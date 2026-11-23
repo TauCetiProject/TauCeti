@@ -132,6 +132,12 @@ theorem conjRepresentation_mul (g : G) (x y : MonoidAlgebra R G) :
     conjRepresentation R G g (x * y) = conjRepresentation R G g x * conjRepresentation R G g y :=
   map_mul (MonoidAlgebra.domCongr R R (MulAut.conj g)) x y
 
+/-- Conjugating by `h` and then by `g` is conjugating by `g * h`. This is not a simp lemma: simp
+normalises `conjRepresentation R G (g * h)` the other way, with `map_mul`. -/
+theorem conjRepresentation_conjRepresentation (g h : G) (x : MonoidAlgebra R G) :
+    conjRepresentation R G g (conjRepresentation R G h x) = conjRepresentation R G (g * h) x := by
+  rw [map_mul, mul_apply_eq_comp]
+
 variable (R) in
 /-- The subalgebra `R[G]^H` of elements of `R[G]` fixed by conjugation by `H`: the centralizer in
 `R[G]` of the group elements of `H` (`TauCeti.mem_conjInvariants_iff`). -/
@@ -376,8 +382,8 @@ theorem conjRepresentation_mem_conjInvariants (g : G) {H : Subgroup G} {x : Mono
   rw [mem_conjInvariants_iff] at hx ⊢
   intro h hh
   have := hx _ ((mem_conj_smul g H h).1 hh)
-  rw [← mul_apply_eq_comp, ← map_mul, show h * g = g * (g⁻¹ * h * g) by group, map_mul,
-    mul_apply_eq_comp, this]
+  rw [conjRepresentation_conjRepresentation, show h * g = g * (g⁻¹ * h * g) by group,
+    ← conjRepresentation_conjRepresentation, this]
 
 /-- Conjugation by `g` maps `R[G]^H` onto `R[G]^{gHg⁻¹}`. -/
 theorem map_conjInvariants (g : G) (H : Subgroup G) :
@@ -388,8 +394,7 @@ theorem map_conjInvariants (g : G) (H : Subgroup G) :
     exact conjRepresentation_mem_conjInvariants g hx
   · simpa [map_inv, inv_smul_smul] using conjRepresentation_mem_conjInvariants g⁻¹ hy
   · -- the `AlgHom` coercion of an `AlgEquiv` applies as the `AlgEquiv` (`AlgEquiv.coe_toAlgHom`)
-    refine (domCongrAut_conj_apply g _).trans ?_
-    simp [← mul_apply_eq_comp, ← map_mul]
+    exact (domCongrAut_conj_apply g _).trans (Representation.self_inv_apply _ g y)
 
 variable (R) in
 /-- Conjugation by `g` as an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`, `x ↦ g x g⁻¹`. -/
@@ -411,8 +416,7 @@ theorem coe_conjInvariantsEquiv_symm (g : G) (H : Subgroup G)
     (y : conjInvariants R (MulAut.conj g • H)) :
     ((conjInvariantsEquiv R g H).symm y : MonoidAlgebra R G) = conjRepresentation R G g⁻¹ y := by
   obtain ⟨x, rfl⟩ := (conjInvariantsEquiv R g H).surjective y
-  rw [AlgEquiv.symm_apply_apply, coe_conjInvariantsEquiv]
-  simp [← mul_apply_eq_comp, ← map_mul]
+  rw [AlgEquiv.symm_apply_apply, coe_conjInvariantsEquiv, Representation.inv_self_apply]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex Fintype.ofFinite
 
@@ -430,8 +434,8 @@ theorem conjInvariantsEquiv_relTrace (g : G) {Q P : Subgroup G} [(Q.subgroupOf P
   rw [coe_conjInvariantsEquiv, coe_relTrace, map_sum,
     relTrace_apply_eq_sum_of_bijective _ (Subgroup.mk_mulEquiv_out_bijective e he)]
   refine Finset.sum_congr rfl fun q _ => ?_
-  rw [coe_conjInvariantsEquiv, ← mul_apply_eq_comp, ← map_mul, ← mul_apply_eq_comp,
-    ← map_mul]
+  rw [coe_conjInvariantsEquiv, conjRepresentation_conjRepresentation,
+    conjRepresentation_conjRepresentation]
   congr 2
   simp [e, MulAut.smul_def, MulAut.conj_apply]
 
@@ -455,7 +459,7 @@ theorem inclusion_relTrace_eq_sum_relTrace_conj {T Q P : Subgroup G}
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [coe_relTrace]
   refine Finset.sum_congr rfl fun j _ => ?_
-  rw [coe_conjInvariantsEquiv, ← mul_apply_eq_comp, ← map_mul]
+  rw [coe_conjInvariantsEquiv, conjRepresentation_conjRepresentation]
 
 /-- **The Mackey formula over the double cosets.** For `T ≤ P` and any subgroup `Q` with `Q ∩ P`
 of finite index in `P`, `Tr_Q^P(a) = ∑_{TxQ ⊆ P} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T`, summed

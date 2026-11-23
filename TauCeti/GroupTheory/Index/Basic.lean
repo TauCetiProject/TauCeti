@@ -318,6 +318,7 @@ theorem finiteIndex_conj_smul_subgroupOf {G : Type*} [Group G] {T P : Subgroup G
     ((MulAut.conj x • Q).subgroupOf T).FiniteIndex := by
   have h := instFiniteIndexSubgroupOfSMul (Q := Q) (P := P) (MulAut.conj x)
   rw [conj_smul_eq_self_of_mem hx, ← isFiniteRelIndex_iff_finiteIndex] at h
+  -- `h : (MulAut.conj x • Q).IsFiniteRelIndex P` supplies the instance argument here
   exact isFiniteRelIndex_iff_finiteIndex.1 (isFiniteRelIndex_of_le_right _ hTP)
 
 /-- A subgroup of finite index in an infinite group is infinite. -/
