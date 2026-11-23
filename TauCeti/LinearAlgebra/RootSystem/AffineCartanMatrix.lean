@@ -482,55 +482,54 @@ theorem det_affineCartanMatrix [DecidableEq ι] : b.affineCartanMatrix.det = 0 :
     ⟨b.affineMarks, fun h ↦ by simpa using congrFun h none,
       b.affineMarks_vecMul_affineCartanMatrix⟩
 
-/-- **The left kernel of the affine Cartan matrix is spanned by the marks**: for a root system, a
-vector `v` with `v ᵥ* A = 0` is `v 0` times the marks. Together with
-`RootPairing.Base.affineMarks_vecMul_affineCartanMatrix`, the affine Cartan matrix has corank
-one. -/
-theorem vecMul_affineCartanMatrix_eq_zero_iff [IsDomain R] [P.IsRootSystem]
-    {v : Option b.support → ℤ} :
-    v ᵥ* b.affineCartanMatrix = 0 ↔ v = v none • b.affineMarks := by
-  refine ⟨fun hv ↦ ?_, fun hv ↦ by rw [hv, smul_vecMul, affineMarks_vecMul_affineCartanMatrix,
-    smul_zero]⟩
-  -- `w = v - v 0 • m` is a left null vector vanishing at the affine node, so its restriction to
-  -- the simple nodes is a left null vector of the nondegenerate finite Cartan matrix
-  set w := v - v none • b.affineMarks with hw
-  have hw0 : w none = 0 := by simp [hw]
-  have hwA : w ᵥ* b.affineCartanMatrix = 0 := by
-    rw [hw, sub_vecMul, smul_vecMul, affineMarks_vecMul_affineCartanMatrix, hv, smul_zero,
-      sub_zero]
-  have hfin : (w ∘ some) ᵥ* b.cartanMatrix = 0 := by
+/-- Shared kernel argument: a left null vector `v` of `A` is `v none • n` when `n` is a left null
+vector with `n none = 1` and `A.submatrix some some` has trivial left kernel. -/
+private theorem vecMul_eq_zero_iff_of_null {α : Type*} [Fintype α]
+    {A : Matrix (Option α) (Option α) ℤ} {n v : Option α → ℤ}
+    (hsub : ∀ u : α → ℤ, u ᵥ* A.submatrix some some = 0 → u = 0)
+    (hn0 : n none = 1) (hnA : n ᵥ* A = 0) :
+    v ᵥ* A = 0 ↔ v = v none • n := by
+  refine ⟨fun hv ↦ ?_, fun hv ↦ by rw [hv, smul_vecMul, hnA, smul_zero]⟩
+  set w := v - v none • n with hw
+  have hw0 : w none = 0 := by simp [hw, hn0]
+  have hwA : w ᵥ* A = 0 := by rw [hw, sub_vecMul, smul_vecMul, hnA, hv, smul_zero, sub_zero]
+  have hfin : (w ∘ some) ᵥ* A.submatrix some some = 0 := by
     ext j
     have := congrFun hwA (some j)
-    simpa [vecMul, dotProduct, Fintype.sum_option, hw0, cartanMatrixIn_def] using this
-  have hsome := b.cartanMatrix_nondegenerate.separatingLeft.eq_zero_of_vecMul_eq_zero hfin
+    simpa [vecMul, dotProduct, Fintype.sum_option, hw0] using this
+  have hsome := hsub _ hfin
   rw [← sub_eq_zero]
   ext k
   rcases k with _ | i
   · exact hw0
   · exact congrFun hsome i
 
+/-- **The left kernel of the affine Cartan matrix is spanned by the marks**: for a root system, a
+vector `v` with `v ᵥ* A = 0` is `v 0` times the marks. Together with
+`RootPairing.Base.affineMarks_vecMul_affineCartanMatrix`, the affine Cartan matrix has corank
+one. -/
+theorem vecMul_affineCartanMatrix_eq_zero_iff [IsDomain R] [P.IsRootSystem]
+    {v : Option b.support → ℤ} :
+    v ᵥ* b.affineCartanMatrix = 0 ↔ v = v none • b.affineMarks :=
+  vecMul_eq_zero_iff_of_null
+    (fun _ h ↦ b.cartanMatrix_nondegenerate.separatingLeft.eq_zero_of_vecMul_eq_zero
+      (by simpa using h))
+    b.affineMarks_none b.affineMarks_vecMul_affineCartanMatrix
+
 /-- **The right kernel of the affine Cartan matrix is spanned by the comarks**: for a root system, a
 vector `v` with `A *ᵥ v = 0` is `v 0` times the comarks. -/
 theorem affineCartanMatrix_mulVec_eq_zero_iff [IsDomain R] [P.IsRootSystem]
     {v : Option b.support → ℤ} :
     b.affineCartanMatrix *ᵥ v = 0 ↔ v = v none • b.affineComarks := by
-  refine ⟨fun hv ↦ ?_, fun hv ↦ by rw [hv, mulVec_smul, affineCartanMatrix_mulVec_affineComarks,
-    smul_zero]⟩
-  set w := v - v none • b.affineComarks with hw
-  have hw0 : w none = 0 := by simp [hw]
-  have hwA : b.affineCartanMatrix *ᵥ w = 0 := by
-    rw [hw, mulVec_sub, mulVec_smul, affineCartanMatrix_mulVec_affineComarks, hv, smul_zero,
-      sub_zero]
-  have hfin : b.cartanMatrix *ᵥ (w ∘ some) = 0 := by
-    ext i
-    have := congrFun hwA (some i)
-    simpa [mulVec, dotProduct, Fintype.sum_option, hw0, cartanMatrixIn_def] using this
-  have hsome := b.cartanMatrix_nondegenerate.separatingRight.eq_zero_of_mulVec_eq_zero hfin
-  rw [← sub_eq_zero]
-  ext k
-  rcases k with _ | i
-  · exact hw0
-  · exact congrFun hsome i
+  rw [← Matrix.vecMul_transpose]
+  exact vecMul_eq_zero_iff_of_null
+    (fun u h ↦ b.cartanMatrix_nondegenerate.separatingRight.eq_zero_of_mulVec_eq_zero
+      (by
+        change b.cartanMatrix *ᵥ u = 0
+        rw [← b.submatrix_affineCartanMatrix_some, ← Matrix.vecMul_transpose]
+        exact h))
+    b.affineComarks_none
+    (by rw [Matrix.vecMul_transpose, affineCartanMatrix_mulVec_affineComarks])
 
 /-! ### Symmetries of the affine Cartan matrix -/
 

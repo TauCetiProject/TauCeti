@@ -276,12 +276,17 @@ local notation "P" => loopAlgebra R ℤ L
 local notation "c" => twoCocycleOfBilinear R ℤ L Φ hΦ hΦs
 local notation "E" => ofTwoCocycle c
 
+/-- The degree derivation is skew for the residue cocycle. -/
+theorem residuePairing_degreeDerivation_add (u v : P) :
+    (c : twoCochain R P (TrivialLieModule R P R)) (degreeDerivation R L u) v +
+      (c : twoCochain R P (TrivialLieModule R P R)) u (degreeDerivation R L v) = 0 := by
+  simp only [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, ← map_add,
+    residuePairing_degreeDerivation_add_eq_zero Φ u v, map_zero]
+
 /-- **The degree derivation on the central extension** `ĝ = ofTwoCocycle c`, acting by `t d/dt`
 on loop modes and annihilating the central element `K`. -/
 def extensionDegreeDerivation : LieDerivation R E E :=
-  ofTwoCocycle.derivation c (degreeDerivation R L) fun u v ↦ by
-    simp only [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, ← map_add,
-      residuePairing_degreeDerivation_add_eq_zero Φ u v, map_zero]
+  ofTwoCocycle.derivation c (degreeDerivation R L) (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
 @[simp]
 theorem extensionDegreeDerivation_ofProd (u : P) (z : TrivialLieModule R P R) :
@@ -295,93 +300,109 @@ theorem extensionDegreeDerivation_centralElement :
   ofTwoCocycle.derivation_centralElement c (degreeDerivation R L) _
 
 local notation "δ" => extensionDegreeDerivation Φ hΦ hΦs
-local notation "ψ" => LieDerivation.lineHom (extensionDegreeDerivation Φ hΦ hΦs)
 
 /-- **The extended affine loop algebra** `ĝ' = ĝ ⋊ R d`: the residue central extension of
 `loopAlgebra R ℤ L` by `Φ` with the degree derivation `d = t d/dt` adjoined. -/
 def extendedResidueExtension : Type _ :=
-  E ⋊⁅LieDerivation.lineHom (extensionDegreeDerivation Φ hΦ hΦs)⁆ R
+  ofTwoCocycle.derivationExtension c (degreeDerivation R L)
+    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
-instance : LieRing (extendedResidueExtension Φ hΦ hΦs) := inferInstanceAs (LieRing (E ⋊⁅ψ⁆ R))
+instance : LieRing (extendedResidueExtension Φ hΦ hΦs) :=
+  inferInstanceAs (LieRing
+    (ofTwoCocycle.derivationExtension c (degreeDerivation R L)
+      (residuePairing_degreeDerivation_add Φ hΦ hΦs)))
 
 instance : LieAlgebra R (extendedResidueExtension Φ hΦ hΦs) :=
-  inferInstanceAs (LieAlgebra R (E ⋊⁅ψ⁆ R))
+  inferInstanceAs (LieAlgebra R
+    (ofTwoCocycle.derivationExtension c (degreeDerivation R L)
+      (residuePairing_degreeDerivation_add Φ hΦ hΦs)))
 
 local notation "E'" => extendedResidueExtension Φ hΦ hΦs
 
 /-- The inclusion of the residue central extension `ĝ` into the extended affine loop algebra. -/
-def toExtendedResidueExtension : E →ₗ⁅R⁆ E' := inl ψ
+def toExtendedResidueExtension : E →ₗ⁅R⁆ E' :=
+  ofTwoCocycle.toDerivationExtension c (degreeDerivation R L)
+    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
 /-- The adjoined degree element `d` of the extended affine loop algebra. -/
-def degreeElement : E' := inr ψ (1 : R)
+def degreeElement : E' :=
+  ofTwoCocycle.derivationElement c (degreeDerivation R L)
+    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
 /-- The projection from the extended affine loop algebra onto the degree coordinate `R`. -/
-def degreeProj : E' →ₗ⁅R⁆ R := projr ψ
+def degreeProj : E' →ₗ⁅R⁆ R :=
+  ofTwoCocycle.derivationProj c (degreeDerivation R L)
+    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
 /-- The degree projection vanishes on the residue central extension `ĝ`. -/
 @[simp]
 theorem degreeProj_toExtendedResidueExtension (x : E) :
-    degreeProj Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs x) = 0 := projr_inl_apply ψ
+    degreeProj Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs x) = 0 :=
+  ofTwoCocycle.derivationProj_toDerivationExtension c (degreeDerivation R L) _ x
 
 /-- The degree projection sends the degree element `d` to `1`. -/
 @[simp]
 theorem degreeProj_degreeElement : degreeProj Φ hΦ hΦs (degreeElement Φ hΦ hΦs) = 1 :=
-  projr_inr_apply ψ
+  ofTwoCocycle.derivationProj_derivationElement c (degreeDerivation R L) _
 
 /-- The linear equivalence identifying `extendedResidueExtension Φ hΦ hΦs` with `ĝ × R`. -/
-def extendedToProd : E' ≃ₗ[R] E × R := toProdl ψ
+def extendedToProd : E' ≃ₗ[R] E × R :=
+  ofTwoCocycle.derivationToProd c (degreeDerivation R L)
+    (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
 @[simp]
 theorem extendedToProd_toExtendedResidueExtension (x : E) :
-    extendedToProd Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs x) = (x, 0) := (rfl)
+    extendedToProd Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs x) = (x, 0) :=
+  ofTwoCocycle.derivationToProd_toDerivationExtension c (degreeDerivation R L) _ x
 
 @[simp]
 theorem extendedToProd_degreeElement :
-    extendedToProd Φ hΦ hΦs (degreeElement Φ hΦ hΦs) = (0, 1) := (rfl)
+    extendedToProd Φ hΦ hΦs (degreeElement Φ hΦ hΦs) = (0, 1) :=
+  ofTwoCocycle.derivationToProd_derivationElement c (degreeDerivation R L) _
 
 /-- Reconstructing an element of `extendedResidueExtension` from `(P × R) × R` coordinates. -/
 theorem extendedToProd_symm_apply (x : E) (t : R) :
     (extendedToProd Φ hΦ hΦs).symm (x, t) =
       toExtendedResidueExtension Φ hΦ hΦs x + t • degreeElement Φ hΦ hΦs :=
-  (extendedToProd Φ hΦ hΦs).injective (by simp [map_add, map_smul])
+  ofTwoCocycle.derivationToProd_symm_apply c (degreeDerivation R L) _ x t
 
 /-- The second coordinate under `extendedToProd` is `degreeProj`. -/
 theorem snd_extendedToProd (y : E') :
-    (extendedToProd Φ hΦ hΦs y).snd = degreeProj Φ hΦ hΦs y := (rfl)
+    (extendedToProd Φ hΦ hΦs y).snd = degreeProj Φ hΦ hΦs y :=
+  ofTwoCocycle.snd_derivationToProd c (degreeDerivation R L) _ y
 
 /-- The inclusion of `ĝ` in the extended affine loop algebra is injective. -/
 theorem toExtendedResidueExtension_injective :
-    Function.Injective (toExtendedResidueExtension Φ hΦ hΦs) := inl_injective ψ
+    Function.Injective (toExtendedResidueExtension Φ hΦ hΦs) :=
+  ofTwoCocycle.toDerivationExtension_injective c (degreeDerivation R L) _
 
 /-- The range of `toExtendedResidueExtension` is the kernel of `degreeProj`. -/
 theorem range_toExtendedResidueExtension_eq_ker_degreeProj :
     (toExtendedResidueExtension Φ hΦ hΦs).range.toSubmodule =
       (degreeProj Φ hΦ hΦs).ker.toSubmodule :=
-  SetLike.ext fun x ↦ SetLike.ext_iff.mp (IsExtension.exact (i := inl ψ) (p := projr ψ)) x
+  ofTwoCocycle.range_toDerivationExtension_eq_ker_derivationProj c (degreeDerivation R L) _
 
 /-- Every element of `extendedResidueExtension Φ hΦ hΦs` is `x + t • d` for `x ∈ ĝ`, `t ∈ R`. -/
 theorem exists_eq_add_smul_degreeElement (y : E') : ∃ (x : E) (t : R),
     y = toExtendedResidueExtension Φ hΦ hΦs x + t • degreeElement Φ hΦ hΦs :=
-  LieDerivation.exists_eq_add_smul_inr_one δ y
+  ofTwoCocycle.exists_eq_add_smul_derivationElement c (degreeDerivation R L) _ y
 
 /-- **The degree element acts by the degree derivation**: `⁅d, x⁆ = δ x` for `x ∈ ĝ`. -/
 theorem lie_degreeElement_toExtendedResidueExtension (x : E) :
     ⁅degreeElement Φ hΦ hΦs, toExtendedResidueExtension Φ hΦ hΦs x⁆ =
       toExtendedResidueExtension Φ hΦ hΦs (δ x) :=
-  LieDerivation.lie_inr_lineHom_one_inl δ x
+  ofTwoCocycle.lie_derivationElement_toDerivationExtension c (degreeDerivation R L) _ x
 
 /-- **The degree element commutes with `K`.** -/
 @[simp]
 theorem lie_degreeElement_centralElement :
     ⁅degreeElement Φ hΦ hΦs, toExtendedResidueExtension Φ hΦ hΦs (centralElement c)⁆ = 0 :=
-  LieDerivation.lie_inr_lineHom_one_inl_eq_zero δ
-    (extensionDegreeDerivation_centralElement Φ hΦ hΦs)
+  ofTwoCocycle.lie_derivationElement_centralElement c (degreeDerivation R L) _
 
 /-- **`K` is central in the extended affine loop algebra.** -/
 theorem toExtendedResidueExtension_centralElement_mem_center :
     toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' :=
-  LieDerivation.inl_lineHom_mem_center δ (centralElement_mem_center c)
-    (extensionDegreeDerivation_centralElement Φ hΦ hΦs)
+  ofTwoCocycle.toDerivationExtension_centralElement_mem_center c (degreeDerivation R L) _
 
 /-- **The `n`-th mode map** `x ↦ tⁿ ⊗ x` from `L` into the extended affine loop algebra. -/
 def mode (n : ℤ) : L →ₗ[R] E' :=
@@ -423,7 +444,10 @@ theorem lie_mode_mode (m n : ℤ) (x y : L) :
 /-- **The constant loop embedding** `x ↦ 1 ⊗ x` from `L` into `ĝ'` as a Lie homomorphism. -/
 def constHom : L →ₗ⁅R⁆ E' where
   toLinearMap := mode Φ hΦ hΦs 0
-  map_lie' {_ _} := by simp [lie_mode_mode]
+  map_lie' {x y} := by
+    change mode Φ hΦ hΦs 0 ⁅x, y⁆ = ⁅mode Φ hΦ hΦs 0 x, mode Φ hΦ hΦs 0 y⁆
+    rw [lie_mode_mode]
+    simp
 
 @[simp]
 theorem constHom_apply (x : L) : constHom Φ hΦ hΦs x = mode Φ hΦ hΦs 0 x := (rfl)
@@ -551,16 +575,22 @@ theorem extendedToProd_lie (x y : E') :
         (TrivialLieModule.equiv R P R).symm (residuePairing R ℤ L Φ px.fst py.fst)), 0) := by
   have hlie : extendedToProd Φ hΦ hΦs ⁅x, y⁆ =
       (⁅(extendedToProd Φ hΦ hΦs x).fst, (extendedToProd Φ hΦ hΦs y).fst⁆ +
-        (extendedToProd Φ hΦ hΦs x).snd • δ (extendedToProd Φ hΦ hΦs y).fst -
-        (extendedToProd Φ hΦ hΦs y).snd • δ (extendedToProd Φ hΦ hΦs x).fst, 0) :=
-    congrArg (extendedToProd Φ hΦ hΦs) (LieDerivation.lie_lineHom_eq_mk δ x y)
+        (extendedToProd Φ hΦ hΦs x).snd •
+          ofTwoCocycle.derivation c (degreeDerivation R L)
+            (residuePairing_degreeDerivation_add Φ hΦ hΦs) (extendedToProd Φ hΦ hΦs y).fst -
+        (extendedToProd Φ hΦ hΦs y).snd •
+          ofTwoCocycle.derivation c (degreeDerivation R L)
+            (residuePairing_degreeDerivation_add Φ hΦ hΦs) (extendedToProd Φ hΦ hΦs x).fst,
+        0) :=
+    ofTwoCocycle.derivationToProd_lie c (degreeDerivation R L)
+      (residuePairing_degreeDerivation_add Φ hΦ hΦs) x y
   dsimp only; rw [hlie]
   refine Prod.ext ((ofProd c).symm.injective ?_) rfl
   rw [Equiv.symm_apply_apply, ← coe_ofProdLinearEquiv_symm, map_sub, map_add, map_smul, map_smul]
   have hx := (Equiv.apply_symm_apply (ofProd c) (extendedToProd Φ hΦ hΦs x).fst).symm
   have hy := (Equiv.apply_symm_apply (ofProd c) (extendedToProd Φ hΦ hΦs y).fst).symm
-  conv_lhs => rw [hx, hy, bracket_ofTwoCocycle, extensionDegreeDerivation_ofProd,
-    extensionDegreeDerivation_ofProd]
+  conv_lhs => rw [hx, hy, bracket_ofTwoCocycle, ofTwoCocycle.derivation_ofProd,
+    ofTwoCocycle.derivation_ofProd]
   simp [trivial_lie_zero, sub_eq_add_neg, twoCocycleOfBilinear_coe,
     twoCochainOfBilinear_apply_apply]
 
@@ -621,94 +651,34 @@ variable {Φ Ψ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.
   (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
 
 local notation "P" => loopAlgebra R ℤ L
-local notation "Z" => TrivialLieModule R P R
 local notation "cΦ" => twoCocycleOfBilinear R ℤ L Φ hΦ hΦs
 local notation "cΨ" => twoCocycleOfBilinear R ℤ L Ψ hΨ hΨs
-
-private theorem twoCocycleOfBilinear_eq_smul {r : R} (h : Ψ = r • Φ) : cΨ = r • cΦ := by
-  subst h; exact twoCocycleOfBilinear_smul r hΦ hΨ hΦs hΨs
-
-/-- Rescaling the level of the polynomial loop central extension: if `Ψ = r • Φ`, the Lie
-homomorphism `ofTwoCocycle cΦ →ₗ⁅R⁆ ofTwoCocycle cΨ` fixing loops and sending `K ↦ r • K`. -/
-def levelHom {r : R} (h : Ψ = r • Φ) : ofTwoCocycle cΦ →ₗ⁅R⁆ ofTwoCocycle cΨ :=
-  ofTwoCocycle.smulMap cΦ cΨ r (twoCocycleOfBilinear_eq_smul hΦ hΦs hΨ hΨs h)
-
-@[simp]
-theorem levelHom_ofProd {r : R} (h : Ψ = r • Φ) (u : P) (z : Z) :
-    levelHom hΦ hΦs hΨ hΨs h (ofProd cΦ (u, z)) = ofProd cΨ (u, r • z) :=
-  ofTwoCocycle.smulMap_ofProd cΦ cΨ r _ u z
-
-@[simp]
-theorem ofProd_symm_levelHom {r : R} (h : Ψ = r • Φ) (v : ofTwoCocycle cΦ) :
-    (ofProd cΨ).symm (levelHom hΦ hΦs hΨ hΨs h v) =
-      (((ofProd cΦ).symm v).fst, r • ((ofProd cΦ).symm v).snd) :=
-  ofTwoCocycle.ofProd_symm_smulMap cΦ cΨ r _ v
-
-@[simp]
-theorem levelHom_centralElement {r : R} (h : Ψ = r • Φ) :
-    levelHom hΦ hΦs hΨ hΨs h (centralElement cΦ) = r • centralElement cΨ :=
-  ofTwoCocycle.smulMap_centralElement cΦ cΨ r _
-
-/-- If `Ψ = u • Φ` for a unit `u`, `ofTwoCocycle cΦ` and `ofTwoCocycle cΨ` are isomorphic via
-`(v, z) ↦ (v, u • z)`. -/
-def levelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    ofTwoCocycle cΦ ≃ₗ⁅R⁆ ofTwoCocycle cΨ :=
-  ofTwoCocycle.smulMapEquiv cΦ cΨ u (twoCocycleOfBilinear_eq_smul hΦ hΦs hΨ hΨs h)
-
-@[simp]
-theorem levelEquiv_ofProd {u : Rˣ} (h : Ψ = (u : R) • Φ) (v : P) (z : Z) :
-    levelEquiv hΦ hΦs hΨ hΨs h (ofProd cΦ (v, z)) = ofProd cΨ (v, (u : R) • z) := by
-  rw [levelEquiv]; simp [Units.smul_def]
-
-@[simp]
-theorem levelEquiv_centralElement {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    levelEquiv hΦ hΦs hΨ hΨs h (centralElement cΦ) = (u : R) • centralElement cΨ :=
-  ofTwoCocycle.smulMapEquiv_centralElement cΦ cΨ u _
-
-@[simp]
-theorem levelEquiv_symm_ofProd {u : Rˣ} (h : Ψ = (u : R) • Φ) (v : P) (z : Z) :
-    (levelEquiv hΦ hΦs hΨ hΨs h).symm (ofProd cΨ (v, z)) = ofProd cΦ (v, u⁻¹ • z) :=
-  ofTwoCocycle.smulMapEquiv_symm_ofProd cΦ cΨ u _ v z
-
-/-- The inverse of `levelEquiv` is the level isomorphism for the reciprocal scalar `u⁻¹`. -/
-theorem levelEquiv_symm {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    (levelEquiv hΦ hΦs hΨ hΨs h).symm =
-      levelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs (by simp [h, smul_smul]) := by
-  rw [levelEquiv, levelEquiv]; exact ofTwoCocycle.smulMapEquiv_symm cΦ cΨ u _
-
-@[simp]
-theorem levelEquiv_symm_centralElement {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    (levelEquiv hΦ hΦs hΨ hΨs h).symm (centralElement cΨ) = (↑u⁻¹ : R) • centralElement cΦ := by
-  rw [levelEquiv_symm, levelEquiv_centralElement]
-
-@[simp]
-theorem toLieHom_levelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    (levelEquiv hΦ hΦs hΨ hΨs h).toLieHom = levelHom hΦ hΦs hΨ hΨs h :=
-  ofTwoCocycle.toLieHom_smulMapEquiv cΦ cΨ u _
 
 /-- **Level transport on extended affine loop algebras**: if `Ψ = r • Φ`, the Lie algebra
 homomorphism `extendedResidueExtension Φ →ₗ⁅R⁆ extendedResidueExtension Ψ` fixing all loop
 modes and `d` while sending `K ↦ r • K`. -/
 def extendedLevelHom {r : R} (h : Ψ = r • Φ) :
     extendedResidueExtension Φ hΦ hΦs →ₗ⁅R⁆ extendedResidueExtension Ψ hΨ hΨs :=
-  LieDerivation.liftLineHom (extensionDegreeDerivation Φ hΦ hΦs)
-    (extensionDegreeDerivation Ψ hΨ hΨs) (levelHom hΦ hΦs hΨ hΨs h) fun x ↦ by
-      obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd cΦ).surjective x; simp
+  ofTwoCocycle.smulMapDerivationHom cΦ (degreeDerivation R L) _ cΨ _ r
+    (by subst h; exact twoCocycleOfBilinear_smul r hΦ hΨ hΦs hΨs)
 
 @[simp]
 theorem extendedToProd_extendedLevelHom {r : R} (h : Ψ = r • Φ)
     (x : extendedResidueExtension Φ hΦ hΦs) :
     extendedToProd Ψ hΨ hΨs (extendedLevelHom hΦ hΦs hΨ hΨs h x) =
-      (levelHom hΦ hΦs hΨ hΨs h (extendedToProd Φ hΦ hΦs x).fst,
+      (ofTwoCocycle.smulMap cΦ cΨ r (by subst h; exact twoCocycleOfBilinear_smul r hΦ hΨ hΦs hΨs)
+          (extendedToProd Φ hΦ hΦs x).fst,
         (extendedToProd Φ hΦ hΦs x).snd) :=
-  Prod.ext (LieDerivation.liftLineHom_left _ _ _ _ x) (LieDerivation.liftLineHom_right _ _ _ _ x)
+  ofTwoCocycle.derivationToProd_smulMapDerivationHom cΦ (degreeDerivation R L) _ cΨ _ r _ x
 
-/-- `extendedLevelHom` restricts to `levelHom` on the residue central extension. -/
+/-- `extendedLevelHom` restricts to `ofTwoCocycle.smulMap` on the residue central extension. -/
 theorem extendedLevelHom_toExtendedResidueExtension {r : R} (h : Ψ = r • Φ)
     (x : ofTwoCocycle cΦ) :
     extendedLevelHom hΦ hΦs hΨ hΨs h (toExtendedResidueExtension Φ hΦ hΦs x) =
-      toExtendedResidueExtension Ψ hΨ hΨs (levelHom hΦ hΦs hΨ hΨs h x) :=
-  LieDerivation.liftLineHom_inl _ _ _ _ x
+      toExtendedResidueExtension Ψ hΨ hΨs
+        (ofTwoCocycle.smulMap cΦ cΨ r
+          (by subst h; exact twoCocycleOfBilinear_smul r hΦ hΨ hΦs hΨs) x) :=
+  ofTwoCocycle.smulMapDerivationHom_toDerivationExtension cΦ (degreeDerivation R L) _ cΨ _ r _ x
 
 /-- `extendedLevelHom` fixes every loop mode `tⁿ ⊗ x`. -/
 @[simp]
@@ -721,14 +691,14 @@ theorem extendedLevelHom_mode {r : R} (h : Ψ = r • Φ) (n : ℤ) (x : L) :
 theorem extendedLevelHom_centralElement {r : R} (h : Ψ = r • Φ) :
     extendedLevelHom hΦ hΦs hΨ hΨs h
         (toExtendedResidueExtension Φ hΦ hΦs (centralElement cΦ)) =
-      r • toExtendedResidueExtension Ψ hΨ hΨs (centralElement cΨ) := by
-  rw [extendedLevelHom_toExtendedResidueExtension, levelHom_centralElement, map_smul]
+      r • toExtendedResidueExtension Ψ hΨ hΨs (centralElement cΨ) :=
+  ofTwoCocycle.smulMapDerivationHom_centralElement cΦ (degreeDerivation R L) _ cΨ _ r _
 
 /-- `extendedLevelHom` preserves the degree element `d`. -/
 @[simp]
 theorem extendedLevelHom_degreeElement {r : R} (h : Ψ = r • Φ) :
     extendedLevelHom hΦ hΦs hΨ hΨs h (degreeElement Φ hΦ hΦs) = degreeElement Ψ hΨ hΨs :=
-  LieDerivation.liftLineHom_inr _ _ _ _ 1
+  ofTwoCocycle.smulMapDerivationHom_derivationElement cΦ (degreeDerivation R L) _ cΨ _ r _
 
 /-- **Level transport scales the invariant bilinear form by `r`**: for `Ψ = r • Φ`,
 `B_Ψ(f x, f y) = r * B_Φ(x, y)`. -/
@@ -740,7 +710,8 @@ theorem extendedBilinForm_extendedLevelHom {r : R} (h : Ψ = r • Φ)
   have hct : constantTermPairing (A := ℤ) Ψ = r • constantTermPairing Φ := by
     rw [h, constantTermPairing_smul]
   rw [extendedBilinForm_apply, extendedBilinForm_apply, extendedToProd_extendedLevelHom,
-    extendedToProd_extendedLevelHom, ofProd_symm_levelHom, ofProd_symm_levelHom, hct]
+    extendedToProd_extendedLevelHom, ofTwoCocycle.ofProd_symm_smulMap,
+    ofTwoCocycle.ofProd_symm_smulMap, hct]
   simp only [LinearMap.smul_apply, smul_eq_mul, map_smul]; ring
 
 /-- **Level isomorphism for extended affine loop algebras**: if `Ψ = u • Φ` for a unit `u`, then
@@ -748,34 +719,31 @@ theorem extendedBilinForm_extendedLevelHom {r : R} (h : Ψ = r • Φ)
 the map fixing all loop modes and `d` and sending `K ↦ u • K`. -/
 def extendedLevelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     extendedResidueExtension Φ hΦ hΦs ≃ₗ⁅R⁆ extendedResidueExtension Ψ hΨ hΨs :=
-  LieDerivation.liftLineEquiv (extensionDegreeDerivation Φ hΦ hΦs)
-    (extensionDegreeDerivation Ψ hΨ hΨs) (levelEquiv hΦ hΦs hΨ hΨs h) fun x ↦ by
-      obtain ⟨⟨v, z⟩, rfl⟩ := (ofProd cΦ).surjective x; simp
+  ofTwoCocycle.smulMapDerivationEquiv cΦ (degreeDerivation R L) _ cΨ _ u
+    (by subst h; exact twoCocycleOfBilinear_smul (u : R) hΦ hΨ hΦs hΨs)
 
 @[simp]
 theorem toLieHom_extendedLevelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    (extendedLevelEquiv hΦ hΦs hΨ hΨs h).toLieHom = extendedLevelHom hΦ hΦs hΨ hΨs h := by
-  rw [extendedLevelEquiv, LieDerivation.toLieHom_liftLineEquiv]
-  ext x <;> simp [extendedLevelHom]
+    (extendedLevelEquiv hΦ hΦs hΨ hΨs h).toLieHom = extendedLevelHom hΦ hΦs hΨ hΨs h :=
+  ofTwoCocycle.toLieHom_smulMapDerivationEquiv cΦ (degreeDerivation R L) _ cΨ _ u _
 
-/-- `extendedLevelEquiv` acts by `levelEquiv` on the `ĝ` coordinate and fixes the `R` coordinate. -/
+/-- `extendedLevelEquiv` acts by `ofTwoCocycle.smulMapEquiv` on the `ĝ` coordinate and fixes the
+`R` coordinate. -/
 @[simp]
 theorem extendedToProd_extendedLevelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ)
     (x : extendedResidueExtension Φ hΦ hΦs) :
     extendedToProd Ψ hΨ hΨs (extendedLevelEquiv hΦ hΦs hΨ hΨs h x) =
-      (levelEquiv hΦ hΦs hΨ hΨs h (extendedToProd Φ hΦ hΦs x).fst,
-        (extendedToProd Φ hΦ hΦs x).snd) := by
-  rw [← LieEquiv.coe_toLieHom, toLieHom_extendedLevelEquiv, extendedToProd_extendedLevelHom,
-    ← toLieHom_levelEquiv, LieEquiv.coe_toLieHom]
+      (ofTwoCocycle.smulMapEquiv cΦ cΨ u
+          (by subst h; exact twoCocycleOfBilinear_smul (u : R) hΦ hΨ hΦs hΨs)
+          (extendedToProd Φ hΦ hΦs x).fst,
+        (extendedToProd Φ hΦ hΦs x).snd) :=
+  ofTwoCocycle.derivationToProd_smulMapDerivationEquiv cΦ (degreeDerivation R L) _ cΨ _ u _ x
 
 /-- The inverse of `extendedLevelEquiv` is the extended level isomorphism for `u⁻¹`. -/
 theorem extendedLevelEquiv_symm {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     (extendedLevelEquiv hΦ hΦs hΨ hΨs h).symm =
-      extendedLevelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs (by simp [h, smul_smul]) := by
-  refine LieEquiv.ext fun x ↦ (LieEquiv.symm_apply_eq _).mpr ?_
-  apply (extendedToProd Ψ hΨ hΨs).injective
-  rw [extendedToProd_extendedLevelEquiv, extendedToProd_extendedLevelEquiv,
-    ← levelEquiv_symm hΦ hΦs hΨ hΨs h, LieEquiv.apply_symm_apply, Prod.mk.eta]
+      extendedLevelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs (by simp [h, smul_smul]) :=
+  ofTwoCocycle.smulMapDerivationEquiv_symm cΦ (degreeDerivation R L) _ cΨ _ u _
 
 @[simp]
 theorem extendedLevelEquiv_mode {u : Rˣ} (h : Ψ = (u : R) • Φ) (n : ℤ) (x : L) :
@@ -786,13 +754,13 @@ theorem extendedLevelEquiv_mode {u : Rˣ} (h : Ψ = (u : R) • Φ) (n : ℤ) (x
 theorem extendedLevelEquiv_centralElement {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     extendedLevelEquiv hΦ hΦs hΨ hΨs h
         (toExtendedResidueExtension Φ hΦ hΦs (centralElement cΦ)) =
-      (u : R) • toExtendedResidueExtension Ψ hΨ hΨs (centralElement cΨ) := by
-  rw [← LieEquiv.coe_toLieHom, toLieHom_extendedLevelEquiv, extendedLevelHom_centralElement]
+      (u : R) • toExtendedResidueExtension Ψ hΨ hΨs (centralElement cΨ) :=
+  ofTwoCocycle.smulMapDerivationEquiv_centralElement cΦ (degreeDerivation R L) _ cΨ _ u _
 
 @[simp]
 theorem extendedLevelEquiv_degreeElement {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    extendedLevelEquiv hΦ hΦs hΨ hΨs h (degreeElement Φ hΦ hΦs) = degreeElement Ψ hΨ hΨs := by
-  rw [← LieEquiv.coe_toLieHom, toLieHom_extendedLevelEquiv, extendedLevelHom_degreeElement]
+    extendedLevelEquiv hΦ hΦs hΨ hΨs h (degreeElement Φ hΦ hΦs) = degreeElement Ψ hΨ hΨs :=
+  ofTwoCocycle.smulMapDerivationEquiv_derivationElement cΦ (degreeDerivation R L) _ cΨ _ u _
 
 @[simp]
 theorem extendedLevelEquiv_symm_mode {u : Rˣ} (h : Ψ = (u : R) • Φ) (n : ℤ) (x : L) :
@@ -803,14 +771,14 @@ theorem extendedLevelEquiv_symm_mode {u : Rˣ} (h : Ψ = (u : R) • Φ) (n : �
 theorem extendedLevelEquiv_symm_centralElement {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     (extendedLevelEquiv hΦ hΦs hΨ hΨs h).symm
         (toExtendedResidueExtension Ψ hΨ hΨs (centralElement cΨ)) =
-      (↑u⁻¹ : R) • toExtendedResidueExtension Φ hΦ hΦs (centralElement cΦ) := by
-  rw [extendedLevelEquiv_symm, extendedLevelEquiv_centralElement]
+      (↑u⁻¹ : R) • toExtendedResidueExtension Φ hΦ hΦs (centralElement cΦ) :=
+  ofTwoCocycle.smulMapDerivationEquiv_symm_centralElement cΦ (degreeDerivation R L) _ cΨ _ u _
 
 @[simp]
 theorem extendedLevelEquiv_symm_degreeElement {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     (extendedLevelEquiv hΦ hΦs hΨ hΨs h).symm (degreeElement Ψ hΨ hΨs) =
-      degreeElement Φ hΦ hΦs := by
-  rw [extendedLevelEquiv_symm, extendedLevelEquiv_degreeElement]
+      degreeElement Φ hΦ hΦs :=
+  ofTwoCocycle.smulMapDerivationEquiv_symm_derivationElement cΦ (degreeDerivation R L) _ cΨ _ u _
 
 /-- Under `extendedLevelEquiv`, `extendedBilinForm Ψ` pulls back to `u * extendedBilinForm Φ`. -/
 theorem extendedBilinForm_extendedLevelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ)

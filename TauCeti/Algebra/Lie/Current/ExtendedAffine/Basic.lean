@@ -64,7 +64,8 @@ public section
 noncomputable section
 
 open scoped LaurentSeries TensorProduct
-open HahnSeries LieAlgebra LieAlgebra.SemiDirectSum TauCeti.UniversalEnvelopingAlgebra
+open HahnSeries LieAlgebra LieAlgebra.SemiDirectSum LieModule.Cohomology
+open TauCeti.UniversalEnvelopingAlgebra
 open LieAlgebra.ofTwoCocycle (centralElement centralElement_mem_center envelopingι)
 
 -- The coefficientwise algebra structure matches the module used by the tensor product.
@@ -88,46 +89,59 @@ variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsS
 
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
 local notation "E" => ofTwoCocycle c
-local notation "δ" => vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1)
-local notation "ψ" => LieDerivation.lineHom (vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1))
+local notation "d₀" => vectorFieldDerivation R L (single 1 1)
+
+/-- The degree derivation `t d/dt` is skew for the residue cocycle. -/
+theorem residuePairing_degreeDerivation_add (u v : C) :
+    (c : twoCochain R C (TrivialLieModule R C R)) (d₀ u) v +
+      (c : twoCochain R C (TrivialLieModule R C R)) u (d₀ v) = 0 := by
+  simp only [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, ← map_add,
+    residuePairing_vectorFieldDerivation_add, map_zero]
 
 /-- **The extended affine algebra** `ĝ ⋊ R d`: the residue central extension `ĝ = L((t)) ⊕ R K` of
 `Φ` with the degree derivation `d = t d/dt` adjoined, so that `⁅d, x_n⁆ = n x_n` and
 `⁅d, K⁆ = 0`. -/
 def extendedResidueExtension : Type _ :=
-  E ⋊⁅(vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1)).lineHom⁆ R
+  ofTwoCocycle.derivationExtension c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
 instance : LieRing (extendedResidueExtension Φ hΦ hΦs) :=
-  inferInstanceAs (LieRing (E ⋊⁅ψ⁆ R))
+  inferInstanceAs (LieRing
+    (ofTwoCocycle.derivationExtension c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)))
 
 instance : LieAlgebra R (extendedResidueExtension Φ hΦ hΦs) :=
-  inferInstanceAs (LieAlgebra R (E ⋊⁅ψ⁆ R))
+  inferInstanceAs (LieAlgebra R
+    (ofTwoCocycle.derivationExtension c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)))
 
 local notation "E'" => extendedResidueExtension Φ hΦ hΦs
 
 /-- The inclusion of the residue central extension `ĝ` in the extended affine algebra. -/
 def toExtendedResidueExtension : E →ₗ⁅R⁆ E' :=
-  inl ψ
+  ofTwoCocycle.toDerivationExtension c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
 /-- The adjoined degree element `d` of the extended affine algebra. -/
 def degreeElement : E' :=
-  inr ψ (1 : R)
+  ofTwoCocycle.derivationElement c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs)
 
 /-- The inclusion of `ĝ` in the extended affine algebra is injective. -/
 theorem toExtendedResidueExtension_injective :
     Function.Injective (toExtendedResidueExtension Φ hΦ hΦs) :=
-  inl_injective ψ
+  ofTwoCocycle.toDerivationExtension_injective c d₀ _
 
 /-- Every element of the extended affine algebra is `x + t • d` for some `x ∈ ĝ` and `t ∈ R`. -/
 theorem exists_eq_add_smul_degreeElement (y : E') :
     ∃ (x : E) (t : R), y = toExtendedResidueExtension Φ hΦ hΦs x + t • degreeElement Φ hΦ hΦs :=
-  LieDerivation.exists_eq_add_smul_inr_one δ y
+  ofTwoCocycle.exists_eq_add_smul_derivationElement c d₀ _ y
 
 /-- **The degree element acts by the degree derivation**: `⁅d, x⁆ = t x'` for `x ∈ ĝ`. -/
 theorem lie_degreeElement_toExtendedResidueExtension (x : E) :
     ⁅degreeElement Φ hΦ hΦs, toExtendedResidueExtension Φ hΦ hΦs x⁆ =
-      toExtendedResidueExtension Φ hΦ hΦs (δ x) :=
-  LieDerivation.lie_inr_lineHom_one_inl δ x
+      toExtendedResidueExtension Φ hΦ hΦs
+        (vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) x) := by
+  refine (ofTwoCocycle.lie_derivationElement_toDerivationExtension c d₀
+    (residuePairing_degreeDerivation_add Φ hΦ hΦs) x).trans ?_
+  congr 1
+  obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective x
+  rw [ofTwoCocycle.derivation_ofProd, vectorFieldExtensionDerivation_ofProd]
 
 /-- **The degree element on modes**: `⁅d, x_n⁆ = n x_n` for `x_n = r tⁿ ⊗ x`. -/
 theorem lie_degreeElement_toExtendedResidueExtension_ofProd_single_tmul (n : ℤ) (r : R) (x : L) :
@@ -143,14 +157,12 @@ theorem lie_degreeElement_toExtendedResidueExtension_ofProd_single_tmul (n : ℤ
 theorem lie_degreeElement_centralElement :
     ⁅degreeElement Φ hΦ hΦs,
       toExtendedResidueExtension Φ hΦ hΦs (centralElement c)⁆ = 0 :=
-  LieDerivation.lie_inr_lineHom_one_inl_eq_zero δ
-    (vectorFieldExtensionDerivation_centralElement Φ hΦ hΦs (single 1 1))
+  ofTwoCocycle.lie_derivationElement_centralElement c d₀ _
 
 /-- **`K` is central in the extended affine algebra.** -/
 theorem toExtendedResidueExtension_centralElement_mem_center :
     toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' :=
-  LieDerivation.inl_lineHom_mem_center δ (centralElement_mem_center c)
-    (vectorFieldExtensionDerivation_centralElement Φ hΦ hΦs (single 1 1))
+  ofTwoCocycle.toDerivationExtension_centralElement_mem_center c d₀ _
 
 end Extension
 
@@ -165,6 +177,15 @@ local notation "UK" => CentralQuotient R (centralElement c) a
 local notation "UK'" =>
   CentralQuotient R (toExtendedResidueExtension Φ hΦ hΦs (centralElement c)) a
 local notation "dU" => vectorFieldEnvelopingDerivation Φ hΦ hΦs a (single 1 1)
+local notation "d₀" => vectorFieldDerivation R L (single 1 1)
+
+private theorem vectorFieldEnvelopingDerivation_ι_derivation (x : ofTwoCocycle c) :
+    (dU : Module.End R UK) (CentralQuotient.ι (centralElement c) a x) =
+      CentralQuotient.ι (centralElement c) a
+        (ofTwoCocycle.derivation c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs) x) := by
+  rw [vectorFieldEnvelopingDerivation_ι]
+  obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective x
+  rw [vectorFieldExtensionDerivation_ofProd, ofTwoCocycle.derivation_ofProd]
 
 /-- The algebra map `U(ĝ) / (ι K - a) → U(ĝ') / (ι K - a)` induced by the inclusion of `ĝ` in the
 extended affine algebra `ĝ'`. -/
@@ -183,7 +204,7 @@ ring.** `U(ĝ') / (ι K - a)` is the Ore extension of `U(ĝ) / (ι K - a)` by th
 derivation `t d/dt`, with `d` corresponding to the variable `X`. -/
 def extendedEnvelopingOreEquiv :
     UK' ≃ₐ[R] OreExtension (AlgHom.id R UK) (derivationLieAlgebra.toSigmaDerivation dU) :=
-  CentralQuotient.semiDirectSumOreEquiv (vectorFieldEnvelopingDerivation_ι Φ hΦ hΦs a (single 1 1))
+  CentralQuotient.semiDirectSumOreEquiv (vectorFieldEnvelopingDerivation_ι_derivation Φ hΦ hΦs a)
 
 /-- The isomorphism `U' ≃ U[X; d]` sends the image of `x ∈ U` to the constant `C x`. -/
 @[simp]
@@ -210,7 +231,7 @@ theorem extendedEnvelopingOreEquiv_symm_monomial (n : ℕ) (x : UK) :
 /-- **`U(ĝ) / (ι K - a)` embeds in `U(ĝ') / (ι K - a)`**, over every commutative ring and for every
 central value `a`, including `a = 0`. -/
 theorem toExtendedEnveloping_injective : Function.Injective (toExtendedEnveloping Φ hΦ hΦs a) :=
-  CentralQuotient.map_inl_injective (vectorFieldEnvelopingDerivation_ι Φ hΦ hΦs a (single 1 1))
+  CentralQuotient.map_inl_injective (vectorFieldEnvelopingDerivation_ι_derivation Φ hΦ hΦs a)
 
 /-- **Inner derivation by `d` restricts to the degree derivation**: in `U'`,
 `d x - x d` is the image of `t x'` for every `x ∈ U`. -/
@@ -220,7 +241,7 @@ theorem ι_degreeElement_mul_sub_mul (x : UK) :
       toExtendedEnveloping Φ hΦ hΦs a ((dU : Module.End R UK) x) := by
   rw [sub_eq_iff_eq_add']
   exact CentralQuotient.ι_inr_mul_map_inl
-    (vectorFieldEnvelopingDerivation_ι Φ hΦ hΦs a (single 1 1)) x
+    (vectorFieldEnvelopingDerivation_ι_derivation Φ hΦ hΦs a) x
 
 /-- **The degree element on the mode generators**: `[d, ι(x_n)] = n ι(x_n)` in `U'`. -/
 theorem ι_degreeElement_mul_sub_mul_envelopingι_single_tmul (n : ℤ) (r : R) (x : L) :
