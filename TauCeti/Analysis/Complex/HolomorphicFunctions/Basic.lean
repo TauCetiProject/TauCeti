@@ -311,6 +311,43 @@ theorem apply_coe_vanishingAt {U : Opens ℂ} {x : ℂ} {hx : x ∈ U} (f : vani
     (f : holomorphicFunctions U).val ⟨x, hx⟩ = 0 :=
   mem_vanishingAt_iff.mp f.property
 
+/-- Restriction of holomorphic functions vanishing at `x` along an inclusion of open domains. -/
+noncomputable def restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V) :
+    vanishingAt U x (h hx) →ₙₐ[ℂ] vanishingAt V x hx :=
+  ((restrict h).toNonUnitalAlgHom.comp
+    (NonUnitalSubalgebraClass.subtype (vanishingAt U x (h hx)))).codRestrict
+      (vanishingAt V x hx) fun f => mem_vanishingAt_iff.mpr (by simp)
+
+/-- Coercing `restrictVanishingAt` back to `holomorphicFunctions V` recovers `restrict`. -/
+@[simp]
+theorem coe_restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V)
+    (f : vanishingAt U x (h hx)) :
+    (restrictVanishingAt h hx f : holomorphicFunctions V) = restrict h f.val := (rfl)
+
+/-- Restricting `vanishingAt` along `le_refl` is the identity homomorphism. -/
+@[simp]
+theorem restrictVanishingAt_refl {x : ℂ} (hx : x ∈ U) :
+    restrictVanishingAt (le_refl U) hx = NonUnitalAlgHom.id ℂ (vanishingAt U x hx) := by
+  ext f
+  simp
+
+/-- Successive restrictions of `vanishingAt` compose to restriction along the composite
+inclusion. -/
+@[simp]
+theorem restrictVanishingAt_comp_restrictVanishingAt {x : ℂ} (hVU : V ≤ U) (hWV : W ≤ V)
+    (hx : x ∈ W) :
+    (restrictVanishingAt hWV hx).comp (restrictVanishingAt hVU (hWV hx)) =
+      restrictVanishingAt (hWV.trans hVU) hx := by
+  ext f
+  simp [← AlgHom.comp_apply]
+
+/-- Restriction on `HolomorphicFunctions.vanishingAt` is continuous for the compact-open
+topology. -/
+@[continuity]
+theorem continuous_restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V) :
+    Continuous (restrictVanishingAt h hx) :=
+  ((continuous_restrict h).comp continuous_subtypeVal).subtype_mk _
+
 end HolomorphicFunctions
 
 /-- The holomorphic functions form a closed subalgebra of the continuous functions. -/

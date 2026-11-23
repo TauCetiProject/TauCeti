@@ -385,6 +385,47 @@ theorem exists_ofFunVanishingAt_eq {s : Set ℂ} {x : ℂ} {hx : x ∈ s} (g : v
   have hf0 : f x = 0 := by simpa [← hfg] using eval_coe_vanishingAt g
   exact ⟨f, hf, hf0, Subtype.ext hfg⟩
 
+/-- Restriction of a holomorphic germ vanishing at `x` to a subset `t ⊆ s` containing `x`. -/
+def restrictVanishingAt {x : ℂ} (h : t ⊆ s) (hx : x ∈ t) :
+    vanishingAt s x (h hx) →ₙₐ[ℂ] vanishingAt t x hx :=
+  ((restrict h).toNonUnitalAlgHom.comp
+    (NonUnitalSubalgebraClass.subtype (vanishingAt s x (h hx)))).codRestrict
+      (vanishingAt t x hx) fun g => mem_vanishingAt_iff.mpr <| by
+        simp
+
+/-- Coercing `restrictVanishingAt` back to `holomorphicGerms t` recovers `restrict`. -/
+@[simp]
+theorem coe_restrictVanishingAt {x : ℂ} (h : t ⊆ s) (hx : x ∈ t)
+    (g : vanishingAt s x (h hx)) :
+    (restrictVanishingAt h hx g : holomorphicGerms t) = restrict h g.val := (rfl)
+
+/-- Restricting an `ofFunVanishingAt` representative agrees with `ofFunVanishingAt` on the
+smaller base set. -/
+@[simp]
+theorem restrictVanishingAt_ofFunVanishingAt {x : ℂ} (h : t ⊆ s) (hx : x ∈ t)
+    (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) (hf0 : f x = 0) :
+    restrictVanishingAt h hx (ofFunVanishingAt (h hx) f hf hf0) =
+      ofFunVanishingAt hx f (hf.mono h) hf0 :=
+  Subtype.ext (restrict_ofFun h f hf)
+
+/-- Restricting `vanishingAt` along `Subset.rfl` is the identity homomorphism. -/
+@[simp]
+theorem restrictVanishingAt_refl {x : ℂ} (hx : x ∈ s) :
+    restrictVanishingAt (Subset.rfl : s ⊆ s) hx =
+      NonUnitalAlgHom.id ℂ (vanishingAt s x hx) := by
+  ext g
+  simp
+
+/-- Successive restrictions of `vanishingAt` compose to restriction along the composite
+inclusion. -/
+@[simp]
+theorem restrictVanishingAt_comp_restrictVanishingAt {u : Set ℂ} {x : ℂ}
+    (htu : u ⊆ t) (hst : t ⊆ s) (hx : x ∈ u) :
+    (restrictVanishingAt htu hx).comp (restrictVanishingAt hst (htu hx)) =
+      restrictVanishingAt (htu.trans hst) hx := by
+  ext g
+  simp [← AlgHom.comp_apply]
+
 /-- The holomorphic germ of a polynomial function `z ↦ p.eval z` equals `Polynomial.aeval` at the
 coordinate germ. -/
 theorem ofFun_eval_polynomial (p : Polynomial ℂ) :

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Spectrum
 public import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
+import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Unitization
 
 /-!
 # Holomorphic functional calculus for nonunital Banach algebras
@@ -54,8 +55,8 @@ private theorem unitizationInrL_unitizationSndL_holomorphicCalculus (a : A)
       holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
         (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val) :=
   WithLp.unitizationInrL_unitizationSndL_of_fst_eq_zero <| by
-    rw [← WithLp.unitizationFstA_apply,
-      AlgHom.map_holomorphicCalculus_eq_eval (WithLp.unitizationFstA ℂ A)]
+    rw [← WithLp.unitizationFstA_apply, ← WithLp.mem_range_unitizationInrL_iff,
+      WithLp.holomorphicCalculus_mem_range_unitizationInrL_iff]
     simp
 
 /-- **Nonunital holomorphic functional calculus.** For an element `a` of a nonunital complex Banach
@@ -150,6 +151,22 @@ theorem quasispectrum_nonUnitalHolomorphicCalculus_ofFunVanishingAt (a : A) (f :
       f '' quasispectrum ℂ a := by
   rw [quasispectrum_nonUnitalHolomorphicCalculus]
   ext c; simp [Set.mem_image]
+
+/-- **Nonunital spectral mapping theorem (open-domain form).** For a holomorphic function `f` on
+an open neighbourhood `U` of `quasispectrum ℂ a` vanishing at `0`,
+`quasispectrum ℂ (nonUnitalHolomorphicCalculus a (toGermVanishingAt ha _ f)) =`
+`extend f.val '' quasispectrum ℂ a`. -/
+theorem quasispectrum_nonUnitalHolomorphicCalculus_toGermVanishingAt (a : A) (U : Opens ℂ)
+    (ha : quasispectrum ℂ a ⊆ U)
+    (f : vanishingAt U 0 (ha (quasispectrum.zero_mem ℂ a))) :
+    quasispectrum ℂ (nonUnitalHolomorphicCalculus a
+        (toGermVanishingAt ha (quasispectrum.zero_mem ℂ a) f)) =
+      extend f.val '' quasispectrum ℂ a := by
+  rw [quasispectrum_nonUnitalHolomorphicCalculus]
+  ext c
+  constructor <;> rintro ⟨z, hz, rfl⟩
+  · exact ⟨z, hz, by simp [extend_apply f.val ⟨z, ha hz⟩]⟩
+  · exact ⟨z, hz, by simp [(extend_apply f.val ⟨z, ha hz⟩).symm]⟩
 
 end NonUnital
 

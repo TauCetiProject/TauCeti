@@ -149,19 +149,33 @@ theorem comp_toGerm {t : Set ℂ} (hs : s ⊆ U) (ht : t ⊆ V) (f : holomorphic
 /-- Send a holomorphic function on an open neighbourhood `U` of `s` vanishing at `x ∈ s` to its
 germ in `holomorphicGerms.vanishingAt s x hx`. -/
 def toGermVanishingAt {x : ℂ} (hs : s ⊆ U) (hx : x ∈ s) :
-    vanishingAt U x (hs hx) →ₙₐ[ℂ] holomorphicGerms.vanishingAt s x hx where
-  toFun f := ⟨toGerm hs f.val, holomorphicGerms.mem_vanishingAt_iff.mpr <| by
-    rw [eval_toGerm, mem_vanishingAt_iff.mp f.property]⟩
-  map_smul' c f := Subtype.ext (map_smul (toGerm hs) c f.val)
-  map_zero' := Subtype.ext (map_zero (toGerm hs))
-  map_add' f g := Subtype.ext (map_add (toGerm hs) f.val g.val)
-  map_mul' f g := Subtype.ext (map_mul (toGerm hs) f.val g.val)
+    vanishingAt U x (hs hx) →ₙₐ[ℂ] holomorphicGerms.vanishingAt s x hx :=
+  ((toGerm hs).toNonUnitalAlgHom.comp
+    (NonUnitalSubalgebraClass.subtype (vanishingAt U x (hs hx)))).codRestrict
+      (holomorphicGerms.vanishingAt s x hx) fun f =>
+        holomorphicGerms.mem_vanishingAt_iff.mpr (by simp)
 
 /-- Coercing `toGermVanishingAt` back to `holomorphicGerms s` recovers `toGerm`. -/
 @[simp]
 theorem coe_toGermVanishingAt {x : ℂ} (hs : s ⊆ U) (hx : x ∈ s)
     (f : vanishingAt U x (hs hx)) :
     (toGermVanishingAt hs hx f : holomorphicGerms s) = toGerm hs f.val := (rfl)
+
+/-- Shrinking the open domain does not change the vanishing germ. -/
+@[simp]
+theorem toGermVanishingAt_restrictVanishingAt {x : ℂ} (hs : s ⊆ V) (hVU : V ≤ U) (hx : x ∈ s)
+    (f : vanishingAt U x (hVU (hs hx))) :
+    toGermVanishingAt hs hx (restrictVanishingAt hVU (hs hx) f) =
+      toGermVanishingAt (hs.trans hVU) hx f :=
+  Subtype.ext (by simp)
+
+/-- Restricting the base set commutes with taking a vanishing function germ. -/
+@[simp]
+theorem restrictVanishingAt_toGermVanishingAt {t : Set ℂ} {x : ℂ} (ht : t ⊆ s) (hs : s ⊆ U)
+    (hx : x ∈ t) (f : vanishingAt U x (hs (ht hx))) :
+    holomorphicGerms.restrictVanishingAt ht hx (toGermVanishingAt hs (ht hx) f) =
+      toGermVanishingAt (ht.trans hs) hx f :=
+  Subtype.ext (by simp)
 
 end TauCeti.HolomorphicFunctions
 
@@ -176,6 +190,18 @@ theorem exists_toGerm_eq {s : Set ℂ} (g : holomorphicGerms s) :
   rw [HolomorphicFunctions.toGerm_of]
   apply Subtype.ext
   simpa only [coe_ofFun] using hfg
+
+/-- Every holomorphic germ vanishing at `x ∈ s` is represented by a holomorphic function on an
+open neighbourhood vanishing at `x`. -/
+theorem exists_toGermVanishingAt_eq {s : Set ℂ} {x : ℂ} {hx : x ∈ s}
+    (g : vanishingAt s x hx) :
+    ∃ (U : Opens ℂ) (hs : s ⊆ U) (f : HolomorphicFunctions.vanishingAt U x (hs hx)),
+      HolomorphicFunctions.toGermVanishingAt hs hx f = g := by
+  obtain ⟨U, hs, f, hfg⟩ := exists_toGerm_eq (g : holomorphicGerms s)
+  have hf0 : f ∈ HolomorphicFunctions.vanishingAt U x (hs hx) :=
+    HolomorphicFunctions.mem_vanishingAt_iff.mpr <| by
+      rw [← HolomorphicFunctions.eval_toGerm hs x hx f, hfg, eval_coe_vanishingAt]
+  exact ⟨U, hs, ⟨f, hf0⟩, Subtype.ext hfg⟩
 
 /-- Two holomorphic germs have representatives on a common open neighbourhood. -/
 theorem exists_toGerm_eq₂ {s : Set ℂ} (a b : holomorphicGerms s) :
