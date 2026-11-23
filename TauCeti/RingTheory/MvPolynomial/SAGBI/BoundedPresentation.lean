@@ -123,6 +123,13 @@ theorem quotientSpanWeightHomogenizationEquiv_mk (f : (MvPolynomial ι R)[X]) :
       weightReesAevalLift (fun i ↦ hA ▸ Algebra.subset_adjoin (Set.mem_range_self i)) hc f := by
   simp [quotientSpanWeightHomogenizationEquiv]
 
+-- Cancel before the forward `@[simp]` rule expands representatives.
+@[simp↓]
+theorem quotientSpanWeightHomogenizationEquiv_symm_apply_apply (q) :
+    (quotientSpanWeightHomogenizationEquiv hA hc hg hJ hr hQ hQc).symm
+      (quotientSpanWeightHomogenizationEquiv hA hc hg hJ hr hQ hQc q) = q :=
+  AlgEquiv.symm_apply_apply _ _
+
 @[simp]
 theorem quotientSpanWeightHomogenizationEquiv_symm_weightReesAevalLift
     {hcA : ∀ i, c i ∈ A} (f : (MvPolynomial ι R)[X]) :

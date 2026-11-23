@@ -27,6 +27,10 @@ splits as `P(u) e + P(0) • (1 - e)` or `P(u) (1 - e) + P(0) • e`
 
 A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
 `A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
+
+Evaluation at `a : R` yields scalar towers `R → R[X] → C`
+(`Polynomial.isScalarTower_evalRingHom_left`) and `R[X] → R → C`
+(`Polynomial.isScalarTower_evalRingHom_right`).
 -/
 
 public section
@@ -95,5 +99,23 @@ theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A
   by_contra ha0
   exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
     (hdvd _ (by rwa [aeval_C]))
+
+/-- Evaluation at `a : R` yields a scalar tower `R → R[X] → C`. -/
+theorem isScalarTower_evalRingHom_left (R C : Type*) [CommSemiring R] [Semiring C]
+    [Algebra R C] (a : R) :
+    letI := Algebra.compHom C (evalRingHom a)
+    IsScalarTower R R[X] C :=
+  letI := Algebra.compHom C (evalRingHom a)
+  IsScalarTower.of_algebraMap_eq fun r ↦ by simp [Algebra.compHom_algebraMap_apply]
+
+/-- Evaluation at `a : R` yields a scalar tower `R[X] → R → C`. -/
+theorem isScalarTower_evalRingHom_right (R C : Type*) [CommSemiring R] [Semiring C]
+    [Algebra R C] (a : R) :
+    letI := Algebra.compHom R (evalRingHom a)
+    letI := Algebra.compHom C (evalRingHom a)
+    IsScalarTower R[X] R C :=
+  letI := Algebra.compHom R (evalRingHom a)
+  letI := Algebra.compHom C (evalRingHom a)
+  IsScalarTower.of_algebraMap_eq fun p ↦ by simp [Algebra.compHom_algebraMap_apply]
 
 end Polynomial

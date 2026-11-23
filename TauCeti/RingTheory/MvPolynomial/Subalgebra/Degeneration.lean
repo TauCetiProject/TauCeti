@@ -79,6 +79,13 @@ theorem quotientSpanXWeightReesAlgebraEquiv_mk (g : A.weightReesAlgebra w) :
       A.weightReesSymbolToInitial w g := by
   simp [quotientSpanXWeightReesAlgebraEquiv]
 
+-- Cancel before the forward `@[simp]` rule expands representatives.
+@[simp↓]
+theorem quotientSpanXWeightReesAlgebraEquiv_symm_apply_apply (q) :
+    (A.quotientSpanXWeightReesAlgebraEquiv w).symm
+      (A.quotientSpanXWeightReesAlgebraEquiv w q) = q :=
+  AlgEquiv.symm_apply_apply _ _
+
 @[simp]
 theorem quotientSpanXWeightReesAlgebraEquiv_symm_weightReesSymbolToInitial
     (g : A.weightReesAlgebra w) :
@@ -123,6 +130,15 @@ theorem baseChangeZeroWeightReesAlgebraEquiv_tmul (r : R) (g : A.weightReesAlgeb
   let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
   simp [baseChangeZeroWeightReesAlgebraEquiv]
 
+-- Cancel before the forward `@[simp]` rule expands pure tensors.
+@[simp↓]
+theorem baseChangeZeroWeightReesAlgebraEquiv_symm_apply_apply (t) :
+    letI := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
+    (A.baseChangeZeroWeightReesAlgebraEquiv w).symm
+      (A.baseChangeZeroWeightReesAlgebraEquiv w t) = t := by
+  let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
+  exact AlgEquiv.symm_apply_apply _ _
+
 @[simp]
 theorem baseChangeZeroWeightReesAlgebraEquiv_symm_weightReesSymbolToInitial
     (g : A.weightReesAlgebra w) :
@@ -166,6 +182,13 @@ theorem quotientSpanXSubOneWeightReesAlgebraEquiv_mk (g : A.weightReesAlgebra w)
       coeffSubalgebra.evalOne (A.weightFiltration w) g :=
   coeffSubalgebra.quotientSpanXSubOneEquiv_mk _ _ _ _ g
 
+-- Cancel before the forward `@[simp]` rule expands representatives.
+@[simp↓]
+theorem quotientSpanXSubOneWeightReesAlgebraEquiv_symm_apply_apply (q) :
+    (A.quotientSpanXSubOneWeightReesAlgebraEquiv w).symm
+      (A.quotientSpanXSubOneWeightReesAlgebraEquiv w q) = q :=
+  AlgEquiv.symm_apply_apply _ _
+
 @[simp]
 theorem quotientSpanXSubOneWeightReesAlgebraEquiv_symm_evalOne (g : A.weightReesAlgebra w) :
     (A.quotientSpanXSubOneWeightReesAlgebraEquiv w).symm
@@ -194,6 +217,15 @@ theorem baseChangeOneWeightReesAlgebraEquiv_tmul (r : R) (g : A.weightReesAlgebr
     A.baseChangeOneWeightReesAlgebraEquiv w (r ⊗ₜ[R[X]] g) =
       r • coeffSubalgebra.evalOne (A.weightFiltration w) g :=
   coeffSubalgebra.baseChangeEvalOneEquiv_tmul _ _ _ _ r g
+
+-- Cancel before the forward `@[simp]` rule expands pure tensors.
+@[simp↓]
+theorem baseChangeOneWeightReesAlgebraEquiv_symm_apply_apply (t) :
+    letI := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
+    (A.baseChangeOneWeightReesAlgebraEquiv w).symm
+      (A.baseChangeOneWeightReesAlgebraEquiv w t) = t := by
+  let := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
+  exact AlgEquiv.symm_apply_apply _ _
 
 @[simp]
 theorem baseChangeOneWeightReesAlgebraEquiv_symm_evalOne (g : A.weightReesAlgebra w) :

@@ -113,6 +113,15 @@ noncomputable def quotientSpanXSubAlgebraMapEquiv (hM : Monotone M) (hex : (⨆ 
   (Ideal.quotientEquivAlgOfEq R (ker_eval M h1 hM ha).symm).trans
     (Ideal.quotientKerAlgEquivOfSurjective (eval_surjective M hex ha))
 
+/-- The quotient comparison at a unit `a` cancels its inverse before representatives expand. -/
+-- Cancel before the forward `@[simp]` rule expands representatives.
+@[simp↓]
+theorem quotientSpanXSubAlgebraMapEquiv_symm_apply_apply (hM : Monotone M)
+    (hex : (⨆ n, M n) = ⊤) {a : R} (ha : IsUnit a) (q) :
+    (quotientSpanXSubAlgebraMapEquiv M h1 hM hex ha).symm
+      (quotientSpanXSubAlgebraMapEquiv M h1 hM hex ha q) = q :=
+  AlgEquiv.symm_apply_apply _ _
+
 /-- The quotient comparison is evaluation at `a` on representatives. -/
 @[simp]
 theorem quotientSpanXSubAlgebraMapEquiv_mk (hM : Monotone M) (hex : (⨆ n, M n) = ⊤)
@@ -134,6 +143,14 @@ noncomputable def quotientSpanXSubOneEquiv (hM : Monotone M) (hex : (⨆ n, M n)
     (coeffSubalgebra M ⧸ Ideal.span {X M h1 - 1}) ≃ₐ[R] B :=
   (Ideal.quotientEquivAlgOfEq R (by rw [map_one])).trans
     (quotientSpanXSubAlgebraMapEquiv M h1 hM hex isUnit_one)
+
+/-- The quotient comparison at `X = 1` cancels its inverse before representatives expand. -/
+-- Cancel before the forward `@[simp]` rule expands representatives.
+@[simp↓]
+theorem quotientSpanXSubOneEquiv_symm_apply_apply (hM : Monotone M) (hex : (⨆ n, M n) = ⊤) (q) :
+    (quotientSpanXSubOneEquiv M h1 hM hex).symm
+      (quotientSpanXSubOneEquiv M h1 hM hex q) = q :=
+  AlgEquiv.symm_apply_apply _ _
 
 /-- The quotient comparison at `X = 1` evaluates representatives at one. -/
 @[simp]
@@ -171,6 +188,19 @@ noncomputable def baseChangeEvalEquiv (hM : Monotone M) (hex : (⨆ n, M n) = �
     (eval_surjective M hex ha)
     (by rw [algebraMap_X]; exact (ker_eval M h1 hM ha).le)
 
+/-- The base-change comparison at a unit `a` cancels its inverse before pure tensors expand. -/
+-- Cancel before the forward `@[simp]` rule expands pure tensors.
+@[simp↓]
+theorem baseChangeEvalEquiv_symm_apply_apply (hM : Monotone M) (hex : (⨆ n, M n) = ⊤)
+    {a : R} (ha : IsUnit a) (t) :
+    letI := algebra M h1
+    letI := Algebra.compHom R (Polynomial.evalRingHom a)
+    (baseChangeEvalEquiv M h1 hM hex ha).symm
+      (baseChangeEvalEquiv M h1 hM hex ha t) = t := by
+  let := algebra M h1
+  let := Algebra.compHom R (Polynomial.evalRingHom a)
+  exact AlgEquiv.symm_apply_apply _ _
+
 /-- The base-change comparison sends a pure tensor to scalar multiplication of its value
 at `a`. -/
 @[simp]
@@ -201,6 +231,18 @@ noncomputable def baseChangeEvalOneEquiv (hM : Monotone M) (hex : (⨆ n, M n) =
     letI := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
     (R ⊗[R[X]] coeffSubalgebra M) ≃ₐ[R] B :=
   baseChangeEvalEquiv M h1 hM hex isUnit_one
+
+/-- The base-change comparison at `X = 1` cancels its inverse before pure tensors expand. -/
+-- Cancel before the forward `@[simp]` rule expands pure tensors.
+@[simp↓]
+theorem baseChangeEvalOneEquiv_symm_apply_apply (hM : Monotone M) (hex : (⨆ n, M n) = ⊤) (t) :
+    letI := algebra M h1
+    letI := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
+    (baseChangeEvalOneEquiv M h1 hM hex).symm
+      (baseChangeEvalOneEquiv M h1 hM hex t) = t := by
+  let := algebra M h1
+  let := Algebra.compHom R (Polynomial.evalRingHom (1 : R))
+  exact AlgEquiv.symm_apply_apply _ _
 
 /-- The base-change comparison at `X = 1` sends a pure tensor to scalar multiplication of its value
 at one. -/

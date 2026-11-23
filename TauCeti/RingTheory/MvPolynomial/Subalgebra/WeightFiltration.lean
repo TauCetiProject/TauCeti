@@ -377,14 +377,17 @@ theorem weightReesMap_weightReesAevalLift {B : Subalgebra R (MvPolynomial σ R)}
 /-- The kernel of `weightReesAevalLift hcA hc` equals the kernel of `weightReesAeval c d`. -/
 theorem ker_weightReesAevalLift :
     RingHom.ker (weightReesAevalLift hcA hc) = RingHom.ker (weightReesAeval c d) := by
-  have hinj : Function.Injective
-      ((TauCeti.MvPolynomial.weightReesAlgebra R w).val.comp
-        ((A.weightReesInclusion w).restrictScalars R)) :=
+  let j := (TauCeti.MvPolynomial.weightReesAlgebra R w).val.comp
+    ((A.weightReesInclusion w).restrictScalars R)
+  have hinj : Function.Injective j.toRingHom :=
     Subtype.val_injective.comp (A.weightReesInclusion_injective w)
-  ext f
-  rw [RingHom.mem_ker, RingHom.mem_ker,
-    ← val_comp_weightReesInclusion_comp_weightReesAevalLift hcA hc,
-    AlgHom.comp_apply, map_eq_zero_iff _ hinj, AlgHom.restrictScalars_apply]
+  have hcomp : j.toRingHom.comp (weightReesAevalLift hcA hc).toRingHom =
+      (weightReesAeval c d).toRingHom :=
+    congrArg AlgHom.toRingHom (val_comp_weightReesInclusion_comp_weightReesAevalLift hcA hc)
+  change RingHom.ker (weightReesAevalLift hcA hc).toRingHom =
+    RingHom.ker (weightReesAeval c d).toRingHom
+  rw [← hcomp, ← RingHom.comap_ker, RingHom.ker_eq_comap_bot (f := j.toRingHom),
+    Ideal.comap_bot_of_injective _ hinj, ← RingHom.ker_eq_comap_bot]
 
 end ReesLift
 

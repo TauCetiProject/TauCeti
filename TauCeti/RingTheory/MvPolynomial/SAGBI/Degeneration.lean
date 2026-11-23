@@ -265,6 +265,13 @@ theorem quotientSpanWeightHomogenizationRescaleEquiv_mk (f : (MvPolynomial ι k)
         (fun i ↦ m.monicNormalize_mem_iff.mp (hc i)) f := by
   simp [quotientSpanWeightHomogenizationRescaleEquiv]
 
+-- Cancel before the forward `@[simp]` rule expands representatives.
+@[simp↓]
+theorem quotientSpanWeightHomogenizationRescaleEquiv_symm_apply_apply (q) :
+    (quotientSpanWeightHomogenizationRescaleEquiv hA hc ha hJ hQ hQc).symm
+      (quotientSpanWeightHomogenizationRescaleEquiv hA hc ha hJ hQ hQc q) = q :=
+  AlgEquiv.symm_apply_apply _ _
+
 @[simp]
 theorem quotientSpanWeightHomogenizationRescaleEquiv_symm_weightReesAevalLift
     {hbA : ∀ i, b i ∈ A}

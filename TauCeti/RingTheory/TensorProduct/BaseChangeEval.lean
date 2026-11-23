@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.AlgHom
 import TauCeti.RingTheory.Ideal.Operations
 
@@ -38,6 +39,14 @@ namespace Algebra.TensorProduct
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R[X] A]
 
+private theorem includeRight_algebraMap_X (a : R) :
+    letI := Algebra.compHom R (evalRingHom a)
+    (includeRight : A →ₐ[R[X]] R ⊗[R[X]] A) (algebraMap R[X] A X) =
+      algebraMap R (R ⊗[R[X]] A) a := by
+  let := Algebra.compHom R (evalRingHom a)
+  rw [includeRight.commutes]
+  simp [Algebra.compHom_algebraMap_apply, algebraMap_apply]
+
 /-- The canonical map `x ↦ 1 ⊗ₜ[R[X]] x` into the evaluation base change `R ⊗[R[X]] A` is
 surjective. -/
 theorem includeRight_surjective_evalRingHom (a : R) :
@@ -52,22 +61,6 @@ theorem includeRight_surjective_evalRingHom (a : R) :
 end Algebra.TensorProduct
 
 namespace AlgHom
-
-private theorem isScalarTower_evalRingHom_left (R C : Type*) [CommSemiring R] [Semiring C]
-    [Algebra R C] (a : R) :
-    letI := Algebra.compHom C (evalRingHom a)
-    IsScalarTower R R[X] C :=
-  letI := Algebra.compHom C (evalRingHom a)
-  IsScalarTower.of_algebraMap_eq fun r ↦ by simp [Algebra.compHom_algebraMap_apply]
-
-private theorem isScalarTower_evalRingHom_right (R C : Type*) [CommSemiring R] [Semiring C]
-    [Algebra R C] (a : R) :
-    letI := Algebra.compHom R (evalRingHom a)
-    letI := Algebra.compHom C (evalRingHom a)
-    IsScalarTower R[X] R C :=
-  letI := Algebra.compHom R (evalRingHom a)
-  letI := Algebra.compHom C (evalRingHom a)
-  IsScalarTower.of_algebraMap_eq fun p ↦ by simp [Algebra.compHom_algebraMap_apply]
 
 variable {R A C : Type*}
 
@@ -88,8 +81,8 @@ noncomputable def baseChangeEval :
     (R ⊗[R[X]] A) →ₐ[R] C :=
   letI := Algebra.compHom R (evalRingHom a)
   letI := Algebra.compHom C (evalRingHom a)
-  letI : IsScalarTower R R[X] C := isScalarTower_evalRingHom_left R C a
-  letI : IsScalarTower R[X] R C := isScalarTower_evalRingHom_right R C a
+  letI : IsScalarTower R R[X] C := Polynomial.isScalarTower_evalRingHom_left R C a
+  letI : IsScalarTower R[X] R C := Polynomial.isScalarTower_evalRingHom_right R C a
   AlgHom.liftEquiv R[X] R A C
     (φ.toPolynomialAlgHom (by simpa [Algebra.compHom_algebraMap_apply] using hX))
 
@@ -100,8 +93,8 @@ theorem baseChangeEval_tmul (r : R) (x : A) :
     φ.baseChangeEval hX (r ⊗ₜ[R[X]] x) = r • φ x := by
   let := Algebra.compHom R (evalRingHom a)
   let := Algebra.compHom C (evalRingHom a)
-  let : IsScalarTower R R[X] C := isScalarTower_evalRingHom_left R C a
-  let : IsScalarTower R[X] R C := isScalarTower_evalRingHom_right R C a
+  let : IsScalarTower R R[X] C := Polynomial.isScalarTower_evalRingHom_left R C a
+  let : IsScalarTower R[X] R C := Polynomial.isScalarTower_evalRingHom_right R C a
   rw [baseChangeEval, AlgHom.liftEquiv_tmul, AlgHom.toPolynomialAlgHom_apply]
 
 /-- The base-change homomorphism induced by `φ` is surjective if and only if `φ` is surjective. -/
@@ -127,29 +120,23 @@ noncomputable def baseChangeEvalEquiv (a : R) :
     letI := Algebra.compHom R (evalRingHom a)
     ((R ⊗[R[X]] A) →ₐ[R] C) ≃ { φ : A →ₐ[R] C // φ (algebraMap R[X] A X) = algebraMap R C a } :=
   letI := Algebra.compHom R (evalRingHom a)
-  letI : IsScalarTower R R[X] R := isScalarTower_evalRingHom_left R R a
+  letI : IsScalarTower R R[X] R := Polynomial.isScalarTower_evalRingHom_left R R a
   let inc : A →ₐ[R] R ⊗[R[X]] A :=
     (Algebra.TensorProduct.includeRight : A →ₐ[R[X]] R ⊗[R[X]] A).restrictScalars R
   { toFun := fun ψ ↦
       ⟨ψ.comp inc, by
-        have hX' : inc (algebraMap R[X] A X) = algebraMap R (R ⊗[R[X]] A) a := by
-          rw [AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply,
-            Algebra.algebraMap_eq_smul_one, TensorProduct.tmul_smul, TensorProduct.smul_tmul',
-            ← Algebra.algebraMap_eq_smul_one, Algebra.compHom_algebraMap_apply, coe_evalRingHom,
-            eval_X, Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self,
-            RingHom.id_apply]
-        rw [AlgHom.comp_apply, hX', AlgHom.commutes]⟩
+        rw [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+          Algebra.TensorProduct.includeRight_algebraMap_X, AlgHom.commutes]⟩
     invFun := fun ψ ↦ ψ.val.baseChangeEval ψ.property
-    left_inv := fun ψ ↦ AlgHom.ext fun t ↦ by
-      induction t using TensorProduct.inductionOn with
-      | tmul r x =>
-        have htmul : r ⊗ₜ[R[X]] x = algebraMap R (R ⊗[R[X]] A) r * (1 ⊗ₜ[R[X]] x) := by
-          rw [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply,
-            Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-        dsimp only
-        rw [baseChangeEval_tmul, htmul, map_mul, AlgHom.commutes, Algebra.smul_def,
-          AlgHom.comp_apply, AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply]
-      | add x y hx hy => simp [hx, hy]
+    left_inv := fun ψ ↦ by
+      let := Algebra.compHom C (evalRingHom a)
+      let : IsScalarTower R[X] R R := Polynomial.isScalarTower_evalRingHom_right R R a
+      let : IsScalarTower R[X] R C := Polynomial.isScalarTower_evalRingHom_right R C a
+      refine Algebra.TensorProduct.ext' fun r x ↦ ?_
+      dsimp only
+      rw [baseChangeEval_tmul, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+        Algebra.TensorProduct.includeRight_apply, ← map_smul, TensorProduct.smul_tmul',
+        smul_eq_mul, mul_one]
     right_inv := fun ψ ↦ Subtype.ext <| AlgHom.ext fun x ↦ by
       simp [inc, Algebra.TensorProduct.includeRight_apply] }
 
@@ -159,11 +146,10 @@ theorem baseChangeEvalEquiv_apply (a : R) :
     ∀ (ψ : (R ⊗[R[X]] A) →ₐ[R] C) (x : A),
       (baseChangeEvalEquiv R A C a ψ).val x = ψ (1 ⊗ₜ[R[X]] x) := by
   let := Algebra.compHom R (evalRingHom a)
-  let : IsScalarTower R R[X] R := isScalarTower_evalRingHom_left R R a
+  let : IsScalarTower R R[X] R := Polynomial.isScalarTower_evalRingHom_left R R a
   intro ψ x
   simp [baseChangeEvalEquiv]
 
-@[simp]
 theorem baseChangeEvalEquiv_symm_apply (a : R)
     (ψ : { φ : A →ₐ[R] C // φ (algebraMap R[X] A X) = algebraMap R C a }) :
     (baseChangeEvalEquiv R A C a).symm ψ = ψ.val.baseChangeEval ψ.property := by
@@ -178,7 +164,8 @@ theorem baseChangeEval_ext {a : R} :
   let := Algebra.compHom R (evalRingHom a)
   intro ψ₁ ψ₂ h
   apply (baseChangeEvalEquiv R A C a).injective
-  exact Subtype.ext (AlgHom.ext h)
+  exact Subtype.ext <| AlgHom.ext fun x ↦ by
+    simpa only [baseChangeEvalEquiv_apply] using h x
 
 end Semiring
 
@@ -209,13 +196,10 @@ theorem ker_includeRight_evalRingHom {R A : Type*} [CommRing R] [Ring A]
     rwa [AlgHom.baseChangeEval_tmul, one_smul, map_zero, Ideal.Quotient.mkₐ_eq_mk,
       Ideal.Quotient.eq_zero_iff_mem] at h0
   · rintro _ (rfl : _ = algebraMap R[X] A X - algebraMap R A a)
-    let := AlgHom.isScalarTower_evalRingHom_left R R a
+    let := Polynomial.isScalarTower_evalRingHom_left R R a
     rw [SetLike.mem_coe, RingHom.mem_ker, ← AlgHom.restrictScalars_apply R
-      (includeRight : A →ₐ[R[X]] R ⊗[R[X]] A), map_sub]
-    have hix : (includeRight : A →ₐ[R[X]] R ⊗[R[X]] A).restrictScalars R
-        (algebraMap R[X] A X) = algebraMap R (R ⊗[R[X]] A) a := by
-      simp [Algebra.compHom_algebraMap_apply, algebraMap_apply]
-    rw [hix, AlgHom.commutes, sub_self]
+      (includeRight : A →ₐ[R[X]] R ⊗[R[X]] A), map_sub, AlgHom.restrictScalars_apply,
+      includeRight_algebraMap_X, AlgHom.commutes, sub_self]
 
 end Algebra.TensorProduct
 

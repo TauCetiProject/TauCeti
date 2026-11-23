@@ -187,10 +187,8 @@ theorem ker_weightReesAeval_eq_span
     RingHom.ker (weightReesAeval c d) =
       Ideal.span (Set.range fun j ↦ weightHomogenization R d (e j) (r j - Q j)) := by
   classical
-  have hF (j : J) : r j - Q j ∈ weightFiltration R d (e j) := by
-    rw [← weightFiltrationLT_sup_weightedHomogeneousSubmodule]
-    exact sub_mem (Submodule.mem_sup_right ((mem_weightedHomogeneousSubmodule R d _ _).2 (hr j)))
-      (Submodule.mem_sup_left (hQ j))
+  have hF (j : J) : r j - Q j ∈ weightFiltration R d (e j) :=
+    sub_mem_weightFiltration_of_isWeightedHomogeneous (hr j) (hQ j)
   refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 ?_)
   · -- Decompose `f` by the weight `weight d x + k` of its monomials `Y^x tᵏ`: its part of weight
     -- `n` is the homogenization in degree `n` of the coefficient of `tⁿ` in `weightReesHom R d f`.
