@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Contour.Cycle.Basic
 /-!
 # The Cauchy principal value along a contour cycle
 
-A contour cycle is a formal integer combination of closed piecewise-`C¹` curves, and every
+A contour cycle is a formal integer combination of closed absolutely continuous curves, and every
 additive invariant of curves extends to it by linearity. This file carries out that extension
 for the set-level Cauchy principal value, the invariant the Hungerbühler–Wasem generalized
 residue theorem evaluates when singularities of the integrand lie **on** the contour.
@@ -71,24 +71,25 @@ variable {f : ℂ → ℂ} {C D : Cycle}
 single-curve principal value `TauCeti.Contour.cauchyPV` from generators. Like every value read
 off a junk-valued function, it is meaningful exactly where `Cycle.CauchyPVExists` holds. -/
 def cauchyPV (f : ℂ → ℂ) : Cycle →+ ℂ :=
-  FreeAddCommGroup.lift fun γ : PiecewiseC1ClosedCurve ↦ TauCeti.Contour.cauchyPV γ γ.a γ.b f
+  FreeAddCommGroup.lift fun γ : AbsolutelyContinuousClosedCurve ↦
+    TauCeti.Contour.cauchyPV γ γ.a γ.b f
 
 /-- The principal value along a one-generator cycle is the principal value along that curve. -/
 @[simp]
-theorem cauchyPV_of (γ : PiecewiseC1ClosedCurve) (f : ℂ → ℂ) :
+theorem cauchyPV_of (γ : AbsolutelyContinuousClosedCurve) (f : ℂ → ℂ) :
     cauchyPV f (FreeAddCommGroup.of γ) = TauCeti.Contour.cauchyPV γ γ.a γ.b f := by
   rw [cauchyPV, FreeAddCommGroup.lift_apply_of]
 
 /-- The principal value along a raw closed curve bundled as a one-generator cycle is its raw
 principal value. -/
-theorem cauchyPV_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem cauchyPV_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) (f : ℂ → ℂ) :
-    cauchyPV f (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
+    cauchyPV f (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) =
       TauCeti.Contour.cauchyPV γ a b f := by
   rw [cauchyPV_of]
-  simpa only [PiecewiseC1ClosedCurve.of_a, PiecewiseC1ClosedCurve.of_b] using
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
     TauCeti.Contour.cauchyPV_congr_curve (f := f) fun _ ht ↦
-      PiecewiseC1ClosedCurve.of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
+      AbsolutelyContinuousClosedCurve.of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
 
 /-- The principal value along a cycle is the coefficient-weighted sum of the principal values
 along the curves of its canonical support. -/
@@ -128,14 +129,14 @@ theorem hasCauchyPV_iff {v : ℂ} :
 /-- Existence of the principal value along a one-generator cycle is exactly existence along its
 generating curve. -/
 @[simp]
-theorem cauchyPVExists_of_iff (γ : PiecewiseC1ClosedCurve) :
+theorem cauchyPVExists_of_iff (γ : AbsolutelyContinuousClosedCurve) :
     CauchyPVExists (FreeAddCommGroup.of γ) f ↔
       TauCeti.Contour.CauchyPVExists γ γ.a γ.b f := by
   simp [CauchyPVExists, FreeAddCommGroup.support_of]
 
 /-- A one-generator cycle has principal value `v` exactly when its generating curve does. -/
 @[simp]
-theorem hasCauchyPV_of_iff (γ : PiecewiseC1ClosedCurve) {v : ℂ} :
+theorem hasCauchyPV_of_iff (γ : AbsolutelyContinuousClosedCurve) {v : ℂ} :
     HasCauchyPV (FreeAddCommGroup.of γ) f v ↔ TauCeti.Contour.HasCauchyPV γ γ.a γ.b f v := by
   constructor
   · intro h
@@ -163,7 +164,7 @@ theorem CauchyPVExists.hasCauchyPV_cauchyPV (h : CauchyPVExists C f) :
 /-- **Assembling a cycle's principal value from its generators.** If the principal value of `f`
 along each curve `γ` of the canonical support of `C` exists and equals `w γ`, then the principal
 value along `C` exists and is the coefficient-weighted sum of the `w γ`. -/
-theorem HasCauchyPV.of_generators {w : PiecewiseC1ClosedCurve → ℂ}
+theorem HasCauchyPV.of_generators {w : AbsolutelyContinuousClosedCurve → ℂ}
     (h : ∀ γ ∈ FreeAddCommGroup.support C, TauCeti.Contour.HasCauchyPV γ γ.a γ.b f (w γ)) :
     HasCauchyPV C f (∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C • w γ) := by
   refine ⟨fun γ hγ ↦ TauCeti.Contour.CauchyPVExists.intro (h γ hγ), ?_⟩
@@ -206,7 +207,7 @@ theorem hasCauchyPV_integral (h : ∀ γ ∈ FreeAddCommGroup.support C,
     IntervalIntegrable (fun t ↦ f (γ t) * deriv (⇑γ) t) volume γ.a γ.b) :
     HasCauchyPV C f (integral f C) := by
   have hgen := HasCauchyPV.of_generators
-    (w := fun γ : PiecewiseC1ClosedCurve ↦ ∫ t in γ.a..γ.b, f (γ t) * deriv (⇑γ) t)
+    (w := fun γ : AbsolutelyContinuousClosedCurve ↦ ∫ t in γ.a..γ.b, f (γ t) * deriv (⇑γ) t)
     fun γ hγ ↦ TauCeti.Contour.HasCauchyPV.of_integrable (h γ hγ)
   refine ⟨hgen.1, hgen.2.trans ?_⟩
   rw [integral_eq_sum_support]

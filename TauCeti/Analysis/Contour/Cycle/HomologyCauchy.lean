@@ -103,7 +103,7 @@ private def cycleDixonFunction (f : ℂ → ℂ) (U : Set ℂ) (C : Cycle) (w : 
 
 /-- Every supported curve of a cycle contained in `U` maps its parameter interval into `U`. -/
 private theorem mapsTo_of_mem_support {C : Cycle} {U : Set ℂ} (hCU : IsIn C U)
-    {γ : PiecewiseC1ClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
+    {γ : AbsolutelyContinuousClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
     ∀ t ∈ uIcc γ.a γ.b, γ t ∈ U := by
   intro t ht
   exact isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
@@ -263,7 +263,7 @@ private theorem homologyCauchyTheorem_complex {f : ℂ → ℂ} {C : Cycle} {U :
     simpa using hzero
 
 /-- **The homology Cauchy theorem for contour cycles.** Let `C` be a finite formal integer
-combination of closed piecewise-`C¹` curves whose trace lies in an open set `U`. If `C` is
+combination of closed absolutely continuous curves whose trace lies in an open set `U`. If `C` is
 null-homologous in `U` and `f` is holomorphic on `U`, with values in any complex normed space,
 then the contour integral of `f` over the whole cycle vanishes.
 

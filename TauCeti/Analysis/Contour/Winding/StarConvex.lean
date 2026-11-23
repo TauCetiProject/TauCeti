@@ -69,9 +69,9 @@ theorem isNullHomologous_of_starConvex {Ω : Set ℂ} {x : ℂ} (hstar : StarCon
 namespace Cycle
 
 /-- **A cycle in a star-shaped set is null-homologous there.** Every generator of the cycle is a
-closed piecewise-`C¹` curve confined to `Ω`, so each has vanishing winding number outside `Ω` by
-`TauCeti.Contour.isNullHomologous_of_starConvex`, and the cycle winding number is their
-`ℤ`-combination. -/
+closed absolutely continuous curve confined to `Ω`, so each has vanishing winding number outside
+`Ω` by `AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex`, and the cycle winding number
+is their `ℤ`-combination. -/
 theorem isNullHomologous_of_starConvex {C : Cycle} {Ω : Set ℂ} {x : ℂ}
     (hstar : StarConvex ℝ x Ω) (hC : IsIn C Ω) : IsNullHomologous C Ω := by
   refine isNullHomologous_iff.mpr fun w hw ↦ ?_
@@ -80,7 +80,7 @@ theorem isNullHomologous_of_starConvex {C : Cycle} {Ω : Set ℂ} {x : ℂ}
   have hδΩ : ∀ t ∈ uIcc δ.a δ.b, δ t ∈ Ω := fun t ht ↦
     isIn_iff.mp hC (mem_trace_iff.mpr ⟨δ, hδ, t, ht, rfl⟩)
   rw [TauCeti.Contour.isNullHomologous_iff.mp
-    (TauCeti.Contour.isNullHomologous_of_starConvex hstar δ.isPiecewiseC1On
+    (δ.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex hstar
       δ.source_eq_target hδΩ) w hw, mul_zero]
 
 end Cycle
