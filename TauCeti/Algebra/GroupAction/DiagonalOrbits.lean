@@ -111,7 +111,7 @@ variable {G S} [FiniteStabilizerOrbits G S]
 
 /-- The points `t` with `(t, s)` in a given diagonal orbit form a finite set: they lie in one orbit
 of the stabilizer of `s`. -/
-theorem FiniteStabilizerOrbits.finite_setOf_mk_right_eq (s : S)
+theorem FiniteStabilizerOrbits.finite_setOf_mk_left_eq (s : S)
     (q : Quotient (orbitRel G (S × S))) :
     {t | Quotient.mk (orbitRel G (S × S)) (t, s) = q}.Finite := by
   rcases Set.eq_empty_or_nonempty {t | Quotient.mk (orbitRel G (S × S)) (t, s) = q} with
@@ -125,10 +125,10 @@ theorem FiniteStabilizerOrbits.finite_setOf_mk_right_eq (s : S)
 
 /-- The points `y` with `(x, y)` in a given diagonal orbit form a finite set, by swapping
 coordinates. -/
-theorem FiniteStabilizerOrbits.finite_setOf_mk_left_eq (x : S)
+theorem FiniteStabilizerOrbits.finite_setOf_mk_right_eq (x : S)
     (q : Quotient (orbitRel G (S × S))) :
     {y | Quotient.mk (orbitRel G (S × S)) (x, y) = q}.Finite :=
-  (finite_setOf_mk_right_eq x (Quotient.map' (s₁ := orbitRel G (S × S))
+  (finite_setOf_mk_left_eq x (Quotient.map' (s₁ := orbitRel G (S × S))
     (s₂ := orbitRel G (S × S)) Prod.swap (by rintro _ b ⟨g, rfl⟩; exact ⟨g, rfl⟩) q)).subset
     fun _ hy ↦ by subst hy; rw [Set.mem_ofPred_eq, Quotient.map'_mk'', Prod.swap_prod_mk]
 

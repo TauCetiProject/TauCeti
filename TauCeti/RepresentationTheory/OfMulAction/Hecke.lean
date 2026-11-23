@@ -118,12 +118,12 @@ private theorem finite_support_comp (h : permutationHeckeModule G S A) (f : S �
 /-- Each row of an element of `Fun_G(S × S, A)` has finitely many nonzero entries. -/
 theorem finite_support_row (h : permutationHeckeModule G S A) (x : S) :
     (Function.support fun y ↦ (h : S × S → A) (x, y)).Finite :=
-  finite_support_comp h _ (FiniteStabilizerOrbits.finite_setOf_mk_left_eq x)
+  finite_support_comp h _ (FiniteStabilizerOrbits.finite_setOf_mk_right_eq x)
 
 /-- Each column of an element of `Fun_G(S × S, A)` has finitely many nonzero entries. -/
 theorem finite_support_column (h : permutationHeckeModule G S A) (s : S) :
     (Function.support fun t ↦ (h : S × S → A) (t, s)).Finite :=
-  finite_support_comp h _ (FiniteStabilizerOrbits.finite_setOf_mk_right_eq s)
+  finite_support_comp h _ (FiniteStabilizerOrbits.finite_setOf_mk_left_eq s)
 
 /-- The column of `h` at `s`, the finitely supported function `t ↦ h(t, s)`. -/
 def column (h : permutationHeckeModule G S A) (s : S) : S →₀ A :=
