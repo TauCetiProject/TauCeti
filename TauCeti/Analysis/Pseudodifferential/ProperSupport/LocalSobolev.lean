@@ -39,9 +39,10 @@ of the calculus and proves that it loses at most `m` orders of local Sobolev reg
   (`TauCeti.Symbol.isLocallySobolevAt_quantizeDistribution`). Hence the `H^{s - m}` singular support
   of `Op(a) T` lies in the closed `R`-neighbourhood of the `H^s` singular support of `T`, and the
   same holds for the singular supports
-  (`TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_subset`,
-  `TauCeti.Symbol.singularSupport_quantizeDistribution_subset`). So `Op(a)` maps `H^s_loc(ℝⁿ)` to
-  `H^{s - m}_loc(ℝⁿ)` (`TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_eq_empty`), and
+  (`TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_subset_cthickening`,
+  `TauCeti.Symbol.singularSupport_quantizeDistribution_subset_cthickening`). So `Op(a)` maps
+  `H^s_loc(ℝⁿ)` to `H^{s - m}_loc(ℝⁿ)`
+  (`TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_eq_empty`), and
   a smoothing symbol maps every distribution to one that is smooth near every point
   (`TauCeti.Symbol.IsSmoothing.singularSupport_quantizeDistribution_eq_empty`).
 
@@ -237,8 +238,8 @@ theorem isLocallySobolevAt_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
 
 /-- **The `H^s` singular support under a properly supported operator.** The `H^{s - m}` singular
 support of `Op(a) T` lies in the closed `R`-neighbourhood of the `H^s` singular support of `T`. -/
-theorem sobolevSingularSupport_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R)
-    (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+theorem sobolevSingularSupport_quantizeDistribution_subset_cthickening
+    (ha : a.HasNearDiagonalKernel R) (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (quantizeDistribution ha T).sobolevSingularSupport (s - m) ⊆
       cthickening R (T.sobolevSingularSupport s) := fun x hx ↦ by
   by_contra hxc
@@ -253,11 +254,12 @@ theorem sobolevSingularSupport_quantizeDistribution_eq_empty (ha : a.HasNearDiag
     {s : ℝ} {T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)} (hT : T.sobolevSingularSupport s = ∅) :
     (quantizeDistribution ha T).sobolevSingularSupport (s - m) = ∅ :=
   subset_empty_iff.1 <| by
-    simpa [hT] using sobolevSingularSupport_quantizeDistribution_subset ha s T
+    simpa [hT] using sobolevSingularSupport_quantizeDistribution_subset_cthickening ha s T
 
 /-- **The singular support under a properly supported operator.** The singular support of
 `Op(a) T` lies in the closed `R`-neighbourhood of the singular support of `T`. -/
-theorem singularSupport_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R)
+theorem singularSupport_quantizeDistribution_subset_cthickening
+    (ha : a.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (quantizeDistribution ha T).singularSupport ⊆ cthickening R T.singularSupport := fun x hx ↦ by
   by_contra hxc
