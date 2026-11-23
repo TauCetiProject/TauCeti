@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Connected.LocallyPathConnected
 import Mathlib.Topology.Separation.Regular
-import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Compact connected sets in locally path-connected spaces; locality and retracts
@@ -108,8 +107,8 @@ theorem LocallyPathConnectedSpace.of_forall_exists_mem_nhds
     obtain ⟨s, ⟨hs, hsc⟩, hst : s ⊆ _⟩ := (path_connected_basis
       (⟨x, mem_of_mem_nhds hU⟩ : U)).mem_iff.1
       (continuous_subtypeVal.continuousAt.preimage_mem_nhds ht)
-    exact ⟨(↑) '' s, TauCeti.image_val_mem_nhds_of_mem_nhds hU hs, hsc.image continuous_subtypeVal,
-      image_subset_iff.2 hst⟩
+    exact ⟨(↑) '' s, map_nhds_subtypeVal_eq_nhds (mem_of_mem_nhds hU) hU ▸ Filter.image_mem_map hs,
+      hsc.image continuous_subtypeVal, image_subset_iff.2 hst⟩
 
 /-- **A retract of a locally path-connected space is locally path-connected.** The retraction
 `r` has the continuous section `s`, so it is a quotient map. -/

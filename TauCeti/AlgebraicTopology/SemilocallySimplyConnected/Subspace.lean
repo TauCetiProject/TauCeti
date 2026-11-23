@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 public import TauCeti.Topology.PathComponent
-import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Semilocal simple connectivity on subspaces
@@ -68,7 +67,7 @@ theorem SemilocallySimplyConnectedAt.of_mem_nhds {U : Set X} {x : X} (hU : U ∈
   have hx : x ∈ U := mem_of_mem_nhds hU
   obtain ⟨V, hV, hloops⟩ := semilocallySimplyConnectedAt_def.1 h
   refine semilocallySimplyConnectedAt_def.2
-    ⟨(↑) '' V, image_val_mem_nhds_of_mem_nhds hU hV, fun γ hγ ↦ ?_⟩
+    ⟨(↑) '' V, map_nhds_subtypeVal_eq_nhds hx hU ▸ Filter.image_mem_map hV, fun γ hγ ↦ ?_⟩
   have hmem (t : I) : γ t ∈ U := by
     obtain ⟨y, -, hy⟩ := hγ ⟨t, rfl⟩
     exact hy ▸ y.property
