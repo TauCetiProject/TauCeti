@@ -52,8 +52,9 @@ The bases of `GSpin_{2n+1}` and `GSp₂ₙ` come from `TauCeti.Symplectic.diagon
   `TauCeti.gsoRootDatum`: the root data.
 * `TauCeti.gspinOddBase`, `TauCeti.gspBase`, `TauCeti.gspinEvenBase` and `TauCeti.gsoBase`: their
   bases.
+* `TauCeti.gspinOddUpsilon` and `TauCeti.gspinEvenUpsilon`: the character `Υ`.
 * `TauCeti.gspinOddRootDatum_toLinearMap_root_inr` and
-  `TauCeti.gspinOddRootDatum_toLinearMap_cliffordNorm_coroot`: `ε₀∨` is central and `Υ` is
+  `TauCeti.gspinOddRootDatum_toLinearMap_gspinOddUpsilon_coroot`: `ε₀∨` is central and `Υ` is
   orthogonal to the coroots, with their counterparts for `GSpin_{2n}`.
 
 ## References
@@ -80,6 +81,8 @@ section Odd
 
 variable (n : ℕ)
 
+namespace GeneralSpin
+
 /-- The linear form `x ↦ -(x₁ + ⋯ + xₙ)` on the characters of the diagonal torus of `Sp₂ₙ`. -/
 noncomputable def negCharacterSum : (ULift.{u} (Fin n) →₀ ℤ) →ₗ[ℤ] ℤ :=
   -SplitTorus.dotPairing.flip fun _ => 1
@@ -91,6 +94,7 @@ theorem negCharacterSum_apply (x : ULift.{u} (Fin n) →₀ ℤ) :
 
 /-- The `ε₀`-coordinate of the roots of `GSp₂ₙ`, and the `ε₀∨`-coordinate of the coroots of
 `GSpin_{2n+1}`: minus half the coordinate sum of the corresponding root of `Sp₂ₙ`. -/
+@[simp]
 def multiplierCoordinate {n : ℕ} : GLSymplecticFin.RootSubgroupIndex n → ℤ
   | .positiveLong _ => -1
   | .negativeLong _ => 1
@@ -102,16 +106,25 @@ theorem two_mul_multiplierCoordinate (i : GLSymplecticFin.RootSubgroupIndex n) :
     2 * multiplierCoordinate i =
       negCharacterSum.{u} n ((Symplectic.diagonalRootDatum.{u} n).root i) := by
   cases i <;>
-  simp [multiplierCoordinate, Symplectic.diagonalRootDatum_root_positiveLong,
+  simp [Symplectic.diagonalRootDatum_root_positiveLong,
     Symplectic.diagonalRootDatum_root_negativeLong, Symplectic.diagonalRootDatum_root_difference,
     Symplectic.diagonalRootDatum_root_positiveSum, Symplectic.diagonalRootDatum_root_negativeSum]
 
-/-- `two_mul_multiplierCoordinate`, with the roots of `Sp₂ₙ` read as the coroots of its dual. -/
-theorem two_mul_multiplierCoordinate_flip (i : GLSymplecticFin.RootSubgroupIndex n) :
-    2 * multiplierCoordinate i =
-      negCharacterSum.{u} n ((Symplectic.diagonalRootDatum.{u} n).flip.coroot i) := by
-  rw [RootPairing.flip_coroot]
-  exact two_mul_multiplierCoordinate n i
+end GeneralSpin
+
+open GeneralSpin
+
+/-- The character `Υ = 2ε₀ + ε₁ + ⋯ + εₙ` of `GSpin_{2n+1}`, the Clifford norm `ν`. -/
+def gspinOddUpsilon : (ULift.{u} (Fin n) → ℤ) × ℤ :=
+  (fun _ => 1, 2)
+
+@[simp]
+theorem gspinOddUpsilon_fst : (gspinOddUpsilon.{u} n).1 = fun _ => 1 :=
+  (rfl)
+
+@[simp]
+theorem gspinOddUpsilon_snd : (gspinOddUpsilon.{u} n).2 = 2 :=
+  (rfl)
 
 /-- **The root datum of `GSpin_{2n+1}`** on `X = (ULift (Fin n) → ℤ) × ℤ`, the second factor
 being `ℤε₀`: the root datum of `SO_{2n+1}` extended by the central cocharacter `ε₀∨`. Its roots
@@ -121,7 +134,9 @@ noncomputable def gspinOddRootDatum :
     RootDatum (GLSymplecticFin.RootSubgroupIndex n) ((ULift.{u} (Fin n) → ℤ) × ℤ)
       ((ULift.{u} (Fin n) →₀ ℤ) × ℤ) :=
   (Symplectic.diagonalRootDatum.{u} n).flip.extendCoroot (negCharacterSum n)
-    multiplierCoordinate (two_mul_multiplierCoordinate_flip n)
+    multiplierCoordinate fun i => by
+      rw [RootPairing.flip_coroot]
+      exact two_mul_multiplierCoordinate n i
 
 /-- **The root datum of `GSp₂ₙ`** on `X = (ULift (Fin n) →₀ ℤ) × ℤ`: the root datum of `Sp₂ₙ`
 extended by the multiplier `ε₀`. Its roots are `εᵢ - εⱼ`, `±(εᵢ + εⱼ - ε₀)`, `±(2εᵢ - ε₀)` and its
@@ -238,17 +253,17 @@ theorem gspinOddRootDatum_toLinearMap_root_inr (i : GLSymplecticFin.RootSubgroup
 
 /-- **The Clifford norm `Υ = 2ε₀ + ε₁ + ⋯ + εₙ` of `GSpin_{2n+1}`** pairs to zero with every
 coroot. -/
-theorem gspinOddRootDatum_toLinearMap_cliffordNorm_coroot
+theorem gspinOddRootDatum_toLinearMap_gspinOddUpsilon_coroot
     (i : GLSymplecticFin.RootSubgroupIndex n) :
-    (gspinOddRootDatum.{u} n).toLinearMap (fun _ => 1, 2) ((gspinOddRootDatum.{u} n).coroot i) =
-      0 :=
+    (gspinOddRootDatum.{u} n).toLinearMap (gspinOddUpsilon n)
+      ((gspinOddRootDatum.{u} n).coroot i) = 0 :=
   RootPairing.extendCoroot_toLinearMap_coroot_of_eq_neg _ _ _ _ (fun y => by
     rw [RootPairing.flip_toLinearMap, LinearMap.flip_apply,
       Symplectic.diagonalRootDatum_toLinearMap, negCharacterSum_apply, neg_neg]) i
 
 /-- `Υ` pairs with `ε₀∨` to `2`. -/
-theorem gspinOddRootDatum_toLinearMap_cliffordNorm_inr :
-    (gspinOddRootDatum.{u} n).toLinearMap (fun _ => 1, 2) (0, 1) = 2 :=
+theorem gspinOddRootDatum_toLinearMap_gspinOddUpsilon_inr :
+    (gspinOddRootDatum.{u} n).toLinearMap (gspinOddUpsilon n) (0, 1) = 2 :=
   RootPairing.extendCoroot_toLinearMap_inr _ _ _ _ _
 
 /-- **The base of `GSpin_{2n+1}`**: simple roots `εᵢ - εᵢ₊₁` and `εₙ`, with simple coroots
@@ -283,6 +298,8 @@ open DynkinType
 
 variable (n : ℕ)
 
+namespace GeneralSpin
+
 /-- The linear form `y ↦ -(y₁ + ⋯ + yₙ)` on `ℤⁿ`. -/
 noncomputable def negCoordinateSum : (Fin n → ℤ) →ₗ[ℤ] ℤ :=
   -dotProductEquiv ℤ (Fin n) 1
@@ -313,6 +330,22 @@ theorem two_mul_halfNegCoordinateSum_root (x : TypeDRoot n) :
     2 * halfNegCoordinateSum x = negCoordinateSum n ((typeDClassicalRootDatum n).root x) := by
   rw [typeDClassicalRootDatum_root]
   exact two_mul_halfNegCoordinateSum n x
+
+end GeneralSpin
+
+open GeneralSpin
+
+/-- The character `Υ = 2ε₀ + ε₁ + ⋯ + εₙ` of `GSpin_{2n}`, the Clifford norm `ν`. -/
+def gspinEvenUpsilon : (Fin n → ℤ) × ℤ :=
+  (1, 2)
+
+@[simp]
+theorem gspinEvenUpsilon_fst : (gspinEvenUpsilon n).1 = 1 :=
+  (rfl)
+
+@[simp]
+theorem gspinEvenUpsilon_snd : (gspinEvenUpsilon n).2 = 2 :=
+  (rfl)
 
 /-- **The root datum of `GSpin_{2n}`** on `X = (Fin n → ℤ) × ℤ`: the root datum of `SO_{2n}`
 extended by the central cocharacter `ε₀∨`. Its roots are `±εᵢ ± εⱼ` and its coroots are
@@ -381,14 +414,15 @@ theorem gspinEvenRootDatum_toLinearMap_root_inr (x : TypeDRoot n) :
 
 /-- **The Clifford norm `Υ = 2ε₀ + ε₁ + ⋯ + εₙ` of `GSpin_{2n}`** pairs to zero with every
 coroot. -/
-theorem gspinEvenRootDatum_toLinearMap_cliffordNorm_coroot (x : TypeDRoot n) :
-    (gspinEvenRootDatum n).toLinearMap (1, 2) ((gspinEvenRootDatum n).coroot x) = 0 :=
+theorem gspinEvenRootDatum_toLinearMap_gspinEvenUpsilon_coroot (x : TypeDRoot n) :
+    (gspinEvenRootDatum n).toLinearMap (gspinEvenUpsilon n) ((gspinEvenRootDatum n).coroot x) =
+      0 :=
   RootPairing.extendCoroot_toLinearMap_coroot_of_eq_neg _ _ _ _ (fun y => by
     rw [typeDClassicalRootDatum_toLinearMap_apply, negCoordinateSum_apply, neg_neg]) x
 
 /-- `Υ` pairs with `ε₀∨` to `2`. -/
-theorem gspinEvenRootDatum_toLinearMap_cliffordNorm_inr :
-    (gspinEvenRootDatum n).toLinearMap (1, 2) (0, 1) = 2 :=
+theorem gspinEvenRootDatum_toLinearMap_gspinEvenUpsilon_inr :
+    (gspinEvenRootDatum n).toLinearMap (gspinEvenUpsilon n) (0, 1) = 2 :=
   RootPairing.extendCoroot_toLinearMap_inr _ _ _ _ _
 
 variable {n} (hn : 4 ≤ n)

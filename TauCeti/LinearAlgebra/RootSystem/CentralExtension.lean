@@ -20,13 +20,18 @@ roots  (αᵢ, 0),    coroots  (αᵢ∨, dᵢ).
 ```
 
 Writing `ε₀` and `ε₀∨` for the new basis vectors `(0, 1)`, the cocharacter `ε₀∨` pairs to zero with
-every root. It is central: these are the root data of the reductive groups `(𝔾_m × G)/μ` obtained
-by adjoining a central torus to a semisimple group `G`, such as the general spin groups. The
-coordinates `dᵢ` are prescribed by a linear form `δ` on `N` through `2 dᵢ = δ(αᵢ∨)`. This makes
-`i ↦ (αᵢ∨, dᵢ)` compatible with the reflections, so the reflections of the extension permute the
-indices exactly as those of `P` do, and it transfers every base of `P` to the extension. When
-`δ = -⟨υ, ·⟩` for a character `υ` of `P`, the character `υ + 2ε₀` pairs to zero with every coroot
-of the extension.
+every root, so it is central. The coordinates `dᵢ` are prescribed by a linear form `δ` on `N`
+through `2 dᵢ = δ(αᵢ∨)`. This makes `i ↦ (αᵢ∨, dᵢ)` compatible with the reflections, so the
+reflections of the extension permute the indices exactly as those of `P` do, and it transfers every
+base of `P` to the extension. When `δ = -⟨υ, ·⟩` for a character `υ` of `P`, the character
+`υ + 2ε₀` pairs to zero with every coroot of the extension.
+
+When `P` is semisimple, the extension is the root datum of a reductive group `(𝔾_m × G)/μ`, with
+`𝔾_m` the image of `ε₀∨`, `G` the derived group of the extension and `μ` a finite central subgroup.
+In general `G` is not the semisimple group of `P` but a cover of it, since only the cocharacters
+`y` of `P` with `δ(y)` even lift to the cocharacters `(y, δ(y)/2)` of `G`. For the general spin
+groups, `P` is the root datum of `SO_{2n+1}` or `SO_{2n}`, while `G` is `Spin_{2n+1}` or
+`Spin_{2n}`.
 
 The dual construction `RootPairing.extendRoot` puts the extra coordinate on the roots instead:
 roots `(αᵢ, dᵢ)` and coroots `(αᵢ∨, 0)`. It is the flip of `extendCoroot` applied to the flip of
@@ -35,7 +40,8 @@ roots `(αᵢ, dᵢ)` and coroots `(αᵢ∨, 0)`. It is the flip of `extendCoro
 ## Main declarations
 
 * `RootPairing.extendPairing`: the pairing of `M × ℤ` with `N × ℤ`, a perfect pairing when the
-  pairing of `M` with `N` is.
+  pairing of `M` with `N` is; its flip is the extended pairing of the flip
+  (`RootPairing.flip_extendPairing`).
 * `RootPairing.extendCoroot` and `RootPairing.extendRoot`: the two extensions, dual to one another
   (`RootPairing.flip_extendCoroot`, `RootPairing.flip_extendRoot`).
 * `RootPairing.extendCoroot_reflectionPerm`: the extension has the reflection permutations of `P`.
@@ -98,12 +104,15 @@ private theorem bijective_extendPairing {M' N' : Type*} [AddCommGroup M'] [AddCo
   exact (LinearEquiv.bijective _).comp
     ((LinearMap.IsPerfPair.bijective_left q).prodMap bijective_mul)
 
+/-- The flip of the extended pairing is the extended pairing of the flip. -/
+@[simp]
+theorem flip_extendPairing : (extendPairing p).flip = extendPairing p.flip := by
+  ext <;> simp [mul_comm]
+
 /-- The extended pairing is perfect when `p` is. -/
 instance [p.IsPerfPair] : (extendPairing p).IsPerfPair := by
-  have hflip : (extendPairing p).flip = extendPairing p.flip := by
-    ext <;> simp [mul_comm]
   refine ⟨bijective_extendPairing p, ?_⟩
-  rw [hflip]
+  rw [flip_extendPairing]
   exact bijective_extendPairing p.flip
 
 end Pairing
@@ -194,11 +203,6 @@ theorem extendCoroot_toLinearMap_root_inr (i : ι) :
     (P.extendCoroot δ d hd).toLinearMap ((P.extendCoroot δ d hd).root i) (0, 1) = 0 := by
   simp
 
-/-- The character `ε₀ = (0, 1)` pairs with the central cocharacter `ε₀∨` to `1`. -/
-theorem extendCoroot_toLinearMap_inr_inr :
-    (P.extendCoroot δ d hd).toLinearMap (0, 1) (0, 1) = 1 := by
-  simp
-
 /-- **A character orthogonal to every coroot.** If `δ = -⟨υ, ·⟩`, then `υ + 2ε₀` pairs to zero
 with every coroot `(αᵢ∨, dᵢ)` of the extension. -/
 theorem extendCoroot_toLinearMap_coroot_of_eq_neg {υ : M} (hυ : ∀ y, P.toLinearMap υ y = -δ y)
@@ -207,9 +211,9 @@ theorem extendCoroot_toLinearMap_coroot_of_eq_neg {υ : M} (hυ : ∀ y, P.toLin
   rw [extendCoroot_toLinearMap, extendCoroot_coroot, extendPairing_apply, hυ, ← hd]
   ring
 
-/-- The character `υ + 2ε₀` pairs with the central cocharacter `ε₀∨` to `2`. -/
-theorem extendCoroot_toLinearMap_inr (υ : M) :
-    (P.extendCoroot δ d hd).toLinearMap (υ, 2) (0, 1) = 2 := by
+/-- A character `(x, a)` pairs with the central cocharacter `ε₀∨` to its `ε₀`-coordinate `a`. -/
+theorem extendCoroot_toLinearMap_inr (x : M × ℤ) :
+    (P.extendCoroot δ d hd).toLinearMap x (0, 1) = x.2 := by
   simp
 
 /-! ### Bases -/
