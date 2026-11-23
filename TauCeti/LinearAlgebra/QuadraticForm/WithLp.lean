@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Lp.ProdLp
+public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Analysis.Normed.Lp.WithLp
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
@@ -29,6 +30,11 @@ with `QuadraticMap.IsometryEquiv.uniqueProd`, `prodUnique`, `prodComm`, and `pro
 
 ## Main results
 
+* `QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProd`,
+  `QuadraticMap.IsometryEquiv.toLinearEquiv_withLpSubsingletonProd`,
+  `QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdSubsingleton`,
+  `QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdComm`, and
+  `QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdAssoc`: bundled `toLinearEquiv` normal forms.
 * `QuadraticMap.IsometryEquiv.withLpSubsingletonProd_toIsometry_baseChange`,
   `QuadraticMap.IsometryEquiv.withLpProdSubsingleton_toIsometry_baseChange`,
   `QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange`, and
@@ -62,6 +68,12 @@ def withLpProd : Q.IsometryEquiv (Q₁.prod Q₂) where
   toLinearEquiv := WithLp.linearEquiv p R (M₁ × M₂)
   map_app' x := by simp [QuadraticMap.prod_apply, hQ x]
 
+/-- The underlying linear equivalence of `withLpProd` is `WithLp.linearEquiv`. -/
+@[simp]
+theorem toLinearEquiv_withLpProd :
+    (withLpProd hQ).toLinearEquiv = WithLp.linearEquiv p R (M₁ × M₂) :=
+  (rfl)
+
 /-- `withLpProd` unwraps `WithLp.ofLp`. -/
 @[simp]
 theorem withLpProd_apply (x : WithLp p (M₁ × M₂)) : withLpProd hQ x = WithLp.ofLp x := (rfl)
@@ -91,6 +103,17 @@ theorem withLpSubsingletonProd_symm_apply (hM₁ : Subsingleton M₁) (m₂ : M�
   exact (withLpSubsingletonProd hQ hM₁).symm_apply_eq.mpr
     (withLpSubsingletonProd_apply hQ hM₁ (WithLp.toLp p (0, m₂))).symm
 
+/-- The underlying linear equivalence of `withLpSubsingletonProd` is `WithLp.linearEquiv`
+composed with `LinearEquiv.uniqueProd`. -/
+@[simp]
+theorem toLinearEquiv_withLpSubsingletonProd (hM₁ : Subsingleton M₁) :
+    (withLpSubsingletonProd hQ hM₁).toLinearEquiv =
+      letI : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+      (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.uniqueProd := by
+  let : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+  ext x
+  simp
+
 /-- Projecting `WithLp p (M₁ × M₂)` onto `M₁` is a quadratic isometry when `M₂` is a subsingleton.
 -/
 def withLpProdSubsingleton (hM₂ : Subsingleton M₂ := by infer_instance) : Q.IsometryEquiv Q₁ :=
@@ -112,6 +135,17 @@ theorem withLpProdSubsingleton_symm_apply (hM₂ : Subsingleton M₂) (m₁ : M�
   exact (withLpProdSubsingleton hQ hM₂).symm_apply_eq.mpr
     (withLpProdSubsingleton_apply hQ hM₂ (WithLp.toLp p (m₁, 0))).symm
 
+/-- The underlying linear equivalence of `withLpProdSubsingleton` is `WithLp.linearEquiv`
+composed with `LinearEquiv.prodUnique`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdSubsingleton (hM₂ : Subsingleton M₂) :
+    (withLpProdSubsingleton hQ hM₂).toLinearEquiv =
+      letI : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+      (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.prodUnique := by
+  let : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+  ext x
+  simp
+
 end Prod
 
 section Comm
@@ -126,6 +160,13 @@ forms. -/
 def withLpProdComm : Q₁₂.IsometryEquiv Q₂₁ where
   toLinearEquiv := (LinearEquiv.prodComm R M₁ M₂).withLpCongr p
   map_app' x := by rw [hQ₂₁, hQ₁₂]; exact add_comm _ _
+
+/-- The underlying linear equivalence of `withLpProdComm` is `LinearEquiv.prodComm` lifted to
+`WithLp`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdComm :
+    (withLpProdComm hQ₁₂ hQ₂₁).toLinearEquiv = (LinearEquiv.prodComm R M₁ M₂).withLpCongr p :=
+  (rfl)
 
 /-- `withLpProdComm` swaps `(m₁, m₂)` to `(m₂, m₁)`. -/
 @[simp]
@@ -156,6 +197,13 @@ variable {Q₁₂ : QuadraticMap R (WithLp p (M₁ × M₂)) P}
 def withLpProdAssoc : Q_L.IsometryEquiv Q_R where
   toLinearEquiv := LinearEquiv.withLpProdAssoc p R M₁ M₂ M₃
   map_app' x := by simp [LinearEquiv.withLpProdAssoc_apply, hQ_R, hQ₂₃, hQ_L, hQ₁₂, add_assoc]
+
+/-- The underlying linear equivalence of `withLpProdAssoc` is `LinearEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdAssoc :
+    (withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L hQ_R).toLinearEquiv =
+      LinearEquiv.withLpProdAssoc p R M₁ M₂ M₃ :=
+  (rfl)
 
 /-- `withLpProdAssoc` reassociates `((m₁, m₂), m₃)` to `(m₁, (m₂, m₃))`. -/
 @[simp]
@@ -191,26 +239,26 @@ variable {p : ℝ≥0∞} {R : Type*} (A : Type*) [CommRing R] [Invertible (2 : 
 theorem withLpSubsingletonProd_toIsometry_baseChange
     {Q : QuadraticForm R (WithLp p (M₁ × M₂))}
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hM₁ : Subsingleton M₁) [Unique (A ⊗[R] M₁)] :
+    [Subsingleton M₁] :
     (uniqueProd (Q₁.baseChange A) (Q₂.baseChange A)).toIsometry.comp
         ((withLpProd hQ).baseChangeProd A).toIsometry =
-      (withLpSubsingletonProd hQ hM₁).toIsometry.baseChange A :=
+      (withLpSubsingletonProd hQ).toIsometry.baseChange A :=
   QuadraticMap.Isometry.ext fun y ↦
     DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      rcases x with ⟨⟨v, w⟩⟩
+      obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
       simp [baseChangeProd_tmul]) y
 
 /-- Scalar extension of `withLpProdSubsingleton` commutes with `baseChangeProd` and `prodUnique`. -/
 theorem withLpProdSubsingleton_toIsometry_baseChange
     {Q : QuadraticForm R (WithLp p (M₁ × M₂))}
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hM₂ : Subsingleton M₂) [Unique (A ⊗[R] M₂)] :
+    [Subsingleton M₂] :
     (prodUnique (Q₁.baseChange A) (Q₂.baseChange A)).toIsometry.comp
         ((withLpProd hQ).baseChangeProd A).toIsometry =
-      (withLpProdSubsingleton hQ hM₂).toIsometry.baseChange A :=
+      (withLpProdSubsingleton hQ).toIsometry.baseChange A :=
   QuadraticMap.Isometry.ext fun y ↦
     DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      rcases x with ⟨⟨v, w⟩⟩
+      obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
       simp [baseChangeProd_tmul]) y
 
 /-- Scalar extension of `withLpProdComm` commutes with `baseChangeProd` and `prodComm`. -/
@@ -224,7 +272,7 @@ theorem withLpProdComm_toIsometry_baseChange
         ((withLpProd hQ₁₂).baseChangeProd A).toIsometry :=
   QuadraticMap.Isometry.ext fun y ↦
     DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      rcases x with ⟨⟨v, w⟩⟩
+      obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
       simp [baseChangeProd_tmul]) y
 
 /-- Scalar extension of `withLpProdAssoc` commutes with `baseChangeProd` and `prodAssoc`. -/
@@ -247,7 +295,8 @@ theorem withLpProdAssoc_toIsometry_baseChange
         ((withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L hQ_R).toIsometry.baseChange A) :=
   QuadraticMap.Isometry.ext fun y ↦
     DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      rcases x with ⟨⟨⟨⟨u, v⟩⟩, w⟩⟩
+      obtain ⟨⟨x₁₂, w⟩, rfl⟩ := WithLp.toLp_surjective p x
+      obtain ⟨⟨u, v⟩, rfl⟩ := WithLp.toLp_surjective p x₁₂
       simp [baseChangeProd_tmul]) y
 
 end BaseChange

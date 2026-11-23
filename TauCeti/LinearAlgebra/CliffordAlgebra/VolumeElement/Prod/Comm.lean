@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientation
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Comm
 public import TauCeti.LinearAlgebra.Orientation.WithLp
-import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
 
 /-!
@@ -73,9 +72,9 @@ theorem koszulComm_complexProdTensor
   intro K
   rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply,
     AlgEquiv.coe_toAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, equivOfIsometry_apply,
-    equivOfIsometry_apply,
-    map_map_of_comp_eq
-      (QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange ℂ hQ_VW hQ_WV)]
+    equivOfIsometry_apply, ← AlgHom.comp_apply (map _), map_comp_map,
+    QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange, ← map_comp_map,
+    AlgHom.comp_apply]
   exact AlgHom.koszulComm_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
     (ρ₁.involutive_complexVolume o₁ hQ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
     ρ₂ (ρ₂ (complexVolume Q₂ o₂)) (ρ₂.involutive_complexVolume o₂ hQ₂)
@@ -140,8 +139,7 @@ theorem koszulComm_complexProdTensor_complexVolume_map
       (WithLp.linearEquiv 2 ℝ (W × V)).symm = o_WV := by
     rw [← ho_WV, ← ho_VW,
       Orientation.map_withLpProdComm_prod_of_even o₁ o₂ Fact.out Fact.out (hn.mul_right m),
-      Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl, Orientation.reindex_refl,
-      Equiv.refl_apply]
+      Orientation.reindex_finCongr_symm_reindex_finCongr]
   exact koszulComm_complexProdTensor_complexVolume hQ_VW hQ_WV o₁ o₂ hQ₁ hn hQ₂ hm ρ₁ ρ₂
     o_VW o_WV ho_VW ho_WV' z
 

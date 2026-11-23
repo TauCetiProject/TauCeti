@@ -412,8 +412,9 @@ theorem map_neg_left {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [Comm
     {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
     [AddCommGroup M₂] [Module R₂ M₂] [AddCommMonoid N₂] [Module R₂ N₂]
     (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
-    map (-f) g = -map f g :=
-  TensorProduct.ext' fun m n ↦ by simp [neg_tmul]
+    map (-f) g = -map f g := by
+  simpa only [LinearMap.flip_apply, mapBilinear_apply] using
+    map_neg ((mapBilinear σ₁₂ M N M₂ N₂).flip g) f
 
 /-- Negating the right map of `TensorProduct.map` negates the tensor-product map. -/
 @[simp]
@@ -421,8 +422,8 @@ theorem map_neg_right {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [Com
     {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
     [AddCommGroup M₂] [Module R₂ M₂] [AddCommGroup N₂] [Module R₂ N₂]
     (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
-    map f (-g) = -map f g :=
-  TensorProduct.ext' fun m n ↦ by simp [tmul_neg]
+    map f (-g) = -map f g := by
+  simpa only [mapBilinear_apply] using map_neg (mapBilinear σ₁₂ M N M₂ N₂ f) g
 
 variable {P Q : Type*} [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
 

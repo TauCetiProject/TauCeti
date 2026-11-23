@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import Mathlib.LinearAlgebra.Contraction
-import Mathlib.LinearAlgebra.Projection
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 
 /-!
@@ -49,12 +49,19 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
 
 ## Main definitions
 
+* `CliffordAlgebra.prodTensorLinearEquiv`: `CliffordAlgebra (Q₁.prod Q₂)` linearly identified with
+  `CliffordAlgebra Q₁ ⊗ CliffordAlgebra Q₂`.
 * `AlgHom.cliffordProdTensor`: the action of `CliffordAlgebra (Q₁.prod Q₂)` on `E ⊗ F`.
 
 ## Main results
 
 * `CliffordAlgebra.toProd_tmul`: the inverse map of `CliffordAlgebra.prodEquiv` sends `x ᵍ⊗ₜ y` to
   the product of the images of `x` and `y` under the two summand inclusions.
+* `CliffordAlgebra.prodTensorLinearEquiv_symm_tmul`,
+  `CliffordAlgebra.prodTensorLinearEquiv_toProd_tmul`, and
+  `CliffordAlgebra.prodTensorLinearEquiv_map_inl_mul_map_inr`: pure-tensor evaluation of
+  `prodTensorLinearEquiv` and its inverse.
+* `AlgHom.cliffordProdTensor_congr`: congruence in the representations and grading operator.
 * `AlgHom.cliffordProdTensor_ι`: a vector `(v, w)` acts by `c₁(v) ⊗ 1 + γ ⊗ c₂(w)`.
 * `AlgHom.cliffordProdTensor_map_inl`: `CliffordAlgebra Q₁` acts through the first factor.
 * `AlgHom.cliffordProdTensor_map_inr_prod`: a product of `k` vectors of `M₂` acts by
@@ -93,6 +100,36 @@ theorem toProd_tmul (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) 
     toProd Q₁ Q₂ (x ᵍ⊗ₜ y) =
       map (QuadraticMap.Isometry.inl Q₁ Q₂) x * map (QuadraticMap.Isometry.inr Q₁ Q₂) y := by
   rw [toProd, GradedTensorProduct.lift_tmul]
+
+/-- `CliffordAlgebra.prodEquiv` viewed as a linear equivalence onto the ordinary tensor product
+`CliffordAlgebra Q₁ ⊗[R] CliffordAlgebra Q₂`. -/
+noncomputable def prodTensorLinearEquiv (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) :
+    CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] CliffordAlgebra Q₁ ⊗[R] CliffordAlgebra Q₂ :=
+  (CliffordAlgebra.prodEquiv Q₁ Q₂).toLinearEquiv.trans
+    (GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)).symm
+
+/-- The inverse of `CliffordAlgebra.prodTensorLinearEquiv` sends a pure tensor `a ⊗ₜ b` to
+`toProd Q₁ Q₂ (a ᵍ⊗ₜ b)`. -/
+@[simp]
+theorem prodTensorLinearEquiv_symm_tmul (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    (a : CliffordAlgebra Q₁) (b : CliffordAlgebra Q₂) :
+    (prodTensorLinearEquiv Q₁ Q₂).symm (a ⊗ₜ[R] b) = toProd Q₁ Q₂ (a ᵍ⊗ₜ b) := by
+  simp [prodTensorLinearEquiv]
+
+/-- `CliffordAlgebra.prodTensorLinearEquiv` sends `toProd Q₁ Q₂ (a ᵍ⊗ₜ b)` to `a ⊗ₜ b`. -/
+theorem prodTensorLinearEquiv_toProd_tmul (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    (a : CliffordAlgebra Q₁) (b : CliffordAlgebra Q₂) :
+    prodTensorLinearEquiv Q₁ Q₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) = a ⊗ₜ[R] b := by
+  rw [← prodTensorLinearEquiv_symm_tmul, LinearEquiv.apply_symm_apply]
+
+/-- `CliffordAlgebra.prodTensorLinearEquiv` sends `map inl a * map inr b` to `a ⊗ₜ b`. -/
+@[simp]
+theorem prodTensorLinearEquiv_map_inl_mul_map_inr (Q₁ : QuadraticForm R M₁)
+    (Q₂ : QuadraticForm R M₂) (a : CliffordAlgebra Q₁) (b : CliffordAlgebra Q₂) :
+    prodTensorLinearEquiv Q₁ Q₂
+        (map (QuadraticMap.Isometry.inl Q₁ Q₂) a * map (QuadraticMap.Isometry.inr Q₁ Q₂) b) =
+      a ⊗ₜ[R] b := by
+  rw [← toProd_tmul, prodTensorLinearEquiv_toProd_tmul]
 
 end CliffordAlgebra
 
@@ -269,15 +306,19 @@ theorem cliffordProdTensor_toProd_tmul_apply_tmul (a : CliffordAlgebra Q₁) {j 
   · rw [cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb, map_tmul, mul_apply_eq_comp,
       Module.End.HasEigenvector.pow_apply ⟨he, hne⟩ j.val, ← pow_mul, map_smul, smul_tmul']
 
-private noncomputable def prodTensorLinearEquiv (Q₁ : QuadraticForm R M₁)
-    (Q₂ : QuadraticForm R M₂) :
-    CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] CliffordAlgebra Q₁ ⊗[R] CliffordAlgebra Q₂ :=
-  (CliffordAlgebra.prodEquiv Q₁ Q₂).toLinearEquiv.trans
-    (GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)).symm
-
-private noncomputable def evenOddProdEquiv (Q₂ : QuadraticForm R M₂) :
-    (evenOdd Q₂ 0 × evenOdd Q₂ 1) ≃ₗ[R] CliffordAlgebra Q₂ :=
-  (evenOdd Q₂ 0).prodEquivOfIsCompl (evenOdd Q₂ 1) (evenOdd_isCompl Q₂)
+/-- `AlgHom.cliffordProdTensor` depends only on the representations `ρ₁`, `ρ₂` and the grading
+operator `γ`, not on the proofs of `γ * γ = 1` and anticommutation. -/
+theorem cliffordProdTensor_congr
+    {ρ₁ ρ₁' : CliffordAlgebra Q₁ →ₐ[R] Module.End R E}
+    {γ γ' : Module.End R E}
+    {hγ : γ * γ = 1} {hγ' : γ' * γ' = 1}
+    {hγρ : ∀ v, γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ)}
+    {hγ'ρ : ∀ v, γ' * ρ₁' (ι Q₁ v) = -(ρ₁' (ι Q₁ v) * γ')}
+    {ρ₂ ρ₂' : CliffordAlgebra Q₂ →ₐ[R] Module.End R F}
+    (hρ₁ : ρ₁ = ρ₁') (hγ_eq : γ = γ') (hρ₂ : ρ₂ = ρ₂') :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ = cliffordProdTensor ρ₁' γ' hγ' hγ'ρ ρ₂' := by
+  subst hρ₁ hγ_eq hρ₂
+  rfl
 
 private noncomputable def cliffordProdTensorLinearEquiv
     [Module.Finite R E] [Module.Projective R E]
@@ -306,19 +347,16 @@ private theorem cliffordProdTensor_eq_linearEquiv_tmul
       cliffordProdTensorLinearEquiv ρ₁ γ hγ ρ₂ hρ₁ hρ₂
         ((prodTensorLinearEquiv Q₁ Q₂).symm (a ⊗ₜ y)) := by
   let rγ : Module.End R E ≃ₗ[R] Module.End R E := Units.mulRightLinearEquiv R ⟨γ, γ, hγ, hγ⟩
-  let s₂ := evenOddProdEquiv Q₂
   have hmid :
       LinearEquiv.prodCongr (.refl R (Module.End R E ⊗[R] evenOdd Q₂ 0))
           (rγ.rTensor (evenOdd Q₂ 1))
           (TensorProduct.prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
-            (ρ₁ a ⊗ₜ s₂.symm y)) =
+            (ρ₁ a ⊗ₜ (evenOddProdEquiv Q₂).symm y)) =
         TensorProduct.prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
-          ((ρ₁ a * γ ^ j.val) ⊗ₜ s₂.symm y) := by
+          ((ρ₁ a * γ ^ j.val) ⊗ₜ (evenOddProdEquiv Q₂).symm y) := by
     rcases (by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) j with rfl | rfl
-    · have hs : s₂.symm y = (⟨y, hy⟩, 0) := s₂.symm_apply_eq.mpr (by simp [s₂, evenOddProdEquiv])
-      simp [hs, ZMod.val_zero]
-    · have hs : s₂.symm y = (0, ⟨y, hy⟩) := s₂.symm_apply_eq.mpr (by simp [s₂, evenOddProdEquiv])
-      simp [hs, rγ, ZMod.val_one]
+    · simp [evenOddProdEquiv_symm_of_mem_even hy, ZMod.val_zero]
+    · simp [evenOddProdEquiv_symm_of_mem_odd hy, rγ, ZMod.val_one]
   have hΨ : cliffordProdTensorLinearEquiv ρ₁ γ hγ ρ₂ hρ₁ hρ₂
       ((prodTensorLinearEquiv Q₁ Q₂).symm (a ⊗ₜ y)) =
       TensorProduct.map (ρ₁ a * γ ^ j.val) (ρ₂ y) := by
@@ -330,9 +368,7 @@ private theorem cliffordProdTensor_eq_linearEquiv_tmul
       AlgHom.toLinearMap_apply]
     ext e f'
     simp
-  have he₁_symm : (prodTensorLinearEquiv Q₁ Q₂).symm (a ⊗ₜ y) = toProd Q₁ Q₂ (a ᵍ⊗ₜ y) := by
-    simp [prodTensorLinearEquiv]
-  rw [hΨ, he₁_symm, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hy]
+  rw [hΨ, prodTensorLinearEquiv_symm_tmul, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hy]
 
 /-- **Bijectivity of the graded tensor product of endomorphism representations.** When `E` and `F`
 are finite projective `R`-modules and `ρ₁`, `ρ₂` are bijective onto `End_R E` and `End_R F`, the
@@ -346,11 +382,8 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
   have hlin : (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap = Ψ.toLinearMap := by
     refine (prodTensorLinearEquiv Q₁ Q₂).symm.surjective.injective_linearMapComp_right
       (TensorProduct.ext' fun a b ↦ ?_)
-    obtain ⟨b₀, b₁, hbb⟩ : ∃ b₀ b₁, (evenOddProdEquiv Q₂).symm b = (b₀, b₁) := ⟨_, _, rfl⟩
-    have hb : b = (b₀ : CliffordAlgebra Q₂) + (b₁ : CliffordAlgebra Q₂) := by
-      simpa [evenOddProdEquiv] using
-        ((evenOddProdEquiv Q₂).apply_symm_apply b).symm.trans (congrArg (evenOddProdEquiv Q₂) hbb)
-    rw [hb, tmul_add, map_add, map_add]
+    obtain ⟨⟨b₀, b₁⟩, rfl⟩ := (evenOddProdEquiv Q₂).surjective b
+    rw [evenOddProdEquiv_apply, tmul_add, map_add, map_add]
     dsimp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, AlgHom.toLinearMap_apply]
     rw [cliffordProdTensor_eq_linearEquiv_tmul ρ₁ γ hγ hγρ ρ₂ hρ₁ hρ₂ a b₀.property,
       cliffordProdTensor_eq_linearEquiv_tmul ρ₁ γ hγ hγρ ρ₂ hρ₁ hρ₂ a b₁.property]

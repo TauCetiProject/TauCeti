@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.WithLp
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -49,15 +48,9 @@ When `m` is odd the central volume element of `V ⊕ W` acts through the second 
 `1 ⊗ ω_W`. Both formulas follow from the action of the ordered frame product,
 `c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ)`, and the exponent identity
 `⌊(n + m + 1) / 2⌋ = ⌊(n + 1) / 2⌋ + ⌊(m + 1) / 2⌋` for even `n`. See
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Orientation.lean` for frame-free
-product-orientation versions and `HalfSpin.lean` for the half-spin eigenspace decomposition.
-
-**Orientation reversal.** Reversing the orientation of `V` negates `Γ_V`, so on the graded tensor
-product for `-o₁` a vector of `W` acts by `c(0, w) = -Γ_V ⊗ c_W(w)`. For `m` even, `1 ⊗ Γ_W`
-anticommutes with every `c_W(w)` and so intertwines the two graded tensor products
-(`CliffordAlgebra.lTensor_complexVolume_mul_complexProdTensor`); for `Q₂ w = -‖w‖²` it is an
-involution, and the product for `-o₁` is the conjugate of that for `o₁`
-(`CliffordAlgebra.complexProdTensor_neg_orientation`).
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Orientation.lean` for orientation reversal
+and frame-free product-orientation versions and `HalfSpin.lean` for the half-spin eigenspace
+decomposition.
 
 ## Main definitions
 
@@ -78,10 +71,6 @@ involution, and the product for `-o₁` is the conjugate of that for `o₁`
   `Γ_(V ⊕ W) = Γ_V ⊗ Γ_W` for the ordered product orientation.
 * `CliffordAlgebra.complexProdTensor_complexVolume_of_odd`: for `m` odd,
   `ω_(V ⊕ W) = 1 ⊗ ω_W`.
-* `CliffordAlgebra.lTensor_complexVolume_mul_complexProdTensor`: `1 ⊗ Γ_W` intertwines the graded
-  tensor products for `o₁` and `-o₁`.
-* `CliffordAlgebra.complexProdTensor_neg_orientation`: the graded tensor product for `-o₁` is the
-  conjugate of that for `o₁` by `1 ⊗ Γ_W`.
 
 ## References
 
@@ -312,33 +301,5 @@ theorem complexProdTensor_complexVolume_of_odd (hm : Odd m) (b₁ : OrthonormalB
       (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
   rw [complexProdTensor_complexVolume_eq_map_pow hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o b₁ hb₁ b₂ hb₂ hQb₂ ho,
     map_complexVolume_pow_of_even o₁ hQ₁ ρ₁ hm.add_one, LinearMap.lTensor, Module.End.one_eq_id]
-
-/-! ### Orientation reversal -/
-
-omit [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)] in
-/-- **Reversing the orientation of `V`**: for `W` of even dimension, `1 ⊗ Γ_W` intertwines the
-graded tensor product for `o₁` with that for `-o₁`, on which a vector of `W` acts by
-`c(0, w) = -Γ_V ⊗ c_W(w)`. -/
-theorem lTensor_complexVolume_mul_complexProdTensor (hm : Even m)
-    (x : CliffordAlgebra (Q.baseChange ℂ)) :
-    (ρ₂ (complexVolume Q₂ o₂)).lTensor E * complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x =
-      complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ x * (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-  rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply, AlgHom.comp_apply]
-  exact AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg _ _ _ _ _ _ _ ρ₂
-    (map_complexVolume_mul_map_ι o₂ hm ρ₂) (by rw [complexVolume_neg_orientation, map_neg]) _
-
-omit [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)] in
-/-- **Reversing the orientation of `V` is a conjugation**: for `W` of even dimension with
-`Q₂ w = -‖w‖²`, the graded tensor product for `-o₁` is the conjugate of that for `o₁` by the
-involution `1 ⊗ Γ_W`. -/
-theorem complexProdTensor_neg_orientation (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hm : Even m)
-    (x : CliffordAlgebra (Q.baseChange ℂ)) :
-    complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ x =
-      (ρ₂ (complexVolume Q₂ o₂)).lTensor E * complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x *
-        (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-  rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply, AlgHom.comp_apply]
-  exact AlgHom.cliffordProdTensor_of_eq_neg _ _ _ _ _ _ _ ρ₂
-    (map_complexVolume_mul_map_ι o₂ hm ρ₂) (map_complexVolume_mul_self o₂ hQ₂ ρ₂)
-    (by rw [complexVolume_neg_orientation, map_neg]) _
 
 end CliffordAlgebra
