@@ -31,7 +31,7 @@ basis, `q(x) = xᵀ A x` for an upper triangular `A`, and the Gram matrix of the
 `A + Aᵀ`. The identities below are proved in the polynomial ring over `ℤ`, where `2` cancels, and
 specialized: `halfDet` commutes with ring homomorphisms, `halfDet (Pᵀ A P) = det P ^ 2 * halfDet A`,
 `halfDet` is unchanged by adding `Z - Zᵀ` (which does not change the quadratic form `xᵀ A x`) and by
-reindexing, and for a block-diagonal matrix with an even block `A` and an odd block `D` it is
+reindexing, and for a block-diagonal matrix with an even block `A` and any block `D` it is
 `det (A + Aᵀ) * halfDet D`.
 
 ## Main definitions
@@ -178,31 +178,35 @@ private theorem evalPair_X_inl (A : Matrix ι ι R) (B : Matrix κ κ R) (p : ι
 
 attribute [local simp] genericLeft_map genericRight_map evalPair_X_inl
 
-/-- `halfDet (Pᵀ * A * P) = det P ^ 2 * halfDet A`, for `A` of odd size. -/
-theorem halfDet_transpose_mul_mul (hι : Odd (Fintype.card ι)) (A P : Matrix ι ι R) :
+/-- `halfDet (Pᵀ * A * P) = det P ^ 2 * halfDet A`. -/
+theorem halfDet_transpose_mul_mul (A P : Matrix ι ι R) :
     (Pᵀ * A * P).halfDet = P.det ^ 2 * A.halfDet := by
-  have key : ((genericRight ι ι)ᵀ * genericLeft ι ι * genericRight ι ι).halfDet =
-      (genericRight ι ι).det ^ 2 * (genericLeft ι ι).halfDet := by
-    refine eq_of_two_mul_eq ?_
-    rw [two_mul_halfDet hι, mul_left_comm, two_mul_halfDet hι, transpose_mul, transpose_mul,
-      transpose_transpose, ← Matrix.mul_assoc (genericRight ι ι)ᵀ, ← Matrix.add_mul,
-      ← Matrix.mul_add, det_mul, det_mul, det_transpose]
-    ring
-  simpa [map_halfDet, RingHom.map_det, transpose_map] using congrArg (evalPair A P) key
+  by_cases hι : Odd (Fintype.card ι)
+  · have key : ((genericRight ι ι)ᵀ * genericLeft ι ι * genericRight ι ι).halfDet =
+        (genericRight ι ι).det ^ 2 * (genericLeft ι ι).halfDet := by
+      refine eq_of_two_mul_eq ?_
+      rw [two_mul_halfDet hι, mul_left_comm, two_mul_halfDet hι, transpose_mul, transpose_mul,
+        transpose_transpose, ← Matrix.mul_assoc (genericRight ι ι)ᵀ, ← Matrix.add_mul,
+        ← Matrix.mul_add, det_mul, det_mul, det_transpose]
+      ring
+    simpa [map_halfDet, RingHom.map_det, transpose_map] using congrArg (evalPair A P) key
+  · rw [halfDet_of_not_odd hι, halfDet_of_not_odd hι, mul_zero]
 
 /-- Adding `Z - Zᵀ`, which does not change the quadratic form `x ↦ xᵀ A x`, does not change
 `halfDet`. -/
-theorem halfDet_add_sub_transpose (hι : Odd (Fintype.card ι)) (A Z : Matrix ι ι R) :
+theorem halfDet_add_sub_transpose (A Z : Matrix ι ι R) :
     (A + (Z - Zᵀ)).halfDet = A.halfDet := by
-  have key : (genericLeft ι ι + (genericRight ι ι - (genericRight ι ι)ᵀ)).halfDet =
-      (genericLeft ι ι).halfDet := by
-    refine eq_of_two_mul_eq ?_
-    rw [two_mul_halfDet hι, two_mul_halfDet hι]
-    congr 1
-    rw [transpose_add, transpose_sub, transpose_transpose]
-    abel
-  simpa [map_halfDet, Matrix.map_add, Matrix.map_sub, transpose_map] using
-    congrArg (evalPair A Z) key
+  by_cases hι : Odd (Fintype.card ι)
+  · have key : (genericLeft ι ι + (genericRight ι ι - (genericRight ι ι)ᵀ)).halfDet =
+        (genericLeft ι ι).halfDet := by
+      refine eq_of_two_mul_eq ?_
+      rw [two_mul_halfDet hι, two_mul_halfDet hι]
+      congr 1
+      rw [transpose_add, transpose_sub, transpose_transpose]
+      abel
+    simpa [map_halfDet, Matrix.map_add, Matrix.map_sub, transpose_map] using
+      congrArg (evalPair A Z) key
+  · rw [halfDet_of_not_odd hι, halfDet_of_not_odd hι]
 
 /-- `halfDet` is invariant under reindexing. -/
 @[simp]
@@ -218,23 +222,28 @@ theorem halfDet_submatrix_equiv_self (e : κ ≃ ι) (A : Matrix ι ι R) :
   · have hκ : ¬Odd (Fintype.card κ) := Fintype.card_congr e ▸ hι
     rw [halfDet_of_not_odd hι, halfDet_of_not_odd hκ]
 
-/-- For `A` of even size and `D` of odd size, the half-determinant of the block-diagonal matrix
-`fromBlocks A 0 0 D` is `det (A + Aᵀ) * halfDet D`. -/
-theorem halfDet_fromBlocks_zero₁₂_zero₂₁ (hι : Even (Fintype.card ι)) (hκ : Odd (Fintype.card κ))
-    (A : Matrix ι ι R) (D : Matrix κ κ R) :
+/-- For `A` of even size, the half-determinant of the block-diagonal matrix `fromBlocks A 0 0 D` is
+`det (A + Aᵀ) * halfDet D`. -/
+theorem halfDet_fromBlocks_zero₁₂_zero₂₁ (hι : Even (Fintype.card ι)) (A : Matrix ι ι R)
+    (D : Matrix κ κ R) :
     (fromBlocks A 0 0 D).halfDet = (A + Aᵀ).det * D.halfDet := by
-  have hικ : Odd (Fintype.card (ι ⊕ κ)) := by
-    rw [Fintype.card_sum]
-    exact hι.add_odd hκ
-  have key : (fromBlocks (genericLeft ι κ) 0 0 (genericRight ι κ)).halfDet =
-      (genericLeft ι κ + (genericLeft ι κ)ᵀ).det * (genericRight ι κ).halfDet := by
-    refine eq_of_two_mul_eq ?_
-    rw [two_mul_halfDet hικ, mul_left_comm, two_mul_halfDet hκ, fromBlocks_transpose,
-      fromBlocks_add]
-    simp only [transpose_zero, add_zero]
-    exact det_fromBlocks_zero₂₁ _ _ _
-  simpa [map_halfDet, RingHom.map_det, fromBlocks_map, Matrix.map_add, transpose_map] using
-    congrArg (evalPair A D) key
+  by_cases hκ : Odd (Fintype.card κ)
+  · have hικ : Odd (Fintype.card (ι ⊕ κ)) := by
+      rw [Fintype.card_sum]
+      exact hι.add_odd hκ
+    have key : (fromBlocks (genericLeft ι κ) 0 0 (genericRight ι κ)).halfDet =
+        (genericLeft ι κ + (genericLeft ι κ)ᵀ).det * (genericRight ι κ).halfDet := by
+      refine eq_of_two_mul_eq ?_
+      rw [two_mul_halfDet hικ, mul_left_comm, two_mul_halfDet hκ, fromBlocks_transpose,
+        fromBlocks_add]
+      simp only [transpose_zero, add_zero]
+      exact det_fromBlocks_zero₂₁ _ _ _
+    simpa [map_halfDet, RingHom.map_det, fromBlocks_map, Matrix.map_add, transpose_map] using
+      congrArg (evalPair A D) key
+  · have hικ : ¬Odd (Fintype.card (ι ⊕ κ)) := by
+      rw [Fintype.card_sum, Nat.not_odd_iff_even]
+      exact hι.add (Nat.not_odd_iff_even.mp hκ)
+    rw [halfDet_of_not_odd hικ, halfDet_of_not_odd hκ, mul_zero]
 
 /-- In size one, `halfDet A` is the single entry of `A`. -/
 @[simp]

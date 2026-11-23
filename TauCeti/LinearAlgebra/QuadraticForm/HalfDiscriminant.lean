@@ -92,17 +92,15 @@ noncomputable def halfDiscr (q : QuadraticForm R M) (b : Basis ι R M) : R :=
 /-- The half-discriminant can be computed from any bilinear form `B` with `B(x, x) = q(x)`. -/
 theorem halfDiscr_eq_halfDet {q : QuadraticForm R M} (b : Basis ι R M) {B : BilinForm R M}
     (hB : B.toQuadraticMap = q) : halfDiscr q b = (BilinForm.toMatrix b B).halfDet := by
-  by_cases hι : Odd (Fintype.card ι)
-  · have := Module.Free.of_basis b
-    have hB' := (LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q).choose_spec
-    obtain ⟨Z, hZ⟩ := BilinForm.exists_toMatrix_eq_sub_transpose_of_isAlt b
-      (D := B - (LinearMap.BilinMap.toQuadraticMap_surjective q).choose)
-      (LinearMap.BilinMap.toQuadraticMap_eq_zero.mp (by
-        rw [LinearMap.BilinMap.toQuadraticMap_sub, hB, hB', sub_self]))
-    rw [halfDiscr, ← halfDet_add_sub_transpose hι _ Z, ← hZ, ← map_add]
-    congr 2
-    abel
-  · rw [halfDiscr, halfDet_of_not_odd hι, halfDet_of_not_odd hι]
+  have := Module.Free.of_basis b
+  have hB' := (LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q).choose_spec
+  obtain ⟨Z, hZ⟩ := BilinForm.exists_toMatrix_eq_sub_transpose_of_isAlt b
+    (D := B - (LinearMap.BilinMap.toQuadraticMap_surjective q).choose)
+    (LinearMap.BilinMap.toQuadraticMap_eq_zero.mp (by
+      rw [LinearMap.BilinMap.toQuadraticMap_sub, hB, hB', sub_self]))
+  rw [halfDiscr, ← halfDet_add_sub_transpose _ Z, ← hZ, ← map_add]
+  congr 2
+  abel
 
 /-- In even rank, `disc'(q)` is `0` by convention. -/
 theorem halfDiscr_of_not_odd (hι : ¬Odd (Fintype.card ι)) (q : QuadraticForm R M)
@@ -131,13 +129,11 @@ theorem polarDiscr_basis_change (q : QuadraticForm R M) (b b' : Basis ι R M) :
 basis; so `disc'(q)` is well defined up to the square of a unit. -/
 theorem halfDiscr_basis_change (q : QuadraticForm R M) (b b' : Basis ι R M) :
     halfDiscr q b' = b.det b' ^ 2 * halfDiscr q b := by
-  by_cases hι : Odd (Fintype.card ι)
-  · have := Module.Free.of_basis b
-    obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q
-    rw [halfDiscr_eq_halfDet b' hB, halfDiscr_eq_halfDet b hB,
-      ← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix b, halfDet_transpose_mul_mul hι,
-      Basis.det_apply]
-  · rw [halfDiscr_of_not_odd hι, halfDiscr_of_not_odd hι, mul_zero]
+  have := Module.Free.of_basis b
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q
+  rw [halfDiscr_eq_halfDet b' hB, halfDiscr_eq_halfDet b hB,
+    ← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix b, halfDet_transpose_mul_mul,
+    Basis.det_apply]
 
 /-- Reindexing the basis does not change `disc(q)`. -/
 @[simp]
