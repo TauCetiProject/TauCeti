@@ -32,6 +32,11 @@ and vanishing on finite free modules. These classes measure the obstruction to s
 The file also records additivity on products of modules, `[P × Q] = [P] + [Q]` and
 `[Rⁿ] = n[R]`, in the form consumed by classes `[M] - n[R]`.
 
+## Main definitions
+
+* `TauCeti.FiniteProjectiveModules.of Λ P`: a finitely generated projective `Λ`-module `P` as an
+  object of the subcategory of finitely generated projective modules.
+
 ## Main results
 
 * `TauCeti.FiniteProjectiveModules.biprodLinearEquiv`: the underlying module of a biproduct
@@ -174,7 +179,7 @@ variable (Λ : Type u) [Ring Λ]
 
 /-- A finitely generated projective module as an object of the subcategory of finitely generated
 projective modules. -/
-private abbrev obj (P : Type u) [AddCommGroup P] [Module Λ P] [Module.Finite Λ P]
+abbrev of (P : Type u) [AddCommGroup P] [Module Λ P] [Module.Finite Λ P]
     [Module.Projective Λ P] : (finiteProjectiveModules Λ).FullSubcategory :=
   ⟨ModuleCat.of Λ P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
 
@@ -196,14 +201,14 @@ variable {Λ M}
 
 /-- Isomorphic modules have the same class. -/
 theorem classOf_congr (e : M ≃ₗ[Λ] N) (n : ℕ) : classOf Λ M n = classOf Λ N n := by
-  rw [classOf, classOf, SplitK0.of_congr.{u} (X := obj Λ M) (Y := obj Λ N)
+  rw [classOf, classOf, SplitK0.of_congr.{u} (X := of Λ M) (Y := of Λ N)
     (ObjectProperty.isoMk _ e.toModuleIso)]
 
 /-- **Stably free classes.** The class `[M] - n[Λ]` vanishes if and only if `M` is stably free of
 rank `n`: `M × Λᵏ ≃ Λⁿ⁺ᵏ` for some `k`. -/
 theorem classOf_eq_zero_iff (n : ℕ) :
     classOf Λ M n = 0 ↔ ∃ k : ℕ, Nonempty ((M × (Fin k → Λ)) ≃ₗ[Λ] (Fin (n + k) → Λ)) := by
-  rw [classOf, sub_eq_zero, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ))
+  rw [classOf, sub_eq_zero, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := of Λ (Fin n → Λ))
     (.refl _ _) (.refl _ _)]
   exact SplitK0.of_eq_of_iff_exists_prod_linearEquiv_fin (.refl _ _)
 
@@ -216,8 +221,8 @@ theorem classOf_eq_classOf_iff (n : ℕ) :
 
 /-- The class of a product is the sum of the classes, the ranks adding. -/
 theorem classOf_prod (n m : ℕ) : classOf Λ (M × N) (n + m) = classOf Λ M n + classOf Λ N m := by
-  rw [classOf, classOf, classOf, SplitK0.of_eq_add_of_linearEquiv_prod (X := obj Λ (M × N))
-    (P := obj Λ M) (Q := obj Λ N) (.refl _ _), add_nsmul]
+  rw [classOf, classOf, classOf, SplitK0.of_eq_add_of_linearEquiv_prod (X := of Λ (M × N))
+    (P := of Λ M) (Q := of Λ N) (.refl _ _), add_nsmul]
   abel
 
 variable (Λ) in
@@ -225,7 +230,7 @@ variable (Λ) in
 @[simp]
 theorem classOf_free (n : ℕ) : classOf Λ (Fin n → Λ) n = 0 := by
   rw [classOf, sub_eq_zero]
-  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ)) (R' := obj Λ Λ)
+  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := of Λ (Fin n → Λ)) (R' := of Λ Λ)
     (.refl _ _) (.refl _ _)
 
 /-- Extension of scalars on split `K₀` sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`, for every
