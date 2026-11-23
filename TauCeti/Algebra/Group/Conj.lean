@@ -33,6 +33,8 @@ conjugation action.
 
 * `TauCeti.isConj_inv_iff`: conjugacy is inherited by inverses in both directions.
 * `ConjClasses.inv_mk`: the inverse of the class of `g` is the class of `g⁻¹`.
+* `ConjClasses.conj_mem_carrier` and `ConjClasses.conj_inv_mem_carrier`: a conjugacy class is
+  closed under conjugation.
 * `TauCeti.IsRealClass`: a class containing an element conjugate to its own inverse, with
   `TauCeti.isRealClass_iff_inv_eq` identifying it with being fixed by inversion.
 * `ConjClasses.ncard_carrier_inv` and `ConjClasses.card_carrier_inv`: a conjugacy
@@ -58,6 +60,7 @@ conjugation action.
   the group, with `ConjClasses.card_carrier_cast_ne_zero` the consequence that the size of
   a class is nonzero in any semiring where the group order is, and
   `ConjClasses.card_carrier_div_card_ne_zero` the nonvanishing of `#C / #G` for a finite group.
+* `ConjClasses.mem_carrier_iff_of_isConj`: conjugate elements lie in the same conjugacy classes.
 * `ConjClasses.pow`: the power operation itself, with `C ^ j` its notation.
 * `ConjClasses.mem_pow_iff`: an element lies in `C ^ j` exactly when it is a
   `j`-th power of a member of `C`, with `ConjClasses.mk_pow` the computation rule.
@@ -151,6 +154,17 @@ class. -/
 theorem mem_carrier_inv_iff {C : ConjClasses G} {x : G} :
     x ∈ (C⁻¹).carrier ↔ x⁻¹ ∈ C.carrier := by
   rw [mem_carrier_iff_mk_eq, mem_carrier_iff_mk_eq, ← inv_mk, inv_eq_iff_eq_inv]
+
+/-- A conjugacy class is closed under conjugation. -/
+theorem conj_mem_carrier {C : ConjClasses G} {x : G} (hx : x ∈ C.carrier) (h : G) :
+    h * x * h⁻¹ ∈ C.carrier := by
+  rw [mem_carrier_iff_mk_eq] at hx ⊢
+  exact (mk_eq_mk_iff_isConj.2 (isConj_iff.2 ⟨h, rfl⟩)).symm.trans hx
+
+/-- A conjugacy class is closed under conjugation by an inverse. -/
+theorem conj_inv_mem_carrier {C : ConjClasses G} {x : G} (hx : x ∈ C.carrier) (h : G) :
+    h⁻¹ * x * h ∈ C.carrier := by
+  simpa using conj_mem_carrier hx h⁻¹
 
 /-- **A conjugacy class and its inverse have the same size**, inversion of the group restricting to
 a bijection between them.
@@ -354,6 +368,11 @@ theorem one_div_orderOf_div_card_div_card_carrier_mul_orderOf {G : Type*} [Group
       rw [div_div_eq_mul_div, (Nat.cast_commute (Nat.card C.carrier) (orderOf σ : K)).eq, one_div,
         inv_mul_cancel_left₀ hord]
   | inr h => simp [Nat.card_eq_zero_of_infinite]
+
+/-- Conjugate elements lie in the same conjugacy classes. -/
+theorem mem_carrier_iff_of_isConj {M : Type*} [Monoid M] {a b : M} {C : ConjClasses M}
+    (h : IsConj a b) : a ∈ C.carrier ↔ b ∈ C.carrier := by
+  rw [mem_carrier_iff_mk_eq, mem_carrier_iff_mk_eq, mk_eq_mk_iff_isConj.mpr h]
 
 /-! ### Powers of a conjugacy class -/
 

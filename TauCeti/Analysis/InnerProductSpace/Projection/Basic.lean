@@ -17,9 +17,10 @@ For submodules `U` and `V` of an inner product space admitting orthogonal projec
 `P_V P_U = (P_U P_V)†`, this is the identity `‖T‖ = ‖T†‖`, stated here without any completeness
 hypothesis on the ambient space, where the adjoint of a bounded operator need not exist.
 
-A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
-`dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
-same dimension. The orthogonal complement of a nonzero vector has codimension one, that of the
+A linear map `T P_U` that factors through the projection onto `U` has rank at most `rank U`, hence
+at most `dim U` when `U` is finite-dimensional. For subspaces `U` and `V` of the same finite
+dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same dimension. The orthogonal complement of a nonzero
+vector has codimension one, that of the
 span of a finite linearly independent family has codimension its cardinality, and fewer than
 `dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one. A nonzero
 vector followed by a linearly independent family in its orthogonal complement is linearly
@@ -39,7 +40,13 @@ The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the o
 `Uᗮ` never decreases the norm of `v`. Perturbing a subspace increases the distance from any vector
 to the subspace by at most the operator-norm change in orthogonal projection times the vector's
 norm. Over `ℝ`, Pythagoras splits the squared distance from a
-point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`.
+point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`. For the
+projection `P` onto a real line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`, so lying strictly on the
+same side of the orthogonal hyperplane is transitive, and `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫`.
+
+The orthogonal complement `Kᗮ` has the dimension of the quotient `E ⧸ K`. A linear isometry
+equivalence `e` carries the projection onto `K` to the projection onto its image:
+`⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫`.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
 nonzero vector of `U` is orthogonal to `V`. In that case the rank of `U` is at most that of
@@ -62,6 +69,7 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## Main results
 
+* `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
@@ -69,7 +77,10 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
   orthogonal projection is subspace inclusion.
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
+* `Submodule.lift_rank_comp_starProjection_le`: `rank (T P_U) ≤ rank U` for a linear map `T`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
+* `ContinuousLinearMap.rank_comp_starProjection_le`: a continuous linear map `T P_V` has rank at
+  most `n` when `V` has rank at most `n`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
@@ -104,6 +115,13 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `infDist w U ≤ infDist w V + ‖P_U - P_V‖ * ‖w‖`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
+* `Submodule.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one`: the sign identity
+  `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫` for the projection `P` onto a real line.
+* `Submodule.inner_starProjection_sq_of_finrank_eq_one`: `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫` for the
+  projection `P` onto a real line.
+* `Submodule.finrank_orthogonal_eq_finrank_quotient`: `dim Kᗮ = dim (E ⧸ K)`.
+* `Submodule.inner_starProjection_map_apply`: `⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫` for a linear
+  isometry equivalence `e`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -127,23 +145,29 @@ public section
 
 noncomputable section
 
+universe u v
+
 namespace Submodule
 
 open ContinuousLinearMap
 open scoped InnerProductSpace
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 : Type*} {E : Type u} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+
+/-- An orthogonal projection is idempotent, evaluated at a vector: `P_U (P_U x) = P_U x`. -/
+@[simp]
+theorem starProjection_starProjection_apply (x : E) :
+    U.starProjection (U.starProjection x) = U.starProjection x :=
+  starProjection_eq_self_iff.mpr (U.starProjection_apply_mem x)
 
 /-- The inner product with the orthogonal-complement projection is squared distance, embedded
 in the scalar field. In particular, this inner product is real even for complex scalars. -/
 theorem inner_starProjection_orthogonal_eq_infDist_sq (x : E) :
     inner 𝕜 x (Uᗮ.starProjection x) = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
-  have hfix : Uᗮ.starProjection (Uᗮ.starProjection x) = Uᗮ.starProjection x :=
-    starProjection_eq_self_iff.mpr (Uᗮ.starProjection_apply_mem x)
   calc
     inner 𝕜 x (Uᗮ.starProjection x) = inner 𝕜 (Uᗮ.starProjection x) (Uᗮ.starProjection x) := by
-      rw [Uᗮ.inner_starProjection_left_eq_right, hfix]
+      rw [Uᗮ.inner_starProjection_left_eq_right, starProjection_starProjection_apply]
     _ = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
       rw [inner_self_eq_norm_sq_to_K, Uᗮ.norm_starProjection_eq_infDist, orthogonal_orthogonal]
 
@@ -154,7 +178,7 @@ private theorem norm_starProjection_comp_starProjection_le :
   -- `P_U y = y`.
   refine opNorm_le_bound _ (norm_nonneg _) fun x => ?_
   set y := U.starProjection (V.starProjection x)
-  have hy : U.starProjection y = y := starProjection_eq_self_iff.mpr (U.starProjection_apply_mem _)
+  have hy : U.starProjection y = y := U.starProjection_starProjection_apply _
   have hinner : ⟪y, y⟫_𝕜 = ⟪x, V.starProjection y⟫_𝕜 :=
     calc ⟪y, y⟫_𝕜 = ⟪V.starProjection x, U.starProjection y⟫_𝕜 :=
           inner_starProjection_left_eq_right U _ _
@@ -181,13 +205,22 @@ theorem norm_starProjection_comp_starProjection_comm :
   (norm_starProjection_comp_starProjection_le U V).antisymm
     (norm_starProjection_comp_starProjection_le V U)
 
+/-- A linear map `T P_U` that factors through the projection onto `U` has rank at most
+`rank U`, the two ranks compared in a common universe. The target `F` carries no topology. -/
+theorem lift_rank_comp_starProjection_le {F : Type v} [AddCommMonoid F] [Module 𝕜 F]
+    (T : E →ₗ[𝕜] F) :
+    Cardinal.lift.{u} (T ∘ₗ (U.starProjection : E →ₗ[𝕜] E)).rank ≤
+      Cardinal.lift.{v} (Module.rank 𝕜 U) := by
+  refine (LinearMap.lift_rank_comp_le_right (U.starProjection : E →ₗ[𝕜] E) T).trans_eq ?_
+  rw [LinearMap.rank, range_starProjection]
+
 /-- A map `T P_U` that factors through the projection onto `U` has rank at most `dim U`. -/
-theorem finrank_range_comp_starProjection_le {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+theorem finrank_range_comp_starProjection_le {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
     [FiniteDimensional 𝕜 U] (T : E →ₗ[𝕜] F) :
     Module.finrank 𝕜 (LinearMap.range (T ∘ₗ (U.starProjection : E →ₗ[𝕜] E))) ≤
-      Module.finrank 𝕜 U := by
-  rw [LinearMap.range_comp, range_starProjection]
-  exact finrank_map_le _ _
+      Module.finrank 𝕜 U :=
+  Module.finrank_le_finrank_of_rank_le_rank (U.lift_rank_comp_starProjection_le T)
+    (Module.rank_lt_aleph0 𝕜 U)
 
 omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
 /-- For finite-dimensional subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same
@@ -413,6 +446,22 @@ theorem span_range_starProjection_orthogonal_basis_succ
   rw [hw']
   exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
 
+/-- The orthogonal complement of `K` has the dimension of the quotient by `K`; in particular the
+normal space of a hyperplane is a line. -/
+theorem finrank_orthogonal_eq_finrank_quotient (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
+    Module.finrank 𝕜 Kᗮ = Module.finrank 𝕜 (E ⧸ K) :=
+  (K.quotientEquivOfIsCompl Kᗮ K.isCompl_orthogonal).finrank_eq.symm
+
+/-- A linear isometry equivalence `e` transports orthogonal projections: projecting `e x` onto
+the image of `K` and pairing with `e y` gives the inner product of the projection of `x` onto `K`
+with `y`. -/
+theorem inner_starProjection_map_apply {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace 𝕜 E'] (e : E ≃ₗᵢ[𝕜] E') (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    (x y : E) :
+    ⟪(K.map (e.toLinearEquiv : E →ₗ[𝕜] E')).starProjection (e x), e y⟫_𝕜 =
+      ⟪K.starProjection x, y⟫_𝕜 := by
+  rw [starProjection_map_apply, e.symm_apply_apply, e.inner_map_map]
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -431,6 +480,29 @@ theorem norm_sub_add_sq_of_mem_of_mem_orthogonal (v : F) {b c : F} (hb : b ∈ R
     R.inner_right_of_mem_orthogonal (R.sub_mem (R.starProjection_apply_mem v) hb) hperp,
     norm_sub_sq_real, real_inner_comm]
   ring
+
+/-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`: if `n`
+spans the line, both sides are `⟪n, x⟫ ⟪n, y⟫² ⟪n, z⟫ / ‖n‖⁴`. In particular, lying strictly on the
+same side of the orthogonal hyperplane is a transitive relation. -/
+theorem inner_starProjection_mul_inner_starProjection_of_finrank_eq_one (L : Submodule ℝ F)
+    [L.HasOrthogonalProjection] (hL : Module.finrank ℝ L = 1) (x y z : F) :
+    ⟪L.starProjection x, y⟫_ℝ * ⟪L.starProjection y, z⟫_ℝ =
+      ⟪L.starProjection y, y⟫_ℝ * ⟪L.starProjection x, z⟫_ℝ := by
+  obtain ⟨n, hnL, hn⟩ := L.exists_mem_ne_zero_of_ne_bot (by rintro rfl; simp at hL)
+  obtain rfl := eq_span_singleton_of_mem_of_finrank_eq_one hL hnL hn
+  simp only [starProjection_singleton, real_inner_smul_left, RCLike.ofReal_real_eq_id, id_eq]
+  ring
+
+/-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫`. In particular
+`⟪P x, y⟫` vanishes exactly when `x` or `y` is orthogonal to the line. -/
+theorem inner_starProjection_sq_of_finrank_eq_one (L : Submodule ℝ F) [L.HasOrthogonalProjection]
+    (hL : Module.finrank ℝ L = 1) (x y : F) :
+    ⟪L.starProjection x, y⟫_ℝ ^ 2 = ⟪L.starProjection x, x⟫_ℝ * ⟪L.starProjection y, y⟫_ℝ := by
+  have h := L.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one hL x y x
+  have hyx : ⟪L.starProjection y, x⟫_ℝ = ⟪L.starProjection x, y⟫_ℝ := by
+    rw [inner_starProjection_left_eq_right, real_inner_comm]
+  rw [hyx] at h
+  rw [sq, h, mul_comm]
 
 end Real
 
@@ -475,6 +547,22 @@ theorem apply_mem_of_commute_starProjection {U : Submodule 𝕜 E} [U.HasOrthogo
 end Commute
 
 end Submodule
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- Composing with the projection onto a subspace of rank at most `n` has rank at most `n`.
+The target needs only a topology and a module structure; no target norm is used. -/
+theorem rank_comp_starProjection_le {F : Type*} [TopologicalSpace F] [AddCommMonoid F]
+    [Module 𝕜 F] (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
+    [V.HasOrthogonalProjection] (hV : Module.rank 𝕜 V ≤ n) :
+    (T ∘L V.starProjection).rank ≤ n := by
+  rw [toLinearMap_comp]
+  exact Cardinal.lift_le_nat_iff.mp <| (V.lift_rank_comp_starProjection_le (T : E →ₗ[𝕜] F)).trans
+    (by simpa using hV)
+
+end ContinuousLinearMap
 
 namespace TauCeti
 

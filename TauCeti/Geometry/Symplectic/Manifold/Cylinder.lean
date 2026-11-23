@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
+import TauCeti.Geometry.Manifold.DeRham.Wedge
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # The area form of the cylinder
@@ -30,6 +32,7 @@ two-form on a surface.
 * `TauCeti.eval₂_cylinderAreaForm`, `TauCeti.cylinderAreaForm_apply`: the area form evaluates as
   the determinant of two tangent vectors.
 * `TauCeti.isClosed_cylinderAreaForm`: the area form is closed.
+* `TauCeti.cylinderAreaForm_mem_exactForms`: the area form is exact, `dr ∧ dθ = d(r dθ)`.
 
 ## References
 
@@ -41,7 +44,7 @@ public section
 
 noncomputable section
 
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -82,5 +85,22 @@ def cylinderAreaClosedForm : closedForms (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddC
 @[simp]
 theorem coe_cylinderAreaClosedForm : (cylinderAreaClosedForm p).val = cylinderAreaForm p :=
   (rfl)
+
+/-- **The area form of the cylinder is exact**: it is the exterior derivative of the one-form
+`r dθ`, the coordinate function `r` of the line times the time form of the circle. -/
+theorem cylinderAreaForm_mem_exactForms :
+    cylinderAreaForm p ∈ exactForms (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 2 := by
+  let r : C^∞⟮𝓘(ℝ).prod 𝓘(ℝ), ℝ × AddCircle p; ℝ⟯ := ⟨Prod.fst, contMDiff_fst⟩
+  -- The pulled back coordinate form `dr` is the differential of `r`, and `dθ` is closed.
+  have hdr : SmoothForm.mpullback (M := ℝ × AddCircle p) Prod.fst contMDiff_fst
+      SmoothForm.realLineCoordForm ∈ exactForms (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 1 := by
+    rw [exactForms_succ]
+    refine ⟨SmoothForm.ofFunction r, Subtype.ext ?_⟩
+    rw [SmoothForm.coe_mpullback, mextDerivₗ_apply, SmoothForm.coe_ofFunction]
+    exact (SmoothForm.mpullback_realLineCoordForm _).symm
+  rw [cylinderAreaForm]
+  exact SmoothForm.wedge_mem_exactForms_of_left_mem hdr ((mem_closedForms _ _).mpr
+    ((SmoothForm.isClosed_def _).mp
+      ((AddCircle.isClosed_timeForm p).mpullback Prod.snd contMDiff_snd)))
 
 end TauCeti

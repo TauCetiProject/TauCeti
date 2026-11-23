@@ -11,8 +11,11 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 # Reindexing and currying continuous multilinear maps
 
 Mathlib's `ContinuousMultilinearMap.domDomCongrₗᵢ` packages the reindexing of the arguments of a
-continuous multilinear map along an equivalence of index types as a linear isometric equivalence.
-This file records its evaluation lemma.
+continuous multilinear map along an equivalence of index types as a linear isometric equivalence,
+and `continuousMultilinearCurryLeftEquiv` packages `ContinuousMultilinearMap.curryLeft` the same
+way. This file records the evaluation lemmas identifying these equivalences with the underlying
+operations, and how joining the last variable with Mathlib's
+`continuousMultilinearCurryRightEquiv'` interacts with separating the first one.
 
 Separating the last variable of a continuous multilinear map with
 `ContinuousMultilinearMap.curryRight` preserves distances, so it is `1`-Lipschitz; it also
@@ -26,6 +29,10 @@ sends `0` to `0`.
   `ContinuousMultilinearMap.lipschitzWith_curryRight`: separating the last variable preserves
   distances.
 * `ContinuousMultilinearMap.curryRight_zero`: separating the last variable of `0` gives `0`.
+* `ContinuousMultilinearMap.curryLeft_continuousMultilinearCurryRightEquiv'_symm`: separating the
+  first variable commutes with joining the last one.
+* `continuousMultilinearCurryLeftEquiv_eq_curryLeft`: `continuousMultilinearCurryLeftEquiv`
+  applied to a map is `ContinuousMultilinearMap.curryLeft`.
 -/
 
 public section
@@ -70,3 +77,40 @@ theorem lipschitzWith_curryRight :
 end curryRight
 
 end ContinuousMultilinearMap
+
+section CurryRight
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Separating the first variable commutes with joining the last one: for an `(n + 1)`-multilinear
+map `M` with values in `E →L[𝕜] F`, the first variable of the `(n + 2)`-multilinear map obtained by
+joining the last variable of `M` may be separated before the join. -/
+theorem ContinuousMultilinearMap.curryLeft_continuousMultilinearCurryRightEquiv'_symm {n : ℕ}
+    (M : E [×(n + 1)]→L[𝕜] (E →L[𝕜] F)) (v : E) :
+    ((continuousMultilinearCurryRightEquiv' 𝕜 (n + 1) E F).symm M).curryLeft v =
+      (continuousMultilinearCurryRightEquiv' 𝕜 n E F).symm (M.curryLeft v) :=
+  ContinuousMultilinearMap.ext fun w ↦ by
+    have hw : Fin.init (Fin.cons v w : Fin (n + 2) → E) = Fin.cons v (Fin.init w) := by
+      ext i
+      refine Fin.cases ?_ (fun j ↦ ?_) i
+      · rfl
+      · simp only [Fin.init, Fin.cons_succ, ← Fin.succ_castSucc]
+    simp [hw]
+
+end CurryRight
+
+section CurryLeft
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ} {Ei : Fin (n + 1) → Type*}
+  [∀ i, NormedAddCommGroup (Ei i)] [∀ i, NormedSpace 𝕜 (Ei i)] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Left currying of an `(n + 1)`-multilinear map by the currying equivalence is
+`ContinuousMultilinearMap.curryLeft`. -/
+theorem continuousMultilinearCurryLeftEquiv_eq_curryLeft (f : ContinuousMultilinearMap 𝕜 Ei G) :
+    continuousMultilinearCurryLeftEquiv 𝕜 Ei G f = f.curryLeft := by
+  ext x v
+  rw [continuousMultilinearCurryLeftEquiv_apply, ContinuousMultilinearMap.curryLeft_apply]
+
+end CurryLeft
