@@ -232,7 +232,7 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
 theorem toL1_eq_toLp [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
     (f : ConvolutionAlgebra α μ) :
     toL1 f = CompactlySupportedContinuousMap.toLp 1 μ ℂ f.ofConv :=
-  Lp.ext ((coeFn_toL1 f).trans (CompactlySupportedContinuousMap.coeFn_toLp ℂ f.ofConv).symm)
+  CompactlySupportedL1.toL1_eq_toLp ℂ f
 
 @[simp]
 theorem toL1_coefficientMul [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
@@ -255,38 +255,31 @@ variable [R1Space G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
 
 /-- The compact-support convolution algebra has dense image in `Lp A 1 μ` for any measure finite
 on compact sets and inner regular on sets of finite measure. -/
-theorem denseRange_toL1 : DenseRange (toL1 (α := α) (μ := μ)) := by
-  refine (CompactlySupportedContinuousMap.denseRange_toLp ENNReal.one_ne_top μ ℂ).mono ?_
-  rintro _ ⟨f, rfl⟩
-  exact ⟨toConv f, toL1_eq_toLp (toConv f)⟩
+theorem denseRange_toL1 : DenseRange (toL1 (α := α) (μ := μ)) :=
+  CompactlySupportedL1.denseRange_toL1 ℂ
 
 theorem denseRange_toL1LI : DenseRange (toL1LI α μ) :=
-  (funext toL1LI_apply : ⇑(toL1LI α μ) = ⇑(toL1 (α := α) (μ := μ))) ▸ denseRange_toL1
+  CompactlySupportedL1.denseRange_toL1LI ℂ
 
 variable (α μ) in
 /-- **Identification of the twisted `L¹` completion with Bochner `L¹`**: the canonical inclusion
 `toL1` extends to a complex linear isometric equivalence between
 `UniformSpace.Completion (ConvolutionAlgebra α μ)` and `Lp A 1 μ`. -/
-def completionEquivL1 : Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
-  (toL1LI α μ).fromCompletionEquivOfDenseRange denseRange_toL1LI
+abbrev completionEquivL1 : Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
+  CompactlySupportedL1.completionEquivL1 α A μ ℂ
 
-@[simp]
 theorem completionEquivL1_coe (f : ConvolutionAlgebra α μ) :
-    completionEquivL1 α μ f = toL1 f := by
-  rw [completionEquivL1,
-    (toL1LI α μ).fromCompletionEquivOfDenseRange_coe denseRange_toL1LI f, toL1LI_apply]
+    completionEquivL1 α μ f = toL1 f :=
+  CompactlySupportedL1.completionEquivL1_coe ℂ f
 
-@[simp]
 theorem completionEquivL1_symm_toL1 (f : ConvolutionAlgebra α μ) :
-    (completionEquivL1 α μ).symm (toL1 f) = f := by
-  rw [completionEquivL1, ← toL1LI_apply (α := α) (μ := μ),
-    (toL1LI α μ).fromCompletionEquivOfDenseRange_symm_apply denseRange_toL1LI f]
+    (completionEquivL1 α μ).symm (toL1 f) = f :=
+  CompactlySupportedL1.completionEquivL1_symm_toL1 ℂ f
 
-@[simp]
 theorem completionEquivL1_symm_toLp (f : C_c(G, A)) :
     (completionEquivL1 α μ).symm (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
-      ((toConv f : ConvolutionAlgebra α μ) : Completion (ConvolutionAlgebra α μ)) := by
-  rw [← toL1_eq_toLp, completionEquivL1_symm_toL1]
+      ((toConv f : ConvolutionAlgebra α μ) : Completion (ConvolutionAlgebra α μ)) :=
+  CompactlySupportedL1.completionEquivL1_symm_toLp ℂ f
 
 @[simp]
 theorem completionEquivL1_completion_coefficientMul (a : A)
@@ -333,9 +326,7 @@ theorem completionEquivL1_completion_translateLIE (r : G)
       α.translateLp μ 1 r (completionEquivL1 α μ x) := by
   induction x using Completion.induction_on with
   | hp =>
-    exact isClosed_eq
-      ((completionEquivL1 α μ).continuous.comp (translateLIE r).completion.continuous)
-      ((α.translateLp μ 1 r).continuous.comp (completionEquivL1 α μ).continuous)
+    exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih f =>
     rw [LinearIsometryEquiv.completion_apply_coe, completionEquivL1_coe, completionEquivL1_coe,
       toL1_translateLIE]

@@ -64,47 +64,51 @@ theorem integratedOperator_twistedInvolution (f : C_c(G, A)) :
 
 /-- The integrated form as a nonunital complex ⋆-algebra homomorphism on the compact-support
 convolution algebra. Its values are defined by Hilbert-space vector integrals. -/
-def integratedStarAlgHom : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) where
-  __ := P.integratedNonUnitalAlgHom μ
-  map_star' _ := by simp
+def integratedStarAlgHom : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
+  (P.integratedOperatorCLM μ).toNonUnitalStarAlgHomOfMulStar (fun f g => by simp)
+    (fun f => by simp)
 
 /-- Evaluation of the integrated ⋆-homomorphism uses the compactly supported coefficient
 function underlying the convolution-algebra element. -/
 @[simp]
 theorem integratedStarAlgHom_apply (f : ConvolutionAlgebra α μ) :
-    P.integratedStarAlgHom μ f = P.integratedOperator μ f.ofConv :=
-  P.integratedNonUnitalAlgHom_apply μ f
+    P.integratedStarAlgHom μ f = P.integratedOperator μ f.ofConv := by
+  rw [integratedStarAlgHom, ContinuousLinearMap.toNonUnitalStarAlgHomOfMulStar_apply,
+    integratedOperatorCLM_apply]
 
 /-- The integrated ⋆-homomorphism is bounded by the L¹ norm of the convolution algebra. -/
 theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
     ‖P.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
-  simpa [ConvolutionAlgebra.norm_eq_integral_norm] using P.norm_integratedOperator_le μ f.ofConv
+  rw [integratedStarAlgHom, ContinuousLinearMap.toNonUnitalStarAlgHomOfMulStar_apply]
+  exact ((P.integratedOperatorCLM μ).le_opNorm f).trans <|
+    mul_le_of_le_one_left (norm_nonneg f) (P.norm_integratedOperatorCLM_le μ)
 
 /-- The integrated ⋆-homomorphism is continuous in the L¹ topology. -/
 @[fun_prop]
 theorem continuous_integratedStarAlgHom : Continuous (P.integratedStarAlgHom μ) :=
-  (P.integratedOperatorCLM μ).continuous.congr fun f => by simp
+  (P.integratedOperatorCLM μ).continuous_toNonUnitalStarAlgHomOfMulStar _ _
 
 /-- The integrated form on `Completion (ConvolutionAlgebra α μ)` bundled as a nonunital complex
 `⋆`-algebra homomorphism. -/
 def integratedStarAlgHomL1 :
     Completion (ConvolutionAlgebra α μ) →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
-  (P.integratedStarAlgHom μ).fromCompletion (P.continuous_integratedStarAlgHom μ)
+  (P.integratedOperatorCLM μ).fromCompletionNonUnitalStarAlgHomOfMulStar (fun f g => by simp)
+    (fun f => by simp)
 
 @[simp]
 theorem toNonUnitalAlgHom_integratedStarAlgHomL1 :
     (P.integratedStarAlgHomL1 μ).toNonUnitalAlgHom = P.integratedOperatorL1 μ := by
-  rw [integratedStarAlgHomL1, NonUnitalStarAlgHom.toNonUnitalAlgHom_fromCompletion]
-  exact (P.integratedStarAlgHom μ).toNonUnitalAlgHom.fromCompletion_unique
-    (P.continuous_integratedStarAlgHom μ) (P.integratedOperatorL1 μ)
-    (P.continuous_integratedOperatorL1 μ) fun f => by simp
+  rw [integratedStarAlgHomL1,
+    ContinuousLinearMap.toNonUnitalAlgHom_fromCompletionNonUnitalStarAlgHomOfMulStar]
+  exact (P.integratedOperatorCLM μ).fromCompletionNonUnitalAlgHomOfMul_unique _
+    (P.integratedOperatorL1 μ) (P.continuous_integratedOperatorL1 μ) fun f => by simp
 
 @[simp]
 theorem integratedStarAlgHomL1_apply (x : Completion (ConvolutionAlgebra α μ)) :
     P.integratedStarAlgHomL1 μ x = P.integratedOperatorL1 μ x :=
   DFunLike.congr_fun (P.toNonUnitalAlgHom_integratedStarAlgHomL1 μ) x
 
-/-- The L¹ integrated form preserves the `⋆`-involution on the twisted L¹ completion. -/
+/-- The L¹ integrated form preserves the `⋆`-involution on the L¹ completion. -/
 @[simp]
 theorem integratedOperatorL1_star (x : Completion (ConvolutionAlgebra α μ)) :
     P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) := by
@@ -113,7 +117,7 @@ theorem integratedOperatorL1_star (x : Completion (ConvolutionAlgebra α μ)) :
 /-- The L¹ integrated `⋆`-homomorphism is continuous. -/
 @[fun_prop]
 theorem continuous_integratedStarAlgHomL1 : Continuous (P.integratedStarAlgHomL1 μ) :=
-  (P.integratedStarAlgHom μ).continuous_fromCompletion _
+  (P.integratedOperatorCLM μ).continuous_fromCompletionNonUnitalStarAlgHomOfMulStar _ _
 
 /-- The L¹ integrated `⋆`-homomorphism is a contraction on the twisted L¹ completion. -/
 theorem norm_integratedStarAlgHomL1_le (x : Completion (ConvolutionAlgebra α μ)) :

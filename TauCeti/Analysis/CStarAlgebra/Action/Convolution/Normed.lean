@@ -54,30 +54,20 @@ variable [OpensMeasurableSpace G] {α : CStarAction G A} {μ : Measure G}
   [IsFiniteMeasureOnCompacts μ]
 
 /-- Realize a compactly supported convolution coefficient as a Bochner L¹ class. -/
-def toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ :=
-  (CompactlySupportedContinuousMap.toLp 1 μ ℂ).comp (linearEquiv α μ).toLinearMap
+abbrev toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ :=
+  CompactlySupportedL1.toL1 ℂ
 
 /-- The L¹ class of a convolution coefficient is represented by its underlying function. -/
-theorem coeFn_toL1 (f : ConvolutionAlgebra α μ) : toL1 f =ᵐ[μ] f.ofConv := by
-  simpa [toL1] using CompactlySupportedContinuousMap.coeFn_toLp ℂ f.ofConv
-
-/-- The convolution algebra carries the L¹ seminorm, even for measures without full support. -/
-instance : SeminormedAddCommGroup (ConvolutionAlgebra α μ) :=
-  .induced _ _ (toL1 (α := α) (μ := μ)).toAddMonoidHom
-
-/-- The L¹ seminorm is compatible with the complex scalar action. -/
-instance : NormedSpace ℂ (ConvolutionAlgebra α μ) :=
-  .induced ℂ _ _ (toL1 (α := α) (μ := μ))
+theorem coeFn_toL1 (f : ConvolutionAlgebra α μ) : toL1 f =ᵐ[μ] f.ofConv :=
+  CompactlySupportedL1.coeFn_toL1 ℂ f
 
 /-- The norm of a convolution coefficient is its integral norm. -/
-theorem norm_eq_integral_norm (f : ConvolutionAlgebra α μ) : ‖f‖ = ∫ s, ‖f.ofConv s‖ ∂μ := by
-  exact (L1.norm_eq_integral_norm (toL1 f)).trans
-    (integral_congr_ae ((coeFn_toL1 f).fun_comp norm))
+theorem norm_eq_integral_norm (f : ConvolutionAlgebra α μ) : ‖f‖ = ∫ s, ‖f.ofConv s‖ ∂μ :=
+  CompactlySupportedL1.norm_eq_integral_norm f
 
-@[simp]
 theorem norm_toConv (f : C_c(G, A)) :
     ‖(toConv f : ConvolutionAlgebra α μ)‖ = ∫ s, ‖f s‖ ∂μ :=
-  norm_eq_integral_norm _
+  CompactlySupportedL1.norm_toConv f
 
 /-- The `L¹` norm of an elementary function is `(∫ |φ|) * ‖e‖`. -/
 @[simp]
@@ -87,13 +77,11 @@ theorem norm_smulRight (φ : C_c(G, ℝ)) (e : A) :
 
 variable (α μ) in
 /-- The linear isometry from the convolution algebra with its L¹ seminorm to Bochner L¹. -/
-def toL1LI : ConvolutionAlgebra α μ →ₗᵢ[ℂ] Lp A 1 μ where
-  __ := toL1
-  norm_map' _ := (rfl)
+abbrev toL1LI : ConvolutionAlgebra α μ →ₗᵢ[ℂ] Lp A 1 μ :=
+  CompactlySupportedL1.toL1LI α A μ ℂ
 
-@[simp]
 theorem toL1LI_apply (f : ConvolutionAlgebra α μ) : toL1LI α μ f = toL1 f :=
-  (rfl)
+  CompactlySupportedL1.toL1LI_apply ℂ f
 
 section Multiplication
 
@@ -103,9 +91,8 @@ variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 instance : NonUnitalSeminormedRing (ConvolutionAlgebra α μ) where
   __ : SeminormedAddCommGroup (ConvolutionAlgebra α μ) := inferInstance
   __ : NonUnitalRing (ConvolutionAlgebra α μ) := inferInstance
-  norm_mul_le f g := by
-    simpa only [norm_eq_integral_norm, ofConv_mul] using
-      α.integral_norm_convolution_le μ f.ofConv g.ofConv
+  norm_mul_le := CompactlySupportedL1.norm_mul_le_of (fun f g => α.convolution μ f g) ofConv_mul
+    (fun f g => α.integral_norm_convolution_le μ f g)
 
 end Multiplication
 
@@ -115,13 +102,7 @@ variable [μ.IsOpenPosMeasure]
 
 /-- Full support of the measure makes the realization of continuous coefficients injective. -/
 theorem toL1_injective : Function.Injective (toL1 (α := α) (μ := μ)) :=
-  (CompactlySupportedContinuousMap.toLp_injective 1 μ ℂ).comp (linearEquiv α μ).injective
-
-/-- For a full-support measure the L¹ seminorm separates convolution coefficients. -/
-instance : NormedAddCommGroup (ConvolutionAlgebra α μ) :=
-  .ofSeparation fun f hf => toL1_injective <| by
-    rw [map_zero]
-    exact norm_eq_zero.1 (((toL1LI α μ).norm_map f).trans hf)
+  CompactlySupportedL1.toL1_injective ℂ
 
 variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 
@@ -142,15 +123,16 @@ variable {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
 /-- For a left-invariant measure the twisted involution is an isometry for the L¹ seminorm,
 `‖f*‖₁ = ‖f‖₁`: the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))` is exactly the density
 of the inverted Haar measure. -/
-theorem norm_star (f : ConvolutionAlgebra α μ) : ‖star f‖ = ‖f‖ := by
-  rw [norm_eq_integral_norm, ofConv_star, α.integral_norm_twistedInvolution μ f.ofConv,
-    norm_eq_integral_norm]
+theorem norm_star (f : ConvolutionAlgebra α μ) : ‖star f‖ = ‖f‖ :=
+  CompactlySupportedL1.norm_star_of α.twistedInvolution ofConv_star
+    (α.integral_norm_twistedInvolution μ) f
 
 /-- For a left-invariant measure the twisted convolution algebra is a seminormed ⋆-algebra. Its
 completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
 ⋆-algebra. -/
 instance : NormedStarGroup (ConvolutionAlgebra α μ) :=
-  ⟨fun f => (norm_star f).le⟩
+  CompactlySupportedL1.normedStarGroupOf α.twistedInvolution ofConv_star
+    (α.integral_norm_twistedInvolution μ)
 
 end Star
 

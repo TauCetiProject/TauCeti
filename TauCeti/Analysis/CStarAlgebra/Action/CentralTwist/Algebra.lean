@@ -64,86 +64,111 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A] 
 /-- The `ω`-twisted convolution ⋆-algebra of `(A, G, α, ω)` with respect to `μ`: compactly
 supported continuous functions `G → A` equipped with `ω.convolution μ`, `ω.involution`, and the
 Bochner `L¹` seminorm. -/
-structure TwistedConvolutionAlgebra {α : CStarAction G A} (ω : CentralCocycle α)
-    (μ : Measure G) where
-  /-- Regard a compactly supported function as an element of the twisted convolution algebra. -/
-  toConv ::
-  /-- The compactly supported function underlying an element of the twisted convolution algebra. -/
-  ofConv : C_c(G, A)
+abbrev TwistedConvolutionAlgebra {α : CStarAction G A} (ω : CentralCocycle α)
+    (μ : Measure G) : Type _ :=
+  CompactlySupportedL1 ω A μ
 
 namespace TwistedConvolutionAlgebra
 
 variable {α : CStarAction G A} {ω : CentralCocycle α} {μ : Measure G}
 
-@[simp] theorem ofConv_toConv (f : C_c(G, A)) :
-    (toConv f : TwistedConvolutionAlgebra ω μ).ofConv = f := (rfl)
+/-- Regard a compactly supported function as an element of the twisted convolution algebra. -/
+abbrev toConv (f : C_c(G, A)) : TwistedConvolutionAlgebra ω μ := CompactlySupportedL1.toConv f
 
-@[simp] theorem toConv_ofConv (f : TwistedConvolutionAlgebra ω μ) : toConv f.ofConv = f := (rfl)
+/-- The compactly supported function underlying an element of the twisted convolution algebra. -/
+abbrev ofConv (f : TwistedConvolutionAlgebra ω μ) : C_c(G, A) := CompactlySupportedL1.ofConv f
+
+theorem ofConv_toConv (f : C_c(G, A)) :
+    (toConv f : TwistedConvolutionAlgebra ω μ).ofConv = f :=
+  CompactlySupportedL1.ofConv_toConv f
+
+theorem toConv_ofConv (f : TwistedConvolutionAlgebra ω μ) : toConv f.ofConv = f :=
+  CompactlySupportedL1.toConv_ofConv f
 
 theorem ofConv_injective :
     Function.Injective (ofConv : TwistedConvolutionAlgebra ω μ → C_c(G, A)) :=
-  fun f g h => by rw [← toConv_ofConv f, h, toConv_ofConv]
+  CompactlySupportedL1.ofConv_injective
 
 theorem toConv_injective :
     Function.Injective (toConv : C_c(G, A) → TwistedConvolutionAlgebra ω μ) :=
-  fun f g h => by rw [← ofConv_toConv (ω := ω) (μ := μ) f, h, ofConv_toConv]
+  CompactlySupportedL1.toConv_injective
 
-@[ext] theorem ext {f g : TwistedConvolutionAlgebra ω μ} (h : f.ofConv = g.ofConv) : f = g :=
+theorem ext {f g : TwistedConvolutionAlgebra ω μ} (h : f.ofConv = g.ofConv) : f = g :=
   ofConv_injective h
 
 variable (ω μ) in
 /-- `ofConv` and `toConv` as an equivalence with `C_c(G, A)`. -/
-def equiv : TwistedConvolutionAlgebra ω μ ≃ C_c(G, A) :=
-  ⟨ofConv, toConv, fun _ => rfl, fun _ => rfl⟩
+abbrev equiv : TwistedConvolutionAlgebra ω μ ≃ C_c(G, A) :=
+  CompactlySupportedL1.equiv ω A μ
 
-@[simp] theorem equiv_apply (f : TwistedConvolutionAlgebra ω μ) :
-    equiv ω μ f = f.ofConv := (rfl)
+theorem equiv_apply (f : TwistedConvolutionAlgebra ω μ) :
+    equiv ω μ f = f.ofConv :=
+  CompactlySupportedL1.equiv_apply f
 
-@[simp] theorem equiv_symm_apply (f : C_c(G, A)) : (equiv ω μ).symm f = toConv f := (rfl)
-
-instance : AddCommGroup (TwistedConvolutionAlgebra ω μ) := (equiv ω μ).addCommGroup
+theorem equiv_symm_apply (f : C_c(G, A)) : (equiv ω μ).symm f = toConv f :=
+  CompactlySupportedL1.equiv_symm_apply f
 
 variable (ω μ) in
 /-- `ofConv` as an additive equivalence with `C_c(G, A)`. -/
-def addEquiv : TwistedConvolutionAlgebra ω μ ≃+ C_c(G, A) :=
-  { equiv ω μ with map_add' _ _ := rfl }
+abbrev addEquiv : TwistedConvolutionAlgebra ω μ ≃+ C_c(G, A) :=
+  CompactlySupportedL1.addEquiv ω A μ
 
-@[simp] theorem addEquiv_apply (f : TwistedConvolutionAlgebra ω μ) :
-    addEquiv ω μ f = f.ofConv := (rfl)
+theorem addEquiv_apply (f : TwistedConvolutionAlgebra ω μ) :
+    addEquiv ω μ f = f.ofConv :=
+  CompactlySupportedL1.addEquiv_apply f
 
-@[simp] theorem addEquiv_symm_apply (f : C_c(G, A)) : (addEquiv ω μ).symm f = toConv f := (rfl)
+theorem addEquiv_symm_apply (f : C_c(G, A)) : (addEquiv ω μ).symm f = toConv f :=
+  CompactlySupportedL1.addEquiv_symm_apply f
 
-instance : Module ℂ (TwistedConvolutionAlgebra ω μ) := (addEquiv ω μ).module ℂ
+theorem ofConv_zero : (0 : TwistedConvolutionAlgebra ω μ).ofConv = 0 :=
+  CompactlySupportedL1.ofConv_zero
 
-@[simp] theorem ofConv_zero : (0 : TwistedConvolutionAlgebra ω μ).ofConv = 0 := (rfl)
-@[simp] theorem ofConv_add (f g : TwistedConvolutionAlgebra ω μ) :
-    (f + g).ofConv = f.ofConv + g.ofConv := (rfl)
-@[simp] theorem ofConv_neg (f : TwistedConvolutionAlgebra ω μ) : (-f).ofConv = -f.ofConv := (rfl)
-@[simp] theorem ofConv_sub (f g : TwistedConvolutionAlgebra ω μ) :
-    (f - g).ofConv = f.ofConv - g.ofConv := (rfl)
-@[simp] theorem ofConv_smul (c : ℂ) (f : TwistedConvolutionAlgebra ω μ) :
-    (c • f).ofConv = c • f.ofConv := (rfl)
+theorem ofConv_add (f g : TwistedConvolutionAlgebra ω μ) :
+    (f + g).ofConv = f.ofConv + g.ofConv :=
+  CompactlySupportedL1.ofConv_add f g
 
-@[simp] theorem toConv_zero : (toConv 0 : TwistedConvolutionAlgebra ω μ) = 0 := (rfl)
-@[simp] theorem toConv_add (f g : C_c(G, A)) :
-    (toConv (f + g) : TwistedConvolutionAlgebra ω μ) = toConv f + toConv g := (rfl)
-@[simp] theorem toConv_neg (f : C_c(G, A)) :
-    (toConv (-f) : TwistedConvolutionAlgebra ω μ) = -toConv f := (rfl)
-@[simp] theorem toConv_sub (f g : C_c(G, A)) :
-    (toConv (f - g) : TwistedConvolutionAlgebra ω μ) = toConv f - toConv g := (rfl)
-@[simp] theorem toConv_smul (c : ℂ) (f : C_c(G, A)) :
-    (toConv (c • f) : TwistedConvolutionAlgebra ω μ) = c • toConv f := (rfl)
+theorem ofConv_neg (f : TwistedConvolutionAlgebra ω μ) : (-f).ofConv = -f.ofConv :=
+  CompactlySupportedL1.ofConv_neg f
+
+theorem ofConv_sub (f g : TwistedConvolutionAlgebra ω μ) :
+    (f - g).ofConv = f.ofConv - g.ofConv :=
+  CompactlySupportedL1.ofConv_sub f g
+
+theorem ofConv_smul (c : ℂ) (f : TwistedConvolutionAlgebra ω μ) :
+    (c • f).ofConv = c • f.ofConv :=
+  CompactlySupportedL1.ofConv_smul c f
+
+theorem toConv_zero : (toConv 0 : TwistedConvolutionAlgebra ω μ) = 0 :=
+  CompactlySupportedL1.toConv_zero
+
+theorem toConv_add (f g : C_c(G, A)) :
+    (toConv (f + g) : TwistedConvolutionAlgebra ω μ) = toConv f + toConv g :=
+  CompactlySupportedL1.toConv_add f g
+
+theorem toConv_neg (f : C_c(G, A)) :
+    (toConv (-f) : TwistedConvolutionAlgebra ω μ) = -toConv f :=
+  CompactlySupportedL1.toConv_neg f
+
+theorem toConv_sub (f g : C_c(G, A)) :
+    (toConv (f - g) : TwistedConvolutionAlgebra ω μ) = toConv f - toConv g :=
+  CompactlySupportedL1.toConv_sub f g
+
+theorem toConv_smul (c : ℂ) (f : C_c(G, A)) :
+    (toConv (c • f) : TwistedConvolutionAlgebra ω μ) = c • toConv f :=
+  CompactlySupportedL1.toConv_smul c f
 
 variable (ω μ) in
 /-- `ofConv` as a complex linear equivalence with `C_c(G, A)`. -/
-def linearEquiv : TwistedConvolutionAlgebra ω μ ≃ₗ[ℂ] C_c(G, A) :=
-  { addEquiv ω μ with map_smul' _ _ := rfl }
+abbrev linearEquiv : TwistedConvolutionAlgebra ω μ ≃ₗ[ℂ] C_c(G, A) :=
+  CompactlySupportedL1.linearEquiv ω A μ ℂ
 
-@[simp] theorem linearEquiv_apply (f : TwistedConvolutionAlgebra ω μ) :
-    linearEquiv ω μ f = f.ofConv := (rfl)
+theorem linearEquiv_apply (f : TwistedConvolutionAlgebra ω μ) :
+    linearEquiv ω μ f = f.ofConv :=
+  CompactlySupportedL1.linearEquiv_apply f
 
-@[simp] theorem linearEquiv_symm_apply (f : C_c(G, A)) :
-    (linearEquiv ω μ).symm f = toConv f := (rfl)
+theorem linearEquiv_symm_apply (f : C_c(G, A)) :
+    (linearEquiv ω μ).symm f = toConv f :=
+  CompactlySupportedL1.linearEquiv_symm_apply f
 
 /-! ### Cocycle-twisted convolution product -/
 
@@ -161,24 +186,25 @@ instance : Mul (TwistedConvolutionAlgebra ω μ) where
     (toConv (ω.convolution μ f g) : TwistedConvolutionAlgebra ω μ) =
       toConv f * toConv g := (rfl)
 
-instance : NonUnitalNonAssocRing (TwistedConvolutionAlgebra ω μ) where
-  left_distrib _ _ _ := by ext1; simp
-  right_distrib _ _ _ := by ext1; simp
-  zero_mul _ := by ext1; simp
-  mul_zero _ := by ext1; simp
+instance : NonUnitalNonAssocRing (TwistedConvolutionAlgebra ω μ) :=
+  CompactlySupportedL1.nonUnitalNonAssocRingOf (fun f g => ω.convolution μ f g) ofConv_mul
+    (fun _ _ _ => by simp) (fun _ _ _ => by simp) (fun _ => by simp) (fun _ => by simp)
 
 instance :
-    IsScalarTower ℂ (TwistedConvolutionAlgebra ω μ) (TwistedConvolutionAlgebra ω μ) where
-  smul_assoc _ _ _ := by ext1; simp
+    IsScalarTower ℂ (TwistedConvolutionAlgebra ω μ) (TwistedConvolutionAlgebra ω μ) :=
+  CompactlySupportedL1.isScalarTowerOf (fun f g => ω.convolution μ f g) ofConv_mul
+    fun _ _ _ => by simp
 
 instance :
-    SMulCommClass ℂ (TwistedConvolutionAlgebra ω μ) (TwistedConvolutionAlgebra ω μ) where
-  smul_comm _ _ _ := by ext1; simp
+    SMulCommClass ℂ (TwistedConvolutionAlgebra ω μ) (TwistedConvolutionAlgebra ω μ) :=
+  CompactlySupportedL1.smulCommClassOf (fun f g => ω.convolution μ f g) ofConv_mul
+    fun _ _ _ => by simp
 
 variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 
-instance instNonUnitalRing : NonUnitalRing (TwistedConvolutionAlgebra ω μ) where
-  mul_assoc _ _ _ := by ext1; simp [CentralCocycle.convolution_assoc]
+instance instNonUnitalRing : NonUnitalRing (TwistedConvolutionAlgebra ω μ) :=
+  CompactlySupportedL1.nonUnitalRingOf (fun f g => ω.convolution μ f g) ofConv_mul
+    fun _ _ _ => by simp [CentralCocycle.convolution_assoc]
 
 end Mul
 
@@ -197,18 +223,19 @@ instance : Star (TwistedConvolutionAlgebra ω μ) where
 @[simp] theorem toConv_involution (f : C_c(G, A)) :
     (toConv (ω.involution f) : TwistedConvolutionAlgebra ω μ) = star (toConv f) := (rfl)
 
-instance : InvolutiveStar (TwistedConvolutionAlgebra ω μ) where
-  star_involutive _ := by ext1; simp
+instance : InvolutiveStar (TwistedConvolutionAlgebra ω μ) :=
+  CompactlySupportedL1.involutiveStarOf ω.involution ofConv_star fun _ => by simp
 
-instance : StarModule ℂ (TwistedConvolutionAlgebra ω μ) where
-  star_smul _ _ := by ext1; simp
+instance : StarModule ℂ (TwistedConvolutionAlgebra ω μ) :=
+  CompactlySupportedL1.starModuleOf ω.involution ofConv_star fun _ _ => by simp
 
 variable [OpensMeasurableSpace G] [MeasurableMul G] [IsFiniteMeasureOnCompacts μ]
   [μ.IsMulLeftInvariant]
 
-instance instStarRing : StarRing (TwistedConvolutionAlgebra ω μ) where
-  star_mul _ _ := by ext1; simp [CentralCocycle.involution_convolution]
-  star_add _ _ := by ext1; simp
+instance instStarRing : StarRing (TwistedConvolutionAlgebra ω μ) :=
+  CompactlySupportedL1.starRingOf (fun f g => ω.convolution μ f g) ω.involution ofConv_mul
+    ofConv_star ofConv_add (fun _ _ => by simp) fun _ _ => by
+      simp [CentralCocycle.involution_convolution]
 
 end Star
 
@@ -219,40 +246,35 @@ section Normed
 variable [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
 
 /-- Realize a compactly supported twisted convolution coefficient as a Bochner `L¹` class. -/
-def toL1 : TwistedConvolutionAlgebra ω μ →ₗ[ℂ] Lp A 1 μ :=
-  (CompactlySupportedContinuousMap.toLp 1 μ ℂ).comp (linearEquiv ω μ).toLinearMap
+abbrev toL1 : TwistedConvolutionAlgebra ω μ →ₗ[ℂ] Lp A 1 μ :=
+  CompactlySupportedL1.toL1 ℂ
 
 /-- The `L¹` class of a twisted convolution coefficient is represented by its underlying
 function. -/
-theorem coeFn_toL1 (f : TwistedConvolutionAlgebra ω μ) : toL1 f =ᵐ[μ] f.ofConv := by
-  simpa [toL1] using CompactlySupportedContinuousMap.coeFn_toLp ℂ f.ofConv
+theorem coeFn_toL1 (f : TwistedConvolutionAlgebra ω μ) : toL1 f =ᵐ[μ] f.ofConv :=
+  CompactlySupportedL1.coeFn_toL1 ℂ f
 
-instance : SeminormedAddCommGroup (TwistedConvolutionAlgebra ω μ) :=
-  .induced _ _ (toL1 (ω := ω) (μ := μ)).toAddMonoidHom
-
-instance : NormedSpace ℂ (TwistedConvolutionAlgebra ω μ) :=
-  .induced ℂ _ _ (toL1 (ω := ω) (μ := μ))
-
-theorem norm_def (f : TwistedConvolutionAlgebra ω μ) : ‖f‖ = ‖toL1 f‖ := (rfl)
+theorem norm_def (f : TwistedConvolutionAlgebra ω μ) : ‖f‖ = ‖toL1 f‖ :=
+  CompactlySupportedL1.norm_def ℂ f
 
 /-- The norm of a twisted convolution coefficient is its `L¹` integral norm. -/
 theorem norm_eq_integral_norm (f : TwistedConvolutionAlgebra ω μ) :
     ‖f‖ = ∫ s, ‖f.ofConv s‖ ∂μ :=
-  (L1.norm_eq_integral_norm (toL1 f)).trans <| integral_congr_ae <|
-    (coeFn_toL1 f).fun_comp norm
+  CompactlySupportedL1.norm_eq_integral_norm f
 
-@[simp] theorem norm_toConv (f : C_c(G, A)) :
+theorem norm_toConv (f : C_c(G, A)) :
     ‖(toConv f : TwistedConvolutionAlgebra ω μ)‖ = ∫ s, ‖f s‖ ∂μ :=
-  norm_eq_integral_norm _
+  CompactlySupportedL1.norm_toConv f
 
 variable (ω μ) in
 /-- The linear isometry from the twisted convolution algebra with its `L¹` seminorm to Bochner
 `L¹`. -/
-def toL1LI : TwistedConvolutionAlgebra ω μ →ₗᵢ[ℂ] Lp A 1 μ :=
-  { toL1 with norm_map' _ := rfl }
+abbrev toL1LI : TwistedConvolutionAlgebra ω μ →ₗᵢ[ℂ] Lp A 1 μ :=
+  CompactlySupportedL1.toL1LI ω A μ ℂ
 
-@[simp] theorem toL1LI_apply (f : TwistedConvolutionAlgebra ω μ) :
-    toL1LI ω μ f = toL1 f := (rfl)
+theorem toL1LI_apply (f : TwistedConvolutionAlgebra ω μ) :
+    toL1LI ω μ f = toL1 f :=
+  CompactlySupportedL1.toL1LI_apply ℂ f
 
 section Multiplication
 
@@ -261,9 +283,8 @@ variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 instance : NonUnitalSeminormedRing (TwistedConvolutionAlgebra ω μ) where
   __ : SeminormedAddCommGroup (TwistedConvolutionAlgebra ω μ) := inferInstance
   __ : NonUnitalRing (TwistedConvolutionAlgebra ω μ) := inferInstance
-  norm_mul_le f g := by
-    simpa only [norm_eq_integral_norm, ofConv_mul] using
-      ω.integral_norm_convolution_le μ f.ofConv g.ofConv
+  norm_mul_le := CompactlySupportedL1.norm_mul_le_of (fun f g => ω.convolution μ f g) ofConv_mul
+    (fun f g => ω.integral_norm_convolution_le μ f g)
 
 end Multiplication
 
@@ -273,11 +294,7 @@ variable [μ.IsOpenPosMeasure]
 
 /-- Full support of `μ` makes `toL1` injective on continuous coefficients. -/
 theorem toL1_injective : Function.Injective (toL1 (ω := ω) (μ := μ)) :=
-  (CompactlySupportedContinuousMap.toLp_injective 1 μ ℂ).comp (linearEquiv ω μ).injective
-
-instance : NormedAddCommGroup (TwistedConvolutionAlgebra ω μ) :=
-  .ofSeparation fun f hf => toL1_injective <| by
-    rw [map_zero]; exact norm_eq_zero.1 (((toL1LI ω μ).norm_map f).trans hf)
+  CompactlySupportedL1.toL1_injective ℂ
 
 variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 
@@ -296,11 +313,11 @@ variable [IsFiniteMeasureOnCompacts μ] [IsTopologicalGroup G] [LocallyCompactSp
 
 /-- For a left-invariant measure, the `ω`-twisted involution is an `L¹` isometry:
 `‖star f‖ = ‖f‖`. -/
-theorem norm_star (f : TwistedConvolutionAlgebra ω μ) : ‖star f‖ = ‖f‖ := by
-  rw [norm_eq_integral_norm, ofConv_star, ω.integral_norm_involution μ f.ofConv,
-    norm_eq_integral_norm]
+theorem norm_star (f : TwistedConvolutionAlgebra ω μ) : ‖star f‖ = ‖f‖ :=
+  CompactlySupportedL1.norm_star_of ω.involution ofConv_star (ω.integral_norm_involution μ) f
 
-instance : NormedStarGroup (TwistedConvolutionAlgebra ω μ) := ⟨fun f => (norm_star f).le⟩
+instance : NormedStarGroup (TwistedConvolutionAlgebra ω μ) :=
+  CompactlySupportedL1.normedStarGroupOf ω.involution ofConv_star (ω.integral_norm_involution μ)
 
 end NormedStar
 
@@ -311,44 +328,40 @@ section CompletionEquiv
 theorem toL1_eq_toLp [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
     (f : TwistedConvolutionAlgebra ω μ) :
     toL1 f = CompactlySupportedContinuousMap.toLp 1 μ ℂ f.ofConv :=
-  Lp.ext ((coeFn_toL1 f).trans (CompactlySupportedContinuousMap.coeFn_toLp ℂ f.ofConv).symm)
+  CompactlySupportedL1.toL1_eq_toLp ℂ f
 
 variable [R1Space G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
   [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
 
 /-- The compact-support twisted convolution algebra has dense image in `Lp A 1 μ` for any
 measure finite on compact sets and inner regular on sets of finite measure. -/
-theorem denseRange_toL1 : DenseRange (toL1 (ω := ω) (μ := μ)) := by
-  refine (CompactlySupportedContinuousMap.denseRange_toLp ENNReal.one_ne_top μ ℂ).mono ?_
-  rintro _ ⟨f, rfl⟩
-  exact ⟨toConv f, toL1_eq_toLp (toConv f)⟩
+theorem denseRange_toL1 : DenseRange (toL1 (ω := ω) (μ := μ)) :=
+  CompactlySupportedL1.denseRange_toL1 ℂ
 
 /-- `toL1LI` has dense range in `Lp A 1 μ`. -/
 theorem denseRange_toL1LI : DenseRange (toL1LI ω μ) :=
-  (funext toL1LI_apply : ⇑(toL1LI ω μ) = ⇑(toL1 (ω := ω) (μ := μ))) ▸ denseRange_toL1
+  CompactlySupportedL1.denseRange_toL1LI ℂ
 
 variable (ω μ) in
 /-- **Identification of the cocycle-twisted `L¹` completion with Bochner `L¹`**: the canonical
 inclusion `toL1` extends to a complex linear isometric equivalence between
 `UniformSpace.Completion (TwistedConvolutionAlgebra ω μ)` and `Lp A 1 μ`. -/
-def completionEquivL1 : Completion (TwistedConvolutionAlgebra ω μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
-  (toL1LI ω μ).fromCompletionEquivOfDenseRange denseRange_toL1LI
+abbrev completionEquivL1 : Completion (TwistedConvolutionAlgebra ω μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
+  CompactlySupportedL1.completionEquivL1 ω A μ ℂ
 
-@[simp] theorem completionEquivL1_coe (f : TwistedConvolutionAlgebra ω μ) :
-    completionEquivL1 ω μ f = toL1 f := by
-  rw [completionEquivL1,
-    (toL1LI ω μ).fromCompletionEquivOfDenseRange_coe denseRange_toL1LI f, toL1LI_apply]
+theorem completionEquivL1_coe (f : TwistedConvolutionAlgebra ω μ) :
+    completionEquivL1 ω μ f = toL1 f :=
+  CompactlySupportedL1.completionEquivL1_coe ℂ f
 
-@[simp] theorem completionEquivL1_symm_toL1 (f : TwistedConvolutionAlgebra ω μ) :
-    (completionEquivL1 ω μ).symm (toL1 f) = f := by
-  rw [completionEquivL1, ← toL1LI_apply (ω := ω) (μ := μ),
-    (toL1LI ω μ).fromCompletionEquivOfDenseRange_symm_apply denseRange_toL1LI f]
+theorem completionEquivL1_symm_toL1 (f : TwistedConvolutionAlgebra ω μ) :
+    (completionEquivL1 ω μ).symm (toL1 f) = f :=
+  CompactlySupportedL1.completionEquivL1_symm_toL1 ℂ f
 
-@[simp] theorem completionEquivL1_symm_toLp (f : C_c(G, A)) :
+theorem completionEquivL1_symm_toLp (f : C_c(G, A)) :
     (completionEquivL1 ω μ).symm (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
       ((toConv f : TwistedConvolutionAlgebra ω μ) :
-        Completion (TwistedConvolutionAlgebra ω μ)) := by
-  rw [← toL1_eq_toLp, completionEquivL1_symm_toL1]
+        Completion (TwistedConvolutionAlgebra ω μ)) :=
+  CompactlySupportedL1.completionEquivL1_symm_toLp ℂ f
 
 end CompletionEquiv
 

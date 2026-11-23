@@ -56,61 +56,53 @@ variable [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G)
 /-- The integrated form bundled as a contractive continuous linear map on
 `TwistedConvolutionAlgebra ω μ`. -/
 def integratedOperatorCLM : TwistedConvolutionAlgebra ω μ →L[ℂ] (H →L[ℂ] H) :=
-  ((P.integratedOperator μ).comp
-      (TwistedConvolutionAlgebra.linearEquiv ω μ).toLinearMap).mkContinuous
-    1 fun f => by
-      simpa [TwistedConvolutionAlgebra.norm_eq_integral_norm] using
-        P.norm_integratedOperator_le μ f.ofConv
+  CompactlySupportedL1.liftCLM (P.integratedOperator μ) 1 fun f => by
+    simpa only [one_mul] using P.norm_integratedOperator_le μ f
 
 @[simp] theorem integratedOperatorCLM_apply (f : TwistedConvolutionAlgebra ω μ) :
-    P.integratedOperatorCLM μ f = P.integratedOperator μ f.ofConv := by
-  simp [integratedOperatorCLM]
+    P.integratedOperatorCLM μ f = P.integratedOperator μ f.ofConv :=
+  CompactlySupportedL1.liftCLM_apply (P.integratedOperator μ) _ f
 
 theorem norm_integratedOperatorCLM_le : ‖P.integratedOperatorCLM μ‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f => by
-    simpa [TwistedConvolutionAlgebra.norm_eq_integral_norm] using
-      P.norm_integratedOperator_le μ f.ofConv
+  CompactlySupportedL1.norm_liftCLM_le (P.integratedOperator μ) zero_le_one _
 
 section Multiplication
 
 variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 
 /-- The integrated form as a nonunital algebra homomorphism on `TwistedConvolutionAlgebra ω μ`. -/
-def integratedNonUnitalAlgHom : TwistedConvolutionAlgebra ω μ →ₙₐ[ℂ] (H →L[ℂ] H) where
-  toFun := P.integratedOperatorCLM μ
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_smul' := map_smul _
-  map_mul' _ _ := by simp
+def integratedNonUnitalAlgHom : TwistedConvolutionAlgebra ω μ →ₙₐ[ℂ] (H →L[ℂ] H) :=
+  (P.integratedOperatorCLM μ).toNonUnitalAlgHomOfMul fun f g => by simp
 
 @[simp] theorem integratedNonUnitalAlgHom_apply (f : TwistedConvolutionAlgebra ω μ) :
     P.integratedNonUnitalAlgHom μ f = P.integratedOperator μ f.ofConv := by
-  simp [integratedNonUnitalAlgHom]
+  rw [integratedNonUnitalAlgHom, ContinuousLinearMap.toNonUnitalAlgHomOfMul_apply,
+    integratedOperatorCLM_apply]
 
 @[fun_prop] theorem continuous_integratedNonUnitalAlgHom :
     Continuous (P.integratedNonUnitalAlgHom μ) :=
-  (P.integratedOperatorCLM μ).continuous
+  (P.integratedOperatorCLM μ).continuous_toNonUnitalAlgHomOfMul _
 
 /-- Extension by continuity of the integrated form to
 `Completion (TwistedConvolutionAlgebra ω μ)`. -/
 def integratedOperatorL1 :
     Completion (TwistedConvolutionAlgebra ω μ) →ₙₐ[ℂ] (H →L[ℂ] H) :=
-  (P.integratedNonUnitalAlgHom μ).fromCompletion (P.continuous_integratedNonUnitalAlgHom μ)
+  (P.integratedOperatorCLM μ).fromCompletionNonUnitalAlgHomOfMul fun f g => by simp
 
 @[simp] theorem integratedOperatorL1_coe (f : TwistedConvolutionAlgebra ω μ) :
     P.integratedOperatorL1 μ f = P.integratedOperator μ f.ofConv := by
-  simp [integratedOperatorL1]
+  rw [integratedOperatorL1, ContinuousLinearMap.fromCompletionNonUnitalAlgHomOfMul_coe,
+    integratedOperatorCLM_apply]
 
 @[fun_prop] theorem continuous_integratedOperatorL1 : Continuous (P.integratedOperatorL1 μ) :=
-  (P.integratedNonUnitalAlgHom μ).continuous_fromCompletion _
+  (P.integratedOperatorCLM μ).continuous_fromCompletionNonUnitalAlgHomOfMul _
 
 theorem norm_integratedOperatorL1_le (x : Completion (TwistedConvolutionAlgebra ω μ)) :
     ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ :=
-  ((P.integratedNonUnitalAlgHom μ).norm_fromCompletion_le
-    (P.continuous_integratedNonUnitalAlgHom μ) (fun f => by
-      simpa only [integratedNonUnitalAlgHom_apply, one_mul,
-        TwistedConvolutionAlgebra.norm_eq_integral_norm] using
-        P.norm_integratedOperator_le μ f.ofConv) x).trans_eq (one_mul _)
+  ((P.integratedOperatorCLM μ).norm_fromCompletionNonUnitalAlgHomOfMul_le _
+    (fun f => ((P.integratedOperatorCLM μ).le_opNorm f).trans
+      (mul_le_mul_of_nonneg_right (P.norm_integratedOperatorCLM_le μ) (norm_nonneg f))) x).trans_eq
+    (one_mul _)
 
 end Multiplication
 
@@ -123,37 +115,38 @@ variable [MeasurableSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [Bor
 
 /-- The integrated form as a nonunital complex ⋆-algebra homomorphism on
 `TwistedConvolutionAlgebra ω μ`. -/
-def integratedStarAlgHom : TwistedConvolutionAlgebra ω μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) where
-  __ := P.integratedNonUnitalAlgHom μ
-  map_star' _ := by simp
+def integratedStarAlgHom : TwistedConvolutionAlgebra ω μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
+  (P.integratedOperatorCLM μ).toNonUnitalStarAlgHomOfMulStar (fun f g => by simp)
+    (fun f => by simp)
 
 @[simp] theorem integratedStarAlgHom_apply (f : TwistedConvolutionAlgebra ω μ) :
-    P.integratedStarAlgHom μ f = P.integratedOperator μ f.ofConv :=
-  P.integratedNonUnitalAlgHom_apply μ f
+    P.integratedStarAlgHom μ f = P.integratedOperator μ f.ofConv := by
+  rw [integratedStarAlgHom, ContinuousLinearMap.toNonUnitalStarAlgHomOfMulStar_apply,
+    integratedOperatorCLM_apply]
 
 theorem norm_integratedStarAlgHom_le_norm (f : TwistedConvolutionAlgebra ω μ) :
     ‖P.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
-  simpa [TwistedConvolutionAlgebra.norm_eq_integral_norm] using
-    P.norm_integratedOperator_le μ f.ofConv
+  rw [integratedStarAlgHom, ContinuousLinearMap.toNonUnitalStarAlgHomOfMulStar_apply]
+  exact ((P.integratedOperatorCLM μ).le_opNorm f).trans <|
+    mul_le_of_le_one_left (norm_nonneg f) (P.norm_integratedOperatorCLM_le μ)
 
 @[fun_prop] theorem continuous_integratedStarAlgHom : Continuous (P.integratedStarAlgHom μ) :=
-  (P.integratedOperatorCLM μ).continuous.congr fun f => by simp
+  (P.integratedOperatorCLM μ).continuous_toNonUnitalStarAlgHomOfMulStar _ _
 
 /-- Extension by continuity of the integrated ⋆-representation to
 `Completion (TwistedConvolutionAlgebra ω μ)`. -/
 def integratedStarAlgHomL1 :
     Completion (TwistedConvolutionAlgebra ω μ) →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
-  (P.integratedStarAlgHom μ).fromCompletion (P.continuous_integratedStarAlgHom μ)
+  (P.integratedOperatorCLM μ).fromCompletionNonUnitalStarAlgHomOfMulStar (fun f g => by simp)
+    (fun f => by simp)
 
 @[simp] theorem toNonUnitalAlgHom_integratedStarAlgHomL1 :
-    (P.integratedStarAlgHomL1 μ).toNonUnitalAlgHom = P.integratedOperatorL1 μ := by
-  rw [integratedStarAlgHomL1, NonUnitalStarAlgHom.toNonUnitalAlgHom_fromCompletion]
-  exact (NonUnitalAlgHom.fromCompletion_unique _ _ (P.integratedOperatorL1 μ)
-    (P.continuous_integratedOperatorL1 μ) fun f => by simp).symm
+    (P.integratedStarAlgHomL1 μ).toNonUnitalAlgHom = P.integratedOperatorL1 μ :=
+  (P.integratedOperatorCLM μ).toNonUnitalAlgHom_fromCompletionNonUnitalStarAlgHomOfMulStar _ _
 
 @[simp] theorem integratedStarAlgHomL1_apply (x : Completion (TwistedConvolutionAlgebra ω μ)) :
     P.integratedStarAlgHomL1 μ x = P.integratedOperatorL1 μ x :=
-  DFunLike.congr_fun (P.toNonUnitalAlgHom_integratedStarAlgHomL1 μ) x
+  (P.integratedOperatorCLM μ).fromCompletionNonUnitalStarAlgHomOfMulStar_apply _ _ x
 
 theorem integratedStarAlgHomL1_coe (f : TwistedConvolutionAlgebra ω μ) :
     P.integratedStarAlgHomL1 μ f = P.integratedOperator μ f.ofConv := by
@@ -161,11 +154,11 @@ theorem integratedStarAlgHomL1_coe (f : TwistedConvolutionAlgebra ω μ) :
 
 /-- The L¹ integrated form preserves the `⋆`-involution on the twisted L¹ completion. -/
 @[simp] theorem integratedOperatorL1_star (x : Completion (TwistedConvolutionAlgebra ω μ)) :
-    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) := by
-  simpa only [integratedStarAlgHomL1_apply] using map_star (P.integratedStarAlgHomL1 μ) x
+    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) :=
+  (P.integratedOperatorCLM μ).fromCompletionNonUnitalAlgHomOfMul_star _ (fun f => by simp) x
 
 @[fun_prop] theorem continuous_integratedStarAlgHomL1 : Continuous (P.integratedStarAlgHomL1 μ) :=
-  (P.integratedStarAlgHom μ).continuous_fromCompletion _
+  (P.integratedOperatorCLM μ).continuous_fromCompletionNonUnitalStarAlgHomOfMulStar _ _
 
 theorem norm_integratedStarAlgHomL1_le (x : Completion (TwistedConvolutionAlgebra ω μ)) :
     ‖P.integratedStarAlgHomL1 μ x‖ ≤ ‖x‖ := by

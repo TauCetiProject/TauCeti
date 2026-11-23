@@ -79,16 +79,16 @@ end AlgHom
 
 namespace NonUnitalAlgHom
 
-variable {R E F : Type*} [Semiring R]
-  [NonUnitalSeminormedRing E] [Module R E] [UniformContinuousConstSMul R E]
-  [NonUnitalSeminormedRing F] [Module R F] [UniformContinuousConstSMul R F]
+variable {R S E F : Type*} [Monoid R] [Monoid S] {φ : R →* S}
+  [NonUnitalSeminormedRing E] [DistribMulAction R E] [UniformContinuousConstSMul R E]
+  [NonUnitalSeminormedRing F] [DistribMulAction S F] [ContinuousConstSMul S F]
   [T0Space F] [CompleteSpace F]
 
-/-- If a continuous nonunital algebra homomorphism `f : E →ₙₐ[R] F` into a complete separated
-seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its extension
+/-- If a continuous semilinear nonunital algebra homomorphism `f : E →ₛₙₐ[φ] F` into a complete
+separated seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its extension
 `f.fromCompletion hf` to the completion satisfies `‖f.fromCompletion hf y‖ ≤ C * ‖y‖` for all
 `y`. -/
-theorem norm_fromCompletion_le (f : E →ₙₐ[R] F) (hf : Continuous f) {C : ℝ}
+theorem norm_fromCompletion_le (f : E →ₛₙₐ[φ] F) (hf : Continuous f) {C : ℝ}
     (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
     ‖f.fromCompletion hf y‖ ≤ C * ‖y‖ := by
   simpa only [coe_fromCompletion] using
@@ -99,11 +99,11 @@ end NonUnitalAlgHom
 
 namespace NonUnitalStarAlgHom
 
-variable {R E F : Type*} [Semiring R]
+variable {R E F : Type*} [Monoid R]
   [NonUnitalSeminormedRing E] [StarAddMonoid E] [ContinuousStar E]
-  [Module R E] [UniformContinuousConstSMul R E]
+  [DistribMulAction R E] [UniformContinuousConstSMul R E]
   [NonUnitalSeminormedRing F] [Star F] [ContinuousStar F]
-  [Module R F] [UniformContinuousConstSMul R F] [T0Space F] [CompleteSpace F]
+  [DistribMulAction R F] [ContinuousConstSMul R F] [T0Space F] [CompleteSpace F]
 
 /-- If a continuous nonunital `⋆`-algebra homomorphism `f : E →⋆ₙₐ[R] F` into a complete
 separated seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its extension
@@ -112,8 +112,8 @@ separated seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, t
 theorem norm_fromCompletion_le (f : E →⋆ₙₐ[R] F) (hf : Continuous f) {C : ℝ}
     (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
     ‖f.fromCompletion hf y‖ ≤ C * ‖y‖ := by
-  simpa only [coe_fromCompletion] using
-    Completion.norm_extension_le (f := (f : E → F))
-      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf) hC y
+  simpa only [← NonUnitalStarAlgHom.coe_toNonUnitalAlgHom,
+    f.toNonUnitalAlgHom_fromCompletion hf] using
+    f.toNonUnitalAlgHom.norm_fromCompletion_le hf hC y
 
 end NonUnitalStarAlgHom

@@ -80,14 +80,14 @@ def convolutionMap (φ : Hom α β) (μ : Measure G) [IsFiniteMeasureOnCompacts 
   map_mul' f g := by
     apply ConvolutionAlgebra.ext
     ext s
-    simp only [ConvolutionAlgebra.ofConv_mul, compLeft_apply]
+    simp only [ConvolutionAlgebra.ofConv_mul, ConvolutionAlgebra.ofConv_toConv, compLeft_apply]
     rw [map_convolution, convolution_apply]
     simp only [compLeft_apply]
   map_star' f := by
     apply ConvolutionAlgebra.ext
     ext s
-    simp only [ConvolutionAlgebra.ofConv_star, twistedInvolution_apply,
-      compLeft_apply, map_smul, map_action, map_star]
+    simp only [ConvolutionAlgebra.ofConv_star, ConvolutionAlgebra.ofConv_toConv,
+      twistedInvolution_apply, compLeft_apply, map_smul, map_action, map_star]
 
 variable {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
 
