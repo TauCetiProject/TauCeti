@@ -42,8 +42,8 @@ Hence, for every coadjoint orbit `O` of a compact Lie group and every division r
 * the odd Betti numbers of `O` vanish
   (`Module.Dual.bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_zero_of_odd`);
 * the sum of the Betti numbers of `O` is the number of critical points of any Morse height
-  (`Module.Dual.sum_bettiNumber_quotient_stabilizer_coadjointRepresentation`), for instance the
-  number of points of `O` lying over `t` for a regular `X ∈ t`;
+  (`Module.Dual.sum_bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard`), for
+  instance the number of points of `O` lying over `t` for a regular `X ∈ t`;
 * if `G` is connected, `O` is simply connected
   (`Module.Dual.simplyConnectedSpace_quotient_stabilizer_coadjointRepresentation`), since no
   height has a critical point of index one.
@@ -62,8 +62,8 @@ even-cell structure itself, are not proved here.
 * `Module.Dual.isPerfectMorse_orbitMap_coadjointRepresentation_apply`: Morse heights are perfect.
 * `Module.Dual.bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_zero_of_odd`: odd Betti
   numbers vanish.
-* `Module.Dual.sum_bettiNumber_quotient_stabilizer_coadjointRepresentation`: the total Betti number
-  is the number of critical points of a Morse height.
+* `Module.Dual.sum_bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard`: the total
+  Betti number is the number of critical points of a Morse height.
 * `Module.Dual.simplyConnectedSpace_quotient_stabilizer_coadjointRepresentation`: coadjoint orbits
   of compact connected Lie groups are simply connected.
 
@@ -156,7 +156,8 @@ theorem even_manifoldMorseIndex_orbitMap_coadjointRepresentation_apply
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   exact ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap.even_manifoldMorseIndex
-    ν.isSymplectic_coadjointOrbitForm.isNondegenerate ν.eval₂_coadjointOrbitForm_mfderiv_smul hx
+    ν.isSymplectic_coadjointOrbitForm.isNondegenerate
+    (fun g ↦ (ν.isSymplecticMap_smul_coadjointOrbitForm g).apply) hx
 
 variable (k : Type u) [DivisionRing k]
 
@@ -172,7 +173,8 @@ theorem isPerfectMorse_orbitMap_coadjointRepresentation_apply
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   exact ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap.isPerfectMorse
-    ν.isSymplectic_coadjointOrbitForm.isNondegenerate ν.eval₂_coadjointOrbitForm_mfderiv_smul k hX
+    ν.isSymplectic_coadjointOrbitForm.isNondegenerate
+    (fun g ↦ (ν.isSymplecticMap_smul_coadjointOrbitForm g).apply) k hX
 
 /-- **Betti numbers of a coadjoint orbit count critical points.** For a Morse height `f_X` on a
 coadjoint orbit `O` of a compact Lie group, the Betti number `bⱼ(O; k)` is the number of critical
@@ -200,7 +202,7 @@ theorem bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_zero_of_odd {
 /-- **The total Betti number of a coadjoint orbit.** For a Morse height `f_X` on a coadjoint orbit
 `O` of a compact Lie group, the sum of the Betti numbers of `O` is the number of critical points of
 `f_X`, for every division ring `k`. -/
-theorem sum_bettiNumber_quotient_stabilizer_coadjointRepresentation
+theorem sum_bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard
     (hX : IsMorse 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
       fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) :
     ∑ j ∈ Finset.range
