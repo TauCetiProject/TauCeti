@@ -126,16 +126,14 @@ theorem flag_eq_of_flag_le (b : Basis (Fin n) K E) {e : Basis (Fin n) K E} {k : 
   -- Invert whichever diagonal block of the transition matrix has the smaller size `min k (n - k)`.
   rcases le_total (k : ℕ) (n - k) with hkn | hkn
   · let eP : {l : Fin n // l.castSucc < k} ≃ Fin (min (k : ℕ) (n - k)) :=
-      ⟨fun j ↦ ⟨j.val, by have : (j.val : ℕ) < k := j.property; omega⟩,
-       fun j ↦ ⟨⟨j, by omega⟩, Fin.lt_def.2 (by dsimp; omega)⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+      (Fin.castLEquiv (Nat.le_of_lt_succ k.isLt)).symm.trans (finCongr (min_eq_left hkn).symm)
     have : IsDedekindFiniteMonoid (Matrix {l : Fin n // l.castSucc < k} _ K) :=
       (MulEquivClass.isDedekindFiniteMonoid_iff (Matrix.reindexRingEquiv K eP)).2 inferInstance
     exact repr_eq_zero_of_block_zero_left b e hzero hi (not_lt.2 hm)
   · let eS : {l : Fin n // ¬l.castSucc < k} ≃ Fin (min (k : ℕ) (n - k)) :=
-      ⟨fun l ↦ ⟨l.val - k, by have : (k : ℕ) ≤ l.val := not_lt.1 l.property; omega⟩,
-       fun l ↦ ⟨⟨l + k, by omega⟩, not_lt.2 (Fin.le_def.2 (by dsimp; omega))⟩,
-       fun l ↦ by ext; have : (k : ℕ) ≤ l.val := not_lt.1 l.property; dsimp; omega,
-       fun l ↦ by ext; dsimp; omega⟩
+      (Equiv.subtypeEquiv Fin.revPerm fun l ↦ by
+        simp only [Fin.lt_def, Fin.val_castSucc, Fin.revPerm_apply, Fin.val_rev]; omega).trans <|
+        (Fin.castLEquiv (Nat.sub_le n k)).symm.trans (finCongr (min_eq_right hkn).symm)
     have : IsDedekindFiniteMonoid (Matrix {l : Fin n // ¬l.castSucc < k} _ K) :=
       (MulEquivClass.isDedekindFiniteMonoid_iff (Matrix.reindexRingEquiv K eS)).2 inferInstance
     exact repr_eq_zero_of_block_zero_right b e hzero hi (not_lt.2 hm)
@@ -186,17 +184,18 @@ private theorem exists_injective_nat_lt_of_apply_lt [Finite ι] [Preorder α] (f
   have := Fintype.ofFinite ι
   let : Preorder ι := Preorder.lift f
   let e := Fintype.equivFin ι
-  let g (i : ι) : ℕ := #{j | j < i} * Fintype.card ι + e i
-  refine ⟨g, fun i j hij ↦ e.injective <| Fin.ext ?_, fun i j hij ↦ ?_⟩
-  · have := congrArg (· % Fintype.card ι) hij
-    simpa [g, Nat.add_mod, Nat.mod_eq_of_lt (e i).isLt, Nat.mod_eq_of_lt (e j).isLt] using this
-  · have hrank : #{k | k < i} < #{k | k < j} := TauCeti.card_filter_lt_lt_card_filter_lt hij
-    have hmul : (#{k | k < i} + 1) * Fintype.card ι ≤ #{k | k < j} * Fintype.card ι :=
-      Nat.mul_le_mul_right _ hrank
-    rw [add_one_mul] at hmul
-    have hi := (e i).isLt
-    dsimp only [g]
-    omega
+  let r (i : ι) : Fin (Fintype.card ι + 1) :=
+    ⟨#{j | j < i}, Nat.lt_succ_of_le (card_filter_le univ _)⟩
+  let g (i : ι) : ℕ := finProdFinEquiv (r i, e i)
+  refine ⟨g, fun i j hij ↦ e.injective <| congrArg Prod.snd <|
+    finProdFinEquiv.injective <| Fin.val_injective hij, fun i j hij ↦ ?_⟩
+  have hrank : #{k | k < i} < #{k | k < j} := TauCeti.card_filter_lt_lt_card_filter_lt hij
+  have hmul : Fintype.card ι * (#{k | k < i} + 1) ≤ Fintype.card ι * #{k | k < j} :=
+    Nat.mul_le_mul_left _ hrank
+  rw [mul_add_one] at hmul
+  have hi := (e i).isLt
+  dsimp only [g, r, finProdFinEquiv, Equiv.coe_fn_mk]
+  omega
 
 /-- The determinant of a family `v` that is triangular with respect to a basis `b` along a map
 `f` into a preorder, in the sense that each `v i - c i • b i` is a combination of the `b j` with
