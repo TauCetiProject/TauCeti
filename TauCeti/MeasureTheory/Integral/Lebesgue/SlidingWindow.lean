@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LConvolution
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Integral.MeanInequalities
@@ -41,6 +42,8 @@ time-localized pairings arise.
 ## Main declarations
 
 * `MeasureTheory.lintegral_setLIntegral_sub_preimage`: the sliding-window identity.
+* `MeasureTheory.setLIntegral_sub_preimage_eq_lconvolution`: the window integral as a
+  convolution.
 * `MeasureTheory.measurable_setLIntegral_sub_preimage`: the window integrals are measurable.
 * `MeasureTheory.lintegral_rpow_setLIntegral_sub_preimage_mul_le`: the square-function bound.
 * `MeasureTheory.lintegral_setLIntegral_sub_preimage_mul_le`: the bound for the window kernel.
@@ -93,20 +96,29 @@ theorem lintegral_setLIntegral_sub_preimage (hW : MeasurableSet W) {f : G → �
     _ = μ W * ∫⁻ s, f s ∂μ := by
         rw [lintegral_const_mul _ hg, lintegral_congr_ae hf.ae_eq_mk.symm]
 
+omit [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant] in
+/-- The integral of `f` over the window `{s | s - t ∈ W}` is the convolution of `f` with the
+indicator of `-W`, evaluated at `t`. -/
+theorem setLIntegral_sub_preimage_eq_lconvolution (hW : MeasurableSet W) (f : G → ℝ≥0∞) (t : G) :
+    ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ = (f ⋆ₗ[μ] (-W).indicator fun _ ↦ 1) t := by
+  rw [lconvolution_def, ← lintegral_indicator (measurable_sub_const t hW)]
+  refine lintegral_congr fun s ↦ ?_
+  have h : -s + t ∈ -W ↔ s ∈ (fun s ↦ s - t) ⁻¹' W := by simp [neg_add_eq_sub]
+  by_cases hs : s ∈ (fun s ↦ s - t) ⁻¹' W
+  · rw [indicator_of_mem hs, indicator_of_mem (h.2 hs), mul_one]
+  · rw [indicator_of_notMem hs, indicator_of_notMem (mt h.1 hs), mul_zero]
+
 omit [μ.IsAddLeftInvariant] [μ.IsNegInvariant] in
 /-- The integrals of `f` over the windows `{s | s - t ∈ W}` depend measurably on `t`. -/
 theorem measurable_setLIntegral_sub_preimage (hW : MeasurableSet W) {f : G → ℝ≥0∞}
     (hf : AEMeasurable f μ) :
     Measurable fun t ↦ ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ := by
+  -- Replace `f` by its measurable modification inside every window.
   have h (t : G) : ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ =
-      ∫⁻ s, {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ hf.mk f p.2) (t, s) ∂μ := by
-    rw [← lintegral_indicator (measurable_sub_const t hW)]
-    refine lintegral_congr_ae ?_
-    filter_upwards [hf.ae_eq_mk] with s hs
-    exact indicator_eq_indicator (by simp only [mem_preimage, mem_ofPred_eq]) hs
-  simp only [h]
-  exact Measurable.lintegral_prod_right'
-    ((hf.measurable_mk.comp measurable_snd).indicator ((measurable_snd.sub measurable_fst) hW))
+      ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, hf.mk f s ∂μ :=
+    lintegral_congr_ae (ae_restrict_of_ae hf.ae_eq_mk)
+  simp_rw [h, setLIntegral_sub_preimage_eq_lconvolution hW]
+  exact measurable_lconvolution μ hf.measurable_mk (measurable_const.indicator hW.neg)
 
 /-- **The square-function bound over sliding windows.** The `L²` norms of `f` over the windows
 `{s | s - t ∈ W}`, integrated against `g`, are at most `(μ W)^{1/2} ‖f‖₂ ‖g‖₂`. -/
@@ -137,22 +149,16 @@ theorem lintegral_setLIntegral_sub_preimage_mul_le (hW : MeasurableSet W) {f g :
       μ W * eLpNorm f 2 μ * eLpNorm g 2 μ := by
   -- The window integrals are the convolution of `f` with the indicator of `-W`, so Young's
   -- inequality `L² ⋆ L¹ ⊆ L²` and Cauchy–Schwarz give the bound.
-  set k : G → ℝ≥0∞ := (-W).indicator fun _ ↦ 1 with hk_def
+  set k : G → ℝ≥0∞ := (-W).indicator fun _ ↦ 1
   have hk : AEMeasurable k μ := (measurable_const.indicator hW.neg).aemeasurable
-  have hconv (t : G) : ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ = (f ⋆ₗ[μ] k) t := by
-    rw [lconvolution_def, ← lintegral_indicator (measurable_sub_const t hW)]
-    refine lintegral_congr fun s ↦ ?_
-    have h : -s + t ∈ -W ↔ s ∈ (fun s ↦ s - t) ⁻¹' W := by simp [neg_add_eq_sub]
-    by_cases hs : s ∈ (fun s ↦ s - t) ⁻¹' W
-    · rw [indicator_of_mem hs, hk_def, indicator_of_mem (h.2 hs), mul_one]
-    · rw [indicator_of_notMem hs, hk_def, indicator_of_notMem (mt h.1 hs), mul_zero]
   have hkW : eLpNorm k 1 μ = μ W := by
     rw [eLpNorm_indicator_const hW.neg.nullMeasurableSet one_ne_zero ENNReal.one_ne_top,
       Measure.measure_neg]
     simp
   have hfk := aemeasurable_lconvolution hf hk
   calc ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ) * g t ∂μ
-      = ∫⁻ t, (f ⋆ₗ[μ] k) t * g t ∂μ := by simp only [hconv]
+      = ∫⁻ t, (f ⋆ₗ[μ] k) t * g t ∂μ := by
+        simp only [setLIntegral_sub_preimage_eq_lconvolution hW, k]
     _ ≤ eLpNorm (f ⋆ₗ[μ] k) 2 μ * eLpNorm g 2 μ := by
         rw [TauCeti.eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hfk,
           TauCeti.eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hg,

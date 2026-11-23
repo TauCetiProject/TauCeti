@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
 import TauCeti.Analysis.PDE.Strichartz.Localized
+import TauCeti.Analysis.PDE.Strichartz.Retarded
 import Mathlib.Data.Int.Log
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.MeasureTheory.Measure.Prod
@@ -407,31 +409,23 @@ private theorem enorm_integral_adjoint_indicator_mk_preimage_le {p r : ℝ≥0�
   set S := Prod.mk s ⁻¹' W
   have hS : MeasurableSet S := measurable_prodMk_left hW
   have hb : AEMeasurable fun t ↦ eLpNorm (G t) r μ := hG.aemeasurable_eLpNorm_Lp .rfl r
-  refine (hK _ (hG.indicator hS) (by rw [adjoint_indicator_eq]; exact hUG.indicator hS)).trans ?_
+  rw [adjoint_indicator_eq, integral_indicator hS]
   -- The exponent `p = 0` makes the dual estimate vanish.
   rcases eq_or_ne p 0 with rfl | hp0
-  · rw [eLpNorm_exponent_zero
-      ((hG.indicator hS).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable, mul_zero]
+  · refine (enorm_setIntegral_adjoint_le hK hS hG.restrict hUG.integrableOn).trans ?_
+    rw [eLpNorm_exponent_zero (hb.indicator hS).aestronglyMeasurable, mul_zero]
     exact zero_le
-  gcongr
-  have hb' : (fun t ↦ eLpNorm ((S.indicator G t : Lp E 2 μ) : X → E) r μ) =
-      S.indicator fun t ↦ eLpNorm (G t) r μ := by
-    ext t
-    by_cases ht : t ∈ S
-    · simp [ht]
-    · rw [indicator_of_notMem ht, indicator_of_notMem ht,
-        eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
-  rw [hb', eLpNorm_indicator_eq_eLpNorm_restrict (μ := volume) hS.nullMeasurableSet,
-    eLpNorm_indicator_eq_eLpNorm_restrict (μ := volume) hS.nullMeasurableSet]
-  refine (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp
-    (hb.restrict (s := S)).aestronglyMeasurable).trans ?_
-  rw [Measure.restrict_apply_univ]
-  have hexp : 0 ≤ 1 / p.toReal - 1 / (2 : ℝ≥0∞).toReal := by
+  refine (enorm_setIntegral_adjoint_le_of_le_two hp hK hG hS hUG.integrableOn).trans ?_
+  rw [eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet,
+    eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hb.restrict, mul_assoc,
+    mul_comm (volume S ^ _)]
+  have hexp : 0 ≤ p.toReal⁻¹ - 2⁻¹ := by
     have hp' : p.toReal ≤ 2 := by
       simpa using ENNReal.toReal_mono ENNReal.ofNat_ne_top hp
     have hp'0 : 0 < p.toReal := ENNReal.toReal_pos hp0 (ne_top_of_le_ne_top ENNReal.ofNat_ne_top hp)
-    rw [ENNReal.toReal_ofNat, sub_nonneg]
-    exact one_div_le_one_div_of_le hp'0 hp'
+    rw [sub_nonneg]
+    exact inv_anti₀ hp'0 hp'
+  simp only [ENNReal.toReal_ofNat, one_div]
   gcongr
   exact volume_mk_preimage_le hWρ s
 

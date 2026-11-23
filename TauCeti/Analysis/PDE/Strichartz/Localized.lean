@@ -56,6 +56,8 @@ dual estimate with a time exponent `p ≤ 2`. The dyadic time shells of
 
 ## Main declarations
 
+* `TauCeti.enorm_setIntegral_adjoint_le_of_le_two`: a dual estimate with a time exponent `p ≤ 2`
+  on a set of times, with an `L²` norm in time.
 * `TauCeti.lintegral_setLIntegral_sub_preimage_enorm_inner_adjoint_le`: the decay bound for an
   arbitrary measurable window.
 * `TauCeti.lintegral_setLIntegral_enorm_inner_adjoint_le`: the decay corner for the absolute
@@ -220,7 +222,7 @@ private theorem holderConjugate_inv_eq_and_le_two {p q : ℝ≥0} (hq : 2 < q)
 `‖∫ U(s)* F(s) ds‖ ≤ K ‖F‖_{L^p L^r}` holds with a time exponent `p ≤ 2`, then restricting `F` to a
 measurable set `S` of times and applying Hölder's inequality in time on `S` gives
 `‖∫_S U(s)* F(s) ds‖ ≤ K |S|^{1/p - 1/2} ‖F‖_{L²(S; L^r)}`. -/
-private theorem enorm_setIntegral_adjoint_le_of_le_two {p a : ℝ≥0∞} (hp : p ≤ 2)
+theorem enorm_setIntegral_adjoint_le_of_le_two {p a : ℝ≥0∞} (hp : p ≤ 2)
     {U : ℝ → H →L[𝕜] Lp E 2 μ} {K : ℝ≥0∞}
     (hK : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
       ‖∫ s, ((U s)†) (F s)‖ₑ ≤ K * eLpNorm (fun s ↦ eLpNorm (F s) a μ) p)
