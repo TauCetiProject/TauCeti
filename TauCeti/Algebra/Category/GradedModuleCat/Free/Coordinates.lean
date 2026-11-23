@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 
 /-!
@@ -72,17 +71,8 @@ noncomputable def rangeObjOfPiEnd {I : Type uI} [Fintype I] (s : I → ℤ)
     (p : (I → A) →ₗ[A] (I → A))
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
     GradedModuleCat.{max uA uI} 𝒜 :=
-  let _ := (free 𝒜 s).gradedSMul
   let p' := freeEndOfPiEnd s p hhom
-  { carrier := LinearMap.range p'.hom
-    isAddCommGroup := Submodule.addCommGroup _
-    isModule := Submodule.module _
-    isModuleBase := Submodule.module' _
-    grading := (free 𝒜 s).grading.submodule (LinearMap.range p'.hom)
-      p'.isHomogeneous.isHomogeneous_range
-    gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
-      rw [InternalGrading.mem_submodule_piece] at hx ⊢
-      exact SetLike.GradedSMul.smul_mem (B := (free 𝒜 s).grading.piece) ha hx⟩ }
+  (free 𝒜 s).submoduleObj (LinearMap.range p'.hom) p'.isHomogeneous.isHomogeneous_range
 
 /-- `A`-linear identification `LinearMap.range p ≃ₗ[A] rangeObjOfPiEnd s p hhom`. -/
 noncomputable def rangeEquivRangeObj {I : Type uI} [Fintype I] (s : I → ℤ)

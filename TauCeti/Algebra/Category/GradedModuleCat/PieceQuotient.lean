@@ -29,6 +29,8 @@ with respect to morphisms in `GradedModuleCat 𝒜` via `Submodule.mapQ`.
   `M →ₗ[A₀] PieceQuotient M p`.
 * `TauCeti.GradedModuleCat.pieceQuotientHom`: the `A₀`-linear map on `PieceQuotient` induced by a
   morphism in `GradedModuleCat 𝒜`.
+* `TauCeti.GradedModuleCat.pieceQuotientFunctor`: functoriality of `PieceQuotient (-, p)` into
+  `ModuleCat A₀`.
 -/
 
 public section
@@ -121,7 +123,7 @@ private def pieceMap {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ) :
 morphism `f : M ⟶ N`. -/
 def pieceQuotientHom {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ) :
     PieceQuotient M p →ₗ[SetLike.GradeZero.subalgebra 𝒜] PieceQuotient N p :=
-  Submodule.mapQ _ _ (pieceMap f p) (fun _ hx ↦ map_mem_positive_smul_top f hx)
+  Submodule.mapQ _ _ (pieceMap f p) (fun _ hx ↦ InternalGrading.map_mem_positive_smul_top f.hom hx)
 
 /-- `pieceQuotientHom f p` acts on quotient classes by applying `f.hom`. -/
 @[simp]
@@ -143,9 +145,19 @@ theorem pieceQuotientHom_comp {M N P : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (
     pieceQuotientHom (f ≫ g) p = (pieceQuotientHom g p).comp (pieceQuotientHom f p) := by
   have hcomp : pieceMap (f ≫ g) p = (pieceMap g p).comp (pieceMap f p) := by ext x; rfl
   refine Eq.trans ?_ (Submodule.mapQ_comp _ _ _ (pieceMap f p) (pieceMap g p)
-    (fun _ hx ↦ map_mem_positive_smul_top f hx)
-    (fun _ hx ↦ map_mem_positive_smul_top g hx))
+    (fun _ hx ↦ InternalGrading.map_mem_positive_smul_top f.hom hx)
+    (fun _ hx ↦ InternalGrading.map_mem_positive_smul_top g.hom hx))
   dsimp only [pieceQuotientHom]
   congr 1
+
+/-- The degree-`p` quotient `(M / A₊ M)ₚ` as a functor from graded `𝒜`-modules to
+`A₀`-modules. -/
+@[expose, simps]
+def pieceQuotientFunctor (p : ℤ) :
+    GradedModuleCat.{v} 𝒜 ⥤ ModuleCat.{v} (SetLike.GradeZero.subalgebra 𝒜) where
+  obj M := ModuleCat.of (SetLike.GradeZero.subalgebra 𝒜) (PieceQuotient M p)
+  map f := ModuleCat.ofHom (pieceQuotientHom f p)
+  map_id M := ModuleCat.hom_ext (pieceQuotientHom_id M p)
+  map_comp f g := ModuleCat.hom_ext (pieceQuotientHom_comp f g p)
 
 end TauCeti.GradedModuleCat

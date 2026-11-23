@@ -70,17 +70,10 @@ private theorem injective_retractPieceQuotientHom (hneg : ∀ i < 0, 𝒜 i = �
     {I : Type uI} [Finite I] {s : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
     (r : Retract M (free 𝒜 s)) (q : ℤ) :
     Function.Injective (retractPieceQuotientHom hneg hzero r q) := by
-  let ρ : ({j : I // s j = q} → k) →ₗ[k] PieceQuotient M q :=
-    ((pieceQuotientHom r.r q).restrictScalars k).comp
-      (freePieceQuotientEquiv hneg hzero s q).symm.toLinearMap
-  refine Function.LeftInverse.injective (g := ρ) fun x ↦ ?_
-  dsimp [ρ, retractPieceQuotientHom]
-  rw [LinearEquiv.symm_apply_apply]
-  have hcomp : ((pieceQuotientHom r.r q).restrictScalars k).comp
-      ((pieceQuotientHom r.i q).restrictScalars k) = LinearMap.id := by
-    rw [← LinearMap.restrictScalars_comp, ← pieceQuotientHom_comp, r.retract,
-      pieceQuotientHom_id, LinearMap.restrictScalars_id]
-  exact LinearMap.congr_fun hcomp x
+  let rPQ := r.map (pieceQuotientFunctor (𝒜 := 𝒜) q)
+  have hleft : Function.LeftInverse rPQ.r.hom rPQ.i.hom := fun x ↦
+    LinearMap.congr_fun (ModuleCat.hom_ext_iff.mp rPQ.retract) x
+  exact (freePieceQuotientEquiv hneg hzero s q).injective.comp hleft.injective
 
 /-- If `liftGen q` lifts a `k`-basis `bq q` of `PieceQuotient M q.val` for every shift `q` in the
 image of `s`, then the induced morphism `freeLift` onto `M` is surjective. -/

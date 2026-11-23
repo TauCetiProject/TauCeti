@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Retract
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
+import TauCeti.Algebra.Module.GradedModule.PositiveAction
 
 /-!
 # Basic properties of graded retracts
@@ -37,8 +38,8 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 theorem mem_positive_smul_top_iff {M N : GradedModuleCat.{v} 𝒜} (r : Retract M N) {x : M} :
     r.i.hom x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) ↔
       x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
-  refine ⟨fun hx ↦ ?_, map_mem_positive_smul_top r.i⟩
-  have h := map_mem_positive_smul_top r.r hx
+  refine ⟨fun hx ↦ ?_, InternalGrading.map_mem_positive_smul_top r.i.hom⟩
+  have h := InternalGrading.map_mem_positive_smul_top r.r.hom hx
   have hri : r.r.hom (r.i.hom x) = x :=
     LinearMap.congr_fun (congrArg Hom.hom r.retract) x
   rwa [hri] at h

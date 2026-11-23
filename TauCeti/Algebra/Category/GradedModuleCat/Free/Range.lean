@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+import Mathlib.Algebra.Module.LinearMap.DivisionRing
 import TauCeti.Algebra.Category.GradedModuleCat.Free.Coordinates
 import TauCeti.Algebra.Category.GradedModuleCat.Free.Head
 
@@ -100,30 +101,20 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
     {n : ℕ} (b : Module.Basis (Fin n) A (LinearMap.range p))
     (d : Fin n → ℤ) (hb : ∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) :
     Multiset.map d Finset.univ.val = {s i₀} := by
-  let ι : (Fin 1 → A) →ₗ[A] (I → A) :=
-    (LinearMap.toSpanSingleton A (I → A) w).comp (LinearMap.proj 0)
-  have hp_eq : p = (LinearMap.toSpanSingleton A (I → A) w).comp (LinearMap.proj i₀) :=
-    LinearMap.ext fun v ↦ hp v
-  have hleft : Function.LeftInverse (fun (v : I → A) (_ : Fin 1) ↦ v i₀) ι := fun u ↦
-    funext fun t ↦ by
-      rw [Fin.eq_zero t]
-      simp [ι, hw₀]
-  have hrange : LinearMap.range ι = LinearMap.range p := by
-    rw [hp_eq]
-    exact (LinearMap.range_comp_of_range_eq_top (LinearMap.toSpanSingleton A (I → A) w)
-      (LinearMap.range_eq_top.mpr (LinearMap.proj_surjective 0))).trans
-      (LinearMap.range_comp_of_range_eq_top (LinearMap.toSpanSingleton A (I → A) w)
-        (LinearMap.range_eq_top.mpr (LinearMap.proj_surjective i₀))).symm
-  let e₁ : (Fin 1 → A) ≃ₗ[A] LinearMap.range p :=
+  have hp_eq : p = (LinearMap.proj i₀).smulRight w := LinearMap.ext fun v ↦ hp v
+  have hleft : Function.LeftInverse (fun v : I → A ↦ v i₀)
+      (LinearMap.toSpanSingleton A (I → A) w) := fun a ↦ by simp [hw₀]
+  have hrange : LinearMap.range (LinearMap.toSpanSingleton A (I → A) w) = LinearMap.range p := by
+    rw [LinearMap.range_toSpanSingleton, hp_eq,
+      LinearMap.range_smulRight_apply_of_surjective (LinearMap.proj_surjective i₀)]
+  let e₁ : A ≃ₗ[A] LinearMap.range p :=
     (LinearEquiv.ofLeftInverse hleft).trans (LinearEquiv.ofEq _ _ hrange)
-  let b₀ : Module.Basis (Fin 1) A (LinearMap.range p) := (Pi.basisFun A (Fin 1)).map e₁
+  let b₀ : Module.Basis (Fin 1) A (LinearMap.range p) := (Module.Basis.singleton (Fin 1) A).map e₁
   have hb₀ : ∀ (i : Fin 1) (j : I), (b₀ i).val j ∈ 𝒜 (s i₀ - s j) := fun i j ↦ by
-    rw [Fin.eq_zero i]
-    have hval : (b₀ 0).val = w := by
-      dsimp only [b₀]
-      rw [Module.Basis.map_apply, Pi.basisFun_apply]
-      change ι (Pi.single 0 1) = w
-      simp [ι]
+    have hval : (b₀ i).val = w := by
+      dsimp [b₀]
+      rw [Module.Basis.singleton_apply]
+      exact one_smul A w
     rw [hval]
     exact hw j
   have h := multiset_map_eq_of_homogeneous_basis_range hneg hzero s p

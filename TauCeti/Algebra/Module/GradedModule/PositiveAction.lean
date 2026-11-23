@@ -23,6 +23,7 @@ scalars `𝒜 0`. Its degree-`p` homogeneous component consists of sums of produ
   `y ∈ M_{p - i}`.
 * `TauCeti.InternalGrading.isHomogeneous_positive_smul_top`: `A₊ M` is a homogeneous submodule.
 * `TauCeti.InternalGrading.smul_mem_positive_smul_top`: degree-zero scalars preserve `A₊ M`.
+* `TauCeti.InternalGrading.map_mem_positive_smul_top`: `A`-linear maps preserve `A₊`.
 -/
 
 public section
@@ -31,7 +32,24 @@ namespace TauCeti.InternalGrading
 
 open _root_.DirectSum
 
-universe uk uA uM
+universe uk uA uM uN
+
+section LinearMap
+
+variable {k : Type uk} [CommSemiring k] {A : Type uA} [Semiring A] [Algebra k A]
+  {M : Type uM} {N : Type uN} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+  [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N] {𝒜 : ℤ → Submodule k A}
+
+/-- Every `A`-linear map preserves the positive-degree action `A₊`. -/
+theorem map_mem_positive_smul_top (f : M →ₗ[A] N) {x : M}
+    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
+    f x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) := by
+  refine Submodule.smul_induction_on hx (fun a ha y _ ↦ ?_) (fun _ _ hx hy ↦ by
+    simpa only [map_add] using Submodule.add_mem _ hx hy)
+  rw [map_smul]
+  exact Submodule.smul_mem_smul ha Submodule.mem_top
+
+end LinearMap
 
 variable {k : Type uk} [CommSemiring k] {A : Type uA} [Semiring A] [Algebra k A]
   {M : Type uM} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]

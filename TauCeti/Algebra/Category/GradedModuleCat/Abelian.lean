@@ -34,6 +34,8 @@ graded abelian category, whose canonical exact structure is
 
 ## Main definitions
 
+* `TauCeti.GradedModuleCat.submoduleObj`: a homogeneous `A`-submodule packaged as a graded
+  `𝒜`-module.
 * `TauCeti.GradedModuleCat.kernelObj`, `TauCeti.GradedModuleCat.kernelι` and
   `TauCeti.GradedModuleCat.kernelCone`: the kernel of a morphism of graded modules, its inclusion
   and the corresponding kernel fork, formed on underlying modules.
@@ -78,6 +80,23 @@ universe v w uk uA
 
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 variable {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N)
+
+section Submodule
+
+/-- A homogeneous `A`-submodule of a graded `𝒜`-module, packaged as a graded `𝒜`-module with the
+induced internal grading. -/
+noncomputable abbrev submoduleObj (M : GradedModuleCat.{v} 𝒜) (U : Submodule A M)
+    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U) : GradedModuleCat.{v} 𝒜 where
+  carrier := U
+  isAddCommGroup := Submodule.addCommGroup _
+  isModule := Submodule.module _
+  isModuleBase := Submodule.module' _
+  grading := M.grading.submodule U hU
+  gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
+    rw [InternalGrading.mem_submodule_piece] at hx ⊢
+    exact SetLike.GradedSMul.smul_mem (B := M.grading.piece) ha hx⟩
+
+end Submodule
 
 section Kernel
 

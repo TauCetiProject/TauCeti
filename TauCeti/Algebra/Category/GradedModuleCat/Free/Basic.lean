@@ -348,10 +348,8 @@ whose `i`th vector is the image of `freeGenerator i` in degree `d i`. -/
 def homogeneousBasis {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
     (Φ : free 𝒜 d ≅ M) : Module.Basis I A M := by
   classical
-  have hbij : Function.Bijective Φ.hom.hom :=
-    (GradedModuleCat.isIso_iff_bijective Φ.hom).mp inferInstance
   exact (Finsupp.basisSingleOne (ι := I) (R := A)).map
-    ((finsuppLequivDFinsupp A).trans (LinearEquiv.ofBijective Φ.hom.hom hbij))
+    ((finsuppLequivDFinsupp A).trans (toModuleCat.mapIso Φ).toLinearEquiv)
 
 /-- The `i`th basis vector of `Φ.homogeneousBasis` is `Φ.hom.hom (freeGenerator i)`. -/
 @[simp]
@@ -359,10 +357,11 @@ theorem homogeneousBasis_apply {I : Type uI} {d : I → ℤ}
     {M : GradedModuleCat.{max uA uI} 𝒜} (Φ : free 𝒜 d ≅ M) (i : I) :
     Φ.homogeneousBasis i = Φ.hom.hom (freeGenerator i) := by
   classical
-  unfold homogeneousBasis
-  rw [Module.Basis.map_apply, Finsupp.coe_basisSingleOne, LinearEquiv.trans_apply,
-    LinearEquiv.ofBijective_apply, finsuppLequivDFinsupp_apply_apply,
-    Finsupp.toDFinsupp_single, DirectSum.single_eq_lof A, ← freeGenerator_eq_lof (𝒜 := 𝒜) (d := d)]
+  change (toModuleCat.mapIso Φ).toLinearEquiv
+    (finsuppLequivDFinsupp A (Finsupp.single i 1)) = Φ.hom.hom (freeGenerator i)
+  rw [finsuppLequivDFinsupp_apply_apply, Finsupp.toDFinsupp_single, DirectSum.single_eq_lof A,
+    ← freeGenerator_eq_lof (𝒜 := 𝒜) (d := d)]
+  rfl
 
 /-- The `i`th vector of `Φ.homogeneousBasis` is homogeneous of degree `d i`. -/
 theorem homogeneousBasis_mem_piece {I : Type uI} {d : I → ℤ}

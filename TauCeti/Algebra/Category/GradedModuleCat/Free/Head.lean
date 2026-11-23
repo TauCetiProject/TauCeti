@@ -233,16 +233,11 @@ theorem card_fiber_eq_of_iso_free [Nontrivial k] (hneg : ∀ i < 0, 𝒜 i = ⊥
     {I₁ I₂ : Type uI} [Fintype I₁] [Fintype I₂] {d₁ : I₁ → ℤ} {d₂ : I₂ → ℤ}
     (Φ : free 𝒜 d₁ ≅ free 𝒜 d₂) (q : ℤ) :
     Fintype.card {i : I₁ // d₁ i = q} = Fintype.card {i : I₂ // d₂ i = q} := by
+  let ePQ₀ : PieceQuotient (free 𝒜 d₁) q ≃ₗ[SetLike.GradeZero.subalgebra 𝒜]
+      PieceQuotient (free 𝒜 d₂) q :=
+    ((pieceQuotientFunctor (𝒜 := 𝒜) q).mapIso Φ).toLinearEquiv
   let ePQ : PieceQuotient (free 𝒜 d₁) q ≃ₗ[k] PieceQuotient (free 𝒜 d₂) q :=
-    LinearEquiv.ofLinearMap
-      ((pieceQuotientHom Φ.hom q).restrictScalars k)
-      ((pieceQuotientHom Φ.inv q).restrictScalars k)
-      (by
-        rw [← LinearMap.restrictScalars_comp, ← pieceQuotientHom_comp, Φ.inv_hom_id,
-          pieceQuotientHom_id, LinearMap.restrictScalars_id])
-      (by
-        rw [← LinearMap.restrictScalars_comp, ← pieceQuotientHom_comp, Φ.hom_inv_id,
-          pieceQuotientHom_id, LinearMap.restrictScalars_id])
+    ePQ₀.restrictScalars k
   let e : ({i : I₁ // d₁ i = q} → k) ≃ₗ[k] ({i : I₂ // d₂ i = q} → k) :=
     (freePieceQuotientEquiv hneg hzero d₁ q).symm.trans
       (ePQ.trans (freePieceQuotientEquiv hneg hzero d₂ q))
