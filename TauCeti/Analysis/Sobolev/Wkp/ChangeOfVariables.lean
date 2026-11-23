@@ -771,7 +771,7 @@ private theorem exists_comp_top_one (h : IsChangeOfVariables 1 U V Φ L c) (u : 
   have hweak : HasWeakFDerivOn mu U u₀ (fun x => innerSL ℝ (g x)) :=
     hweak₀.congr_ae_deriv (by filter_upwards [hg₀_mem.coeFn_toLp] with x hx; rw [hx])
   set w : Wkp mu U ⊤ 1 := W1p.mk u₀ g hweak
-  have hgn : ‖g‖ ≤ max 1 L * ‖u‖ := Lp.norm_top_le_of_ae_bound
+  have hgn : ‖g‖ ≤ max 1 L * ‖u‖ := Lp.norm_le_of_ae_bound_top
     (mul_nonneg (max_one_pos L).le (norm_nonneg u))
     (hg₀_mem.coeFn_toLp.mp (hg₀_ae.mono fun _ hx hxy => hxy ▸ hx))
   have hu₀n : ‖u₀‖ ≤ ‖u‖ :=
@@ -910,7 +910,7 @@ private theorem exists_comp_top_succ_succ {m : ℕ} (h : IsChangeOfVariables (m 
   have hD_mem : MemLp D_fun ⊤ (mu.restrict U) :=
     memLp_top_of_bound hweak.locallyIntegrableOn_deriv.aestronglyMeasurable _ hD_bound
   set D : Lp (IteratedGradient E (m + 1)) ⊤ (mu.restrict U) := hD_mem.toLp D_fun
-  have hDn : ‖D‖ ≤ M * ‖u‖ := Lp.norm_top_le_of_ae_bound (mul_nonneg hM (norm_nonneg u))
+  have hDn : ‖D‖ ≤ M * ‖u‖ := Lp.norm_le_of_ae_bound_top (mul_nonneg hM (norm_nonneg u))
     (hD_mem.coeFn_toLp.mp (hD_bound.mono fun _ hy hxy => hxy ▸ hy))
   set w : Wkp mu U ⊤ (m + 2) := mk m w₀ D (hweak.congr_ae_deriv hD_mem.coeFn_toLp.symm)
   refine ⟨w, by simpa only [w, value_mk, value_succ (m + 1) u] using hw₀,
