@@ -274,14 +274,8 @@ instance : ContMDiffSMul I 𝓘(ℝ, SpinCHalfSpinor o hQ b ρ ε) ∞ SpinC
     exact e.symm.contDiff.contMDiff.comp
       ((contMDiff_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε).comp he)
 
-instance : ContinuousSMul SpinC (SpinCHalfSpinor o hQ b ρ ε) where
-  continuous_smul := by
-    let e : SpinCHalfSpinor o hQ b ρ ε ≃L[ℝ] S :=
-      ((linearEquiv o hQ b ρ ε).toContinuousLinearEquiv).restrictScalars ℝ
-    simp only [smul_def]
-    exact e.symm.continuous.comp
-      ((contMDiff_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε).continuous.comp
-        (continuous_fst.prodMk (e.continuous.comp continuous_snd)))
+instance : ContinuousSMul SpinC (SpinCHalfSpinor o hQ b ρ ε) :=
+  ContMDiffSMul.continuousSMul («I» := I) (I' := 𝓘(ℝ, SpinCHalfSpinor o hQ b ρ ε)) ∞
 
 /-- The action of `g` on the half-spinor model, as a linear map, has the determinant of the
 half-spin representation at `g`. -/
