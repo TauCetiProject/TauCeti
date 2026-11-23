@@ -25,6 +25,14 @@ strictly weaker `SymplecticForm.Tames` predicate, paralleling the compatible con
 the symmetric part is just twice the asymmetric metric `ω(·, J ·)`, which is recorded as the bridge
 `SymplecticForm.Compatible.symmetrizedBilinForm_apply`.
 
+On a finite-dimensional space the normalized metric `g = gₛ / 2` represents `ω` by a linear
+operator, the **gradient operator** `A` with `g(A u, v) = ω(u, v)`. It turns the weak differential
+`∫ ω(γ' - X_H, ξ) dt` of the action functional into the `L²` pairing of `ξ` with the gradient
+`A (γ' - X_H)`. For a compatible pair `A = J`, and conversely `A = J` forces compatibility; the
+defect `A - J` is measured by the failure `ω(u, v) - ω(J u, J v)` of `J`-invariance. Tame pairs
+need not be compatible (`TauCeti.SymplecticForm.exists_tames_not_compatible`), so in general
+`A ≠ J`.
+
 ## Main declarations
 
 * `TauCeti.SymplecticForm.symmetrizedBilinForm`: the symmetric part `gₛ(v, w) = ω(v, J w) +
@@ -38,6 +46,10 @@ the symmetric part is just twice the asymmetric metric `ω(·, J ·)`, which is 
   pair as an `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.Tames.innerProductCore_inner_invariant`: the packaged inner product is
   `J`-invariant, `⟪J v, J w⟫ = ⟪v, w⟫`.
+* `TauCeti.SymplecticForm.Tames.gradientOperator`: the operator `A` with `gₛ(A u, v) = 2 ω(u, v)`,
+  characterized by `TauCeti.SymplecticForm.Tames.eq_gradientOperator_iff`.
+* `TauCeti.SymplecticForm.Tames.gradientOperator_eq_iff`: `A = J` exactly for compatible pairs,
+  with the defect `TauCeti.SymplecticForm.Tames.symmetrizedBilinForm_gradientOperator_sub`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Sections 2.1 and 2.5.
@@ -74,10 +86,8 @@ lemma symmetrizedBilinForm_isSymm : (ω.symmetrizedBilinForm J).IsSymm :=
 gₛ(v, w)`. This uses only `J² = -1` and skew-symmetry of `ω`, not taming. -/
 lemma symmetrizedBilinForm_invariant (v w : V) :
     ω.symmetrizedBilinForm J (J v) (J w) = ω.symmetrizedBilinForm J v w := by
-  have e₁ : ω (J v) (-w) = ω w (J v) :=
-    (map_neg (ω.toBilinForm (J v)) w).trans (ω.neg_eq (J v) w)
-  have e₂ : ω (J w) (-v) = ω v (J w) :=
-    (map_neg (ω.toBilinForm (J w)) v).trans (ω.neg_eq (J w) v)
+  have e₁ : ω (J v) (-w) = ω w (J v) := by rw [ω.apply_neg, ω.neg_eq]
+  have e₂ : ω (J w) (-v) = ω v (J w) := by rw [ω.apply_neg, ω.neg_eq]
   rw [symmetrizedBilinForm_apply, symmetrizedBilinForm_apply,
     AlmostComplexStructure.apply_apply, AlmostComplexStructure.apply_apply, e₁, e₂, add_comm]
 
@@ -173,6 +183,99 @@ lemma symmetrizedBilinForm_apply (h : ω.Compatible J) (v w : V) :
   rw [SymplecticForm.symmetrizedBilinForm_apply, ← h.associatedBilinForm_apply_swap v w, two_mul]
 
 end Compatible
+
+/-! ### The operator representing `ω` through the symmetric metric -/
+
+section GradientOperator
+
+variable [FiniteDimensional ℝ V]
+
+namespace Tames
+
+/-- The **gradient operator** of a tame pair `(ω, J)` on a finite-dimensional space: the linear map
+`A` with `g(A u, v) = ω(u, v)` for the normalized symmetric metric `g = gₛ / 2`, that is
+`gₛ(A u, v) = 2 ω(u, v)` (`TauCeti.SymplecticForm.Tames.symmetrizedBilinForm_gradientOperator`).
+It exists and is unique because taming makes `gₛ` nondegenerate. This is the analogue, for the
+metric built from `(ω, J)`, of the operator `TauCeti.SymplecticForm.innerOperator` representing `ω`
+through an ambient inner product.
+
+It is the operator through which `g` turns the weak differential of the action functional into a
+gradient: a first variation `∫ ω(γ' - X_H, ξ) dt` is `∫ g(ξ, A (γ' - X_H)) dt`. When `ω` is
+compatible with `J`, `A = J` (`TauCeti.SymplecticForm.Compatible.gradientOperator_eq`), but for a
+merely tame `J` it differs from `J` (`TauCeti.SymplecticForm.Tames.gradientOperator_eq_iff`). -/
+noncomputable def gradientOperator (h : ω.Tames J) : V →ₗ[ℝ] V :=
+  ((2 : ℝ) • ω.toBilinForm).symmCompOfNondegenerate (ω.symmetrizedBilinForm J)
+    h.symmetrizedBilinForm_nondegenerate
+
+/-- **The defining property of the gradient operator**: `gₛ(A u, v) = 2 ω(u, v)`, so
+`g(A u, v) = ω(u, v)` for `g = gₛ / 2`. -/
+@[simp high]
+theorem symmetrizedBilinForm_gradientOperator (h : ω.Tames J) (u v : V) :
+    ω.symmetrizedBilinForm J (h.gradientOperator u) v = 2 * ω u v := by
+  simp [gradientOperator]
+
+/-- The gradient operator in the second slot of the symmetric metric:
+`gₛ(u, A v) = 2 ω(v, u)`. -/
+@[simp high]
+theorem symmetrizedBilinForm_gradientOperator_right (h : ω.Tames J) (u v : V) :
+    ω.symmetrizedBilinForm J u (h.gradientOperator v) = 2 * ω v u := by
+  rw [← h.symmetrizedBilinForm_gradientOperator, symmetrizedBilinForm_apply,
+    symmetrizedBilinForm_apply, add_comm]
+
+/-- The gradient operator is skew-adjoint for the symmetric metric: `gₛ(A u, u) = 0`. -/
+theorem symmetrizedBilinForm_gradientOperator_self (h : ω.Tames J) (u : V) :
+    ω.symmetrizedBilinForm J (h.gradientOperator u) u = 0 := by
+  simp
+
+/-- **Uniqueness of the gradient operator.** A linear map `A` with `gₛ(A u, v) = 2 ω(u, v)` for all
+`u` and `v` is the gradient operator. -/
+theorem eq_gradientOperator_iff (h : ω.Tames J) {A : V →ₗ[ℝ] V} :
+    A = h.gradientOperator ↔ ∀ u v, ω.symmetrizedBilinForm J (A u) v = 2 * ω u v := by
+  refine ⟨fun hA u v ↦ hA ▸ h.symmetrizedBilinForm_gradientOperator u v, fun hA ↦ ?_⟩
+  refine LinearMap.ext fun u ↦ sub_eq_zero.1 <|
+    h.symmetrizedBilinForm_nondegenerate.1 _ fun v ↦ ?_
+  rw [map_sub, LinearMap.sub_apply, hA, h.symmetrizedBilinForm_gradientOperator, sub_self]
+
+/-- The gradient operator is injective, since `ω` is nondegenerate. -/
+theorem gradientOperator_injective (h : ω.Tames J) : Function.Injective h.gradientOperator := by
+  refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ω.separatingLeft u fun v ↦ ?_
+  have hv := h.symmetrizedBilinForm_gradientOperator u v
+  rw [hu, map_zero, LinearMap.zero_apply] at hv
+  linarith
+
+/-- **The defect of the gradient operator from `J`.** It measures the failure of `J`-invariance:
+`gₛ((A - J) u, v) = ω(u, v) - ω(J u, J v)`. -/
+theorem symmetrizedBilinForm_gradientOperator_sub (h : ω.Tames J) (u v : V) :
+    ω.symmetrizedBilinForm J (h.gradientOperator u - J u) v = ω u v - ω (J u) (J v) := by
+  -- `ω(v, J (J u)) = ω(v, -u) = ω(u, v)`, by skew-symmetry.
+  rw [map_sub, LinearMap.sub_apply, h.symmetrizedBilinForm_gradientOperator,
+    symmetrizedBilinForm_apply, AlmostComplexStructure.apply_apply, ω.apply_neg, ω.neg_eq]
+  ring
+
+/-- **The gradient operator is `J` exactly for compatible pairs.** For a tame pair, `A = J` if and
+only if `ω` is compatible with `J`. So for a tame `J` that is not compatible, the gradient of the
+action is not `J (γ' - X_H)`. -/
+theorem gradientOperator_eq_iff (h : ω.Tames J) :
+    h.gradientOperator = J.toLinearMap ↔ ω.Compatible J := by
+  refine ⟨fun hA ↦ Compatible.of_tames ((ω.invariant_iff J).2 fun u v ↦ ?_) h, fun hc ↦ ?_⟩
+  · have := h.symmetrizedBilinForm_gradientOperator_sub u v
+    rw [hA] at this
+    simp only [sub_self, map_zero, LinearMap.zero_apply] at this
+    linarith
+  · refine LinearMap.ext fun u ↦ (sub_eq_zero.1 <|
+      h.symmetrizedBilinForm_nondegenerate.1 _ fun v ↦ ?_)
+    rw [h.symmetrizedBilinForm_gradientOperator_sub, hc.invariant_apply, sub_self]
+
+end Tames
+
+/-- For a compatible pair, the gradient operator is `J`: the metric is `g = ω(·, J ·)`, and
+`g(J u, v) = ω(J u, J v) = ω(u, v)`. -/
+@[simp]
+theorem Compatible.gradientOperator_eq (h : ω.Compatible J) :
+    h.tames.gradientOperator = J.toLinearMap :=
+  h.tames.gradientOperator_eq_iff.2 h
+
+end GradientOperator
 
 end SymplecticForm
 

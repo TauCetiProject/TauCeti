@@ -50,12 +50,13 @@ variable {K : AbstractSimplicialComplex ι} {n : ℕ}
 
 /-- The characteristic map of a simplicial cell, using its increasing vertex enumeration. -/
 def characteristicMap (c : RealizationCell K n) : PartialEquiv (Fin n → ℝ) (Realization K) :=
-  simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.1.2)
+  simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.val.property)
 
 /-- A cell's characteristic map uses its increasing vertex enumeration. -/
 theorem characteristicMap_def (c : RealizationCell K n) :
     c.characteristicMap =
-      simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.1.2) :=
+      simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.val.property)
+          :=
   (rfl)
 
 /-- The source of a simplicial cell's characteristic map is the open unit ball. -/
@@ -67,7 +68,7 @@ theorem characteristicMap_source (c : RealizationCell K n) :
 /-- The open cell consists of the points whose barycentric support is its face. -/
 @[simp]
 theorem characteristicMap_target (c : RealizationCell K n) :
-    c.characteristicMap.target = {x : Realization K | x.1.support = c.1.1} := by
+    c.characteristicMap.target = {x : Realization K | x.val.support = c.val.val} := by
   rw [characteristicMap, simplexCharacteristicMap_target, image_vertexEmbedding]
 
 /-- A cell's characteristic map is injective on the closed ball. -/
@@ -78,7 +79,7 @@ theorem injOn_characteristicMap_closedBall (c : RealizationCell K n) :
 /-- The open ball maps onto the points whose support is the cell's face. -/
 @[simp]
 theorem image_characteristicMap_ball (c : RealizationCell K n) :
-    c.characteristicMap '' ball 0 1 = {x : Realization K | x.1.support = c.1.1} := by
+    c.characteristicMap '' ball 0 1 = {x : Realization K | x.val.support = c.val.val} := by
   rw [← c.characteristicMap_source, PartialEquiv.image_source_eq_target,
     characteristicMap_target]
 
@@ -86,14 +87,14 @@ theorem image_characteristicMap_ball (c : RealizationCell K n) :
 @[simp]
 theorem image_characteristicMap_closedBall (c : RealizationCell K n) :
     c.characteristicMap '' closedBall 0 1 =
-      {x : Realization K | x.1.support ⊆ c.1.1} := by
+      {x : Realization K | x.val.support ⊆ c.val.val} := by
   rw [characteristicMap, image_simplexCharacteristicMap_closedBall, image_vertexEmbedding]
 
 /-- The boundary sphere maps onto the proper subfaces of the cell's face. -/
 @[simp]
 theorem image_characteristicMap_sphere (c : RealizationCell K n) :
     c.characteristicMap '' sphere 0 1 =
-      {x : Realization K | x.1.support ⊂ c.1.1} := by
+      {x : Realization K | x.val.support ⊂ c.val.val} := by
   rw [characteristicMap, image_simplexCharacteristicMap_sphere, image_vertexEmbedding]
 
 end RealizationCell
@@ -101,10 +102,10 @@ end RealizationCell
 omit [LinearOrder ι] in
 private theorem finite_lowerCells {K : AbstractSimplicialComplex ι} {n : ℕ}
     (c : RealizationCell K n) (m : ℕ) :
-    {d : RealizationCell K m | d.1.1 ⊆ c.1.1}.Finite := by
-  have himage : ((fun d : RealizationCell K m => d.1.1) ''
-      {d | d.1.1 ⊆ c.1.1}).Finite :=
-    c.1.1.powerset.finite_toSet.subset (by
+    {d : RealizationCell K m | d.val.val ⊆ c.val.val}.Finite := by
+  have himage : ((fun d : RealizationCell K m => d.val.val) ''
+      {d | d.val.val ⊆ c.val.val}).Finite :=
+    c.val.val.powerset.finite_toSet.subset (by
       rintro _ ⟨d, hd, rfl⟩
       exact Finset.mem_powerset.mpr hd)
   exact Set.Finite.of_finite_image himage fun d _ e _ hde =>
@@ -118,7 +119,7 @@ omit [LinearOrder ι] in
 @[simp]
 private theorem mem_lowerCells {K : AbstractSimplicialComplex ι} {n m : ℕ}
     (c : RealizationCell K n) (d : RealizationCell K m) :
-    d ∈ lowerCells c m ↔ d.1.1 ⊆ c.1.1 :=
+    d ∈ lowerCells c m ↔ d.val.val ⊆ c.val.val :=
   Set.Finite.mem_toFinset _
 
 private theorem pairwiseDisjoint_characteristicMap (K : AbstractSimplicialComplex ι) :
@@ -128,12 +129,12 @@ private theorem pairwiseDisjoint_characteristicMap (K : AbstractSimplicialComple
   rw [Function.onFun_apply, RealizationCell.image_characteristicMap_ball,
     RealizationCell.image_characteristicMap_ball, Set.disjoint_left]
   intro x hxc hxd
-  have hfaces : c.1.1 = d.1.1 := hxc.symm.trans hxd
+  have hfaces : c.val.val = d.val.val := hxc.symm.trans hxd
   have hcard : n + 1 = m + 1 := by
     calc
-      n + 1 = c.1.1.card := c.2.symm
-      _ = d.1.1.card := congrArg Finset.card hfaces
-      _ = m + 1 := d.2
+      n + 1 = c.val.val.card := c.property.symm
+      _ = d.val.val.card := congrArg Finset.card hfaces
+      _ = m + 1 := d.property
   have hnm : n = m := by omega
   subst m
   have hcd : c = d := Subtype.ext (Subtype.ext hfaces)
@@ -146,19 +147,19 @@ private theorem mapsTo_characteristicMap (K : AbstractSimplicialComplex ι) (n :
       (⋃ (m < n) (d ∈ lowerCells c m), d.characteristicMap '' closedBall 0 1) := by
   intro x hx
   let y := c.characteristicMap x
-  have hy : y.1.support ⊂ c.1.1 := by
+  have hy : y.val.support ⊂ c.val.val := by
     have : y ∈ c.characteristicMap '' sphere 0 1 := ⟨x, hx, rfl⟩
     simpa only [RealizationCell.image_characteristicMap_sphere, Set.mem_ofPred_eq] using this
-  have hface : y.1.support ∈ K := support_mem K y
-  have hnonempty : y.1.support.Nonempty := K.isRelLowerSet_faces.prop_of_mem hface
-  let m := y.1.support.card - 1
-  have hmcard : y.1.support.card = m + 1 := by
+  have hface : y.val.support ∈ K := support_mem K y
+  have hnonempty : y.val.support.Nonempty := K.isRelLowerSet_faces.prop_of_mem hface
+  let m := y.val.support.card - 1
+  have hmcard : y.val.support.card = m + 1 := by
     exact (Nat.sub_add_cancel (Finset.card_pos.mpr hnonempty)).symm
-  let d : RealizationCell K m := ⟨⟨y.1.support, hface⟩, hmcard⟩
+  let d : RealizationCell K m := ⟨⟨y.val.support, hface⟩, hmcard⟩
   have hmn : m < n := by
     have hcard := Finset.card_lt_card hy
     dsimp only [m]
-    rw [c.2] at hcard
+    rw [c.property] at hcard
     omega
   refine mem_iUnion.mpr ⟨m, mem_iUnion.mpr ⟨hmn, mem_iUnion.mpr ⟨d, ?_⟩⟩⟩
   refine mem_iUnion.mpr ⟨(mem_lowerCells c d).mpr hy.subset, ?_⟩
@@ -181,9 +182,9 @@ def realizationCWComplex (K : AbstractSimplicialComplex ι) :
   closed' A _ hA := by
     rw [isClosed_iff_faceInclusion]
     intro σ
-    have hσne : σ.1.Nonempty := K.isRelLowerSet_faces.prop_of_mem σ.2
-    let n := σ.1.card - 1
-    have hcard : σ.1.card = n + 1 :=
+    have hσne : σ.val.Nonempty := K.isRelLowerSet_faces.prop_of_mem σ.property
+    let n := σ.val.card - 1
+    have hcard : σ.val.card = n + 1 :=
       (Nat.sub_add_cancel (Finset.card_pos.mpr hσne)).symm
     let c : RealizationCell K n := ⟨σ, hcard⟩
     have hc := hA n c
@@ -203,12 +204,12 @@ def realizationCWComplex (K : AbstractSimplicialComplex ι) :
   union' := by
     apply eq_univ_of_forall
     intro x
-    have hface : x.1.support ∈ K := support_mem K x
-    have hnonempty : x.1.support.Nonempty := K.isRelLowerSet_faces.prop_of_mem hface
-    let n := x.1.support.card - 1
-    have hcard : x.1.support.card = n + 1 :=
+    have hface : x.val.support ∈ K := support_mem K x
+    have hnonempty : x.val.support.Nonempty := K.isRelLowerSet_faces.prop_of_mem hface
+    let n := x.val.support.card - 1
+    have hcard : x.val.support.card = n + 1 :=
       (Nat.sub_add_cancel (Finset.card_pos.mpr hnonempty)).symm
-    let c : RealizationCell K n := ⟨⟨x.1.support, hface⟩, hcard⟩
+    let c : RealizationCell K n := ⟨⟨x.val.support, hface⟩, hcard⟩
     refine mem_iUnion.mpr ⟨n, mem_iUnion.mpr ⟨c, ?_⟩⟩
     rw [RealizationCell.image_characteristicMap_closedBall]
     exact Finset.Subset.rfl
@@ -232,7 +233,7 @@ theorem openCell_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι) {n
     (c : RealizationCell K n) :
     letI := realizationCWComplex K
     RelCWComplex.openCell n ((realizationCellEquiv K n).symm c) =
-      {x : Realization K | x.1.support = c.1.1} :=
+      {x : Realization K | x.val.support = c.val.val} :=
   c.image_characteristicMap_ball
 
 /-- The closed cells of `realizationCWComplex K` are the closed simplices of the cell's face. -/
@@ -241,7 +242,7 @@ theorem closedCell_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι) 
     (c : RealizationCell K n) :
     letI := realizationCWComplex K
     RelCWComplex.closedCell n ((realizationCellEquiv K n).symm c) =
-      {x : Realization K | x.1.support ⊆ c.1.1} :=
+      {x : Realization K | x.val.support ⊆ c.val.val} :=
   c.image_characteristicMap_closedBall
 
 /-- The cell frontiers of `realizationCWComplex K` are the proper subfaces of the cell's face. -/
@@ -250,7 +251,7 @@ theorem cellFrontier_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι
     (c : RealizationCell K n) :
     letI := realizationCWComplex K
     RelCWComplex.cellFrontier n ((realizationCellEquiv K n).symm c) =
-      {x : Realization K | x.1.support ⊂ c.1.1} :=
+      {x : Realization K | x.val.support ⊂ c.val.val} :=
   c.image_characteristicMap_sphere
 
 /-- The frontier of a positive-dimensional realization cell is the union of the closed cells
@@ -265,7 +266,7 @@ theorem cellFrontier_realizationCellEquiv_symm_eq_iUnion_face
   ext x
   simp only [cellFrontier_realizationCellEquiv_symm,
     closedCell_realizationCellEquiv_symm, Set.mem_ofPred_eq, Set.mem_iUnion]
-  exact (c.exists_subset_face_iff_ssubset x.1.support).symm
+  exact (c.exists_subset_face_iff_ssubset x.val.support).symm
 
 /-- Stage `n` of the CW filtration consists exactly of points with at most `n` nonzero
 barycentric coordinates. Stage zero is empty and stage infinity is the whole realization. -/
@@ -273,7 +274,7 @@ barycentric coordinates. Stage zero is empty and stage infinity is the whole rea
 theorem skeletonLT_realizationCWComplex (K : AbstractSimplicialComplex ι) (n : ℕ∞) :
     letI := realizationCWComplex K
     (RelCWComplex.skeletonLT (univ : Set (Realization K)) n : Set (Realization K)) =
-      {x | (x.1.support.card : ℕ∞) ≤ n} := by
+      {x | (x.val.support.card : ℕ∞) ≤ n} := by
   let := realizationCWComplex K
   induction n using ENat.recTopCoe with
   | top => simp
@@ -284,19 +285,19 @@ theorem skeletonLT_realizationCWComplex (K : AbstractSimplicialComplex ι) (n : 
     constructor
     · rintro ⟨m, hmn, c, hxc⟩
       let d := realizationCellEquiv K m c
-      have hx : x.1.support = d.1.1 := by
+      have hx : x.val.support = d.val.val := by
         rw [← (realizationCellEquiv K m).symm_apply_apply c,
           openCell_realizationCellEquiv_symm] at hxc
         exact hxc
       have hm : m < n := by exact_mod_cast hmn
-      rw [hx, d.2]
+      rw [hx, d.property]
       omega
     · intro hx
-      have hpos : 0 < x.1.support.card :=
+      have hpos : 0 < x.val.support.card :=
         Finset.card_pos.mpr (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))
-      let m := x.1.support.card - 1
+      let m := x.val.support.card - 1
       let d : RealizationCell K m :=
-        ⟨⟨x.1.support, support_mem K x⟩, by dsimp [m]; omega⟩
+        ⟨⟨x.val.support, support_mem K x⟩, by dsimp [m]; omega⟩
       refine ⟨m, ?_, (realizationCellEquiv K m).symm d, ?_⟩
       · have hm : m < n := by dsimp [m]; omega
         exact_mod_cast hm
@@ -324,7 +325,7 @@ theorem cellAttachingMap_realization_injective
     _root_.AbstractSimplicialComplex.map_realizationCellEquiv_symm] at h'
   exact (TopCat.isClosedEmbedding_diskBoundaryInclusion n).injective
     ((diskHomeomorphClosedBall n).injective (Subtype.ext
-      (c.injOn_characteristicMap_closedBall (diskHomeomorphClosedBall n _).2
-        (diskHomeomorphClosedBall n _).2 h')))
+      (c.injOn_characteristicMap_closedBall (diskHomeomorphClosedBall n _).property
+        (diskHomeomorphClosedBall n _).property h')))
 
 end TauCeti

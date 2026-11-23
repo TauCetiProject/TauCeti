@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
+public import TauCeti.Analysis.PDE.Vortex.ModulusBound
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Sobolev.Poincare.Schrodinger
 
@@ -36,13 +37,28 @@ Poincaré inequality for Schrödinger forms
 (`TauCeti.exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq`)
 bounds the connection part below by a positive multiple of `∫ (η₀² + η₁²)`.
 
+The gap is uniform over all vortices of a given degree `m`
+(`TauCeti.Vortex.exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint`):
+one `c > 0`, depending only on `m`, serves every smooth vortex with the degree-`m` end framing,
+over the whole noncompact moduli space `Sym^m ℂ`, including divisors whose zeros collide or move
+apart in clusters. The vacuum gap alone does not give this: the potential `P` vanishes at the
+zeros wherever they are. By the lower bound `|α|² ≥ ∏ ‖z - a‖² / (‖z - a‖² + C)` in terms of the
+zeros (`TauCeti.Vortex.prod_div_le_normSq`), a point where `|α|²` is small lies near a zero
+(`TauCeti.Vortex.exists_mem_mul_norm_sub_sq_lt`), so the potential `2 P` is at least `1/4` off
+the union of the discs of a fixed radius `ρ`, depending only on `m`, about the `m` zeros. This
+union has measure at most `m` times that of a disc of radius `ρ` wherever the zeros are, and the
+Poincaré inequality for Schrödinger forms has a constant depending only on such a measure bound
+(`exists_pos_forall_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq`).
+
 These are classical test-field estimates. They do not construct the completed Sobolev
-realization of `L_x` or a uniform gap over the noncompact vortex moduli space.
+realization of `L_x`.
 
 ## Main results
 
 * `TauCeti.Vortex.exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint`: the
   global coercivity of `L_x*` at a vortex with `|α| → 1`.
+* `TauCeti.Vortex.exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint`:
+  the same with one constant for all smooth vortices of degree `m`.
 
 ## References
 
@@ -55,7 +71,7 @@ public section
 namespace TauCeti.Vortex
 
 open Complex MeasureTheory Filter
-open scoped Laplacian Topology RealInnerProductSpace
+open scoped ContDiff Laplacian Topology RealInnerProductSpace
 
 variable {x η : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -137,31 +153,32 @@ private theorem integral_le_integral_norm_sq_gaugeFixedAdjoint (hx : ContDiff �
         Δ (fun w ↦ ‖η w‖ ^ 2) z / 2) ∂μ := by
     rw [integral_add hi hΔ, integral_div,
       integral_laplacian_eq_zero_of_hasCompactSupport (hη.norm_sq ℝ) hnc, zero_div, add_zero,
-      integral_inner_gaugeFixedOperator hx.continuous hL hLc (hη.of_le (by norm_num))]
+      integral_inner_gaugeFixedOperator hL (hη.of_le (by norm_num)) (.inl hLc)]
     simp only [real_inner_self_eq_norm_sq]
   rw [hW]
   exact integral_mono hG (hi.fun_add hΔ) fun z ↦
     le_inner_gaugeFixedOperator_gaugeFixedAdjoint_add_laplacian
       (hx.differentiable one_ne_zero z) hη.contDiffAt (hsol z)
 
-/-- **Spectral gap of `L_x L_x*` at a vortex.** For an actual vortex with unit-modulus end,
-there is `c > 0`, depending only on the vortex, such that `c ∫|η|² ≤ ∫|L_x* η|²` for every
-compactly supported `C²` field `η`. -/
-theorem exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
-    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ c > 0, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
-      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
-  -- The connection components see the potential `2 P ≥ 1/4` outside a disc.
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous fun z ↦ 2 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    have := hxi 2; have := hxi 3; fun_prop
-  obtain ⟨c, hc, hgap⟩ :=
-    exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
-      (μ := μ) (F := ℝ) hPc.locallyIntegrable (ae_of_all _ fun z ↦ by positivity)
-      (by norm_num : (0 : ℝ) < 1 / 4) (ae_of_all _ fun z hz ↦ by linarith [hR z hz])
-  refine ⟨min (c / 2) (1 / 8), by positivity, fun η hη hηc ↦ ?_⟩
+/-- The potential `2 P = 2 (x₂² + x₃²)` of the connection components of a continuous field is
+continuous. -/
+private theorem continuous_connectionPotential (hx : Continuous x) :
+    Continuous fun z ↦ 2 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+  have : Continuous fun z ↦ x z 2 := by fun_prop
+  have : Continuous fun z ↦ x z 3 := by fun_prop
+  fun_prop
+
+/-- The spectral gap of `L_x L_x*` from a Poincaré inequality for the Schrödinger form of the
+potential `2 P = 2 (x₂² + x₃²)` of the connection components: if that form is bounded below by
+`c ∫ u²`, then `min (c / 2) (1 / 8) ∫ |η|² ≤ ∫ |L_x* η|²`. -/
+private theorem min_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
+    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0) {c : ℝ}
+    (hgap : ∀ u : ℂ → ℝ, ContDiff ℝ 1 u → HasCompactSupport u →
+      c * ∫ z, ‖u z‖ ^ 2 ∂μ ≤
+        ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ + ∫ z, 2 * (x z 2 ^ 2 + x z 3 ^ 2) * ‖u z‖ ^ 2 ∂μ)
+    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+    min (c / 2) (1 / 8) * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
+  have hPc := continuous_connectionPotential hx.continuous
   have hu (i : Fin 4) : ContDiff ℝ 2 fun w ↦ η w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hη :)
   have huc (i : Fin 4) : HasCompactSupport fun w ↦ η w i :=
@@ -208,5 +225,65 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
     mul_le_mul_of_nonneg_right (min_le_left (c / 2) (1 / 8)) (hB₀ 1),
     mul_le_mul_of_nonneg_right (min_le_right (c / 2) (1 / 8)) (hB₀ 2),
     mul_le_mul_of_nonneg_right (min_le_right (c / 2) (1 / 8)) (hB₀ 3)]
+
+/-- **Spectral gap of `L_x L_x*` at a vortex.** For an actual vortex with unit-modulus end,
+there is `c > 0`, depending only on the vortex, such that `c ∫|η|² ≤ ∫|L_x* η|²` for every
+compactly supported `C²` field `η`. -/
+theorem exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
+    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ c > 0, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
+  -- The connection components see the potential `2 P ≥ 1/4` outside a disc.
+  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
+  have hPc := continuous_connectionPotential hx.continuous
+  obtain ⟨c, hc, hgap⟩ :=
+    exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
+      (μ := μ) (F := ℝ) hPc.locallyIntegrable (ae_of_all _ fun z ↦ by positivity)
+      (by norm_num : (0 : ℝ) < 1 / 4) (ae_of_all _ fun z hz ↦ by linarith [hR z hz])
+  exact ⟨min (c / 2) (1 / 8), by positivity, fun η hη hηc ↦
+    min_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint hx hsol hgap hη hηc⟩
+
+/-- **Uniform spectral gap of `L_x L_x*` over all vortices of degree `m`.** There is `c > 0`,
+depending only on `m`, such that for every smooth plane vortex `x` with the degree-`m` end
+framing, `c ∫|η|² ≤ ∫|L_x* η|²` for every compactly supported `C²` field `η`. The constant is
+uniform over the whole noncompact moduli space `Sym^m ℂ`: the zeros of `α` may lie anywhere,
+collide, or move apart in clusters. -/
+theorem exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (m : ℕ) :
+    ∃ c > 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+        c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
+  -- The potential `2 P` of the connection components is at least `1/4` off the discs of radius
+  -- `ρ` about the `m` zeros, so off a set of measure at most `m μ(B(0, ρ))`.
+  set C : ℝ := 16 * m + 1
+  set ρ := √(2 * (m * C))
+  obtain ⟨c, hc, hgap⟩ :=
+    exists_pos_forall_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
+      (μ := μ) (F := ℝ) (by norm_num : (0 : ℝ) < 1 / 4)
+      (M := m * μ (Metric.ball 0 ρ))
+      (ENNReal.mul_ne_top (ENNReal.natCast_ne_top m) measure_ball_lt_top.ne)
+  refine ⟨min (c / 2) (1 / 8), by positivity, fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
+  have hm : Multiset.card D = m := hD.card_eq_of_tendsto_mul_inv_pow hframe
+  have hPc := continuous_connectionPotential hx.continuous
+  refine min_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (hx.of_le (by simp)) hsol
+    (fun u hu huc ↦ hgap _ (⋃ a ∈ D.toFinset, Metric.ball a ρ) hPc.locallyIntegrable
+      (ae_of_all _ fun z ↦ by positivity) ?_ (ae_of_all _ fun z hz ↦ ?_) u hu huc) hη hηc
+  · calc μ (⋃ a ∈ D.toFinset, Metric.ball a ρ)
+        ≤ ∑ a ∈ D.toFinset, μ (Metric.ball a ρ) := measure_biUnion_finset_le _ _
+      _ = D.toFinset.card * μ (Metric.ball 0 ρ) := by
+        simp [Measure.addHaar_ball_center, Finset.sum_const, nsmul_eq_mul]
+      _ ≤ m * μ (Metric.ball 0 ρ) := by
+        gcongr
+        exact_mod_cast hm ▸ Multiset.toFinset_card_le D
+  · -- A point where `2 P < 1/4`, so `|α|² ≤ 1/2`, lies within `ρ` of a zero.
+    by_contra! hlt
+    obtain ⟨a, haD, ha⟩ := exists_mem_mul_norm_sub_sq_lt hx hsol hframe hD
+      (by simp [C] : 16 * (m : ℝ) < C) (by norm_num : (1 : ℝ) / 2 < 1) (z := z) (by linarith)
+    refine hz (Set.mem_biUnion (Multiset.mem_toFinset.mpr haD) ?_)
+    rw [Metric.mem_ball, dist_eq_norm, Real.lt_sqrt (norm_nonneg _)]
+    linarith
 
 end TauCeti.Vortex

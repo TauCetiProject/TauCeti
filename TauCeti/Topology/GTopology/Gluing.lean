@@ -44,10 +44,10 @@ of the source. The local maps are defined on the induced G-topologies. -/
 theorem exists_iff_restrict (hG : G.Saturated) {C : Set B} (hC : G.Covers ⊤ C)
     (f : X → Y) :
     (∃ g : G.ContinuousMap G', ∀ x, g x = f x) ↔
-      ∀ U : C, ∃ g : (G.restrict U.1).ContinuousMap G', ∀ x, g x = f x := by
+      ∀ U : C, ∃ g : (G.restrict U.val).ContinuousMap G', ∀ x, g x = f x := by
   constructor
   · rintro ⟨g, hg⟩ U
-    exact ⟨g.comp (G.restrictInclusion U.1), fun x ↦ by simpa using hg x⟩
+    exact ⟨g.comp (G.restrictInclusion U.val), fun x ↦ by simpa using hg x⟩
   · intro hlocal
     classical
     choose g hg using hlocal
@@ -62,7 +62,7 @@ theorem exists_iff_restrict (hG : G.Saturated) {C : Set B} (hC : G.Covers ⊤ C)
     choose φ hφ using hpre
     -- Local preimages represent intersections of global preimages with the cover.
     have hφlocal (V : B') (U : C) :
-        φ V ⊓ U.1 = ((g U).comap V : B) := by
+        φ V ⊓ U.val = ((g U).comap V : B) := by
       apply ι.injective
       rw [G.map_inf, hφ, ← image_restrictEmbedding, coe_comap]
       ext x
@@ -82,23 +82,23 @@ theorem exists_iff_restrict (hG : G.Saturated) {C : Set B} (hC : G.Covers ⊤ C)
 uniquely. Agreement is required at every point of each overlap; the target need not be
 saturated or separated. -/
 theorem existsUnique_glue (hG : G.Saturated) {C : Set B} (hC : G.Covers ⊤ C)
-    (f : ∀ U : C, (G.restrict U.1).ContinuousMap G')
-    (hf : ∀ (U V : C) (x : X) (hU : x ∈ ι U.1) (hV : x ∈ ι V.1),
+    (f : ∀ U : C, (G.restrict U.val).ContinuousMap G')
+    (hf : ∀ (U V : C) (x : X) (hU : x ∈ ι U.val) (hV : x ∈ ι V.val),
       f U ⟨x, hU⟩ = f V ⟨x, hV⟩) :
-    ∃! g : G.ContinuousMap G', ∀ (U : C) (x : ι U.1), g x = f U x := by
-  have hcover : ⋃ U : C, ι U.1 = Set.univ := by
+    ∃! g : G.ContinuousMap G', ∀ (U : C) (x : ι U.val), g x = f U x := by
+  have hcover : ⋃ U : C, ι U.val = Set.univ := by
     simpa only [Set.iUnion_coe_set, Set.sUnion_image, G.map_top] using G.union_eq hC
-  let F := Set.liftCover (fun U : C ↦ ι U.1) (fun U ↦ ⇑(f U)) hf hcover
-  have hF (U : C) (x : ι U.1) : F x = f U x := by
+  let F := Set.liftCover (fun U : C ↦ ι U.val) (fun U ↦ ⇑(f U)) hf hcover
+  have hF (U : C) (x : ι U.val) : F x = f U x := by
     dsimp only [F]
-    exact Set.liftCover_coe (S := fun U : C ↦ ι U.1) (f := fun U ↦ ⇑(f U))
+    exact Set.liftCover_coe (S := fun U : C ↦ ι U.val) (f := fun U ↦ ⇑(f U))
       (hf := hf) (hS := hcover) x
   obtain ⟨g, hg⟩ := (exists_iff_restrict hG hC F).mpr fun U ↦
     ⟨f U, fun x ↦ (hF U x).symm⟩
   refine ⟨g, fun U x ↦ (hg x).trans (hF U x), fun g' hg' ↦ ?_⟩
   apply ext
   intro x
-  have hx : x ∈ ⋃ U : C, ι U.1 := hcover ▸ Set.mem_univ x
+  have hx : x ∈ ⋃ U : C, ι U.val := hcover ▸ Set.mem_univ x
   obtain ⟨U, hU⟩ := Set.mem_iUnion.mp hx
   exact (hg' U ⟨x, hU⟩).trans ((hF U ⟨x, hU⟩).symm.trans (hg x).symm)
 

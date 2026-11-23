@@ -131,7 +131,7 @@ theorem mapsTo_eigenspace_chirality_of_mem_even {x : CliffordAlgebra Q} (hx : x 
 on the `ε`-eigenspace `W^ε` by the restriction of `ρ x`. For `ε = ±1` this is the action on the
 half-spinors `W^±`. -/
 def evenHalfSpinAction : even Q →ₐ[ℝ] Module.End ℂ (eigenspace (ρ (chirality Q o)) ε) where
-  toFun x := (ρ x).restrict fun _ hψ ↦ mapsTo_eigenspace_chirality_of_mem_even o ρ ε x.2 hψ
+  toFun x := (ρ x).restrict fun _ hψ ↦ mapsTo_eigenspace_chirality_of_mem_even o ρ ε x.property hψ
   map_one' := by ext; simp
   map_mul' x y := by ext; simp
   map_zero' := by ext; simp
@@ -326,7 +326,7 @@ theorem ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self (hkl : 2 + 2 = finr
   -- `c(v) ψ` is a negative half-spinor.
   have hneg : ρ (chirality Q o) (ρ (ι Q v) ψ) = -ρ (ι Q v) ψ := by
     simpa using map_ι_apply_mem_eigenspace_chirality_neg o (ε := 1)
-      (by simpa using mem_positiveHalfSpinors.1 ψ.2) v
+      (by simpa using mem_positiveHalfSpinors.1 ψ.property) v
   -- The self-dual form `β` annihilates it, for the Clifford action on `W` through `ρ`.
   have hzero : ρ (bivectorExterior Q β) (ρ (ι Q v) ψ) = 0 :=
     letI := Module.compHom W ρ.toRingHom

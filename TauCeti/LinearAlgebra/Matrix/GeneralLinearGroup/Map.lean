@@ -12,13 +12,14 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
 `Matrix.GeneralLinearGroup.map f : GL n R →* GL n S` applies a ring hom `f : R →+* S` entrywise.
 Mathlib gives its functoriality (`map_id`, `map_comp`, `map_comp_apply`) but says nothing about
-injectivity, nor about how the map interacts with the positive-determinant subgroup — both of
-which a construction transporting a group of matrices along a change of scalars needs.
+injectivity or negation, nor about how the map interacts with the positive-determinant subgroup,
+all of which a construction transporting a group of matrices along a change of scalars needs.
 
 ## Main results
 
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
+* `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
 * `Matrix.GeneralLinearGroup.map_mem_glpos_iff`: a monotone ring hom preserves and reflects
   membership in the positive-determinant subgroups.
 * `Subgroup.map_mapGL`: extending a subgroup of `SL(n, R)` to `GL n S` and then to `GL n T`
@@ -36,6 +37,15 @@ is determined by its image over `S`, and a unit by its underlying matrix. -/
 theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (Matrix.GeneralLinearGroup.map (n := n) f) :=
   Units.map_injective (Matrix.map_injective hf)
+
+/-- Change of scalars commutes with negation. Together with Mathlib's `map_one`, `map_mul` and
+`map_inv`, this lets subgroup constructions involving `-1`, such as `Subgroup.adjoinNegOne`, be
+transported along `Matrix.GeneralLinearGroup.map f`. -/
+@[simp]
+protected theorem map_neg (f : R →+* S) (g : GL n R) :
+    Matrix.GeneralLinearGroup.map f (-g) = -Matrix.GeneralLinearGroup.map f g := by
+  ext i j
+  simp [Matrix.GeneralLinearGroup.map_apply]
 
 section StrictOrdered
 

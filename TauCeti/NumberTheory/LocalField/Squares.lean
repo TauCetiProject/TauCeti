@@ -186,7 +186,7 @@ theorem valuation_one_add_four_mul (h2 : (2 : K) ≠ 0) (he : 0 < natCastValuati
   rw [map_mul, valuation_four_eq_pow h2 hπ]
   calc valuation K (π : K) ^ (2 * natCastValuation K 2 h2) * valuation K (n : K)
       ≤ valuation K (π : K) ^ (2 * natCastValuation K 2 h2) * 1 :=
-        mul_le_mul' le_rfl ((Valuation.mem_integer_iff _ _).mp n.2)
+        mul_le_mul' le_rfl ((Valuation.mem_integer_iff _ _).mp n.property)
     _ < 1 := by
         rw [mul_one]
         exact pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one hπ) (by omega)
@@ -233,7 +233,7 @@ theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
   -- A square root of the integral element `1 + 4c` is integral.
   have hyO : (y : K) ∈ 𝒪[K] := by
     rw [Valuation.mem_integer_iff, ← pow_le_one_iff two_ne_zero, ← map_pow, hyK]
-    exact (1 + 4 * c).2
+    exact (1 + 4 * c).property
   have h2' : (2 : 𝒪[K]) ≠ 0 := fun h ↦ h2 <| by
     rw [← map_ofNat 𝒪[K].subtype 2, h, map_zero]
   obtain ⟨t, ht⟩ :=

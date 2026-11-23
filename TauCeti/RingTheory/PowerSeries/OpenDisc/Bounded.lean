@@ -77,7 +77,7 @@ theorem uniformContinuous_inclusion_onOpenDiscSubring :
     (Subring.inclusion HasGaussNorm.subring_le_onOpenDiscSubring).toAddMonoidHom) 1 fun f ↦ ?_
   rw [one_mul, TauCeti.PowerSeries.norm_eq_gaussNorm, norm_eq_gaussNorm]
   simpa using TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _)
-    r.2.1.le r.2.2.le (HasGaussNorm.mem_subring.mp f.2)
+    r.property.1.le r.property.2.le (HasGaussNorm.mem_subring.mp f.property)
 
 /-- The inclusion of bounded series into series on the open disc of the same radius is
 continuous. -/
@@ -97,7 +97,7 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {R₀ : ℝ} [Fact
 with `‖b‖ ≤ R₀` is bounded by its Gauss norm. -/
 theorem norm_evalAt_le [IsUltrametricDist A] [NormOneClass A] (f : HasGaussNorm.subring R R₀)
     (hb : ‖b‖ ≤ R₀) : ‖(f : R⟦X⟧).evalAt b‖ ≤ ‖f‖ :=
-  norm_evalAt_le_gaussNorm (HasGaussNorm.mem_subring.mp f.2) hb
+  norm_evalAt_le_gaussNorm (HasGaussNorm.mem_subring.mp f.property) hb
 
 /-- Evaluation of bounded series at a point `b` with `‖b‖ < R₀` of a complete normed algebra,
 through the series on the open disc of radius `R₀`, is continuous for the Gauss norm. -/

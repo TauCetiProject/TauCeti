@@ -81,10 +81,7 @@ private noncomputable def zigzagComponentPairing (C : G.ConnectedComponent) :
   classical
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
-    let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i =>
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
-    exact (zigzagTracePairing k C.toSimpleGraph hns).compl₁₂
+    exact (zigzagTracePairing k C.toSimpleGraph C.exists_adj_toSimpleGraph).compl₁₂
       (zigzagComponentAlgebraEquivNonisolated k G C).toLinearEquiv
       (zigzagComponentAlgebraEquivNonisolated k G C).toLinearEquiv
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
@@ -120,31 +117,14 @@ private theorem zigzagComponentPairing_mul_assoc (C : G.ConnectedComponent)
   classical
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
-    let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i =>
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
-    let e := zigzagComponentAlgebraEquivNonisolated k G C
-    simp only [zigzagComponentPairing, hC]
-    -- Evaluating the transported pairing is definitionally `compl₁₂_apply`; unfolding the
-    -- preceding `by_cases` does not expose that equation to `simp` in this dependent family.
-    change zigzagTracePairing k C.toSimpleGraph hns (e (x * y)) (e z) =
-      zigzagTracePairing k C.toSimpleGraph hns (e x) (e (y * z))
-    -- `e.map_mul` is stated through `e.toMulEquiv`, whereas this goal contains the `AlgEquiv`
-    -- function coercion, so `rw [e.map_mul x y]` cannot find the syntactically different term.
-    rw [show e (x * y) = e x * e y from e.map_mul x y,
-      show e (y * z) = e y * e z from e.map_mul y z]
-    exact zigzagTracePairing_mul_assoc k C.toSimpleGraph hns _ _ _
+    rw [zigzagComponentPairing_apply_nontrivial k G C C.exists_adj_toSimpleGraph,
+      zigzagComponentPairing_apply_nontrivial k G C C.exists_adj_toSimpleGraph,
+      map_mul (zigzagComponentAlgebraEquivNonisolated k G C) x y,
+      map_mul (zigzagComponentAlgebraEquivNonisolated k G C) y z]
+    exact zigzagTracePairing_mul_assoc k C.toSimpleGraph _ _ _ _
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
-    let e := (zigzagComponentAlgebraEquivULiftDualNumber k G C).trans
-      (ULift.algEquiv (R := k) (A := DualNumber k))
-    simp only [zigzagComponentPairing, hC]
-    -- As above, this records the definitional evaluation of the transported pairing after the
-    -- singleton branch of the dependent `by_cases` has been selected.
-    change dualNumberTracePairing k (e (x * y)) (e z) =
-      dualNumberTracePairing k (e x) (e (y * z))
-    -- The typed equalities bridge the same `e.toMulEquiv` versus `AlgEquiv` coercion mismatch.
-    rw [show e (x * y) = e x * e y from e.map_mul x y,
-      show e (y * z) = e y * e z from e.map_mul y z]
+    rw [zigzagComponentPairing_apply_subsingleton k G C,
+      zigzagComponentPairing_apply_subsingleton k G C, map_mul, map_mul]
     exact dualNumberTracePairing_mul_assoc k _ _ _
 
 private theorem zigzagComponentPairing_isSymm (C : G.ConnectedComponent) :
@@ -154,21 +134,12 @@ private theorem zigzagComponentPairing_isSymm (C : G.ConnectedComponent) :
   intro x y
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
-    let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i =>
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
-    let e := zigzagComponentAlgebraEquivNonisolated k G C
-    simp only [zigzagComponentPairing, hC]
-    -- Selecting this dependent branch leaves evaluation of the transported pairing definitional.
-    change zigzagTracePairing k C.toSimpleGraph hns (e x) (e y) =
-      zigzagTracePairing k C.toSimpleGraph hns (e y) (e x)
-    exact (zigzagTracePairing_isSymm k C.toSimpleGraph hns).eq _ _
+    rw [zigzagComponentPairing_apply_nontrivial k G C C.exists_adj_toSimpleGraph,
+      zigzagComponentPairing_apply_nontrivial k G C C.exists_adj_toSimpleGraph]
+    exact (zigzagTracePairing_isSymm k C.toSimpleGraph _).eq _ _
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
-    let e := (zigzagComponentAlgebraEquivULiftDualNumber k G C).trans
-      (ULift.algEquiv (R := k) (A := DualNumber k))
-    simp only [zigzagComponentPairing, hC]
-    -- The singleton branch likewise reduces the transported pairing only by definitional equality.
-    change dualNumberTracePairing k (e x) (e y) = dualNumberTracePairing k (e y) (e x)
+    rw [zigzagComponentPairing_apply_subsingleton k G C,
+      zigzagComponentPairing_apply_subsingleton k G C]
     exact (dualNumberTracePairing_isSymm k).eq _ _
 
 /-- The direct-sum Frobenius pairing on the public componentwise zigzag algebra. -/
@@ -261,30 +232,13 @@ theorem zigzagAlgebraPairing_apply_eq_trace_mul (x y : zigzagAlgebra k G) :
   rw [map_mul]
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
-    let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i ↦
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
-    rw [zigzagComponentPairing_apply_nontrivial k G C hns,
-      zigzagComponentTrace_apply_nontrivial k G C, zigzagTracePairing_apply]
-    let e := zigzagComponentAlgebraEquivNonisolated k G C
-    -- The typed equality bridges the `toMulEquiv` coercion in `map_mul` with the algebra-map
-    -- coercion under the trace.
-    rw [show e (zigzagComponentProjection k G C x * zigzagComponentProjection k G C y) =
-      e (zigzagComponentProjection k G C x) * e (zigzagComponentProjection k G C y) from
-        e.map_mul _ _]
+    rw [zigzagComponentPairing_apply_nontrivial k G C C.exists_adj_toSimpleGraph,
+      zigzagComponentTrace_apply_nontrivial k G C, zigzagTracePairing_apply,
+      map_mul (zigzagComponentAlgebraEquivNonisolated k G C)]
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     rw [zigzagComponentPairing_apply_subsingleton k G C,
-      zigzagComponentTrace_apply_subsingleton k G C]
-    let e := (zigzagComponentAlgebraEquivULiftDualNumber k G C).trans
-      (ULift.algEquiv (R := k) (A := DualNumber k))
-    -- This exposes the dual-number presentation hidden behind the component and `ULift` wrappers.
-    change dualNumberTracePairing k (e (zigzagComponentProjection k G C x))
-      (e (zigzagComponentProjection k G C y)) =
-        (e (zigzagComponentProjection k G C x * zigzagComponentProjection k G C y)).snd
-    -- The typed equality supplies the same multiplication-coercion bridge in this branch.
-    rw [show e (zigzagComponentProjection k G C x * zigzagComponentProjection k G C y) =
-      e (zigzagComponentProjection k G C x) * e (zigzagComponentProjection k G C y) from
-        e.map_mul _ _, dualNumberTracePairing_apply, DualNumber.snd_mul]
+      zigzagComponentTrace_apply_subsingleton k G C, map_mul, ULift.mul_down,
+      dualNumberTracePairing_apply, DualNumber.snd_mul]
 
 open Classical in
 /-- On a nontrivial component the direct-sum pairing restricted to the embedded factor is the
@@ -294,9 +248,7 @@ theorem zigzagAlgebraPairing_single_nontrivial (C : G.ConnectedComponent) [Nontr
     (x y : zigzagComponentAlgebra k G C) :
     zigzagAlgebraPairing k G (zigzagAlgebraMk k G (Pi.single C x))
         (zigzagAlgebraMk k G (Pi.single C y)) =
-      zigzagTracePairing k C.toSimpleGraph (fun i =>
-        exists_adj_iff_not_isIsolated.mpr
-          (C.connected_toSimpleGraph.preconnected.not_isIsolated i))
+      zigzagTracePairing k C.toSimpleGraph C.exists_adj_toSimpleGraph
         (zigzagComponentAlgebraEquivNonisolated k G C x)
         (zigzagComponentAlgebraEquivNonisolated k G C y) := by
   classical

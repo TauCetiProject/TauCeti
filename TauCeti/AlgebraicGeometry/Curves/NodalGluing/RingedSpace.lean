@@ -65,8 +65,8 @@ theorem sheafedSpace_map_apply {U V : (Opens (GluedCurve d))ᵒᵖ} (h : U ⟶ V
     (g : (sheafedSpace I d).presheaf.obj U)
     (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj V.unop) :
     (quotientSheafSectionsEquiv I (gluedRelSetoid d) V.unop
-      (((sheafedSpace I d).presheaf.map h).hom g)).1 x =
-      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U.unop g).1
+      (((sheafedSpace I d).presheaf.map h).hom g)).val x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U.unop g).val
         (Opens.inclusion (leOfHom ((Opens.map (TopCat.quotientMk
           (gluedRelSetoid d))).map h.unop)) x) := by
   exact (congrArg
@@ -83,8 +83,8 @@ private theorem sheafedSpace_comp_map_apply {R : CommRingCat}
     (h : U ⟶ V) (g : R)
     (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj V.unop) :
     (quotientSheafSectionsEquiv I (gluedRelSetoid d) V.unop
-      ((f ≫ (sheafedSpace I d).presheaf.map h).hom g)).1 x =
-      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U.unop (f.hom g)).1
+      ((f ≫ (sheafedSpace I d).presheaf.map h).hom g)).val x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U.unop (f.hom g)).val
         (Opens.inclusion (leOfHom ((Opens.map (TopCat.quotientMk
           (gluedRelSetoid d))).map h.unop)) x) := by
   exact sheafedSpace_map_apply I d h (f.hom g) x
@@ -93,8 +93,8 @@ private theorem sheafedSpace_comp_map_apply {R : CommRingCat}
 @[ext]
 theorem sheafedSpace_sectionMap_ext {R : CommRingCat} {U : Opens (GluedCurve d)}
     {f g : R ⟶ (sheafedSpace I d).presheaf.obj (op U)}
-    (h : ∀ a x, (quotientSheafSectionsEquiv I (gluedRelSetoid d) U (f.hom a)).1 x =
-      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U (g.hom a)).1 x) : f = g := by
+    (h : ∀ a x, (quotientSheafSectionsEquiv I (gluedRelSetoid d) U (f.hom a)).val x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U (g.hom a)).val x) : f = g := by
   apply CommRingCat.hom_ext
   apply RingHom.ext
   intro a
@@ -135,14 +135,14 @@ theorem quotientSheafSectionsEquiv_app_apply [∀ i, T2Space (X i)] [Finite Flag
       algebraMap ℂ ((sheafedSpace I d).presheaf.obj (op ((Opens.map f.hom.base).obj U))) c)
     (U : Opens (GluedCurve d')) (g : (sheafedSpace I d').presheaf.obj (op U))
     (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj ((Opens.map f.hom.base).obj U))
-    (y : Σ i, X' i) (hy : Quotient.mk _ y = f.hom.base (Quotient.mk _ x.1)) :
-    (quotientSheafSectionsEquiv I _ _ ((f.hom.c.app (op U)).hom g)).1 x =
-      (quotientSheafSectionsEquiv I _ U g).1
-        ⟨y, by rw [Opens.mem_map, TopCat.quotientMk_apply, hy]; exact x.2⟩ := by
-  set z : GluedCurve d := Quotient.mk (gluedRelSetoid d) x.1 with hzdef
-  have hz : f.hom.base z ∈ U := x.2
-  set c := (quotientSheafSectionsEquiv I _ U g).1
-    ⟨y, by rw [Opens.mem_map, TopCat.quotientMk_apply, hy]; exact x.2⟩
+    (y : Σ i, X' i) (hy : Quotient.mk _ y = f.hom.base (Quotient.mk _ x.val)) :
+    (quotientSheafSectionsEquiv I _ _ ((f.hom.c.app (op U)).hom g)).val x =
+      (quotientSheafSectionsEquiv I _ U g).val
+        ⟨y, by rw [Opens.mem_map, TopCat.quotientMk_apply, hy]; exact x.property⟩ := by
+  set z : GluedCurve d := Quotient.mk (gluedRelSetoid d) x.val with hzdef
+  have hz : f.hom.base z ∈ U := x.property
+  set c := (quotientSheafSectionsEquiv I _ U g).val
+    ⟨y, by rw [Opens.mem_map, TopCat.quotientMk_apply, hy]; exact x.property⟩
   -- The germ of `g - c` at the image point vanishes there, so it is not a unit.
   set γ := ((sheafedSpace I d').presheaf.germ U (f.hom.base z) hz).hom (g - algebraMap ℂ _ c)
   have hγ : ¬ IsUnit γ := fun hu ↦ (hu.map ((eval I (Σ i, X' i) y).comp
@@ -155,11 +155,11 @@ theorem quotientSheafSectionsEquiv_app_apply [∀ i, T2Space (X i)] [Finite Flag
   have hmem : (f.hom.stalkMap z).hom γ ∈ IsLocalRing.maximalIdeal _ :=
     fun hu ↦ hγ (isUnit_of_map_unit (f.hom.stalkMap z).hom _ hu)
   rw [← IsLocalRing.ker_eq_maximalIdeal _
-    (eval_comp_quotientStalkBranch_surjective I _ z x.1 hzdef.symm), RingHom.mem_ker] at hmem
+    (eval_comp_quotientStalkBranch_surjective I _ z x.val hzdef.symm), RingHom.mem_ker] at hmem
   refine sub_eq_zero.mp (Eq.trans ?_ hmem)
-  refine Eq.symm ((congrArg (eval I (Σ i, X i) x.1 ∘ quotientStalkBranch I _ z x.1 _)
+  refine Eq.symm ((congrArg (eval I (Σ i, X i) x.val ∘ quotientStalkBranch I _ z x.val _)
     (PresheafedSpace.stalkMap_germ_apply f.hom U z hz _)).trans
-      ((eval_quotientStalkBranch_germ I _ z x.1 hzdef.symm _ hz _).trans ?_))
+      ((eval_quotientStalkBranch_germ I _ z x.val hzdef.symm _ hz _).trans ?_))
   rw [map_sub, hf U c, map_sub, AddSubgroupClass.coe_sub, holomorphicStructureSheaf.sub_apply,
     quotientSheafSectionsEquiv_algebraMap]
 
@@ -183,26 +183,26 @@ def pullbackSection (e : Iso I ω d d') (U : Opens (GluedCurve d')) :
     ((precomp I _ e e.toDiffeomorph.contMDiff (op W')).comp
       ((quotientSheafι I (gluedRelSetoid d')).hom.app (op U)).hom)
   have hp (g) (x : W) : p g x =
-      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).1
-        ⟨e x.1, by
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).val
+        ⟨e x.val, by
           rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
-          exact x.2⟩ :=
+          exact x.property⟩ :=
     (map_apply _ _ _).trans
       (precomp_apply I _ e e.toDiffeomorph.contMDiff
         (op ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj U))
         (((quotientSheafι I (gluedRelSetoid d')).hom.app (op U)).hom g)
-        ⟨x.1, by
-          exact (congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x.1)).to_iff.mp x.2⟩
-        |>.trans (congrArg (fun f ↦ f ⟨e x.1, by
+        ⟨x.val, by
+          exact (congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x.val)).to_iff.mp x.property⟩
+        |>.trans (congrArg (fun f ↦ f ⟨e x.val, by
           rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
-          exact x.2⟩) (quotientSheafι_app_apply I _ U g)))
+          exact x.property⟩) (quotientSheafι_app_apply I _ U g)))
   exact (quotientSheafSectionsEquiv I (gluedRelSetoid d) V).symm.toRingHom.comp
     (p.codRestrict (quotientSectionSubring I (gluedRelSetoid d) V) (by
       intro g
       rw [mem_quotientSectionSubring]
       intro x y hx hy hxy
       have hm := ((mem_quotientSectionSubring I _ U _).mp
-        (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).2) (e x) (e y)
+        (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).property) (e x) (e y)
         ((congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x)).to_iff.mp hx)
         ((congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk y)).to_iff.mp hy)
         ((gluedRelSetoid_r d' _ _).mpr
@@ -216,11 +216,11 @@ theorem pullbackSection_apply (e : Iso I ω d d') (U : Opens (GluedCurve d'))
     (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj
       ((Opens.map (TopCat.ofHom
         ⟨e.gluedCurveHomeomorph, e.gluedCurveHomeomorph.continuous⟩)).obj U)) :
-    (quotientSheafSectionsEquiv I (gluedRelSetoid d) _ (e.pullbackSection U g)).1 x =
-      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).1
-        ⟨e x.1, by
+    (quotientSheafSectionsEquiv I (gluedRelSetoid d) _ (e.pullbackSection U g)).val x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).val
+        ⟨e x.val, by
           rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
-          exact x.2⟩ := by
+          exact x.property⟩ := by
   dsimp only [pullbackSection, RingHom.comp_apply, RingHom.codRestrict_apply]
   simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
     RingEquiv.apply_symm_apply, RingHom.codRestrict_apply]
@@ -228,11 +228,11 @@ theorem pullbackSection_apply (e : Iso I ω d d') (U : Opens (GluedCurve d'))
       (precomp_apply I _ e e.toDiffeomorph.contMDiff
         (op ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj U))
         (((quotientSheafι I (gluedRelSetoid d')).hom.app (op U)).hom g)
-        ⟨x.1, by
-          exact (congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x.1)).to_iff.mp x.2⟩
-        |>.trans (congrArg (fun f ↦ f ⟨e x.1, by
+        ⟨x.val, by
+          exact (congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x.val)).to_iff.mp x.property⟩
+        |>.trans (congrArg (fun f ↦ f ⟨e x.val, by
           rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
-          exact x.2⟩) (quotientSheafι_app_apply I _ U g)))
+          exact x.property⟩) (quotientSheafι_app_apply I _ U g)))
 
 /-- Pullback after a section map evaluates the map at the image on the normalization. -/
 private theorem pullbackSection_comp_apply (e : Iso I ω d d') (U : Opens (GluedCurve d'))
@@ -241,11 +241,11 @@ private theorem pullbackSection_comp_apply (e : Iso I ω d d') (U : Opens (Glued
       ((Opens.map (TopCat.ofHom
         ⟨e.gluedCurveHomeomorph, e.gluedCurveHomeomorph.continuous⟩)).obj U)) :
     (quotientSheafSectionsEquiv I (gluedRelSetoid d) _
-      ((f ≫ CommRingCat.ofHom (e.pullbackSection U)).hom g)).1 x =
-      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U (f.hom g)).1
-        ⟨e x.1, by
+      ((f ≫ CommRingCat.ofHom (e.pullbackSection U)).hom g)).val x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U (f.hom g)).val
+        ⟨e x.val, by
           rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
-          exact x.2⟩ := by
+          exact x.property⟩ := by
   exact pullbackSection_apply e U (f.hom g) x
 
 /-- An actual normalization isomorphism descends with its holomorphic structure-sheaf map.
@@ -262,17 +262,17 @@ abbrev sheafedSpaceHom (e : Iso I ω d d') : sheafedSpace I d ⟶ sheafedSpace I
             let p := (quotientSheafι I (gluedRelSetoid d')).hom ≫
               Functor.whiskerLeft (Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).op
                 (homOfContMDiff I _ e e.toDiffeomorph.contMDiff).hom
-            have hx : e x.1 ∈
+            have hx : e x.val ∈
                 (Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj V.unop := by
               rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
-              exact x.2
+              exact x.property
             have hp (A : (Opens (GluedCurve d'))ᵒᵖ) (a)
                 (y : (Opens.map (TopCat.ofHom
                   ⟨e, e.toDiffeomorph.contMDiff.continuous⟩)).obj
                     ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj A.unop)) :
                 toFun I _ _ ((p.app A).hom a) y =
-                  (quotientSheafSectionsEquiv I (gluedRelSetoid d') A.unop a).1
-                    ⟨e y.1, y.2⟩ := by
+                  (quotientSheafSectionsEquiv I (gluedRelSetoid d') A.unop a).val
+                    ⟨e y.val, y.property⟩ := by
               have ha := congrArg
                 (fun k ↦ ((quotientSheafι I (gluedRelSetoid d')).hom.app A) ≫ k)
                 (homOfContMDiff_app I _ e e.toDiffeomorph.contMDiff
@@ -280,15 +280,15 @@ abbrev sheafedSpaceHom (e : Iso I ω d d') : sheafedSpace I d ⟶ sheafedSpace I
               exact (congrArg (fun k ↦ toFun I _ _ (k.hom a) y) ha).trans
                 ((precomp_apply I _ e e.toDiffeomorph.contMDiff _
                 (((quotientSheafι I (gluedRelSetoid d')).hom.app A).hom a) y).trans
-                  (congrArg (fun f ↦ f ⟨e y.1, y.2⟩)
+                  (congrArg (fun f ↦ f ⟨e y.val, y.property⟩)
                     (quotientSheafι_app_apply I _ A.unop a)))
             have hn := congrArg (fun k ↦ toFun I _
               (op ((Opens.map (TopCat.ofHom
                 ⟨e, e.toDiffeomorph.contMDiff.continuous⟩)).obj
                   ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj V.unop)))
-              (k.hom g) ⟨x.1, hx⟩) (p.naturality h)
+              (k.hom g) ⟨x.val, hx⟩) (p.naturality h)
             exact (pullbackSection_comp_apply e V.unop _ g x).trans
-              ((hp V _ ⟨x.1, hx⟩).symm.trans (hn.trans
+              ((hp V _ ⟨x.val, hx⟩).symm.trans (hn.trans
                 ((map_apply _ _ _).trans ((hp U g _).trans
                   ((pullbackSection_apply e U.unop g _).symm.trans
                     (sheafedSpace_comp_map_apply I d _ _ g x).symm))))) } }
@@ -329,7 +329,7 @@ theorem sheafedSpaceHom_refl : (Iso.refl I ω d).sheafedSpaceHom = 𝟙 (sheafed
   intro g x
   exact (sheafedSpace_comp_map_apply I d _ _ g x).trans
     ((pullbackSection_apply (Iso.refl I ω d) U g _).trans
-      (congrArg ((quotientSheafSectionsEquiv I (gluedRelSetoid d) U g).1)
+      (congrArg ((quotientSheafSectionsEquiv I (gluedRelSetoid d) U g).val)
         (Subtype.ext (refl_apply _))))
 
 /-- Ringed descent preserves composition, including the maps on holomorphic sections. -/
@@ -344,7 +344,7 @@ theorem sheafedSpaceHom_trans (e : Iso I ω d d') (e' : Iso I ω d' d'') :
   intro g x
   exact (sheafedSpace_comp_map_apply I d _ _ g x).trans
     ((pullbackSection_apply (e.trans e') U g _).trans
-      ((congrArg ((quotientSheafSectionsEquiv I (gluedRelSetoid d'') U g).1)
+      ((congrArg ((quotientSheafSectionsEquiv I (gluedRelSetoid d'') U g).val)
         (Subtype.ext (trans_apply e e' _))).trans
         ((pullbackSection_apply e' U g _).symm.trans
           (pullbackSection_comp_apply e

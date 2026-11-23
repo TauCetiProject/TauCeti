@@ -51,7 +51,7 @@ theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injOn
     rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc]
     exact schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
       (ha k.castSucc_lt_succ).le
-      (fun l _ => TauCeti.not_mem_Ioo_castSucc_succ a ha.monotone k l)
+      (fun l _ => TauCeti.notMem_Ioo_castSucc_succ a ha.monotone k l)
       (hfinite _) (hfinite _)
   rw [← hedges i] at hzi
   rw [← hedges j] at hzj
@@ -94,7 +94,7 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_last_eq_first_vertex_of_inject
     rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc]
     exact schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
       (ha i.castSucc_lt_succ).le
-      (fun l _ => TauCeti.not_mem_Ioo_castSucc_succ a ha.monotone i l)
+      (fun l _ => TauCeti.notMem_Ioo_castSucc_succ a ha.monotone i l)
       (hfinite _) (hfinite _)
   rw [← hedge] at hzi
   obtain ⟨x, hx, rfl⟩ := hzi
@@ -133,7 +133,7 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_last_prevertex_eq_last_vertex_
     rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc]
     exact schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
       (ha i.castSucc_lt_succ).le
-      (fun l _ => TauCeti.not_mem_Ioo_castSucc_succ a ha.monotone i l)
+      (fun l _ => TauCeti.notMem_Ioo_castSucc_succ a ha.monotone i l)
       (hfinite _) (hfinite _)
   rw [← hedge] at hzi
   obtain ⟨x, hx, rfl⟩ := hzi

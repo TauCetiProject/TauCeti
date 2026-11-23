@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import Mathlib.Data.Fin.Tuple.Reflection
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The commutator of a Clifford two-vector with a generator
@@ -37,9 +38,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : Quadr
 `⁅c₂(F), c(v)⁆ = 2 c(v ⌟ F)`, where `v ⌟ F` is `TauCeti.twoVectorContraction F v`. -/
 theorem bivectorExterior_lie_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (F : ⋀[ℝ]^2 V) (v : V) :
     ⁅bivectorExterior Q F, ι Q v⁆ = ι Q ((2 : ℝ) • twoVectorContraction F v) := by
-  have hpolar (x y : V) : QuadraticMap.polar Q x y = -2 * ⟪x, y⟫ := by
-    simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-    ring
+  have hpolar := QuadraticMap.polar_eq_neg_two_inner hQ
   -- Both sides are linear in `F`; compare them on `a ∧ b`.
   have key : (LinearMap.mulRight ℝ (ι Q v) - LinearMap.mulLeft ℝ (ι Q v)) ∘ₗ bivectorExterior Q =
       ((2 : ℝ) • ι Q) ∘ₗ (LinearMap.applyₗ (R := ℝ) v ∘ₗ twoVectorContractionₗ) := by

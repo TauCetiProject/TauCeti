@@ -100,13 +100,13 @@ all terms taken at `(s₀, t)`. -/
 theorem hasDerivAt_sub_intervalIntegral (h : σ.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w)
     {A : ℝ → ℝ} {s₀ : ℝ}
-    (hA : HasDerivAt A (-∫ t in 0..1, σ.1 (w (s₀, t)) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0),
+    (hA : HasDerivAt A (-∫ t in 0..1, σ.val (w (s₀, t)) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0),
       mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1)]) s₀) :
     HasDerivAt (fun s ↦ A s - ∫ t in 0..1, H t (w (s, t)))
-      (∫ t in 0..1, σ.1 (w (s₀, t))
+      (∫ t in 0..1, σ.val (w (s₀, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)]) s₀ := by
-  have hσ : IsSmoothForm I 0 σ.1 := σ.isSmoothForm.of_le (by simp)
+  have hσ : IsSmoothForm I 0 σ.val := σ.isSmoothForm.of_le (by simp)
   convert hA.sub (Manifold.hasDerivAt_intervalIntegral_apply_comp hH hwc s₀ 0 1) using 1
   rw [← intervalIntegral.integral_neg]
   refine (intervalIntegral.integral_congr fun t _ ↦
@@ -123,10 +123,10 @@ omit [FiniteDimensional ℝ E] in
 the velocity of `γ`. -/
 private theorem apply_eq_of_apply_zero {γ : ℝ → M} (h0 : ∀ t, w (0, t) = γ t) {t : ℝ}
     (hwd : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (0, t)) :
-    σ.1 (w (0, t))
+    σ.val (w (0, t))
       ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (0, t)),
         mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] =
-      σ.1 (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
+      σ.val (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
         mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] := by
   have hγw : (fun t ↦ w (0, t)) = γ := funext h0
   have hv : Manifold.curveVelocity I γ t = mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) := by
@@ -143,7 +143,7 @@ theorem SmoothTwoForm.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero 
     (horbit : γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1)
     (hwd : ∀ t, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (0, t)) (h0 : ∀ t, w (0, t) = γ t)
     (a b : ℝ) :
-    ∫ t in a..b, σ.1 (w (0, t))
+    ∫ t in a..b, σ.val (w (0, t))
       ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (0, t)),
         mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] = 0 := by
   refine (intervalIntegral.integral_congr fun t _ ↦ ?_).trans intervalIntegral.integral_zero
@@ -152,7 +152,7 @@ theorem SmoothTwoForm.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero 
     exact Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
       ((mem_periodicSolutions.mp horbit).1 t).hasMFDerivWithinAt uniqueDiffWithinAt_univ
   rw [apply_eq_of_apply_zero h0 (hwd t), hv, sub_self]
-  exact (σ.1 (γ t)).map_coord_zero 0 rfl
+  exact (σ.val (γ t)).map_coord_zero 0 rfl
 
 end FirstVariation
 
@@ -198,7 +198,7 @@ private theorem integral_mul_apply_eq_zero [I.Boundaryless] (h : σ.IsNondegener
     (hγ : ContMDiff 𝓘(ℝ, ℝ) I n γ) (hγper : ∀ t, γ (t + 1) = γ t)
     (hvar : ∀ ⦃w : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I n w →
       (∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z) → (∀ t, w (0, t) = γ t) →
-      ∫ t in 0..1, σ.1 (w (0, t))
+      ∫ t in 0..1, σ.val (w (0, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (0, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] = 0)
     {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E} (hJo : IsOpen J) (hJper : ∀ t, t + 1 ∈ J ↔ t ∈ J)
@@ -206,10 +206,10 @@ private theorem integral_mul_apply_eq_zero [I.Boundaryless] (h : σ.IsNondegener
     (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
       extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
     (hφ : ContDiff ℝ n φ) (hφper : ∀ t, φ (t + 1) = φ t) (hφJ : tsupport φ ⊆ J) :
-    (∫ t in 0..1, φ t * σ.1 (γ t) ![Manifold.curveVelocity I γ t -
+    (∫ t in 0..1, φ t * σ.val (γ t) ![Manifold.curveVelocity I γ t -
         σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ
           (γ t) e]) = 0 ∧
-      Continuous fun t ↦ φ t * σ.1 (γ t) ![Manifold.curveVelocity I γ t -
+      Continuous fun t ↦ φ t * σ.val (γ t) ![Manifold.curveVelocity I γ t -
         σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ
           (γ t) e] := by
   have : IsManifold I n M := IsManifold.of_le (n := ∞) (WithTop.coe_le_coe.2 le_top)
@@ -233,7 +233,7 @@ theorem mem_periodicSolutions_of_forall_integral_eq_zero [I.Boundaryless]
     (hγper : ∀ t, γ (t + 1) = γ t)
     (hvar : ∀ ⦃w : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I n w →
       (∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z) → (∀ t, w (0, t) = γ t) →
-      ∫ t in 0..1, σ.1 (w (0, t))
+      ∫ t in 0..1, σ.val (w (0, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (0, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] = 0) :
     γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1 := by
@@ -261,12 +261,12 @@ theorem mem_periodicSolutions_of_forall_integral_eq_zero [I.Boundaryless]
       extChartAt I x₀ (γ t) + c • e ∈ (extChartAt I x₀).target := fun t ht ↦
     hδ₀U (by rw [Real.dist_eq]; exact ht.trans_le (min_le_left _ _))
   -- `g t` pairs the obstruction at `t` with the tangent vector of chart coordinates `e`
-  set g : ℝ → ℝ := fun t ↦ σ.1 (γ t) ![Manifold.curveVelocity I γ t -
+  set g : ℝ → ℝ := fun t ↦ σ.val (γ t) ![Manifold.curveVelocity I γ t -
     σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e]
   have hg₀ : 0 < g t₀ := he
   have hgper : Periodic g 1 := fun t ↦ by
     simp only [g]
-    rw [hγp.curveVelocity_add (hγd _), hP, hγper]
+    rw [hγp.curveVelocity_add, hP, hγper]
   -- the bump of radius `r ≤ δ`, supported where `cos (2π(t - t₀)) > cos (πr)`, has a chart
   -- variation, so `∫₀¹ φ g = 0` with `φ g` continuous
   have hcosr : ∀ r, 0 < r → r ≤ 1 / 2 → cos (2 * π * r) < cos (π * r) :=

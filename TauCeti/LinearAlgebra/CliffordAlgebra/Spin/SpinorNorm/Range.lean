@@ -78,7 +78,7 @@ theorem range_spinorNorm_eq_closure (Q : QuadraticForm K V) (hQ : Q.Nondegenerat
           (Set.mem_image_of_mem _ (Set.mul_mem_mul (hval v) (hval w)))
       · exact LinearEquiv.ext fun x ↦ by simp
     rintro _ ⟨g, rfl⟩
-    obtain ⟨g', hg', hgg'⟩ := hM g.2
+    obtain ⟨g', hg', hgg'⟩ := hM g.property
     rwa [Subtype.ext hgg'] at hg'
   · refine (Subgroup.closure_le _).mpr ?_
     rintro _ ⟨_, ⟨a, ha, b, hb, rfl⟩, rfl⟩

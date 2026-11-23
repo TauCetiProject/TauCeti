@@ -8,7 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 
 /-!
-# Products of Kronecker products with matrix units
+# Kronecker products: distributivity and products with matrix units
+
+The Kronecker product `⊗ₖₜ[R]` of matrices with entries in two different `R`-modules distributes
+over addition in the left factor (`Matrix.add_kroneckerTMul'`); Mathlib states this only when both
+factors have the same entry type.
 
 A Kronecker product `Matrix.single i j 1 ⊗ₖ X` is the block matrix carrying `X` in the block from
 `j` to `i` and zero elsewhere. Such block matrices multiply along chains: the product of
@@ -17,6 +21,7 @@ the single block of the product of the `X t`.
 
 ## Main results
 
+* `Matrix.add_kroneckerTMul'`: `(A₁ + A₂) ⊗ₖₜ[R] B = A₁ ⊗ₖₜ[R] B + A₂ ⊗ₖₜ[R] B`.
 * `Matrix.single_one_kronecker_mul_single_one_kronecker`: two block matrices multiply blockwise.
 * `Matrix.list_prod_ofFn_single_kronecker`: the product of the block matrices along a chain.
 -/
@@ -26,6 +31,13 @@ public section
 open scoped Kronecker
 
 namespace Matrix
+
+/-- Left distributivity of `⊗ₖₜ[R]` over `+` when the two factors have different entry types.
+Mathlib's `Matrix.add_kroneckerTMul` asks for both factors to have the same entry type. -/
+theorem add_kroneckerTMul' {R α β l m n p : Type*} [CommSemiring R] [AddCommMonoid α]
+    [AddCommMonoid β] [Module R α] [Module R β] (A₁ A₂ : Matrix l m α) (B : Matrix n p β) :
+    (A₁ + A₂) ⊗ₖₜ[R] B = A₁ ⊗ₖₜ[R] B + A₂ ⊗ₖₜ[R] B :=
+  kroneckerMap_add_left _ TensorProduct.add_tmul _ _ _
 
 variable {R l m : Type*} [Semiring R] [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq m]
 
