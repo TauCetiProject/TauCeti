@@ -610,10 +610,10 @@ theorem eventually_lt_oscillationExit {f : X → E} (hf : IsCadlag f) {ε : ℝ}
   have hexit : TauCeti.oscillationExitAfter f ε (t N) = t (N + 1) := by
     rw [ht N, ht (N + 1), TauCeti.oscillationExit_succ]
   rcases (hf.lt_and_le_dist_of_oscillationExitAfter_eq_coe hε hexit).2 with hval | hleft
-  · simp only [WithTop.untopD_coe] at hval
+  · simp only [WithTop.untopA, WithTop.untopD_coe] at hval
     have htri := dist_triangle_right (f (t (N + 1))) (f (t N)) (f.leftLim s)
     linarith
-  · simp only [WithTop.untopD_coe] at hleft
+  · simp only [WithTop.untopA, WithTop.untopD_coe] at hleft
     have htri := dist_triangle_right (f.leftLim (t (N + 1))) (f (t N)) (f.leftLim s)
     linarith
 
