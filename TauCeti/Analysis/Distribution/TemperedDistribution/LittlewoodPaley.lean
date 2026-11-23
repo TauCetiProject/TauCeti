@@ -83,8 +83,11 @@ blocks `Δⱼ u`.
 ## Main declarations
 
 * `TemperedDistribution.littlewoodPaleyBlock`: the Littlewood–Paley block `Δⱼ`.
-* `TemperedDistribution.sum_littlewoodPaleyBlock_range`: the partial sums are the low-pass
-  truncations by `φ (2^{-N} ·)`.
+* `TemperedDistribution.littlewoodPaleyLowPass`: the low-frequency truncation `Sⱼ = ∑_{k < j} Δₖ`,
+  the Fourier multiplier by `φ (2^{1-j} ·)` for `j ≥ 1`
+  (`littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM`), with its expression as an average
+  against the dilates of the kernel `𝓕⁻ φ` (`ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq`),
+  whose integral is `1` (`ContDiffBump.integral_fourierInv`).
 * `TemperedDistribution.tendsto_fourierMultiplierCLM_contDiffBump`: the low-pass truncations
   `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 u)` converge to `u` as `R → ∞`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
@@ -97,10 +100,6 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock_lineDerivOp`,
   `TemperedDistribution.littlewoodPaleyBlock_iteratedLineDerivOp`: the blocks commute with
   derivatives.
-* `TemperedDistribution.littlewoodPaleyLowPass`: the low-frequency truncation `Sⱼ = ∑_{k < j} Δₖ`,
-  the Fourier multiplier by `φ (2^{1-j} ·)` for `j ≥ 1`, with its expression as an average
-  against the dilates of the kernel `𝓕⁻ φ` (`ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq`),
-  whose integral is `1` (`ContDiffBump.integral_fourierInv`).
 * `TemperedDistribution.littlewoodPaleyBlock_eq_zero_of_isVanishingOn`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball`,
@@ -162,8 +161,8 @@ blocks `Δⱼ u`.
   enlarged blocks are bounded on `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass
   truncations `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 ·)`, uniformly in the scale `R ≠ 0`, by `‖𝓕⁻ φ‖₁`
   (`TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le`), in particular the
-  partial sums `∑_{j ≤ N} Δⱼ`
-  (`TemperedDistribution.exists_sum_littlewoodPaleyBlock_eq_and_norm_le`).
+  truncations `S_{N+1} = ∑_{j ≤ N} Δⱼ`
+  (`TemperedDistribution.exists_littlewoodPaleyLowPass_succ_eq_and_norm_le`).
 * `TemperedDistribution.ae_eq_convolution_of_littlewoodPaleyBlock_eq`: on `Lᵖ`, the block `Δⱼ` is
   convolution with `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le`: the commutator of
@@ -485,14 +484,35 @@ theorem littlewoodPaleyBlock_apply_apply (j : ℕ) (u : 𝓢'(E, F)) (f : 𝓢(E
   fourierMultiplierCLM_apply_apply_of_even
     (fun ξ ↦ by simp only [φ.inhomogeneousLittlewoodPaley_neg]) u f
 
-/-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
-`∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/
-theorem sum_littlewoodPaleyBlock_range (N : ℕ) :
-    ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j =
-      fourierMultiplierCLM F fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) := by
-  simp_rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM]
+variable (F) in
+/-- The **low-frequency truncation** `Sⱼ = ∑_{k < j} Δₖ`, the sum of the Littlewood–Paley blocks of
+index below `j`. For `j ≥ 1` it is the Fourier multiplier by `φ (2^{1-j} ·)`
+(`TemperedDistribution.littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM`), and `S₀ = 0`. These
+are the truncations from which Bony's paraproducts are built. -/
+noncomputable def littlewoodPaleyLowPass (φ : ContDiffBump (0 : E)) (j : ℕ) :
+    𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
+  ∑ k ∈ Finset.range j, littlewoodPaleyBlock F φ k
+
+theorem littlewoodPaleyLowPass_def (j : ℕ) :
+    littlewoodPaleyLowPass F φ j = ∑ k ∈ Finset.range j, littlewoodPaleyBlock F φ k :=
+  (rfl)
+
+@[simp]
+theorem littlewoodPaleyLowPass_zero : littlewoodPaleyLowPass F φ 0 = 0 := by
+  simp [littlewoodPaleyLowPass_def]
+
+theorem littlewoodPaleyLowPass_succ (j : ℕ) :
+    littlewoodPaleyLowPass F φ (j + 1) =
+      littlewoodPaleyLowPass F φ j + littlewoodPaleyBlock F φ j := by
+  simp only [littlewoodPaleyLowPass_def, Finset.sum_range_succ]
+
+/-- `S_{j+1} = ∑_{k ≤ j} Δₖ` is the Fourier multiplier by `φ (2^{-j} ·)`. -/
+theorem littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM (j : ℕ) :
+    littlewoodPaleyLowPass F φ (j + 1) =
+      fourierMultiplierCLM F fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) := by
+  simp_rw [littlewoodPaleyLowPass_def, littlewoodPaleyBlock_eq_fourierMultiplierCLM]
   rw [← fourierMultiplierCLM_sum F
-    fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
+    fun k _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k]
   simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
 
 /-- **Convergence of the low-pass truncations.** For every tempered distribution `u`, the
@@ -512,7 +532,8 @@ of the partial sums of its Littlewood–Paley blocks: `u = ∑ⱼ Δⱼ u`. -/
 theorem tendsto_sum_littlewoodPaleyBlock (u : 𝓢'(E, F)) :
     Tendsto (fun N ↦ ∑ j ∈ Finset.range N, littlewoodPaleyBlock F φ j u) atTop (𝓝 u) := by
   rw [← tendsto_add_atTop_iff_nat 1]
-  simp_rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range]
+  simp_rw [← _root_.sum_apply, ← littlewoodPaleyLowPass_def,
+    littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM]
   exact tendsto_fourierMultiplierCLM_contDiffBump φ
     (tendsto_pow_atTop_atTop_of_one_lt one_lt_two) u
 
@@ -578,40 +599,6 @@ theorem littlewoodPaleyBlock_iteratedLineDerivOp (j : ℕ) {k : ℕ} (m : Fin k 
   | succ k ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left,
       littlewoodPaleyBlock_lineDerivOp, ih]
-
-variable (F) in
-/-- The **low-frequency truncation** `Sⱼ = ∑_{k < j} Δₖ`, the sum of the Littlewood–Paley blocks of
-index below `j`. For `j ≥ 1` it is the Fourier multiplier by `φ (2^{1-j} ·)`
-(`TemperedDistribution.littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM`), and `S₀ = 0`. These
-are the truncations from which Bony's paraproducts are built. -/
-noncomputable def littlewoodPaleyLowPass (φ : ContDiffBump (0 : E)) (j : ℕ) :
-    𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
-  ∑ k ∈ Finset.range j, littlewoodPaleyBlock F φ k
-
-theorem littlewoodPaleyLowPass_def (j : ℕ) :
-    littlewoodPaleyLowPass F φ j = ∑ k ∈ Finset.range j, littlewoodPaleyBlock F φ k :=
-  (rfl)
-
-@[simp]
-theorem littlewoodPaleyLowPass_zero : littlewoodPaleyLowPass F φ 0 = 0 := by
-  simp [littlewoodPaleyLowPass_def]
-
-theorem littlewoodPaleyLowPass_succ (j : ℕ) :
-    littlewoodPaleyLowPass F φ (j + 1) =
-      littlewoodPaleyLowPass F φ j + littlewoodPaleyBlock F φ j := by
-  simp only [littlewoodPaleyLowPass_def, Finset.sum_range_succ]
-
-/-- `S_{j+1}` is the Fourier multiplier by `φ (2^{-j} ·)`. -/
-theorem littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM (j : ℕ) :
-    littlewoodPaleyLowPass F φ (j + 1) =
-      fourierMultiplierCLM F fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
-  sum_littlewoodPaleyBlock_range φ j
-
-/-- The low-frequency truncations converge to the identity: `Sⱼ u → u` in `𝓢'(E, F)`. -/
-theorem tendsto_littlewoodPaleyLowPass (u : 𝓢'(E, F)) :
-    Tendsto (fun j ↦ littlewoodPaleyLowPass F φ j u) atTop (𝓝 u) := by
-  simpa only [littlewoodPaleyLowPass_def, _root_.sum_apply] using
-    tendsto_sum_littlewoodPaleyBlock φ u
 
 /-- A tempered distribution whose blocks vanish outside a finite set of indices is the sum of
 its blocks over that set. -/
@@ -1083,16 +1070,26 @@ theorem exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le [CompleteSpace F] {p
     (inv_ne_zero hR)] at hgf
   exact ⟨g, by rw [← hg, φ.coe_lowPassSchwartz], hgf⟩
 
-/-- **The partial sums of the blocks are bounded on `Lᵖ` uniformly in `N`.** For every
-`1 ≤ p ≤ ∞`, every `N` and every `f ∈ Lᵖ`, the truncation `S_N f = ∑_{j ≤ N} Δⱼ f` is a function
-in `Lᵖ` with `‖S_N f‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p`. -/
-theorem exists_sum_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (N : ℕ) (f : Lp F p (volume : Measure E)) :
+/-- **The low-frequency truncations are bounded on `Lᵖ` uniformly in `N`.** For every
+`1 ≤ p ≤ ∞`, every `N` and every `f ∈ Lᵖ`, the truncation `S_{N+1} f = ∑_{j ≤ N} Δⱼ f` is a
+function in `Lᵖ` with `‖S_{N+1} f‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p`. -/
+theorem exists_littlewoodPaleyLowPass_succ_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (N : ℕ) (f : Lp F p (volume : Measure E)) :
     ∃ g : Lp F p (volume : Measure E),
-      ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g ∧
+      littlewoodPaleyLowPass F φ (N + 1) (f : 𝓢'(E, F)) = g ∧
         ‖g‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
-  rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range]
+  rw [littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM]
   exact exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le φ (by positivity) f
+
+/-- If the blocks `Δₖ u` of an `Lᵖ` function `u` are the `Lᵖ` functions `zₖ`, then the truncation
+`S_N u` is the `Lᵖ` function `∑_{k < N} zₖ`. -/
+theorem littlewoodPaleyLowPass_eq_sum [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {u : Lp F p (volume : Measure E)} {z : ℕ → Lp F p (volume : Measure E)}
+    (hz : ∀ k, littlewoodPaleyBlock F φ k (u : 𝓢'(E, F)) = z k) (N : ℕ) :
+    littlewoodPaleyLowPass F φ N (u : 𝓢'(E, F)) =
+      ((∑ k ∈ Finset.range N, z k : Lp F p volume) : 𝓢'(E, F)) := by
+  rw [littlewoodPaleyLowPass_def, _root_.sum_apply, Lp.toTemperedDistribution_sum]
+  exact Finset.sum_congr rfl fun k _ ↦ hz k
 
 open ContinuousLinearMap in
 open scoped Convolution in
@@ -1210,12 +1207,10 @@ theorem ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq [CompleteSpace F] {p : 
     [Fact (1 ≤ p)] (j : ℕ) {f g : Lp F p (volume : Measure E)}
     (hg : littlewoodPaleyLowPass F φ (j + 1) (f : 𝓢'(E, F)) = g) :
     g =ᵐ[volume] fun x ↦ ∫ s, 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) s • f (x - ((2 : ℝ) ^ j)⁻¹ • s) := by
-  obtain ⟨g', hg', hconv, -⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq
-    (φ.lowPassSchwartz (pow_ne_zero j two_ne_zero)) f (q := p) (r := 1) le_rfl
-    (by rw [inv_one, add_comm])
-  rw [φ.coe_lowPassSchwartz, ← littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM, hg] at hg'
-  rw [Lp.toTemperedDistribution_injective hg']
-  refine hconv.trans (Eventually.of_forall fun x ↦ ?_)
+  rw [littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM,
+    ← φ.coe_lowPassSchwartz (pow_ne_zero j two_ne_zero)] at hg
+  refine (ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq hg).trans
+    (Eventually.of_forall fun x ↦ ?_)
   -- The kernel is `2^{jn} 𝓕⁻ φ (2^j ·)`; substitute `t = 2^{-j} s` in the convolution integral.
   have h0 : 𝓕⁻ ⇑(φ.lowPassSchwartz one_ne_zero) = 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) := by
     simp [φ.coe_lowPassSchwartz]

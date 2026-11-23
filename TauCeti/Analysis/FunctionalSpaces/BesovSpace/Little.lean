@@ -222,7 +222,7 @@ theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
     v ∈ littleBesov F φ s p := by
   obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
   set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
-  have hK := exists_sum_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ (p := p)
+  have hK := exists_littlewoodPaleyLowPass_succ_eq_and_norm_le (F := F) φ (p := p)
   obtain ⟨C, hC0, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
   -- For a Schwartz function `g` close to `w` in `Lᵖ`, the cut-off `S_{M+1} g` is a Schwartz
   -- function, `S_{M+1} w = w`, and `S_{M+1} (w - g)` has finitely many nonzero blocks, so its
@@ -239,6 +239,7 @@ theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
   set h : 𝓢(E, F) := ∑ j ∈ Finset.range (M + 1),
     SchwartzMap.fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g
   obtain ⟨r, hr, hrw⟩ := hK M (w - g.toLp p (volume : Measure E))
+  rw [littlewoodPaleyLowPass_def, _root_.sum_apply] at hr
   have hrh : (r : 𝓢'(E, F)) = w - h := by
     rw [← hr, Lp.toTemperedDistribution_sub, Lp.toTemperedDistribution_toLp_eq]
     simp only [map_sub, Finset.sum_sub_distrib, h, map_sum,

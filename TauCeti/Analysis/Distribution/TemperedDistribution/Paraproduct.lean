@@ -37,7 +37,7 @@ level of the dyadic partial sums:
   in `L¹` against every integrable weight
   (`MeasureTheory.tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub`), and the
   truncations are bounded in `L^∞` uniformly in `j`
-  (`exists_sum_littlewoodPaleyBlock_eq_and_norm_le`). Writing
+  (`exists_littlewoodPaleyLowPass_succ_eq_and_norm_le`). Writing
   `Sⱼ f · Sⱼ g - f g = (Sⱼ f - f) · Sⱼ g + f · (Sⱼ g - g)` and pairing with a Schwartz function
   gives the convergence.
 * `TemperedDistribution.tendsto_toTemperedDistribution_paraproduct_add_paraproduct_add_resonant`:
@@ -51,8 +51,9 @@ The spectral localization of the terms, and the corresponding finite decompositi
 
 The blocks and truncations of an `L^∞` function are `L^∞` functions
 (`exists_littlewoodPaleyBlock_eq_and_norm_le`,
-`exists_sum_littlewoodPaleyBlock_eq_and_norm_le`); the statements take these
-functions as data, through the hypotheses identifying their tempered distributions.
+`exists_littlewoodPaleyLowPass_succ_eq_and_norm_le`), and the truncations are represented by the
+sums of the representatives of the blocks (`littlewoodPaleyLowPass_eq_sum`); the statements take
+these functions as data, through the hypotheses identifying their tempered distributions.
 
 ## References
 
@@ -138,10 +139,8 @@ theorem tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq
   -- The truncations of `g` are bounded in `L^∞` uniformly in `j`.
   set C := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hbC : ∀ j, ‖b (j + 1)‖ₑ ≤ ENNReal.ofReal (C * ‖g‖) := fun j ↦ by
-    obtain ⟨g', hg', hg'C⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ j g
-    rw [Lp.toTemperedDistribution_injective (by
-      rw [← hb, littlewoodPaleyLowPass_def, _root_.sum_apply, hg'] :
-      (b (j + 1) : 𝓢'(E, F)) = g'), ← ofReal_norm]
+    obtain ⟨g', hg', hg'C⟩ := exists_littlewoodPaleyLowPass_succ_eq_and_norm_le φ j g
+    rw [Lp.toTemperedDistribution_injective ((hb (j + 1)).symm.trans hg'), ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal hg'C
   refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.2 fun ψ ↦ ?_
   simp only [Lp.toTemperedDistribution_apply]
@@ -158,17 +157,6 @@ theorem tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq
   refine (eNorm_integral_smul_sub_integral_smul_le ψ _ f _ g).trans ?_
   gcongr
   exact hbC _
-
-/-- The truncation `S_N u` is represented by the sum of representatives of the blocks `Δₖ u`,
-`k < N`. -/
-private theorem littlewoodPaleyLowPass_eq_sum (u : Lp F ∞ (volume : Measure E))
-    {z : ℕ → Lp F ∞ (volume : Measure E)}
-    (hz : ∀ k, littlewoodPaleyBlock F φ k (u : 𝓢'(E, F)) = z k) (N : ℕ) :
-    littlewoodPaleyLowPass F φ N (u : 𝓢'(E, F)) =
-      ((∑ k ∈ range N, z k : Lp F ∞ volume) : 𝓢'(E, F)) := by
-  rw [littlewoodPaleyLowPass_def, _root_.sum_apply,
-    Lp.toTemperedDistribution_sum]
-  exact sum_congr rfl fun k _ ↦ hz k
 
 /-- **Bony's decomposition of a product of bounded functions.** Let `f, g ∈ L^∞`, and let
 `xₖ, yⱼ ∈ L^∞` be their Littlewood–Paley blocks, `Δₖ f = xₖ` and `Δⱼ g = yⱼ`. Then the partial
@@ -187,7 +175,7 @@ theorem tendsto_toTemperedDistribution_paraproduct_add_paraproduct_add_resonant
           Lp F ∞ (volume : Measure E)) : 𝓢'(E, F))) atTop
       (𝓝 ((f • g : Lp F ∞ (volume : Measure E)) : 𝓢'(E, F))) := by
   refine (tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq φ f g
-    (littlewoodPaleyLowPass_eq_sum φ f hx) (littlewoodPaleyLowPass_eq_sum φ g hy)).congr
+    (littlewoodPaleyLowPass_eq_sum φ hx) (littlewoodPaleyLowPass_eq_sum φ hy)).congr
     fun N ↦ ?_
   congr 1
   rw [Lp.sum_smul, sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _, sum_range_sum_range_split_gap 1]

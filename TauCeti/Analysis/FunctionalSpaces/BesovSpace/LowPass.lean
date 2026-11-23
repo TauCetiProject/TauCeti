@@ -119,7 +119,8 @@ theorem coe_lowPass (u : BesovSpace F φ s p q) (m : ℕ) :
 theorem coe_lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
     (u.lowPass (m + 1) : 𝓢'(E, F)) =
       fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ m)⁻¹ • ξ) : ℂ)) u.toDistr := by
-  rw [coe_lowPass, ← _root_.sum_apply, sum_littlewoodPaleyBlock_range]
+  rw [coe_lowPass, ← _root_.sum_apply, ← littlewoodPaleyLowPass_def,
+    littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM]
 
 /-- Elements of two Besov spaces with the same tempered distribution have the same low-frequency
 cut-offs. -/
@@ -166,12 +167,12 @@ theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
     ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
   rcases m with _ | m
   · simpa using mul_nonneg (MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg f)
-  obtain ⟨g, hg, hgf⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ m f
+  obtain ⟨g, hg, hgf⟩ := exists_littlewoodPaleyLowPass_succ_eq_and_norm_le φ m f
   -- `S_{m+1} u` and `g` are the same tempered distribution, hence the same `Lᵖ` function.
   have h : u.lowPass (m + 1) = g :=
     LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
       simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
-      rw [coe_lowPass, hf, hg]
+      rw [coe_lowPass, hf, ← _root_.sum_apply, ← littlewoodPaleyLowPass_def, hg]
   rwa [h]
 
 /-- **The low-frequency cut-offs at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
