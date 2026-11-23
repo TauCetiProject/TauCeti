@@ -240,17 +240,20 @@ theorem exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow {W : Submodul
     (W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)).symm.toLinearMap
   -- Apply Minkowski's shortest-vector bound to the scaled lattice `L'`.
   obtain ⟨x, hxL', hx0, hx_norm⟩ := ZLattice.exists_ne_zero_mem_norm_le L'
-  set z : W.integerPoints :=
-    (W.integerPointsEquivComapMulMixed (isUnit_multSqrt K)).symm ⟨x, hxL'⟩
+  let e : W.integerPoints ≃ₗ[ℤ] L' :=
+    W.integerPointsEquivIntegerLattice.trans
+      (ZLattice.comap_equiv ℝ W.integerLattice
+        (W.mulMixedSubmoduleEquiv (isUnit_multSqrt K)).symm.toLinearEquiv)
+  set z : W.integerPoints := e.symm ⟨x, hxL'⟩
   have hz_ne : (z : ι → 𝓞 K) ≠ 0 := fun hz0 ↦ hx0 <| congrArg Subtype.val <|
-    (W.integerPointsEquivComapMulMixed (isUnit_multSqrt K)).symm.map_eq_zero_iff.mp
-      (Subtype.ext hz0)
+    e.symm.map_eq_zero_iff.mp (Subtype.ext hz0)
   have hTx :
       W.mulMixedSubmodule (multSqrt K) (W.integerPointsEquivIntegerLattice z : W.euclideanSpan) =
         x := by
-    rw [← W.coe_integerPointsEquivComapMulMixed_apply (isUnit_multSqrt K) z]
-    exact congrArg Subtype.val
-      ((W.integerPointsEquivComapMulMixed (isUnit_multSqrt K)).apply_symm_apply ⟨x, hxL'⟩)
+    have hez : (e z : W.euclideanSpan) = x := congrArg Subtype.val (e.apply_symm_apply ⟨x, hxL'⟩)
+    rwa [LinearEquiv.trans_apply, ZLattice.comap_equiv_apply,
+      ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.symm_symm,
+      ContinuousLinearEquiv.coe_toLinearEquiv, W.mulMixedSubmoduleEquiv_apply] at hez
   rw [hfin, W.covolume_comap_mulMixedSubmodule_multSqrt_rpow hW] at hx_norm
   refine ⟨z, z.property, hz_ne, ?_⟩
   calc height2 (fun i ↦ ((z : ι → 𝓞 K) i : K))
@@ -271,6 +274,14 @@ end NumberField
 
 section Rat
 
+private theorem exists_ne_zero_int_of_ringOfIntegers {ι : Type*} {V : Submodule ℚ (ι → ℚ)}
+    {z : ι → 𝓞 ℚ} (hzV : z ∈ V.integerPoints) (hz0 : z ≠ 0) :
+    ∃ w ∈ V.intPoints, w ≠ 0 ∧ (fun i ↦ (w i : ℚ)) = (fun i ↦ (z i : ℚ)) := by
+  let w : V.intPoints := V.integerPointsEquivIntPoints ⟨z, hzV⟩
+  exact ⟨w, w.property, fun h ↦ hz0 <| congrArg Subtype.val <|
+    V.integerPointsEquivIntPoints.map_eq_zero_iff.mp (Subtype.ext h),
+    funext fun i ↦ V.intCast_coe_integerPointsEquivIntPoints_apply ⟨z, hzV⟩ i⟩
+
 variable {ι : Type*} [Finite ι] [LinearOrder ι]
 
 /-- **Siegel's lemma for a rational subspace, in the Euclidean height.**
@@ -281,17 +292,8 @@ theorem exists_ne_zero_mem_intPoints_height2_le {V : Submodule ℚ (ι → ℚ)}
       height2 (fun i ↦ (z i : ℚ)) ≤
         √(finrank ℚ V : ℝ) * V.subspaceHeight ^ (finrank ℚ V : ℝ)⁻¹ := by
   obtain ⟨z, hzV, hz0, hle⟩ := exists_ne_zero_mem_integerPoints_height2_le_sqrt hV
-  let w : V.intPoints := V.integerPointsEquivIntPoints ⟨z, hzV⟩
-  have hw0 : (w : ι → ℤ) ≠ 0 := by
-    intro h
-    apply hz0
-    have : (⟨z, hzV⟩ : V.integerPoints) = 0 :=
-      (V.integerPointsEquivIntPoints.map_eq_zero_iff).mp (Subtype.ext h)
-    exact congrArg Subtype.val this
-  have hcoe : (fun i ↦ ((w : ι → ℤ) i : ℚ)) = (fun i ↦ (z i : ℚ)) := by
-    ext i
-    simp [w, Rat.ringOfIntegersEquiv_apply_coe, RingOfIntegers.coe_eq_algebraMap]
-  refine ⟨w, w.property, hw0, ?_⟩
+  obtain ⟨w, hwV, hw0, hcoe⟩ := exists_ne_zero_int_of_ringOfIntegers hzV hz0
+  refine ⟨w, hwV, hw0, ?_⟩
   rw [hcoe]
   simpa [discr_rat, finrank_self] using hle
 
@@ -453,15 +455,8 @@ theorem exists_ne_zero_int_mulVec_eq_zero_height2_le {A : Matrix m ι ℚ} (hA :
         √(Fintype.card ι : ℝ) *
           (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
   obtain ⟨z, hz0, hmul, hle⟩ := exists_ne_zero_mulVec_eq_zero_height2_le_of_card_lt hA hlt
-  let w : ι → ℤ := fun i ↦ Rat.ringOfIntegersEquiv (z i)
-  have hcoe : (fun i ↦ (w i : ℚ)) = (fun i ↦ (z i : ℚ)) := by
-    ext i
-    simp [w, Rat.ringOfIntegersEquiv_apply_coe, RingOfIntegers.coe_eq_algebraMap]
-  have hw0 : w ≠ 0 := by
-    intro h
-    apply hz0
-    ext1 i
-    exact Rat.ringOfIntegersEquiv.injective (by simpa [w] using congrFun h i)
+  obtain ⟨w, _, hw0, hcoe⟩ :=
+    Submodule.exists_ne_zero_int_of_ringOfIntegers (V := ⊤) (by simp) hz0
   refine ⟨w, hw0, hcoe.symm ▸ hmul, ?_⟩
   rw [hcoe]
   simpa [discr_rat, finrank_self] using hle

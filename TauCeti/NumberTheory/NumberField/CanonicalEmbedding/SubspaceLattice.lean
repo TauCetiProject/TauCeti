@@ -65,9 +65,6 @@ back to `V.integerLattice` (`Submodule.comap_intLattice_euclideanSpanEquivRealSp
   in `NumberField.mixedEmbedding.euclidean.integerLattice K`.
 * `Submodule.integerPointsEquivIntegerLattice W`: the `ℤ`-linear equivalence
   `W.integerPoints ≃ₗ[ℤ] W.integerLattice`.
-* `Submodule.integerPointsEquivComapMulMixed W hc`: the `ℤ`-linear equivalence between
-  `W.integerPoints` and the scaled lattice
-  `ZLattice.comap ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearMap`.
 * `Submodule.euclideanSpanBasisOfPseudoBasis`, `Submodule.integerLatticeBasisOfPseudoBasis`: the
   `ℝ`-basis of `W.euclideanSpan` and `ℤ`-basis of `W.integerLattice` attached to a pseudo-basis
   `(b, J)` of `W.integerPoints`.
@@ -80,8 +77,6 @@ back to `V.integerLattice` (`Submodule.comap_intLattice_euclideanSpanEquivRealSp
   multiplication by `mixedSpace K`.
 * `Submodule.toLinearMap_mulMixedSubmoduleEquiv`, `Submodule.mulMixedSubmoduleEquiv_apply`:
   `W.mulMixedSubmoduleEquiv hc` has underlying linear map `W.mulMixedSubmodule c`.
-* `Submodule.coe_integerPointsEquivComapMulMixed_apply`: forward evaluation of
-  `W.integerPointsEquivComapMulMixed hc` in `W.euclideanSpan`.
 * `Submodule.det_mulMixedSubmodule`: `LinearMap.det (W.mulMixedSubmodule c) =
   (Algebra.norm ℝ c) ^ finrank K W`.
 * `Submodule.norm_sq_mulMixedSubmodule`, `Submodule.norm_sq_mulMixedSubmodule_integerPoints`,
@@ -730,7 +725,7 @@ def mulMixedSubmoduleEquiv [Finite ι] (W : Submodule K (ι → K)) {c : mixedSp
 theorem mulMixedSubmoduleEquiv_apply [Finite ι] (W : Submodule K (ι → K)) {c : mixedSpace K}
     (hc : IsUnit c) (x : W.euclideanSpan) :
     W.mulMixedSubmoduleEquiv hc x = W.mulMixedSubmodule c x := by
-  rfl
+  simp [mulMixedSubmoduleEquiv]
 
 /-- The underlying `ℝ`-linear map of `W.mulMixedSubmoduleEquiv hc` is `W.mulMixedSubmodule c`. -/
 @[simp]
@@ -740,25 +735,6 @@ theorem toLinearMap_mulMixedSubmoduleEquiv [Finite ι] (W : Submodule K (ι → 
       W.mulMixedSubmodule c := by
   ext1 x
   exact W.mulMixedSubmoduleEquiv_apply hc x
-
-open Classical in
-/-- For any unit `c : mixedSpace K`, `W.integerPoints` is `ℤ`-linearly equivalent to the scaled
-lattice `ZLattice.comap ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearMap`. -/
-def integerPointsEquivComapMulMixed [Fintype ι] (W : Submodule K (ι → K)) {c : mixedSpace K}
-    (hc : IsUnit c) :
-    W.integerPoints ≃ₗ[ℤ]
-      ZLattice.comap ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearMap :=
-  W.integerPointsEquivIntegerLattice.trans
-    (ZLattice.comap_equiv ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearEquiv)
-
-/-- Forward evaluation of `W.integerPointsEquivComapMulMixed hc` in `W.euclideanSpan`. -/
-theorem coe_integerPointsEquivComapMulMixed_apply [Fintype ι] (W : Submodule K (ι → K))
-    {c : mixedSpace K} (hc : IsUnit c) (z : W.integerPoints) :
-    (W.integerPointsEquivComapMulMixed hc z : W.euclideanSpan) =
-      W.mulMixedSubmodule c (W.integerPointsEquivIntegerLattice z : W.euclideanSpan) := by
-  rw [integerPointsEquivComapMulMixed, LinearEquiv.trans_apply, ZLattice.comap_equiv_apply,
-    ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.symm_symm,
-    ContinuousLinearEquiv.coe_toLinearEquiv, W.mulMixedSubmoduleEquiv_apply hc]
 
 open Classical in
 /-- Scaling `x : W.euclideanSpan` coordinatewise by `c : mixedSpace K` multiplies each infinite
@@ -821,6 +797,10 @@ open TauCeti.NumberField.mixedEmbedding.euclidean
 
 variable {ι : Type*}
 
+private theorem ratCast_ringOfIntegersEquiv (y : 𝓞 ℚ) :
+    ((Rat.ringOfIntegersEquiv y : ℤ) : ℚ) = y :=
+  (Rat.ringOfIntegersEquiv_apply_coe y).trans (RingOfIntegers.coe_eq_algebraMap y).symm
+
 /-- Over `ℚ`, `V.integerPoints` is canonically `ℤ`-linearly equivalent to `V.intPoints` via
 `Rat.ringOfIntegersEquiv : 𝓞 ℚ ≃+* ℤ`. -/
 def integerPointsEquivIntPoints (V : Submodule ℚ (ι → ℚ)) :
@@ -828,7 +808,7 @@ def integerPointsEquivIntPoints (V : Submodule ℚ (ι → ℚ)) :
   toFun z := ⟨fun i ↦ Rat.ringOfIntegersEquiv ((z : ι → 𝓞 ℚ) i), by
     rw [mem_intPoints]
     convert mem_integerPoints.mp z.property with i
-    exact (Rat.ringOfIntegersEquiv_apply_coe _).trans (RingOfIntegers.coe_eq_algebraMap _).symm⟩
+    exact ratCast_ringOfIntegersEquiv _⟩
   map_add' _ _ := by ext i; simp
   map_smul' _ _ := by ext i; simp
   invFun z := ⟨fun i ↦ Rat.ringOfIntegersEquiv.symm ((z : ι → ℤ) i), by
@@ -844,6 +824,13 @@ theorem coe_integerPointsEquivIntPoints_apply (V : Submodule ℚ (ι → ℚ)) (
     (i : ι) :
     (V.integerPointsEquivIntPoints z : ι → ℤ) i = Rat.ringOfIntegersEquiv ((z : ι → 𝓞 ℚ) i) := by
   simp [integerPointsEquivIntPoints]
+
+/-- Mapping `V.integerPoints` to `V.intPoints` via `V.integerPointsEquivIntPoints` preserves
+ambient `ℚ`-coordinates. -/
+theorem intCast_coe_integerPointsEquivIntPoints_apply (V : Submodule ℚ (ι → ℚ))
+    (z : V.integerPoints) (i : ι) :
+    ((V.integerPointsEquivIntPoints z : ι → ℤ) i : ℚ) = ((z : ι → 𝓞 ℚ) i : ℚ) := by
+  rw [coe_integerPointsEquivIntPoints_apply, ratCast_ringOfIntegersEquiv]
 
 /-- Coordinates of `V.integerPointsEquivIntPoints.symm z`. -/
 @[simp]

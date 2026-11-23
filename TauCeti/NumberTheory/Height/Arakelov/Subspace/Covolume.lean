@@ -586,14 +586,16 @@ theorem covolume_comap_mulMixedSubmodule_multSqrt_rpow (W : Submodule K (ι → 
       |(discr K : ℝ)| ^ (1 / (2 * (finrank ℚ K : ℝ))) *
         W.subspaceHeight ^ (finrank K W : ℝ)⁻¹ := by
   have : Nontrivial W := Submodule.nontrivial_iff_ne_bot.mpr hW
-  have hD : (0 : ℝ) < finrank ℚ K := Nat.cast_pos.mpr finrank_pos
-  have hm : (0 : ℝ) < finrank K W := Nat.cast_pos.mpr finrank_pos
   rw [W.covolume_comap_mulMixedSubmodule_multSqrt,
     Real.mul_rpow (by positivity) (pow_nonneg (Submodule.subspaceHeight_pos W).le _),
-    Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg _),
-    ← Real.rpow_mul (abs_nonneg _), ← Real.rpow_natCast,
-    ← Real.rpow_mul (Submodule.subspaceHeight_pos W).le, Nat.cast_mul]
-  congr 1 <;> congr 1 <;> field_simp [hD.ne', hm.ne']
+    Nat.cast_mul]
+  congr 1
+  · rw [mul_comm (finrank ℚ K : ℝ), mul_inv,
+      Real.rpow_mul (pow_nonneg (Real.sqrt_nonneg _) _),
+      Real.pow_rpow_inv_natCast (Real.sqrt_nonneg _) finrank_pos.ne',
+      Real.sqrt_eq_rpow, ← Real.rpow_mul (abs_nonneg _), ← one_div, one_div_mul_one_div]
+  · rw [mul_inv, Real.rpow_mul (pow_nonneg (Submodule.subspaceHeight_pos W).le _),
+      Real.pow_rpow_inv_natCast (Submodule.subspaceHeight_pos W).le finrank_pos.ne']
 
 open Classical in
 /-- The zero subspace has integral lattice of covolume `1` in its `0`-dimensional real span. -/

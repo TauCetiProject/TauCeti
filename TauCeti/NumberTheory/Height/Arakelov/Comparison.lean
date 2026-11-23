@@ -239,16 +239,14 @@ theorem height2_le_sqrt_sum_mult_mul_sum_norm_sq_div [Fintype ι] (y : ι → �
     refine (pow_le_pow_left₀ (arakelovMulHeight_nonneg _) harak 2).trans_eq ?_
     rw [← Finset.prod_pow]
     refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [← Real.rpow_natCast _ 2, ← Real.rpow_mul (hnn w), Nat.cast_ofNat,
-      div_mul_cancel₀ _ two_ne_zero]
+    rw [← Real.rpow_mul_natCast (hnn w), Nat.cast_ofNat, div_mul_cancel₀ _ two_ne_zero]
   have h := arakelovMulHeight_eq_height2 (fun i ↦ (y i : K))
   rw [ite_eq_right hy'] at h
   refine Real.le_sqrt_of_sq_le ?_
   calc height2 (fun i ↦ (y i : K)) ^ 2
       = (arakelovMulHeight (fun i ↦ (y i : K)) ^ 2) ^ (finrank ℚ K : ℝ)⁻¹ := by
-        rw [← h, ← Real.rpow_natCast _ 2, ← Real.rpow_mul (arakelovMulHeight_nonneg _),
-          ← Real.rpow_natCast _ 2, ← Real.rpow_mul (arakelovMulHeight_nonneg _), one_div,
-          mul_comm]
+        rw [← h, ← Real.rpow_mul_natCast (arakelovMulHeight_nonneg _),
+          ← Real.rpow_natCast_mul (arakelovMulHeight_nonneg _), one_div, mul_comm]
     _ ≤ (∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i : K)‖ ^ 2) ^ (w.mult : ℝ)) ^
           (finrank ℚ K : ℝ)⁻¹ :=
         Real.rpow_le_rpow (sq_nonneg _) harak_sq (by positivity)
