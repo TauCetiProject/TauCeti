@@ -46,6 +46,15 @@ the resulting tuples are again the components of the same section
   `W^{k+r,p}(V) → W^{k,q}(V)` for `1/q + r/n = 1/p`, `q < ∞`.
 * `TauCeti.SobolevSection.exists_sobolevEmbeddingL_of_inv_add_eq_of_le`: the embeddings
   `W^{k+r,p}(V) → W^{k,q'}(V)` for `1 ≤ q' ≤ q`; for `p = 1` these are `1 ≤ q' ≤ n/(n-r)`.
+* `TauCeti.SobolevSection.sobolevEmbeddingL`: the Sobolev embedding as a chosen continuous linear
+  map `W^{k+1,p}(V) →L[ℝ] W^{k,p⋆}(V)`.
+* `TauCeti.SobolevSection.value_sobolevEmbeddingL_ae`,
+  `TauCeti.SobolevSection.chartValueL_sobolevEmbeddingL_ae`: it keeps the chart components and the
+  chart data, hence the section; these determine it
+  (`TauCeti.SobolevSection.sobolevEmbeddingL_eq_iff`).
+* `TauCeti.SobolevSection.sobolevEmbeddingL_injective`: it is injective.
+* `TauCeti.SobolevSection.lowerOrderL_sobolevEmbeddingL`: it commutes with forgetting the highest
+  weak derivative.
 
 ## References
 
@@ -96,7 +105,6 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
       ∀ w i, A.sectionChartData.chartValueL μ pstar k i (T w) =ᵐ[μ.restrict (A.image i)]
         A.sectionChartData.chartValueL μ p (k + 1) i w := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-  have hp : p ≠ ⊤ := ne_top_of_inv_add_inv_eq_inv hexp
   obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := A.exists_transfer_cover
   have hPj (i j : Fin A.n) : P i j ≤ A.image j :=
     SetLike.coe_subset_coe.1 ((hP i j).trans (A.overlap_subset_image i j))
@@ -107,45 +115,32 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
     hpstar hexp (hQc i) (hQ i) k
   let D (i : Fin A.n) :
       SobolevSection A μ p (k + 1) →L[ℝ] (Fin (finrank ℝ F) → Wkp μ (Q i) pstar k) :=
-    ContinuousLinearMap.pi fun l ↦ (Emb i).comp ((ContinuousLinearMap.proj l).comp
-      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin A.sectionChartData.n ↦
-          ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p (k + 1)) i).comp
-        (A.sectionChartData.sobolevSections μ p (k + 1)).subtypeL))
-  -- The inclusion followed by the two projections evaluates `w` at `i` and `l`. This holds by
-  -- definition only, unfolding `pi`, `proj`, `comp` and `subtypeL`, as the index type
-  -- `Fin A.sectionChartData.n` of the projection unfolds to `Fin A.n`.
+    ContinuousLinearMap.pi fun l ↦ (Emb i).comp
+      ((ContinuousLinearMap.proj l).comp (A.sectionChartData.componentsL μ p (k + 1) i))
   have hD (w : SobolevSection A μ p (k + 1)) (i : Fin A.n) (l : Fin (finrank ℝ F)) :
       D i w l = Emb i ((w : A.sectionChartData.SobolevData μ p (k + 1)) i l) :=
-    (rfl)
+    congrArg (Emb i) (congrFun (A.sectionChartData.componentsL_apply μ p (k + 1) i w) l)
   -- On the piece `P i j`, the transfer of the embedded chart-`i` components.
   let f (j : Fin A.n) (m : Fin (finrank ℝ F)) (i : Fin A.n) :
       SobolevSection A μ p (k + 1) →L[ℝ] Wkp μ (P i j) pstar k :=
     (ContinuousLinearMap.proj m).comp
-      ((A.transferL μ pstar k hpstar i j (hPc i j) (hPD i j) (hPQ i j)).comp (D i))
+      ((A.transferL μ pstar k i j (hPc i j) (hPD i j) (hPQ i j)).comp (D i))
   have hf (j : Fin A.n) (m : Fin (finrank ℝ F)) (i : Fin A.n) (w : SobolevSection A μ p (k + 1)) :
       (Wkp.value k (f j m i w) : E → ℝ) =ᵐ[μ.restrict (P i j)]
         Wkp.value (k + 1) ((w : A.sectionChartData.SobolevData μ p (k + 1)) j m) := by
-    set u := (w : A.sectionChartData.SobolevData μ p (k + 1)) with hu
-    -- Both sides are the coordinate change applied to the chart-`i` components at the image
-    -- point, which agree almost everywhere.
-    have htr := A.restrictL_eq_transferL μ p (k + 1) hp w.property (hP i j) (hPc i j) (hPD i j)
-        (hQi i)
-      (hPQ i j) m
-    have hl : ∀ᵐ y ∂μ.restrict (P i j), ∀ l,
-        Wkp.value k (Emb i (u i l)) (((A.chart j).symm ≫ₕ A.chart i) y) =
-          Wkp.value (k + 1) (Wkp.restrictL (hQi i) (k + 1) (u i l))
-            (((A.chart j).symm ≫ₕ A.chart i) y) :=
-      (A.exists_isChangeOfVariables_chart_symm_trans k (hPc i j) (hPD i j)
-        (hPQ i j)).choose_spec.choose_spec.ae_comp (ae_all_iff.2 fun l ↦ (hEmb i (u i l)).trans
-          (Wkp.value_restrictL_ae (hQi i) (k + 1) (u i l)).symm)
-    filter_upwards [A.value_transferL_ae μ pstar k hpstar i j (hPc i j) (hPD i j) (hPQ i j)
-        (D i w) m,
-      A.value_transferL_ae μ p (k + 1) hp i j (hPc i j) (hPD i j) (hPQ i j)
-        (fun l ↦ Wkp.restrictL (hQi i) (k + 1) (u i l)) m,
-      Wkp.value_restrictL_ae (hPj i j) (k + 1) (u j m), hl] with y h₁ h₂ h₃ h₄
-    refine Eq.trans ?_ h₃
-    rw [htr, h₂]
-    simp only [f, ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, h₁, hD, ← hu, h₄]
+    set u := (w : A.sectionChartData.SobolevData μ p (k + 1))
+    -- The transfer only sees the values of the embedded chart-`i` components, which are those of
+    -- the chart-`i` components themselves; by `restrictL_eq_transferL` these transfer to the
+    -- chart-`j` components.
+    refine (A.value_transferL_ae_congr (hPc i j) (hPD i j) (hPQ i j) (D i w)
+      (fun l ↦ Wkp.restrictL (hQi i) (k + 1) (u i l))
+      (fun l ↦ by
+        rw [hD]
+        exact (hEmb i (u i l)).trans (Wkp.value_restrictL_ae (hQi i) (k + 1) (u i l)).symm)
+      m).trans ?_
+    rw [← A.restrictL_eq_transferL μ p (k + 1) w.property (hP i j) (hPc i j) (hPD i j) (hQi i)
+      (hPQ i j) m]
+    exact Wkp.value_restrictL_ae (hPj i j) (k + 1) (u j m)
   choose Φ hΦ using fun j m ↦ Wkp.exists_continuousLinearMap_value_ae_eq (fun i ↦ hPj i j)
     (hcov j) (f j m) _ (hf j m)
   exact A.sectionChartData.exists_continuousLinearMap_chartValueL_ae_eq Φ hΦ
@@ -194,6 +189,76 @@ theorem exists_sobolevEmbeddingL_of_inv_add_eq_of_le [T2Space M] (k r : ℕ) {q 
   rw [ContinuousLinearMap.comp_apply, SectionChartData.chartValueL_ofExponentLEL,
     Lp.coeFn_ofExponentLEL]
   exact hT w i
+
+variable [T2Space M] {pstar : ℝ≥0∞} [Fact (1 ≤ pstar)]
+
+/-- **The Sobolev embedding for Sobolev sections**, as a continuous linear map. On a compact
+manifold without boundary, given by a finite bundle atlas of a Hausdorff manifold of dimension `n`,
+if `1 ≤ p` and `1/p⋆ + 1/n = 1/p` with `p⋆ < ∞`, this is the inclusion
+`W^{k+1,p}(V) → W^{k,p⋆}(V)`, chosen by `TauCeti.SobolevSection.exists_sobolevEmbeddingL`. It keeps
+the chart data (`TauCeti.SobolevSection.chartValueL_sobolevEmbeddingL_ae`), hence the section, and
+the chart components (`TauCeti.SobolevSection.value_sobolevEmbeddingL_ae`). At `p = 1` it is the
+endpoint embedding `W^{k+1,1}(V) → W^{k,n/(n-1)}(V)`. -/
+def sobolevEmbeddingL (k : ℕ) (hpstar : pstar ≠ ⊤)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) :
+    SobolevSection A μ p (k + 1) →L[ℝ] SobolevSection A μ pstar k :=
+  (exists_sobolevEmbeddingL A μ hpstar hexp k).choose
+
+variable {A μ} {k : ℕ}
+
+/-- The Sobolev embedding keeps the chart data of a Sobolev section, hence the section whose
+coordinates they are. -/
+theorem chartValueL_sobolevEmbeddingL_ae (hpstar : pstar ≠ ⊤)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (w : SobolevSection A μ p (k + 1))
+    (i : Fin A.n) :
+    A.sectionChartData.chartValueL μ pstar k i (sobolevEmbeddingL A μ k hpstar hexp w)
+      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ p (k + 1) i w :=
+  (exists_sobolevEmbeddingL A μ hpstar hexp k).choose_spec w i
+
+/-- The Sobolev embedding keeps the chart components of a Sobolev section. -/
+theorem value_sobolevEmbeddingL_ae (hpstar : pstar ≠ ⊤)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (w : SobolevSection A μ p (k + 1))
+    (i : Fin A.n) (m : Fin (finrank ℝ F)) :
+    (Wkp.value k ((sobolevEmbeddingL A μ k hpstar hexp w :
+        A.sectionChartData.SobolevData μ pstar k) i m) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
+      Wkp.value (k + 1) ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m) := by
+  -- Both are the `m`th coordinate of the reading in chart `i` of the section underlying `w`.
+  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section μ p (k + 1) w
+  exact (SectionChartData.value_ae_eq_repr_coord
+    ((chartValueL_sobolevEmbeddingL_ae hpstar hexp w i).trans (hs i)) m).trans
+      (SectionChartData.value_ae_eq_repr_coord (hs i) m).symm
+
+/-- **Characterization of the Sobolev embedding.** An element of `W^{k,p⋆}(V)` is the image of
+`w ∈ W^{k+1,p}(V)` exactly when its chart components have the values of those of `w`. -/
+theorem sobolevEmbeddingL_eq_iff (hpstar : pstar ≠ ⊤)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (w : SobolevSection A μ p (k + 1))
+    (v : SobolevSection A μ pstar k) :
+    sobolevEmbeddingL A μ k hpstar hexp w = v ↔ ∀ i m,
+      (Wkp.value k ((v : A.sectionChartData.SobolevData μ pstar k) i m) : E → ℝ)
+        =ᵐ[μ.restrict (A.image i)]
+          Wkp.value (k + 1) ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m) := by
+  refine ⟨fun h i m ↦ h ▸ value_sobolevEmbeddingL_ae hpstar hexp w i m, fun h ↦ ?_⟩
+  exact A.sectionChartData.sobolevSections_ext μ pstar k fun i m ↦ Lp.ext <|
+    (value_sobolevEmbeddingL_ae hpstar hexp w i m).trans (h i m).symm
+
+/-- The Sobolev embedding is injective. -/
+theorem sobolevEmbeddingL_injective (hpstar : pstar ≠ ⊤)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) :
+    Function.Injective (sobolevEmbeddingL A μ k hpstar hexp) := fun w w' h ↦
+  A.sectionChartData.sobolevSections_ext μ p (k + 1) fun i m ↦ Lp.ext <|
+    (value_sobolevEmbeddingL_ae hpstar hexp w i m).symm.trans <| by
+      rw [h]
+      exact value_sobolevEmbeddingL_ae hpstar hexp w' i m
+
+/-- The Sobolev embedding commutes with forgetting the highest weak derivative. -/
+theorem lowerOrderL_sobolevEmbeddingL (hpstar : pstar ≠ ⊤)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (w : SobolevSection A μ p (k + 2)) :
+    A.sectionChartData.lowerOrderL μ pstar k (sobolevEmbeddingL A μ (k + 1) hpstar hexp w) =
+      sobolevEmbeddingL A μ k hpstar hexp (A.sectionChartData.lowerOrderL μ p (k + 1) w) := by
+  refine ((sobolevEmbeddingL_eq_iff hpstar hexp _ _).2 fun i m ↦ ?_).symm
+  rw [SectionChartData.lowerOrderL_apply, SectionChartData.lowerOrderL_apply, ← Wkp.value_succ,
+    ← Wkp.value_succ]
+  exact value_sobolevEmbeddingL_ae hpstar hexp w i m
 
 end SobolevSection
 

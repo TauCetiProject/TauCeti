@@ -236,6 +236,15 @@ def holonomy (α : Cochain X G) (u v w : V) : G := α u v * α v w * α w u
 theorem holonomy_def (α : Cochain X G) (u v w : V) :
     α.holonomy u v w = α u v * α v w * α w u := (rfl)
 
+/-- The holonomy of `Cochain.ofLt` around an increasing triple `u < v < w`. -/
+theorem holonomy_ofLt_complete [Fintype V] [LinearOrder V] (f : V → V → G) {u v w : V}
+    (huv : u < v) (hvw : v < w) :
+    (ofLt (complete V) f).holonomy u v w = f u v * f v w * (f u w)⁻¹ := by
+  have huw := huv.trans hvw
+  rw [holonomy_def, ofLt_apply_of_lt _ ((adj_complete u v).mpr huv.ne) huv,
+    ofLt_apply_of_lt _ ((adj_complete v w).mpr hvw.ne) hvw,
+    ofLt_apply_of_gt _ ((adj_complete w u).mpr huw.ne') huw]
+
 @[simp, grind =] theorem holonomy_one (u v w : V) : (1 : Cochain X G).holonomy u v w = 1 := by
   simp [holonomy_def]
 

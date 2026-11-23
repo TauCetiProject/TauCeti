@@ -156,11 +156,8 @@ theorem intrinsicMultiplicity_prod [FiniteDimensional k V] {W : Type w'} [AddCom
       ρ.intrinsicMultiplicity i + σ.intrinsicMultiplicity i := by
   rw [intrinsicMultiplicity_def, intrinsicMultiplicity_def, intrinsicMultiplicity_def,
     ← finrank_prod]
-  -- `Hom(Zᵢ, ρ × σ)` is `Hom(Zᵢ, ρ) × Hom(Zᵢ, σ)`, computed on the `k[G]`-modules.
-  exact (IntertwiningMap.equivLinearMapAsModule _ _ ≪≫ₗ
-    LinearEquiv.homCongrRight k (prodAsModuleEquiv ρ σ) ≪≫ₗ (LinearMap.prodEquiv k).symm ≪≫ₗ
-    (IntertwiningMap.equivLinearMapAsModule _ _).symm.prodCongr
-      (IntertwiningMap.equivLinearMapAsModule _ _).symm).finrank_eq
+  -- `Hom(Zᵢ, ρ × σ)` is `Hom(Zᵢ, ρ) × Hom(Zᵢ, σ)`.
+  exact IntertwiningMap.prodEquiv.symm.finrank_eq
 
 /-- **The intrinsic multiplicities are additive on finite direct sums**
 (`Representation.directSum`) of finite-dimensional representations: an intertwining map into the

@@ -42,7 +42,7 @@ The norm-two count and kissing number for all ranks are provided by
 
 * `TauCeti.IntegralLattice.nebentypus_realModel_typeARootLattice_two_intCast`,
   `TauCeti.IntegralLattice.isPrimitive_nebentypus_realModel_typeARootLattice_two`: the nebentypus
-  of `A₂` is the primitive Kronecker character `(-3 / ·)` modulo `3`.
+  of the real model of `A₂` is the primitive Kronecker character `(-3 / ·)` modulo `3`.
 * `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace`:
   `Θ_{A₂}` lies in `M₁(Γ₀(3), χ₋₃)` (`TauCeti.modFormCharSpace` for `χ₋₃` at modulus `3`).
 * `TauCeti.IntegralLattice.thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0`:
@@ -83,6 +83,7 @@ private theorem a2_character_primitive : χ₋₃.IsPrimitive :=
 
 /-- The nebentypus of the real model of `A₂` is the Kronecker character `(-3 / ·)` modulo `3`: its
 value at every integer `a` is `(-3 / a)`. -/
+@[simp]
 theorem nebentypus_realModel_typeARootLattice_two_intCast (R : Type*) [CommRing R] [NeZero (2 : R)]
     (a : ℤ) :
     ((isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr

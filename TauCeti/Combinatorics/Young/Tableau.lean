@@ -16,10 +16,10 @@ public import TauCeti.Combinatorics.Young.Diagram
 # Young tableaux
 
 A `μ`-tableau is a bijective filling `t : ↥μ.cells ≃ Fin μ.card` of the cells of a Young diagram
-`μ` by the labels `Fin μ.card`.  This file defines `YoungTableau`, the row and the column of a
-label, and identifies the labels lying in a given row, respectively column, with the cells of that
-row, respectively column, of `μ`; counting those labels recovers the row lengths of `μ`
-(`YoungTableau.card_filter_rowIndex_eq`) and their partial sums
+`μ` by the labels `Fin μ.card`.  This file defines `YoungTableau`, the row, the column and the
+content of a label, and identifies the labels lying in a given row, respectively column, with
+the cells of that row, respectively column, of `μ`; counting those labels recovers the row
+lengths of `μ` (`YoungTableau.card_filter_rowIndex_eq`) and their partial sums
 (`YoungTableau.card_filter_rowIndex_lt`), and the column lengths
 (`YoungTableau.card_filter_colIndex_eq`). The latter gives the pigeonhole lemma
 `YoungTableau.exists_ne_and_apply_eq_of_lt_colLen`: a filling by fewer values than the length of a
@@ -92,6 +92,27 @@ theorem rowIndex_apply (t : YoungTableau μ) (c : ↥μ.cells) :
 theorem colIndex_apply (t : YoungTableau μ) (c : ↥μ.cells) :
     colIndex t (t c) = (c : ℕ × ℕ).2 := by
   rw [colIndex_def, Equiv.symm_apply_apply]
+
+/-- The content of the cell of `μ` carrying the label `k` in the tableau `t`: its column minus
+its row, `YoungDiagram.cellContent`. -/
+def labelContent (t : YoungTableau μ) (k : Fin μ.card) : ℤ :=
+  YoungDiagram.cellContent (t.symm k)
+
+/-- The content of a label is the content of the cell carrying it.  As for `rowIndex_def`, this
+is not a `simp` lemma. -/
+theorem labelContent_def (t : YoungTableau μ) (k : Fin μ.card) :
+    labelContent t k = YoungDiagram.cellContent (t.symm k) := by
+  rw [labelContent]
+
+/-- The content of a label is its column minus its row. -/
+theorem labelContent_eq_colIndex_sub_rowIndex (t : YoungTableau μ) (k : Fin μ.card) :
+    labelContent t k = colIndex t k - rowIndex t k := by
+  rw [labelContent_def, YoungDiagram.cellContent_def, colIndex_def, rowIndex_def]
+
+@[simp]
+theorem labelContent_apply (t : YoungTableau μ) (c : ↥μ.cells) :
+    labelContent t (t c) = YoungDiagram.cellContent c := by
+  rw [labelContent_def, Equiv.symm_apply_apply]
 
 /-- A cell of a Young diagram is determined by its row together with its column, so a label of a
 tableau is determined by its row and its column. -/
@@ -432,6 +453,13 @@ theorem colIndex_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) (
     colIndex (relabel σ t) k = colIndex t (σ⁻¹ k) := by
   rw [colIndex_def, colIndex_def, relabel_symm_apply]
 
+/-- Relabeling by `σ` moves the content of the label `σ⁻¹ k` to the label `k`. -/
+@[simp]
+theorem labelContent_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ)
+    (k : Fin μ.card) :
+    labelContent (relabel σ t) k = labelContent t (σ⁻¹ k) := by
+  rw [labelContent_def, labelContent_def, relabel_symm_apply]
+
 @[simp]
 theorem relabel_one (t : YoungTableau μ) : relabel 1 t = t := by
   rw [relabel, Equiv.Perm.one_def, Equiv.trans_refl]
@@ -495,6 +523,14 @@ theorem colIndex_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
     colIndex (transpose t) k = rowIndex t (Fin.cast (YoungDiagram.card_transpose μ) k) := by
   rw [rowIndex_def, colIndex_def, transpose_symm_apply,
     YoungDiagram.transposeCellsEquiv_symm_apply, Prod.snd_swap]
+
+/-- Transposing a tableau negates the content of each label. -/
+@[simp]
+theorem labelContent_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
+    labelContent (transpose t) k =
+      -labelContent t (Fin.cast (YoungDiagram.card_transpose μ) k) := by
+  rw [labelContent_def, labelContent_def, transpose_symm_apply,
+    YoungDiagram.transposeCellsEquiv_symm_apply, YoungDiagram.cellContent_swap]
 
 /-- Transposing a tableau twice gives back its labels: the cell `c` of `μᵗᵗ = μ` carries the
 label that `t` gives it. -/

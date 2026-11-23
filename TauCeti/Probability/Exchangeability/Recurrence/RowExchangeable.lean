@@ -11,6 +11,8 @@ public import TauCeti.Probability.Recurrent.SuccessorArray
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 -- Non-public: the convergence of masses of eventually coinciding events is used only in a proof.
 import Mathlib.MeasureTheory.Integral.Indicator
+-- Non-public: recurrence from returns to the initial state is used only in a proof.
+import TauCeti.Probability.Exchangeability.Recurrence.Excursion
 
 /-!
 # The visited successor array of a recurrent Markov exchangeable process is row exchangeable
@@ -22,8 +24,10 @@ change of variables that turns a row exchangeable array recording those successo
 mixture of Markov chains. This file supplies the missing hypothesis of that change of variables:
 for a recurrent Markov exchangeable process, the **visited successor array**
 `TauCeti.Probability.visitedSuccessorProcess`, whose rows at unvisited states are constant, is row
-exchangeable, and the Diaconis--Freedman representation of such a process started at a fixed state
-follows.
+exchangeable. Under a finite measure, a Markov exchangeable process started at a fixed state that
+returns to it infinitely often is recurrent
+(`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`), so the Diaconis--Freedman
+representation of such a process follows.
 
 ## The argument
 
@@ -63,9 +67,10 @@ reads, and carries no such tie.
 * `TauCeti.Probability.MarkovExchangeable.rowExchangeable_successorProcess` — the plain successor
   array is row exchangeable when every state is almost surely attained.
 * `TauCeti.Probability.MarkovExchangeable.mixedMarkovChain_of_ae_initial_eq` — **the
-  Diaconis--Freedman representation at a fixed start**: a recurrent Markov exchangeable process
-  started at a fixed state is a mixture of Markov chains. Conditioning on the initial state removes
-  the fixed start (`TauCeti.Probability.MarkovExchangeable.mixedMarkovChain`).
+  Diaconis--Freedman representation at a fixed start**: a Markov exchangeable process started at a
+  fixed state and returning to it infinitely often is a mixture of Markov chains. Conditioning on
+  the initial state removes the fixed start
+  (`TauCeti.Probability.MarkovExchangeable.mixedMarkovChain`).
 
 ## References
 
@@ -349,7 +354,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] {μ : Measure
 private theorem measure_setOf_eqOn [MeasurableSingletonClass α]
     (hX : ∀ i, AEMeasurable (X i) μ) (w : ℕ → α) (m : ℕ) :
     μ {ω | ∀ i ≤ m, X i ω = w i} = prefixLaw μ X (m + 1) {fun i : Fin (m + 1) ↦ w i.val} := by
-  rw [prefixLaw_singleton_eq_measure hX]
+  rw [prefixLaw_singleton_eq_measure fun i => hX i.val]
   exact congrArg μ (Set.ext fun ω ↦
     ⟨fun hω i ↦ hω i.val (Nat.lt_succ_iff.1 i.isLt),
       fun hω i hi ↦ hω ⟨i, Nat.lt_succ_of_le hi⟩⟩)
@@ -495,18 +500,20 @@ theorem MarkovExchangeable.rowExchangeable_successorProcess [IsFiniteMeasure μ]
   · filter_upwards [hae] with ω hω
     exact funext hω
 
-/-- **The Diaconis--Freedman representation theorem at a fixed start.** A recurrent Markov
-exchangeable process that starts almost surely at a fixed state is a mixture of Markov chains.
+/-- **The Diaconis--Freedman representation theorem at a fixed start.** A Markov exchangeable
+process that starts almost surely at a fixed state `a₀` and almost surely returns to `a₀`
+infinitely often is a mixture of Markov chains.
 `TauCeti.Probability.MarkovExchangeable.mixedMarkovChain` removes the fixed start. -/
 theorem MarkovExchangeable.mixedMarkovChain_of_ae_initial_eq [IsProbabilityMeasure μ] {a₀ : α}
-    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
+    (h : MarkovExchangeable μ X) (hret : ∀ᵐ ω ∂μ, {n | X n ω = a₀}.Infinite)
+    (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
     MixedMarkovChain μ X := by
   have := h.countable
   have := h.measurableSingletonClass
   exact mixedMarkovChain_of_rowExchangeable h.aemeasurable h0
     (aemeasurable_visitedSuccessorProcess h.aemeasurable)
     (ae_of_all _ fun ω n ↦ visitedSuccessorProcess_visitCell X n ω)
-    (h.rowExchangeable_visitedSuccessorProcess hrec)
+    (h.rowExchangeable_visitedSuccessorProcess (h.recurrent_of_ae_initial_eq hret h0))
 
 end Representation
 

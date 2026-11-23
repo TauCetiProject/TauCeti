@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Taylor Dupuy, Thomas Tucker, Zhuoran Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 -/
 module
 
@@ -75,6 +75,8 @@ residue field as `A`; to use the residue-field API, first install
   `A[x]/(x^e − f)`.
 * `TauCeti.standardTameCoverAlgEquivOfMulPowEq`: for a unit `u` with `u ^ e * g = f`, scaling
   identifies `R[x]/(x^e − g)` with `R[x]/(x^e − f)`.
+* `TauCeti.standardTameCoverLift`: the `A`-algebra map `A[x]/(x^e − f) →ₐ[A] S` sending the root
+  `x` to a chosen `e`-th root `γ` of `f` in `S`.
 
 ## Main results
 
@@ -103,6 +105,9 @@ residue field as `A`; to use the residue-field API, first install
   nonzerodivisor iff `f` is.
 * `TauCeti.standardTameCover_etale`: if `f` and `e` are units, the cover is étale; it is a
   standard étale algebra by `Polynomial.Monic.isStandardEtale_adjoinRoot`.
+* `TauCeti.surjective_productLeftAlgHom_standardTameCoverLift_of_adjoin_eq_top`: if a field
+  extension `L / K` of `A`-algebras is generated over `K` by an `e`-th root of `f` with `e ≠ 0`,
+  then the canonical map `K ⊗[A] A[x]/(x^e − f) →ₐ[K] L` is surjective.
 * `TauCeti.standardTameCover_etale_away`: if `e` is invertible in `A_f`, the cover is étale over
   `A_f` after inverting `f`.
 * `TauCeti.standardTameCover_etale_away_iff`: for `e ≥ 1`, étaleness away from `f` is equivalent
@@ -358,6 +363,42 @@ theorem IsFiniteProductOfStandardTameCovers.etale {C : Type v} [CommRing C] [Alg
 monic. -/
 instance (f : A) (e : ℕ) [NeZero e] : Module.Finite A (standardTameCover A f e) :=
   (monic_X_pow_sub_C f (NeZero.ne e)).finite_adjoinRoot
+
+/-- Lift an `e`-th root `γ` of `f ∈ A` in an `A`-algebra `S` to an `A`-algebra homomorphism out of
+the standard cover `A[x]/(x^e − f)`. -/
+noncomputable def standardTameCoverLift {S : Type*} [CommRing S] [Algebra A S] {f : A} {e : ℕ}
+    {γ : S} (hγ : γ ^ e = algebraMap A S f) :
+    standardTameCover A f e →ₐ[A] S :=
+  AdjoinRoot.liftAlgHom (X ^ e - C f) (Algebra.ofId A S) γ (by simp [hγ])
+
+/-- `standardTameCoverLift` sends the canonical root to the chosen root `γ`. -/
+@[simp]
+theorem standardTameCoverLift_root {S : Type*} [CommRing S] [Algebra A S] {f : A} {e : ℕ}
+    {γ : S} (hγ : γ ^ e = algebraMap A S f) :
+    standardTameCoverLift hγ (AdjoinRoot.root (X ^ e - C f)) = γ :=
+  AdjoinRoot.liftAlgHom_root ..
+
+/-- If a field extension `L / K` of `A`-algebras is generated over `K` by an `e`-th root `γ` of
+`f ∈ A` with `e ≠ 0`, then the canonical `K`-algebra homomorphism
+`K ⊗[A] standardTameCover A f e →ₐ[K] L` is surjective. -/
+theorem surjective_productLeftAlgHom_standardTameCoverLift_of_adjoin_eq_top
+    {K L : Type*} [Field K] [Field L]
+    [Algebra A K] [Algebra A L] [Algebra K L] [IsScalarTower A K L] {f : A} {e : ℕ} (he : e ≠ 0)
+    {γ : L} (hγ : γ ^ e = algebraMap A L f) (hgen : IntermediateField.adjoin K {γ} = ⊤) :
+    Function.Surjective
+      (Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId K L) (standardTameCoverLift hγ)) := by
+  let χ := Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId K L) (standardTameCoverLift hγ)
+  have hγ_int : IsIntegral K γ :=
+    (IsIntegral.of_pow (Nat.pos_of_ne_zero he) (hγ ▸ isIntegral_algebraMap (R := A))).tower_top
+  have hadj : Algebra.adjoin K ({γ} : Set L) = ⊤ :=
+    (IntermediateField.adjoin_simple_eq_top_iff_of_isAlgebraic hγ_int.isAlgebraic).mp hgen
+  have hmem : γ ∈ χ.range :=
+    ⟨1 ⊗ₜ[A] AdjoinRoot.root (X ^ e - C f), by simp [χ]⟩
+  have htop : χ.range = ⊤ :=
+    top_unique (hadj ▸ Algebra.adjoin_le (Set.singleton_subset_iff.mpr hmem))
+  intro x
+  have hx : x ∈ χ.range := htop ▸ Algebra.mem_top
+  exact (AlgHom.mem_range χ).mp hx
 
 section Maps
 

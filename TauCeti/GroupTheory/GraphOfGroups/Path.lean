@@ -557,6 +557,15 @@ theorem Homotopic.toπ₁Tree_eq {p q : 𝔸.Path x y} (h : p.Homotopic q) :
   | dart_reverse p e => simp [mul_assoc]
   | dart_ω e c p => simp [mul_assoc, π₁Tree.edge_mul_of_ω]
 
+/-- Killing the darts of `S' ⊇ S` sends the element of `π₁(𝔸, S)` read off a path to the element
+of `π₁(𝔸, S')` read off the same path. -/
+theorem lift_toπ₁Tree_of_subset {S S' : Set Γ.E} (hS : S ⊆ S') (p : 𝔸.Path x y) :
+    π₁Tree.lift (π₁Tree.of S') (π₁Tree.edge S') (fun _ he => π₁Tree.edge_eq_one (hS he))
+      π₁Tree.edge_rev π₁Tree.edge_mul_of_ω_mul_edge_inv (p.toπ₁Tree S) = p.toπ₁Tree S' := by
+  induction p with
+  | nil => simp
+  | cons q l ih => cases l <;> simp [ih]
+
 end Path
 
 namespace π₁

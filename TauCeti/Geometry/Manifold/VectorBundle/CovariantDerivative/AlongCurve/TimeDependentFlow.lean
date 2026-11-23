@@ -79,7 +79,7 @@ theorem alongCurve_mfderiv_timeDependentFlowOf
   have hopen := isOpen_timeDependentFlowDomain hX₁
   -- Realize `v` as the velocity at `0` of a `C²` curve `c` through `x`.
   obtain ⟨c, rfl, hc, hcv⟩ := exists_contMDiffAt_curveVelocity_eq (I := I) (n := 2)
-    (by norm_num) x v 0
+    (by norm_num) x BoundarylessManifold.isInteriorPoint v 0
   -- The variation `F (r, u) = φ_{s,u}(c r)` is `C²` near `(0, t)`.
   set F : ℝ → ℝ → M := fun r u ↦ timeDependentFlowOf X s u (c r)
   have hg : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℝ).prod I) 2

@@ -98,9 +98,12 @@ theorem le_dualAnnihilator_comap_binaryFormsSocle
     {W : Subcomodule k (coordinateHopfAlgebra k 2) (Module.Dual k (binaryForms k d))}
     (hW : W ≠ ⊤) :
     W ≤ ((binaryFormsSocle k d).comap (Subcomodule.subtype (binaryForms k d))).dualAnnihilator := by
-  rw [← Subcomodule.dualCoannihilator_dualAnnihilator W,
+  have hS : Function.Injective (HopfAlgebra.antipode k :
+      coordinateHopfAlgebra k 2 → coordinateHopfAlgebra k 2) :=
+    Function.Involutive.injective (HopfAlgebra.antipode_antipode (R := k))
+  rw [← Subcomodule.dualCoannihilator_dualAnnihilator W hS,
     Subcomodule.dualAnnihilator_le_dualAnnihilator_iff]
-  set N := W.dualCoannihilator
+  set N := W.dualCoannihilator hS
   have hN : N ≠ ⊥ := Subcomodule.dualCoannihilator_eq_bot_iff.not.mpr hW
   -- The image of the common kernel in the polynomial functions is a nonzero subrepresentation
   -- of the binary forms, so it contains the socle.
@@ -297,7 +300,8 @@ the three entries `a`, `b`, `d` of the generic upper-triangular matrix. -/
 private theorem exists_algHom_upperEntry_eq_one :
     ∃ u : UpperTriangular.coordinateHopfAlgebra k 2 →ₐ[k] k,
       u (upperEntry 0 0) = 1 ∧ u (upperEntry 0 1) = 1 ∧ u (upperEntry 1 1) = 1 := by
-  let v : Matrix.SpecialLinearGroup (Fin 2) k := ⟨!![1, 1; 0, 1], by simp [Matrix.det_fin_two]⟩
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
+  let v : Matrix.SpecialLinearGroup (Fin 2) k := .mk !![1, 1; 0, 1] (by simp [Matrix.det_fin_two])
   have hv : v ∈ (upperTriangularGroup (Fin 2) k).comap Matrix.SpecialLinearGroup.toGL := by
     rw [UpperTriangularGroup.mem_comap_toGL_iff]
     intro i j hij

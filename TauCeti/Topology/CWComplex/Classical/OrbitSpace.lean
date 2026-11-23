@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CWComplex.Classical.CellAction
+public import TauCeti.Topology.CWComplex.Classical.FreeAction
 public import TauCeti.Topology.CWComplex.Classical.OpenCells
 public import TauCeti.Topology.Covering.Quotient
 
@@ -25,7 +26,10 @@ an open cell onto itself only when `g = 1`. Then `B` is a CW complex
 * the characteristic map of an orbit is `p ∘ φ` for the characteristic map `φ` of its chosen
   representative (`IsQuotientCoveringMap.map_cellQuotientEquiv_symm`);
 * the covering map carries each open and each closed cell of `E` onto the open and closed cell of
-  its orbit (`IsQuotientCoveringMap.image_openCell` and `IsQuotientCoveringMap.image_closedCell`).
+  its orbit (`IsQuotientCoveringMap.image_openCell` and `IsQuotientCoveringMap.image_closedCell`),
+  carries each skeleton of `E` onto the corresponding skeleton of `B`
+  (`IsQuotientCoveringMap.image_skeletonLT` and `IsQuotientCoveringMap.image_skeleton`), and is
+  therefore cellular (`IsQuotientCoveringMap.isCellular_cwComplexQuotient`).
 
 Only the characteristic maps of the representatives are used, and the hypotheses on the action
 concern open cells rather than characteristic maps: a translation need not carry the
@@ -328,6 +332,78 @@ theorem _root_.IsQuotientCoveringMap.image_closedCell {n : ℕ} (i : cell (univ 
     p '' closedCell n i =
       closedCell n ((hp.cellQuotientEquiv hcell hfree n).symm (Quotient.mk'' i)) :=
   (image_quotientCellMap_mk_closedBall hp hcell hfree i).symm
+
+/-- An `n`-cell of `E` represents an `n`-cell `b` of the orbit space `B` if and only if the
+covering map carries its open cell onto the open cell of `b`. -/
+theorem _root_.IsQuotientCoveringMap.quotient_mk_eq_cellQuotientEquiv_iff {n : ℕ}
+    {i : cell (univ : Set E) n}
+    {b : letI := hp.cwComplexQuotient hcell hfree; cell (univ : Set B) n} :
+    letI := hp.cwComplexQuotient hcell hfree
+    letI := cellMulAction hcell n
+    (Quotient.mk'' i : MulAction.orbitRel.Quotient G (cell (univ : Set E) n)) =
+        hp.cellQuotientEquiv hcell hfree n b ↔
+      p '' openCell n i = openCell n b := by
+  let := hp.cwComplexQuotient hcell hfree
+  let := cellMulAction hcell n
+  rw [hp.image_openCell hcell hfree i, ← Equiv.symm_apply_eq]
+  exact ⟨fun h ↦ h ▸ rfl, openCell_congr n⟩
+
+/-- Every `n`-cell of the orbit space has a lift in `E` whose open cell maps onto its open
+cell. -/
+theorem _root_.IsQuotientCoveringMap.exists_image_openCell_eq {n : ℕ}
+    (b : letI := hp.cwComplexQuotient hcell hfree; cell (univ : Set B) n) :
+    letI := hp.cwComplexQuotient hcell hfree
+    ∃ i : cell (univ : Set E) n, p '' openCell n i = openCell n b := by
+  let := hp.cwComplexQuotient hcell hfree
+  let := cellMulAction hcell n
+  exact ⟨(hp.cellQuotientEquiv hcell hfree n b).out,
+    (hp.quotient_mk_eq_cellQuotientEquiv_iff hcell hfree).1 (Quotient.out_eq' _)⟩
+
+/-- The covering map carries each stage of the skeletal filtration of `E` onto the corresponding
+stage of the orbit space `B`. -/
+theorem _root_.IsQuotientCoveringMap.image_skeletonLT (n : ℕ∞) :
+    letI := hp.cwComplexQuotient hcell hfree
+    haveI := hp.t2Space_of_cwComplex hcell hfree
+    p '' (skeletonLT (univ : Set E) n : Set E) =
+      (skeletonLT (univ : Set B) n : Set B) := by
+  let := hp.cwComplexQuotient hcell hfree
+  have := hp.t2Space_of_cwComplex hcell hfree
+  rw [← CWComplex.iUnion_openCell_eq_skeletonLT, ← CWComplex.iUnion_openCell_eq_skeletonLT,
+    image_iUnion₂]
+  refine iUnion₂_congr fun m _ ↦ ?_
+  rw [image_iUnion]
+  apply Subset.antisymm
+  · refine iUnion_subset fun i ↦ ?_
+    rw [hp.image_openCell hcell hfree i]
+    exact subset_iUnion _ _
+  · refine iUnion_subset fun b ↦ ?_
+    obtain ⟨i, hi⟩ := hp.exists_image_openCell_eq hcell hfree b
+    exact hi ▸ subset_iUnion (fun i : cell (univ : Set E) m ↦ p '' openCell m i) i
+
+/-- The covering map carries each skeleton of `E` onto the corresponding skeleton of `B`. -/
+theorem _root_.IsQuotientCoveringMap.image_skeleton (n : ℕ∞) :
+    letI := hp.cwComplexQuotient hcell hfree
+    haveI := hp.t2Space_of_cwComplex hcell hfree
+    p '' (skeleton (univ : Set E) n : Set E) =
+      (skeleton (univ : Set B) n : Set B) :=
+  hp.image_skeletonLT hcell hfree (n + 1)
+
+open CategoryTheory in
+/-- **The quotient covering map of a free cellular action is cellular** for the orbit-space CW
+structure, as a map from `univ : Set E` to `univ : Set B`. -/
+theorem _root_.IsQuotientCoveringMap.isCellular_cwComplexQuotient :
+    letI := hp.cwComplexQuotient hcell hfree
+    haveI := hp.t2Space_of_cwComplex hcell hfree
+    IsCellular (univ : Set E) (univ : Set B)
+      (TopCat.ofHom ⟨fun x ↦ ⟨p x.val, mem_univ _⟩,
+        (hp.continuous.comp continuous_subtypeVal).subtype_mk _⟩) := by
+  let := hp.cwComplexQuotient hcell hfree
+  have := hp.t2Space_of_cwComplex hcell hfree
+  rintro n ⟨x, _⟩ hx
+  have hx' : x ∈ (skeletonLT (univ : Set E) n : Set E) := hx
+  have hpx : p x ∈ (skeletonLT (univ : Set B) n : Set B) :=
+    hp.image_skeletonLT hcell hfree n ▸ mem_image_of_mem p hx'
+  exact hpx
 
 end Quotient
 
