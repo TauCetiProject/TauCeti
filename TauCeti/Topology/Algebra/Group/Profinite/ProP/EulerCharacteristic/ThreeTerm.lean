@@ -160,7 +160,7 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
     have : ContinuousAdd M := ⟨continuous_of_discreteTopology⟩
     have : ContinuousSMul G (M ⧸ N) := N.quotientDistribMulAction_continuousSMul hN
     have hNtriv : ∀ (g : G) (a : N), g • a = a := fun g a ↦
-      Subtype.ext ((N.restrictDistribMulAction_coe_smul hN g a).trans (hNfix g a a.2))
+      Subtype.ext ((N.restrictDistribMulAction_coe_smul hN g a).trans (hNfix g a a.property))
     -- the nine-term exact sequence
     -- `0 → H⁰(N) → H⁰(M) → H⁰(M ⧸ N) → H¹(N) → H¹(M) → H¹(M ⧸ N) → H²(N) → H²(M) → H²(M ⧸ N) → 0`,
     -- exact on the right because `H³(G, N) = 0`

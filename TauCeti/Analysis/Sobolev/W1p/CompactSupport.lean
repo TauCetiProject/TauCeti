@@ -71,6 +71,9 @@ Neither `ψ` nor `w` need have compact support, so it applies to unbounded `Ω` 
   product extended by zero to a larger open set.
 * `TauCeti.W1p.exists_top_value_gradient_ae_eq_on_of_isCompact`: near a compact subset of `Ω`,
   a function in `W^{1,p}(Ω)` agrees in value and gradient with one in `W^{1,p}(ℝⁿ)`.
+* `TauCeti.W1p.exists_top_value_gradient_ae_eq_mul_sub_const`: for a smooth `ψ` compactly
+  supported in `Ω` and a constant `m`, the function `ψ (u - m)` extends by zero to `W^{1,p}(ℝⁿ)`
+  with weak gradient `ψ ∇u + (u - m) ∇ψ`; value and gradient are both stated.
 
 ## References
 
@@ -150,30 +153,31 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
     (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.value u x = 0) :
     u ∈ w1p0Submodule mu Omega p := by
   have hmeas : MeasurableSet (Omega : Set E) := Omega.isOpen.measurableSet
+  have hnull : NullMeasurableSet (Omega : Set E) mu := hmeas.nullMeasurableSet
   have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := by simp
   have humu : ∀ᵐ x ∂mu, x ∈ (Omega : Set E) → x ∉ K → W1p.value u x = 0 :=
     (ae_restrict_iff' hmeas).1 hu
   have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed hK.isClosed hu
   -- the zero-extension of `u` to the whole space is again a Sobolev function
   have hweak : HasWeakFDerivOn mu ⊤
-      ((extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.value u) : E → ℝ))
-      (fun x => innerSL ℝ (extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.gradient u) x)) := by
+      ((extendByZeroLpₗᵢ ℝ mu hnull hsub (W1p.value u) : E → ℝ))
+      (fun x => innerSL ℝ (extendByZeroLpₗᵢ ℝ mu hnull hsub (W1p.gradient u) x)) := by
     have hU : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K →
         innerSL ℝ (W1p.gradient u x) = 0 := by
       filter_upwards [hgrad] with x hx hxK
       rw [hx hxK, map_zero]
     refine (((W1p.hasWeakFDerivOn u).indicator_of_isCompact hK hKO hu hU).congr_ae
-      (coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)).symm).congr_ae_deriv ?_
-    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.gradient u)] with x hx
+      (coeFn_extendByZeroLpₗᵢ ℝ hnull hsub (W1p.value u)).symm).congr_ae_deriv ?_
+    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hnull hsub (W1p.gradient u)] with x hx
     rw [hx]
     by_cases hxO : x ∈ (Omega : Set E) <;> simp [hxO]
   set w : W1p mu (⊤ : Opens E) p :=
-    W1p.mk (extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.value u))
-      (extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.gradient u)) hweak with hwdef
+    W1p.mk (extendByZeroLpₗᵢ ℝ mu hnull hsub (W1p.value u))
+      (extendByZeroLpₗᵢ ℝ mu hnull hsub (W1p.gradient u)) hweak with hwdef
   have hvalw : ⇑(W1p.value w) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
       (Omega : Set E).indicator (W1p.value u : E → ℝ) := by
     rw [hwdef, W1p.value_mk]
-    exact coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)
+    exact coeFn_extendByZeroLpₗᵢ ℝ hnull hsub (W1p.value u)
   -- a smooth cutoff, equal to one on `K` and compactly supported inside `Ω`
   obtain ⟨chi, M, hchi, -, hchi_one_nhds, _, hchi_ts, hM0, hchiM_all,
     hchigradM_all⟩ := hK.exists_contDiff_cutoff_with_bounds Omega.isOpen hKO
@@ -286,7 +290,8 @@ theorem W1p.value_extendByZeroL_contDiffSMul_ae (hsub : Omega ≤ Omega') {psi :
     ∀ᵐ x ∂mu.restrict Omega', W1p.value (W1p0.extendByZeroL hsub ⟨_, hw⟩ : W1p mu Omega' p) x =
       (Omega : Set E).indicator (fun y => psi y * W1p.value u y) x := by
   have hOmega := Omega.isOpen.measurableSet
-  have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega (SetLike.coe_subset_coe.mpr hsub)
+  have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega.nullMeasurableSet
+    (SetLike.coe_subset_coe.mpr hsub)
     (W1p.value (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u))
   have h3 := (ae_restrict_iff' hOmega).1 (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u)
   filter_upwards [h2, ae_restrict_of_ae h3] with x hx2 hx3
@@ -307,7 +312,8 @@ theorem W1p.gradient_extendByZeroL_contDiffSMul_ae (hsub : Omega ≤ Omega') {ps
       (Omega : Set E).indicator
         (fun y => psi y • W1p.gradient u y + W1p.value u y • ∇ psi y) x := by
   have hOmega := Omega.isOpen.measurableSet
-  have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega (SetLike.coe_subset_coe.mpr hsub)
+  have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega.nullMeasurableSet
+    (SetLike.coe_subset_coe.mpr hsub)
     (W1p.gradient (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u))
   have h3 := (ae_restrict_iff' hOmega).1 (W1p.gradient_contDiffSMul_ae hpsi hM hpsiM hgradM u)
   filter_upwards [h2, ae_restrict_of_ae h3] with x hx2 hx3
@@ -342,11 +348,57 @@ theorem W1p.exists_top_value_gradient_ae_eq_on_of_isCompact (hp : p ≠ (∞ : E
   have hval := W1p.value_extendByZeroL_contDiffSMul_ae le_top hchi hM0 hchiM hchigradM u hw0
   have hgrad := W1p.gradient_extendByZeroL_contDiffSMul_ae le_top hchi hM0 hchiM hchigradM u hw0
   simp only [Opens.coe_top, Measure.restrict_univ] at hval hgrad
-  refine ⟨(W1p0.extendByZeroL (p := p) (Omega := Omega) le_top ⟨_, hw0⟩).1, ?_, ?_⟩
+  refine ⟨(W1p0.extendByZeroL (p := p) (Omega := Omega) le_top ⟨_, hw0⟩).val, ?_, ?_⟩
   · filter_upwards [hval] with x hx hxS
     rw [hx, indicator_of_mem (hSO hxS), (hchi_S x hxS).1, one_mul]
   · filter_upwards [hgrad] with x hx hxS
     rw [hx, indicator_of_mem (hSO hxS), (hchi_S x hxS).1, (hchi_S x hxS).2, one_smul,
       smul_zero, add_zero]
+
+/-- **A cutoff of a Sobolev function minus a constant extends to the whole space.** For
+`u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, a smooth `ψ` with compact support in `Ω` and a constant `m`, the
+function `ψ (u - m)`, extended by zero, lies in `W^{1,p}(ℝⁿ)`, with weak gradient
+`ψ ∇u + (u - m) ∇ψ`: some `v ∈ W^{1,p}(ℝⁿ)` has value `ψ (u - m)` and this weak gradient almost
+everywhere. Both vanish off `Ω`, since `ψ` does. -/
+theorem W1p.exists_top_value_gradient_ae_eq_mul_sub_const (hp : p ≠ (∞ : ℝ≥0∞))
+    (u : W1p mu Omega p) {psi : E → ℝ} (hpsi : ContDiff ℝ ∞ psi) (hcpt : HasCompactSupport psi)
+    (hts : tsupport psi ⊆ (Omega : Set E)) (m : ℝ) :
+    ∃ v : W1p mu ⊤ p, (∀ᵐ x ∂mu, W1p.value v x = psi x * (W1p.value u x - m)) ∧
+      ∀ᵐ x ∂mu, W1p.gradient v x = psi x • W1p.gradient u x + (W1p.value u x - m) • ∇ psi x := by
+  obtain ⟨M, hM, hpsiM, hgradM⟩ := (hpsi.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
+  have hw := W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp hpsi hM
+    (fun x _ => hpsiM x) (fun x _ => hgradM x) hcpt hts u
+  let psiT : 𝓓((⊤ : Opens E), ℝ) := ⟨psi, hpsi, hcpt, subset_univ _⟩
+  have hpsiT : (psiT : E → ℝ) = psi := TestFunction.coe_mk
+  refine ⟨(W1p0.extendByZeroL le_top ⟨_, hw⟩ : W1p mu ⊤ p) -
+    m • W1p.ofTestFunctionₗ mu ⊤ p psiT, ?_, ?_⟩
+  · have h1 := W1p.value_extendByZeroL_contDiffSMul_ae le_top hpsi hM (fun x _ => hpsiM x)
+      (fun x _ => hgradM x) u hw
+    have h2 := W1p.value_sub_ae (W1p0.extendByZeroL le_top ⟨_, hw⟩ : W1p mu ⊤ p)
+      (m • W1p.ofTestFunctionₗ mu ⊤ p psiT)
+    have h3 := W1p.value_smul_ae m (W1p.ofTestFunctionₗ mu ⊤ p psiT)
+    simp only [Opens.coe_top, Measure.restrict_univ] at h1 h2 h3
+    filter_upwards [h1, h2, h3, W1p.value_ofTestFunctionₗ_top_ae (mu := mu) (p := p) psiT]
+      with x h1 h2 h3 h4
+    rw [h2, Pi.sub_apply, h1, h3, Pi.smul_apply, h4, hpsiT, smul_eq_mul]
+    by_cases hx : x ∈ (Omega : Set E)
+    · rw [indicator_of_mem hx, mul_sub, mul_comm m]
+    · rw [indicator_of_notMem hx, image_eq_zero_of_notMem_tsupport fun h => hx (hts h)]
+      simp
+  · have h1 := W1p.gradient_extendByZeroL_contDiffSMul_ae le_top hpsi hM (fun x _ => hpsiM x)
+      (fun x _ => hgradM x) u hw
+    have h2 := W1p.gradient_sub_ae (W1p0.extendByZeroL le_top ⟨_, hw⟩ : W1p mu ⊤ p)
+      (m • W1p.ofTestFunctionₗ mu ⊤ p psiT)
+    have h3 := W1p.gradient_smul_ae m (W1p.ofTestFunctionₗ mu ⊤ p psiT)
+    simp only [Opens.coe_top, Measure.restrict_univ] at h1 h2 h3
+    filter_upwards [h1, h2, h3, W1p.gradient_ofTestFunctionₗ_top_ae (mu := mu) (p := p) psiT]
+      with x h1 h2 h3 h4
+    rw [h2, Pi.sub_apply, h1, h3, Pi.smul_apply, h4, hpsiT]
+    by_cases hx : x ∈ (Omega : Set E)
+    · rw [indicator_of_mem hx, sub_smul, add_sub_assoc]
+    · have hxK : x ∉ tsupport psi := fun h => hx (hts h)
+      rw [indicator_of_notMem hx, image_eq_zero_of_notMem_tsupport hxK,
+        gradient_of_notMem_tsupport hxK]
+      simp
 
 end TauCeti

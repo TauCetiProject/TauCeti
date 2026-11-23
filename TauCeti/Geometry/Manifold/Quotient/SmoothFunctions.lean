@@ -72,7 +72,8 @@ def smoothQuotientEquivInvariants :
   toFun u := ⟨u.comp (smoothQuotientMk I M n G),
     mem_invariants_smoothFunctionRep_iff.2 fun _ _ ↦ by simp⟩
   invFun f :=
-    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).orbitRelQuotientLift (mem_invariants_smoothFunctionRep_iff.1 f.2)
+    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).orbitRelQuotientLift (mem_invariants_smoothFunctionRep_iff.1
+        f.property)
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv u := ((u.comp (smoothQuotientMk I M n G)).eq_orbitRelQuotientLift_iff _).2 rfl |>.symm
@@ -90,7 +91,7 @@ theorem smoothQuotientEquivInvariants_symm_apply
     (f : (smoothFunctionRep 𝕜 I M F n G).invariants) :
     (smoothQuotientEquivInvariants 𝕜 I M F n G).symm f =
       (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).orbitRelQuotientLift
-        (mem_invariants_smoothFunctionRep_iff.1 f.2) :=
+        (mem_invariants_smoothFunctionRep_iff.1 f.property) :=
   (rfl)
 
 /-- **Eigenfunctions on an orbit space are invariant eigenfunctions.** If an operator `T` on the
@@ -132,7 +133,7 @@ theorem coe_eigenspaceEquivInvariantsInfEigenspace_symm_apply
     ((eigenspaceEquivInvariantsInfEigenspace hTS μ).symm f :
         C^n⟮I, MulAction.orbitRel.Quotient G M; 𝓘(𝕜, F), F⟯) =
       (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).orbitRelQuotientLift
-        (mem_invariants_smoothFunctionRep_iff.1 f.2.1) :=
+        (mem_invariants_smoothFunctionRep_iff.1 f.property.1) :=
   (ContMDiffMap.eq_orbitRelQuotientLift_iff _ _).2 <| by
     rw [← coe_eigenspaceEquivInvariantsInfEigenspace_apply hTS, LinearEquiv.apply_symm_apply]
 

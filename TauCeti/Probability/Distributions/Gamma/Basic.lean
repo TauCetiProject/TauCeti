@@ -15,6 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Probability.Distributions.Gamma.PDF
 import TauCeti.Probability.Moments.Basic
 import TauCeti.Probability.Moments.Determinacy
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Elementary theory of the gamma distribution
@@ -72,6 +73,8 @@ exactly the half-line on which the shifted rate is still positive.
   parameters;
 * `TauCeti.Probability.gammaMeasure_map_const_mul` — scaling by `c > 0` sends the rate `r` to
   `r / c`;
+* `ProbabilityTheory.HasLaw.const_mul_gammaMeasure` — the corresponding transport theorem for a
+  gamma random variable;
 * `TauCeti.Probability.gammaMeasure_eq_withDensity_restrict_Ioi` — the law is its density against
   Lebesgue
   measure on `Ioi 0`;
@@ -87,10 +90,10 @@ The cumulative distribution function is computed in
 
 public section
 
-namespace TauCeti.Probability
-
 open MeasureTheory ProbabilityTheory Real Set
 open scoped MeasureTheory Topology
+
+namespace TauCeti.Probability
 
 variable {a r : ℝ}
 
@@ -152,7 +155,7 @@ and rate exactly when its density-weighted version is Lebesgue integrable. -/
 theorem integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) {g : ℝ → E} :
     Integrable g (gammaMeasure a r) ↔ Integrable fun x ↦ gammaPDFReal a r x • g x := by
   rw [gammaMeasure_eq_withDensity_ofReal]
-  exact Probability.integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
     (ae_of_all _ (gammaPDFReal_nonneg ha hr))
 
@@ -178,7 +181,7 @@ density-weighted Lebesgue integral. -/
 theorem integral_gammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (g : ℝ → E) :
     ∫ x, g x ∂gammaMeasure a r = ∫ x, gammaPDFReal a r x • g x := by
   rw [gammaMeasure_eq_withDensity_ofReal]
-  exact Probability.integral_withDensity_ofReal
+  exact MeasureTheory.integral_withDensity_ofReal
     (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
     (ae_of_all _ (gammaPDFReal_nonneg ha hr)) g
 
@@ -517,3 +520,17 @@ theorem gammaMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
           ENNReal.ofReal_one, one_mul]
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+/-- Multiplying a gamma random variable by a positive constant divides its rate by that
+constant. -/
+theorem const_mul_gammaMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {a r c : ℝ} (hX : HasLaw X (gammaMeasure a r) P) (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (gammaMeasure a (r / c)) P := by
+  rw [← gammaMeasure_map_const_mul hc]
+  exact (hasLaw_map (measurable_const_mul c).aemeasurable).fun_comp hX
+
+end ProbabilityTheory.HasLaw

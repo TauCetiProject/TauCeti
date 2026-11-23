@@ -30,9 +30,7 @@ The standard simplex is sent to `[1] - [0]` (`TauCeti.cubeRelClass_singularHomol
 * `TauCeti.cubeSimplex`, `TauCeti.cubeRelClass`: the standard `1`-simplex of `I¹` and its class in
   `H₁(I¹, ∂I¹; R)`; `TauCeti.cubeRelClass_singularHomologyMap`: its image under a map of pairs.
 * `TauCeti.reducedSingularHomologyTopCatSphereIso_zero_inv_ι`: the generator of reduced `H₀(S⁰)` is
-  `[-e₀] - [e₀]` on `TopCat.sphere 0`.
-* `TauCeti.eq_sphereMinus_or_eq_spherePlus`, `TauCeti.sphereMinus_ne_spherePlus`: `S⁰` consists
-  of the two distinct points `-e₀` and `e₀`.
+  `[-e₀] - [e₀]` (`TauCeti.sphereMinus` and `TauCeti.spherePlus`) on `TopCat.sphere 0`.
 * `TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`: the generator of `H₁(I¹, ∂I¹; R)` is
   `-cubeRelClass R`.
 -/
@@ -136,19 +134,6 @@ section Sphere
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
-/-- The standard orthonormal basis of `EuclideanSpace ℝ (ULift (Fin 1))`, which determines the
-generator of reduced `H₀(S⁰)`. -/
-abbrev sphereZeroBasis : OrthonormalBasis (Fin 1) ℝ (EuclideanSpace ℝ (ULift.{w} (Fin 1))) :=
-  (EuclideanSpace.basisFun (ULift.{w} (Fin 1)) ℝ).reindex Equiv.ulift
-
-/-- The point `e₀` of `TopCat.sphere 0`. -/
-def spherePlus : TopCat.diskBoundary.{w} 1 :=
-  (diskBoundaryHomeomorph 1).symm ⟨sphereZeroBasis 0, by simp⟩
-
-/-- The point `-e₀` of `TopCat.sphere 0`. -/
-def sphereMinus : TopCat.diskBoundary.{w} 1 :=
-  (diskBoundaryHomeomorph 1).symm (-⟨sphereZeroBasis 0, by simp⟩)
-
 /-- **The standard generator of reduced `H₀(S⁰)`** is the class `[-e₀] - [e₀]`. -/
 lemma reducedSingularHomologyTopCatSphereIso_zero_inv_ι :
     (reducedSingularHomologyTopCatSphereIso R 0).inv ≫
@@ -174,53 +159,11 @@ lemma reducedSingularHomologyTopCatSphereIso_zero_inv_ι :
         singularHomology₀Section R sphereMinus - singularHomology₀Section R spherePlus := by
     rw [(reducedSingularHomologyι R 0).naturality, ← Category.assoc,
       reducedSingularHomologySphereIso_inv_ι, Preadditive.sub_comp,
-      singularHomology₀Section_naturality, singularHomology₀Section_naturality]
+      singularHomology₀Section_naturality, singularHomology₀Section_naturality,
+      sphereMinus_def, spherePlus_def]
     rfl
   rw [hinv]
   exact (Category.assoc _ _ _).trans key
-
-lemma spherePlus_coord :
-    (((TopCat.diskBoundaryInclusion.{w} 1 spherePlus) :
-      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-        EuclideanSpace ℝ (Fin 1)) 0 = 1 := by
-  -- `spherePlus`/`sphereMinus` are defined through `(diskBoundaryHomeomorph 1).symm`, and the
-  -- inclusion of the boundary sphere into the disk keeps the underlying vector.
-  change ((((diskBoundaryHomeomorph 1).symm _ : TopCat.diskBoundary.{w} 1) :
-    ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-      EuclideanSpace ℝ (Fin 1)) 0 = 1
-  rw [diskBoundaryHomeomorph_symm_apply_down_apply]
-  simp
-
-lemma sphereMinus_coord :
-    (((TopCat.diskBoundaryInclusion.{w} 1 sphereMinus) :
-      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-        EuclideanSpace ℝ (Fin 1)) 0 = -1 := by
-  -- `spherePlus`/`sphereMinus` are defined through `(diskBoundaryHomeomorph 1).symm`, and the
-  -- inclusion of the boundary sphere into the disk keeps the underlying vector.
-  change ((((diskBoundaryHomeomorph 1).symm _ : TopCat.diskBoundary.{w} 1) :
-    ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-      EuclideanSpace ℝ (Fin 1)) 0 = -1
-  rw [diskBoundaryHomeomorph_symm_apply_down_apply]
-  simp
-
-/-- **`S⁰` consists of the two points `-e₀` and `e₀`.** -/
-lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{w} 1) :
-    p = sphereMinus ∨ p = spherePlus := by
-  have hnorm : ‖((p : ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-      EuclideanSpace ℝ (Fin 1))‖ = 1 := by
-    simp
-  rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs,
-    Real.sqrt_sq_eq_abs, abs_eq zero_le_one] at hnorm
-  rcases hnorm with h | h
-  · exact Or.inr (diskBoundary_one_ext (h.trans spherePlus_coord.{w}.symm))
-  · exact Or.inl (diskBoundary_one_ext (h.trans sphereMinus_coord.{w}.symm))
-
-/-- The two points `-e₀` and `e₀` of `S⁰` are distinct. -/
-lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{w} 1) ≠ spherePlus := by
-  intro h
-  have h' := sphereMinus_coord.{w}
-  rw [h, spherePlus_coord] at h'
-  norm_num at h'
 
 lemma diskBoundaryPairToCube_snd_spherePlus :
     TopPair.Hom.snd (diskBoundaryPairToCube.{w} 1) spherePlus = cubeEnd 1 (Or.inr rfl) := by

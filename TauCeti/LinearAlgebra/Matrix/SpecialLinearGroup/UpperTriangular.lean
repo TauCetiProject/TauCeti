@@ -39,31 +39,31 @@ def diagonalProjection :
     (upperTriangularGroup m A).comap SpecialLinearGroup.toGL →*
       (upperTriangularGroup m A).comap SpecialLinearGroup.toGL where
   toFun g :=
-    ⟨⟨Matrix.diagonal fun i ↦ (g.1 : Matrix m m A) i i, by
+    ⟨⟨Matrix.diagonal fun i ↦ (g.val : Matrix m m A) i i, by
       rw [Matrix.det_diagonal, ← Matrix.det_of_isUpperTriangular
-        (UpperTriangularGroup.mem_comap_toGL_iff.mp g.2)]
-      exact g.1.property⟩,
+        (UpperTriangularGroup.mem_comap_toGL_iff.mp g.property)]
+      exact g.val.property⟩,
       UpperTriangularGroup.mem_comap_toGL_iff.mpr (Matrix.blockTriangular_diagonal _)⟩
   map_one' := by ext i j; simp
   map_mul' g h := by
     ext i j
     -- Unpack the determinant-one and subgroup carriers before computing matrix multiplication.
-    change Matrix.diagonal (fun k ↦ ((g.1 : Matrix m m A) * h.1) k k) i j =
-      (Matrix.diagonal (fun k ↦ (g.1 : Matrix m m A) k k) *
-        Matrix.diagonal (fun k ↦ (h.1 : Matrix m m A) k k)) i j
+    change Matrix.diagonal (fun k ↦ ((g.val : Matrix m m A) * h.val) k k) i j =
+      (Matrix.diagonal (fun k ↦ (g.val : Matrix m m A) k k) *
+        Matrix.diagonal (fun k ↦ (h.val : Matrix m m A) k k)) i j
     rw [Matrix.diagonal_mul_diagonal]
     congr 2
     funext k
     exact Matrix.mul_apply_diag_of_isUpperTriangular
-      (UpperTriangularGroup.mem_comap_toGL_iff.mp g.2)
-      (UpperTriangularGroup.mem_comap_toGL_iff.mp h.2) k
+      (UpperTriangularGroup.mem_comap_toGL_iff.mp g.property)
+      (UpperTriangularGroup.mem_comap_toGL_iff.mp h.property) k
 
 /-- The projection retains precisely the diagonal entries of the original matrix. -/
 @[simp]
 theorem diagonalProjection_coe
     (g : (upperTriangularGroup m A).comap SpecialLinearGroup.toGL) :
-    ((diagonalProjection g).1 : Matrix m m A) =
-      Matrix.diagonal (fun i ↦ (g.1 : Matrix m m A) i i) := (rfl)
+    ((diagonalProjection g).val : Matrix m m A) =
+      Matrix.diagonal (fun i ↦ (g.val : Matrix m m A) i i) := (rfl)
 
 /-- Diagonal projection is idempotent. -/
 @[simp]
@@ -77,11 +77,11 @@ theorem diagonalProjection_idempotent
 @[simp]
 theorem diagonalProjection_eq_self_iff
     (g : (upperTriangularGroup m A).comap SpecialLinearGroup.toGL) :
-    diagonalProjection g = g ↔ (g.1 : Matrix m m A).IsDiag := by
+    diagonalProjection g = g ↔ (g.val : Matrix m m A).IsDiag := by
   constructor
   · intro h
     have hmat := congrArg (fun x : (upperTriangularGroup m A).comap SpecialLinearGroup.toGL ↦
-      (x.1 : Matrix m m A)) h
+      (x.val : Matrix m m A)) h
     rw [diagonalProjection_coe] at hmat
     exact hmat ▸ Matrix.isDiag_diagonal _
   · intro h
@@ -95,13 +95,13 @@ theorem diagonalProjection_eq_self_iff
 theorem diagonalProjection_eq_one_iff
     (g : (upperTriangularGroup m A).comap SpecialLinearGroup.toGL) :
     diagonalProjection g = 1 ↔
-      SpecialLinearGroup.toGL g.1 ∈ upperUnitriangularGroup m A := by
+      SpecialLinearGroup.toGL g.val ∈ upperUnitriangularGroup m A := by
   rw [UpperUnitriangularGroup.mem_iff, Matrix.isUpperUnitriangular_def]
   constructor
   · intro h
-    refine ⟨UpperTriangularGroup.mem_comap_toGL_iff.mp g.2, fun i ↦ ?_⟩
+    refine ⟨UpperTriangularGroup.mem_comap_toGL_iff.mp g.property, fun i ↦ ?_⟩
     have hi := congrArg (fun x : (upperTriangularGroup m A).comap SpecialLinearGroup.toGL ↦
-      (x.1 : Matrix m m A) i i) h
+      (x.val : Matrix m m A) i i) h
     simpa using hi
   · rintro ⟨_, h⟩
     ext i j
@@ -112,10 +112,10 @@ theorem diagonalProjection_eq_one_iff
 @[simp]
 theorem map_diagonalProjection {B : Type*} [CommRing B] (f : A →+* B)
     (g : (upperTriangularGroup m A).comap SpecialLinearGroup.toGL) :
-    SpecialLinearGroup.map f (diagonalProjection g).1 =
-      (diagonalProjection ⟨SpecialLinearGroup.map f g.1,
+    SpecialLinearGroup.map f (diagonalProjection g).val =
+      (diagonalProjection ⟨SpecialLinearGroup.map f g.val,
         UpperTriangularGroup.mem_comap_toGL_iff.mpr
-          ((UpperTriangularGroup.mem_comap_toGL_iff.mp g.2).map f)⟩).1 := by
+          ((UpperTriangularGroup.mem_comap_toGL_iff.mp g.property).map f)⟩).val := by
   ext i j
   simp [diagonalProjection_coe, Matrix.diagonal_apply, apply_ite f]
 
@@ -125,8 +125,8 @@ theorem existsUnique_unipotent_mul_diagonal
     (g : (upperTriangularGroup m A).comap SpecialLinearGroup.toGL) :
     ∃! p : (upperTriangularGroup m A).comap SpecialLinearGroup.toGL ×
         (upperTriangularGroup m A).comap SpecialLinearGroup.toGL,
-      SpecialLinearGroup.toGL p.1.1 ∈ upperUnitriangularGroup m A ∧
-        (p.2.1 : Matrix m m A).IsDiag ∧ p.1 * p.2 = g := by
+      SpecialLinearGroup.toGL p.1.val ∈ upperUnitriangularGroup m A ∧
+        (p.2.val : Matrix m m A).IsDiag ∧ p.1 * p.2 = g := by
   refine ⟨(g * (diagonalProjection g)⁻¹, diagonalProjection g), ?_, ?_⟩
   · refine ⟨(diagonalProjection_eq_one_iff _).mp ?_,
       (diagonalProjection_eq_self_iff _).mp (diagonalProjection_idempotent g), ?_⟩

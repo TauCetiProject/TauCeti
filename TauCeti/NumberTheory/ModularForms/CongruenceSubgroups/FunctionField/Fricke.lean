@@ -173,7 +173,7 @@ private def frickeCompactified (a : Fin 2 → ZMod N) :
     ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient → ℂ
   | .ofQuotient p => Quotient.lift (frickeFunction a) (fun _ _ h ↦ by
       obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
-      exact frickeFunction_smul_of_mem a g.2 _) p
+      exact frickeFunction_smul_of_mem a g.property _) p
   | .ofCusp _ => 0
 
 private theorem frickeCompactified_ofQuotient_mk (a : Fin 2 → ZMod N) (τ : ℍ) :
@@ -347,7 +347,8 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_top :
       (IntermediateField.adjoin (IntermediateField.fixedField H) S).fixingSubgroup = ⊥ := by
     refine (Subgroup.eq_bot_iff_forall _).mpr fun σ hσ ↦ ?_
     obtain ⟨τ, rfl⟩ := FixedPoints.toAlgAut_surjective H M σ
-    have hτ : (τ : M ≃ₐ[ℂ] M) = 1 := eq_one_of_mem_range_of_forall_frickeMeromorphicFunction τ.2
+    have hτ : (τ : M ≃ₐ[ℂ] M) = 1 := eq_one_of_mem_range_of_forall_frickeMeromorphicFunction
+        τ.property
       fun a ha ↦ (IntermediateField.mem_fixingSubgroup_iff _ _).mp hσ _
         (IntermediateField.subset_adjoin _ _ ⟨a, ha, rfl⟩)
     have hτ' : τ = 1 := Subtype.ext hτ

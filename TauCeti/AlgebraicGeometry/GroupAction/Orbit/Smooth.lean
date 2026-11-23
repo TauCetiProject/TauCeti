@@ -5,32 +5,34 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Geometrically.Reduced
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Scheme
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Translation
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
+import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.AlgebraicGeometry.GroupAction.Orbit.BaseChange
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 
 /-!
 # Smooth orbit schemes
 
-For a reduced finite-type group scheme acting on a finite-type scheme over an
-algebraically closed field, every locally closed orbit has a smooth scheme model.
-The model is the locally closed scheme image of the actual orbit morphism;
-for closed orbits the entire scheme-theoretic image is smooth. Reducedness descends
-from the group to this image; the dense smooth locus of the orbit scheme spreads
-to the whole model by translations. The ambient scheme need not be
-reduced, irreducible or separated, and the group need not be connected.
+For a geometrically reduced finite-type group scheme acting on a finite-type scheme over any
+field `k` (in particular, for any smooth group over `k` or any reduced group over a perfect
+field), every locally closed orbit has a smooth scheme model. The model is the locally closed
+scheme image of the actual orbit morphism. The ambient scheme need not be reduced, irreducible or
+separated, and the group need not be connected.
 
-Every orbit closure contains such a smooth closed orbit. If the ambient scheme
-is proper, the resulting smooth closed orbit is proper as well. In particular,
-these models supply smooth proper schemes for comparison with complex manifolds.
-The orbit morphism itself is not asserted smooth: in positive characteristic
-its stabilizer can be nonreduced.
-
-The smooth-locus argument uses
-`AlgebraicGeometry.Scheme.Hom.smooth_of_transitive_on_closedPoints`, which adapts the proof
-underlying Mathlib's `AlgebraicGeometry.smooth_of_grpObj`, by Andrew Yang. Combine this
-with transitivity of equivariant immersions into an orbit to obtain smoothness;
-the existing closed-orbit existence theorems then supply smooth closed orbits.
+Over an algebraically closed field, reducedness descends from the group to the orbit image, and
+the dense smooth locus of the orbit scheme spreads to the whole model by translations
+(`AlgebraicGeometry.Scheme.Hom.smooth_of_transitive_on_closedPoints`, adapting the proof
+underlying Mathlib's `AlgebraicGeometry.smooth_of_grpObj`, by Andrew Yang); for closed orbits the
+entire scheme-theoretic image is smooth, and every orbit closure contains such a smooth closed
+orbit. Over a general field `k`, extending scalars to `AlgebraicClosure k` identifies the orbit
+scheme with the base change of `orbitScheme` (`isPullback_orbitToBase_baseChange`), and
+smoothness descends along `Spec (AlgebraicClosure k) ⟶ Spec k`. The orbit morphism itself is not
+asserted smooth: in positive characteristic its stabilizer can be nonreduced.
 
 ## References
 
@@ -40,10 +42,13 @@ the existing closed-orbit existence theorems then supply smooth closed orbits.
 public section
 
 open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj AlgebraicGeometry
+open scoped CategoryTheory.Obj
 
 namespace TauCeti.SchemeAction
 
 universe u
+
+section AlgClosed
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
@@ -63,25 +68,40 @@ theorem smooth_of_equivariant_of_range_subset_orbit
   refine ⟨e g, ?_, hg⟩
   rw [← Category.assoc, he, Category.assoc, Over.w]
 
-/-- Every orbit scheme of a reduced finite-type group over an algebraically closed field
-is smooth. The stabilizer and orbit morphism need not be smooth. -/
-instance [CompactSpace G.left] [CompactSpace X.left] [IsReduced G.left]
-    (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) : Smooth (orbitToBase G x) := by
+private theorem smooth_orbitToBase_of_isAlgClosed [CompactSpace G.left] [CompactSpace X.left]
+    [IsReduced G.left] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) : Smooth (orbitToBase G x) := by
   rw [orbitToBase_def]
   exact smooth_of_equivariant_of_range_subset_orbit G x (orbitι G x)
     (range_orbitι G x).le (orbitTranslation G x) (orbitTranslation_hom_ι G x)
 
 /-- A closed orbit of a reduced finite-type group over an algebraically closed field
 has a smooth scheme-theoretic image, even when the ambient scheme is nonreduced. -/
-theorem smooth_orbitClosureToBase_of_isClosed [IsReduced G.left] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
-    [QuasiCompact (orbitMap G x).left] (hc : IsClosed (orbit G x)) :
+theorem smooth_orbitClosureToBase_of_isClosed [IsReduced G.left]
+    (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) [QuasiCompact (orbitMap G x).left]
+    (hc : IsClosed (orbit G x)) :
     Smooth (orbitClosureToBase G x) := by
   have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
-  have : IsReduced (orbitClosureScheme G x) := by
-    exact IsSchemeTheoreticallyDominant.isReduced (toOrbitClosure G x)
+  have : IsReduced (orbitClosureScheme G x) :=
+    IsSchemeTheoreticallyDominant.isReduced (toOrbitClosure G x)
   rw [orbitClosureToBase_def]
   exact smooth_of_equivariant_of_range_subset_orbit G x (orbitClosureι G x)
     (range_orbitClosureι_of_isClosed G x hc).le (orbitClosureTranslation G x)
     (orbitClosureTranslation_hom_ι G x)
+
+end AlgClosed
+
+/-- Over any field, every orbit scheme of a geometrically reduced finite-type group is smooth. In
+particular, this applies whenever the group is smooth over `k`, or reduced over a perfect field.
+The stabilizer and orbit morphism need not be smooth. -/
+instance smooth_orbitToBase {k : Type u} [Field k] (G : Over (Spec (.of k)))
+    {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
+    [LocallyOfFiniteType G.hom] [CompactSpace G.left]
+    [LocallyOfFiniteType X.hom] [CompactSpace X.left] [GeometricallyReduced G.hom]
+    (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) : Smooth (orbitToBase G x) := by
+  let f := Spec.algebraMap k (AlgebraicClosure k)
+  let := (Over.pullback f).modObjObj G X
+  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
+    (isPullback_orbitToBase_baseChange f G x)
+    (smooth_orbitToBase_of_isAlgClosed ((Over.pullback f).obj G) _)
 
 end TauCeti.SchemeAction
