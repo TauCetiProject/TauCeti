@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.Algebra.MonoidAlgebra.Face
+public import TauCeti.Algebra.MonoidAlgebra.TensorProduct
 
 /-!
 # The integral boundary of a regular toric chart
@@ -64,6 +65,20 @@ public section
 namespace TauCeti.Toric
 
 open AddMonoidAlgebra
+
+section Translation
+
+variable {ι Q : Type*} [Add Q]
+
+/-- The exponents with every `a_i ≠ 0` are stable under translation, so the general monomial-ideal
+API of `AddMonoidAlgebra` (for instance `AddMonoidAlgebra.mem_ideal_span_of'_image_iff` and
+`AddMonoidAlgebra.quotientSpanOf'ImageBasis`) applies to their monomial ideal, the ideal of the
+boundary (`TauCeti.Toric.span_boundaryMonomial_eq_span_of'_image`). -/
+theorem add_mem_setOf_forall_ne_zero (d p : (ι →₀ ℕ) × Q)
+    (hp : p ∈ {p : (ι →₀ ℕ) × Q | ∀ i, p.1 i ≠ 0}) : d + p ∈ {p : (ι →₀ ℕ) × Q | ∀ i, p.1 i ≠ 0} :=
+  fun i h ↦ hp i <| Nat.eq_zero_of_add_eq_zero_left <| by rwa [Prod.fst_add, Finsupp.add_apply] at h
+
+end Translation
 
 section Coordinate
 
@@ -135,14 +150,6 @@ theorem mem_span_boundaryCoordinate_iff {i : ι} {f : AddMonoidAlgebra R ((ι �
 theorem mapRingHom_boundaryCoordinate {S : Type*} [CommSemiring S] (φ : R →+* S) (i : ι) :
     mapRingHom _ φ (boundaryCoordinate R Q i) = boundaryCoordinate S Q i := by
   simp [boundaryCoordinate]
-
-/-- The exponents with every `a_i ≠ 0` are stable under translation, so the general monomial-ideal
-API of `AddMonoidAlgebra` (for instance `AddMonoidAlgebra.mem_ideal_span_of'_image_iff` and
-`AddMonoidAlgebra.quotientSpanOf'ImageBasis`) applies to their monomial ideal, the ideal of the
-boundary (`TauCeti.Toric.span_boundaryMonomial_eq_span_of'_image`). -/
-theorem add_mem_setOf_forall_ne_zero (d p : (ι →₀ ℕ) × Q)
-    (hp : p ∈ {p : (ι →₀ ℕ) × Q | ∀ i, p.1 i ≠ 0}) : d + p ∈ {p : (ι →₀ ℕ) × Q | ∀ i, p.1 i ≠ 0} :=
-  fun i h ↦ hp i <| Nat.eq_zero_of_add_eq_zero_left <| by rwa [Prod.fst_add, Finsupp.add_apply] at h
 
 end Coordinate
 
