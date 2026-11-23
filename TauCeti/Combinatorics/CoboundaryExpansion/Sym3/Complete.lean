@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 import TauCeti.Combinatorics.CoboundaryExpansion.Staircase
-import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
+import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Data.Fintype.Card
 import Mathlib.Order.Prod.Lex.Basic
