@@ -139,34 +139,43 @@ theorem eq_zero_iff (h : ProjectionEquivalent M p q) : p = 0 ↔ q = 0 := by
     rwa [star_mul_self_eq_zero] at hv₁
   rw [← hv₂, hv₀, zero_mul]
 
+private theorem mul_self_of_isPartialIsometry {v q : H →L[ℂ] H}
+    (hv : v.IsPartialIsometry) (hvq : v * star v = q) : q * v = v := by
+  rw [← hvq]
+  exact (ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv).mul_star_mul_self
+
+private theorem star_mul_eq_zero_of_isPartialIsometry {v₁ v₂ q₁ q₂ : H →L[ℂ] H}
+    (hv₁ : v₁.IsPartialIsometry) (hv₂ : v₂.IsPartialIsometry)
+    (hv₁q : v₁ * star v₁ = q₁) (hv₂q : v₂ * star v₂ = q₂)
+    (hq₁₂ : q₁ * q₂ = 0) : star v₁ * v₂ = 0 := by
+  have hq₁ : IsStarProjection q₁ :=
+    hv₁q ▸ (ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₁).isStarProjection_mul_star_self
+  calc star v₁ * v₂
+    _ = star (q₁ * v₁) * (q₂ * v₂) := by
+      rw [mul_self_of_isPartialIsometry hv₁ hv₁q, mul_self_of_isPartialIsometry hv₂ hv₂q]
+    _ = star v₁ * (q₁ * q₂) * v₂ := by
+      simp only [star_mul, hq₁.isSelfAdjoint.star_eq, mul_assoc]
+    _ = 0 := by rw [hq₁₂, mul_zero, zero_mul]
+
 /-- Orthogonal sums of pairwise Murray–von Neumann equivalent projections in `M` are equivalent. -/
 theorem add {p₁ p₂ q₁ q₂ : H →L[ℂ] H} (hp₁₂ : p₁ * p₂ = 0) (hq₁₂ : q₁ * q₂ = 0)
     (h₁ : ProjectionEquivalent M p₁ q₁) (h₂ : ProjectionEquivalent M p₂ q₂) :
     ProjectionEquivalent M (p₁ + p₂) (q₁ + q₂) := by
   obtain ⟨v₁, hv₁M, hv₁, hv₁p, hv₁q⟩ := h₁.exists_isPartialIsometry
   obtain ⟨v₂, hv₂M, hv₂, hv₂p, hv₂q⟩ := h₂.exists_isPartialIsometry
-  have hv₁' : TauCeti.IsPartialIsometry v₁ :=
-    ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₁
-  have hv₂' : TauCeti.IsPartialIsometry v₂ :=
-    ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₂
-  have hqv₁ : q₁ * v₁ = v₁ := by rw [← hv₁q]; exact hv₁'.mul_star_mul_self
-  have hqv₂ : q₂ * v₂ = v₂ := by rw [← hv₂q]; exact hv₂'.mul_star_mul_self
-  have hv₁p_r : v₁ * p₁ = v₁ := by rw [← hv₁p, ← mul_assoc]; exact hv₁'.mul_star_mul_self
-  have hv₂p_r : v₂ * p₂ = v₂ := by rw [← hv₂p, ← mul_assoc]; exact hv₂'.mul_star_mul_self
-  have hcross₁ : star v₁ * v₂ = 0 := by
-    calc star v₁ * v₂
-      _ = star (q₁ * v₁) * (q₂ * v₂) := by rw [hqv₁, hqv₂]
-      _ = star v₁ * (q₁ * q₂) * v₂ := by
-        simp only [star_mul, h₁.isStarProjection_right.isSelfAdjoint.star_eq, mul_assoc]
-      _ = 0 := by rw [hq₁₂, mul_zero, zero_mul]
+  have hcross₁ : star v₁ * v₂ = 0 :=
+    star_mul_eq_zero_of_isPartialIsometry hv₁ hv₂ hv₁q hv₂q hq₁₂
   have hcross₂ : star v₂ * v₁ = 0 := by
     simpa only [star_mul, star_star, star_zero] using congrArg star hcross₁
+  have hv₁s : (star v₁).IsPartialIsometry := by
+    rw [ContinuousLinearMap.star_eq_adjoint]
+    exact hv₁.adjoint
+  have hv₂s : (star v₂).IsPartialIsometry := by
+    rw [ContinuousLinearMap.star_eq_adjoint]
+    exact hv₂.adjoint
   have hcross₃ : v₁ * star v₂ = 0 := by
-    calc v₁ * star v₂
-      _ = (v₁ * p₁) * star (v₂ * p₂) := by rw [hv₁p_r, hv₂p_r]
-      _ = v₁ * (p₁ * p₂) * star v₂ := by
-        simp only [star_mul, h₂.isStarProjection_left.isSelfAdjoint.star_eq, mul_assoc]
-      _ = 0 := by rw [hp₁₂, mul_zero, zero_mul]
+    simpa only [star_star] using star_mul_eq_zero_of_isPartialIsometry hv₁s hv₂s
+      (by simpa only [star_star] using hv₁p) (by simpa only [star_star] using hv₂p) hp₁₂
   have hcross₄ : v₂ * star v₁ = 0 := by
     simpa only [star_mul, star_star, star_zero] using congrArg star hcross₃
   refine ⟨h₁.isStarProjection_left.add h₂.isStarProjection_left hp₁₂,
@@ -188,9 +197,7 @@ theorem centralSupport_eq (h : ProjectionEquivalent M p q) :
   obtain ⟨v, hvM, hv, hv₁, hv₂⟩ := he.exists_isPartialIsometry
   rw [centralSupportProjection_le_iff, coe_centralSupportProjection]
   set z := M.centralSupport e₂
-  have hqv : e₂ * v = v := by
-    rw [← hv₂]
-    exact (ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv).mul_star_mul_self
+  have hqv : e₂ * v = v := mul_self_of_isPartialIsometry hv hv₂
   have hzv : z * star v = star v * z :=
     (mem_commutant_iff.1 (M.centralSupport_mem_commutant e₂) (star v) (star_mem hvM)).symm
   calc z * e₁
@@ -215,26 +222,9 @@ projection `x.range.topologicalClosure.starProjection` are Murray–von Neumann 
 witnessed by `x.polarFactor`. -/
 theorem projectionEquivalent_orthogonal_ker_topologicalClosure_range {M : VonNeumannAlgebra H}
     {x : H →L[ℂ] H} (hx : x ∈ M) :
-    ProjectionEquivalent M x.kerᗮ.starProjection x.range.topologicalClosure.starProjection := by
-  refine ProjectionEquivalent.of_isPartialIsometry (polarFactor_mem hx)
-    x.isPartialIsometry_polarFactor ?_ ?_
-  · rw [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.mul_def,
-      x.adjoint_polarFactor_comp_polarFactor]
-  · rw [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.mul_def,
-      x.polarFactor_comp_adjoint_polarFactor]
-
-private theorem starProjection_ker_one_sub_mul {M : VonNeumannAlgebra H} (p q : M.Projection) :
-    ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
-      (q : H →L[ℂ] H) - (p ⊓ q : M.Projection) := by
-  have : CompleteSpace ↥(p.closedRange.toSubmodule ⊓ q.closedRange.toSubmodule) :=
-    inferInstanceAs (CompleteSpace ↥(p.closedRange ⊓ q.closedRange))
-  have h : ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
-      ((1 - p.closedRange.toSubmodule.starProjection) *
-        q.closedRange.toSubmodule.starProjection).kerᗮ.starProjection := by
-    simp only [Projection.starProjection_closedRange]
-  rw [h, Submodule.starProjection_orthogonal_ker_one_sub_mul]
-  simp only [Projection.starProjection_closedRange, Projection.coe_inf,
-    ClosedSubmodule.toSubmodule_inf]
+    ProjectionEquivalent M x.kerᗮ.starProjection x.range.topologicalClosure.starProjection :=
+  ProjectionEquivalent.of_isPartialIsometry (polarFactor_mem hx) x.isPartialIsometry_polarFactor
+    x.star_polarFactor_mul_polarFactor x.polarFactor_mul_star_polarFactor
 
 /-- **Kaplansky's parallelogram law.** For any two projections `p, q : M.Projection` in a von
 Neumann algebra `M`, `(p ⊔ q) - p` and `q - (p ⊓ q)` are Murray–von Neumann equivalent in `M`. -/
@@ -243,7 +233,7 @@ theorem parallelogram_projectionEquivalent {M : VonNeumannAlgebra H} (p q : M.Pr
   set x : H →L[ℂ] H := (1 - (p : H →L[ℂ] H)) * q
   have hx : x ∈ M := mul_mem (sub_mem (one_mem M) p.coe_mem) q.coe_mem
   have hinit : x.kerᗮ.starProjection = (q : H →L[ℂ] H) - (p ⊓ q : M.Projection) :=
-    starProjection_ker_one_sub_mul p q
+    Projection.starProjection_orthogonal_ker_one_sub_mul p q
   -- Pass to complements `qᶜ, pᶜ` via `star x = (1 - qᶜ) * pᶜ` and De Morgan's law.
   have hstar_x : star x = (1 - ((qᶜ : M.Projection) : H →L[ℂ] H)) * (pᶜ : M.Projection) := by
     simp only [x, star_mul, star_sub, star_one, Projection.star_coe, Projection.coe_compl,
@@ -253,7 +243,8 @@ theorem parallelogram_projectionEquivalent {M : VonNeumannAlgebra H} (p q : M.Pr
     have hrange : x.range.topologicalClosure = (star x).kerᗮ := by
       rw [← x.range.orthogonal_orthogonal_eq_closure, x.orthogonal_range,
         ← ContinuousLinearMap.star_eq_adjoint]
-    rw [Submodule.starProjection_inj.2 hrange, hstar_x, starProjection_ker_one_sub_mul qᶜ pᶜ,
+    rw [Submodule.starProjection_inj.2 hrange, hstar_x,
+      Projection.starProjection_orthogonal_ker_one_sub_mul qᶜ pᶜ,
       inf_comm, ← Projection.compl_sup, Projection.coe_compl, Projection.coe_compl]
     abel
   rw [← hfinal, ← hinit]

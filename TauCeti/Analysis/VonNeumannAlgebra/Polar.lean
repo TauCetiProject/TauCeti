@@ -88,8 +88,7 @@ theorem polarFactor_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx : x �
 `adjoin {x}`. -/
 theorem starProjection_orthogonal_ker_mem_adjoin (x : H →L[ℂ] H) :
     x.kerᗮ.starProjection ∈ adjoin {x} := by
-  rw [← x.adjoint_polarFactor_comp_polarFactor, ← ContinuousLinearMap.star_eq_adjoint,
-    ← ContinuousLinearMap.mul_def]
+  rw [← x.star_polarFactor_mul_polarFactor]
   exact mul_mem (star_mem (polarFactor_mem_adjoin x)) (polarFactor_mem_adjoin x)
 
 /-- If `x ∈ M`, then the orthogonal projection onto `(ker x)ᗮ` belongs to `M`. -/
@@ -114,8 +113,7 @@ theorem starProjection_ker_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx
 `adjoin {x}`. -/
 theorem starProjection_topologicalClosure_range_mem_adjoin (x : H →L[ℂ] H) :
     x.range.topologicalClosure.starProjection ∈ adjoin {x} := by
-  rw [← x.polarFactor_comp_adjoint_polarFactor, ← ContinuousLinearMap.star_eq_adjoint,
-    ← ContinuousLinearMap.mul_def]
+  rw [← x.polarFactor_mul_star_polarFactor]
   exact mul_mem (polarFactor_mem_adjoin x) (star_mem (polarFactor_mem_adjoin x))
 
 /-- If `x ∈ M`, then the orthogonal projection onto the closure of `range x` belongs to `M`. -/

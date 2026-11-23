@@ -161,6 +161,18 @@ theorem polarFactor_comp_adjoint_polarFactor :
     T.polarFactor ∘L T.polarFactor† = T.range.topologicalClosure.starProjection :=
   factorThru_comp_adjoint_factorThru (fun x ↦ (T.norm_modulus_apply x).symm)
 
+/-- The initial projection `star U * U` of the polar factor of an endomorphism is the orthogonal
+projection onto `(ker T)ᗮ`. -/
+theorem star_polarFactor_mul_polarFactor (T : E →L[𝕜] E) :
+    star T.polarFactor * T.polarFactor = T.kerᗮ.starProjection := by
+  rw [star_eq_adjoint, mul_def, adjoint_polarFactor_comp_polarFactor]
+
+/-- The final projection `U * star U` of the polar factor of an endomorphism is the orthogonal
+projection onto the closure of the range of `T`. -/
+theorem polarFactor_mul_star_polarFactor (T : E →L[𝕜] E) :
+    T.polarFactor * star T.polarFactor = T.range.topologicalClosure.starProjection := by
+  rw [star_eq_adjoint, mul_def, polarFactor_comp_adjoint_polarFactor]
+
 variable {T} in
 /-- The polar factor of an injective operator is an isometry: `U† U = 1`. -/
 theorem adjoint_polarFactor_comp_polarFactor_of_injective (hT : Function.Injective T) :
@@ -220,7 +232,7 @@ theorem polarFactor_unitary_conj {u : E →L[𝕜] E} (hu : u ∈ unitary (E →
     (T : E →L[𝕜] E) :
     (u * T * star u).polarFactor = u * T.polarFactor * star u := by
   let e : E ≃ₗᵢ[𝕜] E := Unitary.linearIsometryEquiv ⟨u, hu⟩
-  have he : (e : E →L[𝕜] E) = u := rfl
+  have he : (e : E →L[𝕜] E) = u := Unitary.coe_linearIsometryEquiv_apply ⟨u, hu⟩
   have he_symm : (e.symm : E →L[𝕜] E) = star u := by
     rw [← e.adjoint_eq_symm, he, star_eq_adjoint]
   simpa only [he, he_symm, mul_def, comp_assoc] using polarFactor_conj e e T

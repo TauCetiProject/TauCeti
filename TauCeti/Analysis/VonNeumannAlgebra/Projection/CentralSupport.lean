@@ -82,12 +82,12 @@ theorem centralSupport_mul_self (M : VonNeumannAlgebra H) (a : H →L[ℂ] H) :
   rw [← coe_centralSupportProjection,
     ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff hid,
     ← Projection.toSubmodule_closedRange, centralSupportProjection, Projection.closedRange_sInf,
-    sInf_image, ClosedSubmodule.toSubmodule_iInf]
-  refine le_iInf fun z => ?_
-  rw [ClosedSubmodule.toSubmodule_iInf, Projection.toSubmodule_closedRange]
-  exact le_iInf fun hz =>
-    (ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
-      z.isStarProjection.isIdempotentElem a).1 hz
+    ClosedSubmodule.toSubmodule_sInf]
+  refine le_iInf₂ fun _ h => ?_
+  rcases h with ⟨z, hz, rfl⟩
+  rw [Projection.toSubmodule_closedRange]
+  exact (ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
+    z.isStarProjection.isIdempotentElem a).1 hz
 
 theorem mul_centralSupport_self {M : VonNeumannAlgebra H} {a : H →L[ℂ] H} (ha : a ∈ M) :
     a * M.centralSupport a = a := by
@@ -114,6 +114,34 @@ theorem centralSupport_le_iff {M : VonNeumannAlgebra H} {a z : H →L[ℂ] H}
   rw [← coe_centralSupportProjection,
     ← Projection.coe_mk z hz (mem_inf.2 ⟨hzM, hzC⟩), Projection.coe_le_coe]
   exact centralSupportProjection_le_iff
+
+/-- Bundled central support is monotone with respect to range inclusion. -/
+theorem centralSupportProjection_mono_of_range_le {M : VonNeumannAlgebra H} {a b : H →L[ℂ] H}
+    (h : a.range ≤ b.range) :
+    M.centralSupportProjection a ≤ M.centralSupportProjection b := by
+  rw [centralSupportProjection_le_iff, coe_centralSupportProjection]
+  exact (ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
+    (M.isStarProjection_centralSupport b).isIdempotentElem a).2 <|
+    h.trans ((ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
+      (M.isStarProjection_centralSupport b).isIdempotentElem b).1 (M.centralSupport_mul_self b))
+
+/-- Central support is monotone with respect to range inclusion. -/
+theorem centralSupport_mono_of_range_le {M : VonNeumannAlgebra H} {a b : H →L[ℂ] H}
+    (h : a.range ≤ b.range) :
+    M.centralSupport a ≤ M.centralSupport b := by
+  rw [← coe_centralSupportProjection, ← coe_centralSupportProjection, Projection.coe_le_coe]
+  exact centralSupportProjection_mono_of_range_le h
+
+/-- Bundled central support is monotone on `M.Projection`. -/
+theorem centralSupportProjection_mono {M : VonNeumannAlgebra H} {p q : M.Projection}
+    (h : p ≤ q) :
+    M.centralSupportProjection p ≤ M.centralSupportProjection q :=
+  centralSupportProjection_mono_of_range_le (Projection.le_iff_range_le.1 h)
+
+/-- Central support is monotone on `M.Projection`. -/
+theorem centralSupport_mono {M : VonNeumannAlgebra H} {p q : M.Projection} (h : p ≤ q) :
+    M.centralSupport p ≤ M.centralSupport q :=
+  centralSupport_mono_of_range_le (Projection.le_iff_range_le.1 h)
 
 /-- Every star projection is bounded above by its central support. -/
 theorem le_centralSupport {M : VonNeumannAlgebra H} {p : H →L[ℂ] H} (hp : IsStarProjection p) :

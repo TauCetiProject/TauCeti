@@ -28,6 +28,8 @@ subspace, it also contains the linear span and norm-closed linear span of any su
 
 public section
 
+open scoped InnerProduct
+
 namespace VonNeumannAlgebra
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
@@ -65,5 +67,16 @@ theorem span_subset {M : VonNeumannAlgebra H} {s : Set (H →L[ℂ] H)} (hs : s 
 theorem closure_span_subset {M : VonNeumannAlgebra H} {s : Set (H →L[ℂ] H)} (hs : s ⊆ M) :
     closure (Submodule.span ℂ s : Set (H →L[ℂ] H)) ⊆ M :=
   closure_minimal (span_subset hs) M.isClosed
+
+/-- If a subspace `U` is invariant under `M.commutant`, then so is its orthogonal complement `Uᗮ`.
+-/
+theorem orthogonal_mem_invtSubmodule_commutant {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
+    (hU : ∀ y ∈ M.commutant, U ∈ Module.End.invtSubmodule y) :
+    ∀ y ∈ M.commutant, Uᗮ ∈ Module.End.invtSubmodule y := by
+  intro y hy
+  have hstar : U ∈ Module.End.invtSubmodule (y†).toLinearMap := by
+    rw [← ContinuousLinearMap.star_eq_adjoint]
+    exact hU (star y) (star_mem hy)
+  exact y.orthogonal_mem_invtSubmodule hstar
 
 end VonNeumannAlgebra

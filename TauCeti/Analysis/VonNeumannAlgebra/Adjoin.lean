@@ -144,6 +144,19 @@ theorem conj_mem_adjoin {u : H →L[ℂ] H} (hu : u ∈ unitary (H →L[ℂ] H))
   exact Set.conj_mem_centralizer v
     (fun y hy => by simpa using Set.conj_mem_centralizer v⁻¹ hT hy) hx
 
+/-- The range of the continuous functional calculus `cfcHom` of a normal operator `a` generates
+the same von Neumann algebra as `a`. -/
+@[simp]
+theorem adjoin_range_cfcHom (a : H →L[ℂ] H) [IsStarNormal a] :
+    adjoin (Set.range (cfcHom (R := ℂ) (a := a) ‹_›)) = adjoin {a} := by
+  refine le_antisymm (adjoin_le_iff.2 ?_) (adjoin_mono ?_)
+  · rintro _ ⟨f, rfl⟩
+    exact StarSubalgebra.topologicalClosure_minimal
+      (StarAlgebra.adjoin_le (S := (adjoin {a}).toStarSubalgebra) (subset_adjoin {a}))
+      (adjoin {a}).isClosed (cfcHom_mem_elemental ‹_› f)
+  · rw [Set.singleton_subset_iff]
+    exact ⟨(ContinuousMap.id ℂ).restrict _, cfcHom_id ‹_›⟩
+
 end VonNeumannAlgebra
 
 namespace StarSubalgebra

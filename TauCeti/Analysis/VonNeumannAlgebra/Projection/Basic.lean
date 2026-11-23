@@ -9,6 +9,7 @@ public import Mathlib.Order.CompleteSublattice
 public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
 public import TauCeti.Analysis.VonNeumannAlgebra.Basic
 import Mathlib.Algebra.Order.Star.Projection
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Topology.Algebra.Module.ClosedSubmodule
 
 /-!
@@ -70,17 +71,6 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 /-! ### Invariant closed subspaces and orthogonal projections in `M` -/
 
 section SubspaceProjections
-
-/-- If a subspace `U` is invariant under `M.commutant`, then so is its orthogonal complement `Uᗮ`.
--/
-theorem orthogonal_mem_invtSubmodule_commutant {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
-    (hU : ∀ y ∈ M.commutant, U ∈ Module.End.invtSubmodule y) :
-    ∀ y ∈ M.commutant, Uᗮ ∈ Module.End.invtSubmodule y := by
-  intro y hy
-  have hstar : U ∈ Module.End.invtSubmodule (y†).toLinearMap := by
-    rw [← ContinuousLinearMap.star_eq_adjoint]
-    exact hU (star y) (star_mem hy)
-  exact y.orthogonal_mem_invtSubmodule hstar
 
 /-- If `U.starProjection ∈ M`, then `Uᗮ.starProjection ∈ M`. -/
 theorem starProjection_orthogonal_mem {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
@@ -199,15 +189,9 @@ theorem toSubmodule_closedRange (p : M.Projection) :
     p.closedRange.toSubmodule = (p : H →L[ℂ] H).range :=
   (rfl)
 
-/-- Every bundled projection in `M` is the orthogonal projection onto `p.closedRange`. -/
-theorem starProjection_closedRange (p : M.Projection) :
-    p.closedRange.toSubmodule.starProjection = (p : H →L[ℂ] H) := by
-  simp only [toSubmodule_closedRange, starProjection_range]
-
 theorem starProjection_closedRange_mem (p : M.Projection) :
     p.closedRange.toSubmodule.starProjection ∈ M := by
-  rw [starProjection_closedRange]
-  exact p.coe_mem
+  simp only [toSubmodule_closedRange, starProjection_range, p.coe_mem]
 
 theorem closedRange_injective :
     Function.Injective (closedRange : M.Projection → ClosedSubmodule ℂ H) :=
@@ -252,31 +236,36 @@ theorem mem_closedProjectionSublattice {U : ClosedSubmodule ℂ H} :
     U ∈ closedProjectionSublattice M ↔ U.toSubmodule.starProjection ∈ M :=
   Iff.rfl
 
+-- Public and `@[expose]` because `CompleteLattice M.Projection` is an exposed module instance.
+/-- Equivalence between `M.Projection` and `closedProjectionSublattice M`, shared by the
+`CompleteLattice` instance and `closedRangeOrderIso`. -/
+@[expose] noncomputable def closedRangeEquiv (M : VonNeumannAlgebra H) :
+    M.Projection ≃ closedProjectionSublattice M where
+  toFun p := ⟨p.closedRange, mem_closedProjectionSublattice.2 p.starProjection_closedRange_mem⟩
+  invFun U := ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
+  left_inv p := Projection.ext <| by
+    simp only [coe_ofClosedSubmodule, toSubmodule_closedRange, starProjection_range]
+  right_inv U := Subtype.ext <|
+    closedRange_ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
+
 noncomputable instance : CompleteLattice M.Projection :=
-  Equiv.completeLattice
-    { toFun p := ⟨p.closedRange, mem_closedProjectionSublattice.2 p.starProjection_closedRange_mem⟩
-      invFun U := ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
-      left_inv p := Projection.ext <| by
-        rw [coe_ofClosedSubmodule]
-        exact starProjection_closedRange p
-      right_inv U := Subtype.ext <|
-        closedRange_ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property) }
+  Equiv.completeLattice (closedRangeEquiv M)
 
 /-- Order isomorphism between `M.Projection` and `closedProjectionSublattice M`. -/
 noncomputable def closedRangeOrderIso (M : VonNeumannAlgebra H) :
     M.Projection ≃o closedProjectionSublattice M where
-  toFun p := ⟨p.closedRange, mem_closedProjectionSublattice.2 p.starProjection_closedRange_mem⟩
-  invFun U := ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
-  left_inv p := Projection.ext <| by
-    rw [coe_ofClosedSubmodule]
-    exact starProjection_closedRange p
-  right_inv U := Subtype.ext <|
-    closedRange_ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
+  toEquiv := closedRangeEquiv M
   map_rel_iff' := Iff.rfl
 
 @[simp]
 theorem closedRangeOrderIso_apply (p : M.Projection) :
     (closedRangeOrderIso M p : ClosedSubmodule ℂ H) = p.closedRange :=
+  (rfl)
+
+@[simp]
+theorem closedRangeOrderIso_symm_apply (U : closedProjectionSublattice M) :
+    (closedRangeOrderIso M).symm U =
+      ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property) :=
   (rfl)
 
 /-- `closedRange` as a complete lattice homomorphism into `ClosedSubmodule ℂ H`. -/
@@ -380,6 +369,20 @@ theorem coe_inf (p q : M.Projection) :
       (p.closedRange ⊓ q.closedRange).toSubmodule.starProjection := by
   rw [← (p ⊓ q).starProjection_range]
   exact Submodule.starProjection_inj.2 (by rw [← toSubmodule_closedRange, closedRange_inf])
+
+/-- The orthogonal projection onto `(ker ((1 - p) * q))ᗮ` equals `q - (p ⊓ q)`. -/
+theorem starProjection_orthogonal_ker_one_sub_mul (p q : M.Projection) :
+    ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
+      (q : H →L[ℂ] H) - (p ⊓ q : M.Projection) := by
+  have : CompleteSpace ↥(p.closedRange.toSubmodule ⊓ q.closedRange.toSubmodule) :=
+    inferInstanceAs (CompleteSpace ↥(p.closedRange ⊓ q.closedRange))
+  have h : ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
+      ((1 - p.closedRange.toSubmodule.starProjection) *
+        q.closedRange.toSubmodule.starProjection).kerᗮ.starProjection := by
+    simp only [toSubmodule_closedRange, starProjection_range]
+  rw [h, Submodule.starProjection_orthogonal_ker_one_sub_mul]
+  simp only [toSubmodule_closedRange, starProjection_range, coe_inf,
+    ClosedSubmodule.toSubmodule_inf]
 
 /-- The join of two projections in `M` is the orthogonal projection onto the closed span of their
 ranges. -/
