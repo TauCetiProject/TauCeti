@@ -13,7 +13,8 @@ public import TauCeti.CategoryTheory.Sites.DenseSubsite.InducedTopology
 
 import Mathlib.CategoryTheory.MorphismProperty.CommaSites
 import TauCeti.AlgebraicGeometry.Sites.Zariski.FiniteType
-import TauCeti.CategoryTheory.Sites.MorphismProperty.Over
+import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.CategoryTheory.MorphismProperty.Over
 import TauCeti.CategoryTheory.Sites.CoverPreserving
 
 /-!
@@ -274,13 +275,10 @@ theorem ofArrows_mem_finiteTypeHTopology_iff
     Sieve.ofArrows Y f ∈ S.finiteTypeHTopology X ↔
       Sieve.ofArrows (fun i ↦ (Y i).left) (fun i ↦ (f i).left) ∈ hTopology X.left := by
   rw [mem_finiteTypeHTopology_iff, Sieve.functorPushforward_ofArrows,
-    GrothendieckTopology.mem_over_iff]
-  change Sieve.overEquiv
-    ((MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S).obj X) _ ∈
-      hTopology X.left ↔ _
-  exact Iff.of_eq (congrArg (fun R ↦ R ∈ hTopology X.left)
-    (MorphismProperty.Over.overEquiv_ofArrows_forget
-      (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S Y f))
+    GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
+  simp only [MorphismProperty.Over.forget_obj_left, ← CategoryTheory.Over.forget_map,
+    ← Functor.comp_map, MorphismProperty.Over.forget_comp_forget_map]
+  rfl
 
 /-- Change of base along any scheme morphism preserves the generators of the finite-type
 h-topology. -/
@@ -300,7 +298,8 @@ theorem Hom.pullback_map_mem_finiteTypeHPrecoverage {S T : Scheme.{u}} (f : S �
   exact Precoverage.mem_coverings_of_isPullback (fun i ↦ (g i).left) hgen
     (Limits.pullback.fst X.hom f) (fun i ↦ (F.map (g i)).left)
     (fun i ↦ Limits.pullback.fst (Y i).hom f)
-    (fun i ↦ MorphismProperty.Over.isPullback_pullback_map_left f (g i))
+    (fun i ↦ CategoryTheory.Over.isPullback_pullback_map_left f
+      ((MorphismProperty.Over.forget _ ⊤ T).map (g i)))
 
 /-- Over a quasi-separated base, the finite-type h-generators form a coverage. -/
 def finiteTypeHCoverage (S : Scheme.{u}) [QuasiSeparatedSpace S] : Coverage S.FiniteType :=
