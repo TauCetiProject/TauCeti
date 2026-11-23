@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
+public import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
 public import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
@@ -20,11 +20,12 @@ require commutativity. Equivalence comparisons and the characterization of unifo
 apply to rings: for a rank-one discrete valuation, a uniformizer is an element of order `-log γ`,
 where `γ` is the generator below `1` of the value group. On a ring the valuation need not attain
 `γ` (the `t`-adic valuation on `k[t², t³]`), so a uniformizer need not exist. Inverse and
-quotient laws are stated on division rings; valuation-subring results are stated on fields. Facts
-about surjective valuations that do not involve the order are in
-`TauCeti.RingTheory.Valuation.Surjective`, under the conditions on the value group each needs: the
-value group is full with no condition (and for a valuation from a division ring into an ordered
-group with zero, full value group means surjectivity), the valuation is nontrivial exactly when
+quotient laws are stated on division rings; valuation-subring results are stated on fields.
+A surjective valuation has full value group, and for a valuation from a division ring into an
+ordered group with zero full value group means surjectivity; both facts hold for monoid-with-zero
+homomorphisms and are in `TauCeti.Algebra.GroupWithZero.Range`. The other facts about surjective
+valuations that do not involve the order are in `TauCeti.RingTheory.Valuation.Surjective`, under
+the conditions on the value group each needs: the valuation is nontrivial exactly when
 its target has an element other than `0` and `1`, equivalent surjective valuations into a linearly
 ordered commutative group with zero are equal when its units form a cyclic group, and for a
 surjective valuation from a field into a linearly ordered commutative group with zero whose units
@@ -105,14 +106,6 @@ theorem ord_eq_iff_valuation_eq_exp_neg (v : _root_.Valuation F ℤᵐ⁰) {f : 
     (hf : v f ≠ 0) {n : ℤ} : ord v f = n ↔ v f = WithZero.exp (-n) := by
   rw [valuation_eq_exp_neg_ord v hf, WithZero.exp_inj, neg_inj]
 
-/-- `exp (-1)` generates the units of `ℤᵐ⁰`: its inverse corresponds to `1` under
-`WithZero.unitsWithZeroEquiv`. -/
-private theorem zpowers_mk0_exp_neg_one :
-    Subgroup.zpowers (Units.mk0 (WithZero.exp (-1) : ℤᵐ⁰) WithZero.exp_ne_zero) = ⊤ := by
-  rw [← Subgroup.zpowers_inv]
-  exact WithZero.unitsWithZeroEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one
-    (WithZero.coe_injective <| by simp [← WithZero.exp_eq_coe_ofAdd])
-
 /-- **Every integer is an order** when the valuation is surjective onto `ℤᵐ⁰`: an element of
 valuation `exp (-n)` has order `n`. -/
 theorem ord_surjective (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) :
@@ -144,7 +137,7 @@ theorem isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top (v : _root_.Valuation 
   rw [isUniformizer_iff_ord_eq_neg_log_generator,
     ← IsRankOneDiscrete.valueGroup_genLTOne_eq_generator,
     ← LinearOrderedCommGroup.Subgroup.genLTOne_unique _ (Units.val_lt_val.mp <| by simp)
-      (zpowers_mk0_exp_neg_one.trans hv.symm),
+      (TauCeti.zpowers_mk0_exp_neg_one.trans hv.symm),
     Units.val_mk0, WithZero.log_exp, neg_neg]
 
 theorem ord_mul (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : v f ≠ 0) (hg : v g ≠ 0) :
@@ -298,7 +291,8 @@ theorem ord_div_zpow (v : _root_.Valuation F ℤᵐ⁰) {f t : F} (hf : f ≠ 0)
 the units of `ℤᵐ⁰`, and on a division ring a valuation attaining a generator is surjective. -/
 theorem surjective_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰) {t : F}
     (ht : v t = WithZero.exp (-1)) : Function.Surjective v :=
-  (v : F →*₀ ℤᵐ⁰).surjective_of_mem_range_of_zpowers_eq_top ⟨t, ht⟩ zpowers_mk0_exp_neg_one
+  (v : F →*₀ ℤᵐ⁰).surjective_of_mem_range_of_zpowers_eq_top ⟨t, ht⟩
+    TauCeti.zpowers_mk0_exp_neg_one
 
 end DivisionRing
 
