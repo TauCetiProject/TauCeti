@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Morphism
+public import TauCeti.RingTheory.AdicRing.Padic
 public import TauCeti.RingTheory.Huber.Padic.Basic
 
 /-!
@@ -46,18 +47,6 @@ example (X : FormalScheme.{u}) (A : Type u) [CommRing A] [TopologicalSpace A]
 
 /-! ### 2. Empty formal schemes -/
 
-/-- Out of any empty formal scheme `X`, there is a unique morphism `X ⟶ ofSpf A`. -/
-theorem nonempty_unique_hom_of_isEmpty (X : FormalScheme.{u}) (hX : IsEmpty X) (A : Type u)
-    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] :
-    Nonempty (Unique (X ⟶ ofSpf A)) :=
-  have hsub : Subsingleton (X.presheaf.obj (op ⊤)) :=
-    ⟨fun _ _ ↦ X.toLocallyRingedSpace.IsSheaf.section_ext fun x ↦ (hX.false x).elim⟩
-  let φ0 : A →+* X.presheaf.obj (op ⊤) :=
-    ⟨⟨⟨0, hsub.elim _ _⟩, fun _ _ ↦ hsub.elim _ _⟩, rfl, fun _ _ ↦ hsub.elim _ _⟩
-  ⟨{ default := homOfContinuousOnAffines φ0 ((continuousOnAffines_iff_residue
-       (IsAdicRing.ideal_spec A).2.1 φ0).mpr fun _ _ x ↦ (hX.false x).elim)
-     uniq := fun _ ↦ sectionsHom_injective (RingHom.ext fun _ ↦ hsub.elim _ _) }⟩
-
 /-- `ofSpf (ZMod 1)` is empty and admits a unique morphism into any `ofSpf A`. -/
 example (A : Type) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
     [TopologicalSpace (ZMod 1)] [DiscreteTopology (ZMod 1)] :
@@ -70,18 +59,13 @@ example (A : Type) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAd
 section Padic
 variable (p : ℕ) [Fact p.Prime]
 
-/-- `ℤ_[p]` is a complete separated adic ring of finite ideal type with ideal `(p)`. -/
-local instance padicIntIsAdicRing : IsAdicRing ℤ_[p] := ⟨IsLocalRing.maximalIdeal ℤ_[p],
-  PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Submodule.fg_span_singleton _,
-  Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
-
 /-- `sectionsHom` recovers the identity on `ofSpf ℤ_[p]`. -/
 example (a : ℤ_[p]) : (Spf.topSectionsIso ℤ_[p]).hom (sectionsHom (𝟙 (ofSpf ℤ_[p])) a) = a :=
   sectionsHom_id ℤ_[p] ▸ ConcreteCategory.congr_hom (Spf.topSectionsIso ℤ_[p]).inv_hom_id a
 
 /-- With ideals `I = (p)` and `J = (p)²` on `ℤ_[p]`, `(I ^ n).map id ≤ J` holds for some `n > 0`
 (`IsAdic.continuous_iff_exists_pos_pow_map_le`), whereas `¬ I.map id ≤ J` since `p ∉ (p)²`. -/
-theorem padicInt_continuous_pow_witness :
+theorem padicInt_exists_pos_pow_map_le_and_not_map_le :
     (∃ n > 0, (IsLocalRing.maximalIdeal ℤ_[p] ^ n).map
           (Spf.homEquiv (𝟙 (Spf ℤ_[p])) : ℤ_[p] →+* ℤ_[p]) ≤
         IsLocalRing.maximalIdeal ℤ_[p] ^ 2) ∧
@@ -93,13 +77,15 @@ theorem padicInt_continuous_pow_witness :
     (is_ideal_adic_pow hI two_pos)).mp (Spf.homEquiv (𝟙 (Spf ℤ_[p]))).2, fun hle ↦ ?_⟩
   rw [Spf.homEquiv_apply_coe, Spf.sectionsHom_id, Ideal.map_id] at hle
   have hpI : (p : ℤ_[p]) ∈ I := by
-    rw [show I = IsLocalRing.maximalIdeal ℤ_[p] from rfl, PadicInt.maximalIdeal_eq_span_p]
-    exact Ideal.subset_span rfl
-  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp (show (p : ℤ_[p]) ∈ Ideal.span {(p : ℤ_[p]) ^ 2}
-    by simpa only [PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow] using hle hpI)
+    simpa only [I, PadicInt.maximalIdeal_eq_span_p] using Ideal.mem_span_singleton_self (p : ℤ_[p])
+  have hpI2 : (p : ℤ_[p]) ∈ Ideal.span {(p : ℤ_[p]) ^ 2} := by
+    simpa only [I, PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow] using hle hpI
+  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp hpI2
+  have hpc : (p : ℤ_[p]) * c = 1 :=
+    mul_left_cancel₀ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+      (by linear_combination -hc)
   exact (IsLocalRing.maximalIdeal.isMaximal ℤ_[p]).ne_top <| (Ideal.eq_top_iff_one _).mpr <|
-    (mul_left_cancel₀ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-      (by linear_combination -hc) : (p : ℤ_[p]) * c = 1) ▸ I.mul_mem_right c hpI
+    hpc ▸ I.mul_mem_right c hpI
 
 /-- `ofSpf ℤ_[p]` has at most one point, yet its global `sectionsTopology` is nondiscrete. -/
 theorem subsingleton_and_not_discrete_sectionsTopology_padicInt :

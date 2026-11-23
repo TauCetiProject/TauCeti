@@ -80,7 +80,15 @@ theorem evaluation_eq_zero_iff_restrict_Γevaluation_eq_zero (U : Opens X) (x : 
   have hres : (X.restrict U.isOpenEmbedding).evaluation x' (j.c.app (op U) s) =
       (X.restrict U.isOpenEmbedding).Γevaluation x
         ((X.toPresheafedSpace.restrictTopSectionsIso U).hom s) := by
-    rw [← X.toPresheafedSpace.ofRestrict_c_app_self U, ConcreteCategory.comp_apply]
+    have hsec :
+        (X.restrict U.isOpenEmbedding).presheaf.map
+            (homOfLE (fun y _ ↦ y.2 : (⊤ : Opens _) ≤ (Opens.map j.base).obj U)).op
+            (j.c.app (op U) s) =
+          (X.toPresheafedSpace.restrictTopSectionsIso U).hom s :=
+      ConcreteCategory.congr_hom
+        ((PresheafedSpace.Hom.appLE_def _ _ _ _).symm.trans
+          (X.toPresheafedSpace.ofRestrict_appLE_self U)) s
+    rw [← hsec]
     exact (congrArg ((X.restrict U.isOpenEmbedding).residue x)
       (TopCat.Presheaf.germ_res_apply (X.restrict U.isOpenEmbedding).presheaf
         (homOfLE (fun y _ ↦ y.2 : (⊤ : Opens _) ≤ (Opens.map j.base).obj U)) x trivial

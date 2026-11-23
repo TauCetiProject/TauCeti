@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Restrict
+public import TauCeti.Geometry.RingedSpace.PresheafedSpace.GlueMorphisms
 
-import TauCeti.Geometry.RingedSpace.PresheafedSpace.GlueMorphisms
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Basic
 
 /-!
 # Gluing morphisms of locally ringed spaces along open covers
@@ -38,17 +39,9 @@ private noncomputable def gluePsh : X.toPresheafedSpace ⟶ Y.toPresheafedSpace 
 private theorem isLocalHom_stalkMap_gluePsh (x : X) :
     IsLocalHom ((gluePsh U hU f hf).stalkMap x).hom := by
   obtain ⟨i, hx⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : x ∈ ⨆ i, U i)
-  let j := X.ofRestrict (U i).isOpenEmbedding; let x' : X.restrict (U i).isOpenEmbedding := ⟨x, hx⟩
-  have hcomp_eq : j.toHom ≫ gluePsh U hU f hf = (f i).toHom :=
-    PresheafedSpace.ofRestrict_glueMorphisms X.IsSheaf U hU _ _ i
-  have hloc : IsLocalHom ((j.toHom ≫ gluePsh U hU f hf).stalkMap x').hom := by
-    rw [PresheafedSpace.stalkMap.congr_hom _ _ hcomp_eq x', CommRingCat.hom_comp]
-    have := isLocalHom_of_isIso (eqToHom (hcomp_eq ▸ rfl :
-      Y.presheaf.stalk ((j.toHom ≫ gluePsh U hU f hf).base x') = Y.presheaf.stalk ((f i).base x')))
-    have := (f i).prop x'; exact CommRingCat.isLocalHom_comp _ _
-  rw [PresheafedSpace.stalkMap.comp] at hloc
-  have : IsLocalHom ((j.toHom.stalkMap x').hom.comp ((gluePsh U hU f hf).stalkMap x).hom) := hloc
-  exact isLocalHom_of_comp _ (j.toHom.stalkMap x').hom
+  exact isLocalHom_stalkMap_of_comp_eq (X.ofRestrict (U i).isOpenEmbedding) (gluePsh U hU f hf)
+    (f i) (PresheafedSpace.ofRestrict_glueMorphisms X.IsSheaf U hU _ _ i)
+    (rfl : (X.ofRestrict (U i).isOpenEmbedding).base ⟨x, hx⟩ = x)
 
 /-- **Gluing morphisms of locally ringed spaces along an open cover.** Given an open cover
 `U : ι → Opens X` with `⨆ i, U i = ⊤` and morphisms `f i : X|_{U i} ⟶ Y` agreeing on every
@@ -56,6 +49,16 @@ intersection `U i ⊓ U j`, `glueMorphisms` is the unique morphism `X ⟶ Y` res
 each `U i`. -/
 noncomputable def glueMorphisms : X ⟶ Y :=
   ⟨gluePsh U hU f hf, isLocalHom_stalkMap_gluePsh U hU f hf⟩
+
+/-- The underlying morphism of presheafed spaces of `glueMorphisms` is
+`PresheafedSpace.glueMorphisms`. -/
+@[simp] theorem glueMorphisms_toHom :
+    (glueMorphisms U hU f hf).toHom =
+      PresheafedSpace.glueMorphisms X.IsSheaf U hU (fun i ↦ (f i).toHom) fun i j ↦
+        (X.toPresheafedSpace.pullback_comp_iff_restrictHomOfLE (f i).toHom (f j).toHom).mpr <| by
+          have h := congrArg Hom.toHom (hf i j)
+          rw [comp_toHom, comp_toHom, restrictHomOfLE_toHom, restrictHomOfLE_toHom] at h
+          exact h := (rfl)
 
 /-- The glued morphism restricts to `f i` on each member `U i` of the open cover. -/
 @[reassoc (attr := simp)] theorem ofRestrict_glueMorphisms (i : ι) :

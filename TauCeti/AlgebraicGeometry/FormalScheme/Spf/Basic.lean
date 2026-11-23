@@ -38,6 +38,7 @@ generated one.
   locally ringed space.
 * `TauCeti.FormalScheme.Spf.stalkResidueFieldEquiv`: the residue field of `Spf A` at `p` is
   `Frac(A ⧸ p)`.
+* `TauCeti.FormalScheme.Spf.topSectionsIso`: `Γ(⊤, O_{Spf A}) ≅ A` for `IsAdicRing A`.
 
 ## Main results
 
@@ -48,6 +49,11 @@ generated one.
   local rings.
 * `TauCeti.FormalScheme.Spf.stalkResidueFieldEquiv_residue_germ`: the residue field
   isomorphism sends the residue class of `a ∈ A` to the image of `a` in `Frac(A ⧸ p)`.
+* `TauCeti.FormalScheme.Spf.algebraMap_comp_basicOpenSectionsIso_inv`: restricting global sections
+  of `Spf A` to `D(a)` corresponds to `algebraMap A (CompletedAway A a)`.
+* `TauCeti.FormalScheme.Spf.Γevaluation_topSectionsIso_inv_eq_zero_iff`,
+  `TauCeti.FormalScheme.Spf.basicOpen_topSectionsIso_inv`: vanishing in the residue field and
+  the ringed-space basic open of the global section attached to `a ∈ A`.
 
 ## References
 
@@ -228,6 +234,70 @@ theorem stalkResidueFieldEquiv_residue_germ {p : carrier A} (f : BasicNeighbourh
   -- `stalkResidueIso`, so the residue class of the germ is that of `a` in the colimit
   exact (congrArg (fun x ↦ stalkResidueIso p (IsLocalRing.residue _ x)) h).trans
     (stalkResidueIso_coeff p f a)
+
+/-- The global sections of `Spf A` are canonically isomorphic to `A` (EGA I, Ch. I, 10.1.3). -/
+noncomputable def topSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] : (Spf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A :=
+  have := (IsAdicRing.ideal_spec A).2.2; globalSectionsIso (IsAdicRing.ideal_spec A).2.1
+
+/-- `topSectionsIso A` is `globalSectionsIso` at the chosen ideal of definition of `A`. -/
+theorem topSectionsIso_def (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    have := (IsAdicRing.ideal_spec A).2.2
+    topSectionsIso A = globalSectionsIso (IsAdicRing.ideal_spec A).2.1 := by
+  rfl
+
+/-- Restricting a global section of `Spf A` to `basicOpen a` corresponds under `topSectionsIso`
+and `basicOpenSectionsIso` to `algebraMap A (CompletedAway A a)`. -/
+@[reassoc] theorem algebraMap_comp_basicOpenSectionsIso_inv (a : A) :
+    CommRingCat.ofHom (algebraMap A (AdicRing.CompletedAway A a)) ≫
+        (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 a).inv =
+      (topSectionsIso A).inv ≫ (Spf A).presheaf.map (homOfLE (le_top : basicOpen a ≤ ⊤)).op := by
+  have := (IsAdicRing.ideal_spec A).2.2
+  refine (Iso.comp_inv_eq _).mpr ?_
+  have h1 : (topSectionsIso A).inv ≫ (Spf A).presheaf.map (homOfLE (le_top : basicOpen a ≤ ⊤)).op =
+      (globalSectionsIso (IsAdicRing.ideal_spec A).2.1).inv ≫
+        (structureSheaf (IsAdicRing.ideal_spec A).2.1).obj.map
+          (homOfLE (le_top : basicOpen a ≤ ⊤)).op := rfl
+  rw [h1, Category.assoc, globalSectionsIso_inv_comp_basicOpenSectionsIso_hom]
+
+/-- Under `stalkResidueFieldEquiv`, evaluating the global section attached to `a ∈ A` at an open
+prime `p` produces the image of `a` in `Frac(A ⧸ p)`. -/
+theorem stalkResidueFieldEquiv_Γevaluation_topSectionsIso_inv (p : carrier A) (a : A) :
+    stalkResidueFieldEquiv p ((Spf A).Γevaluation p ((topSectionsIso A).inv a)) =
+      algebraMap (A ⧸ (p : PrimeSpectrum A).asIdeal)
+        (FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal)) (Ideal.Quotient.mk _ a) := by
+  have := (IsAdicRing.ideal_spec A).2.2
+  let u : BasicNeighbourhood p :=
+    ⟨1, by simpa using (Ideal.ne_top_iff_one _).mp (p : PrimeSpectrum A).isPrime.ne_top⟩
+  have hres : (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1 u.elem).inv
+        (algebraMap A (AdicRing.CompletedAway A u.elem) a) =
+      (Spf A).presheaf.map (homOfLE (le_top : basicOpen u.elem ≤ ⊤)).op
+        ((topSectionsIso A).inv a) :=
+    ConcreteCategory.congr_hom (algebraMap_comp_basicOpenSectionsIso_inv u.elem) a
+  have hgerm := TopCat.Presheaf.germ_res_apply (Spf A).presheaf
+    (homOfLE (le_top : basicOpen u.elem ≤ ⊤)) p (mem_basicOpen.mpr u.notMem)
+    ((topSectionsIso A).inv a)
+  exact (congrArg (fun x ↦ stalkResidueFieldEquiv p ((Spf A).residue p x))
+    ((congrArg ((Spf A).presheaf.germ (basicOpen u.elem) p (mem_basicOpen.mpr u.notMem))
+      hres).trans hgerm).symm).trans (stalkResidueFieldEquiv_residue_germ u a)
+
+/-- The global section attached to `a ∈ A` vanishes in the residue field of `Spf A` at `p` if and
+only if `a ∈ p`. -/
+@[simp] theorem Γevaluation_topSectionsIso_inv_eq_zero_iff (p : carrier A) (a : A) :
+    (Spf A).Γevaluation p ((topSectionsIso A).inv a) = 0 ↔ a ∈ (p : PrimeSpectrum A).asIdeal := by
+  have : IsDomain (A ⧸ (p : PrimeSpectrum A).asIdeal) := Ideal.Quotient.isDomain _
+  rw [← (stalkResidueFieldEquiv p).map_eq_zero_iff,
+    stalkResidueFieldEquiv_Γevaluation_topSectionsIso_inv, IsFractionRing.to_map_eq_zero_iff,
+    Ideal.Quotient.eq_zero_iff_mem]
+
+/-- The ringed-space basic open of the global section of `Spf A` attached to `a ∈ A` is `D(a)`. -/
+@[simp] theorem basicOpen_topSectionsIso_inv (a : A) :
+    (Spf A).toRingedSpace.basicOpen ((topSectionsIso A).inv a) = basicOpen a := by
+  ext p
+  exact (LocallyRingedSpace.Γevaluation_ne_zero_iff_mem_basicOpen (Spf A) p _).symm.trans
+    ((Γevaluation_topSectionsIso_inv_eq_zero_iff p a).not.trans mem_basicOpen.symm)
 
 end Spf
 

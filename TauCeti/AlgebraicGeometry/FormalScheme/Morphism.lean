@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.FormalScheme.GlueMorphisms
 public import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
-public import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.GlueMorphisms
+
+import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
 # Morphisms into `Spf A` and automatic continuity for formal schemes
@@ -17,80 +19,17 @@ type, every `f : X ⟶ ofSpf A` induces `sectionsHom f : A →+* Γ(X, ⊤)` sat
 satisfying `ContinuousOnAffines X A φ` glues across affine formal opens via `IsAffineOpen.isoSpf`,
 `ofSpfMap`, and `glueMorphisms` into a unique `X ⟶ ofSpf A` (`homSpfEquiv`; EGA I, Ch. I, 10.4.6;
 Stacks Tag 0AHY). By `continuousOnAffines_iff_residue`, `ContinuousOnAffines X A φ` holds iff `φ`
-maps an ideal of definition of `A` into the kernel of residue evaluation at every `x : X`.
+maps an ideal of definition of `A` into the kernel of residue evaluation at every `x : X`. Out of an
+empty formal scheme `X`, there is a unique morphism `X ⟶ ofSpf A`
+(`nonempty_unique_hom_of_isEmpty`).
 -/
 
 public section
 open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry
-universe u w
+universe u
 namespace TauCeti.FormalScheme
-section RestrictHom
-variable (X : FormalScheme.{u})
-
-/-- For opens `V ≤ W` of a formal scheme `X`, the inclusion `X.restrict V ⟶ X.restrict W`. -/
-noncomputable def restrictHomOfLE {V W : Opens X} (h : V ≤ W) : X.restrict V ⟶ X.restrict W :=
-  InducedCategory.homMk (X.toLocallyRingedSpace.restrictHomOfLE h)
-
-@[simp] theorem forgetToLocallyRingedSpace_map_restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
-    forgetToLocallyRingedSpace.map (X.restrictHomOfLE h) =
-      X.toLocallyRingedSpace.restrictHomOfLE h := (rfl)
-@[reassoc (attr := simp)] theorem restrictHomOfLE_ofRestrict {V W : Opens X} (h : V ≤ W) :
-    X.restrictHomOfLE h ≫ X.ofRestrict W = X.ofRestrict V :=
-  fullyFaithfulForgetToLocallyRingedSpace.map_injective <| by
-    simp only [Functor.map_comp, forgetToLocallyRingedSpace_map_restrictHomOfLE,
-      forgetToLocallyRingedSpace_map_ofRestrict]
-    exact X.toLocallyRingedSpace.restrictHomOfLE_ofRestrict h
-@[simp] theorem restrictHomOfLE_refl (V : Opens X) : X.restrictHomOfLE (le_refl V) =
-    𝟙 (X.restrict V) := InducedCategory.hom_ext (X.toLocallyRingedSpace.restrictHomOfLE_refl V)
-@[reassoc (attr := simp)] theorem restrictHomOfLE_comp {U V W : Opens X} (h : U ≤ V) (k : V ≤ W) :
-    X.restrictHomOfLE h ≫ X.restrictHomOfLE k = X.restrictHomOfLE (h.trans k) :=
-  InducedCategory.hom_ext (X.toLocallyRingedSpace.restrictHomOfLE_comp h k)
-end RestrictHom
-
-section Glue
-variable {X Y : FormalScheme.{u}} {ι : Type w} (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
-include hU
-
-/-- Morphisms of formal schemes agreeing on every member of an open cover of the source coincide. -/
-theorem hom_ext_of_ofRestrict {g g' : X ⟶ Y}
-    (h : ∀ i, X.ofRestrict (U i) ≫ g = X.ofRestrict (U i) ≫ g') : g = g' :=
-  fullyFaithfulForgetToLocallyRingedSpace.map_injective <|
-    LocallyRingedSpace.hom_ext_of_ofRestrict U hU fun i ↦ by
-      have hi := congrArg forgetToLocallyRingedSpace.map (h i)
-      simp only [Functor.map_comp, forgetToLocallyRingedSpace_map_ofRestrict] at hi; exact hi
-
-variable (f : ∀ i, X.restrict (U i) ⟶ Y)
-  (hf : ∀ i j, X.restrictHomOfLE (inf_le_left : U i ⊓ U j ≤ U i) ≫ f i =
-    X.restrictHomOfLE inf_le_right ≫ f j)
-include hf
-
-/-- **Gluing morphisms of formal schemes along an open cover** (EGA I, Ch. I, 10.4.6). -/
-noncomputable def glueMorphisms : X ⟶ Y :=
-  InducedCategory.homMk <| LocallyRingedSpace.glueMorphisms U hU
-    (fun i ↦ forgetToLocallyRingedSpace.map (f i))
-    fun i j ↦ congrArg InducedCategory.Hom.hom (hf i j)
-
-@[reassoc (attr := simp)] theorem ofRestrict_glueMorphisms (i : ι) :
-    X.ofRestrict (U i) ≫ glueMorphisms U hU f hf = f i :=
-  fullyFaithfulForgetToLocallyRingedSpace.map_injective <| by
-    simp only [Functor.map_comp, forgetToLocallyRingedSpace_map_ofRestrict]
-    exact LocallyRingedSpace.ofRestrict_glueMorphisms U hU _ _ i
-
-/-- Universal property of open-cover morphism gluing for formal schemes. -/
-theorem existsUnique_glueMorphisms : ∃! g : X ⟶ Y, ∀ i, X.ofRestrict (U i) ≫ g = f i :=
-  ⟨glueMorphisms U hU f hf, ofRestrict_glueMorphisms U hU f hf, fun _ hg ↦
-    hom_ext_of_ofRestrict U hU fun i ↦ (hg i).trans (ofRestrict_glueMorphisms U hU f hf i).symm⟩
-end Glue
 
 section SectionsHomAndContinuity
-/-- Restricting a global section along `X.ofRestrict U` at `op ⊤` applies `Γ(X, ⊤) → Γ(X, U)`
-followed by `restrictTopSectionsIso`. -/
-theorem ofRestrict_c_app_top_apply (X : FormalScheme.{u}) (U : Opens X)
-    (s : X.presheaf.obj (op ⊤)) : (forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (op ⊤) s =
-      (X.toPresheafedSpace.restrictTopSectionsIso U).hom
-        (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op s) := by
-  rw [forgetToLocallyRingedSpace_map_ofRestrict]
-  exact ConcreteCategory.congr_hom (X.toPresheafedSpace.ofRestrict_c_app_top U) s
 
 section SectionsHom
 variable {X Y : FormalScheme.{u}} {A B : Type u} [CommRing A] [TopologicalSpace A]
@@ -183,11 +122,15 @@ theorem continuousOnAffines_sectionsHom (f : X ⟶ ofSpf A) :
     ContinuousOnAffines X A (sectionsHom f) := fun U hU ↦ by
   let tTop : TopologicalSpace ((Spf A).presheaf.obj (op ⊤)) :=
     (ofSpf A).sectionsTopology ⊤ (isAffineOpen_top_ofSpf A)
-  exact @Continuous.comp _ _ _ ‹TopologicalSpace A› tTop (X.sectionsTopology U hU) _ _
-    (continuous_c_app_comp_map_sectionsTopology f (isAffineOpen_top_ofSpf A) hU
-      fun _ _ ↦ trivial)
-    ((Spf.topSectionsIso A).commRingCatIsoToRingEquiv.toEquiv.isHomeomorph_iff.mp
-      (isHomeomorph_topSectionsIso A)).2
+  have hUV : U ≤ (Opens.map (forgetToLocallyRingedSpace.map f).base).obj ⊤ := fun _ _ ↦ trivial
+  exact @Continuous.congr _ _ ‹TopologicalSpace A› (X.sectionsTopology U hU) _ _
+    (@Continuous.comp _ _ _ ‹TopologicalSpace A› tTop (X.sectionsTopology U hU) _ _
+      (continuous_c_app_comp_map_sectionsTopology f (isAffineOpen_top_ofSpf A) hU hUV)
+      ((Spf.topSectionsIso A).commRingCatIsoToRingEquiv.toEquiv.isHomeomorph_iff.mp
+        (isHomeomorph_topSectionsIso A)).2)
+    fun a ↦ (ConcreteCategory.congr_hom
+      (PresheafedSpace.Hom.appLE_def (forgetToLocallyRingedSpace.map f).toHom ⊤ U hUV)
+      ((Spf.topSectionsIso A).inv a)).trans (ConcreteCategory.comp_apply _ _ _)
 
 /-- **Residue-field criterion for `ContinuousOnAffines`** (EGA I, Ch. I, 10.4.6): for any ideal of
 definition `I` of `A`, `ContinuousOnAffines X A φ` holds if and only if `φ a` vanishes in the
@@ -250,8 +193,7 @@ private theorem restrictHomOfLE_chartHom {W U : Opens X} (hW : X.IsAffineOpen W)
       (X.toPresheafedSpace.restrictTopSectionsIso W).hom <|
       (ConcreteCategory.comp_apply (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op)
         (X.presheaf.map (homOfLE hWU).op) (φ a)).symm.trans <|
-      ConcreteCategory.congr_hom ((X.presheaf.map_comp _ _).symm.trans
-        (congrArg X.presheaf.map (Subsingleton.elim _ _))) (φ a)
+      ConcreteCategory.congr_hom (TopCat.Presheaf.map_comp_map_eq X.presheaf _ _ _) (φ a)
   exact h1.trans h2
 
 private theorem chartHom_overlap (U V : {U : Opens X // X.IsAffineOpen U}) :
@@ -325,5 +267,17 @@ noncomputable def homSpfEquiv (X : FormalScheme.{u}) (A : Type u) [CommRing A] [
 /-- Two morphisms `X ⟶ ofSpf A` with the same induced global-section homomorphism are equal. -/
 theorem sectionsHom_injective : Function.Injective (sectionsHom (X := X) (A := A)) := fun _ _ h ↦
   (homSpfEquiv X A).injective (Subtype.ext h)
+
+/-- Out of any empty formal scheme `X`, there is a unique morphism `X ⟶ ofSpf A`. -/
+theorem nonempty_unique_hom_of_isEmpty (X : FormalScheme.{u}) (hX : IsEmpty X) (A : Type u)
+    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] :
+    Nonempty (Unique (X ⟶ ofSpf A)) :=
+  have hsub : Subsingleton (X.presheaf.obj (op ⊤)) :=
+    ⟨fun _ _ ↦ X.toLocallyRingedSpace.IsSheaf.section_ext fun x ↦ (hX.false x).elim⟩
+  let φ0 : A →+* X.presheaf.obj (op ⊤) :=
+    ⟨⟨⟨0, hsub.elim _ _⟩, fun _ _ ↦ hsub.elim _ _⟩, rfl, fun _ _ ↦ hsub.elim _ _⟩
+  ⟨{ default := homOfContinuousOnAffines φ0 ((continuousOnAffines_iff_residue
+       (IsAdicRing.ideal_spec A).2.1 φ0).mpr fun _ _ x ↦ (hX.false x).elim)
+     uniq := fun _ ↦ sectionsHom_injective (RingHom.ext fun _ ↦ hsub.elim _ _) }⟩
 end HomSpfCorrespondence
 end TauCeti.FormalScheme

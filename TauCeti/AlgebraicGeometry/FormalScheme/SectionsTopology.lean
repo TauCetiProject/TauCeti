@@ -24,8 +24,8 @@ EGA I, Ch. I, 10.4.5). Topologically nilpotent sections are cut out by residue v
 affine section maps are continuous (`continuous_c_app_comp_map_sectionsTopology`), and for arbitrary
 opens `W ⊆ X`, `X.openSectionsTopology W` makes `Γ(X, W)` a topological ring
 (`openSectionsTopology_isTopologicalRing`), is tested on open covers
-(`openSectionsTopology_isEmbedding_pi`), agrees with `Spf.quotientSectionsTopology` on formal
-spectra (`openSectionsTopology_ofSpf`, `sectionsTopology_ofSpf`), and makes every morphism
+(`isEmbedding_pi_restrict_openSectionsTopology`), agrees with `Spf.quotientSectionsTopology` on
+formal spectra (`openSectionsTopology_ofSpf`, `sectionsTopology_ofSpf`), and makes every morphism
 continuous on sections (`continuous_c_app_openSectionsTopology`; EGA I, Ch. I, 10.4.6).
 -/
 
@@ -96,19 +96,18 @@ theorem chartSectionsIso_hom_comp_isoToRingEquiv {B₁ B₂ : Type u} [CommRing 
         CommRingCat.ofHom (Spf.isoToRingEquiv (e₂.symm ≪≫ e₁)).toRingHom =
       topApp e₁.hom ≫ topApp e₂.inv ≫ (Spf.topSectionsIso B₂).hom := by
     rw [RingEquiv.toRingHom_eq_coe, Spf.isoToRingEquiv_toRingHom,
-      ← Spf.c_app_top_comp_topSectionsIso_hom (e₂.symm ≪≫ e₁).hom]; exact Category.assoc _ _ _
-  have hmid' : topApp e₁.inv ≫ (Spf.topSectionsIso B₁).hom ≫
-        CommRingCat.ofHom (Spf.isoToRingEquiv (e₂.symm ≪≫ e₁)).toRingHom =
-      topApp e₂.inv ≫ (Spf.topSectionsIso B₂).hom :=
-    (congrArg (topApp e₁.inv ≫ ·) hmid).trans <| (Category.assoc _ _ _).symm.trans <|
-      (congrArg (· ≫ _) (LocallyRingedSpace.iso_inv_c_app_top_comp_hom e₁)).trans
-        (Category.id_comp _)
+      ← Spf.c_app_top_comp_topSectionsIso_hom (e₂.symm ≪≫ e₁).hom]
+    exact Category.assoc _ _ _
   exact (congrArg (· ≫ CommRingCat.ofHom (Spf.isoToRingEquiv (e₂.symm ≪≫ e₁)).toRingHom)
       (chartSectionsIso_hom X U e₁)).trans <|
     (Category.assoc _ _ _).trans <|
-    (congrArg ((X.toPresheafedSpace.restrictTopSectionsIso U).hom ≫ ·) <|
-      (Category.assoc _ _ _).trans hmid').trans
-    (chartSectionsIso_hom X U e₂).symm
+    congrArg ((X.toPresheafedSpace.restrictTopSectionsIso U).hom ≫ ·) <|
+      (Category.assoc _ _ _).trans <|
+      (congrArg (e₁.inv.c.app (op ⊤) ≫ ·) hmid).trans <|
+      (Category.assoc _ _ _).symm.trans <|
+      (congrArg (· ≫ (topApp e₂.inv ≫ (Spf.topSectionsIso B₂).hom))
+        (LocallyRingedSpace.iso_inv_c_app_top_comp_hom e₁)).trans
+        (Category.id_comp _)
 
 private theorem induced_chartSectionsIso_eq {B₁ B₂ : Type u} [CommRing B₁]
     [t₁ : TopologicalSpace B₁] [IsTopologicalRing B₁] [IsAdicRing B₁] [CommRing B₂]
@@ -178,16 +177,17 @@ theorem isTopologicallyNilpotent_iff_forall_evaluation_eq_zero (s : X.presheaf.o
   let φ := (chartSectionsIso X U e).commRingCatIsoToRingEquiv
   obtain ⟨hφ₁, hφ₂⟩ := φ.toEquiv.isHomeomorph_iff.mp (isHomeomorph_chartSectionsIso X U hU e)
   obtain ⟨-, hIB, -⟩ := IsAdicRing.ideal_spec B
-  rw [show IsTopologicallyNilpotent s ↔ IsTopologicallyNilpotent (φ s) from
-      ⟨fun hs ↦ hs.map (φ := φ.toRingHom) hφ₁,
-        fun hs ↦ by simpa using hs.map (φ := φ.symm.toRingHom) hφ₂⟩,
-    hIB.isTopologicallyNilpotent_iff_mem_radical, Ideal.radical_eq_sInf, Ideal.mem_sInf,
-    show (∀ p ∈ {p : Ideal B | IsAdicRing.ideal B ≤ p ∧ p.IsPrime}, φ s ∈ p) ↔
-      ∀ p : Spf.carrier B, (Spf B).Γevaluation p ((Spf.topSectionsIso B).inv (φ s)) = 0 from
-      ⟨fun h p ↦ (Spf.Γevaluation_topSectionsIso_inv_eq_zero_iff p _).mpr
-        (h _ ⟨(Spf.mem_carrier_iff_le hIB).mp p.2, p.1.isPrime⟩),
-       fun h q hq ↦ (Spf.Γevaluation_topSectionsIso_inv_eq_zero_iff
-        ⟨⟨q, hq.2⟩, (Spf.mem_carrier_iff_le hIB).mpr hq.1⟩ _).mp (h _)⟩]
+  have hnil : IsTopologicallyNilpotent s ↔ IsTopologicallyNilpotent (φ s) :=
+    ⟨fun hs ↦ hs.map (φ := φ.toRingHom) hφ₁,
+      fun hs ↦ by simpa using hs.map (φ := φ.symm.toRingHom) hφ₂⟩
+  have hmem : (∀ p ∈ {p : Ideal B | IsAdicRing.ideal B ≤ p ∧ p.IsPrime}, φ s ∈ p) ↔
+      ∀ p : Spf.carrier B, (Spf B).Γevaluation p ((Spf.topSectionsIso B).inv (φ s)) = 0 :=
+    ⟨fun h p ↦ (Spf.Γevaluation_topSectionsIso_inv_eq_zero_iff p _).mpr
+      (h _ ⟨(Spf.mem_carrier_iff_le hIB).mp p.2, p.1.isPrime⟩),
+     fun h q hq ↦ (Spf.Γevaluation_topSectionsIso_inv_eq_zero_iff
+      ⟨⟨q, hq.2⟩, (Spf.mem_carrier_iff_le hIB).mpr hq.1⟩ _).mp (h _)⟩
+  rw [hnil, hIB.isTopologicallyNilpotent_iff_mem_radical, Ideal.radical_eq_sInf, Ideal.mem_sInf,
+    hmem]
   have hsec₂ : (Spf.topSectionsIso B).inv (φ s) = e.inv.c.app (op ⊤)
       ((X.toPresheafedSpace.restrictTopSectionsIso U).hom s) :=
     ConcreteCategory.congr_hom (Spf.topSectionsIso B).hom_inv_id _
@@ -247,52 +247,6 @@ noncomputable def isoSpf (hU : X.IsAffineOpen U) : X.restrict U ≅ ofSpf hU.Sec
     (chartSectionsIso X U (chosenChart hU).iso).commRingCatIsoToRingEquiv
   let hφ := φ.toEquiv.isHomeomorph_iff.mp (isHomeomorph_chartSectionsIso X U hU _)
   InducedCategory.isoMk ((chosenChart hU).iso ≪≫ Spf.mapIso φ hφ.1 hφ.2)
-
-/-- For an affine formal open `U ⊆ X` and a section `a ∈ Γ(X, U)`, the open subset of `X`
-corresponding to the basic open `D(a) ⊆ Spf hU.Sections` under `hU.isoSpf.inv`. -/
-noncomputable def imageBasicOpen (hU : X.IsAffineOpen U) (a : hU.Sections) : Opens X :=
-  let l := Spf.basicOpenι a ≫ forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
-    X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
-  have hl : LocallyRingedSpace.IsOpenImmersion l :=
-    @LocallyRingedSpace.IsOpenImmersion.comp _ _ _ _ (Spf.isOpenImmersion_basicOpenι a) _
-      (@LocallyRingedSpace.IsOpenImmersion.comp _ _ _ _
-        (LocallyRingedSpace.IsOpenImmersion.of_isIso
-          (forgetToLocallyRingedSpace.mapIso hU.isoSpf).inv)
-        (X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding)
-        (show LocallyRingedSpace.IsOpenImmersion (X.toLocallyRingedSpace.ofRestrict
-          U.isOpenEmbedding) from inferInstance))
-  ⟨Set.range l.base, hl.base_open.isOpen_range⟩
-
-/-- The open `hU.imageBasicOpen a ⊆ X` is an affine formal open of `X`. -/
-theorem isAffineOpen_imageBasicOpen (hU : X.IsAffineOpen U) (a : hU.Sections) :
-    X.IsAffineOpen (hU.imageBasicOpen a) :=
-  let l := Spf.basicOpenι a ≫ forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
-    X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
-  have : LocallyRingedSpace.IsOpenImmersion l :=
-    @LocallyRingedSpace.IsOpenImmersion.comp _ _ _ _ (Spf.isOpenImmersion_basicOpenι a) _
-      (@LocallyRingedSpace.IsOpenImmersion.comp _ _ _ _
-        (LocallyRingedSpace.IsOpenImmersion.of_isIso
-          (forgetToLocallyRingedSpace.mapIso hU.isoSpf).inv)
-        (X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding)
-        (show LocallyRingedSpace.IsOpenImmersion (X.toLocallyRingedSpace.ofRestrict
-          U.isOpenEmbedding) from inferInstance))
-  (X.isAffineOpen_iff (hU.imageBasicOpen a)).mpr
-    ⟨AdicRing.CompletedAway hU.Sections a, inferInstance, inferInstance, inferInstance,
-      inferInstance, ⟨(LocallyRingedSpace.isoOfSheafedSpaceIso <| SheafedSpace.isoMk <|
-        PresheafedSpace.IsOpenImmersion.isoOfRangeEq l.toHom (X.toLocallyRingedSpace.ofRestrict
-          (hU.imageBasicOpen a).isOpenEmbedding).toHom Subtype.range_coe.symm).symm⟩⟩
-
-/-- `hU.imageBasicOpen a ≤ W'` iff `Spf.basicOpen a` maps into `W'` under `hU.isoSpf.inv`. -/
-theorem imageBasicOpen_le_iff (hU : X.IsAffineOpen U) (a : hU.Sections) (W' : Opens X) :
-    hU.imageBasicOpen a ≤ W' ↔
-      Spf.basicOpen a ≤ (Opens.map (forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
-        X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding).base).obj W' := by
-  constructor
-  · intro h p hp
-    obtain ⟨q, hq⟩ := (Spf.range_basicOpenι a).ge hp
-    exact h ⟨q, hq ▸ rfl⟩
-  · rintro h _ ⟨q, rfl⟩
-    exact h ((Spf.range_basicOpenι a).le ⟨q, rfl⟩)
 end IsAffineOpen
 
 private theorem forgetToLocallyRingedSpace_map_isoSpf_hom (hU : X.IsAffineOpen U) :
@@ -316,20 +270,19 @@ private theorem forgetToLocallyRingedSpace_map_isoSpf_hom (hU : X.IsAffineOpen U
     (chartSectionsIso X U e).commRingCatIsoToRingEquiv
   let hφ := φ.toEquiv.isHomeomorph_iff.mp (isHomeomorph_chartSectionsIso X U hU e)
   have hm : (Spf.topSectionsIso hU.Sections).inv ≫ topApp (Spf.map φ.toRingHom hφ.1) =
-      rU.hom ≫ topApp e.inv := by
-    have h1 : (Spf.topSectionsIso hU.Sections).inv ≫ topApp (Spf.map φ.toRingHom hφ.1) =
-        CommRingCat.ofHom φ.toRingHom ≫ (Spf.topSectionsIso (chosenChart hU).B).inv :=
-      (Spf.topSectionsIso_inv_comp_c_app_top (Spf.map φ.toRingHom hφ.1)).trans <|
-        congrArg (fun ψ ↦ CommRingCat.ofHom ψ ≫ (Spf.topSectionsIso (chosenChart hU).B).inv)
-          (Spf.sectionsHom_map φ.toRingHom hφ.1)
+      rU.hom ≫ topApp e.inv :=
     have h2 : CommRingCat.ofHom φ.toRingHom =
         rU.hom ≫ topApp e.inv ≫ (Spf.topSectionsIso (chosenChart hU).B).hom :=
       chartSectionsIso_hom X U e
-    exact h1.trans <| (congrArg (· ≫ (Spf.topSectionsIso (chosenChart hU).B).inv) h2).trans <|
-      (Category.assoc _ _ _).trans <| congrArg (rU.hom ≫ ·) <|
+    (Spf.topSectionsIso_inv_comp_c_app_top (Spf.map φ.toRingHom hφ.1)).trans <|
+      (congrArg (fun ψ ↦ CommRingCat.ofHom ψ ≫ (Spf.topSectionsIso (chosenChart hU).B).inv)
+        (Spf.sectionsHom_map φ.toRingHom hφ.1)).trans <|
+      (congrArg (· ≫ (Spf.topSectionsIso (chosenChart hU).B).inv) h2).trans <|
       (Category.assoc _ _ _).trans <|
-      (congrArg (topApp e.inv ≫ ·) (Spf.topSectionsIso (chosenChart hU).B).hom_inv_id).trans
-        (Category.comp_id _)
+      congrArg (rU.hom ≫ ·) <|
+        (Category.assoc _ _ _).trans <|
+        (congrArg (topApp e.inv ≫ ·) (Spf.topSectionsIso (chosenChart hU).B).hom_inv_id).trans
+          (Category.comp_id _)
   have hcomp : ((forgetToLocallyRingedSpace.map hU.isoSpf.hom).c.app (op ⊤) :
         (Spf hU.Sections).presheaf.obj (op ⊤) ⟶
           (X.toLocallyRingedSpace.restrict U.isOpenEmbedding).presheaf.obj (op ⊤)) =
@@ -358,17 +311,132 @@ theorem isoSpf_inv_c_app_top_comp_topSectionsIso_hom (hU : X.IsAffineOpen U) :
           (Spf hU.Sections).presheaf.obj (op ⊤)) =
       (Spf.topSectionsIso hU.Sections).inv :=
     (congrArg (· ≫ ((forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤) :
-        (X.toLocallyRingedSpace.restrict U.isOpenEmbedding).presheaf.obj (op ⊤) ⟶
-          (Spf hU.Sections).presheaf.obj (op ⊤)))
+          (X.toLocallyRingedSpace.restrict U.isOpenEmbedding).presheaf.obj (op ⊤) ⟶
+            (Spf hU.Sections).presheaf.obj (op ⊤)))
       (topSectionsIso_inv_isoSpf_hom_c_app_top hU).symm).trans <|
     (Category.assoc _ _ _).trans <|
     (congrArg ((Spf.topSectionsIso hU.Sections).inv ≫ ·)
       (LocallyRingedSpace.iso_hom_c_app_top_comp_inv
-        (forgetToLocallyRingedSpace.mapIso hU.isoSpf))).trans (Category.comp_id _)
-  exact (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ (Spf.topSectionsIso hU.Sections).hom) hL).trans <|
-    (Spf.topSectionsIso hU.Sections).inv_hom_id.trans
-      (X.toPresheafedSpace.restrictTopSectionsIso U).hom_inv_id.symm
+        (forgetToLocallyRingedSpace.mapIso hU.isoSpf))).trans
+      (Category.comp_id _)
+  exact ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ (Spf.topSectionsIso hU.Sections).hom)
+    hL)).trans ((Spf.topSectionsIso hU.Sections).inv_hom_id.trans
+      (X.toPresheafedSpace.restrictTopSectionsIso U).hom_inv_id.symm)
+
+namespace IsAffineOpen
+private noncomputable def basicOpenImmersion (hU : X.IsAffineOpen U) (a : hU.Sections) :
+    Spf (AdicRing.CompletedAway hU.Sections a) ⟶ X.toLocallyRingedSpace :=
+  Spf.basicOpenι a ≫ forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
+    X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
+
+private instance isOpenImmersion_basicOpenImmersion (hU : X.IsAffineOpen U) (a : hU.Sections) :
+    LocallyRingedSpace.IsOpenImmersion (basicOpenImmersion hU a) :=
+  let h1 : LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map hU.isoSpf.inv) :=
+    LocallyRingedSpace.IsOpenImmersion.of_isIso (forgetToLocallyRingedSpace.mapIso hU.isoSpf).inv
+  let jU : forgetToLocallyRingedSpace.obj (X.restrict U) ⟶ X.toLocallyRingedSpace :=
+    X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
+  have _ : LocallyRingedSpace.IsOpenImmersion jU :=
+    LocallyRingedSpace.IsOpenImmersion.ofRestrict X.toLocallyRingedSpace U.isOpenEmbedding
+  let j2 : Spf hU.Sections ⟶ X.toLocallyRingedSpace :=
+    forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫ jU
+  have _ : LocallyRingedSpace.IsOpenImmersion j2 :=
+    LocallyRingedSpace.IsOpenImmersion.comp
+      (f := forgetToLocallyRingedSpace.map hU.isoSpf.inv) (H := h1) jU
+  LocallyRingedSpace.IsOpenImmersion.comp (f := Spf.basicOpenι a) (H := inferInstance) j2
+
+/-- Pulling back the ringed-space basic open `D(a) ⊆ X` along the chart inclusion
+`Spf hU.Sections ⟶ X` gives `Spf.basicOpen a`. -/
+theorem preimage_basicOpen (hU : X.IsAffineOpen U) (a : hU.Sections) :
+    (Opens.map (forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
+      X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding).base).obj
+        (X.toLocallyRingedSpace.toRingedSpace.basicOpen a) = Spf.basicOpen a := by
+  let l := forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
+    X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
+  have hle : (⊤ : Opens (Spf hU.Sections)) ≤ (Opens.map l.base).obj U :=
+    fun z _ ↦ ((forgetToLocallyRingedSpace.map hU.isoSpf.inv).base z).2
+  have heq : (Opens.map l.base).obj U = ⊤ := le_antisymm le_top hle
+  have hsec : (Spf hU.Sections).presheaf.map (eqToHom (congrArg op heq)) (l.c.app (op U) a) =
+      (Spf.topSectionsIso hU.Sections).inv a := by
+    have hl : l.toHom.appLE U ⊤ hle = (Spf.topSectionsIso hU.Sections).inv := by
+      have h1 := PresheafedSpace.comp_ofRestrict_appLE (le_refl U)
+        (forgetToLocallyRingedSpace.map hU.isoSpf.inv).toHom hle
+      have h2 : (X.toPresheafedSpace.restrictTopSectionsIso U).hom ≫
+          ((forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤) :
+            _ ⟶ (Spf hU.Sections).presheaf.obj (op ⊤)) =
+          (Spf.topSectionsIso hU.Sections).inv :=
+        (congrArg (· ≫ ((forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤) :
+              _ ⟶ (Spf hU.Sections).presheaf.obj (op ⊤)))
+          (topSectionsIso_inv_isoSpf_hom_c_app_top hU).symm).trans <|
+        (Category.assoc _ _ _).trans <|
+        (congrArg ((Spf.topSectionsIso hU.Sections).inv ≫ ·)
+          (LocallyRingedSpace.iso_hom_c_app_top_comp_inv
+            (forgetToLocallyRingedSpace.mapIso hU.isoSpf))).trans
+          (Category.comp_id _)
+      exact (h1.trans ((congrArg (· ≫ _) (TopCat.Presheaf.map_eq_id _ _)).trans
+        (Category.id_comp _))).trans h2
+    have hsub : eqToHom (congrArg op heq) = (homOfLE hle).op := Subsingleton.elim _ _
+    exact (congrArg (fun i ↦ (Spf hU.Sections).presheaf.map i (l.c.app (op U) a)) hsub).trans <|
+      (ConcreteCategory.comp_apply (l.c.app (op U))
+        ((Spf hU.Sections).presheaf.map (homOfLE hle).op) a).symm.trans <|
+      ConcreteCategory.congr_hom ((PresheafedSpace.Hom.appLE_def l.toHom U ⊤ hle).symm.trans hl) a
+  exact (LocallyRingedSpace.preimage_basicOpen l a).trans <|
+    (RingedSpace.basicOpen_res_eq (X := (Spf hU.Sections).toRingedSpace)
+      (eqToHom (congrArg op heq)) (l.c.app (op U) a)).symm.trans <|
+    (congrArg (RingedSpace.basicOpen (X := (Spf hU.Sections).toRingedSpace) (U := ⊤)) hsec).trans
+      (Spf.basicOpen_topSectionsIso_inv a)
+
+private theorem range_basicOpenImmersion (hU : X.IsAffineOpen U) (a : hU.Sections) :
+    Set.range (basicOpenImmersion hU a).base =
+      (X.toLocallyRingedSpace.toRingedSpace.basicOpen a).1 := by
+  let e := forgetToLocallyRingedSpace.mapIso hU.isoSpf
+  let jU := X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
+  ext x
+  constructor
+  · rintro ⟨p, rfl⟩
+    exact (congrArg (((Spf.basicOpenι a).base p : Spf.carrier hU.Sections) ∈ ·)
+      (preimage_basicOpen hU a)).mpr ((Spf.range_basicOpenι a).le (Set.mem_range_self p))
+  · intro hx
+    have hxU : x ∈ U := X.toLocallyRingedSpace.toRingedSpace.basicOpen_le a hx
+    let q : Spf.carrier hU.Sections := e.hom.base ⟨x, hxU⟩
+    have hqx : (e.inv ≫ jU).base q = x :=
+      (congrArg (fun k : X.toLocallyRingedSpace.restrict U.isOpenEmbedding ⟶ _ ↦
+        jU.base (k.base ⟨x, hxU⟩)) e.hom_inv_id).trans rfl
+    have hqmem : q ∈ Spf.basicOpen a :=
+      (congrArg (q ∈ ·) (preimage_basicOpen hU a)).mp (show (e.inv ≫ jU).base q ∈ _ from hqx ▸ hx)
+    obtain ⟨p, hp⟩ := (Spf.range_basicOpenι a).ge hqmem
+    exact ⟨p, (congrArg (e.inv ≫ jU).base hp).trans hqx⟩
+
+/-- For an affine formal open `U ⊆ X` and a section `a ∈ Γ(X, U)`, the ringed-space basic open
+`X.toLocallyRingedSpace.toRingedSpace.basicOpen a` is an affine formal open of `X`. -/
+theorem basicOpen (hU : X.IsAffineOpen U) (a : hU.Sections) :
+    X.IsAffineOpen (X.toLocallyRingedSpace.toRingedSpace.basicOpen a) := by
+  let V := X.toLocallyRingedSpace.toRingedSpace.basicOpen a
+  have : LocallyRingedSpace.IsOpenImmersion (basicOpenImmersion hU a) :=
+    isOpenImmersion_basicOpenImmersion hU a
+  have : LocallyRingedSpace.IsOpenImmersion (X.toLocallyRingedSpace.ofRestrict V.isOpenEmbedding) :=
+    inferInstance
+  refine (X.isAffineOpen_iff V).mpr
+    ⟨AdicRing.CompletedAway hU.Sections a, inferInstance, inferInstance, inferInstance,
+      inferInstance, ⟨(LocallyRingedSpace.isoOfSheafedSpaceIso <| SheafedSpace.isoMk <|
+        PresheafedSpace.IsOpenImmersion.isoOfRangeEq (basicOpenImmersion hU a).toHom
+          (X.toLocallyRingedSpace.ofRestrict V.isOpenEmbedding).toHom
+          ((range_basicOpenImmersion hU a).trans Subtype.range_coe.symm)).symm⟩⟩
+
+/-- `X.toLocallyRingedSpace.toRingedSpace.basicOpen a ≤ W'` iff `Spf.basicOpen a` maps into `W'`
+under `hU.isoSpf.inv`. -/
+theorem basicOpen_le_iff (hU : X.IsAffineOpen U) (a : hU.Sections) (W' : Opens X) :
+    X.toLocallyRingedSpace.toRingedSpace.basicOpen a ≤ W' ↔
+      Spf.basicOpen a ≤ (Opens.map (forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
+        X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding).base).obj W' := by
+  constructor
+  · intro h p hp
+    rw [← preimage_basicOpen hU a] at hp
+    exact h hp
+  · intro h x hx
+    obtain ⟨p, hp⟩ := (range_basicOpenImmersion hU a).ge hx
+    rw [← hp]
+    exact h ((Spf.range_basicOpenι a).le (Set.mem_range_self p))
+end IsAffineOpen
 
 private theorem sectionsHom_isoSpf_inv_comp_hom_of_fac {X Y : FormalScheme.{u}} (f : X ⟶ Y)
     {V : Opens Y} (hV : Y.IsAffineOpen V) {U : Opens X} (hU : X.IsAffineOpen U)
@@ -379,8 +447,7 @@ private theorem sectionsHom_isoSpf_inv_comp_hom_of_fac {X Y : FormalScheme.{u}} 
       X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding ≫ forgetToLocallyRingedSpace.map f) :
     Spf.sectionsHom ((forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫ fUV) ≫
         forgetToLocallyRingedSpace.map hV.isoSpf.hom) =
-      (((forgetToLocallyRingedSpace.map f).c.app (op V) ≫
-        X.presheaf.map (homOfLE hUV).op).hom : hV.Sections →+* hU.Sections) := by
+      ((forgetToLocallyRingedSpace.map f).toHom.appLE V U hUV).hom := by
   refine congrArg CommRingCat.Hom.hom <| (Spf.ofHom_sectionsHom _).trans ?_
   have hcomp : ((forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫ fUV) ≫
         forgetToLocallyRingedSpace.map hV.isoSpf.hom).c.app (op ⊤) =
@@ -395,29 +462,45 @@ private theorem sectionsHom_isoSpf_inv_comp_hom_of_fac {X Y : FormalScheme.{u}} 
         (LocallyRingedSpace.Γ.map_comp fUV.op (forgetToLocallyRingedSpace.map hU.isoSpf.inv).op)
   have hmid : (Y.toPresheafedSpace.restrictTopSectionsIso V).hom ≫ fUV.c.app (op ⊤) ≫
         (X.toPresheafedSpace.restrictTopSectionsIso U).inv =
-      (forgetToLocallyRingedSpace.map f).c.app (op V) ≫ X.presheaf.map (homOfLE hUV).op :=
+      (forgetToLocallyRingedSpace.map f).toHom.appLE V U hUV :=
     (Category.assoc _ _ _).symm.trans <|
       (congrArg (· ≫ (X.toPresheafedSpace.restrictTopSectionsIso U).inv)
         (PresheafedSpace.restrictTopSectionsIso_hom_c_app_top_of_fac
           (forgetToLocallyRingedSpace.map f).toHom hUV fUV.toHom
           (congrArg LocallyRingedSpace.Hom.toHom hfac))).trans <|
       (Category.assoc _ _ _).trans <|
-      (congrArg ((forgetToLocallyRingedSpace.map f).c.app (op V) ≫
-          X.presheaf.map (homOfLE hUV).op ≫ ·)
-        (X.toPresheafedSpace.restrictTopSectionsIso U).hom_inv_id).trans
-        (congrArg ((forgetToLocallyRingedSpace.map f).c.app (op V) ≫ ·) (Category.comp_id _))
-  exact (congrArg (fun k ↦ (Spf.topSectionsIso hV.Sections).inv ≫ k ≫
-      (Spf.topSectionsIso hU.Sections).hom) hcomp).trans <|
-    (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ (fUV.c.app (op ⊤) ≫
-        ((forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤) :
-          _ ⟶ (Spf hU.Sections).presheaf.obj (op ⊤))) ≫
-        (Spf.topSectionsIso hU.Sections).hom)
-      (topSectionsIso_inv_isoSpf_hom_c_app_top hV)).trans <|
-    (congrArg ((Y.toPresheafedSpace.restrictTopSectionsIso V).hom ≫ ·) <|
-      (Category.assoc _ _ _).trans <|
-      congrArg (fUV.c.app (op ⊤) ≫ ·) (isoSpf_inv_c_app_top_comp_topSectionsIso_hom hU)).trans
-      hmid
+      (congrArg (_ ≫ ·) (X.toPresheafedSpace.restrictTopSectionsIso U).hom_inv_id).trans
+        (Category.comp_id _)
+  have hstep1 : (Spf.topSectionsIso hV.Sections).inv ≫
+        ((forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫ fUV) ≫
+          forgetToLocallyRingedSpace.map hV.isoSpf.hom).c.app (op ⊤) ≫
+        (Spf.topSectionsIso hU.Sections).hom =
+      ((Spf.topSectionsIso hV.Sections).inv ≫
+          ((forgetToLocallyRingedSpace.map hV.isoSpf.hom).c.app (op ⊤) :
+            (Spf hV.Sections).presheaf.obj (op ⊤) ⟶ _)) ≫
+        fUV.c.app (op ⊤) ≫
+        (((forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤) :
+            _ ⟶ (Spf hU.Sections).presheaf.obj (op ⊤)) ≫
+          (Spf.topSectionsIso hU.Sections).hom) :=
+    (congrArg (fun m ↦ (Spf.topSectionsIso hV.Sections).inv ≫ m ≫
+        (Spf.topSectionsIso hU.Sections).hom) hcomp).trans <|
+      (congrArg ((Spf.topSectionsIso hV.Sections).inv ≫ ·)
+        ((Category.assoc _ _ _).trans
+          (congrArg (_ ≫ ·) (Category.assoc _ _ _)))).trans <|
+      (Category.assoc _ _ _).symm
+  have hstep2 : ((Spf.topSectionsIso hV.Sections).inv ≫
+          ((forgetToLocallyRingedSpace.map hV.isoSpf.hom).c.app (op ⊤) :
+            (Spf hV.Sections).presheaf.obj (op ⊤) ⟶ _)) ≫
+        fUV.c.app (op ⊤) ≫
+        (((forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤) :
+            _ ⟶ (Spf hU.Sections).presheaf.obj (op ⊤)) ≫
+          (Spf.topSectionsIso hU.Sections).hom) =
+      (Y.toPresheafedSpace.restrictTopSectionsIso V).hom ≫ fUV.c.app (op ⊤) ≫
+        (X.toPresheafedSpace.restrictTopSectionsIso U).inv :=
+    congrArg₂ (· ≫ fUV.c.app (op ⊤) ≫ ·)
+      (topSectionsIso_inv_isoSpf_hom_c_app_top hV)
+      (isoSpf_inv_c_app_top_comp_topSectionsIso_hom hU)
+  exact hstep1.trans (hstep2.trans hmid)
 
 /-- **Automatic continuity on affine opens** (EGA I, Ch. I, 10.4.6): for `f : X ⟶ Y` and affine
 opens `U ⊆ X`, `V ⊆ Y` with `U ≤ f ⁻¹' V`, `Γ(Y, V) →+* Γ(X, U)` is continuous. -/
@@ -425,7 +508,7 @@ theorem continuous_c_app_comp_map_sectionsTopology {X Y : FormalScheme.{u}} (f :
     {V : Opens Y} (hV : Y.IsAffineOpen V) {U : Opens X} (hU : X.IsAffineOpen U)
     (hUV : U ≤ (Opens.map (forgetToLocallyRingedSpace.map f).base).obj V) :
     @Continuous _ _ (Y.sectionsTopology V hV) (X.sectionsTopology U hU)
-      ((forgetToLocallyRingedSpace.map f).c.app (op V) ≫ X.presheaf.map (homOfLE hUV).op) := by
+      ((forgetToLocallyRingedSpace.map f).toHom.appLE V U hUV) := by
   let jU := X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
   let jV := Y.toLocallyRingedSpace.ofRestrict V.isOpenEmbedding
   have hsub : Set.range (jU ≫ forgetToLocallyRingedSpace.map f).base ⊆ Set.range jV.base :=
@@ -438,7 +521,7 @@ theorem continuous_c_app_comp_map_sectionsTopology {X Y : FormalScheme.{u}} (f :
 
 /-- Transporting a restricted morphism `fUV : X.restrict U ⟶ Y.restrict V` (satisfying
 `fUV ≫ Y.ofRestrict V = X.ofRestrict U ≫ f`) through the canonical charts `hU.isoSpf` and
-`hV.isoSpf` gives `ofSpfMap` of the section homomorphism `Γ(Y, V) →+* Γ(X, U)`. -/
+`hV.isoSpf` gives `ofSpfMap` of the restricted section homomorphism `Γ(Y, V) →+* Γ(X, U)`. -/
 @[reassoc]
 theorem isoSpf_inv_comp_hom_of_fac {X Y : FormalScheme.{u}} (f : X ⟶ Y) {V : Opens Y}
     (hV : Y.IsAffineOpen V) {U : Opens X} (hU : X.IsAffineOpen U)
@@ -446,8 +529,7 @@ theorem isoSpf_inv_comp_hom_of_fac {X Y : FormalScheme.{u}} (f : X ⟶ Y) {V : O
     (fUV : X.restrict U ⟶ Y.restrict V) (hfac : fUV ≫ Y.ofRestrict V = X.ofRestrict U ≫ f) :
     hU.isoSpf.inv ≫ fUV ≫ hV.isoSpf.hom =
       ofSpfMap (A := hV.Sections) (B := hU.Sections)
-        (((forgetToLocallyRingedSpace.map f).c.app (op V) ≫
-          X.presheaf.map (homOfLE hUV).op).hom)
+        ((forgetToLocallyRingedSpace.map f).toHom.appLE V U hUV).hom
         (continuous_c_app_comp_map_sectionsTopology f hV hU hUV) := by
   let g := (forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫ forgetToLocallyRingedSpace.map fUV) ≫
     forgetToLocallyRingedSpace.map hV.isoSpf.hom
@@ -461,8 +543,7 @@ theorem isoSpf_inv_comp_hom_of_fac {X Y : FormalScheme.{u}} (f : X ⟶ Y) {V : O
     (forgetToLocallyRingedSpace.map fUV) hfac'
   refine fullyFaithfulForgetToLocallyRingedSpace.map_injective ?_
   have hmap : Spf.map (A := hU.Sections) (B := hV.Sections)
-        (((forgetToLocallyRingedSpace.map f).c.app (op V) ≫
-          X.presheaf.map (homOfLE hUV).op).hom)
+        ((forgetToLocallyRingedSpace.map f).toHom.appLE V U hUV).hom
       (continuous_c_app_comp_map_sectionsTopology f hV hU hUV) =
       Spf.map (Spf.sectionsHom g) (Spf.continuous_sectionsHom g) := by
     congr 1; exact hsec.symm
@@ -479,8 +560,7 @@ theorem comp_isoSpf_hom_of_fac {X Y : FormalScheme.{u}} (f : X ⟶ Y) {V : Opens
     (fUV : X.restrict U ⟶ Y.restrict V) (hfac : fUV ≫ Y.ofRestrict V = X.ofRestrict U ≫ f) :
     fUV ≫ hV.isoSpf.hom =
       hU.isoSpf.hom ≫ ofSpfMap (A := hV.Sections) (B := hU.Sections)
-        (((forgetToLocallyRingedSpace.map f).c.app (op V) ≫
-          X.presheaf.map (homOfLE hUV).op).hom)
+        ((forgetToLocallyRingedSpace.map f).toHom.appLE V U hUV).hom
         (continuous_c_app_comp_map_sectionsTopology f hV hU hUV) :=
   (Iso.inv_comp_eq hU.isoSpf).mp (isoSpf_inv_comp_hom_of_fac f hV hU hUV fUV hfac)
 
@@ -524,6 +604,15 @@ theorem continuous_iff_openSectionsTopology {T : Type*} [TopologicalSpace T] (X 
           (X.presheaf.map (homOfLE hUW).op ∘ g) := by
   let _ := X.openSectionsTopology W; simp only [continuous_iInf_rng, continuous_induced_rng]
 
+private theorem appLE_forgetToLocallyRingedSpace_id (X : FormalScheme.{u})
+    {U V : Opens X} (hUV : U ≤ (Opens.map (forgetToLocallyRingedSpace.map (𝟙 X)).base).obj V) :
+    ((forgetToLocallyRingedSpace.map (𝟙 X)).toHom.appLE V U hUV :
+      X.presheaf.obj (op V) ⟶ X.presheaf.obj (op U)) =
+      X.presheaf.map (homOfLE hUV).op :=
+  (PresheafedSpace.Hom.congr_appLE
+      (congrArg LocallyRingedSpace.Hom.toHom (forgetToLocallyRingedSpace.map_id X)) hUV _).trans
+    (PresheafedSpace.Hom.id_appLE X.toPresheafedSpace _)
+
 /-- On an affine formal open `W ⊆ X`, `X.openSectionsTopology W = X.sectionsTopology W hW`. -/
 theorem openSectionsTopology_eq_sectionsTopology (X : FormalScheme.{u}) (W : Opens X)
     (hW : X.IsAffineOpen W) : X.openSectionsTopology W = X.sectionsTopology W hW := by
@@ -531,8 +620,9 @@ theorem openSectionsTopology_eq_sectionsTopology (X : FormalScheme.{u}) (W : Ope
     (le_iInf fun U ↦ le_iInf fun hU ↦ le_iInf fun hUW ↦ ?_)
   · rw [TopCat.Presheaf.map_eq_id]; exact le_of_eq (induced_id (t := X.sectionsTopology W hW))
   · let _ := X.sectionsTopology W hW; let _ := X.sectionsTopology U hU
-    exact continuous_iff_le_induced.mp
-      ((continuous_c_app_comp_map_sectionsTopology (𝟙 X) hW hU hUW).congr fun _ ↦ rfl)
+    exact continuous_iff_le_induced.mp <|
+      (continuous_c_app_comp_map_sectionsTopology (𝟙 X) hW hU hUW).congr <|
+        ConcreteCategory.congr_hom (appLE_forgetToLocallyRingedSpace_id X hUW)
 
 /-- Restriction maps `Γ(X, W₂) → Γ(X, W₁)` are continuous for `openSectionsTopology`. -/
 theorem continuous_restrict_openSectionsTopology (X : FormalScheme.{u}) {W₁ W₂ : Opens X}
@@ -562,18 +652,19 @@ private theorem quotientSectionsTopology_le_openSectionsTopology (W : Opens (ofS
   let k : Spf hU.Sections ⟶ Spf A := e.inv ≫ (Spf A).ofRestrict U.isOpenEmbedding
   have hle : (⊤ : Opens (Spf.carrier hU.Sections)) ≤ (Opens.map k.base).obj W :=
     fun z _ ↦ hUW (e.inv.base z).2
-  have h1 : k.c.app (op W) ≫ (Spf hU.Sections).presheaf.map (homOfLE hle).op =
+  have h1 : k.toHom.appLE W ⊤ hle =
       ((Spf A).toPresheafedSpace.presheaf.map (homOfLE hUW).op ≫
         ((Spf A).toPresheafedSpace.restrictTopSectionsIso U).hom) ≫ e.inv.c.app (op ⊤) :=
-    PresheafedSpace.comp_ofRestrict_c_app_le hUW e.inv.toHom hle
-  have hcomp : k.c.app (op W) ≫ (Spf hU.Sections).presheaf.map (homOfLE hle).op ≫
-        (Spf.topSectionsIso hU.Sections).hom = (Spf A).presheaf.map (homOfLE hUW).op :=
-    (Category.assoc _ _ _).symm.trans <|
-      (congrArg (· ≫ (Spf.topSectionsIso hU.Sections).hom) h1).trans <|
+    (PresheafedSpace.comp_ofRestrict_appLE hUW e.inv.toHom hle).trans (Category.assoc _ _ _).symm
+  have hcomp : k.toHom.appLE W ⊤ hle ≫ (Spf.topSectionsIso hU.Sections).hom =
+      (Spf A).presheaf.map (homOfLE hUW).op :=
+    (congrArg (· ≫ (Spf.topSectionsIso hU.Sections).hom) (h1.trans (Category.assoc _ _ _))).trans <|
       (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (isoSpf_inv_c_app_top_comp_topSectionsIso_hom hU)).trans <|
-      (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) ((Spf A).toPresheafedSpace.restrictTopSectionsIso U).hom_inv_id).trans
+      (congrArg ((Spf A).presheaf.map (homOfLE hUW).op ≫ ·) <|
+        (Category.assoc _ _ _).trans <|
+        (congrArg (((ofSpf A).toPresheafedSpace.restrictTopSectionsIso U).hom ≫ ·)
+          (isoSpf_inv_c_app_top_comp_topSectionsIso_hom hU)).trans
+          ((ofSpf A).toPresheafedSpace.restrictTopSectionsIso U).hom_inv_id).trans
         (Category.comp_id _)
   let hIU := (IsAdicRing.ideal_spec hU.Sections).2.1
   let _ := Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 W
@@ -581,7 +672,15 @@ private theorem quotientSectionsTopology_le_openSectionsTopology (W : Opens (ofS
   let _ := Spf.quotientSectionsTopology hIU ((Opens.map k.base).obj W)
   exact continuous_iff_le_induced.mp <| ((Spf.isHomeomorph_topSectionsIso hU.Sections).continuous
     |>.comp ((Spf.quotientSectionsTopology_restrict hIU hle).comp (Spf.continuous_c_app k W))).congr
-      (ConcreteCategory.congr_hom hcomp)
+      fun s ↦
+        (congrArg (Spf.topSectionsIso hU.Sections).hom
+          ((ConcreteCategory.comp_apply (k.c.app (op W))
+            ((Spf hU.Sections).presheaf.map (homOfLE hle).op) s).symm.trans
+            (ConcreteCategory.congr_hom (PresheafedSpace.Hom.appLE_def k.toHom W ⊤ hle).symm
+              s))).trans <|
+        (ConcreteCategory.comp_apply (k.toHom.appLE W ⊤ hle)
+          (Spf.topSectionsIso hU.Sections).hom s).symm.trans
+          (ConcreteCategory.congr_hom hcomp s)
 
 private theorem basicOpenι_c_app_comp_res (f : A)
     (hpre : (Opens.map (Spf.basicOpenι f).base).obj (Spf.basicOpen f) = ⊤) :
@@ -593,18 +692,16 @@ private theorem basicOpenι_c_app_comp_res (f : A)
   have hpre' : (⊤ : Opens _) ≤ (Opens.map (e.inv ≫
       (Spf A).ofRestrict (U : Opens (Spf A).toTopCat).isOpenEmbedding).base).obj U :=
     (Spf.restrictBasicOpenIso_inv_ofRestrict f).symm ▸ hpre.ge
-  have h1 := PresheafedSpace.c_app_comp_homOfLE_of_eq
+  have h1 := PresheafedSpace.Hom.congr_appLE
     (congrArg LocallyRingedSpace.Hom.toHom (Spf.restrictBasicOpenIso_inv_ofRestrict f))
     hpre' hpre.ge
-  have h2 := PresheafedSpace.comp_ofRestrict_c_app_le (le_refl U) e.inv.toHom hpre'
+  have h2 := PresheafedSpace.comp_ofRestrict_appLE (le_refl U) e.inv.toHom hpre'
   have h3 : ((ofSpf A).toPresheafedSpace.restrictTopSectionsIso U).hom ≫ e.inv.c.app (op ⊤) =
       (chartSectionsIso (ofSpf A) U e).hom ≫ (Spf.topSectionsIso B).inv :=
     (Iso.eq_comp_inv (Spf.topSectionsIso B)).mpr (Category.assoc _ _ _)
-  exact h1.symm.trans <| h2.trans <|
-    (congrArg (· ≫ e.inv.c.app (op ⊤)) <|
-      (congrArg (· ≫ ((Spf A).toPresheafedSpace.restrictTopSectionsIso U).hom)
-        (TopCat.Presheaf.map_eq_id (Spf A).presheaf (𝟙 (op U)))).trans
-        (Category.id_comp _)).trans h3
+  exact (PresheafedSpace.Hom.appLE_def (Spf.basicOpenι f).toHom U ⊤ hpre.ge).symm.trans <|
+    h1.symm.trans <| h2.trans <|
+    (congrArg (· ≫ _) (TopCat.Presheaf.map_eq_id _ _)).trans <| (Category.id_comp _).trans h3
 
 private theorem isInducing_presheaf_map_basicOpen_mul_self (f : A) :
     @Topology.IsInducing _ _
@@ -624,15 +721,16 @@ private theorem isInducing_presheaf_map_basicOpen_mul_self (f : A) :
       (Spf A).presheaf.obj (op (Spf.basicOpen (f * f))) :=
     { toFun := (Spf A).presheaf.map (homOfLE hle₁).op
       invFun := (Spf A).presheaf.map (homOfLE hle₂).op
-      left_inv s := ConcreteCategory.congr_hom
-        (((Spf A).presheaf.map_comp _ _).symm.trans <|
-          (congrArg (Spf A).presheaf.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))).trans
-          (TopCat.Presheaf.map_eq_id (Spf A).presheaf (𝟙 (op (Spf.basicOpen f))))) s
-      right_inv s := ConcreteCategory.congr_hom
-        (((Spf A).presheaf.map_comp _ _).symm.trans <|
-          (congrArg (Spf A).presheaf.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))).trans
-          (TopCat.Presheaf.map_eq_id (Spf A).presheaf
-            (𝟙 (op (Spf.basicOpen (f * f)))))) s
+      left_inv s := (ConcreteCategory.comp_apply _ _ s).symm.trans <|
+        (ConcreteCategory.congr_hom
+          ((TopCat.Presheaf.map_comp_map_eq (Spf A).presheaf (homOfLE hle₁).op (homOfLE hle₂).op
+            (𝟙 _)).trans (TopCat.Presheaf.map_eq_id _ _)) s).trans
+        (ConcreteCategory.id_apply s)
+      right_inv s := (ConcreteCategory.comp_apply _ _ s).symm.trans <|
+        (ConcreteCategory.congr_hom
+          ((TopCat.Presheaf.map_comp_map_eq (Spf A).presheaf (homOfLE hle₂).op (homOfLE hle₁).op
+            (𝟙 _)).trans (TopCat.Presheaf.map_eq_id _ _)) s).trans
+        (ConcreteCategory.id_apply s)
       continuous_toFun := Spf.quotientSectionsTopology_restrict hIA hle₁
       continuous_invFun := Spf.quotientSectionsTopology_restrict hIA hle₂ }
   exact h.isInducing
@@ -667,24 +765,33 @@ private theorem sectionsTopology_basicOpen_le (f : A) :
   have hsplit : (Spf B).presheaf.map (eqToHom (congrArg op
         (Spf.basicOpenι_preimage_basicOpen f f))) =
       (Spf B).presheaf.map (homOfLE hpre.ge).op ≫ (Spf B).presheaf.map (homOfLE le_top).op :=
-    (congrArg (Spf B).presheaf.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))).trans
-      ((Spf B).presheaf.map_comp _ _)
+    (TopCat.Presheaf.map_comp_map_eq (Spf B).presheaf _ _ _).symm
   have hres := basicOpenι_c_app_comp_res A f hpre
+  have hι1 : (chartSectionsIso (ofSpf A) U e).hom ≫ (Spf.topSectionsIso B).inv ≫
+        (Spf B).presheaf.map (homOfLE le_top).op ≫
+        (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom =
+      ((Spf.basicOpenι f).c.app (op U) ≫ (Spf B).presheaf.map (homOfLE hpre.ge).op) ≫
+        (Spf B).presheaf.map (homOfLE le_top).op ≫
+        (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom :=
+    (Category.assoc _ _ _).symm.trans <| congrArg (· ≫
+      ((Spf B).presheaf.map (homOfLE le_top).op ≫
+        (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom)) hres.symm
+  have hι2 : ((Spf.basicOpenι f).c.app (op U) ≫ (Spf B).presheaf.map (homOfLE hpre.ge).op) ≫
+        (Spf B).presheaf.map (homOfLE le_top).op ≫
+        (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom =
+      (Spf.basicOpenι f).c.app (op U) ≫
+        (Spf B).presheaf.map (eqToHom (congrArg op (Spf.basicOpenι_preimage_basicOpen f f))) ≫
+        (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom :=
+    (Category.assoc _ _ _).trans <| congrArg ((Spf.basicOpenι f).c.app (op U) ≫ ·) <|
+      (Category.assoc _ _ _).symm.trans <| congrArg (· ≫
+        (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom) hsplit.symm
   have hι : (chartSectionsIso (ofSpf A) U e).hom ≫ (Spf.topSectionsIso B).inv ≫
         (Spf B).presheaf.map (homOfLE le_top).op ≫
         (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom =
       (Spf A).presheaf.map (homOfLE ((Spf.basicOpen_mul f f).le.trans inf_le_right)).op ≫
         (Spf.basicOpenSectionsIso hIA hIAfg (f * f)).hom ≫
         (AdicRing.CompletedAway.iterateEquiv f f).symm.toCommRingCatIso.hom :=
-    (Category.assoc _ _ _).symm.trans <| (Category.assoc _ _ _).symm.trans <|
-      (congrArg (· ≫ (Spf B).presheaf.map (homOfLE le_top).op ≫
-        (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom) hres.symm).trans <|
-      (Category.assoc _ _ _).trans <|
-      (congrArg ((Spf.basicOpenι f).c.app (op U) ≫ ·) <|
-        (Category.assoc _ _ _).symm.trans <|
-        (congrArg (· ≫ (Spf.basicOpenSectionsIso hIB hIBfg (algebraMap A B f)).hom)
-          hsplit.symm)).trans
-      (Spf.basicOpenι_c_app f f)
+    hι1.trans <| hι2.trans (Spf.basicOpenι_c_app f f)
   let _ := (ofSpf A).sectionsTopology U (isAffineOpen_basicOpen A f)
   let _ := Spf.quotientSectionsTopology hIB ⊤; let _ := Spf.quotientSectionsTopology hIA U
   let _ := Spf.quotientSectionsTopology hIB (Spf.basicOpen (algebraMap A B f))
@@ -731,21 +838,22 @@ private theorem exists_sectionsHom_eq_basicOpen_res {X Y : FormalScheme.{u}} (f 
     {W : Opens Y} {U : Opens X} (hU : X.IsAffineOpen U)
     (hUW : U ≤ (Opens.map (forgetToLocallyRingedSpace.map f).base).obj W)
     {V : Opens Y} (hV : Y.IsAffineOpen V) (hVW : V ≤ W) (a : hU.Sections)
-    (ha_le : hU.imageBasicOpen a ≤ (Opens.map (forgetToLocallyRingedSpace.map f).base).obj V) :
+    (ha_le : X.toLocallyRingedSpace.toRingedSpace.basicOpen a ≤
+      (Opens.map (forgetToLocallyRingedSpace.map f).base).obj V) :
     ∃ g : Spf (AdicRing.CompletedAway hU.Sections a) ⟶ Spf hV.Sections,
       ∀ s : Y.presheaf.obj (op W), Spf.sectionsHom g (Y.presheaf.map (homOfLE hVW).op s) =
         (Spf.basicOpenSectionsIso (IsAdicRing.ideal_spec hU.Sections).2.1
           (IsAdicRing.ideal_spec hU.Sections).1 a).hom
           ((Spf hU.Sections).presheaf.map (homOfLE (le_top : Spf.basicOpen a ≤ ⊤)).op
-            ((Spf.topSectionsIso hU.Sections).inv (X.presheaf.map (homOfLE hUW).op
-              ((forgetToLocallyRingedSpace.map f).c.app (op W) s)))) := by
+            ((Spf.topSectionsIso hU.Sections).inv
+              ((forgetToLocallyRingedSpace.map f).toHom.appLE W U hUW s))) := by
   let A := hU.Sections; obtain ⟨hIAfg, hIA, _⟩ := IsAdicRing.ideal_spec A
   let fL := forgetToLocallyRingedSpace.map f; let e := forgetToLocallyRingedSpace.mapIso hU.isoSpf
   let jU := X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
   let jV := Y.toLocallyRingedSpace.ofRestrict V.isOpenEmbedding
   let rU := X.toPresheafedSpace.restrictTopSectionsIso U
   let m := Spf.map (algebraMap A _) (AdicRing.CompletedAway.continuous_algebraMap A a)
-  have ha_le' := (hU.imageBasicOpen_le_iff a ((Opens.map fL.base).obj V)).mp ha_le
+  have ha_le' := (hU.basicOpen_le_iff a ((Opens.map fL.base).obj V)).mp ha_le
   have hsub : Set.range ((m ≫ e.inv) ≫ jU ≫ fL).base ⊆ Set.range jV.base := by
     rintro _ ⟨p, rfl⟩
     exact ⟨⟨_, ha_le' (SetLike.mem_coe.mp ((by rw [Spf.map_base, ← Spf.basicOpenι_base,
@@ -809,19 +917,25 @@ theorem continuous_c_app_openSectionsTopology {X Y : FormalScheme.{u}} (f : X �
     continuous_of_basicOpen_glue hU _ fun p ↦ ?_
   obtain ⟨V, hV, hxV, hVW⟩ := Y.exists_isAffineOpen_mem_le
     (hUW ((forgetToLocallyRingedSpace.map hU.isoSpf.inv).base p).2)
-  obtain ⟨_, ⟨a, rfl⟩, ha_mem, ha_le⟩ := Opens.isBasis_iff_nbhd.mp Spf.isBasis_basicOpen
-    (show p ∈ (Opens.map (forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
-      X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding ≫ fL).base).obj V from hxV)
+  have hpV : p ∈ (Opens.map (forgetToLocallyRingedSpace.map hU.isoSpf.inv ≫
+      X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding ≫ fL).base).obj V := hxV
+  obtain ⟨_, ⟨a, rfl⟩, ha_mem, ha_le⟩ := Opens.isBasis_iff_nbhd.mp Spf.isBasis_basicOpen hpV
   obtain ⟨g, hg⟩ := exists_sectionsHom_eq_basicOpen_res f hU hUW hV hVW a
-    ((hU.imageBasicOpen_le_iff a ((Opens.map fL.base).obj V)).mpr ha_le)
+    ((hU.basicOpen_le_iff a ((Opens.map fL.base).obj V)).mpr ha_le)
   exact ⟨a, ha_mem, ((Spf.continuous_sectionsHom g).comp
-    ((continuous_iff_openSectionsTopology Y W id).mp continuous_id V hV hVW)).congr hg⟩
+    ((continuous_iff_openSectionsTopology Y W id).mp continuous_id V hV hVW)).congr fun s ↦
+      (hg s).trans <| congrArg (fun t ↦ (Spf.basicOpenSectionsIso
+          (IsAdicRing.ideal_spec hU.Sections).2.1 (IsAdicRing.ideal_spec hU.Sections).1 a).hom
+        ((Spf hU.Sections).presheaf.map (homOfLE (le_top : Spf.basicOpen a ≤ ⊤)).op
+          ((Spf.topSectionsIso hU.Sections).inv t))) <|
+        (ConcreteCategory.congr_hom (PresheafedSpace.Hom.appLE_def fL.toHom W U hUW) s).trans
+          (ConcreteCategory.comp_apply _ _ s)⟩
 
 /-- For any open cover `W ≤ ⨆ i, V i` by opens `V i ≤ W`, the restriction map from
 `Γ(X, W)` (with `X.openSectionsTopology W`) into `∏ i, Γ(X, V i)` (with
 `X.openSectionsTopology (V i)`) is a topological embedding (`Topology.IsEmbedding`). -/
-theorem openSectionsTopology_isEmbedding_pi {ι : Type*} (X : FormalScheme.{u}) {W : Opens X}
-    {V : ι → Opens X} (hV : ∀ i, V i ≤ W) (hcov : W ≤ ⨆ i, V i) :
+theorem isEmbedding_pi_restrict_openSectionsTopology {ι : Type*} (X : FormalScheme.{u})
+    {W : Opens X} {V : ι → Opens X} (hV : ∀ i, V i ≤ W) (hcov : W ≤ ⨆ i, V i) :
     @Topology.IsEmbedding (X.presheaf.obj (op W)) (∀ i : ι, X.presheaf.obj (op (V i)))
       (X.openSectionsTopology W)
       (@Pi.topologicalSpace ι _ fun i ↦ X.openSectionsTopology (V i))
@@ -838,24 +952,32 @@ theorem openSectionsTopology_isEmbedding_pi {ι : Type*} (X : FormalScheme.{u}) 
   let e := forgetToLocallyRingedSpace.mapIso hU.isoSpf
   let jU := X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
   obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcov (hUW (e.inv.base p).2))
-  obtain ⟨_, ⟨a, rfl⟩, ha_mem, ha_le⟩ := Opens.isBasis_iff_nbhd.mp Spf.isBasis_basicOpen
-    (show p ∈ (Opens.map (e.inv ≫ jU).base).obj (V i) from hi)
-  let Up := hU.imageBasicOpen a
-  have hUp : X.IsAffineOpen Up := hU.isAffineOpen_imageBasicOpen a
-  have hUpV : Up ≤ V i := (hU.imageBasicOpen_le_iff a (V i)).mpr ha_le
+  have hpVi : p ∈ (Opens.map (e.inv ≫ jU).base).obj (V i) := hi
+  obtain ⟨_, ⟨a, rfl⟩, ha_mem, ha_le⟩ := Opens.isBasis_iff_nbhd.mp Spf.isBasis_basicOpen hpVi
+  let Up := X.toLocallyRingedSpace.toRingedSpace.basicOpen a
+  have hUp : X.IsAffineOpen Up := hU.basicOpen a
+  have hUpV : Up ≤ V i := (hU.basicOpen_le_iff a (V i)).mpr ha_le
+  have hUp_id : Up ≤ (Opens.map (forgetToLocallyRingedSpace.map (𝟙 X)).base).obj Up := by
+    rw [forgetToLocallyRingedSpace.map_id]; exact le_rfl
   obtain ⟨g, hg⟩ := exists_sectionsHom_eq_basicOpen_res (𝟙 X) hU hUW hUp (hUpV.trans (hV i)) a
-    le_rfl
+    hUp_id
   have hΦ (s : X.presheaf.obj (op W)) : X.presheaf.map (homOfLE hUpV).op (Φ s i) =
       X.presheaf.map (homOfLE (hUpV.trans (hV i))).op s :=
     (ConcreteCategory.comp_apply (X.presheaf.map (homOfLE (hV i)).op)
       (X.presheaf.map (homOfLE hUpV).op) s).symm.trans <|
       ConcreteCategory.congr_hom
-        ((X.presheaf.map_comp _ _).symm.trans (congrArg X.presheaf.map (Subsingleton.elim _ _))) s
+        (TopCat.Presheaf.map_comp_map_eq X.presheaf (homOfLE (hV i)).op (homOfLE hUpV).op
+          (homOfLE (hUpV.trans (hV i))).op) s
   exact ⟨a, ha_mem, ((Spf.continuous_sectionsHom g).comp ((continuous_iInf_dom (i := Up) <|
     continuous_iInf_dom (i := hUp) <| continuous_iInf_dom (i := hUpV) <|
     continuous_induced_dom (t := X.sectionsTopology Up hUp)).comp ((@continuous_apply _
       (fun i ↦ X.presheaf.obj (op (V i))) (fun i ↦ X.openSectionsTopology (V i)) i).comp
       (@continuous_induced_dom _ _ Φ Pi.topologicalSpace)))).congr fun s ↦
-    (congrArg (Spf.sectionsHom g) (hΦ s)).trans (hg s)⟩
+    (congrArg (Spf.sectionsHom g) (hΦ s)).trans <| (hg s).trans <| congrArg (fun m ↦
+      (Spf.basicOpenSectionsIso (IsAdicRing.ideal_spec hU.Sections).2.1
+        (IsAdicRing.ideal_spec hU.Sections).1 a).hom
+        ((Spf hU.Sections).presheaf.map (homOfLE (le_top : Spf.basicOpen a ≤ ⊤)).op
+          ((Spf.topSectionsIso hU.Sections).inv (m s))))
+      (appLE_forgetToLocallyRingedSpace_id X hUW)⟩
 end SpecialCasesAndOpenTopology
 end TauCeti.FormalScheme

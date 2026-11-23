@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 public import Mathlib.Topology.UniformSpace.Cauchy
 public import Mathlib.Topology.UniformSpace.Pi
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.IdealIndependence
 public import TauCeti.RingTheory.AdicCompletion.InitialTopology
 
@@ -44,9 +45,9 @@ continuous (`quotientSectionsTopology_restrict`), embeds `Γ(U, O_{Spf A})` as a
 subring of `∏ i, Γ(V i, O_{Spf A})` for every open cover `U = ⋃ i, V i`
 (`quotientSectionsTopology_glue`), and does not depend on the chosen ideal of definition
 (`quotientSectionsTopology_independent`). Moreover, it recovers the topology of `A` on global
-sections when `A` is `I`-adically complete (`isHomeomorph_globalSectionsIso`), and of the completed
-localisation `CompletedAway A f` on `D(f)` when `IsAdicRing A` holds and `I` is finitely generated
-(`quotientSectionsTopology_basic`).
+sections when `A` is `I`-adically complete (`isHomeomorph_globalSectionsIso`,
+`isHomeomorph_topSectionsIso`), and of the completed localisation `CompletedAway A f` on `D(f)` when
+`IsAdicRing A` holds and `I` is finitely generated (`quotientSectionsTopology_basic`).
 
 ## Main definitions
 
@@ -74,9 +75,11 @@ localisation `CompletedAway A f` on `D(f)` when `IsAdicRing A` holds and `I` is 
 * `TauCeti.FormalScheme.Spf.quotientSectionsTopology_glue`: for every open cover `U = ⋃ i, V i`,
   the product of restrictions `Γ(U, O_{Spf A}) → ∏ i, Γ(V i, O_{Spf A})` is a closed embedding.
 * `TauCeti.FormalScheme.Spf.isHomeomorph_globalSectionsIso`,
-  `TauCeti.FormalScheme.Spf.quotientSectionsTopology_basic`: `globalSectionsIso` is a
-  homeomorphism onto `A` when `A` is `I`-adically complete, and `basicOpenSectionsIso` is a
-  homeomorphism onto `CompletedAway A f` when `IsAdicRing A` holds and `I` is finitely generated.
+  `TauCeti.FormalScheme.Spf.isHomeomorph_topSectionsIso`,
+  `TauCeti.FormalScheme.Spf.quotientSectionsTopology_basic`: `globalSectionsIso` and
+  `topSectionsIso` are homeomorphisms onto `A` when `A` is `I`-adically complete (resp.
+  `IsAdicRing A`), and `basicOpenSectionsIso` is a homeomorphism onto `CompletedAway A f` when
+  `IsAdicRing A` holds and `I` is finitely generated.
 * `TauCeti.FormalScheme.Spf.quotientSectionsTopology_independent`,
   `TauCeti.FormalScheme.Spf.isHomeomorph_structureSheafIso`: `structureSheafIso hI hJ` is a
   homeomorphism on sections over every open `U`, and when `IsAdicRing A` holds and `I`, `J` are
@@ -797,6 +800,16 @@ theorem isHomeomorph_globalSectionsIso [IsAdicComplete I A] (hI : IsAdic I) :
       globalSectionsIso_inv_comp_quotientProjection_assoc, Iso.inv_hom_id, Category.comp_id]
   ext s
   exact congrArg (fun φ ↦ φ s) hhom
+
+/-- `topSectionsIso A` is a homeomorphism from `(Γ(⊤, O_{Spf A}), quotientSectionsTopology _ ⊤)`
+onto `A` (EGA I, Ch. I, 10.1.3). -/
+theorem isHomeomorph_topSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    @IsHomeomorph _ _ (quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 ⊤)
+      ‹TopologicalSpace A› (topSectionsIso A).hom := by
+  have := (IsAdicRing.ideal_spec A).2.2
+  rw [topSectionsIso_def A]
+  exact isHomeomorph_globalSectionsIso (IsAdicRing.ideal_spec A).2.1
 
 /-- For a finitely generated ideal of definition `I`, `basicOpenSectionsAdicCompletionIso hI f` is
 a homeomorphism from `(Γ(D(f), O_{Spf A}), quotientSectionsTopology hI (basicOpen f))` onto

@@ -95,6 +95,25 @@ theorem iso_hom_c_app_top_comp_inv {Y₁ Y₂ : LocallyRingedSpace.{_}} (e : Y�
     (e.hom.c.app (op ⊤) : Y₂.presheaf.obj (op ⊤) ⟶ Y₁.presheaf.obj (op ⊤)) ≫ e.inv.c.app (op ⊤) =
       𝟙 (Y₂.presheaf.obj (op ⊤)) := iso_inv_c_app_top_comp_hom e.symm
 
+/-- If `c : X ⟶ Y` and `g : Y.toPresheafedSpace ⟶ Z.toPresheafedSpace` compose to the underlying
+morphism of `f : X ⟶ Z` and `c.base x' = x`, then the stalk map of `g` at `x` is local. -/
+theorem isLocalHom_stalkMap_of_comp_eq {X Y Z : LocallyRingedSpace.{_}}
+    (c : X ⟶ Y) (g : Y.toPresheafedSpace ⟶ Z.toPresheafedSpace) (f : X ⟶ Z)
+    (hcomp : c.toHom ≫ g = f.toHom) {x' : X} {x : Y} (hx : c.base x' = x) :
+    IsLocalHom (g.stalkMap x).hom := by
+  subst hx
+  have hloc : IsLocalHom ((c.toHom ≫ g).stalkMap x').hom := by
+    rw [PresheafedSpace.stalkMap.congr_hom _ _ hcomp x', CommRingCat.hom_comp]
+    have := isLocalHom_of_isIso (eqToHom (hcomp ▸ rfl :
+      Z.presheaf.stalk ((c.toHom ≫ g).base x') = Z.presheaf.stalk (f.base x')))
+    have := f.prop x'
+    exact CommRingCat.isLocalHom_comp _ _
+  rw [PresheafedSpace.stalkMap.comp] at hloc
+  -- `rw [CommRingCat.hom_comp] at hloc` fails: `g.stalkMap (c.base x')` has domain at
+  -- `(c.toHom ≫ g).base x'`, only definitionally equal to `g.base (c.base x')`.
+  have : IsLocalHom ((c.toHom.stalkMap x').hom.comp (g.stalkMap (c.base x')).hom) := hloc
+  exact isLocalHom_of_comp _ (c.toHom.stalkMap x').hom
+
 end LocallyRingedSpace
 
 universe u
@@ -148,20 +167,9 @@ private theorem comp_descPsh : c.toHom ≫ descPsh c hq hc h hh = h.toHom := by
 
 private theorem isLocalHom_stalkMap_descPsh (y : Y) :
     IsLocalHom ((descPsh c hq hc h hh).stalkMap y).hom := by
-  obtain ⟨x, rfl⟩ := hq.surjective y
-  have : IsLocalHom ((c.toHom ≫ descPsh c hq hc h hh).stalkMap x).hom := by
-    rw [PresheafedSpace.stalkMap.congr_hom _ _ (comp_descPsh c hq hc h hh) x,
-      CommRingCat.hom_comp]
-    have := isLocalHom_of_isIso (eqToHom (comp_descPsh c hq hc h hh ▸ rfl :
-      Z.presheaf.stalk ((c.toHom ≫ descPsh c hq hc h hh).base x) =
-        Z.presheaf.stalk (h.base x)))
-    exact CommRingCat.isLocalHom_comp _ _
-  rw [PresheafedSpace.stalkMap.comp] at this
-  -- `rw [CommRingCat.hom_comp] at this` fails: the stalk map of `descPsh` has codomain stated at
-  -- `(c.toHom ≫ descPsh c hq hc h hh).base x`, only definitionally equal to `descPsh` at `c x`.
-  have : IsLocalHom ((c.toHom.stalkMap x).hom.comp
-      ((descPsh c hq hc h hh).stalkMap (c.base x)).hom) := this
-  exact isLocalHom_of_comp _ (c.toHom.stalkMap x).hom
+  obtain ⟨x, hx⟩ := hq.surjective y
+  exact LocallyRingedSpace.isLocalHom_stalkMap_of_comp_eq c (descPsh c hq hc h hh) h
+    (comp_descPsh c hq hc h hh) hx
 
 /-- **Descent along a contraction.** Let `c : X ⟶ Y` be a topological quotient map for which
 `𝒪_Y → c_* 𝒪_X` is an isomorphism. A morphism `h : X ⟶ Z` of locally ringed spaces whose

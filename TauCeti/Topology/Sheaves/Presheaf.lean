@@ -22,6 +22,8 @@ intersection of their domains glue to a section over the union.
 
 * `TopCat.Presheaf.comp_map_comp_map_eq_self`: composing restriction maps along inclusions in both
   directions gives the identity after any morphism into the starting section object.
+* `TopCat.Presheaf.map_comp_map_eq`: composing two restriction maps yields the unique restriction
+  map between the endpoints.
 * `TopCat.Presheaf.map_eq_id`: restriction from an open to itself is the identity morphism.
 * `TopCat.Presheaf.map_apply_eq_self`: restriction from an open to itself is the identity on
   sections.
@@ -49,6 +51,20 @@ theorem comp_map_comp_map_eq_self {F : T.Presheaf C} {A : C} {V V' : Opens T}
     (a : A ⟶ F.obj (op V)) (i : op V ⟶ op V') (j : op V' ⟶ op V) :
     (a ≫ F.map i) ≫ F.map j = a := by
   rw [Category.assoc, ← F.map_comp, Subsingleton.elim (i ≫ j) (𝟙 _), F.map_id, Category.comp_id]
+
+/-- Composing two restriction maps of a presheaf yields the unique restriction map between the
+endpoints, identifying parallel arrows in the opens preorder. -/
+@[reassoc]
+theorem map_comp_map_eq (F : Presheaf C T) {U V W : Opens T}
+    (i : op U ⟶ op V) (j : op V ⟶ op W) (k : op U ⟶ op W) :
+    F.map i ≫ F.map j = F.map k :=
+  (F.map_comp i j).symm.trans (congrArg F.map (Subsingleton.elim _ _))
+
+/-- Two composites of two restriction maps of a presheaf with the same endpoints are equal. -/
+theorem map_comp_eq_map_comp (F : Presheaf C T) {U V₁ V₂ W : Opens T}
+    (i₁ : op U ⟶ op V₁) (j₁ : op V₁ ⟶ op W) (i₂ : op U ⟶ op V₂) (j₂ : op V₂ ⟶ op W) :
+    F.map i₁ ≫ F.map j₁ = F.map i₂ ≫ F.map j₂ :=
+  (F.map_comp_map_eq i₁ j₁ (i₁ ≫ j₁)).trans (F.map_comp_map_eq i₂ j₂ (i₁ ≫ j₁)).symm
 
 /-- Restriction from an open to itself is the identity morphism: there is only one morphism
 from an open to itself, the identity. -/
