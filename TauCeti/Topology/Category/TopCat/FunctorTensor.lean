@@ -236,6 +236,9 @@ def cowedge : Limits.Cowedge (prodBifunctor K X) :=
     exact ι_map K X f x t
 
 @[simp]
+theorem cowedge_pt : (cowedge K X).pt = functorTensor K X := (rfl)
+
+@[simp]
 theorem cowedge_π (d : D) : (cowedge K X).π d = TopCat.ofHom (ι K X d) := (rfl)
 
 /-- The cowedge `cowedge K X` exhibits `functorTensor K X` as a coend of `prodBifunctor K X` in
@@ -334,17 +337,14 @@ theorem isQuotientMap_reindex (X : Dᵒᵖ ⥤ TopCat.{u}) [Small.{u} D] [Small.
     generalize (hF d).choose = c, (hF d).choose_spec = hcd; subst hcd; simp
   exact heq.symm ▸ isQuotientMap_sigma K X
 
-private theorem whiskerLeft_op_app_op_apply {X Y : Dᵒᵖ ⥤ TopCat.{u}} (φ : X ⟶ Y) (c : C)
-    (x : (F.op ⋙ X).obj (op c)) :
-    (Functor.whiskerLeft F.op φ).app (op c) x = φ.app (op (F.obj c)) x := (rfl)
-
 /-- Naturality of `reindex F K` with respect to morphisms `φ : X ⟶ Y`. -/
 @[reassoc (attr := simp)]
 theorem map_comp_reindex {X Y : Dᵒᵖ ⥤ TopCat.{u}} (φ : X ⟶ Y) [Small.{u} D] [Small.{u} C] :
     map (F ⋙ K) (Functor.whiskerLeft F.op φ) ≫ reindex F K Y = reindex F K X ≫ map K φ := by
   ext c x t
   rw [CategoryTheory.comp_apply, CategoryTheory.comp_apply, map_ι, reindex_ι, reindex_ι, map_ι,
-    whiskerLeft_op_app_op_apply]
+    Functor.whiskerLeft_app]
+  rfl
 
 end
 
@@ -412,7 +412,8 @@ theorem reindex_comp_augment {C : Type u₂} [Category.{w'} C] (F : C ⥤ D)
     (ε : X ⟶ (Functor.const _).obj Z) [Small.{u} D] [Small.{u} C] :
     reindex F K X ≫ augment K ε = augment (F ⋙ K) (Functor.whiskerLeft F.op ε) := by
   ext c x t
-  rw [CategoryTheory.comp_apply, reindex_ι, augment_ι, augment_ι, whiskerLeft_op_app_op_apply]
+  rw [CategoryTheory.comp_apply, reindex_ι, augment_ι, augment_ι, Functor.whiskerLeft_app]
+  rfl
 
 end Augment
 

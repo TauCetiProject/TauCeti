@@ -19,8 +19,10 @@ this inclusion is an open embedding, and its range is exactly the preimage of th
 subset. `CategoryTheory.ObjectProperty.fatClassifyingSpaceRestrictionHomeomorph` identifies
 this preimage, with its subspace topology, with the fat classifying space of the restriction.
 If `P` is closed, realization of the inclusion is instead a closed embedding with the same range
-(`CategoryTheory.ObjectProperty.isClosedEmbedding_fatClassifyingSpaceMap_ι`), and the coarse
-space of the restriction is the closed subspace of the coarse space over the image of `P`
+(`CategoryTheory.ObjectProperty.isClosedEmbedding_fatClassifyingSpaceMap_ι`), yielding
+`CategoryTheory.ObjectProperty.fatClassifyingSpaceClosedRestrictionHomeomorph` (both via
+`CategoryTheory.ObjectProperty.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding`), and the
+coarse space of the restriction is the closed subspace of the coarse space over the image of `P`
 (`CategoryTheory.ObjectProperty.isClosedEmbedding_isomorphismClasses_map_ι`).
 
 No properness, étaleness, effectiveness or continuity of composition is needed here.
@@ -127,14 +129,46 @@ theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_ι :
     simpa only [Functor.whiskerLeft_app] using
       P.range_topologicalNerveMap_ι hs (SemiSimplexCategory.toSimplexCategory.op.obj m)
 
+/-- Whenever the inclusion of a saturated full subgroupoid induces a topological embedding on fat
+classifying spaces (for instance via `isOpenEmbedding_fatClassifyingSpaceMap_ι` or
+`isClosedEmbedding_fatClassifyingSpaceMap_ι`), its fat classifying space is homeomorphic to the
+corresponding coarse-map preimage with its subspace topology. -/
+def fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding
+    (h : IsEmbedding (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι)) :
+    TauCeti.fatClassifyingSpace P.FullSubcategory ≃ₜ
+      (TauCeti.fatClassifyingSpace.coarseMap hs ⁻¹'
+        (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
+  h.toHomeomorph.trans
+    (Homeomorph.setCongr (P.preimage_coarseMap_eq_range_fatClassifyingSpaceMap_ι hs).symm)
+
+/-- The embedding restriction homeomorphism is induced by the original inclusion functor. -/
+@[simp↓]
+theorem fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_apply_val
+    (h : IsEmbedding (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι))
+    (z : TauCeti.fatClassifyingSpace P.FullSubcategory) :
+    (P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs h z).val =
+      TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z := (rfl)
+
+/-- Mapping the inverse embedding restriction homeomorphism back by inclusion recovers the given
+point of the coarse-map preimage. -/
+@[simp↓]
+theorem fatClassifyingSpaceMap_ι_fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_symm_apply
+    (h : IsEmbedding (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι))
+    (z : TauCeti.fatClassifyingSpace.coarseMap hs ⁻¹'
+      (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
+    TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
+      ((P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs h).symm z) = z.val :=
+  congrArg Subtype.val
+    ((P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs h).apply_symm_apply z)
+
 /-- The fat classifying space of a saturated open restriction is homeomorphic to the
 actual coarse-map preimage, with its subspace topology. -/
 def fatClassifyingSpaceRestrictionHomeomorph (hP : IsOpen {x | P x}) :
     TauCeti.fatClassifyingSpace P.FullSubcategory ≃ₜ
       (TauCeti.fatClassifyingSpace.coarseMap hs ⁻¹'
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
-  (P.isOpenEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding.toHomeomorph.trans
-    (Homeomorph.setCongr (P.preimage_coarseMap_eq_range_fatClassifyingSpaceMap_ι hs).symm)
+  P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs
+    (P.isOpenEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding
 
 /-- The restriction homeomorphism is induced by the original inclusion functor. -/
 -- Rewrite before simplification normalizes the dependent TopCat carriers.
@@ -154,6 +188,35 @@ theorem fatClassifyingSpaceMap_ι_fatClassifyingSpaceRestrictionHomeomorph_symm_
       (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
     TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
       ((P.fatClassifyingSpaceRestrictionHomeomorph hs hP).symm z) = z.val :=
-  congrArg Subtype.val ((P.fatClassifyingSpaceRestrictionHomeomorph hs hP).apply_symm_apply z)
+  P.fatClassifyingSpaceMap_ι_fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_symm_apply
+    hs (P.isOpenEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding z
+
+/-- The fat classifying space of a saturated closed restriction is homeomorphic to the
+actual coarse-map preimage, with its subspace topology. -/
+def fatClassifyingSpaceClosedRestrictionHomeomorph (hP : IsClosed {x | P x}) :
+    TauCeti.fatClassifyingSpace P.FullSubcategory ≃ₜ
+      (TauCeti.fatClassifyingSpace.coarseMap hs ⁻¹'
+        (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
+  P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs
+    (P.isClosedEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding
+
+/-- The closed restriction homeomorphism is induced by the original inclusion functor. -/
+@[simp↓]
+theorem fatClassifyingSpaceClosedRestrictionHomeomorph_apply_val (hP : IsClosed {x | P x})
+    (z : TauCeti.fatClassifyingSpace P.FullSubcategory) :
+    (P.fatClassifyingSpaceClosedRestrictionHomeomorph hs hP z).val =
+      TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z := (rfl)
+
+/-- Mapping the inverse closed restriction homeomorphism back by inclusion recovers the given
+point of the coarse-map preimage. -/
+@[simp↓]
+theorem fatClassifyingSpaceMap_ι_fatClassifyingSpaceClosedRestrictionHomeomorph_symm_apply
+    (hP : IsClosed {x | P x})
+    (z : TauCeti.fatClassifyingSpace.coarseMap hs ⁻¹'
+      (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
+    TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
+      ((P.fatClassifyingSpaceClosedRestrictionHomeomorph hs hP).symm z) = z.val :=
+  P.fatClassifyingSpaceMap_ι_fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_symm_apply
+    hs (P.isClosedEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding z
 
 end CategoryTheory.ObjectProperty

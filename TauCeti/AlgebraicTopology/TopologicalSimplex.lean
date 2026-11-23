@@ -404,6 +404,7 @@ def toTopBoundary (n : SemiSimplexCategory) : Set (toTop.{u}.obj n) :=
   {t | ∃ i, toTopWeights t i = 0}
 
 /-- A point lies on `∂Δⁿ` exactly when one of its barycentric coordinates vanishes. -/
+@[simp]
 theorem mem_toTopBoundary_iff {t : toTop.{u}.obj n} :
     t ∈ toTopBoundary n ↔ ∃ i, toTopWeights t i = 0 :=
   Iff.rfl
