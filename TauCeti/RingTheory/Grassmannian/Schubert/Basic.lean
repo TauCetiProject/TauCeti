@@ -229,71 +229,73 @@ private theorem chartBasisEquiv_apply_mem_rankLocus
     (N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] schubertChartBasis b hp hnk (.inr j)))
     {i : Fin r} {j : Fin k} (hij : p i < schubertComplEmb hp hnk j) :
     chartBasisEquiv (schubertChartBasis b hp hnk) A N i j ∈
-      N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) := by
+      N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) := by
   set q := schubertComplEmb hp hnk
   set s := (p i : ℕ) - i
   let T : Finset (Fin k) := {j' : Fin k | q j' < p i}
   let e : Fin s ≃ T := (T.orderIsoOfFin (card_filter_schubertComplEmb_lt hp hnk i)).toEquiv
-  let m : Fin (s + 1) → M := Fin.snoc (fun u : Fin s ↦ b (q (e u).1)) (b (p i))
+  let m : Fin (s + 1) → M := Fin.snoc (fun u : Fin s ↦ b (q (e u).val)) (b (p i))
   have hm (u : Fin (s + 1)) : m u ∈ b.flag (p i).succ :=
     u.lastCases (by simpa [m] using b.self_mem_flag Fin.castSucc_lt_succ) fun u₀ ↦ by
-      simpa [m] using b.self_mem_flag (Fin.castSucc_lt_succ_iff.mpr (mem_filter.mp (e u₀).2).2.le)
-  let idx : Fin (s + 1) → Fin k := Fin.snoc (fun v : Fin s ↦ (e v).1) j
-  let φ : Fin (s + 1) → Dual A ((A ⊗[R] M) ⧸ N.1.toSubmodule) :=
+      simpa [m] using b.self_mem_flag (Fin.castSucc_lt_succ_iff.mpr (mem_filter.mp
+          (e u₀).property).2.le)
+  let idx : Fin (s + 1) → Fin k := Fin.snoc (fun v : Fin s ↦ (e v).val) j
+  let φ : Fin (s + 1) → Dual A ((A ⊗[R] M) ⧸ N.val.toSubmodule) :=
     fun v ↦ LinearMap.proj (idx v) ∘ₗ (chartQuotEquiv N).symm.toLinearMap
   have hφ (y : A ⊗[R] M) (v : Fin (s + 1)) :
-      φ v (N.1.toSubmodule.mkQ y) = (chartEquiv A _ N).1 y (idx v) :=
+      φ v (N.val.toSubmodule.mkQ y) = (chartEquiv A _ N).val y (idx v) :=
     congrFun ((LinearEquiv.symm_apply_eq _).mpr (chartQuotEquiv_chartEquiv_apply _ N y).symm) _
-  have hψq (j' : Fin k) : (chartEquiv A _ N).1 (1 ⊗ₜ b (q j')) = Pi.single j' 1 := by
+  have hψq (j' : Fin k) : (chartEquiv A _ N).val (1 ⊗ₜ b (q j')) = Pi.single j' 1 := by
     rw [← schubertChartBasis_inr b hp hnk j']; exact chartEquiv_apply_apply_self _ N j'
   let B : Matrix (Fin (s + 1)) (Fin (s + 1)) A :=
-    Matrix.of fun u v ↦ φ v (N.1.toSubmodule.mkQ (1 ⊗ₜ m u))
+    Matrix.of fun u v ↦ φ v (N.val.toSubmodule.mkQ (1 ⊗ₜ m u))
   have hB_tri : B.IsLowerTriangular := fun u v (huv : u < v) ↦ by
     obtain ⟨u₀, rfl⟩ := Fin.exists_castSucc_eq.mpr (huv.trans_le (Fin.le_last v)).ne
     dsimp only [B, m]; rw [Matrix.of_apply, hφ, Fin.snoc_castSucc, hψq]
     revert huv
     refine v.lastCases (fun _ ↦ Pi.single_eq_of_ne (fun h ↦ ?_) 1) fun v₀ hv ↦
       Pi.single_eq_of_ne (fun h ↦ ?_) 1
-    · exact ((mem_filter.mp (e u₀).2).2.trans hij).ne' (congrArg q (by simpa [idx] using h))
+    · exact ((mem_filter.mp (e u₀).property).2.trans hij).ne' (congrArg q (by simpa [idx] using h))
     · exact (Fin.castSucc_lt_castSucc_iff.mp hv).ne
         (e.injective (Subtype.ext (by simpa [idx] using h.symm)))
   have hB_det : B.det = chartBasisEquiv (schubertChartBasis b hp hnk) A N i j := by
     rw [Matrix.det_of_isLowerTriangular B hB_tri, Fin.prod_univ_castSucc]
     dsimp only [B]; simp only [Matrix.of_apply, hφ]
     simp [m, idx, hψq, chartBasisEquiv_apply, schubertChartBasis_inl]
-  exact hB_det ▸ N.1.det_mem_rankLocus φ hm
+  exact hB_det ▸ N.val.det_mem_rankLocus φ hm
 
 private theorem rankLocus_schubertChartBasis_eq_bot_of_eq_zero (Φ : Matrix (Fin r) (Fin k) A)
     (hΦ : ∀ (i' : Fin r) (j : Fin k), p i' < schubertComplEmb hp hnk j → Φ i' j = 0)
     (i : Fin r) :
-    ((chartBasisEquiv (schubertChartBasis b hp hnk) A).symm Φ).1.rankLocus
+    ((chartBasisEquiv (schubertChartBasis b hp hnk) A).symm Φ).val.rankLocus
       (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥ := by
   set q := schubertComplEmb hp hnk
   set N := (chartBasisEquiv (schubertChartBasis b hp hnk) A).symm Φ
   let T : Finset (Fin k) := {j : Fin k | q j < p i}
   have hzero {t : Fin n} (htp : t ≤ p i) {j : Fin k} (hpj : p i < q j) :
-      (chartEquiv A _ N).1 (1 ⊗ₜ b t) j = 0 := by
+      (chartEquiv A _ N).val (1 ⊗ₜ b t) j = 0 := by
     obtain ⟨i' | j', heq⟩ := (schubertIndexEquiv hp hnk).symm.surjective t
     · obtain rfl : p i' = t := by simpa [schubertIndexEquiv] using heq
-      have hval : (chartEquiv A _ N).1 (1 ⊗ₜ b (p i')) = Φ i' := by
+      have hval : (chartEquiv A _ N).val (1 ⊗ₜ b (p i')) = Φ i' := by
         rw [← Equiv.apply_symm_apply (chartBasisEquiv (schubertChartBasis b hp hnk) A) Φ,
           chartBasisEquiv_apply, schubertChartBasis_inl]
       rw [hval, hΦ i' j (htp.trans_lt hpj)]
     · obtain rfl : q j' = t := by simpa [q, schubertIndexEquiv] using heq
-      have hval : (chartEquiv A _ N).1 (1 ⊗ₜ b (q j')) = Pi.single j' 1 := by
+      have hval : (chartEquiv A _ N).val (1 ⊗ₜ b (q j')) = Pi.single j' 1 := by
         simpa [q, schubertChartBasis_inr] using chartEquiv_apply_apply_self _ N j'
       rw [hval, Pi.single_eq_of_ne fun hjj' ↦ (htp.trans_lt hpj).ne (congrArg _ hjj'.symm)]
-  have hcomp : (chartQuotEquiv N).symm.toLinearMap ∘ₗ N.1.toSubmodule.mkQ = (chartEquiv A _ N).1 :=
+  have hcomp :
+      (chartQuotEquiv N).symm.toLinearMap ∘ₗ N.val.toSubmodule.mkQ = (chartEquiv A _ N).val :=
     LinearMap.ext fun x ↦ (LinearEquiv.symm_apply_eq _).mpr
       (chartQuotEquiv_chartEquiv_apply _ N x).symm
   rw [rankLocus_def, ← Submodule.minorsIdeal_map_equiv (chartQuotEquiv N).symm]
-  refine Submodule.minorsIdeal_eq_bot_of_le_span_range (v := fun u : T ↦ Pi.single u.1 (1 : A)) ?_
+  refine Submodule.minorsIdeal_eq_bot_of_le_span_range (v := fun u : T ↦ Pi.single u.val (1 : A)) ?_
     (by rw [Nat.card_eq_fintype_card, Fintype.card_coe, card_filter_schubertComplEmb_lt]; omega)
   rw [← Submodule.map_comp, hcomp, Basis.flag, Submodule.baseChange_span, Submodule.map_span,
     Set.image_image, Set.image_image, Submodule.span_le]
   rintro _ ⟨t, ht, rfl⟩
   dsimp only; rw [TensorProduct.mk_apply]
-  set v := (chartEquiv A _ N).1 (1 ⊗ₜ b t) with hv
+  set v := (chartEquiv A _ N).val (1 ⊗ₜ b t) with hv
   rw [← Finset.univ_sum_single v]
   refine sum_mem fun j _ ↦ ?_
   by_cases hj : j ∈ T
@@ -310,7 +312,7 @@ non-pivot basis vectors `b (schubertComplEmb hp hnk j)` with matrix
 generated by the entries `Φ i j` with `p i < schubertComplEmb hp hnk j`. -/
 theorem iSup_rankLocus_schubertChartBasis
     (N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] schubertChartBasis b hp hnk (.inr j))) :
-    (⨆ i : Fin r, N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i)) =
+    (⨆ i : Fin r, N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i)) =
       Ideal.span {a : A | ∃ (i : Fin r) (j : Fin k),
         p i < schubertComplEmb hp hnk j ∧
           chartBasisEquiv (schubertChartBasis b hp hnk) A N i j = a} := by
@@ -327,14 +329,14 @@ theorem iSup_rankLocus_schubertChartBasis
     rw [Matrix.map_apply, ← RingHom.mem_ker, hker]
     exact Ideal.subset_span ⟨i', j, hij, rfl⟩
   · rintro _ ⟨i, j, hij, rfl⟩
-    exact le_iSup (fun i : Fin r ↦ N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i)) i
+    exact le_iSup (fun i : Fin r ↦ N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i)) i
       (chartBasisEquiv_apply_mem_rankLocus b hp hnk N hij)
 
 /-- A point `N` of the adapted chart satisfies all Schubert rank conditions for `p` if and only if
 its chart matrix `Φ` vanishes at all pairs `(i, j)` with `p i < schubertComplEmb hp hnk j`. -/
 theorem rankLocus_schubertChartBasis_eq_bot_iff
     (N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] schubertChartBasis b hp hnk (.inr j))) :
-    (∀ i : Fin r, N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥) ↔
+    (∀ i : Fin r, N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥) ↔
       ∀ (i : Fin r) (j : Fin k), p i < schubertComplEmb hp hnk j →
         chartBasisEquiv (schubertChartBasis b hp hnk) A N i j = 0 := by
   rw [← iSup_eq_bot, iSup_rankLocus_schubertChartBasis b hp hnk N, Ideal.span_eq_bot]
@@ -353,8 +355,8 @@ private noncomputable def schubertFreeEntriesEquiv :
     {ij : Fin r × Fin k // schubertComplEmb hp hnk ij.2 < p ij.1} ≃
       (univ.image p).echelonFreeEntries :=
   Equiv.ofBijective
-    (fun ij ↦ ⟨(p ij.1.1, schubertComplEmb hp hnk ij.1.2),
-      mem_echelonFreeEntries.mpr ⟨mem_image_of_mem p (mem_univ _), ij.2,
+    (fun ij ↦ ⟨(p ij.val.1, schubertComplEmb hp hnk ij.val.2),
+      mem_echelonFreeEntries.mpr ⟨mem_image_of_mem p (mem_univ _), ij.property,
         schubertComplEmb_notMem_image hp hnk _⟩⟩)
     ⟨fun ⟨⟨i₁, j₁⟩, _⟩ ⟨⟨i₂, j₂⟩, _⟩ h ↦ by
       obtain ⟨hi, hj⟩ := Prod.mk.inj (Subtype.mk.inj h)
@@ -369,7 +371,7 @@ private noncomputable def schubertFreeEntriesEquiv :
 @[simp]
 private theorem schubertFreeEntriesEquiv_apply
     (ij : {ij : Fin r × Fin k // schubertComplEmb hp hnk ij.2 < p ij.1}) :
-    (schubertFreeEntriesEquiv hp hnk ij).1 = (p ij.1.1, schubertComplEmb hp hnk ij.1.2) :=
+    (schubertFreeEntriesEquiv hp hnk ij).val = (p ij.val.1, schubertComplEmb hp hnk ij.val.2) :=
   rfl
 
 @[simp]
@@ -452,12 +454,12 @@ vanish are in bijection with `(Finset.univ.image p).echelonFreeEntries → A`. B
 `StrictMono.card_echelonFreeEntries_image`, there are `∑ i, (p i - i)` coordinates. -/
 noncomputable def schubertCellEquiv (A : Type w) [CommRing A] [Algebra R A] :
     {N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] schubertChartBasis b hp hnk (.inr j)) //
-      ∀ i : Fin r, N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥} ≃
+      ∀ i : Fin r, N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥} ≃
       ((univ.image p).echelonFreeEntries → A) where
   toFun N x :=
-    -chartBasisEquiv (schubertChartBasis b hp hnk) A N.1
-      ((schubertFreeEntriesEquiv hp hnk).symm x).1.1
-      ((schubertFreeEntriesEquiv hp hnk).symm x).1.2
+    -chartBasisEquiv (schubertChartBasis b hp hnk) A N.val
+      ((schubertFreeEntriesEquiv hp hnk).symm x).val.1
+      ((schubertFreeEntriesEquiv hp hnk).symm x).val.2
   invFun a :=
     ⟨(chartBasisEquiv (schubertChartBasis b hp hnk) A).symm (schubertEchelonMatrix hp hnk a),
       (rankLocus_schubertChartBasis_eq_bot_iff b hp hnk _).mpr fun i j hij ↦ by
@@ -468,7 +470,7 @@ noncomputable def schubertCellEquiv (A : Type w) [CommRing A] [Algebra R A] :
     rcases lt_or_gt_of_ne (schubertComplEmb_ne hp hnk i j) with hij | hij
     · simp [hij]
     · rw [schubertEchelonMatrix_eq_zero_of_lt hp hnk _ hij]
-      exact ((rankLocus_schubertChartBasis_eq_bot_iff b hp hnk N.1).mp N.2 i j hij).symm
+      exact ((rankLocus_schubertChartBasis_eq_bot_iff b hp hnk N.val).mp N.property i j hij).symm
   right_inv a := by
     funext x
     obtain ⟨⟨⟨i, j⟩, hij⟩, rfl⟩ := (schubertFreeEntriesEquiv hp hnk).surjective x
@@ -482,17 +484,17 @@ is `-chartBasisEquiv (schubertChartBasis b hp hnk) A N.1 i j`. -/
 @[simp]
 theorem schubertCellEquiv_apply
     (N : {N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] schubertChartBasis b hp hnk (.inr j)) //
-      ∀ i : Fin r, N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥})
+      ∀ i : Fin r, N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥})
     {i : Fin r} {j : Fin k}
     (h : (p i, schubertComplEmb hp hnk j) ∈ (univ.image p).echelonFreeEntries) :
     schubertCellEquiv b hp hnk A N ⟨(p i, schubertComplEmb hp hnk j), h⟩ =
-      -chartBasisEquiv (schubertChartBasis b hp hnk) A N.1 i j := by
+      -chartBasisEquiv (schubertChartBasis b hp hnk) A N.val i j := by
   simp [schubertCellEquiv]
 
 /-- The chart matrix of `(schubertCellEquiv b hp hnk A).symm a` in the adapted chart basis is
 `schubertEchelonMatrix hp hnk a`. -/
 theorem chartBasisEquiv_schubertCellEquiv_symm (a : (univ.image p).echelonFreeEntries → A) :
-    chartBasisEquiv (schubertChartBasis b hp hnk) A ((schubertCellEquiv b hp hnk A).symm a).1 =
+    chartBasisEquiv (schubertChartBasis b hp hnk) A ((schubertCellEquiv b hp hnk A).symm a).val =
       schubertEchelonMatrix hp hnk a :=
   Equiv.apply_symm_apply _ _
 
@@ -500,14 +502,14 @@ theorem chartBasisEquiv_schubertCellEquiv_symm (a : (univ.image p).echelonFreeEn
 `schubertEchelonMatrix hp hnk a` under `chartBasisEquiv`. -/
 @[simp]
 theorem coe_schubertCellEquiv_symm_apply (a : (univ.image p).echelonFreeEntries → A) :
-    ((schubertCellEquiv b hp hnk A).symm a).1 =
+    ((schubertCellEquiv b hp hnk A).symm a).val =
       (chartBasisEquiv (schubertChartBasis b hp hnk) A).symm (schubertEchelonMatrix hp hnk a) :=
   (Equiv.eq_symm_apply _).mpr (chartBasisEquiv_schubertCellEquiv_symm b hp hnk a)
 
 /-- **The point of the Schubert cell with free entries `a` is spanned by the reduced echelon
 rows.** -/
 theorem toSubmodule_schubertCellEquiv_symm (a : (univ.image p).echelonFreeEntries → A) :
-    ((schubertCellEquiv b hp hnk A).symm a).1.1.toSubmodule =
+    ((schubertCellEquiv b hp hnk A).symm a).val.val.toSubmodule =
       Submodule.span A (Set.range fun s : univ.image p ↦
         (b.baseChange A).echelonRow (univ.image p) a s) := by
   rw [coe_schubertCellEquiv_symm_apply, toSubmodule_chartBasisEquiv_symm]
@@ -519,8 +521,8 @@ theorem toSubmodule_schubertCellEquiv_symm (a : (univ.image p).echelonFreeEntrie
 /-- **Naturality of the Schubert cell coordinates.** Base change along `f : A →ₐ[R] B` applies `f`
 to the free echelon entries. -/
 theorem map_schubertCellEquiv_symm (f : A →ₐ[R] B) (a : (univ.image p).echelonFreeEntries → A) :
-    map f ((schubertCellEquiv b hp hnk A).symm a).1.1 =
-      ((schubertCellEquiv b hp hnk B).symm (f ∘ a)).1.1 := by
+    map f ((schubertCellEquiv b hp hnk A).symm a).val.val =
+      ((schubertCellEquiv b hp hnk B).symm (f ∘ a)).val.val := by
   rw [coe_schubertCellEquiv_symm_apply, coe_schubertCellEquiv_symm_apply,
     map_chartBasisEquiv_symm, schubertEchelonMatrix_map]
 
@@ -549,7 +551,7 @@ are in natural bijection with the points of the Schubert cell over `A`. -/
 noncomputable def schubertCellHomEquiv (A : Type w) [CommRing A] [Algebra R A] :
     (MvPolynomial (univ.image p).echelonFreeEntries R →ₐ[R] A) ≃
       {N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] schubertChartBasis b hp hnk (.inr j)) //
-        ∀ i : Fin r, N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥} :=
+        ∀ i : Fin r, N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥} :=
   (MvPolynomial.aevalEquiv _ R A).symm.trans (schubertCellEquiv b hp hnk A).symm
 
 /-- Evaluating the algebra homomorphism classifying a Schubert cell point `N` on the generator
@@ -557,7 +559,7 @@ noncomputable def schubertCellHomEquiv (A : Type w) [CommRing A] [Algebra R A] :
 @[simp]
 theorem schubertCellHomEquiv_symm_apply_X
     (N : {N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] schubertChartBasis b hp hnk (.inr j)) //
-      ∀ i : Fin r, N.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥})
+      ∀ i : Fin r, N.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥})
     (e : (univ.image p).echelonFreeEntries) :
     (schubertCellHomEquiv b hp hnk A).symm N (MvPolynomial.X e) =
       schubertCellEquiv b hp hnk A N e := by
@@ -576,9 +578,9 @@ theorem schubertCellEquiv_schubertCellHomEquiv_apply
 /-- `schubertCellHomEquiv` is natural in `A`. -/
 theorem schubertCellHomEquiv_comp (f : A →ₐ[R] B)
     (g : MvPolynomial (univ.image p).echelonFreeEntries R →ₐ[R] A) :
-    (schubertCellHomEquiv b hp hnk B (f.comp g)).1.1 =
-      map f (schubertCellHomEquiv b hp hnk A g).1.1 :=
-  (congrArg (fun a ↦ ((schubertCellEquiv b hp hnk B).symm a).1.1)
+    (schubertCellHomEquiv b hp hnk B (f.comp g)).val.val =
+      map f (schubertCellHomEquiv b hp hnk A g).val.val :=
+  (congrArg (fun a ↦ ((schubertCellEquiv b hp hnk B).symm a).val.val)
     (funext fun _ ↦ by simp : (MvPolynomial.aevalEquiv _ R B).symm (f.comp g) =
       f ∘ (MvPolynomial.aevalEquiv _ R A).symm g)).trans
     (map_schubertCellEquiv_symm b hp hnk f _).symm
@@ -590,10 +592,11 @@ noncomputable def schubertCellCorepresentableBy :
       (CommAlgCat.of R (MvPolynomial (univ.image p).echelonFreeEntries R)) where
   homEquiv {A} := ConcreteCategory.homEquiv.trans <|
     (schubertCellHomEquiv b hp hnk A.carrier).trans
-      { toFun N := ⟨N.1.1, (mem_schubertCellFunctor_obj_iff b hp hnk A N.1.1).mpr ⟨N.1.2, N.2⟩⟩
+      { toFun N := ⟨N.val.val,
+          (mem_schubertCellFunctor_obj_iff b hp hnk A N.val.val).mpr ⟨N.val.property, N.property⟩⟩
         invFun N :=
-          let h := (mem_schubertCellFunctor_obj_iff b hp hnk A N.1).mp N.2
-          ⟨⟨N.1, h.1⟩, h.2⟩
+          let h := (mem_schubertCellFunctor_obj_iff b hp hnk A N.val).mp N.property
+          ⟨⟨N.val, h.1⟩, h.2⟩
         left_inv _ := rfl
         right_inv _ := rfl }
   homEquiv_comp f g := Subtype.ext <| by exact schubertCellHomEquiv_comp b hp hnk f.hom g.hom
@@ -605,13 +608,13 @@ noncomputable def schubertChartAlgHom :
       MvPolynomial (univ.image p).echelonFreeEntries R :=
   (chartHomEquiv R _ _).symm
     (schubertCellHomEquiv b hp hnk _
-      (AlgHom.id R (MvPolynomial (univ.image p).echelonFreeEntries R))).1
+      (AlgHom.id R (MvPolynomial (univ.image p).echelonFreeEntries R))).val
 
 @[simp]
 theorem chartHomEquiv_schubertChartAlgHom :
     chartHomEquiv R _ _ (schubertChartAlgHom b hp hnk) =
       (schubertCellHomEquiv b hp hnk _
-        (AlgHom.id R (MvPolynomial (univ.image p).echelonFreeEntries R))).1 :=
+        (AlgHom.id R (MvPolynomial (univ.image p).echelonFreeEntries R))).val :=
   Equiv.apply_symm_apply _ _
 
 /-- On the generator `universalLinearMap R _ (b (p i)) j`, `schubertChartAlgHom` evaluates to the
@@ -633,7 +636,7 @@ theorem schubertChartAlgHom_universalLinearMap (i : Fin r) (j : Fin k) :
 theorem chartHomEquiv_comp_schubertChartAlgHom
     (g : MvPolynomial (univ.image p).echelonFreeEntries R →ₐ[R] A) :
     chartHomEquiv R _ A (g.comp (schubertChartAlgHom b hp hnk)) =
-      (schubertCellHomEquiv b hp hnk A g).1 := by
+      (schubertCellHomEquiv b hp hnk A g).val := by
   refine (chartBasisEquiv (schubertChartBasis b hp hnk) A).injective (Matrix.ext fun i j ↦ ?_)
   rw [schubertCellHomEquiv, Equiv.trans_apply, chartBasisEquiv_schubertCellEquiv_symm]
   have h1 := congrFun (chartBasisEquiv_apply (schubertChartBasis b hp hnk)
@@ -650,8 +653,8 @@ theorem schubertChartAlgHom_surjective :
   let sec : MvPolynomial (univ.image p).echelonFreeEntries R →ₐ[R]
       ChartAlgebra R (fun j ↦ schubertChartBasis b hp hnk (.inr j)) :=
     MvPolynomial.aeval fun e ↦ -ChartAlgebra.universalLinearMap R _
-      (b (p ((schubertFreeEntriesEquiv hp hnk).symm e).1.1))
-      ((schubertFreeEntriesEquiv hp hnk).symm e).1.2
+      (b (p ((schubertFreeEntriesEquiv hp hnk).symm e).val.1))
+      ((schubertFreeEntriesEquiv hp hnk).symm e).val.2
   have hsec : (schubertChartAlgHom b hp hnk).comp sec = AlgHom.id R _ := by
     refine MvPolynomial.algHom_ext fun e ↦ ?_
     obtain ⟨⟨⟨i, j⟩, hij⟩, rfl⟩ := (schubertFreeEntriesEquiv hp hnk).surjective e
@@ -664,16 +667,16 @@ theorem ker_schubertChartAlgHom :
     RingHom.ker (schubertChartAlgHom b hp hnk) =
       ⨆ i : Fin r,
         (chartHomEquiv R (fun j ↦ schubertChartBasis b hp hnk (.inr j)) _
-          (AlgHom.id R _)).1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) := by
+          (AlgHom.id R _)).val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) := by
   let x := fun j ↦ schubertChartBasis b hp hnk (.inr j)
   set N₀ := chartHomEquiv R x (ChartAlgebra R x) (AlgHom.id R _)
-  set I := ⨆ i : Fin r, N₀.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i)
+  set I := ⨆ i : Fin r, N₀.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i)
   refine le_antisymm (fun c hc ↦ ?_) ?_
   · -- The quotient point over `ChartAlgebra R x ⧸ I` kills `I`, hence factors through the cell.
     let mk : ChartAlgebra R x →ₐ[R] ChartAlgebra R x ⧸ I := Ideal.Quotient.mkₐ R I
     have hN : ∀ i : Fin r,
-        (chartHomEquiv R x _ mk).1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥ := by
-      have hmap : (chartHomEquiv R x _ mk).1 = map mk N₀.1 := by
+        (chartHomEquiv R x _ mk).val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥ := by
+      have hmap : (chartHomEquiv R x _ mk).val = map mk N₀.val := by
         dsimp only [N₀]; rw [← chartHomEquiv_comp x mk (AlgHom.id R _), AlgHom.comp_id]
       rw [← iSup_eq_bot, hmap]
       simp_rw [rankLocus_map, ← Ideal.map_iSup]

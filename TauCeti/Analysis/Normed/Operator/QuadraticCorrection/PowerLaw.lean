@@ -162,8 +162,8 @@ theorem eventually_exists_continuous_forall_add_add_eq_zero
   filter_upwards [hDQ, hQ, hN, hN0, he, hT,
     eventually_contraction_budget hC hL hδ hε hδ0 hql hqa] with h hDQ hQ hN hN0 he hT hbud
   obtain ⟨hεδ, hεL⟩ := hbud
-  have hC0 : (0 : ℝ) ≤ C h := (C h).2
-  have hL0 : (0 : ℝ) ≤ L h := (L h).2
+  have hC0 : (0 : ℝ) ≤ C h := (C h).property
+  have hL0 : (0 : ℝ) ≤ L h := (L h).property
   -- The radius `r = 2 C ε` is below `δ`, and `C L r = 2 C² L ε < 1`.
   have hr : (C h : ℝ) * L h * (2 * C h * ε h) < 1 := by nlinarith
   have hre (p : P) : 2 * C h * ‖e h p‖ ≤ 2 * C h * ε h := by gcongr; exact he p
@@ -208,7 +208,7 @@ theorem eventually_exists_continuous_forall_add_add_eq_zero_of_norm_le_mul {K : 
     with h ⟨x, hx, hxsol⟩ ⟨hKδ, hKL⟩
   refine ⟨x, hx, fun p ↦ ⟨(hxsol p).1, (hxsol p).2.1, (hxsol p).2.2.1, ?_⟩⟩
   intro y hyQ hye hyK
-  have hCL : (0 : ℝ) ≤ C h * L h := mul_nonneg (C h).2 (L h).2
+  have hCL : (0 : ℝ) ≤ C h * L h := mul_nonneg (C h).property (L h).property
   exact (hxsol p).2.2.2 y hyQ hye (hyK.trans hKδ)
     ((mul_le_mul_of_nonneg_left hyK hCL).trans_lt hKL)
 

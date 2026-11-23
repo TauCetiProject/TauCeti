@@ -129,6 +129,14 @@ theorem extend_of {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g U) {z : ℂ} (h
     extend (of U g hg) z = g z := by
   rw [extend_apply _ ⟨z, hz⟩, of_apply]
 
+/-- The zero extension of zero is zero. -/
+@[simp]
+theorem extend_zero : extend (0 : holomorphicFunctions U) = 0 := by
+  ext z
+  by_cases hz : z ∈ U
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [hz]
+
 /-- Restriction along an inclusion of open domains. -/
 noncomputable def restrict (h : V ≤ U) : holomorphicFunctions U →ₐ[ℂ] holomorphicFunctions V :=
   ((ContinuousMap.compRightAlgHom ℂ ℂ
@@ -169,7 +177,7 @@ theorem restrict_comp_restrict (hVU : V ≤ U) (hWV : W ≤ V) :
 theorem continuous_restrict (h : V ≤ U) : Continuous (restrict h) := by
   unfold restrict
   exact (ContinuousMap.compRightAlgHom_continuous ℂ ℂ
-    ⟨Set.inclusion h, continuous_inclusion h⟩).comp continuous_subtype_val |>.subtype_mk _
+    ⟨Set.inclusion h, continuous_inclusion h⟩).comp continuous_subtypeVal |>.subtype_mk _
 
 /-- Convergence in the inherited topology is locally uniform convergence on the open domain. -/
 theorem tendsto_iff_tendstoLocallyUniformlyOn {ι : Type*} {p : Filter ι}
@@ -187,7 +195,7 @@ theorem exists_le_mapsTo_extend {s : Set ℂ} (hs : s ⊆ U) (f : holomorphicFun
     (hf : MapsTo (extend f) s V) :
     ∃ U' : Opens ℂ, s ⊆ U' ∧ U' ≤ U ∧ MapsTo (extend f) U' V := by
   refine ⟨⟨Subtype.val '' (f.val ⁻¹' (V : Set ℂ)),
-    U.isOpen.isOpenMap_subtype_val _ (V.isOpen.preimage f.val.continuous)⟩,
+    U.isOpen.isOpenMap_subtypeVal _ (V.isOpen.preimage f.val.continuous)⟩,
     fun z hz => ⟨⟨z, hs hz⟩, ?_, rfl⟩, ?_, ?_⟩
   · rw [mem_preimage, ← extend_apply]
     exact hf hz
@@ -281,7 +289,7 @@ theorem continuous_comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V
   exact (ContinuousMap.compRightAlgHom_continuous ℂ ℂ
     (ContinuousMap.mk
       (fun z : U => (⟨f.val z, apply_mem_of_mapsTo_extend f hf z⟩ : V))
-      (f.val.continuous.subtype_mk _))).comp continuous_subtype_val |>.subtype_mk _
+      (f.val.continuous.subtype_mk _))).comp continuous_subtypeVal |>.subtype_mk _
 
 end HolomorphicFunctions
 

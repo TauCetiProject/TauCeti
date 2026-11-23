@@ -153,7 +153,7 @@ theorem crossedProjection_conj_smul (g x : G) :
     h.equiv_fst_mul_equiv_snd _
   have hd : g * (h.equiv (g⁻¹ * x * g)).2 * g⁻¹ ∈ MulAut.conj g • D := by
     rw [mem_pointwise_smul_iff_inv_smul_mem]
-    convert (h.equiv (g⁻¹ * x * g)).2.2 using 1
+    convert (h.equiv (g⁻¹ * x * g)).2.property using 1
     simp [mul_assoc]
   have hx : x = ((g • h.crossedProjection (g⁻¹ * x * g) : N) : G) *
       (⟨_, hd⟩ : ↥(MulAut.conj g • D)) := by

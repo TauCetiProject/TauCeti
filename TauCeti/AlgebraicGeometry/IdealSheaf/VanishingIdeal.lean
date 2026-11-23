@@ -54,7 +54,7 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {X : Scheme.{u}}
+variable {U X : Scheme.{u}}
 
 /-- The reduced induced closed subscheme structure on a closed subset is reduced. -/
 instance isReduced_subscheme_vanishingIdeal (Z : Closeds X) :
@@ -107,7 +107,7 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
   refine le_ofIdeals_iff.mpr fun U s hs ↦ RingHom.mem_ker.mpr (eq_zero_of_basicOpen_eq_bot _ ?_)
   rw [← Scheme.preimage_basicOpen, eq_bot_iff]
   rintro y hy
-  have hZ : f y ∈ X.zeroLocus (U := U.1) ((vanishingIdeal Z).ideal U) :=
+  have hZ : f y ∈ X.zeroLocus (U := U.val) ((vanishingIdeal Z).ideal U) :=
     (mem_support_iff_of_mem (X.basicOpen_le s hy)).mp <| by
       rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
       exact h ⟨y, rfl⟩
@@ -166,7 +166,7 @@ theorem _root_.AlgebraicGeometry.Scheme.isOpenImmersion_of_comp_nilradical_subsc
 `vanishingIdeal (j ⁻¹' Z)`. -/
 theorem comap_vanishingIdeal_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
     (Z : Closeds X) :
-    (vanishingIdeal Z).comap j = vanishingIdeal ⟨j ⁻¹' Z, Z.2.preimage j.continuous⟩ := by
+    (vanishingIdeal Z).comap j = vanishingIdeal ⟨j ⁻¹' Z, Z.isClosed'.preimage j.continuous⟩ := by
   have hrad : ((vanishingIdeal Z).comap j).radical = (vanishingIdeal Z).comap j :=
     IdealSheafData.ext (funext fun W ↦ by
       rw [radical_ideal, ideal_comap_of_isOpenImmersion]
@@ -196,5 +196,20 @@ theorem comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range {U : Schem
   simp only [Closeds.coe_mk, Set.mem_preimage]
   rw [j.isOpenEmbedding.isInducing.closure_eq_preimage_closure_image, Set.image_singleton,
     Set.mem_preimage]
+
+/-- Along an open immersion `j : U ⟶ X`, the vanishing ideal sheaf of `closure {j u}` pulls back to
+the vanishing ideal sheaf of `closure {u}`. -/
+theorem comap_vanishingIdeal_closure_singleton_of_isOpenImmersion (j : U ⟶ X) [IsOpenImmersion j]
+    (u : U) :
+    (vanishingIdeal ⟨closure {j u}, isClosed_closure⟩).comap j =
+      vanishingIdeal ⟨closure {u}, isClosed_closure⟩ := by
+  rw [comap_vanishingIdeal_of_isOpenImmersion]
+  congr 1
+  ext1
+  simp only [Closeds.coe_mk]
+  rw [j.isOpenEmbedding.isOpenMap.preimage_closure_eq_closure_preimage j.continuous]
+  congr 1
+  ext w
+  simp [j.isOpenEmbedding.injective.eq_iff]
 
 end AlgebraicGeometry.Scheme.IdealSheafData

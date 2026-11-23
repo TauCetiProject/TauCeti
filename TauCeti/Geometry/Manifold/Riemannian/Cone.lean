@@ -62,7 +62,7 @@ def cone (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) 
       (fun p : radiusDomain × M ↦ TangentSpace ((𝓘(ℝ)).prod I) p) :=
   ContMDiffRiemannianMetric.warpedProdTangentSpace
     (((riemannianMetricVectorSpace ℝ).ofLE le_top).restrictOpenTangentSpace radiusDomain)
-    (fun r : radiusDomain ↦ (r : ℝ)) contMDiff_subtype_val
+    (fun r : radiusDomain ↦ (r : ℝ)) contMDiff_subtypeVal
     (fun r ↦ (coe_radiusDomain_pos r).ne') g
 
 /-- The cone metric is the warped product of the restricted real metric and the link metric. -/
@@ -71,7 +71,7 @@ theorem cone_eq_warpedProdTangentSpace
     cone g =
       warpedProdTangentSpace
         (((riemannianMetricVectorSpace ℝ).ofLE le_top).restrictOpenTangentSpace radiusDomain)
-        (fun r : radiusDomain ↦ (r : ℝ)) contMDiff_subtype_val
+        (fun r : radiusDomain ↦ (r : ℝ)) contMDiff_subtypeVal
         (fun r ↦ (coe_radiusDomain_pos r).ne') g :=
   (rfl)
 

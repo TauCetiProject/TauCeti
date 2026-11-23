@@ -79,7 +79,7 @@ def stiefelOneHomeomorphSphere : stiefel E 1 ≃ₜ sphere (0 : E) 1 where
     exact coe_stiefelProj 0 v
   right_inv _ := Subtype.ext (by simp)
   continuous_toFun := continuous_stiefelProj 0
-  continuous_invFun := (continuous_pi fun _ ↦ continuous_subtype_val).subtype_mk _
+  continuous_invFun := (continuous_pi fun _ ↦ continuous_subtypeVal).subtype_mk _
 
 variable {E}
 
@@ -111,15 +111,15 @@ section LocallyTrivial
 /-- Keeping only the first vector of an orthonormal `(k + 1)`-frame of `ℝ^N`. -/
 private def firstOrthonormalFrame {k N : ℕ} (f : finiteOrthonormalFrame ℝ (k + 1) N) :
     finiteOrthonormalFrame ℝ 1 N :=
-  ⟨fun _ ↦ f.1 0, f.2.comp _ fun _ _ _ ↦ Subsingleton.elim _ _⟩
+  ⟨fun _ ↦ f.val 0, f.property.comp _ fun _ _ _ ↦ Subsingleton.elim _ _⟩
 
 private theorem coe_firstOrthonormalFrame {k N : ℕ} (f : finiteOrthonormalFrame ℝ (k + 1) N)
-    (i : Fin 1) : (firstOrthonormalFrame f : Fin 1 → Fin N → ℝ) i = f.1 0 :=
+    (i : Fin 1) : (firstOrthonormalFrame f : Fin 1 → Fin N → ℝ) i = f.val 0 :=
   (rfl)
 
 private theorem continuous_firstOrthonormalFrame {k N : ℕ} :
     Continuous (firstOrthonormalFrame (k := k) (N := N)) :=
-  continuous_induced_rng.2 <| continuous_pi fun _ ↦ (continuous_apply 0).comp continuous_subtype_val
+  continuous_induced_rng.2 <| continuous_pi fun _ ↦ (continuous_apply 0).comp continuous_subtypeVal
 
 private theorem firstOrthonormalFrame_unitaryMap {k N : ℕ} (A : Matrix.unitaryGroup (Fin N) ℝ)
     (f : finiteOrthonormalFrame ℝ (k + 1) N) :
@@ -149,7 +149,7 @@ private theorem exists_trivialization_stiefelProj_euclidean (n k : ℕ)
     have : ContinuousSMul (Matrix.unitaryGroup (Fin (1 + n)) ℝ)
         (finiteOrthonormalFrame ℝ (k + 1) (1 + n)) :=
       ⟨finiteOrthonormalFrame.continuous_unitaryMap⟩
-    let φ₁ := finiteOrthonormalFrame.sphereHomeomorph (1 + n)
+    let φ₁ := finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n)
     let φk := stiefel.finiteOrthonormalFrameHomeomorph (k + 1) (1 + n)
     obtain ⟨c, hcq⟩ := exists_trivialization_unitaryFrameMap (𝕜 := ℝ) (r := 1) (m := n) (φ₁.symm q)
     let f₀ := finiteOrthonormalFrame.standard ℝ (Nat.le_add_right 1 n)
@@ -187,10 +187,11 @@ private theorem exists_trivialization_stiefelProj_euclidean (n k : ℕ)
     simpa [e₁, Trivialization.transFiberHomeomorph, Trivialization.homeomorphComp,
       Trivialization.compHomeomorph, e₀, equivariantLocalSectionTrivialization_baseSet] using hcq
   · have : IsEmpty (stiefel V (k + 1)) :=
-      ⟨fun v ↦ absurd ((nonempty_stiefel (E := V) (k := k + 1)).1 ⟨v.1, v.2⟩)
+      ⟨fun v ↦ absurd ((nonempty_stiefel (E := V) (k := k + 1)).1 ⟨v.val, v.property⟩)
         (by rw [finrank_euclideanSpace_fin]; omega)⟩
     have : IsEmpty (stiefel (EuclideanSpace ℝ (Fin n)) k) :=
-      ⟨fun v ↦ absurd ((nonempty_stiefel (E := EuclideanSpace ℝ (Fin n)) (k := k)).1 ⟨v.1, v.2⟩)
+      ⟨fun v ↦ absurd
+        ((nonempty_stiefel (E := EuclideanSpace ℝ (Fin n)) (k := k)).1 ⟨v.val, v.property⟩)
         (by rw [finrank_euclideanSpace_fin]; omega)⟩
     exact ⟨Trivialization.ofIsEmpty _ _, by simp⟩
 
@@ -251,13 +252,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- **Connectivity of Stiefel manifolds.** For a finite-dimensional real inner product space `E`,
 the Stiefel manifold `V_k(E)` is `(finrank ℝ E - k - 1)`-connected: its homotopy group indexed by
 a finite type `M` is trivial whenever `Nat.card M + k < finrank ℝ E`. -/
-theorem subsingleton_homotopyGroup_stiefel [FiniteDimensional ℝ E] {M : Type*} [Finite M] {k : ℕ}
+theorem subsingleton_homotopyGroup_stiefel [FiniteDimensional ℝ E] {M : Type*} {k : ℕ}
     (h : Nat.card M + k < finrank ℝ E) (v : stiefel E k) :
     Subsingleton (HomotopyGroup M (stiefel E k) v) := by
   let L : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)) := (stdOrthonormalBasis ℝ E).repr
   let φ : stiefel E k ≃ₜ finiteOrthonormalFrame ℝ k (finrank ℝ E) :=
     (L.stiefelHomeomorph k).trans (stiefel.finiteOrthonormalFrameHomeomorph k (finrank ℝ E))
-  have := finiteOrthonormalFrame.subsingleton_homotopyGroup h (φ v)
+  have := finiteOrthonormalFrame.subsingleton_homotopyGroup_real h (φ v)
   exact (HomotopyGroup.homeomorphEquiv φ v).subsingleton
 
 /-- For `k < finrank ℝ E`, the Stiefel manifold `V_k(E)` is path-connected. -/

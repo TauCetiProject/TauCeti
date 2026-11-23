@@ -68,11 +68,12 @@ theorem mem_upperStripTraces_iff {C : CompatibleCouple ℂ X₀ X₁ V}
 `G 0 = 0` on the closed strip and extended by zero outside `verticalClosedStrip 0 1`. -/
 def upperStripFunction (g : C.upperStripTraces) : ℂ → C.SumSpace :=
   (verticalClosedStrip 0 1).indicator fun z =>
-    (mem_upperStripTraces_iff.1 g.2).choose z - (mem_upperStripTraces_iff.1 g.2).choose 0
+    (mem_upperStripTraces_iff.1 g.property).choose z -
+        (mem_upperStripTraces_iff.1 g.property).choose 0
 
 theorem isUpperStripFunction_upperStripFunction (g : C.upperStripTraces) :
     C.IsUpperStripFunction (C.upperStripFunction g) g :=
-  ((mem_upperStripTraces_iff.1 g.2).choose_spec.sub_const _).congr fun _ hz => by
+  ((mem_upperStripTraces_iff.1 g.property).choose_spec.sub_const _).congr fun _ hz => by
     rw [upperStripFunction, indicator_of_mem hz]
 
 @[simp] theorem upperStripFunction_apply_zero (g : C.upperStripTraces) :
@@ -152,13 +153,13 @@ theorem norm_upperStripDerivEval_le (z : ℂ) : ‖C.upperStripDerivEval z‖ �
 private theorem tendstoLocallyUniformlyOn_upperStripFunction [CompleteSpace X₀] [CompleteSpace X₁]
     {u : ℕ → C.upperStripTraces}
     {q : (offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁)}
-    (hlim : Tendsto (fun n => (u n).1) atTop (𝓝 q)) :
+    (hlim : Tendsto (fun n => (u n).val) atTop (𝓝 q)) :
     TendstoLocallyUniformlyOn (fun n => C.upperStripFunction (u n))
       (fun z => limUnder atTop fun n => C.upperStripFunction (u n) z)
       atTop (verticalClosedStrip 0 1) := by
   have hdist (n m : ℕ) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
       ‖C.upperStripFunction (u n) z - C.upperStripFunction (u m) z‖ ≤
-        ‖(u n).1 - (u m).1‖ * ‖z‖ := by
+        ‖(u n).val - (u m).val‖ * ‖z‖ := by
     simpa using ((C.isUpperStripFunction_upperStripFunction (u n)).sub
       (C.isUpperStripFunction_upperStripFunction (u m))).norm_sub_apply_zero_le hz
   have hlimz {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :

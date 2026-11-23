@@ -548,24 +548,24 @@ theorem jetCoordChange_last_symmetric_bijective {r : ℕ} {n : ℕ∞ω}
     Function.Bijective
       (fun A : {A : E [×(r + 1)]→L[𝕜] F //
           ∀ (v : Fin (r + 1) → E) (σ : Equiv.Perm (Fin (r + 1))), A (v ∘ σ) = A v} ↦
-        (⟨jetCoordChange (r + 1) h g x (jetSnoc j₀ A.1) (Fin.last (r + 1)),
-          jetCoordChange_jetSnoc_last_comp_perm hn hh hg hj₀ A.2⟩ :
+        (⟨jetCoordChange (r + 1) h g x (jetSnoc j₀ A.val) (Fin.last (r + 1)),
+          jetCoordChange_jetSnoc_last_comp_perm hn hh hg hj₀ A.property⟩ :
           {B : E' [×(Fin.last (r + 1)).val]→L[𝕜] G //
             ∀ (v : Fin (Fin.last (r + 1)).val → E')
               (σ : Equiv.Perm (Fin (Fin.last (r + 1)).val)), B (v ∘ σ) = B v})) := by
   have hbij := jetCoordChange_last_bijective h g x j₀ a c ha hc
   refine ⟨fun _ _ hEq ↦ Subtype.ext (hbij.1 (congrArg Subtype.val hEq)), fun B ↦ ?_⟩
-  obtain ⟨A, hA⟩ := hbij.2 B.1
+  obtain ⟨A, hA⟩ := hbij.2 B.val
   dsimp only at hA
   have hB0 := jetCoordChange_jetSnoc_last_comp_perm hn hh hg hj₀
     (A := (0 : E [×(r + 1)]→L[𝕜] F)) (fun _ _ ↦ rfl)
   have hv (u : Fin (r + 1) → E) : a (A u) =
-      (B.1 - jetCoordChange (r + 1) h g x (jetSnoc j₀ 0) (Fin.last (r + 1))) (c.symm ∘ u) := by
+      (B.val - jetCoordChange (r + 1) h g x (jetSnoc j₀ 0) (Fin.last (r + 1))) (c.symm ∘ u) := by
     rw [← hA, jetCoordChange_jetSnoc_last_eq h g x j₀ A, ha, hc, add_sub_cancel_right]
     simp [Function.comp_def]
   refine ⟨⟨A, fun v σ ↦ a.injective ?_⟩, Subtype.ext hA⟩
   rw [hv (v ∘ σ), hv v, _root_.sub_apply, _root_.sub_apply]
-  exact congrArg₂ (· - ·) (B.2 (c.symm ∘ v) σ) (hB0 (c.symm ∘ v) σ)
+  exact congrArg₂ (· - ·) (B.property (c.symm ∘ v) σ) (hB0 (c.symm ∘ v) σ)
 
 /-! ### Smoothness on bundle-chart domains -/
 

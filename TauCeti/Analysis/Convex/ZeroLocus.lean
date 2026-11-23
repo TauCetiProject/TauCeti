@@ -16,10 +16,15 @@ import Mathlib.Tactic.Linarith
 For a finite family of nonpositive affine functions on a nonempty convex set,
 `Convex.exists_mem_zero_iff_forall` finds a single point detecting which functions vanish on
 the whole set. This supplies the active-inequality classification of polyhedral faces.
+A segment between a strictly feasible point and a point violating one affine row
+crosses that row at zero, while the other rows remain strict.
 
 Adapted from `Mei/Geometry/Convex/Polyhedron/Face.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
 commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
+The single-active crossing lemma is adapted from
+`Mei/Geometry/Convex/Polyhedron/Face/Facet.lean` at commit
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f`, with the same copyright and author.
 -/
 
 public section
@@ -71,3 +76,23 @@ theorem Convex.exists_mem_zero_iff_forall {F : Set V} (hF : Convex ℝ F) (hne :
       · intro hall
         rw [hmid, hall p hp, hall q hq]
         norm_num
+
+namespace TauCeti
+
+/-- The segment from a strictly feasible point to a point violating just row `j` crosses that
+row at zero while all the other rows remain strict. -/
+theorem exists_mem_openSegment_single_active (g : ι → (V →ᵃ[ℝ] ℝ)) (j : ι) {q x : V}
+    (hq : ∀ l, g l q < 0) (hxj : 0 < g j x) (hx : ∀ l ≠ j, g l x ≤ 0) :
+    ∃ p ∈ openSegment ℝ q x, g j p = 0 ∧ ∀ l ≠ j, g l p < 0 := by
+  have hzero : 0 ∈ (g j) '' openSegment ℝ q x := by
+    rw [image_openSegment, openSegment_eq_Ioo ((hq j).trans hxj)]
+    exact ⟨hq j, hxj⟩
+  obtain ⟨p, hp, hpj⟩ := hzero
+  refine ⟨p, hp, hpj, fun l hl => ?_⟩
+  rw [openSegment_eq_image_lineMap] at hp
+  obtain ⟨t, ht, rfl⟩ := hp
+  rw [(g l).apply_lineMap, AffineMap.lineMap_apply_ring]
+  exact add_neg_of_neg_of_nonpos (mul_neg_of_pos_of_neg (sub_pos.mpr ht.2) (hq l))
+    (mul_nonpos_of_nonneg_of_nonpos ht.1.le (hx l hl))
+
+end TauCeti

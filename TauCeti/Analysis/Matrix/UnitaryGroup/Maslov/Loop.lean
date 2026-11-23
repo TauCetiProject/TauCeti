@@ -57,8 +57,10 @@ In particular the Robbin–Salamon index of a closed path of Lagrangians, as giv
 formula, has the sign and normalization of the native loop invariant, which counts half-turns of
 the determinant of a frame. Through the loop comparison, Souriau's index of paths whose Lagrangians
 close up inherits the invariance of the native index under free homotopies, along which the
-endpoints move (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`); for a general
-path it is only invariant under homotopies fixing the endpoints.
+endpoints move (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`). For a general
+path it is not invariant under arbitrary free homotopies, but it is invariant under homotopies
+along whose endpoints the eigenvalue `1` of the Souriau map keeps its multiplicity
+(`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_rootMultiplicity_eq`).
 
 ## Main declarations
 
@@ -106,7 +108,8 @@ theorem realImage_eq_realImage_iff_souriau_eq {U V : unitaryGroup n ℂ} :
     have hgram (W : unitaryGroup n ℂ) :
         (((Unitary.toUnits W : GL n ℂ) : Matrix n n ℂ)ᴴ * (Unitary.toUnits W : GL n ℂ)).map
           Complex.re = 1 := by
-      rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.2,
+      rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose,
+          Unitary.star_mul_self_of_mem W.property,
         Matrix.map_one _ Complex.zero_re Complex.one_re]
     obtain ⟨N, hN, hVN⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
       (M := Unitary.toUnits U) (M' := Unitary.toUnits V)
@@ -160,7 +163,7 @@ noncomputable def realImagePath {U V : unitaryGroup n ℂ} (γ : Path U V) :
   exists_frame := ⟨TauCeti.realSubspace n, TauCeti.isMaximalTotallyReal_realSubspace,
     fun t ↦ (γ t : Matrix n n ℂ).toEuclideanCLE (det_isUnit (γ t)).ne_zero,
     by simpa only [coe_toEuclideanCLE, Function.comp_def] using
-      continuous_toEuclideanCLM.comp (continuous_subtype_val.comp γ.continuous),
+      continuous_toEuclideanCLM.comp (continuous_subtypeVal.comp γ.continuous),
     fun t ↦ realImage_eq_map_toEuclideanCLE _⟩
 
 @[simp]

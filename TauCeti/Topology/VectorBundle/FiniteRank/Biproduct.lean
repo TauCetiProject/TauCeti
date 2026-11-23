@@ -120,7 +120,7 @@ theorem coordChange_whitneySum_splitCoords_symm (A D : FiniteRankBundleCore 𝕜
 /-- Projection of the Whitney sum onto its first bundle. -/
 def whitneyFst (A D : FiniteRankBundleCore 𝕜 B) : whitneySum A D ⟶ A where
   operator i j :=
-    ⟨fun x => (A.core.coordChange i j x.1).comp
+    ⟨fun x => (A.core.coordChange i j x.val).comp
       ((ContinuousLinearMap.fst 𝕜 _ _).comp
         (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap),
       (((A.core.continuousOn_coordChange i j).mono
@@ -141,7 +141,7 @@ def whitneyFst (A D : FiniteRankBundleCore 𝕜 B) : whitneySum A D ⟶ A where
 /-- Projection of the Whitney sum onto its second bundle. -/
 def whitneySnd (A D : FiniteRankBundleCore 𝕜 B) : whitneySum A D ⟶ D where
   operator i j :=
-    ⟨fun x => (D.core.coordChange i j x.1).comp
+    ⟨fun x => (D.core.coordChange i j x.val).comp
       ((ContinuousLinearMap.snd 𝕜 _ _).comp
         (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap),
       (((D.core.continuousOn_coordChange i j).mono
@@ -163,7 +163,7 @@ def whitneySnd (A D : FiniteRankBundleCore 𝕜 B) : whitneySum A D ⟶ D where
 def whitneyInl (A D : FiniteRankBundleCore 𝕜 B) : A ⟶ whitneySum A D where
   operator i j :=
     ⟨fun x => (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
-      ((ContinuousLinearMap.inl 𝕜 _ _).comp (A.core.coordChange i j x.1)),
+      ((ContinuousLinearMap.inl 𝕜 _ _).comp (A.core.coordChange i j x.val)),
       ((((A.core.continuousOn_coordChange i j).mono
         (fun x (h : x ∈ A.core.baseSet i ∩ (A.core.baseSet j ∩ D.core.baseSet j)) =>
           ⟨h.1, h.2.1⟩)).domRestrict.const_clm_comp _).const_clm_comp _)⟩
@@ -183,7 +183,7 @@ def whitneyInl (A D : FiniteRankBundleCore 𝕜 B) : A ⟶ whitneySum A D where
 def whitneyInr (A D : FiniteRankBundleCore 𝕜 B) : D ⟶ whitneySum A D where
   operator i j :=
     ⟨fun x => (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
-      ((ContinuousLinearMap.inr 𝕜 _ _).comp (D.core.coordChange i j x.1)),
+      ((ContinuousLinearMap.inr 𝕜 _ _).comp (D.core.coordChange i j x.val)),
       ((((D.core.continuousOn_coordChange i j).mono
         (fun x (h : x ∈ D.core.baseSet i ∩ (A.core.baseSet j ∩ D.core.baseSet j)) =>
           ⟨h.1, h.2.2⟩)).domRestrict.const_clm_comp _).const_clm_comp _)⟩
@@ -766,11 +766,11 @@ This holds for every `p`, with no base-set hypothesis. -/
 theorem localTriv_prod_whitneySumFiberEquiv (A D : FiniteRankBundleCore 𝕜 B) (i : B)
     (p : (whitneySum A D).core.TotalSpace) :
     (((A.core.localTriv i).prod (D.core.localTriv i))
-      ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩).2 =
+      ⟨p.proj, whitneySumFiberEquiv A D p.proj p.snd⟩).2 =
       splitCoords (𝕜 := 𝕜) A.rank D.rank (((whitneySum A D).core.localTriv i p).2) := by
   simp only [Trivialization.prod_apply, Trivialization.Prod.toFun', localTriv_apply,
     A.indexAt_eq, D.indexAt_eq, (whitneySum A D).indexAt_eq, whitneySumFiberEquiv_apply]
-  exact (splitCoords_coordChange_whitneySum A D p.proj i p.proj p.2).symm
+  exact (splitCoords_coordChange_whitneySum A D p.proj i p.proj p.snd).symm
 
 /-- In matching local trivializations at `i`, `(whitneySumFiberEquiv A D q.proj).symm` intertwines
 Mathlib's product trivialization `(A.core.localTriv i).prod (D.core.localTriv i)` with the
@@ -778,7 +778,7 @@ Whitney-sum core chart. This holds for every `q`, with no base-set hypothesis. -
 theorem localTriv_whitneySumFiberEquiv_symm (A D : FiniteRankBundleCore 𝕜 B) (i : B)
     (q : TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber)) :
     ((whitneySum A D).core.localTriv i
-      ⟨q.proj, (whitneySumFiberEquiv A D q.proj).symm q.2⟩).2 =
+      ⟨q.proj, (whitneySumFiberEquiv A D q.proj).symm q.snd⟩).2 =
       (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm
         ((((A.core.localTriv i).prod (D.core.localTriv i)) q).2) := by
   rcases q with ⟨y, w⟩
@@ -792,8 +792,8 @@ direct-sum bundle `A.core.Fiber ×ᵇ D.core.Fiber`, over the identity of the ba
 def whitneySumTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
     (whitneySum A D).core.TotalSpace ≃ₜ
       TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber) where
-  toFun p := ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩
-  invFun p := ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, whitneySumFiberEquiv A D p.proj p.snd⟩
+  invFun p := ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.snd⟩
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := by
@@ -821,21 +821,21 @@ def whitneySumTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
 @[simp]
 theorem whitneySumTotalSpaceHomeomorph_apply (A D : FiniteRankBundleCore 𝕜 B)
     (p : (whitneySum A D).core.TotalSpace) :
-    whitneySumTotalSpaceHomeomorph A D p = ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩ := (rfl)
+    whitneySumTotalSpaceHomeomorph A D p = ⟨p.proj, whitneySumFiberEquiv A D p.proj p.snd⟩ := (rfl)
 
 @[simp]
 theorem whitneySumTotalSpaceHomeomorph_symm_apply (A D : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber)) :
     (whitneySumTotalSpaceHomeomorph A D).symm p =
-      ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.2⟩ := (rfl)
+      ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.snd⟩ := (rfl)
 
 /-- `whitneySumTotalSpaceHomeomorph` intertwines `whitneyMap f g` on the Whitney sum with the
 componentwise action of `f` and `g` on Mathlib's direct-sum bundle. -/
 theorem whitneySumTotalSpaceHomeomorph_naturality {A A' D D' : FiniteRankBundleCore 𝕜 B}
     (f : A ⟶ A') (g : D ⟶ D') (p : (whitneySum A D).core.TotalSpace) :
     whitneySumTotalSpaceHomeomorph A' D' ((whitneyMap f g).totalSpaceMap p) =
-      ⟨p.proj, (f.fiberMap p.proj (whitneySumTotalSpaceHomeomorph A D p).2.1,
-        g.fiberMap p.proj (whitneySumTotalSpaceHomeomorph A D p).2.2)⟩ := by
+      ⟨p.proj, (f.fiberMap p.proj (whitneySumTotalSpaceHomeomorph A D p).snd.1,
+        g.fiberMap p.proj (whitneySumTotalSpaceHomeomorph A D p).snd.2)⟩ := by
   rw [whitneySumTotalSpaceHomeomorph_apply A D p]
   rcases p with ⟨x, v⟩
   rw [CoordinateHom.totalSpaceMap_mk, whitneySumTotalSpaceHomeomorph_apply]

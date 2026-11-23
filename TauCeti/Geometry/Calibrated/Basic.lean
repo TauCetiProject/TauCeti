@@ -251,7 +251,7 @@ theorem IsCalibration.restrictOpenTangentSpace [IsManifold I 2 M]
     {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {k : ℕ} {φ : RoughForm I M ℝ k} (hφ : IsCalibration g φ) (U : Opens M) :
     IsCalibration (g.restrictOpenTangentSpace U) (mpullback I I (Subtype.val : U → M) φ) :=
-  hφ.mpullback_of_inner_eq contMDiff_subtype_val fun x v w ↦ by
+  hφ.mpullback_of_inner_eq contMDiff_subtypeVal fun x v w ↦ by
     rw [ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner,
       TauCeti.Manifold.mfderiv_subtype_val]
     rfl

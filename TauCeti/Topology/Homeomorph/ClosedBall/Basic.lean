@@ -41,7 +41,7 @@ private def ballExtension (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : E) 1)
 private theorem ballExtension_coe (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : E) 1)
     (x : closedBall (0 : E) 1) : ballExtension f x = f x := by
   have h : radialRetraction 1 (x : E) = x :=
-    radialRetraction_of_norm_le (mem_closedBall_zero_iff.mp x.2)
+    radialRetraction_of_norm_le (mem_closedBall_zero_iff.mp x.property)
   simp [ballExtension, h]
 
 private theorem ballExtension_of_one_le (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : E) 1)
@@ -74,11 +74,11 @@ def extendClosedBall (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : E) 1)
   right_inv := ballExtension_inverse f.symm (fun x hx => by rw [f.symm_apply_eq, hf x hx])
   continuous_toFun := by
     have hr := (lipschitzWith_radialRetraction (E := E) zero_le_one).continuous
-    exact (continuous_subtype_val.comp (f.continuous.comp (hr.subtype_mk _))).add
+    exact (continuous_subtypeVal.comp (f.continuous.comp (hr.subtype_mk _))).add
       (continuous_id.sub hr)
   continuous_invFun := by
     have hr := (lipschitzWith_radialRetraction (E := E) zero_le_one).continuous
-    exact (continuous_subtype_val.comp (f.symm.continuous.comp (hr.subtype_mk _))).add
+    exact (continuous_subtypeVal.comp (f.symm.continuous.comp (hr.subtype_mk _))).add
       (continuous_id.sub hr)
 
 variable (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : E) 1)
@@ -108,7 +108,7 @@ theorem norm_extendClosedBall_le_one_iff (x : E) :
     ‖f.extendClosedBall hf x‖ ≤ 1 ↔ ‖x‖ ≤ 1 := by
   simp only [← mem_closedBall_zero_iff]
   by_cases hx : x ∈ closedBall (0 : E) 1
-  · simpa only [hx, iff_true, extendClosedBall_coe f hf ⟨x, hx⟩] using (f ⟨x, hx⟩).2
+  · simpa only [hx, iff_true, extendClosedBall_coe f hf ⟨x, hx⟩] using (f ⟨x, hx⟩).property
   · have hx' : 1 ≤ ‖x‖ :=
       le_of_lt (not_le.mp (fun h => hx (mem_closedBall_zero_iff.mpr h)))
     rw [extendClosedBall_of_one_le f hf hx']
@@ -119,7 +119,7 @@ theorem norm_extendClosedBall_sub_le (x : E) : ‖f.extendClosedBall hf x - x‖
   · let y : closedBall (0 : E) 1 := ⟨x, mem_closedBall_zero_iff.mpr hx⟩
     rw [extendClosedBall_coe f hf y]
     exact (norm_sub_le _ _).trans (by
-      have := mem_closedBall_zero_iff.mp (f y).2
+      have := mem_closedBall_zero_iff.mp (f y).property
       linarith)
   · rw [extendClosedBall_of_one_le f hf (le_of_not_ge hx), sub_self, norm_zero]
     norm_num

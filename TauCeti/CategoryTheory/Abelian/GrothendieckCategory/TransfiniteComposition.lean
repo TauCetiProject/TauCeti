@@ -119,7 +119,7 @@ private lemma prop_transfiniteIterate {A₀ : Subobject X} (hA₀ : Q A₀) (j :
     rw [supTransfiniteIterate_limit _ _ hj]
     have : Nonempty (Set.Iio j) := ⟨⟨⊥, hj.bot_lt⟩⟩
     exact h.iSup _ (fun k k' hkk' ↦ h.transfiniteIterate_le A₀ hkk')
-      (fun k ↦ hj' k.1 k.2)
+      (fun k ↦ hj' k.val k.property)
 
 omit [OrderBot J] [SuccOrder J] in
 private lemma exists_transfiniteIterate_eq_top (A₀ : Subobject X)
@@ -182,16 +182,16 @@ private noncomputable def transfiniteCompositionOfShapeMapFromBot (hA₀ : Q A�
   F := (Set.initialSegIic j).monotone.functor ⋙ h.functor J A₀
   isoBot := Iso.refl _
   incl :=
-    { app k := (h.functor J A₀).map (homOfLE k.2)
+    { app k := (h.functor J A₀).map (homOfLE k.property)
       naturality k k' f := by
         have := (h.functor J A₀).map_comp (homOfLE (leOfHom f) : (k : J) ⟶ k')
-          (homOfLE (k'.2 : (k' : J) ≤ j))
+          (homOfLE (k'.property : (k' : J) ≤ j))
         exact (this.symm.trans (congrArg _ (Subsingleton.elim _ _))).trans
           (Category.comp_id _).symm }
   isColimit := colimitOfDiagramTerminal isTerminalTop _
   fac := Category.id_comp _
   map_mem k hk := by
-    have hkj : (k : J) < j := lt_of_le_of_ne k.2 (fun h' ↦ hk (by
+    have hkj : (k : J) < j := lt_of_le_of_ne k.property (fun h' ↦ hk (by
       rw [isMax_iff_eq_top]
       exact Subtype.ext h'))
     rw [Functor.comp_map, functor_map]

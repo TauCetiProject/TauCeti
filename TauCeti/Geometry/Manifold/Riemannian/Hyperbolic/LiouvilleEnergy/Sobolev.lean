@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Trudinger
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Convex.Uniform.Basic
-import TauCeti.Analysis.LocallyConvex.WeakSpace
+import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.MeasureTheory.Function.L2Space

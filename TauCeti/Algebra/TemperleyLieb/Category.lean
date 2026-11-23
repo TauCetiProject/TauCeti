@@ -377,6 +377,23 @@ theorem id_eq_diagBasis (X : TLCat R δ) :
     (𝟙 X : X ⟶ X) = diagBasis X X (PlanarMatching.nested X.as) :=
   hom_ext <| by simp
 
+/-- Induction on morphisms of `TLCat R δ` along the diagram basis: a property of morphisms
+`X ⟶ Y` that holds on every basis morphism and is closed under `0`, addition and scalar
+multiplication holds for every morphism. -/
+@[elab_as_elim]
+theorem hom_induction {motive : (X ⟶ Y) → Prop} (zero : motive 0)
+    (add : ∀ f g, motive f → motive g → motive (f + g))
+    (smul : ∀ (r : R) f, motive f → motive (r • f)) (basis : ∀ x, motive (diagBasis X Y x))
+    (f : X ⟶ Y) : motive f := by
+  have hf : f ∈ Submodule.span R (Set.range (diagBasis X Y)) := by
+    rw [(diagBasis X Y).span_eq]
+    exact Submodule.mem_top
+  induction hf using Submodule.span_induction with
+  | mem _ h => obtain ⟨x, rfl⟩ := h; exact basis x
+  | zero => exact zero
+  | add _ _ _ _ h₁ h₂ => exact add _ _ h₁ h₂
+  | smul r _ _ h => exact smul r _ h
+
 /-- **The loop rule.** Composing two planar-matching basis morphisms glues their matchings along
 the middle boundary and multiplies by `δ` raised to the number of closed circles formed there. -/
 @[simp, reassoc]
@@ -708,7 +725,7 @@ theorem cap_comp_cup_ne_smul_id [Nontrivial R] (r : R) :
   intro h
   have hne : PlanarMatching.nested 2 ≠ (TLDiagram.cap.comp TLDiagram.cup).matching := by
     intro hm
-    have h0 := congrFun (congrArg (fun x : PlanarMatching 4 => ⇑x.1.val) hm) 0
+    have h0 := congrFun (congrArg (fun x : PlanarMatching 4 => ⇑x.val.val) hm) 0
     simp only [TLDiagram.cap_comp_cup_matching_val, PlanarMatching.nested_val] at h0
     exact absurd h0 (by decide)
   rw [cap_comp_cup_eq_diagBasis] at h
@@ -785,7 +802,7 @@ private theorem glueMiddle_zero_append_left_injective {n m : ℕ} (y : PlanarMat
   intro x₁ x₂ hx
   simp only [PlanarMatching.glueMiddle_zero, EmbeddingLike.apply_eq_iff_eq] at hx
   refine PlanarMatching.ext fun i => Fin.castAdd_injective (n + 0) (0 + m) ?_
-  have hi := congrFun (congrArg (fun z : PlanarMatching _ => ⇑z.1.val) hx)
+  have hi := congrFun (congrArg (fun z : PlanarMatching _ => ⇑z.val.val) hx)
     (Fin.castAdd (0 + m) i)
   simpa only [PlanarMatching.append_val_castAdd] using hi
 
@@ -795,7 +812,7 @@ private theorem glueMiddle_zero_append_right_injective {n m : ℕ} (x : PlanarMa
   intro z₁ z₂ hz
   simp only [PlanarMatching.glueMiddle_zero, EmbeddingLike.apply_eq_iff_eq] at hz
   refine PlanarMatching.ext fun j => Fin.natAdd_injective (0 + m) (n + 0) ?_
-  have hj := congrFun (congrArg (fun w : PlanarMatching _ => ⇑w.1.val) hz)
+  have hj := congrFun (congrArg (fun w : PlanarMatching _ => ⇑w.val.val) hz)
     (Fin.natAdd (n + 0) j)
   simpa only [PlanarMatching.append_val_natAdd] using hj
 

@@ -50,6 +50,8 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
   `Δ[n]` to its identity.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
+* `SSet.Edge.yonedaEquiv_symm_edge_app_zero`, `SSet.Edge.yonedaEquiv_symm_edge_app_one`: the map
+  `Δ[1] ⟶ X` given by an edge sends the vertices `0` and `1` to its source and target.
 * `SSet.fstStdSimplexZeroIso`: the projection `K ⊗ Δ[0] ⟶ K` is an isomorphism.
 
 * `SSet.boundary.isConnected`: the boundary `∂Δ[n + 2]` is connected.
@@ -283,6 +285,24 @@ lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀E
   -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
   exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
 
+/-- The map `Δ[1] ⟶ X` given by an edge from `x₀` to `x₁` sends the vertex `0` to `x₀`. -/
+lemma Edge.yonedaEquiv_symm_edge_app_zero {X : SSet.{u}} {x₀ x₁ : X _⦋0⦌} (e : Edge x₀ x₁) :
+    (yonedaEquiv.symm e.edge).app _ (stdSimplex.obj₀Equiv.symm 0) = x₀ := by
+  have h : yonedaEquiv (stdSimplex.δ 1) = stdSimplex.obj₀Equiv.{u}.symm 0 := by
+    rw [stdSimplex.δ_one_eq_const]
+    rfl
+  rw [← h, ← yonedaEquiv_comp, stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.apply_symm_apply,
+    e.src_eq]
+
+/-- The map `Δ[1] ⟶ X` given by an edge from `x₀` to `x₁` sends the vertex `1` to `x₁`. -/
+lemma Edge.yonedaEquiv_symm_edge_app_one {X : SSet.{u}} {x₀ x₁ : X _⦋0⦌} (e : Edge x₀ x₁) :
+    (yonedaEquiv.symm e.edge).app _ (stdSimplex.obj₀Equiv.symm 1) = x₁ := by
+  have h : yonedaEquiv (stdSimplex.δ 0) = stdSimplex.obj₀Equiv.{u}.symm 1 := by
+    rw [stdSimplex.δ_zero_eq_const]
+    rfl
+  rw [← h, ← yonedaEquiv_comp, stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.apply_symm_apply,
+    e.tgt_eq]
+
 /-- The projection `K ⊗ Δ[0] ⟶ K` is an isomorphism, `Δ[0]` being terminal. -/
 def fstStdSimplexZeroIso (K : SSet.{u}) : K ⊗ Δ[0] ≅ K where
   hom := fst K Δ[0]
@@ -312,7 +332,7 @@ instance boundary.isConnected (n : ℕ) : (∂Δ[n + 2] : SSet.{u}).IsConnected 
     let v (k : Fin (n + 3)) : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌ :=
       ⟨stdSimplex.obj₀Equiv.symm k, by simp [boundary_obj_eq_univ]⟩
     suffices h : ∀ k, π₀.mk (v k) = π₀.mk (v 0) by
-      have hv (z : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌) : z = v (stdSimplex.obj₀Equiv z.1) :=
+      have hv (z : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌) : z = v (stdSimplex.obj₀Equiv z.val) :=
         Subtype.ext (stdSimplex.obj₀Equiv.symm_apply_apply _).symm
       rw [hv x, hv y]
       exact (h _).trans (h _).symm

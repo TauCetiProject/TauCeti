@@ -189,7 +189,7 @@ private theorem sum_compl_le_cupOneWeight_smul_eq {F : Fin (n + 3) → Fin (n + 
         (((x.1 : ℤ) - cupOneWeight n x.2.succ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2)) • F x.1 x.2 := by
   set S : Finset (Fin (n + 3) × Fin (n + 2)) := {is | (is.1 : ℕ) ≤ is.2}
   refine (Finset.sum_bij (fun x hx ↦ (x.2.succ, x.1.castLT
-      (lt_of_le_of_lt (Finset.mem_filter.1 hx).2 x.2.2))) ?_ ?_ ?_ ?_).symm
+      (lt_of_le_of_lt (Finset.mem_filter.1 hx).2 x.2.isLt))) ?_ ?_ ?_ ?_).symm
   · intro x hx
     simp only [S, Finset.compl_filter, Finset.mem_filter_univ, Fin.val_succ,
       Fin.val_castLT] at hx ⊢
@@ -208,7 +208,7 @@ private theorem sum_compl_le_cupOneWeight_smul_eq {F : Fin (n + 3) → Fin (n + 
   · rintro ⟨i, s⟩ hx
     have his : (i : ℕ) ≤ s := (Finset.mem_filter.1 hx).2
     dsimp only
-    have hi' : (i.castLT (lt_of_le_of_lt his s.2)).castSucc = i := by ext; rfl
+    have hi' : (i.castLT (lt_of_le_of_lt his s.isLt)).castSucc = i := by ext; rfl
     rw [hF _ _ (by simpa [Fin.le_def] using his), hi', Fin.val_succ, Fin.val_castLT]
     congr 1
     have hpow : (-1 : ℤ) ^ ((s : ℕ) + 1 + i) = -((-1 : ℤ) ^ ((i : ℕ) + s)) := by
@@ -237,7 +237,7 @@ private theorem sum_le_cupOneWeight_smul_eq {F : Fin (n + 3) → Fin (n + 2) →
     rw [Finset.sum_filter]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     split_ifs with his
-    · have hi : (i : ℕ) ≤ n + 1 := le_trans his (Nat.le_of_lt_succ s.2)
+    · have hi : (i : ℕ) ≤ n + 1 := le_trans his (Nat.le_of_lt_succ s.isLt)
       rw [← add_smul]
       congr 1
       simp only [cupOneWeight, hi, ↓reduceIte]
@@ -250,11 +250,11 @@ private theorem sum_le_cupOneWeight_smul_eq {F : Fin (n + 3) → Fin (n + 2) →
     simp only [hlast, zero_mul, zero_smul, Finset.sum_const_zero, add_zero]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     have hwj : ((n + 1 : ℤ) - (j.castSucc : ℕ) - cupOneWeight n j.castSucc.succ) = 1 := by
-      have hj : (j : ℕ) + 1 ≤ n + 1 := Nat.succ_le_of_lt j.2
+      have hj : (j : ℕ) + 1 ≤ n + 1 := Nat.succ_le_of_lt j.isLt
       simp only [cupOneWeight, Fin.val_succ, Fin.val_castSucc, hj, ↓reduceIte]
       omega
     rw [hwj]
-    refine Finset.sum_bij (fun i hi ↦ ⟨i, lt_of_le_of_lt (Finset.mem_filter.1 hi).2 j.2⟩)
+    refine Finset.sum_bij (fun i hi ↦ ⟨i, lt_of_le_of_lt (Finset.mem_filter.1 hi).2 j.isLt⟩)
       ?_ ?_ ?_ ?_
     · intro i hi
       exact Finset.mem_Iic.2 (Fin.le_def.2 (Finset.mem_filter.1 hi).2)
@@ -267,8 +267,9 @@ private theorem sum_le_cupOneWeight_smul_eq {F : Fin (n + 3) → Fin (n + 2) →
       have hij : (i : ℕ) ≤ j := (Finset.mem_filter.1 hi).2
       dsimp only
       have hjs : j.castSucc.succ = j.succ.castSucc := Fin.ext (by simp)
-      have hface := hF ⟨i, lt_of_le_of_lt hij (Nat.lt_succ_of_lt j.2)⟩ j.castSucc hij
-      have hi_eq' : (⟨(i : ℕ), lt_of_le_of_lt hij (Nat.lt_succ_of_lt j.2)⟩ : Fin (n + 2)).castSucc =
+      have hface := hF ⟨i, lt_of_le_of_lt hij (Nat.lt_succ_of_lt j.isLt)⟩ j.castSucc hij
+      have hi_eq' : (⟨(i : ℕ), lt_of_le_of_lt hij (Nat.lt_succ_of_lt j.isLt)⟩ : Fin
+          (n + 2)).castSucc =
           i := Fin.ext rfl
       rw [hi_eq'] at hface
       rw [one_mul, ← hface, hjs]
@@ -458,7 +459,7 @@ theorem hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_of_mem_cyclicCoc
         (cyclicRowHomotopySum R A M (n + 1) (barCoboundary R A M n φ)) =
       cochainPeriodicity R A M n φ := by
   have hb : hochschildCoboundary R A M n φ = 0 := (mem_cyclicCocycles_iff R A M).1 hφ
-  simpa [hb] using hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_add φ.2
+  simpa [hb] using hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_add φ.property
 
 /-- For every cyclic `n`-cochain `ψ`, `(1 - λ) (b (H' (b' ψ))) = -(n + 1) • b' (b ψ)`. -/
 theorem one_sub_cyclicOperator_hochschildCoboundary_cyclicRowHomotopySum_barCoboundary
@@ -471,7 +472,7 @@ theorem one_sub_cyclicOperator_hochschildCoboundary_cyclicRowHomotopySum_barCobo
     LinearMap.comp_apply, one_sub_cyclicOperator_apply_cyclicRowHomotopySum, map_sub, map_smul,
     barCoboundary_barCoboundary, smul_zero, zero_sub,
     ← LinearMap.comp_apply (cyclicNorm R A M (n + 1)), ← hochschildCoboundary_comp_cyclicNorm,
-    LinearMap.comp_apply, cyclicNorm_apply_of_mem_cyclicCochains ψ.2, map_smul, map_smul]
+    LinearMap.comp_apply, cyclicNorm_apply_of_mem_cyclicCochains ψ.property, map_smul, map_smul]
 
 /-- For every cyclic cocycle `φ`, `S₀ φ` is a cyclic cochain. -/
 theorem cochainPeriodicity_mem_cyclicCochains_of_mem_cyclicCocycles
@@ -494,10 +495,10 @@ variable (R A M) in
 `(n + 2)`-cocycle `S₀ φ`. -/
 def cyclicCocyclesPeriodicity (n : ℕ) :
     cyclicCocycles R A M n →ₗ[R] cyclicCocycles R A M (n + 2) where
-  toFun φ := ⟨⟨cochainPeriodicity R A M n φ.1.1,
-      cochainPeriodicity_mem_cyclicCochains_of_mem_cyclicCocycles φ.2⟩,
+  toFun φ := ⟨⟨cochainPeriodicity R A M n φ.val.val,
+      cochainPeriodicity_mem_cyclicCochains_of_mem_cyclicCocycles φ.property⟩,
     (mem_cyclicCocycles_iff R A M).2
-      (hochschildCoboundary_cochainPeriodicity_of_mem_cyclicCocycles φ.2)⟩
+      (hochschildCoboundary_cochainPeriodicity_of_mem_cyclicCocycles φ.property)⟩
   map_add' φ ψ := by ext a; simp [map_add]
   map_smul' c φ := by ext a; simp [map_smul]
 
@@ -506,7 +507,7 @@ def cyclicCocyclesPeriodicity (n : ℕ) :
 theorem coe_cyclicCocyclesPeriodicity_apply (φ : cyclicCocycles R A M n) :
     ((cyclicCocyclesPeriodicity R A M n φ : cyclicCochains R A M (n + 2)) :
       MultilinearMap (RingHom.id R) (fun _ : Fin (n + 3) ↦ A) M) =
-      cochainPeriodicity R A M n φ.1.1 :=
+      cochainPeriodicity R A M n φ.val.val :=
   (rfl)
 
 /-! ### Connes' Proposition 12 and coboundary preservation -/
@@ -518,10 +519,10 @@ theorem hochschildCoboundary_cyclicNorm_cochainPeriodicity (ψ : cyclicCochains 
         (cyclicNorm R A M (n + 2) (cochainPeriodicity R A M n ψ)) =
       (n + 1 : R) • cochainPeriodicity R A M (n + 1) (hochschildCoboundary R A M n ψ) := by
   have hbψ_cyc : hochschildCoboundary R A M n ψ ∈ cyclicCochains R A M (n + 1) :=
-    hochschildCoboundary_mem_cyclicCochains R A M ψ.2
+    hochschildCoboundary_mem_cyclicCochains R A M ψ.property
   have hbψ_coc : (⟨hochschildCoboundary R A M n ψ, hbψ_cyc⟩ : cyclicCochains R A M (n + 1)) ∈
       cyclicCocycles R A M (n + 1) :=
-    (mem_cyclicCocycles_iff R A M).2 (hochschildCoboundary_hochschildCoboundary R A M ψ.1)
+    (mem_cyclicCocycles_iff R A M).2 (hochschildCoboundary_hochschildCoboundary R A M ψ.val)
   -- `N` kills `cupOneLeft (b ψ)` because `N (δ_r (b ψ)) = ± b (b ψ) = 0`.
   have hN_cup : cyclicNorm R A M (n + 2) (cupOneLeft n (hochschildCoboundary R A M n ψ)) = 0 := by
     simp only [cupOneLeft, LinearMap.sum_apply, LinearMap.smul_apply, map_sum, map_zsmul]
@@ -537,7 +538,7 @@ theorem hochschildCoboundary_cyclicNorm_cochainPeriodicity (ψ : cyclicCochains 
         (cyclicRowHomotopySum R A M (n + 1) (barCoboundary R A M n ψ)) +
       (n + 1 : R) • cyclicRowHomotopySum R A M (n + 2)
         (barCoboundary R A M (n + 1) (hochschildCoboundary R A M n ψ)) := by
-    rw [← hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_add ψ.2, map_add, hN_cup,
+    rw [← hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_add ψ.property, map_add, hN_cup,
       add_zero]
     exact (eq_sub_of_add_eq' (sub_eq_iff_eq_add.1 hH).symm).trans (sub_neg_eq_add _ _)
   rw [hNS₀, map_add, map_smul, hochschildCoboundary_hochschildCoboundary, smul_zero, zero_add,
@@ -565,10 +566,10 @@ theorem coe_connesS_apply [Invertible (n + 3 : R)] (ψ : cyclicCochains R A M n)
 /-- On a cyclic cocycle `φ`, `connesS` agrees with the unaveraged operator `cochainPeriodicity`. -/
 theorem connesS_eq_cyclicCocyclesPeriodicity [Invertible (n + 3 : R)]
     (φ : cyclicCocycles R A M n) :
-    connesS R A M n φ.1 = (cyclicCocyclesPeriodicity R A M n φ).1 := by
+    connesS R A M n φ.val = (cyclicCocyclesPeriodicity R A M n φ).val := by
   ext1
   rw [coe_connesS_apply, cyclicNorm_apply_of_mem_cyclicCochains
-    (cochainPeriodicity_mem_cyclicCochains_of_mem_cyclicCocycles φ.2),
+    (cochainPeriodicity_mem_cyclicCochains_of_mem_cyclicCocycles φ.property),
     show ((n + 2 : ℕ) + 1 : R) = (n + 3 : R) by push_cast; ring, invOf_smul_smul,
     coe_cyclicCocyclesPeriodicity_apply]
 
@@ -579,7 +580,7 @@ theorem smul_cyclicHochschildCoboundary_connesS [Invertible (n + 3 : R)]
       (n + 1 : R) • connesS R A M (n + 1) (cyclicHochschildCoboundary R A M n ψ) := by
   have hbψ : cyclicHochschildCoboundary R A M n ψ ∈ cyclicCocycles R A M (n + 1) := by
     rw [mem_cyclicCocycles_iff, coe_cyclicHochschildCoboundary_apply]
-    exact hochschildCoboundary_hochschildCoboundary R A M ψ.1
+    exact hochschildCoboundary_hochschildCoboundary R A M ψ.val
   ext1
   rw [Submodule.coe_smul_of_tower, coe_cyclicHochschildCoboundary_apply, coe_connesS_apply,
     map_smul, smul_invOf_smul, hochschildCoboundary_cyclicNorm_cochainPeriodicity,
@@ -660,7 +661,7 @@ theorem map_comp_periodicity {B : Type u} [Ring B] [Algebra R B] (f : A →ₙ�
   apply Subtype.ext
   rw [coe_cyclicCocyclesPeriodicity_apply, Subtype.coe_mk, coe_cyclicCochainsMap_apply,
     Subtype.coe_mk, coe_cyclicCochainsMap_apply, coe_cyclicCocyclesPeriodicity_apply]
-  exact cochainPeriodicity_compLinearMap f φ.1.1
+  exact cochainPeriodicity_compLinearMap f φ.val.val
 
 end Cohomology
 

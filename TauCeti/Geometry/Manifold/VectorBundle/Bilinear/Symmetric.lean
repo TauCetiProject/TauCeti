@@ -162,7 +162,7 @@ theorem contMDiffWithinAt_symmetricBilinearMaps_iff
       ContMDiffWithinAt IN (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
         (fun x ↦ TotalSpace.mk' (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G)
           (F →L[𝕜] F →L[𝕜] G) (f x).proj
-          ((f x).2 : V (f x).proj →L[𝕜] V (f x).proj →L[𝕜] G)) s x₀ := by
+          ((f x).snd : V (f x).proj →L[𝕜] V (f x).proj →L[𝕜] G)) s x₀ := by
   rw [contMDiffWithinAt_totalSpace_iff, contMDiffWithinAt_totalSpace_iff]
   refine and_congr_right fun hf ↦ ?_
   have hx₀ := mem_baseSet_trivializationAt F V (f x₀).proj
@@ -173,14 +173,14 @@ theorem contMDiffWithinAt_symmetricBilinearMaps_iff
     refine ((symmetricBilinearMaps 𝕜 F G).subtypeL.contDiff.comp_contMDiffWithinAt
       h).congr_of_eventuallyEq ?_ ?_
     · filter_upwards [hev] with x hx
-      exact (coe_trivializationAt_symmetricBilinearMaps_snd hx (f x).2).symm
-    · exact (coe_trivializationAt_symmetricBilinearMaps_snd hx₀ (f x₀).2).symm
+      exact (coe_trivializationAt_symmetricBilinearMaps_snd hx (f x).snd).symm
+    · exact (coe_trivializationAt_symmetricBilinearMaps_snd hx₀ (f x₀).snd).symm
   · intro h
     refine ((ContinuousLinearMap.symmetrizeBilinear (V := F) (G := G)).contDiff
       |>.comp_contMDiffWithinAt h).congr_of_eventuallyEq ?_ ?_
     · filter_upwards [hev] with x hx
-      simp [← coe_trivializationAt_symmetricBilinearMaps_snd hx (f x).2]
-    · simp [← coe_trivializationAt_symmetricBilinearMaps_snd hx₀ (f x₀).2]
+      simp [← coe_trivializationAt_symmetricBilinearMaps_snd hx (f x).snd]
+    · simp [← coe_trivializationAt_symmetricBilinearMaps_snd hx₀ (f x₀).snd]
 
 /-- A map into the symmetric bilinear bundle is `C^n` at a point exactly when the corresponding
 map into its ambient bilinear bundle is `C^n` at that point. -/
@@ -189,7 +189,7 @@ theorem contMDiffAt_symmetricBilinearMaps_iff {x₀ : N} :
       ContMDiffAt IN (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
         (fun x ↦ TotalSpace.mk' (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G)
           (F →L[𝕜] F →L[𝕜] G) (f x).proj
-          ((f x).2 : V (f x).proj →L[𝕜] V (f x).proj →L[𝕜] G)) x₀ :=
+          ((f x).snd : V (f x).proj →L[𝕜] V (f x).proj →L[𝕜] G)) x₀ :=
   contMDiffWithinAt_symmetricBilinearMaps_iff
 
 /-- A map into the symmetric bilinear bundle is `C^n` on a set exactly when the corresponding
@@ -199,7 +199,7 @@ theorem contMDiffOn_symmetricBilinearMaps_iff {s : Set N} :
       ContMDiffOn IN (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
         (fun x ↦ TotalSpace.mk' (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G)
           (F →L[𝕜] F →L[𝕜] G) (f x).proj
-          ((f x).2 : V (f x).proj →L[𝕜] V (f x).proj →L[𝕜] G)) s :=
+          ((f x).snd : V (f x).proj →L[𝕜] V (f x).proj →L[𝕜] G)) s :=
   forall₂_congr fun _ _ ↦ contMDiffWithinAt_symmetricBilinearMaps_iff
 
 /-- A map into the symmetric bilinear bundle is `C^n` exactly when the corresponding map into
@@ -209,7 +209,7 @@ theorem contMDiff_symmetricBilinearMaps_iff :
       ContMDiff IN (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
         (fun x ↦ TotalSpace.mk' (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G)
           (F →L[𝕜] F →L[𝕜] G) (f x).proj
-          ((f x).2 : V (f x).proj →L[𝕜] V (f x).proj →L[𝕜] G)) :=
+          ((f x).snd : V (f x).proj →L[𝕜] V (f x).proj →L[𝕜] G)) :=
   forall_congr' fun _ ↦ contMDiffAt_symmetricBilinearMaps_iff
 
 variable (IB n) in
@@ -221,10 +221,10 @@ def symmetricBilinearSectionEquiv :
   toFun σ := ⟨⟨fun x ↦ (σ x : V x →L[𝕜] V x →L[𝕜] G),
       contMDiff_symmetricBilinearMaps_iff.1 σ.contMDiff⟩,
     (mem_symmetricBilinearSections _).2 fun x ↦
-      (mem_symmetricBilinearMaps 𝕜 (V x) G _).1 (σ x).2⟩
-  invFun β := ⟨fun x ↦ ⟨β.1 x, (mem_symmetricBilinearMaps 𝕜 (V x) G _).2
-      ((mem_symmetricBilinearSections _).1 β.2 x)⟩,
-    contMDiff_symmetricBilinearMaps_iff.2 β.1.contMDiff⟩
+      (mem_symmetricBilinearMaps 𝕜 (V x) G _).1 (σ x).property⟩
+  invFun β := ⟨fun x ↦ ⟨β.val x, (mem_symmetricBilinearMaps 𝕜 (V x) G _).2
+      ((mem_symmetricBilinearSections _).1 β.property x)⟩,
+    contMDiff_symmetricBilinearMaps_iff.2 β.val.contMDiff⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

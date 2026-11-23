@@ -191,8 +191,8 @@ def doubledVertexEquiv : V(Graph.ofSimpleGraph G) ≃ DoubledQuiver G :=
 
 @[simp]
 theorem doubledVertexEquiv_apply (x : V(Graph.ofSimpleGraph G)) :
-    G.doubledVertexEquiv x = DoubledQuiver.vertex G x.1 :=
-  DoubledQuiver.vertexEquiv_apply G x.1
+    G.doubledVertexEquiv x = DoubledQuiver.vertex G x.val :=
+  DoubledQuiver.vertexEquiv_apply G x.val
 
 @[simp]
 theorem doubledVertexEquiv_symm_apply (i : DoubledQuiver G) :
@@ -213,16 +213,16 @@ theorem map_doubledVertexEquiv_toOfSimpleGraphFinset (S : Finset V) :
 /-- Every bidirected arrow of `Graph.ofSimpleGraph G` witnesses adjacency of its endpoints in
 `G`. -/
 theorem adj_of_bidirectedHom {x y : V(Graph.ofSimpleGraph G)}
-    (a : (Graph.ofSimpleGraph G).BidirectedHom x y) : G.Adj x.1 y.1 := by
-  have ha := a.2
+    (a : (Graph.ofSimpleGraph G).BidirectedHom x y) : G.Adj x.val y.val := by
+  have ha := a.property
   rw [Graph.ofSimpleGraph_isLink] at ha
   simpa only [ha.1, SimpleGraph.mem_edgeSet] using ha.2
 
 /-- The underlying multigraph edge of a bidirected arrow of `Graph.ofSimpleGraph G` is the
 unordered pair of its endpoints. -/
 theorem edge_eq_of_bidirectedHom {x y : V(Graph.ofSimpleGraph G)}
-    (a : (Graph.ofSimpleGraph G).BidirectedHom x y) : a.1 = s(x.1, y.1) := by
-  have ha := a.2
+    (a : (Graph.ofSimpleGraph G).BidirectedHom x y) : a.val = s(x.val, y.val) := by
+  have ha := a.property
   rw [Graph.ofSimpleGraph_isLink] at ha
   exact ha.1
 
@@ -233,7 +233,7 @@ def doubledHomEquiv (x y : V(Graph.ofSimpleGraph G)) :
       (G.doubledVertexEquiv x ⟶ G.doubledVertexEquiv y) where
   toFun a := Quiver.homOfEq (DoubledQuiver.arrow G (G.adj_of_bidirectedHom a))
     (G.doubledVertexEquiv_apply x).symm (G.doubledVertexEquiv_apply y).symm
-  invFun e := ⟨s(x.1, y.1), by
+  invFun e := ⟨s(x.val, y.val), by
     rw [Graph.ofSimpleGraph_isLink]
     refine ⟨rfl, ?_⟩
     have hmem := DoubledQuiver.edge_mem G e
@@ -251,7 +251,7 @@ theorem doubledHomEquiv_apply {x y : V(Graph.ofSimpleGraph G)}
 @[simp]
 theorem coe_doubledHomEquiv_symm_apply {x y : V(Graph.ofSimpleGraph G)}
     (e : G.doubledVertexEquiv x ⟶ G.doubledVertexEquiv y) :
-    ((G.doubledHomEquiv x y).symm e : Sym2 V) = s(x.1, y.1) :=
+    ((G.doubledHomEquiv x y).symm e : Sym2 V) = s(x.val, y.val) :=
   (rfl)
 
 /-- Transporting a bidirected arrow of `Graph.ofSimpleGraph G` to `DoubledQuiver G` preserves its
@@ -259,7 +259,7 @@ underlying unordered-pair edge. -/
 @[simp]
 theorem edge_doubledHomEquiv {x y : V(Graph.ofSimpleGraph G)}
     (a : (Graph.ofSimpleGraph G).BidirectedHom x y) :
-    DoubledQuiver.edge G (G.doubledHomEquiv x y a) = a.1 := by
+    DoubledQuiver.edge G (G.doubledHomEquiv x y a) = a.val := by
   rw [doubledHomEquiv_apply, DoubledQuiver.edge_homOfEq, DoubledQuiver.edge_arrow,
     G.edge_eq_of_bidirectedHom a]
 
@@ -273,19 +273,19 @@ def bidirectedTotalHomEquivDart :
 
 @[simp]
 theorem bidirectedTotalHomEquivDart_fst (a : Σ x y, (Graph.ofSimpleGraph G).BidirectedHom x y) :
-    (G.bidirectedTotalHomEquivDart a).fst = a.1.1 := by
+    (G.bidirectedTotalHomEquivDart a).fst = a.1.val := by
   rcases a with ⟨x, y, a⟩
   simp [bidirectedTotalHomEquivDart, Equiv.sigmaCongr]
 
 @[simp]
 theorem bidirectedTotalHomEquivDart_snd (a : Σ x y, (Graph.ofSimpleGraph G).BidirectedHom x y) :
-    (G.bidirectedTotalHomEquivDart a).snd = a.2.1.1 := by
+    (G.bidirectedTotalHomEquivDart a).snd = a.2.1.val := by
   rcases a with ⟨x, y, a⟩
   simp [bidirectedTotalHomEquivDart, Equiv.sigmaCongr]
 
 @[simp]
 theorem bidirectedTotalHomEquivDart_edge (a : Σ x y, (Graph.ofSimpleGraph G).BidirectedHom x y) :
-    (G.bidirectedTotalHomEquivDart a).edge = a.2.2.1 := by
+    (G.bidirectedTotalHomEquivDart a).edge = a.2.2.val := by
   rw [SimpleGraph.Dart.edge, G.bidirectedTotalHomEquivDart_fst, G.bidirectedTotalHomEquivDart_snd,
     ← G.edge_eq_of_bidirectedHom a.2.2]
 
@@ -303,7 +303,7 @@ theorem bidirectedTotalHomEquivDart_symm_apply_snd_fst (d : G.Dart) :
 
 @[simp]
 theorem bidirectedTotalHomEquivDart_symm_apply_snd_snd_val (d : G.Dart) :
-    (G.bidirectedTotalHomEquivDart.symm d).2.2.1 = d.edge := by
+    (G.bidirectedTotalHomEquivDart.symm d).2.2.val = d.edge := by
   rw [← G.bidirectedTotalHomEquivDart_edge, Equiv.apply_symm_apply]
 
 end SimpleGraph
@@ -368,7 +368,7 @@ theorem bidirectedNetworkIso_homEquiv_apply [Zero K] [LE K] (c : Sym2 V → K)
 theorem edge_bidirectedNetworkIso_homEquiv [Zero K] [LE K] (c : Sym2 V → K)
     (hc : ∀ p ∈ G.edgeSet, 0 ≤ c p) {x y : V(Graph.ofSimpleGraph G)}
     (a : (Graph.ofSimpleGraph G).BidirectedHom x y) :
-    edge G ((bidirectedNetworkIso G c hc).homEquiv x y a) = a.1 := by
+    edge G ((bidirectedNetworkIso G c hc).homEquiv x y a) = a.val := by
   rw [← G.edge_doubledHomEquiv a, ← bidirectedNetworkIso_homEquiv_apply G c hc x y a,
     edge_homOfEq]
 
@@ -514,7 +514,7 @@ theorem reachableWithout_edge_mem_iff (F : Set (Sym2 V)) {u v : V} :
       (vertex G u) (vertex G v) ↔ (G.deleteEdges F).Reachable u v := by
   have hpre : (unitBidirectedNetworkIso G).totalHomEquiv ⁻¹'
       {a : TotalArrow G | edge G a.2.2 ∈ F} =
-      {a : Σ x y, (Graph.ofSimpleGraph G).BidirectedHom x y | a.2.2.1 ∈ F} := by
+      {a : Σ x y, (Graph.ofSimpleGraph G).BidirectedHom x y | a.2.2.val ∈ F} := by
     ext ⟨x, y, a⟩
     simp only [Set.mem_preimage, Set.mem_ofPred_eq, Network.Iso.totalHomEquiv_apply]
     rw [edge_bidirectedNetworkIso_homEquiv]

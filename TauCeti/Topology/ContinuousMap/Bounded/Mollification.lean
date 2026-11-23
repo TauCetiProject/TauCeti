@@ -88,6 +88,6 @@ theorem tendsto_normedConvolutionBUC [CompleteSpace F] {ι : Type*} {l : Filter 
     [μ.IsAddHaarMeasure] (f : uniformContinuousSubmodule ℝ G F) :
     Tendsto (fun i ↦ (ρ i).normedConvolutionBUC μ f) l (𝓝 f) := by
   rw [tendsto_subtype_rng, BoundedContinuousFunction.tendsto_iff_tendstoUniformly]
-  exact tendstoUniformly_normed_convolution hρ ((mem_uniformContinuousSubmodule _).1 f.2)
+  exact tendstoUniformly_normed_convolution hρ ((mem_uniformContinuousSubmodule _).1 f.property)
 
 end ContDiffBump

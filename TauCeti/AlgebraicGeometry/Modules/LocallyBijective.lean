@@ -224,11 +224,11 @@ private lemma exists_pow_smul_eq_zero (φ : P ⟶ M.val)
     exact ⟨htf, exists_forall_pow_smul_map_eq_zero hP φ hU htf z hz w hw⟩
   choose! hle m hm using ht
   refine ⟨T.sup m, TopCat.Sheaf.eq_of_locally_eq'
-    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) (fun t : T ↦ X.basicOpen t.1)
-    (X.basicOpen f) (fun t ↦ homOfLE (hle t.1 t.2)) ?_ _ _ fun t ↦ ?_⟩
+    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) (fun t : T ↦ X.basicOpen t.val)
+    (X.basicOpen f) (fun t ↦ homOfLE (hle t.val t.property)) ?_ _ _ fun t ↦ ?_⟩
   · simpa [iSup_subtype] using
       (hU.basicOpen_le_iSup_basicOpen_iff (s := ↑T) (f := f)).2 ⟨N, hNT⟩
-  · rw [hm t.1 t.2 _ (Finset.le_sup t.2), map_zero]
+  · rw [hm t.val t.property _ (Finset.le_sup t.property), map_zero]
 
 end
 

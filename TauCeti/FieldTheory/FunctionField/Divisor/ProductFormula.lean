@@ -52,6 +52,10 @@ also cover algebraic functions, where the degree is `0` by convention.
   `deg D + [algebraicClosure k F : k]` whenever `L(D)` is nonzero, and
   `TauCeti.Divisor.exists_mem_dim_sub_ofPoint_lt` shows that such an `L(D)` drops when some place
   of a set of sufficiently large total degree is removed.
+* `TauCeti.exists_nonneg_and_degree_eq_finrank_and_two_le_dim`: the pole divisor of a
+  transcendental `x` is effective, of degree `[F : k(x)]`, with `ℓ ≥ 2`.
+* `TauCeti.exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim`: over an exact constant
+  field, a divisor `D` with `ℓ(D) ≥ 2` gives a rational subfield of index at most `deg D`.
 
 ## References
 
@@ -345,7 +349,7 @@ theorem degreeZeroClassHom_surjective (hF : IsFunctionField k F) :
     Function.Surjective (degreeZeroClassHom hF) := fun c ↦ by
   obtain ⟨D, hD⟩ := (Place.orderSystem hF).weightedDegreeZeroClassHom_surjective
     (Place.isWeightedDegreeZero_orderSystem hF) c
-  refine ⟨⟨D, ker_degree_eq_weightedDegreeZeroSubgroup.ge D.2⟩, Subtype.ext ?_⟩
+  refine ⟨⟨D, ker_degree_eq_weightedDegreeZeroSubgroup.ge D.property⟩, Subtype.ext ?_⟩
   rw [coe_degreeZeroClassHom_apply, ← hD,
     (Place.orderSystem hF).coe_weightedDegreeZeroClassHom_apply]
 
@@ -422,5 +426,29 @@ theorem Divisor.exists_mem_dim_sub_ofPoint_lt (hF : IsFunctionField k F) {D : Di
     Divisor.degree_eq_weightedDegree (WeilDivisor.ofFinset T),
     WeilDivisor.weightedDegree_ofFinset] at hle
   omega
+
+/-- **A transcendental `x` gives an effective divisor of degree `[F : k(x)]` with `ℓ ≥ 2`**: the
+pole divisor `(x)_∞`, whose Riemann–Roch space contains `1` and `x`. No exactness of the constant
+field is needed. -/
+theorem exists_nonneg_and_degree_eq_finrank_and_two_le_dim (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) : ∃ D : Divisor k F,
+      0 ≤ D ∧ Divisor.degree D = Module.finrank k⟮x⟯ F ∧ 2 ≤ Divisor.dim D :=
+  ⟨Divisor.poles hF (Units.mk0 x hx.ne_zero), Divisor.poles_nonneg hF _,
+    Divisor.degree_poles hF _ hx, by
+      simpa using le_dim_zsmul_poles hF (Units.mk0 x hx.ne_zero) hx (n := 2) (m := 1) (by norm_num)⟩
+
+/-- **A divisor with `ℓ(D) ≥ 2` gives a rational subfield of index at most `deg D`**, over an exact
+constant field: some transcendental `x` has `[F : k(x)] ≤ deg D`. -/
+theorem exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F} (hdim : 2 ≤ Divisor.dim D) :
+    ∃ x : F, Transcendental k x ∧ (Module.finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree D := by
+  -- Move `D` inside its class to an effective divisor `B`, which has the same degree and `ℓ`.
+  obtain ⟨B, hBeff, hDB⟩ := (riemannRochSpace_ne_bot_iff hF).mp
+    ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF D).mp (by omega))
+  have hBdeg := Divisor.degree_eq_of_linearlyEquivalent hF hDB
+  have hBdim : 2 ≤ Divisor.dim B := Divisor.dim_eq_of_linearlyEquivalent hF hDB ▸ hdim
+  -- `L(B)` holds a transcendental `x`, whose poles are bounded by `B`, so `[F : k(x)] ≤ deg B`.
+  obtain ⟨x, hxB, hx⟩ := Divisor.exists_mem_riemannRochSpace_transcendental hF hex hBdim
+  exact ⟨x, hx, hBdeg.symm ▸ Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hBeff hxB⟩
 
 end TauCeti

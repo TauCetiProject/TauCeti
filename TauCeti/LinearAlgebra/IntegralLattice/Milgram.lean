@@ -89,7 +89,7 @@ private theorem gaussSum_rankOne_of_pos (hm : 0 < m) :
     · have h := congrArg (rankOneDiscriminantEquiv (2 * (M : ℤ))) hkl
       simp only [φ, rankOneDiscriminantEquiv_zsmul_rankOneClass, Int.cast_natCast] at h
       have h' := (ZMod.natCast_eq_natCast_iff' _ _ _).mp h
-      rw [hn, Nat.mod_eq_of_lt k.2, Nat.mod_eq_of_lt l.2] at h'
+      rw [hn, Nat.mod_eq_of_lt k.isLt, Nat.mod_eq_of_lt l.isLt] at h'
       exact Fin.ext h'
     · rw [Fintype.card_fin, ← Nat.card_eq_fintype_card, natCard_rankOne_discriminantGroup, hn]
   rw [@FiniteQuadraticModule.gaussSum_eq_sum _ inst, Int.cast_natCast,
@@ -174,7 +174,7 @@ private def splitCarrier : Submodule ℤ V :=
   ℤ ∙ (x : V) ⊔ L.carrier ⊓ LinearMap.ker ((L.form x).restrictScalars ℤ)
 
 private theorem splitCarrier_le : splitCarrier L x ≤ L.carrier :=
-  sup_le ((Submodule.span_singleton_le_iff_mem _ _).mpr x.2) inf_le_left
+  sup_le ((Submodule.span_singleton_le_iff_mem _ _).mpr x.property) inf_le_left
 
 /-- If `x` has nonzero norm `d`, then `ℤx + (x^⊥ ∩ L)` contains `dL`: every `y ∈ L` satisfies
 `d • y = (x, y) • x + (d • y - (x, y) • x)` with the second summand orthogonal to `x`. Hence it
@@ -194,7 +194,7 @@ private theorem isFullLattice_splitCarrier (hx : L.integralNorm x ≠ 0) :
     abel
   rw [hsplit]
   refine Submodule.add_mem_sup (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _))
-    ⟨L.carrier.sub_mem (L.carrier.smul_mem _ hy) (L.carrier.smul_mem _ x.2), ?_⟩
+    ⟨L.carrier.sub_mem (L.carrier.smul_mem _ hy) (L.carrier.smul_mem _ x.property), ?_⟩
   simp only [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.restrictScalars_apply, map_sub,
     map_zsmul, hc, hxx, zsmul_eq_mul]
   ring

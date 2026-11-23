@@ -50,7 +50,7 @@ theorem gelfandNumber_le_singularValue_comp (T : E →L[𝕜] F) (J : F →ₗ�
     have h := R.toLinearMap.quotKerEquivRange.lift_rank_eq
     exact Cardinal.lift_le_nat_iff.mp (h.trans_le (Cardinal.lift_le_nat_iff.mpr hR))
   refine (T.gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
-  have hx : R x = 0 := x.2
+  have hx : R x = 0 := x.property
   have h : ‖T x‖ ≤ ‖J.toContinuousLinearMap ∘L T - R‖ * ‖x‖ := by
     simpa [hx, Submodule.norm_coe] using
       (J.toContinuousLinearMap ∘L T - R).le_opNorm (x : E)

@@ -60,7 +60,7 @@ theorem rTensor_add_lTensor_rTensor_congr
   | tmul u v =>
       simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, coe_subtype,
         LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
-      rw [hP _ u.2, hQ _ v.2]
+      rw [hP _ u.property, hQ _ v.property]
   | add u v hu hv =>
       simp only [map_add]
       rw [add_add_add_comm, hu, hv, ← add_add_add_comm]
@@ -155,7 +155,7 @@ theorem exists_eq_rTensor_inclusion_add (p q : Submodule R N) (t : ↥(p ⊔ q) 
     ∃ a b, t = (inclusion le_sup_left).rTensor M a + (inclusion le_sup_right).rTensor M b := by
   induction t with
   | tmul x m =>
-    obtain ⟨y, hy, z, hz, hyz⟩ := mem_sup.mp x.2
+    obtain ⟨y, hy, z, hz, hyz⟩ := mem_sup.mp x.property
     refine ⟨⟨y, hy⟩ ⊗ₜ m, ⟨z, hz⟩ ⊗ₜ m, ?_⟩
     rw [LinearMap.rTensor_tmul, LinearMap.rTensor_tmul, ← TensorProduct.add_tmul]
     exact congrArg (· ⊗ₜ m) (Subtype.ext hyz.symm)
@@ -175,7 +175,7 @@ theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Subm
     -- In `J`, the element `y` of `I • J` lies in `I • ⊤`, since `I • J` is the image of `I • ⊤`.
     have hy : (y : N) ∈ (I • ⊤ : Submodule R J).map J.subtype := by
       rw [map_smul'', map_top, range_subtype]
-      exact y.2
+      exact y.property
     obtain ⟨z, hz, hzy⟩ := hy
     have hz' : inclusion smul_le_right y = z := Subtype.ext hzy.symm
     rw [LinearMap.lTensor_tmul, hz']
@@ -214,7 +214,7 @@ theorem map₂_tmul_mul_le (P S : Submodule R A) (Q T : Submodule R B) :
     induction b with
     | tmul s t =>
       simpa using apply_mem_map₂ (TensorProduct.mk R A B)
-        (mul_mem_mul p.2 s.2) (mul_mem_mul q.2 t.2)
+        (mul_mem_mul p.property s.property) (mul_mem_mul q.property t.property)
     | add b c hb hc => simpa [mul_add] using Submodule.add_mem _ hb hc
   | add a c ha hc => simpa [add_mul] using Submodule.add_mem _ ha hc
 

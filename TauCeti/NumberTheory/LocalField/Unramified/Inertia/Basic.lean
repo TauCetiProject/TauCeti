@@ -326,7 +326,7 @@ theorem restrictNormal_mem_lowerRamificationGroup_zero
   have hτxω : τ • (x - ω) ∈ 𝓂[L] := by
     have h : ((τ.maximalIdealEquiv ⟨x - ω, hxω⟩ : 𝓂[L]) : 𝒪[L]) = τ • (x - ω) :=
       Subtype.ext (by rw [AlgEquiv.coe_maximalIdealEquiv, AlgEquiv.coe_smul_integerRing])
-    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).2
+    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).property
   rw [zero_add, Int.toNat_one, pow_one, show τ • x - x = τ • (x - ω) - (x - ω) by
     rw [smul_sub, hω]
     ring]

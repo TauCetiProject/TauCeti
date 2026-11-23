@@ -101,7 +101,7 @@ scalar extension of evaluation at `v`. -/
 theorem finiteAdeleBaseChangeHom_apply (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
     (v : HeightOneSpectrum (𝓞 K))
     (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    finiteAdeleBaseChangeHom K L s w.1 =
+    finiteAdeleBaseChangeHom K L s w.val =
       v.adicCompletionSemilocalHom K (𝓞 L) L
         (TensorProduct.map
           (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K).toLinearMap
@@ -162,13 +162,13 @@ theorem finiteAdeleBaseChangeHom_injective :
 component is integral, the coefficients can be chosen in `𝒪_v`. -/
 private theorem exists_semilocalHom_sum_tmul_eq (v : HeightOneSpectrum (𝓞 K))
     (z : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-      w.1.adicCompletion L) :
+      w.val.adicCompletion L) :
     ∃ c : Module.Free.ChooseBasisIndex ℤ (𝓞 L) → v.adicCompletion K,
       v.adicCompletionSemilocalHom K (𝓞 L) L (∑ i, c i ⊗ₜ[K] (RingOfIntegers.basis L i : L)) = z ∧
-      ((∀ w, z w ∈ w.1.adicCompletionIntegers L) → ∀ i, c i ∈ v.adicCompletionIntegers K) := by
+      ((∀ w, z w ∈ w.val.adicCompletionIntegers L) → ∀ i, c i ∈ v.adicCompletionIntegers K) := by
   classical
   let b := RingOfIntegers.basis L
-  by_cases hz : ∀ w, z w ∈ w.1.adicCompletionIntegers L
+  by_cases hz : ∀ w, z w ∈ w.val.adicCompletionIntegers L
   · -- Integral components come from the integral tensor product, which `1 ⊗ b i` spans.
     obtain ⟨ζ, hζ⟩ :=
       (v.adicCompletionIntegersSemilocalEquiv K (𝓞 L) L).surjective fun w ↦ ⟨z w, hz w⟩
@@ -180,7 +180,7 @@ private theorem exists_semilocalHom_sum_tmul_eq (v : HeightOneSpectrum (𝓞 K))
       exact h.symm
     obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp
       (hspan ▸ Submodule.mem_top : ζ ∈ Submodule.span _ _)
-    refine ⟨fun i ↦ c i, ?_, fun _ i ↦ (c i).2⟩
+    refine ⟨fun i ↦ c i, ?_, fun _ i ↦ (c i).property⟩
     have h :=
       v.adicCompletionIntegersSemilocalEquiv_fieldCompatibility (K := K) (B := 𝓞 L) (L := L) ζ
     rw [hζ, ← hc, map_sum] at h
@@ -214,13 +214,13 @@ theorem finiteAdeleBaseChangeHom_surjective :
   classical
   intro y
   choose c hc hci using fun v : HeightOneSpectrum (𝓞 K) ↦
-    exists_semilocalHom_sum_tmul_eq K L v fun w ↦ y w.1
+    exists_semilocalHom_sum_tmul_eq K L v fun w ↦ y w.val
   -- The components of `y` above `v` are integral for all but finitely many `v`.
   have hy : ∀ᶠ v : HeightOneSpectrum (𝓞 K) in Filter.cofinite,
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        y w.1 ∈ w.1.adicCompletionIntegers L := by
+        y w.val ∈ w.val.adicCompletionIntegers L := by
     have hfin : {w : HeightOneSpectrum (𝓞 L) | y w ∉ w.adicCompletionIntegers L}.Finite :=
-      Filter.eventually_cofinite.1 y.2
+      Filter.eventually_cofinite.1 y.property
     refine Filter.eventually_cofinite.2 ((hfin.image (HeightOneSpectrum.under (𝓞 K))).subset ?_)
     intro v hv
     simp only [Set.mem_ofPred_eq, not_forall] at hv

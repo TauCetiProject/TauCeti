@@ -430,7 +430,7 @@ theorem homogeneousLawMap_surjective (d : ℕ) :
   · rw [coeff_homogeneousLawMap d _ m k hk, LinearMap.comp_apply,
       Submodule.subtype_apply, coeffLift_prod_dp f fun j ↦ (k j, m j), famCoeff]
     simp
-  · rw [(mem_homogeneousSubmodule.mp (homogeneousLawMap R M N d _).2).coeff_eq_zero m hk,
+  · rw [(mem_homogeneousSubmodule.mp (homogeneousLawMap R M N d _).property).coeff_eq_zero m hk,
       (mem_homogeneousSubmodule.mp hf).coeff_eq_zero m hk]
 
 variable (R M N) in

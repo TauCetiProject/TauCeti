@@ -7,6 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -20,8 +23,10 @@ An affine map of a finite-dimensional real normed space multiplies every additiv
 by the absolute value of the determinant of its linear part
 (`MeasureTheory.Measure.addHaar_image_affineMap`, and
 `MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation `y ↦ x + r • y`,
-`r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. Correspondingly, the substitution
+`x = N y` for an invertible linear map `N` multiplies integrals by `|det N|`
+(`MeasureTheory.Measure.integral_eq_abs_det_smul_integral_comp`). The affine dilation
+`y ↦ x + r • y`, `r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
 (`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`), and it scales measures by the
 inverse dimension power of `|r|` (`MeasureTheory.Measure.addHaar_preimage_add_smul`,
 `MeasureTheory.Measure.ofReal_abs_pow_mul_addHaar_preimage_add_smul`), in particular the measure
@@ -32,6 +37,9 @@ of the part of a set in a ball or closed ball
 equivalences for rescaling lower volume bounds
 (`MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_iff`,
 `MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_inter_ball_iff`).
+
+`MeasureTheory.Measure.addHaar_preimage_comp_sub_right_ball` gives the corresponding
+translation-and-scaling formula for preimages of balls under linear maps.
 
 A linear map into a finite-dimensional real normed space that is not surjective has almost every
 fibre empty for every additive Haar measure on the codomain
@@ -65,7 +73,7 @@ is a proper subspace, hence null, and the latter measure tends to zero as `t →
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Metric Set
 open scoped ENNReal Pointwise
 
 namespace TauCeti
@@ -91,6 +99,20 @@ section Affine
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] (μ : Measure F) [μ.IsAddHaarMeasure]
 
+/-- For `s > 0`, the preimage `z₀ + A⁻¹(B_s)` of a ball under a linear map has
+Haar measure `sⁿ μ(A⁻¹(B_1))`, where `n` is the dimension of the domain. -/
+theorem addHaar_preimage_comp_sub_right_ball {G : Type*} [SeminormedAddCommGroup G]
+    [NormedSpace ℝ G] (A : F →ₗ[ℝ] G) (z₀ : F) {s : ℝ} (hs : 0 < s) :
+    μ ((fun z ↦ A (z - z₀)) ⁻¹' Metric.ball 0 s) =
+      ENNReal.ofReal (s ^ Module.finrank ℝ F) * μ (A ⁻¹' Metric.ball 0 1) := by
+  have hset : (fun z ↦ A (z - z₀)) ⁻¹' Metric.ball (0 : G) s =
+      (fun z ↦ z + -z₀) ⁻¹' (s • (A ⁻¹' Metric.ball (0 : G) 1)) := by
+    ext z
+    simp only [mem_preimage, mem_ball_zero_iff, mem_smul_set_iff_inv_smul_mem₀ hs.ne',
+      map_smul, norm_smul, sub_eq_add_neg, Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
+    rw [inv_mul_lt_iff₀ hs, mul_one]
+  rw [hset, measure_preimage_add_right, Measure.addHaar_smul, abs_of_nonneg (by positivity)]
+
 /-- The image of a set under an affine map has Haar measure equal to the absolute value of the
 determinant of the linear part times the measure of the set. -/
 theorem addHaar_image_affineMap (f : F →ᵃ[ℝ] F) (s : Set F) :
@@ -105,6 +127,20 @@ the determinant of the linear part times the measure of the set. -/
 theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
     μ (f '' s) = ENNReal.ofReal |LinearMap.det (f.linear : F →ₗ[ℝ] F)| * μ s :=
   addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
+
+/-- **Linear change of variables.** Substituting `x = N y` for an invertible linear map `N`
+multiplies an integral against an additive Haar measure by `|det N|`. -/
+theorem integral_eq_abs_det_smul_integral_comp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {N : F →L[ℝ] F} (hN : IsUnit N) (f : F → G) :
+    ∫ x, f x ∂μ = |N.det| • ∫ y, f (N y) ∂μ := by
+  obtain ⟨u, rfl⟩ := hN
+  set e := ContinuousLinearEquiv.unitsEquiv ℝ F u
+  have he : ⇑e = ⇑(u : F →L[ℝ] F) := funext (ContinuousLinearEquiv.unitsEquiv_apply ℝ F u)
+  have h := integral_image_eq_integral_abs_det_fderiv_smul μ MeasurableSet.univ
+    (fun y _ ↦ (u : F →L[ℝ] F).hasFDerivAt.hasFDerivWithinAt) (he ▸ e.injective).injOn f
+  rw [image_univ_of_surjective (he ▸ e.surjective)] at h
+  simp only [Measure.restrict_univ] at h
+  rw [h, integral_smul]
 
 /-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
 Haar measure, so preimages under it of null-measurable sets are null-measurable. -/

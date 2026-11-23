@@ -32,7 +32,8 @@ convergent geometric series, which integrates term by term against an `L¹` func
 * `TauCeti.norm_fourier_apply`: every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
 * `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
   `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
-* `TauCeti.fourier_apply_add`: `fourier n (x + y) = fourier n x * fourier n y`.
+* `TauCeti.fourier_apply_add`, `TauCeti.fourier_apply_sub`: `fourier n` turns sums and differences
+  of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
 * `TauCeti.norm_fourier_sub_one_le`: `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖` on the circle, where `‖h‖` is
@@ -44,7 +45,8 @@ convergent geometric series, which integrates term by term against an `L¹` func
   `TauCeti.hasSum_integral_inv_one_sub_mul_fourier`: for `‖c‖ < 1` the geometric kernel
   `(1 - c * e_m)⁻¹` is continuous, and integrating an `L¹` function `f` against it gives
   `∑ n, c ^ n * f̂ (-(n * m))`.
-* `UnitAddTorus.mFourier_apply_add`, `TauCeti.UnitAddTorus.mFourier_coe_apply` and
+* `UnitAddTorus.mFourier_apply_add`, `UnitAddTorus.mFourier_apply_sub`,
+  `TauCeti.UnitAddTorus.mFourier_coe_apply` and
   `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
   monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
   is `exp (2πi ∑ i, n i * x i)`.
@@ -101,6 +103,11 @@ theorem fourier_one_pow_apply (m : ℕ) (x : AddCircle T) :
 theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
     fourier n (x + y) = fourier n x * fourier n y := by
   simp [AddCircle.toCircle_add]
+
+/-- A Fourier monomial turns a difference of points into `fourier n x * fourier (-n) y`. -/
+theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
+    fourier n (x - y) = fourier n x * fourier (-n) y := by
+  simp [sub_eq_add_neg, AddCircle.toCircle_add]
 
 /-- The frequency factor `2πin/T` by which differentiation multiplies the Fourier monomial
 `fourier n` (`hasDerivAt_fourier`) has norm `2π/T |n|`. -/
@@ -258,6 +265,13 @@ theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
     mFourier n (x + y) = mFourier n x * mFourier n y := by
   simp only [mFourier, ContinuousMap.coe_mk, Pi.add_apply, TauCeti.fourier_apply_add,
     Finset.prod_mul_distrib]
+
+/-- A multivariate Fourier monomial turns a difference of points into a product with the
+monomial of the opposite index: `mFourier n (x - y) = mFourier n x * mFourier (-n) y`. -/
+theorem mFourier_apply_sub (n : d → ℤ) (x y : UnitAddTorus d) :
+    mFourier n (x - y) = mFourier n x * mFourier (-n) y := by
+  rw [sub_eq_add_neg, mFourier_apply_add]
+  simp only [mFourier, ContinuousMap.coe_mk, Pi.neg_apply, fourier_apply, smul_neg, neg_smul]
 
 /-- Multivariate Fourier monomials take values in the unit circle. -/
 @[simp]

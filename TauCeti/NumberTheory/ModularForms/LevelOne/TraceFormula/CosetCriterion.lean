@@ -84,10 +84,10 @@ local notation "qR" => Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))
 
 /-- The anti-involution on determinant-`n` matrices. -/
 private def flipFixedDet (A : TraceFormulaMatrix n) : TraceFormulaMatrix n :=
-  ⟨A.1.antitranspose, by rw [Matrix.det_antitranspose, A.2]⟩
+  ⟨A.val.antitranspose, by rw [Matrix.det_antitranspose, A.property]⟩
 
 private theorem val_flipFixedDet (A : TraceFormulaMatrix n) :
-    (flipFixedDet A).1 = !![A.1 1 1, A.1 0 1; A.1 1 0, A.1 0 0] :=
+    (flipFixedDet A).val = !![A.val 1 1, A.val 0 1; A.val 1 0, A.val 0 0] :=
   Matrix.antitranspose_fin_two _
 
 /-- The anti-involution on `ℳₙ`. -/
@@ -107,7 +107,7 @@ private theorem flip_flip (x : ℳ n) : flip (flip x) = x := by
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   rw [flip_mk, flip_mk]
   exact congrArg mk
-    (Subtype.ext A.1.antitranspose_antitranspose : flipFixedDet (flipFixedDet A) = A)
+    (Subtype.ext A.val.antitranspose_antitranspose : flipFixedDet (flipFixedDet A) = A)
 
 /-- The anti-involution turns left multiplication by `g` into right multiplication by its image. -/
 private theorem flip_smul (g : SL(2, ℤ)) (x : ℳ n) :
@@ -158,15 +158,15 @@ private theorem mapDomain_coeff_flipSum_apply [Semiring k] (hn : n ≠ 0) (x : �
 
 /-- Membership of `mk A` in `ℳₙ^∞` in terms of the entries `(a b; c d)` of `A`. -/
 private theorem mk_mem_upperTriangularReps_iff_of_val_eq {A : TraceFormulaMatrix n}
-    {a b c d : ℤ} (hA : A.1 = !![a, b; c, d]) :
+    {a b c d : ℤ} (hA : A.val = !![a, b; c, d]) :
     mk A ∈ upperTriangularReps n ↔
       c = 0 ∧ 0 < a ∧ 0 ≤ b ∧ |b| < |d| ∨ c = 0 ∧ a < 0 ∧ b ≤ 0 ∧ |b| < |d| := by
   simp [mk_mem_upperTriangularReps, FixedDetMatrices.reps, hA]
 
 /-- The image of `T⁻¹ (a b; c d)` under the anti-involution is `(d, b - d; c, a - c)`. -/
 private theorem val_flipFixedDet_T_inv_smul (A : TraceFormulaMatrix n) :
-    (flipFixedDet (T⁻¹ • A)).1 =
-      !![A.1 1 1, A.1 0 1 - A.1 1 1; A.1 1 0, A.1 0 0 - A.1 1 0] := by
+    (flipFixedDet (T⁻¹ • A)).val =
+      !![A.val 1 1, A.val 0 1 - A.val 1 1; A.val 1 0, A.val 0 0 - A.val 1 0] := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [val_flipFixedDet, FixedDetMatrices.smul_coe, Matrix.mul_apply,
@@ -174,8 +174,8 @@ private theorem val_flipFixedDet_T_inv_smul (A : TraceFormulaMatrix n) :
 
 /-- The right translate `(a b; c d) T⁻¹` is `(a, b - a; c, d - c)`. -/
 private theorem val_traceFormulaMatrixRight_T (A : TraceFormulaMatrix n) :
-    (traceFormulaMatrixRight T A).1 =
-      !![A.1 0 0, A.1 0 1 - A.1 0 0; A.1 1 0, A.1 1 1 - A.1 1 0] := by
+    (traceFormulaMatrixRight T A).val =
+      !![A.val 0 0, A.val 0 1 - A.val 0 0; A.val 1 0, A.val 1 1 - A.val 1 0] := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [val_traceFormulaMatrixRight, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
@@ -188,17 +188,17 @@ private theorem one_sub_ofMulAction_T_flipSum [CommRing k] (hn : 0 < n) :
   classical
   ext x
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
-  have hdet : A.1 0 0 * A.1 1 1 - A.1 0 1 * A.1 1 0 = n := by
-    simpa [Matrix.det_fin_two] using A.2
+  have hdet : A.val 0 0 * A.val 1 1 - A.val 0 1 * A.val 1 0 = n := by
+    simpa [Matrix.det_fin_two] using A.property
   simp only [LinearMap.sub_apply, one_apply_eq_self, coeff_sub, Finsupp.coe_sub, Pi.sub_apply,
     coeff_ofMulAction, coeff_flipSum, coeff_upperTriangularSum, smul_mk, flip_mk,
     ← MulOpposite.op_inv, ← QuotientGroup.mk_inv, op_smul_mk, inv_inv]
   simp only [Set.indicator_apply, Pi.one_apply,
     mk_mem_upperTriangularReps_iff_of_val_eq (val_flipFixedDet A),
     mk_mem_upperTriangularReps_iff_of_val_eq (val_flipFixedDet_T_inv_smul A),
-    mk_mem_upperTriangularReps_iff_of_val_eq (Matrix.eta_fin_two A.1),
+    mk_mem_upperTriangularReps_iff_of_val_eq (Matrix.eta_fin_two A.val),
     mk_mem_upperTriangularReps_iff_of_val_eq (val_traceFormulaMatrixRight_T A)]
-  generalize A.1 0 0 = a, A.1 0 1 = b, A.1 1 0 = c, A.1 1 1 = d at hdet ⊢
+  generalize A.val 0 0 = a, A.val 0 1 = b, A.val 1 0 = c, A.val 1 1 = d at hdet ⊢
   rcases eq_or_ne c 0 with rfl | hc
   · -- the four indicators are those of `0 ≤ b < a`, `d ≤ b < a + d`, `0 ≤ b < d` and
     -- `a ≤ b < a + d` (up to sign), and `[0, a) + [a, a + d) = [0, d) + [d, a + d)`

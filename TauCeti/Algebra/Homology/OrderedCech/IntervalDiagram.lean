@@ -316,15 +316,15 @@ number of vertices of `s` below the deleted one. -/
 lemma flagComplexι_d (A : IntervalDiagram S C) {p : ℕ} {s : Finset (LinearExtension S)}
     (hs : IsFlag s) (hp : #s = p + 1 + 1) :
     A.flagComplexι hs hp ≫ A.flagComplex.d (p + 1) p =
-      ∑ i : s, ((-1 : ℤ) ^ #{j ∈ s | j < i.1}) •
-        A.map (homOfLE (flagInterval_mono hs (hs.erase (by omega) i.1) (erase_subset _ _))).op ≫
-          A.flagComplexι (hs.erase (by omega) i.1)
-            (by rw [card_erase_of_mem i.2, hp, Nat.add_sub_cancel]) := by
+      ∑ i : s, ((-1 : ℤ) ^ #{j ∈ s | j < i.val}) •
+        A.map (homOfLE (flagInterval_mono hs (hs.erase (by omega) i.val) (erase_subset _ _))).op ≫
+          A.flagComplexι (hs.erase (by omega) i.val)
+            (by rw [card_erase_of_mem i.property, hp, Nat.add_sub_cancel]) := by
   simp only [flagComplexι, Category.assoc]
   rw [Functor.ι_orderedCechComplex_d, Preadditive.comp_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Preadditive.comp_zsmul, flagObjι_flagObjDesc_assoc,
-    flagRestrict_of_isFlag A hs _ (hs.erase (by omega) i.1), Category.assoc]
+    flagRestrict_of_isFlag A hs _ (hs.erase (by omega) i.val), Category.assoc]
 
 end Complex
 
@@ -337,7 +337,7 @@ flag with `p + 1` vertices. -/
 def flagComplexDesc (A : IntervalDiagram S C) {p : ℕ} {Y : C}
     (f : ∀ (s : Finset (LinearExtension S)) (hs : IsFlag s), #s = p + 1 →
       (A.obj (op (flagInterval hs)) ⟶ Y)) : A.flagComplex.X p ⟶ Y :=
-  A.flagFunctor.orderedCechComplexDesc fun s ↦ A.flagObjDesc fun hs ↦ f s.1 hs s.2
+  A.flagFunctor.orderedCechComplexDesc fun s ↦ A.flagObjDesc fun hs ↦ f s.val hs s.property
 
 @[reassoc (attr := simp)]
 lemma flagComplexι_flagComplexDesc (A : IntervalDiagram S C) {p : ℕ} {Y : C}
@@ -633,7 +633,7 @@ lemma quasiIso_flagComplexMap_f (α : A ⟶ B) [∀ I, QuasiIso (α.app I)] (p :
   exact HomologicalComplex.quasiIso_of_isColimit_cofan
     (A.flagFunctor.isColimitOrderedCechComplexCofan p)
     (B.flagFunctor.isColimitOrderedCechComplexCofan p)
-    (fun s : {s : Finset (LinearExtension S) // #s = p + 1} ↦ (flagFunctorMap α).app (op s.1)) _
+    (fun s : {s : Finset (LinearExtension S) // #s = p + 1} ↦ (flagFunctorMap α).app (op s.val)) _
     fun s ↦ NatTrans.ι_orderedCechComplexMap_f (flagFunctorMap α) s
 
 /-- **A map of interval diagrams which is a quasi-isomorphism on every interval induces a
@@ -658,10 +658,6 @@ theorem quasiIso_totalMap (α : A ⟶ B) [∀ I, QuasiIso (α.app I)] : QuasiIso
     -- the goal only up to unfolding the total complex, so the sign is moved with `erw`.
     erw [Linear.units_smul_comp, ιTotal_totalMap, Linear.comp_units_smul]
     rw [HomologicalComplex₂.flipFunctor_map_f_f]
-    -- The two sides now differ only in the types of the morphisms, where one side still writes
-    -- the objects of the flag complexes through `HomologicalComplex₂.flip`; they agree by
-    -- definition.
-    rfl
   rw [← quasiIso_iff_comp_left
       (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom, hcomm]
   infer_instance

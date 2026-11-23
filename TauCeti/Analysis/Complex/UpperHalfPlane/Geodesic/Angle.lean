@@ -138,7 +138,7 @@ theorem velocity_rotation_zero (θ : ℝ) :
     rw [Complex.exp_mul_I, Complex.cos_neg, Complex.sin_neg]
     push_cast
     ring
-  rw [h, ← Complex.exp_nat_mul, div_eq_mul_inv, ← Complex.exp_neg]
+  rw [h, ← Complex.exp_natCast_mul, div_eq_mul_inv, ← Complex.exp_neg]
   congr 2
   push_cast
   ring

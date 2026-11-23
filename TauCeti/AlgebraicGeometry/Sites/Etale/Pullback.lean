@@ -367,7 +367,7 @@ instance preservesFiniteLimits_smallEtalePullback
     [(smallEtaleTopology X).HasSheafCompose (CategoryTheory.forget A)] :
     PreservesFiniteLimits (f.smallEtalePullback A) := by
   let p (x : X) : Spec (.of (SeparableClosure (X.residueField x))) ⟶ X :=
-    (SpecToEquivOfField (SeparableClosure (X.residueField x)) _).2
+    (SpecToEquivOfField (SeparableClosure (X.residueField x)) _).invFun
       ⟨x, CommRingCat.ofHom (algebraMap (X.residueField x) _)⟩
   have hΦ : JointlyReflectIsomorphisms fun x : X ↦ (pointSmallEtale (p x)).sheafFiber (A := A) :=
     ⟨fun φ h ↦

@@ -132,43 +132,44 @@ theorem exists_proper_homotopy_extension_of_retraction {Y : Type v} [Topological
   -- Glue `f` and `H` on `J = {0} × X ∪ I × A`; the bottom slice and wall form a closed cover of `J`
   -- on which the glued map restricts to proper maps.
   let g₀ : cylinderExtensionDomain A → Y := fun q ↦
-    if h : q.1.2 ∈ A then H (q.1.1, ⟨q.1.2, h⟩) else f q.1.2
-  let C₀ : Set (cylinderExtensionDomain A) := {q | q.1.1 = 0}
-  let C₁ : Set (cylinderExtensionDomain A) := {q | q.1.2 ∈ A}
+    if h : q.val.2 ∈ A then H (q.val.1, ⟨q.val.2, h⟩) else f q.val.2
+  let C₀ : Set (cylinderExtensionDomain A) := {q | q.val.1 = 0}
+  let C₁ : Set (cylinderExtensionDomain A) := {q | q.val.2 ∈ A}
   have hC₀ : IsClosed C₀ := (isClosed_singleton (x := (0 : I))).preimage (by fun_prop)
   have hC₁ : IsClosed C₁ := hA.preimage (by fun_prop)
-  have hcov : C₀ ∪ C₁ = univ := eq_univ_of_forall fun q ↦ mem_cylinderExtensionDomain_iff.1 q.2
+  have hcov : C₀ ∪ C₁ = univ := eq_univ_of_forall fun q ↦ mem_cylinderExtensionDomain_iff.1
+      q.property
   have hinc : IsProperMap ((↑) : cylinderExtensionDomain A → I × X) := hdom.isProperMap_subtypeVal
   have hg₀ : IsProperMap g₀ := by
     rw [hC₀.isProperMap_iff_domRestrict_of_union_eq_univ hC₁ hcov]
     refine ⟨?_, ?_⟩
     · have h₀ : C₀.domRestrict g₀ = (f ∘ Prod.snd) ∘ C₀.domRestrict Subtype.val := by
         funext ⟨q, hq⟩
-        have hq0 : q.1.1 = 0 := hq
-        by_cases hx : q.1.2 ∈ A <;> simp [g₀, hq0, hx, h0]
+        have hq0 : q.val.1 = 0 := hq
+        by_cases hx : q.val.2 ∈ A <;> simp [g₀, hq0, hx, h0]
       rw [h₀]
       exact (hf.comp isProperMap_snd_of_compactSpace).comp (hinc.restrict hC₀)
-    · let φ : C₁ → I × A := fun q ↦ (q.1.1.1, ⟨q.1.1.2, q.2⟩)
+    · let φ : C₁ → I × A := fun q ↦ (q.val.val.1, ⟨q.val.val.2, q.property⟩)
       have hφ_comp : Prod.map id Subtype.val ∘ φ = C₁.domRestrict Subtype.val := by
         funext q
         simp [φ]
       have hφ : IsProperMap φ :=
-        isProperMap_of_comp_of_inj (by fun_prop) (continuous_id.prodMap continuous_subtype_val)
+        isProperMap_of_comp_of_inj (by fun_prop) (continuous_id.prodMap continuous_subtypeVal)
           (hφ_comp ▸ hinc.restrict hC₁) (Function.injective_id.prodMap Subtype.val_injective)
       have h₁ : C₁.domRestrict g₀ = H ∘ φ := by
         funext ⟨q, hq⟩
-        have hx : q.1.2 ∈ A := hq
+        have hx : q.val.2 ∈ A := hq
         simp [g₀, φ, hx]
       rw [h₁]
       exact hH.comp hφ
   let r₀ : I × X → cylinderExtensionDomain A := fun p ↦ ⟨r p, hr p⟩
   have hr₀ : IsProperMap r₀ :=
-    isProperMap_of_comp_of_inj (r.continuous.subtype_mk hr) continuous_subtype_val hrp
+    isProperMap_of_comp_of_inj (r.continuous.subtype_mk hr) continuous_subtypeVal hrp
       Subtype.val_injective
   refine ⟨⟨g₀ ∘ r₀, hg₀.continuous.comp hr₀.continuous⟩, hg₀.comp hr₀, fun x ↦ ?_, fun t a ↦ ?_⟩
   · by_cases hx : x ∈ A <;>
       simp [g₀, r₀, hr' _ (zero_mem_cylinderExtensionDomain x), hx, h0]
-  · simp [g₀, r₀, hr' _ (mem_cylinderExtensionDomain_of_mem a.2), a.2]
+  · simp [g₀, r₀, hr' _ (mem_cylinderExtensionDomain_of_mem a.property), a.property]
 
 /-- A subset onto whose cylinder extension domain the cylinder properly retracts has the proper
 homotopy extension property. -/
@@ -194,13 +195,13 @@ theorem _root_.IsClopen.hasProperHomotopyExtensionProperty (hA : IsClopen A) :
     refine ⟨?_, ?_⟩
     · have h₀ : s.domRestrict r = Subtype.val := by
         funext p
-        have hp : p.1.2 ∈ A := p.2
+        have hp : p.val.2 ∈ A := p.property
         simp [r, hp]
       rw [h₀]
       exact hs.isProperMap_subtypeVal
     · have h₁ : t.domRestrict r = t.domRestrict (Prod.mk (0 : I) ∘ Prod.snd) := by
         funext p
-        have hp : p.1.2 ∉ A := p.2
+        have hp : p.val.2 ∉ A := p.property
         simp [r, hp]
       rw [h₁]
       exact ((isProperMap_prodMk_left (0 : I)).comp isProperMap_snd_of_compactSpace).restrict ht
@@ -232,23 +233,24 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_retraction
   let f₀ : C(X, cylinderExtensionDomain A) :=
     ⟨fun x ↦ ⟨((0 : I), x), zero_mem_cylinderExtensionDomain x⟩, by fun_prop⟩
   let H₀ : C(I × A, cylinderExtensionDomain A) :=
-    ⟨fun q ↦ ⟨(q.1, q.2.1), mem_cylinderExtensionDomain_of_mem q.2.2⟩, by fun_prop⟩
+    ⟨fun q ↦ ⟨(q.1, q.2.val), mem_cylinderExtensionDomain_of_mem q.2.property⟩, by fun_prop⟩
   have hf₀_comp : Subtype.val ∘ (f₀ : X → cylinderExtensionDomain A) = Prod.mk (0 : I) := by
     funext x
     simp [f₀]
   have hf₀ : IsProperMap f₀ :=
-    isProperMap_of_comp_of_inj f₀.continuous continuous_subtype_val
+    isProperMap_of_comp_of_inj f₀.continuous continuous_subtypeVal
       (hf₀_comp ▸ isProperMap_prodMk_left (0 : I)) Subtype.val_injective
   have hH₀_comp : Subtype.val ∘ (H₀ : I × A → cylinderExtensionDomain A) =
       Prod.map id Subtype.val := by
     funext ⟨t, a⟩
     simp [H₀]
   have hH₀ : IsProperMap H₀ :=
-    isProperMap_of_comp_of_inj H₀.continuous continuous_subtype_val
+    isProperMap_of_comp_of_inj H₀.continuous continuous_subtypeVal
       (hH₀_comp ▸ isProperMap_id.prodMap hA.isProperMap_subtypeVal) Subtype.val_injective
   obtain ⟨K, hKp, hK₀, hK₁⟩ := h.exists_extension f₀ hf₀ H₀ hH₀ fun _ ↦ rfl
-  refine ⟨⟨fun p ↦ (K p : I × X), continuous_subtype_val.comp K.continuous⟩,
-    (isClosed_cylinderExtensionDomain hA).isProperMap_subtypeVal.comp hKp, fun p ↦ (K p).2, ?_⟩
+  refine ⟨⟨fun p ↦ (K p : I × X), continuous_subtypeVal.comp K.continuous⟩,
+    (isClosed_cylinderExtensionDomain hA).isProperMap_subtypeVal.comp hKp, fun p ↦ (K p).property,
+        ?_⟩
   rintro ⟨t, x⟩ htx
   rcases mem_cylinderExtensionDomain_iff.1 htx with rfl | hx
   · exact congrArg Subtype.val (hK₀ x)

@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.TraceWord.Connected
 public import TauCeti.Probability.RandomMatrix.MomentBounds
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Probability.RandomMatrix.Wigner.Trace.Integrability
 
 /-!
 # Connected two-trace expansion and covariance bounds for Wigner moments
@@ -62,12 +63,12 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper �
 section ConnectedExpansion
 
 private theorem integral_prod_mul_prod_sub_eq_zero_of_not_connected {k₁ k₂ n : ℕ}
-    (hξm : ∀ ij : StrictUpper, ij.1.2 < n → AEMeasurable (ξ ij) P)
+    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
     (hηm : ∀ i < n, AEMeasurable (η i) P)
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
-    (hξzero : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξzero : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hηzero : ∀ i < n, ∫ ω, η i ω ∂P = 0) (w₁ : Fin k₁ → Fin n) (w₂ : Fin k₂ → Fin n)
     (hnot : ¬ ((∃ i j, s(w₁ i, w₁ (finRotate k₁ i)) = s(w₂ j, w₂ (finRotate k₂ j))) ∧
       ∀ t : Fin k₁ ⊕ Fin k₂, ∃ t' ≠ t,
@@ -363,11 +364,11 @@ private theorem integrable_trace_pow_mul_trace_pow_wignerMatrix [IsFiniteMeasure
       (wignerMatrix ξ η n ω ^ k₂).trace) P := by
   rcases eq_or_ne k₁ 0 with rfl | hk₁
   · simp only [pow_zero, trace_one, Fintype.card_fin]
-    exact (integrable_trace_pow_wignerMatrix (n := n)
+    exact (integrable_trace_pow_wignerMatrix (n := n) (fun _ ↦ inferInstance)
       (fun ij _ ↦ by simpa using hξp ij) (fun i _ ↦ by simpa using hηp i)).const_mul _
   rcases eq_or_ne k₂ 0 with rfl | hk₂
   · simp only [pow_zero, trace_one, Fintype.card_fin]
-    exact (integrable_trace_pow_wignerMatrix (n := n)
+    exact (integrable_trace_pow_wignerMatrix (n := n) (fun _ ↦ inferInstance)
       (fun ij _ ↦ by simpa using hξp ij) (fun i _ ↦ by simpa using hηp i)).mul_const _
   have hprod (ω : Ω) : (wignerMatrix ξ η n ω ^ k₁).trace * (wignerMatrix ξ η n ω ^ k₂).trace =
       ∑ p : (Fin k₁ → Fin n) × (Fin k₂ → Fin n),
@@ -404,11 +405,11 @@ theorem norm_integral_inv_mul_trace_pow_wignerMatrix_sub_mul_le
   set X₁ : Ω → ℂ := fun ω ↦ (n : ℂ)⁻¹ * (wignerMatrix ξ η n ω ^ k₁).trace
   set X₂ : Ω → ℂ := fun ω ↦ (n : ℂ)⁻¹ * (wignerMatrix ξ η n ω ^ k₂).trace
   have hint₁ : Integrable X₁ P :=
-    (integrable_trace_pow_wignerMatrix (n := n)
+    (integrable_trace_pow_wignerMatrix (n := n) (fun _ ↦ inferInstance)
       (fun ij _ ↦ (hξp ij).mono_exponent (by exact_mod_cast Nat.le_add_right k₁ k₂))
       (fun i _ ↦ (hηp i).mono_exponent (by exact_mod_cast Nat.le_add_right k₁ k₂))).const_mul _
   have hint₂ : Integrable X₂ P :=
-    (integrable_trace_pow_wignerMatrix (n := n)
+    (integrable_trace_pow_wignerMatrix (n := n) (fun _ ↦ inferInstance)
       (fun ij _ ↦ (hξp ij).mono_exponent (by exact_mod_cast Nat.le_add_left k₂ k₁))
       (fun i _ ↦ (hηp i).mono_exponent (by exact_mod_cast Nat.le_add_left k₂ k₁))).const_mul _
   have hint₁₂ : Integrable (fun ω ↦ X₁ ω * X₂ ω) P := by

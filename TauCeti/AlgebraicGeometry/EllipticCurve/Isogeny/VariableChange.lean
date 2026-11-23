@@ -479,7 +479,8 @@ variable (W : WeierstrassCurve.Affine F)
 point at infinity, hence a unit of the endomorphism monoid. -/
 noncomputable def autGroupToUnits : W.autGroup →* (Hom W W)ˣ :=
   MonoidHom.toHomUnits
-    { toFun := fun C => ofIsogeny (variableChangeIsogeny C (MulAction.mem_stabilizer_iff.mp C.2))
+    { toFun := fun C => ofIsogeny (variableChangeIsogeny C (MulAction.mem_stabilizer_iff.mp
+        C.property))
       map_one' := by
         simp only [OneMemClass.coe_one, variableChangeIsogeny_one, one_def, id_def]
       map_mul' := fun C C' => by
@@ -491,7 +492,7 @@ noncomputable def autGroupToUnits : W.autGroup →* (Hom W W)ˣ :=
 @[simp]
 theorem coe_autGroupToUnits (C : W.autGroup) :
     (autGroupToUnits W C : Hom W W) =
-      ofIsogeny (variableChangeIsogeny C (MulAction.mem_stabilizer_iff.mp C.2)) :=
+      ofIsogeny (variableChangeIsogeny C (MulAction.mem_stabilizer_iff.mp C.property)) :=
   (rfl)
 
 /-- **Distinct changes of variables fixing `W` give distinct automorphisms of `W`.** -/

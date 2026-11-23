@@ -70,7 +70,7 @@ theorem localEulerCharacteristic_eq_localCardNorm (n : ℕ) [NeZero n]
     ((QuotientGroup.mk' V.toSubgroup).subgroupComap C).comp
       (absoluteGaloisGroupExtendEquiv F L σ hσ : Field.absoluteGaloisGroup L →* _)
   have hf : Continuous f :=
-    ((QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _).comp
+    ((QuotientGroup.continuous_mk.comp continuous_subtypeVal).subtype_mk _).comp
       (absoluteGaloisGroupExtendEquiv F L σ hσ).continuous_toFun
   -- This open kernel acts trivially, and its index divides the order of the coprime group C.
   let N : OpenNormalSubgroup (Field.absoluteGaloisGroup L) :=

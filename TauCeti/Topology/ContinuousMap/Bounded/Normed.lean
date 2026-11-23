@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import Mathlib.Analysis.Normed.Group.Bounded
 
 /-!
 # Norm bounds and pointwise operators on bounded continuous functions
@@ -40,7 +41,10 @@ isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
 `ContinuousLinearMap.compLeftContinuousBounded_compContinuous`,
 `ContinuousLinearMap.norm_compLeftContinuousBounded_apply_le`, and
 `ContinuousLinearMap.norm_compLeftContinuousBounded_le` record naturality and operator-norm bounds
-for postcomposition with a continuous linear map, and
+for postcomposition with a continuous linear map.
+`ContinuousLinearMap.compLeftContinuousBounded₂` is the pointwise action
+`(f, g) ↦ (t ↦ B (f t) (g t))` of a continuous bilinear map `B` on bounded continuous functions,
+of operator norm at most `‖B‖` (`ContinuousLinearMap.norm_compLeftContinuousBounded₂_le`), and
 `LinearIsometry.norm_compLeftContinuousBounded` says that postcomposition with a linear isometry
 preserves the norm.
 
@@ -52,6 +56,9 @@ real function is a uniform limit of finite-valued bounded functions.
 `BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg` says that a nonnegative real
 bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
 
+`BoundedContinuousFunction.ringInverse_apply` says that the inverse of a unit of the algebra of
+bounded continuous functions with values in a normed division ring is computed pointwise.
+
 `BoundedContinuousFunction.dilate` is the dilation `n ↦ f (n / k)` of a bounded sequence, with
 natural-number division; dilations compose multiplicatively and commute with the pointwise
 operations. They are the operators under which Dixmier's generalized limits are invariant, see
@@ -62,6 +69,14 @@ bounded continuous difference-quotient `(t, s) ↦ (t - s)⁻¹ • (g t - g s)`
 at most `K`, with converse `BoundedContinuousFunction.lipschitzWith_of_sub_eq_smul`, and
 `BoundedContinuousFunction.pinnedCurve` recovers `t ↦ g t - g 0` from an off-diagonal difference
 quotient by pinning at `0`.
+
+`BoundedContinuousFunction.compactSlice` views a compactly supported continuous function
+on space-time as a bounded continuous spatial function at a fixed time.
+
+Formalization references for compact slices:
+https://github.com/frenzymath/lean-eval-submissions and
+https://github.com/frenzymath/PoincareConjecture.
+
 -/
 
 public section
@@ -187,6 +202,35 @@ theorem norm_compLeftContinuousBounded_le (g : β →L[𝕜] γ) (α : Type*) [T
   (g.compLeftContinuousBounded α).opNorm_le_bound (norm_nonneg g)
     (g.norm_compLeftContinuousBounded_apply_le)
 
+section Bilinear
+
+variable {ζ : Type*} [SeminormedAddCommGroup ζ] [NormedSpace 𝕜 ζ]
+
+/-- The pointwise action `(f, g) ↦ (t ↦ B (f t) (g t))` of a continuous bilinear map
+`B : β × γ → ζ` on bounded continuous functions, as a continuous bilinear map. -/
+noncomputable def compLeftContinuousBounded₂ (B : β →L[𝕜] γ →L[𝕜] ζ) (α : Type*)
+    [TopologicalSpace α] : (α →ᵇ β) →L[𝕜] (α →ᵇ γ) →L[𝕜] α →ᵇ ζ :=
+  BoundedContinuousFunction.applyCLM ∘L B.compLeftContinuousBounded α
+
+@[simp]
+theorem compLeftContinuousBounded₂_apply_apply (B : β →L[𝕜] γ →L[𝕜] ζ) (f : α →ᵇ β)
+    (g : α →ᵇ γ) (t : α) : B.compLeftContinuousBounded₂ α f g t = B (f t) (g t) :=
+  (rfl)
+
+/-- The pointwise action of `B` on `f` and `g` has sup norm at most `‖B‖ * ‖f‖ * ‖g‖`. -/
+theorem norm_compLeftContinuousBounded₂_apply_apply_le (B : β →L[𝕜] γ →L[𝕜] ζ) (f : α →ᵇ β)
+    (g : α →ᵇ γ) : ‖B.compLeftContinuousBounded₂ α f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
+  (BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦
+    B.le_of_opNorm₂_le_of_le le_rfl (f.norm_coe_le_norm t) (g.norm_coe_le_norm t)
+
+/-- The pointwise action of `B` on bounded continuous functions has operator norm at most
+`‖B‖`. -/
+theorem norm_compLeftContinuousBounded₂_le (B : β →L[𝕜] γ →L[𝕜] ζ) (α : Type*)
+    [TopologicalSpace α] : ‖B.compLeftContinuousBounded₂ α‖ ≤ ‖B‖ :=
+  opNorm_le_bound₂ _ (norm_nonneg B) B.norm_compLeftContinuousBounded₂_apply_apply_le
+
+end Bilinear
+
 end ContinuousLinearMap
 
 /-- Postcomposition with a linear isometry preserves the norm of a bounded continuous
@@ -211,8 +255,8 @@ preserved by both `a` and `b`. -/
 def compContinuousₗᵢ (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x) (hba : ∀ x, b (a x) = x)
     (ha : ∀ f ∈ s, f.compContinuous a ∈ s) (hb : ∀ f ∈ s, f.compContinuous b ∈ s) :
     s ≃ₗᵢ[𝕜] s where
-  toFun f := ⟨(f : α →ᵇ β).compContinuous a, ha _ f.2⟩
-  invFun f := ⟨(f : α →ᵇ β).compContinuous b, hb _ f.2⟩
+  toFun f := ⟨(f : α →ᵇ β).compContinuous a, ha _ f.property⟩
+  invFun f := ⟨(f : α →ᵇ β).compContinuous b, hb _ f.property⟩
   map_add' _ _ := Subtype.ext <| ext fun _ => by simp
   map_smul' _ _ := Subtype.ext <| ext fun _ => by simp
   left_inv f := Subtype.ext <| ext fun x => congrArg (f : α →ᵇ β) (hab x)
@@ -275,6 +319,13 @@ theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f 
       Real.norm_eq_abs]
     rw [abs_of_nonneg (by linarith)]
     linarith
+
+/-- The inverse of a unit of the algebra of bounded continuous functions with values in a normed
+division ring is computed pointwise. -/
+theorem ringInverse_apply {α 𝕜 : Type*} [TopologicalSpace α] [NormedDivisionRing 𝕜]
+    {F : α →ᵇ 𝕜} (hF : IsUnit F) (x : α) : Ring.inverse F x = (F x)⁻¹ := by
+  simpa using
+    hF.map_ringInverse ((Pi.evalMonoidHom (fun _ ↦ 𝕜) x).comp (FunLike.coeMonoidHom (α →ᵇ 𝕜) α 𝕜))
 
 section Dilate
 
@@ -412,19 +463,22 @@ variable {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedS
 /-- The bounded continuous difference-quotient `(t, s) ↦ (t - s)⁻¹ • (g t - g s)` on
 `offDiag (univ : Set 𝕜)` associated with a `K`-Lipschitz map `g : 𝕜 → E`. -/
 noncomputable def offDiagSlope (hg : LipschitzWith K g) : offDiag (univ : Set 𝕜) →ᵇ E :=
-  BoundedContinuousFunction.ofNormedAddCommGroup (fun p ↦ (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2))
+  BoundedContinuousFunction.ofNormedAddCommGroup
+    (fun p ↦ (p.val.1 - p.val.2)⁻¹ • (g p.val.1 - g p.val.2))
     (by
       have hc := hg.continuous
-      exact (((continuous_fst.comp continuous_subtype_val).sub
-        (continuous_snd.comp continuous_subtype_val)).inv₀ fun p ↦ sub_ne_zero.2 p.2.2.2).smul
-        ((hc.comp (continuous_fst.comp continuous_subtype_val)).sub
-          (hc.comp (continuous_snd.comp continuous_subtype_val))))
+      exact (((continuous_fst.comp continuous_subtypeVal).sub
+        (continuous_snd.comp continuous_subtypeVal)).inv₀ fun p ↦ sub_ne_zero.2
+            p.property.2.2).smul
+        ((hc.comp (continuous_fst.comp continuous_subtypeVal)).sub
+          (hc.comp (continuous_snd.comp continuous_subtypeVal))))
     K fun p ↦ by
-      rw [norm_smul, norm_inv, inv_mul_le_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 p.2.2.2)), mul_comm]
-      simpa [dist_eq_norm] using hg.dist_le_mul p.1.1 p.1.2
+      rw [norm_smul, norm_inv, inv_mul_le_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 p.property.2.2)),
+          mul_comm]
+      simpa [dist_eq_norm] using hg.dist_le_mul p.val.1 p.val.2
 
 @[simp] theorem offDiagSlope_apply (hg : LipschitzWith K g) (p : offDiag (univ : Set 𝕜)) :
-    hg.offDiagSlope p = (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2) := (rfl)
+    hg.offDiagSlope p = (p.val.1 - p.val.2)⁻¹ • (g p.val.1 - g p.val.2) := (rfl)
 
 theorem norm_offDiagSlope_le (hg : LipschitzWith K g) : ‖hg.offDiagSlope‖ ≤ K :=
   BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ K.coe_nonneg _
@@ -439,3 +493,24 @@ theorem smul_offDiagSlope_apply (hg : LipschitzWith K g) {t s : 𝕜} (h : t ≠
   simpa [BoundedContinuousFunction.pinnedCurve_of_ne_zero _ ht] using hg.smul_offDiagSlope_apply ht
 
 end LipschitzWith
+
+namespace BoundedContinuousFunction
+
+variable {V F : Type*} [TopologicalSpace V] [SeminormedAddCommGroup F]
+
+/-- A continuous compactly supported function on space-time, viewed as a curve of bounded
+continuous spatial functions. -/
+noncomputable def compactSlice (f : V × ℝ → F) (hf : Continuous f)
+    (hc : HasCompactSupport f) (t : ℝ) : V →ᵇ F :=
+  ofNormedAddCommGroup (fun x ↦ f (x, t))
+    (hf.comp (continuous_id.prodMk continuous_const))
+    (hc.exists_bound_of_continuous hf).choose
+    (fun x ↦ (hc.exists_bound_of_continuous hf).choose_spec (x, t))
+
+/-- Evaluation of a compactly supported time slice. -/
+@[simp]
+theorem compactSlice_apply (f : V × ℝ → F) (hf : Continuous f)
+    (hc : HasCompactSupport f) (t : ℝ) (x : V) :
+    compactSlice f hf hc t x = f (x, t) := (rfl)
+
+end BoundedContinuousFunction

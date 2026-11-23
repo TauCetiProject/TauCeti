@@ -124,7 +124,7 @@ private theorem integral_prod_pow_map_eq_toReal_lintegral {k : ℕ} (B : Fin k �
   · exact integral_congr_ae (Filter.Eventually.of_forall fun P => (toReal_prod_pow P B m).symm)
   case meas =>
     exact (Finset.measurable_prod _ fun j _ =>
-      ((Measure.measurable_coe (hB j)).comp measurable_subtype_coe).pow_const _).aemeasurable
+      ((Measure.measurable_coe (hB j)).comp measurable_subtypeVal).pow_const _).aemeasurable
   case fin =>
     exact Filter.Eventually.of_forall fun P =>
       ENNReal.prod_lt_top fun j _ => (ENNReal.pow_ne_top (measure_ne_top _ _)).lt_top

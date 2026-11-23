@@ -263,8 +263,8 @@ theorem matching_verticalReflect (x : TLDiagram n m) :
 
 /-- Vertical reflection sends a partner to its reflected boundary label. -/
 theorem coe_verticalReflect_matching_val_apply (D : TLDiagram n m) (i : Fin (m + n)) :
-    ((verticalReflect n m D).matching.1.val i : ℕ) =
-      n + m - 1 - (D.matching.1.val ⟨n + m - 1 - i, by omega⟩ : ℕ) := by
+    ((verticalReflect n m D).matching.val.val i : ℕ) =
+      n + m - 1 - (D.matching.val.val ⟨n + m - 1 - i, by omega⟩ : ℕ) := by
   simp [matching_verticalReflect, PlanarMatching.coe_cast_apply,
     PlanarMatching.coe_reflect_apply, PerfectMatching.congr_val, Fin.rev, Nat.sub_sub, Nat.add_comm]
 
@@ -387,11 +387,14 @@ def id (n : ℕ) : TLDiagram n n :=
 @[simp]
 theorem matching_id (n : ℕ) : (id n).matching = PlanarMatching.nested n := (rfl)
 
-theorem id_matching_val (n : ℕ) : (id n).matching.1.val = Fin.revPerm :=
+theorem id_matching_val (n : ℕ) : (id n).matching.val.val = Fin.revPerm :=
   PlanarMatching.nested_val n
 
 @[simp]
 theorem circles_id (n : ℕ) : (id n).circles = 0 := (rfl)
+
+/-- The circle-free diagram of the fully nested matching is the identity diagram. -/
+theorem mk_nested_zero (n : ℕ) : (⟨PlanarMatching.nested n, 0⟩ : TLDiagram n n) = id n := (rfl)
 
 /-- The identity diagram is symmetric under vertical reflection. -/
 @[simp]
@@ -406,7 +409,7 @@ def cup : TLDiagram 0 2 :=
   ⟨⟨⟨swap 0 1, by decide⟩, by decide⟩, 0⟩
 
 @[simp]
-theorem cup_matching_val : cup.matching.1.val = swap 0 1 := (rfl)
+theorem cup_matching_val : cup.matching.val.val = swap 0 1 := (rfl)
 
 @[simp]
 theorem circles_cup : cup.circles = 0 := (rfl)
@@ -416,7 +419,7 @@ def cap : TLDiagram 2 0 :=
   ⟨⟨⟨swap 0 1, by decide⟩, by decide⟩, 0⟩
 
 @[simp]
-theorem cap_matching_val : cap.matching.1.val = swap 0 1 := (rfl)
+theorem cap_matching_val : cap.matching.val.val = swap 0 1 := (rfl)
 
 @[simp]
 theorem circles_cap : cap.circles = 0 := (rfl)
@@ -476,8 +479,8 @@ end TLDiagram
 /-- Horizontal reflection exchanges the two distinct diagrams `3 → 1` built from a cap and a
 strand: it sends the cap on the two left points, `{0, 1}, {2, 3}`, to the cap on the two right
 points, `{0, 3}, {1, 2}`. So it does not fix every diagram built from cups, caps and strands. -/
-example (x y : TLDiagram 3 1) (hx : x.matching.1.val = swap 0 1 * swap 2 3)
-    (hy : y.matching.1.val = swap 0 3 * swap 1 2) (hc : x.circles = y.circles) :
+example (x y : TLDiagram 3 1) (hx : x.matching.val.val = swap 0 1 * swap 2 3)
+    (hy : y.matching.val.val = swap 0 3 * swap 1 2) (hc : x.circles = y.circles) :
     TLDiagram.reflect 3 1 x = y ∧ x ≠ y := by
   refine ⟨TLDiagram.ext (PlanarMatching.ext fun a => ?_) hc, fun h => ?_⟩
   · simp only [TLDiagram.matching_reflect, PlanarMatching.coe_rotate_pow_apply,
@@ -485,13 +488,13 @@ example (x y : TLDiagram 3 1) (hx : x.matching.1.val = swap 0 1 * swap 2 3)
       hx, hy]
     revert a
     decide
-  · have := congrArg (fun z : TLDiagram 3 1 => z.matching.1.val 0) h
+  · have := congrArg (fun z : TLDiagram 3 1 => z.matching.val.val 0) h
     simp only [hx, hy] at this
     exact absurd this (by decide)
 
 /-- The rotation of the identity diagram on two strands, `{0, 3}, {1, 2}`, is the diagram
 `{1, 0}, {2, 3}`: a cap on the bottom points followed by a cup on the top points. -/
-example : (TLDiagram.rotate 2 2 (TLDiagram.id 2)).matching.1.val = swap 0 1 * swap 2 3 := by
+example : (TLDiagram.rotate 2 2 (TLDiagram.id 2)).matching.val.val = swap 0 1 * swap 2 3 := by
   simp only [TLDiagram.matching_rotate, PlanarMatching.coe_rotate_apply, PerfectMatching.congr_val,
     TLDiagram.id_matching_val]
   decide

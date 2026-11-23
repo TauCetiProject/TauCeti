@@ -279,8 +279,8 @@ private theorem forth_pt {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n : ℕ}
   let P : Fin n → Prop := fun i => (a i).ownerRow = r₀ ∧ (a i).label? = some τ₀
   let m₀ := Fintype.card {i : Fin n // P i}
   let e₀ : Fin m₀ ≃ {i : Fin n // P i} := (Fintype.equivFin {i : Fin n // P i}).symm
-  let idx₀ : Fin m₀ → Fin n := fun q => (e₀ q).1
-  choose xs₀ hxs₀ using fun q => Carrier.ownerRow_eq_and_label?_eq_some_iff.mp (e₀ q).2
+  let idx₀ : Fin m₀ → Fin n := fun q => (e₀ q).val
+  choose xs₀ hxs₀ using fun q => Carrier.ownerRow_eq_and_label?_eq_some_iff.mp (e₀ q).property
   choose ys₀ hys₀ using fun q => h.exists_pt_of_pt (xs₀ q) (hxs₀ q)
   obtain ⟨y₀, hy₀⟩ := ((BFEquiv.add_one α xs₀ ys₀).mp
     (h.fiber_bfEquiv r₀ τ₀ idx₀ xs₀ ys₀ hxs₀ hys₀)).2.1 x₀

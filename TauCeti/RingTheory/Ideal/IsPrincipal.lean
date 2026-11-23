@@ -53,7 +53,7 @@ theorem exists_ne_zero_finsetInf_eq_span_singleton
     (h : ∀ P ∈ b, ∃ π : R, Prime π ∧ P = Ideal.span {π}) :
     ∃ a : R, a ≠ 0 ∧ b.inf id = Ideal.span {a} := by
   classical
-  choose π hπ hgen using fun P : b ↦ h P P.2
+  choose π hπ hgen using fun P : b ↦ h P P.property
   have hsame (P Q : b) (hPQ : Associated (π P) (π Q)) : P = Q := by
     apply Subtype.ext
     rw [hgen P, hgen Q]
@@ -70,7 +70,7 @@ theorem exists_ne_zero_finsetInf_eq_span_singleton
       exact hπ P
     · intro p hp
       obtain ⟨P, _, rfl⟩ := Multiset.mem_map.mp hp
-      have := hx P P.2
+      have := hx P P.property
       rwa [hgen P, Ideal.mem_span_singleton] at this
     · intro p
       rw [Multiset.countP_map, ← Finset.filter_val, Finset.card_val, Finset.card_le_one]

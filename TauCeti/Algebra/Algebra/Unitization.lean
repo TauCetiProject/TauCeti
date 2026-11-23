@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Unitization
+public import Mathlib.Algebra.Star.MonoidHom
+public import Mathlib.Tactic.NoncommRing
 
 /-!
 # Functoriality of the forced unitization
@@ -13,6 +15,11 @@ public import Mathlib.Algebra.Algebra.Unitization
 A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
 counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
+
+For a unital algebra `B`, the map `x ↦ 1 + (x - 1_B)` is a unital multiplicative map
+`B → Unitization R B` (a star monoid homomorphism when `B` is a star algebra). It acts on
+`B ⊆ Unitization R B` by multiplication as `x` does, so it carries unitaries of `B` to unitaries
+of the unitization implementing the same conjugation on `B`.
 
 ## Main declarations
 
@@ -23,6 +30,9 @@ counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 * `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
+* `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
+* `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
+  `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
 -/
 
 public section
@@ -124,5 +134,56 @@ theorem fstStarAlgEquivOfSubsingleton_symm_apply [Star R] [Star A] (r : R) :
     (fstStarAlgEquivOfSubsingleton R A).symm r = inl r := (rfl)
 
 end Subsingleton
+
+end Unitization
+
+namespace Unitization
+
+variable {R A C : Type*} [CommSemiring R] [StarRing R]
+  [NonUnitalSemiring A] [StarRing A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [Semiring C] [Algebra R C] [StarRing C] [StarModule R C]
+
+/-- The lift of a star homomorphism to the unitization restricts to it on the nonunital
+algebra. -/
+theorem starLift_comp_inr (φ : A →⋆ₙₐ[R] C) :
+    (starLift φ).toNonUnitalStarAlgHom.comp (inrNonUnitalStarAlgHom R A) = φ := by
+  rw [← starLift_symm_apply, Equiv.symm_apply_apply]
+
+end Unitization
+
+namespace Unitization
+
+variable {R B : Type*} [CommRing R] [StarRing R] [Ring B] [StarRing B] [Module R B]
+  [IsScalarTower R B B] [SMulCommClass R B B] [StarModule R B]
+
+/-- For a unital algebra `B`, the unital multiplicative map `B → Unitization R B` sending `x` to
+`1 + (x - 1_B)`. It maps unitaries of `B` to unitaries of the unitization acting on `B` by the
+same conjugation. -/
+noncomputable def oneAddInrSubOne : B →⋆* Unitization R B where
+  toFun x := 1 + inr (x - 1)
+  map_one' := by simp
+  map_mul' x y := by
+    ext
+    · simp
+    · simp only [snd_mul, fst_add, snd_add, fst_one, snd_one, fst_inr, snd_inr]
+      simp only [add_zero, zero_add, one_smul]
+      noncomm_ring
+  map_star' x := by simp [← inr_star]
+
+/-- `Unitization.oneAddInrSubOne` sends `x` to `1 + (x - 1_B)`. -/
+@[simp]
+theorem oneAddInrSubOne_apply (x : B) :
+    oneAddInrSubOne x = (1 + inr (x - 1) : Unitization R B) := by
+  rfl
+
+/-- Left multiplication by `oneAddInrSubOne x` acts on `B` as left multiplication by `x`. -/
+theorem oneAddInrSubOne_mul_inr (x c : B) :
+    (oneAddInrSubOne x : Unitization R B) * inr c = inr (x * c) := by
+  simp [add_mul, sub_mul, ← inr_mul]
+
+/-- Right multiplication by `oneAddInrSubOne x` acts on `B` as right multiplication by `x`. -/
+theorem inr_mul_oneAddInrSubOne (c x : B) :
+    (inr c : Unitization R B) * oneAddInrSubOne x = inr (c * x) := by
+  simp [mul_add, mul_sub, ← inr_mul]
 
 end Unitization

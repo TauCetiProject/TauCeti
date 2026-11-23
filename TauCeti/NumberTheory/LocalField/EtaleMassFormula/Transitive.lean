@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.GaloisSet.Relabelling
+public import TauCeti.FieldTheory.Galois.GaloisSet.Sum
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.Mass
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.SubfieldCount
 import Mathlib.Tactic.FieldSimp
 import TauCeti.Algebra.BigOperators.Group.Finset.Defs
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.GroupTheory.GroupAction.Hom
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Splitting symbols of Galois sets and the transitive mass
@@ -33,7 +36,15 @@ where `q` is the residue cardinality of `K` (`TauCeti.etaleMass_isTransitive_spl
   pair and splitting symbol of a labelled Galois set, with `TauCeti.GaloisSet.mem_splittingSymbol`,
   `TauCeti.GaloisSet.card_splittingSymbol`, and `TauCeti.GaloisSet.sum_map_mul_splittingSymbol`.
 * `TauCeti.GaloisSet.splittingSymbol_eq_of_equiv`: invariance under equivariant bijection.
-* `TauCeti.GaloisSet.splittingSymbol_sigma`: additivity on disjoint unions of Galois sets.
+* `TauCeti.GaloisSet.splittingSymbol_sigma` and `TauCeti.GaloisSet.splittingSymbol_sum`:
+  additivity on disjoint unions of Galois sets.
+* `TauCeti.GaloisSet.splittingSymbol_eq_singleton_iff` and
+  `TauCeti.GaloisSet.splittingSymbol_eq_singleton_iff_finrank`: the Galois sets with a singleton
+  splitting symbol `{(f, e)}` are the transitive ones with a point stabilizer fixing a field of
+  degree `f * e` and residue degree `f`.
+* `TauCeti.GaloisSet.tsum_splittingSymbol_eq_singleton`: summed over the Galois sets of size
+  `f * e` with splitting symbol `{(f, e)}`, a weight of a point stabilizer's fixed field is
+  `(f * e - 1)!` times its sum over the subextensions of degree `f * e` and residue degree `f`.
 * `TauCeti.etaleMass_isTransitive_splittingSymbol`: the mass of the Galois sets of size `f * e`
   with splitting symbol `{(f, e)}`.
 
@@ -158,6 +169,14 @@ theorem mem_splittingSymbol {ρ : GaloisSet K n} {x : ℕ × ℕ} :
   exact ⟨fun ⟨O, _, hO⟩ ↦ ⟨O.out, (ρ.orbitSymbol_def O).symm.trans hO⟩,
     fun ⟨i, hi⟩ ↦ ⟨Quotient.mk'' i, Finset.mem_univ _, (ρ.orbitSymbol_mk i).trans hi⟩⟩
 
+/-- The `(f, e)` pair of the fixed field of the stabilizer of any label `i` belongs to
+`ρ.splittingSymbol`. -/
+theorem mk_mem_splittingSymbol (ρ : GaloisSet K n) (i : Fin n) :
+    (letI := ρ.mulAction
+    let F := IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i)
+    (F.inertiaDegree, Module.finrank K F / F.inertiaDegree)) ∈ ρ.splittingSymbol :=
+  mem_splittingSymbol.2 ⟨i, rfl⟩
+
 /-- The number of factors in `ρ.splittingSymbol` is the number of Galois orbits of `ρ`. -/
 @[simp]
 theorem card_splittingSymbol (ρ : GaloisSet K n) :
@@ -213,7 +232,7 @@ theorem splittingSymbol_eq_of_equiv {m : ℕ} (ρ : GaloisSet K n) (τ : GaloisS
   dsimp only [Function.comp_def, Equiv.coe_toEmbedding]
   rw [τ.orbitSymbol_of_mk_eq hE, ρ.orbitSymbol_def]
   dsimp only
-  rw [MulAction.stabilizer_eq_of_injective e e.injective he]
+  rw [MulAction.stabilizer_eq_of_injective e e.injective (he · _)]
 
 /-- Relabelling a Galois set does not change its splitting symbol. -/
 @[simp]
@@ -321,6 +340,31 @@ theorem splittingSymbol_eq_singleton_iff {f e : ℕ} (ρ : GaloisSet K (f * e))
     rw [ρ.finrank_fixedField_stabilizer_of_isTransitive htrans i, hdeg,
       Nat.mul_div_cancel_left e (Nat.pos_of_mul_pos_right i.pos)]
 
+/-- On a Galois set of any size with a label `i`, the splitting symbol is `{(f, e)}` iff the
+action is transitive and the stabilizer of `i` fixes a field of degree `f * e` and residue degree
+`f`. -/
+theorem splittingSymbol_eq_singleton_iff_finrank (ρ : GaloisSet K n) (i : Fin n) (f e : ℕ) :
+    ρ.splittingSymbol = {(f, e)} ↔
+      ρ.IsTransitive ∧
+        letI := ρ.mulAction
+        let F := IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i)
+        Module.finrank K F = f * e ∧ F.inertiaDegree = f := by
+  let := ρ.mulAction
+  have := ρ.finiteDimensional_fixedField_stabilizer i
+  constructor
+  · intro h
+    have htrans := isTransitive_of_splittingSymbol_eq_singleton h
+    obtain ⟨hf, he⟩ := Prod.mk.inj (Multiset.singleton_inj.mp
+      ((ρ.splittingSymbol_of_isTransitive htrans i).symm.trans h))
+    refine ⟨htrans, ?_, hf⟩
+    rw [← hf, ← he, Nat.mul_div_cancel' (IntermediateField.inertiaDegree_dvd_finrank _)]
+  · rintro ⟨htrans, hrank, hf⟩
+    have hf_pos : 0 < f := hf ▸ IntermediateField.inertiaDegree_pos
+      (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i))
+    rw [ρ.splittingSymbol_of_isTransitive htrans i]
+    dsimp only
+    rw [hrank, hf, Nat.mul_div_right e hf_pos]
+
 /-- The splitting symbol of a disjoint union of Galois sets is the sum of their splitting
 symbols. -/
 @[simp]
@@ -361,78 +405,82 @@ theorem splittingSymbol_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
   exact Finset.sum_congr rfl fun i _ ↦ by
     rw [(ρ i).splittingSymbol_eq_map_orbitSymbol, ← Finset.sum_multiset_map_singleton]
 
-end GaloisSet
+/-- The splitting symbol of a disjoint union of two labelled Galois sets is the sum of their
+splitting symbols. -/
+@[simp]
+theorem splittingSymbol_sum {m l : ℕ} (ρ₁ : GaloisSet K m) (ρ₂ : GaloisSet K l)
+    (e : Fin m ⊕ Fin l ≃ Fin n) :
+    (sum ρ₁ ρ₂ e).splittingSymbol = ρ₁.splittingSymbol + ρ₂.splittingSymbol := by
+  classical
+  let := ρ₁.mulAction
+  let := ρ₂.mulAction
+  let := (sum ρ₁ ρ₂ e).mulAction
+  let := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin m))
+  let := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin l))
+  let := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
+  let E₁ := MulAction.orbitRelQuotientCongr (MulEquiv.refl Gal(SeparableClosure K/K)) e
+    (fun σ x ↦ by rcases x with i | j <;> simp)
+  let E₂ := (MulAction.orbitRelQuotientSumEquiv
+    (G := Gal(SeparableClosure K/K)) (X := Fin m) (Y := Fin l)).symm
+  let E := E₂.trans E₁
+  simp only [splittingSymbol_def]
+  rw [← Multiset.map_univ_val_equiv E, ← Finset.univ_disjSum_univ, Finset.val_disjSum,
+    Multiset.map_map, Multiset.map_disjSum]
+  congr 1
+  · refine Multiset.map_congr rfl fun ω _ ↦ ?_
+    have hE : (Quotient.mk'' (e (Sum.inl ω.out)) :
+        orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) = E (Sum.inl ω) := by
+      apply E.symm.injective
+      simp [E, E₁, E₂]
+    dsimp only [Function.comp_def]
+    rw [(sum ρ₁ ρ₂ e).orbitSymbol_of_mk_eq hE, ρ₁.orbitSymbol_def]
+    dsimp only
+    rw [MulAction.stabilizer_eq_of_injective (fun a ↦ e (Sum.inl a))
+      (e.injective.comp Sum.inl_injective) (x := ω.out) (fun σ ↦ by simp)]
+  · refine Multiset.map_congr rfl fun ω _ ↦ ?_
+    have hE : (Quotient.mk'' (e (Sum.inr ω.out)) :
+        orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) = E (Sum.inr ω) := by
+      apply E.symm.injective
+      simp [E, E₁, E₂]
+    dsimp only [Function.comp_def]
+    rw [(sum ρ₁ ρ₂ e).orbitSymbol_of_mk_eq hE, ρ₂.orbitSymbol_def]
+    dsimp only
+    rw [MulAction.stabilizer_eq_of_injective (fun a ↦ e (Sum.inr a))
+      (e.injective.comp Sum.inr_injective) (x := ω.out) (fun σ ↦ by simp)]
 
-/-- Via label `0` and `GaloisSet.tsum_isTransitive`, summing over Galois sets of size `f * e` with
-splitting symbol `{(f, e)}` reduces to `(f * e - 1)!` times an inertia-degree-`f` sum over
-degree-`f * e` subextensions. -/
-private theorem tsum_splittingSymbol_singleton_eq_tsum_finrank {f e : ℕ}
-    (hf : 0 < f) (he : 0 < e) :
+/-- **Galois sets with splitting symbol `{(f, e)}` and subextensions.** Summed over the labelled
+Galois sets of size `f * e` with splitting symbol `{(f, e)}`, any weight `g` of the fixed field of
+the stabilizer of a label `i` is `(f * e - 1)!` times the sum of `g` over the subextensions of
+`SeparableClosure K` of degree `f * e` and residue degree `f`. -/
+theorem tsum_splittingSymbol_eq_singleton {f e : ℕ} (i : Fin (f * e))
+    (g : IntermediateField K (SeparableClosure K) → ℝ≥0∞) :
     ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
+        (letI := ρ.val.mulAction
+        g (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i))) =
       ((f * e - 1)! : ℝ≥0∞) *
-        ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e},
-          (if L.1.inertiaDegree = f then
-            1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) := by
-  let i₀ : Fin (f * e) := ⟨0, Nat.mul_pos hf he⟩
-  let g : IntermediateField K (SeparableClosure K) → ℝ≥0∞ := fun L ↦
-    if L.inertiaDegree = f then 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.discriminantExponent else 0
-  let S : Set {ρ : GaloisSet K (f * e) // ρ.IsTransitive} :=
-    {ρ | let := ρ.1.mulAction
-      (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀)).inertiaDegree = f}
-  let E₁ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}} ≃ S :=
-    (Equiv.subtypeEquivRight fun ρ ↦ ρ.splittingSymbol_eq_singleton_iff i₀).trans
-      (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
-  have hind :
-      (fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
-        let := ρ.1.mulAction
-        g (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀))) =
-      S.indicator (fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent) := by
-    ext ρ
-    let := ρ.1.mulAction
-    dsimp [g, S, Set.indicator]
-    split_ifs with h
-    · exact (congrArg (fun d ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ d)
-        (ρ.1.discriminantExponent_of_isTransitive ρ.2 i₀)).symm
-    · rfl
-  have hE₁ : ∀ ρ, (E₁ ρ).1.1 = ρ.1 := fun ρ ↦ by
-    dsimp only [E₁]
-    rw [Equiv.trans_apply, Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe,
-      Equiv.subtypeEquivRight_apply_coe]
-  rw [tsum_congr fun ρ ↦ by rw [← hE₁ ρ],
-    E₁.tsum_eq fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.1.discriminantExponent,
-    tsum_subtype S fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent,
-    ← hind, GaloisSet.tsum_isTransitive i₀ g]
+        ∑' L : {L : IntermediateField K (SeparableClosure K) //
+          Module.finrank K L = f * e ∧ L.inertiaDegree = f}, g L.val := by
+  -- Restrict `g` to residue degree `f` and apply the transitive bridge.
+  let g' : IntermediateField K (SeparableClosure K) → ℝ≥0∞ := fun L ↦
+    if L.inertiaDegree = f then g L else 0
+  let G (h : IntermediateField K (SeparableClosure K) → ℝ≥0∞) (ρ : GaloisSet K (f * e)) :
+      ℝ≥0∞ := letI := ρ.mulAction; h (IntermediateField.fixedField
+        (stabilizer Gal(SeparableClosure K/K) i))
+  have hρ : ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}}, G g ρ =
+      ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive}, G g' ρ :=
+    tsum_subtype_eq_of_indicator_eq fun ρ ↦ by
+      by_cases h : ρ.IsTransitive <;>
+        simp [Set.indicator, G, g', ρ.splittingSymbol_eq_singleton_iff i, h]
+  have hL : ∑' L : {L : IntermediateField K (SeparableClosure K) //
+      Module.finrank K L = f * e}, g' L =
+      ∑' L : {L : IntermediateField K (SeparableClosure K) //
+        Module.finrank K L = f * e ∧ L.inertiaDegree = f}, g L :=
+    tsum_subtype_eq_of_indicator_eq fun L ↦ by
+      by_cases h₁ : Module.finrank K L = f * e <;> by_cases h₂ : L.inertiaDegree = f <;>
+        simp [Set.indicator, g', h₁, h₂]
+  exact hρ.trans ((tsum_isTransitive i g').trans (congrArg _ hL))
 
-/-- Summing the inertia-degree-`f` discriminant weight over degree-`f * e` subextensions evaluates
-via `tsum_inertiaDegree_eq`. -/
-private theorem tsum_finrank_inertiaDegree_indicator {f e : ℕ} (hf : 0 < f) :
-    ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e},
-        (if L.1.inertiaDegree = f then
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) =
-      (e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)) := by
-  let S₂ : Set {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} :=
-    {L | L.1.inertiaDegree = f}
-  let E₂ : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e ∧
-      L.inertiaDegree = f} ≃ S₂ :=
-    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
-  have hind :
-      (fun L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} ↦
-        if L.1.inertiaDegree = f then
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) =
-      S₂.indicator (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent) := by
-    ext L
-    dsimp [S₂, Set.indicator]
-    split_ifs <;> rfl
-  have hE₂ : ∀ L, (E₂ L).1.1 = L.1 := fun L ↦
-    Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe _ _ L
-  rw [hind, ← tsum_subtype S₂ fun L : {L : IntermediateField K (SeparableClosure K) //
-      Module.finrank K L = f * e} ↦
-    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent,
-    ← E₂.tsum_eq fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.1.discriminantExponent]
-  simp_rw [hE₂]
-  exact tsum_inertiaDegree_eq (K := K) hf.ne' e
+end GaloisSet
 
 private theorem ennreal_factorial_mul_cancel {f e : ℕ} (hf : 0 < f) (he : 0 < e) :
     ((f * e)! : ℝ≥0∞)⁻¹ * (((f * e - 1)! : ℝ≥0∞) * (e : ℝ≥0∞)) = (f : ℝ≥0∞)⁻¹ := by
@@ -454,15 +502,19 @@ Galois sets of size `f * e` with splitting symbol `{(f, e)}` have mass
 theorem etaleMass_isTransitive_splittingSymbol (f e : ℕ) (hf : 0 < f) (he : 0 < e) :
     ((f * e)! : ℝ≥0∞)⁻¹ *
         ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent =
       1 / ((f : ℝ≥0∞) * (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1))) := by
-  -- Double-count via label `0`: each degree-`f * e` subextension of residue degree `f` arises from
-  -- `(f * e - 1)!` transitive Galois sets (`tsum_splittingSymbol_singleton_eq_tsum_finrank`), and
-  -- Serre's formula (`tsum_finrank_inertiaDegree_indicator`) sums their weights to
-  -- `e / q ^ (f * (e - 1))`.
-  rw [tsum_splittingSymbol_singleton_eq_tsum_finrank hf he,
-    tsum_finrank_inertiaDegree_indicator hf,
-    div_eq_mul_inv, ← mul_assoc ((f * e - 1)! : ℝ≥0∞), ← mul_assoc,
+  -- These Galois sets are transitive, so `d(ρ)` is the discriminant exponent at label `0`; each
+  -- degree-`f * e` subextension of residue degree `f` arises from `(f * e - 1)!` of them
+  -- (`GaloisSet.tsum_splittingSymbol_eq_singleton`), and Serre's formula
+  -- (`tsum_inertiaDegree_eq`) sums their weights to `e / q ^ (f * (e - 1))`.
+  let i : Fin (f * e) := ⟨0, Nat.mul_pos hf he⟩
+  rw [tsum_congr fun ρ ↦ by
+      rw [ρ.val.discriminantExponent_of_isTransitive
+        ((ρ.val.splittingSymbol_eq_singleton_iff i).1 ρ.property).1 i],
+    GaloisSet.tsum_splittingSymbol_eq_singleton i
+      fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.discriminantExponent,
+    tsum_inertiaDegree_eq hf.ne', div_eq_mul_inv, ← mul_assoc ((f * e - 1)! : ℝ≥0∞), ← mul_assoc,
     ennreal_factorial_mul_cancel hf he, one_div,
     ENNReal.mul_inv (Or.inl (Nat.cast_ne_zero.2 hf.ne')) (Or.inl (ENNReal.natCast_ne_top f))]
 

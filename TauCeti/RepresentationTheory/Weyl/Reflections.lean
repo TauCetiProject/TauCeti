@@ -242,10 +242,10 @@ noncomputable def posRootsEquivPseudoreflections (b : P.Base) :
     posRoots P b ≃
       {w : P.weylGroup // Module.finrank K (M ⧸ (P.weylGroupRootRep w).fixedSubmodule) = 1} :=
   Equiv.ofBijective
-    (fun α ↦ ⟨weylGroup.ofIdx P α.1,
-      P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α.1⟩)
+    (fun α ↦ ⟨weylGroup.ofIdx P α.val,
+      P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α.val⟩)
     ⟨fun α β h ↦ Subtype.ext <|
-      (P.ofIdx_eq_ofIdx_iff_of_mem_posRoots b α.2 β.2).1 (congrArg Subtype.val h),
+      (P.ofIdx_eq_ofIdx_iff_of_mem_posRoots b α.property β.property).1 (congrArg Subtype.val h),
      fun ⟨_, hw⟩ ↦ by
       obtain ⟨α, hα, rfl⟩ := (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff b).1 hw
       exact ⟨⟨α, hα⟩, rfl⟩⟩
@@ -253,15 +253,15 @@ noncomputable def posRootsEquivPseudoreflections (b : P.Base) :
 /-- `posRootsEquivPseudoreflections` sends a positive root `α` to `weylGroup.ofIdx P α.1`. -/
 @[simp]
 theorem coe_posRootsEquivPseudoreflections (b : P.Base) (α : posRoots P b) :
-    (P.posRootsEquivPseudoreflections b α : P.weylGroup) = weylGroup.ofIdx P α.1 :=
+    (P.posRootsEquivPseudoreflections b α : P.weylGroup) = weylGroup.ofIdx P α.val :=
   (rfl)
 
 /-- `(posRootsEquivPseudoreflections b).symm` recovers the positive root `α` from its reflection. -/
 @[simp]
 theorem posRootsEquivPseudoreflections_symm_ofIdx (b : P.Base) (α : posRoots P b) :
     (P.posRootsEquivPseudoreflections b).symm
-        ⟨weylGroup.ofIdx P α.1,
-          P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α.1⟩ = α :=
+        ⟨weylGroup.ofIdx P α.val,
+          P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α.val⟩ = α :=
   (P.posRootsEquivPseudoreflections b).symm_apply_apply α
 
 /-- The number of pseudoreflections of `P.weylGroupRootRep` equals the number of positive roots. -/
@@ -295,12 +295,12 @@ noncomputable def posRootsEquivReflectingHyperplanes (b : P.Base) :
     posRoots P b ≃ P.weylGroupRootRep.reflectingHyperplanes :=
   letI := P.finite_weylGroup_of_base b
   Equiv.ofBijective
-    (fun α ↦ ⟨LinearMap.ker (P.coroot' α.1),
+    (fun α ↦ ⟨LinearMap.ker (P.coroot' α.val),
       P.weylGroupRootRep.mem_reflectingHyperplanes.2
-        ⟨weylGroup.ofIdx P α.1, P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α.1,
-          P.fixedSubmodule_weylGroupRootRep_ofIdx α.1⟩⟩)
+        ⟨weylGroup.ofIdx P α.val, P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α.val,
+          P.fixedSubmodule_weylGroupRootRep_ofIdx α.val⟩⟩)
     ⟨fun α β h ↦ Subtype.ext <|
-      (P.ker_coroot'_eq_iff_of_mem_posRoots b α.2 β.2).1 (congrArg Subtype.val h),
+      (P.ker_coroot'_eq_iff_of_mem_posRoots b α.property β.property).1 (congrArg Subtype.val h),
      fun ⟨_, hH⟩ ↦ by
       obtain ⟨_, hw, rfl⟩ := P.weylGroupRootRep.mem_reflectingHyperplanes.1 hH
       obtain ⟨α, hα, rfl⟩ := (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff b).1 hw
@@ -311,17 +311,17 @@ noncomputable def posRootsEquivReflectingHyperplanes (b : P.Base) :
 theorem coe_posRootsEquivReflectingHyperplanes (b : P.Base) (α : posRoots P b) :
     letI := P.finite_weylGroup_of_base b
     ((P.posRootsEquivReflectingHyperplanes b α).val : Submodule K M) =
-      LinearMap.ker (P.coroot' α.1) :=
+      LinearMap.ker (P.coroot' α.val) :=
   (rfl)
 
 /-- `(posRootsEquivReflectingHyperplanes b).symm` recovers the positive root `α` from its coroot
 hyperplane. -/
 @[simp]
 theorem posRootsEquivReflectingHyperplanes_symm_ker_coroot' (b : P.Base) (α : posRoots P b)
-    (hH : LinearMap.ker (P.coroot' α.1) ∈
+    (hH : LinearMap.ker (P.coroot' α.val) ∈
       (letI := P.finite_weylGroup_of_base b; P.weylGroupRootRep.reflectingHyperplanes)) :
     letI := P.finite_weylGroup_of_base b
-    (P.posRootsEquivReflectingHyperplanes b).symm ⟨LinearMap.ker (P.coroot' α.1), hH⟩ = α :=
+    (P.posRootsEquivReflectingHyperplanes b).symm ⟨LinearMap.ker (P.coroot' α.val), hH⟩ = α :=
   letI := P.finite_weylGroup_of_base b
   (P.posRootsEquivReflectingHyperplanes b).symm_apply_apply α
 

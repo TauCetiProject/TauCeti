@@ -124,7 +124,7 @@ This coordinate system fixes the normalization of `TauCeti.symmetricLebesgue`. -
 def symmetricCoordinates :
     (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) ≃L[ℝ] (upperTriangle p → ℝ) :=
   LinearEquiv.toContinuousLinearEquiv
-    { toFun A ij := (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2
+    { toFun A ij := (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2
       map_add' A B := rfl
       map_smul' c A := rfl
       invFun x :=
@@ -155,7 +155,7 @@ def symmetricCoordinates :
 @[simp]
 theorem symmetricCoordinates_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (ij : upperTriangle p) :
-    symmetricCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 :=
+    symmetricCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 :=
   (rfl)
 
 @[simp]
@@ -213,7 +213,7 @@ on-or-above-diagonal entries. -/
 @[simp]
 theorem symmetricBasis_repr (x : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (ij : upperTriangle p) :
-    (symmetricBasis p).repr x ij = (x : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+    (symmetricBasis p).repr x ij = (x : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 := by
   simp [symmetricBasis]
 
 theorem coe_symmetricBasis_apply_of_le (ij : upperTriangle p) {k l : Fin p} (h : k ≤ l) :
@@ -323,7 +323,7 @@ theorem continuous_trace_mul_coe {p : ℕ}
 theorem continuous_coe_apply {p : ℕ} (i j : Fin p) :
     Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ) i j :=
-  continuous_subtype_val.matrix_elem i j
+  continuous_subtypeVal.matrix_elem i j
 
 /-- Reading off an entry of a symmetric matrix is measurable. -/
 @[fun_prop]

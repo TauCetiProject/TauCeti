@@ -30,7 +30,7 @@ variable {α : Type*} {f : Filter α}
 along any filter. -/
 theorem limsup_add_le' (u v : α → ℝ≥0∞) : f.limsup (u + v) ≤ f.limsup u + f.limsup v := by
   simp only [limsup_eq_iInf_iSup, iInf_subtype']
-  rw [ENNReal.iInf_add_iInf fun s t ↦ ⟨⟨s.1 ∩ t.1, inter_mem s.2 t.2⟩, add_le_add
+  rw [ENNReal.iInf_add_iInf fun s t ↦ ⟨⟨s.val ∩ t.val, inter_mem s.property t.property⟩, add_le_add
     (biSup_mono Set.inter_subset_left) (biSup_mono Set.inter_subset_right)⟩]
   exact iInf_mono fun s ↦ iSup₂_le fun a ha ↦ add_le_add (le_biSup u ha) (le_biSup v ha)
 
