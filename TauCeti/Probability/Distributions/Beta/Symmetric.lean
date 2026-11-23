@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Beta.Square
 import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Affine
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -142,10 +143,11 @@ theorem integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 < a) (
 @[simp]
 theorem integral_sq_map_centered_betaMeasure (ha : 0 < a) :
     ∫ x, x ^ 2 ∂((betaMeasure a a).map (fun t ↦ -1 + 2 * t)) = 1 / (2 * a + 1) := by
-  have h := integral_id_betaMeasure (by norm_num : (0 : ℝ) < 1 / 2) ha
-  rw [← betaMeasure_map_centered_sq, integral_map (by fun_prop) (by fun_prop)] at h
-  rw [integral_map (by fun_prop) (by fun_prop)]
-  convert h using 1
+  have h := integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
+    (r := 0) ha (by simpa using ha) 2
+  simp only [rpow_zero, mul_one, add_zero, show Even 2 by decide, ↓reduceIte] at h
+  rw [h, show (((2 : ℕ) : ℝ) + 1) / 2 = 1 / 2 + 1 by norm_num,
+    beta_add_one_left_div (by norm_num) ha]
   field_simp
   ring
 

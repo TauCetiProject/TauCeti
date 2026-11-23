@@ -96,9 +96,10 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
 * `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
   `Β(a, 1) = Β(1, a) = 1 / a`;
-* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`,
-  `ProbabilityTheory.beta_add_one_left_div` — the ratio `Β(a + 1, b) / Β(a, b) = a / (a + b)`,
-  and `ProbabilityTheory.beta_add_one_right`, the same step in the second parameter;
+* `ProbabilityTheory.beta_add_one_left` and `ProbabilityTheory.beta_add_one_right` — the unit steps
+  `Β(a + 1, b) = a / (a + b) * Β(a, b)` and `Β(a, b + 1) = b / (a + b) * Β(a, b)`,
+  with quotient forms `ProbabilityTheory.beta_add_one_left_div` and
+  `ProbabilityTheory.beta_add_one_right_div`;
 * `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
   the ratios `Β(a + 1, b - 1) / Β(a, b) = a / (b - 1)` and
   `Β(a + 2, b - 2) / Β(a, b) = a (a + 1) / ((b - 1) (b - 2))`;
@@ -1137,6 +1138,11 @@ theorem beta_add_one_right (hb : b ≠ 0) (hab : a + b ≠ 0) :
 theorem beta_add_one_left_div (ha : 0 < a) (hb : 0 < b) :
     beta (a + 1) b / beta a b = a / (a + b) := by
   rw [beta_add_one_left ha.ne' (by positivity), mul_div_cancel_right₀ _ (beta_pos ha hb).ne']
+
+/-- The ratio of Euler's beta function shifted by one in its second parameter to `Β(a, b)`. -/
+theorem beta_add_one_right_div (ha : 0 < a) (hb : 0 < b) :
+    beta a (b + 1) / beta a b = b / (a + b) := by
+  rw [beta_add_one_right hb.ne' (by positivity), mul_div_cancel_right₀ _ (beta_pos ha hb).ne']
 
 /-- Shifting one unit from the second beta parameter to the first gives a rational ratio. -/
 theorem beta_add_one_sub_one_div (ha : 0 < a) (hb : 1 < b) :

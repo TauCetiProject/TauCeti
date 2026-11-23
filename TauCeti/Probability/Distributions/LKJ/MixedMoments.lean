@@ -412,27 +412,22 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
         (R : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (R : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
           (R : Matrix (Fin 3) (Fin 3) ℝ) 1 0 ∂lkjMeasure 3 η =
       1 / (2 * η + 2) ^ 2 := by
-  let n : Fin 3 × Fin 3 → ℕ :=
-    Pi.single ((2 : Fin 3), (1 : Fin 3)) 1 +
-      Pi.single ((2 : Fin 3), (0 : Fin 3)) 1 +
-      Pi.single ((1 : Fin 3), (0 : Fin 3)) 1
   let S : Finset (Fin 3 × Fin 3) := {((2 : Fin 3), (1 : Fin 3)), (2, 0), (1, 0)}
-  have hn_zero {ij : Fin 3 × Fin 3} (hij : ij ∉ S) : n ij = 0 := by
-    simp only [S, Finset.mem_insert, Finset.mem_singleton, not_or] at hij
-    simp [n, hij.1, hij.2.1, hij.2.2]
-  have hn_one {ij : Fin 3 × Fin 3} (hij : ij ∈ S) : n ij = 1 := by
-    simp only [S, Finset.mem_insert, Finset.mem_singleton] at hij
-    rcases hij with rfl | rfl | rfl <;> decide
+  let n : Fin 3 × Fin 3 → ℕ := fun q ↦ if q ∈ S then 1 else 0
   have hprod (R : selfAdjoint.submodule ℝ (Matrix (Fin 3) (Fin 3) ℝ)) :
       (R : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (R : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
           (R : Matrix (Fin 3) (Fin 3) ℝ) 1 0 =
         ∏ ij : Fin 3 × Fin 3, (R : Matrix (Fin 3) (Fin 3) ℝ) ij.1 ij.2 ^ n ij := by
-    simp only [n, Pi.add_apply, pow_add, Finset.prod_mul_distrib,
-      Fintype.prod_pow_pi_single (fun ij : Fin 3 × Fin 3 ↦
-        (R : Matrix (Fin 3) (Fin 3) ℝ) ij.1 ij.2), pow_one]
+    simp only [n, pow_ite, pow_one, pow_zero,
+      Finset.prod_ite_mem_eq S fun ij ↦ (R : Matrix (Fin 3) (Fin 3) ℝ) ij.1 ij.2]
+    rw [Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton,
+      mul_assoc]
   simp_rw [hprod]
   rw [integral_prod_pow_coe_apply_lkjMeasure 3 hη n]
   let c₀ : mulTransposeExpansionChoice n := fun _ _ ↦ ⟨0, Fin.zero_le _⟩
+  have hc0 (c : mulTransposeExpansionChoice n) {ij : Fin 3 × Fin 3} (hij : ij.2 = 0)
+      (r : Fin (n ij)) : (c ij r : Fin 3) = 0 :=
+    Fin.le_zero_iff.mp ((c ij r).property.trans (hij ▸ min_le_right _ _))
   have hsum_pow (c : mulTransposeExpansionChoice n) (q : Fin 3 × Fin 3) :
       mulTransposeExpansionPower c q =
         ((if ((2 : Fin 3), (c (2, 1) ⟨0, by decide⟩ : Fin 3)) = q then 1 else 0) +
@@ -441,18 +436,16 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
           if ((0 : Fin 3), (0 : Fin 3)) = q then 1 else 0) +
         ((if ((1 : Fin 3), (0 : Fin 3)) = q then 1 else 0) +
           if ((0 : Fin 3), (0 : Fin 3)) = q then 1 else 0) := by
-    have hc20 : (c (2, 0) ⟨0, by decide⟩ : Fin 3) = 0 :=
-      Fin.le_zero_iff.mp (c (2, 0) ⟨0, by decide⟩).property
-    have hc10 : (c (1, 0) ⟨0, by decide⟩ : Fin 3) = 0 :=
-      Fin.le_zero_iff.mp (c (1, 0) ⟨0, by decide⟩).property
     have h1 {ij : Fin 3 × Fin 3} (hij : ij ∈ S) (f : Fin (n ij) → ℕ) :
-        (∑ r, f r) = f ⟨0, by have := hn_one hij; omega⟩ := by
-      rw [← Equiv.sum_comp (finCongr (hn_one hij)).symm, Fin.sum_univ_one]
+        (∑ r, f r) = f ⟨0, by simp [n, hij]⟩ := by
+      have hnij : n ij = 1 := by simp [n, hij]
+      rw [← Equiv.sum_comp (finCongr hnij).symm, Fin.sum_univ_one]
       rfl
     rw [mulTransposeExpansionPower_eq_sum,
-      ← Finset.sum_subset (Finset.subset_univ S) fun ij _ hij ↦ by simp [hn_zero hij],
+      ← Finset.sum_subset (Finset.subset_univ S) fun ij _ hij ↦ by simp [n, hij],
       Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
-      h1 (by decide), h1 (by decide), h1 (by decide), hc20, hc10]
+      h1 (by decide), h1 (by decide), h1 (by decide),
+      hc0 c (ij := (2, 0)) rfl, hc0 c (ij := (1, 0)) rfl]
     abel
   rw [Finset.sum_eq_single c₀]
   · have hres (ij : strictLowerTriangle 3) :
@@ -489,21 +482,20 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
       by_contra hne
       apply hc
       ext ij r
-      have hij : ij ∈ S := by
-        by_contra hnot
-        have hzero := hn_zero hnot
-        exact absurd r.isLt (by omega)
-      simp only [S, Finset.mem_insert, Finset.mem_singleton] at hij
-      rcases hij with rfl | rfl | rfl
-      · have hr0 : r = ⟨0, by decide⟩ := Fin.fin_one_eq_zero r
-        rw [hr0]
-        have hle : ((c (2, 1) ⟨0, by decide⟩ : Fin 3) : ℕ) ≤ 1 :=
-          (c (2, 1) ⟨0, by decide⟩).property
-        have hne' : ((c (2, 1) ⟨0, by decide⟩ : Fin 3) : ℕ) ≠ 1 := fun h ↦ hne (Fin.ext h)
-        simp only [c₀]
-        omega
-      · exact congrArg Fin.val (Fin.le_zero_iff.mp (c (2, 0) r).property)
-      · exact congrArg Fin.val (Fin.le_zero_iff.mp (c (1, 0) r).property)
+      by_cases hij : ij ∈ S
+      · simp only [S, Finset.mem_insert, Finset.mem_singleton] at hij
+        rcases hij with rfl | rfl | rfl
+        · have hr0 : r = ⟨0, by decide⟩ :=
+            Fin.ext (Nat.lt_one_iff.mp (by simpa [n, S] using r.isLt))
+          rw [hr0]
+          have hle : ((c (2, 1) ⟨0, by decide⟩ : Fin 3) : ℕ) ≤ 1 :=
+            (c (2, 1) ⟨0, by decide⟩).property
+          have hne' : ((c (2, 1) ⟨0, by decide⟩ : Fin 3) : ℕ) ≠ 1 := fun h ↦ hne (Fin.ext h)
+          simp only [c₀]
+          omega
+        · exact congrArg Fin.val (hc0 c rfl r)
+        · exact congrArg Fin.val (hc0 c rfl r)
+      · exact absurd r.isLt (by simp [n, hij])
     have hpow21 : mulTransposeExpansionPower c (2, 1) = 1 := by
       rw [hsum_pow, h21]
       decide
