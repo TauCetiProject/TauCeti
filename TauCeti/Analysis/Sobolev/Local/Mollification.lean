@@ -171,7 +171,9 @@ theorem exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn (hp : 2 < 
   · simpa only [B, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.compL_apply, innerSL_apply_apply, smul_eq_mul] using
       (hlim_J α Subset.rfl hw).congr fun n =>
-        integral_congr_ae (.of_forall fun z => by simp [B])
+        integral_congr_ae (.of_forall fun z => by
+          rw [TestFunction.inner_smulAdjointTestFunction_apply]
+          simp [B])
 
 /-- Scalar test-function form of the commutator identity for `J ∈ W^{1,p}_loc(Ω)` and
 `ξ ∈ W^{1,q}_loc(Ω)` (`2 < p ≤ ∞`, `1/p + 1/q ≤ 1`) in directions `u, v ∈ ℂ`. -/

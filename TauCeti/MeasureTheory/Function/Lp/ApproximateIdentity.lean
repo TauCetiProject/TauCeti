@@ -286,10 +286,11 @@ theorem _root_.ContinuousLinearMap.tendsto_integral_bilin_normed_convolution
   simpa only [Function.comp_def, hpairphi, hpair _ _ hf.coeFn_toLp] using hlim
 
 omit [Fact (1 ≤ p)] in
-/-- Pairing a mollified cut-off field `(phi i).normed mu ⋆ W'.indicator f` against `χ • g`
-(where `χ` is continuous and compactly supported with `tsupport χ ⊆ W'` and `g ∈ L^q(tsupport χ)`)
-through a continuous bilinear map `B` converges to the pairing of `f`, including the `p = ∞`,
-`q = 1` weak-star endpoint. -/
+/-- Pairing a mollified cut-off field `(phi i).normed mu ⋆ W'.indicator f` (with
+`W'.indicator f ∈ Lᵖ` and outer radii `(phi i).rOut → 0`) against `χ • g` (where `χ` is
+continuous and compactly supported with `tsupport χ ⊆ W'`, `q` is Hölder conjugate to `p`, and
+`g ∈ L^q(tsupport χ)`) through a continuous bilinear map `B` converges to the pairing
+`∫ χ • B f g`, including the `p = ∞`, `q = 1` weak-star endpoint. -/
 theorem _root_.ContinuousLinearMap.tendsto_integral_smul_bilin_normed_convolution_indicator
     {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [CompleteSpace F]

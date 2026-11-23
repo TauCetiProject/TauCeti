@@ -293,8 +293,10 @@ section
 
 open LineDeriv
 
-/-- Smooth-factor weak Leibniz identity for a continuous bilinear map against a scalar test
-function, derived from `TauCeti.HasWeakLineDerivOn.contDiff_bilin`. -/
+/-- For a smooth `F`-valued map `f` (`F` finite-dimensional) and `g` with weak directional
+derivative `g'` in direction `v` on `Ω`, testing `TauCeti.HasWeakLineDerivOn.contDiff_bilin`
+against a scalar test function `ψ ∈ 𝓓(Ω, ℝ)` gives
+`∫ (∂_v ψ) • B(f, g) + ∫ ψ • B(∂_v f, g) = -∫ ψ • B(f, g')`. -/
 theorem HasWeakLineDerivOn.integral_lineDeriv_smul_bilin_of_contDiff {G H : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H]
     [CompleteSpace H] [FiniteDimensional ℝ F]

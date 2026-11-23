@@ -56,10 +56,12 @@ for the statements here.
 * `TauCeti.IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_of_memWkpLoc`: Green's formula
   for `2 < p ≤ ∞` and `ξ ∈ W^{1,q}_loc(Ω)` (`1 ≤ q ≤ ∞`, including the `q = 1` and `p = ∞`
   endpoints), using `W^{1,1}_loc ⊂ L²_loc` and `TauCeti.HasWeakFDerivOn.bilin`.
-* `TauCeti.IsSobolevCRCoefficients.isWeakCRSolution_iff_ae` and
-  `TauCeti.IsSobolevCRCoefficients.isWeakCRSolution_two_iff_ae`: equivalence between the weak
-  equation and `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`, in the Hölder regime
-  `1/p + 1/q ≤ 1` and in the `W^{1,q}_loc(Ω)` (`2 < p ≤ ∞`, `1 ≤ q ≤ ∞`) regime respectively.
+* `TauCeti.IsSobolevCRCoefficients.isWeakCRSolution_iff_ae`: in the Hölder regime
+  `1/p + 1/q ≤ 1` with `ξ, Dξ ∈ L^q_loc(Ω)`, characterizes `IsWeakCRSolution q` by
+  `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`.
+* `TauCeti.IsSobolevCRCoefficients.isWeakCRSolution_two_iff_ae`: in the Sobolev regime
+  `2 < p ≤ ∞`, `1 ≤ q ≤ ∞` with `ξ ∈ W^{1,q}_loc(Ω)`, characterizes `IsWeakCRSolution 2` by
+  `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`.
 * `TauCeti.IsSobolevCRCoefficients.isWeakLinearCauchyRiemannOn_iff`: the solutions of the linear
   equation in the sense of `TauCeti.IsWeakLinearCauchyRiemannOn` are exactly the continuous weak
   solutions of the homogeneous weak equation with a locally `L^q` weak derivative.
