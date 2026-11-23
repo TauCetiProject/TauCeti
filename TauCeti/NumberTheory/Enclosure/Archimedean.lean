@@ -89,6 +89,12 @@ variable {t : ℝ}
 theorem mem_Icc (E : RealEnclosure t) : t ∈ Set.Icc (E.interval.fst : ℝ) E.interval.snd :=
   ⟨E.fst_le, E.le_snd⟩
 
+/-- A rational number lies in the real interval spanned by the rational endpoints exactly when
+it lies in the rational interval. -/
+theorem ratCast_mem_Icc_iff (E : RealEnclosure t) {q : ℚ} :
+    (q : ℝ) ∈ Set.Icc (E.interval.fst : ℝ) E.interval.snd ↔ q ∈ E.interval := by
+  rw [← Set.mem_preimage, Rat.preimage_cast_Icc, Set.mem_Icc, NonemptyInterval.mem_def]
+
 /-- Every real number `u` between the endpoints of the interval approximates the enclosed number
 up to the width of the interval. -/
 theorem abs_sub_le_length (E : RealEnclosure t) {u : ℝ}
@@ -100,7 +106,7 @@ theorem abs_sub_le_length (E : RealEnclosure t) {u : ℝ}
 of the interval. -/
 theorem abs_sub_ratCast_le_length (E : RealEnclosure t) {q : ℚ} (hq : q ∈ E.interval) :
     |t - q| ≤ E.interval.length :=
-  E.abs_sub_le_length <| by rwa [← Set.mem_preimage, Rat.preimage_cast_Icc]
+  E.abs_sub_le_length (E.ratCast_mem_Icc_iff.mpr hq)
 
 /-- The enclosed number is within the width of the interval of its lower endpoint. -/
 theorem abs_sub_fst_le_length (E : RealEnclosure t) :
@@ -170,7 +176,7 @@ theorem HasPrecision.abs_sub_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecis
 number up to `2⁻ⁿ`. -/
 theorem HasPrecision.abs_sub_ratCast_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecision n)
     {q : ℚ} (hq : q ∈ E.interval) : |t - q| ≤ ((2 : ℝ) ^ n)⁻¹ :=
-  h.abs_sub_le <| by rwa [← Set.mem_preimage, Rat.preimage_cast_Icc]
+  h.abs_sub_le (E.ratCast_mem_Icc_iff.mpr hq)
 
 /-- The degenerate enclosure of a rational number has every absolute precision. -/
 @[simp]
@@ -215,11 +221,8 @@ theorem self_mem_box (E : ComplexEnclosure z) : z ∈ E.box :=
 interval and `b` in the imaginary interval of the enclosure. -/
 theorem ratCast_add_ratCast_mul_I_mem_box_iff (E : ComplexEnclosure z) (a b : ℚ) :
     (a + b * I : ℂ) ∈ E.box ↔ a ∈ E.re.interval ∧ b ∈ E.im.interval := by
-  rw [box_def, mem_reProdIm]
-  simp only [add_re, add_im, ratCast_re, ratCast_im, mul_re, mul_im, I_re, I_im, mul_zero, mul_one,
-    sub_zero, add_zero, zero_add]
-  rw [← Set.mem_preimage, Rat.preimage_cast_Icc, ← Set.mem_preimage, Rat.preimage_cast_Icc,
-    ← NonemptyInterval.coe_def, ← NonemptyInterval.coe_def, SetLike.mem_coe, SetLike.mem_coe]
+  rw [box_def, mem_reProdIm, ← E.re.ratCast_mem_Icc_iff, ← E.im.ratCast_mem_Icc_iff]
+  simp
 
 /-- The point `0` lies outside the box exactly when `0` lies outside the real or the imaginary
 interval of the enclosure. -/

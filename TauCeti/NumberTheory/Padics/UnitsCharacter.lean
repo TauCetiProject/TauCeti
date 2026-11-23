@@ -115,7 +115,7 @@ theorem coe_padicUnitPart_apply (x : ℚ_[p]ˣ) :
 `Padic.unitPart`. -/
 theorem coe_padicUnitPart_eq_unitPart (x : ℚ_[p]ˣ) :
     ((padicUnitPart p x : ℤ_[p]ˣ) : ℤ_[p]) = Padic.unitPart (x : ℚ_[p]) :=
-  (rfl)
+  PadicInt.ext ((coe_padicUnitPart_apply x).trans (Padic.coe_unitPart _).symm)
 
 /-- **Every nonzero `p`-adic number is `p ^ v(x)` times its unit part.** -/
 theorem coe_eq_zpow_valuation_mul_padicUnitPart (x : ℚ_[p]ˣ) :
