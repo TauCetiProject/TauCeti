@@ -87,18 +87,16 @@ private theorem lintegral_hardyKernel_row {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < 
 
 private theorem lintegral_hardyKernel_col {θ s : ℝ} (hθ : 0 < θ) (hs : 0 < s) :
     ∫⁻ t, hardyKernel θ t s ∂multHaar = ENNReal.ofReal θ⁻¹ := by
-  have hcongr : (fun t ↦ hardyKernel θ t s) =
-      (Ici s).indicator fun t ↦ ENNReal.ofReal (s ^ θ) * ENNReal.ofReal (t ^ (-θ)) := by
-    ext t
-    by_cases hst : s ≤ t
-    · have ht : 0 < t := hs.trans_le hst
-      simp only [hardyKernel, ht, hs, hst, and_self, ↓reduceIte, indicator_of_mem (mem_Ici.2 hst)]
-      rw [Real.div_rpow hs.le ht.le, div_eq_mul_inv, ← Real.rpow_neg ht.le,
-        ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _)]
-    · simp [hardyKernel, hst]
-  rw [hcongr, lintegral_indicator measurableSet_Ici, lintegral_const_mul _ (by fun_prop),
-    lintegral_Ici_multHaar_rpow_neg hθ hs, ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _),
-    Real.rpow_neg hs.le, ← mul_assoc, mul_inv_cancel₀ (Real.rpow_pos_of_pos hs θ).ne', one_mul]
+  have hae : (fun t ↦ hardyKernel θ t s) =ᵐ[multHaar] fun t ↦ hardyKernel θ 1 (s * t⁻¹) := by
+    filter_upwards [ae_pos_multHaar] with t ht
+    simp only [hardyKernel, ht, hs, zero_lt_one, ← div_eq_mul_inv, div_pos hs ht, true_and,
+      div_one, div_le_one ht]
+  have hmp : MeasurePreserving (fun t : ℝ ↦ s * t⁻¹) multHaar multHaar :=
+    MeasurePreserving.comp ⟨measurable_const_mul s, map_multHaar_mul_left hs⟩
+      ⟨measurable_inv, map_multHaar_inv⟩
+  have hm : Measurable (hardyKernel θ 1) :=
+    (measurable_uncurry_hardyKernel θ).comp (measurable_const.prodMk measurable_id)
+  rw [lintegral_congr_ae hae, hmp.lintegral_comp hm, lintegral_hardyKernel_row hθ one_pos]
 
 /-- **Prefix Hardy inequality** in multiplicative Haar form: for `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ (-θ) ∫₀ᵗ ψ(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ (-θ) ψ(s)‖_{L^q(ds / s)}`. -/
