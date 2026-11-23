@@ -60,8 +60,8 @@ oscillation. The ellipticity ratio `1 + b` of the counterexample tends to infini
   `n / 2 < p`, some such coefficient field has a `W^{2,p₀}` strong solution of the homogeneous
   equation on every bounded open set containing the origin that is not in `W^{2,p}` there.
 * `TauCeti.PDE.exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_iff`: for
-  `0 < γ < 1` and `b = (n + γ - 2) / (1 - γ)`, the function `‖x‖ ^ γ` is a `W^{2,p}` strong
-  solution exactly for `p < n / (2 - γ)`.
+  `γ ≠ 0` with `2 - n < γ < 1` and `b = (n + γ - 2) / (1 - γ)`, the function `‖x‖ ^ γ` is a
+  `W^{2,p}` strong solution exactly for `p < n / (2 - γ)`.
 
 ## References
 
@@ -284,6 +284,24 @@ private theorem exists_exponent_lt_of_lt (hn : 2 ≤ n) {p₀ p : ℝ≥0∞} (h
     have : 1 ≤ p.toReal / t := (one_le_div ht0).2 htp.le
     nlinarith
 
+/-- For `2 - n < γ < 1` and `b = (n + γ - 2) / (1 - γ)`, an element of `W^{2,p}` equal to
+`‖x‖ ^ γ` solves `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = 0` almost everywhere with its weak Hessian, for
+`a = TauCeti.PDE.radialCoefficient 1 b`. -/
+private theorem ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq_zero (hγ1 : γ < 1)
+    (hγ : 2 - (n : ℝ) < γ) {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens (EuclideanSpace ℝ (Fin n))}
+    (W : Wkp volume Ω p 2)
+    (hW : Wkp.value 2 W =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin n)))]
+      fun x => ‖x‖ ^ γ) :
+    ∀ᵐ x ∂volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin n))),
+      ∑ i, ∑ j, radialCoefficient 1 ((n + γ - 2) / (1 - γ)) x i j *
+        ⟪Wkp.iteratedGradient 1 W x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+        0 := by
+  filter_upwards [ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq hγ W hW] with x hx
+  rw [hx]
+  have : (1 : ℝ) - γ ≠ 0 := by linarith
+  field_simp
+  ring
+
 /-- **`W^{2,p}` regularity fails for discontinuous coefficients.** Let `n ≥ 2` and
 `1 ≤ p₀ < p < ∞` with `p₀ < n` and `n / 2 < p`. Then there are `b > 0` and `0 < γ < 1` such that,
 for the coefficient field `a = TauCeti.PDE.radialCoefficient 1 b`, uniformly elliptic with constants
@@ -313,28 +331,23 @@ theorem exists_radialCoefficient_not_exists_wkp (hn : 2 ≤ n) {p₀ p : ℝ≥0
     fun {Ω} hb h0 => ⟨?_, ?_⟩⟩
   · obtain ⟨W, hW⟩ := exists_wkp_two_value_ae_eq_norm_rpow (μ := volume) (s := γ) hb hp₀top
       (by rwa [finrank_euclideanSpace_fin])
-    refine ⟨W, hW, ?_⟩
-    filter_upwards [ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq
-      (b := (n + γ - 2) / (1 - γ)) (by linarith) W hW] with x hx
-    rw [hx]
-    have : (1 : ℝ) - γ ≠ 0 := by linarith
-    field_simp
-    ring
+    exact ⟨W, hW,
+      ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq_zero hγ1 (by linarith) W hW⟩
   · rw [exists_wkp_two_value_ae_eq_norm_rpow_iff hb hp h0 hγ0.ne' (by
       rw [finrank_euclideanSpace_fin]
       linarith), finrank_euclideanSpace_fin, not_lt]
     exact hγp
 
-/-- **The VMO hypothesis is load-bearing for `W^{2,p}` regularity.** Let `n ≥ 2`, `0 < γ < 1`,
-and let `a = TauCeti.PDE.radialCoefficient 1 b` with `b = (n + γ - 2) / (1 - γ) > 0`: a symmetric,
-measurable coefficient field, uniformly elliptic with constants `1` and `1 + b`
-(`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient`) and not in VMO
+/-- **The VMO hypothesis is load-bearing for `W^{2,p}` regularity.** Let `γ ≠ 0` with
+`2 - n < γ < 1` (so `n ≥ 2`), and let `a = TauCeti.PDE.radialCoefficient 1 b` with
+`b = (n + γ - 2) / (1 - γ) > 0`: a symmetric, measurable coefficient field, uniformly elliptic
+with constants `1` and `1 + b` (`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient`) and not in VMO
 (`TauCeti.PDE.not_memVMO_radialCoefficient_apply_self`). On a bounded open set `Ω` containing the
 origin and for `1 ≤ p < ∞`, the function `‖x‖ ^ γ` is a `W^{2,p}(Ω)` strong solution of
-`aⁱʲ ∂ᵢ∂ⱼu = 0` exactly when `p < n / (2 - γ)`. Since `n / 2 < n / (2 - γ) < n`, it is a
-continuous `W^{2,p}` solution for some `p > n / 2`, but not a `W^{2,n}` solution. -/
+`aⁱʲ ∂ᵢ∂ⱼu = 0` exactly when `p < n / (2 - γ)`. For `0 < γ`, since `n / 2 < n / (2 - γ) < n`,
+it is a continuous `W^{2,p}` solution for some `p > n / 2`, but not a `W^{2,n}` solution. -/
 theorem exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_iff
-    (hn : 2 ≤ n) (hγ0 : 0 < γ) (hγ1 : γ < 1) {Ω : Opens (EuclideanSpace ℝ (Fin n))}
+    (hγ0 : γ ≠ 0) (hγn : 2 - (n : ℝ) < γ) (hγ1 : γ < 1) {Ω : Opens (EuclideanSpace ℝ (Fin n))}
     (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin n))))
     (h0 : (0 : EuclideanSpace ℝ (Fin n)) ∈ Ω) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) :
     (∃ W : Wkp volume Ω p 2,
@@ -345,19 +358,13 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_i
           ⟪Wkp.iteratedGradient 1 W x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
             0) ↔
       p < ENNReal.ofReal (n / (2 - γ)) := by
-  have hn0 : (2 : ℝ) ≤ n := by exact_mod_cast hn
-  have key := exists_wkp_two_value_ae_eq_norm_rpow_iff (μ := volume) hb hp h0 hγ0.ne'
-    (by rw [finrank_euclideanSpace_fin]; linarith)
+  have key := exists_wkp_two_value_ae_eq_norm_rpow_iff (μ := volume) hb hp h0 hγ0
+    (by rwa [finrank_euclideanSpace_fin])
   rw [finrank_euclideanSpace_fin] at key
   rw [ENNReal.lt_ofReal_iff_toReal_lt hp, lt_div_iff₀ (by linarith), ← neg_lt_neg_iff,
     show -(p.toReal * (2 - γ)) = (γ - 2) * p.toReal by ring, ← key]
-  refine exists_congr fun W => and_iff_left_of_imp fun hW => ?_
-  filter_upwards [ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq
-    (b := (n + γ - 2) / (1 - γ)) (by linarith) W hW] with x hx
-  rw [hx]
-  have : (1 : ℝ) - γ ≠ 0 := by linarith
-  field_simp
-  ring
+  exact exists_congr fun W => and_iff_left_of_imp
+    (ae_sum_radialCoefficient_mul_inner_iteratedGradient_eq_zero hγ1 hγn W)
 
 end PDE
 

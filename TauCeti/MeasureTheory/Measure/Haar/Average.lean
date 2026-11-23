@@ -62,14 +62,17 @@ theorem mul_ofReal_div_pow_le_setLAverage_ball {g : E → ℝ≥0∞} {c z : E} 
   have hδ : δ ≤ ⨍⁻ y in ball z ρ, g y ∂μ := by
     rw [← setLAverage_const (μ := μ) (measure_ball_pos μ z hρ).ne' measure_ball_lt_top.ne δ]
     exact laverage_mono_ae ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ h))
+  have hcancel :
+      ENNReal.ofReal ((r / ρ) ^ finrank ℝ E) * ENNReal.ofReal ((ρ / r) ^ finrank ℝ E) = 1 := by
+    rw [← ENNReal.ofReal_mul (by positivity), ← mul_pow, div_mul_div_cancel₀ hρ.ne',
+      div_self hr.ne']
+    simp
   calc δ * ENNReal.ofReal ((ρ / r) ^ finrank ℝ E)
       ≤ ENNReal.ofReal ((r / ρ) ^ finrank ℝ E) * (⨍⁻ y in ball c r, g y ∂μ) *
           ENNReal.ofReal ((ρ / r) ^ finrank ℝ E) := by
         gcongr
         exact hδ.trans (setLAverage_ball_le g hρ hsub)
     _ = ⨍⁻ y in ball c r, g y ∂μ := by
-        rw [mul_comm, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), ← mul_pow,
-          div_mul_div_comm, mul_comm ρ r, div_self (by positivity), one_pow, ENNReal.ofReal_one,
-          one_mul]
+        rw [mul_right_comm, hcancel, one_mul]
 
 end TauCeti
