@@ -36,8 +36,6 @@ isomorphism over none of its open neighbourhoods.
 * `AlgebraicGeometry.Scheme.Hom.isClosed_centre`: the centre is closed.
 * `AlgebraicGeometry.Scheme.Hom.centre_eq_empty_iff`: the centre is empty exactly when `f` is an
   isomorphism.
-* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackFst_morphismRestrict`: being an isomorphism over an
-  open is preserved by base change.
 
 ## References
 
@@ -46,7 +44,7 @@ isomorphism over none of its open neighbourhoods.
 
 public section
 
-open CategoryTheory Limits
+open CategoryTheory
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -144,14 +142,5 @@ theorem disjoint_centre_iff (f : X ⟶ Y) {U : Y.Opens} :
 theorem centre_eq_empty_iff (f : X ⟶ Y) : f.centre = ∅ ↔ IsIso f := by
   rw [← isoLocus_eq_top_iff, centre_def, Set.compl_empty_iff, ← TopologicalSpace.Opens.coe_top,
     SetLike.coe_set_eq]
-
-/-- If `φ : S' ⟶ S` is an isomorphism over `U`, then the projection `X ×_S S' ⟶ X` is an
-isomorphism over `f⁻¹(U)`: it is the base change of `φ⁻¹(U) ≅ U` along `f⁻¹(U) ⟶ U`. -/
-theorem isIso_pullbackFst_morphismRestrict {S S' : Scheme.{u}} (f : X ⟶ S) (φ : S' ⟶ S)
-    {U : S.Opens} (hU : IsIso (φ ∣_ U)) : IsIso (pullback.fst f φ ∣_ (f ⁻¹ᵁ U)) := by
-  have s := (isPullback_morphismRestrict (pullback.fst f φ) (f ⁻¹ᵁ U)).flip.paste_horiz
-    (IsPullback.of_hasPullback f φ).flip
-  rw [← morphismRestrict_ι] at s
-  exact (s.of_right' (isPullback_morphismRestrict φ U).flip).isIso_snd_of_isIso
 
 end AlgebraicGeometry.Scheme.Hom

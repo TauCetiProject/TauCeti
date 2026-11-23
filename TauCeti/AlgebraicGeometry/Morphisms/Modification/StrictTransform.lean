@@ -21,36 +21,37 @@ the open `X ×_S φ⁻¹(U)` (`strictTransformOpen f φ U`). The *strict transfo
 with respect to `U` is the ideal sheaf on `Y` of the scheme-theoretic closure of `V`, the kernel of
 the open immersion `j : V ⟶ Y` (`strictTransform f φ U`). The witness is part of the data: the
 strict transform can depend on it whenever `f⁻¹(U)` is not scheme-theoretically dense in `f⁻¹(U')`
-(`strictTransform_eq_of_le`). For the identity of `𝔸¹` and `X` the origin, the witness `U = 𝔸¹`
-gives the zero ideal sheaf and `U = 𝔾_m` the unit ideal sheaf; `X` with embedded components gives
-further examples. The definition makes sense for every `U`;
-the comparison with the topological closure needs `j` quasi-compact, which holds for instance when
-`Y` is locally Noetherian, when the complement of `U` is cut out by a finite-type ideal sheaf, or
-in the blowup case.
+(`strictTransform_eq_of_le_of_isIso`). For the identity of `𝔸¹` and `X` the origin, the witness
+`U = 𝔸¹` gives the zero ideal sheaf and `U = 𝔾_m` the unit ideal sheaf; `X` with embedded
+components gives further examples. The definition makes sense for every `U`; the comparison with
+the topological closure needs `j` quasi-compact, which holds for instance when `Y` is locally
+Noetherian, when the complement of `U` is cut out by a finite-type ideal sheaf, or in the blowup
+case.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.strictTransformOpen f φ U`: the open `X ×_S φ⁻¹(U)` of `X ×_S S'`.
-* `TauCeti.AlgebraicGeometry.strictTransform f φ U`: the ideal sheaf of its scheme-theoretic
+* `AlgebraicGeometry.Scheme.Hom.strictTransformOpen f φ U`: the open `X ×_S φ⁻¹(U)` of
+  `X ×_S S'`.
+* `AlgebraicGeometry.Scheme.Hom.strictTransform f φ U`: the ideal sheaf of its scheme-theoretic
   closure.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.support_strictTransform` (the roadmap's `strictTransform_eq_closure`):
-  for quasi-compact `j`, the support of the strict transform is the closure of `V`.
-* `TauCeti.AlgebraicGeometry.strictTransform_eq_of_le` (the roadmap's
-  `strictTransform_independent_of_witness`): for `U ≤ U'` with `φ` an isomorphism over `U'` and
-  `f⁻¹(U)` scheme-theoretically dense in `f⁻¹(U')`, the strict transforms agree;
+* `AlgebraicGeometry.Scheme.Hom.support_strictTransform`: for quasi-compact `j`, the support of
+  the strict transform is the closure of `V`.
+* `AlgebraicGeometry.Scheme.Hom.strictTransform_eq_of_le_of_isIso`: for `U ≤ U'` with `φ` an
+  isomorphism over `U'` and `f⁻¹(U)` scheme-theoretically dense in `f⁻¹(U')`, the strict
+  transforms agree;
   `strictTransform_eq_of_isSchemeTheoreticallyDominant` is the same statement with the density
   asked of the opens of `X ×_S S'`.
-* `TauCeti.AlgebraicGeometry.strictTransform_top` and `strictTransform_bot`: the open `U = S` gives
-  the zero ideal sheaf and `U = ∅` the unit ideal sheaf.
-* `TauCeti.AlgebraicGeometry.strictTransform_id` (the roadmap's `strictTransform_self`): for `S'`
-  reduced and `φ⁻¹(U)` dense, as for a modification witness, the strict transform of the identity
-  of `S` is the zero ideal sheaf on `S ×_S S' ≅ S'`.
-* `TauCeti.AlgebraicGeometry.strictTransform_blowupToBase` (the roadmap's
-  `strictTransform_eq_blowup`): for the blowup `Bl_I S ⟶ S` and `U = S ∖ V(I)`, the strict
-  transform is the ideal sheaf of the blowup of `X` along `I.comap f`, embedded in `X ×_S Bl_I S`.
+* `AlgebraicGeometry.Scheme.Hom.strictTransform_top` and `strictTransform_bot`: the open `U = S`
+  gives the zero ideal sheaf and `U = ∅` the unit ideal sheaf.
+* `AlgebraicGeometry.Scheme.Hom.strictTransform_id`: for `S'` reduced and `φ⁻¹(U)` dense, as for a
+  modification witness, the strict transform of the identity of `S` is the zero ideal sheaf on
+  `S ×_S S' ≅ S'`.
+* `AlgebraicGeometry.Scheme.Hom.strictTransform_blowupToBase`: for the blowup `Bl_I S ⟶ S` and
+  `U = S ∖ V(I)`, the strict transform is the ideal sheaf of the blowup of `X` along `I.comap f`,
+  embedded in `X ×_S Bl_I S`.
 
 ## References
 
@@ -63,9 +64,9 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits AlgebraicGeometry
+open CategoryTheory Limits
 
-namespace TauCeti.AlgebraicGeometry
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -144,7 +145,7 @@ density transfers to the opens of `X ×_S S'`. For `X` reduced and `f⁻¹(U)` d
 density condition holds. It fails when `f⁻¹(U)` is not dense in `f⁻¹(U')`, as for the identity of
 `𝔸¹` with `X` the origin, `U = 𝔾_m` and `U' = 𝔸¹`, and it can fail for `X` with embedded
 components. -/
-theorem strictTransform_eq_of_le {U U' : S.Opens} (h : U ≤ U') (hU' : IsIso (φ ∣_ U'))
+theorem strictTransform_eq_of_le_of_isIso {U U' : S.Opens} (h : U ≤ U') (hU' : IsIso (φ ∣_ U'))
     [IsSchemeTheoreticallyDominant (X.homOfLE (f.preimage_mono h))] :
     strictTransform f φ U = strictTransform f φ U' := by
   have hU : IsIso (φ ∣_ U) := φ.le_isoLocus_iff.mp (h.trans (φ.le_isoLocus_iff.mpr hU'))
@@ -199,4 +200,4 @@ theorem strictTransform_blowupToBase (I : S.IdealSheafData) :
     strictTransform f I.blowupToBase I.support.compl = (I.blowupBaseChangeHom f).ker :=
   (I.ker_blowupBaseChangeHom f).symm
 
-end TauCeti.AlgebraicGeometry
+end AlgebraicGeometry.Scheme.Hom
