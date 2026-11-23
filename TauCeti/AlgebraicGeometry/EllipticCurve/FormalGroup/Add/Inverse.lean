@@ -245,12 +245,14 @@ theorem subst_invPair_formalThirdRoot :
       (formalThirdRoot W) = 0 := by
   have h := congrArg (MvPowerSeries.map W.specialize)
     (subst_invPair_formalThirdRoot_of_isDomain Universal.curve two_ne_zero)
-  have hι := (map_formalInverse Universal.curve W.specialize).symm
-  dsimp only [PowerSeries.map] at hι
-  rw [MvPowerSeries.map_subst (hasSubst_invPair Universal.curve),
-    MvPowerSeries.comp_pairSubstitution, PowerSeries.X_apply, MvPowerSeries.map_X,
-    ← PowerSeries.X_apply, ← map_formalThirdRoot, hι, map_zero] at h
-  simpa [W.map_specialize] using h
+  -- `PowerSeries.map` is defined as `MvPowerSeries.map` on `Unit`, so `map_formalInverse`
+  -- supplies the `MvPowerSeries.map` identity for `simpa` after `MvPowerSeries.map_subst`.
+  have hι : MvPowerSeries.map W.specialize (formalInverse Universal.curve) = formalInverse W :=
+    (map_formalInverse Universal.curve W.specialize).symm.trans
+      (congrArg formalInverse W.map_specialize)
+  rw [MvPowerSeries.map_subst (hasSubst_invPair Universal.curve)] at h
+  simpa only [MvPowerSeries.comp_pairSubstitution, PowerSeries.X_apply, MvPowerSeries.map_X,
+    ← map_formalThirdRoot, W.map_specialize, hι, map_zero] using h
 
 /-- **The inverse law of the chord group law**: `F(z, ι(z)) = 0`.
 

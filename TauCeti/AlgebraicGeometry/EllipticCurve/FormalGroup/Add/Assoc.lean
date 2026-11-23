@@ -229,6 +229,8 @@ private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0
     Affine.Point.some _ _ h₃ = W.thetaPoint hΔ hF hF0 := by
   classical
   subst hTp
+  -- `h₃` is reverted so `set` rewrites its type alongside the goal `Affine.Point.some _ _ h₃`,
+  -- whose implicit coordinate arguments are read from `h₃`'s type.
   revert h₃
   set Tp := subst (pairSubstitution q₁ q₂) (formalThirdRoot W)
   intro h₃
