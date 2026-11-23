@@ -35,6 +35,8 @@ a fundamental representation.
   holds on the group scheme.
 * `TauCeti.DynkinType.map_kostantToralPointsSubgroup_conj_scModuleDiagramEquiv`: the lattice
   symmetry matrix of a diagram symmetry normalizes the algebra-valued points.
+* `TauCeti.DynkinType.kostantNumberedSymmetryMatrix_scModuleDiagramEquiv_pow_eq_one`: the lattice
+  symmetry matrix satisfies every order relation of the node permutation.
 * `TauCeti.DynkinType.scToralDiagramAutPoints`: conjugation on all algebra-valued points,
   with matrix formulas, value-ring naturality, composition, inverse and order laws, and
   root-subgroup and weight-torus action formulas. These point-level constructions do not require
@@ -175,11 +177,13 @@ theorem map_comp_scToralDiagramAutPoints (hσ : σ ∈ t.diagramSymmetry)
   comp_kostantNumberedSymmetryPoints _ _ _ _ _ _ _ _ f _
     (GeneralLinear.IntegralPointsPresentation.coe_map _ _ f)
 
-/-- The order of the full-weight diagram action divides the order of its diagram symmetry. -/
-@[simp]
-theorem scToralDiagramAutPoints_pow_eq_one (hσ : σ ∈ t.diagramSymmetry)
-    (A : Type v) [CommRing A] {m : ℕ} (hm : σ ^ m = 1) :
-    t.scToralDiagramAutPoints ht hσ A ^ m = 1 := by
+/-- The lattice symmetry matrix of a diagram symmetry satisfies every order relation of the node
+permutation. -/
+theorem kostantNumberedSymmetryMatrix_scModuleDiagramEquiv_pow_eq_one
+    (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A] {m : ℕ} (hm : σ ^ m = 1) :
+    kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+      (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
+      A ^ m = 1 := by
   -- Package the module composition law to transport the diagram's order relation.
   let θ : t.diagramSymmetry →* (t.scModule ht ≃ₗ[ℚ] t.scModule ht) :=
     { toFun := fun s => t.scModuleDiagramEquiv ht s.property
@@ -190,9 +194,15 @@ theorem scToralDiagramAutPoints_pow_eq_one (hσ : σ ∈ t.diagramSymmetry)
     -- Unfold only the local hom's application: rewriting the full module term times out.
     change θ ⟨σ, hσ⟩ ^ m = 1
     exact (θ.map_pow ⟨σ, hσ⟩ m).symm.trans ((congrArg θ hm').trans θ.map_one)
-  exact kostantNumberedSymmetryPoints_pow_eq_one _ _ _ _ A _ _
-    (kostantNumberedSymmetryMatrix_pow_eq_one _ _ _ _ A
-      (fun x => by rw [hθ]; rfl))
+  exact kostantNumberedSymmetryMatrix_pow_eq_one _ _ _ _ A (fun x => by rw [hθ]; rfl)
+
+/-- The order of the full-weight diagram action divides the order of its diagram symmetry. -/
+@[simp]
+theorem scToralDiagramAutPoints_pow_eq_one (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] {m : ℕ} (hm : σ ^ m = 1) :
+    t.scToralDiagramAutPoints ht hσ A ^ m = 1 :=
+  kostantNumberedSymmetryPoints_pow_eq_one _ _ _ _ A _ _
+    (t.kostantNumberedSymmetryMatrix_scModuleDiagramEquiv_pow_eq_one ht hσ A hm)
 
 /-- The identity diagram symmetry acts identically on full-weight toral-closure points. -/
 @[simp]
