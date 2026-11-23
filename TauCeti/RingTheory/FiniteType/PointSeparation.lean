@@ -39,10 +39,7 @@ that ideal is finite over `k` by Zariski's lemma and therefore embeds into `K`.
   one at every algebraically closed point is one.
 * `TauCeti.exists_algHom_apply_ne_zero_of_ne_zero`: a nonzero element of a reduced finite-type
   algebra is nonzero at some algebraically closed point.
-* `TauCeti.exists_algHom_apply_ne_of_ne`: points of a reduced finite-type algebra distinguish
-  distinct elements.
 * `TauCeti.eq_of_forall_algHom_apply_eq`: the corresponding point-separation principle.
-* `TauCeti.algHom_evaluation_injective`: the same principle, stated as injectivity of evaluation.
 * `Set.Finite.exists_algHom_injOn`: one point simultaneously distinguishes all elements of
   a prescribed finite subset of a finite-type domain.
 
@@ -127,13 +124,6 @@ theorem exists_algHom_apply_ne_zero_of_ne_zero {x : A} (hx : x ≠ 0) :
     ∃ f : A →ₐ[k] K, f x ≠ 0 :=
   exists_algHom_apply_ne_zero_of_not_isNilpotent fun h ↦ hx h.eq_zero
 
-/-- Two elements of a reduced finite-type algebra over a field are distinguished by a point
-valued in any algebraically closed extension whenever they are distinct. -/
-theorem exists_algHom_apply_ne_of_ne {x y : A} (hxy : x ≠ y) :
-    ∃ f : A →ₐ[k] K, f x ≠ f y :=
-  (exists_algHom_apply_ne_zero_of_ne_zero (sub_ne_zero.mpr hxy)).imp fun f hf ↦ by
-    rwa [map_sub, sub_ne_zero] at hf
-
 /-- Algebraically closed points separate the elements of a reduced finite-type algebra over a
 field. -/
 theorem eq_of_forall_algHom_apply_eq {x y : A} (h : ∀ f : A →ₐ[k] K, f x = f y) :
@@ -141,12 +131,6 @@ theorem eq_of_forall_algHom_apply_eq {x y : A} (h : ∀ f : A →ₐ[k] K, f x =
   sub_eq_zero.mp <| IsNilpotent.eq_zero <|
     (forall_algHom_apply_eq_zero_iff_isNilpotent (k := k) (K := K) _).mp fun f ↦ by
       rw [map_sub, h, sub_self]
-
-/-- Evaluation on all algebraically closed points is injective for a reduced finite-type algebra
-over a field. -/
-theorem algHom_evaluation_injective :
-    Function.Injective (fun x : A ↦ fun f : A →ₐ[k] K ↦ f x) :=
-  fun _ _ h ↦ eq_of_forall_algHom_apply_eq (congrFun h)
 
 end TauCeti
 

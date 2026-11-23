@@ -104,8 +104,8 @@ theorem isLocallyConstant_isOrientationPreservingAt
   have ho := o'.toVectorBundleOrientation.eventually_mapOrientation_eq o'.card_eq e' ha
   simp only [toVectorBundleOrientation_apply] at ho
   filter_upwards [hpos, hbase, (hf.tendsto a).eventually ho] with p hpos hp hop
-  have hmaps := _root_.Orientation.map_eq_map_of_det_pos η (T p hp).toLinearEquiv
-    (T a ha).toLinearEquiv o.card_eq (by
+  have hmaps := (_root_.Orientation.map_eq_map_iff_det_pos η (T p hp).toLinearEquiv
+    (T a ha).toLinearEquiv o.card_eq).mpr (by
       convert hpos using 2
       ext v
       simp [K, hcT p hp])
@@ -122,5 +122,15 @@ theorem isOrientationPreservingAt_family_iff [PreconnectedSpace P]
       IsOrientationPreservingAt o o' (fun y => F (q, y)) x :=
   ((isLocallyConstant_isOrientationPreservingAt o o' hF x hD).apply_eq_of_preconnectedSpace
     p q).to_iff
+
+/-- In a preconnected smooth family of self-maps with invertible slice derivatives at `x`, if one
+slice is the identity then every slice preserves every orientation at `x`. -/
+theorem isOrientationPreservingAt_of_family_eq_id [PreconnectedSpace P]
+    (o : Manifold.Orientation I M ι) {F : P × M → M} (hF : ContMDiff (L.prod I) I 1 F) (x : M)
+    (hD : ∀ p, (mfderiv I I (fun y => F (p, y)) x).IsInvertible) {p₀ : P}
+    (h₀ : (fun y => F (p₀, y)) = id) (p : P) :
+    IsOrientationPreservingAt o o (fun y => F (p, y)) x :=
+  (isOrientationPreservingAt_family_iff o o hF x hD p p₀).2
+    (h₀ ▸ isOrientationPreservingAt_id o x)
 
 end TauCeti.Manifold.Orientation
