@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Integral
 public import TauCeti.NumberTheory.LocalField.MassFormula.Ore
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 
 /-!
 # Krasner's discriminant boxes in Eisenstein coefficient space
@@ -170,8 +171,7 @@ theorem eisensteinBox_zero_right_of_isUnit {n : ℕ} (hn : 0 < n) (hu : IsUnit (
   refine (mem_eisensteinBox_iff_of_map_eq hf).mpr ⟨isOreAdmissible_zero_right_iff.mpr ⟨hn, hu⟩, he,
     fun h _ hhn ↦ ?_, fun hb ↦ by simp at hb⟩
   rw [oreCoefficientDepth_zero_right]
-  simpa using (TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal (n := 1)).mp
-    (by simpa using he.mem (hdeg ▸ hhn))
+  simpa using he.one_le_addVal_coeff (hdeg ▸ hhn)
 
 /-- A discriminant box is nonempty if and only if the pair `(n, j)` is Ore-admissible. -/
 @[simp]
@@ -250,12 +250,10 @@ theorem setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox {n : ℕ} (hn 
     refine le_ciInf fun i ↦ ?_
     rcases eq_or_lt_of_le (Nat.succ_le_of_lt i.isLt) with hiTop | hiLow
     · exact (by exact_mod_cast hiTop.symm : (n : ℕ∞) = ((i : ℕ) + 1 : ℕ∞)).trans_le le_add_self
-    · have hm1 : 1 ≤ addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) :=
-        (TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal (n := 1)).mp
-          (by simpa using he.mem (hdeg ▸ hiLow))
-      have hm1' : 1 ≤ addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) := by
-        rw [addVal_mul]; exact hm1.trans le_self_add
-      exact (nsmul_one n).symm.le.trans ((nsmul_le_nsmul_right hm1' n).trans le_self_add)
+    · have hm1 : 1 ≤ addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) := by
+        rw [addVal_mul]
+        exact (he.one_le_addVal_coeff (hdeg ▸ hiLow)).trans le_self_add
+      exact (nsmul_one n).symm.le.trans ((nsmul_le_nsmul_right hm1 n).trans le_self_add)
   lift ⨅ i : Fin n, T i to ℕ using hne_top with m hm
   have hnm : n ≤ m := by exact_mod_cast hle_iInf
   have hm_eq : (⨅ i : Fin n, T i) = (((m - n) + n : ℕ) : ℕ∞) := by

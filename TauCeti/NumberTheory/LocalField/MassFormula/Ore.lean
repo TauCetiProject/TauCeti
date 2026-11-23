@@ -12,6 +12,7 @@ import Mathlib.FieldTheory.Separable
 import TauCeti.NumberTheory.LocalField.Different.Eisenstein
 import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
 /-!
@@ -354,8 +355,7 @@ private theorem addVal_Eisenstein_lower {n : ℕ} {f : 𝒪[K][X]}
       n • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞) =
         n • (addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) +
           addVal 𝒪[K] (((i : ℕ) + 1 : ℕ) : 𝒪[K])) + (((i : ℕ) + 1 : ℕ) : ℕ∞) := by
-  refine ⟨(TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal
-    (n := 1)).mp (by simpa using hf.mem hi), ?_⟩
+  refine ⟨hf.one_le_addVal_coeff hi, ?_⟩
   rw [addVal_mul]
   norm_cast
 
