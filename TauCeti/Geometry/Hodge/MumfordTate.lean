@@ -212,8 +212,7 @@ theorem map_complexCoordinateBialgHom_one_tmul (he : ∀ i, ω.toEquiv (e i) = e
   have hmap (y : ℂ ⊗[ℝ] S) :
       Algebra.TensorProduct.map σ.toAlgHom (AlgHom.id ℝ S) y =
         TensorProduct.map σ.toLinearMap LinearMap.id y := by
-    rw [← AlgEquiv.refl_toAlgHom, ← Algebra.TensorProduct.congr_apply, ← ScalarAut.smul_def,
-      ScalarAut.tensorProductMap_eq_smul]
+    rw [ScalarAut.algebraTensorProductMap_eq_smul, ScalarAut.tensorProductMap_eq_smul]
   have key : (Algebra.TensorProduct.map σ.toAlgHom (AlgHom.id ℝ S)).comp f = f := by
     refine coordinateHopfAlgebra_algHom_ext ℝ d fun i j ↦ ?_
     have hij := hs.complexCoordinateBialgHom_one_tmul_X e i j
@@ -238,15 +237,14 @@ theorem complexCoordinateBialgHom_map (he : ∀ i, ω.toEquiv (e i) = e i) (σ :
     (x : ℂ ⊗[ℝ] coordinateHopfAlgebra ℝ d) :
     hs.complexCoordinateBialgHom e (TensorProduct.map σ.toLinearMap LinearMap.id x) =
       TensorProduct.map σ.toLinearMap LinearMap.id (hs.complexCoordinateBialgHom e x) := by
-  induction x with
-  | tmul c a =>
-    rw [TensorProduct.map_tmul, LinearMap.id_apply, AlgEquiv.toLinearMap_apply,
-      TensorProduct.tmul_eq_smul_one_tmul, TensorProduct.tmul_eq_smul_one_tmul c, map_smul,
-      map_smul]
-    conv_lhs => rw [← hs.map_complexCoordinateBialgHom_one_tmul he σ a]
-    rw [ScalarAut.tensorProductMap_eq_smul, ScalarAut.tensorProductMap_eq_smul,
-      ScalarAut.smul_smulₛₗ]
-  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
+  let F : ℂ ⊗[ℝ] coordinateHopfAlgebra ℝ d →ₗ[ℂ] ℂ ⊗[ℝ] S := hs.complexCoordinateBialgHom e
+  have hF (a : coordinateHopfAlgebra ℝ d) :
+      ScalarAut.semilinearMap σ (F (1 ⊗ₜ a)) = F (1 ⊗ₜ a) := by
+    rw [ScalarAut.semilinearMap_apply, ← ScalarAut.tensorProductMap_eq_smul,
+      BialgHom.coe_toLinearMap, hs.map_complexCoordinateBialgHom_one_tmul he σ a]
+  have h := ScalarAut.map_smul_eq_of_forall_one_tmul σ F _ hF x
+  rwa [BialgHom.coe_toLinearMap, ScalarAut.semilinearMap_apply,
+    ← ScalarAut.tensorProductMap_eq_smul, ← ScalarAut.tensorProductMap_eq_smul] at h
 
 /-- **The homomorphism `h : S → GL_{d,ℝ}` of a Hodge structure, on coordinate rings**, in a
 basis `e` fixed by the conjugation: the morphism of Hopf `ℝ`-algebras `O(GL_d)_ℝ → O(S)` whose

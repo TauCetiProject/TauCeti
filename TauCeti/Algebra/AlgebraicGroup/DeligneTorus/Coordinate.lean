@@ -385,13 +385,22 @@ theorem conjSwap_comp_splittingPoint :
 theorem splittingBialgEquiv_map_conj (z : ℂ ⊗[ℝ] S) :
     splittingBialgEquiv (TensorProduct.map Complex.conjAe.toLinearMap LinearMap.id z) =
       conjSwap (splittingBialgEquiv z) := by
-  induction z with
-  | tmul c s =>
-    rw [TensorProduct.map_tmul, LinearMap.id_apply, AlgEquiv.toLinearMap_apply,
-      TensorProduct.tmul_eq_smul_one_tmul, TensorProduct.tmul_eq_smul_one_tmul c, map_smul,
-      map_smul, splittingBialgEquiv_one_tmul, conjSwap_smul, Complex.conjAe_coe]
-    congr 1
-    exact (congrArg (fun φ ↦ φ s) conjSwap_comp_splittingPoint).symm
-  | add x y hx hy => simp only [map_add, hx, hy]
+  -- `conjSwap` as a map that is semilinear for complex conjugation.
+  let g : MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) →ₛₗ[Complex.conjAe.toRingHom]
+      MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
+    { toFun := conjSwap
+      map_add' := map_add conjSwap
+      map_smul' c x := by
+        rw [conjSwap_smul, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+          AlgEquiv.coe_toRingEquiv, Complex.conjAe_coe] }
+  let F : ℂ ⊗[ℝ] S →ₗ[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
+    (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+  have hF (s : S) : g (F (1 ⊗ₜ s)) = F (1 ⊗ₜ s) := by
+    simp only [g, F, LinearMap.coe_mk, AddHom.coe_mk, BialgHom.coe_toLinearMap,
+      BialgEquiv.coe_toBialgHom, splittingBialgEquiv_one_tmul]
+    exact congrArg (fun φ ↦ φ s) conjSwap_comp_splittingPoint
+  simpa only [g, F, LinearMap.coe_mk, AddHom.coe_mk, BialgHom.coe_toLinearMap,
+    BialgEquiv.coe_toBialgHom, ScalarAut.tensorProductMap_eq_smul] using
+    ScalarAut.map_smul_eq_of_forall_one_tmul Complex.conjAe F g hF z
 
 end TauCeti.DeligneTorus

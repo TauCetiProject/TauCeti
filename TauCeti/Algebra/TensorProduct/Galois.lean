@@ -39,8 +39,6 @@ This supplies the underlying algebra map for descent of coordinate bialgebra mor
   extension is the scalar extension of its intersection with the original space.
 * `Submodule.existsUnique_baseChange_eq_iff_forall_map_mem`: the subspaces arising by scalar
   extension are exactly the Galois-stable ones, and each arises from a unique subspace.
-* `TauCeti.ScalarAut.tensorProductMap_eq_smul`: the scalar-factor action of `σ` is
-  `TensorProduct.map σ id`.
 * `AlgHom.galoisDescend`: descent of an equivariant algebra morphism.
 * `AlgHom.existsUnique_map_eq_iff`: equivariance characterizes unique descent.
 
@@ -191,22 +189,6 @@ theorem existsUnique_baseChange_eq_iff_forall_map_mem (W : Submodule L (L ⊗[k]
       baseChange_injective (hp.trans (W.baseChange_comap_eq_of_forall_map_mem hW).symm)⟩
 
 end Submodule
-
-namespace TauCeti.ScalarAut
-
-variable {K L A : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
-  [AddCommMonoid A] [Module K A]
-
-/-- The scalar-factor action of `σ` is `TensorProduct.map σ id`, the form in which Galois
-equivariance is stated here (`AlgHom.existsUnique_map_eq_iff`). -/
-theorem tensorProductMap_eq_smul (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
-    TensorProduct.map σ.toLinearMap LinearMap.id x = σ • x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => rw [map_add, hx, hy, smul_add]
-  | tmul a x => rw [TensorProduct.map_tmul, smul_tmul, AlgEquiv.toLinearMap_apply,
-      LinearMap.id_apply]
-
-end TauCeti.ScalarAut
 
 namespace AlgHom
 
