@@ -45,7 +45,7 @@ namespace TauCeti.SpinStructure
 
 variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : X → Type w} [TopologicalSpace (TotalSpace F E)] [∀ x, NormedAddCommGroup (E x)]
-  [∀ x, InnerProductSpace ℝ (E x)] [∀ x, FiniteDimensional ℝ (E x)] [FiberBundle F E]
+  [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E]
   [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E] {n : ℕ}
   (g : ContinuousRiemannianMetric F E)
 
@@ -59,6 +59,7 @@ theorem fiberOrientation_metricChange (s : SpinStructure F E n)
     fiberOrientation (s.metricChange g) o x =
       Orientation.map (Fin n) (WithFiberMetric.toWithFiberMetric g x).toLinearEquiv
         (s.fiberOrientation o x) := by
+  have := s.finiteDimensional_fiber
   rw [OrthonormalFrameLift.metricChange, fiberOrientation_map,
     ContinuousRiemannianMetric.toLinearEquiv_metricChangeIsometry, Orientation.map_trans,
     Orientation.map_metricChangeEquiv _ _ _ (by rw [Fintype.card_fin, s.finrank_fiber x])]

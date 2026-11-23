@@ -44,7 +44,7 @@ universe w
 
 variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
-  [∀ b, InnerProductSpace ℝ (E b)] [∀ b, FiniteDimensional ℝ (E b)] [FiberBundle F E]
+  [∀ b, InnerProductSpace ℝ (E b)] [FiberBundle F E]
   [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E] (g : ContinuousRiemannianMetric F E)
 
 namespace TauCeti.OrthonormalFrameLift
@@ -55,30 +55,40 @@ variable {n : ℕ} {G : Type*} [Group G] [TopologicalSpace G]
 /-- The **metric change of a lift** of the orthonormal frame bundle along `ρ`: the same principal
 bundle, with its frame map composed with the metric change of orthonormal frames to the second
 metric `g`. For `ρ` the vector action of `Spin(n)` this carries a Spin structure for the given
-metric to a Spin structure for `g`. -/
+metric to a Spin structure for `g`. The fibres are finite-dimensional because `s` has frames
+(`TauCeti.OrthonormalFrameLift.finiteDimensional_fiber`). -/
 noncomputable abbrev metricChange (s : OrthonormalFrameLift F E n G ρ) :
     OrthonormalFrameLift F (WithFiberMetric g) n G ρ :=
+  letI := s.finiteDimensional_fiber
   s.map g.metricChangeIsometry g.continuous_metricChangeIsometry
 
 /-- The frame of a point of the metric change of a lift is the metric change of its frame. -/
 theorem toFrame_metricChange (s : OrthonormalFrameLift F E n G ρ) (p : TotalSpace G s.P) :
+    letI := s.finiteDimensional_fiber
     (s.metricChange g).toFrame p = OrthonormalFrameBundle.metricChangeHomeomorph g (s.toFrame p) :=
+  letI := s.finiteDimensional_fiber
   (s.toFrame_map p).trans (OrthonormalFrameBundle.metricChangeHomeomorph_apply g _).symm
 
 /-- Metric change is injective on lifts. -/
 theorem metricChange_injective :
-    Function.Injective fun s : OrthonormalFrameLift F E n G ρ ↦ s.metricChange g :=
-  map_injective
+    Function.Injective fun s : OrthonormalFrameLift F E n G ρ ↦ s.metricChange g := fun s _ h ↦
+  letI := s.finiteDimensional_fiber
+  map_injective h
 
 /-- Every lift for the metric `g` is the metric change of a lift for the given metric. -/
 theorem metricChange_surjective :
-    Function.Surjective fun s : OrthonormalFrameLift F E n G ρ ↦ s.metricChange g :=
-  map_surjective g.continuous_metricChangeIsometry_symm
+    Function.Surjective fun s : OrthonormalFrameLift F E n G ρ ↦ s.metricChange g := fun t ↦
+  -- The fibres of `E` are those of `WithFiberMetric g`, finite-dimensional because `t` has frames.
+  letI (b : B) : FiniteDimensional ℝ (E b) :=
+    have := t.finiteDimensional_fiber b
+    (WithFiberMetric.toWithFiberMetric g b).toLinearEquiv.symm.finiteDimensional
+  map_surjective (hΦ := g.continuous_metricChangeIsometry) g.continuous_metricChangeIsometry_symm t
 
 /-- **Metric change preserves and reflects equivalence of lifts**, so it is a bijection on
 equivalence classes of lifts. -/
 theorem nonempty_equiv_metricChange_iff (s t : OrthonormalFrameLift F E n G ρ) :
     Nonempty ((s.metricChange g).Equiv (t.metricChange g)) ↔ Nonempty (s.Equiv t) :=
+  letI := s.finiteDimensional_fiber
   nonempty_equiv_map_iff s t
 
 end TauCeti.OrthonormalFrameLift
