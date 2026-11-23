@@ -229,8 +229,8 @@ lemma apply_eq_apply_orthogonalSpanPairProj_add (h : ω e' e = 1) (u v : V) :
   have hdec (x : V) : x = (ω.orthogonalSpanPairProj h x : V) + ω e' x • e + (-ω e x) • e' := by
     rw [coe_orthogonalSpanPairProj_apply]
     module
-  have key := ω.apply_add_smul_add_smul h (ω.orthogonalSpanPairProj h u).2
-    (ω.orthogonalSpanPairProj h v).2 (ω e' u) (-ω e u) (ω e' v) (-ω e v)
+  have key := ω.apply_add_smul_add_smul h (ω.orthogonalSpanPairProj h u).property
+    (ω.orthogonalSpanPairProj h v).property (ω e' u) (-ω e u) (ω e' v) (-ω e v)
   rw [← hdec, ← hdec] at key
   rw [key]
   ring

@@ -155,7 +155,7 @@ private theorem exists_closed_slice_form {F G : V → ℝ} (hF : ContDiff ℝ �
     (hsd w).fderiv]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, add_apply,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
-  exact (σ.apply_add_smul_add_smul hee' a.2 b.2 _ _ _ _).trans (by ring)
+  exact (σ.apply_add_smul_add_smul hee' a.property b.property _ _ _ _).trans (by ring)
 
 /-- **Darboux's theorem on the slice.** Let `σ e' e = 1`, and let `F`, `G` be smooth with
 `dF_{x₀} = σ(e, ·)` and `dG_{x₀} = σ(e', ·)`. On the symplectic complement `W` of the plane of
@@ -176,9 +176,9 @@ private theorem exists_diffeomorph_orthogonal_span_pair {F G : V → ℝ} (hF : 
   obtain ⟨η, hηc, hηd, hη⟩ := σ.exists_closed_slice_form hF hG hee' x₀
   have hη₀ (a b : W) : η 0 ![a, b] = σ a b := by
     have hdF₀ (a : W) : fderiv ℝ F x₀ a = 0 :=
-      (hFe a).symm.trans (mem_orthogonal_span_pair_iff.1 a.2).1
+      (hFe a).symm.trans (mem_orthogonal_span_pair_iff.1 a.property).1
     have hdG₀ (a : W) : fderiv ℝ G x₀ a = 0 :=
-      (hGe a).symm.trans (mem_orthogonal_span_pair_iff.1 a.2).2
+      (hGe a).symm.trans (mem_orthogonal_span_pair_iff.1 a.property).2
     simp [hη, hdF₀, hdG₀]
   have hηnd : ∀ v : W, (∀ w : W, η 0 ![v, w] = 0) → v = 0 := fun v hv ↦
     (σ.nondegenerate_restrict_orthogonal_of_isCompl
