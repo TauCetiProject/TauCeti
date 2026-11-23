@@ -32,6 +32,10 @@ since units lift modulo the radical (`TauCeti.Ring.isLocalHom_mk_jacobson`).
 * `IsIdempotentElem.isLocalRing_corner_of_isPrimitiveIdempotent_mk`: an idempotent that is
   primitive modulo the Jacobson radical has a local corner, when the radical quotient is
   semisimple.
+* `IsIdempotentElem.exists_mem_of_mem_iSup` (Rosenberg's lemma): an idempotent with local corner
+  that lies in a sum of two-sided ideals lies in one of them; for a primitive idempotent of an
+  Artinian ring, such as a finite-dimensional algebra, this is
+  `TauCeti.IsPrimitiveIdempotent.exists_mem_of_mem_iSup`.
 -/
 
 public section
@@ -89,4 +93,47 @@ theorem isLocalRing_corner_of_isPrimitiveIdempotent_mk [IsSemisimpleRing (A ⧸ 
     he.cornerQuotientJacobsonEquiv.symm.toRingHom he.cornerQuotientJacobsonEquiv.symm.surjective
   exact (Ideal.Quotient.mk (Ring.jacobson he.Corner)).domain_isLocalRing
 
+variable (he : IsIdempotentElem e)
+
+/-- **Rosenberg's lemma.** An idempotent with local corner ring `eAe` that lies in a sum of
+two-sided ideals lies in one of them. Otherwise the compression `exe` of an element `x` of an
+ideal `J` lies in the left ideal `eJe` of `eAe`, which does not contain `e`, so `exe` is not a unit;
+as the nonunits of a local ring are closed under addition, the compression of every element of the
+sum is a nonunit, but `e` compresses to the unit of `eAe`. The ideals must be two-sided: in
+`Matrix (Fin 2) (Fin 2) k` the idempotent `E₁₁` lies in the sum of the left ideals of matrices with
+rows in `k (1, 1)` and in `k (0, 1)`, but in neither. -/
+theorem exists_mem_of_mem_iSup [IsLocalRing he.Corner] {ι : Type*} (J : ι → Ideal A)
+    [∀ i, (J i).IsTwoSided] (h : e ∈ ⨆ i, J i) : ∃ i, e ∈ J i := by
+  by_contra! hJ
+  -- The compression of an element of `J i` lies in `e (J i) e`, a left ideal of `eAe` without `1`.
+  have hmem (i : ι) {x : A} (hx : x ∈ J i) : he.compress x ∈ nonunits he.Corner := by
+    rintro ⟨u, hu⟩
+    have hx' : he.compress x ∈ he.cornerIdeal (J i) := by
+      rw [mem_cornerIdeal, val_compress]
+      exact (J i).mul_mem_right e ((J i).mul_mem_left e hx)
+    have h1 := (he.cornerIdeal (J i)).mul_mem_left (↑u⁻¹ : he.Corner) hx'
+    rw [← hu, Units.inv_mul, mem_cornerIdeal, Corner.val_one] at h1
+    exact hJ i h1
+  have hsum : he.compress e ∈ nonunits he.Corner :=
+    Submodule.iSup_induction J (motive := fun x ↦ he.compress x ∈ nonunits he.Corner) h hmem
+      (by simp [compress_zero])
+      fun x y hx hy ↦ by simpa [compress_add] using IsLocalRing.nonunits_add hx hy
+  exact hsum (by rw [show he.compress e = 1 from Subtype.ext (by
+    rw [val_compress, Corner.val_one, he.eq, he.eq])]; exact isUnit_one)
+
 end IsIdempotentElem
+
+namespace TauCeti
+
+variable {A : Type*} [Ring A] {e : A}
+
+/-- **Rosenberg's lemma for Artinian rings.** A primitive idempotent of an Artinian ring, for
+instance of a finite-dimensional algebra, that lies in a sum of two-sided ideals lies in one of
+them. -/
+theorem IsPrimitiveIdempotent.exists_mem_of_mem_iSup [IsArtinianRing A]
+    (he : IsPrimitiveIdempotent e) {ι : Type*} (J : ι → Ideal A) [∀ i, (J i).IsTwoSided]
+    (h : e ∈ ⨆ i, J i) : ∃ i, e ∈ J i :=
+  have := he.isLocalRing_corner
+  he.isIdempotentElem.exists_mem_of_mem_iSup J h
+
+end TauCeti
