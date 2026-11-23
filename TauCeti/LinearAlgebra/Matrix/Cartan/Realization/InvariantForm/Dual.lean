@@ -101,11 +101,6 @@ theorem toDual_symm_root (i : I) :
   rw [LinearEquiv.symm_apply_eq, map_smul, B.toDual_coroot hB,
     smul_inv_smul₀ (A.symmetrizer_cast_ne_zero i)]
 
-/-- The dual bilinear form `B.form.dualForm hB` (Kac, §2.1, eq. (2.1.5)) is symmetric. -/
-theorem isSymm_dualForm : (B.form.dualForm hB).IsSymm :=
-  ⟨fun φ ψ ↦ by rw [LinearMap.BilinForm.dualForm_apply, LinearMap.BilinForm.dualForm_apply,
-    B.isSymm.eq]⟩
-
 /-- `B.form.toDual hB` bundled as an isometric equivalence
 `B.form.IsometryEquiv (B.form.dualForm hB)`. -/
 noncomputable def toDualIsometryEquiv : B.form.IsometryEquiv (B.form.dualForm hB) :=
@@ -123,7 +118,7 @@ theorem toDualIsometryEquiv_apply (x : H) :
 @[simp]
 theorem dualForm_root_left (i : I) (μ : Dual K H) :
     B.form.dualForm hB (R.root i) μ = A.symmetrizer i * μ (R.coroot i) := by
-  rw [(B.isSymm_dualForm hB).eq, LinearMap.BilinForm.dualForm_apply_eq, B.toDual_symm_root,
+  rw [(B.isSymm.dualForm hB).eq, LinearMap.BilinForm.dualForm_apply_eq, B.toDual_symm_root,
     map_smul, smul_eq_mul]
 
 /-- Pairing a simple root on the right against any weight `μ : Dual K H` gives `d i * μ(hᵢ)`. -/
@@ -167,7 +162,7 @@ theorem dualForm_eq_of_mem_rootSpan_right {B₁ B₂ : InvariantForm A R}
     (hB₁ : B₁.form.Nondegenerate) (hB₂ : B₂.form.Nondegenerate) (φ : Dual K H) {ψ : Dual K H}
     (hψ : ψ ∈ Submodule.span K (Set.range R.root)) :
     B₁.form.dualForm hB₁ φ ψ = B₂.form.dualForm hB₂ φ ψ := by
-  rw [(B₁.isSymm_dualForm hB₁).eq, (B₂.isSymm_dualForm hB₂).eq]
+  rw [(B₁.isSymm.dualForm hB₁).eq, (B₂.isSymm.dualForm hB₂).eq]
   exact dualForm_eq_of_mem_rootSpan_left hB₁ hB₂ hψ φ
 
 /-- Any two nondegenerate standard invariant forms induce the same pairing whenever the left
@@ -185,7 +180,7 @@ theorem dualForm_eq_of_mem_rootLattice_right {B₁ B₂ : InvariantForm A R}
     (hB₁ : B₁.form.Nondegenerate) (hB₂ : B₂.form.Nondegenerate) (φ : Dual K H) {ψ : Dual K H}
     (hψ : ψ ∈ R.rootLattice) :
     B₁.form.dualForm hB₁ φ ψ = B₂.form.dualForm hB₂ φ ψ := by
-  rw [(B₁.isSymm_dualForm hB₁).eq, (B₂.isSymm_dualForm hB₂).eq]
+  rw [(B₁.isSymm.dualForm hB₁).eq, (B₂.isSymm.dualForm hB₂).eq]
   exact dualForm_eq_of_mem_rootLattice_left hB₁ hB₂ hψ φ
 
 /-! ### Invariance under simple reflections on `Dual K H` -/
@@ -253,8 +248,8 @@ theorem dualForm_add_self_sub_eq_sum [Fintype I] {μ lam : Dual K H} (ρ : Dual 
       B.form.dualForm hB (lam + ρ) (lam + ρ) - B.form.dualForm hB (μ + ρ) (μ + ρ) =
         B.form.dualForm hB (lam - μ) (lam + μ + (2 : K) • ρ) := by
     simp only [map_add, map_sub, map_smul, LinearMap.add_apply, LinearMap.sub_apply, smul_eq_mul,
-      (B.isSymm_dualForm hB).eq μ lam, (B.isSymm_dualForm hB).eq ρ lam,
-      (B.isSymm_dualForm hB).eq ρ μ]
+      (B.isSymm.dualForm hB).eq μ lam, (B.isSymm.dualForm hB).eq ρ lam,
+      (B.isSymm.dualForm hB).eq ρ μ]
     ring
   rw [hdiff, ← hc, map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_

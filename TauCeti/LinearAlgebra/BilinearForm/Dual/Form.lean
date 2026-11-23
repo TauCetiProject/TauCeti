@@ -88,8 +88,8 @@ theorem dualForm_toDual_toDual (x y : V) :
 /-- `Q^∨(ξ, η) = ξ(Q♭⁻¹ η)`. -/
 theorem dualForm_apply_eq (ξ η : Dual K V) :
     Q.dualForm hQ ξ η = ξ ((Q.toDual hQ).symm η) := by
-  conv_rhs => rw [← (Q.toDual hQ).apply_symm_apply ξ]
-  rw [dualForm_apply, toDual_def]
+  rw [dualForm_apply]
+  exact apply_toDual_symm_apply ξ _
 
 /-- `Q^∨(ξ, Q♭ y) = ξ(y)`. -/
 theorem dualForm_apply_toDual_right (ξ : Dual K V) (y : V) :
@@ -103,6 +103,10 @@ theorem nondegenerate_dualForm : (Q.dualForm hQ).Nondegenerate :=
 /-- The dual form of an alternating form is alternating. -/
 theorem IsAlt.dualForm (hQa : Q.IsAlt) : (Q.dualForm hQ).IsAlt :=
   fun ξ ↦ by rw [dualForm_apply]; exact hQa _
+
+/-- The dual form of a symmetric form is symmetric. -/
+theorem IsSymm.dualForm (hQs : Q.IsSymm) : (Q.dualForm hQ).IsSymm :=
+  ⟨fun ξ η ↦ by rw [dualForm_apply, dualForm_apply, hQs.eq]⟩
 
 /-- `(c Q)^∨ = c⁻¹ Q^∨`. -/
 theorem dualForm_smul {c : K} (hc : c ≠ 0) (hcQ : (c • Q).Nondegenerate) :
@@ -187,6 +191,7 @@ variable {K V : Type*} [Field K] [Algebra R K] [AddCommGroup V] [Module K V] [Mo
   (hQK : (hj.bilinForm Q).Nondegenerate)
 
 /-- `Q♭` of the base change, on the image of `Λ`, is the base change of `Q♭`. -/
+@[simp]
 theorem toDual_isBaseChange_bilinForm_apply (y : Λ) :
     (hj.bilinForm Q).toDual hQK (j y) = hj.toDual (Q y) := by
   refine hj.algHom_ext _ _ fun z ↦ ?_
