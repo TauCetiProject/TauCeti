@@ -72,6 +72,17 @@ def piLpCoordBCF (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ �
   (lp.bcfDualEquiv 𝕜 (α i)).symm
     (Λ.comp (PiLp.singleCLM p 𝕜 (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1) i))
 
+/-- For discrete coordinate spaces `α i` over an `RCLike` field `𝕜`, evaluating `Λ` on a single
+coordinate vector `PiLp.single p i u` agrees with the `ℓ¹`-pairing of `u` against
+`Λ.piLpCoordBCF i`. -/
+theorem apply_piLpSingle_eq_bcfPairing [DecidableEq ι]
+    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι)
+    (u : lp (fun _ : α i ↦ 𝕜) 1) :
+    Λ (PiLp.single p i u) = lp.bcfPairing 𝕜 (α i) 𝕜 u (Λ.piLpCoordBCF i) := by
+  simp only [piLpCoordBCF, lp.bcfPairing_bcfDualEquiv_symm, ContinuousLinearMap.comp_apply,
+    PiLp.singleCLM_apply]
+  congr!
+
 /-- The `i`-th coordinate bounded function of `Λ` evaluates at `y` to
 `Λ (PiLp.single p i (lp.single 1 y 1))`. -/
 @[simp]
@@ -79,13 +90,7 @@ theorem piLpCoordBCF_apply [DecidableEq ι]
     (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι)
     [DecidableEq (α i)] (y : α i) :
     Λ.piLpCoordBCF i y = Λ (PiLp.single p i (lp.single 1 y 1)) := by
-  simp only [piLpCoordBCF, lp.bcfDualEquiv_symm_apply, ContinuousLinearMap.comp_apply,
-    PiLp.singleCLM_apply]
-  congr 1
-  ext j
-  rcases eq_or_ne j i with rfl | h
-  · simp
-  · simp [h]
+  rw [Λ.apply_piLpSingle_eq_bcfPairing, lp.bcfPairing_single, one_smul]
 
 @[simp]
 theorem piLpCoordBCF_zero :
@@ -125,21 +130,6 @@ theorem piLpCoordBCF_smul (c : 𝕜)
   classical
   ext i y
   simp [piLpCoordBCF_apply]
-
-/-- For discrete coordinate spaces `α i` over an `RCLike` field `𝕜`, evaluating `Λ` on a single
-coordinate vector `PiLp.single p i u` agrees with the `ℓ¹`-pairing of `u` against
-`Λ.piLpCoordBCF i`. -/
-theorem apply_piLpSingle_eq_bcfPairing [DecidableEq ι]
-    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι)
-    (u : lp (fun _ : α i ↦ 𝕜) 1) :
-    Λ (PiLp.single p i u) = lp.bcfPairing 𝕜 (α i) 𝕜 u (Λ.piLpCoordBCF i) := by
-  simp only [piLpCoordBCF, lp.bcfPairing_bcfDualEquiv_symm, ContinuousLinearMap.comp_apply,
-    PiLp.singleCLM_apply]
-  congr 1
-  ext j
-  rcases eq_or_ne j i with rfl | h
-  · simp
-  · simp [h]
 
 /-- When the coordinate index type `ι` is finite and `1 ≤ p`, each coordinate bounded function of
 `Λ` has supremum norm at most `‖Λ‖`. -/

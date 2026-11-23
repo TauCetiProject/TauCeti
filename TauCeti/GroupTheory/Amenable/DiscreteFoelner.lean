@@ -215,13 +215,11 @@ theorem Amenable.zero_mem_closure_range_stdSimplexLeftTranslationSub [Amenable G
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   have h0 : m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) = 0 := by
     simp only [map_sum, map_sub, hm.apply_leftTranslation, sub_self, sum_const_zero]
+  -- `map_inv` would turn `UCB.leftTranslation g⁻¹` into `(UCB.leftTranslation g).symm`.
   have hF (x : G) :
       ((∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g) : UCB G) : G →ᵇ ℝ) x =
         Λ (stdSimplexLeftTranslationSub K (.single x)) := by
-    rw [hv, ← UCB.discreteAlgEquiv_apply, ← BoundedContinuousFunction.evalCLM_apply ℝ x]
-    simp only [map_sum, map_sub, BoundedContinuousFunction.evalCLM_apply,
-      UCB.discreteAlgEquiv_apply, UCB.leftTranslation_apply, inv_inv, F,
-      UCB.coe_discreteAlgEquiv_symm]
+    simp [hv, F, -map_inv]
   have hu : u ≤ m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) :=
     m.le_apply_of_forall_le fun x ↦ by
       rw [hF]
