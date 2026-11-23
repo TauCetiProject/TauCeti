@@ -6,15 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Basic
-public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Global trivialization of a vector bundle core with identity transitions
 
 `VectorBundleCore.globalTrivializationOfCoordChangeEqId` identifies the total space of a core
 whose transition maps are the identity on every chart overlap with the product of its base and
-model fibre, and `VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId` packages it as a
-homeomorphism `Z.TotalSpace ≃ₜ B × F`.
+model fibre.
 
 Although each fibre `Z.Fiber x` is definitionally `F`, the total space `Z.TotalSpace` carries the
 topology glued from the local charts of `Z` rather than the product topology on `B × F`, so a
@@ -97,26 +95,5 @@ instance globalTrivializationOfCoordChangeEqId_isLinear :
     (Z.globalTrivializationOfCoordChangeEqId hcoord).IsLinear 𝕜 where
   -- Unfold `VectorBundleCore.Fiber` to identify the fibre's module structure with that of `F`.
   linear _ _ := (LinearMap.id : F →ₗ[𝕜] F).isLinear
-
-/-- A vector bundle core whose transitions are the identity on chart overlaps has total space
-homeomorphic to `B × F`. -/
-def totalSpaceHomeomorphOfCoordChangeEqId : Z.TotalSpace ≃ₜ B × F :=
-  (Z.globalTrivializationOfCoordChangeEqId hcoord).toHomeomorphOfBaseSetEqUniv
-    (Z.globalTrivializationOfCoordChangeEqId_baseSet hcoord)
-
-/-- Forward evaluation of `VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId`. -/
-@[simp]
-theorem totalSpaceHomeomorphOfCoordChangeEqId_apply (q : Z.TotalSpace) :
-    Z.totalSpaceHomeomorphOfCoordChangeEqId hcoord q = (q.proj, q.snd) := by
-  rw [totalSpaceHomeomorphOfCoordChangeEqId,
-    Bundle.Trivialization.coe_toHomeomorphOfBaseSetEqUniv]
-  exact Z.globalTrivializationOfCoordChangeEqId_apply hcoord q
-
-/-- Inverse evaluation of `VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId`. -/
-@[simp]
-theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply (p : B × F) :
-    (Z.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm p = ⟨p.1, p.2⟩ := by
-  rw [(Z.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm_apply_eq]
-  exact (Z.totalSpaceHomeomorphOfCoordChangeEqId_apply hcoord ⟨p.1, p.2⟩).symm
 
 end VectorBundleCore
