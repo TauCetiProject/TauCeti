@@ -27,35 +27,27 @@ import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 /-!
 # Orbits of a Coxeter element on the roots and `|Φ| = r · h`
 
-This file combines two complementary developments of Coxeter orbits on the roots:
-
-1. **General fixed-point-free orbit bounds (`TauCeti`)**: if `w` is an element of the Weyl group
-   of a finite root system fixing no nonzero vector, the heights along any `⟨w⟩`-orbit over a
-   period sum to zero, so every orbit meets `inversions P b w` within `orderOf w` steps
-   (`TauCeti.exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions`), giving
-   `|Φ| ≤ orderOf w * #inversions(w)` (`TauCeti.natCard_le_orderOf_mul_ncard_inversions`) and
+1. **General fixed-point-free orbit bounds (`TauCeti`)**: if `w` fixes no nonzero vector, heights
+   over a `⟨w⟩`-period sum to zero (`TauCeti.exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions`),
+   giving `|Φ| ≤ orderOf w * #inversions(w)` (`TauCeti.natCard_le_orderOf_mul_ncard_inversions`) and
    `|Φ| ≤ orderOf c * l.length` (`TauCeti.natCard_le_orderOf_wordProd_mul_length`).
 
-2. **Steinberg's free Coxeter orbits and `|Φ| = r · h` (`RootPairing.Base`)**: for an irreducible,
-   finite, reduced, crystallographic root pairing `P` with base `b` of rank `r = b.support.card`
-   (or when `b.cartanMatrix` is of finite type with preconnected Dynkin diagram) and any Coxeter
-   element `c = wordProd P b l` of order `h = orderOf c`, without assuming root spanning:
+2. **Steinberg's free Coxeter orbits and `|Φ| = r · h` (`RootPairing.Base`)**: for a finite,
+   reduced, crystallographic root pairing `P` with base `b` of rank `r` whose Cartan matrix is of
+   finite type with preconnected diagram (or `[P.IsIrreducible]`) and any `c = wordProd P b l` of
+   order `h` (without assuming root spanning):
    - **Free cyclic orbits** (`weylGroupToPerm_wordProd_pow_apply_eq_self_iff`,
-     `minimalPeriod_weylGroupToPerm_wordProd`, `ncard_setOf_sameCycle_weylGroupToPerm_wordProd`):
-     every `⟨c⟩`-orbit on `ι` has minimal period and cardinality `h`.
+     `minimalPeriod_weylGroupToPerm_wordProd`, `ncard_setOf_sameCycle_weylGroupToPerm_wordProd`).
    - **Unique inversion per orbit & `|Φ| = r · h`**
      (`card_quotient_sameCycle_weylGroupToPerm_wordProd`,
      `existsUnique_sameCycle_mem_inversions_wordProd`, `existsUnique_pow_mem_inversions_wordProd`,
      `natCard_eq_card_support_mul_orderOf_wordProd`,
-     `ncard_posRoots_eq_card_support_mul_orderOf_wordProd_div_two`): `⟨c⟩` partitions `ι` into `r`
-     cyclic orbits, each containing a unique inversion, and proves `_of_isFiniteType` forms used in
-     `TauCeti.LinearAlgebra.RootSystem.NumberOfRoots.Exceptional`.
+     `ncard_posRoots_eq_card_support_mul_orderOf_wordProd_div_two`), plus `_of_isFiniteType` forms.
 
 ## References
 * R. Steinberg, *Finite reflection groups*, Trans. Amer. Math. Soc. **91** (1959), 493–504.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, no. 2; Ch. VI, §1, no. 11.
-* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge University Press (1990),
-  §§ 3.16–3.18.
+* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, §§ 3.16–3.18.
 -/
 
 public section
@@ -96,8 +88,7 @@ private theorem surjective_quotientMk_inversions_wordProd (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     Function.Surjective fun k : inversions P b (wordProd P b l) ↦
       Quotient.mk (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm (wordProd P b l))) k.val :=
-  Quotient.ind fun j ↦
-    let ⟨k, hsc, hinv⟩ := b.exists_sameCycle_mem_inversions_wordProd hnd hall j
+  Quotient.ind fun j ↦ let ⟨k, hsc, hinv⟩ := b.exists_sameCycle_mem_inversions_wordProd hnd hall j
     ⟨⟨k, hinv⟩, Quotient.sound hsc.symm⟩
 
 omit [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
@@ -162,11 +153,10 @@ private theorem card_quotient_sameCycle_bipartite_of_isFiniteType
   rw [weylCoxeterSystem_wordProd] at hword₀
   rw [← Nat.card_eq_of_bijective (fun k : inversions P b c₀ ↦
       Quotient.mk (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm c₀)) k.val)
-    ⟨fun k₁ k₂ hk ↦ by
+    ⟨fun k₁ k₂ hk ↦ Subtype.ext <| by
       obtain ⟨m, hm⟩ := exists_fin_pow_eq_of_sameCycle (orderOf_pos c₀) (Quotient.exact hk)
-      exact Subtype.ext (by
-        simpa [← b.subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType hft hconn col
-          k₁.val (by simp) (hm ▸ k₂.property) (m₁ := ⟨0, orderOf_pos c₀⟩)] using hm),
+      simpa [← b.subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType hft hconn col
+        k₁.val (by simp) (hm ▸ k₂.property) (m₁ := ⟨0, orderOf_pos c₀⟩)] using hm,
       hword₀ ▸ b.surjective_quotientMk_inversions_wordProd hnd₀ hall₀⟩,
     Nat.card_coe_set_eq, ncard_inversions_bipartiteCoxeterElement]
 
@@ -179,8 +169,8 @@ and root index `j : ι`, the power `c ^ k` fixes `j` if and only if `orderOf c �
 theorem weylGroupToPerm_wordProd_pow_apply_eq_self_iff_of_isFiniteType (j : ι) (k : ℕ) :
     P.weylGroupToPerm (wordProd P b l ^ k) j = j ↔ orderOf (wordProd P b l) ∣ k := by
   refine ⟨fun hfix ↦ ?_, fun h ↦ by rw [orderOf_dvd_iff_pow_eq_one.mp h, map_one]; rfl⟩
-  have : Nonempty ι := ⟨j⟩; classical
-  have hW := b.actsBy_wordProd l
+  classical
+  have : Nonempty ι := ⟨j⟩; have hW := b.actsBy_wordProd l
   obtain ⟨z, -, hz_eig, hz_prim, hz_reg, -⟩ :=
     b.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType hft hconn hnd hall hW
   have heval := b.corootEval_weylGroupToPerm_inv (hW.pow k) ℂ j z
@@ -212,17 +202,15 @@ private theorem natCard_eq_card_quotient_mul_orderOf_wordProd :
     Nat.card ι = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid
       (P.weylGroupToPerm (wordProd P b l)))) * orderOf (wordProd P b l) := by
   let := Fintype.ofFinite ι; classical
-  have hsum := (Equiv.Perm.sum_quotient_sameCycle_sum_range
-    (P.weylGroupToPerm (wordProd P b l)) fun _ ↦ (1 : ℕ)).symm
-  simp_rw [Finset.sum_const, smul_eq_mul, mul_one,
-    b.minimalPeriod_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall,
-    Finset.sum_const, Finset.card_univ, smul_eq_mul] at hsum
-  simpa [Nat.card_eq_fintype_card] using hsum
+  simpa only [Finset.sum_const, Finset.card_univ, Finset.card_range, smul_eq_mul, mul_one,
+    Nat.card_eq_fintype_card,
+    b.minimalPeriod_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall] using
+    (Equiv.Perm.sum_quotient_sameCycle_sum_range
+      (P.weylGroupToPerm (wordProd P b l)) fun _ ↦ (1 : ℕ)).symm
 
 private theorem natCard_eq_card_support_mul_orderOf_wordProd_subsingleton [Subsingleton b.support] :
     Nat.card ι = b.support.card * orderOf (wordProd P b l) := by
-  let := Fintype.ofFinite ι
-  by_cases hne : Nonempty b.support
+  let := Fintype.ofFinite ι; by_cases hne : Nonempty b.support
   · obtain ⟨i₀⟩ := hne; set c := wordProd P b l with hc
     have hword_pow (lw : List b.support) : wordProd P b lw = c ^ lw.length :=
       lw.rec (by simp) fun a lw ih ↦ by
@@ -349,8 +337,7 @@ theorem minimalPeriod_weylGroupToPerm_wordProd (j : ι) :
 theorem ncard_setOf_sameCycle_weylGroupToPerm_wordProd (j : ι) :
     {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm (wordProd P b l)) j k}.ncard =
       orderOf (wordProd P b l) :=
-  (Equiv.Perm.ncard_setOf_sameCycle _ _).trans
-    (b.minimalPeriod_weylGroupToPerm_wordProd hnd hall j)
+  (Equiv.Perm.ncard_setOf_sameCycle _ _).trans (b.minimalPeriod_weylGroupToPerm_wordProd hnd hall j)
 
 /-- **Bourbaki's root-count formula `|Φ| = r · h`.** In a finite, reduced, irreducible,
 crystallographic root pairing with base `b`, the total number of roots equals the rank

@@ -51,8 +51,7 @@ theorem corootEval_apply (S : Type*) [CommRing S] (j : ι) (y : b.support → S)
     b.corootEval S j y = ∑ i : b.support, (P.pairingIn ℤ (i : ι) j : S) * y i := (rfl)
 
 /-- On `Pi.single i c`, `corootEval` evaluates to the `i`-th pairing scaled by `c`. -/
-@[simp]
-theorem corootEval_single [DecidableEq b.support] (S : Type*) [CommRing S] (j : ι)
+@[simp] theorem corootEval_single [DecidableEq b.support] (S : Type*) [CommRing S] (j : ι)
     (i : b.support) (c : S) :
     b.corootEval S j (Pi.single i c) = (P.pairingIn ℤ (i : ι) j : S) * c := by
   simp [corootEval_apply, Pi.single_apply]
@@ -84,8 +83,7 @@ theorem liftBaseChange_coroot'_sum_tmul_root {S : Type*} [CommRing S] [Algebra R
   simp [corootEval_apply, ← P.algebraMap_pairingIn ℤ, mul_comm]
 
 /-- Root negation negates `corootEval`. -/
-@[simp]
-theorem corootEval_reflectionPerm_self [CharZero R] (S : Type*) [CommRing S] (j : ι) :
+@[simp] theorem corootEval_reflectionPerm_self [CharZero R] (S : Type*) [CommRing S] (j : ι) :
     b.corootEval S (P.reflectionPerm j j) = -b.corootEval S j := by
   ext y; simp [corootEval_apply, P.pairingIn_reflectionPerm_self_right, ← Finset.sum_neg_distrib]
 
@@ -97,8 +95,8 @@ theorem exists_corootEval_eq_sum_nat_of_mem_posRoots {j : ι} (hj : j ∈ posRoo
     ∃ f : b.support → ℕ, (∃ k : b.support, f k ≠ 0) ∧
       ∀ (S : Type*) [CommRing S] (y : b.support → S),
         b.corootEval S j y = ∑ k : b.support, (f k : S) * b.corootEval S (k : ι) y := by
-  have := P.flip_isReduced
-  obtain ⟨f, ⟨k₀, hk₀, hfk₀⟩, hcor'⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hj
+  have := P.flip_isReduced; obtain ⟨f, ⟨k₀, hk₀, hfk₀⟩, hcor'⟩ :=
+    exists_coroot'_eq_sum_nat_of_mem_posRoots P b hj
   have hint (i : b.support) :
       P.pairingIn ℤ (i : ι) j = ∑ k : b.support, (f k : ℤ) * P.pairingIn ℤ (i : ι) (k : ι) := by
     apply FaithfulSMul.algebraMap_injective ℤ R

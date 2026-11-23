@@ -24,21 +24,12 @@ import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 # Coleman's Coxeter plane and regular primitive-root eigenvectors
 
 For a base `b` of a finite, reduced, irreducible, crystallographic root pairing `P` over a
-characteristic-zero domain (or, more generally, a finite, reduced, crystallographic pairing whose
-Cartan matrix `b.cartanMatrix` is of finite type with preconnected Dynkin diagram) and a Coxeter
-element `c = wordProd P b l` of order `h = orderOf c`, we construct Coleman's real Coxeter plane
-(rank ≥ 2) and Steinberg's regular `exp (2πi / h)`-eigenvector with trivial Weyl stabilizer
-(assuming `[Nonempty ι]` in the coordinate and finite-type forms).
-
-On `span {e₁, e₂} ⊆ (b.support → ℝ)`, the bipartite Coxeter matrix `W` rotates `(e₁, e₂)` by
-`-2π / h` (`Winv` by `+2π / h`), with the open sector `(0, π / h)` in the open dominant cone.
-Downstream, `TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Orbit` uses this for freeness of
-`⟨c⟩`-orbits on roots and `|Φ| = r · h`; the regular eigenvector also serves Weyl degree formulas.
-
-API guide: use `_of_isFiniteType` forms (only `IsFiniteType b.cartanMatrix` and preconnected
-diagram, plus `[Nonempty ι]` for eigenvectors) for non-spanning pairings and `HasCartanType` bases,
-and `[P.IsIrreducible]` corollaries (handling `IsEmpty ι` in weight-space forms) otherwise. Choose
-`b.support → ℂ` over any char-0 domain `R`, `ℂ ⊗[R] M` with `[Algebra R ℂ]`, or `M` when `R = ℂ`.
+characteristic-zero domain (or a finite, reduced, crystallographic pairing whose Cartan matrix is of
+finite type with preconnected Dynkin diagram) and a Coxeter element `c = wordProd P b l` of order
+`h = orderOf c`, we construct Coleman's real Coxeter plane (rank ≥ 2) and Steinberg's regular
+`exp (2πi / h)`-eigenvector with trivial Weyl stabilizer (`[Nonempty ι]` in coordinate/finite-type
+forms). On `span {e₁, e₂}`, the bipartite Coxeter matrix `W` rotates by `-2π / h` (`Winv` by
+`+2π / h`), sending `(0, π / h)` into the open dominant cone.
 
 ## Main results
 * `RootPairing.Base.isIrreducible_two_smul_one_sub_transpose_cartanMatrix` / `_of_preconnected`
@@ -150,19 +141,14 @@ private theorem cos_eq_one_of_planePoint_eq_zero [Nontrivial b.support]
     (ht : b.planePoint col θ x t = b.planePoint col θ x 0) : Real.cos t = 1 := by
   have hcomb : (Real.cos t - 1) • b.planeBasis₁ col θ x +
       Real.sin t • b.planeBasis₂ col θ x = 0 := by
-    have h0 : b.planePoint col θ x t - b.planePoint col θ x 0 = 0 := sub_eq_zero.mpr ht
-    rw [← h0]; simp [planePoint, sub_smul]; abel
+    rw [← sub_eq_zero.mpr ht]; simp [planePoint, sub_smul]; abel
   have hg := Fintype.linearIndependent_iff.mp
     (coxeterPlane_linearIndependent b col hconn hx hsinθ) ![Real.cos t - 1, Real.sin t]
-  rw [Fin.sum_univ_two] at hg
-  exact sub_eq_zero.mp (hg hcomb 0)
+  rw [Fin.sum_univ_two] at hg; exact sub_eq_zero.mp (hg hcomb 0)
 
-variable {κ : ℝ} {x : b.support → ℝ}
-  (hxC : x ᵥ* b.cartanMatrix.map (Int.castRingHom ℝ) = κ • x)
-include hxC
-
-variable {θ : ℝ} (hμ_eq : 2 - κ = 2 * Real.cos θ)
-include hμ_eq
+variable {κ : ℝ} {x : b.support → ℝ} (hxC : x ᵥ* b.cartanMatrix.map (Int.castRingHom ℝ) = κ • x)
+  {θ : ℝ} (hμ_eq : 2 - κ = 2 * Real.cos θ)
+include hxC hμ_eq
 
 private theorem coxeterPlane_rotation [DecidableEq ι] :
     (b.bipartiteCoxeterMatrix col).map (Int.castRingHom ℝ) *ᵥ b.planeBasis₁ col θ x =
@@ -175,12 +161,12 @@ private theorem coxeterPlane_rotation [DecidableEq ι] :
             b.planePoint col θ x (φ + 2 * (k : ℝ) * θ) := by
   set W := (b.bipartiteCoxeterMatrix col).map (Int.castRingHom ℝ)
   set Winv := (b.colorClassMatrix col false * b.colorClassMatrix col true).map (Int.castRingHom ℝ)
-  have hWt := b.bipartiteCoxeterMatrix_mulVec_ite_color_true col hxC
-  have hWf := b.bipartiteCoxeterMatrix_mulVec_ite_color_false col hxC
-  change W *ᵥ b.colorVec col x true =
-    ((2 - κ) ^ 2 - 1) • b.colorVec col x true + (2 - κ) • b.colorVec col x false at hWt
-  change W *ᵥ b.colorVec col x false =
-    -b.colorVec col x false - (2 - κ) • b.colorVec col x true at hWf
+  have hWt : W *ᵥ b.colorVec col x true =
+      ((2 - κ) ^ 2 - 1) • b.colorVec col x true + (2 - κ) • b.colorVec col x false :=
+    b.bipartiteCoxeterMatrix_mulVec_ite_color_true col hxC
+  have hWf : W *ᵥ b.colorVec col x false =
+      -b.colorVec col x false - (2 - κ) • b.colorVec col x true :=
+    b.bipartiteCoxeterMatrix_mulVec_ite_color_false col hxC
   have hsin2 : Real.sin θ ^ 2 = 1 - Real.cos θ ^ 2 := by linarith [Real.cos_sq_add_sin_sq θ]
   have hWe₁ : W *ᵥ b.planeBasis₁ col θ x =
       Real.cos (2 * θ) • b.planeBasis₁ col θ x - Real.sin (2 * θ) • b.planeBasis₂ col θ x :=
@@ -193,36 +179,21 @@ private theorem coxeterPlane_rotation [DecidableEq ι] :
       Real.sin (2 * θ) • b.planeBasis₁ col θ x + Real.cos (2 * θ) • b.planeBasis₂ col θ x :=
     funext fun i ↦ by
       simp only [planeBasis₁, planeBasis₂, mulVec_smul, hWt, hμ_eq, Real.cos_two_mul,
-        Real.sin_two_mul, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-      ring
+        Real.sin_two_mul, Pi.add_apply, Pi.smul_apply, smul_eq_mul]; ring
   have hWinvW : Winv * W = 1 := by
     rw [← Matrix.map_mul, bipartiteCoxeterMatrix_def, mul_assoc (b.colorClassMatrix col false),
       ← mul_assoc (b.colorClassMatrix col true), colorClassMatrix_mul_self, one_mul,
       colorClassMatrix_mul_self, Matrix.map_one _ (map_zero _) (map_one _)]
-  have h1 : Winv *ᵥ (Real.cos (2 * θ) • b.planeBasis₁ col θ x -
-      Real.sin (2 * θ) • b.planeBasis₂ col θ x) = b.planeBasis₁ col θ x := by
-    rw [← hWe₁, mulVec_mulVec, hWinvW, one_mulVec]
-  have h2 : Winv *ᵥ (Real.sin (2 * θ) • b.planeBasis₁ col θ x +
-      Real.cos (2 * θ) • b.planeBasis₂ col θ x) = b.planeBasis₂ col θ x := by
-    rw [← hWe₂, mulVec_mulVec, hWinvW, one_mulVec]
+  have hW_pt (ψ : ℝ) : W *ᵥ b.planePoint col θ x ψ = b.planePoint col θ x (ψ - 2 * θ) :=
+    funext fun i ↦ by
+      simp only [planePoint, mulVec_add, mulVec_smul, hWe₁, hWe₂, Real.cos_sub, Real.sin_sub,
+        Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]; ring
+  have hWinv_pt (ψ : ℝ) : Winv *ᵥ b.planePoint col θ x ψ = b.planePoint col θ x (ψ + 2 * θ) := by
+    simpa [mulVec_mulVec, hWinvW] using (congrArg (Winv *ᵥ ·) (hW_pt (ψ + 2 * θ))).symm
   refine ⟨hWe₁, hWe₂, fun k φ ↦ ?_⟩
   induction k generalizing φ with
   | zero => simp [planePoint]
-  | succ k ih =>
-    rw [pow_succ', ← mulVec_mulVec, ih, Nat.cast_succ, show φ + 2 * ((k : ℝ) + 1) * θ =
-      (φ + 2 * (k : ℝ) * θ) + 2 * θ by ring]
-    set ψ := φ + 2 * (k : ℝ) * θ
-    have hcs := Real.cos_sq_add_sin_sq (2 * θ)
-    ext i
-    have hi1 := congrFun h1 i; have hi2 := congrFun h2 i
-    simp only [mulVec_sub, mulVec_add, mulVec_smul, Pi.sub_apply, Pi.add_apply, Pi.smul_apply,
-      smul_eq_mul] at hi1 hi2
-    simp only [planePoint, mulVec_add, mulVec_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
-      Real.cos_add, Real.sin_add]
-    linear_combination (Real.cos ψ * Real.cos (2 * θ) - Real.sin ψ * Real.sin (2 * θ)) * hi1 +
-      (Real.sin ψ * Real.cos (2 * θ) + Real.cos ψ * Real.sin (2 * θ)) * hi2 -
-      (Real.cos ψ * (Winv *ᵥ b.planeBasis₁ col θ x) i +
-        Real.sin ψ * (Winv *ᵥ b.planeBasis₂ col θ x) i) * hcs
+  | succ k ih => rw [pow_succ', ← mulVec_mulVec, ih, hWinv_pt]; congr 1; push_cast; ring
 
 private theorem coxeterPlane_corootEval (k : b.support) (φ : ℝ) :
     b.corootEval ℝ (k : ι) (b.planePoint col θ x φ) =
@@ -273,14 +244,12 @@ private theorem coxeterPlane_angle_eq_pi_div_orderOf [Nontrivial b.support]
   let c := (weylCoxeterSystem P b).bipartiteCoxeterElement col; let h := orderOf c
   have hWinv_h : ((b.colorClassMatrix col false * b.colorClassMatrix col true).map
       (Int.castRingHom ℝ)) ^ h = 1 := by
-    have h1 : (b.colorClassMatrix col false * b.colorClassMatrix col true) ^ h = 1 :=
-      (by simpa [h, c, pow_orderOf_eq_one] using
-        (b.actsBy_bipartiteCoxeterElement_inv col).pow h : b.ActsBy 1 _).unique b.actsBy_one
+    have h1 := (by simpa [h, c, pow_orderOf_eq_one] using
+      (b.actsBy_bipartiteCoxeterElement_inv col).pow h : b.ActsBy 1 _).unique b.actsBy_one
     rw [← Matrix.map_pow, h1, Matrix.map_one _ (map_zero _) (map_one _)]
-  have hcos : Real.cos (2 * (h : ℝ) * θ) = 1 := by
-    have hrot := hWinv_pow h 0
-    rw [hWinv_h, one_mulVec, zero_add] at hrot
-    exact cos_eq_one_of_planePoint_eq_zero b col hconn hx hsinθ hrot.symm
+  have hcos : Real.cos (2 * (h : ℝ) * θ) = 1 :=
+    cos_eq_one_of_planePoint_eq_zero b col hconn hx hsinθ <| by
+      have hrot := hWinv_pow h 0; rw [hWinv_h, one_mulVec, zero_add] at hrot; exact hrot.symm
   refine eq_pi_div_of_cos_two_mul_eq_one (orderOf_pos c) hθpos hcos (fun h' hh'0 hh'lt hcos' ↦ ?_)
     fun n q ⟨h0, hlt⟩ ↦ let ⟨j, hj⟩ := coxeterPlane_exists_corootEval_zero b col hxC hμ_eq hconn n q
       b.corootEval_ne_zero_of_forall_pos
@@ -449,8 +418,8 @@ private theorem exists_eigenvector_of_isConj (b : P.Base)
   have hUinv : b.ActsBy (wordProd P b lu)⁻¹ Uinv := hlu' ▸ b.actsBy_wordProd lu'
   have hUinvU (x : b.support → ℂ) :
       (Uinv.map (Int.castRingHom ℂ)) *ᵥ ((U.map (Int.castRingHom ℂ)) *ᵥ x) = x := by
-    rw [mulVec_mulVec, ← Matrix.map_mul, ((by simpa using hUinv.mul hU :
-      b.ActsBy 1 (Uinv * U)).unique b.actsBy_one)]; simp
+    rw [mulVec_mulVec, ← Matrix.map_mul, (show b.ActsBy 1 (Uinv * U) from
+      inv_mul_cancel (wordProd P b lu) ▸ hUinv.mul hU).unique b.actsBy_one]; simp
   refine ⟨(U.map (Int.castRingHom ℂ)) *ᵥ v₀, fun hv0 ↦ hv₀_ne (by
       simpa only [hUinvU, mulVec_zero] using congrArg ((Uinv.map (Int.castRingHom ℂ)) *ᵥ ·) hv0),
     by rw [hW.unique (hu ▸ (hU.mul hW₀).mul hUinv), hconj.choose_spec.orderOf_eq]
@@ -525,9 +494,9 @@ private theorem exists_eigenvector_baseChange_isEmpty [P.IsIrreducible] [IsEmpty
       (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1) := by
   dsimp only; have : IsEmpty b.support := ⟨(IsEmpty.false ·.val)⟩
   have := IsIrreducible.nontrivial (P := P); obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
-  obtain ⟨n₀, hr₀⟩ : ∃ n₀ : N, P.toLinearMap m₀ n₀ ≠ 0 := by_contra fun h ↦ hm₀ <|
-    (LinearMap.IsPerfPair.bijective_left P.toLinearMap).injective
-      ((LinearMap.ext fun n ↦ not_not.mp fun hn ↦ h ⟨n, hn⟩).trans (map_zero _).symm)
+  obtain ⟨n₀, hr₀⟩ : ∃ n₀ : N, P.toLinearMap m₀ n₀ ≠ 0 := by
+    by_contra! h; exact hm₀ ((LinearMap.IsPerfPair.bijective_left P.toLinearMap).injective
+      (by ext n; simp [h]))
   set r₀ := P.toLinearMap m₀ n₀
   have hS_top : LinearMap.range (LinearMap.lsmul R M r₀) = ⊤ :=
     IsIrreducible.eq_top_of_invtSubmodule_reflection (P := P) _ (fun i ↦ (IsEmpty.false i).elim)
@@ -548,14 +517,14 @@ private theorem sum_tmul_root_injective_of_isFiniteType (b : P.Base)
     (hft : IsFiniteType b.cartanMatrix) :
     Function.Injective (fun u : b.support → ℂ ↦ ∑ i : b.support, u i ⊗ₜ[R] P.root i) := by
   classical
-  exact fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit
+  refine fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit
     ((Matrix.isUnit_iff_isUnit_det (b.cartanMatrixᵀ.map (Int.castRingHom ℂ))).mpr <|
       isUnit_iff_ne_zero.mpr <| by
         rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_transpose]
         exact Int.cast_ne_zero (α := ℂ).mpr hft.det_ne_zero)
     (funext fun k ↦ by
-      have hk := congrArg
-        (LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' (k : ι))) h
+      have hk := congrArg (LinearMap.liftBaseChange ℂ
+        (Algebra.linearMap R ℂ ∘ₗ P.coroot' (k : ι))) h
       simp only [b.liftBaseChange_coroot'_sum_tmul_root, corootEval_coe_support] at hk
       simpa [mulVec, dotProduct] using hk)
 
@@ -626,8 +595,8 @@ private theorem exists_isRegularWeight_eigenvector_of_baseChange {c : P.weylGrou
   obtain ⟨v₀, hv₀_ne, hv₀_eig, hprim, hv₀_reg, hv₀_stab⟩ := hex; let e := TensorProduct.lid ℂ M
   have he_act (g : P.weylGroup) (x : ℂ ⊗[ℂ] M) :
       e (P.weylGroupRootRep.baseChange ℂ g x) = g • e x :=
-    TensorProduct.inductionOn x (fun _ _ ↦ by
-      simp [e, Representation.baseChange_apply, weylGroupRootRep_apply, smul_comm])
+    TensorProduct.inductionOn x
+      (fun _ _ ↦ by simp [e, Representation.baseChange_apply, weylGroupRootRep_apply, smul_comm])
       fun _ _ hx hy ↦ by rw [map_add, map_add, map_add, smul_add, hx, hy]
   refine ⟨e v₀, fun h ↦ hv₀_ne (e.map_eq_zero_iff.mp h), by rw [← he_act, hv₀_eig, map_smul],
     hprim, (isRegularWeight_iff P (e v₀)).mpr fun j ↦ LinearMap.congr_fun (TensorProduct.ext'

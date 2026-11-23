@@ -46,8 +46,7 @@ noncomputable def colorClassMatrix (s : Bool) : Matrix b.support b.support ℤ :
   (((Finset.univ.filter fun i : b.support ↦ col i = s).toList).map (reflMatrix b.cartanMatrix)).prod
 
 /-- Explicit entries of `b.colorClassMatrix col s` in terms of `b.cartanMatrix`. -/
-@[simp]
-theorem colorClassMatrix_apply (s : Bool) (k j : b.support) :
+@[simp] theorem colorClassMatrix_apply (s : Bool) (k j : b.support) :
     b.colorClassMatrix col s k j =
       (if k = j then 1 else 0) - (if col k = s then b.cartanMatrix j k else 0) := by
   rw [colorClassMatrix, prod_map_reflMatrix_apply_of_orthogonal b.cartanMatrix
@@ -55,8 +54,7 @@ theorem colorClassMatrix_apply (s : Bool) (k j : b.support) :
       b.cartanMatrix_eq_zero_of_color_eq col hpq (by simp_all)) k j]; simp
 
 /-- `b.colorClassMatrix col s` is an involution (`M * M = 1`). -/
-@[simp]
-theorem colorClassMatrix_mul_self (s : Bool) :
+@[simp] theorem colorClassMatrix_mul_self (s : Bool) :
     b.colorClassMatrix col s * b.colorClassMatrix col s = 1 := by
   ext k j; simp only [Matrix.mul_apply, colorClassMatrix_apply, Matrix.one_apply]
   by_cases hck : col k = s
@@ -114,8 +112,7 @@ theorem colorClassMatrix_mulVec_ite_color {S : Type*} [CommRing S] {y : b.suppor
         (fun i ↦ if col i = z then y i else 0) =
       (fun i ↦ if col i = z then y i else 0) -
         (if z = s then 2 else κ - 2) • (fun i ↦ if col i = s then y i else 0) := by
-  ext k
-  simp only [mulVec, dotProduct, map_apply, Int.coe_castRingHom, colorClassMatrix_apply,
+  ext k; simp only [mulVec, dotProduct, map_apply, Int.coe_castRingHom, colorClassMatrix_apply,
     Int.cast_sub, Int.cast_ite, Int.cast_one, Int.cast_zero, sub_mul, Finset.sum_sub_distrib,
     ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
   by_cases hck : col k = s

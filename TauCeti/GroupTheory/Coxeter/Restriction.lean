@@ -96,8 +96,7 @@ theorem isReduced_of_nodup (cs : CoxeterSystem M W) {l : List B} (hl : l.Nodup) 
   refine hsub.eq_of_length_le ?_
   rw [← List.toFinset_card_of_nodup hl, ← List.toFinset_card_of_nodup (hsub.nodup hl)]
   refine Finset.card_le_card fun i hi ↦ ?_
-  rw [List.mem_toFinset] at hi ⊢; by_contra hiσ
-  obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hi
+  rw [List.mem_toFinset] at hi ⊢; by_contra hiσ; obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hi
   obtain ⟨-, hl₂', hdisj⟩ := List.nodup_append.mp hl; rw [List.nodup_cons] at hl₂'
   let J : Set B := {j | j ≠ i}
   exact (cs.simple_mem_parabolic_iff (J := J)).mp (by

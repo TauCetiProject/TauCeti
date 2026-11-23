@@ -183,8 +183,7 @@ theorem ncard_inversions_colorClassProd (col : (coxeterMatrixOfBase P b).graph.C
 
 /-- The bipartite Coxeter element of any two-colouring of the Coxeter graph has `b.support.card`
 inversions. -/
-@[simp]
-theorem ncard_inversions_bipartiteCoxeterElement
+@[simp] theorem ncard_inversions_bipartiteCoxeterElement
     (col : (coxeterMatrixOfBase P b).graph.Coloring Bool) :
     (inversions P b ((weylCoxeterSystem P b).bipartiteCoxeterElement col)).ncard =
       b.support.card := by

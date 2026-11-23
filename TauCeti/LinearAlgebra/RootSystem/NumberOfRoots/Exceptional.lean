@@ -15,10 +15,9 @@ import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 /-!
 # Root counts for the exceptional Cartan types
 
-For any finite, reduced, crystallographic root pairing `P` over a commutative domain of
-characteristic zero with a base `b` of exceptional Cartan type `E₆`, `E₇`, `E₈`, `F₄`, or `G₂`,
-we determine the total number of roots `Nat.card ι` and the number of positive roots
-`(posRoots P b).ncard`, without assuming root spanning or `[P.IsIrreducible]`:
+For any finite, reduced, crystallographic root pairing `P` over a characteristic-zero domain with
+a base `b` of exceptional Cartan type `E₆`, `E₇`, `E₈`, `F₄`, or `G₂`, we compute `Nat.card ι`
+and `(posRoots P b).ncard`, without assuming root spanning or `[P.IsIrreducible]`:
 
 | type | rank `r` | Coxeter number `h` | `|Φ| = r · h` | `|Φ⁺| = r · h / 2` |
 |---|---|---|---|---|
@@ -28,11 +27,9 @@ we determine the total number of roots `Nat.card ι` and the number of positive 
 | `F₄` | 4 | 12 | 48 | 24 |
 | `G₂` | 2 | 6 | 12 | 6 |
 
-These counts specialize Bourbaki's formula `|Φ| = r · h`
-(`RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType`) using the
-exceptional Coxeter numbers proved in `TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Every`,
-verifying the exceptional values recorded by `TauCeti.DynkinType.numRoots` for any abstract root
-pairing matching `TauCeti.HasCartanType`.
+These specialize `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType`
+via `TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Every`, matching `TauCeti.DynkinType.numRoots`
+and `TauCeti.HasCartanType`.
 
 ## Main results
 
