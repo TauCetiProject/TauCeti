@@ -46,7 +46,7 @@ For uniqueness, `u ∈ W^{2,p}(Ω) ⊆ W^{2,n}(Ω)` has a representative `ū` co
 by Morrey's embedding on Lipschitz domains, which vanishes on `frontier Ω` since
 `u ∈ W^{1,p}_0(Ω)` (`TauCeti.Wkp.exists_continuousOn_closure_ae_eq_and_eqOn_frontier`). The weak
 maximum principle for strong subsolutions
-(`TauCeti.PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier`), applied to `u`
+(`TauCeti.PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier`), applied to `u`
 and `-u`, gives `ū = 0`.
 
 For Lemma 9.17, `u ↦ L u` is a bounded operator `W^{2,p}(Ω) → Lᵖ(Ω)`
@@ -178,12 +178,12 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
       ⇑(iteratedGradient 1 u) :=
     iteratedGradient_ofExponentLEL_ae hpn 1 u
   have hle : ∀ x ∈ Omega, ū x ≤ 0 := fun x hx =>
-    PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier hb rfl v hcont hvū hA hc
+    PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier hb rfl v hcont hvū hA hc
       (by
         filter_upwards [heq, hD, hv] with y hy hDy hvy
         rw [hDy, hvy, hy]) le_rfl (fun z hz => (hfr hz).le) hx
   have hge : ∀ x ∈ Omega, -ū x ≤ 0 := fun x hx =>
-    PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier (ū := -ū) hb rfl (-v)
+    PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier (ū := -ū) hb rfl (-v)
       hcont.neg ((value_neg_ae 2 v).trans hvū.neg) hA hc
       (by
         filter_upwards [heq, hD, hv, value_neg_ae 2 v,

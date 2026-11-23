@@ -25,9 +25,9 @@ weak Hessian `D²u(x)`; in an orthonormal basis it is `∑ᵢⱼ aʲⁱ ∂ᵢ�
 positive definite, `⟪A(x) ξ, ξ⟫ > 0` for `ξ ≠ 0`, almost everywhere, then
 
 * for `c = 0`, `ū ≤ m` on `Ω` whenever `ū ≤ m` on `frontier Ω`
-  (`TauCeti.PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_le_frontier`);
+  (`TauCeti.PDE.le_of_traceCLM_comp_iteratedGradient_nonneg_le_frontier`);
 * for `c ≤ 0`, `ū ≤ m` on `Ω` whenever `ū ≤ m` on `frontier Ω` and `m ≥ 0`
-  (`TauCeti.PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier`).
+  (`TauCeti.PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier`).
 
 The coefficients need no regularity, not even measurability, and `A(x)` need not be symmetric.
 This is the uniqueness input for strong solutions of the Dirichlet problem: two solutions in
@@ -74,7 +74,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDim
 dimension `n`, let `u ∈ W^{2,n}(Ω)` have a representative `ū` continuous on `closure Ω`, and let
 `A(x)` be positive definite, `⟪A(x) ξ, ξ⟫ > 0` for `ξ ≠ 0`, for almost every `x ∈ Ω`. If
 `tr (A ∘ D²u) ≥ 0` almost everywhere on `Ω` and `ū ≤ m` on `frontier Ω`, then `ū ≤ m` on `Ω`. -/
-theorem le_of_nonneg_traceCLM_comp_iteratedGradient_le_frontier
+theorem le_of_traceCLM_comp_iteratedGradient_nonneg_le_frontier
     (hΩb : Bornology.IsBounded (Ω : Set F)) (hp : p = finrank ℝ F) (u : Wkp volume Ω p 2)
     (hcont : ContinuousOn ū (closure Ω)) (hū : Wkp.value 2 u =ᵐ[volume.restrict Ω] ū)
     (hA : ∀ᵐ x ∂volume.restrict Ω, ∀ ξ, ξ ≠ 0 → 0 < ⟪A x ξ, ξ⟫)
@@ -134,7 +134,7 @@ real inner product space of dimension `n`, let `u ∈ W^{2,n}(Ω)` have a repres
 continuous on `closure Ω`, let `A(x)` be positive definite, `⟪A(x) ξ, ξ⟫ > 0` for `ξ ≠ 0`, and let
 `c(x) ≤ 0`, for almost every `x ∈ Ω`. If `tr (A ∘ D²u) + c u ≥ 0` almost everywhere on `Ω` and
 `ū ≤ m` on `frontier Ω` with `m ≥ 0`, then `ū ≤ m` on `Ω`. -/
-theorem le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier
+theorem le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier
     (hΩb : Bornology.IsBounded (Ω : Set F)) (hp : p = finrank ℝ F) (u : Wkp volume Ω p 2)
     (hcont : ContinuousOn ū (closure Ω)) (hū : Wkp.value 2 u =ᵐ[volume.restrict Ω] ū)
     (hA : ∀ᵐ x ∂volume.restrict Ω, ∀ ξ, ξ ≠ 0 → 0 < ⟪A x ξ, ξ⟫) {c : F → ℝ}
@@ -152,7 +152,7 @@ theorem le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier
     ae_restrict_of_ae_restrict_of_subset hVΩ h
   have hVae : ∀ᵐ y ∂volume.restrict (V : Set F), y ∈ V :=
     ae_restrict_mem V.isOpen.measurableSet
-  refine (le_of_nonneg_traceCLM_comp_iteratedGradient_le_frontier (hΩb.subset hVΩ) hp
+  refine (le_of_traceCLM_comp_iteratedGradient_nonneg_le_frontier (hΩb.subset hVΩ) hp
     (Wkp.restrictL hVΩ 2 u) (hcont.mono (closure_mono hVΩ))
     ((Wkp.value_restrictL_ae hVΩ 2 u).trans (hVsub hū)) (hVsub hA) ?_ (fun z hz => ?_)
     ⟨hx, hxm⟩).not_gt hxm

@@ -32,8 +32,8 @@ compact coordinatewise, since each scalar coordinate is a `W^{1,p}(Ω)` function
 * `TauCeti.Wkp.exists_subseq_tendsto_lowerOrder_of_isLipschitzDomainWith`: a bounded sequence in
   `W^{k+1,p}(Ω)` has a subsequence converging in `W^{k,p}(Ω)`.
 * `TauCeti.Wkp.exists_pos_mul_norm_le_of_mem_w1p0Submodule`: **Peetre's argument**: an operator
-  `T : W^{2,p}(Ω) → Lᵖ(Ω)` with `‖u‖ ≤ D (‖T u‖ + ‖u‖_{Lᵖ})` that is injective on functions with
-  zero boundary values is bounded below there.
+  `T : W^{2,p}(Ω) → Y` into a normed space with `‖u‖ ≤ D (‖T u‖ + ‖u‖_{Lᵖ})` that is injective on
+  functions with zero boundary values is bounded below there.
 
 ## References
 
@@ -80,13 +80,12 @@ theorem exists_subseq_tendsto_lowerOrder_of_isLipschitzDomainWith
   simpa only [ContinuousLinearMap.coe_coe, lowerOrderL_apply k (u (φ _))] using hw
 
 /-- **Peetre's argument on `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)`.** On a bounded Lipschitz domain, an operator
-`T : W^{2,p}(Ω) → Lᵖ(Ω)` with `‖u‖ ≤ D (‖T u‖ + ‖u‖_{Lᵖ})` that is injective on functions with zero
-boundary values is bounded below there. -/
+`T : W^{2,p}(Ω) → Y` into a normed space with `‖u‖ ≤ D (‖T u‖ + ‖u‖_{Lᵖ})` that is injective on
+functions with zero boundary values is bounded below there. -/
 theorem exists_pos_mul_norm_le_of_mem_w1p0Submodule
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
-    (T : Wkp volume Ω p 2 →L[ℝ] Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Ω))
-    {D : ℝ}
+    {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y] (T : Wkp volume Ω p 2 →L[ℝ] Y) {D : ℝ}
     (hest : ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Ω p → ‖u‖ ≤ D * (‖T u‖ + ‖value 2 u‖))
     (hinj : ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Ω p → T u = 0 → u = 0) :
     ∃ κ : ℝ, 0 < κ ∧ ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Ω p → κ * ‖u‖ ≤ ‖T u‖ := by
