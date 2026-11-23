@@ -12,11 +12,9 @@ public import Mathlib.Probability.Distributions.Beta
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
-import TauCeti.Probability.Distributions.Beta.Symmetric
 import TauCeti.Probability.Distributions.LKJ.Cholesky.Moments
 import TauCeti.Probability.Distributions.LKJ.Marginal
 import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
-import TauCeti.Probability.Distributions.LKJ.PrincipalBlock
 
 /-!
 # Mixed entry moments of LKJ correlation matrices
@@ -33,10 +31,7 @@ The expansion covers repeated symmetric entries, diagonal powers, and dimensions
 Diagonal exponents leave mixed moments unchanged, relabelling rows and columns by a permutation
 preserves mixed moments, and any vertex `i` of odd symmetric degree `∑ j, (n (i, j) + n (j, i))`
 forces the mixed moment to vanish by diagonal sign invariance. Specializing to a single entry gives
-closed Beta-quotient moments of all natural orders, and evaluating a three-entry cycle gives the
-joint third moment `E[R i j * R i k * R j k] = 1 / (2 * η + p - 1) ^ 2` for pairwise distinct
-indices, witnessing non-independence of off-diagonal correlation entries despite zero pairwise
-covariances between distinct strict-lower-triangle entries.
+closed Beta-quotient moments of all natural orders.
 
 ## Main results
 
@@ -49,17 +44,13 @@ covariances between distinct strict-lower-triangle entries.
 * `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure`: closed finite
   Beta-quotient evaluation of all natural mixed entry moments under `lkjMeasure p η` for `0 < η`;
 * `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_integral_prod_filter_ne`,
-  `TauCeti.Probability.integral_prod_pow_coe_apply_perm_lkjMeasure`,
-  `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd`, and
-  `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_of_diag`: diagonal-exponent
-  invariance, permutation invariance, odd-degree vanishing, and unit evaluation of mixed moments
-  when all off-diagonal exponents vanish;
+  `TauCeti.Probability.integral_prod_pow_coe_apply_perm_lkjMeasure`, and
+  `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd`: diagonal-exponent
+  invariance, permutation invariance, and odd-degree vanishing of mixed moments;
 * `TauCeti.Probability.integral_pow_coe_apply_lkjMeasure_of_ne` and
   `TauCeti.Probability.integral_pow_coe_apply_lkjMeasure`: single-entry moments of all natural
   orders (with unexponentiated first moments re-exported from
   `TauCeti.Probability.Distributions.LKJ.Symmetry`);
-* `TauCeti.Probability.integral_mul_mul_coe_apply_lkjMeasure`: the joint three-entry triangle
-  moment `1 / (2 * η + p - 1) ^ 2`;
 * `ProbabilityTheory.HasLaw.integral_prod_pow_coe_apply_lkjMeasure` and companions: transfers to
   random matrices with LKJ law.
 
@@ -390,165 +381,6 @@ theorem integral_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
     simp [integral_pow_coe_apply_self_lkjMeasure hη]
   · simp [hij, integral_pow_coe_apply_lkjMeasure_of_ne hη hij]
 
-/-- At positive shape, any mixed entry moment equals one when all off-diagonal exponents
-vanish. -/
-theorem integral_prod_pow_coe_apply_lkjMeasure_of_diag {p : ℕ} {η : ℝ} (hη : 0 < η)
-    {n : Fin p × Fin p → ℕ} (hdiag : ∀ ab, n ab ≠ 0 → ab.1 = ab.2) :
-    ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
-        ∏ ab, (R : Matrix (Fin p) (Fin p) ℝ) ab.1 ab.2 ^ n ab ∂lkjMeasure p η = 1 := by
-  let _ := isProbabilityMeasure_lkjMeasure (p := p) hη
-  rw [integral_prod_pow_coe_apply_lkjMeasure_eq_integral_prod_filter_ne]
-  have hprod (R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-      (∏ q with q.1 ≠ q.2, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) = 1 := by
-    refine Finset.prod_eq_one fun q hq ↦ ?_
-    have h0 : n q = 0 := not_not.mp fun hn ↦ (Finset.mem_filter.mp hq).2 (hdiag q hn)
-    simp [h0]
-  simp [hprod]
-
-/-! ### Joint three-entry triangle moment of `lkjMeasure` -/
-
-private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
-    ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin 3) (Fin 3) ℝ),
-        (R : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (R : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
-          (R : Matrix (Fin 3) (Fin 3) ℝ) 1 0 ∂lkjMeasure 3 η =
-      1 / (2 * η + 2) ^ 2 := by
-  let S : Finset (Fin 3 × Fin 3) := {((2 : Fin 3), (1 : Fin 3)), (2, 0), (1, 0)}
-  let n : Fin 3 × Fin 3 → ℕ := fun q ↦ if q ∈ S then 1 else 0
-  have hprod (R : selfAdjoint.submodule ℝ (Matrix (Fin 3) (Fin 3) ℝ)) :
-      (R : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (R : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
-          (R : Matrix (Fin 3) (Fin 3) ℝ) 1 0 =
-        ∏ ij : Fin 3 × Fin 3, (R : Matrix (Fin 3) (Fin 3) ℝ) ij.1 ij.2 ^ n ij := by
-    simp only [n, pow_ite, pow_one, pow_zero,
-      Finset.prod_ite_mem_eq S fun ij ↦ (R : Matrix (Fin 3) (Fin 3) ℝ) ij.1 ij.2]
-    rw [Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton,
-      mul_assoc]
-  simp_rw [hprod]
-  rw [integral_prod_pow_coe_apply_lkjMeasure 3 hη n]
-  let c₀ : mulTransposeExpansionChoice n := fun _ _ ↦ ⟨0, Fin.zero_le _⟩
-  have hc0 (c : mulTransposeExpansionChoice n) {ij : Fin 3 × Fin 3} (hij : ij.2 = 0)
-      (r : Fin (n ij)) : (c ij r : Fin 3) = 0 :=
-    Fin.le_zero_iff.mp ((c ij r).property.trans (hij ▸ min_le_right _ _))
-  have hsum_pow (c : mulTransposeExpansionChoice n) (q : Fin 3 × Fin 3) :
-      mulTransposeExpansionPower c q =
-        ((if ((2 : Fin 3), (c (2, 1) ⟨0, by decide⟩ : Fin 3)) = q then 1 else 0) +
-          if ((1 : Fin 3), (c (2, 1) ⟨0, by decide⟩ : Fin 3)) = q then 1 else 0) +
-        ((if ((2 : Fin 3), (0 : Fin 3)) = q then 1 else 0) +
-          if ((0 : Fin 3), (0 : Fin 3)) = q then 1 else 0) +
-        ((if ((1 : Fin 3), (0 : Fin 3)) = q then 1 else 0) +
-          if ((0 : Fin 3), (0 : Fin 3)) = q then 1 else 0) := by
-    have h1 {ij : Fin 3 × Fin 3} (hij : ij ∈ S) (f : Fin (n ij) → ℕ) :
-        (∑ r, f r) = f ⟨0, by simp [n, hij]⟩ := by
-      have hnij : n ij = 1 := by simp [n, hij]
-      rw [← Equiv.sum_comp (finCongr hnij).symm, Fin.sum_univ_one]
-      rfl
-    rw [mulTransposeExpansionPower_eq_sum,
-      ← Finset.sum_subset (Finset.subset_univ S) fun ij _ hij ↦ by simp [n, hij],
-      Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
-      h1 (by decide), h1 (by decide), h1 (by decide),
-      hc0 c (ij := (2, 0)) rfl, hc0 c (ij := (1, 0)) rfl]
-    abel
-  rw [Finset.sum_eq_single c₀]
-  · have hres (ij : strictLowerTriangle 3) :
-        partialCorrelationCholeskyMonomialResidualPower (mulTransposeExpansionPower c₀) ij = 0 := by
-      rw [partialCorrelationCholeskyMonomialResidualPower_eq_sum_Ioi]
-      refine Finset.sum_eq_zero fun k hk ↦ ?_
-      rw [hsum_pow]
-      have hk' : ij.val.2 < k := Finset.mem_Ioi.mp hk
-      have hk0 : (0 : Fin 3) ≠ k := (lt_of_le_of_lt (Fin.zero_le _) hk').ne
-      simp [c₀, hk0]
-    let z10 : strictLowerTriangle 3 := ⟨(1, 0), by decide⟩
-    let z20 : strictLowerTriangle 3 := ⟨(2, 0), by decide⟩
-    let z21 : strictLowerTriangle 3 := ⟨(2, 1), by decide⟩
-    have huniv : (Finset.univ : Finset (strictLowerTriangle 3)) = {z10, z20, z21} := by decide
-    have hp10 : mulTransposeExpansionPower c₀ z10.val = 2 := by simp [hsum_pow, c₀, z10]
-    have hp20 : mulTransposeExpansionPower c₀ z20.val = 2 := by simp [hsum_pow, c₀, z20]
-    have hp21 : mulTransposeExpansionPower c₀ z21.val = 0 := by simp [hsum_pow, c₀, z21]
-    simp_rw [hres, add_zero]
-    rw [huniv, Finset.prod_insert (by decide), Finset.prod_insert (by decide),
-      Finset.prod_singleton, hp10, hp20, hp21]
-    have h10pos := lkjPartialCorrelationShape_pos hη z10
-    have h20pos := lkjPartialCorrelationShape_pos hη z20
-    have h21pos := lkjPartialCorrelationShape_pos hη z21
-    simp only [show Even 2 by decide, show Even 0 by decide, ↓reduceIte, Nat.cast_zero, zero_add]
-    rw [show (((2 : ℕ) : ℝ) + 1) / 2 = (1 / 2 : ℝ) + 1 by norm_num,
-      beta_add_one_left_div (by norm_num) h10pos, beta_add_one_left_div (by norm_num) h20pos,
-      div_self (beta_pos (by norm_num) h21pos).ne',
-      lkjPartialCorrelationShape_eq, lkjPartialCorrelationShape_eq]
-    norm_num [z10, z20]
-    field_simp
-    ring
-  · intro c _ hc
-    have h21 : (c (2, 1) ⟨0, by decide⟩ : Fin 3) = 1 := by
-      by_contra hne
-      apply hc
-      ext ij r
-      by_cases hij : ij ∈ S
-      · simp only [S, Finset.mem_insert, Finset.mem_singleton] at hij
-        rcases hij with rfl | rfl | rfl
-        · have hr0 : r = ⟨0, by decide⟩ :=
-            Fin.ext (Nat.lt_one_iff.mp (by simpa [n, S] using r.isLt))
-          rw [hr0]
-          have hle : ((c (2, 1) ⟨0, by decide⟩ : Fin 3) : ℕ) ≤ 1 :=
-            (c (2, 1) ⟨0, by decide⟩).property
-          have hne' : ((c (2, 1) ⟨0, by decide⟩ : Fin 3) : ℕ) ≠ 1 := fun h ↦ hne (Fin.ext h)
-          simp only [c₀]
-          omega
-        · exact congrArg Fin.val (hc0 c rfl r)
-        · exact congrArg Fin.val (hc0 c rfl r)
-      · exact absurd r.isLt (by simp [n, hij])
-    have hpow21 : mulTransposeExpansionPower c (2, 1) = 1 := by
-      rw [hsum_pow, h21]
-      decide
-    exact Finset.prod_eq_zero (Finset.mem_univ (⟨(2, 1), by decide⟩ : strictLowerTriangle 3))
-      (by simp [hpow21])
-  · simp
-
-/-- **Joint three-entry triangle moment of the LKJ law.** For `0 < η` and pairwise distinct indices
-`i, j, k : Fin p`, the mixed moment `E[R i j * R i k * R j k]` equals `1 / (2 * η + p - 1) ^ 2`.
-In particular, although distinct strict-lower-triangle correlation entries have covariance zero, any
-three entries forming a triangle have strictly positive joint third moment. -/
-theorem integral_mul_mul_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
-    {i j k : Fin p} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) :
-    ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
-        (R : Matrix (Fin p) (Fin p) ℝ) i j * (R : Matrix (Fin p) (Fin p) ℝ) i k *
-          (R : Matrix (Fin p) (Fin p) ℝ) j k ∂lkjMeasure p η =
-      1 / (2 * η + p - 1) ^ 2 := by
-  have hf : Function.Injective ![k, j, i] := by
-    simp only [Matrix.vecCons, Fin.cons_injective_iff, Fin.range_cons, Set.range_eq_empty,
-      Set.mem_insert_iff, Set.mem_empty_iff_false, or_false, not_or, not_false_eq_true, true_and]
-    exact ⟨⟨hjk.symm, hik.symm⟩, hij.symm, Function.injective_of_subsingleton _⟩
-  have hp3 : (3 : ℝ) ≤ p := by
-    exact_mod_cast (by simpa using Fintype.card_le_of_injective _ hf : 3 ≤ p)
-  have hη' : 0 < η + ((p : ℝ) - 3) / 2 := by linarith
-  have hm3 : Measurable fun B : selfAdjoint.submodule ℝ (Matrix (Fin 3) (Fin 3) ℝ) ↦
-      (B : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (B : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
-        (B : Matrix (Fin 3) (Fin 3) ℝ) 1 0 :=
-    ((selfAdjoint.measurable_coe_apply 2 1).mul (selfAdjoint.measurable_coe_apply 2 0)).mul
-      (selfAdjoint.measurable_coe_apply 1 0)
-  let S := Matrix.symmetricCongruenceLinearMap
-    ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix ![k, j, i] id)
-  have hcomp (R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-      (R : Matrix (Fin p) (Fin p) ℝ) i j * (R : Matrix (Fin p) (Fin p) ℝ) i k *
-          (R : Matrix (Fin p) (Fin p) ℝ) j k =
-        (S R : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (S R : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
-          (S R : Matrix (Fin 3) (Fin 3) ℝ) 1 0 := by
-    simp only [S, Matrix.coe_symmetricCongruenceLinearMap_apply,
-      Matrix.transpose_submatrix, Matrix.transpose_one,
-      Matrix.submatrix_one_mul_mul_submatrix_one]
-    simp
-  simp_rw [hcomp]
-  rw [← integral_map (f := fun B : selfAdjoint.submodule ℝ (Matrix (Fin 3) (Fin 3) ℝ) ↦
-        (B : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (B : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
-          (B : Matrix (Fin 3) (Fin 3) ℝ) 1 0)
-      (LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable
-      hm3.aestronglyMeasurable,
-    map_symmetricCongruenceLinearMap_submatrix_one_lkjMeasure ![k, j, i] hf hη]
-  -- `![k, j, i]` has block dimension elaborated as `Nat.succ (Nat.succ (Nat.succ 0))`.
-  have h3 : (Nat.succ (Nat.succ (Nat.succ 0)) : ℝ) = 3 := by norm_num
-  rw [h3, integral_triangle_lkjMeasure_three hη']
-  congr 2
-  ring
-
 end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw
@@ -687,25 +519,5 @@ theorem integral_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
   (hX.integral_comp
     (TauCeti.Probability.integrable_pow_coe_apply_lkjMeasure η i j m).aestronglyMeasurable).trans
     (TauCeti.Probability.integral_pow_coe_apply_lkjMeasure hη i j m)
-
-/-- At positive shape, any mixed entry moment of a random matrix with LKJ law equals one when all
-off-diagonal exponents vanish. -/
-theorem integral_prod_pow_coe_apply_lkjMeasure_of_diag (hX : HasLaw X (lkjMeasure p η) P)
-    (hη : 0 < η) {n : Fin p × Fin p → ℕ} (hdiag : ∀ ab, n ab ≠ 0 → ab.1 = ab.2) :
-    ∫ ω, (∏ ab, (X ω : Matrix (Fin p) (Fin p) ℝ) ab.1 ab.2 ^ n ab) ∂P = 1 :=
-  (hX.integral_comp
-    (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η n).aestronglyMeasurable).trans
-    (TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_of_diag hη hdiag)
-
-/-- Joint three-entry triangle moment of a random matrix with positive-shape LKJ law. -/
-theorem integral_mul_mul_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
-    (hη : 0 < η) {i j k : Fin p} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) :
-    ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ) i j * (X ω : Matrix (Fin p) (Fin p) ℝ) i k *
-        (X ω : Matrix (Fin p) (Fin p) ℝ) j k ∂P =
-      1 / (2 * η + p - 1) ^ 2 :=
-  (hX.integral_comp
-    (((selfAdjoint.measurable_coe_apply i j).mul (selfAdjoint.measurable_coe_apply i k)).mul
-      (selfAdjoint.measurable_coe_apply j k)).aestronglyMeasurable).trans
-    (TauCeti.Probability.integral_mul_mul_coe_apply_lkjMeasure hη hij hik hjk)
 
 end ProbabilityTheory.HasLaw

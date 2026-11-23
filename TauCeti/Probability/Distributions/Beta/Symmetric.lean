@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.Beta.Square
 import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Affine
-import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -137,19 +136,6 @@ theorem integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 < a) (
         (by have := Nat.cast_nonneg (α := ℝ) n; linarith : (-1 : ℝ) < (n : ℝ)) hr
   · exact integral_eq_zero_of_odd fun z ↦ by
       simp [(Nat.not_even_iff_odd.1 hn).neg_pow, neg_mul]
-
-/-- A centered symmetric Beta variable of positive shape `a` has second moment
-`1 / (2 * a + 1)`. -/
-@[simp]
-theorem integral_sq_map_centered_betaMeasure (ha : 0 < a) :
-    ∫ x, x ^ 2 ∂((betaMeasure a a).map (fun t ↦ -1 + 2 * t)) = 1 / (2 * a + 1) := by
-  have h := integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
-    (r := 0) ha (by simpa using ha) 2
-  simp only [rpow_zero, mul_one, add_zero, show Even 2 by decide, ↓reduceIte] at h
-  rw [h, show (((2 : ℕ) : ℝ) + 1) / 2 = 1 / 2 + 1 by norm_num,
-    beta_add_one_left_div (by norm_num) ha]
-  field_simp
-  ring
 
 /-- Products of weighted natural powers of independent centered symmetric Beta variables
 are integrable when every residual exponent is above its endpoint threshold. -/
