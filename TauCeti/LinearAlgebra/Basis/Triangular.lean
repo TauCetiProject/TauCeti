@@ -34,9 +34,9 @@ same for a preordered index type and the `b j` with `j < i`.
   respect to `e` has the same flag as `e`.
 * `Module.Basis.det_eq_prod_of_sub_smul_mem_span_image_apply_lt`: the determinant of a family
   triangular along a map `f` into a preorder is the product of its diagonal coefficients.
-* `Module.Basis.det_pos_of_sub_smul_mem_span_image_apply_lt`: over an ordered ring in which
-  products of positive elements are positive, such a family with positive diagonal coefficients
-  has positive determinant.
+* `Module.Basis.det_pos_of_sub_smul_mem_span_image_apply_lt`: for a relation `<` on the ring
+  with `0 < 1` under which products of positive elements are positive, such a family with
+  positive diagonal coefficients has positive determinant.
 -/
 
 public section
@@ -166,16 +166,17 @@ theorem det_eq_prod_of_sub_smul_mem_span_image_apply_lt [Preorder α] (b : Basis
     rw [toMatrix_apply, hrepr _ _ fun hij ↦ (hlt i j hij).not_gt hji,
       Finsupp.single_eq_of_ne hji.ne', mul_zero]
 
-/-- Over an ordered ring in which products of positive elements are positive, a family `v` that
-is triangular with respect to a basis `b` along a map `f` into a preorder with positive diagonal
-coefficients `c i`, in the sense of `Module.Basis.det_eq_prod_of_sub_smul_mem_span_image_apply_lt`,
-has positive determinant in `b`. -/
-theorem det_pos_of_sub_smul_mem_span_image_apply_lt [PartialOrder R] [ZeroLEOneClass R]
-    [PosMulStrictMono R] [Nontrivial R] [Preorder α] (b : Basis ι R M) (f : ι → α) {v : ι → M}
-    {c : ι → R} (hc : ∀ i, 0 < c i)
+/-- Let `<` be a relation on the ring `R` with `0 < 1` under which products of positive elements
+are positive, as in an ordered ring. A family `v` that is triangular with respect to a basis `b`
+along a map `f` into a preorder with positive diagonal coefficients `c i`, in the sense of
+`Module.Basis.det_eq_prod_of_sub_smul_mem_span_image_apply_lt`, has positive determinant in `b`.
+-/
+theorem det_pos_of_sub_smul_mem_span_image_apply_lt [LT R] [Preorder α] (b : Basis ι R M)
+    (f : ι → α) {v : ι → M} {c : ι → R} (h1 : (0 : R) < 1)
+    (hmul : ∀ x y : R, 0 < x → 0 < y → 0 < x * y) (hc : ∀ i, 0 < c i)
     (hv : ∀ i, v i - c i • b i ∈ span R (b '' {j | f j < f i})) : 0 < b.det v := by
   rw [b.det_eq_prod_of_sub_smul_mem_span_image_apply_lt f hv]
-  exact prod_pos fun i _ ↦ hc i
+  exact prod_induction _ (0 < ·) hmul h1 fun i _ ↦ hc i
 
 end Det
 
