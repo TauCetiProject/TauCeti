@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.RamificationInertia.Basic
 import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.RingTheory.Norm.Filtration
 import TauCeti.RingTheory.Norm.Quotient
+import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 
 /-!
 # Norms in a finite free extension of discrete valuation rings
@@ -28,16 +29,16 @@ these apply to complete discrete valuation rings with imperfect residue fields. 
 integral inputs for the residue of a norm of a symbol under a finite extension of discretely valued
 fields.
 
-The residue formula is proved in `S ⧸ 𝔪_R S = S ⧸ ϖᵉ S`, a finite algebra over `k` whose filtration
-by the powers of a uniformizer `ϖ` has `e` successive quotients, each the residue field `l`
-(`TauCeti.Algebra.norm_eq_norm_mk_span_singleton_pow`). The valuation formula follows from the
-fundamental identity `e f = [S : R]`
+The residue formula is proved in `S ⧸ 𝔪_R S = S ⧸ ϖᵉ S` (the identity `𝔪_R S = 𝔪_S ^ e` is
+`TauCeti.IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx`), a finite algebra over
+`k` whose filtration by the powers of a uniformizer `ϖ` has `e` successive quotients, each the
+residue field `l` (`TauCeti.Algebra.norm_eq_norm_mk_span_singleton_pow`). The valuation formula
+follows from the fundamental identity `e f = [S : R]`
 (`TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_eq_finrank_of_isLocalRing`) applied to
 the norm of a uniformizer of `R`.
 
 ## Main results
 
-* `TauCeti.IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx`: `𝔪_R S = 𝔪_S ^ e`.
 * `TauCeti.IsDiscreteValuationRing.addVal_norm`: `v_R(N x) = f · v_S(x)`.
 * `TauCeti.IsDiscreteValuationRing.residue_norm`: `res_R(N x) = N_{l/k}(res_S x) ^ e`.
 
@@ -58,23 +59,6 @@ variable {R S : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   [CommRing S] [IsDomain S] [IsDiscreteValuationRing S] [Algebra R S]
   [Module.Free R S] [Module.Finite R S]
 
-omit [Module.Free R S] [Module.Finite R S] in
-variable (R S) in
-/-- For an injective local homomorphism of discrete valuation rings, the maximal ideal of `R`
-generates the `e`-th power of the maximal ideal of `S`, where `e` is the ramification index. -/
-theorem map_maximalIdeal_eq_pow_ramificationIdx [FaithfulSMul R S] [IsLocalHom (algebraMap R S)] :
-    (maximalIdeal R).map (algebraMap R S) =
-      maximalIdeal S ^ (maximalIdeal S).ramificationIdx R := by
-  have hmap : (maximalIdeal R).map (algebraMap R S) ≠ ⊥ :=
-    map_ne_bot_of_ne_bot (IsDiscreteValuationRing.not_a_field R)
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible S
-  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hmap hϖ
-  have hpow : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S ^ n := by
-    rw [hn, hϖ.maximalIdeal_eq, span_singleton_pow]
-  rw [IsDedekindDomain.ramificationIdx_eq_multiplicity (maximalIdeal R) _ hmap, hpow,
-    multiplicity_pow_self_of_prime
-      (prime_of_isPrime (IsDiscreteValuationRing.not_a_field S) inferInstance)]
-
 /-- The norm of a uniformizer of `S` has valuation `f`, the residue degree. -/
 private theorem addVal_norm_of_irreducible {ϖ : S} (hϖ : Irreducible ϖ) :
     IsDiscreteValuationRing.addVal R (Algebra.norm R ϖ) = (maximalIdeal S).inertiaDeg R := by
@@ -84,8 +68,9 @@ private theorem addVal_norm_of_irreducible {ϖ : S} (hϖ : Irreducible ϖ) :
   -- A uniformizer of `R` is `ϖ ^ e` times a unit of `S`; compare the valuations of the norms.
   have hassoc : Associated (ϖ ^ e) (algebraMap R S π) := by
     rw [← span_singleton_eq_span_singleton, ← span_singleton_pow, ← hϖ.maximalIdeal_eq,
-      ← map_maximalIdeal_eq_pow_ramificationIdx, hπ.maximalIdeal_eq, Ideal.map_span,
-      Set.image_singleton]
+      ← map_maximalIdeal_eq_pow_ramificationIdx
+        (map_ne_bot_of_ne_bot (IsDiscreteValuationRing.not_a_field R)),
+      hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
   obtain ⟨u, hu⟩ := hassoc
   have h := congrArg (fun y => IsDiscreteValuationRing.addVal R (Algebra.norm R y)) hu
   have hu0 : IsDiscreteValuationRing.addVal R (Algebra.norm R (u : S)) = 0 := by
@@ -134,7 +119,8 @@ theorem residue_norm (x : S) :
   have he : 0 < e := Ideal.ramificationIdx_pos R (maximalIdeal S)
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible S
   have hIϖ : I = span {ϖ ^ e} := by
-    rw [show I = _ from map_maximalIdeal_eq_pow_ramificationIdx R S, ← span_singleton_pow,
+    rw [show I = _ from map_maximalIdeal_eq_pow_ramificationIdx
+      (map_ne_bot_of_ne_bot (IsDiscreteValuationRing.not_a_field R)), ← span_singleton_pow,
       ← hϖ.maximalIdeal_eq]
   -- Apply the filtration formula in `V = S ⧸ 𝔪_R S = S ⧸ ϖᵉ S` with `w` the class of `ϖ`.
   set w := Ideal.Quotient.mk I ϖ
