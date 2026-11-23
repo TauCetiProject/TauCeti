@@ -42,8 +42,9 @@ that is `σ = 0` or `τ ≤ 0`) the closed-form formulas reduce, through Lean's 
 and `√τ = 0` for `τ ≤ 0`, to `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`
 (`TauCeti.BlackScholes.callPrice_of_mul_sqrt_eq_zero`,
 `TauCeti.BlackScholes.putPrice_of_mul_sqrt_eq_zero`), which satisfy
-`∂V/∂t + r (s ∂V/∂s - V) = 0`. So the equation also holds past the expiry, `t > T`; it fails at
-`t = T`, where the formulas jump.
+`∂V/∂t + r (s ∂V/∂s - V) = 0`. So the equation also holds past the expiry, `t > T`; for `σ ≠ 0`
+the formulas generally jump at `t = T`, where the equation can fail, so
+`TauCeti.BlackScholes.callPrice_pde` and `TauCeti.BlackScholes.putPrice_pde` exclude `t = T`.
 
 ## Main declarations
 
