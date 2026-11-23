@@ -18,7 +18,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 # Examples of monotone twist maps of an open strip
 
 Checks for `TauCeti.IsMonotoneTwistMap` (Katok–Hasselblatt, *Introduction to the Modern Theory of
-Dynamical Systems*, Section 9.2).
+Dynamical Systems*, Section 9.3).
 
 * The standard map `(x, y) ↦ (x + y + ε sin 2πx, y + ε sin 2πx)` of the plane, the open strip
   `ℝ × ℝ`, is a monotone twist map with period `1` for every `ε`, with `∂F₁/∂y = 1`
@@ -97,22 +97,19 @@ theorem isMonotoneTwistMap_standardMap (ε : ℝ) :
     linarith [(abs_le.1 (hbound x)).2]
   · simp only [Homeomorph.toOpenPartialHomeomorph_apply, standardMap_apply]
     linarith [(abs_le.1 (hbound x)).1]
-  · have hL : HasFDerivAt (fun q : ℝ × ℝ => q.2 + (q.1 + ε * sin (2 * π * q.1)))
-        (ContinuousLinearMap.snd ℝ ℝ ℝ +
-          (1 + ε * (cos (2 * π * p.1) * (2 * π))) • ContinuousLinearMap.fst ℝ ℝ ℝ) p := by
-      have h1 : HasDerivAt (fun x : ℝ => x + ε * sin (2 * π * x))
-          (1 + ε * (cos (2 * π * p.1) * (2 * π))) p.1 := by
-        convert (hasDerivAt_id' p.1).add
-          (((hasDerivAt_id' p.1).const_mul (2 * π)).sin.const_mul ε) using 1
-        ring
-      exact hasFDerivAt_snd.add (h1.comp_hasFDerivAt p hasFDerivAt_fst)
-    have hF : DifferentiableAt ℝ (standardMap ε) p := hs.differentiable one_ne_zero p
-    have hL' : HasFDerivAt (fun q => (standardMap ε q).1) (ContinuousLinearMap.snd ℝ ℝ ℝ +
-        (1 + ε * (cos (2 * π * p.1) * (2 * π))) • ContinuousLinearMap.fst ℝ ℝ ℝ) p := by
-      convert hL using 2 with q
-      simp only [standardMap_apply]
+  · have h1 : HasDerivAt (fun x : ℝ => x + ε * sin (2 * π * x))
+        (1 + ε * (cos (2 * π * p.1) * (2 * π))) p.1 := by
+      convert (hasDerivAt_id' p.1).add
+        (((hasDerivAt_id' p.1).const_mul (2 * π)).sin.const_mul ε) using 1
       ring
-    rw [Homeomorph.toOpenPartialHomeomorph_apply, fderiv_apply_fst hF hL']
+    have hL : HasFDerivAt (fun q => (standardMap ε q).1) (ContinuousLinearMap.snd ℝ ℝ ℝ +
+        (1 + ε * (cos (2 * π * p.1) * (2 * π))) • ContinuousLinearMap.fst ℝ ℝ ℝ) p := by
+      convert hasFDerivAt_snd.add (h1.comp_hasFDerivAt p (hasFDerivAt_fst (𝕜 := ℝ))) using 1
+      ext q
+      simp only [standardMap_apply, Pi.add_apply, Function.comp_apply]
+      ring
+    rw [Homeomorph.toOpenPartialHomeomorph_apply,
+      fderiv_apply_fst (hs.differentiable one_ne_zero p) hL]
     simp
 
 /-- The map `(x, y) ↦ (x + log y, y)` as a homeomorphism of the strip `ℝ × (0, ∞)`, with inverse
