@@ -238,11 +238,10 @@ theorem withLpSubsingletonProd_toIsometry_baseChange
     [Subsingleton M₁] :
     (uniqueProd (Q₁.baseChange A) (Q₂.baseChange A)).toIsometry.comp
         ((withLpProd hQ).baseChangeProd A).toIsometry =
-      (withLpSubsingletonProd hQ).toIsometry.baseChange A :=
-  QuadraticMap.Isometry.ext fun y ↦
-    DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
-      simp [baseChangeProd_tmul]) y
+      (withLpSubsingletonProd hQ).toIsometry.baseChange A := by
+  refine QuadraticMap.Isometry.baseChange_ext fun x ↦ ?_
+  obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
+  simp [baseChangeProd_tmul]
 
 /-- Scalar extension of `withLpProdSubsingleton` commutes with `baseChangeProd` and `prodUnique`. -/
 theorem withLpProdSubsingleton_toIsometry_baseChange
@@ -251,11 +250,10 @@ theorem withLpProdSubsingleton_toIsometry_baseChange
     [Subsingleton M₂] :
     (prodUnique (Q₁.baseChange A) (Q₂.baseChange A)).toIsometry.comp
         ((withLpProd hQ).baseChangeProd A).toIsometry =
-      (withLpProdSubsingleton hQ).toIsometry.baseChange A :=
-  QuadraticMap.Isometry.ext fun y ↦
-    DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
-      simp [baseChangeProd_tmul]) y
+      (withLpProdSubsingleton hQ).toIsometry.baseChange A := by
+  refine QuadraticMap.Isometry.baseChange_ext fun x ↦ ?_
+  obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
+  simp [baseChangeProd_tmul]
 
 /-- Scalar extension of `withLpProdComm` commutes with `baseChangeProd` and `prodComm`. -/
 theorem withLpProdComm_toIsometry_baseChange
@@ -265,11 +263,10 @@ theorem withLpProdComm_toIsometry_baseChange
     ((withLpProd hQ₂₁).baseChangeProd A).toIsometry.comp
         ((withLpProdComm hQ₁₂ hQ₂₁).toIsometry.baseChange A) =
       (prodComm (Q₁.baseChange A) (Q₂.baseChange A)).toIsometry.comp
-        ((withLpProd hQ₁₂).baseChangeProd A).toIsometry :=
-  QuadraticMap.Isometry.ext fun y ↦
-    DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
-      simp [baseChangeProd_tmul]) y
+        ((withLpProd hQ₁₂).baseChangeProd A).toIsometry := by
+  refine QuadraticMap.Isometry.baseChange_ext fun x ↦ ?_
+  obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective p x
+  simp [baseChangeProd_tmul]
 
 /-- Scalar extension of `withLpProdAssoc` commutes with `baseChangeProd` and `prodAssoc`. -/
 theorem withLpProdAssoc_toIsometry_baseChange
@@ -288,12 +285,11 @@ theorem withLpProdAssoc_toIsometry_baseChange
       (((QuadraticMap.Isometry.id (Q₁.baseChange A)).prodMap
             ((withLpProd hQ₂₃).baseChangeProd A).toIsometry).comp
           ((withLpProd hQ_R).baseChangeProd A).toIsometry).comp
-        ((withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L hQ_R).toIsometry.baseChange A) :=
-  QuadraticMap.Isometry.ext fun y ↦
-    DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      obtain ⟨⟨x₁₂, w⟩, rfl⟩ := WithLp.toLp_surjective p x
-      obtain ⟨⟨u, v⟩, rfl⟩ := WithLp.toLp_surjective p x₁₂
-      simp [baseChangeProd_tmul]) y
+        ((withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L hQ_R).toIsometry.baseChange A) := by
+  refine QuadraticMap.Isometry.baseChange_ext fun x ↦ ?_
+  obtain ⟨⟨x₁₂, w⟩, rfl⟩ := WithLp.toLp_surjective p x
+  obtain ⟨⟨u, v⟩, rfl⟩ := WithLp.toLp_surjective p x₁₂
+  simp [baseChangeProd_tmul]
 
 end BaseChange
 
