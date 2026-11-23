@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Prod
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Prod.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
 public import TauCeti.Algebra.Homology.Semisimple

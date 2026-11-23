@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Iterated
 import TauCeti.GroupTheory.Coprod.Reduced
+import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Transport
 
 /-!
 # Free products with free and free abelian groups embed in extensions of centralizers
@@ -24,16 +25,30 @@ For `K = G` the second one embeds the free `G`-group `G[X] = G ∗ F(X)` on a co
 over `G` in the single extension `G(u, ℤ)`. Over a nonabelian fully residually free group `H`, an
 element `u` that is not a proper power and an element `g ∉ C_H(u)` exist by root reduction, so
 `H[X]` and `H ∗ ℤⁿ` embed over `H` in one admissible extension of a centralizer of `H`. These are
-the free and the free abelian levels of a normalized tower over `H`.
+the free and the free abelian levels of a normalized tower over `H`. More generally, over a
+nonabelian fully residually free group `H`, a group `K` that embeds over `H` in an iterated
+extension of centralizers of `H` is itself nonabelian and fully residually free, so `K ∗ ℤⁿ` embeds
+over `K` in an iterated extension of centralizers of `K`; composing the two embeddings
+(`TauCeti.LimitGroup.ICE.exists_embedding_comp`) embeds `K ∗ ℤⁿ` over `H` in an iterated
+extension of centralizers of `H`. For `K = H[X]` this embeds `H[X] ∗ ℤⁿ`.
+
+Without any hypothesis on `u`, a letter `tᵢ` is free over every subgroup of `G` meeting `C`
+trivially: if `f : K →* G` maps no nontrivial element of `K` into `C`, then the homomorphism
+`K ∗ ⟨z⟩ →* G(u, ℤⁿ)` that is `f` on `K` and sends `z` to `tᵢ` is injective.
 
 ## Main results
 
 * `TauCeti.LimitGroup.CentralizerExt.coprodPiLift_injective`: `K ∗ A` embeds in `G(u, ℤⁿ)`.
 * `TauCeti.LimitGroup.CentralizerExt.coprodFreeGroupLift_injective`: `K ∗ F(X)` embeds in
   `G(u, ℤⁿ)`.
+* `TauCeti.LimitGroup.CentralizerExt.coprodLift_injective_of_forall_mem_centralizer`: `K ∗ ⟨tᵢ⟩`
+  embeds in `G(u, ℤⁿ)` when `K` meets `C_G(u)` trivially.
 * `TauCeti.LimitGroup.exists_ice_embedding_GX`: `H[X]` embeds over `H` in an ICE group over `H`.
 * `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi`: `H ∗ ℤⁿ` embeds over `H` in an ICE group
   over `H`.
+* `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi_of_exists_ice_embedding`: for a nonabelian
+  fully residually free group `H`, if `K` embeds over `H` in an ICE group over `H`, so does
+  `K ∗ ℤⁿ`.
 
 ## Implementation notes
 
@@ -42,11 +57,13 @@ letter `g⁻¹ f(k) g` of `G` when `f k ∈ C`, since `tᵢ` centralizes `C`, an
 malnormality. Otherwise it is the five letters `g⁻¹, tᵢ⁻¹, f k, tᵢ, g`. A nontrivial `a ∈ A` goes
 to the single letter `a` of the factor `C × ℤⁿ`. A nontrivial `w ∈ F(X)`, written with syllables
 `x₁^{e₁} ⋯ x_r^{e_r}` (consecutive `xⱼ` distinct, `eⱼ ≠ 0`), goes to the word
-`tᵢ^{m x₁}, g, tᵢ^{e₁}, g⁻¹, tᵢ^{m x₂ - m x₁}, g, …, g⁻¹, tᵢ^{-m x_r}`. All these letters lie
-outside the amalgamated subgroup, and the images of the letters of `K` start and end in `G` while
-the others start and end in `C × ℤⁿ`. So the image of a nonempty reduced word of `K ∗ A` or
-`K ∗ F(X)` (`Monoid.Coprod.exists_reduced_list_mk_eq`) is a nonempty reduced word of the amalgam,
-which is not `1` by the normal form theorem (`Monoid.PushoutI.Reduced.eq_empty_of_mem_range`).
+`tᵢ^{m x₁}, g, tᵢ^{e₁}, g⁻¹, tᵢ^{m x₂ - m x₁}, g, …, g⁻¹, tᵢ^{-m x_r}`. For the free letter `tᵢ`, no
+conjugation is needed: `k ≠ 1` goes to the single letter `f k ∉ C` of `G` and `zᵉ`, `e ≠ 0`, to
+the single letter `tᵢᵉ` of `C × ℤⁿ`. All these letters lie outside the amalgamated subgroup, and
+the images of the letters of `K` start and end in `G` while the others start and end in `C × ℤⁿ`.
+So the image of a nonempty reduced word of `K ∗ A`, `K ∗ F(X)` or `K ∗ ⟨z⟩`
+(`Monoid.Coprod.exists_reduced_list_mk_eq`) is a nonempty reduced word of the amalgam, which is not
+`1` by the normal form theorem (`Monoid.PushoutI.Reduced.eq_empty_of_mem_range`).
 
 ## References
 
@@ -150,29 +167,23 @@ section Lift
 
 variable {K A : Type*} [Group K] [Group A]
 
-/-- The homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `ψ` on `A` and sends `k ∈ K` to
-`(tᵢ g)⁻¹ f(k) (tᵢ g)`. -/
-private def conjLift (f : K →* G) (ψ : A →* CentralizerExt u n) (g : G) (i : Fin n) :
-    Monoid.Coprod K A →* CentralizerExt u n :=
-  Monoid.Coprod.lift ((MulAut.conj (t i * of g)⁻¹).toMonoidHom.comp (of.comp f)) ψ
-
 section
 
-variable {f : K →* G} {ψ : A →* CentralizerExt u n} {g : G}
+variable {φ : K →* CentralizerExt u n} {ψ : A →* CentralizerExt u n}
 
-/-- `conjLift` sends a reduced word of `K ∗ A` to the product of a reduced word of `G(u, ℤⁿ)`
-starting in the factor of its first letter, if the images of the nontrivial elements of `A` are
-blocks of `C_G(u) × ℤⁿ`. -/
-private theorem exists_reduced_conjLift (i : Fin n) (hf : Function.Injective f)
-    (hC : TauCeti.IsTISubgroup (centralizer {u})) (hg : g ∉ centralizer {u})
+/-- `Monoid.Coprod.lift φ ψ` sends a reduced word of `K ∗ A` to the product of a reduced word of
+`G(u, ℤⁿ)` starting in the factor of its first letter, if the images under `φ` of the nontrivial
+elements of `K` are blocks of `G` and those under `ψ` of the nontrivial elements of `A` are blocks
+of `C_G(u) × ℤⁿ`. -/
+private theorem exists_reduced_coprodLift (hφ : ∀ k, k ≠ 1 → IsBlock false false (φ k))
     (hψ : ∀ a, a ≠ 1 → IsBlock true true (ψ a)) :
     ∀ L : List (K ⊕ A), (L.map Sum.isRight).IsChain (· ≠ ·) → Sum.inl 1 ∉ L → Sum.inr 1 ∉ L →
       ∃ W : Monoid.CoprodI.Word (CentralizerExtFactor u n), Reduced (centralizerExtMap u n) W ∧
         W.fstIdx = L.head?.map Sum.isRight ∧ ofCoprodI (φ := centralizerExtMap u n) W.prod =
-          conjLift f ψ g i (mk (FreeMonoid.ofList L))
+          Monoid.Coprod.lift φ ψ (mk (FreeMonoid.ofList L))
   | [], _, _, _ => ⟨.empty, fun _ h => by simp at h, rfl, by simp⟩
   | s :: L, hc, h₁, h₂ => by
-    obtain ⟨W, hW, hWi, hWp⟩ := exists_reduced_conjLift i hf hC hg hψ L (by simpa using hc.tail)
+    obtain ⟨W, hW, hWi, hWp⟩ := exists_reduced_coprodLift hφ hψ L (by simpa using hc.tail)
       (fun h => h₁ (List.mem_cons_of_mem _ h)) fun h => h₂ (List.mem_cons_of_mem _ h)
     -- The first letter of `L` lies in the other factor.
     have hne : W.fstIdx ≠ some s.isRight := by
@@ -183,31 +194,18 @@ private theorem exists_reduced_conjLift (i : Fin n) (hf : Function.Injective f)
       | cons s' L => simpa [eq_comm] using this
     rw [FreeMonoid.ofList_cons, map_mul, map_mul, ← hWp]
     cases s with
-    | inr a => simpa [conjLift] using hψ a (fun h => h₂ (h ▸ List.mem_cons_self)) W hW hne
-    | inl k =>
-      have hk : f k ≠ 1 := (map_ne_one_iff f hf).2 fun h => h₁ (h ▸ List.mem_cons_self)
-      have hl : conjLift f ψ g i (mk (.of (.inl k))) =
-          (t i * of g)⁻¹ * of (f k) * (t i * of g) := by
-        simp [conjLift, mul_assoc]
-      rw [hl]
-      exact isBlock_conj hC hg i hk W hW hne
+    | inl k => simpa using hφ k (fun h => h₁ (h ▸ List.mem_cons_self)) W hW hne
+    | inr a => simpa using hψ a (fun h => h₂ (h ▸ List.mem_cons_self)) W hW hne
 
-/-- The homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `f` on `K` and `(tᵢ g) ψ (tᵢ g)⁻¹` on `A` is
-injective if the images under `ψ` of the nontrivial elements of `A` are blocks of `C_G(u) × ℤⁿ`:
-the image of a nonempty reduced word of `K ∗ A`, conjugated by `tᵢ g`, is the product of a nonempty
-reduced word of the amalgam, which is not `1`. -/
-private theorem injective_lift_conj (i : Fin n) (hf : Function.Injective f)
-    (hC : TauCeti.IsTISubgroup (centralizer {u})) (hg : g ∉ centralizer {u})
-    (hψ : ∀ a, a ≠ 1 → IsBlock true true (ψ a)) :
-    Function.Injective
-      (Monoid.Coprod.lift (of.comp f) ((MulAut.conj (t i * of g)).toMonoidHom.comp ψ)) := by
-  have h : Monoid.Coprod.lift (of.comp f) ((MulAut.conj (t i * of g)).toMonoidHom.comp ψ) =
-      (MulAut.conj (t i * of g)).toMonoidHom.comp (conjLift f ψ g i) := by
-    ext <;> simp [conjLift, mul_assoc]
-  rw [h, MonoidHom.coe_comp]
-  refine (MulAut.conj _).injective.comp <| (injective_iff_map_eq_one _).2 fun x hx => ?_
+/-- The homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `φ` on `K` and `ψ` on `A` is injective if the
+images under `φ` of the nontrivial elements of `K` are blocks of `G` and those under `ψ` of the
+nontrivial elements of `A` are blocks of `C_G(u) × ℤⁿ`: the image of a nonempty reduced word of
+`K ∗ A` is the product of a nonempty reduced word of the amalgam, which is not `1`. -/
+private theorem coprodLift_injective_of_isBlock (hφ : ∀ k, k ≠ 1 → IsBlock false false (φ k))
+    (hψ : ∀ a, a ≠ 1 → IsBlock true true (ψ a)) : Function.Injective (Monoid.Coprod.lift φ ψ) := by
+  refine (injective_iff_map_eq_one _).2 fun x hx => ?_
   obtain ⟨L, hc, h₁, h₂, rfl⟩ := exists_reduced_list_mk_eq x
-  obtain ⟨W, hW, hWi, hWp⟩ := exists_reduced_conjLift i hf hC hg hψ L hc h₁ h₂
+  obtain ⟨W, hW, hWi, hWp⟩ := exists_reduced_coprodLift hφ hψ L hc h₁ h₂
   obtain rfl := hW.eq_empty_of_mem_range (centralizerExtMap_injective u n) ⟨1, by
     rw [map_one, hWp, hx]⟩
   cases L with
@@ -215,6 +213,22 @@ private theorem injective_lift_conj (i : Fin n) (hf : Function.Injective f)
   | cons s L => simp [Monoid.CoprodI.Word.fstIdx] at hWi
 
 end
+
+/-- The homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `f` on `K` and `(tᵢ g) ψ (tᵢ g)⁻¹` on `A` is
+injective if `f` is, `C_G(u)` is malnormal, `g ∉ C_G(u)` and the images under `ψ` of the nontrivial
+elements of `A` are blocks of `C_G(u) × ℤⁿ`: conjugated by `tᵢ g`, it sends `k ∈ K` to the block
+`(tᵢ g)⁻¹ f(k) (tᵢ g)` of `G`. -/
+private theorem injective_lift_conj {f : K →* G} {ψ : A →* CentralizerExt u n} {g : G} (i : Fin n)
+    (hf : Function.Injective f) (hC : TauCeti.IsTISubgroup (centralizer {u}))
+    (hg : g ∉ centralizer {u}) (hψ : ∀ a, a ≠ 1 → IsBlock true true (ψ a)) : Function.Injective
+      (Monoid.Coprod.lift (of.comp f) ((MulAut.conj (t i * of g)).toMonoidHom.comp ψ)) := by
+  have h : Monoid.Coprod.lift (of.comp f) ((MulAut.conj (t i * of g)).toMonoidHom.comp ψ) =
+      (MulAut.conj (t i * of g)).toMonoidHom.comp (Monoid.Coprod.lift
+        ((MulAut.conj (t i * of g)⁻¹).toMonoidHom.comp (of.comp f)) ψ) := by
+    ext <;> simp [mul_assoc]
+  rw [h, MonoidHom.coe_comp]
+  refine (MulAut.conj _).injective.comp (coprodLift_injective_of_isBlock (fun k hk => ?_) hψ)
+  simpa [mul_assoc] using isBlock_conj hC hg i ((map_ne_one_iff f hf).2 hk)
 
 variable (u) in
 /-- The homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `f` on `K` and sends `a ∈ A` to the conjugate
@@ -247,6 +261,18 @@ theorem coprodPiLift_injective (hf : Function.Injective f) (hι : Function.Injec
     (hC : TauCeti.IsTISubgroup (centralizer {u})) (hg : g ∉ centralizer {u}) :
     Function.Injective (coprodPiLift u f ι g i) :=
   injective_lift_conj i hf hC hg fun _ ha => isBlock_zpowersPiHom ((map_ne_one_iff ι hι).2 ha)
+
+/-- **A free letter.** If `f : K →* G` maps no nontrivial element of `K` into `C_G(u)`, then the
+homomorphism `K ∗ ⟨z⟩ →* G(u, ℤⁿ)` that is `f` on `K` and sends `z` to the letter `tᵢ` is
+injective: `f(K)` and `tᵢ` generate their free product. -/
+theorem coprodLift_injective_of_forall_mem_centralizer (hK : ∀ k, f k ∈ centralizer {u} → k = 1) :
+    Function.Injective (Monoid.Coprod.lift ((of : G →* CentralizerExt u n).comp f)
+      (FreeGroup.lift fun _ : Unit => t i)) := by
+  refine coprodLift_injective_of_isBlock (fun k hk => isBlock_of_notMem (mt (hK k) hk))
+    fun z hz => ?_
+  obtain ⟨e, rfl⟩ : ∃ e : ℤ, FreeGroup.of () ^ e = z :=
+    ⟨FreeGroup.freeGroupUnitEquivInt z, FreeGroup.freeGroupUnitEquivInt.symm_apply_apply z⟩
+  simpa using isBlock_t_zpow i (by rintro rfl; exact hz (zpow_zero _))
 
 end Lift
 
@@ -390,5 +416,26 @@ theorem exists_ice_embedding_GX (hH : IsFullyResiduallyFree H) (hH' : ¬IsMulCom
     ⟨coprodFreeGroupLift u (.id H) (fun x => e x + 1) g (0 : Fin 1), fun h => by simp⟩,
     coprodFreeGroupLift_injective 0 Function.injective_id (fun x y h => he (by simpa using h))
       (fun x => by omega) (hH.isCSA.centralizer_isTISubgroup u) hg⟩
+
+/-- Over a nonabelian fully residually free group `H`, if a group `K` embeds, over `H`, in an
+iterated extension of centralizers of `H`, then so does the free product `K ∗ ℤⁿ` of `K` and a free
+abelian group of rank `n`. -/
+theorem exists_ice_embedding_coprod_pi_of_exists_ice_embedding (hH : IsFullyResiduallyFree H)
+    (hH' : ¬IsMulCommutative H) {K : Type*} [Group K] {κ : H →* K}
+    (hK : ∃ (E : Type u) (_ : Group E) (j : H →* E) (_ : ICE H E j) (f : GHom κ j),
+      Function.Injective f) (n : ℕ) :
+    ∃ (E : Type u) (_ : Group E) (j : H →* E) (_ : ICE H E j)
+      (f : GHom ((inl : K →* Monoid.Coprod K (Fin n → Multiplicative ℤ)).comp κ) j),
+      Function.Injective f := by
+  obtain ⟨E, _, j, c, e, he⟩ := hK
+  -- `K` embeds in `E`, so it is fully residually free, and it contains `H`, so it is nonabelian.
+  have hκ : Function.Injective κ := by
+    have hj := c.injective
+    rw [← e.comp_coeff, MonoidHom.coe_comp] at hj
+    exact hj.of_comp
+  obtain ⟨E', _, j', c', g, hg⟩ := exists_ice_embedding_coprod_pi
+    ((c.isFullyResiduallyFree hH).of_injective he)
+    (fun _ => hH' <| .of_comm fun a b => (Commute.of_map hκ (mul_comm' (κ a) (κ b))).eq) n
+  exact ICE.exists_embedding_comp hH c e he c' g hg
 
 end TauCeti.LimitGroup

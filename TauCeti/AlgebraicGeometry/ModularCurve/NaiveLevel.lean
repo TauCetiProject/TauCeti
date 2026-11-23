@@ -716,7 +716,7 @@ theorem hasProperty_surjective_naiveLevel (D : (naiveLevel B A).RelRepData) {N :
   let L := AlgebraicClosure (X.base.residueField s)
   let t : Spec (.of L) ⟶ X.base := X.base.fromSpecAlgebraicClosure s
   have hNL : (N : L) ≠ 0 :=
-    (X.structureMap.natCast_residueField_ne_zero (x := s)
+    ((X.structureMap.natCast_residueField_ne_zero_iff (x := s)).mpr
       (hN _)).isUnit.natCast_ne_zero_of_algebra
   obtain ⟨φ, hφ⟩ := (X.curve.baseChange t).exists_isFiberwiseInjective hNL
   obtain ⟨p⟩ : Nonempty (Spec (.of L)) := inferInstance
@@ -765,7 +765,7 @@ theorem hasProperty_etale_gammaOneNaiveRelRepData (hN : ∀ b : B, (N : B.residu
     (gammaOneNaiveRelRepData (B := B) (N := N)).HasProperty @Etale :=
   hasProperty_gammaOneNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun X ↦
     X.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun _ ↦ by
-      simpa using X.structureMap.natCast_residueField_ne_zero (hN _)
+      simpa using X.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)
 
 /-- **The naive moduli problem `[Γ₁(N)]` is finite over `Ell/B` when `N` is invertible on `B`**:
 if `N` is invertible in every residue field of `B`, every representing scheme is finite over its
@@ -775,7 +775,7 @@ theorem hasProperty_isFinite_gammaOneNaiveRelRepData (hN : ∀ b : B, (N : B.res
   refine (RelRepData.hasProperty_iff _).mpr fun X ↦ ?_
   have := X.curve.isFinite_torsion_hom (n := (N : ℤ)) (by exact_mod_cast NeZero.ne N)
   refine EllipticCurveGeom.isFinite_naiveLocusOver_hom _
-    (fun s ↦ X.structureMap.natCast_residueField_ne_zero (hN _)) fun a ↦ ?_
+    (fun s ↦ X.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)) fun a ↦ ?_
   have ha : a ^ N = 1 := Multiplicative.toAdd.injective (by simp)
   rw [← map_pow, ha, map_one]
 
@@ -853,18 +853,17 @@ theorem hasProperty_etale_gammaNaiveRelRepData :
     have h : Etale ((X.baseChangeFunctor.obj T).curve.torsion N).X.hom :=
       (X.baseChangeFunctor.obj T).curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N)
         fun u ↦ by
-            exact_mod_cast U.ι.natCast_residueField_ne_zero (x := u) (N := N) ((hU _).mp u.property)
+          exact_mod_cast (U.ι.natCast_residueField_ne_zero_iff (x := u) (N := N)).mpr
+            ((hU _).mp u.property)
     exact EllipticCurveGeom.naiveLocusOver_hom_mem _ (fun _ _ _ _ ↦ inferInstance)
       (MorphismProperty.comp_mem _ _ _ (MorphismProperty.pullback_fst _ _ h) h)
   -- the representing scheme lies over `U`, since its tautological structure forces `N ≠ 0`
   have hrange : Set.range (D.rep X).hom ⊆ Set.range U.ι := by
     rintro _ ⟨r, rfl⟩
-    rw [Scheme.Opens.range_ι, SetLike.mem_coe, hU]
-    intro h0
-    have h := congrArg ((D.rep X).hom.residueFieldMap r) h0
-    rw [map_natCast, map_zero] at h
+    rw [Scheme.Opens.range_ι, SetLike.mem_coe, hU,
+      ← (D.rep X).hom.natCast_residueField_ne_zero_iff]
     have hφ := isFiberwiseInjective_naiveLocusHom (X.curve.torsionPairHom N) (𝟙 _)
-    exact hφ.natCast_residueField_ne_zero r h
+    exact hφ.natCast_residueField_ne_zero r
   -- so it factors through `U`, by the base change to `U`, which is the representing scheme over `T`
   have hlift : IsPullback (𝟙 _) (IsOpenImmersion.lift U.ι (D.rep X).hom hrange) (D.rep X).hom
       (X.baseChangeFunctorHom T).base := by
@@ -887,7 +886,7 @@ theorem hasProperty_isFinite_gammaNaiveRelRepData (hN : ∀ b : B, (N : B.residu
     rw [Over.tensorObj_hom]
     infer_instance
   refine EllipticCurveGeom.isFinite_naiveLocusOver_hom _
-    (fun s ↦ X.structureMap.natCast_residueField_ne_zero (hN _)) fun a ↦ ?_
+    (fun s ↦ X.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)) fun a ↦ ?_
   have ha : a ^ N = 1 := Multiplicative.toAdd.injective (by ext <;> simp)
   rw [← map_pow, ha, map_one]
 

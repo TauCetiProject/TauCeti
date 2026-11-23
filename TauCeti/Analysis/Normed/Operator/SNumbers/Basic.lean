@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
+public import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
 /-!
 # Axioms for s-number sequences
@@ -19,8 +21,11 @@ term is the operator norm, and the term at index `n` vanishes on operators of ra
 
 This file defines the ordinary and strict axioms and derives the norm bound, Lipschitz
 continuity and scalar homogeneity. Strictness means normalization on every identity below
-the dimension, not merely on the finite Euclidean identities. An injective family is one that
-does not change under postcomposition with linear isometries.
+the dimension, not merely on the finite Euclidean identities. For a strict sequence, factoring
+the identity of a space of rank greater than `n` through an operator `T` therefore bounds
+`sₙ(T)` from below (`TauCeti.SNumbers.IsStrictSNumberSequence.le_of_comp_eq_id`). An injective
+family is one that does not change under postcomposition with linear isometries, and a surjective
+family is one that does not change under precomposition with normed quotient maps.
 
 ## References
 
@@ -28,8 +33,8 @@ does not change under postcomposition with linear isometries.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
 * M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory 9 (2024), art. 82,
   Remark 1, for the strict normalization (S5′) and its implication of (S5).
-* A. Pietsch, *Operator Ideals*, North-Holland (1980), Chapter 11, for injective s-number
-  sequences.
+* A. Pietsch, *Operator Ideals*, North-Holland (1980), Chapter 11, for injective and surjective
+  s-number sequences.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
   `SNumbers/Basic.lean`: an earlier Lean formalization of the same axiom API.
 -/
@@ -125,6 +130,16 @@ structure IsInjective (s : SNumberFamily 𝕜) : Prop where
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
     (J : Y →ₗᵢ[𝕜] Z) (T : X →L[𝕜] Y) (n : ℕ), s (J.toContinuousLinearMap ∘L T) n = s T n
 
+/-- An s-number family is surjective when precomposition with a metric surjection, that is, an
+operator `Q` whose underlying bounded additive homomorphism is a normed quotient map, leaves every
+term unchanged: `s (T ∘L Q) n = s T n`. -/
+structure IsSurjective (s : SNumberFamily 𝕜) : Prop where
+  /-- Precomposition with a normed quotient map leaves every term unchanged. -/
+  comp_of_isQuotient : ∀ {W X Y : Type u} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (T : X →L[𝕜] Y) {Q : W →L[𝕜] X}, Q.toNormedAddGroupHom.IsQuotient →
+      ∀ n : ℕ, s (T ∘L Q) n = s T n
+
 namespace IsSNumberSequence
 
 variable {s : SNumberFamily 𝕜} (hs : IsSNumberSequence s)
@@ -182,6 +197,15 @@ theorem comp_le_right (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ) :
       simpa using hs.comp_le (ContinuousLinearMap.id 𝕜 Y) T A n
     _ ≤ s T n * ‖A‖₊ := by gcongr; exact mul_le_of_le_one_left' hid
 
+/-- Two-sided compression by contractions does not increase s-numbers. -/
+theorem comp_comp_le_of_norm_le_one {B : Y →L[𝕜] Z} {A : W →L[𝕜] X} (hB : ‖B‖ ≤ 1)
+    (hA : ‖A‖ ≤ 1) (T : X →L[𝕜] Y) (n : ℕ) : s (B ∘L T ∘L A) n ≤ s T n := by
+  have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
+  have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
+  calc s (B ∘L T ∘L A) n ≤ ‖B‖₊ * s T n * ‖A‖₊ := hs.comp_le B T A n
+    _ ≤ 1 * s T n * 1 := by gcongr
+    _ = s T n := by rw [one_mul, mul_one]
+
 private theorem smul_le (c : 𝕜) (T : X →L[𝕜] Y) (n : ℕ) :
     s (c • T) n ≤ ‖c‖₊ * s T n := by
   have hid : ‖ContinuousLinearMap.id 𝕜 Y‖₊ ≤ 1 := by
@@ -209,5 +233,29 @@ theorem neg (T : X →L[𝕜] Y) (n : ℕ) : s (-T) n = s T n := by
   simpa using hs.smul (-1) T n
 
 end IsSNumberSequence
+
+namespace IsStrictSNumberSequence
+
+variable {s : SNumberFamily 𝕜} (hs : IsStrictSNumberSequence s)
+
+include hs
+variable {M X Y : Type u}
+  [NormedAddCommGroup M] [NormedSpace 𝕜 M] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- **Lower bound by factorization.** If the identity of a space of rank greater than `n`
+factors as `B ∘ T ∘ A` with `c ‖B‖ ‖A‖ ≤ 1`, then `c ≤ sₙ(T)`. -/
+theorem le_of_comp_eq_id {c : ℝ≥0} (B : Y →L[𝕜] M) (T : X →L[𝕜] Y) (A : M →L[𝕜] X)
+    (hBTA : B ∘L T ∘L A = ContinuousLinearMap.id 𝕜 M) {n : ℕ}
+    (hn : (n : Cardinal) < Module.rank 𝕜 M) (hc : c * ‖B‖₊ * ‖A‖₊ ≤ 1) : c ≤ s T n := by
+  have h1 : 1 ≤ ‖B‖₊ * s T n * ‖A‖₊ := by
+    simpa [hBTA, hs.normalize_of_lt_rank n hn] using hs.comp_le B T A n
+  calc
+    c = c * 1 := (mul_one c).symm
+    _ ≤ c * (‖B‖₊ * s T n * ‖A‖₊) := by gcongr
+    _ = c * ‖B‖₊ * ‖A‖₊ * s T n := by ring
+    _ ≤ s T n := mul_le_of_le_one_left' hc
+
+end IsStrictSNumberSequence
 
 end TauCeti.SNumbers

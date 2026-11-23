@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Retraction
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.Homotopy
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 
 /-!
 # Compression of cubical chains with local coefficients
@@ -88,6 +89,8 @@ local coefficients.
   `TauCeti.isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`: transported to
   simplicial chains, the inclusion of a subspace is surjective on singular homology with local
   coefficients below the connectivity of the pair, and bijective one degree lower.
+* `TauCeti.isZero_twistedHomology_ofSubset_of_relHomotopyGroup`: by the long exact sequence of the
+  pair, the relative homology with local coefficients vanishes below the connectivity of the pair.
 
 ## References
 
@@ -143,7 +146,7 @@ private def firstEdge (m : ℕ) : Path (0 : Fin (m + 1) → I) (Fin.cons 1 0) wh
 theorem originTransport_heq {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X m) :
     D.originTransport hm c ≍ (D.sweep c).pathClass 0 (Fin.cons 1 0) :=
   fromPath_heq_pathClass (D.sweep c) (firstEdge m) _ fun t ↦ by
-    simp [firstEdge, sweep_apply]
+    simp [firstEdge, CubeDeformation.sweep_apply]
 
 /-- The origin of `c` as an object of the fundamental groupoid is the origin of its swept cube. -/
 private theorem mk_sweep_zero {m : ℕ} (c : SingularCube X m) :
@@ -153,13 +156,13 @@ private theorem mk_sweep_zero {m : ℕ} (c : SingularCube X m) :
 private theorem eq_sweep_comp {m : ℕ} (c : SingularCube X m) :
     c = (D.sweep c).comp ⟨fun y ↦ Fin.cons 0 y, by fun_prop⟩ := by
   ext y
-  simp [sweep_apply]
+  simp [CubeDeformation.sweep_apply]
 
 private theorem subtypeVal_comp_retract_eq {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X m) :
     (ContinuousMap.subtypeVal A).comp (D.retract hm c) =
       (D.sweep c).comp ⟨fun y ↦ Fin.cons 1 y, by fun_prop⟩ := by
   ext y
-  simp [sweep_apply]
+  simp [CubeDeformation.sweep_apply]
 
 private theorem sweep_comp_face_eq {m : ℕ} (c : SingularCube X (m + 1)) (i : Fin (m + 1)) {t : I}
     (ht : t = 0 ∨ t = 1) :
@@ -243,8 +246,9 @@ theorem originTransport_comp_pathClass_heq {m : ℕ} (hm : ((m + 1 : ℕ) : ℕ�
   have hl : D.originTransport hm c ≫
       ((ContinuousMap.subtypeVal A).comp (D.retract hm c)).pathClass 0
         (face i t (ContinuousMap.id _) 0) ≍ (D.sweep c).pathClass 0 (Fin.cons 1 v) :=
-    comp_heq_pathClass (D.sweep c) (D.mk_sweep_zero c) (congrArg _ (by simp [sweep_apply]))
-      (congrArg _ (by simp [sweep_apply, hface]))
+    comp_heq_pathClass (D.sweep c) (D.mk_sweep_zero c)
+      (congrArg _ (by simp [CubeDeformation.sweep_apply]))
+      (congrArg _ (by simp [CubeDeformation.sweep_apply, hface]))
       (D.originTransport_heq hm c)
       ((D.pathClass_heq_sweep_retract hm c 0 _).trans (pathClass_heq rfl rfl (by rw [hface])))
   have hr₁ : c.pathClass 0 (face i t (ContinuousMap.id _) 0) ≍
@@ -259,8 +263,8 @@ theorem originTransport_comp_pathClass_heq {m : ℕ} (hm : ((m + 1 : ℕ) : ℕ�
         (pathClass_heq rfl (insertNth_succ_zero i t) (Fin.insertNth_succ_cons i t 1 0))))
   refine hl.trans (HEq.symm (comp_heq_pathClass (D.sweep c) (D.mk_sweep_zero c)
     (congrArg _ ?_) (congrArg _ ?_) hr₁ hr₂))
-  · simp [sweep_apply, hface]
-  · simp [sweep_apply, comp_face_id, ← D.homotopy_insertNth c i ht, hv]
+  · simp [CubeDeformation.sweep_apply, hface]
+  · simp [CubeDeformation.sweep_apply, comp_face_id, ← D.homotopy_insertNth c i ht, hv]
 
 /-- The track of the origin of a cube of `A` is constant. -/
 theorem originTransport_subtypeVal_comp_heq {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube A m) :
@@ -382,8 +386,8 @@ private theorem ofSubcube_sweep_face_zero_zero {m : ℕ} (c : SingularCube X m)
   rw [TwistedCubicalChain.ofSubcube_apply, ← ModuleCat.comp_apply, ← L.map_comp]
   refine TwistedCubicalChain.ofCube_congr L ?_ ((map_apply_heq L (congrArg _ ?_)
     (D.eqToHom_comp_pathClass_face_zero_zero_heq c) a).trans (heq_of_eq ?_))
-  · rw [comp_face_id, face_zero_zero_sweep]
-  · rw [← ContinuousMap.comp_apply, comp_face_id, face_zero_zero_sweep]
+  · rw [comp_face_id, CubeDeformation.face_zero_zero_sweep]
+  · rw [← ContinuousMap.comp_apply, comp_face_id, CubeDeformation.face_zero_zero_sweep]
   · rw [L.map_id]
     rfl
 
@@ -399,8 +403,8 @@ private theorem ofSubcube_sweep_face_zero_one {m : ℕ} (hm : (m : ℕ∞) < n) 
   refine Eq.trans ?_ (TwistedCubicalChain.map_ofCube _ _).symm
   refine TwistedCubicalChain.ofCube_congr L ?_ (map_apply_heq L (congrArg _ ?_)
     (D.eqToHom_comp_pathClass_face_zero_one_heq hm c) a)
-  · rw [comp_face_id, face_zero_one_sweep, subtypeVal_comp_retract]
-  · rw [← ContinuousMap.comp_apply, comp_face_id, face_zero_one_sweep]
+  · rw [comp_face_id, CubeDeformation.face_zero_one_sweep, subtypeVal_comp_retract]
+  · rw [← ContinuousMap.comp_apply, comp_face_id, CubeDeformation.face_zero_one_sweep]
     simp
 
 /-- The spatial faces of the swept cube are the swept faces. -/
@@ -878,5 +882,38 @@ theorem isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt
     infer_instance
   exact IsIso.of_isIso_comp_left (HomologicalComplex.homologyMap
     (twistedCubicalToSingularMap ((LocalCoefficientSystem.pullback i.hom).obj L)) m) _
+
+/-- **Relative homology with local coefficients vanishes below the connectivity of the pair.** If
+every point of `X` is joined by a path to a point of `A`, and the relative homotopy set
+`π_{k+1}(X, A, a)` is trivial for every `k + 1 < n` and every `a ∈ A`, then for every local
+coefficient system `L` on `X` the relative homology `H_m(X, A; L)` vanishes for every `m < n`. -/
+theorem isZero_twistedHomology_ofSubset_of_relHomotopyGroup {R : Type u} [Ring R]
+    {X : TopCat.{v}} {A : Set X} {n : ℕ} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
+    (h : ∀ k : ℕ, k + 1 < n → ∀ a : A,
+      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A, a⟩))
+    (L : LocalCoefficientSystem.{u, v, v} R X) {m : ℕ} (hm : m < n) :
+    Limits.IsZero ((TopPair.ofSubset A).twistedHomology L m) := by
+  -- In the exact sequence `H_m(A) ⟶ H_m(X) ⟶ H_m(X, A) ⟶ H_{m-1}(A) ⟶ H_{m-1}(X)` of the pair,
+  -- the first map is onto and the last one is injective.
+  have := epi_twistedHomologyMap_subtypeVal_of_relHomotopyGroup h₀ h L hm
+  have hπ : (TopPair.ofSubset A).twistedHomologyπ L m = 0 :=
+    (cancel_epi (twistedHomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L m)).1
+      (((TopPair.ofSubset A).twistedHomologyMap_comp_twistedHomologyπ L m).trans
+        Limits.comp_zero.symm)
+  cases m with
+  | zero =>
+    -- The instance for pairs applies once `L` is read as a system on the ambient space of the
+    -- pair, which unfolds to `X` only up to instance transparency.
+    let L' : LocalCoefficientSystem.{u, v, v} R (TopPair.ofSubset A).fst := L
+    have : Epi ((TopPair.ofSubset A).twistedHomologyπ L' 0) := inferInstance
+    exact Limits.IsZero.of_epi_eq_zero _ hπ
+  | succ j =>
+    have := isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt h₀ h L
+      (m := j) hm
+    exact ((TopPair.ofSubset A).twistedHomology_exact_relative L (j + 1) j).isZero_of_both_zeros
+      hπ (((TopPair.ofSubset A).twistedHomology_exact_subspace L (j + 1) j).mono_g_iff.1
+        -- The goal's map is the `g` field of the short complex of the exact sequence, which
+        -- instance search does not reduce to the map of `this`, so the instance is passed by hand.
+        (@IsIso.mono_of_iso _ _ _ _ _ this))
 
 end TauCeti

@@ -82,14 +82,14 @@ example (J : Ideal (WittVector p (pair p).plus)) (ϖ : (pair p).plus)
     RingHom.ker (untilt.theta J hϖ (Localization.Away (WittVector.teichmuller p ϖ))) =
       J.map (algebraMap _ (Localization.Away (WittVector.teichmuller p ϖ))) ∧
     IsPseudoUniformizer (untilt.sharp p (pair p) J ϖ) :=
-  ⟨untilt.ker_theta J hϖ _, untilt.isPseudoUniformizer_sharp J hϖ⟩
+  ⟨untilt.ker_theta J hϖ _, untilt.isPseudoUniformizer_sharp hϖ⟩
 
 -- Recovery: the untilt along `(p)` is `R⁺[1/ϖ]`, by an isomorphism sending `x♯` to `x`.
 example (ϖ : (pair p).plus) (hϖ : IsPseudoUniformizer (ϖ : uniformTilt p ℂ_[p]))
     (x : (pair p).plus) :
-    untilt.spanPEquiv hϖ (Localization.Away ϖ) (untilt.sharp p (pair p) _ x) =
+    untilt.spanPEquiv hϖ (Localization.Away ϖ) (untilt.sharpPlus p (pair p) _ x) =
       algebraMap _ (Localization.Away ϖ) x :=
-  untilt.spanPEquiv_sharp hϖ _ x
+  untilt.spanPEquiv_sharpPlus hϖ _ x
 
 -- Recovery: along `(p)`, `A⁺ ⧸ (ϖ♯) ≃ R⁺ ⧸ (ϖ)` is induced by the zeroth Witt coordinate.
 example (ϖ : (pair p).plus) (a : WittVector p (pair p).plus) :
