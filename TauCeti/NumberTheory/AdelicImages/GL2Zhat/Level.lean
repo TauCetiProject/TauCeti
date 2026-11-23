@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.AdelicImages.GL2Zhat.Basic
 public import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
+import TauCeti.GroupTheory.Index.Basic
 import TauCeti.GroupTheory.Index.Map
 
 /-!
@@ -24,8 +25,9 @@ Two further invariants of an open subgroup `H` are its determinant subgroup
 the projective index of `H`). Open subgroups of coprime levels intersect cleanly with multiplicative
 index (`index_inf_of_coprime_level`). Conjugation in `GL₂(ℤ̂)` preserves `level`, `index`,
 `projectiveIndex`, `detSubgroup`, `detLevel`, `IsFullDet`, and membership of `-1`. Finally, each
-`ℓ`-adic projection `projOpenSubgroup H ℓ` is an open subgroup of `GL₂(ℤ_ℓ)` containing the
-congruence kernel modulo `ℓ ^ v_ℓ(level H)`, and equals `GL₂(ℤ_ℓ)` whenever `ℓ ∤ level H`.
+`ℓ`-adic projection `projOpenSubgroup H ℓ` is an open subgroup of `GL₂(ℤ_ℓ)` with prime-power
+local level `localLevel (projOpenSubgroup H ℓ) ∣ ℓ ^ v_ℓ(level H)`, and equals `GL₂(ℤ_ℓ)` whenever
+`ℓ ∤ level H`.
 
 ## Main definitions
 
@@ -38,6 +40,8 @@ congruence kernel modulo `ℓ ^ v_ℓ(level H)`, and equals `GL₂(ℤ_ℓ)` whe
   level, and surjectivity of the determinant on `H`.
 * `TauCeti.GL2Zhat.conj`: conjugation of an open subgroup of `GL₂(ℤ̂)`.
 * `TauCeti.GL2Zhat.projOpenSubgroup`: the `ℓ`-adic image of `H` as an open subgroup of `GL₂(ℤ_ℓ)`.
+* `TauCeti.GL2Zhat.localLevelExp`, `TauCeti.GL2Zhat.localLevel`: the minimal exponent and prime
+  power `ℓ ^ k` whose reduction kernel lies in an open subgroup of `GL₂(ℤ_ℓ)`.
 
 ## Main results
 
@@ -51,7 +55,8 @@ congruence kernel modulo `ℓ ^ v_ℓ(level H)`, and equals `GL₂(ℤ_ℓ)` whe
   coprime.
 * `TauCeti.GL2Zhat.detGamma_le_iff`, `TauCeti.GL2Zhat.detLevel_dvd_level`,
   `TauCeti.GL2Zhat.isFullDet_iff_detLevel_eq_one`, `TauCeti.GL2Zhat.isFullDet_iff_map_red_det`.
-* `TauCeti.GL2Zhat.projOpenSubgroup_eq_top_of_not_dvd_level`.
+* `TauCeti.GL2Zhat.ker_redPadicPow_le_iff_dvd`, `TauCeti.GL2Zhat.localLevel_projOpenSubgroup_dvd`,
+  `TauCeti.GL2Zhat.projOpenSubgroup_eq_top_of_not_dvd_level`.
 
 ## References
 
@@ -247,30 +252,36 @@ then `[GL₂(ℤ̂) : H₁ ⊓ H₂] = [GL₂(ℤ̂) : H₁] · [GL₂(ℤ̂) : 
 theorem index_inf_of_coprime_level {H₁ H₂ : OpenSubgroup GL2Zhat}
     (h : Nat.Coprime (level H₁) (level H₂)) :
     (H₁ ⊓ H₂).toSubgroup.index = H₁.toSubgroup.index * H₂.toSubgroup.index := by
-  have hmul := mul_eq_univ_of_coprime_level h
-  let φ : GL2Zhat ⧸ (H₁ ⊓ H₂).toSubgroup →
-      (GL2Zhat ⧸ H₁.toSubgroup) × (GL2Zhat ⧸ H₂.toSubgroup) :=
-    Quotient.lift (fun g ↦ (QuotientGroup.mk g, QuotientGroup.mk g)) fun a b hab ↦ by
-      have hab' : a⁻¹ * b ∈ (H₁ ⊓ H₂).toSubgroup := QuotientGroup.leftRel_apply.mp hab
-      exact Prod.ext (QuotientGroup.eq.mpr hab'.1) (QuotientGroup.eq.mpr hab'.2)
-  have hbij : Function.Bijective φ := by
-    refine ⟨?_, ?_⟩
-    · rintro ⟨a⟩ ⟨b⟩ hq
-      exact QuotientGroup.eq.mpr
-        ⟨QuotientGroup.eq.mp (congrArg Prod.fst hq),
-          QuotientGroup.eq.mp (congrArg Prod.snd hq)⟩
-    · rintro ⟨⟨a⟩, ⟨b⟩⟩
-      have hab : a⁻¹ * b ∈ (H₁.toSubgroup : Set GL2Zhat) * (H₂.toSubgroup : Set GL2Zhat) := by
-        rw [hmul]
-        trivial
-      obtain ⟨h₁, hh₁, h₂, hh₂, heq⟩ := Set.mem_mul.mp hab
-      refine ⟨QuotientGroup.mk (a * h₁), Prod.ext ?_ ?_⟩
-      · exact QuotientGroup.eq.mpr (by simpa [mul_assoc] using H₁.toSubgroup.inv_mem hh₁)
-      · have hrel : (a * h₁)⁻¹ * b = h₂ := by
-          rw [_root_.mul_inv_rev, mul_assoc, ← heq, inv_mul_cancel_left]
-        exact QuotientGroup.eq.mpr (hrel ▸ hh₂)
-  rw [Subgroup.index_eq_card, Subgroup.index_eq_card, Subgroup.index_eq_card, ← Nat.card_prod]
-  exact Nat.card_congr (Equiv.ofBijective φ hbij)
+  have : H₁.toSubgroup.FiniteIndex :=
+    have := Subgroup.quotient_finite_of_isOpen H₁.toSubgroup H₁.isOpen
+    Subgroup.finiteIndex_of_finite_quotient
+  have : H₂.toSubgroup.FiniteIndex :=
+    have := Subgroup.quotient_finite_of_isOpen H₂.toSubgroup H₂.isOpen
+    Subgroup.finiteIndex_of_finite_quotient
+  have hd : (⟨Nat.gcd (levelPNat H₁) (levelPNat H₂),
+      Nat.gcd_pos_of_pos_left _ (levelPNat H₁).pos⟩ : ℕ+) = 1 :=
+    Subtype.ext h
+  have hG : Gamma (levelPNat H₁) ⊔ Gamma (levelPNat H₂) = ⊤ :=
+    (Gamma_gcd_eq_sup (levelPNat H₁) (levelPNat H₂)).trans ((congrArg Gamma hd).trans Gamma_one)
+  have hG_sub : (Gamma (levelPNat H₁)).toSubgroup ⊔ (Gamma (levelPNat H₂)).toSubgroup = ⊤ := by
+    simpa [OpenSubgroup.toSubgroup_sup] using congrArg OpenSubgroup.toSubgroup hG
+  have hsup : H₁.toSubgroup ⊔ (Gamma (levelPNat H₂)).toSubgroup = ⊤ :=
+    eq_top_iff.mpr (hG_sub ▸
+      sup_le ((Gamma_level_le H₁ : _ ≤ H₁.toSubgroup).trans le_sup_left) le_sup_right)
+  have hΓ : H₁.toSubgroup.relIndex (Gamma (levelPNat H₂)).toSubgroup = H₁.toSubgroup.index := by
+    rw [← Subgroup.relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal, hsup,
+      Subgroup.relIndex_top_right]
+  have hne : H₁.toSubgroup.relIndex ⊤ ≠ 0 := by
+    rw [Subgroup.relIndex_top_right]
+    exact Subgroup.FiniteIndex.index_ne_zero
+  have hrel : H₁.toSubgroup.relIndex H₂.toSubgroup = H₁.toSubgroup.index := by
+    refine le_antisymm ?_ ?_
+    · rw [← Subgroup.relIndex_top_right]
+      exact Subgroup.relIndex_le_of_le_right le_top hne
+    · rw [← hΓ]
+      exact Subgroup.relIndex_le_of_le_right (Gamma_level_le H₂)
+        (Subgroup.relIndex_ne_zero_trans hne (by simp))
+  rw [OpenSubgroup.toSubgroup_inf, Subgroup.index_inf, hrel]
 
 end LevelCorrespondence
 
@@ -328,12 +339,8 @@ section Determinant
 congruent to `1` modulo `n`. -/
 noncomputable def detGamma (n : ℕ+) : OpenSubgroup (Additive zHat.{0})ˣ where
   toSubgroup := (Units.map (zHat.toZMod n : Additive zHat.{0} →* ZMod n)).ker
-  isOpen' := by
-    have hcont : Continuous (Units.map (zHat.toZMod n : Additive zHat.{0} →* ZMod n)) := by
-      rw [Units.continuous_iff]
-      exact ⟨(zHat.continuous_toZMod n).comp Units.continuous_val,
-        (zHat.continuous_toZMod n).comp Units.continuous_coe_inv⟩
-    exact (isOpen_discrete {1}).preimage hcont
+  isOpen' :=
+    (isOpen_discrete {1}).preimage (Continuous.units_map _ (zHat.continuous_toZMod n))
 
 @[simp]
 theorem mem_detGamma_iff (n : ℕ+) (u : (Additive zHat.{0})ˣ) :
@@ -540,14 +547,15 @@ end Determinant
 
 section Conjugation
 
-/-- Conjugation of an open subgroup `H ≤ GL₂(ℤ̂)` by `g : GL₂(ℤ̂)`: the subgroup `g H g⁻¹`. -/
+/-- Conjugation of an open subgroup `H ≤ GL₂(ℤ̂)` by `g : GL₂(ℤ̂)`: the subgroup `g⁻¹ H g`
+(LMFDB's `H^g`). -/
 noncomputable def conj (g : GL2Zhat) (H : OpenSubgroup GL2Zhat) : OpenSubgroup GL2Zhat :=
-  H.comap (MulAut.conj g⁻¹).toMonoidHom
+  H.comap (MulAut.conj g).toMonoidHom
     ((continuous_const.mul continuous_id).mul continuous_const)
 
 @[simp]
 theorem mem_conj_iff {g x : GL2Zhat} {H : OpenSubgroup GL2Zhat} :
-    x ∈ conj g H ↔ g⁻¹ * x * g ∈ H :=
+    x ∈ conj g H ↔ g * x * g⁻¹ ∈ H :=
   Iff.rfl
 
 @[simp]
@@ -557,7 +565,7 @@ theorem conj_one (H : OpenSubgroup GL2Zhat) : conj 1 H = H := by
 
 @[simp]
 theorem conj_mul (g₁ g₂ : GL2Zhat) (H : OpenSubgroup GL2Zhat) :
-    conj (g₁ * g₂) H = conj g₁ (conj g₂ H) := by
+    conj (g₁ * g₂) H = conj g₂ (conj g₁ H) := by
   ext x
   simp [mul_assoc]
 
@@ -567,10 +575,10 @@ theorem conj_top (g : GL2Zhat) : conj g ⊤ = ⊤ := by
   simp
 
 theorem toSubgroup_conj (g : GL2Zhat) (H : OpenSubgroup GL2Zhat) :
-    (conj g H).toSubgroup = ConjAct.toConjAct g • H.toSubgroup := by
+    (conj g H).toSubgroup = (ConjAct.toConjAct g)⁻¹ • H.toSubgroup := by
   ext x
   rw [OpenSubgroup.mem_toSubgroup, mem_conj_iff, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
-    ← map_inv, ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, inv_inv, mul_assoc]
+    inv_inv, ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, mul_assoc]
   rfl
 
 @[simp]
@@ -578,7 +586,7 @@ theorem conj_Gamma (g : GL2Zhat) (n : ℕ+) : conj g (Gamma n) = Gamma n := by
   ext x
   rw [mem_conj_iff, mem_Gamma_iff, mem_Gamma_iff, map_mul, map_mul, map_inv]
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  have h' := congrArg (fun y ↦ red n g * y * (red n g)⁻¹) h
+  have h' := congrArg (fun y ↦ (red n g)⁻¹ * y * red n g) h
   simpa [mul_assoc] using h'
 
 @[simp]
@@ -590,8 +598,11 @@ theorem level_conj (g : GL2Zhat) (H : OpenSubgroup GL2Zhat) : level (conj g H) =
     exact Gamma_level_le H (by simpa [← mem_conj_iff, conj_Gamma] using hx)
   · rw [← coe_levelPNat (conj g H)]
     refine (Gamma_le_iff (N := levelPNat (conj g H))).mp fun x hx ↦ ?_
-    have hx' : g * x * g⁻¹ ∈ Gamma (levelPNat (conj g H)) := by
-      simpa [← mem_conj_iff, inv_inv, conj_Gamma] using hx
+    have hx' : g⁻¹ * x * g ∈ Gamma (levelPNat (conj g H)) := by
+      have hx'' : x ∈ conj g⁻¹ (Gamma (levelPNat (conj g H))) := by
+        rw [conj_Gamma]
+        exact hx
+      simpa using (mem_conj_iff (g := g⁻¹)).mp hx''
     simpa [mem_conj_iff, mul_assoc] using Gamma_level_le (conj g H) hx'
 
 @[simp]
@@ -610,10 +621,10 @@ theorem detSubgroup_conj (g : GL2Zhat) (H : OpenSubgroup GL2Zhat) :
   ext u
   refine ⟨?_, ?_⟩
   · rintro ⟨x, hx, rfl⟩
-    refine ⟨g⁻¹ * x * g, hx, ?_⟩
+    refine ⟨g * x * g⁻¹, hx, ?_⟩
     simp
   · rintro ⟨x, hx, rfl⟩
-    refine ⟨g * x * g⁻¹, ?_, ?_⟩
+    refine ⟨g⁻¹ * x * g, ?_, ?_⟩
     · rw [SetLike.mem_coe, OpenSubgroup.mem_toSubgroup, mem_conj_iff]
       simpa [mul_assoc] using hx
     · simp
@@ -715,6 +726,54 @@ theorem exists_ker_redPadicPow_le {ℓ : Nat.Primes} (U : OpenSubgroup (GL (Fin 
   obtain ⟨g, hg_Gamma, hg_proj⟩ := exists_proj_eq_and_mem_Gamma_of_ker hA
   simpa [hg_proj] using hN hg_Gamma
 
+/-- The least exponent `k : ℕ` such that `ker (redPadicPow ℓ k) ≤ U`. -/
+noncomputable def localLevelExp {ℓ : Nat.Primes} (U : OpenSubgroup (GL (Fin 2) ℤ_[ℓ])) : ℕ := by
+  classical
+  exact Nat.find (exists_ker_redPadicPow_le U)
+
+/-- The **local level** of an open subgroup `U ≤ GL₂(ℤ_ℓ)`: `ℓ` raised to the least exponent
+whose reduction kernel lies in `U`. -/
+noncomputable def localLevel {ℓ : Nat.Primes} (U : OpenSubgroup (GL (Fin 2) ℤ_[ℓ])) : ℕ :=
+  (ℓ : ℕ) ^ localLevelExp U
+
+/-- The local level of an open subgroup of `GL₂(ℤ_ℓ)` is positive. -/
+theorem localLevel_pos {ℓ : Nat.Primes} (U : OpenSubgroup (GL (Fin 2) ℤ_[ℓ])) :
+    0 < localLevel U :=
+  pow_pos ℓ.property.pos _
+
+/-- Every open subgroup `U ≤ GL₂(ℤ_ℓ)` contains `ker (redPadicPow ℓ (localLevelExp U))`. -/
+theorem ker_redPadicPow_localLevelExp_le {ℓ : Nat.Primes}
+    (U : OpenSubgroup (GL (Fin 2) ℤ_[ℓ])) :
+    (redPadicPow ℓ (localLevelExp U)).ker ≤ U.toSubgroup := by
+  classical
+  exact Nat.find_spec (exists_ker_redPadicPow_le U)
+
+/-- `ker (redPadicPow ℓ k) ≤ ker (redPadicPow ℓ m)` whenever `m ≤ k`. -/
+theorem ker_redPadicPow_le_of_le {ℓ : Nat.Primes} {m k : ℕ} (h : m ≤ k) :
+    (redPadicPow ℓ k).ker ≤ (redPadicPow ℓ m).ker := by
+  intro A hA
+  rw [MonoidHom.mem_ker] at hA ⊢
+  have hcast : GeneralLinearGroup.map
+      (ZMod.castHom (pow_dvd_pow (ℓ : ℕ) h) (ZMod ((ℓ : ℕ) ^ m))) (redPadicPow ℓ k A) =
+        redPadicPow ℓ m A := by
+    ext i j
+    simp [redPadicPow, PadicInt.cast_toZModPow m k h]
+  rw [← hcast, hA, map_one]
+
+/-- `ker (redPadicPow ℓ k) ≤ U` if and only if `localLevelExp U ≤ k`. -/
+theorem ker_redPadicPow_le_iff {ℓ : Nat.Primes} {U : OpenSubgroup (GL (Fin 2) ℤ_[ℓ])} {k : ℕ} :
+    (redPadicPow ℓ k).ker ≤ U.toSubgroup ↔ localLevelExp U ≤ k := by
+  classical
+  exact ⟨fun hk ↦ Nat.find_min' (exists_ker_redPadicPow_le U) hk,
+    fun hle ↦ (ker_redPadicPow_le_of_le hle).trans (ker_redPadicPow_localLevelExp_le U)⟩
+
+/-- `ker (redPadicPow ℓ k) ≤ U` if and only if `localLevel U ∣ ℓ ^ k`. -/
+theorem ker_redPadicPow_le_iff_dvd {ℓ : Nat.Primes} {U : OpenSubgroup (GL (Fin 2) ℤ_[ℓ])}
+    {k : ℕ} :
+    (redPadicPow ℓ k).ker ≤ U.toSubgroup ↔ localLevel U ∣ (ℓ : ℕ) ^ k := by
+  rw [ker_redPadicPow_le_iff, localLevel,
+    Nat.pow_dvd_pow_iff_le_right ℓ.property.one_lt]
+
 /-- The `ℓ`-adic projection of `H` contains the principal congruence kernel of exponent
 `v_ℓ(level H)`. -/
 theorem ker_redPadicPow_factorization_le (H : OpenSubgroup GL2Zhat) (ℓ : Nat.Primes) :
@@ -723,6 +782,11 @@ theorem ker_redPadicPow_factorization_le (H : OpenSubgroup GL2Zhat) (ℓ : Nat.P
   obtain ⟨g, hg_Gamma, hg_proj⟩ :=
     exists_proj_eq_and_mem_Gamma_of_ker (N := levelPNat H) hA
   exact ⟨g, Gamma_level_le H hg_Gamma, hg_proj⟩
+
+/-- The local level of the `ℓ`-adic projection of `H` divides `ℓ ^ v_ℓ(level H)`. -/
+theorem localLevel_projOpenSubgroup_dvd (H : OpenSubgroup GL2Zhat) (ℓ : Nat.Primes) :
+    localLevel (projOpenSubgroup H ℓ) ∣ (ℓ : ℕ) ^ (level H).factorization ℓ :=
+  ker_redPadicPow_le_iff_dvd.mp (ker_redPadicPow_factorization_le H ℓ)
 
 /-- If `ℓ` does not divide `level H`, then the `ℓ`-adic projection of `H` is all of `GL₂(ℤ_ℓ)`. -/
 theorem projOpenSubgroup_eq_top_of_not_dvd_level {H : OpenSubgroup GL2Zhat} {ℓ : Nat.Primes}

@@ -122,8 +122,9 @@ section ZMod
 
 open Matrix
 
-/-- **The order of `GL_m(ℤ/p^{k+1})`**: reduction modulo `p` is a surjective local homomorphism
-with kernel of order `(p ^ k) ^ (m * m)`. -/
+/-- **The order of `GL_m(ℤ/p^{k+1})`**: reduction modulo `p` is a surjective local ring
+homomorphism `ℤ/p^{k+1} →+* ℤ/p` with kernel of order `p ^ k`, so the induced map on `GL_m` has
+kernel of order `(p ^ k) ^ (m * m)`. -/
 theorem natCard_GL_zmod_prime_pow (m p k : ℕ) [hp : Fact p.Prime] :
     Nat.card (GL (Fin m) (ZMod (p ^ (k + 1)))) =
       (p ^ k) ^ (m * m) * Nat.card (GL (Fin m) (ZMod p)) := by

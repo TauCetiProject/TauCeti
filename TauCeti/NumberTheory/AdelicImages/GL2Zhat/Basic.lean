@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Units
 public import TauCeti.Topology.Algebra.Group.Units
 public import TauCeti.Topology.Instances.Matrix
+import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.LevelSubgroup
@@ -75,14 +76,6 @@ abbrev GL2Zhat : Type := GL (Fin 2) (Additive zHat.{0})
 
 namespace GL2Zhat
 
-private theorem continuous_glMap {R S : Type*} [CommRing R] [CommRing S]
-    [TopologicalSpace R] [TopologicalSpace S] {f : R →+* S} (hf : Continuous f) :
-    Continuous (GeneralLinearGroup.map (n := Fin 2) f) := by
-  rw [Units.continuous_iff]
-  refine ⟨continuous_matrix fun i j ↦ hf.comp ?_, continuous_matrix fun i j ↦ hf.comp ?_⟩
-  · exact (Units.continuous_val (M := Matrix (Fin 2) (Fin 2) R)).matrix_elem i j
-  · exact (Units.continuous_coe_inv (M := Matrix (Fin 2) (Fin 2) R)).matrix_elem i j
-
 section Reduction
 
 /-- Reduction modulo `n : ℕ+`, given by entrywise reduction `zHat.toZMod n`. -/
@@ -103,7 +96,7 @@ theorem red_neg (n : ℕ+) (g : GL2Zhat) : red n (-g) = -red n g :=
 /-- Reduction modulo `n` is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_red (n : ℕ+) : Continuous (red n) :=
-  continuous_glMap (zHat.continuous_toZMod n)
+  (zHat.continuous_toZMod n).generalLinearGroup_map
 
 /-- Reduction modulo `n : ℕ+` is surjective onto `GL₂(ℤ / n)`. -/
 theorem red_surjective (n : ℕ+) : Function.Surjective (red n) := fun g ↦ by
@@ -321,19 +314,6 @@ end CongruenceSubgroups
 
 section DeterminantAndSL2
 
-/-- The determinant homomorphism `GL₂(ℤ̂) →* ℤ̂ˣ` is surjective. -/
-theorem det_surjective :
-    Function.Surjective (GeneralLinearGroup.det : GL2Zhat →* (Additive zHat.{0})ˣ) :=
-  GeneralLinearGroup.det_surjective
-
-/-- The determinant homomorphism `GL₂(ℤ̂) →* ℤ̂ˣ` is continuous. -/
-@[continuity, fun_prop]
-theorem continuous_det :
-    Continuous (GeneralLinearGroup.det : GL2Zhat →* (Additive zHat.{0})ˣ) := by
-  rw [Units.continuous_iff]
-  refine ⟨Continuous.matrix_det Units.continuous_val, ?_⟩
-  exact Continuous.matrix_det Units.continuous_coe_inv
-
 /-- Reduction modulo `n` intertwines determinants. -/
 @[simp]
 theorem map_toZMod_det (n : ℕ+) (g : GL2Zhat) :
@@ -351,7 +331,7 @@ theorem mem_SL2Zhat_iff (g : GL2Zhat) : g ∈ SL2Zhat ↔ GeneralLinearGroup.det
 
 /-- `SL₂(ℤ̂)` is a closed subgroup of `GL₂(ℤ̂)`. -/
 theorem isClosed_SL2Zhat : IsClosed (SL2Zhat : Set GL2Zhat) :=
-  isClosed_singleton.preimage continuous_det
+  isClosed_singleton.preimage GeneralLinearGroup.continuous_det
 
 instance normal_SL2Zhat : SL2Zhat.Normal :=
   (GeneralLinearGroup.det : GL2Zhat →* (Additive zHat.{0})ˣ).normal_ker
@@ -373,7 +353,7 @@ theorem proj_apply (ℓ : Nat.Primes) (g : GL2Zhat) (i j : Fin 2) :
 /-- Each `ℓ`-adic projection is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_proj (ℓ : Nat.Primes) : Continuous (proj ℓ) :=
-  continuous_glMap (zHat.continuous_component ℓ)
+  (zHat.continuous_component ℓ).generalLinearGroup_map
 
 /-- **Product decomposition of `GL₂(ℤ̂)`.** The Chinese remainder decomposition of `ℤ̂` induces a
 topological group isomorphism `GL₂(ℤ̂) ≃ₜ* ∀ ℓ : Nat.Primes, GL₂(ℤ_ℓ)`. -/
