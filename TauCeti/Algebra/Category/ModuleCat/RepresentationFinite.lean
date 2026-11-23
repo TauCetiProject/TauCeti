@@ -300,7 +300,7 @@ theorem skeletonFiniteIndecomposableModulesEquiv_toSkeleton_eq_toSkeleton_iff
     rw [skeletonFiniteIndecomposableModulesEquiv, Functor.objEquiv, Equiv.ofBijective_apply,
       Functor.mapSkeleton_obj_toSkeleton]
   rw [hM, ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso]
-  rfl
+  simp [congrFiniteIndecomposable]
 
 /-- The inverse of the correspondence induced by an equivalence of module categories is the
 correspondence induced by the inverse equivalence. -/
