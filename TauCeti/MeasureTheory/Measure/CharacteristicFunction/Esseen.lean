@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import TauCeti.Analysis.Bochner.CharFun.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Fejer
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
@@ -29,6 +28,8 @@ variables, whose characteristic function is a product.
 * M. Rudelson and R. Vershynin, *The Littlewood–Offord problem and invertibility of random
   matrices*, Advances in Mathematics 218 (2008), §4, where the inequality bounds the small-ball
   probability of a weighted sum through its arithmetic structure.
+* Mathlib's `MeasureTheory.integral_charFun_Icc`, whose interchange of an interval integral with
+  an integral against `μ` the Fubini step here adapts.
 -/
 
 public section
@@ -39,44 +40,15 @@ namespace MeasureTheory
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
-/-- The kernel `T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` when `|y| ≤ T⁻¹`, since then
-`|T * y / 2| ≤ 1 / 2` and `sinc` is at least `3 / 4` there. -/
-private theorem div_four_le_mul_sinc_sq {T y : ℝ} (hy : |y| ≤ T⁻¹) :
-    T / 4 ≤ T / 2 * sinc (T * y / 2) ^ 2 := by
-  rcases le_or_gt T 0 with hT | hT
-  · -- For `T ≤ 0` the hypothesis forces `T⁻¹ = 0`, hence `T = 0`.
-    have hT₀ : T = 0 := inv_eq_zero.1 (le_antisymm (inv_nonpos.2 hT) ((abs_nonneg y).trans hy))
-    simp [hT₀]
-  -- Multiplying `|y| ≤ T⁻¹` by `T > 0` gives `T * |y| ≤ 1`.
-  have hTy₁ : T * |y| ≤ 1 := by
-    simpa [hT.ne'] using mul_le_mul_of_nonneg_left hy hT.le
-  have hTy : |T * y / 2| ≤ 1 / 2 := by
-    rw [abs_div, abs_mul, abs_of_pos hT, abs_two]
-    linarith
-  have hsq : (T * y / 2) ^ 2 ≤ 1 / 4 := by
-    rw [← sq_abs]
-    nlinarith [abs_nonneg (T * y / 2)]
-  have hlow : 3 / 4 ≤ sinc (T * y / 2) := by
-    linarith [(abs_le.1 (Real.abs_sinc_sub_one_le (T * y / 2))).1]
-  have hsinc : 1 / 2 ≤ sinc (T * y / 2) ^ 2 := by nlinarith
-  calc T / 4 = T / 2 * (1 / 2) := by ring
-    _ ≤ T / 2 * sinc (T * y / 2) ^ 2 := by gcongr
-
-/-- The kernel `T / 2 * sinc (T * y / 2) ^ 2` is at most `T / 2` for `T ≥ 0`. -/
-private theorem mul_sinc_sq_le {T : ℝ} (hT : 0 ≤ T) (y : ℝ) :
-    T / 2 * sinc (T * y / 2) ^ 2 ≤ T / 2 := by
-  have hsq : sinc (T * y / 2) ^ 2 ≤ 1 := by
-    rw [← sq_abs]
-    exact pow_le_one₀ (abs_nonneg _) (Real.abs_sinc_le_one _)
-  exact mul_le_of_le_one_right (by positivity) hsq
-
-/-- Averaging the kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2` against `μ` averages the rotated
-characteristic function against the triangular weight on `[0, T]`, by Fubini's theorem. The
-Fubini step adapts the proof of Mathlib's `MeasureTheory.integral_charFun_Icc`, which swaps an
-interval integral with an integral against `μ` through `intervalIntegral_integral_swap`. -/
+/-- The integral of the kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2` against `μ` equals the
+integral over `[0, T]`, weighted by `1 - t / T`, of the real part of the characteristic function
+of `μ` at `t` after rotation by the phase `-t * v`. -/
 private theorem integral_mul_sinc_sq_eq (v T : ℝ) :
     ∫ x, T / 2 * sinc (T * (x - v) / 2) ^ 2 ∂μ =
       ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
+  -- Fubini's theorem, swapping the interval integral with the integral against `μ` through
+  -- `intervalIntegral_integral_swap`, as in the proof of Mathlib's
+  -- `MeasureTheory.integral_charFun_Icc`.
   have hint : Integrable (Function.uncurry fun t x : ℝ ↦ (1 - t / T) * Real.cos (t * (x - v)))
       ((volume.restrict (uIoc 0 T)).prod μ) := by
     have hw : Integrable (fun t : ℝ ↦ |1 - t / T|) (volume.restrict (uIoc 0 T)) :=
@@ -94,8 +66,9 @@ private theorem integral_mul_sinc_sq_eq (v T : ℝ) :
         simp only [integral_const_mul, TauCeti.integral_cos_mul_sub_eq_re]
 
 omit [IsFiniteMeasure μ] in
-/-- Against the triangular weight on `[0, T]`, the rotated characteristic function has a smaller
-average than the modulus of the characteristic function. -/
+/-- For `T > 0`, the integral over `[0, T]`, weighted by `1 - t / T`, of the real part of the
+characteristic function of `μ` at `t` after rotation by the phase `-t * v` is at most the
+unweighted integral of `‖charFun μ t‖` over `[0, T]`. -/
 private theorem integral_one_sub_div_mul_re_le {T : ℝ} (hT : 0 < T) (v : ℝ) :
     ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re ≤
       ∫ t in 0..T, ‖charFun μ t‖ := by
@@ -125,7 +98,7 @@ theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (h�
   have hK_int : Integrable K μ :=
     Integrable.of_bound (by fun_prop) (T / 2) (ae_of_all _ fun x ↦ by
       rw [Real.norm_of_nonneg (by positivity)]
-      exact mul_sinc_sq_le hT₀.le _)
+      exact TauCeti.mul_sinc_sq_le_div_two hT₀.le _)
   have hsymm : ∫ t in -T..T, ‖charFun μ t‖ = 2 * ∫ t in 0..T, ‖charFun μ t‖ := by
     rw [intervalIntegral.integral_eq_two_smul_of_even (fun t ↦ by
       rw [charFun_neg, Complex.norm_conj]), smul_eq_mul]
@@ -135,7 +108,7 @@ theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (h�
     _ ≤ 4 / T * ∫ x in closedBall v ε, K x ∂μ := by
         refine mul_le_mul_of_nonneg_left ?_ (by positivity)
         refine setIntegral_mono_on integrableOn_const hK_int.integrableOn
-          measurableSet_closedBall fun x hx ↦ div_four_le_mul_sinc_sq ?_
+          measurableSet_closedBall fun x hx ↦ TauCeti.div_four_le_mul_sinc_sq ?_
         simpa [hT, Real.dist_eq] using Metric.mem_closedBall.mp hx
     _ ≤ 4 / T * ∫ x, K x ∂μ := by
         refine mul_le_mul_of_nonneg_left ?_ (by positivity)

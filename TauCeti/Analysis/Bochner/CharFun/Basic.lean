@@ -15,10 +15,10 @@ measure (`TauCeti.integrable_exp_inner_mul_I`). The characteristic function of a
 not finite is zero (`TauCeti.charFun_of_not_isFiniteMeasure`). On a real inner product space whose
 open sets are measurable (`[OpensMeasurableSpace E]`), the characteristic function of every
 measure is continuous (`TauCeti.continuous_charFun_of_opensMeasurableSpace`). On the real line,
-the average of `cos (t * (x - v))` over a finite measure is the real part of its characteristic
-function at `t`, rotated by the phase `-t * v` (`TauCeti.integral_cos_mul_sub_eq_re`). These facts
-support integral manipulations in characteristic-function formulas and positive-definiteness
-proofs.
+the integral of `cos (t * (x - v))` against a finite measure is the real part of its
+characteristic function at `t` after rotation by the phase `-t * v`
+(`TauCeti.integral_cos_mul_sub_eq_re`). These facts support integral manipulations in
+characteristic-function formulas and positive-definiteness proofs.
 -/
 
 public section
@@ -78,21 +78,21 @@ section Real
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
-/-- The average of `cos (t * (x - v))` over a finite measure `μ` on `ℝ` is the real part of the
-characteristic function at `t`, rotated by the phase `-t * v`. The rotation comes from translating
-`μ` by `-v` (Mathlib's `MeasureTheory.charFun_map_add_const`). -/
+/-- The integral of `cos (t * (x - v))` against a finite measure `μ` on `ℝ` is the real part of
+the characteristic function of `μ` at `t` after rotation by the phase `-t * v`. -/
 theorem integral_cos_mul_sub_eq_re (v t : ℝ) :
     ∫ x, Real.cos (t * (x - v)) ∂μ = (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
-  have hint : Integrable (fun x : ℝ ↦ cexp (↑(t * (x - v)) * I)) μ :=
-    Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ by rw [norm_exp_ofReal_mul_I])
-  have hshift : ∫ x, cexp (↑(t * (x - v)) * I) ∂μ = cexp (↑(-(t * v)) * I) * charFun μ t :=
-    calc ∫ x, cexp (↑(t * (x - v)) * I) ∂μ = charFun (μ.map (· + -v)) t := by
-          rw [charFun_apply_real, integral_map (by fun_prop) (by fun_prop)]
-          simp [sub_eq_add_neg]
-      _ = cexp (↑(-(t * v)) * I) * charFun μ t := by
-          rw [charFun_map_add_const, Real.inner_apply, neg_mul, mul_comm v t, mul_comm]
-  rw [← hshift, ← RCLike.re_eq_complex_re, ← integral_re hint]
+  -- Translating `μ` by `-v` rotates its characteristic function by the phase `-t * v`
+  -- (Mathlib's `MeasureTheory.charFun_map_add_const`).
+  have hmap : ∫ x, Real.cos (t * (x - v)) ∂μ = ∫ y, Real.cos (t * y) ∂(μ.map (· + -v)) := by
+    rw [integral_map (by fun_prop) (by fun_prop)]
+    simp [sub_eq_add_neg]
+  have hchar : charFun (μ.map (· + -v)) t = cexp (↑(-(t * v)) * I) * charFun μ t := by
+    simp [charFun_map_add_const, mul_comm]
+  rw [hmap, ← hchar, charFun_apply, ← RCLike.re_eq_complex_re,
+    ← integral_re (integrable_exp_inner_mul_I t)]
   simp only [RCLike.re_eq_complex_re, exp_ofReal_mul_I_re]
+  simp
 
 end Real
 

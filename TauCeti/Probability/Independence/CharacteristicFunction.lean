@@ -88,8 +88,9 @@ theorem iIndepFun.measureReal_abs_finsetSum_mul_sub_le_le_integral_prod_norm_cha
     (hmeas : ∀ i ∈ s, AEMeasurable (ξ i) P) (a : ι → ℝ) (v : ℝ) {ε : ℝ} (hε : 0 < ε) :
     P.real {ω | |∑ i ∈ s, a i * ξ i ω - v| ≤ ε} ≤
       2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ∏ i ∈ s, ‖charFun (P.map (ξ i)) (a i * t)‖ := by
-  have hX : iIndepFun (s.restrict fun i ω ↦ a i * ξ i ω) P :=
-    hξ.comp (fun i x ↦ a i * x) fun i ↦ measurable_const_mul (a i)
+  have hX : iIndepFun (s.restrict fun i ω ↦ a i * ξ i ω) P := by
+    simpa [Finset.restrict_def, Function.comp_def] using
+      hξ.comp (fun i x ↦ a i * x) fun i ↦ measurable_const_mul (a i)
   refine (hX.measureReal_abs_finsetSum_sub_le_le_integral_prod_norm_charFun
     (fun i hi ↦ (hmeas i hi).const_mul (a i)) v hε).trans_eq ?_
   refine congrArg (2 * ε * ·) (intervalIntegral.integral_congr fun t _ ↦
