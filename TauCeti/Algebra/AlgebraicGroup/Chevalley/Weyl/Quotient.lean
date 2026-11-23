@@ -65,8 +65,9 @@ private theorem coe_list_prod_simpleLift (l : List (Fin t.rank)) :
 private theorem mk_list_prod_simpleLift (l : List (Fin t.rank)) :
     (QuotientGroup.mk (l.map (D.simpleLift A)).prod : Q) =
       (l.map (D.simpleClass A)).prod := by
-  rw [← QuotientGroup.mk'_apply, map_list_prod, List.map_map]
-  rfl
+  rw [← QuotientGroup.mk'_apply, map_list_prod, List.map_map, QuotientGroup.coe_mk']
+  unfold simpleClass
+  simp only [Function.comp_def]
 
 private theorem simpleClass_mul_self (i : Fin t.rank) :
     D.simpleClass A i * D.simpleClass A i = 1 := by
