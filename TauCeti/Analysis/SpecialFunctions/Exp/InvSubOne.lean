@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # The function `(exp t - 1)⁻¹`
@@ -91,25 +92,20 @@ section Field
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
   [CompleteSpace 𝕜]
 
-private theorem exp_add_self_field (x y : 𝕜) : exp (x + y) = exp x * exp y :=
-  exp_add_of_mem_ball (𝕂 := 𝕜) (𝔸 := 𝕜)
-    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
-    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
-
 /-- Factoring out `NormedSpace.exp z` rewrites `exp z - 1` as `exp z * (1 - exp (-z))`. -/
 theorem exp_sub_one_eq_exp_mul_one_sub_exp_neg (z : 𝕜) :
     exp z - 1 = exp z * (1 - exp (-z)) := by
-  rw [mul_sub, mul_one, ← exp_add_self_field, add_neg_cancel, exp_zero]
+  rw [mul_sub, mul_one, ← exp_add_of_continuousSMul, add_neg_cancel, exp_zero]
 
 /-- Rewriting `exp (-c * z) / (1 - exp (-z))` with denominator `exp z - 1`. -/
 theorem exp_neg_mul_div_one_sub_exp_neg (c z : 𝕜) :
     exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1) := by
   have hnum : exp z * exp (-c * z) = exp ((1 - c) * z) := by
-    rw [← exp_add_self_field]
+    rw [← exp_add_of_continuousSMul]
     congr 1
     ring
   have hne : exp z ≠ 0 :=
-    left_ne_zero_of_mul_eq_one (by rw [← exp_add_self_field z (-z), add_neg_cancel, exp_zero])
+    (isUnit_exp_of_mem_ball ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)).ne_zero
   rw [exp_sub_one_eq_exp_mul_one_sub_exp_neg, ← hnum, mul_div_mul_left _ _ hne]
 
 /-- Coefficient-free specialization of `exp_neg_mul_div_one_sub_exp_neg`:

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.Analysis.MellinTransform.ExpKernel
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Series
 import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne

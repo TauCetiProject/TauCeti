@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Divided differences of the real and complex exponential
@@ -34,27 +35,6 @@ open scoped ContDiff
 
 namespace NormedSpace
 
-private theorem exp_add_self_field {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
-    [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] (x y : 𝕜) : exp (x + y) = exp x * exp y :=
-  exp_add_of_mem_ball (𝕂 := 𝕜) (𝔸 := 𝕜)
-    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
-    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
-
-private theorem hasDerivAt_exp_zero_field {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
-    [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] : HasDerivAt (exp : 𝕜 → 𝕜) 1 0 := by
-  have h := (exp_hasFPowerSeriesAt_zero (𝕂 := 𝕜) (𝔸 := 𝕜)).hasDerivAt
-  rwa [expSeries_apply_eq, Nat.factorial_one, Nat.cast_one, inv_one, pow_one, one_smul] at h
-
-private theorem hasDerivAt_exp_field {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
-    [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] (x : 𝕜) : HasDerivAt (exp : 𝕜 → 𝕜) (exp x) x := by
-  have h1 : HasDerivAt (fun y : 𝕜 => exp (x + y)) (exp x) 0 := by
-    simpa only [exp_add_self_field, mul_one] using hasDerivAt_exp_zero_field.const_mul (exp x)
-  have h2 : HasDerivAt (fun y : 𝕜 => y - x) 1 x := (hasDerivAt_id' x).sub_const x
-  have h3 : HasDerivAt (fun y : 𝕜 => exp (x + (y - x))) (exp x * 1) x :=
-    HasDerivAt.comp x (h₂ := fun y : 𝕜 => exp (x + y)) (h := fun y : 𝕜 => y - x)
-      (by simpa only [sub_self] using h1) h2
-  simpa only [add_sub_cancel, mul_one] using h3
-
 /-- Translating the divided difference of `NormedSpace.exp` to zero extracts the factor
 `NormedSpace.exp a`. -/
 theorem dslope_exp_eq_exp_mul_dslope_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
@@ -62,11 +42,12 @@ theorem dslope_exp_eq_exp_mul_dslope_zero {𝕜 : Type*} [NontriviallyNormedFiel
     dslope (exp : 𝕜 → 𝕜) a b = exp a * dslope (exp : 𝕜 → 𝕜) 0 (b - a) := by
   by_cases hab : b = a
   · subst hab
-    simp [dslope_same, (hasDerivAt_exp_field b).deriv, (hasDerivAt_exp_zero_field (𝕜 := 𝕜)).deriv]
+    simp [dslope_same, (hasDerivAt_exp_of_continuousSMul b).deriv,
+      (hasDerivAt_exp_of_continuousSMul (0 : 𝕜)).deriv]
   · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
     rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
     simp only [sub_zero, exp_zero]
-    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add_self_field, add_sub_cancel]
+    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add_of_continuousSMul, add_sub_cancel]
 
 end NormedSpace
 

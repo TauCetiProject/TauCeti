@@ -62,11 +62,10 @@ theorem AnalyticAt.dslope_snd {f : E × 𝕜 → F} {x₀ : E} {z₀ w₀ : 𝕜
     rintro ⟨x, w⟩ ⟨hx, hw⟩
     have hrel : ∀ y ∈ V, f (x, y) - f (x, w₀) = (y - w₀) • H (x, y) := fun y hy ↦
       (hUV (Set.mk_mem_prod hx hy)).1
-    symm
-    refine TauCeti.dslope_eq_of_factorization ?_
-      ⟨fun _ ↦ eventually_of_mem hV hrel, fun _ ↦ hrel w hw⟩
-    rintro rfl
-    exact ((hUV (Set.mk_mem_prod hx hw)).2.comp (analyticAt_const.prod analyticAt_id)).continuousAt
+    have hcont : ContinuousAt (fun y ↦ H (x, y)) w₀ :=
+      ((hUV (Set.mk_mem_prod hx (mem_of_mem_nhds hV))).2.comp
+        (analyticAt_const.prod analyticAt_id)).continuousAt
+    exact (TauCeti.eqOn_dslope_of_factorization hV hcont hrel hw).symm
   · have hfx₀ : AnalyticAt 𝕜 (fun p : E × 𝕜 ↦ f (p.1, z₀)) (x₀, w₀) :=
       hf₀.comp_of_eq (analyticAt_fst.prod analyticAt_const) rfl
     have hq : AnalyticAt 𝕜 (fun p : E × 𝕜 ↦ (p.2 - z₀)⁻¹ • (f p - f (p.1, z₀))) (x₀, w₀) :=

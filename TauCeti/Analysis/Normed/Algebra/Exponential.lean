@@ -38,6 +38,10 @@ Baker--Campbell--Hausdorff expansion.
   origin.
 * `NormedSpace.hasSum_exp_sub_one`: `exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
+* `NormedSpace.exp_add_of_continuousSMul`: `exp (x + y) = exp x * exp y` in a complete
+  characteristic-zero normed field with `[ContinuousSMul ℚ 𝕜]`.
+* `NormedSpace.hasDerivAt_exp_of_continuousSMul`: `exp` has derivative `exp x` at every point in
+  a complete characteristic-zero normed field with `[ContinuousSMul ℚ 𝕜]`.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
@@ -126,6 +130,25 @@ theorem exp_add_smul (a : A) (s t : 𝕂) :
   rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
 
 end Normed
+
+section Field
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+  [CompleteSpace 𝕜]
+
+/-- In a complete characteristic-zero normed field with continuous rational scalar multiplication,
+`NormedSpace.exp` turns addition into multiplication everywhere. -/
+theorem exp_add_of_continuousSMul (x y : 𝕜) : exp (x + y) = exp x * exp y :=
+  exp_add_of_mem_ball (𝕂 := 𝕜) (𝔸 := 𝕜)
+    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+
+/-- In a complete characteristic-zero normed field with continuous rational scalar multiplication,
+`NormedSpace.exp` has derivative `NormedSpace.exp x` at every point `x : 𝕜`. -/
+theorem hasDerivAt_exp_of_continuousSMul (x : 𝕜) : HasDerivAt (exp : 𝕜 → 𝕜) (exp x) x :=
+  _root_.hasDerivAt_exp_of_mem_ball ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+
+end Field
 
 end NormedSpace
 

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Normed.Algebra.Exponential
 
@@ -183,10 +182,7 @@ theorem oneSubExpNegDivSelf_eq_dslope_exp_zero_neg {𝕜 : Type*} [NontriviallyN
     [CharZero 𝕜] [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] (z : 𝕜) :
     oneSubExpNegDivSelf 𝕜 z = dslope (exp : 𝕜 → 𝕜) 0 (-z) := by
   rcases eq_or_ne z 0 with rfl | hz
-  · have hderiv : HasDerivAt (exp : 𝕜 → 𝕜) 1 0 := by
-      have h := (exp_hasFPowerSeriesAt_zero (𝕂 := 𝕜) (𝔸 := 𝕜)).hasDerivAt
-      rwa [expSeries_apply_eq, Nat.factorial_one, Nat.cast_one, inv_one, pow_one, one_smul] at h
-    simp [dslope_same, hderiv.deriv]
+  · simp [dslope_same, (hasDerivAt_exp_of_continuousSMul (0 : 𝕜)).deriv]
   · apply mul_left_cancel₀ (neg_ne_zero.mpr hz)
     have h1 : (-z) * oneSubExpNegDivSelf 𝕜 z = exp (-z) - 1 := by
       have h := mul_oneSubExpNegDivSelf (𝕂 := 𝕜) z

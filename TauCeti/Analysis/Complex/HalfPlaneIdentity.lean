@@ -7,17 +7,20 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Analytic.Uniqueness
 
 /-!
-# Identity theorems on right half-planes and punctured planes
+# Identity theorems for holomorphic functions on complex domains
 
-Functions holomorphic on a right half-plane `Re s > a` or on a punctured complex plane `{w}ᶜ`
-that agree on the intersection with `{s | b < s.re}` agree throughout their domain, by
-`DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq`. The codomain is any complete
-complex normed space.
+Two functions holomorphic on an open preconnected subset `U ⊆ ℂ` that agree near some point
+`z₀ ∈ U` agree throughout `U` (`DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq`).
+In particular, functions holomorphic on a right half-plane `Re s > a` or on a punctured complex
+plane `{w}ᶜ` that agree on the intersection with `{s | b < s.re}` agree throughout their domain.
+The codomain is any complex normed space (without requiring completeness).
 -/
 
 public section
@@ -25,10 +28,27 @@ public section
 open Set
 open scoped Topology
 
+/-- **Identity theorem on an open preconnected domain from local agreement.** Two functions
+holomorphic on an open preconnected set `U ⊆ ℂ` that agree near some point `z₀ ∈ U` agree
+throughout `U`. -/
+theorem DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f g : ℂ → E} {U : Set ℂ} {z₀ : ℂ}
+    (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hz₀ : z₀ ∈ U) (hfg : f =ᶠ[𝓝 z₀] g) : Set.EqOn f g U := by
+  let e : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL
+  have heq : Set.EqOn (e ∘ f) (e ∘ g) U :=
+    ((e.differentiable.comp_differentiableOn hf).analyticOnNhd
+      hU_open).eqOn_of_preconnected_of_eventuallyEq
+      ((e.differentiable.comp_differentiableOn hg).analyticOnNhd hU_open)
+      hU_conn hz₀ (hfg.mono fun z hz ↦ congrArg e hz)
+  exact fun z hz ↦ UniformSpace.Completion.coe_injective E (heq hz)
+
 /-- **Identity theorem on a right half-plane.** Two functions holomorphic on `Re s > a` that
 agree on `{s | a < s.re} ∩ {s | b < s.re}` agree throughout `Re s > a`. -/
 theorem DifferentiableOn.eqOn_of_eqOn_re_gt {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] {f g : ℂ → E} {a b : ℝ}
+    [NormedSpace ℂ E] {f g : ℂ → E} {a b : ℝ}
     (hf : DifferentiableOn ℂ f {s | a < s.re}) (hg : DifferentiableOn ℂ g {s | a < s.re})
     (hfg : EqOn f g ({s | a < s.re} ∩ {s | b < s.re})) : EqOn f g {s | a < s.re} := by
   have hopenA : IsOpen {s : ℂ | a < s.re} := isOpen_lt continuous_const Complex.continuous_re
@@ -47,7 +67,7 @@ theorem DifferentiableOn.eqOn_of_eqOn_re_gt {E : Type*} [NormedAddCommGroup E]
 /-- **Identity theorem on a punctured plane from a right half-plane.** Two functions holomorphic on
 `{w}ᶜ` that agree on `{w}ᶜ ∩ {s | b < s.re}` agree throughout `{w}ᶜ`. -/
 theorem DifferentiableOn.eqOn_compl_singleton_of_eqOn_re_gt {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] {f g : ℂ → E} {w : ℂ} {b : ℝ}
+    [NormedSpace ℂ E] {f g : ℂ → E} {w : ℂ} {b : ℝ}
     (hf : DifferentiableOn ℂ f {w}ᶜ) (hg : DifferentiableOn ℂ g {w}ᶜ)
     (hfg : EqOn f g ({w}ᶜ ∩ {s | b < s.re})) : EqOn f g {w}ᶜ := by
   have hopenB : IsOpen {s : ℂ | b < s.re} := isOpen_lt continuous_const Complex.continuous_re

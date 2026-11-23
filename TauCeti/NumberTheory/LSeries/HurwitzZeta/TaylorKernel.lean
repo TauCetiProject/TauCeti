@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.NumberTheory.BernoulliPolynomials
+public import TauCeti.Analysis.Analytic.TaylorSeries
 public import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Analytic.IteratedDeriv
-public import TauCeti.Analysis.Analytic.TaylorSeries
 import TauCeti.Analysis.Calculus.DSlope.Iterate
 import TauCeti.Analysis.Calculus.DSlope.Parametric
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
@@ -60,13 +60,17 @@ bounds on `‖∂_c^d (hurwitzTaylorQuot M c z)‖` and Taylor remainder bounds
   coefficient of `hurwitzKernel c` at `0` with `hurwitzBernoulliCoeff k c`.
 * `TauCeti.iterate_dslope_hurwitzKernel_zero`: `@[simp]` evaluation of the `k`-fold divided
   difference `(Function.swap dslope 0)^[k] (hurwitzKernel c) 0 = hurwitzBernoulliCoeff k c`.
-* `TauCeti.hurwitzTaylorQuot` and `TauCeti.hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot`:
-  jointly analytic iterated-`dslope` remainder quotient and exact Taylor decomposition.
+* `TauCeti.hurwitzTaylorQuot`, `TauCeti.hurwitzTaylorQuot_of_ne_zero`,
+  `TauCeti.hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot`, and
+  `TauCeti.analyticAt_hurwitzTaylorQuot_ofReal`: jointly analytic iterated-`dslope` remainder
+  quotient, away-from-zero quotient formula, exact Taylor decomposition, and real-axis analyticity.
 * `TauCeti.exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le`,
   `TauCeti.exists_norm_hurwitzTaylorQuot_le`,
+  `TauCeti.exists_norm_hurwitzTaylorQuot_le_Icc`,
   `TauCeti.exists_norm_iteratedDeriv_left_hurwitzKernel_sub_sum_le`, and
   `TauCeti.exists_norm_hurwitzKernel_sub_sum_le`: compact-uniform Taylor quotient and remainder
-  estimates on compact subsets of `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`.
+  estimates on compact subsets of `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}` and
+  `K ×ˢ Icc 0 1`.
 
 ## References
 
@@ -260,13 +264,12 @@ theorem analyticOnNhd_hurwitzTaylorQuot (M : ℕ) :
 theorem hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot (M : ℕ) (c z : ℂ) :
     hurwitzKernel c z - ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k c * z ^ k =
       z ^ (M + 1) * hurwitzTaylorQuot M c z := by
-  have h := (analyticAt_hurwitzKernel_zero c)
-    |>.sub_sum_inv_factorial_smul_iteratedDeriv_eq_pow_smul_iterate_dslope (M + 1) z
-  simp_rw [
-    ← (analyticAt_hurwitzKernel_zero c).coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv,
-    coeff_taylorSeries_hurwitzKernel_zero] at h
-  simpa only [hurwitzTaylorQuot, sub_zero, smul_eq_mul,
-    mul_comm _ (hurwitzBernoulliCoeff _ c)] using h
+  have h := TauCeti.sum_add_pow_sub_smul_iterate_dslope (hurwitzKernel c) 0 z (M + 1)
+  simp only [sub_zero, smul_eq_mul, iterate_dslope_hurwitzKernel_zero] at h
+  have hsum : ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k c * z ^ k =
+      ∑ j ∈ Finset.range (M + 1), z ^ j * hurwitzBernoulliCoeff j c :=
+    Finset.sum_congr rfl fun _ _ => mul_comm _ _
+  rw [hurwitzTaylorQuot_def, hsum, ← h, add_sub_cancel_left]
 
 /-- At `z = 0`, the order-`M` Taylor remainder quotient equals the next Taylor coefficient
 `hurwitzBernoulliCoeff (M + 1) c`. -/
@@ -275,15 +278,23 @@ theorem hurwitzTaylorQuot_zero_right (M : ℕ) (c : ℂ) :
     hurwitzTaylorQuot M c 0 = hurwitzBernoulliCoeff (M + 1) c :=
   iterate_dslope_hurwitzKernel_zero (M + 1) c
 
+/-- Away from `z = 0`, `hurwitzTaylorQuot M c z` is the order-`M` Taylor remainder divided by
+`z ^ (M + 1)`. -/
+theorem hurwitzTaylorQuot_of_ne_zero (M : ℕ) (c : ℂ) {z : ℂ} (hz : z ≠ 0) :
+    hurwitzTaylorQuot M c z =
+      (hurwitzKernel c z -
+        ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k c * z ^ k) / z ^ (M + 1) := by
+  rw [hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot,
+    mul_div_cancel_left₀ _ (pow_ne_zero (M + 1) hz)]
+
 /-- Step relation between consecutive Taylor remainder quotients. -/
 theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c z : ℂ) :
     hurwitzTaylorQuot M c z =
       hurwitzBernoulliCoeff (M + 1) c + z * hurwitzTaylorQuot (M + 1) c z := by
-  have h := (analyticAt_hurwitzKernel_zero c).iterate_dslope_eq_inv_factorial_smul_add_sub_smul_succ
-    (M + 1) z
-  rw [← (analyticAt_hurwitzKernel_zero c).coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv,
-    coeff_taylorSeries_hurwitzKernel_zero] at h
-  simpa only [hurwitzTaylorQuot, sub_zero, smul_eq_mul] using h
+  have h := eq_add_of_sub_eq'
+    (sub_smul_dslope ((Function.swap dslope (0 : ℂ))^[M + 1] (hurwitzKernel c)) 0 z).symm
+  simpa only [sub_zero, smul_eq_mul, iterate_dslope_hurwitzKernel_zero,
+    Function.iterate_succ_apply', hurwitzTaylorQuot_def] using h
 
 /-- `(c, z) ↦ iteratedDeriv d (fun w => hurwitzTaylorQuot M w z) c` is jointly analytic on
 `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
@@ -318,6 +329,26 @@ theorem exists_norm_hurwitzTaylorQuot_le {S : Set (ℂ × ℂ)} (hS : IsCompact 
     ∃ B ≥ 0, ∀ p ∈ S, ‖hurwitzTaylorQuot M p.1 p.2‖ ≤ B := by
   obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le hS hS_sub M 0
   exact ⟨B, hB0, fun p hp => by simpa using hB p hp⟩
+
+private theorem ofReal_snd_mem_dslope_exp_ne_zero (c : ℂ) (t : ℝ) :
+    (c, (t : ℂ)) ∈ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := by
+  simpa using Complex.dslope_exp_ofReal_ne_zero 0 (-t)
+
+/-- At any `(c, (t : ℂ))` with real `t`, `hurwitzTaylorQuot M` is jointly analytic. -/
+theorem analyticAt_hurwitzTaylorQuot_ofReal (M : ℕ) (c : ℂ) (t : ℝ) :
+    AnalyticAt ℂ (fun p : ℂ × ℂ => hurwitzTaylorQuot M p.1 p.2) (c, t) :=
+  analyticOnNhd_hurwitzTaylorQuot M (c, t) (ofReal_snd_mem_dslope_exp_ne_zero c t)
+
+/-- Uniform bound for `‖hurwitzTaylorQuot M c t‖` on `K × [0, 1]` for any compact `K ⊆ ℂ`. -/
+theorem exists_norm_hurwitzTaylorQuot_le_Icc {K : Set ℂ} (hK : IsCompact K) (M : ℕ) :
+    ∃ B ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, ‖hurwitzTaylorQuot M c t‖ ≤ B := by
+  let S : Set (ℂ × ℂ) := K ×ˢ (Complex.ofReal '' Icc (0 : ℝ) 1)
+  have hS_comp : IsCompact S := hK.prod (isCompact_Icc.image continuous_ofReal)
+  have hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := by
+    rintro ⟨c, _⟩ ⟨_, t, _, rfl⟩
+    exact ofReal_snd_mem_dslope_exp_ne_zero c t
+  obtain ⟨B, hB0, hB⟩ := exists_norm_hurwitzTaylorQuot_le hS_comp hS_sub M
+  exact ⟨B, hB0, fun c hc t ht => hB (c, t) ⟨hc, t, ht, rfl⟩⟩
 
 /-- Compact-uniform Taylor remainder estimate on a compact subset `S` of the nonvanishing locus
 after any fixed order `d` of differentiation in the parameter `c`. -/
