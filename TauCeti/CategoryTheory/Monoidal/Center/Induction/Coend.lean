@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.End
-public import Mathlib.CategoryTheory.Monoidal.Rigid.Functor
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.End
+import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 import TauCeti.CategoryTheory.Semisimple.Multiplicity
 
 /-!
@@ -53,12 +52,12 @@ adjunction `Center.forget C ⊣ Center.induction k C` (its dual left adjunction
 * `CategoryTheory.Center.coendι_comp_biproduct_desc` and
   `CategoryTheory.Center.inductionObj_hom_ext_coendι`: the universal coend descent through
   `biproduct.desc` and uniqueness principle in `C`;
-* `CategoryTheory.Center.inductionBifunctor`, `CategoryTheory.Center.inductionCowedge`,
+* `CategoryTheory.Center.inductionCowedge`,
   `CategoryTheory.Center.isColimitInductionCowedge`,
   `CategoryTheory.Center.hasCoend_inductionBifunctor`, and
-  `CategoryTheory.Center.inductionObjIsoCoend`: the bundled bifunctor `(Y', Y) ↦ Y ⊗ X ⊗ Y'ᘁ`,
-  its cowedge on `inductionObj X`, its `IsColimit` and `HasCoend` witnesses, and its canonical
-  comparison isomorphism with Mathlib's `Limits.coend`.
+  `CategoryTheory.Center.inductionObjIsoCoend`: the cowedge for `inductionBifunctor X` on
+  `inductionObj X`, its `IsColimit` and `HasCoend` witnesses, and its canonical comparison
+  isomorphism with Mathlib's `Limits.coend`.
 
 ## References
 
@@ -184,6 +183,24 @@ private theorem coendιAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [F
 
 end CoendCowedge
 
+section SummandTransport
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+
+private def summandTransport (X : C) {Y Z : C} (u : Y ≅ Z) :
+    Y ⊗ X ⊗ Yᘁ ≅ Z ⊗ X ⊗ Zᘁ :=
+  whiskerRightIso u (X ⊗ Yᘁ) ≪≫ whiskerLeftIso Z (whiskerLeftIso X u.rightAdjointMate.symm)
+
+private theorem summandTransport_hom (X : C) {Y Z : C} (u : Y ≅ Z) :
+    (summandTransport X u).hom = u.hom ▷ (X ⊗ Yᘁ) ≫ Z ◁ X ◁ (u.inv)ᘁ := by
+  simp [summandTransport]
+
+private theorem summandTransport_inv (X : C) {Y Z : C} (u : Y ≅ Z) :
+    (summandTransport X u).inv = Z ◁ X ◁ (u.hom)ᘁ ≫ u.inv ▷ (X ⊗ Yᘁ) := by
+  simp [summandTransport]
+
+end SummandTransport
+
 section Coendι
 
 variable (k : Type w) [Field k] [IsAlgClosed k]
@@ -229,7 +246,7 @@ private theorem exists_inductionCoendι_repr_iso (X : C) (S : SimpleClasses C) :
     ∃ (R : SimpleClasses C) (u : S.repr ≅ R.repr),
       R = S ∧
       inductionCoendι X S.repr =
-        u.hom ▷ (X ⊗ S.reprᘁ) ≫ R.repr ◁ X ◁ (u.inv)ᘁ ≫ biproduct.ι (inductionSummand X) R := by
+        (summandTransport X u).hom ≫ biproduct.ι (inductionSummand X) R := by
   obtain ⟨i, hi, hcls, u, hu_hom, hu_inv⟩ :=
     IsFiniteSemisimpleCategory.exists_chosenSimple_decompIso S.repr
   refine ⟨SimpleClasses.classOf (IsFiniteSemisimpleCategory.chosenSimpleFamily S.repr i), u,
@@ -237,7 +254,7 @@ private theorem exists_inductionCoendι_repr_iso (X : C) (S : SimpleClasses C) :
   rw [inductionCoendι_def,
     Finset.sum_eq_single i (fun j _ hj ↦ absurd (hi j) hj)
       (fun hi' ↦ absurd (Finset.mem_univ i) hi'),
-    ← hu_hom, ← hu_inv]
+    ← hu_hom, ← hu_inv, summandTransport_hom, Category.assoc]
 
 include k in
 /-- On the chosen representative `S.repr` of a simple class `S`, `inductionCoendι` is the biproduct
@@ -246,9 +263,10 @@ inclusion of the `S`-summand. -/
 theorem inductionCoendι_repr (X : C) (S : SimpleClasses C) :
     inductionCoendι X S.repr = biproduct.ι (inductionSummand X) S := by
   obtain ⟨R, u, _, hu⟩ := exists_inductionCoendι_repr_iso X S
-  rw [hu, ← whisker_exchange_assoc, repr_codinatural k X u.hom, ← whiskerLeft_comp_assoc,
-    ← whiskerLeft_comp, ← comp_rightAdjointMate, u.hom_inv_id, rightAdjointMate_id,
-    whiskerLeft_id, whiskerLeft_id, Category.id_comp]
+  rw [hu, summandTransport_hom, Category.assoc, ← whisker_exchange_assoc,
+    repr_codinatural k X u.hom, ← whiskerLeft_comp_assoc, ← whiskerLeft_comp,
+    ← comp_rightAdjointMate, u.hom_inv_id, rightAdjointMate_id, whiskerLeft_id,
+    whiskerLeft_id, Category.id_comp]
 
 omit [MonoidalPreadditive C] in
 /-- Naturality of `inductionCoendι` in `X` with respect to `inductionMap f`. -/
@@ -268,22 +286,23 @@ projection `inductionEndπ X S`. -/
 theorem inductionCoendι_comp_inductionEndπ_of_simple (X S : C) [Simple S] :
     inductionCoendι X S ≫ inductionEndπ X S = 𝟙 (S ⊗ X ⊗ Sᘁ) := by
   let e : S ≅ (SimpleClasses.classOf S).repr := (SimpleClasses.classOfReprIso S).symm
+  let t := summandTransport X e
   have hcoend : inductionCoendι X S =
-      S ◁ X ◁ (e.inv)ᘁ ≫ e.hom ▷ (X ⊗ (SimpleClasses.classOf S).reprᘁ) ≫
-        biproduct.ι (inductionSummand X) (SimpleClasses.classOf S) := by
-    rw [← inductionCoendι_repr k X (SimpleClasses.classOf S),
+      t.hom ≫ biproduct.ι (inductionSummand X) (SimpleClasses.classOf S) := by
+    rw [← inductionCoendι_repr k X (SimpleClasses.classOf S)]
+    dsimp only [t]
+    rw [summandTransport_hom, Category.assoc, ← whisker_exchange_assoc,
       inductionCoendι_dinatural k X e.hom, ← whiskerLeft_comp_assoc, ← whiskerLeft_comp,
       ← comp_rightAdjointMate, Iso.hom_inv_id, rightAdjointMate_id, whiskerLeft_id,
       whiskerLeft_id, Category.id_comp]
   have hend : inductionEndπ X S =
-      inductionEndπ X (SimpleClasses.classOf S).repr ≫ e.inv ▷ (X ⊗ _) ≫ S ◁ X ◁ (e.hom)ᘁ := by
-    rw [inductionEndπ_dinatural_assoc k X e.inv, ← whiskerLeft_comp, ← whiskerLeft_comp,
-      ← comp_rightAdjointMate, Iso.hom_inv_id, rightAdjointMate_id, whiskerLeft_id,
-      whiskerLeft_id, Category.comp_id]
-  rw [hcoend, hend, inductionEndπ_repr k X (SimpleClasses.classOf S)]
-  simp only [Category.assoc, biproduct.ι_π_self_assoc, ← comp_whiskerRight_assoc, Iso.hom_inv_id,
-    id_whiskerRight, Category.id_comp, ← whiskerLeft_comp, ← comp_rightAdjointMate,
-    rightAdjointMate_id, whiskerLeft_id]
+      biproduct.π (inductionSummand X) (SimpleClasses.classOf S) ≫ t.inv := by
+    rw [← inductionEndπ_repr k X (SimpleClasses.classOf S)]
+    dsimp only [t]
+    rw [summandTransport_inv, whisker_exchange, inductionEndπ_dinatural_assoc k X e.inv,
+      ← whiskerLeft_comp, ← whiskerLeft_comp, ← comp_rightAdjointMate, Iso.hom_inv_id,
+      rightAdjointMate_id, whiskerLeft_id, whiskerLeft_id, Category.comp_id]
+  rw [hcoend, hend, Category.assoc, biproduct.ι_π_self_assoc, t.hom_inv_id]
 
 end Coendι
 
@@ -384,17 +403,8 @@ theorem inductionObj_map_hom_ext_coendι {D : Type*} [Category* D] [HasZeroMorph
   refine inductionObj_map_hom_ext_ι fun S ↦ ?_
   obtain ⟨R, u, hR, hu⟩ := exists_inductionCoendι_repr_iso X S
   have hS := h S.repr
-  rw [hu] at hS
-  have hcancel :
-      (R.repr ◁ X ◁ (u.hom)ᘁ ≫ u.inv ▷ (X ⊗ S.reprᘁ)) ≫
-        u.hom ▷ (X ⊗ S.reprᘁ) ≫ R.repr ◁ X ◁ (u.inv)ᘁ ≫ biproduct.ι (inductionSummand X) R =
-      biproduct.ι (inductionSummand X) R := by
-    simp only [Category.assoc, ← comp_whiskerRight_assoc, u.inv_hom_id, id_whiskerRight,
-      Category.id_comp, ← whiskerLeft_comp_assoc, ← whiskerLeft_comp, ← comp_rightAdjointMate,
-      rightAdjointMate_id, whiskerLeft_id]
-  have hR' := congrArg
-    (F.map (R.repr ◁ X ◁ (u.hom)ᘁ ≫ u.inv ▷ (X ⊗ S.reprᘁ)) ≫ ·) hS
-  rw [← F.map_comp_assoc, ← F.map_comp_assoc, hcancel] at hR'
+  rw [hu, F.map_comp_assoc, F.map_comp_assoc] at hS
+  have hR' := (cancel_epi (F.mapIso (summandTransport X u)).hom).1 hS
   exact hR ▸ hR'
 
 /-- Two morphisms out of `inductionObj X` agree once they agree after every coend coprojection
@@ -458,37 +468,6 @@ theorem coendι_comp_biproduct_desc {X W : C} (w : ∀ Y : C, Y ⊗ X ⊗ Yᘁ �
 end UniversalCoend
 
 section Coend
-
-section Bifunctor
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
-
-/-- The bifunctor `Cᵒᵖ ⥤ C ⥤ C` sending `(Y', Y)` to `Y ⊗ X ⊗ Y'ᘁ`, whose coend is
-`inductionObj X`. -/
-@[expose] def inductionBifunctor (X : C) : Cᵒᵖ ⥤ C ⥤ C :=
-  (rightDualFunctor C ⋙ unmopFunctor Cᵒᵖ).leftOp ⋙
-    tensorLeft X ⋙ (curriedTensor C).flip
-
-/-- The bifunctor `inductionBifunctor X` evaluates on `(op Y', Y)` to `Y ⊗ X ⊗ Y'ᘁ`. -/
-@[simp]
-theorem inductionBifunctor_obj_obj (X : C) (Y' : Cᵒᵖ) (Y : C) :
-    ((inductionBifunctor X).obj Y').obj Y = Y ⊗ X ⊗ Y'.unopᘁ :=
-  rfl
-
-/-- On covariant morphisms `f : Y₁ ⟶ Y₂`, `inductionBifunctor X` acts by `f ▷ (X ⊗ Y'ᘁ)`. -/
-@[simp]
-theorem inductionBifunctor_obj_map (X : C) (Y' : Cᵒᵖ) {Y₁ Y₂ : C} (f : Y₁ ⟶ Y₂) :
-    ((inductionBifunctor X).obj Y').map f = f ▷ (X ⊗ Y'.unopᘁ) :=
-  rfl
-
-/-- On contravariant morphisms `g : Y₁' ⟶ Y₂'`, `inductionBifunctor X` acts by
-`Y ◁ X ◁ g.unopᘁ`. -/
-@[simp]
-theorem inductionBifunctor_map_app (X : C) {Y₁' Y₂' : Cᵒᵖ} (g : Y₁' ⟶ Y₂') (Y : C) :
-    ((inductionBifunctor X).map g).app Y = Y ◁ X ◁ g.unopᘁ :=
-  rfl
-
-end Bifunctor
 
 section Cowedge
 

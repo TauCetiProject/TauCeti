@@ -91,6 +91,20 @@ private def classOfUnitRightDualIso :
   @Iso.rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) _
     (SimpleClasses.classOfReprIso (𝟙_ C)).symm
 
+omit [IsFiniteSemisimpleCategory C] in
+/-- Transporting the ordinary evaluation at `(classOf (𝟙_ C)).repr` along the composite isomorphism
+to `𝟙_ C` yields `𝟙_ C ◁ (classOfReprIso (𝟙_ C)).hom ≫ (ρ_ (𝟙_ C)).hom`. -/
+private theorem classOfUnitRightDual_evaluation :
+    let S₀ := SimpleClasses.classOf (𝟙_ C)
+    let i : S₀.reprᘁ ≅ 𝟙_ C := classOfUnitRightDualIso (C := C) ≪≫ rightDualUnitIso C
+    i.inv ▷ S₀.repr ≫ ε_ S₀.repr S₀.reprᘁ =
+      𝟙_ C ◁ (SimpleClasses.classOfReprIso (𝟙_ C)).hom ≫ (ρ_ (𝟙_ C)).hom := by
+  intro S₀ i
+  dsimp only [i, Iso.trans_inv, classOfUnitRightDualIso]
+  simp only [Iso.rightAdjointMate_inv, Iso.symm_inv, comp_whiskerRight, Category.assoc]
+  rw [@rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc,
+    rightDualUnitIso_inv_whiskerRight_evaluation]
+
 /-- On the representative `S₀.repr` of `SimpleClasses.classOf (𝟙_ C)`, the swapped evaluation
 `swapEval S₀.repr` agrees with the unit pairing transported along `classOfReprIso (𝟙_ C)`. -/
 private theorem swapEval_classOf_unit :
@@ -114,13 +128,10 @@ private theorem swapEval_classOf_unit :
     infer_instance
   have hp₂_comp : @ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂ ≫ ε_ S₀.repr S₀.reprᘁ =
       𝟙 (𝟙_ C) := by
-    rw [@exactPairingCongr_coevaluation C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀]
-    dsimp only [i, Iso.trans_inv, classOfUnitRightDualIso]
-    simp only [Iso.rightAdjointMate_inv, Iso.symm_inv, comp_whiskerRight, Category.assoc]
-    rw [@rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc, ← whiskerLeft_comp_assoc,
-      Iso.inv_hom_id, whiskerLeft_id, Category.id_comp,
-      rightDualUnitIso_inv_whiskerRight_evaluation, TauCeti.ExactPairing.unit_coevaluation,
-      Iso.inv_hom_id]
+    rw [@exactPairingCongr_coevaluation C _ _ S₀.reprᘁ (𝟙_ C) S₀.repr (𝟙_ C) exactPairingUnit i e₀,
+      Category.assoc, Category.assoc, classOfUnitRightDual_evaluation,
+      ← whiskerLeft_comp_assoc, Iso.inv_hom_id, whiskerLeft_id, Category.id_comp,
+      TauCeti.ExactPairing.unit_coevaluation, Iso.inv_hom_id]
   have hε_eq : ε_ S₀.repr S₀.reprᘁ = inv (@ExactPairing.coevaluation C _ _ S₀.reprᘁ S₀.repr p₂) :=
     IsIso.eq_inv_of_hom_inv_id hp₂_comp
   have hε_iso : IsIso (ε_ S₀.repr S₀.reprᘁ) := by
@@ -558,11 +569,8 @@ private theorem inductionMate_evaluation_classOf_unit (S : SimpleClasses C) :
   let e₀ := SimpleClasses.classOfReprIso (𝟙_ C)
   let u : 𝟙_ C ⟶ S₀.reprᘁ :=
     (rightDualUnitIso C).inv ≫ (classOfUnitRightDualIso (C := C)).inv
-  have hev : u ▷ S₀.repr ≫ ε_ S₀.repr S₀.reprᘁ = 𝟙_ C ◁ e₀.hom ≫ (ρ_ (𝟙_ C)).hom := by
-    dsimp only [u, classOfUnitRightDualIso]
-    simp only [Iso.rightAdjointMate_inv, Iso.symm_inv, comp_whiskerRight, Category.assoc]
-    rw [@rightAdjointMate_comp_evaluation]
-    rw [← whisker_exchange_assoc, rightDualUnitIso_inv_whiskerRight_evaluation]
+  have hev : u ▷ S₀.repr ≫ ε_ S₀.repr S₀.reprᘁ = 𝟙_ C ◁ e₀.hom ≫ (ρ_ (𝟙_ C)).hom :=
+    classOfUnitRightDual_evaluation
   rw [inductionMate_apply]
   calc _ = 𝟙 _ ⊗≫ (u ▷ (S.reprᘁ ⊗ 𝟙_ C) ≫ (S₀.reprᘁ : C) ◁ (S.reprᘁ : C) ◁ η_ S.repr S.reprᘁ) ⊗≫
             (S₀.reprᘁ : C) ◁ (ε_ S.repr S.reprᘁ ≫ e₀.inv) ▷ (S.reprᘁ : C) ⊗≫

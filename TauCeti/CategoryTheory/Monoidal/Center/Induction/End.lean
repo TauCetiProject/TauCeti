@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Shapes.End
+public import Mathlib.CategoryTheory.Monoidal.Rigid.Functor
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Basic
 import TauCeti.CategoryTheory.Semisimple.Multiplicity
 
@@ -46,7 +48,13 @@ adjunction `Center.forget C ⊣ Center.induction k C`.
   principles under an additive functor `F : C ⥤ D`;
 * `CategoryTheory.Center.inductionLift`, `CategoryTheory.Center.inductionLift_comp_endπ`, and
   `CategoryTheory.Center.inductionObj_hom_ext_endπ`: the universal end lift and uniqueness
-  principle in `C`.
+  principle in `C`;
+* `CategoryTheory.Center.inductionBifunctor`, `CategoryTheory.Center.inductionWedge`,
+  `CategoryTheory.Center.isLimitInductionWedge`,
+  `CategoryTheory.Center.hasEnd_inductionBifunctor`, and
+  `CategoryTheory.Center.inductionObjIsoEnd`: the bundled bifunctor `(Y', Y) ↦ Y ⊗ X ⊗ Y'ᘁ`,
+  its wedge on `inductionObj X`, its `IsLimit` and `HasEnd` witnesses, and its canonical
+  comparison isomorphism with Mathlib's `Limits.end_`.
 
 ## References
 
@@ -369,5 +377,116 @@ theorem inductionObj_hom_ext_endπ {W X : C}
   inductionObj_map_hom_ext_endπ k (F := 𝟭 C) h
 
 end UniversalEnd
+
+section End
+
+section Bifunctor
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+
+/-- The bifunctor `Cᵒᵖ ⥤ C ⥤ C` sending `(Y', Y)` to `Y ⊗ X ⊗ Y'ᘁ`, whose end and coend are
+both `inductionObj X`. -/
+@[expose] def inductionBifunctor (X : C) : Cᵒᵖ ⥤ C ⥤ C :=
+  (rightDualFunctor C ⋙ unmopFunctor Cᵒᵖ).leftOp ⋙
+    tensorLeft X ⋙ (curriedTensor C).flip
+
+/-- The bifunctor `inductionBifunctor X` evaluates on `(op Y', Y)` to `Y ⊗ X ⊗ Y'ᘁ`. -/
+@[simp]
+theorem inductionBifunctor_obj_obj (X : C) (Y' : Cᵒᵖ) (Y : C) :
+    ((inductionBifunctor X).obj Y').obj Y = Y ⊗ X ⊗ Y'.unopᘁ :=
+  rfl
+
+/-- On covariant morphisms `f : Y₁ ⟶ Y₂`, `inductionBifunctor X` acts by `f ▷ (X ⊗ Y'ᘁ)`. -/
+@[simp]
+theorem inductionBifunctor_obj_map (X : C) (Y' : Cᵒᵖ) {Y₁ Y₂ : C} (f : Y₁ ⟶ Y₂) :
+    ((inductionBifunctor X).obj Y').map f = f ▷ (X ⊗ Y'.unopᘁ) :=
+  rfl
+
+/-- On contravariant morphisms `g : Y₁' ⟶ Y₂'`, `inductionBifunctor X` acts by
+`Y ◁ X ◁ g.unopᘁ`. -/
+@[simp]
+theorem inductionBifunctor_map_app (X : C) {Y₁' Y₂' : Cᵒᵖ} (g : Y₁' ⟶ Y₂') (Y : C) :
+    ((inductionBifunctor X).map g).app Y = Y ◁ X ◁ g.unopᘁ :=
+  rfl
+
+end Bifunctor
+
+section Wedge
+
+variable (k : Type w) [Field k] [IsAlgClosed k]
+variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
+  [Linear k C] [MonoidalLinear k C] [RightRigidCategory C] [IsFiniteSemisimpleCategory C]
+  [Fintype (SimpleClasses C)] [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
+
+include k
+
+/-- The wedge for `inductionBifunctor X` with point `inductionObj X` and projections
+`inductionEndπ X`. -/
+@[expose] def inductionWedge (X : C) : Limits.Wedge (inductionBifunctor X) :=
+  Limits.Wedge.mk (inductionObj X) (inductionEndπ X) fun _ _ g ↦
+    inductionEndπ_dinatural k X g
+
+/-- The cone point of `inductionWedge k X` is `inductionObj X`. -/
+@[simp]
+theorem inductionWedge_pt (X : C) : (inductionWedge k X).pt = inductionObj X :=
+  rfl
+
+/-- The `Y`-projection of `inductionWedge k X` is `inductionEndπ X Y`. -/
+@[simp]
+theorem inductionWedge_ι (X Y : C) : (inductionWedge k X).ι Y = inductionEndπ X Y :=
+  rfl
+
+/-- `inductionWedge k X` is a limit wedge, realizing `inductionObj X` as the categorical end
+`∫_{Y ∈ C} Y ⊗ X ⊗ Yᘁ`. -/
+def isLimitInductionWedge (X : C) : Limits.IsLimit (inductionWedge k X) :=
+  Limits.Multifork.IsLimit.mk (inductionWedge k X)
+    (fun s ↦ inductionLift fun Y : C ↦ s.ι Y)
+    (fun s Y ↦ inductionLift_comp_endπ (fun Y' : C ↦ s.ι Y')
+      (fun {Y₁ Y₂ : C} (g : Y₁ ⟶ Y₂) ↦ Limits.Wedge.condition s g) Y)
+    (fun s m hm ↦ inductionObj_map_hom_ext (F := 𝟭 C) fun S ↦ by
+      have hmS : m ≫ biproduct.π (inductionSummand X) S = s.ι S.repr := by
+        rw [← inductionEndπ_repr k X S]
+        exact hm S.repr
+      have hlift : inductionLift (fun Y' : C ↦ s.ι Y') ≫
+          biproduct.π (inductionSummand X) S = s.ι S.repr :=
+        inductionLift_comp_π _ S
+      exact hmS.trans hlift.symm)
+
+omit [Fintype (SimpleClasses C)] in
+/-- `inductionBifunctor X` admits a categorical end. -/
+theorem hasEnd_inductionBifunctor [Finite (SimpleClasses C)] (X : C) :
+    Limits.HasEnd (inductionBifunctor X) := by
+  let := Fintype.ofFinite (SimpleClasses C)
+  exact Limits.HasLimit.mk ⟨inductionWedge k X, isLimitInductionWedge k X⟩
+
+/-- Canonical comparison isomorphism between `inductionObj X` and Mathlib's chosen end
+`Limits.end_ (inductionBifunctor X)`. -/
+def inductionObjIsoEnd (X : C) [Limits.HasEnd (inductionBifunctor X)] :
+    inductionObj X ≅ Limits.end_ (inductionBifunctor X) :=
+  (isLimitInductionWedge k X).conePointUniqueUpToIso (Limits.limit.isLimit _)
+
+/-- Composing the forward comparison isomorphism with Mathlib's chosen end projection
+`Limits.end_.π (inductionBifunctor X) Y` recovers `inductionEndπ X Y`. -/
+@[reassoc (attr := simp)]
+theorem inductionObjIsoEnd_hom_comp_end_π (X Y : C)
+    [Limits.HasEnd (inductionBifunctor X)] :
+    (inductionObjIsoEnd k X).hom ≫ Limits.end_.π (inductionBifunctor X) Y =
+      inductionEndπ X Y :=
+  (isLimitInductionWedge k X).conePointUniqueUpToIso_hom_comp
+    (Limits.limit.isLimit _) (Limits.WalkingMulticospan.left Y)
+
+/-- Composing the inverse comparison isomorphism with `inductionEndπ X Y` recovers Mathlib's
+chosen end projection `Limits.end_.π (inductionBifunctor X) Y`. -/
+@[reassoc (attr := simp)]
+theorem inductionObjIsoEnd_inv_comp_inductionEndπ (X Y : C)
+    [Limits.HasEnd (inductionBifunctor X)] :
+    (inductionObjIsoEnd k X).inv ≫ inductionEndπ X Y =
+      Limits.end_.π (inductionBifunctor X) Y :=
+  (isLimitInductionWedge k X).conePointUniqueUpToIso_inv_comp
+    (Limits.limit.isLimit _) (Limits.WalkingMulticospan.left Y)
+
+end Wedge
+
+end End
 
 end CategoryTheory.Center

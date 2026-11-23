@@ -438,6 +438,23 @@ private theorem endAlgEquivOfSimple_leftDim_mul_globalDim
   refine h.trans (Finset.sum_congr rfl fun Z _ ↦ ?_)
   rw [endAlgEquivOfSimple_tensorUnit_apply, leftDim_f]
 
+private theorem endAlgEquivOfSimple_globalDim_eq_sum
+    {D : Type*} [Category* D] [MonoidalCategory D] [RigidCategory D] [PivotalCategory D]
+    [Preadditive D] [Linear k D] [HasKernels D] [Simple (𝟙_ D)]
+    [FiniteDimensional k (𝟙_ D ⟶ 𝟙_ D)] [Fintype (SimpleClasses D)] :
+    endAlgEquivOfSimple k (𝟙_ D) (End.of (globalDim D)) =
+      ∑ S : SimpleClasses D,
+        endAlgEquivOfSimple k (𝟙_ D) (End.of (leftDim S.repr)) *
+          endAlgEquivOfSimple k (𝟙_ D) (End.of (rightDim S.repr)) := by
+  let φ : (𝟙_ D ⟶ 𝟙_ D) →+ k :=
+    { toFun := fun f ↦ endAlgEquivOfSimple k (𝟙_ D) (End.of f)
+      map_zero' := by simp [End.of_zero]
+      map_add' := fun f g ↦ by simp [End.of_add] }
+  have hsum := map_sum φ (fun S : SimpleClasses D ↦ leftDim S.repr ≫ rightDim S.repr) Finset.univ
+  rw [← globalDim_eq_sum_leftDim_comp_rightDim] at hsum
+  refine hsum.trans (Finset.sum_congr rfl fun S _ ↦ ?_)
+  simp [φ, End.of_comp, map_mul, mul_comm]
+
 variable (C)
 
 /-- **Global dimension of the Drinfeld centre (scalar form)**: whenever `Center C` is finite
@@ -447,32 +464,18 @@ theorem endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory
     [IsFiniteSemisimpleCategory (Center C)] [Fintype (SimpleClasses (Center C))] :
     endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (globalDim (Center C))) =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 := by
-  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
-  have : EssentiallySmall.{max u v} (Center C) :=
-    essentiallySmall_of_small_of_locallySmall (Center C)
   let e := endAlgEquivOfSimple k (𝟙_ C)
-  have hglobalC :
-      e (End.of (globalDim C)) =
-        ∑ S : SimpleClasses C, e (End.of (leftDim S.repr)) * e (End.of (rightDim S.repr)) := by
-    rw [globalDim_eq_sum_leftDimChar_smul k, End.of_smul, End.of_id, map_smul, map_one,
-      smul_eq_mul, mul_one]
-    refine Finset.sum_congr rfl fun S _ ↦ ?_
-    rw [← SplitK0.dual_of, SplitK0.leftDimChar_dual, SplitK0.leftDimChar_of,
-      SplitK0.rightDimChar_of]
-  rw [globalDim_eq_sum_leftDimChar_smul k, End.of_smul, End.of_id, map_smul, map_one, smul_eq_mul,
-    mul_one]
+  rw [endAlgEquivOfSimple_globalDim_eq_sum k (D := Center C)]
   calc (∑ Z : SimpleClasses (Center C),
-          SplitK0.leftDimChar k (Center C) (SplitK0.of Z.repr) *
-            SplitK0.leftDimChar k (Center C) (SplitK0.of (Z.repr)ᘁ))
+          endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (leftDim Z.repr)) *
+            endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (rightDim Z.repr)))
       = ∑ Z : SimpleClasses (Center C),
           e (End.of (leftDim Z.repr.1)) *
             (∑ S : SimpleClasses C,
               (simpleMultiplicities Z.repr.1 S : k) * e (End.of (rightDim S.repr))) := by
           refine Finset.sum_congr rfl fun Z _ ↦ ?_
-          rw [← SplitK0.dual_of, SplitK0.leftDimChar_dual, SplitK0.leftDimChar_of,
-            SplitK0.rightDimChar_of, endAlgEquivOfSimple_tensorUnit_apply,
-            endAlgEquivOfSimple_tensorUnit_apply, leftDim_f, rightDim_f,
-            endAlgEquivOfSimple_rightDim_eq_sum k Z.repr.1]
+          rw [endAlgEquivOfSimple_tensorUnit_apply, endAlgEquivOfSimple_tensorUnit_apply,
+            leftDim_f, rightDim_f, endAlgEquivOfSimple_rightDim_eq_sum k Z.repr.1]
     _ = ∑ S : SimpleClasses C,
           (∑ Z : SimpleClasses (Center C),
             (simpleMultiplicities Z.repr.1 S : k) * e (End.of (leftDim Z.repr.1))) *
@@ -492,7 +495,7 @@ theorem endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory
           refine Finset.sum_congr rfl fun S _ ↦ ?_
           ring
     _ = e (End.of (globalDim C)) ^ 2 := by
-          rw [← hglobalC, sq]
+          rw [← endAlgEquivOfSimple_globalDim_eq_sum k (D := C), sq]
 
 /-- **Global dimension of the Drinfeld centre (scalar multiplication form)**: whenever `Center C`
 is finite semisimple with finitely many simple classes, `globalDim (Center C)` acts on

@@ -28,7 +28,9 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
 ## Main results
 
 * `TauCeti.IsFiniteSemisimpleCategory`: every object is a finite biproduct of simple objects.
-* `TauCeti.IsFiniteSemisimpleCategory.chosenSimpleIndex`,
+* `TauCeti.IsFiniteSemisimpleCategory.SimpleDecomp`,
+  `TauCeti.IsFiniteSemisimpleCategory.chosenSimpleDecomp`,
+  `TauCeti.IsFiniteSemisimpleCategory.chosenSimpleIndex`,
   `TauCeti.IsFiniteSemisimpleCategory.chosenSimpleFamily`, and
   `TauCeti.IsFiniteSemisimpleCategory.chosenSimpleIso`: the chosen finite biproduct decomposition
   of an object into simple objects.
@@ -226,27 +228,50 @@ namespace IsFiniteSemisimpleCategory
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C]
 
+/-- Bundled finite biproduct decomposition of an object into simple objects. -/
+structure SimpleDecomp (Y : C) where
+  /-- Index type of the biproduct decomposition. -/
+  index : Type
+  /-- Finiteness witness for the index type. -/
+  fintype : Fintype index
+  /-- Family of objects indexing the biproduct summands. -/
+  family : index → C
+  /-- Simplicity witness for each summand in `family`. -/
+  simple : ∀ i, Simple (family i)
+  /-- Existence witness for the biproduct of `family`. -/
+  hasBiproduct : HasBiproduct family
+  /-- Isomorphism between `Y` and `⨁ family`. -/
+  iso : Y ≅ ⨁ family
+
+/-- Opaque chosen finite simple biproduct decomposition of `Y`. -/
+def chosenSimpleDecomp (Y : C) : SimpleDecomp Y :=
+  let h := exists_biproduct_simples Y
+  ⟨h.choose, h.choose_spec.choose, h.choose_spec.choose_spec.choose,
+    h.choose_spec.choose_spec.choose_spec.choose,
+    h.choose_spec.choose_spec.choose_spec.choose_spec.choose,
+    h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some⟩
+
 /-- Index type of the chosen simple biproduct decomposition of `Y`. -/
 @[expose] def chosenSimpleIndex (Y : C) : Type :=
-  (exists_biproduct_simples Y).choose
+  (chosenSimpleDecomp Y).index
 
 instance (Y : C) : Fintype (chosenSimpleIndex Y) :=
-  (exists_biproduct_simples Y).choose_spec.choose
+  (chosenSimpleDecomp Y).fintype
 
 /-- Family of simple objects in the chosen biproduct decomposition of `Y`. -/
 def chosenSimpleFamily (Y : C) : chosenSimpleIndex Y → C :=
-  (exists_biproduct_simples Y).choose_spec.choose_spec.choose
+  (chosenSimpleDecomp Y).family
 
 instance (Y : C) (i : chosenSimpleIndex Y) : Simple (chosenSimpleFamily Y i) :=
-  (exists_biproduct_simples Y).choose_spec.choose_spec.choose_spec.choose i
+  (chosenSimpleDecomp Y).simple i
 
 instance (Y : C) : HasBiproduct (chosenSimpleFamily Y) :=
-  (exists_biproduct_simples Y).choose_spec.choose_spec.choose_spec.choose_spec.choose
+  (chosenSimpleDecomp Y).hasBiproduct
 
 /-- Isomorphism `Y ≅ ⨁ chosenSimpleFamily Y` of the chosen simple biproduct decomposition of
 `Y`. -/
 def chosenSimpleIso (Y : C) : Y ≅ ⨁ chosenSimpleFamily Y :=
-  (exists_biproduct_simples Y).choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
+  (chosenSimpleDecomp Y).iso
 
 /-- Every object of a finite semisimple category is injective. -/
 instance injective (X : C) : Injective X := by
