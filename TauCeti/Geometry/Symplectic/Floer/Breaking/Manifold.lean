@@ -15,6 +15,8 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.MeasureTheory.Integral.Rectangle
+import TauCeti.MeasureTheory.Measure.Haar.Prod
 import TauCeti.Topology.Compactness.Compact
 /-!
 # Limits of translated Floer cylinders in a manifold
@@ -381,18 +383,10 @@ private theorem setLIntegral_Icc_prod_floerEnergyDensity_eq_zero (hω : ω.IsNon
     (ω.continuousOn_floerEnergyDensity hU hu hXs.continuousOn hXt.continuousOn)
   set W : Set (ℝ × ℝ) := Icc a b ×ˢ Icc 0 1
   have hWm : MeasurableSet W := measurableSet_Icc.prod measurableSet_Icc
-  -- The translation `z ↦ z + (c, 0)` preserves the Lebesgue measure of the plane and maps `W`
-  -- onto the window `[a + c, b + c] × [0, 1]`.
-  have hμ (c : ℝ) : MeasurePreserving (fun z : ℝ × ℝ ↦ z + ((c, 0) : ℝ × ℝ)) volume volume := by
-    have hfun : (fun z : ℝ × ℝ ↦ z + ((c, 0) : ℝ × ℝ)) = Prod.map (· + c) id :=
-      funext fun z ↦ Prod.ext (by simp) (by simp)
-    rw [hfun]
-    exact (measurePreserving_add_right volume c).prod (MeasurePreserving.id volume)
+  -- The translation `z ↦ z + (c, 0)` maps `W` onto the window `[a + c, b + c] × [0, 1]`.
   have hpre (c : ℝ) :
-      W = (fun z ↦ z + ((c, 0) : ℝ × ℝ)) ⁻¹' (Icc (a + c) (b + c) ×ˢ Icc 0 1) := by
-    ext ⟨x, y⟩
-    simp only [W, mem_preimage, mem_prod, Prod.mk_add_mk, mem_Icc, add_zero]
-    constructor <;> rintro ⟨⟨h₁, h₂⟩, h₃⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h₃⟩
+      W = (fun z ↦ z + ((c, 0) : ℝ × ℝ)) ⁻¹' (Icc (a + c) (b + c) ×ˢ Icc 0 1) :=
+    (preimage_add_fst_Icc_prod a b c _).symm
   obtain ⟨N, hN⟩ := eventually_atTop.1 (hW a b)
   have hmem {n : ℕ} {z : ℝ × ℝ} (hz : z ∈ W) : z + (s (n + N), 0) ∈ D := by
     rw [hpre (s (n + N))] at hz
@@ -415,8 +409,8 @@ private theorem setLIntegral_Icc_prod_floerEnergyDensity_eq_zero (hω : ω.IsNon
       (eventually_Icc_add_prod_subset_inter hs (hW a b))
     refine ((tendsto_add_atTop_iff_nat N).2 h).congr fun n ↦ ?_
     rw [hpre (s (n + N))]
-    exact ((hμ (s (n + N))).setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _)
-      (e u) _).symm
+    exact ((measurePreserving_add_right volume ((s (n + N), 0) : ℝ × ℝ))
+      |>.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _) (e u) _).symm
   -- Fatou's lemma.
   have hmeas (n : ℕ) : AEMeasurable (fun z ↦ e u (z + (s (n + N), 0))) (volume.restrict W) :=
     (hcont.comp (continuous_id.add continuous_const).continuousOn
@@ -494,6 +488,13 @@ theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add (hω : �
     tendsto_const_nhds (hdu z hz) hJ' hω.continuous_hamiltonianVectorField_zero.continuousAt
     (hω.continuous_hamiltonianVectorField_cylindrical hH).continuousAt hsol
 
+/-- If every window `[a + s_k, b + s_k] × [0, 1]` eventually lies in `D`, then so do the translates
+`z + (s_k, 0)` of every point `z` of the strip `ℝ × [0, 1]`. -/
+private theorem eventually_add_mem_of_eventually_Icc_prod_subset
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ D) :
+    ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ᶠ k in atTop, z + (s k, 0) ∈ D :=
+  fun z hz ↦ (hW z.1 z.1).mono fun _ hk ↦ hk ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩
+
 /-- **The limit of translated Floer cylinders is independent of `s`.** Under the hypotheses of
 `TauCeti.SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add` and
 `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add`, if the
@@ -518,7 +519,7 @@ theorem IsNondegenerate.eq_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate
     (hJt : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (v z)).Tames (J z.2 (v z))) :
     ∀ r, ∀ t ∈ Icc (0 : ℝ) 1, v (r, t) = v (0, t) := by
   have hsol := isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add hω hH hfloer
-    (fun z hz ↦ (hW z.1 z.1).mono fun _ hk ↦ hk ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩) hdu hJ
+    (eventually_add_mem_of_eventually_Icc_prod_subset hW) hdu hJ
   refine (hω.lintegral_floerEnergyDensity_eq_zero_iff (J := fun z ↦ J z.2 (v z)) hH hv hJt
     (fun z hz ↦ ?_)).1 (lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add hω hH hU
       hu hDU hfin hs hW hdu)
@@ -558,7 +559,7 @@ private theorem IsNondegenerate.mfderiv_eq_of_tendsto_mfderiv_comp_add (hω : ω
   -- an almost complex structure is injective, since `J (J w) = -w`.
   have hF := (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ v z _).1
     (isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add hω hH hfloer
-      (fun z hz ↦ (hW z.1 z.1).mono fun _ hk ↦ hk ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩)
+      (eventually_add_mem_of_eventually_Icc_prod_subset hW)
       hdu hJ z hz)
   rw [hs0, hamiltonianVectorField_const, Pi.zero_apply, sub_zero, zero_add] at hF
   have h' := congrArg (J z.2 (v z)) hF

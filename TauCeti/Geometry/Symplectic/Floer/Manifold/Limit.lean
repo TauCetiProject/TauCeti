@@ -86,8 +86,8 @@ theorem _root_.TauCeti.isComplexLinearMap_of_tendsto_tangentBundle [FiniteDimens
   · rw [isComplexLinearMap_stdComplexLine_iff, ContinuousLinearMap.coe_coe] at hi
     simp only [comp_apply]
     rw [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply, Bundle.Trivialization.symmL_continuousLinearMapAt _ hb, hi]
-    rfl
+      ContinuousLinearMap.comp_apply, Bundle.Trivialization.symmL_continuousLinearMapAt _ hb, hi,
+      LinearMap.coe_toContinuousLinearMap']
 
 /-- **Limits of Floer solutions satisfy the Floer equation.** Let maps `u i` solve the Floer
 equation `(du - X_K)^{0,1} = 0` at points `z i → z₀`, for a domain-dependent structure `J(z, x)` on
