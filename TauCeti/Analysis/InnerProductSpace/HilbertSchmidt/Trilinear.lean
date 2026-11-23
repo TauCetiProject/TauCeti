@@ -42,7 +42,7 @@ local instance trilinearCompleteSpace₃ : CompleteSpace E₃ := FiniteDimension
 /-- Squared Frobenius energy of the tensor-product linearization of a continuous trilinear map. -/
 def trilinearHilbertSchmidtEnergy (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) : ℝ :=
   TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 _ F
-    (TensorProduct.uncurryThreefold 𝕜 E₁ E₂ E₃ F
+    (TensorProduct.uncurryThreefold (RingHom.id 𝕜) E₁ E₂ E₃ F
       ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)) ^ 2
 
 /-- The trilinear energy is the squared Frobenius seminorm of its tensor linearization. -/
@@ -50,7 +50,7 @@ theorem trilinearHilbertSchmidtEnergy_eq_sq_frobenius
     (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
     trilinearHilbertSchmidtEnergy T =
       TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 _ F
-        (TensorProduct.uncurryThreefold 𝕜 E₁ E₂ E₃ F
+        (TensorProduct.uncurryThreefold (RingHom.id 𝕜) E₁ E₂ E₃ F
           ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)) ^ 2 := (rfl)
 
 /-- The three-slot energy is the sum of squared output norms over all triples of vectors
@@ -67,14 +67,6 @@ theorem trilinearHilbertSchmidtEnergy_eq_sum {ι₁ ι₂ ι₃ : Type*}
   simp only [Fintype.sum_prod_type, OrthonormalBasis.tensorProduct_apply,
     TensorProduct.uncurryThreefold_tmul, LinearMap.compRight_apply,
     LinearMap.comp_apply, toLinearMap₁₂_apply_apply_apply, coe_coe]
-
-/-- Compute the trilinear energy in the standard orthonormal bases of its input spaces. -/
-theorem trilinearHilbertSchmidtEnergy_eq_sum_stdOrthonormalBasis
-    (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
-    trilinearHilbertSchmidtEnergy T =
-      ∑ i, ∑ j, ∑ k, ‖T (stdOrthonormalBasis 𝕜 E₁ i)
-        (stdOrthonormalBasis 𝕜 E₂ j) (stdOrthonormalBasis 𝕜 E₃ k)‖ ^ 2 :=
-  trilinearHilbertSchmidtEnergy_eq_sum _ _ _ T
 
 /-- The three-slot energy is the sum of squared Hilbert–Schmidt norms of its slices.
 The first two slots use independently chosen orthonormal bases. -/
@@ -125,7 +117,7 @@ theorem trilinearHilbertSchmidtEnergy_eq_zero_iff
     trilinearHilbertSchmidtEnergy T = 0 ↔ T = 0 := by
   constructor
   · intro h
-    let L := (TensorProduct.uncurryThreefold 𝕜 E₁ E₂ E₃ F
+    let L := (TensorProduct.uncurryThreefold (RingHom.id 𝕜) E₁ E₂ E₃ F
       ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)).toContinuousLinearMap
     let b := (stdOrthonormalBasis 𝕜 ((E₁ ⊗[𝕜] E₂) ⊗[𝕜] E₃)).toHilbertBasis
     have hL := L.enorm_sq_le_hilbertSchmidtEnergy b
