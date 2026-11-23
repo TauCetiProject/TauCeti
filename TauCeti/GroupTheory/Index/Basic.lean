@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.Coset.Basic
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.GroupTheory.OrderOfElement
@@ -131,10 +132,11 @@ theorem compositeTransversal_spec (G : Type u) [Group G] (U V : Subgroup G) (hVU
       (QuotientGroup.mk (s v) : U ⧸ V.subgroupOf U) = v)
     (q : G ⧸ V) :
     (QuotientGroup.mk (compositeTransversal G U V hVU t ht s q) : G ⧸ V) = q := by
-  rw [← (quotientEquivProdOfLE' hVU t ht).symm_apply_apply q, compositeTransversal,
-    Equiv.apply_symm_apply]
-  conv_rhs => rw [← Prod.mk.eta (p := quotientEquivProdOfLE' hVU t ht q),
-    ← hs (quotientEquivProdOfLE' hVU t ht q).2]
+  -- The inverse tower map sends the coordinates `(a, b)` of `q` back to `q`, and `b` is the coset
+  -- of its representative `s b`.
+  refine Eq.trans ?_ (quotientEquivProdOfLE'_reconstruct hVU t ht q)
+  rw [compositeTransversal]
+  conv_rhs => rw [← hs (quotientEquivProdOfLE' hVU t ht q).2]
   rfl
 
 section
@@ -400,9 +402,10 @@ theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer 
   rintro ⟨g, hg⟩
   rw [sup_comm, ← SetLike.mem_coe, coe_mul_of_right_le_normalizer_left N H hH] at hg
   obtain ⟨n, hn, h, hh, rfl⟩ := hg
-  refine ⟨Quotient.mk'' ⟨n, hn⟩, Quotient.sound' ?_⟩
-  rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
-  simpa using hh
+  have hh' : (⟨h, (le_sup_left : H ≤ H ⊔ N) hh⟩ : ↥(H ⊔ N)) ∈ H.subgroupOf (H ⊔ N) := hh
+  refine ⟨QuotientGroup.mk ⟨n, hn⟩, ?_⟩
+  rw [quotientSubgroupOfEmbeddingOfLE_apply_mk]
+  exact (QuotientGroup.mk_mul_of_mem (⟨n, (le_sup_right : N ≤ H ⊔ N) hn⟩ : ↥(H ⊔ N)) hh').symm
 
 /-- If `H` normalizes `N` and `[G : H]` is coprime to `Nat.card N`, then `N ≤ H`. Neither
 `H.index` nor `N` need be finite (`H.index = 0` forces `Nat.card N = 1`, while `Nat.card N = 0`
