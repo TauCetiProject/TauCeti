@@ -36,6 +36,8 @@ so that `N_P(t, s) y` is the value at `t` of the Carathéodory solution of `x' =
   `N_P(s, t)` (`TauCeti.isUnit_propagator`, `TauCeti.ringInverse_propagator`).
 * `TauCeti.norm_propagator_le`, `TauCeti.norm_propagator_sub_one_le`:
   `‖N_P(t, s)‖ ≤ exp |∫ r in s..t, ‖P r‖|` and `‖N_P(t, s) - 1‖ ≤ exp |∫ r in s..t, ‖P r‖| - 1`.
+* `TauCeti.norm_propagator_le_of_norm_le`: a domination `‖P r‖ ≤ m r` between `s` and `t` gives
+  `‖N_P(t, s)‖ ≤ exp |∫ r in s..t, m r|`.
 * `TauCeti.continuousOn_propagator`: `(t, s) ↦ N_P(t, s)` is continuous on `[a, b]²` in the
   operator norm.
 * `TauCeti.absolutelyContinuousOnInterval_propagator_left`,
@@ -291,6 +293,26 @@ theorem norm_propagator_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
     (fun r hr ↦ (propagator_apply_eq_add_integral hP hs hr y).trans
       (picard_restrictScalars P _ y s r).symm) ht
   simpa [mul_comm] using this
+
+open scoped Interval in
+/-- **The norm bound under a domination.** If `P` and `m` are integrable between `s` and `t` and
+`‖P r‖ ≤ m r` for almost every `r` there, then `‖N_P(t, s)‖ ≤ exp |∫ r in s..t, m r|`. Applied
+to a family of coefficients dominated by one function `m` for all parameters in a set, the
+bound is uniform in the parameter. -/
+theorem norm_propagator_le_of_norm_le {m : ℝ → ℝ} (hP : IntervalIntegrable P volume s t)
+    (hm : IntervalIntegrable m volume s t) (hPm : ∀ᵐ r, r ∈ Ι s t → ‖P r‖ ≤ m r) :
+    ‖propagator P t s‖ ≤ exp |∫ r in s..t, m r| := by
+  have hP' : IntegrableOn P (Icc (min s t) (max s t)) :=
+    Iff.mpr integrableOn_Icc_iff_integrableOn_Ioc (by simpa only [uIoc] using hP.def')
+  refine (norm_propagator_le hP'
+    ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩).trans
+    (exp_le_exp.2 ?_)
+  have hPi : IntervalIntegrable (fun r ↦ ‖P r‖) volume s t := hP.norm
+  rw [abs_integral_eq_abs_integral_uIoc, abs_integral_eq_abs_integral_uIoc,
+    abs_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
+  refine (MeasureTheory.integral_mono_ae hPi.def' hm.def' ?_).trans (le_abs_self _)
+  rw [Filter.EventuallyLE, ae_restrict_iff' measurableSet_uIoc]
+  exact hPm
 
 /-- The propagator `N_P(t, s)` is continuous in `s ∈ [a, b]` in the operator norm. -/
 theorem continuousOn_propagator_right (hP : IntegrableOn P (Icc a b)) (ht : t ∈ Icc a b) :
