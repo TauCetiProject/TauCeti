@@ -310,8 +310,7 @@ variable {U V : Type*} [Fintype U] [DecidableEq U] [Fintype V] [DecidableEq V]
 graph homomorphisms. -/
 theorem _root_.SimpleGraph.homCount_toUniformHypergraph :
     F.toUniformHypergraph.homCount G.toUniformHypergraph = Nat.card (F →g G) := by
-  rw [SimpleGraph.card_hom_eq_card_adjPreservingMaps, Nat.card_eq_fintype_card,
-    Fintype.card_subtype, homCount_def]
+  rw [SimpleGraph.card_hom_eq_card_filter_adjPreserving, homCount_def]
   simp_rw [SimpleGraph.isHom_toUniformHypergraph_iff]
 
 /-- The injective homomorphisms between the `2`-uniform hypergraphs of two simple graphs are
