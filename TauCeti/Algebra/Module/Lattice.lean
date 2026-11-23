@@ -16,6 +16,7 @@ import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Submodule
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Basis
 
 /-!
 # Full submodule lattices
@@ -536,24 +537,20 @@ restriction to `L` is an isomorphism onto `GL ι R`. Its matrix in the ambient `
 noncomputable def _root_.Module.Basis.stabilizerMulEquivGL (b : Basis ι R L) :
     MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V) ≃* GL ι R :=
   haveI := Module.Free.of_basis b
-  (L.stabilizerMulEquiv K).trans
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R L).symm.trans
-      (Units.mapEquiv (LinearMap.toMatrixAlgEquiv b).toMulEquiv))
+  (L.stabilizerMulEquiv K).trans b.toGL
 
 variable {K}
 
 /-- The matrix `b.stabilizerMulEquivGL K g` is the matrix in `b` of the restriction of `g` to the
 lattice. -/
 @[simp]
-theorem _root_.Module.Basis.coe_stabilizerMulEquivGL_apply [Module.Free R L] (b : Basis ι R L)
+theorem _root_.Module.Basis.coe_stabilizerMulEquivGL_apply (b : Basis ι R L)
     (g : MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V)) :
+    letI := Module.Free.of_basis b
     (b.stabilizerMulEquivGL K g : Matrix ι ι R) =
       LinearMap.toMatrix b b (L.stabilizerMulEquiv K g : L →ₗ[R] L) :=
-  Matrix.ext fun i j => by
-    -- The underlying matrix of `Units.mapEquiv` is `LinearMap.toMatrixAlgEquiv b` of the
-    -- restriction, by definition of `Module.Basis.stabilizerMulEquivGL`.
-    rw [LinearMap.toMatrix_apply, ← LinearMap.toMatrixAlgEquiv_apply]
-    rfl
+  letI := Module.Free.of_basis b
+  b.coe_toGL (L.stabilizerMulEquiv K g)
 
 /-- The matrix of a lattice-stabilizing automorphism in the ambient basis extended from a lattice
 basis `b` is the image in `K` of its integral matrix `b.stabilizerMulEquivGL K g`. -/
@@ -562,7 +559,6 @@ theorem _root_.Module.Basis.map_stabilizerMulEquivGL_apply (b : Basis ι R L)
     (b.stabilizerMulEquivGL K g : Matrix ι ι R).map (algebraMap R K) =
       LinearMap.toMatrix (b.extendOfIsFullLattice K) (b.extendOfIsFullLattice K)
         (g : V ≃ₗ[K] V) := by
-  have := Module.Free.of_basis b
   ext i j
   rw [Matrix.map_apply, b.coe_stabilizerMulEquivGL_apply, LinearMap.toMatrix_apply,
     LinearMap.toMatrix_apply, ← Basis.extendOfIsFullLattice_repr_coe K, LinearEquiv.coe_coe,
