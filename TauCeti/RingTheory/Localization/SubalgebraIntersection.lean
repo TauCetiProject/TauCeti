@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Localization.AsSubring
 public import Mathlib.RingTheory.Coprime.Basic
+import Mathlib.Data.Bool.Set
 
 /-!
 # Intersections of embedded principal localizations
@@ -15,8 +16,8 @@ A family of embedded principal localizations whose denominators generate the uni
 intersects in the coefficient image. This recovers global coefficient membership from a
 cover by principal localizations and supplies denominator patching in a common ambient algebra.
 The coefficient and ambient commutative semirings need not be domains, and the family may be
-infinite. For a total quotient ring, the embedded models `Localization.subalgebra` require
-non-zero-divisor denominators. Those denominators must still generate the unit ideal.
+infinite. `Localization.subalgebra` and `ofField` provide the required `IsLocalization`
+instances for their embedded models.
 
 ## References
 
@@ -31,7 +32,7 @@ namespace TauCeti.Localization.subalgebra
 variable {R K : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
 
 /-- Embedded principal localizations at a unit-ideal generating family intersect in the
-coefficient image. In total quotient models the denominators must be non-zero-divisors. -/
+coefficient image. -/
 theorem iInf_subalgebra_powers_eq_bot_of_span_range_eq_top {ι : Type*} (a : ι → R)
     (A : ι → Subalgebra R K) [∀ i, IsLocalization (Submonoid.powers (a i)) (A i)]
     (hcover : Ideal.span (Set.range a) = ⊤) : (⨅ i, A i) = ⊥ := by
@@ -47,7 +48,7 @@ theorem iInf_subalgebra_powers_eq_bot_of_span_range_eq_top {ι : Type*} (a : ι 
   exact ⟨n, by rwa [Algebra.denIdeal_def, Submodule.mem_colon_singleton] at hn⟩
 
 /-- Two embedded principal localizations at coprime elements intersect in the coefficient
-image. Regularity is supplied by the chosen models when they lie in a total quotient ring. -/
+image. -/
 theorem inf_subalgebra_powers_eq_bot_of_isCoprime (a b : R) (A B : Subalgebra R K)
     [IsLocalization (Submonoid.powers a) A] [IsLocalization (Submonoid.powers b) B]
     (hab : IsCoprime a b) : A ⊓ B = ⊥ := by
@@ -56,13 +57,12 @@ theorem inf_subalgebra_powers_eq_bot_of_isCoprime (a b : R) (A B : Subalgebra R 
   have : ∀ i, IsLocalization (Submonoid.powers (d i)) (C i) := by
     intro i
     cases i <;> dsimp [d, C] <;> infer_instance
+  have hr : Set.range d = {a, b} := by
+    simpa only [d, Bool.false_eq_true, ↓reduceIte] using Bool.range_eq d
   have hc : Ideal.span (Set.range d) = ⊤ := by
-    apply (Ideal.eq_top_iff_one _).mpr
-    obtain ⟨r, s, hrs⟩ := hab
-    rw [← hrs]
-    exact Ideal.add_mem _
-      ((Ideal.span (Set.range d)).mul_mem_left r (Ideal.subset_span ⟨false, rfl⟩))
-      ((Ideal.span (Set.range d)).mul_mem_left s (Ideal.subset_span ⟨true, rfl⟩))
-  simpa [C, iInf_bool_eq, inf_comm] using iInf_subalgebra_powers_eq_bot_of_span_range_eq_top d C hc
+    rw [hr, Ideal.span_insert]
+    exact ((Ideal.isCoprime_span_singleton_iff a b).mpr hab).sup_eq
+  simpa only [C, iInf_bool_eq, Bool.false_eq_true, ↓reduceIte, inf_comm] using
+    iInf_subalgebra_powers_eq_bot_of_span_range_eq_top d C hc
 
 end TauCeti.Localization.subalgebra

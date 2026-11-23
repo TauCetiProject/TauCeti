@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Subsemiring.Basic
-public import Mathlib.Algebra.Ring.Subsemiring.MulOpposite
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.RingTheory.Ideal.Maps
 
@@ -60,16 +59,9 @@ The individual `aᵢ` need not belong to `H`. -/
 theorem mem_of_sum_mul_eq_one_left (H : S) (s : Finset ι) (u a : ι → R) {f : R}
     (h1 : ∑ i ∈ s, u i * a i = 1) (hu : ∀ i ∈ s, u i ∈ H)
     (hf : ∀ i ∈ s, a i * f ∈ H) : f ∈ H := by
-  have hm (x : R) : x ∈ Subsemiring.ofClass H ↔ x ∈ H := by
-    rw [← SetLike.mem_coe, Subsemiring.coe_ofClass, SetLike.mem_coe]
-  have h := mem_of_sum_mul_eq_one (Subsemiring.ofClass H).op s
-    (fun i ↦ MulOpposite.op (a i)) (fun i ↦ MulOpposite.op (u i))
-    (f := MulOpposite.op f)
-    (by simpa only [← MulOpposite.op_mul, ← Finset.op_sum, MulOpposite.op_one] using
-      congrArg MulOpposite.op h1)
-    (by simpa only [Subsemiring.mem_op, MulOpposite.unop_op, hm] using hu)
-    (by simpa only [Subsemiring.mem_op, MulOpposite.unop_mul, MulOpposite.unop_op,
-      hm] using hf)
-  simpa only [Subsemiring.mem_op, MulOpposite.unop_op, hm] using h
+  rw [← one_mul f, ← h1, Finset.sum_mul]
+  exact sum_mem fun i hi ↦ by
+    rw [mul_assoc]
+    exact mul_mem (hu i hi) (hf i hi)
 
 end SubsemiringClass
