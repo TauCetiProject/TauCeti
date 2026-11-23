@@ -247,47 +247,23 @@ theorem coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub
       E.indicator (fun ω ↦ hW.l2Integral v (hH.toPredictableLp v) ω -
         hW.l2Integral u (hH.toPredictableLp u) ω) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  let f := hH.toPredictableLp T
-  have hL : ((Lp.memLp f).indicator
-      (measurableSet_predictable_Ioc_prod u v hE).nullMeasurableSet).toLp
-        ((Ioc u v ×ˢ E).indicator f) = (hH.indicator_Ioc_prod u v hE).toPredictableLp T := by
-    apply Lp.ext
-    filter_upwards [((Lp.memLp f).indicator
-        (measurableSet_predictable_Ioc_prod u v hE).nullMeasurableSet).coeFn_toLp,
-      hH.coeFn_toPredictableLp T, (hH.indicator_Ioc_prod u v hE).coeFn_toPredictableLp T]
-      with ⟨t, ω⟩ h1 h2 h3
-    rw [h1, h3]
-    by_cases ht : t ∈ Ioc u v <;> by_cases hω : ω ∈ E <;> simp [ht, hω, f, h2]
-  have hR : ((Lp.memLp f).indicator
-      (measurableSet_predictable_Ioc_prod u v (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).toLp
-        ((Ioc u v ×ˢ univ).indicator f) =
-      ℱ.predictableMeasureExtendLp P ℝ hvT (hH.toPredictableLp v) -
-        ℱ.predictableMeasureExtendLp P ℝ (huv.trans hvT) (hH.toPredictableLp u) := by
-    apply Lp.ext
-    filter_upwards [((Lp.memLp f).indicator (measurableSet_predictable_Ioc_prod u v
-        (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).coeFn_toLp,
-      Lp.coeFn_sub (ℱ.predictableMeasureExtendLp P ℝ hvT (hH.toPredictableLp v))
-        (ℱ.predictableMeasureExtendLp P ℝ (huv.trans hvT) (hH.toPredictableLp u)),
-      hH.coeFn_toPredictableLp T,
-      ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := ℝ) hvT (hH.coeFn_toPredictableLp v),
-      ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := ℝ) (huv.trans hvT)
-        (hH.coeFn_toPredictableLp u)] with ⟨t, ω⟩ h1 hsub hf hv hu
-    rw [h1, hsub]
-    dsimp only [f, Pi.sub_apply]
-    rw [hv, hu]
-    simp only [Function.uncurry_apply_pair, Set.indicator, Set.mem_prod,
-      Set.mem_Ioc, Set.mem_univ, and_true] at hf ⊢
-    by_cases hut : u < t <;> by_cases htv : t ≤ v
-    · have ht0 : 0 < t := bot_le.trans_lt hut
-      simp [hut, htv, ht0, not_le_of_gt hut, hf]
-    · simp [hut, htv, not_le_of_gt hut]
-    · have htu : t ≤ u := not_lt.mp hut
-      by_cases ht0 : 0 < t <;> simp [hut, htv, ht0, htu]
-    · exact False.elim (htv ((not_lt.mp hut).trans huv))
-  have hloc := hW.coeFn_l2Integral_indicator_Ioc_prod T u v hE f
-  rw [hL, hR, map_sub, hW.l2Integral_predictableMeasureExtendLp hvT,
-    hW.l2Integral_predictableMeasureExtendLp (huv.trans hvT)] at hloc
+  have hloc := hW.coeFn_l2Integral_indicator_Ioc_prod T u v hE (hH.toPredictableLp T)
+  rw [← hH.toPredictableLp_indicator_Ioc_prod u v hE T,
+    ← hH.toPredictableLp_indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u)) T] at hloc
+  have hR : hW.l2Integral T
+      ((hH.indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u))).toPredictableLp T) =
+      hW.l2Integral v (hH.toPredictableLp v) - hW.l2Integral u (hH.toPredictableLp u) := by
+    rw [← hW.l2Integral_indicator_Ioc_prod_univ_eq_sub hH huv]
+    refine hW.l2Integral_eq_of_ae_eq_of_ae_eq_zero hvT _ _ ?_ ?_
+    · exact ((hH.indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u))).coeFn_toPredictableLp T
+        |>.filter_mono (ae_mono (ℱ.predictableMeasure_mono P hvT))).trans
+        ((hH.indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u))).coeFn_toPredictableLp v).symm
+    · filter_upwards
+        [(hH.indicator_Ioc_prod u v (@MeasurableSet.univ Ω (ℱ u))).coeFn_toPredictableLp T]
+        with ⟨t, ω⟩ ht hvt
+      rw [ht]
+      simp [Set.mem_Ioc, not_le_of_gt hvt]
+  rw [hR] at hloc
   filter_upwards [hloc, Lp.coeFn_sub (hW.l2Integral v (hH.toPredictableLp v))
     (hW.l2Integral u (hH.toPredictableLp u))] with ω hω hsub
   rw [hω]

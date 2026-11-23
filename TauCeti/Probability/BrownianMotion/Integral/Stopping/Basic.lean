@@ -7,18 +7,24 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Process.StochasticInterval
+public import TauCeti.Probability.Process.StoppingApproximation
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # Stopping Brownian integrands
 
 The predictable-set restriction lemmas for the expected and pathwise square-energy domains
-specialize to `[0,τ]` and `(σ,τ]` for stopping times on a raw filtration. These are
-cutoff integrands, zero after the stopping time, not stopped processes retaining their last
-value. Neither completeness nor right continuity of the filtration is required.
+specialize to `[0,τ]` and `(σ,τ]` for stopping times on a raw filtration, together with the
+corresponding `toPredictableLp` cutoff laws (`BrownianIntegrable.toPredictableLp_ite_le`,
+`BrownianIntegrable.toPredictableLp_ite_Ioc`). These are cutoff integrands, zero after the stopping
+time, not stopped processes retaining their last value. Neither completeness nor right continuity of
+the filtration is required.
 
-Along stopping times tending almost surely to infinity, the cutoffs recover an integrand in
-expected square-energy norm on every finite horizon. These facts allow approximation and
+Along stopping times tending almost surely to infinity, or decreasing almost surely to a target
+stopping time `τ` (in particular along `TauCeti.dyadicCeilTime`), the cutoffs recover the
+integrand or its `τ`-cutoff in expected square-energy norm on every finite horizon
+(`BrownianIntegrable.tendsto_eLpNorm_ite_le_sub_ite_le`,
+`BrownianIntegrable.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub`). These facts allow approximation and
 localization of stochastic-integral inputs. The pathwise-domain closure results impose no
 moment assumptions. No stochastic integral is constructed here.
 
@@ -99,5 +105,87 @@ theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub
     apply tendsto_const_nhds.congr'
     filter_upwards [hp.eventually (eventually_gt_nhds (WithTop.coe_lt_top p.1))] with n hn
     exact (ite_eq_left hn.le).symm
+
+/-- Killing a `BrownianIntegrable` integrand after a stopping time `τ` cuts off its predictable `L²`
+class by the indicator of the closed stochastic interval `⟦0, τ⟧`. -/
+theorem BrownianIntegrable.toPredictableLp_ite_le (hH : BrownianIntegrable ℱ P H)
+    (hτ : IsStoppingTime ℱ τ) (T : ℝ≥0) :
+    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+    (hH.ite_le hτ).toPredictableLp T =
+      ((Lp.memLp (hH.toPredictableLp T)).indicator
+        hτ.measurableSet_predictable_ge.nullMeasurableSet).toLp
+          ({p : ℝ≥0 × Ω | (p.1 : WithTop ℝ≥0) ≤ τ p.2}.indicator (hH.toPredictableLp T)) := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  have heq : (hH.ite_le hτ).toPredictableLp T =
+      (hH.indicator hτ.measurableSet_predictable_ge).toPredictableLp T := by
+    rw [BrownianIntegrable.toPredictableLp_eq_iff]
+    refine .of_forall ?_
+    rintro ⟨t, ω⟩
+    dsimp only [Function.uncurry_apply_pair]
+    by_cases h : (t : WithTop ℝ≥0) ≤ τ ω
+    · rw [ite_eq_left h, Set.indicator_of_mem h]; rfl
+    · rw [ite_eq_right h, Set.indicator_of_notMem h]
+  exact heq.trans (hH.toPredictableLp_indicator hτ.measurableSet_predictable_ge T)
+
+/-- Restricting a `BrownianIntegrable` integrand to the half-open stochastic interval `(σ, τ]` cuts
+off its predictable `L²` class by the indicator of `(σ, τ]`. -/
+theorem BrownianIntegrable.toPredictableLp_ite_Ioc (hH : BrownianIntegrable ℱ P H)
+    (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ) (T : ℝ≥0) :
+    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+    (hH.ite_Ioc hσ hτ).toPredictableLp T =
+      ((Lp.memLp (hH.toPredictableLp T)).indicator
+        (hσ.measurableSet_predictable_Ioc hτ).nullMeasurableSet).toLp
+          ({p : ℝ≥0 × Ω | σ p.2 < p.1 ∧ (p.1 : WithTop ℝ≥0) ≤ τ p.2}.indicator
+            (hH.toPredictableLp T)) := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  have heq : (hH.ite_Ioc hσ hτ).toPredictableLp T =
+      (hH.indicator (hσ.measurableSet_predictable_Ioc hτ)).toPredictableLp T := by
+    rw [BrownianIntegrable.toPredictableLp_eq_iff]
+    refine .of_forall ?_
+    rintro ⟨t, ω⟩
+    dsimp only [Function.uncurry_apply_pair]
+    by_cases h : σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω
+    · rw [ite_eq_left h, Set.indicator_of_mem h]; rfl
+    · rw [ite_eq_right h, Set.indicator_of_notMem h]
+  exact heq.trans (hH.toPredictableLp_indicator (hσ.measurableSet_predictable_Ioc hτ) T)
+
+/-- Cutoffs along stopping times decreasing almost surely to a random time `τ` converge to the
+cutoff at `τ` in `L²((timeMeasure T).prod P)` on every finite horizon. -/
+theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub_ite_le
+    (hH : BrownianIntegrable ℱ P H) {σ : ℕ → Ω → WithTop ℝ≥0} {τ : Ω → WithTop ℝ≥0}
+    (hσ : ∀ n, IsStoppingTime ℱ (σ n))
+    (hle : ∀ᵐ ω ∂P, ∀ n, τ ω ≤ σ n ω)
+    (hlim : ∀ᵐ ω ∂P, Tendsto (σ · ω) atTop (𝓝 (τ ω))) (T : ℝ≥0) :
+    Tendsto (fun n ↦ eLpNorm
+      (fun p : ℝ≥0 × Ω ↦ (if (p.1 : WithTop ℝ≥0) ≤ σ n p.2 then H p.1 p.2 else 0) -
+        (if (p.1 : WithTop ℝ≥0) ≤ τ p.2 then H p.1 p.2 else 0)) 2
+      ((Probability.timeMeasure T).prod P)) atTop (𝓝 0) := by
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) ENNReal.ofNat_ne_top
+    (.of_forall fun n ↦ ((hH.ite_le (hσ n)).memLp_timeMeasure T).aestronglyMeasurable)
+    (hH.memLp_timeMeasure T)
+    (.of_forall fun n ↦ .of_forall fun ⟨t, ω⟩ ↦ by split_ifs <;> simp) ?_
+  have hprod := (Measure.quasiMeasurePreserving_snd
+    (μ := Probability.timeMeasure T) (ν := P)).ae (hle.and hlim)
+  filter_upwards [hprod] with ⟨t, ω⟩ ⟨hωle, hωlim⟩
+  by_cases hle' : (t : WithTop ℝ≥0) ≤ τ ω
+  · exact tendsto_const_nhds.congr fun n ↦ by
+      rw [ite_eq_left hle', ite_eq_left (hle'.trans (hωle n))]
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [hωlim.eventually (isOpen_Iio.mem_nhds (not_le.mp hle'))] with n hn
+    rw [ite_eq_right hle', ite_eq_right (not_le.mpr hn)]
+
+/-- Cutoffs along upward dyadic approximations converge to the cutoff at `τ` in
+`L²((timeMeasure T).prod P)` on every finite horizon. -/
+theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub
+    (hH : BrownianIntegrable ℱ P H) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ)
+    (T : ℝ≥0) :
+    Tendsto (fun k ↦ eLpNorm
+      (fun p : ℝ≥0 × Ω ↦
+        (if (p.1 : WithTop ℝ≥0) ≤ TauCeti.dyadicCeilTime k (τ p.2) then H p.1 p.2 else 0) -
+        (if (p.1 : WithTop ℝ≥0) ≤ τ p.2 then H p.1 p.2 else 0)) 2
+      ((Probability.timeMeasure T).prod P)) atTop (𝓝 0) :=
+  hH.tendsto_eLpNorm_ite_le_sub_ite_le hτ.dyadicCeilTime
+    (.of_forall fun ω k ↦ TauCeti.le_dyadicCeilTime k (τ ω))
+    (.of_forall fun ω ↦ TauCeti.tendsto_dyadicCeilTime (τ ω)) T
 
 end TauCeti

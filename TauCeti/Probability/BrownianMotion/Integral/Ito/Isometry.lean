@@ -32,9 +32,12 @@ martingale properties.
   comparison between `IsItoIntegral` and modifications of `hW.l2Integral t (hH.toPredictableLp t)`.
 * `TauCeti.Probability.IsItoIntegral.ae_eq_wienerIntegral`: an Itô integral of a deterministic
   integrand agrees almost surely at each finite horizon with its Wiener integral.
-* `TauCeti.Probability.IsItoIntegral.martingale` and
-  `TauCeti.Probability.IsItoIntegral.martingale_sq_sub_integral`: every adapted Itô integral of
-  `H` is a martingale, with square-compensation martingale `I_t² - ∫_(0,t] H_s² ds`.
+* `TauCeti.Probability.IsItoIntegral.martingale`,
+  `TauCeti.Probability.IsItoIntegral.martingale_sq_sub_integral`,
+  `TauCeti.Probability.IsItoIntegral.setIntegral_sq_sub`, and
+  `TauCeti.Probability.IsItoIntegral.condExp_sq_sub`: every adapted Itô integral of
+  `H` is a martingale with square-compensation martingale `I_t² - ∫_(0,t] H_s² ds`, and every Itô
+  integral satisfies the conditional increment energy identity.
 * `TauCeti.Probability.IsItoIntegral.memLp`, `TauCeti.Probability.IsItoIntegral.eLpNorm_eq`,
   `TauCeti.Probability.IsItoIntegral.integral_sq`, and
   `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_mul_isometry`: every Itô integral `I`
@@ -328,6 +331,32 @@ theorem IsItoIntegral.martingale_sq_sub_integral (hI : IsItoIntegral ℱ P W H I
     Martingale (fun t ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) ℱ P :=
   hW.martingale_sq_sub_integral_of_ae_eq_l2Integral hH hIa
     (hW.itoIntegral_ae_eq_l2Integral hH hI)
+
+/-- **Set-integral increment energy of the Itô integral.** Against a pre-Brownian motion relative
+to the filtration, for any Itô integral `I` of a Brownian-integrable integrand `H`, the set
+integral of `(I t - I s)^2` over any `ℱ s`-measurable event `A` equals the expected square energy
+of `H` over `(s, t] × A`. No adaptedness assumption on `I` is needed. -/
+theorem IsItoIntegral.setIntegral_sq_sub (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
+    {s t : ℝ≥0} (hst : s ≤ t) {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
+    ∫ ω in A, (I t ω - I s ω) ^ 2 ∂P =
+      ∫ p in Ioc s t ×ˢ A, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P :=
+  hW.setIntegral_sq_sub_of_ae_eq_l2Integral hH hst
+    (hW.itoIntegral_ae_eq_l2Integral hH hI s)
+    (hW.itoIntegral_ae_eq_l2Integral hH hI t) hA
+
+/-- **Conditional increment isometry of the Itô integral.** Against a pre-Brownian motion relative
+to the filtration, for any Itô integral `I` of a Brownian-integrable integrand `H`,
+`E[(I t - I s)^2 | ℱ s] = E[∫_(s, t] H u ^ 2 du | ℱ s]` almost surely. No adaptedness assumption
+on `I` is needed. -/
+theorem IsItoIntegral.condExp_sq_sub (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    P[fun ω ↦ (I t ω - I s ω) ^ 2 | ℱ s] =ᵐ[P]
+      P[fun ω ↦ ∫ u in Ioc s t, H u ω ^ 2 ∂timeMeasure t | ℱ s] :=
+  hW.condExp_sq_sub_of_ae_eq_l2Integral hH hst
+    (hW.itoIntegral_ae_eq_l2Integral hH hI s)
+    (hW.itoIntegral_ae_eq_l2Integral hH hI t)
 
 /-- **Deterministic-integrand comparison with the Wiener integral.** An Itô integral of a
 deterministic integrand against a pre-Brownian motion relative to the filtration agrees almost

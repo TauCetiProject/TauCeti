@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Simple
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
+import TauCeti.Probability.BrownianMotion.Integral.Locality
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.BrownianMotion.Integral.Square
 import TauCeti.Probability.BrownianMotion.Martingale
@@ -34,9 +37,10 @@ elementary-approximation `L²` error identity (`eLpNorm_simpleGains_sub_of_ae_eq
 `tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`), uniform convergence in outer probability on
 finite horizons when right-continuous (`tendsto_measure_exists_le_norm_simpleGains_sub_lt`), and is
 a centered `L²` martingale satisfying the Itô isometry `integral_sq_of_ae_eq_l2Integral`, the
-cross-isometry `integral_mul_of_ae_eq_l2Integral`, and the square-compensation martingale property
-`martingale_sq_sub_integral_of_ae_eq_l2Integral`. Predictable rectangle restriction and optional
-stopping at raw stopping times are established in
+cross-isometry `integral_mul_of_ae_eq_l2Integral`, the set-integral and conditional increment
+energy identities (`setIntegral_sq_sub_of_ae_eq_l2Integral`, `condExp_sq_sub_of_ae_eq_l2Integral`),
+and the square-compensation martingale property `martingale_sq_sub_integral_of_ae_eq_l2Integral`.
+Predictable rectangle restriction and optional stopping at raw stopping times are established in
 `TauCeti.Probability.BrownianMotion.Integral.Locality` and
 `TauCeti.Probability.BrownianMotion.Integral.Stopping.Integral`.
 
@@ -257,6 +261,63 @@ theorem martingale_sq_sub_integral_of_ae_eq_l2Integral (hW : IsFilteredPreBrowni
         fun ω ↦ (∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t) -
           ∫ s, H s ω ^ 2 ∂timeMeasure t := by ext ω; simp [M]; ring
   rw [htri]; exact eLpNorm_sub_le le_rfl
+
+/-- For any process `I` agreeing almost surely at `s` and `t` (`s ≤ t`) with the predictable `L²`
+integral of a `BrownianIntegrable` integrand `H`, the set integral of `(I t - I s)^2` over any
+`ℱ s`-measurable event `A` equals the expected square energy of `H` over `(s, t] × A`.
+No adaptedness assumption on `I` is needed. -/
+theorem setIntegral_sq_sub_of_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
+    {s t : ℝ≥0} (hst : s ≤ t)
+    (hs : I s =ᵐ[P] hW.l2Integral s (hH.toPredictableLp s))
+    (ht : I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t))
+    {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
+    ∫ ω in A, (I t ω - I s ω) ^ 2 ∂P =
+      ∫ p in Ioc s t ×ˢ A, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hrect := hW.coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub hH hst le_rfl hA
+  have hsq : (fun ω ↦ A.indicator (fun ω ↦ (I t ω - I s ω) ^ 2) ω) =ᵐ[P]
+      fun ω ↦ hW.l2Integral t ((hH.indicator_Ioc_prod s t hA).toPredictableLp t) ω ^ 2 := by
+    filter_upwards [hrect, hs, ht] with ω hω hωs hωt
+    rw [hω]
+    by_cases hωA : ω ∈ A
+    · simp only [Set.indicator_of_mem hωA, hωs, hωt]
+    · simp [hωA]
+  have hint := hW.integral_sq_l2Integral_toPredictableLp (hH.indicator_Ioc_prod s t hA) t
+  rw [← integral_indicator (ℱ.le s A hA), integral_congr_ae hsq, hint,
+    ← integral_indicator ((measurableSet_Ioc (a := s) (b := t)).prod (ℱ.le s A hA))]
+  refine integral_congr_ae (.of_forall fun ⟨u, ω⟩ ↦ ?_)
+  by_cases hu : u ∈ Ioc s t <;> by_cases hω : ω ∈ A <;> simp [hu, hω]
+
+/-- Conditional second moment of increments of a modification `I` of the predictable `L²` Brownian
+integral: for `s ≤ t`, `E[(I t - I s)^2 | ℱ s] = E[∫_(s, t] H u ^ 2 du | ℱ s]` almost surely.
+No adaptedness assumption on `I` is needed. -/
+theorem condExp_sq_sub_of_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
+    {s t : ℝ≥0} (hst : s ≤ t)
+    (hs : I s =ᵐ[P] hW.l2Integral s (hH.toPredictableLp s))
+    (ht : I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) :
+    P[fun ω ↦ (I t ω - I s ω) ^ 2 | ℱ s] =ᵐ[P]
+      P[fun ω ↦ ∫ u in Ioc s t, H u ω ^ 2 ∂timeMeasure t | ℱ s] := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hI_mem : MemLp (fun ω ↦ I t ω - I s ω) 2 P :=
+    (hW.memLp_of_ae_eq_l2Integral hH ht).sub (hW.memLp_of_ae_eq_l2Integral hH hs)
+  have hH_int : Integrable (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2) ((timeMeasure t).prod P) :=
+    (hH.memLp_timeMeasure t).integrable_sq
+  have hprod_int : Integrable (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2)
+      (((timeMeasure t).restrict (Ioc s t)).prod P) :=
+    hH_int.mono_measure (Measure.prod_mono Measure.restrict_le_self le_rfl)
+  have hRHS_int : Integrable (fun ω ↦ ∫ u in Ioc s t, H u ω ^ 2 ∂timeMeasure t) P :=
+    hprod_int.integral_prod_right
+  refine (ae_eq_condExp_of_forall_setIntegral_eq (ℱ.le s)
+    hI_mem.integrable_sq (fun _ _ _ ↦ integrable_condExp.integrableOn)
+    (fun A hA _ ↦ ?_) stronglyMeasurable_condExp.aestronglyMeasurable).symm
+  have hA_int : Integrable (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2)
+      (((timeMeasure t).restrict (Ioc s t)).prod (P.restrict A)) :=
+    hprod_int.mono_measure (Measure.prod_mono le_rfl Measure.restrict_le_self)
+  rw [setIntegral_condExp (ℱ.le s) hRHS_int hA,
+    hW.setIntegral_sq_sub_of_ae_eq_l2Integral hH hst hs ht hA,
+    ← Measure.prod_restrict (Ioc s t) A, integral_prod_symm _ hA_int]
 
 end Modification
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Process
 public import TauCeti.Probability.BrownianMotion.Integral.Stopping.Basic
-import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.Probability.BrownianMotion.Integral.Locality
 import TauCeti.Probability.Martingale.ContinuousStopping
 
@@ -25,7 +25,8 @@ The proof discretizes `τ` from above along `TauCeti.dyadicCeilTime`, expands th
 stopped integrand into predictable rectangles via
 `coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub`, and passes to the `L²` limit on both sides
 using right-continuous martingale stopping
-(`Martingale.tendsto_eLpNorm_stoppedProcess_dyadicCeilTime`) and `L²` dominated convergence.
+(`Martingale.tendsto_eLpNorm_stoppedProcess_dyadicCeilTime`) and `L²` time-product cutoff
+convergence (`TauCeti.BrownianIntegrable.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub`).
 
 ## References
 
@@ -63,19 +64,43 @@ private theorem stoppedProcess_dyadicCeilTime_ae_eq_l2Integral
   let g (j : ℕ) := (hH.indicator_Ioc_prod (d j) (d (j + 1)) (hEv j)).toPredictableLp T
   have hsum_lp : (hH.ite_le (hτ.dyadicCeilTime k)).toPredictableLp T = ∑ j ∈ range N, g j := by
     let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    apply Lp.ext
-    have hmem_T : ∀ᵐ p ∂ℱ.predictableMeasure P T, p.1 ∈ Ioc 0 T := by
-      have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
-        (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
-      rw [ℱ.predictableMeasure_restrict, min_self] at hb; exact hb.mono fun _ hp ↦ hp.1
-    filter_upwards [(hH.ite_le (hτ.dyadicCeilTime k)).coeFn_toPredictableLp T,
-      Lp.coeFn_finsetSum (range N) g,
-      ae_ball_iff (Finset.countable_toSet (range N)) |>.mpr fun j _ ↦
-        (hH.indicator_Ioc_prod (d j) (d (j + 1)) (hEv j)).coeFn_toPredictableLp T,
-      hmem_T] with ⟨t, ω⟩ hite hsum hj ht
-    rw [hite, hsum, Finset.sum_apply, Function.uncurry_apply_pair,
-      TauCeti.ite_le_dyadicCeilTime_eq_sum_indicator H k T τ ht ω]
-    exact sum_congr rfl fun j hjmem ↦ (hj j hjmem).symm
+    let μ := ℱ.predictableMeasure P T
+    let S := {p : ℝ≥0 × Ω | (p.1 : WithTop ℝ≥0) ≤ TauCeti.dyadicCeilTime k (τ p.2)}
+    have hS : MeasurableSet S := (hτ.dyadicCeilTime k).measurableSet_predictable_ge
+    let Sj (j : ℕ) : Set (ℝ≥0 × Ω) :=
+      Ioc (d j) (d (j + 1)) ×ˢ {ω | ¬ TauCeti.dyadicCeilTime k (τ ω) ≤ d j}
+    have hSj (j : ℕ) : MeasurableSet (Sj j) := measurableSet_predictable_Ioc_prod _ _ (hEv j)
+    have hind : linftyIndicator μ S hS = ∑ j ∈ range N, linftyIndicator μ (Sj j) (hSj j) := by
+      apply Lp.ext
+      have hmem_T : ∀ᵐ p ∂μ, p.1 ∈ Ioc 0 T := by
+        have hb := ae_restrict_mem (μ := μ)
+          (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
+        rw [ℱ.predictableMeasure_restrict, min_self] at hb; exact hb.mono fun _ hp ↦ hp.1
+      filter_upwards [coeFn_linftyIndicator (μ := μ) hS,
+        Lp.coeFn_finsetSum (range N) (fun j ↦ linftyIndicator μ (Sj j) (hSj j)),
+        ae_ball_iff (Finset.countable_toSet (range N)) |>.mpr fun j _ ↦
+          coeFn_linftyIndicator (μ := μ) (hSj j),
+        hmem_T] with ⟨t, ω⟩ hL hsum hj ht
+      rw [hL, hsum, Finset.sum_apply]
+      have h1 : S.indicator (1 : ℝ≥0 × Ω → ℝ) (t, ω) =
+          ∑ j ∈ range N, (Sj j).indicator (1 : ℝ≥0 × Ω → ℝ) (t, ω) := by
+        rw [show S.indicator (1 : ℝ≥0 × Ω → ℝ) (t, ω) =
+            if (t : WithTop ℝ≥0) ≤ TauCeti.dyadicCeilTime k (τ ω) then (1 : ℝ) else 0 from by
+              by_cases h : (t : WithTop ℝ≥0) ≤ TauCeti.dyadicCeilTime k (τ ω)
+              · rw [Set.indicator_of_mem (show (t, ω) ∈ S from h), ite_eq_left h]; rfl
+              · rw [Set.indicator_of_notMem (show (t, ω) ∉ S from h), ite_eq_right h],
+          TauCeti.ite_le_dyadicCeilTime_eq_sum_indicator (fun _ _ ↦ (1 : ℝ)) k T τ ht ω]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        simp only [Sj, d, Set.indicator_apply, Set.mem_prod, Set.mem_ofPred_eq, Pi.one_apply,
+          not_le]
+        split_ifs <;> first | rfl | exact False.elim (by tauto)
+      exact h1.trans (sum_congr rfl fun j hjmem ↦ (hj j hjmem).symm)
+    rw [hH.toPredictableLp_ite_le (hτ.dyadicCeilTime k) T,
+      ← holder_mul_linftyIndicator_eq_toLp hS (hH.toPredictableLp T), hind,
+      ← ContinuousLinearMap.holderL_apply_apply, map_sum, sum_apply]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [ContinuousLinearMap.holderL_apply_apply, holder_mul_linftyIndicator_eq_toLp]
+    exact (hH.toPredictableLp_indicator_Ioc_prod (d j) (d (j + 1)) (hEv j) T).symm
   rw [hsum_lp, map_sum]
   have hterm_ae (j : ℕ) :
       hW.l2Integral T (g j) =ᵐ[P] {ω | ¬ TauCeti.dyadicCeilTime k (τ ω) ≤ d j}.indicator
@@ -110,18 +135,7 @@ theorem stoppedProcess_ae_eq_l2Integral
         hW.l2Integral T ((hH.ite_le hτ).toPredictableLp T) ω) 2 P) atTop (𝓝 0) := by
     simp_rw [fun k ↦ hW.eLpNorm_l2Integral_sub_l2Integral (hH.ite_le (hτ.dyadicCeilTime k))
       (hH.ite_le hτ) T]
-    refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) ENNReal.ofNat_ne_top
-      (.of_forall fun k ↦
-        ((hH.ite_le (hτ.dyadicCeilTime k)).memLp_timeMeasure T).aestronglyMeasurable)
-      (hH.memLp_timeMeasure T) (.of_forall fun k ↦ .of_forall fun ⟨t, ω⟩ ↦ by split_ifs <;> simp)
-      (.of_forall fun ⟨t, ω⟩ ↦ ?_)
-    by_cases hle : (t : WithTop ℝ≥0) ≤ τ ω
-    · exact tendsto_const_nhds.congr fun k ↦ by
-        rw [ite_eq_left hle, ite_eq_left (hle.trans (TauCeti.le_dyadicCeilTime k (τ ω)))]
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [(TauCeti.tendsto_dyadicCeilTime (τ ω)).eventually
-        (isOpen_Iio.mem_nhds (not_le.mp hle))] with k hk
-      rw [ite_eq_right hle, ite_eq_right (not_le.mpr hk)]
+    exact hH.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub hτ T
   let target : Ω → ℝ := hW.l2Integral T ((hH.ite_le hτ).toPredictableLp T)
   have hzero : eLpNorm (stoppedProcess I τ T - target) 2 P = 0 := by
     refine le_antisymm (ge_of_tendsto (by simpa only [zero_add] using hlhs_lim.add hrhs_lim)

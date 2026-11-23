@@ -34,7 +34,8 @@ pathwise-energy domain (`TauCeti.Probability.IsItoIntegral.locallyBrownianIntegr
 Itô integral vanishes almost surely at `0` (`TauCeti.Probability.IsItoIntegral.ae_eval_zero`), and
 the relation is preserved under zero (`TauCeti.Probability.IsItoIntegral.zero`),
 product-almost-everywhere integrand replacement
-(`TauCeti.Probability.IsItoIntegral.congr_integrand`), scalar multiplication
+(`TauCeti.Probability.IsItoIntegral.congr_integrand`), deterministic-time almost-everywhere
+integrator replacement (`TauCeti.Probability.IsItoIntegral.congr_integrator`), scalar multiplication
 (`TauCeti.Probability.IsItoIntegral.const_mul`), negation (`TauCeti.Probability.IsItoIntegral.neg`),
 addition (`TauCeti.Probability.IsItoIntegral.add`), subtraction
 (`TauCeti.Probability.IsItoIntegral.sub`), and filtration enlargement
@@ -181,6 +182,22 @@ theorem IsItoIntegral.congr_integrand [SFinite P] (hI : IsItoIntegral ℱ P W H 
       measure_congr (hae_ω.mono fun ω hω ↦ ?_)), hg⟩
     simp only [mem_ofPred_eq]
     rw [lintegral_congr_ae (hω.mono fun s (hs : H s ω = K s ω) ↦ by rw [hs])]
+
+/-- Replacing the integrator by a process agreeing almost everywhere at every deterministic time
+preserves `IsItoIntegral`. -/
+theorem IsItoIntegral.congr_integrator (hI : IsItoIntegral ℱ P W H I) {W' : ℝ≥0 → Ω → ℝ}
+    (hWW' : ∀ t : ℝ≥0, W t =ᵐ[P] W' t) : IsItoIntegral ℱ P W' H I where
+  isStronglyPredictable := hI.isStronglyPredictable
+  ae_continuous := hI.ae_continuous
+  exists_approx t := by
+    obtain ⟨n, τ, a, hτ, ha, hen, hg⟩ := hI.exists_approx t
+    refine ⟨n, τ, a, hτ, ha, hen, hg.congr_left fun k ↦ ?_⟩
+    filter_upwards [(eventually_all_finset (Finset.range (n k))).mpr
+        fun j _ ↦ hWW' (min (τ k j) t),
+      (eventually_all_finset (Finset.range (n k))).mpr
+        fun j _ ↦ hWW' (min (τ k (j + 1)) t)] with ω h₁ h₂
+    simp only [Finance.simpleGains_def]
+    exact Finset.sum_congr rfl fun j hj ↦ by rw [h₁ j hj, h₂ j hj]
 
 /-- Every process satisfying `IsItoIntegral` vanishes almost surely at `0`, directly from the
 elementary-approximation specification without Brownian, continuity, or integrability
