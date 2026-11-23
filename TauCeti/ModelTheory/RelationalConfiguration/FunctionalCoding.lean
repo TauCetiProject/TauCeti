@@ -103,18 +103,40 @@ instance [∀ n, Countable (L.Functions n)] [Countable V] : Countable (Arg L V) 
   inferInstanceAs (Countable (Σ f : (Σ l, L.Functions l), Fin f.1 → V))
 
 /-- The argument of a function symbol `f` and a tuple `v`. -/
-@[expose] def arg {k : ℕ} (f : L.Functions k) (v : Fin k → V) : Arg L V := ⟨⟨k, f⟩, v⟩
+def arg {k : ℕ} (f : L.Functions k) (v : Fin k → V) : Arg L V := ⟨⟨k, f⟩, v⟩
+
+/-- Every argument is `arg f v` for a function symbol `f` and a tuple `v`. -/
+@[elab_as_elim]
+theorem Arg.induction_arg {motive : Arg L V → Prop}
+    (h : ∀ {k : ℕ} (f : L.Functions k) (v : Fin k → V), motive (arg f v)) (p : Arg L V) :
+    motive p := by
+  obtain ⟨⟨k, f⟩, v⟩ := p
+  exact h f v
+
+/-- Relabel the entries of an argument along a map of carriers. -/
+def Arg.map {W : Type*} (g : V → W) (p : Arg L V) : Arg L W := ⟨p.1, g ∘ p.2⟩
+
+@[simp]
+theorem Arg.map_arg {W : Type*} (g : V → W) {k : ℕ} (f : L.Functions k) (v : Fin k → V) :
+    (arg f v).map g = arg f (g ∘ v) :=
+  (rfl)
+
+@[simp]
+theorem Arg.map_id (p : Arg L V) : p.map id = p := (rfl)
+
+theorem Arg.map_map {W X : Type*} (g : V → W) (g' : W → X) (p : Arg L V) :
+    (p.map g).map g' = p.map (g' ∘ g) :=
+  (rfl)
 
 /-- The functional configuration with a given function table and relational configuration. -/
-@[expose] def mk (T : Arg L V → V) (c : RelationalConfiguration L V) :
-    FunctionalConfiguration L V :=
+def mk (T : Arg L V → V) (c : RelationalConfiguration L V) : FunctionalConfiguration L V :=
   (T, c)
 
 /-- The function table of a functional configuration. -/
-@[expose] def table (F : FunctionalConfiguration L V) : Arg L V → V := F.1
+def table (F : FunctionalConfiguration L V) : Arg L V → V := F.1
 
 /-- The relational configuration of a functional configuration. -/
-@[expose] def rel (F : FunctionalConfiguration L V) : RelationalConfiguration L V := F.2
+def rel (F : FunctionalConfiguration L V) : RelationalConfiguration L V := F.2
 
 @[simp]
 theorem table_mk (T : Arg L V → V) (c : RelationalConfiguration L V) : (mk T c).table = T :=
@@ -157,10 +179,10 @@ theorem toStructure_relMap (F : FunctionalConfiguration L V) {k : ℕ} (R : L.Re
 `σ` sends the table `F` to `(f, v) ↦ σ (F (f, σ⁻¹ ∘ v))`, and acts on the relational
 configuration by the logic action. -/
 instance instSMulPerm : SMul (Equiv.Perm V) (FunctionalConfiguration L V) :=
-  ⟨fun σ F => mk (fun p => σ (F.table ⟨p.1, ⇑σ⁻¹ ∘ p.2⟩)) (σ • F.rel)⟩
+  ⟨fun σ F => mk (fun p => σ (F.table (p.map ⇑σ⁻¹))) (σ • F.rel)⟩
 
 theorem table_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfiguration L V) (p : Arg L V) :
-    (σ • F).table p = σ (F.table ⟨p.1, ⇑σ⁻¹ ∘ p.2⟩) :=
+    (σ • F).table p = σ (F.table (p.map ⇑σ⁻¹)) :=
   (rfl)
 
 @[simp]
@@ -175,8 +197,10 @@ theorem rel_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfiguration L V) :
   (rfl)
 
 instance instMulActionPerm : MulAction (Equiv.Perm V) (FunctionalConfiguration L V) where
-  one_smul F := ext (funext fun _ => rfl) (one_smul _ F.rel)
-  mul_smul σ τ F := ext (funext fun _ => rfl) (mul_smul σ τ F.rel)
+  one_smul F := ext (funext fun p => by simp [table_perm_smul])
+    (by rw [rel_perm_smul, one_smul])
+  mul_smul σ τ F := ext (funext fun p => by simp [table_perm_smul, Arg.map_map])
+    (by rw [rel_perm_smul, rel_perm_smul, rel_perm_smul, mul_smul])
 
 variable (L V) in
 /-- Isomorphism of decoded structures, as a setoid on functional configurations. -/
@@ -206,9 +230,9 @@ private theorem perm_smul_eq_iff (σ : Equiv.Perm V) (F G : FunctionalConfigurat
     · simp [Function.comp_def]
     · simp [Function.comp_def]
   · rintro ⟨hf, hR⟩
-    refine ext (funext fun ⟨⟨k, f⟩, v⟩ => ?_) (RelationalConfiguration.ext fun a => ?_)
-    · change (σ • F).table (arg f v) = G.table (arg f v)
-      simpa [Function.comp_def] using hf f (⇑σ⁻¹ ∘ v)
+    refine ext (funext fun p => ?_) (RelationalConfiguration.ext fun a => ?_)
+    · induction p using Arg.induction_arg with
+      | h f v => simpa [Function.comp_def] using hf f (⇑σ⁻¹ ∘ v)
     · induction a using Atom.induction_atom with
       | h R v =>
         simpa [Function.comp_def] using (hR R (⇑σ⁻¹ ∘ v)).symm
@@ -248,14 +272,14 @@ noncomputable def graphCode (F : FunctionalConfiguration L V) :
   @ofStructure L.graphLanguage V (@graphExpansion L V F.toStructure)
 
 @[simp]
-theorem graphCode_eval_base (F : FunctionalConfiguration L V) {n : ℕ} (R : L.Relations n)
+theorem eval_graphCode_base (F : FunctionalConfiguration L V) {n : ℕ} (R : L.Relations n)
     (v : Fin n → V) :
     (graphCode F).eval (atom (L := L.graphLanguage) (GraphRelation.base R) v) =
       F.rel.eval (atom R v) := by
   simp [graphCode]
 
 @[simp]
-theorem graphCode_eval_graph (F : FunctionalConfiguration L V) {k : ℕ} (f : L.Functions k)
+theorem eval_graphCode_graph (F : FunctionalConfiguration L V) {k : ℕ} (f : L.Functions k)
     (w : Fin (k + 1) → V) :
     (graphCode F).eval (atom (L := L.graphLanguage) (GraphRelation.graph f) w) = true ↔
       F.table (arg f (Fin.init w)) = w (Fin.last k) := by
@@ -264,13 +288,14 @@ theorem graphCode_eval_graph (F : FunctionalConfiguration L V) {k : ℕ} (f : L.
 /-- **The graph code is injective.** -/
 theorem graphCode_injective : Function.Injective (graphCode (L := L) (V := V)) := by
   intro F G h
-  refine ext (funext fun ⟨⟨k, f⟩, v⟩ => ?_) (RelationalConfiguration.ext fun a => ?_)
-  · change F.table (arg f v) = G.table (arg f v)
-    have hF := (graphCode_eval_graph F f (Fin.snoc v (F.table (arg f v)))).2 (by simp)
-    rw [h, graphCode_eval_graph] at hF
-    simpa using hF.symm
+  refine ext (funext fun p => ?_) (RelationalConfiguration.ext fun a => ?_)
+  · induction p using Arg.induction_arg with
+    | h f v =>
+      have hF := (eval_graphCode_graph F f (Fin.snoc v (F.table (arg f v)))).2 (by simp)
+      rw [h, eval_graphCode_graph] at hF
+      simpa using hF.symm
   · induction a using Atom.induction_atom with
-    | h R v => rw [← graphCode_eval_base, h, graphCode_eval_base]
+    | h R v => rw [← eval_graphCode_base, h, eval_graphCode_base]
 
 /-- **The graph code is equivariant.** -/
 theorem graphCode_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfiguration L V) :
@@ -281,9 +306,8 @@ theorem graphCode_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfiguration L V
     cases R with
     | base R => simp
     | graph f =>
-      rw [Bool.eq_iff_iff, graphCode_eval_graph, eval_perm_smul, Atom.map_atom,
-        graphCode_eval_graph, table_perm_smul_arg, Equiv.Perm.eq_inv_iff_eq.symm]
-      rfl
+      rw [Bool.eq_iff_iff]
+      simp [Equiv.Perm.eq_inv_iff_eq.symm, Fin.comp_init]
 
 /-- **Graph codes are isomorphic exactly when the functional configurations are.** -/
 theorem isoSetoid_graphCode_iff {F G : FunctionalConfiguration L V} :
@@ -300,9 +324,14 @@ def IsGraphCode (c : RelationalConfiguration L.graphLanguage V) : Prop :=
   ∀ ⦃k : ℕ⦄ (f : L.Functions k) (v : Fin k → V),
     ∃! y, c.eval (atom (L := L.graphLanguage) (GraphRelation.graph f) (Fin.snoc v y)) = true
 
+theorem isGraphCode_iff {c : RelationalConfiguration L.graphLanguage V} :
+    IsGraphCode c ↔ ∀ ⦃k : ℕ⦄ (f : L.Functions k) (v : Fin k → V),
+      ∃! y, c.eval (atom (L := L.graphLanguage) (GraphRelation.graph f) (Fin.snoc v y)) = true :=
+  Iff.rfl
+
 theorem isGraphCode_graphCode (F : FunctionalConfiguration L V) : IsGraphCode (graphCode F) :=
   fun k f v => ⟨F.table (arg f v), by simp, fun y hy => by
-    have := (graphCode_eval_graph F f _).1 hy
+    have := (eval_graphCode_graph F f _).1 hy
     rw [Fin.init_snoc, Fin.snoc_last] at this
     exact this.symm⟩
 
@@ -322,7 +351,7 @@ noncomputable def ofGraphCode
         RelMap R v := c.val.eval (atom (L := L.graphLanguage) (GraphRelation.base R) v) })
 
 @[simp]
-theorem rel_ofGraphCode_eval
+theorem eval_rel_ofGraphCode
     (c : {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c}) {n : ℕ}
     (R : L.Relations n) (v : Fin n → V) :
     (ofGraphCode c).rel.eval (atom R v) =
@@ -347,7 +376,7 @@ theorem graphCode_ofGraphCode
     cases R with
     | base R => simp
     | graph f =>
-      rw [Bool.eq_iff_iff, graphCode_eval_graph, table_ofGraphCode_eq_iff, Fin.snoc_init_self]
+      rw [Bool.eq_iff_iff, eval_graphCode_graph, table_ofGraphCode_eq_iff, Fin.snoc_init_self]
 
 @[simp]
 theorem ofGraphCode_graphCode (F : FunctionalConfiguration L V) :
@@ -415,7 +444,7 @@ theorem not_isClosed_setOf_isGraphCode [Infinite V] {k : ℕ} (f : L.Functions k
       | graph g =>
         filter_upwards [Filter.eventually_cofinite_ne (w (Fin.last _))] with y hy
         simp only [c₀, eval_mk]
-        rw [← Bool.not_eq_true, graphCode_eval_graph]
+        rw [← Bool.not_eq_true, eval_graphCode_graph]
         simpa [F] using hy
   have hmem := hclosed.mem_of_tendsto htend
     (Filter.Eventually.of_forall fun y => isGraphCode_graphCode (F y))
@@ -444,6 +473,12 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {g : X → FunctionalCon
     Continuous g ↔ Continuous (fun x => (g x).table) ∧ Continuous (fun x => (g x).rel) :=
   continuous_prodMk
 
+@[fun_prop]
+theorem continuous_mk {X : Type*} [TopologicalSpace X] {T : X → Arg L V → V}
+    {c : X → RelationalConfiguration L V} (hT : Continuous T) (hc : Continuous c) :
+    Continuous fun x => mk (T x) (c x) :=
+  hT.prodMk hc
+
 instance [T2Space V] : T2Space (FunctionalConfiguration L V) :=
   inferInstanceAs (T2Space ((Arg L V → V) × RelationalConfiguration L V))
 
@@ -451,10 +486,10 @@ instance [∀ n, Countable (L.Functions n)] [∀ n, Countable (L.Relations n)] [
     [SecondCountableTopology V] : SecondCountableTopology (FunctionalConfiguration L V) :=
   inferInstanceAs (SecondCountableTopology ((Arg L V → V) × RelationalConfiguration L V))
 
-/-- **The functional coding space is Polish** on a countable discrete carrier, with countably many
-symbols. -/
+/-- **The functional coding space is Polish** on a countable Polish carrier (for instance a
+countable discrete one), with countably many symbols. -/
 instance [∀ n, Countable (L.Functions n)] [∀ n, Countable (L.Relations n)] [Countable V]
-    [DiscreteTopology V] : PolishSpace (FunctionalConfiguration L V) := by
+    [PolishSpace V] : PolishSpace (FunctionalConfiguration L V) := by
   have : IsCompletelyMetrizableSpace (Arg L V → V) := IsCompletelyMetrizableSpace.pi_countable
   have : PolishSpace (Arg L V → V) := {}
   exact inferInstanceAs (PolishSpace ((Arg L V → V) × RelationalConfiguration L V))
@@ -462,11 +497,13 @@ instance [∀ n, Countable (L.Functions n)] [∀ n, Countable (L.Relations n)] [
 /-- Reading a graph code back into a functional configuration is continuous, for every topology on
 the carrier: the value at `(f, v)` is `y` on the open set of graph codes whose graph relation
 holds at `(v, y)`, so it is locally constant. -/
+@[fun_prop]
 theorem continuous_ofGraphCode : Continuous (ofGraphCode (L := L) (V := V)) := by
-  refine continuous_iff.2 ⟨continuous_pi fun ⟨⟨k, f⟩, v⟩ => ?_,
+  refine continuous_iff.2 ⟨continuous_pi fun p => ?_,
     RelationalConfiguration.continuous_iff.2 fun a => ?_⟩
-  · refine (IsLocallyConstant.iff_isOpen_fiber.2 fun y => ?_).continuous
-    have : (fun c => (ofGraphCode c).table ⟨⟨k, f⟩, v⟩) ⁻¹' {y} =
+  · induction p using Arg.induction_arg with | h f v => ?_
+    refine (IsLocallyConstant.iff_isOpen_fiber.2 fun y => ?_).continuous
+    have : (fun c => (ofGraphCode c).table (arg f v)) ⁻¹' {y} =
         Subtype.val ⁻¹' {c : RelationalConfiguration L.graphLanguage V |
           c.eval (atom (L := L.graphLanguage) (GraphRelation.graph f) (Fin.snoc v y)) = true} := by
       ext c
@@ -475,7 +512,7 @@ theorem continuous_ofGraphCode : Continuous (ofGraphCode (L := L) (V := V)) := b
     exact ((isClopen_setOf_eval _ true).isOpen).preimage continuous_subtypeVal
   · induction a using Atom.induction_atom with
     | h R v =>
-      simp only [rel_ofGraphCode_eval]
+      simp only [eval_rel_ofGraphCode]
       exact (continuous_eval _).comp continuous_subtypeVal
 
 variable [DiscreteTopology V]
@@ -508,14 +545,14 @@ theorem continuous_graphCode : Continuous (graphCode (L := L) (V := V)) := by
   | h R w =>
     cases R with
     | base R =>
-      simp only [graphCode_eval_base]
+      simp only [eval_graphCode_base]
       exact (continuous_eval (atom R w)).comp continuous_rel
     | graph f =>
       have : (fun F : FunctionalConfiguration L V =>
           (graphCode F).eval (atom (L := L.graphLanguage) (GraphRelation.graph f) w)) =
           (fun y => decide (y = w (Fin.last _))) ∘ fun F => F.table (arg f (Fin.init w)) := by
         ext F
-        rw [Function.comp_apply, Bool.eq_iff_iff, graphCode_eval_graph, decide_eq_true_iff]
+        rw [Function.comp_apply, Bool.eq_iff_iff, eval_graphCode_graph, decide_eq_true_iff]
       rw [this]
       exact continuous_of_discreteTopology.comp ((continuous_apply _).comp continuous_table)
 
