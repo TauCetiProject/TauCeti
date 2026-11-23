@@ -110,7 +110,7 @@ private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
     (f : X ⟶ Spec (.of (ULift.{u} WeierstrassCurve.UniversalTate.Ring)))
     (hf : f ≫ (pointHom.{u} ^ 4).left = f ≫ curveGeom.zero) :
     ∃ hom : X ⟶ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)),
-      hom ≫ Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift) = f := by
+      hom ≫ Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) = f := by
   obtain ⟨φ, hφ⟩ := Spec.map_surjective (X.isoSpec.inv ≫ f)
   have hN : Spec.map φ ≫ (pointHom.{u} ^ 4).left = Spec.map φ ≫ curveGeom.zero := by
     rw [hφ, Category.assoc, hf, Category.assoc]
@@ -127,11 +127,11 @@ private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
       WeierstrassCurve.UniversalTate.lift hΔ :=
     WeierstrassCurve.UniversalTate.eq_lift hΔ
       (by rw [← map_map, ← WeierstrassCurve.UniversalTate.curveULift_eq, hmap])
-  have hcomp : CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift ≫ ψ = φ := by
+  have hcomp : CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift ≫ ψ = φ := by
     refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
-    have h₁ : (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift ≫ ψ).hom x =
+    have h₁ : (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift ≫ ψ).hom x =
         (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down) := by
-      simp [ψ, UniversalGammaOneFour.toUniversalTateULift_apply, ULift.ringEquiv]
+      simp [ψ, RingHom.ulift_apply, ULift.ringEquiv]
     rw [h₁]
     calc (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down)
         = (WeierstrassCurve.UniversalTate.lift hΔ) x.down :=
@@ -143,17 +143,17 @@ private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
 
 private theorem exists_yOneFourToSpec :
     ∃ hom : yOne.{u} 4 ⟶ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)),
-      hom ≫ Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift) =
+      hom ≫ Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) =
         yOneι.{u} 4 :=
   exists_toSpec_of_isAffine (yOneι.{u} 4)
     (((exists_comp_yOneι_eq_iff (yOneι.{u} 4) 4).mp ⟨𝟙 _, Category.id_comp _⟩).1)
 
 private theorem exists_specToYOneFour :
     ∃ inv : Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)) ⟶ yOne.{u} 4,
-      inv ≫ yOneι 4 = Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift) :=
+      inv ≫ yOneι 4 = Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) :=
   (exists_comp_yOneι_eq_iff _ 4).mpr
     ⟨(specMap_comp_pointHom_pow_four_eq_zero_iff _).mpr
-        UniversalGammaOneFour.toUniversalTateULift_a₁,
+        UniversalGammaOneFour.toUniversalTate_ulift_a₁,
       fun _ ↦ by simp⟩
 
 /-- **Naive `Y₁(4)` over `ℤ` is `Spec ℤ[B, (B(1 - 16B))⁻¹]`** (agreeing with Drinfeld `Y₁(4)`
@@ -169,16 +169,16 @@ noncomputable def yOneFourIso :
   inv_hom_id := by
     obtain ⟨χ, hχ⟩ := Spec.map_surjective
       (exists_specToYOneFour.{u}.choose ≫ exists_yOneFourToSpec.choose)
-    have hχj : Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift ≫ χ) =
-        Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift) := by
+    have hχj : Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift ≫ χ) =
+        Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) := by
       rw [Spec.map_comp, hχ, Category.assoc, exists_yOneFourToSpec.choose_spec,
         exists_specToYOneFour.choose_spec]
-    have hχπ : χ.hom.comp UniversalGammaOneFour.toUniversalTateULift =
-        UniversalGammaOneFour.toUniversalTateULift :=
+    have hχπ : χ.hom.comp UniversalGammaOneFour.toUniversalTate.ulift =
+        UniversalGammaOneFour.toUniversalTate.ulift :=
       congrArg CommRingCat.Hom.hom (Spec.map_injective hχj)
     have hparam : χ.hom (.up UniversalGammaOneFour.param) = .up UniversalGammaOneFour.param := by
       have h := RingHom.congr_fun hχπ WeierstrassCurve.UniversalTate.curveULift.a₃
-      rwa [RingHom.comp_apply, UniversalGammaOneFour.toUniversalTateULift_a₃] at h
+      rwa [RingHom.comp_apply, UniversalGammaOneFour.toUniversalTate_ulift_a₃] at h
     have hχid : χ = 𝟙 _ := by
       refine CommRingCat.hom_ext ?_
       have h₀ : (ULift.ringEquiv.toRingHom.comp χ.hom).comp ULift.ringEquiv.symm.toRingHom =
@@ -194,7 +194,7 @@ noncomputable def yOneFourIso :
 @[reassoc (attr := simp)]
 theorem yOneFourIso_hom_SpecMap :
     yOneFourIso.{u}.hom ≫
-        Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift) =
+        Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) =
       yOneι.{u} 4 :=
   exists_yOneFourToSpec.choose_spec
 
@@ -203,7 +203,7 @@ map `A = 1`. -/
 @[reassoc (attr := simp)]
 theorem yOneFourIso_inv_yOneι :
     yOneFourIso.{u}.inv ≫ yOneι.{u} 4 =
-      Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift) :=
+      Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) :=
   exists_specToYOneFour.choose_spec
 
 /-- Naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/

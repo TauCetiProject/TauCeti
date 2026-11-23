@@ -241,38 +241,20 @@ private theorem exists_etale_pushout_quotient {A₀ B : Type u} [CommRing A₀] 
         { app J' := CommRingCat.ofHom (Ideal.Quotient.factor J'.property.1)
           naturality _ J₂ h := CommRingCat.hom_ext
             (Ideal.Quotient.factor_comp (leOfHom h) J₂.property.1) } }
-  let botι : ι := ⟨⊥, bot_le, Submodule.fg_bot⟩
-  let hc : IsColimit c :=
-    { desc s :=
-        let base : A₀ →+* s.pt := (s.ι.app botι).hom.comp (Ideal.Quotient.mk ⊥)
-        CommRingCat.ofHom <| Ideal.Quotient.lift J base fun x hx ↦ by
-          let Jx : ι := ⟨Ideal.span {x}, Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hx),
-            Submodule.fg_span (Set.finite_singleton x)⟩
-          have hle : botι ≤ Jx := (bot_le : (⊥ : Ideal A₀) ≤ Jx.val)
-          have hw := RingHom.congr_fun (congrArg CommRingCat.Hom.hom (s.w (homOfLE hle)))
-            (Ideal.Quotient.mk ⊥ x)
-          change (s.ι.app Jx).hom (Ideal.Quotient.factor hle (Ideal.Quotient.mk ⊥ x)) = base x
-            at hw
-          rw [Ideal.Quotient.factor_mk,
-            Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl), map_zero] at hw
-          exact hw.symm
-      fac s J' := by
-        refine CommRingCat.hom_ext (Ideal.Quotient.ringHom_ext (RingHom.ext fun x ↦ ?_))
-        have hle : botι ≤ J' := (bot_le : (⊥ : Ideal A₀) ≤ J'.val)
-        have hw := RingHom.congr_fun (congrArg CommRingCat.Hom.hom (s.w (homOfLE hle)))
-          (Ideal.Quotient.mk ⊥ x)
-        change (s.ι.app J').hom (Ideal.Quotient.factor hle (Ideal.Quotient.mk ⊥ x)) =
-          (s.ι.app botι).hom (Ideal.Quotient.mk ⊥ x) at hw
-        rw [Ideal.Quotient.factor_mk] at hw
-        exact hw.symm
-      uniq s m hm := by
-        refine CommRingCat.hom_ext (Ideal.Quotient.ringHom_ext (RingHom.ext fun x ↦ ?_))
-        have hw := RingHom.congr_fun (congrArg CommRingCat.Hom.hom (hm botι))
-          (Ideal.Quotient.mk ⊥ x)
-        change m.hom (Ideal.Quotient.factor botι.property.1 (Ideal.Quotient.mk ⊥ x)) =
-          (s.ι.app botι).hom (Ideal.Quotient.mk ⊥ x) at hw
-        rw [Ideal.Quotient.factor_mk] at hw
-        exact hw }
+  let hc : IsColimit c := isColimitOfReflects (forget CommRingCat.{u}) <|
+    Types.FilteredColimit.isColimitOf' _ _
+      (fun x ↦ by
+        obtain ⟨x₀, rfl⟩ := Ideal.Quotient.mk_surjective x
+        exact ⟨⟨⊥, bot_le, Submodule.fg_bot⟩, Ideal.Quotient.mk ⊥ x₀, rfl⟩)
+      (fun J₁ x y hxy ↦ by
+        obtain ⟨x₀, rfl⟩ := Ideal.Quotient.mk_surjective x
+        obtain ⟨y₀, rfl⟩ := Ideal.Quotient.mk_surjective y
+        let J₂ : ι := ⟨J₁.val ⊔ Ideal.span {x₀ - y₀},
+          sup_le J₁.property.1
+            (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr (Ideal.Quotient.eq.mp hxy))),
+          Submodule.FG.sup J₁.property.2 (Submodule.fg_span (Set.finite_singleton _))⟩
+        refine ⟨J₂, homOfLE (le_sup_left : J₁.val ≤ J₂.val), ?_⟩
+        exact Ideal.Quotient.eq.mpr (Ideal.mem_sup_right (Ideal.subset_span rfl)))
   obtain ⟨J', T', f', g', hpush, hf'⟩ :=
     RingHom.Etale.preIndSpreads.exists_isPushout hc (CommRingCat.ofHom ψ) hψ
   exact ⟨J', T', f', g', hpush, hf'⟩
@@ -355,16 +337,14 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
   let : Algebra A' B' := f'.hom.toAlgebra
   let : Algebra A' (A₀ ⧸ J) := (Ideal.Quotient.factor J'.property.1).toAlgebra
   let : Algebra (A₀ ⧸ J) B := ψJ.toAlgebra
+  let : Algebra B' B := g'.hom.toAlgebra
   let : Algebra A' B := (ψJ.comp (Ideal.Quotient.factor J'.property.1)).toAlgebra
   have : IsScalarTower A' (A₀ ⧸ J) B := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower R (A₀ ⧸ J) B := ⟨fun r x y ↦ by
-    rw [Algebra.smul_def r x, Algebra.smul_def _ y, Algebra.smul_def r (x • y),
-      Algebra.smul_def x y]
-    change ψJ (algebraMap R (A₀ ⧸ J) r * x) * y = algebraMap R B r * (ψJ x * y)
-    rw [map_mul, ← mul_assoc]
-    congr 2
-    change algebraMap A B (eA (algebraMap R (A₀ ⧸ J) r)) = algebraMap R B r
-    rw [eA.commutes, ← IsScalarTower.algebraMap_apply R A B]⟩
+  have : IsScalarTower A' B' B := .of_algebraMap_eq fun x ↦ congr($hpush.w x)
+  have : IsScalarTower R (A₀ ⧸ J) B :=
+    .of_algebraMap_eq (R := R) (S := A₀ ⧸ J) (A := B) fun r ↦ by
+      change algebraMap R B r = algebraMap A B (eA (algebraMap R (A₀ ⧸ J) r))
+      rw [eA.commutes, ← IsScalarTower.algebraMap_apply R A B]
   have : Algebra.Etale A' B' := hf'
   have : Module.FaithfullyFlat (A₀ ⧸ J) B := by
     rw [← RingHom.faithfullyFlat_algebraMap_iff]
@@ -372,23 +352,8 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
     exact RingHom.FaithfullyFlat.comp
       (RingHom.FaithfullyFlat.of_bijective eA.bijective)
       (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
-  let eIso := (CommRingCat.isPushout_tensorProduct A' (A₀ ⧸ J) B').isoPushout ≪≫
-    hpush.isoPushout.symm
-  let ePush : (A₀ ⧸ J) ⊗[A'] B' ≃ₐ[A₀ ⧸ J] B :=
-    { __ := eIso.commRingCatIsoToRingEquiv
-      commutes' x := by
-        have h1 : (CommRingCat.isPushout_tensorProduct A' (A₀ ⧸ J) B').isoPushout.hom
-            (x ⊗ₜ 1) = (pushout.inl (CommRingCat.ofHom (algebraMap A' (A₀ ⧸ J)))
-              (CommRingCat.ofHom (algebraMap A' B'))) x :=
-          congr($((CommRingCat.isPushout_tensorProduct A' (A₀ ⧸ J) B').inl_isoPushout_hom).hom x)
-        have h2 (y : A₀ ⧸ J) := congr($hpush.inl_isoPushout_inv y)
-        dsimp only [CommRingCat.hom_comp, RingHom.coe_comp, Function.comp_apply,
-          CommRingCat.hom_ofHom] at h2
-        change hpush.isoPushout.inv.hom
-          (((CommRingCat.isPushout_tensorProduct A' (A₀ ⧸ J) B').isoPushout.hom).hom
-            (x ⊗ₜ[A'] 1)) = ψJ x
-        rw [h1]
-        exact h2 x }
+  have : Algebra.IsPushout A' (A₀ ⧸ J) B' B := CommRingCat.isPushout_iff_isPushout.mp hpush
+  let ePush : (A₀ ⧸ J) ⊗[A'] B' ≃ₐ[A₀ ⧸ J] B := Algebra.IsPushout.equiv A' (A₀ ⧸ J) B' B
   obtain ⟨I₀, hI₀⟩ := (PrimeSpectrum.isClosed_iff_zeroLocus_ideal
     (Set.range (PrimeSpectrum.comap (algebraMap A' B')))ᶜ).mp
     (PrimeSpectrum.isOpenMap_comap_of_hasGoingDown_of_finitePresentation
@@ -417,27 +382,15 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
   let : Algebra A' A'' := (Ideal.Quotient.factor hJ'J'').toAlgebra
   let : Algebra A'' (A₀ ⧸ J) := (Ideal.Quotient.factor hJ''J).toAlgebra
   let : Algebra R B' := Algebra.compHom B' (algebraMap R A')
-  have : IsScalarTower A' A'' (A₀ ⧸ J) := ⟨fun x y z ↦ by
+  have : IsScalarTower A' A'' (A₀ ⧸ J) := .of_algebraMap_eq fun x ↦ by
     obtain ⟨x₀, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Algebra.smul_def, Algebra.smul_def, Algebra.smul_def, Algebra.smul_def, map_mul,
-      mul_assoc]
-    rfl⟩
-  have : IsScalarTower R A' B' := ⟨fun r x y ↦ by
-    rw [Algebra.smul_def r x, Algebra.smul_def _ y, Algebra.smul_def r (x • y),
-      Algebra.smul_def x y, map_mul, mul_assoc]
-    rfl⟩
-  have : IsScalarTower R A' A'' := ⟨fun r x y ↦ by
-    rw [Algebra.smul_def r x, Algebra.smul_def _ y, Algebra.smul_def r (x • y),
-      Algebra.smul_def x y, map_mul, mul_assoc]
-    rfl⟩
-  have : IsScalarTower R A'' (A₀ ⧸ J) := ⟨fun r x y ↦ by
-    rw [Algebra.smul_def r x, Algebra.smul_def _ y, Algebra.smul_def r (x • y),
-      Algebra.smul_def x y, map_mul, mul_assoc]
-    rfl⟩
-  have : IsScalarTower R A' (A₀ ⧸ J) := ⟨fun r x y ↦ by
-    rw [Algebra.smul_def r x, Algebra.smul_def _ y, Algebra.smul_def r (x • y),
-      Algebra.smul_def x y, map_mul, mul_assoc]
-    rfl⟩
+    rfl
+  have : IsScalarTower R A' B' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower R A' A'' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower R A'' (A₀ ⧸ J) :=
+    .of_algebraMap_eq (R := R) (S := A'') (A := A₀ ⧸ J) fun _ ↦ rfl
+  have : IsScalarTower R A' (A₀ ⧸ J) :=
+    .of_algebraMap_eq (R := R) (S := A') (A := A₀ ⧸ J) fun _ ↦ rfl
   have htop'' : I₀.map (algebraMap A' A'') = ⊤ := by
     rw [Ideal.eq_top_iff_one]
     have hmem : algebraMap A' A'' (Ideal.Quotient.mk J'.val x₀) = 1 := by

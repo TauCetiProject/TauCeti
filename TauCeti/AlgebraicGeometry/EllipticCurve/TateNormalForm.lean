@@ -629,29 +629,17 @@ theorem lift_comp_toUniversalTate {R : Type*} [CommRing R] {b : R}
 
 universe u
 
-/-- The ring homomorphism `ULift ℤ[A, B][Δ⁻¹] →+* ULift ℤ[B, (B(1 - 16B))⁻¹]` specializing `A` to
-`1` and `B` to `param`. -/
-noncomputable def toUniversalTateULift :
-    ULift.{u} UniversalTate.Ring →+* ULift.{u} Ring :=
-  ULift.ringEquiv.symm.toRingHom.comp (toUniversalTate.comp ULift.ringEquiv.toRingHom)
-
-/-- `toUniversalTateULift` applies `toUniversalTate` to the underlying element. -/
-@[simp]
-theorem toUniversalTateULift_apply (x : ULift.{u} UniversalTate.Ring) :
-    toUniversalTateULift.{u} x = .up (toUniversalTate x.down) := by
-  simp [toUniversalTateULift, ULift.ringEquiv]
-
-/-- `toUniversalTateULift` maps the coefficient `a₁` of `UniversalTate.curveULift` to `1`. -/
-theorem toUniversalTateULift_a₁ :
-    toUniversalTateULift.{u} UniversalTate.curveULift.a₁ = 1 := by
-  rw [toUniversalTateULift_apply, UniversalTate.curveULift_a₁]
+/-- `toUniversalTate.ulift` maps the coefficient `a₁` of `UniversalTate.curveULift` to `1`. -/
+theorem toUniversalTate_ulift_a₁ :
+    toUniversalTate.ulift.{u, u} UniversalTate.curveULift.a₁ = 1 := by
+  rw [RingHom.ulift_apply, UniversalTate.curveULift_a₁]
   ext
   simp [baseChange]
 
-/-- `toUniversalTateULift` maps the coefficient `a₃` of `UniversalTate.curveULift` to `param`. -/
-theorem toUniversalTateULift_a₃ :
-    toUniversalTateULift.{u} UniversalTate.curveULift.a₃ = .up param := by
-  rw [toUniversalTateULift_apply, UniversalTate.curveULift_a₃]
+/-- `toUniversalTate.ulift` maps the coefficient `a₃` of `UniversalTate.curveULift` to `param`. -/
+theorem toUniversalTate_ulift_a₃ :
+    toUniversalTate.ulift.{u, u} UniversalTate.curveULift.a₃ = .up param := by
+  rw [RingHom.ulift_apply, UniversalTate.curveULift_a₃]
   ext
   simp [baseChange]
 
