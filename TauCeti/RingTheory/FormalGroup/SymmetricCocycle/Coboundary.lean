@@ -223,7 +223,7 @@ theorem two_le_order (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ 
     have : d.degree < 2 := by exact_mod_cast hd
     simpa [Finsupp.degree_eq_sum, Fin.sum_univ_two] using this
   have hd' : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := by
-    ext i; fin_cases i <;> simp
+    simpa only [Fin.sum_univ_two] using (Finsupp.univ_sum_single d).symm
   rw [hd']
   rcases h0 : d 0 with _ | _ | _ <;> rcases h1 : d 1 with _ | _ | _ <;> try omega
   · simpa using hΦ₀

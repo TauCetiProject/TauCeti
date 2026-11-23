@@ -25,8 +25,8 @@ records that every coordinate variable `X s` is nonzero over a nontrivial semiri
 `MvPowerSeries.mem_support` together with `support_zero`, `support_add`, `support_smul_subset`,
 `support_neg`, and `support_sub` bridges `Function.support` with `MvPowerSeries.coeff` and the
 algebraic operations on `MvPowerSeries`. `MvPowerSeries.liftOfSurjective` lifts a
-multivariate power series coefficientwise along a surjective map, yielding
-`MvPowerSeries.map_surjective`, and `MvPowerSeries.coeff_map_mul_mem` shows that left
+multivariate power series coefficientwise along a surjective map, and
+`MvPowerSeries.coeff_map_mul_mem` shows that left
 multiplication by a scalar power series preserves membership of coefficients in a submodule.
 -/
 
@@ -145,11 +145,6 @@ theorem map_liftOfSurjective {π : A →+* k} (hπ : Function.Surjective π)
     (f : MvPowerSeries σ k) :
     MvPowerSeries.map π (liftOfSurjective hπ f) = f :=
   MvPowerSeries.ext fun d ↦ by rw [coeff_map, coeff_liftOfSurjective, Function.surjInv_eq hπ]
-
-/-- Base change of multivariate power series along a surjective ring homomorphism is surjective. -/
-theorem map_surjective {π : A →+* k} (hπ : Function.Surjective π) :
-    Function.Surjective (MvPowerSeries.map (σ := σ) π) :=
-  fun f ↦ ⟨liftOfSurjective hπ f, map_liftOfSurjective hπ f⟩
 
 end Surjective
 

@@ -137,9 +137,7 @@ theorem mul_eq_zero_of_coeff_mem {I J : Ideal R} (hIJ : I * J = ⊥) {f g : MvPo
 in `I`. -/
 theorem coeff_mul_mem_of_right {I : Ideal R} {f g : MvPowerSeries σ R}
     (hg : ∀ d, coeff d g ∈ I) (d : σ →₀ ℕ) : coeff d (f * g) ∈ I := by
-  classical
-  rw [coeff_mul]
-  exact Ideal.sum_mem I fun pq _ ↦ I.mul_mem_left _ (hg pq.2)
+  simpa only [Ideal.top_mul] using coeff_mul_mem_mul (fun _ ↦ Submodule.mem_top) hg d
 
 end Semiring
 

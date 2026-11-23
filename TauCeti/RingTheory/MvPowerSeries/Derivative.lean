@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPolynomial.FirstJet
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
@@ -207,26 +208,33 @@ theorem subst_add_of_mul_eq_zero {S : Type*} [CommRing R] [CommRing S] [Algebra 
   refine Continuous.ext_on denseRange_toMvPowerSeries (continuous_subst hah)
     ((continuous_subst ha).add (continuous_finsetSum _ fun i _ ↦
       continuous_const.mul ((continuous_subst ha).comp (continuous_pderiv i)))) ?_
-  have h0 : subst a (0 : MvPowerSeries σ R) = 0 := by rw [← coe_substAlgHom ha, map_zero]
   rintro _ ⟨p, rfl⟩
-  induction p using MvPolynomial.induction_on with
-  | C r => dsimp only; rw [subst_coe, subst_coe]; simp [h0]
-  | add p q hp hq =>
-    simp only [MvPolynomial.coe_add, map_add, subst_add hah, subst_add ha] at hp hq ⊢
-    rw [hp, hq]
-    simp only [mul_add, Finset.sum_add_distrib]
-    ring
-  | mul_X p j hp =>
-    have hmul : (∑ i, h i * subst a (pderiv i (p : MvPowerSeries σ R))) * h j = 0 := by
-      rw [Finset.sum_mul]
-      exact Finset.sum_eq_zero fun i _ ↦ by rw [mul_right_comm, hh i j, zero_mul]
-    simp only [MvPolynomial.coe_mul, MvPolynomial.coe_X, subst_mul hah, subst_X hah, Pi.add_apply,
-      subst_mul ha, subst_X ha, Derivation.leibniz, smul_eq_mul, subst_add ha, pderiv_X,
-      Pi.single_apply, apply_ite (subst a), h0, mul_add, mul_ite, mul_one, mul_zero,
-      Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] at hp ⊢
-    rw [hp, add_mul, add_mul, hmul, add_zero, Finset.sum_mul]
-    simp_rw [mul_assoc, mul_comm (subst a (pderiv _ _)) (a j)]
-    ring
+  let T := MvPowerSeries τ S
+  let L : (σ → T) →ₗ[T] T :=
+    { toFun := fun v ↦ ∑ i, v i * h i
+      map_add' := fun u v ↦ by simp [add_mul, Finset.sum_add_distrib]
+      map_smul' := fun c v ↦ by simp [smul_eq_mul, mul_assoc, Finset.mul_sum] }
+  have hL : ∀ u v, L u * L v = 0 := fun u v ↦ by
+    simp only [L, LinearMap.coe_mk, AddHom.coe_mk, Finset.sum_mul, Finset.mul_sum]
+    exact Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ by
+      rw [mul_mul_mul_comm, hh, mul_zero]
+  let φ : TrivSqZeroExt T (σ → T) →ₐ[T] T := TrivSqZeroExt.liftEquivOfComm ⟨L, hL⟩
+  have hcomp : φ.comp (TauCeti.jetAlgebra a) = MvPolynomial.aeval (a + h) :=
+    MvPolynomial.algHom_ext fun i ↦ by
+      simp [φ, L, TrivSqZeroExt.liftEquivOfComm_apply, Pi.single_apply]
+  let pT : MvPolynomial σ T := MvPolynomial.map (algebraMap R T) p
+  have hlhs : subst (a + h) (p : MvPowerSeries σ R) = MvPolynomial.aeval (a + h) pT := by
+    simp [subst_coe, MvPolynomial.aeval_def, pT, MvPolynomial.eval₂_map, T]
+  have hrhs := congrArg φ (TauCeti.jetAlgebra_apply a pT)
+  rw [← AlgHom.comp_apply, hcomp, ← hlhs] at hrhs
+  refine hrhs.trans ?_
+  simp only [φ, map_add, TrivSqZeroExt.liftEquivOfComm_apply, TrivSqZeroExt.lift_apply_inl,
+    TrivSqZeroExt.lift_apply_inr, Algebra.ofId_apply, Algebra.algebraMap_self, RingHom.id_apply,
+    L, LinearMap.coe_mk, AddHom.coe_mk, pT, MvPolynomial.eval_map, MvPolynomial.pderiv_map]
+  congr 1
+  · rw [← MvPolynomial.aeval_def, ← subst_coe]
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [mul_comm, ← MvPolynomial.aeval_def, ← subst_coe, pderiv_coe]
 
 /-- **The first-order Taylor formula at `X`**: if the perturbations `h i` pairwise multiply to
 zero, then `f(X + h) = f + ∑ᵢ hᵢ · ∂ᵢ f`. -/

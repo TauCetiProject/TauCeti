@@ -15,6 +15,7 @@ import TauCeti.Algebra.TrivSqZeroExt.Ideal
 import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
+import TauCeti.RingTheory.MvPolynomial.FirstJet
 import TauCeti.RingTheory.MvPowerSeries.Derivative
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -533,30 +534,34 @@ private noncomputable def evalShift (n : ℕ+) : MvPolynomial ℕ+ ℤ →ₐ[�
 private noncomputable def shiftGeneratorHom (n : ℕ+) : LazardRing →+* DualNumber LazardRing :=
   ((evalShift n).comp (mvPolynomialEquiv.symm : LazardRing →ₐ[ℤ] MvPolynomial ℕ+ ℤ)).toRingHom
 
+private theorem evalShift_eq_map_jetAlgebra (n : ℕ+) (p : MvPolynomial ℕ+ ℤ) :
+    evalShift n p =
+      TrivSqZeroExt.map (LinearMap.proj (R := LazardRing) n)
+        (TauCeti.jetAlgebra generator (MvPolynomial.map (Int.castRingHom LazardRing) p)) := by
+  refine AlgHom.congr_fun (MvPolynomial.algHom_ext (f := evalShift n)
+    (g := ((TrivSqZeroExt.map (LinearMap.proj (R := LazardRing) n)).restrictScalars ℤ).comp
+      (((TauCeti.jetAlgebra generator).restrictScalars ℤ).comp
+        (MvPolynomial.mapAlgHom (Algebra.ofId ℤ LazardRing)))) fun m ↦ ?_) p
+  simp only [evalShift, MvPolynomial.aeval_X, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
+    MvPolynomial.mapAlgHom_apply, MvPolynomial.map_X, TauCeti.jetAlgebra_X, map_add,
+    TrivSqZeroExt.map_inl, TrivSqZeroExt.map_inr, LinearMap.proj_apply,
+    TrivSqZeroExt.algebraMap_eq_inl, DualNumber.eps]
+  congr 1
+  by_cases hmn : m = n <;> simp [hmn]
+
 private theorem fst_evalShift (n : ℕ+) (p : MvPolynomial ℕ+ ℤ) :
-    (evalShift n p).fst = mvPolynomialEquiv p :=
-  AlgHom.congr_fun (MvPolynomial.algHom_ext
-    (f := (TrivSqZeroExt.fstHom ℤ LazardRing LazardRing).comp (evalShift n))
-    (g := mvPolynomialEquiv.toAlgHom) fun m ↦ by
-      simp only [AlgHom.comp_apply, TrivSqZeroExt.fstHom_apply, evalShift, MvPolynomial.aeval_X]
-      split_ifs <;> simp [TrivSqZeroExt.algebraMap_eq_inl]) p
+    (evalShift n p).fst = mvPolynomialEquiv p := by
+  rw [evalShift_eq_map_jetAlgebra, TrivSqZeroExt.fst_map, TauCeti.fst_jetAlgebra,
+    MvPolynomial.eval_map, mvPolynomialEquiv_apply, MvPolynomial.aeval_def, algebraMap_int_eq]
 
 private theorem fst_shiftGeneratorHom (n : ℕ+) (x : LazardRing) :
     (shiftGeneratorHom n x).fst = x := by simp [shiftGeneratorHom, fst_evalShift]
 
 private theorem snd_evalShift (n : ℕ+) (p : MvPolynomial ℕ+ ℤ) :
     (evalShift n p).snd = mvPolynomialEquiv (MvPolynomial.pderiv n p) := by
-  induction p using MvPolynomial.induction_on with
-  | C r => simp [evalShift]
-  | add p q hp hq => rw [map_add, map_add, map_add, TrivSqZeroExt.snd_add, hp, hq]
-  | mul_X p m hp =>
-    have hXm : evalShift n (MvPolynomial.X m) =
-        algebraMap LazardRing (DualNumber LazardRing) (generator m) +
-          if m = n then DualNumber.eps else 0 := MvPolynomial.aeval_X _ m
-    rw [map_mul, Derivation.leibniz]
-    simp only [smul_eq_mul, map_add, map_mul, mvPolynomialEquiv_X, TrivSqZeroExt.snd_mul,
-      fst_evalShift, hp, hXm, MvPolynomial.pderiv_X, Pi.single_apply]
-    split_ifs with hmn <;> simp [hmn, TrivSqZeroExt.algebraMap_eq_inl, mul_comm]
+  rw [evalShift_eq_map_jetAlgebra, TrivSqZeroExt.snd_map, LinearMap.proj_apply,
+    TauCeti.snd_jetAlgebra_apply, MvPolynomial.pderiv_map, MvPolynomial.eval_map,
+    mvPolynomialEquiv_apply, MvPolynomial.aeval_def, algebraMap_int_eq]
 
 private theorem snd_shiftGeneratorHom (n : ℕ+) (x : LazardRing) :
     (shiftGeneratorHom n x).snd =
@@ -612,7 +617,8 @@ private theorem le_order_universalShiftSeries (n : ℕ+) :
 private theorem coeff_formalGroup_eq_zero_of_axis {d : Fin 2 →₀ ℕ} (hd : 2 ≤ d.degree)
     (haxis : d 0 = 0 ∨ d 1 = 0) : coeff d formalGroup.toPowerSeries = 0 := by
   have hdeg : d 0 + d 1 = d.degree := by simp [Finsupp.degree_eq_sum, Fin.sum_univ_two]
-  have hd_eq : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := by ext s; fin_cases s <;> simp
+  have hd_eq : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := by
+    simpa only [Fin.sum_univ_two] using (Finsupp.univ_sum_single d).symm
   rcases haxis with h0 | h1
   · rw [hd_eq, h0, Finsupp.single_zero, _root_.zero_add, formalGroup.coeff_single_one,
       ite_eq_right (by omega)]
@@ -633,7 +639,8 @@ private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
     · push Not at haxis
       have hi0 : 0 < d 0 := Nat.pos_of_ne_zero haxis.1
       have hd_eq : d = Finsupp.single 0 (d 0) + Finsupp.single 1 ((n : ℕ) + 1 - d 0) := by
-        ext s; fin_cases s <;> simp; omega
+        have hd1 : d 1 = (n : ℕ) + 1 - d 0 := by omega
+        simpa only [Fin.sum_univ_two, hd1] using (Finsupp.univ_sum_single d).symm
       set z := coeff (Finsupp.single 0 (d 0) + Finsupp.single 1 ((n : ℕ) + 1 - d 0))
           formalGroup.toPowerSeries -
         (((n : ℕ) + 1).choose (d 0) / TauCeti.lazardGcd ((n : ℕ) + 1)) • generator n

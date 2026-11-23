@@ -680,8 +680,14 @@ noncomputable def dualNumberEquiv {p h : ℕ} [Fact p.Prime] [CharP k p]
       FormalGroupDeformation (TrivSqZeroExt.fstHom k k k).toRingHom F₀ :=
   (Equiv.piCongrRight fun _ ↦ dualNumberKerEquiv).trans <|
     (squareZeroFiberEquiv (B := k) (π_B := RingHom.id k) Function.surjective_id
-      (RingHom.id_comp _) TrivSqZeroExt.fst_surjective
-      fg_ker_dualNumberFst (TrivSqZeroExt.kerIdeal_mul_self k k) hF₀
+      (RingHom.id_comp _)
+      (show Function.Surjective (TrivSqZeroExt.fstHom k k k).toRingHom from
+        TrivSqZeroExt.fst_surjective)
+      fg_ker_dualNumberFst
+      (show RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom *
+          RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom = ⊥ from
+        TrivSqZeroExt.kerIdeal_mul_self k k)
+      hF₀
       (FormalGroupLift.ofSection F₀ (TrivSqZeroExt.fstHom k k k).toRingHom
         (algebraMap k (DualNumber k)) (RingHom.ext fun _ ↦ by simp))).trans
       (Equiv.subtypeUnivEquiv fun _ ↦ Subsingleton.elim _ _)
@@ -696,8 +702,11 @@ theorem dualNumberEquiv_apply {p h : ℕ} [Fact p.Prime] [CharP k p]
         (RingHom.id_comp _)
         (TrivSqZeroExt.kerIdeal_mul_self k k)
         p h (fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩) := by
-  simp only [dualNumberEquiv, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply]
-  exact congrArg (deformByLubinTate _ _ _ p h) (funext fun j ↦ Equiv.piCongrRight_apply _ c j)
+  have hc : (Equiv.piCongrRight fun _ ↦ dualNumberKerEquiv) c =
+      fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩ :=
+    funext fun j ↦ by rw [Equiv.piCongrRight_apply]; rfl
+  rw [dualNumberEquiv, Equiv.trans_apply, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply,
+    squareZeroFiberEquiv_apply_coe, hc]
 
 end SquareZeroFiber
 
