@@ -100,7 +100,7 @@ For a fibrewise complex-linear isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over a
 Euler class of `E`. -/
 theorem complexEulerClass_eq_singularCohomologyMap_of_fiberwise {g : C(B', B)}
     {φ : ∀ b', E' b' ≃L[ℂ] E (g b')}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
     complexEulerClass F' E' hF' =
       TopCat.singularCohomologyMap (TopCat.ofHom g) (2 * r + 2) (complexEulerClass F E hF) := by
   rw [complexEulerClass_def, complexEulerClass_def]
@@ -122,7 +122,7 @@ continuous on total spaces, between complex vector bundles of complex rank `r + 
 of `E'` is `(-1) ^ (r + 1)` times the pull-back along `g` of the Euler class of `E`. -/
 theorem complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugateFiberwise
     {g : C(B', B)} {φ : ∀ b', E' b' ≃L⋆[ℂ] E (g b')}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
     complexEulerClass F' E' hF' =
       (-1 : ℤ) ^ (r + 1) •
         TopCat.singularCohomologyMap (TopCat.ofHom g) (2 * r + 2) (complexEulerClass F E hF) := by
@@ -132,7 +132,7 @@ theorem complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugate
     { (φ b').toLinearEquiv.restrictScalarsₛₗ ℝ with
       continuous_toFun := by simpa using (φ b').continuous
       continuous_invFun := by simpa using (φ b').symm.continuous }
-  have hψ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (ψ v.proj v.2) := by
+  have hψ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (ψ v.proj v.snd) := by
     have h : ∀ b' v, ψ b' v = φ b' v := fun b' v ↦
       congrFun (LinearEquiv.coe_restrictScalarsₛₗ ℝ (φ b').toLinearEquiv) v
     simp only [h]
@@ -174,7 +174,7 @@ variable {F' : Type w} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace
 isomorphism `φ b : E'_b ≃ E_b` over the same base, continuous on total spaces, the Euler classes of
 `E'` and `E` agree. -/
 theorem complexEulerClass_eq_of_fiberwise {φ : ∀ b, E' b ≃L[ℂ] E b}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.snd)) :
     complexEulerClass F' E' hF' = complexEulerClass F E hF :=
   (complexEulerClass_eq_singularCohomologyMap_of_fiberwise hF hF' (g := ContinuousMap.id B)
     hφ).trans (CategoryTheory.ConcreteCategory.congr_hom (TopCat.singularCohomologyMap_id _ _) _)
@@ -184,7 +184,7 @@ theorem complexEulerClass_eq_of_fiberwise {φ : ∀ b, E' b ≃L[ℂ] E b}
 complex rank `r + 1`, the Euler class of `E'` is `(-1) ^ (r + 1)` times that of `E`:
 `e(conj E) = (-1) ^ (r + 1) e(E)`. -/
 theorem complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise {φ : ∀ b, E' b ≃L⋆[ℂ] E b}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.snd)) :
     complexEulerClass F' E' hF' = (-1 : ℤ) ^ (r + 1) • complexEulerClass F E hF := by
   rw [complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugateFiberwise hF hF'
     (g := ContinuousMap.id B) hφ]
@@ -196,7 +196,7 @@ conjugate-linear isomorphism `φ b : E'_b ≃ E_b` between complex line bundles,
 spaces, `e(E') = -e(E)`, that is `e(conj L) = -e(L)`. -/
 theorem complexEulerClass_eq_neg_of_finrank_eq_one_of_conjugateFiberwise
     (hF : finrank ℂ F = 0 + 1) (hF' : finrank ℂ F' = 0 + 1) {φ : ∀ b, E' b ≃L⋆[ℂ] E b}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.snd)) :
     complexEulerClass F' E' hF' = -complexEulerClass F E hF := by
   rw [complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise hF hF' hφ, pow_one,
     neg_one_zsmul]

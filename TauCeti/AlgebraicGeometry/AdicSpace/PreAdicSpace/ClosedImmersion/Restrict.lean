@@ -183,24 +183,24 @@ variable {X Y : PreAdicSpace.{u}}
 -- immersion is the restriction of the quotient morphism `Spa(A ⧸ J) ⟶ Spa(A)` to `R(T/s)`.
 private theorem IsClosedImmersion.exists_le_isClosedImmersion_restrictPreimage {f : X ⟶ Y}
     (hf : IsClosedImmersion f) (hY : isSheafy Y) (W : Opens Y) (y : W) :
-    ∃ V' : Opens Y, y.1 ∈ V' ∧ V' ≤ W ∧ IsClosedImmersion (f.restrictPreimage V') := by
+    ∃ V' : Opens Y, y.val ∈ V' ∧ V' ≤ W ∧ IsClosedImmersion (f.restrictPreimage V') := by
   obtain ⟨V, hyV, A, _, _, _, _, S, P, hP, J, -, hsheaf, eV, eU, hfac⟩ :=
-    (isClosedImmersion_iff f).mp hf y.1
+    (isClosedImmersion_iff f).mp hf y.val
   have hsA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
       (presentationLimitPresheaf P S.plus) :=
     ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ hY)
   -- a rational open `R(T/s)` of `Spa(A, A⁺)` around the image of `y`, inside the image of `W`
   let O' : Opens (spa S.plus) := (Opens.map eV.inv.base).obj
     ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W)
-  have hinv : eV.inv.base (eV.hom.base ⟨y.1, hyV⟩) = ⟨y.1, hyV⟩ :=
-    congrArg (fun g ↦ g.base ⟨y.1, hyV⟩) eV.hom_inv_id
-  have hz : eV.hom.base ⟨y.1, hyV⟩ ∈ O' := by
+  have hinv : eV.inv.base (eV.hom.base ⟨y.val, hyV⟩) = ⟨y.val, hyV⟩ :=
+    congrArg (fun g ↦ g.base ⟨y.val, hyV⟩) eV.hom_inv_id
+  have hz : eV.hom.base ⟨y.val, hyV⟩ ∈ O' := by
     refine Opens.mem_map.mpr (Opens.mem_map.mpr ?_)
-    have h : (Y.ofRestrict V.isOpenEmbedding).base (eV.inv.base (eV.hom.base ⟨y.1, hyV⟩)) =
-        y.1 := by
+    have h : (Y.ofRestrict V.isOpenEmbedding).base (eV.inv.base (eV.hom.base ⟨y.val, hyV⟩)) =
+        y.val := by
       rw [hinv]
       rfl
-    exact Eq.mpr (congrArg (· ∈ W) h) y.2
+    exact Eq.mpr (congrArg (· ∈ W) h) y.property
   obtain ⟨R, hR, hzR, hRO⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens S.plus) hz
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hR
   -- over the image `V'` of `R(T/s)` in `Y`, `f` is the quotient morphism restricted to `R(T/s)`
@@ -226,8 +226,8 @@ private theorem IsClosedImmersion.exists_le_isClosedImmersion_restrictPreimage {
         hsheaf hT hsA)
   have hV'W : (V' : Set Y) ⊆ W := by
     rintro _ ⟨r, rfl⟩
-    exact Opens.mem_map.mp (Opens.mem_map.mp (hRO r.2))
-  exact ⟨V', ⟨⟨eV.hom.base ⟨y.1, hyV⟩, hzR⟩, congrArg Subtype.val hinv⟩, hV'W, hV'⟩
+    exact Opens.mem_map.mp (Opens.mem_map.mp (hRO r.property))
+  exact ⟨V', ⟨⟨eV.hom.base ⟨y.val, hyV⟩, hzR⟩, congrArg Subtype.val hinv⟩, hV'W, hV'⟩
 
 /-- **A closed immersion restricts to a closed immersion over every open of the target**, when the
 target is sheafy: if `f : X ⟶ Y` is a closed immersion and the structure presheaf of `Y` is a

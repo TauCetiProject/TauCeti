@@ -612,7 +612,7 @@ namespace CombinatoriallyEquivalent
 
 /-- Combinatorial equivalence is an equivalence relation. -/
 theorem equivalence : Equivalence (CombinatoriallyEquivalent (R := R) (P := P)) :=
-  Relation.EqvGen.is_equivalence _
+  Relation.EqvGen.equivalence _
 
 @[refl]
 theorem refl (p : SimplePolygon R P) : CombinatoriallyEquivalent p p :=

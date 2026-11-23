@@ -34,7 +34,8 @@ from both sides:
 The lower bound assumes that `K` is a convex body with `0` in its interior. Both bounds are sharp:
 weighted cross-polytopes attain the lower one and weighted boxes the upper one.
 
-Since `λ₀ ≤ λᵢ` for every `i`, the upper bound strengthens Minkowski's first theorem
+Since `λ₀ ≤ λᵢ` for every `i` (when `0` is an interior point of `K`, and otherwise `μ K = 0`),
+the upper bound strengthens Minkowski's first theorem
 `λ₀ⁿ · μ K ≤ 2ⁿ · covolume L μ`, and it is the bound against which the products of the gauges of
 short lattice bases (such as fundamental systems of units, or bases of the integer kernel of a
 matrix) are measured.
@@ -110,7 +111,7 @@ Haar measure directly, without transport to a Euclidean space.
 * H. Davenport, *Minkowski's inequality for the minima associated with a convex body*, Quart. J.
   Math. Oxford **10** (1939), 119–121.
 * M. Henk, *Successive minima and lattice points*, Rend. Circ. Mat. Palermo (2) Suppl. **70**
-  (2002), 377–384, Theorem 1.2 and §3: <https://arxiv.org/abs/math/0204158>.
+  (2002), 377–384, Theorem 1.3 and §3: <https://arxiv.org/abs/math/0204158>.
 * J.-H. Evertse, *Geometry of Numbers*, §2.3, Theorem 2.9 and the proof of its lower bound,
   printed pp.24–27: <https://pub.math.leidenuniv.nl/~evertsejh/dio19-2.pdf>.
 -/
@@ -310,8 +311,8 @@ private theorem fiber_fold (m : ℕ) (Y : Set (Fin n → ℝ)) (z : {i : Fin n /
   simp only [fold, foldPi, mem_ofPred_eq]
   constructor
   · rintro ⟨hI, k, hk, hY⟩
-    refine ⟨fun i ↦ by simpa [i.2] using hI i.1 i.2,
-      fun i ↦ k i.1, ?_⟩
+    refine ⟨fun i ↦ by simpa [i.property] using hI i.val i.property,
+      fun i ↦ k i.val, ?_⟩
     convert hY using 1
     ext i
     by_cases h : (i : ℕ) < m
@@ -520,7 +521,8 @@ private theorem prod_mul_volume_image_le_one {L : Submodule ℤ E} {K : Set E} (
 
 variable [MeasurableSpace E] [BorelSpace E]
 
-/-- The theorem for the interior of `K`, assuming `0 ∈ interior K` and `0 < g i`. -/
+/-- The theorem for the interior of `K`, assuming `0 ∈ interior K`, `0 < g i` and that `g` is
+monotone. -/
 private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopology L]
     (μ : Measure E) [μ.IsAddHaarMeasure] {K : Set E} (hK : Convex ℝ K)
     (hKs : ∀ x ∈ K, -x ∈ K) (h0 : (0 : E) ∈ interior K) {n : ℕ} (hn : n = finrank ℝ E)
@@ -594,7 +596,7 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E)
     refine discreteTopology_of_isOpen_singleton_zero ?_
     have hopen : IsOpen {v : E | gauge K v < g ⟨0, hnpos⟩} :=
       isOpen_lt (continuous_gauge hK (mem_interior_iff_mem_nhds.1 h0)) continuous_const
-    convert hopen.preimage (continuous_subtype_val (p := (· ∈ L))) using 1
+    convert hopen.preimage (continuous_subtypeVal (p := (· ∈ L))) using 1
     ext v
     simp only [mem_singleton_iff, mem_preimage, mem_ofPred_eq]
     refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
@@ -602,7 +604,7 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E)
     · have hIio : Iio (⟨0, hnpos⟩ : Fin n) = ∅ := by
         ext i
         simp [Fin.lt_def]
-      have h := hgap ⟨0, hnpos⟩ v v.2 hv
+      have h := hgap ⟨0, hnpos⟩ v v.property hv
       rw [hIio, image_empty, span_empty, mem_bot] at h
       exact Subtype.ext h
   -- Replace `g` by its running maximum `G`, which is monotone and still satisfies `hgap`.
@@ -672,7 +674,8 @@ theorem prod_successiveMin_le_covolume_of_two_pow_finrank_le (L : Submodule ℤ 
 space `E` of positive dimension `n`, a Haar measure `μ` on `E`, and a convex body `K` symmetric
 about `0`, the first successive minimum `λ₀` of `L` with respect to `K` satisfies
 `λ₀ⁿ · μ.real K ≤ 2ⁿ · covolume L μ`. It follows from the upper bound of Minkowski's second
-theorem, since `λ₀ ≤ λᵢ` for every `i`. -/
+theorem, since `λ₀ ≤ λᵢ` for every `i` when `0` is an interior point of `K` (otherwise `K` has
+empty interior and `μ.real K = 0`). -/
 theorem successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume (L : Submodule ℤ E)
     [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
     {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) (hE : 0 < finrank ℝ E) :
@@ -688,7 +691,6 @@ theorem successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume (L : Submodule
   rw [← Fin.prod_const]
   exact Finset.prod_le_prod₀ (fun _ _ ↦ successiveMin_nonneg L K _)
     fun i _ ↦ monotone_successiveMin L hK₀ (Fin.mk_le_mk.2 i.val.zero_le)
-
 
 /-! ### The lower bound -/
 
@@ -778,7 +780,6 @@ theorem Convex.prod_mul_volume_real_le_two_pow {n : ℕ} {K : Set (Fin n → ℝ
     (hKs : ∀ x ∈ K, -x ∈ K) {a : Fin n → ℝ} (ha : ∀ i, 0 ≤ a i)
     (hgap : ∀ i (z : Fin n → ℤ), gauge K (fun j ↦ (z j : ℝ)) < a i → ∀ j, i ≤ j → z j = 0) :
     (∏ i, a i) * volume.real K ≤ 2 ^ n := by
-  classical
   -- Apply the general upper bound to the lattice spanned by the standard basis `e`, with the
   -- vectors `e i` and the numbers `a i`.
   set e := Pi.basisFun ℝ (Fin n)

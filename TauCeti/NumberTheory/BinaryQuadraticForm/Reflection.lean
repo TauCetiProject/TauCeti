@@ -98,7 +98,7 @@ forms of discriminant `-n`; it is well defined since `reflected_smul` carries pr
 forms to properly equivalent forms. -/
 def reflectedClass (n : ℕ) [NeZero n] : PosDefProperClass n → PosDefProperClass n :=
   Quotient.map (fun f ↦ ⟨(f : BinaryQuadraticForm ℤ).reflected,
-      reflected_mem_posDef_inf_primitiveForms_iff.2 f.2⟩)
+      reflected_mem_posDef_inf_primitiveForms_iff.2 f.property⟩)
     fun f g h ↦ by
       obtain ⟨γ, rfl⟩ := MulAction.mem_orbit_iff.1 h
       exact MulAction.mem_orbit_iff.2 ⟨SpecialLinearGroup.conjJ γ, Subtype.ext <|
@@ -107,7 +107,7 @@ def reflectedClass (n : ℕ) [NeZero n] : PosDefProperClass n → PosDefProperCl
 /-- The reflection of the class of a form is the class of the reflected form. -/
 @[simp] theorem reflectedClass_mk {n : ℕ} [NeZero n] (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     reflectedClass n (Quotient.mk _ f) = Quotient.mk _ ⟨(f : BinaryQuadraticForm ℤ).reflected,
-      reflected_mem_posDef_inf_primitiveForms_iff.2 f.2⟩ :=
+      reflected_mem_posDef_inf_primitiveForms_iff.2 f.property⟩ :=
   (rfl)
 
 /-- Reflection on proper classes is an involution. -/

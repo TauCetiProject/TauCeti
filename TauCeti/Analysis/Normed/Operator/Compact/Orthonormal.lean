@@ -66,7 +66,7 @@ theorem finite_setOf_le_norm_of_apply_eq_smul (hT : IsCompactOperator T) (hv : �
   obtain ⟨m, n, hmn, hlt⟩ := hT.exists_dist_lt_of_norm_le (u := fun k ↦ v (e k)) (fun _ ↦ hv _) hδ
   have hne : (e m : ι) ≠ e n := fun h ↦ hmn.ne (e.injective (Subtype.ext h))
   refine hlt.not_ge ?_
-  calc δ ≤ ‖μ (e m)‖ := (e m).2
+  calc δ ≤ ‖μ (e m)‖ := (e m).property
     _ = ‖⟪w (e m), T (v (e m)) - T (v (e n))⟫_𝕜‖ := by
       simp [hTv, inner_sub_right, inner_smul_right, hw.2 hne, inner_self_eq_norm_sq_to_K, hw.1]
     _ ≤ dist (T (v (e m))) (T (v (e n))) := by
