@@ -34,6 +34,9 @@ import TauCeti.Data.Nat.Periodic.Basic
 * `TauCeti.bijective_zpow_iff_natAbs` and `TauCeti.bijective_zsmul_iff_natAbs`: raising to the
   `m`-th power (multiplying by `m`) is bijective on a group if and only if raising to the
   `m.natAbs`-th power is.
+* `TauCeti.bijective_zpow_of_dvd` and `TauCeti.bijective_zsmul_of_dvd`: if raising to the `m`-th
+  power (multiplying by `m`) is bijective on a group and `d ∣ m`, then raising to the `d`-th power
+  is also bijective.
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
   power `(n + 1) / 2` inverts squaring on elements killed by `n`.
 -/
@@ -133,6 +136,20 @@ theorem bijective_zpow_iff_natAbs {G : Type*} [Group G] (m : ℤ) :
       conv_lhs => rw [h]
       rw [Function.comp_apply, zpow_neg]
     rw [hfun, Function.Bijective.of_comp_iff' inv_involutive.bijective]
+
+/-- If raising to the `m`-th power is bijective on a group and `d ∣ m`, then raising to the
+`d`-th power is also bijective. -/
+@[to_additive /-- If multiplication by `m : ℤ` is bijective on an additive group and `d ∣ m`, then
+multiplication by `d` is also bijective. -/]
+theorem bijective_zpow_of_dvd {G : Type*} [Group G] {d m : ℤ} (hdm : d ∣ m)
+    (hm : Function.Bijective fun x : G ↦ x ^ m) :
+    Function.Bijective fun x : G ↦ x ^ d := by
+  obtain ⟨k, rfl⟩ := hdm
+  have h1 : (fun x : G ↦ x ^ (d * k)) = (fun x : G ↦ x ^ d) ∘ (fun x : G ↦ x ^ k) := by
+    funext x; rw [Function.comp_apply, mul_comm, zpow_mul]
+  have h2 : (fun x : G ↦ x ^ (d * k)) = (fun x : G ↦ x ^ k) ∘ (fun x : G ↦ x ^ d) := by
+    funext x; rw [Function.comp_apply, zpow_mul]
+  exact ⟨Function.Injective.of_comp (h2 ▸ hm.1), Function.Surjective.of_comp (h1 ▸ hm.2)⟩
 
 /-- For odd `n`, raising to the power `(n + 1) / 2` inverts squaring on elements `a` with
 `a ^ n = 1`. -/

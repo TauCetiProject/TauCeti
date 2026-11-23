@@ -99,8 +99,10 @@ private lemma homotopyEquivalences_zsmul_add_proj {X : Type u} [TopologicalSpace
           ((((TopCat.of X).singularHomologyUliftAddEquiv ℤ (q + 1)).bijective_zsmul_iff m).1
             (hX q))
   have (q : ℕ) : Projective ((C.obj (TopCat.of X)).X q) := by
-    change Projective (((TopCat.toSSet.obj (TopCat.of X)).chainComplex
-      (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ))).X q)
+    -- `singularChainComplexFunctor` is definitionally `SSet.chainComplexFunctor` composed with
+    -- `TopCat.toSSet`.
+    dsimp only [C, singularChainComplexFunctor, SSet.chainComplexFunctor, Functor.comp_obj,
+      Functor.whiskeringLeft_obj_obj]
     exact SSet.projective_chainComplex_X_of_projective (TopCat.toSSet.obj (TopCat.of X))
       (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ)) q
   exact (ChainComplex.quasiIso_iff_of_projective (zsmulAddProjEndo x m)).1 hqi
@@ -137,6 +139,7 @@ theorem isZero_singularHomology_of_bijective_zsmul_int {X : Type u} [Topological
   have hkill : m • 𝟙 (FCh.obj (C.obj (TopCat.of X))) = 0 := by
     ext q : 1
     let G := MonoidalCategory.tensorRight ((C.obj (TopCat.of X)).X q)
+    -- `(FCh.obj D).X q` is `F.obj (D.X q) = M' ⊗ D.X q = G.obj M'`, so `G` pulls out `m • 𝟙 M'`.
     change m • 𝟙 (G.obj M') = 0
     rw [← G.map_id, ← G.map_zsmul, hM0, G.map_zero]
   let H := HomologicalComplex.homologyFunctor (ModuleCat.{u} (ULift.{u} ℤ)) (.down ℕ) (n + 1)

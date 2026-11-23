@@ -46,7 +46,7 @@ and no spectral sequence is needed.
 
 ## Main results
 
-* `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: vanishing of `H_{i+1}(-; k)`
+* `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: vanishing of `H_i(-; k)`
   transfers to the `(n + 2)`-connected cover of an `(n + 1)`-connected Hausdorff space when the
   `K(πₙ₊₂, n + 1)` spaces are `k`-acyclic.
 * `TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology`: given the two inputs, every
@@ -76,22 +76,21 @@ variable (k : Type u) [Ring k]
 
 /-- **The `(n + 2)`-connected cover of a `k`-acyclic space.** Let `X` be a Hausdorff,
 path-connected space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and whose
-`(i + 1)`-st `k`-homology vanishes. If every `K(πₘ₊₂(X), m + 1)` space has the `k`-homology of a
-point, then the `(i + 1)`-st `k`-homology of the `(m + 2)`-connected cover `X⟨m + 2⟩` also
-vanishes. -/
+`i`-th `k`-homology vanishes. If every `K(πₘ₊₂(X), m + 1)` space has the `k`-homology of a point,
+then the `i`-th `k`-homology of the `(m + 2)`-connected cover `X⟨m + 2⟩` also vanishes. -/
 theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{u}) [T2Space X]
     [PathConnectedSpace X] (x : X) (m : ℕ)
     (hX : ∀ j, j ≠ 0 → j < m + 2 → Subsingleton (π_ j X x))
     (hK : ∀ {Y : Type u} [TopologicalSpace Y] {y : Y},
       IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Y y →
         ∀ j, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (j + 1)))
-    (i : ℕ) (hXk : Subsingleton (((singularChains k).obj X).homology (i + 1))) :
-    Subsingleton (((singularChains k).obj (nConnectedCover (m + 2) X x)).homology (i + 1)) := by
+    (i : ℕ) (hXk : Subsingleton (((singularChains k).obj X).homology i)) :
+    Subsingleton (((singularChains k).obj (nConnectedCover (m + 2) X x)).homology i) := by
   -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it is `k`-acyclic and the
   -- projection is a `k`-homology isomorphism.
   have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
     (serreFibrations_nConnectedCoverProj (m + 2) X x)
-    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK (i + 1)
+    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK i
   exact (subsingleton_singularChains_homology_iff_of_isIso _
     (nConnectedCoverProj (m + 2) X x) _).2 hXk
 
@@ -148,10 +147,9 @@ theorem prop_homotopyGroup_of_subsingleton_singularHomology {Y : Type u} [Topolo
     have := hf.isIso_singularHomologyMap (ModuleCat.of k k) q
     exact (subsingleton_singularChains_homology_iff_of_isIso _ f _).2 (hWk q hq1 hq2)
   · -- The fibres of the cover are `k`-acyclic, so `k`-homology vanishing transfers to the cover.
-    obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
     exact subsingleton_singularHomology_nConnectedCover_of_fiber k W w m hW
       (fun hY' ↦ hK (hπ w m hW fun j hj1 hj2 ↦ hWk j (by omega) (by omega))
         (hY'.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm))
-      q' (hWk (q' + 1) hq1 hq2)
+      q (hWk q hq1 hq2)
 
 end TauCeti

@@ -120,6 +120,16 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod {Y : Type 
       exact ((TopCat.of Y).isZero_singularHomology_zmod_iff_of_ringEquiv
         (ULift.ringEquiv : ULift.{u} (ZMod m) ≃+* ZMod m) q).1 (hY q hq1 hq2)
 
+/-- Vanishing of reduced singular homology in all degrees implies vanishing of ordinary singular
+homology in every nonzero degree. -/
+private lemma isZero_singularHomology_of_isZero_reduced {R : Type*} [Ring R]
+    (M : ModuleCat.{u} R) {Y : Type u} [TopologicalSpace Y]
+    (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor M q).obj (TopCat.of Y)))
+    {q : ℕ} (hq : q ≠ 0) :
+    IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj M).obj (TopCat.of Y)) := by
+  obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
+  exact (hY (q' + 1)).of_iso ((reducedSingularHomologySuccIso M q').app (TopCat.of Y)).symm
+
 /-- **Reduced-homology mod-`m` vanishing theorem with ring coefficients.** If `π₁(Y, y)` is trivial
 and the reduced singular homology of `Y` with coefficients in a ring `k ≃+* ZMod m` in the universe
 of `Y` vanishes in every degree, then multiplication by `m` is a bijection on every higher homotopy
@@ -130,9 +140,8 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_ringEqui
     (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) q).obj (TopCat.of Y)))
     (n : ℕ) : Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
   bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv e fun q hq _ ↦ by
-    obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
-    exact (hY (q' + 1)).of_iso
-      ((reducedSingularHomologySuccIso (ModuleCat.of k k) q').app (TopCat.of Y)).symm
+    rw [← singularHomologyFunctor_obj_obj]
+    exact isZero_singularHomology_of_isZero_reduced (ModuleCat.of k k) hY (by omega)
 
 /-- **Reduced-homology mod-`m` vanishing theorem.** If `π₁(Y, y)` is trivial and the reduced
 singular homology of `Y` with coefficients in the lifted integer module `ℤ/m` vanishes in every
@@ -143,11 +152,8 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod {Y 
     (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor
       (ModuleCat.of ℤ (ULift.{u} (ZMod m))) q).obj (TopCat.of Y))) (n : ℕ) :
     Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
-  bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod fun q hq _ ↦ by
-    obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
-    exact (hY (q' + 1)).of_iso
-      ((reducedSingularHomologySuccIso
-        (ModuleCat.of ℤ (ULift.{u} (ZMod m))) q').app (TopCat.of Y)).symm
+  bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod fun q hq _ ↦
+    isZero_singularHomology_of_isZero_reduced (ModuleCat.of ℤ (ULift.{u} (ZMod m))) hY (by omega)
 
 /-- **Sharp finite-range mod-two vanishing theorem with ring coefficients.** If `π₁(Y, y)` is
 trivial and `H_q(Y; k) = 0` for all `2 ≤ q ≤ n + 3` for a ring `k ≃+* ZMod 2` in the universe of

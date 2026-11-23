@@ -19,8 +19,8 @@ forms the sequence `ℤ → ℤ → ℤ/n` of `ℤ`-modules, which is the short 
 for homology constructions in arbitrary universes.
 
 * `TauCeti.zmodCoefficientSequence` packages the multiplication and reduction maps.
-* `TauCeti.zmodZeroModuleIso` and `TauCeti.zmodCoefficientSequence_zero_g` isolate the
-  identification `ZMod 0 = ℤ` at modulus zero.
+* `TauCeti.zmodCoefficientSequence_zero_X₂_eq_X₃` and `TauCeti.zmodCoefficientSequence_zero_g`
+  isolate the identification `ZMod 0 = ℤ` at modulus zero.
 * `TauCeti.zmodCoefficientSequence_shortExact` proves its short exactness for `n ≠ 0`.
 -/
 
@@ -54,38 +54,15 @@ theorem zmodCoefficientSequence_f (n : ℕ) :
 theorem zmodCoefficientSequence_g_apply (n : ℕ) (z : ℤ) :
     (zmodCoefficientSequence.{u} n).g (ULift.up z) = ULift.up (z : ZMod n) := rfl
 
-/-- Identification of `ModuleCat.of ℤ (ULift.{u} (ZMod 0))` with `ModuleCat.of ℤ (ULift.{u} ℤ)`,
-isolating the definitional equality `ZMod 0 = ℤ`. -/
-def zmodZeroModuleIso :
-    ModuleCat.of ℤ (ULift.{u} (ZMod 0)) ≅ ModuleCat.of ℤ (ULift.{u} ℤ) :=
-  Iso.refl _
+/-- For modulus `0`, `ZMod 0` is `ℤ` definitionally, so the middle and right objects of
+`TauCeti.zmodCoefficientSequence 0` coincide. -/
+theorem zmodCoefficientSequence_zero_X₂_eq_X₃ :
+    (zmodCoefficientSequence.{u} 0).X₂ = (zmodCoefficientSequence.{u} 0).X₃ := rfl
 
-/-- The forward map of `TauCeti.zmodZeroModuleIso` is the identity (via `ZMod 0 = ℤ`). -/
-theorem zmodZeroModuleIso_hom :
-    zmodZeroModuleIso.{u}.hom = 𝟙 (ModuleCat.of ℤ (ULift.{u} ℤ)) :=
-  (rfl)
-
-/-- The inverse map of `TauCeti.zmodZeroModuleIso` is the identity (via `ZMod 0 = ℤ`). -/
-theorem zmodZeroModuleIso_inv :
-    zmodZeroModuleIso.{u}.inv = 𝟙 (ModuleCat.of ℤ (ULift.{u} ℤ)) :=
-  (rfl)
-
-/-- Pointwise action of `TauCeti.zmodZeroModuleIso.hom` (via `ZMod 0 = ℤ`). -/
-@[simp]
-theorem zmodZeroModuleIso_hom_apply (x : ModuleCat.of ℤ (ULift.{u} (ZMod 0))) :
-    zmodZeroModuleIso.{u}.hom x = x :=
-  (rfl)
-
-/-- Pointwise action of `TauCeti.zmodZeroModuleIso.inv` (via `ZMod 0 = ℤ`). -/
-@[simp]
-theorem zmodZeroModuleIso_inv_apply (x : ModuleCat.of ℤ (ULift.{u} ℤ)) :
-    zmodZeroModuleIso.{u}.inv x = x :=
-  (rfl)
-
-/-- For modulus `0`, `ZMod 0` is `ℤ` and the reduction map `(zmodCoefficientSequence 0).g` is the
-inverse of `TauCeti.zmodZeroModuleIso`. -/
+/-- For modulus `0`, `ZMod 0` is `ℤ` definitionally, so the reduction map
+`(zmodCoefficientSequence 0).g` is `eqToHom`. -/
 theorem zmodCoefficientSequence_zero_g :
-    (zmodCoefficientSequence.{u} 0).g = zmodZeroModuleIso.inv := by
+    (zmodCoefficientSequence.{u} 0).g = eqToHom zmodCoefficientSequence_zero_X₂_eq_X₃ := by
   ext ⟨z⟩
   rfl
 

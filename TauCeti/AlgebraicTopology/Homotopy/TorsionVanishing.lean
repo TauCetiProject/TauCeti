@@ -121,9 +121,7 @@ theorem isTorsion'_homotopyGroup_of_subsingleton_singularHomology (k : Type) [Co
     (fun hA _ _ _ _ _ hX ↦
       IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf k
         (hA.isUnit_addOrderOf fun s hs ↦ by simpa using IsLocalization.map_units k ⟨s, hs⟩) hX)
-    y n fun q hq _ ↦ by
-      obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
-      exact hY q'
+    y n fun q hq _ ↦ subsingleton_singularChains_homology_of_forall_succ k hY (by omega)
 
 /-- **Serre's theorem modulo `S`-torsion.** Let `S` be a submonoid of `ℤ`. If every class of the
 positive-degree integral homology of a simply connected space `Y` is killed by an element of `S`,

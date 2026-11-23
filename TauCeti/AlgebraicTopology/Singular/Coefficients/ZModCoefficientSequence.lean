@@ -28,8 +28,8 @@ long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/m ⟶ 0` (`TauCeti.zmodCoeffic
 preserves coproducts and homology, so the two agree (`TopCat.singularHomologyZModIso`), and one
 vanishes exactly when the other does (`TopCat.isZero_singularHomology_zmod_iff`,
 `TopCat.isZero_singularHomology_zmod_iff_of_ringEquiv` for any coefficient ring isomorphic to
-`ZMod m` in the universe of the space, and universe-`0` variants
-`TopCat.isZero_singularHomology_uliftZMod_iff` and `TopCat.isZero_singularHomology_zmod_iff'`).
+`ZMod m` in the universe of the space, and the universe-`0` variant
+`TopCat.isZero_singularHomology_zmod_iff'`).
 
 The first map of the coefficient sequence `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/m ⟶ 0` is multiplication by `m`, so it
 induces multiplication by `m` on integral singular homology `Hₙ(X; ℤ)`
@@ -136,22 +136,10 @@ theorem isZero_singularHomology_zmod_iff_of_ringEquiv (X : TopCat.{u}) {k : Type
         (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X) ↔
       IsZero (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).obj X) := by
   rw [Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
-      (AddEquiv.ulift.trans e.symm.toAddEquiv).toIntLinearEquiv.toModuleIso).app X),
-    Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
-      (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := k) k).symm).app X ≪≫
-      ((Functor.singularHomologyFunctorObjCompIso
-        (ModuleCat.restrictScalars.{u} (algebraMap ℤ k)) (ModuleCat.of k k) n).app X).symm),
-    ModuleCat.isZero_iff_subsingleton, ModuleCat.isZero_iff_subsingleton]
-  rfl
-
-/-- In universe `0`, vanishing of singular homology with coefficients in the integer module
-`ULift (ZMod m)` agrees with vanishing of singular homology with coefficients in `ZMod m`. -/
-theorem isZero_singularHomology_uliftZMod_iff (X : TopCat.{0}) (m n : ℕ) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
-        (ModuleCat.of ℤ (ULift.{0} (ZMod m)))).obj X) ↔
-      IsZero (((singularHomologyFunctor (ModuleCat.{0} (ZMod m)) n).obj
-        (ModuleCat.of (ZMod m) (ZMod m))).obj X) :=
-  X.isZero_singularHomology_zmod_iff_of_ringEquiv (RingEquiv.refl (ZMod m)) n
+      ((AddEquiv.ulift.trans e.symm.toAddEquiv).toIntLinearEquiv.toModuleIso ≪≫
+        (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := k) k).symm)).app X)]
+  exact (ModuleCat.restrictScalars.{u} (algebraMap ℤ k)).isZero_singularHomologyFunctor_iff
+    (ModuleCat.of k k) n X
 
 /-- In universe `0`, singular homology with coefficients in the integer module `ℤ/m` vanishes
 exactly when singular homology with coefficients in the ring `ZMod m` does, with the coefficients
@@ -162,7 +150,7 @@ theorem isZero_singularHomology_zmod_iff' (X : TopCat.{0}) (m n : ℕ) :
         (ModuleCat.of (ZMod m) (ZMod m))).obj X) := by
   rw [Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).mapIso
     (ULift.moduleEquiv : ULift.{0} (ZMod m) ≃ₗ[ℤ] ZMod m).toModuleIso.symm).app X)]
-  exact X.isZero_singularHomology_uliftZMod_iff m n
+  exact X.isZero_singularHomology_zmod_iff_of_ringEquiv (RingEquiv.refl (ZMod m)) n
 
 /-! ### Multiplication by `m` and reduction modulo `m` -/
 
@@ -202,14 +190,15 @@ theorem singularHomologyReductionZMod_naturality {X Y : TopCat.{u}} (f : X ⟶ Y
   ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
     (TauCeti.zmodCoefficientSequence.{u} m).g).naturality f
 
-/-- For `m = 0`, reduction modulo `0` is the isomorphism on singular homology induced by
-`TauCeti.zmodZeroModuleIso.symm`. -/
+/-- For `m = 0`, reduction modulo `0` is `eqToHom` on singular homology (via `ZMod 0 = ℤ`). -/
 theorem singularHomologyReductionZMod_zero_eq (X : TopCat.{u}) (n : ℕ) :
     X.singularHomologyReductionZMod 0 n =
-      (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
-        TauCeti.zmodZeroModuleIso.symm).app X).hom :=
-  congrArg (fun f ↦ ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map f).app X)
+      eqToHom (congrArg (fun M ↦ ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj M).obj X)
+        TauCeti.zmodCoefficientSequence_zero_X₂_eq_X₃) := by
+  have h := congrArg (fun f ↦ ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map f).app X)
     TauCeti.zmodCoefficientSequence_zero_g
+  rw [eqToHom_map, eqToHom_app] at h
+  exact h
 
 /-- For `m = 0`, reduction modulo `0` acts as the identity on integral singular homology. -/
 @[simp]
@@ -218,14 +207,8 @@ theorem singularHomologyReductionZMod_zero_apply (X : TopCat.{u}) (n : ℕ)
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) :
     X.singularHomologyReductionZMod 0 n x = x := by
   rw [X.singularHomologyReductionZMod_zero_eq n]
-  have h : ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
-      TauCeti.zmodZeroModuleIso.inv).app X x = x := by
-    rw [TauCeti.zmodZeroModuleIso_inv]
-    -- `ZMod 0 = ℤ` definitionally, so `.map` now acts on `𝟙 (ModuleCat.of ℤ (ULift ℤ))`.
-    change ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
-      (𝟙 (ModuleCat.of ℤ (ULift.{u} ℤ)))).app X x = x
-    rw [CategoryTheory.Functor.map_id, NatTrans.id_app, ModuleCat.id_apply]
-  exact h
+  -- `eqToHom rfl` acts as the identity since `ZMod 0 = ℤ` definitionally.
+  rfl
 
 /-- **The kernel of the reduction modulo `m`**: an integral homology class reduces to zero modulo
 `m` exactly when it is an `m`-multiple of a class (for all `m : ℕ`, including `m = 0`). -/
@@ -234,10 +217,10 @@ theorem ker_singularHomologyReductionZMod (X : TopCat.{u}) (m n : ℕ) :
       LinearMap.range (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
   rcases eq_or_ne m 0 with rfl | hm
-  · have : Mono (X.singularHomologyReductionZMod 0 n) := by
+  · have : IsIso (X.singularHomologyReductionZMod 0 n) := by
       rw [X.singularHomologyReductionZMod_zero_eq n]
       infer_instance
-    rw [LinearMap.ker_eq_bot.2 ((ModuleCat.mono_iff_injective _).1 this)]
+    rw [LinearMap.ker_eq_bot.2 ((ModuleCat.mono_iff_injective _).1 inferInstance)]
     simp
   · have : NeZero m := ⟨hm⟩
     rw [← X.singularHomologyFunctor_map_zmodCoefficientSequence_f_app m n]
@@ -365,10 +348,10 @@ theorem bijective_zsmul_singularHomology_of_isZero_zmod (X : TopCat.{u}) (m n : 
     Function.Bijective fun x : ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X ↦ (m : ℤ) • x := by
   rcases eq_or_ne m 0 with rfl | hm
-  · have hnℤ : IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+  · -- `ZMod 0 = ℤ` definitionally, so `hn` gives `IsZero` for `ULift.{u} ℤ` coefficients.
+    have hnℤ : IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) :=
-      hn.of_iso (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
-        TauCeti.zmodZeroModuleIso).app X).symm
+      hn.of_iso (Iso.refl _)
     have : Subsingleton (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) := ModuleCat.isZero_iff_subsingleton.1 hnℤ
     exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩

@@ -115,15 +115,8 @@ private theorem isZero_singularHomology_zmod_of_bijective_zsmul {m : ℕ} {A : T
     refine ((TopCat.of X).isZero_singularHomology_zmod_iff_forall_prime m (n + 1)).2
       fun p hp hpm ↦ ?_
     have : Fact p.Prime := ⟨hp⟩
-    obtain ⟨q, rfl⟩ := hpm
-    have hAp : Function.Bijective fun a : A ↦ (p : ℤ) • a := by
-      have h1 : (fun a : A ↦ ((p * q : ℕ) : ℤ) • a) =
-          (fun a : A ↦ (p : ℤ) • a) ∘ (fun a : A ↦ (q : ℤ) • a) := by
-        funext a; rw [Function.comp_apply, Nat.cast_mul, mul_zsmul]
-      have h2 : (fun a : A ↦ ((p * q : ℕ) : ℤ) • a) =
-          (fun a : A ↦ (q : ℤ) • a) ∘ (fun a : A ↦ (p : ℤ) • a) := by
-        funext a; rw [Function.comp_apply, Nat.cast_mul, mul_comm, mul_zsmul]
-      exact ⟨Function.Injective.of_comp (h2 ▸ hA.1), Function.Surjective.of_comp (h1 ▸ hA.2)⟩
+    have hAp : Function.Bijective fun a : A ↦ (p : ℤ) • a :=
+      TauCeti.bijective_zsmul_of_dvd (Int.natCast_dvd_natCast.2 hpm) hA
     have : IsSemisimpleRing (ULift.{u} (ZMod p)) :=
       (ULift.ringEquiv : ULift.{u} (ZMod p) ≃+* ZMod p).symm.isSemisimpleRing
     exact ((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv
