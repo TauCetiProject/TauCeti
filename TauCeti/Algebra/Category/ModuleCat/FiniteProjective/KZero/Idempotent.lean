@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Monoid
 
 import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
+import TauCeti.RingTheory.GrothendieckRing
 
 /-!
 # The idempotent monoid and projective `K₀`
@@ -17,22 +19,26 @@ import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 Building on `TauCeti.IdempotentMonoid` in `TauCeti.LinearAlgebra.Matrix.Idempotent.Monoid`, this
 file proves `objectCodeAddEquiv : IdempotentMonoid R ≃+ ObjectCode (FiniteProjectiveRight R)` and
 identifies the group completions of `V(R)` with split projective `K₀` for right modules
-(`kZeroEquiv`, with `kZeroEquiv_of_mk` and `exists_kZeroEquiv_sub_nsmul_eq`) and left modules via
-`opEquiv` (`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent`.
+(`kZeroEquiv`, `kZeroEquiv_of_mk`, `kZeroEquiv_of_mk_one`, `exists_kZeroEquiv_sub_nsmul_eq`,
+`toKZero`, `toKZero_mk`, `map_toKZero`, `map_comp_kZeroEquiv`, `toKZero_mk_eq_toKZero_mk_iff`,
+`mem_mrange_toKZero_iff`, `toKZero_sub_one_eq_classOf_of_linearEquiv`) and left modules via
+`opEquiv` (`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent` and
+`extendScalarsOfIdempotentIso`.
 
 ## References
 
 * J. Rosenberg, *Algebraic K-Theory and Its Applications*, §1.2.
 * C. A. Weibel, *The K-book*, Chapter II, §2, the definition of `K₀` by idempotent matrices.
+* B. Blackadar, *K-Theory for Operator Algebras*, §§1.7.2 and 4.6.
 -/
 
 public section
 
 noncomputable section
 
-namespace TauCeti
+open CategoryTheory CategoryTheory.Limits LinearMap Matrix MulOpposite _root_.Algebra
 
-open CategoryTheory Matrix LinearMap _root_.Algebra
+namespace TauCeti
 
 universe u
 
@@ -52,7 +58,7 @@ noncomputable def FiniteProjectiveModules.ofIdempotent {R : Type u} [Ring R] {ι
 noncomputable def FiniteProjectiveModules.ofIdempotentLinearEquiv {R : Type u} [Ring R]
     {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e) :
     (ofIdempotent e he).obj ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ) :=
-  (e.rangeMulVecBilinReindexEquiv (Fintype.equivFin ι) (Fintype.equivFin ι)).symm
+  (e.rangeMulVecBilinSubmatrixEquiv (Fintype.equivFin ι).symm (Fintype.equivFin ι).symm).symm
 
 namespace IdempotentMonoid
 
@@ -76,7 +82,7 @@ private def objectCodeFun :
     fun _ _ he hg h ↦ objectCode_ofIdempotent_congr R he hg h
 
 variable {R} in
-private theorem objectCodeFun_mk_linearEquiv {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
+private theorem objectCodeFun_mk_eq_of_linearEquiv {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
     (he : IsIdempotentElem e) {P : FiniteProjectiveRight R}
     (θ : P.obj ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ)) :
     objectCodeFun R (mk e he) = objectCode.{u} P := by
@@ -92,7 +98,7 @@ variable {R} in
 private theorem objectCodeFun_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R)
     (he : IsIdempotentElem e) :
     objectCodeFun R (mk e he) = objectCode.{u} (FiniteProjectiveModules.ofIdempotent e he) :=
-  objectCodeFun_mk_linearEquiv (P := FiniteProjectiveModules.ofIdempotent e he) he
+  objectCodeFun_mk_eq_of_linearEquiv (P := FiniteProjectiveModules.ofIdempotent e he) he
     (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
 
 private def objectCodeHom : IdempotentMonoid R →+ ObjectCode.{u} (FiniteProjectiveRight R) where
@@ -110,18 +116,22 @@ private def objectCodeHom : IdempotentMonoid R →+ ObjectCode.{u} (FiniteProjec
     induction a using ind with | mk m e he =>
     induction b using ind with | mk n f hf =>
     rw [mk_add_mk, objectCodeFun_mk e he, objectCodeFun_mk f hf, ← objectCode_biprod.{u}]
-    exact objectCodeFun_mk_linearEquiv (he.fromBlocks_zero₁₂_zero₂₁ hf)
+    exact objectCodeFun_mk_eq_of_linearEquiv (he.fromBlocks_zero₁₂_zero₂₁ hf)
       (((FiniteProjectiveModules.biprodLinearEquiv _ _).trans
         ((FiniteProjectiveModules.ofIdempotentLinearEquiv e he).prodCongr
           (FiniteProjectiveModules.ofIdempotentLinearEquiv f hf))).trans
         (rangeMulVecBilinFromBlocksEquiv e f).symm)
 
+private theorem objectCodeHom_apply (x : IdempotentMonoid R) :
+    objectCodeHom R x = objectCodeFun R x :=
+  rfl
+
 private theorem objectCodeHom_bijective : Function.Bijective (objectCodeHom R) :=
   ⟨fun a b hab ↦ by
     induction a using ind with | mk m e he =>
     induction b using ind with | mk n f hf =>
-    change objectCodeFun R (mk e he) = objectCodeFun R (mk f hf) at hab
-    rw [objectCodeFun_mk e he, objectCodeFun_mk f hf, objectCode_eq_objectCode_iff.{u}] at hab
+    rw [objectCodeHom_apply, objectCodeHom_apply, objectCodeFun_mk e he, objectCodeFun_mk f hf,
+      objectCode_eq_objectCode_iff.{u}] at hab
     obtain ⟨iso⟩ := hab
     exact (mk_eq_mk_iff he hf).mpr ((nonempty_linearEquiv_range_mulVecBilin_iff he hf).mp
       ⟨(FiniteProjectiveModules.ofIdempotentLinearEquiv e he).symm.trans
@@ -132,7 +142,7 @@ private theorem objectCodeHom_bijective : Function.Bijective (objectCodeHom R) :
     have := (finiteProjectiveModules_iff.mp P.property).1
     have := (finiteProjectiveModules_iff.mp P.property).2
     obtain ⟨n, e, he, ⟨θ⟩⟩ := Module.Finite.exists_linearEquiv_range_mulVecBilin R P.obj
-    exact ⟨mk e he, objectCodeFun_mk_linearEquiv he θ⟩⟩
+    exact ⟨mk e he, objectCodeFun_mk_eq_of_linearEquiv he θ⟩⟩
 
 /-- **Idempotent presentation of the monoid of projective modules.** `[e] ↦ [e Rⁿ]` is an
 additive isomorphism `IdempotentMonoid R ≃+ ObjectCode (FiniteProjectiveRight R)`. -/
@@ -141,18 +151,18 @@ def objectCodeAddEquiv : IdempotentMonoid R ≃+ ObjectCode.{u} (FiniteProjectiv
 
 variable {R} in
 /-- Evaluating `objectCodeAddEquiv` on `[e]` yields `objectCode P` for any `P ≃ₗ[Rᵐᵒᵖ] e R^ι`. -/
-theorem objectCodeAddEquiv_mk_linearEquiv {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
+theorem objectCodeAddEquiv_mk_eq_of_linearEquiv {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
     (he : IsIdempotentElem e) {P : FiniteProjectiveRight R}
     (θ : P.obj ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ)) :
     objectCodeAddEquiv R (mk e he) = objectCode.{u} P :=
-  objectCodeFun_mk_linearEquiv he θ
+  objectCodeFun_mk_eq_of_linearEquiv he θ
 
 variable {R} in
 @[simp]
 theorem objectCodeAddEquiv_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R)
     (he : IsIdempotentElem e) :
     objectCodeAddEquiv R (mk e he) = objectCode.{u} (FiniteProjectiveModules.ofIdempotent e he) :=
-  objectCodeAddEquiv_mk_linearEquiv (P := FiniteProjectiveModules.ofIdempotent e he) he
+  objectCodeAddEquiv_mk_eq_of_linearEquiv (P := FiniteProjectiveModules.ofIdempotent e he) he
     (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
 
 /-- **`K₀(R)` is the group completion of the idempotent monoid `V(R)`.** Sends `[e]` to `[eRⁿ]`
@@ -173,7 +183,7 @@ theorem kZeroEquiv_of_mk {e : Matrix ι ι R} (he : IsIdempotentElem e) (X : Fin
     ((AddLocalization.addMonoidOf ⊤).addEquivOfAddEquiv_eq
       (k := AddLocalization.addMonoidOf (M := ObjectCode.{u} (FiniteProjectiveRight R)) ⊤)
       (AddSubmonoid.map_equiv_top (objectCodeAddEquiv R)) (mk e he))).trans ?_
-  rw [objectCodeAddEquiv_mk_linearEquiv he θ]
+  rw [objectCodeAddEquiv_mk_eq_of_linearEquiv he θ]
   exact SplitK0.grothendieckAddGroupEquiv_of_objectCode.{u} X
 
 -- Not `@[simp]`: the simp normal form of `GrothendieckAddGroup.of x` is
@@ -183,14 +193,9 @@ theorem kZeroEquiv_of_mk {e : Matrix ι ι R} (he : IsIdempotentElem e) (X : Fin
 theorem kZeroEquiv_of_mk_one (m : ℕ) :
     kZeroEquiv R (GrothendieckAddGroup.of (mk (1 : Matrix (Fin m) (Fin m) R) .one)) =
       m • SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := by
-  -- `Rᵐ`, the image of the identity matrix, written as `(Rᵐᵒᵖ)ᵐ` through `unop` on coordinates.
-  let L : (Fin m → Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] (Fin m → R) :=
-    .piCongrRight fun _ ↦ (MulOpposite.opLinearEquiv Rᵐᵒᵖ).symm
-  have htop : range (mulVecBilin R Rᵐᵒᵖ (1 : Matrix (Fin m) (Fin m) R)) = ⊤ :=
-    range_eq_top.2 fun v ↦ ⟨v, one_mulVec v⟩
   rw [kZeroEquiv_of_mk _ ⟨ModuleCat.of Rᵐᵒᵖ (Fin m → Rᵐᵒᵖ),
     finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
-    (L.trans (LinearEquiv.ofTop _ htop).symm)]
+    (rangeMulVecBilinOneEquiv (Fin m) R).symm]
   exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _) (.refl _ _)
 
 /-- **Every class in `K₀(R)` is `[eRⁿ] - m[R]`.** Every element of `K₀(R)` is the difference of
@@ -207,6 +212,213 @@ theorem exists_kZeroEquiv_sub_nsmul_eq (x : KZero R) :
 end IdempotentMonoid
 
 end KZero
+
+section ScalarExtension
+
+namespace FiniteProjectiveModules
+
+variable {R S : Type u} [Ring R] [Ring S]
+
+/-- **Extension of scalars on `ofIdempotent`.** Along a ring homomorphism `f : R →+* S`,
+extending scalars of the finitely generated projective right `R`-module
+`FiniteProjectiveModules.ofIdempotent e he` yields a module canonically isomorphic to
+`FiniteProjectiveModules.ofIdempotent (e.map f) (he.matrix_map f)`. -/
+noncomputable def extendScalarsOfIdempotentIso (f : R →+* S) {ι : Type*} [Fintype ι]
+    {e : Matrix ι ι R} (he : IsIdempotentElem e) :
+    (RingHom.op f).finiteProjectiveModulesExtendScalars.obj (ofIdempotent e he) ≅
+      ofIdempotent (e.map f) (he.matrix_map f) :=
+  ObjectProperty.isoMk (finiteProjectiveModules Sᵐᵒᵖ)
+    (eqToIso ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj _) ≪≫
+      ((BalancedExtension.congr (RingHom.op f) (ofIdempotentLinearEquiv e he)).trans
+        ((BalancedExtension.rangeMulVecBilinEquiv f he).trans
+          (ofIdempotentLinearEquiv (e.map f) (he.matrix_map f)).symm)).toModuleIso)
+
+/-- Transport of `(extendScalarsOfIdempotentIso f he).hom` through `ofIdempotentLinearEquiv`. -/
+@[simp]
+theorem ofIdempotentLinearEquiv_extendScalarsOfIdempotentIso_hom_apply (f : R →+* S)
+    {ι : Type*} [Fintype ι] {e : Matrix ι ι R} (he : IsIdempotentElem e)
+    (x : ((RingHom.op f).finiteProjectiveModulesExtendScalars.obj (ofIdempotent e he)).obj) :
+    ofIdempotentLinearEquiv (e.map f) (he.matrix_map f)
+        ((extendScalarsOfIdempotentIso f he).hom.hom x) =
+      BalancedExtension.rangeMulVecBilinEquiv f he
+        (BalancedExtension.congr (RingHom.op f) (ofIdempotentLinearEquiv e he)
+          ((eqToHom ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj _)).hom x)) := by
+  dsimp [extendScalarsOfIdempotentIso]; simp
+
+/-- Pure-tensor coordinate formula for `(extendScalarsOfIdempotentIso f he).hom`. -/
+theorem coe_ofIdempotentLinearEquiv_extendScalarsOfIdempotentIso_hom_tmul (f : R →+* S)
+    {ι : Type*} [Fintype ι] {e : Matrix ι ι R} (he : IsIdempotentElem e) (s : Sᵐᵒᵖ)
+    (v : (ofIdempotent e he).obj) :
+    (ofIdempotentLinearEquiv (e.map f) (he.matrix_map f)
+        ((extendScalarsOfIdempotentIso f he).hom.hom
+          ((eqToHom ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj _).symm).hom
+            (BalancedExtension.tmul (RingHom.op f) s v))) : ι → S) =
+      fun i ↦ f ((ofIdempotentLinearEquiv e he v : ι → R) i) * s.unop := by
+  rw [ofIdempotentLinearEquiv_extendScalarsOfIdempotentIso_hom_apply, ← ModuleCat.comp_apply,
+    eqToHom_trans, eqToHom_refl]; simp
+
+/-- Transport of `(extendScalarsOfIdempotentIso f he).inv` into `BalancedExtension.congr`. -/
+@[simp]
+theorem balancedExtensionCongr_extendScalarsOfIdempotentIso_inv_apply (f : R →+* S)
+    {ι : Type*} [Fintype ι] {e : Matrix ι ι R} (he : IsIdempotentElem e)
+    (w : (ofIdempotent (e.map f) (he.matrix_map f)).obj) :
+    BalancedExtension.congr (RingHom.op f) (ofIdempotentLinearEquiv e he)
+        ((eqToHom ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj _)).hom
+          ((extendScalarsOfIdempotentIso f he).inv.hom w)) =
+      (BalancedExtension.rangeMulVecBilinEquiv f he).symm
+        (ofIdempotentLinearEquiv (e.map f) (he.matrix_map f) w) := by
+  dsimp [extendScalarsOfIdempotentIso]
+  simp only [ObjectProperty.isoMk_inv, Iso.trans_inv, LinearEquiv.toModuleIso_inv,
+    LinearEquiv.trans_symm, LinearEquiv.symm_symm, BalancedExtension.congr_symm, eqToIso.inv,
+    ObjectProperty.homMk_hom, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, coe_comp,
+    LinearEquiv.coe_coe, Function.comp_apply, LinearEquiv.trans_apply]
+  rw [← ModuleCat.comp_apply, eqToHom_trans, eqToHom_refl]; simp
+
+/-- Explicit column-sum formula for `(extendScalarsOfIdempotentIso f he).inv`. -/
+theorem extendScalarsOfIdempotentIso_inv_apply (f : R →+* S)
+    {ι : Type*} [Fintype ι] {e : Matrix ι ι R} (he : IsIdempotentElem e)
+    (w : (ofIdempotent (e.map f) (he.matrix_map f)).obj) :
+    (extendScalarsOfIdempotentIso f he).inv.hom w =
+      (eqToHom ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj _).symm).hom
+        (∑ j, BalancedExtension.tmul (RingHom.op f)
+          (op ((ofIdempotentLinearEquiv (e.map f) (he.matrix_map f) w : ι → S) j))
+          ((ofIdempotentLinearEquiv e he).symm ⟨e.col j, e.col_mem_range_mulVecBilin j⟩)) := by
+  apply (ConcreteCategory.bijective_of_isIso
+    (eqToHom ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj
+      (ofIdempotent e he)))).injective
+  apply (BalancedExtension.congr (RingHom.op f) (ofIdempotentLinearEquiv e he)).injective
+  rw [balancedExtensionCongr_extendScalarsOfIdempotentIso_inv_apply, ← ModuleCat.comp_apply,
+    eqToHom_trans, eqToHom_refl]; simp
+
+end FiniteProjectiveModules
+
+namespace IdempotentMonoid
+
+section ObjectCode
+
+variable (R : Type u) [Ring R]
+
+/-- The canonical additive monoid homomorphism from `IdempotentMonoid R` to `KZero R`, sending
+`[e]` to the class `[e R^ι]` of its column range (`TauCeti.IdempotentMonoid.kZeroEquiv` restricted
+along `GrothendieckAddGroup.of`). -/
+noncomputable def toKZero : IdempotentMonoid R →+ KZero R :=
+  (kZeroEquiv R).toAddMonoidHom.comp _root_.Algebra.GrothendieckAddGroup.of
+
+/-- The group-completion isomorphism `kZeroEquiv R` restricts along `GrothendieckAddGroup.of` to
+`toKZero R`. Not marked `@[simp]` because `GrothendieckAddGroup.of` is reducible. -/
+theorem kZeroEquiv_of (x : IdempotentMonoid R) :
+    kZeroEquiv R (_root_.Algebra.GrothendieckAddGroup.of x) = toKZero R x := (rfl)
+
+@[simp]
+theorem lift_toKZero :
+    _root_.Algebra.GrothendieckAddGroup.lift (toKZero R) = (kZeroEquiv R).toAddMonoidHom :=
+  _root_.Algebra.GrothendieckAddGroup.lift.eq_symm_apply.mp
+    (_root_.Algebra.GrothendieckAddGroup.lift_symm_apply _).symm
+
+variable {R} in
+@[simp]
+theorem toKZero_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e) :
+    toKZero R (mk e he) = SplitK0.of.{u} (FiniteProjectiveModules.ofIdempotent e he) :=
+  kZeroEquiv_of_mk he _ (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
+
+/-- `TauCeti.IdempotentMonoid.toKZero R` factors via `objectCodeAddEquiv R` and `SplitK0.ofCode`. -/
+theorem ofCode_comp_objectCodeAddEquiv :
+    SplitK0.ofCode.{u}.comp (objectCodeAddEquiv R).toAddMonoidHom = toKZero R := by
+  ext n e he; simp
+
+end ObjectCode
+
+section Functoriality
+
+variable {R S : Type u} [Ring R] [Ring S]
+
+/-- **Naturality of `toKZero` under scalar extension.** -/
+@[simp]
+theorem map_toKZero (f : R →+* S) (x : IdempotentMonoid R) :
+    SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars (toKZero R x) =
+      toKZero S (IdempotentMonoid.map f.toNonUnitalRingHom x) := by
+  induction x using ind with | mk n e he =>
+  rw [toKZero_mk, SplitK0.map_of,
+    SplitK0.of_congr.{u} (FiniteProjectiveModules.extendScalarsOfIdempotentIso f he),
+    IdempotentMonoid.map_mk]
+  exact (toKZero_mk (e.map f.toNonUnitalRingHom) (he.matrix_map f.toNonUnitalRingHom)).symm
+
+theorem toKZero_comp_map (f : R →+* S) :
+    (toKZero S).comp (IdempotentMonoid.map f.toNonUnitalRingHom) =
+      (SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars).comp
+        (toKZero R) :=
+  AddMonoidHom.ext fun x ↦ (map_toKZero f x).symm
+
+/-- **Naturality of `kZeroEquiv` under scalar extension.** -/
+theorem map_comp_kZeroEquiv (f : R →+* S) :
+    (SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars).comp
+        (kZeroEquiv R).toAddMonoidHom =
+      (kZeroEquiv S).toAddMonoidHom.comp (_root_.Algebra.GrothendieckAddGroup.lift
+        (_root_.Algebra.GrothendieckAddGroup.of.comp
+          (IdempotentMonoid.map f.toNonUnitalRingHom))) := by
+  refine _root_.Algebra.GrothendieckAddGroup.addHom_ext fun a ↦ ?_
+  simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
+  rw [_root_.Algebra.GrothendieckAddGroup.lift_apply_of, AddMonoidHom.comp_apply,
+    kZeroEquiv_of, kZeroEquiv_of, map_toKZero]
+
+end Functoriality
+
+section PresentationAndCone
+
+variable {R : Type u} [Ring R]
+
+/-- Two idempotent matrices have the same class in `K₀(R)` iff their column ranges are stably
+equivalent right `R`-modules. -/
+theorem toKZero_mk_eq_toKZero_mk_iff_stableEquivalent {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {e : Matrix ι ι R} {f : Matrix κ κ R} {he : IsIdempotentElem e} {hf : IsIdempotentElem f} :
+    toKZero R (mk e he) = toKZero R (mk f hf) ↔
+      StableEquivalent Rᵐᵒᵖ (range (e.mulVecBilin R Rᵐᵒᵖ)) (range (f.mulVecBilin R Rᵐᵒᵖ)) := by
+  rw [toKZero_mk, toKZero_mk, SplitK0.of_eq_of_iff_stableEquivalent]
+  let ψe := FiniteProjectiveModules.ofIdempotentLinearEquiv e he
+  let ψf := FiniteProjectiveModules.ofIdempotentLinearEquiv f hf
+  exact ⟨fun h ↦ (StableEquivalent.of_equiv ψe.symm).trans (h.trans (.of_equiv ψf)),
+    fun h ↦ (StableEquivalent.of_equiv ψe).trans (h.trans (.of_equiv ψf.symm))⟩
+
+/-- **Equality of idempotent classes in `K₀(R)`.** Two idempotent matrices have the same class in
+`K₀(R)` iff they become equivalent after adding a common identity block `1ₖ`. -/
+theorem toKZero_mk_eq_toKZero_mk_iff {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {e : Matrix ι ι R} {f : Matrix κ κ R} {he : IsIdempotentElem e} {hf : IsIdempotentElem f} :
+    toKZero R (mk e he) = toKZero R (mk f hf) ↔
+      ∃ k : ℕ, IdempotentEquivalent (fromBlocks e 0 0 (1 : Matrix (Fin k) (Fin k) R))
+        (fromBlocks f 0 0 (1 : Matrix (Fin k) (Fin k) R)) :=
+  toKZero_mk_eq_toKZero_mk_iff_stableEquivalent.trans (stableEquivalent_range_mulVecBilin_iff he hf)
+
+/-- **Algebraic positive cone of projective `K₀`.** The image submonoid of `IdempotentMonoid R` in
+`K₀(R)` consists precisely of the classes `[P]` of finitely generated projective right `R`-modules.
+-/
+theorem mem_mrange_toKZero_iff {x : KZero R} :
+    x ∈ AddMonoidHom.mrange (toKZero R) ↔ ∃ P : FiniteProjectiveRight R, x = SplitK0.of.{u} P := by
+  rw [← ofCode_comp_objectCodeAddEquiv R]
+  constructor
+  · rintro ⟨a, rfl⟩; obtain ⟨P, hP⟩ := objectCode_surjective.{u} (objectCodeAddEquiv R a)
+    exact ⟨P, by simp [← hP]⟩
+  · rintro ⟨P, rfl⟩; obtain ⟨a, ha⟩ := (objectCodeAddEquiv R).surjective (objectCode.{u} P)
+    exact ⟨a, by simp [ha]⟩
+
+/-- Subtracting `[1ₘ]` from `[e]` in `K₀(R)` gives `classOf Rᵐᵒᵖ P m = [P] - m[R]`. -/
+theorem toKZero_sub_one_eq_classOf_of_linearEquiv {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
+    (he : IsIdempotentElem e) {P : Type u} [AddCommGroup P] [Module Rᵐᵒᵖ P] [Module.Finite Rᵐᵒᵖ P]
+    [Module.Projective Rᵐᵒᵖ P] (θ : P ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ)) (m : ℕ) :
+    toKZero R (mk e he) - toKZero R (mk (1 : Matrix (Fin m) (Fin m) R) IsIdempotentElem.one) =
+      FiniteProjectiveModules.classOf Rᵐᵒᵖ P m := by
+  rw [← kZeroEquiv_of, ← kZeroEquiv_of,
+    kZeroEquiv_of_mk he ⟨ModuleCat.of Rᵐᵒᵖ P, finiteProjectiveModules_iff.mpr
+      ⟨inferInstance, inferInstance⟩⟩ θ,
+    kZeroEquiv_of_mk_one, FiniteProjectiveModules.classOf_def,
+    SplitK0.of_congr.{u} (X := finiteProjectiveModulesRegular Rᵐᵒᵖ) (Y := ⟨ModuleCat.of Rᵐᵒᵖ Rᵐᵒᵖ,
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩)
+      (ObjectProperty.isoMk _ (Iso.refl _))]
+
+end PresentationAndCone
+
+end IdempotentMonoid
+
+end ScalarExtension
 
 section Ring
 
@@ -246,6 +458,21 @@ theorem splitK0Equiv_of (x : IdempotentMonoid A) :
     splitK0Equiv A (GrothendieckAddGroup.of x) = toSplitK0 x := by
   rw [toSplitK0, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
 
+/-- The identity map of an `S`-module `M`, as an `e`-semilinear equivalence from `M` with scalars
+restricted along `e : R ≃+* S` to `M` itself. The underlying additive group of
+`(ModuleCat.restrictScalars e.toRingHom).obj M` is `M`, and `map_smul'` is
+`ModuleCat.restrictScalars.smul_def`. -/
+private def restrictScalarsSemilinearEquiv {R S : Type*} [Ring R] [Ring S] (e : R ≃+* S)
+    {σ' : S →+* R} [RingHomInvPair (e : R →+* S) σ'] [RingHomInvPair σ' (e : R →+* S)]
+    (M : ModuleCat S) :
+    (ModuleCat.restrictScalars (e : R →+* S)).obj M ≃ₛₗ[(e : R →+* S)] M where
+  toFun m := m
+  invFun m := m
+  map_add' _ _ := rfl
+  map_smul' r m := ModuleCat.restrictScalars.smul_def (e : R →+* S) r m
+  left_inv _ := rfl
+  right_inv _ := rfl
+
 /-- The isomorphism `TauCeti.IdempotentMonoid.splitK0Equiv` sends the class of an idempotent
 matrix `e` to the class of any module isomorphic to the image `Aⁿe` of its action on row vectors. -/
 theorem splitK0Equiv_of_mk {ι : Type*} [Fintype ι] {e : Matrix ι ι A} (he : IsIdempotentElem e)
@@ -263,12 +490,9 @@ theorem splitK0Equiv_of_mk {ι : Type*} [Fintype ι] {e : Matrix ι ι A} (he : 
     .of_ringEquiv_symm (RingEquiv.opOp A)
   let eY : Y.obj ≃ₛₗ[((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)] X.obj :=
     (eqToIso (E₀.finiteProjectiveModulesEquivalence_inverse_obj_obj X)).toLinearEquiv.trans
-      { toFun := fun x ↦ x, invFun := fun x ↦ x, left_inv := fun _ ↦ rfl,
-        right_inv := fun _ ↦ rfl, map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
-  -- Transport `θ` across `RingEquiv.opOp A` and then across
-  -- `Matrix.rangeVecMulLinearTransposeMapOpEquiv`, turning row vectors `Aⁿe` into column vectors
-  -- `(eᵀ.map op) (Aᵐᵒᵖ)ⁿ`.
-  have heOp : (eᵀ.map op)ᵀ.map op = e.map (RingEquiv.opOp A) := by ext i j; rfl
+      (restrictScalarsSemilinearEquiv (RingEquiv.opOp A).symm X.obj)
+  have heOp : (eᵀ.map op)ᵀ.map op = e.map (RingEquiv.opOp A) := by
+    ext i j; simp [RingEquiv.opOp_apply]
   let eOp : range e.vecMulLinear ≃ₛₗ[(RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ)]
       range ((eᵀ.map op)ᵀ.map op).vecMulLinear :=
     (e.rangeVecMulLinearEquiv (RingEquiv.opOp A)).trans (LinearEquiv.ofEq _ _ (by rw [← heOp]))

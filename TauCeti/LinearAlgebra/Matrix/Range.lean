@@ -25,7 +25,7 @@ Over an arbitrary semiring `R` (not necessarily commutative), this file also col
 properties of row ranges `LinearMap.range M.vecMulLinear` and right-module column ranges
 `LinearMap.range (M.mulVecBilin R Rᵐᵒᵖ)` (over `Rᵐᵒᵖ`): functoriality under entrywise ring
 homomorphisms, block-diagonal decompositions, the equivalence between row ranges over `Rᵐᵒᵖ` and
-column ranges over `R`, finiteness, `Matrix.submatrix`, `Matrix.reindex`, the identity matrix
+column ranges over `R`, finiteness, `Matrix.submatrix`, the identity matrix
 `1 : Matrix m m R`, and column-range `finrank` formulas under `StrongRankCondition Rᵐᵒᵖ`.
 
 ## Main definitions
@@ -37,8 +37,8 @@ column ranges over `R`, finiteness, `Matrix.submatrix`, `Matrix.reindex`, the id
   decompositions for the row and column ranges of `Matrix.fromBlocks e 0 0 f`.
 * `Matrix.rangeVecMulLinearTransposeMapOpEquiv`: `Rᵐᵒᵖ`-linear isomorphism identifying the row
   range of `eᵀ.map MulOpposite.op` with the column range of `e`.
-* `Matrix.rangeMulVecBilinSubmatrixEquiv` and `Matrix.rangeMulVecBilinReindexEquiv`: `Rᵐᵒᵖ`-linear
-  isomorphisms of column ranges under `Matrix.submatrix` and `Matrix.reindex`.
+* `Matrix.rangeMulVecBilinSubmatrixEquiv`: `Rᵐᵒᵖ`-linear isomorphism of column ranges under
+  `Matrix.submatrix`.
 * `Matrix.rangeMulVecBilinOneEquiv` and `Matrix.rangeMulVecBilinSingleOneEquiv`: the column ranges
   of `1 : Matrix m m R` and of a diagonal matrix unit `Eᵢᵢ` are `m → Rᵐᵒᵖ` and `Rᵐᵒᵖ`.
 
@@ -350,27 +350,6 @@ theorem coe_rangeMulVecBilinSubmatrixEquiv_symm_apply {ι₂ ι₂' : Type*} [Fi
     (M : Matrix ι' ι R) (σ : ι₂' ≃ ι') (τ : ι₂ ≃ ι)
     (w : range ((M.submatrix σ τ).mulVecBilin R Rᵐᵒᵖ)) :
     ((M.rangeMulVecBilinSubmatrixEquiv σ τ).symm w : ι' → R) = (w : ι₂' → R) ∘ σ.symm := (rfl)
-
-/-- Reindexing rows and columns along `σ` and `τ` induces an `Rᵐᵒᵖ`-linear isomorphism between
-column ranges, acting by precomposition with `σ.symm`. -/
-def rangeMulVecBilinReindexEquiv {ι₂ ι₂' : Type*} [Fintype ι₂] (M : Matrix ι' ι R)
-    (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂) :
-    range (M.mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] range ((M.reindex σ τ).mulVecBilin R Rᵐᵒᵖ) :=
-  M.rangeMulVecBilinSubmatrixEquiv σ.symm τ.symm
-
-@[simp]
-theorem rangeMulVecBilinReindexEquiv_eq_submatrixEquiv {ι₂ ι₂' : Type*} [Fintype ι₂]
-    (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂) :
-    M.rangeMulVecBilinReindexEquiv σ τ = M.rangeMulVecBilinSubmatrixEquiv σ.symm τ.symm := (rfl)
-
-theorem coe_rangeMulVecBilinReindexEquiv_apply {ι₂ ι₂' : Type*} [Fintype ι₂]
-    (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂) (v : range (M.mulVecBilin R Rᵐᵒᵖ)) :
-    (M.rangeMulVecBilinReindexEquiv σ τ v : ι₂' → R) = (v : ι' → R) ∘ σ.symm := (rfl)
-
-theorem coe_rangeMulVecBilinReindexEquiv_symm_apply {ι₂ ι₂' : Type*} [Fintype ι₂]
-    (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂)
-    (w : range ((M.reindex σ τ).mulVecBilin R Rᵐᵒᵖ)) :
-    ((M.rangeMulVecBilinReindexEquiv σ τ).symm w : ι' → R) = (w : ι₂' → R) ∘ σ := (rfl)
 
 end Fintype
 

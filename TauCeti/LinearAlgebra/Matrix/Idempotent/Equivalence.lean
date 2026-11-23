@@ -14,7 +14,7 @@ import TauCeti.Data.Matrix.Block
 /-!
 # Further calculus of equivalence of idempotent matrices
 
-Building on `Matrix.IdempotentEquivalent` in `TauCeti.LinearAlgebra.Matrix.Idempotent`, this
+Building on `Matrix.IdempotentEquivalent` in `TauCeti.LinearAlgebra.Matrix.Idempotent.Basic`, this
 file develops symmetry/reindexing/zero-block padding, size invariance of identity matrices and
 separation of `Eᵢᵢ` from `0` and `1` under `InvariantBasisNumber`, the explicit isomorphism
 `Matrix.linearEquivRangeMulVecBilinOfMulEq` and invariance of column-range `finrank`, and the

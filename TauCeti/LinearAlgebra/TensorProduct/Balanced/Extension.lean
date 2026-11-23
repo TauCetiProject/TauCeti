@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
-public import TauCeti.LinearAlgebra.Matrix.Idempotent
+public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 
 import TauCeti.Algebra.Module.Projective.Semilinear
 
@@ -532,7 +532,9 @@ theorem rangeMulVecBilinEquiv_symm_apply (he : IsIdempotentElem e)
         op ((w : ι → S) j) := by
     simp
   rw [hj]
-  exact congrArg (tmul (RingHom.op f) _) (Subtype.ext (by simp; rfl))
+  exact congrArg (tmul (RingHom.op f) _) (Subtype.ext (funext fun i ↦ by
+    simp only [coe_rangeVecMulLinearTransposeMapOpEquiv_apply, Function.comp_apply,
+      Matrix.map_apply, Matrix.transpose_apply, unop_op, Matrix.col_apply]))
 
 end Idempotent
 

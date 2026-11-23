@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Idempotent
+public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 
 /-!
 # Finitely generated projective right modules from column ranges of idempotent matrices
