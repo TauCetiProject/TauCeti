@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel.Equivarian
 
 import Mathlib.RepresentationTheory.Maschke
 import TauCeti.Geometry.Manifold.GroupAction.EquivariantSlice
+import TauCeti.Order.ModularLattice
 import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.RepresentationTheory.Semisimple
 
@@ -299,9 +300,9 @@ theorem exists_subrepresentation_isCompl_lieAnnihilator [π𝔤.IsSemisimpleRepr
   let A : Subrepresentation π𝔤 :=
     ⟨(lieAnnihilator ℝ 𝔤 ν).toSubmodule, fun k _ hξ ↦ apply_mem_lieAnnihilator hπT hρπ hρ k hξ⟩
   have hNA : N ≤ A := Subrepresentation.toSubmodule_le_toSubmodule.1 (ker_le_lieAnnihilator hρ)
-  obtain ⟨𝔪, h𝔪, h𝔪'⟩ := IsModularLattice.exists_disjoint_and_sup_eq hNA
-  obtain ⟨𝔮, h𝔮⟩ := exists_isCompl A
-  have h0 := congrArg Subrepresentation.toSubmodule (disjoint_iff.1 h𝔪)
+  obtain ⟨𝔪, 𝔮, h𝔪', h𝔮, h𝔪𝔮, -⟩ := exists_sup_eq_and_isCompl_of_le hNA
+  have h0 := congrArg Subrepresentation.toSubmodule
+    (disjoint_iff.1 (h𝔪𝔮.disjoint.mono_right le_sup_left))
   rw [Subrepresentation.toSubmodule_inf, Subrepresentation.toSubmodule_bot] at h0
   exact ⟨𝔪, 𝔮, disjoint_iff.2 h0, congrArg Subrepresentation.toSubmodule h𝔪',
     Subrepresentation.isCompl_toSubmodule.2 h𝔮⟩

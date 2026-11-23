@@ -18,7 +18,6 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Calculus and geometric invariance of the Laplacian
