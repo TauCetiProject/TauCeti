@@ -30,7 +30,10 @@ of `f` at `a • x`, again without any differentiability of `f`
 its norm is `‖a‖ ^ i` times that of the `i`-th derivative of `f` at `x + a • z`
 (`TauCeti.norm_iteratedFDeriv_comp_add_const_smul`). A Hölder bound on a set `t` for the `i`-th
 derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
-(`HolderOnWith.iteratedFDeriv_comp_const_smul`).
+(`HolderOnWith.iteratedFDeriv_comp_const_smul`). For linear isometry equivalences on both the
+domain and codomain, `LinearIsometryEquiv.holderOnWith_iteratedFDeriv_comp` transfers Hölder bounds
+on each iterated derivative field, and `LinearIsometryEquiv.contDiffOn_bounds_comp` transfers
+smoothness, uniform derivative bounds, and Hölder bounds simultaneously.
 -/
 
 public section
@@ -243,5 +246,25 @@ theorem holderOnWith_iteratedFDeriv_comp {𝕜 E E' T Tu : Type*} [NontriviallyN
   have hxy := hv (e x) hx (e y) hy
   rw [e.dist_map] at hxy
   simpa only [dist_eq_norm] using hxy
+
+open scoped NNReal in
+/-- Composing a function with linear isometry equivalences on both sides transfers smoothness on
+`s`, uniform bounds on the derivative fields through order `k`, and their `α`-Hölder bounds on `s`
+to the preimage `e ⁻¹' s`. -/
+theorem contDiffOn_bounds_comp {𝕜 E E' A A' : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup A'] [NormedSpace 𝕜 A']
+    (e : E' ≃ₗᵢ[𝕜] E) (t : A ≃ₗᵢ[𝕜] A') {k : ℕ} {f : E → A} {s : Set E}
+    {M : ℝ} {H α : ℝ≥0} (hf : ContDiffOn 𝕜 k f s)
+    (hfb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 j f x‖ ≤ M)
+    (hfH : ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv 𝕜 j f) s) :
+    ContDiffOn 𝕜 k (t ∘ f ∘ e) (e ⁻¹' s) ∧
+      (∀ j ≤ k, ∀ x ∈ e ⁻¹' s, ‖iteratedFDeriv 𝕜 j (t ∘ f ∘ e) x‖ ≤ M) ∧
+      ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv 𝕜 j (t ∘ f ∘ e)) (e ⁻¹' s) :=
+  ⟨t.contDiff.comp_contDiffOn (hf.comp_continuousLinearMap (e : E' →L[𝕜] E)),
+    fun j hj x hx => by
+      rw [t.norm_iteratedFDeriv_comp_left, e.norm_iteratedFDeriv_comp_right]
+      exact hfb j hj (e x) hx,
+    fun j hj => e.holderOnWith_iteratedFDeriv_comp t f j (hfH j hj)⟩
 
 end LinearIsometryEquiv

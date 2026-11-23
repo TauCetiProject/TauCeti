@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Holder.Bilinear
 public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.LowOrder
 public import TauCeti.Analysis.Holder.OpenSet
 import TauCeti.Analysis.Holder.Leibniz
 import TauCeti.LinearAlgebra.ExtendByZero
@@ -295,6 +297,36 @@ theorem norm_compCkHolderOn₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ : C
     gcongr
     exact B.norm_compCkHolderOn₂_le hΩ hα)
 
+/-- At order `0`, `compCkHolderOn₂` transports through `equivHolderSpace` to `compHolder₂`. -/
+@[simp]
+theorem equivHolderSpace_compCkHolderOn₂ (B : E →L[ℝ] F →L[ℝ] G)
+    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn 0 α Ω E) (g : CkHolderSpaceOn 0 α Ω F) :
+    CkHolderSpaceOn.equivHolderSpace (B.compCkHolderOn₂ hΩ hα f g) =
+      B.compHolder₂ (CkHolderSpaceOn.equivHolderSpace f)
+        (CkHolderSpaceOn.equivHolderSpace g) := by
+  ext x
+  simp
+
+/-- At order `0`, the bilinear lift `compCkHolderOn₂` has operator norm at most `‖B‖`. -/
+theorem norm_compCkHolderOn₂_zero_le (B : E →L[ℝ] F →L[ℝ] G)
+    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1) :
+    ‖B.compCkHolderOn₂ (k := 0) (α := α) hΩ hα‖ ≤ ‖B‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound₂ _ (norm_nonneg B) fun f g ↦ ?_
+  rw [← CkHolderSpaceOn.equivHolderSpace.norm_map, equivHolderSpace_compCkHolderOn₂]
+  simpa only [LinearIsometryEquiv.norm_map] using
+    B.norm_compHolder₂_apply_le (CkHolderSpaceOn.equivHolderSpace f)
+      (CkHolderSpaceOn.equivHolderSpace g)
+
+/-- At order `0`, the pointwise bilinear product satisfies `‖B (f, g)‖ ≤ ‖B‖ ‖f‖ ‖g‖`. -/
+theorem norm_compCkHolderOn₂_zero_apply_le (B : E →L[ℝ] F →L[ℝ] G)
+    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn 0 α Ω E) (g : CkHolderSpaceOn 0 α Ω F) :
+    ‖B.compCkHolderOn₂ hΩ hα f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
+  ((B.compCkHolderOn₂ hΩ hα).le_opNorm₂ f g).trans (by
+    gcongr
+    exact B.norm_compCkHolderOn₂_zero_le hΩ hα)
+
 end OpenSet
 
 end ContinuousLinearMap
@@ -342,6 +374,20 @@ theorem norm_smulL_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     gcongr
     exact norm_smulL_le hΩ hα)
 
+/-- At order `0`, pointwise scalar multiplication has operator norm at most `1`. -/
+theorem norm_smulL_zero_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
+    ‖smulL (k := 0) (α := α) (R := R) (F := F) hΩ hα‖ ≤ 1 :=
+  (ContinuousLinearMap.norm_compCkHolderOn₂_zero_le _ hΩ hα).trans
+    ContinuousLinearMap.opNorm_lsmul_le
+
+/-- At order `0`, pointwise scalar multiplication satisfies `‖smulL hΩ hα f g‖ ≤ ‖f‖ * ‖g‖`. -/
+theorem norm_smulL_zero_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn 0 α Ω R) (g : CkHolderSpaceOn 0 α Ω F) :
+    ‖smulL hΩ hα f g‖ ≤ ‖f‖ * ‖g‖ :=
+  ((smulL hΩ hα).le_opNorm₂ f g).trans (by
+    simpa only [one_mul] using mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_right (norm_smulL_zero_le hΩ hα) (norm_nonneg f)) (norm_nonneg g))
+
 end SMul
 
 section Mul
@@ -381,6 +427,20 @@ theorem norm_mulL_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
   ((mulL hΩ hα).le_opNorm₂ f g).trans (by
     gcongr
     exact norm_mulL_le hΩ hα)
+
+/-- At order `0`, pointwise algebra multiplication has operator norm at most `1`. -/
+theorem norm_mulL_zero_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
+    ‖mulL (k := 0) (α := α) (A := A) hΩ hα‖ ≤ 1 :=
+  (ContinuousLinearMap.norm_compCkHolderOn₂_zero_le _ hΩ hα).trans
+    (ContinuousLinearMap.opNorm_mul_le ℝ A)
+
+/-- At order `0`, pointwise algebra multiplication satisfies `‖mulL hΩ hα f g‖ ≤ ‖f‖ * ‖g‖`. -/
+theorem norm_mulL_zero_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (f g : CkHolderSpaceOn 0 α Ω A) :
+    ‖mulL hΩ hα f g‖ ≤ ‖f‖ * ‖g‖ :=
+  ((mulL hΩ hα).le_opNorm₂ f g).trans (by
+    simpa only [one_mul] using mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_right (norm_mulL_zero_le hΩ hα) (norm_nonneg f)) (norm_nonneg g))
 
 end Mul
 
