@@ -65,6 +65,8 @@ scope.
   `CliffordAlgebra.quadraticLieSubalgebra_le_even` and
   `CliffordAlgebra.quadraticLieSubalgebra_le_filtration_two`: the quadratic elements are
   even and have filtration degree at most two.
+* `CliffordAlgebra.quadraticLieSubalgebraToEven`: the inclusion of the quadratic elements into the
+  even subalgebra, as a Lie algebra homomorphism.
 * `CliffordAlgebra.quadraticLieSubalgebra_toSubmodule_eq_range` and
   `CliffordAlgebra.mem_quadraticLieSubalgebra_iff`: they are exactly the image of
   `⋀[R]^2 M` under `CliffordAlgebra.bivectorExterior`.
@@ -73,6 +75,8 @@ scope.
 * `CliffordAlgebra.adjoin_quadraticLieSubalgebra` and
   `CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra_eq_top`: the quadratic elements
   generate the even subalgebra as an algebra.
+* `CliffordAlgebra.adjoin_range_eq_top_of_surjective`: hence their images generate every
+  surjective image of the even subalgebra.
 -/
 
 public section
@@ -208,6 +212,23 @@ theorem quadraticLieSubalgebra_le_even :
   rw [CliffordAlgebra.even_toSubmodule]
   exact quadraticLieSubalgebra_le_evenOdd_zero Q
 
+/-- **The quadratic elements as a Lie subalgebra of the even subalgebra.** Every quadratic element
+is even (`CliffordAlgebra.quadraticLieSubalgebra_le_even`), and the commutator brackets agree, so
+the inclusion is a Lie algebra homomorphism into `even Q`. Composed with a representation of the
+even subalgebra, it lets the quadratic elements act on each parity summand of a Clifford module. -/
+def quadraticLieSubalgebraToEven : quadraticLieSubalgebra Q →ₗ⁅R⁆ even Q where
+  toFun x := ⟨x, quadraticLieSubalgebra_le_even Q x.property⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_lie' := rfl
+
+/-- The inclusion of the quadratic elements into the even subalgebra does not change the
+underlying Clifford element. -/
+@[simp]
+theorem coe_quadraticLieSubalgebraToEven_apply (x : quadraticLieSubalgebra Q) :
+    ((quadraticLieSubalgebraToEven Q x : even Q) : CliffordAlgebra Q) = x :=
+  (rfl)
+
 /-- The quadratic elements have filtration degree at most two. -/
 theorem quadraticLieSubalgebra_le_filtration_two :
     (quadraticLieSubalgebra Q).toSubmodule ≤ filtration Q 2 :=
@@ -241,6 +262,31 @@ theorem adjoin_coe_preimage_quadraticLieSubalgebra_eq_top :
   have := Algebra.adjoin_adjoin_coe_preimage (R := R)
     (s := (quadraticLieSubalgebra Q : Set (CliffordAlgebra Q)))
   rwa [adjoin_quadraticLieSubalgebra] at this
+
+/-- **Quadratic elements generate every surjective image of the even subalgebra.** If `F` maps the
+even subalgebra onto an algebra `A`, and `f` sends each point of `L` to the image under `F` of a
+quadratic element, through a parametrization `g` onto all quadratic elements, then the values of
+`f` generate `A`. For a Lie algebra realized by the quadratic elements and a representation of the
+even subalgebra onto `Module.End R S`, this says that its operators generate every endomorphism
+of `S`. -/
+theorem adjoin_range_eq_top_of_surjective {L A : Type*} [Semiring A] [Algebra R A]
+    (F : even Q →ₐ[R] A) (hF : Function.Surjective F) (g : L → quadraticLieSubalgebra Q)
+    (hg : Function.Surjective g) (f : L → A)
+    (hf : ∀ x, f x = F ⟨g x, quadraticLieSubalgebra_le_even Q (g x).property⟩) :
+    Algebra.adjoin R (Set.range f) = ⊤ := by
+  have hrange : Set.range f =
+      F '' (((↑) : even Q → CliffordAlgebra Q) ⁻¹' quadraticLieSubalgebra Q) := by
+    ext a
+    constructor
+    · rintro ⟨x, rfl⟩
+      exact ⟨_, (g x).property, (hf x).symm⟩
+    · rintro ⟨y, hy, rfl⟩
+      obtain ⟨x, hx⟩ := hg ⟨y, hy⟩
+      have hx' : ((g x : quadraticLieSubalgebra Q) : CliffordAlgebra Q) = y :=
+        congrArg Subtype.val hx
+      exact ⟨x, (hf x).trans (congrArg F (Subtype.ext hx'))⟩
+  rw [hrange, ← AlgHom.map_adjoin, adjoin_coe_preimage_quadraticLieSubalgebra_eq_top,
+    Algebra.map_top, (AlgHom.range_eq_top F).2 hF]
 
 /-- **The quadratic elements are the image of the second exterior power.** This is the sense in
 which the Lie subalgebra realizes `⋀[R]^2 M` inside the Clifford algebra; the map itself is

@@ -73,29 +73,11 @@ theorem typeDSpinLieRep_apply (hline : P.line = ⊥)
 
 /-! ## The half-spin representations -/
 
-/-- The map from the split type-`D` matrix Lie algebra to the even Clifford subalgebra. -/
-private noncomputable def typeDToEvenLieHom (hline : P.line = ⊥) :
-    LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ CliffordAlgebra.even Q := by
-  let f : LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ CliffordAlgebra Q :=
-    (quadraticLieSubalgebra Q).incl.comp (P.typeDQuadraticEquiv b hline).toLieHom
-  exact {
-    toFun := fun x => ⟨f x,
-      quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline x).property⟩
-    map_add' := fun x y => SetCoe.ext (f.map_add x y)
-    map_smul' := fun r x => SetCoe.ext (f.map_smul r x)
-    map_lie' := @fun x y => SetCoe.ext (f.map_lie x y) }
-
-/-- Coercing the even Clifford image of a split type-`D` matrix recovers its quadratic Clifford
-realization. -/
-private theorem coe_typeDToEvenLieHom_apply (hline : P.line = ⊥)
-    (x : LieAlgebra.Orthogonal.typeD ι K) :
-    ((P.typeDToEvenLieHom b hline x : CliffordAlgebra.even Q) : CliffordAlgebra Q) =
-      (P.typeDQuadraticEquiv b hline x : CliffordAlgebra Q) := rfl
-
 /-- The split type-`D` matrix Lie algebra acting on the even half-spin summand. -/
 noncomputable def typeDSpinPlusLieRep (hline : P.line = ⊥) :
     LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ Module.End K (spinPlus Q P) :=
-  (spinPlusAction Q P hline).toLieHom.comp (P.typeDToEvenLieHom b hline)
+  (spinPlusAction Q P hline).toLieHom.comp <|
+    (quadraticLieSubalgebraToEven Q).comp (P.typeDQuadraticEquiv b hline).toLieHom
 
 /-- After coercion to the exterior algebra, the even half-spin action agrees with the full spin
 action. -/
@@ -104,13 +86,15 @@ theorem coe_typeDSpinPlusLieRep_apply (hline : P.line = ⊥)
     (x : LieAlgebra.Orthogonal.typeD ι K) (s : spinPlus Q P) :
     ((P.typeDSpinPlusLieRep b hline x s : spinPlus Q P) : ExteriorAlgebra K P.W) =
       P.typeDSpinLieRep b hline x s := by
-  rw [typeDSpinPlusLieRep, LieHom.comp_apply, AlgHom.toLieHom_apply,
-    coe_spinPlusAction_apply, coe_typeDToEvenLieHom_apply, typeDSpinLieRep_apply]
+  rw [typeDSpinPlusLieRep, LieHom.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
+    coe_spinPlusAction_apply, coe_quadraticLieSubalgebraToEven_apply, LieEquiv.coe_toLieHom,
+    typeDSpinLieRep_apply]
 
 /-- The split type-`D` matrix Lie algebra acting on the odd half-spin summand. -/
 noncomputable def typeDSpinMinusLieRep (hline : P.line = ⊥) :
     LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ Module.End K (spinMinus Q P) :=
-  (spinMinusAction Q P hline).toLieHom.comp (P.typeDToEvenLieHom b hline)
+  (spinMinusAction Q P hline).toLieHom.comp <|
+    (quadraticLieSubalgebraToEven Q).comp (P.typeDQuadraticEquiv b hline).toLieHom
 
 /-- After coercion to the exterior algebra, the odd half-spin action agrees with the full spin
 action. -/
@@ -119,7 +103,8 @@ theorem coe_typeDSpinMinusLieRep_apply (hline : P.line = ⊥)
     (x : LieAlgebra.Orthogonal.typeD ι K) (s : spinMinus Q P) :
     ((P.typeDSpinMinusLieRep b hline x s : spinMinus Q P) : ExteriorAlgebra K P.W) =
       P.typeDSpinLieRep b hline x s := by
-  rw [typeDSpinMinusLieRep, LieHom.comp_apply, AlgHom.toLieHom_apply,
-    coe_spinMinusAction_apply, coe_typeDToEvenLieHom_apply, typeDSpinLieRep_apply]
+  rw [typeDSpinMinusLieRep, LieHom.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
+    coe_spinMinusAction_apply, coe_quadraticLieSubalgebraToEven_apply, LieEquiv.coe_toLieHom,
+    typeDSpinLieRep_apply]
 
 end TauCeti.SpinPolarizationData
