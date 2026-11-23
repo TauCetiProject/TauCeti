@@ -149,7 +149,7 @@ theorem callPrice_itoDrift_eq_hedgeDrift (hs : 0 < s) (hK : 0 < K) (hβ : β ≠
       μ * s * deriv (fun x => callPrice x r σ K (T - t)) s +
         r * β * hedgeBondHolding (fun x => callPrice x r σ K (T - t)) s β :=
   (itoDrift_eq_hedgeDrift_iff_pde (fun x u => callPrice x r σ K (T - u)) μ σ r s t hβ).2
-    (callPrice_pde hs hK ht)
+    (callPrice_pde hs hK ht.ne)
 
 /-- **Drift of the put's delta hedge.** In calendar time `t < T`, the Itô drift of the
 Black–Scholes put price `P(s, t) = putPrice s r σ K (T - t)` under a stock drift `μ` equals
@@ -162,6 +162,6 @@ theorem putPrice_itoDrift_eq_hedgeDrift (hs : 0 < s) (hK : 0 < K) (hβ : β ≠ 
       μ * s * deriv (fun x => putPrice x r σ K (T - t)) s +
         r * β * hedgeBondHolding (fun x => putPrice x r σ K (T - t)) s β :=
   (itoDrift_eq_hedgeDrift_iff_pde (fun x u => putPrice x r σ K (T - u)) μ σ r s t hβ).2
-    (putPrice_pde hs hK ht)
+    (putPrice_pde hs hK ht.ne)
 
 end TauCeti.BlackScholes
