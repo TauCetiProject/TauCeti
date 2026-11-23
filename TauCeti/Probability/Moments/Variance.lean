@@ -50,7 +50,7 @@ measure is a probability measure) tends to zero in measure when the variances te
   composition with a measure-preserving measurable embedding.
 * `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
   L² convergence on a finite measure space.
-* `TauCeti.Probability.evariance_integral_prod_le` and
+* `MeasureTheory.Integrable.evariance_integral_prod_le` and
   `TauCeti.Probability.evariance_prod_le`: product-variance bounds for averages and products.
 * `TauCeti.Probability.variance_weighted_coordinate_sum`,
   `TauCeti.Probability.variance_weighted_coordinate_sum_of_covariance_eq_zero` and
@@ -58,16 +58,17 @@ measure is a probability measure) tends to zero in measure when the variances te
   bounds for weighted sums of square-integrable variables that are pairwise independent or
   pairwise uncorrelated.
 * `TauCeti.Probability.tendsto_measure_abs_sub_integral_ge_of_tendsto_variance`: vanishing
-  variances imply that the deviations of square-integrable functions from their own means tend
-  to zero in measure, including on varying finite measure spaces.
+  variances imply that the deviations of square-integrable functions from their own integrals
+  (their means when each measure is a probability measure) tend to zero in measure, including on
+  varying finite measure spaces.
 * `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: on a finite measure space,
   summable variances imply that the deviations of square-integrable functions from their own
-  means tend to zero almost everywhere.
-* `TauCeti.integral_pos_of_nonneg_ae_of_variance_ne_zero`: on a finite measure space, an almost
-  everywhere strongly measurable, almost everywhere nonnegative real random variable with nonzero
-  variance has strictly positive expectation.
+  integrals (their means when the measure is a probability measure) tend to zero almost everywhere.
+* `MeasureTheory.AEStronglyMeasurable.integral_pos_of_nonneg_ae_of_variance_ne_zero`: on a finite
+  measure space, an almost everywhere strongly measurable, almost everywhere nonnegative real
+  function with nonzero variance has strictly positive integral.
 * `TauCeti.measure_setOf_eq_zero_lt_measure_univ_of_variance_ne_zero`: on a finite measure space,
-  a real-valued random variable with nonzero variance satisfies `μ {ω | X ω = 0} < μ univ`.
+  a real-valued function with nonzero variance satisfies `μ {ω | X ω = 0} < μ univ`.
 -/
 
 public section
@@ -198,9 +199,11 @@ section VarianceNeZero
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- An almost everywhere strongly measurable, almost everywhere nonnegative real random variable
-on a finite measure space with nonzero variance has strictly positive expectation. -/
-theorem integral_pos_of_nonneg_ae_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ}
+/-- An almost everywhere strongly measurable, almost everywhere nonnegative real function on a
+finite measure space with nonzero variance has strictly positive integral (expectation when `μ`
+is a probability measure). -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.integral_pos_of_nonneg_ae_of_variance_ne_zero
+    [IsFiniteMeasure μ] {X : Ω → ℝ}
     (hX : AEStronglyMeasurable X μ) (h0 : 0 ≤ᵐ[μ] X) (hvar : Var[X; μ] ≠ 0) :
     0 < ∫ ω, X ω ∂μ := by
   have hint := (memLp_two_of_variance_ne_zero hX hvar).integrable one_le_two
@@ -290,7 +293,8 @@ theorem measure_weighted_coordinate_sum_sub_mean_ge {Ω ι : Type*} [MeasurableS
 
 /-- **Chebyshev convergence in measure from vanishing variances.** If square-integrable real-valued
 functions on possibly varying finite measure spaces have variances tending to zero along a filter,
-then their deviations from their expectations converge to zero in measure. -/
+then their deviations from their own integrals (their means when each measure is a probability
+measure) converge to zero in measure. -/
 theorem tendsto_measure_abs_sub_integral_ge_of_tendsto_variance {ι : Type*} {l : Filter ι}
     {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
     {P : (i : ι) → Measure (Ω i)} [∀ i, IsFiniteMeasure (P i)]
@@ -305,7 +309,8 @@ theorem tendsto_measure_abs_sub_integral_ge_of_tendsto_variance {ι : Type*} {l 
 
 /-- **Borel--Cantelli almost-everywhere convergence from summable variances.** On a finite measure
 space, if a sequence of square-integrable real-valued functions has summable variances, then its
-fluctuations around its expectations converge almost everywhere to zero. -/
+deviations from its own integrals (its means when `P` is a probability measure) converge almost
+everywhere to zero. -/
 theorem ae_tendsto_sub_integral_of_summable_variance {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsFiniteMeasure P] {X : ℕ → Ω → ℝ}
     (hX : ∀ n, MemLp (X n) 2 P) (hvar : Summable fun n ↦ Var[X n; P]) :
@@ -323,7 +328,8 @@ product of an s-finite measure `ν` and a probability measure `π`, the extended
 respect to `ν`) of the average of `F` over the second coordinate against `π` is at most the
 `π`-average over the second coordinate of the extended variances of the first-coordinate
 sections. -/
-theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
+theorem _root_.MeasureTheory.Integrable.evariance_integral_prod_le
+    (hint : Integrable F (ν.prod π)) :
     evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   have hmint : Integrable (fun w => ∫ a, F (a, w) ∂ν) π := hint.integral_prod_right
@@ -356,7 +362,7 @@ theorem evariance_prod_le [IsProbabilityMeasure ν] (hL : MemLp F 2 (ν.prod π)
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   rw [evariance_prod_eq hL]
   gcongr
-  exact evariance_integral_prod_le (hL.integrable one_le_two)
+  exact (hL.integrable one_le_two).evariance_integral_prod_le
 
 /-- The variance of `f` in coordinate `i`, with the other coordinates frozen at `x`, is a
 measurable function of `x`. -/
