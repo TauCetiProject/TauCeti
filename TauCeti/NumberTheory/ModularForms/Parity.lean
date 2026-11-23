@@ -5,17 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # The parity lemma for nebentypus character spaces
 
 The weight and the nebentypus of a nonzero modular form determine each other's parity:
 `M_k(Γ₁(N), χ) ≠ 0` forces `χ(-1) = (-1)^k`. This is the emptiness criterion that odd
-weights and Eisenstein constructions consume, and the ModularForms roadmap pins it at
-Layer 0, alongside the diamond operators and character spaces of
-`TauCeti.NumberTheory.ModularForms.DiamondOperators` on which it is stated.
+weights and Eisenstein constructions consume. It is stated on the diamond operators and
+character spaces of `TauCeti.NumberTheory.ModularForms.DiamondOperators`.
 
 The mechanism is `-I`. It lies in `Γ₀(N)` at every level, and its lower-right entry is the
 unit `-1`, so it represents the diamond operator `⟨-1⟩`. On the other hand `-I` acts
@@ -44,6 +45,9 @@ additional to it: there `-1 = 1` in `(ZMod N)ˣ`, so every `χ` has `χ(-1) = 1 
   the classical `M_k(Γ₀(N)) = 0` for odd `k`; `even_of_mem_modFormCharSpace_one_of_ne_zero` and
   `even_of_mem_cuspFormCharSpace_one_of_ne_zero` read it as the evenness of the weight of a
   nonzero form.
+* `even_changeLevel_inv_mul_changeLevel_of_modFormCharSpace_ne_bot`: the quotient of the
+  zero-extended nebentypes of nonzero spaces `M_k(Γ₁(N), χ)` and `M_k(Γ₁(M), ψ)` of the same
+  weight, lifted to a common multiple of the levels, is even.
 * `ModularForm.eq_zero_of_odd_of_dvd_two`: at the levels `N ∣ 2` all of `M_k(Γ₁(N))` vanishes
   in odd weight.
 
@@ -131,13 +135,12 @@ theorem cuspFormCharSpace_eq_bot_of_char_neg_one_ne (h : (χ (-1) : ℂ) ≠ (-1
   Submodule.eq_bot_iff _ |>.mpr fun _f hf ↦
     not_not.mp fun hf0 ↦ h (char_neg_one_of_mem_cuspFormCharSpace hf hf0)
 
-/-- **The parity lemma**, in the form the roadmap states it: if `M_k(Γ₁(N), χ)` is nonzero
-then `χ(-1) = (-1)^k`. -/
+/-- **The parity lemma**: if `M_k(Γ₁(N), χ)` is nonzero then `χ(-1) = (-1)^k`. -/
 theorem char_neg_one_of_modFormCharSpace_ne_bot (h : modFormCharSpace (N := N) k χ ≠ ⊥) :
     (χ (-1) : ℂ) = (-1 : ℂ) ^ k :=
   not_not.mp fun hne ↦ h (modFormCharSpace_eq_bot_of_char_neg_one_ne hne)
 
-/-- **The parity lemma for cusp forms**, in the form the roadmap states it. -/
+/-- **The parity lemma for cusp forms**: if `S_k(Γ₁(N), χ)` is nonzero then `χ(-1) = (-1)^k`. -/
 theorem char_neg_one_of_cuspFormCharSpace_ne_bot (h : cuspFormCharSpace (N := N) k χ ≠ ⊥) :
     (χ (-1) : ℂ) = (-1 : ℂ) ^ k :=
   not_not.mp fun hne ↦ h (cuspFormCharSpace_eq_bot_of_char_neg_one_ne hne)
@@ -177,6 +180,26 @@ theorem even_of_mem_cuspFormCharSpace_one_of_ne_zero
     (hf : f ∈ cuspFormCharSpace k 1) (hf0 : f ≠ 0) : Even k := by
   refine Int.even_or_odd k |>.resolve_right fun hk ↦ hf0 ?_
   simpa using (cuspFormCharSpace_one_eq_bot_of_odd hk).le hf
+
+/-! ### The quotient of two nebentypes -/
+
+/-- **The quotient of two nebentypes of the same weight is even.** If `M_k(Γ₁(N), χ)` and
+`M_k(Γ₁(M), ψ)` are both nonzero, the parity lemma gives `χ(-1) = ψ(-1) = (-1)^k`, so the
+quotient `χ⁻¹ ψ` of the zero-extended characters, lifted to any common multiple `L` of the
+levels, is even. -/
+theorem even_changeLevel_inv_mul_changeLevel_of_modFormCharSpace_ne_bot {M L : ℕ}
+    {ψ : (ZMod M)ˣ →* ℂˣ} (hN : N ∣ L) (hM : M ∣ L) (hχ : modFormCharSpace (N := N) k χ ≠ ⊥)
+    (hψ : modFormCharSpace (N := M) k ψ ≠ ⊥) :
+    ((DirichletCharacter.changeLevel hN (MulChar.ofUnitHom χ))⁻¹ *
+      DirichletCharacter.changeLevel hM (MulChar.ofUnitHom ψ)).Even := by
+  have hpar {N : ℕ} {χ : (ZMod N)ˣ →* ℂˣ} (h : modFormCharSpace (N := N) k χ ≠ ⊥) :
+      MulChar.ofUnitHom χ (-1) = (-1 : ℂ) ^ k := by
+    rw [← Units.val_one, ← Units.val_neg, MulChar.ofUnitHom_coe]
+    exact char_neg_one_of_modFormCharSpace_ne_bot h
+  rw [DirichletCharacter.Even, MulChar.mul_apply, MulChar.inv_apply_eq_inv',
+    DirichletCharacter.changeLevel_apply_neg_one, DirichletCharacter.changeLevel_apply_neg_one,
+    hpar hχ, hpar hψ]
+  exact inv_mul_cancel₀ (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero))
 
 /-! ### The degenerate levels `N ∣ 2` -/
 

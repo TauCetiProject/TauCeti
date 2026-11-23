@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # The product rule for weak derivatives
@@ -42,7 +43,8 @@ used (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul`), since `ψ φ` only sees `ψ
 coefficient field of an elliptic operator, smooth in the domain but not beyond it, is a factor of
 this kind. For an additive Haar measure, a factor that is only `C¹` on `Ω` also suffices
 (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`), as a consequence of the Lipschitz rule
-below.
+below. Expanding in a basis gives the rule `D(T u) = T Du + (DT) u` for a `C¹` field `T` of linear
+maps between finite-dimensional spaces (`TauCeti.HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero`).
 
 ## Lipschitz factors
 
@@ -53,12 +55,13 @@ fields that are merely Lipschitz, such as those produced by flattening a `C²` b
 mollifies a Lipschitz extension of `ψ` by normalized bumps `ρₙ` of radius `1 / (n + 1)` and
 applies the smooth rule to `ψₙ = ρₙ ⋆ ψ`. The factors `ψₙ` converge to `ψ` uniformly, while
 `∂_v ψₙ = ρₙ ⋆ ∂_v ψ` stays bounded by the Lipschitz constant and converges to `∂_v ψ` almost
-everywhere by the Lebesgue differentiation theorem. Dominated convergence then passes the
-identity tested against a fixed `φ` to the limit
-(`LipschitzWith.tendsto_integral_normed_convolution_smul` and
-`LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`). For a factor that is also
-bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`
-(`TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`).
+everywhere by the Lebesgue differentiation theorem. The identity tested against a fixed `φ` then
+passes to the limit: uniform convergence handles the `ψₙ` terms
+(`ContDiffBump.tendsto_integral_normed_convolution_smul`) and dominated convergence the
+`∂_v ψₙ` term (`LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`). For a
+factor that is also bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`, with the `Lᵖ`
+bound `‖∂_v (ψ u)‖ ≤ M ‖∂_v u‖ + K ‖v‖ ‖u‖` for `|ψ| ≤ M`
+(`TauCeti.HasWeakLineDerivOn.exists_norm_le_lipschitzOnWith_smul`).
 
 ## Why this is the localization tool
 
@@ -82,11 +85,17 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul` and
   `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`: the rule in a direction `v` for a Lipschitz
   factor, with its almost-everywhere directional derivative.
+* `TauCeti.HasWeakLineDerivOn.locallyLipschitzOn_smul`: the same for a factor that is only
+  locally Lipschitz on `Ω`, such as the continuous representative of a `W^{1,∞}` function.
 * `TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`,
   `TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`: the rule in both forms for a factor that
   is `C^n` on `Ω` with `n ≠ 0` (at least `C¹`), for an additive Haar measure.
-* `TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`: a bounded Lipschitz factor keeps
-  an `Lᵖ` weak derivative in `Lᵖ`.
+* `TauCeti.HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero`,
+  `TauCeti.HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero`: the same rule in both forms for a
+  `C¹` factor with values in linear maps between finite-dimensional spaces,
+  `∂_v (Φ u) = Φ ∂_v u + (∂_v Φ) u`.
+* `TauCeti.HasWeakLineDerivOn.exists_norm_le_lipschitzOnWith_smul`: a bounded Lipschitz factor
+  keeps an `Lᵖ` weak derivative in `Lᵖ`, with an explicit bound.
 * `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: for `1 ≤ p`, the `Lᵖ` bound
   `‖ψ Du + Dψ ⊗ u‖_{Lᵖ} ≤ A ‖Du‖_{Lᵖ} + B ‖u‖_{Lᵖ}` when `|ψ| ≤ A` and `‖Dψ‖ ≤ B` almost
   everywhere.
@@ -303,10 +312,13 @@ private theorem integral_lineDeriv_smul_lipschitzWith_smul_eq
   have hw₂c : ∀ f : E → ℝ, Continuous f → Integrable (fun x => f x • w₂ x) μ := fun f hf =>
     integrable_continuousOn_smul_of_forall_notMem_eq_zero φ.hasCompactSupport.isCompact hw₂
       (fun x hx => by simp [w₂, image_eq_zero_of_notMem_tsupport hx]) hf.continuousOn
-  -- Pass to the limit on both sides by dominated convergence.
+  -- Pass to the limit on both sides: uniform convergence for `ψₙ`, dominated convergence for
+  -- `∂_v ψₙ`.
   have hlimit := tendsto_nhds_unique
-    (hψ.tendsto_integral_normed_convolution_smul hρ hw₁ (hw₁c ψ hψ.continuous))
-    (((hψ.tendsto_integral_normed_convolution_smul hρ hw₂ (hw₂c ψ hψ.continuous)).add
+    (ContDiffBump.tendsto_integral_normed_convolution_smul hψ.uniformContinuous hρ hw₁
+      (hw₁c ψ hψ.continuous))
+    (((ContDiffBump.tendsto_integral_normed_convolution_smul hψ.uniformContinuous hρ hw₂
+      (hw₂c ψ hψ.continuous)).add
       (hψ.tendsto_integral_fderiv_normed_convolution_apply_smul hρ h'ρ v hw₃)).neg.congr
         fun n => (integral_lineDeriv_smul_normed_convolution_eq h hψ (ρ n) φ).symm)
   rw [← integral_add (hw₂c ψ hψ.continuous) (hψ.integrable_lineDeriv_smul hw₃)]
@@ -355,6 +367,20 @@ theorem HasWeakLineDerivOn.lipschitzOnWith_smul (h : HasWeakLineDerivOn μ Ω u 
   · exact (ae_restrict_mem Ω.isOpen.measurableSet).mono fun x hx => by
       simp only [← hgψ hx, (hnear x hx).lineDeriv_eq]
 
+/-- **The Leibniz rule for weak directional derivatives with a locally Lipschitz factor.** If `u'`
+is a weak derivative of `u` in the direction `v` on `Ω` and `ψ` is locally Lipschitz on `Ω`, then
+`ψ u` is weakly differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
+Neither `ψ` nor its directional derivative need be bounded on `Ω`. -/
+theorem HasWeakLineDerivOn.locallyLipschitzOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
+    (hψ : LocallyLipschitzOn (Ω : Set E) ψ) :
+    HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
+      (fun x => ψ x • u' x + lineDeriv ℝ ψ x v • u x) v := by
+  -- On each relatively compact open `V` with closure in `Ω` the factor is Lipschitz, so the
+  -- Lipschitz rule applies there.
+  refine hasWeakLineDerivOn_iff_forall_isCompact_closure.2 fun V hVc hVΩ => ?_
+  obtain ⟨K, hK⟩ := (hψ.mono hVΩ).exists_lipschitzOnWith_of_compact hVc
+  exact (h.mono (subset_closure.trans hVΩ)).lipschitzOnWith_smul (hK.mono subset_closure)
+
 /-- **The Leibniz rule for weak directional derivatives with a `C¹` factor.** If `u'` is a weak
 derivative of `u` in the direction `v` on `Ω` and `ψ` is `C^n` on `Ω` for some `n ≠ 0`, then `ψ u`
 is weakly differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
@@ -365,20 +391,14 @@ theorem HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞}
     (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : ContDiffOn ℝ n ψ Ω) (hn : n ≠ 0) :
     HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v := by
-  -- On each relatively compact open `V` with closure in `Ω`, the factor is Lipschitz, so the
-  -- Lipschitz rule applies there, and its almost-everywhere directional derivative is the
-  -- classical one.
+  -- The factor is locally Lipschitz on `Ω`, and its directional derivative is the classical one.
   have hψ1 : ContDiffOn ℝ 1 ψ Ω := hψ.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
   have hll : LocallyLipschitzOn (Ω : Set E) ψ := fun x hx => by
     obtain ⟨K, t, ht, hK⟩ :=
       ((hψ1 x hx).contDiffAt (Ω.isOpen.mem_nhds hx)).exists_lipschitzOnWith
     exact ⟨K, t, nhdsWithin_le_nhds ht, hK⟩
-  refine hasWeakLineDerivOn_iff_forall_isCompact_closure.2 fun V hVc hVΩ => ?_
-  obtain ⟨K, hK⟩ := (hll.mono hVΩ).exists_lipschitzOnWith_of_compact hVc
-  refine ((h.mono (subset_closure.trans hVΩ)).lipschitzOnWith_smul
-    (hK.mono subset_closure)).congr_ae_deriv ?_
-  filter_upwards [ae_restrict_mem V.isOpen.measurableSet] with x hx
-  have hxΩ : x ∈ (Ω : Set E) := hVΩ (subset_closure hx)
+  refine (h.locallyLipschitzOn_smul hll).congr_ae_deriv ?_
+  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with x hxΩ
   rw [((hψ1.differentiableOn one_ne_zero x hxΩ).differentiableAt
     (Ω.isOpen.mem_nhds hxΩ)).lineDeriv_eq_fderiv]
 
@@ -394,20 +414,89 @@ theorem HasWeakFDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞} {U : E �
   convert hv using 2 with x
   simp
 
-/-- **A bounded Lipschitz factor keeps an `Lᵖ` weak derivative.** If `u ∈ Lᵖ(Ω)` has a weak
-derivative `u' ∈ Lᵖ(Ω)` in the direction `v` and `ψ` is bounded and Lipschitz on `Ω`, then `ψ u`
-has a weak derivative in the direction `v` that lies in `Lᵖ(Ω)`, namely `ψ u' + (∂_v ψ) u` from
-`TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`. -/
-theorem HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul {p : ℝ≥0∞} {M : ℝ}
-    (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : LipschitzOnWith K ψ Ω)
+/-- **The Leibniz rule with a `C¹` operator-valued factor.** If `u'` is a weak derivative of `u`
+in the direction `v` on `Ω` and `Φ : E → (F →L[ℝ] G)` is `C^n` on `Ω` for some `n ≠ 0`, between
+finite-dimensional spaces, then `x ↦ Φ x (u x)` is weakly differentiable in the direction `v` on
+`Ω`, with derivative `Φ u' + (∂_v Φ) u`, for an additive Haar measure. -/
+theorem HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero [FiniteDimensional ℝ F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {n : WithTop ℕ∞} {Φ : E → F →L[ℝ] G} (h : HasWeakLineDerivOn μ Ω u u' v)
+    (hΦ : ContDiffOn ℝ n Φ Ω) (hn : n ≠ 0) :
+    HasWeakLineDerivOn μ Ω (fun x => Φ x (u x)) (fun x => Φ x (u' x) + fderiv ℝ Φ x v (u x))
+      v := by
+  -- Expand `Φ x = ∑ₘ cₘ (Φ x) • bₘ` in a basis `(bₘ)` of `F →L[ℝ] G`; the scalar `C¹` Leibniz
+  -- rule applies to each `cₘ (Φ x) • bₘ (u x)`.
+  set b := Module.finBasis ℝ (F →L[ℝ] G)
+  let c : Fin (Module.finrank ℝ (F →L[ℝ] G)) → (F →L[ℝ] G) →L[ℝ] ℝ := fun m =>
+    LinearMap.toContinuousLinearMap (b.coord m)
+  have hexp (T : F →L[ℝ] G) (y : F) : ∑ m, c m T • b m y = T y := by
+    calc ∑ m, c m T • b m y = (∑ m, b.repr T m • b m) y := by
+          simp [-Module.Basis.sum_repr, c]
+      _ = T y := by rw [b.sum_repr]
+  have hsum := HasWeakLineDerivOn.sum (F := G) Finset.univ fun m _ =>
+    (h.clm_comp (b m)).contDiffOn_smul_of_ne_zero ((c m).contDiff.comp_contDiffOn hΦ) hn
+  refine (hsum.congr_ae (Filter.Eventually.of_forall fun x => hexp (Φ x) (u x))).congr_ae_deriv ?_
+  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with x hx
+  have hd : DifferentiableAt ℝ Φ x :=
+    ((hΦ.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)).differentiableOn one_ne_zero x
+      hx).differentiableAt (Ω.isOpen.mem_nhds hx)
+  simp only [Finset.sum_add_distrib, fderiv_comp x (c _).differentiableAt hd,
+    ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, Function.comp_apply, hexp]
+
+/-- **The Leibniz rule for weak Fréchet derivatives with a `C¹` operator-valued factor**:
+`D(Φ u) = Φ Du + (DΦ) u` on `Ω` for `Φ : E → (F →L[ℝ] G)` that is `C^n` on `Ω` with `n ≠ 0`,
+between finite-dimensional spaces, for an additive Haar measure. -/
+theorem HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero [FiniteDimensional ℝ F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {n : WithTop ℕ∞} {Φ : E → F →L[ℝ] G} {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
+    (hΦ : ContDiffOn ℝ n Φ Ω) (hn : n ≠ 0) :
+    HasWeakFDerivOn μ Ω (fun x => Φ x (u x))
+      (fun x => (Φ x).comp (U x) + (fderiv ℝ Φ x).flip (u x)) := by
+  rw [hasWeakFDerivOn_iff]
+  intro v
+  have hv := (h.hasWeakLineDerivOn v).contDiffOn_clm_apply_of_ne_zero hΦ hn
+  convert hv using 2 with x
+  simp
+
+/-- **A bounded Lipschitz factor keeps an `Lᵖ` weak derivative.** Let `1 ≤ p`. If `u ∈ Lᵖ(Ω)` has
+a weak derivative `u' ∈ Lᵖ(Ω)` in the direction `v` and `ψ` is `K`-Lipschitz on `Ω` with
+`‖ψ‖ ≤ M` there, then `ψ u` has a weak derivative `G` in the direction `v` that lies in `Lᵖ(Ω)`,
+namely `ψ u' + (∂_v ψ) u` from `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`, with
+
+`‖G‖_{Lᵖ(Ω)} ≤ M ‖u'‖_{Lᵖ(Ω)} + K ‖v‖ ‖u‖_{Lᵖ(Ω)}`. -/
+theorem HasWeakLineDerivOn.exists_norm_le_lipschitzOnWith_smul {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {M : ℝ} (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : LipschitzOnWith K ψ Ω)
     (hψb : ∀ x ∈ (Ω : Set E), ‖ψ x‖ ≤ M) (hu : MemLp u p (μ.restrict Ω))
     (hu' : MemLp u' p (μ.restrict Ω)) :
-    ∃ G : Lp F p (μ.restrict Ω), HasWeakLineDerivOn μ Ω (fun x => ψ x • u x) G v := by
+    ∃ G : Lp F p (μ.restrict Ω),
+      ‖G‖ ≤ M * (eLpNorm u' p (μ.restrict Ω)).toReal +
+          K * ‖v‖ * (eLpNorm u p (μ.restrict Ω)).toReal ∧
+        HasWeakLineDerivOn μ Ω (fun x => ψ x • u x) G v := by
   have hΩm : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
   have hm := ((memLp_top_of_bound (hψ.continuousOn.aestronglyMeasurable hΩm) M
     ((ae_restrict_mem hΩm).mono hψb)).smul (r := p) hu').add
     ((hψ.memLp_lineDeriv Ω.isOpen v).smul (r := p) hu)
-  exact ⟨hm.toLp _, (h.lipschitzOnWith_smul hψ).congr_ae_deriv hm.coeFn_toLp.symm⟩
+  refine ⟨hm.toLp _, ?_, (h.lipschitzOnWith_smul hψ).congr_ae_deriv hm.coeFn_toLp.symm⟩
+  rcases (Ω : Set E).eq_empty_or_nonempty with hΩ | ⟨x₀, hx₀⟩
+  · simp [Lp.norm_toLp, hΩ]
+  lift M to ℝ≥0 using (norm_nonneg _).trans (hψb x₀ hx₀)
+  -- Pointwise, `|ψ| ≤ M` and `|∂_v ψ| ≤ K ‖v‖` on `Ω`.
+  have hle := eLpNorm_le_mul_add_mul_of_ae_norm_le (A := M) (B := K * ‖v‖₊) (p := p)
+    (f := fun x => ψ x • u' x + lineDeriv ℝ ψ x v • u x) Fact.out
+    hm.aestronglyMeasurable hu'.aestronglyMeasurable hu.aestronglyMeasurable <| by
+      filter_upwards [ae_restrict_mem hΩm] with x hx
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+      · rw [norm_smul]
+        exact mul_le_mul_of_nonneg_right (hψb x hx) (norm_nonneg _)
+      · rw [norm_smul, NNReal.coe_mul, coe_nnNorm]
+        exact mul_le_mul_of_nonneg_right
+          (norm_lineDeriv_le_of_lipschitzOn ℝ (Ω.isOpen.mem_nhds hx) hψ) (norm_nonneg _)
+  have hu_ne := hu.eLpNorm_ne_top
+  have hu'_ne := hu'.eLpNorm_ne_top
+  rw [Lp.norm_toLp]
+  refine (ENNReal.toReal_mono (by finiteness) hle).trans_eq ?_
+  rw [ENNReal.toReal_add (by finiteness) (by finiteness)]
+  simp
 
 end Lipschitz
 
@@ -429,21 +518,15 @@ theorem eLpNorm_smul_add_fderiv_smulRight_le (hp : 1 ≤ p) {ψ : E → ℝ}
     eLpNorm (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) p μ ≤
       A * eLpNorm D p μ + B * eLpNorm u p μ := by
   have hm : AEStronglyMeasurable (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) μ :=
-    (hψ.smul hD).add ((ContinuousLinearMap.smulRightL ℝ E F).aestronglyMeasurable_comp₂
+    (hψ.smul hD).add ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F).aestronglyMeasurable_comp₂
       (measurable_fderiv ℝ ψ).aestronglyMeasurable hu)
-  calc eLpNorm (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) p μ
-      ≤ eLpNorm ((A : ℝ) • fun z => ‖D z‖) p μ + eLpNorm ((B : ℝ) • fun z => ‖u z‖) p μ := by
-        refine (eLpNorm_mono_ae_real hm ?_).trans (eLpNorm_add_le hp)
-        filter_upwards [hA, hB] with z hAz hBz
-        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-        · rw [norm_smul]
-          exact mul_le_mul_of_nonneg_right hAz (norm_nonneg _)
-        · rw [ContinuousLinearMap.norm_smulRight_apply]
-          exact mul_le_mul_of_nonneg_right hBz (norm_nonneg _)
-    _ = A * eLpNorm D p μ + B * eLpNorm u p μ := by
-        rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm, eLpNorm_norm] <;>
-          first | assumption | simp
+  refine eLpNorm_le_mul_add_mul_of_ae_norm_le hp hm hD hu ?_
+  filter_upwards [hA, hB] with z hAz hBz
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · rw [norm_smul]
+    exact mul_le_mul_of_nonneg_right hAz (norm_nonneg _)
+  · rw [ContinuousLinearMap.norm_smulRight_apply]
+    exact mul_le_mul_of_nonneg_right hBz (norm_nonneg _)
 
 end LpBound
 

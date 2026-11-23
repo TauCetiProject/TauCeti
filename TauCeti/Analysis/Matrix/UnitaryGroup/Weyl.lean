@@ -53,6 +53,8 @@ torus.
   and every permutation arises.
 * `TauCeti.unitaryTorusNormalizerPerm_permutationUnitary`: the coordinate permutation of the
   permutation matrix `Matrix.permutationUnitary σ` is `σ`.
+* `TauCeti.coe_unitaryTorusHom_mul_permutationUnitary_apply`: the entries of a monomial unitary
+  matrix `diag(z) P`.
 
 ## References
 
@@ -180,7 +182,7 @@ noncomputable def unitaryTorusNormalizerQuotientMulEquivPerm :
       (unitaryTorusNormalizerPerm_eq_one_iff g).mpr)
     ⟨(Subgroup.normalizerQuotientLift_injective_iff _ _ _).mpr
         unitaryTorusNormalizerPerm_eq_one_iff,
-      Subgroup.normalizerQuotientLift_surjective_of_surjective _ _ _
+      (Subgroup.normalizerQuotientLift_surjective_iff _ _ _).mpr
         unitaryTorusNormalizerPerm_surjective⟩
 
 /-- The Weyl-group equivalence sends the class of a normalizer element to its coordinate
@@ -222,6 +224,14 @@ theorem mem_normalizer_unitaryTorus_iff {g : unitaryGroup (Fin n) ℂ} :
   · rintro ⟨z, σ, rfl⟩
     exact Subgroup.mul_mem _ (Subgroup.le_normalizer (unitaryTorusHom_mem_unitaryTorus z))
       (permutationUnitary_mem_normalizer σ)
+
+/-- The entries of the monomial unitary matrix `diag(z) P`, for `P` the permutation matrix of
+`σ⁻¹`: row `k` has the single nonzero entry `z k`, in column `σ⁻¹ k`. -/
+theorem coe_unitaryTorusHom_mul_permutationUnitary_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (z : ι → Circle) (σ : Equiv.Perm ι) (k i : ι) :
+    ((unitaryTorusHom ι z * permutationUnitary σ : unitaryGroup ι ℂ) : Matrix ι ι ℂ) k i =
+      if i = σ⁻¹ k then (z k : ℂ) else 0 := by
+  simp [coe_unitaryTorusHom, coe_permutationUnitary, diagonal_mul, eq_comm]
 
 /-- A monomial factorization of a unitary normalizer element determines its coordinate
 permutation. -/

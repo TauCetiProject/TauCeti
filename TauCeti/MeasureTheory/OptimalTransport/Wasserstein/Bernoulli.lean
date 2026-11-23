@@ -56,12 +56,12 @@ theorem wassersteinEDist_one_bernoulliMeasure_le {X : Type*} [MeasurableSpace X]
   let movedMass : Measure X := ENNReal.ofReal ((t : ℝ) - s) • Measure.dirac y
   have hleft : ENNReal.ofReal (1 - (t : ℝ)) + ENNReal.ofReal ((t : ℝ) - s) =
       ENNReal.ofReal (1 - (s : ℝ)) := by
-    rw [← ENNReal.ofReal_add (sub_nonneg.2 t.2.2) (sub_nonneg.2 hst)]
+    rw [← ENNReal.ofReal_add (sub_nonneg.2 t.property.2) (sub_nonneg.2 hst)]
     congr 1
     ring
   have hright : ENNReal.ofReal (s : ℝ) + ENNReal.ofReal ((t : ℝ) - s) =
       ENNReal.ofReal (t : ℝ) := by
-    rw [← ENNReal.ofReal_add s.2.1 (sub_nonneg.2 hst)]
+    rw [← ENNReal.ofReal_add s.property.1 (sub_nonneg.2 hst)]
     congr 1
     ring
   have hs : Ber(x, y, s) = commonMass + movedMass := by
@@ -76,7 +76,7 @@ theorem wassersteinEDist_one_bernoulliMeasure_le {X : Type*} [MeasurableSpace X]
   rw [hs, ht]
   refine (wassersteinEDist_add_smul_dirac_le hd 1 commonMass movedMass x).trans_eq ?_
   have hmeas : Measurable fun z ↦ edist z x := hd.comp (measurable_id.prodMk measurable_const)
-  rw [eLpNorm_one_eq_lintegral_enorm hmeas.aestronglyMeasurable]
+  rw [eLpNorm_one_eq_lintegral_eNorm hmeas.aestronglyMeasurable]
   simp [movedMass, lintegral_smul_measure, lintegral_dirac' y hmeas, edist_comm y x]
 
 end TauCeti

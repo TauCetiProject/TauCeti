@@ -22,11 +22,11 @@ section gives.
 
 Two things are worth being precise about. First, this is the root-datum layer and not the group
 layer: nothing here mentions a group scheme, its points, or a finite group, and the equations below
-record on the root datum what milestone L1 states about root subgroups, rather than being those
+record on the root datum what the Steinberg map does to root subgroups, rather than being those
 equations themselves. Second, the composite is *defined* in the order `γ ∘ Frob_q` and then proved
 to agree with `Frob_q ∘ γ`. That agreement,
 `TauCeti.GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_comp`, is the root-datum form of the
-relation "`γ` commutes with `Frob_q`" which L1 requires of the graph-twisted families, and it comes
+relation "`γ` commutes with `Frob_q`" of the graph-twisted families, and it comes
 from the general naturality of scaling among isogenies,
 `TauCeti.RootPairingIsogeny.comp_smulId`, at the endo-isogenies of a single datum.
 
@@ -50,7 +50,7 @@ index under `σ⁻¹`, which is what the pullback of `γ ∘ Frob_q` does.
 
 Taking the inverse costs nothing that `datumGraphAut` was carrying. Its order relation
 `TauCeti.GraphTwistedIndex.datumGraphAut_pow_twistOrder` is the `γ ^ 2 = 1` and `γ ^ 3 = 1` of
-milestone L1, and an inverse has the same order, so the graph factor used here satisfies it too.
+the graph factor, and an inverse has the same order, so the graph factor used here satisfies it too.
 The distinction is invisible on `²Aₙ`, `²Dₙ` and `²E₆`, whose diagram permutation is an involution,
 and is visible only on `³D₄`, where the two orientations name the two trialities.
 
@@ -80,22 +80,20 @@ degenerates to its Frobenius exactly on the nine untwisted families, so `²Aₙ(
   `TauCeti.GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_iff_twistOrder`: it is the plain
   Frobenius exactly on the untwisted families, equivalently exactly when the twist order is one.
 * `TauCeti.GraphTwistedIndex.datumSteinberg_pow_twistOrder_eq_smulId`: its twist-order power is the
-  Frobenius `Frob_(q ^ e)`, which is the order relation of milestone L1 read on the Steinberg map.
+  Frobenius `Frob_(q ^ e)`, which is the order relation of the graph factor read on the Steinberg
+  map.
 
-## Roadmap
+## Related declarations and references
 
-This is the root-datum layer of milestone L1, "ordinary and graph Steinberg maps", of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose table sets the Steinberg map of the untwisted
-families to `Frob_q` and that of `²A`, `²D`, `²E₆` and `³D₄` to `γ ∘ Frob_q`, with required
-relations `γ ^ 2 = 1`, `γ ^ 3 = 1` and "`γ` commutes with `Frob_q`". The order relations are
-already `TauCeti.GraphTwistedIndex.datumGraphAut_pow_twistOrder`; the commutation is proved here.
-What remains of L1 after this file is the group layer: `TauCeti.ValidLieTypeIndex.steinberg` and the
-equations `γ (x_α(t)) = x_{γ α}(t)` and `Frob_q (x_α(t)) = x_α(t ^ q)` on the root subgroups of the
-pinned ambient group, which wait on the carriers of milestone L0. Nothing in this file consumes an
-L0 carrier: it is convention material of the kind milestone I0 pins ahead of L0, of which the
-roadmap says that the pinned diagram permutations "carry the conventions of L1 and L2 and need
-nothing from Layer 9, so they land here rather than waiting on L0". This file stands to the
-graph-twisted families as `TauCeti/GroupTheory/SpecificGroups/CFSG/RootDatumAutomorphism.lean`
+The Steinberg map of the untwisted families is `Frob_q`, and that of `²A`, `²D`, `²E₆` and `³D₄` is
+`γ ∘ Frob_q`, with relations `γ ^ 2 = 1`, `γ ^ 3 = 1` and "`γ` commutes with `Frob_q`". The order
+relations are already `TauCeti.GraphTwistedIndex.datumGraphAut_pow_twistOrder`; the commutation is
+proved here. The group layer, `TauCeti.ValidLieTypeIndex.steinberg` and the equations
+`γ (x_α(t)) = x_{γ α}(t)` and `Frob_q (x_α(t)) = x_α(t ^ q)` on the root subgroups of the pinned
+ambient group, is not built here, and nothing in this file uses a group scheme or its points: the
+pinned diagram permutations and their root-datum shadows are convention material that needs no
+carrier. This file stands to the graph-twisted families as
+`TauCeti/GroupTheory/SpecificGroups/CFSG/RootDatumAutomorphism.lean`
 stands to the graph automorphism alone.
 
 The conventions follow R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80
@@ -121,24 +119,24 @@ covariant in the diagram permutation; the module docstring sets that out. On the
 families the graph automorphism is trivial and this is the Frobenius itself, by
 `TauCeti.GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_iff`. -/
 def datumSteinberg :
-    RootPairingIsogeny (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid)
-      (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid) :=
-  (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹).comp d.1.datumFrobenius
+    RootPairingIsogeny (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid)
+      (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid) :=
+  (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹).comp d.val.datumFrobenius
 
 /-- **The defining equation of the root-datum Steinberg map.** The body of `datumSteinberg` is not
 exposed, so this is what exhibits it as the graph automorphism after the Frobenius, in that order;
 `TauCeti.GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_comp` is the same map in the other
 order. -/
 theorem datumSteinberg_def : d.datumSteinberg =
-    (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹).comp d.1.datumFrobenius := by
+    (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹).comp d.val.datumFrobenius := by
   rw [datumSteinberg]
 
-/-- **The graph automorphism commutes with the Frobenius.** This is the second relation milestone
-L1 requires of a graph-twisted Steinberg map, read on the pinned root datum: the composite is the
+/-- **The graph automorphism commutes with the Frobenius.** This is the second relation of the graph
+factor of a graph-twisted Steinberg map, read on the pinned root datum: the composite is the
 same whichever order the two factors are taken in. -/
 theorem datumSteinberg_eq_datumFrobenius_comp :
     d.datumSteinberg =
-      d.1.datumFrobenius.comp (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹) := by
+      d.val.datumFrobenius.comp (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹) := by
   rw [datumSteinberg_def, ValidLieTypeIndex.datumFrobenius_def]
   exact RootPairingIsogeny.comp_smulId (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹) _
 
@@ -146,7 +144,7 @@ theorem datumSteinberg_eq_datumFrobenius_comp :
 map of the graph automorphism. -/
 @[simp] theorem datumSteinberg_weightMap :
     d.datumSteinberg.weightMap =
-      (d.datumGraphAut⁻¹).toHom.weightMap ∘ₗ (d.1.fieldOrder • LinearMap.id) := by
+      (d.datumGraphAut⁻¹).toHom.weightMap ∘ₗ (d.val.fieldOrder • LinearMap.id) := by
   rw [datumSteinberg_def, RootPairingIsogeny.comp_weightMap,
     RootPairingIsogeny.ofEquiv_weightMap, ValidLieTypeIndex.datumFrobenius_weightMap]
 
@@ -154,7 +152,7 @@ map of the graph automorphism. -/
 followed by multiplication by `q`. -/
 @[simp] theorem datumSteinberg_coweightMap :
     d.datumSteinberg.coweightMap =
-      (d.1.fieldOrder • LinearMap.id) ∘ₗ (d.datumGraphAut⁻¹).toHom.coweightMap := by
+      (d.val.fieldOrder • LinearMap.id) ∘ₗ (d.datumGraphAut⁻¹).toHom.coweightMap := by
   rw [datumSteinberg_def, RootPairingIsogeny.comp_coweightMap,
     RootPairingIsogeny.ofEquiv_coweightMap, ValidLieTypeIndex.datumFrobenius_coweightMap]
 
@@ -163,7 +161,7 @@ followed by multiplication by `q`. -/
 the pullback orientation the module docstring fixes. -/
 @[simp] theorem datumSteinberg_indexEquiv :
     d.datumSteinberg.indexEquiv =
-      (DynkinType.diagramRootPerm d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry)⁻¹ := by
+      (DynkinType.diagramRootPerm d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry)⁻¹ := by
   rw [datumSteinberg_def, RootPairingIsogeny.comp_indexEquiv, RootPairingIsogeny.ofEquiv_indexEquiv,
     ValidLieTypeIndex.datumFrobenius_indexEquiv, Equiv.refl_trans,
     datumGraphAut_def]
@@ -172,38 +170,38 @@ the pullback orientation the module docstring fixes. -/
 
 /-- Every root is rescaled by the Frobenius parameter, uniformly: the graph automorphism moves
 roots without rescaling them, so the composite has the constant exponent of the Frobenius. -/
-@[simp] theorem datumSteinberg_exponent (k : Fin d.1.dynkinType.numRoots) :
-    d.datumSteinberg.exponent k = (d.1.fieldOrder : ℤ) := by
+@[simp] theorem datumSteinberg_exponent (k : Fin d.val.dynkinType.numRoots) :
+    d.datumSteinberg.exponent k = (d.val.fieldOrder : ℤ) := by
   rw [datumSteinberg_def, RootPairingIsogeny.comp_exponent,
     ValidLieTypeIndex.datumFrobenius_exponent, RootPairingIsogeny.ofEquiv_exponent, mul_one]
 
 /-- **The Steinberg map on roots**: it sends the root at `k` to `q` times the root at the image of
 `k` under the induced permutation of the root enumeration. That permutation is the motion of the
 pinned root indices under the pullback of `γ ∘ Frob_q`, which is why the inverse appears. -/
-theorem datumSteinberg_root_weightMap (k : Fin d.1.dynkinType.numRoots) :
+theorem datumSteinberg_root_weightMap (k : Fin d.val.dynkinType.numRoots) :
     d.datumSteinberg.weightMap
-        ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root k) =
-      (d.1.fieldOrder : ℤ) •
-        (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
-          ((DynkinType.diagramRootPerm d.1.dynkinType_valid
+        ((d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).root k) =
+      (d.val.fieldOrder : ℤ) •
+        (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).root
+          ((DynkinType.diagramRootPerm d.val.dynkinType_valid
             d.diagramPerm_mem_diagramSymmetry)⁻¹ k) := by
   rw [d.datumSteinberg.root_weightMap, datumSteinberg_exponent, datumSteinberg_indexEquiv,
     Int.cast_id]
 
 /-- **The Steinberg map on the Bourbaki-numbered simple roots**, where the induced permutation of
-the root enumeration is the inverse of the index's own pinned diagram permutation. Milestone L1
-states the graph-twisted convention as the motion `α_i ↦ α_{σ i}` of the pinned simple root
-subgroups; pulling back along `γ` turns that into `σ⁻¹` here. -/
-theorem datumSteinberg_root_weightMap_simpleIndex (i : Fin d.1.rank) :
+the root enumeration is the inverse of the index's own pinned diagram permutation. The
+graph-twisted convention is the motion `α_i ↦ α_{σ i}` of the pinned simple root subgroups;
+pulling back along `γ` turns that into `σ⁻¹` here. -/
+theorem datumSteinberg_root_weightMap_simpleIndex (i : Fin d.val.rank) :
     d.datumSteinberg.weightMap
-        ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
-          (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)) =
-      (d.1.fieldOrder : ℤ) •
-        (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
-          (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.diagramPerm⁻¹ i)) := by
-  have h : (DynkinType.diagramRootPerm d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry)⁻¹
-      (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) =
-      d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.diagramPerm⁻¹ i) := by
+        ((d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).root
+          (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i)) =
+      (d.val.fieldOrder : ℤ) •
+        (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).root
+          (d.val.dynkinType.simpleIndex d.val.dynkinType_valid (d.diagramPerm⁻¹ i)) := by
+  have h : (DynkinType.diagramRootPerm d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry)⁻¹
+      (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i) =
+      d.val.dynkinType.simpleIndex d.val.dynkinType_valid (d.diagramPerm⁻¹ i) := by
     rw [Equiv.Perm.inv_def, Equiv.symm_apply_eq, DynkinType.diagramRootPerm_simpleIndex,
       Equiv.Perm.inv_def, Equiv.apply_symm_apply]
   rw [datumSteinberg_root_weightMap, h]
@@ -212,7 +210,7 @@ theorem datumSteinberg_root_weightMap_simpleIndex (i : Fin d.1.rank) :
 direction is what makes the four graph-twisted families genuinely twisted: no untwisted index
 receives the same root-datum map. -/
 @[simp] theorem datumSteinberg_eq_datumFrobenius_iff :
-    d.datumSteinberg = d.1.datumFrobenius ↔ d.diagramPerm = 1 := by
+    d.datumSteinberg = d.val.datumFrobenius ↔ d.diagramPerm = 1 := by
   rw [datumSteinberg_def, ValidLieTypeIndex.datumFrobenius_def,
     RootPairingIsogeny.comp_ofEquiv_smulId_eq_iff, inv_eq_one, datumGraphAut_def]
   exact DynkinType.diagramAut_eq_one_iff _ _
@@ -221,20 +219,21 @@ receives the same root-datum map. -/
 superscript**, since the twist order of a graph-twisted index is the order of its diagram
 permutation. -/
 theorem datumSteinberg_eq_datumFrobenius_iff_twistOrder :
-    d.datumSteinberg = d.1.datumFrobenius ↔ d.twistOrder = 1 := by
+    d.datumSteinberg = d.val.datumFrobenius ↔ d.twistOrder = 1 := by
   rw [datumSteinberg_eq_datumFrobenius_iff, ← orderOf_diagramPerm d, orderOf_eq_one_iff]
 
 /-- **The order relation of the graph-twisted Steinberg map**: raising `γ ∘ Frob_q` to the twist
-order returns the Frobenius of the field of that degree, `Frob_(q ^ e)`. It is milestone L1's
+order returns the Frobenius of the field of that degree, `Frob_(q ^ e)`. It is the analogue of
 `γ ^ 2 = 1` and `γ ^ 3 = 1` read on the Steinberg map itself rather than on its graph factor. On an
 untwisted family the twist order is `1` and this is the definition of the Frobenius. -/
 theorem datumSteinberg_pow_twistOrder_eq_smulId :
     d.datumSteinberg ^ d.twistOrder =
-      RootPairingIsogeny.smulId _ (d.1.1.fieldOrderPNat ^ d.twistOrder) := by
+      RootPairingIsogeny.smulId _ (d.val.val.fieldOrderPNat ^ d.twistOrder) := by
   -- the power splits over the two factors because a scaling is central,
   have hcomm : Commute (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹)
       (RootPairingIsogeny.smulId
-        (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid) d.1.1.fieldOrderPNat) :=
+        (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid) d.val.val.fieldOrderPNat)
+            :=
     (RootPairingIsogeny.commute_smulId _ _ _).symm
   -- and the graph factor is annihilated by the twist order.
   have hgraph : RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹ ^ d.twistOrder = 1 := by
@@ -242,10 +241,10 @@ theorem datumSteinberg_pow_twistOrder_eq_smulId :
       RootPairingIsogeny.ofEquiv_one, ← RootPairingIsogeny.one_def]
   calc d.datumSteinberg ^ d.twistOrder
       = RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹ ^ d.twistOrder *
-          RootPairingIsogeny.smulId _ d.1.1.fieldOrderPNat ^ d.twistOrder := by
+          RootPairingIsogeny.smulId _ d.val.val.fieldOrderPNat ^ d.twistOrder := by
         rw [datumSteinberg_def, ValidLieTypeIndex.datumFrobenius_def, ← RootPairingIsogeny.mul_def,
           hcomm.mul_pow]
-    _ = RootPairingIsogeny.smulId _ (d.1.1.fieldOrderPNat ^ d.twistOrder) := by
+    _ = RootPairingIsogeny.smulId _ (d.val.val.fieldOrderPNat ^ d.twistOrder) := by
         rw [hgraph, one_mul, RootPairingIsogeny.smulId_pow]
 
 end

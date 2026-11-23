@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.MetricSpace.Contracting
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # Stability of surjectivity under small perturbations
@@ -43,6 +44,9 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
   stays surjective under a perturbation bounded by `θ < 1` times the map.
 * `ContinuousLinearMap.surjective_of_norm_sub_lt_inv_rightInverse`: a perturbation smaller than
   the reciprocal bound of a given bounded nonlinear right inverse stays surjective.
+* `ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_lt` and its special case
+  `ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_le_half`: an approximate bounded
+  linear right inverse, with `‖T ∘ Q₀ - id‖ < 1`, corrects to an exact one.
 * `ContinuousLinearMap.surjective_coprod_toSpanSingleton_iff`: a continuous linear map extended
   by the line through a vector is surjective exactly when its range and the vector span the
   target.
@@ -81,7 +85,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 /-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear
 maps. -/
 theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := by
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   rw [Metric.isOpen_iff]
   rintro A (hA : Surjective A)
   obtain ⟨R, hAR⟩ := A.exists_rightInverse_of_surjective (A.range_eq_top_of_surjective hA)
@@ -148,7 +152,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 No complement to the kernel is needed. -/
 theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
     (T S : E →L[𝕜] F) (R : T.NonlinearRightInverse)
-    (h : ‖S - T‖ < (R.nnnorm : ℝ)⁻¹) : Function.Surjective S := by
+    (h : ‖S - T‖ < (R.nnNorm : ℝ)⁻¹) : Function.Surjective S := by
   have ha : ApproximatesLinearOn (S : E → F) T univ ‖S - T‖₊ := by
     intro x _ y _
     have he : S x - S y - T (x - y) = (S - T) (x - y) := by
@@ -156,13 +160,50 @@ theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
       abel
     rw [he]
     exact (S - T).le_opNorm _
-  have hnn : ‖S - T‖₊ < R.nnnorm⁻¹ := by exact_mod_cast h
+  have hnn : ‖S - T‖₊ < R.nnNorm⁻¹ := by exact_mod_cast h
   have hopen : IsOpen (Set.range S) := by
     simpa only [image_univ] using ha.open_image R isOpen_univ (Or.inr hnn)
   apply LinearMap.range_eq_top.1
   apply Submodule.eq_top_of_nonempty_interior'
   rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, hopen.interior_eq]
   exact ⟨0, 0, map_zero S⟩
+
+/-- **Approximate right inverses can be corrected.** If `Q₀` is an approximate bounded linear
+right inverse of `T`, with `‖T ∘ Q₀ - id‖ < 1`, then `T` has a bounded linear right inverse `Q`
+with `‖Q‖ ≤ ‖Q₀‖ / (1 - ‖T ∘ Q₀ - id‖)`, namely `Q₀ ∘ (T ∘ Q₀)⁻¹`, where `T ∘ Q₀` is inverted by
+its Neumann series. -/
+theorem exists_rightInverse_of_norm_comp_sub_id_lt [CompleteSpace F] (T : E →L[𝕜] F)
+    (Q₀ : F →L[𝕜] E) (h : ‖T.comp Q₀ - ContinuousLinearMap.id 𝕜 F‖ < 1) :
+    ∃ Q : F →L[𝕜] E, T.comp Q = ContinuousLinearMap.id 𝕜 F ∧
+      ‖Q‖ ≤ ‖Q₀‖ * (1 - ‖T.comp Q₀ - ContinuousLinearMap.id 𝕜 F‖)⁻¹ := by
+  set t : F →L[𝕜] F := ContinuousLinearMap.id 𝕜 F - T.comp Q₀
+  have ht : ‖t‖ < 1 := by rwa [norm_sub_rev]
+  set U := Units.oneSub t ht
+  have hU : (U : F →L[𝕜] F) = T.comp Q₀ := by
+    rw [Units.val_oneSub, one_def, sub_sub_cancel]
+  refine ⟨Q₀.comp ((U⁻¹ : (F →L[𝕜] F)ˣ) : F →L[𝕜] F), ?_, ?_⟩
+  · rw [← comp_assoc, ← hU, ← mul_def, Units.mul_inv, one_def]
+  · rw [norm_sub_rev]
+    refine (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg Q₀))
+    rw [← Ring.inverse_unit, Units.val_oneSub]
+    refine (NormedRing.norm_inverse_one_sub_le ht).trans ?_
+    have h1 : ‖(1 : F →L[𝕜] F)‖ ≤ 1 := by
+      rw [one_def]
+      exact norm_id_le
+    linarith
+
+/-- **Approximate right inverses within `1 / 2`.** If `‖T ∘ Q₀ - id‖ ≤ 1 / 2`, then `T` has a
+bounded linear right inverse of norm at most `2 ‖Q₀‖`. -/
+theorem exists_rightInverse_of_norm_comp_sub_id_le_half [CompleteSpace F] (T : E →L[𝕜] F)
+    (Q₀ : F →L[𝕜] E) (h : ‖T.comp Q₀ - ContinuousLinearMap.id 𝕜 F‖ ≤ 1 / 2) :
+    ∃ Q : F →L[𝕜] E, T.comp Q = ContinuousLinearMap.id 𝕜 F ∧ ‖Q‖ ≤ 2 * ‖Q₀‖ := by
+  obtain ⟨Q, hQ, hQn⟩ := T.exists_rightInverse_of_norm_comp_sub_id_lt Q₀ (by linarith)
+  refine ⟨Q, hQ, hQn.trans ?_⟩
+  have hinv : (1 - ‖T.comp Q₀ - ContinuousLinearMap.id 𝕜 F‖)⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ (by linarith) (by norm_num)]
+    linarith
+  rw [mul_comm]
+  exact mul_le_mul_of_nonneg_right hinv (norm_nonneg Q₀)
 
 /-- A continuous linear map and a vector together span the target exactly when the map extended
 by the line through the vector is surjective. -/

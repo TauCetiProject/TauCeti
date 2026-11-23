@@ -65,8 +65,10 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `π [x, y] = [π x, y] = [x, π y]` away from degree zero.
 * `TauCeti.gradedMap_gradedBracket`, `TauCeti.gradedMap_gradedPow`: naturality of the bracket and
   of `π`.
-* `TauCeti.gradedMap_symm_gradedMap`: the graded map of the inverse of a topological isomorphism
-  inverts the graded map of the isomorphism.
+* `TauCeti.gradedMap_symm_gradedMap`, `TauCeti.gradedMap_gradedMap_symm`,
+  `TauCeti.gradedMap_injective`: the graded maps of a topological isomorphism and of its inverse
+  are mutually inverse, so the graded map of a topological isomorphism is injective in every
+  degree.
 * `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
   isomorphic to `ℤ/pⁿ⁺¹` with `1 < p`, `π^n` of the class of the generator is nonzero.
 
@@ -327,8 +329,8 @@ theorem gradedPieceInclusion_gradedMk {k : ℕ} (x : pLowerCentralSeries p G k) 
 theorem gradedPieceInclusion_injective (k : ℕ) :
     Function.Injective (gradedPieceInclusion p G k) := by
   rw [gradedPieceInclusion, MonoidHom.coe_toAdditive]
-  exact (Additive.ofMul.injective.comp ((TauCeti.QuotientGroup.map_injective_iff _ _ _).mpr
-    (comap_subtype _ _).symm)).comp Additive.toMul.injective
+  exact (Additive.ofMul.injective.comp ((_root_.QuotientGroup.map_injective_iff _ _ _ _).mpr
+    (comap_subtype _ _).le)).comp Additive.toMul.injective
 
 theorem gradedPieceInclusion_zero_surjective :
     Function.Surjective (gradedPieceInclusion p G 0) := by
@@ -452,7 +454,7 @@ theorem gradedCast_gradedCast {i j k : ℕ} (hij : i = j) (hjk : j = k) (x : gra
 
 @[simp]
 theorem gradedCast_gradedMk {j k : ℕ} (h : j = k) (x : pLowerCentralSeries p G j) :
-    gradedCast p G h (gradedMk p G j x) = gradedMk p G k ⟨x, h ▸ x.2⟩ := by
+    gradedCast p G h (gradedMk p G j x) = gradedMk p G k ⟨x, h ▸ x.property⟩ := by
   subst h; rfl
 
 /-! ### The bracket -/
@@ -467,7 +469,8 @@ private def bracketAux (j k : ℕ) (x : pLowerCentralSeries p G j) :
       (pLowerCentralSeries p G (j + k + 1) ⧸
         (pLowerCentralSeries p G (j + k + 1 + 1)).subgroupOf
           (pLowerCentralSeries p G (j + k + 1))) where
-  toFun y := QuotientGroup.mk ⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.2 y.2⟩
+  toFun y := QuotientGroup.mk ⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.property
+      y.property⟩
   map_one' := by
     rw [← QuotientGroup.mk_one]
     congr 1
@@ -476,12 +479,13 @@ private def bracketAux (j k : ℕ) (x : pLowerCentralSeries p G j) :
   map_mul' y y' := by
     rw [← QuotientGroup.mk_mul, QuotientGroup.eq_subgroupOf]
     simp only [coe_mul, QuotientGroup.mk_mul]
-    exact mk_commutatorElement_mul_right x.2 y'.2 y
+    exact mk_commutatorElement_mul_right x.property y'.property y
 
 private theorem bracketAux_apply (j k : ℕ) (x : pLowerCentralSeries p G j)
     (y : pLowerCentralSeries p G k) :
     bracketAux p G j k x y =
-      QuotientGroup.mk ⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.2 y.2⟩ :=
+      QuotientGroup.mk ⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.property
+          y.property⟩ :=
   rfl
 
 private theorem subgroupOf_le_ker_bracketAux (j k : ℕ) (x : pLowerCentralSeries p G j) :
@@ -489,7 +493,7 @@ private theorem subgroupOf_le_ker_bracketAux (j k : ℕ) (x : pLowerCentralSerie
       (bracketAux p G j k x).ker := by
   intro y hy
   rw [MonoidHom.mem_ker, bracketAux_apply, QuotientGroup.eq_one_iff, mem_subgroupOf, coe_mk]
-  exact commutator_mem_pLowerCentralSeries (j := j) (k := k + 1) x.2 (mem_subgroupOf.mp hy)
+  exact commutator_mem_pLowerCentralSeries (j := j) (k := k + 1) x.property (mem_subgroupOf.mp hy)
 
 /-- The bracket with a fixed element of `λ_j`, as an additive map `gr_k(G) →+ gr_{j+k+1}(G)`. -/
 private def bracketRight (j k : ℕ) (x : pLowerCentralSeries p G j) :
@@ -501,7 +505,7 @@ private theorem bracketRight_gradedMk (j k : ℕ) (x : pLowerCentralSeries p G j
     (y : pLowerCentralSeries p G k) :
     bracketRight p G j k x (gradedMk p G k y) =
       gradedMk p G (j + k + 1)
-        ⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.2 y.2⟩ := by
+        ⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.property y.property⟩ := by
   rw [bracketRight, gradedMk, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
     QuotientGroup.lift_mk, bracketAux_apply, gradedMk]
 
@@ -525,7 +529,7 @@ private def bracketLeftAux (j k : ℕ) :
     rw [AddMonoidHom.add_apply, bracketRight_gradedMk, bracketRight_gradedMk,
       bracketRight_gradedMk, ← gradedMk_mul, gradedMk_eq_gradedMk_iff]
     simp only [coe_mul, QuotientGroup.mk_mul]
-    exact mk_commutatorElement_mul_left x'.2 y.2 x
+    exact mk_commutatorElement_mul_left x'.property y.property x
 
 private theorem bracketLeftAux_apply (j k : ℕ) (x : pLowerCentralSeries p G j) :
     bracketLeftAux p G j k x = Multiplicative.ofAdd (bracketRight p G j k x) :=
@@ -541,7 +545,7 @@ private theorem subgroupOf_le_ker_bracketLeftAux (j k : ℕ) :
   obtain ⟨y, rfl⟩ := gradedMk_surjective k y
   rw [bracketRight_gradedMk, AddMonoidHom.zero_apply, gradedMk_eq_zero_iff, coe_mk]
   exact pLowerCentralSeries_antitone (by omega)
-    (commutator_mem_pLowerCentralSeries (mem_subgroupOf.mp hx) y.2)
+    (commutator_mem_pLowerCentralSeries (mem_subgroupOf.mp hx) y.property)
 
 /-- **The bracket** `[·, ·] : gr_j(G) →+ gr_k(G) →+ gr_{j+k+1}(G)`, induced by the group
 commutator `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹`. The degree shifts by one because the series is
@@ -559,7 +563,7 @@ theorem gradedBracket_gradedMk {j k : ℕ} (x : pLowerCentralSeries p G j)
     (y : pLowerCentralSeries p G k) :
     gradedBracket p G j k (gradedMk p G j x) (gradedMk p G k y) =
       gradedMk p G (j + k + 1)
-        ⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.2 y.2⟩ := by
+        ⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.property y.property⟩ := by
   rw [gradedBracket, gradedMk, MonoidHom.toAdditiveLeft_apply_apply, toMul_ofMul,
     QuotientGroup.lift_mk]
   exact bracketRight_gradedMk p G j k x y
@@ -579,7 +583,7 @@ theorem gradedBracket_gradedMkZero_gradedMk (g : G) {k : ℕ} (y : pLowerCentral
     gradedBracket p G 0 k (gradedMkZero p G g) (gradedMk p G k y) =
       gradedMk p G (0 + k + 1)
         ⟨⁅g, (y : G)⁆,
-          commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) y.2⟩ := by
+          commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) y.property⟩ := by
   rw [gradedMkZero, gradedBracket_gradedMk]
 
 /-- **The bracket of a class in degree `j` with a degree-zero class**, as the class of the
@@ -589,7 +593,7 @@ theorem gradedBracket_gradedMk_gradedMkZero {j : ℕ} (x : pLowerCentralSeries p
     gradedBracket p G j 0 (gradedMk p G j x) (gradedMkZero p G h) =
       gradedMk p G (j + 0 + 1)
         ⟨⁅(x : G), h⁆,
-          commutator_mem_pLowerCentralSeries x.2 (mem_pLowerCentralSeries_zero p h)⟩ := by
+          commutator_mem_pLowerCentralSeries x.property (mem_pLowerCentralSeries_zero p h)⟩ := by
   rw [gradedMkZero, gradedBracket_gradedMk]
 
 variable (p G) in
@@ -650,7 +654,7 @@ theorem gradedBracket_jacobi {i j k : ℕ} (x : gradedPiece p G i) (y : gradedPi
   obtain ⟨c, rfl⟩ := gradedMk_surjective k z
   simp only [gradedBracket_gradedMk, gradedCast_gradedMk, ← gradedMk_mul, gradedMk_eq_zero_iff,
     coe_mul]
-  exact commutatorElement_jacobi_mem_pLowerCentralSeries a.2 b.2 c.2
+  exact commutatorElement_jacobi_mem_pLowerCentralSeries a.property b.property c.property
 
 end Bracket
 
@@ -668,7 +672,7 @@ additivity is `(p choose 2) • [y, x]` (`TauCeti.gradedPow_add_zero`), which va
 def gradedPow (k : ℕ) : gradedPiece p G k → gradedPiece p G (k + 1) := fun x =>
   Additive.ofMul (Quotient.map'
     (fun y : pLowerCentralSeries p G k =>
-      (⟨(y : G) ^ p, pow_mem_pLowerCentralSeries y.2⟩ : pLowerCentralSeries p G (k + 1)))
+      (⟨(y : G) ^ p, pow_mem_pLowerCentralSeries y.property⟩ : pLowerCentralSeries p G (k + 1)))
     (fun y y' h => by
       rw [QuotientGroup.leftRel_apply, mem_subgroupOf, coe_mul, coe_inv] at h ⊢
       dsimp only
@@ -676,7 +680,7 @@ def gradedPow (k : ℕ) : gradedPiece p G k → gradedPiece p G (k + 1) := fun x
         ⟨_, h, by group⟩
       rw [← QuotientGroup.eq, hy', QuotientGroup.mk_pow, QuotientGroup.mk_pow, QuotientGroup.mk_mul,
         (QuotientGroup.commute_mk_iff.mpr (pLowerCentralSeries_antitone (by omega)
-          (commutator_mem_pLowerCentralSeries y.2 hz))).mul_pow, ← QuotientGroup.mk_pow _ z,
+          (commutator_mem_pLowerCentralSeries y.property hz))).mul_pow, ← QuotientGroup.mk_pow _ z,
         (QuotientGroup.eq_one_iff _).mpr (pow_mem_pLowerCentralSeries hz), mul_one])
     x.toMul)
 
@@ -686,7 +690,7 @@ variable {p G}
 @[simp]
 theorem gradedPow_gradedMk {k : ℕ} (x : pLowerCentralSeries p G k) :
     gradedPow p G k (gradedMk p G k x) =
-      gradedMk p G (k + 1) ⟨(x : G) ^ p, pow_mem_pLowerCentralSeries x.2⟩ := by
+      gradedMk p G (k + 1) ⟨(x : G) ^ p, pow_mem_pLowerCentralSeries x.property⟩ := by
   rw [gradedPow, gradedMk, toMul_ofMul, gradedMk]
   rfl
 
@@ -752,7 +756,7 @@ theorem gradedPow_add_of_one_le {k : ℕ} (hk : 1 ≤ k) (x y : gradedPiece p G 
     gradedMk_eq_gradedMk_iff]
   simp only [coe_mul, QuotientGroup.mk_pow, QuotientGroup.mk_mul]
   exact (QuotientGroup.commute_mk_iff.mpr (pLowerCentralSeries_antitone (by omega)
-    (commutator_mem_pLowerCentralSeries x.2 y.2))).mul_pow p
+    (commutator_mem_pLowerCentralSeries x.property y.property))).mul_pow p
 
 variable (p G) in
 /-- **The `p`-power operator above degree zero, as an additive map** `gr_k(G) →+ gr_{k+1}(G)`, for
@@ -778,8 +782,9 @@ theorem gradedPow_add_zero (x y : gradedPiece p G 0) :
     gradedMk_eq_gradedMk_iff]
   simp only [coe_mul, coe_pow, ← QuotientGroup.mk'_apply, map_mul, map_pow, map_commutatorElement]
   exact Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two
-    (commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries_succ y.2 x) x)
-    (commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries_succ y.2 x) y) p
+    (commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries_succ y.property x) x)
+    (commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries_succ y.property x) y)
+        p
 
 /-- **`π` is additive in degree zero for odd `p`**: the defect `(p choose 2) • [y, x]` is a
 multiple of `p • [y, x] = 0`. -/
@@ -818,8 +823,8 @@ theorem gradedPow_gradedBracket_left {j k : ℕ} (hj : 1 ≤ j) (x : gradedPiece
     gradedCast_gradedMk, gradedMk_eq_gradedMk_iff]
   simp only [← QuotientGroup.mk'_apply, map_commutatorElement, map_pow]
   exact (QuotientGroup.commute_mk_iff.mpr (pLowerCentralSeries_antitone (by omega)
-    (commutator_mem_pLowerCentralSeries x.2
-      (commutator_mem_pLowerCentralSeries x.2 y.2)))).commutatorElement_pow_left p
+    (commutator_mem_pLowerCentralSeries x.property
+      (commutator_mem_pLowerCentralSeries x.property y.property)))).commutatorElement_pow_left p
 
 /-- **`π` against the bracket on the right**, away from degree zero: `π [x, y] = [x, π y]` for
 `y ∈ gr_k(G)` with `k ≥ 1`. -/
@@ -833,8 +838,8 @@ theorem gradedPow_gradedBracket_right {j k : ℕ} (hk : 1 ≤ k) (x : gradedPiec
     gradedCast_gradedMk, gradedMk_eq_gradedMk_iff]
   simp only [← QuotientGroup.mk'_apply, map_commutatorElement, map_pow]
   exact (QuotientGroup.commute_mk_iff.mpr (pLowerCentralSeries_antitone (by omega)
-    (commutator_mem_pLowerCentralSeries y.2
-      (commutator_mem_pLowerCentralSeries x.2 y.2)))).commutatorElement_pow_right p
+    (commutator_mem_pLowerCentralSeries y.property
+      (commutator_mem_pLowerCentralSeries x.property y.property)))).commutatorElement_pow_right p
 
 /-- **A class brackets trivially with its own `p`-power**: `[π x, x] = 0` in every degree, since
 `x ^ p` commutes with `x`. -/
@@ -871,7 +876,7 @@ induces `gr_k(G) →+ gr_k(H)`. Its defining equation is `TauCeti.gradedMap_grad
 def gradedMap (f : G →* H) (hf : Continuous f) (k : ℕ) : gradedPiece p G k →+ gradedPiece p H k :=
   MonoidHom.toAdditive (QuotientGroup.map _ _
     ((f.comp (pLowerCentralSeries p G k).subtype).codRestrict (pLowerCentralSeries p H k)
-      fun x => f.map_pLowerCentralSeries_le hf k ⟨x, x.2, rfl⟩)
+      fun x => f.map_pLowerCentralSeries_le hf k ⟨x, x.property, rfl⟩)
     fun x hx => mem_comap.mpr (mem_subgroupOf.mpr
       (f.map_pLowerCentralSeries_le hf (k + 1) ⟨x, mem_subgroupOf.mp hx, rfl⟩)))
 
@@ -880,7 +885,7 @@ def gradedMap (f : G →* H) (hf : Continuous f) (k : ℕ) : gradedPiece p G k �
 theorem gradedMap_gradedMk (f : G →* H) (hf : Continuous f) {k : ℕ}
     (x : pLowerCentralSeries p G k) :
     gradedMap p f hf k (gradedMk p G k x) =
-      gradedMk p H k ⟨f x, f.map_pLowerCentralSeries_le hf k ⟨x, x.2, rfl⟩⟩ := by
+      gradedMk p H k ⟨f x, f.map_pLowerCentralSeries_le hf k ⟨x, x.property, rfl⟩⟩ := by
   rw [gradedMap, gradedMk, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
     QuotientGroup.map_mk, gradedMk]
   rfl
@@ -922,6 +927,19 @@ theorem gradedMap_symm_gradedMap (e : G ≃ₜ* H) (k : ℕ) (x : gradedPiece p 
   congr 1
   exact Subtype.ext (e.symm_apply_apply x)
 
+/-- The graded map of a topological isomorphism, after the graded map of its inverse, is the
+identity, in every degree. -/
+@[simp]
+theorem gradedMap_gradedMap_symm (e : G ≃ₜ* H) (k : ℕ) (y : gradedPiece p H k) :
+    gradedMap p (e : G →* H) (map_continuous e) k
+      (gradedMap p (e.symm : H →* G) (map_continuous e.symm) k y) = y :=
+  gradedMap_symm_gradedMap e.symm k y
+
+/-- The graded map of a topological isomorphism is injective in every degree. -/
+theorem gradedMap_injective (e : G ≃ₜ* H) (k : ℕ) :
+    Function.Injective (gradedMap p (e : G →* H) (map_continuous e) k) :=
+  Function.LeftInverse.injective (gradedMap_symm_gradedMap (p := p) e k)
+
 /-- A continuous closed surjection (for instance a continuous surjection from a compact group onto
 a Hausdorff group, by `Continuous.isClosedMap`) induces a surjection in every degree. -/
 theorem gradedMap_surjective (f : G →* H) (hf : Continuous f) (hfc : IsClosedMap f)
@@ -930,7 +948,7 @@ theorem gradedMap_surjective (f : G →* H) (hf : Continuous f) (hfc : IsClosedM
   obtain ⟨y, rfl⟩ := gradedMk_surjective k y
   obtain ⟨x, hx, hxy⟩ : (y : H) ∈ (pLowerCentralSeries p G k).map f := by
     rw [f.map_pLowerCentralSeries_eq_of_surjective hf hfc hsurj]
-    exact y.2
+    exact y.property
   refine ⟨gradedMk p G k ⟨x, hx⟩, ?_⟩
   rw [gradedMap_gradedMk]
   congr 1

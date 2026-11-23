@@ -77,8 +77,8 @@ theorem LocallyPathConnectedSpace.of_forall_exists_mem_nhds
     intro t ht
     obtain ⟨s, ⟨hs, hsc⟩, hst : s ⊆ _⟩ := (path_connected_basis
       (⟨x, mem_of_mem_nhds hU⟩ : U)).mem_iff.1
-      (continuous_subtype_val.continuousAt.preimage_mem_nhds ht)
-    exact ⟨(↑) '' s, image_val_mem_nhds hU hs, hsc.image continuous_subtype_val,
+      (continuous_subtypeVal.continuousAt.preimage_mem_nhds ht)
+    exact ⟨(↑) '' s, image_val_mem_nhds hU hs, hsc.image continuous_subtypeVal,
       image_subset_iff.2 hst⟩
 
 /-- **Semilocal simple connectivity at a point is local.** If a neighbourhood `U` of a point `x`
@@ -99,7 +99,7 @@ theorem SemilocallySimplyConnectedAt.of_mem_nhds {U : Set X} {x : X} (hU : U ∈
     have hyt : γ.codRestrict (x := ⟨x, hx⟩) (y := ⟨x, hx⟩) hmem t = y :=
       Subtype.ext ((Path.codRestrict_coe _ hmem t).trans hy.symm)
     rwa [hyt]
-  simpa [Path.map_refl] using (hloops _ hγV).map ⟨Subtype.val, continuous_subtype_val⟩
+  simpa [Path.map_refl] using (hloops _ hγV).map ⟨Subtype.val, continuous_subtypeVal⟩
 
 /-- **Semilocal simple connectivity is local.** A space in which every point has a neighbourhood
 that is semilocally simply connected as a subspace is semilocally simply connected. -/
@@ -139,8 +139,8 @@ theorem TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset
     obtain ⟨U, hU, hloops⟩ := semilocallySimplyConnectedAt_def.1
       (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (a : X))
     refine semilocallySimplyConnectedAt_def.2
-      ⟨(↑) ⁻¹' U, continuous_subtype_val.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
-    obtain ⟨H⟩ := hloops (γ.map continuous_subtype_val) (by
+      ⟨(↑) ⁻¹' U, continuous_subtypeVal.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
+    obtain ⟨H⟩ := hloops (γ.map continuous_subtypeVal) (by
       rintro _ ⟨t, rfl⟩
       exact hγ ⟨t, rfl⟩)
     -- At each time `t`, the homotopy runs in the path component of `γ t`, which lies in `S`.

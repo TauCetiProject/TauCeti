@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.RankOne
+public import TauCeti.Algebra.Homology.DG.Twisted.Equivalence
 
 /-!
 # Twisted complexes of classical local systems
@@ -31,6 +32,17 @@ complex over the group ring is the Morse or Floer complex with coefficients in `
 works with an arbitrary twisting cocycle and does not construct that data. It also does not
 compare these complexes with cubical chains with local coefficients.
 
+The identification is natural in the choices. Two twisting cocycles built from different data
+are compared by continuation cocycles, and two continuation cocycles by parametrized cocycles.
+Through `classicalTwistedCochainComplexIso`, the continuation map of a continuation cocycle `ν`
+with values in `C_*(Ω_x X; R)` is the continuation map over the group ring of its degree-zero
+truncation
+(`TauCeti.ContinuationCocycle.continuationHom_comp_classicalTwistedCochainComplexIso_hom`), on
+homology as well
+(`TauCeti.ContinuationCocycle.homologyMap_continuationHom_comp_classicalTwistedHomologyIso_hom`),
+and the homotopy of a parametrized cocycle is the homotopy of its truncation
+(`TauCeti.ParametrizedCocycle.homotopy_hom_comp_classicalTwistedCochainComplexIso_hom_f`).
+
 ## Main definitions
 
 The truncation `loopChainToGroupAlgebraDGAlgHom` lives in `DGLocalSystem/LoopAlgebra.lean`, and
@@ -38,6 +50,14 @@ the action `classicalGroupAlgebraAction` in `DGLocalSystem/Classical/Basic.lean`
 
 * `TauCeti.classicalTwistedCochainComplexIso`: the twisted complex of a classical local system is
   isomorphic to the twisted complex of its fiber over the group ring with the truncated cocycle.
+
+## Main results
+
+* `TauCeti.ContinuationCocycle.continuationHom_comp_classicalTwistedCochainComplexIso_hom`,
+  `TauCeti.ContinuationCocycle.homologyMap_continuationHom_comp_classicalTwistedHomologyIso_hom`,
+  `TauCeti.ParametrizedCocycle.homotopy_hom_comp_classicalTwistedCochainComplexIso_hom_f`: the
+  identification commutes with continuation maps, on complexes and on homology, and with their
+  homotopies.
 
 ## References
 
@@ -73,6 +93,28 @@ theorem twistedDifferential_loopChainToGroupAlgebra (L : LocalCoefficientSystem.
       twistedDifferential m (trivialGrading R (L.obj (FundamentalGroupoid.mk x))) 0 f := by
   funext q
   simp only [twistedDifferential_apply, op_loopChainToGroupAlgebra_smul]
+
+/-- On the fiber, the continuation map of a matrix of chains is the continuation map of its
+degree-zero truncation. -/
+theorem continuationMap_loopChainToGroupAlgebra (L : LocalCoefficientSystem.{u, u, w} R X)
+    {P Q : Type*} [Fintype P] (ν : P → Q → loopChainAlgebra X x R)
+    (f : P → L.obj (FundamentalGroupoid.mk x)) :
+    continuationMap R (L.obj (FundamentalGroupoid.mk x))
+        (fun p q ↦ loopChainToGroupAlgebra X x R (ν p q)) f =
+      continuationMap R (L.obj (FundamentalGroupoid.mk x)) ν f := by
+  funext q
+  simp only [continuationMap_apply, op_loopChainToGroupAlgebra_smul]
+
+/-- On the fiber, the homotopy map of a matrix of chains is the homotopy map of its degree-zero
+truncation. -/
+theorem homotopyMap_loopChainToGroupAlgebra (L : LocalCoefficientSystem.{u, u, w} R X)
+    {P Q : Type*} [Fintype P] (η : P → Q → loopChainAlgebra X x R)
+    (f : P → L.obj (FundamentalGroupoid.mk x)) :
+    homotopyMap (fun p q ↦ loopChainToGroupAlgebra X x R (η p q))
+        (trivialGrading R (L.obj (FundamentalGroupoid.mk x))) f =
+      homotopyMap η (trivialGrading R (L.obj (FundamentalGroupoid.mk x))) f := by
+  funext q
+  simp only [homotopyMap_apply, op_loopChainToGroupAlgebra_smul]
 
 end Action
 
@@ -158,5 +200,95 @@ def classicalTwistedHomologyIso (q : ℤ) :
   (HomologicalComplex.homologyFunctor _ _ q).mapIso (classicalTwistedCochainComplexIso L m)
 
 end Twisted
+
+section Continuation
+
+universe uP
+
+variable {R : Type u} [CommRing R] {X : TopCat.{u}} {x : X}
+  (L : LocalCoefficientSystem.{u, u, w} R X) {P Q : Type uP} [Fintype P] [Fintype Q]
+  {ind : P → ℤ} {indQ : Q → ℤ} {mP : LoopTwistingCocycle X x R P ind}
+  {mQ : LoopTwistingCocycle X x R Q indQ}
+
+namespace ContinuationCocycle
+
+/-- **The classical recovery is natural in the choices**: through the identifications
+`classicalTwistedCochainComplexIso` of the twisted complexes of `classicalDGLocalSystem x L` with
+the twisted complexes of the fiber `L_x` over the group ring, the continuation map of a
+continuation cocycle `ν` with values in `C_*(Ω_x X; R)` is the continuation map of its degree-zero
+truncation. -/
+@[reassoc]
+theorem continuationHom_comp_classicalTwistedCochainComplexIso_hom
+    (ν : ContinuationCocycle mP mQ) :
+    ν.continuationHom (isDGRightModule_fiber L) ≫ (classicalTwistedCochainComplexIso L mQ).hom =
+      (classicalTwistedCochainComplexIso L mP).hom ≫
+        (ν.map (loopChainToGroupAlgebraDGAlgHom X x R)).continuationHom
+          (isDGRightModule_fiber_groupAlgebra L) := by
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext (LinearMap.ext fun g ↦ ?_)
+  apply (twistedCochainComplexXEquiv (mQ.map (loopChainToGroupAlgebraDGAlgHom X x R)).mem_graded
+    (mQ.map (loopChainToGroupAlgebraDGAlgHom X x R)).twisting
+    (isDGRightModule_fiber_groupAlgebra L) n).injective
+  apply Subtype.ext
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    classicalTwistedCochainComplexIso_hom_f_apply,
+    twistedCochainComplexXEquiv_classicalTwistedCochainComplexXEquiv, continuationHom_f_apply]
+  rw [← continuationMap_loopChainToGroupAlgebra L ν.ν]
+  congr 2
+  funext p q
+  rw [map_ν, loopChainToGroupAlgebraDGAlgHom_apply]
+
+/-- The identification `classicalTwistedHomologyIso` of the homology of the twisted complexes of a
+classical local system commutes with the maps induced by a continuation cocycle and by its
+degree-zero truncation. -/
+@[reassoc]
+theorem homologyMap_continuationHom_comp_classicalTwistedHomologyIso_hom
+    (ν : ContinuationCocycle mP mQ) (q : ℤ) :
+    HomologicalComplex.homologyMap (ν.continuationHom (isDGRightModule_fiber L)) q ≫
+        (classicalTwistedHomologyIso L mQ q).hom =
+      (classicalTwistedHomologyIso L mP q).hom ≫
+        HomologicalComplex.homologyMap
+          ((ν.map (loopChainToGroupAlgebraDGAlgHom X x R)).continuationHom
+            (isDGRightModule_fiber_groupAlgebra L)) q := by
+  simp only [classicalTwistedHomologyIso, Functor.mapIso_hom,
+    HomologicalComplex.homologyFunctor_map, ← HomologicalComplex.homologyMap_comp,
+    continuationHom_comp_classicalTwistedCochainComplexIso_hom]
+
+end ContinuationCocycle
+
+namespace ParametrizedCocycle
+
+variable {ν₀ ν₁ : ContinuationCocycle mP mQ}
+
+/-- Through the identifications `classicalTwistedCochainComplexIso`, the homotopy of a
+parametrized cocycle `η` with values in `C_*(Ω_x X; R)` between continuation maps of
+`classicalDGLocalSystem x L` is the homotopy of its degree-zero truncation. -/
+@[reassoc]
+theorem homotopy_hom_comp_classicalTwistedCochainComplexIso_hom_f
+    (η : ParametrizedCocycle ν₀ ν₁) (i j : ℤ) :
+    (η.homotopy (isDGRightModule_fiber L)).hom i j ≫
+        (classicalTwistedCochainComplexIso L mQ).hom.f j =
+      (classicalTwistedCochainComplexIso L mP).hom.f i ≫
+        ((η.map (loopChainToGroupAlgebraDGAlgHom X x R)).homotopy
+          (isDGRightModule_fiber_groupAlgebra L)).hom i j := by
+  by_cases hij : j + 1 = i
+  · subst hij
+    refine ModuleCat.hom_ext (LinearMap.ext fun g ↦ ?_)
+    apply (twistedCochainComplexXEquiv (mQ.map (loopChainToGroupAlgebraDGAlgHom X x R)).mem_graded
+      (mQ.map (loopChainToGroupAlgebraDGAlgHom X x R)).twisting
+      (isDGRightModule_fiber_groupAlgebra L) j).injective
+    apply Subtype.ext
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+      classicalTwistedCochainComplexIso_hom_f_apply,
+      twistedCochainComplexXEquiv_classicalTwistedCochainComplexXEquiv, homotopy_hom_apply]
+    rw [← homotopyMap_loopChainToGroupAlgebra L η.h]
+    congr 2
+    funext p q
+    rw [map_h, loopChainToGroupAlgebraDGAlgHom_apply]
+  · rw [homotopy_hom_eq_zero _ _ hij, homotopy_hom_eq_zero _ _ hij, Limits.zero_comp,
+      Limits.comp_zero]
+
+end ParametrizedCocycle
+
+end Continuation
 
 end TauCeti

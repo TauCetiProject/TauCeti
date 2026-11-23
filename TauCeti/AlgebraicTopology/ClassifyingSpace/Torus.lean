@@ -116,8 +116,8 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_torusLoop (n : ι → ℤ) :
     classifyingSpaceFirstHomologyAddEquiv (ι → Multiplicative ℤ)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (torusHomotopyEquivClassifyingSpace p hp).toFun)) 1).hom
-          (H₁AddEquivHomology _ (loopClass (torusLoop p n)))) =
-      Additive.ofMul (Abelianization.of (fun i ↦ Multiplicative.ofAdd (n i))) := by
+          (H₁AddEquivHomology ℤ _ (loopClass ℤ (torusLoop p n)))) =
+      Additive.ofMul (Group.Abelianization.of (fun i ↦ Multiplicative.ofAdd (n i))) := by
   rw [← hurewiczHomologyAddEquiv_ofMul_of_mk,
     classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEquiv _
       (torusClassifyingSpaceBasepointPath p hp),
@@ -131,7 +131,7 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_torusHomotopyEquivClassifyingS
     classifyingSpaceFirstHomologyAddEquiv (ι → Multiplicative ℤ)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (torusHomotopyEquivClassifyingSpace p hp).toFun)) 1).hom x) =
-      Additive.ofMul (Abelianization.of
+      Additive.ofMul (Group.Abelianization.of
         (fun i ↦ Multiplicative.ofAdd (torusFirstHomologyEquiv p hp x i))) := by
   obtain ⟨n, rfl⟩ := (torusFirstHomologyEquiv p hp).symm.surjective x
   rw [torusFirstHomologyEquiv_symm_apply,
@@ -145,7 +145,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_torusLoop (n : ι
     classifyingSpaceFirstHomologyAddEquivGroupHomology (ι → Multiplicative ℤ)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (torusHomotopyEquivClassifyingSpace p hp).toFun)) 1).hom
-          (H₁AddEquivHomology _ (loopClass (torusLoop p n)))) =
+          (H₁AddEquivHomology ℤ _ (loopClass ℤ (torusLoop p n)))) =
       groupHomology.H1π (Rep.trivial ℤ (ι → Multiplicative ℤ) ℤ)
         ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (ι → Multiplicative ℤ) ℤ)).inv
           (Finsupp.single (fun i ↦ Multiplicative.ofAdd (n i)) 1)) := by

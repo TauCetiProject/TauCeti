@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
 /-!
@@ -32,6 +34,10 @@ Rellich–Kondrachov compactness from `Lᵖ` to every subcritical target exponen
 ## Main declarations
 
 * `IsCompactOperator.of_norm_le_mul_rpow_mul_rpow`: compactness by interpolation.
+* `IsCompactOperator.of_norm_le_mul_norm`: a linear map dominated by a compact operator is
+  compact.
+* `IsCompactOperator.of_adjoint_comp_self`: a bounded operator between Hilbert spaces is compact
+  when `T† T` is, by the interpolation inequality `‖T x‖ ≤ ‖T† T x‖ ^ (1 / 2) ‖x‖ ^ (1 / 2)`.
 * `IsCompactOperator.of_forall_ae_eq_of_interpolation`: compactness into `L^{p₀}` and boundedness
   into `L^{p₁}` give compactness into the intermediate `Lᵖ`.
 * `IsCompactOperator.of_forall_ae_eq_of_le`: on a finite measure space, compactness into `L^{p₀}`
@@ -98,6 +104,34 @@ theorem of_norm_le_mul_rpow_mul_rpow {T₀ : X →ₗ[𝕜] Y₀} (hT₀ : IsCom
           (Real.rpow_le_rpow (norm_nonneg _) h₁ hθ₀) (by positivity) (by positivity)
     _ < ε := hε'
 
+/-- **Compactness by domination.** A linear map `T : X → Y` into a Banach space with
+`‖T x‖ ≤ C ‖T₀ x‖` for all `x`, for a compact operator `T₀ : X → Y₀`, is compact. This is the
+case `θ = 0` of `IsCompactOperator.of_norm_le_mul_rpow_mul_rpow`. -/
+theorem of_norm_le_mul_norm {T₀ : X →ₗ[𝕜] Y₀} (hT₀ : IsCompactOperator T₀) {T : X →ₗ[𝕜] Y}
+    {C : ℝ} (hT : ∀ x, ‖T x‖ ≤ C * ‖T₀ x‖) : IsCompactOperator T :=
+  of_norm_le_mul_rpow_mul_rpow hT₀ (0 : X →L[𝕜] 𝕜) le_rfl zero_lt_one fun x ↦ by
+    rw [sub_zero, Real.rpow_one, Real.rpow_zero, mul_one]
+    exact hT x
+
+/-- **Compactness from the Gram operator.** A bounded operator `T` between Hilbert spaces is
+compact as soon as `T† T` is. In particular a self-adjoint `T` is compact when `T²` is. -/
+theorem of_adjoint_comp_self {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [CompleteSpace F] {T : E →L[𝕜] F} (hT : IsCompactOperator (T.adjoint ∘L T)) :
+    IsCompactOperator T := by
+  -- `‖T x‖² = re ⟪T† T x, x⟫ ≤ ‖T† T x‖ ‖x‖` is an interpolation inequality with `θ = 1 / 2`.
+  refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow
+    (T₀ := ((T.adjoint ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E)) hT (ContinuousLinearMap.id 𝕜 E)
+    (T := (T : E →ₗ[𝕜] F)) (C := 1) (θ := 1 / 2) (by norm_num) (by norm_num) fun x => ?_
+  have hsq : ‖T x‖ ^ 2 ≤ ‖T.adjoint (T x)‖ * ‖x‖ := by
+    rw [ContinuousLinearMap.apply_norm_sq_eq_inner_adjoint_left]
+    exact (RCLike.re_le_norm _).trans (norm_inner_le_norm _ _)
+  -- The interpolation inequality `‖T x‖ ≤ ‖T† T x‖ ^ (1 / 2) ‖x‖ ^ (1 / 2)`.
+  have hle : ‖T x‖ ≤ ‖T.adjoint (T x)‖ ^ (1 / 2 : ℝ) * ‖x‖ ^ (1 / 2 : ℝ) := by
+    rw [← Real.mul_rpow (norm_nonneg _) (norm_nonneg _), ← Real.sqrt_eq_rpow]
+    exact Real.le_sqrt_of_sq_le hsq
+  norm_num [hle]
+
 section Lp
 
 open MeasureTheory
@@ -125,13 +159,8 @@ compact. -/
 theorem of_forall_ae_eq_of_le [IsFiniteMeasure μ] {S₀ : X →L[𝕜] Lp E p₀ μ}
     (hS₀ : IsCompactOperator S₀) {S : X →L[𝕜] Lp E p μ} (hp : p ≤ p₀)
     (h : ∀ x, (S x : α → E) =ᵐ[μ] S₀ x) : IsCompactOperator S := by
-  have hexp : 0 ≤ 1 / p.toReal - 1 / p₀.toReal := by
-    rcases eq_or_ne p₀ ∞ with rfl | hp₀
-    · simp only [ENNReal.toReal_top, div_zero, sub_zero]
-      positivity
-    · exact sub_nonneg.2 (one_div_le_one_div_of_le (ENNReal.toReal_pos
-        (zero_lt_one.trans_le Fact.out).ne' (ne_top_of_le_ne_top hp₀ hp))
-        (ENNReal.toReal_mono hp₀ hp))
+  have hexp : 0 ≤ 1 / p.toReal - 1 / p₀.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg (zero_lt_one.trans_le Fact.out).ne' hp
   -- `‖S x‖_p ≤ μ(α) ^ (1/p - 1/p₀) ‖S₀ x‖_{p₀}`, an interpolation bound with `θ = 0`.
   refine hS₀.of_norm_le_mul_rpow_mul_rpow (T₀ := S₀.toLinearMap) (T := S.toLinearMap) S₀
     (C := (μ Set.univ ^ (1 / p.toReal - 1 / p₀.toReal)).toReal) le_rfl zero_lt_one fun x => ?_

@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.Integral.RieszPotential
+public import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Function.Lp.Duality
-import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
+import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The non-endpoint `TT*` argument
@@ -48,14 +50,31 @@ inner norm is an almost everywhere measurable function of time
 The endpoint `q = 2`, where the time kernel `|s - t| ^ (-1)` is not locally integrable and
 Hardy–Littlewood–Sobolev fails, needs the Keel–Tao argument instead.
 
+At the other end, `q = ∞`, only the pairings at equal times matter. A single bounded operator
+`U` with `‖U U* g‖_r ≤ A ‖g‖_{r'}` satisfies `‖U* g‖² = ⟪g, U U* g⟫ ≤ A ‖g‖_{r'}²`, so `U*` maps
+`L^{r'}` to `H` with norm at most `A ^ (1 / 2)`; for a family `U(t)` with this bound at every time,
+Minkowski's inequality in time gives the dual and homogeneous estimates with `L¹` in time on the
+dual side.
+
 ## Main declarations
 
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_adjoint_le`: the bilinear `TT*` estimate
   `∫∫ |⟪U(s)* F(s), U(t)* G(t)⟫| ds dt ≤ C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}`.
+* `TauCeti.enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm`: the truncation to
+  `s < t` of a pairing integral is bounded by the full integral of its absolute value, which
+  reduces retarded estimates to the bilinear one.
+* `TauCeti.enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le`: `TT*` for a time integral, a
+  bound on `∫∫ ⟪u(s), u(t)⟫ ds dt` bounds `‖∫ u‖`.
 * `TauCeti.exists_enorm_integral_adjoint_le`: the dual homogeneous estimate
   `‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^{q'} L^{r'}}`.
 * `TauCeti.exists_enorm_integral_inner_apply_le`: the homogeneous estimate in weak form,
   `|∫ ⟪U(t) f, G(t)⟫ dt| ≤ C A ^ (1 / 2) ‖f‖ ‖G‖_{L^{q'} L^{r'}}`.
+* `TauCeti.enorm_adjoint_apply_le`: the `TT*` argument for a single operator,
+  `‖U* g‖ ≤ A ^ (1 / 2) ‖g‖_{r'}`.
+* `TauCeti.enorm_integral_adjoint_le_eLpNorm_one` and
+  `TauCeti.enorm_integral_inner_apply_le_eLpNorm_one`: the dual and homogeneous estimates at
+  `q = ∞`, `‖∫ U(s)* F(s) ds‖ ≤ A ^ (1 / 2) ‖F‖_{L¹ L^{r'}}` and
+  `|∫ ⟪U(t) f, G(t)⟫ dt| ≤ A ^ (1 / 2) ‖f‖ ‖G‖_{L¹ L^{r'}}`.
 
 ## References
 
@@ -80,7 +99,7 @@ variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measu
 
 /-- A single time pairing: Hölder's inequality in space and the decay of `U(s) U(t)*` bound
 `|⟪U(s)* f, U(t)* g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
-private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
+theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
     (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
       eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
     {s t : ℝ} (hst : s ≠ t) (f g : Lp E 2 μ) :
@@ -91,6 +110,38 @@ private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A :
         gcongr
         exact hU s t hst g
     _ = _ := by ring
+
+/-- **The `TT*` argument at a single time.** If `U : H → L²(X, μ)` is bounded and `U U*` maps
+`L^{r'}` to `L^r`, `‖U U* g‖_r ≤ A ‖g‖_{r'}` for every `g ∈ L²(X, μ)`, then `U*` maps `L^{r'}` to
+`H`: `‖U* g‖ ≤ A ^ (1 / 2) ‖g‖_{r'}`. Indeed `‖U* g‖² = ⟪g, U U* g⟫ ≤ ‖g‖_{r'} ‖U U* g‖_r` by
+Hölder's inequality in space. -/
+theorem enorm_adjoint_apply_le {U : H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞}
+    (hU : ∀ g : Lp E 2 μ, eLpNorm (U ((U†) g)) r μ ≤ A * eLpNorm g r' μ) (g : Lp E 2 μ) :
+    ‖(U†) g‖ₑ ≤ A ^ (2⁻¹ : ℝ) * eLpNorm g r' μ := by
+  have hsq : ‖(U†) g‖ₑ ^ (2 : ℝ) ≤ A * eLpNorm g r' μ * eLpNorm g r' μ := by
+    calc ‖(U†) g‖ₑ ^ (2 : ℝ) = ‖⟪(U†) g, (U†) g⟫_𝕜‖ₑ := by
+          rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
+          simp
+      _ = ‖∫ x, ⟪g x, U ((U†) g) x⟫_𝕜 ∂μ‖ₑ := by
+          rw [ContinuousLinearMap.adjoint_inner_left, L2.inner_def]
+      _ ≤ eLpNorm g r' μ * eLpNorm (U ((U†) g)) r μ := enorm_integral_inner_le
+      _ ≤ eLpNorm g r' μ * (A * eLpNorm g r' μ) := by
+          gcongr
+          exact hU g
+      _ = _ := by ring
+  have hrhs : (A ^ (2⁻¹ : ℝ) * eLpNorm g r' μ) ^ (2 : ℝ) =
+      A * eLpNorm g r' μ * eLpNorm g r' μ := by
+    rw [ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ← ENNReal.rpow_mul,
+      inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one, ENNReal.rpow_two]
+    ring
+  rwa [← ENNReal.rpow_le_rpow_iff (z := 2) two_pos, hrhs]
+
+/-- The reduction of a retarded estimate to the bilinear one: the pairing integrated over the
+region `s < t` is bounded by the integral of its absolute value over the whole `(s, t)` plane. -/
+theorem enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (f : ℝ → ℝ → V) :
+    ‖∫ t, ∫ s in Set.Iio t, f s t‖ₑ ≤ ∫⁻ t, ∫⁻ s, ‖f s t‖ₑ :=
+  enorm_integral_setIntegral_le_lintegral_lintegral f
 
 /-- **The bilinear `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
 `U(t) : H → L²(X, μ)` be bounded operators whose time pairings decay from `L^{r'}` to `L^r`,
@@ -143,7 +194,7 @@ theorem exists_lintegral_lintegral_enorm_inner_adjoint_le {p q : ℝ≥0} (hq : 
       _ = A * a s * I s := by
           rw [lintegral_const_mul'' _ hk]
           congr 1
-          simp only [I, rieszPotential_def, enorm_eq_self, Module.finrank_self]
+          simp only [I, rieszPotential_def, eNorm_eq_self, Module.finrank_self]
           refine lintegral_congr fun t ↦ ?_
           congr 2
           push_cast
@@ -155,17 +206,38 @@ theorem exists_lintegral_lintegral_enorm_inner_adjoint_le {p q : ℝ≥0} (hq : 
     _ ≤ A * (eLpNorm a p * eLpNorm I q) := by
         gcongr
         have h := ENNReal.lintegral_mul_le_Lp_mul_Lq volume hpq.coe ha hI
-        rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by positivity) ENNReal.coe_ne_top
+        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.coe_ne_top
             ha.aestronglyMeasurable,
-          eLpNorm_eq_lintegral_rpow_enorm_toReal (by positivity) ENNReal.coe_ne_top
+          eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.coe_ne_top
             hI.aestronglyMeasurable]
-        simpa only [enorm_eq_self, ENNReal.coe_toReal, Pi.mul_apply] using h
+        simpa only [eNorm_eq_self, ENNReal.coe_toReal, Pi.mul_apply] using h
     _ ≤ A * (eLpNorm a p * (C * eLpNorm b p)) := by
         gcongr
         exact hC b
     _ = _ := by ring
 
 variable [NormedSpace ℝ H]
+
+omit [CompleteSpace E] in
+/-- **`TT*` for a time integral.** For an integrable `u : ℝ → H`, `‖∫ u‖²` is the integral of the
+pairings `⟪u(s), u(t)⟫` over the plane, so a bound `|∫∫ ⟪u(s), u(t)⟫ ds dt| ≤ C a²` gives
+`‖∫ u‖ ≤ √C a`. -/
+theorem enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le {u : ℝ → H} (hu : Integrable u)
+    {C : ℝ≥0} {a : ℝ≥0∞}
+    (h : ‖∫ z, ⟪u z.1, u z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤ C * a * a) :
+    ‖∫ t, u t‖ₑ ≤ NNReal.sqrt C * a := by
+  have hsq : ‖∫ t, u t‖ₑ ^ (2 : ℝ) ≤ C * a * a := by
+    calc ‖∫ t, u t‖ₑ ^ (2 : ℝ) = ‖⟪∫ s, u s, ∫ t, u t⟫_𝕜‖ₑ := by
+          rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
+          simp
+      _ = ‖∫ z, ⟪u z.1, u z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ := by
+          rw [inner_integral_integral_eq_integral_prod hu hu]
+      _ ≤ C * a * a := h
+  have hrhs : ((NNReal.sqrt C : ℝ≥0∞) * a) ^ (2 : ℝ) = C * a * a := by
+    rw [ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ENNReal.rpow_two, ENNReal.rpow_two,
+      ← ENNReal.coe_pow, NNReal.sq_sqrt, sq]
+    ring
+  rwa [← ENNReal.rpow_le_rpow_iff (z := 2) two_pos, hrhs]
 
 /-- **The dual homogeneous `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
 `U(t) : H → L²(X, μ)` be bounded operators with
@@ -185,27 +257,21 @@ theorem exists_enorm_integral_adjoint_le {p q : ℝ≥0} (hq : 2 < q) (hpq : p.H
   obtain ⟨C, hC⟩ := exists_lintegral_lintegral_enorm_inner_adjoint_le (𝕜 := 𝕜) (H := H)
     (E := E) (μ := μ) (r := r) (r' := r') hq hpq
   refine ⟨NNReal.sqrt C, fun U A hU F hF hUF => ?_⟩
-  set v := ∫ s, ((U s)†) (F s)
   set a := eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p
-  -- `‖v‖² = ⟪v, v⟫` expands into the double integral of the time pairings.
-  have hsq : ‖v‖ₑ ^ (2 : ℝ) ≤ C * A * a * a := by
-    calc ‖v‖ₑ ^ (2 : ℝ) = ‖⟪v, v⟫_𝕜‖ₑ := by
-          rw [inner_self_eq_norm_sq_to_K, enorm_pow, ← ENNReal.rpow_natCast]
-          simp
-      _ = ‖∫ s, ⟪v, ((U s)†) (F s)⟫_𝕜‖ₑ := by rw [integral_inner hUF]
-      _ ≤ ∫⁻ s, ‖⟪v, ((U s)†) (F s)⟫_𝕜‖ₑ := enorm_integral_le_lintegral_enorm _
-      _ = ∫⁻ s, ‖∫ t, ⟪((U s)†) (F s), ((U t)†) (F t)⟫_𝕜‖ₑ := by
-          refine lintegral_congr fun s ↦ ?_
-          rw [← ofReal_norm, norm_inner_symm, ofReal_norm, integral_inner hUF]
-      _ ≤ ∫⁻ s, ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (F t)⟫_𝕜‖ₑ :=
-          lintegral_mono fun s ↦ enorm_integral_le_lintegral_enorm _
-      _ ≤ C * A * a * a := hC U A hU F F hF hF
-  have hrhs : ((NNReal.sqrt C : ℝ≥0∞) * A ^ (2⁻¹ : ℝ) * a) ^ (2 : ℝ) = C * A * a * a := by
-    rw [ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ENNReal.mul_rpow_of_nonneg _ _ zero_le_two,
-      ← ENNReal.rpow_mul, inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one, ENNReal.rpow_two,
-      ENNReal.rpow_two, ← ENNReal.coe_pow, NNReal.sq_sqrt, sq]
-    ring
-  rwa [← ENNReal.rpow_le_rpow_iff (z := 2) two_pos, hrhs]
+  have hA : A ^ (2⁻¹ : ℝ) * A ^ (2⁻¹ : ℝ) = A := by
+    rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+    norm_num
+  -- `TT*`, with `A ^ (1 / 2) a` in place of `a`.
+  rw [mul_assoc]
+  refine enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := 𝕜) hUF ?_
+  calc _ ≤ ∫⁻ z, ‖⟪((U z.1)†) (F z.1), ((U z.2)†) (F z.2)⟫_𝕜‖ₑ ∂(volume.prod volume) :=
+        eNorm_integral_le_lintegral_eNorm _
+    _ = ∫⁻ s, ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (F t)⟫_𝕜‖ₑ :=
+        lintegral_prod _ (hUF.inner_fst_snd hUF).aestronglyMeasurable.eNorm
+    _ ≤ C * A * a * a := hC U A hU F F hF hF
+    _ = C * (A ^ (2⁻¹ : ℝ) * a) * (A ^ (2⁻¹ : ℝ) * a) := by
+        nth_rw 1 [← hA]
+        ring
 
 /-- **The homogeneous `TT*` estimate in weak form.** Let `2 < q < ∞` with Hölder conjugate `p`,
 and let `U(t) : H → L²(X, μ)` be bounded operators with
@@ -231,10 +297,57 @@ theorem exists_enorm_integral_inner_apply_le {p q : ℝ≥0} (hq : 2 < q)
   refine ⟨C, fun U A hU f G hG hUG => ?_⟩
   simp_rw [← ContinuousLinearMap.adjoint_inner_right]
   rw [integral_inner hUG]
-  calc _ ≤ ‖f‖ₑ * ‖∫ t, ((U t)†) (G t)‖ₑ := enorm_inner_le_enorm _ _
+  calc _ ≤ ‖f‖ₑ * ‖∫ t, ((U t)†) (G t)‖ₑ := eNorm_inner_le_eNorm _ _
     _ ≤ ‖f‖ₑ * (C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun t ↦ eLpNorm (G t) r' μ) p) := by
         gcongr
         exact hC U A hU G hG hUG
     _ = _ := by ring
+
+/-- **The dual `TT*` estimate at `q = ∞`.** Let `U(t) : H → L²(X, μ)` be bounded operators with
+`‖U(t) U(t)* g‖_r ≤ A ‖g‖_{r'}` for every time `t` and every `g ∈ L²(X, μ)`. Then for every
+almost everywhere strongly measurable `F : ℝ → L²(X, μ)`,
+
+`‖∫ U(s)* F(s) ds‖ ≤ A ^ (1 / 2) ‖F‖_{L¹ L^{r'}}`.
+
+Unlike the estimates for `2 < q < ∞`, this needs no decay of the pairings `U(s) U(t)*` for
+`s ≠ t`: the bound at equal times and Minkowski's inequality suffice. -/
+theorem enorm_integral_adjoint_le_eLpNorm_one {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞}
+    (hU : ∀ t (g : Lp E 2 μ), eLpNorm (U t (((U t)†) g)) r μ ≤ A * eLpNorm g r' μ)
+    {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) :
+    ‖∫ s, ((U s)†) (F s)‖ₑ ≤ A ^ (2⁻¹ : ℝ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 1 := by
+  calc ‖∫ s, ((U s)†) (F s)‖ₑ ≤ ∫⁻ s, ‖((U s)†) (F s)‖ₑ := eNorm_integral_le_lintegral_eNorm _
+    _ ≤ ∫⁻ s, A ^ (2⁻¹ : ℝ) * eLpNorm (F s) r' μ :=
+        lintegral_mono fun s ↦ enorm_adjoint_apply_le (hU s) (F s)
+    _ = _ := by
+        have h := hF.aemeasurable_eLpNorm_Lp .rfl r'
+        rw [lintegral_const_mul'' _ h, eLpNorm_one_eq_lintegral_eNorm h.aestronglyMeasurable]
+        simp only [eNorm_eq_self]
+
+omit [NormedSpace ℝ H] in
+/-- **The homogeneous `TT*` estimate at `q = ∞`**, in weak form. Let `U(t) : H → L²(X, μ)` be
+bounded operators with `‖U(t) U(t)* g‖_r ≤ A ‖g‖_{r'}` for every time `t` and every
+`g ∈ L²(X, μ)`. Then for every `f ∈ H` and every almost everywhere strongly measurable
+`G : ℝ → L²(X, μ)`,
+
+`|∫ ⟪U(t) f, G(t)⟫ dt| ≤ A ^ (1 / 2) ‖f‖ ‖G‖_{L¹ L^{r'}}`.
+
+This is the estimate `‖U(·) f‖_{L^∞ L^r} ≤ A ^ (1 / 2) ‖f‖` tested against `G`. -/
+theorem enorm_integral_inner_apply_le_eLpNorm_one {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞}
+    (hU : ∀ t (g : Lp E 2 μ), eLpNorm (U t (((U t)†) g)) r μ ≤ A * eLpNorm g r' μ) (f : H)
+    {G : ℝ → Lp E 2 μ} (hG : AEStronglyMeasurable G) :
+    ‖∫ t, ⟪U t f, G t⟫_𝕜‖ₑ ≤ A ^ (2⁻¹ : ℝ) * ‖f‖ₑ * eLpNorm (fun t ↦ eLpNorm (G t) r' μ) 1 := by
+  calc ‖∫ t, ⟪U t f, G t⟫_𝕜‖ₑ ≤ ∫⁻ t, ‖⟪U t f, G t⟫_𝕜‖ₑ := eNorm_integral_le_lintegral_eNorm _
+    _ ≤ ∫⁻ t, A ^ (2⁻¹ : ℝ) * ‖f‖ₑ * eLpNorm (G t) r' μ := by
+        refine lintegral_mono fun t ↦ ?_
+        rw [← ContinuousLinearMap.adjoint_inner_right]
+        calc _ ≤ ‖f‖ₑ * ‖((U t)†) (G t)‖ₑ := eNorm_inner_le_eNorm _ _
+          _ ≤ ‖f‖ₑ * (A ^ (2⁻¹ : ℝ) * eLpNorm (G t) r' μ) := by
+              gcongr
+              exact enorm_adjoint_apply_le (hU t) (G t)
+          _ = _ := by ring
+    _ = _ := by
+        have h := hG.aemeasurable_eLpNorm_Lp .rfl r'
+        rw [lintegral_const_mul'' _ h, eLpNorm_one_eq_lintegral_eNorm h.aestronglyMeasurable]
+        simp only [eNorm_eq_self]
 
 end TauCeti

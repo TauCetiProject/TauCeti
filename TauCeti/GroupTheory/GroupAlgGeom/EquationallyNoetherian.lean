@@ -47,6 +47,13 @@ are nonabelian, with `cᵢ` and `dᵢ` two noncommuting elements placed in the c
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_finite`,
   `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_finite_Rad_eq`: the finite subsystem, for
   any finite type of variables, with the same algebraic set and the same radical.
+* `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_V_eq`,
+  `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_Rad_eq`: for any finite type
+  of variables, decreasing sequences of algebraic sets and increasing sequences of radicals are
+  eventually constant.
+* `TauCeti.GroupAlgGeom.exists_seq_of_forall_finite_V_ne`: a system equivalent to none of its
+  finite subsystems contains an increasing sequence of finite subsystems whose algebraic sets
+  decrease strictly.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.of_injective`: subgroups of equationally
   Noetherian groups are equationally Noetherian.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.comp`: restricting the coefficients preserves the
@@ -108,6 +115,34 @@ theorem exists_finite_Rad_eq (h : IsEquationallyNoetherian ι) [Finite X] (S : S
   obtain ⟨S₀, hS₀, hfin, hV⟩ := h.exists_finite S
   exact ⟨S₀, hS₀, hfin, by rw [Rad_def, Rad_def, hV]⟩
 
+/-- Over an equationally Noetherian group, a decreasing sequence of algebraic sets in a finite type
+of variables is eventually constant. -/
+theorem exists_forall_ge_V_eq (h : IsEquationallyNoetherian ι) [Finite X]
+    {S : ℕ → Set (GX G X)} (hS : Antitone fun k => V ι (S k)) :
+    ∃ m, ∀ k, m ≤ k → V ι (S k) = V ι (S m) := by
+  -- The radicals of the systems increase and define the same algebraic sets.
+  have hR : Monotone fun k => (Rad ι (S k) : Set (GX G X)) := fun _ _ hij =>
+    SetLike.coe_subset_coe.2 (by rw [Rad_def, Rad_def]; exact I_antitone ι (hS hij))
+  obtain ⟨S₀, hS₀, hfin, hV⟩ := h.exists_finite (⋃ k, (Rad ι (S k) : Set (GX G X)))
+  lift S₀ to Finset (GX G X) using hfin
+  obtain ⟨m, hm⟩ := hR.directed_le.exists_mem_subset_of_finset_subset_biUnion hS₀
+  refine ⟨m, fun k hk => (hS hk).antisymm ?_⟩
+  calc V ι (S m) = V ι (Rad ι (S m) : Set (GX G X)) := (V_Rad _).symm
+    _ ⊆ V ι S₀ := V_antitone ι hm
+    _ = V ι (⋃ k, (Rad ι (S k) : Set (GX G X))) := hV
+    _ ⊆ V ι (Rad ι (S k) : Set (GX G X)) :=
+      V_antitone ι (Set.subset_iUnion (fun k => (Rad ι (S k) : Set (GX G X))) k)
+    _ = V ι (S k) := V_Rad _
+
+/-- Over an equationally Noetherian group, an increasing sequence of radicals of systems in a
+finite type of variables is eventually constant. -/
+theorem exists_forall_ge_Rad_eq (h : IsEquationallyNoetherian ι) [Finite X]
+    {S : ℕ → Set (GX G X)} (hS : Monotone fun k => Rad ι (S k)) :
+    ∃ m, ∀ k, m ≤ k → Rad ι (S k) = Rad ι (S m) := by
+  obtain ⟨m, hm⟩ := h.exists_forall_ge_V_eq (S := S) fun _ _ hij => by
+    simpa only [V_Rad] using V_antitone ι (SetLike.coe_subset_coe.2 (hS hij))
+  exact ⟨m, fun k hk => by rw [Rad_def, Rad_def, hm k hk]⟩
+
 /-- The source of an injective homomorphism compatible with the coefficients into an equationally
 Noetherian group is equationally Noetherian; in particular so is every subgroup containing the
 image of the coefficients. -/
@@ -139,6 +174,33 @@ theorem isEquationallyNoetherian_iff {ι : G →* H} :
   ⟨fun h _ _ S => h.exists_finite S, fun h n _ =>
     exists_finite_V_eq_of_map (Monoid.Coprod.map (.id G) (FreeGroup.map ULift.up))
       (· ∘ ULift.down) (fun _ _ => by simp [Function.comp_def]) (h (ULift (Fin n)) _)⟩
+
+/-- A system `S` equivalent to none of its finite subsystems contains an increasing sequence of
+finite subsystems `T k`, with points `v k` solving `T k` and equations `s k ∈ T (k + 1)` failing at
+`v k`. So the algebraic sets of the `T k` decrease strictly; this is the step from a system with no
+equivalent finite subsystem to a chain of algebraic sets that never stabilizes. -/
+theorem exists_seq_of_forall_finite_V_ne {ι : G →* H} {S : Set (GX G X)}
+    (hS : ∀ S₀ ⊆ S, S₀.Finite → V ι S₀ ≠ V ι S) :
+    ∃ (T : ℕ → Set (GX G X)) (v : ℕ → X → H) (s : ℕ → GX G X), Monotone T ∧
+      ∀ k, T k ⊆ S ∧ (T k).Finite ∧ v k ∈ V ι (T k) ∧ s k ∈ T (k + 1) ∧
+        eval ι (v k) (s k) ≠ 1 := by
+  -- Every finite subsystem has a solution at which some equation of `S` fails.
+  have key (T : Set (GX G X)) (hT : T ⊆ S) (hfin : T.Finite) :
+      ∃ s ∈ S, ∃ v ∈ V ι T, eval ι v s ≠ 1 := by
+    obtain ⟨v, hvT, hvS⟩ := Set.exists_of_ssubset
+      ((V_antitone ι hT).ssubset_of_ne (hS T hT hfin).symm)
+    obtain ⟨s, hs, hvs⟩ : ∃ s ∈ S, eval ι v s ≠ 1 := by simpa using hvS
+    exact ⟨s, hs, v, hvT, hvs⟩
+  choose! s hs v hv hsv using key
+  -- Add these equations one at a time, starting from the empty system.
+  let T (k : ℕ) : Set (GX G X) := k.rec ∅ fun _ T => insert (s T) T
+  have hT (k : ℕ) : T k ⊆ S ∧ (T k).Finite := by
+    induction k with
+    | zero => exact ⟨Set.empty_subset S, Set.finite_empty⟩
+    | succ k ih => exact ⟨Set.insert_subset (hs _ ih.1 ih.2) ih.1, ih.2.insert _⟩
+  exact ⟨T, fun k => v (T k), fun k => s (T k),
+    monotone_nat_of_le_succ fun k => Set.subset_insert _ _, fun k =>
+      ⟨(hT k).1, (hT k).2, hv _ (hT k).1 (hT k).2, Set.mem_insert _ _, hsv _ (hT k).1 (hT k).2⟩⟩
 
 /-! ### Finite groups -/
 
@@ -253,7 +315,7 @@ theorem not_isEquationallyNoetherian_of_injective_pi {κ : Type*} [DecidableEq �
     (hK : {i | ∃ a b : K i, ¬Commute a b}.Infinite) :
     ¬IsEquationallyNoetherian (MonoidHom.id H) := by
   have := hK.to_subtype
-  choose a b hab using fun i : {i | ∃ a b : K i, ¬Commute a b} => i.2
+  choose a b hab using fun i : {i | ∃ a b : K i, ¬Commute a b} => i.property
   choose c hc using fun i : {i | ∃ a b : K i, ¬Commute a b} => hrange i (a i)
   choose d hd using fun i : {i | ∃ a b : K i, ¬Commute a b} => hrange i (b i)
   refine not_isEquationallyNoetherian_of_pairwise_commute (c := c) (d := d)

@@ -217,7 +217,7 @@ private theorem homogeneousProj_of_mem {d : ℕ} {c : coordinateBialgebra R ι}
 private theorem homogeneousProj_comp_subtype (d : ℕ) :
     homogeneousProj R ι d ∘ₗ (homogeneousSubcoalgebra R ι d).toSubmodule.subtype =
       (homogeneousSubcoalgebra R ι d).toSubmodule.subtype :=
-  LinearMap.ext fun c ↦ homogeneousProj_of_mem R ι c.2
+  LinearMap.ext fun c ↦ homogeneousProj_of_mem R ι c.property
 
 private theorem homogeneousProj_idem (d : ℕ) :
     homogeneousProj R ι d ∘ₗ homogeneousProj R ι d = homogeneousProj R ι d :=
@@ -330,7 +330,7 @@ private theorem degreeProj_eq_self_iff (d : ℕ) (m : M) :
     degreeProj R ι M d m = m ↔
       (homogeneousProj R ι d).lTensor M (Comodule.coact (R := R) m) = Comodule.coact m := by
   refine ⟨fun h ↦ by rw [← coact_degreeProj, h], fun h ↦ ?_⟩
-  rw [degreeProj_apply, h, Comodule.lTensor_counit_coact, TensorProduct.rid_tmul, one_smul]
+  rw [degreeProj_apply, h, Comodule.rid_lTensor_counit_coact]
 
 /-- A vector whose coaction lies in `M ⊗ A(d)` has no component in any other degree. -/
 private theorem degreeProj_of_ne {d e : ℕ} (he : e ≠ d) {m : M}

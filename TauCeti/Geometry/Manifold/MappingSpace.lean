@@ -82,7 +82,7 @@ private theorem exists_opens_locallyPathConnectedSpace [Nonempty K] (f : C(K, M)
 omit [T2Space M] [CompactSpace K] in
 /-- A map with values in an open subset `W` lies in the image of `C(K, W)`. -/
 private theorem mem_range_postcomp_opens {W : Opens M} {f : C(K, M)} (hf : ∀ k, f k ∈ W) :
-    f ∈ range (ContinuousMap.comp ⟨Subtype.val, continuous_subtype_val⟩ :
+    f ∈ range (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ :
       C(K, W) → C(K, M)) :=
   ⟨⟨fun k ↦ ⟨f k, hf k⟩, f.continuous.subtype_mk hf⟩, ext fun _ ↦ rfl⟩
 
@@ -97,7 +97,7 @@ theorem locallyPathConnectedSpace_of_isManifold : LocallyPathConnectedSpace C(K,
     infer_instance
   refine .of_forall_exists_mem_nhds fun f ↦ ?_
   obtain ⟨W, hf, hW, -⟩ := exists_opens_locallyPathConnectedSpace I f
-  have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtype_val⟩
+  have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtypeVal⟩
     W.isOpen.isOpenEmbedding_subtypeVal
   exact ⟨_, he.isOpen_range.mem_nhds (mem_range_postcomp_opens hf),
     he.isEmbedding.toHomeomorph.locallyPathConnectedSpace⟩
@@ -115,7 +115,7 @@ theorem semilocallySimplyConnectedSpace_of_isManifold :
     infer_instance
   refine .of_forall_exists_mem_nhds fun f ↦ ?_
   obtain ⟨W, hf, -, hW⟩ := exists_opens_locallyPathConnectedSpace I f
-  have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtype_val⟩
+  have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtypeVal⟩
     W.isOpen.isOpenEmbedding_subtypeVal
   let h := he.isEmbedding.toHomeomorph
   exact ⟨_, he.isOpen_range.mem_nhds (mem_range_postcomp_opens hf),

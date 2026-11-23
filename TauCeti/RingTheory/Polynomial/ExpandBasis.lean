@@ -59,7 +59,7 @@ private theorem coeff_expand_mul_X_pow (f : R[X]) (i j : Fin n) (k : ℕ) :
 
 private theorem coeff_sum_expand (f : Fin n → R[X]) (i : Fin n) (k : ℕ) :
     (∑ j, expand R n (f j) * (X ^ (j : ℕ) : R[X])).coeff (k * n + i) = (f i).coeff k := by
-  simp [finsetSum_coeff, coeff_expand_mul_X_pow]
+  simp [coeff_expand_mul_X_pow]
 
 private theorem expand_powers_linearIndependent :
     letI : Module R[X] R[X] := (expand R n).toRingHom.toAlgebra.toModule
@@ -70,7 +70,7 @@ private theorem expand_powers_linearIndependent :
   ext k
   -- The restricted action multiplies by the expanded scalar.
   exact (coeff_sum_expand R f i k).symm.trans
-    ((congrArg (coeff · (k * n + i)) hfg).trans (coeff_sum_expand R g i k))
+    ((congrArg (fun p : R[X] => p.coeff (k * n + i)) hfg).trans (coeff_sum_expand R g i k))
 
 private theorem expand_powers_span (hn : 0 < n) :
     letI : Module R[X] R[X] := (expand R n).toRingHom.toAlgebra.toModule
@@ -110,7 +110,7 @@ theorem expandBasis_repr_coeff (hn : 0 < n) (p : R[X]) (i : Fin n) (k : ℕ) :
   simp only [expandBasis_apply] at h
   -- The restricted action multiplies by the expanded scalar.
   exact (coeff_sum_expand R (fun j => (expandBasis R hn).repr p j) i k).symm.trans
-    (congrArg (coeff · (k * n + i)) h)
+    (congrArg (fun p : R[X] => p.coeff (k * n + i)) h)
 
 /-- Polynomial power substitution with positive exponent is flat, in every characteristic. -/
 theorem flat_expand (S : Type u) [CommRing S] {n : ℕ} (hn : 0 < n) :

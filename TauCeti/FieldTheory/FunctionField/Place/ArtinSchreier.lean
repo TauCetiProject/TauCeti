@@ -93,7 +93,7 @@ theorem exists_ord_sub_pow_sub_self_gt_of_dvd_ord {n : ℕ} (hn : 1 < n)
     simpa only [heq, add_comm] using h
   -- The linear correction has strictly higher order than the original pole.
   have hsecond : (a : F) / s ∈ P.filtration (P.ord u + 1) := by
-    have haint := P.mem_filtration_zero_iff.mpr a.2
+    have haint := P.mem_filtration_zero_iff.mpr a.property
     have hsint : s⁻¹ ∈ P.filtration q := by
       rw [P.mem_filtration_iff_le_ord (inv_ne_zero hs0), P.ord_inv, hs]
       omega
@@ -251,7 +251,7 @@ theorem not_exists_reduced_artinSchreier_representative_of_forall_pow_ne_residue
     have h := P.ord_mul hu0 hsn0
     rw [P.ord_pow] at h
     exact ⟨-P.ord s, by linarith⟩
-  obtain ⟨hneg, hdvd'⟩ := ord_sub_pow_sub_self_neg_and_dvd (v := P.valuation) hn
+  obtain ⟨hneg, hdvd'⟩ := ord_sub_pow_sub_self_neg_and_dvd (v := P.valuation)
     (by rwa [ord_valuation]) (by rwa [ord_valuation]) w
     (by simpa only [ord_valuation] using
       P.ord_sub_pow_le_of_forall_pow_ne_residue hs hres w)

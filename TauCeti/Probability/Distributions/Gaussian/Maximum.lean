@@ -103,7 +103,7 @@ theorem measureReal_sup'_abs_le_sqrt_log_card_div_four_le (hindep : iIndepFun g 
           (fun i => (hasLaw_map measurable_abs.aemeasurable).comp (hlaw i)) s
     _ ≤ rexp (-p) ^ Fintype.card ι :=
         pow_le_pow_left₀ (cdf_nonneg _ s) (hq.trans (Real.one_sub_le_exp_neg p)) _
-    _ = rexp (-(m * p)) := by rw [← Real.exp_nat_mul, hm, mul_neg]
+    _ = rexp (-(m * p)) := by rw [← Real.exp_natCast_mul, hm, mul_neg]
     _ ≤ 7 / 8 := (Real.exp_le_exp.2 (neg_le_neg hmp)).trans h7
 
 /-- The expected maximum of the absolute values of `m` independent standard Gaussian random

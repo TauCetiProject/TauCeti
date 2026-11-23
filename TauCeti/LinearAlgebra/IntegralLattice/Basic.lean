@@ -20,11 +20,6 @@ integers.  The integrality condition is expressed using Mathlib's
 The form restricts to a canonical `ℤ`-bilinear form on the carrier.  Conversely, a finite
 `ℚ`-basis and an integral symmetric Gram matrix construct an integral lattice.
 
-## References
-
-* `TauCetiRoadmap/IntegralLattices/README.md`
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
-
 ## Main definitions
 
 * `TauCeti.IntegralLattice`: an integral symmetric lattice in a rational vector space.
@@ -66,7 +61,7 @@ structure IntegralLattice where
   /-- The rational symmetric bilinear form on the ambient vector space. -/
   form : LinearMap.BilinForm ℚ V
   /-- The carrier is finitely generated and spans the ambient rational vector space. -/
-  isLattice : carrier.IsLattice ℚ
+  isFullLattice : carrier.IsFullLattice ℚ
   /-- The rational bilinear form is symmetric. -/
   isSymm : form.IsSymm
   /-- Every vector of the carrier lies in its dual submodule. -/
@@ -77,7 +72,15 @@ namespace IntegralLattice
 variable {V}
 
 /-- The carrier of an integral lattice is a Mathlib lattice. -/
-instance (L : IntegralLattice V) : L.carrier.IsLattice ℚ := L.isLattice
+instance (L : IntegralLattice V) : L.carrier.IsFullLattice ℚ := L.isFullLattice
+
+/-- The carrier of an integral lattice is a free `ℤ`-module. -/
+instance (L : IntegralLattice V) : Module.Free ℤ L.carrier :=
+  Submodule.IsLattice.free ℚ L.carrier
+
+/-- The carrier of an integral lattice is a finite `ℤ`-module. -/
+instance (L : IntegralLattice V) : Module.Finite ℤ L.carrier :=
+  Submodule.IsLattice.finite ℚ L.carrier
 
 /-- An integral lattice coerces to the type of its vectors. -/
 instance : CoeSort (IntegralLattice V) (Type u) := ⟨fun L ↦ L.carrier⟩
@@ -97,7 +100,7 @@ theorem form_flip (L : IntegralLattice V) : L.form.flip = L.form :=
 /-- The value of the rational form on lattice vectors is integral. -/
 theorem form_mem_one (L : IntegralLattice V) (x y : L) :
     L.form x y ∈ (1 : Submodule ℤ ℚ) :=
-  L.le_dual x.2 (y : V) y.2
+  L.le_dual x.property (y : V) y.property
 
 /-- Every ambient submodule contained in the carrier is integral for the lattice form. -/
 theorem le_dualSubmodule_of_le_carrier (L : IntegralLattice V) {N : Submodule ℤ V}
@@ -110,12 +113,12 @@ theorem le_dualSubmodule_of_le_carrier (L : IntegralLattice V) {N : Submodule �
 /-- The chosen `ℤ`-basis of an integral lattice extends to a `ℚ`-basis of the ambient space. -/
 noncomputable def rationalBasis (L : IntegralLattice V) :
     Basis (Module.Free.ChooseBasisIndex ℤ L) ℚ V :=
-  (Module.Free.chooseBasis ℤ L).extendOfIsLattice ℚ
+  (Module.Free.chooseBasis ℤ L).extendOfIsFullLattice ℚ
 
 @[simp]
 theorem rationalBasis_apply (L : IntegralLattice V) (i : Module.Free.ChooseBasisIndex ℤ L) :
     L.rationalBasis i = (Module.Free.chooseBasis ℤ L i : V) :=
-  Basis.extendOfIsLattice_apply ℚ (Module.Free.chooseBasis ℤ L) i
+  Basis.extendOfIsFullLattice_apply ℚ (Module.Free.chooseBasis ℤ L) i
 
 /-- The ambient rational vector space of an integral lattice is finite-dimensional. -/
 theorem finiteDimensional (L : IntegralLattice V) : FiniteDimensional ℚ V :=
@@ -125,7 +128,7 @@ theorem finiteDimensional (L : IntegralLattice V) : FiniteDimensional ℚ V :=
 space. -/
 theorem finrank_carrier (L : IntegralLattice V) :
     Module.finrank ℤ L = Module.finrank ℚ V :=
-  congr_arg Cardinal.toNat (Submodule.IsLattice.rank' ℚ L.carrier)
+  Submodule.IsFullLattice.finrank_eq ℚ L.carrier
 
 /-- The ambient space of an integral lattice of rank zero is trivial. -/
 theorem subsingleton_of_finrank_eq_zero {L : IntegralLattice V} (h : Module.finrank ℤ L = 0) :
@@ -191,21 +194,21 @@ theorem isSymm_integralForm (L : IntegralLattice V) : L.integralForm.IsSymm := b
 
 /-- Construct an integral lattice from a full submodule, a symmetric rational bilinear form, and
 an integrality proof. -/
-def ofSubmodule (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+def ofSubmodule (S : Submodule ℤ V) [hS : S.IsFullLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) : IntegralLattice V where
   carrier := S
   form := B
-  isLattice := hS
+  isFullLattice := hS
   isSymm := hB
   le_dual := hle
 
 @[simp]
-theorem ofSubmodule_carrier (S : Submodule ℤ V) [S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+theorem ofSubmodule_carrier (S : Submodule ℤ V) [S.IsFullLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     (ofSubmodule S B hB hle).carrier = S := (rfl)
 
 @[simp]
-theorem ofSubmodule_form (S : Submodule ℤ V) [S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+theorem ofSubmodule_form (S : Submodule ℤ V) [S.IsFullLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     (ofSubmodule S B hB hle).form = B := (rfl)
 
@@ -213,12 +216,10 @@ section Basis
 
 variable {ι : Type*} [Finite ι]
 
-/-- The `ℤ`-span of a finite rational basis is a Mathlib lattice. -/
-theorem isLattice_span_basis (b : Basis ι ℚ V) :
-    (Submodule.span ℤ (Set.range b)).IsLattice ℚ := by
-  constructor
-  · exact Submodule.fg_span (Set.finite_range b)
-  · simp [Submodule.span_span_of_tower]
+/-- The `ℤ`-span of a finite rational basis is a Mathlib full lattice. -/
+theorem isFullLattice_span_basis (b : Basis ι ℚ V) :
+    (Submodule.span ℤ (Set.range b)).IsFullLattice ℚ :=
+  Submodule.isFullLattice_span (Set.finite_range b) b.span_eq
 
 /-- A symmetric rational form that is integral on basis vectors defines an integral lattice.
 
@@ -228,7 +229,7 @@ noncomputable def ofBasis (b : Basis ι ℚ V) (B : LinearMap.BilinForm ℚ V) (
     (hint : ∀ i j, B (b i) (b j) ∈ (1 : Submodule ℤ ℚ)) : IntegralLattice V where
   carrier := Submodule.span ℤ (Set.range b)
   form := B
-  isLattice := isLattice_span_basis b
+  isFullLattice := isFullLattice_span_basis b
   isSymm := hB
   le_dual := by
     rw [Submodule.span_le]

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Complex.HalfPlane
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Gauss' series for digamma
@@ -22,7 +23,9 @@ Pairing is essential: the two reciprocal series do not converge separately.
 The proof first identifies the sum on the positive real axis using the digamma recurrence
 and its explicit logarithmic asymptotic. Local uniform convergence extends the identity
 through the right half-plane by the identity theorem. Recurrences for the sum and digamma
-then extend it to every regular complex point.
+then extend it to every regular complex point. Telescoping the finite partial sums also yields
+the Euler–Gauss limit representation `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹ → digamma s`
+(`Complex.tendsto_log_add_sub_sum_inv_add`).
 
 ## References
 
@@ -44,13 +47,6 @@ private theorem gaussTerm_eq {s : ℂ} {n : ℕ} (hsn : s + n ≠ 0) :
     gaussTerm s n = (s - 1) / (((n : ℂ) + 1) * (s + n)) := by
   rw [gaussTerm, div_sub_div _ _ n.cast_add_one_ne_zero hsn]
   ring
-
-private theorem nonpole_of_re_pos {s : ℂ} (hs : 0 < s.re) :
-    ∀ m : ℕ, s ≠ -(m : ℂ) := by
-  intro m hm
-  have h := congrArg Complex.re hm
-  simp only [Complex.neg_re, Complex.natCast_re] at h
-  linarith [Nat.cast_nonneg (α := ℝ) m]
 
 private theorem norm_natCast_add_one (n : ℕ) : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
   simpa only [Nat.cast_add, Nat.cast_one] using Complex.norm_natCast (n + 1)
@@ -78,7 +74,7 @@ private theorem summable_gaussTerm (s : ℂ) : Summable (gaussTerm s) := by
 private theorem gaussTerm_sum (s : ℂ) (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (N : ℕ) :
     ∑ n ∈ Finset.range N, gaussTerm s n =
       digamma s + Real.eulerMascheroniConstant + digamma (N + 1) - digamma (s + N) := by
-  rw [add_comm (N : ℂ) 1, digamma_apply_add_nat (nonpole_of_re_pos (by norm_num)) N,
+  rw [add_comm (N : ℂ) 1, digamma_apply_add_nat (ne_neg_natCast_of_re_pos (by norm_num)) N,
     digamma_apply_add_nat hs N, digamma_one]
   simp only [gaussTerm, Finset.sum_sub_distrib, add_comm (1 : ℂ), one_div]
   ring
@@ -129,7 +125,7 @@ private theorem differentiableOn_gaussSeries :
     apply DifferentiableOn.sub (by fun_prop)
     apply DifferentiableOn.div (by fun_prop) (by fun_prop)
     intro s hs
-    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using nonpole_of_re_pos hs n
+    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using ne_neg_natCast_of_re_pos hs n
   exact (hasSumLocallyUniformlyOn_gaussTerm.differentiableOn
     (Eventually.of_forall hfinite) (isOpen_re_gt 0)).const_add _
 
@@ -166,7 +162,7 @@ private theorem tendsto_digamma_nat_shift_diff {x : ℝ} (hx : 0 < x) :
 
 private theorem digamma_ofReal_eq_gaussSeries {x : ℝ} (hx : 0 < x) :
     digamma (x : ℂ) = gaussSeries x := by
-  have hs := nonpole_of_re_pos (by simpa using hx : 0 < (x : ℂ).re)
+  have hs := ne_neg_natCast_of_re_pos (by simpa using hx : 0 < (x : ℂ).re)
   have ht : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.range N, gaussTerm x n) atTop
       (𝓝 (digamma (x : ℂ) + Real.eulerMascheroniConstant)) := by
     have h := (tendsto_digamma_nat_shift_diff hx).const_add
@@ -188,9 +184,9 @@ private theorem analyticOnNhd_digamma_pos :
   have hΓ : AnalyticOnNhd ℂ Gamma {s : ℂ | 0 < s.re} := by
     apply DifferentiableOn.analyticOnNhd _ (isOpen_re_gt 0)
     intro s hs
-    exact (differentiableAt_Gamma s (nonpole_of_re_pos hs)).differentiableWithinAt
+    exact (differentiableAt_Gamma s (ne_neg_natCast_of_re_pos hs)).differentiableWithinAt
   simpa only [digamma_def, logDeriv, Pi.div_def] using
-    hΓ.deriv.div hΓ (fun s hs ↦ Gamma_ne_zero (nonpole_of_re_pos hs))
+    hΓ.deriv.div hΓ (fun s hs ↦ Gamma_ne_zero (ne_neg_natCast_of_re_pos hs))
 
 private theorem digamma_eq_gaussSeries_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     digamma s = gaussSeries s := by
@@ -280,5 +276,62 @@ theorem digamma_eq_gaussSeries {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
     digamma s = -Real.eulerMascheroniConstant +
       ∑' n : ℕ, (1 / ((n : ℂ) + 1) - 1 / (s + n)) := by
   simpa only [gaussSeries, gaussTerm] using digamma_eq_gaussSeries_regular hs
+
+private theorem tendsto_log_add_natCast_sub_log (s : ℂ) :
+    Tendsto (fun N : ℕ ↦ Complex.log (s + N) - Complex.log (((N : ℝ) + 2 : ℝ) : ℂ))
+      atTop (𝓝 0) := by
+  have hiR : Tendsto (fun N : ℕ ↦ ((N : ℝ) + 2)⁻¹) atTop (𝓝 0) :=
+    tendsto_inv_atTop_zero.comp
+      (tendsto_atTop_add_const_right atTop 2 tendsto_natCast_atTop_atTop)
+  have hi : Tendsto (fun N : ℕ ↦ ((N : ℂ) + 2)⁻¹) atTop (𝓝 0) := by
+    simpa only [Function.comp_def, ofReal_inv, ofReal_add, ofReal_natCast, ofReal_ofNat,
+      ofReal_zero] using continuous_ofReal.continuousAt.tendsto.comp hiR
+  let z : ℕ → ℂ := fun N ↦ 1 + (s - 2) * ((N : ℂ) + 2)⁻¹
+  have hz : Tendsto z atTop (𝓝 (1 : ℂ)) := by
+    simpa only [z, mul_zero, add_zero] using (hi.const_mul (s - 2)).const_add 1
+  have hl : Tendsto (fun N : ℕ ↦ Complex.log (z N)) atTop (𝓝 0) := by
+    simpa [Function.comp_def] using (continuousAt_clog one_mem_slitPlane).tendsto.comp hz
+  have heq (N : ℕ) : s + N = z N * (((N : ℝ) + 2 : ℝ) : ℂ) := by
+    dsimp [z]
+    push_cast
+    have hn : (N : ℂ) + 2 ≠ 0 := by
+      intro hn
+      have h := congrArg Complex.re hn
+      norm_num at h
+      linarith [Nat.cast_nonneg (α := ℝ) N]
+    field_simp
+    ring
+  refine hl.congr' ?_
+  filter_upwards [hz.eventually_ne one_ne_zero] with N hnz
+  rw [heq N, Complex.log_mul_ofReal ((N : ℝ) + 2) (by positivity) (z N) hnz,
+    ofReal_log (by positivity : (0 : ℝ) ≤ (N : ℝ) + 2)]
+  ring
+
+/-- Euler–Gauss limit representation of the digamma function: for every non-pole `s`
+(`∀ n : ℕ, s ≠ -n`), `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹ → ψ(s)` as `N → ∞`. -/
+theorem tendsto_log_add_sub_sum_inv_add {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
+    Tendsto (fun N : ℕ ↦ Complex.log (s + N) - ∑ k ∈ Finset.Icc 0 N, (s + k)⁻¹)
+      atTop (𝓝 (digamma s)) := by
+  have hsum : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.range (N + 1), gaussTerm s n) atTop
+      (𝓝 (digamma s + Real.eulerMascheroniConstant)) := by
+    have htsum : ∑' n : ℕ, gaussTerm s n = digamma s + Real.eulerMascheroniConstant := by
+      rw [digamma_eq_gaussSeries_regular hs, gaussSeries]
+      ring
+    simpa only [Function.comp_def, htsum] using
+      (summable_gaussTerm s).hasSum.tendsto_sum_nat.comp (tendsto_add_atTop_nat 1)
+  have hpsi : Tendsto (fun N : ℕ ↦
+      digamma (((N : ℝ) + 2 : ℝ) : ℂ) - Complex.log (((N : ℝ) + 2 : ℝ) : ℂ)) atTop (𝓝 0) :=
+    tendsto_psi_error.comp (tendsto_atTop_add_const_right atTop 2 tendsto_natCast_atTop_atTop)
+  have h := (((hsum.add (tendsto_log_add_natCast_sub_log s)).sub hpsi).sub_const
+    (Real.eulerMascheroniConstant : ℂ))
+  convert h using 1
+  · ext N
+    have hg := gaussTerm_sum s hs (N + 1)
+    have hd := digamma_apply_add_nat hs (N + 1)
+    rw [Nat.range_succ_eq_Icc_zero] at hd
+    have hN2 : (((N + 1 : ℕ) : ℂ) + 1) = (((N : ℝ) + 2 : ℝ) : ℂ) := by push_cast; ring
+    rw [hN2, hd] at hg
+    linear_combination -hg
+  · simp
 
 end Complex

@@ -66,22 +66,23 @@ theorem isInducing_restrictionMap_ofArrows_iff
     (f : ∀ i, Y i ⟶ X) :
     Topology.IsInducing
         (fun (x : F.obj (op X))
-          (g : (Z : C) × { h : Z ⟶ X // Sieve.ofArrows Y f h }) ↦ (F.map g.2.1.op).1 x) ↔
-      Topology.IsInducing (fun (x : F.obj (op X)) i ↦ (F.map (f i).op).1 x) := by
+          (g : (Z : C) × { h : Z ⟶ X // Sieve.ofArrows Y f h }) ↦ (F.map g.2.val.op).val x) ↔
+      Topology.IsInducing (fun (x : F.obj (op X)) i ↦ (F.map (f i).op).val x) := by
   let S := Sieve.ofArrows Y f
   constructor
   · intro h
     choose factor factorHom factor_spec using fun g : (Z : C) × { h : Z ⟶ X // S h } ↦
-      (Sieve.mem_ofArrows_iff Y f g.2.1).mp g.2.2
-    refine .of_comp (continuous_pi fun i ↦ (F.map (f i).op).2)
-      (continuous_pi fun g ↦ (F.map (factorHom g).op).2.comp (continuous_apply (factor g))) ?_
+      (Sieve.mem_ofArrows_iff Y f g.2.val).mp g.2.property
+    refine .of_comp (continuous_pi fun i ↦ (F.map (f i).op).property)
+      (continuous_pi fun g ↦ (F.map (factorHom g).op).property.comp (continuous_apply
+          (factor g))) ?_
     convert h using 1
     funext x g
     -- composition in `TopCommRingCat` is composition of the underlying ring homs
     rw [Function.comp_apply, factor_spec g, op_comp, F.map_comp]
     rfl
   · intro h
-    refine .of_comp (continuous_pi fun g ↦ (F.map g.2.1.op).2)
+    refine .of_comp (continuous_pi fun g ↦ (F.map g.2.val.op).property)
       (continuous_pi fun i ↦ continuous_apply (⟨Y i, f i, Sieve.ofArrows_mk Y f i⟩ :
         (Z : C) × { h : Z ⟶ X // S h })) h
 
@@ -89,19 +90,19 @@ private theorem exists_isAmalgamation_of_isSheafFor_forget {X : C} {R : Presieve
     {E : _root_.TopCommRingCat.{v}}
     (hR : Presieve.IsSheafFor (F ⋙ forget _root_.TopCommRingCat) R)
     (hind : Topology.IsInducing fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // R f }) ↦
-      (F.map g.2.1.op).1 x) (φ : Presieve.FamilyOfElements (F ⋙ coyoneda.obj (op E)) R)
+      (F.map g.2.val.op).val x) (φ : Presieve.FamilyOfElements (F ⋙ coyoneda.obj (op E)) R)
     (hφ : φ.Compatible) : ∃ t, φ.IsAmalgamation t := by
   -- Evaluating the family at `e : E` gives a compatible family of elements of the underlying
   -- presheaf of sets, which `hR` glues to `a e`.
   let ψ (e : E) : Presieve.FamilyOfElements (F ⋙ forget _root_.TopCommRingCat) R :=
-    fun _ f hf ↦ (φ f hf).1 e
+    fun _ f hf ↦ (φ f hf).val e
   have hψ (e : E) : (ψ e).Compatible := fun _ _ _ g₁ g₂ _ _ h₁ h₂ w ↦
     ConcreteCategory.congr_hom (hφ g₁ g₂ h₁ h₂ w) e
   let a (e : E) : F.obj (op X) := hR.amalgamate (ψ e) (hψ e)
-  have ha (e : E) {Y : C} (f : Y ⟶ X) (hf : R f) : (F.map f.op).1 (a e) = (φ f hf).1 e :=
+  have ha (e : E) {Y : C} (f : Y ⟶ X) (hf : R f) : (F.map f.op).val (a e) = (φ f hf).val e :=
     hR.valid_glue (hψ e) f hf
   have hsep {x y : F.obj (op X)}
-      (h : ∀ ⦃Y : C⦄ ⦃f : Y ⟶ X⦄, R f → (F.map f.op).1 x = (F.map f.op).1 y) : x = y :=
+      (h : ∀ ⦃Y : C⦄ ⦃f : Y ⟶ X⦄, R f → (F.map f.op).val x = (F.map f.op).val y) : x = y :=
     hR.isSeparatedFor.ext h
   -- The restriction maps are ring homs, so both sides of each ring-hom identity for `a` have the
   -- same restrictions, and separatedness identifies them.
@@ -115,7 +116,7 @@ private theorem exists_isAmalgamation_of_isSheafFor_forget {X : C} {R : Presieve
   -- `F(X)` carries the topology induced from the product, and each coordinate of `aR` is the
   -- continuous map `φ f hf`.
   exact hind.continuous_iff.mpr <| continuous_pi fun g ↦
-    (φ g.2.1 g.2.2).2.congr fun e ↦ (ha e g.2.1 g.2.2).symm
+    (φ g.2.val g.2.property).property.congr fun e ↦ (ha e g.2.val g.2.property).symm
 
 /-- The presheaf of sets underlying a presheaf `F` of topological commutative rings is separated
 for a presieve `R` if and only if, for every topological commutative ring `E`, the presheaf
@@ -134,17 +135,18 @@ theorem isSeparatedFor_forget_iff {X : C} {R : Presieve X} :
       _root_.TopCommRingCat.of (MvPolynomial PUnit.{v + 1} ℤ) ⟶ F.obj (op Y) :=
     ⟨MvPolynomial.eval₂Hom (Int.castRingHom _) fun _ ↦ x, continuous_of_discreteTopology⟩
   have hev₁ {Y : C} (x : F.obj (op Y)) :
-      (ev x).1 = MvPolynomial.eval₂Hom (Int.castRingHom _) fun _ ↦ x := rfl
+      (ev x).val = MvPolynomial.eval₂Hom (Int.castRingHom _) fun _ ↦ x := rfl
   -- the underlying ring hom of a composite in `TopCommRingCat` is the composite of ring homs
-  have hev {Y Z : C} (g : Z ⟶ Y) (x : F.obj (op Y)) : ev x ≫ F.map g.op = ev ((F.map g.op).1 x) :=
+  have hev {Y Z : C} (g : Z ⟶ Y) (x : F.obj (op Y)) : ev x ≫ F.map g.op = ev ((F.map g.op).val x) :=
     Subtype.ext <| MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun _ ↦ by
-      rw [show (ev x ≫ F.map g.op).1 = (F.map g.op).1.comp (ev x).1 from rfl, RingHom.comp_apply,
+      rw [show (ev x ≫ F.map g.op).val = (F.map g.op).val.comp (ev x).val from rfl,
+          RingHom.comp_apply,
         hev₁, hev₁, MvPolynomial.eval₂Hom_X', MvPolynomial.eval₂Hom_X']
   intro z x y hx hy
   have hxy : ev x = ev y := h _ (fun _ f hf ↦ ev (z f hf)) (ev x) (ev y)
     (fun _ f hf ↦ (hev f x).trans (congrArg ev (hx f hf)))
     (fun _ f hf ↦ (hev f y).trans (congrArg ev (hy f hf)))
-  have hX (x : F.obj (op X)) : (ev x).1 (MvPolynomial.X PUnit.unit) = x := by
+  have hX (x : F.obj (op X)) : (ev x).val (MvPolynomial.X PUnit.unit) = x := by
     rw [hev₁, MvPolynomial.eval₂Hom_X']
   rw [← hX x, ← hX y, hxy]
 
@@ -157,7 +159,7 @@ property over a Grothendieck topology. -/
 theorem isSheafFor_of_isSheafFor_forget {X : C} (R : Presieve X)
     (hR : Presieve.IsSheafFor (F ⋙ forget _root_.TopCommRingCat) R)
     (hind : Topology.IsInducing
-      fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // R f }) ↦ (F.map g.2.1.op).1 x)
+      fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // R f }) ↦ (F.map g.2.val.op).val x)
     (E : _root_.TopCommRingCat.{v}) :
     Presieve.IsSheafFor (F ⋙ coyoneda.obj (op E)) R :=
   ((isSeparatedFor_forget_iff F).mp hR.isSeparatedFor E).isSheafFor
@@ -171,13 +173,13 @@ the sheaf condition. -/
 theorem isInducing_restrictionMap_of_isSheafFor {X : C} (R : Presieve X)
     (h : ∀ E : _root_.TopCommRingCat.{v}, Presieve.IsSheafFor (F ⋙ coyoneda.obj (op E)) R) :
     Topology.IsInducing
-      fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // R f }) ↦ (F.map g.2.1.op).1 x := by
+      fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // R f }) ↦ (F.map g.2.val.op).val x := by
   refine ⟨le_antisymm (continuous_iff_le_induced.mp
-    (continuous_pi fun g ↦ (F.map g.2.1.op).2)) ?_⟩
+    (continuous_pi fun g ↦ (F.map g.2.val.op).property)) ?_⟩
   -- The restriction map is a ring hom, so the topology it induces on `F(X)` is a ring topology;
   -- call the resulting topological ring `E`.
   let rR : F.obj (op X) →+* ((g : (Y : C) × { f : Y ⟶ X // R f }) → F.obj (op g.1)) :=
-    RingHom.pi fun g ↦ (F.map g.2.1.op).1
+    RingHom.pi fun g ↦ (F.map g.2.val.op).val
   let τ : TopologicalSpace (F.obj (op X)) := TopologicalSpace.induced rR inferInstance
   let _ : @IsTopologicalRing (F.obj (op X)) τ _ :=
     { toContinuousAdd := continuousAdd_induced rR
@@ -186,22 +188,22 @@ theorem isInducing_restrictionMap_of_isSheafFor {X : C} (R : Presieve X)
   let E : _root_.TopCommRingCat.{v} := @_root_.TopCommRingCat.of (F.obj (op X)) _ τ _
   -- The restrictions are continuous for `τ`, and form a compatible family out of `E`.
   let φ : Presieve.FamilyOfElements (F ⋙ coyoneda.obj (op E)) R := fun _ f hf ↦
-    ⟨(F.map f.op).1, (continuous_apply (⟨_, f, hf⟩ : (Y : C) × { f : Y ⟶ X // R f })).comp
+    ⟨(F.map f.op).val, (continuous_apply (⟨_, f, hf⟩ : (Y : C) × { f : Y ⟶ X // R f })).comp
       (continuous_induced_dom (f := rR))⟩
   have hφ : φ.Compatible := fun _ _ _ g₁ g₂ f₁ f₂ _ _ w ↦ ConcreteCategory.ext_apply fun x ↦ by
-    have := congrArg (fun m ↦ (F.map m.op).1 x) w
+    have := congrArg (fun m ↦ (F.map m.op).val x) w
     rw [op_comp, op_comp, F.map_comp, F.map_comp] at this
     exact this
   -- Their amalgamation is the identity of `F(X)` by separatedness, so the identity is continuous
   -- from `τ` to the topology of `F(X)`.
   obtain ⟨t, ht, -⟩ := h E φ hφ
-  have htx (x : F.obj (op X)) : t.1 x = x :=
+  have htx (x : F.obj (op X)) : t.val x = x :=
     ((isSeparatedFor_forget_iff F).mpr fun _ ↦ (h _).isSeparatedFor).ext fun _ f hf ↦
       (ConcreteCategory.comp_apply t (F.map f.op) x).symm.trans
         (ConcreteCategory.congr_hom (ht f hf) x)
   refine continuous_id_iff_le.mp ?_
-  have h₂ : @Continuous _ _ τ (F.obj (op X)).isTopologicalSpace t.1 := t.2
-  rwa [show (t.1 : F.obj (op X) → F.obj (op X)) = id from funext htx] at h₂
+  have h₂ : @Continuous _ _ τ (F.obj (op X)).isTopologicalSpace t.val := t.property
+  rwa [show (t.val : F.obj (op X) → F.obj (op X)) = id from funext htx] at h₂
 
 /-- **Sheaves from sheaves of sets.** A presheaf `F` of topological commutative rings on a site
 `(C, J)` is a sheaf once its underlying presheaf of sets is a sheaf and, for every covering sieve
@@ -214,7 +216,7 @@ theorem isSheaf_of_isSheaf_forget (J : GrothendieckTopology C)
     (hF : Presheaf.IsSheaf J (F ⋙ forget _root_.TopCommRingCat))
     (hind : ∀ ⦃X : C⦄ (S : Sieve X), S ∈ J X →
       Topology.IsInducing fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // S f }) ↦
-        (F.map g.2.1.op).1 x) : Presheaf.IsSheaf J F := fun E _ S hS ↦
+        (F.map g.2.val.op).val x) : Presheaf.IsSheaf J F := fun E _ S hS ↦
   isSheafFor_of_isSheafFor_forget F S.arrows (hF.isSheafFor S hS) (hind S hS) E
 
 end TauCeti.TopCommRingCat

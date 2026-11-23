@@ -34,35 +34,33 @@ open Polynomial
 variable {R : Type*}
 
 private theorem lastRow_of_degree_drop [Semiring R] {p q : R[X]} {m n j k : ℕ}
-    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hjm : j < m) (hjn : j ≤ n)
+    (hn : q.natDegree ≤ n) (hjm : j < m) (hjn : j ≤ n)
     (i l : Fin ((m - j) + (n + 1 - j))) (hi : i.val = (m - j) + (n - j)) :
     subresultantCoeffMatrix p q m (n + 1) j k i l =
       if l.val = (m - j) + (n - j) then p.coeff m else 0 := by
   have hi0 : i.val ≠ 0 := by omega
-  rw [subresultantCoeffMatrix_apply_eq_coeff hm (hn.trans (Nat.le_succ n))]
-  simp only [hi0, ↓reduceIte]
   induction l using Fin.addCases with
   | left l =>
     have hdeg : q.natDegree < i.val + j - l.val := by omega
-    have hle : l.val ≤ i.val + j := by omega
     have hne : l.val ≠ (m - j) + (n - j) := by omega
-    simp [coeff_X_pow_mul', hle, coeff_eq_zero_of_natDegree_lt hdeg, hne]
+    simp [hi0, coeff_eq_zero_of_natDegree_lt hdeg, hne]
   | right l =>
-    by_cases h : (m - j) + l.val = (m - j) + (n - j)
-    · have hcoeff : i.val + j - l.val = m := by omega
-      have hle : l.val ≤ i.val + j := by omega
-      simp [coeff_X_pow_mul', h, hcoeff, hle]
-    · have hdeg : p.natDegree < i.val + j - l.val := by omega
-      have hle : l.val ≤ i.val + j := by omega
-      have hne : l.val ≠ n - j := by omega
-      simp [coeff_X_pow_mul', hle, hne, coeff_eq_zero_of_natDegree_lt hdeg]
+    by_cases h : l.val = n - j
+    · simp [hi0, h]
+      split_ifs
+      · congr 1
+        omega
+      · omega
+    · have hne : ¬ i.val + j ≤ l.val + m := by omega
+      simp [hi0, hne]
+      omega
 
 variable [CommRing R]
 
 /-- Lowering an oversized right bound by one scales every coefficient minor by the coefficient
 at the left bound. The smaller right terminal index is included, but `j < m` is essential. -/
 theorem _root_.Polynomial.subresultantCoeff_succ_right {p q : R[X]} {m n j : ℕ}
-    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hjm : j < m) (hjn : j ≤ n)
+    (hn : q.natDegree ≤ n) (hjm : j < m) (hjn : j ≤ n)
     (k : ℕ) :
     subresultantCoeff p q m (n + 1) j k =
       p.coeff m * subresultantCoeff p q m n j k := by
@@ -75,26 +73,32 @@ theorem _root_.Polynomial.subresultantCoeff_succ_right {p q : R[X]} {m n j : ℕ
       M (Fin.last d) l = if l = Fin.last d then p.coeff m else 0 := by
     simpa only [M, Matrix.reindex_apply, Matrix.submatrix_apply, e, finCongr_apply,
       finCongr_symm, Fin.val_cast, Fin.val_last, Fin.ext_iff] using
-      lastRow_of_degree_drop hm hn hjm hjn (e.symm (Fin.last d)) (e.symm l) rfl
+      lastRow_of_degree_drop hn hjm hjn (e.symm (Fin.last d)) (e.symm l) rfl
   -- Removing the last row and column preserves the replaced first row.
   have hminor : M.submatrix Fin.castSucc Fin.castSucc =
       subresultantCoeffMatrix p q m n j k := by
     ext i l
     simp only [Matrix.submatrix_apply, M, Matrix.reindex_apply, Matrix.submatrix_apply]
-    rw [subresultantCoeffMatrix_apply_eq_coeff hm (hn.trans (Nat.le_succ n)),
-      subresultantCoeffMatrix_apply_eq_coeff hm hn]
     induction l using Fin.addCases with
     | left l =>
       have hl : e.symm (Fin.castSucc (Fin.castAdd (n - j) l)) =
           Fin.castAdd (n + 1 - j) l := by ext; rfl
       rw [hl]
-      simp [e]
+      have hv : (e.symm i.castSucc : ℕ) = i := rfl
+      simp only [subresultantCoeffMatrix_castAdd, hv]
+      generalize (if (i : ℕ) = 0 then k else (i : ℕ) + j) = D
+      split_ifs <;> first
+        | rfl
+        | (exfalso; omega)
+        | exact coeff_eq_zero_of_natDegree_lt (by omega)
     | right l =>
       have hle : n - j ≤ n + 1 - j := by omega
       have hl : e.symm (Fin.castSucc (Fin.natAdd (m - j) l)) =
           Fin.natAdd (m - j) (Fin.castLE hle l) := by ext; rfl
       rw [hl]
-      simp [e]
+      have hv : (e.symm i.castSucc : ℕ) = i := rfl
+      simp only [subresultantCoeffMatrix_natAdd, hv]
+      rfl
   have hdet : subresultantCoeff p q m (n + 1) j k = M.det := by
     simp only [M, Matrix.det_reindex_self, subresultantCoeff_def]
   rw [hdet, Matrix.det_eq_mul_det_submatrix_castSucc_of_row M (by
@@ -105,14 +109,14 @@ theorem _root_.Polynomial.subresultantCoeff_succ_right {p q : R[X]} {m n j : ℕ
 /-- Lowering an oversized right bound scales every coefficient minor by the corresponding
 power of the coefficient at the left bound, including the smaller right terminal index. -/
 theorem _root_.Polynomial.subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop
-    {p q : R[X]} {m n N j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    {p q : R[X]} {m n N j : ℕ} (hn : q.natDegree ≤ n)
     (hN : n ≤ N) (hjm : j < m) (hjn : j ≤ n) (k : ℕ) :
     subresultantCoeff p q m N j k =
       p.coeff m ^ (N - n) * subresultantCoeff p q m n j k := by
   induction N, hN using Nat.le_induction with
   | base => simp
   | succ N hN ih =>
-    rw [subresultantCoeff_succ_right hm (hn.trans hN) hjm (hjn.trans hN), ih]
+    rw [subresultantCoeff_succ_right (hn.trans hN) hjm (hjn.trans hN), ih]
     have hgap : N + 1 - n = (N - n) + 1 := by omega
     rw [hgap, pow_succ]
     ring
@@ -120,7 +124,7 @@ theorem _root_.Polynomial.subresultantCoeff_eq_coeff_pow_mul_of_right_degree_dro
 /-- Lowering an oversized left bound scales coefficient minors by the right coefficient
 power and the column-block sign. The smaller left terminal index is included. -/
 theorem _root_.Polynomial.subresultantCoeff_eq_sign_mul_coeff_pow_mul_of_left_degree_drop
-    {p q : R[X]} {m M n j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    {p q : R[X]} {m M n j : ℕ} (hm : p.natDegree ≤ m)
     (hM : m ≤ M) (hjm : j ≤ m) (hjn : j < n) (k : ℕ) :
     subresultantCoeff p q M n j k = (-1) ^ ((M - m) * (n - j)) *
       q.coeff n ^ (M - m) * subresultantCoeff p q m n j k := by
@@ -129,32 +133,26 @@ theorem _root_.Polynomial.subresultantCoeff_eq_sign_mul_coeff_pow_mul_of_left_de
     subresultantCoeff p q M n j k = (-1) ^ ((M - j) * (n - j)) *
         (q.coeff n ^ (M - m) * subresultantCoeff q p n m j k) := by
       rw [subresultantCoeff_comm p q M n j k,
-        subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hn hm hM hjn hjm]
+        subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hM hjn hjm]
     _ = _ := by
       rw [subresultantCoeff_comm p q m n j k, hgap, add_mul, pow_add]
       ring
 
 /-- An arbitrary drop in the right bound contributes the corresponding power of the
-coefficient at the left bound. The lower right bound need only dominate the degree; the left
-input is truncated to its formal bound, so no degree bound on it is needed. -/
+coefficient at the left bound. The lower right bound need only dominate the degree of the right
+input; no degree bound on the left input is needed. -/
 theorem _root_.Polynomial.psc_eq_coeff_pow_mul_of_right_degree_drop {p q : R[X]}
     {m n N j : ℕ} (hn : q.natDegree ≤ n)
     (hN : n ≤ N) (hjm : j ≤ m) (hjn : j ≤ n) :
     psc p q m N j = p.coeff m ^ (N - n) * psc p q m n j := by
-  have key : ∀ p' : R[X], p'.natDegree ≤ m →
-      psc p' q m N j = p'.coeff m ^ (N - n) * psc p' q m n j := by
-    intro p' hm
-    by_cases hjm' : j < m
-    · simpa only [subresultantCoeff_self] using
-        subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hn hN hjm' hjn j
-    · have hjeq : j = m := by omega
-      subst j
-      rw [psc_left_bound, psc_left_bound, ← pow_add]
-      congr 1
-      omega
-  have h := key (p.reductum (m + 1)) (Nat.lt_succ_iff.mp (natDegree_reductum_lt _ _))
-  rw [psc_reductum_left, psc_reductum_left, coeff_reductum] at h
-  simpa only [lt_add_one, ↓reduceIte] using h
+  by_cases hjm' : j < m
+  · simpa only [subresultantCoeff_self] using
+      subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hn hN hjm' hjn j
+  · have hjeq : j = m := by omega
+    subst j
+    rw [psc_left_bound, psc_left_bound, ← pow_add]
+    congr 1
+    omega
 
 /-- Lowering an oversized right degree bound by one multiplies the principal
 subresultant by the coefficient at the left bound. The terminal smaller index is included. -/
@@ -167,13 +165,13 @@ theorem _root_.Polynomial.psc_succ_right {p q : R[X]} {m n j : ℕ}
 /-- Dropping the left bound also contributes the sign of moving its removed columns
 past the right block. The lower left bound need only dominate the degree. -/
 theorem _root_.Polynomial.psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop {p q : R[X]}
-    {m M n j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    {m M n j : ℕ} (hm : p.natDegree ≤ m)
     (hM : m ≤ M) (hjm : j ≤ m) (hjn : j ≤ n) :
     psc p q M n j =
       (-1) ^ ((M - m) * (n - j)) * q.coeff n ^ (M - m) * psc p q m n j := by
   by_cases hjn' : j < n
   · simpa only [subresultantCoeff_self] using
-      subresultantCoeff_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM hjm hjn' j
+      subresultantCoeff_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hM hjm hjn' j
   · have hjeq : j = n := by omega
     subst j
     simp only [psc_right_bound, Nat.sub_self, mul_zero, pow_zero, one_mul, ← pow_add]
@@ -209,7 +207,7 @@ theorem _root_.Polynomial.map_psc_of_right_degree_drop {S : Type*} [CommRing S]
 power of the specialized coefficient at the right bound. Truncation occurs before mapping. -/
 theorem _root_.Polynomial.map_psc_of_left_degree_drop {S : Type*} [CommRing S]
     (f : R →+* S) {p q : R[X]} {m M n j : ℕ}
-    (hm : (p.map f).natDegree ≤ m) (hn : (q.map f).natDegree ≤ n)
+    (hm : (p.map f).natDegree ≤ m)
     (hM : m ≤ M) (hjm : j ≤ m) (hjn : j ≤ n) :
     f (psc p q M n j) = (-1) ^ ((M - m) * (n - j)) * f (q.coeff n) ^ (M - m) *
       psc ((p.reductum (m + 1)).map f) (q.map f) m n j := by
@@ -217,6 +215,6 @@ theorem _root_.Polynomial.map_psc_of_left_degree_drop {S : Type*} [CommRing S]
     rw [← reductum_map]
     exact reductum_eq_self (by omega)
   rw [htrunc, ← psc_map_map,
-    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM hjm hjn, coeff_map]
+    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hM hjm hjn, coeff_map]
 
 end TauCeti

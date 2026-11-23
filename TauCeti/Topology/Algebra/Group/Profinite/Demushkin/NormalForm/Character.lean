@@ -109,13 +109,12 @@ theorem range_demushkinCharacter_eq_unitsPrincipal_of_equiv_demushkinWordNeTwo (
     range_eq_unitsPrincipal_of_hasPrescriptionProperty_demushkinWordNeTwo hn hn₁ hq hf hf₂
 
 /-- **A Demushkin group isomorphic to the `q = 0` normal form has trivial orientation image**, for
-`n ≥ 2` even. -/
-theorem range_demushkinCharacter_eq_bot_of_equiv_demushkinWordNeTwo (hn : Even n) (hn₁ : 1 < n)
-    (hq : q = 0)
+`n` even. -/
+theorem range_demushkinCharacter_eq_bot_of_equiv_demushkinWordNeTwo (hn : Even n) (hq : q = 0)
     (e : G ≃ₜ* presentedProP p (Fin n) {demushkinWordNeTwo q n (freeProPGen p n)}) :
     (demushkinCharacter hG).toMonoidHom.range = ⊥ :=
   range_demushkinCharacter_eq_of_equiv hG e fun _ ↦
-    range_eq_bot_of_hasPrescriptionProperty_demushkinWordNeTwo hn hn₁ hq
+    range_eq_bot_of_hasPrescriptionProperty_demushkinWordNeTwo hn hq
 
 end NeTwo
 
@@ -313,7 +312,7 @@ theorem exists_isDemushkin_demushkinQ_eq_two_isEmpty_continuousMulEquiv (hn : 3 
     refine ⟨_, _, h₁, h₂, demushkinRank_presentedProP_demushkinWordTwoEven (dvd_zero 2) two_pos h₁,
       demushkinRank_presentedProP_demushkinWordNeTwo dvd_rfl h₂,
       demushkinQ_presentedProP_demushkinWordTwoEven (dvd_zero 4) two_pos h₁, ?_, ⟨fun e ↦ ?_⟩⟩
-    · rw [demushkinQ_presentedProP_demushkinWordNeTwo dvd_rfl two_ne_zero h₂,
+    · rw [demushkinQ_presentedProP_demushkinWordNeTwo two_ne_zero h₂,
       Nat.padicValNat_def, Nat.Prime.multiplicity_self,
         pow_one]
     · refine unitsPlusMinus_ne_zpowers_neg_one 2 ?_

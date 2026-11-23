@@ -83,7 +83,7 @@ theorem ae_enorm_acDerivativeDensity_eq_rnDeriv :
   have hnorm := Measure.ae_rnDeriv_eq_zero_of_measure_eq_zero (ν := ν)
     (ae_iff.1 (ae_norm_polarDensity_eq_one hu hfin))
   filter_upwards [hnorm, Measure.rnDeriv_ne_top (variationMeasure μ Ω u) ν] with x hx htop
-  rw [acDerivativeDensity_def, enorm_smul, Real.enorm_eq_ofReal
+  rw [acDerivativeDensity_def, eNorm_smul, Real.eNorm_eq_ofReal
     ENNReal.toReal_nonneg, ENNReal.ofReal_toReal htop]
   by_cases hzero : (variationMeasure μ Ω u).rnDeriv ν x = 0
   · simp [hzero]
@@ -114,7 +114,7 @@ theorem locallyIntegrable_acDerivativeDensity :
   have := Ω.isOpen.locallyCompactSpace
   refine locallyIntegrable_iff.2 fun K hK =>
     ⟨(measurable_acDerivativeDensity ν).aestronglyMeasurable.restrict, ?_⟩
-  apply hasFiniteIntegral_iff_enorm.mpr
+  apply hasFiniteIntegral_iff_eNorm.mpr
   rw [lintegral_congr_ae (ae_restrict_of_ae (ae_enorm_acDerivativeDensity_eq_rnDeriv hu hfin ν))]
   exact (Measure.setLIntegral_rnDeriv_le K).trans_lt hK.measure_lt_top
 
@@ -128,7 +128,7 @@ theorem integrable_acDerivativeDensity (hvar : totalVariationOn μ Ω u ≠ ∞)
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞ :=
     fun _ _ hK => ⟨Ω, hK, hvar⟩
   refine ⟨(measurable_acDerivativeDensity ν).aestronglyMeasurable, ?_⟩
-  apply hasFiniteIntegral_iff_enorm.mpr
+  apply hasFiniteIntegral_iff_eNorm.mpr
   rw [lintegral_congr_ae (ae_enorm_acDerivativeDensity_eq_rnDeriv hu hfin ν)]
   have hmass : variationMeasure μ Ω u univ < ∞ := by
     rw [variationMeasure_univ hu hfin]
@@ -178,8 +178,8 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
   have : IsFiniteMeasureOnCompacts η := ⟨fun K hK => by
     simp only [η, _root_.add_apply, withDensity_apply _ hK.measurableSet]
     exact ENNReal.add_lt_top.2
-      ⟨hasFiniteIntegral_iff_enorm.1 (hτ.integrableOn_isCompact hK).2,
-        hasFiniteIntegral_iff_enorm.1 (hσ.integrableOn_isCompact hK).2⟩⟩
+      ⟨hasFiniteIntegral_iff_eNorm.1 (hτ.integrableOn_isCompact hK).2,
+        hasFiniteIntegral_iff_eNorm.1 (hσ.integrableOn_isCompact hK).2⟩⟩
   have hην : η ⟂ₘ ν :=
     (hξ.mono_ac (withDensity_absolutelyContinuous _ _) Measure.AbsolutelyContinuous.rfl).add_left
       ((Measure.mutuallySingular_singularPart _ _).mono_ac
@@ -209,7 +209,7 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
             hu hfin ν φ
         linarith
       rw [heq, Measure.setLIntegral_rnDeriv hηρ]
-      exact enorm_sub_le.trans (by
+      exact eNorm_sub_le.trans (by
         simpa only [η, _root_.add_apply, add_comm] using add_le_add
           (TestFunction.enorm_integral_inner_le_withDensity U.isOpen.measurableSet hφU hφ ω
             (polarDensity μ Ω u))

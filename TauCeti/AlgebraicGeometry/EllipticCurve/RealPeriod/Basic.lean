@@ -231,8 +231,8 @@ private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ :
           simp only [← ofReal_norm]
           rw [hfac, ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
           exact ENNReal.ofReal_le_ofReal (by linarith)
-        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top enorm_ne_top enorm_ne_top)
-            enorm_ne_top, ENNReal.mul_rpow_of_ne_top enorm_ne_top enorm_ne_top]
+        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top eNorm_ne_top eNorm_ne_top)
+            eNorm_ne_top, ENNReal.mul_rpow_of_ne_top eNorm_ne_top eNorm_ne_top]
           exact hle x
     _ = K * ((∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ)) +
           (∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ)) +
@@ -462,7 +462,7 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : Weierstr
         rw [harea]
         refine lintegral_congr fun y ↦ ?_
         rw [← ENNReal.tsum_set_const]
-        exact tsum_congr fun x ↦ by rw [hr₀S x x.2.1, x.2.2]
+        exact tsum_congr fun x ↦ by rw [hr₀S x x.property.1, x.property.2]
     _ = ∫⁻ y, ((U ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y :=
         lintegral_congr_ae (hfib.mono fun y hy ↦ by dsimp only; rw [hy])
     _ = _ := (setLIntegral_eq_of_support_subset hsupp).symm

@@ -99,7 +99,7 @@ def timeForm : SmoothForm 𝓘(ℝ) (AddCircle p) ℝ 1 :=
 /-- The time form sends a tangent vector of `AddCircle p` to itself. -/
 @[simp]
 theorem timeForm_apply (x : AddCircle p) (v : Fin 1 → TangentSpace 𝓘(ℝ) x) :
-    (timeForm p).1 x v = v 0 :=
+    (timeForm p).val x v = v 0 :=
   (rfl)
 
 /-- On the circle cylinder, the wedge of the angular time form and the real coordinate form
@@ -124,7 +124,7 @@ theorem degreeOneEquiv_timeForm (x : AddCircle p) :
   rfl
 
 /-- The time form vanishes nowhere. -/
-theorem timeForm_apply_ne_zero (x : AddCircle p) : (timeForm p).1 x ≠ 0 := fun h ↦ by
+theorem timeForm_apply_ne_zero (x : AddCircle p) : (timeForm p).val x ≠ 0 := fun h ↦ by
   -- The time form sends the tangent vector `1` to `1` (`AddCircle.timeForm_apply`).
   have h₁ : (1 : ℝ) = 0 := DFunLike.congr_fun h fun _ ↦ (1 : ℝ)
   exact one_ne_zero h₁
@@ -138,13 +138,11 @@ theorem isClosed_timeForm : (timeForm p).IsClosed :=
 /-- The time form pulls back along the quotient map `ℝ → AddCircle p` to the differential `dt` of
 the coordinate of `ℝ`. -/
 theorem mpullback_coe_timeForm :
-    mpullback 𝓘(ℝ) 𝓘(ℝ) ((↑) : ℝ → AddCircle p) (timeForm p).1 =
+    mpullback 𝓘(ℝ) 𝓘(ℝ) ((↑) : ℝ → AddCircle p) (timeForm p).val =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
   funext t
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  simp only [mpullback_apply, mfderiv_coe, timeForm_apply, mextDeriv_ofFunction, mvfderiv_eq_fderiv,
-    fderiv_id, ContinuousLinearMap.id_comp, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-    ContinuousLinearEquiv.coe_coe]
+  rw [mpullback_apply, timeForm_apply, mfderiv_coe, mextDeriv_ofFunction_id_apply]
   -- Tangent vectors of `AddCircle p` are real numbers, on which the identity of `ℝ` acts.
   rfl
 
@@ -169,7 +167,7 @@ variable {p} in
 /-- The time form is the unique one-form on `AddCircle p` pulling back to `dt` along the quotient
 map `ℝ → AddCircle p`. -/
 theorem eq_timeForm_iff {α : RoughForm 𝓘(ℝ) (AddCircle p) ℝ 1} :
-    α = (timeForm p).1 ↔
+    α = (timeForm p).val ↔
       mpullback 𝓘(ℝ) 𝓘(ℝ) ((↑) : ℝ → AddCircle p) α =
         mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
   refine ⟨fun h ↦ h ▸ mpullback_coe_timeForm p, fun h ↦ mpullback_coe_injective p ?_⟩
@@ -180,7 +178,7 @@ variable {p} in
 `c`. -/
 theorem timeForm_apply_eq_mextDeriv_of_coe_apply {c : OpenPartialHomeomorph (AddCircle p) ℝ}
     (hc : ∀ x ∈ c.source, (c x : AddCircle p) = x) {x : AddCircle p} (hx : x ∈ c.source) :
-    (timeForm p).1 x = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) c) x := by
+    (timeForm p).val x = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) c) x := by
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   simp only [timeForm_apply, mextDeriv_ofFunction, mvfderiv, mfderiv_of_coe_apply hc hx,
     ContinuousAlternatingMap.ofSubsingleton_apply_apply]
@@ -192,7 +190,7 @@ theorem timeForm_apply_eq_mextDeriv_of_coe_apply {c : OpenPartialHomeomorph (Add
 /-- The time form is invariant under the translations of `AddCircle p`. -/
 @[simp]
 theorem mpullback_add_right_timeForm (a : AddCircle p) :
-    mpullback 𝓘(ℝ) 𝓘(ℝ) (· + a) (timeForm p).1 = (timeForm p).1 := by
+    mpullback 𝓘(ℝ) 𝓘(ℝ) (· + a) (timeForm p).val = (timeForm p).val := by
   funext x
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   simp only [mpullback_apply, mfderiv_add_right, timeForm_apply]
@@ -202,7 +200,7 @@ theorem mpullback_add_right_timeForm (a : AddCircle p) :
 /-- Multiplication by an integer `k` pulls the time form back to `k • dt_p`. -/
 @[simp]
 theorem mpullback_zsmul_timeForm (k : ℤ) :
-    mpullback 𝓘(ℝ) 𝓘(ℝ) (fun y : AddCircle p ↦ k • y) (timeForm p).1 = k • (timeForm p).1 := by
+    mpullback 𝓘(ℝ) 𝓘(ℝ) (fun y : AddCircle p ↦ k • y) (timeForm p).val = k • (timeForm p).val := by
   funext x
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   simp only [mpullback_apply, mfderiv_zsmul, timeForm_apply, Pi.smul_apply,
@@ -214,8 +212,8 @@ theorem mpullback_zsmul_timeForm (k : ℤ) :
 `(p⁻¹ * q) • dt_p`. -/
 @[simp]
 theorem mpullback_diffeomorphAddCircle_timeForm (q : ℝ) [Fact (0 < q)] (n : ℕ∞ω) :
-    mpullback 𝓘(ℝ) 𝓘(ℝ) (diffeomorphAddCircle p q n) (timeForm q).1 =
-      (p⁻¹ * q) • (timeForm p).1 := by
+    mpullback 𝓘(ℝ) 𝓘(ℝ) (diffeomorphAddCircle p q n) (timeForm q).val =
+      (p⁻¹ * q) • (timeForm p).val := by
   funext x
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   simp only [mpullback_apply, mfderiv_diffeomorphAddCircle, timeForm_apply, Pi.smul_apply,
@@ -229,7 +227,7 @@ variable {p} in
 `AddCircle p`. -/
 @[simp]
 theorem mpullback_coverMap_timeForm {q : ℝ} [Fact (0 < q)] (h : p ∈ AddSubgroup.zmultiples q) :
-    mpullback 𝓘(ℝ) 𝓘(ℝ) (coverMap h) (timeForm q).1 = (timeForm p).1 := by
+    mpullback 𝓘(ℝ) 𝓘(ℝ) (coverMap h) (timeForm q).val = (timeForm p).val := by
   funext x
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   simp only [mpullback_apply, mfderiv_coverMap, timeForm_apply]
@@ -242,7 +240,7 @@ theorem mpullback_coverMap_timeForm {q : ℝ} [Fact (0 < q)] (h : p ∈ AddSubgr
 `b - a`. In particular one circuit `0 ≤ t ≤ p` of the circle has integral `p`. -/
 @[simp]
 theorem pathIntegral_timeForm_coe (a b : ℝ) :
-    pathIntegral (timeForm p).1 ((↑) : ℝ → AddCircle p) a b = b - a := by
+    pathIntegral (timeForm p).val ((↑) : ℝ → AddCircle p) a b = b - a := by
   simp only [pathIntegral_def, Manifold.curveVelocity_apply, mfderiv_coe]
   -- The velocity `1` of the curve is a real number, sent to itself by the identity of `ℝ`.
   exact (intervalIntegral.integral_const (1 : ℝ)).trans (by simp)

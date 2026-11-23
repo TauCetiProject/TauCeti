@@ -314,8 +314,8 @@ theorem IsDeformationOfOrder.hochschildDifferential_deformationObstruction {n : 
     ∑ i ∈ Finset.range (n + 1), Polynomial.monomial i (D i)
   have hB (i : ℕ) : B.coeff i = D i := by
     by_cases hi : i ≤ n
-    · simp [B, Polynomial.coeff_monomial, Nat.lt_succ_iff.2 hi]
-    · simp [B, Polynomial.coeff_monomial, hi, hD, hφ', gradedCoderiv_zero_left]
+    · simp [B, Finsupp.single_apply, Nat.lt_succ_iff.2 hi]
+    · simp [B, Finsupp.single_apply, hi, hD, hφ', gradedCoderiv_zero_left]
   have hBB (k : ℕ) : (B * B).coeff k = ∑ x ∈ Finset.antidiagonal k, D x.1 ∘ₗ D x.2 := by
     simp only [Polynomial.coeff_mul, hB, Module.End.mul_eq_comp]
   have hBB_eq_zero {k : ℕ} (hk : k ≤ n) : (B * B).coeff k = 0 := by
@@ -323,7 +323,9 @@ theorem IsDeformationOfOrder.hochschildDifferential_deformationObstruction {n : 
   -- Comparing the coefficients of `tⁿ⁺¹` in `(B * B) * B` and `B * (B * B)`, all terms but one
   -- vanish on each side, so `S_{n + 1}` commutes with `D₀`.
   have hcomm : (B * B).coeff (n + 1) * D 0 = D 0 * (B * B).coeff (n + 1) := by
-    have e := congrArg (Polynomial.coeff · (n + 1)) (mul_assoc B B B)
+    have e := congrArg
+      (fun p : Polynomial (Module.End R (ReducedTensorWords R A)) ↦ p.coeff (n + 1))
+      (mul_assoc B B B)
     simp only [Polynomial.coeff_mul (B * B) B, Polynomial.coeff_mul B (B * B)] at e
     rw [Finset.sum_eq_single (n + 1, 0) (fun x hx hne ↦ ?_) (by simp),
       Finset.sum_eq_single (0, n + 1) (fun x hx hne ↦ ?_) (by simp), hB] at e
@@ -405,22 +407,22 @@ theorem IsDeformationOfOrder.exists_isFormalDeformation
   -- Every deformation of order `m` extends by one order without changing its coefficients up to
   -- order `m`, since its obstruction class vanishes.
   have step (m : ℕ) (χ : {χ // 𝒜.IsDeformationOfOrder m χ}) :
-      ∃ χ', 𝒜.IsDeformationOfOrder (m + 1) χ' ∧ ∀ i ≤ m, χ' i = χ.1 i := by
-    obtain ⟨ψ, hψ⟩ := (χ.2.obstructionClass_eq_zero_iff).1 (Subsingleton.elim _ _)
-    exact ⟨_, hψ, fun i hi ↦ Function.update_of_ne (a' := m + 1) (by omega) ψ χ.1⟩
+      ∃ χ', 𝒜.IsDeformationOfOrder (m + 1) χ' ∧ ∀ i ≤ m, χ' i = χ.val i := by
+    obtain ⟨ψ, hψ⟩ := (χ.property.obstructionClass_eq_zero_iff).1 (Subsingleton.elim _ _)
+    exact ⟨_, hψ, fun i hi ↦ Function.update_of_ne (a' := m + 1) (by omega) ψ χ.val⟩
   choose next hnext hagree using step
   -- Extend `φ` one order at a time.
   let seq : (j : ℕ) → {χ // 𝒜.IsDeformationOfOrder (n + j) χ} :=
     fun j ↦ Nat.rec ⟨φ, h⟩ (fun j χ ↦ ⟨next (n + j) χ, hnext (n + j) χ⟩) j
-  have hseq (j : ℕ) : (seq (j + 1)).1 = next (n + j) (seq j) := rfl
-  have hstable {j j' : ℕ} (hj : j ≤ j') : ∀ i ≤ n + j, (seq j').1 i = (seq j).1 i := by
+  have hseq (j : ℕ) : (seq (j + 1)).val = next (n + j) (seq j) := rfl
+  have hstable {j j' : ℕ} (hj : j ≤ j') : ∀ i ≤ n + j, (seq j').val i = (seq j).val i := by
     induction j', hj using Nat.le_induction with
     | base => exact fun _ _ ↦ rfl
     | succ j' hj ih =>
       intro i hi
       rw [hseq, hagree _ _ i (by omega), ih i hi]
-  refine ⟨fun i ↦ (seq i).1 i, fun m ↦ ?_, fun i hi ↦ ?_⟩
-  · exact ((seq m).2.mono (by omega)).congr fun i hi ↦ hstable hi i (by omega)
+  refine ⟨fun i ↦ (seq i).val i, fun m ↦ ?_, fun i hi ↦ ?_⟩
+  · exact ((seq m).property.mono (by omega)).congr fun i hi ↦ hstable hi i (by omega)
   · exact hstable (Nat.zero_le i) i (by omega)
 
 end TauCeti.AInfinityAlgebra

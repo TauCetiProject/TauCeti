@@ -49,9 +49,10 @@ fields, and nothing needs `k` perfect.
 
 ## Main results
 
-* `TauCeti.Place.center_restrict_asIdeal_eq_maximalIdeal`: the prime of `𝒪_P` below the centre of
-  `P'` on the local model is the maximal ideal of `𝒪_P`, so the residue extension the different
-  exponent reads is the residue-field extension of the two places.
+* `TauCeti.Place.centerIntegralClosure_liesOver_maximalIdeal`: the centre of `P'` on the local
+  model lies over the maximal ideal of `𝒪_P` (identified with the centre of `P` on `𝒪_P` by
+  `TauCeti.Place.center_integers_asIdeal`), so the residue extension the different exponent reads
+  is the residue-field extension of the two places.
 * `TauCeti.Place.pow_dvd_differentIdeal_iff_le_differentExponent`: the characteristic property of
   the different exponent, `𝔓'^n ∣ differentIdeal 𝒪_P 𝒪'_P ↔ n ≤ d(P' ∣ P)`.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_add_one`: **Dedekind's different theorem**
@@ -144,7 +145,7 @@ theorem differentIdeal_eq_top_of_ord_discr_eq_zero {ι : Type*} [Fintype ι] [De
         Submodule (integralClosure (P.integers) F') F')
       = ((1 : FractionalIdeal (integralClosure (P.integers) F')⁰ F') :
         Submodule (integralClosure (P.integers) F') F') := by
-    rw [FractionalIdeal.coe_dual_one, FractionalIdeal.coe_one]
+    rw [FractionalIdeal.coeToSubmodule_dual_one, FractionalIdeal.coeToSubmodule_one]
     exact traceDual_one_eq_one_of_ord_discr_eq_zero F' P hb hd
   have hdual : FractionalIdeal.dual (P.integers) F
       (1 : FractionalIdeal (integralClosure (P.integers) F')⁰ F') = 1 :=
@@ -169,19 +170,6 @@ variable (k F) (P' : Place k' F')
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-/-- **The prime of `𝒪_P` below the centre of `P'` on the local model is the maximal ideal of
-`𝒪_P`**: the residue extension read on the local model is the residue-field extension of the two
-places. -/
-@[simp]
-theorem center_restrict_asIdeal_eq_maximalIdeal :
-    ((P'.restrict k F).center (algebraMap_mem_integers_restrict
-        (R := ((P'.restrict k F).integers)) k F P'
-        (algebraMap_mem_integers_of_mem_integralClosure k F P'))).asIdeal
-      = IsLocalRing.maximalIdeal ((P'.restrict k F).integers) := by
-  ext f
-  rw [mem_center_asIdeal, mem_maximalIdeal_iff_valuation_lt_one]
-  exact Iff.rfl
-
 variable [Algebra.IsSeparable F F']
 
 /-- **The centre of `P'` on the local model `𝒪'_P`**: the height one prime of the integral closure
@@ -198,7 +186,7 @@ extension of the local model is read at the residue field of `P`. -/
 instance centerIntegralClosure_liesOver_maximalIdeal :
     (centerIntegralClosure k F P').asIdeal.LiesOver
       (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) := by
-  rw [← center_restrict_asIdeal_eq_maximalIdeal k F P', centerIntegralClosure_def]
+  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
   exact center_liesOver k F P' _
 
 /-- **The different exponent `d(P' ∣ P)`** of a place `P'` of `F' / k'` over the place

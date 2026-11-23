@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
+import Mathlib.LinearAlgebra.Matrix.Nonsingular
 
 /-!
 # The monomial and Schur bases of the symmetric homogeneous polynomials
@@ -73,6 +74,10 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.schurPolyBasis` and `TauCeti.coe_schurPolyBasis`: **the Schur polynomials of the
   partitions of `n` with at most `Fintype.card σ` parts are a basis of the symmetric homogeneous
   polynomials of degree `n`.**
+* The symmetric homogeneous polynomials of degree `n` are a free and finite module.
+* `TauCeti.finrank_symmetricHomogeneousSubmodule`: the dimension in degree `n` is the number of
+  partitions of `n` with at most `Fintype.card σ` parts; it is the number of all partitions of `n`
+  in at least `n` letters and smaller in fewer.
 
 ## References
 
@@ -80,9 +85,6 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   Sections 2 and 6: the monomial symmetric functions are a basis, the Kostka matrix is
   unitriangular for the dominance order, and hence the Schur functions are a basis.
 * R. P. Stanley, *Enumerative Combinatorics*, Volume 2, §7.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7, "The Schur functions are a `ℤ`-basis of the symmetric functions; `msymm`-to-`schurPoly`
-  change of basis is the Kostka matrix `Kλμ`".
 -/
 
 public section
@@ -100,13 +102,13 @@ def partitionEquivSchurIndex (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fint
 /-- Reindexing a partition into the Schur basis retains the same underlying partition. -/
 @[simp]
 theorem partitionEquivSchurIndex_apply (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ)
-    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).1 = μ := (rfl)
+    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).val = μ := (rfl)
 
 /-- The inverse reindexing from the Schur basis returns the underlying partition. -/
 @[simp]
 theorem partitionEquivSchurIndex_symm_apply (σ : Type*) [Fintype σ] (n : ℕ)
     (h : n ≤ Fintype.card σ) (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
-    (partitionEquivSchurIndex σ n h).symm μ = μ.1 := (rfl)
+    (partitionEquivSchurIndex σ n h).symm μ = μ.val := (rfl)
 
 section CommSemiring
 
@@ -149,7 +151,7 @@ noncomputable def partWeightCoeff :
     symmetricHomogeneousSubmodule σ R n →ₗ[R]
       ({ν : n.Partition // ν.parts.card ≤ Fintype.card σ} →₀ R) :=
   (Finsupp.linearEquivFunOnFinite R R _).symm.toLinearMap ∘ₗ
-    LinearMap.pi fun ν => (lcoeff (R := R) (partWeight σ ν.1)).comp
+    LinearMap.pi fun ν => (lcoeff (R := R) (partWeight σ ν.val)).comp
       (symmetricHomogeneousSubmodule σ R n).subtype
 
 /-- The coordinates of `TauCeti.partWeightCoeff` are the coefficients at the sorted monomials.
@@ -157,7 +159,7 @@ The body of `TauCeti.partWeightCoeff` is not exposed, so this is what a consumer
 @[simp]
 theorem partWeightCoeff_apply (p : symmetricHomogeneousSubmodule σ R n)
     (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
-    partWeightCoeff σ R n p ν = (p : MvPolynomial σ R).coeff (partWeight σ ν.1) := by
+    partWeightCoeff σ R n p ν = (p : MvPolynomial σ R).coeff (partWeight σ ν.val) := by
   simp [partWeightCoeff]
 
 /-- **A symmetric homogeneous polynomial is determined by its coefficients at the sorted
@@ -170,10 +172,10 @@ theorem partWeightCoeff_injective : Function.Injective (partWeightCoeff σ R n) 
   by_cases hd : d.degree = n
   · have h := DFunLike.congr_fun hpq ⟨weightPartition d hd, card_parts_weightPartition_le d hd⟩
     rw [partWeightCoeff_apply, partWeightCoeff_apply] at h
-    rw [coeff_eq_coeff_partWeight (mem_symmetricHomogeneousSubmodule.mp p.2).1 hd,
-      coeff_eq_coeff_partWeight (mem_symmetricHomogeneousSubmodule.mp q.2).1 hd, h]
-  · rw [(mem_symmetricHomogeneousSubmodule.mp p.2).2.coeff_eq_zero hd,
-      (mem_symmetricHomogeneousSubmodule.mp q.2).2.coeff_eq_zero hd]
+    rw [coeff_eq_coeff_partWeight (mem_symmetricHomogeneousSubmodule.mp p.property).1 hd,
+      coeff_eq_coeff_partWeight (mem_symmetricHomogeneousSubmodule.mp q.property).1 hd, h]
+  · rw [(mem_symmetricHomogeneousSubmodule.mp p.property).2.coeff_eq_zero hd,
+      (mem_symmetricHomogeneousSubmodule.mp q.property).2.coeff_eq_zero hd]
 
 /-- **The coefficients at the sorted monomials may be prescribed arbitrarily**: the combination of
 the monomial symmetric polynomials with the prescribed coefficients realizes them, each `m_ν` being
@@ -181,13 +183,16 @@ the indicator of its own sorted monomial. -/
 theorem partWeightCoeff_surjective : Function.Surjective (partWeightCoeff σ R n) := by
   classical
   intro f
-  refine ⟨⟨∑ ν, f ν • msymm σ R ν.1, Submodule.sum_mem _ fun ν _ =>
-    Submodule.smul_mem _ _ (msymm_mem_symmetricHomogeneousSubmodule ν.1)⟩, Finsupp.ext fun ξ => ?_⟩
+  refine ⟨⟨∑ ν, f ν • msymm σ R ν.val, Submodule.sum_mem _ fun ν _ =>
+    Submodule.smul_mem _ _ (msymm_mem_symmetricHomogeneousSubmodule ν.val)⟩,
+        Finsupp.ext fun ξ => ?_⟩
   rw [partWeightCoeff_apply, coeff_sum]
   refine (Finset.sum_eq_single ξ (fun ν _ hne => ?_) fun hξ => absurd (mem_univ ξ) hξ).trans ?_
-  · rw [coeff_smul, coeff_msymm_partWeight R ν.1 ξ.1 ξ.2,
+  · rw [AddMonoidAlgebra.coeff_smul_apply, coeff_msymm_partWeight R ν.val ξ.val ξ.property,
       ite_eq_right fun h => hne (Subtype.ext h.symm), smul_zero]
-  · rw [coeff_smul, coeff_msymm_partWeight R ξ.1 ξ.1 ξ.2, ite_eq_left rfl, smul_eq_mul, mul_one]
+  · rw [AddMonoidAlgebra.coeff_smul_apply, coeff_msymm_partWeight R ξ.val ξ.val ξ.property,
+      ite_eq_left rfl,
+      smul_eq_mul, mul_one]
 
 /-- **A symmetric homogeneous polynomial is exactly a prescription of coefficients at the sorted
 monomials.** -/
@@ -212,7 +217,7 @@ the normal form of a monomial-basis coordinate, and the elimination rule matchin
 @[simp]
 theorem msymmBasis_repr_apply (p : symmetricHomogeneousSubmodule σ R n)
     (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
-    (msymmBasis σ R n).repr p ν = (p : MvPolynomial σ R).coeff (partWeight σ ν.1) := by
+    (msymmBasis σ R n).repr p ν = (p : MvPolynomial σ R).coeff (partWeight σ ν.val) := by
   -- The coordinate map of `TauCeti.msymmBasis` is the map it was built from.
   have h : (msymmBasis σ R n).repr p = partWeightCoeff σ R n p :=
     LinearEquiv.ofBijective_apply (f := partWeightCoeff σ R n)
@@ -225,12 +230,13 @@ the polynomials `m_ν` the name records. -/
 @[simp]
 theorem coe_msymmBasis [DecidableEq σ] (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     ((msymmBasis σ R n ν : symmetricHomogeneousSubmodule σ R n) : MvPolynomial σ R)
-      = msymm σ R ν.1 := by
+      = msymm σ R ν.val := by
   have h : (msymmBasis σ R n).repr (msymmBasis σ R n ν)
       = (msymmBasis σ R n).repr
-        ⟨msymm σ R ν.1, msymm_mem_symmetricHomogeneousSubmodule ν.1⟩ := by
+        ⟨msymm σ R ν.val, msymm_mem_symmetricHomogeneousSubmodule ν.val⟩ := by
     refine (Module.Basis.repr_self _ ν).trans (Finsupp.ext fun ξ => ?_).symm
-    rw [msymmBasis_repr_apply, coeff_msymm_partWeight R ν.1 ξ.1 ξ.2, Finsupp.single_apply]
+    rw [msymmBasis_repr_apply, coeff_msymm_partWeight R ν.val ξ.val ξ.property,
+        Finsupp.single_apply]
     exact if_congr (Subtype.ext_iff.symm.trans eq_comm) rfl rfl
   exact congrArg Subtype.val ((msymmBasis σ R n).repr.injective h)
 
@@ -241,9 +247,48 @@ monomial basis into its normal form as a coefficient. -/
 theorem msymmBasis_repr_schurPoly (μ : n.Partition)
     (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     (msymmBasis σ R n).repr ⟨schurPoly σ R μ, schurPoly_mem_symmetricHomogeneousSubmodule μ⟩ ν
-      = (kostkaNumber μ ν.1 : R) := by
+      = (kostkaNumber μ ν.val : R) := by
   rw [msymmBasis_repr_apply]
-  exact coeff_schurPoly_partWeight μ ν.1 (by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.2)
+  exact coeff_schurPoly_partWeight μ ν.val (by rw [YoungDiagram.colLen_zero_ofPartition]; exact
+      ν.property)
+
+/-! ### The dimension -/
+
+omit [Fintype σ] in
+/-- The symmetric polynomials of degree `n` in a finite alphabet form a free module, with the
+monomial basis `TauCeti.msymmBasis`. -/
+instance [Finite σ] : Module.Free R (symmetricHomogeneousSubmodule σ R n) :=
+  have := Fintype.ofFinite σ
+  .of_basis (msymmBasis σ R n)
+
+omit [Fintype σ] in
+/-- The symmetric polynomials of degree `n` in a finite alphabet form a finite module, spanned by
+the monomial basis `TauCeti.msymmBasis`. -/
+instance [Finite σ] : Module.Finite R (symmetricHomogeneousSubmodule σ R n) :=
+  have := Fintype.ofFinite σ
+  .of_basis (msymmBasis σ R n)
+
+variable (σ R n) in
+/-- **The dimension of the symmetric polynomials of degree `n`** in the alphabet `σ` is the number
+of partitions of `n` with at most `Fintype.card σ` parts, the index set of the monomial and Schur
+bases. -/
+theorem finrank_symmetricHomogeneousSubmodule [Nontrivial R] :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) =
+      Fintype.card {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
+  Module.finrank_eq_card_basis (msymmBasis σ R n)
+
+/-- **In at least `n` letters the dimension in degree `n` is the number of partitions of `n`.** -/
+theorem finrank_symmetricHomogeneousSubmodule_of_le [Nontrivial R] (h : n ≤ Fintype.card σ) :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) = Fintype.card n.Partition := by
+  rw [finrank_symmetricHomogeneousSubmodule, Fintype.card_congr (partitionEquivSchurIndex σ n h)]
+
+/-- **In fewer than `n` letters the dimension in degree `n` is less than the number of partitions
+of `n`**, the partition `1ⁿ` having more parts than the alphabet has letters. -/
+theorem finrank_symmetricHomogeneousSubmodule_lt [Nontrivial R] (h : Fintype.card σ < n) :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) < Fintype.card n.Partition := by
+  rw [finrank_symmetricHomogeneousSubmodule]
+  refine Fintype.card_subtype_lt (x := Nat.Partition.ones n) ?_
+  simpa [Nat.Partition.ones_parts] using h
 
 end CommSemiring
 
@@ -259,7 +304,7 @@ are about to be shown to be a basis of. -/
 private noncomputable def schurPolyElem
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     symmetricHomogeneousSubmodule σ R n :=
-  ⟨schurPoly σ R μ.1, schurPoly_mem_symmetricHomogeneousSubmodule μ.1⟩
+  ⟨schurPoly σ R μ.val, schurPoly_mem_symmetricHomogeneousSubmodule μ.val⟩
 
 open scoped PartitionLex in
 /-- **The Kostka matrix is triangular with `1`s on the diagonal**, hence a change of basis:
@@ -268,10 +313,10 @@ open scoped PartitionLex in
 private theorem isUnit_det_schurPolyElem :
     IsUnit ((msymmBasis σ R n).det (schurPolyElem σ R n)) := by
   have hentry : ∀ ν μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ},
-      (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν μ = (kostkaNumber μ.1 ν.1 : R) := by
+      (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν μ = (kostkaNumber μ.val ν.val : R) := by
     intro ν μ
     rw [Module.Basis.toMatrix_apply]
-    exact msymmBasis_repr_schurPoly μ.1 ν
+    exact msymmBasis_repr_schurPoly μ.val ν
   have htri : ((msymmBasis σ R n).toMatrix (schurPolyElem σ R n)).IsUpperTriangular := by
     intro ν μ hμν
     have hlt : (μ : n.Partition) < (ν : n.Partition) := Subtype.coe_lt_coe.mpr hμν
@@ -304,7 +349,7 @@ basis vectors back as the polynomials `s_μ`.  It is what makes the basis usable
 @[simp]
 theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     ((schurPolyBasis σ R n μ : symmetricHomogeneousSubmodule σ R n) : MvPolynomial σ R)
-      = schurPoly σ R μ.1 := by
+      = schurPoly σ R μ.val := by
   have h : schurPolyBasis σ R n μ = schurPolyElem σ R n μ := Module.Basis.mk_apply _ _ μ
   rw [h]
   rfl
@@ -316,13 +361,13 @@ alphabet has letters contribute nothing, their Schur polynomials vanishing. -/
 theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ R n}
     {c : n.Partition → R} (hp : (p : MvPolynomial σ R) = ∑ l, c l • schurPoly σ R l)
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
-    (schurPolyBasis σ R n).repr p μ = c μ.1 := by
-  have h : p = ∑ ν, c ν.1 • schurPolyBasis σ R n ν := by
+    (schurPolyBasis σ R n).repr p μ = c μ.val := by
+  have h : p = ∑ ν, c ν.val • schurPolyBasis σ R n ν := by
     refine Subtype.ext ?_
     simp only [hp, Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis]
     rw [← Fintype.sum_subtype_add_sum_subtype (fun l : n.Partition => l.parts.card ≤
       Fintype.card σ), Fintype.sum_eq_zero (fun l : {l : n.Partition // ¬_} => _)
-      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.2), smul_zero], add_zero]
+      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.property), smul_zero], add_zero]
   rw [h, Module.Basis.repr_sum_self]
 
 /-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of

@@ -72,7 +72,10 @@ of Mathlib's `evenOdd`, whose definition is the analogous supremum over the `i` 
 * `CliffordAlgebra.involute_mem_filtration`,
   `CliffordAlgebra.reverse_mem_filtration` and
   `CliffordAlgebra.map_mem_filtration`: the filtration is preserved by the grade
-  involution, by reversal, and by an isometry of quadratic forms.
+  involution, by reversal, and by an isometry of quadratic forms, which sends each generator into
+  the first step (`CliffordAlgebra.map_apply_ι_mem_filtration_one`).
+* `CliffordAlgebra.forall_filtration_map_eq_iff`: an algebra map preserves every step if and
+  only if it preserves the first one.
 * `CliffordAlgebra.contractLeft_mem_filtration_succ` and
   `CliffordAlgebra.contractLeft_mem_filtration`,
   `CliffordAlgebra.changeForm_mem_filtration`, and
@@ -282,7 +285,7 @@ private theorem prod_map_ι_mem_filtration_pred_of_not_nodup :
 
 /-- The multilinear product of `k + 1` Clifford generators. -/
 private noncomputable def filtrationLeadingTermRaw (k : ℕ) :
-    MultilinearMap R (fun _ : Fin (k + 1) => M) (CliffordAlgebra Q) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) => M) (CliffordAlgebra Q) :=
   (MultilinearMap.mkPiAlgebraFin R (k + 1) (CliffordAlgebra Q)).compLinearMap fun _ => ι Q
 
 private theorem filtrationLeadingTermRaw_mem (k : ℕ) (v : Fin (k + 1) → M) :
@@ -431,6 +434,13 @@ section Map
 
 variable {N : Type w} [AddCommGroup N] [Module R N] {Q' : QuadraticForm R N}
 
+variable {Q} in
+/-- The Clifford map of an isometry sends every generator into the first filtration step. -/
+theorem map_apply_ι_mem_filtration_one (f : Q →qᵢ Q') (m : M) :
+    CliffordAlgebra.map f (ι Q m) ∈ filtration Q' 1 := by
+  rw [CliffordAlgebra.map_apply_ι]
+  exact ι_mem_filtration_one Q' (f m)
+
 /-- An isometry of quadratic forms respects the degree filtration: it takes a product of generators
 to a product of the same length. -/
 theorem map_mem_filtration (f : Q →qᵢ Q') {k : ℕ} {x : CliffordAlgebra Q}
@@ -439,6 +449,15 @@ theorem map_mem_filtration (f : Q →qᵢ Q') {k : ℕ} {x : CliffordAlgebra Q}
   intro m
   rw [CliffordAlgebra.map_apply_ι]
   exact TauCeti.Algebra.apply_mem_wordFiltration_one (ι Q') (f m)
+
+variable {Q} in
+/-- **An algebra map preserves every step of the degree filtration as soon as it preserves the
+first.** Each step `filtration Q k` is the `k`-th power of the first one. -/
+theorem forall_filtration_map_eq_iff (g : CliffordAlgebra Q →ₐ[R] CliffordAlgebra Q') :
+    (∀ k, (filtration Q k).map g.toLinearMap = filtration Q' k) ↔
+      (filtration Q 1).map g.toLinearMap = filtration Q' 1 := by
+  refine ⟨fun h ↦ h 1, fun h k ↦ TauCeti.Algebra.map_wordFiltration_eq (ι Q) g (ι Q') ?_ k⟩
+  rwa [← TauCeti.Algebra.wordFiltration_one, ← TauCeti.Algebra.wordFiltration_one]
 
 end Map
 

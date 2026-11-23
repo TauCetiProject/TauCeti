@@ -163,7 +163,7 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
   · refine ⟨1, 1, one_pos, one_pos, fun t _ ↦ ?_⟩
     rw [Subsingleton.elim (exp ((t : ℂ) • T)) 0, norm_zero]
     positivity
-  have := FiniteDimensional.complete ℂ V
+  have := FiniteDimensional.completeSpace ℂ V
   let +nondep : NormedAlgebra ℚ (V →L[ℂ] V) := .restrictScalars ℚ ℂ _
   -- A uniform margin `β` between the roots of `q` and the imaginary axis.
   obtain ⟨β, hβ, hβq⟩ := exists_pos_forall_re_lt_neg_of_re_lt_zero hroots
@@ -187,10 +187,11 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
     have hrμ : r.eval μ = 0 := by
       have := spectrum.subset_polynomial_aeval N r ⟨μ, hμ, rfl⟩
       rwa [hNr, spectrum.zero_eq, Set.mem_singleton_iff] at this
-    rw [← NNReal.coe_lt_coe, coe_nnnorm, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp,
+    rw [← NNReal.coe_lt_coe, coe_nnNorm, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp,
       NNReal.coe_one, Real.exp_lt_one_iff]
     exact hrroots μ hrμ
-  have hρ := spectrum.spectralRadius_lt_of_forall_lt _ hspec
+  have hρ := spectrum.spectralRadius_lt_of_forall_lt _ (r := 1) fun z hz ↦ by
+    simpa [eNorm_eq_nnNorm] using ENNReal.coe_lt_coe.2 (hspec z hz)
   rw [spectrum.spectralRadius_eq_gelfandRadius, ENNReal.coe_one, ENNReal.ofReal_lt_one] at hρ
   obtain ⟨C, hC0, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt _ hρ
   simp only [one_pow, mul_one] at hC
@@ -218,11 +219,7 @@ part. Then `‖exp (t • B)‖ ≤ K * exp (-α t)` for `t ≥ 0`, with `K, α 
 theorem exists_norm_exp_smul_le_of_aeval_eq_zero (B : E →L[ℝ] E) {p : ℝ[X]}
     (hp : aeval B p = 0) (hroots : ∀ z : ℂ, aeval z p = 0 → z.re < 0) :
     ∃ K α : ℝ, 0 < K ∧ 0 < α ∧ ∀ t : ℝ, 0 ≤ t → ‖exp (t • B)‖ ≤ K * Real.exp (-α * t) := by
-  have := FiniteDimensional.complete ℝ E
-  have : FiniteDimensional ℝ (TauCeti.Complexification E) :=
-    (TauCeti.Complexification.equivProd E).symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℂ (TauCeti.Complexification E) :=
-    Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  have := FiniteDimensional.completeSpace ℝ E
   obtain ⟨K, α, hK, hα, h⟩ := B.complexify.exists_norm_exp_smul_le_of_aeval_eq_zero'
     (q := p.map (algebraMap ℝ ℂ))
     (by rw [aeval_map_algebraMap, ← complexifyAlgHom_apply, aeval_algHom_apply, hp, map_zero])

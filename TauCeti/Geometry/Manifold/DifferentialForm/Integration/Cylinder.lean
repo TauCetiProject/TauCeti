@@ -12,25 +12,38 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.ContMDiff.Curve
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Topology.Algebra.Order.Floor
 
 /-!
-# Gluing, reparametrization and Green's formula for integrals over rectangles
+# Gluing and reparametrization of integrals over rectangles
 
 This file develops the integral
 `∫_u φ = ∫_{a.1}^{b.1} ∫_{a.2}^{b.2} φ_{u(s, t)}(∂_s u, ∂_t u) dt ds`
-of a two-form `φ` over a map `u : ℝ × ℝ → M` (`TauCeti.rectangleIntegral`) along the first
+of a two-form `φ` over a map `u : ℝ × ℝ → M` (`TauCeti.rectangleIntegral`, defined in
+`TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy`) along the first
 coordinate `s`, the coordinate along which a cylinder `u` joins its boundary loops `u(a.1, ·)` and
 `u(b.1, ·)`. For a continuous form and a `C¹` map:
 
 * the integral is additive under subdivision of `[a.1, b.1]`
   (`TauCeti.rectangleIntegral_add_adjacent_fst`);
-* it is invariant under a `C¹` change `σ` of the first coordinate, between the image endpoints
-  (`TauCeti.rectangleIntegral_comp_prodMap`, with the affine case
-  `TauCeti.rectangleIntegral_comp_prodMap_affine`), and reversing the first coordinate changes
-  its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`).
+* specializing its invariance under a `C¹` change of the first coordinate, proved in
+  `Integration.Homotopy` (`TauCeti.rectangleIntegral_comp_prodMap` and
+  `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff`), it is invariant under an affine change of
+  the first coordinate (`TauCeti.rectangleIntegral_comp_prodMap_affine`), and reversing the first
+  coordinate changes its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`); so does
+  reversing the second coordinate (`TauCeti.rectangleIntegral_comp_prodMap_id_one_sub`);
+* it is likewise additive under subdivision of `[a.2, b.2]`
+  (`TauCeti.rectangleIntegral_add_adjacent_snd`) and invariant under a `C¹` change of the second
+  coordinate (`TauCeti.rectangleIntegral_comp_prodMap_snd`).
+
+In the second coordinate, the circle coordinate of a cylinder, a differentiable map `u` that is
+`T`-periodic in `t` has the same integral as its rotation `z ↦ u (z + (0, θ))` over a rectangle
+spanning one period (`TauCeti.rectangleIntegral_comp_add_snd_of_periodic`). This is the invariance
+of the area of a cylinder or cap under a change of the origin of its circle coordinate.
 
 Two maps `u₁ u₂ : ℝ × ℝ → M` with `u₁(1, ·) = u₂(0, ·)` are glued into their concatenation
 `TauCeti.rectangleTrans u₁ u₂`, the curve concatenation `TauCeti.curveConcat` in the first
@@ -43,29 +56,57 @@ cylinder ending at the loop, and how two caps of the same loop are glued into a 
 integral is the difference of the integrals of the two caps
 (`TauCeti.rectangleIntegral_rectangleTrans_comp_prodMap_one_sub`).
 
-Finally, **Green's formula** (`TauCeti.rectangleIntegral_mextDeriv`): the integral of an exact
-two-form `dα` over a `C²` map `u` is the signed sum of the line integrals of `α` along the four
-edges of the rectangle. In particular the integral of `dα` over a cylinder is the difference of the
-line integrals of `α` along its two boundary loops.
+Two maps `u₁ u₂ : ℝ × ℝ → M` with `u₁(·, 1) = u₂(·, 0)` and `u₂(·, 1) = u₁(·, 0)` are placed
+side by side in their loopwise concatenation `TauCeti.loopwiseTrans u₁ u₂`, which for each `s`
+runs through the loop `u₁(s, ·)` on `[0, 1/2]` and through `u₂(s, ·)` on `[1/2, 1]`, reparametrized
+so that it rests near `t = 1/2` and near the integers, and is `1`-periodic in `t`. It is as smooth
+as `u₁` and `u₂` (`TauCeti.contMDiff_loopwiseTrans`), and its integral over `[a₁, b₁] × [0, 1]` is
+the sum of those of `u₁` and `u₂` (`TauCeti.rectangleIntegral_loopwiseTrans`). This is how caps of
+two loops based at the same point are placed side by side, as a cap of their collared
+concatenation (`Path.collaredTrans`).
+
+Finally, a two-form vanishes on spheres (`TauCeti.VanishesOnSpheres`) or on tori
+(`TauCeti.VanishesOnTori`) when its integral over every map of the square factoring through a
+sphere, respectively a torus, vanishes. Such a form has the same integral over any two caps of a
+loop (`TauCeti.VanishesOnSpheres.rectangleIntegral_eq`), respectively over any two cylinders
+between the same loops (`TauCeti.VanishesOnTori.rectangleIntegral_eq`). By Green's formula
+`TauCeti.rectangleIntegral_mextDeriv` from `Integration.Homotopy`, which expresses the integral of
+an exact two-form `dα` as the signed sum of the line integrals of `α` along the four edges of the
+rectangle, exact two-forms vanish on spheres and on tori.
 
 ## Main definitions
 
 * `TauCeti.rectangleTrans u₁ u₂`: the concatenation of two maps of the plane along the first
   coordinate.
+* `TauCeti.loopwiseTrans u₁ u₂`: the concatenation of two maps of the plane along the second
+  coordinate, periodic in it.
+* `TauCeti.VanishesOnSpheres φ`, `TauCeti.VanishesOnTori φ`: the integral of `φ` vanishes over
+  every map of the square factoring through a sphere, respectively a torus.
 
 ## Main results
 
+* `TauCeti.rectangleIntegral_comp_add_snd_of_periodic`: rotation invariance in the second
+  coordinate over a full period.
 * `TauCeti.rectangleIntegral_add_adjacent_fst`: additivity in the first coordinate.
-* `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization in the first coordinate, and
-  `TauCeti.rectangleIntegral_comp_prodMap_affine` its affine case.
+* `TauCeti.rectangleIntegral_comp_prodMap_affine`: reparametrization by an affine function in the
+  first coordinate.
+* `TauCeti.rectangleIntegral_add_adjacent_snd`, `TauCeti.rectangleIntegral_comp_prodMap_snd`:
+  additivity and reparametrization in the second coordinate.
 * `TauCeti.rectangleIntegral_rectangleTrans`: the integral over a concatenation.
 * `TauCeti.rectangleIntegral_rectangleTrans_comp_prodMap_one_sub`: the integral over two maps
   glued along their common start.
+* `TauCeti.contMDiff_loopwiseTrans`, `TauCeti.rectangleIntegral_loopwiseTrans`: smoothness of and
+  the integral over a loopwise concatenation.
 * `TauCeti.IsSmoothCylinder.trans`: the concatenation of two smooth cylinders is a smooth
+  cylinder.
+* `TauCeti.IsSmoothCylinder.comp_prodMap_one_sub`: a smooth cylinder run backwards is a smooth
   cylinder.
 * `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth map, `1`-periodic in `t`,
   from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth cylinder.
-* `TauCeti.rectangleIntegral_mextDeriv`: Green's formula for an exact form.
+* `TauCeti.VanishesOnSpheres.rectangleIntegral_eq`, `TauCeti.VanishesOnTori.rectangleIntegral_eq`:
+  independence of the cap and of the cylinder.
+* `TauCeti.vanishesOnSpheres_mextDeriv`, `TauCeti.vanishesOnTori_mextDeriv`: exact two-forms
+  vanish on spheres and on tori.
 
 ## References
 
@@ -87,6 +128,33 @@ namespace TauCeti
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-! ### Rotation in the second coordinate -/
+
+/-- **Rotating a periodic map.** If a differentiable map `u` of the plane is `T`-periodic in its
+second coordinate, its rotation `z ↦ u (z + (0, θ))` has the same integral as `u` over every
+rectangle `[a₁, b₁] × [a₂, a₂ + T]` spanning one period in the second coordinate. For a cylinder,
+`T = 1`, this is the invariance of its integral under a rotation of the circle coordinate. -/
+theorem rectangleIntegral_comp_add_snd_of_periodic (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) {T : ℝ} (hT : ∀ z : ℝ × ℝ, u (z.1, z.2 + T) = u z)
+    (θ a₁ b₁ a₂ : ℝ) :
+    rectangleIntegral φ (fun z ↦ u (z + (0, θ))) (a₁, a₂) (b₁, a₂ + T) =
+      rectangleIntegral φ u (a₁, a₂) (b₁, a₂ + T) := by
+  set G : ℝ × ℝ → F := fun z ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ z ![(1, 0), (0, 1)]
+  -- The integrand `G` is `T`-periodic in the second coordinate, since `u` is.
+  have hG (z : ℝ × ℝ) : G (z + (0, T)) = G z := by
+    have hu' : (fun w ↦ u (w + (0, T))) = u := funext fun ⟨a, b⟩ ↦ by simpa using hT (a, b)
+    have h := congrArg (fun A ↦ A ![(1, 0), (0, 1)])
+      (mpullback_comp_add_right (c := ((0 : ℝ), T)) (hu (z + (0, T))) φ)
+    rw [hu'] at h
+    exact h.symm
+  have hper (s : ℝ) : Function.Periodic (fun t ↦ G (s, t)) T := fun t ↦ by
+    simpa using hG (s, t)
+  rw [rectangleIntegral_comp_add_right φ hu]
+  simp only [Prod.mk_add_mk, add_zero, rectangleIntegral_def]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  rw [add_right_comm]
+  exact Function.Periodic.intervalIntegral_add_eq (hper s) (a₂ + θ) a₂
 
 /-! ### Additivity and reparametrization in the first coordinate -/
 
@@ -141,7 +209,110 @@ theorem rectangleIntegral_comp_prodMap_affine {φ : RoughForm I M F 2} (hφ : Is
     continuousOn_const]
   simp
 
+/-- **The area swept by a variation.** For a continuous form and a `C¹` map `u`, the integral over
+the restriction of `u` to `[s, s₀] × [a₂, b₂]`, rescaled to `[0, 1]` in the first coordinate, has
+derivative `-∫_{a₂}^{b₂} φ(∂_s u, ∂_t u) dt` in `s` at `s₀`, the integrand taken at `(s₀, t)`. -/
+theorem hasDerivAt_rectangleIntegral_comp_prodMap_affine [CompleteSpace F]
+    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (s₀ a₂ b₂ : ℝ) :
+    HasDerivAt
+      (fun s ↦ rectangleIntegral φ (u ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id) (0, a₂) (1, b₂))
+      (-∫ t in a₂..b₂, φ (u (s₀, t)) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t) (1, 0),
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t) (0, 1)]) s₀ := by
+  have hf := continuous_integral_mpullback hφ hu a₂ b₂
+  have heq : (fun s ↦ rectangleIntegral φ (u ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id)
+      (0, a₂) (1, b₂)) = fun s ↦ -∫ x in s₀..s,
+        ∫ t in a₂..b₂, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (x, t) ![(1, 0), (0, 1)] := by
+    funext s
+    rw [rectangleIntegral_comp_prodMap_affine hφ hu, rectangleIntegral_def,
+      intervalIntegral.integral_symm]
+  rw [heq]
+  convert (hf.integral_hasStrictDerivAt s₀ s₀).hasDerivAt.neg using 2
+  exact intervalIntegral.integral_congr fun t _ ↦ (mpullback_apply_pair u φ (s₀, t) _ _).symm
+
+/-! ### Additivity and reparametrization in the second coordinate -/
+
+/-- **Additivity in the second coordinate.** For a continuous form and a `C¹` map, the integral
+over `[a.1, b.1] × [a.2, b.2]` is the sum of the integrals over `[a.1, b.1] × [a.2, c]` and
+`[a.1, b.1] × [c, b.2]`. -/
+theorem rectangleIntegral_add_adjacent_snd {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a b : ℝ × ℝ) (c : ℝ) :
+    rectangleIntegral φ u a (b.1, c) + rectangleIntegral φ u (a.1, c) b =
+      rectangleIntegral φ u a b := by
+  have hG := hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]
+  have hi (s c d : ℝ) : IntervalIntegrable
+      (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)]) volume c d :=
+    (hG.comp (Continuous.prodMk_right s)).intervalIntegrable _ _
+  simp only [rectangleIntegral_def]
+  rw [← intervalIntegral.integral_add
+    ((continuous_integral_mpullback hφ hu _ _).intervalIntegrable _ _)
+    ((continuous_integral_mpullback hφ hu _ _).intervalIntegrable _ _)]
+  exact intervalIntegral.integral_congr fun s _ ↦
+    intervalIntegral.integral_add_adjacent_intervals (hi s _ _) (hi s _ _)
+
+/-- **Reparametrization invariance in the second coordinate.** For a continuous form `φ`, a `C¹`
+map `u` of the plane and a `C¹` change of parameter `τ`, the integral over
+`(s, t) ↦ u (s, τ t)` is the integral over `u` on the rectangle between the image corners. The
+change of parameter need not be monotone. -/
+theorem rectangleIntegral_comp_prodMap_snd {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {τ τ' : ℝ → ℝ} {a b : ℝ × ℝ}
+    (hτ : ∀ t ∈ [[a.2, b.2]], HasDerivAt τ (τ' t) t) (hτ' : ContinuousOn τ' [[a.2, b.2]]) :
+    rectangleIntegral φ (u ∘ Prod.map id τ) a b =
+      rectangleIntegral φ u (a.1, τ a.2) (b.1, τ b.2) := by
+  have hG := hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]
+  simp only [rectangleIntegral_def]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  refine Eq.trans ?_
+    (intervalIntegral.integral_deriv_smul_comp hτ hτ' (hG.comp (Continuous.prodMk_right s)))
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  -- The derivative of `Prod.map id τ` sends the coordinate vectors to `(1, 0)` and `(0, τ' t)`.
+  let A : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
+    (ContinuousLinearMap.id ℝ ℝ).prodMap (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (τ' t))
+  have hL : HasFDerivAt (Prod.map id τ) A (s, t) :=
+    (hasFDerivAt_id s).prodMap (s, t) (hτ t ht).hasFDerivAt
+  have hv : (A ∘ ![(1, 0), (0, 1)]) =
+      Function.update ![((1 : ℝ), (0 : ℝ)), (0, 1)] 1 (τ' t • ((0 : ℝ), (1 : ℝ))) := by
+    funext i
+    fin_cases i <;> simp [A]
+  rw [mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero)]
+  -- Read the pullback as a flat form on the plane, whose tangent spaces are `ℝ × ℝ` itself.
+  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
+  refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
+    (congrArg _ hv)).trans ((ψ (s, τ t)).map_update_smul _ _ _ _)).trans ?_
+  congr 2
+  funext i
+  fin_cases i <;> rfl
+
+/-- **Reparametrization by a `C¹` function in the second coordinate.** For a continuous form, a
+`C¹` map `u` and a `C¹` function `τ`, the integral over `(s, t) ↦ u (s, τ t)` is the integral over
+`u` on the rectangle between the image corners. -/
+theorem rectangleIntegral_comp_prodMap_snd_of_contDiff {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {τ : ℝ → ℝ}
+    (hτ : ContDiff ℝ 1 τ) {a b : ℝ × ℝ} :
+    rectangleIntegral φ (u ∘ Prod.map id τ) a b =
+      rectangleIntegral φ u (a.1, τ a.2) (b.1, τ b.2) :=
+  rectangleIntegral_comp_prodMap_snd hφ hu (fun t _ ↦ (hτ.differentiable one_ne_zero t).hasDerivAt)
+    (hτ.continuous_deriv le_rfl).continuousOn
+
 end Continuous
+
+/-- Reversing the second coordinate of a differentiable map changes the sign of its integral over
+`[a₁, b₁] × [0, 1]`. -/
+theorem rectangleIntegral_comp_prodMap_id_one_sub (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) (a₁ b₁ : ℝ) :
+    rectangleIntegral φ (u ∘ Prod.map id (fun t ↦ 1 - t)) (a₁, 0) (b₁, 1) =
+      -rectangleIntegral φ u (a₁, 0) (b₁, 1) := by
+  rw [rectangleIntegral_def, rectangleIntegral_def, ← intervalIntegral.integral_neg]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  -- The derivative of `Prod.map id (1 - ·)` sends `(0, 1)` to `-(0, 1)`, so the integrand at
+  -- `(s, t)` is minus the integrand of `u` at `(s, 1 - t)`.
+  have hpt (t : ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ Prod.map id fun t ↦ 1 - t) φ (s, t)
+      ![(1, 0), (0, 1)] = -mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, 1 - t) ![(1, 0), (0, 1)] := by
+    simpa using mpullback_comp_prodMap_apply φ (hasDerivAt_id s)
+      ((hasDerivAt_id t).const_sub 1) (hu _)
+  simp_rw [hpt, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_sub_left (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t)
+      ![(1, 0), (0, 1)]) 1, sub_self, sub_zero]
 
 /-! ### Concatenation along the first coordinate -/
 
@@ -227,28 +398,23 @@ theorem rectangleIntegral_rectangleTrans [IsManifold I 1 M] {φ : RoughForm I M 
     (hu₂ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u₂) (h : ∀ t, u₁ (1, t) = u₂ (0, t)) (a₂ b₂ : ℝ) :
     rectangleIntegral φ (rectangleTrans u₁ u₂) (0, a₂) (1, b₂) =
       rectangleIntegral φ u₁ (0, a₂) (1, b₂) + rectangleIntegral φ u₂ (0, a₂) (1, b₂) := by
-  -- The two reparametrizations `s ↦ β (f s)`, for `f s = 3 s` and `f s = 3 s - 2`.
-  have hβ {f : ℝ → ℝ} (hf : ContDiff ℝ 1 f) :
-      (∀ s, HasDerivAt (fun s ↦ Real.smoothTransition (f s))
-        (deriv (fun s ↦ Real.smoothTransition (f s)) s) s) ∧
-      Continuous (deriv fun s ↦ Real.smoothTransition (f s)) :=
-    have hc := Real.smoothTransition.contDiff.comp hf
-    ⟨fun s ↦ (hc.differentiable one_ne_zero s).hasDerivAt, hc.continuous_deriv le_rfl⟩
-  have h₁ := hβ (f := fun s ↦ 3 * s) (by fun_prop)
-  have h₂ := hβ (f := fun s ↦ 3 * s - 2) (by fun_prop)
+  -- The two reparametrizations `s ↦ β (f s)`, for `f s = 3 s` and `f s = 3 s - 2`, are `C¹`.
+  have hβ {f : ℝ → ℝ} (hf : ContDiff ℝ 1 f) : ContDiff ℝ 1 fun s ↦ Real.smoothTransition (f s) :=
+    Real.smoothTransition.contDiff.comp hf
   rw [← rectangleIntegral_add_adjacent_fst hφ (contMDiff_rectangleTrans hu₁ hu₂ h) _ _ (1 / 2)]
   congr 1
   · -- On `[0, 1/2]` the concatenation is `u₁` reparametrized by `s ↦ β (3 s)`.
     rw [rectangleIntegral_congr fun z hz ↦ rectangleTrans_eq_left h (z := z) (by
         simp only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at hz
         linarith [hz.1.2]),
-      rectangleIntegral_comp_prodMap hφ hu₁ (fun s _ ↦ h₁.1 s) h₁.2.continuousOn]
+      rectangleIntegral_comp_prodMap_of_contDiff hφ hu₁ (hβ (f := fun s ↦ 3 * s) (by fun_prop))]
     norm_num [Real.smoothTransition.one_of_one_le]
   · -- On `[1/2, 1]` it is `u₂` reparametrized by `s ↦ β (3 s - 2)`.
     rw [rectangleIntegral_congr fun z hz ↦ rectangleTrans_eq_right h (z := z) (by
         simp only [uIcc_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1)] at hz
         linarith [hz.1.1]),
-      rectangleIntegral_comp_prodMap hφ hu₂ (fun s _ ↦ h₂.1 s) h₂.2.continuousOn]
+      rectangleIntegral_comp_prodMap_of_contDiff hφ hu₂
+        (hβ (f := fun s ↦ 3 * s - 2) (by fun_prop))]
     norm_num [Real.smoothTransition.zero_of_nonpos]
 
 /-- **The integral over two maps glued along their common start.** For a continuous form and two
@@ -265,6 +431,140 @@ theorem rectangleIntegral_rectangleTrans_comp_prodMap_one_sub [IsManifold I 1 M]
     hu.comp ((contDiff_const.sub contDiff_id).prodMap contDiff_id).contMDiff
   rw [rectangleIntegral_rectangleTrans hφ hu' hv (fun t ↦ by simpa using h t),
     rectangleIntegral_comp_prodMap_one_sub hφ hu, neg_add_eq_sub]
+
+/-! ### Concatenation along the second coordinate -/
+
+/-- The loopwise concatenation of two maps `u₁ u₂ : ℝ × ℝ → M`: for each `s`, the loop that runs
+through `t ↦ u₁ (s, t)` and then through `t ↦ u₂ (s, t)`, both over `t ∈ [0, 1]`. It is the curve
+concatenation `TauCeti.curveConcat` of `r ↦ u₁ (s, β (2 r - 1))` and `r ↦ u₂ (s, β (2 r))`,
+where `β = Real.smoothTransition`, evaluated at the fractional part of `t`. So on `[0, 1)` it is
+`u₁ (s, β (6 t - 1))` for `t ≤ 1/2` and `u₂ (s, β (6 t - 4))` for `t > 1/2`, and it is
+`1`-periodic in `t`. When `u₁ (s, 1) = u₂ (s, 0)` and
+`u₂ (s, 1) = u₁ (s, 0)` for all `s`, it rests at these common points for `t` near `1/2` and near
+the integers, so it is as smooth as `u₁` and `u₂` (`TauCeti.contMDiff_loopwiseTrans`). This is how
+caps of two loops based at the same point are placed side by side, as a cap of their collared
+concatenation (`Path.collaredTrans`). -/
+def loopwiseTrans (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) : M :=
+  curveConcat (fun r ↦ u₁ (z.1, Real.smoothTransition (2 * r - 1)))
+    (fun r ↦ u₂ (z.1, Real.smoothTransition (2 * r))) (Int.fract z.2)
+
+omit [TopologicalSpace M] in
+/-- The loopwise concatenation is `1`-periodic in the second coordinate. -/
+@[simp]
+theorem loopwiseTrans_apply_add_one (u₁ u₂ : ℝ × ℝ → M) (s t : ℝ) :
+    loopwiseTrans u₁ u₂ (s, t + 1) = loopwiseTrans u₁ u₂ (s, t) := by
+  simp only [loopwiseTrans, Int.fract_add_one]
+
+omit [TopologicalSpace M] in
+/-- On `[0, 1/2]` the loopwise concatenation runs through the first map. -/
+theorem loopwiseTrans_of_le (u₁ u₂ : ℝ × ℝ → M) {z : ℝ × ℝ} (h₀ : 0 ≤ z.2) (h : z.2 ≤ 1 / 2) :
+    loopwiseTrans u₁ u₂ z = u₁ (z.1, Real.smoothTransition (6 * z.2 - 1)) := by
+  rw [loopwiseTrans, Int.fract_eq_self.2 ⟨h₀, by linarith⟩, curveConcat_of_le (by linarith),
+    ← mul_assoc]
+  norm_num
+
+omit [TopologicalSpace M] in
+/-- On `(1/2, 1)` the loopwise concatenation runs through the second map. -/
+theorem loopwiseTrans_of_lt (u₁ u₂ : ℝ × ℝ → M) {z : ℝ × ℝ} (h : 1 / 2 < z.2) (h₁ : z.2 < 1) :
+    loopwiseTrans u₁ u₂ z = u₂ (z.1, Real.smoothTransition (6 * z.2 - 4)) := by
+  rw [loopwiseTrans, Int.fract_eq_self.2 ⟨by linarith, h₁⟩, curveConcat_of_lt (by linarith),
+    mul_sub, ← mul_assoc]
+  norm_num
+
+omit [TopologicalSpace M] in
+/-- From `t = 1/3` up to `t = 1` the loopwise concatenation is a reparametrization of the second
+map, if each map ends where the other starts. -/
+theorem loopwiseTrans_eq_right {u₁ u₂ : ℝ × ℝ → M} (h₁ : ∀ s, u₁ (s, 1) = u₂ (s, 0))
+    (h₂ : ∀ s, u₂ (s, 1) = u₁ (s, 0)) {z : ℝ × ℝ} (hz : z.2 ∈ Ioc (1 / 3) 1) :
+    loopwiseTrans u₁ u₂ z = u₂ (z.1, Real.smoothTransition (6 * z.2 - 4)) := by
+  obtain ⟨hz₁, hz₂⟩ := hz
+  rcases hz₂.lt_or_eq with hz₂ | hz₂
+  · -- From `t = 1/3` on, the concatenation is past the rest at the junction of the two maps.
+    rw [loopwiseTrans, Int.fract_eq_self.2 ⟨by linarith, hz₂⟩,
+      eqOn_curveConcat_right (y := u₁ (z.1, 1))
+        (fun r hr ↦ by rw [Real.smoothTransition.one_of_one_le (by linarith)])
+        (fun r hr ↦ by rw [Real.smoothTransition.zero_of_nonpos (by linarith), h₁]) hz₁]
+    dsimp only
+    congr 3
+    ring
+  · -- At `t = 1` it is back at the start of the first map, where the second map ends.
+    rw [loopwiseTrans, hz₂, Int.fract_one, curveConcat_of_le (by norm_num),
+      Real.smoothTransition.zero_of_nonpos (by norm_num),
+      Real.smoothTransition.one_of_one_le (by norm_num), h₂]
+
+/-- The loopwise concatenation of two `C^n` maps, each ending where the other starts, is
+`C^n`. -/
+theorem contMDiff_loopwiseTrans {n : ℕ∞} {u₁ u₂ : ℝ × ℝ → M}
+    (hu₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u₁) (hu₂ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u₂)
+    (h₁ : ∀ s, u₁ (s, 1) = u₂ (s, 0)) (h₂ : ∀ s, u₂ (s, 1) = u₁ (s, 0)) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (loopwiseTrans u₁ u₂) := by
+  -- `loopwiseTrans u₁ u₂` is the periodization in `t` of the concatenation `G`, which near every
+  -- point is a reparametrization of `u₁` or of `u₂`.
+  let G : ℝ × ℝ → M := fun p ↦ curveConcat (fun r ↦ u₁ (p.1, Real.smoothTransition (2 * r - 1)))
+    (fun r ↦ u₂ (p.1, Real.smoothTransition (2 * r))) p.2
+  have hR {d : ℝ} : ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) n
+      (Prod.map (id : ℝ → ℝ) fun t ↦ Real.smoothTransition (6 * t - d)) :=
+    (contDiff_id.prodMap (Real.smoothTransition.contDiff.comp (by fun_prop))).contMDiff
+  have hrest₁ (s : ℝ) : ∀ r, 1 ≤ r → u₁ (s, Real.smoothTransition (2 * r - 1)) = u₁ (s, 1) :=
+    fun r hr ↦ by rw [Real.smoothTransition.one_of_one_le (by linarith)]
+  have hrest₂ (s : ℝ) : ∀ r ≤ 0, u₂ (s, Real.smoothTransition (2 * r)) = u₁ (s, 1) :=
+    fun r hr ↦ by rw [Real.smoothTransition.zero_of_nonpos (by linarith), h₁]
+  have hG : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n G := by
+    intro z
+    rcases lt_or_ge z.2 (2 / 3) with hz | hz
+    · refine ((hu₁.comp (hR (d := 1))) z).congr_of_eventuallyEq ?_
+      filter_upwards [(isOpen_lt continuous_snd continuous_const).eventually_mem hz] with w hw
+      refine (eqOn_curveConcat_left (hrest₁ w.1) (hrest₂ w.1) hw).trans ?_
+      simp only [Function.comp_apply, Prod.map_apply', id, ← mul_assoc]
+      norm_num
+    · refine ((hu₂.comp (hR (d := 4))) z).congr_of_eventuallyEq ?_
+      filter_upwards [(isOpen_lt continuous_const continuous_snd).eventually_mem
+        (by linarith : (1 / 3 : ℝ) < z.2)] with w hw
+      refine (eqOn_curveConcat_right (hrest₁ w.1) (hrest₂ w.1) hw).trans ?_
+      simp only [Function.comp_apply, Prod.map_apply', id]
+      congr 3
+      ring
+  intro z
+  refine ((hG.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const)).contMDiff)
+    z).congr_of_eventuallyEq
+    (apply_fract_snd_eventuallyEq (G := G) (ε := 1 / 6) (by norm_num) (fun s t ht₀ ht₁ ↦ ?_) z)
+  -- Just below `t = 0` the concatenation rests where `u₂` ends and `u₁` starts.
+  simp only [G]
+  rw [curveConcat_of_lt (by linarith), curveConcat_of_le (by linarith),
+    Real.smoothTransition.one_of_one_le (by linarith),
+    Real.smoothTransition.zero_of_nonpos (by linarith), h₂]
+
+/-- **The integral over a loopwise concatenation.** For a continuous form and two `C¹` maps,
+each ending where the other starts, the integral over `[a₁, b₁] × [0, 1]` of their loopwise
+concatenation is the sum of the integrals of `u₁` and `u₂`. -/
+theorem rectangleIntegral_loopwiseTrans [IsManifold I 1 M] {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u₁ u₂ : ℝ × ℝ → M} (hu₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u₁)
+    (hu₂ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u₂) (h₁ : ∀ s, u₁ (s, 1) = u₂ (s, 0))
+    (h₂ : ∀ s, u₂ (s, 1) = u₁ (s, 0)) (a₁ b₁ : ℝ) :
+    rectangleIntegral φ (loopwiseTrans u₁ u₂) (a₁, 0) (b₁, 1) =
+      rectangleIntegral φ u₁ (a₁, 0) (b₁, 1) + rectangleIntegral φ u₂ (a₁, 0) (b₁, 1) := by
+  -- The two reparametrizations `t ↦ β (6 t - d)` are `C¹`.
+  have hβ (d : ℝ) : ContDiff ℝ 1 fun t : ℝ ↦ Real.smoothTransition (6 * t - d) :=
+    Real.smoothTransition.contDiff.comp (by fun_prop)
+  have hsplit := rectangleIntegral_add_adjacent_snd hφ (contMDiff_loopwiseTrans hu₁ hu₂ h₁ h₂)
+    (a₁, 0) (b₁, 1) (1 / 2)
+  rw [← hsplit]
+  congr 1
+  · -- On `[0, 1/2]` the concatenation is `u₁` reparametrized by `t ↦ β (6 t - 1)`.
+    rw [rectangleIntegral_congr (v := u₁ ∘ Prod.map id fun t ↦ Real.smoothTransition (6 * t - 1))
+        fun z hz ↦ by
+          simp only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at hz
+          exact loopwiseTrans_of_le u₁ u₂ hz.2.1 hz.2.2,
+      rectangleIntegral_comp_prodMap_snd_of_contDiff hφ hu₁ (hβ 1)]
+    norm_num [Real.smoothTransition.one_of_one_le, Real.smoothTransition.zero_of_nonpos]
+  · -- On `[1/2, 1]` it is `u₂` reparametrized by `t ↦ β (6 t - 4)`.
+    rw [rectangleIntegral_congr (v := u₂ ∘ Prod.map id fun t ↦ Real.smoothTransition (6 * t - 4))
+        fun z hz ↦ by
+          simp only [uIcc_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1)] at hz
+          rw [Function.comp_apply, Prod.map_apply',
+            loopwiseTrans_eq_right h₁ h₂ ⟨by linarith [hz.2.1], hz.2.2⟩, id],
+      rectangleIntegral_comp_prodMap_snd_of_contDiff hφ hu₂ (hβ 4)]
+    norm_num [Real.smoothTransition.one_of_one_le, Real.smoothTransition.zero_of_nonpos]
 
 variable (I) in
 /-- A smooth cylinder from the loop `γ` to the loop `γ₀`: a smooth map `u : ℝ × ℝ → M` running
@@ -291,6 +591,16 @@ theorem IsSmoothCylinder.trans {γ γ' γ₀ : ℝ → M} {u₁ u₂ : ℝ × �
     have hβ (r : ℝ) : Real.smoothTransition r ∈ Icc (0 : ℝ) 1 :=
       ⟨Real.smoothTransition.nonneg r, Real.smoothTransition.le_one r⟩
     simp only [rectangleTrans, h₁.periodic _ (hβ _), h₂.periodic _ (hβ _)]
+
+/-- Reversing the first coordinate of a smooth cylinder from `γ` gives a smooth cylinder from its
+final edge `u (1, ·)` back to `γ`. -/
+theorem IsSmoothCylinder.comp_prodMap_one_sub {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
+    (hu : IsSmoothCylinder I γ γ₀ u) :
+    IsSmoothCylinder I (fun t ↦ u (1, t)) γ (u ∘ Prod.map (fun s ↦ 1 - s) id) where
+  contMDiff := hu.contMDiff.comp ((contDiff_const.sub contDiff_id).prodMap contDiff_id).contMDiff
+  apply_zero t := by simp
+  apply_one t _ := by simp [hu.apply_zero]
+  periodic s hs := by simpa using hu.periodic (1 - s) ⟨by linarith [hs.2], by linarith [hs.1]⟩
 
 /-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth map `u : ℝ × ℝ → M`,
 `1`-periodic in `t`, into a smooth cylinder from the loop `u(a, ·)` to the loop `u(b, ·)`. -/
@@ -338,125 +648,6 @@ theorem vanishesOnTori_iff (φ : RoughForm I M F 2) :
       (∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)) → rectangleIntegral φ u (0, 0) (1, 1) = 0 :=
   Iff.rfl
 
-/-! ### Gluing two cylinders along their common start -/
-
-section Glue
-
-variable {X : Type*} {u v : ℝ × ℝ → X}
-
-/-- The map gluing `u` and `v` along their common start: on `[0, 1/2]` it runs backwards
-through `u`, and on `[1/2, 1]` forwards through `v`, each reparametrized by a smooth transition
-so that the glued map rests on the common loop for `s ∈ [1/3, 2/3]`. -/
-private def glue (u v : ℝ × ℝ → X) (z : ℝ × ℝ) : X :=
-  if z.1 ≤ 1 / 2 then u (smoothTransition (-3 * z.1 + 1), z.2)
-  else v (smoothTransition (3 * z.1 + -2), z.2)
-
-private theorem glue_of_le {z : ℝ × ℝ} (hz : z.1 ≤ 1 / 2) :
-    glue u v z = u (smoothTransition (-3 * z.1 + 1), z.2) := by
-  simp only [glue, hz, ↓reduceIte]
-
-private theorem glue_of_gt {z : ℝ × ℝ} (hz : 1 / 2 < z.1) :
-    glue u v z = v (smoothTransition (3 * z.1 + -2), z.2) := by
-  simp only [glue, hz.not_ge, ↓reduceIte]
-
-private theorem glue_eq_left (h : ∀ t, u (0, t) = v (0, t)) {z : ℝ × ℝ} (hz : z.1 < 2 / 3) :
-    glue u v z = u (smoothTransition (-3 * z.1 + 1), z.2) := by
-  rcases le_or_gt z.1 (1 / 2) with hz' | hz'
-  · exact glue_of_le hz'
-  · rw [glue_of_gt hz', smoothTransition.zero_of_nonpos (by linarith),
-      smoothTransition.zero_of_nonpos (by linarith), h]
-
-private theorem glue_eq_right (h : ∀ t, u (0, t) = v (0, t)) {z : ℝ × ℝ} (hz : 1 / 3 < z.1) :
-    glue u v z = v (smoothTransition (3 * z.1 + -2), z.2) := by
-  rcases le_or_gt z.1 (1 / 2) with hz' | hz'
-  · rw [glue_of_le hz', smoothTransition.zero_of_nonpos (by linarith),
-      smoothTransition.zero_of_nonpos (by linarith), h]
-  · exact glue_of_gt hz'
-
-private theorem glue_zero (t : ℝ) : glue u v (0, t) = u (1, t) := by
-  rw [glue_of_le (by norm_num)]
-  norm_num
-
-private theorem glue_one (t : ℝ) : glue u v (1, t) = v (1, t) := by
-  rw [glue_of_gt (by norm_num)]
-  norm_num
-
-private theorem glue_periodic (hu : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0))
-    (hv : ∀ s ∈ Icc (0 : ℝ) 1, v (s, 1) = v (s, 0)) (s : ℝ) :
-    glue u v (s, 1) = glue u v (s, 0) := by
-  simp only [glue]
-  split_ifs
-  · exact hu _ ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
-  · exact hv _ ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
-
-/-- The reparametrizations used in the gluing are smooth. -/
-private theorem contDiff_smoothTransition_affine {n : ℕ∞} (c d : ℝ) :
-    ContDiff ℝ n fun s : ℝ ↦ smoothTransition (c * s + d) :=
-  smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).add contDiff_const)
-
-variable {u v : ℝ × ℝ → M}
-
-private theorem contMDiff_glue {n : ℕ∞} (h : ∀ t, u (0, t) = v (0, t))
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n v) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (glue u v) := by
-  -- Near a point with `s < 2/3` the glued map is a reparametrization of `u`, and near a point
-  -- with `s > 1/3` it is a reparametrization of `v`.
-  have hcomp {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n w) (c d : ℝ) :
-      ContMDiff 𝓘(ℝ, ℝ × ℝ) I n fun z : ℝ × ℝ ↦ w (smoothTransition (c * z.1 + d), z.2) :=
-    hw.comp (((contDiff_smoothTransition_affine c d).comp contDiff_fst).prodMk
-      contDiff_snd).contMDiff
-  intro z
-  rcases lt_or_ge z.1 (2 / 3) with hz | hz
-  · refine (hcomp hu (-3) 1 z).congr_of_eventuallyEq ?_
-    filter_upwards [(isOpen_lt continuous_fst continuous_const).mem_nhds hz] with w hw
-    exact glue_eq_left h hw
-  · have hz' : (1 / 3 : ℝ) < z.1 := by linarith
-    refine (hcomp hv 3 (-2) z).congr_of_eventuallyEq ?_
-    filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hz'] with w hw
-    exact glue_eq_right h hw
-
-/-- The integral over the glued map is the integral over `v` minus the integral over `u`. -/
-private theorem rectangleIntegral_glue [IsManifold I 1 M]
-    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) (h : ∀ t, u (0, t) = v (0, t))
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) :
-    rectangleIntegral φ (glue u v) (0, 0) (1, 1) =
-      rectangleIntegral φ v (0, 0) (1, 1) - rectangleIntegral φ u (0, 0) (1, 1) := by
-  -- A reparametrization `s ↦ smoothTransition (c * s + d)` of the first coordinate.
-  have hreparam {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (c d : ℝ) (a b : ℝ × ℝ) :
-      rectangleIntegral φ (w ∘ Prod.map (fun s ↦ smoothTransition (c * s + d)) id) a b =
-        rectangleIntegral φ w (smoothTransition (c * a.1 + d), a.2)
-          (smoothTransition (c * b.1 + d), b.2) :=
-    rectangleIntegral_comp_prodMap hφ hw
-      (fun s _ ↦ ((contDiff_smoothTransition_affine (n := 1) c d).differentiable
-        one_ne_zero s).hasDerivAt)
-      ((contDiff_smoothTransition_affine (n := 1) c d).continuous_deriv le_rfl).continuousOn
-  rw [← rectangleIntegral_add_adjacent hφ (contMDiff_glue h hu hv) (0, 0) (1 / 2) (1, 1)]
-  -- On `[0, 1/2]` the glued map runs backwards through `u`, on `[1/2, 1]` forwards through `v`.
-  have hl : rectangleIntegral φ (glue u v) (0, 0) (1 / 2, 1) =
-      -rectangleIntegral φ u (0, 0) (1, 1) := by
-    have heq : EqOn (glue u v) (u ∘ Prod.map (fun s ↦ smoothTransition (-3 * s + 1)) id)
-        ([[(0 : ℝ), 1 / 2]] ×ˢ [[(0 : ℝ), 1]]) := by
-      intro z hz
-      rw [uIcc_of_le (by norm_num)] at hz
-      exact glue_of_le hz.1.2
-    rw [rectangleIntegral_congr heq, hreparam hu, ← rectangleIntegral_symm_fst]
-    norm_num
-    rw [smoothTransition.zero_of_nonpos (by norm_num)]
-  have hr : rectangleIntegral φ (glue u v) (1 / 2, 0) (1, 1) =
-      rectangleIntegral φ v (0, 0) (1, 1) := by
-    have heq : EqOn (glue u v) (v ∘ Prod.map (fun s ↦ smoothTransition (3 * s + -2)) id)
-        ([[(1 / 2 : ℝ), 1]] ×ˢ [[(0 : ℝ), 1]]) := by
-      intro z hz
-      rw [uIcc_of_le (by norm_num), uIcc_of_le (by norm_num)] at hz
-      exact glue_eq_right h (by linarith [hz.1.1])
-    rw [rectangleIntegral_congr heq, hreparam hv]
-    norm_num
-    rw [smoothTransition.zero_of_nonpos (by norm_num)]
-  rw [hl, hr]
-  abel
-
-end Glue
-
 /-! ### Independence of the cylinder -/
 
 section Independence
@@ -470,13 +661,15 @@ theorem VanishesOnSpheres.rectangleIntegral_eq (hS : VanishesOnSpheres φ)
     (hφ : IsSmoothForm I 0 φ) {x y : M} (hu : IsSmoothCylinder I γ (fun _ ↦ x) u)
     (hv : IsSmoothCylinder I γ (fun _ ↦ y) v) :
     rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) := by
+  -- Glue `u`, run backwards, to `v` along `γ`: this is a sphere, with integral `∫ v - ∫ u`.
   have h t : u (0, t) = v (0, t) := (hu.apply_zero t).trans (hv.apply_zero t).symm
-  have hglue := hS (glue u v) (contMDiff_glue h hu.contMDiff hv.contMDiff)
-    (fun t ht ↦ by rw [glue_zero, glue_zero, hu.apply_one t ht, hu.apply_one 0 (by simp)])
-    (fun t ht ↦ by rw [glue_one, glue_one, hv.apply_one t ht, hv.apply_one 0 (by simp)])
-    (fun s _ ↦ glue_periodic hu.periodic hv.periodic s)
-  rw [rectangleIntegral_glue hφ h (hu.contMDiff.of_le (by simp))
-    (hv.contMDiff.of_le (by simp)), sub_eq_zero] at hglue
+  have hw := hu.comp_prodMap_one_sub.trans hv fun t ↦ by simpa using h t
+  have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.mpr zero_le_one
+  have hglue := hS _ hw.contMDiff
+    (fun t ht ↦ by rw [hw.apply_zero, hw.apply_zero, hu.apply_one t ht, hu.apply_one 0 h₀])
+    (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_one 0 h₀]) hw.periodic
+  rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le (by simp))
+    (hv.contMDiff.of_le (by simp)) h, sub_eq_zero] at hglue
   exact hglue.symm
 
 /-- **Independence of the cylinder.** A continuous two-form that vanishes on tori has the same
@@ -484,12 +677,13 @@ integral over any two cylinders from a loop `γ` to a loop `γ₀`. -/
 theorem VanishesOnTori.rectangleIntegral_eq (hT : VanishesOnTori φ) (hφ : IsSmoothForm I 0 φ)
     (hu : IsSmoothCylinder I γ γ₀ u) (hv : IsSmoothCylinder I γ γ₀ v) :
     rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) := by
+  -- Glue `u`, run backwards, to `v` along `γ`: this is a torus, with integral `∫ v - ∫ u`.
   have h t : u (0, t) = v (0, t) := (hu.apply_zero t).trans (hv.apply_zero t).symm
-  have hglue := hT (glue u v) (contMDiff_glue h hu.contMDiff hv.contMDiff)
-    (fun t ht ↦ by rw [glue_zero, glue_one, hu.apply_one t ht, hv.apply_one t ht])
-    (fun s _ ↦ glue_periodic hu.periodic hv.periodic s)
-  rw [rectangleIntegral_glue hφ h (hu.contMDiff.of_le (by simp))
-    (hv.contMDiff.of_le (by simp)), sub_eq_zero] at hglue
+  have hw := hu.comp_prodMap_one_sub.trans hv fun t ↦ by simpa using h t
+  have hglue := hT _ hw.contMDiff
+    (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_zero, hu.apply_one t ht]) hw.periodic
+  rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le (by simp))
+    (hv.contMDiff.of_le (by simp)) h, sub_eq_zero] at hglue
   exact hglue.symm
 
 end Independence

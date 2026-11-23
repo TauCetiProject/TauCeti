@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Module
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Image
+public import TauCeti.AlgebraicGeometry.Modules.Dual
+public import TauCeti.AlgebraicGeometry.Modules.InternalHom.Quasicoherent
+import TauCeti.AlgebraicGeometry.Modules.Sections
 
 /-!
-# Multiplication of ideal sheaves
+# Tensor products and multiplication of ideal sheaves
 
 For ideal sheaves `I` and `J` on a scheme `X`, products of local functions in `I` and `J` are
 local functions in the product ideal sheaf `I * J`. This file packages that multiplication, first
@@ -18,6 +22,10 @@ It is the restriction of the multiplication `𝒪_X ⊗ 𝒪_X ≅ 𝒪_X` of th
 inclusions of `I`, `J` and `I * J` into `𝒪_X`. No hypothesis is placed on `I` or `J`; when `J` is
 the ideal sheaf of an effective Cartier divisor the multiplication is an isomorphism
 (`Scheme.IdealSheafData.tensorProductSheafIso`).
+
+For a finite locally free module sheaf `M`, a section of `M` lifting through `M ⊗ I` has its
+corresponding dual functional's image ideal contained in `I`. If the support of `I` meets the
+nonvanishing locus of that functional, `M ⊗ I → M` is not surjective on global sections.
 
 ## Main declarations
 
@@ -29,6 +37,10 @@ the ideal sheaf of an effective Cartier divisor the multiplication is an isomorp
 * `Scheme.IdealSheafData.sheafMul`: the multiplication morphism `I ⊗ J ⟶ I * J` of
   `𝒪_X`-modules, characterized by `sheafMul_sheafι` as the restriction of the multiplication of
   `𝒪_X`.
+* `Scheme.Modules.imageIdealSheaf_le_of_tensorLift`: a tensor lift places the functional's
+  image ideal in the given ideal sheaf;
+* `Scheme.Modules.not_surjective_app_tensorIdeal`: an ideal meeting the nonvanishing locus of
+  a dual functional prevents surjectivity on global sections.
 
 ## References
 
@@ -232,3 +244,64 @@ end SheafMul
 end
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open MonoidalCategory MonoidalClosed TauCeti
+
+noncomputable section
+
+variable {X : Scheme.{u}}
+
+/-- If the section corresponding to a functional lifts through tensoring with an ideal sheaf,
+the image ideal of the functional is contained in that ideal sheaf. -/
+theorem imageIdealSheaf_le_of_tensorLift (M : X.Modules)
+    [M.IsLocallyFree] [M.IsFiniteType]
+    (I : X.IdealSheafData)
+    (φ : (ihom M).obj (𝟙_ X.Modules) ⟶ 𝟙_ X.Modules)
+    (t : 𝟙_ X.Modules ⟶ M ⊗ I.sheaf)
+    (ht : t ≫ M ◁ I.sheafι ≫ (ρ_ M).hom = dualHomUnitEquiv M φ) :
+    φ.imageIdealSheaf ≤ I := by
+  let D := (ihom M).obj (𝟙_ X.Modules)
+  let : ExactPairing D M := exactPairingOfIsIsoDualTensorIhom
+  let i : I.sheaf ⟶ 𝟙_ X.Modules := I.sheafι
+  let ψ : D ⟶ I.sheaf := (λ_ D).inv ≫
+    (tensorRightHomEquiv (𝟙_ X.Modules) D M I.sheaf).symm (t ≫ (β_ M I.sheaf).hom)
+  have hφ : tensorRightHomEquiv (𝟙_ X.Modules) D M (𝟙_ X.Modules) ((λ_ D).hom ≫ φ) =
+      dualHomUnitEquiv M φ ≫ (λ_ M).inv := by
+    rw [dualHomUnitEquiv_apply, ← exactPairingOfIsIsoDualTensorIhom_coevaluation]
+    dsimp only [tensorRightHomEquiv, Equiv.coe_fn_mk]
+    simp only [comp_whiskerRight]
+    monoidal
+  have hψ : ψ ≫ i = φ := by
+    apply (cancel_epi (λ_ D).hom).mp
+    apply (tensorRightHomEquiv (𝟙_ X.Modules) D M (𝟙_ X.Modules)).injective
+    dsimp only [ψ]
+    rw [← Category.assoc, Iso.hom_inv_id_assoc, tensorRightHomEquiv_naturality,
+      Equiv.apply_symm_apply, Category.assoc,
+      ← BraidedCategory.braiding_naturality_right, hφ, ← ht]
+    simp only [braiding_tensorUnit_right, Category.assoc]
+    rfl
+  exact φ.imageIdealSheaf_le_of_factor I ψ hψ
+
+/-- Tensoring with an ideal sheaf does not surject onto global sections of a finite locally
+free sheaf when the ideal support meets the nonvanishing locus of a dual functional. -/
+theorem not_surjective_app_tensorIdeal (M : X.Modules)
+    [M.IsLocallyFree] [M.IsFiniteType]
+    (I : X.IdealSheafData) (φ : (ihom M).obj (𝟙_ X.Modules) ⟶ 𝟙_ X.Modules)
+    (x : X) (hxI : x ∈ I.support) (hxφ : x ∉ φ.imageIdealSheaf.support) :
+    ¬Function.Surjective ((M ◁ I.sheafι ≫ (ρ_ M).hom).app ⊤) := by
+  intro hsurj
+  obtain ⟨s, hs⟩ := hsurj (M.unitHomEquivTop (dualHomUnitEquiv M φ))
+  let t : 𝟙_ X.Modules ⟶ M ⊗ I.sheaf := (M ⊗ I.sheaf).unitHomEquivTop.symm s
+  have ht : t ≫ M ◁ I.sheafι ≫ (ρ_ M).hom = dualHomUnitEquiv M φ := by
+    apply M.unitHomEquivTop.injective
+    exact (unitHomEquivTop_comp (M ⊗ I.sheaf) t (M ◁ I.sheafι ≫ (ρ_ M).hom)).trans
+      ((congrArg ((M ◁ I.sheafι ≫ (ρ_ M).hom).app ⊤)
+        ((M ⊗ I.sheaf).unitHomEquivTop.apply_symm_apply s)).trans hs)
+  exact hxφ (IdealSheafData.support_antitone
+    (imageIdealSheaf_le_of_tensorLift M I φ t ht) hxI)
+
+end
+
+end AlgebraicGeometry.Scheme.Modules

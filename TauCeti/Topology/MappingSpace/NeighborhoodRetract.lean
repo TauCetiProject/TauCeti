@@ -66,7 +66,7 @@ mapping space `C(K, U)` is strongly locally contractible: it is an open subset o
 topological vector space `C(K, E)`. -/
 theorem stronglyLocallyContractibleSpace_of_isOpen (hU : IsOpen U) :
     StronglyLocallyContractibleSpace C(K, U) :=
-  (isOpenEmbedding_postcomp ⟨Subtype.val, continuous_subtype_val⟩
+  (isOpenEmbedding_postcomp ⟨Subtype.val, continuous_subtypeVal⟩
     hU.isOpenEmbedding_subtypeVal).stronglyLocallyContractibleSpace
 
 variable (K) in

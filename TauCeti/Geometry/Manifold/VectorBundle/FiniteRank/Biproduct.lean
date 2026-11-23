@@ -685,19 +685,11 @@ assumption on the cores or completeness of `𝕜`. -/
 theorem contMDiff_whitneySumTotalSpaceHomeomorph_symm (A D : FiniteRankBundleCore 𝕜 B) :
     ContMDiff (IB.prod 𝓘(𝕜, (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)))
       (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) n
-      (whitneySumTotalSpaceHomeomorph A D).symm := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace]
-  simp only [whitneySumTotalSpaceHomeomorph_symm_apply]
-  refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
-  let S' : ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap
-  refine (S'.contDiff.comp_contMDiffAt
-    (p₀.contMDiffAt_trivializationAt_snd (IB := IB) (n := n))).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun q ↦ ?_)
-  dsimp only [Function.comp_apply]
-  rw [(whitneySum A D).trivializationAt_core, prod_trivializationAt_eq]
-  exact localTriv_whitneySumFiberEquiv_symm A D p₀.proj q
+      (whitneySumTotalSpaceHomeomorph A D).symm :=
+  (whitneySum A D).contMDiff_of_trivializationAt_snd (whitneySumTotalSpaceHomeomorph A D).symm
+    (fun p ↦ by simp) (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap fun b p ↦ by
+      rw [prod_trivializationAt_eq, whitneySumTotalSpaceHomeomorph_symm_apply]
+      exact localTriv_whitneySumFiberEquiv_symm A D b p
 
 /-- The reconstructed total space of the Whitney sum is `C^n`-diffeomorphic (and, over `𝓘(ℂ, EB)`
 with `n = ∞`, biholomorphic) to the total space of Mathlib's native direct-sum vector bundle
@@ -717,7 +709,7 @@ def whitneySumTotalSpaceDiffeomorph (IB : ModelWithCorners 𝕜 EB HB) (n : With
 theorem whitneySumTotalSpaceDiffeomorph_apply (IB : ModelWithCorners 𝕜 EB HB) (n : WithTop ℕ∞)
     (A D : FiniteRankBundleCore 𝕜 B) (p : (whitneySum A D).core.TotalSpace) :
     whitneySumTotalSpaceDiffeomorph IB n A D p =
-      ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩ :=
+      ⟨p.proj, whitneySumFiberEquiv A D p.proj p.snd⟩ :=
   whitneySumTotalSpaceHomeomorph_apply A D p
 
 @[simp]
@@ -725,7 +717,7 @@ theorem whitneySumTotalSpaceDiffeomorph_symm_apply (IB : ModelWithCorners 𝕜 E
     (A D : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber)) :
     (whitneySumTotalSpaceDiffeomorph IB n A D).symm p =
-      ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.2⟩ :=
+      ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.snd⟩ :=
   whitneySumTotalSpaceHomeomorph_symm_apply A D p
 
 @[simp]
@@ -741,8 +733,8 @@ theorem whitneySumTotalSpaceDiffeomorph_naturality (IB : ModelWithCorners 𝕜 E
     {A A' D D' : FiniteRankBundleCore 𝕜 B} (f : A ⟶ A') (g : D ⟶ D')
     (p : (whitneySum A D).core.TotalSpace) :
     whitneySumTotalSpaceDiffeomorph IB n A' D' ((whitneyMap f g).totalSpaceMap p) =
-      ⟨p.proj, (f.fiberMap p.proj (whitneySumTotalSpaceDiffeomorph IB n A D p).2.1,
-        g.fiberMap p.proj (whitneySumTotalSpaceDiffeomorph IB n A D p).2.2)⟩ :=
+      ⟨p.proj, (f.fiberMap p.proj (whitneySumTotalSpaceDiffeomorph IB n A D p).snd.1,
+        g.fiberMap p.proj (whitneySumTotalSpaceDiffeomorph IB n A D p).snd.2)⟩ :=
   whitneySumTotalSpaceHomeomorph_naturality f g p
 
 end MathlibProd

@@ -126,7 +126,7 @@ theorem affineSpaceHomeomorph_apply
 nonnegative on the orthant is the ordinary monomial whose exponents are the pairings of the
 character with the basis vectors. -/
 theorem analyticCharacter_affineSpaceHomeomorph_symm (m : IntegralCharacter N)
-    (hm : ∀ σ : (affineSpace b hi).cones, m ∈ dualSemigroup (affineSpace b hi).lattice σ.1)
+    (hm : ∀ σ : (affineSpace b hi).cones, m ∈ dualSemigroup (affineSpace b hi).lattice σ.val)
     (z : ι → ℂ) :
     (affineSpace b hi).analyticCharacter (isRegular_affineSpace b hi) m hm
         ((affineSpaceHomeomorph b hi).symm z) =

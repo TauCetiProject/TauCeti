@@ -49,7 +49,7 @@ theorem ae_mem_exp_affineRange_multivariateLogNormalMeasure (m : EuclideanSpace 
   have he := hf.measurableEmbedding (PiLp.exp_injective 2)
   rw [multivariateLogNormalMeasure_def]
   exact (ae_map_iff he.measurable.aemeasurable
-    (he.measurableSet_image' (AffineSubspace.closed_of_finiteDimensional _).measurableSet)).2 <|
+    (he.measurableSet_image' (AffineSubspace.isClosed_of_finiteDimensional _).measurableSet)).2 <|
       (ae_mem_affineRange_multivariateGaussian hS m).mono fun _ hx ↦ mem_image_of_mem _ hx
 
 /-- The topological support of a multivariate log-normal law is the closure of the
@@ -122,7 +122,7 @@ theorem HasLaw.ae_mem_exp_affineRange_multivariateLogNormalMeasure
       WithLp.toLp 2 (fun i ↦ Real.exp (y i))) := by fun_prop
   have he := hf.measurableEmbedding (PiLp.exp_injective 2)
   exact (hX.ae_iff (measurableSet_setOfPred.mp
-    (he.measurableSet_image' (AffineSubspace.closed_of_finiteDimensional _).measurableSet))).2
+    (he.measurableSet_image' (AffineSubspace.isClosed_of_finiteDimensional _).measurableSet))).2
       (TauCeti.Probability.ae_mem_exp_affineRange_multivariateLogNormalMeasure m hS)
 
 end ProbabilityTheory

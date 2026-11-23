@@ -114,20 +114,15 @@ theorem demushkinRank_presentedProP_demushkinWordTwoEvenPadic (hα : 2 ∣ α) (
   simpa using demushkinRank_presentedProP (Set.singleton_subset_iff.2
     (demushkinWordTwoEvenPadic_mem_proPFrattini _ _ _ _ _ hα hq)) hG
 
-/-- The genuine `2`-adic normal form with `α ∈ 4ℤ₂` and even `q` has torsion invariant
+/-- The genuine `2`-adic normal form with `α ∈ 4ℤ₂` has torsion invariant
 `q(G) = 2`. -/
 @[simp]
-theorem demushkinQ_presentedProP_demushkinWordTwoEvenPadic (hα : 4 ∣ α) (hq : 2 ∣ q)
+theorem demushkinQ_presentedProP_demushkinWordTwoEvenPadic (hα : 4 ∣ α)
     (hG : IsDemushkin 2 (presentedProP 2 (Fin n)
       {demushkinWordTwoEvenPadic (isProP_freeProP 2 (Fin n)) α q n (freeProPGen 2 n)})) :
     demushkinQ hG = 2 := by
   have hn : 0 < n := by simpa using hG.card_pos_presentedProP
-  have hα2 : (2 : ℤ_[2]) ∣ α :=
-    dvd_trans (Dvd.intro 2 (by norm_num) : (2 : ℤ_[2]) ∣ 4) hα
-  have hr := demushkinWordTwoEvenPadic_mem_proPFrattini
-    (isProP_freeProP 2 (Fin n)) α q n (freeProPGen 2 n) hα2 hq
-  apply (demushkinQ_presentedProP_eq_iff_exists_not_dvd hG
-    (freeProP.dvd_exponentSum_of_mem_proPFrattini 2 (Fin n) hr)).2
+  apply (demushkinQ_presentedProP_eq_iff_exists_not_dvd hG).2
   refine ⟨⟨0, hn⟩, ?_⟩
   have hexp : (freeProP.exponentSum 2 (Fin n)
       (demushkinWordTwoEvenPadic (isProP_freeProP 2 (Fin n)) α q n

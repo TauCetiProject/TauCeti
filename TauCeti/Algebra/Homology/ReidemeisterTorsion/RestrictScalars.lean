@@ -123,20 +123,21 @@ private theorem d_towerVec (j : ℤ) {p : ℕ} (u : Fin p → C.X (j + 1)) (x : 
 include hd in
 /-- The transported lifts are lifts of the transported boundary vectors. -/
 private theorem d_towerVec_chosenBoundaryLift (j : ℤ) (x) :
-    (D.d (j + 1) j).hom (towerVec β c e (j + 1) (chosenBoundaryLift C c j) x) =
-      towerVec β c e j (fun k ↦ (chosenBoundaryBasis C c j k : C.X j)) x := by
+    (D.d (j + 1) j).hom (towerVec β c e (j + 1) (chosenBoundaryLift C c (j + 1) j) x) =
+      towerVec β c e j (fun k ↦ (chosenBoundaryBasis C c (j + 1) j k : C.X j)) x := by
   rw [d_towerVec hd]
   simp_rw [chosenBoundaryLift_spec]
 
 include hd in
 private theorem towerVec_mem_range (j : ℤ) (x) :
-    towerVec β c e j (fun k ↦ (chosenBoundaryBasis C c j k : C.X j)) x ∈
+    towerVec β c e j (fun k ↦ (chosenBoundaryBasis C c (j + 1) j k : C.X j)) x ∈
       LinearMap.range (D.d (j + 1) j).hom :=
   ⟨_, d_towerVec_chosenBoundaryLift hd j x⟩
 
 private theorem linearIndependent_towerVec (j : ℤ) :
-    LinearIndependent F (towerVec β c e j fun k ↦ (chosenBoundaryBasis C c j k : C.X j)) := by
-  have hb := (β.smulTower' (chosenBoundaryBasis C c j)).linearIndependent.map'
+    LinearIndependent F
+      (towerVec β c e j fun k ↦ (chosenBoundaryBasis C c (j + 1) j k : C.X j)) := by
+  have hb := (β.smulTower' (chosenBoundaryBasis C c (j + 1) j)).linearIndependent.map'
     ((LinearMap.range (C.d (j + 1) j).hom).subtype.restrictScalars F)
     (LinearMap.ker_eq_bot.2 Subtype.val_injective)
   have := (hb.comp _ finProdFinEquiv.symm.injective).map' (towerEquiv β c e j).toLinearMap
@@ -159,7 +160,7 @@ private def towerBoundaryBasis (j : ℤ) :
 
 private theorem coe_towerBoundaryBasis (j : ℤ) (x) :
     (towerBoundaryBasis hd j x : D.X j) =
-      towerVec β c e j (fun k ↦ (chosenBoundaryBasis C c j k : C.X j)) x := by
+      towerVec β c e j (fun k ↦ (chosenBoundaryBasis C c (j + 1) j k : C.X j)) x := by
   simp [towerBoundaryBasis]
 
 /-- Appending two families of transported vectors, in the order of `finProdFinEquiv`. -/
@@ -184,29 +185,33 @@ include hd in
 `C` for the chosen boundary bases and lifts. -/
 private theorem torsionBracket_towerBoundaryBasis {j : ℤ} (h : C.ExactAt (j + 1))
     (hD : D.ExactAt (j + 1)) :
-    torsionBracket e hD (towerBoundaryBasis hd (j + 1)) (towerBoundaryBasis hd j)
-        (towerVec β c e (j + 1) (chosenBoundaryLift C c j))
+    torsionBracket e (by simp) (by simp) hD (towerBoundaryBasis hd (j + 1))
+        (towerBoundaryBasis hd j)
+        (towerVec β c e (j + 1) (chosenBoundaryLift C c (j + 1) j))
         (fun x ↦ by rw [d_towerVec_chosenBoundaryLift hd, coe_towerBoundaryBasis]) =
-      Algebra.norm F (torsionBracket c h (chosenBoundaryBasis C c (j + 1))
-        (chosenBoundaryBasis C c j) (chosenBoundaryLift C c j)
-        (chosenBoundaryLift_spec C c j)) := by
-  have hn := eq_add_of_exactAt c h (chosenBoundaryBasis C c (j + 1)) (chosenBoundaryBasis C c j)
+      Algebra.norm F (torsionBracket c (by simp) (by simp) h
+        (chosenBoundaryBasis C c (j + 1 + 1) (j + 1)) (chosenBoundaryBasis C c (j + 1) j)
+        (chosenBoundaryLift C c (j + 1) j) (chosenBoundaryLift_spec C c (j + 1) j)) := by
+  have hn := eq_add_of_exactAt c (by simp) (by simp) h (chosenBoundaryBasis C c (j + 1 + 1) (j + 1))
+    (chosenBoundaryBasis C c (j + 1) j)
   have hnm : n (j + 1) * m = finrank L (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom) * m +
       finrank L (LinearMap.range (C.d (j + 1) j).hom) * m := by rw [hn, add_mul]
-  set V := Fin.append (fun k ↦ (chosenBoundaryBasis C c (j + 1) k : C.X (j + 1)))
-    (chosenBoundaryLift C c j) ∘ Fin.cast hn
+  set V := Fin.append (fun k ↦ (chosenBoundaryBasis C c (j + 1 + 1) (j + 1) k : C.X (j + 1)))
+    (chosenBoundaryLift C c (j + 1) j) ∘ Fin.cast hn
   have hfam : Fin.append (fun x ↦ (towerBoundaryBasis hd (j + 1) x : D.X (j + 1)))
-      (towerVec β c e (j + 1) (chosenBoundaryLift C c j)) ∘ Fin.cast hnm =
+      (towerVec β c e (j + 1) (chosenBoundaryLift C c (j + 1) j)) ∘ Fin.cast hnm =
       (towerBasis β c (j + 1)).semilinearMap (RingHom.id F) (e (j + 1)) ∘
         fun x ↦ β (finProdFinEquiv.symm x).2 • V (finProdFinEquiv.symm x).1 := by
     funext x
     obtain ⟨⟨k, a⟩, rfl⟩ := finProdFinEquiv.surjective x
     have hb : (fun x ↦ (towerBoundaryBasis hd (j + 1) x : D.X (j + 1))) =
-        towerVec β c e (j + 1) fun k ↦ (chosenBoundaryBasis C c (j + 1) k : C.X (j + 1)) :=
+        towerVec β c e (j + 1) fun k ↦
+          (chosenBoundaryBasis C c (j + 1 + 1) (j + 1) k : C.X (j + 1)) :=
       funext (coe_towerBoundaryBasis hd (j + 1))
     simp only [Function.comp_apply, hb, append_towerVec (j + 1) hn hnm,
       semilinearMap_towerBasis, LinearEquiv.coe_coe, Equiv.symm_apply_apply, V]
-  rw [torsionBracket_eq_det_append e _ _ _ _ _ hnm, torsionBracket_eq_det_append c _ _ _ _ _ hn,
+  rw [torsionBracket_eq_det_append e _ _ _ _ _ _ _ hnm,
+    torsionBracket_eq_det_append c _ _ _ _ _ _ _ hn,
     hfam, Basis.det_comp_semilinearMap, RingHom.id_apply, towerBasis, Basis.det_reindex,
     ← Basis.det_smulTower' β]
   congr 1
@@ -244,13 +249,15 @@ theorem norm_reidemeisterTorsion :
   have hD := hDC.2 h
   -- The norm as a homomorphism of monoids with zero, to commute with integer powers.
   let N : L →*₀ F := { Algebra.norm F with map_zero' := Algebra.norm_zero }
-  rw [reidemeisterTorsion_eq_finprod hn h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
-      (chosenBoundaryLift_spec C c),
+  let b (j : ℤ) := chosenBoundaryBasis C c (j + 1) j
+  let s (j : ℤ) := chosenBoundaryLift C c (j + 1) j
+  have hs (j : ℤ) := chosenBoundaryLift_spec C c (j + 1) j
+  rw [reidemeisterTorsion_eq_finprod hn h b s hs,
     reidemeisterTorsion_eq_finprod (hnD ▸ hn) hD (towerBoundaryBasis hd)
-      (fun j ↦ towerVec β c e (j + 1) (chosenBoundaryLift C c j))
+      (fun j ↦ towerVec β c e (j + 1) (chosenBoundaryLift C c (j + 1) j))
       (fun j x ↦ by rw [d_towerVec_chosenBoundaryLift hd, coe_towerBoundaryBasis])]
   refine Eq.trans (finprod_congr fun j ↦ ?_) (MonoidHom.map_finprod (N : L →* F)
-    (hasFiniteMulSupport_torsionBracket hn h _ _ (chosenBoundaryLift_spec C c))).symm
+    (hasFiniteMulSupport_torsionBracket hn h b s hs)).symm
   rw [torsionBracket_towerBoundaryBasis hd (h (j + 1)) (hD (j + 1))]
   exact (map_zpow₀ N _ _).symm
 

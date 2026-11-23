@@ -20,16 +20,11 @@ symmetric tensor basis to the monomial basis. This identifies the quotient-tenso
 descriptions of symmetric powers, allowing constructions on symmetric tensors to be used
 degreewise on the symmetric algebra.
 
-The scalar semiring lies in `Type` because Mathlib's `SymmetricPower R ι M` requires `R` and
-`ι` to share a universe, and `Sym[R]^n M` uses `ι = Fin n`. This is also the universe
-convention of `Module.Basis.symmetricPower`, used in the basis comparison below.
-The module and its basis index type have independent universes.
-
 ## Main declarations
 
-* `TauCeti.SymmetricPower.toSymmetricAlgebra` multiplies the generators of a pure symmetric tensor.
-* `TauCeti.SymmetricPower.toHomogeneous` restricts multiplication to its homogeneous component.
-* `TauCeti.SymmetricPower.equivHomogeneous` is the resulting equivalence.
+* `SymmetricPower.toSymmetricAlgebra` multiplies the generators of a pure symmetric tensor.
+* `SymmetricPower.toHomogeneous` restricts multiplication to its homogeneous component.
+* `SymmetricPower.equivHomogeneous` is the resulting equivalence.
 
 ## References
 
@@ -42,16 +37,14 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.SymmetricPower
+namespace SymmetricPower
 
-open _root_.SymmetricPower
+universe u v w
 
-universe v w
-
-variable (R : Type) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 private noncomputable def algebraMultilinear (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ M) (SymmetricAlgebra R M) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ M) (SymmetricAlgebra R M) :=
   (MultilinearMap.mkPiAlgebra R (Fin n) (SymmetricAlgebra R M)).compLinearMap
     (fun _ ↦ SymmetricAlgebra.ι R M)
 
@@ -211,7 +204,7 @@ theorem toSymmetricAlgebra_symmetricPower_apply {κ : Type w} (b : Module.Basis 
   rw [map_prod, TauCeti.SymmetricAlgebra.equivMvPolynomial_symmetricAlgebraHomogeneous_apply]
   simp only [SymmetricAlgebra.equivMvPolynomial_ι_apply]
   rw [← List.prod_ofFn]
-  have hexp : (_root_.Sym.equivFinsuppDegree κ n (Sym.ofFn f)).1 =
+  have hexp : (_root_.Sym.equivFinsuppDegree κ n (Sym.ofFn f)).val =
       (List.ofFn f : Multiset κ).toFinsupp := by
     rw [_root_.Sym.coe_equivFinsuppDegree_apply, Sym.coe_ofFn]
   rw [hexp]
@@ -269,4 +262,4 @@ theorem equivHomogeneous_symm_prod_ι (n : ℕ) (m : Fin n → M)
   apply (equivHomogeneous (R := R) (M := M) n).injective
   simp only [LinearEquiv.apply_symm_apply, equivHomogeneous_tprod]
 
-end TauCeti.SymmetricPower
+end SymmetricPower
