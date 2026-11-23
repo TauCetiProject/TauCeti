@@ -25,8 +25,8 @@ space the constructible topology is totally separated, which makes compact subse
   the constructible topology.
 * `TauCeti.continuous_ofTopology_withConstructibleTopology`: the map from the constructible
   topology to the given topology of a prespectral space is continuous.
-* `TauCeti.compactSpace_constructibleTopology`: a spectral space is compact for its constructible
-  topology, stated with the topology explicit.
+* `TauCeti.compactSpace_constructibleTopology`: on a compact, quasi-sober, quasi-separated
+  prespectral space the constructible topology is compact.
 * `IsSpectralMap.continuous_constructibleTopology`: a spectral map is continuous for the
   constructible topologies; `IsSpectralMap.continuous_withConstructibleTopology` is the same
   statement for the induced map between the `WithConstructibleTopology` type synonyms.
@@ -75,15 +75,13 @@ theorem TauCeti.continuous_ofTopology_withConstructibleTopology [PrespectralSpac
     WithConstructibleTopology.isOpen_iff.2 hs.isOpen_constructibleTopology
 
 variable (X) in
-/-- A compact, quasi-sober, quasi-separated prespectral space, for instance a spectral space, is
-compact for its constructible topology. This is Mathlib's `compactSpace_withConstructibleTopology`
-with the topology carried explicitly rather than through the type synonym. -/
+/-- On a compact, quasi-sober, quasi-separated prespectral space (for instance a spectral space) the
+constructible topology is compact. This is Mathlib's `compactSpace_withConstructibleTopology` for
+the topology itself rather than for the type synonym `WithConstructibleTopology X`. -/
 theorem TauCeti.compactSpace_constructibleTopology [CompactSpace X] [QuasiSober X]
-    [PrespectralSpace X] [QuasiSeparatedSpace X] : @CompactSpace X (constructibleTopology X) := by
-  refine @CompactSpace.mk X (constructibleTopology X) ?_
-  have h := @IsCompact.image (WithConstructibleTopology X) X _ (constructibleTopology X) univ
-    WithTopology.ofTopology isCompact_univ (WithTopology.continuous_ofTopology _)
-  rwa [image_univ_of_surjective (WithTopology.ofTopology_surjective _)] at h
+    [PrespectralSpace X] [QuasiSeparatedSpace X] : @CompactSpace X (constructibleTopology X) :=
+  @Function.Surjective.compactSpace _ _ _ (constructibleTopology X) _
+    (WithTopology.continuous_ofTopology _) _ (WithTopology.ofTopology_surjective _)
 
 /-- A spectral map is continuous for the constructible topologies: it pulls the defining subbasis
 back into itself. -/

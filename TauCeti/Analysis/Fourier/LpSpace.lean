@@ -29,6 +29,10 @@ Together with the `L¹ → L^∞` bound `‖𝓕 f‖_∞ ≤ ‖f‖₁` (`TauC
 the two endpoint estimates which the Riesz–Thorin theorem interpolates to the Hausdorff–Young
 inequality, in `TauCeti.Analysis.Fourier.HausdorffYoung`.
 
+The file also records the Fourier transform of an `L²` derivative: if the tempered distribution
+`f` has a Fourier transform `v ∈ L^q`, `1 ≤ q`, and the derivative `∂_m f` is an `L²` function
+`d`, then `𝓕 d(ξ) = 2πi⟪ξ, m⟫ v(ξ)` almost everywhere.
+
 ## Main declarations
 
 * `MeasureTheory.Integrable.coeFn_fourier_toLp`: on `L¹ ∩ L²` the `L²` Fourier transform is the
@@ -36,6 +40,8 @@ inequality, in `TauCeti.Analysis.Fourier.HausdorffYoung`.
 * `MeasureTheory.Integrable.eLpNorm_fourier_two_eq`: Plancherel's theorem on `L¹ ∩ L²`.
 * `MeasureTheory.Integrable.memLp_fourier_two`: the Fourier integral of a function in `L¹ ∩ L²`
   lies in `L²`.
+* `MeasureTheory.Lp.fourier_ae_eq_of_lineDerivOp_eq`: the Fourier transform of an `L²` derivative
+  `∂_m f` is `2πi⟪ξ, m⟫ 𝓕f`.
 
 ## References
 
@@ -78,3 +84,24 @@ theorem memLp_fourier_two (hf : Integrable f) (hf₂ : MemLp f 2) : MemLp (𝓕 
   memLp_iff.2 ((hf.eLpNorm_fourier_two_eq hf₂).trans_lt hf₂.eLpNorm_lt_top)
 
 end MeasureTheory.Integrable
+
+namespace MeasureTheory.Lp
+
+open TemperedDistribution
+open scoped LineDeriv SchwartzMap Real
+
+variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The Fourier transform of a derivative.** If a tempered distribution `f` has the `L^q`
+Fourier transform `v` and its derivative in the direction `m` is an `L²` function `d`, then
+`𝓕 d(ξ) = 2πi⟪ξ, m⟫ v(ξ)` almost everywhere. -/
+theorem fourier_ae_eq_of_lineDerivOp_eq {f : 𝓢'(E, F)} {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {v : Lp F q (volume : Measure E)} {d : Lp F 2 (volume : Measure E)} (hv : 𝓕 f = v) {m : E}
+    (hd : ∂_{m} f = d) :
+    𝓕 d =ᵐ[volume] fun ξ ↦ (2 * π * Complex.I * inner ℝ ξ m) • v ξ := by
+  rw [← toTemperedDistribution_eq_smulLeftCLM_iff (by fun_prop),
+    ← fourier_toTemperedDistribution_eq, ← hd, fourier_lineDerivOp_eq, hv]
+  exact (DFunLike.congr_fun (smulLeftCLM_smul (F := F) (g := fun ξ : E ↦ (inner ℝ ξ m : ℂ))
+    (by fun_prop) (2 * π * Complex.I)) _).symm
+
+end MeasureTheory.Lp

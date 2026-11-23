@@ -156,12 +156,12 @@ theorem toTensorPower_prod_dp_eq_sum_tprod (d : ℕ) {ι : Type*} [DecidableEq �
         rw [Finsupp.notMem_support_iff.mp fun h' ↦ hj (hF h')]
         by_contra h'
         obtain ⟨t, rfl⟩ := Finsupp.sum_single_one_apply_ne_zero_iff.mp h'
-        exact hj (w t).2
+        exact hj (w t).property
     · simp only [k, Finsupp.subtypeDomain_apply, ← h, Finsupp.sum_single_one_apply, Subtype.ext_iff]
   refine Finset.sum_bij (fun w _ t ↦ w t) (fun w hw ↦ ?_) (fun v _ w _ h ↦ ?_) (fun w hw ↦ ?_)
     fun _ _ ↦ rfl
   · rw [Finset.mem_filter] at hw ⊢
-    exact ⟨Fintype.mem_piFinset.mpr fun t ↦ (w t).2, (hcount w).mp hw.2⟩
+    exact ⟨Fintype.mem_piFinset.mpr fun t ↦ (w t).property, (hcount w).mp hw.2⟩
   · exact funext fun t ↦ Subtype.ext (congrFun h t)
   · rw [Finset.mem_filter, Fintype.mem_piFinset] at hw
     exact ⟨fun t ↦ ⟨w t, hw.1 t⟩, Finset.mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun _ ↦

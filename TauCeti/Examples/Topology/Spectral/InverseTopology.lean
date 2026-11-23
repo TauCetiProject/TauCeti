@@ -22,9 +22,7 @@ namespace TauCeti
 
 /-- In the inverse topology of the Sierpiński space the closed point `False` becomes open. -/
 example : IsOpen[inverseTopology Prop] {False} := by
-  have h : ({False} : Set Prop)ᶜ = {True} := by
-    ext p
-    simp only [mem_compl_iff, mem_singleton_iff, eq_iff_iff, iff_false, iff_true, not_not]
+  have h : ({False} : Set Prop)ᶜ = {True} := by rw [Prop.compl_singleton, not_false_eq_true]
   refine isOpen_inverseTopology_of_isClosed ?_ ?_
   · rw [← isOpen_compl_iff, h]
     exact isOpen_singleton_true
@@ -45,6 +43,6 @@ example : @Specializes Prop (inverseTopology Prop) False True :=
 /-- The inverse topology of the Sierpiński space is spectral. -/
 example : @SpectralSpace Prop (inverseTopology Prop) :=
   have : SpectralSpace Prop := spectralSpace_prop
-  spectralSpace_inverseTopology
+  spectralSpace_inverseTopology Prop
 
 end TauCeti

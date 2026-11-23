@@ -81,7 +81,7 @@ noncomputable def spaLocalizationToRationalSubset (P : PairOfDefinition A) (Aplu
       Aplus Bplus hplus
   exact Set.codRestrict f _ fun v ↦ by
     have hv := image_comap_algebraMap_spa_subset_rationalSubset P Aplus T s S hden
-      ⟨v.1, v.2, rfl⟩
+      ⟨v.val, v.property, rfl⟩
     simpa only [Set.mem_preimage, f, spaComap_val] using hv
 
 /-- The map to the rational subset is pullback along `A → A(T/s)` on underlying valuations. -/
@@ -93,8 +93,8 @@ theorem spaLocalizationToRationalSubset_apply_val (P : PairOfDefinition A)
     letI := locTopology P T s S hden
     ∀ v : spa (integralClosure ↥(Algebra.adjoin Aplus
         (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring,
-      ((spaLocalizationToRationalSubset P Aplus T s S hden v).1 : spa Aplus).1 =
-        comap (algebraMap A S) v.1 := by
+      ((spaLocalizationToRationalSubset P Aplus T s S hden v).val : spa Aplus).val =
+        comap (algebraMap A S) v.val := by
   let _ := locTopology P T s S hden
   have _ := isTopologicalRing_locTopology P T s S hden
   intro v
@@ -126,8 +126,8 @@ theorem surjective_spaLocalizationToRationalSubset (P : PairOfDefinition A)
   have _ := isTopologicalRing_locTopology P T s S hden
   intro v
   have himage := Set.ext_iff.mp
-    (image_comap_algebraMap_spa_eq_rationalSubset P Aplus hP T s S hden) v.1.1
-  obtain ⟨w, hwspa, hcomp⟩ := himage.mpr v.2
+    (image_comap_algebraMap_spa_eq_rationalSubset P Aplus hP T s S hden) v.val.val
+  obtain ⟨w, hwspa, hcomp⟩ := himage.mpr v.property
   refine ⟨⟨w, hwspa⟩, Subtype.ext ?_⟩
   exact Subtype.ext (by rw [spaLocalizationToRationalSubset_apply_val]; exact hcomp)
 
@@ -158,8 +158,8 @@ theorem spaLocalizationHomeomorph_apply_val (P : PairOfDefinition A) (Aplus : Su
     letI := locTopology P T s S hden
     ∀ v : spa (integralClosure ↥(Algebra.adjoin Aplus
         (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring,
-      ((spaLocalizationHomeomorph P Aplus hP T s S hden v).1 : spa Aplus).1 =
-        comap (algebraMap A S) v.1 := by
+      ((spaLocalizationHomeomorph P Aplus hP T s S hden v).val : spa Aplus).val =
+        comap (algebraMap A S) v.val := by
   let _ := locTopology P T s S hden
   have _ := isTopologicalRing_locTopology P T s S hden
   intro v
@@ -190,14 +190,14 @@ theorem comap_spaLocalizationHomeomorph_symm_apply (P : PairOfDefinition A)
     (hden : HasDenominatorPower P T s S) :
     letI := locTopology P T s S hden
     ∀ v : (Subtype.val ⁻¹' rationalSubset Aplus T s : Set (spa Aplus)),
-      comap (algebraMap A S) ((spaLocalizationHomeomorph P Aplus hP T s S hden).symm v).1 =
-        v.1.1 := by
+      comap (algebraMap A S) ((spaLocalizationHomeomorph P Aplus hP T s S hden).symm v).val =
+        v.val.val := by
   let _ := locTopology P T s S hden
   have _ := isTopologicalRing_locTopology P T s S hden
   intro v
   rw [← spaLocalizationHomeomorph_apply_val P Aplus hP T s S hden]
   exact congrArg (fun w : (Subtype.val ⁻¹' rationalSubset Aplus T s : Set (spa Aplus)) ↦
-    w.1.1) ((spaLocalizationHomeomorph P Aplus hP T s S hden).apply_symm_apply v)
+    w.val.val) ((spaLocalizationHomeomorph P Aplus hP T s S hden).apply_symm_apply v)
 
 end TauCeti.ValuationSpectrum
 

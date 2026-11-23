@@ -65,7 +65,7 @@ private def chainComplexPairingX (P : SSetPair.{w}) (μ : M ⊗ S ⟶ N) (n : �
   (CokernelCofork.IsColimit.desc'
     (((chainComplexXSplitting S P n).map (tensorLeft M)).gIsCokernel)
     ((P.right.chainComplexPairing μ).f n ≫ (P.chainComplexπ N).f n)
-    (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).1
+    (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).val
 
 @[reassoc]
 private lemma whiskerLeft_chainComplexπ_f_chainComplexPairingX (P : SSetPair.{w})
@@ -74,7 +74,7 @@ private lemma whiskerLeft_chainComplexπ_f_chainComplexPairingX (P : SSetPair.{w
       (P.right.chainComplexPairing μ).f n ≫ (P.chainComplexπ N).f n :=
   (CokernelCofork.IsColimit.desc'
     (((chainComplexXSplitting S P n).map (tensorLeft M)).gIsCokernel) _
-    (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).2
+    (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).property
 
 instance epi_whiskerLeft_chainComplexπ_f (P : SSetPair.{w}) (S : C) (n : ℕ) :
     Epi (M ◁ (P.chainComplexπ S).f n) :=

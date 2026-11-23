@@ -231,7 +231,7 @@ theorem exists_lift_iff {T : C} (g : T ⟶ G) :
 def pointsPresheaf : Cᵒᵖ ⥤ GrpCat.{v} where
   obj T := GrpCat.of (stabilizerPoints G x T.unop)
   map f := GrpCat.ofHom
-    { toFun := fun g ↦ ⟨f.unop ≫ g.1, comp_mem_stabilizerPoints G x f.unop g.2⟩
+    { toFun := fun g ↦ ⟨f.unop ≫ g.val, comp_mem_stabilizerPoints G x f.unop g.property⟩
       map_one' := Subtype.ext (MonObj.comp_one _)
       map_mul' := fun g h ↦ Subtype.ext (MonObj.comp_mul _ _ _) }
 
@@ -239,11 +239,11 @@ def pointsPresheaf : Cᵒᵖ ⥤ GrpCat.{v} where
 def representableBy : (pointsPresheaf G x ⋙ forget _).RepresentableBy (stabilizer G x) where
   homEquiv {T} :=
     { toFun := fun s ↦ ⟨s ≫ incl G x, comp_mem_stabilizerPoints G x s (incl_mem G x)⟩
-      invFun := fun g ↦ stabilizer.lift G x g.1 g.2
+      invFun := fun g ↦ stabilizer.lift G x g.val g.property
       left_inv := fun s ↦ by
         apply (cancel_mono (incl G x)).1
         simp
-      right_inv := fun g ↦ Subtype.ext (lift_incl G x g.1 g.2) }
+      right_inv := fun g ↦ Subtype.ext (lift_incl G x g.val g.property) }
   homEquiv_comp f g := Subtype.ext (Category.assoc _ _ _)
 
 /-- The stabilizer is a group object. -/
