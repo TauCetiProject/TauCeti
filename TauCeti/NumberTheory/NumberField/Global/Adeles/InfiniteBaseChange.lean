@@ -186,6 +186,12 @@ theorem infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
   apply (infiniteAdeleBaseChangeAlgEquiv K L).injective
   simp [infiniteAdeleBaseChangeAlgEquiv]
 
+/-- The algebraic comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem infiniteAdeleBaseChangeAlgEquiv_one_tmul (x : L) :
+    infiniteAdeleBaseChangeAlgEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (InfiniteAdeleRing L) x := by
+  rw [← AlgEquiv.coe_toAlgHom, infiniteAdeleBaseChangeAlgEquiv_toAlgHom,
+    infiniteAdeleBaseChangeHom_tmul, map_one, one_mul]
+
 end
 
 variable [NumberField K] [NumberField L] [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]

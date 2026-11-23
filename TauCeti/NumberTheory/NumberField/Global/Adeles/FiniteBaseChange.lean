@@ -264,6 +264,13 @@ theorem finiteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
   apply (finiteAdeleBaseChangeAlgEquiv K L).injective
   simp [finiteAdeleBaseChangeAlgEquiv]
 
+/-- The algebraic comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem finiteAdeleBaseChangeAlgEquiv_one_tmul (x : L) :
+    finiteAdeleBaseChangeAlgEquiv K L (1 ⊗ₜ[K] x) =
+      algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
+  rw [← AlgEquiv.coe_toAlgHom, finiteAdeleBaseChangeAlgEquiv_toAlgHom,
+    finiteAdeleBaseChangeHom_tmul, map_one, one_mul]
+
 variable [TopologicalSpace (FiniteAdeleRing (𝓞 K) K ⊗[K] L)]
   [IsModuleTopology (FiniteAdeleRing (𝓞 K) K) (FiniteAdeleRing (𝓞 K) K ⊗[K] L)]
 
