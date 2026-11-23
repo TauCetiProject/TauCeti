@@ -407,12 +407,11 @@ lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom [HasZeroObject D]
         AlgebraicTopology.AlternatingFaceMapComplex.ε.app
           (SimplicialObject.Augmented.const.obj B) := by
   dsimp only [Functor.doldPuppeFunctorConstHomotopyEquiv, HomotopyEquiv.trans,
-    HomotopyEquiv.ofIso, Functor.doldPuppeFunctor, doldPuppe, SimplicialObject.whiskering]
-  simp only [Functor.mapIso_hom, Iso.app_hom,
-    SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_hom]
-  -- `Augmented.drop.obj (Augmented.const.obj B)` is definitionally
-  -- `(SimplicialObject.const D).obj B`.
-  rfl
+    HomotopyEquiv.ofIso, Functor.doldPuppeFunctor, doldPuppe, SimplicialObject.whiskering,
+    SimplicialObject.Augmented.ExtraDegeneracy.homotopyEquiv,
+    AlgebraicTopology.alternatingFaceMapComplex, SimplicialObject.Augmented.drop,
+    SimplicialObject.Augmented.const]
+  simp
 
 @[simp]
 lemma Functor.doldPuppeFunctorConstHomotopyEquiv_inv [HasZeroObject D]

@@ -44,28 +44,16 @@ lemma const_homotopyEquiv_inv {C : Type u} [Category.{v} C] [Preadditive C] [Has
             ((SimplicialObject.const C).obj X)) X).symm (𝟙 X) :=
   rfl
 
-/-- Degree-zero component of `const_homotopyEquiv_inv_naturality`. The `erw` steps are needed
-because `(const X).homotopyEquiv.inv` is typed over
-`(ChainComplex.single₀ C).obj (Augmented.point.obj (Augmented.const.obj X))` and
-`AlternatingFaceMapComplex.obj (Augmented.drop.obj (Augmented.const.obj X))`, which match
-`(ChainComplex.single₀ C).obj X` and
-`(alternatingFaceMapComplex C).obj ((SimplicialObject.const C).obj X)` only up to unfolding
-`Augmented.point`, `Augmented.drop`, `Augmented.const`, and `AlternatingFaceMapComplex.obj`. -/
+/-- Degree-zero component of `const_homotopyEquiv_inv_naturality`. -/
 private lemma const_homotopyEquiv_inv_naturality_f_zero {C : Type u} [Category.{v} C]
     [Preadditive C] [HasZeroObject C] {X Y : C} (f : X ⟶ Y) :
     ((ChainComplex.single₀ C).map f ≫ (const Y).homotopyEquiv.inv).f 0 =
       ((const X).homotopyEquiv.inv ≫
         (AlgebraicTopology.alternatingFaceMapComplex C).map
           ((SimplicialObject.const C).map f)).f 0 := by
-  dsimp only [ExtraDegeneracy.homotopyEquiv]
-  -- Unfold across `Augmented.const` / `AlternatingFaceMapComplex` / `fromSingle₀Equiv`.
-  erw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    ChainComplex.single₀_map_f_zero,
-    ChainComplex.fromSingle₀Equiv_symm_apply_f_zero,
-    ChainComplex.fromSingle₀Equiv_symm_apply_f_zero,
-    AlgebraicTopology.alternatingFaceMapComplex_map_f]
-  dsimp
-  erw [Category.comp_id, Category.id_comp]
+  dsimp [ExtraDegeneracy.homotopyEquiv, ExtraDegeneracy.const,
+    AlgebraicTopology.alternatingFaceMapComplex, SimplicialObject.Augmented.const]
+  simp [ChainComplex.fromSingle₀Equiv]
 
 /-- Naturality of the inverse homotopy equivalence `(ExtraDegeneracy.const X).homotopyEquiv.inv`
 with respect to morphisms `f : X ⟶ Y`. -/

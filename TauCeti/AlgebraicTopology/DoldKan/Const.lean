@@ -109,4 +109,24 @@ lemma N.constIso_inv_app_f_zero (X : C) :
 def Γ.single₀Iso : ChainComplex.single₀ C ⋙ Γ ≅ SimplicialObject.const C :=
   N.constIso.symm.compInverseIso (H := equivalence)
 
+/-- The forward map of `Γ.single₀Iso` at `X` is `Γ.map (N.constIso.inv.app X)` followed by the
+inverse of the Dold–Kan unit isomorphism `ε`. -/
+@[simp]
+lemma Γ.single₀Iso_hom_app (X : C) :
+    Γ.single₀Iso.hom.app X =
+      Γ.map (N.constIso.inv.app X) ≫ ε.inv.app ((SimplicialObject.const C).obj X) := by
+  dsimp [Γ.single₀Iso, Iso.compInverseIso, Functor.isoWhiskerRight, Functor.whiskeringRight,
+    Functor.mapIso, Functor.whiskerRight]
+  simp [equivalence_unitIso, equivalence_inverse, equivalence_functor]
+
+/-- The inverse map of `Γ.single₀Iso` at `X` is the Dold–Kan unit isomorphism `ε` followed by
+`Γ.map (N.constIso.hom.app X)`. -/
+@[simp]
+lemma Γ.single₀Iso_inv_app (X : C) :
+    Γ.single₀Iso.inv.app X =
+      ε.hom.app ((SimplicialObject.const C).obj X) ≫ Γ.map (N.constIso.hom.app X) := by
+  dsimp [Γ.single₀Iso, Iso.compInverseIso, Functor.isoWhiskerRight, Functor.whiskeringRight,
+    Functor.mapIso, Functor.whiskerRight]
+  simp [equivalence_unitIso, equivalence_inverse, equivalence_functor]
+
 end CategoryTheory.Idempotents.DoldKan

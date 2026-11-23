@@ -96,8 +96,9 @@ namespace AlgebraicTopology
 
 instance normalizedMooreComplex.projective_X {A : Type u} [Category.{v} A] [Abelian A]
     (X : SimplicialObject A) [∀ n, Projective (X _⦋n⦌)] (n : ℕ) :
-    Projective (((normalizedMooreComplex A).obj X).X n) :=
-  Projective.of_iso
+    Projective (((normalizedMooreComplex A).obj X).X n) := by
+  rw [← Abelian.DoldKan.N_eq_normalizedMooreComplex]
+  exact Projective.of_iso
     (HomologicalComplex.Hom.isoApp ((Abelian.DoldKan.comparisonN (A := A)).symm.app X) n)
     inferInstance
 
@@ -127,7 +128,7 @@ theorem projective_iff_normalizedMooreComplex_projective {A : Type u} [Category.
     (X : SimplicialObject A) :
     (∀ n : ℕ, Projective (X _⦋n⦌)) ↔
       ∀ n : ℕ, Projective (((normalizedMooreComplex A).obj X).X n) := by
-  rw [projective_iff_N_projective]
+  rw [projective_iff_N_projective, ← Abelian.DoldKan.N_eq_normalizedMooreComplex]
   refine ⟨fun h n ↦ ?_, fun h n ↦ ?_⟩
   · exact Projective.of_iso
       (HomologicalComplex.Hom.isoApp ((Abelian.DoldKan.comparisonN (A := A)).symm.app X) n) (h n)

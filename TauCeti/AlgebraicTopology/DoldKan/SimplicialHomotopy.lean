@@ -82,7 +82,22 @@ lemma homotopyEquivNAlternatingFaceMapComplex_hom (X : SimplicialObject C) :
 lemma homotopyEquivNAlternatingFaceMapComplex_inv (X : SimplicialObject C) :
     (homotopyEquivNAlternatingFaceMapComplex X).inv = PInftyToN.app X := (rfl)
 
+/-- The pseudoabelian normalized chain complex functor `Idempotents.DoldKan.N` is fully
+faithful. -/
+def N.fullyFaithful : (N (C := C)).FullyFaithful :=
+  (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
+
 end CategoryTheory.Idempotents.DoldKan
+
+namespace CategoryTheory.Abelian.DoldKan
+
+/-- The abelian Dold–Kan functor `Abelian.DoldKan.N` is
+`AlgebraicTopology.normalizedMooreComplex A`. -/
+lemma N_eq_normalizedMooreComplex {A : Type u} [Category.{v} A] [Abelian A] :
+    (N : SimplicialObject A ⥤ ChainComplex A ℕ) = AlgebraicTopology.normalizedMooreComplex A :=
+  rfl
+
+end CategoryTheory.Abelian.DoldKan
 
 namespace CategoryTheory.SimplicialObject
 
@@ -171,8 +186,7 @@ def ofAlternatingFaceMapComplexHomotopy {X Y : SimplicialObject C} {f g : X ⟶ 
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
       ((alternatingFaceMapComplex C).map g)) :
     Homotopy f g := by
-  let hN : (N (C := C)).FullyFaithful :=
-    (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
+  let hN := N.fullyFaithful (C := C)
   let Ψ : N.obj ((cylinder C).obj X) ⟶ N.obj Y :=
     inclusionN.app ((cylinder C).obj X) ≫ cylinderChainMap H ≫ PInftyToN.app Y
   let Φ : (cylinder C).obj X ⟶ Y := hN.preimage Ψ
@@ -266,8 +280,7 @@ def ofAlternatingFaceMapComplexHomotopyEquiv {X Y : SimplicialObject C} (f : X �
       ((alternatingFaceMapComplex C).obj Y))
     (he : e.hom = (alternatingFaceMapComplex C).map f) :
     HomotopyEquiv X Y := by
-  let hN : (N (C := C)).FullyFaithful :=
-    (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
+  let hN := N.fullyFaithful (C := C)
   let gN : N.obj Y ⟶ N.obj X := inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X
   let g : Y ⟶ X := hN.preimage gN
   have hg : N.map g = gN := hN.map_preimage gN
@@ -370,9 +383,8 @@ on normalized Moore complexes if and only if it induces a quasi-isomorphism on p
 normalized chains `Idempotents.DoldKan.N`. -/
 theorem quasiIso_normalizedMooreComplex_map_iff_N {X Y : SimplicialObject A} (f : X ⟶ Y) :
     QuasiIso ((normalizedMooreComplex A).map f) ↔ QuasiIso (Idempotents.DoldKan.N.map f) := by
-  -- `Abelian.DoldKan.N` is defined to be `AlgebraicTopology.normalizedMooreComplex A`.
-  change QuasiIso (Abelian.DoldKan.N.map f) ↔ _
-  rw [← NatIso.naturality_2 Abelian.DoldKan.comparisonN f,
+  rw [← Abelian.DoldKan.N_eq_normalizedMooreComplex,
+    ← NatIso.naturality_2 Abelian.DoldKan.comparisonN f,
     quasiIso_iff_comp_left (Abelian.DoldKan.comparisonN.hom.app X) _,
     quasiIso_iff_comp_right (Idempotents.DoldKan.N.map f)
       (Abelian.DoldKan.comparisonN.inv.app Y)]
