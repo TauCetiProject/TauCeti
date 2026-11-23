@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Geometry.Lie.Subgroup.OneParameter
 import TauCeti.Geometry.Lie.Adjoint.Derivation

@@ -15,10 +15,8 @@ Let `K` be a subgroup of a Lie group `G`, with Lie algebra `𝔨 = Subgroup.grou
 in the tangent Lie algebra `𝔤`. The adjoint action `Ad_g` of an element `g` of the normalizer of
 `K` preserves `𝔨`, so for a normal subgroup `N` the Lie algebra `𝔫` is a subrepresentation of the
 adjoint representation. If moreover `N` is closed, then `Ad_n ξ - ξ ∈ 𝔫` for `n ∈ N` and every
-`ξ ∈ 𝔤`, so `N` acts trivially on `𝔤 ⧸ 𝔫`.
-
-The dual statements for the coadjoint action on the annihilator `𝔨⁰ ⊆ 𝔤*` are in
-`TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Subgroup`.
+`ξ ∈ 𝔤`, so `N` acts trivially on `𝔤 ⧸ 𝔫`
+(`TauCeti.Geometry.Lie.Adjoint.Representation.Quotient`).
 
 ## Main results
 

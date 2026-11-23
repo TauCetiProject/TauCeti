@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.RepresentationTheory.Dual.Basic
 
 /-!
 # Faithful quotient representations
@@ -52,10 +53,7 @@ left-hand side, where `Representation.ofQuotient_comp_mk'` no longer applies. -/
 theorem dual_ofQuotient_comp_mk' {k V : Type*} [CommSemiring k] [AddCommMonoid V] [Module k V]
     (ρ : Representation k G V) (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp S.subtype)] :
     (ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual := by
-  -- Checked pointwise: `Representation.dual_comp` would import Picard-group theory through
-  -- `TauCeti.RepresentationTheory.Dual`.
-  ext g φ v
-  simp [dual_apply, Module.Dual.transpose_apply, ← QuotientGroup.mk_inv, ofQuotient_coe_apply]
+  rw [← dual_comp, ofQuotient_comp_mk']
 
 /-- A quotient representation is faithful exactly when the subgroup removed is the entire
 kernel. -/

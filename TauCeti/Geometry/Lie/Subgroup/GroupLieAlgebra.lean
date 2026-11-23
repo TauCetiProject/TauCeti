@@ -143,8 +143,9 @@ omit [T2Space G] in
 theorem _root_.Subgroup.groupLieSubalgebra_mono {K K' : Subgroup G} (h : K ≤ K') :
     K.groupLieSubalgebra (I := I) ≤ K'.groupLieSubalgebra (I := I) := by
   have := I.t2Space_of_lieGroup (G := G) ∞
-  exact groupLieSubalgebra_le_iff.mpr fun _ hξ ↦
-    mem_groupLieSubalgebra_of_forall fun t ↦ h (hξ t)
+  have h₁ := ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)
+  rw [Subgroup.groupLieSubalgebra_eq_map K h₁, Subgroup.groupLieSubalgebra_eq_map K' h₁]
+  exact LieSubalgebra.gc_map_comap.monotone_l (lieSubalgebraOfSubgroup_mono h)
 
 omit [T2Space G] in
 /-- **The Lie algebra of an intersection of closed subgroups is the intersection of their Lie
@@ -155,12 +156,13 @@ theorem _root_.Subgroup.groupLieSubalgebra_inf {K K' : Subgroup G} (hK : IsClose
     (K ⊓ K').groupLieSubalgebra (I := I) =
       K.groupLieSubalgebra (I := I) ⊓ K'.groupLieSubalgebra (I := I) := by
   have := I.t2Space_of_lieGroup (G := G) ∞
-  have hinf : IsClosed ((K ⊓ K' : Subgroup G) : Set G) := by
-    rw [Subgroup.coe_inf]
-    exact hK.inter hK'
-  ext ξ
-  simp only [LieSubalgebra.mem_inf, mem_groupLieSubalgebra hinf, mem_groupLieSubalgebra hK,
-    mem_groupLieSubalgebra hK', Subgroup.mem_inf, forall_and]
+  have h₁ := ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)
+  rw [Subgroup.groupLieSubalgebra_eq_map _ h₁, Subgroup.groupLieSubalgebra_eq_map K h₁,
+    Subgroup.groupLieSubalgebra_eq_map K' h₁, lieSubalgebraOfSubgroup_inf hK hK']
+  -- Evaluation at the identity is injective, so its image commutes with intersections.
+  refine LieSubalgebra.toSubmodule_injective ?_
+  rw [LieSubalgebra.inf_toSubmodule]
+  exact Submodule.map_inf _ (LieEquiv.injective _)
 
 omit [T2Space G] in
 /-- The Lie algebra of the trivial subgroup is zero. -/
@@ -183,6 +185,9 @@ omit [T2Space G] in
 theorem _root_.Subgroup.groupLieSubalgebra_top :
     (⊤ : Subgroup G).groupLieSubalgebra (I := I) = ⊤ := by
   have := I.t2Space_of_lieGroup (G := G) ∞
-  exact eq_top_iff.mpr fun _ _ ↦ mem_groupLieSubalgebra_of_forall fun _ ↦ Subgroup.mem_top _
+  rw [Subgroup.groupLieSubalgebra_eq_map _
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
+    lieSubalgebraOfSubgroup_top, ← LieSubalgebra.map_top, LieHom.range_eq_top]
+  exact LieEquiv.surjective _
 
 end TauCeti.Lie

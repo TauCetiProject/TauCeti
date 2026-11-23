@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Lie.InvariantForm
 public import TauCeti.Geometry.Lie.Adjoint.Derivation
 public import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.Compact.BilinearForm
 import TauCeti.Geometry.Lie.Exponential.Derivative.Basic

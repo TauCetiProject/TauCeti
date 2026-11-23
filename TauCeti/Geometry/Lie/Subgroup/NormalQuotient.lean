@@ -37,7 +37,12 @@ of `G ⧸ N` is smooth, and describes its Lie algebra and its actions.
   (`Subgroup.lieMap_quotientMkSmoothHom_eq_zero_iff`,
   `Subgroup.toLieSubalgebra_ker_lieMap_quotientMkSmoothHom`). Together these identify the Lie
   algebra of `G ⧸ N` with the quotient `𝔤 ⧸ 𝔫` through the Lie map of `π`
-  (`Subgroup.quotientLieAlgebraEquiv`).
+  (`Subgroup.quotientLieAlgebraEquiv`). In the tangent Lie algebras at the identity, the
+  differential of `π` vanishes exactly on `𝔫 = Subgroup.groupLieSubalgebra N`
+  (`Subgroup.groupLieAlgebraMap_quotientGroupMk'_eq_zero_iff`) and is surjective
+  (`Subgroup.surjective_groupLieAlgebraMap_quotientGroupMk'`), so it induces a linear isomorphism
+  `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)` (`Subgroup.quotientGroupLieAlgebraEquiv`) that preserves brackets
+  (`Subgroup.quotientGroupLieAlgebraEquiv_apply_mk_lie`).
 * **The residual action.** Let `G` act smoothly on a boundaryless manifold `M`, with `N` acting
   freely and properly. By the quotient manifold theorem the orbit space `M ⧸ N` is a smooth
   manifold (`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`,
@@ -269,6 +274,88 @@ theorem quotientLieAlgebraEquiv_apply_mk [N.Normal] (hN : IsClosed (N : Set G))
     quotientLieAlgebraEquiv I hN (LieSubmodule.Quotient.mk D) =
       lieMap (quotientMkSmoothHom I hN) D :=
   LieHom.quotKerEquivOfSurjective_apply_mk _ _ D
+
+/-! ### The Lie algebra of the quotient, in the tangent Lie algebra -/
+
+/-- **The differential of the projection onto `G ⧸ N` vanishes exactly on `𝔫`.** For a closed
+normal subgroup `N`, the kernel of the differential at the identity of `G → G ⧸ N` is the Lie
+algebra `Subgroup.groupLieSubalgebra N` of `N` in the tangent Lie algebra of `G`. -/
+theorem groupLieAlgebraMap_quotientGroupMk'_eq_zero_iff [N.Normal] (hN : IsClosed (N : Set G))
+    {ξ : GroupLieAlgebra I G} :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    (QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N) ξ = 0 ↔
+      ξ ∈ N.groupLieSubalgebra (I := I) := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  have := lieGroup_quotientOfIsClosed (I := I) hN
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let e' := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, QuotientModelSpace I N)) (n := ∞)
+      (by simp) (1 : G ⧸ N))
+  -- Read at the identity, the Lie map of the projection is its differential.
+  have h : e' (lieMap (quotientMkSmoothHom I hN) (e.symm ξ)) =
+      (QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N) ξ := by
+    rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap, LieEquiv.apply_symm_apply,
+      coe_quotientMkSmoothHom, MonoidHom.groupLieAlgebraMap_apply, QuotientGroup.coe_mk']
+  rw [← h, map_eq_zero_iff e' e'.injective, lieMap_quotientMkSmoothHom_eq_zero_iff,
+    Lie.mem_groupLieSubalgebra_iff, leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
+
+/-- **The differential of the projection onto `G ⧸ N` is surjective**, for a closed normal subgroup
+`N`. -/
+theorem surjective_groupLieAlgebraMap_quotientGroupMk' [N.Normal] (hN : IsClosed (N : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    Surjective ((QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N)) := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  intro v
+  obtain ⟨ξ, hξ⟩ := (isSubmersion_quotientMk (I := I) hN).surjective_mfderiv (by simp) 1 v
+  refine ⟨ξ, ?_⟩
+  rwa [MonoidHom.groupLieAlgebraMap_apply, QuotientGroup.coe_mk']
+
+/-- **The tangent Lie algebra of `G ⧸ N` is `𝔤 ⧸ 𝔫`**: for a closed normal subgroup `N`, the
+differential at the identity of the projection `G → G ⧸ N` induces a linear isomorphism from
+the quotient of the tangent Lie algebra of `G` by `𝔫 = Subgroup.groupLieSubalgebra N` onto the
+tangent Lie algebra of the quotient Lie group `G ⧸ N`. It carries brackets of representatives to
+brackets (`Subgroup.quotientGroupLieAlgebraEquiv_apply_mk_lie`); the same identification on
+left-invariant derivations, as an isomorphism of Lie algebras, is
+`Subgroup.quotientLieAlgebraEquiv`. -/
+def quotientGroupLieAlgebraEquiv (N : Subgroup G) [N.Normal] (hN : IsClosed (N : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    (GroupLieAlgebra I G ⧸ (N.groupLieSubalgebra (I := I)).toSubmodule) ≃ₗ[ℝ]
+      GroupLieAlgebra 𝓘(ℝ, QuotientModelSpace I N) (G ⧸ N) :=
+  letI := quotientChartedSpaceOfIsClosed I hN
+  (Submodule.quotEquivOfEq _ _ (Submodule.ext fun _ ↦
+      (groupLieAlgebraMap_quotientGroupMk'_eq_zero_iff hN).symm)).trans
+    (LinearMap.quotKerEquivOfSurjective
+      ((QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N) :
+        GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra 𝓘(ℝ, QuotientModelSpace I N) (G ⧸ N))
+      (surjective_groupLieAlgebraMap_quotientGroupMk' hN))
+
+/-- The identification `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)` sends the class of `ξ` to the differential at the
+identity of the projection, applied to `ξ`. -/
+@[simp]
+theorem quotientGroupLieAlgebraEquiv_apply_mk [N.Normal] (hN : IsClosed (N : Set G))
+    (ξ : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    N.quotientGroupLieAlgebraEquiv hN (Submodule.Quotient.mk ξ) =
+      (QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N) ξ := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  rw [quotientGroupLieAlgebraEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, ContinuousLinearMap.coe_coe]
+
+/-- **The identification `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)` preserves brackets**: the class of `⁅ξ, η⁆` goes to
+the bracket in the Lie algebra of `G ⧸ N` of the images of the classes of `ξ` and `η`. -/
+theorem quotientGroupLieAlgebraEquiv_apply_mk_lie [N.Normal] (hN : IsClosed (N : Set G))
+    (ξ η : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    haveI := lieGroup_quotientOfIsClosed (I := I) hN
+    N.quotientGroupLieAlgebraEquiv hN (Submodule.Quotient.mk ⁅ξ, η⁆) =
+      ⁅N.quotientGroupLieAlgebraEquiv hN (Submodule.Quotient.mk ξ),
+        N.quotientGroupLieAlgebraEquiv hN (Submodule.Quotient.mk η)⁆ := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  have := lieGroup_quotientOfIsClosed (I := I) hN
+  simp only [quotientGroupLieAlgebraEquiv_apply_mk]
+  exact (quotientMkSmoothHom I hN).groupLieAlgebraMap_lie ξ η
 
 /-! ### The residual action on an orbit space -/
 
