@@ -72,10 +72,13 @@ theorem finiteProjectiveModulesMatrixSplitK0Equiv_apply (x) :
       eqToIso (finiteProjectiveModulesRegular_obj (Matrix ι ι R)).symm
 end Index
 
+namespace SplitK0
+
 /-- For any `i : ι`, `finiteProjectiveModulesToMatrixFunctor` induces the same map on `SplitK0` as
 `ModuleCat.matrixEquivalence R i`. -/
-theorem map_finiteProjectiveModulesToMatrixFunctor_eq (ι : Type u) [Fintype ι] [DecidableEq ι]
-    [Nonempty ι] (i : ι) : SplitK0.map.{u, u} (finiteProjectiveModulesToMatrixFunctor R ι) =
+theorem map_finiteProjectiveModulesToMatrixFunctor_eq_matrixEquivalence (ι : Type u) [Fintype ι]
+    [DecidableEq ι] [Nonempty ι] (i : ι) :
+    SplitK0.map.{u, u} (finiteProjectiveModulesToMatrixFunctor R ι) =
       ((ModuleCat.matrixEquivalence R (ι := ι) i).finiteProjectiveModulesSplitK0Equiv :
         SplitK0.{u} (finiteProjectiveModules R).FullSubcategory →+
           SplitK0.{u} (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory) :=
@@ -84,12 +87,14 @@ theorem map_finiteProjectiveModulesToMatrixFunctor_eq (ι : Type u) [Fintype ι]
       ((ModuleCat.matrixEquivalence R (ι := ι) i).finiteProjectiveModulesEquivalence_functor_obj_obj
         P).symm))⟩).trans (Equivalence.finiteProjectiveModulesSplitK0Equiv_toAddMonoidHom _).symm
 
+end SplitK0
+
 /-- For every `i : ι`, `finiteProjectiveModulesMatrixSplitK0Equiv` agrees with the Morita
 equivalence induced by `ModuleCat.matrixEquivalence R i`. -/
 theorem finiteProjectiveModulesMatrixSplitK0Equiv_eq (ι : Type u) [Fintype ι] [DecidableEq ι]
     [Nonempty ι] (i : ι) : finiteProjectiveModulesMatrixSplitK0Equiv R ι =
       (ModuleCat.matrixEquivalence R (ι := ι) i).finiteProjectiveModulesSplitK0Equiv :=
   AddEquiv.toAddMonoidHom_injective <| (SplitK0.mapEquiv_toAddMonoidHom.{u, u} _).trans
-    (map_finiteProjectiveModulesToMatrixFunctor_eq R ι i)
+    (SplitK0.map_finiteProjectiveModulesToMatrixFunctor_eq_matrixEquivalence R ι i)
 
 end TauCeti

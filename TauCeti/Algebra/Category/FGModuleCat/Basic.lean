@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Colimits
+public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
@@ -230,6 +231,11 @@ instance : (ModuleCat.isFG.{v} R).IsStableUnderRetracts where
     have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
     refine (ModuleCat.isFG_iff M).mpr (Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, ?_⟩)
     simp [← ModuleCat.comp_apply]
+
+/-- The subcategory of finitely generated `R`-modules is essentially `u`-small (where
+`R : Type u`). -/
+instance : ObjectProperty.EssentiallySmall.{u} (ModuleCat.isFG.{u} R) :=
+  (ObjectProperty.exists_equivalence_iff _).1 ⟨_, _, ⟨equivSmallModel.{u} (FGModuleCat.{u} R)⟩⟩
 
 /-- **A monomorphism of finitely generated modules is injective**: the inclusion
 `FGModuleCat R ⥤ ModuleCat R` preserves monomorphisms, over any ring `R`. -/

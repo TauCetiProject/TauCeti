@@ -125,12 +125,6 @@ universe u v
 
 variable (R : Type u) [Ring R]
 
-/-! ### Essential smallness -/
-
-instance : ObjectProperty.EssentiallySmall.{u} (ModuleCat.isFG.{u} R) :=
-  (ObjectProperty.exists_equivalence_iff _).1
-    ⟨_, _, ⟨equivSmallModel.{u} (FGModuleCat.{u} R)⟩⟩
-
 /-! ### The two exact structures -/
 
 /-- A finitely generated projective module is a projective object for the canonical exact
@@ -177,12 +171,16 @@ noncomputable def finiteProjectiveModulesSplitK0EquivExactK0 :
   ExactK0.fromSplitEquiv.{u} fun {S} hS ↦ (ExactStructure.split_conflation S).mp
     (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
 
-@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_of (P) :
-    finiteProjectiveModulesSplitK0EquivExactK0 R (SplitK0.of.{u} P) = ExactK0.of.{u} P := by
-  rw [finiteProjectiveModulesSplitK0EquivExactK0, ExactK0.fromSplitEquiv_apply.{u},
-    ExactK0.fromSplit_of.{u}]
+theorem finiteProjectiveModulesSplitK0EquivExactK0_apply (x) :
+    finiteProjectiveModulesSplitK0EquivExactK0 R x =
+      ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R) x := by
+  rw [finiteProjectiveModulesSplitK0EquivExactK0, ExactK0.fromSplitEquiv_apply.{u}]
   exact fun hS ↦ (ExactStructure.split_conflation _).mp
     (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_of (P) :
+    finiteProjectiveModulesSplitK0EquivExactK0 R (SplitK0.of.{u} P) = ExactK0.of.{u} P := by
+  rw [finiteProjectiveModulesSplitK0EquivExactK0_apply, ExactK0.fromSplit_of.{u}]
 
 @[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_symm_of (P) :
     (finiteProjectiveModulesSplitK0EquivExactK0 R).symm (ExactK0.of.{u} P) = SplitK0.of.{u} P :=

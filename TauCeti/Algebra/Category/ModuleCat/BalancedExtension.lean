@@ -388,6 +388,11 @@ theorem functorRingEquivIso_hom_app_tmul_one (e : R ≃+* S) (M : ModuleCat.{max
     (m : M) :
     (functorRingEquivIso e).hom.app M (tmul (e : R →+* S) 1 m) =
       ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M m := by
+  -- `functorRingEquivIso e` is `leftAdjointUniq`, so it commutes with the adjunction units
+  -- (`η₁ ≫ R.map hom = η₂`). Unwrapping `restrictScalarsAddEquiv` on `m` evaluates the LHS to
+  -- `hom (1 ⊗ m)` and the RHS to the unit of
+  -- `adj₂ := (restrictScalarsEquivalenceOfRingEquiv e).symm.toAdjunction`, which by
+  -- `Equivalence.symm_unit` / `counitInv` is `counitIso.inv.app M m = m`.
   let adj₂ : ModuleCat.restrictScalars.{max v u₂} (e.symm : S →+* R) ⊣
       ModuleCat.restrictScalars.{max v u₂} (e : R →+* S) :=
     (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).symm.toAdjunction

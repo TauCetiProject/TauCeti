@@ -537,10 +537,9 @@ variable (f)
     SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj
       (finiteProjectiveModulesRegular R)) = SplitK0.of.{u} (finiteProjectiveModulesRegular S) :=
   of_extendScalars_obj <| (BalancedExtension.congr f
-    ((eqToIso (finiteProjectiveModulesRegular_obj R)).toLinearEquiv.trans
-      (LinearEquiv.funUnique Unit R R).symm)).trans <|
-    (BalancedExtension.piScalarRight f Unit).trans ((LinearEquiv.funUnique Unit S S).trans
-      (eqToIso (finiteProjectiveModulesRegular_obj S).symm).toLinearEquiv)
+    (eqToIso (finiteProjectiveModulesRegular_obj R)).toLinearEquiv).trans <|
+    (BalancedExtension.rid f).trans
+      (eqToIso (finiteProjectiveModulesRegular_obj S).symm).toLinearEquiv
 
 /-- Along a surjective `p : E →+* A` making `A` finite projective over `E`, extending scalars after
 restricting scalars induces the identity on `SplitK0`. -/

@@ -64,8 +64,7 @@ namespace RingHom
 theorem finite_toModule_of_surjective {R S : Type*} [Ring R] [Ring S] (f : R →+* S)
     (hf : Function.Surjective f) :
     letI := f.toModule; Module.Finite R S :=
-  letI := f.toModule
-  Module.Finite.of_surjective ({ f with map_smul' := f.map_mul } : R →ₗ[R] S) hf
+  Module.Finite.compHom_of_surjective (M := S) f hf
 
 /-- `R` is finitely generated as an `(R × S)`-module via `RingHom.fst R S`. -/
 theorem finite_fst (R S : Type*) [Ring R] [Ring S] :

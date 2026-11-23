@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 
@@ -86,8 +85,6 @@ theorem finiteProjectiveModulesRegular_obj :
   (rfl)
 
 instance : ObjectProperty.EssentiallySmall.{u} (finiteProjectiveModules R) :=
-  letI : ObjectProperty.EssentiallySmall.{u} (ModuleCat.isFG.{u} R) :=
-    (ObjectProperty.exists_equivalence_iff _).1 ⟨_, _, ⟨equivSmallModel.{u} (FGModuleCat.{u} R)⟩⟩
   ObjectProperty.EssentiallySmall.of_le (finiteProjectiveModules_le_finiteModules R)
 
 instance : (finiteProjectiveModules R).IsClosedUnderBinaryProducts :=

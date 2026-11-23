@@ -191,10 +191,6 @@ instance (R : Type u) (ι : Type v) [Ring R] [Fintype ι] [DecidableEq ι] :
     (ModuleCat.toMatrixModCat.{u, v, w} R ι).Additive where
   map_add {_ _ _ _} := ModuleCat.hom_ext <| LinearMap.ext fun _ ↦ funext fun _ ↦ rfl
 
-@[simp] theorem ModuleCat.toMatrixModCat_obj_smul_apply {R : Type u} [Ring R] {ι : Type v}
-    [Fintype ι] [DecidableEq ι] (M : ModuleCat.{w} R) (A : Matrix ι ι R)
-    (v : (ModuleCat.toMatrixModCat R ι).obj M) (i : ι) : (A • v) i = ∑ j : ι, A i j • v j := (rfl)
-
 namespace TauCeti
 
 variable (R : Type u) [Ring R] (ι : Type v) [Fintype ι] [DecidableEq ι]
@@ -205,7 +201,11 @@ def toMatrixModCatPiLinearEquiv :
       Matrix ι ι R where
   toFun v := Matrix.of fun i k ↦ v i k; invFun M i k := M i k
   left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl
-  map_smul' _ _ := by ext; simp [Matrix.mul_apply]
+  map_smul' A v := by
+    ext i k
+    -- `(ModuleCat.toMatrixModCat R ι).obj M` acts on underlying functions by `Matrix.Module`.
+    exact (congr_fun (Matrix.Module.smul_apply A (v : ι → (ι → R)) i) k).trans
+      (by simp [Matrix.mul_apply])
 
 @[simp] theorem toMatrixModCatPiLinearEquiv_apply (v) (i k : ι) :
     toMatrixModCatPiLinearEquiv R ι v i k = v i k := (rfl)

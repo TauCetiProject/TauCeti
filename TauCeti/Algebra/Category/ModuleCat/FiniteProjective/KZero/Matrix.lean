@@ -45,8 +45,6 @@ canonical universe-polymorphic isomorphism `KZero.{u} R ≃+ KZero.{max u v} (Ma
 
 * `TauCeti.FiniteProjectiveModules.matrixColumn R ι`: the column module `R^ι` over
   `Matrix ι ι R`, as a finitely generated projective module.
-* `TauCeti.FiniteProjectiveModules.matrixK0Equiv R ι`: the Morita isomorphism
-  `K₀(R) ≃+ K₀(Matrix ι ι R)` induced by `ModuleCat.matrixEquivalence`.
 * `TauCeti.FiniteProjectiveModules.matrixRankEquiv R ι h`: the isomorphism
   `K₀(Matrix ι ι R) ≃+ ℤ` normalized by the column module, when `R` has invariant basis number
   and its finitely generated projective modules are stably free.
@@ -57,10 +55,10 @@ canonical universe-polymorphic isomorphism `KZero.{u} R ≃+ KZero.{max u v} (Ma
 
 * `TauCeti.FiniteProjectiveModules.of_finiteProjectiveModulesRegular_matrix`: in
   `K₀(Matrix ι ι R)` the regular class is `card ι` times the column class.
-* `TauCeti.FiniteProjectiveModules.matrixK0Equiv_of_finiteProjectiveModulesRegular` and
-  `TauCeti.FiniteProjectiveModules.matrixK0Equiv_symm_of_finiteProjectiveModulesRegular`: the
-  Morita isomorphism sends `[R]` to the column class, and its inverse sends the regular class of
-  `Matrix ι ι R` to `card ι • [R]`.
+* `TauCeti.finiteProjectiveModulesMatrixSplitK0Equiv_of_finiteProjectiveModulesRegular` and
+  `TauCeti.finiteProjectiveModulesMatrixSplitK0Equiv_symm_of_finiteProjectiveModulesRegular`:
+  `finiteProjectiveModulesMatrixSplitK0Equiv` sends `[R]` to the column class, and its inverse
+  sends the regular class of `Matrix ι ι R` to `card ι • [R]`.
 * `TauCeti.FiniteProjectiveModules.matrixRankEquiv_of_matrixColumn` and
   `TauCeti.FiniteProjectiveModules.matrixRankEquiv_of_finiteProjectiveModulesRegular`: the
   normalized isomorphism with `ℤ` sends the column class to `1` and the regular class to `card ι`.
@@ -123,55 +121,50 @@ theorem of_finiteProjectiveModulesRegular_matrix :
   rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ ↦ matrixColumn R ι) (Matrix.linearEquivPi ι R),
     Finset.sum_const, Finset.card_univ]
 
+end FiniteProjectiveModules
+
 /-! ### The Morita isomorphism -/
 
-variable [Nonempty ι]
+section
+variable (R : Type u) [Ring R] (ι : Type) [Fintype ι] [DecidableEq ι] [Nonempty ι]
 
-/-- **Morita invariance of `K₀` for matrix rings.** The isomorphism
-`K₀(R) ≃+ K₀(Matrix ι ι R)` induced by the matrix Morita equivalence
-`ModuleCat.matrixEquivalence`. It sends the class of `M` to the class of the column module `M^ι`
-(`TauCeti.FiniteProjectiveModules.matrixK0Equiv_of`); this does not depend on the corner used to
-build the inverse equivalence. -/
-noncomputable def matrixK0Equiv :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
-      SplitK0.{u} (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory :=
-  SplitK0.mapEquiv
-    (ModuleCat.matrixEquivalence R (Classical.arbitrary ι)).finiteProjectiveModulesEquivalence
+/-- `finiteProjectiveModulesMatrixSplitK0Equiv` sends `[R]` to the class of the column module
+`R^ι`. -/
+theorem finiteProjectiveModulesMatrixSplitK0Equiv_of_finiteProjectiveModulesRegular :
+    finiteProjectiveModulesMatrixSplitK0Equiv R ι
+        (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) =
+      SplitK0.of.{u} (FiniteProjectiveModules.matrixColumn R ι) := by
+  rw [finiteProjectiveModulesMatrixSplitK0Equiv_of]
+  exact SplitK0.of_congr <| ObjectProperty.isoMk _ <| eqToIso <|
+    (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι _).trans
+      (FiniteProjectiveModules.matrixColumn_obj R ι).symm
 
-/-- The Morita isomorphism sends the class of `M` to the class of any finitely generated
-projective `Matrix ι ι R`-module isomorphic to the column module `M^ι`. -/
-theorem matrixK0Equiv_of (M : (finiteProjectiveModules R).FullSubcategory)
-    (N : (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory)
-    (e : (ι → M.obj) ≃ₗ[Matrix ι ι R] N.obj) :
-    matrixK0Equiv R ι (SplitK0.of.{u} M) = SplitK0.of.{u} N := by
-  rw [matrixK0Equiv, SplitK0.mapEquiv_of]
-  exact SplitK0.of_congr ((finiteProjectiveModules (Matrix ι ι R)).fullyFaithfulι.preimageIso
-    (eqToIso (Equivalence.finiteProjectiveModulesEquivalence_functor_obj_obj _ M) ≪≫
-      e.toModuleIso))
-
-/-- The Morita isomorphism sends `[R]` to the class of the column module `R^ι`. -/
+/-- The inverse of `finiteProjectiveModulesMatrixSplitK0Equiv` sends the class of the column
+module to `[R]`. -/
 @[simp]
-theorem matrixK0Equiv_of_finiteProjectiveModulesRegular :
-    matrixK0Equiv R ι (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) =
-      SplitK0.of.{u} (matrixColumn R ι) :=
-  matrixK0Equiv_of R ι _ _ (.refl _ _)
-
-/-- The inverse Morita isomorphism sends the class of the column module to `[R]`. -/
-@[simp]
-theorem matrixK0Equiv_symm_of_matrixColumn :
-    (matrixK0Equiv R ι).symm (SplitK0.of.{u} (matrixColumn R ι)) =
+theorem finiteProjectiveModulesMatrixSplitK0Equiv_symm_of_matrixColumn :
+    (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm
+        (SplitK0.of.{u} (FiniteProjectiveModules.matrixColumn R ι)) =
       SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
-  rw [AddEquiv.symm_apply_eq, matrixK0Equiv_of_finiteProjectiveModulesRegular]
+  rw [AddEquiv.symm_apply_eq,
+    finiteProjectiveModulesMatrixSplitK0Equiv_of_finiteProjectiveModulesRegular]
 
-/-- The inverse Morita isomorphism sends the class of the regular `Matrix ι ι R`-module to
-`card ι • [R]`. -/
+/-- The inverse of `finiteProjectiveModulesMatrixSplitK0Equiv` sends the class of the regular
+`Matrix ι ι R`-module to `card ι • [R]`. -/
 @[simp]
-theorem matrixK0Equiv_symm_of_finiteProjectiveModulesRegular :
-    (matrixK0Equiv R ι).symm (SplitK0.of.{u} (finiteProjectiveModulesRegular (Matrix ι ι R))) =
-      Fintype.card ι • SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
-  rw [of_finiteProjectiveModulesRegular_matrix, map_nsmul, matrixK0Equiv_symm_of_matrixColumn]
+theorem finiteProjectiveModulesMatrixSplitK0Equiv_symm_of_finiteProjectiveModulesRegular :
+    (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm
+        (SplitK0.of.{u} (finiteProjectiveModulesRegular (Matrix ι ι R))) =
+      Fintype.card ι • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
+  (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm_apply_eq.2
+    (finiteProjectiveModulesMatrixSplitK0Equiv_card_nsmul_finiteProjectiveModulesRegular R ι).symm
 
-omit [Nonempty ι] in
+end
+
+namespace FiniteProjectiveModules
+
+variable (R : Type u) [Ring R] (ι : Type) [Fintype ι] [DecidableEq ι]
+
 /-- **The column module is not stably free.** If `R` has invariant basis number and
 `card ι ≥ 2`, the column module `R^ι` over `Matrix ι ι R` is not stably free, and in particular not
 free. -/
@@ -180,9 +173,9 @@ theorem not_isStablyFree_matrixColumn [InvariantBasisNumber R] (hι : 1 < Fintyp
   have : Nonempty ι := Fintype.card_pos_iff.1 (by omega)
   intro _
   obtain ⟨z, hz⟩ := exists_zsmul_eq_of_isStablyFree (Matrix ι ι R) (matrixColumn R ι)
-  have h := congrArg (matrixK0Equiv R ι).symm hz
-  rw [map_zsmul, matrixK0Equiv_symm_of_finiteProjectiveModulesRegular,
-    matrixK0Equiv_symm_of_matrixColumn, ← natCast_zsmul, smul_smul] at h
+  have h := congrArg (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm hz
+  rw [map_zsmul, finiteProjectiveModulesMatrixSplitK0Equiv_symm_of_finiteProjectiveModulesRegular,
+    finiteProjectiveModulesMatrixSplitK0Equiv_symm_of_matrixColumn, ← natCast_zsmul, smul_smul] at h
   have h1 : z * Fintype.card ι = 1 :=
     zsmul_of_finiteProjectiveModulesRegular_injective R (h.trans (one_zsmul _).symm)
   have := Int.eq_one_of_dvd_one (by positivity) (Dvd.intro_left z h1)
@@ -192,7 +185,7 @@ theorem not_isStablyFree_matrixColumn [InvariantBasisNumber R] (hι : 1 < Fintyp
 
 section RankEquiv
 
-variable [InvariantBasisNumber R]
+variable [Nonempty ι] [InvariantBasisNumber R]
   (h : ∀ P : (finiteProjectiveModules R).FullSubcategory, IsStablyFree R P.obj)
 
 /-- **`K₀` of a matrix ring is `ℤ`, normalized by the column module.** If `R` has invariant basis
@@ -202,14 +195,16 @@ ring), then `K₀(Matrix ι ι R) ≃+ ℤ` by the inverse Morita isomorphism fo
 to `card ι`. -/
 noncomputable def matrixRankEquiv :
     SplitK0.{u} (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory ≃+ ℤ :=
-  (matrixK0Equiv R ι).symm.trans (rankEquiv R h)
+  (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm.trans (rankEquiv R h)
 
 /-- The inverse of `TauCeti.FiniteProjectiveModules.matrixRankEquiv` sends `z` to `z` times the
 column class. -/
 @[simp]
 theorem matrixRankEquiv_symm_apply (z : ℤ) :
     (matrixRankEquiv R ι h).symm z = z • SplitK0.of.{u} (matrixColumn R ι) := by
-  simp [matrixRankEquiv, map_zsmul]
+  rw [matrixRankEquiv, AddEquiv.symm_trans_apply, rankEquiv_symm_apply,
+    AddEquiv.symm_symm, map_zsmul,
+    finiteProjectiveModulesMatrixSplitK0Equiv_of_finiteProjectiveModulesRegular]
 
 /-- `TauCeti.FiniteProjectiveModules.matrixRankEquiv` sends the column class to `1`. -/
 @[simp]

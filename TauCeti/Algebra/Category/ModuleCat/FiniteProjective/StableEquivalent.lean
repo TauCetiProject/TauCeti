@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 public import TauCeti.Algebra.Module.StableEquivalent
 
 /-!
@@ -37,10 +37,6 @@ The file also records additivity on products of modules, `[P × Q] = [P] + [Q]` 
   exactly when `M` is stably free of rank `n`.
 * `TauCeti.FiniteProjectiveModules.classOf_eq_classOf_iff`: equality of classes in the same
   rank is stable equivalence.
-* `TauCeti.SplitK0.of_eq_add_of_linearEquiv_prod`: the class of a module isomorphic to `P × Q` is
-  the sum of the classes of `P` and `Q`.
-* `TauCeti.SplitK0.of_eq_nsmul_of_linearEquiv_fin`: the class of a module isomorphic to `Rⁿ` is
-  `n` times the class of `R`.
 * `TauCeti.SplitK0.of_eq_of_iff_stableEquivalent`: two finitely generated projective modules have
   the same class in split `K₀` if and only if they are stably equivalent.
 * `TauCeti.SplitK0.of_eq_of_iff_exists_prod_linearEquiv_fin`: a finitely generated projective
@@ -77,14 +73,6 @@ private theorem nonempty_biprod_iso_biprod_iff
 
 namespace SplitK0
 
-/-- **Additivity on products.** The class of a finitely generated projective module isomorphic to
-a product `P × Q` is the sum of the classes of `P` and `Q`. -/
-theorem of_eq_add_of_linearEquiv_prod {X P Q : (finiteProjectiveModules R).FullSubcategory}
-    (e : X.obj ≃ₗ[R] (P.obj × Q.obj)) : of.{u} X = of.{u} P + of.{u} Q := by
-  rw [← of_biprod]
-  exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
-    (e.trans (FiniteProjectiveModules.biprodLinearEquiv P Q).symm).toModuleIso)
-
 /-- **Additivity on finite products.** The class of a finitely generated projective module
 isomorphic to a finite product is the sum of the classes of the factors. -/
 theorem of_eq_sum_of_linearEquiv_pi {ι : Type} [Fintype ι]
@@ -102,24 +90,6 @@ theorem of_eq_sum_of_linearEquiv_pi {ι : Type} [Fintype ι]
   exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
     (e.toModuleIso ≪≫ (ModuleCat.biproductIsoPi fun i ↦ (P i).obj).symm ≪≫
       ((finiteProjectiveModules R).ι.mapBiproduct P).symm))
-
-/-- The class of a finitely generated projective module isomorphic to `Rⁿ` is `n` times the class
-of `R`. -/
-theorem of_eq_nsmul_of_linearEquiv_fin {X R' : (finiteProjectiveModules R).FullSubcategory}
-    {n : ℕ} (e : X.obj ≃ₗ[R] (Fin n → R)) (e' : R'.obj ≃ₗ[R] R) : of.{u} X = n • of.{u} R' := by
-  induction n generalizing X with
-  | zero =>
-    have : Subsingleton ((finiteProjectiveModules R).ι.obj X) := e.toEquiv.subsingleton
-    rw [zero_smul]
-    exact of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero (finiteProjectiveModules R).ι
-      X (ModuleCat.isZero_of_subsingleton _))
-  | succ n ih =>
-    -- Split `Rⁿ⁺¹ ≃ R × Rⁿ` and use additivity on products.
-    let Y : (finiteProjectiveModules R).FullSubcategory :=
-      ⟨ModuleCat.of R (Fin n → R), finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
-    rw [of_eq_add_of_linearEquiv_prod (P := R') (Q := Y)
-      (e.trans ((Fin.consLinearEquiv R fun _ ↦ R).symm.trans (e'.symm.prodCongr (.refl _ _)))),
-      ih (X := Y) (.refl _ _), succ_nsmul']
 
 /-- **Equality in projective `K₀` is stable equivalence.** Two finitely generated projective
 `R`-modules have the same class in split `K₀` if and only if `P × Rⁿ ≃ₗ[R] Q × Rⁿ` for some `n`. -/
@@ -140,9 +110,7 @@ theorem of_eq_of_iff_stableEquivalent {P Q : (finiteProjectiveModules R).FullSub
       (e.prodCongr (LinearEquiv.refl R N.obj)).trans <|
       (LinearEquiv.prodAssoc R Q.obj T.obj N.obj).trans <| (LinearEquiv.refl R Q.obj).prodCongr c⟩⟩
   · rintro ⟨n, h⟩
-    exact ⟨⟨ModuleCat.of R (Fin n → R),
-      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩,
-      nonempty_biprod_iso_biprod_iff.2 h⟩
+    exact ⟨FiniteProjectiveModules.finFreeObj R n, nonempty_biprod_iso_biprod_iff.2 h⟩
 
 /-- **Classes of finite free modules in projective `K₀`.** If `Q ≃ₗ[R] Rⁿ`, then a finitely
 generated projective module `P` has the class of `Q` in split `K₀` if and only if
@@ -194,7 +162,7 @@ theorem classOf_congr (e : M ≃ₗ[Λ] N) (n : ℕ) : classOf Λ M n = classOf 
 rank `n`: `M × Λᵏ ≃ Λⁿ⁺ᵏ` for some `k`. -/
 theorem classOf_eq_zero_iff (n : ℕ) :
     classOf Λ M n = 0 ↔ ∃ k : ℕ, Nonempty ((M × (Fin k → Λ)) ≃ₗ[Λ] (Fin (n + k) → Λ)) := by
-  rw [classOf, sub_eq_zero, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ))
+  rw [classOf, sub_eq_zero, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := finFreeObj Λ n)
     (.refl _ _) (.refl _ _)]
   exact SplitK0.of_eq_of_iff_exists_prod_linearEquiv_fin (.refl _ _)
 
@@ -216,7 +184,7 @@ variable (Λ) in
 @[simp]
 theorem classOf_free (n : ℕ) : classOf Λ (Fin n → Λ) n = 0 := by
   rw [classOf, sub_eq_zero]
-  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ)) (R' := obj Λ Λ)
+  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := finFreeObj Λ n) (R' := obj Λ Λ)
     (.refl _ _) (.refl _ _)
 
 /-- Extension of scalars on split `K₀` sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`, for every

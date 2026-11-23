@@ -48,9 +48,6 @@ module is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is 
   finitely generated projective module is stably free, every class is a multiple of `[A]`.
 * `TauCeti.FiniteProjectiveModules.rankEquiv_of`: the class of a free module goes to its rank.
 * `TauCeti.FiniteProjectiveModules.subsingleton_splitK0`: `K₀` of the zero ring is trivial.
-* `TauCeti.kZero_divisionRing`: `K₀` of a division ring is `ℤ`, with `[D] ↦ 1`.
-* `TauCeti.kZero_of_isPrincipalIdealRing`: `K₀` of a commutative principal ideal domain is `ℤ`,
-  with `[R] ↦ 1`, and `TauCeti.kZero_int` the case of `ℤ`.
 
 ## References
 
@@ -205,23 +202,5 @@ to its rank, computed as `Module.finrank` over `Rᵐᵒᵖ`. -/
 end PID
 
 end KZero
-
-/-- `K₀` of a division ring `D` is `ℤ`, with the class of the free right module of rank one going
-to `1`. -/
-theorem kZero_divisionRing (D : Type u) [DivisionRing D] :
-    ∃ e : KZero D ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Dᵐᵒᵖ)) = 1 :=
-  ⟨KZero.rankEquivPID D, KZero.regular_def D ▸ KZero.rankEquivPID_regular D⟩
-
-/-- `K₀` of a commutative principal ideal domain `R` is `ℤ`, with the class of the free right
-module of rank one going to `1`: every finitely generated projective module is free. -/
-theorem kZero_of_isPrincipalIdealRing (R : Type u) [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] :
-    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 :=
-  ⟨KZero.rankEquivPID R, KZero.regular_def R ▸ KZero.rankEquivPID_regular R⟩
-
-/-- `K₀(ℤ)` is `ℤ`, with the class of the free module of rank one going to `1`. -/
-theorem kZero_int :
-    ∃ e : KZero ℤ ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular ℤᵐᵒᵖ)) = 1 :=
-  ⟨KZero.rankEquivPID ℤ, KZero.regular_def ℤ ▸ KZero.rankEquivPID_regular ℤ⟩
 
 end TauCeti
