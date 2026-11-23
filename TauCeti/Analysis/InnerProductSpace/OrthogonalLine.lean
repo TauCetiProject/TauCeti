@@ -32,6 +32,8 @@ the orthogonal hyperplane of a unit vector `v` with the image of `g.graph`: when
 * `TauCeti.isClosed_range_add_smul_of_continuous` and
   `TauCeti.isClosed_range_add_smul_of_lipschitzWith`: a continuous or globally Lipschitz graph over
   `(ℝ ∙ v)ᗮ` (`‖v‖ = 1`) is closed.
+* `TauCeti.orthogonalLineEquiv_symm_fst_add_smul`: the transverse inverse coordinate of
+  `y + t • e` is `y`.
 * `TauCeti.lineSection_setOf_abs_inner_lt_div_two`: line sections of an open symmetric subgraph
   `{x | |⟪e, x⟫| < f y / 2}` are centered open intervals
   `Metric.eball 0 (ENNReal.ofReal (f y) / 2)`.
@@ -90,6 +92,12 @@ theorem isClosed_range_add_smul_of_lipschitzWith {v : E} (hv : ‖v‖ = 1) {K :
     IsClosed (Set.range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) :=
   isClosed_range_add_smul_of_continuous hv hg.continuous
 
+/-- The transverse inverse coordinate of `y + t • e` is `y`. -/
+theorem orthogonalLineEquiv_symm_fst_add_smul (e : E) (he : ‖e‖ = 1)
+    (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    ((orthogonalLineEquiv e he).symm ((y : E) + t • e)).1 = y := by
+  rw [← orthogonalLineEquiv_apply e he y t, ContinuousLinearEquiv.symm_apply_apply]
+
 /-- Line sections of an open symmetric subgraph `{x | |⟪e, x⟫| < f y / 2}` along the unit
 direction `e` are the centered open intervals `Metric.eball 0 (ENNReal.ofReal (f y) / 2)`. -/
 theorem lineSection_setOf_abs_inner_lt_div_two (e : E) (he : ‖e‖ = 1)
@@ -98,9 +106,8 @@ theorem lineSection_setOf_abs_inner_lt_div_two (e : E) (he : ‖e‖ = 1)
         {x : E | |⟪e, x⟫| < f ((orthogonalLineEquiv e he).symm x).1 / 2}} =
       Metric.eball (0 : ℝ) (ENNReal.ofReal (f y) / 2) := by
   ext t
-  have hqyt : ((orthogonalLineEquiv e he).symm ((y : E) + t • e)).1 = y := by
-    rw [← orthogonalLineEquiv_apply e he y t, (orthogonalLineEquiv e he).symm_apply_apply]
-  simp only [Set.mem_ofPred_eq, inner_add_smul e he, hqyt, Metric.mem_eball, edist_zero_right,
+  simp only [Set.mem_ofPred_eq, inner_add_smul e he,
+    orthogonalLineEquiv_symm_fst_add_smul e he y t, Metric.mem_eball, edist_zero_right,
     Real.eNorm_eq_ofReal_abs]
   rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_div_of_pos zero_lt_two]
   rcases le_or_gt (f y) 0 with hle | hgt

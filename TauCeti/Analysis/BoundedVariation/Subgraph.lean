@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
-public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
+public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.Deriv.Abs
 import TauCeti.Analysis.BoundedVariation.Coarea
+import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
+import TauCeti.MeasureTheory.Measure.Continuity
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Perimeter of smooth symmetric subgraphs
@@ -38,8 +42,9 @@ Writing `h x = w (q x) / 2 - |⟪e, x⟫|`, the subgraph is `{0 < h}`. For any `
 coarea formula (`LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fderiv`) along lines
 parallel to `e` bounds `∫⁻ r in Ioo 0 δ, P({r < h})` by `δ · ∫⁻_{0 < w} √(4 + ‖Dw‖²)`, so for
 every `k` there is `r_k ∈ (0, 1 / (k + 1))` with `P({r_k < h}) ≤ B + 1 / (k + 1)`. Since
-`{r_k < h} → {0 < h}` locally in measure via `TauCeti.tendsto_measure_setOf_pos_lt_le_inter`,
-lower semicontinuity of the perimeter concludes.
+`{r_k < h} → {0 < h}` locally in measure via
+`AEMeasurable.tendsto_measure_setOf_pos_lt_le_inter`, lower semicontinuity of the perimeter
+concludes.
 
 ## References
 
@@ -58,39 +63,40 @@ open scoped ENNReal RealInnerProductSpace Topology symmDiff
 
 namespace TauCeti
 
-/-- For an almost-everywhere measurable real function `f` on a finite-measure carrier `K` and a
-decreasing sequence `δ k → 0`, the measure of the shrinking positive level strips
-`{x | 0 < f x ∧ f x ≤ δ k} ∩ K` tends to `0`. -/
-theorem tendsto_measure_setOf_pos_lt_le_inter {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    {f : α → ℝ} (hf : AEMeasurable f μ) {K : Set α} (hK : NullMeasurableSet K μ)
-    (hKfin : μ K ≠ ∞) {δ : ℕ → ℝ} (hδ_anti : Antitone δ)
-    (hδ_lim : Tendsto δ atTop (𝓝 0)) :
-    Tendsto (fun k ↦ μ ({x | 0 < f x ∧ f x ≤ δ k} ∩ K)) atTop (𝓝 0) := by
-  let G : ℕ → Set α := fun k ↦ {x | 0 < f x ∧ f x ≤ δ k} ∩ K
-  have hGm (k : ℕ) : NullMeasurableSet (G k) μ :=
-    ((nullMeasurableSet_lt aemeasurable_const hf).inter
-      (nullMeasurableSet_le hf aemeasurable_const)).inter hK
-  have hGanti : Antitone G := fun _ _ hmn _ ⟨⟨h1, h2⟩, hxK⟩ ↦
-    ⟨⟨h1, h2.trans (hδ_anti hmn)⟩, hxK⟩
-  have hGfin : μ (G 0) ≠ ∞ :=
-    ne_top_of_le_ne_top hKfin (measure_mono inter_subset_right)
-  have hGinter : (⋂ k, G k) = ∅ := eq_empty_of_forall_notMem fun x hx ↦ by
-    simp only [mem_iInter, mem_inter_iff, mem_ofPred_eq, G] at hx
-    exact (hx 0).1.1.not_ge (ge_of_tendsto' hδ_lim fun k ↦ (hx k).1.2)
-  simpa only [Function.comp_def, hGinter, measure_empty] using
-    tendsto_measure_iInter_atTop hGm hGanti ⟨0, hGfin⟩
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- Orthogonal projection `E →L[ℝ] (ℝ ∙ e)ᗮ` induced by `TauCeti.orthogonalLineEquiv`. -/
+private def subgraphProj (e : E) (he : ‖e‖ = 1) : E →L[ℝ] (ℝ ∙ e)ᗮ :=
+  (ContinuousLinearMap.fst ℝ (ℝ ∙ e)ᗮ ℝ).comp
+    (orthogonalLineEquiv e he).symm.toContinuousLinearMap
+
+/-- Height function `x ↦ w (subgraphProj e he x) / 2 - |⟪e, x⟫|` of a symmetric subgraph. -/
+private def subgraphHeight (e : E) (he : ‖e‖ = 1) (w : (ℝ ∙ e)ᗮ → ℝ) (x : E) : ℝ :=
+  w (subgraphProj e he x) / 2 - |⟪e, x⟫_ℝ|
+
+private theorem subgraphProj_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    subgraphProj e he ((y : E) + t • e) = y :=
+  orthogonalLineEquiv_symm_fst_add_smul e he y t
+
+private theorem subgraphHeight_add_smul (e : E) (he : ‖e‖ = 1) (w : (ℝ ∙ e)ᗮ → ℝ)
+    (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    subgraphHeight e he w ((y : E) + t • e) = w y / 2 - |t| := by
+  simp [subgraphHeight, subgraphProj_add_smul e he, inner_add_smul e he]
+
+private theorem continuous_subgraphHeight (e : E) (he : ‖e‖ = 1) {w : (ℝ ∙ e)ᗮ → ℝ}
+    (hw : Continuous w) :
+    Continuous (subgraphHeight e he w) :=
+  ((hw.comp (subgraphProj e he).continuous).div_const 2).sub
+    (continuous_const.inner continuous_id).abs
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Clamped-gradient formula for a `C¹` symmetric subgraph: clamping `h x = w (q x) / 2 - |⟪e, x⟫|`
 to `[0, δ]` has a.e. gradient norm `(1 / 2) √(4 + ‖Dw (q x)‖²)` on `{0 < h < δ}` and `0` outside. -/
 private theorem enorm_fderiv_clamp_subgraph_ae (e : E) (he : ‖e‖ = 1)
     {w : (ℝ ∙ e)ᗮ → ℝ} (hw : ContDiff ℝ 1 w) {δ : ℝ} (hδ : 0 < δ) :
-    let q : E →L[ℝ] (ℝ ∙ e)ᗮ :=
-      (ContinuousLinearMap.fst ℝ (ℝ ∙ e)ᗮ ℝ).comp
-        (orthogonalLineEquiv e he).symm.toContinuousLinearMap
-    let h : E → ℝ := fun x ↦ w (q x) / 2 - |⟪e, x⟫_ℝ|
+    let q := subgraphProj e he
+    let h := subgraphHeight e he w
     let u : E → ℝ := fun x ↦ min (max (h x) 0) δ
     ∀ᵐ x : E ∂volume,
       ‖fderiv ℝ u x‖ₑ =
@@ -98,14 +104,7 @@ private theorem enorm_fderiv_clamp_subgraph_ae (e : E) (he : ‖e‖ = 1)
           (fun x ↦ ENNReal.ofReal ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2))) x := by
   intro q h u
   let H := (ℝ ∙ e)ᗮ
-  have hqyt (y : H) (t : ℝ) : q ((y : E) + t • e) = y := by
-    rw [← orthogonalLineEquiv_apply e he y t]
-    exact congrArg Prod.fst ((orthogonalLineEquiv e he).symm_apply_apply (y, t))
-  have hhyt (y : H) (t : ℝ) : h ((y : E) + t • e) = w y / 2 - |t| := by
-    simp [h, hqyt, inner_add_smul e he]
-  have hcont_h : Continuous h :=
-    ((hw.continuous.comp q.continuous).div_const 2).sub
-      (continuous_const.inner continuous_id).abs
+  have hcont_h : Continuous h := continuous_subgraphHeight e he hw.continuous
   let Z : Set E := {x : E | h x = 0 ∨ h x = δ ∨ ⟪e, x⟫_ℝ = 0}
   have hZ_closed : IsClosed Z :=
     (isClosed_eq hcont_h continuous_const).union
@@ -118,7 +117,7 @@ private theorem enorm_fderiv_clamp_subgraph_ae (e : E) (he : ‖e‖ = 1)
       (.of_forall fun y ↦ ?_)
     set R : ℝ := w y / 2
     have hsub : {t : ℝ | (y : E) + t • e ∈ Z} ⊆ {0, R, -R, R - δ, -(R - δ)} := fun t ht ↦ by
-      simp only [Z, mem_ofPred_eq, hhyt, inner_add_smul e he] at ht
+      simp only [Z, mem_ofPred_eq, h, subgraphHeight_add_smul e he, inner_add_smul e he] at ht
       rcases ht with h1 | h2 | h3
       · have habs : |t| = R := by dsimp only [R]; linarith
         rcases (abs_eq (habs ▸ abs_nonneg t)).1 habs with rfl | rfl <;> simp
@@ -151,24 +150,14 @@ private theorem enorm_fderiv_clamp_subgraph_ae (e : E) (he : ‖e‖ = 1)
         simpa [div_eq_inv_mul, smul_eq_mul, ContinuousLinearMap.smul_comp] using
           (((hw.differentiable one_ne_zero (q x)).hasFDerivAt).comp x
             q.hasFDerivAt).const_mul (1 / 2 : ℝ)
-      let σ : ℝ := if 0 < ⟪e, x⟫_ℝ then -1 else 1
-      have hσsq : σ ^ 2 = 1 := by dsimp [σ]; split_ifs <;> norm_num
+      let σ : ℝ := -(SignType.sign ⟪e, x⟫_ℝ : ℝ)
+      have hσsq : σ ^ 2 = 1 := by
+        dsimp [σ]
+        rcases lt_or_gt_of_ne hxt with ht | ht <;> simp [ht]
       have hd2 : HasFDerivAt (fun z : E ↦ -|⟪e, z⟫_ℝ|) (σ • innerSL ℝ e) x := by
-        rcases lt_or_gt_of_ne hxt with ht_neg | ht_pos
-        · have hev : (fun z : E ↦ -|⟪e, z⟫_ℝ|) =ᶠ[𝓝 x] fun z ↦ ⟪e, z⟫_ℝ := by
-            filter_upwards [(isOpen_lt (continuous_const.inner continuous_id)
-              continuous_const).mem_nhds ht_neg] with z hz
-            dsimp only [id_eq] at hz; rw [abs_of_neg hz, neg_neg]
-          have hσ_eq : σ = 1 := ite_eq_right (not_lt.2 ht_neg.le)
-          rw [hσ_eq, one_smul]
-          exact (innerSL ℝ e).hasFDerivAt.congr_of_eventuallyEq hev
-        · have hev : (fun z : E ↦ -|⟪e, z⟫_ℝ|) =ᶠ[𝓝 x] fun z ↦ -⟪e, z⟫_ℝ := by
-            filter_upwards [(isOpen_lt continuous_const
-              (continuous_const.inner continuous_id)).mem_nhds ht_pos] with z hz
-            dsimp only [id_eq] at hz; rw [abs_of_pos hz]
-          have hσ_eq : σ = -1 := ite_eq_left ht_pos
-          rw [hσ_eq, neg_one_smul]
-          exact (innerSL ℝ e).hasFDerivAt.neg.congr_of_eventuallyEq hev
+        change HasFDerivAt _ (-(SignType.sign ⟪e, x⟫_ℝ : ℝ) • innerSL ℝ e) x
+        rw [neg_smul]
+        exact ((innerSL ℝ e).hasFDerivAt.abs hxt).neg
       have hdh : HasFDerivAt h
           ((((1 / 2 : ℝ) • fderiv ℝ w (q x)).comp q) + σ • innerSL ℝ e) x :=
         (hd1.add hd2).congr_of_eventuallyEq (.of_forall fun _ ↦ (sub_eq_add_neg _ _).symm)
@@ -183,7 +172,8 @@ private theorem enorm_fderiv_clamp_subgraph_ae (e : E) (he : ‖e‖ = 1)
           simpa [v] using InnerProductSpace.toDual_symm_apply
             (y := (1 / 2 : ℝ) • fderiv ℝ w (q x)) (x := y_z)
         simp only [add_apply, ContinuousLinearMap.comp_apply, smul_apply, innerSL_apply_apply,
-          orthogonalLineEquiv_apply, hqyt, InnerProductSpace.toDual_apply_apply, inner_add_left,
+          orthogonalLineEquiv_apply, q, subgraphProj_add_smul e he,
+          InnerProductSpace.toDual_apply_apply, inner_add_left,
           inner_add_right, inner_smul_left, inner_smul_right,
           Submodule.mem_orthogonal_singleton_iff_inner_left.mp v.property,
           Submodule.mem_orthogonal_singleton_iff_inner_right.mp y_z.property,
@@ -204,26 +194,6 @@ private theorem enorm_fderiv_clamp_subgraph_ae (e : E) (he : ‖e‖ = 1)
       rw [hev.fderiv_eq, fderiv_const_apply, indicator_of_notMem hx_not]
       exact (eNorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
 
-/-- One-dimensional strip-length bound: `{t : ℝ | 0 < R - |t| ∧ R - |t| < δ}` consists of two
-symmetric open intervals of total length at most `2 * δ`. -/
-private theorem volume_setOf_pos_sub_abs_lt_le (R : ℝ) {δ : ℝ} (hδ : 0 < δ) :
-    volume {t : ℝ | 0 < R - |t| ∧ R - |t| < δ} ≤ ENNReal.ofReal (2 * δ) := by
-  have hTsub : {t : ℝ | 0 < R - |t| ∧ R - |t| < δ} ⊆
-      Ioo (R - δ) R ∪ Ioo (-R) (-(R - δ)) := by
-    intro t ht
-    simp only [mem_ofPred_eq] at ht
-    rcases ht with ⟨h1, h2⟩
-    rcases le_or_gt 0 t with ht0 | ht0
-    · rw [abs_of_nonneg ht0] at h1 h2
-      exact Or.inl ⟨by linarith, by linarith⟩
-    · rw [abs_of_neg ht0] at h1 h2
-      exact Or.inr ⟨by linarith, by linarith⟩
-  refine ((measure_mono hTsub).trans (measure_union_le _ _)).trans_eq ?_
-  rw [Real.volume_Ioo, Real.volume_Ioo]
-  have hlen1 : R - (R - δ) = δ := by ring
-  have hlen2 : -(R - δ) - -R = δ := by ring
-  rw [hlen1, hlen2, ← ENNReal.ofReal_add hδ.le hδ.le, two_mul]
-
 /-- **Perimeter upper bound for a `C¹` symmetric subgraph.** Let `w : (ℝ ∙ e)ᗮ → ℝ` be `C¹`. The
 open symmetric subgraph `S = {x : E | |⟪e, x⟫| < w y / 2}` (where `y` is the orthogonal projection
 of `x` onto `(ℝ ∙ e)ᗮ`) has whole-space perimeter at most `∫⁻_{0 < w} √(4 + ‖Dw‖²)`. No
@@ -234,20 +204,12 @@ theorem perimeter_setOf_abs_inner_lt_div_two_le (e : E) (he : ‖e‖ = 1)
         {x : E | |⟪e, x⟫_ℝ| < w ((orthogonalLineEquiv e he).symm x).1 / 2} ≤
       ∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < w y}, ENNReal.ofReal √(4 + ‖fderiv ℝ w y‖ ^ 2) := by
   let H := (ℝ ∙ e)ᗮ
-  let q : E →L[ℝ] H :=
-    (ContinuousLinearMap.fst ℝ H ℝ).comp (orthogonalLineEquiv e he).symm.toContinuousLinearMap
-  have hqyt (y : H) (t : ℝ) : q ((y : E) + t • e) = y := by
-    rw [← orthogonalLineEquiv_apply e he y t]
-    exact congrArg Prod.fst ((orthogonalLineEquiv e he).symm_apply_apply (y, t))
-  let h : E → ℝ := fun x ↦ w (q x) / 2 - |⟪e, x⟫_ℝ|
-  have hhyt (y : H) (t : ℝ) : h ((y : E) + t • e) = w y / 2 - |t| := by
-    simp [h, hqyt, inner_add_smul e he]
+  let q := subgraphProj e he
+  let h := subgraphHeight e he w
   have hS_eq : {x : E | |⟪e, x⟫_ℝ| < w ((orthogonalLineEquiv e he).symm x).1 / 2} =
-      {x : E | 0 < h x} := by ext x; simp [h, q, sub_pos]
+      {x : E | 0 < h x} := by ext x; simp [h, subgraphHeight, subgraphProj, sub_pos]
   rw [hS_eq]
-  have hcont_h : Continuous h :=
-    ((hw.continuous.comp q.continuous).div_const 2).sub
-      (continuous_const.inner continuous_id).abs
+  have hcont_h : Continuous h := continuous_subgraphHeight e he hw.continuous
   have hlip_h : LocallyLipschitz h := by
     refine ((hw.comp q.contDiff).div_const 2).locallyLipschitz.sub
       (LipschitzWith.of_dist_le_mul (K := 1) fun x₁ x₂ ↦ ?_).locallyLipschitz
@@ -306,8 +268,11 @@ theorem perimeter_setOf_abs_inner_lt_div_two_le (e : E) (he : ‖e‖ = 1)
               (fun x ↦ ENNReal.ofReal ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2)))
               ((y : E) + t • e)) = T.indicator (fun _ ↦ c) := funext fun t ↦ by
             by_cases ht : t ∈ T
-            · rw [indicator_of_mem ht, indicator_of_mem (by simpa [T, hhyt] using ht), hqyt]
-            · rw [indicator_of_notMem ht, indicator_of_notMem (by simpa [T, hhyt] using ht)]
+            · rw [indicator_of_mem ht,
+                indicator_of_mem (by simpa [T, h, subgraphHeight_add_smul e he] using ht),
+                subgraphProj_add_smul e he]
+            · rw [indicator_of_notMem ht,
+                indicator_of_notMem (by simpa [T, h, subgraphHeight_add_smul e he] using ht)]
           rw [hind_eq, lintegral_indicator_const hTm]
           by_cases hy : 0 < w y
           · rw [indicator_of_mem hy]
@@ -348,7 +313,7 @@ theorem perimeter_setOf_abs_inner_lt_div_two_le (e : E) (he : ‖e‖ = 1)
       (measurableSet_lt measurable_const hcont_h.measurable).nullMeasurableSet fun K hK _ ↦ ?_
     have hGlim : Tendsto
         (fun k : ℕ ↦ volume ({x : E | 0 < h x ∧ h x ≤ 1 / ((k : ℝ) + 1)} ∩ K)) atTop (𝓝 0) :=
-      tendsto_measure_setOf_pos_lt_le_inter hcont_h.measurable.aemeasurable
+      hcont_h.measurable.aemeasurable.tendsto_measure_setOf_pos_lt_le_inter
         hK.measurableSet.nullMeasurableSet hK.measure_lt_top.ne
         (fun _ _ hmn ↦ one_div_le_one_div_of_le (by positivity) (by gcongr))
         tendsto_one_div_add_atTop_nhds_zero_nat

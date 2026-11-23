@@ -26,9 +26,10 @@ It localizes the extra cost to `A`. After importing
 is null-measurable, so both bounds apply to it by taking
 `hA := nullMeasurableSet_noninterval_lineSection hs hfin e he` and `hbad := .of_forall fun _ ↦ id`.
 When `s` also has finite perimeter, `D` and `A` have finite measure
-(`TauCeti.volume_setOf_pos_volume_lineSection_ne_top`,
-`TauCeti.volume_ne_top_of_noninterval_lineSection`) and the real section-length function is
-integrable (`TauCeti.integrable_measureReal_lineSection`).
+(`MeasureTheory.NullMeasurableSet.volume_setOf_pos_volume_lineSection_ne_top`,
+`MeasureTheory.NullMeasurableSet.volume_ne_top_of_noninterval_lineSection`) and the real
+section-length function is integrable
+(`MeasureTheory.NullMeasurableSet.integrable_measureReal_lineSection`).
 
 ## References
 
@@ -124,16 +125,14 @@ theorem two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSectio
     hs hfin e he hA hbad (fun _ ↦ 1)
   simpa using h.trans (by simpa using lintegral_perimeter_lineSection_le hs hfin e he)
 
-/-- For a null-measurable set of finite volume, the real lengths of its parallel line sections
-along a unit vector form an integrable function on the orthogonal hyperplane. -/
-theorem integrable_measureReal_lineSection {s : Set E} (hs : NullMeasurableSet s volume)
-    (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1) :
-    Integrable (fun y : (ℝ ∙ e)ᗮ ↦ volume.real {t : ℝ | (y : E) + t • e ∈ s}) volume :=
-  ⟨(aemeasurable_volume_lineSection e he hs).ennreal_toReal.aestronglyMeasurable,
-    (lintegral_mono fun y ↦ by
-      rw [Real.eNorm_of_nonneg measureReal_nonneg, measureReal_def]
-      exact ENNReal.ofReal_toReal_le).trans_lt
-      ((volume_eq_lintegral_volume_lineSection e he hs).symm ▸ hfin.lt_top)⟩
+end TauCeti
+
+namespace MeasureTheory.NullMeasurableSet
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- For a finite-volume, finite-perimeter set, the transverse projection of positive-length line
 sections has finite measure. -/
@@ -160,4 +159,4 @@ theorem volume_ne_top_of_noninterval_lineSection {s : Set E}
   exact ne_top_of_le_ne_top hP <|
     (le_self_add.trans_eq (two_mul _).symm).trans (le_add_self.trans hle)
 
-end TauCeti
+end MeasureTheory.NullMeasurableSet

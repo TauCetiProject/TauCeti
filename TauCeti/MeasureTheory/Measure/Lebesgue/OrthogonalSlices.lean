@@ -24,6 +24,9 @@ Replacing a set by a volume-a.e. equal representative changes almost every secti
 on a one-dimensional null set. This permits line-section arguments for measurable sets
 without choosing a Borel representative permanently.
 The length of a line section is independent of its base point along the line, in any real module.
+For a null-measurable set of finite volume, these real section lengths form an integrable function
+on the orthogonal hyperplane
+(`MeasureTheory.NullMeasurableSet.integrable_measureReal_lineSection`).
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
@@ -433,3 +436,23 @@ theorem norm_measurableEquivProd_le (V : Submodule ℝ E) {p k : E} (hkp : k - p
   abel
 
 end Submodule
+
+namespace MeasureTheory.NullMeasurableSet
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- For a null-measurable set of finite volume, the real lengths of its parallel line sections
+along a unit vector form an integrable function on the orthogonal hyperplane. -/
+theorem integrable_measureReal_lineSection {s : Set E} (hs : NullMeasurableSet s volume)
+    (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1) :
+    Integrable (fun y : (ℝ ∙ e)ᗮ ↦ volume.real {t : ℝ | (y : E) + t • e ∈ s}) volume :=
+  ⟨(aemeasurable_volume_lineSection e he hs).ennreal_toReal.aestronglyMeasurable,
+    (lintegral_mono fun y ↦ by
+      rw [Real.eNorm_of_nonneg measureReal_nonneg, measureReal_def]
+      exact ENNReal.ofReal_toReal_le).trans_lt
+      ((volume_eq_lintegral_volume_lineSection e he hs).symm ▸ hfin.lt_top)⟩
+
+end MeasureTheory.NullMeasurableSet

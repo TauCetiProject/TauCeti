@@ -37,6 +37,9 @@ of a `C^N` function, with no support or growth condition
 Integrals against the mollifications of a uniformly continuous function converge, along any filter
 of bump indices with radii tending to zero, to the integral against the function
 (`ContDiffBump.tendsto_integral_normed_convolution_smul`).
+Pointwise and indicator-integral bounds under `h² + ‖φ₀‖² ≤ 1` are recorded in
+`ContDiffBump.normed_convolution_le_sqrt_one_sub_norm_sq` and
+`ContDiffBump.ofReal_integral_indicator_mul_convolution_le`.
 
 Along an arbitrary filter of bump indices, convolution with normalized bumps also converges
 uniformly on a neighbourhood filter of a point of continuity of the function.
@@ -473,6 +476,36 @@ theorem ContDiffBump.normed_convolution_le_sqrt_one_sub_norm_sq {G F : Type*}
   rw [h1, h2, Real.norm_eq_abs, sq_abs] at hnorm
   exact Real.le_sqrt_of_sq_le
     (by nlinarith [norm_nonneg ((ρ.normed μ ⋆[lsmul ℝ ℝ, μ] F') y)])
+
+/-- Pairing a constant indicator `S.indicator c` (`0 ≤ c`) with the mollification of a continuous
+function `h₀ : G → [0, 1]` satisfying `h₀² + ‖φ₀‖² ≤ 1` is bounded by `c` times the Lebesgue
+integral over `S` of `√(1 - ‖ρ ⋆ φ₀‖²)`. -/
+theorem ContDiffBump.ofReal_integral_indicator_mul_convolution_le {G F : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G]
+    [BorelSpace G] {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [CompleteSpace F] (ρ : ContDiffBump (0 : G)) {φ₀ : G → F} (hφ₀ : Continuous φ₀)
+    {S : Set G} (hS : NullMeasurableSet S μ) {c : ℝ} (hc : 0 ≤ c)
+    (hS_int : Integrable (S.indicator (fun _ ↦ c)) μ) {h₀ : G → ℝ} (hh₀ : Continuous h₀)
+    (hmem : ∀ y, h₀ y ∈ Set.Icc (0 : ℝ) 1) (hsq : ∀ y, h₀ y ^ 2 + ‖φ₀ y‖ ^ 2 ≤ 1) :
+    ENNReal.ofReal
+        (∫ y : G, S.indicator (fun _ ↦ c) y * (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] h₀) y ∂μ) ≤
+      ENNReal.ofReal c *
+        ∫⁻ y in S, ENNReal.ofReal √(1 - ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] φ₀) y‖ ^ 2) ∂μ := by
+  have hm (y : G) := ρ.normed_convolution_mem_Icc (μ := μ) hh₀.locallyIntegrable hmem y
+  have hcont : Continuous (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] h₀) :=
+    ρ.hasCompactSupport_normed.continuous_convolution_left
+      (lsmul ℝ ℝ) ρ.continuous_normed hh₀.locallyIntegrable
+  rw [ofReal_integral_eq_lintegral_ofReal (hS_int.mul_bdd (c := 1)
+        hcont.aestronglyMeasurable (.of_forall fun y ↦ by
+          rw [Real.norm_of_nonneg (hm y).1]; exact (hm y).2))
+      (.of_forall fun y ↦ mul_nonneg (by by_cases hy : y ∈ S <;> simp [hy, hc]) (hm y).1),
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← lintegral_indicator₀ hS]
+  refine lintegral_mono fun y ↦ ?_
+  by_cases hy : y ∈ S
+  · rw [Set.indicator_of_mem hy, Set.indicator_of_mem hy, ENNReal.ofReal_mul hc]
+    exact mul_le_mul_right (ENNReal.ofReal_le_ofReal
+      (ρ.normed_convolution_le_sqrt_one_sub_norm_sq hh₀ hφ₀ hsq y)) _
+  · simp [hy]
 
 /-- A normalized bump of outer radius `r` changes a Lipschitz function by at most `K * r`. -/
 theorem LipschitzWith.dist_normed_convolution_le {E F : Type*}

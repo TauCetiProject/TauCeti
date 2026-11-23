@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
 # The Cauchy–Schwarz inequality for real integrals
@@ -20,6 +21,9 @@ For square-integrable real functions `f` and `g`,
 for real integrals with real exponents and roots
 (`MeasureTheory.integral_mul_le_Lp_mul_Lq_of_nonneg`); this is the squared form for `p = q = 2`,
 without roots or sign conditions, as it is used in energy estimates.
+
+A weighted variant for nonnegative `a`, `d` and positive `g` gives
+`(∫ a √d)² ≤ (∫ a (d / g)) (∫ a g)` (`TauCeti.sq_integral_mul_sqrt_le_integral_mul_div_mul`).
 -/
 
 public section
@@ -49,5 +53,40 @@ theorem sq_integral_mul_le_integral_sq_mul_integral_sq {α : Type*} [MeasurableS
         pow_le_pow_left₀ (integral_nonneg fun x ↦ by positivity) h 2
     _ = (∫ x, f x ^ 2 ∂μ) * ∫ x, g x ^ 2 ∂μ := by
         rw [mul_pow, Real.sq_sqrt hF, Real.sq_sqrt hG]
+
+/-- **Weighted Cauchy–Schwarz inequality** `(∫ a √d)² ≤ (∫ a (d / g)) (∫ a g)` for almost
+everywhere nonnegative weights `a` and `d` and almost everywhere positive `g`. -/
+theorem sq_integral_mul_sqrt_le_integral_mul_div_mul {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {a d g : α → ℝ} (ha : ∀ᵐ x ∂μ, 0 ≤ a x) (hd : ∀ᵐ x ∂μ, 0 ≤ d x)
+    (hg : ∀ᵐ x ∂μ, 0 < g x) (hadg : Integrable (fun x ↦ a x * (d x / g x)) μ)
+    (hag : Integrable (fun x ↦ a x * g x) μ) :
+    (∫ x, a x * √(d x) ∂μ) ^ 2 ≤ (∫ x, a x * (d x / g x) ∂μ) * ∫ x, a x * g x ∂μ := by
+  have hmem1 : MemLp (fun x ↦ √(a x * (d x / g x))) 2 μ :=
+    (memLp_two_iff_integrable_sq
+      (Real.continuous_sqrt.comp_aestronglyMeasurable hadg.aestronglyMeasurable)).2 <|
+      hadg.congr <| by
+        filter_upwards [ha, hd, hg] with x hxa hxd hxg
+        exact (Real.sq_sqrt (mul_nonneg hxa (div_nonneg hxd hxg.le))).symm
+  have hmem2 : MemLp (fun x ↦ √(a x * g x)) 2 μ :=
+    (memLp_two_iff_integrable_sq
+      (Real.continuous_sqrt.comp_aestronglyMeasurable hag.aestronglyMeasurable)).2 <|
+      hag.congr <| by
+        filter_upwards [ha, hg] with x hxa hxg
+        exact (Real.sq_sqrt (mul_nonneg hxa hxg.le)).symm
+  have hcs := sq_integral_mul_le_integral_sq_mul_integral_sq hmem1 hmem2
+  have hprod : (fun x ↦ √(a x * (d x / g x)) * √(a x * g x)) =ᵐ[μ] fun x ↦ a x * √(d x) := by
+    filter_upwards [ha, hd, hg] with x hxa hxd hxg
+    have hmul : a x * (d x / g x) * (a x * g x) = a x ^ 2 * d x := by
+      calc a x * (d x / g x) * (a x * g x) = a x ^ 2 * d x * (g x / g x) := by ring
+        _ = a x ^ 2 * d x := by rw [div_self hxg.ne', mul_one]
+    rw [← Real.sqrt_mul (mul_nonneg hxa (div_nonneg hxd hxg.le)), hmul,
+      Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hxa]
+  have hsq1 : (fun x ↦ √(a x * (d x / g x)) ^ 2) =ᵐ[μ] fun x ↦ a x * (d x / g x) := by
+    filter_upwards [ha, hd, hg] with x hxa hxd hxg
+    exact Real.sq_sqrt (mul_nonneg hxa (div_nonneg hxd hxg.le))
+  have hsq2 : (fun x ↦ √(a x * g x) ^ 2) =ᵐ[μ] fun x ↦ a x * g x := by
+    filter_upwards [ha, hg] with x hxa hxg
+    exact Real.sq_sqrt (mul_nonneg hxa hxg.le)
+  rwa [integral_congr_ae hprod, integral_congr_ae hsq1, integral_congr_ae hsq2] at hcs
 
 end TauCeti

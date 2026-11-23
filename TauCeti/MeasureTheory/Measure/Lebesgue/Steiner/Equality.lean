@@ -7,19 +7,18 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
-import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.BoundedVariation.Convolution
-import TauCeti.Analysis.BoundedVariation.Slicing.Excess
 import TauCeti.Analysis.BoundedVariation.Slicing.Measurability
 import TauCeti.Analysis.BoundedVariation.Slicing.MollifiedExcess
+import TauCeti.Analysis.BoundedVariation.Subgraph
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Measure.Continuity
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Perimeter
-import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Subgraph
 
 /-!
 # Equality in Steiner's perimeter inequality
@@ -51,7 +50,7 @@ noninterval sections still give a symmetral of infinite perimeter satisfies `P(S
 
 For a shrinking family of radial smooth mollifiers `κ_j` on `H`, put `w_j = κ_j ⋆ v`,
 `d_j = κ_j ⋆ (2 · 1_D)`, and `a_j = κ_j ⋆ 1_A`. By the mollified slicing excess inequality
-(`MeasureTheory.NullMeasurableSet.mul_integral_sqrt_normed_convolution_add_two_mul_sq_le`),
+(`MeasureTheory.NullMeasurableSet.mul_integral_sqrt_sq_add_norm_fderiv_sq_add_two_mul_sq_le`),
 
 `M ∫ √(d_j² + ‖∇w_j‖²) + 2 (∫ a_j √d_j)² ≤ M P(s)`,
 
@@ -81,124 +80,118 @@ open scoped Convolution ENNReal RealInnerProductSpace Topology symmDiff
 
 namespace MeasureTheory.NullMeasurableSet
 
-/-- For shrinking normalized bumps `phi i` and finite-measure null-measurable sets `A, D` with
-`A ⊆ᵐ D`, the mollifications `a i = phi i ⋆ 1_A` and `d i = phi i ⋆ (2 · 1_D)` satisfy
-`∫ a i √(d i) → √2 * mu.real A`. -/
-private theorem tendsto_integral_normed_convolution_mul_sqrt_normed_convolution
-    {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
-    [MeasurableSpace H] [BorelSpace H] {mu : Measure H} [mu.IsAddHaarMeasure]
-    {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : H)}
-    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (𝓝 0)) {A D : Set H}
-    (hA : NullMeasurableSet A mu) (hD : NullMeasurableSet D mu)
-    (hAfin : mu A ≠ ∞) (hDfin : mu D ≠ ∞) (hAD : ∀ᵐ x ∂mu, x ∈ A → x ∈ D) :
-    Tendsto (fun i ↦ ∫ x,
-        ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] A.indicator (fun _ ↦ (1 : ℝ))) x *
-          √(((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] D.indicator (fun _ ↦ (2 : ℝ))) x) ∂mu)
-      l (𝓝 (√2 * mu.real A)) := by
-  let fA : H → ℝ := A.indicator (fun _ ↦ 1)
-  let fD : H → ℝ := D.indicator (fun _ ↦ 2)
-  let a : I → H → ℝ := fun i ↦ (phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fA
-  let d : I → H → ℝ := fun i ↦ (phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fD
-  have hA_int : Integrable fA mu := (integrableOn_const hAfin).integrable_indicator₀ hA
-  have hD_int : Integrable fD mu := (integrableOn_const hDfin).integrable_indicator₀ hD
-  have ha_int (i) : Integrable (a i) mu :=
-    (phi i).integrable_normed.integrable_convolution _ hA_int
-  have hd_int (i) : Integrable (d i) mu :=
-    (phi i).integrable_normed.integrable_convolution _ hD_int
-  have hd_mem (i : I) (x : H) : d i x ∈ Icc (0 : ℝ) 2 :=
-    (phi i).normed_convolution_indicator_mem_Icc zero_le_two hD_int.locallyIntegrable x
-  have htarget_ae : (fun x : H ↦ fA x * √(fD x)) =ᵐ[mu] A.indicator (fun _ ↦ √2) :=
-    hAD.mono fun x hx ↦ by by_cases hxA : x ∈ A <;> simp [fA, fD, hxA, hx]
-  have htarget : ∫ x, fA x * √(fD x) ∂mu = √2 * mu.real A := by
-    rw [integral_congr_ae htarget_ae, integral_indicator₀ hA, setIntegral_const, smul_eq_mul,
-      mul_comm]
-  have hbound : Tendsto (fun i ↦ √2 * (∫ x, |a i x - fA x| ∂mu) +
-      √(mu.real A * ∫ x, |d i x - fD x| ∂mu)) l (𝓝 0) := by
-    have h1 := (tendsto_integral_abs_normed_convolution_sub hphi hA_int).const_mul √2
-    have h2 := (Real.continuous_sqrt.tendsto 0).comp
-      (by simpa only [mul_zero] using
-        (tendsto_integral_abs_normed_convolution_sub hphi hD_int).const_mul (mu.real A))
-    simpa only [Function.comp_def, mul_zero, Real.sqrt_zero, add_zero] using h1.add h2
-  have hfA_sq (x : H) : fA x ^ 2 = fA x := by by_cases hx : x ∈ A <;> simp [fA, hx]
-  have hM1 : MemLp fA 2 mu := by
-    rw [memLp_two_iff_integrable_sq hA_int.aestronglyMeasurable]
-    exact hA_int.congr (.of_forall fun x ↦ (hfA_sq x).symm)
-  have hint2 : Integrable (fun x ↦ fA x * √(fD x)) mu :=
-    hA_int.mul_bdd (c := √2)
-      (Real.continuous_sqrt.comp_aestronglyMeasurable hD_int.aestronglyMeasurable)
-      (.of_forall fun x ↦ by
-        rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-        exact Real.sqrt_le_sqrt (by by_cases hx : x ∈ D <;> simp [fD, hx]))
-  rw [← htarget, Metric.tendsto_nhds]
-  intro r hr
-  filter_upwards [hbound.eventually (gt_mem_nhds hr)] with i hi
-  rw [Real.dist_eq]
-  have hint1 : Integrable (fun x ↦ a i x * √(d i x)) mu :=
-    (ha_int i).mul_bdd (c := √2)
-      (Real.continuous_sqrt.comp_aestronglyMeasurable (hd_int i).aestronglyMeasurable)
-      (.of_forall fun x ↦ by
-        rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]; exact Real.sqrt_le_sqrt (hd_mem i x).2)
-  have hM2 : MemLp (fun x ↦ √|d i x - fD x|) 2 mu :=
-    (memLp_two_iff_integrable_sq
-      (Real.continuous_sqrt.comp_aestronglyMeasurable
-        ((hd_int i).sub hD_int).abs.aestronglyMeasurable)).2
-      (((hd_int i).sub hD_int).abs.congr (.of_forall fun _ ↦ (Real.sq_sqrt (abs_nonneg _)).symm))
-  have hcs_sqrt : ∫ x, fA x * √|d i x - fD x| ∂mu ≤
-      √(mu.real A * ∫ x, |d i x - fD x| ∂mu) := by
-    have hcs := sq_integral_mul_le_integral_sq_mul_integral_sq hM1 hM2
-    have hsqA : ∫ x, fA x ^ 2 ∂mu = mu.real A := by
-      rw [integral_congr_ae (.of_forall hfA_sq), integral_indicator₀ hA, setIntegral_const,
-        smul_eq_mul, mul_one]
-    have hsqD : ∫ x, √|d i x - fD x| ^ 2 ∂mu = ∫ x, |d i x - fD x| ∂mu :=
-      integral_congr_ae (.of_forall fun _ ↦ Real.sq_sqrt (abs_nonneg _))
-    rw [hsqA, hsqD] at hcs
-    exact Real.le_sqrt_of_sq_le hcs
-  have hterm1 : Integrable (fun x ↦ √2 * |a i x - fA x|) mu :=
-    ((ha_int i).sub hA_int).abs.const_mul √2
-  have hterm2 : Integrable (fun x ↦ fA x * √|d i x - fD x|) mu := hM1.integrable_mul hM2
-  refine lt_of_le_of_lt ?_ hi
-  rw [← integral_sub hint1 hint2]
-  have hdiff_eq (x : H) : a i x * √(d i x) - fA x * √(fD x) =
-      (a i x - fA x) * √(d i x) + fA x * (√(d i x) - √(fD x)) := by ring
-  calc |∫ x, (a i x * √(d i x) - fA x * √(fD x)) ∂mu|
-      ≤ ∫ x, |a i x * √(d i x) - fA x * √(fD x)| ∂mu := abs_integral_le_integral_abs
-    _ ≤ ∫ x, (√2 * |a i x - fA x| + fA x * √|d i x - fD x|) ∂mu :=
-        integral_mono (hint1.sub hint2).abs (hterm1.add hterm2) fun x ↦ by
-          rw [hdiff_eq x]
-          refine (abs_add_le _ _).trans (add_le_add ?_ ?_)
-          · rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _), mul_comm]
-            exact mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt (hd_mem i x).2) (abs_nonneg _)
-          · have hA0 : 0 ≤ fA x := by by_cases hx : x ∈ A <;> simp [fA, hx]
-            rw [abs_mul, abs_of_nonneg hA0]
-            exact mul_le_mul_of_nonneg_left (Real.abs_sqrt_sub_sqrt_le _ _) hA0
-    _ = √2 * (∫ x, |a i x - fA x| ∂mu) + ∫ x, fA x * √|d i x - fD x| ∂mu := by
-        rw [integral_add hterm1 hterm2, integral_const_mul]
-    _ ≤ _ := add_le_add le_rfl hcs_sqrt
-
-private theorem sqrt_four_add_sq_le_sqrt_sq_add_sq_add_abs {d g : ℝ} (hd0 : 0 ≤ d) :
-    √(4 + g ^ 2) ≤ √(d ^ 2 + g ^ 2) + |2 - d| := by
-  rw [Real.sqrt_le_left (by positivity)]
-  have hsq : √(d ^ 2 + g ^ 2) ^ 2 = d ^ 2 + g ^ 2 := Real.sq_sqrt (by positivity)
-  have hble : d ≤ √(d ^ 2 + g ^ 2) :=
-    Real.le_sqrt_of_sq_le (le_add_of_nonneg_right (sq_nonneg _))
-  have hcross : d * (2 - d) ≤ |2 - d| * √(d ^ 2 + g ^ 2) :=
-    (mul_le_mul_of_nonneg_left (le_abs_self _) hd0).trans <|
-      (mul_comm d _).le.trans (mul_le_mul_of_nonneg_left hble (abs_nonneg _))
-  nlinarith [hsq, (sq_abs (2 - d)).symm, hcross]
-
-private theorem integral_abs_indicator_sub_indicator {H : Type*} [MeasurableSpace H]
-    {μ : Measure H} {S₁ S₂ : Set H} (hS₁ : NullMeasurableSet S₁ μ)
-    (hS₂ : NullMeasurableSet S₂ μ) {c : ℝ} (hc : 0 ≤ c) :
-    ∫ y : H, |S₁.indicator (fun _ ↦ c) y - S₂.indicator (fun _ ↦ c) y| ∂μ =
-      c * μ.real (S₁ ∆ S₂) := by
-  have hEq : (fun y : H ↦ |S₁.indicator (fun _ ↦ c) y - S₂.indicator (fun _ ↦ c) y|) =
-      (S₁ ∆ S₂).indicator (fun _ ↦ c) := funext fun y ↦ by
-    by_cases h1 : y ∈ S₁ <;> by_cases h2 : y ∈ S₂ <;>
-      simp [Set.mem_symmDiff, h1, h2, abs_of_nonneg hc]
-  rw [hEq, integral_indicator₀ (hS₁.symmDiff hS₂), setIntegral_const, smul_eq_mul, mul_comm]
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
+
+/-- Single-bump combination of the smooth symmetric subgraph perimeter bound and the mollified
+slicing excess inequality at positive threshold `ε`. -/
+private theorem mul_perimeter_subgraph_mollified_add_le
+    {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞)
+    (hP : perimeter volume ⊤ s ≠ ∞) (e : E) (he : ‖e‖ = 1)
+    {A : Set (ℝ ∙ e)ᗮ} (hA : NullMeasurableSet A volume)
+    (hbad : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, y ∈ A →
+      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I)
+    (ρ : ContDiffBump (0 : (ℝ ∙ e)ᗮ)) {ε : ℝ} (hε : 0 < ε) :
+    let H := (ℝ ∙ e)ᗮ
+    let D : Set H := {y : H | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}}
+    let v : H → ℝ := fun y ↦ volume.real {t : ℝ | (y : E) + t • e ∈ s}
+    let d : H → ℝ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] D.indicator (fun _ ↦ (2 : ℝ))
+    let w : H → ℝ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] v
+    let a : H → ℝ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] A.indicator (fun _ ↦ (1 : ℝ))
+    let M : ℝ := 2 * volume.real D + (totalVariationOn volume ⊤ v).toReal
+    ENNReal.ofReal M *
+        perimeter volume ⊤
+          {x : E | |⟪e, x⟫_ℝ| < (w ((orthogonalLineEquiv e he).symm x).1 - ε) / 2} +
+        ENNReal.ofReal (2 * (∫ y : H, a y * √(d y)) ^ 2) ≤
+      ENNReal.ofReal M * perimeter volume ⊤ s +
+        ENNReal.ofReal
+          (M * ∫ y : H, |({y : H | ε < w y}.indicator (fun _ ↦ (2 : ℝ))) y - d y|) := by
+  intro H D v d w a M
+  have hD : NullMeasurableSet D volume :=
+    nullMeasurableSet_lt aemeasurable_const (aemeasurable_volume_lineSection e he hs)
+  have hDfin : volume D ≠ ∞ := hs.volume_setOf_pos_volume_lineSection_ne_top hfin hP e he
+  have hv_tv_fin : totalVariationOn volume ⊤ v ≠ ∞ :=
+    ne_top_of_le_ne_top hP (totalVariationOn_measureReal_lineSection_le hs hfin e he)
+  have hv_int : Integrable v volume := hs.integrable_measureReal_lineSection hfin e he
+  have hD_ind_int : Integrable (D.indicator (fun _ ↦ (2 : ℝ))) volume :=
+    (integrableOn_const hDfin).integrable_indicator₀ hD
+  have hw_smooth : ContDiff ℝ 1 w :=
+    ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
+      (ρ.contDiff_normed (n := 1)) hv_int.locallyIntegrable
+  have hw_int : Integrable w volume :=
+    ρ.integrable_normed.integrable_convolution (lsmul ℝ ℝ) hv_int
+  have hd_int : Integrable d volume :=
+    ρ.integrable_normed.integrable_convolution (lsmul ℝ ℝ) hD_ind_int
+  have hd_mem (y : H) : d y ∈ Icc (0 : ℝ) 2 :=
+    ρ.normed_convolution_indicator_mem_Icc zero_le_two hD_ind_int.locallyIntegrable y
+  let Eε : Set H := {y : H | ε < w y}
+  have hEε_m : MeasurableSet Eε := measurableSet_lt measurable_const hw_smooth.continuous.measurable
+  have hEε_fin : volume Eε ≠ ∞ :=
+    ne_top_of_le_ne_top (hw_int.measure_ge_lt_top hε).ne <|
+      measure_mono fun _ (hy : ε < w _) ↦ hy.le
+  have hgrad_int : Integrable (fun y : H ↦ ‖fderiv ℝ w y‖) volume :=
+    ρ.integrable_norm_fderiv_normed_convolution hv_int.locallyIntegrable hv_tv_fin
+  have hsqrt_int : Integrable (fun y : H ↦ √(d y ^ 2 + ‖fderiv ℝ w y‖ ^ 2)) volume := by
+    refine (hd_int.add hgrad_int).mono'
+      (Real.continuous_sqrt.comp (((ρ.hasCompactSupport_normed.continuous_convolution_left
+        (lsmul ℝ ℝ) ρ.continuous_normed hD_ind_int.locallyIntegrable).pow 2).add
+          ((hw_smooth.continuous_fderiv one_ne_zero).norm.pow 2))).aestronglyMeasurable
+      (.of_forall fun y ↦ ?_)
+    rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+    have hle := Real.sqrt_sq_add_sq_le (d y) ‖fderiv ℝ w y‖
+    rw [abs_of_nonneg (hd_mem y).1, abs_of_nonneg (opNorm_nonneg _)] at hle
+    exact hle
+  have hdiff_int : Integrable (fun y : H ↦ |Eε.indicator (fun _ ↦ (2 : ℝ)) y - d y|) volume :=
+    (((integrableOn_const hEε_fin).integrable_indicator hEε_m).sub hd_int).abs
+  have hsum_int : Integrable (fun y : H ↦ √(d y ^ 2 + ‖fderiv ℝ w y‖ ^ 2) +
+      |Eε.indicator (fun _ ↦ (2 : ℝ)) y - d y|) volume := hsqrt_int.add hdiff_int
+  set I_sq := ∫ y : H, √(d y ^ 2 + ‖fderiv ℝ w y‖ ^ 2)
+  set I_err := ∫ y : H, |Eε.indicator (fun _ ↦ (2 : ℝ)) y - d y|
+  have hper_upper :
+      perimeter volume ⊤
+          {x : E | |⟪e, x⟫_ℝ| < (w ((orthogonalLineEquiv e he).symm x).1 - ε) / 2} ≤
+        ENNReal.ofReal (I_sq + I_err) := by
+    calc perimeter volume ⊤
+            {x : E | |⟪e, x⟫_ℝ| < (w ((orthogonalLineEquiv e he).symm x).1 - ε) / 2}
+        ≤ ∫⁻ y in Eε, ENNReal.ofReal √(4 + ‖fderiv ℝ w y‖ ^ 2) := by
+          have hsub := perimeter_setOf_abs_inner_lt_div_two_le e he
+            (hw_smooth.sub (contDiff_const (c := ε)))
+          have hfderiv (y : H) : fderiv ℝ (fun x ↦ w x - ε) y = fderiv ℝ w y := fderiv_sub_const ε
+          simpa only [Eε, sub_pos, hfderiv] using hsub
+      _ ≤ ∫⁻ y : H, ENNReal.ofReal
+            (√(d y ^ 2 + ‖fderiv ℝ w y‖ ^ 2) + |Eε.indicator (fun _ ↦ (2 : ℝ)) y - d y|) := by
+          rw [← lintegral_indicator hEε_m]
+          refine lintegral_mono fun y ↦ ?_
+          by_cases hy : y ∈ Eε
+          · rw [indicator_of_mem hy]
+            refine ENNReal.ofReal_le_ofReal ?_
+            rw [indicator_of_mem hy]
+            have hlip := Real.abs_sqrt_sq_add_sq_sub_sqrt_sq_add_sq_le 2 (d y) ‖fderiv ℝ w y‖
+            norm_num only at hlip
+            exact sub_le_iff_le_add'.1 ((le_abs_self _).trans hlip)
+          · rw [indicator_of_notMem hy]; exact zero_le
+      _ = ENNReal.ofReal (I_sq + I_err) := by
+          rw [← integral_add hsqrt_int hdiff_int, ofReal_integral_eq_lintegral_ofReal hsum_int
+            (.of_forall fun _ ↦ add_nonneg (Real.sqrt_nonneg _) (abs_nonneg _))]
+  have hM_nonneg : 0 ≤ M := by positivity
+  have hmoll := hs.mul_integral_sqrt_sq_add_norm_fderiv_sq_add_two_mul_sq_le hfin hP e he hA hbad ρ
+  calc ENNReal.ofReal M *
+          perimeter volume ⊤
+            {x : E | |⟪e, x⟫_ℝ| < (w ((orthogonalLineEquiv e he).symm x).1 - ε) / 2} +
+          ENNReal.ofReal (2 * (∫ y : H, a y * √(d y)) ^ 2)
+      ≤ ENNReal.ofReal M * ENNReal.ofReal (I_sq + I_err) +
+          ENNReal.ofReal (2 * (∫ y : H, a y * √(d y)) ^ 2) := by gcongr
+    _ = ENNReal.ofReal (M * I_sq + 2 * (∫ y : H, a y * √(d y)) ^ 2 + M * I_err) := by
+        rw [← ENNReal.ofReal_mul hM_nonneg, ← ENNReal.ofReal_add
+          (mul_nonneg hM_nonneg (add_nonneg (integral_nonneg fun _ ↦ Real.sqrt_nonneg _)
+            (integral_nonneg fun _ ↦ abs_nonneg _))) (by positivity)]
+        congr 1; ring
+    _ ≤ ENNReal.ofReal (M * (perimeter volume ⊤ s).toReal + M * I_err) :=
+        ENNReal.ofReal_le_ofReal (by linarith)
+    _ = ENNReal.ofReal M * perimeter volume ⊤ s + ENNReal.ofReal (M * I_err) := by
+        rw [ENNReal.ofReal_add (mul_nonneg hM_nonneg ENNReal.toReal_nonneg)
+            (mul_nonneg hM_nonneg (integral_nonneg fun _ ↦ abs_nonneg _)),
+          ENNReal.ofReal_mul hM_nonneg, ENNReal.ofReal_toReal hP]
 
 /-- **Quantitative Steiner perimeter excess inequality.** Let `s` be a Lebesgue-measurable set of
 finite volume, `e` a unit vector with orthogonal hyperplane `H = (ℝ ∙ e)ᗮ`, and `A ⊆ H` a
@@ -244,18 +237,17 @@ theorem mul_perimeter_steinerSymmetrization_add_four_mul_sq_le
   -- Finite ambient perimeter: set up `D`, `A`, `v`, and a shrinking mollifier subsequence.
   have hD : NullMeasurableSet D volume :=
     nullMeasurableSet_lt aemeasurable_const (aemeasurable_volume_lineSection e he hs)
-  have hDfin : volume D ≠ ∞ := volume_setOf_pos_volume_lineSection_ne_top hs hfin hP e he
-  have hAfin : volume A ≠ ∞ := volume_ne_top_of_noninterval_lineSection hs hfin hP e he hA hbad
+  have hDfin : volume D ≠ ∞ := hs.volume_setOf_pos_volume_lineSection_ne_top hfin hP e he
+  have hAfin : volume A ≠ ∞ := hs.volume_ne_top_of_noninterval_lineSection hfin hP e he hA hbad
   have hv_tv_fin : totalVariationOn volume ⊤ v ≠ ∞ :=
     ne_top_of_le_ne_top hP (totalVariationOn_measureReal_lineSection_le hs hfin e he)
-  have hv_int : Integrable v volume := integrable_measureReal_lineSection hs hfin e he
+  have hv_int : Integrable v volume := hs.integrable_measureReal_lineSection hfin e he
   have hD_ind_int : Integrable fD volume := (integrableOn_const hDfin).integrable_indicator₀ hD
   have hAD : ∀ᵐ y : H ∂volume, y ∈ A → y ∈ D := by
     filter_upwards [hbad] with y hy hyA
     by_contra hyD
     exact hy hyA ∅ ordConnected_empty (ae_eq_empty.2 (nonpos_iff_eq_zero.1 (not_lt.1 hyD)))
   let M : ℝ := 2 * volume.real D + (totalVariationOn volume ⊤ v).toReal
-  have hM_nonneg : 0 ≤ M := by positivity
   have hM_ofReal : ENNReal.ofReal M = 2 * volume D + totalVariationOn volume ⊤ v := by
     rw [ENNReal.ofReal_add (by positivity) ENNReal.toReal_nonneg, ENNReal.ofReal_mul zero_le_two,
       ENNReal.ofReal_ofNat, ofReal_measureReal hDfin, ENNReal.ofReal_toReal hv_tv_fin]
@@ -327,8 +319,6 @@ theorem mul_perimeter_steinerSymmetrization_add_four_mul_sq_le
       (ρ j).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hv_int
     have hd_int (j : ℕ) : Integrable (d j) volume :=
       (ρ j).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hD_ind_int
-    have hd_mem (j : ℕ) (y : H) : d j y ∈ Icc (0 : ℝ) 2 :=
-      (ρ j).normed_convolution_indicator_mem_Icc zero_le_two hD_ind_int.locallyIntegrable y
     have hEj_m (j : ℕ) : MeasurableSet (Ej j) :=
       measurableSet_lt measurable_const (hw_smooth j).continuous.measurable
     have hEε_nm : NullMeasurableSet Eε volume :=
@@ -346,63 +336,8 @@ theorem mul_perimeter_steinerSymmetrization_add_four_mul_sq_le
         ENNReal.ofReal M * perimeter volume ⊤ (Sj j) +
             ENNReal.ofReal (2 * (∫ y : H, a j y * √(d j y)) ^ 2) ≤
           ENNReal.ofReal M * perimeter volume ⊤ s +
-            ENNReal.ofReal (M * ∫ y : H, |fEj j y - d j y|) := by
-      have hgrad_int : Integrable (fun y : H ↦ ‖fderiv ℝ (w j) y‖) volume :=
-        (ρ j).integrable_norm_fderiv_normed_convolution hv_int.locallyIntegrable hv_tv_fin
-      have hsqrt_int : Integrable (fun y : H ↦ √(d j y ^ 2 + ‖fderiv ℝ (w j) y‖ ^ 2)) volume := by
-        refine ((hd_int j).add hgrad_int).mono'
-          (Real.continuous_sqrt.comp ((((ρ j).hasCompactSupport_normed.continuous_convolution_left
-            (lsmul ℝ ℝ) (ρ j).continuous_normed hD_ind_int.locallyIntegrable).pow 2).add
-              (((hw_smooth j).continuous_fderiv one_ne_zero).norm.pow 2))).aestronglyMeasurable
-          (.of_forall fun y ↦ ?_)
-        rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-        exact (Real.sqrt_le_left (add_nonneg (hd_mem j y).1 (opNorm_nonneg _))).2
-          (by nlinarith [mul_nonneg (hd_mem j y).1 (opNorm_nonneg (fderiv ℝ (w j) y))])
-      have hdiff_int : Integrable (fun y : H ↦ |fEj j y - d j y|) volume :=
-        (((integrableOn_const (hEj_fin j)).integrable_indicator (hEj_m j)).sub (hd_int j)).abs
-      have hsum_int : Integrable (fun y : H ↦ √(d j y ^ 2 + ‖fderiv ℝ (w j) y‖ ^ 2) +
-          |fEj j y - d j y|) volume := hsqrt_int.add hdiff_int
-      set I_sq := ∫ y : H, √(d j y ^ 2 + ‖fderiv ℝ (w j) y‖ ^ 2)
-      set I_err := ∫ y : H, |fEj j y - d j y|
-      have hper_upper : perimeter volume ⊤ (Sj j) ≤ ENNReal.ofReal (I_sq + I_err) := by
-        calc perimeter volume ⊤ (Sj j)
-            ≤ ∫⁻ y in Ej j, ENNReal.ofReal √(4 + ‖fderiv ℝ (w j) y‖ ^ 2) := by
-              have hsub := perimeter_setOf_abs_inner_lt_div_two_le e he
-                ((hw_smooth j).sub (contDiff_const (c := ε)))
-              have hfderiv (y : H) : fderiv ℝ (fun x ↦ w j x - ε) y = fderiv ℝ (w j) y :=
-                fderiv_sub_const ε
-              simpa only [Ej, sub_pos, hfderiv] using hsub
-          _ ≤ ∫⁻ y : H, ENNReal.ofReal
-                (√(d j y ^ 2 + ‖fderiv ℝ (w j) y‖ ^ 2) + |fEj j y - d j y|) := by
-              rw [← lintegral_indicator (hEj_m j)]
-              refine lintegral_mono fun y ↦ ?_
-              by_cases hy : y ∈ Ej j
-              · rw [indicator_of_mem hy]
-                refine ENNReal.ofReal_le_ofReal ?_
-                have hfEj_eq : fEj j y = 2 := indicator_of_mem hy _
-                rw [hfEj_eq]
-                exact sqrt_four_add_sq_le_sqrt_sq_add_sq_add_abs (hd_mem j y).1
-              · rw [indicator_of_notMem hy]; exact zero_le
-          _ = ENNReal.ofReal (I_sq + I_err) := by
-              rw [← integral_add hsqrt_int hdiff_int, ofReal_integral_eq_lintegral_ofReal hsum_int
-                (.of_forall fun _ ↦ add_nonneg (Real.sqrt_nonneg _) (abs_nonneg _))]
-      have hmoll := hs.mul_integral_sqrt_normed_convolution_add_two_mul_sq_le hfin hP e he hA
-        hbad (ρ j)
-      calc ENNReal.ofReal M * perimeter volume ⊤ (Sj j) +
-              ENNReal.ofReal (2 * (∫ y : H, a j y * √(d j y)) ^ 2)
-          ≤ ENNReal.ofReal M * ENNReal.ofReal (I_sq + I_err) +
-              ENNReal.ofReal (2 * (∫ y : H, a j y * √(d j y)) ^ 2) := by gcongr
-        _ = ENNReal.ofReal (M * I_sq + 2 * (∫ y : H, a j y * √(d j y)) ^ 2 + M * I_err) := by
-            rw [← ENNReal.ofReal_mul hM_nonneg, ← ENNReal.ofReal_add
-              (mul_nonneg hM_nonneg (add_nonneg (integral_nonneg fun _ ↦ Real.sqrt_nonneg _)
-                (integral_nonneg fun _ ↦ abs_nonneg _))) (by positivity)]
-            congr 1; ring
-        _ ≤ ENNReal.ofReal (M * (perimeter volume ⊤ s).toReal + M * I_err) :=
-            ENNReal.ofReal_le_ofReal (by linarith)
-        _ = ENNReal.ofReal M * perimeter volume ⊤ s + ENNReal.ofReal (M * I_err) := by
-            rw [ENNReal.ofReal_add (mul_nonneg hM_nonneg ENNReal.toReal_nonneg)
-                (mul_nonneg hM_nonneg (integral_nonneg fun _ ↦ abs_nonneg _)),
-              ENNReal.ofReal_mul hM_nonneg, ENNReal.ofReal_toReal hP]
+            ENNReal.ofReal (M * ∫ y : H, |fEj j y - d j y|) :=
+      hs.mul_perimeter_subgraph_mollified_add_le hfin hP e he hA hbad (ρ j) hε
     -- Limit 1: `Sj j → S_trunc ε` in `L¹`, so `P(S_trunc ε) ≤ liminf P(Sj j)`.
     have hSj_lim : Tendsto (fun j ↦ volume (Sj j ∆ S_trunc ε)) atTop (𝓝 0) := by
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
@@ -526,7 +461,7 @@ theorem mul_perimeter_steinerSymmetrization_add_four_mul_sq_le
   have hDdiff_lim : Tendsto (fun k ↦ volume (D \ {y : H | ε k < v y})) atTop (𝓝 0) := by
     have hGlim : Tendsto
         (fun k : ℕ ↦ volume ({y : H | 0 < v y ∧ v y ≤ 1 / ((k : ℝ) + 1)} ∩ D)) atTop (𝓝 0) :=
-      tendsto_measure_setOf_pos_lt_le_inter hv_int.aestronglyMeasurable.aemeasurable hD hDfin
+      hv_int.aestronglyMeasurable.aemeasurable.tendsto_measure_setOf_pos_lt_le_inter hD hDfin
         (fun _ _ hmn ↦ one_div_le_one_div_of_le (by positivity) (by gcongr))
         tendsto_one_div_add_atTop_nhds_zero_nat
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hGlim
@@ -578,7 +513,7 @@ theorem perimeter_mul_perimeter_steinerSymmetrization_add_two_mul_sq_le
   have hM_fin : M ≠ ∞ := ne_top_of_le_ne_top (ENNReal.mul_ne_top (by norm_num) hP) hM_le
   have hPS_le : PS ≤ P := perimeter_steinerSymmetrization_le e he hs hfin
   have hPS_fin : PS ≠ ∞ := ne_top_of_le_ne_top hP hPS_le
-  have hAfin : volume A ≠ ∞ := volume_ne_top_of_noninterval_lineSection hs hfin hP e he hA hbad
+  have hAfin : volume A ≠ ∞ := hs.volume_ne_top_of_noninterval_lineSection hfin hP e he hA hbad
   have hreal : M.toReal * PS.toReal + 4 * volume.real A ^ 2 ≤ M.toReal * P.toReal := by
     have h1 := ENNReal.toReal_mono (ENNReal.mul_ne_top hM_fin hP)
       (hs.mul_perimeter_steinerSymmetrization_add_four_mul_sq_le hfin e he hA hbad)

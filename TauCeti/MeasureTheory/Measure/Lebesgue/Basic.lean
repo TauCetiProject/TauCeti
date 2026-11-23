@@ -16,7 +16,9 @@ Mathlib's extended-radius balls and `Real.volume_eball`, and allows zero and inf
 It supplies the sectionwise contraction inequality for Steiner symmetrization. The annulus
 between two concentric open intervals of radii `0 ≤ r ≤ R` has length `2 (R - r)`
 (`TauCeti.volume_ball_sdiff_ball`), so that between radii `r` and `2r` has length `2r`
-(`TauCeti.volume_ball_two_mul_sdiff_ball`).
+(`TauCeti.volume_ball_two_mul_sdiff_ball`), and the symmetric strip
+`{t : ℝ | 0 < R - |t| ∧ R - |t| < δ}` has length at most `2 δ`
+(`TauCeti.volume_setOf_pos_sub_abs_lt_le`).
 
 An order-connected subset of the real line of positive finite volume agrees almost everywhere
 with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): finite volume
@@ -113,6 +115,26 @@ theorem volume_ball_sdiff_ball {r R : ℝ} (hr : 0 ≤ r) (hrR : r ≤ R) (x : �
   rw [measure_sdiff (Metric.ball_subset_ball hrR) measurableSet_ball.nullMeasurableSet
     measure_ball_lt_top.ne, Real.volume_ball, Real.volume_ball,
     ← ENNReal.ofReal_sub _ (by positivity), mul_sub]
+
+/-- One-dimensional strip-length bound: `{t : ℝ | 0 < R - |t| ∧ R - |t| < δ}` consists of two
+symmetric open intervals of total length at most `2 * δ`. -/
+theorem volume_setOf_pos_sub_abs_lt_le (R : ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    volume {t : ℝ | 0 < R - |t| ∧ R - |t| < δ} ≤ ENNReal.ofReal (2 * δ) := by
+  have hTsub : {t : ℝ | 0 < R - |t| ∧ R - |t| < δ} ⊆
+      Ioo (R - δ) R ∪ Ioo (-R) (-(R - δ)) := by
+    intro t ht
+    simp only [mem_ofPred_eq] at ht
+    rcases ht with ⟨h1, h2⟩
+    rcases le_or_gt 0 t with ht0 | ht0
+    · rw [abs_of_nonneg ht0] at h1 h2
+      exact Or.inl ⟨by linarith, by linarith⟩
+    · rw [abs_of_neg ht0] at h1 h2
+      exact Or.inr ⟨by linarith, by linarith⟩
+  refine ((measure_mono hTsub).trans (measure_union_le _ _)).trans_eq ?_
+  rw [Real.volume_Ioo, Real.volume_Ioo]
+  have hlen1 : R - (R - δ) = δ := by ring
+  have hlen2 : -(R - δ) - -R = δ := by ring
+  rw [hlen1, hlen2, ← ENNReal.ofReal_add hδ.le hδ.le, two_mul]
 
 /-- The annulus between the open intervals of radii `r` and `2r` about a point has length `2r`. -/
 theorem volume_ball_two_mul_sdiff_ball (r x : ℝ) :
