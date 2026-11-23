@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient.ProperAction
 public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Translate
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LevelShift
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.Basic
 
 /-!
 # Cotangent reduction at a nonzero value: the magnetic term
@@ -20,8 +20,8 @@ Let a Lie group `G` act smoothly on a manifold `Q`, and let `⟨μ(q, p), ξ⟩ 
 moment map of the cotangent-lifted action on `T*Q` (`TauCeti.CotangentBundle.momentMap`). At the
 value `0`, the reduction map `(q, p) ↦ (ρ q, p ∘ (dρ_q)⁻¹)` along the orbit projection
 `ρ : Q → Q ⧸ G` of a free proper action identifies `μ⁻¹(0) ⧸ G` with `T*(Q ⧸ G)`, carrying the
-canonical symplectic form (`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent`). This
-file treats a nonzero value `ν ∈ 𝔤*`.
+canonical symplectic form (`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.Basic`).
+This file treats a nonzero value `ν ∈ 𝔤*`.
 
 Fix a `G`-invariant one-form `α` on `Q` that pairs every fundamental vector field with `-ν`:
 `α(ξ_Q) = -ν(ξ)`. For a principal connection `A` of the free action, normalized by `A(ξ_Q) = -ξ`
