@@ -13,7 +13,8 @@ public import TauCeti.RepresentationTheory.FDRep.Continuous
 # Finite-dimensional Banach representations
 
 The finite-dimensional representations form an extension-closed full subcategory of
-`TauCeti.BanachRep`. In particular the strict exact structure restricts to this subcategory.
+`TauCeti.BanachRep`. The construction `TauCeti.ExactStructure.fullSubcategory` restricts the
+strict exact structure to this subcategory using `isExtensionClosed_isFiniteDimensional`.
 
 Over a complete nontrivially normed field, forgetting the norm gives an equivalence with
 `TauCeti.ContFDRep`, the category defined by continuity of matrix coefficients. Thus a continuous
@@ -105,8 +106,14 @@ noncomputable def fullyFaithfulToContFDRep : (toContFDRep 𝕜 G).FullyFaithful 
   preimage f := ObjectProperty.homMk
     ⟨LinearMap.toContinuousLinearMap f.hom.hom.hom.hom,
       fun g x => LinearMap.congr_fun (FDRep.hom_hom_hom_comm f.hom g) x⟩
-  map_preimage _ := rfl
-  preimage_map _ := rfl
+  map_preimage {X Y} f := by
+    ext x
+    rw [toContFDRep_map_hom_hom_hom_hom, ObjectProperty.homMk_hom]
+    let φ : X.obj →ₗ[𝕜] Y.obj := f.hom.hom.hom.hom
+    exact LinearMap.congr_fun (LinearMap.coe_toContinuousLinearMap φ) x
+  preimage_map f := by
+    ext x
+    simp
 
 /-- Every finite-dimensional representation with continuous matrix coefficients has a Banach
 realization, unique up to isomorphism. -/
