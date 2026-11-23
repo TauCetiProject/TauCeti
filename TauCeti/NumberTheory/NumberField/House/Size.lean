@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.House
-import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.NumberTheory.Height.House
+import TauCeti.NumberTheory.NumberField.House
 
 /-!
 # Sizes of algebraic numbers
@@ -17,28 +17,20 @@ exponent `a` and a bound `H` such that `δ ^ a * α` is an algebraic integer of 
 The numbers such a proof builds are sums and products of powers of finitely many given algebraic
 numbers, and their sizes are computed from the sizes of the given numbers. The integrality half of
 this bookkeeping holds in any commutative ring (`IsIntegral.pow_add_mul_mul` and its neighbours);
-this file supplies the house half, the common denominator of finitely many elements, and
-Liouville's inequality for a number of known size, which turns such a size into a lower bound for
-every conjugate of a nonzero number.
+this file supplies the house half, and Liouville's inequality for a number of known size, which
+turns such a size into a lower bound for every conjugate of a nonzero number.
 
-The field generated over `ℚ` by finitely many algebraic numbers of a field of characteristic zero
-is a number field, by `IntermediateField.finiteDimensional_adjoin` and
-`NumberField.of_module_finite`; `NumberField.exists_natCast_mul_isIntegral_and_house_le` then gives
-its elements of interest a common denominator.
+Raising the exponent of a size is `NumberField.house_natCast_pow_mul_le_of_le`, and the common
+denominator of finitely many algebraic numbers is
+`NumberField.exists_natCast_mul_isIntegral_house_le` (inside a number field) or
+`NumberField.exists_numberField_denominator` (in a field of characteristic zero).
 
 ## Main results
 
-* `NumberField.house_prod_le_prod_house`: the house of a product over an indexed family is at most
-  the product of the houses.
 * `NumberField.house_pow_add_mul_mul_le`, `NumberField.house_pow_mul_add_le`,
   `NumberField.house_pow_mul_mul_pow_le`, `NumberField.house_pow_mul_sum_le`,
   `NumberField.house_pow_sum_mul_prod_le`: house bounds for products, sums and powers of numbers
   of known size.
-* `NumberField.house_pow_mul_le_of_le`: raising the exponent from `a` to `c` multiplies the bound
-  by `G ^ (c - a)`, for any `G` bounding the house of `δ`.
-* `NumberField.exists_natCast_mul_isIntegral_and_house_le`: finitely many elements of `K` have a
-  common denominator `δ ≥ 1` and a common bound `G` for the houses of `δ` times each of them, with
-  `1 ≤ G` and `δ ≤ G`.
 * `NumberField.one_le_pow_mul_norm_embedding_mul_pow`: **Liouville's inequality for a number of
   known size**. If `δ ≠ 0` and `δ ^ a * α` is a nonzero algebraic integer of house at most `H`,
   then `1 ≤ δ ^ a ‖σ α‖ H ^ ([K : ℚ] - 1)` for every complex embedding `σ`.
@@ -52,16 +44,9 @@ its elements of interest a common denominator.
 
 public section
 
-open Finset
-
 namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- The house of a product over a finite indexed family is at most the product of the houses. -/
-theorem house_prod_le_prod_house {ι : Type*} (s : Finset ι) (f : ι → K) :
-    house (∏ i ∈ s, f i) ≤ ∏ i ∈ s, house (f i) := by
-  simpa [house, map_prod] using Finset.norm_prod_le s fun i ↦ canonicalEmbedding K (f i)
 
 variable {δ α β : K} {a b : ℕ} {H H' : ℝ}
 
@@ -86,17 +71,6 @@ theorem house_pow_mul_mul_pow_le (hα : house (δ ^ a * α) ≤ H) (k : ℕ) :
   rw [pow_mul, ← mul_pow, house_pow]
   exact pow_le_pow_left₀ (house_nonneg _) hα k
 
-/-- If `δ ^ a * α` has house at most `H` and `δ` has house at most `G`, then for `a ≤ c` the
-number `δ ^ c * α` has house at most `G ^ (c - a) * H`. For a natural number `δ` one can take
-`G = δ`, or any `G ≥ δ`. -/
-theorem house_pow_mul_le_of_le (hα : house (δ ^ a * α) ≤ H) {G : ℝ} (hδ : house δ ≤ G) {c : ℕ}
-    (hac : a ≤ c) : house (δ ^ c * α) ≤ G ^ (c - a) * H := by
-  rw [← Nat.sub_add_cancel hac, pow_add, mul_assoc, Nat.add_sub_cancel]
-  refine (house_mul_le _ _).trans (mul_le_mul ?_ hα (house_nonneg _)
-    (pow_nonneg ((house_nonneg _).trans hδ) _))
-  rw [house_pow]
-  exact pow_le_pow_left₀ (house_nonneg _) hδ _
-
 /-- If `δ ^ a * f i` has house at most `H i` for every `i ∈ s`, then `δ ^ a * ∑ i ∈ s, f i` has
 house at most `∑ i ∈ s, H i`. -/
 theorem house_pow_mul_sum_le {ι : Type*} {s : Finset ι} {f : ι → K} {H : ι → ℝ}
@@ -113,29 +87,6 @@ theorem house_pow_sum_mul_prod_le {ι : Type*} {s : Finset ι} {f : ι → K} {a
   rw [← Finset.prod_pow_eq_pow_sum, ← Finset.prod_mul_distrib]
   exact (house_prod_le_prod_house _ _).trans
     (Finset.prod_le_prod₀ (fun _ _ ↦ house_nonneg _) hf)
-
-/-- **Common denominators.** Finitely many elements `x i` of a number field have a common
-denominator: a natural number `δ ≥ 1` such that every `δ * x i` is an algebraic integer. The houses
-of the `δ * x i` have a common bound `G`, which can be taken with `1 ≤ G` and `δ ≤ G`. -/
-theorem exists_natCast_mul_isIntegral_and_house_le {ι : Type*} [Finite ι] (x : ι → K) :
-    ∃ δ : ℕ, 1 ≤ δ ∧ ∃ G : ℝ, 1 ≤ G ∧ (δ : ℝ) ≤ G ∧
-      ∀ i, IsIntegral ℤ ((δ : K) * x i) ∧ house ((δ : K) * x i) ≤ G := by
-  classical
-  have := Fintype.ofFinite ι
-  obtain ⟨y, hy0, hy⟩ := exists_integral_multiples ℤ ℚ (univ.image x)
-  have hint (i : ι) : IsIntegral ℤ ((y.natAbs : K) * x i) := by
-    have h := hy (x i) (mem_image_of_mem x (mem_univ i))
-    rw [zsmul_eq_mul] at h
-    rcases Int.natAbs_eq y with hy' | hy'
-    · rwa [hy', Int.cast_natCast] at h
-    · rw [hy', Int.cast_neg, Int.cast_natCast, neg_mul] at h
-      exact IsIntegral.neg_iff.mp h
-  refine ⟨y.natAbs, Int.natAbs_pos.mpr hy0, y.natAbs + ∑ i, house ((y.natAbs : K) * x i), ?_,
-    le_add_of_nonneg_right (sum_nonneg fun _ _ ↦ house_nonneg _), fun i ↦ ⟨hint i, ?_⟩⟩
-  · exact le_add_of_le_of_nonneg (by exact_mod_cast Int.natAbs_pos.mpr hy0)
-      (sum_nonneg fun _ _ ↦ house_nonneg _)
-  · exact le_add_of_nonneg_of_le (Nat.cast_nonneg _)
-      (single_le_sum (fun j _ ↦ house_nonneg ((y.natAbs : K) * x j)) (mem_univ i))
 
 /-- **Liouville's inequality for a number of known size.** If `δ ≠ 0` and `δ ^ a * α` is a
 nonzero algebraic integer of house at most `H`, then `1 ≤ δ ^ a ‖σ α‖ H ^ ([K : ℚ] - 1)` for every

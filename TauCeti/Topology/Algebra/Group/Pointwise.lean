@@ -31,6 +31,9 @@ neighbourhood inside any given identity neighbourhood.
 
 * `TauCeti.closure_div_closure_subset`, with its additive form
   `TauCeti.closure_sub_closure_subset`.
+* `TauCeti.exists_open_nhds_one_inv_eq_mul_subset`, with its additive form
+  `TauCeti.exists_open_nhds_zero_neg_eq_add_subset`: open symmetric identity-neighbourhood
+  splitting `V * V ⊆ U`, parallel to `exists_closed_nhds_one_inv_eq_mul_subset`.
 * `TauCeti.exists_mem_nhds_one_isClosed_isCompact_inv_eq_subset`, with its additive form
   `TauCeti.exists_mem_nhds_zero_isClosed_isCompact_neg_eq_subset`.
 * `IsClosed.image_mul_of_snd_subset`, with its additive form
@@ -64,6 +67,18 @@ theorem closure_div_closure_subset (s t : Set G) : closure s / closure t ⊆ clo
     map_mem_closure₂ continuous_div' ha hb fun _ hx _ hy ↦ div_mem_div hx hy
 
 end Div
+
+/-- Every identity neighbourhood in a topological group contains an open, symmetric identity
+neighbourhood `V` with `V * V ⊆ U`. -/
+@[to_additive /-- Every neighbourhood of zero in a topological additive group contains an open,
+symmetric neighbourhood `V` of zero with `V + V ⊆ U`. -/]
+theorem exists_open_nhds_one_inv_eq_mul_subset {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
+    ∃ V : Set G, IsOpen V ∧ (1 : G) ∈ V ∧ V⁻¹ = V ∧ V * V ⊆ U := by
+  obtain ⟨V₀, hV₀o, h1V₀, hV₀U⟩ := exists_open_nhds_one_mul_subset hU
+  refine ⟨V₀ ∩ V₀⁻¹, hV₀o.inter hV₀o.inv, ⟨h1V₀, by simpa using h1V₀⟩, ?_,
+    (mul_subset_mul inter_subset_left inter_subset_left).trans hV₀U⟩
+  rw [inter_inv, inv_inv, inter_comm]
 
 /-- Every identity neighbourhood in a weakly locally compact topological group contains a closed,
 compact, symmetric identity neighbourhood. -/

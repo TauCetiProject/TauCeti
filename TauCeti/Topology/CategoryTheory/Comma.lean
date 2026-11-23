@@ -193,26 +193,28 @@ theorem continuous_unit (hA : Continuous fun a : A ↦ (⟨a, a, 𝟙 a⟩ : Qui
 in `A` and `B`. -/
 theorem continuous_comp
     (hA : Continuous fun p : {p : Quiver.Total A × Quiver.Total A // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total A))
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          A))
     (hB : Continuous fun p : {p : Quiver.Total B × Quiver.Total B // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total B)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          B)) :
     Continuous fun p : {p : Quiver.Total (Comma L R) × Quiver.Total (Comma L R) //
         p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ :
         Quiver.Total (Comma L R)) := by
   refine continuous_total_iff.mpr ⟨by fun_prop, by fun_prop, ?_, ?_⟩
   · convert hA.comp (Continuous.subtype_mk (p := fun q ↦ q.1.right = q.2.left)
-      ((continuous_homLeft.comp (continuous_fst.comp continuous_subtype_val)).prodMk
-        (continuous_homLeft.comp (continuous_snd.comp continuous_subtype_val)))
+      ((continuous_homLeft.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
+        (continuous_homLeft.comp (continuous_snd.comp continuous_subtypeVal)))
       fun p : {p : Quiver.Total (Comma L R) × Quiver.Total (Comma L R) //
-        p.1.right = p.2.left} ↦ congrArg Comma.left p.2) using 1
+        p.1.right = p.2.left} ↦ congrArg Comma.left p.property) using 1
     funext p
     simp [eqToHom_left]
   · convert hB.comp (Continuous.subtype_mk (p := fun q ↦ q.1.right = q.2.left)
-      ((continuous_homRight.comp (continuous_fst.comp continuous_subtype_val)).prodMk
-        (continuous_homRight.comp (continuous_snd.comp continuous_subtype_val)))
+      ((continuous_homRight.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
+        (continuous_homRight.comp (continuous_snd.comp continuous_subtypeVal)))
       fun p : {p : Quiver.Total (Comma L R) × Quiver.Total (Comma L R) //
-        p.1.right = p.2.left} ↦ congrArg Comma.right p.2) using 1
+        p.1.right = p.2.left} ↦ congrArg Comma.right p.property) using 1
     funext p
     simp [eqToHom_right]
 
@@ -244,27 +246,28 @@ theorem continuous_totalEquiv_symm [IsGroupoid A]
     (hL : Continuous fun f : Quiver.Total A ↦ (⟨_, _, L.map f.hom⟩ : Quiver.Total T))
     (hR : Continuous fun f : Quiver.Total B ↦ (⟨_, _, R.map f.hom⟩ : Quiver.Total T))
     (hcomp : Continuous fun p : {p : Quiver.Total T × Quiver.Total T // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          T)) :
     Continuous (totalEquiv : Quiver.Total (Comma L R) ≃ _).symm := by
   set P := {p : Comma L R × Quiver.Total A × Quiver.Total B //
     p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}
-  have hX : Continuous fun p : P ↦ p.1.1 := continuous_fst.comp continuous_subtype_val
-  have ha : Continuous fun p : P ↦ p.1.2.1 :=
-    continuous_fst.comp (continuous_snd.comp continuous_subtype_val)
-  have hb : Continuous fun p : P ↦ p.1.2.2 :=
-    continuous_snd.comp (continuous_snd.comp continuous_subtype_val)
+  have hX : Continuous fun p : P ↦ p.val.1 := continuous_fst.comp continuous_subtypeVal
+  have ha : Continuous fun p : P ↦ p.val.2.1 :=
+    continuous_fst.comp (continuous_snd.comp continuous_subtypeVal)
+  have hb : Continuous fun p : P ↦ p.val.2.2 :=
+    continuous_snd.comp (continuous_snd.comp continuous_subtypeVal)
   -- The structure arrow of the target is the composite `L a⁻¹ ≫ X.hom ≫ R b`.
   have hfirst : Continuous fun p : P ↦
-      (⟨_, _, L.map (inv p.1.2.1.hom) ≫ eqToHom (congrArg L.obj p.2.1) ≫ p.1.1.hom⟩ :
+      (⟨_, _, L.map (inv p.val.2.1.hom) ≫ eqToHom (congrArg L.obj p.property.1) ≫ p.val.1.hom⟩ :
         Quiver.Total T) :=
     hcomp.comp (Continuous.subtype_mk (p := fun q ↦ q.1.right = q.2.left)
       ((hL.comp (hinv.comp ha)).prodMk (continuous_totalHom.comp hX))
-        fun p : P ↦ congrArg L.obj p.2.1)
+        fun p : P ↦ congrArg L.obj p.property.1)
   have hhom : Continuous fun p : P ↦
-      (⟨_, _, (L.map (inv p.1.2.1.hom) ≫ eqToHom (congrArg L.obj p.2.1) ≫ p.1.1.hom) ≫
-        eqToHom (congrArg R.obj p.2.2.symm) ≫ R.map p.1.2.2.hom⟩ : Quiver.Total T) :=
+      (⟨_, _, (L.map (inv p.val.2.1.hom) ≫ eqToHom (congrArg L.obj p.property.1) ≫ p.val.1.hom) ≫
+        eqToHom (congrArg R.obj p.property.2.symm) ≫ R.map p.val.2.2.hom⟩ : Quiver.Total T) :=
     hcomp.comp (Continuous.subtype_mk (p := fun q ↦ q.1.right = q.2.left)
-      (hfirst.prodMk (hR.comp hb)) fun p : P ↦ congrArg R.obj p.2.2.symm)
+      (hfirst.prodMk (hR.comp hb)) fun p : P ↦ congrArg R.obj p.property.2.symm)
   rw [continuous_total_iff]
   simp only [totalEquiv_symm_apply_left, totalEquiv_symm_apply_right,
     totalEquiv_symm_apply_hom_left, totalEquiv_symm_apply_hom_right]
@@ -287,7 +290,8 @@ noncomputable def totalHomeomorph [IsGroupoid A]
     (hL : Continuous fun f : Quiver.Total A ↦ (⟨_, _, L.map f.hom⟩ : Quiver.Total T))
     (hR : Continuous fun f : Quiver.Total B ↦ (⟨_, _, R.map f.hom⟩ : Quiver.Total T))
     (hcomp : Continuous fun p : {p : Quiver.Total T × Quiver.Total T // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          T)) :
     Quiver.Total (Comma L R) ≃ₜ
       {p : Comma L R × Quiver.Total A × Quiver.Total B //
         p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} where
@@ -305,7 +309,8 @@ theorem coe_totalHomeomorph [IsGroupoid A]
     (hL : Continuous fun f : Quiver.Total A ↦ (⟨_, _, L.map f.hom⟩ : Quiver.Total T))
     (hR : Continuous fun f : Quiver.Total B ↦ (⟨_, _, R.map f.hom⟩ : Quiver.Total T))
     (hcomp : Continuous fun p : {p : Quiver.Total T × Quiver.Total T // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          T)) :
     ⇑(totalHomeomorph htA htB hinv hL hR hcomp) = totalEquiv := (rfl)
 
 /-- The inverse of `CategoryTheory.Comma.totalHomeomorph` is the inverse of
@@ -318,7 +323,8 @@ theorem coe_totalHomeomorph_symm [IsGroupoid A]
     (hL : Continuous fun f : Quiver.Total A ↦ (⟨_, _, L.map f.hom⟩ : Quiver.Total T))
     (hR : Continuous fun f : Quiver.Total B ↦ (⟨_, _, R.map f.hom⟩ : Quiver.Total T))
     (hcomp : Continuous fun p : {p : Quiver.Total T × Quiver.Total T // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          T)) :
     ⇑(totalHomeomorph htA htB hinv hL hR hcomp).symm = totalEquiv.symm := (rfl)
 
 /-- Given local inverses `eA` and `eB` of the sources of `A` and `B`, the points of the fiber
@@ -330,7 +336,7 @@ private def fstHomeomorph (eA : OpenPartialHomeomorph (Quiver.Total A) A)
     (hB : Quiver.Total.left = ⇑eB) :
     {q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
         p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} |
-      q.1.2.1 ∈ eA.source ∧ q.1.2.2 ∈ eB.source} ≃ₜ
+      q.val.2.1 ∈ eA.source ∧ q.val.2.2 ∈ eB.source} ≃ₜ
       {X : Comma L R | X.left ∈ eA.target ∧ X.right ∈ eB.target} :=
   -- The local inverses are sections of the sources, and the source of a component of a point
   -- of the fiber product is the corresponding part of its object.
@@ -339,16 +345,17 @@ private def fstHomeomorph (eA : OpenPartialHomeomorph (Quiver.Total A) A)
   have hsymB {x : B} (hx : x ∈ eB.target) : (eB.symm x).left = x :=
     (congrFun hB _).trans (eB.right_inv hx)
   have hleftA (q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
-      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) : q.1.1.left = eA q.1.2.1 :=
-    q.2.1.symm.trans (congrFun hA _)
+      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) : q.val.1.left = eA q.val.2.1 :=
+    q.property.1.symm.trans (congrFun hA _)
   have hleftB (q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
-      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) : q.1.1.right = eB q.1.2.2 :=
-    q.2.2.symm.trans (congrFun hB _)
-  { toFun q := ⟨q.1.1.1, by
-      rw [Set.mem_ofPred_eq, hleftA q.1, hleftB q.1]
-      exact ⟨eA.map_source q.2.1, eB.map_source q.2.2⟩⟩
-    invFun X := ⟨⟨(X.1, eA.symm X.1.left, eB.symm X.1.right), hsymA X.2.1, hsymB X.2.2⟩,
-      eA.map_target X.2.1, eB.map_target X.2.2⟩
+      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) : q.val.1.right = eB q.val.2.2 :=
+    q.property.2.symm.trans (congrFun hB _)
+  { toFun q := ⟨q.val.val.1, by
+      rw [Set.mem_ofPred_eq, hleftA q.val, hleftB q.val]
+      exact ⟨eA.map_source q.property.1, eB.map_source q.property.2⟩⟩
+    invFun X := ⟨⟨(X.val, eA.symm X.val.left, eB.symm X.val.right), hsymA X.property.1,
+        hsymB X.property.2⟩,
+      eA.map_target X.property.1, eB.map_target X.property.2⟩
     left_inv q := by
       obtain ⟨⟨⟨X, a, b⟩, hpa, hpb⟩, hqa, hqb⟩ := q
       have hla : eA.symm X.left = a := by
@@ -362,11 +369,11 @@ private def fstHomeomorph (eA : OpenPartialHomeomorph (Quiver.Total A) A)
     continuous_toFun := by fun_prop
     continuous_invFun := by
       refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
-      refine continuous_subtype_val.prodMk (.prodMk ?_ ?_)
-      · exact eA.continuousOn_symm.comp_continuous (continuous_left.comp continuous_subtype_val)
-          fun X ↦ X.2.1
+      refine continuous_subtypeVal.prodMk (.prodMk ?_ ?_)
+      · exact eA.continuousOn_symm.comp_continuous (continuous_left.comp continuous_subtypeVal)
+          fun X ↦ X.property.1
       · exact eB.continuousOn_symm.comp_continuous
-          (continuous_right.comp continuous_subtype_val) fun X ↦ X.2.2 }
+          (continuous_right.comp continuous_subtypeVal) fun X ↦ X.property.2 }
 
 /-- The projection from the fiber product of the objects of a comma category with the total
 arrows of `A` and `B` to the objects is a local homeomorphism when the sources of `A` and `B`
@@ -375,18 +382,18 @@ private theorem isLocalHomeomorph_fst
     (hsA : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total A → A))
     (hsB : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total B → B)) :
     IsLocalHomeomorph fun p : {p : Comma L R × Quiver.Total A × Quiver.Total B //
-      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} ↦ p.1.1 := by
+      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} ↦ p.val.1 := by
   rw [isLocalHomeomorph_iff_isOpenEmbedding_restrict]
   intro p
-  obtain ⟨eA, haA, hA⟩ := hsA p.1.2.1
-  obtain ⟨eB, hbB, hB⟩ := hsB p.1.2.2
+  obtain ⟨eA, haA, hA⟩ := hsA p.val.2.1
+  obtain ⟨eB, hbB, hB⟩ := hsB p.val.2.2
   -- Near `p`, the projection is `fstHomeomorph` followed by the inclusion of an open set.
   have hUo : IsOpen {q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
-      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} | q.1.2.1 ∈ eA.source ∧
-        q.1.2.2 ∈ eB.source} :=
+      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} | q.val.2.1 ∈ eA.source ∧
+        q.val.2.2 ∈ eB.source} :=
     (eA.open_source.preimage (continuous_fst.comp (continuous_snd.comp
-      continuous_subtype_val))).inter
-      (eB.open_source.preimage (continuous_snd.comp (continuous_snd.comp continuous_subtype_val)))
+      continuous_subtypeVal))).inter
+      (eB.open_source.preimage (continuous_snd.comp (continuous_snd.comp continuous_subtypeVal)))
   have hVo : IsOpen {X : Comma L R | X.left ∈ eA.target ∧ X.right ∈ eB.target} :=
     (eA.open_target.preimage continuous_left).inter (eB.open_target.preimage continuous_right)
   exact ⟨_, hUo.mem_nhds ⟨haA, hbB⟩,
@@ -403,7 +410,8 @@ theorem isLocalHomeomorph_source [IsGroupoid A]
     (hL : Continuous fun f : Quiver.Total A ↦ (⟨_, _, L.map f.hom⟩ : Quiver.Total T))
     (hR : Continuous fun f : Quiver.Total B ↦ (⟨_, _, R.map f.hom⟩ : Quiver.Total T))
     (hcomp : Continuous fun p : {p : Quiver.Total T × Quiver.Total T // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          T)) :
     IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (Comma L R) → Comma L R) := by
   -- The target of `A` is its source after inversion.
   have htA : Continuous (Quiver.Total.right : Quiver.Total A → A) := hsA.continuous.comp hinv
@@ -423,7 +431,8 @@ theorem isLocalHomeomorph_target [IsGroupoid A] [IsGroupoid B]
     (hL : Continuous fun f : Quiver.Total A ↦ (⟨_, _, L.map f.hom⟩ : Quiver.Total T))
     (hR : Continuous fun f : Quiver.Total B ↦ (⟨_, _, R.map f.hom⟩ : Quiver.Total T))
     (hcomp : Continuous fun p : {p : Quiver.Total T × Quiver.Total T // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          T)) :
     IsLocalHomeomorph (Quiver.Total.right : Quiver.Total (Comma L R) → Comma L R) := by
   have hinv := continuous_inverse (L := L) (R := R) hinvA hinvB
   have hinvol : Function.Involutive fun f : Quiver.Total (Comma L R) ↦
@@ -449,7 +458,8 @@ theorem isProperMap_source_target [T2Space (Quiver.Total T)]
     (hL : Continuous fun f : Quiver.Total A ↦ (⟨_, _, L.map f.hom⟩ : Quiver.Total T))
     (hR : Continuous fun f : Quiver.Total B ↦ (⟨_, _, R.map f.hom⟩ : Quiver.Total T))
     (hcomp : Continuous fun p : {p : Quiver.Total T × Quiver.Total T // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          T)) :
     IsProperMap fun f : Quiver.Total (Comma L R) ↦ (f.left, f.right) := by
   refine isProperMap_iff_ultrafilter.mpr ⟨by fun_prop, fun 𝒰 ⟨X, Y⟩ h ↦ ?_⟩
   have hX : Tendsto Quiver.Total.left (𝒰 : Filter (Quiver.Total (Comma L R))) (𝓝 X) :=

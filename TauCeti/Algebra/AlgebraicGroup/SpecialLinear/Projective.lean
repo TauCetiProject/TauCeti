@@ -72,14 +72,14 @@ theorem map_centerPointsSubgroup_pointsMulEquiv_eq_center (hn : 0 < n)
     let ζ : rootsOfUnity n A :=
       Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin n hn A c
     let f := (RootsOfUnityGroup.pointsMulEquiv (R := k) (A := A) n).symm ζ
-    refine ⟨(rootsOfUnityScalarCenterMulEquiv (S := k) n hn A f).1, ?_, ?_⟩
+    refine ⟨(rootsOfUnityScalarCenterMulEquiv (S := k) n hn A f).val, ?_, ?_⟩
     · rw [CommHopfAlgCat.centerPointsSubgroup_eq_center]
-      exact (rootsOfUnityScalarCenterMulEquiv (S := k) n hn A f).2
+      exact (rootsOfUnityScalarCenterMulEquiv (S := k) n hn A f).property
     -- The two established roots-of-unity equivalences identify the represented center and the
     -- matrix center. The subgroup-map witness uses the coerced equivalence, so expose its
     -- application before applying their public evaluation lemmas.
     change pointsMulEquiv (R := k) (A := A) n
-      (rootsOfUnityScalarCenterMulEquiv (S := k) n hn A f).1 = g
+      (rootsOfUnityScalarCenterMulEquiv (S := k) n hn A f).val = g
     rw [rootsOfUnityScalarCenterMulEquiv_apply,
       pointsMulEquiv_rootsOfUnityScalarPoints, MulEquiv.apply_symm_apply]
     apply Subtype.ext

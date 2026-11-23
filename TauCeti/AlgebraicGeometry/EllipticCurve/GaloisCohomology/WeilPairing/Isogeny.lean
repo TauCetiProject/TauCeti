@@ -149,7 +149,7 @@ def kerCoeffWeilPairing : (ofIsogeny φ).KerCoeff →+ (ofIsogeny φ.dual).KerCo
   have vanishing (P : (ofIsogeny φ).KerCoeff) : ψ.ker ≤ (pairing P).ker := fun R hR ↦
     φ.torsionCoeffWeilPairing_eq_zero_of_pointCoeffMap_eq_zero hn
       (by
-        have hP : (ofIsogeny φ).pointCoeffMap (P : W₁.PointCoeff) = 0 := P.2
+        have hP : (ofIsogeny φ).pointCoeffMap (P : W₁.PointCoeff) = 0 := P.property
         simpa using hP)
       (by simpa [ψ, Subtype.ext_iff] using hR)
   let lift := ψ.liftOfSurjective (G₃ := KummerCoeff K φ.degree)
@@ -210,7 +210,7 @@ theorem coe_kerCoeffWeilPairing_baseChange {L : Type*} [Field L] [Algebra K L]
   let R' : (W₁⁄L).TorsionCoeff (φ.baseChange L).degree :=
     ⟨W₁.pointCoeffBaseChange τ R, by
       simpa only [hd, coe_torsionCoeffBaseChange] using
-        (W₁.torsionCoeffBaseChange τ φ.degree R).2⟩
+        (W₁.torsionCoeffBaseChange τ φ.degree R).property⟩
   have hR' : (R' : (W₁⁄L).PointCoeff) = W₁.pointCoeffBaseChange τ R := rfl
   have hQ' : (φ.baseChange L).torsionCoeffToDualKerCoeff R' = Q' := by
     apply Subtype.ext

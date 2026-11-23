@@ -363,7 +363,7 @@ theorem mem_zigzagProjectiveHomOfDegree_iff {i j : V} {d : ℕ}
     refine (mem_zigzagGradedCorner_iff k G).2
       ⟨?_, ?_⟩
     · rw [← coe_zigzagProjectiveHomEquivCorner_apply]
-      exact (zigzagProjectiveHomEquivCorner k G i j φ).2
+      exact (zigzagProjectiveHomEquivCorner k G i j φ).property
     exact (mem_zigzagProjectiveNatGrade_iff k G).1
       (by simpa only [Nat.zero_add] using hφ.map_mem hgen)
   · intro hφ
@@ -391,7 +391,7 @@ theorem isHomogeneous_zigzagProjective_iff {i j : V} {d : ℤ}
   · intro hφ
     refine (mem_zigzagIntegerGradedCorner_iff k G).2 ⟨?_, ?_⟩
     · rw [← coe_zigzagProjectiveHomEquivCorner_apply]
-      exact (zigzagProjectiveHomEquivCorner k G i j φ).2
+      exact (zigzagProjectiveHomEquivCorner k G i j φ).property
     · exact (mem_zigzagProjectiveGrade_iff k G).1
         (by simpa only [Int.zero_add] using hφ.map_mem hgen)
   · intro hφ
@@ -468,7 +468,7 @@ theorem coe_zigzagProjectiveHomOfDegreeEquivGradedCorner_symm_apply {i j : V} {d
   -- explicit inclusion of the graded corner into the corner.
   change (((zigzagProjectiveHomEquivCorner k G i j).symm
     (⟨(x : nonisolatedZigzagQuotient k G),
-      (zigzagGradedCorner_le_zigzagCorner k G i j d) x.2⟩ : zigzagCorner k G i j)) y :
+      (zigzagGradedCorner_le_zigzagCorner k G i j d) x.property⟩ : zigzagCorner k G i j)) y :
         nonisolatedZigzagQuotient k G) = _
   rw [coe_zigzagProjectiveHomEquivCorner_symm_apply]
 
@@ -529,7 +529,7 @@ theorem coe_zigzagProjectiveTargetShiftHomEquivIntegerGradedCorner_symm_apply {i
   -- application lemma for the ungraded dictionary.
   change (((zigzagProjectiveHomEquivCorner k G i j).symm
     (⟨(x : nonisolatedZigzagQuotient k G),
-      ((mem_zigzagIntegerGradedCorner_iff k G).1 x.2).1⟩ : zigzagCorner k G i j)) y :
+      ((mem_zigzagIntegerGradedCorner_iff k G).1 x.property).1⟩ : zigzagCorner k G i j)) y :
         nonisolatedZigzagQuotient k G) = _
   rw [coe_zigzagProjectiveHomEquivCorner_symm_apply]
 
@@ -578,7 +578,7 @@ theorem zigzagProjectiveHomEquivCorner_symm_apply_mem {i j : V} {d : ℕ}
   rw [mem_zigzagProjectiveHomOfDegree_iff]
   refine (mem_zigzagGradedCorner_iff k G).2 ⟨?_, ?_⟩ <;>
     rw [← coe_zigzagProjectiveHomEquivCorner_apply, LinearEquiv.apply_symm_apply]
-  · exact x.2
+  · exact x.property
   · exact hx
 
 /-- **The identity of a vertex projective raises degree by zero.** -/

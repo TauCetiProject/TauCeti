@@ -83,12 +83,12 @@ theorem isOpen_image_of_isPushout (sq : IsPushout g f f' g') {W : Set A'} (hW : 
 restricts to an open embedding on the complement of the range of `f`. -/
 theorem isOpenEmbedding_domRestrict_compl_range_of_isPushout (sq : IsPushout g f f' g')
     (hf : IsClosed (Set.range f)) : IsOpenEmbedding ((Set.range f)ᶜ.domRestrict g') := by
-  refine .of_continuous_injective_isOpenMap (g'.hom.continuous.comp continuous_subtype_val)
+  refine .of_continuous_injective_isOpenMap (g'.hom.continuous.comp continuous_subtypeVal)
     (Set.injOn_iff_injective.1
       (Types.injOn_compl_range_of_isPushout ((forget TopCat).map_isPushout sq)))
     fun V hV ↦ ?_
   rw [Set.domRestrict_eq, Set.image_comp]
-  exact isOpen_image_of_isPushout sq (hf.isOpen_compl.isOpenMap_subtype_val V hV)
+  exact isOpen_image_of_isPushout sq (hf.isOpen_compl.isOpenMap_subtypeVal V hV)
     (Subtype.coe_image_subset _ _)
 
 end Pushout
