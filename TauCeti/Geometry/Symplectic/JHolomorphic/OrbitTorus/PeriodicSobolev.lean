@@ -290,6 +290,17 @@ def detLinePeriodicTorusOperatorEquiv (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F �
     ((quotientRangePeriodicTorusOperatorEquiv T hℓ S hS).trans
       (quotientRangeLoopOperatorEquiv T S))
 
+/-- `TauCeti.detLinePeriodicTorusOperatorEquiv` is the isomorphism of determinant lines induced by
+the isomorphisms of kernels and cokernels with those of `1 - Ψ(T)`. -/
+theorem detLinePeriodicTorusOperatorEquiv_def (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
+    detLinePeriodicTorusOperatorEquiv T hℓ S hS =
+      LinearMap.detLineCongrKerCoker
+        ((kerPeriodicTorusOperatorEquiv T hℓ S hS).trans (kerLoopOperatorEquiv T S))
+        ((quotientRangePeriodicTorusOperatorEquiv T hℓ S hS).trans
+          (quotientRangeLoopOperatorEquiv T S)) :=
+  (rfl)
+
 /-- `TauCeti.detLinePeriodicTorusOperatorEquiv` is the transport along the isomorphisms of kernels
 and cokernels with those of `L_S` (`TauCeti.kerPeriodicTorusOperatorEquiv`,
 `TauCeti.quotientRangePeriodicTorusOperatorEquiv`), followed by the identification of the
@@ -409,17 +420,8 @@ theorem detLinePeriodicTorusOperatorEquiv_symm_detLineEndGenerator_eq_det_smul (
     (detLinePeriodicTorusOperatorEquiv T hℓ S hS).symm
         (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)).detLineEndGenerator =
       LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)) •
-        ((periodicTorusOperator T ℓ S).toLinearMap.detLineEquivOfBijective hD).symm 1 := by
-  have hinj := (injective_loopOperator_iff T S).1
-    ((injective_periodicTorusOperator_iff T hℓ S hS).1 hD.1)
-  have hP := And.intro hinj (LinearMap.injective_iff_surjective.1 hinj)
-  rw [LinearMap.detLineEndGenerator_eq_det_smul _ hP, LinearEquiv.map_smul]
-  congr 1
-  rw [LinearEquiv.symm_apply_eq]
-  refine (LinearMap.detLineEquivOfBijective hP).injective ?_
-  rw [LinearEquiv.apply_symm_apply]
-  exact ((LinearMap.detLineEquivOfBijective_detLineCongrKerCoker hD hP _ _ _).trans
-    (LinearEquiv.apply_symm_apply _ _)).symm
+        ((periodicTorusOperator T ℓ S).toLinearMap.detLineEquivOfBijective hD).symm 1 :=
+  LinearMap.detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul _ hD _ _
 
 end Inner
 

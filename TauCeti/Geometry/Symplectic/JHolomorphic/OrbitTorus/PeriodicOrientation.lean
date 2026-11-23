@@ -405,19 +405,8 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det (hℓ : �
       SignType.sign
         (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F))) := by
   rw [detLineOrientationTransport_rayOfNeZero_periodicTorusOperator T hℓ hM hMs hMa hf hz,
-    ray_eq_iff] at hxz
-  -- `x` is a positive multiple of the transported normalized generator, which is `det (1 - P)`
-  -- times the generator of the bijective trivialization.
-  obtain ⟨r, hr, hrx⟩ := SameRay.exists_pos_left (R := ℝ) (M := (periodicTorusOperator T ℓ (M b) :
-      CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
-        CircleSobolev 0 F × 𝕐[F]).detLine) hxz hx
-    ((LinearEquiv.map_ne_zero_iff _).2 (LinearMap.detLineEndGenerator_ne_zero _))
-  have hx' := congrArg (r⁻¹ • ·) hrx
-  simp only [smul_smul, inv_mul_cancel₀ hr.ne', one_smul] at hx'
-  rw [hx', detLinePeriodicTorusOperatorEquiv_symm_detLineEndGenerator_eq_det_smul T hℓ _ _ hb,
-    smul_smul, LinearEquiv.map_smul, LinearEquiv.apply_symm_apply]
-  -- What remains is `sgn ((r⁻¹ * det (1 - P)) • 1) = sgn det (1 - P)` in `ℝ`, with `r > 0`.
-  simp [sign_mul, inv_pos.2 hr]
+    ray_eq_iff, detLinePeriodicTorusOperatorEquiv_def] at hxz
+  exact LinearMap.sign_detLineEquivOfBijective_eq_sign_det_of_sameRay _ hb _ _ hx hxz
 
 /-- **The orbit-torus operator twisted along the orbit has determinant sign `sgn det (1 + P)`.**
 Let `M` be a path of infinitesimally symplectic loops, continuous on `[a, b]`, whose loop `M a`

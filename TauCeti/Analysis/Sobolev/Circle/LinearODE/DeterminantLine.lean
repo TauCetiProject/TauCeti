@@ -449,16 +449,8 @@ theorem detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul
         (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator =
       LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) •
         ((loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective
-          hL).symm 1 := by
-  have hinj := (injective_loopOperator_iff T S).1 hL.1
-  have hP := And.intro hinj (LinearMap.injective_iff_surjective.1 hinj)
-  rw [LinearMap.detLineEndGenerator_eq_det_smul _ hP, LinearEquiv.map_smul]
-  congr 1
-  rw [LinearEquiv.symm_apply_eq]
-  refine (LinearMap.detLineEquivOfBijective hP).injective ?_
-  rw [LinearEquiv.apply_symm_apply]
-  exact ((LinearMap.detLineEquivOfBijective_detLineCongrKerCoker hL hP _ _ _).trans
-    (LinearEquiv.apply_symm_apply _ _)).symm
+          hL).symm 1 :=
+  LinearMap.detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul _ hL _ _
 
 /-- **The sign of the transported generator at a nondegenerate loop.** Let `L_S` be bijective,
 equivalently `det (1 - Ψ(T)) ≠ 0`. Every nonzero element `x` of the determinant line of `L_S` on
@@ -474,19 +466,8 @@ theorem sign_detLineEquivOfBijective_eq_sign_det_of_sameRay
         ((loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective
           hL x) =
       SignType.sign
-        (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E))) := by
-  set A := 1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)
-  -- `x` is a positive multiple of the transported normalized generator of `A`.
-  have hy : (detLineLoopOperatorEquiv T S).symm A.detLineEndGenerator ≠ 0 :=
-    (LinearEquiv.map_ne_zero_iff _).2 (LinearMap.detLineEndGenerator_ne_zero A)
-  obtain ⟨r, hr, hrx⟩ := SameRay.exists_pos_left (R := ℝ)
-    (M := (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLine) hxy hx hy
-  have hx' : x = r⁻¹ • (detLineLoopOperatorEquiv T S).symm A.detLineEndGenerator := by
-    rw [← hrx, smul_smul, inv_mul_cancel₀ hr.ne', one_smul]
-  -- The transported generator is `det A` times the generator of the bijective trivialization.
-  rw [hx', detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul T S hL, smul_smul,
-    map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one, sign_mul,
-    sign_pos (inv_pos.2 hr), one_mul]
+        (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E))) :=
+  LinearMap.sign_detLineEquivOfBijective_eq_sign_det_of_sameRay _ hL _ _ hx hxy
 
 /-! ### Coherence along families -/
 
