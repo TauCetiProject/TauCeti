@@ -87,7 +87,7 @@ theorem fusion_eq_iff {φ : H →* G} {i : Fin dH.numClasses} {j : Fin dG.numCla
 theorem fusion_eq_of_conj {φ : H →* G} {i : Fin dH.numClasses} {j : Fin dG.numClasses}
     (c : G) (hc : c * dG.rep j * c⁻¹ = φ (dH.rep i)) :
     dH.fusion dG φ i = j :=
-  (dH.fusion_eq_iff dG).mpr (isConj_iff.mpr ⟨c, hc⟩)
+  dG.index_eq_of_conj c hc
 
 /-- **The numbered fusion map tracks `ConjClasses.map φ`.** -/
 @[simp]

@@ -21,7 +21,7 @@ table:
 * the power maps `d.powIndex n` and `d.zpowIndex z` track `C ↦ C ^ n` on `ConjClasses G`, compose
   multiplicatively in the exponent, depend only on the residue of `n` modulo `orderOf (d.rep i)`,
   and permute the class indices bijectively whenever `n` is coprime to every representative order
-  (in particular, whenever `n` is coprime to `Nat.card G`).
+  (in particular, whenever `n` is coprime to `Monoid.exponent G`).
 
 For groups whose class data is certified from explicit conjugating witnesses rather than by brute
 enumeration, each index equation (`d.invIndex i = j`, `d.powIndex n i = j`, `d.zpowIndex z i = j`)
@@ -43,9 +43,9 @@ across `TauCeti.ClassData.map`.
 * `TauCeti.ClassData.invIndex_eq_self_iff`: `d.invIndex` fixes `i` if and only if `d.classOf i` is
   a real class (`TauCeti.IsRealClass`).
 * `TauCeti.ClassData.powIndex_bijective_of_coprime`,
-  `TauCeti.ClassData.powIndex_bijective_of_coprime_card`,
+  `TauCeti.ClassData.powIndex_bijective_of_coprime_exponent`,
   `TauCeti.ClassData.zpowIndex_bijective_of_coprime`,
-  `TauCeti.ClassData.zpowIndex_bijective_of_coprime_card`: coprime power maps permute the
+  `TauCeti.ClassData.zpowIndex_bijective_of_coprime_exponent`: coprime power maps permute the
   numbered classes bijectively.
 * `TauCeti.ClassData.card_classFinset_powIndex_of_coprime`,
   `TauCeti.ClassData.card_classFinset_zpowIndex_of_coprime`: raising a single class `i` to a
@@ -90,7 +90,7 @@ theorem invIndex_eq_iff {i j : Fin d.numClasses} :
 /-- Certify `d.invIndex i = j` directly from an explicit conjugating element `c`. -/
 theorem invIndex_eq_of_conj {i j : Fin d.numClasses} (c : G)
     (hc : c * d.rep j * c⁻¹ = (d.rep i)⁻¹) : d.invIndex i = j :=
-  d.invIndex_eq_iff.mpr (isConj_iff.mpr ⟨c, hc⟩)
+  d.index_eq_of_conj c hc
 
 /-- **The inverse-class map tracks element inversion** under `TauCeti.ClassData.index`. -/
 @[simp]
@@ -122,7 +122,7 @@ theorem invIndex_involutive : Function.Involutive d.invIndex :=
 
 /-- **The numbered inverse-class permutation**: bundles `TauCeti.ClassData.invIndex` as a
 permutation of `Fin d.numClasses`. -/
-@[expose] def invEquiv : Equiv.Perm (Fin d.numClasses) where
+def invEquiv : Equiv.Perm (Fin d.numClasses) where
   toFun := d.invIndex
   invFun := d.invIndex
   left_inv := d.invIndex_invIndex
@@ -202,7 +202,7 @@ theorem powIndex_eq_iff {n : ℕ} {i j : Fin d.numClasses} :
 /-- Certify `d.powIndex n i = j` directly from an explicit conjugating element `c`. -/
 theorem powIndex_eq_of_conj {n : ℕ} {i j : Fin d.numClasses} (c : G)
     (hc : c * d.rep j * c⁻¹ = d.rep i ^ n) : d.powIndex n i = j :=
-  d.powIndex_eq_iff.mpr (isConj_iff.mpr ⟨c, hc⟩)
+  d.index_eq_of_conj c hc
 
 /-- **The power map tracks element powers** under `TauCeti.ClassData.index`. -/
 @[simp]
@@ -311,7 +311,7 @@ theorem zpowIndex_eq_iff {z : ℤ} {i j : Fin d.numClasses} :
 /-- Certify `d.zpowIndex z i = j` directly from an explicit conjugating element `c`. -/
 theorem zpowIndex_eq_of_conj {z : ℤ} {i j : Fin d.numClasses} (c : G)
     (hc : c * d.rep j * c⁻¹ = d.rep i ^ z) : d.zpowIndex z i = j :=
-  d.zpowIndex_eq_iff.mpr (isConj_iff.mpr ⟨c, hc⟩)
+  d.index_eq_of_conj c hc
 
 /-- **The `ℤ`-power map tracks integer powers** under `TauCeti.ClassData.index`. -/
 @[simp]
@@ -410,7 +410,7 @@ theorem zpowIndex_eq_powIndex_natAbs_or (z : ℤ) :
   · right
     funext i
     conv_lhs => rw [h, zpowIndex_neg, zpowIndex_natCast]
-    rfl
+    rw [Function.comp_apply]
 
 /-- Raising class `i` to an integer power with `z.natAbs` coprime to `orderOf (d.rep i)`
 preserves its centralizer index. -/
@@ -432,6 +432,11 @@ theorem card_classFinset_zpowIndex_of_coprime [Fintype G] {z : ℤ} {i : Fin d.n
   rw [card_classFinset_eq_index_centralizer, card_classFinset_eq_index_centralizer,
     d.index_centralizer_rep_zpowIndex_of_coprime hz]
 
+omit [DecidableRel (IsConj : G → G → Prop)] in
+private theorem zpow_eq_zpow_iff_of_orderOf_eq {a b : G} {z w : ℤ} (h : orderOf a = orderOf b) :
+    a ^ z = a ^ w ↔ b ^ z = b ^ w := by
+  simp only [zpow_eq_zpow_iff_modEq, h]
+
 /-- **A power map coprime to every representative order is a bijection** on `Fin d.numClasses`,
 without assuming `G` is finite. -/
 theorem powIndex_bijective_of_coprime {n : ℕ}
@@ -443,23 +448,23 @@ theorem powIndex_bijective_of_coprime {n : ℕ}
   obtain ⟨z, hz⟩ := Subgroup.mem_zpowers_iff.mp (mem_zpowers_pow_iff.mpr (hn i₁).symm)
   have hz₁ : d.rep i₁ ^ ((n : ℤ) * z) = d.rep i₁ ^ (1 : ℤ) := by
     rw [zpow_mul, zpow_natCast, zpow_one, hz]
-  have hz₂ : (d.rep i₂ ^ n) ^ z = d.rep i₂ := by
-    rw [← zpow_natCast, ← zpow_mul]
-    conv_rhs => rw [← zpow_one (d.rep i₂)]
-    rw [zpow_eq_zpow_iff_modEq, ← hord, ← zpow_eq_zpow_iff_modEq]
-    exact hz₁
+  have hz₂ : d.rep i₂ ^ ((n : ℤ) * z) = d.rep i₂ := by
+    have hpow := (zpow_eq_zpow_iff_of_orderOf_eq hord).mp hz₁
+    rwa [zpow_one] at hpow
   calc
     i₁ = d.index ((d.rep i₁ ^ n) ^ z) := by rw [hz, d.index_rep]
     _ = d.zpowIndex z (d.powIndex n i₁) := by rw [powIndex, zpowIndex_index]
     _ = d.zpowIndex z (d.powIndex n i₂) := by rw [h]
     _ = d.index ((d.rep i₂ ^ n) ^ z) := by rw [powIndex, zpowIndex_index]
-    _ = i₂ := by rw [hz₂, d.index_rep]
+    _ = i₂ := by rw [← zpow_natCast, ← zpow_mul, hz₂, d.index_rep]
 
-/-- **Any power coprime to `Nat.card G` induces a bijection** on `Fin d.numClasses`. For infinite
-`G`, `Nat.card G = 0`, so `(Nat.card G).Coprime n` forces `n = 1` and the result still holds. -/
-theorem powIndex_bijective_of_coprime_card {n : ℕ}
-    (hn : (Nat.card G).Coprime n) : Function.Bijective (d.powIndex n) :=
-  d.powIndex_bijective_of_coprime fun _ => hn.of_dvd_left (orderOf_dvd_natCard _)
+/-- **Any power coprime to `Monoid.exponent G` induces a bijection** on `Fin d.numClasses`. For
+groups without finite exponent, `Monoid.exponent G = 0`, so `(Monoid.exponent G).Coprime n` forces
+`n = 1` and the result still holds; for bounded-exponent infinite groups, every `n` coprime to the
+exponent still qualifies. -/
+theorem powIndex_bijective_of_coprime_exponent {n : ℕ}
+    (hn : (Monoid.exponent G).Coprime n) : Function.Bijective (d.powIndex n) :=
+  d.powIndex_bijective_of_coprime fun _ => hn.coprime_dvd_left (Monoid.order_dvd_exponent _)
 
 /-- **An integer power map with `z.natAbs` coprime to every representative order is a bijection**
 on `Fin d.numClasses`, without assuming `G` is finite. -/
@@ -469,12 +474,14 @@ theorem zpowIndex_bijective_of_coprime {z : ℤ}
   · exact d.powIndex_bijective_of_coprime hz
   · exact d.invIndex_involutive.bijective.comp (d.powIndex_bijective_of_coprime hz)
 
-/-- **Any integer power with `z.natAbs` coprime to `Nat.card G` induces a bijection** on
-`Fin d.numClasses`. For infinite `G`, `Nat.card G = 0`, so `(Nat.card G).Coprime z.natAbs` forces
-`z.natAbs = 1` (`z = ±1`) and the result still holds. -/
-theorem zpowIndex_bijective_of_coprime_card {z : ℤ}
-    (hz : (Nat.card G).Coprime z.natAbs) : Function.Bijective (d.zpowIndex z) :=
-  d.zpowIndex_bijective_of_coprime fun _ => hz.of_dvd_left (orderOf_dvd_natCard _)
+/-- **Any integer power with `z.natAbs` coprime to `Monoid.exponent G` induces a bijection** on
+`Fin d.numClasses`. For groups without finite exponent, `Monoid.exponent G = 0`, so
+`(Monoid.exponent G).Coprime z.natAbs` forces `z.natAbs = 1` (`z = ±1`) and the result still
+holds; for bounded-exponent infinite groups, every `z` with `z.natAbs` coprime to the exponent
+still qualifies. -/
+theorem zpowIndex_bijective_of_coprime_exponent {z : ℤ}
+    (hz : (Monoid.exponent G).Coprime z.natAbs) : Function.Bijective (d.zpowIndex z) :=
+  d.zpowIndex_bijective_of_coprime fun _ => hz.coprime_dvd_left (Monoid.order_dvd_exponent _)
 
 /-- **Transport of the `ℕ`-power map** across a multiplicative equivalence. -/
 @[simp]

@@ -312,6 +312,11 @@ theorem index_eq_iff {g : G} {i : Fin d.numClasses} : d.index g = i ↔ IsConj (
   by_contra hne
   exact d.not_isConj_rep hne ((d.isConj_rep_index g).trans h.symm)
 
+/-- Certify `d.index g = i` directly from an explicit conjugating element `c : G`. -/
+theorem index_eq_of_conj {g : G} {i : Fin d.numClasses} (c : G)
+    (hc : c * d.rep i * c⁻¹ = g) : d.index g = i :=
+  d.index_eq_iff.mpr (isConj_iff.mpr ⟨c, hc⟩)
+
 @[simp]
 theorem index_rep (i : Fin d.numClasses) : d.index (d.rep i) = i :=
   d.index_eq_iff.mpr (IsConj.refl _)
