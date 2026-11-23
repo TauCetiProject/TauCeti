@@ -38,8 +38,11 @@ quotient of `J_F` by `U_F Fˣ` is its divisor class group.
 * `TauCeti.IdeleGroup k F`: the idele group of `F / k`.
 * `TauCeti.IdeleGroup.unitEmbedding`: the diagonal embedding `Fˣ →* J_F`.
 * `TauCeti.IdeleGroup.unitIdeles k F`: the subgroup of ideles that are units everywhere.
+* `TauCeti.IdeleGroup.orderSystem k F`: the places of `F / k` with the orders of idele
+  components, as an order system on `Additive J_F`.
 * `TauCeti.IdeleGroup.divisor` and `TauCeti.IdeleGroup.divisorHom`: the divisor of an idele, and
-  its packaging as a group homomorphism `Additive J_F →+ Divisor k F`.
+  its packaging as a group homomorphism `Additive J_F →+ Divisor k F`, the principal-divisor
+  homomorphism of that order system.
 * `TauCeti.IdeleGroup.quotientUnitIdelesEquiv`: `J_F / U_F ≃* Div(F)`.
 * `TauCeti.IdeleGroup.quotientClassGroupEquiv`: `J_F / (U_F Fˣ) ≃* Cl(F)`.
 
@@ -166,19 +169,25 @@ theorem mem_unitIdeles_iff_ord_eq_zero {x : IdeleGroup k F} :
 
 /-! ### The divisor of an idele -/
 
+variable (k F) in
+/-- **The places of `F / k` as an order system on the idele group**: the order of an idele at `P`
+is the order of its component at `P` in the completion. Its principal divisors are the divisors
+of ideles. -/
+def orderSystem : WeilDivisor.OrderSystem (Place k F) (Additive (IdeleGroup k F)) where
+  ord P := P.completionPlace.ordAddMonoidHom.comp
+    (RestrictedProduct.evalMonoidHom (fun Q : Place k F ↦ Q.Completionˣ) P).toAdditive
+  finite_support x := (finite_setOf_ord_ne_zero x.toMul).subset fun P hP ↦ by
+    simpa using hP
+
+@[simp]
+theorem orderSystem_ord (P : Place k F) (x : IdeleGroup k F) :
+    (orderSystem k F).ord P (Additive.ofMul x) = P.completionPlace.ord (x P : P.Completion) := by
+  simp [orderSystem]
+
 /-- **The divisor homomorphism** `J_F → Div(F)`, `x ↦ ∑_P ord_P(x_P) · P`, in its additivized
-form. -/
-def divisorHom : Additive (IdeleGroup k F) →+ Divisor k F where
-  toFun x := Finsupp.ofSupportFinite
-    (fun P ↦ P.completionPlace.ord (x.toMul P : P.Completion))
-    (finite_setOf_ord_ne_zero x.toMul)
-  map_zero' := Finsupp.ext fun P ↦ by
-    simp only [Finsupp.ofSupportFinite_coe, toMul_zero, RestrictedProduct.one_apply, Units.val_one,
-      Place.ord_one, Finsupp.coe_zero, Pi.zero_apply]
-  map_add' x y := Finsupp.ext fun P ↦ by
-    simp only [Finsupp.ofSupportFinite_coe, toMul_add, RestrictedProduct.mul_apply, Units.val_mul,
-      Finsupp.coe_add, Pi.add_apply]
-    exact Place.ord_mul _ (Units.ne_zero _) (Units.ne_zero _)
+form: the principal-divisor homomorphism of `TauCeti.IdeleGroup.orderSystem`. -/
+def divisorHom : Additive (IdeleGroup k F) →+ Divisor k F :=
+  (orderSystem k F).principalHom
 
 /-- **The divisor** `div x = ∑_P ord_P(x_P) · P` of an idele. -/
 def divisor (x : IdeleGroup k F) : Divisor k F :=
@@ -196,8 +205,7 @@ theorem divisorHom_apply (x : Additive (IdeleGroup k F)) :
 @[simp]
 theorem coeff_divisor (x : IdeleGroup k F) (P : Place k F) :
     (divisor x).coeff P = P.completionPlace.ord (x P : P.Completion) := by
-  rw [divisor, divisorHom, WeilDivisor.coeff, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
-  exact congrFun Finsupp.ofSupportFinite_coe P
+  simp [divisor, divisorHom]
 
 theorem mem_support_divisor_iff {x : IdeleGroup k F} {P : Place k F} :
     P ∈ (divisor x).support ↔ P.completionPlace.ord (x P : P.Completion) ≠ 0 := by
