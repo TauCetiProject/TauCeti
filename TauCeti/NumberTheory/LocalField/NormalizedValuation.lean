@@ -497,6 +497,18 @@ theorem normalizedAbsoluteValue_coe (x : Kˣ) :
       (Nat.card 𝓀[K] : ℚ≥0) ^ (-(normalizedValuation K x).toAdd) := by
   simpa using normalizedAbsoluteValue_apply_ne_zero (x : K) x.ne_zero
 
+/-- The real cast of `normalizedAbsoluteValue_coe`: `|x| = q ^ (-v_K(x))` in `ℝ`. -/
+theorem coe_normalizedAbsoluteValue_eq_zpow (x : Kˣ) :
+    ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) =
+      (Nat.card 𝓀[K] : ℝ) ^ (-(normalizedValuation K x).toAdd) := by
+  rw [normalizedAbsoluteValue_coe, NNRat.cast_zpow, NNRat.cast_natCast]
+
+/-- The normalized absolute value of a unit is a positive real number. -/
+theorem coe_normalizedAbsoluteValue_pos (x : Kˣ) :
+    (0 : ℝ) < ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) := by
+  rw [coe_normalizedAbsoluteValue_eq_zpow]
+  exact zpow_pos (by exact_mod_cast Nat.card_pos) _
+
 /-- The normalized absolute value of an irreducible element of `𝒪[K]`, that is of a uniformizer
 of `K`, is the inverse of the residue-field cardinality. -/
 @[simp]

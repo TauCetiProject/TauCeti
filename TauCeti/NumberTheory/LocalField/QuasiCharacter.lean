@@ -48,7 +48,8 @@ that Tate's local theory uses.
 * `TauCeti.normalizedAbsCpowCharacter_eq_iff`: `ω_s = ω_t` exactly when
   `s ∈ t + (2πi / log q) ℤ`.
 * `TauCeti.characterConductorExp_mul_normalizedAbsCpowCharacter`: `c(ω ω_s) = c(ω)`.
-* `TauCeti.existsUnique_norm_eq_rpow`: the exponent exists and is unique.
+* `TauCeti.existsUnique_norm_coe_apply_eq_normalizedAbsoluteValue_rpow`: the exponent exists and
+  is unique.
 * `TauCeti.characterExponent_normalizedAbsCpowCharacter`, `TauCeti.characterExponent_mul`:
   the exponent of `ω_s` is `re s`, and exponents add.
 * `TauCeti.norm_coe_mul_normalizedAbsCpowCharacter_neg_characterExponent`: `ω ω_{-σ}` is
@@ -73,7 +74,7 @@ namespace TauCeti
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-! ### Positivity of `q` and of the normalized absolute value -/
+/-! ### Positivity of `q` -/
 
 private theorem one_lt_natCard_residueField_real : (1 : ℝ) < Nat.card 𝓀[K] := by
   exact_mod_cast (Finite.one_lt_card : 1 < Nat.card 𝓀[K])
@@ -88,21 +89,16 @@ private theorem log_natCard_residueField_ne_zero : Real.log (Nat.card 𝓀[K]) �
   Real.log_ne_zero_of_pos_of_ne_one (natCard_residueField_pos_real K)
     (one_lt_natCard_residueField_real K).ne'
 
+private theorem log_natCard_residueField_complex :
+    log (Nat.card 𝓀[K] : ℂ) = Real.log (Nat.card 𝓀[K]) := by
+  rw [← ofReal_natCast, ofReal_log (Nat.cast_nonneg _)]
+
+private theorem log_natCard_residueField_ne_zero_complex : log (Nat.card 𝓀[K] : ℂ) ≠ 0 := by
+  rw [log_natCard_residueField_complex, ofReal_ne_zero]
+  exact log_natCard_residueField_ne_zero K
+
 private theorem natCard_residueField_cpow_ne_zero (s : ℂ) : (Nat.card 𝓀[K] : ℂ) ^ (-s) ≠ 0 := by
   simp [natCard_residueField_ne_zero_complex K]
-
-variable {K} in
-/-- The real cast of `normalizedAbsoluteValue_coe`: `|x| = q ^ (-v_K(x))`. -/
-private theorem coe_normalizedAbsoluteValue_eq_zpow (x : Kˣ) :
-    ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) =
-      (Nat.card 𝓀[K] : ℝ) ^ (-(normalizedValuation K x).toAdd) := by
-  rw [normalizedAbsoluteValue_coe, NNRat.cast_zpow, NNRat.cast_natCast]
-
-variable {K} in
-private theorem coe_normalizedAbsoluteValue_pos (x : Kˣ) :
-    (0 : ℝ) < ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) := by
-  rw [coe_normalizedAbsoluteValue_eq_zpow]
-  exact zpow_pos (natCard_residueField_pos_real K) _
 
 /-! ### The norm-power characters `ω_s` -/
 
@@ -125,12 +121,13 @@ theorem coe_normalizedAbsCpowCharacter_apply_eq_zpow (s : ℂ) (x : Kˣ) :
 theorem coe_normalizedAbsCpowCharacter_apply (s : ℂ) (x : Kˣ) :
     (normalizedAbsCpowCharacter K s x : ℂ) =
       (((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) : ℂ) ^ s := by
-  have harg : (Nat.card 𝓀[K] : ℂ).arg = 0 := natCast_arg
+  -- Both sides are `q` to a complex power: `q ^ (v_K(x) * (-s))` and `q ^ (-v_K(x) * s)`.
   rw [coe_normalizedAbsCpowCharacter_apply_eq_zpow, coe_normalizedAbsoluteValue_eq_zpow,
-    ofReal_zpow, ofReal_natCast, ← cpow_int_mul' (by simp [harg, Real.pi_pos])
-      (by simp [harg, Real.pi_pos.le]), ← cpow_int_mul]
+    ← Real.rpow_intCast, ← cpow_mul_ofReal_nonneg (Nat.cast_nonneg _), ofReal_natCast,
+    ← cpow_int_mul]
+  congr 1
   push_cast
-  ring_nf
+  ring
 
 /-- The absolute value of `ω_s(x)` is `|x| ^ re s`. -/
 theorem norm_coe_normalizedAbsCpowCharacter_apply (s : ℂ) (x : Kˣ) :
@@ -170,12 +167,12 @@ theorem normalizedAbsCpowCharacter_eq_iff {s t : ℂ} :
     normalizedAbsCpowCharacter K s = normalizedAbsCpowCharacter K t ↔
       ∃ n : ℤ, s = t + n * (2 * Real.pi * I / Real.log (Nat.card 𝓀[K])) := by
   have hq := natCard_residueField_ne_zero_complex K
-  have hlog : (Real.log (Nat.card 𝓀[K]) : ℂ) ≠ 0 :=
-    ofReal_ne_zero.2 (log_natCard_residueField_ne_zero K)
+  have hlog := log_natCard_residueField_ne_zero_complex K
   rw [normalizedAbsCpowCharacter, normalizedAbsCpowCharacter,
     (unramifiedCharacter_injective K).eq_iff, Units.ext_iff, Units.val_mk0, Units.val_mk0,
     cpow_def_of_ne_zero hq, cpow_def_of_ne_zero hq, exp_eq_exp_iff_exists_int,
-    ← ofReal_natCast, ← ofReal_log (Nat.cast_nonneg _)]
+    log_natCard_residueField_complex]
+  rw [log_natCard_residueField_complex] at hlog
   generalize (Real.log (Nat.card 𝓀[K]) : ℂ) = L at hlog ⊢
   constructor
   · rintro ⟨n, h⟩
@@ -194,9 +191,7 @@ trivial on `U(K,0) = 𝒪[K]ˣ` exactly when it is `ω_s` for some `s : ℂ`. -/
 theorem exists_eq_normalizedAbsCpowCharacter_iff {ω : Kˣ →ₜ* ℂˣ} :
     (∃ s : ℂ, ω = normalizedAbsCpowCharacter K s) ↔ unitFiltration K 0 ≤ ω.ker := by
   have hq := natCard_residueField_ne_zero_complex K
-  have hlog : log (Nat.card 𝓀[K] : ℂ) ≠ 0 := by
-    rw [← ofReal_natCast, ← ofReal_log (Nat.cast_nonneg _), ofReal_ne_zero]
-    exact log_natCard_residueField_ne_zero K
+  have hlog := log_natCard_residueField_ne_zero_complex K
   have hker : unitFiltration K 0 ≤ ω.ker ↔ ∀ u : Kˣ, valuation K (u : K) = 1 → ω u = 1 :=
     ⟨fun h u hu ↦ h ((mem_unitFiltration_zero u).2 hu),
       fun h u hu ↦ h u ((mem_unitFiltration_zero u).1 hu)⟩
@@ -225,20 +220,9 @@ theorem characterConductorExp_normalizedAbsCpowCharacter (s : ℂ) :
 @[simp]
 theorem characterConductorExp_mul_normalizedAbsCpowCharacter (ω : Kˣ →ₜ* ℂˣ) (s : ℂ) :
     ClassFieldTheory.characterConductorExp K (ω * normalizedAbsCpowCharacter K s) =
-      ClassFieldTheory.characterConductorExp K ω := by
-  -- On every step `U(K,n) ⊆ U(K,0)` the twist `ω_s` is trivial, so the two kernels agree there.
-  have h (n : ℕ) : unitFiltration K n ≤ (ω * normalizedAbsCpowCharacter K s).ker ↔
-      unitFiltration K n ≤ ω.ker := by
-    refine forall₂_congr fun u hu ↦ ?_
-    have hs : normalizedAbsCpowCharacter K s u = 1 :=
-      unitFiltration_zero_le_ker_normalizedAbsCpowCharacter K s
-        (unitFiltration_antitone (Nat.zero_le n) hu)
-    simp [MonoidHom.mem_ker, hs]
-  refine le_antisymm ?_ ?_
-  · rw [ClassFieldTheory.characterConductorExp_le_iff, h]
-    exact ClassFieldTheory.unitFiltration_characterConductorExp_le_ker K ω
-  · rw [ClassFieldTheory.characterConductorExp_le_iff, ← h]
-    exact ClassFieldTheory.unitFiltration_characterConductorExp_le_ker K _
+      ClassFieldTheory.characterConductorExp K ω :=
+  ClassFieldTheory.characterConductorExp_mul_of_unitFiltration_zero_le_ker K ω _
+    (unitFiltration_zero_le_ker_normalizedAbsCpowCharacter K s)
 
 /-! ### The exponent of a quasi-character -/
 
@@ -255,16 +239,16 @@ theorem norm_coe_apply_eq_one_of_mem_unitFiltration_zero (ω : Kˣ →ₜ* ℂˣ
 theorem norm_coe_apply_eq_zpow_of_isUniformizer (ω : Kˣ →ₜ* ℂˣ) {ϖ : Kˣ}
     (hϖ : IsUniformizer K ϖ) (x : Kˣ) :
     ‖(ω x : ℂ)‖ = ‖(ω ϖ : ℂ)‖ ^ (normalizedValuation K x).toAdd := by
-  set n := (normalizedValuation K x).toAdd
-  have hu := mul_zpow_neg_mem_unitFiltration_zero ((isUniformizer_def ϖ).1 hϖ) x
-  have hx : ω x = ω (x * ϖ ^ (-n)) * ω ϖ ^ n := by
-    rw [← map_zpow, ← map_mul, mul_assoc, ← zpow_add, neg_add_cancel, zpow_zero, mul_one]
-  rw [hx, Units.val_mul, norm_mul, Units.val_zpow_eq_zpow_val, norm_zpow,
-    norm_coe_apply_eq_one_of_mem_unitFiltration_zero ω hu, one_mul]
+  -- `‖ω‖ : Kˣ → ℝˣ` is trivial on `U(K,0)`, so it is the unramified character of `‖ω(ϖ)‖`.
+  let δ : Kˣ →* ℝˣ := (Units.map (normHom : ℂ →*₀ ℝ).toMonoidHom).comp ω.toMonoidHom
+  have hδ (u : Kˣ) (hu : valuation K (u : K) = 1) : δ u = 1 := Units.ext <|
+    norm_coe_apply_eq_one_of_mem_unitFiltration_zero ω ((mem_unitFiltration_zero u).2 hu)
+  simpa [δ, unramifiedCharacter_apply] using
+    congrArg Units.val (apply_eq_unramifiedCharacter_of_isUniformizer hδ hϖ x)
 
 /-- **The exponent of a quasi-character.** For every quasi-character `ω` of `K` there is a unique
 real `σ` with `‖ω(x)‖ = |x| ^ σ` for all `x ∈ Kˣ`. -/
-theorem existsUnique_norm_eq_rpow (ω : Kˣ →ₜ* ℂˣ) :
+theorem existsUnique_norm_coe_apply_eq_normalizedAbsoluteValue_rpow (ω : Kˣ →ₜ* ℂˣ) :
     ∃! σ : ℝ, ∀ x : Kˣ,
       ‖(ω x : ℂ)‖ = ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) ^ σ := by
   obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
@@ -274,10 +258,15 @@ theorem existsUnique_norm_eq_rpow (ω : Kˣ →ₜ* ℂˣ) :
     rw [coe_normalizedAbsoluteValue_eq_zpow, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd,
       zpow_neg_one]
   refine ⟨-Real.logb (Nat.card 𝓀[K]) ‖(ω ϖ : ℂ)‖, fun x ↦ ?_, fun σ hσ ↦ ?_⟩
-  · rw [norm_coe_apply_eq_zpow_of_isUniformizer ω hϖ, coe_normalizedAbsoluteValue_eq_zpow,
-      ← Real.rpow_intCast_mul hq₀.le, Int.cast_neg, neg_mul_neg, mul_comm (_ : ℝ),
-      Real.rpow_mul_intCast hq₀.le,
-      Real.rpow_logb hq₀ hq.ne' (norm_pos_iff.2 (ω ϖ).ne_zero)]
+  · -- Both sides are `q` to a real power: `q ^ (logb q ‖ω(ϖ)‖ * v_K(x))` and
+    -- `q ^ (-v_K(x) * -logb q ‖ω(ϖ)‖)`.
+    rw [norm_coe_apply_eq_zpow_of_isUniformizer ω hϖ, coe_normalizedAbsoluteValue_eq_zpow,
+      ← Real.rpow_intCast, ← Real.rpow_intCast, ← Real.rpow_mul hq₀.le]
+    nth_rw 1 [← Real.rpow_logb hq₀ hq.ne' (norm_pos_iff.2 (ω ϖ).ne_zero)]
+    rw [← Real.rpow_mul hq₀.le]
+    congr 1
+    push_cast
+    ring
   · have h := hσ ϖ
     rw [hϖabs, Real.inv_rpow hq₀.le, ← Real.rpow_neg hq₀.le] at h
     rw [h, Real.logb_rpow hq₀ hq.ne', neg_neg]
@@ -286,19 +275,19 @@ variable (K) in
 /-- The **exponent** of a quasi-character `ω` of `K`: the unique real `σ` with
 `‖ω(x)‖ = |x| ^ σ` for all `x ∈ Kˣ` (`TauCeti.norm_coe_apply_eq_rpow_characterExponent`). -/
 def characterExponent (ω : Kˣ →ₜ* ℂˣ) : ℝ :=
-  (existsUnique_norm_eq_rpow ω).exists.choose
+  (existsUnique_norm_coe_apply_eq_normalizedAbsoluteValue_rpow ω).exists.choose
 
 /-- The characterizing property of the exponent: `‖ω(x)‖ = |x| ^ σ`. -/
 theorem norm_coe_apply_eq_rpow_characterExponent (ω : Kˣ →ₜ* ℂˣ) (x : Kˣ) :
     ‖(ω x : ℂ)‖ = ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) ^ characterExponent K ω :=
-  (existsUnique_norm_eq_rpow ω).exists.choose_spec x
+  (existsUnique_norm_coe_apply_eq_normalizedAbsoluteValue_rpow ω).exists.choose_spec x
 
 /-- The exponent is the only real `σ` with `‖ω(x)‖ = |x| ^ σ` for all `x`. -/
 theorem characterExponent_eq_iff (ω : Kˣ →ₜ* ℂˣ) (σ : ℝ) :
     characterExponent K ω = σ ↔
       ∀ x : Kˣ, ‖(ω x : ℂ)‖ = ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) ^ σ :=
   ⟨by rintro rfl; exact norm_coe_apply_eq_rpow_characterExponent ω,
-    fun h ↦ (existsUnique_norm_eq_rpow ω).unique
+    fun h ↦ (existsUnique_norm_coe_apply_eq_normalizedAbsoluteValue_rpow ω).unique
       (norm_coe_apply_eq_rpow_characterExponent ω) h⟩
 
 /-- The exponent of `ω_s` is `re s`. -/
@@ -331,10 +320,8 @@ theorem characterExponent_eq_zero_iff (ω : Kˣ →ₜ* ℂˣ) :
 a unitary character; thus `ω` is a unitary character times `ω_σ`. -/
 theorem norm_coe_mul_normalizedAbsCpowCharacter_neg_characterExponent (ω : Kˣ →ₜ* ℂˣ)
     (x : Kˣ) :
-    ‖((ω * normalizedAbsCpowCharacter K (-(characterExponent K ω : ℂ))) x : ℂ)‖ = 1 := by
-  revert x
-  rw [← characterExponent_eq_zero_iff, characterExponent_mul,
-    characterExponent_normalizedAbsCpowCharacter]
-  simp
+    ‖((ω * normalizedAbsCpowCharacter K (-(characterExponent K ω : ℂ))) x : ℂ)‖ = 1 :=
+  (characterExponent_eq_zero_iff _).1
+    (by rw [characterExponent_mul, characterExponent_normalizedAbsCpowCharacter]; simp) x
 
 end TauCeti
