@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.RingTheory.Binomial
+import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Analytic.OfScalars
@@ -40,6 +41,9 @@ Likewise, on the open unit disk `‖z‖ < 1`, `Complex.regularizedGaussHGFun a 
 parameter-shift and derivative-contiguous relations, and is jointly analytic in `(a, b, c, z)`.
 Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a pole-avoidance
 hypothesis on the lower parameter.
+For general parameter multisets, an upper parameter `-n` makes every coefficient of index greater
+than `n` vanish, so the series terminates and the function is a polynomial of degree at most `n`,
+with no condition on the lower parameters.
 
 ## Main results
 
@@ -48,6 +52,8 @@ hypothesis on the lower parameter.
 * `Complex.differentiable_regularizedHGFun_of_card_le` — `regularizedHGFun a b` is entire when
   `a.card ≤ b.card`, and `Complex.hasSum_deriv_regularizedHGFun` expresses its derivative as the
   termwise differentiated series.
+* `Complex.hasDerivAt_regularizedHGFun_zero_singleton` — the derivative of `₀F₁(; b; z)` is
+  `₀F₁(; b + 1; z)`, the `a = 0`, `b = {b}` case of Mathlib's `Complex.hasDerivAt_regularizedHGFun`.
 * `Complex.regularizedHGFun_of_zero_mem` — when `0 ∈ a`, `regularizedHGFun a b` is constant and
   equals `(b.map Gamma).prod⁻¹`.
 * `Complex.hasSum_regularizedGaussHGFun` — the power series of `regularizedGaussHGFun a b c`
@@ -62,8 +68,10 @@ hypothesis on the lower parameter.
   arguments, with Cauchy product `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul`.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
-* `Complex.hasDerivAt_regularizedHGFun_zero_singleton` — differentiating `₀F₁(; b; ·)` raises its
-  parameter by one, for complex `b` and `z`.
+* `Complex.regularizedHGFun_eq_sum_range_of_neg_natCast_mem`,
+  `Complex.exists_natDegree_le_regularizedHGFun_of_neg_natCast_mem` — if an upper parameter is a
+  nonpositive integer `-n`, the series terminates and the function is a polynomial of degree at
+  most `n`.
 * `Complex.regularizedGaussHGFun_zero` — the origin value `(Gamma c)⁻¹` at `z = 0`.
 * `Complex.hasFPowerSeriesOnBall_regularizedGaussHGFun`, `Complex.analyticAt_regularizedGaussHGFun`,
   `Complex.analyticOnNhd_regularizedGaussHGFun` — power-series representation and analyticity of
@@ -174,6 +182,11 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
       Real.norm_of_nonneg (by positivity)]
     gcongr
 
+/-- The derivative of `₀F₁(; b; z)` in `z` is `₀F₁(; b + 1; z)`, for every complex `b`. -/
+theorem hasDerivAt_regularizedHGFun_zero_singleton (b z : ℂ) :
+    HasDerivAt (regularizedHGFun 0 {b}) (regularizedHGFun 0 {b + 1} z) z := by
+  simpa using hasDerivAt_regularizedHGFun (a := 0) (b := {b}) (z := z) (by simp)
+
 /-- The coefficients of the Kummer function `𝐌(1, b, z) = ₁F₁(1; b; z) / Γ(b)` are
 `1 / Γ(b + n)`. -/
 @[simp]
@@ -236,62 +249,7 @@ theorem continuous_regularizedHGFun_zero_singleton_ofReal_re :
 theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     HasDerivAt (fun y : ℝ => (regularizedHGFun 0 {(b : ℂ)} y).re)
       (regularizedHGFun 0 {(b : ℂ) + 1} y).re y := by
-  have heq : (fun y : ℝ => (regularizedHGFun 0 {(b : ℂ)} y).re) =
-      fun y => ∑' n : ℕ, y ^ n / (n ! * Real.Gamma (b + n)) :=
-    funext fun y => (hasSum_regularizedHGFun_zero_singleton_ofReal_re b y).tsum_eq.symm
-  obtain ⟨C, hC⟩ := Real.exists_abs_inv_Gamma_le b
-  set R := |y| + 1
-  have hu : Summable fun n : ℕ => C * (n * R ^ (n - 1) / n !) := by
-    refine (summable_nat_add_iff 1).1 ?_
-    convert (Real.summable_pow_div_factorial R).mul_left C using 2 with n
-    rw [Nat.factorial_succ]
-    push_cast
-    field_simp
-  have hd := hasDerivAt_tsum_of_isPreconnected (y₀ := 0) (y := y) hu isOpen_Ioo
-    isPreconnected_Ioo (t := Ioo (-R) R)
-    (g := fun n y => y ^ n / (n ! * Real.Gamma (b + n)))
-    (g' := fun n y => n * y ^ (n - 1) / (n ! * Real.Gamma (b + n)))
-    (fun n y _ => (hasDerivAt_pow n y).div_const _) (fun n z hz => ?_)
-    ⟨by linarith [abs_nonneg y], by linarith [abs_nonneg y]⟩
-    (hasSum_regularizedHGFun_zero_singleton_ofReal_re b 0).summable
-    ⟨by linarith [neg_abs_le y], by linarith [le_abs_self y]⟩
-  · rw [heq]
-    convert hd using 1
-    refine (HasSum.tsum_eq ?_).symm
-    rw [← hasSum_nat_add_iff' 1]
-    convert hasSum_regularizedHGFun_zero_singleton_ofReal_re (b + 1) y using 1
-    · ext n
-      have hadd : b + (n + 1 : ℝ) = b + 1 + n := by ring
-      rw [Nat.factorial_succ]
-      push_cast
-      rw [hadd]
-      field_simp
-    · simp
-  · have hz' : |z| ≤ R := (abs_lt.2 hz).le
-    have hG := hC (b + n) (by linarith [n.cast_nonneg (α := ℝ)])
-    rw [Real.norm_eq_abs, div_eq_mul_inv, mul_inv, abs_mul, abs_mul, abs_mul, abs_pow, abs_inv,
-      Nat.abs_cast, Nat.abs_cast]
-    calc (n : ℝ) * |z| ^ (n - 1) * ((n ! : ℝ)⁻¹ * |(Real.Gamma (b + n))⁻¹|)
-        ≤ n * R ^ (n - 1) * ((n ! : ℝ)⁻¹ * C) := by gcongr
-      _ = C * (n * R ^ (n - 1) / n !) := by ring
-
-/-- Differentiating `₀F₁(; b; ·)` raises its parameter by one:
-`d/dz ₀F₁(; b; z) = ₀F₁(; b + 1; z)`. -/
-theorem hasDerivAt_regularizedHGFun_zero_singleton (b z : ℂ) :
-    HasDerivAt (regularizedHGFun 0 {b}) (regularizedHGFun 0 {b + 1} z) z := by
-  have hd := (analyticAt_regularizedHGFun_zero (b := {b}) z).differentiableAt.hasDerivAt
-  convert hd using 1
-  refine (hasSum_regularizedHGFun (a := 0) (b := {b + 1}) (by simp) z).unique ?_
-  convert hasSum_deriv_regularizedHGFun (a := 0) (b := {b}) (by simp) z using 1
-  funext n
-  simp only [regularizedHGFunCoeff_zero_singleton, Nat.factorial_succ, Nat.cast_mul,
-    Nat.cast_succ, mul_inv_rev]
-  have hn : (n + 1 : ℂ) ≠ 0 := by exact_mod_cast n.succ_ne_zero
-  -- Regroup the Gamma argument `b + (n + 1)` of the differentiated series as the argument
-  -- `(b + 1) + n` of the series of `₀F₁(; b + 1; ·)`.
-  have hb : b + (n + 1) = b + 1 + n := by ring
-  rw [hb]
-  field_simp
+  simpa using (hasDerivAt_regularizedHGFun_zero_singleton (b : ℂ) y).real_of_complex
 
 /-- The finite convolution of the coefficients of `₀F₁(; a; z)` and `₀F₁(; b; z)`, valid at every
 pair of complex parameters `a`, `b`, including poles of `Γ`. -/
@@ -403,6 +361,30 @@ theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul (a b y : ℝ) :
   have hb : (b : ℂ) + n = ((b + n : ℝ) : ℂ) := by push_cast; ring
   rw [hc, ha, hb, heval, Gamma_ofReal, Gamma_ofReal]
   norm_cast
+
+/-- If `-n` is an upper parameter, the regularized hypergeometric series terminates at
+degree `n`: `regularizedHGFun a b z` is the sum of its first `n + 1` terms. -/
+theorem regularizedHGFun_eq_sum_range_of_neg_natCast_mem {a b : Multiset ℂ} {n : ℕ}
+    (ha : -(n : ℂ) ∈ a) (z : ℂ) :
+    regularizedHGFun a b z =
+      ∑ k ∈ Finset.range (n + 1), regularizedHGFunCoeff a b k * z ^ k := by
+  rw [regularizedHGFun, (regularizedHGFunSeries a b).sum_of_finite (n := n + 1) (fun m hm =>
+    regularizedHGFunSeries_eq_zero.2 (regularizedHGFunCoeff_eq_zero_left a b m n ha hm)) z]
+  simp only [FormalMultilinearSeries.partialSum, regularizedHGFunSeries,
+    FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul]
+
+open Polynomial in
+/-- If `-n` is an upper parameter, `regularizedHGFun a b` is a polynomial of degree at most `n`,
+whatever the other upper and the lower parameters are. -/
+theorem exists_natDegree_le_regularizedHGFun_of_neg_natCast_mem {a b : Multiset ℂ} {n : ℕ}
+    (ha : -(n : ℂ) ∈ a) :
+    ∃ p : ℂ[X], p.natDegree ≤ n ∧ ∀ z, regularizedHGFun a b z = p.eval z := by
+  refine ⟨ofFn (n + 1) fun k => regularizedHGFunCoeff a b k,
+    Nat.lt_succ_iff.mp (ofFn_natDegree_lt n.succ_pos _), fun z => ?_⟩
+  rw [regularizedHGFun_eq_sum_range_of_neg_natCast_mem ha z,
+    eval_eq_sum_range' (ofFn_natDegree_lt n.succ_pos _)]
+  exact Finset.sum_congr rfl fun k hk => by
+    rw [ofFn_coeff_eq_val_of_lt _ (Finset.mem_range.mp hk)]
 
 section Gaussian
 

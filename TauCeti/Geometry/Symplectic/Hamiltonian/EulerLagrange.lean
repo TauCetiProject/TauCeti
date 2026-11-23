@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.StrongDual
+public import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -65,6 +66,17 @@ is `H` along the Legendre lift, is conserved along every solution of the Euler�
 with differentiable velocity (`TauCeti.energy_eq_of_eulerLagrange`); this needs neither an
 inverse `w` nor finite dimensionality.
 
+Energy conservation and the equivalence of the Euler–Lagrange and Hamilton equations are the
+constant case of statements about a time-dependent Lagrangian `L : ℝ → E × E → ℝ`, which are
+proved first. Write `∂_t L` for its time derivative `TauCeti.timeFDeriv (Function.uncurry L)`.
+By the chain rule `d/dt L(t, q, v) = ∂_t L + ∂_q L(q') + ∂_v L(v')`
+(`TauCeti.hasDerivAt_timeDependent_comp_prodMk`), along a solution of the time-dependent
+Euler–Lagrange equations `d/dt ∂_v L(t, q, v) = ∂_q L(t, q, v)` the energy changes at the rate
+`-∂_t L` (`TauCeti.hasDerivAt_energy_of_eulerLagrange`). These equations hold at `t` exactly when
+the Legendre lift `s ↦ FL_s(q s, v s)` solves the Hamilton equations of `H_t` at `t`
+(`TauCeti.hasDerivAt_timeDependent_linearLegendreMap_iff`). Their form on the extended phase space
+is in `TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange.TimeDependent`.
+
 The Euler–Lagrange equations also come directly from the Lagrangian side. Let `X` be a vector
 at `(q, v)` with base component `v`, solving the Lagrangian equation
 `ω(dFL X, dFL W) = dE_L(W)` for every `W`, that is `ι_X (FL^* ω) = dE_L`. Then the momentum
@@ -121,6 +133,23 @@ theorem linearLegendreMap_snd (L : E × E → ℝ) (x : E × E) :
     (linearLegendreMap L x).2 = fderiv ℝ (fun v ↦ L (x.1, v)) x.2 :=
   (rfl)
 
+/-- Lagrangians that agree near `x` have Legendre maps that agree near `x`. -/
+theorem _root_.Filter.EventuallyEq.linearLegendreMap {L₁ L₂ : E × E → ℝ} {x : E × E}
+    (h : L₁ =ᶠ[𝓝 x] L₂) : linearLegendreMap L₁ =ᶠ[𝓝 x] linearLegendreMap L₂ := by
+  filter_upwards [h.eventually_nhds] with y hy
+  refine Prod.ext rfl ?_
+  rw [linearLegendreMap_snd, linearLegendreMap_snd]
+  exact Filter.EventuallyEq.fderiv_eq
+    (((continuous_const.prodMk continuous_id).tendsto y.2).eventually hy)
+
+/-- Lagrangians that agree near `x` have energies `E_L(q, v) = ∂_v L(q, v)(v) - L(q, v)` that
+agree near `x`. -/
+theorem _root_.Filter.EventuallyEq.linearLegendreMap_snd_apply_sub {L₁ L₂ : E × E → ℝ}
+    {x : E × E} (h : L₁ =ᶠ[𝓝 x] L₂) :
+    (fun y ↦ (linearLegendreMap L₁ y).2 y.2 - L₁ y) =ᶠ[𝓝 x]
+      fun y ↦ (linearLegendreMap L₂ y).2 y.2 - L₂ y :=
+  (h.linearLegendreMap.and h).mono fun y hy ↦ by dsimp only; rw [hy.1, hy.2]
+
 /-- The **Hamiltonian** of a Lagrangian `L`, given a map `w` solving the momentum for the velocity:
 `H(q, p) = p(w(q, p)) - L(q, w(q, p))`. When `∂_v L(q, w(q, p)) = p`, this is the energy of `L`
 at the velocity `w(q, p)` (`TauCeti.legendreHamiltonian_linearLegendreMap`). -/
@@ -167,7 +196,35 @@ theorem hasFDerivAt_legendreHamiltonian {L : E × E → ℝ} {w : E × StrongDua
     neg_apply, hsplit, ← hr, hl]
   ring
 
-/-! ### Conservation of energy -/
+/-! ### Energy balance and conservation of energy -/
+
+/-- **The chain rule for a time-dependent Lagrangian along a curve.** Let `L : ℝ → E × E → ℝ` be
+jointly differentiable at `(t, q t, v t)`, and let `q` and `v` have derivatives `q'` and `v'` at
+`t`. Then `s ↦ L(s, q s, v s)` has derivative `∂_t L + ∂_q L(q') + ∂_v L(v')` at `t`. -/
+theorem hasDerivAt_timeDependent_comp_prodMk {L : ℝ → E × E → ℝ} {q v : ℝ → E} {q' v' : E}
+    {t : ℝ} (hL : DifferentiableAt ℝ (Function.uncurry L) (t, (q t, v t)))
+    (hq : HasDerivAt q q' t) (hv : HasDerivAt v v' t) :
+    HasDerivAt (fun s ↦ L s (q s, v s))
+      (timeFDeriv (Function.uncurry L) t (q t, v t) + fderiv ℝ (fun y ↦ L t (y, v t)) (q t) q' +
+        fderiv ℝ (fun u ↦ L t (q t, u)) (v t) v') t := by
+  have hLc := hasDerivAt_comp_prodMk hL (hq.prodMk hv)
+  rw [← fderiv_timeSlice hL, fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
+    (hasFDerivAt_timeSlice hL).differentiableAt] at hLc
+  simpa only [Function.uncurry_apply_pair, add_assoc] using hLc
+
+/-- **Energy balance.** Let `q` solve the time-dependent Euler–Lagrange equation
+`d/dt ∂_v L(t, q, v) = ∂_q L(t, q, v)` at `t` with velocity `v` differentiable at `t`, and let `L`
+be jointly differentiable at `(t, q t, v t)`. Then the energy
+`E_L(s) = ∂_v L(s, q s, v s)(v s) - L(s, q s, v s)` has derivative `-∂_t L(t, q t, v t)` at `t`. -/
+theorem hasDerivAt_energy_of_eulerLagrange {L : ℝ → E × E → ℝ} {q v : ℝ → E} {t : ℝ}
+    (hq : HasDerivAt q (v t) t)
+    (hEL : HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L s (q s, u)) (v s))
+      (fderiv ℝ (fun y ↦ L t (y, v t)) (q t)) t)
+    (hL : DifferentiableAt ℝ (Function.uncurry L) (t, (q t, v t))) (hv : DifferentiableAt ℝ v t) :
+    HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L s (q s, u)) (v s) (v s) - L s (q s, v s))
+      (-timeFDeriv (Function.uncurry L) t (q t, v t)) t :=
+  ((hEL.clm_apply hv.hasDerivAt).sub
+    (hasDerivAt_timeDependent_comp_prodMk hL hq hv.hasDerivAt)).congr_deriv (by abel)
 
 /-- **Conservation of energy.** Let `q` solve the Euler–Lagrange equations with a differentiable
 velocity `v` at every time, with `L` differentiable along the curve. Then the energy
@@ -179,18 +236,15 @@ theorem energy_eq_of_eulerLagrange {L : E × E → ℝ} {q v : ℝ → E}
     (hL : ∀ t, DifferentiableAt ℝ L (q t, v t)) (hv : ∀ t, DifferentiableAt ℝ v t) (s t : ℝ) :
     fderiv ℝ (fun u ↦ L (q s, u)) (v s) (v s) - L (q s, v s) =
       fderiv ℝ (fun u ↦ L (q t, u)) (v t) (v t) - L (q t, v t) := by
-  -- `d/dt E_L = (d/dt ∂_v L)(v) + ∂_v L(v') - ∂_q L(v) - ∂_v L(v')`, which vanishes by the
-  -- Euler–Lagrange equation.
+  -- The energy balance for the constant family `fun _ ↦ L`, whose time derivative vanishes.
   have hderiv (r : ℝ) : HasDerivAt
       (fun s ↦ fderiv ℝ (fun u ↦ L (q s, u)) (v s) (v s) - L (q s, v s)) 0 r := by
-    have hp := (hEL r).clm_apply (hv r).hasDerivAt
-    have hLc := (hL r).hasFDerivAt.comp_hasDerivAt r ((hq r).prodMk (hv r).hasDerivAt)
-    refine (hp.sub hLc).congr_deriv ?_
-    have hsplit : fderiv ℝ L (q r, v r) (v r, deriv v r) =
-        fderiv ℝ L (q r, v r) (v r, 0) + fderiv ℝ L (q r, v r) (0, deriv v r) := by
-      rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
-    rw [hsplit, fderiv_slice_left (hL r), fderiv_slice_right (hL r)]
-    simp
+    have hL' : DifferentiableAt ℝ (Function.uncurry fun _ : ℝ ↦ L) (r, (q r, v r)) := by
+      simpa only [Function.uncurry_def, Function.comp_def] using
+        (hL r).comp (r, (q r, v r)) differentiableAt_snd
+    have h := hasDerivAt_energy_of_eulerLagrange (L := fun _ ↦ L) (hq r) (hEL r) hL' (hv r)
+    rwa [(hasDerivAt_parameterCurve hL').unique (hasDerivAt_const r (L (q r, v r))),
+      neg_zero] at h
   exact is_const_of_deriv_eq_zero (fun r ↦ (hderiv r).differentiableAt)
     (fun r ↦ (hderiv r).deriv) s t
 
@@ -288,11 +342,36 @@ theorem hamiltonianVectorField_legendreHamiltonian {L : E × E → ℝ} {w : E �
   simp only [strongDualCotangentSymplecticForm_apply, coprod_apply, neg_apply, apply_apply]
   ring
 
+/-- **Euler–Lagrange equations versus the nonautonomous Hamilton equations.** Let `L` be a
+time-dependent Lagrangian and `q` a curve with velocity field `v`, and suppose that `w t` recovers
+the velocity from the Legendre lift at time `t`. Then the Legendre lift `s ↦ FL_s(q s, v s)` solves
+the Hamilton equations of the Hamiltonian `H_t = p(w t) - L(t, q, w t)` at `t` exactly when `v` is
+the velocity of `q` at `t` and the time-dependent Euler–Lagrange equation
+`d/dt ∂_v L(t, q, v) = ∂_q L(t, q, v)` holds at `t`. -/
+theorem hasDerivAt_timeDependent_linearLegendreMap_iff {L : ℝ → E × E → ℝ}
+    {w : ℝ → E × StrongDual ℝ E → E} {q v : ℝ → E} {t : ℝ}
+    (hw : DifferentiableAt ℝ (w t) (linearLegendreMap (L t) (q t, v t)))
+    (hL : DifferentiableAt ℝ (L t) (q t, v t))
+    (hwv : w t (linearLegendreMap (L t) (q t, v t)) = v t) :
+    HasDerivAt (fun s ↦ linearLegendreMap (L s) (q s, v s))
+        ((strongDualCotangentSymplecticForm (V := E)).hamiltonianVectorField
+          (legendreHamiltonian (L t) (w t)) (linearLegendreMap (L t) (q t, v t))) t ↔
+      HasDerivAt q (v t) t ∧
+        HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L s (q s, u)) (v s))
+          (fderiv ℝ (fun y ↦ L t (y, v t)) (q t)) t := by
+  have hfun : (fun s ↦ linearLegendreMap (L s) (q s, v s)) =
+      fun s ↦ (q s, fderiv ℝ (fun u ↦ L s (q s, u)) (v s)) :=
+    funext fun s ↦ Prod.ext (linearLegendreMap_fst _ _) (linearLegendreMap_snd _ _)
+  rw [hfun, hamiltonianVectorField_legendreHamiltonian hw (by simpa [hwv] using hL)
+    (by simp [hwv])]
+  simp only [linearLegendreMap_fst, hwv]
+  exact ⟨fun h ↦ ⟨h.fst, h.snd⟩, fun h ↦ h.1.prodMk h.2⟩
+
 /-- **Euler–Lagrange equations versus Hamilton's equations.** Let `q` be a curve with velocity
 field `v`, and suppose that `w` recovers the velocity from the Legendre lift at time `t`. Then
 the Legendre lift `s ↦ FL(q s, v s)` solves Hamilton's equations at `t` exactly when `v` is the
 velocity of `q` at `t` and the Euler–Lagrange equation `d/dt ∂_v L(q, v) = ∂_q L(q, v)` holds
-at `t`. -/
+at `t`. This is `TauCeti.hasDerivAt_timeDependent_linearLegendreMap_iff` for a constant family. -/
 theorem hasDerivAt_linearLegendreMap_iff {L : E × E → ℝ} {w : E × StrongDual ℝ E → E}
     {q v : ℝ → E} {t : ℝ} (hw : DifferentiableAt ℝ w (linearLegendreMap L (q t, v t)))
     (hL : DifferentiableAt ℝ L (q t, v t)) (hwv : w (linearLegendreMap L (q t, v t)) = v t) :
@@ -301,11 +380,8 @@ theorem hasDerivAt_linearLegendreMap_iff {L : E × E → ℝ} {w : E × StrongDu
           (legendreHamiltonian L w) (linearLegendreMap L (q t, v t))) t ↔
       HasDerivAt q (v t) t ∧
         HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L (q s, u)) (v s))
-          (fderiv ℝ (fun y ↦ L (y, v t)) (q t)) t := by
-  rw [hamiltonianVectorField_legendreHamiltonian hw (by simpa [hwv] using hL)
-    (by simp [hwv])]
-  simp only [linearLegendreMap_fst, hwv]
-  refine ⟨fun h ↦ ⟨h.fst, h.snd⟩, fun h ↦ h.1.prodMk h.2⟩
+          (fderiv ℝ (fun y ↦ L (y, v t)) (q t)) t :=
+  hasDerivAt_timeDependent_linearLegendreMap_iff (L := fun _ ↦ L) (w := fun _ ↦ w) hw hL hwv
 
 /-- **The second-order property.** Along an integral curve `γ = (q, p)` of the Hamiltonian vector
 field of a Lagrangian system, the position `q` moves with the velocity `w(q, p)` recovered from

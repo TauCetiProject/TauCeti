@@ -23,7 +23,9 @@ Its cycles are exactly the link components. This file packages that permutation,
 decomposition and component count, and the predicate that the represented link is a knot. The
 grid-diagram disjointness condition makes the component permutation fixed-point-free, so
 Mathlib's cycle decomposition accounts for every marking, and the component count is also the
-number of orbits `TauCeti.orbitCount` of the component permutation.
+number of orbits `TauCeti.orbitCount` of the component permutation. The quotient
+`GridDiagram.Components` indexes these components, and `componentOfColumn` identifies exactly
+the columns on the same component.
 
 On a knot grid the component permutation is a single cycle through all columns, so it leads from
 any base column to any other column; the least number of steps is the traversal index
@@ -31,6 +33,7 @@ any base column to any other column; the least number of steps is the traversal 
 the target column.
 
 Row relabeling leaves the component permutation unchanged, while column relabeling conjugates it.
+Both relabelings induce equivalences of component indices.
 Consequently the cycle type, component count, and knot predicate are preserved by both
 relabelings, as well as by diagonal reflection, half-turn rotation, and exchanging `O` with `X`.
 
@@ -41,6 +44,10 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 * `TauCeti.GridDiagram.componentCycles`: the cycle factors representing the link components.
 * `TauCeti.GridDiagram.componentCycleType`: the multiset of component sizes.
 * `TauCeti.GridDiagram.componentCount`: the number of represented link components.
+* `TauCeti.GridDiagram.Components`: the component index type, given by permutation orbits.
+* `TauCeti.GridDiagram.componentOfColumn`: the component containing a column.
+* `TauCeti.GridDiagram.componentsRelabelRowsEquiv`,
+  `TauCeti.GridDiagram.componentsRelabelColumnsEquiv`: component equivalences under relabeling.
 * `TauCeti.GridDiagram.IsKnot`: the represented link has exactly one component.
 * `TauCeti.GridDiagram.IsKnot.traversalIndex`: on a knot grid, the number of steps of the
   component permutation from a base column to a column.
@@ -164,6 +171,31 @@ theorem componentCount_eq_orbitCount : G.componentCount = orbitCount G.component
   rw [Equiv.Perm.orbitCount_eq_card_parts_partition,
     Equiv.Perm.parts_partition_eq_cycleType G.support_componentPerm,
     componentCount, componentCycleType]
+
+/-- The components of a grid diagram, indexed by the orbits of its component permutation. -/
+abbrev Components := Quotient (Equiv.Perm.SameCycle.setoid G.componentPerm)
+
+/-- The link component containing the `O`-marking in a column. -/
+def componentOfColumn (c : Fin n) : G.Components := Quotient.mk _ c
+
+/-- Two columns index the same component exactly when they lie in the same component cycle. -/
+@[simp]
+theorem componentOfColumn_eq_iff {c d : Fin n} :
+    G.componentOfColumn c = G.componentOfColumn d ↔ G.componentPerm.SameCycle c d :=
+  Quotient.eq
+
+/-- Every link component contains an `O`-marking column. -/
+theorem componentOfColumn_surjective : Function.Surjective G.componentOfColumn :=
+  Quotient.mk_surjective
+
+/-- Projecting the representative of a component recovers that component. -/
+@[simp]
+theorem componentOfColumn_out (q : G.Components) : G.componentOfColumn q.out = q :=
+  Quotient.out_eq q
+
+/-- The cardinality of the component index type is the component count of the diagram. -/
+theorem natCard_components : Nat.card G.Components = G.componentCount := by
+  rw [componentCount_eq_orbitCount, orbitCount_def]
 
 /-- A grid diagram represents a knot when its component permutation has exactly one cycle. -/
 def IsKnot : Prop :=
@@ -345,6 +377,53 @@ theorem componentPerm_relabelColumns (κ : Equiv.Perm (Fin n)) : (G.relabelColum
       κ * G.componentPerm * κ⁻¹ := by
   ext c
   simp [componentPerm_apply]
+
+/-- Row relabeling preserves the component index of each column. -/
+def componentsRelabelRowsEquiv (ρ : Equiv.Perm (Fin n)) :
+    G.Components ≃ (G.relabelRows ρ).Components :=
+  Equiv.sameCycleQuotientCongr (Equiv.refl _) (by
+    rw [componentPerm_relabelRows]
+    rfl)
+
+/-- Row relabeling sends the component of a column to the component of that same column. -/
+@[simp]
+theorem componentsRelabelRowsEquiv_componentOfColumn (ρ : Equiv.Perm (Fin n)) (c : Fin n) :
+    G.componentsRelabelRowsEquiv ρ (G.componentOfColumn c) =
+      (G.relabelRows ρ).componentOfColumn c := by
+  unfold componentsRelabelRowsEquiv componentOfColumn
+  exact Equiv.sameCycleQuotientCongr_mk _ _ _
+
+/-- The inverse row relabeling equivalence retains the column labeling of components. -/
+@[simp]
+theorem componentsRelabelRowsEquiv_symm_componentOfColumn
+    (ρ : Equiv.Perm (Fin n)) (c : Fin n) :
+    (G.componentsRelabelRowsEquiv ρ).symm ((G.relabelRows ρ).componentOfColumn c) =
+      G.componentOfColumn c := by
+  rw [Equiv.symm_apply_eq, componentsRelabelRowsEquiv_componentOfColumn]
+
+/-- Column relabeling induces the corresponding relabeling of component indices. -/
+def componentsRelabelColumnsEquiv (κ : Equiv.Perm (Fin n)) :
+    G.Components ≃ (G.relabelColumns κ).Components :=
+  Equiv.sameCycleQuotientCongr κ (by
+    rw [componentPerm_relabelColumns]
+    rfl)
+
+/-- Column relabeling sends the component of `c` to the component of its relabeled column. -/
+@[simp]
+theorem componentsRelabelColumnsEquiv_componentOfColumn (κ : Equiv.Perm (Fin n)) (c : Fin n) :
+    G.componentsRelabelColumnsEquiv κ (G.componentOfColumn c) =
+      (G.relabelColumns κ).componentOfColumn (κ c) := by
+  unfold componentsRelabelColumnsEquiv componentOfColumn
+  exact Equiv.sameCycleQuotientCongr_mk _ _ _
+
+/-- The inverse column relabeling equivalence restores the original column labels. -/
+@[simp]
+theorem componentsRelabelColumnsEquiv_symm_componentOfColumn
+    (κ : Equiv.Perm (Fin n)) (c : Fin n) :
+    (G.componentsRelabelColumnsEquiv κ).symm ((G.relabelColumns κ).componentOfColumn c) =
+      G.componentOfColumn (κ.symm c) := by
+  rw [Equiv.symm_apply_eq, componentsRelabelColumnsEquiv_componentOfColumn,
+    Equiv.apply_symm_apply]
 
 /-- Row relabeling preserves the component cycles. -/
 @[simp]
