@@ -26,9 +26,13 @@ is null or conull: the action is ergodic.
 * `TauCeti.Probability.measurePreserving_infinitePi_comp_inv_smul`: `ν^{⊗ι}` is invariant.
 * `TauCeti.Probability.eventuallyEmptyOrUniv_infinitePi_const`: an almost invariant event is null
   or conull for a Bernoulli product measure.
-* `TauCeti.Probability.ergodicSMul_infinitePi_const`: the same statement as `ErgodicSMul` for the
-  action `arrowAction`, and `TauCeti.Probability.ergodicSMul_infinitePi_const_of_proper` for a
-  proper action of an infinite group.
+* `TauCeti.Probability.ergodicSMul_arrowAction_infinitePi_const`: the same statement as
+  `ErgodicSMul` for the action `arrowAction`, and
+  `TauCeti.Probability.ergodicSMul_arrowAction_infinitePi_const_of_proper` for a proper action of
+  an infinite group.
+
+For the finitely supported permutations of `ℕ` acting on `ℕ → α`, Hewitt–Savage gives the same
+conclusion: `TauCeti.Probability.ergodicSMul_infinitePi_const`.
 
 ## References
 
@@ -82,7 +86,7 @@ theorem eventuallyEmptyOrUniv_infinitePi_const [Countable ι]
 every finite set can be moved off every finite set. For a probability measure `ν` on `S`, the
 action `(g • ω) i = ω (g⁻¹ • i)` of `Γ` on `ι → S` (Mathlib's `arrowAction`) is ergodic for the
 product measure `ν^{⊗ι}`. -/
-theorem ergodicSMul_infinitePi_const [Countable ι]
+theorem ergodicSMul_arrowAction_infinitePi_const [Countable ι]
     (hmove : ∀ F Λ : Finset ι, ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ) :
     letI := arrowAction (G := Γ) (A := ι) (B := S)
     ErgodicSMul Γ (ι → S) (Measure.infinitePi fun _ => ν) := by
@@ -101,11 +105,11 @@ theorem ergodicSMul_infinitePi_const [Countable ι]
 /-- **Bernoulli product measures are ergodic under proper actions.** If an infinite group `Γ` acts
 properly on a countable set `ι` (for finite `F, F' ⊆ ι`, only finitely many `g` move a point of
 `F` into `F'`), then the action `arrowAction` is ergodic for `ν^{⊗ι}`. -/
-theorem ergodicSMul_infinitePi_const_of_proper [Countable ι] [Infinite Γ]
+theorem ergodicSMul_arrowAction_infinitePi_const_of_proper [Countable ι] [Infinite Γ]
     (hproper : ∀ F F' : Finset ι, {g : Γ | ∃ i ∈ F, g • i ∈ F'}.Finite) :
     letI := arrowAction (G := Γ) (A := ι) (B := S)
     ErgodicSMul Γ (ι → S) (Measure.infinitePi fun _ => ν) :=
-  ergodicSMul_infinitePi_const fun F Λ =>
+  ergodicSMul_arrowAction_infinitePi_const fun F Λ =>
     let ⟨g, hg⟩ := (hproper F Λ).infinite_compl.nonempty
     ⟨g, fun i hi hgi => hg ⟨i, hi, hgi⟩⟩
 
