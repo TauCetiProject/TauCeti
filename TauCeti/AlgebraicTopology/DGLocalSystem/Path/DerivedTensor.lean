@@ -73,6 +73,8 @@ same reason a CW complex `B` and the coefficients `R` lie in `Type`, as in
 * `TauCeti.nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation`: a semi-free model
   quasi-isomorphic to the chains on the based path space computes the derived tensor product with
   the ground ring.
+* `TauCeti.exists_rowFiniteTwistedDifferential_eq_of_augmentation_eq_zero`: a cycle of such a
+  model whose image in the based path chains has augmentation zero is a boundary.
 * `TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`:
   Brown's resolution of the circle computes the derived tensor product with the ground ring.
 * `TauCeti.exists_semifreeModel_localizedFunctor_iso_derivedTensor_loopChainAugmentation`:
@@ -232,6 +234,50 @@ theorem nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation
       ((hlc u).symm.trans hw)
     exact ⟨u', w', hu', (congrArg (· + _) (hlc u')).trans hw'⟩
 
+/-- **A cycle of a Brown model whose image has augmentation zero is a boundary.** Let `m` be a
+twisting cocycle over the loop chains `C_*(Ω_b B; R)`, with a comparison `g` of its free module
+`K_m` with the chains `C_*(P_b B; R)` on the based path space that commutes with the differentials
+and is a quasi-isomorphism: every relative cycle of `g` is a relative boundary. Then the composite
+of `g` with the augmentation `C_*(P_b B; R) → R` kills no nonzero class: every cycle `u` of `K_m`
+whose image under `g` has augmentation zero is a boundary. -/
+theorem exists_rowFiniteTwistedDifferential_eq_of_augmentation_eq_zero
+    {P : Type*} {ind : P → ℤ}
+    {m : RowFiniteTwistingCocycle (R := R) (A := loopChainAlgebra B b R)
+      (cubicalChainGrading (MooreLoopSpace B b) R) (cubicalChainDifferential (MooreLoopSpace B b) R)
+      P ind}
+    {g : P → cubicalChainModule (MoorePathFrom B b) H R}
+    (hgd : ∀ x, Finsupp.linearCombination (loopChainAlgebra B b R) g (m.m x) =
+      cubicalChainModuleDifferential (MoorePathFrom B b) H R (g x))
+    (hgrel : ∀ u w, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u = 0 →
+      Finsupp.linearCombination (loopChainAlgebra B b R) g u =
+        cubicalChainModuleDifferential (MoorePathFrom B b) H R w →
+      ∃ u' w', rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+          (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+          (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u' = u ∧
+        Finsupp.linearCombination (loopChainAlgebra B b R) g u' +
+          cubicalChainModuleDifferential (MoorePathFrom B b) H R w' = w)
+    {u : P →₀ loopChainAlgebra B b R}
+    (hu : rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+      (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u = 0)
+    (hε : cubicalChainModuleAugmentation (MoorePathFrom B b) H R
+      (Finsupp.linearCombination (loopChainAlgebra B b R) g u) = 0) :
+    ∃ u', rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+      (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u' = u := by
+  -- The comparison with the path chains and their augmentation are quasi-isomorphisms, so their
+  -- composite `K_m → R` is one.
+  obtain ⟨u', -, hu', -⟩ := exists_differential_eq_and_comp_add_eq
+    (g := (Finsupp.linearCombination (loopChainAlgebra B b R) g).restrictScalars R)
+    (f := (pathFromChainAugmentationHom B b H R).restrictScalars R)
+    (linearCombination_rowFiniteTwistedDifferential (pathFromChain_isDGLeftModule B b H R) m.m hgd)
+    pathFromChainAugmentationHom_differential hgrel
+    exists_differential_eq_and_pathFromChainAugmentationHom_add_eq u 0 hu
+    ((Bimodule.of _).symm.injective (by simpa using hε))
+  exact ⟨u', hu'⟩
+
 /-- **Brown's resolution of the circle computes the derived tensor product with the ground ring.**
 For the complex unit circle, based at `1`, with its `1`-cell attached along the counterclockwise
 loop, tensoring DG right modules `𝓕` over `C_*(Ω S¹; R)` with the free module of
@@ -375,18 +421,10 @@ theorem exists_semifreeModel_localizedFunctor_iso_derivedTensor_loopChainAugment
             (loopChainAugmentation B b R).bimoduleDifferential).localizedFunctor L₁ L₂) := by
   obtain ⟨m, g, hgdeg, hgF, hgc, hgd, hms, hwf, hK, hgrel⟩ :=
     exists_semifreeModel_pathFromChain (H := H) (R := R) τ hC
-  refine ⟨m, g, hwf, hgdeg, hgF, hgc, hgd, hms, hK, hgrel, fun u hu hε ↦ ?_, fun L₁ _ L₂ _ ↦
-    nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation L₁ L₂ hwf hgdeg hgd hgrel⟩
-  -- The comparison with the path chains and their augmentation are quasi-isomorphisms, so their
-  -- composite `K_m → R` is one: a cycle of augmentation zero is a boundary.
-  obtain ⟨u', -, hu', -⟩ := exists_differential_eq_and_comp_add_eq
-    (g := (Finsupp.linearCombination (loopChainAlgebra B b R) g).restrictScalars R)
-    (f := (pathFromChainAugmentationHom B b H R).restrictScalars R)
-    (linearCombination_rowFiniteTwistedDifferential (pathFromChain_isDGLeftModule B b H R) m.m hgd)
-    pathFromChainAugmentationHom_differential hgrel
-    exists_differential_eq_and_pathFromChainAugmentationHom_add_eq u 0 hu
-    ((Bimodule.of _).symm.injective (by simpa using hε))
-  exact ⟨u', hu'⟩
+  exact ⟨m, g, hwf, hgdeg, hgF, hgc, hgd, hms, hK, hgrel,
+    fun _ hu hε ↦ exists_rowFiniteTwistedDifferential_eq_of_augmentation_eq_zero hgd hgrel hu hε,
+    fun L₁ _ L₂ _ ↦
+      nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation L₁ L₂ hwf hgdeg hgd hgrel⟩
 
 end CWComplex
 
