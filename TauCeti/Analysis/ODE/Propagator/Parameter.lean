@@ -67,9 +67,9 @@ theorem propagator_inv_sub {z : ℂ} {t : ℝ} (hz : ∀ r ∈ uIcc 0 t, z ≠ r
     · ext u
       simp [div_eq_mul_inv]
     · simp [div_eq_mul_inv]
+  have hs : (z - r)⁻¹ * (z / (z - r)) = z / (z - r) ^ 2 := by
+    field_simp [hne r hr]
   convert hd.smul_const (1 : ℂ →L[ℂ] ℂ) using 1
-  simp [smul_smul]
-  congr 1
-  field_simp [hne r hr]
+  rw [← ContinuousLinearMap.mul_def, smul_mul_smul_comm, mul_one, hs]
 
 end TauCeti
