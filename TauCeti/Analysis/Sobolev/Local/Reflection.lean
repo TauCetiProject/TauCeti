@@ -522,7 +522,7 @@ private theorem integral_smul_planarReflection {Ω : Set ℂ}
       ∫ z in {z : ℂ | z.im < 0}, f z • h (imDilation (higherReflectionNode j) z) =
         |higherReflectionNode j|⁻¹ •
           ∫ w in {z : ℂ | 0 < z.im}, f (imDilation (higherReflectionNode j)⁻¹ w) • h w := by
-    rw [← setIntegral_comp_imDilation (higherReflectionNode_ne_zero j), preimage_imDilation_node]
+    rw [← setIntegral_comp_imDilation, preimage_imDilation_node]
     refine setIntegral_congr_fun hL fun z _ => ?_
     simp only [imDilation_imDilation, inv_mul_cancel₀ (higherReflectionNode_ne_zero j),
       imDilation_one_apply]

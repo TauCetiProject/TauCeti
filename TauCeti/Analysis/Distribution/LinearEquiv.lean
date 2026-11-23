@@ -150,8 +150,9 @@ theorem compCLMOfContinuousLinearEquiv_ofFun [MeasurableSpace E] [BorelSpace E]
   rw [compCLMOfContinuousLinearEquiv_apply, ofFun_apply hf,
     ofFun_apply (hf.comp_continuousLinearEquiv_of_mapsTo e hVO)]
   -- Change variables `y = e x`.
-  have hcov := Measure.integral_comp_continuousLinearEquiv μ (fun y ↦ φ (e.symm y) • f y) e
-  simp only [ContinuousLinearEquiv.symm_apply_apply] at hcov
+  have hcov := Measure.integral_comp_linearMap μ (fun y ↦ φ (e.symm y) • f y) (e : E →ₗ[ℝ] E)
+  simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    ContinuousLinearEquiv.symm_apply_apply] at hcov
   rw [hcov]
   simp only [ContinuousLinearEquiv.transportTestFunction_apply]
 

@@ -164,11 +164,11 @@ theorem abs_le_mul_im_of_eq_zero_on_real {M : ℝ} {χ : ℂ → ℝ} (hχ : Dif
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- **Change of variables for a dilation of the normal coordinate** on a preimage: the case of
-`ContinuousLinearEquiv.integral_preimage_affine` for `TauCeti.imDilationEquiv`. -/
-theorem setIntegral_comp_imDilation {c : ℝ} (hc : c ≠ 0) (f : ℂ → F) (s : Set ℂ) :
+`LinearMap.integral_preimage_affine` for `TauCeti.imDilation`. For `c = 0` both sides are `0`. -/
+theorem setIntegral_comp_imDilation (c : ℝ) (f : ℂ → F) (s : Set ℂ) :
     ∫ z in imDilation c ⁻¹' s, f (imDilation c z) = |c|⁻¹ • ∫ w in s, f w := by
-  simpa only [zero_add, coe_imDilationEquiv, det_imDilationEquiv] using
-    (imDilationEquiv hc).integral_preimage_affine 0 f s volume
+  simpa only [zero_add, ContinuousLinearMap.coe_coe, det_imDilation] using
+    (imDilation c : ℂ →ₗ[ℝ] ℂ).integral_preimage_affine 0 f s volume
 
 omit [NormedSpace ℝ F] in
 /-- Integrability transfers along a dilation of the normal coordinate. -/

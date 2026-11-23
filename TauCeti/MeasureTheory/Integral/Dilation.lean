@@ -23,9 +23,9 @@ the left-hand side is `g 0 * μ univ`, which is `∞` in positive dimension unle
 Dilating each coordinate of `ℝ^ι` by its own nonzero factor `cᵢ` rescales an additive Haar
 measure by `|∏ᵢ cᵢ|⁻¹` (`MeasureTheory.Measure.map_mul_pi_addHaar_eq_smul`), by Mathlib's
 `MeasureTheory.Measure.map_linearMap_addHaar_eq_smul_addHaar` for the diagonal matrix of the
-factors. The Bochner integral is rescaled by the same factor (`TauCeti.integral_comp_mul_pi`), by
-the linear change of variables `MeasureTheory.Measure.integral_comp_continuousLinearEquiv` for the
-diagonal automorphism.
+factors. The Bochner integral is rescaled by the same factor, for all factors
+(`TauCeti.integral_comp_mul_pi`), by the linear change of variables
+`MeasureTheory.Measure.integral_comp_linearMap` for the diagonal matrix.
 
 ## Main declarations
 
@@ -133,23 +133,14 @@ theorem integral_sq_norm_fderiv_comp_smul {μ : Measure E} {f : E → ℝ} {a : 
   simp only [norm_fderiv_comp_smul a, mul_pow, sq_abs]
   field_simp
 
-/-- Multiplying the `i`-th coordinate by `cᵢ ≠ 0` scales the integral against an additive Haar
-measure on `ℝ^ι` by `|∏ᵢ cᵢ|⁻¹`. -/
+/-- Multiplying the `i`-th coordinate by `cᵢ` scales the integral against an additive Haar
+measure on `ℝ^ι` by `|∏ᵢ cᵢ|⁻¹`. If some `cᵢ` is `0`, both sides are `0`. -/
 theorem integral_comp_mul_pi {ι G : Type*} [Fintype ι] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure] {c : ι → ℝ} (hc : ∀ i, c i ≠ 0)
-    (F : (ι → ℝ) → G) :
+    {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure] (c : ι → ℝ) (F : (ι → ℝ) → G) :
     ∫ x, F (fun i ↦ c i * x i) ∂μ = |∏ i, c i|⁻¹ • ∫ y, F y ∂μ := by
   classical
-  -- The coordinatewise dilation is the automorphism given by the diagonal matrix of the `cᵢ`.
-  let e : (ι → ℝ) ≃L[ℝ] (ι → ℝ) :=
-    (LinearMap.equivOfDetNeZero _ (Measure.det_toLin'_diagonal c ▸
-      Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i)).toContinuousLinearEquiv
-  have hlin : (e : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) = Matrix.toLin' (Matrix.diagonal c) := by
-    rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_ofIsUnitDet]
-  have he : ⇑e = fun x i ↦ c i * x i := by
-    rw [Measure.mul_pi_eq_toLin'_diagonal, ← hlin, LinearEquiv.coe_coe,
-      ContinuousLinearEquiv.coe_toLinearEquiv]
-  have h := Measure.integral_comp_continuousLinearEquiv μ F e
-  rwa [he, hlin, Measure.det_toLin'_diagonal] at h
+  -- The coordinatewise dilation is the linear map of the diagonal matrix of the `cᵢ`.
+  have h := Measure.integral_comp_linearMap μ F (Matrix.toLin' (Matrix.diagonal c))
+  rwa [← Measure.mul_pi_eq_toLin'_diagonal, Measure.det_toLin'_diagonal] at h
 
 end TauCeti

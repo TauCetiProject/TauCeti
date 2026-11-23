@@ -55,7 +55,7 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
   variables on the positive-definite cone, which congruence by an invertible matrix preserves,
   together with its lower-integral form. The Bochner-integral form
   (`Matrix.GeneralLinearGroup.integral_posDef_symmetricCongruence`) is the case of
-  `ContinuousLinearEquiv.integral_preimage_affine` for congruence on the cone.
+  `LinearMap.integral_preimage_affine` for congruence on the cone.
 
 ## References
 
@@ -550,7 +550,7 @@ theorem lintegral_posDef_symmetricCongruence
   rw [← h, map_symmetricCongruence_restrict_posDef, lintegral_smul_measure, smul_eq_mul]
 
 /-- The congruence change of variables for Bochner integrals over the positive-definite cone: the
-case of `ContinuousLinearEquiv.integral_preimage_affine` for congruence by `C`, whose preimage of
+case of `LinearMap.integral_preimage_affine` for congruence by `C`, whose preimage of
 the cone is the cone. -/
 theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E) :
@@ -560,10 +560,10 @@ theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
       (|Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1))⁻¹ •
         ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
           (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p := by
-  have h := (symmetricCongruence C).integral_preimage_affine 0 f
+  have h := LinearMap.integral_preimage_affine (symmetricCongruence C : _ →ₗ[ℝ] _) 0 f
     {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p)
-  simp only [zero_add] at h
+  simp only [zero_add, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] at h
   rwa [preimage_symmetricCongruence_posDef, det_symmetricCongruence, abs_pow] at h
 
 end Cone

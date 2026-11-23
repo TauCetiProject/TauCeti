@@ -83,26 +83,15 @@ theorem volume_image_mul_left (c : mixedSpace K) (A : Set (mixedSpace K)) :
   rw [h, Measure.addHaar_image_linearMap, ← Algebra.norm_apply, abs_algebraNorm]
 
 open scoped Classical in
-/-- **Change of variables for multiplication on the mixed space.** If `c` has nonzero mixed norm,
-the substitution `x ↦ c * x` divides an integral over the mixed space by `mixedEmbedding.norm c`.
-No integrability or measurability hypothesis on `g` is needed. -/
+/-- **Change of variables for multiplication on the mixed space.** The substitution `x ↦ c * x`
+divides an integral over the mixed space by `mixedEmbedding.norm c`; if that norm is `0`, both
+sides are `0`. No integrability or measurability hypothesis on `g` is needed. -/
 theorem integral_comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (g : mixedSpace K → E) {c : mixedSpace K} (hc : mixedEmbedding.norm c ≠ 0) :
+    (g : mixedSpace K → E) (c : mixedSpace K) :
     ∫ x, g (c * x) = (mixedEmbedding.norm c)⁻¹ • ∫ x, g x := by
-  have hu : IsUnit c := TauCeti.NumberField.mixedEmbedding.isUnit_iff_norm_ne_zero.mpr hc
-  let e : mixedSpace K ≃L[ℝ] mixedSpace K :=
-    (hu.unit.mulLeftLinearEquiv ℝ (mixedSpace K)).toContinuousLinearEquiv
-  -- The linear map of `e` is `Algebra.lmul ℝ _ c`, so `e` is multiplication by `c`.
-  have hlin : (e : mixedSpace K →ₗ[ℝ] mixedSpace K) = Algebra.lmul ℝ (mixedSpace K) c := by
-    rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, Units.toLinearMap_mulLeftLinearEquiv,
-      IsUnit.unit_spec]
-    exact LinearMap.ext fun x ↦ by
-      rw [LinearMap.mulLeft_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
-  have he : ⇑e = (c * ·) := funext fun x ↦ by
-    simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
-      Algebra.coe_lmul_eq_mul, LinearMap.mul_apply'] using LinearMap.congr_fun hlin x
-  have h := Measure.integral_comp_continuousLinearEquiv volume g e
-  rwa [he, hlin, ← Algebra.norm_apply, abs_algebraNorm] at h
+  have h := Measure.integral_comp_linearMap volume g (Algebra.lmul ℝ (mixedSpace K) c)
+  have hc : ⇑(Algebra.lmul ℝ (mixedSpace K) c) = (c * ·) := funext fun _ ↦ by simp
+  rwa [hc, ← Algebra.norm_apply, abs_algebraNorm] at h
 
 open scoped Classical in
 /-- **The unit action preserves volume.**  With it, `measure_smul` and `measure_preimage_smul`
