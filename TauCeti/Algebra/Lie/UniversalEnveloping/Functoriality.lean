@@ -210,6 +210,12 @@ theorem mapEquiv_toAlgHom (e : LieEquiv R L M) :
     (mapEquiv R e).toAlgHom = map R e.toLieHom :=
   by rw [mapEquiv, AlgEquiv.toAlgHom_ofAlgHom]
 
+/-- Mapping along a Lie homomorphism and then along a Lie equivalence is mapping along their
+composite. -/
+theorem mapEquiv_toAlgHom_comp_map (e : LieEquiv R M N) (g : LieHom R L M) :
+    (mapEquiv R e).toAlgHom.comp (map R g) = map R (e.toLieHom.comp g) := by
+  rw [mapEquiv_toAlgHom, map_comp]
+
 /-- The algebra equivalence induced by a Lie equivalence acts on canonical generators by that Lie
 equivalence. -/
 -- `simp`-normal form is `mapEquiv_ι'`, since `simp` unfolds `ι` through `ι_apply`.

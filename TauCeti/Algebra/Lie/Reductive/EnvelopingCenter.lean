@@ -8,48 +8,58 @@ module
 public import TauCeti.Algebra.Lie.Reductive.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.ProductCenter
-public import Mathlib.Algebra.Lie.Prod
-import Mathlib.LinearAlgebra.Projection
 
 /-!
 # The enveloping algebra and its center for a reductive Lie algebra
 
-Two complementary ideals `I` and `J` of a Lie algebra bracket to zero against each other, so
-addition `I × J → L` is an equivalence of Lie algebras (`LieIdeal.prodEquivOfIsCompl`). For a
-finite-dimensional reductive Lie algebra `L` over a field of characteristic zero, the centre and
-the derived ideal are complementary (`TauCeti.isCompl_center_derivedSeries`), which gives the
-central/derived splitting `L ≃ z(L) × [L, L]` (`TauCeti.centerDerivedEquiv`).
+Let `I` and `J` be complementary ideals of a Lie algebra `L` over a commutative ring `R`, with `I`
+abelian. Addition `I × J → L` is an equivalence of Lie algebras (`LieIdeal.prodEquivOfIsCompl`),
+and transporting the product comparison `TauCeti.UniversalEnvelopingAlgebra.productEnveloping`
+through it gives the algebra equivalence
 
-Transporting the product comparison `TauCeti.UniversalEnvelopingAlgebra.productEnveloping`
-through this splitting gives the algebra equivalence
+`U(L) ≃ Sym(I) ⊗ U(J)`  (`UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl`),
+
+which sends a canonical generator `x = i + j` to `ι_I(i) ⊗ 1 + 1 ⊗ ι_J(j)`, and whose inverse
+multiplies the images of the two factor inclusions. For `I` free, its restriction to the centers
+is the algebra equivalence
+
+`Z(U(L)) ≃ Sym(I) ⊗ Z(U(J))`  (`UniversalEnvelopingAlgebra.centerEquivOfIsCompl`).
+
+For a finite-dimensional reductive Lie algebra `L` over a field of characteristic zero, the centre
+and the derived ideal are complementary (`TauCeti.isCompl_center_derivedSeries`), and these
+specialize to
 
 `U(L) ≃ Sym(z(L)) ⊗ U([L, L])`  (`UniversalEnvelopingAlgebra.reductiveEnveloping`),
 
-which sends a canonical generator `x` to `ι_z(pr_z x) ⊗ 1 + 1 ⊗ ι_der(pr_der x)`, and whose
-inverse multiplies the images of the two factor inclusions. Its restriction to the centers is the
-algebra equivalence
+`Z(U(L)) ≃ Sym(z(L)) ⊗ Z(U([L, L]))`  (`UniversalEnvelopingAlgebra.reductiveCenterEquiv`).
 
-`Z(U(L)) ≃ Sym(z(L)) ⊗ Z(U([L, L]))`  (`UniversalEnvelopingAlgebra.reductiveCenterEquiv`),
-
-which, followed by `id ⊗ (Z(U([L, L])) ↪ U([L, L]))`, is `reductiveEnveloping` on the underlying
-central element. Both are built from universal properties: no Harish-Chandra theorem is used.
+The latter, followed by `id ⊗ (Z(U([L, L])) ↪ U([L, L]))`, is `reductiveEnveloping` on the
+underlying central element. Both are built from universal properties: no Harish-Chandra theorem is
+used.
 
 ## Main definitions
 
-* `LieIdeal.prodEquivOfIsCompl`: addition `I × J ≃ₗ⁅R⁆ L` for complementary ideals.
-* `TauCeti.centerDerivedEquiv`: the splitting `L ≃ₗ⁅K⁆ z(L) × [L, L]` of a reductive `L`.
+* `UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl`: `U(L) ≃ₐ[R] Sym(I) ⊗ U(J)` for
+  complementary ideals `I` and `J` with `I` abelian.
+* `UniversalEnvelopingAlgebra.centerEquivOfIsCompl`: `Z(U(L)) ≃ₐ[R] Sym(I) ⊗ Z(U(J))`, for `I`
+  moreover free.
 * `UniversalEnvelopingAlgebra.reductiveEnveloping`: `U(L) ≃ₐ[K] Sym(z(L)) ⊗ U([L, L])`.
 * `UniversalEnvelopingAlgebra.reductiveCenterEquiv`:
   `Z(U(L)) ≃ₐ[K] Sym(z(L)) ⊗ Z(U([L, L]))`.
 
 ## Main results
 
-* `UniversalEnvelopingAlgebra.reductiveEnveloping_ι`: the value on a generator.
-* `UniversalEnvelopingAlgebra.reductiveEnveloping_symm_tmul`: the inverse on a pure tensor.
-* `UniversalEnvelopingAlgebra.reductiveEnveloping_naturality`: naturality for Lie maps
-  sending the centre into the centre.
-* `UniversalEnvelopingAlgebra.reductiveCenterEquiv_inclusion`: the inclusion square.
-* `UniversalEnvelopingAlgebra.reductiveCenterEquiv_symm_tmul`: the pure-tensor formula.
+* `UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_ι` and
+  `UniversalEnvelopingAlgebra.reductiveEnveloping_ι`: the value on a generator.
+* `UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_symm_tmul` and
+  `UniversalEnvelopingAlgebra.reductiveEnveloping_symm_tmul`: the inverse on a pure tensor.
+* `UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_naturality` and
+  `UniversalEnvelopingAlgebra.reductiveEnveloping_naturality`: naturality for Lie maps
+  preserving the two ideals, respectively sending the centre into the centre.
+* `UniversalEnvelopingAlgebra.centerEquivOfIsCompl_inclusion` and
+  `UniversalEnvelopingAlgebra.reductiveCenterEquiv_inclusion`: the inclusion square.
+* `UniversalEnvelopingAlgebra.centerEquivOfIsCompl_symm_tmul` and
+  `UniversalEnvelopingAlgebra.reductiveCenterEquiv_symm_tmul`: the pure-tensor formula.
 
 ## References
 
@@ -65,166 +75,149 @@ open LieAlgebra
 
 universe u v w
 
-namespace LieIdeal
-
-variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-/-- Elements of two complementary ideals bracket to zero. -/
-theorem lie_eq_zero_of_isCompl {I J : LieIdeal R L} (h : IsCompl I J) {x y : L} (hx : x ∈ I)
-    (hy : y ∈ J) : ⁅x, y⁆ = 0 := by
-  have hm : ⁅x, y⁆ ∈ I ⊓ J :=
-    ⟨by rw [← lie_skew]; exact I.neg_mem (I.lie_mem hx), J.lie_mem hy⟩
-  rw [h.inf_eq_bot] at hm
-  exact (LieSubmodule.mem_bot _).mp hm
-
-/-- For complementary ideals `I` and `J` of a Lie algebra `L`, addition `I × J → L` is an
-equivalence of Lie algebras: the cross brackets vanish because they lie in `I ⊓ J = ⊥`. -/
-noncomputable def prodEquivOfIsCompl (I J : LieIdeal R L) (h : IsCompl I J) :
-    (I × J) ≃ₗ⁅R⁆ L :=
-  { Submodule.prodEquivOfIsCompl I.toSubmodule J.toSubmodule
-      (LieSubmodule.isCompl_toSubmodule.mpr h) with
-    map_lie' := by
-      rintro ⟨a, b⟩ ⟨c, d⟩
-      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-        Submodule.coe_prodEquivOfIsCompl', LieAlgebra.Prod.bracket_apply, lie_add, add_lie,
-        lie_eq_zero_of_isCompl h a.property d.property,
-        lie_eq_zero_of_isCompl h.symm b.property c.property]
-      abel }
-
-/-- `prodEquivOfIsCompl` is addition. -/
-@[simp]
-theorem prodEquivOfIsCompl_apply (I J : LieIdeal R L) (h : IsCompl I J) (p : I × J) :
-    prodEquivOfIsCompl I J h p = (p.1 : L) + p.2 :=
-  (rfl)
-
-/-- The inverse of `prodEquivOfIsCompl` on an element of the first ideal. -/
-@[simp]
-theorem prodEquivOfIsCompl_symm_apply_left (I J : LieIdeal R L) (h : IsCompl I J) (x : I) :
-    (prodEquivOfIsCompl I J h).symm x = (x, 0) :=
-  (prodEquivOfIsCompl I J h).symm_apply_eq.2 <| by simp
-
-/-- The inverse of `prodEquivOfIsCompl` on an element of the second ideal. -/
-@[simp]
-theorem prodEquivOfIsCompl_symm_apply_right (I J : LieIdeal R L) (h : IsCompl I J) (x : J) :
-    (prodEquivOfIsCompl I J h).symm x = (0, x) :=
-  (prodEquivOfIsCompl I J h).symm_apply_eq.2 <| by simp
-
-end LieIdeal
-
-namespace TauCeti
-
-section Splitting
-
-variable (K : Type u) (L : Type v) [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [HasCentralRadical K L]
-
-/-- The central/derived splitting `L ≃ z(L) × [L, L]` of a finite-dimensional reductive Lie
-algebra over a field of characteristic zero: the inverse of addition. -/
-noncomputable def centerDerivedEquiv : L ≃ₗ⁅K⁆ (center K L) × derivedSeries K L 1 :=
-  (LieIdeal.prodEquivOfIsCompl _ _ (isCompl_center_derivedSeries K L)).symm
-
-/-- The inverse of the central/derived splitting is addition. -/
-@[simp]
-theorem centerDerivedEquiv_symm_apply (p : (center K L) × derivedSeries K L 1) :
-    (centerDerivedEquiv K L).symm p = (p.1 : L) + p.2 :=
-  (rfl)
-
-/-- The two components of the central/derived splitting add up to the original element. -/
-theorem centerDerivedEquiv_fst_add_snd (x : L) :
-    ((centerDerivedEquiv K L x).1 : L) + (centerDerivedEquiv K L x).2 = x := by
-  rw [← centerDerivedEquiv_symm_apply, LieEquiv.symm_apply_apply]
-
-/-- The central/derived splitting of a central element. -/
-@[simp]
-theorem centerDerivedEquiv_center (z : center K L) :
-    centerDerivedEquiv K L z = (z, 0) :=
-  LieIdeal.prodEquivOfIsCompl_symm_apply_left _ _ _ z
-
-/-- The central/derived splitting of an element of the derived ideal. -/
-@[simp]
-theorem centerDerivedEquiv_derivedSeries (d : derivedSeries K L 1) :
-    centerDerivedEquiv K L d = (0, d) :=
-  LieIdeal.prodEquivOfIsCompl_symm_apply_right _ _ _ d
-
-/-- The splitting composed with the inclusion of the centre is the first factor inclusion. -/
-theorem centerDerivedEquiv_comp_incl_center :
-    (centerDerivedEquiv K L).toLieHom.comp (center K L).incl =
-      LieHom.inl K (center K L) (derivedSeries K L 1) := by
-  ext z <;> simp
-
-/-- The splitting composed with the inclusion of the derived ideal is the second factor
-inclusion. -/
-theorem centerDerivedEquiv_comp_incl_derivedSeries :
-    (centerDerivedEquiv K L).toLieHom.comp (derivedSeries K L 1).incl =
-      LieHom.inr K (center K L) (derivedSeries K L 1) := by
-  ext d <;> simp
-
-end Splitting
-
-section Restrict
-
-variable {K : Type u} {L : Type v} {L' : Type w} [CommRing K] [LieRing L] [LieAlgebra K L]
-  [LieRing L'] [LieAlgebra K L']
-
-/-- A Lie homomorphism sending the centre into the centre, restricted to the centres. -/
-def centerRestrict (f : L →ₗ⁅K⁆ L') (hf : ∀ z ∈ center K L, f z ∈ center K L') :
-    center K L →ₗ⁅K⁆ center K L' where
-  toLinearMap := f.toLinearMap.restrict hf
-  map_lie' {x y} := Subtype.ext (f.map_lie x y)
-
-/-- `centerRestrict` is `f` on the underlying elements. -/
-@[simp]
-theorem coe_centerRestrict_apply (f : L →ₗ⁅K⁆ L') (hf : ∀ z ∈ center K L, f z ∈ center K L')
-    (z : center K L) : (centerRestrict f hf z : L') = f z :=
-  (rfl)
-
-/-- A Lie homomorphism restricted to the derived ideals. -/
-def derivedSeriesRestrict (f : L →ₗ⁅K⁆ L') :
-    derivedSeries K L 1 →ₗ⁅K⁆ derivedSeries K L' 1 where
-  toLinearMap := f.toLinearMap.restrict fun _ hx =>
-    LieIdeal.derivedSeries_map_le (f := f) 1 (LieIdeal.mem_map hx)
-  map_lie' {x y} := Subtype.ext (f.map_lie x y)
-
-/-- `derivedSeriesRestrict` is `f` on the underlying elements. -/
-@[simp]
-theorem coe_derivedSeriesRestrict_apply (f : L →ₗ⁅K⁆ L') (d : derivedSeries K L 1) :
-    (derivedSeriesRestrict f d : L') = f d :=
-  (rfl)
-
-end Restrict
-
-section Naturality
-
-variable {K : Type u} {L : Type v} {L' : Type w} [Field K] [CharZero K] [LieRing L]
-  [LieAlgebra K L] [FiniteDimensional K L] [HasCentralRadical K L] [LieRing L']
-  [LieAlgebra K L'] [FiniteDimensional K L'] [HasCentralRadical K L']
-
-/-- The central/derived splitting is natural for Lie maps sending the centre into the centre. -/
-theorem centerDerivedEquiv_map (f : L →ₗ⁅K⁆ L') (hf : ∀ z ∈ center K L, f z ∈ center K L')
-    (x : L) :
-    centerDerivedEquiv K L' (f x) =
-      (centerRestrict f hf (centerDerivedEquiv K L x).1,
-        derivedSeriesRestrict f (centerDerivedEquiv K L x).2) := by
-  have h := centerDerivedEquiv_symm_apply K L'
-    (centerRestrict f hf (centerDerivedEquiv K L x).1,
-      derivedSeriesRestrict f (centerDerivedEquiv K L x).2)
-  rw [coe_centerRestrict_apply, coe_derivedSeriesRestrict_apply, ← map_add,
-    centerDerivedEquiv_fst_add_snd] at h
-  rw [← h, LieEquiv.apply_symm_apply]
-
-end Naturality
-
-end TauCeti
-
 namespace UniversalEnvelopingAlgebra
 
 open TauCeti TauCeti.UniversalEnvelopingAlgebra
 
-private theorem mapEquiv_map {R L M N : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-    [LieRing M] [LieAlgebra R M] [LieRing N] [LieAlgebra R N] (e : M ≃ₗ⁅R⁆ N)
-    (g : L →ₗ⁅R⁆ M) (a : _root_.UniversalEnvelopingAlgebra R L) :
-    mapEquiv R e (map R g a) = map R (e.toLieHom.comp g) a := by
-  rw [map_comp, AlgHom.comp_apply, ← mapEquiv_toAlgHom, AlgEquiv.toAlgHom_apply]
+section IsCompl
+
+variable (R : Type u) {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+  (I J : LieIdeal R L) (h : IsCompl I J) [IsLieAbelian I]
+
+local notation "UL" => _root_.UniversalEnvelopingAlgebra R L
+local notation "UJ" => _root_.UniversalEnvelopingAlgebra R J
+local notation "SI" => SymmetricAlgebra R I
+
+/-- The enveloping algebra of a Lie algebra with complementary ideals `I` and `J`, `I` abelian:
+`U(L) ≃ Sym(I) ⊗ U(J)`, the map induced by the inverse of addition `I × J ≃ L` followed by
+`productEnveloping`. -/
+noncomputable def envelopingEquivOfIsCompl : UL ≃ₐ[R] SI ⊗[R] UJ :=
+  (mapEquiv R (LieIdeal.prodEquivOfIsCompl I J h).symm).trans (productEnveloping R I J)
+
+/-- The definition of `envelopingEquivOfIsCompl`, for use outside this module. -/
+theorem envelopingEquivOfIsCompl_def :
+    envelopingEquivOfIsCompl R I J h =
+      (mapEquiv R (LieIdeal.prodEquivOfIsCompl I J h).symm).trans (productEnveloping R I J) :=
+  (rfl)
+
+/-- `envelopingEquivOfIsCompl` sends a canonical generator `x = i + j` to
+`ι_I(i) ⊗ 1 + 1 ⊗ ι_J(j)`. -/
+theorem envelopingEquivOfIsCompl_ι (x : L) :
+    envelopingEquivOfIsCompl R I J h (_root_.UniversalEnvelopingAlgebra.ι R x) =
+      SymmetricAlgebra.ι R I ((LieIdeal.prodEquivOfIsCompl I J h).symm x).1 ⊗ₜ[R] (1 : UJ) +
+        (1 : SI) ⊗ₜ[R]
+          _root_.UniversalEnvelopingAlgebra.ι R ((LieIdeal.prodEquivOfIsCompl I J h).symm x).2 := by
+  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply, mapEquiv_ι, productEnveloping_ι]
+
+/-- The `simp`-normal form of `envelopingEquivOfIsCompl_ι`, stated for the canonical generators as
+`simp` writes them: `ι R x` unfolds to `mkAlgHom R L (TensorAlgebra.ι R x)`. -/
+@[simp]
+theorem envelopingEquivOfIsCompl_ι' (x : L) :
+    envelopingEquivOfIsCompl R I J h
+        (_root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x)) =
+      SymmetricAlgebra.ι R I ((LieIdeal.prodEquivOfIsCompl I J h).symm x).1 ⊗ₜ[R] (1 : UJ) +
+        (1 : SI) ⊗ₜ[R] _root_.UniversalEnvelopingAlgebra.mkAlgHom R J
+          (TensorAlgebra.ι R ((LieIdeal.prodEquivOfIsCompl I J h).symm x).2) := by
+  simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using
+    envelopingEquivOfIsCompl_ι R I J h x
+
+/-- On the inclusion of `I`, `envelopingEquivOfIsCompl` is the inverse abelian comparison
+tensored with one. -/
+@[simp]
+theorem envelopingEquivOfIsCompl_map_incl_left (a : _root_.UniversalEnvelopingAlgebra R I) :
+    envelopingEquivOfIsCompl R I J h (map R I.incl a) =
+      (symmetricAlgebraEquiv R I).symm a ⊗ₜ[R] (1 : UJ) := by
+  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply,
+    show mapEquiv R _ (map R I.incl a) = _ from
+      AlgHom.congr_fun (mapEquiv_toAlgHom_comp_map R _ I.incl) a,
+    LieIdeal.prodEquivOfIsCompl_symm_comp_incl_left, productEnveloping_map_inl]
+
+/-- On the inclusion of `J`, `envelopingEquivOfIsCompl` is one tensored with the element. -/
+@[simp]
+theorem envelopingEquivOfIsCompl_map_incl_right (u : UJ) :
+    envelopingEquivOfIsCompl R I J h (map R J.incl u) = (1 : SI) ⊗ₜ[R] u := by
+  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply,
+    show mapEquiv R _ (map R J.incl u) = _ from
+      AlgHom.congr_fun (mapEquiv_toAlgHom_comp_map R _ J.incl) u,
+    LieIdeal.prodEquivOfIsCompl_symm_comp_incl_right, productEnveloping_map_inr]
+
+/-- The inverse of `envelopingEquivOfIsCompl` sends a pure tensor `a ⊗ u` to the product of the
+images of `a` and `u` under the inclusions of `I` and of `J`. -/
+@[simp]
+theorem envelopingEquivOfIsCompl_symm_tmul (a : SI) (u : UJ) :
+    (envelopingEquivOfIsCompl R I J h).symm (a ⊗ₜ[R] u) =
+      map R I.incl (symmetricAlgebraEquiv R I a) * map R J.incl u := by
+  apply (envelopingEquivOfIsCompl R I J h).injective
+  rw [AlgEquiv.apply_symm_apply, map_mul, envelopingEquivOfIsCompl_map_incl_left,
+    envelopingEquivOfIsCompl_map_incl_right, AlgEquiv.symm_apply_apply,
+    Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+
+end IsCompl
+
+section IsComplNaturality
+
+variable {R : Type u} {L : Type v} {L' : Type w} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing L'] [LieAlgebra R L'] {I J : LieIdeal R L} (h : IsCompl I J) [IsLieAbelian I]
+  {I' J' : LieIdeal R L'} (h' : IsCompl I' J') [IsLieAbelian I']
+
+-- `hom_ext` uses the commutator Lie ring of the target algebra; `Sym(I') ⊗ U(J')` also carries the
+-- scalar-extension Lie ring, which is not definitionally the same.
+attribute [local instance 1100] LieRing.ofAssociativeRing
+
+/-- `envelopingEquivOfIsCompl` is natural for Lie maps `f` sending `I` into `I'` and `J` into `J'`:
+such a map acts on `Sym(I)` and on `U(J)` through its restrictions to the ideals. -/
+theorem envelopingEquivOfIsCompl_naturality (f : L →ₗ⁅R⁆ L') (hI : ∀ x ∈ I, f x ∈ I')
+    (hJ : ∀ x ∈ J, f x ∈ J') :
+    (Algebra.TensorProduct.map (SymmetricAlgebra.map R ((f.restrictIdeal hI : I →ₗ[R] I')))
+        (map R (f.restrictIdeal hJ))).comp (envelopingEquivOfIsCompl R I J h).toAlgHom =
+      (envelopingEquivOfIsCompl R I' J' h').toAlgHom.comp (map R f) := by
+  refine _root_.UniversalEnvelopingAlgebra.hom_ext R (LieHom.ext fun x => ?_)
+  simp only [LieHom.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+  rw [envelopingEquivOfIsCompl_ι, map_ι, envelopingEquivOfIsCompl_ι,
+    LieIdeal.prodEquivOfIsCompl_symm_map I J h h' f hI hJ, map_add,
+    Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul]
+  simp only [SymmetricAlgebra.map_apply_ι, map_one, map_ι, LieHom.coe_toLinearMap]
+
+end IsComplNaturality
+
+section IsComplCenter
+
+variable (R : Type u) {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+  (I J : LieIdeal R L) (h : IsCompl I J) [IsLieAbelian I] [Module.Free R I]
+
+local notation "UL" => _root_.UniversalEnvelopingAlgebra R L
+local notation "UJ" => _root_.UniversalEnvelopingAlgebra R J
+local notation "SI" => SymmetricAlgebra R I
+local notation "ZJ" => Subalgebra.center R UJ
+
+/-- The center of the enveloping algebra of a Lie algebra with complementary ideals `I` and `J`,
+`I` abelian and free: `Z(U(L)) ≃ Sym(I) ⊗ Z(U(J))`, the restriction of `envelopingEquivOfIsCompl`
+to the centers. See `centerEquivOfIsCompl_inclusion` for the inclusion square. -/
+noncomputable def centerEquivOfIsCompl : Subalgebra.center R UL ≃ₐ[R] SI ⊗[R] ZJ :=
+  (Subalgebra.centerCongr (mapEquiv R (LieIdeal.prodEquivOfIsCompl I J h).symm)).trans
+    (productCenterEquiv R I J)
+
+/-- The inclusion square of `centerEquivOfIsCompl`: followed by `id ⊗ val`, it is
+`envelopingEquivOfIsCompl` on the underlying central element. -/
+@[simp]
+theorem centerEquivOfIsCompl_inclusion (z : Subalgebra.center R UL) :
+    Algebra.TensorProduct.map (AlgHom.id R SI) (ZJ).val (centerEquivOfIsCompl R I J h z) =
+      envelopingEquivOfIsCompl R I J h (z : UL) := by
+  rw [centerEquivOfIsCompl, AlgEquiv.trans_apply, productCenterEquiv_inclusion]
+  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply]
+  exact congrArg _ (Subalgebra.centerCongr_apply_coe _ z)
+
+/-- The inverse of `centerEquivOfIsCompl` on a pure tensor `a ⊗ c` with `c` central is the product
+of the images of `a` and `c` under the inclusions of `I` and of `J`. -/
+@[simp]
+theorem centerEquivOfIsCompl_symm_tmul (a : SI) (c : ZJ) :
+    ((centerEquivOfIsCompl R I J h).symm (a ⊗ₜ[R] c) : UL) =
+      map R I.incl (symmetricAlgebraEquiv R I a) * map R J.incl (c : UJ) := by
+  rw [← envelopingEquivOfIsCompl_symm_tmul R I J h, AlgEquiv.eq_symm_apply,
+    ← centerEquivOfIsCompl_inclusion, AlgEquiv.apply_symm_apply, Algebra.TensorProduct.map_tmul,
+    AlgHom.id_apply, Subalgebra.coe_val]
+
+end IsComplCenter
 
 section Enveloping
 
@@ -235,17 +228,16 @@ local notation "UL" => _root_.UniversalEnvelopingAlgebra K L
 local notation "UD" => _root_.UniversalEnvelopingAlgebra K (derivedSeries K L 1)
 local notation "SZ" => SymmetricAlgebra K (center K L)
 
-/-- The enveloping algebra of a reductive Lie algebra: `U(L) ≃ Sym(z(L)) ⊗ U([L, L])`, the map
-induced by the central/derived splitting followed by `productEnveloping`. -/
+/-- The enveloping algebra of a reductive Lie algebra: `U(L) ≃ Sym(z(L)) ⊗ U([L, L])`,
+`envelopingEquivOfIsCompl` for the central/derived splitting. -/
 noncomputable def reductiveEnveloping : UL ≃ₐ[K] SZ ⊗[K] UD :=
-  (mapEquiv K (centerDerivedEquiv K L)).trans
-    (productEnveloping K (center K L) (derivedSeries K L 1))
+  envelopingEquivOfIsCompl K (center K L) (derivedSeries K L 1) (isCompl_center_derivedSeries K L)
 
 /-- The definition of `reductiveEnveloping`, for use outside this module. -/
 theorem reductiveEnveloping_def :
     reductiveEnveloping K L =
-      (mapEquiv K (centerDerivedEquiv K L)).trans
-        (productEnveloping K (center K L) (derivedSeries K L 1)) :=
+      envelopingEquivOfIsCompl K (center K L) (derivedSeries K L 1)
+        (isCompl_center_derivedSeries K L) :=
   (rfl)
 
 /-- `reductiveEnveloping` sends a canonical generator `x` to
@@ -254,7 +246,17 @@ theorem reductiveEnveloping_ι (x : L) :
     reductiveEnveloping K L (_root_.UniversalEnvelopingAlgebra.ι K x) =
       SymmetricAlgebra.ι K (center K L) (centerDerivedEquiv K L x).1 ⊗ₜ[K] (1 : UD) +
         (1 : SZ) ⊗ₜ[K] _root_.UniversalEnvelopingAlgebra.ι K (centerDerivedEquiv K L x).2 := by
-  rw [reductiveEnveloping, AlgEquiv.trans_apply, mapEquiv_ι, productEnveloping_ι]
+  rw [reductiveEnveloping, envelopingEquivOfIsCompl_ι, centerDerivedEquiv_def]
+
+/-- The `simp`-normal form of `reductiveEnveloping_ι`, stated for the canonical generators as
+`simp` writes them: `ι K x` unfolds to `mkAlgHom K L (TensorAlgebra.ι K x)`. -/
+@[simp]
+theorem reductiveEnveloping_ι' (x : L) :
+    reductiveEnveloping K L (_root_.UniversalEnvelopingAlgebra.mkAlgHom K L (TensorAlgebra.ι K x)) =
+      SymmetricAlgebra.ι K (center K L) (centerDerivedEquiv K L x).1 ⊗ₜ[K] (1 : UD) +
+        (1 : SZ) ⊗ₜ[K] _root_.UniversalEnvelopingAlgebra.mkAlgHom K (derivedSeries K L 1)
+          (TensorAlgebra.ι K (centerDerivedEquiv K L x).2) := by
+  simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using reductiveEnveloping_ι K L x
 
 /-- On the inclusion of the centre, `reductiveEnveloping` is the inverse abelian comparison
 tensored with one. -/
@@ -262,17 +264,15 @@ tensored with one. -/
 theorem reductiveEnveloping_map_incl_center
     (a : _root_.UniversalEnvelopingAlgebra K (center K L)) :
     reductiveEnveloping K L (map K (center K L).incl a) =
-      (symmetricAlgebraEquiv K (center K L)).symm a ⊗ₜ[K] (1 : UD) := by
-  rw [reductiveEnveloping, AlgEquiv.trans_apply, mapEquiv_map,
-    centerDerivedEquiv_comp_incl_center, productEnveloping_map_inl]
+      (symmetricAlgebraEquiv K (center K L)).symm a ⊗ₜ[K] (1 : UD) :=
+  envelopingEquivOfIsCompl_map_incl_left _ _ _ _ a
 
 /-- On the inclusion of the derived ideal, `reductiveEnveloping` is one tensored with the
 element. -/
 @[simp]
 theorem reductiveEnveloping_map_incl_derivedSeries (u : UD) :
-    reductiveEnveloping K L (map K (derivedSeries K L 1).incl u) = (1 : SZ) ⊗ₜ[K] u := by
-  rw [reductiveEnveloping, AlgEquiv.trans_apply, mapEquiv_map,
-    centerDerivedEquiv_comp_incl_derivedSeries, productEnveloping_map_inr]
+    reductiveEnveloping K L (map K (derivedSeries K L 1).incl u) = (1 : SZ) ⊗ₜ[K] u :=
+  envelopingEquivOfIsCompl_map_incl_right _ _ _ _ u
 
 /-- The inverse of `reductiveEnveloping` sends a pure tensor `a ⊗ u` to the product of the images
 of `a` and `u` under the inclusions of the centre and of the derived ideal. -/
@@ -280,11 +280,8 @@ of `a` and `u` under the inclusions of the centre and of the derived ideal. -/
 theorem reductiveEnveloping_symm_tmul (a : SZ) (u : UD) :
     (reductiveEnveloping K L).symm (a ⊗ₜ[K] u) =
       map K (center K L).incl (symmetricAlgebraEquiv K (center K L) a) *
-        map K (derivedSeries K L 1).incl u := by
-  apply (reductiveEnveloping K L).injective
-  rw [AlgEquiv.apply_symm_apply, map_mul, reductiveEnveloping_map_incl_center,
-    reductiveEnveloping_map_incl_derivedSeries, AlgEquiv.symm_apply_apply,
-    Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+        map K (derivedSeries K L 1).incl u :=
+  envelopingEquivOfIsCompl_symm_tmul _ _ _ _ a u
 
 end Enveloping
 
@@ -294,24 +291,18 @@ variable {K : Type u} {L : Type v} {L' : Type w} [Field K] [CharZero K] [LieRing
   [LieAlgebra K L] [FiniteDimensional K L] [HasCentralRadical K L] [LieRing L']
   [LieAlgebra K L'] [FiniteDimensional K L'] [HasCentralRadical K L']
 
--- `hom_ext` uses the commutator Lie ring of the target algebra; `Sym(z(L')) ⊗ U([L', L'])` also
--- carries the scalar-extension Lie ring, which is not definitionally the same.
-attribute [local instance 1100] LieRing.ofAssociativeRing
-
 /-- `reductiveEnveloping` is natural for Lie maps sending the centre into the centre: such a map
 acts on `Sym(z(L))` through its restriction to the centres and on `U([L, L])` through its
 restriction to the derived ideals. -/
 theorem reductiveEnveloping_naturality (f : L →ₗ⁅K⁆ L')
     (hf : ∀ z ∈ center K L, f z ∈ center K L') :
     (Algebra.TensorProduct.map
-        (SymmetricAlgebra.map K ((centerRestrict f hf : center K L →ₗ[K] center K L')))
-        (map K (derivedSeriesRestrict f))).comp (reductiveEnveloping K L).toAlgHom =
-      (reductiveEnveloping K L').toAlgHom.comp (map K f) := by
-  refine _root_.UniversalEnvelopingAlgebra.hom_ext K (LieHom.ext fun x => ?_)
-  simp only [LieHom.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
-  rw [reductiveEnveloping_ι, map_ι, reductiveEnveloping_ι, centerDerivedEquiv_map f hf, map_add,
-    Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul]
-  simp only [SymmetricAlgebra.map_apply_ι, map_one, map_ι, LieHom.coe_toLinearMap]
+        (SymmetricAlgebra.map K ((f.restrictIdeal hf : center K L →ₗ[K] center K L')))
+        (map K (f.restrictIdeal fun _ hx ↦
+          LieIdeal.derivedSeries_map_le (f := f) 1 (LieIdeal.mem_map hx)))).comp
+        (reductiveEnveloping K L).toAlgHom =
+      (reductiveEnveloping K L').toAlgHom.comp (map K f) :=
+  envelopingEquivOfIsCompl_naturality _ _ f hf _
 
 end Naturality
 
@@ -326,21 +317,18 @@ local notation "SZ" => SymmetricAlgebra K (center K L)
 local notation "ZD" => Subalgebra.center K UD
 
 /-- The center of the enveloping algebra of a reductive Lie algebra:
-`Z(U(L)) ≃ Sym(z(L)) ⊗ Z(U([L, L]))`, the restriction of `reductiveEnveloping` to the centers.
+`Z(U(L)) ≃ Sym(z(L)) ⊗ Z(U([L, L]))`, `centerEquivOfIsCompl` for the central/derived splitting.
 See `reductiveCenterEquiv_inclusion` for the inclusion square. -/
 noncomputable def reductiveCenterEquiv : Subalgebra.center K UL ≃ₐ[K] SZ ⊗[K] ZD :=
-  ((AlgEquiv.subalgebraMap (mapEquiv K (centerDerivedEquiv K L)) (Subalgebra.center K UL)).trans
-    (Subalgebra.equivOfEq _ _ (Subalgebra.map_center_eq _))).trans
-    (productCenterEquiv K (center K L) (derivedSeries K L 1))
+  centerEquivOfIsCompl K (center K L) (derivedSeries K L 1) (isCompl_center_derivedSeries K L)
 
 /-- The inclusion square of `reductiveCenterEquiv`: followed by `id ⊗ val`, it is
 `reductiveEnveloping` on the underlying central element. -/
 @[simp]
 theorem reductiveCenterEquiv_inclusion (z : Subalgebra.center K UL) :
     Algebra.TensorProduct.map (AlgHom.id K SZ) (ZD).val (reductiveCenterEquiv K L z) =
-      reductiveEnveloping K L (z : UL) := by
-  rw [reductiveCenterEquiv, AlgEquiv.trans_apply, productCenterEquiv_inclusion]
-  rfl
+      reductiveEnveloping K L (z : UL) :=
+  centerEquivOfIsCompl_inclusion _ _ _ _ z
 
 /-- The inverse of `reductiveCenterEquiv` on a pure tensor `a ⊗ c` with `c` central is the product
 of the images of `a` and `c` under the inclusions of the centre and of the derived ideal. -/
@@ -348,10 +336,8 @@ of the images of `a` and `c` under the inclusions of the centre and of the deriv
 theorem reductiveCenterEquiv_symm_tmul (a : SZ) (c : ZD) :
     ((reductiveCenterEquiv K L).symm (a ⊗ₜ[K] c) : UL) =
       map K (center K L).incl (symmetricAlgebraEquiv K (center K L) a) *
-        map K (derivedSeries K L 1).incl (c : UD) := by
-  rw [← reductiveEnveloping_symm_tmul, AlgEquiv.eq_symm_apply, ← reductiveCenterEquiv_inclusion,
-    AlgEquiv.apply_symm_apply, Algebra.TensorProduct.map_tmul]
-  rfl
+        map K (derivedSeries K L 1).incl (c : UD) :=
+  centerEquivOfIsCompl_symm_tmul _ _ _ _ a c
 
 /-- **The center of the enveloping algebra of a reductive Lie algebra.** There is an algebra
 equivalence `Z(U(L)) ≃ Sym(z(L)) ⊗ Z(U([L, L]))` which, followed by `id ⊗ val`, is

@@ -28,6 +28,7 @@ This file supplies general constructions for Lie modules that are missing from M
   module.
 * `LieHom.lieIdealComap`: a Lie homomorphism restricted to the preimage of a Lie ideal, as a
   Lie homomorphism into that ideal.
+* `LieHom.restrictIdeal`: a Lie homomorphism restricted to Lie ideals it maps into each other.
 
 ## Main results
 
@@ -546,6 +547,20 @@ injective. -/
 theorem _root_.LieHom.lieIdealComap_injective (hf : Function.Injective f) :
     Function.Injective (f.lieIdealComap I) := fun x y h ↦
   Subtype.ext (hf (by simpa using congrArg Subtype.val h))
+
+/-- The restriction of a Lie homomorphism `f` to Lie ideals `J` and `J'` with `f(J) ⊆ J'`, as a Lie
+homomorphism `J → J'`. -/
+def _root_.LieHom.restrictIdeal {J : LieIdeal R L} {J' : LieIdeal R L'}
+    (hf : ∀ x ∈ J, f x ∈ J') : J →ₗ⁅R⁆ J' where
+  toFun x := ⟨f x, hf x x.property⟩
+  map_add' _ _ := Subtype.ext (map_add f _ _)
+  map_smul' _ _ := Subtype.ext (map_smul f _ _)
+  map_lie' := Subtype.ext (f.map_lie _ _)
+
+@[simp]
+theorem _root_.LieHom.coe_restrictIdeal_apply {J : LieIdeal R L} {J' : LieIdeal R L'}
+    (hf : ∀ x ∈ J, f x ∈ J') (x : J) : (f.restrictIdeal hf x : L') = f x :=
+  (rfl)
 
 end Adjoint
 
