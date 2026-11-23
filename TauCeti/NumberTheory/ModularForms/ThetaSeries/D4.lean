@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.RootLattice
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.RealModel
+public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Nebentypus
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Basic
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
 import TauCeti.NumberTheory.Divisors
@@ -17,8 +18,8 @@ import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 # The theta series of D₄
 
 The root lattice `D₄ = IntegralLattice.checkerboardLattice 4` has rank `4`, level `2`, and square
-signed discriminant `4 = 2²`. Its quadratic theta character is therefore trivial, so
-`ZLattice.thetaFormGamma0` bundles the theta series of its real model as a weight-two modular form
+signed discriminant `4 = 2²`. Its nebentypus is therefore trivial, so `ZLattice.thetaFormGamma0`
+bundles the theta series of its real model as a weight-two modular form
 `thetaFormRealModelCheckerboardLatticeFour` on `Γ₀(2)`.
 
 By the Sturm bound on `Γ₀(2)` (weight two and index three, so `⌊6 / 12⌋ = 0` and only the constant
@@ -34,6 +35,8 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 
 ## Main statements
 
+* `TauCeti.IntegralLattice.nebentypus_realModel_checkerboardLattice_four`: the nebentypus of the
+  real model of `D₄` is trivial.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0`:
   `Θ_{D₄} ∣[2] A = Θ_{D₄}` for every `A ∈ Γ₀(2)`.
 * `TauCeti.IntegralLattice.thetaFormRealModelCheckerboardLatticeFour_eq_neg_correctedE2`,
@@ -53,23 +56,31 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 2, §2.3.
 -/
 
-public noncomputable section
+public section
 
 open Module ModularForm UpperHalfPlane Matrix.SpecialLinearGroup CongruenceSubgroup
-open scoped MatrixGroups ModularForm ArithmeticFunction.sigma
+open scoped MatrixGroups ArithmeticFunction.sigma
 
 namespace TauCeti.IntegralLattice
+
+/-- The nebentypus of the real model of `D₄` is trivial, since its signed discriminant `4` is a
+square. -/
+@[simp]
+theorem nebentypus_realModel_checkerboardLattice_four (R : Type*) [CommRing R] [NeZero (2 : R)] :
+    ((isEven_realModel_iff _ (isPosDef_checkerboardLattice 4)).mpr
+      (isEven_checkerboardLattice 4)).nebentypus R ⟨2, by simp [finrank_carrier]⟩ = 1 :=
+  (ZLattice.IsEven.nebentypus_eq_one_iff_isSquare _ _).mpr
+    ⟨2, by rw [signedDiscr_realModel_checkerboardLattice_four]; norm_num⟩
 
 /-- **Modularity of `Θ_{D₄}` on `Γ₀(2)`**: the theta series of the real model of `D₄`, bundled as a
 weight-two modular form on `Γ₀(2)` via `ZLattice.thetaFormGamma0` from the lattice invariants
 `level D₄ = 2` and `signedDiscr D₄ = 4 = 2²`. -/
-def thetaFormRealModelCheckerboardLatticeFour :
+noncomputable def thetaFormRealModelCheckerboardLatticeFour :
     ModularForm ((Gamma0 2).map (mapGL ℝ)) 2 :=
   (ZLattice.thetaFormGamma0
     ((isEven_realModel_iff _ (isPosDef_checkerboardLattice 4)).mpr (isEven_checkerboardLattice 4))
     (k := 2) (by simp [finrank_carrier])
-    (ZLattice.IsEven.thetaCharacter_eq_one_of_isSquare _ _
-      ⟨2, by rw [signedDiscr_realModel_checkerboardLattice_four]; norm_num⟩)).mcast rfl
+    (nebentypus_realModel_checkerboardLattice_four ℂ)).mcast rfl
     (by rw [level_realModel_checkerboardLattice_four])
 
 /-- The underlying function of the bundled `D₄` theta form is the lattice theta series. -/
@@ -89,15 +100,10 @@ theorem thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0 {A : 
         ∣[(2 : ℤ)] A =
       ZLattice.thetaSeries
         ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) := by
-  have hL : ZLattice.IsEven
-      ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) :=
-    (isEven_realModel_iff _ (isPosDef_checkerboardLattice 4)).mpr (isEven_checkerboardLattice 4)
-  have hA' : A ∈ Gamma0
-      (ZLattice.level ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4))) := by
-    rwa [level_realModel_checkerboardLattice_four]
-  exact hL.thetaSeries_slash_of_mem_Gamma0_of_isSquare
-    (by simp [RealModelSpace.finrank_eq, finrank_carrier])
-    ⟨2, by rw [signedDiscr_realModel_checkerboardLattice_four]; norm_num⟩ hA'
+  rw [← coe_thetaFormRealModelCheckerboardLatticeFour, ModularForm.SL_slash,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+  exact thetaFormRealModelCheckerboardLatticeFour.slash_action_eq' _
+    (Subgroup.mem_map_of_mem _ hA)
 
 /-- As weight-two modular forms on `Γ₀(2)`, the theta form of the real model of `D₄` equals
 `-EisensteinSeries.correctedE2 2`, namely `2 E₂(2τ) - E₂(τ)`. -/

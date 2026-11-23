@@ -112,7 +112,7 @@ theorem ramificationGroup_smul (g : G) (Q : Ideal B) (i : ℕ) :
 instance instNormalRamificationGroupStabilizer (Q : Ideal B) (i : ℕ) :
     (Q.ramificationGroup (MulAction.stabilizer G Q) i).Normal := by
   simp_rw [Subgroup.normal_iff_map_conj_eq, ← ramificationGroup_smul]
-  exact fun g ↦ congrArg (ramificationGroup _ · i) g.2
+  exact fun g ↦ congrArg (ramificationGroup _ · i) g.property
 
 section Noetherian
 

@@ -14,8 +14,8 @@ public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 In a real or complex seminormed space, a set is norm bounded if and only if every
 continuous linear functional has bounded image on it. Equivalently, its image in
 `WeakSpace` is von Neumann bounded. In particular, weakly compact sets, weakly
-convergent sequences, and sets in which every sequence has a weakly convergent subsequence
-are norm bounded. No completeness or separability assumption
+convergent and weakly Cauchy sequences, and sets in which every sequence has a weakly
+convergent subsequence are norm bounded. No completeness or separability assumption
 on the original space is needed.
 
 The proof applies Mathlib's `banach_steinhaus` to the evaluation functionals on the
@@ -90,6 +90,14 @@ theorem Filter.Tendsto.isBounded_range_of_toWeakSpace {u : ℕ → E} {x : E}
     Bornology.IsBounded (range u) := by
   rw [← TauCeti.NormedSpace.isVonNBounded_toWeakSpace_iff 𝕜, ← range_comp]
   exact hu.isVonNBounded_range 𝕜
+
+/-- A weakly Cauchy sequence, one whose values under every continuous linear functional form a
+Cauchy sequence, is norm bounded, even in an incomplete space. -/
+theorem TauCeti.isBounded_range_of_forall_cauchySeq {u : ℕ → E}
+    (hu : ∀ f : StrongDual 𝕜 E, CauchySeq fun n ↦ f (u n)) : Bornology.IsBounded (range u) :=
+  (TauCeti.NormedSpace.isBounded_iff_forall_dual_isBounded 𝕜).2 fun f ↦ by
+    rw [← range_comp]
+    exact (hu f).isBounded_range
 
 /-- A set with weakly convergent subsequences for all its sequences is norm bounded.
 Subsequential limits need not belong to the set. -/
