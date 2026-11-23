@@ -151,35 +151,31 @@ theorem pderiv_totalDeriv (δ : ι → Derivation R B B) (i : ι) (a : α) (I : 
     MvPolynomial.pderiv (a, I) (totalDeriv δ i p) =
       totalDeriv δ i (MvPolynomial.pderiv (a, I) p) +
         if 1 ≤ I i then MvPolynomial.pderiv (a, I - Finsupp.single i 1) p else 0 := by
-  have hgen (E : Derivation R (RelJetAlgebra B ι α) (RelJetAlgebra B ι α))
-      (hC : ∀ b : B, E (C b) = 0)
-      (hX : ∀ b J, E (X (b, J)) =
-        if 1 ≤ I i then MvPolynomial.pderiv (a, I - Finsupp.single i 1) (X (b, J)) else 0)
-      (x : RelJetAlgebra B ι α)
+  let E : Derivation R (RelJetAlgebra B ι α) (RelJetAlgebra B ι α) :=
+    if 1 ≤ I i then (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R else 0
+  have hgen (x : RelJetAlgebra B ι α)
       (hx : x ∈ Set.range (C : B → RelJetAlgebra B ι α) ∪ Set.range X) :
       ((MvPolynomial.pderiv (a, I)).restrictScalars R) (totalDeriv δ i x) =
         totalDeriv δ i (((MvPolynomial.pderiv (a, I)).restrictScalars R) x) + E x := by
     rcases hx with ⟨b, rfl⟩ | ⟨⟨b, J⟩, rfl⟩
-    · simp [hC]
+    · dsimp only [E]
+      split_ifs <;> simp
     · have h0 : totalDeriv δ i (MvPolynomial.pderiv (a, I) (X (b, J) : RelJetAlgebra B ι α)) =
           0 := by
         simp only [MvPolynomial.pderiv_X, Pi.single_apply]
         split_ifs <;> simp
-      simp only [Derivation.coe_restrictScalars, totalDeriv_X, h0, zero_add, hX]
-      exact pderiv_X_add_single i a b I J
-  by_cases hI : 1 ≤ I i
-  · simpa [hI] using
-      ((MvPolynomial.pderiv (a, I)).restrictScalars R).apply_apply_eq_add_of_adjoin_eq_top
-        (D₂ := totalDeriv δ i)
-        (E := (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R)
-        (TauCeti.MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
-        (hgen (E := (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R)
-          (fun _ ↦ by simp) fun b J ↦ by simp [hI]) p
-  · simpa [hI] using
-      ((MvPolynomial.pderiv (a, I)).restrictScalars R).apply_apply_eq_add_of_adjoin_eq_top
-        (D₂ := totalDeriv δ i) (E := 0)
-        (TauCeti.MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
-        (hgen (E := 0) (fun _ ↦ by simp) fun b J ↦ by simp [hI]) p
+      simp only [Derivation.coe_restrictScalars, totalDeriv_X, h0, zero_add]
+      rw [pderiv_X_add_single]
+      dsimp only [E]
+      split_ifs <;> simp
+  have h :=
+    ((MvPolynomial.pderiv (a, I)).restrictScalars R).apply_apply_eq_add_of_adjoin_eq_top
+      (D₂ := totalDeriv δ i) (E := E)
+      (TauCeti.MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ))) hgen p
+  dsimp only [Derivation.coe_restrictScalars] at h
+  rw [h]
+  dsimp only [E]
+  split_ifs <;> simp
 
 end TotalDeriv
 
@@ -261,7 +257,8 @@ def stageDeriv {R : Type*} [CommSemiring R] [Algebra R B] (δ : ι → Derivatio
 theorem coe_stageDeriv {R : Type*} [CommSemiring R] [Algebra R B] (δ : ι → Derivation R B B)
     (i : ι) (r : ℕ) (p : stage B ι α r) :
     (stageDeriv δ i r p : RelJetAlgebra B ι α) = totalDeriv δ i p := by
-  rfl
+  unfold stageDeriv
+  exact LinearMap.coe_restrict_apply _ _
 
 /-- Finite-stage total differentiation commutes with stage inclusions. -/
 @[simp]

@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Tower
 public import TauCeti.Geometry.Variational.PolynomialJet.Defs
 public import TauCeti.Geometry.Variational.PolynomialJet.Relative.Basic
-import Mathlib.RingTheory.Adjoin.Basic
 import TauCeti.RingTheory.Derivation.Basic
 
 /-!
@@ -142,60 +141,59 @@ theorem polyJetEquivRel_pderiv_field (a : α) (I : ι →₀ ℕ) (p : Polynomia
   have hp := DFunLike.congr_fun h p
   simpa [Derivation.conjAlgEquiv_apply] using congrArg (polyJetEquivRel R ι α) hp.symm
 
+/-- `polyJetEquivRel` identifies the finite stages of `PolynomialJet` and `RelJetAlgebra`. -/
+@[simp]
+theorem polyJetEquivRel_mem_stage_iff (r : ℕ) (p : PolynomialJet R ι α) :
+    polyJetEquivRel R ι α p ∈ stage (MvPolynomial ι R) ι α r ↔
+      p ∈ PolynomialJet.stage R ι α r := by
+  constructor
+  · -- Induct on `q = polyJetEquivRel R ι α p ∈ stage ...` as a `(MvPolynomial ι R)`-subalgebra.
+    intro hp
+    set q := polyJetEquivRel R ι α p
+    have hq : (polyJetEquivRel R ι α).symm q ∈ PolynomialJet.stage R ι α r := by
+      rw [stage_eq_supported, MvPolynomial.supported_eq_adjoin_X] at hp
+      refine Algebra.adjoin_induction ?_ ?_ (fun _ _ _ _ h₁ h₂ ↦ ?_)
+        (fun _ _ _ _ h₁ h₂ ↦ ?_) hp
+      · rintro _ ⟨⟨a, I⟩, hI, rfl⟩
+        simpa using PolynomialJet.X_field_mem_stage r a I hI
+      · intro b
+        rw [MvPolynomial.algebraMap_eq, polyJetEquivRel_symm_C]
+        induction b using MvPolynomial.induction_on with
+        | C c =>
+          rw [MvPolynomial.rename_C, ← MvPolynomial.algebraMap_eq]
+          exact Subalgebra.algebraMap_mem _ _
+        | add b₁ b₂ h₁ h₂ => simp [map_add, add_mem h₁ h₂]
+        | mul_X b j hb => simp [map_mul, mul_mem hb]
+      · rw [map_add]
+        exact add_mem h₁ h₂
+      · rw [map_mul]
+        exact mul_mem h₁ h₂
+    simpa [q] using hq
+  · -- Induct on `p ∈ PolynomialJet.stage R ι α r` as an `R`-subalgebra.
+    intro hp
+    rw [PolynomialJet.stage_eq_supported, MvPolynomial.supported_eq_adjoin_X] at hp
+    refine Algebra.adjoin_induction ?_ ?_ (fun _ _ _ _ h₁ h₂ ↦ ?_)
+      (fun _ _ _ _ h₁ h₂ ↦ ?_) hp
+    · rintro _ ⟨j | ⟨a, I⟩, hmem, rfl⟩
+      · rw [polyJetEquivRel_X_base, ← MvPolynomial.algebraMap_eq]
+        exact Subalgebra.algebraMap_mem _ _
+      · simpa using X_mem_stage hmem
+    · intro c
+      rw [AlgEquiv.commutes, IsScalarTower.algebraMap_apply R (MvPolynomial ι R)]
+      exact Subalgebra.algebraMap_mem _ _
+    · rw [map_add]
+      exact add_mem h₁ h₂
+    · rw [map_mul]
+      exact mul_mem h₁ h₂
+
 /-- Mapping a relative finite stage along `(polyJetEquivRel R ι α).symm` yields the corresponding
 `PolynomialJet` stage. -/
 theorem map_stage_polyJetEquivRel_symm (r : ℕ) :
     ((stage (MvPolynomial ι R) ι α r).restrictScalars R).map
         (polyJetEquivRel R ι α).symm.toAlgHom =
       PolynomialJet.stage R ι α r := by
-  have hbase_set :
-      (MvPolynomial.rename (R := R) (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ)))) '' Set.range X =
-        X '' Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ))) := by
-    ext x
-    simp
-  have hcoeff :
-      (IsScalarTower.toAlgHom R (MvPolynomial ι R)
-          (RelJetAlgebra (MvPolynomial ι R) ι α)).range.map
-          (polyJetEquivRel R ι α).symm.toAlgHom =
-        Algebra.adjoin R (X '' Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ)))) := by
-    rw [← AlgHom.range_comp, polyJetEquivRel_symm_comp_algebraMap, ← Algebra.map_top,
-      ← MvPolynomial.adjoin_range_X (R := R) (σ := ι), AlgHom.map_adjoin, hbase_set]
-  have hfield_set :
-      (polyJetEquivRel R ι α).symm.toAlgHom ''
-          (X '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}) =
-        X '' (Sum.inr '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}) := by
-    ext x
-    simp
-  have hunion :
-      Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ))) ∪
-          Sum.inr '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r} =
-        {v | Sum.elim (fun _ ↦ True) (fun aI ↦ aI.2.degree ≤ r) v} := by
-    ext (j | ⟨a, I⟩) <;> simp
-  calc
-    ((stage (MvPolynomial ι R) ι α r).restrictScalars R).map
-          (polyJetEquivRel R ι α).symm.toAlgHom
-        = (IsScalarTower.toAlgHom R (MvPolynomial ι R)
-              (RelJetAlgebra (MvPolynomial ι R) ι α)).range.map
-              (polyJetEquivRel R ι α).symm.toAlgHom ⊔
-            Algebra.adjoin R
-              ((polyJetEquivRel R ι α).symm.toAlgHom ''
-                (X '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r})) := by
-          rw [stage_eq_supported, MvPolynomial.supported_eq_adjoin_X,
-            Algebra.Subalgebra.restrictScalars_adjoin, Algebra.map_sup, AlgHom.map_adjoin]
-    _ = Algebra.adjoin R (X '' Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ)))) ⊔
-          Algebra.adjoin R (X '' (Sum.inr '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r})) := by
-          rw [hcoeff, hfield_set]
-    _ = PolynomialJet.stage R ι α r := by
-          rw [← Algebra.adjoin_union, ← Set.image_union, hunion,
-            ← MvPolynomial.supported_eq_adjoin_X, ← PolynomialJet.stage_eq_supported]
-
-/-- `polyJetEquivRel` identifies the finite stages of `PolynomialJet` and `RelJetAlgebra`. -/
-@[simp]
-theorem polyJetEquivRel_mem_stage_iff (r : ℕ) (p : PolynomialJet R ι α) :
-    polyJetEquivRel R ι α p ∈ stage (MvPolynomial ι R) ι α r ↔
-      p ∈ PolynomialJet.stage R ι α r := by
-  rw [← map_stage_polyJetEquivRel_symm (R := R) (ι := ι) (α := α) r, Subalgebra.mem_map]
-  simp [(polyJetEquivRel R ι α).symm_apply_eq]
+  ext p
+  simp [Subalgebra.mem_map, (polyJetEquivRel R ι α).symm_apply_eq]
 
 /-- Restricting `polyJetEquivRel` to finite stages gives an `R`-algebra isomorphism between
 `PolynomialJet.stage R ι α r` and `(stage (MvPolynomial ι R) ι α r).restrictScalars R`. -/

@@ -17,26 +17,27 @@ commutative ring `B`, the algebraic exterior derivative
 `KaehlerDeRham.extDeriv B (RelJetAlgebra B ι α)` and the Lie-derivative lifts `totalDerivForm δ i`
 of total differentiation commute (`extDeriv_totalDerivForm`), and `totalDerivForm δ i` and
 `totalDerivForm δ j` commute whenever `δ i` and `δ j` commute (`totalDerivForm_comm`). Every
-vertical form lies in a finite-order stage `vertStage B ι α r`, preserved by `vertStageDAlg` and
-shifted by at most one order by `vertStageTotalDerivForm`.
+vertical form lies in a finite-order stage `vertStage B ι α r`, preserved by `vertStageExtDeriv`
+and shifted by at most one order by `vertStageTotalDerivForm`.
 
 Tensoring with the constant-coefficient horizontal exterior algebra `ExteriorAlgebra R (ι →₀ R)`
-gives the vertical operator `dAlgTensor`, which squares to zero over any commutative ring `R` and
-any index type `ι` (`dAlgTensor_dAlgTensor`). Over a finite base index type `[Fintype ι]`, the
-unsigned horizontal operator `horizDerivUnsigned δ` and `dAlgTensor` form a pair of commuting
-operators for arbitrary base derivations `δ` (`dAlgTensor_horizDerivUnsigned`). Whenever the base
-derivations `δ i` and `δ j` commute, `horizDerivUnsigned δ` also squares to zero
-(`horizDerivUnsigned_horizDerivUnsigned`), yielding the unsigned double-differential complex over
-any commutative ring `R` (without characteristic restrictions).
+gives the vertical operator `extDerivRTensor`, which squares to zero over any commutative ring `R`
+and any index type `ι` (`extDerivRTensor_extDerivRTensor`). Over a finite base index type
+`[Fintype ι]`, the unsigned horizontal operator `horizDerivUnsigned δ` and `extDerivRTensor` form
+a pair of commuting operators for arbitrary base derivations `δ`
+(`extDerivRTensor_horizDerivUnsigned`). Whenever the base derivations `δ i` and `δ j` commute,
+`horizDerivUnsigned δ` also squares to zero (`horizDerivUnsigned_horizDerivUnsigned`), yielding
+the unsigned double-differential complex over any commutative ring `R` (without characteristic
+restrictions).
 
 ## Main definitions
 
 * `TauCeti.RelJetAlgebra.VertForms`, `TauCeti.RelJetAlgebra.totalDerivForm`,
-  `TauCeti.RelJetAlgebra.vertStage`, `TauCeti.RelJetAlgebra.vertStageDAlg`,
+  `TauCeti.RelJetAlgebra.vertStage`, `TauCeti.RelJetAlgebra.vertStageExtDeriv`,
   `TauCeti.RelJetAlgebra.vertStageTotalDerivForm`: the relative vertical de Rham complex, its
   total-derivative Lie actions, and their finite-stage linear restrictions.
-* `TauCeti.RelJetAlgebra.dAlgTensor` and `TauCeti.RelJetAlgebra.horizDerivUnsigned`: the vertical
-  and (for `[Fintype ι]`) unsigned horizontal operators on
+* `TauCeti.RelJetAlgebra.extDerivRTensor` and `TauCeti.RelJetAlgebra.horizDerivUnsigned`: the
+  vertical and (for `[Fintype ι]`) unsigned horizontal operators on
   `VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`.
 
 ## Main results
@@ -52,12 +53,13 @@ any commutative ring `R` (without characteristic restrictions).
   `TauCeti.RelJetAlgebra.ι_D_X_mem_vertStage_iff`,
   `TauCeti.RelJetAlgebra.extDeriv_mem_vertStage`: finite-stage membership and `extDeriv`
   preservation.
-* `TauCeti.RelJetAlgebra.vertStageDAlg_vertStageDAlg`,
-  `TauCeti.RelJetAlgebra.vertStageDAlg_vertStageTotalDerivForm`,
+* `TauCeti.RelJetAlgebra.vertStageExtDeriv_vertStageExtDeriv`,
+  `TauCeti.RelJetAlgebra.vertStageExtDeriv_vertStageTotalDerivForm`,
   `TauCeti.RelJetAlgebra.vertStageTotalDerivForm_comm`: finite-stage square-zero and commutation
-  laws for `vertStageDAlg` and `vertStageTotalDerivForm`.
-* `TauCeti.RelJetAlgebra.dAlgTensor_dAlgTensor`: `dAlgTensor² = 0` (for arbitrary `ι` and `δ`).
-* `TauCeti.RelJetAlgebra.dAlgTensor_horizDerivUnsigned`: commutation of `dAlgTensor` with
+  laws for `vertStageExtDeriv` and `vertStageTotalDerivForm`.
+* `TauCeti.RelJetAlgebra.extDerivRTensor_extDerivRTensor`: `extDerivRTensor² = 0` (for arbitrary
+  `ι` and `δ`).
+* `TauCeti.RelJetAlgebra.extDerivRTensor_horizDerivUnsigned`: commutation of `extDerivRTensor` with
   `horizDerivUnsigned` (for `[Fintype ι]` and arbitrary `δ`).
 * `TauCeti.RelJetAlgebra.horizDerivUnsigned_horizDerivUnsigned`: `(D_H⁰)² = 0` when `[Fintype ι]`
   and the base derivations commute, completing the unsigned double-differential complex.
@@ -195,30 +197,31 @@ theorem totalDerivForm_mem_vertStage (δ : ι → Derivation R B B) (i : ι) {r 
 
 variable (B ι α) in
 /-- The algebraic vertical exterior derivative restricted to a finite vertical stage. -/
-def vertStageDAlg (r : ℕ) : vertStage B ι α r →ₗ[B] vertStage B ι α r :=
+def vertStageExtDeriv (r : ℕ) : vertStage B ι α r →ₗ[B] vertStage B ι α r :=
   (KaehlerDeRham.extDeriv B (RelJetAlgebra B ι α)).restrict
     (p := (vertStage B ι α r).toSubmodule)
     (q := (vertStage B ι α r).toSubmodule)
     fun _ hω ↦ extDeriv_mem_vertStage hω
 
 @[simp]
-theorem coe_vertStageDAlg (r : ℕ) (ω : vertStage B ι α r) :
-    (vertStageDAlg B ι α r ω : VertForms B ι α) =
+theorem coe_vertStageExtDeriv (r : ℕ) (ω : vertStage B ι α r) :
+    (vertStageExtDeriv B ι α r ω : VertForms B ι α) =
       KaehlerDeRham.extDeriv B (RelJetAlgebra B ι α) ω := by
-  rfl
+  unfold vertStageExtDeriv
+  exact LinearMap.coe_restrict_apply _ _
 
 /-- Finite-stage vertical exterior differentiation commutes with stage inclusions. -/
 @[simp]
-theorem vertStageDAlg_inclusion {r s : ℕ} (hrs : r ≤ s) (ω : vertStage B ι α r) :
-    vertStageDAlg B ι α s (Subalgebra.inclusion (vertStage_mono hrs) ω) =
-      Subalgebra.inclusion (vertStage_mono hrs) (vertStageDAlg B ι α r ω) := by
+theorem vertStageExtDeriv_inclusion {r s : ℕ} (hrs : r ≤ s) (ω : vertStage B ι α r) :
+    vertStageExtDeriv B ι α s (Subalgebra.inclusion (vertStage_mono hrs) ω) =
+      Subalgebra.inclusion (vertStage_mono hrs) (vertStageExtDeriv B ι α r ω) := by
   apply Subtype.ext
   simp
 
 /-- Finite-stage vertical exterior differentiation squares to zero. -/
 @[simp]
-theorem vertStageDAlg_vertStageDAlg (r : ℕ) (ω : vertStage B ι α r) :
-    vertStageDAlg B ι α r (vertStageDAlg B ι α r ω) = 0 := by
+theorem vertStageExtDeriv_vertStageExtDeriv (r : ℕ) (ω : vertStage B ι α r) :
+    vertStageExtDeriv B ι α r (vertStageExtDeriv B ι α r ω) = 0 := by
   apply Subtype.ext
   simp
 
@@ -235,7 +238,8 @@ def vertStageTotalDerivForm (δ : ι → Derivation R B B) (i : ι) (r : ℕ) :
 theorem coe_vertStageTotalDerivForm (δ : ι → Derivation R B B) (i : ι) (r : ℕ)
     (ω : vertStage B ι α r) :
     (vertStageTotalDerivForm δ i r ω : VertForms B ι α) = totalDerivForm δ i ω := by
-  rfl
+  unfold vertStageTotalDerivForm
+  exact LinearMap.coe_restrict_apply _ _
 
 /-- Finite-stage vertical total differentiation commutes with stage inclusions. -/
 @[simp]
@@ -249,12 +253,12 @@ theorem vertStageTotalDerivForm_inclusion (δ : ι → Derivation R B B) (i : ι
 
 /-- Finite-stage vertical exterior differentiation commutes with `vertStageTotalDerivForm` at
 stage `r + 1`. -/
-theorem vertStageDAlg_vertStageTotalDerivForm (δ : ι → Derivation R B B) (i : ι) (r : ℕ)
+theorem vertStageExtDeriv_vertStageTotalDerivForm (δ : ι → Derivation R B B) (i : ι) (r : ℕ)
     (ω : vertStage B ι α r) :
-    vertStageDAlg B ι α (r + 1) (vertStageTotalDerivForm δ i r ω) =
-      vertStageTotalDerivForm δ i r (vertStageDAlg B ι α r ω) := by
+    vertStageExtDeriv B ι α (r + 1) (vertStageTotalDerivForm δ i r ω) =
+      vertStageTotalDerivForm δ i r (vertStageExtDeriv B ι α r ω) := by
   apply Subtype.ext
-  simp only [coe_vertStageDAlg, coe_vertStageTotalDerivForm]
+  simp only [coe_vertStageExtDeriv, coe_vertStageTotalDerivForm]
   exact extDeriv_totalDerivForm δ i (ω : VertForms B ι α)
 
 /-- Commuting base derivations yield commuting `vertStageTotalDerivForm` maps at stage `r + 2`. -/
@@ -272,36 +276,38 @@ section UnsignedDoubleComplex
 
 variable (R B ι α : Type*) [CommRing R] [CommRing B] [Algebra R B]
 
-/-- The vertical differential `d_alg ⊗ id` on `VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`. -/
-def dAlgTensor :
+/-- The vertical differential `extDeriv ⊗ id` on
+`VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`. -/
+def extDerivRTensor :
     Module.End R (VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :=
   ((KaehlerDeRham.extDeriv B (RelJetAlgebra B ι α)).restrictScalars R).rTensor
     (ExteriorAlgebra R (ι →₀ R))
 
 variable {R B ι α}
 
-/-- Action of `dAlgTensor` on a pure tensor `ω ⊗ₜ β`. -/
+/-- Action of `extDerivRTensor` on a pure tensor `ω ⊗ₜ β`. -/
 @[simp]
-theorem dAlgTensor_tmul (ω : VertForms B ι α) (β : ExteriorAlgebra R (ι →₀ R)) :
-    dAlgTensor R B ι α (ω ⊗ₜ[R] β) =
+theorem extDerivRTensor_tmul (ω : VertForms B ι α) (β : ExteriorAlgebra R (ι →₀ R)) :
+    extDerivRTensor R B ι α (ω ⊗ₜ[R] β) =
       KaehlerDeRham.extDeriv B (RelJetAlgebra B ι α) ω ⊗ₜ[R] β := by
-  rfl
+  simp only [extDerivRTensor, LinearMap.rTensor_tmul, LinearMap.restrictScalars_apply]
 
-/-- `dAlgTensor` squares to zero. -/
+/-- `extDerivRTensor` squares to zero. -/
 @[simp]
-theorem dAlgTensor_dAlgTensor (x : VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :
-    dAlgTensor R B ι α (dAlgTensor R B ι α x) = 0 := by
+theorem extDerivRTensor_extDerivRTensor (x : VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :
+    extDerivRTensor R B ι α (extDerivRTensor R B ι α x) = 0 := by
   have hsq :
       ((KaehlerDeRham.extDeriv B (RelJetAlgebra B ι α)).restrictScalars R).comp
           ((KaehlerDeRham.extDeriv B (RelJetAlgebra B ι α)).restrictScalars R) = 0 := by
     have h := congrArg (fun f ↦ f.restrictScalars R)
       (KaehlerDeRham.extDeriv_comp_extDeriv (R := B) (S := RelJetAlgebra B ι α))
     simpa only [LinearMap.restrictScalars_comp, LinearMap.restrictScalars_zero] using h
-  rw [dAlgTensor, ← LinearMap.rTensor_comp_apply, hsq, LinearMap.rTensor_zero, LinearMap.zero_apply]
+  rw [extDerivRTensor, ← LinearMap.rTensor_comp_apply, hsq, LinearMap.rTensor_zero,
+    LinearMap.zero_apply]
 
 /-- The unsigned horizontal operator `D_H⁰(ω ⊗ₜ β) = ∑ μ, (D_μ ω) ⊗ₜ (dx^μ ∧ β)` on
-`VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`. It commutes with `dAlgTensor` for arbitrary
-base derivations `δ`, and squares to zero whenever the base derivations `δ i` commute. -/
+`VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`. It commutes with `extDerivRTensor` for
+arbitrary base derivations `δ`, and squares to zero whenever the base derivations `δ i` commute. -/
 def horizDerivUnsigned [Fintype ι] (δ : ι → Derivation R B B) :
     Module.End R (VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :=
   ∑ i : ι, TensorProduct.map (totalDerivForm δ i)
@@ -316,14 +322,14 @@ theorem horizDerivUnsigned_tmul [Fintype ι] (δ : ι → Derivation R B B) (ω 
         (ExteriorAlgebra.ι R (Finsupp.single i (1 : R)) * β) := by
   simp [horizDerivUnsigned]
 
-/-- **Commutation of `dAlgTensor` and `horizDerivUnsigned`**: for any family of base derivations
-`δ`, the vertical differential `d_alg ⊗ id` and the unsigned horizontal operator `D_H⁰` commute
-with no sign. -/
-theorem dAlgTensor_horizDerivUnsigned [Fintype ι] (δ : ι → Derivation R B B)
+/-- **Commutation of `extDerivRTensor` and `horizDerivUnsigned`**: for any family of base
+derivations `δ`, the vertical differential `extDeriv ⊗ id` and the unsigned horizontal operator
+`D_H⁰` commute with no sign. -/
+theorem extDerivRTensor_horizDerivUnsigned [Fintype ι] (δ : ι → Derivation R B B)
     (x : VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :
-    dAlgTensor R B ι α (horizDerivUnsigned δ x) =
-      horizDerivUnsigned δ (dAlgTensor R B ι α x) := by
-  simp only [dAlgTensor, horizDerivUnsigned, LinearMap.sum_apply, map_sum]
+    extDerivRTensor R B ι α (horizDerivUnsigned δ x) =
+      horizDerivUnsigned δ (extDerivRTensor R B ι α x) := by
+  simp only [extDerivRTensor, horizDerivUnsigned, LinearMap.sum_apply, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [LinearMap.rTensor_map, LinearMap.map_rTensor]
   congr 2

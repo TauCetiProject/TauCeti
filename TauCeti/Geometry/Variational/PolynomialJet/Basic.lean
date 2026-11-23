@@ -72,7 +72,8 @@ def stageDeriv (i : ι) (r : ℕ) : stage R ι α r →ₗ[R] stage R ι α (r +
 @[simp]
 theorem coe_stageDeriv (i : ι) (r : ℕ) (p : stage R ι α r) :
     (stageDeriv i r p : PolynomialJet R ι α) = totalDeriv i p := by
-  rfl
+  unfold stageDeriv
+  exact LinearMap.coe_restrict_apply _ _
 
 /-- Finite-stage differentiation commutes with the transition inclusions. -/
 @[simp]
