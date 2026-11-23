@@ -103,6 +103,13 @@ theorem of_tprod_congr {k l : ℕ} (hk : 0 < k) (hkl : k = l) {u : Fin k → M}
   subst hkl
   exact congrArg _ (congrArg _ (funext h))
 
+/-- A pure tensor word of length two equals the two-letter word on its two entries. -/
+theorem of_two_tprod {hn : 0 < 2} (x : Fin 2 → M) :
+    of R M ⟨2, hn⟩ (PiTensorProduct.tprod R x) =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![x 0, x 1]) :=
+  of_tprod_congr R M hn rfl <| Fin.forall_fin_two.2
+    ⟨(Matrix.cons_val_zero _ _).symm, by simp⟩
+
 /-- Project reduced tensor words to a fixed positive tensor length. -/
 noncomputable def component (n : {n : ℕ // 0 < n}) :
     ReducedTensorWords R M →ₗ[R] TensorPower R n.val M :=

@@ -79,13 +79,6 @@ theorem of_one_tprod (x : Fin 1 → M) :
   rw [ofLetter_eq_of_tprod]
   exact of_tprod_congr R M Nat.one_pos rfl <| Fin.forall_fin_one.2 rfl
 
-/-- A pure tensor word of length two equals the two-letter word on its two entries. -/
-theorem of_two_tprod {hn : 0 < 2} (x : Fin 2 → M) :
-    of R M ⟨2, hn⟩ (PiTensorProduct.tprod R x) =
-      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![x 0, x 1]) :=
-  of_tprod_congr R M hn rfl <| Fin.forall_fin_two.2
-    ⟨(Matrix.cons_val_zero _ _).symm, by simp⟩
-
 /-- The length-one component of a single letter is that letter under the tensor-power
 identification. -/
 theorem component_ofLetter (a : M) :
