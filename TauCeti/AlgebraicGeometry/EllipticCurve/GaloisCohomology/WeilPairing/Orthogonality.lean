@@ -24,9 +24,11 @@ so the result applies over both finite and infinite completions of a number fiel
 For global classes satisfying the Selmer local conditions over an extension `L/K` in which the
 degree is invertible, the Brauer-valued cup product of their restrictions, for the base change of
 `φ` and its dual, vanishes (`kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`).
-Over a nonarchimedean local field, the unramified subgroups `W.unramifiedTorsionCohomology m`,
-`φ.unramifiedKerCohomology`, and `φ.dual.unramifiedKerCohomology` are likewise orthogonal under
-both the Weil cup product and local Tate duality
+Over a nonarchimedean local field `K` in which `m`, respectively `deg φ`, is invertible (though
+it need not be prime to the residue characteristic), the unramified subgroups
+`W.unramifiedTorsionCohomology m`, `φ.unramifiedKerCohomology`, and
+`φ.dual.unramifiedKerCohomology` are likewise orthogonal under both the Weil cup product and local
+Tate duality
 (`WeierstrassCurve.torsionH1WeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology`,
 `WeierstrassCurve.localTateWeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology`,
 `TauCeti.Isogeny.kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology`, and

@@ -88,12 +88,16 @@ omit [Finite M] in
 adjoint of the pairing is bijective. Neither module need be finite. -/
 theorem natCard_orthogonalBilin_zmod (hB : Function.Bijective B.flip) :
     Nat.card (S.orthogonalBilin B) = Nat.card (M ⧸ S) := by
-  let e := LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom
+  let e : N →+ M →+ ZMod n :=
+    (AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp B.flip.toAddMonoidHom
   have he : Function.Bijective e :=
     (AddMonoidHom.toZModLinearMapEquiv n).symm.bijective.comp hB
+  have he_eq : e = LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom := by
+    ext y x
+    rfl
   have h := e.natCard_ker_compl₂_subtype_eq_index_zmod he
     (ZModModule.char_nsmul_eq_zero n) S.toAddSubgroup
-  rw [ker_compl₂_toAddSubgroup_eq_orthogonalBilin] at h
+  rw [he_eq, ker_compl₂_toAddSubgroup_eq_orthogonalBilin] at h
   -- Submodules and their additive subgroups have the same carrier and quotient types.
   exact h
 
@@ -126,16 +130,25 @@ is the original submodule. The pairing is flipped on the second step. -/
 @[simp]
 theorem orthogonalBilin_flip_orthogonalBilin_zmod [B.IsPerfPair] :
     (S.orthogonalBilin B).orthogonalBilin B.flip = S := by
-  let e := LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom
+  let e : N →+ M →+ ZMod n :=
+    (AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp B.flip.toAddMonoidHom
   have he : Function.Bijective e :=
     (AddMonoidHom.toZModLinearMapEquiv n).symm.bijective.comp
       (LinearMap.IsPerfPair.bijective_right B)
+  have he_eq : e = LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom := by
+    ext y x
+    rfl
+  have he_flip : e.flip = LinearMap.toAddMonoidHom'.comp B.flip.flip.toAddMonoidHom := by
+    ext x y
+    simp only [AddMonoidHom.flip_apply, he_eq, AddMonoidHom.comp_apply,
+      LinearMap.toAddMonoidHom'_apply, LinearMap.toAddMonoidHom_coe, LinearMap.flip_apply]
   have h := e.ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod he
     (ZModModule.char_nsmul_eq_zero n) S.toAddSubgroup
-  rw [ker_compl₂_toAddSubgroup_eq_orthogonalBilin S B] at h
+  rw [he_eq, ker_compl₂_toAddSubgroup_eq_orthogonalBilin S B] at h
   have hflip : (e.flip.compl₂ (S.orthogonalBilin B).toAddSubgroup.subtype).ker =
-      ((S.orthogonalBilin B).orthogonalBilin B.flip).toAddSubgroup :=
-    ker_compl₂_toAddSubgroup_eq_orthogonalBilin (S.orthogonalBilin B) B.flip
+      ((S.orthogonalBilin B).orthogonalBilin B.flip).toAddSubgroup := by
+    rw [he_flip]
+    exact ker_compl₂_toAddSubgroup_eq_orthogonalBilin (S.orthogonalBilin B) B.flip
   exact toAddSubgroup_injective (hflip.symm.trans h)
 
 end Submodule

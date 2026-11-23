@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Ba
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.LocalField
 
 /-!
@@ -196,7 +197,7 @@ theorem ker_explicitCoeff1_torsionCoeffIncl_eq_unramifiedTorsionCohomology
       continuous_of_discreteTopology).ker = W.unramifiedTorsionCohomology m := by
   classical
   have hmU : IsUnit (m : K) := (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit
-  have : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hmU.ne_zero⟩)
+  have : NeZero m := hmU.neZero_natCast
   -- Compare orders: `#(im δ_m) = [E(K) : m E(K)] = #E(K)[m] = #H¹_ur(K, E[m])`.
   have hcard : Nat.card (W.unramifiedTorsionCohomology m) ≤
       Nat.card ((explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
@@ -237,25 +238,9 @@ theorem torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup {m : ℕ}
     (hmres : (m : 𝓀[L i]) ≠ 0)
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} (hc : c ∈ W.selmerGroup τ m) :
     W.torsionRes (τ i) m c ∈ (W⁄(L i)).unramifiedTorsionCohomology m := by
-  classical
-  have : (W⁄(L i)).IsElliptic := by
-    rw [← baseChange_integralModel_eq 𝒪[L i] (W⁄(L i))]
-    infer_instance
-  have : W.IsElliptic := by
-    rw [isElliptic_iff, isUnit_iff_ne_zero]
-    intro hΔ
-    have hΔL := (W⁄(L i)).isUnit_Δ.ne_zero
-    rw [baseChange, map_Δ, hΔ, map_zero] at hΔL
-    exact hΔL rfl
-  have hmL : IsUnit (m : L i) := (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit
-  have hm : IsUnit (m : K) := by
-    rw [isUnit_iff_ne_zero]
-    intro h
-    apply hmL.ne_zero
-    simpa using congrArg (algebraMap K (L i)) h
-  exact (W⁄(L i)).range_kummerMap_le_unramifiedTorsionCohomology m
-    hmres
-    ((W.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap τ hm).mp hc i)
+  refine (W⁄(L i)).ker_explicitCoeff1_torsionCoeffIncl_le_unramifiedTorsionCohomology m hmres ?_
+  rw [AddMonoidHom.mem_ker, ← pointRes_torsionCoeffIncl]
+  exact (W.mem_shafarevichTateGroup_iff τ).mp ((W.mem_selmerGroup_iff τ m).mp hc) i
 
 /-! ### Classes unramified outside `S` -/
 

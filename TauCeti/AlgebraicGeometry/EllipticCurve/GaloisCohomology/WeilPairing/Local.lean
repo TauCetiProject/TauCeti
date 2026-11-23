@@ -77,6 +77,17 @@ theorem toRatAddCircle_localTateWeilPairing
     W.torsionWeilBrauerPairing_apply m hm]
   exact toRatAddCircle_h2MuEquivZMod K hm _
 
+/-- Pointwise comparison between `localTateWeilPairing` and `dualityMap1` followed by
+`explicitH2MuEquivZMod`. -/
+theorem localTateWeilPairing_eq_dualityMap1
+    (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    haveI := hm.neZero_natCast
+    W.localTateWeilPairing m hm a b =
+      explicitH2MuEquivZMod K hm
+        (dualityMap1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (KummerCoeff K m) a
+          (explicitCoeff1 _ _ (W.torsionCoeffWeilDual m hm) continuous_of_discreteTopology b)) := by
+  rw [localTateWeilPairing_apply, torsionH1WeilPairing_eq_dualityMap1]
+
 /-- **Perfect local Tate duality for `E[m]`.** Pairing with a class gives a bijection from
 `H¹(K, E[m])` to its additive characters with values in `ℤ/m`. -/
 theorem localTateWeilPairing_bijective : Function.Bijective (W.localTateWeilPairing m hm) := by
@@ -91,8 +102,7 @@ theorem localTateWeilPairing_bijective : Function.Bijective (W.localTateWeilPair
     (dualityMap1_kummerCoeff_bijective hm (W.TorsionCoeff m)
       fun P ↦ AddSubgroup.torsionBy.nsmul P)
   intro a b
-  simp only [localTateWeilPairing_apply, torsionH1WeilPairing_eq_dualityMap1,
-    AddMonoidHom.id_apply, AddEquiv.coe_toAddMonoidHom]
+  exact W.localTateWeilPairing_eq_dualityMap1 m hm a b
 
 /-- **The local Kummer image is isotropic for local Tate duality**: the local Tate pairing of the
 Kummer classes of two points of `E(K)` vanishes. -/
@@ -148,6 +158,17 @@ theorem localTateKerWeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
   simp only [localTateKerWeilPairing_apply, localTateWeilPairing_apply,
     kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff]
 
+/-- Pointwise comparison between `localTateKerWeilPairing` and `dualityMap1` followed by
+`explicitH2MuEquivZMod`. -/
+theorem localTateKerWeilPairing_eq_dualityMap1
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    φ.localTateKerWeilPairing hn a b =
+      explicitH2MuEquivZMod K hn
+        (dualityMap1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff (KummerCoeff K φ.degree) a
+          (explicitCoeff1 _ _ (φ.kerCoeffWeilDual hn) continuous_of_discreteTopology b)) := by
+  rw [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1]
+
 /-- **Perfect local Tate duality for the kernels of an isogeny and of its dual.** Pairing with a
 class gives a bijection from `H¹(K, E₁[φ])` to the additive characters of `H¹(K, E₂[φ̂])` with
 values in `ℤ/n`, `n = deg φ`. -/
@@ -163,8 +184,7 @@ theorem localTateKerWeilPairing_bijective :
     (explicitH2MuEquivZMod K hn).bijective
     (dualityMap1_kummerCoeff_bijective hn (ofIsogeny φ).KerCoeff φ.degree_nsmul_kerCoeff_eq_zero)
   intro a b
-  simp only [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,
-    AddMonoidHom.id_apply, AddEquiv.coe_toAddMonoidHom]
+  exact φ.localTateKerWeilPairing_eq_dualityMap1 hn a b
 
 end TauCeti.Isogeny
 

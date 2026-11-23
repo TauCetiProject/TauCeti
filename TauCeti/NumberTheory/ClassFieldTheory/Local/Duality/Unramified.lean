@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Cardinality
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.Algebra.Module.ZMod.Annihilator
 import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
@@ -122,21 +123,12 @@ theorem natCard_unramifiedH1_mul_natCard_unramifiedH1_internalHom_eq_natCard_H1 
         Nat.card (unramifiedH1 K
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) =
       Nat.card (H1 (AbsoluteGaloisGroup K) M) := by
-  have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
-  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
+  have := FinitePadicExtension.charZero K p
+  have hn := TauCeti.isUnit_natCast_of_not_dvd (K := K) hpn
+  have : NeZero n := hn.neZero_natCast
   rw [natCard_unramifiedH1_eq_natCard_H0, natCard_unramifiedH1_eq_natCard_H0,
     ← natCard_H2_eq_natCard_H0_internalHom hn M hM,
     natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd_of_nsmul_eq_zero p hpn M hM]
-
-private theorem finite_H1_internalHom (hpn : ¬ p ∣ n)
-    (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
-    [Finite M] (hM : ∀ x : M, n • x = 0) :
-    Finite (H1 (AbsoluteGaloisGroup K)
-      (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-  have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
-  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
-  finite_H1_of_nsmul_eq_zero hn.ne_zero _ (InternalHom.nsmul_eq_zero_of_domain hM)
 
 /-- **Unramified local Tate duality (Milne, *ADT* I, Theorem 2.6; NSW (7.2.15)).** Let `K` be a
 finite extension of `ℚ_p` and `M` a finite discrete `G_K`-module killed by `n` with `p ∤ n`. Then
@@ -149,11 +141,12 @@ theorem unramifiedH1_eq_ker_compl₂_dualityMap1 (hpn : ¬ p ∣ n)
       ((dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)).compl₂
         (unramifiedH1 K
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))).subtype).ker := by
-  have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
-  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
+  have := FinitePadicExtension.charZero K p
+  have hn := TauCeti.isUnit_natCast_of_not_dvd (K := K) hpn
+  have : NeZero n := hn.neZero_natCast
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-    finite_H1_internalHom p hpn M hM
+    finite_H1_of_nsmul_eq_zero hn.ne_zero _ (InternalHom.nsmul_eq_zero_of_domain hM)
   rw [(dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)
     ).eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEquiv_zmod
       (explicitH2MuEquivZMod K hn)
@@ -172,11 +165,12 @@ theorem unramifiedH1_internalHom_eq_ker_flip_compl₂_dualityMap1 (hpn : ¬ p �
     unramifiedH1 K (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n)) =
       ((dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)).flip.compl₂
         (unramifiedH1 K M).subtype).ker := by
-  have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
-  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
+  have := FinitePadicExtension.charZero K p
+  have hn := TauCeti.isUnit_natCast_of_not_dvd (K := K) hpn
+  have : NeZero n := hn.neZero_natCast
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-    finite_H1_internalHom p hpn M hM
+    finite_H1_of_nsmul_eq_zero hn.ne_zero _ (InternalHom.nsmul_eq_zero_of_domain hM)
   rw [unramifiedH1_eq_ker_compl₂_dualityMap1 p hpn M hM,
     (dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)
       ).ker_flip_compl₂_subtype_ker_compl₂_subtype_of_addEquiv_zmod

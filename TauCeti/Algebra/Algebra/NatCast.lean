@@ -35,6 +35,8 @@ differentiation.
   exactly when it contains `t`.
 * `TauCeti.isUnit_natCast_of_forall_prime_dvd`, `TauCeti.isUnit_natCast_iff_forall_prime_dvd`: a
   nonzero natural number casts to a unit in a semiring if and only if all of its prime divisors do.
+* `TauCeti.isUnit_natCast_of_not_dvd`: in a characteristic-zero division semiring, any natural
+  number not divisible by a given `p` is a unit.
 * `TauCeti.isUnit_natCast_of_ne_zero`, `TauCeti.isUnit_natCast_add_of_ne_zero`,
   `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : K) + k` for
   `k ≠ 0` and `(m : K) + 1`) is a unit in a `ℚ`-algebra.
@@ -103,6 +105,12 @@ cast to units. -/
 theorem isUnit_natCast_iff_forall_prime_dvd {R : Type*} [Semiring R] {n : ℕ} (hn : n ≠ 0) :
     IsUnit (n : R) ↔ ∀ p : ℕ, p.Prime → p ∣ n → IsUnit (p : R) :=
   ⟨fun hu _ _ hpn ↦ hu.natCast_of_dvd hpn, isUnit_natCast_of_forall_prime_dvd hn⟩
+
+/-- In a division semiring of characteristic zero, any natural number not divisible by `p` casts
+to a unit. -/
+theorem isUnit_natCast_of_not_dvd {K : Type*} [DivisionSemiring K] [CharZero K] {p n : ℕ}
+    (hpn : ¬ p ∣ n) : IsUnit (n : K) :=
+  (Nat.cast_ne_zero.mpr fun (h : n = 0) ↦ hpn (h ▸ dvd_zero p)).isUnit
 
 /-- Every nonzero natural number is a unit in a `ℚ`-algebra. -/
 theorem isUnit_natCast_of_ne_zero {K : Type*} [Semiring K] [Algebra ℚ K] {m : ℕ}
