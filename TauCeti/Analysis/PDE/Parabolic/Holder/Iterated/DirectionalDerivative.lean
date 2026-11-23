@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
+public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 
@@ -50,6 +51,9 @@ differentiated equation, whose data are one order lower.
   derivatives in space.
 * `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_apply_eq_spatialFDerivL`: the values are those
   of the spatial derivative applied to `h`.
+* `TauCeti.ParabolicCkHolderSpace.hasSpatialLineDerivAt` and
+  `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_slabMk_eq_lineDeriv`: the time slices have
+  line derivative `∂_h u`.
 * `TauCeti.ParabolicCkHolderSpace.timeDerivL_spatialLineDerivL`: `∂ₜ (∂_h u) = ∂_h (∂ₜu)`.
 * `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_add` and
   `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_smul`: linearity in the direction.
@@ -274,6 +278,20 @@ theorem spatialLineDerivL_apply_eq_spatialFDerivL (h : E)
     spatialLineDerivL h f p = spatialFDerivL k α E F hab f p h := by
   obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
   rw [spatialLineDerivL_slabMk, spatialFDerivL_slabMk]
+
+/-- The time slices of `u` have line derivative `∂_h u` in the direction `h`. -/
+theorem hasSpatialLineDerivAt (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
+    (t : Icc a b) (x : E) :
+    HasLineDerivAt ℝ (fun y ↦ f (slabMk y t)) (spatialLineDerivL h f (slabMk x t)) x h := by
+  rw [spatialLineDerivL_apply_eq_spatialFDerivL]
+  exact (f.hasSpatialFDerivAt t x).hasLineDerivAt h
+
+/-- The value of `∂_h u` at `(x, t)` is the line derivative of `u (·, t)` at `x` in the
+direction `h`. -/
+theorem spatialLineDerivL_slabMk_eq_lineDeriv (h : E)
+    (f : ParabolicCkHolderSpace (k + 1) α E F hab) (x : E) (t : Icc a b) :
+    spatialLineDerivL h f (slabMk x t) = lineDeriv ℝ (fun y ↦ f (slabMk y t)) x h :=
+  (hasSpatialLineDerivAt h f t x).lineDeriv.symm
 
 /-- **Spatial and time derivatives commute**: `∂ₜ (∂_h u) = ∂_h (∂ₜu)` for
 `u ∈ C_{par,b}^{(k+3)+α}`. -/
