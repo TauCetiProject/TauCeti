@@ -65,19 +65,6 @@ open Function Set
 
 namespace TauCeti
 
-namespace WreathProduct
-
-/-- Signed permutations of the coordinates preserve the dot product. -/
-theorem smul_dotProduct_smul {ι : Type*} [Fintype ι] (w : WreathProduct ℤˣ ι) (x y : ι → ℤ) :
-    (w • x) ⬝ᵥ (w • y) = x ⬝ᵥ y := by
-  simp only [dotProduct, product_smul, Units.smul_def]
-  calc ∑ i, (w.left i : ℤ) * x (w.right⁻¹ i) * ((w.left i : ℤ) * y (w.right⁻¹ i))
-      = ∑ i, x (w.right⁻¹ i) * y (w.right⁻¹ i) := Finset.sum_congr rfl fun i _ ↦ by
-        rw [mul_mul_mul_comm, ← Units.val_mul, Int.units_mul_self, Units.val_one, one_mul]
-    _ = ∑ i, x i * y i := Equiv.sum_comp w.right⁻¹ fun i ↦ x i * y i
-
-end WreathProduct
-
 namespace DynkinType
 
 open RootPairing
@@ -335,6 +322,26 @@ private theorem weylGroupToPerm_typeDSimplyConnectedRootDatum_injective (hn : 4 
     (typeDSimplyConnectedRootDatum n hn)
     (corootSpan_typeDSimplyConnectedRootDatum_eq_top n hn)).comp Subtype.val_injective
 
+/-- **The Weyl group of the pinned integral datum of type `Dₙ` is the group of signed permutations
+of `n` coordinates with an even number of sign changes**, acting on the root indices as on the
+classical roots `±eᵢ ± eⱼ`; see `TauCeti.DynkinType.typeDRootPermHom_typeDWeylGroupEquiv`. -/
+noncomputable def typeDWeylGroupEquiv (n : ℕ) (hn : 4 ≤ n) :
+    (typeDSimplyConnectedRootDatum n hn).weylGroup ≃* typeDWeylSubgroup n :=
+  (MonoidHom.ofInjective (weylGroupToPerm_typeDSimplyConnectedRootDatum_injective hn)).trans <|
+    (MulEquiv.subgroupCongr (range_weylGroupToPerm_typeDSimplyConnectedRootDatum hn)).trans
+      (MonoidHom.ofInjective (typeDRootPermHom_domRestrict_injective hn)).symm
+
+/-- The signed permutation attached to a Weyl-group element of the pinned datum of type `Dₙ`
+induces its permutation of the root indices. -/
+@[simp]
+theorem typeDRootPermHom_typeDWeylGroupEquiv (hn : 4 ≤ n)
+    (w : (typeDSimplyConnectedRootDatum n hn).weylGroup) :
+    typeDRootPermHom n hn (typeDWeylGroupEquiv n hn w) =
+      (typeDSimplyConnectedRootDatum n hn).weylGroupToPerm w := by
+  rw [typeDWeylGroupEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    ← MonoidHom.domRestrict_apply, MonoidHom.apply_ofInjective_symm, MulEquiv.subgroupCongr_apply,
+    MonoidHom.ofInjective_apply]
+
 section Realization
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -347,34 +354,15 @@ include hQ hinj
 /-- Compare a root pairing whose Weyl group acts faithfully on the root indices, with the pinned
 reflection permutations of type `Dₙ`, with the even-sign subgroup. -/
 private noncomputable def typeDWeylGroupEquivOf : Q.weylGroup ≃* typeDWeylSubgroup n :=
-  (MonoidHom.ofInjective hinj).trans <|
-    (MulEquiv.subgroupCongr (by
-      rw [range_weylGroupToPerm, hQ, ← range_weylGroupToPerm,
-        range_weylGroupToPerm_typeDSimplyConnectedRootDatum])).trans
-      (MonoidHom.ofInjective (typeDRootPermHom_domRestrict_injective hn)).symm
+  (weylGroupEquivOfReflectionPermEq Q (typeDSimplyConnectedRootDatum n hn) hQ hinj
+    (weylGroupToPerm_typeDSimplyConnectedRootDatum_injective hn)).trans (typeDWeylGroupEquiv n hn)
 
 private theorem typeDRootPermHom_typeDWeylGroupEquivOf (w : Q.weylGroup) :
     typeDRootPermHom n hn (typeDWeylGroupEquivOf hn Q hQ hinj w) = Q.weylGroupToPerm w := by
-  rw [typeDWeylGroupEquivOf, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    ← MonoidHom.domRestrict_apply, MonoidHom.apply_ofInjective_symm, MulEquiv.subgroupCongr_apply,
-    MonoidHom.ofInjective_apply]
+  rw [typeDWeylGroupEquivOf, MulEquiv.trans_apply, typeDRootPermHom_typeDWeylGroupEquiv,
+    weylGroupToPerm_weylGroupEquivOfReflectionPermEq]
 
 end Realization
-
-/-- **The Weyl group of the pinned integral datum of type `Dₙ` is the group of signed permutations
-of `n` coordinates with an even number of sign changes**, acting on the root indices as on the
-classical roots `±eᵢ ± eⱼ`; see `TauCeti.DynkinType.typeDRootPermHom_typeDWeylGroupEquiv`. -/
-noncomputable def typeDWeylGroupEquiv (n : ℕ) (hn : 4 ≤ n) :
-    (typeDSimplyConnectedRootDatum n hn).weylGroup ≃* typeDWeylSubgroup n :=
-  typeDWeylGroupEquivOf hn _ rfl (weylGroupToPerm_typeDSimplyConnectedRootDatum_injective hn)
-
-/-- The signed permutation attached to a Weyl-group element of the pinned datum of type `Dₙ`
-induces its permutation of the root indices. -/
-theorem typeDRootPermHom_typeDWeylGroupEquiv (hn : 4 ≤ n)
-    (w : (typeDSimplyConnectedRootDatum n hn).weylGroup) :
-    typeDRootPermHom n hn (typeDWeylGroupEquiv n hn w) =
-      (typeDSimplyConnectedRootDatum n hn).weylGroupToPerm w :=
-  typeDRootPermHom_typeDWeylGroupEquivOf hn _ _ _ w
 
 /-- **The Weyl group of the pinned integral datum of type `Dₙ` has order `2ⁿ⁻¹ · n!`.** -/
 theorem card_weylGroup_typeDSimplyConnectedRootDatum (hn : 4 ≤ n) :
@@ -397,6 +385,7 @@ noncomputable def typeDRationalWeylGroupEquiv (n : ℕ) (hn : 4 ≤ n) :
 
 /-- The signed permutation attached to a Weyl-group element of the pinned rational root system of
 type `Dₙ` induces its permutation of the root indices. -/
+@[simp]
 theorem typeDRootPermHom_typeDRationalWeylGroupEquiv (hn : 4 ≤ n)
     (w : ((DynkinType.D n).rationalRootSystem (DynkinType.valid_D.mpr hn)).weylGroup) :
     typeDRootPermHom n hn (typeDRationalWeylGroupEquiv n hn w) =

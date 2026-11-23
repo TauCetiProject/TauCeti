@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.Group.PUnit
 public import Mathlib.Data.Finite.Perm
+public import Mathlib.Data.Matrix.Mul
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.Algebra.Group.Action.End
 
 import Mathlib.Algebra.Group.Subgroup.Finite
+import Mathlib.Data.Int.Order.Units
 import Mathlib.GroupTheory.Index
 import Mathlib.GroupTheory.Perm.Sign
 
@@ -681,6 +683,21 @@ theorem productToPerm_injective [Nontrivial Λ] [FaithfulSMul D Λ] :
   MulAction.toPerm_injective
 
 end Product
+
+section DotProduct
+
+variable [Fintype ι]
+
+/-- Signed permutations of the coordinates preserve the dot product. -/
+theorem smul_dotProduct_smul (w : WreathProduct ℤˣ ι) (x y : ι → ℤ) :
+    (w • x) ⬝ᵥ (w • y) = x ⬝ᵥ y := by
+  simp only [dotProduct, product_smul, Units.smul_def]
+  calc ∑ i, (w.left i : ℤ) * x (w.right⁻¹ i) * ((w.left i : ℤ) * y (w.right⁻¹ i))
+      = ∑ i, x (w.right⁻¹ i) * y (w.right⁻¹ i) := Finset.sum_congr rfl fun i _ ↦ by
+        rw [mul_mul_mul_comm, ← Units.val_mul, Int.units_mul_self, Units.val_one, one_mul]
+    _ = ∑ i, x i * y i := Equiv.sum_comp w.right⁻¹ fun i ↦ x i * y i
+
+end DotProduct
 
 end WreathProduct
 
