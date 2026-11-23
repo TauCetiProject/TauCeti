@@ -10,9 +10,9 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 /-!
 # The cyclic quotient of an algebra
 
-For a (not necessarily unital or associative) ring `A` which is a module over a ring `k`, the
-**commutator submodule** of `A` is the `k`-span of the additive commutators `x * y - y * x`.  The
-quotient by this submodule is the **cyclic quotient**
+For a (not necessarily unital or associative) ring `A` which is a module over a semiring `k`, the
+**commutator submodule** of `A` is the `k`-span of the additive commutators `x * y - y * x`.  When
+`k` is a ring, the quotient by this submodule is the **cyclic quotient**
 
 ```text
 A / [A, A].
@@ -48,7 +48,8 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
   centrally, a non-unital ring homomorphism carries the commutator submodule over `k` into the
   commutator submodule of its target over any semiring of scalars acting on the target.
 
-The trace criterion for nonvanishing cyclic classes, which needs matrices, is
+The trace criterion for nonmembership in the commutator submodule (hence, over a ring of scalars,
+for nonvanishing cyclic classes), which needs matrices, is
 `TauCeti.trace_map_eq_zero_of_mem_commutatorSubmodule` in
 `TauCeti.LinearAlgebra.Matrix.Trace.CyclicQuotient`.
 
