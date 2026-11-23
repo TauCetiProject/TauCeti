@@ -158,7 +158,7 @@ from any point is strictly plurisubharmonic at every point. -/
 theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal (U : Opens F) (a : F)
     (x : U) : IsManifoldStrictlyPlurisubharmonicAt F (fun y : U ↦ ‖(y : F) - a‖ ^ 2) x := by
   rw [isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff
-    (contMDiff_subtype_val (I := 𝓘(ℂ, F)) x)]
+    (contMDiff_subtypeVal (I := 𝓘(ℂ, F)) x)]
   exact Manifold.injective_mvfderiv_subtype_val x
 
 section Immersion
@@ -191,8 +191,9 @@ theorem ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le
   have : IsManifold 𝓘(ℝ, E) 2 M := .of_le (n := ∞) (by norm_cast)
   have : IsManifold 𝓘(ℂ, E) 2 M := .of_le (n := ∞) (by norm_cast)
   have hiR : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ i := by simpa using hi.restrictScalars ℝ
-  have hinjR (x : M) : Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) i x) :=
-    injective_mfderiv_restrictScalars ℝ (injective_mvfderiv_iff.1 (hinj x))
+  have hinjR (x : M) : Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) i x) := by
+    have h := injective_mfderiv_restrictScalars ℝ (injective_mvfderiv_iff.1 (hinj x))
+    rwa [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at h
   filter_upwards [ae_isMorse_norm_sq_sub_comp μ hiR hinjR] with a ha
   exact ⟨ha, fun x hx ↦ manifoldMorseIndex_norm_sq_sub_comp_le ((hi x).of_le (by norm_cast))
     (hinj x) (mem_criticalPoints.1 hx)⟩

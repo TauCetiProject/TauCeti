@@ -113,7 +113,7 @@ theorem exists_contDiffOn_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero
   -- primitive `β`, a one-form vanishing at `c₀`. Its coefficients `βᵢ = β(eᵢ)` satisfy
   -- `dβ = ∑ᵢ dβᵢ ∧ dcᵢ`, so `hᵢ = -βᵢ` cancels `s^* σ` in the formula
   -- `(h • s)^* σ = s^* σ + ∑ᵢ dhᵢ ∧ dcᵢ`.
-  set ρ : (ι → ℝ) → (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ := mpullbackWithin 𝓘(ℝ, ι → ℝ) I s t σ.1
+  set ρ : (ι → ℝ) → (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ := mpullbackWithin 𝓘(ℝ, ι → ℝ) I s t σ.val
     with hρ
   have hρs : ContDiffOn ℝ ∞ ρ t := by
     have h := ContMDiffOn.mpullbackWithin_form (σ.contMDiff.contMDiffOn (s := univ)) hs
@@ -122,7 +122,7 @@ theorem exists_contDiffOn_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero
   have hdρ : ∀ c ∈ t, extDeriv ρ c = 0 := by
     intro c hct
     have h : extDerivWithin ρ t c = 0 := by
-      have h := extDerivWithin_mpullbackWithin (φ := σ.1) ((hs c hct).of_le (by simp))
+      have h := extDerivWithin_mpullbackWithin (φ := σ.val) ((hs c hct).of_le (by simp))
         ht.uniqueDiffOn (subset_closure (ht.interior_eq.symm ▸ hct)) hct (σ.mdifferentiable _)
       rw [(SmoothForm.isClosed_def σ).1 hσ.isClosed, mpullbackWithin_zero] at h
       exact h
@@ -141,7 +141,7 @@ theorem exists_contDiffOn_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero
   have h1 : SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
       (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') = extDeriv β c ![b, b'] := by
     rw [hβ c hct, SmoothBundleForm.eval₂_apply, hρ]
-    refine Eq.trans ?_ (mpullbackWithin_apply s t σ.1 c ![b, b']).symm
+    refine Eq.trans ?_ (mpullbackWithin_apply s t σ.val c ![b, b']).symm
     congr 1
     funext i
     fin_cases i <;> simp [mfderivWithin_of_isOpen ht hct]

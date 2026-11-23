@@ -22,6 +22,11 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
 * `finsuppTensorFinsupp'_mapDomain`: the identification of the tensor product of two spaces of
   finitely supported functions with functions on the product of the index types is natural in the
   index types.
+* `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_map` and
+  `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor`: an endomorphism of
+  `ι →₀ R`, for `ι ≃ α × β`, whose matrix coefficients split as those of `dA ⊗ 1 + εA ⊗ dB`
+  corresponds to `dA ⊗ 1 + εA ⊗ dB` on `(α →₀ R) ⊗ (β →₀ R)`; with `εA = 1`, to
+  `dA ⊗ 1 + 1 ⊗ dB`.
 -/
 
 public section
@@ -62,5 +67,51 @@ theorem finsuppTensorFinsupp'_mapDomain (g₁ : α → α') (g₂ : β → β') 
       Finsupp.lmapDomain R R (Prod.map g₁ g₂) ∘ₗ (finsuppTensorFinsupp' R α β).toLinearMap := by
     ext; simp [Finsupp.mapDomain_single]
   exact congr($h (c ⊗ₜ d))
+
+/-- **An endomorphism with split coefficients is `dA ⊗ 1 + εA ⊗ dB`.** Let `e : ι ≃ α × β`. If the
+coefficient of `(p', q')` in the image under `d` of the basis vector `(p, q)` is the coefficient of
+`p'` in `εA p` times the coefficient of `q'` in `dB q`, plus the coefficient of `p'` in `dA p` when
+`q = q'`, then under the identification of `ι →₀ R` with `(α →₀ R) ⊗ (β →₀ R)` along `e`, the map
+`d` is `dA ⊗ 1 + εA ⊗ dB`. This is the form of the boundary of a product chain complex on bases,
+with `εA` the Koszul sign `(-1) ^ |p|` of the first factor. -/
+theorem domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_map {ι : Type*}
+    [DecidableEq β] (e : ι ≃ α × β) (d : (ι →₀ R) →ₗ[R] ι →₀ R)
+    (dA εA : (α →₀ R) →ₗ[R] α →₀ R) (dB : (β →₀ R) →ₗ[R] β →₀ R)
+    (hd : ∀ p p' q q', d (Finsupp.single (e.symm (p, q)) 1) (e.symm (p', q')) =
+      εA (Finsupp.single p 1) p' * dB (Finsupp.single q 1) q' +
+        if q = q' then dA (Finsupp.single p 1) p' else 0) :
+    ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap ∘ₗ d =
+      (dA.rTensor (β →₀ R) + TensorProduct.map εA dB) ∘ₗ
+        ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap := by
+  classical
+  set Φ := (Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm
+  -- Compare both sides on basis vectors, coefficient by coefficient after applying `Φ.symm`.
+  refine Finsupp.lhom_ext' fun i ↦ LinearMap.ext_ring ?_
+  obtain ⟨⟨p, q⟩, rfl⟩ := e.symm.surjective i
+  refine Φ.symm.injective (Finsupp.ext fun j ↦ ?_)
+  obtain ⟨⟨p', q'⟩, rfl⟩ := e.symm.surjective j
+  simp [Φ, hd, finsuppTensorFinsupp'_symm_single_eq_tmul_single_one, Finsupp.single_apply,
+    finsuppTensorFinsupp'_apply_apply, Finsupp.domLCongr_apply, add_comm]
+
+/-- **An endomorphism with split coefficients is `dA ⊗ 1 + 1 ⊗ dB`.** Let `e : ι ≃ α × β`. If the
+coefficient of `(p', q')` in the image under `d` of the basis vector `(p, q)` is the coefficient of
+`q'` in `dB q` when `p = p'`, plus the coefficient of `p'` in `dA p` when `q = q'`, then under the
+identification of `ι →₀ R` with `(α →₀ R) ⊗ (β →₀ R)` along `e`, the map `d` is
+`dA ⊗ 1 + 1 ⊗ dB`. This is the form of the boundary of a product chain complex on bases, without
+Koszul signs. -/
+theorem domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor {ι : Type*}
+    [DecidableEq α] [DecidableEq β] (e : ι ≃ α × β) (d : (ι →₀ R) →ₗ[R] ι →₀ R)
+    (dA : (α →₀ R) →ₗ[R] α →₀ R) (dB : (β →₀ R) →ₗ[R] β →₀ R)
+    (hd : ∀ p p' q q', d (Finsupp.single (e.symm (p, q)) 1) (e.symm (p', q')) =
+      (if p = p' then dB (Finsupp.single q 1) q' else 0) +
+        if q = q' then dA (Finsupp.single p 1) p' else 0) :
+    ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap ∘ₗ d =
+      (dA.rTensor (β →₀ R) + dB.lTensor (α →₀ R)) ∘ₗ
+        ((Finsupp.domLCongr e).trans (finsuppTensorFinsupp' R α β).symm).toLinearMap := by
+  rw [LinearMap.lTensor_def]
+  refine domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_map e d dA LinearMap.id dB
+    fun p p' q q' ↦ ?_
+  rw [hd]
+  by_cases h : p = p' <;> simp [h]
 
 end FinsuppTensorFinsupp

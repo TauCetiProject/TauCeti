@@ -74,7 +74,7 @@ theorem ext {f g : CheegerSobolevSpace m} (h : toLp m f = toLp m g) : f = g :=
 
 /-- Sobolev functions have finite Cheeger energy. -/
 theorem cheegerEnergy_ne_top (f : CheegerSobolevSpace m) : cheegerEnergy m (toLp m f) ≠ ∞ :=
-  mem_cheegerEnergyDomain.1 f.2
+  mem_cheegerEnergyDomain.1 f.property
 
 @[simp]
 theorem mk_toLp (f : CheegerSobolevSpace m) : mk (toLp m f) f.cheegerEnergy_ne_top = f := (rfl)

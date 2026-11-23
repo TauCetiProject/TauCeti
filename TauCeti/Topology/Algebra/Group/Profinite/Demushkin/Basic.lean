@@ -189,8 +189,8 @@ theorem exists_mem_proPFrattini_continuousMulEquiv_presentedProP (X : Type u) [F
         (subset_normalClosure.trans (le_topologicalClosure _))
       rw [Finset.coe_singleton, Set.image_singleton]
     · exact (topologicalClosure_normalClosure_le_iff (isClosed_topologicalClosure _)).2
-        (Set.singleton_subset_iff.2 x.2)
-  exact ⟨x, (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).2 hrels x.2,
+        (Set.singleton_subset_iff.2 x.property)
+  exact ⟨x, (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).2 hrels x.property,
     ⟨(presentedProP.congrOfClosureEq hR).symm.trans e⟩⟩
 
 /-- **A Demushkin group is a one-relator pro-`p` group on `Fin n`**, `n = demushkinRank hG`: it is

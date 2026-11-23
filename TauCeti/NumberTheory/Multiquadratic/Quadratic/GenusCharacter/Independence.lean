@@ -88,7 +88,7 @@ theorem exists_forall_genusCharFunNarrowClassGroupHom_subset_eq
   refine ⟨A, fun t hts => ?_⟩
   rw [genusCharFunNarrowClassGroupHom_eq_prod_singleton hs heven hprod hmin hgen hsf hts,
     MonoidHom.finsetProd_apply, ← Finset.prod_coe_sort t]
-  exact Finset.prod_congr rfl fun P _ => hA P (hts P.2)
+  exact Finset.prod_congr rfl fun P _ => hA P (hts P.property)
 
 /-- **Every sign vector of coordinate sum zero is a value of the genus characters.** The linear
 form of `exists_forall_genusCharFunNarrowClassGroupHom_singleton_eq`: writing the sign group
@@ -108,13 +108,13 @@ theorem exists_genusCharFunElementaryTwoQuotientFamilyLinearMap_eq
   have hε : ∏ P ∈ s, ε P = 1 := by
     have hprodε : ∏ P ∈ s, ε P = ∏ P : ↥s, Additive.toMul (v P) := by
       rw [← Finset.prod_coe_sort s]
-      exact Finset.prod_congr rfl fun P _ => by simp [ε, P.2]
+      exact Finset.prod_congr rfl fun P _ => by simp [ε, P.property]
     rw [hprodε, ← toMul_sum, hv, toMul_zero]
   obtain ⟨A, hA⟩ :=
     exists_forall_genusCharFunNarrowClassGroupHom_singleton_eq hs heven hprod hmin hgen hsf ε hε
   refine ⟨TauCeti.elementaryTwoQuotientMk A, funext fun P => ?_⟩
   rw [genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
-    genusCharFunElementaryTwoQuotientLinearMap_mk, hA P P.2]
-  simp [ε, P.2]
+    genusCharFunElementaryTwoQuotientLinearMap_mk, hA P P.property]
+  simp [ε, P.property]
 
 end TauCeti.Multiquadratic

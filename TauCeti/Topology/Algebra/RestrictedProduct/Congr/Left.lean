@@ -71,7 +71,7 @@ def restrictedProductCongrLeftEquiv :
     (Πʳ j, [G (e j), A (e j)]) ≃ (Πʳ i, [G i, A i]) where
   toFun y := RestrictedProduct.mk (Equiv.piCongrLeft G e y) <| by
     rw [← e.symm.injective.comap_cofinite_eq, eventually_comap]
-    filter_upwards [y.2] with j hj i hi
+    filter_upwards [y.property] with j hj i hi
     obtain rfl : i = e j := e.symm_apply_eq.mp hi
     rwa [Equiv.piCongrLeft_apply_apply]
   invFun := RestrictedProduct.mapAlong G (fun j ↦ G (e j)) e e.injective.tendsto_cofinite
@@ -116,7 +116,7 @@ theorem continuous_restrictedProductCongrLeftEquiv :
     obtain ⟨j, rfl⟩ := e.surjective i
     simp only [Function.comp_apply, restrictedProductCongrLeftEquiv_apply_apply,
       RestrictedProduct.inclusion_apply]
-    exact eventually_principal.mp y.2 j (by simpa using hi)
+    exact eventually_principal.mp y.property j (by simpa using hi)
 
 /-- The inverse of the reindexing equivalence is continuous for every reference family. -/
 theorem continuous_restrictedProductCongrLeftEquiv_symm :
