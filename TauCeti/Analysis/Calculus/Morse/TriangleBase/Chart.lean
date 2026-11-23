@@ -116,6 +116,21 @@ theorem triangleBaseGluingParameter_eq_exp {z : WithLp 2 (ℝ × ℝ)} (hu : z.f
     exp_intervalBaseTimeCoordinate hv, triangleBaseGluingParameter]
   field_simp [hu.1.ne']
 
+/-- On the open square `(0, 1)²`, the orbit parameter is `-log σ` for the gluing parameter `σ`. -/
+theorem triangleBaseOrbitParameter_eq_neg_log_triangleBaseGluingParameter
+    {z : WithLp 2 (ℝ × ℝ)} (hu : z.fst ∈ Ioo 0 1) (hv : z.snd ∈ Ioo 0 1) :
+    triangleBaseOrbitParameter z = -Real.log (triangleBaseGluingParameter z) := by
+  rw [triangleBaseGluingParameter_eq_exp hu hv, Real.log_exp, neg_neg]
+
+/-- The square of the gluing parameter is `v² (1 - u²) / (u² (1 - v²))` where `u² ≤ 1` and
+`v² ≤ 1`. -/
+theorem sq_triangleBaseGluingParameter {z : WithLp 2 (ℝ × ℝ)} (hu : z.fst ^ 2 ≤ 1)
+    (hv : z.snd ^ 2 ≤ 1) :
+    triangleBaseGluingParameter z ^ 2 =
+      z.snd ^ 2 * (1 - z.fst ^ 2) / (z.fst ^ 2 * (1 - z.snd ^ 2)) := by
+  rw [triangleBaseGluingParameter, div_pow, mul_pow, mul_pow, Real.sq_sqrt (by linarith),
+    Real.sq_sqrt (by linarith)]
+
 /-- **The gluing parameter is a first integral** of the flow on the triangle away from the source
 and the sink: on the part of the square where `0 < u ≤ 1` and `0 ≤ v < 1`. -/
 @[simp]
@@ -241,9 +256,10 @@ private theorem one_sub_sq_add_pos {c : ℝ} (hc : c ^ 2 < 1) (σ : ℝ) :
 
 /-- The square of the transverse coordinate on the slice `u = c` is `c² σ² / (1 - c² + c² σ²)`: it
 vanishes to second order at the broken end, so the coordinate itself to first order. -/
-theorem sq_snd_triangleBaseFstSlice {c : ℝ} (hc : c ^ 2 < 1) (σ : ℝ) :
+theorem sq_snd_triangleBaseFstSlice {c : ℝ} (hc : c ^ 2 ≤ 1) (σ : ℝ) :
     (triangleBaseFstSlice c σ).snd ^ 2 = c ^ 2 * σ ^ 2 / (1 - c ^ 2 + c ^ 2 * σ ^ 2) := by
-  rw [snd_triangleBaseFstSlice, div_pow, mul_pow, Real.sq_sqrt (one_sub_sq_add_pos hc σ).le]
+  rw [snd_triangleBaseFstSlice, div_pow, mul_pow,
+    Real.sq_sqrt (by nlinarith [sq_nonneg (c * σ)])]
 
 /-- **The evaluation on the slice `u = c` is smooth** in the gluing parameter, including at the
 broken end `σ = 0`. -/
@@ -277,7 +293,7 @@ theorem triangleBaseGluingParameter_triangleBaseFstSlice {c : ℝ} (hc₀ : c �
     (σ : ℝ) : triangleBaseGluingParameter (triangleBaseFstSlice c σ) = σ := by
   have hD := one_sub_sq_add_pos hc₁ σ
   have hv : 1 - (triangleBaseFstSlice c σ).snd ^ 2 = (1 - c ^ 2) / (1 - c ^ 2 + c ^ 2 * σ ^ 2) := by
-    rw [sq_snd_triangleBaseFstSlice hc₁]
+    rw [sq_snd_triangleBaseFstSlice hc₁.le]
     field_simp
     ring
   rw [triangleBaseGluingParameter, hv, Real.sqrt_div' _ hD.le, fst_triangleBaseFstSlice,
@@ -288,15 +304,10 @@ theorem triangleBaseGluingParameter_triangleBaseFstSlice {c : ℝ} (hc₀ : c �
 theorem triangleBaseFstSlice_triangleBaseGluingParameter {z : WithLp 2 (ℝ × ℝ)}
     (hu₀ : z.fst ≠ 0) (hu₁ : z.fst ^ 2 < 1) (hv : z.snd ^ 2 < 1) :
     triangleBaseFstSlice z.fst (triangleBaseGluingParameter z) = z := by
-  have h1u : 0 < 1 - z.fst ^ 2 := by linarith
   have h1v : 0 < 1 - z.snd ^ 2 := by linarith
-  have hσ : triangleBaseGluingParameter z ^ 2 =
-      z.snd ^ 2 * (1 - z.fst ^ 2) / (z.fst ^ 2 * (1 - z.snd ^ 2)) := by
-    rw [triangleBaseGluingParameter, div_pow, mul_pow, mul_pow, Real.sq_sqrt h1u.le,
-      Real.sq_sqrt h1v.le]
   have hD : 1 - z.fst ^ 2 + z.fst ^ 2 * triangleBaseGluingParameter z ^ 2 =
       (1 - z.fst ^ 2) / (1 - z.snd ^ 2) := by
-    rw [hσ]
+    rw [sq_triangleBaseGluingParameter hu₁.le hv.le]
     field_simp
     ring
   simp only [WithLp.ext_iff, Prod.ext_iff, WithLp.ofLp_fst, WithLp.ofLp_snd]
@@ -342,12 +353,9 @@ theorem bijOn_triangleBaseFstSlice {c : ℝ} (hc : c ∈ Ioo 0 1) :
 theorem triangleBaseOrbitParameter_triangleBaseFstSlice {c σ : ℝ} (hc : c ∈ Ioo 0 1)
     (hσ : 0 < σ) : triangleBaseOrbitParameter (triangleBaseFstSlice c σ) = -Real.log σ := by
   have hc₁ : c ^ 2 < 1 := by nlinarith [hc.1, hc.2]
-  have h := triangleBaseGluingParameter_eq_exp (z := triangleBaseFstSlice c σ) hc
-    (snd_triangleBaseFstSlice_mem_Ioo hc hσ)
-  rw [triangleBaseGluingParameter_triangleBaseFstSlice hc.1.ne' hc₁] at h
-  have h' := congrArg Real.log h
-  rw [Real.log_exp] at h'
-  linarith
+  rw [triangleBaseOrbitParameter_eq_neg_log_triangleBaseGluingParameter
+    (z := triangleBaseFstSlice c σ) hc (snd_triangleBaseFstSlice_mem_Ioo hc hσ),
+    triangleBaseGluingParameter_triangleBaseFstSlice hc.1.ne' hc₁]
 
 /-! ### Evaluation on the slice `v = c` -/
 
@@ -426,14 +434,9 @@ parameter.** -/
 theorem triangleBaseSndSlice_triangleBaseGluingParameter {z : WithLp 2 (ℝ × ℝ)}
     (hu₀ : 0 < z.fst) (hu₁ : z.fst ^ 2 ≤ 1) (hv₀ : 0 < z.snd) (hv₁ : z.snd ^ 2 < 1) :
     triangleBaseSndSlice z.snd (triangleBaseGluingParameter z) = z := by
-  have h1v : 0 < 1 - z.snd ^ 2 := by linarith
-  have hσ : triangleBaseGluingParameter z ^ 2 =
-      z.snd ^ 2 * (1 - z.fst ^ 2) / (z.fst ^ 2 * (1 - z.snd ^ 2)) := by
-    rw [triangleBaseGluingParameter, div_pow, mul_pow, mul_pow, Real.sq_sqrt (by linarith),
-      Real.sq_sqrt h1v.le]
   have hE : z.snd ^ 2 + (1 - z.snd ^ 2) * triangleBaseGluingParameter z ^ 2 =
       (z.snd / z.fst) ^ 2 := by
-    rw [hσ]
+    rw [sq_triangleBaseGluingParameter hu₁ hv₁.le]
     field_simp
     ring
   simp only [WithLp.ext_iff, Prod.ext_iff, WithLp.ofLp_fst, WithLp.ofLp_snd]
@@ -486,12 +489,9 @@ theorem bijOn_triangleBaseSndSlice {c : ℝ} (hc : c ∈ Ioo 0 1) :
 theorem triangleBaseOrbitParameter_triangleBaseSndSlice {c σ : ℝ} (hc : c ∈ Ioo 0 1)
     (hσ : σ ≠ 0) : triangleBaseOrbitParameter (triangleBaseSndSlice c σ) = -Real.log |σ| := by
   have hc₁ : c ^ 2 < 1 := by nlinarith [hc.1, hc.2]
-  have h := triangleBaseGluingParameter_eq_exp (z := triangleBaseSndSlice c σ)
-    (fst_triangleBaseSndSlice_mem_Ioo hc hσ) hc
-  rw [triangleBaseGluingParameter_triangleBaseSndSlice hc.1.ne' hc₁] at h
-  have h' := congrArg Real.log h
-  rw [Real.log_exp] at h'
-  linarith
+  rw [triangleBaseOrbitParameter_eq_neg_log_triangleBaseGluingParameter
+    (z := triangleBaseSndSlice c σ) (fst_triangleBaseSndSlice_mem_Ioo hc hσ) hc,
+    triangleBaseGluingParameter_triangleBaseSndSlice hc.1.ne' hc₁]
 
 /-- **The two slices give the same chart of the orbit interval.** For `C ≠ 0`, `0 < c, c' < 1`
 and `0 < σ`, the point with gluing parameter `σ` on the slice `u = c` flows to the point with
@@ -499,10 +499,11 @@ gluing parameter `σ` on the slice `v = c'`. -/
 theorem exists_triangleBaseFlow_triangleBaseFstSlice_eq_triangleBaseSndSlice (hC : C ≠ 0)
     {c c' σ : ℝ} (hc : c ∈ Ioo 0 1) (hc' : c' ∈ Ioo 0 1) (hσ : 0 < σ) :
     ∃ s, triangleBaseFlow C s (triangleBaseFstSlice c σ) = triangleBaseSndSlice c' σ := by
-  rw [exists_triangleBaseFlow_eq_iff (z := triangleBaseFstSlice c σ)
+  rw [exists_triangleBaseFlow_eq_iff_triangleBaseGluingParameter_eq (z := triangleBaseFstSlice c σ)
     (w := triangleBaseSndSlice c' σ) hC hc (snd_triangleBaseFstSlice_mem_Ioo hc hσ)
     (fst_triangleBaseSndSlice_mem_Ioo hc' hσ.ne') hc',
-    triangleBaseOrbitParameter_triangleBaseFstSlice hc hσ,
-    triangleBaseOrbitParameter_triangleBaseSndSlice hc' hσ.ne', abs_of_pos hσ]
+    triangleBaseGluingParameter_triangleBaseFstSlice hc.1.ne' (by nlinarith [hc.1, hc.2]),
+    triangleBaseGluingParameter_triangleBaseSndSlice hc'.1.ne' (by nlinarith [hc'.1, hc'.2]),
+    abs_of_pos hσ]
 
 end TauCeti
