@@ -286,8 +286,12 @@ theorem mem_coinducedSingle_piece_iff (p : ℤ) (x : coinducedSingle 𝒜 V) :
   have h1 : x ∈ ((coinducedSingleGrading 𝒜 V).map toCoinducedSingle).piece p ↔
       toCoinducedSingle.symm x ∈ (coinducedSingleGrading 𝒜 V).piece p :=
     InternalGrading.mem_map_piece_iff (coinducedSingleGrading 𝒜 V) toCoinducedSingle p x
-  have hval : (toCoinducedSingle.symm x).val = coinducedSingleApply x := rfl
-  exact Iff.trans Iff.rfl (h1.trans (by rw [mem_coinducedSingleGrading_piece_iff, hval]))
+  have hval : (toCoinducedSingle.symm x).val = coinducedSingleApply x := by
+    simp [coinducedSingleApply]
+  -- Unfold the `let`-bound grading inside `coinducedSingle` to
+  -- `(coinducedSingleGrading 𝒜 V).map toCoinducedSingle`.
+  change x ∈ ((coinducedSingleGrading 𝒜 V).map toCoinducedSingle).piece p ↔ _
+  exact h1.trans (by rw [mem_coinducedSingleGrading_piece_iff, hval])
 
 private theorem comp_mem_coinducedSingleCarrier {V W : Type v} [AddCommGroup V] [Module k V]
     [AddCommGroup W] [Module k W] (g : V →ₗ[k] W) {ψ : A →ₗ[k] V}
@@ -398,8 +402,8 @@ theorem coinducedSinglePieceEquiv_apply (p : ℤ) (x : (coinducedSingle 𝒜 V).
   simp only [coinducedSinglePieceEquiv, LinearEquiv.trans_apply, LinearEquiv.congrLeft_apply,
     AddEquiv.toFun_eq_coe, LinearEquiv.arrowCongrAddEquiv_apply, LinearEquiv.refl_toLinearMap,
     LinearMap.id_comp, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.ofEq_symm,
-    LinearEquiv.coe_ofEq_apply, InternalGrading.homPieceEquiv_apply]
-  rfl
+    LinearEquiv.coe_ofEq_apply, InternalGrading.homPieceEquiv_apply,
+    coinducedSinglePieceToHomPiece, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
 
 private theorem coinducedSingleApply_coinducedSinglePieceToHomPiece_symm (p : ℤ)
     (ψ : (InternalGrading.ofDecomposition 𝒜).homPiece V p) :

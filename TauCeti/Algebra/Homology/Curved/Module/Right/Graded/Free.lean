@@ -640,13 +640,14 @@ theorem freeEquiv_closedHom_freeFunctor_map_apply (f : V ⟶ W) (x : freeObj h V
       (f.hom (freeEquiv h V x).1, f.hom (freeEquiv h V x).2) := by
   obtain ⟨u, v, rfl⟩ := exists_eq_freeι_add_differential_freeι h V x
   have hu : closedHom ((freeFunctor (h := h)).map f) (freeι h V u) = freeι h W (f.hom u) := by
-    rw [freeFunctor_map, closedHom_freeDesc_freeι_apply]
-    rfl
+    rw [freeFunctor_map, closedHom_freeDesc_freeι_apply, GradedModuleCat.hom_comp,
+      LinearMap.comp_apply, hom_freeUnit]
   have hd :
       closedHom ((freeFunctor (h := h)).map f) ((freeObj h V).differential (freeι h V v)) =
         (freeObj h W).differential (freeι h W (f.hom v)) := by
-    rw [freeFunctor_map, closedHom_freeDesc_differential_freeι_apply]
-    rfl
+    rw [freeFunctor_map, closedHom_freeDesc_differential_freeι_apply, GradedModuleCat.hom_comp,
+      LinearMap.comp_apply, hom_freeUnit]
+    dsimp only [freeFunctor, ForgetEnrichment.to, ForgetEnrichment.of]
   rw [map_add, hu, hd, map_add, map_add]
   simp
 
