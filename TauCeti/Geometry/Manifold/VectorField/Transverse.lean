@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Level
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -17,7 +19,9 @@ to `ι`: it does not lie in the range of the differential `dι_s`. When `ι` is 
 hypersurface, so that this range has codimension one, this is transversality of `Z` to the
 hypersurface in the usual sense: `Z (ι s)` and the tangent space of the hypersurface at `s` span
 the tangent space of `M` at `ι s`. A transverse vector field does not vanish along `ι`
-(`TauCeti.IsTransverseAlong.ne_zero`).
+(`TauCeti.IsTransverseAlong.ne_zero`). If moreover `S` has one dimension less than `M`, a function
+vanishing on the image of `ι` near `s` whose derivative along `Z` vanishes at `ι s` has zero
+differential there (`TauCeti.mvfderiv_eq_zero_of_comp_eventuallyEq_zero`).
 
 For a regular level `f⁻¹(c)` of a scalar function, with its preferred atlas
 `TauCeti.regularLevelChartedSpace`, the tangent space at `x` is the kernel of `df_x`
@@ -41,6 +45,8 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 
 ## Main results
 
+* `TauCeti.mvfderiv_eq_zero_of_comp_eventuallyEq_zero`: on a transverse slice of codimension one,
+  a function vanishing on the slice and killed by `Z` has zero differential.
 * `TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`: transversality along a regular level is
   the nonvanishing of `df(Z)` on the level.
 * `TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`: the frontier of a sublevel set whose level is
@@ -101,6 +107,43 @@ theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} 
       neg_smul, one_smul, neg_neg]
   rw [hab, zero_smul, zero_add, ← map_zero (mfderiv J I ι s)] at h0
   exact Prod.ext (sub_eq_zero.1 hab) (sub_eq_zero.1 (himm h0))
+
+/-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
+differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than `M`.
+If a function `h` vanishes on the slice near `s` and its derivative along `Z` vanishes at `ι s`,
+then its differential at `ι s` is zero. -/
+theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) {Z : (x : M) → TangentSpace I x} {ι : S → M}
+    {h : M → ℝ} {s : S}
+    (h0 : h ∘ ι =ᶠ[𝓝 s] 0) (himm : Function.Injective (mfderiv J I ι s))
+    (htr : Z (ι s) ∉ (mfderiv J I ι s).range) (hZ : mvfderiv I h (ι s) (Z (ι s)) = 0) :
+    mvfderiv I h (ι s) = 0 := by
+  -- A function that is not differentiable at `ι s` has zero differential there by convention.
+  by_cases hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)
+  swap
+  · simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hh]
+  set L := (mfderiv J I ι s).toLinearMap
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (hdim ▸ Nat.succ_pos _)
+  have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv himm
+  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`
+  -- (trivially when `ι` is not differentiable at `s`, as then `L = 0`).
+  have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 := by
+    by_cases hιs : MDifferentiableAt J I ι s
+    · have hc := mvfderiv_comp_apply s hh hιs w
+      rw [h0.mvfderiv_eq, mvfderiv_zero] at hc
+      exact hc.symm
+    · rw [show L w = 0 by simp [L, mfderiv_zero_of_not_mdifferentiableAt hιs], map_zero]
+  -- The tangent space of the slice and the line through `Z (ι s)` span the tangent space of `M`.
+  have htop : LinearMap.range L ⊔ ℝ ∙ Z (ι s) = ⊤ := by
+    refine Submodule.eq_top_of_finrank_eq ?_
+    rw [Submodule.finrank_sup_span_singleton htr, LinearMap.finrank_range_of_inj himm]
+    exact hdim
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  have hv : v ∈ LinearMap.range L ⊔ ℝ ∙ Z (ι s) := htop ▸ Submodule.mem_top
+  obtain ⟨_, ⟨w, rfl⟩, _, hz, rfl⟩ := Submodule.mem_sup.1 hv
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hz
+  rw [map_add, map_smul, hL, hZ]
+  simp
 
 /-! ### Vector fields crossing a level outwards -/
 

@@ -46,6 +46,11 @@ for set and probability integrals.
 * `TauCeti.MeasureTheory.norm_integral_le_of_eLpNorm_one_le` bounds the norm of an integral by any
   real bound on the `L¹` norm of the integrand.
 
+## Finite averages
+
+* `MeasureTheory.integrable_expect` and `MeasureTheory.integral_expect`: a finite average of
+  integrable functions is integrable, and its integral is the average of the integrals.
+
 ## Counting measures of multisets
 
 * `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is
@@ -69,6 +74,10 @@ for set and probability integrals.
   integral at most `E`.
 * `setIntegral_le_of_lintegral_ofReal_le` bounds every set integral of a real-valued function
   by a bound `E` on the integral of its pointwise positive part over the whole space.
+* `ofReal_le_withDensity_of_le_setIntegral` and `le_setIntegral_of_ofReal_le_withDensity` compare
+  the integral of `f` over a part of a set `S` with the measure `(μ.restrict S).withDensity` of
+  density `ofReal ∘ f`, in both directions; `le_withDensity_of_le_setLIntegral` is the lower bound
+  for a lower integral and an `ℝ≥0∞`-valued density.
 * `ofReal_integral_sq_div_le_lintegral_enorm` bounds `∫ h² / C` by the `L¹` norm `∫⁻ ‖h‖ₑ` of
   a real-valued function `h` with `|h| ≤ C` almost everywhere.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
@@ -339,6 +348,41 @@ theorem setIntegral_Icc_update_add_setIntegral_Icc_update {ι E : Type*} [Fintyp
     measurableSet_Icc.nullMeasurableSet hf₁ hf₂, hunion]
 
 namespace MeasureTheory
+
+/-- For integrable `f` and `g`, the integral of the norm of their sum is bounded by the sum of
+the integrals of their norms. -/
+theorem _root_.MeasureTheory.Integrable.integral_norm_add_le {Ω E : Type*} [MeasurableSpace Ω]
+    [SeminormedAddCommGroup E] {μ : Measure Ω} {f g : Ω → E}
+    (hf : Integrable f μ) (hg : Integrable g μ) :
+    (∫ x, ‖f x + g x‖ ∂μ) ≤ (∫ x, ‖f x‖ ∂μ) + (∫ x, ‖g x‖ ∂μ) := by
+  have hnorm {u : Ω → E} (hu : Integrable u μ) : Integrable (fun x ↦ ‖u x‖) μ :=
+    hu.congr'_eNorm hu.aestronglyMeasurable.norm (.of_forall fun x ↦ (eNorm_norm (u x)).symm)
+  calc
+    _ ≤ ∫ x, ‖f x‖ + ‖g x‖ ∂μ :=
+      integral_mono (hnorm (hf.add hg)) ((hnorm hf).add (hnorm hg)) (fun x ↦ norm_add_le _ _)
+    _ = _ := integral_add (hnorm hf) (hnorm hg)
+
+section Expect
+
+open scoped BigOperators
+
+variable {ι Ω E : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [Module ℚ≥0 E] {s : Finset ι} {f : ι → Ω → E}
+
+/-- A finite average of integrable functions is integrable. -/
+theorem _root_.MeasureTheory.integrable_expect (hf : ∀ i ∈ s, Integrable (f i) μ) :
+    Integrable (fun x ↦ 𝔼 i ∈ s, f i x) μ := by
+  simp only [Finset.expect, ← NNRat.cast_smul_eq_nnqsmul ℝ]
+  exact (integrable_finsetSum s hf).smul (((s.card : ℚ≥0)⁻¹ : ℚ≥0) : ℝ)
+
+/-- The integral of a finite average of integrable functions is the average of their
+integrals. -/
+theorem _root_.MeasureTheory.integral_expect (hf : ∀ i ∈ s, Integrable (f i) μ) :
+    ∫ x, 𝔼 i ∈ s, f i x ∂μ = 𝔼 i ∈ s, ∫ x, f i x ∂μ := by
+  simp only [Finset.expect, ← NNRat.cast_smul_eq_nnqsmul ℝ, integral_smul,
+    integral_finsetSum s hf]
+
+end Expect
 
 /-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
 function is integrable on a finite measure space. -/
@@ -640,6 +684,37 @@ theorem setIntegral_le_of_lintegral_ofReal_le {α : Type*} [MeasurableSpace α]
     ∫ x in s, f x ∂μ ≤ E :=
   (ENNReal.ofReal_le_ofReal_iff E.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
     ((setLIntegral_le_lintegral _ _).trans (hE.trans_eq ENNReal.ofReal_coe_nnreal.symm)))
+
+/-- Lower integral at least `δ` over a measurable part `s` of `S ∩ N` makes the measure of `N`
+with density `f` on `S` at least `δ`. -/
+theorem le_withDensity_of_le_setLIntegral {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {f : Ω → ℝ≥0∞} {S s N : Set Ω} {δ : ℝ≥0∞} (hs : MeasurableSet s) (hsS : s ⊆ S)
+    (hsN : s ⊆ N) (h : δ ≤ ∫⁻ y in s, f y ∂μ) : δ ≤ (μ.restrict S).withDensity f N :=
+  calc δ ≤ ∫⁻ y in s, f y ∂μ := h
+    _ = _ := by rw [withDensity_apply _ hs, Measure.restrict_restrict hs, Set.inter_eq_left.2 hsS]
+    _ ≤ _ := measure_mono hsN
+
+/-- Integral at least `δ` over a measurable part `s` of `S ∩ N` makes the measure of `N` with
+density `ofReal ∘ f` on `S` at least `δ`. No integrability or sign assumption on `f` is needed. -/
+theorem ofReal_le_withDensity_of_le_setIntegral {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {f : Ω → ℝ} {S s N : Set Ω} {δ : ℝ} (hs : MeasurableSet s) (hsS : s ⊆ S)
+    (hsN : s ⊆ N) (h : δ ≤ ∫ y in s, f y ∂μ) :
+    ENNReal.ofReal δ ≤ (μ.restrict S).withDensity (fun y ↦ ENNReal.ofReal (f y)) N :=
+  le_withDensity_of_le_setLIntegral hs hsS hsN
+    ((ENNReal.ofReal_le_ofReal h).trans ofReal_integral_le_lintegral_ofReal)
+
+/-- The measure of a measurable set `N` with density `ofReal ∘ f` on a measurable set `S`, if at
+least `δ`, makes the integral of `f` over `N ∩ S` at least `δ`, for `f` integrable and nonnegative
+on `N ∩ S`. -/
+theorem le_setIntegral_of_ofReal_le_withDensity {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {f : Ω → ℝ} {S N : Set Ω} {δ : ℝ} (hN : MeasurableSet N)
+    (hS : MeasurableSet S) (hint : IntegrableOn f (N ∩ S) μ) (h0 : ∀ y ∈ N ∩ S, 0 ≤ f y)
+    (h : ENNReal.ofReal δ ≤ (μ.restrict S).withDensity (fun y ↦ ENNReal.ofReal (f y)) N) :
+    δ ≤ ∫ y in N ∩ S, f y ∂μ := by
+  have hs := hN.inter hS
+  rw [withDensity_apply _ hN, Measure.restrict_restrict hN,
+    ← ofReal_integral_eq_lintegral_ofReal hint (ae_restrict_of_forall_mem hs h0)] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (setIntegral_nonneg hs h0)).1 h
 
 /-- For a real-valued function bounded by `C` almost everywhere, the integral of its square
 divided by `C` is at most its `L¹` norm. No integrability, measurability or sign assumption is

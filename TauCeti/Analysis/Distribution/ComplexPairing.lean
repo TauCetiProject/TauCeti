@@ -28,7 +28,8 @@ kernel `t ↦ χ t / (t - z)` whose pairing with a distribution on `ℝ` is the 
 file defines the extension `Distribution.complexPairing` and transfers to it the two basic
 estimates used when the test function varies: the pairing depends only on the germ of the test
 function along the support of `T`, and it has finite order on each compact set. Complex
-conjugation of the values, `mapCLM conjCLE`, is an involution on complex distributions.
+conjugation of the values, `mapCLM conjCLE`, is an involution on complex distributions, and
+continuous linear maps of the values act functorially.
 
 ## Main declarations
 
@@ -46,6 +47,12 @@ conjugation of the values, `mapCLM conjCLE`, is an involution on complex distrib
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
 * `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
   back.
+* `Distribution.mapCLM_id`, `Distribution.mapCLM_mapCLM`: continuous linear maps of the values
+  act functorially.
+* `Distribution.mapCLM_restrictScalars_eq_smul`, `Distribution.mapCLM_restrictScalars_smul`,
+  `Distribution.mapCLM_restrictScalars_symm_mapCLM`: complex-linear maps of the values; on
+  complex distributions they are scalar multiplications, they commute with complex scalar
+  multiples, and complex isomorphisms are undone by their inverses.
 
 ## References
 
@@ -212,5 +219,60 @@ theorem complexPairing_eq_of_eventuallyEq (T : 𝓓'^{n}(Ω, ℂ)) {φ ψ : 𝓓
     map_eq_map_of_eventuallyEq T (φ := postcompCLM (𝕜 := ℝ) imCLM φ)
       (ψ := postcompCLM (𝕜 := ℝ) imCLM ψ)
       (by simpa only [postcompCLM_apply] using h.fun_comp imCLM)]
+
+/-! ### Continuous linear maps of the values -/
+
+section MapCLM
+
+variable {F F' F'' : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+  [IsTopologicalAddGroup F] [ContinuousSMul ℝ F] [AddCommGroup F'] [Module ℝ F']
+  [TopologicalSpace F'] [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F'] [AddCommGroup F'']
+  [Module ℝ F''] [TopologicalSpace F''] [IsTopologicalAddGroup F''] [ContinuousSMul ℝ F'']
+
+/-- The identity of the values acts trivially on `T`. -/
+@[simp]
+theorem mapCLM_id (T : 𝓓'^{n}(Ω, F)) : mapCLM (ContinuousLinearMap.id ℝ F) T = T := by
+  ext φ
+  simp
+
+/-- Applying `B` and then `A` to the values is applying `A ∘ B`. -/
+theorem mapCLM_mapCLM (A : F' →L[ℝ] F'') (B : F →L[ℝ] F') (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM A (mapCLM B T) = mapCLM (A.comp B) T := by
+  ext φ
+  simp
+
+end MapCLM
+
+/-! ### Complex-linear maps of the values -/
+
+section ComplexValues
+
+variable {F F' : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup F']
+  [NormedSpace ℂ F']
+
+/-- A complex-linear functional `ℓ` on `ℂ` is multiplication by `ℓ 1`, so applying it to the
+values of a complex distribution `T` gives the scalar multiple `ℓ 1 • T`. -/
+theorem mapCLM_restrictScalars_eq_smul (ℓ : ℂ →L[ℂ] ℂ) (T : 𝓓'^{n}(Ω, ℂ)) :
+    mapCLM (ℓ.restrictScalars ℝ) T = ℓ 1 • T := by
+  ext φ
+  simpa [mul_comm] using ℓ.map_smul (T φ) (1 : ℂ)
+
+/-- Applying a complex isomorphism `A` of the values and then its inverse gives back `T`. -/
+@[simp]
+theorem mapCLM_restrictScalars_symm_mapCLM (A : F ≃L[ℂ] F') (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM ((A.symm : F' →L[ℂ] F).restrictScalars ℝ)
+      (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T) = T := by
+  rw [mapCLM_mapCLM]
+  ext φ
+  simp
+
+/-- A complex-linear map of the values commutes with complex scalar multiplication. -/
+@[simp]
+theorem mapCLM_restrictScalars_smul (A : F →L[ℂ] F') (c : ℂ) (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM (A.restrictScalars ℝ) (c • T) = c • mapCLM (A.restrictScalars ℝ) T := by
+  ext φ
+  simp
+
+end ComplexValues
 
 end Distribution

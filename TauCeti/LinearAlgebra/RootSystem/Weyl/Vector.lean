@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # The Weyl vector of a base
@@ -52,6 +53,8 @@ positive coroot is not merely positive but at least `1`, being a positive intege
 * `TauCeti.reflection_twoWeylVector` and `TauCeti.reflection_weylVector`: `sᵢ(2ρ) = 2ρ - 2αᵢ` and
   `sᵢ(ρ) = ρ - αᵢ`.
 * `TauCeti.sum_root_negRootsFinset`: the sum of the negative roots is `-2ρ`.
+* `TauCeti.twoWeylVector_flip`: for the dual pairing, `2ρ` is the sum of the positive coroots
+  `2ρ^∨ = ∑_{α > 0} α^∨`.
 * `TauCeti.smul_twoWeylVector_sub_twoWeylVector` and `TauCeti.smul_weylVector_sub_weylVector`:
   a Weyl-group element `w` moves `2ρ` and `ρ` by a sum of roots,
   `w (2ρ) - 2ρ = -2 ∑_{α > 0, w⁻¹ α < 0} α` and `w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`.
@@ -204,6 +207,24 @@ theorem twoWeylVector_ne_zero [Nonempty ι] : twoWeylVector P b ≠ 0 :=
   (isRegularWeight_twoWeylVector P b).ne_zero
 
 end Reduced
+
+section Coroots
+
+variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
+
+/-- **The sum of the positive roots of the dual pairing is the sum of the positive coroots**,
+`2ρ^∨ = ∑_{α > 0} α^∨`. The roots of `P.flip` are the coroots of `P`, and `b.flip` has the same
+positive roots as `b`. -/
+theorem twoWeylVector_flip :
+    twoWeylVector P.flip b.flip = ∑ i ∈ posRootsFinset P b, P.coroot i := by
+  have := P.flip_isReduced
+  have h : posRootsFinset P.flip b.flip = posRootsFinset P b := by
+    ext i
+    rw [mem_posRootsFinset, mem_posRootsFinset, posRoots_flip]
+  rw [twoWeylVector_def, h]
+  simp only [RootPairing.flip_root]
+
+end Coroots
 
 /-- **The sum of the negative roots is `-2ρ`.** Root negation is a bijection from the negative
 roots onto the positive ones. -/

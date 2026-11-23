@@ -7,9 +7,10 @@ module
 
 public import TauCeti.NumberTheory.NumberField.PlacesOver.Basic
 public import TauCeti.NumberTheory.Height.FundamentalInequality
+import TauCeti.NumberTheory.Height.NumberField
 
 /-!
-# Height bounds above places
+# Height bounds above places, and Liouville's inequality
 
 Absolute values of a number field extension `F / K` lying over distinct places of `K` give local
 factors whose product is bounded by the relative height `mulHeight₁` in `F`:
@@ -30,14 +31,22 @@ single-place bounds `NumberField.max_apply_one_le_mulHeight₁_of_liesOver` and
 `NumberField.inv_mulHeight₁_le_min_one_apply_of_liesOver` for
 `IsInfinitePlace v ∨ IsFinitePlace v`).
 
+**Liouville's inequality over a number field** (`NumberField.inv_le_prod_min_one_sub`) is the
+lower bound at `x = β - α` for `α ∈ F` and `β ∈ K`, with the height of `β - α` bounded by
+`2 ^ [F : ℚ] H(α) H(β) ^ [F : K]`, the height of `β` over `F` being its height over `K` raised
+to `[F : K]`. It is the local step of the proofs of Roth's theorem and of the Subspace Theorem: a
+point of `K` cannot approximate an algebraic number `α ≠ β` better, over finitely many places,
+than a power of its height allows.
+
 ## References
 
-* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry* (2006), §§1.3 and 1.5.
+* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry* (2006), §§1.3 and 1.5, and
+  Theorem 1.5.21 (Liouville's inequality).
 -/
 
 public section
 
-open Height
+open Height Module
 
 namespace NumberField
 
@@ -228,6 +237,29 @@ theorem inv_mulHeight₁_le_min_one_apply_of_liesOver {v : AbsoluteValue K ℝ}
     exact v'.inv_mulHeight₁_le_min_one_apply_of_liesOver w hx
   · obtain ⟨v', rfl⟩ := (isFinitePlace_iff v).mp hfin
     exact v'.inv_mulHeight₁_le_min_one_apply_of_liesOver w hx
+
+/-- **Liouville's inequality over a number field** (Bombieri–Gubler, Theorem 1.5.21): for
+`α ∈ F` and `β ∈ K` with `β ≠ α`, and absolute values `w v` of `F` lying over distinct places
+`v` of `K`, the truncated local factors of `β - α` multiply to at least
+`(2 ^ [F : ℚ] H(α) H(β) ^ [F : K])⁻¹`. The heights are relative: that of `α` over `F` and that
+of `β` over `K`. -/
+theorem inv_le_prod_min_one_sub
+    (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
+    (w : AbsoluteValue K ℝ → AbsoluteValue F ℝ)
+    (hinf : ∀ v ∈ Sinf, (w v.val).LiesOver v.val) (hfin : ∀ v ∈ Sfin, (w v.val).LiesOver v.val)
+    {α : F} {β : K} (hne : algebraMap K F β ≠ α) :
+    (2 ^ finrank ℚ F * mulHeight₁ α * mulHeight₁ β ^ finrank K F)⁻¹ ≤
+      (∏ v ∈ Sinf, min 1 (w v.val (algebraMap K F β - α)) ^ v.mult) *
+        ∏ v ∈ Sfin, min 1 (w v.val (algebraMap K F β - α)) := by
+  refine le_trans ?_ (inv_mulHeight₁_le_prod_min_one_apply_pow_mult_mul_prod_of_liesOver
+    Sinf Sfin (fun v ↦ w v.val) (fun v ↦ w v.val) hinf hfin (sub_ne_zero.mpr hne))
+  refine inv_anti₀ (mulHeight₁_pos _) ?_
+  calc mulHeight₁ (algebraMap K F β - α)
+      ≤ 2 ^ totalWeight F * mulHeight₁ (algebraMap K F β) * mulHeight₁ α :=
+        mulHeight₁_sub_le _ _
+    _ = 2 ^ finrank ℚ F * mulHeight₁ α * mulHeight₁ β ^ finrank K F := by
+        rw [totalWeight_eq_finrank, mulHeight₁_algebraMap]
+        ring
 
 end NumberField
 

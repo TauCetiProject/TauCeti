@@ -11,6 +11,7 @@ public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 import TauCeti.AlgebraicTopology.Singular.Contractible
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Sphere
+import TauCeti.Analysis.Convex.Contractible
 import TauCeti.Geometry.Manifold.Instances.ClosedBall.Boundary
 import TauCeti.LowDimTopology.DehnSurgery.Unknot
 
@@ -518,7 +519,6 @@ def IsSmoothSliceDisc.toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     refine ⟨fun ⟨_, hx, _⟩ ↦ hx.symm, fun hc ↦ ⟨circleHomeomorphBoundaryClosedBall z, hc.symm, ?_⟩⟩
     exact circleHomeomorphBoundaryClosedBall.symm_apply_apply z
   map_ker_eq_top := by
-    have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
     -- `singularHomologyFunctor` unfolds to the homology of the singular chain complex, so the
     -- vanishing of the first homology of the contractible disc is the chain-level statement.
     have : Subsingleton (((singularChains ℤ).obj (TopCat.of (closedBall (0 : ℂ) 1))).homology 1) :=
@@ -567,7 +567,6 @@ theorem IsSmoothSliceDisc.genus_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     (hΨ : IsSolidTorusNeighborhood K Ψ)
     (hl : hΨ.boundaryHomologyMap (hΨ.framedBoundaryTorus.basis 1) = 0) :
     (h.toZeroShakeSurface hΨ hl).genus = 0 := by
-  have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
   -- The carrier of `h.toZeroShakeSurface hΨ hl` is the closed unit disc by definition.
   have : Subsingleton (h.toZeroShakeSurface hΨ hl).firstHomology :=
     inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj

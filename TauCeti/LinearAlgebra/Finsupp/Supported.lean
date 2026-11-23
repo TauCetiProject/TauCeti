@@ -44,6 +44,8 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
 * `Finsupp.exists_support_map_subset_range`: a linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a
   finitely generated module `M` sends sequences supported in `Finset.range n` into some
   `Finset.range m`.
+* `Finsupp.exists_mem_supported_lt`: a finitely supported function is supported on the points
+  of rank below some bound, for any rank function to `ℕ`.
 -/
 
 public section
@@ -165,5 +167,11 @@ theorem exists_support_map_subset_range {R M N : Type*} [Semiring R] [AddCommMon
         (Finset.coe_subset.2 hu))⟩
   exact Finset.mem_coe.2 <| Finset.mem_range.2 <| Nat.lt_succ_of_le <|
     Finset.le_sup (f := id) (Finset.mem_biUnion.2 ⟨j, Finset.mem_coe.1 hj, hT j x hk⟩)
+
+/-- A finitely supported function is supported on the points of rank below some bound, for any
+rank function to `ℕ`. -/
+theorem exists_mem_supported_lt {α M R : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (r : α → ℕ) (f : α →₀ M) : ∃ k, f ∈ supported M R {y | r y < k} :=
+  ⟨f.support.sup (r · + 1), fun _ hy ↦ Nat.lt_of_succ_le (Finset.le_sup (f := (r · + 1)) hy)⟩
 
 end Finsupp

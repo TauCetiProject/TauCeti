@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
+import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Equation
 import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.FieldTheory.SplittingField.Construction
@@ -79,8 +80,6 @@ an elliptic curve over a general base.
   polynomial splits, with `e₂ - e₁` a square, is a change of variables away from Legendre form.
 * `WeierstrassCurve.exists_variableChange_smul_baseChange_eq_freyCurve_one`: away from
   characteristic `2`, an elliptic curve takes Legendre form over a finite separable extension.
-* `TauCeti.isElliptic_freyCurve_one_neg_iff`: `y² = x (x - 1) (x - l)` is elliptic
-  exactly when `2l(l - 1)` is a unit.
 * `WeierstrassCurve.toLegendre_smul`: over a ring, `toLegendre` carries `W` to Legendre form, with
   an explicit parameter.
 * `WeierstrassCurve.eq_toLegendre`: it is the only change of variables with scaling `u` doing so
@@ -111,17 +110,6 @@ public section
 universe u
 
 open Polynomial TauCeti
-
-namespace TauCeti
-
-/-- The Legendre form `y² = x (x - 1) (x - l)` is elliptic exactly when `2l(l - 1)` is a unit. -/
-theorem isElliptic_freyCurve_one_neg_iff {R : Type*} [CommRing R] {l : R} :
-    (freyCurve 1 (-l)).IsElliptic ↔ IsUnit (2 * l * (l - 1)) := by
-  rw [isElliptic_freyCurve_iff, IsUnit.mul_iff, IsUnit.mul_iff, IsUnit.neg_iff,
-    ← sub_eq_add_neg, ← neg_sub l, IsUnit.neg_iff]
-  simp only [isUnit_one, true_and, and_assoc]
-
-end TauCeti
 
 namespace WeierstrassCurve
 
@@ -425,10 +413,10 @@ theorem curve_def : curve = freyCurve 1 (-param) := (rfl)
 variable {R : Type*} [CommRing R]
 
 /-- The universal Legendre curve is an elliptic curve. -/
-instance : curve.IsElliptic :=
-  (isElliptic_freyCurve_one_neg_iff (l := param)).mpr <| by
-    have h := IsLocalization.Away.algebraMap_isUnit (S := Ring) (2 * X * (X - 1) : ℤ[X])
-    rwa [map_mul, map_mul, map_sub, map_ofNat, map_one] at h
+instance : curve.IsElliptic := by
+  rw [curve_def, ← legendre_eq_freyCurve, isElliptic_legendre_iff]
+  have h := IsLocalization.Away.algebraMap_isUnit (S := Ring) (2 * X * (X - 1) : ℤ[X])
+  rwa [map_mul, map_mul, map_sub, map_ofNat, map_one] at h
 
 /-- Two ring homomorphisms out of `ℤ[1/2][λ, 1/λ(λ - 1)]` are equal as soon as they agree on the
 parameter `λ`. -/
@@ -504,7 +492,7 @@ theorem existsUnique_legendre [W.IsElliptic] (h₁ : W.toAffine.Equation x₁ y�
   obtain ⟨C, ⟨hCu, hCr, hCt, hCx, hCy, B, hC⟩, hCuniq⟩ :=
     existsUnique_variableChange_legendre h2 u h₁ h₂ hψ₁ hψ₂ hu
   have hB : IsUnit (2 * -B * (-B - 1)) := by
-    rw [← isElliptic_freyCurve_one_neg_iff, neg_neg, ← hC]
+    rw [← isElliptic_legendre_iff, legendre_eq_freyCurve, neg_neg, ← hC]
     infer_instance
   refine ⟨(lift hB, C), ⟨hCu, hCr, hCt, hCx, hCy, ?_⟩,
     fun ⟨f, D⟩ ⟨hDu, hDr, hDt, hDx, hDy, hD⟩ ↦ ?_⟩
