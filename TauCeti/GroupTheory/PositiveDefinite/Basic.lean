@@ -46,9 +46,8 @@ permanence of the Haagerup property under increasing unions and finite-index ove
 * `TauCeti.inducedFun`: the function induced from a subgroup of finite index along a section,
   with `TauCeti.posSemidef_inducedFun`, `TauCeti.inducedFun_one`,
   `TauCeti.tendsto_inducedFun_cofinite`, `TauCeti.norm_inducedFun_sub_one_lt`,
-  `TauCeti.card_mul_one_sub_re_inducedFun`,
-  `TauCeti.one_sub_re_le_card_mul_one_sub_re_inducedFun`, and
-  `TauCeti.forall_posSemidef_norm_sub_one_lt_subgroupOf`.
+  `TauCeti.card_mul_one_sub_re_inducedFun`, and
+  `TauCeti.one_sub_re_le_card_mul_one_sub_re_inducedFun`.
 
 ## References
 
@@ -256,53 +255,5 @@ theorem one_sub_re_le_card_mul_one_sub_re_inducedFun {s : G ⧸ H → G}
     (fun x _ ↦ hφ.one_sub_re_nonneg h1 _) (Finset.mem_univ x₀)
 
 end FintypeQuotient
-
-/-- Inducing positive-definite functions from a finite-index subgroup `H ≤ G` via
-`TauCeti.inducedFun` transfers quantitative approximation by normalized positive-definite functions
-from `Λ` to `Λ.subgroupOf H`. -/
-theorem forall_posSemidef_norm_sub_one_lt_subgroupOf {Λ H : Subgroup G} [H.FiniteIndex]
-    (hΛ : ∀ ε : ℝ, 0 < ε →
-      ∃ (F : Finset G) (δ : ℝ), 0 < δ ∧
-        ∀ φ : G → 𝕜, (of fun a b : G ↦ φ (a⁻¹ * b)).PosSemidef → φ 1 = 1 →
-          (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε) :
-    ∀ ε : ℝ, 0 < ε →
-      ∃ (F_H : Finset H) (δ : ℝ), 0 < δ ∧
-        ∀ φ : H → 𝕜, (of fun a b : H ↦ φ (a⁻¹ * b)).PosSemidef → φ 1 = 1 →
-          (∀ k ∈ F_H, ‖φ k - 1‖ < δ) → ∀ h ∈ Λ.subgroupOf H, ‖φ h - 1‖ < ε := by
-  classical
-  let : Fintype (G ⧸ H) := Subgroup.fintypeQuotientOfFiniteIndex
-  let N : ℕ := Fintype.card (G ⧸ H)
-  have hNpos : (0 : ℝ) < N := Nat.cast_pos.mpr Fintype.card_pos
-  -- Choose a section `s : G ⧸ H → G` fixing the identity coset `x₀`.
-  let x₀ : G ⧸ H := ((1 : G) : G ⧸ H)
-  let s : G ⧸ H → G := Function.update Quotient.out x₀ 1
-  have hs (x : G ⧸ H) : (s x : G ⧸ H) = x := by
-    by_cases hx : x = x₀
-    · subst hx; simp [s, x₀]
-    · simp [s, hx]
-  have hs1 : s x₀ = 1 := Function.update_self x₀ 1 Quotient.out
-  intro ε hε
-  obtain ⟨F, δ, hδ, hFδ⟩ := hΛ (ε ^ 2 / (2 * N)) (by positivity)
-  let c (g : G) (x : G ⧸ H) : H :=
-    ⟨(s (g • x))⁻¹ * g * s x, inv_mul_mul_mem_of_section hs g x⟩
-  let F_H : Finset H := F.biUnion fun g ↦ Finset.univ.image (c g)
-  refine ⟨F_H, δ, hδ, fun φ hφ h1 hφF h hh ↦ ?_⟩
-  -- Induce `φ` to `G` via `s`; closeness on `F_H` makes `ψ` close to `1` on `F`, hence on `Λ`.
-  let ψ : G → 𝕜 := inducedFun s φ
-  have hψF (g : G) (hg : g ∈ F) : ‖ψ g - 1‖ < δ :=
-    norm_inducedFun_sub_one_lt hs fun x ↦
-      hφF (c g x) (Finset.mem_biUnion.mpr ⟨g, hg, Finset.mem_image_of_mem _ (Finset.mem_univ x)⟩)
-  have hψh : ‖ψ (h : G) - 1‖ < ε ^ 2 / (2 * N) :=
-    hFδ ψ (posSemidef_inducedFun s hφ) ((inducedFun_one s φ).trans h1) hψF h hh
-  -- Convert the bound on `ψ h` back to `‖φ h - 1‖` via the real-part averaging inequality.
-  have hre_ψ : 1 - RCLike.re (ψ (h : G)) < ε ^ 2 / (2 * N) :=
-    lt_of_le_of_lt (by simpa [norm_sub_rev] using RCLike.re_le_norm (1 - ψ h)) hψh
-  have hre_h : 1 - RCLike.re (φ h) ≤ (N : ℝ) * (1 - RCLike.re (ψ (h : G))) :=
-    one_sub_re_le_card_mul_one_sub_re_inducedFun hs hs1 hφ h1 h
-  have hre_lt : 1 - RCLike.re (φ h) < ε ^ 2 / 2 := by
-    have hmul : (N : ℝ) * (ε ^ 2 / (2 * N)) = ε ^ 2 / 2 := by field_simp [hNpos.ne']
-    nlinarith
-  have hnorm_sq : ‖φ h - 1‖ ^ 2 ≤ 2 * (1 - RCLike.re (φ h)) := hφ.norm_sub_one_sq_le h1 h
-  exact (sq_lt_sq₀ (norm_nonneg _) hε.le).mp (by linarith)
 
 end TauCeti
