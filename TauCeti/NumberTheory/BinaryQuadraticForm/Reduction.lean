@@ -55,7 +55,8 @@ reduced form in the class.
   forms of discriminant `-D` contains exactly one reduced form (Cohen, §5.3).
 * `TauCeti.BinaryQuadraticForm.orbit_mk_reducedForms_bijective`: so the reduced forms of
   discriminant `-D` are in bijection with the classes, and there are finitely many classes
-  (`TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_posDef`).
+  (`TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_posDef`), as many as reduced forms
+  (`TauCeti.BinaryQuadraticForm.nat_card_orbitRel_quotient_posDef`).
 * `TauCeti.hurwitzClassNumber_eq_finsum`: for `D ≠ 0`, `H D` is the sum over the classes of
   `2 / |Stab|`.
 
@@ -221,6 +222,13 @@ theorem orbit_mk_reducedForms_bijective :
 instance finite_orbitRel_quotient_posDef : Finite (orbitRel.Quotient SL(2, ℤ) (posDef D)) :=
   -- the finitely many reduced forms represent them all
   .of_surjective _ orbit_mk_reducedForms_bijective.2
+
+/-- **The number of classes of positive definite forms** of discriminant `-D` is the number of
+reduced forms of discriminant `-D`. -/
+theorem nat_card_orbitRel_quotient_posDef :
+    Nat.card (orbitRel.Quotient SL(2, ℤ) (posDef D)) = (reducedForms D).card :=
+  (Nat.card_eq_of_bijective _ orbit_mk_reducedForms_bijective).symm.trans
+    (Nat.card_eq_finsetCard _)
 
 end BinaryQuadraticForm
 

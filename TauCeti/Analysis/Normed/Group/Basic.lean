@@ -33,9 +33,12 @@ A continuous function on `ℝ` with limits at `±∞` is bounded, and a function
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
-Near `0`, the product `‖x‖ * R` is eventually less than any positive bound.
+Near `0`, the product `‖x‖ * R` is eventually less than any positive bound. Eventual bounds
+`‖g i‖ < r` for every `r > s` pass to `f` along a filter on which `‖f i - g i‖ → 0`.
 
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
+
+The terms of a sequence whose norms decrease strictly are nonzero.
 
 A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
 contains `0`.
@@ -66,6 +69,8 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
 * `TauCeti.exists_forall_norm_le_of_tendsto` -- a continuous function `ℝ → F` with limits at `±∞`
   is bounded.
+* `TauCeti.exists_forall_norm_le_of_eventually_eq` -- a continuous function `ℝ → F` that is
+  eventually constant at `±∞` is bounded.
 * `TauCeti.exists_forall_ge_norm_le_of_tendsto` -- a function `ℝ → F` continuous on `[a, ∞)` with
   a limit at `+∞` is bounded on `[a, ∞)`.
 * `TauCeti.exists_enorm_sub_le_mul_of_reflTransGen` -- constants joined by a chain of related
@@ -73,7 +78,11 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 * `TauCeti.eventually_norm_mul_lt` -- eventually near `0`, `‖x‖ * R < ρ` for any `ρ > 0`.
+* `Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt` -- eventual bounds `‖g i‖ < r` for
+  all `r > s` pass to `f` when `‖f i - g i‖ → 0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
+* `TauCeti.ne_zero_of_strictAnti_norm` -- the terms of a family with strictly decreasing norms,
+  indexed without a maximum, are nonzero.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
 * `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
@@ -158,10 +167,29 @@ theorem eventually_norm_mul_lt {E : Type*} [SeminormedAddGroup E] (R : ℝ) {ρ 
     ∀ᶠ x in 𝓝 (0 : E), ‖x‖ * R < ρ :=
   (tendsto_norm_zero.mul_const R).eventually (gt_mem_nhds (by rwa [zero_mul]))
 
+/-- **Eventual norm bounds survive a vanishing perturbation.** If `‖f i - g i‖ → 0` along `l` and
+every `r > s` eventually bounds `‖g i‖`, then every `r > s` eventually bounds `‖f i‖`. The
+seminormed group may vary with the index, as for matrices of growing size. -/
+theorem _root_.Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt {ι : Type*}
+    {E : ι → Type*} [∀ i, SeminormedAddGroup (E i)] {l : Filter ι} {f g : ∀ i, E i} {s : ℝ}
+    (hfg : Tendsto (fun i ↦ ‖f i - g i‖) l (𝓝 0)) (hg : ∀ r > s, ∀ᶠ i in l, ‖g i‖ < r) :
+    ∀ r > s, ∀ᶠ i in l, ‖f i‖ < r := by
+  intro r hr
+  filter_upwards [hg ((r + s) / 2) (by linarith),
+    hfg.eventually_lt_const (by linarith : (0 : ℝ) < (r - s) / 2)] with i hgi hfgi
+  exact (norm_le_norm_sub_add (f i) (g i)).trans_lt ((add_lt_add hfgi hgi).trans_eq (by ring))
+
 /-- A sum `z + a` with `‖a‖ < ‖z‖` is nonzero. -/
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
     z + a ≠ 0 :=
   fun h' ↦ h.ne' (by rw [eq_neg_of_add_eq_zero_left h', norm_neg])
+
+/-- If the norms of a family `d` indexed by an order without maximum decrease strictly, every
+term of `d` is nonzero: its norm exceeds the nonnegative norm of a later term. -/
+theorem ne_zero_of_strictAnti_norm {ι E : Type*} [Preorder ι] [NoMaxOrder ι]
+    [SeminormedAddGroup E] {d : ι → E} (hdec : StrictAnti fun i ↦ ‖d i‖) (i : ι) : d i ≠ 0 :=
+  have ⟨_, hj⟩ := exists_gt i
+  ne_zero_of_norm_ne_zero ((norm_nonneg _).trans_lt (hdec hj)).ne'
 
 /-- A continuous function `ℝ → F` into a seminormed group with limits at `±∞` is bounded. -/
 theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
@@ -171,6 +199,14 @@ theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] 
     (hA.isBounded_range_iff_isBigO_atTop_atBot.mpr
       ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩)
   exact ⟨M, fun s ↦ hM _ (Set.mem_range_self s)⟩
+
+/-- A continuous function `ℝ → F` into a seminormed group that is eventually constant at `-∞` and
+at `+∞` is bounded. -/
+theorem exists_forall_norm_le_of_eventually_eq {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
+    {Aminus Aplus : F} (hA : Continuous A) (hbot : ∀ᶠ s in atBot, A s = Aminus)
+    (htop : ∀ᶠ s in atTop, A s = Aplus) : ∃ M, ∀ s, ‖A s‖ ≤ M :=
+  exists_forall_norm_le_of_tendsto hA (tendsto_const_nhds.congr' (hbot.mono fun _ h ↦ h.symm))
+    (tendsto_const_nhds.congr' (htop.mono fun _ h ↦ h.symm))
 
 /-- A function `ℝ → F` into a seminormed group, continuous on `[a, ∞)` and with a limit at `+∞`,
 is bounded on `[a, ∞)`. -/
