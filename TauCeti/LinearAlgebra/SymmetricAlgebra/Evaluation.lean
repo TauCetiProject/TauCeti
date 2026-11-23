@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 
 /-!
 # Evaluations of elements of a symmetric algebra

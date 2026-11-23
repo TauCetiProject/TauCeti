@@ -31,6 +31,9 @@ dimension in that locus, so the projective orbit of `[w]` is closed and represen
 
 ## Main results
 
+* `TauCeti.HopfIdeal.IsBorelOverAlgClosed.exists_basis_stabilizerHopfIdeal_eq`: Chevalley's
+  theorem and the Lie--Kolchin theorem produce a finite-dimensional `G`-comodule `M` with a
+  basis `b` whose first line has stabilizer `B` and which is upper triangular over `G ⧸ B.toIdeal`.
 * `TauCeti.HopfIdeal.IsBorelOverAlgClosed.isClosed_range_projectiveOrbitMap_exteriorFlagVector`:
   the projective orbit of `exteriorFlagVector k (1 + n) b` is closed.
 * `TauCeti.HopfIdeal.IsBorelOverAlgClosed.exists_isClosed_projectiveOrbit_stabilizerHopfIdeal_eq`:
@@ -60,7 +63,7 @@ variable {G : FiniteTypeCommHopfAlgCat.{u, u} k}
 /-- Chevalley's theorem and the Lie--Kolchin theorem produce a finite-dimensional `G`-comodule `M`
 with a basis `b` whose first line has stabilizer `B` and whose corestriction to `G ⧸ B.toIdeal`
 is upper triangular. -/
-private theorem exists_basis_stabilizerHopfIdeal_eq_of_isBorelOverAlgClosed
+theorem IsBorelOverAlgClosed.exists_basis_stabilizerHopfIdeal_eq
     {B : HopfIdeal k G} (hB : IsBorelOverAlgClosed k G B) :
     ∃ (M : Type u) (_ : AddCommGroup M) (_ : Module k M) (_ : Comodule k G M)
       (_ : Module.Finite k M) (n : ℕ) (b : Module.Basis (Fin (1 + n)) k M),
@@ -168,8 +171,7 @@ theorem IsBorelOverAlgClosed.exists_isClosed_projectiveOrbit_stabilizerHopfIdeal
         IsProper (Comodule.projectiveOrbitToSpec (H := G) w hw) ∧
         Nonempty (CommHopfAlgCat.fppfHomogeneousQuotient G.obj B ≅
           Comodule.projectiveOrbitPointsSheaf (H := G.obj) w hw) := by
-  obtain ⟨M, _, _, _, _, n, b, hb0_stab, htri⟩ :=
-    exists_basis_stabilizerHopfIdeal_eq_of_isBorelOverAlgClosed hB
+  obtain ⟨M, _, _, _, _, n, b, hb0_stab, htri⟩ := hB.exists_basis_stabilizerHopfIdeal_eq
   let W := exteriorPower.FlagSpace k M (1 + n)
   let instAddW : AddCommGroup W := Module.addCommMonoidToAddCommGroup k
   let instComodW : Comodule k G W := Comodule.exteriorFlag k G M (1 + n)
