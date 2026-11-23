@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Monoidal
-public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # The differential of a tensor product of complexes
