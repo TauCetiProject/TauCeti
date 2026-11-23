@@ -25,9 +25,8 @@ maps under double precomposition (`precomp G (precomp G u)`).
   `F →L[𝕜] G` is continuous.
 * `ContinuousLinearMap.precomp_id`, `ContinuousLinearMap.precomp_comp`: precomposition by the
   identity is the identity, and precomposition reverses composition.
-* `ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_comp_applyₗ`,
-  `ContinuousLinearMap.coeLM_comp_applyₗ`: naturality of canonical evaluation with respect to the
-  double strong transpose and identification with `coeLM`.
+* `ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_comp_applyₗ`:
+  naturality of canonical evaluation with respect to the double strong transpose.
 * `ContinuousLinearMap.precomp_precomp_comp_of_forall_apply_eq`,
   `ContinuousLinearMap.symm_comp_precomp_precomp_comp_of_forall_apply_eq`: intertwining and
   recovery of `u : E →L[𝕜] F` from maps agreeing pointwise with canonical evaluation.
@@ -110,16 +109,6 @@ theorem precomp_precomp_comp_applyₗ (u : E →L[𝕜] F) :
   simp
 
 end ApplyLinear
-
-/-- Forgetting continuity on the codomain of canonical evaluation `applyₗ` recovers the flipped
-coercion `(coeLM 𝕜).flip` used in `separatingDual_iff_injective`. -/
-theorem coeLM_comp_applyₗ {𝕜 E G : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
-    [TopologicalSpace E] [ContinuousSMul 𝕜 E] [AddCommGroup G] [Module 𝕜 G]
-    [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousConstSMul 𝕜 G] :
-    (coeLM (R := 𝕜) 𝕜 (M := E →L[𝕜] G) (N₃ := G)).comp (applyₗ G (RingHom.id 𝕜)) =
-      (coeLM (R := 𝕜) 𝕜 (M := E) (N₃ := G)).flip := by
-  ext x φ
-  simp
 
 section EvaluationMaps
 

@@ -13,9 +13,10 @@ public import Mathlib.Topology.Algebra.Module.TransferInstance
 
 Given topological linear isomorphisms `a : StrongDual 𝕜 E ≃L[𝕜] F` and
 `b : E ≃L[𝕜] StrongDual 𝕜 F` compatible with evaluation (`b x (a ℓ) = ℓ x`), canonical evaluation
-`ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)` upgrades to topological linear isomorphisms from
-both `E` and `F` onto their strong biduals (`ContinuousLinearEquiv.bidualEquivOfDualEquiv`,
-`ContinuousLinearEquiv.dualBidualEquivOfDualEquiv`).
+`ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)` upgrades to a topological linear isomorphism from `E`
+onto its strong bidual (`ContinuousLinearEquiv.bidualEquivOfDualEquiv`); swapping `a` and `b` via
+`bidualEquivOfDualEquiv b.symm a.symm` yields the corresponding strong-bidual equivalence on `F`
+(`ContinuousLinearEquiv.trans_bidualEquivOfDualEquiv`).
 
 ## Main declarations
 
@@ -23,10 +24,8 @@ both `E` and `F` onto their strong biduals (`ContinuousLinearEquiv.bidualEquivOf
   `ContinuousLinearEquiv.bidualEquivOfDualEquiv_eq_trans`: strong-bidual evaluation equivalence
   on `E` from a compatible dual identification
   `(StrongDual 𝕜 E ≃L[𝕜] F, E ≃L[𝕜] StrongDual 𝕜 F)`, and its factorization.
-* `ContinuousLinearEquiv.dualBidualEquivOfDualEquiv`: strong-bidual evaluation equivalence on
-  `F` from the same dual identification.
-* `ContinuousLinearEquiv.trans_dualBidualEquivOfDualEquiv`: compatibility of `a` composed with
-  `dualBidualEquivOfDualEquiv a b h` against `b.arrowCongr (.refl 𝕜 𝕜)`.
+* `ContinuousLinearEquiv.trans_bidualEquivOfDualEquiv`: compatibility of `a` composed with
+  `bidualEquivOfDualEquiv b.symm a.symm h` against `b.arrowCongr (.refl 𝕜 𝕜)`.
 -/
 
 public section
@@ -73,43 +72,15 @@ theorem bidualEquivOfDualEquiv_eq_trans (a : StrongDual 𝕜 E ≃L[𝕜] F)
       b.trans (a.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)) := by
   rw [bidualEquivOfDualEquiv]
 
-/-- Given topological linear isomorphisms `a : StrongDual 𝕜 E ≃L[𝕜] F` and
-`b : E ≃L[𝕜] StrongDual 𝕜 F` compatible with evaluation (`b x (a ℓ) = ℓ x`), canonical evaluation
-`ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)` is also a topological linear isomorphism
-`F ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)`. -/
-def dualBidualEquivOfDualEquiv
+/-- Composing `a : StrongDual 𝕜 E ≃L[𝕜] F` with `bidualEquivOfDualEquiv b.symm a.symm h` agrees
+with `b.arrowCongr (.refl 𝕜 𝕜)`. -/
+theorem trans_bidualEquivOfDualEquiv
     (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    F ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F) :=
-  bidualEquivOfDualEquiv b.symm a.symm fun f φ ↦ by
-    rw [← h (b.symm φ) (a.symm f), b.apply_symm_apply, a.apply_symm_apply]
-
-@[simp]
-theorem dualBidualEquivOfDualEquiv_apply_apply
-    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x)
-    (f : F) (φ : StrongDual 𝕜 F) :
-    dualBidualEquivOfDualEquiv a b h f φ = φ f :=
-  bidualEquivOfDualEquiv_apply_apply _ _ _ f φ
-
-@[simp]
-theorem toLinearMap_dualBidualEquivOfDualEquiv
-    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    letI : ContinuousSMul 𝕜 F := a.symm.continuousSMul
-    (dualBidualEquivOfDualEquiv a b h).toLinearMap =
-      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
-  toLinearMap_bidualEquivOfDualEquiv b.symm a.symm _
-
-/-- Composing `a : StrongDual 𝕜 E ≃L[𝕜] F` with the dual-bidual equivalence
-`dualBidualEquivOfDualEquiv a b h` agrees with `b.arrowCongr (.refl 𝕜 𝕜)`. -/
-theorem trans_dualBidualEquivOfDualEquiv
-    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    a.trans (dualBidualEquivOfDualEquiv a b h) = b.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) := by
+    (h : ∀ (f : F) (φ : StrongDual 𝕜 F), a.symm f (b.symm φ) = φ f) :
+    a.trans (bidualEquivOfDualEquiv b.symm a.symm h) =
+      b.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) := by
   ext ℓ Ξ
-  obtain ⟨x, rfl⟩ := b.surjective Ξ
-  simp [h]
+  simpa using (h (a ℓ) Ξ).symm
 
 end DualReflexivity
 

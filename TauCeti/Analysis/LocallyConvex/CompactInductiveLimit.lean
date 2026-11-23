@@ -61,26 +61,30 @@ inducing property when continuous
 strong-dual evaluation criterion in `TauCeti.Analysis.LocallyConvex.DoubleDual`. Continuity of
 `evalInductive` in fact forces the topology of `L` to equal that final locally convex topology
 (`TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`).
-Conversely, when `L` carries a topology equal to `finalLocallyConvexTopology` via `ht`, callers
-obtain `IsTopologicalAddGroup L` and `LocallyConvexSpace ℝ L` from the `FinalLocallyConvexTopology`
-instances along `ht`, scalar continuity by transporting `FinalLocallyConvexTopology.continuousSMul`
-along `ht`, dual separation (when `T₁`) via `TauCeti.instSeparatingDualOfLocallyConvexSpace` or
-`TauCeti.FinalLocallyConvexTopology.separatingDual`, and `evalInductive`-continuity via
-`continuous_evalInductive_of_le_finalLocallyConvexTopology hι hinj hcover ht.ge`.
-When the bonding maps are weakly compact and `evalInductive` is continuous (equivalently, `L`
-carries the final locally convex topology), `L` is complete for its additive uniformity by
-transporting completeness from the strong dual of the Fréchet space `dualProjectiveLimit T` along
-the surjective uniformly inducing map `evalInductive`
-(`TauCeti.dualProjectiveLimit.completeSpace_of_continuous_evalInductive`), and when `L` is also
-`T₁`, `evalInductive` upgrades to the topological linear isomorphism
+Conversely, when `L` carries a topology equal to `finalLocallyConvexTopology` via `ht`, the setup
+lemmas `TauCeti.dualProjectiveLimit.isTopologicalAddGroup_of_finalLocallyConvexTopology`,
+`TauCeti.dualProjectiveLimit.locallyConvexSpace_of_finalLocallyConvexTopology`,
+`TauCeti.dualProjectiveLimit.continuousSMul_of_finalLocallyConvexTopology`,
+`TauCeti.dualProjectiveLimit.separatingDual_of_finalLocallyConvexTopology` (when `T₁`), and
+`TauCeti.dualProjectiveLimit.continuous_evalInductive_of_finalLocallyConvexTopology` supply the
+transported instances and `evalInductive`-continuity directly (and
+`continuous_of_continuous_evalInductive_of_continuous_comp` then supplies functional continuity for
+`strongDualEquiv`).
+When the bonding maps are weakly compact over `ℝ` or `ℂ` and `evalInductive` is continuous
+(equivalently, `L` carries the final locally convex topology), if `L` is a locally convex uniform
+additive group then it is complete for its additive uniformity by transporting completeness from the
+strong dual of the Fréchet space `dualProjectiveLimit T` along the surjective uniformly inducing map
+`evalInductive` (`TauCeti.dualProjectiveLimit.completeSpace_of_continuous_evalInductive`), and when
+`L` is a `T₁` locally convex space, `evalInductive` upgrades to the topological linear isomorphism
 `L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)` (`TauCeti.dualProjectiveLimit.evalEquiv`).
 
-Finally, still when `L` is `T₁`, the bonding maps are weakly compact, and `evalInductive` is
-continuous, composing `evalEquiv` with `(strongDualEquiv …).symm.arrowCongr (.refl 𝕜 𝕜)` constructs
-the canonical strong-bidual isomorphism `L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)`
-(`TauCeti.dualProjectiveLimit.inductiveBidualEquiv`), which agrees pointwise with canonical
-evaluation (`TauCeti.dualProjectiveLimit.inductiveBidualEquiv_apply_apply`), intertwines
-continuous linear maps between such limits with their double strong transposes
+Finally, still when `L` is a `T₁` locally convex space over `ℝ` or `ℂ`, the bonding maps are weakly
+compact, and `evalInductive` is continuous, composing `evalEquiv` with
+`(strongDualEquiv …).symm.arrowCongr (.refl 𝕜 𝕜)` constructs the canonical strong-bidual isomorphism
+`L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)` (`TauCeti.dualProjectiveLimit.inductiveBidualEquiv`),
+which agrees pointwise with canonical evaluation
+(`TauCeti.dualProjectiveLimit.inductiveBidualEquiv_apply_apply`), intertwines continuous linear
+maps between such limits with their double strong transposes
 (`TauCeti.dualProjectiveLimit.precomp_precomp_comp_inductiveBidualEquiv`), and matches
 `strongDualEquiv` followed by `bidualEquiv` with `(evalEquiv …).arrowCongr (.refl 𝕜 𝕜)`
 (`TauCeti.dualProjectiveLimit.strongDualEquiv_trans_bidualEquiv`).
@@ -102,12 +106,22 @@ neighbourhoods, whose restriction maps are compact by Montel's theorem.
   `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_continuous_comp_seminorm`,
   `TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`:
   forward continuity and final-topology characterization.
+* `TauCeti.dualProjectiveLimit.isTopologicalAddGroup_of_finalLocallyConvexTopology`,
+  `TauCeti.dualProjectiveLimit.locallyConvexSpace_of_finalLocallyConvexTopology`,
+  `TauCeti.dualProjectiveLimit.continuousSMul_of_finalLocallyConvexTopology`,
+  `TauCeti.dualProjectiveLimit.separatingDual_of_finalLocallyConvexTopology`,
+  `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_finalLocallyConvexTopology`: setup lemmas
+  supplying the transported instances and `evalInductive`-continuity from a final-topology
+  equality.
 * `TauCeti.dualProjectiveLimit.evalEquiv`: topological linear isomorphism
-  `L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)` when `evalInductive` is continuous.
-* `TauCeti.dualProjectiveLimit.completeSpace_of_continuous_evalInductive`: completeness of `L` when
-  `evalInductive` is continuous.
+  `L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)` over `ℝ` or `ℂ` when `L` is `T₁` locally convex,
+  the bonding maps are weakly compact, and `evalInductive` is continuous.
+* `TauCeti.dualProjectiveLimit.completeSpace_of_continuous_evalInductive`: completeness of a
+  locally convex uniform additive group `L` over `ℝ` or `ℂ` (with `IsUniformAddGroup L`) when the
+  bonding maps are weakly compact and `evalInductive` is continuous.
 * `TauCeti.dualProjectiveLimit.inductiveBidualEquiv`: canonical strong-bidual isomorphism
-  `L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)` when `evalInductive` is continuous, and its naturality.
+  `L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)` over `ℝ` or `ℂ` when `L` is `T₁` locally convex, the
+  bonding maps are weakly compact, and `evalInductive` is continuous, and its naturality.
 
 ## References
 
@@ -146,16 +160,18 @@ theorem isVonNBounded_iff_exists_subset_image_closedBall [SeparatingDual 𝕜 L]
     Bornology.IsVonNBounded 𝕜 A ↔ ∃ j, ∃ R : ℝ, A ⊆ ι j '' closedBall 0 R := by
   refine ⟨fun hA ↦ ?_, fun ⟨j, R, hA⟩ ↦ ((NormedSpace.isVonNBounded_closedBall 𝕜 (B j) R).image
     (ι j)).subset hA⟩
-  -- Evaluation at the points of `A` is a pointwise bounded family on `lim_j B j′`.
+  -- Evaluation at the points of `A` is a pointwise bounded subset of `(lim_j B j′)′_b`.
   have hbdd (f : dualProjectiveLimit T) :
-      BddAbove (Set.range fun x : A ↦ ‖evalInductive hι hinj hcover x f‖) := by
+      BddAbove (Set.range fun Φ : evalInductive hι hinj hcover '' A ↦
+        ‖(Φ : StrongDual 𝕜 (dualProjectiveLimit T)) f‖) := by
     obtain ⟨φ, rfl⟩ := precomp_surjective hι hinj hcover hfinal f
-    simpa [evalInductive_apply_precomp] using hA.bddAbove_range_norm_apply φ
-  obtain ⟨j, R, hrep⟩ := exists_forall_exists_norm_le_eval_eq hT _ hbdd
-  refine ⟨j, R, fun x hx ↦ ?_⟩
-  obtain ⟨z, hz, heq⟩ := hrep ⟨x, hx⟩
-  exact ⟨z, mem_closedBall_zero_iff.2 hz,
-    evalInductive_injective hι hinj hcover ((evalInductive_ι hι hinj hcover j z).trans heq)⟩
+    obtain ⟨r, hr⟩ := hA.bddAbove_range_norm_apply φ
+    refine ⟨r, Set.forall_mem_range.2 ?_⟩
+    rintro ⟨_, x, hx, rfl⟩
+    simpa [evalInductive_apply_precomp] using hr ⟨⟨x, hx⟩, rfl⟩
+  obtain ⟨j, R, hsub⟩ := exists_subset_image_closedBall_eval hT hbdd
+  refine ⟨j, R, (Set.image_subset_image_iff (evalInductive_injective hι hinj hcover)).1 ?_⟩
+  simpa [Set.image_image, evalInductive_ι] using hsub
 
 end RCLike
 
@@ -389,6 +405,19 @@ theorem continuous_evalInductive_of_le_finalLocallyConvexTopology
       (eval T n).continuous.congr fun z ↦ (evalInductive_ι hι hinj hcover n z).symm
   exact continuous_iff_le_induced.2 (hle.trans (continuous_iff_le_induced.1 hcont₀))
 
+/-- Over a nontrivially normed `ℝ`-algebra `𝕜`, whenever `L` carries the final locally convex
+topology of the compatible injective covering maps `ι n : B n →L[𝕜] L`, the glued evaluation
+map `evalInductive` is continuous. -/
+theorem continuous_evalInductive_of_finalLocallyConvexTopology
+    [NormedAlgebra ℝ 𝕜] [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
+    [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
+      ‹TopologicalSpace L›) :
+    Continuous (evalInductive hι hinj hcover) :=
+  continuous_evalInductive_of_le_finalLocallyConvexTopology hι hinj hcover ht.ge
+
 /-- If `evalInductive` is continuous, then every linear functional on `L` whose composites with all
 stage maps `ι n` are continuous is itself continuous on `L`. -/
 theorem continuous_of_continuous_evalInductive_of_continuous_comp
@@ -498,6 +527,78 @@ theorem finalLocallyConvexTopology_eq_of_continuous_evalInductive
     exact (hev n z).trans (evalInductive_ι hι hinj hcover n z).symm
   rw [ht₀, heq, ← (isInducing_evalInductive_of_continuous hι hinj hcover hcont).eq_induced]
 
+end RCLike
+
+section FinalTopologySetup
+
+/-- A space `L` carrying the final locally convex topology of continuous linear maps
+`ι n : B n →L[𝕜] L` (over an `ℝ`-algebra `𝕜`) is a topological additive group. -/
+theorem isTopologicalAddGroup_of_finalLocallyConvexTopology
+    {𝕜 : Type*} [Semiring 𝕜] [Algebra ℝ 𝕜] {B : ℕ → Type*}
+    [∀ n, AddCommGroup (B n)] [∀ n, Module 𝕜 (B n)] [∀ n, TopologicalSpace (B n)]
+    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
+    {L : Type*} [AddCommGroup L] [Module 𝕜 L] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
+    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
+      ‹TopologicalSpace L›) :
+    IsTopologicalAddGroup L := by
+  rw [← ht]
+  infer_instance
+
+/-- A space `L` carrying the final locally convex topology of continuous linear maps
+`ι n : B n →L[𝕜] L` (over an `ℝ`-algebra `𝕜`) is a locally convex real vector space. -/
+theorem locallyConvexSpace_of_finalLocallyConvexTopology
+    {𝕜 : Type*} [Semiring 𝕜] [Algebra ℝ 𝕜] {B : ℕ → Type*}
+    [∀ n, AddCommGroup (B n)] [∀ n, Module 𝕜 (B n)] [∀ n, TopologicalSpace (B n)]
+    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
+    {L : Type*} [AddCommGroup L] [Module 𝕜 L] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
+    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
+      ‹TopologicalSpace L›) :
+    LocallyConvexSpace ℝ L := by
+  rw [← ht]
+  infer_instance
+
+/-- Over `ℝ` or `ℂ`, a space `L` carrying the final locally convex topology of continuous linear
+maps `ι n : B n →L[𝕜] L` has jointly continuous scalar multiplication. -/
+theorem continuousSMul_of_finalLocallyConvexTopology
+    {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
+    [∀ n, AddCommGroup (B n)] [∀ n, Module 𝕜 (B n)] [∀ n, TopologicalSpace (B n)]
+    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)] [∀ n, ContinuousConstSMul 𝕜 (B n)]
+    {L : Type*} [AddCommGroup L] [Module 𝕜 L] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
+    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
+      ‹TopologicalSpace L›) :
+    ContinuousSMul 𝕜 L := by
+  rw [← ht]
+  exact FinalLocallyConvexTopology.continuousSMul _ fun n ↦ (ι n).map_smul
+
+/-- Over `ℝ` or `ℂ`, a `T₁` space `L` carrying the final locally convex topology of continuous
+linear maps `ι n : B n →L[𝕜] L` has a separating continuous dual. -/
+theorem separatingDual_of_finalLocallyConvexTopology
+    {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
+    [∀ n, AddCommGroup (B n)] [∀ n, Module 𝕜 (B n)] [∀ n, TopologicalSpace (B n)]
+    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)] [∀ n, ContinuousConstSMul 𝕜 (B n)]
+    {L : Type*} [AddCommGroup L] [Module 𝕜 L] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [TopologicalSpace L] [T1Space L] {ι : ∀ n, B n →L[𝕜] L}
+    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
+      ‹TopologicalSpace L›) :
+    SeparatingDual 𝕜 L :=
+  let _ := isTopologicalAddGroup_of_finalLocallyConvexTopology ht
+  let _ := locallyConvexSpace_of_finalLocallyConvexTopology ht
+  let _ := continuousSMul_of_finalLocallyConvexTopology ht
+  instSeparatingDualOfLocallyConvexSpace
+
+end FinalTopologySetup
+
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  {T : ∀ n, B n →L[𝕜] B (n + 1)}
+  {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
+  {ι : ∀ n, B n →L[𝕜] L}
+
 /-- **Canonical evaluation isomorphism onto the strong dual of `dualProjectiveLimit T`.** Let `L`
 be a `T₁` locally convex space over `ℝ` or `ℂ`, covered by compatible injective continuous linear
 maps `ι n : B n →L[𝕜] L` from normed spaces with weakly compact bonding maps `T n`. Whenever
@@ -565,14 +666,17 @@ theorem strongDualEquiv_trans_bidualEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜
   let a := strongDualEquiv hT hι hinj hcover
     (continuous_of_continuous_evalInductive_of_continuous_comp hι hinj hcover hcont)
   let b := evalEquiv hT hι hinj hcover hcont
-  have h : ∀ (x : L) (ℓ : StrongDual 𝕜 L), b x (a ℓ) = ℓ x := fun x ℓ ↦ by
-    simp [a, b, evalInductive_apply_precomp]
+  have h : ∀ (f : dualProjectiveLimit T) (φ : StrongDual 𝕜 (dualProjectiveLimit T)),
+      a.symm f (b.symm φ) = φ f := fun f φ ↦ by
+    obtain ⟨x, rfl⟩ := b.surjective φ
+    obtain ⟨n, z, rfl⟩ := hcover x
+    simp [a, b]
   have hbidual : dualProjectiveLimit.bidualEquiv hT =
-      ContinuousLinearEquiv.dualBidualEquivOfDualEquiv a b h := by
+      ContinuousLinearEquiv.bidualEquivOfDualEquiv b.symm a.symm h := by
     ext f φ
     simp
   rw [hbidual]
-  exact a.trans_dualBidualEquivOfDualEquiv b h
+  exact a.trans_bidualEquivOfDualEquiv b h
 
 /-- **Completeness of compact inductive limits.** Let `L` be a locally convex uniform additive
 group over `ℝ` or `ℂ`, covered by compatible injective continuous linear maps `ι n : B n →L[𝕜] L`

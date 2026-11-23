@@ -77,10 +77,11 @@ separate points of `L` and surjective when the bonding maps are weakly compact o
 
 * `TauCeti.dualProjectiveLimit`: the projective limit `lim_j B j′` as a submodule of the product.
 * `TauCeti.dualProjectiveLimit.coord`, `TauCeti.dualProjectiveLimit.continuousLinearMap_ext`,
-  `TauCeti.dualProjectiveLimit.lift`, `TauCeti.dualProjectiveLimit.coord_comp_lift`: its
-  coordinate projections to the spaces `B j′`, coordinate extensionality for continuous linear
-  maps into `lim_j B j′`, and the universal lift assembling a compatible family of coordinate maps
-  into `lim_j B j′`.
+  `TauCeti.dualProjectiveLimit.precomp_comp_coord`, `TauCeti.dualProjectiveLimit.lift`,
+  `TauCeti.dualProjectiveLimit.coord_comp_lift`, `TauCeti.dualProjectiveLimit.lift_coord`: its
+  coordinate projections to the spaces `B j′`, coordinate extensionality and compatibility for
+  continuous linear maps into `lim_j B j′`, and the universal lift assembling a compatible family
+  of coordinate maps into `lim_j B j′`.
 * `TauCeti.dualProjectiveLimit.withSeminorms`: its topology is given by the coordinate norms.
 * `TauCeti.dualProjectiveLimit.isVonNBounded_iff`: bounded sets of `lim_j B j′` are those uniformly
   bounded in each coordinate.
@@ -130,7 +131,7 @@ namespace TauCeti
 
 section General
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : ℕ → Type*}
+variable {𝕜 : Type*} [NormedField 𝕜] {B : ℕ → Type*}
   [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
   (T : ∀ n, B n →L[𝕜] B (n + 1))
 
@@ -165,9 +166,13 @@ theorem isClosed_dualProjectiveLimit :
   exact isClosed_iInter fun n ↦ isClosed_eq
     ((precomp 𝕜 (T n)).continuous.comp (continuous_apply (n + 1))) (continuous_apply n)
 
+end General
+
 section Complete
 
-variable [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  (T : ∀ n, B n →L[𝕜] B (n + 1)) [CompleteSpace 𝕜]
 
 /-- The projective limit is complete when the scalar field is complete. -/
 instance : CompleteSpace (dualProjectiveLimit T) :=
@@ -180,13 +185,11 @@ instance : IsCompletelyPseudoMetrizableSpace (dualProjectiveLimit T) :=
 
 end Complete
 
-end General
-
 namespace dualProjectiveLimit
 
-section General
+section NormedField
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : ℕ → Type*}
+variable {𝕜 : Type*} [NormedField 𝕜] {B : ℕ → Type*}
   [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
   (T : ∀ n, B n →L[𝕜] B (n + 1))
 
@@ -203,10 +206,19 @@ theorem coord_apply (j : ℕ) (f : dualProjectiveLimit T) :
 
 /-- Two continuous linear maps into `dualProjectiveLimit T` are equal if their compositions with
 every coordinate projection `coord T n` are equal. -/
+@[ext]
 theorem continuousLinearMap_ext {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
     {u v : E →L[𝕜] dualProjectiveLimit T}
     (h : ∀ n, (coord T n).comp u = (coord T n).comp v) : u = v :=
   ContinuousLinearMap.ext fun x ↦ Subtype.ext <| funext fun n ↦ congrArg (· x) (h n)
+
+/-- Precomposing the `(n + 1)`-st coordinate projection with `T n` gives the `n`-th coordinate
+projection. -/
+@[simp]
+theorem precomp_comp_coord (n : ℕ) :
+    (ContinuousLinearMap.precomp 𝕜 (T n)).comp (coord T (n + 1)) = coord T n := by
+  ext f x
+  exact congr($(f.property n) x)
 
 /-- Assemble a compatible family of continuous linear maps `u n : E →L[𝕜] StrongDual 𝕜 (B n)`,
 `(ContinuousLinearMap.precomp 𝕜 (T n)).comp (u (n + 1)) = u n`, into a continuous linear map
@@ -234,6 +246,17 @@ theorem coord_comp_lift {E : Type*} [AddCommGroup E] [Module 𝕜 E] [Topologica
   ext x z
   simp
 
+/-- Lifting the coordinate projections of an existing map `u : E →L[𝕜] dualProjectiveLimit T`
+recovers `u`. -/
+@[simp]
+theorem lift_coord {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    (u : E →L[𝕜] dualProjectiveLimit T)
+    (hu : ∀ n, (ContinuousLinearMap.precomp 𝕜 (T n)).comp ((coord T (n + 1)).comp u) =
+      (coord T n).comp u) :
+    lift (fun n ↦ (coord T n).comp u) hu = u := by
+  ext n
+  simp
+
 @[simp]
 theorem apply_succ_comp (f : dualProjectiveLimit T) (j : ℕ) :
     ((f : ∀ n, StrongDual 𝕜 (B n)) (j + 1)).comp (T j) = (f : ∀ n, StrongDual 𝕜 (B n)) j :=
@@ -243,6 +266,50 @@ theorem apply_succ_comp (f : dualProjectiveLimit T) (j : ℕ) :
 theorem apply_succ_apply (f : dualProjectiveLimit T) {j : ℕ} (x : B j) :
     (f : ∀ n, StrongDual 𝕜 (B n)) (j + 1) (T j x) = (f : ∀ n, StrongDual 𝕜 (B n)) j x :=
   congr($(apply_succ_comp f j) x)
+
+section Precomp
+
+variable {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
+
+variable (ι) in
+/-- Precomposition with compatible maps `ι j : B j → L` sends a continuous functional `φ` on `L`
+to the point `(φ ∘ ι j)_j` of the projective limit `lim_j B j′`. -/
+def precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) :
+    StrongDual 𝕜 L →L[𝕜] dualProjectiveLimit T :=
+  lift (fun n ↦ ContinuousLinearMap.precomp 𝕜 (ι n)) fun n ↦ by
+    rw [← ContinuousLinearMap.precomp_comp, hι n]
+
+@[simp]
+theorem precomp_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (φ : StrongDual 𝕜 L) (n : ℕ) :
+    (precomp ι hι φ : ∀ n, StrongDual 𝕜 (B n)) n = φ.comp (ι n) := by
+  simp [precomp]
+
+@[simp]
+theorem coord_comp_precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (n : ℕ) :
+    (coord T n).comp (precomp ι hι) = ContinuousLinearMap.precomp 𝕜 (ι n) :=
+  coord_comp_lift _ _ n
+
+/-- A continuous functional on `L` is determined by its composites with the maps `ι j` when the
+ranges of these maps cover `L`. -/
+theorem precomp_injective (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) :
+    Function.Injective (precomp ι hι) := by
+  intro φ ψ h
+  ext x
+  obtain ⟨n, y, rfl⟩ := hcover x
+  simpa using congr($(congr_arg (coord T n) h) y)
+
+end Precomp
+
+end NormedField
+
+section General
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  (T : ∀ n, B n →L[𝕜] B (n + 1))
+
+variable {T}
 
 /-- The coordinate norms increase along the projective system, up to the norms of the bonding
 maps: `‖f j‖ ≤ ‖T j‖ ⋯ ‖T (k - 1)‖ * ‖f k‖` for `j ≤ k`. -/
@@ -343,37 +410,9 @@ theorem eval_comp (j : ℕ) : (eval T (j + 1)).comp (T j) = eval T j := by
   ext x f
   simp
 
-section Precomp
+section EvalInductive
 
 variable {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
-
-variable (ι) in
-/-- Precomposition with compatible maps `ι j : B j → L` sends a continuous functional `φ` on `L`
-to the point `(φ ∘ ι j)_j` of the projective limit `lim_j B j′`. -/
-def precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) :
-    StrongDual 𝕜 L →L[𝕜] dualProjectiveLimit T :=
-  lift (fun n ↦ ContinuousLinearMap.precomp 𝕜 (ι n)) fun n ↦ by
-    rw [← ContinuousLinearMap.precomp_comp, hι n]
-
-@[simp]
-theorem precomp_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (φ : StrongDual 𝕜 L) (n : ℕ) :
-    (precomp ι hι φ : ∀ n, StrongDual 𝕜 (B n)) n = φ.comp (ι n) := by
-  simp [precomp]
-
-@[simp]
-theorem coord_comp_precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (n : ℕ) :
-    (coord T n).comp (precomp ι hι) = ContinuousLinearMap.precomp 𝕜 (ι n) :=
-  coord_comp_lift _ _ n
-
-/-- A continuous functional on `L` is determined by its composites with the maps `ι j` when the
-ranges of these maps cover `L`. -/
-theorem precomp_injective (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
-    (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) :
-    Function.Injective (precomp ι hι) := by
-  intro φ ψ h
-  ext x
-  obtain ⟨n, y, rfl⟩ := hcover x
-  simpa using congr($(congr_arg (coord T n) h) y)
 
 /-- A vector of `B j` can be moved along the bonding maps to any later stage `B k`, without
 changing its image in `L` or its value under a compatible family of functionals. -/
@@ -478,7 +517,7 @@ theorem evalInductive_injective [SeparatingDual 𝕜 L] (hι : ∀ n, (ι (n + 1
     Function.Injective (evalInductive hι hinj hcover) :=
   injective_of_forall_apply_eq (evalInductive_apply_precomp hι hinj hcover)
 
-end Precomp
+end EvalInductive
 
 variable (T) in
 /-- Restricting a continuous functional on `StrongDual 𝕜 (dualProjectiveLimit T)` along the stage
@@ -508,9 +547,8 @@ theorem fromStrongBidual_applyₗ (f : dualProjectiveLimit T) :
 @[simp]
 theorem fromStrongBidual_comp_strongEval [BarrelledSpace 𝕜 (dualProjectiveLimit T)] :
     (fromStrongBidual T).comp (strongEval 𝕜 (dualProjectiveLimit T)) =
-      ContinuousLinearMap.id 𝕜 _ := by
-  ext1 f
-  simp
+      ContinuousLinearMap.id 𝕜 _ :=
+  ContinuousLinearMap.ext fun f ↦ by simp
 
 end General
 
