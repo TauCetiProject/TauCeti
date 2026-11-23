@@ -8,24 +8,57 @@ module
 import TauCeti.RingTheory.DeltaRing.Quotient
 
 /-!
-# Checks for `δ`-stable ideals and `δ`-quotients
+# Checks for quotients of `δ`-rings
 
-These examples use `ℤ` with its unique `2`-`δ`-structure, for which `δ 2 = -1`. The ideal `(2)`
-is therefore not `δ`-stable, although the `δ`-stabilization of `⊥` lies in it: the minimality
-statement `deltaStabilization_le_iff` needs its target to be `δ`-stable. The `δ`-stabilization of
-`(2)` contains the unit `-1`, so it is the unit ideal and the universal `δ`-quotient of `ℤ` in
-which `2` vanishes is the zero ring.
+The zero ideal is `δ`-stable and its quotient recovers the given `δ`-structure; the unit ideal is
+`δ`-stable with quotient the zero ring. For the `δ`-structure on `ℤ`, the ideal `(p)` is stable
+under the Frobenius, which is the identity, but not under `δ`, since `δ p = 1 - p ^ (p - 1)` is
+not divisible by `p`. So no `δ`-structure on `ℤ ⧸ (p)` makes the quotient map a `δ`-map.
+
+For `p = 2`, where `δ 2 = -1`, the `δ`-stabilization of `⊥` lies in `(2)`, which is not
+`δ`-stable: the minimality statement `deltaStabilization_le_iff` needs its target to be
+`δ`-stable. The `δ`-stabilization of `(2)` contains the unit `-1`, so it is the unit ideal and the
+universal `δ`-quotient of `ℤ` in which `2` vanishes is the zero ring.
 -/
 
 namespace TauCeti.Examples
 
-open TauCeti.DeltaRing
+open DeltaRing
 
--- `(2)` is not `δ`-stable in `ℤ`, since `δ 2 = -1`.
-example : ¬ IsDeltaStable 2 (Ideal.span {(2 : ℤ)}) := fun h => by
-  have := h.delta_mem (Ideal.subset_span rfl)
-  rw [delta_int_two, Ideal.mem_span_singleton] at this
-  norm_num at this
+variable {p : ℕ} {A : Type*} [CommRing A] [DeltaRing p A]
+
+-- The zero ideal is `δ`-stable, and the isomorphism `A ⧸ ⊥ ≃+* A` carries the quotient
+-- `δ`-structure to the given one.
+example (hI : ∀ x ∈ (⊥ : Ideal A), delta p x ∈ (⊥ : Ideal A)) (x : A ⧸ (⊥ : Ideal A)) :
+    RingEquiv.quotientBot A (@delta p _ _ (quotient ⊥ hI) x) =
+      delta p (RingEquiv.quotientBot A x) := by
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp only [delta_quotient_mk, RingEquiv.quotientBot_mk]
+
+example : ∀ x ∈ (⊥ : Ideal A), delta p x ∈ (⊥ : Ideal A) := by
+  simp
+
+-- The unit ideal is `δ`-stable, with quotient the zero ring and its unique `δ`-structure.
+example (hI : ∀ x ∈ (⊤ : Ideal A), delta p x ∈ (⊤ : Ideal A)) :
+    quotient ⊤ hI = default :=
+  Subsingleton.elim _ _
+
+-- The ideal `(p)` of `ℤ` is stable under the Frobenius but not under `δ`.
+example [Fact p.Prime] : ∀ x ∈ Ideal.span {(p : ℤ)}, frobenius p ℤ x ∈ Ideal.span {(p : ℤ)} := by
+  simp
+
+-- `(p)` is not `δ`-stable, so no `δ`-structure on `ℤ ⧸ (p)` makes the quotient map a `δ`-map.
+example [hp : Fact p.Prime] :
+    ¬ ∃ d : DeltaRing p (ℤ ⧸ Ideal.span {(p : ℤ)}),
+      @IsDeltaMap p ℤ _ _ _ _ d (Ideal.Quotient.mk (Ideal.span {(p : ℤ)})) := by
+  have key : ¬ ∀ x ∈ Ideal.span {(p : ℤ)}, delta p x ∈ Ideal.span {(p : ℤ)} := by
+    intro h
+    have h' := h p (Ideal.mem_span_singleton_self _)
+    rw [delta_natCast_self, Ideal.mem_span_singleton] at h'
+    have h1 : (p : ℤ) ∣ 1 := by
+      simpa using dvd_add h' (dvd_pow_self (p : ℤ) (Nat.sub_ne_zero_of_lt hp.out.one_lt))
+    exact hp.out.one_lt.ne' (by exact_mod_cast Int.eq_one_of_dvd_one (by positivity) h1)
+  exact fun ⟨_, hd⟩ => key fun _ hx => delta_mem_of_isDeltaMap_quotient_mk hd hx
 
 -- The `δ`-stabilization of `⊥` lies in the ideal `(2)`, which is not `δ`-stable.
 example : deltaStabilization 2 (⊥ : Ideal ℤ) ≤ Ideal.span {(2 : ℤ)} := by

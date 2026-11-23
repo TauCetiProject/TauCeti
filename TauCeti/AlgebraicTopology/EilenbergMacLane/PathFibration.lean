@@ -48,20 +48,23 @@ noncomputable section
 
 open CategoryTheory Limits AlgebraicTopology
 
+universe u
+
 namespace TauCeti
 
-variable (k : Type) [CommRing k]
+variable (k : Type u) [CommRing k]
 
 /-- **A Serre fibration with acyclic Eilenberg--Mac Lane fibres is a homology isomorphism.** A
 Serre fibration whose fibres are `K(G, n)` spaces induces isomorphisms on `k`-homology, as soon as
 `K(G, n)` spaces have no positive-degree `k`-homology. -/
-theorem isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber {G : Type} [Group G] {n : ℕ}
-    [NeZero n] {E B : _root_.TopCat.{0}} {p : E ⟶ B} (hp : TauCeti.TopCat.serreFibrations p)
+theorem isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber {G : Type u} [Group G]
+    {n : ℕ} [NeZero n] {E B : _root_.TopCat.{u}} {p : E ⟶ B}
+    (hp : TauCeti.TopCat.serreFibrations p)
     (hfib : ∀ b, ∃ y, IsEilenbergMacLaneSpace G n (p.fiber b) y)
-    (hK : ∀ {X : Type} [TopologicalSpace X] {x : X}, IsEilenbergMacLaneSpace G n X x →
+    (hK : ∀ {X : Type u} [TopologicalSpace X] {x : X}, IsEilenbergMacLaneSpace G n X x →
       ∀ i, Subsingleton (((singularChains k).obj (_root_.TopCat.of X)).homology (i + 1)))
     (i : ℕ) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{0} k) i).obj (ModuleCat.of k k)).map p) :=
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map p) :=
   TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber hp k i
     (fun b ↦ (hfib b).choose_spec.pathConnectedSpace) fun b q hq0 _ ↦ by
       obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
@@ -72,12 +75,12 @@ namespace IsEilenbergMacLaneSpace
 
 /-- The induction on the degree, through the based path fibration. The degree is written `j + 1`
 so that the induction does not have to carry a `NeZero` instance. -/
-private theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne_succ {A : Type}
+private theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne_succ {A : Type u}
     [AddCommGroup A]
-    (hA : ∀ {X : Type} [TopologicalSpace X] {x : X},
+    (hA : ∀ {X : Type u} [TopologicalSpace X] {x : X},
       IsEilenbergMacLaneSpaceOne (Multiplicative A) X x →
         ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1))) (j : ℕ) :
-    ∀ {X : Type} [TopologicalSpace X] {x : X},
+    ∀ {X : Type u} [TopologicalSpace X] {x : X},
       IsEilenbergMacLaneSpace (Multiplicative A) (j + 1) X x →
         ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) := by
   induction j with
@@ -91,7 +94,7 @@ private theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne_succ
     let p : TopCat.of (MappingPathFiber (ContinuousMap.id X) x) ⟶ TopCat.of X :=
       TopCat.ofHom (MappingPathFiber.proj _ x)
     have hp : TauCeti.TopCat.serreFibrations p :=
-      (MappingPathFiber.isHurewiczFibration_proj.{0} _ _).mem_serreFibrations
+      (MappingPathFiber.isHurewiczFibration_proj.{u} _ _).mem_serreFibrations
     -- Every fibre is homotopy equivalent to the loop space, a `K(A, j + 1)` space.
     have hfib (b : X) : ∃ y, IsEilenbergMacLaneSpace (Multiplicative A) (j + 1) (p.fiber b) y :=
       hX.exists_fiber_mappingPathFiberProj (ContinuousMap.id X) x b
@@ -105,11 +108,11 @@ private theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne_succ
 has no homology in positive degrees with coefficients in a commutative ring `k`, then neither has
 any `K(A, n)` space, `n ≥ 1`. The induction goes through the based path fibration of a
 `K(A, n + 1)` space, whose total space is contractible and whose fibres are `K(A, n)` spaces. -/
-theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne {A : Type} [AddCommGroup A]
-    (hA : ∀ {X : Type} [TopologicalSpace X] {x : X},
+theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne {A : Type u}
+    [AddCommGroup A] (hA : ∀ {X : Type u} [TopologicalSpace X] {x : X},
       IsEilenbergMacLaneSpaceOne (Multiplicative A) X x →
         ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)))
-    {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
+    {n : ℕ} [NeZero n] {X : Type u} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne n)
