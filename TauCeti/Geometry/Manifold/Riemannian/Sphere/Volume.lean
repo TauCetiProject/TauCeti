@@ -1,14 +1,18 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Riccardo Brasca, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Group.Measure
 public import TauCeti.Geometry.Euclidean.Volume.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Hausdorff
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
 
 /-!
 # The Riemannian volume of the round sphere
@@ -20,11 +24,22 @@ normalized `n`-dimensional Hausdorff measure `μHE[n]` of `E` restricted to the 
 particular the round sphere has total volume `|Sⁿ| = TauCeti.roundSphereVolume n`, the constant in
 the Yamabe invariant `Y(Sⁿ) = n (n - 1) |Sⁿ| ^ (2 / n)` of the round sphere.
 
+The antipodal map preserves this volume. For mean-zero cancellation, also import
+`TauCeti.MeasureTheory.Integral.OddSymmetric` and apply `MeasureTheory.integral_eq_zero_of_odd`;
+the instance `TauCeti.isNegInvariant_riemannianVolume_sphere` supplies negation invariance. For a
+pointwise odd function, pass `Filter.Eventually.of_forall hodd` as the symmetry hypothesis.
+This gives the mean-zero step in the stability calculation for the projective equator.
+
 ## Main results
 
+* `TauCeti.isNegInvariant_riemannianVolume_sphere`: native Riemannian volume on the round unit
+  sphere is invariant under negation.
 * `TauCeti.map_subtypeVal_riemannianVolume_sphere`: the inclusion of the sphere carries its
   Riemannian volume to `μHE[n]` restricted to the sphere.
 * `TauCeti.riemannianTotalVolume_sphere`: the round sphere has total volume `|Sⁿ|`.
+
+The proof of antipodal invariance originated in
+[`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/1666783/ForTauCeti/Geometry/Manifold/Riemannian/Examples/Immersion/ProjectiveEquator/OddMean.lean).
 
 ## References
 
@@ -32,17 +47,36 @@ the Yamabe invariant `Y(Sⁿ) = n (n - 1) |Sⁿ| ^ (2 / n)` of the round sphere.
   (the round metric as an induced metric, and the Riemannian density).
 -/
 
-public section
+public noncomputable section
 
-open MeasureTheory Metric Module Set
-open scoped Manifold
-
-noncomputable section
+open MeasureTheory
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {n : ℕ} [Fact (finrank ℝ E = n + 1)] [MeasurableSpace E] [BorelSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  {n : ℕ} [Fact (Module.finrank ℝ E = n + 1)]
+
+/-- Native Riemannian volume on the round unit sphere is invariant under negation. -/
+instance isNegInvariant_riemannianVolume_sphere :
+    letI := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
+    (riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1)).IsNegInvariant := by
+  have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
+  let Φ := (LinearIsometryEquiv.neg ℝ (E := E)).unitSphereRiemannianIsometry
+    (n := n) (k := n)
+  have hΦ : (Φ : Metric.sphere (0 : E) 1 → Metric.sphere (0 : E) 1) = fun x => -x := by
+    funext x
+    rw [← RiemannianIsometry.coe_toDiffeomorph Φ]
+    rw [LinearIsometryEquiv.unitSphereRiemannianIsometry_toDiffeomorph]
+    exact LinearIsometryEquiv.unitSphereDiffeomorph_neg_apply x
+  exact ⟨by simpa only [Measure.neg_def, hΦ] using Φ.measurePreserving_riemannianVolume.map_eq⟩
+
+section SurfaceMeasure
+
+open Metric Module Set
+
+variable [FiniteDimensional ℝ E]
 
 /-- **The Riemannian volume of the round sphere is its surface measure.** The inclusion of the unit
 sphere `Sⁿ` into `E` carries the Riemannian volume of the round metric to the normalized
@@ -69,5 +103,7 @@ theorem riemannianTotalVolume_sphere :
     euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume Fact.out] at h
   rw [riemannianTotalVolume_def, measureReal_def, h,
     ENNReal.toReal_ofReal (roundSphereVolume_pos n).le]
+
+end SurfaceMeasure
 
 end TauCeti

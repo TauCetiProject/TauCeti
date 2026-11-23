@@ -62,7 +62,8 @@ fields on a product manifold.
   composing the differential of `Prod.map f g` with a slice inclusion commutes with the
   differential on the varied factor.
 * `TauCeti.mfderivWithin_extChartAt_symm_prod_apply`: the derivative of the inverse of a product
-  chart acts on each component through the derivative of the inverse chart of that factor.
+  chart acts on each component through the derivative of the inverse chart of that factor;
+  `TauCeti.mfderiv_extChartAt_symm_prod_apply` is the same for `mfderiv` without boundary.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `MDifferentiableAt.injective_mfderiv_fst_prod_iff`: the differential of a
@@ -70,6 +71,8 @@ fields on a product manifold.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
 * `MDifferentiableAt.curry_left` and `MDifferentiableAt.curry_right`: a curried function
   differentiable jointly is differentiable in each variable separately.
+* `MDifferentiableAt.mfderiv_uncurry_apply_zero_mk`: the differential of an uncurried family on
+  a vertical vector `(0, v)` is the differential of the member of the family on `v`.
 
 * `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
   differential of a coordinate of a map into a product.
@@ -437,6 +440,19 @@ theorem mfderivWithin_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold 
   -- the tangent space of the product only up to definitional unfolding.
   rfl
 
+/-- **The derivative of the inverse of a product chart, without boundary.** On the target of the
+preferred chart of `M × N` at `p`, the derivative of its inverse sends `(v, w)` to the pair of the
+derivatives of the inverse charts of `M` at `p.1` and of `N` at `p.2`, applied to `v` and to `w`. -/
+theorem mfderiv_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold J 1 N] [I.Boundaryless]
+    [J.Boundaryless] {p : M × N} {z : E × E'} (hz : z ∈ (extChartAt (I.prod J) p).target)
+    (v : E × E') :
+    mfderiv 𝓘(𝕜, E × E') (I.prod J) (extChartAt (I.prod J) p).symm z v =
+      (mfderiv 𝓘(𝕜, E) I (extChartAt I p.1).symm z.1 v.1,
+        mfderiv 𝓘(𝕜, E') J (extChartAt J p.2).symm z.2 v.2) := by
+  rw [← mfderivWithin_univ, ← (I.prod J).range_eq_univ,
+    mfderivWithin_extChartAt_symm_prod_apply hz, I.range_eq_univ, J.range_eq_univ,
+    mfderivWithin_univ, mfderivWithin_univ]
+
 end ExtChartAt
 
 end TauCeti
@@ -530,6 +546,14 @@ theorem MDifferentiableAt.curry_right
     (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) :
     MDifferentiableAt I' J (fun y ↦ f x y) y :=
   hf.comp (f := fun y' : M' ↦ (x, y')) y (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
+
+/-- The differential of an uncurried family `(x, y) ↦ f x y` on a vertical tangent vector `(0, v)`
+is the differential of the member `f x` on `v`. -/
+theorem MDifferentiableAt.mfderiv_uncurry_apply_zero_mk
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) (v : TangentSpace I' y) :
+    mfderiv (I.prod I') J (Function.uncurry f) (x, y) (0, v) = mfderiv I' J (f x) y v :=
+  -- The product rule, whose first summand vanishes at the zero vector.
+  (mfderiv_prod_eq_add_apply hf).trans ((congrArg (· + _) (map_zero _)).trans (zero_add _))
 
 end Curry
 

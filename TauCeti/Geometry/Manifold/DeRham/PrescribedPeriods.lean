@@ -165,11 +165,11 @@ theorem homologyPeriod_surjective : Function.Surjective (homologyPeriod (I := I)
   obtain ⟨x⟩ : Nonempty M := inferInstance
   -- The homomorphism of the fundamental group through the Hurewicz isomorphism.
   obtain ⟨c, hc⟩ := period_surjective (I := I) x (h.comp
-    ((hurewiczHomologyAddEquiv (X := .of M) x).toAddMonoidHom.comp
+    ((hurewiczHomologyAddEquiv (X := .of M) x (.refl ℤ)).toAddMonoidHom.comp
       (MonoidHom.toAdditive Group.Abelianization.of)))
   obtain ⟨φ, rfl⟩ := mk_surjective I 1 c
   refine ⟨mk I 1 φ,
-    homology_one_addMonoidHom_ext_of_fundamentalGroup (X := .of M) x fun g ↦ ?_⟩
+    homology_one_addMonoidHom_ext_of_fundamentalGroup (X := .of M) x (.refl ℤ) fun g ↦ ?_⟩
   rw [homologyPeriod_mk, homologyPeriodHom_hurewiczHomologyAddEquiv, ← period_mk, hc]
   simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
     AddEquiv.coe_toAddMonoidHom]

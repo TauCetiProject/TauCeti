@@ -20,11 +20,15 @@ derivative of their pointwise bilinear product is `α`-Hölder on `s`, with cons
 bounds on the first factor are needed for a global bound when the second factor has topological
 support inside that open set
 (`ContinuousLinearMap.holderWith_iteratedFDeriv_of_tsupport_subset_right`).
+
+For two local `C^{n,α}` maps, `ContinuousLinearMap.exists_holderOnWith_iteratedFDeriv_comp₂`
+gives a common positive ball on which their bilinear product is `C^n` and its top derivative is
+`α`-Hölder, deriving the required lower-jet bounds locally.
 -/
 
 public section
 
-open Set
+open Set Metric Filter
 open scoped NNReal Topology
 
 namespace ContinuousLinearMap
@@ -311,5 +315,36 @@ theorem holderOnWith_iteratedFDeriv_comp₂
   have h := holderOnWith_iteratedFDeriv_comp₂_aux k Lu hfu hgu (hs.preimage e.continuous)
     hfub hgub hfuH hguH
   exact h.mono_const (by gcongr)
+
+/-- Two local `C^{n,α}` maps have a local `C^{n,α}` bilinear product, without an extra
+derivative or finite-dimensional parameter assumption. -/
+theorem exists_holderOnWith_iteratedFDeriv_comp₂
+    {P : Type uP} {A : Type uA} {B : Type uB} {G : Type uG}
+    [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
+    [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (L : A →L[ℝ] B →L[ℝ] G) {n : ℕ} {α C D : ℝ≥0} {f : P → A} {g : P → B}
+    {s : Set P} {a : P} (hs : s ∈ 𝓝 a) (hα : α ≤ 1)
+    (hf : ContDiffOn ℝ n f s) (hg : ContDiffOn ℝ n g s)
+    (hfH : HolderOnWith C α (iteratedFDeriv ℝ n f) s)
+    (hgH : HolderOnWith D α (iteratedFDeriv ℝ n g) s) :
+    ∃ r > 0, ball a r ⊆ s ∧
+      ContDiffOn ℝ n (fun x ↦ L (f x) (g x)) (ball a r) ∧ ∃ K : ℝ≥0,
+        HolderOnWith K α (iteratedFDeriv ℝ n (fun x ↦ L (f x) (g x))) (ball a r) := by
+  obtain ⟨r, hr, hrs, M, H, hfb, hfH'⟩ :=
+    hf.exists_ball_bounds_and_holderOnWith_iteratedFDeriv hs hα hfH
+  obtain ⟨t, ht, _, N, K, hgb, hgH'⟩ :=
+    hg.exists_ball_bounds_and_holderOnWith_iteratedFDeriv hs hα hgH
+  obtain ⟨ρ, hρ, hρrt⟩ := Metric.eventually_nhds_iff_ball.mp
+    (Filter.Eventually.and (ball_mem_nhds a hr) (ball_mem_nhds a ht))
+  have hρr : ball a ρ ⊆ ball a r := fun x hx ↦ (hρrt x hx).1
+  have hρt : ball a ρ ⊆ ball a t := fun x hx ↦ (hρrt x hx).2
+  have hρs := hρr.trans hrs
+  have hC : ContDiffOn ℝ n (fun x ↦ L (f x) (g x)) s :=
+    L.isBoundedBilinearMap.contDiff.comp_contDiffOn (hf.prodMk hg)
+  exact ⟨ρ, hρ, hρs, hC.mono hρs, _, L.holderOnWith_iteratedFDeriv_comp₂
+    (hf.mono hρs) (hg.mono hρs) isOpen_ball
+    (fun j hj x hx ↦ hfb j hj x (hρr hx)) (fun j hj x hx ↦ hgb j hj x (hρt hx))
+    (fun j hj ↦ (hfH' j hj).mono hρr) (fun j hj ↦ (hgH' j hj).mono hρt)⟩
 
 end ContinuousLinearMap

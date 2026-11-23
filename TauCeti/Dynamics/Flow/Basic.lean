@@ -31,6 +31,9 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.prod`: the product of two flows with the same time.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
   set all meet an open set, they all meet it before a common time.
+* `Flow.homotopic_of_eq_apply`: maps sending each point to two times of its flow line are homotopic.
+* `Flow.homotopic_id_restrict`: on a forward invariant set, each forward time map is homotopic to
+  the identity.
 -/
 
 public section
@@ -145,5 +148,16 @@ theorem homotopic_of_eq_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpa
     exact ϕ.continuous (by fun_prop) (hp.comp continuous_snd)
   · exact hι.injective ((hG (0, y)).trans (by simp [hF₀]))
   · exact hι.injective ((hG (1, y)).trans (by simp [hF₁]))
+
+/-- On a forward invariant set, the time-`t` map of the flow with `t ≥ 0` is homotopic to the
+identity, through the time-`u t` maps with `u ∈ [0, 1]`. -/
+theorem homotopic_id_restrict {ϕ : Flow ℝ α} {s : Set α} (hs : IsForwardInvariant ϕ s) {t : ℝ}
+    (ht : 0 ≤ t) :
+    (ContinuousMap.id s).Homotopic
+      ⟨(hs ht).restrict (ϕ t) s s, (ϕ.continuous_toFun t).restrict (hs ht)⟩ :=
+  ϕ.homotopic_of_eq_apply Topology.IsEmbedding.subtypeVal continuous_subtypeVal
+    continuous_const continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ t)
+    (fun x ↦ by simp) (fun _ ↦ rfl) fun x u hu ↦
+      ⟨⟨ϕ (u * t) x, hs (mul_nonneg hu.1 ht) x.property⟩, by simp⟩
 
 end Flow
