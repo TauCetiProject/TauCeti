@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Section
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Graph
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Twisted
 
 /-!
 # Sections of a regular Lagrangian torus fibration and one-forms on its base
@@ -220,13 +220,15 @@ theorem mpullback_sectionMapGraph (hsm : ContMDiff J I ∞ s) (α : SmoothForm J
     SmoothForm.mpullback (h.sectionMapGraph hσc hs α) (h.contMDiff_sectionMapGraph hσc hs hsm α)
         σ =
       SmoothForm.mpullback s hsm σ - mextDerivₗ J 1 α := by
-  rw [sub_eq_neg_add, ← CotangentBundle.mpullback_symplecticForm]
-  refine SmoothBundleForm.ext_eval₂ fun b v w ↦ ?_
-  rw [SmoothForm.eval₂_mpullback, SmoothBundleForm.eval₂_add, SmoothForm.eval₂_mpullback,
-    SmoothForm.eval₂_mpullback]
-  exact h.eval₂_mfderiv_of_sectionMap_eventuallyEq hσc hs hsm
-    (((SmoothForm.degreeOneEquiv α).contMDiff b).mdifferentiableAt (by simp))
-    (Eventually.of_forall fun _ ↦ rfl) (EventuallyEq.refl _ _) v w
+  -- `Φ_s` pulls `σ` back to the twisted form `ω + π^*(s^* σ)`, which the graph of `α` pulls
+  -- back to `s^* σ - dα`.
+  have hpull := SmoothForm.mpullback_mpullback
+    (fun b ↦ TotalSpace.mk' (F →L[ℝ] ℝ) b (SmoothForm.degreeOneEquiv α b))
+    (h.sectionMap hσc hs) (SmoothForm.degreeOneEquiv α).contMDiff
+    (h.contMDiff_sectionMap hσc hs hsm) σ
+  rw [h.mpullback_sectionMap hσc hs hsm, ← CotangentBundle.twistedSymplecticForm_def,
+    CotangentBundle.mpullback_section_twistedSymplecticForm] at hpull
+  exact hpull.symm
 
 /-- **The moved section pulls `σ` back to zero exactly when `dα = s^* σ`.** -/
 theorem mpullback_sectionMapGraph_eq_zero_iff (hsm : ContMDiff J I ∞ s)
