@@ -63,6 +63,10 @@ variable {Γ Λ R L : Type*} [AddCommMonoid Γ] [AddCommMonoid Λ]
 def wallBracketNormal (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) : Λ →+ ℤ :=
   m (ρ n') • m' - m' (ρ n) • m
 
+/-- Express the bracket normal as a difference of integer multiples of the input characters. -/
+theorem wallBracketNormal_def (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) :
+    wallBracketNormal ρ n n' m m' = m (ρ n') • m' - m' (ρ n) • m := (rfl)
+
 /-- Evaluate the bracket normal on a tangent vector. -/
 @[simp]
 theorem wallBracketNormal_apply (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) (v : Λ) :
@@ -79,7 +83,7 @@ theorem wallBracketNormal_zsmul {Γ Λ : Type*} [AddCommGroup Γ] [AddCommMonoid
     simpa only [AddMonoidHom.comp_apply, zsmul_eq_mul, Int.cast_id] using (m.comp ρ).map_zsmul b n'
   have hm' : m' (ρ (a • n)) = a * m' (ρ n) := by
     simpa only [AddMonoidHom.comp_apply, zsmul_eq_mul, Int.cast_id] using (m'.comp ρ).map_zsmul a n
-  simp only [wallBracketNormal, hm, hm']
+  simp only [wallBracketNormal_def, hm, hm']
 
 /-- Homogeneous submodules with the normal and bracket laws of directed walls.
 For a positive grading, containment in the homogeneous pieces automatically makes
@@ -136,7 +140,7 @@ theorem wall_le_wall_wallBracketNormal_of_inf_ker_le (f g m : Λ →+ ℤ) {n : 
     H.wall n m ≤ H.wall n (wallBracketNormal ρ n n f g) := by
   by_cases hmn : m (ρ n) = 0
   · apply H.wall_le_wall_of_ker_ge n
-    rw [wallBracketNormal]
+    rw [wallBracketNormal_def]
     exact f.ker_zsmul_sub_zsmul_le_of_inf_ker_le g m (ρ n) hn hm hmn
   · simp [hmn]
 

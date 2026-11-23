@@ -16,8 +16,8 @@ some nonzero integer multiple of the latter is a multiple of the former. Equal k
 therefore give equal nonzero integer multiples. These facts compare integral normals without
 choosing a basis or extending scalars to a field.
 
-Contracting two integer characters at a vector outside their common kernel detects every
-character that vanishes both on that common kernel and on the vector.
+If a vector lies outside the common kernel of two characters, any character vanishing
+on that kernel and at the vector also vanishes on the kernel of their contraction.
 
 ## Attribution
 
@@ -37,6 +37,11 @@ namespace AddMonoidHom
 
 variable {A : Type*} [AddGroup A]
 
+private theorem pivot_mem_ker_iff (f g : A →+ ℤ) (v x : A) :
+    f v • x - f x • v ∈ g.ker ↔ f v * g x = g v * f x := by
+  rw [AddMonoidHom.sub_mem_ker_iff, map_zsmul, map_zsmul, Int.zsmul_eq_mul,
+    Int.zsmul_eq_mul, mul_comm (f x) (g v)]
+
 /-- If the kernel of an integer character is contained in that of another,
 then a nonzero integer multiple of the latter is a multiple of the former.
 Either character is allowed to be zero. -/
@@ -50,11 +55,8 @@ theorem exists_ne_zero_zsmul_eq_of_ker_le (f g : A →+ ℤ)
   obtain ⟨a, ha⟩ := DFunLike.ne_iff.mp hf
   refine ⟨f a, g a, ha, ?_⟩
   ext x
-  have hx : f a • x - f x • a ∈ f.ker := by
-    simp only [AddMonoidHom.sub_mem_ker_iff, map_zsmul, Int.zsmul_eq_mul, mul_comm]
-  have hx' := hker hx
-  simp only [AddMonoidHom.sub_mem_ker_iff, map_zsmul, Int.zsmul_eq_mul] at hx'
-  simpa only [zsmul_apply, Int.zsmul_eq_mul] using hx'.trans (mul_comm _ _)
+  have hx : f a • x - f x • a ∈ f.ker := (pivot_mem_ker_iff f f a x).mpr rfl
+  simpa only [zsmul_apply, Int.zsmul_eq_mul] using (pivot_mem_ker_iff f g a x).mp (hker hx)
 
 /-- Integer characters with the same kernel have equal nonzero integer multiples. -/
 theorem exists_ne_zero_zsmul_eq_of_ker_eq (f g : A →+ ℤ)
@@ -86,10 +88,8 @@ theorem ker_zsmul_sub_zsmul_le_of_inf_ker_le (f g m : A →+ ℤ) (v : A)
     have hx' : f v * g x = g v * f x := by
       simpa only [mem_ker, sub_apply, zsmul_apply, Int.zsmul_eq_mul, sub_eq_zero] using hx
     have hz : f v • x - f x • v ∈ f.ker ⊓ g.ker :=
-      AddSubgroup.mem_inf.mpr ⟨by
-        simp only [AddMonoidHom.sub_mem_ker_iff, map_zsmul, Int.zsmul_eq_mul, mul_comm], by
-        simpa only [AddMonoidHom.sub_mem_ker_iff, map_zsmul, Int.zsmul_eq_mul] using
-          hx'.trans (mul_comm _ _)⟩
+      AddSubgroup.mem_inf.mpr
+        ⟨(pivot_mem_ker_iff f f v x).mpr rfl, (pivot_mem_ker_iff f g v x).mpr hx'⟩
     have hprod : f v * m x = 0 := by
       simpa [hmv] using AddMonoidHom.mem_ker.mp (hm hz)
     exact AddMonoidHom.mem_ker.mpr ((Int.mul_eq_zero.mp hprod).resolve_left hf)
