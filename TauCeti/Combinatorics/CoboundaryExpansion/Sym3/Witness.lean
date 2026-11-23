@@ -15,8 +15,11 @@ import TauCeti.Algebra.BigOperators.Finset.Filter
 # Explicit `Sym(3)` witnesses on five to eight vertices
 
 `h1_complete_movedNorm_fin_three` in `Sym3/Complete.lean` gives
-`h1 (complete V) (movedNorm (Fin 3)) = card V / 3` for every `3 ≤ card V`. Beasley, Corollary 7,
-the case `4 ∣ card V`, is that theorem.
+`h1 (complete V) (movedNorm (Fin 3)) = card V / 3` for every `3 ≤ card V`.
+Beasley, Theorem 8, is that statement, and it also covers `card V = 3`.
+Beasley, Corollary 7, is the replicated-seed ratio in that module:
+`defect_replicatedSeed`, `gaugeDist_replicatedSeed` and
+`defect_div_gaugeDist_replicatedSeedOfCardEq`.
 
 `Sym3.witness5`, `Sym3.witness6`, `Sym3.witness7` and `Sym3.witness8` are the Appendix A cochains,
 each `Cochain.ofLt` of `Sym3.edge5` through `Sym3.edge8`. `defect_witness*` is the moved-point
@@ -27,7 +30,8 @@ distance, equal to that cost (`6`, `18`, `12` and `27`) and attained by the iden
 ## References
 
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
-  k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792, Corollary 7 and Theorem 4 with Appendix A.
+  k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792, Corollary 7, Theorem 4 and Theorem 8,
+  with Appendix A.
 * D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136, Definition 3.2.
 * Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
   commit `7f5f2c6`: `w5`, `w6`, `w7` and `w8` in `CoboundaryK3/Basic.lean`.
