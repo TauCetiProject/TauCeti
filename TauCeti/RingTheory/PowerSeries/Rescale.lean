@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
-public import TauCeti.Analysis.Normed.Monoid.MulUnit
+public import Mathlib.Analysis.Normed.Group.Defs
+import TauCeti.Analysis.Normed.MulAction
 
 /-!
 # Rescaling power series
@@ -21,8 +22,8 @@ coefficient `a`, is divisible by `a c`, with a quotient whose linear coefficient
 
 Over a complete local ring, `g` then has a compositional inverse, so the values of `f` on `c I`
 are exactly `a c I` for an adic ideal `I`. This is how multiplication by an integer `n` on a
-formal group is analysed deep inside the maximal ideal of a discrete valuation ring. When `u` is a
-multiplicative unit (`TauCeti.IsNormMulUnit`) with `‖u‖ s = r`, rescaling by `u` transports
+formal group is analysed deep inside the maximal ideal of a discrete valuation ring. When left
+multiplication by `u` scales every norm by `‖u‖` and `‖u‖ s = r`, rescaling by `u` transports
 weighted coefficient norms at radius `r` to weighted coefficient norms at radius `s`.
 
 ## Main results
@@ -37,8 +38,8 @@ weighted coefficient norms at radius `r` to weighted coefficient norms at radius
   constant term and its linear coefficient `a` divides `c`.
 * `PowerSeries.coeff_multiset_prod_rescale_C_mul_rescale`: replacing `Q(t)` by `a Q(b t)`
   multiplies the coefficient of `tᵏ` in `∏_{x ∈ s} Q(x t)` by `a ^ |s| bᵏ`.
-* `PowerSeries.norm_coeff_rescale_mul_pow`: rescaling by a multiplicative unit `u` with
-  `‖u‖ s = r` identifies `‖coeff n (rescale u f)‖ sⁿ` with `‖coeff n f‖ rⁿ`.
+* `PowerSeries.norm_coeff_rescale_mul_pow`: rescaling by an element `u` scaling all norms by
+  `‖u‖`, with `‖u‖ s = r`, identifies `‖coeff n (rescale u f)‖ sⁿ` with `‖coeff n f‖ rⁿ`.
 -/
 
 public section
@@ -101,8 +102,7 @@ theorem exists_rescale_eq_C_mul {R : Type*} [CommSemiring R] {f : R⟦X⟧}
   rcases i with _ | _ | i
   · simp [hf]
   · simp [mul_comm]
-  · simp only [show i + 1 + 1 ≠ 0 by omega, show i + 1 + 1 ≠ 1 by omega, ↓reduceIte,
-      show i + 1 + 1 - 2 = i by omega, hd]
+  · simp [hd]
     ring
 
 /-- **Homogeneity of `∏ Q(x t)`**: replacing `Q(t)` by `a Q(b t)` multiplies the coefficient of
@@ -116,23 +116,15 @@ theorem coeff_multiset_prod_rescale_C_mul_rescale {R : Type*} [CommSemiring R] (
     simp [Multiset.prod_map_mul, map_multiset_prod, Multiset.map_map, rescale_rescale, mul_comm]
   rw [h, coeff_C_mul, coeff_rescale, mul_assoc]
 
-/-- Rescaling by a multiplicative unit `u` preserves weighted coefficient norms when the weight is
-changed by `‖u‖`: if `‖u‖ * s = r`, then `‖coeff n (rescale u f)‖ * s ^ n = ‖coeff n f‖ * r ^ n`. -/
+/-- Rescaling by an element `u` by which left multiplication scales every norm by `‖u‖` (for
+instance a multiplicative unit, `TauCeti.IsNormMulUnit`) preserves weighted coefficient norms
+when the weight is changed by `‖u‖`: if `‖u‖ * s = r`, then
+`‖coeff n (rescale u f)‖ * s ^ n = ‖coeff n f‖ * r ^ n`. -/
 theorem norm_coeff_rescale_mul_pow {R : Type*} [CommSemiring R] [Norm R] (f : R⟦X⟧) {u : R}
-    (hu : TauCeti.IsNormMulUnit u) {r s : ℝ} (hrs : ‖u‖ * s = r) (n : ℕ) :
+    (hu : ∀ x : R, ‖u * x‖ = ‖u‖ * ‖x‖) {r s : ℝ} (hrs : ‖u‖ * s = r) (n : ℕ) :
     ‖coeff n (rescale u f)‖ * s ^ n = ‖coeff n f‖ * r ^ n := by
   rw [coeff_rescale]
-  have hpow (m : ℕ) : ‖u ^ m * coeff n f‖ * s ^ m = ‖coeff n f‖ * r ^ m := by
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      calc ‖u ^ (m + 1) * coeff n f‖ * s ^ (m + 1)
-          = (‖u ^ m * coeff n f‖ * s ^ m) * (‖u‖ * s) := by
-            rw [pow_succ', mul_assoc, hu.norm_mul, pow_succ']
-            ring
-        _ = ‖coeff n f‖ * r ^ (m + 1) := by
-            rw [ih, hrs, pow_succ]
-            ring
-  exact hpow n
+  simpa only [smul_eq_mul] using TauCeti.norm_pow_smul_mul_pow (u := u) (r := r) (s := s)
+    (fun x ↦ by rw [smul_eq_mul, hu, ← hrs]; ac_rfl) n (coeff n f)
 
 end PowerSeries

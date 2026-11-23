@@ -92,24 +92,19 @@ theorem ae_tendsto_inv_smul_zero_of_summable_integral_norm_sq {E : Type*}
     refine TauCeti.MeasureTheory.ae_tendsto_of_tsum_dist_ge_ne_top (g := 0) fun ε hε ↦ ?_
     have hbound (k : ℕ) : μ {ω | ε ≤ dist ((b (k + N))⁻¹ • Z (k + N) ω) 0} ≤
         ENNReal.ofReal (ε⁻¹ ^ 2 * ((∫ ω, ‖Z (k + N) ω‖ ^ 2 ∂μ) / b (k + N) ^ 2)) := by
-      rw [show {ω | ε ≤ dist ((b (k + N))⁻¹ • Z (k + N) ω) 0} =
-          {ω | ε ≤ ‖(b (k + N))⁻¹ • Z (k + N) ω‖} by simp only [dist_zero_right]]
-      by_cases hbk : b (k + N) = 0
-      · have hempty : {ω | ε ≤ ‖(b (k + N))⁻¹ • Z (k + N) ω‖} = ∅ :=
-          Set.eq_empty_iff_forall_notMem.2 fun ω hω ↦ by
-            have h0 : ‖(b (k + N))⁻¹ • Z (k + N) ω‖ ≤ 0 := by
-              simpa only [hbk, inv_zero, norm_zero, zero_mul] using
-                norm_smul_le (b (k + N))⁻¹ (Z (k + N) ω)
-            linarith [Set.mem_ofPred_eq.mp hω]
-        simp [hempty]
-      · have hsub : {ω | ε ≤ ‖(b (k + N))⁻¹ • Z (k + N) ω‖} ⊆
-            {ω | ε * |b (k + N)| ≤ ‖Z (k + N) ω‖} := fun ω hω ↦ by
-          have h1 := norm_smul_le (b (k + N))⁻¹ (Z (k + N) ω)
-          rw [Real.norm_eq_abs, abs_inv, inv_mul_eq_div] at h1
-          exact (le_div_iff₀ (abs_pos.2 hbk)).1 ((Set.mem_ofPred_eq.mp hω).trans h1)
-        refine (measure_mono hsub).trans ((meas_ge_le_integral_sq_div_sq
-          (hN (k + N) (Nat.le_add_left N k)) (mul_pos hε (abs_pos.2 hbk))).trans_eq ?_)
-        congr 1; rw [mul_pow, sq_abs]; field_simp
+      have hsub : {ω | ε ≤ dist ((b (k + N))⁻¹ • Z (k + N) ω) 0} ⊆
+          {ω | ε ≤ |(b (k + N))⁻¹| * ‖Z (k + N) ω‖} := fun ω hω ↦ by
+        rw [Set.mem_ofPred_eq, dist_zero_right] at hω
+        exact hω.trans
+          ((norm_smul_le (b (k + N))⁻¹ (Z (k + N) ω)).trans_eq (by rw [Real.norm_eq_abs]))
+      have hint_maj : Integrable (fun ω ↦ (|(b (k + N))⁻¹| * ‖Z (k + N) ω‖) ^ 2) μ := by
+        simpa only [mul_pow, sq_abs] using
+          (hN (k + N) (Nat.le_add_left N k)).const_mul ((b (k + N))⁻¹ ^ 2)
+      refine (measure_mono hsub).trans ((meas_ge_le_integral_sq_div_sq hint_maj hε).trans_eq ?_)
+      simp only [mul_pow, sq_abs, integral_const_mul]
+      congr 1
+      rw [inv_pow, div_eq_mul_inv, div_eq_mul_inv, inv_pow]
+      ring
     have hsum_shift : Summable fun k ↦ (∫ ω, ‖Z (k + N) ω‖ ^ 2 ∂μ) / b (k + N) ^ 2 :=
       (summable_nat_add_iff N).2 hsum
     exact ne_top_of_le_ne_top (hsum_shift.mul_left (ε⁻¹ ^ 2)).tsum_ofReal_ne_top

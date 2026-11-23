@@ -22,10 +22,11 @@ No measurability is required of the exceptional sets, since the squeeze only
 uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
-Convergence in mean square also implies convergence in measure, with integrability of the
-squared deviations required only eventually along the filter. In the other direction,
-Chebyshev-type bounds with an auxiliary truncation level give measures tending to zero, and real
-functions tending to zero in measure have upper tails of measure tending to zero.
+Convergence in mean absolute norm implies vanishing tail measures even when the measure spaces
+vary with the index. Convergence in mean square implies convergence in measure, with
+integrability of the squared deviations required only eventually along the filter. Chebyshev-type
+bounds with an auxiliary truncation level give measures tending to zero. Real functions tending to
+zero in measure have upper tails of measure tending to zero.
 
 This file also develops continuous and algebraic stability of `MeasureTheory.TendstoInMeasure`:
 * Pairing (`TendstoInMeasure.prodMk`), uniformly continuous unary and binary maps
@@ -80,8 +81,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on`, and
   `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on_prob`: domination on events whose complements
   have vanishing measure.
-* `MeasureTheory.tendstoInMeasure_iff_lt_dist` and
-  `MeasureTheory.tendstoInMeasure_iff_measureReal_lt_dist`: strict-distance characterizations.
+* `MeasureTheory.tendstoInMeasure_iff_measureReal_lt_dist`: strict-distance characterization
+  for finite measures.
 * `MeasureTheory.tendsto_measure_dist_ge_atTop`: distance tightness of almost-everywhere strongly
   measurable functions on finite measure spaces.
 * `MeasureTheory.TendstoInMeasure.smul`, `Filter.Tendsto.smul_tendstoInMeasure`, and
@@ -357,28 +358,20 @@ namespace MeasureTheory
 open Filter Topology
 open scoped ENNReal
 
-/-- Convergence in measure expressed with strict distance inequalities `ε < dist (f i x) (g x)`. -/
-theorem tendstoInMeasure_iff_lt_dist {α ι E : Type*} [MeasurableSpace α] {μ : Measure α}
-    [PseudoMetricSpace E] {l : Filter ι} {f : ι → α → E} {g : α → E} :
-    TendstoInMeasure μ f l g ↔
-      ∀ ε > 0, Tendsto (fun i ↦ μ {x | ε < dist (f i x) (g x)}) l (𝓝 0) := by
-  rw [tendstoInMeasure_iff_dist]
-  refine ⟨fun h ε hε ↦ ?_, fun h ε hε ↦ ?_⟩
-  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h ε hε) (fun _ ↦ zero_le)
-      fun i ↦ measure_mono fun x (hx : ε < dist (f i x) (g x)) ↦ le_of_lt hx
-  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h (ε / 2) (half_pos hε))
-      (fun _ ↦ zero_le) fun i ↦ measure_mono
-      fun x (hx : ε ≤ dist (f i x) (g x)) ↦ (half_lt_self hε).trans_le hx
-
 /-- For a finite measure, convergence in measure is equivalent to `μ.real {ε < dist (f i) g} → 0`
 for every `ε > 0`. -/
 theorem tendstoInMeasure_iff_measureReal_lt_dist {α ι E : Type*} [MeasurableSpace α] {μ : Measure α}
     [IsFiniteMeasure μ] [PseudoMetricSpace E] {l : Filter ι} {f : ι → α → E} {g : α → E} :
     TendstoInMeasure μ f l g ↔
       ∀ ε > 0, Tendsto (fun i ↦ μ.real {x | ε < dist (f i x) (g x)}) l (𝓝 0) := by
-  rw [tendstoInMeasure_iff_lt_dist]
-  congr! with ε _
-  simp_rw [measureReal_def, ENNReal.tendsto_toReal_zero_iff (fun _ ↦ measure_ne_top _ _)]
+  rw [tendstoInMeasure_iff_measureReal_dist]
+  refine ⟨fun h ε hε ↦ ?_, fun h ε hε ↦ ?_⟩
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h ε hε)
+      (fun _ ↦ measureReal_nonneg) fun i ↦
+      measureReal_mono fun x (hx : ε < dist (f i x) (g x)) ↦ le_of_lt hx
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h (ε / 2) (half_pos hε))
+      (fun _ ↦ measureReal_nonneg) fun i ↦
+      measureReal_mono fun x (hx : ε ≤ dist (f i x) (g x)) ↦ (half_lt_self hε).trans_le hx
 
 /-- Sectionwise convergence in measure almost everywhere implies convergence in measure on a
 product of two finite measures if the distances to the limit are eventually jointly measurable. -/
@@ -400,6 +393,26 @@ theorem tendstoInMeasure_prod_of_ae_tendstoInMeasure
     (fun _ ↦ ν Set.univ) (hs.mono fun _ hi ↦ measurable_measure_prodMk_left hi)
     (Eventually.of_forall fun _ ↦ ae_of_all _ fun _ ↦ measure_mono (Set.subset_univ _))
     (by rw [lintegral_const]; finiteness) hlim
+
+/-- If the mean norms tend to zero, every positive norm tail has vanishing measure, even
+on varying measure spaces. Integrability of the norms is only needed eventually. -/
+theorem tendsto_measure_norm_ge_of_tendsto_integral_norm {ι E : Type*}
+    [SeminormedAddCommGroup E]
+    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)] {μ : ∀ i, Measure (Ω i)}
+    {l : Filter ι} {f : ∀ i, Ω i → E}
+    (hint : ∀ᶠ i in l, Integrable (fun ω ↦ ‖f i ω‖) (μ i))
+    (hlim : Tendsto (fun i ↦ ∫ ω, ‖f i ω‖ ∂μ i) l (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ i {ω | ε ≤ ‖f i ω‖}) l (𝓝 0) := by
+  have hupper := ENNReal.tendsto_ofReal (hlim.div_const ε)
+  simp only [zero_div, ENNReal.ofReal_zero] at hupper
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
+    (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hint] with i hi
+  have hMarkov := meas_ge_le_lintegral_div hi.aemeasurable.ennreal_ofReal
+    (ENNReal.ofReal_pos.mpr hε).ne' ENNReal.ofReal_ne_top
+  rw [← ofReal_integral_eq_lintegral_ofReal hi (.of_forall fun ω ↦ norm_nonneg (f i ω)),
+    ← ENNReal.ofReal_div_of_pos hε] at hMarkov
+  simpa only [ENNReal.ofReal_le_ofReal_iff (norm_nonneg _)] using hMarkov
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/
