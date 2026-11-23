@@ -108,36 +108,11 @@ variable [CommRing O] [CommRing K] [CommRing A] [Algebra O K] [Algebra O A]
 variable (M : Submonoid O) [IsLocalization M K]
 
 include M in
-/-- Over a localization `K` of `O`, a `K`-submodule containing `s • z` for some `s` in the
-submonoid contains `z`. -/
-private theorem mem_of_smul_mem {N : Type x} [AddCommGroup N] [Module K N] [Module O N]
-    [IsScalarTower O K N] (p : Submodule K N) (s : M) {z : N} (hz : (s : O) • z ∈ p) :
-    z ∈ p := by
-  obtain ⟨u, hu⟩ := IsLocalization.map_units K s
-  have hz' : z = ((u⁻¹ : Kˣ) : K) • ((s : O) • z) := by
-    rw [← algebraMap_smul K (s : O) z, ← hu, smul_smul, Units.inv_mul, one_smul]
-  rw [hz']
-  exact p.smul_mem _ hz
-
-/-- Over a localization `K` of `O`, every element of `K ⊗[O] A` has a multiple by an element of
-the submonoid of the form `1 ⊗ a`. -/
-theorem exists_smul_eq_one_tmul (y : K ⊗[O] A) :
-    ∃ s : M, ∃ a : A, (s : O) • y = (1 : K) ⊗ₜ[O] a := by
-  obtain ⟨⟨a, s⟩, h⟩ := IsLocalizedModule.surj M (TensorProduct.mk O K A 1) y
-  exact ⟨s, a, h⟩
-
-include M in
 /-- Over a localization `K` of `O`, the closure ideal `I^♮` generates `I`. -/
 theorem map_closureIdeal (I : Ideal (K ⊗[O] A)) :
     (closureIdeal K I).map (includeRight : A →ₐ[O] K ⊗[O] A) = I := by
-  refine le_antisymm (map_closureIdeal_le I) fun y hy ↦ ?_
-  obtain ⟨s, a, h⟩ := exists_smul_eq_one_tmul M y
-  have ha : a ∈ closureIdeal K I := by
-    rw [mem_closureIdeal, ← h]
-    exact Submodule.smul_of_tower_mem I (s : O) hy
-  refine (Submodule.restrictScalars_mem K _ y).mp (mem_of_smul_mem M _ s ?_)
-  rw [Submodule.restrictScalars_mem, h]
-  exact Ideal.mem_map_of_mem _ ha
+  let := Algebra.TensorProduct.rightAlgebra (R := O) (A := K) (B := A)
+  exact IsLocalization.map_under (Algebra.algebraMapSubmonoid A M) (K ⊗[O] A) I
 
 variable (K) in
 /-- Over a localization `K` of `O`, the generic fibre of the closure `A ⧸ I^♮` is
@@ -186,8 +161,9 @@ instance isTorsionFree_closure (I : Ideal (K ⊗[O] A)) :
   rw [← sub_eq_zero, ← smul_sub, ← map_sub, ← Ideal.Quotient.mk_eq_mk,
     ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hxy
   rw [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, mem_closureIdeal]
-  refine mem_of_smul_mem O⁰ (I.restrictScalars K) ⟨s, hs.mem_nonZeroDivisors⟩ ?_
-  rw [Submodule.restrictScalars_mem, ← TensorProduct.tmul_smul]
+  refine (IsLocalization.smul_mem_iff (R' := K) (N' := I.restrictScalars K)
+    (s := (⟨s, hs.mem_nonZeroDivisors⟩ : O⁰))).mp ?_
+  rw [Submonoid.smul_def, Submodule.restrictScalars_mem, ← TensorProduct.tmul_smul]
   exact hxy
 
 /-- Over a Dedekind domain, for instance a discrete valuation ring, the closure `A ⧸ I^♮` is
@@ -216,15 +192,10 @@ theorem mem_closure_points {O' : Type x} [CommRing O'] [Algebra O O']
     closureIdeal K I ≤ RingHom.ker f ↔
       I ≤ RingHom.ker (Algebra.TensorProduct.map (AlgHom.id K K) f) := by
   constructor
-  · intro h y hy
-    obtain ⟨s, a, hs⟩ := exists_smul_eq_one_tmul O⁰ y
-    have ha : a ∈ closureIdeal K I := by
-      rw [mem_closureIdeal, ← hs]
-      exact Submodule.smul_of_tower_mem I (s : O) hy
+  · intro h
+    rw [← map_closureIdeal O⁰ I]
+    refine Ideal.map_le_iff_le_comap.mpr fun a ha ↦ ?_
     have hfa : f a = 0 := h ha
-    rw [RingHom.mem_ker]
-    refine (Submodule.mem_bot K).mp (mem_of_smul_mem O⁰ ⊥ s ?_)
-    rw [Submodule.mem_bot, ← algebraMap_smul K, ← map_smul, algebraMap_smul, hs]
     simp [hfa]
   · intro h a ha
     exact eq_zero_of_one_tmul_eq_zero (K := K) (by simpa using h ha)
