@@ -22,8 +22,9 @@ open ball `ball w r` lies in `{y | c < ⟪y, ν⟫}` already when `c + r * ‖ν
 `{z | c ≤ ⟪z, ν⟫}`, the open ball of radius `ρ` about `x + (ρ / ‖ν‖) ν` lies in the open
 half-space `{z | c < ⟪z, ν⟫}` (`TauCeti.ball_add_smul_subset_setOf_lt_inner`). For `ν ≠ 0`, the
 foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lies on the hyperplane
-`{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`, and every point of that
-hyperplane lies at distance at least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. In rigid coordinates
+`{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`
+(`TauCeti.exists_inner_eq_and_dist_eq`), and every point of that hyperplane lies at distance at
+least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
 where it is positive is a half-space.
 -/
@@ -129,6 +130,15 @@ theorem div_norm_le_dist_of_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerPr
   · simp
   rw [div_le_iff₀ (norm_pos_iff.2 hν), dist_eq_norm, ← hw, ← inner_sub_left]
   exact real_inner_le_norm _ _
+
+/-- **The foot of the perpendicular.** For `ν ≠ 0`, some point of the hyperplane
+`{y | ⟪y, ν⟫ = c}` lies at distance exactly `|⟪w, ν⟫ - c| / ‖ν‖` from `w`, namely
+`w - ((⟪w, ν⟫ - c) / ‖ν‖²) ν`. -/
+theorem exists_inner_eq_and_dist_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {ν : E} (hν : ν ≠ 0) (w : E) (c : ℝ) :
+    ∃ z, ⟪z, ν⟫_ℝ = c ∧ dist w z = |⟪w, ν⟫_ℝ - c| / ‖ν‖ :=
+  ⟨w - ((⟪w, ν⟫_ℝ - c) / ‖ν‖ ^ 2) • ν, real_inner_sub_div_norm_sq_smul_self_eq hν w c, by
+    rw [dist_eq_norm, sub_sub_cancel, norm_div_norm_sq_smul_self]⟩
 
 end TauCeti
 

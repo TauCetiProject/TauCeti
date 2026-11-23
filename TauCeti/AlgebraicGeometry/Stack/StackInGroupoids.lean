@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
-public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 public import Mathlib.CategoryTheory.Groupoid.Discrete
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.AlgebraicGeometry.Stack.Basic
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Sites.Descent.Discrete
 
 /-!
@@ -27,6 +28,9 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom`: morphisms of stacks in groupoids, the strong
   transformations of the underlying pseudofunctors. Identities and composites are Mathlib's
   `Pseudofunctor.StrongTrans.id` and `Pseudofunctor.StrongTrans.vcomp`.
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.isGroupoid_obj`: every fibre is a groupoid, so by
+  `Pseudofunctor.isGroupoid_hom` the morphisms between two stacks in groupoids, with
+  modifications as morphisms, form a groupoid.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.IsFiberwiseEquiv`: a morphism whose component
   on every scheme is an equivalence of fibre groupoids. It holds for identities, is closed under
   composition, and satisfies two-out-of-three.
@@ -70,6 +74,14 @@ attribute [instance] StackInGroupoids.isGroupoid StackInGroupoids.isStack
 /-- Morphisms of stacks in groupoids: strong transformations of the underlying pseudofunctors. -/
 abbrev Hom (X Y : StackInGroupoids.{u}) : Type (u + 1) :=
   Pseudofunctor.StrongTrans X.toSchPseudofunctor Y.toSchPseudofunctor
+
+/-- Every fibre of a stack in groupoids is a groupoid, also over a point of
+`LocallyDiscrete Scheme.{u}ᵒᵖ` not written as `.mk (op T)`. With `Pseudofunctor.isGroupoid_hom`,
+this makes the morphisms between two stacks in groupoids, with modifications as morphisms, a
+groupoid. -/
+instance isGroupoid_obj (X : StackInGroupoids.{u}) (a : LocallyDiscrete Scheme.{u}ᵒᵖ) :
+    IsGroupoid (X.toSchPseudofunctor.obj a) :=
+  X.isGroupoid a.as.unop
 
 namespace Hom
 

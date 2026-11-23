@@ -148,6 +148,7 @@ theorem contMDiffOn_hom_of_forall_contMDiff {n m : ℕ∞ω} (hn : n ≤ m) (hm 
     ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n
       (fun y ↦ TotalSpace.mk' (F →L[ℝ] G) y (A y)) u := by
   have : ContMDiffVectorBundle n F V I := .of_le hn
+  let : IsManifold I m M := IsManifold.of_le hm
   refine contMDiffOn_of_locally_contMDiffOn fun x _ ↦ ?_
   let e := trivializationAt F V x
   let e' := trivializationAt G W x
