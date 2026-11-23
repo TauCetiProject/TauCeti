@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
 # Eigen-coordinates and eigenvalue multisets of a Hermitian matrix
@@ -41,7 +43,9 @@ for `0 ≤ A ≤ B`.
 
 A unit eigenvector of a simple eigenvalue is a unimodular multiple of the matching column of `U`,
 so the quadratic form of any matrix `C` at it is a diagonal entry of `Uᴴ C U`. This identifies the
-first variation of a simple eigenvalue.
+first variation of a simple eigenvalue. The adjugate of `λ k₀ - B` multiplies an eigenvector for
+`λ k₀` by the product of the gaps `λ k₀ - λ k` to the other eigenvalues, which is nonzero exactly
+when `λ k₀` is simple; this gives differentiable curves of eigenvectors.
 
 ## Main results
 
@@ -72,6 +76,8 @@ first variation of a simple eigenvalue.
   diagonal matrix of eigenvalues;
 * `Matrix.IsHermitian.star_eigenvectorUnitary_mulVec_apply_eq_zero` — the eigen-coordinates of an
   eigenvector for `μ` vanish off the indices with eigenvalue `μ`;
+* `Matrix.IsHermitian.adjugate_scalar_sub_mulVec_eq_prod_smul` — the adjugate of `λ k₀ - B`
+  multiplies an eigenvector for `λ k₀` by the product of the gaps `λ k₀ - λ k`, `k ≠ k₀`;
 * `Matrix.IsHermitian.star_dotProduct_mulVec_eq_of_simple` — a unit eigenvector `u` of a simple
   eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`.
 
@@ -196,6 +202,49 @@ theorem star_eigenvectorUnitary_mulVec_apply_eq_zero {μ : ℝ} {u : ι → 𝕜
   simp only [mulVec_diagonal, Function.comp_apply, Pi.smul_apply, smul_eq_mul] at hk'
   have h' : ((hB.eigenvalues k : 𝕜) - μ) * (star U *ᵥ u) k = 0 := by rw [sub_mul, hk', sub_self]
   exact (mul_eq_zero.1 h').resolve_left (sub_ne_zero.2 (by exact_mod_cast hk))
+
+/-- The adjugate of `λ k₀ - B` multiplies an eigenvector of a Hermitian matrix `B` for the
+eigenvalue `λ k₀ = hB.eigenvalues k₀` by the product `∏_{k ≠ k₀} (λ k₀ - λ k)` of the gaps to the
+eigenvalues at the other indices. This product vanishes unless the eigenvalue is simple. -/
+theorem adjugate_scalar_sub_mulVec_eq_prod_smul {k₀ : ι} {u : ι → 𝕜}
+    (hu : B *ᵥ u = (hB.eigenvalues k₀ : 𝕜) • u) :
+    Matrix.adjugate (scalar ι (hB.eigenvalues k₀ : 𝕜) - B) *ᵥ u =
+      (∏ k ∈ Finset.univ.erase k₀, ((hB.eigenvalues k₀ - hB.eigenvalues k : ℝ) : 𝕜)) • u := by
+  set U : Matrix ι ι 𝕜 := (hB.eigenvectorUnitary : Matrix ι ι 𝕜)
+  set d := hB.eigenvalues
+  set μ := d k₀
+  have hU : star U * U = 1 := Unitary.star_mul_self_of_mem hB.eigenvectorUnitary.property
+  have hU' : U * star U = 1 := Unitary.mul_star_self_of_mem hB.eigenvectorUnitary.property
+  -- In the eigenbasis, `μ - B` is the diagonal matrix of the gaps `μ - λₖ`.
+  have hN : scalar ι (μ : 𝕜) - B = U * diagonal (fun k ↦ ((μ - d k : ℝ) : 𝕜)) * star U := by
+    have hD : diagonal (fun k ↦ ((μ - d k : ℝ) : 𝕜)) =
+        (μ : 𝕜) • 1 - diagonal (RCLike.ofReal ∘ d) := by
+      rw [smul_one_eq_diagonal, diagonal_sub]
+      simp
+    rw [hD, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, hU',
+      scalar_apply, ← smul_one_eq_diagonal]
+    conv_lhs => rw [hB.spectral_theorem, conjStarAlgAut_apply]
+  -- Conjugation by a unitary commutes with the adjugate.
+  have hadj : Matrix.adjugate (scalar ι (μ : 𝕜) - B) =
+      U * Matrix.adjugate (diagonal fun k ↦ ((μ - d k : ℝ) : 𝕜)) * star U := by
+    rw [hN, adjugate_mul_distrib, adjugate_mul_distrib, adjugate_eq_det_smul_of_mul_eq_one hU,
+      adjugate_eq_det_smul_of_mul_eq_one hU']
+    simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, Matrix.mul_assoc]
+    rw [← det_mul, hU', det_one, one_smul]
+  -- Off `k₀`, either the eigen-coordinate of `u` or the adjugate entry, a product containing the
+  -- gap `μ - λ k₀ = 0`, vanishes.
+  have hdiag : Matrix.adjugate (diagonal fun k ↦ ((μ - d k : ℝ) : 𝕜)) *ᵥ (star U *ᵥ u) =
+      (∏ k ∈ Finset.univ.erase k₀, ((μ - d k : ℝ) : 𝕜)) • (star U *ᵥ u) := by
+    ext k
+    rw [adjugate_diagonal, mulVec_diagonal, Pi.smul_apply, smul_eq_mul]
+    obtain rfl | hk := eq_or_ne k₀ k
+    · rfl
+    obtain hdk | hdk := ne_or_eq (d k) μ
+    · rw [hB.star_eigenvectorUnitary_mulVec_apply_eq_zero hu hdk, mul_zero, mul_zero]
+    · rw [Finset.prod_eq_zero (Finset.mem_erase.2 ⟨hk, Finset.mem_univ k₀⟩) (by simp [μ]),
+        Finset.prod_eq_zero (Finset.mem_erase.2 ⟨hk.symm, Finset.mem_univ k⟩)
+          (by rw [hdk, sub_self, RCLike.ofReal_zero])]
+  rw [hadj, ← mulVec_mulVec, ← mulVec_mulVec, hdiag, mulVec_smul, mulVec_mulVec, hU', one_mulVec]
 
 /-- A unit eigenvector `u` of a simple eigenvalue `λ k₀` of a Hermitian matrix `B` is a unimodular
 multiple of the `k₀`-th column of `U = hB.eigenvectorUnitary`, so `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for

@@ -37,7 +37,10 @@ The perturbation estimate combines the operator Weyl inequality in
 `TauCeti.Analysis.Matrix.EntrywiseOpNorm`. The rank count reindexes Mathlib's
 `Matrix.IsHermitian.rank_eq_card_non_zero_eigs` to the sorted enumeration. The same reindexing
 turns a simple sorted eigenvalue into a simple matrix-indexed one
-(`Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq`).
+(`Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq`), whose gaps `λᵢ - λₖ` to the
+other eigenvalues have nonzero product (`Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero`).
+Every sorted eigenvalue `μ` is a root of the characteristic polynomial, so `μ - A` is singular
+(`Matrix.IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero`).
 
 Weyl's additive inequalities `λₖ(A + B) ≤ λᵢ(A) + λⱼ(B)` for `i + j ≤ k`, and their lower
 counterpart, are the matrix forms of the operator inequalities in
@@ -171,6 +174,25 @@ theorem IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian
   intro k hk
   have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
   simpa [e, IsHermitian.eigenvalues] using hi _ hk'
+
+/-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
+matrix-indexed eigenvalues does not vanish. -/
+theorem IsHermitian.prod_erase_sub_eigenvalues_ne_zero (hA : A.IsHermitian)
+    {i : Fin (Fintype.card ι)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
+    ∏ j ∈ Finset.univ.erase (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i),
+      (hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) -
+        hA.eigenvalues j) ≠ 0 :=
+  Finset.prod_ne_zero_iff.2 fun j hj ↦ sub_ne_zero.2
+    (hA.eigenvalues_ne_eigenvalues_equivOfCardEq hi j (Finset.ne_of_mem_erase hj)).symm
+
+/-- Every ordered eigenvalue `μ` of a Hermitian matrix `A` is a root of its characteristic
+polynomial, so `μ - A` is singular. -/
+theorem IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero (hA : A.IsHermitian)
+    (i : Fin (Fintype.card ι)) : (scalar ι (hA.eigenvalues₀ i : 𝕜) - A).det = 0 := by
+  have hroot : (hA.eigenvalues₀ i : 𝕜) ∈ A.charpoly.roots := by
+    rw [hA.roots_charpoly_eq_eigenvalues₀]
+    exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
+  rw [← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1 hroot).eq_zero]
 
 /-- The rank of a Hermitian matrix counts its nonzero sorted eigenvalues, with multiplicity. -/
 theorem IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :

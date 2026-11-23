@@ -12,7 +12,6 @@ import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Spectrum
-import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
 # Second variation of simple eigenvalues
@@ -35,14 +34,15 @@ drift `∑_{j ≠ i} (λᵢ - λⱼ)⁻¹` of Dyson's eigenvalue equation.
 
 ## Implementation notes
 
-A simple eigenvalue has a differentiable curve of eigenvectors through `u`, namely a scalar
-multiple of `adjugate (λᵢ (t) - M t) *ᵥ u`: the adjugate of a singular matrix maps into its
-kernel, and at `t₀` it acts on `u` by the nonzero product `∏_{k ≠ i} (λᵢ - λₖ)`. Along this curve
-`w`, the first variation formula of `TauCeti.Analysis.Matrix.Eigenvalues.Smooth` writes `λᵢ'` as
-the Rayleigh quotient `Re ⟪w, M' w⟫ / ⟪w, w⟫` near `t₀`, which is differentiated by the product
-rule. Differentiating `M w = λᵢ w` at `t₀` gives `(λᵢ - M) w' = M' u - λᵢ' u`, which determines
-the coordinates of `w'` in the eigenbasis off the eigenvalue `λᵢ`; the coordinate along `u` drops
-out.
+A simple eigenvalue has a differentiable curve of eigenvectors through `u`
+(`Matrix.exists_eigenvector_curve`), namely a scalar multiple of `adjugate (λᵢ (t) - M t) *ᵥ u`:
+the adjugate of a singular matrix maps into its kernel, and at `t₀` it acts on `u` by the nonzero
+product `∏_{k ≠ i} (λᵢ - λₖ)` (`Matrix.IsHermitian.adjugate_scalar_sub_mulVec_eq_prod_smul`).
+Along this curve `w`, the first variation formula writes `λᵢ'` as the Rayleigh quotient
+`Re ⟪w, M' w⟫ / ⟪w, w⟫` near `t₀` (`Matrix.deriv_eigenvalues₀_eq_div`), which is differentiated
+by the product rule. Differentiating `M w = λᵢ w` at `t₀` gives `(λᵢ - M) w' = M' u - λᵢ' u`,
+which determines the coordinates of `w'` in the eigenbasis off the eigenvalue `λᵢ`; the
+coordinate along `u` drops out.
 
 ## References
 
@@ -65,50 +65,6 @@ namespace Matrix
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
 /-! ### Linear algebra at a simple eigenvalue -/
-
-/-- At a simple eigenvalue `μ = A.eigenvalues₀ i` of a Hermitian matrix `A`, the adjugate of
-`μ - A` multiplies an eigenvector for `μ` by the product of the gaps `μ - λₖ` to the eigenvalues
-at the other indices. -/
-private theorem adjugate_scalar_sub_mulVec_of_simple {A : Matrix n n 𝕜} (hA : A.IsHermitian)
-    {i : Fin (Fintype.card n)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i)
-    {u : n → 𝕜} (hu : A *ᵥ u = (hA.eigenvalues₀ i : 𝕜) • u) :
-    adjugate (scalar n (hA.eigenvalues₀ i : 𝕜) - A) *ᵥ u =
-      (∏ k ∈ Finset.univ.erase (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i),
-        ((hA.eigenvalues₀ i - hA.eigenvalues k : ℝ) : 𝕜)) • u := by
-  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
-  set U : Matrix n n 𝕜 := (hA.eigenvectorUnitary : Matrix n n 𝕜)
-  set d := hA.eigenvalues
-  set μ := hA.eigenvalues₀ i
-  have hU : star U * U = 1 := Unitary.star_mul_self_of_mem hA.eigenvectorUnitary.property
-  have hU' : U * star U = 1 := Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property
-  -- In the eigenbasis, `μ - A` is the diagonal matrix of the gaps `μ - λₖ`.
-  have hN : scalar n (μ : 𝕜) - A = U * diagonal (fun k ↦ ((μ - d k : ℝ) : 𝕜)) * star U := by
-    have hD : diagonal (fun k ↦ ((μ - d k : ℝ) : 𝕜)) =
-        (μ : 𝕜) • 1 - diagonal (RCLike.ofReal ∘ d) := by
-      rw [smul_one_eq_diagonal, diagonal_sub]
-      simp
-    rw [hD, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, hU',
-      scalar_apply, ← smul_one_eq_diagonal]
-    conv_lhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply]
-  -- Conjugation by a unitary commutes with the adjugate.
-  have hadj : adjugate (scalar n (μ : 𝕜) - A) =
-      U * adjugate (diagonal fun k ↦ ((μ - d k : ℝ) : 𝕜)) * star U := by
-    rw [hN, adjugate_mul_distrib, adjugate_mul_distrib, adjugate_eq_det_smul_of_mul_eq_one hU,
-      adjugate_eq_det_smul_of_mul_eq_one hU']
-    simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, Matrix.mul_assoc]
-    rw [← det_mul, hU', det_one, one_smul]
-  -- The eigen-coordinates of `u` vanish off the simple index `e i`.
-  have hc : ∀ k ≠ e i, (star U *ᵥ u) k = 0 := fun k hk ↦
-    hA.star_eigenvectorUnitary_mulVec_apply_eq_zero hu <| by
-      simpa [μ, d] using hA.eigenvalues_ne_eigenvalues_equivOfCardEq hi k hk
-  have hdiag : adjugate (diagonal fun k ↦ ((μ - d k : ℝ) : 𝕜)) *ᵥ (star U *ᵥ u) =
-      (∏ k ∈ Finset.univ.erase (e i), ((μ - d k : ℝ) : 𝕜)) • (star U *ᵥ u) := by
-    ext k
-    rw [adjugate_diagonal, mulVec_diagonal, Pi.smul_apply, smul_eq_mul]
-    obtain rfl | hk := eq_or_ne k (e i)
-    · rfl
-    · rw [hc k hk, mul_zero, mul_zero]
-  rw [hadj, ← mulVec_mulVec, ← mulVec_mulVec, hdiag, mulVec_smul, mulVec_mulVec, hU', one_mulVec]
 
 /-- Let `u` be an eigenvector of a Hermitian matrix `A` for the eigenvalue `μ`, and let `w'` solve
 `(μ - A) w' = B u - b u`. Then `Re ⟪w', B u - b u⟫` is the sum of `|(Uᴴ B u)ₖ|² / (μ - λₖ)` over
@@ -157,38 +113,10 @@ private theorem re_star_dotProduct_sub_smul_eq_sum {A B : Matrix n n 𝕜} (hA :
 
 variable {M : ℝ → Matrix n n 𝕜}
 
-open scoped ComplexOrder in
-/-- The first variation formula with an eigenvector that need not be normalized: at a simple
-eigenvalue, the derivative of `t ↦ λᵢ (M t)` is the Rayleigh quotient
-`Re ⟪w, M' w⟫ / ⟪w, w⟫` of the derivative of the family at any nonzero eigenvector `w`. -/
-private theorem deriv_eigenvalues₀_eq_div (hM : ∀ t, (M t).IsHermitian) {t : ℝ}
-    (hMd : ∀ a b, DifferentiableAt ℝ (fun s ↦ M s a b) t) {i : Fin (Fintype.card n)}
-    (hi : ∀ j ≠ i, (hM t).eigenvalues₀ j ≠ (hM t).eigenvalues₀ i) {w : n → 𝕜}
-    (hw : M t *ᵥ w = ((hM t).eigenvalues₀ i : 𝕜) • w) (hw0 : w ≠ 0) :
-    deriv (fun s ↦ (hM s).eigenvalues₀ i) t =
-      RCLike.re (star w ⬝ᵥ (of (fun a b ↦ deriv (fun s ↦ M s a b) t) *ᵥ w)) /
-        RCLike.re (star w ⬝ᵥ w) := by
-  obtain ⟨r, hr, hrw⟩ := RCLike.pos_iff_exists_ofReal.1 (dotProduct_star_self_pos_iff.2 hw0)
-  set c : 𝕜 := (((Real.sqrt r)⁻¹ : ℝ) : 𝕜)
-  have hcc : star c * c = ((r⁻¹ : ℝ) : 𝕜) := by
-    rw [RCLike.star_def, RCLike.conj_ofReal, ← RCLike.ofReal_mul, ← mul_inv,
-      Real.mul_self_sqrt hr.le]
-  have hu : M t *ᵥ (c • w) = ((hM t).eigenvalues₀ i : 𝕜) • (c • w) := by
-    rw [mulVec_smul, hw, smul_comm]
-  have hu1 : star (c • w) ⬝ᵥ (c • w) = 1 := by
-    rw [star_smul, smul_dotProduct, dotProduct_smul, smul_smul, smul_eq_mul, hcc, ← hrw]
-    norm_cast
-    exact inv_mul_cancel₀ hr.ne'
-  rw [← fderiv_apply_one_eq_deriv, fderiv_eigenvalues₀_apply hM hMd hi hu hu1, ← hrw,
-    RCLike.ofReal_re]
-  simp only [fderiv_apply_one_eq_deriv, star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul,
-    smul_eq_mul]
-  rw [← mul_assoc, mul_comm c, hcc, RCLike.re_ofReal_mul, inv_mul_eq_div]
-
 /-- Through a unit eigenvector `u` of a simple eigenvalue `λᵢ (t₀)` passes a curve `w` of
 eigenvectors, `M t *ᵥ w t = λᵢ (t) • w t` for every `t`, which is differentiable at `t₀` when the
 entries of `M` are. It is a fixed multiple of `adjugate (λᵢ (t) - M t) *ᵥ u`. -/
-private theorem exists_eigenvector_curve (hM : ∀ t, (M t).IsHermitian) {t₀ : ℝ}
+theorem exists_eigenvector_curve (hM : ∀ t, (M t).IsHermitian) {t₀ : ℝ}
     (hMd : ∀ a b, DifferentiableAt ℝ (fun s ↦ M s a b) t₀) {i : Fin (Fintype.card n)}
     (hi : ∀ j ≠ i, (hM t₀).eigenvalues₀ j ≠ (hM t₀).eigenvalues₀ i) {u : n → 𝕜}
     (hu : M t₀ *ᵥ u = ((hM t₀).eigenvalues₀ i : 𝕜) • u) (hu1 : star u ⬝ᵥ u = 1) :
@@ -204,9 +132,11 @@ private theorem exists_eigenvector_curve (hM : ∀ t, (M t).IsHermitian) {t₀ :
     exact_mod_cast h
   refine ⟨fun t ↦ p⁻¹ • (adjugate (scalar n ((hM t).eigenvalues₀ i : 𝕜) - M t) *ᵥ u), ?_, ?_,
     fun t ↦ ?_⟩
-  · dsimp only
-    rw [adjugate_scalar_sub_mulVec_of_simple (hM t₀) hi hu, smul_smul, inv_mul_cancel₀ hp,
-      one_smul]
+  · have he := (hM t₀).eigenvalues_apply_equivOfCardEq i
+    have h := (hM t₀).adjugate_scalar_sub_mulVec_eq_prod_smul (k₀ := e i) (he ▸ hu)
+    rw [he] at h
+    dsimp only
+    rw [h, smul_smul, inv_mul_cancel₀ hp, one_smul]
   · have hlam : DifferentiableAt ℝ (fun t ↦ (hM t).eigenvalues₀ i) t₀ :=
       (hasFDerivAt_eigenvalues₀ hM hMd hi hu hu1).differentiableAt
     -- Each entry of the adjugate is the determinant of a matrix with differentiable entries.
