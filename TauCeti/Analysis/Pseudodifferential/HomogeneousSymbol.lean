@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -74,7 +75,7 @@ The file develops:
 * smoothness of the cut-off term `χ(ξ) • a(x, ξ)` on the whole space, for a frequency cutoff
   `χ` (`HomogeneousSymbol.contDiff_smul_coefficient`), and of its rescaling `χ(ξ / R) • a(x, ξ)`
   (`HomogeneousSymbol.contDiff_comp_inv_smul_snd_smul_coefficient`); near every nonzero frequency
-  a homogeneous symbol agrees with such a smooth function
+  a homogeneous symbol agrees with a smooth function on the whole space
   (`HomogeneousSymbol.exists_contDiff_eventuallyEq_coefficient`). On a proper frequency space
   the cut-off term satisfies the symbol estimates of order `m`, with the weight
   `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
@@ -1073,23 +1074,37 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
   simpa using a.contDiff_comp_inv_smul_snd_smul_coefficient χ 1
 
 /-- **Smooth local representatives.** Near the points with a fixed nonzero frequency `ξ₀`, a
-homogeneous symbol agrees with a smooth function on the whole space: its product with a frequency
-cutoff dilated to equal `1` near `ξ₀` and `0` near the zero frequency. -/
-theorem exists_contDiff_eventuallyEq_coefficient [HasContDiffBump E] {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0) :
+homogeneous symbol agrees with a smooth function on the whole space. -/
+theorem exists_contDiff_eventuallyEq_coefficient {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0) :
     ∃ f : X × E → V →L[ℂ] W, ContDiff ℝ ∞ f ∧ ∀ x, f =ᶠ[𝓝 (x, ξ₀)] a.coefficient := by
-  let χ : FrequencyCutoff E := default
-  refine ⟨fun p ↦ χ ((‖ξ₀‖ / 4)⁻¹ • p.2) • a.coefficient p,
-    a.contDiff_comp_inv_smul_snd_smul_coefficient χ _, fun x ↦ ?_⟩
-  -- Near `ξ₀` the dilated frequency has norm greater than `2`, where the cutoff equals `1`.
+  -- For a functional `ℓ` with `ℓ ξ₀ = ‖ξ₀‖` and a smooth transition `s ξ` from `0` where
+  -- `ℓ ξ ≤ ‖ξ₀‖ / 4` to `1` where `ℓ ξ ≥ ‖ξ₀‖ / 2`, the frequency map `g ξ = ξ₀ + s ξ • (ξ - ξ₀)`
+  -- is smooth, misses the zero frequency and is the identity near `ξ₀`; take `f = a ∘ (id × g)`.
   have hn : 0 < ‖ξ₀‖ := norm_pos_iff.2 hξ₀
-  have h2 : 2 < ‖(‖ξ₀‖ / 4)⁻¹ • ξ₀‖ := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity), inv_div, div_mul_cancel₀ _ hn.ne']
-    norm_num
-  have hc : Continuous fun q : X × E ↦ (‖ξ₀‖ / 4)⁻¹ • q.2 := continuous_snd.const_smul _
-  filter_upwards [(χ.eventuallyEq_one_of_two_lt_norm h2).comp_tendsto hc.continuousAt]
+  obtain ⟨ℓ, -, hℓ⟩ := exists_dual_vector ℝ ξ₀ hn.ne'
+  set t : E → ℝ := fun ξ ↦ 4 * (ℓ ξ / ‖ξ₀‖) - 1 with ht
+  set g : E → E := fun ξ ↦ ξ₀ + Real.smoothTransition (t ξ) • (ξ - ξ₀) with hg
+  have hgc : ContDiff ℝ ∞ g := contDiff_const.add <|
+    (Real.smoothTransition.contDiff.comp (by fun_prop)).smul (contDiff_id.sub contDiff_const)
+  have hg0 (ξ : E) : g ξ ≠ 0 := by
+    intro h
+    have hs0 := Real.smoothTransition.nonneg (t ξ)
+    have hs1 := Real.smoothTransition.le_one (t ξ)
+    have h0 : ‖ξ₀‖ + Real.smoothTransition (t ξ) * (ℓ ξ - ‖ξ₀‖) = 0 := by
+      simpa [hg, hℓ] using congrArg ℓ h
+    by_cases hξ : ℓ ξ ≤ ‖ξ₀‖ / 4
+    · rw [Real.smoothTransition.zero_of_nonpos (by rw [ht]; field_simp; linarith)] at h0
+      linarith
+    · nlinarith [mul_le_mul_of_nonneg_left (min_le_left ‖ξ₀‖ (ℓ ξ)) (sub_nonneg.2 hs1),
+        mul_le_mul_of_nonneg_left (min_le_right ‖ξ₀‖ (ℓ ξ)) hs0, lt_min hn (by linarith : 0 < ℓ ξ)]
+  refine ⟨fun p ↦ a.coefficient (p.1, g p.2), a.contDiffOn_coefficient.comp_contDiff
+    (contDiff_fst.prodMk (hgc.comp contDiff_snd)) fun p ↦ hg0 p.2, fun x ↦ ?_⟩
+  -- Near `ξ₀` the transition variable exceeds `1`, where the transition equals `1`.
+  have h3 : 1 < t ξ₀ := by norm_num [ht, hℓ, hn.ne']
+  have htc : Continuous fun q : X × E ↦ t q.2 := by rw [ht]; fun_prop
+  filter_upwards [htc.continuousAt.eventually (lt_mem_nhds (a := 1) (b := t (x, ξ₀).2) h3)]
     with q hq
-  simp only [Function.comp_apply, Pi.one_apply] at hq
-  simp only [hq, one_smul]
+  simp [hg, Real.smoothTransition.one_of_one_le hq.le]
 
 end Growth
 
