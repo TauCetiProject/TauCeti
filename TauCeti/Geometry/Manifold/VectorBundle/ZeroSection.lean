@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
+public import TauCeti.Geometry.Manifold.VectorBundle.TotalSpaceMFDeriv
 
 /-!
 # Tangent spaces along the zero section
