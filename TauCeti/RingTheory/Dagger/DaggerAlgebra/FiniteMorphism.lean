@@ -27,7 +27,8 @@ Let `K` be a complete nontrivially normed ultrametric field and `φ : A → B` a
 the map `Â ⊗[A] B → B̂`, `x ⊗ b ↦ φ̂ x * τ_B b`, is an isomorphism
 (`TauCeti.Dagger.completionTensorAlgEquiv`). Its inverse is the extension of `b ↦ 1 ⊗ b` to `B̂`
 given by the universal property of `B̂`, which applies because `Â ⊗[A] B` is finite over the
-affinoid algebra `Â`, hence itself affinoid.
+affinoid algebra `Â`, hence itself affinoid. The isomorphism is `Â`-linear for the action of `Â`
+on `B̂` through `φ̂` (`TauCeti.Dagger.completionTensorAlgEquiv_smul`).
 
 Since `Â` is faithfully flat over `A` (`TauCeti.Dagger.faithfullyFlat_completionAlgebra`),
 properties of `φ` are detected after this base change. For a finite morphism `φ` of dagger algebras:
@@ -181,6 +182,17 @@ theorem completionTensorAlgEquiv_symm_daggerCompletionMap (x : completion K A) :
       x ⊗ₜ[A] (1 : B) :=
   completionToCompletionTensor_daggerCompletionMap x
 
+/-- `completionTensorAlgEquiv` is compatible with the `completion K A`-actions: it sends
+`x • t` to `φ̂ x * e t`, where `e` is the isomorphism, so it is `Â`-linear for the action on `B̂`
+through `φ̂`. -/
+@[simp]
+theorem completionTensorAlgEquiv_smul (x : completion K A) (t : completion K A ⊗[A] B) :
+    completionTensorAlgEquiv K A B (x • t) =
+      (IsScalarTower.toAlgHom K A B).daggerCompletionMap x * completionTensorAlgEquiv K A B t := by
+  induction t with
+  | tmul y b => simp [TensorProduct.smul_tmul', mul_assoc]
+  | add t₁ t₂ h₁ h₂ => rw [smul_add, map_add, map_add, h₁, h₂, mul_add]
+
 /-- The completed structure map `Â → B̂` factors as `x ↦ x ⊗ 1` followed by
 `completionTensorAlgEquiv`. -/
 private theorem daggerCompletionMap_eq_comp_includeLeft :
@@ -244,12 +256,7 @@ private noncomputable def completionTensorLinearEquiv :
     completion K A ⊗[A] B ≃ₗ[completion K A] completion K B :=
   letI := completionAlgebraOfMap (K := K) (A := A) (B := B)
   { (completionTensorAlgEquiv K A B).toRingEquiv with
-    map_smul' x t := by
-      have hx : x • t = x ⊗ₜ[A] (1 : B) * t := by
-        induction t with
-        | tmul y b => simp [TensorProduct.smul_tmul']
-        | add t₁ t₂ h₁ h₂ => rw [smul_add, mul_add, h₁, h₂]
-      simp [hx, Algebra.smul_def, RingHom.algebraMap_toAlgebra] }
+    map_smul' x t := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra] }
 
 /-- The `completion K A`-module topology on `completion K B` is its own topology. -/
 private theorem isModuleTopology_completionAlgebraOfMap :
