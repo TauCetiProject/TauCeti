@@ -43,17 +43,13 @@ theorem norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq {b : ℂ
   rw [norm_toLp_gaussian_sq, norm_toLp_lineDerivOp_one_gaussian_sq]
   ring
 
-/-- At `b = π`, the prefactor `√(π / (2 Re b))` of the Gaussian norms is `(√2)⁻¹`. -/
-private theorem sqrt_pi_div_two_mul_re_pi : √(π / (2 * (π : ℂ).re)) = (√2)⁻¹ := by
-  rw [Complex.ofReal_re, show π / (2 * π) = 2⁻¹ by field_simp, Real.sqrt_inv]
-
 /-- The Gaussian `exp(-π x²)` on `ℝ` has `‖g‖²_{H^{1,2}} = (1 + 1 / (4π)) / √2`. -/
 theorem norm_toBesselPotentialSpaceCLM_one_gaussian_pi_sq :
     ‖SchwartzMap.toBesselPotentialSpaceCLM (1 : ℝ) 2
         (SchwartzMap.gaussian (V := ℝ) (b := (π : ℂ)) Real.pi_pos)‖ ^ 2 =
       (1 + (4 * π)⁻¹) / √2 := by
-  rw [norm_toBesselPotentialSpaceCLM_one_gaussian_sq, sqrt_pi_div_two_mul_re_pi,
-    Complex.ofReal_re, Complex.norm_of_nonneg Real.pi_pos.le]
+  rw [norm_toBesselPotentialSpaceCLM_one_gaussian_sq, Complex.ofReal_re,
+    div_mul_cancel_right₀ Real.pi_ne_zero, Real.sqrt_inv, Complex.norm_of_nonneg Real.pi_pos.le]
   field_simp
 
 /-- The Gaussian `exp(-π x²)` on `ℝ` has `‖g‖²_{L²} + ‖g'‖²_{L²} = (1 + π) / √2`. -/
@@ -62,8 +58,8 @@ theorem norm_toLp_gaussian_pi_sq_add_norm_toLp_lineDerivOp_sq :
         ‖(∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) (b := (π : ℂ))
           Real.pi_pos : 𝓢(ℝ, ℂ))).toLp 2‖ ^ 2 =
       (1 + π) / √2 := by
-  rw [norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq, sqrt_pi_div_two_mul_re_pi,
-    Complex.ofReal_re, Complex.norm_of_nonneg Real.pi_pos.le]
+  rw [norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq, Complex.ofReal_re,
+    div_mul_cancel_right₀ Real.pi_ne_zero, Real.sqrt_inv, Complex.norm_of_nonneg Real.pi_pos.le]
   field_simp
 
 end TauCeti.Examples.BesselPotential
