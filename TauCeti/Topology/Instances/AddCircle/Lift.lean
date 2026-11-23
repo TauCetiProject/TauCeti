@@ -45,9 +45,11 @@ the circle is either strictly monotone of degree one or strictly antitone of deg
 * `AddCircle.exists_int_forall_add_period_eq_of_lift`: a continuous lift has an integer degree
   `d`, and then shifts integer multiples of the period by multiples of `d * T`
   (`AddCircle.lift_add_int_mul_of_degree`, stated for any real increment per period).
+  `AddCircle.exists_continuous_lift_add_period_eq` gives a continuous lift with its degree.
 * `AddCircle.add_mul_sub_add_period`: for any weight `c`, the interpolation
   `x ↦ x + c * (F x - x)` between the identity and a lift `F` is again a lift.
-* `AddCircle.periodic_sub_of_lift`: the displacement `x ↦ F x - x` of a lift is periodic.
+* `AddCircle.periodic_sub_of_lift`, `AddCircle.periodic_sub_int_mul_of_lift`: the displacement
+  `x ↦ F x - d * x` of a lift of degree `d` is periodic.
 * `Homeomorph.exists_addCircle_lift_symm_comp_eq_add`: for a homeomorphism `φ` of the circle, a
   continuous lift of `φ⁻¹` composed with a continuous lift of `φ` is a translation.
 * `AddCircle.strictMono_or_strictAnti_of_lift`: a continuous lift of a homeomorphism of the
@@ -95,6 +97,14 @@ theorem periodic_sub_of_lift (hper : ∀ x, F (x + T) = F x + T) :
   simp only [hper]
   ring
 
+/-- For a lift `F` of degree `d`, `F (x + T) = F x + d * T`, the displacement `x ↦ F x - d * x`
+from the linear map of slope `d` is periodic. For `d = 1` this is
+`AddCircle.periodic_sub_of_lift`. -/
+theorem periodic_sub_int_mul_of_lift {d : ℤ} (hd : ∀ x, F (x + T) = F x + d * T) :
+    Function.Periodic (fun x ↦ F x - d * x) T := fun x ↦ by
+  simp only [hd]
+  ring
+
 /-- A strictly monotone lift `F` maps the fundamental interval `(0, T]` into `(F 0, F 0 + T]`. -/
 theorem image_Ioc_subset_of_lift (hF : StrictMono F) (hper : ∀ x, F (x + T) = F x + T) :
     F '' Ioc 0 T ⊆ Ioc (F 0) (F 0 + T) := by
@@ -138,6 +148,16 @@ theorem exists_int_forall_add_period_eq_of_lift (hF : Continuous F) (hφ : ∀ x
       AddCircle.coe_add_period, sub_self]
   obtain ⟨d, hd⟩ := (AddCircle.coe_eq_zero_iff T).1 hc0
   exact ⟨d, fun x ↦ by simpa [← hd, zsmul_eq_mul] using hc x⟩
+
+/-- **Lifting circle maps, with their degree.** Every continuous map `φ` of the circle has a
+continuous lift `F`, `φ x = F x`, together with its integer degree `d`:
+`F (x + T) = F x + d * T`. -/
+theorem exists_continuous_lift_add_period_eq (hφ : Continuous φ) :
+    ∃ F : ℝ → ℝ, ∃ d : ℤ, Continuous F ∧ (∀ x : ℝ, φ x = F x) ∧
+      ∀ x, F (x + T) = F x + d * T := by
+  obtain ⟨F, hF, hf⟩ := exists_continuous_lift hφ
+  obtain ⟨d, hd⟩ := exists_int_forall_add_period_eq_of_lift hF hf
+  exact ⟨F, d, hF, hf, hd⟩
 
 /-- A continuous lift `G` of the inverse of a homeomorphism `φ` of the circle, composed with a
 continuous lift `F` of `φ`, lifts the identity, so it is a translation: `G (F x) = x + c`. -/

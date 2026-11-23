@@ -26,6 +26,8 @@ compactness argument over the compact set of a derivative test gives continuity.
 
 ## Main results
 
+* `ContMDiffMap.iteratedFDerivWithin_extChartAt_prodMk`: a coordinate derivative of a pair of maps,
+  read in the product chart, is the pair of the coordinate derivatives.
 * `ContMDiffMap.continuous_prodMk_manifoldWeakWhitney`: pairing is jointly continuous.
 
 The weak topology is treated in M. Hirsch, *Differential Topology*, GTM 33, Chapter 2, §1.
@@ -53,7 +55,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 omit [LocallyCompactSpace E] in
 /-- The coordinate derivatives of a pair of maps, read in the product chart, are the pairs of the
 coordinate derivatives. -/
-private theorem iteratedFDerivWithin_extChartAt_prodMk (f : C^n⟮I, M; J, N⟯)
+theorem iteratedFDerivWithin_extChartAt_prodMk (f : C^n⟮I, M; J, N⟯)
     (g : C^n⟮I, M; J', N'⟯) {x : M} {y : N × N'} {w : E} (hw : w ∈ (extChartAt I x).target)
     (hf : f ((extChartAt I x).symm w) ∈ (extChartAt J y.1).source)
     (hg : g ((extChartAt I x).symm w) ∈ (extChartAt J' y.2).source) {m : ℕ} (hm : m ≤ n) :

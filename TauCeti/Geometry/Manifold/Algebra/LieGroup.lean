@@ -280,4 +280,9 @@ theorem mulZPowDiffeomorph_apply (a g : G) (e : ℤ) (he : e * e = 1) :
     mulZPowDiffeomorph I n a e he g = a * g ^ e :=
   (rfl)
 
+@[to_additive (attr := simp)]
+theorem mulZPowDiffeomorph_symm_apply (a g : G) (e : ℤ) (he : e * e = 1) :
+    (mulZPowDiffeomorph I n a e he).symm g = (a⁻¹ * g) ^ e :=
+  (rfl)
+
 end TauCeti.Lie

@@ -43,7 +43,8 @@ function.
 * `AddCircle.deriv_pos_or_deriv_neg_of_lift`: a continuous lift of a `C^n` diffeomorphism of the
   circle, `n ≠ 0`, has degree one and positive derivative, or degree `-1` and negative derivative.
 * `Diffeomorph.exists_addCircle_lift`: every `C^n` diffeomorphism of the circle, `n ≠ 0`, has a
-  `C^n` lift of one of these two kinds.
+  `C^n` lift of one of these two kinds; `Diffeomorph.exists_addCircle_lift_degree` states this
+  with an integer degree `d = ±1`.
 * `AddCircle.exists_contMDiff_lift_unitInterval_prod`: smooth homotopy lifting for the circle.
 * `AddCircle.exists_contMDiff_coe_eq_of_norm_lt`: a smooth real function on the circle which is
   a section of the projection `ℝ → AddCircle T` near `0`.
@@ -146,5 +147,17 @@ theorem exists_addCircle_lift (φ : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)�
   obtain ⟨F, hF, hφ⟩ := AddCircle.exists_continuous_lift φ.continuous
   exact ⟨F, AddCircle.contDiff_of_comp_coe_eq (funext hφ) hF φ.contMDiff, hφ,
     AddCircle.deriv_pos_or_deriv_neg_of_lift hn hF hφ⟩
+
+/-- **Every circle diffeomorphism has a lift of degree `±1`.** A `C^n` diffeomorphism `φ` of
+`AddCircle T`, `n ≠ 0`, has a `C^n` lift `F`, `φ x = F x`, of some degree `d` with `d * d = 1`,
+`F (x + T) = F x + d * T`, whose derivative has the sign of `d`. -/
+theorem exists_addCircle_lift_degree (φ : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle T) (hn : n ≠ 0) :
+    ∃ F : ℝ → ℝ, ContDiff ℝ n F ∧ (∀ x : ℝ, φ x = F x) ∧
+      ∃ d : ℤ, d * d = 1 ∧ (∀ x, F (x + T) = F x + d * T) ∧ ∀ x, 0 < d * deriv F x := by
+  obtain ⟨F, hF, hφ, hlift⟩ := φ.exists_addCircle_lift hn
+  refine ⟨F, hF, hφ, ?_⟩
+  rcases hlift with ⟨hper, hpos⟩ | ⟨hper, hneg⟩
+  · exact ⟨1, rfl, fun x ↦ by simp [hper], fun x ↦ by simpa using hpos x⟩
+  · exact ⟨-1, rfl, fun x ↦ by simp [hper, sub_eq_add_neg], fun x ↦ by simpa using hneg x⟩
 
 end Diffeomorph
