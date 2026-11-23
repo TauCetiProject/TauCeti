@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Harmonic
 public import TauCeti.RepresentationTheory.Subrepresentation
+-- Supplies `TauCeti.finrank_piTensorPower`.
+import TauCeti.LinearAlgebra.Dimension.TensorProduct
 
 /-!
 # The trace splitting of the orthogonal tensor powers

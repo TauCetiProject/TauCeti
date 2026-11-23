@@ -7,9 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Action
--- Non-public: `Fintype.equivFin` transports finite coordinate index sets to `Fin n`, and
--- `Matrix.reindex_sumCongr_J` transports `Matrix.J` along that equivalence.
-import Mathlib.Data.Fintype.EquivFin
+-- Non-public: `Matrix.reindex_sumCongr_J` transports `Matrix.J` along `Fintype.equivFin`.
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!

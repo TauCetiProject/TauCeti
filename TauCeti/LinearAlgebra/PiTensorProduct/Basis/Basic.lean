@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
+public import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Coordinates of reindexed tensors in a product basis
@@ -21,7 +21,6 @@ coordinate of `t` at `w ∘ e`.
 * `TauCeti.piTensorPowerBasis`: the coordinate monomial basis of `⨂[R] _ : ι, (κ → R)`.
 * `TauCeti.piTensorPowerBasis_apply`: each basis vector is the pure tensor of standard basis
   vectors `Pi.single (u i) 1`.
-* `TauCeti.finrank_piTensorPower`: dimension `Nat.card κ ^ Nat.card ι` of `⨂[R] _ : ι, (κ → R)`.
 * `Basis.piTensorProduct_repr_reindex`: reindexing the factors of a tensor reindexes its
   coordinates in a product basis.
 -/
@@ -54,13 +53,6 @@ theorem piTensorPowerBasis_apply (R : Type*) [CommSemiring R] (ι κ : Type*)
     piTensorPowerBasis R ι κ u = PiTensorProduct.tprod R fun i => Pi.single (u i) (1 : R) := by
   rw [piTensorPowerBasis_def, Basis.piTensorProduct_apply]
   simp
-
-/-- **The dimension of `(κ → R)^{⊗ι}` is `Nat.card κ ^ Nat.card ι`**, read off the coordinate
-monomial basis `TauCeti.piTensorPowerBasis`, whose index type is `ι → κ`. -/
-theorem finrank_piTensorPower (R : Type*) [CommSemiring R] [StrongRankCondition R]
-    (ι κ : Type*) [Finite ι] [Finite κ] :
-    Module.finrank R (⨂[R] _ : ι, κ → R) = Nat.card κ ^ Nat.card ι := by
-  rw [Module.finrank_eq_nat_card_basis (piTensorPowerBasis R ι κ), Nat.card_fun]
 
 end TauCeti
 

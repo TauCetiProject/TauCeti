@@ -8,14 +8,12 @@ module
 public import TauCeti.Algebra.BrauerAlgebra.Generation
 public import TauCeti.Combinatorics.Brauer.SkewWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
--- Non-public: `Equiv.Perm.sign_sumComm` evaluates the reflection sign, `Matrix.Congruence` expands
--- `(P * J * Qᵀ) i j` entrywise, and `SymplecticGroup` supplies reindexing, entrywise, and
--- multiplication identities for `Matrix.J` in the reindexing, loop, and reconnection steps;
--- `Associativity` and `WeightedAssociativity` reassociate diagrams and match the loop counts of
--- the two bracketings in the loop rule.
+-- Non-public: `Matrix.Congruence` expands `(P * J * Qᵀ) i j` entrywise, and `SymplecticGroup`
+-- supplies reindexing, entrywise, and multiplication identities for `Matrix.J` in the reindexing,
+-- loop, and reconnection steps; `Associativity` and `WeightedAssociativity` reassociate diagrams
+-- and match the loop counts of the two bracketings in the loop rule.
 import TauCeti.Combinatorics.Brauer.Associativity
 import TauCeti.Combinatorics.Brauer.WeightedAssociativity
-import TauCeti.GroupTheory.Perm.SumCongr
 import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.SymplecticGroup
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.PowerSum
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Character
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Orthogonality
+-- Supplies `TauCeti.finrank_piTensorPower`.
+import TauCeti.LinearAlgebra.Dimension.TensorProduct
 
 /-!
 # The Schur-Weyl decomposition of the character of a tensor power
