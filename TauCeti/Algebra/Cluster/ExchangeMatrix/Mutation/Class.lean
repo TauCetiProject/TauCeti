@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word
 public import Mathlib.Data.Set.Card
-public import TauCeti.LinearAlgebra.Matrix.Block
+public import TauCeti.Data.Matrix.Block
 
 /-!
 # Mutation classes of block diagonal matrices
@@ -102,9 +102,10 @@ namespace Matrix
 variable {I₁ I₂ K₁ K₂ : Type*} [DecidableEq I₁] [DecidableEq I₂]
   [DecidableEq K₁] [DecidableEq K₂]
 
-/-- A nonnegative uniform bound on principal entry products in a rectangular block
-mutation class holds exactly when it holds in both components. Bound three is the
-product-bound part of two-finiteness, with its sign condition supplied by skew-symmetrizability. -/
+/-- A nonnegative uniform bound on absolute principal-entry products at distinct mutable indices
+in a rectangular block mutation class holds exactly when it holds in both components.
+Bound three gives the product-bound part of two-finiteness.
+Skew-symmetrizability supplies the sign condition. -/
 theorem forall_abs_matrixMutationWord_mul_le_fromBlocks_iff
     (B₁ : Matrix I₁ K₁ ℤ) (row₁ : K₁ ↪ I₁) (row₂ : K₂ ↪ I₂)
     (B₂ : Matrix I₂ K₂ ℤ) (bound : ℤ) (hbound : 0 ≤ bound) :

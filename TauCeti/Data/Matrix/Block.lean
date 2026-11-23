@@ -67,6 +67,14 @@ and empty blocks.
 
 namespace Matrix
 
+/-- With fixed off-diagonal blocks, the assembled matrix determines both diagonal blocks. -/
+public theorem fromBlocks_injective_diag {m n p q α : Type*}
+    (B : Matrix m q α) (C : Matrix n p α) :
+    Function.Injective (fun a : Matrix m p α × Matrix n q α ↦ fromBlocks a.1 B C a.2) := by
+  rintro ⟨A₁, D₁⟩ ⟨A₂, D₂⟩ h
+  simpa only [fromBlocks_inj, and_true, true_and, Prod.mk.injEq] using h
+
+
 section ToBlocksMul
 
 variable {n o l m p q α : Type*} [Fintype l] [Fintype m] [AddCommMonoid α] [Mul α]
