@@ -24,9 +24,11 @@ normalization of each generator handles both orientations and constant parameter
 
 As an immediate consequence (`TauCeti.Contour.Cycle.integrable_windingWeight`), the trace-zero
 winding weight of every contour cycle is globally integrable on `ℂ`, so its product with any map
-continuous on `tsupport C.windingWeight` is globally integrable
-(`TauCeti.Contour.Cycle.integrable_windingWeight_smul`,
-`TauCeti.Contour.Cycle.integrableOn_windingWeight_smul`).
+continuous on `tsupport C.windingWeight` is globally integrable on `ℂ`
+(`TauCeti.Contour.Cycle.integrable_windingWeight_smul`). When `C` lies in `U` (`C.IsIn U`) and is
+null-homologous in `U` (`C.IsNullHomologous U`), `tsupport C.windingWeight ⊆ U`, so the product
+with any map continuous on `U` is integrable on `U`
+(`TauCeti.Contour.Cycle.integrableOn_windingWeight_smul`).
 -/
 
 public section

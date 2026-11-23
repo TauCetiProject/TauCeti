@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Topology.Closure
 
 /-!
 # Elementary frontier lemmas
@@ -121,6 +122,8 @@ let alone a holomorphic map.
   set where it is continuous.
 * `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
   frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
+* `IsOpen.closure_sdiff_of_isClosed` and `IsOpen.frontier_sdiff_of_isClosed` — the closure and
+  frontier of an open set with a closed subset removed.
 * `IsOpen.closure_sdiff_biUnion` and `IsOpen.frontier_sdiff_biUnion` — the closure and frontier
   of an open set with finitely many pairwise-disjoint closed subsets removed.
 -/
@@ -388,37 +391,56 @@ section FiniteHoles
 
 variable {X ι : Type*} [TopologicalSpace X]
 
+/-- Removing a closed subset `K ⊆ U` from an open set `U` gives a set whose closure is
+`closure U \ interior K`. -/
+theorem _root_.IsOpen.closure_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (hK : IsClosed K)
+    (hKU : K ⊆ U) : closure (U \ K) = closure U \ interior K := by
+  have hcodisj : Codisjoint (interior U) (interior Kᶜ) :=
+    codisjoint_iff.mpr (interior_union_interior_compl_eq_univ hU hK hKU)
+  rw [sdiff_eq, closure_inter_of_codisjoint_interior hcodisj, closure_compl, sdiff_eq]
+
+/-- Removing a closed subset `K ⊆ U` from an open set `U` gives a set whose frontier is
+`frontier U ∪ frontier K`. -/
+theorem _root_.IsOpen.frontier_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (hK : IsClosed K)
+    (hKU : K ⊆ U) : frontier (U \ K) = frontier U ∪ frontier K := by
+  refine Subset.antisymm ?_ ?_
+  · rw [sdiff_eq]
+    exact (frontier_inter_subset U Kᶜ).trans
+      (union_subset_union inter_subset_left (inter_subset_right.trans (frontier_compl K).le))
+  · conv_rhs => rw [frontier, (hU.sdiff hK).interior_eq, hU.closure_sdiff_of_isClosed hK hKU]
+    rintro x (⟨hxUcl, hxUint⟩ | ⟨hxKcl, hxKint⟩)
+    · have hxU : x ∉ U := hU.interior_eq ▸ hxUint
+      exact ⟨⟨hxUcl, fun h ↦ hxU (hKU (interior_subset h))⟩, fun h ↦ hxU h.1⟩
+    · have hxK : x ∈ K := hK.closure_eq ▸ hxKcl
+      exact ⟨⟨subset_closure (hKU hxK), hxKint⟩, fun h ↦ h.2 hxK⟩
+
+private theorem interior_biUnion_of_isClosed_pairwiseDisjoint (s : Finset ι) {K : ι → Set X}
+    (hK : ∀ i ∈ s, IsClosed (K i)) (hdisj : (s : Set ι).PairwiseDisjoint K) :
+    interior (⋃ i ∈ s, K i) = ⋃ i ∈ s, interior (K i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i t hi ih =>
+    have hKi : IsClosed (K i) := hK i (Finset.mem_insert_self i t)
+    have ht' : ∀ j ∈ t, IsClosed (K j) := fun j hj ↦ hK j (Finset.mem_insert_of_mem hj)
+    have hKt : IsClosed (⋃ j ∈ t, K j) := t.finite_toSet.isClosed_biUnion ht'
+    have hdisj_it : Disjoint (closure (K i)) (closure (⋃ j ∈ t, K j)) := by
+      rw [hKi.closure_eq, hKt.closure_eq]
+      exact Set.disjoint_iUnion₂_right.mpr fun j hj ↦ hdisj (Finset.mem_insert_self i t)
+        (Finset.mem_insert_of_mem hj) (fun h ↦ hi (h ▸ hj))
+    rw [Finset.set_biUnion_insert, interior_union_of_disjoint_closure hdisj_it,
+      ih ht' (hdisj.subset (Finset.coe_subset.mpr (Finset.subset_insert i t))),
+      Finset.set_biUnion_insert]
+
 /-- Removing finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`) from an open set
 `U` gives a set whose closure is `closure U \ ⋃ i ∈ s, interior (K i)`. -/
 theorem _root_.IsOpen.closure_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Finset ι)
     {K : ι → Set X} (hK : ∀ i ∈ s, IsClosed (K i)) (hsub : ∀ i ∈ s, K i ⊆ U)
     (hdisj : (s : Set ι).PairwiseDisjoint K) :
     closure (U \ ⋃ i ∈ s, K i) = closure U \ ⋃ i ∈ s, interior (K i) := by
-  classical
   have hK_star : IsClosed (⋃ i ∈ s, K i) := s.finite_toSet.isClosed_biUnion hK
-  have hcodisj : Codisjoint (interior U) (interior (⋃ i ∈ s, K i)ᶜ) :=
-    codisjoint_iff_compl_le_left.mpr (by
-      rw [interior_compl, hK_star.closure_eq, compl_compl, hU.interior_eq]
-      exact iUnion₂_subset hsub)
-  have hint_star : ∀ (t : Finset ι), (∀ i ∈ t, IsClosed (K i)) →
-      (t : Set ι).PairwiseDisjoint K →
-      interior (⋃ i ∈ t, K i) = ⋃ i ∈ t, interior (K i) := by
-    intro t ht hdisj_t
-    induction t using Finset.induction_on with
-    | empty => simp
-    | @insert i t hi ih =>
-      have hKi : IsClosed (K i) := ht i (Finset.mem_insert_self i t)
-      have ht' : ∀ j ∈ t, IsClosed (K j) := fun j hj ↦ ht j (Finset.mem_insert_of_mem hj)
-      have hKt : IsClosed (⋃ j ∈ t, K j) := t.finite_toSet.isClosed_biUnion ht'
-      have hdisj_it : Disjoint (closure (K i)) (closure (⋃ j ∈ t, K j)) := by
-        rw [hKi.closure_eq, hKt.closure_eq]
-        exact Set.disjoint_iUnion₂_right.mpr fun j hj ↦ hdisj_t (Finset.mem_insert_self i t)
-          (Finset.mem_insert_of_mem hj) (fun h ↦ hi (h ▸ hj))
-      rw [Finset.set_biUnion_insert, interior_union_of_disjoint_closure hdisj_it,
-        ih ht' (hdisj_t.subset (Finset.coe_subset.mpr (Finset.subset_insert i t))),
-        Finset.set_biUnion_insert]
-  rw [sdiff_eq, closure_inter_of_codisjoint_interior hcodisj, closure_compl, sdiff_eq,
-    hint_star s hK hdisj]
+  rw [hU.closure_sdiff_of_isClosed hK_star (iUnion₂_subset hsub),
+    interior_biUnion_of_isClosed_pairwiseDisjoint s hK hdisj]
 
 /-- **Frontier of an open set with finitely many pairwise-disjoint closed holes.** For an open set
 `U` and finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`), the frontier of
@@ -427,30 +449,18 @@ theorem _root_.IsOpen.frontier_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Fi
     {K : ι → Set X} (hK : ∀ i ∈ s, IsClosed (K i)) (hsub : ∀ i ∈ s, K i ⊆ U)
     (hdisj : (s : Set ι).PairwiseDisjoint K) :
     frontier (U \ ⋃ i ∈ s, K i) = frontier U ∪ ⋃ i ∈ s, frontier (K i) := by
-  have hopen : IsOpen (U \ ⋃ i ∈ s, K i) :=
-    hU.sdiff (s.finite_toSet.isClosed_biUnion hK)
-  rw [frontier, hopen.interior_eq, hU.closure_sdiff_biUnion s hK hsub hdisj]
-  ext x
-  constructor
-  · rintro ⟨⟨hxUcl, hxint⟩, hxΔ⟩
-    by_cases hxU : x ∈ U
-    · obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp (by_contra fun h ↦ hxΔ ⟨hxU, h⟩)
-      exact Or.inr (mem_iUnion₂.mpr
-        ⟨i, hi, (hK i hi).closure_eq.symm ▸ hxi, fun h ↦ hxint (mem_iUnion₂.mpr ⟨i, hi, h⟩)⟩)
-    · exact Or.inl ⟨hxUcl, hU.interior_eq.symm ▸ hxU⟩
-  · rintro (⟨hxUcl, hxUint⟩ | hxfr)
-    · have hxU : x ∉ U := hU.interior_eq ▸ hxUint
-      refine ⟨⟨hxUcl, fun h ↦ ?_⟩, fun h ↦ hxU h.1⟩
-      obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp h
-      exact hxU (hsub i hi (interior_subset hxi))
-    · obtain ⟨i, hi, hxicl, hxiint⟩ := mem_iUnion₂.mp hxfr
-      have hxi : x ∈ K i := (hK i hi).closure_eq ▸ hxicl
-      refine ⟨⟨subset_closure (hsub i hi hxi), fun h ↦ ?_⟩,
-        fun h ↦ h.2 (mem_iUnion₂.mpr ⟨i, hi, hxi⟩)⟩
-      obtain ⟨j, hj, hxjint⟩ := mem_iUnion₂.mp h
-      by_cases hji : j = i
-      · exact hxiint (hji ▸ hxjint)
-      · exact Set.disjoint_left.mp (hdisj hi hj (Ne.symm hji)) hxi (interior_subset hxjint)
+  have hK_star : IsClosed (⋃ i ∈ s, K i) := s.finite_toSet.isClosed_biUnion hK
+  rw [hU.frontier_sdiff_of_isClosed hK_star (iUnion₂_subset hsub)]
+  refine congrArg (frontier U ∪ ·) (Subset.antisymm (s.frontier_biUnion_subset K) ?_)
+  intro x hxfr
+  obtain ⟨i, hi, hxicl, hxiint⟩ := mem_iUnion₂.mp hxfr
+  have hxi : x ∈ K i := (hK i hi).closure_eq ▸ hxicl
+  refine ⟨subset_closure (mem_iUnion₂.mpr ⟨i, hi, hxi⟩), fun h ↦ ?_⟩
+  rw [interior_biUnion_of_isClosed_pairwiseDisjoint s hK hdisj] at h
+  obtain ⟨j, hj, hxjint⟩ := mem_iUnion₂.mp h
+  by_cases hji : j = i
+  · exact hxiint (hji ▸ hxjint)
+  · exact Set.disjoint_left.mp (hdisj hi hj (Ne.symm hji)) hxi (interior_subset hxjint)
 
 end FiniteHoles
 

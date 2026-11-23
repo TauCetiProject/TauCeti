@@ -164,6 +164,20 @@ theorem jordanSign_positivelyOrient {γ : PiecewiseC1ClosedCurve} (hab : γ.a �
     rw [← positivelyOrient_symm hne]
     exact hlt_case hηlt hηinj
 
+/-- A simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
+`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has a Jordan curve as its interval image. -/
+theorem isJordanCurve_image_of_ne (γ : PiecewiseC1ClosedCurve) (hab : γ.a ≠ γ.b)
+    (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
+    TauCeti.IsJordanCurve (γ '' uIcc γ.a γ.b) := by
+  rcases lt_or_gt_of_ne hab with hlt | hlt
+  · rw [min_eq_left hlt.le, max_eq_right hlt.le] at hinj
+    exact γ.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
+      hlt γ.source_eq_target hinj
+  · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
+    rw [← γ.image_symm]
+    exact γ.symm.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
+      (by simpa using hlt : γ.symm.a < γ.symm.b) γ.symm.source_eq_target (by simpa using hinj)
+
 end PiecewiseC1ClosedCurve
 
 namespace Cycle
@@ -374,18 +388,6 @@ theorem trace_jordanBoundaryCycle_eq_union
       rw [FreeAddCommGroup.mem_support_iff]
       exact hneg.ne
 
-private theorem isJordanCurve_image_of_ne {η : PiecewiseC1ClosedCurve} (hab : η.a ≠ η.b)
-    (hinj : InjOn η (Ico (min η.a η.b) (max η.a η.b))) :
-    TauCeti.IsJordanCurve (η '' uIcc η.a η.b) := by
-  rcases lt_or_gt_of_ne hab with hlt | hlt
-  · rw [min_eq_left hlt.le, max_eq_right hlt.le] at hinj
-    exact η.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
-      hlt η.source_eq_target hinj
-  · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
-    rw [← η.image_symm]
-    exact η.symm.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
-      (by simpa using hlt : η.symm.a < η.symm.b) η.symm.source_eq_target (by simpa using hinj)
-
 /-- **Trace identification for `jordanBoundaryCycle`.** The trace of the oriented boundary cycle of
 a finitely connected Jordan region `Δ` equals `frontier Δ`. -/
 theorem trace_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
@@ -399,8 +401,8 @@ theorem trace_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
       frontier ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
         ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) := by
   rw [trace_jordanBoundaryCycle_eq_union hsub,
-    (isJordanCurve_image_of_ne hab₀ hinj₀).frontier_filledHull_sdiff_biUnion
-      (fun i hi ↦ isJordanCurve_image_of_ne (hab i hi) (hinj i hi)) hsub hdisj]
+    (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).frontier_filledHull_sdiff_biUnion
+      (fun i hi ↦ (γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)) hsub hdisj]
 
 open scoped Classical in
 /-- **Winding-number adapter for `jordanBoundaryCycle`.** Off its trace `frontier Δ`, the oriented
@@ -455,8 +457,8 @@ theorem windingWeight_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
   set Δ := (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
     ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)
   have hΔ_open : IsOpen Δ :=
-    (isJordanCurve_image_of_ne hab₀ hinj₀).isClosed.isOpen_filledHull_sdiff_biUnion s fun i hi ↦
-      (isJordanCurve_image_of_ne (hab i hi) (hinj i hi)).isClosed
+    (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).isClosed.isOpen_filledHull_sdiff_biUnion s fun i hi ↦
+      ((γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)).isClosed
   ext z
   by_cases htr : z ∈ trace (jordanBoundaryCycle γ₀ s γ)
   · rw [windingWeight_eq_zero_of_mem _ htr]

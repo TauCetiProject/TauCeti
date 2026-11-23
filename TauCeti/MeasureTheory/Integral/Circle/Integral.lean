@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
+import Mathlib.MeasureTheory.Integral.CircleAverage
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
@@ -109,25 +110,19 @@ theorem TauCeti.norm_circleIntegral_sub_inv_smul_sub_le [CompleteSpace E] {f : �
     {y : E} {R M : ℝ} (hR : 0 < R) (hf : CircleIntegrable f c R)
     (hM : ∀ z ∈ sphere c R, ‖f z - y‖ ≤ M) :
     ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • y‖ ≤ 2 * π * M := by
-  have hc : c ∉ sphere c |R| := by simp [abs_of_pos hR, hR.ne]
-  have hf' : CircleIntegrable (fun z ↦ (z - c)⁻¹ • f z) c R := by
-    simpa only [zpow_neg_one] using hf.sub_zpow_smul (-1) hc
-  have hconst : CircleIntegrable (fun z ↦ (z - c)⁻¹ • y) c R := by
-    simpa only [zpow_neg_one] using (circleIntegrable_const y c R).sub_zpow_smul (-1) hc
-  have hsub : (∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • y =
-      ∮ z in C(c, R), (z - c)⁻¹ • (f z - y) := by
-    rw [← circleIntegral.integral_sub_center_inv c hR.ne', ← circleIntegral.integral_smul_const,
-      ← circleIntegral.integral_sub hf' hconst]
-    simp only [smul_sub]
-  rw [hsub]
-  calc
-    ‖∮ z in C(c, R), (z - c)⁻¹ • (f z - y)‖
-        ≤ 2 * π * R * (R⁻¹ * M) := by
-          refine circleIntegral.norm_integral_le_of_norm_le_const hR.le fun z hz ↦ ?_
-          rw [norm_smul, norm_inv, mem_sphere_iff_norm.mp hz]
-          exact mul_le_mul_of_nonneg_left (hM z hz) (inv_nonneg.mpr hR.le)
-    _ = 2 * π * M := by
-          rw [mul_assoc, mul_inv_cancel_left₀ hR.ne']
+  have hpi : (2 * π * I : ℂ) ≠ 0 :=
+    mul_ne_zero (mul_ne_zero two_ne_zero (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero)) I_ne_zero
+  have hint : ∮ z in C(c, R), (z - c)⁻¹ • f z = (2 * π * I : ℂ) • Real.circleAverage f c R :=
+    (inv_smul_eq_iff₀ hpi).mp (Real.circleAverage_eq_circleIntegral hR.ne').symm
+  have hconst : CircleIntegrable (fun _ ↦ y) c R := circleIntegrable_const y c R
+  rw [hint, ← Real.circleAverage_const y c R, ← smul_sub, ← Real.circleAverage_sub hf hconst,
+    norm_smul, norm_mul, norm_mul, Complex.norm_two, Complex.norm_real, Real.norm_of_nonneg
+      Real.pi_pos.le, Complex.norm_I, mul_one]
+  refine mul_le_mul_of_nonneg_left
+    (Real.norm_circleAverage_le_circleAverage_norm.trans ?_) (by positivity)
+  refine Real.circleAverage_mono_on_of_le_circle (hf.sub hconst).norm fun z hz ↦ ?_
+  rw [abs_of_pos hR] at hz
+  exact hM z hz
 
 /-- **Supremum oscillation bound for the Cauchy integral over a circle.** For `R > 0` and `f`
 continuous on `sphere c R`, `‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I) • y‖` is bounded

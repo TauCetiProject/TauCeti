@@ -98,31 +98,35 @@ theorem mul_conj_deriv_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t
 
 namespace Contour.Cycle
 
-/-- For `F` continuous on the trace of `C`, the real part of `C.integral F` equals the
-coefficient-weighted sum of the real circulations of `(Re F, -Im F)` over the supported
-generators. -/
-theorem re_integral_eq_sum_circulationFun (C : Cycle) {F : ℂ → ℂ} (hF : ContinuousOn F C.trace) :
+/-- When `t ↦ deriv γ t • F (γ t)` is interval-integrable along every curve `γ` in the support
+of `C`, the real part of `C.integral F` equals the coefficient-weighted sum of the real
+circulations of `(Re F, -Im F)` over the supported generators. -/
+theorem re_integral_eq_sum_circulationFun (C : Cycle) {F : ℂ → ℂ}
+    (hF : ∀ γ ∈ FreeAddCommGroup.support C,
+      IntervalIntegrable (fun t ↦ deriv γ t • F (γ t)) volume γ.a γ.b) :
     (C.integral F).re =
       ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t := by
   rw [integral_eq_sum_support, Complex.re_sum]
   refine Finset.sum_congr rfl fun γ hγ ↦ ?_
   rw [← Complex.reCLM_apply, map_zsmul, zsmul_eq_mul,
-    ← Complex.reCLM.intervalIntegral_comp_comm (C.intervalIntegrable_of_mem_support hF hγ)]
+    ← Complex.reCLM.intervalIntegral_comp_comm (hF γ hγ)]
   exact congrArg _ (intervalIntegral.integral_congr fun t _ ↦
     re_deriv_mul_eq_circulationFun F γ t)
 
-/-- For `F` continuous on the trace of `C`, the imaginary part of `C.integral F` equals the
-coefficient-weighted sum of the real circulations of `(Im F, Re F)` over the supported
-generators. -/
-theorem im_integral_eq_sum_circulationFun (C : Cycle) {F : ℂ → ℂ} (hF : ContinuousOn F C.trace) :
+/-- When `t ↦ deriv γ t • F (γ t)` is interval-integrable along every curve `γ` in the support
+of `C`, the imaginary part of `C.integral F` equals the coefficient-weighted sum of the real
+circulations of `(Im F, Re F)` over the supported generators. -/
+theorem im_integral_eq_sum_circulationFun (C : Cycle) {F : ℂ → ℂ}
+    (hF : ∀ γ ∈ FreeAddCommGroup.support C,
+      IntervalIntegrable (fun t ↦ deriv γ t • F (γ t)) volume γ.a γ.b) :
     (C.integral F).im =
       ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t := by
   rw [integral_eq_sum_support, Complex.im_sum]
   refine Finset.sum_congr rfl fun γ hγ ↦ ?_
   rw [← Complex.imCLM_apply, map_zsmul, zsmul_eq_mul,
-    ← Complex.imCLM.intervalIntegral_comp_comm (C.intervalIntegrable_of_mem_support hF hγ)]
+    ← Complex.imCLM.intervalIntegral_comp_comm (hF γ hγ)]
   exact congrArg _ (intervalIntegral.integral_congr fun t _ ↦
     im_deriv_mul_eq_circulationFun F γ t)
 
@@ -212,13 +216,15 @@ theorem integral_eq_two_mul_I_mul_integral_windingWeight_conjWirtingerDeriv (C :
       C.integrableOn_windingWeight_smul_conjWirtingerDeriv hU htrace hnull hF
   have hre : (C.integral F).re =
       -2 * (∫ z in U, (C.windingWeight z : ℂ) * conjWirtingerDeriv F z 1).im := by
-    rw [C.re_integral_eq_sum_circulationFun hFtr, (C.green_winding hU htrace hu hv.neg hnull).2.2]
+    rw [C.re_integral_eq_sum_circulationFun (fun _ ↦ C.intervalIntegrable_of_mem_support hFtr),
+      (C.green_winding hU htrace hu hv.neg hnull).2.2]
     exact setIntegral_windingWeight_mul_curl_eq C hU (-2) Complex.imCLM hint fun z hz ↦
       curl_re_neg_im_eq_neg_two_mul_im_conjWirtingerDeriv
         ((hF.contDiffAt (hU.mem_nhds hz)).differentiableAt one_ne_zero)
   have him : (C.integral F).im =
       2 * (∫ z in U, (C.windingWeight z : ℂ) * conjWirtingerDeriv F z 1).re := by
-    rw [C.im_integral_eq_sum_circulationFun hFtr, (C.green_winding hU htrace hv hu hnull).2.2]
+    rw [C.im_integral_eq_sum_circulationFun (fun _ ↦ C.intervalIntegrable_of_mem_support hFtr),
+      (C.green_winding hU htrace hv hu hnull).2.2]
     exact setIntegral_windingWeight_mul_curl_eq C hU 2 Complex.reCLM hint fun z hz ↦
       curl_im_re_eq_two_mul_re_conjWirtingerDeriv
         ((hF.contDiffAt (hU.mem_nhds hz)).differentiableAt one_ne_zero)
@@ -292,11 +298,13 @@ theorem circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerD
   have hre : (C.integral (fun z ↦ conj (F z))).re =
       ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ (F z).im) γ t := by
-    simpa [Green.circulationFun] using C.re_integral_eq_sum_circulationFun hFtr
+    simpa [Green.circulationFun] using C.re_integral_eq_sum_circulationFun
+      (F := fun z ↦ conj (F z)) (fun _ hγ ↦ C.intervalIntegrable_of_mem_support hFtr hγ)
   have him : -(C.integral (fun z ↦ conj (F z))).im =
       ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ -(F z).re) γ t := by
-    rw [C.im_integral_eq_sum_circulationFun hFtr, ← Finset.sum_neg_distrib]
+    rw [C.im_integral_eq_sum_circulationFun
+        (fun _ hγ ↦ C.intervalIntegrable_of_mem_support hFtr hγ), ← Finset.sum_neg_distrib]
     refine Finset.sum_congr rfl fun γ _ ↦ ?_
     rw [← mul_neg, ← intervalIntegral.integral_neg]
     refine congrArg _ (intervalIntegral.integral_congr fun t _ ↦ ?_)
@@ -323,10 +331,8 @@ private theorem setIntegral_windingWeight_circleCycle_eq_ball {c : ℂ} {R : ℝ
     (∫ z in U, ((Contour.circleCycle c R).windingWeight z : ℂ) * g z) =
       ∫ z in ball c R, g z := by
   rw [Contour.Cycle.windingWeight_circleCycle c hR]
-  have hfun : (fun z ↦ (((ball c R).indicator (1 : ℂ → ℝ) z : ℝ) : ℂ) * g z) =
-      (ball c R).indicator g := by
-    ext z; by_cases hz : z ∈ ball c R <;> simp [hz]
-  rw [hfun, setIntegral_indicator measurableSet_ball,
+  simp_rw [← Complex.real_smul, ← Set.indicator_smul_left, Pi.one_apply, one_smul]
+  rw [setIntegral_indicator measurableSet_ball,
     inter_eq_right.mpr (ball_subset_closedBall.trans hball)]
 
 /-- **Complex circle Stokes formula for `F dbar z`.** For `R ≥ 0` and `F` real `C¹` on an open
