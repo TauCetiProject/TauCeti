@@ -163,10 +163,6 @@ private lemma exists_finiteType_proper_refinement (S : Scheme.{u}) {X : S.Finite
       (hPrecoverage.over S) ((MorphismProperty.Over.forget _ ⊤ S).obj X) ∧
         r.map (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S) ≤
           (Sieve.generate (Presieve.singleton f)).arrows := by
-  -- Supply the intersection explicitly since instance search does not synthesize it.
-  let : MorphismProperty.IsStableUnderComposition
-      (@LocallyOfFiniteType ⊓ @QuasiCompact : MorphismProperty Scheme.{u}) :=
-    .inf (P := @LocallyOfFiniteType) (Q := @QuasiCompact)
   have hle : Scheme.precoverage (@IsProper ⊓ @Surjective) ≤
       (@LocallyOfFiniteType ⊓ @QuasiCompact : MorphismProperty Scheme.{u}).precoverage := by
     refine le_trans inf_le_right (MorphismProperty.precoverage_monotone ?_)

@@ -32,6 +32,12 @@ instance : MorphismProperty.IsStableUnderBaseChange
     (@LocallyOfFiniteType ⊓ @QuasiCompact : MorphismProperty Scheme.{u}) :=
   .inf (P := @LocallyOfFiniteType) (Q := @QuasiCompact)
 
+/-- Composites of locally finite-type, quasi-compact morphisms remain locally of finite type
+and quasi-compact. -/
+instance : MorphismProperty.IsStableUnderComposition
+    (@LocallyOfFiniteType ⊓ @QuasiCompact : MorphismProperty Scheme.{u}) :=
+  .inf (P := @LocallyOfFiniteType) (Q := @QuasiCompact)
+
 end TauCeti
 
 namespace AlgebraicGeometry.Scheme
