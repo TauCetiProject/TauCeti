@@ -372,21 +372,25 @@ theorem contMDiffWithinAt_relativeVolumeDensity
   exact heq hq
 
 /-- **Joint regularity of the relative density of a family of metrics.** If the inner products of
-a family of metrics `g_t` are `C^k` jointly in `(t, x)` at `(t₀, x₀)`, and those of a fixed
-metric `g₀` are `C^k` at `x₀`, then the relative volume density of `g_t` with respect to `g₀` is
-`C^k` jointly in `(t, x)` at `(t₀, x₀)`. -/
-theorem contMDiffAt_uncurry_relativeVolumeDensity {k : ℕ∞ω} [IsManifold I (k + 1) M] {x₀ : M}
+a family of metrics `g_t`, parametrised by a manifold, are `C^k` jointly in `(t, x)` at
+`(t₀, x₀)`, and those of a fixed metric `g₀` are `C^k` at `x₀`, then the relative volume density
+of `g_t` with respect to `g₀` is `C^k` jointly in `(t, x)` at `(t₀, x₀)`. -/
+theorem contMDiffAt_uncurry_relativeVolumeDensity
+    {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+    {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
+    {k : ℕ∞ω} [IsManifold I (k + 1) M] {x₀ : M}
     {g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
-    {g : ℝ → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)} {t₀ : ℝ}
+    {g : P → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)} {t₀ : P}
     (hg₀ : ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
       (fun x : M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x (g₀.inner x)) x₀)
-    (hg : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
-      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+    (hg : ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
+      (fun p : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
         ((g p.1).inner p.2)) (t₀, x₀)) :
-    ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) k
-      (fun p : ℝ × M ↦ relativeVolumeDensity g₀ (g p.1) p.2) (t₀, x₀) :=
+    ContMDiffAt (IP.prod I) 𝓘(ℝ) k
+      (fun p : P × M ↦ relativeVolumeDensity g₀ (g p.1) p.2) (t₀, x₀) :=
   contMDiffWithinAt_univ.1 <| contMDiffWithinAt_relativeVolumeDensity (b := Prod.snd)
     (fun _ ↦ g₀) (fun p ↦ g p.1) (hg₀.comp (t₀, x₀) contMDiffAt_snd).contMDiffWithinAt
     hg.contMDiffWithinAt

@@ -337,18 +337,21 @@ theorem pullback_id
   simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
 
 /-- **Joint regularity of induced metrics.** The metrics `F_t^* g` induced by a jointly
-`C^(n+1)` family of immersions `F_t` from a `C^n` metric `g` have inner products that are `C^n`
-jointly in `(t, x)`. -/
+`C^(n+1)` family of immersions `F_t`, parametrised by a manifold, from a `C^n` metric `g` have
+inner products that are `C^n` jointly in `(t, x)`. -/
 theorem contMDiffAt_uncurry_pullback
-    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
-    (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (Function.uncurry Φ))
-    (hinj : ∀ t x, Function.Injective (mfderiv I J (Φ t) x)) (p₀ : ℝ × M) :
-    ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
-      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+    {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+    {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : P → M → N}
+    (hΦ : ContMDiff (IP.prod I) J (n + 1) (Function.uncurry Φ))
+    (hinj : ∀ t x, Function.Injective (mfderiv I J (Φ t) x)) (p₀ : P × M) :
+    ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun p : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
         ((g.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2)) p₀ := by
   have hb := (g.contMDiff (Φ p₀.1 p₀.2)).comp p₀ (hΦ.contMDiffAt.of_le le_self_add)
-  have hL := ContMDiffAt.mfderiv (fun (p : ℝ × M) (x : M) ↦ Φ p.1 x) Prod.snd
+  have hL := ContMDiffAt.mfderiv (fun (p : P × M) (x : M) ↦ Φ p.1 x) Prod.snd
     ((hΦ (p₀.1, p₀.2)).comp (p₀, p₀.2)
       ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)) contMDiffAt_snd le_rfl
   refine contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_snd, ?_⟩
