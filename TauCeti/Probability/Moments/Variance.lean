@@ -67,6 +67,9 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
   measurable function of finite extended variance is square-integrable.
 * `TauCeti.Probability.evariance_prod_eq`: the law of total variance on the product of a finite
   measure and a probability measure, for any almost everywhere strongly measurable function.
+* `TauCeti.Probability.lintegral_enorm_sq_prod_le_lintegral_evariance`: if the second factor of a
+  product has infinite mass, the second moment of any function on the product is at most the lower
+  integral of the extended variances of its sections in the second coordinate.
 * `TauCeti.Probability.memLp_prod_of_evariance_ne_top` and
   `TauCeti.Probability.memLp_prod_of_lintegral_evariance_ne_top`: an almost everywhere strongly
   measurable function on a product of s-finite measures is square-integrable if the lower integral
@@ -77,8 +80,9 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
   two s-finite measures, the extended variance of its integral over the second factor is at most
   the mass of that factor times the lower integral of the extended variances of its sections in the
   first coordinate.
-* `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein bound on the product of an
-  s-finite measure and a probability measure.
+* `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein bound for a function that is
+  almost everywhere strongly measurable on the product of an s-finite measure and a probability
+  measure.
 * `TauCeti.Probability.variance_weighted_coordinate_sum` and
   `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
   bounds for weighted sums of pairwise independent variables.
@@ -453,6 +457,13 @@ theorem aemeasurable_evariance_prod_right [SFinite π] (hF : AEStronglyMeasurabl
   filter_upwards [Measure.ae_ae_of_ae_prod hF.ae_eq_mk] with a ha
   exact (evariance_congr ha).symm
 
+/-- If the second factor has infinite mass, then the second moment `∫⁻ ‖F‖ₑ ^ 2` of any function
+on the product is at most the lower integral of the extended variances of its sections in the
+second coordinate: by Tonelli's inequality and `lintegral_enorm_sq_le_evariance`. -/
+theorem lintegral_enorm_sq_prod_le_lintegral_evariance (hπ : π Set.univ = ∞) :
+    ∫⁻ p, ‖F p‖ₑ ^ 2 ∂(ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν :=
+  (lintegral_prod_le _).trans (lintegral_mono fun _ => lintegral_enorm_sq_le_evariance hπ)
+
 /-- If a function is almost everywhere strongly measurable on the product with an s-finite
 measure, and the lower integral of the extended variances of its sections in the second coordinate
 is finite, then almost every such section is square-integrable. -/
@@ -472,11 +483,11 @@ theorem memLp_prod_of_lintegral_evariance_ne_top [SFinite ν] [SFinite π]
     (h₁ : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν ≠ ∞)
     (h₂ : ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π ≠ ∞) : MemLp F 2 (ν.prod π) := by
   rcases eq_or_ne (ν Set.univ) ∞ with hν | hν
-  · -- Under a first factor of infinite mass, each section extended variance in the first
-    -- coordinate bounds the second moment of that section.
+  · -- Under a first factor of infinite mass, the section extended variances in the first
+    -- coordinate bound the second moment of `F`.
     refine hF.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr ?_
-    rw [lintegral_prod_symm _ (hF.eNorm.pow_const 2)]
-    exact (lintegral_mono fun w => lintegral_enorm_sq_le_evariance hν).trans_lt h₂.lt_top
+    rw [← lintegral_prod_swap]
+    exact (lintegral_enorm_sq_prod_le_lintegral_evariance hν).trans_lt h₂.lt_top
   have : IsFiniteMeasure ν := ⟨lt_top_iff_ne_top.mpr hν⟩
   rcases eq_zero_or_neZero ν with rfl | hν
   · simp
@@ -510,11 +521,10 @@ theorem memLp_prod_of_evariance_ne_top [SFinite ν] [SFinite π]
     (hslice : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν ≠ ∞)
     (hmean : evariance (fun a => ∫ w, F (a, w) ∂π) ν ≠ ∞) : MemLp F 2 (ν.prod π) := by
   rcases eq_or_ne (π Set.univ) ∞ with hπ | hπ
-  · -- Under a second factor of infinite mass, each section extended variance in the second
-    -- coordinate bounds the second moment of that section.
-    refine hF.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr ?_
-    rw [lintegral_prod _ (hF.eNorm.pow_const 2)]
-    exact (lintegral_mono fun a => lintegral_enorm_sq_le_evariance hπ).trans_lt hslice.lt_top
+  · -- Under a second factor of infinite mass, the section extended variances in the second
+    -- coordinate bound the second moment of `F`.
+    exact hF.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr
+      ((lintegral_enorm_sq_prod_le_lintegral_evariance hπ).trans_lt hslice.lt_top)
   have : IsFiniteMeasure π := ⟨lt_top_iff_ne_top.mpr hπ⟩
   have hsl := ae_memLp_two_prod_right_of_lintegral_evariance_ne_top hF hslice
   have hmL := memLp_two_of_evariance_ne_top hF.integral_prod_right' hmean
@@ -588,8 +598,9 @@ variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure
 s-finite measures, the extended variance of its integral over the second coordinate is at most the
 mass of the second factor times the lower integral over the second coordinate of the extended
 variances of its sections in the first coordinate. For a probability measure on the second factor
-this bounds the variance of the average by the average of the variances. The proof applies
-Minkowski's integral inequality in `L²` to the sections centered in the first coordinate. -/
+this bounds the extended variance of the average by the lower integral of the extended variances of
+the sections. The proof applies Minkowski's integral inequality in `L²` to the sections centered in
+the first coordinate. -/
 theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
     evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
       π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
@@ -630,8 +641,8 @@ theorem evariance_prod_le [IsProbabilityMeasure π] (hF : AEStronglyMeasurable F
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   rcases eq_or_ne (ν Set.univ) ∞ with hν | hν
   · -- Under a first factor of infinite mass, almost every section in the first coordinate has
-    -- integral zero, hence so does `F`, and each section extended variance bounds the second
-    -- moment of its section.
+    -- integral zero, hence so does `F`, and the section extended variances in the first
+    -- coordinate bound the second moment of `F`.
     rcases eq_or_ne (∫⁻ w, evariance (fun a => F (a, w)) ν ∂π) ∞ with h₂ | h₂
     · simp only [h₂, add_top, le_top]
     have hae : ∀ᵐ w ∂π, ∫ a, F (a, w) ∂ν = 0 := by
@@ -643,9 +654,9 @@ theorem evariance_prod_le [IsProbabilityMeasure π] (hF : AEStronglyMeasurable F
       · exact integral_undef hint
     calc evariance F (ν.prod π) = ∫⁻ p, ‖F p‖ₑ ^ 2 ∂(ν.prod π) := by
           simp only [evariance, hmean, sub_zero]
-      _ = ∫⁻ w, ∫⁻ a, ‖F (a, w)‖ₑ ^ 2 ∂ν ∂π := lintegral_prod_symm _ (hF.eNorm.pow_const 2)
+      _ = ∫⁻ p, ‖F p.swap‖ₑ ^ 2 ∂(π.prod ν) := (lintegral_prod_swap _).symm
       _ ≤ ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π :=
-          lintegral_mono fun w => lintegral_enorm_sq_le_evariance hν
+          lintegral_enorm_sq_prod_le_lintegral_evariance hν
       _ ≤ _ := le_add_self
   have : IsFiniteMeasure ν := ⟨lt_top_iff_ne_top.mpr hν⟩
   by_cases hL : MemLp F 2 (ν.prod π)

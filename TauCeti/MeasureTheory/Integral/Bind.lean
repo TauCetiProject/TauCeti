@@ -45,8 +45,46 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
-variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
-  [NormedAddCommGroup E] {μ : Measure α} {K : α → Measure β} {f : β → E}
+variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
+  {K : α → Measure β} {f : β → E}
+
+section TopologicalSpace
+
+variable [TopologicalSpace E]
+
+/-- An observable that is almost everywhere strongly measurable with respect to the mixture is
+almost everywhere strongly measurable with respect to almost every component. -/
+theorem ae_aestronglyMeasurable_bind (hK : AEMeasurable K μ)
+    (hf : AEStronglyMeasurable f (μ.bind K)) : ∀ᵐ a ∂μ, AEStronglyMeasurable f (K a) := by
+  filter_upwards [ae_ae_of_ae_bind hK hf.ae_eq_mk] with a ha
+  exact ⟨hf.mk f, hf.stronglyMeasurable_mk, ha⟩
+
+/-- If an observable is in `Lᵖ` of the mixture, then it is in `Lᵖ` of almost every component. -/
+theorem ae_memLp_bind [ContinuousENorm E] {p : ℝ≥0∞} (hK : AEMeasurable K μ)
+    (hf : MemLp f p (μ.bind K)) : ∀ᵐ a ∂μ, MemLp f p (K a) := by
+  have hfae := ae_aestronglyMeasurable_bind hK hf.aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact hfae.mono fun a ha ↦ memLp_zero_iff_aestronglyMeasurable.mpr ha
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · -- An essential bound of `f` under the mixture bounds `f` under almost every component.
+    filter_upwards [hfae, ae_ae_of_ae_bind hK (ae_le_eLpNormEssSup (f := f))] with a ha hb
+    rw [memLp_iff, eLpNorm_exponent_top ha]
+    exact (eLpNormEssSup_le_of_ae_eNorm_bound hb).trans_lt
+      (eLpNorm_exponent_top hf.aestronglyMeasurable ▸ hf.eLpNorm_lt_top)
+  · -- The lower integral of `‖f‖ₑ ^ p` under the mixture is the integral of its component lower
+    -- integrals, which are therefore finite almost everywhere.
+    have hg : AEMeasurable (fun x ↦ ‖f x‖ₑ ^ p.toReal) (μ.bind K) :=
+      hf.aestronglyMeasurable.eNorm.pow_const _
+    have hlt := (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp_top
+      hf.aestronglyMeasurable).mp hf.eLpNorm_lt_top
+    rw [lintegral_bind hK hg] at hlt
+    filter_upwards [hfae, ae_lt_top' ((aemeasurable_lintegral hg).comp_aemeasurable hK) hlt.ne]
+      with a ha hia
+    exact memLp_iff.mpr ((eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp_top ha).mpr hia)
+
+end TopologicalSpace
+
+variable [NormedAddCommGroup E]
 
 /-- An observable that is almost everywhere strongly measurable with respect to the mixture is
 integrable against it exactly when it is integrable against almost every component and its
@@ -130,13 +168,6 @@ theorem integrable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
     (eLpNorm_one_integral_bind_le hK).trans_lt (memLp_one_iff_integrable.mpr hf).eLpNorm_lt_top
 
 /-- An observable that is almost everywhere strongly measurable with respect to the mixture is
-almost everywhere strongly measurable with respect to almost every component. -/
-theorem ae_aestronglyMeasurable_bind (hK : AEMeasurable K μ)
-    (hf : AEStronglyMeasurable f (μ.bind K)) : ∀ᵐ a ∂μ, AEStronglyMeasurable f (K a) := by
-  filter_upwards [ae_ae_of_ae_bind hK hf.ae_eq_mk] with a ha
-  exact ⟨hf.mk f, hf.stronglyMeasurable_mk, ha⟩
-
-/-- An observable that is almost everywhere strongly measurable with respect to the mixture is
 square-integrable against it exactly when it is square-integrable against almost every component
 and its component second moments are integrable against the mixing measure. -/
 theorem memLp_two_bind_iff (hK : AEMeasurable K μ)
@@ -150,24 +181,6 @@ theorem memLp_two_bind_iff (hK : AEMeasurable K μ)
   simp only [Real.norm_of_nonneg (sq_nonneg _)]
   exact and_congr (eventually_congr ((ae_aestronglyMeasurable_bind hK hf).mono fun a ha ↦
     (memLp_two_iff_integrable_sq_norm ha).symm)) Iff.rfl
-
-/-- If an observable is in `Lᵖ` of the mixture, then it is in `Lᵖ` of almost every component. -/
-theorem ae_memLp_bind {p : ℝ≥0∞} (hK : AEMeasurable K μ) (hf : MemLp f p (μ.bind K)) :
-    ∀ᵐ a ∂μ, MemLp f p (K a) := by
-  have hfae := ae_aestronglyMeasurable_bind hK hf.aestronglyMeasurable
-  rcases eq_or_ne p 0 with rfl | hp0
-  · exact hfae.mono fun a ha ↦ memLp_zero_iff_aestronglyMeasurable.mpr ha
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · -- An essential bound of `f` under the mixture bounds `f` under almost every component.
-    filter_upwards [hfae, ae_ae_of_ae_bind hK (ae_le_eLpNormEssSup (f := f))] with a ha hb
-    rw [memLp_iff, eLpNorm_exponent_top ha]
-    exact (eLpNormEssSup_le_of_ae_eNorm_bound hb).trans_lt
-      (eLpNorm_exponent_top hf.aestronglyMeasurable ▸ hf.eLpNorm_lt_top)
-  · -- The `p`-th power of `‖f‖` is integrable under the mixture, so under almost every component.
-    have hint := ((integrable_bind_iff hK (hf.aestronglyMeasurable.norm.aemeasurable.pow_const
-      p.toReal).aestronglyMeasurable).mp (hf.integrable_norm_rpow hp0 hp_top)).1
-    filter_upwards [hfae, hint] with a ha hia
-    exact (integrable_norm_rpow_iff ha hp0 hp_top).mp hia
 
 /-- `eLpNorm_integral_bind_le` for an observable that is almost everywhere strongly measurable
 with respect to the mixture. -/
