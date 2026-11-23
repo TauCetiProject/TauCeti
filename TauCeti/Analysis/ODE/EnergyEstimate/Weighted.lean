@@ -120,7 +120,8 @@ private theorem squareIntegrableSolutions_sub_smul_id_and_neg_adjoint (hA : Cont
         Module.finrank ℝ (squareIntegrableSolutions C) :=
     WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_hasLyapunovForm hA hAm hAp
       hbot htop AL hAL
-  -- The formal adjoint of `B` is `C'`.
+  -- `C' = -B†` is the coefficient of the trajectory operator whose kernel is that of the formal
+  -- adjoint of `D_B`.
   have hBC' : (fun s ↦ -ContinuousLinearMap.adjoint (B s)) = C' := by
     funext s
     simp only [B, C', I, map_sub, LinearIsometryEquiv.map_smulₛₗ, ContinuousLinearMap.adjoint_id,

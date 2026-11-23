@@ -38,18 +38,18 @@ of the stable and unstable solutions to span `E`:
 
 * if `S` is a symmetric Lyapunov form of `A⁺`, the stable solutions have dimension `dim E - n⁻(S)`
   and the stable solutions of the formal adjoint equation `w' = A† w` have dimension `n⁻(S)`, where
-  `n⁻` counts negative eigenvalues
+  `n⁻` counts negative eigenvalues with multiplicity
   (`TauCeti.finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspace`,
   `TauCeti.finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi`); for a symmetric invertible `A⁺`
-  this is the dimension of its positive spectral subspace
-  (`TauCeti.finrank_squareIntegrableSolutionsOn_Ioi`);
+  the stable solutions of `v' + A v = 0` have the dimension of the positive spectral subspace of
+  `A⁺` (`TauCeti.finrank_squareIntegrableSolutionsOn_Ioi`);
 * dually, if `S` is a symmetric Lyapunov form of `A⁻`, the unstable solutions have dimension
   `dim E - n⁺(S)` and the unstable solutions of the adjoint equation have dimension `n⁺(S)`, where
-  `n⁺` counts positive eigenvalues
+  `n⁺` counts positive eigenvalues with multiplicity
   (`TauCeti.finrank_squareIntegrableSolutionsOn_Iio_add_finrank_pointSpectralSubspace`,
   `TauCeti.finrank_squareIntegrableSolutionsOn_neg_adjoint_Iio`); for a symmetric invertible `A⁻`
-  this is the dimension of its negative spectral subspace
-  (`TauCeti.finrank_squareIntegrableSolutionsOn_Iio`);
+  the unstable solutions of `v' + A v = 0` have the dimension of the negative spectral subspace of
+  `A⁻` (`TauCeti.finrank_squareIntegrableSolutionsOn_Iio`);
 * on each half-line the decaying solutions of the adjoint equation are the orthogonal complement of
   those of `v' + A v = 0` (`TauCeti.squareIntegrableSolutionsOn_neg_adjoint_Ioi_eq_orthogonal`,
   `TauCeti.squareIntegrableSolutionsOn_neg_adjoint_Iio_eq_orthogonal`);
@@ -358,7 +358,8 @@ private theorem finrank_sub_finrank_leftCap (hA : Continuous A) {C Aplus S : E �
 finite-dimensional real inner product space tending at `+∞` to an operator `A⁺` with a symmetric
 Lyapunov form `S`: `c ‖v‖² ≤ ⟪S (A⁺ v), v⟫` with `c > 0`. Then the initial values of the
 solutions of `v' + A v = 0` square integrable on `(0, ∞)` form a space of dimension
-`dim E - n⁻(S)`, where `n⁻(S)` is the number of negative eigenvalues of `S`. -/
+`dim E - n⁻(S)`, where `n⁻(S)` is the number of negative eigenvalues of `S` counted with
+multiplicity. -/
 theorem finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspace
     (hA : Continuous A) {Aplus S : E →L[ℝ] E} (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ}
     (hc : 0 < c) (hplus : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (Aplus v), v⟫_ℝ)
@@ -396,7 +397,8 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspac
 family of operators on a finite-dimensional real inner product space tending at `+∞` to an
 operator `A⁺` with a symmetric Lyapunov form `S`: `c ‖v‖² ≤ ⟪S (A⁺ v), v⟫` with `c > 0`. Then
 the initial values of the solutions of the formal adjoint equation `w' = A† w` square integrable
-on `(0, ∞)` form a space of dimension `n⁻(S)`, the number of negative eigenvalues of `S`. -/
+on `(0, ∞)` form a space of dimension `n⁻(S)`, the number of negative eigenvalues of `S` counted
+with multiplicity. -/
 theorem finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi
     (hA : Continuous A) {Aplus S : E →L[ℝ] E} (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ}
     (hc : 0 < c) (hplus : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (Aplus v), v⟫_ℝ)
@@ -441,7 +443,8 @@ theorem finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi
 finite-dimensional real inner product space tending at `-∞` to an operator `A⁻` with a symmetric
 Lyapunov form `S`: `c ‖v‖² ≤ ⟪S (A⁻ v), v⟫` with `c > 0`. Then the initial values of the
 solutions of `v' + A v = 0` square integrable on `(-∞, 0)` form a space of dimension
-`dim E - n⁺(S)`, where `n⁺(S)` is the number of positive eigenvalues of `S`. -/
+`dim E - n⁺(S)`, where `n⁺(S)` is the number of positive eigenvalues of `S` counted with
+multiplicity. -/
 theorem finrank_squareIntegrableSolutionsOn_Iio_add_finrank_pointSpectralSubspace
     (hA : Continuous A) {Aminus S : E →L[ℝ] E} (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ}
     (hc : 0 < c) (hminus : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (Aminus v), v⟫_ℝ)
@@ -461,7 +464,8 @@ theorem finrank_squareIntegrableSolutionsOn_Iio_add_finrank_pointSpectralSubspac
 family of operators on a finite-dimensional real inner product space tending at `-∞` to an
 operator `A⁻` with a symmetric Lyapunov form `S`: `c ‖v‖² ≤ ⟪S (A⁻ v), v⟫` with `c > 0`. Then
 the initial values of the solutions of the formal adjoint equation `w' = A† w` square integrable
-on `(-∞, 0)` form a space of dimension `n⁺(S)`, the number of positive eigenvalues of `S`. -/
+on `(-∞, 0)` form a space of dimension `n⁺(S)`, the number of positive eigenvalues of `S` counted
+with multiplicity. -/
 theorem finrank_squareIntegrableSolutionsOn_neg_adjoint_Iio
     (hA : Continuous A) {Aminus S : E →L[ℝ] E} (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ}
     (hc : 0 < c) (hminus : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (Aminus v), v⟫_ℝ)

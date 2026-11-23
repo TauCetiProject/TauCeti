@@ -309,11 +309,11 @@ theorem ae_eq_adjoint_of_ae_eq
   filter_upwards [hAL, hBL] with s hs hBs
   rw [hBs, hs]
 
-/-- **An `L∞` class of the coefficient of the formal adjoint.** If `AL` is an `L∞` class of `A`,
-then some `L∞` class `BL` is almost everywhere the pointwise adjoint of `AL`, and `-BL` is an `L∞`
-class of `s ↦ -A(s)†`, the coefficient of the formal adjoint `D_{-A†}` of the trajectory operator
-`D_A`. These are the two facts about `BL` used to identify the cokernel of `D_A` with the kernel of
-`D_{-A†}`. -/
+/-- **An `L∞` class of the coefficient `-A†`.** If `AL` is an `L∞` class of `A`, then some `L∞`
+class `BL` is almost everywhere the pointwise adjoint of `AL`, and `-BL` is an `L∞` class of
+`s ↦ -A(s)†`, the coefficient of the trajectory operator `D_{-A†} = d/ds - A†`. This operator is the
+negative of the formal adjoint `-d/ds + A†` of `D_A`, so the two have the same kernel. These are the
+two facts about `BL` used to identify the cokernel of `D_A` with the kernel of `D_{-A†}`. -/
 theorem exists_ae_eq_adjoint_and_neg_ae_eq_neg_adjoint
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :

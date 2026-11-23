@@ -34,8 +34,9 @@ proves:
   operators of the same index;
 * the index vanishes when the two limits agree and are invertible and symmetric;
 * the index is the dimension of the space of square-integrable solutions of `v' = -A v` minus that
-  of the formal adjoint equation `w' = A† w`, and this holds for every continuous `A` for which
-  `D_A` has closed range; for symmetric `A` the adjoint equation is `v' = A v`;
+  of the formal adjoint equation `w' = A† w`, and this holds for every continuous `A` with an `L∞`
+  class (so that `D_A` is defined) for which `D_A` has closed range; for symmetric `A` the adjoint
+  equation is `v' = A v`;
 * for invertible symmetric limits, the index is `n⁻(A⁻) - n⁻(A⁺)`, where `n⁻(B)` is the number
   of negative eigenvalues of `B` counted with multiplicity, that is, the dimension of the sum of its
   eigenspaces at negative eigenvalues;
@@ -46,17 +47,18 @@ For the first statement, the affine family `(1 - t) A + t B` has the same limits
 every real `t`, so each of its trajectory operators is Fredholm. The trajectory operator depends
 continuously on its `L∞` coefficient (`TauCeti.WeakDerivStep.lipschitzWith_trajectoryOperator`),
 so the index is constant along this family. For the second, a constant coefficient `A₀` with a
-spectral gap gives an injective `D_{A₀}` and an injective formal adjoint `D_{-A₀}`, by the
-coercive estimate `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`, so `D_{A₀}` is bijective
-and has index zero; a family with equal limits `A₀` has the index of the constant family.
+spectral gap gives an injective `D_{A₀}` and an injective `D_{-A₀}`, the negative of the formal
+adjoint `-d/ds + A₀`, by the coercive estimate
+`TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`, so `D_{A₀}` is bijective and has index zero;
+a family with equal limits `A₀` has the index of the constant family.
 
 The first statement is the invariance of the index under deformations of the coefficient family
 that fix its limits; the second is its value when the limits agree. Together they reduce the
 computation of the index for arbitrary limits to that of one family for each pair of limits. The
 third statement is the form that computation takes: the kernel of `D_A` is the space of
 square-integrable solutions of `v' + A v = 0` (`TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`),
-and the cokernel is the kernel of the formal adjoint `D_{-A†}`, which is `D_{-A}` for symmetric
-`A`.
+and the cokernel is the kernel of the formal adjoint `-d/ds + A†`, which is also the kernel of its
+negative `D_{-A†}`, that is `D_{-A}` for symmetric `A`.
 
 For the fourth statement we use the model family `ψ(-s) A⁻ + ψ(s) A⁺`, where `ψ` is Mathlib's
 `Real.smoothTransition`. On `[0, ∞)` it is `ψ(s) A⁺`, a scalar multiple of one symmetric operator,
@@ -84,9 +86,10 @@ computing the index with the forms `S` and `S'` at the two ends shows `n⁻(S) =
   gap gives a bijective trajectory operator.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_zero_of_tendsto`: a family with equal limits
   at both ends gives index zero.
-* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`: when
-  the range of `D_A` is closed, the index of `D_A` is the dimension of the square-integrable
-  solutions of `v' = -A v` minus that of the formal adjoint equation `w' = A† w`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`: for
+  a continuous `A` with an `L∞` class, when the range of `D_A` is closed, the index of `D_A` is the
+  dimension of the square-integrable solutions of `v' = -A v` minus that of the formal adjoint
+  equation `w' = A† w`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_hasLyapunovForm`: the
   same formula for limits with Lyapunov forms.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank`: for a continuous
@@ -236,8 +239,9 @@ theorem index_trajectoryOperator_eq_zero_of_tendsto {A : ℝ → E →L[ℝ] E}
 variable {A : ℝ → E →L[ℝ] E}
 
 /-- **The index of a trajectory operator with closed range counts square-integrable solutions.**
-For a continuous family `A` of operators on a finite-dimensional real inner product space `E` such
-that the range of `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is closed, the index of
+For a continuous family `A` of operators on a finite-dimensional real inner product space `E` with
+an `L∞` class `AL`, such that the range of `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)`,
+defined through `AL`, is closed, the index of
 `D_A` is the dimension of the space of square-integrable solutions of `v' = -A v` minus that of
 the square-integrable solutions of the formal adjoint equation `w' = A† w`. No symmetry of `A` is
 assumed. -/
