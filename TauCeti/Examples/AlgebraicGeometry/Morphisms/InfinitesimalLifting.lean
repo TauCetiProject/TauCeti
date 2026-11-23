@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.AffineSpace
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallySmooth
+public import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Examples for thickenings and the infinitesimal lifting properties
@@ -80,16 +81,11 @@ theorem isThickening_evalZero : IsThickening (Spec.map (CommRingCat.ofHom (evalZ
   rw [IsThickening.SpecMap_iff _ (evalZero_surjective k), CommRingCat.hom_ofHom]
   intro a ha
   obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective a
-  have hp : p ∈ Ideal.span (X '' Set.univ) := by
-    rw [mem_ideal_span_X_image]
-    intro m hm
-    by_contra! h
-    have hm0 : m = 0 := Finsupp.ext fun i ↦ h i (Set.mem_univ i)
-    rw [RingHom.mem_ker, evalZero_mk, eval_zero, constantCoeff_eq] at ha
-    exact (mem_support_iff.mp hm) (hm0 ▸ ha)
-  have hle : Ideal.span (X '' Set.univ) ≤ (nilradical (A k)).comap (Ideal.Quotient.mk _) := by
+  have hp : p ∈ idealOfVars ℕ k := by
+    rwa [← ker_constantCoeff, RingHom.mem_ker, ← eval_zero, ← evalZero_mk]
+  have hle : idealOfVars ℕ k ≤ (nilradical (A k)).comap (Ideal.Quotient.mk _) := by
     rw [Ideal.span_le]
-    rintro _ ⟨n, -, rfl⟩
+    rintro _ ⟨n, rfl⟩
     exact isNilpotent_mk_X k n
   exact hle hp
 
