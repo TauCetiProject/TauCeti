@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Riccardo Brasca
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -20,7 +21,8 @@ a Riemannian covering map are all local Riemannian isometries.
 Every local construction of Riemannian geometry is natural under local Riemannian isometries,
 since pulling vector fields back along `f` only involves the differential of `f` at each point.
 This file sets up the pointwise API used to transport the Levi-Civita connection and the curvature
-along such maps.
+along such maps. The equal-fibre inner-product and tangent-norm preservation lemmas are adapted
+from Riccardo Brasca's `ForTauCeti` formalization.
 
 ## Main definitions and results
 
@@ -34,10 +36,20 @@ along such maps.
   pointwise inner products.
 * `TauCeti.IsLocalRiemannianIsometry.exists_contMDiff_mpullback_apply_eq`: every tangent vector is
   the value of the pullback of a smooth vector field.
+* `TauCeti.IsLocalRiemannianIsometry.isLocalDiffeomorph`: out of a boundaryless manifold, a local
+  Riemannian isometry is a local diffeomorphism, by the inverse function theorem.
 * `TauCeti.IsLocalRiemannianIsometry.id` and `TauCeti.IsLocalRiemannianIsometry.comp`: the identity
   and composites.
+* `TauCeti.IsLocalRiemannianIsometry.of_comp_left`: cancel a local Riemannian isometry on the
+  left of a smooth composition.
 * `TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`: a Riemannian isometry is a local
   Riemannian isometry.
+* `Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_smul`: with a metric `g` installed,
+  an element of a group acting smoothly on `M` whose differential preserves `g` acts by a local
+  Riemannian isometry.
+
+The cancellation theorem `TauCeti.IsLocalRiemannianIsometry.of_comp_left` is adapted from
+Riccardo Brasca's `ForTauCeti` formalization.
 
 ## References
 
@@ -48,7 +60,7 @@ along such maps.
 public section
 
 open Bundle Manifold VectorField
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold InnerProductSpace
 
 noncomputable section
 
@@ -84,6 +96,22 @@ variable {f : M → N}
 protected theorem mdifferentiableAt (hf : IsLocalRiemannianIsometry I J f) (x : M) :
     MDifferentiableAt I J f x :=
   hf.contMDiff.mdifferentiableAt (by simp) (x := x)
+
+/-- A local Riemannian isometry preserves inner products of tangent vectors at equal
+base points, including the native explicit equal-fibre transports. -/
+theorem inner_mfderiv_cast
+    {f : M → N} (hf : IsLocalRiemannianIsometry I J f) {x y : M} (hxy : x = y)
+    (v : TangentSpace I x) (w : TangentSpace I y) :
+    ⟪tangentSpaceCast J (f x) (f y) (mfderiv I J f x v), mfderiv I J f y w⟫_ℝ =
+      ⟪tangentSpaceCast I x y v, w⟫_ℝ := by
+  subst y
+  exact hf.inner_mfderiv x v w
+
+/-- The actual differential of a local Riemannian isometry preserves tangent norms. -/
+theorem norm_mfderiv
+    {f : M → N} (hf : IsLocalRiemannianIsometry I J f) (x : M) (v : TangentSpace I x) :
+    ‖mfderiv I J f x v‖ = ‖v‖ := by
+  simpa only [norm_eq_sqrt_real_inner] using congrArg Real.sqrt (hf.inner_mfderiv x v v)
 
 /-- The differential of a local Riemannian isometry at a point is injective. -/
 theorem mfderiv_injective (hf : IsLocalRiemannianIsometry I J f) (x : M) :
@@ -163,6 +191,24 @@ theorem exists_contMDiff_mpullback_apply_eq (hf : IsLocalRiemannianIsometry I J 
 
 end Extension
 
+section LocalDiffeomorph
+
+variable [CompleteSpace E] [BoundarylessManifold I M]
+
+/-- A local Riemannian isometry out of a boundaryless manifold is a `C^n` local diffeomorphism for
+every `1 ≤ n ≤ ∞`, by the inverse function theorem. -/
+theorem isLocalDiffeomorph (hf : IsLocalRiemannianIsometry I J f) {n : ℕ∞ω}
+    [IsManifold I n M] [IsManifold J n N] (hn : 1 ≤ n) (hn' : n ≤ ∞) :
+    IsLocalDiffeomorph I J n f :=
+  isLocalDiffeomorph_of_mfderiv_eq (hf.contMDiff.of_le hn') hn hf.isInvertible_mfderiv
+
+/-- A local Riemannian isometry out of a boundaryless manifold is a local homeomorphism. -/
+theorem isLocalHomeomorph [IsManifold I 1 M] [IsManifold J 1 N]
+    (hf : IsLocalRiemannianIsometry I J f) : IsLocalHomeomorph f :=
+  (hf.isLocalDiffeomorph (n := 1) le_rfl (by simp)).isLocalHomeomorph
+
+end LocalDiffeomorph
+
 variable (I M) in
 /-- The identity map is a local Riemannian isometry. -/
 protected theorem id : IsLocalRiemannianIsometry I I (id : M → M) where
@@ -190,6 +236,24 @@ protected theorem comp {g : N → P} (hg : IsLocalRiemannianIsometry J K g)
       mfderiv_comp_apply x (hg.mdifferentiableAt (f x)) (hf.mdifferentiableAt x),
       hg.inner_mfderiv, hf.inner_mfderiv]
 
+/-- Cancel a local Riemannian isometry on the left of a smooth composition. -/
+theorem of_comp_left {g : N → P} (hgf : IsLocalRiemannianIsometry I K (g ∘ f))
+    (hg : IsLocalRiemannianIsometry J K g) (hf : ContMDiff I J ∞ f) :
+    IsLocalRiemannianIsometry I J f := by
+  refine ⟨hf, fun x ↦ ?_, fun x v w ↦ ?_⟩
+  · have h := hgf.isInvertible_mfderiv x
+    rw [mfderiv_comp x (hg.mdifferentiableAt (f x))
+      (hf.mdifferentiableAt (by simp))] at h
+    obtain ⟨A, hA⟩ := hg.isInvertible_mfderiv (f x)
+    rw [← hA] at h
+    exact ContinuousLinearMap.isInvertible_equiv_comp.mp h
+  · have h := hgf.inner_mfderiv x v w
+    rw [mfderiv_comp_apply x (hg.mdifferentiableAt (f x))
+      (hf.mdifferentiableAt (by simp)),
+      mfderiv_comp_apply x (hg.mdifferentiableAt (f x))
+        (hf.mdifferentiableAt (by simp)), hg.inner_mfderiv] at h
+    exact h
+
 end IsLocalRiemannianIsometry
 
 /-- A smooth Riemannian isometry is a local Riemannian isometry. -/
@@ -201,3 +265,24 @@ theorem RiemannianIsometry.isLocalRiemannianIsometry (Φ : RiemannianIsometry I 
   inner_mfderiv := Φ.inner_mfderiv
 
 end TauCeti
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n : ℕ∞ω}
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- With `g` installed on `M`, an element `a` of a group acting smoothly on `M`, whose
+differential preserves `g`, acts by a local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_smul
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (a : G)
+    (ha : ∀ (x : M) (v w : TangentSpace I x),
+      g.inner (a • x) (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = g.inner x v w) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    TauCeti.IsLocalRiemannianIsometry I I (a • · : M → M) := by
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  rw [← TauCeti.RiemannianIsometry.coe_constSMul (ha := ha)]
+  exact (TauCeti.RiemannianIsometry.constSMul a ha).isLocalRiemannianIsometry
+
+end Bundle.ContMDiffRiemannianMetric

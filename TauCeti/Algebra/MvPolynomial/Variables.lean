@@ -23,7 +23,10 @@ some variables is multiplied by a Wronskian in another variable.
 
 The file also bounds the variables of renamed polynomials, using Mathlib's
 `MvPolynomial.vars_rename`: every variable of `rename f a` is the image under `f` of a variable
-of `a`.
+of `a`. Over a commutative ring and a well-founded variable order, a triangular substitution
+`X i ↦ c i • X i + r i`, where each `c i` is a unit and `r i` involves only variables strictly
+below `i`, is an automorphism of `MvPolynomial σ R`: its inverse is constructed by well-founded
+recursion along the variable order.
 
 ## Main results
 
@@ -33,6 +36,9 @@ of `a`.
   every variable of `rename f a` lies above `i`.
 * `MvPolynomial.exists_rename_eq_of_vars_subset_range'`: a polynomial whose variables all lie in
   the range of `f` is the renaming along `f` of a polynomial, with no injectivity assumption on `f`.
+* `MvPolynomial.bijective_aeval_of_vars_sub_smul_X_lt` and
+  `MvPolynomial.bijective_aeval_of_vars_sub_X_lt`: a triangular substitution with unit diagonal
+  coefficients along a well-founded variable order is bijective.
 * `Polynomial.vars_toMvPolynomial_subset`: a one-variable polynomial placed in the coordinate `i`
   involves at most the variable `i`.
 -/
@@ -74,9 +80,65 @@ theorem exists_rename_eq_of_vars_subset_range' {τ : Type*} (p : MvPolynomial σ
     (hf : ↑p.vars ⊆ Set.range f) : ∃ q : MvPolynomial τ R, rename f q = p := by
   rw [coe_vars_subset_iff, AlgHom.mem_range] at hf
   obtain ⟨q, hq⟩ := hf
-  refine ⟨rename (fun x : Set.range f ↦ x.2.choose) q, ?_⟩
+  refine ⟨rename (fun x : Set.range f ↦ x.property.choose) q, ?_⟩
   rw [rename_rename, ← hq]
-  exact congrArg (fun f ↦ rename f q) (funext fun x ↦ x.2.choose_spec)
+  exact congrArg (fun f ↦ rename f q) (funext fun x ↦ x.property.choose_spec)
+
+section Triangular
+
+variable {R σ : Type*} [CommRing R] [LT σ] [WellFoundedLT σ]
+
+/-- **Triangular polynomial substitutions are automorphisms.** Over a commutative ring and a
+well-founded order on the variables, if `f i = c i • X i + r i` where each `c i` is a unit and
+every variable occurring in `r i = f i - c i • X i` is strictly below `i`, then `aeval f` is
+bijective. -/
+theorem bijective_aeval_of_vars_sub_smul_X_lt {f : σ → MvPolynomial σ R} {c : σ → R}
+    (hc : ∀ i, IsUnit (c i)) (hvars : ∀ i, ∀ j ∈ (f i - c i • X i).vars, j < i) :
+    Function.Bijective (aeval (R := R) f) := by
+  classical
+  -- Solve `c i • g i = X i - (f i - c i • X i)(g)` recursively along the well-founded order.
+  let g : σ → MvPolynomial σ R :=
+    WellFoundedLT.fix fun i ih ↦
+      (↑(hc i).unit⁻¹ : R) •
+        (X i - aeval (R := R) (fun j ↦ if hj : j < i then ih j hj else 0) (f i - c i • X i))
+  have hg (i : σ) : g i = (↑(hc i).unit⁻¹ : R) • (X i - aeval (R := R) g (f i - c i • X i)) := by
+    dsimp only [g]
+    rw [WellFoundedLT.fix_eq]
+    congr 2
+    rw [aeval_eq_eval₂Hom, aeval_eq_eval₂Hom]
+    exact eval₂Hom_congr' rfl (fun j hj _ ↦ by simp [hvars i j hj]) rfl
+  have hgf : (aeval (R := R) g).comp (aeval (R := R) f) = AlgHom.id R (MvPolynomial σ R) := by
+    refine algHom_ext fun i ↦ ?_
+    have hci : c i • g i = X i - (aeval (R := R) g (f i) - c i • g i) := by
+      conv_lhs => rw [hg i]
+      rw [smul_smul, (hc i).mul_val_inv, one_smul, map_sub, map_smul, aeval_X]
+    rw [AlgHom.comp_apply, AlgHom.id_apply, aeval_X, ← sub_eq_zero]
+    convert sub_eq_zero.mpr hci using 1
+    abel
+  have hfg : (aeval (R := R) f).comp (aeval (R := R) g) = AlgHom.id R (MvPolynomial σ R) := by
+    suffices ∀ i, aeval (R := R) f (g i) = X i from algHom_ext fun i ↦ by simpa using this i
+    intro i
+    induction i using WellFoundedLT.induction with
+    | ind i ih =>
+      have hrem : aeval (R := R) f (aeval (R := R) g (f i - c i • X i)) = f i - c i • X i := by
+        rw [comp_aeval_apply]
+        conv_rhs => rw [← aeval_X_left_apply (R := R) (f i - c i • X i)]
+        rw [aeval_eq_eval₂Hom, aeval_eq_eval₂Hom]
+        exact eval₂Hom_congr' rfl (fun j hj _ ↦ ih j (hvars i j hj)) rfl
+      rw [hg i, map_smul, map_sub, aeval_X, hrem, sub_sub_cancel, smul_smul,
+        (hc i).val_inv_mul, one_smul]
+  exact Function.bijective_iff_has_inverse.mpr
+    ⟨aeval (R := R) g, fun p ↦ DFunLike.congr_fun hgf p, fun p ↦ DFunLike.congr_fun hfg p⟩
+
+/-- **Unitriangular polynomial substitutions are automorphisms.** Over a commutative ring and a
+well-founded order on the variables, if every variable occurring in `f i - X i` is strictly below
+`i`, then `aeval f` is bijective. -/
+theorem bijective_aeval_of_vars_sub_X_lt {f : σ → MvPolynomial σ R}
+    (hvars : ∀ i, ∀ j ∈ (f i - X i).vars, j < i) :
+    Function.Bijective (aeval (R := R) f) :=
+  bijective_aeval_of_vars_sub_smul_X_lt (c := fun _ ↦ 1) (fun _ ↦ isUnit_one) (by simpa using hvars)
+
+end Triangular
 
 end MvPolynomial
 

@@ -111,8 +111,8 @@ theorem alongCurve_mfderiv_timeDependentFlowOf
         (fun u ↦ mfderiv I I (timeDependentFlowOf X s u) x v) t =
       cov (X t) (timeDependentFlowOf X s t x) (mfderiv I I (timeDependentFlowOf X s t) x v) := by
   obtain ⟨c, rfl, hc, hvel⟩ := exists_contMDiffAt_curveVelocity_eq (I := I) (n := 2)
-    (by norm_num) x v 0
-  have hX₁ := hX.of_le (by norm_num : (1 : WithTop ℕ∞) ≤ 2)
+    (by norm_num) x BoundarylessManifold.isInteriorPoint v 0
+  have hX₁ := hX.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)
   -- Near `t` the flow from `(s, c 0)` is defined, so the transverse velocity is `dφ v` there.
   have hdom : ∀ᶠ r in 𝓝 t, ((s, r), c 0) ∈ timeDependentFlowDomain X :=
     (by fun_prop : Continuous fun r : ℝ ↦ ((s, r), c 0)).continuousAt.preimage_mem_nhds

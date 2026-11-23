@@ -316,9 +316,10 @@ theorem IsOpen.measure_mul_sdiff_eq_zero_of_quasiMeasurePreserving
   have hKsub : K ⊆ ⋃ g : t, (· * ((g : s) : G)⁻¹) ⁻¹' (U \ V) := fun x hx ↦ by
     obtain ⟨g, hgt, hxgU⟩ := mem_iUnion₂.1 (htK hx)
     exact mem_iUnion.2 ⟨⟨g, hgt⟩, hxgU,
-      fun hxgV ↦ (hKWV hx).2 (by simpa using hVs (mul_mem_mul hxgV g.2))⟩
+      fun hxgV ↦ (hKWV hx).2 (by simpa using hVs (mul_mem_mul hxgV g.property))⟩
   have hKzero : μ K = 0 :=
-    measure_mono_null hKsub (measure_iUnion_null fun g : t ↦ (hqmp _ g.1.2).preimage_null hUV)
+    measure_mono_null hKsub (measure_iUnion_null fun g : t ↦ (hqmp _ g.val.property).preimage_null
+        hUV)
   exact hKpos.ne' hKzero
 
 /-- For an inner regular Haar measure `μ` on a locally compact topological group `G`, if `U` is

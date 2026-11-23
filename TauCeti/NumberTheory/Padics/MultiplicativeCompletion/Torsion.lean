@@ -57,22 +57,22 @@ variable (p : ℕ) (L : Type*) [Field L]
 coordinate. -/
 private theorem mk_eq_padicCompletionUnits_apply_of_le (x : ↑(padicCompletionUnits p L))
     {k l : ℕ} (hkl : k ≤ l) {u : Lˣ}
-    (hu : (u : Lˣ ⧸ (powMonoidHom (p ^ l) : Lˣ →* Lˣ).range) = x.1 l) :
-    (u : Lˣ ⧸ (powMonoidHom (p ^ k) : Lˣ →* Lˣ).range) = x.1 k := by
+    (hu : (u : Lˣ ⧸ (powMonoidHom (p ^ l) : Lˣ →* Lˣ).range) = x.val l) :
+    (u : Lˣ ⧸ (powMonoidHom (p ^ k) : Lˣ →* Lˣ).range) = x.val k := by
   induction l, hkl using Nat.le_induction with
   | base => exact hu
   | succ l _ ih =>
     apply ih
     rw [← padicCompletionTransition_mk p L l u, hu]
-    exact (mem_padicCompletionUnits_iff p L x.1).mp x.2 l
+    exact (mem_padicCompletionUnits_iff p L x.val).mp x.property l
 
 /-- An element of `A(L)` killed by a natural number prime to `p` is trivial. -/
 private theorem eq_one_of_pow_eq_one_of_coprime (x : ↑(padicCompletionUnits p L)) {n : ℕ}
     (hn : n.Coprime p) (hx : x ^ n = 1) : x = 1 := by
   apply Subtype.ext
   funext m
-  have hxm : x.1 m ^ n = 1 := by
-    simpa using congrArg (fun y : ↑(padicCompletionUnits p L) ↦ y.1 m) hx
+  have hxm : x.val m ^ n = 1 := by
+    simpa using congrArg (fun y : ↑(padicCompletionUnits p L) ↦ y.val m) hx
   exact (pow_eq_one_iff_of_coprime (hn.pow_right m)).mp
     ⟨hxm, QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ _⟩
 
@@ -86,13 +86,13 @@ theorem padicCompletionUnits_pow_eq_one_iff (x : ↑(padicCompletionUnits p L)) 
   · intro hx
     -- At every level `m`, the coordinate `x_m` is the class of a `p^j`-th root of unity.
     have hlevel : ∀ m, ∃ ζ : rootsOfUnity (p ^ j) L,
-        ((ζ : Lˣ) : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) = x.1 m := by
+        ((ζ : Lˣ) : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) = x.val m := by
       intro m
-      obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (x.1 (m + j))
+      obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (x.val (m + j))
       have hpow :
           ((u ^ p ^ j : Lˣ) : Lˣ ⧸ (powMonoidHom (p ^ (m + j)) : Lˣ →* Lˣ).range) = 1 := by
         rw [QuotientGroup.mk_pow, hu]
-        simpa using congrArg (fun y : ↑(padicCompletionUnits p L) ↦ y.1 (m + j)) hx
+        simpa using congrArg (fun y : ↑(padicCompletionUnits p L) ↦ y.val (m + j)) hx
       obtain ⟨v, hv⟩ := (QuotientGroup.eq_one_iff _).mp hpow
       rw [powMonoidHom_apply] at hv
       refine ⟨⟨u * (v ^ p ^ m)⁻¹, ?_⟩, ?_⟩
@@ -105,7 +105,7 @@ theorem padicCompletionUnits_pow_eq_one_iff (x : ↑(padicCompletionUnits p L)) 
     -- arbitrarily high levels, hence every level.
     choose ζ hζ using hlevel
     obtain ⟨ξ, hξ⟩ := Finite.exists_infinite_fiber ζ
-    refine ⟨ξ, ξ.2, Subtype.ext (funext fun m ↦ ?_)⟩
+    refine ⟨ξ, ξ.property, Subtype.ext (funext fun m ↦ ?_)⟩
     obtain ⟨l, hl, hml⟩ := (Set.infinite_coe_iff.mp hξ).exists_gt m
     rw [padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply]
     refine mk_eq_padicCompletionUnits_apply_of_le p L x hml.le ?_
@@ -143,7 +143,7 @@ theorem padicCompletionUnitsOf_injOn_pPowerRootsOfUnity (h : Finite (pPowerRoots
   have hη : ((ζ * ξ⁻¹ : Lˣ) : Lˣ ⧸ (powMonoidHom (p ^ k) : Lˣ →* Lˣ).range) = 1 := by
     have hof : padicCompletionUnitsOf p L (ζ * ξ⁻¹) = 1 := by
       rw [map_mul, map_inv, he, mul_inv_cancel]
-    simpa using congrArg (fun y : ↑(padicCompletionUnits p L) ↦ y.1 k) hof
+    simpa using congrArg (fun y : ↑(padicCompletionUnits p L) ↦ y.val k) hof
   obtain ⟨v, hv⟩ := (QuotientGroup.eq_one_iff _).mp hη
   rw [powMonoidHom_apply] at hv
   have hvT : v ∈ pPowerRootsOfUnity p L := by

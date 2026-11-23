@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsRealClosed.Real
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Signature
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.Witt
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Witt.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Classification
 
 /-!

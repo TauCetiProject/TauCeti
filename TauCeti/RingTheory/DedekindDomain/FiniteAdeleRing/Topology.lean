@@ -136,6 +136,6 @@ theorem isEmbedding_coe_sIntegralUnits {S : Set (HeightOneSpectrum R)} (hS : S.F
   -- of the local integers
   refine adicCompletionIntegers.mem_units_iff_valued_eq_one.mpr ?_
   rw [coe_unitsContinuousMulEquiv_apply]
-  exact mem_sIntegralUnits_iff.mp x.2 v hv
+  exact mem_sIntegralUnits_iff.mp x.property v hv
 
 end IsDedekindDomain.FiniteAdeleRing

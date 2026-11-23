@@ -248,7 +248,7 @@ theorem mem_fixedSubcomodule_linearHom_iff (f : M →ₗ[R] N) :
 /-- Comodule morphisms are the fixed vectors of the linear Hom comodule. -/
 def fixedLinearHomEquiv :
     fixedSubcomodule R H (M →ₗ[R] N) ≃ₗ[R] Hom R H M N where
-  toFun f := ⟨f.1, (mem_fixedSubcomodule_linearHom_iff f.1).mp f.2⟩
+  toFun f := ⟨f.val, (mem_fixedSubcomodule_linearHom_iff f.val).mp f.property⟩
   invFun f := ⟨f.toLinearMap, (mem_fixedSubcomodule_linearHom_iff f.toLinearMap).mpr
     f.map_coact⟩
   left_inv _ := rfl
@@ -259,7 +259,7 @@ def fixedLinearHomEquiv :
 /-- The fixed-Hom equivalence preserves the underlying linear map. -/
 @[simp]
 theorem fixedLinearHomEquiv_toLinearMap (f : fixedSubcomodule R H (M →ₗ[R] N)) :
-    (fixedLinearHomEquiv f).toLinearMap = f.1 :=
+    (fixedLinearHomEquiv f).toLinearMap = f.val :=
   (rfl)
 
 /-- The inverse fixed-Hom equivalence preserves the underlying linear map. -/
