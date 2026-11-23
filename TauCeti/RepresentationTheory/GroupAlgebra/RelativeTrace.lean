@@ -32,7 +32,9 @@ for `Q = P`, it multiplies `P`-fixed elements by the index `|P : Q|`, it is tran
 `S ≤ Q ≤ P`, and it is a map of `R[G]^P`-bimodules: `Tr_Q^P(a) b = Tr_Q^P(a b)` and
 `b Tr_Q^P(a) = Tr_Q^P(b a)` for `b ∈ R[G]^P`. Its image `R[G]^P_Q` is therefore a two-sided ideal
 of `R[G]^P` (`TauCeti.relTraceIdeal`), decreasing as `Q` shrinks and equal to `R[G]^P` for
-`Q = P`.
+`Q = P`. On the centralizer `C_G(P)` the coefficients of `Tr_Q^P(a)` are `|P : Q|` times those of
+`a`. For `g ∈ G`, the relative trace of `g` from its stabilizer `P ⊓ C_G(g)` is the sum of the
+`P`-conjugates of `g`, each once.
 
 Conjugation by `g ∈ G` is an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`
 (`TauCeti.conjInvariantsEquiv`), and it carries `Tr_Q^P` to `Tr_{gQg⁻¹}^{gPg⁻¹}`. For `T ≤ P`,
@@ -60,6 +62,10 @@ are described through them.
   `Tr_Q^P(a) = |P : Q| a` for `a ∈ R[G]^P`.
 * `TauCeti.relTrace_relTrace`: transitivity `Tr_Q^P ∘ Tr_S^Q = Tr_S^P`.
 * `TauCeti.relTrace_mul`, `TauCeti.mul_relTrace`: the product formulas.
+* `TauCeti.coeff_relTrace_of_mem_centralizer`: `Tr_Q^P(a)` has coefficient `|P : Q| a_c` at
+  `c ∈ C_G(P)`.
+* `TauCeti.coeff_relTrace_single_inf_centralizer`: the relative trace of `g` from its
+  stabilizer in `P` is the sum of the `P`-conjugates of `g`, each once.
 * `TauCeti.relTraceIdeal_mono`, `TauCeti.relTraceIdeal_self`: `R[G]^P_S ≤ R[G]^P_Q` for
   `S ≤ Q ≤ P`, and `R[G]^P_P = R[G]^P`.
 * `TauCeti.conjInvariantsEquiv_relTrace`: `g Tr_Q^P(a) g⁻¹ = Tr_{gQg⁻¹}^{gPg⁻¹}(g a g⁻¹)`.
@@ -267,6 +273,19 @@ theorem relTrace_apply_of_mem {a : conjInvariants R Q} (ha : (a : MonoidAlgebra 
     conjInvariants R P) : (relTrace R Q P a : MonoidAlgebra R G) = (Q.subgroupOf P).index • a :=
   Representation.relNorm_apply_of_forall_apply_eq _ fun g =>
     mem_conjInvariants_iff.1 ha _ g.property
+
+/-- The coefficient of `Tr_Q^P(a)` at an element of `C_G(P)` is `|P : Q|` times that of `a`. -/
+theorem coeff_relTrace_of_mem_centralizer (a : conjInvariants R Q) {c : G}
+    (hc : c ∈ Subgroup.centralizer (P : Set G)) :
+    (relTrace R Q P a : MonoidAlgebra R G).coeff c =
+      (Q.subgroupOf P).index • (a : MonoidAlgebra R G).coeff c := by
+  classical
+  rw [coe_relTrace, coeff_sum]
+  simp only [Finsupp.finsetSum_apply, coeff_conjRepresentation]
+  have hconj (q : P) : (q : G)⁻¹ * c * q = c := by
+    rw [mul_assoc, ← Subgroup.mem_centralizer_iff.1 hc q q.property, inv_mul_cancel_left]
+  simp only [hconj, Finset.sum_const, Finset.card_univ, Subgroup.index_eq_card,
+    Fintype.card_eq_nat_card]
 
 variable (hQP : Q ≤ P)
 
@@ -476,5 +495,59 @@ theorem inclusion_relTrace_eq_sum_doubleCoset {T Q P : Subgroup G} [(Q.subgroupO
     (fun _ hy => Subgroup.existsUnique_mem_doubleCoset_out hTP hy) a
 
 end Conj
+
+section OrbitSum
+
+variable {R G : Type*} [CommSemiring R] [Group G]
+
+/-- `g` is fixed by conjugation by its stabilizer. -/
+theorem single_mem_conjInvariants_inf_centralizer (P : Subgroup G) (g : G) (r : R) :
+    single g r ∈ conjInvariants R (P ⊓ Subgroup.centralizer {g}) := by
+  rw [mem_conjInvariants_iff]
+  intro h hh
+  rw [conjRepresentation_single, (Subgroup.mem_centralizer_singleton_iff.1 hh.2).eq,
+    mul_inv_cancel_right]
+
+open scoped Classical in
+/-- **Orbit sums are relative traces.** The relative trace of `g` from its stabilizer
+`P ⊓ C_G(g)` to `P` has coefficient `r` on each `P`-conjugate of `g`, and `0` elsewhere. -/
+theorem coeff_relTrace_single_inf_centralizer [Finite G] (P : Subgroup G) (g : G) (r : R)
+    (h : G) :
+    (relTrace R (P ⊓ Subgroup.centralizer {g}) P
+        ⟨single g r, single_mem_conjInvariants_inf_centralizer P g r⟩ : MonoidAlgebra R G).coeff h =
+      if ∃ q ∈ P, q * g * q⁻¹ = h then r else 0 := by
+  classical
+  -- `P` acts on `G` by conjugation through its image `K` in `ConjAct G`.
+  let K := P.map (ConjAct.toConjAct (G := G)).toMonoidHom
+  let φ : P ≃* K := P.equivMapOfInjective _ ConjAct.toConjAct.injective
+  have hsmul (q : P) (a : G) : φ q • a = q * a * (q : G)⁻¹ := ConjAct.toConjAct_smul _ _
+  have hrel (a b : P) : QuotientGroup.leftRel ((P ⊓ Subgroup.centralizer {g}).subgroupOf P) a b ↔
+      QuotientGroup.leftRel (MulAction.stabilizer K g) (φ a) (φ b) := by
+    rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply, ← map_inv φ, ← map_mul φ,
+      MulAction.mem_stabilizer_iff, hsmul]
+    simp only [Subgroup.mem_subgroupOf, Subgroup.mem_inf, SetLike.coe_mem, true_and,
+      Subgroup.mem_centralizer_singleton_iff, commute_iff_eq, mul_inv_eq_iff_eq_mul]
+  have := Fintype.ofFinite (MulAction.orbit K g)
+  let e : MulAction.orbit K g ≃ P ⧸ (P ⊓ Subgroup.centralizer {g}).subgroupOf P :=
+    ((Quotient.congr φ.toEquiv hrel).trans (MulAction.orbitEquivQuotientStabilizer K g).symm).symm
+  have hs (x : MulAction.orbit K g) : ((e x).out : G) * g * ((e x).out : G)⁻¹ = x := by
+    have he (q : P) : (e.symm q : G) = φ q • g := by
+      simp only [e, Equiv.symm_symm, Equiv.trans_apply]
+      -- `Quotient.congr` sends the class of `q` to the class of `φ q` (`Quotient.congr_mk`).
+      exact MulAction.orbitEquivQuotientStabilizer_symm_apply (G := K) g (φ q)
+    rw [← hsmul, ← he, QuotientGroup.out_eq', e.symm_apply_apply]
+  have hbij : Function.Bijective
+      fun x => ((e x).out : P ⧸ (P ⊓ Subgroup.centralizer {g}).subgroupOf P) := by
+    simpa only [QuotientGroup.out_eq'] using e.bijective
+  have horbit : h ∈ MulAction.orbit K g ↔ ∃ q ∈ P, q * g * q⁻¹ = h := by
+    rw [MulAction.mem_orbit_iff, φ.surjective.exists]
+    simp only [hsmul, Subtype.exists, exists_prop]
+  rw [relTrace_apply_eq_sum_of_bijective _ hbij, coeff_sum]
+  simp only [Finsupp.finsetSum_apply, conjRepresentation_single, hs, coeff_single,
+    Finsupp.single_apply]
+  rw [Finset.sum_set_coe (f := fun x => if x = h then r else 0), Finset.sum_ite_eq']
+  simp only [Set.mem_toFinset, horbit]
+
+end OrbitSum
 
 end TauCeti
