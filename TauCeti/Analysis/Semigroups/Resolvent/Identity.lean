@@ -31,7 +31,8 @@ also transports the Laplace-transform norm estimate to the abstract resolvent:
 resolvent norm from below: `‖x‖ ≤ ‖R(lambda)‖ * ‖lambda x - A x‖` on `D(A)`, so approximate
 eigenvectors of `A` for `mu` force `|lambda - mu|⁻¹ ≤ ‖R(lambda)‖`
 (`StronglyContinuousSemigroup.inv_abs_sub_le_norm_resolvent_of_tendsto`). The sharp power
-estimate is proved from the integral power formula in `TauCeti/Analysis/Semigroups/Resolvent/PowerBounds.lean`.
+estimate is proved from the integral power formula in
+`TauCeti/Analysis/Semigroups/Resolvent/PowerBounds.lean`.
 
 ## References
 
