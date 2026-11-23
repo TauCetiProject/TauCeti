@@ -253,6 +253,7 @@ theorem formalW_eq_X_pow_mul_formalU : formalW W = PowerSeries.X ^ 3 * formalU W
   · exact formalWCoeff_eq_zero_of_lt W (by omega)
 
 /-- The `w`-expansion is nonzero over any nontrivial ring, since its `z ^ 3` coefficient is `1`. -/
+@[simp]
 theorem formalW_ne_zero [Nontrivial R] : formalW W ≠ 0 := by
   intro h
   have h3 := congrArg (PowerSeries.coeff 3) h

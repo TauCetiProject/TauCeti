@@ -35,14 +35,15 @@ separable.
 
 * `TauCeti.Isogeny.differentialLaurentExpansion_pullbackDifferential`: Laurent chain rule for
   pulled-back Kähler differentials.
-* `TauCeti.Isogeny.coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul` and
-  `TauCeti.Isogeny.pullbackDifferential_invariantDifferential_eq_smul`: `φ^* ω₂ = c • ω₁` with
-  `c = PowerSeries.coeff 1 φ.formalSeries`.
-* `TauCeti.Isogeny.Hom.pullbackDifferential_invariantDifferential_eq_smul`: the same for every
-  morphism `f : W₁ → W₂`.
+* `TauCeti.Isogeny.coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul` (and its
+  formal-group companion): comparing the pullback scalar `c` with
+  `PowerSeries.coeff 1 φ.formalSeries` when both invariant-differential denominators are nonzero.
+* `TauCeti.Isogeny.pullbackDifferential_invariantDifferential_eq_smul` and
+  `TauCeti.Isogeny.Hom.pullbackDifferential_invariantDifferential_eq_smul`: for elliptic curves,
+  `φ^* ω₂ = c • ω₁` with `c = PowerSeries.coeff 1 φ.formalSeries`.
 * `TauCeti.Isogeny.subst_formalSeries_invariantDifferential_mul_derivative` and
   `TauCeti.Isogeny.Hom.subst_formalSeries_invariantDifferential_mul_derivative`: pullback of the
-  formal-group invariant differential along an isogeny or morphism.
+  formal-group invariant differential along an isogeny or morphism of elliptic curves.
 
 ## References
 
@@ -73,9 +74,8 @@ theorem differentialLaurentExpansion_pullbackDifferential
       LaurentSeries.substAlgHom φ.constantCoeff_formalSeries φ.formalSeries_ne_zero
         (W₂.differentialLaurentExpansion η) *
         _root_.LaurentSeries.derivative K (φ.formalSeries : K⸨X⸩) := by
-  rw [φ.pullbackDifferential_apply, W₁.differentialLaurentExpansion_apply,
-    W₂.differentialLaurentExpansion_apply, ← TauCeti.differentialLaurentExpansion_apply,
-    ← TauCeti.differentialLaurentExpansion_apply]
+  rw [φ.pullbackDifferential_apply, W₁.differentialLaurentExpansion_def,
+    W₂.differentialLaurentExpansion_def]
   exact TauCeti.differentialLaurentExpansion_mapSemilinear
     φ.constantCoeff_formalSeries φ.formalSeries_ne_zero
     φ.functionFieldLaurentExpansion_fieldPullback η
@@ -125,8 +125,9 @@ theorem coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul
     simp [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_derivative]
   simpa [map_mul, hsub, hder, (formalGroup W₁).constantCoeff_invariantDifferential] using h
 
-/-- **An isogeny pulls back the invariant differential by the linear coefficient of its formal
-series** (Silverman III.5, IV.4): `φ^* ω₂ = (PowerSeries.coeff 1 φ.formalSeries) • ω₁`. -/
+/-- **An isogeny of elliptic curves pulls back the invariant differential by the linear
+coefficient of its formal series** (Silverman III.5, IV.4): when `W₂` is an elliptic curve,
+`φ^* ω₂ = (PowerSeries.coeff 1 φ.formalSeries) • ω₁`. -/
 theorem pullbackDifferential_invariantDifferential_eq_smul [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
     φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
@@ -138,7 +139,7 @@ theorem pullbackDifferential_invariantDifferential_eq_smul [W₂.IsElliptic]
     (Affine.invariantDifferentialDenom_ne_zero W₂.toAffine) hc]
 
 /-- **Pullback of the formal-group invariant differential along an isogeny**
-(Silverman IV.4.2(b)):
+(Silverman IV.4.2(b)): when `W₂` is an elliptic curve,
 `(P₂ ∘ φ.formalSeries) · (φ.formalSeries)' = (PowerSeries.coeff 1 φ.formalSeries) • P₁`. -/
 theorem subst_formalSeries_invariantDifferential_mul_derivative [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
@@ -148,7 +149,7 @@ theorem subst_formalSeries_invariantDifferential_mul_derivative [W₂.IsElliptic
   simpa using φ.formalGroupHom.subst_invariantDifferential_mul_derivative
 
 /-- **Pullback of the formal-group invariant differential along a morphism**
-(Silverman IV.4.2(b)):
+(Silverman IV.4.2(b)): when `W₂` is an elliptic curve,
 `(P₂ ∘ f.formalSeries) · (f.formalSeries)' = (PowerSeries.coeff 1 f.formalSeries) • P₁`. -/
 theorem Hom.subst_formalSeries_invariantDifferential_mul_derivative [W₂.IsElliptic]
     (f : Hom W₁.toAffine W₂.toAffine) :
@@ -157,8 +158,9 @@ theorem Hom.subst_formalSeries_invariantDifferential_mul_derivative [W₂.IsElli
       PowerSeries.coeff 1 f.formalSeries • (formalGroup W₁).invariantDifferential := by
   simpa using f.formalGroupHom.subst_invariantDifferential_mul_derivative
 
-/-- **A morphism pulls back the invariant differential by the linear coefficient of its formal
-series**: `f^* ω₂ = (PowerSeries.coeff 1 f.formalSeries) • ω₁`. -/
+/-- **A morphism of elliptic curves pulls back the invariant differential by the linear
+coefficient of its formal series**: when `W₂` is an elliptic curve,
+`f^* ω₂ = (PowerSeries.coeff 1 f.formalSeries) • ω₁`. -/
 theorem Hom.pullbackDifferential_invariantDifferential_eq_smul [W₂.IsElliptic]
     (f : Hom W₁.toAffine W₂.toAffine) :
     f.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =

@@ -181,6 +181,15 @@ theorem coeff_two_formalInvariantDifferentialDenom :
 
 /-! ### The invariant differential in the coordinates `(z, w)` -/
 
+/-- Evaluating `2y + a₁x + a₃` at `(q / w, -1 / w)` clears the denominator `w` when `w ≠ 0`. -/
+theorem evalEval_polynomialY_div {K : Type*} [Field K] [Algebra R K] (W : WeierstrassCurve R)
+    (q : K) {w : K} (hw : w ≠ 0) :
+    (W⁄K).toAffine.polynomialY.evalEval (q / w) (-1 / w) =
+      (-2 + algebraMap R K W.a₁ * q + algebraMap R K W.a₃ * w) / w := by
+  rw [Affine.evalEval_polynomialY]
+  simp only [WeierstrassCurve.baseChange, map_a₁, map_a₃]
+  field_simp
+
 /-- **The invariant differential in the coordinates `z = -x / y`, `w = -1 / y`.** Let `D` be a
 derivation over `R` on a field `K`, and let `(q, w)` solve the `w`-equation of `W`, so that
 `(x, y) = (q / w, -1 / w)` is a point of `W⁄K` when `w ≠ 0`. If `2y + a₁x + a₃` and the denominator
@@ -206,9 +215,8 @@ theorem inv_evalEval_polynomialY_smul_derivation_div {K M : Type*} [Field K] [Al
     simp
   have hd := congrArg D heq
   have hD (r : R) : D (algebraMap R K r) = 0 := D.map_algebraMap r
-  rw [Affine.evalEval_polynomialY, D.leibniz_div]
-  simp only [WeierstrassCurve.baseChange, map_a₁, map_a₃, map_add, Derivation.leibniz,
-    Derivation.leibniz_pow, hD, smul_zero, add_zero] at hd ⊢
+  rw [W.evalEval_polynomialY_div q hw, D.leibniz_div]
+  simp only [map_add, Derivation.leibniz, Derivation.leibniz_pow, hD, smul_zero, add_zero] at hd ⊢
   generalize algebraMap R K W.a₁ = a₁ at *
   generalize algebraMap R K W.a₂ = a₂ at *
   generalize algebraMap R K W.a₃ = a₃ at *
@@ -222,9 +230,7 @@ theorem inv_evalEval_polynomialY_smul_derivation_div {K M : Type*} [Field K] [Al
       rw [← hg]
       linear_combination (norm := module) hd
     rw [div_eq_inv_mul, mul_smul, ← this, smul_smul, inv_mul_cancel₀ hG, one_smul]
-  have hY : 2 * (-1 / w) + a₁ * (q / w) + a₃ = (-2 + a₁ * q + a₃ * w) / w := by
-    field_simp
-  rw [hY, hDw, smul_smul, smul_smul, ← sub_smul, smul_smul]
+  rw [hDw, smul_smul, smul_smul, ← sub_smul, smul_smul]
   congr 1
   field_simp
   subst hg
@@ -394,10 +400,8 @@ private theorem evalEval_polynomialY_div_ne_zero {q : UnivSeries} (hq : constant
         (-1 / algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve))) ≠
       0 := by
   have hw := algebraMap_subst_formalW_ne_zero Universal.curve (KK := UnivField) hq hq0
-  rw [Affine.evalEval_polynomialY]
-  simp only [WeierstrassCurve.baseChange, map_a₁, map_a₃]
-  convert div_ne_zero (Universal.curve.neg_two_add_ne_zero two_ne_zero hq) hw using 1
-  field_simp
+  rw [Universal.curve.evalEval_polynomialY_div _ hw]
+  exact div_ne_zero (Universal.curve.neg_two_add_ne_zero two_ne_zero hq) hw
 
 /-- **The invariance of `ω` for the universal curve**: `F_X(X, Y) · G(X) = G(F(X, Y))`. -/
 private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Kaehler.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import TauCeti.RingTheory.Kaehler.MapSemilinear
 public import TauCeti.RingTheory.LaurentSeries.ContinuousDerivation
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
@@ -320,24 +319,6 @@ theorem subst_D (g : K⸨X⸩) : subst hφ hφ₀ (D K g) = D K (substAlgHom hφ
   (equivLaurentSeries K).injective <| by
     rw [equivLaurentSeries_subst, equivLaurentSeries_D, equivLaurentSeries_D,
       derivative_substAlgHom]
-
-/-- Substitution into continuous one-forms intertwines `mk` with
-`KaehlerDifferential.mapSemilinear (substAlgHom hφ hφ₀)`. -/
-theorem subst_mk (ω : Ω[K⸨X⸩⁄K]) :
-    subst hφ hφ₀ (mk K ω) =
-      mk K (KaehlerDifferential.mapSemilinear (substAlgHom hφ hφ₀) ω) := by
-  have hω : ω ∈ Submodule.span K⸨X⸩ (Set.range (KaehlerDifferential.D K K⸨X⸩)) := by
-    rw [KaehlerDifferential.span_range_derivation]
-    trivial
-  induction hω using Submodule.span_induction with
-  | mem _ h =>
-    rcases h with ⟨g, rfl⟩
-    rw [← D_apply, subst_D, KaehlerDifferential.mapSemilinear_D, D_apply]
-  | zero => simp only [map_zero]
-  | add _ _ _ _ hx hy => simp only [map_add, hx, hy]
-  | smul a _ _ hx =>
-    rw [map_smul, map_smulₛₗ, KaehlerDifferential.mapSemilinear_smul, map_smul, hx,
-      RingHom.coe_coe]
 
 /-- Substitution into one-forms sends `d X` to `d φ`. -/
 theorem subst_D_single_one : subst hφ hφ₀ (D K (single 1 1)) = D K (φ : K⸨X⸩) := by
