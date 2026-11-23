@@ -15,10 +15,11 @@ function against the dual record:
 
 `γ(s) L(s) = ε N^(1/2 - s) γ^∨(1 - s) L^∨(1 - s)`.
 
-It holds as an equality of punctured germs at every point, and pointwise wherever both gamma
-factors are regular and the record has no pole at `s`. The pole at `1 - conj s` is then excluded
-by the symmetry of the polar divisor. At a pole of the record the pointwise statement compares
-retained representatives and can fail.
+It holds as an equality of punctured germs at every point, with no hypothesis beyond the
+functional equation. For a record with a meromorphic continuation (`HasMeromorphicContinuation`)
+it also holds pointwise wherever both gamma factors are regular and the record has no pole at `s`.
+The pole at `1 - conj s` is then excluded by the symmetry of the polar divisor. At a pole of the
+record the pointwise statement compares retained representatives and can fail.
 
 The statements follow Christian Merten's earlier construction in Tau Ceti PR #41996,
 transported to the canonical `AnalyticLFunctionData.continuedL`.
@@ -73,9 +74,9 @@ theorem HasFunctionalEquation.gammaFactor_mul_continuedL_eventuallyEq
   rw [dual_conductor] at hc'
   exact gammaFactor_mul_continuedL_eq_of_completed hfz hc hc'
 
-/-- **The pointwise functional equation of the continued function.** It holds at `s` when the
-record has no pole there and both gamma factors are regular. The record then has no pole at
-`1 - conj s` either. -/
+/-- **The pointwise functional equation of the continued function.** For a record with a
+meromorphic continuation, it holds at `s` when the record has no pole there and both gamma factors
+are regular. The record then has no pole at `1 - conj s` either. -/
 theorem HasFunctionalEquation.gammaFactor_mul_continuedL_eq
     (hfe : d.HasFunctionalEquation) (hm : d.HasMeromorphicContinuation) {s : ℂ}
     (hp : d.polarOrder s = 0) (hγ : d.gammaFactor s ≠ 0)
