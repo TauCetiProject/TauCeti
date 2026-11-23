@@ -7,9 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 
-import Mathlib.MeasureTheory.Integral.ExpDecay
 import TauCeti.Analysis.LaplaceTransform.Real
-import TauCeti.MeasureTheory.Integral.Asymptotics
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.IntegrationByParts
 
@@ -47,7 +45,7 @@ public section
 
 noncomputable section
 
-open Asymptotics Filter MeasureTheory Set Topology
+open Filter MeasureTheory Set Topology
 open scoped Interval
 
 namespace TauCeti
@@ -55,15 +53,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### Exponentially weighted improper integration by parts on `(0, ∞)` -/
-
-/-- Exponential-polynomial moment integrability on `(0, ∞)` for a function continuous on
-`[0, ∞)` and bounded at `+∞`. -/
-private theorem integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one {h : ℝ → E} {p : ℝ}
-    (hp : 0 < p) (k : ℕ) (hh_cont : ContinuousOn h (Ici 0)) (hh_top : h =O[atTop] (1 : ℝ → ℝ)) :
-    IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ k) • h t) (Ioi 0) := by
-  have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ k) (Ioi 0) := by
-    simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi k hp
-  exact hw.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hh_cont hh_top
 
 /-- Improper integration by parts for `∫ t in Ioi 0, exp (-(p * t)) • g t` (`0 < p`). -/
 private theorem integral_Ioi_exp_neg_mul_smul_eq {g : ℝ → E} {p : ℝ} (hp : 0 < p)

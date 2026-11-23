@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper

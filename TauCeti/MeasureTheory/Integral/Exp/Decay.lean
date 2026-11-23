@@ -10,8 +10,10 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Overlap
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.MeasureTheory.Integral.Asymptotics
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -82,13 +84,18 @@ inclusion.
 * `TauCeti.locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul`: for any measure `μ` with
   `NullSingletonClass μ`, integrability of `t ↦ exp (-(p * t)) • f t` on `(a, ∞)` implies
   `LocallyIntegrableOn f (Ici a) μ`.
+* `TauCeti.integrableOn_exp_neg_mul_mul_pow_smul_of_lt`: integrability of
+  `t ↦ exp (-(q * t)) • f t` on `(0, ∞)` with respect to `μ` implies integrability of all
+  polynomial moments `t ↦ (exp (-(p * t)) * t ^ j) • f t` for every `p > q`.
+* `TauCeti.integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one`: exponential-polynomial moment
+  integrability on `(0, ∞)` for a function continuous on `[0, ∞)` and bounded at `+∞`.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Set
+open Asymptotics Filter MeasureTheory Set
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -610,5 +617,33 @@ theorem integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos {a s c : ℝ} (hc : 0 < c)
   · rcases ha.eq_or_lt with rfl | ha'
     · exact Or.inr ⟨neg_zero, hs⟩
     · exact Or.inl (neg_lt_zero.mpr ha')
+
+/-- If `t ↦ exp (-(q * t)) • f t` is Bochner integrable on `(0, ∞)` with respect to `μ` and
+`q < p`, then every polynomial moment `t ↦ (exp (-(p * t)) * t ^ j) • f t` is Bochner integrable on
+`(0, ∞)` with respect to `μ`. -/
+theorem integrableOn_exp_neg_mul_mul_pow_smul_of_lt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E} {q p : ℝ} (hqp : q < p)
+    (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(q * t)) • f t) (Ioi 0) μ) (j : ℕ) :
+    IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • f t) (Ioi 0) μ := by
+  obtain ⟨M, _, hM⟩ := exists_rpow_mul_exp_neg_mul_le (Nat.cast_nonneg j) (sub_pos.mpr hqp)
+  refine (hf.bdd_smul M
+    (by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-((p - q) * t)) * t ^ j).aestronglyMeasurable
+    ?_).congr (ae_of_all _ fun t ↦ ?_)
+  · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t (ht : 0 < t)
+    rw [Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht.le _)), mul_comm,
+      ← Real.rpow_natCast]
+    exact hM t ht.le
+  · have hexp : -((p - q) * t) + -(q * t) = -(p * t) := by ring
+    rw [Pi.smul_apply', smul_smul, mul_right_comm, ← Real.exp_add, hexp]
+
+/-- Exponential-polynomial moment integrability on `(0, ∞)` for a function `h` continuous on
+`[0, ∞)` and bounded at `+∞` (`h =O[atTop] (1 : ℝ → ℝ)`). -/
+theorem integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {h : ℝ → E} {p : ℝ} (hp : 0 < p) (k : ℕ)
+    (hh_cont : ContinuousOn h (Ici 0)) (hh_top : h =O[atTop] (1 : ℝ → ℝ)) :
+    IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ k) • h t) (Ioi 0) := by
+  have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ k) (Ioi 0) := by
+    simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi k hp
+  exact hw.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hh_cont hh_top
 
 end TauCeti

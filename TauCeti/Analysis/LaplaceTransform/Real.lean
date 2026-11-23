@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -22,18 +21,18 @@ This file establishes basic analytic properties of one-sided real Laplace integr
 `p ↦ ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • f t ∂μ` for functions `f : ℝ → E` into a real normed
 space `E` (taking `E` to be a real Banach space for the rescaled Abelian limit).
 
-The moment integrability and parametric differentiation results hold for an arbitrary measure
-`μ : Measure ℝ`, while the rescaled Abelian limit
+The parametric differentiation results hold for an arbitrary measure `μ : Measure ℝ` (using
+`TauCeti.integrableOn_exp_neg_mul_mul_pow_smul_of_lt` from
+`TauCeti.MeasureTheory.Integral.Exp.Decay` for exponential-weight moment integrability), while the
+rescaled Abelian limit
 `TauCeti.tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero` is a
 Lebesgue-measure (`volume`) result for a Banach target space `E`.
 
 ## Main results
 
-* `TauCeti.integrableOn_exp_neg_mul_mul_pow_smul_of_lt`: integrability of
-  `t ↦ exp (-(q * t)) • f t` on `(0, ∞)` with respect to `μ` implies integrability of all
-  polynomial moments `t ↦ (exp (-(p * t)) * t ^ j) • f t` for every `p > q`.
 * `TauCeti.hasDerivAt_integral_exp_neg_mul_mul_pow_smul` and
-  `TauCeti.iteratedDeriv_integral_exp_neg_mul_smul`: differentiation under the Laplace integral on
+  `TauCeti.iteratedDeriv_integral_exp_neg_mul_smul`: when `t ↦ exp (-(q * t)) • f t` is integrable
+  on `(0, ∞)` with respect to `μ`, differentiation under the Laplace integral and its moments on
   `{p | q < p}` for any measure `μ`.
 * `TauCeti.tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero`: for Lebesgue
   measure `volume` and a real Banach space `E`, if `h : ℝ → E` is locally integrable on `[0, ∞)`
@@ -51,24 +50,9 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- If `t ↦ exp (-(q * t)) • f t` is Bochner integrable on `(0, ∞)` and `q < p`, then every
-polynomial moment `t ↦ (exp (-(p * t)) * t ^ j) • f t` is Bochner integrable on `(0, ∞)`. -/
-theorem integrableOn_exp_neg_mul_mul_pow_smul_of_lt {μ : Measure ℝ} {f : ℝ → E} {q p : ℝ}
-    (hqp : q < p) (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(q * t)) • f t) (Ioi 0) μ) (j : ℕ) :
-    IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • f t) (Ioi 0) μ := by
-  obtain ⟨M, _, hM⟩ := exists_rpow_mul_exp_neg_mul_le (Nat.cast_nonneg j) (sub_pos.mpr hqp)
-  refine (hf.bdd_smul M
-    (by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-((p - q) * t)) * t ^ j).aestronglyMeasurable
-    ?_).congr (ae_of_all _ fun t ↦ ?_)
-  · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t (ht : 0 < t)
-    rw [Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht.le _)), mul_comm,
-      ← Real.rpow_natCast]
-    exact hM t ht.le
-  · have hexp : -((p - q) * t) + -(q * t) = -(p * t) := by ring
-    rw [Pi.smul_apply', smul_smul, mul_right_comm, ← Real.exp_add, hexp]
-
-/-- Differentiation under the integral sign for the Laplace moments
-`r ↦ ∫ t in Ioi 0, (exp (-(r * t)) * t ^ j) • f t ∂μ` on `{r | q < r}`. -/
+/-- When `t ↦ exp (-(q * t)) • f t` is integrable on `(0, ∞)` with respect to `μ`, the `j`-th
+Laplace moment `r ↦ ∫ t in Ioi 0, (exp (-(r * t)) * t ^ j) • f t ∂μ` has derivative
+`-(∫ t in Ioi 0, (exp (-(p * t)) * t ^ (j + 1)) • f t ∂μ)` at every `p > q`. -/
 theorem hasDerivAt_integral_exp_neg_mul_mul_pow_smul {μ : Measure ℝ} {f : ℝ → E} {q p : ℝ}
     (hqp : q < p) (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(q * t)) • f t) (Ioi 0) μ) (j : ℕ) :
     HasDerivAt (fun r : ℝ ↦ ∫ t in Ioi 0, (Real.exp (-(r * t)) * t ^ j) • f t ∂μ)

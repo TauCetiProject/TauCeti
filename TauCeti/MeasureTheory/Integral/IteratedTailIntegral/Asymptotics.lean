@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Asymptotics.Defs
 public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals

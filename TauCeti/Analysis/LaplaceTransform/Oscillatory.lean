@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Oscillatory
 
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Laplace
 

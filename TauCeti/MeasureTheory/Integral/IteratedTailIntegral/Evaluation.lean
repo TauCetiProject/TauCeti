@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
@@ -91,6 +90,15 @@ private theorem integral_cauchyTriangleKernel_snd [CompleteSpace E]
       intervalIntegral.integral_smul_const, hsub, div_eq_inv_mul]
   · simp [ht]
 
+/-- Recover `AEStronglyMeasurable f` on `(y, ∞)` from integrability of `(t - y) ^ m • f t`. -/
+private theorem aestronglyMeasurable_of_integrableOn_sub_pow_smul {f : ℝ → E} {y : ℝ} {m : ℕ}
+    (hf : IntegrableOn (fun t : ℝ ↦ (t - y) ^ m • f t) (Ioi y)) :
+    AEStronglyMeasurable f (volume.restrict (Ioi y)) :=
+  (aestronglyMeasurable_fun_smul_iff₀
+    (by fun_prop : Continuous fun t : ℝ ↦ (t - y) ^ m).aestronglyMeasurable
+    (by filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : y < t)
+        exact pow_ne_zero _ (sub_pos.mpr ht).ne')).mp hf.aestronglyMeasurable
+
 /-- Product integrability of `cauchyTriangleKernel` on `ℝ × ℝ` from integrability of
 `t ↦ (t - y) ^ (m + 1) • f t` on `(y, ∞)`. -/
 private theorem integrable_cauchyTriangleKernel {f : ℝ → E} {y : ℝ} {m : ℕ}
@@ -100,10 +108,7 @@ private theorem integrable_cauchyTriangleKernel {f : ℝ → E} {y : ℝ} {m : �
     (isOpen_lt continuous_const continuous_fst).measurableSet.inter
       (isOpen_lt continuous_fst continuous_snd).measurableSet
   have hf_meas : AEStronglyMeasurable f (volume.restrict (Ioi y)) :=
-    (aestronglyMeasurable_fun_smul_iff₀
-      (by fun_prop : Continuous fun t : ℝ ↦ (t - y) ^ (m + 1)).aestronglyMeasurable
-      (by filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : y < t)
-          exact pow_ne_zero _ (sub_pos.mpr ht).ne')).mp hfm1.aestronglyMeasurable
+    aestronglyMeasurable_of_integrableOn_sub_pow_smul hfm1
   have hmeas : AEStronglyMeasurable (cauchyTriangleKernel f y m) (volume.prod volume) :=
     (((by fun_prop : Continuous fun p : ℝ × ℝ ↦ (p.2 - p.1) ^ m).aestronglyMeasurable).smul
       (((aestronglyMeasurable_indicator_iff measurableSet_Ioi).mpr hf_meas).comp_snd)).indicator hS
@@ -189,10 +194,7 @@ theorem iteratedTailIntegral_succ_eq_inv_factorial_smul_integral_Ioi
     have hsub (s : ℝ) (hs : x < s) :
         IntegrableOn (fun t : ℝ ↦ (t - s) ^ m • f t) (Ioi s) := by
       have hf_meas : AEStronglyMeasurable f (volume.restrict (Ioi x)) :=
-        (aestronglyMeasurable_fun_smul_iff₀
-          (by fun_prop : Continuous fun t : ℝ ↦ (t - x) ^ (m + 1)).aestronglyMeasurable
-          (by filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : x < t)
-              exact pow_ne_zero _ (sub_pos.mpr ht).ne')).mp hf_top.aestronglyMeasurable
+        aestronglyMeasurable_of_integrableOn_sub_pow_smul hf_top
       refine ((hf_top.mono_set (Ioi_subset_Ioi hs.le)).norm.const_mul ((s - x)⁻¹)).mono'
         (((by fun_prop : Continuous fun t : ℝ ↦ (t - s) ^ m).aestronglyMeasurable).smul
           (hf_meas.mono_set (Ioi_subset_Ioi hs.le))) ?_
