@@ -276,7 +276,8 @@ theorem completedTensor.map_plus_rationalRingEquiv :
         PC UC c.num c.den _ c.hasDenominatorPower PD _ hden₀ hPB hPC hPD,
       rationalLocalizationPair_plus]
     exact map_completedPlusSubring_presentationRingEquivOfEq PD (UB.completedTensor A UC).plus
-      (fun j _ ↦ hPD j.2) (UB.completedTensor A UC).isRingOfIntegralElements.isPowerBounded_of_mem
+      (fun j _ ↦ hPD j.property)
+      (UB.completedTensor A UC).isRingOfIntegralElements.isPowerBounded_of_mem
       num₀ den₀ _ hden₀ d.num d.den _ d.hasDenominatorPower _
 
 /-- **Pure-tensor coefficient formula for `completedTensor.rationalRingEquiv`**:
@@ -325,11 +326,11 @@ noncomputable def completedTensor.rationalSpaHomeomorph :
     ∀ v : spa ((locPairPres PB UB hPB b).completedTensor (Completion (Localization.Away a.den))
         (locPairPres PC UC hPC c)).plus,
       ((completedTensor.rationalSpaHomeomorph PA UA hPA a PB UB hPB b hb PC UC hPC c hc
-          PD hPD d f g hf_alg hg_alg hf hg hd v).1 : Spv (CompletedTensor A B C)) =
+          PD hPD d f g hf_alg hg_alg hf hg hd v).val : Spv (CompletedTensor A B C)) =
         ValuationSpectrum.comap
           ((completedTensor.rationalRingEquiv PA UA hPA a PB UB hPB b hb PC UC hPC c hc
               PD d f g hf_alg hg_alg hf hg hd).symm.toRingHom.comp
-            (toCompletionLoc PD d.num d.den _ d.hasDenominatorPower)) v.1 :=
+            (toCompletionLoc PD d.num d.den _ d.hasDenominatorPower)) v.val :=
   withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in by
     dsimp only [completedTensor.rationalSpaHomeomorph]
     intro v

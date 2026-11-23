@@ -168,11 +168,11 @@ noncomputable def spaHomeomorphOfRingEquiv : spa Aplus ≃ₜ spa Bplus where
 
 /-- `spaHomeomorphOfRingEquiv` pulls valuations back along `e.symm`. -/
 @[simp] theorem spaHomeomorphOfRingEquiv_val (v : spa Aplus) :
-    (spaHomeomorphOfRingEquiv e he he' hplus v : Spv B) = comap (e.symm : B →+* A) v.1 := (rfl)
+    (spaHomeomorphOfRingEquiv e he he' hplus v : Spv B) = comap (e.symm : B →+* A) v.val := (rfl)
 
 /-- The inverse of `spaHomeomorphOfRingEquiv` pulls valuations back along `e`. -/
 @[simp] theorem spaHomeomorphOfRingEquiv_symm_val (w : spa Bplus) :
-    ((spaHomeomorphOfRingEquiv e he he' hplus).symm w : Spv A) = comap (e : A →+* B) w.1 := (rfl)
+    ((spaHomeomorphOfRingEquiv e he he' hplus).symm w : Spv A) = comap (e : A →+* B) w.val := (rfl)
 
 end RingEquiv
 

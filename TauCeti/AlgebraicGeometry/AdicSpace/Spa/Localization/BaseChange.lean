@@ -87,11 +87,11 @@ noncomputable def pairHomOfSpaComapImageSubset :
     rw [Pair.Hom.spaComap_comp, Function.comp_apply]
     apply hf
     refine ⟨(toCompletionLocHom PB UB hPB T' s' S' hden').spaComap w, ?_, rfl⟩
-    have hw : w.1 ∈ spa (completedPlusSubring PB UB.plus T' s' S' hden') := by
-      simpa only [rationalLocalizationPair_plus] using w.2
+    have hw : w.val ∈ spa (completedPlusSubring PB UB.plus T' s' S' hden') := by
+      simpa only [rationalLocalizationPair_plus] using w.property
     simpa only [Set.mem_preimage, Pair.Hom.spaComap_val, toRingHom_toCompletionLocHom,
-      ← spaComapLoc_val PB UB.plus T' s' S' hden' ⟨w.1, hw⟩] using
-      spaComapLoc_mem_rationalSubset PB UB.plus T' s' S' hden' ⟨w.1, hw⟩
+      ← spaComapLoc_val PB UB.plus T' s' S' hden' ⟨w.val, hw⟩] using
+      spaComapLoc_mem_rationalSubset PB UB.plus T' s' S' hden' ⟨w.val, hw⟩
 
 /-- `pairHomOfSpaComapImageSubset` commutes with the structure morphisms from `(A, A⁺)` and
 `(B, B⁺)`. -/
