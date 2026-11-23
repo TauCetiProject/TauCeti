@@ -22,8 +22,8 @@ public noncomputable section
 
 namespace TauCeti.PolarGraph
 
-/-- Polar radius and angle identify the total space with the complex logarithm plane. -/
-@[expose] def polarPointHomeomorphComplex : PolarPoint ≃ₜ ℂ where
+/-- Logarithmic radius and angle identify the total space with `ℂ` via `log r + iθ`. -/
+def polarPointHomeomorphComplex : PolarPoint ≃ₜ ℂ where
   toFun p := ⟨Real.log (radius p), angle p⟩
   invFun z := ⟨(Real.exp z.re, z.im), Real.exp_pos _⟩
   left_inv p := by
@@ -36,42 +36,47 @@ namespace TauCeti.PolarGraph
     · simp only [angle_def]
   continuous_toFun := by
     have hr : Continuous fun p : PolarPoint ↦ radius p :=
-      by simpa only [radius_def, Function.comp_def] using
-        continuous_fst.comp continuous_subtypeVal
-    have hlog : Continuous fun p : PolarPoint ↦ Real.log (radius p) := by
-      apply continuous_iff_continuousAt.mpr
-      intro p
-      exact (Real.continuousAt_log (radius_ne_zero p)).comp hr.continuousAt
+      by simpa only [radius_def] using continuous_subtypeVal.fst
+    have hlog := hr.log radius_ne_zero
     have ha : Continuous fun p : PolarPoint ↦ angle p :=
-      by simpa only [angle_def, Function.comp_def] using
-        continuous_snd.comp continuous_subtypeVal
+      by simpa only [angle_def] using continuous_subtypeVal.snd
     exact Complex.equivRealProdCLM.symm.continuous.comp (hlog.prodMk ha)
   continuous_invFun :=
     ((Real.continuous_exp.comp Complex.continuous_re).prodMk
       Complex.continuous_im).subtype_mk _
 
 @[simp] theorem polarPointHomeomorphComplex_re (p : PolarPoint) :
-    (polarPointHomeomorphComplex p).re = Real.log (radius p) := rfl
+    (polarPointHomeomorphComplex p).re = Real.log (radius p) := (rfl)
 
 @[simp] theorem polarPointHomeomorphComplex_im (p : PolarPoint) :
-    (polarPointHomeomorphComplex p).im = angle p := rfl
+    (polarPointHomeomorphComplex p).im = angle p := (rfl)
+
+@[simp] theorem radius_polarPointHomeomorphComplex_symm (z : ℂ) :
+    radius (polarPointHomeomorphComplex.symm z) = Real.exp z.re := by
+  simp [radius_def, polarPointHomeomorphComplex]
+
+@[simp] theorem angle_polarPointHomeomorphComplex_symm (z : ℂ) :
+    angle (polarPointHomeomorphComplex.symm z) = z.im := by
+  simp [angle_def, polarPointHomeomorphComplex]
 
 /-- The polar projection, with its nonvanishing proof bundled in the codomain. -/
-@[expose] def projectionToNonzero (p : PolarPoint) : {z : ℂ // z ≠ 0} :=
+def projectionToNonzero (p : PolarPoint) : {z : ℂ // z ≠ 0} :=
   ⟨projection p, projection_ne_zero p⟩
+
+@[simp, grind =] theorem coe_projectionToNonzero (p : PolarPoint) :
+    (projectionToNonzero p : ℂ) = projection p := (rfl)
+
+@[simp, grind =] theorem projectionToNonzero_deckShift (k : ℤ) (p : PolarPoint) :
+    projectionToNonzero (deckShift k p) = projectionToNonzero p :=
+  Subtype.ext (projection_deckShift k p)
 
 /-- Under logarithmic coordinates, polar projection is complex exponentiation. -/
 theorem projectionToNonzero_eq_exp (p : PolarPoint) :
     projectionToNonzero p =
       ⟨Complex.exp (polarPointHomeomorphComplex p), Complex.exp_ne_zero _⟩ := by
   apply Subtype.ext
-  apply Complex.ext
-  · change (projection p).re = (Complex.exp (polarPointHomeomorphComplex p)).re
-    rw [re_projection, Complex.exp_re, polarPointHomeomorphComplex_re,
-      polarPointHomeomorphComplex_im, Real.exp_log (radius_pos p)]
-  · change (projection p).im = (Complex.exp (polarPointHomeomorphComplex p)).im
-    rw [im_projection, Complex.exp_im, polarPointHomeomorphComplex_re,
-      polarPointHomeomorphComplex_im, Real.exp_log (radius_pos p)]
+  apply Complex.ext <;>
+    simp [Complex.exp_re, Complex.exp_im, Real.exp_log (radius_pos p)]
 
 /-- The polar projection is a covering map of the punctured complex plane. -/
 theorem isCoveringMap_projectionToNonzero : IsCoveringMap projectionToNonzero := by
@@ -87,11 +92,8 @@ theorem projectionToNonzero_surjective : Function.Surjective projectionToNonzero
   rw [projectionToNonzero_eq_exp, Homeomorph.apply_symm_apply]
   exact Subtype.ext (Complex.exp_log z.property)
 
-/-- The total space of the polar covering is contractible. -/
+/-- The total space of the polar covering is contractible, hence simply connected. -/
 instance : ContractibleSpace PolarPoint :=
   polarPointHomeomorphComplex.contractibleSpace
-
-/-- The polar covering has simply connected total space, by contractibility. -/
-theorem simplyConnectedSpace_polarPoint : SimplyConnectedSpace PolarPoint := inferInstance
 
 end TauCeti.PolarGraph
