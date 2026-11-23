@@ -17,8 +17,9 @@ reductive group. A vector `v` is **`K`-finite** when its `K`-orbit `{π k v | k 
 finite-dimensional subspace. This is the `G`-finiteness predicate `Representation.IsGFinite` of the
 algebraic representation underlying the restriction `π.restrict K.subtype`, so the `K`-finite
 vectors `ContRepresentation.kFiniteSubmodule π K` and their elementary API (closure under the
-linear operations, invariance under `K`, preservation by intertwining maps) are those of
-`Representation.gFiniteSubmodule`, which is not restated here.
+linear operations, preservation by intertwining maps) are those of
+`Representation.gFiniteSubmodule`, which is not restated here. Only invariance under `K` is
+restated, so that it is phrased with `π (x : G)` rather than the restricted representation.
 
 Forgetting continuity and restricting to `K` produce exactly the orbit `{π k v | k ∈ K}` of the
 ambient space (`ContRepresentation.isKFinite_iff`), so the `K`-finite submodule is a subset of `E`
@@ -38,6 +39,8 @@ Every vector of a finite-dimensional space is `K`-finite by
 * `ContRepresentation.isKFinite_iff`: `K`-finiteness is finite dimensionality of the span of the
   orbit `π k v`, `k ∈ K`.
 * `ContRepresentation.IsKFinite.mono`: `K`-finiteness passes to smaller subgroups.
+* `ContRepresentation.IsKFinite.apply`, `ContRepresentation.apply_mem_kFiniteSubmodule`: the
+  `K`-finite vectors are invariant under `π x`, `x ∈ K`.
 * `ContRepresentation.isKFinite_top_iff`: `⊤`-finiteness is `G`-finiteness.
 * `ContRepresentation.kFiniteSubmodule_antitone`: the `K`-finite submodule grows as `K` shrinks.
 * `ContRepresentation.kFiniteSubmodule_top`: the `⊤`-finite submodule is the `G`-finite submodule.
@@ -90,6 +93,19 @@ theorem IsKFinite.mono {K' : Subgroup G} (hK : K' ≤ K) {v : E} (hv : π.IsKFin
     (Submodule.span_mono (t := Set.range fun x : K => π (x : G) v) ?_)
   rintro _ ⟨x, rfl⟩
   exact ⟨Subgroup.inclusion hK x, by simp only [Subgroup.coe_inclusion]⟩
+
+variable {π K} in
+/-- The `K`-finite vectors are invariant under `π x` for `x ∈ K`. -/
+theorem IsKFinite.apply {v : E} (hv : π.IsKFinite K v) (x : K) : π.IsKFinite K (π (x : G) v) :=
+  -- `π (x : G) v` is the restricted representation applied to `v`, by definition (see
+  -- `isKFinite_iff`).
+  Representation.IsGFinite.apply hv x
+
+/-- The `K`-finite submodule is invariant under `π x` for `x ∈ K`. -/
+theorem apply_mem_kFiniteSubmodule {v : E} (hv : v ∈ π.kFiniteSubmodule K) (x : K) :
+    π (x : G) v ∈ π.kFiniteSubmodule K :=
+  (Representation.mem_gFiniteSubmodule _).2 <|
+    IsKFinite.apply ((Representation.mem_gFiniteSubmodule _).1 hv) x
 
 /-- `K`-finiteness for the whole group `⊤` is `G`-finiteness of the underlying representation. -/
 theorem isKFinite_top_iff (v : E) : π.IsKFinite ⊤ v ↔ π.toRepresentation.IsGFinite v := by
