@@ -55,7 +55,9 @@ far out along the strip: its integrals over sets that eventually lie in `E` and 
 `|z.1| < R` tend to zero (`TauCeti.tendsto_setLIntegral_of_eventually_subset`). Applied to
 windows `[a + s_k, b + s_k] × T` with `|s_k| → ∞`, this says that a half-cylinder of finite energy
 carries less and less energy over its translated windows, since such windows eventually lie
-outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`).
+outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`). The translates
+`z + (s_k, 0)` of each point `z` of the strip then also eventually lie in `E`
+(`TauCeti.eventually_add_mem_of_eventually_Icc_prod_subset`).
 
 For a function on `α × ℝ` of period `c` in the second variable, as the energy density of a Floer
 cylinder is, the integrals over all horizontal strips `α × [τ, τ + c]` of width `c` agree
@@ -289,6 +291,14 @@ theorem eventually_Icc_add_prod_subset_inter {ι β : Type*} {l : Filter ι} {s 
   have h₂ : |s i| ≤ |z.1| + |z.1 - s i| := by
     simpa using abs_sub z.1 (z.1 - s i)
   exact (by linarith : R ≤ |z.1|)
+
+/-- If every translated window `[a + s_i, b + s_i] × T` eventually lies in `E`, then so does the
+translate `z + (s_i, 0)` of every point `z` of the strip `ℝ × T`. -/
+theorem eventually_add_mem_of_eventually_Icc_prod_subset {ι β : Type*} [AddZeroClass β]
+    {l : Filter ι} {s : ι → ℝ} {T : Set β} {E : Set (ℝ × β)}
+    (hW : ∀ a b : ℝ, ∀ᶠ i in l, Icc (a + s i) (b + s i) ×ˢ T ⊆ E) :
+    ∀ z ∈ (univ : Set ℝ) ×ˢ T, ∀ᶠ i in l, z + (s i, 0) ∈ E :=
+  fun z hz ↦ (hW z.1 z.1).mono fun _ hi ↦ hi ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩
 
 /-- **Integrals over sets escaping along the strip.** If `f` has finite integral over `E`, then its
 integrals over sets `A i` that eventually lie in `E` and outside every band `|z.1| < R` tend to
