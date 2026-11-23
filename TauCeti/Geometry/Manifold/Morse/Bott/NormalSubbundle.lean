@@ -113,7 +113,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- In the preferred normal-bundle trivialization at `s₀`, the negative and positive normal
 spaces relative to a `C^k` fibre metric are the images of the range and of the kernel of a `C^k`
 family of projections of the fibre model, which reads the projection onto the negative normal
-space along the positive one. This is `exists_contMDiffOn_projection_negativeNormalSpace` for the
+space along the positive one. This is `exists_contMDiffOn_negativeNormalProjection` for the
 metric read in the bundle chart at `s₀`. -/
 theorem exists_contMDiffOn_negativeNormalSpace_eq_map
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
@@ -151,7 +151,7 @@ theorem exists_contMDiffOn_negativeNormalSpace_eq_map
     ((g.inner s).toLinearMap₁₂.compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)).toContinuousBilinearMap
   have hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G e.baseSet :=
     e.contMDiffOn_compl₁₂_symmₗ g.contMDiff.contMDiffOn
-  obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_projection_negativeNormalSpace hn
+  obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_negativeNormalProjection hn
     g.toRiemannianMetric (le_self_add.trans hk) hf hdim s₀ hG fun s hs u v ↦ by
       simp only [← normalSpaceFiberBundle_trivializationAt] at hs ⊢
       simp only [G, LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply,
@@ -306,7 +306,7 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace_of_preconnectedSpac
 along the positive normal bundle, is a `C^k` map of total spaces. In the trivialization at any
 point it reads `(s, y) ↦ (s, p s y)` for the `C^k` family of projections `p` of
 `exists_contMDiffOn_negativeNormalSpace_eq_map`. -/
-theorem contMDiff_projection_negativeNormalSpace
+theorem contMDiff_negativeNormalProjection
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
@@ -352,7 +352,7 @@ theorem contMDiff_projection_negativeNormalSpace
 
 /-- Projecting the normal bundle onto the positive normal bundle relative to a `C^k` fibre metric,
 along the negative normal bundle, is a `C^k` map of total spaces: it is the identity minus the
-projection of `contMDiff_projection_negativeNormalSpace`. -/
+projection of `contMDiff_negativeNormalProjection`. -/
 theorem contMDiff_projection_positiveNormalSpace
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
@@ -382,7 +382,7 @@ theorem contMDiff_projection_positiveNormalSpace
   let := i.normalSpaceContMDiffVectorBundle hn hk hdim
   intro w₀
   have hA := Bundle.contMDiffAt_totalSpace_iff.mp
-    (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g w₀)
+    (contMDiff_negativeNormalProjection hn h hk hf hdim g w₀)
   rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨hA.1, ?_⟩
   set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj
@@ -455,7 +455,7 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
           ((h.negativeNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
             v.proj).toContinuousLinearEquiv v.snd)) := fun v ↦
     (hV'.contMDiffAt_totalSpace_mk le_rfl (b := TotalSpace.proj)
-      ((contMDiff_projection_negativeNormalSpace hn h hk hf hdim g').comp
+      ((contMDiff_negativeNormalProjection hn h hk hf hdim g').comp
         hV.contMDiff_totalSpace_inclusion v) fun _ ↦
           h.negativeNormalProjection_apply_mem hn _ _).congr_of_eventuallyEq
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
@@ -599,8 +599,8 @@ theorem contMDiff_normalMetricChange
   let := i.normalSpaceVectorBundle hn hdim
   -- The change of metric is the sum of the composites of the projections for `g₀` and for `g₁`
   -- (`normalMetricChange_apply`), and each projection is a `C^k` map of total spaces.
-  have hA := (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₁).comp
-    (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₀)
+  have hA := (contMDiff_negativeNormalProjection hn h hk hf hdim g₁).comp
+    (contMDiff_negativeNormalProjection hn h hk hf hdim g₀)
   have hB := (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₁).comp
     (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₀)
   exact (hA.add_sectionAlong hB).congr fun v ↦ by

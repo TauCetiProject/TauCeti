@@ -31,7 +31,7 @@ normal-bundle trivialization at any point, with fibre model `P`, write the two f
 positive ones, the automorphism reads
 `p' ∘ p + (1 - p') ∘ (1 - p)` in the trivialization, a `C^k` family of invertible operators whose
 inverses form a `C^k` family as well (`exists_contMDiffOn_normalMetricChange`). The projections
-`p` and `p'` come from `exists_contMDiffOn_projection_negativeNormalSpace`. Hence a change of
+`p` and `p'` come from `exists_contMDiffOn_negativeNormalProjection`. Hence a change of
 fibre metric is a `C^k` automorphism of the normal bundle carrying the negative and positive
 normal spaces of one metric onto those of the other. No eigenbasis of the normal Hessian is
 chosen.
@@ -221,9 +221,9 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
   set e := i.normalSpaceTrivialization hn hdim s₀
   set V := U ∩ e.baseSet
   obtain ⟨p, hp, hps⟩ :=
-    h.exists_contMDiffOn_projection_negativeNormalSpace hn g hk hf hdim s₀ hG hGg
+    h.exists_contMDiffOn_negativeNormalProjection hn g hk hf hdim s₀ hG hGg
   obtain ⟨p', hp', hps'⟩ :=
-    h.exists_contMDiffOn_projection_negativeNormalSpace hn g' hk hf hdim s₀ hG' hGg'
+    h.exists_contMDiffOn_negativeNormalProjection hn g' hk hf hdim s₀ hG' hGg'
   -- In the trivialization, the change of metric is `p' ∘ p + (1 - p') ∘ (1 - p)`.
   set A : S → P →L[ℝ] P := fun s ↦ (p' s).comp (p s) + (1 - p' s).comp (1 - p s)
   have hsub {q : S → P →L[ℝ] P} (hq : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k q V) :

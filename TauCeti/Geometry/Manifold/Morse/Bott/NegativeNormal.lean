@@ -43,16 +43,16 @@ No eigenbasis of the normal Hessian is chosen, so no smoothly varying eigenvecto
 
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
-* `exists_contMDiffOn_negativeNormalProjection`: in each normal-bundle trivialization, the
-  projections onto the negative normal spaces of a Morse–Bott submanifold relative to a `C^k` fibre
-  metric form a `C^k` family, of rank the Morse index; their ranges and kernels are the negative
-  and positive relative spectral subspaces.
+* `exists_contMDiffOn_relativeSpectralProjection_negativeNormalSpace`: in each normal-bundle
+  trivialization, the projections onto the negative normal spaces of a Morse–Bott submanifold
+  relative to a `C^k` fibre metric form a `C^k` family, of rank the Morse index; their ranges and
+  kernels are the negative and positive relative spectral subspaces.
 * `normalSpaceTrivialization_symm_negativeSpectralProjection_apply`: in a normal-bundle
   trivialization, the negative spectral projection of the normal Hessian relative to a fibre
   metric `g` reads the projection onto the negative normal space for `g`
   (`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.negativeNormalSpace`) along the positive normal
   space for `g`.
-* `exists_contMDiffOn_projection_negativeNormalSpace`: these projections form a `C^k` family in
+* `exists_contMDiffOn_negativeNormalProjection`: these projections form a `C^k` family in
   each normal-bundle trivialization, whose ranges and kernels read the negative and positive
   normal spaces.
 
@@ -93,8 +93,8 @@ kernel are the negative and positive relative spectral subspaces of `N s` with r
 They are orthogonal for both `G s` and `N s`, with `N s` negative definite on the range and
 positive definite on the kernel. The rank of `p s` is the Morse index of `f` at `i s`, and its
 nullity is the Morse index of `-f`. -/
-theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I (k + 2) M]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
+theorem exists_contMDiffOn_relativeSpectralProjection_negativeNormalSpace {k : ℕ∞ω}
+    [IsManifold I (k + 2) M] (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S)
     {U : Set S} {G : S → P →L[ℝ] P →L[ℝ] ℝ} (hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G U)
@@ -187,8 +187,8 @@ a `C^k` family `p` of projections of `P` whose ranges and kernels read, through 
 and positive normal spaces for `g`, and which reads the projection of the normal spaces onto the
 negative normal spaces for `g` along the positive normal spaces for `g`. The rank of `p s` is the
 Morse index of `f` at `i s`, and its nullity is the Morse index of `-f`. This identifies the family
-of `exists_contMDiffOn_negativeNormalProjection` for the fibre metric `g`. -/
-theorem exists_contMDiffOn_projection_negativeNormalSpace {k : ℕ∞ω} [IsManifold I (k + 2) M]
+of `exists_contMDiffOn_relativeSpectralProjection_negativeNormalSpace` for the fibre metric `g`. -/
+theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I (k + 2) M]
     (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
     (hk : k ≤ n) (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S)
@@ -218,8 +218,8 @@ theorem exists_contMDiffOn_projection_negativeNormalSpace {k : ℕ∞ω} [IsMani
   have hGpos (s : S) (hs : s ∈ V) (u : P) (hu : u ≠ 0) : 0 < G s u u := by
     rw [hGg s hs, ← Trivialization.linearEquivAt_symm_apply (R := ℝ) e s hs.2]
     exact g.pos s _ ((map_ne_zero_iff _ (e.linearEquivAt ℝ s hs.2).symm.injective).2 hu)
-  obtain ⟨p, hp, hprop⟩ := h.exists_contMDiffOn_negativeNormalProjection hn hk hf hdim s₀
-    (hG.mono inter_subset_left) hGsymm hGpos
+  obtain ⟨p, hp, hprop⟩ := h.exists_contMDiffOn_relativeSpectralProjection_negativeNormalSpace hn
+    hk hf hdim s₀ (hG.mono inter_subset_left) hGsymm hGpos
   rw [inter_assoc, inter_self] at hp hprop
   refine ⟨p, hp, fun s hs ↦ ?_⟩
   obtain ⟨hidem, hrange, hker, -, -, -, -, hrank, hnull⟩ := hprop s hs
