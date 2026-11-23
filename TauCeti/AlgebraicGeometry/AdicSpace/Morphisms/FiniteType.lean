@@ -365,7 +365,7 @@ theorem LocallyOfFiniteType.finiteType_of_discreteTopology {A B : Type u} [CommR
     RingHom.finiteType_holdsForLocalizationAway RingHom.finiteType_ofLocalizationSpanTarget
     P hP (hS.isSheaf P hP) P' hP' (hT.isSheaf P' hP') φ fun y ↦ ?_
   obtain ⟨TA, sA, hTA, -, CX, β, hβ, c₀, hc₀, hsq⟩ :=
-    hq.exists_openImmersion_over_rationalLocalization CA y rfl
+    hq.exists_openImmersion_over_rationalLocalization CA y (ofDiscrete_hom_base S P hP _ _)
   have : DiscreteTopology (CA.rationalLocalization TA sA hTA).Ring :=
     (CA.isTopologicallyFiniteType_rationalLocalizationHom TA sA
       hTA).isTopologicallyFiniteType_toRingHom.discreteTopology

@@ -273,7 +273,7 @@ theorem LocallyOfFinitePresentation.finitePresentation_of_discreteTopology {A B 
     RingHom.finitePresentation_ofLocalizationSpanTarget
     P hP hsheafA P' hP' (hT.isSheaf P' hP') φ fun y ↦ ?_
   obtain ⟨TA, sA, hTA, -, -, CX, β, hβ, hβ_fp, c₀, hc₀, hsq⟩ :=
-    hq.exists_openImmersion_over_rationalLocalization CA y rfl
+    hq.exists_openImmersion_over_rationalLocalization CA y (ofDiscrete_hom_base S P hP hsheafA _)
   have hDisc₁ : DiscreteTopology (CA.rationalLocalization TA sA hTA).Ring :=
     (CA.isTopologicallyFiniteType_rationalLocalizationHom TA sA
       hTA).isTopologicallyFiniteType_toRingHom.discreteTopology

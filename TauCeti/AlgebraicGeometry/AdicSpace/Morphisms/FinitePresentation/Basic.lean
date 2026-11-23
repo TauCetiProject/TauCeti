@@ -243,24 +243,18 @@ theorem LocallyOfFinitePresentation.of_isOpenImmersion (f : X ⟶ Y)
   have heUV := IsOpenImmersion.isoOfRangeEq_hom_comp
     (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom) (Y.obj.ofRestrict V.isOpenEmbedding) hrange
   let eU := eUV ≪≫ eV
-  refine ⟨U, hfxV, V, le_rfl, A, inferInstance, inferInstance, inferInstance, inferInstance,
-      inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP, A, inferInstance,
-      inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, S,
-      P, hP, Pair.Hom.id S, Pair.Hom.isTopologicallyFiniteType_id S,
-      fun _ ↦ by simpa [Pair.Hom.toRingHom_id] using RingHom.FinitePresentation.id A,
-      hsheafA, eU, eV, ?_⟩
-  have hid : presentationLimitPreAdicSpaceComap (Pair.Hom.id S).toRingHom
-      (Pair.Hom.id S).continuous_toRingHom (Pair.Hom.id S).map_mem_plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP hP hsheafA = 𝟙 _ :=
-    (presentationLimitPreAdicSpacePairComap_def ..).symm.trans
-      (presentationLimitPreAdicSpacePairComap_id P hP hsheafA)
-  rw [hid]
-  calc
-    X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom
-      = eUV.hom ≫ Y.obj.ofRestrict V.isOpenEmbedding := heUV.symm
-    _ = eU.hom ≫ 𝟙 _ ≫ eV.inv ≫ Y.obj.ofRestrict V.isOpenEmbedding := by
-        simp only [eU, Iso.trans_hom, Category.assoc, Iso.hom_inv_id_assoc, Category.id_comp]
+  let CY := ofRestrictIso S P hP hsheafA eV
+  let CX := ofRestrictIso S P hP hsheafA eU
+  have : IsHuberStandard CY.Ring := inferInstanceAs (IsHuberStandard A)
+  have hsq : CY.pairComap CX (Pair.Hom.id S) ≫ CY.hom = CX.hom ≫ f.hom := by
+    refine ofRestrictIso_pairComap_comp_hom S P hP hsheafA eV S P hP hsheafA eU (Pair.Hom.id S) ?_
+    rw [← presentationLimitPreAdicSpacePairComap_def, presentationLimitPreAdicSpacePairComap_id]
+    simpa only [eU, Iso.trans_hom, Category.assoc, Iso.hom_inv_id_assoc, Category.id_comp] using
+      heUV.symm
+  exact locallyOfFinitePresentationAt_of_openImmersion_sq CY CX (Pair.Hom.id S)
+    (Pair.Hom.isTopologicallyFiniteType_id S)
+    (fun _ ↦ (Pair.Hom.toRingHom_id S).symm ▸ RingHom.FinitePresentation.id A)
+    (ofRestrictIso_hom_base S P hP hsheafA eU hfxV) hsq
 
 /-- **Identities on adic spaces locally of Huber's standing class are locally of finite
 presentation** (the standing-class hypothesis `hX : X.IsLocallyHuberStandard` is necessary; see

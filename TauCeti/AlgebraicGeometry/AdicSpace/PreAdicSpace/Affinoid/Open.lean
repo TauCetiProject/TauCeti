@@ -221,19 +221,37 @@ theorem ofRestrictIso_pairComap_comp_hom (φ : Pair.Hom S T) {f : Y ⟶ X}
 
 end OfRestrictIso
 
+section OfDiscrete
+
+variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [DiscreteTopology A] [IsHuberRing A] (S : Pair A) (P : PairOfDefinition A)
+  (hP : P.ringOfDefinition ≤ S.plus)
+  (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
+    (presentationLimitPresheaf P S.plus))
+
 /-- Package a discrete Huber ring `A` with a sheafy presentation `(P, S)` as a self-chart
 `CompleteAffinoidOpen` via the identity open immersion `𝟙 Spa(S)`. -/
-noncomputable abbrev ofDiscrete {A : Type u} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [DiscreteTopology A] [IsHuberRing A]
-    (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
-      (presentationLimitPresheaf P S.plus)) :
+noncomputable abbrev ofDiscrete :
     CompleteAffinoidOpen (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
   letI : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
   haveI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   haveI : DiscreteUniformity A := IsRightUniformAddGroup.discreteUniformity
   { Ring := A, pair := S, pairOfDefinition := P, le_plus := hP, isSheaf := hsheaf, hom := 𝟙 _ }
+
+/-- The open immersion of `ofDiscrete S P hP hsheaf` is the identity morphism `𝟙 _`. -/
+@[simp]
+theorem ofDiscrete_hom : (ofDiscrete S P hP hsheaf).hom = 𝟙 _ := rfl
+
+/-- On underlying points, `(ofDiscrete S P hP hsheaf).hom.base` is the identity map. -/
+@[simp]
+theorem ofDiscrete_hom_base (x : (ofDiscrete S P hP hsheaf).space) :
+    (ofDiscrete S P hP hsheaf).hom.base x = x :=
+  (congrFun (congrArg
+      (fun m : (ofDiscrete S P hP hsheaf).space ⟶ (ofDiscrete S P hP hsheaf).space ↦ ⇑m.base)
+      (ofDiscrete_hom S P hP hsheaf)) x).trans (by simp [PreAdicSpace.id_toHom])
+
+end OfDiscrete
 
 /-- Postcompose a `CompleteAffinoidOpen X` with an open immersion `g : X ⟶ Y` to obtain a
 `CompleteAffinoidOpen Y` with the same underlying complete Hausdorff Huber pair. -/
@@ -659,20 +677,10 @@ private theorem exists_rationalLocalization_ringEquiv_of_subset
   have heCB' : eCB.symm.hom ≫ CX₁.hom = CT.hom := IsOpenImmersion.isoOfRangeEq_inv_comp ..
   have hγ : CX₁.pairComap CT γ = eCB.symm.hom :=
     presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom ..
-  have hpath : γ.comp (ιC.comp α) = ιB.comp φ := by
-    apply CA.pairComap_injective CT
-    calc
-      CA.pairComap CT (γ.comp (ιC.comp α))
-        = eCB.symm.hom ≫ CX.pairComap CX₁ ιC ≫ CA.pairComap CX α := by
-            rw [CA.pairComap_comp CX₁ CT, CA.pairComap_comp CX CX₁, hγ]
-      _ = eCB.symm.hom ≫ CX.pairComap CX₁ ιC ≫ CX.hom ≫ CA.pairComap CB φ := by rw [hsq_α]
-      _ = (eCB.symm.hom ≫ (CX.pairComap CX₁ ιC ≫ CX.hom)) ≫ CA.pairComap CB φ := by
-            simp only [Category.assoc]
-      _ = (eCB.symm.hom ≫ CX₁.hom) ≫ CA.pairComap CB φ := by rw [← rationalLocalization_hom]
-      _ = CT.hom ≫ CA.pairComap CB φ := by rw [heCB']
-      _ = CB.pairComap CT ιB ≫ CA.pairComap CB φ := by
-            rw [ofRationalLocalization_hom, Category.comp_id]
-      _ = CA.pairComap CT (ιB.comp φ) := by rw [CA.pairComap_comp CB CT]
+  have hpath : γ.comp (ιC.comp α) = ιB.comp φ := CA.pairComap_injective CT <| by
+    rw [CA.pairComap_comp CX₁ CT, CA.pairComap_comp CX CX₁, hγ, hsq_α,
+      ← Category.assoc (CX.pairComap CX₁ ιC), ← rationalLocalization_hom, ← Category.assoc, heCB',
+      CA.pairComap_comp CB CT, ofRationalLocalization_hom, Category.comp_id]
   refine ⟨TC, sC, hTC, eγ, ?_⟩
   rw [RingEquiv.toRingHom_eq_coe, coe_ringEquivOfIso, ← Pair.Hom.toRingHom_comp]
   exact congrArg Pair.Hom.toRingHom hpath
@@ -710,8 +718,9 @@ private theorem exists_away_comp_of_rational_chart_discrete
   let CB := ofDiscrete T P' hP' hsheafB
   let ιA := toRationalLocalizationHom P hP hsheafA (𝟙 _) TA sA hTA
   have hsq_α : CA.pairComap CX (β.comp ιA) = CX.hom ≫ CA.pairComap CB φ :=
-    (Category.comp_id _).symm.trans
-      ((CA.pairComap_comp_rationalLocalizationHom_comp_hom CX β).trans hsq)
+    (Category.comp_id _).symm.trans <|
+      (congrArg (CA.pairComap CX (β.comp ιA) ≫ ·) (ofDiscrete_hom S P hP hsheafA).symm).trans <|
+        (CA.pairComap_comp_rationalLocalizationHom_comp_hom CX β).trans hsq
   let OB : Opens (presentationLimitPreAdicSpace P' T.plus
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP') :=
     ⟨Set.range CX.hom.base, CX.hom.isOpenEmbedding.isOpen_range⟩
@@ -721,21 +730,13 @@ private theorem exists_away_comp_of_rational_chart_discrete
   obtain ⟨TC, sC, hTC, eγ, he_comp⟩ :=
     exists_rationalLocalization_ringEquiv_of_subset CA CB φ CX (β.comp ιA) hsq_α TB sB hTB hRBO
   let ιC := CX.rationalLocalizationHom TC sC hTC
-  let ιB := toRationalLocalizationHom P' hP' hsheafB (𝟙 _) TB sB hTB
   let eB := ofRationalLocalizationAwayEquiv P' hP' hsheafB (𝟙 _) TB sB hTB; let e := eγ.trans eB
   have hmap_eq : (algebraMap B (Localization.Away sB)).comp φ.toRingHom =
       e.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom := by
-    calc
-      (algebraMap B (Localization.Away sB)).comp φ.toRingHom
-        = (eB.toRingHom.comp ιB.toRingHom).comp φ.toRingHom := by
-            rw [RingEquiv.toRingHom_eq_coe,
-              ofRationalLocalizationAwayEquiv_comp_toRationalLocalizationHom]
-      _ = eB.toRingHom.comp (ιB.comp φ).toRingHom := by
-            rw [RingHom.comp_assoc, Pair.Hom.toRingHom_comp]
-      _ = eB.toRingHom.comp (eγ.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom) := by rw [he_comp]
-      _ = (eB.toRingHom.comp eγ.toRingHom).comp (ιC.comp (β.comp ιA)).toRingHom := by
-            rw [← RingHom.comp_assoc]
-      _ = e.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom := by rw [← RingEquiv.toRingHom_trans']
+    rw [← ofRationalLocalizationAwayEquiv_comp_toRationalLocalizationHom P' hP' hsheafB (𝟙 _) TB sB
+        hTB,
+      ← RingEquiv.toRingHom_eq_coe, RingHom.comp_assoc, ← Pair.Hom.toRingHom_comp, ← he_comp,
+      ← RingHom.comp_assoc, ← RingEquiv.toRingHom_trans']
   have hRA : R ιA.toRingHom :=
     ringHom_prop_toRationalLocalizationHom_of_discreteTopology _ _ _ _ _ _ _ hiso hloc
   have hRC := CX.ringHom_prop_rationalLocalizationHom_of_discreteTopology hiso hloc TC sC hTC
