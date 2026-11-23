@@ -482,8 +482,8 @@ theorem duistermaatHeckmanMeasure_sphereAreaForm_height :
 theorem liouvilleMeasure_sphereAreaForm_setOf_mem_Icc {a b : ℝ} (ha : -1 ≤ a) (hb : b ≤ 1) :
     sphereAreaForm.liouvilleMeasure 1 {x : S² | (x : ℝ³) 2 ∈ Icc a b} =
       ENNReal.ofReal (2 * π * (b - a)) := by
-  change sphereAreaForm.liouvilleMeasure 1 ((fun x : S² ↦ (x : ℝ³) 2) ⁻¹' Icc a b) = _
-  rw [← SmoothTwoForm.duistermaatHeckmanMeasure_apply measurable_height measurableSet_Icc,
+  rw [← preimage_ofPred_eq (f := fun x : S² ↦ (x : ℝ³) 2) (p := (· ∈ Icc a b)), ofPred_mem_eq,
+    ← SmoothTwoForm.duistermaatHeckmanMeasure_apply measurable_height measurableSet_Icc,
     duistermaatHeckmanMeasure_sphereAreaForm_height, smul_apply,
     Measure.restrict_apply measurableSet_Icc, inter_eq_left.2 (Icc_subset_Icc ha hb),
     Real.volume_Icc, smul_eq_mul, ← ENNReal.ofReal_mul (by positivity)]
