@@ -101,10 +101,10 @@ theorem intervalIntegrable_clm_apply_add (hab : a ≤ b) (hM : IntegrableOn M (I
     IntervalIntegrable (fun s ↦ M s (x s) + F s) volume a b :=
   (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 (integrableOn_Icc_clm_apply_add hM hF hx)
 
-namespace CaratheodoryLinear
-
-/-- The integral of `‖M‖` between two points of `[a, b]` is at most its integral over `[a, b]`. -/
-private theorem abs_integral_norm_le (hM : IntegrableOn M (Icc a b)) {c d : ℝ}
+/-- For a function `M` into a normed group, integrable on `[a, b]`, the integral of `‖M‖` between
+two points of `[a, b]` is at most its integral over `[a, b]`. -/
+theorem abs_integral_norm_le {G : Type*} [NormedAddCommGroup G] {M : ℝ → G}
+    (hM : IntegrableOn M (Icc a b)) {c d : ℝ}
     (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
     |∫ s in c..d, ‖M s‖| ≤ ∫ s in a..b, ‖M s‖ := by
   rw [abs_integral_eq_abs_integral_uIoc, abs_of_nonneg (setIntegral_nonneg measurableSet_uIoc
@@ -114,9 +114,9 @@ private theorem abs_integral_norm_le (hM : IntegrableOn M (Icc a b)) {c d : ℝ}
   exact setIntegral_mono_set (IntegrableOn.mono_set hM.norm Ioc_subset_Icc_self)
     (ae_of_all _ fun _ ↦ norm_nonneg _) hsub.eventuallySubset
 
-/-- With `Λ s = ∫ r in t₀..s, ‖M r‖`, the integral of `‖M‖ |Λ| ^ n` from `t₀` to `t` is
-`|Λ t| ^ (n + 1) / (n + 1)`, in either order of `t₀` and `t`. -/
-private theorem abs_integral_norm_mul_abs_pow {t : ℝ}
+/-- With `Λ s = ∫ r in t₀..s, ‖M r‖` for a function `M` into a normed group, the integral of
+`‖M‖ |Λ| ^ n` from `t₀` to `t` is `|Λ t| ^ (n + 1) / (n + 1)`, in either order of `t₀` and `t`. -/
+theorem abs_integral_norm_mul_abs_pow {G : Type*} [NormedAddCommGroup G] {M : ℝ → G} {t₀ t : ℝ}
     (hM : IntervalIntegrable (fun s ↦ ‖M s‖) volume t₀ t) (n : ℕ) :
     |∫ s in t₀..t, ‖M s‖ * |∫ r in t₀..s, ‖M r‖| ^ n| =
       |∫ s in t₀..t, ‖M s‖| ^ (n + 1) / (n + 1) := by
@@ -140,6 +140,8 @@ private theorem abs_integral_norm_mul_abs_pow {t : ℝ}
     ring
   rw [h, hM.integral_mul_pow_integral]
   simp [abs_mul, abs_div, abs_pow, hσ, abs_of_pos (by positivity : (0 : ℝ) < n + 1)]
+
+namespace CaratheodoryLinear
 
 /-- The Picard map `y ↦ x₀ + ∫_{t₀}^t (M s (y s) + F s) ds` on `C([a, b], E)`. -/
 private noncomputable def next (ht₀ : t₀ ∈ Icc a b) (hM : IntegrableOn M (Icc a b))
