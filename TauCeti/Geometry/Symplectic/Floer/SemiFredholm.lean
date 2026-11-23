@@ -173,6 +173,18 @@ theorem IsCylindricalNearEnds.eq_projIcc (hcyl : IsCylindricalNearEnds J Ks Kt J
   · rw [projIcc_of_mem _ ⟨hs.le, hs'.le⟩]
     exact ⟨rfl, rfl, rfl⟩
 
+/-- Floer data cylindrical near the ends with radius `R` are cylindrical near the ends with every
+larger radius. -/
+theorem IsCylindricalNearEnds.mono (hcyl : IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    {R' : ℝ} (hR : R ≤ R') : IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R' u :=
+  { hcyl with
+    almostComplex_eq_of_le_neg := fun z hz ↦ hcyl.almostComplex_eq_of_le_neg z (by linarith)
+    almostComplex_eq_of_le := fun z hz ↦ hcyl.almostComplex_eq_of_le z (hR.trans hz)
+    hamiltonianS_eq_zero := fun z hz ↦ hcyl.hamiltonianS_eq_zero z fun h ↦
+      hz ⟨by linarith [h.1], by linarith [h.2]⟩
+    hamiltonianT_eq_of_le_neg := fun z hz ↦ hcyl.hamiltonianT_eq_of_le_neg z (by linarith)
+    hamiltonianT_eq_of_le := fun z hz ↦ hcyl.hamiltonianT_eq_of_le z (hR.trans hz) }
+
 end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm

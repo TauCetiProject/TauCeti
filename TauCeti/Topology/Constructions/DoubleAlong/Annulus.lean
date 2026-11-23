@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Constructions.DoubleAlong.Basic
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Analysis.Complex.ClosedAnnulus
 public import Mathlib.Topology.Order.ProjIcc
 

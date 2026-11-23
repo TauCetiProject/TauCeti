@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Chart
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
