@@ -435,6 +435,46 @@ theorem germHom_surjective (P : Sheaf (jointlySurjectiveTopology G) (Type u))
   change germ P.obj S s z = φ s
   rw [← hpa s, ← germ_map, hz, hd]
 
+variable (G)
+
+/-- Sheaves on finite continuous `G`-sets give smooth `G`-sets, by taking the stalk. -/
+noncomputable def fromSheaf : Sheaf (jointlySurjectiveTopology G) (Type u) ⥤ SmoothSet G :=
+  ObjectProperty.lift _ (sheafToPresheaf _ _ ⋙ stalk G) fun P ↦ isSmooth_stalk P.obj
+
+/-- Smooth `G`-sets give sheaves on finite continuous `G`-sets, by taking `G`-maps into them. -/
+noncomputable def toSheaf : SmoothSet G ⥤ Sheaf (jointlySurjectiveTopology G) (Type u) :=
+  ObjectProperty.lift _ ((isSmooth G).ι ⋙ homPresheaf G) fun X ↦ isSheaf_homPresheaf X.obj
+
+/-- The unit of `sheafEquiv`: a sheaf maps to `G`-maps into its stalk. -/
+noncomputable def sheafEquivUnit : 𝟭 _ ⟶ fromSheaf G ⋙ toSheaf G where
+  app P := ObjectProperty.homMk ((germNatTrans G).app P.obj)
+  naturality _ _ f := ObjectProperty.hom_ext _ ((germNatTrans G).naturality f.hom)
+
+/-- The counit of `sheafEquiv`: evaluation of germs of `G`-maps into a smooth `G`-set. -/
+noncomputable def sheafEquivCounit : toSheaf G ⋙ fromSheaf G ⟶ 𝟭 _ where
+  app X := ObjectProperty.homMk (evalAction X.obj)
+  naturality X Y f := by
+    refine ObjectProperty.hom_ext _ (Action.hom_ext _ _ ?_)
+    ext p
+    obtain ⟨S, s, φ, rfl⟩ :=
+      (point G).toPresheafFiber_jointly_surjective (P := (homPresheaf G).obj X.obj) p
+    change evalStalk Y.obj ((point G).presheafFiber.map ((homPresheaf G).map f.hom)
+      (germ _ S s φ)) = f.hom.hom (evalStalk X.obj (germ _ S s φ))
+    rw [GrothendieckTopology.Point.toPresheafFiber_naturality_apply]
+    exact (evalStalk_germ Y.obj S s _).trans
+      (congrArg f.hom.hom (evalStalk_germ X.obj S s φ)).symm
+
+instance instIsIsoSheafEquivUnit : IsIso (sheafEquivUnit G) := by
+  refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun P ↦ ?_
+  have : IsIso ((germNatTrans G).app P.obj) := by
+    refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun S ↦ ?_
+    exact (isIso_iff_bijective _).2 ⟨fun z₁ z₂ h ↦ germ_ext P fun s ↦
+      congr(homPresheafObjEquiv _ _ $h s), germHom_surjective P S.unop⟩
+  have : IsIso ((ObjectProperty.ι _).map ((sheafEquivUnit G).app P)) := this
+  exact (ObjectProperty.fullyFaithfulι _).isIso_of_isIso_map ((sheafEquivUnit G).app P)
+
+variable {G}
+
 variable [CompactSpace G]
 
 /-- For compact `G`, orbits in a smooth `G`-set are finite. -/
@@ -483,42 +523,6 @@ theorem evalStalk_bijective {X : Action (Type u) G} (hX : isSmooth G X) :
       evalStalk_germ _ _ _ _⟩
 
 variable (G)
-
-/-- Sheaves on finite continuous `G`-sets give smooth `G`-sets, by taking the stalk. -/
-noncomputable def fromSheaf : Sheaf (jointlySurjectiveTopology G) (Type u) ⥤ SmoothSet G :=
-  ObjectProperty.lift _ (sheafToPresheaf _ _ ⋙ stalk G) fun P ↦ isSmooth_stalk P.obj
-
-/-- Smooth `G`-sets give sheaves on finite continuous `G`-sets, by taking `G`-maps into them. -/
-noncomputable def toSheaf : SmoothSet G ⥤ Sheaf (jointlySurjectiveTopology G) (Type u) :=
-  ObjectProperty.lift _ ((isSmooth G).ι ⋙ homPresheaf G) fun X ↦ isSheaf_homPresheaf X.obj
-
-/-- The unit of `sheafEquiv`: a sheaf maps to `G`-maps into its stalk. -/
-noncomputable def sheafEquivUnit : 𝟭 _ ⟶ fromSheaf G ⋙ toSheaf G where
-  app P := ObjectProperty.homMk ((germNatTrans G).app P.obj)
-  naturality _ _ f := ObjectProperty.hom_ext _ ((germNatTrans G).naturality f.hom)
-
-/-- The counit of `sheafEquiv`: evaluation of germs of `G`-maps into a smooth `G`-set. -/
-noncomputable def sheafEquivCounit : toSheaf G ⋙ fromSheaf G ⟶ 𝟭 _ where
-  app X := ObjectProperty.homMk (evalAction X.obj)
-  naturality X Y f := by
-    refine ObjectProperty.hom_ext _ (Action.hom_ext _ _ ?_)
-    ext p
-    obtain ⟨S, s, φ, rfl⟩ :=
-      (point G).toPresheafFiber_jointly_surjective (P := (homPresheaf G).obj X.obj) p
-    change evalStalk Y.obj ((point G).presheafFiber.map ((homPresheaf G).map f.hom)
-      (germ _ S s φ)) = f.hom.hom (evalStalk X.obj (germ _ S s φ))
-    rw [GrothendieckTopology.Point.toPresheafFiber_naturality_apply]
-    exact (evalStalk_germ Y.obj S s _).trans
-      (congrArg f.hom.hom (evalStalk_germ X.obj S s φ)).symm
-
-instance instIsIsoSheafEquivUnit : IsIso (sheafEquivUnit G) := by
-  refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun P ↦ ?_
-  have : IsIso ((germNatTrans G).app P.obj) := by
-    refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun S ↦ ?_
-    exact (isIso_iff_bijective _).2 ⟨fun z₁ z₂ h ↦ germ_ext P fun s ↦
-      congr(homPresheafObjEquiv _ _ $h s), germHom_surjective P S.unop⟩
-  have : IsIso ((ObjectProperty.ι _).map ((sheafEquivUnit G).app P)) := this
-  exact (ObjectProperty.fullyFaithfulι _).isIso_of_isIso_map ((sheafEquivUnit G).app P)
 
 instance instIsIsoSheafEquivCounit : IsIso (sheafEquivCounit G) := by
   refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun X ↦ ?_
