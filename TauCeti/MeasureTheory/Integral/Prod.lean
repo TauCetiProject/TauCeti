@@ -45,6 +45,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.enorm_integral_setIntegral_le_lintegral_lintegral` bounds an iterated integral
   truncated to a region `s ∈ S t` (such as `s < t`) by the iterated integral of the norm, as used
   to pass from bilinear to retarded estimates.
+* `TauCeti.integral_setIntegral_Iio_eq_setIntegral` writes the iterated integral
+  `∫ ∫_{s < t} f(s, t) ds dt` as the integral of `f` over the region `{(s, t) | s < t}`.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
@@ -308,5 +310,18 @@ theorem enorm_integral_setIntegral_le_lintegral_lintegral {S : α → Set β} {�
     _ ≤ ∫⁻ t, ∫⁻ s in S t, ‖f s t‖ₑ ∂ρ ∂μ :=
         lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _
     _ ≤ _ := lintegral_mono fun _ ↦ setLIntegral_le_lintegral _ _
+
+/-- The iterated integral `∫ ∫_{s < t} f(s, t) ds dt` of a function integrable on the region
+`{(s, t) | s < t}` is its integral over that region. -/
+theorem integral_setIntegral_Iio_eq_setIntegral {μ ν : Measure ℝ} [SFinite μ] [SFinite ν]
+    {f : ℝ × ℝ → E} (hf : IntegrableOn f {z : ℝ × ℝ | z.1 < z.2} (μ.prod ν)) :
+    ∫ t, ∫ s in Iio t, f (s, t) ∂μ ∂ν = ∫ z in {z : ℝ × ℝ | z.1 < z.2}, f z ∂(μ.prod ν) := by
+  have hmeas : MeasurableSet {z : ℝ × ℝ | z.1 < z.2} :=
+    measurableSet_lt measurable_fst measurable_snd
+  rw [← integral_indicator hmeas, integral_prod_symm _ ((integrable_indicator_iff hmeas).2 hf)]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [← integral_indicator measurableSet_Iio]
+  exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
 
 end TauCeti
