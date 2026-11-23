@@ -8,9 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.Topology.Algebra.Module.Determinant
-import Mathlib.Algebra.Order.Interval.Set.Group
-import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.MeasureTheory.Measure.IntegerSlabs
 
 /-!
 # Affine change of variables for Bochner integrals
@@ -95,11 +94,6 @@ private theorem integral_eq_zero_of_add_zsmul_eq {V E : Type*} [NormedAddCommGro
   · exact integral_undef hint
   obtain ⟨φ, hφ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hk
   let T : ℤ → Set V := fun n ↦ φ ⁻¹' Ico (n : ℝ) (n + 1)
-  have hTm : ∀ n, MeasurableSet (T n) := fun n ↦ φ.continuous.measurable measurableSet_Ico
-  have hTd : Pairwise (Function.onFun Disjoint T) := fun m n hmn ↦
-    (Set.pairwise_disjoint_Ico_intCast ℝ hmn).preimage φ
-  have hTu : ⋃ n, T n = univ := by
-    rw [← preimage_iUnion, iUnion_Ico_intCast, preimage_univ]
   -- Translation by `n • k` carries the strip `T 0` onto `T n`.
   have hTn : ∀ n : ℤ, (· + n • k) ⁻¹' T n = T 0 := fun n ↦ by
     ext x
@@ -116,8 +110,11 @@ private theorem integral_eq_zero_of_add_zsmul_eq {V E : Type*} [NormedAddCommGro
     rw [← hTn n, ← (hν n).setLIntegral_comp_preimage_emb (he n)]
     simp only [hg]
   have hsum : ∫⁻ x, ‖g x‖ₑ ∂ν = ∑' _ : ℤ, ∫⁻ x in T 0, ‖g x‖ₑ ∂ν := by
-    rw [← setLIntegral_univ, ← hTu, lintegral_iUnion hTm hTd]
-    exact tsum_congr hc
+    have h := TauCeti.measure_eq_tsum_inter_preimage_Ico (μ := ν.withDensity fun x ↦ ‖g x‖ₑ)
+      φ.continuous.measurable nullMeasurableSet_univ
+    simp only [univ_inter, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ,
+      withDensity_apply _ (φ.continuous.measurable measurableSet_Ico)] at h
+    exact h.trans (tsum_congr hc)
   have h0 : ∫⁻ x in T 0, ‖g x‖ₑ ∂ν = 0 := by
     by_contra h
     have hfin : ∫⁻ x, ‖g x‖ₑ ∂ν < ⊤ := hint.2
