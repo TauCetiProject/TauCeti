@@ -17,9 +17,11 @@ of `b` are the `n` quadratic Hamiltonians
 
 `Hₖ = xₖ yₖ`
 
-(`TauCeti.SymplecticForm.hyperbolic b`). The Hamiltonian endomorphism of `Hₖ` is the hyperbolic
-scaling of the plane `span(qₖ, pₖ)`, `qₖ ↦ qₖ` and `pₖ ↦ -pₖ`, and it kills the other basis
-vectors (`IsDarbouxBasis.hamiltonianEnd_hyperbolic_apply_fst`,
+(`TauCeti.SymplecticForm.hyperbolic b`). More generally, the Hamiltonian endomorphism of a
+product `xᵢ yⱼ` of two coordinates sends `u` to `xᵢ(u) qⱼ - yⱼ(u) pᵢ`
+(`IsDarbouxBasis.hamiltonianEnd_linMulLin_coord_apply`). The Hamiltonian endomorphism of `Hₖ`
+is the hyperbolic scaling of the plane `span(qₖ, pₖ)`, `qₖ ↦ qₖ` and `pₖ ↦ -pₖ`, and it kills the
+other basis vectors (`IsDarbouxBasis.hamiltonianEnd_hyperbolic_apply_fst`,
 `IsDarbouxBasis.hamiltonianEnd_hyperbolic_apply_snd`), so `(qₖ, pₖ)` is a hyperbolic normal pair
 in the sense of `TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Plane`, and the `Hₖ` pairwise
 Poisson-commute (`IsDarbouxBasis.quadraticPoissonBracket_hyperbolic`).
@@ -68,29 +70,31 @@ theorem polar_hyperbolic (b : Basis (Fin n × Fin 2) ℝ V) (k : Fin n) (u v : V
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {b : Basis (Fin n × Fin 2) ℝ V}
 
+/-- In a Darboux basis, the Hamiltonian endomorphism of the product `qᵢ pⱼ` of two coordinates
+sends `u` to `qᵢ(u) qⱼ - pⱼ(u) pᵢ`. -/
+theorem IsDarbouxBasis.hamiltonianEnd_linMulLin_coord_apply (hb : ω.IsDarbouxBasis b)
+    (i j : Fin n) (u : V) :
+    ω.hamiltonianEnd (QuadraticMap.linMulLin (b.coord (i, 0)) (b.coord (j, 1))) u =
+      b.coord (i, 0) u • b (j, 0) - b.coord (j, 1) u • b (i, 1) := by
+  refine ω.hamiltonianEnd_apply_eq_of_basis b fun c ↦ ?_
+  simp only [Basis.coord_apply, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
+    hb.apply_fst, hb.apply_snd, Basis.repr_self, smul_eq_mul, QuadraticMap.polar,
+    QuadraticMap.linMulLin_apply, map_add]
+  ring
+
 /-- In a Darboux basis, the Hamiltonian endomorphism of the hyperbolic block `Hₖ` fixes `qₖ` and
 sends the other `qⱼ` to `0`. -/
 theorem IsDarbouxBasis.hamiltonianEnd_hyperbolic_apply_fst (hb : ω.IsDarbouxBasis b)
     (k j : Fin n) :
     ω.hamiltonianEnd (hyperbolic b k) (b (j, 0)) = if j = k then b (k, 0) else 0 := by
-  refine ω.hamiltonianEnd_apply_eq_of_basis b fun c ↦ ?_
-  rw [polar_hyperbolic]
-  split_ifs with h
-  · subst h
-    simp [hb.apply_fst]
-  · simp [Finsupp.single_apply, h]
+  simp [hyperbolic, hb.hamiltonianEnd_linMulLin_coord_apply, Finsupp.single_apply]
 
 /-- In a Darboux basis, the Hamiltonian endomorphism of the hyperbolic block `Hₖ` sends `pₖ` to
 `-pₖ` and the other `pⱼ` to `0`. -/
 theorem IsDarbouxBasis.hamiltonianEnd_hyperbolic_apply_snd (hb : ω.IsDarbouxBasis b)
     (k j : Fin n) :
     ω.hamiltonianEnd (hyperbolic b k) (b (j, 1)) = if j = k then -b (k, 1) else 0 := by
-  refine ω.hamiltonianEnd_apply_eq_of_basis b fun c ↦ ?_
-  rw [polar_hyperbolic]
-  split_ifs with h
-  · subst h
-    simp [hb.apply_snd]
-  · simp [Finsupp.single_apply, h]
+  simp [hyperbolic, hb.hamiltonianEnd_linMulLin_coord_apply, Finsupp.single_apply, neg_ite]
 
 /-- The hyperbolic blocks of a Darboux basis pairwise Poisson-commute. -/
 theorem IsDarbouxBasis.quadraticPoissonBracket_hyperbolic (hb : ω.IsDarbouxBasis b)
