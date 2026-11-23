@@ -60,8 +60,8 @@ the integral homology of `ΩHPⁿ` to that of `S³ × ΩS⁴ⁿ⁺³`.
 
 ## Main results
 
-* `TauCeti.QuaternionicProjectiveSpace.hopfProduct_comp_prodMk_const_one`: on `{1} × ΩS⁴ⁿ⁺³`
-  the based Hopf product is the looped Hopf map `Ωq`.
+* `TauCeti.QuaternionicProjectiveSpace.hopfProduct_comp_prodMk_const_one`: the restriction of
+  `j ⋆ Ωq` to `{1} × ΩS⁴ⁿ⁺³` is `Ωq`.
 * `TauCeti.QuaternionicProjectiveSpace.map_hopfProduct_prod`:
   `(j ⋆ Ωq)_* (a × b) = j_* a * (Ωq)_* b`.
 * `TauCeti.QuaternionicProjectiveSpace.hopfLoopBoundaryHom_eq_one_iff`,
@@ -117,8 +117,8 @@ when `j 1` is the unit. -/
 theorem hopfProduct_comp_prodMk_const_one
     {j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v))}
     (hj : j 1 = 1) :
-    (hopfProduct v j).comp ((ContinuousMap.const _ (1 : sphere (0 : ℍ) 1)).prodMk
-        (ContinuousMap.id _)) =
+    (hopfProduct v j).comp
+        ((ContinuousMap.const _ (1 : sphere (0 : ℍ) 1)).prodMk (ContinuousMap.id _)) =
       (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap := by
   ext1 γ
   simp [hj]
@@ -393,8 +393,8 @@ private def hopfLoop : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProject
     · -- Away from `u = 1` the length `‖u - 1‖` does not vanish, so rescaling is continuous.
       have hS : Continuous fun u : {u : sphere (0 : ℍ) 1 // u ≠ 1} ↦ hopfLoopPath v w hw hvw u :=
         (MoorePath.continuous_ofUnitPath.comp
-          ((hopfUnitLoop v w hw hvw).continuous.comp continuous_subtype_val)).moorePath_rescale
-            (by fun_prop) fun u ↦ nnNorm_sub_one_ne_zero u.2
+          ((hopfUnitLoop v w hw hvw).continuous.comp continuous_subtypeVal)).moorePath_rescale
+            (by fun_prop) fun u ↦ nnNorm_sub_one_ne_zero u.property
       have hu' : ContinuousAt (fun u ↦ hopfLoopPath v w hw hvw u) u :=
         (isOpen_ne.isOpenEmbedding_subtypeVal.continuousAt_iff (x := ⟨u, hu⟩)).1 hS.continuousAt
       exact MoorePath.continuous_eval.continuousAt.comp

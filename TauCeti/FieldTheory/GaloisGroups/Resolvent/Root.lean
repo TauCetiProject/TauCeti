@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.RingTheory.Polynomial.Factors
 
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.MvPolynomial.Rename
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.RingTheory.Polynomial.RootEnumeration
 
@@ -125,13 +126,9 @@ private theorem apply_eval₂_rootEnum (e : f.rootSet E ≃ Fin n) (ϕ : E ≃�
     (Ψ : MvPolynomial (Fin n) ℤ) :
     ϕ (MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) Ψ)
       = MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) (MvPolynomial.rename
-          ⇑(e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ))) Ψ) := by
-  have h := MvPolynomial.hom_eval₂ Ψ (Int.castRingHom E) (ϕ : E →+* E) (rootEnum e)
-  have hcast : (ϕ : E →+* E).comp (Int.castRingHom E) = Int.castRingHom E :=
-    RingHom.ext_int _ _
-  rw [hcast] at h
-  rw [MvPolynomial.eval₂_rename, rootEnum_comp_permCongrHom, Function.comp_def]
-  exact h
+          ⇑(e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ))) Ψ) :=
+  MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq Ψ (ϕ : E →+* E)
+    (rootEnum_comp_permCongrHom e ϕ).symm
 
 -- An element of the transported Galois image comes from an automorphism of `E` over `F`.
 private theorem exists_eq_of_mem_image [Normal F E] (e : f.rootSet E ≃ Fin n)
@@ -346,7 +343,7 @@ private noncomputable def cosetValueEquiv (hf : f.Monic)
     ⟨fun _ _ h => cosetValue_injective spec hf hdeg e hres (congrArg Subtype.val h), by
       intro x
       obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hdeg e
-        (aeval_eq_zero_of_mem_rootSet x.2)
+        (aeval_eq_zero_of_mem_rootSet x.property)
       exact ⟨c, Subtype.ext hc⟩⟩
 
 -- The value of the root represented by a coset is its coset value.

@@ -110,7 +110,7 @@ It is infinite, and it is the same group for every Ree index of type `F₄`, the
 entering only through the endomorphism whose fixed points are taken. No finiteness, reductivity,
 pinning or maximality statement is attached to it, and it is not identified with the points of the
 pinned simply connected `F₄` group scheme. -/
-abbrev AmbientGroup : Type := F4ShortRoot.PrimeField.points d.1.Closure
+abbrev AmbientGroup : Type := F4ShortRoot.PrimeField.points d.val.Closure
 
 /-- The classification recipe runs its fixed-point and quotient construction inside this group, so
 it carries a group structure; the carrier being a subgroup of a general linear group supplies
@@ -120,28 +120,29 @@ example : Group d.AmbientGroup := inferInstance
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `F₄` diagram. It is
 the carrier's numbered raising subgroup at the same node, the index type `Fin d.1.rank` being the
 upstream Bourbaki index type of the index's own Dynkin type. -/
-def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  F4ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  F4ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.val.Closure
 
 -- Deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` and its prime-field counterpart
 -- are the normal forms the equations of this file are stated against, and unfolding to
 -- `TauCeti.F4ShortRoot.PrimeField.rootSubgroupPoints` would keep them from firing.
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding node.
 This is the equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`. -/
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
     d.simpleRootSubgroup i =
-      F4ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.1.Closure :=
+      F4ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.val.Closure :=
   (rfl)
 
 /-- The negative simple-root subgroup at the Bourbaki-numbered node `i` of the `F₄` diagram. -/
-def negativeSimpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.1.Closure
+def negativeSimpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup
+    :=
+  F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.val.Closure
 
 /-- The negative simple-root subgroup is the carrier's numbered lowering subgroup.
 This unfolding equation is not a simp lemma, so indexed action equations remain applicable. -/
-theorem negativeSimpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem negativeSimpleRootSubgroup_def (i : Fin d.val.rank) :
     d.negativeSimpleRootSubgroup i =
-      F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.1.Closure :=
+      F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.val.Closure :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the `F₄` root datum.** The character by
@@ -151,7 +152,7 @@ numbering; `TauCeti.F4ShortRoot.weightTorusPoints_conj_rootSubgroupPoints_root_s
 carrier-level conjugation equation this character governs. This is the sense in which the carrier
 serves the diagram the index names; it is not a claim that the carrier is the pinned group of that
 diagram, no pinning being constructed for it. -/
-theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
+theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.val.rank) :
     DynkinType.F4.rootGeneratorWeight DynkinType.valid_F4 (.inl (finCongr d.rank_eq_four i)) =
       (DynkinType.F4.simplyConnectedRootDatum DynkinType.valid_F4).root
         (DynkinType.F4.simpleIndex DynkinType.valid_F4 (finCongr d.rank_eq_four i)) := by
@@ -167,7 +168,7 @@ theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
 It is not the family's Steinberg endomorphism, which is an odd power of an exceptional isogeny
 rather than a Frobenius. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
-  F4ShortRoot.PrimeField.frobenius d.1.fieldExponent d.1.Closure
+  F4ShortRoot.PrimeField.frobenius d.val.fieldExponent d.val.Closure
 
 -- Deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` and `coe_frobenius_apply` are
 -- the normal forms the equations of this file are stated against, and unfolding to
@@ -175,15 +176,15 @@ def frobenius : d.AmbientGroup →* d.AmbientGroup :=
 /-- The Frobenius of a Ree index of type `F₄` is the carrier's Frobenius at the exponent the index
 records. -/
 theorem frobenius_def :
-    d.frobenius = F4ShortRoot.PrimeField.frobenius d.1.fieldExponent d.1.Closure := (rfl)
+    d.frobenius = F4ShortRoot.PrimeField.frobenius d.val.fieldExponent d.val.Closure := (rfl)
 
 /-- The Frobenius acts on the ambient group by raising every matrix entry to the `q`-th power. -/
 @[simp]
 theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 26) :
-    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin 26) d.1.Closure) :
-        Matrix (Fin 26) (Fin 26) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 26) d.1.Closure) :
-        Matrix (Fin 26) (Fin 26) d.1.Closure) r c ^ d.1.fieldOrder := by
+    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin 26) d.val.Closure) :
+        Matrix (Fin 26) (Fin 26) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 26) d.val.Closure) :
+        Matrix (Fin 26) (Fin 26) d.val.Closure) r c ^ d.val.fieldOrder := by
   rw [frobenius_def, d.fieldOrder_eq_two_pow]
   exact F4ShortRoot.PrimeField.coe_frobenius_apply _ _ g r c
 
@@ -192,21 +193,21 @@ parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. In par
 not permute the numbered nodes: the length exchange of this family belongs to its Steinberg map,
 which is not built here. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def,
     F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, d.fieldOrder_eq_two_pow]
 
 /-- The Frobenius preserves each numbered negative simple-root subgroup and raises its parameter
 to the `q`-th power. -/
 @[simp]
-theorem frobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem frobenius_negativeSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.frobenius (d.negativeSimpleRootSubgroup i u) =
       d.negativeSimpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [frobenius_def, negativeSimpleRootSubgroup_def,
     F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, d.fieldOrder_eq_two_pow]
 
@@ -220,8 +221,8 @@ matrix entries lie in the field of definition.** Writing `𝔽_q` for
 closure, these are the points of the carrier with entries in `𝔽_q`. -/
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
-      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 26) d.1.Closure) :
-        Matrix (Fin 26) (Fin 26) d.1.Closure) r c ∈ d.1.fixedField := by
+      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 26) d.val.Closure) :
+        Matrix (Fin 26) (Fin 26) d.val.Closure) r c ∈ d.val.fixedField := by
   rw [mem_fixedSubgroup, frobenius_def, F4ShortRoot.PrimeField.frobenius_eq_self_iff]
   simp only [FiniteField.mem_frobeniusFixedSubalgebra, Nat.card_zmod,
     ValidLieTypeIndex.mem_fixedField, d.fieldOrder_eq_two_pow]
@@ -230,27 +231,27 @@ theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
 squaring each matrix entry. The `q`-power Frobenius is its `(2m+1)`-st power, by
 `frobenius_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  F4ShortRoot.PrimeField.frobenius 1 d.1.Closure
+  F4ShortRoot.PrimeField.frobenius 1 d.val.Closure
 
 -- Deliberately not a `simp` lemma, for the reason `frobenius_def` is not.
 /-- The prime-field Frobenius of a Ree index of type `F₄` is the carrier's Frobenius at exponent
 one. -/
 theorem primeFrobenius_def :
-    d.primeFrobenius = F4ShortRoot.PrimeField.frobenius 1 d.1.Closure := (rfl)
+    d.primeFrobenius = F4ShortRoot.PrimeField.frobenius 1 d.val.Closure := (rfl)
 
 /-- The prime-field Frobenius acts on the ambient group by squaring every matrix entry. -/
 @[simp]
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 26) :
-    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 26) d.1.Closure) :
-        Matrix (Fin 26) (Fin 26) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 26) d.1.Closure) :
-        Matrix (Fin 26) (Fin 26) d.1.Closure) r c ^ 2 := by
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 26) d.val.Closure) :
+        Matrix (Fin 26) (Fin 26) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 26) d.val.Closure) :
+        Matrix (Fin 26) (Fin 26) d.val.Closure) r c ^ 2 := by
   rw [primeFrobenius_def, F4ShortRoot.PrimeField.coe_frobenius_apply, pow_one]
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and squares
 its parameter**, that is, `Frob_2 (x_i(u)) = x_i(u ^ 2)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def,
@@ -259,8 +260,8 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- The prime-field Frobenius preserves each numbered negative simple-root subgroup and squares
 its parameter. -/
 @[simp]
-theorem primeFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_negativeSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.negativeSimpleRootSubgroup i u) =
       d.negativeSimpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
   rw [primeFrobenius_def, negativeSimpleRootSubgroup_def,
@@ -272,7 +273,7 @@ theorem primeFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
 /-- **The `q`-power Frobenius is the `(2m+1)`-st power of the prime-field Frobenius**, the
 exponent being the one the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, F4ShortRoot.PrimeField.frobenius_pow, Nat.one_mul]
 
 end

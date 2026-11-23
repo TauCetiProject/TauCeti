@@ -106,7 +106,7 @@ private theorem completionLocRingHom_eq {p : Presentation P} {q : Presentation P
     letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
     completionLocRingHom g =
       (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm ≫ g.hom ≫
-        eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower)).1 := by
+        eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower)).val := by
   rw [completionLocRingHom]
   simp only [Functor.comp_map, Presentation.completionLocObjCommRingCatIso_inv,
     Presentation.completionLocObjCommRingCatIso_hom]
@@ -133,7 +133,7 @@ private theorem continuous_completionLocRingHom {p : Presentation P} {q : Presen
   have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
   rw [completionLocRingHom_eq]
   exact (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm ≫ g.hom ≫
-    eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower)).2
+    eqToHom (completionLocObj_obj P' q.num q.den _ q.hasDenominatorPower)).property
 
 /-- A morphism `g : A⟨p⟩ ⟶ B⟨q⟩` carrying the structure map of `p` to that of `q` after `φ` does so
 on underlying ring homomorphisms. -/
@@ -188,7 +188,7 @@ private theorem comap_toCompletionLoc_spaCompletedLocalizationHomeomorph_symm
     letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     comap (toCompletionLoc P p.num p.den _ p.hasDenominatorPower)
         ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
-          p.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩).1 = x := by
+          p.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩).val = x := by
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
@@ -196,7 +196,7 @@ private theorem comap_toCompletionLoc_spaCompletedLocalizationHomeomorph_symm
     p.hasDenominatorPower ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
       p.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩)
   rw [Homeomorph.apply_symm_apply] at hw
-  have hxw := congrArg (fun z ↦ z.1.1) hw
+  have hxw := congrArg (fun z ↦ z.val.val) hw
   simp only [spaLocToRationalSubset_val, spaComapLoc_val] at hxw
   exact hxw.symm
 
@@ -226,22 +226,22 @@ theorem comap_map_rationalLocalizationPoint (φ : A →+* B) (hφ : Continuous �
   set w := (spaCompletedLocalizationHomeomorph P' Bplus hP' q.num q.den _
     q.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩
   have hcomp := completionLocRingHom_comp_toCompletionLoc φ hφ g hg
-  have hwx : comap (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower) w.1 = x :=
+  have hwx : comap (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower) w.val = x :=
     comap_toCompletionLoc_spaCompletedLocalizationHomeomorph_symm hP' q x hx
   -- Pulling `w` back along the base change gives a point of `Spa(A⟨p⟩, A⟨p⟩⁺)` over `y`.
   have hcomap : comap ((completionLocRingHom g).comp
-      (toCompletionLoc P p.num p.den _ p.hasDenominatorPower)) w.1 = y.1 := by
+      (toCompletionLoc P p.num p.den _ p.hasDenominatorPower)) w.val = y.val := by
     rw [hcomp, comap_comp, Function.comp_apply, hwx, hy_def, spaComap_val]
-  have hmem : comap (completionLocRingHom g) w.1 ∈
+  have hmem : comap (completionLocRingHom g) w.val ∈
       spa (completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower) := by
     refine comap_mem_spa_completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower _
-      (continuous_completionLocRingHom g) ((mem_spa_iff _ _).mp w.2).1 ?_
+      (continuous_completionLocRingHom g) ((mem_spa_iff _ _).mp w.property).1 ?_
     rw [hcomap]
     exact mem_spaBasicOpen.mp hy
   have hpt :
       (spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
         p.hasDenominatorPower).symm ⟨y, mem_spaBasicOpen.mp hy⟩ =
-        ⟨comap (completionLocRingHom g) w.1, hmem⟩ := by
+        ⟨comap (completionLocRingHom g) w.val, hmem⟩ := by
     rw [Homeomorph.symm_apply_eq]
     refine Subtype.ext (Subtype.ext ?_)
     rw [spaCompletedLocalizationHomeomorph_apply, spaLocToRationalSubset_val, ← hcomap,
@@ -556,7 +556,7 @@ theorem presentationLimitPreAdicSpaceComap_base_val
       (presentationLimitPresheaf P' Bplus))
     (x : presentationLimitPreAdicSpace P' Bplus hBplus hP') :
     ((presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base x :
-      spa Aplus).1 = comap φ (x : spa Bplus).1 := by
+      spa Aplus).val = comap φ (x : spa Bplus).val := by
   rw [presentationLimitPreAdicSpaceComap_toHom, presentationLimitPresheafedSpaceComap_base]
   exact spaComap_val φ hφ Aplus Bplus hplus x
 

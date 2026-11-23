@@ -5,208 +5,192 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Kunneth.Sequence
-public import TauCeti.AlgebraicTopology.Singular.Sphere
-import TauCeti.AlgebraicTopology.Singular.Contractible
-import TauCeti.CategoryTheory.GradedObject
+public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 
 /-!
 # The homology of a product with a sphere
 
-Let `S` be the unit sphere of a real inner product space of dimension `d + 2`, a sphere of
-positive dimension `d + 1`, and let `F` be any space. With coefficients in a principal ideal
-domain `k`, the homology of `S` is free, so the Künneth map of `S × F` is an isomorphism in
-positive degrees (`TopCat.isIso_singularHomologyKunneth_of_flat`), and the only summands of
-`Hₘ₊₁(S × F; k)` that can be nonzero are `H₀(S) ⊗ Hₘ₊₁(F)` and `H_{d+1}(S) ⊗ Hₘ₋d(F)`. So:
+Let `E` be a real normed space of dimension `d + 1`, so that its unit sphere `S = sphere 0 1` is a
+`d`-sphere, and let `B` be any space. This file describes the singular homology of `S × B` in
+terms of that of `B`, with coefficients in any object of an abelian category with coproducts:
+there are short exact sequences
 
-* `Hₘ₊₁(S × F; k)` vanishes when `Hₘ₊₁(F; k)` and `Hₘ₋d(F; k)` do
-  (`TauCeti.isZero_singularHomology_sphere_prod`);
-* the inclusion `F → S × F`, `y ↦ (x₀, y)`, at any point `x₀` of the sphere is an isomorphism on
-  `Hₘ₊₁` when `Hₘ₋d(F; k)` vanishes (`TauCeti.isIso_singularHomologyMap_prodMk_const_sphere`).
+`0 ⟶ Hₘ₊₁(B × E, B × (E ∖ {0})) ⟶ Hₘ(B × (E ∖ {0})) ⟶ Hₘ(B × E) ⟶ 0`
 
-Here a degree `m - d` that would be negative imposes no condition. These are the forms in which the
-homology of a space weakly equivalent to `S × F` is read off from that of `F`, as for the loop
-space `ΩHPⁿ ≃ S³ × ΩS⁴ⁿ⁺³` of a quaternionic projective space. For the circle the same statements
-hold with any coefficients, through the Wang sequence of the mapping torus of the identity
-(`TauCeti.isIso_singularHomologyMap_prodMk_const_one_succ_iff`,
-`TauCeti.isZero_singularHomology_circle_prod_succ_iff`).
+(`TauCeti.shortExact_singularHomology_prodThomPair`), in which `B × (E ∖ {0})` is homotopy
+equivalent to `S × B` (`TauCeti.prodThomPairPuncturedHomotopyEquivSphere`), `B × E` to `B`,
+and the relative term is `H_{m-d}(B)` (`TauCeti.prodThomPairSingularHomologyIso`). The
+sequence is the long exact sequence of the Thom pair of the product bundle `B × E → B`, which
+breaks up because `b ↦ (b, x)` is a section of the punctured bundle for every `x ≠ 0`.
 
-The inclusion at `x₀` is compared with the inclusion of a point through the naturality of the
-Künneth map: both Künneth maps are isomorphisms, both identify the relevant homology with the
-summand of degree `(0, m + 1)`, and `x₀ : pt → S` is an isomorphism on `H₀` since the sphere is path
-connected.
+Read on `S × B`, for a point `x` of the sphere:
+
+* the inclusion `B → S × B`, `b ↦ (x, b)`, is an isomorphism on `Hₘ` exactly when
+  `H_{m-d}(B)` vanishes (`TauCeti.isIso_singularHomologyMap_prodMk_sphere_iff`), and always for
+  `m < d` (`TauCeti.isIso_singularHomologyMap_prodMk_sphere_of_lt`);
+* `Hₘ(S × B)` vanishes exactly when `Hₘ(B)` and `H_{m-d}(B)` do
+  (`TauCeti.isZero_singularHomology_sphere_prod_iff`), and for `m < d` exactly when `Hₘ(B)`
+  does (`TauCeti.isZero_singularHomology_sphere_prod_iff_of_lt`).
+
+The sequences split, through the section, which is the Künneth formula
+`Hₘ(Sᵈ × B) ≅ Hₘ(B) ⊕ H_{m-d}(B)` for a sphere factor, with no hypothesis on the coefficients or
+on `B`; the splitting itself is not packaged here. When `Hₘ(B)` vanishes, the connecting
+morphism gives `Hₘ(S × B) ≅ H_{m-d}(B)` (`TauCeti.singularHomologySphereProdIso`). For the unit
+circle the same vanishing and isomorphism criteria are
+`TauCeti.isZero_singularHomology_circle_prod_succ_iff` and
+`TauCeti.isIso_singularHomologyMap_prodMk_const_one_succ_iff`, through the Wang sequence of a
+mapping torus. These are the forms in which the homology of a space weakly equivalent to a product
+with a sphere, such as the loop space of a quaternionic projective space, is computed.
+
+## Main results
+
+* `TauCeti.isIso_singularHomologyMap_prodMk_sphere_iff`: `H_{n+d}(B) → H_{n+d}(S × B)` is an
+  isomorphism if and only if `Hₙ(B) = 0`.
+* `TauCeti.isZero_singularHomology_sphere_prod_iff`: `H_{n+d}(S × B) = 0` if and only if
+  `H_{n+d}(B) = 0` and `Hₙ(B) = 0`.
+* `TauCeti.singularHomologySphereProdIso`: `H_{n+d}(S × B) ≅ Hₙ(B)` when `H_{n+d}(B) = 0`.
 
 ## References
 
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.B, Theorem 3B.6, the Künneth formula.
+* A. Hatcher, *Algebraic Topology*, Section 3.B, the Künneth formula, and Section 4.D, the Thom
+  isomorphism of a product bundle.
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Limits MonoidalCategory AlgebraicTopology Metric Module
+open CategoryTheory Limits Metric Module AlgebraicTopology
 
-universe w
+universe w v u
 
 namespace TauCeti
 
-variable {k : Type w} [CommRing k] {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  {d : ℕ} (hE : finrank ℝ E = d + 2) (F : Type w) [TopologicalSpace F]
+variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+  {B : Type w} [TopologicalSpace B] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-include hE in
-/-- The summand `Hₚ(S; k) ⊗ H_q(F; k)`, `p + q = m + 1`, of the Künneth decomposition of
-`Hₘ₊₁(S × F; k)` vanishes for `p ≠ 0` as soon as `Hₘ₋d(F; k)` does: either `p` is not the
-dimension `d + 1` of the sphere and `Hₚ(S; k)` vanishes, or `q = m - d`. -/
-private lemma isZero_singularHomology_sphere_tensor {m p q : ℕ} (hpq : p + q = m + 1)
-    (hp : p ≠ 0)
-    (h : ∀ q, q + (d + 1) = m + 1 →
-      IsZero (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (ModuleCat.of k k)).obj
-        (TopCat.of F))) :
-    IsZero ((((singularHomologyFunctor (ModuleCat.{w} k) p).obj (ModuleCat.of k k)).obj
-        (TopCat.of (sphere (0 : E) 1))) ⊗
-      (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (ModuleCat.of k k)).obj
-        (TopCat.of F))) := by
-  obtain ⟨p, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hp
-  by_cases hpd : p + 1 = d + 1
-  · exact (tensorLeft _).map_isZero (h q (by omega))
-  · -- The sphere has no homology in positive degrees other than its dimension.
-    exact (tensorRight _).map_isZero
-      ((isZero_reducedSingularHomologyFunctor_sphere_of_ne (ModuleCat.of k k) hE hpd).of_iso
-        ((reducedSingularHomologySuccIso (ModuleCat.of k k) p).app _).symm)
+/-- The homotopy equivalence `B × (E ∖ {0}) ≃ₕ S × B` as a morphism of `TopCat`. -/
+private abbrev puncturedHom : (prodThomPair B E).snd ⟶ TopCat.of (sphere (0 : E) 1 × B) :=
+  TopCat.ofHom (prodThomPairPuncturedHomotopyEquivSphere B E).toFun
 
-include hE in
-/-- The summand `H₀(S; k) ⊗ Hₘ₊₁(F; k)` is all of the degree `m + 1` part of the tensor product of
-the homologies of `S` and `F` when `Hₘ₋d(F; k)` vanishes. -/
-private lemma isIso_ιTensorObj_sphere {m : ℕ}
-    (h : ∀ q, q + (d + 1) = m + 1 →
-      IsZero (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (ModuleCat.of k k)).obj
-        (TopCat.of F))) :
-    IsIso (GradedObject.Monoidal.ιTensorObj
-      (fun p ↦ ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (ModuleCat.of k k)).obj
-        (TopCat.of (sphere (0 : E) 1)))
-      (fun q ↦ ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (ModuleCat.of k k)).obj
-        (TopCat.of F)) 0 (m + 1) (m + 1) (zero_add _)) :=
-  GradedObject.isIso_ιMapObj_of_isZero _ _ fun ⟨p, q⟩ hpq hp ↦
-    isZero_singularHomology_sphere_tensor hE F hpq (fun h0 ↦ hp (by
-      subst h0
-      simp only [zero_add] at hpq
-      rw [hpq])) h
+/-- The section at a point `x` of the unit sphere, followed by the homotopy equivalence with
+`S × B`, is the inclusion `b ↦ (x, b)`. -/
+private lemma prodThomPairPuncturedSection_comp_puncturedHom (x : sphere (0 : E) 1) :
+    prodThomPairPuncturedSection B (x : E) (ne_zero_of_mem_unit_sphere x) ≫ puncturedHom =
+      TopCat.ofHom ((ContinuousMap.const B x).prodMk (ContinuousMap.id B)) := by
+  ext b : 1
+  refine Prod.ext (Subtype.ext ?_) ?_
+  · -- Radial projection fixes the points of the unit sphere.
+    refine (coe_prodThomPairPuncturedHomotopyEquivSphere_apply_fst _).trans ?_
+    refine (congrArg (fun y : E ↦ ‖y‖⁻¹ • y)
+      (congrArg Prod.snd (prodThomPairPuncturedSection_apply _ _ b))).trans ?_
+    simp [norm_eq_of_mem_sphere x]
+  · exact (prodThomPairPuncturedHomotopyEquivSphere_apply_snd _).trans
+      (congrArg Prod.fst (prodThomPairPuncturedSection_apply _ _ b))
 
-variable [IsDomain k] [IsPrincipalIdealRing k]
+variable (B) in
+/-- The inclusion `b ↦ (x, b)` at a point of the unit sphere is an isomorphism on `Hₘ` exactly
+when the inclusion `B × (E ∖ {0}) → B × E` is. -/
+private lemma isIso_singularHomologyMap_prodMk_sphere_iff_isIso (x : sphere (0 : E) 1)
+    (m : ℕ) :
+    IsIso (((singularHomologyFunctor A m).obj R).map
+        (TopCat.ofHom ((ContinuousMap.const B x).prodMk (ContinuousMap.id B)))) ↔
+      IsIso (((singularHomologyFunctor A m).obj R).map (prodThomPair B E).map) := by
+  have : IsIso (((singularHomologyFunctor A m).obj R).map (puncturedHom (B := B) (E := E))) :=
+    (prodThomPairPuncturedHomotopyEquivSphere B E).isIso_homologyMap R m
+  have hs := isIso_singularHomologyMap_prodThomPairPuncturedSection_comp_map R B (x : E)
+    (ne_zero_of_mem_unit_sphere x) m
+  rw [Functor.map_comp] at hs
+  rw [← prodThomPairPuncturedSection_comp_puncturedHom x, Functor.map_comp, isIso_comp_right_iff]
+  exact ⟨fun _ ↦ IsIso.of_isIso_comp_left (((singularHomologyFunctor A m).obj R).map
+      (prodThomPairPuncturedSection B (x : E) (ne_zero_of_mem_unit_sphere x))) _,
+    fun h ↦ IsIso.of_isIso_comp_right _ (((singularHomologyFunctor A m).obj R).map
+      (prodThomPair B E).map)⟩
 
-include hE in
-/-- The Künneth map of `S × F` is an isomorphism in positive degrees, since the homology of the
-sphere is free. -/
-private lemma isIso_singularHomologyKunneth_sphere (m : ℕ) :
-    IsIso (TopCat.singularHomologyKunneth (TopCat.of (sphere (0 : E) 1)) (TopCat.of F)
-      (ModuleCat.of k k) (ModuleCat.of k k) (m + 1)) := by
-  have (q : ℕ) : Module.Free k ((reducedSingularHomologyFunctor (ModuleCat.of k k) q).obj
-      (TopCat.of (sphere (0 : E) 1))) := by
-    by_cases hq : q = d + 1
-    · subst hq
-      have : FiniteDimensional ℝ E := .of_finrank_eq_succ hE
-      exact .of_equiv (reducedSingularHomologySphereIso (ModuleCat.of k k)
-        ((stdOrthonormalBasis ℝ E).reindex (finCongr hE))).symm.toLinearEquiv
-    · have := ModuleCat.isZero_iff_subsingleton.mp
-        (isZero_reducedSingularHomologyFunctor_sphere_of_ne (ModuleCat.of k k) hE hq)
-      infer_instance
-  have (q : ℕ) := ModuleCat.free_singularHomology_of_free_reducedSingularHomology
-    (ModuleCat.of k k) (X := TopCat.of (sphere (0 : E) 1)) q
-  exact TopCat.isIso_singularHomologyKunneth_of_flat _ _ _ _ m
+variable {R} (B) in
+/-- `Hₘ(S × B)` vanishes exactly when `Hₘ(B)` and `Hₘ₊₁(B × E, B × (E ∖ {0}))` do. -/
+private lemma isZero_singularHomology_sphere_prod_iff_isZero [Nontrivial E] (m : ℕ) :
+    IsZero (((singularHomologyFunctor A m).obj R).obj (TopCat.of (sphere (0 : E) 1 × B))) ↔
+      IsZero (((singularHomologyFunctor A m).obj R).obj (TopCat.of B)) ∧
+        IsZero ((prodThomPair B E).singularHomology R (m + 1)) := by
+  have hS := shortExact_singularHomology_prodThomPair R B E m
+  rw [← ((prodThomPairPuncturedHomotopyEquivSphere B E).singularHomologyIso R m).isZero_iff,
+    ← ((ContinuousMap.HomotopyEquiv.prodContractible B E).singularHomologyIso R m).isZero_iff]
+  -- The middle term of a short exact sequence vanishes exactly when the outer two do.
+  exact ⟨fun h ↦ ⟨@IsZero.of_epi _ _ _ _ _ _ hS.epi_g h,
+      @IsZero.of_mono _ _ _ _ _ _ hS.mono_f h⟩,
+    fun ⟨h₃, h₁⟩ ↦ hS.exact.isZero_X₂ (h₁.eq_of_src _ _) (h₃.eq_of_tgt _ _)⟩
 
-include hE in
-/-- **The homology of a product with a sphere vanishes with that of the other factor.** Let `S`
-be the unit sphere of a real inner product space of dimension `d + 2`. With coefficients in a
-principal ideal domain `k`, if `Hₘ₊₁(F; k)` vanishes and so does `Hₘ₋d(F; k)` (no condition when
-`m < d`), then `Hₘ₊₁(S × F; k)` vanishes. -/
-theorem isZero_singularHomology_sphere_prod {m : ℕ}
-    (h₀ : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) (m + 1)).obj
-      (ModuleCat.of k k)).obj (TopCat.of F)))
-    (h : ∀ q, q + (d + 1) = m + 1 →
-      IsZero (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (ModuleCat.of k k)).obj
-        (TopCat.of F))) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{w} k) (m + 1)).obj (ModuleCat.of k k)).obj
-      (TopCat.of (sphere (0 : E) 1 × F))) := by
-  have := isIso_singularHomologyKunneth_sphere hE F (k := k) m
-  have hT : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) (m + 1)).obj
-      (ModuleCat.of k k ⊗ ModuleCat.of k k)).obj
-      (TopCat.of (sphere (0 : E) 1) ⊗ TopCat.of F)) := by
-    refine IsZero.of_iso ?_
-      (asIso (TopCat.singularHomologyKunneth (TopCat.of (sphere (0 : E) 1)) (TopCat.of F)
-        (ModuleCat.of k k) (ModuleCat.of k k) (m + 1))).symm
-    rw [IsZero.iff_id_eq_zero]
-    refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q hpq ↦ IsZero.eq_of_src ?_ _ _
-    rcases eq_or_ne p 0 with rfl | hp
-    · obtain rfl : q = m + 1 := by omega
-      exact (tensorLeft _).map_isZero h₀
-    · exact isZero_singularHomology_sphere_tensor hE F hpq hp h
-  -- The coefficients `k ⊗ k` of the Künneth map are identified with `k` by the unitor.
-  exact hT.of_iso (((singularHomologyFunctor _ (m + 1)).mapIso
-    (λ_ (ModuleCat.of k k))).app (TopCat.of (sphere (0 : E) 1) ⊗ TopCat.of F)).symm
+variable {d : ℕ}
 
-include hE in
-/-- **The inclusion of a slice of a product with a sphere is an isomorphism on homology** in the
-degrees where the other factor has no homology in the complementary degree. Let `S` be the unit
-sphere of a real inner product space of dimension `d + 2` and `x₀ ∈ S`. With coefficients in a
-principal ideal domain `k`, if `Hₘ₋d(F; k)` vanishes (no condition when `m < d`), then the
-inclusion `F → S × F`, `y ↦ (x₀, y)`, is an isomorphism on `Hₘ₊₁(-; k)`. -/
-theorem isIso_singularHomologyMap_prodMk_const_sphere {m : ℕ} (x₀ : sphere (0 : E) 1)
-    (h : ∀ q, q + (d + 1) = m + 1 →
-      IsZero (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (ModuleCat.of k k)).obj
-        (TopCat.of F))) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{w} k) (m + 1)).obj (ModuleCat.of k k)).map
-      (TopCat.ofHom ((ContinuousMap.const F x₀).prodMk (ContinuousMap.id F)))) := by
-  let R := ModuleCat.of k k
-  let S := TopCat.of (sphere (0 : E) 1)
-  let pt : TopCat.{w} := 𝟙_ TopCat.{w}
-  let c : pt ⟶ S := TopCat.ofHom (ContinuousMap.const _ x₀)
-  let H (n : ℕ) (M : ModuleCat.{w} k) := (singularHomologyFunctor (ModuleCat.{w} k) n).obj M
-  -- Pass to the coefficients `k ⊗ k` of the Künneth map, through the unitor.
-  rw [← NatIso.isIso_map_iff ((singularHomologyFunctor _ (m + 1)).mapIso (λ_ R))]
-  -- `y ↦ (x₀, y)` is the unitor `F ≅ pt × F` followed by `c × 𝟙`. This holds definitionally,
-  -- `TopCat.of (S × F)` being the cartesian monoidal product `S ⊗ F`, so `exact` closes the goal.
-  suffices IsIso ((H (m + 1) (R ⊗ R)).map (c ⊗ₘ 𝟙 (TopCat.of F))) by
-    have : IsIso ((H (m + 1) (R ⊗ R)).map
-        ((λ_ (TopCat.of F)).inv ≫ (c ⊗ₘ 𝟙 (TopCat.of F)))) := by
-      rw [Functor.map_comp]
-      infer_instance
-    exact this
-  have := isIso_singularHomologyKunneth_sphere hE F (k := k) m
-  have : ContractibleSpace pt := inferInstanceAs (ContractibleSpace PUnit)
-  have (p : ℕ) : Module.Flat k ((H p R).obj pt) :=
-    have := ModuleCat.free_singularHomology_of_contractibleSpace R pt p
-    inferInstance
-  have : IsIso (TopCat.singularHomologyKunneth pt (TopCat.of F) R R (m + 1)) :=
-    TopCat.isIso_singularHomologyKunneth_of_flat _ _ _ _ m
-  -- On both sides, the summand of degree `(0, m + 1)` is all of the source of the Künneth map.
-  have := isIso_ιTensorObj_sphere hE F (k := k) h
-  have : IsIso (GradedObject.Monoidal.ιTensorObj (fun p ↦ (H p R).obj pt)
-      (fun q ↦ (H q R).obj (TopCat.of F)) 0 (m + 1) (m + 1) (zero_add _)) :=
-    GradedObject.isIso_ιMapObj_of_isZero _ _ fun ⟨p, q⟩ hpq hp ↦ (tensorRight _).map_isZero
-      (isZero_singularHomologyFunctor_of_contractibleSpace R pt fun h0 ↦ hp (by
-        subst h0
-        simp only [zero_add] at hpq
-        rw [hpq]))
-  -- `c` is an isomorphism on `H₀`, the sphere being path connected.
-  have : PathConnectedSpace S := isPathConnected_iff_pathConnectedSpace.mp
-    (isPathConnected_sphere (Module.one_lt_rank_of_one_lt_finrank (by omega)) 0 zero_le_one)
-  have := isIso_singularHomologyMap_zero_of_pathConnectedSpace R c
-  -- The Künneth maps intertwine `c × 𝟙` with `c_* ⊗ 𝟙` on the summand of degree `(0, m + 1)`.
-  have key := (GradedObject.Monoidal.ι_tensorHom_assoc (fun p ↦ (H p R).map c)
-      (fun q ↦ (H q R).map (𝟙 (TopCat.of F))) 0 (m + 1) (m + 1) (zero_add _)
-      (TopCat.singularHomologyKunneth S (TopCat.of F) R R (m + 1))).symm.trans
-    (congrArg (GradedObject.Monoidal.ιTensorObj _ _ 0 (m + 1) (m + 1) (zero_add _) ≫ ·)
-      (TopCat.singularHomologyKunneth_naturality c (𝟙 (TopCat.of F)) R R (m + 1)))
-  have : IsIso ((GradedObject.Monoidal.ιTensorObj (fun p ↦ (H p R).obj pt)
-      (fun q ↦ (H q R).obj (TopCat.of F)) 0 (m + 1) (m + 1) (zero_add _) ≫
-        TopCat.singularHomologyKunneth pt (TopCat.of F) R R (m + 1)) ≫
-      (H (m + 1) (R ⊗ R)).map (c ⊗ₘ 𝟙 (TopCat.of F))) := by
-    rw [Category.assoc, ← key]
-    infer_instance
-  exact IsIso.of_isIso_comp_left (GradedObject.Monoidal.ιTensorObj (fun p ↦ (H p R).obj pt)
-      (fun q ↦ (H q R).obj (TopCat.of F)) 0 (m + 1) (m + 1) (zero_add _) ≫
-        TopCat.singularHomologyKunneth pt (TopCat.of F) R R (m + 1)) _
+/-- **The inclusion `B → S × B` at a point of a `d`-sphere is an isomorphism on `H_{n+d}` exactly
+when `Hₙ(B)` vanishes.** Here `S` is the unit sphere of a real normed space of dimension `d + 1`,
+the inclusion is `b ↦ (x, b)`, and the coefficients lie in any abelian category with
+coproducts. -/
+theorem isIso_singularHomologyMap_prodMk_sphere_iff (hE : finrank ℝ E = d + 1)
+    (x : sphere (0 : E) 1) {n m : ℕ} (h : n + d = m) :
+    IsIso (((singularHomologyFunctor A m).obj R).map
+        (TopCat.ofHom ((ContinuousMap.const B x).prodMk (ContinuousMap.id B)))) ↔
+      IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of B)) := by
+  have := Module.finite_of_finrank_eq_succ hE
+  have := Module.nontrivial_of_finrank_eq_succ hE
+  exact (isIso_singularHomologyMap_prodMk_sphere_iff_isIso R B x m).trans
+    (((shortExact_singularHomology_prodThomPair R B E m).isIso_g_iff).trans
+      (prodThomPairSingularHomologyIso R B E n (m + 1) (by omega)).isZero_iff)
+
+/-- **Below the dimension of the sphere, the inclusion `B → S × B` at a point is an isomorphism
+on homology**: for `m < d` and `S` the unit sphere of a real normed space of dimension `d + 1`,
+`b ↦ (x, b)` induces `Hₘ(B) ≅ Hₘ(S × B)`. -/
+theorem isIso_singularHomologyMap_prodMk_sphere_of_lt (hE : finrank ℝ E = d + 1)
+    (x : sphere (0 : E) 1) {m : ℕ} (hm : m < d) :
+    IsIso (((singularHomologyFunctor A m).obj R).map
+      (TopCat.ofHom ((ContinuousMap.const B x).prodMk (ContinuousMap.id B)))) := by
+  have := Module.finite_of_finrank_eq_succ hE
+  have := Module.nontrivial_of_finrank_eq_succ hE
+  exact (isIso_singularHomologyMap_prodMk_sphere_iff_isIso R B x m).2
+    (((shortExact_singularHomology_prodThomPair R B E m).isIso_g_iff).2
+      (isZero_singularHomology_prodThomPair R B E (by omega)))
+
+/-- **`H_{n+d}(S × B)` vanishes exactly when `H_{n+d}(B)` and `Hₙ(B)` do**, for `S` the unit
+sphere of a real normed space of dimension `d + 1`, with coefficients in any abelian category with
+coproducts. -/
+theorem isZero_singularHomology_sphere_prod_iff (hE : finrank ℝ E = d + 1) {n m : ℕ}
+    (h : n + d = m) :
+    IsZero (((singularHomologyFunctor A m).obj R).obj (TopCat.of (sphere (0 : E) 1 × B))) ↔
+      IsZero (((singularHomologyFunctor A m).obj R).obj (TopCat.of B)) ∧
+        IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of B)) := by
+  have := Module.finite_of_finrank_eq_succ hE
+  have := Module.nontrivial_of_finrank_eq_succ hE
+  rw [isZero_singularHomology_sphere_prod_iff_isZero,
+    (prodThomPairSingularHomologyIso R B E n (m + 1) (by omega)).isZero_iff]
+
+/-- **Below the dimension of the sphere, `Hₘ(S × B)` vanishes exactly when `Hₘ(B)` does**, for
+`m < d` and `S` the unit sphere of a real normed space of dimension `d + 1`. -/
+theorem isZero_singularHomology_sphere_prod_iff_of_lt (hE : finrank ℝ E = d + 1) {m : ℕ}
+    (hm : m < d) :
+    IsZero (((singularHomologyFunctor A m).obj R).obj (TopCat.of (sphere (0 : E) 1 × B))) ↔
+      IsZero (((singularHomologyFunctor A m).obj R).obj (TopCat.of B)) := by
+  have := Module.finite_of_finrank_eq_succ hE
+  have := Module.nontrivial_of_finrank_eq_succ hE
+  rw [isZero_singularHomology_sphere_prod_iff_isZero,
+    and_iff_left (isZero_singularHomology_prodThomPair R B E (by omega))]
+
+/-- **`H_{n+d}(S × B) ≅ Hₙ(B)` when `H_{n+d}(B)` vanishes**, for `S` the unit sphere of a real
+normed space `E` of dimension `d + 1`, with coefficients in any abelian category with coproducts.
+It is the inverse of the connecting morphism `H_{n+d+1}(B × E, B × (E ∖ {0})) ⟶ H_{n+d}(B × (E ∖
+{0}))` of the Thom pair of the product bundle, which is an isomorphism because the next term
+`H_{n+d}(B × E) ≅ H_{n+d}(B)` vanishes, read on `S × B` through the homotopy equivalence
+`B × (E ∖ {0}) ≃ S × B` and followed by the Thom isomorphism with `Hₙ(B)`. -/
+def singularHomologySphereProdIso (hE : finrank ℝ E = d + 1) {n m : ℕ} (h : n + d = m)
+    (hB : IsZero (((singularHomologyFunctor A m).obj R).obj (TopCat.of B))) :
+    ((singularHomologyFunctor A m).obj R).obj (TopCat.of (sphere (0 : E) 1 × B)) ≅
+      ((singularHomologyFunctor A n).obj R).obj (TopCat.of B) :=
+  have := Module.finite_of_finrank_eq_succ hE
+  have := Module.nontrivial_of_finrank_eq_succ hE
+  have hδ := (shortExact_singularHomology_prodThomPair R B E m).isIso_f_iff.2
+    (hB.of_iso ((ContinuousMap.HomotopyEquiv.prodContractible B E).singularHomologyIso R m))
+  ((prodThomPairPuncturedHomotopyEquivSphere B E).singularHomologyIso R m).symm ≪≫
+    (@asIso _ _ _ _ ((prodThomPair B E).singularHomologyδ R (m + 1) m) hδ).symm ≪≫
+    prodThomPairSingularHomologyIso R B E n (m + 1) (by omega)
 
 end TauCeti

@@ -43,13 +43,13 @@ variable {V E H M F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 For a tubular radius this parametrizes the normal tube using the entire normal bundle. -/
 def normalBundleTubularMapOfRadius (f : M → V) (r : M → ℝ)
     (p : TotalSpace F (fun x => normalSubspace I f x)) : V :=
-  f p.proj + ((normalBundleRadialMap f (r p.proj) p).2 : V)
+  f p.proj + ((normalBundleRadialMap f (r p.proj) p).snd : V)
 
 /-- The ambient formula for the whole-normal-bundle tubular map. -/
 @[simp] theorem normalBundleTubularMapOfRadius_apply (f : M → V) (r : M → ℝ)
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     normalBundleTubularMapOfRadius f r p =
-      f p.proj + r p.proj • OpenPartialHomeomorph.univUnitBall (p.2 : V) := by
+      f p.proj + r p.proj • OpenPartialHomeomorph.univUnitBall (p.snd : V) := by
   simp [normalBundleTubularMapOfRadius]
 
 /-- If normal addition embeds the variable-radius tube openly, radial compression
@@ -63,8 +63,8 @@ theorem isOpenEmbedding_normalBundleTubularMapOfRadius (f : M → V)
   -- The model-fibre parameter is phantom; both topologies are induced from `M × V`.
   let k : TotalSpace F (fun x => normalSubspace I f x) ≃ₜ
       TotalSpace V (fun x => normalSubspace I f x) :=
-    { toFun := fun p => ⟨p.proj, p.2⟩
-      invFun := fun p => ⟨p.proj, p.2⟩
+    { toFun := fun p => ⟨p.proj, p.snd⟩
+      invFun := fun p => ⟨p.proj, p.snd⟩
       left_inv := fun _ => rfl
       right_inv := fun _ => rfl
       continuous_toFun := (isEmbedding_totalSpace_normalSubspace f).isInducing.continuous_iff.mpr
@@ -74,7 +74,7 @@ theorem isOpenEmbedding_normalBundleTubularMapOfRadius (f : M → V)
           (isEmbedding_totalSpace_normalSubspace (F := V) f).continuous }
   let h := k.trans (normalBundleHomeomorphTubeOfRadius (I := I) f ⟨r, hr⟩ hrpos)
   have hk (p : TotalSpace F (fun x => normalSubspace I f x)) :
-      k p = ⟨p.proj, p.2⟩ := rfl
+      k p = ⟨p.proj, p.snd⟩ := rfl
   convert hemb.comp h.isOpenEmbedding using 1
   funext p
   simp only [Function.comp_apply, h, Homeomorph.trans_apply, Set.domRestrict,
