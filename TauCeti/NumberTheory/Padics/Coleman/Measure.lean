@@ -9,10 +9,10 @@ public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.Coleman.RootEvaluation
 public import TauCeti.NumberTheory.Padics.Measure.PhiPsi
 public import TauCeti.NumberTheory.Padics.Measure.RootTranslation
+public import TauCeti.NumberTheory.Padics.PadicIntegers
 
 import TauCeti.NumberTheory.Padics.Coleman.Topology
 import TauCeti.NumberTheory.Padics.Measure.Topology.Amice
-import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
@@ -138,7 +138,8 @@ theorem prod_rootTranslation (hζ : IsPrimitiveRoot ζ p) (F : ℤ_[p]⟦X⟧) :
   exact hζ.prod_eval₂_map_eq_map_frobeniusHom_norm
     (PadicComplex.isTopologicallyNilpotent_sub_one p ζ hζ.pow_eq_one) (integralCoefficientMap p) F
 
-/-- **Uniqueness of Coleman's norm on `ℤ_[p]⟦X⟧`** (Sharifi, Lemma 5.4.14; RJW, Lemmas 10.8–11). -/
+/-- **Uniqueness of Coleman's norm on `ℤ_[p]⟦X⟧`** (Sharifi, Lemma 5.4.14;
+RJW, Lemmas 10.8–10.11). -/
 theorem map_frobeniusHom_eq_prod_rootTranslation_iff (hζ : IsPrimitiveRoot ζ p) (F G : ℤ_[p]⟦X⟧) :
     PowerSeries.map (integralCoefficientMap p) (Coleman.frobeniusHom p ℤ_[p] G) =
         ∏ i : Fin p, rootTranslation p ζ hζ.pow_eq_one (i : ℕ) F ↔

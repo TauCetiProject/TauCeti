@@ -189,23 +189,23 @@ theorem prod_eval₂_map_eq_map_frobeniusHom_norm
       PowerSeries.map ρ (frobeniusHom p O (norm p O F)) := by
   let ψ : O⟦X⟧ →+* S⟦X⟧ := (PowerSeries.map ρ).comp (frobeniusHom p O).toRingHom
   let V : Matrix (Fin p) (Fin p) S⟦X⟧ := Matrix.vandermonde fun i ↦ C (ζ ^ (i : ℕ)) * (1 + X)
+  -- Intertwining identity: `diag(F(ζⁱ(1+X)-1)) * V = V * ψ(M)`; take determinants and cancel
+  -- `det V ≠ 0`.
   have hmat : Matrix.diagonal
       (fun i : Fin p ↦ eval₂ C (C (ζ ^ (i : ℕ)) * (1 + X) - 1) (PowerSeries.map ρ F)) * V =
         V * ψ.mapMatrix (leftMulMatrix p O F) := by
     refine Matrix.ext fun i j ↦ ?_
-    have hcol := congrArg (rootEvalHom hζ_nil (i : ℕ))
-      (congrArg (PowerSeries.map ρ) (mul_one_add_X_pow_eq_sum_leftMulMatrix (p := p) F j))
-    rw [map_mul (PowerSeries.map ρ), map_pow (PowerSeries.map ρ),
-      map_add (PowerSeries.map ρ), map_one (PowerSeries.map ρ), PowerSeries.map_X,
-      map_mul (rootEvalHom hζ_nil (i : ℕ)), map_pow (rootEvalHom hζ_nil (i : ℕ)),
-      rootEvalHom_one_add_X, map_sum (PowerSeries.map ρ),
-      map_sum (rootEvalHom hζ_nil (i : ℕ))] at hcol
+    have hcol := congrArg (PowerSeries.map ρ) (mul_one_add_X_pow_eq_sum_leftMulMatrix (p := p) F j)
+    simp only [map_mul, map_pow, map_add, map_one, map_X, map_sum] at hcol
+    replace hcol := congrArg (rootEvalHom hζ_nil (i : ℕ)) hcol
+    simp only [map_mul, map_pow, map_sum] at hcol
+    simp_rw [rootEvalHom_one_add_X] at hcol
     rw [Matrix.diagonal_mul, Matrix.mul_apply]; dsimp only [V]
     rw [Matrix.vandermonde_apply, ← rootEvalHom_apply hζ_nil (i : ℕ), hcol]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [Matrix.vandermonde_apply, rootEvalHom_map_frobeniusHom_mul_pow hζ.pow_eq_one hζ_nil,
-      mul_comm]
-    simp [ψ]
+    rw [Matrix.vandermonde_apply, rootEvalHom_apply, map_frobeniusHom,
+      eval₂_frobeniusHom hζ.pow_eq_one hζ_nil, mul_comm]
+    simp [ψ, map_frobeniusHom]
   have hdet := congrArg Matrix.det hmat
   rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_diagonal] at hdet
   have hV : V.det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr fun i j hij ↦

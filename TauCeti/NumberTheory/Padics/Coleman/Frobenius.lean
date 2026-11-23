@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Expand
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 
+import TauCeti.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.PowerSeries.OneAddXPow
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -19,13 +20,16 @@ Over any commutative ring `O` and natural number `p`, Frobenius substitution
 `Φ = TauCeti.Coleman.frobeniusHom p O : O⟦X⟧ →ₐ[O] O⟦X⟧` sends `f(X)` to `f((1 + X) ^ p - 1)`.
 It is continuous for the coefficientwise topology `PowerSeries.WithPiTopology` when `O` is a
 topological ring (`TauCeti.Coleman.continuous_frobeniusHom`), commutes with coefficientwise change
-of base ring (`TauCeti.Coleman.map_frobeniusHom`), and agrees with `PowerSeries.expand p` when `p`
-is prime and `(p : O) = 0` (`TauCeti.Coleman.frobeniusHom_eq_expand`).
+of base ring (`TauCeti.Coleman.map_frobeniusHom`), agrees with `PowerSeries.expand p` modulo `(p)`
+when `p` is prime (`TauCeti.Coleman.frobeniusHom_sub_expand_mem_span_p`), and coincides with
+`PowerSeries.expand p` when `(p : O) = 0` (`TauCeti.Coleman.frobeniusHom_eq_expand`).
 
 ## Main definitions and results
 
 * `TauCeti.Coleman.hasSubst_one_add_X_pow_sub_one`: `(1 + X) ^ p - 1` satisfies `HasSubst`.
 * `TauCeti.Coleman.frobeniusHom`: Frobenius substitution `f(X) ↦ f((1 + X) ^ p - 1)`.
+* `TauCeti.Coleman.frobeniusHom_sub_expand_mem_span_p`: for prime `p`, `frobeniusHom` agrees with
+  `PowerSeries.expand p` modulo `(p)`.
 * `TauCeti.Coleman.frobeniusHom_eq_expand`: for prime `p` with `(p : O) = 0`, `frobeniusHom`
   coincides with `PowerSeries.expand p`.
 * `TauCeti.Coleman.map_frobeniusHom`: compatibility with `PowerSeries.map`.
@@ -98,6 +102,18 @@ theorem map_frobeniusHom {O' : Type*} [CommRing O'] (φ : O →+* O') (f : O⟦X
     simp [PowerSeries.map_X]
   exact (PowerSeries.map_subst (hasSubst_one_add_X_pow_sub_one p O) (h := φ) f).trans
     (congrArg (subst · _) hsub)
+
+/-- For prime `p`, `frobeniusHom p O f` agrees with `PowerSeries.expand p` modulo `(p)`. -/
+theorem frobeniusHom_sub_expand_mem_span_p [Fact p.Prime] (f : O⟦X⟧) :
+    frobeniusHom p O f - expand p (Fact.out : p.Prime).ne_zero f ∈ Ideal.span {(p : O⟦X⟧)} := by
+  have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
+  rw [← pow_one (Ideal.span {(p : O⟦X⟧)}), ← map_natCast (C : O →+* O⟦X⟧),
+    PowerSeries.mem_span_C_pow_iff]
+  intro n
+  rw [pow_one, frobeniusHom_apply, expand_apply]
+  simpa using PowerSeries.coeff_subst_sub_subst_mem_span_mul (r := (p : O)) (by simp)
+    (by rw [map_pow, constantCoeff_X, zero_pow hp])
+    (C_dvd_one_add_X_pow_sub_one_sub_X_pow (Fact.out : p.Prime)) ⊤ (fun _ _ ↦ trivial)
 
 /-- For prime `p` with `(p : O) = 0`, `frobeniusHom` coincides with `PowerSeries.expand p`. -/
 theorem frobeniusHom_eq_expand [Fact p.Prime] (hp : (p : O) = 0) (f : O⟦X⟧) :

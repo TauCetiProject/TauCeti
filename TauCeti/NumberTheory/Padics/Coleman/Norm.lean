@@ -112,6 +112,17 @@ private theorem overFrobenius_algebraMap_eq (a : O⟦X⟧) :
     (overFrobeniusRingEquiv p O).symm (frobeniusHom p O a) =
       algebraMap O⟦X⟧ (OverFrobenius p O) a := rfl
 
+variable {p O}
+
+private def overFrobeniusToScalarAlgEquiv :
+    @AlgEquiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O) :=
+  @AlgEquiv.mk O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O)
+    (overFrobeniusRingEquiv p O).toEquiv (overFrobeniusRingEquiv p O).map_mul'
+    (overFrobeniusRingEquiv p O).map_add' (fun _ ↦ rfl)
+
+private theorem overFrobeniusRingEquiv_eq_toScalarAlgEquiv (x : OverFrobenius p O) :
+    overFrobeniusRingEquiv p O x = overFrobeniusToScalarAlgEquiv x := rfl
+
 end Definitions
 
 section InternalBasis
@@ -173,12 +184,6 @@ private theorem overFrobeniusAdjoinRootEquiv_root [Nontrivial O] :
   rw [overFrobeniusAdjoinRootEquiv, AlgEquiv.ofBijective_apply, overFrobeniusAdjoinRootHom,
     AdjoinRoot.liftAlgHom_root]
 
-private def overFrobeniusToScalarAlgEquiv :
-    @AlgEquiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O) :=
-  @AlgEquiv.mk O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O)
-    (overFrobeniusRingEquiv p O).toEquiv (overFrobeniusRingEquiv p O).map_mul'
-    (overFrobeniusRingEquiv p O).map_add' (fun _ ↦ rfl)
-
 end InternalBasis
 
 section Operators
@@ -199,21 +204,20 @@ def leftMulMatrix : O⟦X⟧ →ₐ[O] Matrix (Fin p) (Fin p) O⟦X⟧ where
       AlgHom.commutes]
     ext i j; simp [Matrix.algebraMap_eq_diagonal, Pi.algebraMap_def, PowerSeries.algebraMap_eq]
 
-/-- Coleman's multiplicative norm `N : O⟦X⟧ →* O⟦X⟧`, defined as the determinant of
-`leftMulMatrix p O` in the rank-`p` basis `basis p O` (agreeing with `Algebra.norm` for
-`scalarAlgebra p O`). Requiring prime `p` and `(p)`-adic completeness ensures the finite basis
-without non-finite-free fallbacks. -/
+/-- Coleman's multiplicative norm `N : O⟦X⟧ →* O⟦X⟧` for prime `p` and `(p)`-adically complete `O`,
+defined as the determinant of `leftMulMatrix p O`; agrees with `Algebra.norm` for
+`scalarAlgebra p O` (`norm_eq_algebraNorm`). -/
 def norm : O⟦X⟧ →* O⟦X⟧ :=
   Matrix.detMonoidHom.comp (leftMulMatrix p O).toMonoidHom
 
-/-- Coleman's norm restricted to units, `O⟦X⟧ˣ →* O⟦X⟧ˣ`, under the supported finite-free prime
-and `(p)`-adic-completeness hypotheses of `Coleman.norm`. -/
+/-- Coleman's multiplicative norm restricted to units, `Units.map (norm p O) : O⟦X⟧ˣ →* O⟦X⟧ˣ`,
+for prime `p` and `(p)`-adically complete `O`. -/
 def normUnits : O⟦X⟧ˣ →* O⟦X⟧ˣ :=
   Units.map (norm p O)
 
-/-- Coleman's trace `τ : O⟦X⟧ →ₗ[O] O⟦X⟧`, defined as the trace of `leftMulMatrix p O` in the
-rank-`p` basis `basis p O` (agreeing with `Algebra.trace` for `scalarAlgebra p O`). Requiring prime
-`p` and `(p)`-adic completeness ensures the finite basis without non-finite-free fallbacks. -/
+/-- Coleman's trace `τ : O⟦X⟧ →ₗ[O] O⟦X⟧` for prime `p` and `(p)`-adically complete `O`, defined
+as the trace of `leftMulMatrix p O`; agrees with `Algebra.trace` for `scalarAlgebra p O`
+(`trace_eq_algebraTrace`). -/
 def trace : O⟦X⟧ →ₗ[O] O⟦X⟧ where
   toFun f := Matrix.trace (leftMulMatrix p O f)
   map_add' _ _ := by rw [map_add, Matrix.trace_add]
@@ -305,7 +309,11 @@ theorem basis_repr_apply (f : O⟦X⟧) (i : Fin p) :
     @Module.Basis.repr (Fin p) O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O).toModule (basis p O) f i =
       coord p O i f := by
   rw [basis, @Module.Basis.map_repr _ _ _ _ _ _ _ _ (scalarAlgebra p O).toModule,
-    LinearEquiv.trans_apply, overFrobeniusBasis_repr_apply]; rfl
+    LinearEquiv.trans_apply, overFrobeniusBasis_repr_apply,
+    overFrobeniusRingEquiv_eq_toScalarAlgEquiv]
+  exact congrArg (coord p O i)
+    (@AlgEquiv.apply_symm_apply O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O)
+      overFrobeniusToScalarAlgEquiv f)
 
 /-- `adjoinRootEquiv p O` sends the adjoined root to `1 + X`. -/
 @[simp]
@@ -388,8 +396,8 @@ theorem mul_one_add_X_pow_eq_sum_leftMulMatrix (f : O⟦X⟧) (j : Fin p) :
     (sum_frobeniusHom_coord (p := p) (f * (1 + X) ^ (j : ℕ))).symm
 
 /-- **Determinant formula for Coleman's norm.** `norm p O f = det (leftMulMatrix p O f)`. -/
-theorem norm_eq_det_leftMulMatrix (f : O⟦X⟧) : norm p O f = Matrix.det (leftMulMatrix p O f) := by
-  rw [norm_eq_overFrobenius_norm, Algebra.norm_eq_matrix_det (overFrobeniusBasis p O)]; rfl
+theorem norm_eq_det_leftMulMatrix (f : O⟦X⟧) : norm p O f = Matrix.det (leftMulMatrix p O f) :=
+  (rfl)
 
 /-- **Matrix-trace formula for Coleman's trace.** `trace p O f = trace (leftMulMatrix p O f)`. -/
 theorem trace_eq_trace_leftMulMatrix (f : O⟦X⟧) :

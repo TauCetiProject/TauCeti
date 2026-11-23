@@ -13,7 +13,6 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Presentation
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Group.Subgroup.Ker
-import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Matrix
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 

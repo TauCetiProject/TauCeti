@@ -16,7 +16,6 @@ import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.MonoidAlgebra.Basic
-import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Operations

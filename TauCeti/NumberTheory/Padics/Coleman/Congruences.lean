@@ -72,6 +72,8 @@ private theorem norm_eq_map_frobenius_of_isReduced {R : Type*} [CommRing R] [IsR
 /-- Over any commutative ring of characteristic `p`, `norm` is coefficientwise Frobenius. -/
 theorem norm_eq_map_frobenius {R : Type*} [CommRing R] [CharP R p] (f : R⟦X⟧) :
     norm p R f = PowerSeries.map (frobenius R p) f := by
+  -- The identity holds over the reduced universal ring `MvPolynomial ℕ (ZMod p)`, where
+  -- Frobenius is injective, and transfers to any `R` along `eval₂Hom` by `map_norm`.
   let F : (MvPolynomial ℕ (ZMod p))⟦X⟧ := PowerSeries.mk MvPolynomial.X
   let φ : MvPolynomial ℕ (ZMod p) →+* R :=
     MvPolynomial.eval₂Hom (ZMod.castHom dvd_rfl R) (fun n ↦ coeff n f)

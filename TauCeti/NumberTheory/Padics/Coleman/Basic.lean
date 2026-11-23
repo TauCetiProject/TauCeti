@@ -88,16 +88,10 @@ private theorem coeff_frobeniusHom_sub_expand_mem (J : Ideal O) {g : O⟦X⟧} {
     coeff n (frobeniusHom p O g - expand p (Fact.out : p.Prime).ne_zero g) ∈
       Ideal.span {(p : O)} * J := by
   have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
-  rw [map_sub, frobeniusHom_apply, expand_apply, coeff_subst_eq_sum_range g (by simp),
-    coeff_subst_eq_sum_range g (by rw [map_pow, constantCoeff_X, zero_pow hp]),
-    ← Finset.sum_sub_distrib]
-  refine Ideal.sum_mem _ fun k hk ↦ ?_
-  rw [smul_eq_mul, smul_eq_mul, ← mul_sub, ← map_sub]
-  refine Ideal.mul_mem_mul_rev ?_ (hg k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)))
-  obtain ⟨r, hr⟩ := (C_dvd_one_add_X_pow_sub_one_sub_X_pow (O := O) (Fact.out : p.Prime)).trans
-    (sub_dvd_pow_sub_pow _ _ k)
-  rw [hr, coeff_C_mul]
-  exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
+  rw [frobeniusHom_apply, expand_apply]
+  exact PowerSeries.coeff_subst_sub_subst_mem_span_mul (by simp)
+    (by rw [map_pow, constantCoeff_X, zero_pow hp])
+    (C_dvd_one_add_X_pow_sub_one_sub_X_pow (Fact.out : p.Prime)) J hg
 
 private theorem coeff_neumannStep_mem (J : Ideal O) {a : Fin p → O⟦X⟧} {n : ℕ}
     (ha : ∀ i : Fin p, ∀ m < p * (n + 1), coeff m (a i) ∈ J) (j : Fin p) :

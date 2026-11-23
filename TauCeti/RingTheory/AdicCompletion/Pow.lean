@@ -28,8 +28,9 @@ to a root congruent to it modulo `I ^ n`, and not merely modulo `I`.
   every `J` with `J ^ k ≤ I`, in particular for every `J ≤ I`.
 * `IsPrecomplete.of_pow_le_of_pow_le`, `IsAdicComplete.of_pow_le_of_pow_le`: adic precompleteness
   and completeness for `I` imply the same for every `J` with `J ^ k ≤ I` and `I ^ l ≤ J`.
-* `IsHausdorff.pow`, `IsAdicComplete.pow`: adic Hausdorffness and completeness for `I` imply the
-  same for `I ^ n` when `n ≠ 0`.
+* `IsHausdorff.pow`, `IsAdicComplete.pow`, `IsHausdorff.eq_iff_sub_mem_pow`: adic Hausdorffness
+  and completeness for `I` imply the same for `I ^ n` when `n ≠ 0`, and separation in an
+  `I`-adically Hausdorff ring reduces equality to membership in every `I ^ n`.
 * `IsPrecomplete.pow`: adic precompleteness for `I` implies precompleteness for every `I ^ n`.
 -/
 
@@ -88,3 +89,9 @@ theorem IsAdicComplete.pow [IsAdicComplete I M] {n : ℕ} (hn : n ≠ 0) :
     IsAdicComplete (I ^ n) M where
   toIsHausdorff := .pow hn
   toIsPrecomplete := .pow n
+
+/-- In an `I`-adically Hausdorff commutative ring, two elements are equal if and only if their
+difference lies in `I ^ n` for every `n`. -/
+theorem IsHausdorff.eq_iff_sub_mem_pow [IsHausdorff I R] {x y : R} :
+    x = y ↔ ∀ n : ℕ, x - y ∈ I ^ n := by
+  simp_rw [eq_iff_smodEq (I := I), SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]

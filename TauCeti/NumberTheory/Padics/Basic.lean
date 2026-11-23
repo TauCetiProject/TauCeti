@@ -35,9 +35,7 @@ when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K
 (including the zero seminorm) it maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it
 is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
 `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), and a nonzero integer `n` has norm at least
-`1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`). It also registers
-`PadicInt.isAdicComplete_span_p`, packaging the `(p)`-adic completeness of `ℤ_[p]` alongside
-Mathlib's maximal-ideal instance.
+`1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`).
 
 Two continuous ring homomorphisms from `ℚ_[p]` to a Hausdorff semiring are equal
 (`RingHom.ext_padic_of_continuous`), since they agree on the dense subfield `ℚ`; for instance a
@@ -70,12 +68,6 @@ end TauCeti
 namespace PadicInt
 
 variable {p : ℕ} [Fact (Nat.Prime p)]
-
-/-- `ℤ_[p]` is `(p)`-adically complete. -/
-instance isAdicComplete_span_p (p : ℕ) [Fact (Nat.Prime p)] :
-    IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
-  rw [← maximalIdeal_eq_span_p]
-  infer_instance
 
 /-- The structure map of the `ℤ_[p]`-algebra `ℚ_[p]` is the inclusion `PadicInt.Coe.ringHom`. -/
 theorem algebraMap_eq_coe_ringHom : algebraMap ℤ_[p] ℚ_[p] = Coe.ringHom :=

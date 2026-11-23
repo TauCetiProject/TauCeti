@@ -41,9 +41,10 @@ uniformly coefficientwise (`PowerSeries.mem_map_C_pow_iff_of_fg`), so `R⟦X⟧`
   `PowerSeries.isAdicComplete_comap_constantCoeff`: `R⟦X⟧` inherits `I`-adic Hausdorffness,
   precompleteness and completeness from `R`.
 * `PowerSeries.isHausdorff_map_C`, `PowerSeries.isPrecomplete_map_C`,
-  `PowerSeries.isAdicComplete_map_C`, `PowerSeries.isAdicComplete_span_C`: for finitely generated
-  `I`, `R⟦X⟧` inherits `I`-adic Hausdorffness, precompleteness and completeness for the extended
-  ideal `I.map C`, and in particular for principal constant ideals `Ideal.span {C r}`.
+  `PowerSeries.isAdicComplete_map_C`, `PowerSeries.isAdicComplete_span_C`,
+  `PowerSeries.isAdicComplete_span_natCast`: for finitely generated `I`, `R⟦X⟧` inherits `I`-adic
+  Hausdorffness, precompleteness and completeness for the extended ideal `I.map C`, and in
+  particular for principal constant ideals `Ideal.span {C r}` and natural casts `(n)`.
 * `PowerSeries.isAdicComplete_maximalIdeal`: over a local ring complete for its maximal ideal, the
   power series ring is complete for its maximal ideal.
 -/
@@ -164,6 +165,12 @@ theorem isAdicComplete_span_C (r : R) [IsAdicComplete (Ideal.span {r}) R] :
   have hspan : Ideal.span {C r} = (Ideal.span {r}).map C := by
     rw [Ideal.map_span, Set.image_singleton]
   exact hspan ▸ isAdicComplete_map_C (Submodule.fg_span_singleton r)
+
+/-- If `R` is `(n)`-adically complete for a natural number `n`, then `R⟦X⟧` is `(n)`-adically
+complete. -/
+instance isAdicComplete_span_natCast (n : ℕ) [IsAdicComplete (Ideal.span {(n : R)}) R] :
+    IsAdicComplete (Ideal.span {(n : R⟦X⟧)}) R⟦X⟧ :=
+  (map_natCast (C : R →+* R⟦X⟧) n) ▸ isAdicComplete_span_C (n : R)
 
 /-- **Power series over a complete local ring are complete.** If a local ring `R` is complete for
 its maximal ideal, then so is `R⟦X⟧`. -/
