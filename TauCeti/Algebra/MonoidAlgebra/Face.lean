@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Saturation
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.Algebra.MonoidAlgebra.Ideal
 public import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.MonoidAlgebra.Ideal
 
 /-!
