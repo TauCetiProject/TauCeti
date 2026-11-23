@@ -53,7 +53,7 @@ variable {X Y Z : Scheme.{u}}
 /-- A maximally dominating morphism induces a map between the schemes of generic points. -/
 noncomputable def IsMaximallyDominating.genericPointSchemeMap {f : X ⟶ Y}
     (hf : f.IsMaximallyDominating) : X.genericPointScheme ⟶ Y.genericPointScheme :=
-  Sigma.map' (fun x ↦ ⟨f x, (f.isMaximallyDominating_iff.mp hf) x x.property⟩)
+  Sigma.map' (Set.MapsTo.restrict (⇑f) _ _ hf)
     (fun x ↦ Spec.map (f.residueFieldMap x))
 
 /-- On each component, the induced map of generic-point schemes uses the residue-field map. -/
@@ -158,7 +158,7 @@ theorem isMaximallyDominating_iff_isDominant_pullback_fst_fromGenericPointScheme
 /-- If the source has finitely many irreducible components, maximal domination is equivalent
 to the projection from the generic fibre having dense image. -/
 theorem
-    isMaximallyDominating_iff_isDominant_fst_fromGenericPointScheme_of_finite_irreducibleComponents
+    isMaximallyDominating_iff_isDominant_pullback_fst_fromGenericPointScheme_of_finite
     (f : X ⟶ Y) (hfin : (irreducibleComponents X).Finite) :
     f.IsMaximallyDominating ↔ IsDominant (pullback.fst f Y.fromGenericPointScheme) :=
   f.isMaximallyDominating_iff_isDominant_pullback_fst_fromGenericPointScheme
