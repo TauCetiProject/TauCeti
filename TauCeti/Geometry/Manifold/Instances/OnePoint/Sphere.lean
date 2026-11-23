@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 
@@ -663,14 +665,11 @@ theorem _root_.Orientation.measure_sphereVolumeForm_univ :
   have : BorelSpace (OnePoint ℂ) := ⟨rfl⟩
   have hΦ := (diffeomorphSphere v ι).toHomeomorph.measurePreserving_measure_mpullback
     ((diffeomorphSphere v ι).mdifferentiable (by simp)) o.sphereVolumeForm.val
+  rw [← hΦ.map_eq, Measure.map_apply hΦ.measurable MeasurableSet.univ, preimage_univ,
+    Diffeomorph.coe_toHomeomorph, mpullback_diffeomorphSphere_sphereVolumeForm v ι o,
+    RoughForm.measure_smul, smul_apply, measure_fubiniStudyForm_univ]
   -- The frame `(v, ι 1, ι i)` has volume `±1`, so the pullback is `±4π ω_FS`.
-  have hc : |-(4 * Real.pi * o.volumeForm ![(v : E), (ι 1 : E), (ι Complex.I : E)])| =
-      4 * Real.pi := by
-    rw [abs_neg, abs_mul, abs_volumeForm_frame v ι o, mul_one, abs_of_pos (by positivity)]
-  rw [← hΦ.map_eq, Measure.map_apply hΦ.measurable MeasurableSet.univ, preimage_univ]
-  rw [Diffeomorph.coe_toHomeomorph, mpullback_diffeomorphSphere_sphereVolumeForm v ι o]
-  rw [RoughForm.measure_smul, hc, smul_apply, measure_fubiniStudyForm_univ, smul_eq_mul,
-    mul_one]
+  simp [abs_mul, abs_volumeForm_frame v ι o]
 
 end Area
 

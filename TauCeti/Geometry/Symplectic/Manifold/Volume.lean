@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Volume
-import TauCeti.Topology.Algebra.Module.Alternating.Wedge.TwoForm
 import TauCeti.LinearAlgebra.Basis.Fin
 
 /-!
@@ -97,9 +96,9 @@ theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
 volume form of `σ`. -/
 @[simp]
 theorem volumeForm_one (σ : SmoothTwoForm I M) : σ.volumeForm 1 = σ := by
-  ext x : 2
-  rw [volumeForm_apply, ContinuousAlternatingMap.wedgePow_one, Nat.factorial_one, Nat.cast_one,
-    inv_one, one_smul]
+  ext x v
+  simp only [volumeForm_apply, Nat.factorial_one, Nat.cast_one, inv_one, one_smul]
+  exact ContinuousAlternatingMap.wedgePow_one_apply _ v
 
 /-- Rescaling the two-form by `c` rescales its symplectic volume form by `cⁿ`. -/
 @[simp]

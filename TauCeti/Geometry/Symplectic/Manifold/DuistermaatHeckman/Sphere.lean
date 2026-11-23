@@ -19,6 +19,7 @@ import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.Geometry.Symplectic.Manifold.Sphere.Area
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
@@ -34,10 +35,9 @@ the area measure `|σ|` along `h`:
 
 (`TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_height`). This is Archimedes' theorem that a
 band of the sphere between two heights has the area of the band of the circumscribed cylinder
-between the same heights. In particular the area of the sphere is `4π`
-(`TauCeti.liouvilleMeasure_sphereAreaForm_univ`), and a constant moment map, such as that of the
-trivial circle action, has Duistermaat–Heckman measure `4π δ_c`
-(`TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`).
+between the same heights. A constant moment map, such as that of the trivial circle action, has
+Duistermaat–Heckman measure `4π δ_c` (`TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`),
+since the sphere has area `4π` (`Orientation.liouvilleMeasure_sphereVolumeForm_univ`).
 
 The computation uses longitude and height as coordinates. On the strip `(a, a + 2π) × (-1, 1)`
 (`TauCeti.longitudeHeightStrip a`) the parametrization
@@ -71,8 +71,6 @@ Duistermaat–Heckman measure.
   measure on `(0, 2π) × (-1, 1)`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_height`: the Duistermaat–Heckman measure of the
   height is `2π` times Lebesgue measure on `[-1, 1]`.
-* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area of `S²` is `4π`, and
-  `TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`: that of `r • σ` is `4π |r|`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`: a constant moment map has
   Duistermaat–Heckman measure `4π δ_c`.
 
@@ -474,31 +472,13 @@ theorem duistermaatHeckmanMeasure_sphereAreaForm_height :
     Subtype.range_coe, map_restrict_longitudeHeightStrip_zero,
     Measure.restrict_congr_set Ioo_ae_eq_Icc]
 
-/-- **The area of the unit sphere is `4π`**, as the total mass of its Liouville measure. -/
-@[simp]
-theorem liouvilleMeasure_sphereAreaForm_univ :
-    sphereAreaForm.liouvilleMeasure 1 univ = ENNReal.ofReal (4 * π) := by
-  rw [← SmoothTwoForm.duistermaatHeckmanMeasure_univ measurable_height,
-    duistermaatHeckmanMeasure_sphereAreaForm_height, smul_apply, Measure.restrict_apply_univ,
-    Real.volume_Icc, smul_eq_mul, ← ENNReal.ofReal_mul (by positivity)]
-  congr 1
-  ring
-
-/-- **The area of a rescaled sphere.** Rescaling the area form of the unit sphere by `r` rescales
-its area `4π` by `|r|`. -/
-theorem liouvilleMeasure_smul_sphereAreaForm_univ (r : ℝ) :
-    (r • sphereAreaForm).liouvilleMeasure 1 univ = ENNReal.ofReal (4 * π * |r|) := by
-  rw [SmoothTwoForm.liouvilleMeasure_smul, smul_apply, liouvilleMeasure_sphereAreaForm_univ,
-    pow_one, smul_eq_mul, ← ENNReal.ofReal_mul (abs_nonneg r)]
-  congr 1
-  ring
-
 /-- **The Duistermaat–Heckman measure of a constant moment map on `S²`.** A constant map, such as
 the moment map of the trivial circle action, pushes the area measure of the unit sphere forward to
 the point mass `4π δ_c`. -/
 theorem duistermaatHeckmanMeasure_sphereAreaForm_const {F : Type*} [MeasurableSpace F] (c : F) :
     sphereAreaForm.duistermaatHeckmanMeasure 1 (fun _ : S² ↦ c) =
       ENNReal.ofReal (4 * π) • Measure.dirac c := by
-  rw [SmoothTwoForm.duistermaatHeckmanMeasure_const, liouvilleMeasure_sphereAreaForm_univ]
+  rw [SmoothTwoForm.duistermaatHeckmanMeasure_const, sphereAreaForm_eq_sphereVolumeForm,
+    Orientation.liouvilleMeasure_sphereVolumeForm_univ]
 
 end TauCeti

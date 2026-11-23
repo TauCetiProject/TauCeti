@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Parametrization
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.Measure
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The Fubini–Study form has total integral one
@@ -30,10 +32,15 @@ of `ℂ` (`OnePoint.hasMFDerivAt_coe`), so it is positively oriented, and on the
 `ρ(z) = 1 / (π (1 + |z|²)²)`. The integral of the form is therefore the integral of `ρ` over the
 plane, which is `1` (`OnePoint.integral_fubiniStudyDensity`).
 
+The same computation without orientations shows that the measure `|ω_FS|` of the form gives the
+sphere total mass one (`OnePoint.measure_fubiniStudyForm_univ`): in the affine chart it is
+Lebesgue measure with density `ρ`, and the remaining point `∞` is null.
+
 ## Main results
 
 * `OnePoint.integralTopForm_fubiniStudyForm`: the Fubini–Study form integrates to `1` over the
   Riemann sphere with its complex orientation.
+* `OnePoint.measure_fubiniStudyForm_univ`: its measure gives the sphere total mass one.
 
 ## References
 
@@ -47,7 +54,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Module TauCeti
+open Set Filter MeasureTheory Module TauCeti
 open scoped Manifold TauCeti.ComplexManifold
 
 namespace OnePoint
@@ -91,5 +98,53 @@ theorem integralTopForm_fubiniStudyForm :
   funext i
   refine (ContinuousLinearEquiv.refl_apply ℝ ℂ _).trans ?_
   fin_cases i <;> simp
+
+/-- **The Fubini–Study form has total area one.** The measure `|ω_FS|` of the Fubini–Study form
+gives the Riemann sphere measure `1`: in the affine chart it is Lebesgue measure with density
+`ρ(z) = 1 / (π (1 + |z|²)²)`, which integrates to one (`OnePoint.integral_fubiniStudyDensity`),
+and the remaining point `∞` is null. -/
+theorem measure_fubiniStudyForm_univ {m : MeasurableSpace (OnePoint ℂ)}
+    [BorelSpace (OnePoint ℂ)] :
+    RoughForm.measure fubiniStudyForm.val (univ : Set (OnePoint ℂ)) = 1 := by
+  set e := extChartAt 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ)
+  have hsrc : e.source = {∞}ᶜ := by
+    simp [e, affineChart_source]
+  have himage : e '' {∞}ᶜ = univ :=
+    eq_univ_of_forall fun y ↦ ⟨(y : OnePoint ℂ), coe_ne_infty y, by simp [e]⟩
+  -- In the affine chart the coefficient on a basis `b` is `ρ` times the area of `b`.
+  have hcoef (y : ℂ) (b : Basis (Fin 2) ℝ ℂ) :
+      RoughForm.inChartAt fubiniStudyForm.val ((0 : ℂ) : OnePoint ℂ) y b =
+        fubiniStudyDensity y * Complex.orientation.volumeForm b := by
+    have h := RoughForm.inChartAt_chart_apply fubiniStudyForm.val _
+      (by simp [e] : ((y : ℂ) : OnePoint ℂ) ∈ e.source) b
+    simp only [extChartAt_coe, Function.comp_apply, chartAt_coe, affineChart_coe,
+      modelWithCornersSelf_coe, id_eq] at h
+    refine h.trans ((SmoothBundleForm.apply_eq_eval₂ _ _ _).trans ?_)
+    rw [eval₂_fubiniStudyForm_tangentCoordChange (by simp), ← Orientation.volumeFormL_apply,
+      Complex.orientation_volumeFormL_apply]
+    simp
+  -- Lebesgue measure of `ℂ` is the Haar measure of `b` scaled by the area of `b`.
+  have hvol (b : Basis (Fin 2) ℝ ℂ) :
+      (volume : Measure ℂ) = ENNReal.ofReal |Complex.orientation.volumeForm b| • b.addHaar := by
+    rw [Complex.orientation.abs_volumeForm_apply_eq_sqrt_det_gram, b.volume_eq_smul_addHaar]
+  have hint : Integrable fubiniStudyDensity :=
+    Integrable.of_integral_ne_zero (by rw [integral_fubiniStudyDensity]; exact one_ne_zero)
+  set b := finBasisOfFinrankEq ℝ ℂ Complex.finrank_real_complex
+  calc RoughForm.measure fubiniStudyForm.val univ
+      = RoughForm.measure fubiniStudyForm.val {∞}ᶜ := by
+        rw [← compl_union_self {(∞ : OnePoint ℂ)}, measure_union disjoint_compl_left
+          (measurableSet_singleton _), measure_singleton, add_zero]
+    -- In the affine chart, `|ω_FS|` is the density `ρ` against Lebesgue measure.
+    _ = ∫⁻ z, ENNReal.ofReal (fubiniStudyDensity z) := by
+        rw [RoughForm.measure_apply_of_subset _ (measurableSet_singleton _).compl hsrc.ge,
+          himage, Measure.restrict_univ]
+        simp_rw [hcoef, abs_mul, abs_of_pos (fubiniStudyDensity_pos _),
+          ENNReal.ofReal_mul (fubiniStudyDensity_pos _).le]
+        rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, hvol b, lintegral_smul_measure,
+          smul_eq_mul, mul_comm]
+    _ = 1 := by
+        rw [← ofReal_integral_eq_lintegral_ofReal hint
+          (Eventually.of_forall fun z ↦ (fubiniStudyDensity_pos z).le),
+          integral_fubiniStudyDensity, ENNReal.ofReal_one]
 
 end OnePoint
