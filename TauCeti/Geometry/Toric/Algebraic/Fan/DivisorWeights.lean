@@ -264,4 +264,14 @@ theorem exists_coneDivisorWeights_eq_vadd {sigma : Phi.cones}
       Phi.coneDivisorWeights sigma a = m +ᵥ (dualSemigroup Phi.lattice sigma.val : Set (N →+ ℤ)) :=
   (exists_forall_ray_le_eq_neg hsigma a).imp fun _ ↦ coneDivisorWeights_eq_vadd
 
+/-- The difference of two local Cartier characters for the same divisor belongs to the
+dual semigroup of their overlap. Swapping the charts gives the inverse transition character. -/
+theorem sub_mem_dualSemigroup_inf {sigma tau : Phi.cones} {a : Phi.Ray → ℤ} {m n : N →+ ℤ}
+    (hm : ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho)
+    (hn : ∀ rho : Phi.Ray, rho.toCone ≤ tau → n rho.primitiveGenerator = -a rho) :
+    m - n ∈ dualSemigroup Phi.lattice (sigma ⊓ tau).val := by
+  rw [mem_dualSemigroup_iff_forall_ray_le]
+  intro rho hrho
+  simp [hm rho (hrho.trans inf_le_left), hn rho (hrho.trans inf_le_right)]
+
 end TauCeti.Toric.Fan
