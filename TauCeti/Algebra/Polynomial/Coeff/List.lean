@@ -154,15 +154,22 @@ theorem leadingCoeff_ofCoeffList_reverse {l : List R} (h : l = [] ∨ l.headD 0 
     (ofCoeffList l.reverse).leadingCoeff = l.headD 0 := by
   rw [leadingCoeff, natDegree_ofCoeffList_reverse h, coeff_ofCoeffList_reverse_length_sub_one]
 
-/-- Two lists of the same length define the same polynomial if and only if they are equal.  This
-is not injectivity on arbitrary descending lists, since leading zeros are discarded. -/
-theorem ofCoeffList_reverse_inj {l l' : List R} (hlen : l.length = l'.length) :
-    ofCoeffList l.reverse = ofCoeffList l'.reverse ↔ l = l' := by
-  refine ⟨fun h => List.reverse_inj.1 <| List.ext_getElem (by simpa using hlen) fun i hi hi' => ?_,
-    fun h => h ▸ rfl⟩
+/-- Two constant-first coefficient lists of the same length define the same polynomial if and only
+if they are equal.  This is not injectivity on arbitrary lists, since trailing zeros are
+discarded. -/
+theorem ofCoeffList_inj {l l' : List R} (hlen : l.length = l'.length) :
+    ofCoeffList l = ofCoeffList l' ↔ l = l' := by
+  refine ⟨fun h => List.ext_getElem hlen fun i hi hi' => ?_, fun h => h ▸ rfl⟩
   have hc := congr(($h).coeff i)
   rwa [coeff_ofCoeffList, coeff_ofCoeffList, List.getD_eq_getElem _ _ hi,
     List.getD_eq_getElem _ _ hi'] at hc
+
+/-- Two descending lists of the same length define the same polynomial if and only if they are
+equal.  This is not injectivity on arbitrary descending lists, since leading zeros are
+discarded. -/
+theorem ofCoeffList_reverse_inj {l l' : List R} (hlen : l.length = l'.length) :
+    ofCoeffList l.reverse = ofCoeffList l'.reverse ↔ l = l' :=
+  (ofCoeffList_inj (by simpa using hlen)).trans List.reverse_inj
 
 /-- Recovering a descending list with no leading zero from its polynomial. -/
 theorem coeffList_ofCoeffList_reverse {l : List R} (h : l = [] ∨ l.headD 0 ≠ 0) :
