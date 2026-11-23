@@ -107,7 +107,7 @@ weight-torus morphism. -/
 theorem coe_geckWeightTorusClosedSubgroup
     (hwt : Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤) :
     let _ := t.isClosedImmersion_geckWeightTorus_of_span_eq_top ht hwt
-    (t.geckWeightTorusClosedSubgroup ht hwt).1 = Subobject.mk (t.geckWeightTorus ht) := by
+    (t.geckWeightTorusClosedSubgroup ht hwt).val = Subobject.mk (t.geckWeightTorus ht) := by
   have _ := t.isClosedImmersion_geckWeightTorus_of_span_eq_top ht hwt
   rw [geckWeightTorusClosedSubgroup]
   exact ClosedSubgroupScheme.coe_mk _

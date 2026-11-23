@@ -107,7 +107,7 @@ theorem card_absNorm_real_le_mono {x y : ℝ} (h : x ≤ y) :
       Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ y} := by
   have : Finite {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ y} :=
     (finite_setOf_absNorm_real_le K y).to_subtype
-  refine Nat.card_le_card_of_injective (fun I ↦ ⟨I.1, I.2.trans h⟩) fun a b hab ↦ ?_
+  refine Nat.card_le_card_of_injective (fun I ↦ ⟨I.val, I.property.trans h⟩) fun a b hab ↦ ?_
   injection hab with hab'
   exact Subtype.ext hab'
 

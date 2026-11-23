@@ -291,7 +291,7 @@ private theorem contMDiff_spliceMap {G : ℝ → ℝ → E}
     have hGq : ContDiffAt ℝ ∞ (fun p : ℝ × ℝ => G p.1 p.2) ((q.1 : ℝ), arg q.2) :=
       hG.contDiffAt (prod_mem_nhds univ_mem
         (isOpen_Ioo.mem_nhds ⟨neg_lt_of_abs_lt hlt, lt_of_abs_lt hlt⟩))
-    exact (contMDiffAt_symm_of_mem_maximalAtlas hφ (hGφ _ q.1.2 _ hq)).comp q
+    exact (contMDiffAt_symm_of_mem_maximalAtlas hφ (hGφ _ q.1.property _ hq)).comp q
       (hGq.contMDiffAt.comp q hin)
   · -- Near `q` the motion is `K`.
     have hqO : q.2 ∈ (Circle.exp '' Icc (-a) a)ᶜ := fun h =>
@@ -300,7 +300,7 @@ private theorem contMDiff_spliceMap {G : ℝ → ℝ → E}
         fun q => K q.2 := by
       filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
         ((isClosed_circleExp_image_Icc (-a) a).isOpen_compl.mem_nhds hqO)] with q' hq'
-      exact spliceMap_of_le_abs (hGK _ q'.1.2) hKφ hρr
+      exact spliceMap_of_le_abs (hGK _ q'.1.property) hKφ hρr
         (not_le.1 (mt mem_circleExp_image_Icc_neg_iff.2 hq')).le
     exact (K.contMDiff.comp contMDiff_snd).contMDiffAt.congr_of_eventuallyEq hev
 
@@ -536,8 +536,8 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
     isSmoothEmbedding_spliceMap_of_pos_deriv (r := r) (a := 2 * δ) ℓ
       (hjoint.comp (contMDiff_const.prodMk contMDiff_id))
       ((contDiffOn_splice hkC hlC δ).comp (contDiffOn_const.prodMk contDiffOn_id)
-        fun t ht => ⟨mem_univ _, ht⟩) (hGφ s s.2) (fun t ht _ => hGK s t ht) hKφ
-      (hpos δ s s.2) (fun t ht => (hδb s s.2 t ht).2) hδρ hρr.le hrπ hφ
+        fun t ht => ⟨mem_univ _, ht⟩) (hGφ s s.property) (fun t ht _ => hGK s t ht) hKφ
+      (hpos δ s s.property) (fun t ht => (hδb s s.property t ht).2) hδρ hρr.le hrπ hφ
   let K' := SmoothEmbedding.ofIsSmoothEmbedding _ (hemb 1)
   refine ⟨K', ⟨⟨_, hjoint⟩, fun z => ?_, fun z => ?_, hemb⟩, ?_, fun t z hz => ?_⟩
   · -- At time `0` the motion is `K`.

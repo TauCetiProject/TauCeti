@@ -15,8 +15,10 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Geometry.Symplectic.Duality
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.Analysis.Calculus.FDeriv.Submodule
 
 /-!
 # Integrability and Stokes formulas for symplectic area
@@ -28,7 +30,11 @@ area of a `C²` map on a closed annulus with the difference of its boundary acti
 The outer and inner circles are both parametrized counterclockwise on `[-π, π]`, and the inner
 action is subtracted. No extension across the inner disc is needed. Together with the
 isoperimetric inequality for the boundary loops, this is the Stokes step used in energy decay
-and removal of singularities for holomorphic curves.
+and removal of singularities for holomorphic curves. On a closed upper half-annulus, for a map
+that is `C²` up to the diameter and sends it into a subspace on which `ω` vanishes, the
+symplectic area is the difference of the actions of the two half-circles, parametrized on
+`[0, π]`: the primitive vanishes along the diameter
+(`TauCeti.SymplecticForm.integral_fderivWithin_apply_upperHalfAnnulus`).
 
 For a loop `x : [0, 1] → V`, the integral of `λ` along it is the loop area
 `a(x) = ½ ∫₀¹ ω(x(t), x'(t)) dt` (`TauCeti.SymplecticForm.loopArea`). If the bottom and top sides
@@ -66,7 +72,7 @@ integrals of the symplectic form that tend to zero
 public section
 
 open Filter MeasureTheory Set Complex Topology
-open scoped Real
+open scoped Real Interval
 
 namespace TauCeti
 
@@ -144,13 +150,9 @@ theorem integral_fderiv_apply_prod_Icc [FiniteDimensional ℝ V] (ω : Symplecti
         ((∫ s in a.1..b.1, ω (u (s, b.2)) (fderiv ℝ u (s, b.2) (1, 0))) -
           ∫ s in a.1..b.1, ω (u (s, a.2)) (fderiv ℝ u (s, a.2) (1, 0)))) := by
   let B := ω.toBilinForm.toContinuousBilinearMap
-  have hB (x y : V) : B x y = ω x y := by simp [B]
-  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
-    rw [hB, hB, ← ω.neg_eq]
-    ring
   have hgreen := B.integral_bilinear_fderiv_sub_prod_Icc hle hu
-  simp only [hskew, integral_const_mul] at hgreen
-  simp only [hB] at hgreen
+  simp only [B, toContinuousBilinearMap_sub_swap, integral_const_mul] at hgreen
+  simp only [LinearMap.toContinuousBilinearMap_apply] at hgreen
   linarith
 
 section LoopArea
@@ -388,23 +390,70 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
         (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ)) -
       ∫ θ in -π..π, ω (u (circleMap z₀ a θ))
         (deriv (fun θ ↦ u (circleMap z₀ a θ)) θ)) := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
-    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
-  have hB (x y : V) : B x y = ω x y := by simp [B]
-  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
-    rw [hB, hB, ← ω.neg_eq]
-    ring
+  let B := ω.toBilinForm.toContinuousBilinearMap
   have hcircle (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) :
       deriv (fun θ ↦ u (circleMap z₀ r θ)) θ =
         fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := by
-    have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
-      simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_nonneg (le_trans ha hr.1)] using (mem_Icc.mp hr)
+    have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
+      circleMap_mem_setOf_le_norm_sub_le ha hr θ
     exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
       (hasDerivAt_circleMap z₀ r θ)).deriv
   have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu
-  simp only [hskew, integral_const_mul] at hgreen
-  simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
+  simp only [B, toContinuousBilinearMap_sub_swap, integral_const_mul] at hgreen
+  simp only [LinearMap.toContinuousBilinearMap_apply, ← hcircle b ⟨hab, le_rfl⟩,
+    ← hcircle a ⟨le_rfl, hab⟩] at hgreen
+  linarith
+
+/-- **Stokes' formula for symplectic area on an upper half-annulus with isotropic diameter.** Let
+`u` be `C²` on `{z | z₀.im ≤ z.im} ∩ O` for an open set `O` containing the closed upper half `S` of
+the annulus of radii `0 ≤ a ≤ b` about `z₀`, with derivatives taken within the closed half-plane,
+and let `u` map the points of `O` on the line `z.im = z₀.im` into a subspace `L` on which `ω`
+vanishes. Then the symplectic area of `u` on `S` is the outer minus the inner half-circle action
+for the primitive `λₓ(v) = ½ ω(x, v)`, both half-circles traversed from the angle `0` to `π`: the
+diameter contributes nothing. -/
+theorem integral_fderivWithin_apply_upperHalfAnnulus [FiniteDimensional ℝ V]
+    (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ) {a b : ℝ} {O : Set ℂ} (hO : IsOpen O)
+    (ha : 0 ≤ a) (hab : a ≤ b)
+    (hSO : {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆ O)
+    (hu : ContDiffOn ℝ 2 u ({z : ℂ | z₀.im ≤ z.im} ∩ O)) {L : Submodule ℝ V}
+    (hLω : ∀ v ∈ L, ∀ w ∈ L, ω v w = 0)
+    (huL : ∀ z ∈ O, z.im = z₀.im → u z ∈ L) :
+    ∫ z in {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
+      ω (fderivWithin ℝ u {z | z₀.im ≤ z.im} z 1) (fderivWithin ℝ u {z | z₀.im ≤ z.im} z I) =
+      (1 / 2 : ℝ) * ((∫ θ in 0..π, ω (u (circleMap z₀ b θ))
+          (fderivWithin ℝ u {z | z₀.im ≤ z.im} (circleMap z₀ b θ) (circleMap 0 b θ * I))) -
+        ∫ θ in 0..π, ω (u (circleMap z₀ a θ))
+          (fderivWithin ℝ u {z | z₀.im ≤ z.im} (circleMap z₀ a θ) (circleMap 0 a θ * I))) := by
+  set H : Set ℂ := {z | z₀.im ≤ z.im}
+  let B := ω.toBilinForm.toContinuousBilinearMap
+  -- Along the diameter `u` and its derivative lie in `L`, so the diameter terms vanish.
+  have hseg (z : ℂ) (hzO : z ∈ O) (hz : z.im = z₀.im) : B (u z) (fderivWithin ℝ u H z 1) = 0 := by
+    have hzHO : z ∈ H ∩ O := ⟨hz.ge, hzO⟩
+    have hline : ∀ᶠ t : ℝ in 𝓝 0, z + t • (1 : ℂ) ∈ O :=
+      (Continuous.tendsto' (by fun_prop) 0 z (by simp)).eventually (hO.mem_nhds hzO)
+    have him (t : ℝ) : (z + t • (1 : ℂ)).im = z₀.im := by simp [hz]
+    have hmem := ((hu.differentiableOn (by norm_num)) z hzHO).hasFDerivWithinAt
+      |>.apply_mem_of_eventually_add_smul_sub_mem L.isClosed_of_finiteDimensional
+        (hline.mono fun t ht ↦ ⟨(him t).ge, ht⟩)
+        (hline.mono fun t ht ↦ L.sub_mem (huL _ ht (him t)) (huL z hzO hz))
+    rw [LinearMap.toContinuousBilinearMap_apply, ← fderivWithin_inter (hO.mem_nhds hzO)]
+    exact hLω _ (huL z hzO hz) _ hmem
+  have hdiam (ε : ℝ) (hε : |ε| = 1) :
+      ∫ r in a..b, B (u (z₀ + ε * r)) (fderivWithin ℝ u H (z₀ + ε * r) 1) = 0 := by
+    rw [← intervalIntegral.integral_zero (a := a) (b := b) (μ := volume) (E := ℝ)]
+    refine intervalIntegral.integral_congr fun s hs ↦ ?_
+    rw [uIcc_of_le hab] at hs
+    have him : (z₀ + ε * s).im = z₀.im := by simp
+    refine hseg _ (hSO ⟨him.ge, ?_⟩) him
+    simpa [hε, abs_of_nonneg (ha.trans hs.1)] using hs
+  have hright : ∫ r in a..b, B (u (z₀ + r)) (fderivWithin ℝ u H (z₀ + r) 1) = 0 := by
+    simpa only [ofReal_one, one_mul] using hdiam 1 (by simp)
+  have hleft : ∫ r in a..b, B (u (z₀ - r)) (fderivWithin ℝ u H (z₀ - r) 1) = 0 := by
+    simpa only [ofReal_neg, ofReal_one, neg_one_mul, ← sub_eq_add_neg] using hdiam (-1) (by simp)
+  have hgreen := B.integral_bilinear_fderivWithin_sub_upperHalfAnnulus z₀ hO ha hab hSO hu
+  rw [hright, hleft, add_zero, add_zero] at hgreen
+  simp only [B, toContinuousBilinearMap_sub_swap, integral_const_mul] at hgreen
+  simp only [LinearMap.toContinuousBilinearMap_apply] at hgreen
   linarith
 
 end SymplecticForm

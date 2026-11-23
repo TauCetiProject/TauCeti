@@ -74,7 +74,7 @@ theorem isClosedImmersion_map_of_grade_subset_range (f : 𝒜 →+*ᵍ ℬ)
     (hsurj : ∀ i, 0 < i → (ℬ i : Set B) ⊆ Set.range f) : IsClosedImmersion (map f hf) := by
   -- the standard charts `D₊(s)`, for `s` homogeneous of positive degree, cover `Proj 𝒜`
   have hU : ⨆ s : Σ i : ℕ+, 𝒜 i, basicOpen 𝒜 (s.2 : A) = ⊤ :=
-    (iSup_congr fun s ↦ (opensRange_awayι 𝒜 _ s.2.2 s.1.pos).symm).trans
+    (iSup_congr fun s ↦ (opensRange_awayι 𝒜 _ s.2.property s.1.pos).symm).trans
       (affineOpenCover 𝒜).openCover.iSup_opensRange
   refine IsZariskiLocalAtTarget.of_iSup_eq_top _ hU fun ⟨i, s, hs⟩ ↦ ?_
   -- over `D₊(s)`, the morphism is the restriction `D₊(f s) ⟶ D₊(s)`

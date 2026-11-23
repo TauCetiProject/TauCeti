@@ -290,18 +290,15 @@ theorem eq_of_eq_exp_mul_backward
         ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u₂ y t) x (EuclideanSpace.single i 1) +
         c (slabMk x t) * u₂ x t))
     (hterm : ∀ x, u₁ x t₁ = u₂ x t₁) : v₁ = v₂ := by
-  refine eq_of_euclideanBackwardParabolicOperatorL_eq hα
-    (b := euclideanWeightedFirstOrderCoeff a b dℓ)
-    (c := euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (HolderSpace.ext fun p ↦ ?_)
-    fun y ↦ ?_
-  · rw [← slabMk_space_slabTime p]
-    have hp := hP (p : ParabolicSpaceTime _).space (slabTime p)
-    rw [← exp_mul_euclideanBackwardParabolicOperatorL_eq hα hℓ hdℓ hd2ℓ v₁ hu₁,
-      ← exp_mul_euclideanBackwardParabolicOperatorL_eq hα hℓ hdℓ hd2ℓ v₂ hu₂] at hp
-    exact mul_left_cancel₀ (exp_pos _).ne' hp
-  · have hy := hterm y
-    rw [hu₁ y ⟨t₁, right_mem_Icc.2 ht.le⟩, hu₂ y ⟨t₁, right_mem_Icc.2 ht.le⟩] at hy
-    exact mul_left_cancel₀ (exp_pos _).ne' hy
+  -- Both `v₁` and `v₂` solve the conjugated equation with the forcing `P_back,w v₁`.
+  have h₁ := (euclideanBackwardParabolicOperatorL_weightedCoeff_eq_iff (a := a) (b := b) (c := c)
+    hα hℓ hdℓ hd2ℓ v₁ hu₁ _).1 rfl
+  have h₂ := (euclideanBackwardParabolicOperatorL_weightedCoeff_eq_iff hα hℓ hdℓ hd2ℓ v₂ hu₂ _).2
+    fun x t ↦ (hP x t).symm.trans (h₁ x t)
+  refine eq_of_euclideanBackwardParabolicOperatorL_eq hα ha h₂.symm fun y ↦ ?_
+  have hy := hterm y
+  rw [hu₁ y ⟨t₁, right_mem_Icc.2 ht.le⟩, hu₂ y ⟨t₁, right_mem_Icc.2 ht.le⟩] at hy
+  exact mul_left_cancel₀ (exp_pos _).ne' hy
 
 end Backward
 

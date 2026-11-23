@@ -17,7 +17,8 @@ pulling the right duals of the functor category `SingleObj H ⥤ V` back along t
 `Action.functorCategoryEquivalence`. The underlying object of the dual action is the dual of the
 underlying object (`Action.rightDual_v`). This file records that the same holds for the structure
 maps: the evaluation and coevaluation of the pairing `(X, Xᘁ)` in `Action V H` have, as underlying
-morphisms of `V`, the evaluation and coevaluation of `(X.V, X.Vᘁ)`.
+morphisms of `V`, the evaluation and coevaluation of `(X.V, X.Vᘁ)`. The same holds for the left
+duals of a left rigid `V` (`Action.leftDual_v`).
 
 These are the identities needed to compute categorical constructions built from duals in
 `Action V H` on underlying objects. The first such construction is the Drinfeld isomorphism
@@ -28,6 +29,8 @@ isomorphism of an action is that of its underlying object.
 
 * `Action.evaluation_hom`: the underlying morphism of `ε_ X Xᘁ` is `ε_ X.V X.Vᘁ`;
 * `Action.coevaluation_hom`: the underlying morphism of `η_ X Xᘁ` is `η_ X.V X.Vᘁ`;
+* `Action.leftEvaluation_hom`, `Action.leftCoevaluation_hom`: the same for the pairing
+  `(ᘁX, X)`;
 * `Action.drinfeldIso_hom_hom`, `Action.drinfeldIso_inv_hom`: the Drinfeld isomorphism of an
   action is that of its underlying object.
 -/
@@ -89,5 +92,40 @@ theorem drinfeldIso_inv_hom (X : Action V H) :
   have h := congrArg Hom.hom (drinfeldIso X).hom_inv_id
   rw [comp_hom, drinfeldIso_hom_hom, id_hom] at h
   exact Iso.inv_ext' h
+
+end Action
+
+namespace Action
+
+variable {V : Type*} [Category* V] [MonoidalCategory V] [LeftRigidCategory V]
+  {H : Type*} [Group H]
+
+/-- The evaluation of a left dual action is the evaluation of the left dual of the underlying
+object. -/
+@[simp]
+theorem leftEvaluation_hom (X : Action V H) : (ε_ (ᘁX) X).hom = ε_ (ᘁX.V) X.V := by
+  -- As for `Action.evaluation_hom`, take the component at the single object of
+  -- `map_evaluation_hasLeftDualOfEquivalence`; the structure maps of the equivalence and the
+  -- components of its counit are identities by definition.
+  have h : (ε_ (ᘁX) X).hom = 𝟙 _ ≫ (X.V ◁ 𝟙 (ᘁX.V) ≫ ε_ (ᘁX.V) X.V) ≫ 𝟙 _ :=
+    congrArg (NatTrans.app · (SingleObj.star H)) (map_evaluation_hasLeftDualOfEquivalence
+      (functorCategoryEquivalence V H).toAdjunction X)
+  simpa using h
+
+/-- The coevaluation of a left dual action is the coevaluation of the left dual of the
+underlying object. -/
+@[simp]
+theorem leftCoevaluation_hom (X : Action V H) : (η_ (ᘁX) X).hom = η_ (ᘁX.V) X.V := by
+  -- As for `Action.coevaluation_hom`, the inverse of the counit's component is the identity by
+  -- uniqueness of inverses. The left dual is written `_` where the notation `ᘁ` would be
+  -- ambiguous between objects and morphisms.
+  let e : (ᘁX.V) ≅ (ᘁX.V) :=
+    ((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app
+      ᘁ((functorCategoryEquivalence V H).functor.obj X)).app (SingleObj.star H)
+  have hc : e.inv = 𝟙 _ := Iso.inv_ext (f := e) (Category.comp_id _)
+  have h : (η_ (ᘁX) X).hom = 𝟙 _ ≫ (η_ _ X.V ≫ e.inv ▷ X.V) ≫ 𝟙 _ :=
+    congrArg (NatTrans.app · (SingleObj.star H)) (map_coevaluation_hasLeftDualOfEquivalence
+      (functorCategoryEquivalence V H).toAdjunction X)
+  simpa only [hc, id_whiskerRight, Category.id_comp, Category.comp_id] using h
 
 end Action

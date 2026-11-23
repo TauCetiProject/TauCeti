@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Data.Finsupp.Lex
+public import Mathlib.Data.Finsupp.Weight
 import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!
@@ -17,7 +18,13 @@ function extension by zero, over any additive commutative monoid. For an arbitra
 the range of `Finsupp.mapDomain f` consists of the finitely supported functions vanishing outside
 the range of `f` (`Finsupp.mem_range_mapDomain_iff'`). Restricting to a predicate commutes with
 pushing forward along `f` when the predicate on the source is the pullback along `f` of a
-predicate on the target (`Finsupp.mapDomain_subtypeDomain`).
+predicate on the target (`Finsupp.mapDomain_subtypeDomain`). Pushing forward along the inclusion
+of a subtype is a section of restricting to it (`Finsupp.subtypeDomain_mapDomain_subtype`), and
+restricting to a predicate and pushing forward along the inclusion keeps the part of the function
+on the predicate (`Finsupp.mapDomain_subtypeDomain_eq_filter`); for the complement of a pair
+`{x, y}` this subtracts the components at `x` and `y`
+(`Finsupp.mapDomain_subtypeDomain_compl_pair`). The weight of the push-forward along `f` is the
+weight for the pulled-back weights (`Finsupp.weight_mapDomain`).
 
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
@@ -51,6 +58,12 @@ theorem mem_range_mapDomain_iff' {α β M : Type*} [AddCommMonoid M] (f : α →
   simpa only [LinearMap.mem_range, lmapDomain_apply, mem_supported', Set.mem_range] using
     SetLike.ext_iff.1 h x
 
+/-- The weight of the push-forward of `u` along `f` is the weight of `u` for the weights `w ∘ f`. -/
+theorem weight_mapDomain {σ τ M R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (f : σ → τ) (w : τ → M) (u : σ →₀ R) :
+    weight w (u.mapDomain f) = weight (w ∘ f) u := by
+  simp [weight, linearCombination_mapDomain]
+
 /-- A finitely supported function supported on a set `s` is the push-forward along the inclusion
 of its restriction to `s`. -/
 theorem mapDomain_subtypeDomain_subtype {α M : Type*} [AddCommMonoid M] {s : Set α} {f : α →₀ M}
@@ -58,6 +71,45 @@ theorem mapDomain_subtypeDomain_subtype {α M : Type*} [AddCommMonoid M] {s : Se
   classical
   have h := extendDomain_subtypeDomain f (P := (· ∈ s)) fun _ ha ↦ hf ha
   rwa [extendDomain_eq_embDomain_subtype, embDomain_eq_mapDomain] at h
+
+/-- Restricting to a predicate `p` the push-forward of a function on `Subtype p` along the
+inclusion recovers the function. -/
+@[simp]
+theorem subtypeDomain_mapDomain_subtype {α M : Type*} [AddCommMonoid M] {p : α → Prop}
+    (f : Subtype p →₀ M) : (f.mapDomain Subtype.val).subtypeDomain p = f := by
+  ext a
+  rw [subtypeDomain_apply, mapDomain_apply_of_injective Subtype.val_injective]
+
+/-- Restricting a finitely supported function to a predicate `p` and pushing it forward along the
+inclusion keeps the part of the function on `p`. -/
+@[simp]
+theorem mapDomain_subtypeDomain_eq_filter {α M : Type*} [AddCommMonoid M] (p : α → Prop)
+    [DecidablePred p] (f : α →₀ M) : (f.subtypeDomain p).mapDomain Subtype.val = f.filter p := by
+  ext a
+  by_cases ha : p a
+  · simpa [ha] using mapDomain_apply_of_injective Subtype.val_injective (f.subtypeDomain p) ⟨a, ha⟩
+  · rw [filter_apply_neg _ _ ha, mapDomain_of_notMem_range _ _ (by simpa using ha)]
+
+/-- Restricting to the complement of a pair `{x, y}` of distinct indices and pushing forward along
+the inclusion subtracts the components at `x` and `y`. -/
+theorem mapDomain_subtypeDomain_compl_pair {α M : Type*} [AddCommGroup M] {x y : α} (hxy : x ≠ y)
+    (f : α →₀ M) :
+    (f.subtypeDomain (· ∈ ({x, y}ᶜ : Set α))).mapDomain Subtype.val =
+      f - single x (f x) - single y (f y) := by
+  classical
+  ext i
+  rw [mapDomain_subtypeDomain_eq_filter]
+  by_cases hi : i ∈ ({x, y}ᶜ : Set α)
+  · have hix : i ≠ x := fun h ↦ hi (by simp [h])
+    have hiy : i ≠ y := fun h ↦ hi (by simp [h])
+    rw [filter_apply_pos _ _ hi]
+    simp [single_eq_of_ne hix, single_eq_of_ne hiy]
+  · rw [filter_apply_neg _ _ hi]
+    by_cases hix : i = x
+    · subst hix
+      simp [single_eq_of_ne hxy]
+    · obtain rfl : i = y := by simpa [hix] using hi
+      simp [single_eq_of_ne hix]
 
 /-- If the predicate `p` on the source is the pullback along `f` of the predicate `q` on the
 target, restricting to `p` and then pushing forward along `f` is pushing forward along `f` and

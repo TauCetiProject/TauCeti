@@ -41,6 +41,7 @@ valuations on `A_inf = W(𝒪_F)`.
 * `WittVector.teichmuller_dvd_iff` : `[c]` divides `x` iff `c` divides every `xₙ`; hence `[c]`
   divides `x pᵐ` only if it divides `x` (`WittVector.teichmuller_dvd_mul_natCast_pow_iff`).
 * `WittVector.teichmuller_mem_nonZeroDivisors_iff` : `[c]` is a nonzerodivisor iff `c` is.
+* `WittVector.p_mem_nonZeroDivisors` : `p` is a nonzerodivisor.
 * `WittVector.ringHom_ext_teichmuller` : a ring homomorphism from `𝕎 R` to a `p`-adically
   separated ring is determined by its values on Teichmüller representatives.
 
@@ -206,6 +207,10 @@ theorem teichmuller_mem_nonZeroDivisors_iff {c : R} :
   · simpa using congrArg (coeff · 0) (h (teichmuller p a) (by rw [← map_mul, ha, teichmuller_zero]))
   · rw [zero_teichmullerCoeff]
     exact h _ (by rw [← teichmullerCoeff_teichmuller_mul, hx, zero_teichmullerCoeff])
+
+/-- Over a perfect ring of characteristic `p`, `p` is a nonzerodivisor of `𝕎 R`. -/
+theorem p_mem_nonZeroDivisors : (p : 𝕎 R) ∈ (𝕎 R)⁰ :=
+  mem_nonZeroDivisors_iff_right.mpr eq_zero_of_p_mul_eq_zero
 
 /-- **Ring homomorphisms out of `𝕎 R` are determined on Teichmüller representatives**: two ring
 homomorphisms from the Witt vectors of a perfect ring of characteristic `p` to a `p`-adically

@@ -95,7 +95,7 @@ theorem hasFiniteMulSupport_tamagawaNumberAt (E : WeierstrassCurve K) [E.IsEllip
     obtain ⟨hI, hΔ⟩ := hv
     let := hI
     have : (E.baseChange (v.adicCompletion K)).HasGoodReduction 𝒪[v.adicCompletion K] :=
-      (hasGoodReduction_iff_isUnit_integralModel_Δ _ _).2 hΔ.1
+      (hasGoodReduction_iff_isUnit_integralModel_Δ _ _).2 hΔ.isUnit
     exact E.tamagawaNumberAt_eq_one_of_hasGoodReduction v
   exact Filter.eventually_cofinite.mp hone
 

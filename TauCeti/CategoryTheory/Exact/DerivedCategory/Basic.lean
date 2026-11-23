@@ -185,6 +185,10 @@ theorem acyclicBounded_iff (X : HomotopyCategory.Bounded C) :
     E.acyclicBounded X ↔ E.boundedAcyclic ((HomotopyCategory.Bounded.ι C).obj X) :=
   Iff.rfl
 
+instance : E.acyclicBounded.IsClosedUnderIsomorphisms := by
+  dsimp only [acyclicBounded]
+  infer_instance
+
 instance : E.acyclicBounded.IsTriangulated := by
   dsimp only [acyclicBounded]
   infer_instance

@@ -45,6 +45,19 @@ theorem mapGL_T_smul_coe (k : K) :
     mapGL K T • (k : OnePoint K) = ((k + 1 : K) : OnePoint K) := by
   simp [smul_some_eq_ite]
 
+/-- `T ^ m` fixes `∞` under the Möbius action. -/
+@[simp]
+theorem mapGL_T_zpow_smul_infty (m : ℤ) : mapGL K T ^ m • (∞ : OnePoint K) = ∞ := by
+  rw [← map_zpow]
+  simp [-map_zpow, smul_infty_eq_ite, coe_T_zpow]
+
+/-- `T ^ m` translates an affine point by `m`. -/
+@[simp]
+theorem mapGL_T_zpow_smul_coe (m : ℤ) (k : K) :
+    mapGL K T ^ m • (k : OnePoint K) = ((k + m : K) : OnePoint K) := by
+  rw [← map_zpow]
+  simp [-map_zpow, smul_some_eq_ite, coe_T_zpow]
+
 /-- `T * S` sends `∞` to `1`. -/
 @[simp]
 theorem mapGL_T_mul_S_smul_infty :

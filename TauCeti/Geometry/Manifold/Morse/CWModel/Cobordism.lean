@@ -104,7 +104,7 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b :
     let := relCWComplexSelf (univ : Set (f ⁻¹' {a})) isClosed_univ
     have (m : ℕ) : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a a |
         manifoldMorseIndex I f x = m} :=
-      ⟨fun x ↦ (lt_irrefl a) (x.2.1.2.1.trans_le x.2.1.2.2)⟩
+      ⟨fun x ↦ (lt_irrefl a) (x.property.1.2.1.trans_le x.property.1.2.2)⟩
     refine ⟨f ⁻¹' {a}, _, inferInstance, .id _, ?_⟩
     rw [ContinuousMap.coe_id, range_id]
     exact ⟨‹_›, (Homeomorph.setCongr (by rw [Icc_self])).toHomotopyEquiv, .id,
@@ -152,12 +152,12 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b :
   let c (i : ℕ) : ↥{y ∈ criticalPoints I (f ∘ Subtype.val : V → ℝ) ∩
         (f ∘ Subtype.val) ⁻¹' Ioc s b | manifoldMorseIndex I (f ∘ Subtype.val) y = i} ≃
       ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i} :=
-    { toFun y := ⟨y.1, ⟨mem_criticalPoints_comp_subtypeVal.1 y.2.1.1,
-        has.trans y.2.1.2.1, y.2.1.2.2⟩,
-        (hidx _ (mem_criticalPoints_comp_subtypeVal.1 y.2.1.1)).symm.trans y.2.2⟩
-      invFun x := ⟨⟨x.1, x.2.1.2.1⟩, ⟨mem_criticalPoints_comp_subtypeVal.2 x.2.1.1,
-        lt_of_not_ge fun h ↦ hcrit x x.2.1.1 ⟨x.2.1.2.1.le, h⟩, x.2.1.2.2⟩,
-        (hidx ⟨x.1, x.2.1.2.1⟩ x.2.1.1).trans x.2.2⟩
+    { toFun y := ⟨y.val, ⟨mem_criticalPoints_comp_subtypeVal.1 y.property.1.1,
+        has.trans y.property.1.2.1, y.property.1.2.2⟩,
+        (hidx _ (mem_criticalPoints_comp_subtypeVal.1 y.property.1.1)).symm.trans y.property.2⟩
+      invFun x := ⟨⟨x.val, x.property.1.2.1⟩, ⟨mem_criticalPoints_comp_subtypeVal.2 x.property.1.1,
+        lt_of_not_ge fun h ↦ hcrit x x.property.1.1 ⟨x.property.1.2.1.le, h⟩, x.property.1.2.2⟩,
+        (hidx ⟨x.val, x.property.1.2.1⟩ x.property.1.1).trans x.property.2⟩
       left_inv y := rfl
       right_inv x := rfl }
   refine ⟨X, _, ‹_›, ι, ‹_›, h'.trans k, hι, fun x ↦ ?_,
