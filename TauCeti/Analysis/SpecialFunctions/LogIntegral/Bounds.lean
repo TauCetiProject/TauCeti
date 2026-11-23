@@ -38,6 +38,7 @@ integral `TauCeti.Real.logIntegral` (`Li`):
   `TauCeti.Real.le_logIntegral_sub_div_log`, `TauCeti.Real.lt_logIntegral_sub_div_log`,
   `TauCeti.Real.logIntegral_sub_div_log_eq_iff`, `TauCeti.Real.logIntegral_sub_div_log_lt`,
   `TauCeti.Real.existsUnique_logIntegral_sub_div_log_eq_zero`,
+  `TauCeti.Real.mem_Ioo_of_logIntegral_sub_div_log_eq_zero`,
   `TauCeti.Real.sub_div_log_sq_le_logIntegral_sub_div_log`: monotonicity, explicit envelopes,
   localization of the unique zero in `(6.5797, 6.5798)`, and the lower bound
   `(x - 6.58) / (log x) ^ 2 ≤ Li x - x / log x` for `6.58 ≤ x` (Fiori–Kadiri–Swidinsky, Lemma 20).
@@ -743,10 +744,9 @@ private theorem logIntegral_sub_div_log_at_658 :
     hlx_lo (by norm_num) hllx_lo hSx_lo
   exact lt_of_lt_of_le (by norm_num) hlb
 
-/-- `Li x - x / log x` has a unique zero on `(1, ∞)`, and it lies in `(6.5797, 6.5798)`. -/
+/-- `Li x - x / log x` has a unique zero on `(1, ∞)`. -/
 theorem existsUnique_logIntegral_sub_div_log_eq_zero :
-    ∃! x ∈ Ioi (1 : ℝ), logIntegral x - x / Real.log x = 0 ∧
-      x ∈ Ioo (65797 / 10000) (65798 / 10000) := by
+    ∃! x ∈ Ioi (1 : ℝ), logIntegral x - x / Real.log x = 0 := by
   let g (x : ℝ) : ℝ := logIntegral x - x / Real.log x
   have hg_cont : ContinuousOn g (Icc (65797 / 10000) (65798 / 10000)) := by
     refine ContinuousOn.sub (differentiableOn_logIntegral.continuousOn.mono fun x hx ↦
@@ -756,20 +756,28 @@ theorem existsUnique_logIntegral_sub_div_log_eq_zero :
   obtain ⟨x₀, hx₀_mem, hx₀_eq⟩ := intermediate_value_Icc
     (by norm_num : (65797 / 10000 : ℝ) ≤ 65798 / 10000) hg_cont
     ⟨logIntegral_sub_div_log_at_65797.le, logIntegral_sub_div_log_at_65798.le⟩
-  have hx₀_Ioo : x₀ ∈ Ioo (65797 / 10000 : ℝ) (65798 / 10000) := by
-    refine ⟨lt_of_le_of_ne hx₀_mem.1 ?_, lt_of_le_of_ne hx₀_mem.2 ?_⟩
-    · rintro rfl
-      exact absurd logIntegral_sub_div_log_at_65797 (by linarith [hx₀_eq])
-    · rintro rfl
-      exact absurd logIntegral_sub_div_log_at_65798 (by linarith [hx₀_eq])
-  have hx₀_Ioi : x₀ ∈ Ioi (1 : ℝ) := mem_Ioi.mpr (by linarith [hx₀_Ioo.1])
-  refine ⟨x₀, ⟨hx₀_Ioi, hx₀_eq, hx₀_Ioo⟩, fun y hy ↦ ?_⟩
+  have hx₀_Ioi : x₀ ∈ Ioi (1 : ℝ) := mem_Ioi.mpr (by linarith [hx₀_mem.1])
+  refine ⟨x₀, ⟨hx₀_Ioi, hx₀_eq⟩, fun y hy ↦ ?_⟩
   rcases lt_trichotomy y x₀ with hlt | rfl | hgt
   · exact absurd (strictMonoOn_logIntegral_sub_div_log hy.1 hx₀_Ioi hlt)
-      (by linarith [hy.2.1, hx₀_eq])
+      (by linarith [hy.2, hx₀_eq])
   · rfl
   · exact absurd (strictMonoOn_logIntegral_sub_div_log hx₀_Ioi hy.1 hgt)
-      (by linarith [hy.2.1, hx₀_eq])
+      (by linarith [hy.2, hx₀_eq])
+
+/-- Any zero of `Li x - x / log x` on `(1, ∞)` lies in `(6.5797, 6.5798)`. -/
+theorem mem_Ioo_of_logIntegral_sub_div_log_eq_zero {x : ℝ} (hx : 1 < x)
+    (h : logIntegral x - x / Real.log x = 0) :
+    x ∈ Ioo (65797 / 10000 : ℝ) (65798 / 10000) := by
+  refine ⟨?_, ?_⟩
+  · by_contra! hle
+    have hmono := strictMonoOn_logIntegral_sub_div_log.monotoneOn
+      (mem_Ioi.mpr hx) (mem_Ioi.mpr (by norm_num)) hle
+    linarith [logIntegral_sub_div_log_at_65797]
+  · by_contra! hle
+    have hmono := strictMonoOn_logIntegral_sub_div_log.monotoneOn
+      (mem_Ioi.mpr (by norm_num)) (mem_Ioi.mpr hx) hle
+    linarith [logIntegral_sub_div_log_at_65798]
 
 /-- **Fiori–Kadiri–Swidinsky (2023), Lemma 20**: for every `x ≥ 6.58`,
 `(x - 6.58) / (log x) ^ 2 ≤ Li x - x / log x`, and in particular `0 < Li x - x / log x`
