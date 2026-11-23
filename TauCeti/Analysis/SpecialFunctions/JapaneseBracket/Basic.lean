@@ -55,8 +55,10 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`.
 * `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
   `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
-* `MeasureTheory.MemLp.one_add_norm_sq_rpow_smul_mono`: lowering the order of a Japanese
-  bracket weight preserves `p`-integrability.
+* `TauCeti.norm_pow_two_mul_succ_mul_eq_sum`: expanding one factor `‖v‖²` of `‖v‖ ^ (2 (N + 1))`
+  in the coordinates of `EuclideanSpace`.
+* `TauCeti.le_mul_one_add_norm_sq_pow_inv`: bounds on `F` and on `‖v‖ ^ (2N) F` combine to a
+  bound on `F` with the weight `(1 + ‖v‖²) ^ (-N)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
@@ -66,6 +68,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   elsewhere is `O(T ^ (d - q))`.
 * `TauCeti.not_integrableOn_rpow_neg_one_add_norm_sq`: for `r ≤ d` the bracket
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
+* `TauCeti.integrable_rpow_neg_one_add_norm_sq_iff`: on a nontrivial space the bracket
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable exactly when `d < r`.
 * `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
   integrable for `d < 2 r`, for every additive Haar measure.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
@@ -131,22 +135,27 @@ theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc
   rw [hsqrt, ← mul_pow]
   exact pow_le_pow_left₀ (by positivity) hle i
 
-variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
+/-- Expanding one factor `‖v‖²` in coordinates:
+`‖v‖ ^ (2 (N + 1)) F = ∑ⱼ ‖v‖ ^ (2N) (vⱼ² F)`. -/
+theorem norm_pow_two_mul_succ_mul_eq_sum {n : ℕ} (v : EuclideanSpace ℝ (Fin n)) (N : ℕ) (F : ℝ) :
+    ‖v‖ ^ (2 * (N + 1)) * F = ∑ j, ‖v‖ ^ (2 * N) * (v j ^ 2 * F) := by
+  rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
+  ring
 
-/-- Lowering the order of a Japanese bracket weight preserves `p`-integrability: if
-`x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x` lies in `Lᵖ(μ)` and `t ≤ s`, then so does
-`x ↦ (1 + ‖x‖ ^ 2) ^ (t / 2) • f x`. -/
-theorem _root_.MeasureTheory.MemLp.one_add_norm_sq_rpow_smul_mono {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure V} {p : ENNReal} {f : V → F} {s t : ℝ}
-    (h : MemLp (fun x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x) p μ) (hf : AEStronglyMeasurable f μ)
-    (hts : t ≤ s) : MemLp (fun x ↦ (1 + ‖x‖ ^ 2) ^ (t / 2) • f x) p μ :=
-  h.mono ((((continuous_const.add (continuous_norm.pow 2)).rpow_const fun x ↦
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2).ne').aestronglyMeasurable).smul hf)
-    (.of_forall fun x ↦ by
-      rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
-        Real.norm_of_nonneg (by positivity)]
-      gcongr
-      nlinarith [sq_nonneg ‖x‖])
+/-- Bounds `F ≤ C₀ w` and `‖v‖ ^ (2N) F ≤ C₁ w` combine to the weighted bound
+`F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + ‖v‖²) ^ N)⁻¹`. -/
+theorem le_mul_one_add_norm_sq_pow_inv {E : Type*} [SeminormedAddCommGroup E] {v : E} {N : ℕ}
+    {F C₀ C₁ w : ℝ} (hF : 0 ≤ F) (h₀ : F ≤ C₀ * w) (h₁ : ‖v‖ ^ (2 * N) * F ≤ C₁ * w) :
+    F ≤ 2 ^ (N - 1) * (C₀ + C₁) * w * ((1 + ‖v‖ ^ 2) ^ N)⁻¹ := by
+  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm F]
+  calc (1 + ‖v‖ ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (1 ^ N + (‖v‖ ^ 2) ^ N) * F :=
+        mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (by positivity) N) hF
+    _ = 2 ^ (N - 1) * (F + ‖v‖ ^ (2 * N) * F) := by rw [one_pow, ← pow_mul]; ring
+    _ ≤ 2 ^ (N - 1) * (C₀ * w + C₁ * w) :=
+        mul_le_mul_of_nonneg_left (add_le_add h₀ h₁) (by positivity)
+    _ = 2 ^ (N - 1) * (C₀ + C₁) * w := by ring
+
+variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
 section Integrability
 
@@ -315,6 +324,18 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
             _).symm
       _ ≤ ∫⁻ x in Γ, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := lintegral_mono_set (iUnion_subset hS)
   exact lt_irrefl _ (hint.hasFiniteIntegral.trans_le htop)
+
+/-- **Exact integrability of the Japanese bracket.** On a nontrivial finite-dimensional real
+normed space of dimension `d`, `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable for an additive Haar
+measure exactly when `d < r`. -/
+theorem integrable_rpow_neg_one_add_norm_sq_iff (μ : Measure V) [μ.IsAddHaarMeasure]
+    [Nontrivial V] {r : ℝ} :
+    Integrable (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)) μ ↔ (finrank ℝ V : ℝ) < r := by
+  refine ⟨fun hint ↦ ?_, integrable_rpow_neg_one_add_norm_sq⟩
+  by_contra! hr
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : V)
+  exact not_integrableOn_rpow_neg_one_add_norm_sq μ hr isOpen_univ (fun _ _ _ _ ↦ mem_univ _)
+    (mem_univ ξ) hξ hint.integrableOn
 
 end Cone
 

@@ -64,27 +64,10 @@ private theorem collapseHalfEdge_edgePair (x : Fin (4 * (n + 1))) :
       · simp [collapseHalfEdge, PDCode.reidemeisterOne_edgePair_inl_of_ne, hx, hx']
   · fin_cases s <;> simp [collapseHalfEdge]
 
-private theorem collapseHalfEdge_componentPermOutgoing
-    (x : {x : Fin (4 * (n + 1)) // (D.reidemeisterOne h b).orientation x = true}) :
-    collapseHalfEdge D h ((D.reidemeisterOne h b).componentPermOutgoing x) =
-      collapseHalfEdge D h x := by
-  simp only [componentPermOutgoing_apply, PDCode.componentPerm_apply]
-  rw [collapseHalfEdge_crossingTurn, collapseHalfEdge_edgePair]
-
 private def collapseCrossingComponent : (D.reidemeisterOne h b).CrossingComponent →
     D.CrossingComponent :=
-  Quotient.lift (fun x ↦ collapseHalfEdge D h x.val) fun _ _ hxy ↦
-    hxy.apply_eq_of_apply_eq (f := fun x ↦ collapseHalfEdge D h x.val)
-      (collapseHalfEdge_componentPermOutgoing D h b)
-
-private theorem collapseCrossingComponent_halfEdge (x : Fin (4 * (n + 1))) :
-    collapseCrossingComponent D h b ((D.reidemeisterOne h b).crossingComponentOfHalfEdge x) =
-      collapseHalfEdge D h x := by
-  cases hx : (D.reidemeisterOne h b).orientation x with
-  | true => rw [crossingComponentOfHalfEdge_of_outgoing _ x hx]; rfl
-  | false =>
-    rw [crossingComponentOfHalfEdge_of_incoming _ x hx]
-    exact collapseHalfEdge_edgePair D h b x
+  (D.reidemeisterOne h b).liftCrossingComponent (collapseHalfEdge D h)
+    (collapseHalfEdge_crossingTurn D h b) (collapseHalfEdge_edgePair D h b)
 
 private theorem collapseCrossingComponent_surjective :
     Function.Surjective (collapseCrossingComponent D h b) := by
@@ -92,7 +75,7 @@ private theorem collapseCrossingComponent_surjective :
   obtain ⟨⟨x, hx⟩, rfl⟩ := Quotient.mk_surjective c
   refine ⟨(D.reidemeisterOne h b).crossingComponentOfHalfEdge
     (halfEdgeSuccEquiv n (.inl x)), ?_⟩
-  rw [collapseCrossingComponent_halfEdge]
+  rw [collapseCrossingComponent, liftCrossingComponent_crossingComponentOfHalfEdge]
   simpa [collapseHalfEdge] using D.crossingComponentOfHalfEdge_of_outgoing x hx
 
 private def collapseCrossingComponentEquiv :
@@ -114,7 +97,7 @@ def reidemeisterOneComponentEquiv : D.Component ≃ (D.reidemeisterOne h b).Comp
           (halfEdgeSuccEquiv n (.inl x)))) =
       .inl (D.crossingComponentOfHalfEdge x) := by
   simp [reidemeisterOneComponentEquiv, collapseCrossingComponentEquiv,
-    collapseCrossingComponent_halfEdge, collapseHalfEdge]
+    collapseCrossingComponent, collapseHalfEdge]
 
 /-- Inserting a kink preserves the component represented by each old half-edge,
 including incoming half-edges. -/
@@ -141,7 +124,7 @@ including incoming half-edges. -/
           (halfEdgeSuccEquiv n (.inr s)))) =
       .inl (D.crossingComponentOfHalfEdge h) := by
   simp [reidemeisterOneComponentEquiv, collapseCrossingComponentEquiv,
-    collapseCrossingComponent_halfEdge, collapseHalfEdge]
+    collapseCrossingComponent, collapseHalfEdge]
 
 /-- Inserting a kink preserves each labelled crossing-free component. -/
 @[simp] theorem reidemeisterOneComponentEquiv_inr (i : Fin D.crossinglessComponentCount) :

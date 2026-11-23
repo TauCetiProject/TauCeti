@@ -131,8 +131,8 @@ collar outside. -/
 def collarHomotopy (γ : Path x y) (f : Ω^ N X x) : C(I × (I^N), X) :=
   collar ⟨fun t : I => (2 - (t : ℝ)) / 2, by fun_prop⟩
     ((f : C(I^N, X)).comp ContinuousMap.snd) (γ.toContinuousMap.comp ContinuousMap.snd)
-    (fun t => by have := t.2.2; dsimp; linarith)
-    (fun _ z hz => by simpa using (f.2 z hz).trans γ.source.symm)
+    (fun t => by have := t.property.2; dsimp; linarith)
+    (fun _ z hz => by simpa using (f.property z hz).trans γ.source.symm)
 
 theorem collarHomotopy_apply (γ : Path x y) (f : Ω^ N X x) (t : I) (z : I^N) :
     collarHomotopy γ f (t, z) =
@@ -158,8 +158,8 @@ theorem collarHomotopy_boundary (γ : Path x y) (f : Ω^ N X x) (t : I) {z : I^N
     (hz : z ∈ Cube.boundary N) : collarHomotopy γ f (t, z) = γ t := by
   have hu : cubeRadius z = 1 := (cubeRadius_eq_one_iff z).2 hz
   rw [collarHomotopy_apply, hu]
-  have ht0 := t.2.1
-  have ht1 := t.2.2
+  have ht0 := t.property.1
+  have ht1 := t.property.2
   by_cases h : (1 : ℝ) ≤ (2 - (t : ℝ)) / 2
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h)]
     have hc0 : ((0 : I) : ℝ) = 0 := by norm_num
@@ -169,7 +169,7 @@ theorem collarHomotopy_boundary (γ : Path x y) (f : Ω^ N X x) (t : I) {z : I^N
       rw [hc0]
       norm_num
     rw [h_scale, cubeScale_one, γ.source]
-    exact f.2 z hz
+    exact f.property z hz
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h), max_eq_left (by norm_num)]
     congr 1
     have h_time : (2 : ℝ) - 2 * ((2 - (t : ℝ)) / 2) / 1 = (t : ℝ) := by ring
@@ -231,7 +231,7 @@ def HomotopyAlong.ofHomotopyRel {f g : Ω^ N X x}
     (K : ContinuousMap.HomotopyRel (f : C(I^N, X)) (g : C(I^N, X)) (Cube.boundary N)) :
     HomotopyAlong (Path.refl x) f g where
   toHomotopy := K.toHomotopy
-  map_boundary t z hz := (K.eq_fst t hz).trans (f.2 z hz)
+  map_boundary t z hz := (K.eq_fst t hz).trans (f.property z hz)
 
 /-- The collar homotopy is a homotopy along `γ` from `f` to the transported loop. -/
 def collarHomotopyAlong (γ : Path x y) (f : Ω^ N X x) :

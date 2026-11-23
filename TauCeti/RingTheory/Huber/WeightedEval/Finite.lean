@@ -12,8 +12,9 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Basic
 
 For a finite weight family, the boundedness condition for evaluating weighted restricted series
 can be checked on individual weighted variables. The powers of each finite set of weighted
-variables lie in its bounded submonoid closure. This is useful when factoring finite weighted
-presentations through a larger coefficient ring.
+variables lie in its bounded submonoid closure. For singleton weights `Tᵢ = {tᵢ}`, both
+`TauCeti.Huber.IsWeightedVarPowerBounded` and `TauCeti.Huber.IsWeightBounded` reduce to
+power-boundedness of each `φ tᵢ * bᵢ`.
 
 ## References
 
@@ -51,5 +52,16 @@ theorem isWeightedVarPowerBounded_iff_of_finite {φ : A →+* B} {T : Fin k → 
     rw [weightedVar_def] at hx
     obtain ⟨_, ⟨t, ht, rfl⟩, _, rfl, rfl⟩ := hx
     exact h i t ht
+
+/-- For finite weights, a tuple is weight-bounded precisely when every generator `φ t * b i`
+of each weighted variable is power-bounded. -/
+theorem isWeightBounded_iff_of_finite {φ : A →+* B} {T : Fin k → Set A}
+    {b : Fin k → B} (hT : ∀ i, (T i).Finite) :
+    IsWeightBounded φ T b ↔ ∀ i, ∀ t ∈ T i, IsPowerBounded (φ t * b i) :=
+  isWeightBounded_iff_isWeightedVarPowerBounded.trans
+    (isWeightedVarPowerBounded_iff_of_finite hT)
+
+attribute [simp] isWeightedVarPowerBounded_singleton_iff_forall_isPowerBounded
+  isWeightBounded_singleton_iff_forall_isPowerBounded
 
 end TauCeti.Huber

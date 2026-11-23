@@ -13,8 +13,10 @@ public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Basic
 An inclusion of discrete subgroups `Δ ≤ Γ ≤ PSL(2, ℝ)` induces a map from the compactified
 quotient of `Δ` to that of `Γ`. On the coarse quotient it sends the orbit of `z` to its larger
 orbit; at a cusp it sends the orbit of a parabolic fixed point to its larger orbit. The map is
-continuous also at the adjoined cusp points. The construction applies to arbitrary subgroup
-inclusions; finite index is needed only for subsequent finiteness and ramification results.
+continuous also at the adjoined cusp points, so compactness of `X(Δ)` descends to `X(Γ)`
+(`Subgroup.compactSpace_compactifiedQuotient_of_le`). The construction applies to arbitrary
+subgroup inclusions; finite index is needed only for subsequent finiteness and ramification
+results.
 
 Cusp data with the same representative and scaling define the same horodiscs, even when their
 groups have different primitive cusp widths.
@@ -147,5 +149,25 @@ theorem continuous_compactifiedQuotientMap [DiscreteTopology Γ] (h : Δ ≤ Γ)
       exact continuousAt_compactifiedQuotientMap_ofCusp h D
 
 end CompactifiedQuotient
+
+/-- If `Δ ≤ Γ` are discrete projective subgroups and `X(Δ)` is compact, then `X(Γ)` is compact:
+the image of `X(Δ)` under `compactifiedQuotientMap h` is compact, hence closed in the Hausdorff
+space `X(Γ)`, and contains the dense coarse quotient `ofQuotient`. -/
+theorem compactSpace_compactifiedQuotient_of_le [DiscreteTopology Γ] (h : Δ ≤ Γ)
+    [letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h;
+      CompactSpace Δ.CompactifiedQuotient] :
+    CompactSpace Γ.CompactifiedQuotient := by
+  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+  have hK : IsCompact (range (compactifiedQuotientMap h)) :=
+    isCompact_range (CompactifiedQuotient.continuous_compactifiedQuotientMap h)
+  have hsub : range (CompactifiedQuotient.ofQuotient (Γ := Γ)) ⊆
+      range (compactifiedQuotientMap h) := by
+    rintro _ ⟨p, rfl⟩
+    induction p using Quotient.inductionOn with
+    | h z => exact ⟨.ofQuotient (Quotient.mk (orbitRel Δ ℍ) z), rfl⟩
+  have huniv : range (compactifiedQuotientMap h) = univ := by
+    rw [← hK.isClosed.closure_eq]
+    exact (CompactifiedQuotient.dense_range_ofQuotient.mono hsub).closure_eq
+  exact ⟨huniv ▸ hK⟩
 
 end Subgroup

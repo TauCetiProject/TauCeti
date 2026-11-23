@@ -13,7 +13,7 @@ import TauCeti.NumberTheory.Cyclotomic.Irreducible
 /-!
 # The dyadic cyclotomic character in odd degree
 
-This file shows that the local cyclotomic character of a finite odd-degree extension of `ℚ₂` has
+This file shows that the local cyclotomic character of an odd-degree extension of `ℚ₂` has
 full image in `ℤ₂ˣ`. The base case `Φ₁` is linear, while for positive exponents the translated
 `2`-power cyclotomic polynomial over `ℤ₂` is Eisenstein.
 
@@ -28,11 +28,8 @@ open Polynomial
 
 namespace TauCeti
 
-section FiniteExtension
+variable (K : Type*) [Field K] [Algebra ℚ_[2] K]
 
-variable (K : Type*) [Field K] [Algebra ℚ_[2] K] [FiniteDimensional ℚ_[2] K]
-
-omit [FiniteDimensional ℚ_[2] K] in
 /-- The local dyadic cyclotomic character of an odd-degree extension of `ℚ₂` has full image. -/
 theorem range_localCyclotomicCharacter_of_odd_finrank
     (hodd : Odd (Module.finrank ℚ_[2] K)) :
@@ -59,7 +56,6 @@ def IsDyadicOddCase : Prop :=
     (finite_pPowerRootsOfUnity (p := 2) (K := K) (by norm_num)) = 2 ∧
       Odd (Module.finrank ℚ_[2] K)
 
-omit [FiniteDimensional ℚ_[2] K] in
 /-- Characterization of the numerical conditions in `IsDyadicOddCase`. -/
 theorem isDyadicOddCase_iff : IsDyadicOddCase K ↔
     let _ : CharZero K :=
@@ -69,7 +65,6 @@ theorem isDyadicOddCase_iff : IsDyadicOddCase K ↔
         Odd (Module.finrank ℚ_[2] K) :=
   Iff.rfl
 
-omit [FiniteDimensional ℚ_[2] K] in
 /-- Construct the odd dyadic case from its two numerical conditions. -/
 theorem IsDyadicOddCase.mk
     (hroots : let _ : CharZero K :=
@@ -79,7 +74,6 @@ theorem IsDyadicOddCase.mk
     (hodd : Odd (Module.finrank ℚ_[2] K)) : IsDyadicOddCase K :=
   (isDyadicOddCase_iff (K := K)).mpr ⟨hroots, hodd⟩
 
-omit [FiniteDimensional ℚ_[2] K] in
 /-- The odd dyadic case has exactly two `2`-power roots of unity. -/
 theorem IsDyadicOddCase.localRootOfUnityOrder_eq_two (hcase : IsDyadicOddCase K) :
     let _ : CharZero K :=
@@ -88,18 +82,14 @@ theorem IsDyadicOddCase.localRootOfUnityOrder_eq_two (hcase : IsDyadicOddCase K)
       (finite_pPowerRootsOfUnity (p := 2) (K := K) (by norm_num)) = 2 :=
   ((isDyadicOddCase_iff (K := K)).mp hcase).1
 
-omit [FiniteDimensional ℚ_[2] K] in
 /-- The degree over `ℚ₂` in the odd dyadic case is odd. -/
 theorem IsDyadicOddCase.odd_finrank (hcase : IsDyadicOddCase K) :
     Odd (Module.finrank ℚ_[2] K) :=
   ((isDyadicOddCase_iff (K := K)).mp hcase).2
 
-omit [FiniteDimensional ℚ_[2] K] in
 /-- In the odd dyadic case, the image of the local cyclotomic character is all of `ℤ₂ˣ`. -/
 theorem range_localCyclotomicCharacter_of_degree_odd (hcase : IsDyadicOddCase K) :
     (localCyclotomicCharacter 2 K).range = ⊤ :=
   range_localCyclotomicCharacter_of_odd_finrank K hcase.odd_finrank
-
-end FiniteExtension
 
 end TauCeti
