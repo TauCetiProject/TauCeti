@@ -122,17 +122,17 @@ theorem elementary_one_coeff (v : Fin n → B) :
 /-- Addition in the coefficient of an elementary form. -/
 theorem elementary_add_coeff (c e : B) (v : Fin n → B) :
     elementary A (c + e) v = elementary A c v + elementary A e v := by
-  rw [elementary_def, elementary_def, elementary_def, add_smul]
+  simp only [elementary_def, add_smul]
 
 /-- `B`-scalar multiplication on an elementary form multiplies its coefficient. -/
 theorem elementary_smul_coeff (b c : B) (v : Fin n → B) :
     b • elementary A c v = elementary A (b * c) v := by
-  rw [elementary_def, elementary_def, smul_smul]
+  simp only [elementary_def, smul_smul]
 
 /-- `A`-scalar multiplication on an elementary form acts on its coefficient. -/
 theorem elementary_base_smul_coeff (a : A) (c : B) (v : Fin n → B) :
     a • elementary A c v = elementary A (a • c) v := by
-  rw [elementary_def, elementary_def, smul_assoc]
+  simp only [elementary_def, smul_assoc]
 
 /-- An elementary form with two equal slots vanishes. -/
 theorem elementary_eq_zero_of_eq (c : B) (v : Fin n → B) {i j : Fin n}
