@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.RingTheory.Complex
 public import Mathlib.RingTheory.Norm.Transitivity
 
+import TauCeti.LinearAlgebra.Complex.Finrank
+
 /-!
 # Real determinants of complex and real-linear maps
 
@@ -60,6 +62,12 @@ theorem det_restrictScalars_pos_iff_injective [Module.Finite ℂ E] {f : E →�
     0 < (f.restrictScalars ℝ).det ↔ Function.Injective f := by
   rw [det_restrictScalars_eq_normSq, Complex.normSq_pos, ne_eq, det_eq_zero_iff_ker_ne_bot,
     not_not, ker_eq_bot]
+
+/-- Negating a real-linear endomorphism of a complex module does not change its real
+determinant, because the real dimension is even. -/
+theorem det_neg_of_complex (f : E →ₗ[ℝ] E) : (-f).det = f.det := by
+  rw [← neg_one_smul ℝ f, det_smul, TauCeti.finrank_real_eq_two_mul_finrank_complex,
+    (even_two_mul _).neg_one_pow, one_mul]
 
 end LinearMap
 

@@ -150,9 +150,6 @@ private theorem exists_finset_realize_comp_iff (c : A → G)
       h₁ f fun k hk => hf k (Finset.mem_union_left _ hk),
       h₂ f fun k hk => hf k (Finset.mem_union_right _ hk)]
 
--- The reduction `FirstOrder.Language.group.universal_iff_no_solution` to word systems fixes one
--- universe for the groups it describes, while `K` and `H` may live in different universes, so
--- the transfer is proved by induction on the formula instead.
 /-- If `K` is discriminated by `H` over `G`, a universal formula holds at an assignment in `K`
 as soon as it holds at its image under every coefficient-preserving homomorphism to `H`. -/
 private theorem realize_of_forall_realize_comp (h : IsDiscriminatedBy ιK ιH) (c : A → G)

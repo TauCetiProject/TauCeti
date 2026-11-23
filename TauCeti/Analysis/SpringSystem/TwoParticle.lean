@@ -890,8 +890,8 @@ theorem mem_iInf_eigenspace_symmetryRep_iff
 on which every symmetry `g` acts by the scalar `χ g`. -/
 theorem range_isotypicProjector (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
     LinearMap.range (isotypicProjector χ) = ⨅ g, Module.End.eigenspace (symmetryRep g) (χ g) :=
-  symmetryRep.range_asAlgebraHom_charIdempotent (Nat.cast_ne_zero.2 Nat.card_pos.ne').isUnit
-    χ.toHomUnits
+  (symmetryRep.range_asAlgebraHom_charIdempotent (Nat.cast_ne_zero.2 Nat.card_pos.ne').isUnit
+    χ.toHomUnits).trans (symmetryRep.charEigenspace_def _)
 
 /-- The **trivial isotypic component**, on which both reflections act trivially, is the stretching
 line through `(1, 0, -1, 0)`. -/

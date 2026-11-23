@@ -25,7 +25,8 @@ the reconstruction step in a small coordinate presentation of finite-rank bundle
 No compactness, separation, or finite-dimensionality assumption is needed.
 
 The construction uses Mathlib's `Bundle.Trivialization.coordChangeL` and
-`VectorBundleCore` gluing construction.
+`VectorBundleCore` gluing construction. For any core, `VectorBundleCore.mk_eq_mk_iff` compares
+points of its total space by base point and vector in the model fibre.
 -/
 
 public section
@@ -193,19 +194,29 @@ end TauCeti
 
 namespace VectorBundleCore
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {B : Type*} [TopologicalSpace B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {ι : Type*} (Z : VectorBundleCore 𝕜 B F ι)
+variable {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The domain of the preferred core chart at `p.proj` is a neighbourhood of `p`. -/
-theorem localTrivAt_source_mem_nhds (p : Z.TotalSpace) :
+theorem localTrivAt_source_mem_nhds (Z : VectorBundleCore 𝕜 B F ι) (p : Z.TotalSpace) :
     (Z.localTrivAt p.proj).source ∈ nhds p :=
   (Z.localTrivAt p.proj).open_source.mem_nhds (Z.mem_source_at p.proj p.snd)
 
 /-- The fibre coordinate in the preferred core chart at `p.proj` is continuous at `p`. -/
-theorem continuousAt_localTrivAt_snd (p : Z.TotalSpace) :
+theorem continuousAt_localTrivAt_snd (Z : VectorBundleCore 𝕜 B F ι) (p : Z.TotalSpace) :
     ContinuousAt (fun q : Z.TotalSpace ↦ (Z.localTrivAt p.proj q).2) p :=
-  ((Z.localTrivAt p.proj).continuousOn.continuousAt (Z.localTrivAt_source_mem_nhds p)).snd
+  ((Z.localTrivAt p.proj).continuousOn.continuousAt (localTrivAt_source_mem_nhds Z p)).snd
+
+/-- Points of the total space of a vector bundle core agree exactly when their base points and
+their vectors in the model fibre do. Unlike `Bundle.TotalSpace.mk_inj`, the base points may
+differ, since every fibre of a core is the model fibre. -/
+theorem mk_eq_mk_iff (Z : VectorBundleCore 𝕜 B F ι) {x y : B} {v w : F} :
+    (⟨x, v⟩ : Z.TotalSpace) = ⟨y, w⟩ ↔ x = y ∧ v = w := by
+  constructor
+  · intro h
+    cases h
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
 
 end VectorBundleCore

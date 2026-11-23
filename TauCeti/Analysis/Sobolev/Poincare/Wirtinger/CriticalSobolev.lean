@@ -542,7 +542,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_eNorm_gradient_of_convex (hpstar
     Measure.restrict_apply (measurableSet_le measurable_const hmeas)] at hm₂
   -- Replacing the median by the mean costs a factor `2`.
   calc _ ≤ 2 * eLpNorm (fun x => W1p.value u x - m) pstar (mu.restrict Omega) :=
-        eLpNorm_sub_setAverage_le hfin (one_le_of_inv_add_eq_inv hexp) hpstar m
+        eLpNorm_sub_setAverage_le hfin (one_le_of_inv_add_eq_inv hexp) m
     _ ≤ 2 * (ENNReal.ofReal (16 * pstar.toReal * mu.real (ball 0 1) ^
           (1 - (finrank ℝ E : ℝ)⁻¹) * diam (Omega : Set E) ^ finrank ℝ E / mu.real Omega) *
           ‖W1p.gradient u‖ₑ) := by

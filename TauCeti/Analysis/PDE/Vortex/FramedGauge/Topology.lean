@@ -410,10 +410,11 @@ theorem norm_subOne_inv (u : SobolevTopologicalGaugeGroup hs) : ‖subOne u⁻¹
     filter_upwards [coeFn_toLp_inclusion_subOne_inv h u, coeFn_toLp_inclusion_subOne h u]
       with z h₁ h₂
     rw [h₁, h₂, map_sub, map_one]
-  have hn := (memSobolev_toLp_inclusion h (subOne u)).norm_toBesselPotentialSpace_of_ae_eq_conj
-    hae (memSobolev_toLp_inclusion h (subOne u⁻¹))
-  rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion,
-    toBesselPotentialSpace_memSobolev_toLp_inclusion] at hn
+  simp only [toLp_inclusion] at hae
+  have hn := (memSobolev_inclusionLp h (subOne u)).norm_toBesselPotentialSpace_of_ae_eq_conj
+    hae (memSobolev_inclusionLp h (subOne u⁻¹))
+  rwa [toBesselPotentialSpace_memSobolev_inclusionLp,
+    toBesselPotentialSpace_memSobolev_inclusionLp] at hn
 
 /-- **The range of `u ↦ u - 1` is closed in `H^s(ℂ)`.** If gauges `uₙ ∈ G_s` have `uₙ - 1 → h` in
 `H^s(ℂ)`, then `h = u - 1` for a gauge `u ∈ G_s`: the continuous representative of `h` has
@@ -426,21 +427,21 @@ theorem isClosed_range_subOne :
   refine isClosed_of_closure_subset fun h hh ↦ ?_
   obtain ⟨x, hx, hxh⟩ := mem_closure_iff_seq_limit.1 hh
   choose u hu using hx
-  set H : Lp ℂ 2 (volume : Measure ℂ) := (inclusion h0 h).toLp
-  have hH : MemSobolev s 2 (H : 𝓢'(ℂ, ℂ)) := memSobolev_toLp_inclusion h0 h
+  set H : Lp ℂ 2 (volume : Measure ℂ) := inclusionLp h0 h
+  have hH : MemSobolev s 2 (H : 𝓢'(ℂ, ℂ)) := memSobolev_inclusionLp h0 h
   obtain ⟨g, hg⟩ := hH.exists_zeroAtInftyContinuousMap_ae_eq hs'
   -- The values of `uₙ - 1` converge almost everywhere to those of `h`, so `|1 + g| = 1` almost
   -- everywhere, hence everywhere by continuity.
   have hlim := ae_tendsto_of_tendsto_toBesselPotentialSpace hs'
-    (fun n ↦ memSobolev_toLp_inclusion h0 (subOne (u n))) hH (by
-      simpa only [toBesselPotentialSpace_memSobolev_toLp_inclusion, hu] using hxh)
+    (fun n ↦ memSobolev_inclusionLp h0 (subOne (u n))) hH (by
+      simpa only [toBesselPotentialSpace_memSobolev_inclusionLp, hu] using hxh)
   have hgc : Continuous fun z ↦ 1 + g z := continuous_const.add g.continuous
   have hnorm : ∀ z, ‖1 + g z‖ = 1 := by
     refine congrFun ((hgc.norm.ae_eq_iff_eq volume continuous_const).1 ?_)
     filter_upwards [hlim, hg, ae_all_iff.2 fun n ↦ coeFn_toLp_inclusion_subOne h0 (u n)]
       with z hz hgz hun
     have h₁ := (hz.const_add 1).norm
-    simp only [hun, add_sub_cancel, Circle.norm_coe] at h₁
+    simp only [← toLp_inclusion, hun, add_sub_cancel, Circle.norm_coe] at h₁
     rw [← hgz]
     exact (tendsto_nhds_unique tendsto_const_nhds h₁).symm
   set w : ℂ → Circle := fun z ↦ ⟨1 + g z, mem_sphere_zero_iff_norm.2 (hnorm z)⟩
@@ -452,10 +453,10 @@ theorem isClosed_range_subOne :
     · refine mem_realSobolevFunctions_of_ae_eq (im_mem_realSobolevFunctions hH) ?_
       filter_upwards [hg] with z hz
       simp [w, hz]
-  refine ⟨(toSubgroup hs).symm ⟨w, hw⟩, toLp_inclusion_injective h0 (Lp.ext ?_)⟩
+  refine ⟨(toSubgroup hs).symm ⟨w, hw⟩, inclusionLp_injective h0 (Lp.ext ?_)⟩
   filter_upwards [coeFn_toLp_inclusion_subOne h0 ((toSubgroup hs).symm ⟨w, hw⟩), hg]
     with z h₁ h₂
-  rw [h₁, h₂]
+  rw [← toLp_inclusion, h₁, h₂]
   simp [w]
 
 /-- **`G_s` is a closed subset of `1 + H^s(ℂ)`:** `u ↦ u - 1` is a closed embedding of `G_s`, with
