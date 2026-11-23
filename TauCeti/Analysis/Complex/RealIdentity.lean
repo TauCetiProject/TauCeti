@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Holomorphic functions and their values on the real line
@@ -19,7 +20,10 @@ line—are equal (`Differentiable.eq_of_frequently_ofReal_eq`, `Differentiable.e
 `AnalyticOnNhd.eq_of_frequently_eq`, applied at an accumulation point on the real axis. It is the
 uniqueness statement behind analytic continuation of real one-parameter orbits to complex time.
 On the complex slit plane, agreement on the positive real axis likewise determines a
-holomorphic function uniquely.
+holomorphic function uniquely (`AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq`). Similarly, on the
+complement `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers, agreement on the open
+right half-plane `0 < w.re` determines a holomorphic function uniquely
+(`AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos`).
 
 At a real point, the order of vanishing of a holomorphic function equals the order of vanishing
 of its restriction to the real line (`AnalyticAt.analyticOrderAt_comp_ofReal`). This lets the
@@ -73,6 +77,24 @@ theorem AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq {f g : ℂ → E}
       fun _ _ ↦ by simp_all
   exact hreal.frequently (eventually_nhdsWithin_of_eventually_nhds
     ((lt_mem_nhds one_pos).mono h)).frequently
+
+/-- Two holomorphic functions on the complement `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the
+nonpositive integers that agree on the open right half-plane `0 < w.re` agree throughout
+`{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}`. -/
+theorem AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos {f g : ℂ → E}
+    (hf : AnalyticOnNhd ℂ f {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)})
+    (hg : AnalyticOnNhd ℂ g {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)})
+    (h : ∀ {w : ℂ}, 0 < w.re → f w = g w) :
+    Set.EqOn f g {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
+  have hev : f =ᶠ[𝓝 (1 : ℂ)] g := by
+    filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds
+      (by simp : (0 : ℝ) < (1 : ℂ).re)] with u hu
+    exact h hu
+  refine hf.eqOn_of_preconnected_of_eventuallyEq hg
+    Complex.isConnected_setOf_forall_ne_neg_natCast.isPreconnected (fun n hn => ?_) hev
+  have hre := congrArg Complex.re hn
+  simp only [Complex.one_re, Complex.neg_re, Complex.natCast_re] at hre
+  linarith [n.cast_nonneg (α := ℝ)]
 
 /-- At a real point `t`, a holomorphic function `f` and its restriction `s ↦ f s` to the real line
 vanish to the same order. -/
