@@ -50,8 +50,10 @@ noncomputable def vectorOrbitEquivCorestrict (f : H →ₐc[k] K)
     (letI : Comodule k K M := Corestrict f.toCoalgHom
      VectorOrbit k K M) ≃ VectorOrbit k H M := by
   letI : Comodule k K M := Corestrict f.toCoalgHom
+  -- `rw`, not `simp`: simp would drop `LinearEquiv.refl` silently, so the stored proof would not
+  -- match the hypothesis of `VectorOrbit.equivOfSurjective_mk` used by the lemmas below.
   exact VectorOrbit.equivOfSurjective hf (LinearEquiv.refl k M) fun g v ↦ by
-    simp only [LinearEquiv.refl_apply, basePointsRepresentation_corestrict]
+    rw [LinearEquiv.refl_apply, LinearEquiv.refl_apply, basePointsRepresentation_corestrict]
 
 /-- The rational-orbit comparison sends the orbit of a vector to its original orbit. -/
 @[simp]
@@ -60,8 +62,7 @@ theorem vectorOrbitEquivCorestrict_mk (f : H →ₐc[k] K)
     vectorOrbitEquivCorestrict (M := M) f hf
         (letI : Comodule k K M := Corestrict f.toCoalgHom
          VectorOrbit.mk v) = VectorOrbit.mk v := by
-  let : Comodule k K M := Corestrict f.toCoalgHom
-  exact VectorOrbit.equivOfSurjective_mk ..
+  simp [vectorOrbitEquivCorestrict]
 
 /-- The inverse rational-orbit comparison sends the orbit of a vector to its restricted orbit. -/
 @[simp]
@@ -70,8 +71,7 @@ theorem vectorOrbitEquivCorestrict_symm_mk (f : H →ₐc[k] K)
     (vectorOrbitEquivCorestrict (M := M) f hf).symm (VectorOrbit.mk v) =
       (letI : Comodule k K M := Corestrict f.toCoalgHom
        VectorOrbit.mk v) := by
-  let : Comodule k K M := Corestrict f.toCoalgHom
-  exact VectorOrbit.equivOfSurjective_symm_mk ..
+  simp [vectorOrbitEquivCorestrict]
 
 variable [Module.Finite k M]
 
@@ -100,6 +100,9 @@ noncomputable def vectorOrbitOrderIsoCorestrict (f : H →ₐc[k] K)
     (letI : Comodule k K M := Corestrict f.toCoalgHom
      VectorOrbit k K M) ≃o VectorOrbit k H M := by
   have hp : Function.Surjective (mapDomain (A := k) f) := by
+    -- Unfold explicitly: after a bare `intro`, the stored proof would have the unfolded type,
+    -- which `vectorOrbitEquivCorestrict_mk` would not match in the lemmas below.
+    rw [Function.Surjective]
     intro g
     obtain ⟨q, hq⟩ := CommHopfAlgCat.mapPointsFunctor_app_surjective_of_dominant
       (_root_.CommHopfAlgCat.ofHom f) hf.denseRange g
@@ -119,8 +122,8 @@ theorem vectorOrbitOrderIsoCorestrict_mk (f : H →ₐc[k] K)
     (hf : Function.Surjective (PrimeSpectrum.comap f.toAlgHom.toRingHom)) (v : M) :
     vectorOrbitOrderIsoCorestrict (M := M) f hf
         (letI : Comodule k K M := Corestrict f.toCoalgHom
-         VectorOrbit.mk v) = VectorOrbit.mk v :=
-  vectorOrbitEquivCorestrict_mk ..
+         VectorOrbit.mk v) = VectorOrbit.mk v := by
+  simp [vectorOrbitOrderIsoCorestrict]
 
 /-- The inverse order comparison preserves the vector representing an orbit. -/
 @[simp]
@@ -128,8 +131,8 @@ theorem vectorOrbitOrderIsoCorestrict_symm_mk (f : H →ₐc[k] K)
     (hf : Function.Surjective (PrimeSpectrum.comap f.toAlgHom.toRingHom)) (v : M) :
     (vectorOrbitOrderIsoCorestrict (M := M) f hf).symm (VectorOrbit.mk v) =
       (letI : Comodule k K M := Corestrict f.toCoalgHom
-       VectorOrbit.mk v) :=
-  vectorOrbitEquivCorestrict_symm_mk ..
+       VectorOrbit.mk v) := by
+  simp [vectorOrbitOrderIsoCorestrict]
 
 /-- The orbit-order comparison preserves the entire geometric image, not only its rational
 points. Its closure and boundary therefore agree as well. -/
