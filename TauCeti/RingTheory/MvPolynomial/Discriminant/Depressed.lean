@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed
-public import TauCeti.RingTheory.Polynomial.Resultant.Tschirnhaus
 
 import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.Algebra.Prime.Lemmas
@@ -35,8 +34,7 @@ Over a unique factorization domain `R` with `(2 : R) ≠ 0`, `TauCeti.depressedD
 whenever either `2 ≤ m` and `IsUnit (m : R)` (in particular over any field `K` with `(2 : K) ≠ 0`
 and `(m : K) ≠ 0`, such as any field of characteristic zero) or `3 ≤ m` and `(m : R) ≠ 0`. Under
 these hypotheses, the repeated-root locus where the generic depressed discriminant vanishes is an
-irreducible weighted-homogeneous hypersurface of weight `m * (m - 1)`, so inverting the
-discriminant determines the homogeneous units on the locus of squarefree depressed polynomials.
+irreducible weighted-homogeneous hypersurface of weight `m * (m - 1)`.
 Likewise, on short Weierstrass cubics `y² = x³ + a x + b`, the coordinate scaling
 `(x, y) ↦ (t² x, t³ y)` assigns `(a, b)` weights `(4, 6)` — twice `TauCeti.depressedWeight 3` —
 and makes the discriminant factor `4 a³ + 27 b²` weighted homogeneous of weight `12` over any
@@ -53,26 +51,27 @@ commutative ring, and prime over any unique factorization domain `R` with `(2 : 
 2. **Tschirnhaus transport and primality.** When `(m : R)` is a unit, the Tschirnhaus
    `R`-algebra equivalence `TauCeti.tschirnhausAlgEquiv : MvPolynomial (Fin m) R ≃ₐ[R]
    (MvPolynomial (Fin (m - 1)) R)[X]` (defined in
-   `TauCeti.RingTheory.Polynomial.Resultant.Tschirnhaus`) carries `(Polynomial.freeMonic R m).discr`
-   to `Polynomial.C (TauCeti.depressedDiscr R m)` by translation invariance of the discriminant
-   (`TauCeti.tschirnhausAlgEquiv_discr_freeMonic`). Primality of `TauCeti.depressedDiscr R m`
-   follows for `2 ≤ m` over any unique factorization domain in which `(2 : R) ≠ 0` and `(m : R)` is
-   invertible (`TauCeti.prime_depressedDiscr_of_isUnit`). For `3 ≤ m`, specializing to `X ^ m - 1`
+   `TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed`) carries
+   `(Polynomial.freeMonic R m).discr` to `Polynomial.C (TauCeti.depressedDiscr R m)` by
+   translation invariance of the discriminant (`TauCeti.tschirnhausAlgEquiv_discr_freeMonic`).
+   Primality of `TauCeti.depressedDiscr R m` follows for `2 ≤ m` over any unique factorization
+   domain in which `(2 : R) ≠ 0` and `(m : R)` is invertible
+   (`TauCeti.prime_depressedDiscr_of_isUnit`). For `3 ≤ m`, specializing to `X ^ m - 1`
    and `X ^ m - X` shows that `TauCeti.depressedDiscr R m` has unit content
    (`TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`), so `(m : R) ≠ 0` (with `(2 : R) ≠ 0`)
    suffices over any unique factorization domain (`TauCeti.prime_depressedDiscr_of_three_le`), and
    in particular `TauCeti.depressedDiscr K m` is prime for every `2 ≤ m` over any field of
    characteristic zero (`TauCeti.depressedDiscr_prime`).
 
-3. **Weierstrass cubic discriminant and sharpness.** Weighted homogeneity and primality are
+3. **Weierstrass cubic discriminant factor and sharpness.** Weighted homogeneity and primality are
    established for the Weierstrass cubic discriminant factor
-   `TauCeti.weierstrassDiscr R = 4 X₀³ + 27 X₁²` of weight `12` for weights `(4, 6)`, together
-   with counterexamples showing that `(2 : R) ≠ 0` in degree `2`, `(3 : R) ≠ 0` in degree `3`, and
-   `IsUnit (2 : R)` over `ℤ` in degree `2` are all necessary.
+   `TauCeti.weierstrassDiscrFactor R = 4 X₀³ + 27 X₁²` of weight `12` for weights `(4, 6)`,
+   together with counterexamples showing that `(2 : R) ≠ 0` in degree `2`, `(3 : R) ≠ 0` in degree
+   `3`, and `IsUnit (2 : R)` over `ℤ` in degree `2` are all necessary.
 
 ## Main definitions
 
-* `TauCeti.weierstrassDiscr`: the Weierstrass cubic discriminant factor `4 X₀³ + 27 X₁²`.
+* `TauCeti.weierstrassDiscrFactor`: the Weierstrass cubic discriminant factor `4 X₀³ + 27 X₁²`.
 
 ## Main results
 
@@ -82,8 +81,8 @@ commutative ring, and prime over any unique factorization domain `R` with `(2 : 
 * `TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_isUnit`,
   `TauCeti.prime_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_ne_zero`,
   `TauCeti.depressedDiscr_prime`: unit content for `3 ≤ m` and primality of `depressedDiscr`.
-* `TauCeti.isWeightedHomogeneous_weierstrassDiscr`, `TauCeti.prime_weierstrassDiscr`: weighted
-  homogeneity and primality of the Weierstrass cubic discriminant factor.
+* `TauCeti.isWeightedHomogeneous_weierstrassDiscrFactor`, `TauCeti.prime_weierstrassDiscrFactor`:
+  weighted homogeneity and primality of the Weierstrass cubic discriminant factor.
 * `TauCeti.not_prime_depressedDiscr_two_of_charTwo`,
   `TauCeti.not_prime_depressedDiscr_three_of_charThree`,
   `TauCeti.not_prime_depressedDiscr_int_two`: sharpness counterexamples.
@@ -114,7 +113,8 @@ theorem tschirnhausAlgEquiv_discr_freeMonic {R : Type*} [CommRing R] {m : ℕ}
     tschirnhausAlgEquiv hmu (freeMonic R m).discr = Polynomial.C (depressedDiscr R m) := by
   have h := congrArg Polynomial.discr (map_tschirnhausAlgEquiv_freeMonic hmu)
   rw [(monic_freeMonic R m).discr_map, discr_comp_X_add_C,
-    (monic_genericDepressed (R := R) (m := m)).discr_map, discr_genericDepressed] at h
+    (monic_genericDepressed (R := R) (m := m)).discr_map, discr_genericDepressed,
+    RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv] at h
   exact h
 
 /-- The inverse of `TauCeti.tschirnhausAlgEquiv` carries `Polynomial.C (depressedDiscr R m)` back
@@ -157,6 +157,15 @@ theorem prime_depressedDiscr_of_ne_zero {K : Type*} [Field K] (h2 : (2 : K) ≠ 
     (hm : 2 ≤ m) (hm0 : (m : K) ≠ 0) : Prime (depressedDiscr K m) :=
   prime_depressedDiscr_of_isUnit h2 hm (IsUnit.mk0 _ hm0)
 
+/-- A constant divisor of `depressedDiscr R m` divides the discriminant of any monic depressed
+polynomial of degree `m`. -/
+private theorem dvd_discr_of_C_dvd_depressedDiscr {R : Type*} [CommRing R] {m : ℕ} {r : R}
+    (hr : MvPolynomial.C r ∣ depressedDiscr R m) {f : R[X]} (hf_mon : f.Monic)
+    (hf_deg : f.natDegree = m) (hf_next : f.nextCoeff = 0) : r ∣ f.discr := by
+  have hmap := _root_.map_dvd (MvPolynomial.aeval (R := R) fun i : Fin (m - 1) ↦
+    f.coeff (m - 2 - (i : ℕ))) hr
+  simpa [← discr_eq_eval_depressedDiscr hf_mon hf_deg hf_next] using hmap
+
 /-- Specializing `depressedDiscr R m` (`2 ≤ m`) to the depressed binomial `X ^ m - 1` shows that
 any constant divisor `r` of `depressedDiscr R m` divides `m ^ m`. -/
 private theorem dvd_pow_of_C_dvd_depressedDiscr_of_two_le {R : Type*} [CommRing R] [Nontrivial R]
@@ -171,10 +180,7 @@ private theorem dvd_pow_of_C_dvd_depressedDiscr_of_two_le {R : Type*} [CommRing 
     rw [nextCoeff_of_natDegree_pos (by omega), hf_deg, Polynomial.coeff_sub,
       Polynomial.coeff_X_pow, Polynomial.coeff_C, ite_eq_right hm1_ne_m,
       ite_eq_right hm1_ne_zero, sub_zero]
-  have hdvd : r ∣ f.discr := by
-    have hmap := _root_.map_dvd (MvPolynomial.aeval (R := R) fun i : Fin (m - 1) ↦
-      f.coeff (m - 2 - (i : ℕ))) hr
-    simpa [← discr_eq_eval_depressedDiscr hf_mon hf_deg hf_next] using hmap
+  have hdvd : r ∣ f.discr := dvd_discr_of_C_dvd_depressedDiscr hr hf_mon hf_deg hf_next
   dsimp only [f] at hdvd
   rw [discr_X_pow_sub_C] at hdvd
   exact (isUnit_neg_one.pow _).dvd_mul_left.mp ((isUnit_neg_one.pow _).dvd_mul_right.mp hdvd)
@@ -203,10 +209,7 @@ private theorem dvd_sub_one_pow_of_C_dvd_depressedDiscr_of_three_le {R : Type*} 
     rw [nextCoeff_of_natDegree_pos (by omega), hf_deg, hf_eq, Polynomial.coeff_sub,
       Polynomial.coeff_X_pow, Polynomial.coeff_X, ite_eq_right hm1_ne_m,
       ite_eq_right hone_ne_m1, sub_zero]
-  have hdvd : r ∣ f.discr := by
-    have hmap := _root_.map_dvd (MvPolynomial.aeval (R := R) fun i : Fin (m - 1) ↦
-      f.coeff (m - 2 - (i : ℕ))) hr
-    simpa [← discr_eq_eval_depressedDiscr hf_mon hf_deg hf_next] using hmap
+  have hdvd : r ∣ f.discr := dvd_discr_of_C_dvd_depressedDiscr hr hf_mon hf_deg hf_next
   rw [hf_eq, discr_X_pow_sub_X (by omega)] at hdvd
   exact (isUnit_neg_one.pow _).dvd_mul_left.mp hdvd
 
@@ -321,37 +324,38 @@ theorem not_prime_depressedDiscr_int_two : ¬ Prime (depressedDiscr ℤ 2) := by
 
 /-- The **Weierstrass cubic discriminant factor** `4 X₀³ + 27 X₁²` over `R`, equal to
 `-TauCeti.depressedDiscr R 3`. -/
-noncomputable def weierstrassDiscr (R : Type*) [CommRing R] : MvPolynomial (Fin 2) R :=
+noncomputable def weierstrassDiscrFactor (R : Type*) [CommRing R] : MvPolynomial (Fin 2) R :=
   4 * MvPolynomial.X 0 ^ 3 + 27 * MvPolynomial.X 1 ^ 2
 
-/-- Definitional equation for `TauCeti.weierstrassDiscr`. -/
-theorem weierstrassDiscr_def (R : Type*) [CommRing R] :
-    weierstrassDiscr R = 4 * MvPolynomial.X 0 ^ 3 + 27 * MvPolynomial.X 1 ^ 2 := (rfl)
+/-- Definitional equation for `TauCeti.weierstrassDiscrFactor`. -/
+theorem weierstrassDiscrFactor_def (R : Type*) [CommRing R] :
+    weierstrassDiscrFactor R = 4 * MvPolynomial.X 0 ^ 3 + 27 * MvPolynomial.X 1 ^ 2 := (rfl)
 
-/-- `TauCeti.weierstrassDiscr R = -TauCeti.depressedDiscr R 3`. -/
-theorem weierstrassDiscr_eq_neg_depressedDiscr_three (R : Type*) [CommRing R] :
-    weierstrassDiscr R = -depressedDiscr R 3 := by
-  rw [weierstrassDiscr_def, depressedDiscr_three]
+/-- `TauCeti.weierstrassDiscrFactor R = -TauCeti.depressedDiscr R 3`. -/
+theorem weierstrassDiscrFactor_eq_neg_depressedDiscr_three (R : Type*) [CommRing R] :
+    weierstrassDiscrFactor R = -depressedDiscr R 3 := by
+  rw [weierstrassDiscrFactor_def, depressedDiscr_three]
   ring
 
-/-- The **Weierstrass cubic discriminant factor** `TauCeti.weierstrassDiscr R = -depressedDiscr R 3`
-is weighted homogeneous of weight `12` when `X₀` and `X₁` are given integer weights `4` and `6`. -/
-theorem isWeightedHomogeneous_weierstrassDiscr (R : Type*) [CommRing R] :
-    (weierstrassDiscr R).IsWeightedHomogeneous ![(4 : ℤ), 6] 12 := by
+/-- The **Weierstrass cubic discriminant factor**
+`TauCeti.weierstrassDiscrFactor R = -depressedDiscr R 3` is weighted homogeneous of weight `12` when
+`X₀` and `X₁` are given integer weights `4` and `6`. -/
+theorem isWeightedHomogeneous_weierstrassDiscrFactor (R : Type*) [CommRing R] :
+    (weierstrassDiscrFactor R).IsWeightedHomogeneous ![(4 : ℤ), 6] 12 := by
   have hw : (![(4 : ℤ), 6] : Fin 2 → ℤ) = fun i : Fin 2 ↦ ((i : ℕ) + 2) • (2 : ℤ) :=
     funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-  rw [weierstrassDiscr_eq_neg_depressedDiscr_three, hw,
+  rw [weierstrassDiscrFactor_eq_neg_depressedDiscr_three, hw,
     ← MvPolynomial.mem_weightedHomogeneousSubmodule]
   exact Submodule.neg_mem _ (depressedDiscr_mem_smul R 3 (2 : ℤ))
 
 /-- Over a unique factorization domain `R` with `(2 : R) ≠ 0` and `(3 : R) ≠ 0` (including `ℤ`,
 any field `k` of characteristic neither `2` nor `3`, and `k[t]` for such a field `k`), the
-Weierstrass cubic discriminant factor `TauCeti.weierstrassDiscr R` is prime in
+Weierstrass cubic discriminant factor `TauCeti.weierstrassDiscrFactor R` is prime in
 `MvPolynomial (Fin 2) R`. -/
-theorem prime_weierstrassDiscr {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
-    (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) :
-    Prime (weierstrassDiscr R) := by
-  rw [weierstrassDiscr_eq_neg_depressedDiscr_three]
+theorem prime_weierstrassDiscrFactor {R : Type*} [CommRing R] [IsDomain R]
+    [UniqueFactorizationMonoid R] (h2 : (2 : R) ≠ 0) (h3 : (3 : R) ≠ 0) :
+    Prime (weierstrassDiscrFactor R) := by
+  rw [weierstrassDiscrFactor_eq_neg_depressedDiscr_three]
   exact Prime.neg (prime_depressedDiscr_of_three_le h2 (by omega) (by simpa using h3))
 
 end LowDegree

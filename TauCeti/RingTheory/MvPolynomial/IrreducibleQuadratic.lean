@@ -17,8 +17,8 @@ Over an integral domain `R`, each root-difference hyperplane `X i - X j` (`i ≠
 `MvPolynomial σ R` is irreducible (`MvPolynomial.irreducible_X_sub_X`), and when `σ` carries a
 preorder the differences `X i - X j` with `i < j` are pairwise non-associated
 (`MvPolynomial.eq_of_associated_X_sub_X`). Over a unique factorization domain `R`, these linear
-factors therefore form pairwise coprime primes, giving the prime factorization of Vandermonde and
-root-system hyperplane products `∏_{i < j} (X i - X j)`.
+factors therefore form pairwise coprime primes, giving the factors of the Vandermonde product
+`∏_{i < j} (X i - X j)`.
 
 ## Main results
 

@@ -465,7 +465,7 @@ theorem discr_X_pow_sub_C_mul_X (a : R) {n : ℕ} (hn : 2 ≤ n) :
     rw [hX1, coeff_sub, coeff_X_pow, coeff_C, ite_eq_right (by omega : 0 ≠ n - 1),
       ite_eq_left rfl, zero_sub]
   rw [hfac, monic_X.discr_mul hg_mon, discr_X, hres, one_mul, discr_X_pow_sub_C]
-  have hn_eq : n - 1 - 1 = n - 2 := rfl
+  have hn_eq : n - 1 - 1 = n - 2 := Nat.sub_sub n 1 1
   have hn2 : (n - 2) + 2 = n := by omega
   rw [hn_eq, mul_assoc, ← pow_add, hn2]
 
@@ -478,8 +478,9 @@ theorem discr_X_pow_sub_X {n : ℕ} (hn : 2 ≤ n) :
   rw [C_1, one_mul] at h
   rw [h]
   have hexp : (n - 1) * (n - 2) / 2 + n = n * (n - 1) / 2 + 1 := by
-    have hmul : n * (n - 1) = (n - 1) * (n - 2) + 2 * (n - 1) := by
-      rcases n with _ | _ | k <;> simp_all
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+    have hmul : (k + 2) * (k + 2 - 1) = (k + 2 - 1) * (k + 2 - 2) + 2 * (k + 2 - 1) := by
+      simp only [Nat.add_sub_cancel]
       ring
     omega
   rw [mul_assoc, mul_comm (((n - 1 : ℕ) : R) ^ (n - 1)), ← mul_assoc, ← pow_add, hexp]

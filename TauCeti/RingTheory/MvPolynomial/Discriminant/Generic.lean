@@ -101,7 +101,8 @@ theorem _root_.MvPolynomial.vietaAlgHom_discr_freeMonic (R : Type*) [CommRing R]
     vietaAlgHom R m (freeMonic R m).discr =
       TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2 := by
   have h := congrArg Polynomial.discr (map_vietaAlgHom_freeMonic R m)
-  rw [(monic_freeMonic R m).discr_map, discr_prod_X_sub_C_eq_sq] at h
+  rw [(monic_freeMonic R m).discr_map, discr_prod_X_sub_C_eq_sq, AlgHom.toRingHom_eq_coe,
+    AlgHom.coe_toRingHom] at h
   exact h.trans (TauCeti.alternant_fin_val_sq m).symm
 
 /-- When `(2 : R) = 0`, the discriminant of `Polynomial.freeMonic R m` is a square in

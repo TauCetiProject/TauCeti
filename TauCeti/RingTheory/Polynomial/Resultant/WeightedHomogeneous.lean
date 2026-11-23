@@ -108,8 +108,8 @@ theorem isWeightedHomogeneous_discr {M : Type*} [AddCommMonoid M] {w : σ → M}
     MvPolynomial.aeval fun i : Fin (n + 1) ↦ p.coeff i
   have hmap : (freePoly R n).map φ.toRingHom = p := map_aeval_coeff_freePoly le_rfl
   have hdiscr : p.discr = φ (freePoly R n).discr := by
-    rw [← hmap, discr_map_of_natDegree_eq φ.toRingHom (by rw [hmap, natDegree_freePoly])]
-    rfl
+    rw [← hmap, discr_map_of_natDegree_eq φ.toRingHom (by rw [hmap, natDegree_freePoly]),
+      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
   rw [hdiscr]
   exact hP_smul.aeval fun i ↦ hp i
 

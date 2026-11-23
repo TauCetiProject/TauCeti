@@ -48,8 +48,7 @@ injective `R`-algebra endomorphism `MvPolynomial.vietaAlgHom`) sending each coef
   generator rules.
 * `MvPolynomial.map_vietaAlgHom_freeMonic`: `Polynomial.freeMonic R m` maps along
   `MvPolynomial.vietaAlgHom R m` to `∏ j, (X - C (X j))`.
-* `MvPolynomial.isUnit_of_isUnit_vietaAlgHom`: over a reduced ring, `MvPolynomial.vietaAlgHom R m`
-  reflects units.
+* `MvPolynomial.isUnit_of_isUnit_vietaAlgHom`: `MvPolynomial.vietaAlgHom R m` reflects units.
 * `Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq`: a monic polynomial whose roots are listed by
   `x` on a finite set `s` is the product of the linear factors `X - C (x i)` over `s`.
 
@@ -152,11 +151,21 @@ theorem vietaAlgHom_X {R : Type*} [CommRing R] {m : ℕ} (i : Fin m) :
     rw [Fin.val_rev]
     have := i.isLt
     omega
-  simp only [vietaAlgHom, vietaAlgEquiv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.trans_apply, renameEquiv_apply, rename_X, Fin.revPerm_apply, rescaleEquiv_apply,
-    rescale_X, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, map_pow, map_neg, map_one,
-    esymmAlgEquiv_apply, esymmAlgHom, map_mul, aeval_X, hrev]
-  rfl
+  calc vietaAlgHom R m (X i)
+    _ = ((esymmAlgEquiv (Fin m) R (Fintype.card_fin m))
+          ((rescaleEquiv (fun j : Fin m ↦ (-1 : Rˣ) ^ ((j : ℕ) + 1)))
+            (renameEquiv R Fin.revPerm (X i))) : MvPolynomial (Fin m) R) := by
+          rw [vietaAlgHom_apply, vietaAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply]
+    _ = ((esymmAlgEquiv (Fin m) R (Fintype.card_fin m))
+          (C ((-1 : R) ^ ((i.rev : ℕ) + 1)) * X i.rev) : MvPolynomial (Fin m) R) := by
+          rw [renameEquiv_apply, rename_X, Fin.revPerm_apply, rescaleEquiv_apply, rescale_X,
+            Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
+    _ = ((-1 : R) ^ ((i.rev : ℕ) + 1)) •
+          ((esymmAlgEquiv (Fin m) R (Fintype.card_fin m)) (X i.rev) : MvPolynomial (Fin m) R) := by
+          rw [C_eq_algebraMap, ← Algebra.smul_def, map_smul, SetLike.val_smul]
+    _ = (-1) ^ (m - (i : ℕ)) * esymm (Fin m) R (m - (i : ℕ)) := by
+          rw [esymmAlgEquiv_apply, esymmAlgHom_apply, aeval_X, hrev, Algebra.smul_def,
+            map_pow, map_neg, map_one]
 
 /-- On variables, `MvPolynomial.vietaAlgEquiv` sends `X i` to the signed elementary symmetric
 polynomial `(-1) ^ (m - i) * esymm (Fin m) R (m - i)` in `symmetricSubalgebra (Fin m) R`. -/
@@ -206,14 +215,23 @@ theorem map_vietaAlgHom_freeMonic (R : Type*) [CommRing R] (m : ℕ) :
   exact congrArg Subtype.val
     ((mapEquivMonic R _ m).apply_symm_apply (.mk P hmon hdeg))
 
-/-- Over a reduced ring, `MvPolynomial.vietaAlgHom R m` reflects units. -/
-theorem isUnit_of_isUnit_vietaAlgHom {R : Type*} [CommRing R] [IsReduced R] {m : ℕ}
+/-- `MvPolynomial.vietaAlgHom R m` reflects units. -/
+theorem isUnit_of_isUnit_vietaAlgHom {R : Type*} [CommRing R] {m : ℕ}
     {b : MvPolynomial (Fin m) R} (hb : IsUnit (vietaAlgHom R m b)) : IsUnit b := by
-  obtain ⟨r, hr, hbC⟩ := isUnit_iff_eq_C_of_isReduced.mp hb
-  have hbeq : b = C r := by
-    apply vietaAlgHom_injective R m
-    rw [hbC, ← algebraMap_eq, AlgHom.commutes]
-  exact hbeq ▸ hr.map C
+  obtain ⟨c, hc⟩ := hb.exists_right_inv
+  have hc_symm : c.IsSymmetric := by
+    intro e
+    have h1 : vietaAlgHom R m b * rename e c = 1 := by
+      have h := congrArg (rename e) hc
+      rw [map_mul, map_one, isSymmetric_vietaAlgHom b e] at h
+      exact h
+    calc rename e c = (c * vietaAlgHom R m b) * rename e c := by
+          rw [mul_comm c, hc, one_mul]
+      _ = c * (vietaAlgHom R m b * rename e c) := mul_assoc _ _ _
+      _ = c := by rw [h1, mul_one]
+  obtain ⟨d, hd⟩ := mem_range_vietaAlgHom_iff.mpr hc_symm
+  have hbd : b * d = 1 := vietaAlgHom_injective R m (by rw [map_mul, map_one, hd, hc])
+  exact IsUnit.of_mul_eq_one d hbd
 
 end MvPolynomial
 

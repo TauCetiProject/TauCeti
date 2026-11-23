@@ -75,7 +75,7 @@ theorem vars_X_sub_X {σ R : Type*} [DecidableEq σ] [CommRing R] [Nontrivial R]
   have hd : Disjoint (X i : MvPolynomial σ R).vars (X j : MvPolynomial σ R).vars := by
     simp [hij]
   rw [vars_sub_of_disjoint (X i) hd, vars_X, vars_X]
-  rfl
+  exact (Finset.insert_eq i {j}).symm
 
 /-- If `f` sends every variable of `a` above `i`, then every variable of `rename f a` lies
 above `i`. -/
