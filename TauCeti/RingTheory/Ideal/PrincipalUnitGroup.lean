@@ -309,8 +309,7 @@ field. -/
 noncomputable def maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits
     (R : Type*) [CommRing R] [IsLocalRing R] :
     (maximalIdeal R).PrincipalUnitGroupPowGraded 0 ≃* (ResidueField R)ˣ :=
-  (maximalIdeal R).principalUnitGroupPowZeroQuotientEquiv
-    (by rw [Ideal.jacobson_bot]; exact (ringJacobson_eq_maximalIdeal R).ge)
+  (maximalIdeal R).principalUnitGroupPowZeroQuotientEquiv (maximalIdeal_le_jacobson ⊥)
 
 /-- On the class of a unit `u`, the depth-zero graded equivalence acts by the residue map on
 units. -/

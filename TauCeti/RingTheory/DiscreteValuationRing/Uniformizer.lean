@@ -193,7 +193,7 @@ noncomputable def maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOf
     (π : R) (hπ : Irreducible π) :
     Additive ((maximalIdeal R).PrincipalUnitGroupPowGraded (n + 1)) ≃+ ResidueField R :=
   ((maximalIdeal R).principalUnitGroupPowQuotientEquiv
-    (by rw [Ideal.jacobson_bot]; exact (ringJacobson_eq_maximalIdeal R).ge) n).toAdditive.trans <|
+    (maximalIdeal_le_jacobson ⊥) n).toAdditive.trans <|
     (AddEquiv.additiveMultiplicative _).trans <|
       ((maximalIdeal R).powQuotientComapEquivSmulTop (n + 1)).trans
         (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)).symm.toAddEquiv

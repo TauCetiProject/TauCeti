@@ -36,12 +36,13 @@ additive homomorphism `G_{n+1} / G_{n+2} →+ k` whose dependence on `ϖ` is mul
 
 When `B` is a local algebra over a local ring `A` whose elements `G` fixes and the residue
 extension `ResidueField B / ResidueField A` is separable, membership of an element of `G_0` in
-`G_i` is decided at `ϖ` alone (`mem_ramificationGroup_iff_smul_sub_mem`), so the kernel of the
-`i`-th homomorphism is *equal* to `G_{i+1}` and all graded maps `θ_i`, `tameCharacterGraded`, and
-`ramificationGroupGradedToResidueField` are injective. Together with the local-ring positive-depth
-results from `TauCeti/RingTheory/LocalRing/RamificationGroup.lean`, this gives the tame/wild
-decomposition of inertia without assuming that the residue field is finite or that `B` is
-complete:
+`G_i` is decided at `ϖ` alone
+(`TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_span_singleton_eq_maximalIdeal`), so the
+kernel of the `i`-th homomorphism is *equal* to `G_{i+1}` and all graded maps `θ_i`,
+`tameCharacterGraded`, and `ramificationGroupGradedToResidueField` are injective. Together with the
+local-ring positive-depth results from `TauCeti/RingTheory/LocalRing/RamificationGroup.lean`, this
+gives the tame/wild decomposition of inertia without assuming that the residue field is finite or
+that `B` is complete:
 
 * whenever `G_0 / G_1` is finite, it is cyclic, and its cardinality is not divisible by the residue
   characteristic `p`;
@@ -85,10 +86,10 @@ through a fraction field or Teichmüller lifts.
 * `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField_change`: changing the
   uniformizer scales the positive-depth residue coordinate by the `(n + 1)`-st power of the
   change-unit residue.
-* `TauCeti.IsDiscreteValuationRing.mem_ramificationGroup_iff_smul_sub_mem` and
+* `TauCeti.IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem` and
   `TauCeti.IsDiscreteValuationRing.lowerIndex_eq_addVal_of_irreducible`: for a separable residue
-  extension over a `G`-fixed local base `A`, membership in `G_i` and Serre's lower index on `G_0`
-  are read at any uniformizer.
+  extension over a `G`-fixed local base `A`, membership in `G_n` (`n : ℕ`) and Serre's lower index
+  on `G_0` are read at any uniformizer.
 * `TauCeti.IsDiscreteValuationRing.tameCharacterGraded_injective_of_injective` and
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField_injective_of_injective`:
   injectivity of the tame character and positive-depth residue coordinate from injectivity of
@@ -518,16 +519,6 @@ section Separable
 
 variable {G : Type*} [Group G] {B : Type*} [CommRing B] [IsDomain B]
   [_root_.IsDiscreteValuationRing B] [MulSemiringAction G B]
-
-/-- When `B` is a local `A`-algebra on which `G` acts by `A`-algebra automorphisms with separable
-residue extension `ResidueField B / ResidueField A`, membership of an inertia element `σ ∈ G_0` in
-`G_i` is decided at any uniformizer `ϖ` of `B`. -/
-theorem mem_ramificationGroup_iff_smul_sub_mem (A : Type*) [CommRing A] [IsLocalRing A]
-    [Algebra A B] [IsLocalHom (algebraMap A B)] [SMulCommClass G A B]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] {ϖ : B} (hϖ : Irreducible ϖ)
-    {i : ℤ} {σ : G} (hσ : σ ∈ ramificationGroup G B 0) :
-    σ ∈ ramificationGroup G B i ↔ σ • ϖ - ϖ ∈ maximalIdeal B ^ (i + 1).toNat :=
-  mem_ramificationGroup_iff_of_span_singleton_eq_maximalIdeal A hϖ.maximalIdeal_eq.symm hσ
 
 /-- At a nonnegative index `n : ℕ`, when `B` is a local `A`-algebra on which `G` acts by
 `A`-algebra automorphisms with separable residue extension, membership of `σ ∈ G_0` in `G_n` is

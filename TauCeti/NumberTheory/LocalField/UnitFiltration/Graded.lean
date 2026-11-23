@@ -147,10 +147,8 @@ theorem unitFiltrationToMaximalIdealGraded_surjective (n : ℕ) :
   have h2 : Function.Surjective (Ideal.principalUnitGroupToQuotient
       (𝓂[K] ^ (n + 1)) (𝓂[K] ^ (n + 2))
       (by rw [← pow_add]; exact Ideal.pow_le_pow_right (by omega))) :=
-    Ideal.principalUnitGroupToQuotient_surjective _ (by
-      rw [Ideal.jacobson_bot]
-      exact (Ideal.pow_le_self n.succ_ne_zero).trans
-        (IsLocalRing.ringJacobson_eq_maximalIdeal 𝒪[K]).ge)
+    Ideal.principalUnitGroupToQuotient_surjective _
+      ((Ideal.pow_le_self n.succ_ne_zero).trans (IsLocalRing.maximalIdeal_le_jacobson ⊥))
   exact h1.comp (h2.comp (unitFiltrationEquivPrincipalUnitGroup (n + 1)).surjective)
 
 /-- Subtracting one identifies the positive unit-filtration quotient
@@ -159,8 +157,7 @@ noncomputable def unitFiltrationGradedSuccEquivMaximalIdealGraded (n : ℕ) :
     UnitFiltrationGraded K (n + 1) ≃* Multiplicative (MaximalIdealGraded K (n + 1)) :=
   (unitFiltrationGradedEquivPrincipalUnitGroupPowGraded (n + 1)).trans <|
     ((IsLocalRing.maximalIdeal 𝒪[K]).principalUnitGroupPowQuotientEquiv
-      (by rw [Ideal.jacobson_bot]; exact (IsLocalRing.ringJacobson_eq_maximalIdeal 𝒪[K]).ge)
-      n).trans
+      (IsLocalRing.maximalIdeal_le_jacobson ⊥) n).trans
       (𝓂[K].powQuotientComapEquivSmulTop (n + 1)).toMultiplicative
 
 /-- On a class represented by `u ∈ U(K,n+1)`, the positive-depth graded equivalence is the

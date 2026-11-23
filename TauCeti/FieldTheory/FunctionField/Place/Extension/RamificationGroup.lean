@@ -126,6 +126,20 @@ theorem ramificationGroup_def (i : ℕ) :
       IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i :=
   (rfl)
 
+/-- The `0`-th ramification group of a place is the `0`-th local-ring ramification group of its
+valuation ring under the decomposition group. -/
+theorem ramificationGroup_zero_def :
+    ramificationGroup F P 0 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 :=
+  (rfl)
+
+/-- The `1`-st ramification group of a place is the `1`-st local-ring ramification group of its
+valuation ring under the decomposition group. -/
+theorem ramificationGroup_one_def :
+    ramificationGroup F P 1 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 1 :=
+  (rfl)
+
 /-- **Membership in the `i`-th ramification group** (Stichtenoth, Definition 3.8.4): an
 automorphism lies in `G_i(P)` exactly when it moves every function integral at `P` by something of
 order at least `i + 1`. -/
@@ -251,7 +265,9 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
     IsLocalRing.toAdd_displacementHom_apply]
   refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
   apply Subtype.ext
-  simp [ValuationSubring.coe_decompositionSubgroup_smul, hy]
+  simp only [MulEquiv.subgroupCongr_apply, AddSubgroupClass.coe_sub,
+    ValuationSubring.coe_decompositionSubgroup_smul, MulMemClass.coe_mul, SubmonoidClass.coe_pow,
+    hy]
   field_simp
 
 /-- **The kernel of the ramification residue is the next ramification group** (Stichtenoth,
@@ -304,7 +320,10 @@ torsion-free additive group, so the filtration is constant from `1` on and meets
 theorem ramificationGroup_one_eq_bot [Finite (ramificationGroup F P 1)]
     [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
-  rw [ramificationGroup_def, Nat.cast_one] at *
+  have : Finite
+      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 1) :=
+    ramificationGroup_one_def F P ▸ ‹Finite (ramificationGroup F P 1)›
+  rw [ramificationGroup_one_def]
   exact IsLocalRing.ramificationGroup_eq_bot_of_charZero
     (P.integers.decompositionSubgroup F) P.integers one_pos
 
