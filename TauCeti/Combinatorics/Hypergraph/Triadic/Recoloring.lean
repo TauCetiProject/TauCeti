@@ -215,46 +215,54 @@ private theorem card_filter_color_fiberwise {κ V : Type*} [Fintype κ] [Decidab
     (t := univ) (fun _ _ ↦ mem_univ _)]
   exact sum_congr rfl fun c₀ _ ↦ congrArg card (ext fun x ↦ by simp only [mem_filter]; tauto)
 
-private theorem mul_add_le_of_div_two_add_one (q : ℕ) {a x y : ℝ} (ha : 0 ≤ a)
+/-- Scales a palette-split tolerance bound: if `x = a / (2 * (q + 1))` with `0 ≤ a` and `y ≤ x`,
+then `q * (x + y) ≤ a`. -/
+theorem mul_add_le_of_div_two_add_one (q : ℕ) {a x y : ℝ} (ha : 0 ≤ a)
     (hx : x = a / (2 * ((q : ℝ) + 1))) (hy : y ≤ x) : (q : ℝ) * (x + y) ≤ a := by
   calc (q : ℝ) * (x + y) ≤ (q : ℝ) * (2 * x) :=
         mul_le_mul_of_nonneg_left (by linarith) (Nat.cast_nonneg q)
     _ ≤ a := by rw [hx, ← mul_assoc, mul_div_assoc', div_le_iff₀ (by positivity)]; nlinarith
 
-private theorem small_polyad_mass_le {v q cardD : ℕ} {P β μ' : ℝ}
-    (hv4 : 4 ≤ v) (hDP : (cardD : ℝ) ≤ P) (hP : 0 ≤ P) (hβ : 0 < β) (hμ' : 0 < μ')
-    (hv_real : 4 * P * 221 * ((q : ℝ) + 10) / (β ^ 2 * μ') < v) :
+private theorem pow_three_le_four_mul_descFactorial_three {v : ℕ} (hv4 : 4 ≤ v) :
+    v ^ 3 ≤ 4 * v.descFactorial 3 := by
+  rw [Nat.descFactorial_succ, Nat.descFactorial_succ, Nat.descFactorial_one]
+  have h1 : v ≤ 2 * (v - 1) := by omega
+  have h2 : v ≤ 2 * (v - 2) := by omega
+  calc v ^ 3 = v * (v * v) := by ring
+    _ ≤ v * ((2 * (v - 1)) * (2 * (v - 2))) := Nat.mul_le_mul_left v (Nat.mul_le_mul h1 h2)
+    _ = 4 * ((v - 2) * ((v - 1) * v)) := by ring
+
+/-- Total triple mass contributed by at most `P` small polyads whose support size is below the
+recoloring cutoff `221 * (3 * v ^ 2 + q + 7) / β ^ 2` is at most `μ'`, given `3 ≤ v`, an
+ordered-triple normalization bound `v ^ 3 ≤ c * (v)₃` with `c > 0`, and host lower bound
+`c * P * 221 * (q + 10) / (β ^ 2 * μ') ≤ v`. -/
+theorem small_polyad_mass_le {v q cardD : ℕ} (c : ℝ) {P β μ' : ℝ}
+    (hv3 : 3 ≤ v) (hc : 0 < c) (hv_desc : (v : ℝ) ^ 3 ≤ c * (v.descFactorial 3 : ℝ))
+    (hDP : (cardD : ℝ) ≤ P) (hP : 0 ≤ P) (hβ : 0 < β) (hμ' : 0 < μ')
+    (hv_real : c * P * 221 * ((q : ℝ) + 10) / (β ^ 2 * μ') ≤ v) :
     (cardD : ℝ) * (221 * (3 * (v : ℝ) ^ 2 + q + 7) / β ^ 2) / v.descFactorial 3 ≤ μ' := by
-  have hv_desc : v ^ 3 ≤ 4 * v.descFactorial 3 := by
-    rw [Nat.descFactorial_succ, Nat.descFactorial_succ, Nat.descFactorial_one]
-    have h1 : v ≤ 2 * (v - 1) := by omega
-    have h2 : v ≤ 2 * (v - 2) := by omega
-    calc v ^ 3 = v * (v * v) := by ring
-      _ ≤ v * ((2 * (v - 1)) * (2 * (v - 2))) := Nat.mul_le_mul_left v (Nat.mul_le_mul h1 h2)
-      _ = 4 * ((v - 2) * ((v - 1) * v)) := by ring
   have hv_desc_pos : (0 : ℝ) < v.descFactorial 3 := by
-    have : 0 < v.descFactorial 3 := by
-      have := (pow_pos (by omega : 0 < v) 3).trans_le hv_desc; omega
-    exact_mod_cast this
+    exact_mod_cast Nat.descFactorial_pos.2 hv3
   have hN₀_le : 221 * (3 * (v : ℝ) ^ 2 + q + 7) / β ^ 2 ≤
       221 * ((q : ℝ) + 10) * (v : ℝ) ^ 2 / β ^ 2 := by
     refine div_le_div_of_nonneg_right ?_ (sq_nonneg _)
     have hv1 : (1 : ℝ) ≤ (v : ℝ) ^ 2 := by exact_mod_cast (by nlinarith : 1 ≤ v ^ 2)
     have hqv : (q : ℝ) ≤ q * (v : ℝ) ^ 2 := le_mul_of_one_le_right (Nat.cast_nonneg q) hv1
     linarith
-  have hv_mul : 4 * P * 221 * ((q : ℝ) + 10) ≤ (v : ℝ) * (β ^ 2 * μ') :=
-    ((div_lt_iff₀ (mul_pos (pow_pos hβ 2) hμ')).1 hv_real).le
+  have hv_mul : c * P * 221 * ((q : ℝ) + 10) ≤ (v : ℝ) * (β ^ 2 * μ') :=
+    (div_le_iff₀ (mul_pos (pow_pos hβ 2) hμ')).1 hv_real
   rw [div_le_iff₀ hv_desc_pos]
   calc (cardD : ℝ) * (221 * (3 * (v : ℝ) ^ 2 + q + 7) / β ^ 2)
       ≤ P * (221 * ((q : ℝ) + 10) * (v : ℝ) ^ 2 / β ^ 2) :=
         mul_le_mul hDP hN₀_le (by positivity) hP
-    _ = (4 * P * 221 * ((q : ℝ) + 10)) * ((v : ℝ) ^ 2 / (4 * β ^ 2)) := by field_simp [hβ.ne']
-    _ ≤ ((v : ℝ) * (β ^ 2 * μ')) * ((v : ℝ) ^ 2 / (4 * β ^ 2)) :=
+    _ = (c * P * 221 * ((q : ℝ) + 10)) * ((v : ℝ) ^ 2 / (c * β ^ 2)) := by
+        field_simp [hc.ne', hβ.ne']
+    _ ≤ ((v : ℝ) * (β ^ 2 * μ')) * ((v : ℝ) ^ 2 / (c * β ^ 2)) :=
         mul_le_mul_of_nonneg_right hv_mul (by positivity)
-    _ = μ' * ((v : ℝ) ^ 3 / 4) := by field_simp [hβ.ne']
+    _ = μ' * ((v : ℝ) ^ 3 / c) := by field_simp [hc.ne', hβ.ne']
     _ ≤ μ' * v.descFactorial 3 := by
-        have hv_descR : (v : ℝ) ^ 3 ≤ 4 * (v.descFactorial 3 : ℝ) := by exact_mod_cast hv_desc
-        exact mul_le_mul_of_nonneg_left (by linarith) hμ'.le
+        refine mul_le_mul_of_nonneg_left ?_ hμ'.le
+        exact (div_le_iff₀ hc).2 (by simpa [mul_comm] using hv_desc)
 
 end Helpers
 
@@ -976,7 +984,9 @@ theorem exists_approximates3_topRegularOverMostPolyads [Finite κ] [Fintype κ�
       exact mul_add_le_of_div_two_add_one q hε.le rfl (min_le_left _ _)
     · have hDP : (Fintype.card (Polyad3 D.skeleton) : ℝ) ≤ P := by
         dsimp only [P]; exact_mod_cast hDpoly.trans (Nat.le_succ _)
-      have hsmall := small_polyad_mass_le hv4 hDP (by positivity) (hβ n) (hμ' n) hv_real
+      have hsmall := small_polyad_mass_le 4 (by omega) (by norm_num)
+        (by exact_mod_cast pow_three_le_four_mul_descFactorial_three hv4)
+        hDP (by positivity) (hβ n) (hμ' n) hv_real.le
       rw [div_le_iff₀ (hθ n)]
       have : μ' n + μ' n = μ n * θ n := by dsimp only [μ']; ring
       linarith

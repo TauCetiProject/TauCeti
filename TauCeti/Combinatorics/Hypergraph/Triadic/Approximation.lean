@@ -129,6 +129,12 @@ private noncomputable def triadicCoarseBound (q₃ : ℕ) (ε : ℝ) (F : ℕ �
   strongTriadicRegularityBound F (triadicEnergyGap q₃ ε) (triadicFineTol q₃ F R)
     (triadicFineMass ε F R) (fun _ ↦ 1) (max t₀ 1)
 
+private theorem triadicCoarseBound_def (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
+    triadicCoarseBound q₃ ε F R t₀ =
+      strongTriadicRegularityBound F (triadicEnergyGap q₃ ε) (triadicFineTol q₃ F R)
+        (triadicFineMass ε F R) (fun _ ↦ 1) (max t₀ 1) :=
+  (rfl)
+
 private noncomputable def triadicCompCap (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
     ℕ :=
   let B := triadicCoarseBound q₃ ε F R t₀
@@ -271,33 +277,18 @@ theorem isStrongRegularApproximation3_iff {H H' : Colored3Graph κ V} {C : Triad
 private theorem triadicFine_tol_le (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (K : ℕ) :
     2 * ((q₃ : ℝ) * (triadicFineTol q₃ F R K + triadicFineBeta q₃ ε F R K) +
       triadicFineTheta F R K) ≤ triadicRank1Tol F R K ^ 2 := by
-  have hβ : triadicFineBeta q₃ ε F R K ≤ triadicFineTol q₃ F R K := min_le_right _ _
-  have h1 : triadicFineTol q₃ F R K + triadicFineBeta q₃ ε F R K ≤ 2 * triadicFineTol q₃ F R K := by
-    linarith
-  have h2 : (q₃ : ℝ) * (2 * triadicFineTol q₃ F R K) ≤ triadicRank1Tol F R K ^ 2 / 4 := by
-    dsimp only [triadicFineTol]
-    field_simp
-    nlinarith [sq_nonneg (triadicRank1Tol F R K), Nat.cast_nonneg (α := ℝ) q₃]
   have hqη : (q₃ : ℝ) * (triadicFineTol q₃ F R K + triadicFineBeta q₃ ε F R K) ≤
       triadicRank1Tol F R K ^ 2 / 4 :=
-    (mul_le_mul_of_nonneg_left h1 (Nat.cast_nonneg _)).trans h2
+    mul_add_le_of_div_two_add_one q₃ (by positivity)
+      (by dsimp only [triadicFineTol]; rw [div_div]; congr 1; ring) (min_le_right _ _)
   dsimp only [triadicFineTheta]
   linarith
 
 private theorem triadicFine_edit_le (q₃ : ℕ) {ε : ℝ} (hε : 0 < ε) (F : ℕ → ℝ) (R : ℕ → ℕ)
     (K : ℕ) :
     (q₃ : ℝ) * (√(triadicEnergyGap q₃ ε) + triadicFineBeta q₃ ε F R K) ≤ ε := by
-  have hsqrt : √(triadicEnergyGap q₃ ε) = ε / (2 * ((q₃ : ℝ) + 1)) := sqrt_sq (by positivity)
-  have hβ_le : triadicFineBeta q₃ ε F R K ≤ ε / (2 * ((q₃ : ℝ) + 1)) := min_le_left _ _
-  have hq_le : (q₃ : ℝ) * (ε / (2 * ((q₃ : ℝ) + 1)) + ε / (2 * ((q₃ : ℝ) + 1))) ≤ ε := by
-    field_simp
-    linarith
-  exact (mul_le_mul_of_nonneg_left (by linarith) (Nat.cast_nonneg _)).trans hq_le
-
-private theorem triadicRecoloringCutoff_nonneg (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ)
-    (k nV : ℕ) : 0 ≤ triadicRecoloringCutoff q₃ ε F R k nV := by
-  unfold triadicRecoloringCutoff
-  positivity
+  rw [triadicEnergyGap, sqrt_sq (by positivity)]
+  exact mul_add_le_of_div_two_add_one q₃ hε.le rfl (min_le_left _ _)
 
 private theorem le_triadicFineBeta_sq_mul_triadicRecoloringCutoff (q₃ : ℕ) {ε : ℝ} (hε : 0 < ε)
     {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (R : ℕ → ℕ) (k nV : ℕ) :
@@ -313,44 +304,15 @@ private theorem mul_triadicRecoloringCutoff_div_descFactorial_le (q₃ : ℕ) {�
     (hhost : triadicHostThreshold q₃ ε F R B Dmax K ≤ nV) :
     (P : ℝ) * triadicRecoloringCutoff q₃ ε F R K nV / nV.descFactorial 3 ≤
       triadicFineMass ε F R K := by
-  have hμ := triadicFineMass_pos hε hF R K
-  have hβ := triadicFineBeta_pos q₃ hε hF R K
-  set β := triadicFineBeta q₃ ε F R K
-  set μ := triadicFineMass ε F R K
   have hhost_real :
-      2 * ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) / (β ^ 2 * μ) ≤ nV :=
+      2 * ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) /
+        (triadicFineBeta q₃ ε F R K ^ 2 * triadicFineMass ε F R K) ≤ nV :=
     (Nat.le_ceil _).trans (by dsimp only [triadicHostThreshold] at hhost; exact_mod_cast hhost)
-  have hDpoly : (P : ℝ) ≤ (B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3 := by exact_mod_cast hP
-  have hV_sq : (7 : ℝ) ≤ (nV : ℝ) ^ 2 := by
-    have : (6 : ℝ) ≤ nV := by exact_mod_cast hnV6
-    nlinarith
-  have hV_pos : (0 : ℝ) < nV := by
-    have : (6 : ℝ) ≤ nV := by exact_mod_cast hnV6
-    linarith
-  have hN₀_le :
-      triadicRecoloringCutoff q₃ ε F R K nV ≤ 221 * ((q₃ : ℝ) + 10) * (nV : ℝ) ^ 2 / β ^ 2 := by
-    dsimp only [triadicRecoloringCutoff]
-    rw [mul_assoc 221]
-    refine div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left ?_ (by norm_num)) (sq_nonneg _)
-    nlinarith [Nat.cast_nonneg (α := ℝ) q₃, hV_sq]
-  have hpow3 : (nV : ℝ) ^ 3 ≤ 2 * (nV.descFactorial 3 : ℝ) := by
-    exact_mod_cast Nat.pow_three_le_two_mul_descFactorial_three hnV6
-  have hdesc_pos : (0 : ℝ) < nV.descFactorial 3 := by linarith [pow_pos hV_pos 3]
-  rw [div_le_iff₀ hdesc_pos]
-  have h1 : (P : ℝ) * triadicRecoloringCutoff q₃ ε F R K nV ≤
-      ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * (221 * ((q₃ : ℝ) + 10) * (nV : ℝ) ^ 2 / β ^ 2) :=
-    mul_le_mul hDpoly hN₀_le (triadicRecoloringCutoff_nonneg q₃ ε F R K nV) (by positivity)
-  have h2 : 2 * ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) ≤ μ * β ^ 2 * nV := by
-    rw [div_le_iff₀ (by positivity)] at hhost_real
-    linarith
-  calc (P : ℝ) * triadicRecoloringCutoff q₃ ε F R K nV
-      ≤ ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) *
-          (221 * ((q₃ : ℝ) + 10) * (nV : ℝ) ^ 2 / β ^ 2) := h1
-    _ = (2 * ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10)) *
-          (nV : ℝ) ^ 2 / (2 * β ^ 2) := by ring
-    _ ≤ (μ * β ^ 2 * nV) * (nV : ℝ) ^ 2 / (2 * β ^ 2) := by gcongr
-    _ = μ * ((nV : ℝ) ^ 3 / 2) := by field_simp [hβ.ne']
-    _ ≤ μ * (nV.descFactorial 3 : ℝ) := mul_le_mul_of_nonneg_left (by linarith) hμ.le
+  dsimp only [triadicRecoloringCutoff]
+  exact small_polyad_mass_le 2 (by omega) (by norm_num)
+    (by exact_mod_cast Nat.pow_three_le_two_mul_descFactorial_three hnV6)
+    (by exact_mod_cast hP) (by positivity)
+    (triadicFineBeta_pos q₃ hε hF R K) (triadicFineMass_pos hε hF R K) hhost_real
 
 private theorem triadicFine_mass_le (q₃ : ℕ) {ε : ℝ} (hε : 0 < ε) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
     (R : ℕ → ℕ) (K nV B Dmax P : ℕ) (hnV6 : 6 ≤ nV) (hP : P ≤ B ^ 3 * Dmax ^ 3)
@@ -391,13 +353,13 @@ theorem exists_strong_regular_approximation3 (H : Colored3Graph κ V) {ε : ℝ}
     (by rw [card_univ]; exact (max_one_le_regularityBound3 q₃ ε F R t₀).trans hV)
   have hB' : strongTriadicRegularityBound F (triadicEnergyGap q₃ ε)
       (triadicFineTol q₃ F R) (triadicFineMass ε F R) (fun _ ↦ 1) #P₀.parts ≤ Fintype.card V := by
-    rw [hP₀_card]
+    rw [hP₀_card, ← triadicCoarseBound_def]
     exact (triadicCoarseBound_le_regularityBound3 q₃ ε F R t₀).trans hV
   obtain ⟨C, D, f, hCt, hCm, hDcard, hCP₀, hCeq, hDV, hCreg, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=
     H.exists_strong_topRegularOverMostPolyads_lowerSkeletonRegular P₀ hP₀
       (triadicEnergyGap_pos q₃ hε) hF (triadicFineTol_pos q₃ hF R) (triadicFineMass_pos hε hF R)
       (fun _ ↦ 1) hB'
-  rw [hP₀_card] at hCt hCm
+  rw [hP₀_card, ← triadicCoarseBound_def] at hCt hCm
   have hCcomp : C.complexity ≤ triadicCompCap q₃ ε F R t₀ := complexity_le_triadicCompCap hCt hCm
   have hD_le : D.pairColorCount ≤ triadicRefinementCap q₃ ε F R t₀ :=
     hDcard.trans (topRegularRefinementBound_le_triadicRefinementCap hCt hCm hCcomp)
