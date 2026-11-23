@@ -28,7 +28,7 @@ rotation of `a` (`TauCeti.SpinCStructure.toFrame_twist_mk`). Equivalently, `P �
 of `P ×_X L` by the circle acting by `(p, l) • w = (p • [1, w], l • w⁻¹)`.
 
 Twisting is functorial: equivalences of `Spinᶜ` structures and equivariant homeomorphisms of
-principal `U(1)`-bundles induce equivalences of twists (`TauCeti.SpinCStructure.Equiv.twist`), so
+principal `U(1)`-bundles induce equivalences of twists (`TauCeti.SpinCStructure.twistEquiv`), so
 the equivalence class of `s.twist L` depends only on the equivalence class of `s` and the
 isomorphism class of `L`. Twisting by the trivial bundle changes nothing
 (`TauCeti.SpinCStructure.twistTrivialEquiv`): `[(p, w), a] ↦ p • [1, w] a`.
@@ -43,7 +43,7 @@ it is free and transitive whenever a `Spinᶜ` structure exists, and the determi
 * `CliffordAlgebra.spinCGroup.mulCircle`: the multiplication `Spinᶜ(Q) × U(1) → Spinᶜ(Q)`,
   `(a, w) ↦ a [1, w]`, a homomorphism because the circle is central.
 * `TauCeti.SpinCStructure.twist`: the twist of a `Spinᶜ` structure by a principal `U(1)`-bundle.
-* `TauCeti.SpinCStructure.Equiv.twist`: the equivalence of twists induced by an equivalence of
+* `TauCeti.SpinCStructure.twistEquiv`: the equivalence of twists induced by an equivalence of
   `Spinᶜ` structures and an isomorphism of principal `U(1)`-bundles.
 * `TauCeti.SpinCStructure.twistTrivialEquiv`: the twist by the trivial bundle is equivalent to
   the `Spinᶜ` structure.
@@ -171,7 +171,7 @@ theorem toFrame_twist_inl (x : X) (p : s.P x) (l : L x) :
 /-- **Twisting is functorial**: an equivalence `φ : s ≃ t` of `Spinᶜ` structures and a fibrewise
 equivariant bijection `ψ` from `L` to a principal `U(1)`-bundle `L'`, continuous on total spaces
 in both directions, induce an equivalence of twists `[(p, l), a] ↦ [(φ p, ψ l), a]`. -/
-noncomputable def Equiv.twist {s t : SpinCStructure F V n} (φ : s.Equiv t)
+noncomputable def twistEquiv {s t : SpinCStructure F V n} (φ : s.Equiv t)
     {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
     [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
     (ψ : ∀ x, L x ≃ L' x) (hψ : ∀ x (l : L x) (w : Circle), ψ x (op w • l) = op w • ψ x l)
