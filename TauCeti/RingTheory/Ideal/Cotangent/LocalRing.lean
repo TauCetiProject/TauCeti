@@ -35,6 +35,18 @@ instance ResidueField.ringHomInvPair_mapEquiv {R S : Type*} [CommRing R] [CommRi
       (ResidueField.mapEquiv σ.symm : ResidueField S →+* ResidueField R) :=
   .of_ringEquiv (ResidueField.mapEquiv σ)
 
+private lemma mapCotangent_residue_smul {R S : Type*} [CommRing R] [CommRing S]
+    [IsLocalRing R] [IsLocalRing S] (f : R →+* S)
+    (h : maximalIdeal R ≤ (maximalIdeal S).comap f.toIntAlgHom)
+    (r : R) (v : CotangentSpace R) :
+    Ideal.mapCotangent (maximalIdeal R) (maximalIdeal S) f.toIntAlgHom h (residue R r • v) =
+      residue S (f r) •
+        Ideal.mapCotangent (maximalIdeal R) (maximalIdeal S) f.toIntAlgHom h v := by
+  obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ v
+  simp only [← ResidueField.algebraMap_eq, IsScalarTower.algebraMap_smul, ← map_smul,
+    Ideal.mapCotangent_toCotangent]
+  exact congrArg (Ideal.toCotangent _) (Subtype.ext (map_mul f r m))
+
 /-- A ring isomorphism between local rings induces a semilinear equivalence between their
 cotangent spaces over `ResidueField.mapEquiv σ`. -/
 def cotangentSpaceEquiv {R S : Type*} [CommRing R] [CommRing S]
@@ -54,17 +66,7 @@ def cotangentSpaceEquiv {R S : Type*} [CommRing R] [CommRing S]
   map_add' := map_add _
   map_smul' r m := by
     obtain ⟨r, rfl⟩ := residue_surjective r
-    obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ m
-    change Ideal.mapCotangent _ _ _ _ (residue R r • Ideal.toCotangent _ m) =
-      (ResidueField.mapEquiv σ : ResidueField R →+* ResidueField S) (residue R r) •
-        Ideal.mapCotangent _ _ _ _ (Ideal.toCotangent _ m)
-    rw [← ResidueField.algebraMap_eq, IsScalarTower.algebraMap_smul,
-      RingHom.coe_coe, ResidueField.mapEquiv_apply, ResidueField.algebraMap_eq,
-      ResidueField.map_residue, ← ResidueField.algebraMap_eq,
-      IsScalarTower.algebraMap_smul]
-    apply congrArg (Ideal.toCotangent _)
-    ext
-    exact map_mul σ r m
+    simp [mapCotangent_residue_smul]
 
 /-- On `Ideal.toCotangent` representatives, `cotangentSpaceEquiv` acts by applying `σ`. -/
 @[simp]
