@@ -13,6 +13,7 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # The rhombus concavity criterion and tropical affine-envelope formula
@@ -233,19 +234,15 @@ theorem IsRhombusConcave.interpolate_le_triangleAffine {f : Vertex n → ℝ}
     (hx : x ∈ barycentricSimplex n) : interpolate f x ≤ triangleAffine f T x := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := by cases T <;> exact ⟨_, rfl⟩
   obtain ⟨T', hxT'⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
-  have hx_sum := (mem_barycentricSimplex_iff.mp hx).2
-  have hw := T'.sum_weight hx_sum
-  have haff := (Finset.univ.map_affineCombination (fun i => (T'.vertex i).barycentric)
-    (fun i => T'.weight i x) hw (triangleAffine f T).toAffineMap).symm
-  simp only [Finset.affineCombination_eq_linear_combination _ _ _ hw,
-    T'.sum_weight_smul_vertex hx_sum, ContinuousAffineMap.coe_toAffineMap] at haff
-  calc interpolate f x = ∑ i : Fin 3, f (T'.vertex i) * T'.weight i x := by
-        rw [interpolate_eq_triangleAffine f hxT', triangleAffine_apply]
-    _ ≤ ∑ i : Fin 3, triangleAffine f T (T'.vertex i).barycentric * T'.weight i x :=
-        Finset.sum_le_sum fun i _ => mul_le_mul_of_nonneg_right
-          (hf.le_triangleAffine_barycentric T (T'.vertex i)) (T'.weight_nonneg hxT' i)
-    _ = triangleAffine f T x := by
-        simpa [Function.comp_def, smul_eq_mul, mul_comm] using haff
+  rw [interpolate_eq_triangleAffine f hxT']
+  exact le_of_forall_le_of_mem_convexHull (a := (triangleAffine f T').toAffineMap)
+    (b := (triangleAffine f T).toAffineMap)
+    (by
+      rintro _ ⟨i, rfl⟩
+      rw [ContinuousAffineMap.coe_toAffineMap, ContinuousAffineMap.coe_toAffineMap,
+        triangleAffine_vertex]
+      exact hf.le_triangleAffine_barycentric T (T'.vertex i))
+    (T'.cell_eq_convexHull ▸ hxT')
 /-- **Global affine-envelope formula**: for `n = m + 1 ≥ 1` and rhombus-concave `f`,
 `interpolate f x` on `barycentricSimplex (m + 1)` is the minimum over all `n²` unit triangles of
 `triangleAffine f T x`. -/

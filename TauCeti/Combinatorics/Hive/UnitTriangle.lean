@@ -169,10 +169,10 @@ noncomputable def planarSimplex (n : ℕ) : Set (EuclideanSpace ℝ (Fin 2)) :=
 
 theorem planarSimplex_def (n : ℕ) : planarSimplex n = planeLinear '' barycentricSimplex n := (rfl)
 theorem planarSimplex_eq_preimage (n : ℕ) :
-    planarSimplex n = planeInvAffine n ⁻¹' barycentricSimplex n := by
-  ext u; simp only [planarSimplex, mem_image, mem_preimage]
-  exact ⟨fun ⟨x, hx, h⟩ => h ▸ (planeInvAffine_planeLinear hx.2).symm ▸ hx,
-    fun hu => ⟨planeInvAffine n u, hu, planeLinear_planeInvAffine n u⟩⟩
+    planarSimplex n = planeInvAffine n ⁻¹' barycentricSimplex n :=
+  Set.image_eq_preimage_of_leftInvOn_injOn
+    (fun _ hx => planeInvAffine_planeLinear hx.2)
+    ((Function.LeftInverse.injective (planeLinear_planeInvAffine n)).injOn)
 @[simp] theorem mem_planarSimplex_iff {u : EuclideanSpace ℝ (Fin 2)} :
     u ∈ planarSimplex n ↔ planeInvAffine n u ∈ barycentricSimplex n := by
   rw [planarSimplex_eq_preimage]; rfl

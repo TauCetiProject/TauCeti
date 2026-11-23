@@ -303,13 +303,13 @@ theorem triangleAffine_affine (β γ : ℝ) (T : UnitTriangle n) {x : Fin 3 → 
   simpa [hcoe] using triangleAffine_barycentricLinear (0 : ℝ) 0 β γ T hx
 
 /-- The `s`-th clockwise perimeter unit-step vector `(-1, 1, 0)`, `(0, -1, 1)`, `(1, 0, -1)`. -/
-def unitStepVec : Fin 3 → (Fin 3 → ℝ)
-  | ⟨0, _⟩ => ![-1, 1, 0] | ⟨1, _⟩ => ![0, -1, 1] | ⟨2, _⟩ => ![1, 0, -1]
+def unitStepVec (s : Fin 3) : Fin 3 → ℝ := Pi.single (s + 1) (1 : ℝ) - Pi.single s 1
 
 @[simp] theorem unitStepVec_apply (s k : Fin 3) :
     unitStepVec s k = (if k = s + 1 then 1 else 0) - (if k = s then 1 else 0) := by
-  fin_cases s <;> fin_cases k <;> simp [unitStepVec]
-theorem sum_unitStepVec (s : Fin 3) : ∑ i : Fin 3, unitStepVec s i = 0 := by simp
+  simp [unitStepVec, Pi.single_apply]
+theorem sum_unitStepVec (s : Fin 3) : ∑ i : Fin 3, unitStepVec s i = 0 := by
+  simp [unitStepVec, Finset.sum_pi_single']
 
 /-- The directional derivative of `triangleAffine f T` along `unitStepVec s` equals the
 combinatorial edge slope `triangleGradient f T s`. -/
@@ -494,10 +494,6 @@ theorem interpolate_affine (β γ : ℝ) {x : Fin 3 → ℝ} (hx : x ∈ barycen
     interpolate (affine n β γ) x = x 1 * β + x 2 * γ := by
   have hcoe : ⇑(affine n β γ) = barycentricLinear 0 0 β γ := funext fun _ => by simp
   simpa [hcoe] using interpolate_barycentricLinear (n := n) (0 : ℝ) 0 β γ hx
-theorem interpolate_add_barycentricLinear (f : Vertex n → ℝ) (c₀ α β γ : ℝ) {x : Fin 3 → ℝ}
-    (hx : x ∈ barycentricSimplex n) : interpolate (f + barycentricLinear (n := n) c₀ α β γ) x =
-      interpolate f x + (c₀ + x 0 * α + x 1 * β + x 2 * γ) := by
-  rw [interpolate_add, interpolate_barycentricLinear _ _ _ _ hx]
 /-- Compatibility of `interpolate` with lattice translation by `p : Vertex m`. -/
 theorem interpolate_comp_add (f : Vertex (m + k) → ℝ) (p : Vertex m) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex k) :
