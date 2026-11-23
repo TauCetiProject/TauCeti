@@ -21,8 +21,7 @@ touch the slit-plane boundary.
 
 * `TauCeti.continuousOn_arg_im_nonneg_ne_zero`.
 * `TauCeti.continuousOn_log_im_nonneg_ne_zero`.
-* `Filter.Tendsto.clog_of_im_nonneg`, `Filter.Tendsto.arg_of_im_nonneg`,
-  `ContinuousWithinAt.arg_of_im_nonneg`, and `ContinuousWithinAt.clog_of_im_nonneg`.
+* `Filter.Tendsto.clog_of_im_nonneg` and `ContinuousWithinAt.clog_of_im_nonneg`.
 * `TauCeti.continuousWithinAt_log_one_sub_ofReal_mul_im_nonpos`.
 * `TauCeti.continuousOn_cpow_const_im_nonneg`.
 
@@ -68,22 +67,6 @@ theorem _root_.Filter.Tendsto.clog_of_im_nonneg {α : Type*} {l : Filter α} {f 
   refine (continuousOn_log_im_nonneg_ne_zero z ⟨hz, hne⟩).tendsto.comp (tendsto_nhdsWithin_iff.mpr
     ⟨hf, ?_⟩)
   filter_upwards [him, hf.eventually_ne hne] with y hy hy0 using ⟨hy, hy0⟩
-
-/-- Limit rule for `Complex.arg` along a filter eventually mapped into the closed upper half-plane,
-when the limiting value is nonzero. -/
-theorem _root_.Filter.Tendsto.arg_of_im_nonneg {α : Type*} {l : Filter α} {f : α → ℂ} {z : ℂ}
-    (hf : Tendsto f l (𝓝 z)) (him : ∀ᶠ y in l, 0 ≤ (f y).im) (hne : z ≠ 0) :
-    Tendsto (fun y ↦ (f y).arg) l (𝓝 z.arg) := by
-  simpa only [Function.comp_def, log_im] using
-    continuous_im.continuousAt.tendsto.comp (hf.clog_of_im_nonneg him hne)
-
-/-- Composition rule for `Complex.arg` when `f` eventually maps `𝓝[s] x` into the closed upper
-half-plane and `f x ≠ 0`. -/
-nonrec theorem _root_.ContinuousWithinAt.arg_of_im_nonneg {α : Type*} [TopologicalSpace α]
-    {f : α → ℂ} {s : Set α} {x : α} (hf : ContinuousWithinAt f s x)
-    (him : ∀ᶠ y in 𝓝[s] x, 0 ≤ (f y).im) (hne : f x ≠ 0) :
-    ContinuousWithinAt (fun y ↦ (f y).arg) s x :=
-  hf.arg_of_im_nonneg him hne
 
 /-- Composition rule for `Complex.log` when `f` eventually maps `𝓝[s] x` into the closed upper
 half-plane and `f x ≠ 0`. -/

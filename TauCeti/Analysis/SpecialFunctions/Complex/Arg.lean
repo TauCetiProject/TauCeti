@@ -82,8 +82,6 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
-* `Filter.Tendsto.arg_of_im_neg_of_re_neg_of_im_zero`: approaching the open negative real axis from
-  the open lower half-plane along an arbitrary filter sends `(f y).arg` to `-π`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -412,15 +410,6 @@ theorem sin_arg_sub_arg_one_sub (ξ : ℂ) :
   ring
 
 end Complex
-
-open Filter Topology in
-/-- Limit rule for `Complex.arg` along a filter eventually mapped into the open lower half-plane
-when the limiting value lies on the open negative real axis (`z.re < 0` and `z.im = 0`). -/
-theorem Filter.Tendsto.arg_of_im_neg_of_re_neg_of_im_zero {α : Type*} {l : Filter α} {f : α → ℂ}
-    {z : ℂ} (hf : Tendsto f l (𝓝 z)) (him : ∀ᶠ y in l, (f y).im < 0) (hre : z.re < 0)
-    (him₀ : z.im = 0) : Tendsto (fun y ↦ (f y).arg) l (𝓝 (-π)) :=
-  (Complex.tendsto_arg_nhdsWithin_im_neg_of_re_neg_of_im_zero hre him₀).comp
-    (tendsto_nhdsWithin_iff.mpr ⟨hf, him⟩)
 
 /-- If `f` has complex derivative `f'` at `z` and `f z` lies in the slit plane, then the argument
 `w ↦ arg (f w)` has real derivative `v ↦ Im (v * f' / f z)` at `z`, the imaginary part of the
