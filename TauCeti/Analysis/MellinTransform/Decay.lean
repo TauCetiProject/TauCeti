@@ -26,7 +26,7 @@ This decay is used in absolutely convergent explicit formulas.
 
 A locally integrable function on the positive half-line with compact positive closed support is
 Mellin convergent at every exponent, and its Mellin transform is entire. For a `C¹` such function
-the Mellin transform divided by `s` is integrable on every vertical line `Re s = σ ≠ 0`, which is
+`s⁻¹ • mellin f s` is integrable on every vertical line `Re s = σ ≠ 0`, which is
 what Mellin inversion of the Mellin transform `mellin f s / s` of the upper tail
 `∫_{(x,∞)} f(y) dy/y` requires.
 
@@ -173,7 +173,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- A function locally integrable on `(0, ∞)` whose positive closed support `tsupport f ∩ Ioi 0`
 is compact is Mellin convergent at every exponent. -/
-theorem mellinConvergent_of_isCompact_tsupport {f : ℝ → E}
+theorem mellinConvergent_of_isCompact_tsupport_inter_Ioi {f : ℝ → E}
     (hf : LocallyIntegrableOn f (Ioi 0)) (hc : IsCompact (tsupport f ∩ Ioi 0)) (s : ℂ) :
     MellinConvergent f s :=
   mellinConvergent_of_isBigO_rpow (a := s.re + 1) (b := s.re - 1) hf
@@ -184,7 +184,7 @@ theorem mellinConvergent_of_isCompact_tsupport {f : ℝ → E}
 
 /-- The Mellin transform of a function locally integrable on `(0, ∞)` with compact positive closed
 support is entire. -/
-theorem differentiable_mellin_of_isCompact_tsupport {f : ℝ → E}
+theorem differentiable_mellin_of_isCompact_tsupport_inter_Ioi {f : ℝ → E}
     (hf : LocallyIntegrableOn f (Ioi 0)) (hc : IsCompact (tsupport f ∩ Ioi 0)) :
     Differentiable ℂ (mellin f) := fun s ↦
   mellin_differentiableAt_of_isBigO_rpow (a := s.re + 1) (b := s.re - 1) hf
@@ -193,12 +193,12 @@ theorem differentiable_mellin_of_isCompact_tsupport {f : ℝ → E}
     ((eventuallyEq_zero_nhdsGT_of_isCompact_tsupport_inter_Ioi hc).trans_isBigO
       (Asymptotics.isBigO_zero _ _)) (by linarith)
 
-/-- For a `C¹` function on `(0, ∞)` with compact positive closed support, `s ↦ mellin f s / s` is
+/-- For a `C¹` function on `(0, ∞)` with compact positive closed support, `s ↦ s⁻¹ • mellin f s` is
 integrable on every vertical line `Re s = σ` with `σ ≠ 0`: the transform decays like `|Im s|⁻¹`
-and `1 / s` supplies a second factor `|Im s|⁻¹`. -/
-theorem verticalIntegrable_mellin_div {f : ℝ → ℂ} (hf : ContDiffOn ℝ 1 f (Ioi 0))
+and `s⁻¹` supplies a second factor `|Im s|⁻¹`. -/
+theorem verticalIntegrable_inv_smul_mellin {f : ℝ → E} (hf : ContDiffOn ℝ 1 f (Ioi 0))
     (hc : IsCompact (tsupport f ∩ Ioi 0)) {σ : ℝ} (hσ : σ ≠ 0) :
-    Complex.VerticalIntegrable (fun s ↦ mellin f s / s) σ := by
+    Complex.VerticalIntegrable (fun s ↦ s⁻¹ • mellin f s) σ := by
   obtain ⟨C, hC0, hC⟩ := exists_one_add_abs_im_pow_mul_norm_mellin_le hf hc
     (isCompact_singleton (x := σ))
   have hσ0 : 0 < |σ| := abs_pos.mpr hσ
@@ -207,9 +207,10 @@ theorem verticalIntegrable_mellin_div {f : ℝ → ℂ} (hf : ContDiffOn ℝ 1 f
   let K : ℝ := C * (1 + |σ|) / |σ|
   refine ((integrable_inv_one_add_sq.const_mul K).mono' ?_ (Filter.Eventually.of_forall
     fun t ↦ ?_))
-  · exact ((differentiable_mellin_of_isCompact_tsupport
-      (hf.continuousOn.locallyIntegrableOn measurableSet_Ioi) hc).continuous.comp
-      (by fun_prop)).div (by fun_prop) hs0 |>.aestronglyMeasurable
+  · exact (((by fun_prop : Continuous fun t : ℝ ↦ (σ : ℂ) + t * Complex.I).inv₀ hs0).smul
+      ((differentiable_mellin_of_isCompact_tsupport_inter_Ioi
+        (hf.continuousOn.locallyIntegrableOn measurableSet_Ioi) hc).continuous.comp
+      (by fun_prop))).aestronglyMeasurable
   · set s : ℂ := (σ : ℂ) + t * Complex.I
     have hm : (1 + |t|) * ‖mellin f s‖ ≤ C := by simpa [s] using hC s (by simp [s])
     have hre : |σ| ≤ ‖s‖ := by simpa [s] using Complex.abs_re_le_norm s
@@ -224,9 +225,16 @@ theorem verticalIntegrable_mellin_div {f : ℝ → ℂ} (hf : ContDiffOn ℝ 1 f
       _ ≤ K * ‖s‖ := by
         rw [show K * ‖s‖ = C * (‖s‖ * (1 + |σ|)) / |σ| by ring, le_div_iff₀ hσ0, mul_assoc]
         gcongr
-    rw [norm_div, div_le_iff₀ hsn, mul_right_comm, ← div_eq_mul_inv,
+    rw [norm_smul, norm_inv, inv_mul_eq_div, div_le_iff₀ hsn, mul_right_comm, ← div_eq_mul_inv,
       le_div_iff₀ (by positivity)]
     exact key
+
+/-- For a `C¹` function `f : ℝ → ℂ` on `(0, ∞)` with compact positive closed support,
+`s ↦ mellin f s / s` is integrable on every vertical line `Re s = σ` with `σ ≠ 0`. -/
+theorem verticalIntegrable_mellin_div {f : ℝ → ℂ} (hf : ContDiffOn ℝ 1 f (Ioi 0))
+    (hc : IsCompact (tsupport f ∩ Ioi 0)) {σ : ℝ} (hσ : σ ≠ 0) :
+    Complex.VerticalIntegrable (fun s ↦ mellin f s / s) σ := by
+  simpa only [smul_eq_mul, inv_mul_eq_div] using verticalIntegrable_inv_smul_mellin hf hc hσ
 
 end CompactPositiveSupport
 

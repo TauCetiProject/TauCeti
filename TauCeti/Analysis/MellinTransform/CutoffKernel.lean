@@ -25,9 +25,10 @@ functional equation weights the terms of a Dirichlet series and of its dual:
   `s = 2 + it`, for a function `G` (in applications a ratio of gamma factors).
 
 By Fubini, `F₁(φ, ·)` has Mellin transform `mellin φ s / s` on `Re s > 0`; it is the Mellin
-convolution of the sharp cutoff `1_(0,1]`, whose transform is `1 / s`, with `φ`. For `φ` of class
-`C¹` on `(0, ∞)` with compact positive support, Mellin inversion then gives
-`F₁(φ, x) = (2π)⁻¹ ∫_ℝ x^{-s} mellin φ s / s dt` on every line `Re s = σ > 0`. This is the form in
+convolution of the sharp cutoff `1_(0,1]`, whose transform is `1 / s`, with `φ`. When `φ` is
+Mellin convergent at `σ > 0` and `mellin φ s / s` is integrable on the line `Re s = σ` (as for `φ`
+of class `C¹` on `(0, ∞)` with compact positive support), Mellin inversion then gives
+`F₁(φ, x) = (2π)⁻¹ ∫_ℝ x^{-s} mellin φ s / s dt` on that line. This is the form in
 which the kernel enters contour shifts. When `φ` vanishes on `(0, x)` the kernel equals the
 multiplicative mass `mellin φ 0`, and when `φ` vanishes on `(x, ∞)` it is zero, so a cutoff
 supported in `[a, b] ⊆ (0, ∞)` and normalized by `mellin φ 0 = 1` has kernel `1` on `(0, a]` and
@@ -45,12 +46,14 @@ supported in `[a, b] ⊆ (0, ∞)` and normalized by `mellin φ 0 = 1` has kerne
   sharp cutoff `1_(0,1]` with `φ`.
 * `TauCeti.hasMellin_mellinCutoffKernel`: `mellin F₁(φ, ·) s = mellin φ s / s` for `Re s > 0`,
   with absolute convergence.
-* `TauCeti.mellinCutoffKernel_eq_mellinInv`: Mellin inversion of the kernel on `Re s = σ > 0`.
+* `TauCeti.mellinCutoffKernel_eq_mellinInv`: Mellin inversion of the kernel on `Re s = σ > 0`,
+  and `TauCeti.mellinCutoffKernel_eq_mellinInv_of_contDiffOn` for a `C¹` cutoff with compact
+  positive support.
 * `TauCeti.mellinCutoffKernel_eq_mellin_zero`, `TauCeti.mellinCutoffKernel_eq_zero`: the kernel
   below and above the support of `φ`.
 * `TauCeti.mellinCutoffKernel_comp_div`: scaling the cutoff scales the kernel.
-* `TauCeti.dualMellinCutoffKernel_one`: for `G = 1` the dual kernel is the cutoff kernel of
-  `y ↦ φ (1 / y)`.
+* `TauCeti.dualMellinCutoffKernel_one`, `TauCeti.dualMellinCutoffKernel_one_of_contDiffOn`: for
+  `G = 1` the dual kernel is the cutoff kernel of `y ↦ φ (1 / y)`.
 
 ## References
 
@@ -151,30 +154,53 @@ theorem hasMellin_mellinCutoffKernel {s : ℂ} (hφ : MellinConvergent φ s) (hs
   rw [h1.2, one_div_mul_eq_div] at h
   exact (hasMellin_congr fun x hx ↦ mellinCutoffKernel_eq_integral_mul_div φ hx).mpr h
 
-/-- **Mellin inversion of the cutoff kernel.** For `φ` of class `C¹` on `(0, ∞)` with compact
-positive closed support, `σ > 0` and `x > 0`,
+/-- **Mellin inversion of the cutoff kernel.** If `φ` is Mellin convergent at `σ > 0` and
+`s ↦ mellin φ s / s` is integrable on the line `Re s = σ`, then for `x > 0`
 `F₁(φ, x) = (2π)⁻¹ ∫_ℝ x^{-(σ+it)} mellin φ (σ+it) / (σ+it) dt`. -/
-theorem mellinCutoffKernel_eq_mellinInv (hφ : ContDiffOn ℝ 1 φ (Ioi 0))
-    (hc : IsCompact (tsupport φ ∩ Ioi 0)) {σ : ℝ} (hσ : 0 < σ) (hx : 0 < x) :
+theorem mellinCutoffKernel_eq_mellinInv {σ : ℝ} (hφ : MellinConvergent φ σ)
+    (hV : VerticalIntegrable (fun s ↦ mellin φ s / s) σ) (hσ : 0 < σ) (hx : 0 < x) :
     mellinCutoffKernel φ x = mellinInv σ (fun s ↦ mellin φ s / s) x := by
-  have hconv := mellinConvergent_of_isCompact_tsupport
-    (hφ.continuousOn.locallyIntegrableOn measurableSet_Ioi) hc
-  have hM (s : ℂ) (hs : 0 < s.re) := hasMellin_mellinCutoffKernel (hconv s) hs
-  have hline (t : ℝ) : mellin (mellinCutoffKernel φ) (σ + t * I) =
-      mellin φ (σ + t * I) / (σ + t * I) := (hM _ (by simpa using hσ)).2
-  have hV : VerticalIntegrable (mellin (mellinCutoffKernel φ)) σ := by
-    unfold VerticalIntegrable
-    simp_rw [hline]
-    exact verticalIntegrable_mellin_div hφ hc hσ.ne'
+  -- `y ↦ y ^ (s - 1) • φ y` is integrable on `(a, ∞)` when `y ↦ ‖y ^ (s - σ)‖` is bounded there
+  have hmono (s : ℂ) {a : ℝ} (ha : 0 ≤ a) (C : ℝ)
+      (hC : ∀ y ∈ Ioi a, ‖(y : ℂ) ^ (s - σ)‖ ≤ C) :
+      IntegrableOn (fun y : ℝ ↦ (y : ℂ) ^ (s - 1) • φ y) (Ioi a) := by
+    refine (integrableOn_congr_fun (fun y hy ↦ ?_) measurableSet_Ioi).mp
+      (Integrable.bdd_smul (hφ.mono_set (Ioi_subset_Ioi ha)) C
+        ((ContinuousOn.cpow_const (by fun_prop) fun y hy ↦
+          ofReal_mem_slitPlane.mpr (ha.trans_lt hy)).aestronglyMeasurable measurableSet_Ioi)
+        (ae_restrict_of_forall_mem measurableSet_Ioi hC))
+    have hy0 : (y : ℂ) ≠ 0 := ofReal_ne_zero.mpr (ha.trans_lt hy).ne'
+    simp only [Pi.smul_apply', smul_smul, ← cpow_add _ _ hy0, sub_add_sub_cancel]
+  have hline (t : ℝ) : HasMellin (mellinCutoffKernel φ) (σ + t * I)
+      (mellin φ (σ + t * I) / (σ + t * I)) := by
+    refine hasMellin_mellinCutoffKernel (hmono _ le_rfl 1 fun y hy ↦ ?_) (by simpa using hσ)
+    rw [norm_cpow_eq_rpow_re_of_pos hy]
+    simp
   have hint : IntegrableOn (fun y ↦ φ y / y) (Ioi (x / 2)) := by
-    refine ((integrableOn_congr_fun (fun y _ ↦ ?_) measurableSet_Ioi).mp (hconv 0)).mono_set
-      (Ioi_subset_Ioi (by positivity))
-    simp [cpow_neg_one, div_eq_inv_mul]
+    refine (integrableOn_congr_fun (fun y _ ↦ ?_) measurableSet_Ioi).mp
+      (hmono 0 (by positivity) ((x / 2) ^ (-σ)) fun y hy ↦ ?_)
+    · simp [cpow_neg_one, div_eq_inv_mul]
+    · rw [norm_cpow_eq_rpow_re_of_pos ((half_pos hx).trans hy)]
+      simpa using Real.rpow_le_rpow_of_nonpos (half_pos hx) (le_of_lt hy) (by linarith)
+  have hV' : VerticalIntegrable (mellin (mellinCutoffKernel φ)) σ := by
+    unfold VerticalIntegrable at hV ⊢
+    simp_rw [fun t : ℝ ↦ (hline t).2]
+    exact hV
   have hcont : ContinuousAt (mellinCutoffKernel φ) x :=
     (continuousOn_mellinCutoffKernel hint).continuousAt (Ici_mem_nhds (by linarith))
-  rw [← mellinInv_mellin_eq σ _ hx (hM σ (by simpa using hσ)).1 hV hcont]
+  rw [← mellinInv_mellin_eq σ _ hx (by simpa using (hline 0).1) hV' hcont]
   unfold mellinInv
-  simp_rw [hline]
+  simp_rw [fun t : ℝ ↦ (hline t).2]
+
+/-- **Mellin inversion of the cutoff kernel** for `φ` of class `C¹` on `(0, ∞)` with compact
+positive closed support: for `σ > 0` and `x > 0`,
+`F₁(φ, x) = (2π)⁻¹ ∫_ℝ x^{-(σ+it)} mellin φ (σ+it) / (σ+it) dt`. -/
+theorem mellinCutoffKernel_eq_mellinInv_of_contDiffOn (hφ : ContDiffOn ℝ 1 φ (Ioi 0))
+    (hc : IsCompact (tsupport φ ∩ Ioi 0)) {σ : ℝ} (hσ : 0 < σ) (hx : 0 < x) :
+    mellinCutoffKernel φ x = mellinInv σ (fun s ↦ mellin φ s / s) x :=
+  mellinCutoffKernel_eq_mellinInv (mellinConvergent_of_isCompact_tsupport_inter_Ioi
+    (hφ.continuousOn.locallyIntegrableOn measurableSet_Ioi) hc σ)
+    (verticalIntegrable_mellin_div hφ hc hσ.ne') hσ hx
 
 /-! ### The dual Mellin cutoff kernel -/
 
@@ -202,15 +228,31 @@ theorem dualMellinCutoffKernel_zero_left (G : ℂ → ℂ) (β : ℂ) (x : ℝ) 
   simp [dualMellinCutoffKernel_def, mellinInv, mellin]
 
 /-- For `G = 1` the dual kernel is the cutoff kernel of the reflected cutoff `y ↦ φ (1 / y)`:
+`F₂(φ, 1, β, x) = F₁(φ ∘ inv, x)` for `x > 0`, if `φ` is Mellin convergent at `-2` and
+`s ↦ mellin φ (-s) / s` is integrable on the line `Re s = 2`. -/
+theorem dualMellinCutoffKernel_one (hφ : MellinConvergent φ (-2))
+    (hV : VerticalIntegrable (fun s ↦ mellin φ (-s) / s) 2) (β : ℂ) (hx : 0 < x) :
+    dualMellinCutoffKernel φ 1 β x = mellinCutoffKernel (fun y ↦ φ y⁻¹) x := by
+  have hφ' : MellinConvergent (fun y ↦ φ y⁻¹) (2 : ℝ) := by
+    have h := (MellinConvergent.comp_rpow (f := φ) (s := 2) (a := -1) (by norm_num)).mpr
+      (by convert hφ using 1; norm_num)
+    simpa only [Real.rpow_neg_one, ofReal_ofNat] using h
+  have hV' : VerticalIntegrable (fun s ↦ mellin (fun y ↦ φ y⁻¹) s / s) 2 := by
+    simpa only [mellin_comp_inv] using hV
+  rw [mellinCutoffKernel_eq_mellinInv hφ' hV' two_pos hx, dualMellinCutoffKernel_def]
+  simp only [Pi.one_apply, mul_one, mellin_comp_inv]
+
+/-- For `G = 1` the dual kernel is the cutoff kernel of the reflected cutoff `y ↦ φ (1 / y)`:
 `F₂(φ, 1, β, x) = F₁(φ ∘ inv, x)` for `φ` of class `C¹` on `(0, ∞)` with compact positive
 closed support and `x > 0`. -/
-theorem dualMellinCutoffKernel_one (hφ : ContDiffOn ℝ 1 φ (Ioi 0))
+theorem dualMellinCutoffKernel_one_of_contDiffOn (hφ : ContDiffOn ℝ 1 φ (Ioi 0))
     (hc : IsCompact (tsupport φ ∩ Ioi 0)) (β : ℂ) (hx : 0 < x) :
     dualMellinCutoffKernel φ 1 β x = mellinCutoffKernel (fun y ↦ φ y⁻¹) x := by
   have hφ' : ContDiffOn ℝ 1 (fun y ↦ φ y⁻¹) (Ioi 0) :=
     hφ.comp ((contDiffOn_inv ℝ).mono fun y hy ↦ ne_of_gt hy) fun y hy ↦ inv_pos.mpr hy
-  rw [mellinCutoffKernel_eq_mellinInv hφ' (isCompact_tsupport_comp_inv_inter_Ioi hc) two_pos hx,
-    dualMellinCutoffKernel_def]
-  simp only [Pi.one_apply, mul_one, mellin_comp_inv]
+  exact dualMellinCutoffKernel_one (mellinConvergent_of_isCompact_tsupport_inter_Ioi
+    (hφ.continuousOn.locallyIntegrableOn measurableSet_Ioi) hc _)
+    (by simpa only [mellin_comp_inv] using (verticalIntegrable_mellin_div hφ'
+      (isCompact_tsupport_comp_inv_inter_Ioi hc) two_ne_zero)) β hx
 
 end TauCeti

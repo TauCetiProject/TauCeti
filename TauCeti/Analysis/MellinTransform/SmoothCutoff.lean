@@ -9,7 +9,6 @@ public import Mathlib.Analysis.MellinTransform
 public import TauCeti.Analysis.MellinTransform.CutoffKernel
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
-import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.MellinTransform.Decay
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
