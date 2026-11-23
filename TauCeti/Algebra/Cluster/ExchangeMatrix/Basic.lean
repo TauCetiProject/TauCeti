@@ -55,8 +55,9 @@ entries in transposed positions have opposite signs.
   skew-symmetrizer exchanges the positive part of an entry with the negative part of the
   transposed entry.
 
-* `TauCeti.ExchangeMatrix.eq_amalgamate_iff`: uniqueness from factor restrictions and zero
-  mutable entries between distinct factors.
+* `TauCeti.ExchangeMatrix.eq_amalgamate_iff`: uniqueness from restrictions retaining the entire
+  common frozen boundary, each equal to its factor's zero extension, and zero mutable entries
+  between distinct factors.
 * `TauCeti.ExchangeMatrix.submatrix_amalgamate`: restriction recovers each extended factor.
 * `TauCeti.ExchangeMatrix.amalgamate_reindex`: assembly commutes with relabelling factors,
   mutable indices and frozen boundaries.
@@ -377,9 +378,16 @@ noncomputable def extendFrozen (B : ExchangeMatrix (Function.Embedding.inl : K �
     (Matrix.of fun f k ↦ Function.extend e (fun j ↦ B.matrix (Sum.inr j) k) 0 f)
   symmetrizer := B.symmetrizer
   isSkewSymmetrizer := by
-    convert B.isSkewSymmetrizer using 1
-    ext i k
-    simp [Matrix.submatrix_apply, Function.Embedding.inl_apply]
+    have hprincipal :
+        (Matrix.fromRows (B.matrix.submatrix Sum.inl id)
+          (Matrix.of fun f k ↦ Function.extend e (fun j ↦ B.matrix (Sum.inr j) k) 0 f)).submatrix
+            (Function.Embedding.inl : K ↪ K ⊕ F) id =
+          B.matrix.submatrix (Function.Embedding.inl : K ↪ K ⊕ J) id := by
+      ext i k
+      simp only [Matrix.submatrix_apply, Function.Embedding.inl_apply, Matrix.fromRows_apply_inl,
+        id_eq]
+    rw [hprincipal]
+    exact B.isSkewSymmetrizer
 
 variable (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (e : J ↪ F)
 
@@ -602,7 +610,9 @@ theorem amalgamate_reindex {A' F' : Type*} [DecidableEq A'] {N Q : A' → Type*}
           (Equiv.sumCongr (eM a) (eL a)) (eM a) (fun _ ↦ by simp) (Bs (eA a))) =
       reindex (row' := Function.Embedding.inl)
         (Equiv.sumCongr (Equiv.sigmaCongr eA (fun a ↦ (eM a).symm)).symm eF)
-        (Equiv.sigmaCongr eA (fun a ↦ (eM a).symm)).symm (fun _ ↦ rfl)
+        (Equiv.sigmaCongr eA (fun a ↦ (eM a).symm)).symm
+          (fun _ ↦ by simp only [Function.Embedding.inl_apply,
+            Equiv.sumCongr_apply, Sum.map_inl])
         (amalgamate e Bs) := by
   ext : 1
   · ext (⟨a, i⟩ | f) ⟨b, j⟩
@@ -631,7 +641,8 @@ theorem amalgamate_amalgamate (e : ∀ a b, L a b ↪ G a) (g : ∀ a, G a ↪ F
     amalgamate g (fun a ↦ amalgamate (e a) (Bs a)) =
       reindex (row' := Function.Embedding.inl)
         (Equiv.sumCongr (Equiv.sigmaAssoc M) (Equiv.refl F)) (Equiv.sigmaAssoc M)
-        (fun _ ↦ rfl) (amalgamate (fun p : Σ a, B a ↦ (e p.1 p.2).trans (g p.1))
+        (fun _ ↦ by simp only [Function.Embedding.inl_apply, Equiv.sumCongr_apply,
+          Sum.map_inl]) (amalgamate (fun p : Σ a, B a ↦ (e p.1 p.2).trans (g p.1))
           (fun p ↦ Bs p.1 p.2)) := by
   ext : 1
   · ext (⟨a, b, i⟩ | f) ⟨c, d, j⟩
@@ -646,9 +657,12 @@ theorem amalgamate_amalgamate (e : ∀ a b, L a b ↪ G a) (g : ∀ a, G a ↪ F
           simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaAssoc, hbd, hp]
       · have hp : (⟨a, b⟩ : Σ a, B a) ≠ ⟨c, d⟩ := fun h ↦ hac (congrArg Sigma.fst h)
         simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaAssoc, hac, hp]
-    · simp only [amalgamate_matrix_frozen]
-      simp only [Equiv.sigmaAssoc, extendFrozen_matrix_frozen, amalgamate_matrix_frozen]
-      exact extendFrozen_matrix_frozen_trans (Bs c d) (e c d) (g c) f j
+    · rw [reindex_matrix, Matrix.submatrix_apply]
+      simp only [Equiv.sumCongr_symm, Equiv.sumCongr_apply, Sum.map_inr,
+        Equiv.refl_symm, Equiv.refl_apply]
+      simpa only [Equiv.sigmaAssoc, Equiv.coe_fn_symm_mk, extendFrozen_matrix_frozen,
+        amalgamate_matrix_frozen] using
+        extendFrozen_matrix_frozen_trans (Bs c d) (e c d) (g c) f j
   · funext ⟨a, b, k⟩
     simp [reindex_symmetrizer, Equiv.sigmaAssoc]
 
