@@ -90,19 +90,23 @@ private theorem volume_Ico_neg (L : ℝ) : volume (Ico (-(2 * L)) (-L)) = ENNRea
 
 /-- **The decay corner of the localized `TT*` form.** Let `U(t) : H → L²(X, μ)` be bounded
 operators whose time pairings decay from `L^{r'}` to `L^r`,
-`‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}` for `s ≠ t`, with `γ ≥ 0`. Then for `L > 0` and
+`‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}` for `s ≠ t`, with `γ ≥ 0`. Then for every `L` and
 almost everywhere strongly measurable `F, G : ℝ → L²(X, μ)`, the pairings with time separation
 `L < t - s ≤ 2L` satisfy
 
 `∫∫_{t - 2L ≤ s < t - L} |⟪U(s)* F(s), U(t)* G(t)⟫| ≤ A L^{1-γ} ‖F‖_{L² L^{r'}} ‖G‖_{L² L^{r'}}`. -/
 theorem lintegral_setLIntegral_enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞}
-    {γ L : ℝ} (hγ : 0 ≤ γ) (hL : 0 < L)
+    {γ L : ℝ} (hγ : 0 ≤ γ)
     (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
       eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
     {F G : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) (hG : AEStronglyMeasurable G) :
     ∫⁻ t, ∫⁻ s in Ico (t - 2 * L) (t - L), ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
       A * ENNReal.ofReal L ^ (1 - γ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 *
         eLpNorm (fun t ↦ eLpNorm (G t) r' μ) 2 := by
+  -- For `L ≤ 0` the windows are empty.
+  rcases le_or_gt L 0 with hL | hL
+  · have h (t : ℝ) : Ico (t - 2 * L) (t - L) = ∅ := Ico_eq_empty (by linarith)
+    simp [h]
   set a := fun s ↦ eLpNorm (F s) r' μ
   set b := fun t ↦ eLpNorm (G t) r' μ
   have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
@@ -147,26 +151,26 @@ theorem lintegral_setLIntegral_enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] 
 variable [NormedSpace ℝ H]
 
 /-- **The decay corner of `T_L`.** Under the hypotheses of
-`TauCeti.lintegral_setLIntegral_enorm_inner_adjoint_le`, and if `s ↦ U(s)* F(s)` is integrable,
-the localized retarded form
+`TauCeti.lintegral_setLIntegral_enorm_inner_adjoint_le`, the localized retarded form
 
 `T_L(F, G) = ∫ ⟪∫_{t - 2L ≤ s < t - L} U(s)* F(s) ds, U(t)* G(t)⟫ dt`
 
 satisfies `|T_L(F, G)| ≤ A L^{1-γ} ‖F‖_{L² L^{r'}} ‖G‖_{L² L^{r'}}`. -/
 theorem enorm_integral_inner_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞}
-    {γ L : ℝ} (hγ : 0 ≤ γ) (hL : 0 < L)
+    {γ L : ℝ} (hγ : 0 ≤ γ)
     (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
       eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
-    {F G : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) (hG : AEStronglyMeasurable G)
-    (hUF : Integrable fun s ↦ ((U s)†) (F s)) :
+    {F G : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) (hG : AEStronglyMeasurable G) :
     ‖∫ t, ⟪∫ s in Ico (t - 2 * L) (t - L), ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
       A * ENNReal.ofReal L ^ (1 - γ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 *
         eLpNorm (fun t ↦ eLpNorm (G t) r' μ) 2 := by
   refine (eNorm_integral_le_lintegral_eNorm _).trans (le_trans (lintegral_mono fun t ↦ ?_)
-    (lintegral_setLIntegral_enorm_inner_adjoint_le hγ hL hU hF hG))
-  -- Move the inner integral out of the pairing.
-  rw [← integral_inner_left hUF.integrableOn]
-  exact eNorm_integral_le_lintegral_eNorm _
+    (lintegral_setLIntegral_enorm_inner_adjoint_le hγ hU hF hG))
+  -- Move the inner integral out of the pairing; a non-integrable window integral is `0`.
+  by_cases hi : IntegrableOn (fun s ↦ ((U s)†) (F s)) (Ico (t - 2 * L) (t - L))
+  · rw [← integral_inner_left hi]
+    exact eNorm_integral_le_lintegral_eNorm _
+  · simp [integral_undef hi]
 
 /-- The time exponents of the energy corner: for Hölder conjugate `p` and `q > 2`,
 `1 / p = 1 - 1 / q` and `p ≤ 2`. -/
@@ -187,8 +191,8 @@ private theorem enorm_setIntegral_adjoint_le_of_two_lt {p q : ℝ≥0} (hq : 2 <
     (hpq : p.HolderConjugate q) {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {C : ℝ≥0}
     (hC : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
       ‖∫ s, ((U s)†) (F s)‖ₑ ≤ C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p)
-    {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) (hUF : Integrable fun s ↦ ((U s)†) (F s))
-    {S : Set ℝ} (hS : MeasurableSet S) :
+    {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) {S : Set ℝ} (hS : MeasurableSet S)
+    (hUF : IntegrableOn (fun s ↦ ((U s)†) (F s)) S) :
     ‖∫ s in S, ((U s)†) (F s)‖ₑ ≤ C * A ^ (2⁻¹ : ℝ) * volume S ^ (2⁻¹ - (q : ℝ)⁻¹) *
       (∫⁻ s in S, eLpNorm (F s) r' μ ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
   obtain ⟨hpinv, hp2⟩ := holderConjugate_inv_eq_and_le_two hq hpq
@@ -196,7 +200,7 @@ private theorem enorm_setIntegral_adjoint_le_of_two_lt {p q : ℝ≥0} (hq : 2 <
   have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
   calc ‖∫ s in S, ((U s)†) (F s)‖ₑ
       ≤ C * A ^ (2⁻¹ : ℝ) * eLpNorm (S.indicator a) p :=
-        TauCeti.enorm_setIntegral_adjoint_le hC hS hF.restrict hUF.integrableOn
+        TauCeti.enorm_setIntegral_adjoint_le hC hS hF.restrict hUF
     _ = C * A ^ (2⁻¹ : ℝ) * eLpNorm a p (volume.restrict S) := by
         rw [eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet]
     _ ≤ C * A ^ (2⁻¹ : ℝ) * (eLpNorm a 2 (volume.restrict S) *
@@ -265,8 +269,7 @@ private theorem integral_inner_setIntegral_sub_preimage_eq {f g : ℝ → H} (hf
 `C` such that the following holds. Let `U(t) : H → L²(X, μ)` be bounded operators with
 `‖U(t)‖ ≤ B` whose time pairings decay from `L^{r'}` to `L^r`,
 `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-2 / q) ‖g‖_{r'}` for `s ≠ t`. Then for every measurable window
-`W ⊆ ℝ` and almost everywhere strongly measurable `F, G : ℝ → L²(X, μ)` with `s ↦ U(s)* F(s)`
-integrable,
+`W ⊆ ℝ` and almost everywhere strongly measurable `F, G : ℝ → L²(X, μ)`,
 
 `|∫ ⟪∫_{s - t ∈ W} U(s)* F(s) ds, U(t)* G(t)⟫ dt| ≤
   C A^{1/2} B |W|^{1 - 1/q} ‖F‖_{L² L^{r'}} ‖G‖_{L² L²}`.
@@ -278,13 +281,13 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
       (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
         eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' μ) →
       ∀ {W : Set ℝ}, MeasurableSet W → ∀ F G : ℝ → Lp E 2 μ, AEStronglyMeasurable F →
-        Integrable (fun s ↦ ((U s)†) (F s)) → AEStronglyMeasurable G →
+        AEStronglyMeasurable G →
         ‖∫ t, ⟪∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
           C * A ^ (2⁻¹ : ℝ) * B * volume W ^ (1 - (q : ℝ)⁻¹) *
             eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2 := by
   obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le (𝕜 := 𝕜) (H := H) (E := E) (μ := μ)
     (r := r) (r' := r') hq hpq
-  refine ⟨C, fun U A B hB hU W hW F G hF hUF hG ↦ ?_⟩
+  refine ⟨C, fun U A B hB hU W hW F G hF hG ↦ ?_⟩
   set a := fun s ↦ eLpNorm (F s) r' μ
   have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
   have hGm : AEMeasurable fun t ↦ ‖G t‖ₑ := hG.eNorm
@@ -295,8 +298,11 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
   set c := C * A ^ (2⁻¹ : ℝ) * volume W ^ (2⁻¹ - (q : ℝ)⁻¹)
   -- On each window, the non-endpoint dual estimate and Hölder's inequality in time.
   have hwin (t : ℝ) : ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ ≤ c * φ t := by
-    have h := enorm_setIntegral_adjoint_le_of_two_lt hq hpq (hC U A hU) hF hUF
-      (measurable_sub_const t hW)
+    by_cases hi : IntegrableOn (fun s ↦ ((U s)†) (F s)) ((fun s ↦ s - t) ⁻¹' W)
+    swap
+    · simp [integral_undef hi]
+    have h := enorm_setIntegral_adjoint_le_of_two_lt hq hpq (hC U A hU) hF
+      (measurable_sub_const t hW) hi
     rwa [(measurePreserving_sub_right volume t).measure_preimage hW.nullMeasurableSet] at h
   have hq2 : (q : ℝ)⁻¹ ≤ 2⁻¹ := inv_anti₀ two_pos (by exact_mod_cast hq.le)
   refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
@@ -325,8 +331,8 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
 /-- **The energy corner of `T_L`.** Let `2 < q < ∞` with Hölder conjugate `p`. There is `C` such
 that the following holds. Let `U(t) : H → L²(X, μ)` be bounded operators with `‖U(t)‖ ≤ B` whose
 time pairings decay from `L^{r'}` to `L^r`, `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-2 / q) ‖g‖_{r'}` for
-`s ≠ t`. Then for every `L` and almost everywhere strongly measurable `F, G : ℝ → L²(X, μ)`
-with `s ↦ U(s)* F(s)` integrable, the localized retarded form satisfies
+`s ≠ t`. Then for every `L` and almost everywhere strongly measurable `F, G : ℝ → L²(X, μ)`,
+the localized retarded form satisfies
 
 `|∫ ⟪∫_{t - 2L ≤ s < t - L} U(s)* F(s) ds, U(t)* G(t)⟫ dt| ≤
   C A^{1/2} B L^{1 - 1/q} ‖F‖_{L² L^{r'}} ‖G‖_{L² L²}`.
@@ -340,16 +346,15 @@ theorem exists_enorm_integral_inner_setIntegral_adjoint_le {p q : ℝ≥0} (hq :
     ∃ C : ℝ≥0, ∀ (U : ℝ → H →L[𝕜] Lp E 2 μ) (A B : ℝ≥0∞), (∀ t, ‖U t‖ₑ ≤ B) →
       (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
         eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' μ) →
-      ∀ (L : ℝ) (F G : ℝ → Lp E 2 μ), AEStronglyMeasurable F →
-        Integrable (fun s ↦ ((U s)†) (F s)) → AEStronglyMeasurable G →
+      ∀ (L : ℝ) (F G : ℝ → Lp E 2 μ), AEStronglyMeasurable F → AEStronglyMeasurable G →
         ‖∫ t, ⟪∫ s in Ico (t - 2 * L) (t - L), ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
           C * A ^ (2⁻¹ : ℝ) * B * ENNReal.ofReal L ^ (1 - (q : ℝ)⁻¹) *
             eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2 := by
   obtain ⟨C, hC⟩ := exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le (𝕜 := 𝕜)
     (H := H) (E := E) (μ := μ) (r := r) (r' := r') hq hpq
-  refine ⟨C, fun U A B hB hU L F G hF hUF hG ↦ ?_⟩
+  refine ⟨C, fun U A B hB hU L F G hF hG ↦ ?_⟩
   simp only [Ico_sub_eq_preimage, ← volume_Ico_neg]
-  exact hC U A B hB hU measurableSet_Ico F G hF hUF hG
+  exact hC U A B hB hU measurableSet_Ico F G hF hG
 
 /-- **The energy corner of `T_L` with the roles exchanged.** Under the hypotheses of
 `TauCeti.exists_enorm_integral_inner_setIntegral_adjoint_le`, if both `s ↦ U(s)* F(s)` and
@@ -385,7 +390,7 @@ theorem exists_enorm_integral_inner_setIntegral_adjoint_le' {p q : ℝ≥0} (hq 
     rw [← integral_conj]
     simp only [inner_conj_symm]
   rw [hconj, RCLike.eNorm_conj]
-  refine (hC U A B hB hU measurableSet_Ico.neg G F hG hUG hF).trans_eq ?_
+  refine (hC U A B hB hU measurableSet_Ico.neg G F hG hF).trans_eq ?_
   rw [hW]
   ring
 
