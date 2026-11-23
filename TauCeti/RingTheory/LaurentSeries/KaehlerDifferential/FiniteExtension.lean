@@ -186,10 +186,8 @@ theorem equivLevelContinuousKaehlerDifferential_D (x : Level K d) :
       Level.ContinuousKaehlerDifferential.D K d x := by
   apply (Level.ContinuousKaehlerDifferential.equivLevel K d).injective
   apply (Level.ringEquivLaurentSeries K d).injective
-  rw [equivLevel_equivLevelContinuousKaehlerDifferential, equivSelf_D,
-    Level.ContinuousKaehlerDifferential.equivLevel_D, map_mul, RingEquiv.apply_symm_apply,
-    RingEquiv.apply_symm_apply, ringEquivLaurentSeries_derivation_level,
-    div_mul_cancel₀ _ _root_.LaurentSeries.derivative_single_natCast_one_ne_zero]
+  simp [equivLevel_equivLevelContinuousKaehlerDifferential,
+    ringEquivLaurentSeries_derivation_level, NeZero.ne]
 
 @[simp]
 theorem equivLevelContinuousKaehlerDifferential_symm_D (x : Level K d) :

@@ -284,9 +284,8 @@ theorem map_D (f : K⸨X⸩) :
     map K d (TauCeti.ContinuousKaehlerDifferential.D K f) =
       D K d (Algebra.algebraMap K⸨X⸩ (Level K d) f) := by
   apply (addEquivContinuousKaehlerDifferential K d).injective
-  rw [addEquivContinuousKaehlerDifferential_map, TauCeti.ContinuousKaehlerDifferential.subst_D,
-    TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand, addEquivContinuousKaehlerDifferential_D,
-    algebraMap_apply]
+  simp [addEquivContinuousKaehlerDifferential_map,
+    TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand]
 
 /-- In coordinates, the pullback sends `f dt` to `f (u ^ d) d u ^ (d - 1) du`. -/
 @[simp]
