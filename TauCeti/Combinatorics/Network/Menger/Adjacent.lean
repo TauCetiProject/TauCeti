@@ -103,7 +103,7 @@ theorem card_le_card_add_card_of_isMixedSeparator [Fintype (Q s t)] {ι : Type*}
     (hX : IsMixedSeparator X (arrowFinset Q s t) s t) :
     Fintype.card ι ≤ #X + Fintype.card (Q s t) := by
   -- Every member passes through a vertex of `X` or is a single arrow from `s` to `t`.
-  have h (i : ι) : ∃ x : X ⊕ Q s t, Sum.elim (fun v : X ↦ v.1 ∈ (P i).vertices)
+  have h (i : ι) : ∃ x : X ⊕ Q s t, Sum.elim (fun v : X ↦ v.val ∈ (P i).vertices)
       (fun e ↦ P i = (ArrowWalk.nil s).cons e) x := by
     rcases hX.exists_mem (P i) with ⟨v, hv, hvX⟩ | ⟨⟨v, w, e⟩, he, hD⟩
     · exact ⟨.inl ⟨v, hvX⟩, hv⟩
@@ -120,8 +120,8 @@ theorem card_le_card_add_card_of_isMixedSeparator [Fintype (Q s t)] {ι : Type*}
     cases hgj : g j with
     | inl v =>
       rw [hgj] at hi hj
-      rcases ArrowWalk.internallyDisjoint_def.1 (hdisj hne) v.1 hi hj with h | h
-      exacts [hX.source_notMem (h ▸ v.2), hX.target_notMem (h ▸ v.2)]
+      rcases ArrowWalk.internallyDisjoint_def.1 (hdisj hne) v.val hi hj with h | h
+      exacts [hX.source_notMem (h ▸ v.property), hX.target_notMem (h ▸ v.property)]
     | inr _ =>
       rw [hgj] at hi hj
       exact hne (hinj (hi.trans hj.symm))
@@ -140,7 +140,7 @@ theorem exists_paths_of_withoutHom {ι : Type*} {F : Set (Σ v w, Q v w)}
     ∃ R : ι ⊕ Q s t → ArrowWalk Q s t, Function.Injective R ∧ (∀ i, (R i).IsPath) ∧
       (Pairwise fun i j ↦ (R i).InternallyDisjoint (R j)) ∧
       ∀ e, R (.inr e) = (ArrowWalk.nil s).cons e := by
-  have hadj : IsEmpty (WithoutHom F s t) := ⟨fun e ↦ e.2 (hF e.1)⟩
+  have hadj : IsEmpty (WithoutHom F s t) := ⟨fun e ↦ e.property (hF e.val)⟩
   let φ := WithoutHom.incl F
   let R : ι ⊕ Q s t → ArrowWalk Q s t :=
     Sum.elim (fun i ↦ @Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ φ s t (P i))
@@ -194,7 +194,7 @@ theorem exists_paths_isMixedSeparator_card_eq [Finite V] [Fintype (Q s t)] (hst 
       (∀ e, P (.inr e) = (ArrowWalk.nil s).cons e) ∧
       IsMixedSeparator X (arrowFinset Q s t) s t ∧ #X = k := by
   let F : Set (Σ v w, Q v w) := arrowFinset Q s t
-  have hR : IsEmpty (WithoutHom F s t) := ⟨fun e ↦ e.2 (mem_arrowFinset.2 ⟨rfl, rfl⟩)⟩
+  have hR : IsEmpty (WithoutHom F s t) := ⟨fun e ↦ e.property (mem_arrowFinset.2 ⟨rfl, rfl⟩)⟩
   obtain ⟨k, P, X, -, hP, hdisj, hs, ht, hX, hk⟩ :=
     exists_paths_vertexSeparator_card_eq (Q := WithoutHom F) hst hR
   obtain ⟨P', hinj, hP', hdisj', hP'r⟩ := exists_paths_of_withoutHom

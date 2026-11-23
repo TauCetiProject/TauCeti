@@ -56,8 +56,8 @@ theorem ncard_fiber_toPointHom_eq_degree (Q : W₂.Point) :
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
-  let vQ := (pointEquivDegreeOnePlace W₂ Q).1
-  let f := fun P : W₁.Point ↦ (pointEquivDegreeOnePlace W₁ P).1
+  let vQ := (pointEquivDegreeOnePlace W₂ Q).val
+  let f := fun P : W₁.Point ↦ (pointEquivDegreeOnePlace W₁ P).val
   have hf : Function.Injective f :=
     Subtype.val_injective.comp (pointEquivDegreeOnePlace W₁).injective
   have hbij : Set.BijOn f {P | φ.toPointHom P = Q}
@@ -69,7 +69,7 @@ theorem ncard_fiber_toPointHom_eq_degree (Q : W₂.Point) :
       -- Complete splitting makes every place in this fibre rational.
       have hdeg : v.degree = 1 := by
         rw [Place.degree_eq_degree_restrict_mul_relativeDegree F W₂.FunctionField v, hv,
-          (pointEquivDegreeOnePlace W₂ Q).2, one_mul]
+          (pointEquivDegreeOnePlace W₂ Q).property, one_mul]
         exact (φ.isSplitCompletely (fun _ ↦ rfl) vQ).relativeDegree_eq_one hv
       let P := (pointEquivDegreeOnePlace W₁).symm ⟨v, hdeg⟩
       have hP : f P = v := by simp [f, P]

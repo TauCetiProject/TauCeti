@@ -132,7 +132,7 @@ theorem setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le {f : (ι → 
           (ENNReal.continuous_coe.comp (continuous_const.add continuous_id)))
     simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   refine ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) => ?_)
-  refine setLAverage_enorm_sub_setAverage_rpow_le_of_pos hf (add_pos_of_nonneg_of_pos M.2 hε)
+  refine setLAverage_enorm_sub_setAverage_rpow_le_of_pos hf (add_pos_of_nonneg_of_pos M.property hε)
     (hM.trans ?_) hq c hr
   exact ENNReal.coe_le_coe.2 le_self_add
 

@@ -159,7 +159,7 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : SL2Borel A) :
     CommHopfAlgCat.quotientPointsHom
         (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
         (CommAlgCat.of R A) ((pointsMulEquiv (R := R) (A := A)).symm g) =
-      (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).symm g.1 := by
+      (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).symm g.val := by
   apply (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).injective
   rw [pointsMulEquiv_coe, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 
