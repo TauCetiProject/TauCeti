@@ -223,9 +223,10 @@ theorem Equivalent.toQuadraticMap {R M₁ M₂ : Type*} [CommSemiring R] [AddCom
 associated quadratic maps are equivalent. The underlying modules need not be finite or free. Some
 hypothesis on `2` is needed: over `ZMod 2`, the identity matrix and the all-ones matrix on
 `Fin 2 → ZMod 2` define symmetric forms with the same quadratic map `x 0 + x 1`, and only the
-first is nondegenerate. -/
+first is nondegenerate. The scalars need only form a commutative semiring, provided `M` is an
+additive group, so that every value of `B` has an additive inverse. -/
 theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
-    {R M N : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {R M N : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N]
     {B : BilinForm R M} {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm)
     (h2 : (2 : R) ∈ nonZeroDivisors R) :
     B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
