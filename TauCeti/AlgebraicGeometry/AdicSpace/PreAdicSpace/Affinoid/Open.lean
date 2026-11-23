@@ -174,16 +174,16 @@ theorem ofRestrictIso_hom_base {x : X} (hx : x ∈ U) :
 -/
 theorem ofRestrictIso_hom_base_apply (b : (ofRestrictIso S P hP hsheaf eU).space) :
     (ofRestrictIso S P hP hsheaf eU).hom.base b = (eU.inv.base b).val := by
-  -- `ofRestrictIso` is a semireducible `def`, so rewriting `ofRestrictIso_hom` / `comp_base`
-  -- leaves `(ofRestrictIso ..).commRing` inside `ConcreteCategory.hom`'s implicit domain under
-  -- `implicit` transparency and blocks `TopCat.coe_comp`; retyping `b` to `eU.inv`'s domain
-  -- makes the rewrite well-typed at `implicit` transparency.
-  let b' : presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP := b
-  change (eU.inv ≫ X.ofRestrict U.isOpenEmbedding).base b' = (eU.inv.base b').val
-  rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
-    PreAdicSpace.ofRestrict_base]
-  exact congrFun Opens.coe_inclusion' (eU.inv.base b')
+  have h1 : (ofRestrictIso S P hP hsheaf eU).hom.base b =
+      (eU.inv ≫ X.ofRestrict U.isOpenEmbedding).base b :=
+    congrFun (congrArg (fun m : _ ⟶ X ↦ ⇑m.base) (ofRestrictIso_hom S P hP hsheaf eU)) b
+  have h2 : ⇑(eU.inv ≫ X.ofRestrict U.isOpenEmbedding).base =
+      ⇑(X.ofRestrict U.isOpenEmbedding).base ∘ ⇑eU.inv.base := by
+    rw [PreAdicSpace.comp_base, TopCat.coe_comp]
+  have h3 : (X.ofRestrict U.isOpenEmbedding).base (eU.inv.base b) = (eU.inv.base b).val := by
+    rw [PreAdicSpace.ofRestrict_base]
+    exact congrFun Opens.coe_inclusion' (eU.inv.base b)
+  exact h1.trans ((congrFun h2 b).trans h3)
 
 variable {Y : PreAdicSpace.{u}} {V : Opens Y} {B : Type u} [CommRing B] [UniformSpace B]
   [IsUniformAddGroup B] [IsTopologicalRing B] [CompleteSpace B] [T2Space B] [IsHuberRing B]
