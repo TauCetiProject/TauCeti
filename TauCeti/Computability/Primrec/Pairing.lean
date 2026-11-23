@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Computability.RE
 public import TauCeti.Computability.Primrec.List
 public import TauCeti.Data.Nat.Pairing
 
@@ -12,7 +13,8 @@ public import TauCeti.Data.Nat.Pairing
 # Primitive-recursive column membership and witness search
 
 Membership in `e.pairColumn` and the bounded fresh-witness search `Nat.leastInPairColumn e b` are
-primitive recursive uniformly in `e` and `b`.
+primitive recursive uniformly in `e` and `b`. In particular, membership in a fixed column is
+computable.
 -/
 
 public section
@@ -35,3 +37,7 @@ theorem nat_leastInPairColumn : Primrec₂ Nat.leastInPairColumn := by
     (Nat.leastInPairColumn_def e b).symm
 
 end Primrec
+
+/-- Membership in a fixed column `e.pairColumn` is computable. -/
+theorem Nat.computablePred_mem_pairColumn (e : ℕ) : ComputablePred (· ∈ e.pairColumn) :=
+  (Primrec.mem_pairColumn.comp (.const e) .id).computablePred

@@ -269,10 +269,6 @@ theorem ManyOneEquiv.turingEquivalent_oracle {A B : Set ℕ} (h : ManyOneEquiv (
 
 /-! ### Computable changes of presentation and columns -/
 
-/-- Membership in a fixed column `e.pairColumn` is computable. -/
-theorem Nat.computablePred_mem_pairColumn (e : ℕ) : ComputablePred (· ∈ e.pairColumn) :=
-  (_root_.Primrec.mem_pairColumn.comp (.const e) .id).computablePred
-
 namespace Set
 
 /-- The preimage of a set under a computable function is Turing reducible to the set. -/
