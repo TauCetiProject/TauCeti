@@ -114,8 +114,9 @@ noncomputable def weight (π : LSPath P b lam) : M :=
 
 /-- The canonical rational endpoint of `π` is the image of `π.weight`. -/
 theorem endpoint_toRatPLPath (π : LSPath P b lam) :
-    π.toRatPLPath.endpoint = TensorProduct.mk ℤ ℚ M 1 π.weight :=
-  (Classical.choose_spec (π.existsUnique_endpoint_eq (𝕜 := ℚ)
+    π.toRatPLPath.endpoint = TensorProduct.mk ℤ ℚ M 1 π.weight := by
+  rw [toRatPLPath_def]
+  exact (Classical.choose_spec (π.existsUnique_endpoint_eq (𝕜 := ℚ)
     (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom (P.tensorProduct_mk_injective ℚ))).1
 
 /-- In every realization `(𝕜, V, f)`, `f π.weight` is the endpoint of `π.toPLPath 𝕜 f`. -/
@@ -128,7 +129,7 @@ theorem apply_weight (𝕜 : Type*) {V : Type*} [Field 𝕜] [PartialOrder 𝕜]
     _ = (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) π.toRatPLPath.endpoint :=
         congrArg _ π.endpoint_toRatPLPath.symm
     _ = (π.toPLPath 𝕜 f).endpoint := by
-        rw [toRatPLPath, endpoint_toPLPath, endpoint_toPLPath, LinearMap.toAddMonoidHom_coe,
+        rw [toRatPLPath_def, endpoint_toPLPath, endpoint_toPLPath, LinearMap.toAddMonoidHom_coe,
           map_sum]
         refine Finset.sum_congr rfl fun j _ ↦ ?_
         rw [map_smulₛₗ, AddMonoidHom.liftBaseChangeSemilinear_mk_one, Rat.coe_castHom, Rat.cast_id]
@@ -142,8 +143,9 @@ theorem weight_eq_iff_endpoint {𝕜 V : Type*} [Field 𝕜] [PartialOrder 𝕜]
 /-- Characterization of `π.weight` by the endpoint of its canonical rational realization
 `π.toRatPLPath`. -/
 theorem weight_eq_iff_endpoint_toRatPLPath (π : LSPath P b lam) {μ : M} :
-    π.weight = μ ↔ π.toRatPLPath.endpoint = TensorProduct.mk ℤ ℚ M 1 μ :=
-  weight_eq_iff_endpoint (𝕜 := ℚ) (P.tensorProduct_mk_injective ℚ) π
+    π.weight = μ ↔ π.toRatPLPath.endpoint = TensorProduct.mk ℤ ℚ M 1 μ := by
+  rw [toRatPLPath_def]
+  exact weight_eq_iff_endpoint (𝕜 := ℚ) (P.tensorProduct_mk_injective ℚ) π
 
 @[simp]
 theorem weight_straight : (straight lam : LSPath P b lam).weight = lam :=

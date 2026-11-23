@@ -326,7 +326,8 @@ open scoped TensorProduct in
 theorem endpoint_toRatPLPath_centralTransport :
     (centralTransport χ hχ π).toRatPLPath.endpoint =
       π.toRatPLPath.endpoint + TensorProduct.mk ℤ ℚ M 1 χ := by
-  rw [toRatPLPath, endpoint_toPLPath_centralTransport, LinearMap.toAddMonoidHom_coe]
+  rw [toRatPLPath_def, toRatPLPath_def, endpoint_toPLPath_centralTransport,
+    LinearMap.toAddMonoidHom_coe]
 
 /-- Central transport shifts the lattice-valued weight of an LS path by `χ`. -/
 theorem weight_centralTransport :

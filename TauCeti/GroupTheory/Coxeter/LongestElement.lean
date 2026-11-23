@@ -279,30 +279,6 @@ theorem reverseMul_apply (k : Fin ((C.reverseMul h hJK).length + 1)) :
       cs.minimalCosetRep K ((C (Fin.rev ⟨k, by simpa using k.isLt⟩)).val * w₀) :=
   (rfl)
 
-/-- The `k`-th step of a reversed chain starts at the minimal representative of the coset of the
-`(rev k).succ`-th vertex of `C` times `w₀` modulo `K`. -/
-theorem reverseMul_castSucc (k : Fin (C.reverseMul h hJK).length) :
-    ((C.reverseMul h hJK) k.castSucc).val =
-      cs.minimalCosetRep K ((C (k.cast (length_reverseMul h hJK C)).rev.succ).val * w₀) := by
-  rw [reverseMul_apply]
-  have hk : (⟨(k.castSucc : Fin ((C.reverseMul h hJK).length + 1)).val, by
-      simpa using k.castSucc.isLt⟩ : Fin (C.length + 1)).rev =
-      (k.cast (length_reverseMul h hJK C)).rev.succ := by
-    rw [← Fin.rev_castSucc]; rfl
-  rw [hk]
-
-/-- The `k`-th step of a reversed chain ends at the minimal representative of the coset of the
-`(rev k).castSucc`-th vertex of `C` times `w₀` modulo `K`. -/
-theorem reverseMul_succ (k : Fin (C.reverseMul h hJK).length) :
-    ((C.reverseMul h hJK) k.succ).val =
-      cs.minimalCosetRep K ((C (k.cast (length_reverseMul h hJK C)).rev.castSucc).val * w₀) := by
-  rw [reverseMul_apply]
-  have hk : (⟨(k.succ : Fin ((C.reverseMul h hJK).length + 1)).val, by
-      simpa using k.succ.isLt⟩ : Fin (C.length + 1)).rev =
-      (k.cast (length_reverseMul h hJK C)).rev.castSucc := by
-    rw [← Fin.rev_succ]; rfl
-  rw [hk]
-
 /-- The reversed chain starts at the coset of the last element of the chain, times `w₀`. -/
 @[simp]
 theorem head_reverseMul : (C.reverseMul h hJK).head.val = cs.minimalCosetRep K (C.last.val * w₀)
@@ -322,8 +298,8 @@ theorem reverseMul_reverseMul :
   refine RelSeries.ext rfl (funext fun k ↦ Subtype.ext ?_)
   rw [Function.comp_apply, reverseMul_apply, reverseMul_apply]
   convert h.minimalCosetRep_mul_minimalCosetRep_mul hJK (C k).property using 6
-  · exact congrArg C (Fin.rev_rev _)
-  · exact congrArg C rfl
+  · exact congrArg C (Fin.ext (by simp [Fin.val_rev]; omega))
+  · exact congrArg C (Fin.ext rfl)
 
 end MinimalCosetRepChain
 

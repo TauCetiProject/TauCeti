@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Crystal.Highest
-public import TauCeti.RepresentationTheory.LSPath.Dual
 public import TauCeti.RepresentationTheory.LSPath.Highest
 public import TauCeti.RepresentationTheory.LSPath.Raise
+public import TauCeti.RepresentationTheory.LSPath.Weight
 
 import TauCeti.LinearAlgebra.Dual.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Reduced
@@ -34,7 +34,7 @@ compatible realization.
 
 * `TauCeti.LSPath.crystal`, `TauCeti.LSPath.raise_toPLPath`, `TauCeti.LSPath.lower_toPLPath`,
   `TauCeti.LSPath.toPLPathHom`, `TauCeti.LSPath.toPLPathComponentIso`.
-* `TauCeti.LSPath.congrIso`, `TauCeti.LSPath.dualIso`: shape transport and path duality.
+* `TauCeti.LSPath.congrIso`: shape transport.
 * `TauCeti.LSPath.forall_crystal_e_eq_none_iff`, `TauCeti.LSPath.exists_fWord_straight_eq_some`,
   `TauCeti.LSPath.connected_crystal_graph`,
   `TauCeti.LSPath.mem_range_toPLPath_iff_exists_lowerWord`,
@@ -68,8 +68,10 @@ private noncomputable abbrev ratCrystalOn (hlam : lam ∈ dominantChamber P b) :
     (F := fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i))
     (by simpa only [LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ)
     (fun i ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i))
-    (isCrystalSet_range_toPLPath hlam _ fun i ↦
-      Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i))
+    (by
+      rw [show (toRatPLPath (P := P) (b := b) (lam := lam)) = _ from funext toRatPLPath_def]
+      exact isCrystalSet_range_toPLPath hlam _ fun i ↦
+        Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i))
 
 private noncomputable abbrev toRatRangeEquiv (hlam : lam ∈ dominantChamber P b) :
     LSPath P b lam ≃ Set.range (toRatPLPath (P := P) (b := b) (lam := lam)) :=
@@ -120,7 +122,7 @@ private theorem cast_crystal_ε (hlam : lam ∈ dominantChamber P b) (i : b.supp
 theorem crystal_wt (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) :
     (crystal hlam).wt π = π.weight := by
   rw [crystal, NormalCrystal.transport_wt, Equiv.symm_symm, ratCrystalOn,
-    PLPath.normalCrystalOn_wt_eq_iff, val_toRatRangeEquiv,
+    PLPath.normalCrystalOn_wt_eq_iff, val_toRatRangeEquiv, toRatPLPath_def,
     apply_weight ℚ (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom π]
 
 section Realization
@@ -284,7 +286,7 @@ end FaithfulRealization
 
 end Realization
 
-/-! ### Shape congruence and Littelmann's path duality as strict crystal isomorphisms -/
+/-! ### Shape congruence as a strict crystal isomorphism -/
 
 /-- Shape transport `LSPath.congr` along `λ = λ'` is a strict isomorphism of normal crystals. -/
 noncomputable def congrIso {lam' : X} (h : lam = lam') (hlam : lam ∈ dominantChamber P b)
@@ -317,36 +319,6 @@ theorem congrIso_trans {lam₁ lam₂ lam₃ : X} (h₁ : lam₁ = lam₂) (h₂
     (congrIso h₁ hlam₁ hlam₂).trans (congrIso h₂ hlam₂ hlam₃) =
       congrIso (h₁.trans h₂) hlam₁ hlam₃ := by
   subst h₁ h₂; exact NormalCrystal.StrictIso.ext fun _ ↦ by simp
-
-/-- **Littelmann's path duality `LSPath.dual` is a strict crystal isomorphism**
-`(crystal hlam).dual ≃ crystal hlam'`. -/
-noncomputable def dualIso (hlam : lam ∈ dominantChamber P b)
-    (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b := by
-      have := P.flip_isReduced; exact neg_smul_mem_dominantChamber_longestElement hlam) :
-    NormalCrystal.StrictIso (crystal hlam).dual (crystal hlam') where
-  toEquiv := dual
-  wt_toFun π := by simp [weight_dual π]
-  e_toFun i π := by
-    simp only [Equiv.toFun_as_coe]
-    apply Option.map_injective (toRatPLPath_injective hlam')
-    rw [← raise_toPLPath hlam' _ i _
-        (Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)),
-      toPLPath_dual, PLPath.raise_reverse,
-      lower_toPLPath hlam _ i _
-        (Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)),
-      NormalCrystal.dual_e, Option.map_map, Option.map_map]
-    exact congrArg (Option.map · _) (funext fun ρ : LSPath P b lam ↦ (toPLPath_dual ρ ℚ _).symm)
-
-@[simp]
-theorem coe_dualIso (hlam : lam ∈ dominantChamber P b)
-    (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b) :
-    ⇑(dualIso hlam hlam') = dual := (rfl)
-
-@[simp]
-theorem coe_dualIso_symm (hlam : lam ∈ dominantChamber P b)
-    (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b) :
-    ⇑(dualIso hlam hlam').symm = dual.symm :=
-  funext fun π ↦ EquivLike.injective (dualIso hlam hlam') (by simp)
 
 /-! ### Highest element, connectedness, and comparison with the operator-generated component -/
 

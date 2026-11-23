@@ -75,7 +75,8 @@ theorem crystal_f_centralTransport (i : b.support) (π : LSPath P b lam) :
     simpa only [f₀, LinearMap.toAddMonoidHom_coe] using
       P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam
   apply Option.map_injective (toRatPLPath_injective hlam')
-  rw [← lower_toPLPath hlam' f₀ i F₀ hF₀]
+  rw [show (toRatPLPath (P := P) (b := b) (lam := lam + χ)) = _ from funext toRatPLPath_def,
+    ← lower_toPLPath hlam' f₀ i F₀ hF₀]
   have hlow₀ := lower_toPLPath hlam f₀ i F₀ hF₀ π
   cases hf : (crystal hlam).f i π with
   | none =>

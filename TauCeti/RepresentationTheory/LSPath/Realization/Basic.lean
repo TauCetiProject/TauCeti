@@ -43,15 +43,19 @@ variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
 /-- The canonical rational piecewise-linear realization of an LS path in `ℚ ⊗[ℤ] M`. -/
-noncomputable abbrev toRatPLPath (π : LSPath P b lam) : PLPath ℚ (ℚ ⊗[ℤ] M) :=
+noncomputable def toRatPLPath (π : LSPath P b lam) : PLPath ℚ (ℚ ⊗[ℤ] M) :=
   π.toPLPath ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom
+
+/-- Definitional unfolding of `LSPath.toRatPLPath`. -/
+theorem toRatPLPath_def (π : LSPath P b lam) :
+    π.toRatPLPath = π.toPLPath ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom := (rfl)
 
 /-- The canonical rational realization of the straight LS path is the straight path along
 `1 ⊗ λ`. -/
 theorem toRatPLPath_straight :
     (straight lam : LSPath P b lam).toRatPLPath =
       PLPath.straight ℚ (TensorProduct.mk ℤ ℚ M 1 lam) := by
-  rw [toRatPLPath, toPLPath_straight, LinearMap.toAddMonoidHom_coe]
+  rw [toRatPLPath_def, toPLPath_straight, LinearMap.toAddMonoidHom_coe]
 
 /-- Pushing `LSPath.toRatPLPath` forward along the canonical semilinear extension of `f : M →+ V`
 yields `π.toPLPath 𝕜 f`. -/
@@ -60,7 +64,7 @@ theorem mapSemilinear_toRatPLPath {𝕜 V : Type*} [Field 𝕜] [PartialOrder �
     (π : LSPath P b lam) :
     π.toRatPLPath.mapSemilinear (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) =
       π.toPLPath 𝕜 f := by
-  rw [toRatPLPath, mapSemilinear_toPLPath ℚ _ _ Rat.cast_mono_of_partialOrder,
+  rw [toRatPLPath_def, mapSemilinear_toPLPath ℚ _ _ Rat.cast_mono_of_partialOrder,
     AddMonoidHom.liftBaseChangeSemilinear_comp_mk]
 
 end TauCeti.LSPath
