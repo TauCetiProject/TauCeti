@@ -647,6 +647,9 @@ theorem freeEquiv_closedHom_freeFunctor_map_apply (f : V ⟶ W) (x : freeObj h V
         (freeObj h W).differential (freeι h W (f.hom v)) := by
     rw [freeFunctor_map, closedHom_freeDesc_differential_freeι_apply, GradedModuleCat.hom_comp,
       LinearMap.comp_apply, hom_freeUnit]
+    -- `freeFunctor.obj W` sits inside the dependent `.differential` projection applied to a
+    -- `freeObj h W` element, so `freeFunctor_obj` cannot rewrite without changing the argument
+    -- type.
     dsimp only [freeFunctor, ForgetEnrichment.to, ForgetEnrichment.of]
   rw [map_add, hu, hd, map_add, map_add]
   simp

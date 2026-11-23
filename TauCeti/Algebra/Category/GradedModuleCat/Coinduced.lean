@@ -101,6 +101,11 @@ private def coinducedActionLinear (ψ : A →ₗ[k] V) : A →ₗ[k] (A →ₗ[k
   map_add' _ _ := LinearMap.ext fun _ ↦ by simp [mul_add]
   map_smul' _ _ := LinearMap.ext fun _ ↦ by simp
 
+@[simp]
+private theorem coinducedActionLinear_apply (ψ : A →ₗ[k] V) (a b : A) :
+    coinducedActionLinear V ψ a b = ψ (b * a) :=
+  rfl
+
 private theorem coinducedActionLinear_mem_piece {r p : ℤ} {a : A} (ha : a ∈ 𝒜 r)
     {ψ : A →ₗ[k] V} (hψ : ψ ∈ (InternalGrading.ofDecomposition 𝒜).homPiece V p) :
     coinducedActionLinear V ψ a ∈ (InternalGrading.ofDecomposition 𝒜).homPiece V (r + p) := by
@@ -125,8 +130,8 @@ private theorem coinducedActionLinear_mem_carrier (a : A) {ψ : A →ₗ[k] V}
   | of p y =>
     rw [DirectSum.coeLinearMap_of, ← DirectSum.sum_support_decompose 𝒜 a, map_sum]
     exact (coinducedSingleCarrier 𝒜 V).sum_mem fun r _ ↦
-      InternalGrading.le_range_coeLinearMap ((InternalGrading.ofDecomposition 𝒜).homPiece V)
-        (r + p)
+      (DirectSum.range_coeLinearMap (A := (InternalGrading.ofDecomposition 𝒜).homPiece V) ▸
+        le_iSup ((InternalGrading.ofDecomposition 𝒜).homPiece V) (r + p))
         (coinducedActionLinear_mem_piece 𝒜 V (DirectSum.decompose 𝒜 a r).property y.property)
 
 private def coinducedSingleSubmodule :
@@ -199,8 +204,8 @@ private theorem coinducedSingleCarrierEquiv_smul (a : A) (ψ : coinducedSingleSu
       coinducedActionLinear V (coinducedSingleCarrierEquiv 𝒜 V ψ).val a :=
   LinearMap.ext fun b ↦ by
     rw [coinducedSingleCarrierEquiv_apply_val, Submodule.coe_smul,
-      coextendScalarsBaseEquiv_smul_apply, coinducedSingleCarrierEquiv_apply_val]
-    rfl
+      coextendScalarsBaseEquiv_smul_apply, coinducedSingleCarrierEquiv_apply_val,
+      coinducedActionLinear_apply]
 
 /-- The graded `𝒜`-module coinduced from a `k`-module `V` placed in degree zero. -/
 def coinducedSingle : GradedModuleCat.{max uA v} 𝒜 :=
@@ -370,8 +375,8 @@ private def coinducedSinglePieceToHomPiece (𝒜 : ℤ → Submodule k A) [Grade
       exact (mem_coinducedSingle_piece_iff p x.val).1 x.property q b hb hq⟩
   invFun ψ :=
     ⟨toCoinducedSingle ⟨ψ.val,
-      InternalGrading.le_range_coeLinearMap ((InternalGrading.ofDecomposition 𝒜).homPiece V) p
-        ψ.property⟩,
+      (DirectSum.range_coeLinearMap (A := (InternalGrading.ofDecomposition 𝒜).homPiece V) ▸
+        le_iSup ((InternalGrading.ofDecomposition 𝒜).homPiece V) p) ψ.property⟩,
       (mem_coinducedSingle_piece_iff p _).2 fun q b hb hq ↦ by
         rw [coinducedSingleApply_toCoinducedSingle]
         exact (InternalGrading.mem_homPiece_iff _ V p _).1 ψ.property q b (by
@@ -470,7 +475,8 @@ private theorem coinducedSingleShiftLiftLinear_mem_carrier {M : GradedModuleCat.
   classical
   rw [← DirectSum.sum_support_decompose M.grading.piece x, map_sum]
   exact (coinducedSingleCarrier 𝒜 V).sum_mem fun p _ ↦
-    InternalGrading.le_range_coeLinearMap ((InternalGrading.ofDecomposition 𝒜).homPiece V) (p - n)
+    (DirectSum.range_coeLinearMap (A := (InternalGrading.ofDecomposition 𝒜).homPiece V) ▸
+      le_iSup ((InternalGrading.ofDecomposition 𝒜).homPiece V) (p - n))
       (coinducedSingleShiftLiftLinear_mem_piece n f
         (DirectSum.decompose M.grading.piece x p).property)
 

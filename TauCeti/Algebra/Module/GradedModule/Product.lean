@@ -56,8 +56,9 @@ def productCarrier : Submodule R (∀ j, M j) :=
   LinearMap.range (DirectSum.coeLinearMap (productPiece G))
 
 /-- Every homogeneous family belongs to the graded product. -/
-theorem productPiece_le_productCarrier (p : ℤ) : productPiece G p ≤ productCarrier G :=
-  le_range_coeLinearMap (productPiece G) p
+theorem productPiece_le_productCarrier (p : ℤ) : productPiece G p ≤ productCarrier G := by
+  rw [productCarrier, DirectSum.range_coeLinearMap]
+  exact le_iSup _ p
 
 private def productCoordinate (j : J) (p : ℤ) :
     productPiece G p →ₗ[R] (G j).piece p where
@@ -141,14 +142,16 @@ private theorem product_recompose_injective :
 /-- The sum of the degreewise products is the total graded product. -/
 noncomputable def productEquiv :
     (⨁ p, productPiece G p) ≃ₗ[R] productCarrier G :=
-  rangeCoeEquiv (productPiece G) (product_recompose_injective G)
+  LinearEquiv.ofInjective (DirectSum.coeLinearMap (productPiece G))
+    (product_recompose_injective G)
 
 /-- The comparison sums the finitely many homogeneous families. -/
 @[simp]
 theorem productEquiv_apply (x : ⨁ p, productPiece G p) :
     ((productEquiv G x : productCarrier G) : ∀ j, M j) =
-      DirectSum.coeLinearMap (productPiece G) x :=
-  rangeCoeEquiv_apply (productPiece G) (product_recompose_injective G) x
+      DirectSum.coeLinearMap (productPiece G) x := by
+  rw [productEquiv]
+  exact LinearEquiv.ofInjective_apply _ _
 
 /-- The internal grading on the product, obtained from its degreewise product presentation. -/
 noncomputable def product : InternalGrading R (productCarrier G) ℤ :=

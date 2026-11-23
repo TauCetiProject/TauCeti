@@ -119,11 +119,12 @@ private theorem coinducedEquiv_eq_swap (h : IsCurvedDGAlgebra 𝒜 d w)
     coinducedEquiv h N z = (freeEquiv h (N.shiftObj (-1)) z).swap :=
   (rfl)
 
-private theorem coinducedFst_eq_freeProj (h : IsCurvedDGAlgebra 𝒜 d w)
+private theorem coinducedFst_eq_freeEquiv_snd (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece)
     (z : coinducedObj h N) :
-    (coinducedFst h N).hom z = (freeProj h (N.shiftObj (-1))).hom z :=
-  LinearMap.congr_fun (hom_shiftObjNegOneOneIso_hom N) ((freeProj h (N.shiftObj (-1))).hom z)
+    (coinducedFst h N).hom z = (freeEquiv h (N.shiftObj (-1)) z).2 :=
+  (LinearMap.congr_fun (hom_shiftObjNegOneOneIso_hom N)
+    ((freeProj h (N.shiftObj (-1))).hom z)).trans (freeProj_apply h (N.shiftObj (-1)) z)
 
 private theorem coinducedInr_hom_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece) (y : N) :
@@ -134,19 +135,20 @@ private theorem coinducedInr_hom_apply (h : IsCurvedDGAlgebra 𝒜 d w)
   -- linear-map coercions definitionally, so no rewrite matches the cast.
   rfl
 
-private theorem coinducedObj_differential_eq (h : IsCurvedDGAlgebra 𝒜 d w)
+private theorem freeEquiv_coinducedObj_differential (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece)
     (z : coinducedObj h N) :
-    ((coinducedObj h N).differential z : freeObj h (N.shiftObj (-1))) =
-      (freeObj h (N.shiftObj (-1))).differential z :=
-  (rfl)
+    freeEquiv h (N.shiftObj (-1)) ((coinducedObj h N).differential z) =
+      (op w • (freeEquiv h (N.shiftObj (-1)) z).2, (freeEquiv h (N.shiftObj (-1)) z).1) :=
+  freeEquiv_differential h (N.shiftObj (-1)) z
 
 private theorem mem_coinducedObj_grading_eq_free (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece)
     (p : ℤ) (z : coinducedObj h N) :
     z ∈ (coinducedObj h N).grading p ↔
-      (z : freeObj h (N.shiftObj (-1))) ∈ (freeObj h (N.shiftObj (-1))).grading p :=
-  Iff.rfl
+      (freeEquiv h (N.shiftObj (-1)) z).1 ∈ (N.shiftObj (-1)).grading.piece p ∧
+        (freeEquiv h (N.shiftObj (-1)) z).2 ∈ (N.shiftObj (-1)).grading.piece (p - 1) :=
+  mem_freeObj_grading_iff h (N.shiftObj (-1))
 
 /-- Elements of `coinducedObj h N` are determined by their two components in `N × N`. -/
 @[ext]
@@ -161,9 +163,7 @@ theorem coinducedObj_ext {h : IsCurvedDGAlgebra 𝒜 d w}
 theorem coinducedFst_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece)
     (z : coinducedObj h N) : (coinducedFst h N).hom z = (coinducedEquiv h N z).1 := by
-  rw [coinducedFst_eq_freeProj, coinducedEquiv_eq_swap]
-  dsimp only [coinducedObj] at z ⊢
-  rw [freeProj_apply, Prod.fst_swap]
+  rw [coinducedFst_eq_freeEquiv_snd, coinducedEquiv_eq_swap, Prod.fst_swap]
 
 /-- Evaluating `coinducedEquiv` on the inclusion `coinducedInr h N` gives `(0, y)`. -/
 @[simp]
@@ -179,9 +179,8 @@ theorem coinducedEquiv_differential (h : IsCurvedDGAlgebra 𝒜 d w)
     (z : coinducedObj h N) :
     coinducedEquiv h N ((coinducedObj h N).differential z) =
       ((coinducedEquiv h N z).2, op w • (coinducedEquiv h N z).1) := by
-  rw [coinducedEquiv_eq_swap, coinducedObj_differential_eq, coinducedEquiv_eq_swap]
-  dsimp only [coinducedObj] at z ⊢
-  rw [freeEquiv_differential, Prod.swap_prod_mk, Prod.fst_swap, Prod.snd_swap]
+  rw [coinducedEquiv_eq_swap, freeEquiv_coinducedObj_differential, coinducedEquiv_eq_swap,
+    Prod.swap_prod_mk, Prod.fst_swap, Prod.snd_swap]
 
 private theorem coinducedEquiv_snd (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece)
@@ -197,10 +196,9 @@ theorem mem_coinducedObj_grading_iff {h : IsCurvedDGAlgebra 𝒜 d w}
     {p : ℤ} {z : coinducedObj h N} :
     z ∈ (coinducedObj h N).grading p ↔ (coinducedEquiv h N z).1 ∈ N.grading.piece p ∧
       (coinducedEquiv h N z).2 ∈ N.grading.piece (p + 1) := by
-  rw [mem_coinducedObj_grading_eq_free, coinducedEquiv_eq_swap]
-  dsimp only [coinducedObj] at z ⊢
-  rw [mem_freeObj_grading_iff, GradedModuleCat.mem_shiftObj_piece_iff,
-    GradedModuleCat.mem_shiftObj_piece_iff, Prod.fst_swap, Prod.snd_swap]
+  rw [mem_coinducedObj_grading_eq_free, coinducedEquiv_eq_swap,
+    GradedModuleCat.mem_shiftObj_piece_iff, GradedModuleCat.mem_shiftObj_piece_iff,
+    Prod.fst_swap, Prod.snd_swap]
   simp [sub_neg_eq_add, sub_add_cancel, and_comm]
 
 /-- Scalar multiplication by `a : Aᵐᵒᵖ` on `coinducedObj h N`, expressed in `N × N`. -/
@@ -225,10 +223,10 @@ theorem coinducedEquiv_smul (h : IsCurvedDGAlgebra 𝒜 d w)
 @[reassoc (attr := simp)]
 theorem coinducedInr_comp_coinducedFst (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
-    coinducedInr h N ≫ coinducedFst h N = 0 := by
-  rw [coinducedInr, coinducedFst]
-  dsimp only [coinducedObj]
-  rw [← Category.assoc, freeUnit_comp_freeProj, Limits.zero_comp]
+    coinducedInr h N ≫ coinducedFst h N = 0 :=
+  GradedModuleCat.hom_ext <| LinearMap.ext fun y ↦ by
+    rw [GradedModuleCat.hom_comp, LinearMap.comp_apply, coinducedFst_apply,
+      coinducedEquiv_coinducedInr, GradedModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- After forgetting the differential, `G⁻ N` sits in a short exact sequence
 `0 ⟶ N{-1} ⟶ U(G⁻ N) ⟶ N ⟶ 0` of graded right modules. -/
@@ -275,10 +273,11 @@ theorem isZero_homotopy_coinducedObj (h : IsCurvedDGAlgebra 𝒜 d w)
     IsZero (DGHomotopyCategory.of R (coinducedObj h N)) :=
   isZero_homotopy_freeObj h (N.shiftObj (-1))
 
-/-- Sealed morphism action of `coinduced`, sending `(x, y)` to `(f x, f y)` under `coinducedEquiv`
-(see `TauCeti.CurvedDGRightModuleCat.coinducedEquiv_closedHom_coinduced_map_apply`). Required as
-a public unexposed helper so `@[expose] def coinduced` matches `forgetDifferential` while keeping
-`coinducedObj` sealed. -/
+/-- Sealed morphism action of `coinduced`, equal to `(coinduced h).map f`
+(`TauCeti.CurvedDGRightModuleCat.coinduced_map`) and sending `(x, y)` to `(f x, f y)` under
+`coinducedEquiv` (`TauCeti.CurvedDGRightModuleCat.coinducedEquiv_closedHom_coinduced_map_apply`).
+Required as a public unexposed helper so `@[expose] def coinduced` matches `forgetDifferential`
+while keeping `coinducedObj` sealed. -/
 noncomputable def coinducedMap (h : IsCurvedDGAlgebra 𝒜 d w)
     {N₁ N₂ : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
     (f : N₁ ⟶ N₂) :
@@ -299,20 +298,26 @@ noncomputable def coinduced (h : IsCurvedDGAlgebra 𝒜 d w) :
   obj N := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h N)
   map f := coinducedMap h f
   map_id N := by
-    rw [coinducedMap]
-    dsimp only [coinducedObj]
-    rw [CategoryTheory.Functor.map_id]
+    rw [coinducedMap, CategoryTheory.Functor.map_id]
     exact CategoryTheory.Functor.map_id freeFunctor (N.shiftObj (-1))
   map_comp f g := by
     rw [coinducedMap, coinducedMap, coinducedMap]
-    dsimp only [coinducedObj]
-    rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_comp]
+    exact (congrArg (freeFunctor (h := h)).map
+      ((GradedModuleCat.shiftFunctor (-1)).map_comp f g)).trans
+      ((freeFunctor (h := h)).map_comp _ _)
 
 /-- The coinduction functor sends a graded right module `N` to `coinducedObj h N`. -/
 @[simp]
 theorem coinduced_obj (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
     (coinduced h).obj N = ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h N) :=
+  (rfl)
+
+/-- Action of `coinduced` on morphisms via `coinducedMap`. -/
+theorem coinduced_map (h : IsCurvedDGAlgebra 𝒜 d w)
+    {N₁ N₂ : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
+    (f : N₁ ⟶ N₂) :
+    (coinduced h).map f = coinducedMap h f :=
   (rfl)
 
 /-- Comparison isomorphism identifying the sealed coinduction functor with
@@ -353,24 +358,13 @@ theorem coinducedEquiv_closedHom_coinducedIso_inv_app (h : IsCurvedDGAlgebra �
   rw [hid]
   exact coinducedEquiv_eq_swap h N z
 
-private theorem closedHom_coinduced_map_eq (h : IsCurvedDGAlgebra 𝒜 d w)
+private theorem freeEquiv_coinducedObj_closedHom_map_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     {N₁ N₂ : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
     (f : N₁ ⟶ N₂) (z : coinducedObj h N₁) :
-    (closedHom ((coinduced h).map f) z : freeObj h (N₂.shiftObj (-1))) =
-      closedHom ((freeFunctor (h := h)).map ((GradedModuleCat.shiftFunctor (-1)).map f)) z :=
-  (rfl)
-
-private theorem coinducedFst_closedHom_coinduced_map_apply (h : IsCurvedDGAlgebra 𝒜 d w)
-    {N₁ N₂ : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
-    (f : N₁ ⟶ N₂) (z : coinducedObj h N₁) :
-    (coinducedFst h N₂).hom (closedHom ((coinduced h).map f) z) =
-      f.hom ((coinducedFst h N₁).hom z) := by
-  rw [coinducedFst_eq_freeProj, coinducedFst_eq_freeProj, closedHom_coinduced_map_eq]
-  dsimp only [coinducedObj] at z ⊢
-  rw [freeProj_closedHom_freeFunctor_map_apply, GradedModuleCat.hom_shiftFunctor_map]
-  -- `freeProj ... z` is typed in `(N₁.shiftObj (-1)).shiftObj 1`, whose carrier and module
-  -- instances agree with `N₁` only by unfolding `shiftObj`, so `f.hom` cannot be rewritten across.
-  rfl
+    freeEquiv h (N₂.shiftObj (-1)) (closedHom ((coinduced h).map f) z) =
+      (((GradedModuleCat.shiftFunctor (-1)).map f).hom (freeEquiv h (N₁.shiftObj (-1)) z).1,
+        ((GradedModuleCat.shiftFunctor (-1)).map f).hom (freeEquiv h (N₁.shiftObj (-1)) z).2) :=
+  freeEquiv_closedHom_freeFunctor_map_apply ((GradedModuleCat.shiftFunctor (-1)).map f) z
 
 /-- On underlying pairs in `N × N`, `(coinduced h).map f` applies `f` componentwise. -/
 @[simp]
@@ -379,11 +373,8 @@ theorem coinducedEquiv_closedHom_coinduced_map_apply (h : IsCurvedDGAlgebra 𝒜
     (f : N₁ ⟶ N₂) (z : coinducedObj h N₁) :
     coinducedEquiv h N₂ (closedHom ((coinduced h).map f) z) =
       (f.hom (coinducedEquiv h N₁ z).1, f.hom (coinducedEquiv h N₁ z).2) := by
-  refine Prod.ext ?_ ?_
-  · rw [← coinducedFst_apply, ← coinducedFst_apply]
-    exact coinducedFst_closedHom_coinduced_map_apply h f z
-  · rw [coinducedEquiv_snd, coinducedEquiv_snd, differential_closedHom]
-    exact coinducedFst_closedHom_coinduced_map_apply h f ((coinducedObj h N₁).differential z)
+  rw [coinducedEquiv_eq_swap, freeEquiv_coinducedObj_closedHom_map_apply, coinducedEquiv_eq_swap,
+    Prod.swap_prod_mk, Prod.fst_swap, Prod.snd_swap, GradedModuleCat.hom_shiftFunctor_map]
 
 /-- The closed morphism `M ⟶ G⁻ N` adjunct to a morphism `f : U(M) ⟶ N` of graded right modules,
 sending `m` to `(f m, f (d_M m))`. -/
@@ -508,6 +499,9 @@ theorem forgetDifferentialCoinducedAdj_unit_app_of (h : IsCurvedDGAlgebra 𝒜 d
       (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) =
         coinducedLift (𝟙 (toGradedModuleCat M)) := by
   rw [forgetDifferentialCoinducedAdj, Adjunction.mkOfHomEquiv_unit_app, Equiv.coe_fn_mk]
+  -- `forgetDifferential.obj (ForgetEnrichment.of _ M)` appears inside the dependent `𝟙` passed to
+  -- `coinducedLift`, whose codomain also depends on it, so `forgetDifferential_obj_of` cannot
+  -- rewrite the subterm.
   dsimp only [forgetDifferential, ForgetEnrichment.to, ForgetEnrichment.of]
 
 /-- The counit of `forgetDifferentialCoinducedAdj` at `N` is `coinducedFst h N`. -/

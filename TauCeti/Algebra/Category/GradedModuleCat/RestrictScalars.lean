@@ -252,7 +252,9 @@ def restrictBase (𝒜 : ℤ → Submodule k A) :
     letI : Module k₀ M := Module.restrictScalars k₀ k M
     haveI : IsScalarTower k₀ k M := IsScalarTower.restrictScalars k₀ k M
     haveI : IsScalarTower k₀ A M :=
-      ⟨fun c₀ a m ↦ by rw [← IsScalarTower.algebraMap_smul k c₀ a, smul_assoc]; rfl⟩
+      ⟨fun c₀ a m ↦ by
+        rw [← IsScalarTower.algebraMap_smul k c₀ a, smul_assoc,
+          IsScalarTower.algebraMap_smul k c₀ (a • m)]⟩
     { carrier := M
       grading := { piece := fun p ↦ (M.grading.piece p).restrictScalars k₀
                    isInternal := M.grading.isInternal }
