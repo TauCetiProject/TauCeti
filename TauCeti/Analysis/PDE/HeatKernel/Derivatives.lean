@@ -486,6 +486,6 @@ theorem integral_iteratedFDeriv_heatKernel_eq_zero {t : ℝ} (ht : 0 < t) {m : �
 linear map `L`, `∫ K_t(y) L y dy = 0`, since `K_t` is even. -/
 theorem integral_heatKernel_smul_apply_eq_zero {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] (t : ℝ) (L : E →L[ℝ] F) : ∫ y, heatKernel t y • L y = 0 :=
-  integral_eq_zero_of_odd fun y ↦ by simp [heatKernel_neg]
+  integral_eq_zero_of_odd (Filter.Eventually.of_forall fun y ↦ by simp [heatKernel_neg])
 
 end TauCeti
