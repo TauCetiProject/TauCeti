@@ -27,7 +27,9 @@ triangular arrays on varying probability spaces. Combined with the `O((n + 1)⁻
 bound for odd traces, every odd empirical spectral moment converges to zero in probability; combined
 with the general expected-moment convergence in
 `TauCeti.Probability.RandomMatrix.SpectralMoment.Expected`, every `k`-th empirical spectral moment
-converges in probability to the `k`-th moment of `semicircleReal 0 s` under `2k`-th moment bounds.
+converges in probability to the `k`-th moment of `semicircleReal 0 s` when the strictly
+upper-triangular entries have common second absolute moment `s` across all corners and uniformly
+bounded `2k`-th absolute moments.
 Almost-sure convergence on a fixed probability space via summability of `∑ (n + 1)⁻²` and the
 Borel--Cantelli lemma is established in
 `TauCeti.Probability.RandomMatrix.SpectralMoment.AlmostSure`.
@@ -69,62 +71,41 @@ namespace TauCeti.Probability
 
 section CornerHelpers
 
-private def padZeroOffDiag {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (n : ℕ) :
-    StrictUpper → Ω → ℂ :=
-  fun ij ω ↦ if ij.val.2 < n then ξ ij ω else 0
-
-private def padZeroDiag {Ω : Type*} (η : ℕ → Ω → ℝ) (n : ℕ) : ℕ → Ω → ℝ :=
-  fun i ω ↦ if i < n then η i ω else 0
-
-private theorem padZeroOffDiag_of_lt {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) {n : ℕ}
-    {ij : StrictUpper} (h : ij.val.2 < n) : padZeroOffDiag ξ n ij = ξ ij := by
-  ext ω; simp [padZeroOffDiag, h]
-
-private theorem padZeroOffDiag_of_not_lt {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) {n : ℕ}
-    {ij : StrictUpper} (h : ¬ ij.val.2 < n) : padZeroOffDiag ξ n ij = 0 := by
-  ext ω; simp [padZeroOffDiag, h]
-
-private theorem padZeroDiag_of_lt {Ω : Type*} (η : ℕ → Ω → ℝ) {n : ℕ} {i : ℕ} (h : i < n) :
-    padZeroDiag η n i = η i := by
-  ext ω; simp [padZeroDiag, h]
-
-private theorem padZeroDiag_of_not_lt {Ω : Type*} (η : ℕ → Ω → ℝ) {n : ℕ} {i : ℕ} (h : ¬ i < n) :
-    padZeroDiag η n i = 0 := by
-  ext ω; simp [padZeroDiag, h]
-
-private theorem wignerMatrix_padZero_eq {Ω : Type*} (ξ : StrictUpper → Ω → ℂ)
+open Classical in
+private theorem wignerMatrix_piecewise_eq {Ω : Type*} (ξ : StrictUpper → Ω → ℂ)
     (η : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
-    wignerMatrix (padZeroOffDiag ξ n) (padZeroDiag η n) n ω = wignerMatrix ξ η n ω :=
-  wignerMatrix_congr ω (fun ij hij ↦ by simp [padZeroOffDiag, hij])
-    (fun i hi ↦ by simp [padZeroDiag, hi])
+    wignerMatrix ({ij : StrictUpper | ij.val.2 < n}.piecewise ξ 0)
+      ({i : ℕ | i < n}.piecewise η 0) n ω = wignerMatrix ξ η n ω :=
+  wignerMatrix_congr ω
+    (fun _ hij ↦ congrFun (Set.piecewise_eq_of_mem _ ξ 0 hij) ω)
+    (fun _ hi ↦ congrFun (Set.piecewise_eq_of_mem _ η 0 hi) ω)
 
-private theorem iIndepFun_padZero {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+open Classical in
+private theorem iIndepFun_piecewise {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {n : ℕ}
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P) :
     iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
-      Sum.elim (padZeroOffDiag ξ n) (fun i ω ↦ (padZeroDiag η n i ω : ℂ)) idx) P := by
+      Sum.elim ({ij : StrictUpper | ij.val.2 < n}.piecewise ξ 0)
+        (fun i ω ↦ ({i : ℕ | i < n}.piecewise η 0 i ω : ℂ)) idx) P := by
   have := hindep.isProbabilityMeasure
   let s : Set (StrictUpper ⊕ ℕ) := {idx | Sum.elim (fun ij ↦ ij.val.2 < n) (fun i ↦ i < n) idx}
-  let g : s → {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} :=
-    fun ⟨idx, hidx⟩ ↦ match idx, hidx with
-      | .inl ij, hij => .inl ⟨ij, hij⟩
-      | .inr i, hi => .inr ⟨i, hi⟩
-  have hg : Function.Injective g := fun ⟨a, _⟩ ⟨b, _⟩ hab ↦ Subtype.ext <| by
-    rcases a with ij | i <;> rcases b with ij' | i' <;> cases hab <;> rfl
   refine ProbabilityTheory.iIndepFun.of_subtype_of_ae_eq_const_outside (s := s) ?_ ?_
-  · refine (hindep.precomp hg).congr fun ⟨idx, hidx⟩ ↦ .of_forall fun ω ↦ ?_
+  · refine (hindep.precomp (Equiv.subtypeSum (p := fun idx ↦ idx ∈ s)).injective).congr
+      fun ⟨idx, hidx⟩ ↦ .of_forall fun ω ↦ ?_
     rcases idx with ij | i
-    · simp [g, padZeroOffDiag, show ij.val.2 < n from hidx]
-    · simp [g, padZeroDiag, show i < n from hidx]
+    · change ξ ij ω = ({ij : StrictUpper | ij.val.2 < n}.piecewise ξ 0 ij ω : ℂ)
+      rw [Set.piecewise_eq_of_mem _ ξ 0 hidx]
+    · change (η i ω : ℂ) = ({i : ℕ | i < n}.piecewise η 0 i ω : ℂ)
+      rw [Set.piecewise_eq_of_mem _ η 0 hidx]
   · intro idx hnot
     refine ⟨0, .of_forall fun ω ↦ ?_⟩
     rcases idx with ij | i
-    · have hij : ¬ ij.val.2 < n := hnot
-      simp [padZeroOffDiag, hij]
-    · have hi : ¬ i < n := hnot
-      simp [padZeroDiag, hi]
+    · change ({ij : StrictUpper | ij.val.2 < n}.piecewise ξ 0 ij ω : ℂ) = 0
+      rw [Set.piecewise_eq_of_notMem _ ξ 0 hnot]; rfl
+    · change ({i : ℕ | i < n}.piecewise η 0 i ω : ℂ) = 0
+      rw [Set.piecewise_eq_of_notMem _ η 0 hnot]; simp
 
 end CornerHelpers
 
@@ -191,7 +172,8 @@ private theorem abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le_glob
 /-- **Empirical spectral moment covariance bound.** Under corner-local independent centered entries
 in `L^(k₁ + k₂)` with `(k₁ + k₂)`-th absolute moments bounded by `B`, the covariance between the
 `k₁`-th and `k₂`-th empirical spectral moments of `Hₙ₊₁` has absolute value at most
-`2 * ((k₁ + k₂) / 2)^(k₁ + k₂) * B / (n + 1)²` for all `k₁, k₂, n : ℕ`. -/
+`2 * ⌊(k₁ + k₂) / 2⌋^(k₁ + k₂) * B / (n + 1)²` (where `⌊(k₁ + k₂) / 2⌋` is the `ℕ`-division
+`(k₁ + k₂) / 2`) for all `k₁, k₂, n : ℕ`. -/
 theorem abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le
     {k₁ k₂ n : ℕ} {B : ℝ}
     (hindep : iIndepFun
@@ -208,6 +190,7 @@ theorem abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le
       fun ω ↦ ∫ x, x ^ k₂ ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P]| ≤
       2 * ((((k₁ + k₂) / 2 : ℕ) : ℝ) ^ (k₁ + k₂)) * B / (n + 1 : ℝ) ^ 2 := by
+  classical
   have := hindep.isProbabilityMeasure
   have hB : 0 ≤ B :=
     (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans
@@ -217,27 +200,34 @@ theorem abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le
     · simpa [hk] using hη 0 (Nat.zero_lt_succ n)
     · simpa [zero_pow hk] using hB
   have hcov := abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le_global
-    (ξ := padZeroOffDiag ξ (n + 1)) (η := padZeroDiag η (n + 1)) (k₁ := k₁) (k₂ := k₂) (B := B)
-    (iIndepFun_padZero hindep)
-    (fun ij ↦ by by_cases h : ij.val.2 < n + 1 <;> simp [padZeroOffDiag, h, hξzero])
-    (fun i ↦ by by_cases h : i < n + 1 <;> simp [padZeroDiag, h, hηzero])
+    (ξ := {ij : StrictUpper | ij.val.2 < n + 1}.piecewise ξ 0)
+    (η := {i : ℕ | i < n + 1}.piecewise η 0) (k₁ := k₁) (k₂ := k₂) (B := B)
+    (iIndepFun_piecewise hindep)
     (fun ij ↦ by
       by_cases h : ij.val.2 < n + 1
-      · rw [padZeroOffDiag_of_lt _ h]; exact hξp ij h
-      · rw [padZeroOffDiag_of_not_lt _ h]; exact MemLp.zero)
+      · rw [Set.piecewise_eq_of_mem _ ξ 0 h]; exact hξzero ij h
+      · rw [Set.piecewise_eq_of_notMem _ ξ 0 h]; simp)
     (fun i ↦ by
       by_cases h : i < n + 1
-      · rw [padZeroDiag_of_lt _ h]; exact hηp i h
-      · rw [padZeroDiag_of_not_lt _ h]; exact MemLp.zero)
+      · rw [Set.piecewise_eq_of_mem _ η 0 h]; exact hηzero i h
+      · rw [Set.piecewise_eq_of_notMem _ η 0 h]; simp)
     (fun ij ↦ by
       by_cases h : ij.val.2 < n + 1
-      · simpa [padZeroOffDiag, h] using hξ ij h
-      · simpa [padZeroOffDiag, h] using h0B)
+      · rw [Set.piecewise_eq_of_mem _ ξ 0 h]; exact hξp ij h
+      · rw [Set.piecewise_eq_of_notMem _ ξ 0 h]; exact MemLp.zero)
     (fun i ↦ by
       by_cases h : i < n + 1
-      · simpa [padZeroDiag, h] using hη i h
-      · simpa [padZeroDiag, h] using h0B) n
-  simp_rw [wignerMatrix_padZero_eq] at hcov
+      · rw [Set.piecewise_eq_of_mem _ η 0 h]; exact hηp i h
+      · rw [Set.piecewise_eq_of_notMem _ η 0 h]; exact MemLp.zero)
+    (fun ij ↦ by
+      by_cases h : ij.val.2 < n + 1
+      · rw [Set.piecewise_eq_of_mem _ ξ 0 h]; exact hξ ij h
+      · rw [Set.piecewise_eq_of_notMem _ ξ 0 h]; simpa using h0B)
+    (fun i ↦ by
+      by_cases h : i < n + 1
+      · rw [Set.piecewise_eq_of_mem _ η 0 h]; exact hη i h
+      · rw [Set.piecewise_eq_of_notMem _ η 0 h]; simpa using h0B) n
+  simp_rw [wignerMatrix_piecewise_eq] at hcov
   exact hcov
 
 /-- **Empirical spectral moment variance bound (AGZ Lemma 2.1.7).** Under corner-local
@@ -359,24 +349,17 @@ theorem tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability
       ∫ ω', (∫ x, x ^ k ∂((wignerMatrix (ξ n) (η n) (n + 1) ω').spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω' (n + 1)) : Measure ℝ)) ∂P n|})
       atTop (𝓝 0) := by
-  have (n : ℕ) : IsProbabilityMeasure (P n) := (hindep n).isProbabilityMeasure
-  have hmem (n : ℕ) : MemLp (fun ω ↦ ∫ x, x ^ k
-      ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
-        (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) 2 (P n) :=
-    memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2)
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp n)
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp n)
-  have hvar : Tendsto (fun n ↦ Var[fun ω ↦ ∫ x, x ^ k
-      ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
-        (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ); P n]) atTop (𝓝 0) :=
-    squeeze_zero (fun n ↦ variance_nonneg _ _)
-      (fun n ↦ variance_integral_pow_spectralMeasure_wignerMatrix_le
-        (hindep n) (hξzero n) (hηzero n) (hξp n) (hηp n) (hξ n) (hη n))
-      (by
-        simpa using tendsto_const_nhds.div_atTop
-          ((tendsto_pow_atTop two_ne_zero).comp
-            (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)))
-  exact tendsto_measure_abs_sub_integral_ge_of_tendsto_variance hmem hvar hε
+  have hlim : Tendsto (fun n : ℕ ↦
+      ENNReal.ofReal ((2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2) / ε ^ 2)) atTop (𝓝 0) := by
+    rw [← ENNReal.ofReal_zero]
+    refine ENNReal.tendsto_ofReal ?_
+    simpa using ((tendsto_const_nhds.div_atTop
+      ((tendsto_pow_atTop two_ne_zero).comp
+        (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds))).div_const (ε ^ 2))
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (.of_forall fun _ ↦ bot_le)
+    (.of_forall fun n ↦ measure_integral_pow_spectralMeasure_wignerMatrix_sub_mean_ge
+      (hindep n) (hξzero n) (hηzero n) (hξp n) (hηp n) (hξ n) (hη n) hε)
 
 /-- Every odd empirical spectral moment of a Wigner matrix converges to zero in probability under
 independent centered entries in `L^(4m + 2)` with uniformly bounded `(4m + 2)`-th absolute moments,
