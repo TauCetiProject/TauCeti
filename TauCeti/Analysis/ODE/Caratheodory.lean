@@ -122,17 +122,8 @@ private theorem abs_integral_norm_mul_abs_pow {t : ℝ}
       |∫ s in t₀..t, ‖M s‖| ^ (n + 1) / (n + 1) := by
   set Λ : ℝ → ℝ := fun s ↦ ∫ r in t₀..s, ‖M r‖
   -- `Λ` has a constant sign `σ` between `t₀` and `t`.
-  obtain ⟨σ, hσ, hΛ⟩ : ∃ σ : ℝ, |σ| = 1 ∧ ∀ s ∈ uIcc t₀ t, |Λ s| = σ * Λ s := by
-    rcases le_total t₀ t with h | h
-    · refine ⟨1, abs_one, fun s hs ↦ ?_⟩
-      rw [uIcc_of_le h] at hs
-      rw [one_mul, abs_of_nonneg (integral_nonneg hs.1 fun _ _ ↦ norm_nonneg _)]
-    · refine ⟨-1, by simp, fun s hs ↦ ?_⟩
-      rw [uIcc_of_ge h] at hs
-      rw [neg_one_mul, abs_of_nonpos]
-      simp only [Λ]
-      rw [integral_symm, neg_nonpos]
-      exact integral_nonneg hs.2 fun _ _ ↦ norm_nonneg _
+  obtain ⟨σ, hσ, hΛ⟩ : ∃ σ : ℝ, |σ| = 1 ∧ ∀ s ∈ uIcc t₀ t, |Λ s| = σ * Λ s :=
+    exists_abs_integral_eq_mul_integral fun _ _ ↦ norm_nonneg _
   have h : ∫ s in t₀..t, ‖M s‖ * |Λ s| ^ n = σ ^ n * ∫ s in t₀..t, ‖M s‖ * Λ s ^ n := by
     rw [← intervalIntegral.integral_const_mul]
     refine integral_congr fun s hs ↦ ?_

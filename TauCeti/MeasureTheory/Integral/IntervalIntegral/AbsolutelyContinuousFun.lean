@@ -50,8 +50,14 @@ fundamental-theorem results to curves.
   with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
   with base point in the integrability interval are absolutely continuous in any real normed space.
-* `IntervalIntegrable.integral_mul_pow_integral`: for a real `g` with primitive `G` based at `c`,
-  `∫ s in c..d, g s * G s ^ k = G d ^ (k + 1) / (k + 1)`.
+* `intervalIntegral.exists_abs_integral_eq_mul_integral`: the primitive of a nonnegative function
+  has constant sign.
+* `IntervalIntegrable.integral_mul_deriv_integral`: for a real `g` with primitive `G` based at `c`
+  and a `C¹` function `φ`, `∫ s in c..d, g s * φ' (G s) = φ (G d) - φ 0`.
+* `IntervalIntegrable.integral_mul_pow_integral`: `∫ s in c..d, g s * G s ^ k = G d ^ (k + 1) /
+  (k + 1)`.
+* `IntervalIntegrable.abs_integral_mul_exp_abs_integral`: for `g ≥ 0`,
+  `|∫ s in c..d, g s * exp |G s|| = exp |G d| - 1`.
 -/
 
 public section
@@ -276,6 +282,38 @@ theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'
     Real.dist_eq, intervalIntegral.integral_interval_sub_left hx.norm hy.norm]
   exact intervalIntegral.norm_integral_le_abs_integral_norm
 
+/-- **Constant sign of the primitive of a nonnegative function.** If `g ≥ 0` on `uIcc c d`, then
+`u ↦ ∫ v in c..u, g v` has a constant sign `σ` with `|σ| = 1` on `uIcc c d`: `σ = 1` if `c ≤ d` and
+`σ = -1` otherwise. -/
+theorem intervalIntegral.exists_abs_integral_eq_mul_integral {g : ℝ → ℝ} {c d : ℝ}
+    (hg : ∀ u ∈ uIcc c d, 0 ≤ g u) :
+    ∃ σ : ℝ, |σ| = 1 ∧ ∀ u ∈ uIcc c d, |∫ v in c..u, g v| = σ * ∫ v in c..u, g v := by
+  rcases le_total c d with h | h
+  · refine ⟨1, abs_one, fun u hu ↦ ?_⟩
+    rw [uIcc_of_le h] at hu hg
+    rw [one_mul, abs_of_nonneg (intervalIntegral.integral_nonneg hu.1 fun v hv ↦
+      hg v ⟨hv.1, hv.2.trans hu.2⟩)]
+  · refine ⟨-1, by simp, fun u hu ↦ ?_⟩
+    rw [uIcc_of_ge h] at hu hg
+    rw [neg_one_mul, abs_of_nonpos]
+    rw [intervalIntegral.integral_symm, neg_nonpos]
+    exact intervalIntegral.integral_nonneg hu.2 fun v hv ↦ hg v ⟨hu.1.trans hv.1, hv.2⟩
+
+/-- **Chain rule along a primitive.** For `g` interval integrable on `c..d`, with primitive
+`G s = ∫ u in c..s, g u`, and `φ : ℝ → ℝ` of class `C¹`,
+`∫ s in c..d, g s * φ' (G s) = φ (G d) - φ 0`, whatever the order of `c` and `d`. -/
+theorem IntervalIntegrable.integral_mul_deriv_integral {g : ℝ → ℝ} {c d : ℝ}
+    (hg : IntervalIntegrable g volume c d) {φ : ℝ → ℝ} (hφ : ContDiff ℝ 1 φ) :
+    ∫ s in c..d, g s * deriv φ (∫ u in c..s, g u) = φ (∫ u in c..d, g u) - φ 0 := by
+  have h := (hg.absolutelyContinuousOnInterval_intervalIntegral
+    left_mem_uIcc).integral_fderiv_apply_eq_sub (V := g) ?_ hφ
+  · rw [intervalIntegral.integral_same] at h
+    rw [← h]
+    refine intervalIntegral.integral_congr fun s _ ↦ ?_
+    rw [← fderiv_apply_one_eq_deriv, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+  · filter_upwards [hg.ae_hasDerivAt_integral] with s hs hsI
+    exact hs (uIoc_subset_uIcc hsI) c left_mem_uIcc
+
 /-- For `g` interval integrable on `c..d`, with primitive `G s = ∫ u in c..s, g u`, the integral
 of `g * G ^ k` over `c..d` is `G d ^ (k + 1) / (k + 1)`, whatever the order of `c` and `d`. This
 is the finite-interval form of `MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`;
@@ -284,21 +322,37 @@ coefficients. -/
 theorem IntervalIntegrable.integral_mul_pow_integral {g : ℝ → ℝ} {c d : ℝ}
     (hg : IntervalIntegrable g volume c d) (k : ℕ) :
     ∫ s in c..d, g s * (∫ u in c..s, g u) ^ k = (∫ u in c..d, g u) ^ (k + 1) / (k + 1) := by
-  set G : ℝ → ℝ := fun s ↦ ∫ u in c..s, g u
-  have hpow : AbsolutelyContinuousOnInterval (fun s ↦ G s ^ (k + 1)) c d :=
-    (hg.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc).comp_of_contDiffAt
-      (φ := fun x : ℝ ↦ x ^ (k + 1)) fun _ _ ↦ (contDiff_id.pow _).contDiffAt
-  have hderiv : ∀ᵐ s, s ∈ uIoc c d →
-      deriv (fun s ↦ G s ^ (k + 1)) s = (k + 1) * (g s * G s ^ k) := by
-    filter_upwards [hg.ae_hasDerivAt_integral] with s hs hsI
-    rw [((hs (uIoc_subset_uIcc hsI) c left_mem_uIcc).fun_pow (k + 1)).deriv]
+  have hd (x : ℝ) : deriv (fun x : ℝ ↦ x ^ (k + 1) / (k + 1)) x = x ^ k := by
+    simp only [deriv_div_const, deriv_pow_field]
+    field_simp
     push_cast
     ring
-  have h := hpow.integral_deriv_eq_sub
-  rw [intervalIntegral.integral_congr_ae hderiv, intervalIntegral.integral_const_mul] at h
-  simp only [G, intervalIntegral.integral_same, zero_pow k.succ_ne_zero, sub_zero] at h
-  rw [← h]
-  field_simp
+  simpa [hd] using hg.integral_mul_deriv_integral (φ := fun x : ℝ ↦ x ^ (k + 1) / (k + 1))
+    ((contDiff_id.pow (k + 1)).div_const _)
+
+/-- For `g ≥ 0` interval integrable on `c..d`, with primitive `G u = ∫ v in c..u, g v`,
+`|∫ u in c..d, g u * exp |G u|| = exp |G d| - 1`, whatever the order of `c` and `d`. This gives
+the exponential bound for linear equations with integrable coefficients. -/
+theorem IntervalIntegrable.abs_integral_mul_exp_abs_integral {g : ℝ → ℝ} {c d : ℝ}
+    (hg : IntervalIntegrable g volume c d) (hg₀ : ∀ u ∈ uIcc c d, 0 ≤ g u) :
+    |∫ u in c..d, g u * Real.exp (|∫ v in c..u, g v|)| = Real.exp |∫ v in c..d, g v| - 1 := by
+  obtain ⟨σ, hσ, hG⟩ := intervalIntegral.exists_abs_integral_eq_mul_integral hg₀
+  have hσσ : σ * σ = 1 := by rw [← abs_mul_abs_self, hσ, one_mul]
+  have hd (x : ℝ) : deriv (fun x : ℝ ↦ Real.exp (σ * x)) x = σ * Real.exp (σ * x) := by
+    rw [(((hasDerivAt_id' x).const_mul σ).exp).deriv]
+    simp [mul_comm]
+  have h := hg.integral_mul_deriv_integral (φ := fun x ↦ Real.exp (σ * x))
+    (contDiff_const.mul contDiff_id).exp
+  simp only [hd, mul_zero, Real.exp_zero] at h
+  rw [intervalIntegral.integral_congr (g := fun u ↦ g u * Real.exp (σ * ∫ v in c..u, g v))
+    fun u hu ↦ by simp only [hG u hu]]
+  have h' : ∫ u in c..d, g u * Real.exp (σ * ∫ v in c..u, g v) =
+      σ * (Real.exp (σ * ∫ v in c..d, g v) - 1) := by
+    rw [← h, ← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr fun u _ ↦ ?_
+    linear_combination (-(g u * Real.exp (σ * ∫ v in c..u, g v))) * hσσ
+  rw [h', hG d right_mem_uIcc, abs_mul, hσ, one_mul,
+    abs_of_nonneg (sub_nonneg.2 (Real.one_le_exp (by rw [← hG d right_mem_uIcc]; positivity)))]
 
 /-- A continuous curve with an integrable derivative outside a countable exceptional set is
 absolutely continuous on its parameter interval. -/

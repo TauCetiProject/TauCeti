@@ -10,6 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # The propagator of a linear equation with an integrable coefficient
@@ -35,21 +36,26 @@ so that `N_P(t, s) y` is the value at `t` of the Carathéodory solution of `x' =
   solves `x t = y + ∫ r in s..t, P r (x r)`, and every continuous solution is of this form.
 * `TauCeti.propagator_self`, `TauCeti.propagator_comp_propagator`: `N_P(t, t) = 1` and the cocycle
   identity `N_P(t, r) N_P(r, s) = N_P(t, s)`, so that `N_P(t, s)` is invertible with inverse
-  `N_P(s, t)` (`TauCeti.isUnit_propagator`).
+  `N_P(s, t)` (`TauCeti.isUnit_propagator`, `TauCeti.ring_inverse_propagator`).
 * `TauCeti.norm_propagator_le`, `TauCeti.norm_propagator_sub_one_le`:
   `‖N_P(t, s)‖ ≤ exp |∫ r in s..t, ‖P r‖|` and `‖N_P(t, s) - 1‖ ≤ exp |∫ r in s..t, ‖P r‖| - 1`.
 * `TauCeti.continuousOn_propagator`: `(t, s) ↦ N_P(t, s)` is continuous on `[a, b]²` in the
   operator norm.
+* `TauCeti.absolutelyContinuousOnInterval_propagator_left`,
+  `TauCeti.ae_hasDerivAt_propagator_left`: `t ↦ N_P(t, s)` is absolutely continuous, with
+  derivative `P(t) N_P(t, s)` at almost every `t`.
 * `TauCeti.ae_hasDerivAt_propagator_right`: `s ↦ N_P(t, s)` has derivative `-N_P(t, s) P(s)` at
   almost every `s`.
 * `TauCeti.propagator_congr_ae`: the propagator depends only on `P` almost everywhere on the
   interval between `s` and `t`.
-* `TauCeti.propagator_const`: for a constant coefficient `A`, `N_P(t, s) = exp ((t - s) • A)`.
+* `TauCeti.propagator_const`, `TauCeti.propagator_zero`: for a constant coefficient `A`,
+  `N_P(t, s) = exp ((t - s) • A)`; for `P = 0`, `N_P(t, s) = 1`.
 
 ## Implementation notes
 
 Existence and uniqueness for the operator equation are the linear Carathéodory theorem in the
-Banach space `E →L[𝕜] E`, with the real-linear coefficient `X ↦ P r ∘L X`. The scalars `𝕜` enter
+Banach space `E →L[𝕜] E`, with the real-linear coefficient `X ↦ P r ∘L X`, that is
+`ContinuousLinearMap.mul ℝ (E →L[𝕜] E) (P r)`. The scalars `𝕜` enter
 only through `P`: the integrals are over `ℝ`, so `E` carries compatible real and `𝕜` structures.
 
 ## References
@@ -70,25 +76,20 @@ variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*}
 open scoped Classical in
 /-- The propagator `N_P(t, s)` of the linear equation `x' = P(t) x`: the value at `t` of the
 continuous solution on the interval between `s` and `t` of the operator equation
-`N r = 1 + ∫ u in s..r, P u ∘L N u`. When `P` is integrable on that interval the solution exists
-and is unique (`TauCeti.propagator_eq_of_forall_mem_Icc`); otherwise the value is unspecified. -/
+`N r = 1 + ∫ u in s..r, P u ∘L N u`. When `E` is complete and `P` is integrable on that interval,
+the solution exists (`TauCeti.propagator_eq_one_add_integral`,
+`TauCeti.continuousOn_propagator_left`) and is unique (`TauCeti.propagator_eq_of_forall_mem_Icc`).
+When no such solution exists, the value is `1`. -/
 noncomputable def propagator (P : ℝ → E →L[𝕜] E) (t s : ℝ) : E →L[𝕜] E :=
   if h : ∃ N : ℝ → E →L[𝕜] E, ContinuousOn N (uIcc s t) ∧
       ∀ r ∈ uIcc s t, N r = 1 + ∫ u in s..r, P u ∘L N u then h.choose t else 1
 
 namespace Propagator
 
-/-- Left composition `A ↦ (X ↦ A ∘L X)`, as a real-linear map. -/
-private noncomputable def compLeft : (E →L[𝕜] E) →L[ℝ] (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E :=
-  (ContinuousLinearMap.restrictScalarsL 𝕜 (E →L[𝕜] E) (E →L[𝕜] E) ℝ ℝ).comp
-    ((ContinuousLinearMap.compL 𝕜 E E E).restrictScalars ℝ)
-
-private theorem compLeft_apply (A X : E →L[𝕜] E) : compLeft A X = A ∘L X := rfl
-
-private theorem picard_compLeft (P : ℝ → E →L[𝕜] E) (N : ℝ → E →L[𝕜] E) (s r : ℝ) :
-    ODE.picard (fun u Y ↦ compLeft (P u) Y + (fun _ ↦ (0 : E →L[𝕜] E)) u) s 1 N r =
-      1 + ∫ u in s..r, P u ∘L N u := by
-  simp [ODE.picard_apply, compLeft_apply]
+private theorem picard_mul (P : ℝ → E →L[𝕜] E) (N : ℝ → E →L[𝕜] E) (s r : ℝ) :
+    ODE.picard (fun u Y ↦ ContinuousLinearMap.mul ℝ (E →L[𝕜] E) (P u) Y +
+      (fun _ ↦ (0 : E →L[𝕜] E)) u) s 1 N r = 1 + ∫ u in s..r, P u ∘L N u := by
+  simp [ODE.picard_apply, ContinuousLinearMap.mul_def]
 
 private theorem picard_restrictScalars (P : ℝ → E →L[𝕜] E) (x : ℝ → E) (y : E) (s r : ℝ) :
     ODE.picard (fun u z ↦ (P u).restrictScalars ℝ z + (fun _ ↦ (0 : E)) u) s y x r =
@@ -107,8 +108,9 @@ private theorem exists_sol [CompleteSpace E] (hP : IntegrableOn P (Icc a b))
       ∀ r ∈ Icc a b, N r = 1 + ∫ u in s..r, P u ∘L N u := by
   obtain ⟨N, hN, h⟩ := exists_continuousOn_forall_mem_Icc_eq_picard hs
     (ContinuousLinearMap.integrable_comp (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ) (H := E →L[𝕜] E)
-      (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) compLeft hP) integrableOn_zero 1
-  exact ⟨N, hN, fun r hr ↦ (h r hr).trans (picard_compLeft P N s r)⟩
+      (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) (ContinuousLinearMap.mul ℝ (E →L[𝕜] E)) hP)
+    integrableOn_zero 1
+  exact ⟨N, hN, fun r hr ↦ (h r hr).trans (picard_mul P N s r)⟩
 
 private theorem eqOn_sol (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
     {N₁ N₂ : ℝ → E →L[𝕜] E} (hN₁ : ContinuousOn N₁ (Icc a b)) (hN₂ : ContinuousOn N₂ (Icc a b))
@@ -116,18 +118,21 @@ private theorem eqOn_sol (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
     (h₂ : ∀ r ∈ Icc a b, N₂ r = 1 + ∫ u in s..r, P u ∘L N₂ u) :
     EqOn N₁ N₂ (Icc a b) := by
   have hM := ContinuousLinearMap.integrable_comp (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ)
-    (H := E →L[𝕜] E) (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) compLeft hP
-  exact eqOn_of_forall_mem_Icc_eq_picard (M := fun u ↦ compLeft (P u))
+    (H := E →L[𝕜] E) (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) (ContinuousLinearMap.mul ℝ (E →L[𝕜] E))
+    hP
+  exact eqOn_of_forall_mem_Icc_eq_picard (M := fun u ↦ ContinuousLinearMap.mul ℝ _ (P u))
     (F := fun _ ↦ (0 : E →L[𝕜] E)) (x₀ := 1) hs hM integrableOn_zero hN₁ hN₂
-    (fun r hr ↦ (h₁ r hr).trans (picard_compLeft P N₁ s r).symm)
-    (fun r hr ↦ (h₂ r hr).trans (picard_compLeft P N₂ s r).symm)
+    (fun r hr ↦ (h₁ r hr).trans (picard_mul P N₁ s r).symm)
+    (fun r hr ↦ (h₂ r hr).trans (picard_mul P N₂ s r).symm)
 
 private theorem intervalIntegrable_comp (hP : IntegrableOn P (Icc a b)) (hab : a ≤ b)
     {N : ℝ → E →L[𝕜] E} (hN : ContinuousOn N (Icc a b)) :
     IntervalIntegrable (fun u ↦ P u ∘L N u) volume a b := by
   have hM := ContinuousLinearMap.integrable_comp (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ)
-    (H := E →L[𝕜] E) (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) compLeft hP
-  simpa [compLeft_apply] using intervalIntegrable_clm_apply_add (M := fun u ↦ compLeft (P u))
+    (H := E →L[𝕜] E) (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) (ContinuousLinearMap.mul ℝ (E →L[𝕜] E))
+    hP
+  simpa [ContinuousLinearMap.mul_def] using intervalIntegrable_clm_apply_add
+    (M := fun u ↦ ContinuousLinearMap.mul ℝ _ (P u))
     (F := fun _ ↦ (0 : E →L[𝕜] E)) hab hM integrableOn_zero hN
 
 private theorem intervalIntegrable_apply (hP : IntegrableOn P (Icc a b)) (hab : a ≤ b)
@@ -135,52 +140,6 @@ private theorem intervalIntegrable_apply (hP : IntegrableOn P (Icc a b)) (hab : 
     IntervalIntegrable (fun u ↦ P u (x u)) volume a b := by
   simpa using intervalIntegrable_clm_apply_add (M := fun u ↦ (P u).restrictScalars ℝ)
     (F := fun _ ↦ (0 : E)) hab (integrableOn_restrictScalars hP) integrableOn_zero hx
-
-/-- A solution of an integral equation from `s` also solves it from any other time `r`. -/
-private theorem eq_add_integral_of_mem {f x : ℝ → E} {c : E} {r : ℝ}
-    (hf : IntervalIntegrable f volume a b) (h : ∀ u ∈ Icc a b, x u = c + ∫ v in s..u, f v)
-    (hs : s ∈ Icc a b) (hr : r ∈ Icc a b) (ht : t ∈ Icc a b) :
-    x t = x r + ∫ v in r..t, f v := by
-  rw [h t ht, h r hr, add_assoc, integral_add_adjacent_intervals
-    (hf.mono_set (uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc hr)))
-    (hf.mono_set (uIcc_subset_uIcc (Icc_subset_uIcc hr) (Icc_subset_uIcc ht)))]
-
-/-- For `g ≥ 0` integrable between `s` and `t`, with primitive `G u = ∫ v in s..u, g v`,
-`|∫ u in s..t, g u * exp |G u|| = exp |G t| - 1`, whatever the order of `s` and `t`. -/
-private theorem abs_integral_mul_exp_abs_integral {g : ℝ → ℝ} {s t : ℝ}
-    (hg : IntervalIntegrable g volume s t) (hg₀ : ∀ u, 0 ≤ g u) :
-    |∫ u in s..t, g u * exp (|∫ v in s..u, g v|)| = exp |∫ v in s..t, g v| - 1 := by
-  set G : ℝ → ℝ := fun u ↦ ∫ v in s..u, g v
-  -- `G` has a constant sign `σ` between `s` and `t`.
-  obtain ⟨σ, hσ, hG⟩ : ∃ σ : ℝ, σ * σ = 1 ∧ ∀ u ∈ uIcc s t, |G u| = σ * G u := by
-    rcases le_total s t with h | h
-    · refine ⟨1, one_mul 1, fun u hu ↦ ?_⟩
-      rw [uIcc_of_le h] at hu
-      rw [one_mul, abs_of_nonneg (integral_nonneg hu.1 fun v _ ↦ hg₀ v)]
-    · refine ⟨-1, by norm_num, fun u hu ↦ ?_⟩
-      rw [uIcc_of_ge h] at hu
-      rw [neg_one_mul, abs_of_nonpos]
-      simp only [G]
-      rw [integral_symm, neg_nonpos]
-      exact integral_nonneg hu.2 fun v _ ↦ hg₀ v
-  have hφ : AbsolutelyContinuousOnInterval (fun u ↦ exp (σ * G u)) s t :=
-    (hg.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc).comp_of_contDiffAt
-      (φ := fun x : ℝ ↦ exp (σ * x)) fun _ _ ↦ (contDiff_const.mul contDiff_id).exp.contDiffAt
-  have hderiv : ∀ᵐ u, u ∈ uIoc s t →
-      deriv (fun u ↦ exp (σ * G u)) u = σ * (g u * exp (σ * G u)) := by
-    filter_upwards [hg.ae_hasDerivAt_integral] with u hu huI
-    rw [(((hu (uIoc_subset_uIcc huI) s left_mem_uIcc).const_mul σ).exp).deriv]
-    ring
-  have h := hφ.integral_deriv_eq_sub
-  rw [integral_congr_ae hderiv, intervalIntegral.integral_const_mul] at h
-  have h' : ∫ u in s..t, g u * exp |G u| = σ * (exp (σ * G t) - 1) := by
-    have hGs : G s = 0 := integral_same
-    rw [hGs, mul_zero, exp_zero] at h
-    rw [integral_congr (g := fun u ↦ g u * exp (σ * G u)) fun u hu ↦ by simp only [hG u hu]]
-    linear_combination σ * h - (∫ u in s..t, g u * exp (σ * G u)) * hσ
-  rw [h', ← hG t right_mem_uIcc, abs_mul, show |σ| = 1 by
-    nlinarith [abs_mul_abs_self σ, abs_nonneg σ], one_mul,
-    abs_of_nonneg (sub_nonneg.2 (one_le_exp (abs_nonneg _)))]
 
 end Propagator
 
@@ -230,6 +189,13 @@ theorem propagator_eq_of_forall_mem_Icc (hP : IntegrableOn P (Icc a b)) (hs : s 
   exact eqOn_sol (hP.mono_set hsub) left_mem_uIcc hex.choose_spec.1 (hN.mono hsub)
     hex.choose_spec.2 (fun r hr ↦ h r (hsub hr)) right_mem_uIcc
 
+/-- **Degenerate coefficient.** For `P = 0`, `N_P(t, s) = 1`. -/
+@[simp]
+theorem propagator_zero (t s : ℝ) : propagator (0 : ℝ → E →L[𝕜] E) t s = 1 :=
+  propagator_eq_of_forall_mem_Icc (P := fun _ ↦ 0) (a := min s t) (b := max s t)
+    continuousOn_const.integrableOn_Icc ⟨min_le_left _ _, le_max_left _ _⟩
+    ⟨min_le_right _ _, le_max_right _ _⟩ continuousOn_const fun r _ ↦ by simp
+
 variable [CompleteSpace E]
 
 /-- The propagator `N_P(t, s)` is continuous in `t ∈ [a, b]` in the operator norm. -/
@@ -259,7 +225,7 @@ theorem propagator_apply_eq_add_integral (hP : IntegrableOn P (Icc a b)) (hs : s
   conv_lhs => rw [propagator_eq_one_add_integral hP hs ht]
   rw [add_apply, one_apply_eq_self,
     ContinuousLinearMap.intervalIntegral_apply hI]
-  rfl
+  simp only [ContinuousLinearMap.comp_apply]
 
 /-- **Solutions are given by the propagator.** A curve `x` continuous on `[a, b]` with
 `x r = x s + ∫ u in s..r, P u (x u)` for `r ∈ [a, b]` satisfies `x t = N_P(t, s) (x s)`. -/
@@ -278,12 +244,16 @@ theorem propagator_comp_propagator (hP : IntegrableOn P (Icc a b)) (hr : r ∈ I
     (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
     propagator P t r ∘L propagator P r s = propagator P t s := by
   ext y
-  set x : ℝ → E := fun u ↦ propagator P u s y
-  have hx : ContinuousOn x (Icc a b) :=
+  have hx : ContinuousOn (fun u ↦ propagator P u s y) (Icc a b) :=
     (continuousOn_propagator_left hP hs).clm_apply continuousOn_const
-  have h (u : ℝ) (hu : u ∈ Icc a b) : x u = x r + ∫ v in r..u, P v (x v) :=
-    eq_add_integral_of_mem (intervalIntegrable_apply hP (hs.1.trans hs.2) hx)
-      (fun v hv ↦ propagator_apply_eq_add_integral hP hs hv y) hs hr hu
+  have hI := intervalIntegrable_apply hP (hs.1.trans hs.2) hx
+  -- Rebase the vector equation of `u ↦ N_P(u, s) y` from `s` to `r`.
+  have h (u : ℝ) (hu : u ∈ Icc a b) : propagator P u s y =
+      propagator P r s y + ∫ v in r..u, P v (propagator P v s y) := by
+    rw [propagator_apply_eq_add_integral hP hs hu y, propagator_apply_eq_add_integral hP hs hr y,
+      add_assoc, integral_add_adjacent_intervals
+        (hI.mono_set (uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc hr)))
+        (hI.mono_set (uIcc_subset_uIcc (Icc_subset_uIcc hr) (Icc_subset_uIcc hu)))]
   exact (eq_propagator_apply hP hr ht hx h).symm
 
 /-- `N_P(s, t)` is a left inverse of `N_P(t, s)`. -/
@@ -291,11 +261,30 @@ theorem propagator_comp_propagator_swap (hP : IntegrableOn P (Icc a b)) (hs : s 
     (ht : t ∈ Icc a b) : propagator P s t ∘L propagator P t s = 1 := by
   rw [propagator_comp_propagator hP ht hs hs, propagator_self]
 
-/-- The propagator `N_P(t, s)` is invertible, with inverse `N_P(s, t)`. -/
+/-- The propagator `N_P(t, s)` as a unit, with inverse `N_P(s, t)`. -/
+private noncomputable def propagatorUnit (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) : (E →L[𝕜] E)ˣ :=
+  ⟨propagator P t s, propagator P s t, propagator_comp_propagator_swap hP ht hs,
+    propagator_comp_propagator_swap hP hs ht⟩
+
+private theorem coe_propagatorUnit (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) : (propagatorUnit hP hs ht : E →L[𝕜] E) = propagator P t s :=
+  rfl
+
+private theorem coe_inv_propagatorUnit (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) : ((propagatorUnit hP hs ht)⁻¹ : (E →L[𝕜] E)ˣ) = propagator P s t :=
+  rfl
+
+/-- The propagator `N_P(t, s)` is invertible, with inverse `N_P(s, t)`
+(`TauCeti.ring_inverse_propagator`). -/
 theorem isUnit_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
     (ht : t ∈ Icc a b) : IsUnit (propagator P t s) :=
-  isUnit_iff_exists.2 ⟨propagator P s t, propagator_comp_propagator_swap hP ht hs,
-    propagator_comp_propagator_swap hP hs ht⟩
+  (propagatorUnit hP hs ht).isUnit
+
+/-- The inverse of the propagator `N_P(t, s)` is `N_P(s, t)`. -/
+theorem ring_inverse_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) : Ring.inverse (propagator P t s) = propagator P s t :=
+  Ring.inverse_unit (propagatorUnit hP hs ht)
 
 /-- **The norm bound.** `‖N_P(t, s)‖ ≤ exp |∫ u in s..t, ‖P u‖|` for `s, t ∈ [a, b]`. -/
 theorem norm_propagator_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
@@ -308,20 +297,10 @@ theorem norm_propagator_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
       (picard_restrictScalars P _ y s r).symm) ht
   simpa [mul_comm] using this
 
-/-- The propagator `N_P(t, s)` as a unit, with inverse `N_P(s, t)`. -/
-private noncomputable def propagatorUnit (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
-    (ht : t ∈ Icc a b) : (E →L[𝕜] E)ˣ :=
-  ⟨propagator P t s, propagator P s t, propagator_comp_propagator_swap hP ht hs,
-    propagator_comp_propagator_swap hP hs ht⟩
-
-private theorem ring_inverse_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
-    (ht : t ∈ Icc a b) : Ring.inverse (propagator P t s) = propagator P s t :=
-  Ring.inverse_unit (propagatorUnit hP hs ht)
-
-/-- The propagator `N_P(t, s)` is continuous in `s ∈ [a, b]` in the operator norm: on `[a, b]`,
-`N_P(t, s) = N_P(t, a) N_P(s, a)⁻¹`, and inversion is continuous on the units. -/
+/-- The propagator `N_P(t, s)` is continuous in `s ∈ [a, b]` in the operator norm. -/
 theorem continuousOn_propagator_right (hP : IntegrableOn P (Icc a b)) (ht : t ∈ Icc a b) :
     ContinuousOn (fun s ↦ propagator P t s) (Icc a b) := by
+  -- On `[a, b]`, `N_P(t, s) = N_P(t, a) N_P(s, a)⁻¹`, and inversion is continuous on the units.
   intro s₀ hs₀
   have ha : a ∈ Icc a b := ⟨le_rfl, hs₀.1.trans hs₀.2⟩
   have hinv : ContinuousWithinAt (fun s ↦ Ring.inverse (propagator P s a)) (Icc a b) s₀ :=
@@ -381,38 +360,48 @@ theorem norm_propagator_sub_one_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ I
   have hsub : uIcc s t ⊆ Icc a b := uIcc_subset_Icc hs ht
   have hPi : IntervalIntegrable (fun u ↦ ‖P u‖) volume s t :=
     IntegrableOn.intervalIntegrable (hP.mono_set hsub).norm
-  have hf : IntervalIntegrable (fun u ↦ ‖P u ∘L propagator P u s‖) volume s t :=
-    ((intervalIntegrable_comp hP (hs.1.trans hs.2) (continuousOn_propagator_left hP hs)).mono_set
-      (uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc ht))).norm
   have hg : IntervalIntegrable (fun u ↦ ‖P u‖ * exp |∫ v in s..u, ‖P v‖|) volume s t :=
     hPi.mul_continuousOn
       (continuousOn_primitive_interval (hP.mono_set hsub).norm).abs.rexp
   rw [propagator_eq_one_add_integral hP hs ht, add_sub_cancel_left,
-    ← abs_integral_mul_exp_abs_integral hPi fun _ ↦ norm_nonneg _]
-  refine norm_integral_le_abs_integral_norm.trans ?_
-  rw [abs_integral_eq_abs_integral_uIoc, abs_integral_eq_abs_integral_uIoc,
-    abs_of_nonneg (setIntegral_nonneg measurableSet_uIoc fun _ _ ↦ norm_nonneg _),
-    abs_of_nonneg (setIntegral_nonneg measurableSet_uIoc fun _ _ ↦
-      mul_nonneg (norm_nonneg _) (exp_pos _).le)]
-  refine setIntegral_mono_on hf.def' hg.def' measurableSet_uIoc fun u hu ↦ ?_
+    ← hPi.abs_integral_mul_exp_abs_integral fun _ _ ↦ norm_nonneg _]
+  refine norm_integral_le_abs_of_norm_le ((ae_restrict_mem measurableSet_uIoc).mono
+    fun u hu ↦ ?_) hg
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left
     (norm_propagator_le hP hs (hsub (uIoc_subset_uIcc hu))) (norm_nonneg _))
+
+/-- The propagator `N_P(t, s)` is absolutely continuous in `t` on `[a, b]`. -/
+theorem absolutelyContinuousOnInterval_propagator_left (hP : IntegrableOn P (Icc a b))
+    (hs : s ∈ Icc a b) : AbsolutelyContinuousOnInterval (fun t ↦ propagator P t s) a b := by
+  have hM := ContinuousLinearMap.integrable_comp (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ)
+    (H := E →L[𝕜] E) (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) (ContinuousLinearMap.mul ℝ (E →L[𝕜] E))
+    hP
+  exact absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard
+    (M := fun u ↦ ContinuousLinearMap.mul ℝ _ (P u)) (F := fun _ ↦ (0 : E →L[𝕜] E)) (x₀ := 1) hs
+    hM integrableOn_zero (continuousOn_propagator_left hP hs) fun r hr ↦
+      (propagator_eq_one_add_integral hP hs hr).trans (picard_mul P _ s r).symm
+
+/-- **The derivative in the final time.** `t ↦ N_P(t, s)` has derivative `P(t) N_P(t, s)` at
+almost every `t ∈ (a, b)`. -/
+theorem ae_hasDerivAt_propagator_left (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) :
+    ∀ᵐ t, t ∈ Ioo a b → HasDerivAt (fun t ↦ propagator P t s) (P t ∘L propagator P t s) t := by
+  have hM := ContinuousLinearMap.integrable_comp (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ)
+    (H := E →L[𝕜] E) (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) (ContinuousLinearMap.mul ℝ (E →L[𝕜] E))
+    hP
+  filter_upwards [ae_hasDerivAt_of_forall_mem_Icc_eq_picard
+    (M := fun u ↦ ContinuousLinearMap.mul ℝ _ (P u)) (F := fun _ ↦ (0 : E →L[𝕜] E)) (x₀ := 1) hs
+    hM integrableOn_zero (continuousOn_propagator_left hP hs) fun r hr ↦
+      (propagator_eq_one_add_integral hP hs hr).trans (picard_mul P _ s r).symm] with t hd ht
+  simpa [ContinuousLinearMap.mul_def] using hd ht
 
 /-- **The derivative in the initial time.** `s ↦ N_P(t, s)` has derivative `-N_P(t, s) P(s)` at
 almost every `s ∈ (a, b)`. -/
 theorem ae_hasDerivAt_propagator_right (hP : IntegrableOn P (Icc a b)) (ht : t ∈ Icc a b) :
     ∀ᵐ s, s ∈ Ioo a b → HasDerivAt (fun s ↦ propagator P t s) (-(propagator P t s ∘L P s)) s := by
   have ha : a ∈ Icc a b := ⟨le_rfl, ht.1.trans ht.2⟩
-  have hM := ContinuousLinearMap.integrable_comp (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ)
-    (H := E →L[𝕜] E) (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) compLeft hP
-  have hd := ae_hasDerivAt_of_forall_mem_Icc_eq_picard (M := fun u ↦ compLeft (P u))
-    (F := fun _ ↦ (0 : E →L[𝕜] E)) (x₀ := 1) ha hM integrableOn_zero
-    (continuousOn_propagator_left hP ha) fun r hr ↦
-      (propagator_eq_one_add_integral hP ha hr).trans (picard_compLeft P _ a r).symm
-  filter_upwards [hd] with s hds hs
+  filter_upwards [ae_hasDerivAt_propagator_left hP ha] with s hds hs
   have hs' : s ∈ Icc a b := Ioo_subset_Icc_self hs
-  have hds : HasDerivAt (fun r ↦ propagator P r a) (P s ∘L propagator P s a) s := by
-    simpa [compLeft_apply] using hds hs
+  replace hds := hds hs
   -- Differentiate `N_P(t, a) N_P(s, a)⁻¹`.
   have h := (((ContinuousLinearMap.compL 𝕜 E E E (propagator P t a)).restrictScalars ℝ).hasFDerivAt
     |>.comp_hasDerivAt s <| ((hasFDerivAt_ringInverse (𝕜 := 𝕜)
@@ -423,8 +412,7 @@ theorem ae_hasDerivAt_propagator_right (hP : IntegrableOn P (Icc a b)) (ht : t �
       propagator_comp_propagator hP ha hs' ht
     simp only [ContinuousLinearMap.coe_restrictScalars', neg_apply,
       ContinuousLinearMap.mulLeftRight_apply, ContinuousLinearMap.compL_apply,
-      ← ContinuousLinearMap.mul_def]
-    change propagator P t a * -(propagator P a s * (P s * propagator P s a) * propagator P a s) = _
+      coe_inv_propagatorUnit, ← ContinuousLinearMap.mul_def]
     rw [show propagator P t a * -(propagator P a s * (P s * propagator P s a) * propagator P a s) =
       -(propagator P t a * propagator P a s * P s * (propagator P s a * propagator P a s)) by
         noncomm_ring, h₁, h₂, mul_one]
