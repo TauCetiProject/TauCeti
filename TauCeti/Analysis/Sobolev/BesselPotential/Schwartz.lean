@@ -137,6 +137,14 @@ theorem coeFn_toLp_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
   rw [toLp_toBesselPotentialSpaceCLM]
   exact coeFn_toLp _ p volume
 
+/-- The `H^{s,p}` norm of a Schwartz function `u` is the `Lᵖ` norm of the Schwartz function
+`J^s u`. -/
+theorem norm_toBesselPotentialSpaceCLM_eq_eLpNorm (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM s p u‖ =
+      (eLpNorm (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u) p
+        volume).toReal := by
+  rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM, norm_toLp]
+
 @[simp]
 theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     (toBesselPotentialSpaceCLM s p u).toDistr = (u : 𝓢'(E, F)) := by
