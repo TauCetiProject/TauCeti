@@ -10,23 +10,31 @@ public import Mathlib.RingTheory.HahnSeries.Multiplication
 /-!
 # Powers of Hahn series and compatibility with coefficient scalars
 
-Over a domain, taking a power multiplies the order and raises the leading coefficient to that
-power. These formulas detect whether a leading pole term can be cancelled by a power.
+Over a reduced semiring, taking a power multiplies `orderTop` and raises the leading coefficient
+to that power. Here `orderTop` takes the value `⊤` on the zero series, so the `orderTop` formula
+holds for the zero series too. These formulas detect whether a leading pole term can be cancelled
+by a power.
 
-The order formula allows semiring coefficients; Mathlib's `HahnSeries.addVal` requires ring
-coefficients, so its `AddValuation.map_pow` does not cover this generality.
+The `orderTop` formula allows semiring coefficients; Mathlib's `HahnSeries.addVal` requires
+coefficients in a domain that is a ring, so its `AddValuation.map_pow` does not cover this
+generality.
 
 The formulas are `HahnSeries.leadingCoeff_pow` and `HahnSeries.orderTop_pow`, both
-simplification lemmas, companions of Mathlib's `HahnSeries.order_pow`.
+simplification lemmas, companions of Mathlib's `HahnSeries.order_pow`. Mathlib's
+`HahnSeries.order_pow`, `HahnSeries.leadingCoeff_mul` and `HahnSeries.orderTop_mul` assume no zero
+divisors; for powers it suffices that the coefficients are reduced.
 
 This file also records that coefficientwise scalar multiplication associates and commutes with
-multiplication of Hahn series (`HahnSeries.isScalarTower_self` and
-`HahnSeries.smulCommClass_self`), for any scalars acting on the coefficients compatibly with their
-multiplication, as Mathlib does for monoid algebras. Mathlib provides this for the action of Hahn
-series on Hahn modules, and for commutative scalars through the algebra structure; but the default
-algebra structure on Laurent series `R⸨X⸩` comes from `R⟦X⟧` and is not definitionally the
-coefficientwise one, so for instance the `R⸨X⸩`-module structure on `R`-derivations of `R⸨X⸩`
-needs these instances.
+multiplication of Hahn series (`TauCeti.hahnSeries_isScalarTower` and
+`TauCeti.hahnSeries_smulCommClass`), for any scalars acting on the coefficients compatibly with
+their multiplication, following Mathlib's `MonoidAlgebra.isScalarTower_self` and
+`MonoidAlgebra.smulCommClass_self`. Mathlib provides this for the action of Hahn series on Hahn
+modules, and for commutative scalars through the algebra structure; but the default algebra
+structure on Laurent series `R⸨X⸩` comes from `R⟦X⟧` and is not definitionally the
+coefficientwise one. For instance, the `R⸨X⸩`-module structure on `R`-derivations of `R⸨X⸩`
+needs `TauCeti.hahnSeries_smulCommClass` for the coefficientwise action of `R`, while
+`TauCeti.hahnSeries_isScalarTower` moves that action across products:
+`r • (x * y) = (r • x) * y`.
 
 Finally, `HahnModule.of_symm_smul'` reads the coefficientwise action of `R` on `HahnModule Γ R V`
 through `HahnModule.of`, for the action instance underlying the `R`-module structure.
@@ -48,7 +56,7 @@ of nonnegative exponent, and in particular the constant `1`, have nonnegative or
 
 public section
 
-namespace HahnSeries
+namespace TauCeti
 
 section Scalar
 
@@ -56,41 +64,58 @@ variable {Γ R S : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelA
   [NonUnitalNonAssocSemiring R] [DistribSMul S R]
 
 /-- Coefficientwise scalar multiplication associates with multiplication of Hahn series. -/
-instance isScalarTower_self [IsScalarTower S R R] :
+instance hahnSeries_isScalarTower [IsScalarTower S R R] :
     IsScalarTower S (HahnSeries Γ R) (HahnSeries Γ R) where
   smul_assoc s x y := by
     ext a
-    rw [smul_eq_mul, smul_eq_mul, coeff_mul_left' x.isPWO_support (support_smul_subset s x)]
-    simp only [coeff_smul, coeff_mul, Finset.smul_sum, smul_mul_assoc]
+    rw [smul_eq_mul, smul_eq_mul,
+      HahnSeries.coeff_mul_left' x.isPWO_support (HahnSeries.support_smul_subset s x)]
+    simp only [HahnSeries.coeff_smul, HahnSeries.coeff_mul, Finset.smul_sum, smul_mul_assoc]
 
 /-- Coefficientwise scalar multiplication commutes with multiplication of Hahn series. -/
-instance smulCommClass_self [SMulCommClass S R R] :
+instance hahnSeries_smulCommClass [SMulCommClass S R R] :
     SMulCommClass S (HahnSeries Γ R) (HahnSeries Γ R) where
   smul_comm s x y := by
     ext a
-    rw [smul_eq_mul, smul_eq_mul, coeff_mul_right' y.isPWO_support (support_smul_subset s y)]
-    simp only [coeff_smul, coeff_mul, Finset.smul_sum, mul_smul_comm]
+    rw [smul_eq_mul, smul_eq_mul,
+      HahnSeries.coeff_mul_right' y.isPWO_support (HahnSeries.support_smul_subset s y)]
+    simp only [HahnSeries.coeff_smul, HahnSeries.coeff_mul, Finset.smul_sum, mul_smul_comm]
 
 end Scalar
 
-variable {Γ R : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddMonoid Γ]
-  [Semiring R] [NoZeroDivisors R]
+end TauCeti
 
-/-- The leading coefficient of a power is the power of the leading coefficient. -/
+namespace HahnSeries
+
+variable {Γ R : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddMonoid Γ]
+  [Semiring R] [IsReduced R]
+
+/-- Over a reduced semiring, the leading coefficient of a power is the power of the leading
+coefficient. -/
 @[simp]
 theorem leadingCoeff_pow (x : HahnSeries Γ R) (n : ℕ) :
     (x ^ n).leadingCoeff = x.leadingCoeff ^ n := by
   induction n with
   | zero => simp
-  | succ n ih => simp [pow_succ, ih]
+  | succ n ih =>
+    by_cases hx : x = 0
+    · simp [hx]
+    have h : x.leadingCoeff ^ (n + 1) ≠ 0 := pow_ne_zero _ (leadingCoeff_ne_zero.mpr hx)
+    rw [pow_succ, leadingCoeff_mul_of_ne_zero (by rwa [ih, ← pow_succ]), ih, pow_succ]
 
-/-- The order of a power is the corresponding multiple of the order, including at zero. -/
+/-- Over a nontrivial reduced semiring, `orderTop` of a power is the corresponding multiple of
+`orderTop`. This includes the zero series, whose `orderTop` is `⊤`. -/
 @[simp]
 theorem orderTop_pow [Nontrivial R] (x : HahnSeries Γ R) (n : ℕ) :
     (x ^ n).orderTop = n • x.orderTop := by
   induction n with
   | zero => simp
-  | succ n ih => simp [pow_succ, ih, add_nsmul]
+  | succ n ih =>
+    by_cases hx : x = 0
+    · simp [hx, succ_nsmul]
+    have h : x.leadingCoeff ^ (n + 1) ≠ 0 := pow_ne_zero _ (leadingCoeff_ne_zero.mpr hx)
+    rw [pow_succ, orderTop_mul_of_ne_zero (by rwa [leadingCoeff_pow, ← pow_succ]), ih,
+      succ_nsmul]
 
 end HahnSeries
 
