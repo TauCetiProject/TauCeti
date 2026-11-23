@@ -28,6 +28,8 @@ open set, the iterated derivatives of order `m < n` of a `C^n` map are different
   `C²` at `x` is differentiable at `x`.
 * `ContDiffOn.differentiableOn_iteratedFDeriv_of_isOpen`: a map `C^n` on an open set has
   differentiable iterated derivatives of order `m < n` there.
+* `ContDiffOn.continuousOn_fderivWithin_of_inter`: the derivative within a set of unique
+  differentiability `s` of a `C¹` map on `s ∩ O`, for `O` open, is continuous on `s ∩ O`.
 -/
 
 public section
@@ -62,5 +64,13 @@ theorem ContDiffOn.differentiableOn_iteratedFDeriv_of_isOpen {m : ℕ} (hf : Con
     (hmn : m < n) (hs : IsOpen s) : DifferentiableOn 𝕜 (iteratedFDeriv 𝕜 m f) s :=
   (hf.differentiableOn_iteratedFDerivWithin hmn hs.uniqueDiffOn).congr fun _ hx ↦
     (iteratedFDerivWithin_of_isOpen m hs hx).symm
+
+/-- If `f` is `C¹` on the part `s ∩ O` of a set of unique differentiability `s` in an open set `O`,
+its derivative within `s` is continuous on `s ∩ O`. -/
+theorem ContDiffOn.continuousOn_fderivWithin_of_inter {O : Set E} (hf : ContDiffOn 𝕜 n f (s ∩ O))
+    (hs : UniqueDiffOn 𝕜 s) (hO : IsOpen O) (hn : 1 ≤ n) :
+    ContinuousOn (fderivWithin 𝕜 f s) (s ∩ O) :=
+  (hf.continuousOn_fderivWithin (hs.inter hO) hn).congr
+    fun _ hz ↦ (fderivWithin_inter (hO.mem_nhds hz.2)).symm
 
 end

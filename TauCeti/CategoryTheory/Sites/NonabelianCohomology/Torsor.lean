@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
+public import Mathlib.CategoryTheory.Sites.LocalProperties
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 
 /-!
@@ -35,8 +36,12 @@ relative to a fixed family of objects; here no covering is chosen.
   multiplication.
 * `CategoryTheory.Sheaf.Torsor.trivialHomEquiv`: morphisms from the trivial torsor to `P` are
   the global sections of `P`.
+* `CategoryTheory.Sheaf.Torsor.isoOfSection`: a section of `P` along a functor `u` identifies
+  the restrictions of `G` and of `P` along `u`.
 * `CategoryTheory.Sheaf.Torsor.exists_sections_eq_of_smul_invariant`: a `G`-invariant morphism
   from a torsor to a sheaf of sets is given by a global section.
+* `CategoryTheory.Sheaf.Torsor.isIso_of_bijective_app`: a morphism of sheaves of sets which is
+  bijective over every object over which a torsor has a section is an isomorphism.
 * `CategoryTheory.Sheaf.NonabelianH1 G`: the pointed set of isomorphism classes of `G`-torsors,
   with `NonabelianH1.mk`, `NonabelianH1.lift` and `NonabelianH1.mk_eq_mk_iff`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_eq_one_iff`: a torsor is trivial if and only if it has a
@@ -207,6 +212,29 @@ lemma trivialHomEquiv_symm_apply_hom_app (P : Torsor G) (s : P.sheaf.obj.section
     ((trivialHomEquiv P).symm s).hom.hom.app U g = g • s.val U := by
   rfl
 
+/-- A section `s` of a `G`-torsor `P` along a functor `u : D ⥤ C`, that is a family of sections
+`s d` of `P` over `u d` compatible with restriction, identifies `u.op ⋙ G` with `u.op ⋙ P`: a
+section `g` of `G` over `u d` goes to `g • s d`. For `u` the forgetful functor from a slice
+category, this says that a torsor with a section over an object is trivial over that object. -/
+noncomputable def isoOfSection {D : Type*} [Category D] (P : Torsor G) (u : D ⥤ C)
+    (s : ∀ d : D, P.sheaf.obj.obj (op (u.obj d)))
+    (hs : ∀ ⦃d d' : D⦄ (f : d ⟶ d'), P.sheaf.obj.map (u.map f).op (s d') = s d) :
+    u.op ⋙ G.obj ⋙ forget GrpCat ≅ u.op ⋙ P.sheaf.obj :=
+  NatIso.ofComponents
+    (fun d ↦ (Equiv.ofBijective (fun g : G.obj.obj (op (u.obj d.unop)) ↦ g • s d.unop)
+      ⟨P.smul_left_injective _, fun q ↦ MulAction.exists_smul_eq _ _ q⟩).toIso)
+    fun {d d'} f ↦ by
+      ext (g : G.obj.obj (op (u.obj d.unop)))
+      exact ((P.map_smul _ g (s d.unop)).trans (congrArg _ (hs f.unop))).symm
+
+/-- The isomorphism `isoOfSection` acts on the section `s d`. -/
+lemma isoOfSection_hom_app_apply {D : Type*} [Category D] (P : Torsor G) (u : D ⥤ C)
+    (s : ∀ d : D, P.sheaf.obj.obj (op (u.obj d)))
+    (hs : ∀ ⦃d d' : D⦄ (f : d ⟶ d'), P.sheaf.obj.map (u.map f).op (s d') = s d) (d : Dᵒᵖ)
+    (g : G.obj.obj (op (u.obj d.unop))) :
+    (P.isoOfSection u s hs).hom.app d g = g • s d.unop :=
+  (rfl)
+
 /-- If every group of sections of `G` is trivial, every `G`-torsor has a global section: its
 sections are subsingletons, and the local sections glue. -/
 lemma nonempty_sections_of_subsingleton (P : Torsor G) [∀ U, Subsingleton (G.obj.obj U)] :
@@ -235,6 +263,16 @@ lemma exists_sections_eq_of_smul_invariant (P : Torsor G) {F : Sheaf J (Type w)}
       exact key _ _)
     P.coversTop F.property
   exact ⟨s, fun ⟨U⟩ p ↦ (key p _).trans (hs ⟨U, ⟨p⟩⟩).symm⟩
+
+/-- A morphism of sheaves of sets which is bijective on sections over every object over which a
+`G`-torsor `P` has a section is an isomorphism, because these objects cover the site. -/
+lemma isIso_of_bijective_app (P : Torsor G) {F F' : Sheaf J (Type w)} (f : F ⟶ F')
+    (hf : ∀ U : C, Nonempty (P.sheaf.obj.obj (op U)) → Function.Bijective (f.hom.app (op U))) :
+    IsIso f :=
+  Sheaf.isIso_of_coversTop P.coversTop fun i ↦ by
+    rw [← ObjectProperty.isIso_hom_iff, NatTrans.isIso_iff_isIso_app]
+    rintro ⟨V⟩
+    exact (isIso_iff_bijective _).2 (hf V.left ⟨P.sheaf.obj.map V.hom.op i.property.some⟩)
 
 end Torsor
 

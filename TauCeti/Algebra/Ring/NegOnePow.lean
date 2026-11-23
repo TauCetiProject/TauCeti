@@ -28,6 +28,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   factor is replaced by a two-term correction, telescopes.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
+* `TauCeti.negOnePowCast_smul_mem`: the ground-ring signs preserve every additive subgroup.
 * `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
 * `Int.negOnePow_smul_negOnePow_smul`, `TauCeti.neg_one_pow_smul_neg_one_pow_smul`: the
   unit-valued sign and the power `(-1) ^ n` act as involutions.
@@ -99,6 +100,12 @@ variable {A : Type uA} [AddCommGroup A] [Module R A]
 theorem negOnePow_smul_eq_negOnePowCast_smul (e : ℤ) (a : A) :
     e.negOnePow • a = negOnePowCast R e • a := by
   rw [negOnePowCast, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
+
+/-- A ground-ring sign `(-1) ^ e` preserves every additive subgroup. -/
+theorem negOnePowCast_smul_mem {S : AddSubgroup A} (e : ℤ) {a : A} (ha : a ∈ S) :
+    negOnePowCast R e • a ∈ S := by
+  rw [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def]
+  exact S.zsmul_mem ha _
 
 /-- Additive homomorphisms between modules commute with the ground-ring signs `(-1) ^ e`. -/
 theorem map_negOnePowCast_smul {B F : Type*} [AddCommGroup B] [Module R B] [FunLike F A B]

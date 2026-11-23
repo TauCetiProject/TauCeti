@@ -42,6 +42,8 @@ to those of Mathlib's shift on cochain complexes.
 
 ## Main statements
 
+* `TauCeti.PeriodicComplex.XIsoOfEq_hom_comp_shiftFunctor_obj_d`: the terms of `K⟦k⟧` are those
+  of `K`, with the differentials multiplied by `(-1) ^ k`.
 * `Homotopy.comm_periodic_shift_neg_one`: the components of a null-homotopy of a morphism out of
   the shift by `-1`, read off on the unshifted complex.
 
@@ -153,6 +155,14 @@ lemma shiftFunctor_obj_d' (K : CochainComplex C (ZMod n)) (k : ℤ) (i j : ZMod 
 lemma shiftFunctor_obj_d_eq_zero {K : HomologicalComplex C (ComplexShape.up (ZMod n))}
     (hd : ∀ i j, K.d i j = 0) (k : ℤ) (i j : ZMod n) : (K⟦k⟧).d i j = 0 := by
   rw [shiftFunctor_obj_d', hd, smul_zero]
+
+/-- The identifications `K.X i' ≅ (K⟦k⟧).X i` for `i' = i + k` intertwine the differentials of
+`K` and of its shift `K⟦k⟧` up to the sign `(-1) ^ k`. -/
+lemma XIsoOfEq_hom_comp_shiftFunctor_obj_d (K : CochainComplex C (ZMod n)) (k : ℤ)
+    {i j i' j' : ZMod n} (hi : i' = i + k) (hj : j' = j + k) :
+    (K.XIsoOfEq hi).hom ≫ (K⟦k⟧).d i j = k.negOnePow • (K.d i' j' ≫ (K.XIsoOfEq hj).hom) := by
+  subst hi hj
+  simp
 
 @[simp]
 lemma shiftFunctorAdd_hom_app_f (K : CochainComplex C (ZMod n)) (k₁ k₂ : ℤ) (i : ZMod n) :

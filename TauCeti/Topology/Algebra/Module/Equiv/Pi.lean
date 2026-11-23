@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Topology.PiCurry
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Order.Interval.Set.Pi
@@ -15,7 +16,9 @@ import Mathlib.Order.Interval.Set.Pi
 # Continuous linear regrouping of coordinate families
 
 `ContinuousLinearEquiv.piOptionEquivProd` splits a dependent family indexed by `Option ι`
-into its `none` coordinate and its `some` coordinates. It supplies product coordinates
+into its `none` coordinate and its `some` coordinates, and
+`ContinuousLinearEquiv.piProdEquivPiOption` reassembles a family on `ι` paired with a
+distinguished coordinate into a family on `Option ι`. Both supply product coordinates
 for linear charts, with no finiteness or norm assumptions.
 
 The construction combines `LinearEquiv.piOptionEquivProd` with
@@ -23,7 +26,9 @@ The construction combines `LinearEquiv.piOptionEquivProd` with
 
 For Mathlib's `ContinuousLinearEquiv.sumPiEquivProdPi`, which splits a family indexed by `S ⊕ T`
 into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi_apply` and
-`ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse.
+`ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse, and
+`ContinuousLinearEquiv.piProdEquivPiSumUnique` identifies `(σ → M) × M` with `σ ⊕ τ → M` for any
+unique index type `τ`.
 `ContinuousLinearEquiv.negCoord` negates a single coordinate of a dependent product while leaving
 the remaining coordinates fixed; `TauCeti.image_single_add_negCoord_univ_pi`,
 `TauCeti.image_single_add_negCoord_Icc`, and `TauCeti.image_single_add_negCoord_pi_Ioo` record
@@ -65,6 +70,26 @@ def piOptionEquivProd : ((i : Option ι) → M i) ≃L[R] M none × ((i : ι) �
   funext i
   cases i <;> rfl
 
+/-- Identify a family indexed by `ι` paired with a distinguished coordinate as a family indexed by
+`Option ι`, placing the distinguished coordinate at `none`. -/
+def piProdEquivPiOption :
+    (((i : ι) → M (some i)) × M none) ≃L[R] ((i : Option ι) → M i) :=
+  (prodComm R ((i : ι) → M (some i)) (M none)).trans (piOptionEquivProd R).symm
+
+/-- Applying `piProdEquivPiOption` places the distinguished coordinate at `none` and the remaining
+coordinates at `some i`. -/
+@[simp] theorem piProdEquivPiOption_apply (q : ((i : ι) → M (some i)) × M none) :
+    piProdEquivPiOption R q = (fun i => match i with
+      | none => q.2
+      | some j => q.1 j) := by
+  funext i
+  cases i <;> rfl
+
+/-- The inverse of `piProdEquivPiOption` extracts the `some` coordinates and the `none`
+coordinate. -/
+@[simp] theorem piProdEquivPiOption_symm_apply (x : (i : Option ι) → M i) :
+    (piProdEquivPiOption R).symm x = (fun i => x (some i), x none) := (rfl)
+
 section SumPi
 
 variable {S T : Type*} {A : S ⊕ T → Type*} [∀ st, AddCommMonoid (A st)] [∀ st, Module R (A st)]
@@ -80,6 +105,28 @@ to `T`. -/
 @[simp] theorem sumPiEquivProdPi_symm_apply
     (p : ((s : S) → A (.inl s)) × ((t : T) → A (.inr t))) :
     (sumPiEquivProdPi R S T A).symm p = Sum.rec p.1 p.2 := (rfl)
+
+/-- Identify a family indexed by `σ` paired with a single value in `N` as a family indexed by
+`σ ⊕ τ` for any unique index type `τ`. -/
+def piProdEquivPiSumUnique (σ τ N : Type*) [Unique τ]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N] :
+    ((σ → N) × N) ≃L[R] (σ ⊕ τ → N) :=
+  ((ContinuousLinearEquiv.refl R (σ → N)).prodCongr (funUnique τ R N).symm).trans
+    (sumPiEquivProdPi R σ τ (fun _ ↦ N)).symm
+
+/-- Applying `piProdEquivPiSumUnique` combines the `σ`-indexed family with the constant value on
+`τ` via `Sum.elim`. -/
+@[simp] theorem piProdEquivPiSumUnique_apply {σ τ N : Type*} [Unique τ]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N] (q : (σ → N) × N) :
+    piProdEquivPiSumUnique R σ τ N q = Sum.elim q.1 (fun _ ↦ q.2) := by
+  funext x
+  cases x <;> rfl
+
+/-- The inverse of `piProdEquivPiSumUnique` restricts to `σ` and evaluates at `Sum.inr default`. -/
+@[simp] theorem piProdEquivPiSumUnique_symm_apply {σ τ N : Type*} [Unique τ]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N] (p : σ ⊕ τ → N) :
+    (piProdEquivPiSumUnique R σ τ N).symm p = (p ∘ Sum.inl, p (.inr default)) :=
+  (rfl)
 
 end SumPi
 

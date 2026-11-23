@@ -27,6 +27,10 @@ with multiplication by `i` preserves invertibility.
   for a continuous real-linear map `L : Y →L[ℝ] X`.
 * `ContinuousLinearMap.complexOfMapISmul`: a continuous real-linear map between complex modules
   that commutes with multiplication by `i`, as a continuous complex-linear map.
+* `ContinuousLinearMap.commute_I_smul_one_iff`: a continuous real-linear endomorphism commutes
+  with the operator `I • 1` exactly when it commutes with multiplication by `i` on vectors.
+* `ContinuousLinearEquiv.complexOfMapISmul`: the corresponding conversion of continuous
+  real-linear equivalences, preserving their forward and inverse maps.
 -/
 
 public section
@@ -102,8 +106,53 @@ theorem restrictScalars_complexOfMapISmul (u : V →L[ℝ] W)
     (u.complexOfMapISmul h).restrictScalars ℝ = u :=
   ContinuousLinearMap.ext fun v ↦ congrFun (coe_complexOfMapISmul u h) v
 
+/-- A continuous real-linear endomorphism commutes with multiplication by `I` as an operator
+exactly when it commutes with `I` on vectors. -/
+theorem commute_I_smul_one_iff [ContinuousConstSMul ℂ V] {A : V →L[ℝ] V} :
+    Commute (Complex.I • (1 : V →L[ℝ] V)) A ↔ ∀ v, A (Complex.I • v) = Complex.I • A v := by
+  simp [Commute, SemiconjBy, ContinuousLinearMap.ext_iff, eq_comm]
+
 end ContinuousLinearMap
 
+namespace ContinuousLinearEquiv
+
+variable [TopologicalSpace V] [TopologicalSpace W]
+
+/-- A continuous real-linear equivalence commuting with multiplication by `I`, viewed as a
+continuous complex-linear equivalence with the same forward and inverse maps. -/
+def complexOfMapISmul (e : V ≃L[ℝ] W)
+    (h : ∀ v, e (Complex.I • v) = Complex.I • e v) : V ≃L[ℂ] W where
+  toEquiv := e.toEquiv
+  map_add' := e.map_add
+  map_smul' c v := by
+    let u := e.toContinuousLinearMap.complexOfMapISmul h
+    have hu (v : V) : u v = e v :=
+      congrFun (ContinuousLinearMap.coe_complexOfMapISmul e.toContinuousLinearMap h) v
+    -- `toEquiv := e.toEquiv` fixes the forward map to `e`. The promoted CLM has an
+    -- opaque linear-map constructor, so its explicit coercion law `hu` is needed to
+    -- transfer the scalar identity to this equivalence field.
+    change e (c • v) = c • e v
+    exact (hu _).symm.trans ((u.map_smul c v).trans (congrArg (c • ·) (hu v)))
+  continuous_toFun := e.continuous
+  continuous_invFun := e.symm.continuous
+
+@[simp]
+theorem complexOfMapISmul_apply (e : V ≃L[ℝ] W) (h) (v : V) :
+    e.complexOfMapISmul h v = e v := by rfl
+
+@[simp]
+theorem complexOfMapISmul_symm_apply (e : V ≃L[ℝ] W) (h) (w : W) :
+    (e.complexOfMapISmul h).symm w = e.symm w := by rfl
+
+@[simp]
+theorem restrictScalars_complexOfMapISmul (e : V ≃L[ℝ] W)
+    (h : ∀ v, e (Complex.I • v) = Complex.I • e v) :
+    (e.complexOfMapISmul h).toContinuousLinearMap.restrictScalars ℝ =
+      e.toContinuousLinearMap := by
+  ext v
+  exact e.complexOfMapISmul_apply h v
+
+end ContinuousLinearEquiv
 
 end ComplexOfMapISmul
 

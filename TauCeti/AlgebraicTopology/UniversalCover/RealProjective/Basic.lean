@@ -24,7 +24,7 @@ API, due to Junyan Xu.  Finiteness of `ℤˣ` supplies proper discontinuity; the
 input is that the antipodal action on the unit sphere is free.  The integer-unit sphere action is
 provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`, while nonemptiness and (for
 `1 ≤ n`) connectedness of the covering sphere `Sⁿ` are supplied by
-`TauCeti.instNonemptyEuclideanSphere` and `TauCeti.connectedSpace_euclideanSphere`.
+`TauCeti.instNonemptySphere` and `TauCeti.connectedSpace_euclideanSphere`.
 
 ## Main declarations
 
