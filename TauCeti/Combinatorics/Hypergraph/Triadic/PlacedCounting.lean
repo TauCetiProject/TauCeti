@@ -15,8 +15,6 @@ import TauCeti.Order.Hom.PowersetCard
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.Data.Rat.Cast.Order
-import Mathlib.Tactic.GCongr
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -75,7 +73,7 @@ variable {κ V : Type*} [DecidableEq κ] [Fintype V] [DecidableEq V] {C : Triadi
 /-- The values of `g` at an increasing triple of coordinates. -/
 private def tripleAt {k : ℕ} (g : Fin k → V)
     (t : {t : Fin k × Fin k × Fin k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) : Fin 3 → V :=
-  ![g t.1.1, g t.1.2.1, g t.1.2.2]
+  ![g t.val.1, g t.val.2.1, g t.val.2.2]
 
 variable (F) in
 /-- The map `g` gives the increasing pattern triple `t` its pattern color. -/
@@ -83,7 +81,7 @@ private def TopHolds (g : Fin F.k → V)
     (t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) : Prop :=
   ∃ hg : Injective (tripleAt g t),
     H.color (Set.powersetCard.ofFinEmb 3 V ⟨tripleAt g t, hg⟩) =
-      F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2
+      F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2
 
 /-- The map `g` realizes the pair colors of the route `ψ` and the pattern colors of the
 increasing pattern triples in `s`. -/
@@ -91,16 +89,16 @@ private def RouteHolds
     (s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2})
     (g : Fin F.k → V) : Prop :=
   (∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-    C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)) ∧
+    C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ.pairColor p)) ∧
   ∀ t ∈ s, H.TopHolds F g t
 
 /-- The conditions of `RouteHolds` not involving the coordinate `m`. -/
 private def RouteHoldsAway
     (s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) (m : Fin F.k)
     (g : Fin F.k → V) : Prop :=
-  (∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2}, p.1.1 ≠ m → p.1.2 ≠ m →
-    C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)) ∧
-  ∀ t ∈ s, t.1.1 ≠ m → t.1.2.1 ≠ m → t.1.2.2 ≠ m → H.TopHolds F g t
+  (∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2}, p.val.1 ≠ m → p.val.2 ≠ m →
+    C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ.pairColor p)) ∧
+  ∀ t ∈ s, t.val.1 ≠ m → t.val.2.1 ≠ m → t.val.2.2 ≠ m → H.TopHolds F g t
 
 open Classical in
 /-- With the coordinates outside the increasing pattern triple `t` given by `h`, the values at
@@ -109,13 +107,13 @@ its three pair graphs collects the conditions avoiding one coordinate of `t`. -/
 private noncomputable def slice
     (s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2})
     (t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) (h : Fin F.k → V) :
-    Subpolyad3 (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) where
-  pair₀₁ := {q ∈ (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2).pairSupport₀₁ |
-    H.RouteHoldsAway ψ s t.1.2.2 (update (update h t.1.1 q.1.1) t.1.2.1 q.1.2)}
-  pair₀₂ := {q ∈ (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2).pairSupport₀₂ |
-    H.RouteHoldsAway ψ s t.1.2.1 (update (update h t.1.1 q.1.1) t.1.2.2 q.1.2)}
-  pair₁₂ := {q ∈ (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2).pairSupport₁₂ |
-    H.RouteHoldsAway ψ s t.1.1 (update (update h t.1.2.1 q.1.1) t.1.2.2 q.1.2)}
+    Subpolyad3 (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2) where
+  pair₀₁ := {q ∈ (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2).pairSupport₀₁ |
+    H.RouteHoldsAway ψ s t.val.2.2 (update (update h t.val.1 q.val.1) t.val.2.1 q.val.2)}
+  pair₀₂ := {q ∈ (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2).pairSupport₀₂ |
+    H.RouteHoldsAway ψ s t.val.2.1 (update (update h t.val.1 q.val.1) t.val.2.2 q.val.2)}
+  pair₁₂ := {q ∈ (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2).pairSupport₁₂ |
+    H.RouteHoldsAway ψ s t.val.1 (update (update h t.val.2.1 q.val.1) t.val.2.2 q.val.2)}
   pair₀₁_sub := filter_subset _ _
   pair₀₂_sub := filter_subset _ _
   pair₁₂_sub := filter_subset _ _
@@ -126,7 +124,7 @@ omit [Fintype V] [DecidableEq V] in
 private theorem injective_tripleAt {k : ℕ} {g : Fin k → V} (hg : Injective g)
     (t : {t : Fin k × Fin k × Fin k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) :
     Injective (tripleAt g t) := by
-  obtain ⟨hij, hjl⟩ := t.2
+  obtain ⟨hij, hjl⟩ := t.property
   intro a b hab
   fin_cases a <;> fin_cases b <;>
     simp_all [tripleAt, hg.eq_iff, hij.ne, hjl.ne, (hij.trans hjl).ne, hij.ne', hjl.ne',
@@ -135,7 +133,7 @@ private theorem injective_tripleAt {k : ℕ} {g : Fin k → V} (hg : Injective g
 omit [Fintype V] in
 private theorem ofFinEmb_tripleAt {k : ℕ} {g : Fin k → V}
     {t : {t : Fin k × Fin k × Fin k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}}
-    (hg : Injective (tripleAt g t)) (hc : #{g t.1.1, g t.1.2.1, g t.1.2.2} = 3) :
+    (hg : Injective (tripleAt g t)) (hc : #{g t.val.1, g t.val.2.1, g t.val.2.2} = 3) :
     Set.powersetCard.ofFinEmb 3 V ⟨tripleAt g t, hg⟩ = Set.powersetCard.ofCard hc := by
   refine Subtype.ext (Finset.ext fun a ↦ ?_)
   simp [Set.powersetCard.val_ofFinEmb, tripleAt, Fin.exists_fin_succ, eq_comm]
@@ -143,7 +141,8 @@ private theorem ofFinEmb_tripleAt {k : ℕ} {g : Fin k → V}
 omit [DecidableEq κ] [Fintype V] [DecidableEq V] in
 private theorem topHolds_congr {g g' : Fin F.k → V}
     {t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}}
-    (h₁ : g t.1.1 = g' t.1.1) (h₂ : g t.1.2.1 = g' t.1.2.1) (h₃ : g t.1.2.2 = g' t.1.2.2) :
+    (h₁ : g t.val.1 = g' t.val.1) (h₂ : g t.val.2.1 = g' t.val.2.1)
+        (h₃ : g t.val.2.2 = g' t.val.2.2) :
     H.TopHolds F g t ↔ H.TopHolds F g' t := by
   have : tripleAt g t = tripleAt g' t := by simp [tripleAt, h₁, h₂, h₃]
   unfold TopHolds
@@ -165,8 +164,8 @@ omit [DecidableEq κ] in
 /-- A pair of pattern vertices misses some vertex of every increasing triple. -/
 private theorem pair_avoids (p : {p : Fin F.k × Fin F.k // p.1 < p.2})
     (t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) :
-    (p.1.1 ≠ t.1.2.2 ∧ p.1.2 ≠ t.1.2.2) ∨ (p.1.1 ≠ t.1.2.1 ∧ p.1.2 ≠ t.1.2.1) ∨
-      (p.1.1 ≠ t.1.1 ∧ p.1.2 ≠ t.1.1) := by
+    (p.val.1 ≠ t.val.2.2 ∧ p.val.2 ≠ t.val.2.2) ∨ (p.val.1 ≠ t.val.2.1 ∧ p.val.2 ≠ t.val.2.1) ∨
+      (p.val.1 ≠ t.val.1 ∧ p.val.2 ≠ t.val.1) := by
   obtain ⟨⟨a, b⟩, hab⟩ := p
   obtain ⟨⟨i, j, l⟩, hij, hjl⟩ := t
   have : (a : ℕ) < b := hab
@@ -179,9 +178,9 @@ omit [DecidableEq κ] in
 /-- A second increasing triple misses some vertex of the first. -/
 private theorem triple_avoids
     {u t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}} (hut : u ≠ t) :
-    (u.1.1 ≠ t.1.2.2 ∧ u.1.2.1 ≠ t.1.2.2 ∧ u.1.2.2 ≠ t.1.2.2) ∨
-      (u.1.1 ≠ t.1.2.1 ∧ u.1.2.1 ≠ t.1.2.1 ∧ u.1.2.2 ≠ t.1.2.1) ∨
-        (u.1.1 ≠ t.1.1 ∧ u.1.2.1 ≠ t.1.1 ∧ u.1.2.2 ≠ t.1.1) := by
+    (u.val.1 ≠ t.val.2.2 ∧ u.val.2.1 ≠ t.val.2.2 ∧ u.val.2.2 ≠ t.val.2.2) ∨
+      (u.val.1 ≠ t.val.2.1 ∧ u.val.2.1 ≠ t.val.2.1 ∧ u.val.2.2 ≠ t.val.2.1) ∨
+        (u.val.1 ≠ t.val.1 ∧ u.val.2.1 ≠ t.val.1 ∧ u.val.2.2 ≠ t.val.1) := by
   obtain ⟨⟨a, b, c⟩, hab, hbc⟩ := u
   obtain ⟨⟨i, j, l⟩, hij, hjl⟩ := t
   have : (a : ℕ) < b := hab
@@ -198,8 +197,8 @@ private theorem routeHolds_iff_routeHoldsAway
     {s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}}
     {t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}} (ht : t ∉ s)
     (g : Fin F.k → V) :
-    H.RouteHolds ψ s g ↔ H.RouteHoldsAway ψ s t.1.2.2 g ∧ H.RouteHoldsAway ψ s t.1.2.1 g ∧
-      H.RouteHoldsAway ψ s t.1.1 g := by
+    H.RouteHolds ψ s g ↔ H.RouteHoldsAway ψ s t.val.2.2 g ∧ H.RouteHoldsAway ψ s t.val.2.1 g ∧
+      H.RouteHoldsAway ψ s t.val.1 g := by
   refine ⟨fun ⟨hp, hs⟩ ↦ ⟨⟨fun p _ _ ↦ hp p, fun u hu _ _ _ ↦ hs u hu⟩,
     ⟨fun p _ _ ↦ hp p, fun u hu _ _ _ ↦ hs u hu⟩, ⟨fun p _ _ ↦ hp p, fun u hu _ _ _ ↦ hs u hu⟩⟩,
     fun ⟨h₃, h₂, h₁⟩ ↦ ⟨fun p ↦ ?_, fun u hu ↦ ?_⟩⟩
@@ -225,26 +224,29 @@ private theorem mem_slice_support
     {t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}} (ht : t ∉ s)
     (h : Fin F.k → V) (w : {w : Fin 3 → V // Injective w}) :
     w ∈ (H.slice ψ s t h).support ↔
-      (w.1 0 ∈ φ.vertexCell t.1.1 ∧ w.1 1 ∈ φ.vertexCell t.1.2.1 ∧
-        w.1 2 ∈ φ.vertexCell t.1.2.2) ∧
+      (w.val 0 ∈ φ.vertexCell t.val.1 ∧ w.val 1 ∈ φ.vertexCell t.val.2.1 ∧
+        w.val 2 ∈ φ.vertexCell t.val.2.2) ∧
       H.RouteHolds ψ s
-        (update (update (update h t.1.1 (w.1 0)) t.1.2.1 (w.1 1)) t.1.2.2 (w.1 2)) := by
+        (update (update (update h t.val.1 (w.val 0)) t.val.2.1 (w.val 1)) t.val.2.2 (w.val 2)) := by
   classical
-  obtain ⟨hij, hjl⟩ := t.2
+  obtain ⟨hij, hjl⟩ := t.property
   have hil := hij.trans hjl
-  set g := update (update (update h t.1.1 (w.1 0)) t.1.2.1 (w.1 1)) t.1.2.2 (w.1 2)
-  have gi : g t.1.1 = w.1 0 := by simp [g, hij.ne, hil.ne]
-  have gj : g t.1.2.1 = w.1 1 := by simp [g, hjl.ne]
-  have gl : g t.1.2.2 = w.1 2 := by simp [g]
+  set g := update (update (update h t.val.1 (w.val 0)) t.val.2.1 (w.val 1)) t.val.2.2 (w.val 2)
+  have gi : g t.val.1 = w.val 0 := by simp [g, hij.ne, hil.ne]
+  have gj : g t.val.2.1 = w.val 1 := by simp [g, hjl.ne]
+  have gl : g t.val.2.2 = w.val 2 := by simp [g]
   -- Each pair graph of the slice tests the conditions avoiding one vertex of `t` on `g`.
-  have h₃ : H.RouteHoldsAway ψ s t.1.2.2 (update (update h t.1.1 (w.1 0)) t.1.2.1 (w.1 1)) ↔
-      H.RouteHoldsAway ψ s t.1.2.2 g :=
+  have h₃ : H.RouteHoldsAway ψ s t.val.2.2 (update (update h t.val.1 (w.val 0)) t.val.2.1
+      (w.val 1)) ↔
+      H.RouteHoldsAway ψ s t.val.2.2 g :=
     routeHoldsAway_congr fun n hn ↦ by simp [g, hn]
-  have h₂ : H.RouteHoldsAway ψ s t.1.2.1 (update (update h t.1.1 (w.1 0)) t.1.2.2 (w.1 2)) ↔
-      H.RouteHoldsAway ψ s t.1.2.1 g :=
+  have h₂ : H.RouteHoldsAway ψ s t.val.2.1 (update (update h t.val.1 (w.val 0)) t.val.2.2
+      (w.val 2)) ↔
+      H.RouteHoldsAway ψ s t.val.2.1 g :=
     routeHoldsAway_congr fun n hn ↦ by simp only [g, update_apply]; split_ifs <;> simp_all
-  have h₁ : H.RouteHoldsAway ψ s t.1.1 (update (update h t.1.2.1 (w.1 1)) t.1.2.2 (w.1 2)) ↔
-      H.RouteHoldsAway ψ s t.1.1 g :=
+  have h₁ : H.RouteHoldsAway ψ s t.val.1 (update (update h t.val.2.1 (w.val 1)) t.val.2.2
+      (w.val 2)) ↔
+      H.RouteHoldsAway ψ s t.val.1 g :=
     routeHoldsAway_congr fun n hn ↦ by simp only [g, update_apply]; split_ifs <;> simp_all
   rw [Subpolyad3.mem_support, routeHolds_iff_routeHoldsAway ht]
   simp only [slice, mem_filter, coe_coordPair, h₃, h₂, h₁]
@@ -253,11 +255,11 @@ private theorem mem_slice_support
     obtain ⟨hc₀, hc₁, hc₂, -⟩ := (Polyad3.mem_support _ w).1 hw
     exact ⟨⟨by simpa using hc₀, by simpa using hc₁, by simpa using hc₂⟩, a₃, a₂, a₁⟩
   · rintro ⟨⟨hc₀, hc₁, hc₂⟩, a₃, a₂, a₁⟩
-    have k₀₁ := a₃.1 ⟨(t.1.1, t.1.2.1), hij⟩ hil.ne hjl.ne
-    have k₀₂ := a₂.1 ⟨(t.1.1, t.1.2.2), hil⟩ hij.ne hjl.ne'
-    have k₁₂ := a₁.1 ⟨(t.1.2.1, t.1.2.2), hjl⟩ hij.ne' hil.ne'
+    have k₀₁ := a₃.1 ⟨(t.val.1, t.val.2.1), hij⟩ hil.ne hjl.ne
+    have k₀₂ := a₂.1 ⟨(t.val.1, t.val.2.2), hil⟩ hij.ne hjl.ne'
+    have k₁₂ := a₁.1 ⟨(t.val.2.1, t.val.2.2), hjl⟩ hij.ne' hil.ne'
     simp only [gi, gj, gl] at k₀₁ k₀₂ k₁₂
-    have hw : w ∈ (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2).support :=
+    have hw : w ∈ (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2).support :=
       (Polyad3.mem_support _ w).2 ⟨by simpa using hc₀, by simpa using hc₁, by simpa using hc₂,
         by simpa using k₀₁, by simpa using k₀₂, by simpa using k₁₂⟩
     exact ⟨hw, ⟨coordPair_mem_pairSupport₀₁ hw, a₃⟩, ⟨coordPair_mem_pairSupport₀₂ hw, a₂⟩,
@@ -272,17 +274,18 @@ private theorem card_filter_product_eq_card_filter_slice
     {s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}}
     {t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}} (ht : t ∉ s)
     (h : Fin F.k → V) (Y : {w : Fin 3 → V // Injective w} → Prop) [DecidablePred Y] :
-    #{q ∈ φ.vertexCell t.1.1 ×ˢ φ.vertexCell t.1.2.1 ×ˢ φ.vertexCell t.1.2.2 |
-        H.RouteHolds ψ s (update (update (update h t.1.1 q.1) t.1.2.1 q.2.1) t.1.2.2 q.2.2) ∧
+    #{q ∈ φ.vertexCell t.val.1 ×ˢ φ.vertexCell t.val.2.1 ×ˢ φ.vertexCell t.val.2.2 |
+        H.RouteHolds ψ s (update (update (update h t.val.1 q.1) t.val.2.1 q.2.1) t.val.2.2 q.2.2) ∧
           ∃ hq : Injective ![q.1, q.2.1, q.2.2], Y ⟨_, hq⟩} =
       #{w ∈ (H.slice ψ s t h).support | Y w} := by
   symm
-  refine card_nbij (fun w ↦ (w.1 0, w.1 1, w.1 2)) (fun w hw ↦ ?_)
+  refine card_nbij (fun w ↦ (w.val 0, w.val 1, w.val 2)) (fun w hw ↦ ?_)
     (Fin.injective_apply_zero_one_two.comp Subtype.val_injective).injOn (fun q hq ↦ ?_)
   · obtain ⟨hw, hY⟩ := mem_filter.1 hw
     obtain ⟨⟨h₀, h₁, h₂⟩, hR⟩ := (mem_slice_support ht h w).1 hw
-    have e : ![w.1 0, w.1 1, w.1 2] = w.1 := FinVec.etaExpand_eq w.1
-    refine mem_filter.2 ⟨mem_product.2 ⟨h₀, mem_product.2 ⟨h₁, h₂⟩⟩, hR, by rw [e]; exact w.2, ?_⟩
+    have e : ![w.val 0, w.val 1, w.val 2] = w.val := FinVec.etaExpand_eq w.val
+    refine mem_filter.2 ⟨mem_product.2 ⟨h₀, mem_product.2 ⟨h₁, h₂⟩⟩, hR,
+        by rw [e]; exact w.property, ?_⟩
     exact (congrArg Y (Subtype.ext e)).mpr hY
   · obtain ⟨hq, hR, hinj, hY⟩ := mem_filter.1 (mem_coe.1 hq)
     obtain ⟨h₀, h₁, h₂⟩ : q.1 ∈ _ ∧ q.2.1 ∈ _ ∧ q.2.2 ∈ _ := by simpa using hq
@@ -296,42 +299,44 @@ private theorem sum_sum_sum_update_eq
     {s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}}
     {t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}} (ht : t ∉ s)
     (h : Fin F.k → V) (d : ℝ) :
-    ∑ x ∈ φ.vertexCell t.1.1, ∑ y ∈ φ.vertexCell t.1.2.1, ∑ z ∈ φ.vertexCell t.1.2.2,
-      ((if H.RouteHolds ψ s (update (update (update h t.1.1 x) t.1.2.1 y) t.1.2.2 z) ∧
-          H.TopHolds F (update (update (update h t.1.1 x) t.1.2.1 y) t.1.2.2 z) t then 1 else 0) -
-        d * if H.RouteHolds ψ s (update (update (update h t.1.1 x) t.1.2.1 y) t.1.2.2 z) then 1
+    ∑ x ∈ φ.vertexCell t.val.1, ∑ y ∈ φ.vertexCell t.val.2.1, ∑ z ∈ φ.vertexCell t.val.2.2,
+      ((if H.RouteHolds ψ s (update (update (update h t.val.1 x) t.val.2.1 y) t.val.2.2 z) ∧
+          H.TopHolds F (update (update (update h t.val.1 x) t.val.2.1 y) t.val.2.2 z) t then 1 else
+              0) -
+        d * if H.RouteHolds ψ s (update (update (update h t.val.1 x) t.val.2.1 y) t.val.2.2 z) then
+            1
           else 0) =
-      ((H.relDensityOn (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
+      ((H.relDensityOn (F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2)
         (H.slice ψ s t h).support : ℝ) - d) * #(H.slice ψ s t h).support := by
-  set c := F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2
+  set c := F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2
   set Q := H.slice ψ s t h
   set A := φ.vertexCell
-  obtain ⟨hij, hjl⟩ := t.2
+  obtain ⟨hij, hjl⟩ := t.property
   have hc : (H.relDensityOn c Q.support : ℝ) * #Q.support =
-      #{w ∈ Q.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨w.1, w.2⟩) = c} := by
+      #{w ∈ Q.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨w.val, w.property⟩) = c} := by
     exact_mod_cast H.relDensityOn_mul_card c _
   have hY := card_filter_product_eq_card_filter_slice (H := H) (ψ := ψ) ht h
-    fun w ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨w.1, w.2⟩) = c
+    fun w ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨w.val, w.property⟩) = c
   have hT := card_filter_product_eq_card_filter_slice (H := H) (ψ := ψ) ht h fun _ ↦ True
   dsimp only at hY hT
   -- Substituting `(x, y, z)` into `h` puts these values at `t`.
   have htri (x y z : V) :
-      tripleAt (update (update (update h t.1.1 x) t.1.2.1 y) t.1.2.2 z) t = ![x, y, z] := by
+      tripleAt (update (update (update h t.val.1 x) t.val.2.1 y) t.val.2.2 z) t = ![x, y, z] := by
     ext m
     fin_cases m <;> simp [tripleAt, hij.ne, (hij.trans hjl).ne, hjl.ne]
-  have hR : {q ∈ A t.1.1 ×ˢ A t.1.2.1 ×ˢ A t.1.2.2 |
-      H.RouteHolds ψ s (update (update (update h t.1.1 q.1) t.1.2.1 q.2.1) t.1.2.2 q.2.2)} =
-      {q ∈ A t.1.1 ×ˢ A t.1.2.1 ×ˢ A t.1.2.2 |
-        H.RouteHolds ψ s (update (update (update h t.1.1 q.1) t.1.2.1 q.2.1) t.1.2.2 q.2.2) ∧
+  have hR : {q ∈ A t.val.1 ×ˢ A t.val.2.1 ×ˢ A t.val.2.2 |
+      H.RouteHolds ψ s (update (update (update h t.val.1 q.1) t.val.2.1 q.2.1) t.val.2.2 q.2.2)} =
+      {q ∈ A t.val.1 ×ˢ A t.val.2.1 ×ˢ A t.val.2.2 |
+        H.RouteHolds ψ s (update (update (update h t.val.1 q.1) t.val.2.1 q.2.1) t.val.2.2 q.2.2) ∧
           ∃ _ : Injective ![q.1, q.2.1, q.2.2], True} := by
     refine filter_congr fun q _ ↦ ⟨fun hq ↦ ⟨hq, ?_, trivial⟩, And.left⟩
     rw [← htri]
     exact injective_tripleAt (injective_of_forall_colorOfPair_eq_some hq.1) t
-  have hRT : {q ∈ A t.1.1 ×ˢ A t.1.2.1 ×ˢ A t.1.2.2 |
-      H.RouteHolds ψ s (update (update (update h t.1.1 q.1) t.1.2.1 q.2.1) t.1.2.2 q.2.2) ∧
-        H.TopHolds F (update (update (update h t.1.1 q.1) t.1.2.1 q.2.1) t.1.2.2 q.2.2) t} =
-      {q ∈ A t.1.1 ×ˢ A t.1.2.1 ×ˢ A t.1.2.2 |
-        H.RouteHolds ψ s (update (update (update h t.1.1 q.1) t.1.2.1 q.2.1) t.1.2.2 q.2.2) ∧
+  have hRT : {q ∈ A t.val.1 ×ˢ A t.val.2.1 ×ˢ A t.val.2.2 |
+      H.RouteHolds ψ s (update (update (update h t.val.1 q.1) t.val.2.1 q.2.1) t.val.2.2 q.2.2) ∧
+        H.TopHolds F (update (update (update h t.val.1 q.1) t.val.2.1 q.2.1) t.val.2.2 q.2.2) t} =
+      {q ∈ A t.val.1 ×ˢ A t.val.2.1 ×ˢ A t.val.2.2 |
+        H.RouteHolds ψ s (update (update (update h t.val.1 q.1) t.val.2.1 q.2.1) t.val.2.2 q.2.2) ∧
           ∃ hq : Injective ![q.1, q.2.1, q.2.2],
             H.color (Set.powersetCard.ofFinEmb 3 V ⟨![q.1, q.2.1, q.2.2], hq⟩) = c} := by
     refine filter_congr fun q _ ↦ and_congr_right fun _ ↦ ?_
@@ -348,19 +353,20 @@ outside `s` from its relative density against the maps realizing `RouteHolds ψ 
 private theorem abs_card_filter_topHolds_sub_le
     {s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}}
     {t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}} (ht : t ∉ s) {η : ℝ}
-    (hP : H.IsTopRegularOverPolyad (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) η 1) :
+    (hP : H.IsTopRegularOverPolyad (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2)
+        η 1) :
     |(#{g ∈ Fintype.piFinset φ.vertexCell | H.RouteHolds ψ s g ∧ H.TopHolds F g t} : ℝ) -
-        (H.relativeDensity (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
-          (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) : ℝ) *
+        (H.relativeDensity (F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2)
+          (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2) : ℝ) *
           #{g ∈ Fintype.piFinset φ.vertexCell | H.RouteHolds ψ s g}| ≤
       η * ∏ m, (#(φ.vertexCell m) : ℝ) := by
-  set P := ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2
-  set c := F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2
+  set P := ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2
+  set c := F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2
   set d : ℝ := (H.relativeDensity c P : ℝ)
   set A := φ.vertexCell
   have : Nonempty κ := ⟨c⟩
   have hη := hP.nonneg
-  obtain ⟨hij, hjl⟩ := t.2
+  obtain ⟨hij, hjl⟩ := t.property
   have hil := hij.trans hjl
   -- The difference is a sum over the box of a weight `G`.
   set G : (Fin F.k → V) → ℝ := fun g ↦ (if H.RouteHolds ψ s g ∧ H.TopHolds F g t then 1 else 0) -
@@ -374,38 +380,29 @@ private theorem abs_card_filter_topHolds_sub_le
     exact mul_nonneg hη (prod_nonneg fun _ _ ↦ Nat.cast_nonneg _)
   have hg₀' := Fintype.mem_piFinset.1 hg₀
   have hsplit := Fintype.sum_piFinset_eq_sum_filter_sum_sum_sum_update (M := ℝ) hij.ne hil.ne
-    hjl.ne A (hg₀' t.1.1) (hg₀' t.1.2.1) (hg₀' t.1.2.2)
+    hjl.ne A (hg₀' t.val.1) (hg₀' t.val.2.1) (hg₀' t.val.2.2)
   -- The box volume is the number of fibres times the volume of the cells at `t`.
-  have hvol : (∏ m, (#(A m) : ℝ)) =
-      #{h ∈ Fintype.piFinset A | h t.1.1 = g₀ t.1.1 ∧ h t.1.2.1 = g₀ t.1.2.1 ∧
-        h t.1.2.2 = g₀ t.1.2.2} * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)) := by
-    have := hsplit fun _ ↦ (1 : ℝ)
-    simp only [sum_const, nsmul_eq_mul, mul_one, Fintype.card_piFinset] at this
-    push_cast at this
-    linear_combination this
+  have hvol := congrArg ((↑) : ℕ → ℝ) (Fintype.prod_card_eq_card_filter_piFinset_mul_mul_mul hij.ne
+    hil.ne hjl.ne A (hg₀' t.val.1) (hg₀' t.val.2.1) (hg₀' t.val.2.2))
+  push_cast at hvol
   rw [hsplit, hvol]
-  refine (abs_sum_le_card_nsmul (B := η * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)))
+  refine (abs_sum_le_card_nsmul (B := η * (#(A t.val.1) * #(A t.val.2.1) * #(A t.val.2.2)))
     fun h _ ↦ ?_).trans_eq (by rw [nsmul_eq_mul]; ring)
   -- Over each fibre, rank-one top regularity bounds the color discrepancy on the slice.
   simp only [G]
   rw [sum_sum_sum_update_eq ht h d, abs_mul, Nat.abs_cast]
-  calc _ ≤ η * #P.support := (hP.abs_relDensityOn_sub_mul_card_le c _)
-    _ ≤ η * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)) := by
-      gcongr
-      have := P.card_support_le
-      simp only [P, PairColorPlacement3.polyad_c₀, PairColorPlacement3.polyad_c₁,
-        PairColorPlacement3.polyad_c₂] at this
-      exact_mod_cast this
+  refine (hP.abs_relDensityOn_sub_mul_card_le c _).trans (mul_le_mul_of_nonneg_left ?_ hη)
+  exact_mod_cast ψ.card_support_polyad_le t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2
 
 omit [DecidableEq κ] [Fintype V] in
 /-- For an injective `g`, giving the increasing pattern triple `t` its pattern color is a
 condition on the image triple `{g i, g j, g l}`. -/
 private theorem topHolds_iff_of_injective {g : Fin F.k → V} (hg : Injective g)
     (t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) :
-    H.TopHolds F g t ↔ H.color (Set.powersetCard.ofCard (s := {g t.1.1, g t.1.2.1, g t.1.2.2})
-      (Finset.card_eq_three.2 ⟨g t.1.1, g t.1.2.1, g t.1.2.2, hg.ne t.2.1.ne,
-        hg.ne (t.2.1.trans t.2.2).ne, hg.ne t.2.2.ne, rfl⟩)) =
-      F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2 := by
+    H.TopHolds F g t ↔ H.color (Set.powersetCard.ofCard (s := {g t.val.1, g t.val.2.1, g t.val.2.2})
+      (Finset.card_eq_three.2 ⟨g t.val.1, g t.val.2.1, g t.val.2.2, hg.ne t.property.1.ne,
+        hg.ne (t.property.1.trans t.property.2).ne, hg.ne t.property.2.ne, rfl⟩)) =
+      F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2 := by
   unfold TopHolds
   refine ⟨fun ⟨hx, h⟩ ↦ ?_, fun h ↦ ⟨injective_tripleAt hg t, ?_⟩⟩
   · rwa [ofFinEmb_tripleAt hx] at h
@@ -424,7 +421,7 @@ private theorem placedInducedCopyCount_eq_card_filter :
   · obtain ⟨hcopy, hcell, hcolor⟩ := mem_placedInducedCopies.1 hf
     refine mem_filter.2 ⟨Fintype.mem_piFinset.2 hcell, hcolor, fun t _ ↦ ?_⟩
     exact (topHolds_iff_of_injective f.injective t).2
-      ((isInducedCopy_iff_forall_lt H F f).1 hcopy _ _ _ t.2.1 t.2.2)
+      ((isInducedCopy_iff_forall_lt H F f).1 hcopy _ _ _ t.property.1 t.property.2)
   · obtain ⟨hcell, hR⟩ := mem_filter.1 hg
     let f : Fin F.k ↪ V := ⟨g, injective_of_forall_colorOfPair_eq_some hR.1⟩
     refine ⟨f, mem_placedInducedCopies.2 ⟨(isInducedCopy_iff_forall_lt H F f).2
@@ -447,17 +444,20 @@ densities changes the number of maps realizing the route by at most `#s * η` ti
 product. -/
 private theorem abs_card_filter_routeHolds_sub_le
     (s : Finset {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) {η : ℝ}
-    (hs : ∀ t ∈ s, H.IsTopRegularOverPolyad (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) η 1) :
+    (hs : ∀ t ∈ s, H.IsTopRegularOverPolyad (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1
+        t.property.2) η 1) :
     |(#{g ∈ Fintype.piFinset φ.vertexCell | H.RouteHolds ψ s g} : ℝ) -
-        (∏ t ∈ s, (H.relativeDensity (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
-          (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) : ℝ)) *
+        (∏ t ∈ s, (H.relativeDensity (F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1
+            t.property.2)
+          (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2) : ℝ)) *
           #{g ∈ Fintype.piFinset φ.vertexCell | H.RouteHolds ψ ∅ g}| ≤
       #s * η * ∏ m, (#(φ.vertexCell m) : ℝ) := by
   induction s using Finset.induction_on with
   | empty => simp
   | insert t s ht ih =>
-    set d : ℝ := (H.relativeDensity (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
-      (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) : ℝ)
+    set d : ℝ := (H.relativeDensity (F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1
+        t.property.2)
+      (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2) : ℝ)
     have hd₀ : 0 ≤ d := Rat.cast_nonneg.2 (H.relativeDensity_nonneg _ _)
     have hd₁ : d ≤ 1 := by
       simpa only [d, Rat.cast_one] using Rat.cast_le.2 (H.relativeDensity_le_one _ _)
@@ -471,8 +471,9 @@ private theorem abs_card_filter_routeHolds_sub_le
       ((#{g ∈ Fintype.piFinset φ.vertexCell | H.RouteHolds ψ s g ∧ H.TopHolds F g t} : ℕ) : ℝ)
     set b : ℝ := ((#{g ∈ Fintype.piFinset φ.vertexCell | H.RouteHolds ψ s g} : ℕ) : ℝ)
     set n₀ : ℝ := ((#{g ∈ Fintype.piFinset φ.vertexCell | H.RouteHolds ψ ∅ g} : ℕ) : ℝ)
-    set q := ∏ t ∈ s, (H.relativeDensity (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
-      (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) : ℝ)
+    set q := ∏ t ∈ s, (H.relativeDensity (F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1
+        t.property.2)
+      (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2) : ℝ)
     -- Replace the indicator of `t` by `d`, then the remaining indicators by induction.
     calc |a - d * q * n₀| ≤ |a - d * b| + |b - q * n₀| := by
           rw [mul_assoc]
@@ -493,8 +494,8 @@ theorem abs_placedInducedCopyCount_sub_expectedInducedCountAt_le (hφ : φ.Trans
       (F.k.choose 2 * ε + F.k.choose 3 * η) * ∏ i, (#(φ.vertexCell i) : ℝ) := by
   classical
   set D : ℝ := ∏ t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2},
-    (H.relativeDensity (F.tripleColor t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2)
-      (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2) : ℝ)
+    (H.relativeDensity (F.tripleColor t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2)
+      (ψ.polyad t.val.1 t.val.2.1 t.val.2.2 t.property.1 t.property.2) : ℝ)
   have hD₀ : 0 ≤ D := prod_nonneg fun _ _ ↦ by exact_mod_cast H.relativeDensity_nonneg _ _
   have hD₁ : D ≤ 1 := prod_le_one₀ (fun _ _ ↦ by exact_mod_cast H.relativeDensity_nonneg _ _)
     fun _ _ ↦ by exact_mod_cast H.relativeDensity_le_one _ _
@@ -505,7 +506,8 @@ theorem abs_placedInducedCopyCount_sub_expectedInducedCountAt_le (hφ : φ.Trans
     push_cast
     ring
   have htop := abs_card_filter_routeHolds_sub_le (H := H) (ψ := ψ) univ
-    fun t _ ↦ (ψ.isTopRegularRoute_iff H η 1).1 hroute t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2
+    fun t _ ↦ (ψ.isTopRegularRoute_iff H η 1).1 hroute t.val.1 t.val.2.1 t.val.2.2 t.property.1
+        t.property.2
   rw [card_univ, Set.powersetCard.card_lt_triple, Fintype.card_fin,
     ← lowerRouteCountAt_eq_card_filter (H := H)] at htop
   have hpair := abs_lowerRouteCountAt_sub_expectedLowerRouteCountAt_le hφ ψ hlower

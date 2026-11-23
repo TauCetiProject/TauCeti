@@ -154,8 +154,8 @@ theorem exists_picClass_mul_picClass_eq (f g : primitiveForms D) :
       ((δ • g : primitiveForms D) : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
       (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩ ∧
       picClass D hD f * picClass D hD g = picClass D hD h := by
-  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.2
-  obtain ⟨hgD, hgp⟩ := (mem_primitiveForms D _).mp g.2
+  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.property
+  obtain ⟨hgD, hgp⟩ := (mem_primitiveForms D _).mp g.property
   obtain ⟨γ, δ, a, a', B, C, -, hγ, hδ⟩ := exists_smul_eq_united hfp hgp (hfD.trans hgD.symm)
   have hγp := (isPrimitive_smul_iff _ γ).mpr hfp
   have hδp := (isPrimitive_smul_iff _ δ).mpr hgp
@@ -214,14 +214,14 @@ theorem exists_posDefProperClassToPic_mul_posDefProperClassToPic_eq
   induction q₁ using Quotient.inductionOn with | h f₀ => ?_
   induction q₂ using Quotient.inductionOn with | h g₀ => ?_
   obtain ⟨γ, δ, a, a', B, C, ⟨h, hhm⟩, hf, hg, hh, hpic⟩ := exists_picClass_mul_picClass_eq (-n) hn
-    ⟨f₀, inf_le_right (a := posDef n) f₀.2⟩ ⟨g₀, inf_le_right (a := posDef n) g₀.2⟩
+    ⟨f₀, inf_le_right (a := posDef n) f₀.property⟩ ⟨g₀, inf_le_right (a := posDef n) g₀.property⟩
   -- Only positivity of the composed form is specific to the positive definite case.
   have hf' : ((γ • f₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
       ⟨a, B, a' * C⟩ := hf
   have hg' : ((δ • g₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
       ⟨a', B, a * C⟩ := hg
-  obtain ⟨-, ha, -⟩ := (mem_posDef_inf_primitiveForms n).mp (γ • f₀).2
-  obtain ⟨-, ha', -⟩ := (mem_posDef_inf_primitiveForms n).mp (δ • g₀).2
+  obtain ⟨-, ha, -⟩ := (mem_posDef_inf_primitiveForms n).mp (γ • f₀).property
+  obtain ⟨-, ha', -⟩ := (mem_posDef_inf_primitiveForms n).mp (δ • g₀).property
   simp only at hh
   subst hh
   obtain ⟨hhD, hhp⟩ := (mem_primitiveForms (-n) _).mp hhm

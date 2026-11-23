@@ -9,6 +9,11 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.GroupTheory.Index
 import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
+-- Non-public: the finite case is the unit count
+-- `TauCeti.IsLocalRing.card_residueField_mul_card_units` of the local ring `R ⧸ P ^ e`, whose
+-- residue field is identified with `R ⧸ P` through `TauCeti.residueFieldAlgEquivOfSurjective`.
+import TauCeti.RingTheory.LocalRing.Card
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Units of the quotient by a power of a maximal ideal
@@ -16,7 +21,9 @@ import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 For a maximal ideal `P` of a commutative ring and `e ≠ 0`, the quotient `R ⧸ P ^ e` is a local
 ring whose units are the residues outside `P`. This file counts them:
 `#(R ⧸ P ^ e)ˣ · #(R ⧸ P) = #(R ⧸ P ^ e) · (#(R ⧸ P) - 1)`, where `#` is `Nat.card`. This is the
-local step of Euler's totient for ideals.
+local step of Euler's totient for ideals. When `R ⧸ P ^ e` is finite it is the unit count
+`TauCeti.IsLocalRing.card_residueField_mul_card_units` of a finite local ring with residue field
+`R ⧸ P`; when it is infinite both sides vanish.
 
 ## Main results
 
@@ -51,14 +58,18 @@ theorem card_units_quotient_pow_mul_card_quotient (P : Ideal R) [P.IsMaximal] {e
     exact (AddSubgroup.card_ker_mul_card_of_surjective (f := f.toAddMonoidHom)
       (Ideal.Quotient.factor_surjective (pow_le_self he))).symm
   obtain hfin | hinf := finite_or_infinite (R ⧸ P ^ e)
-  · have hU : Nat.card (R ⧸ P ^ e)ˣ + Nat.card f.toAddMonoidHom.ker = Nat.card (R ⧸ P ^ e) := by
-      rw [Nat.card_congr (Equiv.sumCompl fun x : R ⧸ P ^ e ↦ IsUnit x).symm, Nat.card_sum,
-        Nat.card_congr (Submonoid.unitsTypeEquivIsUnitSubmonoid (M := R ⧸ P ^ e)).toEquiv]
-      congr 1
-      exact Nat.card_congr (Equiv.subtypeEquivRight (p := (· ∈ f.toAddMonoidHom.ker))
-        (q := fun x ↦ ¬ IsUnit x) fun x ↦ by simp [hunit])
-    rw [Nat.mul_sub_one]
-    exact Nat.eq_sub_of_add_eq (by nth_rw 2 [← hU]; rw [hA]; ring)
+  · have : Nontrivial (R ⧸ P ^ e) := Ideal.Quotient.nontrivial_iff.mpr
+      (ne_top_of_le_ne_top (IsMaximal.ne_top inferInstance) (pow_le_self (I := P) he))
+    -- The nonunits of `R ⧸ P ^ e` form the kernel of `f`, so `R ⧸ P ^ e` is a finite local ring
+    -- with residue field `R ⧸ P`, and its units are counted by the general local-ring count.
+    have : IsLocalRing (R ⧸ P ^ e) := .of_nonunits_add fun a b ha hb ↦ by
+      simp_all [mem_nonunits_iff]
+    let := Quotient.field P
+    have hq : Nat.card (IsLocalRing.ResidueField (R ⧸ P ^ e)) = Nat.card (R ⧸ P) :=
+      Nat.card_congr (TauCeti.residueFieldAlgEquivOfSurjective (ψ := f.toIntAlgHom)
+        (Quotient.factor_surjective (pow_le_self he))).toEquiv
+    rw [mul_comm, ← hq]
+    exact TauCeti.IsLocalRing.card_residueField_mul_card_units _
   -- If `R ⧸ P ^ e` is infinite, then so is `R ⧸ P` or the kernel `P / P ^ e`, and in the latter
   -- case `x ↦ 1 + x` embeds the kernel into the units.
   rw [Nat.card_eq_zero_of_infinite (α := R ⧸ P ^ e), zero_mul, mul_eq_zero]
@@ -67,7 +78,7 @@ theorem card_units_quotient_pow_mul_card_quotient (P : Ideal R) [P.IsMaximal] {e
   have : Infinite f.toAddMonoidHom.ker :=
     (Nat.card_eq_zero.mp h).resolve_left (not_isEmpty_of_nonempty _)
   have h1 (x : f.toAddMonoidHom.ker) : IsUnit (1 + (x : R ⧸ P ^ e)) := by
-    have hx : f x = 0 := by simpa using AddMonoidHom.mem_ker.mp x.2
+    have hx : f x = 0 := by simpa using AddMonoidHom.mem_ker.mp x.property
     simp [hunit, hx]
   have : Infinite (R ⧸ P ^ e)ˣ := Infinite.of_injective (fun x ↦ (h1 x).unit)
     fun x y hxy ↦ by simpa using congrArg Units.val hxy

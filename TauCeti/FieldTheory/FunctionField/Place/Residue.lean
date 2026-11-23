@@ -72,19 +72,6 @@ namespace TauCeti.Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
-/-- A function of order zero at `P` lies in the unit group of `𝒪_P`: order zero is valuation one,
-which is exactly `ValuationSubring.mem_unitGroup_iff`. -/
-private theorem mem_unitGroup_of_ord_eq_zero (P : Place k F) {f : Fˣ} (hf : P.ord (f : F) = 0) :
-    f ∈ P.integers.unitGroup :=
-  -- Routed through `IsUnit` rather than through `Valuation.mem_unitGroup_iff`, which would ask
-  -- unification to see `P.integers` as `P.valuation.valuationSubring`: `Place.integers` is not
-  -- an exposed definition, so that unfolding is unavailable here and the attempt exhausts the
-  -- heartbeat budget at `whnf`. Both lemmas used below are generic in the valuation subring.
-  (ValuationSubring.mem_unitGroup_iff _ f).2 <|
-    (ValuationSubring.valuation_eq_one_iff _ _).1
-      ((P.isUnit_iff_ord_eq_zero (x := ⟨(f : F), P.mem_integers_iff_ord_nonneg.2 hf.ge⟩)
-        (Units.ne_zero f)).2 hf)
-
 /-- The element of `𝒪_P`'s unit group named by a unit of order zero.
 
 This is the **only** place the subtype representation of `ValuationSubring.unitGroup` is used.
@@ -94,7 +81,10 @@ below — product, identity, inverse, integer power — are therefore `rfl`. Eve
 the quotient laws, a product and an inverse composed. -/
 private def unitGroupMk (P : Place k F) (f : Fˣ) (hf : P.ord (f : F) = 0) :
     P.integers.unitGroup :=
-  ⟨f, P.mem_unitGroup_of_ord_eq_zero hf⟩
+  ⟨f, by
+    rw [P.integers_def]
+    exact (P.valuation.mem_unitGroup_iff_ord_eq_zero f).mpr
+      (by simpa only [ord_valuation] using hf)⟩
 
 private theorem coe_unitGroupMulEquiv_unitGroupMk (P : Place k F) (f : Fˣ)
     (hf : P.ord (f : F) = 0) :

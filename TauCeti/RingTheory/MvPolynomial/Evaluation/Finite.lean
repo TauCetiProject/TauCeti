@@ -46,7 +46,7 @@ theorem exists_finset_eq_zero_iff_forall_eval_eq_zero (V : Submodule R (MvPolyno
   have : Module.Finite K W :=
     Module.Finite.iff_fg.mpr ((Module.Finite.iff_fg.mp ‹_›).map φ).span
   let e (v : Set.pi Set.univ s) : W →ₗ[K] K :=
-    (aeval (algebraMap R K ∘ v.1)).toLinearMap.comp W.subtype
+    (aeval (algebraMap R K ∘ v.val)).toLinearMap.comp W.subtype
   have he (v : σ → R) (p : MvPolynomial σ R) :
       eval (algebraMap R K ∘ v) (φ p) = algebraMap R K (eval v p) := by
     simp [φ, eval_map, ← aeval_def, aeval_algebraMap_apply]
@@ -55,7 +55,7 @@ theorem exists_finset_eq_zero_iff_forall_eval_eq_zero (V : Submodule R (MvPolyno
   have hmem : (⟨φ p, subset_span (mem_map_of_mem hp)⟩ : W) ∈
       t.inf fun v ↦ LinearMap.ker (e v) :=
     mem_finsetInf.mpr fun v hv ↦ by
-      simp [e, he, h v.1 (Finset.mem_image.mpr ⟨v, hv, rfl⟩)]
+      simp [e, he, h v.val (Finset.mem_image.mpr ⟨v, hv, rfl⟩)]
   exact funext_set s hs fun v hv ↦ by simpa [e, he] using ht ⟨v, hv⟩ hmem
 
 end Submodule

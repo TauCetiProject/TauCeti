@@ -51,7 +51,7 @@ noncomputable def cocycle0 (m : H0 G M) :
     (CochainComplex.next ℕ 0) (by
       rw [d_cochainEquiv0]
       have h : (⟨d0 G M (m : M), mem_C1_iff.mpr (continuous_d0_apply (m : M))⟩ : C1 G M) = 0 :=
-        Subtype.ext (funext fun g ↦ by simp [d0_apply, m.2 g])
+        Subtype.ext (funext fun g ↦ by simp [d0_apply, m.property g])
       rw [h, map_zero])
 
 /-- The inclusion of the homogeneous `0`-cocycle `cocycle0 m` is the cochain `g ↦ g • m`, read

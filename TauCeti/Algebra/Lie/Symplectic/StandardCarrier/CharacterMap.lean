@@ -38,14 +38,14 @@ open _root_.Matrix
 
 universe v
 
-variable (K : Type v) [Field K] [CharP K 2]
+variable (A : Type v) [CommRing A]
 
 /-- In type-C fundamental-weight coordinates the special isogeny sends `(s₀, s₁)` to
 `(s₁, s₀²)`. -/
 @[simp]
-theorem specialIsogeny_weightTorusPoints (s : Fin 2 → Kˣ) :
-    specialIsogeny K (weightTorusPoints 1 K s) =
-      weightTorusPoints 1 K ![s 1, s 0 ^ 2] := by
+theorem specialIsogeny_weightTorusPoints [CharP A 2] (s : Fin 2 → Aˣ) :
+    specialIsogeny A (weightTorusPoints 1 A s) =
+      weightTorusPoints 1 A ![s 1, s 0 ^ 2] := by
   apply Subtype.ext
   apply Units.ext
   rw [coe_specialIsogeny, coe_weightTorusPoints, coe_weightTorusPoints,
@@ -63,14 +63,14 @@ theorem specialIsogeny_weightTorusPoints (s : Fin 2 → Kˣ) :
 
 /-- The weight torus of the rank-two symplectic carrier in type-B₂ fundamental-weight
 coordinates. The swap is the B₂-to-C₂ node adapter. -/
-noncomputable def b2WeightTorusPoints (A : Type v) [CommRing A] :
+noncomputable def b2WeightTorusPoints :
     (Fin 2 → Aˣ) →* points 1 A :=
   (weightTorusPoints 1 A).comp (MonoidHom.pi fun i =>
     Pi.evalMonoidHom (fun _ : Fin 2 => Aˣ) (Equiv.swap 0 1 i))
 
 /-- Type-B₂ torus parameters become swapped type-C fundamental-weight parameters.
 This is not a simp lemma: retaining the type-B₂ torus lets its action formulas apply. -/
-theorem b2WeightTorusPoints_apply (A : Type v) [CommRing A] (s : Fin 2 → Aˣ) :
+theorem b2WeightTorusPoints_apply (s : Fin 2 → Aˣ) :
     b2WeightTorusPoints A s = weightTorusPoints 1 A ![s 1, s 0] := by
   rw [b2WeightTorusPoints, MonoidHom.comp_apply]
   congr 1
@@ -80,16 +80,16 @@ theorem b2WeightTorusPoints_apply (A : Type v) [CommRing A] (s : Fin 2 → Aˣ) 
 /-- In type-B₂ fundamental-weight coordinates the special isogeny sends `(s₀, s₁)` to
 `(s₁², s₀)`. -/
 @[simp]
-theorem specialIsogeny_b2WeightTorusPoints (s : Fin 2 → Kˣ) :
-    specialIsogeny K (b2WeightTorusPoints K s) =
-      b2WeightTorusPoints K ![s 1 ^ 2, s 0] := by
+theorem specialIsogeny_b2WeightTorusPoints [CharP A 2] (s : Fin 2 → Aˣ) :
+    specialIsogeny A (b2WeightTorusPoints A s) =
+      b2WeightTorusPoints A ![s 1 ^ 2, s 0] := by
   simp only [b2WeightTorusPoints_apply, specialIsogeny_weightTorusPoints,
     Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- The character pullback of the represented special isogeny, in type-B₂ numbering, is the
 weight map of the native special root-datum isogeny. -/
-theorem isCharacterMap_specialIsogeny :
-    IsCharacterMap (b2WeightTorusPoints K) (specialIsogeny K)
+theorem isCharacterMap_specialIsogeny [CharP A 2] :
+    IsCharacterMap (b2WeightTorusPoints A) (specialIsogeny A)
       DynkinType.b2SpecialIsogeny.weightMap := by
   rw [isCharacterMap_iff]
   intro s

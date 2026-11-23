@@ -140,7 +140,7 @@ noncomputable def spinGroupEquivUnitsWeightedSumSquaresOne [Invertible (2 : K)] 
     let _ : Invertible (weightedSumSquares K ![(1 : K), 1] ![1, 0]) :=
       invertibleOfNonzero (by simp)
     obtain ⟨y, hy⟩ := (mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two _ (Module.finrank_fin_fun K)
-      ![1, 0]).1 (spinGroup.mem_even g.2)
+      ![1, 0]).1 (spinGroup.mem_even g.property)
     have hg : spinGroupToEven _ g = (even.ι _).bilin ![1, 0] y := Subtype.ext (by simp [hy])
     have hg' : spinGroupToEven _ g⁻¹ = (even.ι _).bilin y ![1, 0] := Subtype.ext (by
       simp [← spinGroup.star_eq_inv, hy])

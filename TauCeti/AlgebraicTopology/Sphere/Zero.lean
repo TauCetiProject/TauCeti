@@ -106,7 +106,7 @@ def zerothHomotopySphereUnique (h : finrank ℝ E = 1) (p : sphere (0 : E) 1) :
       rintro ⟨c, hc⟩
       obtain ⟨x, rfl⟩ := ZerothHomotopy.mk_surjective c
       have hx : (x : E) ∈ ({(p : E), -(p : E)} : Set E) :=
-        sphere_eq_pair_of_finrank_eq_one h p.2 ▸ x.2
+        sphere_eq_pair_of_finrank_eq_one h p.property ▸ x.property
       rcases hx with hx | hx
       · exact absurd (congrArg ZerothHomotopy.mk (Subtype.ext hx)) hc
       · exact Subtype.ext (congrArg ZerothHomotopy.mk (Subtype.ext hx)) }
@@ -125,7 +125,7 @@ theorem exists_continuous_injective_range_sphere_eq_pair {Y : Type*} [Topologica
     ∃ h : sphere (0 : ℝ) 1 → Y, Continuous h ∧ Function.Injective h ∧ Set.range h = {p, q} := by
   -- The `0`-sphere of `ℝ` is the discrete space `{1, -1}`.
   have hpm (t : sphere (0 : ℝ) 1) : (t : ℝ) = 1 ∨ (t : ℝ) = -1 :=
-    (sphere_eq_pair_of_finrank_eq_one (finrank_self ℝ) (p := (1 : ℝ)) (by simp)).subset t.2
+    (sphere_eq_pair_of_finrank_eq_one (finrank_self ℝ) (p := (1 : ℝ)) (by simp)).subset t.property
   have := discreteTopology_sphere_of_finrank_eq_one (finrank_self ℝ) 0 1
   let one : sphere (0 : ℝ) 1 := ⟨1, by simp⟩
   let negOne : sphere (0 : ℝ) 1 := ⟨-1, by simp⟩
