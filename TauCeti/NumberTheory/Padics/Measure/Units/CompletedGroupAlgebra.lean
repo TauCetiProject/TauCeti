@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Padics.Complex.Basic
 public import TauCeti.NumberTheory.Padics.Measure.Topology.Amice
 public import TauCeti.NumberTheory.Padics.Measure.Units.WeightIntegral
 public import TauCeti.NumberTheory.Padics.WeightSpace.Specialization
@@ -16,12 +17,25 @@ import TauCeti.Analysis.Normed.Field.Basic
 This file connects integral measures on principal units `D(1 + qℤ_p, ℤ_p)` with the procyclic
 power-series coordinate via the multiplicative Amice transform on `D(Multiplicative ℤ_p, ℤ_p)`
 (`TauCeti.toCompletedGroupAlgebra_unitsPrincipal`), and connects `D(ℤ_pˣ, ℤ_p)` and `ℤ_p[[ℤ_pˣ]]`
-with evaluation at `K`-valued weights: over any complete ultrametric normed field `K` over `ℚ_p`,
-`κ.specializeRingHom (toCompletedGroupAlgebra ν) = measureFun K ν κ`
-(`TauCeti.WeightSpace.specializeRingHom_toCompletedGroupAlgebra`), so `completedMeasureFun K` embeds
-`ℤ_p[[ℤ_pˣ]]` injectively (`TauCeti.completedMeasureFun_injective`) into functions on
-`WeightSpace p K` bounded in norm by `1` (`TauCeti.WeightSpace.norm_specializeRingHom_le_one`), with
-group elements attaining norm `1` (`TauCeti.WeightSpace.norm_specializeRingHom_of`).
+with evaluation at `K`-valued weights:
+* Over any complete ultrametric normed field `K` over `ℚ_p`,
+  `κ.specializeRingHom (toCompletedGroupAlgebra ν) = measureFun K ν κ`
+  (`TauCeti.WeightSpace.specializeRingHom_toCompletedGroupAlgebra`), so `completedMeasureFun K`
+  embeds `ℤ_p[[ℤ_pˣ]]` injectively (`TauCeti.completedMeasureFun_injective`) into functions on
+  `WeightSpace p K` bounded in norm by `1` (`TauCeti.WeightSpace.norm_specializeRingHom_le_one`),
+  with group elements attaining norm `1` (`TauCeti.WeightSpace.norm_specializeRingHom_of`).
+* Over `ℂ_p`, every weight `κ : WeightSpace p ℂ_p` restricts to `𝓞_ℂ_p`
+  (`TauCeti.WeightSpace.toPadicComplexInt`), and by adic uniqueness its continuous
+  `ℤ_p`-algebra specialisation `κ.toPadicComplexInt.adicSpecialize : ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p] 𝓞_ℂ_p`
+  coincides with the unit-ball factorisation of `κ.specializeRingHom`
+  (`TauCeti.WeightSpace.toRingHom_adicSpecialize_toPadicComplexInt`), recovering `measureFun ℂ_p`
+  after inclusion into `ℂ_p`
+  (`TauCeti.WeightSpace.coe_adicSpecialize_toPadicComplexInt_toCompletedGroupAlgebra`).
+* On arbitrary bounded measures `D(ℤ_pˣ, K)` valued in a separably closed Hausdorff topological
+  field `K` of characteristic zero (such as `ℂ_p`), integration against weights defines
+  `TauCeti.measurePairing K : D(ℤ_pˣ, K) →ₐ[K] (WeightSpace p K → K)`, which is injective
+  (`TauCeti.measurePairing_injective`); finite-order weights already separate measures
+  (`TauCeti.eq_of_forall_isOfFinOrder_characterIntegralAlgHom_weightTest_eq`).
 
 ## References
 
@@ -119,5 +133,141 @@ theorem completedMeasureFun_injective :
         ← completedGroupAlgebraEquiv_apply] using hxy
 
 end MeasureFunComparison
+
+section AdicPadicComplex
+
+/-- Every `ℂ_p`-valued weight takes values in `𝓞_ℂ_p`. -/
+theorem WeightSpace.coe_mem_padicComplexInt (κ : WeightSpace p ℂ_[p]) (x : ℤ_[p]ˣ) :
+    (κ x : ℂ_[p]) ∈ 𝓞_ℂ_[p] := by
+  rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe,
+    PadicComplex.valuation_coe]
+  exact (norm_apply_eq_one_of_compactSpace κ x).le
+
+/-- Restriction of a `ℂ_p`-valued weight `κ : ℤ_pˣ →ₜ* ℂ_pˣ` to the unit group `(𝓞_ℂ_p)ˣ`. -/
+noncomputable def WeightSpace.toPadicComplexInt (κ : WeightSpace p ℂ_[p]) :
+    WeightSpace p 𝓞_ℂ_[p] where
+  toMonoidHom :=
+    { toFun x :=
+        ⟨⟨(κ x : ℂ_[p]), κ.coe_mem_padicComplexInt x⟩,
+         ⟨(κ x⁻¹ : ℂ_[p]), κ.coe_mem_padicComplexInt x⁻¹⟩,
+         Subtype.ext (by simp), Subtype.ext (by simp)⟩
+      map_one' := Units.ext <| Subtype.ext <| by simp
+      map_mul' x y := Units.ext <| Subtype.ext <| by simp }
+  continuous_toFun := Units.continuous_iff.mpr
+    ⟨(Units.continuous_val.comp κ.continuous).subtype_mk _,
+     ((Units.continuous_val.comp κ.continuous).comp continuous_inv).subtype_mk _⟩
+
+@[simp]
+theorem WeightSpace.coe_toPadicComplexInt_apply (κ : WeightSpace p ℂ_[p]) (x : ℤ_[p]ˣ) :
+    ((κ.toPadicComplexInt x : 𝓞_ℂ_[p]) : ℂ_[p]) = κ x :=
+  (rfl)
+
+/-- Every `ℂ_p`-valued weight specialisation takes values in `𝓞_ℂ_p`. -/
+theorem WeightSpace.specializeRingHom_mem_padicComplexInt (κ : WeightSpace p ℂ_[p])
+    (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) : κ.specializeRingHom x ∈ 𝓞_ℂ_[p] := by
+  rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe,
+    PadicComplex.valuation_coe]
+  exact κ.norm_specializeRingHom_le_one x
+
+/-- Under `PadicComplex.padicIntAlgebra p`, the adic specialisation of `κ.toPadicComplexInt` into
+`𝓞_ℂ_p` agrees with the unit-ball factorisation of `κ.specializeRingHom`. -/
+theorem WeightSpace.toRingHom_adicSpecialize_toPadicComplexInt (κ : WeightSpace p ℂ_[p]) :
+    letI := PadicComplex.padicIntAlgebra p
+    haveI := PadicComplex.continuousSMul_padicIntAlgebra p
+    κ.toPadicComplexInt.adicSpecialize.toRingHom =
+      κ.specializeRingHom.codRestrict 𝓞_ℂ_[p] κ.specializeRingHom_mem_padicComplexInt := by
+  let := PadicComplex.padicIntAlgebra p
+  have := PadicComplex.continuousSMul_padicIntAlgebra p
+  let Φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] 𝓞_ℂ_[p] :=
+    { κ.specializeRingHom.codRestrict 𝓞_ℂ_[p] κ.specializeRingHom_mem_padicComplexInt with
+      commutes' a := Subtype.ext <| by
+        simp [PadicComplex.algebraMap_padicIntAlgebra_apply, padicIntAlgebraMap_apply] }
+  have hΦ : Continuous Φ := κ.continuous_specializeRingHom.subtype_mk _
+  exact congrArg AlgHom.toRingHom
+    (WeightSpace.eq_adicSpecialize_of_continuous hΦ κ.toPadicComplexInt fun x ↦
+      Subtype.ext <| by simp [Φ]).symm
+
+/-- Applying the adic specialisation `κ.toPadicComplexInt.adicSpecialize : ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p]
+𝓞_ℂ_p` and including into `ℂ_p` recovers `κ.specializeRingHom`. -/
+theorem WeightSpace.coe_adicSpecialize_toPadicComplexInt (κ : WeightSpace p ℂ_[p])
+    (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) :
+    letI := PadicComplex.padicIntAlgebra p
+    haveI := PadicComplex.continuousSMul_padicIntAlgebra p
+    ((κ.toPadicComplexInt.adicSpecialize x : 𝓞_ℂ_[p]) : ℂ_[p]) = κ.specializeRingHom x := by
+  let := PadicComplex.padicIntAlgebra p
+  have := PadicComplex.continuousSMul_padicIntAlgebra p
+  exact congrArg Subtype.val <|
+    RingHom.congr_fun κ.toRingHom_adicSpecialize_toPadicComplexInt x
+
+/-- **Adic specialisation compatibility with `measureFun`.** For an integral measure
+`ν ∈ D(ℤ_pˣ, ℤ_p)` and a `ℂ_p`-valued weight `κ`, evaluating the unique continuous `ℤ_p`-algebra
+homomorphism `κ.toPadicComplexInt.adicSpecialize : ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p] 𝓞_ℂ_p` at
+`toCompletedGroupAlgebra ν` and including into `ℂ_p` gives `measureFun ℂ_p ν κ`. -/
+theorem WeightSpace.coe_adicSpecialize_toPadicComplexInt_toCompletedGroupAlgebra
+    (ν : D(ℤ_[p]ˣ, ℤ_[p])) (κ : WeightSpace p ℂ_[p]) :
+    letI := PadicComplex.padicIntAlgebra p
+    haveI := PadicComplex.continuousSMul_padicIntAlgebra p
+    ((κ.toPadicComplexInt.adicSpecialize (toCompletedGroupAlgebra ν) : 𝓞_ℂ_[p]) : ℂ_[p]) =
+      measureFun ℂ_[p] ν κ := by
+  let := PadicComplex.padicIntAlgebra p
+  have := PadicComplex.continuousSMul_padicIntAlgebra p
+  rw [κ.coe_adicSpecialize_toPadicComplexInt, WeightSpace.specializeRingHom_toCompletedGroupAlgebra]
+
+end AdicPadicComplex
+
+section MeasurePairing
+
+variable (K : Type*) [CommRing K] [TopologicalSpace K] [IsTopologicalRing K]
+
+/-- **The weight character pairing** sending a bounded measure `μ ∈ D(ℤ_pˣ, K)` to the function
+`κ ↦ μ(κ)` on `K`-valued weights, as a `K`-algebra homomorphism. -/
+noncomputable def measurePairing : D(ℤ_[p]ˣ, K) →ₐ[K] (WeightSpace p K → K) :=
+  AlgHom.pi fun κ ↦ κ.weightTest.characterIntegralAlgHom
+
+@[simp]
+theorem measurePairing_apply (μ : D(ℤ_[p]ˣ, K)) (κ : WeightSpace p K) :
+    measurePairing K μ κ = κ.weightTest.characterIntegralAlgHom μ :=
+  (rfl)
+
+/-- On coefficient-extended integral measures, `measurePairing` recovers `measureFun`. -/
+theorem measurePairing_extendCoefficients {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K]
+    [IsUltrametricDist K] [CompleteSpace K] (ν : D(ℤ_[p]ˣ, ℤ_[p])) :
+    measurePairing K
+        (extendCoefficients (padicIntAlgebraMap p K) (norm_padicIntAlgebraMap_le_one norm_one.le)
+          ν) =
+      measureFun K ν := by
+  ext κ
+  simp [measureFun_apply]
+
+/-- Over a separably closed Hausdorff topological field `K` of characteristic zero (such as `ℂ_p`),
+finite-order weights separate bounded `K`-valued measures on `ℤ_pˣ`. -/
+theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_weightTest_eq {K : Type*} [Field K]
+    [TopologicalSpace K] [IsTopologicalRing K] [T2Space K] [CharZero K] [IsSepClosed K]
+    {μ ν : D(ℤ_[p]ˣ, K)}
+    (h : ∀ κ : WeightSpace p K, IsOfFinOrder κ →
+      κ.weightTest.characterIntegralAlgHom μ = κ.weightTest.characterIntegralAlgHom ν) :
+    μ = ν :=
+  eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq_of_isSepClosed
+    fun (κ : WeightSpace p K) hκ ↦ by
+      have htest :
+          (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩ κ : C(ℤ_[p]ˣ, K)) =
+            (κ.weightTest : C(ℤ_[p]ˣ, K)) :=
+        ContinuousMap.ext fun x ↦ (κ.weightTest_apply x).symm
+      simpa only [characterIntegralAlgHom_apply, htest] using h κ hκ
+
+/-- **`K`-valued weights separate bounded `K`-valued measures on `ℤ_pˣ`** for every separably
+closed Hausdorff topological field `K` of characteristic zero (in particular `K = ℂ_p`). -/
+theorem measurePairing_injective (K : Type*) [Field K] [TopologicalSpace K] [IsTopologicalRing K]
+    [T2Space K] [CharZero K] [IsSepClosed K] :
+    Function.Injective (measurePairing (p := p) K) := fun _ _ hμν ↦
+  eq_of_forall_isOfFinOrder_characterIntegralAlgHom_weightTest_eq fun κ _ ↦
+    congrFun hμν κ
+
+example :
+    Function.Injective fun (μ : D(ℤ_[p]ˣ, ℂ_[p])) (κ : WeightSpace p ℂ_[p]) ↦
+      κ.weightTest.characterIntegralAlgHom μ :=
+  measurePairing_injective ℂ_[p]
+
+end MeasurePairing
 
 end TauCeti
