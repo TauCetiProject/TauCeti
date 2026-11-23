@@ -21,16 +21,17 @@ with uniformly bounded variances is needed, with no independence between matrice
 sizes. For unit off-diagonal second absolute moments and a common diagonal second moment, the mean
 tends to one, so the second empirical spectral moment tends almost surely to one.
 
-For general order `k`, under independent centered entries in `L^(2k)` with uniformly bounded
-`2k`-th absolute moments, the `O((n + 1)⁻²)` variance bound from
+For general order `k`, under independent centered entries in `L^(2k)` for both entry families with
+uniformly bounded `2k`-th absolute moments, the `O((n + 1)⁻²)` variance bound from
 `TauCeti.Probability.RandomMatrix.SpectralMoment.Variance` gives almost-sure vanishing of all
 empirical spectral moment fluctuations (including for sequences of corner arrays with no
-independence assumed across matrix sizes, and simultaneously for all `k` when every even moment is
-uniformly bounded). Combined with the `O((n + 1)⁻¹/²)` expected odd-moment bound, every odd
-empirical spectral moment converges almost surely to zero; combined with the general expected-moment
-convergence in `TauCeti.Probability.RandomMatrix.SpectralMoment.Expected`, every `k`-th empirical
-spectral moment converges almost surely to `∫ x, x ^ k ∂semicircleReal 0 s` under common
-off-diagonal second absolute moment `s`.
+independence assumed across matrix sizes, and simultaneously for all `k` when both entry families
+lie in `L^(2k)` with uniformly bounded `2k`-th absolute moments at every order). Combined with the
+`O((n + 1)⁻¹/²)` expected odd-moment bound, every odd empirical spectral moment converges almost
+surely to zero; combined with the general expected-moment convergence in
+`TauCeti.Probability.RandomMatrix.SpectralMoment.Expected`, every `k`-th empirical spectral moment
+converges almost surely to `∫ x, x ^ k ∂semicircleReal 0 s` under common off-diagonal second
+absolute moment `s`.
 
 ## Main results
 
@@ -198,9 +199,10 @@ theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_of_seq
   exact ae_tendsto_sub_integral_of_summable_variance hmem hvar
 
 /-- **Almost-sure convergence of empirical spectral moments for a sequence of Wigner arrays.**
-With no independence assumed across `n`, under corner-local independence, centered entries,
-off-diagonal second absolute moment `s`, and uniformly bounded `2k`-th moments, the `k`-th
-empirical spectral moment converges almost surely to `∫ x, x ^ k ∂semicircleReal 0 s`. -/
+With no independence assumed across `n`, under corner-local independence, centered entries, both
+diagonal and strictly upper-triangular entry families lying in `L^(2k)` in each corner with
+uniformly bounded `2k`-th absolute moment integrals, and off-diagonal second absolute moment `s`,
+the `k`-th empirical spectral moment converges almost surely to `∫ x, x ^ k ∂semicircleReal 0 s`. -/
 theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_of_seq {s : ℝ≥0}
     (hindep : ∀ n, iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
@@ -217,16 +219,12 @@ theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_of_seq {s : ℝ≥0
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ))
       atTop (𝓝 (∫ x, x ^ k ∂semicircleReal 0 s)) := by
   have := (hindep 0).isProbabilityMeasure
-  have hle : (k : ℝ≥0∞) ≤ (2 * k : ℕ) := by exact_mod_cast Nat.le_mul_of_pos_left k two_pos
+  have hξ' (n ij hij) := (hξp n ij hij).memLp_and_integral_norm_pow_le_sqrt (hξ n ij hij)
+  have hη' (n i hi) := (hηp n i hi).memLp_and_integral_norm_pow_le_sqrt (hη n i hi)
   have hmean := tendsto_integral_integral_pow_spectralMeasure_wignerMatrix' (P := fun _ ↦ P)
-    (k := k) (B := √B) (s := s) hindep hξzero hηzero
-    (fun n ij hij ↦ (hξp n ij hij).mono_exponent hle)
-    (fun n i hi ↦ (hηp n i hi).mono_exponent hle)
-    (fun n ij hij ↦ (hξp n ij hij).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-      (Real.sqrt_le_sqrt (hξ n ij hij)))
-    (fun n i hi ↦ (hηp n i hi).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-      (Real.sqrt_le_sqrt (hη n i hi)))
-    hξsq
+    (k := k) (B := √B) (s := s) hindep hξzero hηzero (fun n ij hij ↦ (hξ' n ij hij).1)
+    (fun n i hi ↦ (hη' n i hi).1) (fun n ij hij ↦ (hξ' n ij hij).2)
+    (fun n i hi ↦ (hη' n i hi).2) hξsq
   filter_upwards [ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_of_seq
     hindep hξzero hηzero hξp hηp hξ hη] with ω hω
   simpa only [sub_add_cancel, zero_add] using hω.add hmean
@@ -259,10 +257,11 @@ theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
     (fun _ ij _ ↦ hξp ij) (fun _ i _ ↦ hηp i)
     (fun _ ij _ ↦ hξ ij) (fun _ i _ ↦ hη i)
 
-/-- **Simultaneous almost-sure vanishing of all empirical spectral moment fluctuations.** When every
-even moment order `2k` of the independent centered entries is uniformly bounded across the array by
-`B k`, on a single full-measure event the fluctuations of all empirical spectral moments around
-their expectations vanish as `n → ∞`. -/
+/-- **Simultaneous almost-sure vanishing of all empirical spectral moment fluctuations.** When the
+entries are independent and centered and both entry families lie in `L^(2k)` with `2k`-th absolute
+moment integrals uniformly bounded across the array by `B k` at every order `k`, on a single
+full-measure event the fluctuations of all empirical spectral moments around their expectations
+vanish as `n → ∞`. -/
 theorem ae_forall_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
@@ -296,21 +295,20 @@ theorem ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ))
       atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  have hle : ((2 * m + 1 : ℕ) : ℝ≥0∞) ≤ (2 * (2 * m + 1) : ℕ) := by exact_mod_cast (by omega)
+  have hξ' (ij) := (hξp ij).memLp_and_integral_norm_pow_le_sqrt (hξ ij)
+  have hη' (i) := (hηp i).memLp_and_integral_norm_pow_le_sqrt (hη i)
   have hmean := tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
     (fun _ ↦ hindep) (fun _ ↦ hξzero) (fun _ ↦ hηzero)
-    (fun _ ij ↦ (hξp ij).mono_exponent hle) (fun _ i ↦ (hηp i).mono_exponent hle)
-    (fun _ ij ↦ (hξp ij).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-      (Real.sqrt_le_sqrt (hξ ij)))
-    (fun _ i ↦ (hηp i).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-      (Real.sqrt_le_sqrt (hη i)))
+    (fun _ ij ↦ (hξ' ij).1) (fun _ i ↦ (hη' i).1)
+    (fun _ ij ↦ (hξ' ij).2) (fun _ i ↦ (hη' i).2)
   filter_upwards [ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
     hindep hξzero hηzero hξp hηp hξ hη] with ω hω
   simpa only [sub_add_cancel, zero_add] using hω.add hmean
 
 /-- **Simultaneous almost-sure convergence of all odd empirical spectral moments to zero.** When
-every `(4m + 2)`-th absolute moment of the independent centered entries is uniformly bounded by
-`B m`, on a single full-measure event all odd empirical spectral moments converge to zero. -/
+the entries are independent and centered and both entry families lie in `L^(4m + 2)` with
+`(4m + 2)`-th absolute moment integrals uniformly bounded by `B m` at every `m`, on a single
+full-measure event all odd empirical spectral moments converge to zero. -/
 theorem ae_forall_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
@@ -326,9 +324,10 @@ theorem ae_forall_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMat
   ae_all_iff.2 fun m ↦ ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
     hindep hξzero hηzero (hξp m) (hηp m) (hξ m) (hη m)
 
-/-- **Almost-sure convergence of empirical spectral moments for an infinite Wigner array.**
-Under independent centered entries, off-diagonal second absolute moment `s`, and uniformly bounded
-`2k`-th absolute moments, the `k`-th empirical spectral moment converges almost surely to
+/-- **Almost-sure convergence of empirical spectral moments for an infinite Wigner array.** Under
+independent centered entries, both diagonal and strictly upper-triangular entry families lying in
+`L^(2k)` with uniformly bounded `2k`-th absolute moment integrals, and off-diagonal second absolute
+moment `s`, the `k`-th empirical spectral moment converges almost surely to
 `∫ x, x ^ k ∂semicircleReal 0 s`. -/
 theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix
     {k : ℕ} {B : ℝ} {s : ℝ≥0}
@@ -347,10 +346,11 @@ theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix
     (fun _ ij _ ↦ hξzero ij) (fun _ i _ ↦ hηzero i) (fun _ ij _ ↦ hξsq ij)
     (fun _ ij _ ↦ hξp ij) (fun _ i _ ↦ hηp i) (fun _ ij _ ↦ hξ ij) (fun _ i _ ↦ hη i)
 
-/-- **Simultaneous almost-sure convergence of all empirical spectral moments.** When every even
-moment order `2k` of the independent centered entries is uniformly bounded by `B k` and the
-off-diagonal entries have common second absolute moment `s`, on a single full-measure event every
-`k`-th empirical spectral moment converges to `∫ x, x ^ k ∂semicircleReal 0 s`. -/
+/-- **Simultaneous almost-sure convergence of all empirical spectral moments.** When the entries are
+independent and centered, both entry families lie in `L^(2k)` with `2k`-th absolute moment
+integrals uniformly bounded by `B k` at every order `k`, and the off-diagonal entries have common
+second absolute moment `s`, on a single full-measure event every `k`-th empirical spectral moment
+converges to `∫ x, x ^ k ∂semicircleReal 0 s`. -/
 theorem ae_forall_tendsto_integral_pow_spectralMeasure_wignerMatrix
     {B : ℕ → ℝ} {s : ℝ≥0}
     (hindep : iIndepFun (fun r : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) r) P)

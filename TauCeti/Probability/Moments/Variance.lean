@@ -151,6 +151,16 @@ theorem MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul
     simpa only [ENNReal.toReal_natCast, Real.rpow_natCast] using h
   simpa only [← pow_mul, mul_comm k 2] using integral_le_sqrt_integral_sq hmem
 
+/-- On a probability space, a function in `L^(2k)` whose `2k`-th absolute moment is at most `B`
+also lies in `L^k` with `k`-th absolute moment at most `√B`. -/
+theorem MemLp.memLp_and_integral_norm_pow_le_sqrt {Ω E : Type*} [MeasurableSpace Ω]
+    [NormedAddCommGroup E] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → E}
+    {k : ℕ} {B : ℝ} (hf : MemLp f (2 * k : ℕ) μ)
+    (hB : ∫ x, ‖f x‖ ^ (2 * k) ∂μ ≤ B) :
+    MemLp f (k : ℕ) μ ∧ ∫ x, ‖f x‖ ^ k ∂μ ≤ √B :=
+  ⟨hf.mono_exponent (by exact_mod_cast Nat.le_mul_of_pos_left k two_pos),
+    hf.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans (Real.sqrt_le_sqrt hB)⟩
+
 section Centering
 
 variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
