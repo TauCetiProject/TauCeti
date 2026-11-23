@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Complex.ReImTopology
+import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 
 /-!
 # Green's formula for bilinear pairings on rectangles, annuli and half-annuli
@@ -29,7 +30,9 @@ The rectangle and annulus formulas below are `TauCeti.integral_extDeriv_prod_Icc
 `TauCeti.integral_extDeriv_annulus` applied to the pullback along `u` of the one-form `x ↦ B x`.
 The half-annulus formula is `TauCeti.integral_upperHalfAnnulus_eq_of_extDeriv_eq` applied to the
 one-form `B u (Du)` built from the derivative `Du` of `u` within the closed half-plane, which
-agrees with that pullback off the diameter.
+agrees with that pullback off the diameter. In the same way, the formula on an open disc, for a map
+which is `C²` inside and only `C¹` up to the boundary circle, is `TauCeti.integral_extDeriv_ball`
+applied to the one-form built from the derivative within the closed disc.
 
 For a compactly supported map on the whole plane the boundary terms are absent and the integral
 vanishes (`TauCeti.integral_bilinear_fderiv_apply_comm`). With boundary, this is the formula that
@@ -52,6 +55,8 @@ on the real axis.
   translated annulus of nonnegative inner radius, with outer minus inner circle boundary terms.
 * `ContinuousLinearMap.integral_bilinear_fderivWithin_sub_upperHalfAnnulus`: the formula on a
   closed upper half-annulus, for a map that is `C²` up to the diameter.
+* `ContinuousLinearMap.integral_bilinear_fderiv_sub_ball`: the formula on an open disc, for a map
+  that is `C²` inside and `C¹` up to the boundary circle.
 -/
 
 public section
@@ -137,6 +142,65 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
     (fun z hz ↦ extDeriv_bilinearPullbackOneForm_apply B (hu z hz) _ _)] at h
   simpa [bilinearPullbackOneForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     Function.comp_def, smul_smul] using h
+
+/-- **Green's formula on a disc with `C¹` boundary values.** For a map which is `C²` on the open
+disc `‖z - z₀‖ < b` and `C¹` up to its boundary circle, the integral over the open disc of the
+alternating part of a bilinear pairing of its derivatives is the integral of `B u (∂_θ u)` along
+the boundary circle, parametrized counterclockwise. Unlike
+`ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus`, no second derivative is required at the
+boundary. -/
+theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_ball
+    (B : V →L[ℝ] V →L[ℝ] W) {u : ℂ → V} (z₀ : ℂ) {b : ℝ} (hb : 0 ≤ b)
+    (hu : ∀ z ∈ Metric.ball z₀ b, ContDiffAt ℝ 2 u z)
+    (hu₁ : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
+    ∫ z in Metric.ball z₀ b,
+      (B (fderiv ℝ u z 1) (fderiv ℝ u z I) - B (fderiv ℝ u z I) (fderiv ℝ u z 1)) =
+      ∫ θ in -π..π, B (u (circleMap z₀ b θ)) (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ) := by
+  rcases hb.eq_or_lt with rfl | hb
+  · simp
+  set K := Metric.closedBall z₀ b
+  set Du := fderivWithin ℝ u K
+  have hDu : ContinuousOn Du K :=
+    hu₁.continuousOn_fderivWithin (uniqueDiffOn_convex (convex_closedBall z₀ b)
+      (by rw [interior_closedBall z₀ hb.ne']; exact Metric.nonempty_ball.mpr hb)) le_rfl
+  -- Inside the disc, `Du` is the derivative of `u`.
+  have hK (w : ℂ) (hw : w ∈ Metric.ball z₀ b) : K ∈ 𝓝 w :=
+    mem_of_superset (Metric.isOpen_ball.mem_nhds hw) Metric.ball_subset_closedBall
+  -- The one-form `B u (Du)`, built from derivatives within the closed disc.
+  let ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] W := fun z ↦
+    (ContinuousLinearMap.liouvilleFormCLM ((2 : ℝ) • B) (u z)).compContinuousLinearMap (Du z)
+  have hCLM := ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
+    (𝕜 := ℝ) (E := ℂ) (F := V) (G := W) (ι := Fin 1) 1 (by simp)
+  have hω : ContinuousOn ω K :=
+    (hCLM.continuous.comp_continuousOn hDu).clm_apply
+      ((ContinuousLinearMap.liouvilleFormCLM _).continuous.comp_continuousOn hu₁.continuousOn)
+  -- Inside the disc, `ω` is the pullback form.
+  have heq (z : ℂ) (hz : z ∈ Metric.ball z₀ b) : ω =ᶠ[𝓝 z] bilinearPullbackOneForm B u := by
+    filter_upwards [Metric.isOpen_ball.mem_nhds hz] with w hw
+    simp only [ω, bilinearPullbackOneForm, Du, fderivWithin_of_mem_nhds (hK w hw)]
+  have hd (z : ℂ) (hz : z ∈ Metric.ball z₀ b) : extDeriv ω z ![1, I] =
+      B (fderiv ℝ u z 1) (fderiv ℝ u z I) - B (fderiv ℝ u z I) (fderiv ℝ u z 1) := by
+    rw [(heq z hz).extDeriv_eq, extDeriv_bilinearPullbackOneForm_apply B (hu z hz)]
+  have hdω : ContinuousOn (fun z ↦ B (Du z 1) (Du z I) - B (Du z I) (Du z 1)) K :=
+    ((B.continuous.comp_continuousOn (hDu.clm_apply continuousOn_const)).clm_apply
+      (hDu.clm_apply continuousOn_const)).sub
+      ((B.continuous.comp_continuousOn (hDu.clm_apply continuousOn_const)).clm_apply
+        (hDu.clm_apply continuousOn_const))
+  have hint : IntegrableOn (fun z ↦ extDeriv ω z ![1, I]) (Metric.ball z₀ b) :=
+    ((hdω.integrableOn_compact (isCompact_closedBall z₀ b)).mono_set
+      Metric.ball_subset_closedBall).congr_fun (fun z hz ↦ by
+        rw [hd z hz]
+        simp only [Du, fderivWithin_of_mem_nhds (hK z hz)]) measurableSet_ball
+  have h := integral_extDeriv_ball hb.le
+    (fun z hz ↦ (contDiffAt_bilinearPullbackOneForm B (hu z hz)).congr_of_eventuallyEq (heq z hz))
+    hω hint
+  rw [setIntegral_congr_fun measurableSet_ball hd] at h
+  rw [h]
+  refine intervalIntegral.integral_congr fun θ _ ↦ ?_
+  have hmem (θ : ℝ) : circleMap z₀ b θ ∈ K := circleMap_mem_closedBall z₀ hb.le θ
+  rw [deriv_comp_circleMap_eq_fderivWithin hmem
+    (hu₁.differentiableOn one_ne_zero _ (hmem θ))]
+  simp [ω, ContinuousAlternatingMap.compContinuousLinearMap_apply, Du, smul_smul]
 
 /-- **Green's formula on a closed upper half-annulus.** Let `S` be the closed upper half
 `{z | z₀.im ≤ z.im}` of the annulus of radii `0 ≤ a ≤ b` about `z₀`, contained in an open set `O`,
