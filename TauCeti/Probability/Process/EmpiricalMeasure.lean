@@ -258,6 +258,14 @@ theorem empiricalMeasureOfFintype_apply {x : κ → α} {s : Set α} (hs : Measu
   rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     toFiniteMeasure_empiricalMeasureOfFintype, empiricalFiniteMeasure_apply hs]
 
+/-- A finite empirical population charges a set exactly when some member of the population lies
+in it. The set need not be measurable. -/
+theorem empiricalMeasureOfFintype_pos_iff [MeasurableSingletonClass α] {x : κ → α}
+    {s : Set α} :
+    0 < (empiricalMeasureOfFintype x : Measure α) s ↔ ∃ i, x i ∈ s := by
+  simp [empiricalMeasureOfFintype_toMeasure, Measure.dirac_apply, pos_iff_ne_zero,
+    Finset.sum_eq_zero_iff]
+
 /-- Two nonempty finite populations with the same values, counted with multiplicity, have the
 same empirical measure. -/
 theorem empiricalMeasureOfFintype_eq_of_map_univ_val_eq {κ' : Type*} [Fintype κ'] [Nonempty κ']

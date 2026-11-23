@@ -11,6 +11,7 @@ import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.SpecificLimits.CampanatoIteration
 import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
@@ -262,7 +263,7 @@ private theorem setIntegral_ball_inter_le_add_of_le {U H : Opens (EuclideanSpace
   refine ⟨?_, setIntegral_norm_sub_sq_le_add_of_le hsS hC₂ (pow_nonneg hq0 _)
     (pow_le_one₀ hq0 hq1) (hfm.integrableOn_norm_sub_sq_of_subset subset_rfl hS _)
     (hHm.integrableOn_norm_sub_sq_of_subset hsS hs _) hfK
-    (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le hs
+    (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset subset_rfl hs
       (hfm.mono_measure (Measure.restrict_mono hsS le_rfl)) ν _) (hd₂ _)⟩
   simpa only [sub_zero] using setIntegral_norm_sub_sq_le_add_of_le (b := 0) (k := 0) (c := 0) hsS
     hC₁ (pow_nonneg hq0 _) (pow_le_one₀ hq0 hq1)
@@ -393,9 +394,8 @@ private theorem exists_setIntegral_ball_inter_norm_sq_le_rpow {κ θ C₂ : ℝ}
   -- The half-space has density one half in the closed balls centred on its boundary hyperplane.
   have hdens (t : ℝ) : (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall z t) ≤
       volume (closedBall z t ∩ H) := by
-    rw [show (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH,
-      inter_comm, volume.addHaar_setOf_lt_inner_inter_closedBall hν hz,
-      ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat, ENNReal.div_eq_inv_mul]
+    rw [show (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
+    exact volume.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner hν hz.ge
   refine (h (Ω := H) (g := g) (fun t _ _ => hdens t) (hgs R le_rfl) hR hΦR (fun s hs hsθ => ?_) t
     ht htθ).trans_eq ?_
   · -- The distance to the multiples of `ν` bounds the square mean oscillation.

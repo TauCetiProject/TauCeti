@@ -109,7 +109,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   along a horizontal line exactly when its derivative in the first coordinate direction vanishes
   there.
 * `HasMFDerivAt.fst_curve` and `HasMFDerivAt.snd_curve`:
-  the components of a curve in a product move with the components of its velocity.
+  the components of a curve in a product move with the components of its velocity, and
+  `HasMFDerivAt.prodMk_curve` and `HasMFDerivWithinAt.prodMk_curve` are the converse.
 * `HasMFDerivWithinAt.hasDerivWithinAt_extChartAt_comp` and
   `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
   its value has the coordinate expression of its velocity as velocity.
@@ -1114,6 +1115,26 @@ theorem snd_curve
     HasMFDerivAt 𝓘(𝕜, 𝕜) I' (Prod.snd ∘ c) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.2) :=
   -- Both derivatives send `r` to `r • v.2`, read in `E'`.
   ((hasMFDerivAt_snd (c t)).comp t hc).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+/-- A curve in a product whose components move with the two components of `v` within `s` moves
+with velocity `v` within `s`. -/
+theorem _root_.HasMFDerivWithinAt.prodMk_curve {f : 𝕜 → M} {g : 𝕜 → M'} {s : Set 𝕜}
+    {v : TangentSpace (I.prod I') (f t, g t)}
+    (hf : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I f s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.1))
+    (hg : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I' g s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.2)) :
+    HasMFDerivWithinAt 𝓘(𝕜, 𝕜) (I.prod I') (fun u ↦ (f u, g u)) s t
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v) :=
+  -- Both derivatives send `r` to `r • v`, read componentwise in `E × E'`.
+  (hf.prodMk hg).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+/-- A curve in a product whose components move with the two components of `v` moves with
+velocity `v`. -/
+theorem prodMk_curve {f : 𝕜 → M} {g : 𝕜 → M'} {v : TangentSpace (I.prod I') (f t, g t)}
+    (hf : HasMFDerivAt 𝓘(𝕜, 𝕜) I f t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.1))
+    (hg : HasMFDerivAt 𝓘(𝕜, 𝕜) I' g t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.2)) :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) (I.prod I') (fun s ↦ (f s, g s)) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v) :=
+  -- Both derivatives send `r` to `r • v`, read componentwise in `E × E'`.
+  (hf.prodMk hg).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
 
 end Prod
 
