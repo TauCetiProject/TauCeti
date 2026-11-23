@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.EssentialImage
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
 public import TauCeti.Topology.CWComplex.Classical.CWType
-import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
+import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.CWType
 import TauCeti.AlgebraicTopology.ClassifyingSpace.PointedMaps
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
@@ -86,11 +86,6 @@ open scoped Topology
 universe u
 
 namespace TauCeti
-
-/-- The underlying space of `classifyingSpaceFunctor.obj G` has CW type. -/
-instance instCWTypeClassifyingSpaceFunctorObj (G : GrpCat.{u}) :
-    CWType (classifyingSpaceFunctor.obj G).carrier :=
-  inferInstanceAs (CWType (classifyingSpace G))
 
 /-- **The classifying space as a functor to the pointed homotopy category.** It sends a
 homomorphism to the pointed homotopy class of the strictly functorial map of Milnor's classifying

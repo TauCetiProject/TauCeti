@@ -8,32 +8,21 @@ module
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
-import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
-import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
+import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.CWType
+import TauCeti.AlgebraicTopology.EilenbergMacLane.AsphericalUniqueness
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
 
 /-!
-# Uniqueness of `K(G, 1)` spaces of CW type
+# Uniqueness of Milnor's classifying space among `K(G, 1)` spaces
 
-Two aspherical spaces of CW type with isomorphic fundamental groups are homotopy equivalent, and
-the homotopy equivalence can be chosen to realize any prescribed isomorphism
-`φ : π₁(X, x) ≃* π₁(Y, y)` (`TauCeti.IsAspherical.exists_homotopyEquiv`). A homotopy equivalence
-`e` need not send `x` to `y`, so realizing `φ` means: there is a path `γ` from `e x` to `y` such
-that the map induced by `e` on fundamental groups, followed by basepoint change along `γ`, is `φ`.
-In particular any two `K(G, 1)` spaces of CW type are homotopy equivalent
-(`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_homotopyEquiv`), and every `K(G, 1)` space of CW
+By the general uniqueness of aspherical spaces of CW type
+(`TauCeti.IsAspherical.exists_homotopyEquiv` in
+`TauCeti.AlgebraicTopology.EilenbergMacLane.AsphericalUniqueness`), every `K(G, 1)` space of CW
 type is homotopy equivalent to Milnor's classifying space `TauCeti.classifyingSpace G`, compatibly
 with the identifications of both fundamental groups with `G`
 (`TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`). So the classifying space is well
 defined up to homotopy equivalence among spaces of CW type.
-
-The cellular classifying space `C` of a presentation of `π₁(X, x)` is homotopy equivalent to both
-spaces by homotopy equivalences `f : C ≃ₕ X` and `g : C ≃ₕ Y` whose forward maps are pointed and
-realize an identification `ψ` and `φ ∘ ψ` (`TauCeti.cellularClassifyingSpaceHomotopyEquiv`). The
-composite `g ∘ f⁻¹` is the required homotopy equivalence. The homotopy from `f ∘ f⁻¹` to the
-identity moves the base point, which is why the realization of `φ` involves a change of base point
-(`ContinuousMap.Homotopy.exists_path_fundamentalGroupMulEquivOfPath_map_comp`).
 
 When a space is well-pointed (its base point has the homotopy extension property), the generic
 pointed uniqueness isomorphism `TauCeti.IsAspherical.pointedHomotopyCatIso` from
@@ -43,8 +32,8 @@ with Milnor's classifying space `classifyingSpace G`. Well-pointedness cannot be
 space based at a non-locally-contractible point is contractible without being pointed homotopy
 equivalent to a point.
 
-The hypothesis of CW type on both spaces cannot be dropped: a point and the Warsaw circle are both
-path connected with trivial homotopy groups, but they are not homotopy equivalent.
+The hypothesis of CW type on the `K(G, 1)` space cannot be dropped: a point and the Warsaw circle
+are both path connected with trivial homotopy groups, but they are not homotopy equivalent.
 
 Without it, the classifying space still maps to every aspherical space by a weak homotopy
 equivalence realizing a prescribed identification of the fundamental group with `G`
@@ -63,11 +52,6 @@ for abelian `G`, which need not have CW type.
 
 ## Main results
 
-* `TauCeti.IsAspherical.exists_homotopyEquiv`: **aspherical spaces of CW type are homotopy
-  equivalent by a homotopy equivalence realizing any prescribed isomorphism of fundamental
-  groups.**
-* `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_homotopyEquiv`: two `K(G, 1)` spaces of CW type are
-  homotopy equivalent.
 * `TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`: an aspherical space of CW type
   with fundamental group identified with `G` is homotopy equivalent to `classifyingSpace G`,
   compatibly with the identifications of fundamental groups.
@@ -93,47 +77,9 @@ open scoped Topology Topology.Homotopy ContinuousMap
 
 open FundamentalGroup
 
-universe u v
+universe u
 
 namespace TauCeti
-
-/-- **Uniqueness of aspherical spaces of CW type.** Two aspherical spaces of CW type are homotopy
-equivalent by a homotopy equivalence realizing any prescribed isomorphism `φ` of their fundamental
-groups: there is a homotopy equivalence `e` and a path `γ` from `e x` to `y` such that the map
-induced by `e` on fundamental groups, followed by basepoint change along `γ`, is `φ`.
-
-The hypothesis of CW type on both spaces cannot be dropped: a point and the Warsaw circle are
-aspherical with trivial fundamental groups, but they are not homotopy equivalent. -/
-theorem IsAspherical.exists_homotopyEquiv {X Y : Type u} [TopologicalSpace X]
-    [TopologicalSpace Y] [CWType X] [CWType Y] {x : X} {y : Y} (hX : IsAspherical X x)
-    (hY : IsAspherical Y y) (φ : FundamentalGroup X x ≃* FundamentalGroup Y y) :
-    ∃ (e : X ≃ₕ Y) (γ : Path (e.toFun x) y),
-      ∀ a, fundamentalGroupMulEquivOfPath γ (map e.toFun x a) = φ a := by
-  obtain ⟨R, hC⟩ :=
-    exists_cellularClassifyingSpace_isEilenbergMacLaneSpaceOne (FundamentalGroup X x)
-  obtain ⟨ψ⟩ := hC.nonempty_fundamentalGroupMulEquiv
-  have : PathConnectedSpace (cellularClassifyingSpace R) := hC.isAspherical.pathConnectedSpace
-  -- Pointed homotopy equivalences from the cellular classifying space realizing `ψ` and `φ ∘ ψ`.
-  set f := cellularClassifyingSpaceHomotopyEquiv R hX ψ
-  set g := cellularClassifyingSpaceHomotopyEquiv R hY (ψ.trans φ)
-  -- `f⁻¹` is a homotopy right inverse of `f`, so `g ∘ f⁻¹` realizes `φ` up to basepoint change.
-  refine ⟨f.symm.trans g, f.right_inv.some.exists_path_fundamentalGroupMulEquivOfPath_map_comp
-    (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hX ψ)
-    (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hY (ψ.trans φ)) φ.toMonoidHom
-    (MonoidHom.ext fun a ↦ by simp [f])⟩
-
-/-- **Two `K(G, 1)` spaces of CW type are homotopy equivalent.** See
-`TauCeti.IsAspherical.exists_homotopyEquiv` for a homotopy equivalence realizing a prescribed
-isomorphism of fundamental groups. -/
-theorem IsEilenbergMacLaneSpaceOne.nonempty_homotopyEquiv {G : Type v} [Group G]
-    {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] [CWType X] [CWType Y] {x : X} {y : Y}
-    (hX : IsEilenbergMacLaneSpaceOne G X x) (hY : IsEilenbergMacLaneSpaceOne G Y y) :
-    Nonempty (X ≃ₕ Y) := by
-  obtain ⟨eX⟩ := hX.nonempty_fundamentalGroupMulEquiv
-  obtain ⟨eY⟩ := hY.nonempty_fundamentalGroupMulEquiv
-  obtain ⟨e, -⟩ := IsAspherical.exists_homotopyEquiv hX.isAspherical hY.isAspherical
-    (eX.trans eY.symm)
-  exact ⟨e⟩
 
 /-- **Milnor's classifying space is the unique `K(G, 1)` of CW type.** An aspherical space `X` of
 CW type whose fundamental group is identified with `G` by `eX` is homotopy equivalent to
@@ -216,8 +162,6 @@ def IsAspherical.pointedHomotopyCatIsoClassifyingSpace {G : Type u} [Group G]
     (eX : FundamentalGroup X.carrier X.basepoint ≃* G) :
     PointedHomotopyCat.quotient.obj X ≅
       PointedHomotopyCat.quotient.obj (classifyingSpaceFunctor.obj (GrpCat.of G)) :=
-  haveI : CWType (classifyingSpaceFunctor.obj (GrpCat.of G)).carrier :=
-    inferInstanceAs (CWType (classifyingSpace G))
   hX.pointedHomotopyCatIso (Y := classifyingSpaceFunctor.obj (GrpCat.of G))
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
     (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
@@ -234,8 +178,6 @@ theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIsoClassifyin
     PointedHomotopyCat.fundamentalGroupFunctor.map
         (hX.pointedHomotopyCatIsoClassifyingSpace hX_hep eX).hom =
       GrpCat.ofHom (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm).toMonoidHom :=
-  haveI : CWType (classifyingSpaceFunctor.obj (GrpCat.of G)).carrier :=
-    inferInstanceAs (CWType (classifyingSpace G))
   hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom
     (Y := classifyingSpaceFunctor.obj (GrpCat.of G))
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
@@ -253,8 +195,6 @@ theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIsoClassifyin
     PointedHomotopyCat.fundamentalGroupFunctor.map
         (hX.pointedHomotopyCatIsoClassifyingSpace hX_hep eX).inv =
       GrpCat.ofHom ((classifyingSpaceFundamentalGroupMulEquiv G).trans eX.symm).toMonoidHom :=
-  haveI : CWType (classifyingSpaceFunctor.obj (GrpCat.of G)).carrier :=
-    inferInstanceAs (CWType (classifyingSpace G))
   hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_inv
     (Y := classifyingSpaceFunctor.obj (GrpCat.of G))
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
