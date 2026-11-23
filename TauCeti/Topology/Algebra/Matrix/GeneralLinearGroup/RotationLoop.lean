@@ -15,8 +15,10 @@ public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 
 import Mathlib.RingTheory.Complex
 import Mathlib.Topology.Homotopy.Lifting
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Matrix.Polar.Deformation
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.LeftMulMatrix
 
 /-!
 # The rotation loop of a coordinate plane is not nullhomotopic
@@ -76,25 +78,13 @@ namespace TauCeti
 
 /-! ### The rotation loop -/
 
-/-- The matrix of left multiplication by a unit complex number `z` in the basis `1, i` of `ℂ` is
-the rotation `!![Re z, -Im z; Im z, Re z]`, and it depends continuously on `z`. -/
-private theorem continuous_unitsLeftMulMatrix_toUnits :
-    Continuous fun z : Circle =>
-      unitsLeftMulMatrix Complex.basisOneI (Circle.toUnits z) := by
-  have hL : Continuous (Algebra.leftMulMatrix Complex.basisOneI : ℂ → Matrix (Fin 2) (Fin 2) ℝ) :=
-    (Algebra.leftMulMatrix Complex.basisOneI).toLinearMap.continuous_of_finiteDimensional
-  refine Units.continuous_iff.2 ⟨?_, ?_⟩ <;>
-    simp only [Function.comp_def, ← map_inv, coe_unitsLeftMulMatrix, Circle.toUnits_apply,
-      Units.val_mk0]
-  · exact hL.comp continuous_subtypeVal
-  · exact hL.comp (continuous_subtypeVal.comp (continuous_inv (G := Circle)))
-
 /-- **The rotation loop of the first coordinate plane** of `ℝᵏ`, for `2 ≤ k`: the unit complex
 number `z` goes to the matrix which rotates the plane of the first two coordinates by `z`,
 `!![Re z, -Im z; Im z, Re z]`, and fixes the other coordinates. -/
 def circleRotationLoop {k : ℕ} (hk : 2 ≤ k) : C(Circle, GL (Fin k) ℝ) where
   toFun z := stabilizeGL ℝ hk (unitsLeftMulMatrix Complex.basisOneI (Circle.toUnits z))
-  continuous_toFun := (continuous_stabilizeGL hk).comp continuous_unitsLeftMulMatrix_toUnits
+  continuous_toFun := (continuous_stabilizeGL hk).comp
+    ((continuous_unitsLeftMulMatrix Complex.basisOneI).comp Circle.continuous_toUnits)
 
 /-- The rotation loop is the identity stabilization of the left multiplication matrix. -/
 theorem circleRotationLoop_apply {k : ℕ} (hk : 2 ≤ k) (z : Circle) :
@@ -132,15 +122,26 @@ private theorem spinVectorAction_spinCircle_single (n : ℕ) (z : Circle) (i j :
         i j := by
   rw [coe_circleRotationLoop_apply]
   rcases j with ⟨_ | _ | j, hj⟩
-  · rw [show (⟨0, hj⟩ : Fin (n + 2)) = 0 from rfl, spinVectorAction_spinCircle_right,
+  · rw [Fin.zero_eta, spinVectorAction_spinCircle_right,
       realCliffordForm_zero_single_one, mul_one]
     rcases i with ⟨_ | _ | i, hi⟩ <;> simp [Fin.ext_iff]
-  · rw [show (⟨1, hj⟩ : Fin (n + 2)) = 1 from rfl, spinVectorAction_spinCircle_left,
+  · rw [Fin.mk_one, spinVectorAction_spinCircle_left,
       realCliffordForm_zero_single_one, mul_one]
     rcases i with ⟨_ | _ | i, hi⟩ <;> simp [Fin.ext_iff]
   · rw [spinVectorAction_spinCircle_of_isOrtho _ _ (isOrtho_realCliffordForm_single
       (by simp [Fin.ext_iff]) 1 1) (isOrtho_realCliffordForm_single (by simp [Fin.ext_iff]) 1 1)]
     rcases i with ⟨_ | _ | i, hi⟩ <;> simp [Pi.single_apply, Fin.ext_iff, Matrix.one_apply]
+
+/-- The entries of the special orthogonal matrix underlying the compact Spin projection of `g`:
+column `j` is the image of the standard basis vector `eⱼ` under the action of `g`. -/
+private theorem coe_symm_realCliffordSpinProjectionZero_apply (n : ℕ) [NeZero n]
+    (g : realCliffordSpinGroupZero n) (i j : Fin n) :
+    ((QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n).symm
+        (realCliffordSpinProjectionZero n g) : Matrix (Fin n) (Fin n) ℝ) i j =
+      spinVectorAction (realCliffordForm n 0) g (Pi.single j 1) i := by
+  rw [QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
+    LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, realCliffordSpinProjectionZero_apply,
+    realCliffordSpinDoubleCoverZero_rightHom, coe_spinToSpecialOrthogonal_apply]
 
 /-- **The Spin lift of the rotation loop.** Let `e₀, e₁` be the first two standard basis vectors
 of `ℝⁿ⁺²`. The Spin rotation path of the pair `(e₁, e₀)`, which runs from `1` to `-1` in the
@@ -154,11 +155,9 @@ theorem coe_symm_realCliffordSpinProjectionZero_spinRotationPath (n : ℕ) (t : 
         Matrix (Fin (n + 2)) (Fin (n + 2)) ℝ) =
       circleRotationLoop (Nat.le_add_left 2 n) (Circle.exp (2 * π * t)) := by
   ext i j
-  rw [QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
-    LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, realCliffordSpinProjectionZero_apply,
-    realCliffordSpinDoubleCoverZero_rightHom, coe_spinToSpecialOrthogonal_apply,
-    spinRotationPath_apply, spinRotation_eq_spinCircle, spinVectorAction_spinCircle_single,
-    ← Circle.exp_natCast_mul, Nat.cast_ofNat, mul_assoc]
+  simp only [coe_symm_realCliffordSpinProjectionZero_apply, spinRotationPath_apply,
+    spinRotation_eq_spinCircle, spinVectorAction_spinCircle_single, ← Circle.exp_natCast_mul,
+    Nat.cast_ofNat, mul_assoc]
 
 /-! ### The rotation loop is not nullhomotopic -/
 
