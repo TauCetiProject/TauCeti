@@ -11,8 +11,8 @@ public import TauCeti.Geometry.Manifold.LieAlgebroid.LieAlgebraBundle
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Action (transformation) Lie algebroids
@@ -27,7 +27,14 @@ Because a `TauCeti.InfinitesimalAction` is a Lie algebra antihomomorphism (`act 
 act η]`), negating it (`InfinitesimalAction.negLieHom`) yields a Lie algebra homomorphism into
 `(tangent I M).Sections` and hence the transformation Lie algebroids
 `InfinitesimalAction.lieAlgebroid` and `ofMulAction`, whereas omitting the minus sign violates the
-Jacobi identity (`not_transformationBracket_jacobi_toSectionLinearMap_affineLine`). When an abelian
+Jacobi identity (`not_transformationBracket_jacobi_toSectionLinearMap_affineLine`). The base only
+needs a complete model space: its anchor intertwines brackets with no Hausdorff or
+finite-dimensionality hypothesis (`transformation_anchorField_bracket`,
+`InfinitesimalAction.lieAlgebroid_anchor_bracket`), its anchor at `x` vanishes exactly on the
+isotropy algebra `𝔤_x` of the action (`InfinitesimalAction.lieAlgebroid_anchor_eq_zero_iff`), and
+the trivial action gives the zero-anchor bundle of Lie algebras
+(`InfinitesimalAction.lieAlgebroid_zero`).
+When an abelian
 Lie algebra `𝔤` acts on a finite-dimensional real normed space `V` by translations along a linear
 equivalence `τ : 𝔤 ≃ₗ[ℝ] V`, the anchor identifies the section Lie algebra with
 `(tangent 𝓘(ℝ, V) V).Sections` (`translationSectionsLieEquiv`).
@@ -133,7 +140,7 @@ theorem transformationBracket_smul_apply
 end LinearPreAlgebroid
 
 section Homomorphism
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
 
@@ -248,7 +255,7 @@ theorem transformationBracket_jacobi {α₀ : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, 
 
 /-- Over a Hausdorff base, `transformationBracket α₀` satisfies the Jacobi identity if and only if
 `α₀` intertwines Lie brackets. -/
-theorem transformationBracket_jacobi_iff [T2Space M]
+theorem transformationBracket_jacobi_iff [FiniteDimensional ℝ E] [T2Space M]
     (α₀ : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
     (∀ a b c, transformationBracket α₀ a (transformationBracket α₀ b c) =
         transformationBracket α₀ (transformationBracket α₀ a b) c +
@@ -313,14 +320,22 @@ theorem transformationConst_injective [Nonempty M] :
     Function.Injective (transformationConst α) := fun _ _ h ↦
   ContMDiffSection.modelConst_injective (by simpa using congrArg (transformation α).sectionsEquiv h)
 
+/-- The anchor of `transformation α` intertwines its bracket with the Lie bracket of vector fields,
+without requiring `M` to be Hausdorff or finite-dimensional (compare `LieAlgebroid.anchor_bracket`).
+-/
+theorem transformation_anchorField_bracket (a b : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) :
+    (transformation α).anchorField ((transformation α).bracket a b) =
+      (tangent I M).bracket ((transformation α).anchorField a)
+        ((transformation α).anchorField b) := by
+  have hField (u) : (transformation α).anchorField u =
+      transformationAnchorField (toTangentLinearMap α) u := by ext x; simp [toTangentLinearMap]
+  rw [hField, hField, hField]
+  exact transformationAnchorField_transformationBracket (toTangentLinearMap_lie α) a b
+
 /-- The anchor of `transformation α` on sections as a Lie algebra homomorphism into
 `(tangent I M).Sections` (without requiring `M` to be Hausdorff). -/
 def transformationAnchorHom : (transformation α).Sections →ₗ⁅ℝ⁆ (tangent I M).Sections :=
-  (transformation α).anchorLieHomOfBracket fun a b ↦ by
-    have hField (u) : (transformation α).anchorField u =
-        transformationAnchorField (toTangentLinearMap α) u := by ext x; simp [toTangentLinearMap]
-    rw [hField, hField, hField]
-    exact transformationAnchorField_transformationBracket (toTangentLinearMap_lie α) a b
+  (transformation α).anchorLieHomOfBracket (transformation_anchorField_bracket α)
 
 @[simp] theorem sectionsEquiv_transformationAnchorHom (s : (transformation α).Sections) :
     (tangent I M).sectionsEquiv (transformationAnchorHom α s) =
@@ -331,7 +346,7 @@ def transformationAnchorHom : (transformation α).Sections →ₗ⁅ℝ⁆ (tang
     transformationAnchorHom α (f • s) = f • transformationAnchorHom α s :=
   (transformation α).anchorLieHomOfBracket_smul _ f s
 
-@[simp] theorem transformationAnchorHom_lie [T2Space M]
+@[simp] theorem transformationAnchorHom_lie [FiniteDimensional ℝ E] [T2Space M]
     (s : (transformation α).Sections) (f : C^∞⟮I, M; ℝ⟯) :
     ⁅transformationAnchorHom α s, f⁆ = ⁅s, f⁆ :=
   (transformation α).anchorLieHomOfBracket_lie _ s f
@@ -395,7 +410,7 @@ theorem transformationMapLieHom_comp {𝔨 : Type*} [LieRing 𝔨] [LieAlgebra �
 
 end LieHom
 
-variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J ∞ N] {α_M : 𝔤 →ₗ⁅ℝ⁆ (tangent I M).Sections} {α_N : 𝔤 →ₗ⁅ℝ⁆ (tangent J N).Sections}
 
@@ -436,7 +451,7 @@ end Pullback
   ext s; exact (transformation α_M).sectionsEquiv.injective (by ext x; simp; rfl)
 
 theorem transformationPullback_comp {E'' H'' P : Type*} [NormedAddCommGroup E'']
-    [NormedSpace ℝ E''] [FiniteDimensional ℝ E''] [TopologicalSpace H'']
+    [NormedSpace ℝ E''] [CompleteSpace E''] [TopologicalSpace H'']
     {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P]
     {α_P : 𝔤 →ₗ⁅ℝ⁆ (tangent K P).Sections} (φ : C^∞⟮J, N; I, M⟯) (hφ) (ψ : C^∞⟮K, P; J, N⟯) (hψ)
     (hφψ : ∀ (ξ : 𝔤) (z : P), mfderiv K I (φ.comp ψ) z ((tangent K P).sectionsEquiv (α_P ξ) z) =
@@ -450,7 +465,7 @@ end Homomorphism
 end LieAlgebroid
 
 namespace InfinitesimalAction
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
   {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] (act : InfinitesimalAction 𝔤 I M)
@@ -477,6 +492,9 @@ def negLieHom : 𝔤 →ₗ⁅ℝ⁆ (LieAlgebroid.tangent I M).Sections :=
     LieAlgebroid.transformationIsotropy act.negLieHom x = act.isotropy x :=
   LieSubalgebra.ext _ _ fun _ ↦ by simp
 
+@[simp] theorem negLieHom_zero : (0 : InfinitesimalAction 𝔤 I M).negLieHom = 0 := by
+  ext ξ; exact (LieAlgebroid.tangent I M).sectionsEquiv.injective (by ext x; simp)
+
 variable [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤] [ContinuousSMul ℝ 𝔤]
   [T2Space 𝔤] [FiniteDimensional ℝ 𝔤]
 
@@ -496,6 +514,32 @@ theorem lieAlgebroid_eq : act.lieAlgebroid = LieAlgebroid.transformation act.neg
       ⁅a x, b x⁆ - b.modelDeriv x (act (a x) x) + a.modelDeriv x (act (b x) x) := by
   simp only [lieAlgebroid, LieAlgebroid.transformation_bracket_apply,
     sectionsEquiv_negLieHom_apply, map_neg]; abel
+
+/-- On constant sections the bracket of `act.lieAlgebroid` is the Lie bracket of `𝔤`. -/
+@[simp] theorem lieAlgebroid_bracket_modelConst (ξ η : 𝔤) :
+    act.lieAlgebroid.bracket (ContMDiffSection.modelConst I M ∞ ξ)
+      (ContMDiffSection.modelConst I M ∞ η) = ContMDiffSection.modelConst I M ∞ ⁅ξ, η⁆ :=
+  LieAlgebroid.transformation_bracket_modelConst act.negLieHom ξ η
+
+/-- The anchor of `act.lieAlgebroid` maps the bracket of two sections to the Lie bracket of their
+anchor vector fields, with no Hausdorff or finite-dimensionality hypothesis on `M`. -/
+theorem lieAlgebroid_anchor_bracket (a b : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (x : M) :
+    act.lieAlgebroid.anchor x (act.lieAlgebroid.bracket a b x) =
+      mlieBracket I (act.lieAlgebroid.anchorField a) (act.lieAlgebroid.anchorField b) x := by
+  rw [lieAlgebroid_eq, ← LieAlgebroid.anchorField_apply,
+    LieAlgebroid.transformation_anchorField_bracket, LieAlgebroid.tangent_bracket_apply]
+
+/-- The anchor of `act.lieAlgebroid` at `x` vanishes exactly on the isotropy algebra `𝔤_x` of the
+action. -/
+theorem lieAlgebroid_anchor_eq_zero_iff (x : M) (ξ : 𝔤) :
+    act.lieAlgebroid.anchor x ξ = 0 ↔ ξ ∈ act.isotropy x := by
+  rw [lieAlgebroid_anchor_apply, neg_eq_zero, mem_isotropy_iff]
+
+/-- For the trivial action the transformation algebroid is the zero-anchor bundle of Lie algebras
+`M × 𝔤`. -/
+@[simp] theorem lieAlgebroid_zero :
+    (0 : InfinitesimalAction 𝔤 I M).lieAlgebroid = LieAlgebroid.trivialLieAlgebra I M 𝔤 := by
+  rw [lieAlgebroid_eq, negLieHom_zero, LieAlgebroid.transformation_zero]
 
 end InfinitesimalAction
 

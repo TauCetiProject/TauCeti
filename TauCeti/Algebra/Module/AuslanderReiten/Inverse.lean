@@ -7,23 +7,19 @@ module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.DualPresentation
 public import TauCeti.Algebra.Module.AuslanderReiten.Indecomposable
-public import TauCeti.Algebra.Module.Dual.Indecomposable
-public import TauCeti.Algebra.Module.Dual.ProjectiveInjective
 
 /-!
-# Indecomposability and projectivity of the inverse Auslander–Reiten translate
+# Indecomposability and projectivity of right transposes
 
-The inverse translate `Tr D` takes non-injective indecomposable modules over a
-finite-dimensional algebra to non-projective indecomposable modules. Here `D E` is specified
-by an equivariant scalar-dual pairing, and `Tr` is the `A`-valued right transpose of a finite
-minimal projective presentation. This gives an actual left `A`-module, with no change of its
-scalars to the double opposite.
+The inverse translate `Tr D` is the `A`-valued right transpose of a finite minimal projective
+presentation of a right module, the Matlis dual `D N`. This gives an actual left `A`-module, with
+no change of its scalars to the double opposite.
 
-The underlying right-transpose results hold over any ring: a minimal right transpose is
-projective exactly when its source is projective, and for a finite-length indecomposable
-source it is indecomposable exactly when the source is not projective. The scalar-dual
-specializations characterize projectivity by injectivity of `E`, and indecomposability by
-non-injectivity of an indecomposable `E`. Algebraic closedness is not required.
+The right-transpose results here hold over any ring: a minimal right transpose is projective
+exactly when its source is projective, and for a finite-length indecomposable source it is
+indecomposable exactly when the source is not projective. Applied to `D N`, they place the inverse
+translate of a non-injective indecomposable among the non-projective indecomposables
+(`ModuleCat.indecomposable_arInverseTranslate_iff`, `ModuleCat.projective_arInverseTranslate_iff`).
 
 ## References
 
@@ -35,7 +31,7 @@ public section
 
 namespace TauCeti.FiniteProjectivePresentation
 
-universe u v w z
+universe u v w
 
 section RightTranspose
 
@@ -87,42 +83,5 @@ theorem isIndecomposableModule_rightTranspose_iff (Q : FiniteProjectivePresentat
   exact he.trans (Q.isIndecomposableModule_auslanderReitenTranspose_iff hQ hN hiN)
 
 end RightTranspose
-
-section ScalarDual
-
-variable {k : Type u} [Field k] {A : Type v} [Ring A] [Algebra k A]
-  [FiniteDimensional k A] {N : ModuleCat.{w} Aᵐᵒᵖ} [Module k N]
-  [IsScalarTower k Aᵐᵒᵖ N] [FiniteDimensional k N]
-  {E : Type z} [AddCommGroup E] [Module A E] [Module k E] [Small.{z} A]
-
-/-- The inverse translate `Tr D E`, formed from a finite minimal presentation of the
-right scalar dual of `E`, is projective exactly when `E` is injective.
-The equivariant pairing specifies the scalar dual without a competing global dual action. -/
-theorem projective_rightTranspose_iff_injective (Q : FiniteProjectivePresentation N)
-    (hQ : IsMinimalProjectivePresentation Q.p Q.π)
-    (e : E ≃ₗ[k] Module.Dual k N)
-    (he : ∀ (a : A) (y : E) (x : N), e (a • y) x = e y (MulOpposite.op a • x)) :
-    Module.Projective A Q.rightTranspose ↔ Module.Injective A E :=
-  (Q.projective_rightTranspose_iff hQ).trans
-    (e.moduleInjective_iff_projective_of_dual he).symm
-
-/-- For an indecomposable `E`, its inverse translate `Tr D E` is indecomposable exactly
-when `E` is not injective. Together with `projective_rightTranspose_iff_injective`, this
-places the inverse translate of a non-injective indecomposable among the non-projective
-indecomposables. -/
-theorem isIndecomposableModule_rightTranspose_iff_not_injective
-    (Q : FiniteProjectivePresentation N) (hQ : IsMinimalProjectivePresentation Q.p Q.π)
-    [Small.{w} Aᵐᵒᵖ] (e : E ≃ₗ[k] Module.Dual k N)
-    (he : ∀ (a : A) (y : E) (x : N), e (a • y) x = e y (MulOpposite.op a • x))
-    (hiE : IsIndecomposableModule A E) :
-    IsIndecomposableModule A Q.rightTranspose ↔ ¬ Module.Injective A E := by
-  have hiN := (e.isIndecomposableModule_iff_of_dual he).mp hiE
-  have hN : IsFiniteLength Aᵐᵒᵖ N :=
-    isFiniteLength_iff_isNoetherian_isArtinian.mpr
-      ⟨isNoetherian_of_tower k inferInstance, isArtinian_of_tower k inferInstance⟩
-  exact (Q.isIndecomposableModule_rightTranspose_iff hQ hN hiN).trans
-    (not_congr (e.moduleInjective_iff_projective_of_dual he)).symm
-
-end ScalarDual
 
 end TauCeti.FiniteProjectivePresentation

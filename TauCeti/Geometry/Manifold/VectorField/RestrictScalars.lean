@@ -53,9 +53,8 @@ theorem MDifferentiableAt.restrictScalars_vectorField
         ((RestrictScalars.addEquiv R A _).symm (V y))⟩ : TangentBundle 𝓘(R, E) M)) x := by
   have hVR : MDifferentiableAt 𝓘(R, E) 𝓘(R, E).tangent
       (fun y ↦ (V y : TangentBundle 𝓘(A, E) M)) x := by
-    -- Tangent charts use the tagged ModelProd E E, not the native self-model on E × E.
-    simp only [mdifferentiableAt_iff, mfld_simps] at hV ⊢
-    exact ⟨hV.1, hV.2.restrictScalars R⟩
+    simpa only [ModelWithCorners.tangent, ModelWithCorners.restrictScalars_prod,
+      modelWithCornersSelf_restrictScalars] using hV.restrictScalars R
   have h := ((TangentBundle.contMDiff_restrictScalarsHomeomorph R
     (𝕜' := A) M 1).mdifferentiable (by norm_num)).mdifferentiableAt.comp x hVR
   apply h.congr_of_eventuallyEq
