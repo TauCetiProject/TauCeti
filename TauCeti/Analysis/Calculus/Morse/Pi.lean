@@ -76,17 +76,12 @@ theorem isNondegenerateCriticalPoint_sum_comp_eval_iff
       ∀ i, deriv (φ i) (y i) = 0 ∧ deriv (deriv (φ i)) (y i) ≠ 0 := by
   have hcont : ContDiffAt ℝ 2 (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) y :=
     ContDiffAt.sum fun i _ ↦ (hφ i).comp y (contDiffAt_apply ℝ (fun _ ↦ ℝ) i y)
-  rw [isNondegenerateCriticalPoint_iff_separatingLeft,
-    fderiv_sum_comp_eval_eq_zero_iff fun i ↦ (hφ i).differentiableAt (by simp)]
-  simp only [hcont, true_and, forall_and]
-  refine and_congr_right fun _ ↦ ?_
-  -- The second derivative is the bilinear form associated with the Hessian quadratic form, a
-  -- weighted sum of squares, which is nondegenerate exactly when its weights are nonzero.
-  rw [← associated_hessianQuadraticForm hcont,
-    ← (QuadraticForm.associated_isSymm ℝ _).isRefl.nondegenerate_iff_separatingLeft,
-    QuadraticMap.nondegenerate_associated_iff, hessianQuadraticForm_sum_comp_eval hφ,
-    QuadraticMap.nondegenerate_weightedSumSquares_iff]
-  simp only [isRegular_iff_ne_zero]
+  -- The Hessian quadratic form is a weighted sum of squares, which is nondegenerate exactly when
+  -- its weights are nonzero.
+  rw [isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate,
+    fderiv_sum_comp_eval_eq_zero_iff fun i ↦ (hφ i).differentiableAt (by simp),
+    hessianQuadraticForm_sum_comp_eval hφ, QuadraticMap.nondegenerate_weightedSumSquares_iff]
+  simp only [hcont, true_and, forall_and, isRegular_iff_ne_zero]
 
 /-- **The Morse index of a separated sum** at a point at which every summand is twice continuously
 differentiable is the number of summands whose second derivative is negative there. -/

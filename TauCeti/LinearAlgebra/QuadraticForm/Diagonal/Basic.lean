@@ -374,6 +374,7 @@ theorem _root_.QuadraticForm.discr'_weightedSumSquares {S : Type*} [Monoid S]
 
 /-- When two is invertible, a diagonal form is nondegenerate if and only if all its weights are
 regular. Over a domain this says that every weight is nonzero (`isRegular_iff_ne_zero`). -/
+@[simp]
 theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_iff {w : ι → R} :
     (QuadraticMap.weightedSumSquares R w).Nondegenerate ↔ ∀ i, IsRegular (w i) := by
   classical
