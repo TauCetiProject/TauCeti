@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
+import TauCeti.Order.Interval.Finset.Basic
 
 /-!
 # Order invariance, converse Möbius inversion and Weisner's theorem
@@ -46,13 +47,6 @@ public section
 
 open Finset IncidenceAlgebra
 
-/-- The strong-induction decrease used for the Möbius recursion: `[a, x]` is strictly smaller than
-`[a, b]` for every `x ∈ [a, b)`. -/
-private theorem card_Icc_lt_card_Icc_of_mem_Ico {α : Type*} [Preorder α] [LocallyFiniteOrder α]
-    {a b x : α} (hx : x ∈ Ico a b) : #(Icc a x) < #(Icc a b) := by
-  obtain ⟨hax, hxb⟩ := mem_Ico.1 hx
-  exact card_lt_card (Icc_ssubset_Icc_right (hax.trans hxb.le) le_rfl hxb)
-
 namespace OrderIso
 
 variable {𝕜 α β : Type*} [AddCommGroup 𝕜] [One 𝕜]
@@ -69,7 +63,8 @@ theorem mu_map (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b :
       simp
     rw [mu_eq_neg_sum_Ico_of_ne (e.injective.ne hab), mu_eq_neg_sum_Ico_of_ne hab, neg_inj]
     refine (sum_equiv e.toEquiv (fun x => by simp) fun x hx => ?_).symm
-    exact (ih _ (hn ▸ card_Icc_lt_card_Icc_of_mem_Ico hx) x rfl).symm
+    obtain ⟨hax, hxb⟩ := mem_Ico.1 hx
+    exact (ih _ (hn ▸ card_Icc_lt_card_Icc_right (hax.trans hxb.le) le_rfl hxb) x rfl).symm
 
 end OrderIso
 
@@ -90,8 +85,9 @@ theorem map_mu (f : F) (hf : f 1 = 1) (a b : α) : f (mu 𝕜 a b) = mu 𝕝 a b
     split_ifs
     · exact hf
     rw [map_neg, map_sum]
-    exact congrArg _ <| sum_congr rfl fun x hx =>
-      ih _ (hn ▸ card_Icc_lt_card_Icc_of_mem_Ico hx) x rfl
+    refine congrArg _ <| sum_congr rfl fun x hx => ?_
+    obtain ⟨hax, hxb⟩ := mem_Ico.1 hx
+    exact ih _ (hn ▸ card_Icc_lt_card_Icc_right (hax.trans hxb.le) le_rfl hxb) x rfl
 
 end MapMu
 
