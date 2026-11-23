@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.SiegelGen
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Rev
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
@@ -251,15 +253,14 @@ private theorem exists_siegelTransvection_single_zero_mem_elementary_of_three_le
             (Pi.single 0 1) w c₁ := by
   let Q := (typeAGraphConjugator r K : Matrix (Fin (r + 1)) (Fin (r + 1)) K)
   have hQ := transpose_map_typeAGraphConjugator σ r
-  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := by simp [Fin.ext_iff]; omega
+  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := (Fin.last_ne_zero (by omega)).symm
   have he0 := comp_single_dotProduct_typeAGraphConjugator_mulVec_single_zero (σ := σ) h0r
-  let i₁ : Fin (r + 1) := ⟨1, by omega⟩
-  let j₁ : Fin (r + 1) := i₁.rev
-  let x₀ : Fin (r + 1) → K := Pi.single i₁ 1
-  let y₀ : Fin (r + 1) → K := Pi.single j₁ 1
-  have hi₁j₁ : i₁ ≠ j₁ := by simp [i₁, j₁, Fin.ext_iff, Fin.rev]; omega
-  have hi₁l : i₁ ≠ Fin.last r := by simp [i₁, Fin.ext_iff]; omega
-  have hj₁l : j₁ ≠ Fin.last r := by simp [j₁, i₁, Fin.ext_iff, Fin.rev]; omega
+  let x₀ : Fin (r + 1) → K := Pi.single 1 1
+  let y₀ : Fin (r + 1) → K := Pi.single (1 : Fin (r + 1)).rev 1
+  have hi₁j₁ : (1 : Fin (r + 1)) ≠ (1 : Fin (r + 1)).rev := Fin.one_ne_rev (by omega) (by omega)
+  have hi₁l : (1 : Fin (r + 1)) ≠ Fin.last r := by
+    simpa only [Fin.rev_zero] using Fin.rev_ne_iff.mp (Fin.rev_one_ne_zero (by omega))
+  have hj₁l : (1 : Fin (r + 1)).rev ≠ Fin.last r := Fin.rev_one_ne_last (by omega)
   have hx₀ : (σ ∘ x₀) ⬝ᵥ (Q *ᵥ x₀) = 0 :=
     comp_single_dotProduct_typeAGraphConjugator_mulVec_single hi₁j₁
   have hx₀l : x₀ (Fin.last r) = 0 := by simp [x₀, hi₁l.symm]
@@ -270,12 +271,13 @@ private theorem exists_siegelTransvection_single_zero_mem_elementary_of_three_le
   have hyx : (σ ∘ y₀) ⬝ᵥ (Q *ᵥ x₀) ≠ 0 := by
     dsimp only [y₀, Q]
     rw [comp_single_dotProduct_typeAGraphConjugator_mulVec]
-    simp [x₀, j₁]
+    simp [x₀]
   have hwjl : (w + y₀) (Fin.last r) = 0 := by simp [y₀, hwl, hj₁l.symm]
   obtain ⟨g₁, hg₁W, c₁, hg₁⟩ := exists_siegelTransvection_single_zero_mem_elementary_of_pair_ne
     hσ htr hadm h0r hx₀ hx₀l hwjl (by rwa [comp_add_dotProduct_mulVec, hwx, zero_add])
   have hy₀ : (σ ∘ y₀) ⬝ᵥ (Q *ᵥ y₀) = 0 :=
-    comp_single_dotProduct_typeAGraphConjugator_mulVec_single (by simpa [j₁] using hi₁j₁.symm)
+    comp_single_dotProduct_typeAGraphConjugator_mulVec_single
+      (by simpa only [Fin.rev_rev] using hi₁j₁.symm)
   have hny₀ : (σ ∘ (-y₀)) ⬝ᵥ (Q *ᵥ (-y₀)) = 0 := by
     rw [map_comp_neg, neg_dotProduct, mulVec_neg, dotProduct_neg, hy₀, neg_zero, neg_zero]
   have he0ny₀ : (σ ∘ Pi.single 0 1) ⬝ᵥ (Q *ᵥ (-y₀)) = 0 := by
@@ -355,7 +357,7 @@ private theorem siegelTransvection_mem_elementary_of_ne_zero (hσ : Function.Inv
     g ∈ (typeAGraphConjugator r K :
       Matrix (Fin (r + 1)) (Fin (r + 1)) K).elementaryUnitaryGroup σ := by
   let Q := (typeAGraphConjugator r K : Matrix (Fin (r + 1)) (Fin (r + 1)) K)
-  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := by simp [Fin.ext_iff]; omega
+  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := (Fin.last_ne_zero hr0).symm
   have he0 := comp_single_dotProduct_typeAGraphConjugator_mulVec_single_zero (σ := σ) h0r
   obtain ⟨h, w₂, c₂, hw₂0, hw₂l, hg'coe⟩ :=
     exists_conj_coe_eq_siegelTransvection_single_zero hσ htr hadm h0r hu0 hu huw hg

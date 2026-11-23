@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.SiegelTransvection
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
-import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -284,9 +283,9 @@ theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff
   rw [hcoe, transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, add_eq_left, smul_eq_zero,
     vecMulVec_eq_zero] at h
   have hQu : Q *ᵥ u ≠ 0 := fun h0 ↦ hdet (exists_mulVec_eq_zero_iff.mp ⟨u, hu0, h0⟩)
-  have hσuQ : (σ ∘ u) ᵥ* Q ≠ 0 :=
-    vecMul_ne_zero_of_isUnit (Q.isUnit_iff_isUnit_det.mpr (Ne.isUnit hdet))
-      fun h0 ↦ hu0 (funext fun i ↦ (map_eq_zero σ).mp (congrFun h0 i))
+  have hσuQ : (σ ∘ u) ᵥ* Q ≠ 0 := fun h0 ↦
+    hdet (exists_vecMul_eq_zero_iff.mp
+      ⟨σ ∘ u, fun hσ0 ↦ hu0 (funext fun i ↦ (map_eq_zero σ).mp (congrFun hσ0 i)), h0⟩)
   exact h.resolve_right (not_or.mpr ⟨hQu, hσuQ⟩)
 
 /-- **The scalar condition for a unitary transvection to be an isometry.** If `σ` is an
@@ -332,9 +331,9 @@ theorem nontrivial_specialIsometryGroup (hσ : Function.Involutive σ) (hQ : (Q.
     hga.symm.trans (congrArg (fun x : Q.specialIsometryGroup σ ↦
       ((x : SpecialLinearGroup n K) : Matrix n n K)) h)
   rw [unitaryTransvection_def, add_eq_left, smul_eq_zero, vecMulVec_eq_zero] at hmat
-  exact (hmat.resolve_left hd0).elim (p₀ : ℙ K (n → K)).rep_ne_zero
-    (vecMul_ne_zero_of_isUnit (Q.isUnit_iff_isUnit_det.mpr (Ne.isUnit hdet)) fun h0 ↦
-      (p₀ : ℙ K (n → K)).rep_ne_zero (funext fun i ↦ (map_eq_zero σ).mp (congrFun h0 i)))
+  exact (hmat.resolve_left hd0).elim (p₀ : ℙ K (n → K)).rep_ne_zero fun h0 ↦
+    hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ v, fun hσ0 ↦
+      (p₀ : ℙ K (n → K)).rep_ne_zero (funext fun i ↦ (map_eq_zero σ).mp (congrFun hσ0 i)), h0⟩)
 
 end Field
 

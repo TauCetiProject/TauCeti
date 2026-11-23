@@ -64,8 +64,6 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
-* `Matrix.vecMul_ne_zero_of_isUnit`: for a unit matrix `Q` over a semiring and `w ≠ 0`,
-  `w ᵥ* Q ≠ 0`.
 * `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
   with matrix-vector and vector-matrix multiplication.
 -/
@@ -225,22 +223,5 @@ theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
   exact Finset.sum_congr rfl fun _ _ => by simp only [mul_assoc]
 
 end Ring
-
-section Semiring
-
-variable [DecidableEq n] {R : Type*} [Semiring R]
-
-/-- If `Q` is a unit matrix over a semiring and `w ≠ 0`, then `w ᵥ* Q ≠ 0`. -/
-theorem vecMul_ne_zero_of_isUnit {Q : Matrix n n R} (hQ : IsUnit Q) {w : n → R} (hw : w ≠ 0) :
-    w ᵥ* Q ≠ 0 := by
-  obtain ⟨U, rfl⟩ := hQ
-  intro h0
-  apply hw
-  calc w = w ᵥ* ((U : Matrix n n R) * ((U⁻¹ : (Matrix n n R)ˣ) : Matrix n n R)) := by simp
-    _ = (w ᵥ* (U : Matrix n n R)) ᵥ* ((U⁻¹ : (Matrix n n R)ˣ) : Matrix n n R) :=
-      (vecMul_vecMul _ _ _).symm
-    _ = 0 := by rw [h0, zero_vecMul]
-
-end Semiring
 
 end Matrix

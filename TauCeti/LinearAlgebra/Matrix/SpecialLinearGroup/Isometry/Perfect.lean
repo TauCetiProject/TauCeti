@@ -9,6 +9,9 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Generatio
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Iwasawa
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Ring.Hom
+import TauCeti.Algebra.Ring.Parity
+import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Rev
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne
@@ -148,34 +151,39 @@ private theorem unitaryTransvection_single_zero_mem_commutator_of_three_le
     g ∈ commutator ((typeAGraphConjugator r K :
       Matrix (Fin (r + 1)) (Fin (r + 1)) K).specialIsometryGroup σ) := by
   let Q := (typeAGraphConjugator r K : Matrix (Fin (r + 1)) (Fin (r + 1)) K)
-  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := by simp [Fin.ext_iff]; omega
+  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := (Fin.last_ne_zero (by omega)).symm
   have ha := unitaryTransvection_single_zero_param_eq_zero hσ h0r hg
   have hσa : σ a = (-1 : K) ^ (r + 1) * a := by
-    have hsq : ((-1 : K) ^ r) ^ 2 = 1 := by rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
-    rw [pow_succ, mul_neg_one]; linear_combination (-1 : K) ^ r * ha - σ a * hsq
+    have h := congrArg ((-1 : K) ^ r * ·) ha
+    rw [mul_add, neg_one_pow_mul_neg_one_pow_mul, mul_zero] at h
+    rw [pow_succ, mul_neg_one]
+    linear_combination h
   obtain ⟨t, ht⟩ := exists_add_neg_one_pow_mul_apply_eq htr (r + 1) hσa
-  let i₁ : Fin (r + 1) := ⟨1, by omega⟩
-  let j₁ : Fin (r + 1) := i₁.rev
-  let w₁ : Fin (r + 1) → K := (-t) • Pi.single i₁ 1
-  let w₂ : Fin (r + 1) → K := Pi.single j₁ 1
-  have hi₁j₁ : i₁ ≠ j₁ := by simp [i₁, j₁, Fin.ext_iff, Fin.rev]; omega
+  let w₁ : Fin (r + 1) → K := (-t) • Pi.single (1 : Fin (r + 1)) 1
+  let w₂ : Fin (r + 1) → K := Pi.single (1 : Fin (r + 1)).rev 1
+  have hi₁j₁ : (1 : Fin (r + 1)) ≠ (1 : Fin (r + 1)).rev := Fin.one_ne_rev (by omega) (by omega)
+  have hi₁l : (1 : Fin (r + 1)) ≠ Fin.last r := by
+    simpa only [Fin.rev_zero] using Fin.rev_ne_iff.mp (Fin.rev_one_ne_zero (by omega))
+  have hj₁l : (1 : Fin (r + 1)).rev ≠ Fin.last r := Fin.rev_one_ne_last (by omega)
   have hw₁ : (σ ∘ w₁) ⬝ᵥ (Q *ᵥ w₁) = 0 := by
     rw [comp_smul_dotProduct_mulVec_smul,
       comp_single_dotProduct_typeAGraphConjugator_mulVec_single hi₁j₁, mul_zero]
   have hw₂ : (σ ∘ w₂) ⬝ᵥ (Q *ᵥ w₂) = 0 :=
-    comp_single_dotProduct_typeAGraphConjugator_mulVec_single (by simpa [j₁] using hi₁j₁.symm)
+    comp_single_dotProduct_typeAGraphConjugator_mulVec_single
+      (by simpa only [Fin.rev_rev] using hi₁j₁.symm)
   have he0w₁ : (σ ∘ Pi.single 0 1) ⬝ᵥ (Q *ᵥ w₁) = 0 := by
     rw [comp_single_dotProduct_typeAGraphConjugator_mulVec]
-    simp [w₁, Fin.rev_zero, i₁, Fin.ext_iff]; omega
+    simp [w₁, Fin.rev_zero, hi₁l.symm]
   have he0w₂ : (σ ∘ Pi.single 0 1) ⬝ᵥ (Q *ᵥ w₂) = 0 := by
     rw [comp_single_dotProduct_typeAGraphConjugator_mulVec]
-    simp [w₂, j₁, i₁, Fin.ext_iff, Fin.rev]; omega
+    simp [w₂, Fin.rev_zero, hj₁l.symm]
   obtain ⟨g₁, g₂, hcomm⟩ :=
     exists_commutator_coe_eq_unitaryTransvection_of_isotropic hσ h0r hw₁ hw₂ he0w₁ he0w₂
   have hpair : (σ ∘ w₁) ⬝ᵥ (Q *ᵥ w₂) = σ t := by
     dsimp only [w₁, Q]
-    rw [TauCeti.map_comp_smul, smul_dotProduct, comp_single_dotProduct_typeAGraphConjugator_mulVec]
-    simp [w₂, i₁, j₁]
+    rw [TauCeti.map_comp_smul, smul_dotProduct, comp_single_dotProduct_typeAGraphConjugator_mulVec,
+      Fin.val_one_of_two_le (m := r + 1) (by omega)]
+    simp [w₂]
   have hge : g = ⁅g₁, g₂⁆ := Subtype.ext <| Subtype.ext <| by
     rw [hg, hcomm, hpair, hσ t]; congr 1; rw [pow_succ] at ht; linear_combination -ht
   exact hge ▸ Subgroup.commutator_mem_commutator (Subgroup.mem_top g₁) (Subgroup.mem_top g₂)
@@ -191,7 +199,7 @@ private theorem unitaryTransvection_single_zero_mem_commutator_two (hσ : Functi
       Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
   let Q := (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K)
   have hQ := transpose_map_typeAGraphConjugator σ 2
-  have h02 : (0 : Fin 3) ≠ Fin.last 2 := by decide
+  have h02 : (0 : Fin 3) ≠ Fin.last 2 := Fin.last_pos.ne
   have he0 := comp_single_dotProduct_typeAGraphConjugator_mulVec_single_zero (σ := σ) h02
   have ha := unitaryTransvection_single_zero_param_eq_zero hσ h02 hg
   set t := σ u * u
@@ -250,7 +258,7 @@ theorem commutator_specialIsometryGroup_typeAGraphConjugator_eq_top
     fun _ ↦ exists_add_neg_one_pow_mul_apply_eq htr r
   have := isPretransitive_isotropicPoints hσ (transpose_map_typeAGraphConjugator σ r)
     (isUnits_det_units _).ne_zero htr_r hadm
-  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := by simp [Fin.ext_iff]; omega
+  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := (Fin.last_ne_zero (by omega)).symm
   let p₀ := isotropicPointZero σ h0r
   rw [eq_top_iff, ← elementaryUnitaryGroup_typeAGraphConjugator_eq_top hσ htr_r hadm hfield]
   refine elementaryUnitaryGroup_le_of_normal p₀ fun g hg ↦ ?_
@@ -280,7 +288,7 @@ theorem isSimpleGroup_quotient_center_typeAGraphConjugator
     fun _ ↦ exists_add_neg_one_pow_mul_apply_eq htr r
   have : Nonempty ((typeAGraphConjugator r K :
       Matrix (Fin (r + 1)) (Fin (r + 1)) K).isotropicPoints σ) :=
-    ⟨isotropicPointZero σ (by simp [Fin.ext_iff]; omega)⟩
+    ⟨isotropicPointZero σ (Fin.last_ne_zero (by omega)).symm⟩
   exact isSimpleGroup_quotient_center_specialIsometryGroup hσ
     (transpose_map_typeAGraphConjugator σ r) (isUnits_det_units _).ne_zero htr_r hadm
     (elementaryUnitaryGroup_typeAGraphConjugator_eq_top hσ htr_r hadm hfield)

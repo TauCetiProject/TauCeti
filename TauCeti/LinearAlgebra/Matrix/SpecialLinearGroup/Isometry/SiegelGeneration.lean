@@ -11,6 +11,9 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Primitive
 import Mathlib.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.Algebra.Ring.Parity
+import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Rev
 import TauCeti.LinearAlgebra.Matrix.BlockSucc
 import TauCeti.LinearAlgebra.Matrix.CornerBlockSucc
 import TauCeti.LinearAlgebra.Matrix.MulVec
@@ -130,15 +133,13 @@ private theorem corner_transvections_mem_elementary (hσ : Function.Involutive �
       · have hσd : σ d = d := by linear_combination -hd
         simp only [neg_one_mul, map_neg, map_mul, map_inv₀, hs, hσd]; ring
     obtain ⟨⟨g, hg⟩, hgW, hga⟩ := exists_mem_elementaryUnitaryGroup_coe_eq hσ hQ her ha
-    have hsign : (-1 : K) ^ r * (-1 : K) ^ r = 1 := by
-      rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
     have hge : g = Matrix.SpecialLinearGroup.transvection h0r.symm (s * d⁻¹) := by
       refine Subtype.ext ?_
       rw [hga, unitaryTransvection_typeAGraphConjugator_single σ (i := Fin.last r)
         (by rw [Fin.rev_last]; exact h0r.symm)]
       simp only [Matrix.SpecialLinearGroup.transvection_coe, Fin.val_last, Fin.rev_last]
       congr 2
-      linear_combination (s * d⁻¹) * hsign
+      exact neg_one_pow_mul_neg_one_pow_mul r (s * d⁻¹)
     subst hge; exact ⟨hg, hgW⟩
 
 /-- **Corner diagonal torus elements belong to the elementary unitary group.** For an involution
@@ -232,36 +233,37 @@ private theorem exists_isotropic_pairings_of_three_le (hσ : Function.Involutive
           (-1 : K) ^ r * z := by
   -- Supported on `{0, 1, r - 1, r}`; the inner hyperbolic pair `{1, r - 1}` cancels the
   -- pairing of `z • e₀` and `e_r`.
-  let i₁ : Fin (r + 1) := ⟨1, by omega⟩
-  let i₂ : Fin (r + 1) := i₁.rev
-  have h01 : (0 : Fin (r + 1)) ≠ i₁ := by simp [i₁, Fin.ext_iff]
-  have h02 : (0 : Fin (r + 1)) ≠ i₂ := by simp [i₂, i₁, Fin.rev, Fin.ext_iff]; omega
-  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := by simp [Fin.ext_iff]; omega
-  have h12 : i₁ ≠ i₂ := by simp [i₂, i₁, Fin.rev, Fin.ext_iff]; omega
-  have h1r : i₁ ≠ Fin.last r := by simp [i₁, Fin.ext_iff]; omega
-  have h2r : i₂ ≠ Fin.last r := by simp [i₂, i₁, Fin.rev, Fin.ext_iff]; omega
+  have h01 : (0 : Fin (r + 1)) ≠ 1 := Fin.ne_of_val_ne <| by
+    rw [Fin.val_zero, Fin.val_one_of_two_le (m := r + 1) (by omega)]; exact zero_ne_one
+  have h02 : (0 : Fin (r + 1)) ≠ (1 : Fin (r + 1)).rev := (Fin.rev_one_ne_zero (by omega)).symm
+  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := (Fin.last_ne_zero (by omega)).symm
+  have h12 : (1 : Fin (r + 1)) ≠ (1 : Fin (r + 1)).rev := Fin.one_ne_rev (by omega) (by omega)
+  have h1r : (1 : Fin (r + 1)) ≠ Fin.last r := by
+    simpa only [Fin.rev_zero] using Fin.rev_ne_iff.mp (Fin.rev_one_ne_zero (by omega))
+  have h2r : (1 : Fin (r + 1)).rev ≠ Fin.last r := Fin.rev_one_ne_last (by omega)
   set v : Fin (r + 1) → K :=
-    z • Pi.single 0 1 + Pi.single i₁ 1 + σ z • Pi.single i₂ 1 + Pi.single (Fin.last r) 1
+    z • Pi.single 0 1 + Pi.single 1 1 + σ z • Pi.single (1 : Fin (r + 1)).rev 1 +
+      Pi.single (Fin.last r) 1
   refine ⟨v, ?_, ?_, ?_⟩
   · have hv0 : v 0 = z := by simp [v, h01, h02, h0r]
-    have hv1 : v i₁ = 1 := by simp [v, h01.symm, h12, h1r]
-    have hv2 : v i₂ = σ z := by simp [v, h02.symm, h12.symm, h2r]
+    have hv1 : v 1 = 1 := by simp [v, h01.symm, h12, h1r]
+    have hv2 : v (1 : Fin (r + 1)).rev = σ z := by simp [v, h02.symm, h12.symm, h2r]
     have hvr : v (Fin.last r) = 1 := by simp [v, h0r.symm, h1r.symm, h2r.symm]
-    have hi₁rev : i₁.rev = i₂ := rfl
-    have hi₂val : (i₂ : ℕ) = r - 1 := by simp [i₂, i₁, Fin.rev]
+    have h1val : ((1 : Fin (r + 1)) : ℕ) = 1 := Fin.val_one_of_two_le (by omega)
+    have h2val : ((1 : Fin (r + 1)).rev : ℕ) = r - 1 := by rw [Fin.val_rev, h1val]; omega
     rw [dotProduct_typeAGraphConjugator_mulVec]
     have hterm (k : Fin (r + 1)) :
         (-1 : K) ^ (k : ℕ) * ((σ ∘ v) k * v k.rev) =
-          (if k = 0 then σ z else 0) + (if k = i₁ then -σ z else 0) +
-          (if k = i₂ then (-1 : K) ^ (r - 1) * z else 0) +
+          (if k = 0 then σ z else 0) + (if k = 1 then -σ z else 0) +
+          (if k = (1 : Fin (r + 1)).rev then (-1 : K) ^ (r - 1) * z else 0) +
           (if k = Fin.last r then (-1 : K) ^ r * z else 0) := by
       by_cases hk0 : k = 0
       · subst hk0; simp [hv0, Fin.rev_zero, hvr, h01, h02, h0r]
-      by_cases hk1 : k = i₁
-      · subst hk1; simp [hk0, hv1, hi₁rev, hv2, h12, h1r, i₁]
-      by_cases hk2 : k = i₂
+      by_cases hk1 : k = 1
+      · subst hk1; rw [h1val]; simp [hk0, hv1, hv2, h12, h1r]
+      by_cases hk2 : k = (1 : Fin (r + 1)).rev
       · subst hk2
-        rw [Function.comp_apply, hv2, Fin.rev_rev i₁, hv1, hσ, mul_one, hi₂val]
+        rw [Function.comp_apply, hv2, Fin.rev_rev, hv1, hσ, mul_one, h2val]
         simp [hk0, hk1, h2r]
       by_cases hkr : k = Fin.last r
       · subst hkr; simp [hk0, hk1, hk2, hvr, Fin.rev_last, hv0]
@@ -340,7 +342,7 @@ private theorem exists_mem_siegelClosure_two_mulVec_last_of_fixed (hσ : Functio
     ∃ D ∈ siegelClosure σ 2,
       ((D : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) *ᵥ
         Pi.single (Fin.last 2) 1 = c • Pi.single (Fin.last 2) 1 := by
-  have h02 : (0 : Fin 3) ≠ Fin.last 2 := by decide
+  have h02 : (0 : Fin 3) ≠ Fin.last 2 := Fin.last_pos.ne
   obtain ⟨hmem, hdiagW⟩ := diag2n_zero_last_mem_elementaryUnitaryGroup_typeAGraphConjugator
     hσ h02 hadm (inv_ne_zero hc0) (by rw [map_inv₀, hc])
   refine ⟨⟨Matrix.SpecialLinearGroup.diag2n h02 c⁻¹ (inv_ne_zero hc0), hmem⟩,
@@ -355,7 +357,7 @@ private theorem exists_mem_siegelClosure_two_mulVec_last_eq_smul_zero_of_eq
     ∃ m ∈ siegelClosure σ 2,
       ((m : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) *ᵥ
         Pi.single (Fin.last 2) 1 = t • Pi.single 0 1 := by
-  have h02 : (0 : Fin 3) ≠ Fin.last 2 := by decide
+  have h02 : (0 : Fin 3) ≠ Fin.last 2 := Fin.last_pos.ne
   refine exists_mem_siegelClosure_mulVec_last_eq_smul_zero_of_exists_isotropic hσ h02 ht0
     (v := ![t, x, 1]) ?_ ?_ ?_
   · rw [dotProduct_typeAGraphConjugator_two_mulVec]
@@ -409,7 +411,7 @@ private theorem exists_mem_siegelClosure_mulVec_last_eq_smul_self (hσ : Functio
       refine ⟨D * n₁, mul_mem hD hn₁, ?_⟩
       rw [specialIsometryGroup_mul_mulVec, hn₁er, mulVec_smul, hDer, smul_smul, mul_comm t c,
         mul_inv_cancel_left₀ hzt]
-  · have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := by simp [Fin.ext_iff]; omega
+  · have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := (Fin.last_ne_zero (by omega)).symm
     obtain ⟨v₁, hv₁, h0v₁, hrv₁⟩ := exists_isotropic_pairings_of_three_le hσ hr3 1
     obtain ⟨vz, hvz, h0vz, hrvz⟩ := exists_isotropic_pairings_of_three_le hσ hr3 z
     obtain ⟨m₁, hm₁, hm₁er⟩ := exists_mem_siegelClosure_mulVec_last_eq_smul_zero_of_exists_isotropic
@@ -471,7 +473,7 @@ private theorem exists_mem_siegelClosure_mulVec_single_zero_and_last (hσ : Func
         Pi.single 0 1 = (σ z)⁻¹ • Pi.single 0 1 ∧
       ((h : Matrix.SpecialLinearGroup (Fin (r + 1)) K) : Matrix (Fin (r + 1)) (Fin (r + 1)) K) *ᵥ
         Pi.single (Fin.last r) 1 = z • Pi.single (Fin.last r) 1 := by
-  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := by simp [Fin.ext_iff]; omega
+  have h0r : (0 : Fin (r + 1)) ≠ Fin.last r := (Fin.last_ne_zero (by omega)).symm
   obtain ⟨-, her0⟩ := comp_single_zero_last_typeAGraphConjugator σ r
   obtain ⟨n, hnS, hner⟩ := exists_mem_siegelClosure_mulVec_last_eq_smul_self hσ hr hadm hz0
   obtain ⟨s, hsS, hser, hse0⟩ :=
@@ -492,8 +494,7 @@ private def borderEquiv (r' : ℕ) : Fin 2 ⊕ Fin (r' + 1) ≃ Fin (r' + 2 + 1)
     rcases x with i | i
     · fin_cases i
       · simp
-      · change Fin.cases (Sum.inl 0) (Fin.lastCases (Sum.inl 1) Sum.inr)
-            (Fin.last (r' + 2)) = Sum.inl 1
+      · simp only [Fin.isValue, Fin.mk_one, Sum.elim_inl, one_ne_zero, ↓reduceIte]
         rw [← Fin.succ_last (r' + 1), Fin.cases_succ, Fin.lastCases_last]
     · simp [Fin.lastCases_castSucc]
   right_inv k := by
@@ -507,20 +508,42 @@ private def borderEquiv (r' : ℕ) : Fin 2 ⊕ Fin (r' + 1) ≃ Fin (r' + 2 + 1)
         simp [Fin.succ_last]
       | cast j => simp [Fin.lastCases_castSucc]
 
+@[simp] private theorem borderEquiv_inl_zero (r' : ℕ) :
+    borderEquiv r' (.inl 0) = 0 := rfl
+
+@[simp] private theorem borderEquiv_inl_one (r' : ℕ) :
+    borderEquiv r' (.inl 1) = Fin.last (r' + 2) := rfl
+
+@[simp] private theorem borderEquiv_inr (r' : ℕ) (i : Fin (r' + 1)) :
+    borderEquiv r' (.inr i) = i.castSucc.succ := rfl
+
+@[simp] private theorem comp_borderEquiv_inr {α : Type*} (r' : ℕ) (v : Fin (r' + 2 + 1) → α) :
+    v ∘ borderEquiv r' ∘ Sum.inr = fun j : Fin (r' + 1) ↦ v j.castSucc.succ := rfl
+
 private theorem reindex_cornerBlockSucc_blockSucc {r' : ℕ}
     (A : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K) :
     Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm
         (cornerBlockSucc 1 (blockSucc A)) =
       fromBlocks (1 : Matrix (Fin 2) (Fin 2) K) 0 0 A := by
-  have h0 : borderEquiv r' (.inl 0) = 0 := rfl
-  have h1 : borderEquiv r' (.inl 1) = (Fin.last (r' + 1)).succ := by
-    rw [Fin.succ_last]; rfl
-  have hi (i : Fin (r' + 1)) : borderEquiv r' (.inr i) = i.castSucc.succ := rfl
   ext (i | i) (j | j)
-  · fin_cases i <;> fin_cases j <;> simp [-Fin.succ_last, h0, h1]
-  · fin_cases i <;> simp [-Fin.succ_last, h0, h1, hi]
-  · fin_cases j <;> simp [-Fin.succ_last, h0, h1, hi]
-  · simp [hi]
+  · fin_cases i <;> fin_cases j <;>
+      simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.reindex_apply, Equiv.symm_symm,
+        Matrix.submatrix_apply, borderEquiv_inl_zero, borderEquiv_inl_one, fromBlocks_apply₁₁] <;>
+      (try rw [← Fin.succ_last (r' + 1)]) <;>
+      simp [-Fin.succ_last]
+  · fin_cases i <;>
+      simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.reindex_apply, Equiv.symm_symm,
+        Matrix.submatrix_apply, borderEquiv_inl_zero, borderEquiv_inl_one, borderEquiv_inr,
+        fromBlocks_apply₁₂, Matrix.zero_apply] <;>
+      (try rw [← Fin.succ_last (r' + 1)]) <;>
+      simp [-Fin.succ_last]
+  · fin_cases j <;>
+      simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.reindex_apply, Equiv.symm_symm,
+        Matrix.submatrix_apply, borderEquiv_inl_zero, borderEquiv_inl_one, borderEquiv_inr,
+        fromBlocks_apply₂₁, Matrix.zero_apply] <;>
+      (try rw [← Fin.succ_last (r' + 1)]) <;>
+      simp [-Fin.succ_last]
+  · simp
 
 private theorem reindex_typeAGraphConjugator_add_two (r' : ℕ) :
     Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm
@@ -537,13 +560,13 @@ private theorem reindex_typeAGraphConjugator_add_two (r' : ℕ) :
     (Fin.succ_injective _).comp (Fin.castSucc_injective _)
   ext (i | i) (j | j)
   · fin_cases i <;> fin_cases j <;>
-      simp [borderEquiv, typeAGraphConjugator_apply, Fin.rev_zero, Fin.rev_last, Fin.last_pos.ne',
+      simp [typeAGraphConjugator_apply, Fin.rev_zero, Fin.rev_last, Fin.last_pos.ne',
         Fin.last_pos.ne, pow_add]
   · fin_cases i <;>
-      simp [borderEquiv, typeAGraphConjugator_apply, Fin.rev_zero, Fin.rev_last, hne0, hnel]
+      simp [typeAGraphConjugator_apply, Fin.rev_zero, Fin.rev_last, hne0, hnel]
   · fin_cases j <;>
-      simp [borderEquiv, typeAGraphConjugator_apply, hrev, (hne0 _).symm, (hnel _).symm]
-  · simp [borderEquiv, typeAGraphConjugator_apply, hrev, hinj.eq_iff, pow_succ]
+      simp [typeAGraphConjugator_apply, hrev, (hne0 _).symm, (hnel _).symm]
+  · simp [typeAGraphConjugator_apply, hrev, hinj.eq_iff, pow_succ]
     split_ifs <;> simp
 
 private theorem reindex_bordered_gram {r' : ℕ} (A : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K) :
@@ -554,24 +577,11 @@ private theorem reindex_bordered_gram {r' : ℕ} (A : Matrix (Fin (r' + 1)) (Fin
       fromBlocks !![(0 : K), 1; (-1 : K) ^ r', 0] 0 0
         (-((A.map σ)ᵀ *
           (typeAGraphConjugator r' K : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K) * A)) := by
-  let e : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K ≃+*
-      Matrix (Fin 2 ⊕ Fin (r' + 1)) (Fin 2 ⊕ Fin (r' + 1)) K :=
-    Matrix.reindexRingEquiv K (borderEquiv r').symm
-  have h1 : e (cornerBlockSucc 1 (blockSucc A)) = fromBlocks 1 0 0 A :=
-    reindex_cornerBlockSucc_blockSucc A
-  have h2 : e ((cornerBlockSucc 1 (blockSucc A)).map σ)ᵀ = fromBlocks 1 0 0 (A.map σ)ᵀ := by
-    have he : e ((cornerBlockSucc 1 (blockSucc A)).map σ)ᵀ =
-        ((e (cornerBlockSucc 1 (blockSucc A))).map σ)ᵀ := by
-      ext i j; rfl
-    rw [he, h1, fromBlocks_map, fromBlocks_transpose]
-    simp [Matrix.map_one (f := σ)]
-  change e (((cornerBlockSucc 1 (blockSucc A)).map σ)ᵀ *
-      (typeAGraphConjugator (r' + 2) K : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) *
-      cornerBlockSucc 1 (blockSucc A)) = _
-  rw [map_mul, map_mul, h2, h1]
-  simp only [e, Matrix.coe_reindexRingEquiv]
-  rw [reindex_typeAGraphConjugator_add_two]
-  simp [fromBlocks_multiply, Matrix.mul_assoc]
+  rw [← Matrix.coe_reindexRingEquiv (R := K) (borderEquiv r').symm, map_mul, map_mul]
+  simp only [Matrix.coe_reindexRingEquiv]
+  rw [← Matrix.transpose_reindex, Matrix.reindex_map, reindex_cornerBlockSucc_blockSucc,
+    reindex_typeAGraphConjugator_add_two, fromBlocks_map, fromBlocks_transpose]
+  simp [Matrix.map_one (f := σ), fromBlocks_multiply, Matrix.mul_assoc]
 
 private theorem cornerBlockSucc_blockSucc_mem_specialIsometryGroup_iff {r' : ℕ}
     (A : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K) :
@@ -583,10 +593,8 @@ private theorem cornerBlockSucc_blockSucc_mem_specialIsometryGroup_iff {r' : ℕ
         (typeAGraphConjugator r' K : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K) * A =
         (typeAGraphConjugator r' K : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K) := by
   -- Reindex both sides into block form `Fin 2 ⊕ Fin (r' + 1)` and compare the `(2, 2)` blocks.
-  rw [← (Matrix.reindexRingEquiv K (borderEquiv r').symm).injective.eq_iff]
-  change Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm _ =
-    Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm _ ↔ _
-  rw [reindex_bordered_gram, reindex_typeAGraphConjugator_add_two, fromBlocks_inj]
+  rw [← (Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm).injective.eq_iff,
+    reindex_bordered_gram, reindex_typeAGraphConjugator_add_two, fromBlocks_inj]
   simp [neg_inj]
 
 private def borderHom {r' : ℕ} :
@@ -599,10 +607,11 @@ private def borderHom {r' : ℕ} :
         (cornerBlockSucc_blockSucc_mem_specialIsometryGroup_iff g.val.val).mpr
           (mem_specialIsometryGroup_iff.mp g.property)⟩
   map_one' := Subtype.ext (Subtype.ext (by simp))
-  map_mul' _ _ := Subtype.ext <| Subtype.ext <| by
-    change cornerBlockSucc 1 (blockSucc (_ * _)) =
-      cornerBlockSucc 1 (blockSucc _) * cornerBlockSucc 1 (blockSucc _)
-    rw [blockSucc_mul, cornerBlockSucc_mul_cornerBlockSucc, one_mul]
+  map_mul' a b := Subtype.ext <| Subtype.ext <| by
+    dsimp only
+    rw [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+      Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+      blockSucc_mul, cornerBlockSucc_mul_cornerBlockSucc, one_mul]
 
 @[simp] private theorem coe_borderHom {r' : ℕ}
     (g : (typeAGraphConjugator r' K :
@@ -616,15 +625,10 @@ private theorem cons_snoc_borderEquiv_inl {α : Type*} [Zero α] {r' : ℕ}
     (u : Fin (r' + 1) → α) (i : Fin 2) :
     (Fin.cons (0 : α) (Fin.snoc u 0) : Fin (r' + 2 + 1) → α) (borderEquiv r' (.inl i)) = 0 := by
   fin_cases i
-  · simp [borderEquiv]
-  · simp only [borderEquiv, Equiv.coe_fn_mk, Sum.elim_inl]
+  · simp
+  · simp only [Fin.isValue, Fin.mk_one, borderEquiv_inl_one]
     rw [← Fin.succ_last (r' + 1)]
-    simp
-
-private theorem cons_snoc_borderEquiv_inr {α : Type*} [Zero α] {r' : ℕ}
-    (u : Fin (r' + 1) → α) (i : Fin (r' + 1)) :
-    (Fin.cons (0 : α) (Fin.snoc u 0) : Fin (r' + 2 + 1) → α) (borderEquiv r' (.inr i)) = u i := by
-  simp [borderEquiv]
+    simp [-Fin.succ_last]
 
 private theorem comp_cons_snoc_dotProduct_mulVec {r' : ℕ}
     (x : Fin (r' + 1) → K) (v : Fin (r' + 2 + 1) → K) :
@@ -640,7 +644,7 @@ private theorem comp_cons_snoc_dotProduct_mulVec {r' : ℕ}
     ext y
     rcases y with i | i
     · simp [cons_snoc_borderEquiv_inl]
-    · simp [cons_snoc_borderEquiv_inr]
+    · simp
   have hQ : ((typeAGraphConjugator (r' + 2) K :
         Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) *ᵥ v) ∘ borderEquiv r' =
       (fromBlocks !![(0 : K), 1; (-1 : K) ^ r', 0] 0 0
@@ -649,9 +653,7 @@ private theorem comp_cons_snoc_dotProduct_mulVec {r' : ℕ}
     rw [← reindex_typeAGraphConjugator_add_two, Matrix.reindex_apply, Matrix.submatrix_mulVec_equiv]
     simp [Function.comp_assoc]
   rw [hcomp, hQ, fromBlocks_mulVec, dotProduct_block]
-  have hinr : (v ∘ borderEquiv r') ∘ Sum.inr = fun j : Fin (r' + 1) ↦ v j.castSucc.succ := by
-    ext j; rfl
-  simp [hinr, neg_mulVec]
+  simp [Function.comp_assoc, neg_mulVec]
 
 private theorem coe_borderHom_eq_siegelTransvection {r' : ℕ}
     (u w : Fin (r' + 1) → K) (c : K) :
@@ -675,10 +677,9 @@ private theorem coe_borderHom_eq_siegelTransvection {r' : ℕ}
         Matrix (Fin (r' + 1)) (Fin (r' + 1)) K).siegelTransvection σ ((-1 : K) ^ r') u w c))
     rw [Matrix.reindex_apply, Matrix.submatrix_mulVec_equiv, Equiv.symm_symm,
       fromBlocks_mulVec] at hre
-    have hinr : (v ∘ borderEquiv r') ∘ Sum.inr = fun j : Fin (r' + 1) ↦ v j.castSucc.succ := by
-      ext j; rfl
-    simpa [hinr, Function.comp_assoc] using hre
-  have hpow : (-1 : K) ^ (r' + 2) = (-1 : K) ^ r' := by simp [pow_add]
+    simpa [Function.comp_assoc] using hre
+  have hpow : (-1 : K) ^ (r' + 2) = (-1 : K) ^ r' := by
+    simpa using neg_one_pow_add_two_mul (α := K) r' 1
   have hpair_neg : (σ ∘ (-Fin.cons 0 (Fin.snoc w 0))) ⬝ᵥ
         ((typeAGraphConjugator (r' + 2) K :
           Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) *ᵥ v) =
@@ -700,14 +701,74 @@ private theorem coe_borderHom_eq_siegelTransvection {r' : ℕ}
     · simp only [Sum.elim_inl, Function.comp_apply, siegelTransvection_mulVec, Pi.sub_apply,
         Pi.add_apply, Pi.smul_apply, Pi.neg_apply, cons_snoc_borderEquiv_inl, neg_zero, smul_zero,
         add_zero, sub_zero]
-    · have hbinr : borderEquiv r' (.inr i) = i.castSucc.succ := rfl
-      simp only [Sum.elim_inr, Function.comp_apply, siegelTransvection_mulVec, Pi.sub_apply,
+    · simp only [Sum.elim_inr, Function.comp_apply, siegelTransvection_mulVec, Pi.sub_apply,
         Pi.add_apply, Pi.smul_apply, Pi.neg_apply, comp_cons_snoc_dotProduct_mulVec, hpair_neg,
-        hpow, cons_snoc_borderEquiv_inr, smul_eq_mul]
-      rw [hbinr]
+        hpow, borderEquiv_inr, Fin.cons_succ, Fin.snoc_castSucc, smul_eq_mul]
       ring
   exact funext fun k ↦ by
     simpa using congrFun hEq ((borderEquiv r').symm k)
+
+private theorem reindex_borderEquiv_toBlocks₁₁_eq_one {r' : ℕ}
+    {M : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K}
+    (h0 : M *ᵥ Pi.single 0 1 = Pi.single 0 1)
+    (hl : M *ᵥ Pi.single (Fin.last (r' + 2)) 1 = Pi.single (Fin.last (r' + 2)) 1) :
+    (Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm M).toBlocks₁₁ = 1 := by
+  have hcol0 (k : Fin (r' + 2 + 1)) : M k 0 = if k = 0 then 1 else 0 := by
+    simpa [Matrix.mulVec_single_one, Pi.single_apply] using congrFun h0 k
+  have hcoll (k : Fin (r' + 2 + 1)) :
+      M k (Fin.last (r' + 2)) = if k = Fin.last (r' + 2) then 1 else 0 := by
+    simpa [Matrix.mulVec_single_one, Pi.single_apply] using congrFun hl k
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.toBlocks₁₁, hcol0, hcoll]
+
+private theorem reindex_borderEquiv_toBlocks₂₁_eq_zero {r' : ℕ}
+    {M : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K}
+    (h0 : M *ᵥ Pi.single 0 1 = Pi.single 0 1)
+    (hl : M *ᵥ Pi.single (Fin.last (r' + 2)) 1 = Pi.single (Fin.last (r' + 2)) 1) :
+    (Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm M).toBlocks₂₁ = 0 := by
+  have hcol0 (k : Fin (r' + 2 + 1)) : M k 0 = if k = 0 then 1 else 0 := by
+    simpa [Matrix.mulVec_single_one, Pi.single_apply] using congrFun h0 k
+  have hcoll (k : Fin (r' + 2 + 1)) :
+      M k (Fin.last (r' + 2)) = if k = Fin.last (r' + 2) then 1 else 0 := by
+    simpa [Matrix.mulVec_single_one, Pi.single_apply] using congrFun hl k
+  ext i j
+  fin_cases j
+  · simp [Matrix.toBlocks₂₁, hcol0, Fin.succ_ne_zero]
+  · simp [Matrix.toBlocks₂₁, hcoll]
+
+private theorem reindex_borderEquiv_toBlocks₁₂_eq_zero {r' : ℕ}
+    {M : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K}
+    (hM : (M.map σ)ᵀ *
+        (typeAGraphConjugator (r' + 2) K : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) * M =
+      (typeAGraphConjugator (r' + 2) K : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K))
+    (hN11 : (Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm M).toBlocks₁₁ = 1)
+    (hN21 : (Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm M).toBlocks₂₁ = 0) :
+    (Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm M).toBlocks₁₂ = 0 := by
+  let N := Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm M
+  have hgram : (N.map σ)ᵀ * fromBlocks !![(0 : K), 1; (-1 : K) ^ r', 0] 0 0
+        (-(typeAGraphConjugator r' K : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K)) * N =
+      fromBlocks !![(0 : K), 1; (-1 : K) ^ r', 0] 0 0
+        (-(typeAGraphConjugator r' K : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K)) := by
+    have hQ := congrArg (Matrix.reindexRingEquiv K (borderEquiv r').symm) hM
+    rw [map_mul, map_mul] at hQ
+    simp only [Matrix.coe_reindexRingEquiv] at hQ
+    rw [← Matrix.transpose_reindex, Matrix.reindex_map, reindex_typeAGraphConjugator_add_two] at hQ
+    exact hQ
+  have hQ2_mul : !![(0 : K), 1; (-1 : K) ^ r', 0] * N.toBlocks₁₂ = 0 := by
+    have hN : N = fromBlocks 1 N.toBlocks₁₂ 0 N.toBlocks₂₂ := by
+      rw [← hN11, ← hN21, fromBlocks_toBlocks]
+    rw [hN, fromBlocks_map, fromBlocks_transpose,
+      Matrix.map_one (⇑σ) (map_zero σ) (map_one σ),
+      Matrix.map_zero (⇑σ) (map_zero σ), transpose_one, transpose_zero,
+      fromBlocks_multiply, fromBlocks_multiply, fromBlocks_inj] at hgram
+    simpa using hgram.2.1
+  have hQ2_inv : !![(0 : K), (-1 : K) ^ r'; 1, 0] * !![(0 : K), 1; (-1 : K) ^ r', 0] = 1 := by
+    have hsq : (-1 : K) ^ r' * (-1 : K) ^ r' = 1 := by
+      simpa using neg_one_pow_mul_neg_one_pow_mul r' (1 : K)
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, hsq]
+  have hcancel := congrArg (!![(0 : K), (-1 : K) ^ r'; 1, 0] * ·) hQ2_mul
+  rwa [← Matrix.mul_assoc, hQ2_inv, Matrix.one_mul, Matrix.mul_zero] at hcancel
 
 private theorem mem_range_borderHom_of_mulVec_single_eq {r' : ℕ}
     {g : (typeAGraphConjugator (r' + 2) K :
@@ -719,55 +780,17 @@ private theorem mem_range_borderHom_of_mulVec_single_eq {r' : ℕ}
         Pi.single (Fin.last (r' + 2)) 1) :
     g ∈ (borderHom (σ := σ) (r' := r')).range := by
   let M := g.val.val
-  let e : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K ≃+*
-      Matrix (Fin 2 ⊕ Fin (r' + 1)) (Fin 2 ⊕ Fin (r' + 1)) K :=
-    Matrix.reindexRingEquiv K (borderEquiv r').symm
-  let N := e M
-  have hcol0 (k : Fin (r' + 2 + 1)) : M k 0 = if k = 0 then 1 else 0 := by
-    simpa [M, Matrix.mulVec_single_one, Pi.single_apply] using congrFun hg0 k
-  have hcoll (k : Fin (r' + 2 + 1)) :
-      M k (Fin.last (r' + 2)) = if k = Fin.last (r' + 2) then 1 else 0 := by
-    simpa [M, Matrix.mulVec_single_one, Pi.single_apply] using congrFun hgl k
-  have hN11 : N.toBlocks₁₁ = 1 := by
-    ext i j
-    fin_cases i <;> fin_cases j
-    · simp [N, e, Matrix.toBlocks₁₁, borderEquiv, hcol0]
-    · simp [N, e, Matrix.toBlocks₁₁, borderEquiv, hcoll]
-    · simp [N, e, Matrix.toBlocks₁₁, borderEquiv, hcol0]
-    · simp [N, e, Matrix.toBlocks₁₁, borderEquiv, hcoll]
-  have hN21 : N.toBlocks₂₁ = 0 := by
-    ext i j
-    fin_cases j
-    · simp [N, e, Matrix.toBlocks₂₁, borderEquiv, hcol0, Fin.succ_ne_zero]
-    · simp [N, e, Matrix.toBlocks₂₁, borderEquiv, hcoll]
-  have hgram : ((N.map σ)ᵀ * fromBlocks !![(0 : K), 1; (-1 : K) ^ r', 0] 0 0
-        (-(typeAGraphConjugator r' K : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K)) * N) =
-      fromBlocks !![(0 : K), 1; (-1 : K) ^ r', 0] 0 0
-        (-(typeAGraphConjugator r' K : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K)) := by
-    have hQ := congrArg e (mem_specialIsometryGroup_iff.mp g.property)
-    have hNt : e (M.map σ)ᵀ = (N.map σ)ᵀ := by ext i j; rfl
-    rw [map_mul, map_mul, hNt] at hQ
-    simp only [e, Matrix.coe_reindexRingEquiv] at hQ
-    rwa [reindex_typeAGraphConjugator_add_two] at hQ
-  have hQ2_mul : !![(0 : K), 1; (-1 : K) ^ r', 0] * N.toBlocks₁₂ = 0 := by
-    have hN : N = fromBlocks 1 N.toBlocks₁₂ 0 N.toBlocks₂₂ := by
-      rw [← hN11, ← hN21, fromBlocks_toBlocks]
-    rw [hN, fromBlocks_map, fromBlocks_transpose] at hgram
-    rw [Matrix.map_one (⇑σ) (map_zero σ) (map_one σ),
-      Matrix.map_zero (⇑σ) (map_zero σ), transpose_one, transpose_zero] at hgram
-    rw [fromBlocks_multiply, fromBlocks_multiply, fromBlocks_inj] at hgram
-    simpa using hgram.2.1
-  have hQ2_inv : !![(0 : K), (-1 : K) ^ r'; 1, 0] * !![(0 : K), 1; (-1 : K) ^ r', 0] = 1 := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, ← pow_add, ← two_mul, pow_mul]
-  have hN12 : N.toBlocks₁₂ = 0 := by
-    have := congrArg (!![(0 : K), (-1 : K) ^ r'; 1, 0] * ·) hQ2_mul
-    rwa [← Matrix.mul_assoc, hQ2_inv, Matrix.one_mul, Matrix.mul_zero] at this
-  have hM : cornerBlockSucc 1 (blockSucc N.toBlocks₂₂) = M := e.injective <| by
-    change Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm
-        (cornerBlockSucc 1 (blockSucc N.toBlocks₂₂)) = N
-    rw [reindex_cornerBlockSucc_blockSucc, ← hN11, ← hN12, ← hN21, fromBlocks_toBlocks]
+  let N := Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm M
+  -- Extract the left-column blocks from the fixed basis vectors `e₀` and `e_{r'+2}`.
+  have hN11 : N.toBlocks₁₁ = 1 := reindex_borderEquiv_toBlocks₁₁_eq_one hg0 hgl
+  have hN21 : N.toBlocks₂₁ = 0 := reindex_borderEquiv_toBlocks₂₁_eq_zero hg0 hgl
+  -- Cancel the upper-right block using the reindexed Gram identity.
+  have hN12 : N.toBlocks₁₂ = 0 :=
+    reindex_borderEquiv_toBlocks₁₂_eq_zero (mem_specialIsometryGroup_iff.mp g.property) hN11 hN21
+  -- Reconstruct `M = cornerBlockSucc 1 (blockSucc N.toBlocks₂₂)` and its preimage in `borderHom`.
+  have hM : cornerBlockSucc 1 (blockSucc N.toBlocks₂₂) = M :=
+    (Matrix.reindex (borderEquiv r').symm (borderEquiv r').symm).injective <| by
+      rw [reindex_cornerBlockSucc_blockSucc, ← hN11, ← hN12, ← hN21, fromBlocks_toBlocks]
   have hdetA : N.toBlocks₂₂.det = 1 := by
     have hdetM : (cornerBlockSucc 1 (blockSucc N.toBlocks₂₂)).det = 1 := hM ▸ g.val.property
     simpa using hdetM
@@ -808,7 +831,8 @@ private theorem siegelClosure_le_comap_borderHom (r' : ℕ) :
     rw [map_comp_neg, mulVec_neg, neg_dotProduct, dotProduct_neg, neg_neg,
       comp_cons_snoc_dotProduct_mulVec]
     simp
-  have hpow : (-1 : K) ^ (r' + 2) = (-1 : K) ^ r' := by simp [pow_add]
+  have hpow : (-1 : K) ^ (r' + 2) = (-1 : K) ^ r' := by
+    simpa using neg_one_pow_add_two_mul (α := K) r' 1
   have hbc : (-c') + (-1 : K) ^ (r' + 2) * σ (-c') + (-1 : K) ^ (r' + 2) *
       ((σ ∘ (-Fin.cons 0 (Fin.snoc w' 0))) ⬝ᵥ
         ((typeAGraphConjugator (r' + 2) K :
@@ -841,7 +865,7 @@ private theorem exists_mem_siegelClosure_mul_mulVec_single_zero_and_last
   let Q := (typeAGraphConjugator (r₁ + 1) K : Matrix (Fin (r₁ + 2)) (Fin (r₁ + 2)) K)
   have hQ := transpose_map_typeAGraphConjugator σ (r₁ + 1)
   have hdet : Q.det ≠ 0 := (isUnits_det_units _).ne_zero
-  have h0r : (0 : Fin (r₁ + 2)) ≠ Fin.last (r₁ + 1) := by simp [Fin.ext_iff]
+  have h0r : (0 : Fin (r₁ + 2)) ≠ Fin.last (r₁ + 1) := Fin.last_pos.ne
   have he0 := comp_single_dotProduct_typeAGraphConjugator_mulVec_single_zero (σ := σ) h0r
   have her := comp_single_dotProduct_typeAGraphConjugator_mulVec_single_last (σ := σ) h0r
   obtain ⟨he0r, -⟩ := comp_single_zero_last_typeAGraphConjugator σ (r₁ + 1)
@@ -884,7 +908,7 @@ private theorem siegelClosure_one_eq_top (hσ : Function.Involutive σ)
   have hdet1 : c * (σ c)⁻¹ = 1 := by
     have hd := g₂.val.property; rwa [hg₂_mat, det_diagonal, Fin.prod_univ_two] at hd
   have hσc : σ c = c := ((mul_inv_eq_one₀ hσc0).mp hdet1).symm
-  have h0r : (0 : Fin 2) ≠ Fin.last 1 := by decide
+  have h0r : (0 : Fin 2) ≠ Fin.last 1 := Fin.last_pos.ne
   obtain ⟨hmem, hdiagW⟩ := diag2n_zero_last_mem_elementaryUnitaryGroup_typeAGraphConjugator
     hσ h0r hadm hc0 hσc
   have hg₂_eq : g₂ = ⟨Matrix.SpecialLinearGroup.diag2n h0r c hc0, hmem⟩ := Subtype.ext <|
@@ -921,7 +945,8 @@ private theorem siegelClosure_eq_top (hσ : Function.Involutive σ) {r : ℕ}
         Pi.single (Fin.last (r₂ + 2)) 1 := by
       rw [specialIsometryGroup_mul_mulVec, hg₂er, mulVec_smul, hh₃er, inv_smul_smul₀ hσc0]
     obtain ⟨g', hg'⟩ := mem_range_borderHom_of_mulVec_single_eq (r' := r₂) hg₃e0 hg₃er
-    have hpow : (-1 : K) ^ (r₂ + 2) = (-1 : K) ^ r₂ := by simp [pow_add]
+    have hpow : (-1 : K) ^ (r₂ + 2) = (-1 : K) ^ r₂ := by
+      simpa using neg_one_pow_add_two_mul (α := K) r₂ 1
     have hg'S : g' ∈ siegelClosure σ r₂ := by
       rw [ih r₂ (by omega) (by simpa only [hpow] using htr) (by simpa only [hpow] using hadm)]
       exact Subgroup.mem_top g'

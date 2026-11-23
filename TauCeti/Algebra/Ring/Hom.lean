@@ -13,6 +13,7 @@ import Mathlib.Data.Nat.Cast.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Ring.Parity
 
 /-!
 # Multiplicative maps, ring homomorphisms, and ring equivalences
@@ -80,9 +81,7 @@ theorem exists_add_neg_one_pow_mul_apply_eq {R : Type*} [Ring R] {σ : R →+* R
     (hs : σ s = (-1 : R) ^ k * s) : ∃ t : R, t + (-1 : R) ^ k * σ t = s := by
   obtain ⟨b, hb⟩ := hb
   refine ⟨s * b, ?_⟩
-  have hsq : (-1 : R) ^ k * (-1 : R) ^ k = 1 := by
-    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
-  rw [map_mul, hs, ← mul_assoc ((-1 : R) ^ k), ← mul_assoc ((-1 : R) ^ k), hsq, one_mul,
+  rw [map_mul, hs, ← mul_assoc ((-1 : R) ^ k), neg_one_pow_mul_neg_one_pow_mul,
     ← mul_add, hb, mul_one]
 
 /-- Existence of a nonzero `d` with `d + σ d = 0` when `k` is even yields a nonzero solution of
