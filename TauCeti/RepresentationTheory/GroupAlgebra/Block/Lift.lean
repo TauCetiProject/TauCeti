@@ -106,7 +106,7 @@ theorem existsUnique_blockIdempotent_map_residue [IsLocalRing O]
   have h := bijOn_centerMapRingHom_isBlockIdempotent (G := G) _ IsLocalRing.residue_surjective
     (IsLocalRing.ker_residue (R := O))
   obtain ⟨b, hb, rfl⟩ := h.surjOn hc
-  refine ⟨b, ⟨hb, (coe_centerMapRingHom _ b).symm⟩, fun b' ⟨hb', hb'c⟩ ↦ h.injOn hb' hb ?_⟩
+  refine ⟨b, ⟨hb, (coe_centerMapRingHom G _ b).symm⟩, fun b' ⟨hb', hb'c⟩ ↦ h.injOn hb' hb ?_⟩
   rw [Subtype.ext_iff, coe_centerMapRingHom, hb'c]
 
 end TauCeti
