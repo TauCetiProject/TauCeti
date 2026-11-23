@@ -143,12 +143,19 @@ theorem regularizedHGFun_of_zero_mem {a b : Multiset ℂ} (h : (0 : ℂ) ∈ a) 
   · intro n hn
     simp [regularizedHGFunCoeff_eq_zero_left a b n 0 (by simpa using h) (Nat.pos_of_ne_zero hn)]
 
-private theorem regularizedGaussHGFun_eq_regularizedHGFun (a b c z : ℂ) :
-    regularizedGaussHGFun a b c z = regularizedHGFun {a, b} {c} z := (rfl)
+/-- `regularizedGaussHGFunSeries a b c` is `regularizedHGFunSeries {a, b} {c}`. -/
+theorem regularizedGaussHGFunSeries_eq_regularizedHGFunSeries (a b c : ℂ) :
+    regularizedGaussHGFunSeries a b c = regularizedHGFunSeries {a, b} {c} :=
+  rfl
+
+/-- `regularizedGaussHGFun a b c z` is `regularizedHGFun {a, b} {c} z`. -/
+theorem regularizedGaussHGFun_eq_regularizedHGFun (a b c z : ℂ) :
+    regularizedGaussHGFun a b c z = regularizedHGFun {a, b} {c} z :=
+  rfl
 
 private theorem regularizedHGFunCoeff_pair_singleton (a b c : ℂ) (k : ℕ) :
     regularizedHGFunCoeff {a, b} {c} k = (regularizedGaussHGFunSeries a b c).coeff k := by
-  rw [regularizedGaussHGFunSeries, regularizedHGFunSeries_coeff]
+  rw [regularizedGaussHGFunSeries_eq_regularizedHGFunSeries, regularizedHGFunSeries_coeff]
 
 /-- Inside the convergence ball of `regularizedHGFunSeries a b`, the regularized hypergeometric
 series converges to `regularizedHGFun a b z`. -/
