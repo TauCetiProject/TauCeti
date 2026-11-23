@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Data.Nat.Cast.Order.Field
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
-public import TauCeti.Algebra.Order.Field.Basic
 public import TauCeti.Analysis.Normed.Lp.Basic
 public import TauCeti.Analysis.Normed.Lp.MapCLM
 public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
@@ -390,17 +390,21 @@ theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥
 
 /-- The bounded harmonic multiplier sequence `n ↦ ((n + 1 : 𝕜)⁻¹)` in `ℓ^∞(ℕ, 𝕜)`. -/
 noncomputable def invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ℓ^∞(ℕ, 𝕜) :=
-  ofAntitone 𝕜 (TauCeti.antitone_inv_natCast_add_one (α := ℝ≥0))
+  ofAntitone 𝕜 (fun _ _ h ↦ Nat.one_div_le_one_div h : Antitone fun n : ℕ ↦ 1 / ((n : ℝ≥0) + 1))
 
-/-- `lp.invNatSucc 𝕜` is `lp.ofAntitone` applied to `TauCeti.antitone_inv_natCast_add_one`. -/
+/-- `lp.invNatSucc 𝕜` is `lp.ofAntitone` applied to the harmonic sequence
+`n ↦ 1 / ((n : ℝ≥0) + 1)`. -/
 theorem invNatSucc_eq_ofAntitone (𝕜 : Type*) [RCLike 𝕜] :
-    invNatSucc 𝕜 = ofAntitone 𝕜 (TauCeti.antitone_inv_natCast_add_one (α := ℝ≥0)) := (rfl)
+    invNatSucc 𝕜 =
+      ofAntitone 𝕜
+        (fun _ _ h ↦ Nat.one_div_le_one_div h : Antitone fun n : ℕ ↦ 1 / ((n : ℝ≥0) + 1)) :=
+  (rfl)
 
 /-- The `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : 𝕜) + 1)⁻¹`. -/
 @[simp]
 theorem invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     invNatSucc 𝕜 n = ((n : 𝕜) + 1)⁻¹ := by
-  rw [invNatSucc_eq_ofAntitone, ofAntitone_apply]
+  simp only [invNatSucc_eq_ofAntitone, ofAntitone_apply, one_div]
   push_cast
   rfl
 
@@ -414,15 +418,14 @@ theorem invNatSucc_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
 /-- The norm of the `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : ℝ) + 1)⁻¹`. -/
 theorem norm_invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     ‖invNatSucc 𝕜 n‖ = ((n : ℝ) + 1)⁻¹ := by
-  rw [invNatSucc_eq_ofAntitone, norm_ofAntitone_apply]
+  simp only [invNatSucc_eq_ofAntitone, norm_ofAntitone_apply, one_div]
   push_cast
   rfl
 
 /-- The `ℓ^∞` norm of `lp.invNatSucc 𝕜` is `1`. -/
 @[simp]
 theorem norm_invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ‖invNatSucc 𝕜‖ = 1 := by
-  rw [invNatSucc_eq_ofAntitone, norm_ofAntitone]
-  simp
+  simp [invNatSucc_eq_ofAntitone]
 
 /-- The norms of the entries of `lp.invNatSucc 𝕜` tend to `0`. -/
 theorem tendsto_norm_invNatSucc (𝕜 : Type*) [RCLike 𝕜] :

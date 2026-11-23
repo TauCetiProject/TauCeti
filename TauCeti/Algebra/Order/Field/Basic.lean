@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Order.ConditionallyCompleteLattice.Indexed
-import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -119,8 +118,6 @@ zero only at `0`.
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
-* `TauCeti.antitone_inv_natCast_add_one`: `n ↦ ((n : α) + 1)⁻¹` is antitone in any linearly
-  ordered semifield.
 -/
 
 public section
@@ -494,12 +491,6 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
-
-/-- For any linearly ordered semifield `α`, the reciprocal sequence `n ↦ ((n : α) + 1)⁻¹` is
-antitone. -/
-theorem antitone_inv_natCast_add_one {α : Type*} [Semifield α] [LinearOrder α]
-    [IsStrictOrderedRing α] : Antitone fun n : ℕ ↦ ((n : α) + 1)⁻¹ :=
-  fun _ _ h ↦ by simpa only [one_div] using Nat.one_div_le_one_div (α := α) h
 
 end TauCeti
 
