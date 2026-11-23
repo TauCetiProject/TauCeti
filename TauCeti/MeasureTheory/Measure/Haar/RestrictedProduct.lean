@@ -460,9 +460,10 @@ theorem restrictedHaar_box_self :
 families are normalized cofinitely, then `restrictedHaar` for `μ'` is `∏ᶠ i, c i` times
 `restrictedHaar` for `μ`. The scalars are nonzero because `μ' i` is a Haar measure, and equal to
 `1` cofinitely because both families are normalized on `B i` cofinitely. -/
-@[to_additive /-- **Change of local normalizations.** If `μ' i = c i • μ i` for scalars
-`c i : ℝ≥0`, where both families are normalized cofinitely, then `restrictedAddHaar` for `μ'` is
-`∏ᶠ i, c i` times `restrictedAddHaar` for `μ`. -/]
+@[to_additive restrictedAddHaar_eq_finprod_smul
+/-- **Change of local normalizations.** If `μ' i = c i • μ i` for scalars `c i : ℝ≥0`, where both
+families are normalized cofinitely, then `restrictedAddHaar` for `μ'` is `∏ᶠ i, c i` times
+`restrictedAddHaar` for `μ`. -/]
 theorem restrictedHaar_eq_finprod_smul (μ' : ∀ i, Measure (G i)) [∀ i, (μ' i).IsHaarMeasure]
     (hμ'B : ∀ᶠ i in cofinite, μ' i (B i) = 1) (c : ι → ℝ≥0) (hμ' : ∀ i, μ' i = c i • μ i) :
     restrictedHaar B μ' hμ'B = (∏ᶠ i, c i) • restrictedHaar B μ hμB := by
