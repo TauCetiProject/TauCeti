@@ -38,6 +38,9 @@ The construction is natural:
   induces the isomorphism of determinant lines `TauCeti.DetBundle.congrHomeomorph e`, given on
   each fibre by `LinearEquiv.exteriorPower`, functorially (`TauCeti.DetBundle.congrEquiv_refl`,
   `TauCeti.DetBundle.congrEquiv_trans`, `TauCeti.DetBundle.congrEquiv_symm`);
+* arbitrary fibrewise families of continuous linear equivalences between independent model
+  presentations induce the fibrewise determinant transport `TauCeti.DetBundle.congrModelEquiv`.
+  No continuity of the family in the base is assumed or asserted;
 * for a continuous map `f : B' → B`, the pullback of `det E` is the determinant line of the
   pullback of `E`, by the map induced by the identity of the fibres of `E`
   (`TauCeti.DetBundle.pullbackHomeomorph`).
@@ -59,6 +62,11 @@ homeomorphic to that of `det E`, linearly on each fibre
   isomorphism of vector bundles.
 * `TauCeti.DetBundle.pullbackHomeomorph`: the pullback of `det E` is `det (f *ᵖ E)`.
 * `TauCeti.DetBundle.ofBundleDetHomeomorph`: comparison with `FiniteRankBundleCore.det`.
+* `TauCeti.DetBundle.fiberDetLineEquiv`: identification with the intrinsic top exterior power
+  indexed by the actual fibre rank.
+* `TauCeti.DetBundle.congrModelEquiv`: fibrewise transport between independent model presentations,
+  without a continuity hypothesis in the base.
+* `TauCeti.DetBundle.zeroEquiv`: the canonical empty-product coordinate for a rank-zero model.
 
 ## References
 
@@ -785,7 +793,7 @@ theorem congrModelEquiv_eq_congrEquiv (e : ∀ x, E₁ x ≃L[K] E₁' x) (x : B
   apply (linearEquiv K F₁ E₁' x).injective
   apply Subtype.ext
   rw [coe_congrModelEquiv, congrEquiv_apply, LinearEquiv.apply_symm_apply,
-    TauCeti.ExteriorAlgebra.coe_exteriorPower_apply]
+    LinearEquiv.coe_exteriorPower_apply]
 
 end SameModel
 
@@ -810,7 +818,7 @@ theorem coe_linearEquiv_zeroEquiv (h : finrank K F₁ = 0) (x : B)
     (linearEquiv K F₁ E₁ x a : ExteriorAlgebra K (E₁ x)) =
       algebraMap K (ExteriorAlgebra K (E₁ x)) (zeroEquiv K F₁ E₁ h x a) := by
   simp only [zeroEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
-  have hz := TauCeti.ExteriorAlgebra.coe_degree_zero
+  have hz := exteriorPower.coe_eq_algebraMap_zeroEquiv
     ((LinearEquiv.ofEq _ _ (congrArg (⋀[K]^· (E₁ x)) h)) (linearEquiv K F₁ E₁ x a))
   simpa only [zeroLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply] using hz
 

@@ -73,6 +73,12 @@ Transport through a preferred fibre equivalence also shows that a family spannin
 nontrivial model has a nonzero member (`VectorBundle.exists_ne_zero_of_span_range_eq_top`).
 The family and fibre may be infinite, with no continuity or manifold assumption on the family.
 
+Membership in both chart base sets gives membership in their product base set
+(`Bundle.Trivialization.mem_prod_baseSet`), also for pulled-back charts
+(`Bundle.Trivialization.mem_prod_pullback_baseSet`). For linear product charts the fibre
+linear equivalence is the product of the two chart equivalences
+(`Bundle.Trivialization.linearEquivAt_prod`).
+
 We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
 bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear trivializations
@@ -686,6 +692,33 @@ namespace Bundle.Trivialization
 
 variable {B : Type*} [TopologicalSpace B]
 
+section ProductBaseSet
+
+variable {F₁ : Type*} [TopologicalSpace F₁] {F₂ : Type*} [TopologicalSpace F₂]
+  {E₁ : B → Type*} {E₂ : B → Type*}
+  [∀ x, Zero (E₁ x)] [∀ x, Zero (E₂ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  {e₁ : Trivialization F₁ (π F₁ E₁)} {e₂ : Trivialization F₂ (π F₂ E₂)}
+
+/-- A point in both chart base sets belongs to the base set of their product chart. -/
+theorem mem_prod_baseSet {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet) :
+    x ∈ (e₁.prod e₂).baseSet := by
+  simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂
+
+variable {B' : Type*} [TopologicalSpace B']
+  {T : Type*} [FunLike T B' B] [ContinuousMapClass T B' B]
+
+/-- Membership in both original base sets gives membership in the product of pulled-back charts. -/
+theorem mem_prod_pullback_baseSet (f : T) {y : B'}
+    (hx₁ : f y ∈ e₁.baseSet) (hx₂ : f y ∈ e₂.baseSet) :
+    letI : ∀ x, Zero ((f *ᵖ E₁) x) := inferInstanceAs (∀ x, Zero (E₁ (f x)))
+    letI : ∀ x, Zero ((f *ᵖ E₂) x) := inferInstanceAs (∀ x, Zero (E₂ (f x)))
+    y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet := by
+  simpa only [Trivialization.prod_baseSet, Trivialization.pullback_baseSet,
+    Set.mem_inter_iff, Set.mem_preimage] using (mem_prod_baseSet hx₁ hx₂)
+
+end ProductBaseSet
+
 section LinearProduct
 
 variable {K : Type*} [NontriviallyNormedField K]
@@ -702,11 +735,11 @@ theorem linearEquivAt_prod
     (e₁ : Trivialization F₁ (π F₁ E₁)) (e₂ : Trivialization F₂ (π F₂ E₂))
     [e₁.IsLinear K] [e₂.IsLinear K] {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet) :
     (e₁.prod e₂).linearEquivAt K x
-      (by simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂) =
+      (mem_prod_baseSet hx₁ hx₂) =
       (e₁.linearEquivAt K x hx₁).prodCongr (e₂.linearEquivAt K x hx₂) := by
   exact congrArg ContinuousLinearEquiv.toLinearEquiv
     (Trivialization.continuousLinearEquivAt_prod (𝕜 := K)
-      (by simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂))
+      (mem_prod_baseSet hx₁ hx₂))
 
 end LinearProduct
 

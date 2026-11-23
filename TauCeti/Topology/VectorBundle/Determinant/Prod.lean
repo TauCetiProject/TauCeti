@@ -28,7 +28,9 @@ are allowed.
 * `TauCeti.DetBundle.prodCommEquiv_prodEquiv` and `TauCeti.DetBundle.prodAssocEquiv_prodEquiv`
   give the rank-dependent swap sign and the sign-free associativity law.
 * `TauCeti.DetBundle.prodPullbackEquiv_prodEquiv` is the native pullback square.
-* `TauCeti.DetBundle.zeroEquiv` supplies the canonical empty-exterior-product unit coordinate.
+* `TauCeti.DetBundle.coe_prodEquiv_tmul_of_finrank_left_eq_zero` and
+  `TauCeti.DetBundle.coe_prodEquiv_tmul_of_finrank_right_eq_zero` give the empty-product unit
+  formulas, using `TauCeti.DetBundle.zeroEquiv` from the determinant module.
 -/
 
 public section
@@ -175,18 +177,18 @@ theorem chartCoord_prodEquiv_tmul
     [e₁.IsLinear K] [e₂.IsLinear K] {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet)
     (a : DetBundle K F₁ E₁ x) (b : DetBundle K F₂ E₂ x) :
     chartCoord (e₁.prod e₂)
-      (by simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂)
+      (Trivialization.mem_prod_baseSet hx₁ hx₂)
       (prodEquiv K F₁ E₁ F₂ E₂ x (a ⊗ₜ b)) =
       prodModelEquiv K F₁ F₂ ⟨chartCoord e₁ hx₁ a ⊗ₜ chartCoord e₂ hx₂ b⟩ := by
   simp only [chartCoord_apply, prodModelEquiv_tmul, LinearEquiv.symm_apply_apply]
   apply congrArg (modelCoord (F₁ × F₂))
   apply Subtype.ext
-  rw [TauCeti.ExteriorAlgebra.coe_exteriorPower_apply, coe_prodEquiv_tmul,
+  rw [LinearEquiv.coe_exteriorPower_apply, coe_prodEquiv_tmul,
     coe_detLineProdEquiv_tmul_eq_mul,
-    TauCeti.ExteriorAlgebra.coe_exteriorPower_apply,
-    TauCeti.ExteriorAlgebra.coe_exteriorPower_apply]
+    LinearEquiv.coe_exteriorPower_apply,
+    LinearEquiv.coe_exteriorPower_apply]
   let e := (e₁.prod e₂).linearEquivAt K x
-    (by simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂)
+    (Trivialization.mem_prod_baseSet hx₁ hx₂)
   have he : e = (e₁.linearEquivAt K x hx₁).prodCongr (e₂.linearEquivAt K x hx₂) :=
     Trivialization.linearEquivAt_prod e₁ e₂ hx₁ hx₂
   have h₁ : e.toLinearMap.comp (LinearMap.inl K (E₁ x) (E₂ x)) =
@@ -225,16 +227,15 @@ theorem prodEquiv_inCoordinates (a x : B)
     simpa only [trivializationAt] using
       (FiberBundle.prod_trivializationAt' (F₁ := F₁) (E₁ := E₁) (F₂ := F₂) (E₂ := E₂) a)
   have ht : x ∈ (trivializationAt K (DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂)) a).baseSet := by
-    simpa only [trivializationAt_eq, trivialization_baseSet, hp,
-      Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂
+    simpa only [trivializationAt_eq, trivialization_baseSet, hp] using
+      (Trivialization.mem_prod_baseSet hx₁ hx₂)
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
   rw [Trivialization.symmL_apply (R := K) _ hs,
     tensorProduct_trivializationAt_symm_apply_tmul hd₁ hd₂]
   rw [Trivialization.continuousLinearMapAt_apply_of_mem K _ ht]
   simp only [ContinuousLinearEquiv.coe_coe, trivializationAt_eq,
     trivialization_symm_apply _ hx₁, trivialization_symm_apply _ hx₂, hp]
-  rw [trivialization_apply_mk _ (by simpa only [Trivialization.prod_baseSet,
-    Set.mem_inter_iff] using And.intro hx₁ hx₂)]
+  rw [trivialization_apply_mk _ (Trivialization.mem_prod_baseSet hx₁ hx₂)]
   simpa only [LinearEquiv.apply_symm_apply] using
     (chartCoord_prodEquiv_tmul (K := K) (F₁ := F₁) (E₁ := E₁) (F₂ := F₂) (E₂ := E₂)
       (trivializationAt F₁ E₁ a) (trivializationAt F₂ E₂ a) hx₁ hx₂
@@ -362,8 +363,9 @@ variable {E₁' : B → Type*}
   [∀ x, IsModuleTopology K (DetBundle K F₁ E₁' x ⊗[K] DetBundle K F₂ E₂' x)]
 
 omit [CompleteSpace K] in
-/-- The Whitney comparison is natural for fibrewise bundle isomorphisms. The equation is for
-all elements of the native tensor fibre, and requires no continuity of the family in the base. -/
+/-- The Whitney comparison is natural for fibrewise families of continuous linear equivalences
+between bundles with the same models. The equation is for all elements of the native tensor
+fibre, and requires no continuity of the family in the base. -/
 theorem congrEquiv_prodEquiv (e₁ : ∀ x, E₁ x ≃L[K] E₁' x)
     (e₂ : ∀ x, E₂ x ≃L[K] E₂' x) (x : B)
     (t : DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x) :
@@ -535,13 +537,12 @@ theorem chartCoord_pullback_prodEquiv_tmul
     (hx₁ : f y ∈ e₁.baseSet) (hx₂ : f y ∈ e₂.baseSet)
     (a : DetBundle K F₁ E₁ (f y)) (b : DetBundle K F₂ E₂ (f y)) :
     chartCoord ((e₁.pullback f).prod (e₂.pullback f))
-      (by simpa only [Trivialization.prod_baseSet, Trivialization.pullback_baseSet,
-        Set.mem_inter_iff, Set.mem_preimage] using And.intro hx₁ hx₂)
+      (Trivialization.mem_prod_pullback_baseSet f hx₁ hx₂)
       (prodEquiv K F₁ ((f : B' → B) *ᵖ E₁) F₂ ((f : B' → B) *ᵖ E₂) y
         (pullbackEquiv (F := F₁) (E := E₁) (f : B' → B) y a ⊗ₜ
           pullbackEquiv (F := F₂) (E := E₂) (f : B' → B) y b)) =
       chartCoord (e₁.prod e₂)
-        (by simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂)
+        (Trivialization.mem_prod_baseSet hx₁ hx₂)
         (prodEquiv K F₁ E₁ F₂ E₂ (f y) (a ⊗ₜ b)) := by
   have hy₁ : y ∈ (e₁.pullback f).baseSet := by
     simpa only [Trivialization.pullback_baseSet, Set.mem_preimage] using hx₁
@@ -641,9 +642,8 @@ theorem prodPullbackEquiv_prodEquiv (y : B')
   let e₂ := trivializationAt F₂ E₂ (f y)
   have hx₁ : f y ∈ e₁.baseSet := mem_baseSet_trivializationAt F₁ E₁ (f y)
   have hx₂ : f y ∈ e₂.baseSet := mem_baseSet_trivializationAt F₂ E₂ (f y)
-  have hy : y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet := by
-    simpa only [Trivialization.prod_baseSet, Trivialization.pullback_baseSet,
-      Set.mem_inter_iff, Set.mem_preimage] using And.intro hx₁ hx₂
+  have hy : y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet :=
+    Trivialization.mem_prod_pullback_baseSet f hx₁ hx₂
   induction t using TensorProduct.inductionOn with
   | add s t hs ht => simp only [map_add, hs, ht]
   | tmul a b =>
