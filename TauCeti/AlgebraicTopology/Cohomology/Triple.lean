@@ -91,10 +91,7 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
 lemma singularCohomologyMap_totalToOuter_comp_innerToTotal (n : ℕ) :
     TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n ≫
       TopPair.singularCohomologyMap (innerToTotal.app T) n = 0 :=
-  (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
-    (congrArg (HomologicalComplex.homologyMap · n)
-      (T.singularCochainComplexShortComplex R k M).zero).trans
-        (HomologicalComplex.homologyMap_zero _ _ n)
+  ((T.singularCochainComplexShortComplex R k M).map (HomologicalComplex.homologyFunctor _ _ n)).zero
 
 /-- The connecting morphism `Hⁿ(A, B) ⟶ Hᵐ(X, A)` followed by `Hᵐ(X, A) ⟶ Hᵐ(X, B)` is zero. -/
 @[reassoc (attr := simp)]
@@ -128,21 +125,6 @@ lemma singularCohomology_exact_inner (n m : ℕ) (h : n + 1 = m := by lia) :
   (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₃ n m (by simpa)
 
 variable {R k M} in
-/-- The morphism of relative singular cochain sequences induced by a morphism of triples, used to
-prove the naturality of the connecting morphism. -/
-private def singularCochainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T') :
-    T'.singularCochainComplexShortComplex R k M ⟶ T.singularCochainComplexShortComplex R k M where
-  τ₁ := TopPair.singularCochainComplexMap (outerPair.map φ)
-  τ₂ := TopPair.singularCochainComplexMap (totalPair.map φ)
-  τ₃ := TopPair.singularCochainComplexMap (innerPair.map φ)
-  comm₁₂ := (TopPair.singularCochainComplexMap_comp _ _).symm.trans <|
-    (congrArg TopPair.singularCochainComplexMap (totalToOuter.naturality φ)).symm.trans
-      (TopPair.singularCochainComplexMap_comp _ _)
-  comm₂₃ := (TopPair.singularCochainComplexMap_comp _ _).symm.trans <|
-    (congrArg TopPair.singularCochainComplexMap (innerToTotal.naturality φ)).symm.trans
-      (TopPair.singularCochainComplexMap_comp _ _)
-
-variable {R k M} in
 /-- The connecting morphism of the long exact cohomology sequence of a triple is natural: for a
 morphism of triples `φ : (X, A, B) ⟶ (X', A', B')`, following `Hⁿ(A', B') ⟶ Hᵐ(X', A')` by the map
 induced by `φ` on `Hᵐ(X', A')` agrees with following the map induced by `φ` on `Hⁿ(A', B')` by
@@ -152,7 +134,9 @@ lemma singularCohomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (n 
     (h : n + 1 = m := by lia) :
     T'.singularCohomologyδ R k M n m h ≫ TopPair.singularCohomologyMap (outerPair.map φ) m =
       TopPair.singularCohomologyMap (innerPair.map φ) n ≫ T.singularCohomologyδ R k M n m h :=
-  HomologicalComplex.HomologySequence.δ_naturality (singularCochainComplexShortComplexMap φ)
+  HomologicalComplex.HomologySequence.δ_naturality
+    ((TauCeti.ChainComplex.linearYonedaFunctor k M).mapShortComplex.map
+      (ShortComplex.opMap (singularChainComplexShortComplexMap φ R)))
     (T'.shortExact_singularCochainComplexShortComplex R k M)
     (T.shortExact_singularCochainComplexShortComplex R k M) n m (by simpa)
 

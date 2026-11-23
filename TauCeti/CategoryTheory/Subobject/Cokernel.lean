@@ -49,7 +49,8 @@ lemma π_cokernelOfLEIsoOfEq_hom {A B A' B' : Subobject X} (hA : A = A') (hB : B
   subst hA hB
   simp [cokernelOfLEIsoOfEq, ofLE_refl]
 
-/-- Rewriting the subobjects `A` and `B` along `A = A` and `B = B` is the identity. -/
+/-- When both subobject equalities are reflexive, `cokernelOfLEIsoOfEq` is the identity
+isomorphism of the cokernel of the inclusion `A ⟶ B`. -/
 @[simp]
 lemma cokernelOfLEIsoOfEq_refl {A B : Subobject X} (hA : A = A) (hB : B = B) (h h' : A ≤ B)
     [HasCokernel (ofLE A B h)] :

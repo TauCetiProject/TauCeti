@@ -105,8 +105,8 @@ private noncomputable def outerPairToShortComplexMap :
   comm₂₃ := (T.singularChainComplexπ_comp_totalToOuter R).trans (Category.comp_id _).symm
 
 /-- The morphism of relative singular chain sequences induced by a morphism of triples, used to
-prove the naturality of the connecting morphism. -/
-private noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
+prove the naturality of the connecting morphisms in homology and cohomology. -/
+noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
     (R : C) : T.singularChainComplexShortComplex R ⟶ T'.singularChainComplexShortComplex R where
   τ₁ := TopPair.singularChainComplexMap (innerPair.map φ) R
   τ₂ := TopPair.singularChainComplexMap (totalPair.map φ) R
