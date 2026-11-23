@@ -44,6 +44,9 @@ continuous `G`-sets with continuous discrete `G`-sets.
   covered by finite étale schemes, indexed by a type in the same universe.
 * `TauCeti.FiniteEtaleScheme.ofArrows_mem_fieldTopology_iff`: the coverings for
   `fieldTopology K` are the jointly surjective families.
+* `TauCeti.FiniteEtaleScheme.ofArrows_mem_galoisTopology_iff`: the coverings for
+  `galoisTopology K Ω` are the families whose corresponding finite étale `K`-scheme morphisms are
+  jointly surjective.
 
 ## References
 
@@ -131,6 +134,16 @@ variable (Ω : Type u) [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [IsGalois K Ω
 Galois theory for finite étale `K`-schemes. -/
 noncomputable abbrev galoisTopology : GrothendieckTopology (ContAction FintypeCat.{u} Gal(Ω/K)) :=
   (galoisEquivalence K Ω).inverse.inducedTopology (fieldTopology K)
+
+/-- **Coverings of finite Galois sets.** A family of morphisms of finite continuous
+`Gal(Ω/K)`-sets generates a covering sieve for `galoisTopology K Ω` exactly when the corresponding
+morphisms of finite étale `K`-schemes are jointly surjective. -/
+theorem ofArrows_mem_galoisTopology_iff {X : ContAction FintypeCat.{u} Gal(Ω/K)} {ι : Type*}
+    {Y : ι → ContAction FintypeCat.{u} Gal(Ω/K)} (f : ∀ i, Y i ⟶ X) :
+    Sieve.ofArrows Y f ∈ galoisTopology K Ω X ↔
+      ⋃ i, Set.range ((galoisEquivalence K Ω).inverse.map (f i)).hom.left = .univ := by
+  rw [Functor.mem_inducedTopology_iff_of_isCoverDense, Sieve.functorPushforward_ofArrows]
+  exact ofArrows_mem_fieldTopology_iff K _
 
 /-- **Étale sheaves on a field are sheaves on finite Galois sets.** For a separable closure `Ω` of
 `K`, étale sheaves on `Spec K` are sheaves on finite continuous `Gal(Ω/K)`-sets for
