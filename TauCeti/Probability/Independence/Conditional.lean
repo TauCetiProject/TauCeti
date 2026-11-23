@@ -520,7 +520,7 @@ variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
 the others together, given the same conditioning sigma-algebra. This criterion applies when
 local independence is proved by removing one coordinate from a process. -/
 theorem iCondIndep_of_condIndep_compl
-    (h : ∀ i, CondIndep m' (m i) (⨆ j : {j : ι // j ≠ i}, m j.1)
+    (h : ∀ i, CondIndep m' (m i) (⨆ j : {j : ι // j ≠ i}, m j.val)
       (mΩ := mΩ) hm' μ) :
     iCondIndep m' hm' m μ := by
   classical
@@ -529,11 +529,11 @@ theorem iCondIndep_of_condIndep_compl
   | empty =>
       exact Filter.Eventually.of_forall fun a => by simp
   | @insert a s ha ih =>
-    have hrest : MeasurableSet[⨆ j : {j : ι // j ≠ a}, m j.1]
+    have hrest : MeasurableSet[⨆ j : {j : ι // j ≠ a}, m j.val]
         (⋂ j ∈ s, f j) := by
       apply Finset.measurableSet_biInter
       intro j hj
-      exact (le_iSup (fun k : {k : ι // k ≠ a} => m k.1)
+      exact (le_iSup (fun k : {k : ι // k ≠ a} => m k.val)
         ⟨j, fun hja => ha (hja ▸ hj)⟩) (f j)
           (hf j (Finset.mem_insert_of_mem hj))
     filter_upwards [h a (f a) (⋂ j ∈ s, f j) (hf a (Finset.mem_insert_self _ _)) hrest,
@@ -579,8 +579,8 @@ theorem condIndepFun_domRestrict_of_reindexing {C R D : Set ι} (hRD : R ⊆ D) 
   have hH : Measurable H := Measurable.of_eval fun i ↦ measurable_pi_apply (r i)
   have hfixed : ∀ x, C.domRestrict (H x) = C.domRestrict x := fun x ↦ by
     funext c
-    simp only [Set.domRestrict_apply, H, hfix c.1 c.2]
-  let K : (R → α) → D → α := fun y q ↦ y ⟨r q, hinto q.2⟩
+    simp only [Set.domRestrict_apply, H, hfix c.val c.property]
+  let K : (R → α) → D → α := fun y q ↦ y ⟨r q, hinto q.property⟩
   have hK : Measurable K := Measurable.of_eval fun _ ↦ measurable_pi_apply _
   let W : (ι → α) → D → α := K ∘ R.domRestrict
   have hW_eq : W = fun x ↦ D.domRestrict (H x) := (rfl)
@@ -622,15 +622,15 @@ theorem condIndepFun_domRestrict_of_finite_reindexing {R D U : Set ι} (hRD : R 
     U.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict := by
   classical
   apply Kernel.IndepFun.process_indepFun
-    (fun i : U ↦ measurable_pi_apply i.1) (Set.measurable_restrict _)
+    (fun i : U ↦ measurable_pi_apply i.val) (Set.measurable_restrict _)
   intro F
   let C : Set ι := Subtype.val '' (F : Set U)
   have hC : C.Finite := F.finite_toSet.image Subtype.val
-  have hCU : C ⊆ U := by rintro i ⟨j, _, rfl⟩; exact j.2
+  have hCU : C ⊆ U := by rintro i ⟨j, _, rfl⟩; exact j.property
   suffices h : C.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ]
       D.domRestrict by
     exact h.comp (Measurable.of_eval fun i : F ↦
-      measurable_pi_apply (⟨i.1.1, ⟨i.1, i.2, rfl⟩⟩ : C)) measurable_id
+      measurable_pi_apply (⟨i.val.val, ⟨i.val, i.property, rfl⟩⟩ : C)) measurable_id
   obtain ⟨r, hr, hfix, hinto⟩ := hreindex C hC hCU
   exact condIndepFun_domRestrict_of_reindexing hRD r hr hfix hinto
 

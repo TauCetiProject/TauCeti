@@ -86,7 +86,7 @@ theorem mahlerEquiv_eval_amiceMap (c : C₀(ℕ, E)) (n : ℕ) :
     refine squeeze_zero_norm (fun n ↦ ?_) (tendsto_zero_iff_norm_tendsto_zero.mp
       (by simpa [Nat.cofinite_eq_atTop] using c.tendsto_cofinite))
     rw [← Nat.cast_smul_eq_nsmul ℤ_[p]]
-    exact (norm_smul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (PadicInt.norm_le_one _))
+    exact PadicInt.norm_smul_le_norm _ _
   rw [eval_amiceMap, mahlerEquiv_apply]
   exact fwdDiff_mahlerSeries hc n
 

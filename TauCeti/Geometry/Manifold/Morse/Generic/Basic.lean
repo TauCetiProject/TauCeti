@@ -196,7 +196,7 @@ theorem _root_.ContMDiffMap.exists_forall_isManifoldNondegenerateCriticalPoint_h
   obtain ⟨𝒱, h𝒱𝒰, h𝒱, hf𝒱⟩ := mem_nhds_iff.mp h𝒰
   choose W hWo hcW hW using fun x : K ↦
     exists_isOpen_forall_exists_isManifoldNondegenerateCriticalPoint (I := I) hn (x : M)
-      (hU.mem_nhds (hKU x.2))
+      (hU.mem_nhds (hKU x.property))
   -- Cover only the compact region to be treated; every local cutoff stays inside `U`.
   obtain ⟨t, hKt⟩ := hK.elim_finite_subcover W hWo fun x hx ↦
     mem_iUnion.mpr ⟨⟨x, hx⟩, hcW ⟨x, hx⟩⟩

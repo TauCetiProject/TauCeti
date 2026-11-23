@@ -62,8 +62,12 @@ bijective.
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
 * `TauCeti.intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
+* `TauCeti.mul_one_sub_sq_inv_mul_eq_of_hasDerivAt`: the linearized flow along a solution in
+  `(0, 1)` preserves `U'(x) w = w / (x (1 - x²))`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
+* `TauCeti.exists_intervalBaseOrbit_eq`: for `C ≠ 0`, the trajectory `q` passes through every
+  point of `(0, 1)`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
   `TauCeti.intervalBaseFlow_add`: the flow.
 * `TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`, `TauCeti.strictMonoOn_intervalBaseFlow`,
@@ -77,17 +81,23 @@ bijective.
 * `TauCeti.intervalBaseOrbit_sq_eq_sigmoid`, `TauCeti.one_sub_intervalBaseOrbit_sq` and
   `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the trajectory `q` through the sigmoid, and
   every flow line through `(0, 1)` as a reparametrization of `q`.
-* `TauCeti.intervalBaseOrbit_one_add_log` and `TauCeti.intervalBaseOrbit_one_sub_log`: the unit-rate
-  trajectory at times `c ∓ T` in the gluing parameter `ρ = e^{-T}`, `ρ` times a function of `ρ²`
-  near `0` and a function of `ρ²` near `1`; `TauCeti.intervalBaseFlow_one_mul_inv_sqrt_one_add_sq`
-  and `TauCeti.intervalBaseFlow_one_inv_sqrt_one_add_sq`: the flow acts on these two forms by
-  scaling `x` with `e^{s}` and `y` with `e^{-s}`.
+* `TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt` and
+  `TauCeti.intervalBaseOrbit_eq_one_sub_exp_sq_mul`: `q` near its two ends in closed form in the
+  gluing parameters `e^{C s}` and `e^{-C s}`.
+* `TauCeti.intervalBaseOrbit_one_sub_log`: the unit-rate trajectory at time `c + T` is
+  `1 / √(1 + y²)` for `y = e^{-c} ρ` in the gluing parameter `ρ = e^{-T}`, a function of `ρ²`.
+* `TauCeti.intervalBaseFlow_one_mul_inv_sqrt_one_add_sq` and
+  `TauCeti.intervalBaseFlow_one_inv_sqrt_one_add_sq`: the flow acts on the end forms
+  `x / √(1 + x²)` and `1 / √(1 + y²)` of the unit-rate trajectory by scaling `x` with `e^{s}` and
+  `y` with `e^{-s}`.
 * `TauCeti.mem_Icc_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, a trajectory whose
   backward limit lies in `[-1, 1]` stays in `[-1, 1]`.
 * `TauCeti.exists_eq_intervalBaseOrbit_of_isIntegralCurve` and
   `TauCeti.eq_const_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, the trajectories from
   `0` to `1` are the translates of `q`, and a trajectory with equal limits at both ends is
   constant.
+* `TauCeti.exists_eq_intervalBaseOrbit_of_hasDerivAt`: for `C ≠ 0`, every solution meeting
+  `(0, 1)` is a translate of `q`, using the equation only inside `(0, 1)`.
 * `TauCeti.index_trajectoryOperator_intervalBasePotential`,
   `TauCeti.exists_ker_trajectoryOperator_intervalBasePotential_eq_span`,
   `TauCeti.surjective_trajectoryOperator_intervalBasePotential` and
@@ -458,28 +468,39 @@ theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
 theorem intervalBaseOrbit_one_sub_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     intervalBaseOrbit 1 (c - Real.log ρ) = (√(1 + (Real.exp (-c) * ρ) ^ 2))⁻¹ := by
   -- Write `ρ² = e^{2 log ρ}` and compare exponents.
-  rw [intervalBaseOrbit_apply, mul_pow, ← Real.exp_log (pow_pos hρ 2), ← Real.exp_nat_mul,
+  rw [intervalBaseOrbit_apply, mul_pow, ← Real.exp_log (pow_pos hρ 2), ← Real.exp_natCast_mul,
     ← Real.exp_add, Real.log_pow]
   ring_nf
 
-/-- **Departure at rate `1`.** In the gluing parameter `ρ = e^{-T}`, the unit-rate trajectory at
-time `c - T` is `x / √(1 + x²)` for `x = e^{c} ρ`: it is `ρ` times a function of `ρ²`. -/
-theorem intervalBaseOrbit_one_add_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
-    intervalBaseOrbit 1 (c + Real.log ρ) =
-      Real.exp c * ρ * (√(1 + (Real.exp c * ρ) ^ 2))⁻¹ := by
-  -- The exponential is `x⁻²` for `x = e^{c} ρ`, and `1 / √(1 + x⁻²) = √x² / √(1 + x²)`.
-  have he : Real.exp (-(2 * 1 * (c + Real.log ρ))) = ((Real.exp c * ρ) ^ 2)⁻¹ := by
-    rw [mul_pow, ← Real.exp_log (pow_pos hρ 2), ← Real.exp_nat_mul, ← Real.exp_add, Real.log_pow,
-      ← Real.exp_neg]
-    ring_nf
-  have hx : 0 < Real.exp c * ρ := by positivity
-  rw [intervalBaseOrbit_apply, he]
-  generalize Real.exp c * ρ = x at hx ⊢
-  conv_rhs => arg 1; rw [← Real.sqrt_sq hx.le]
-  rw [← Real.sqrt_inv, ← Real.sqrt_inv, ← Real.sqrt_mul (sq_nonneg _)]
-  congr 1
+/-- **The end chart of `q` at its source.** In the gluing parameter `ε = e^{C s}`, which tends to
+`0` as `s → -∞` for `C > 0`, the trajectory is `q(s) = ε / √(1 + ε²)`. This theorem is only that
+identity; it shows (without formalizing it) that `q` is a smooth function of `ε` vanishing to first
+order at `ε = 0`, so that `q` leaves `0` at rate `C`. -/
+theorem intervalBaseOrbit_eq_exp_mul_inv_sqrt (C s : ℝ) :
+    intervalBaseOrbit C s = Real.exp (C * s) * (√(1 + Real.exp (C * s) ^ 2))⁻¹ := by
+  have he := Real.exp_pos (C * s)
+  have h : 1 + Real.exp (-(2 * C * s)) = (1 + Real.exp (C * s) ^ 2) / Real.exp (C * s) ^ 2 := by
+    rw [show -(2 * C * s) = -(C * s) + -(C * s) by ring, Real.exp_add, Real.exp_neg]
+    field_simp
+    ring
+  rw [intervalBaseOrbit_apply, h, Real.sqrt_div' _ (by positivity), Real.sqrt_sq he.le]
   field_simp
-  ring
+
+/-- **The end chart of `q` at its sink.** In the gluing parameter `ε = e^{-C s}`, which tends to
+`0` as `s → ∞` for `C > 0`, the trajectory is `q(s) = 1 - ε² / (√(1 + ε²) (√(1 + ε²) + 1))`.
+This theorem is only that identity; it shows (without formalizing it) that the factor of `ε²` is a
+smooth function of `ε` equal to `1 / 2` at `ε = 0`, so that `q` approaches `1` at rate `2 C`. -/
+theorem intervalBaseOrbit_eq_one_sub_exp_sq_mul (C s : ℝ) :
+    intervalBaseOrbit C s = 1 - Real.exp (-(C * s)) ^ 2 *
+      (√(1 + Real.exp (-(C * s)) ^ 2) * (√(1 + Real.exp (-(C * s)) ^ 2) + 1))⁻¹ := by
+  set ε := Real.exp (-(C * s))
+  have := Real.sqrt_pos.2 (by positivity : (0 : ℝ) < 1 + ε ^ 2)
+  have hsq : √(1 + ε ^ 2) ^ 2 = 1 + ε ^ 2 := Real.sq_sqrt (by positivity)
+  have h : Real.exp (-(2 * C * s)) = ε ^ 2 := by
+    rw [← Real.exp_natCast_mul, show -(2 * C * s) = (2 : ℕ) * -(C * s) by push_cast; ring]
+  rw [intervalBaseOrbit_apply, h]
+  field_simp
+  linear_combination -hsq
 
 private theorem inv_sqrt_two_mem_Ioo : (√2)⁻¹ ∈ Ioo (0 : ℝ) 1 :=
   ⟨by positivity, inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two⟩
@@ -504,15 +525,17 @@ theorem intervalBaseFlow_intervalBaseOrbit (C s r : ℝ) :
     intervalBaseFlow_add C s r inv_sqrt_two_mem_Icc]
 
 /-- The flow of the base for time `s` acts on the departing form `x / √(1 + x²)` of the unit-rate
-trajectory (`TauCeti.intervalBaseOrbit_one_add_log`) by `x ↦ e^{s} x`, for every real `x`. -/
+trajectory (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`) by `x ↦ e^{s} x`, for every real
+`x`. -/
 theorem intervalBaseFlow_one_mul_inv_sqrt_one_add_sq (s x : ℝ) :
     intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
       Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := by
   have key : ∀ x : ℝ, 0 < x → intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
       Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := fun x hx ↦ by
-    have h0 := intervalBaseOrbit_one_add_log 0 hx
-    rw [Real.exp_zero, one_mul, zero_add] at h0
-    rw [← h0, intervalBaseFlow_intervalBaseOrbit, intervalBaseOrbit_one_add_log s hx]
+    have h0 : x * (√(1 + x ^ 2))⁻¹ = intervalBaseOrbit 1 (Real.log x) := by
+      rw [intervalBaseOrbit_eq_exp_mul_inv_sqrt, one_mul, Real.exp_log hx]
+    rw [h0, intervalBaseFlow_intervalBaseOrbit, intervalBaseOrbit_eq_exp_mul_inv_sqrt, one_mul,
+      Real.exp_add, Real.exp_log hx]
   rcases lt_trichotomy x 0 with hx | rfl | hx
   · simpa only [neg_sq, mul_neg, neg_mul, intervalBaseFlow_neg, neg_inj] using
       key (-x) (by linarith)
@@ -535,12 +558,6 @@ theorem intervalBaseFlow_one_inv_sqrt_one_add_sq (s y : ℝ) :
 theorem intervalBaseOrbit_mem_Ioo (C s : ℝ) : intervalBaseOrbit C s ∈ Ioo 0 1 := by
   rw [intervalBaseOrbit_eq_intervalBaseFlow]
   exact intervalBaseFlow_mem_Ioo_zero_one C s inv_sqrt_two_mem_Ioo
-
-/-- The trajectory `q` is smooth. -/
-theorem contDiff_intervalBaseOrbit (C : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (intervalBaseOrbit C) := by
-  have h : ContDiff ℝ n fun s : ℝ ↦ 1 + Real.exp (-(2 * C * s)) := by fun_prop
-  exact (h.sqrt fun _ ↦ by positivity).inv fun _ ↦ by positivity
 
 /-- The trajectory `q` solves `q' = C q (1 - q²)`. -/
 theorem hasDerivAt_intervalBaseOrbit (C s : ℝ) :
@@ -574,6 +591,16 @@ noncomputable def intervalBaseTimeCoordinate (t : ℝ) : ℝ :=
 theorem intervalBaseTimeCoordinate_apply (t : ℝ) :
     intervalBaseTimeCoordinate t = Real.log t - Real.log (1 - t ^ 2) / 2 := (rfl)
 
+/-- The time coordinate is even: `U(-t) = U(t)`. -/
+@[simp]
+theorem intervalBaseTimeCoordinate_neg (t : ℝ) :
+    intervalBaseTimeCoordinate (-t) = intervalBaseTimeCoordinate t := by
+  rw [intervalBaseTimeCoordinate, intervalBaseTimeCoordinate, Real.log_neg_eq_log, neg_sq]
+
+/-- The factor `t (1 - t²)` of the vector field `C t (1 - t²)` is positive on `(0, 1)`. -/
+theorem mul_one_sub_sq_pos_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo 0 1) : 0 < t * (1 - t ^ 2) :=
+  mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+
 /-- On `(0, 1)` the derivative of the time coordinate is `1 / (t (1 - t²))`. -/
 theorem hasDerivAt_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
     HasDerivAt intervalBaseTimeCoordinate (t * (1 - t ^ 2))⁻¹ t := by
@@ -591,6 +618,34 @@ theorem _root_.HasDerivAt.intervalBaseTimeCoordinate_comp {x : ℝ → ℝ} {s :
   have h1 : 0 < 1 - x s ^ 2 := by nlinarith [hxs.1, hxs.2]
   refine ((hasDerivAt_intervalBaseTimeCoordinate hxs).comp s hx).congr_deriv ?_
   field_simp [hxs.1.ne', h1.ne']
+
+/-- On `(0, 1)` the derivative of the time coordinate is `1 / (t (1 - t²))`. -/
+theorem deriv_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    deriv intervalBaseTimeCoordinate t = (t * (1 - t ^ 2))⁻¹ :=
+  (hasDerivAt_intervalBaseTimeCoordinate ht).deriv
+
+/-- **The linearized flow carries the derivative of the time coordinate along.** Let `x` be a
+solution of `x' = C x (1 - x²)` with values in `(0, 1)`, and `w` a solution of the linearized
+equation `w' + C (3 x² - 1) w = 0` along it. Then `U'(x) w = w / (x (1 - x²))`
+(`TauCeti.deriv_intervalBaseTimeCoordinate`) does not depend on the time. Since the time
+coordinate `U` advances at the same rate `C` along every solution, this is the linearization of
+`U ∘ Φ_s = U + C s`. -/
+theorem mul_one_sub_sq_inv_mul_eq_of_hasDerivAt {x w : ℝ → ℝ}
+    (hx : ∀ s, HasDerivAt x (C * x s * (1 - x s ^ 2)) s) (hxI : ∀ s, x s ∈ Ioo 0 1)
+    (hw : ∀ s, HasDerivAt w (-(C * (3 * x s ^ 2 - 1) * w s)) s) (s r : ℝ) :
+    (x s * (1 - x s ^ 2))⁻¹ * w s = (x r * (1 - x r ^ 2))⁻¹ * w r := by
+  -- The product `w / (x (1 - x²))` has derivative zero: `x (1 - x²)` solves the same linearized
+  -- equation as `w`, since it is `x' / C`.
+  have hg (s : ℝ) : HasDerivAt (fun s ↦ (x s * (1 - x s ^ 2))⁻¹ * w s) 0 s := by
+    have hp : x s * (1 - x s ^ 2) ≠ 0 := (mul_one_sub_sq_pos_of_mem_Ioo (hxI s)).ne'
+    have hdp : HasDerivAt (fun s ↦ x s * (1 - x s ^ 2))
+        (C * x s * (1 - x s ^ 2) * (1 - 3 * x s ^ 2)) s :=
+      ((hx s).mul (((hx s).pow 2).const_sub 1)).congr_deriv (by norm_num; ring)
+    refine ((hdp.inv hp).mul (hw s)).congr_deriv ?_
+    simp only [Pi.inv_apply]
+    field_simp
+    ring
+  exact is_const_of_deriv_eq_zero (fun s ↦ (hg s).differentiableAt) (fun s ↦ (hg s).deriv) s r
 
 /-- **The time coordinate advances at rate `C` along the flow.** -/
 @[simp]
@@ -624,11 +679,17 @@ theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
     intervalBaseTimeCoordinate_intervalBaseFlow C s inv_sqrt_two_mem_Ioo,
     intervalBaseTimeCoordinate_inv_sqrt_two, zero_add]
 
-/-- For `C ≠ 0` the trajectory `q` is injective: its time coordinate is `C s`. -/
+/-- For `C ≠ 0` the trajectory `q` is injective: its time coordinate `C s` recovers the time. -/
 theorem intervalBaseOrbit_injective (hC : C ≠ 0) : Function.Injective (intervalBaseOrbit C) :=
-  fun a b h ↦ mul_left_cancel₀ hC <| by
-    simpa only [intervalBaseTimeCoordinate_intervalBaseOrbit] using
-      congrArg intervalBaseTimeCoordinate h
+  fun s t h ↦ mul_left_cancel₀ hC (by
+    rw [← intervalBaseTimeCoordinate_intervalBaseOrbit, h,
+      intervalBaseTimeCoordinate_intervalBaseOrbit])
+
+/-- The trajectory `q(s) = 1 / √(1 + e^{-2 C s})` is smooth. -/
+theorem contDiff_intervalBaseOrbit (C : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (intervalBaseOrbit C) := by
+  have h : ContDiff ℝ n fun s : ℝ ↦ 1 + Real.exp (-(2 * C * s)) := by fun_prop
+  exact (h.sqrt fun s ↦ by positivity).inv fun s ↦ by positivity
 
 /-- The time coordinate is strictly increasing on `(0, 1)`. -/
 theorem strictMonoOn_intervalBaseTimeCoordinate :
@@ -666,6 +727,32 @@ theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*
     (h : Tendsto (fun i ↦ intervalBaseTimeCoordinate (x i)) l atTop) : Tendsto x l (𝓝 1) :=
   ((tendsto_intervalBaseOrbit_atTop one_pos).comp h).congr' <| hx.mono fun _ hi ↦
     intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
+
+/-- The time coordinate tends to `-∞` at `0`. -/
+theorem tendsto_intervalBaseTimeCoordinate_nhdsGT_zero :
+    Tendsto intervalBaseTimeCoordinate (𝓝[>] 0) atBot := by
+  have h : Tendsto (fun t : ℝ ↦ Real.log (1 - t ^ 2) / 2) (𝓝[>] 0) (𝓝 0) := by
+    have hc : Continuous (fun t : ℝ ↦ 1 - t ^ 2) := by fun_prop
+    simpa using (((Real.continuousAt_log (by norm_num : (1 : ℝ) - 0 ^ 2 ≠ 0)).tendsto.comp
+      (hc.tendsto 0)).div_const 2).mono_left nhdsWithin_le_nhds
+  refine (Real.tendsto_log_nhdsGT_zero.atBot_add h.neg).congr fun t ↦ ?_
+  rw [intervalBaseTimeCoordinate_apply]; ring
+
+/-- The time coordinate tends to `+∞` at `1`. -/
+theorem tendsto_intervalBaseTimeCoordinate_nhdsLT_one :
+    Tendsto intervalBaseTimeCoordinate (𝓝[<] 1) atTop := by
+  have h₁ : Tendsto (fun t : ℝ ↦ 1 - t ^ 2) (𝓝[<] 1) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have hc : Continuous (fun t : ℝ ↦ 1 - t ^ 2) := by fun_prop
+      simpa using (hc.tendsto 1).mono_left nhdsWithin_le_nhds
+    · filter_upwards [Ioo_mem_nhdsLT (show (0 : ℝ) < 1 by norm_num)] with t ht
+      exact sub_pos.2 (by nlinarith [ht.1, ht.2])
+  have h₂ : Tendsto (fun t : ℝ ↦ -(Real.log (1 - t ^ 2) / 2)) (𝓝[<] 1) atTop :=
+    tendsto_neg_atBot_atTop.comp ((Real.tendsto_log_nhdsGT_zero.comp h₁).atBot_div_const two_pos)
+  have h₃ : Tendsto Real.log (𝓝[<] 1) (𝓝 0) := by
+    simpa using (Real.continuousAt_log one_ne_zero).tendsto.mono_left nhdsWithin_le_nhds
+  refine (h₃.add_atTop h₂).congr fun t ↦ ?_
+  rw [intervalBaseTimeCoordinate_apply]; ring
 
 /-! ### The flow and the time coordinate -/
 
@@ -741,7 +828,7 @@ theorem intervalBaseFlow_eq_intervalBaseOrbit (C s : ℝ) {t : ℝ} (ht : t ∈ 
 /-! ### Trajectories with prescribed limits -/
 
 /-- A negative gradient trajectory of the base potential solves `γ' = C γ (1 - γ²)`. -/
-private theorem hasDerivAt_of_isIntegralCurve_intervalBasePotential {γ : ℝ → ℝ}
+theorem hasDerivAt_of_isIntegralCurve_intervalBasePotential {γ : ℝ → ℝ}
     (hγ : IsIntegralCurve γ (fun _ t ↦ -∇ (intervalBasePotential C) t)) (s : ℝ) :
     HasDerivAt γ (C * γ s * (1 - γ s ^ 2)) s :=
   (hγ s).congr_deriv (by simp only [gradient_intervalBasePotential]; ring)
@@ -816,6 +903,14 @@ theorem intervalBaseOrbit_eq_intervalBaseOrbit_one (C s : ℝ) :
   simp only [intervalBaseOrbit_apply]
   ring_nf
 
+/-- **The trajectory `q` passes through every point of `(0, 1)`**: for `C ≠ 0` and `t ∈ (0, 1)`,
+`q(τ) = t` at the time `τ = U(t) / C`. -/
+theorem exists_intervalBaseOrbit_eq (hC : C ≠ 0) {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    ∃ τ, intervalBaseOrbit C τ = t :=
+  ⟨intervalBaseTimeCoordinate t / C, by
+    rw [intervalBaseOrbit_eq_intervalBaseOrbit_one, mul_div_cancel₀ _ hC,
+      intervalBaseOrbit_one_intervalBaseTimeCoordinate ht]⟩
+
 /-- **The trajectories from `0` to `1` are the translates of `q`.** For `C > 0`, every negative
 gradient trajectory of the base potential tending to `0` at `-∞` and to `1` at `+∞` is
 `s ↦ q(s + τ)` for some `τ`. -/
@@ -839,12 +934,41 @@ theorem exists_eq_intervalBaseOrbit_of_isIntegralCurve (hC : 0 < C) {γ : ℝ �
     have h1 : γ 0 = 1 := le_antisymm (hmem 0).2 h
     rw [h1, ite_eq_right_iff.2 (by norm_num)] at hbot
     norm_num at hbot
-  set τ := intervalBaseTimeCoordinate (γ 0) / C
-  have hq : intervalBaseOrbit C τ = γ 0 := by
-    rw [intervalBaseOrbit_eq_intervalBaseOrbit_one, mul_div_cancel₀ _ hC.ne',
-      intervalBaseOrbit_one_intervalBaseTimeCoordinate ⟨hpos, hlt⟩]
+  obtain ⟨τ, hq⟩ := exists_intervalBaseOrbit_eq hC.ne' ⟨hpos, hlt⟩
   refine ⟨τ, funext fun s ↦ ?_⟩
   rw [congrFun hflow s, ← hq, intervalBaseFlow_intervalBaseOrbit]
+
+/-- **The solutions through `(0, 1)` are the translates of `q`.** For `C ≠ 0`, a continuous curve
+`γ` solving `γ' = C γ (1 - γ²)` at the times where it lies in `(0, 1)`, and lying in `(0, 1)` at
+some time, is `s ↦ q(s + τ)` for some `τ`. In particular it stays in `(0, 1)` forever. Unlike
+`TauCeti.exists_eq_intervalBaseOrbit_of_isIntegralCurve`, no limits at `±∞` are assumed, and the
+equation is only used inside `(0, 1)`. -/
+theorem exists_eq_intervalBaseOrbit_of_hasDerivAt (hC : C ≠ 0) {γ : ℝ → ℝ} (hγc : Continuous γ)
+    (hγ : ∀ s, γ s ∈ Ioo 0 1 → HasDerivAt γ (C * γ s * (1 - γ s ^ 2)) s) {s₀ : ℝ}
+    (h₀ : γ s₀ ∈ Ioo 0 1) : ∃ τ, γ = fun s ↦ intervalBaseOrbit C (s + τ) := by
+  obtain ⟨τ₀, hτ₀⟩ := exists_intervalBaseOrbit_eq hC h₀
+  set σ : ℝ → ℝ := fun s ↦ intervalBaseOrbit C (s + (τ₀ - s₀))
+  have hσ : ∀ s, HasDerivAt σ (C * σ s * (1 - σ s ^ 2)) s := fun s ↦
+    (hasDerivAt_intervalBaseOrbit C (s + (τ₀ - s₀))).comp_add_const s (τ₀ - s₀)
+  have hσc : Continuous σ := continuous_iff_continuousAt.2 fun s ↦ (hσ s).continuousAt
+  have hLip : LipschitzOnWith (2 * ‖C‖₊) (fun t : ℝ ↦ C * t * (1 - t ^ 2)) (Ioo 0 1) := by
+    have hv : (fun t : ℝ ↦ C * t * (1 - t ^ 2)) = fun t ↦ -∇ (intervalBasePotential C) t := by
+      funext t
+      rw [gradient_intervalBasePotential]
+      ring
+    exact hv ▸ (lipschitzOnWith_neg_gradient_intervalBasePotential C).mono
+      (Ioo_subset_Icc_self.trans (Icc_subset_Icc (by norm_num) le_rfl))
+  -- The set of times where `γ` and `σ` agree is open, by local uniqueness inside `(0, 1)`, and
+  -- closed, so it is everything.
+  have hclopen : IsClopen {s | γ s = σ s} := by
+    refine ⟨isClosed_eq hγc hσc, isOpen_iff_mem_nhds.2 fun s (hs : γ s = σ s) ↦ ?_⟩
+    have hmem : ∀ᶠ r in 𝓝 s, γ r ∈ Ioo 0 1 :=
+      hγc.continuousAt.eventually_mem (isOpen_Ioo.mem_nhds (hs ▸ intervalBaseOrbit_mem_Ioo _ _))
+    exact ODE_solution_unique_of_eventually (v := fun _ t ↦ C * t * (1 - t ^ 2))
+      (s := fun _ ↦ Ioo 0 1) (.of_forall fun _ ↦ hLip) (hmem.mono fun r hr ↦ ⟨hγ r hr, hr⟩)
+      (.of_forall fun r ↦ ⟨hσ r, intervalBaseOrbit_mem_Ioo _ _⟩) hs
+  have hall := hclopen.eq_univ ⟨s₀, show γ s₀ = σ s₀ by simp [σ, hτ₀]⟩
+  exact ⟨τ₀ - s₀, funext fun s ↦ Set.eq_univ_iff_forall.1 hall s⟩
 
 /-- **Trajectories with equal limits are constant.** For `C > 0`, a negative gradient trajectory
 of the base potential tending to the same point `a ∈ [-1, 1]` at `-∞` and at `+∞` is constant. -/

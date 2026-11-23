@@ -14,9 +14,11 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 
 The negative gradient flow of the Euclidean quartic `∑ i, (yᵢ² - 1)² / 4` acts coordinatewise on
 the cube `[-1, 1]^ι` (`TauCeti.quarticWellSumFlow`), and its trajectories between two critical
-points are the points `TauCeti.quarticTrajectoryPoint p q u` with time coordinates `u`. This file
-glues two trajectories at a break with the gluing parameter `ρ = e^{-T}`, where `T` is the time
-separating the two pieces.
+points are the points `TauCeti.quarticTrajectoryPoint p q τ` with time shifts `τ` on the moving
+coordinates `{i // p i ≠ q i}`. This file glues two trajectories at a break with the gluing
+parameter `ρ = e^{-T}`, where `T` is the time separating the two pieces. The glued points take
+time coordinates `u : ι → ℝ` on all coordinates, so that one family `u` restricts to the time
+shifts of both pieces and of the glued trajectory.
 
 Let `p → r → q` be a broken trajectory: the coordinates with `p i ≠ r i` move first, from `0` to
 `r i = q i`, and those with `r i ≠ q i` move afterwards, from `0` to `q i`. Running the first block
@@ -39,8 +41,8 @@ Both maps are smooth in the gluing parameter and the time coordinates jointly, a
 (`TauCeti.contDiff_quarticGluingEarly`, `TauCeti.contDiff_quarticGluingLate`). The parameter
 enters with integer powers of `ρ` matching the two asymptotic rates `1` and `2` of the quartic. A
 coordinate leaving `0` towards `q i = ±1`, at rate `1`, is `q i * x / √(1 + x²)` for
-`x = e^{u i} ρ` (`TauCeti.intervalBaseOrbit_one_add_log`), so the early point moves off the first
-piece linearly in `ρ`, with nonzero speed in every coordinate of the second block
+`x = e^{u i} ρ` (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`), so the early point moves off
+the first piece linearly in `ρ`, with nonzero speed in every coordinate of the second block
 (`TauCeti.hasDerivAt_quarticGluingEarly_zero`). A coordinate arriving at `q i = ±1`, at rate `2`,
 is `q i / √(1 + y²)` for `y = e^{-u i} ρ` (`TauCeti.intervalBaseOrbit_one_sub_log`), so the late
 point depends on `ρ` only through `ρ²` (`TauCeti.quarticGluingLate_neg`) and has derivative zero
@@ -139,17 +141,21 @@ theorem quarticGluingLate_same (p r : ι → ℝ) (ρ : ℝ) (u : ι → ℝ) :
 coordinates `u` from `p` to `q`. -/
 @[simp]
 theorem quarticGluingEarly_same_right (p q : ι → ℝ) (ρ : ℝ) (u : ι → ℝ) :
-    quarticGluingEarly p q q ρ u = quarticTrajectoryPoint p q u := by
+    quarticGluingEarly p q q ρ u = quarticTrajectoryPoint p q fun j ↦ u j := by
   funext i
-  by_cases h : p i = q i <;> simp [h]
+  by_cases h : p i = q i
+  · simp [quarticTrajectoryPoint_apply_of_eq _ h, h]
+  · simp [quarticTrajectoryPoint_apply_of_ne _ h, h]
 
 /-- With the break at the start, `r = p`, the late point is the trajectory point with time
 coordinates `u` from `p` to `q`. -/
 @[simp]
 theorem quarticGluingLate_same_left (p q : ι → ℝ) (ρ : ℝ) (u : ι → ℝ) :
-    quarticGluingLate p p q ρ u = quarticTrajectoryPoint p q u := by
+    quarticGluingLate p p q ρ u = quarticTrajectoryPoint p q fun j ↦ u j := by
   funext i
-  simp
+  by_cases h : p i = q i
+  · simp [quarticTrajectoryPoint_apply_of_eq _ h, h]
+  · simp [quarticTrajectoryPoint_apply_of_ne _ h, h]
 
 /-- A point lies in the cube `[-1, 1]^ι` when each coordinate has absolute value at most `1`. -/
 private theorem mem_Icc_of_abs_le_one {y : ι → ℝ} (h : ∀ i, |y i| ≤ 1) : y ∈ Icc (-1) 1 :=
@@ -169,8 +175,9 @@ theorem quarticGluingEarly_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q �
     rw [quarticGluingEarly_apply]
     split_ifs with hpq
     · exact hpq ▸ abs_le.2 ⟨hq.1 i, hq.2 i⟩
-    · exact abs_mul_le_one_of_mem_Icc hq i <| by
-        simpa only [div_eq_mul_inv] using Real.abs_div_sqrt_one_add_sq_le_one _
+    · refine abs_mul_le_one_of_mem_Icc hq i ?_
+      have h := Real.abs_div_sqrt_sq_add_le_one zero_le_one (Real.exp (u i) * ρ)
+      rwa [add_comm, div_eq_mul_inv] at h
     · exact abs_mul_le_one_of_mem_Icc hq i ((abs_of_pos ho.1).trans_le ho.2.le)
 
 /-- The late point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
@@ -190,19 +197,29 @@ theorem quarticGluingLate_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q �
 `-log ρ`. -/
 theorem quarticGluingEarly_of_pos (p r q : ι → ℝ) {ρ : ℝ} (hρ : 0 < ρ) (u : ι → ℝ) :
     quarticGluingEarly p r q ρ u =
-      quarticTrajectoryPoint p q fun i ↦ if p i = r i then u i + Real.log ρ else u i := by
+      quarticTrajectoryPoint p q fun j ↦ if p j = r j then u j + Real.log ρ else u j := by
   funext i
-  simp only [quarticGluingEarly_apply, quarticTrajectoryPoint_apply]
-  split_ifs <;> simp [intervalBaseOrbit_one_add_log _ hρ]
+  by_cases hpq : p i = q i
+  · simp [quarticTrajectoryPoint_apply_of_eq _ hpq, hpq]
+  · rw [quarticTrajectoryPoint_apply_of_ne _ hpq, quarticGluingEarly_apply, ite_eq_right hpq]
+    dsimp only
+    split_ifs
+    · rw [intervalBaseOrbit_eq_exp_mul_inv_sqrt, one_mul, Real.exp_add, Real.exp_log hρ]
+    · rfl
 
 /-- For `ρ > 0` the late point is the trajectory point with the first block advanced by
 `-log ρ`. -/
 theorem quarticGluingLate_of_pos (p r q : ι → ℝ) {ρ : ℝ} (hρ : 0 < ρ) (u : ι → ℝ) :
     quarticGluingLate p r q ρ u =
-      quarticTrajectoryPoint p q fun i ↦ if p i = r i then u i else u i - Real.log ρ := by
+      quarticTrajectoryPoint p q fun j ↦ if p j = r j then u j else u j - Real.log ρ := by
   funext i
-  simp only [quarticGluingLate_apply, quarticTrajectoryPoint_apply]
-  split_ifs <;> simp [intervalBaseOrbit_one_sub_log _ hρ]
+  by_cases hpq : p i = q i
+  · simp [quarticTrajectoryPoint_apply_of_eq _ hpq, hpq]
+  · rw [quarticTrajectoryPoint_apply_of_ne _ hpq, quarticGluingLate_apply, ite_eq_right hpq]
+    dsimp only
+    split_ifs
+    · rfl
+    · rw [intervalBaseOrbit_one_sub_log _ hρ]
 
 /-- The flow of the quartic translates all time coordinates of the early point at once, for every
 gluing parameter `ρ`, including the break `ρ = 0`. -/
@@ -238,9 +255,10 @@ theorem quarticWellSumFlow_neg_log_quarticGluingEarly {p r q : ι → ℝ}
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) {ρ : ℝ} (hρ : 0 < ρ) (u : ι → ℝ) :
     quarticWellSumFlow (-Real.log ρ) (quarticGluingEarly p r q ρ u) =
       quarticGluingLate p r q ρ u := by
-  rw [quarticGluingEarly_of_pos p r q hρ, quarticWellSumFlow_quarticTrajectoryPoint hq,
-    quarticGluingLate_of_pos p r q hρ, quarticTrajectoryPoint_eq_quarticTrajectoryPoint_iff]
-  intro i _ _
+  rw [quarticWellSumFlow_quarticGluingEarly hq, quarticGluingEarly_of_pos p r q hρ,
+    quarticGluingLate_of_pos p r q hρ]
+  congr 1
+  funext j
   split_ifs <;> ring
 
 /-- For `ρ > 0` the flow for time `log ρ` carries the late point back to the early point. -/
@@ -248,9 +266,10 @@ theorem quarticWellSumFlow_log_quarticGluingLate {p r q : ι → ℝ}
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) {ρ : ℝ} (hρ : 0 < ρ) (u : ι → ℝ) :
     quarticWellSumFlow (Real.log ρ) (quarticGluingLate p r q ρ u) =
       quarticGluingEarly p r q ρ u := by
-  rw [quarticGluingLate_of_pos p r q hρ, quarticWellSumFlow_quarticTrajectoryPoint hq,
-    quarticGluingEarly_of_pos p r q hρ, quarticTrajectoryPoint_eq_quarticTrajectoryPoint_iff]
-  intro i _ _
+  rw [quarticWellSumFlow_quarticGluingLate hq, quarticGluingLate_of_pos p r q hρ,
+    quarticGluingEarly_of_pos p r q hρ]
+  congr 1
+  funext j
   split_ifs <;> ring
 
 /-- The coordinates moving along a glued trajectory start at `0`. -/
@@ -272,7 +291,8 @@ theorem tendsto_quarticWellSumFlow_quarticGluingEarly {p r q : ι → ℝ}
     Tendsto (fun s ↦ quarticWellSumFlow s (quarticGluingEarly p r q ρ u)) atBot (𝓝 p) ∧
       Tendsto (fun s ↦ quarticWellSumFlow s (quarticGluingEarly p r q ρ u)) atTop (𝓝 q) := by
   rw [quarticGluingEarly_of_pos p r q hρ]
-  exact tendsto_quarticWellSumFlow_quarticTrajectoryPoint hq (eq_zero_of_ne_of_break hpr hrq) _
+  exact (mem_quarticConnectingSet.1 <|
+    quarticTrajectoryPoint_mem_quarticConnectingSet hq (eq_zero_of_ne_of_break hpr hrq) _).2
 
 /-- For `ρ > 0` the glued trajectory runs from `p` to `q`, seen from the late point. -/
 theorem tendsto_quarticWellSumFlow_quarticGluingLate {p r q : ι → ℝ}
@@ -281,34 +301,38 @@ theorem tendsto_quarticWellSumFlow_quarticGluingLate {p r q : ι → ℝ}
     Tendsto (fun s ↦ quarticWellSumFlow s (quarticGluingLate p r q ρ u)) atBot (𝓝 p) ∧
       Tendsto (fun s ↦ quarticWellSumFlow s (quarticGluingLate p r q ρ u)) atTop (𝓝 q) := by
   rw [quarticGluingLate_of_pos p r q hρ]
-  exact tendsto_quarticWellSumFlow_quarticTrajectoryPoint hq (eq_zero_of_ne_of_break hpr hrq) _
+  exact (mem_quarticConnectingSet.1 <|
+    quarticTrajectoryPoint_mem_quarticConnectingSet hq (eq_zero_of_ne_of_break hpr hrq) _).2
 
 /-- **The broken end, early side.** At `ρ = 0` the early point is the point with time coordinates
 `u` on the first piece, from `p` to `r`. -/
 theorem quarticGluingEarly_zero {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i → p i = 0)
     (hrq : ∀ i, r i ≠ q i → r i = 0) (u : ι → ℝ) :
-    quarticGluingEarly p r q 0 u = quarticTrajectoryPoint p r u := by
+    quarticGluingEarly p r q 0 u = quarticTrajectoryPoint p r fun j ↦ u j := by
   funext i
-  simp only [quarticGluingEarly_apply, quarticTrajectoryPoint_apply]
   by_cases hpr' : p i = r i
-  · have := hrq i
+  · rw [quarticTrajectoryPoint_apply_of_eq _ hpr', quarticGluingEarly_apply]
+    have := hrq i
     split_ifs <;> simp_all
-  · have hrq' := eq_of_ne_of_break hpr hrq hpr'
-    rw [hrq'] at hpr' ⊢
-    simp [hpr']
+  · rw [quarticTrajectoryPoint_apply_of_ne _ hpr', quarticGluingEarly_apply,
+      ← eq_of_ne_of_break hpr hrq hpr', ite_eq_right hpr', ite_eq_right hpr']
 
 /-- **The broken end, late side.** At `ρ = 0` the late point is the point with time coordinates
 `u` on the second piece, from `r` to `q`. -/
 theorem quarticGluingLate_zero {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i → p i = 0)
     (hrq : ∀ i, r i ≠ q i → r i = 0) (u : ι → ℝ) :
-    quarticGluingLate p r q 0 u = quarticTrajectoryPoint r q u := by
+    quarticGluingLate p r q 0 u = quarticTrajectoryPoint r q fun j ↦ u j := by
   funext i
-  simp only [quarticGluingLate_apply, quarticTrajectoryPoint_apply]
   by_cases hpr' : p i = r i
-  · split_ifs <;> simp_all
+  · by_cases hpq : p i = q i
+    · rw [quarticGluingLate_apply, ite_eq_left hpq,
+        quarticTrajectoryPoint_apply_of_eq _ (hpr'.symm.trans hpq), hpr']
+    · rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_left hpr',
+        quarticTrajectoryPoint_apply_of_ne _ fun h ↦ hpq (hpr'.trans h)]
   · have hrq' := eq_of_ne_of_break hpr hrq hpr'
-    rw [hrq'] at hpr' ⊢
-    simp [hpr']
+    rw [quarticTrajectoryPoint_apply_of_eq _ hrq', quarticGluingLate_apply,
+      ite_eq_right fun h ↦ hpr' (h.trans hrq'.symm), ite_eq_right hpr']
+    simp [hrq']
 
 /-- The late point depends on the gluing parameter only through `ρ²`: the arriving coordinates
 approach `±1` at rate `2`. -/
@@ -325,16 +349,20 @@ recovered from the early point. -/
 theorem intervalBaseTimeCoordinate_abs_quarticGluingEarly {p r q : ι → ℝ} {i : ι}
     (hpq : p i ≠ q i) (hpr : p i ≠ r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     intervalBaseTimeCoordinate |quarticGluingEarly p r q ρ u i| = u i := by
-  rw [← intervalBaseTimeCoordinate_abs_quarticTrajectoryPoint hpq hq u]
-  simp [hpq, hpr]
+  have hq' : |q i| = 1 := by rcases hq with h | h <;> simp [h]
+  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_right hpr, abs_mul, hq', one_mul,
+    abs_of_pos (intervalBaseOrbit_mem_Ioo 1 (u i)).1, intervalBaseTimeCoordinate_intervalBaseOrbit,
+    one_mul]
 
 /-- On a coordinate moving between `r` and `q` towards `q i = ±1`, the time coordinate is
 recovered from the late point. -/
 theorem intervalBaseTimeCoordinate_abs_quarticGluingLate {p r q : ι → ℝ} {i : ι}
     (hpq : p i ≠ q i) (hpr : p i = r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     intervalBaseTimeCoordinate |quarticGluingLate p r q ρ u i| = u i := by
-  rw [← intervalBaseTimeCoordinate_abs_quarticTrajectoryPoint hpq hq u]
-  simp [hpr]
+  have hq' : |q i| = 1 := by rcases hq with h | h <;> simp [h]
+  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_left hpr, abs_mul, hq', one_mul,
+    abs_of_pos (intervalBaseOrbit_mem_Ioo 1 (u i)).1, intervalBaseTimeCoordinate_intervalBaseOrbit,
+    one_mul]
 
 /-- On a coordinate `i` moving between `r` and `q` towards `q i = ±1`, the gluing parameter is
 recovered from the early point `y` and the time coordinate as `e^{-u i} q i y i / √(1 - y i²)`. -/
@@ -448,7 +476,8 @@ theorem continuous_quarticGluingLate (p r q : ι → ℝ) :
 the early point tends to the point with time coordinates `u` on the first piece. -/
 theorem tendsto_quarticGluingEarly_nhds_zero {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i → p i = 0)
     (hrq : ∀ i, r i ≠ q i → r i = 0) (u : ι → ℝ) :
-    Tendsto (fun ρ ↦ quarticGluingEarly p r q ρ u) (𝓝 0) (𝓝 (quarticTrajectoryPoint p r u)) := by
+    Tendsto (fun ρ ↦ quarticGluingEarly p r q ρ u) (𝓝 0)
+      (𝓝 (quarticTrajectoryPoint p r fun j ↦ u j)) := by
   rw [← quarticGluingEarly_zero hpr hrq u]
   exact ((continuous_quarticGluingEarly p r q).comp
     (continuous_id.prodMk continuous_const)).tendsto 0
@@ -457,7 +486,8 @@ theorem tendsto_quarticGluingEarly_nhds_zero {p r q : ι → ℝ} (hpr : ∀ i, 
 the late point tends to the point with time coordinates `u` on the second piece. -/
 theorem tendsto_quarticGluingLate_nhds_zero {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i → p i = 0)
     (hrq : ∀ i, r i ≠ q i → r i = 0) (u : ι → ℝ) :
-    Tendsto (fun ρ ↦ quarticGluingLate p r q ρ u) (𝓝 0) (𝓝 (quarticTrajectoryPoint r q u)) := by
+    Tendsto (fun ρ ↦ quarticGluingLate p r q ρ u) (𝓝 0)
+      (𝓝 (quarticTrajectoryPoint r q fun j ↦ u j)) := by
   rw [← quarticGluingLate_zero hpr hrq u]
   exact ((continuous_quarticGluingLate p r q).comp
     (continuous_id.prodMk continuous_const)).tendsto 0
