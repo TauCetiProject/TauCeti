@@ -23,8 +23,11 @@ identity. For `μ ∈ 𝔱`, let `O = G ⧸ G_ν` be the coadjoint orbit of `ν 
 Through `B`, the orbit map is `Φ [g] = B (e (Ad_g μ))`
 (`TauCeti.Lie.orbitMap_coadjointRepresentation_bilinForm_mk`, in
 `TauCeti.Geometry.Lie.Adjoint.InvariantForm`). Since `T` fixes `μ`, it lies in the
-stabilizer `G_ν`, so a representative `n ∈ N(T)` of `w ∈ W` gives a well-defined point `[n_w]`
-of `O` (`TauCeti.Lie.normalizerQuotientToCoadjointOrbit`), with `Φ [n_w] = B (e (w μ))`.
+stabilizer `G_ν`
+(`TauCeti.Lie.le_stabilizer_coadjointRepresentation_of_mem_lieSubalgebraOfSubgroup`, in
+`TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer`), so a representative
+`n ∈ N(T)` of `w ∈ W` gives a well-defined point `[n_w]` of `O`
+(`TauCeti.Lie.normalizerQuotientToCoadjointOrbit`), with `Φ [n_w] = B (e (w μ))`.
 This file proves:
 
 * `[n_w] = [n_w']` exactly when `w μ = w' μ`
@@ -121,19 +124,6 @@ private theorem injective_bilinForm_comp_leftInvariantDerivationLieEquivGroupLie
         BoundarylessManifold.isInteriorPoint D) :=
   (LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hsep)).comp
     (LieEquiv.injective _)
-
-/-- **A commutative subgroup fixes the covectors of its Lie algebra.** For an invariant form `B`
-and `μ` in the Lie algebra of a commutative subgroup `T`, the subgroup `T` lies in the coadjoint
-stabilizer of `B (e μ)`. -/
-theorem le_stabilizer_coadjointRepresentation_of_mem_lieSubalgebraOfSubgroup
-    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
-    {μ : LeftInvariantDerivation I G} (hμ : μ ∈ lieSubalgebraOfSubgroup (I := I) T) :
-    T ≤ (coadjointRepresentation ℝ I G).stabilizer
-      (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-        BoundarylessManifold.isInteriorPoint μ)) := fun g hg ↦ by
-  rw [Representation.mem_stabilizer, coadjointRepresentation_apply_bilinForm hB,
-    ← tangentAd_apply, ← leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
-    Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup hg hμ]
 
 variable (B) in
 /-- **The Weyl group points of a coadjoint orbit.** For an invariant form `B` and `μ` in the Lie
