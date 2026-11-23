@@ -54,30 +54,30 @@ theorem reattachmentRadial_def (w : TopCat.disk.{u} k) :
 theorem continuous_reattachmentRadial : Continuous (reattachmentRadial.{u} (k := k)) :=
   (diskRadialPush k _).continuous.comp (continuous_const.prodMk continuous_id)
 
-theorem coe_reattachmentRadial_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ 1 / 2) :
-    (reattachmentRadial w).down.1 = (2 : ℝ) • w.down.1 := by
+theorem coe_reattachmentRadial_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.down.val‖ ≤ 1 / 2) :
+    (reattachmentRadial w).down.val = (2 : ℝ) • w.down.val := by
   rw [reattachmentRadial, coe_diskRadialPush_one_of_norm_le _ hw]
   norm_num
 
-theorem coe_reattachmentRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
-    (reattachmentRadial w).down.1 = ‖w.down.1‖⁻¹ • w.down.1 :=
+theorem coe_reattachmentRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.val‖) :
+    (reattachmentRadial w).down.val = ‖w.down.val‖⁻¹ • w.down.val :=
   coe_diskRadialPush_one_of_le_norm (by norm_num) hw
 
 /-- On the annulus `1/2 ≤ ‖x‖`, the radial part of `x` is its direction `x / ‖x‖` on the boundary
 sphere. -/
-theorem reattachmentRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
+theorem reattachmentRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.val‖) :
     reattachmentRadial w = TopCat.diskBoundaryInclusion k (annulusDir (by norm_num) ⟨w, hw⟩) :=
   (diskBoundaryInclusion_annulusDir _ ⟨w, hw⟩).symm
 
 /-- The point `(1/2) • θ` of the disc, for `θ` on the boundary sphere, has radial part `θ`. -/
 theorem reattachmentRadial_half_smul (θ : TopCat.diskBoundary.{u} k)
-    (hθ : (1 / 2 : ℝ) • θ.down.1 ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) 1) :
-    reattachmentRadial (ULift.up ⟨(1 / 2 : ℝ) • θ.down.1, hθ⟩) =
+    (hθ : (1 / 2 : ℝ) • θ.down.val ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) 1) :
+    reattachmentRadial (ULift.up ⟨(1 / 2 : ℝ) • θ.down.val, hθ⟩) =
       TopCat.diskBoundaryInclusion k θ := by
-  have hθ' : ‖(1 / 2 : ℝ) • θ.down.1‖ ≤ 1 / 2 :=
+  have hθ' : ‖(1 / 2 : ℝ) • θ.down.val‖ ≤ 1 / 2 :=
     mem_closedBall_zero_iff.1 (smul_diskBoundary_mem_closedBall (by norm_num) θ)
   refine ULift.ext (Subtype.ext ?_)
-  rw [coe_reattachmentRadial_of_norm_le (w := ULift.up ⟨(1 / 2 : ℝ) • θ.down.1, hθ⟩) hθ',
+  rw [coe_reattachmentRadial_of_norm_le (w := ULift.up ⟨(1 / 2 : ℝ) • θ.down.val, hθ⟩) hθ',
     smul_smul, mul_one_div_cancel two_ne_zero, one_smul]
   exact (TopCat.coe_diskBoundaryInclusion_apply_down _ _).symm
 
@@ -94,12 +94,12 @@ theorem reattachmentTime_def (w : TopCat.disk.{u} k) :
 theorem continuous_reattachmentTime : Continuous (reattachmentTime.{u} (k := k)) :=
   continuous_symm.comp continuous_annulusParam
 
-theorem reattachmentTime_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ 1 / 2) :
+theorem reattachmentTime_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.down.val‖ ≤ 1 / 2) :
     reattachmentTime w = 1 := by
   rw [reattachmentTime, annulusParam_of_norm_le (by norm_num) hw, symm_zero]
 
-theorem coe_reattachmentTime_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
-    (reattachmentTime w : ℝ) = 2 - 2 * ‖w.down.1‖ := by
+theorem coe_reattachmentTime_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.val‖) :
+    (reattachmentTime w : ℝ) = 2 - 2 * ‖w.down.val‖ := by
   have h := add_one_sub_mul_annulusParam (by norm_num : (1 / 2 : ℝ) ≤ 1) hw
   rw [reattachmentTime, coe_symm_eq]
   linarith
@@ -114,7 +114,8 @@ theorem reattachmentTime_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) :
 `x ↦ (reattachmentTime x, reattachmentRadial x)` at time `0` to `x ↦ (0, x)` at time `1`. Its disc
 coordinate is the radial push `TauCeti.TopCat.diskRadialPush` with radius `1/2`, run backwards. -/
 def reattachmentPath (p : TopCat.disk.{u} k × I) : I × TopCat.disk.{u} k :=
-  (⟨(1 - (p.2 : ℝ)) * reattachmentTime p.1, mul_mem (symm p.2).2 (reattachmentTime p.1).2⟩,
+  (⟨(1 - (p.2 : ℝ)) * reattachmentTime p.1, mul_mem (symm p.2).property
+      (reattachmentTime p.1).property⟩,
     diskRadialPush k (by norm_num : (0 : ℝ) ≤ 1 / 2) (σ p.2, p.1))
 
 theorem coe_fst_reattachmentPath (p : TopCat.disk.{u} k × I) :
@@ -127,8 +128,8 @@ theorem snd_reattachmentPath (p : TopCat.disk.{u} k × I) :
 
 theorem continuous_reattachmentPath : Continuous (reattachmentPath.{u} (k := k)) := by
   have hs : Continuous fun p : TopCat.disk.{u} k × I ↦ (p.2 : ℝ) :=
-    continuous_subtype_val.comp continuous_snd
-  exact .prodMk ((((continuous_const.sub hs).mul (continuous_subtype_val.comp
+    continuous_subtypeVal.comp continuous_snd
+  exact .prodMk ((((continuous_const.sub hs).mul (continuous_subtypeVal.comp
     (continuous_reattachmentTime.comp continuous_fst))).subtype_mk _))
     ((diskRadialPush k _).continuous.comp
       ((continuous_symm.comp continuous_snd).prodMk continuous_fst))

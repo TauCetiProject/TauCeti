@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 import Mathlib.MeasureTheory.Group.Prod
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Convolution.Young
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Commutators of convolution operators with Lipschitz functions
@@ -40,12 +41,22 @@ The estimate is stated for the integral on the right, which is defined for every
 integrability or boundedness hypothesis on `f` or `g`: a Lipschitz function need not be bounded,
 and then `f • g` need not be in any `Lᵖ`.
 
+The same estimates hold, with the same constant, when `f` is replaced by a `K`-Lipschitz field
+`a : G → (F →L[𝕜] F')` of operators acting on `g`
+(`MeasureTheory.eNorm_integral_sub_apply_smul_le`,
+`MeasureTheory.eLpNorm_integral_sub_apply_smul_le`); the scalar statements are the case
+`a = f • 1`. This is the form needed for Friedrichs' lemma on mollifiers and first-order systems
+`a ∂ᵥ`.
+
 ## Main declarations
 
 * `MeasureTheory.convolution_smul_sub_smul_convolution`: the commutator as a single integral.
 * `MeasureTheory.eNorm_integral_sub_smul_smul_le`: the pointwise bound by the convolution of `‖g‖`
   with the first moment of the kernel.
 * `MeasureTheory.eLpNorm_integral_sub_smul_smul_le`: the `Lᵖ` bound.
+* `MeasureTheory.eNorm_integral_sub_apply_smul_le`,
+  `MeasureTheory.eLpNorm_integral_sub_apply_smul_le`: the same bounds for a Lipschitz field of
+  operators.
 
 ## References
 
@@ -79,21 +90,76 @@ theorem convolution_smul_sub_smul_convolution [Sub G] [SMulCommClass ℝ 𝕜 F]
 
 variable [SeminormedAddCommGroup G]
 
+section Operator
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace 𝕜 F']
+  {a : G → F →L[𝕜] F'}
+
+omit [NormedSpace ℝ F] in
+/-- **Pointwise bound for the commutator with a Lipschitz operator field.** If
+`a : G → F →L[𝕜] F'` is `K`-Lipschitz, then `‖∫ (a (x - t) - a x) (κ t • g (x - t)) dt‖` is at
+most `K` times the convolution of `‖g‖` with the first moment `‖t‖ ‖κ t‖` of the kernel, at `x`. -/
+theorem eNorm_integral_sub_apply_smul_le (ha : LipschitzWith K a) (x : G) :
+    ‖∫ t, (a (x - t) - a x) (κ t • g (x - t)) ∂μ‖ₑ ≤
+      K * ((fun t ↦ ‖t‖ₑ * ‖κ t‖ₑ) ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) x := by
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
+  rw [lconvolution_def, ← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
+  refine lintegral_mono fun t ↦ ?_
+  have hat : ‖a (x - t) - a x‖ₑ ≤ K * ‖t‖ₑ := by
+    simpa [eDist_eq_eNorm_sub] using ha.edist_le_mul (x - t) x
+  calc ‖(a (x - t) - a x) (κ t • g (x - t))‖ₑ
+      ≤ ‖a (x - t) - a x‖ₑ * (‖κ t‖ₑ * ‖g (x - t)‖ₑ) := by
+        rw [← eNorm_smul]; exact (a (x - t) - a x).le_opENorm _
+    _ ≤ K * ‖t‖ₑ * (‖κ t‖ₑ * ‖g (x - t)‖ₑ) := by gcongr
+    _ = K * (‖t‖ₑ * ‖κ t‖ₑ * ‖g (-t + x)‖ₑ) := by rw [neg_add_eq_sub]; ring
+
+variable [SecondCountableTopology G] [BorelSpace G] [SFinite μ] [μ.IsAddLeftInvariant]
+  [μ.IsNegInvariant]
+
+omit [NormedSpace ℝ F] in
+/-- **The commutator of a convolution with a Lipschitz operator field on `Lᵖ`.** If
+`a : G → F →L[𝕜] F'` is `K`-Lipschitz, then for `1 ≤ p ≤ ∞`,
+`‖∫ (a (· - t) - a ·) (κ t • g (· - t)) dt‖_p ≤ K (∫ ‖t‖ ‖κ t‖ dt) ‖g‖_p`. -/
+theorem eLpNorm_integral_sub_apply_smul_le (ha : LipschitzWith K a)
+    (hκ : AEStronglyMeasurable κ μ) (hg : AEStronglyMeasurable g μ) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fun x ↦ ∫ t, (a (x - t) - a x) (κ t • g (x - t)) ∂μ) p μ ≤
+      K * (∫⁻ t, ‖t‖ₑ * ‖κ t‖ₑ ∂μ) * eLpNorm g p μ := by
+  set w : G → ℝ≥0∞ := fun t ↦ ‖t‖ₑ * ‖κ t‖ₑ
+  have hw : AEMeasurable w μ := (measurable_eNorm.aemeasurable).mul hκ.eNorm
+  -- The commutator is measurable as a parametric integral of a jointly measurable integrand.
+  have hmeas : AEStronglyMeasurable
+      (fun x ↦ ∫ t, (a (x - t) - a x) (κ t • g (x - t)) ∂μ) μ := by
+    refine AEStronglyMeasurable.integral_prod_right' (f := fun z : G × G ↦
+      (a (z.1 - z.2) - a z.1) (κ z.2 • g (z.1 - z.2))) ?_
+    refine (ContinuousLinearMap.id 𝕜 (F →L[𝕜] F')).aestronglyMeasurable_comp₂
+      (Continuous.aestronglyMeasurable ?_) (hκ.comp_snd.smul ?_)
+    · exact (ha.continuous.comp continuous_sub).sub (ha.continuous.comp continuous_fst)
+    · exact hg.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub μ μ)
+  calc eLpNorm (fun x ↦ ∫ t, (a (x - t) - a x) (κ t • g (x - t)) ∂μ) p μ
+      ≤ eLpNorm (fun x ↦ (K : ℝ≥0∞) * (w ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) x) p μ :=
+        eLpNorm_mono_eNorm hmeas fun x ↦ by
+          simpa only [eNorm_eq_self] using eNorm_integral_sub_apply_smul_le ha x
+    _ = K * eLpNorm (w ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) p μ :=
+        eLpNorm_const_mul_ennreal (aemeasurable_lconvolution hw hg.eNorm).aestronglyMeasurable
+    _ ≤ K * (eLpNorm w 1 μ * eLpNorm (fun y ↦ ‖g y‖ₑ) p μ) := by
+        gcongr
+        exact eLpNorm_lconvolution_le le_rfl hp (by rw [inv_one]) hw hg.eNorm
+    _ = K * (∫⁻ t, ‖t‖ₑ * ‖κ t‖ₑ ∂μ) * eLpNorm g p μ := by
+        rw [eLpNorm_one_eq_lintegral_eNorm hw.aestronglyMeasurable, eLpNorm_eNorm g hg, mul_assoc]
+        simp only [w, eNorm_eq_self]
+
+end Operator
+
 /-- **Pointwise bound for the commutator with a Lipschitz function.** If `f` is `K`-Lipschitz,
 then `‖∫ (f (x - t) - f x) • κ t • g (x - t) dt‖` is at most `K` times the convolution of `‖g‖`
 with the first moment `‖t‖ ‖κ t‖` of the kernel, at `x`. -/
 theorem eNorm_integral_sub_smul_smul_le (hf : LipschitzWith K f) (x : G) :
     ‖∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ‖ₑ ≤
       K * ((fun t ↦ ‖t‖ₑ * ‖κ t‖ₑ) ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) x := by
-  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
-  rw [lconvolution_def, ← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
-  refine lintegral_mono fun t ↦ ?_
-  have hft : ‖f (x - t) - f x‖ₑ ≤ K * ‖t‖ₑ := by
-    simpa [eDist_eq_eNorm_sub] using hf.edist_le_mul (x - t) x
-  calc ‖(f (x - t) - f x) • κ t • g (x - t)‖ₑ
-      = ‖f (x - t) - f x‖ₑ * (‖κ t‖ₑ * ‖g (x - t)‖ₑ) := by rw [eNorm_smul, eNorm_smul]
-    _ ≤ K * ‖t‖ₑ * (‖κ t‖ₑ * ‖g (x - t)‖ₑ) := by gcongr
-    _ = K * (‖t‖ₑ * ‖κ t‖ₑ * ‖g (-t + x)‖ₑ) := by rw [neg_add_eq_sub]; ring
+  have h := eNorm_integral_sub_apply_smul_le (μ := μ) (κ := κ) (g := g)
+    ((hf.smul_const (ContinuousLinearMap.id 𝕜 F)).weaken (mul_le_of_le_one_right' norm_id_le)) x
+  simp only [smul_apply, id_apply, ← sub_smul] at h
+  exact h
 
 variable [SecondCountableTopology G] [BorelSpace G] [SFinite μ] [μ.IsAddLeftInvariant]
   [μ.IsNegInvariant]
@@ -107,27 +173,10 @@ theorem eLpNorm_integral_sub_smul_smul_le (hf : LipschitzWith K f)
     (hκ : AEStronglyMeasurable κ μ) (hg : AEStronglyMeasurable g μ) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fun x ↦ ∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ) p μ ≤
       K * (∫⁻ t, ‖t‖ₑ * ‖κ t‖ₑ ∂μ) * eLpNorm g p μ := by
-  set w : G → ℝ≥0∞ := fun t ↦ ‖t‖ₑ * ‖κ t‖ₑ
-  have hw : AEMeasurable w μ := (measurable_eNorm.aemeasurable).mul hκ.eNorm
-  -- The commutator is measurable as a parametric integral of a jointly measurable integrand.
-  have hmeas : AEStronglyMeasurable
-      (fun x ↦ ∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ) μ := by
-    refine AEStronglyMeasurable.integral_prod_right' (f := fun z : G × G ↦
-      (f (z.1 - z.2) - f z.1) • κ z.2 • g (z.1 - z.2)) ?_
-    refine (Continuous.aestronglyMeasurable ?_).smul (hκ.comp_snd.smul ?_)
-    · exact (hf.continuous.comp continuous_sub).sub (hf.continuous.comp continuous_fst)
-    · exact hg.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub μ μ)
-  calc eLpNorm (fun x ↦ ∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ) p μ
-      ≤ eLpNorm (fun x ↦ (K : ℝ≥0∞) * (w ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) x) p μ :=
-        eLpNorm_mono_eNorm hmeas fun x ↦ by
-          simpa only [eNorm_eq_self] using eNorm_integral_sub_smul_smul_le hf x
-    _ = K * eLpNorm (w ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) p μ :=
-        eLpNorm_const_mul_ennreal (aemeasurable_lconvolution hw hg.eNorm).aestronglyMeasurable
-    _ ≤ K * (eLpNorm w 1 μ * eLpNorm (fun y ↦ ‖g y‖ₑ) p μ) := by
-        gcongr
-        exact eLpNorm_lconvolution_le le_rfl hp (by rw [inv_one]) hw hg.eNorm
-    _ = K * (∫⁻ t, ‖t‖ₑ * ‖κ t‖ₑ ∂μ) * eLpNorm g p μ := by
-        rw [eLpNorm_one_eq_lintegral_eNorm hw.aestronglyMeasurable, eLpNorm_eNorm g hg, mul_assoc]
-        simp only [w, eNorm_eq_self]
+  have h := eLpNorm_integral_sub_apply_smul_le
+    ((hf.smul_const (ContinuousLinearMap.id 𝕜 F)).weaken (mul_le_of_le_one_right' norm_id_le))
+    hκ hg hp
+  simp only [smul_apply, id_apply, ← sub_smul] at h
+  exact h
 
 end MeasureTheory

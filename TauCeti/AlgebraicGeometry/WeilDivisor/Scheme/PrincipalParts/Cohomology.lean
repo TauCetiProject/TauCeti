@@ -83,7 +83,7 @@ theorem subsingleton_cohomology_add_two_of_invertibleSheaf (hX : ∀ y : X, cohe
   obtain ⟨D, ⟨e⟩⟩ := exists_nonempty_iso_sheaf hX L
   have : Subsingleton ((Scheme.Modules.cohomologyFunctor X (n + 2)).obj (sheaf D)) :=
     subsingleton_cohomology_sheaf_add_two
-      (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX x.2) D n
+      (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX x.property) D n
   exact ((Scheme.Modules.cohomologyFunctor X (n + 2)).mapIso e).addCommGroupIsoToAddEquiv.injective
     |>.subsingleton
 

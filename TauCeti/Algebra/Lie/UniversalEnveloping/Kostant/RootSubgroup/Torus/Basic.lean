@@ -241,7 +241,7 @@ operator. It is the restriction of `ρ(hⱼ)`, which preserves `M` because `hⱼ
 form. -/
 noncomputable def kostantCartanOperator (j : κ) : Module.End ℤ M where
   toFun v := ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) (v : V),
-    hM _ (cartanVector_mem_kostantForm e h j) v v.2⟩
+    hM _ (cartanVector_mem_kostantForm e h j) v v.property⟩
   map_add' v w := Subtype.ext (map_add _ (v : V) (w : V))
   map_smul' z v := Subtype.ext (map_zsmul _ z (v : V))
 
