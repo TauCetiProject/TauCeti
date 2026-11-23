@@ -59,6 +59,9 @@ compared with its real extension.
   nondegeneracy, without a finite-dimensionality assumption.
 * `LinearMap.BilinForm.Nondegenerate.baseChange_of_isLocalization`: an injective localization
   preserves nondegeneracy, without a freeness or finiteness assumption on the module.
+* `LinearMap.BilinForm.baseChange_smul`, `LinearMap.BilinForm.baseChange_neg`: scalar extension
+  commutes with scalar multiplication and negation of forms.
+* `LinearMap.BilinForm.IsAlt.baseChange`: scalar extension preserves alternating forms.
 * `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
   base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
@@ -211,6 +214,59 @@ theorem Nondegenerate.baseChange_of_isLocalization (S : Submonoid R)
   ⟨hB.1.baseChange_of_isLocalization A S, hB.2.baseChange_of_isLocalization A S⟩
 
 end Preservation
+
+section Arithmetic
+
+variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M]
+
+/-- Scalar extension commutes with scalar multiplication of bilinear forms. -/
+@[simp]
+theorem baseChange_smul (r : R) (B : LinearMap.BilinForm R M) :
+    (r • B).baseChange A = algebraMap R A r • B.baseChange A := by
+  refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
+  induction x using TensorProduct.inductionOn with
+  | tmul a x =>
+    induction y using TensorProduct.inductionOn with
+    | tmul b y => simp [Algebra.smul_def, mul_assoc]
+    | add y z hy hz => simp only [map_add, hy, hz]
+  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
+
+end Arithmetic
+
+section Ring
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module R M]
+
+/-- Scalar extension commutes with negation of bilinear forms. -/
+@[simp]
+theorem baseChange_neg (B : LinearMap.BilinForm R M) : (-B).baseChange A = -B.baseChange A := by
+  refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
+  induction x using TensorProduct.inductionOn with
+  | tmul a x =>
+    induction y using TensorProduct.inductionOn with
+    | tmul b y => simp
+    | add y z hy hz => simp only [map_add, hy, hz]
+  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
+
+/-- Scalar extension of an alternating bilinear form is alternating. -/
+theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
+    (B.baseChange A).IsAlt := by
+  have hskew (x y : A ⊗[R] M) : B.baseChange A y x = -B.baseChange A x y := by
+    induction x using TensorProduct.inductionOn with
+    | tmul a x =>
+      induction y using TensorProduct.inductionOn with
+      | tmul b y => simp only [baseChange_tmul, ← hB.neg_eq x y, neg_smul, mul_comm a b]
+      | add y z hy hz => simp only [map_add, LinearMap.add_apply, hy, hz, neg_add]
+    | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx', neg_add]
+  intro x
+  induction x using TensorProduct.inductionOn with
+  | tmul a x => simp [hB x]
+  | add x x' hx hx' =>
+    simp only [map_add, LinearMap.add_apply, hx, hx', hskew x x']
+    abel
+
+end Ring
 
 end LinearMap.BilinForm
 

@@ -32,6 +32,8 @@ lattice span, and the two descriptions agree.
 * `TauCeti.AlmostComplexStructure.latticeComplexification`: the complex-linear extension of `J`
   acting on the chosen abstract complexification; on the real points coming from the realification
   it acts by `J` (`latticeComplexification_realificationComplexEquiv_one_tmul`).
+* `TauCeti.AlmostComplexStructure.latticeComplexification_neg`: the transported extension of `-J`
+  is minus that of `J`.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure`: the associated effective integral Hodge
   structure of weight one.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure_piece_one` and
@@ -97,6 +99,17 @@ theorem latticeComplexification_comp_self
     J.latticeComplexification hℂ ∘ₗ J.latticeComplexification hℂ = -LinearMap.id := by
   rw [latticeComplexification, ← LinearEquiv.conj_comp, J.baseChange_comp_self,
     map_neg, LinearEquiv.conj_id]
+
+/-- The transported complex-linear extension of `-J` is minus that of `J`. -/
+@[simp]
+theorem latticeComplexification_neg (J : AlmostComplexStructure (Hodge.Realification V))
+    (hℂ : IsBaseChange ℂ ιℂ) :
+    (-J).latticeComplexification hℂ = -J.latticeComplexification hℂ := by
+  ext x
+  obtain ⟨y, rfl⟩ := (Hodge.realificationComplexEquiv hℂ).surjective x
+  rw [LinearMap.neg_apply, ← realificationComplexEquiv_baseChange_apply,
+    ← realificationComplexEquiv_baseChange_apply, neg_toLinearMap, LinearMap.baseChange_neg,
+    LinearMap.neg_apply, map_neg]
 
 /-- The eigenspaces of the transported endomorphism are the transports of the eigenspaces of the
 literal scalar extension. -/

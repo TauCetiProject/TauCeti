@@ -18,8 +18,9 @@ Scaling an endomorphism `f` by a scalar `c` that acts injectively on the module 
 nonzero scalar on a vector space) relabels the eigenspaces of `f` by `c`: the `c μ`-eigenspace of
 `c • f` is the `μ`-eigenspace of `f`, and likewise for the generalized eigenspaces of every order
 (`Module.End.genEigenspace_smul`), so `c • f` has the eigenvalue `c μ` exactly when `f` has the
-eigenvalue `μ` (`Module.End.hasEigenvalue_smul_iff`). Over a field, for `c ≠ 0`, every scalar `μ`
-is `c (μ / c)`, so the `μ`-eigenspace of `c • f` is the `μ / c`-eigenspace of `f`
+eigenvalue `μ` (`Module.End.hasEigenvalue_smul_iff`). For `c = -1`, the `μ`-eigenspace of `-f` is
+the `-μ`-eigenspace of `f` (`Module.End.eigenspace_neg`). Over a field, for `c ≠ 0`, every
+scalar `μ` is `c (μ / c)`, so the `μ`-eigenspace of `c • f` is the `μ / c`-eigenspace of `f`
 (`Module.End.eigenspace_smul_eq_div`). For example, for `κ / m ≠ 0`, the eigenspaces of the
 acceleration operator `(κ / m) • H` of a spring system are those of its force matrix `H`.
 
@@ -67,6 +68,16 @@ eigenvalue `μ`. -/
 theorem hasEigenvalue_smul_iff (f : End R M) {c : R} (hc : IsSMulRegular M c) (μ : R) :
     (c • f).HasEigenvalue (c * μ) ↔ f.HasEigenvalue μ := by
   rw [hasEigenvalue_iff, hasEigenvalue_iff, eigenspace_smul f hc]
+
+/-- The `μ`-eigenspace of `-f` is the `-μ`-eigenspace of `f`. -/
+@[simp]
+theorem eigenspace_neg (f : End R M) (μ : R) : eigenspace (-f) μ = eigenspace f (-μ) := by
+  ext x
+  simp only [mem_eigenspace_iff, LinearMap.neg_apply, neg_smul, neg_eq_iff_eq_neg]
+
+/-- The `-μ`-eigenspace of `-f` is the `μ`-eigenspace of `f`. -/
+theorem eigenspace_neg_neg (f : End R M) (μ : R) : eigenspace (-f) (-μ) = eigenspace f μ := by
+  rw [eigenspace_neg, neg_neg]
 
 end Module.End
 
