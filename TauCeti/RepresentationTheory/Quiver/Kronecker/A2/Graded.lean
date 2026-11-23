@@ -167,14 +167,15 @@ theorem gradedCartanMap_gradedVertexProjectiveClass_tgt :
 
 /-- The categorical Betti Poincaré matrix of the minimal resolutions of the graded vertex simples
 of the one-arrow path algebra is `[1, 0; q t, 1]`. -/
-theorem submatrix_bettiPoincareMatrix_eq_gradedBettiMatrixA2 :
-    (bettiPoincareMatrix (PathAlgebra.gradedVertexProjectiveClassBasis k (Kronecker A))
-      (fun j => PathAlgebra.gradedVertexSimpleProjectiveResolution k (Kronecker A) j)).submatrix
+theorem submatrix_bettiPoincarePowerSeriesMatrix_eq_gradedBettiMatrixA2 :
+    (bettiPoincarePowerSeriesMatrix
+      (fun j => PathAlgebra.gradedVertexSimpleProjectiveResolution k (Kronecker A) j)
+      (PathAlgebra.gradedVertexProjectiveClassBasis k (Kronecker A))).submatrix
         ![src, tgt] ![src, tgt] = gradedBettiMatrixA2 := by
   let _ : Fintype A := Unique.fintype
   refine Matrix.ext fun i j => ?_
   rw [Matrix.submatrix_apply,
-    PathAlgebra.bettiPoincareMatrix_gradedVertexSimple_apply k (Kronecker A) _
+    PathAlgebra.bettiPoincarePowerSeriesMatrix_gradedVertexSimple_apply k (Kronecker A) _
       (fun l => PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution k (Kronecker A) l)]
   fin_cases i <;> fin_cases j <;> simp [gradedBettiMatrixA2, Nat.card_eq_fintype_card]
 
@@ -196,22 +197,20 @@ theorem eval_neg_one_trunc_gradedBettiMatrixA2_mul_gradedCartanMatrixA2 :
         | tgt => rfl
       right_inv := fun i => by fin_cases i <;> rfl }
   let r := fun j => PathAlgebra.gradedVertexSimpleProjectiveResolution ℚ (Kronecker Unit) j
-  have heval := PathAlgebra.eval_neg_one_trunc_two_bettiPoincareMatrix ℚ (Kronecker Unit) r
-    (fun l => PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution ℚ (Kronecker Unit) l)
+  have heval := PathAlgebra.eval_neg_one_trunc_two_bettiPoincarePowerSeriesMatrix ℚ (Kronecker Unit)
+    r (fun l => PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution ℚ (Kronecker Unit) l)
   have hmul := PathAlgebra.one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one ℚ (Kronecker Unit)
   rw [← heval] at hmul
   have hre := congrArg (Matrix.reindexRingEquiv (LaurentPolynomial ℤ) e) hmul
   rw [map_mul, map_one] at hre
   have hB : Matrix.reindexRingEquiv (LaurentPolynomial ℤ) e
-      ((bettiPoincareMatrix (PathAlgebra.gradedVertexProjectiveClassBasis ℚ (Kronecker Unit))
-        r).map fun P => (PowerSeries.trunc 2 P).eval (-1)) =
+      ((bettiPoincarePowerSeriesMatrix r
+        (PathAlgebra.gradedVertexProjectiveClassBasis ℚ (Kronecker Unit))).map
+        fun P => (PowerSeries.trunc 2 P).eval (-1)) =
       gradedBettiMatrixA2.map fun P => (PowerSeries.trunc 2 P).eval (-1) := by
-    rw [Matrix.coe_reindexRingEquiv]
-    change ((bettiPoincareMatrix
-      (PathAlgebra.gradedVertexProjectiveClassBasis ℚ (Kronecker Unit))
-      r).submatrix ![src, tgt] ![src, tgt]).map
-      (fun P => (PowerSeries.trunc 2 P).eval (-1)) = _
-    rw [submatrix_bettiPoincareMatrix_eq_gradedBettiMatrixA2]
+    rw [Matrix.coe_reindexRingEquiv, Matrix.reindex_apply, Matrix.submatrix_map]
+    have hesymm : (e.symm : Fin 2 → Kronecker Unit) = ![src, tgt] := rfl
+    rw [hesymm, submatrix_bettiPoincarePowerSeriesMatrix_eq_gradedBettiMatrixA2]
   have hC : Matrix.reindexRingEquiv (LaurentPolynomial ℤ) e
       (gradedCartanMatrix (PathAlgebra.integerGrade ℚ (Kronecker Unit))
         (PathAlgebra.gradedVertexProjectiveClassBasis ℚ (Kronecker Unit))

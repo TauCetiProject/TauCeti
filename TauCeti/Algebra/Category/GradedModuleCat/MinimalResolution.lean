@@ -114,7 +114,7 @@ theorem exists_isMinimal_of_forall_cover (S T : GradedModuleCat.{v} 𝒜 → Pro
     (M : GradedModuleCat.{v} 𝒜) (hM : S M) :
     ∃ r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading,
       r.IsMinimal ∧ ∀ n, T (r.termObj n) := by
-  choose P π hP hπ hmin hT hS using fun N : {N // S N} => hcover N.1 N.2
+  choose P π hP hπ hmin hT hS using fun N : {N // S N} => hcover N.val N.property
   -- The successive kernels, starting from `M`.
   let K : ℕ → {N // S N} := fun n => Nat.rec ⟨M, hM⟩ (fun _ N => ⟨kernelObj (π N), hS N⟩) n
   refine ⟨{
@@ -133,7 +133,7 @@ theorem exists_isMinimal_of_forall_cover (S T : GradedModuleCat.{v} 𝒜 → Pro
       rw [GradedModuleCat.hom_comp, hom_kernelι, GradedModuleCat.hom_comp, hom_kernelι,
         (Submodule.injective_subtype _).comp_exact_iff_exact]
       exact (hπ (K (n + 2))).comp_exact_iff_exact.mpr (LinearMap.exact_subtype_ker_map _) },
-    isMinimal_iff.mpr fun n x => hmin (K n) _ (π (K (n + 1)) |>.hom x).2, fun n => hT (K n)⟩
+    isMinimal_iff.mpr fun n x => hmin (K n) _ (π (K (n + 1)) |>.hom x).property, fun n => hT (K n)⟩
 
 variable [DirectSum.Decomposition 𝒜]
 
@@ -218,9 +218,9 @@ theorem IsMinimal.isIso_hom_of_homotopyEquiv
     hr₁.isIso_f_of_homotopy_id hb₁ e.homotopyHomInvId n
   have (n : ℕ) : IsIso ((e.inv ≫ e.hom).f n) :=
     hr₂.isIso_f_of_homotopy_id hb₂ e.homotopyInvHomId n
-  have := HomologicalComplex.Hom.isIso_of_components (e.hom ≫ e.inv)
-  have := HomologicalComplex.Hom.isIso_of_components (e.inv ≫ e.hom)
-  exact isIso_of_isIso_comp_of_isIso_comp e.hom e.inv
+  have h1 := HomologicalComplex.Hom.isIso_of_components (e.hom ≫ e.inv)
+  have h2 := HomologicalComplex.Hom.isIso_of_components (e.inv ≫ e.hom)
+  exact IsIso.of_isIso_comp_of_isIso_comp (f := e.inv) (h := e.inv) h2 h1
 
 /-- **Termwise uniqueness of minimal resolutions.** Any two bounded-below minimal graded projective
 resolutions of `M` have isomorphic terms in every homological degree. -/
@@ -246,8 +246,8 @@ theorem IsMinimal.nonempty_iso_termObj_of_finite
     (hneg : ∀ i < 0, 𝒜 i = ⊥) (n : ℕ) :
     Nonempty (r₁.termObj n ≅ r₂.termObj n) :=
   hr₁.nonempty_iso_termObj hr₂
-    (fun m => (r₁.grading m).exists_piece_eq_bot_of_lt 𝒜 hneg)
-    (fun m => (r₂.grading m).exists_piece_eq_bot_of_lt 𝒜 hneg) n
+    (fun m => (r₁.grading m).exists_forall_lt_piece_eq_bot 𝒜 hneg)
+    (fun m => (r₂.grading m).exists_forall_lt_piece_eq_bot 𝒜 hneg) n
 
 /-- **Linearity is independent of the minimal resolution.** If two bounded-below minimal graded
 projective resolutions resolve the same graded module, one is linear if and only if the other is. -/

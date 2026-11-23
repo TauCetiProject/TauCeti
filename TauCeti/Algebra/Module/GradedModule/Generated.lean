@@ -50,8 +50,8 @@ semiring suffices; multiplicative grading laws and a commutative base semiring a
 * `TauCeti.InternalGrading.apply_mem_smul_top_of_isGeneratedInDegree`: over a nonnegatively graded
   scalar semiring, a degree-`δ` map from a module generated in degree `d'` to a module generated
   in degree `d < d' + δ` lands in `A₊ M`.
-* `TauCeti.InternalGrading.exists_piece_eq_bot_of_lt`: over a nonnegatively graded algebra, any
-  finitely generated graded module is bounded below.
+* `TauCeti.InternalGrading.exists_forall_lt_piece_eq_bot`: over a nonnegatively graded algebra,
+  any finitely generated graded module is bounded below.
 
 ## References
 
@@ -253,8 +253,8 @@ theorem IsGeneratedInDegree.piece_add_eq_smul (hG : G.IsGeneratedInDegree A d) (
   rw [← DirectSum.decompose_of_mem_same G.piece hx, DirectSum.decompose_sum,
     DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Submodule.sum_mem _ fun i _ ↦ ?_
-  rw [_root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2]
-  exact Submodule.smul_mem_smul (DirectSum.decompose 𝒜 (c i) m).2 (g i).2
+  rw [_root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property]
+  exact Submodule.smul_mem_smul (DirectSum.decompose 𝒜 (c i) m).property (g i).property
 
 omit [IsScalarTower k A M] in
 /-- Over a nonnegatively graded scalar semiring, a module generated in degree `d` has no nonzero
@@ -267,19 +267,28 @@ theorem IsGeneratedInDegree.piece_eq_bot_of_lt (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
   rw [← DirectSum.decompose_of_mem_same G.piece hx, DirectSum.decompose_sum,
     DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Finset.sum_eq_zero fun i _ ↦ ?_
-  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2
+  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property
     (a := c i) (i := p - d)
   rw [sub_add_cancel] at h
   have h0 : (DirectSum.decompose 𝒜 (c i) (p - d) : A) = 0 := by
     exact (Submodule.eq_bot_iff _).1 (h𝒜 (p - d) (by omega)) _
-      (DirectSum.decompose 𝒜 (c i) (p - d)).2
+      (DirectSum.decompose 𝒜 (c i) (p - d)).property
   rw [h, h0, zero_smul]
+
+private theorem iSup_ge_induction {b : ℤ} {C : M → Prop}
+    {x : M} (hx : x ∈ ⨆ (q : ℤ) (_ : b ≤ q), G.piece q)
+    (piece : ∀ q : ℤ, b ≤ q → ∀ y ∈ G.piece q, C y) (zero : C 0)
+    (add : ∀ y z, C y → C z → C (y + z)) : C x :=
+  Submodule.iSup_induction _ (motive := C) hx
+    (fun q _ hq => Submodule.iSup_induction _ (motive := C) hq
+      (fun hqb y hy => piece q hqb y hy) zero add)
+    zero add
 
 omit [IsScalarTower k A M] in
 /-- **Finitely generated graded modules over a nonnegatively graded algebra are bounded below.**
 The homogeneous degrees of a finite generating set have a lower bound `b`, and every homogeneous
 piece below degree `b` vanishes. -/
-theorem exists_piece_eq_bot_of_lt [Module.Finite A M] (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
+theorem exists_forall_lt_piece_eq_bot [Module.Finite A M] (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
     ∃ b : ℤ, ∀ p < b, G.piece p = ⊥ := by
   classical
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := M)
@@ -289,8 +298,7 @@ theorem exists_piece_eq_bot_of_lt [Module.Finite A M] (h𝒜 : ∀ i < 0, 𝒜 i
   -- Since `𝒜` is nonnegatively graded, the span `L₀` of pieces in degrees `≥ b` is an
   -- `A`-submodule containing the finite generating set `s`, hence equals `⊤`.
   let L₀ : Submodule k M := ⨆ (q : ℤ) (_ : b ≤ q), G.piece q
-  have hsmul : ∀ (a : A) (y : M), y ∈ L₀ → a • y ∈ L₀ := by
-    intro a y hy
+  have hsmul : ∀ (a : A) (y : M), y ∈ L₀ → a • y ∈ L₀ := fun a y hy => by
     rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_smul]
     refine L₀.sum_mem fun i _ => ?_
     by_cases hi : i < 0
@@ -298,42 +306,29 @@ theorem exists_piece_eq_bot_of_lt [Module.Finite A M] (h𝒜 : ∀ i < 0, 𝒜 i
         (Submodule.eq_bot_iff _).1 (h𝒜 i hi) _ (DirectSum.decompose 𝒜 a i).property
       rw [ha0, zero_smul]
       exact L₀.zero_mem
-    · refine Submodule.iSup_induction _
-          (motive := fun z => (DirectSum.decompose 𝒜 a i : A) • z ∈ L₀)
-        hy (fun q z hz => ?_) (by simp)
-        (fun z w hz hw => by simpa [smul_add] using L₀.add_mem hz hw)
-      refine Submodule.iSup_induction _
-          (motive := fun z => (DirectSum.decompose 𝒜 a i : A) • z ∈ L₀)
-        hz (fun hq z hz => ?_) (by simp)
-        (fun z w hz hw => by simpa [smul_add] using L₀.add_mem hz hw)
-      exact Submodule.mem_iSup_of_mem (i + q)
-        (Submodule.mem_iSup_of_mem (by omega)
-          (SetLike.GradedSMul.smul_mem (DirectSum.decompose 𝒜 a i).property hz))
+    · exact iSup_ge_induction (G := G) (C := fun y => (DirectSum.decompose 𝒜 a i : A) • y ∈ L₀)
+        hy (fun q hq z hz => Submodule.mem_iSup_of_mem (i + q)
+          (Submodule.mem_iSup_of_mem (by omega)
+            (SetLike.GradedSMul.smul_mem (DirectSum.decompose 𝒜 a i).property hz)))
+        (by rw [smul_zero]; exact L₀.zero_mem)
+        (fun z w hz hw => by rw [smul_add]; exact L₀.add_mem hz hw)
   let L : Submodule A M :=
     { carrier := L₀
       add_mem' := L₀.add_mem
       zero_mem' := L₀.zero_mem
       smul_mem' := hsmul }
-  have hmemL : ∀ y : M, y ∈ L ↔ y ∈ L₀ := fun _ => Iff.rfl
   have hL : L = ⊤ := by
     rw [eq_top_iff, ← hs, Submodule.span_le]
     intro g hg
     rw [← DirectSum.sum_support_decompose G.piece g]
-    refine L.sum_mem fun q hq => ?_
-    have hbq : b ≤ q := hb (Finset.mem_biUnion.2 ⟨g, hg, hq⟩)
-    exact (hmemL _).mpr <| Submodule.mem_iSup_of_mem q
-      (Submodule.mem_iSup_of_mem hbq (DirectSum.decompose G.piece g q).property)
-  have hxL : x ∈ L₀ := (hmemL x).mp (hL.symm ▸ Submodule.mem_top)
-  have hdecomp : ∀ y ∈ L₀, (DirectSum.decompose G.piece y p : M) = 0 := by
-    intro y hy
-    refine Submodule.iSup_induction _
-        (motive := fun z => (DirectSum.decompose G.piece z p : M) = 0)
-      hy (fun q z hz => ?_) (by simp) (fun z w hz hw => by simp [hz, hw])
-    refine Submodule.iSup_induction _
-        (motive := fun z => (DirectSum.decompose G.piece z p : M) = 0)
-      hz (fun hq z hz => ?_) (by simp) (fun z w hz hw => by simp [hz, hw])
-    exact DirectSum.decompose_of_mem_ne G.piece hz (by omega : q ≠ p)
-  have hx0 := hdecomp x hxL
+    refine L.sum_mem fun q hq => Submodule.mem_iSup_of_mem q
+      (Submodule.mem_iSup_of_mem (hb (Finset.mem_biUnion.2 ⟨g, hg, hq⟩))
+        (DirectSum.decompose G.piece g q).property)
+  have hxL : x ∈ L₀ := show x ∈ L from hL.symm ▸ Submodule.mem_top
+  have hx0 : (DirectSum.decompose G.piece x p : M) = 0 :=
+    iSup_ge_induction (G := G) (C := fun z => (DirectSum.decompose G.piece z p : M) = 0) hxL
+      (fun q hq z hz => DirectSum.decompose_of_mem_ne G.piece hz (by omega : q ≠ p))
+      (by simp) (fun z w hz hw => by simp [hz, hw])
   rwa [DirectSum.decompose_of_mem_same G.piece hx] at hx0
 
 /-- A graded module generated in degree `d` has every homogeneous piece of degree above `d`
@@ -356,7 +351,8 @@ theorem apply_mem_smul_top_of_isGeneratedInDegree (h𝒜 : ∀ i < 0, 𝒜 i = �
   classical
   rw [← DirectSum.sum_support_decompose G'.piece x, map_sum]
   refine Submodule.sum_mem _ fun p _ ↦ ?_
-  have hx : (DirectSum.decompose G'.piece x p : M') ∈ G'.piece p := (DirectSum.decompose _ x p).2
+  have hx : (DirectSum.decompose G'.piece x p : M') ∈ G'.piece p :=
+      (DirectSum.decompose _ x p).property
   rcases lt_or_ge p d' with hp | hp
   · rw [(Submodule.eq_bot_iff _).1 (hG'.piece_eq_bot_of_lt 𝒜 h𝒜 hp) _ hx, map_zero]
     exact Submodule.zero_mem _

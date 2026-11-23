@@ -9,7 +9,7 @@ public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Algebra.Group.Pi.Units
-import Mathlib.LinearAlgebra.Matrix.SemiringInverse
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Diagonal matrices: products with matrix units, and commutation
@@ -22,7 +22,9 @@ diagonal matrix of pairwise distinct entries is itself diagonal.
 
 Neither statement needs a unit or an associative multiplication in the entries: the first holds
 over a `NonUnitalNonAssocSemiring`, and the second adds commutativity and cancellation by nonzero
-elements, which is what forces the off-diagonal entries to vanish.
+elements, which is what forces the off-diagonal entries to vanish. Its converse, that a matrix
+vanishing wherever the diagonal matrix separates two coordinates commutes with it, needs only
+commutativity.
 
 For linear maps between based modules, the coordinate matrix is diagonal exactly when each source
 basis vector maps to the corresponding scalar multiple of the target basis vector.
@@ -40,12 +42,15 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 * `TauCeti.isUnit_diagonal_snoc_one_iff`: `diagonal (1, …, 1, x)` is a unit exactly when `x` is.
 * `TauCeti.apply_eq_zero_of_commute_diagonal`: a matrix commuting with a diagonal matrix has
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
+* `TauCeti.commute_diagonal_of_apply_eq_zero`: conversely, a matrix vanishing wherever a diagonal
+  matrix separates `i` from `j` commutes with it, over any commutative semiring;
+  `TauCeti.commute_diagonal_iff` combines the two directions.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
   distinct entries is itself diagonal.
-* `TauCeti.mul_eq_one_iff_transpose_mul_eq_diagonal`: when `diagonal d * B = Eᵀ` with left-regular
-  diagonal entries over a commutative semiring, `C * B = 1` if and only if `Cᵀ * E = diagonal d`.
 * `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
   bases exactly when it scales the corresponding basis vectors by the diagonal entries.
+* `Matrix.prod_pow_mul_apply_mul`: scaling rows and columns of `M` by `s` multiplies an entry
+  monomial `∏ q, M q.1 q.2 ^ n q` by `∏ i, s i ^ ∑ j, (n (i, j) + n (j, i))`.
 -/
 
 public section
@@ -61,7 +66,6 @@ theorem dvd_diagonal_apply {ι α : Type*} [DecidableEq ι] [MonoidWithZero α]
 end Matrix
 
 open Matrix
-open scoped Matrix
 
 namespace TauCeti
 
@@ -110,7 +114,20 @@ theorem isUnit_diagonal_snoc_one_iff {R : Type*} [Semiring R] {d : ℕ} (x : R) 
 section Commute
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-variable {k : Type*} [NonUnitalNonAssocCommSemiring k] [IsLeftCancelMulZero k]
+variable {k : Type*} [NonUnitalNonAssocCommSemiring k]
+
+/-- A matrix whose `(i, j)` entry vanishes whenever the diagonal matrix `diagonal t` separates the
+coordinates `i` and `j` commutes with `diagonal t`. -/
+theorem commute_diagonal_of_apply_eq_zero {t : ι → k} {g : Matrix ι ι k}
+    (hg : ∀ i j, t i ≠ t j → g i j = 0) : Commute (Matrix.diagonal t) g := by
+  rw [commute_iff_eq]
+  ext i j
+  rw [Matrix.diagonal_mul, Matrix.mul_diagonal]
+  by_cases hij : t i = t j
+  · rw [hij, mul_comm]
+  · rw [hg i j hij, mul_zero, zero_mul]
+
+variable [IsLeftCancelMulZero k]
 
 /-- A matrix commuting with a diagonal matrix has vanishing `(i, j)` entry whenever the diagonal
 matrix separates the coordinates `i` and `j`. -/
@@ -126,34 +143,13 @@ theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
     {g : Matrix ι ι k} (hg : Commute (Matrix.diagonal t) g) : g.IsDiag :=
   fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
 
-end Commute
+/-- A matrix commutes with a diagonal matrix exactly when its `(i, j)` entry vanishes wherever
+that diagonal matrix separates the coordinates `i` and `j`. -/
+theorem commute_diagonal_iff {t : ι → k} {g : Matrix ι ι k} :
+    Commute (Matrix.diagonal t) g ↔ ∀ i j, t i ≠ t j → g i j = 0 :=
+  ⟨fun hg _ _ ↦ apply_eq_zero_of_commute_diagonal hg, commute_diagonal_of_apply_eq_zero⟩
 
-/-- If `diagonal d * B = Eᵀ` with every diagonal entry `d i` left-regular over a commutative
-semiring, then `C * B = 1` if and only if `Cᵀ * E = diagonal d`. -/
-theorem mul_eq_one_iff_transpose_mul_eq_diagonal
-    {n R : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
-    {C B E : Matrix n n R} {d : n → R}
-    (hd : ∀ i, IsLeftRegular (d i)) (hDB : diagonal d * B = Eᵀ) :
-    C * B = 1 ↔ Cᵀ * E = diagonal d := by
-  constructor
-  · intro hCB
-    have hBC : B * C = 1 := mul_eq_one_comm.mpr hCB
-    have hT : Eᵀ * C = diagonal d := by
-      rw [← hDB, Matrix.mul_assoc, hBC, Matrix.mul_one]
-    have h := congrArg Matrix.transpose hT
-    simpa [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose] using h
-  · intro hCE
-    have hT : Eᵀ * C = diagonal d := by
-      have h := congrArg Matrix.transpose hCE
-      simpa [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose] using h
-    have hDBC : diagonal d * (B * C) = diagonal d * 1 := by
-      rw [← Matrix.mul_assoc, hDB, hT, Matrix.mul_one]
-    have hBC : B * C = 1 := by
-      refine Matrix.ext fun i j => ?_
-      have hij := congrFun (congrFun hDBC i) j
-      rw [Matrix.diagonal_mul, Matrix.diagonal_mul] at hij
-      exact hd i hij
-    exact mul_eq_one_comm.mp hBC
+end Commute
 
 end TauCeti
 
@@ -173,3 +169,21 @@ theorem toMatrix_eq_diagonal_iff
   · simp [hf, Matrix.toLin_self, Matrix.diagonal_apply]
 
 end Module.Basis
+
+namespace Matrix
+
+/-- Scaling rows and columns of `M` by `s` multiplies an entry monomial `∏ q, M q.1 q.2 ^ n q` by
+`∏ i, s i ^ ∑ j, (n (i, j) + n (j, i))`. -/
+theorem prod_pow_mul_apply_mul {ι R : Type*} [Fintype ι] [CommMonoid R]
+    (M : Matrix ι ι R) (s : ι → R) (n : ι × ι → ℕ) :
+    (∏ q : ι × ι, (s q.1 * M q.1 q.2 * s q.2) ^ n q) =
+      (∏ i : ι, s i ^ ∑ j : ι, (n (i, j) + n (j, i))) *
+        ∏ q : ι × ι, M q.1 q.2 ^ n q := by
+  have hterm (q : ι × ι) :
+      (s q.1 * M q.1 q.2 * s q.2) ^ n q =
+        (s q.1 * s q.2) ^ n q * M q.1 q.2 ^ n q := by
+    rw [mul_right_comm, mul_pow]
+  simp_rw [hterm]
+  rw [Finset.prod_mul_distrib, ← Finset.univ_product_univ, Finset.prod_product_mul_pow]
+
+end Matrix

@@ -123,15 +123,16 @@ private theorem add_smul_sub_mem_diff (hV : StarConvex ℝ p V) (hr : 0 < r)
 /-- Radial projection of `V \ {p}` onto the sphere `sphere p r`. -/
 def radialProjectionToSphere (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
   toFun z := ⟨p + (r / ‖(z : E) - p‖) • ((z : E) - p), by
-    have hd : 0 < ‖(z : E) - p‖ := norm_pos_iff.mpr (sub_ne_zero.mpr z.2.2)
+    have hd : 0 < ‖(z : E) - p‖ := norm_pos_iff.mpr (sub_ne_zero.mpr z.property.2)
     rw [mem_sphere, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
       abs_of_pos (div_pos hr hd), div_mul_cancel₀ _ hd.ne']⟩
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
     have hsub : Continuous fun z : ↥(V \ {p}) => (z : E) - p :=
-      continuous_subtype_val.sub continuous_const
+      continuous_subtypeVal.sub continuous_const
     exact continuous_const.add
-      ((continuous_const.div hsub.norm fun z => norm_ne_zero_iff.mpr (sub_ne_zero.mpr z.2.2)).smul
+      ((continuous_const.div hsub.norm fun z => norm_ne_zero_iff.mpr
+          (sub_ne_zero.mpr z.property.2)).smul
         hsub)
 
 /-- The radial projection onto `sphere p r` is `z ↦ p + (r / ‖z - p‖) • (z - p)`. -/
@@ -158,10 +159,10 @@ def _root_.StarConvex.radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r)
     ((sphereInclusionDiffSingleton hr.ne' hS).comp (radialProjectionToSphere hr)).Homotopy
       (ContinuousMap.id ↥(V \ {p})) where
   toFun x := ⟨p + ((1 - (x.1 : ℝ)) * (r / ‖(x.2 : E) - p‖) + x.1) • ((x.2 : E) - p), by
-    have hd : 0 < ‖(x.2 : E) - p‖ := norm_pos_iff.mpr (sub_ne_zero.mpr x.2.2.2)
-    have ht₀ : 0 ≤ (x.1 : ℝ) := x.1.2.1
-    have ht₁ : (x.1 : ℝ) ≤ 1 := x.1.2.2
-    refine add_smul_sub_mem_diff hV hr hS x.2.2 ?_ ?_
+    have hd : 0 < ‖(x.2 : E) - p‖ := norm_pos_iff.mpr (sub_ne_zero.mpr x.2.property.2)
+    have ht₀ : 0 ≤ (x.1 : ℝ) := x.1.property.1
+    have ht₁ : (x.1 : ℝ) ≤ 1 := x.1.property.2
+    refine add_smul_sub_mem_diff hV hr hS x.2.property ?_ ?_
     · rcases eq_or_lt_of_le ht₁ with h | h
       · simp [h]
       · nlinarith [div_pos hr hd]
@@ -171,11 +172,11 @@ def _root_.StarConvex.radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r)
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
     have hsub : Continuous fun x : I × ↥(V \ {p}) => (x.2 : E) - p :=
-      (continuous_subtype_val.comp continuous_snd).sub continuous_const
+      (continuous_subtypeVal.comp continuous_snd).sub continuous_const
     have ht : Continuous fun x : I × ↥(V \ {p}) => (x.1 : ℝ) :=
-      continuous_subtype_val.comp continuous_fst
+      continuous_subtypeVal.comp continuous_fst
     have hdiv : Continuous fun x : I × ↥(V \ {p}) => r / ‖(x.2 : E) - p‖ :=
-      continuous_const.div hsub.norm fun x => norm_ne_zero_iff.mpr (sub_ne_zero.mpr x.2.2.2)
+      continuous_const.div hsub.norm fun x => norm_ne_zero_iff.mpr (sub_ne_zero.mpr x.2.property.2)
     exact continuous_const.add ((((continuous_const.sub ht).mul hdiv).add ht).smul hsub)
   map_zero_left z := by
     ext
@@ -200,7 +201,7 @@ theorem _root_.StarConvex.radialHomotopy_apply_sphereInclusion
     hV.radialHomotopy hr hS (t, sphereInclusionDiffSingleton hr.ne' hS x) =
       sphereInclusionDiffSingleton hr.ne' hS x := by
   ext
-  have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
+  have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.property
   rw [StarConvex.coe_radialHomotopy_apply, coe_sphereInclusionDiffSingleton_apply, hx,
     div_self hr.ne']
   simp
@@ -217,7 +218,7 @@ def _root_.StarConvex.sphereHomotopyEquiv (hV : StarConvex ℝ p V) (hr : 0 < r)
     -- The radial projection fixes the sphere pointwise.
     convert ContinuousMap.Homotopic.refl (ContinuousMap.id (sphere p r))
     ext x
-    have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
+    have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.property
     rw [ContinuousMap.comp_apply, coe_radialProjectionToSphere_apply,
       coe_sphereInclusionDiffSingleton_apply, hx, div_self hr.ne']
     simp
@@ -283,7 +284,7 @@ unit circle: the normalization `TauCeti.normalizeToSphere` of `z - p`, read in `
 def _root_.Complex.directionFrom (p : ℂ) (V : Set ℂ) : C(↥(V \ {p}), Circle) :=
   (sphereCircleHomeomorph 0 one_pos : C(sphere (0 : ℂ) 1, Circle)).comp
     (normalizeToSphere (fun z : ↥(V \ {p}) ↦ (z : ℂ) - p) (by fun_prop)
-      fun z ↦ sub_ne_zero.2 z.2.2)
+      fun z ↦ sub_ne_zero.2 z.property.2)
 
 @[simp]
 theorem _root_.Complex.coe_directionFrom_apply (p : ℂ) (V : Set ℂ) (z : ↥(V \ {p})) :
@@ -302,7 +303,7 @@ private theorem add_mul_exp_mem_ball_diff_singleton {z : ℂ} (hz : z ∈ ball p
 the circle through `z`, in the punctured ball `ball p R \ {p}`. -/
 def _root_.Complex.loopAround (p : ℂ) (z : ↥(ball p R \ {p})) : Path z z where
   toFun t := ⟨p + (z - p) * Complex.exp (↑(2 * Real.pi * t) * Complex.I),
-    add_mul_exp_mem_ball_diff_singleton z.2 _⟩
+    add_mul_exp_mem_ball_diff_singleton z.property _⟩
   continuous_toFun := Continuous.subtype_mk (by fun_prop) _
   source' := by ext; simp
   target' := by ext; simp

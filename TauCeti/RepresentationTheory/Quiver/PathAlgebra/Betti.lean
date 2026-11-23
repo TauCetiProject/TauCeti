@@ -22,11 +22,11 @@ arrows `i ⟶ j`. Setting `t = -1` recovers `I - q Aᵀ`, the inverse of the gra
 
 ## Main results
 
-* `TauCeti.PathAlgebra.bettiPoincareMatrix_gradedVertexSimple_apply`: the `(i, j)` entry of the
-  Betti Poincaré matrix of any minimal resolutions of the graded vertex simples of a finite acyclic
-  path algebra is `δᵢⱼ + |j ⟶ i| q t`.
-* `TauCeti.PathAlgebra.eval_neg_one_trunc_two_bettiPoincareMatrix`: evaluating the truncated Betti
-  Poincaré matrix at `t = -1` gives `1 - q Aᵀ`.
+* `TauCeti.PathAlgebra.bettiPoincarePowerSeriesMatrix_gradedVertexSimple_apply`: the `(i, j)`
+  entry of the Betti Poincaré matrix of any minimal resolutions of the graded vertex simples of a
+  finite acyclic path algebra is `δᵢⱼ + |j ⟶ i| q t`.
+* `TauCeti.PathAlgebra.eval_neg_one_trunc_two_bettiPoincarePowerSeriesMatrix`: evaluating the
+  truncated Betti Poincaré matrix at `t = -1` gives `1 - q Aᵀ`.
 
 ## References
 
@@ -56,16 +56,16 @@ section BettiMatrix
 
 variable (k Q) [Field k] [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
 
-private theorem coeff_zero_bettiPoincareSeries_gradedVertexSimpleProjectiveResolution
+private theorem coeff_zero_bettiPoincarePowerSeries_gradedVertexSimpleProjectiveResolution
     [DecidableEq Q] (i j : Q) [Finite ((a : Q) × (j ⟶ a))] :
     PowerSeries.coeff 0
-        ((gradedVertexSimpleProjectiveResolution k Q j).bettiPoincareSeries
+        ((gradedVertexSimpleProjectiveResolution k Q j).bettiPoincarePowerSeries
           (gradedVertexProjectiveClassBasis k Q) i) =
       if i = j then 1 else 0 := by
   let _ := integerGradedAlgebra k Q
   let _ := Fintype.ofFinite Q
   let r₀ := gradedVertexSimpleProjectiveResolution k Q j
-  rw [GradedProjectiveResolution.coeff_bettiPoincareSeries]
+  rw [GradedProjectiveResolution.coeff_bettiPoincarePowerSeries]
   have hterm :
       LaurentK0.of.{max u v w}
           (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
@@ -77,17 +77,17 @@ private theorem coeff_zero_bettiPoincareSeries_gradedVertexSimpleProjectiveResol
   rw [hterm, Module.Basis.repr_self, Finsupp.single_apply]
   simp [eq_comm]
 
-private theorem coeff_one_bettiPoincareSeries_gradedVertexSimpleProjectiveResolution
+private theorem coeff_one_bettiPoincarePowerSeries_gradedVertexSimpleProjectiveResolution
     (i j : Q) [Finite ((a : Q) × (j ⟶ a))] :
     PowerSeries.coeff 1
-        ((gradedVertexSimpleProjectiveResolution k Q j).bettiPoincareSeries
+        ((gradedVertexSimpleProjectiveResolution k Q j).bettiPoincarePowerSeries
           (gradedVertexProjectiveClassBasis k Q) i) =
       (Nat.card (j ⟶ i) : LaurentPolynomial ℤ) * T 1 := by
   classical
   let _ := integerGradedAlgebra k Q
   let _ := Fintype.ofFinite Q
   let r₀ := gradedVertexSimpleProjectiveResolution k Q j
-  rw [GradedProjectiveResolution.coeff_bettiPoincareSeries]
+  rw [GradedProjectiveResolution.coeff_bettiPoincarePowerSeries]
   have hterm :
       r₀.finiteProjectiveTerm 1 =
         ⟨gradedArrowSum k Q j, gradedFiniteProjectiveModules_gradedArrowSum k Q j⟩ :=
@@ -99,47 +99,48 @@ private theorem coeff_one_bettiPoincareSeries_gradedVertexSimpleProjectiveResolu
 /-- **The Betti Poincaré matrix of a finite acyclic path algebra is `I + q t Aᵀ`.** In the graded
 vertex-projective basis `[kQ eᵢ]`, the `(i, j)` entry of the Betti Poincaré matrix of any minimal
 graded projective resolutions `r` of the graded vertex simples `Sⱼ` is `δᵢⱼ + |j ⟶ i| q t`. -/
-theorem bettiPoincareMatrix_gradedVertexSimple_apply [DecidableEq Q]
+theorem bettiPoincarePowerSeriesMatrix_gradedVertexSimple_apply [DecidableEq Q]
     (r : ∀ l, GradedProjectiveResolution.{w, max u v w, max u v w, max u v w}
       (integerGrade k Q) (gradedVertexSimple k Q l).grading)
     [∀ l n, Module.Finite (pathAlgebra k Q) ((r l).X n)]
     (hr : ∀ l, (r l).IsMinimal) (i j : Q) :
-    bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q) r i j =
+    bettiPoincarePowerSeriesMatrix r (gradedVertexProjectiveClassBasis k Q) i j =
       (if i = j then 1 else 0) +
         PowerSeries.C ((Nat.card (j ⟶ i) : LaurentPolynomial ℤ) * T 1) * PowerSeries.X := by
   let _ := integerGradedAlgebra k Q
   let _ := Fintype.ofFinite Q
   let _ (a b : Q) : Finite (a ⟶ b) :=
     finite_hom_of_module_finite_pathAlgebra k Q inferInstance a b
-  rw [bettiPoincareMatrix_eq_of_isMinimal (gradedVertexProjectiveClassBasis k Q) hr
+  rw [bettiPoincarePowerSeriesMatrix_eq_of_isMinimal (gradedVertexProjectiveClassBasis k Q) hr
     (fun l => isMinimal_gradedVertexSimpleProjectiveResolution k Q l)
-    (fun _ hp => integerGrade_eq_bot_of_neg k Q hp), bettiPoincareMatrix_apply]
+    (fun _ hp => integerGrade_eq_bot_of_neg k Q hp), bettiPoincarePowerSeriesMatrix_apply]
   refine PowerSeries.ext fun n => ?_
   rcases n with _ | _ | m
-  · rw [coeff_zero_bettiPoincareSeries_gradedVertexSimpleProjectiveResolution]
+  · rw [coeff_zero_bettiPoincarePowerSeries_gradedVertexSimpleProjectiveResolution]
     by_cases hij : i = j <;> simp [hij]
-  · rw [coeff_one_bettiPoincareSeries_gradedVertexSimpleProjectiveResolution]
+  · rw [coeff_one_bettiPoincarePowerSeries_gradedVertexSimpleProjectiveResolution]
     by_cases hij : i = j <;> simp [hij, PowerSeries.coeff_one]
   · have hsub := subsingleton_gradedVertexSimpleProjectiveResolution_X_of_two_le k Q j
       (n := m + 2) (by omega)
-    rw [GradedProjectiveResolution.coeff_bettiPoincareSeries_eq_zero_of_subsingleton
-        (gradedVertexProjectiveClassBasis k Q) (gradedVertexSimpleProjectiveResolution k Q j)
-        i hsub]
+    rw [GradedProjectiveResolution.coeff_bettiPoincarePowerSeries_eq_zero_of_subsingleton
+        (gradedVertexSimpleProjectiveResolution k Q j)
+        (gradedVertexProjectiveClassBasis k Q) i hsub]
     by_cases hij : i = j <;> simp [hij, PowerSeries.coeff_one, -map_mul, -map_natCast]
 
 /-- **Evaluation of the Betti Poincaré matrix of a finite acyclic path algebra at `t = -1`**
 gives `1 - q Aᵀ`, the left and right inverse of the graded Cartan matrix `C(q)`. -/
-theorem eval_neg_one_trunc_two_bettiPoincareMatrix [DecidableEq Q]
+theorem eval_neg_one_trunc_two_bettiPoincarePowerSeriesMatrix [DecidableEq Q]
     (r : ∀ l, GradedProjectiveResolution.{w, max u v w, max u v w, max u v w}
       (integerGrade k Q) (gradedVertexSimple k Q l).grading)
     [∀ l n, Module.Finite (pathAlgebra k Q) ((r l).X n)]
     (hr : ∀ l, (r l).IsMinimal) :
-    (bettiPoincareMatrix (gradedVertexProjectiveClassBasis k Q) r).map
+    (bettiPoincarePowerSeriesMatrix r (gradedVertexProjectiveClassBasis k Q)).map
         (fun P => (PowerSeries.trunc 2 P).eval (-1)) =
       1 - (T 1 : LaurentPolynomial ℤ) •
         (Matrix.of fun i j : Q => (Nat.card (i ⟶ j) : LaurentPolynomial ℤ))ᵀ := by
   refine Matrix.ext fun i j => ?_
-  rw [Matrix.map_apply, bettiPoincareMatrix_gradedVertexSimple_apply k Q r hr i j, map_add]
+  rw [Matrix.map_apply, bettiPoincarePowerSeriesMatrix_gradedVertexSimple_apply k Q r hr i j,
+    map_add]
   by_cases hij : i = j <;>
     simp [hij, PowerSeries.trunc_one, PowerSeries.trunc_C_mul, PowerSeries.trunc_X,
       Polynomial.eval_X, sub_eq_add_neg, -map_mul, -map_natCast]

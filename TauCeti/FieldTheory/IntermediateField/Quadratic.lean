@@ -98,7 +98,7 @@ theorem exists_add_mul_of_mem_sup_adjoin_sq {F : IntermediateField K L} {x : L}
   rw [hpb, Polynomial.eq_X_add_C_of_natDegree_le_one hfle,
     IntermediateField.adjoin.powerBasis_gen] at hf
   refine ⟨algebraMap F L (f.coeff 0), algebraMap F L (f.coeff 1),
-    (f.coeff 0).2, (f.coeff 1).2, ?_⟩
+    (f.coeff 0).property, (f.coeff 1).property, ?_⟩
   have hfeq := congrArg (Subtype.val (p := (· ∈ adjoin F {x}))) hf
   rw [AdjoinSimple.coe_aeval_gen_apply] at hfeq
   simp only [Polynomial.aeval_add, Polynomial.aeval_mul, Polynomial.aeval_C,
@@ -124,7 +124,7 @@ theorem _root_.IntermediateField.finrank_adjoin_simple_eq_two_of_sq_mem_notMem
   refine (minpoly_natDegree_le_two_of_sq_mem hx2).antisymm ?_
   apply (minpoly.two_le_natDegree_iff hx_int).mpr
   rintro ⟨y, hy⟩
-  exact hxF (hy ▸ y.2)
+  exact hxF (hy ▸ y.property)
 
 /-- If `x² ∈ F` but `x ∉ F`, then adjoining `x` doubles the degree:
 `[F ⊔ K⟮x⟯ : K] = 2 · [F : K]`. -/

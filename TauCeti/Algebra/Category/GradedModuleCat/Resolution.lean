@@ -59,6 +59,14 @@ abbrev termObj (n : ℕ) : GradedModuleCat.{v} 𝒜 where
   carrier := r.X n
   grading := r.grading n
 
+/-- The underlying type of `r.termObj n` is `r.X n`. -/
+theorem coe_termObj (n : ℕ) : (r.termObj n : Type v) = r.X n :=
+  rfl
+
+/-- The internal grading of `r.termObj n` is `r.grading n`. -/
+theorem termObj_grading (n : ℕ) : (r.termObj n).grading = r.grading n :=
+  rfl
+
 /-- The differential of a concrete graded resolution as a morphism of graded modules. -/
 abbrev differential (n : ℕ) : r.termObj (n + 1) ⟶ r.termObj n :=
   GradedModuleCat.ofHom (r.d n) (r.isHomogeneous_d n)
@@ -130,8 +138,14 @@ theorem tail_augmentation_comp_kernelι :
   GradedModuleCat.hom_ext rfl
 
 /-- The underlying chain complex of a concrete graded projective resolution. -/
-@[expose] noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
+@[expose]
+noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
+
+/-- The `n`-th term of `r.complex` is `r.termObj n`. -/
+@[simp]
+theorem complex_X (n : ℕ) : r.complex.X n = r.termObj n :=
+  rfl
 
 /-- The `(n + 1)`-to-`n` differential of `r.complex` is `r.differential n`. -/
 @[simp]

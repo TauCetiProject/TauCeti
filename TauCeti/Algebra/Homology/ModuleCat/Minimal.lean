@@ -122,9 +122,9 @@ isomorphism on its forward chain map. -/
 theorem IsMinimal.isIso_hom_of_homotopyEquiv (hK : K.IsMinimal) (hL : L.IsMinimal)
     [∀ i, Module.Finite R (K.X i)] [∀ i, Module.Finite R (L.X i)]
     (e : HomotopyEquiv K L) : IsIso e.hom := by
-  have := hK.isIso_of_homotopy_id e.homotopyHomInvId
-  have := hL.isIso_of_homotopy_id e.homotopyInvHomId
-  exact isIso_of_isIso_comp_of_isIso_comp e.hom e.inv
+  have h1 := hK.isIso_of_homotopy_id e.homotopyHomInvId
+  have h2 := hL.isIso_of_homotopy_id e.homotopyInvHomId
+  exact IsIso.of_isIso_comp_of_isIso_comp (f := e.inv) (h := e.inv) h2 h1
 
 end HomologicalComplex
 

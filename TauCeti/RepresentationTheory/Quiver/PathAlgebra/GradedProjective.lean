@@ -190,7 +190,7 @@ theorem isGeneratedInDegree_zero_gradedVertexProjective (i : Q) :
       ← coe_gradedVertexProjectiveEquiv_apply]
     simp only [e', LinearEquiv.apply_symm_apply]
     exact (mem_span_singleton_iff_mul_eq_self (vertexIdempotent_mul_self i)).mp
-      (gradedVertexProjectiveEquiv k Q i x).2
+      (gradedVertexProjectiveEquiv k Q i x).property
   rw [← hx]
   exact Submodule.smul_mem _ _ (Submodule.subset_span he')
 

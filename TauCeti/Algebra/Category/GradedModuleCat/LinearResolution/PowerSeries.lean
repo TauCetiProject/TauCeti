@@ -101,13 +101,25 @@ theorem forall_isLinear_iff_diagonal_bigradedExtPoincarePowerSeriesMatrix
     (∀ i, (r i).IsLinear) ↔ ∀ i j (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
       (PowerSeries.coeff n
         (bigradedExtPoincarePowerSeriesMatrix (fun i ↦ (S i).obj) h i j)).coeff p = 0 := by
-  simp_rw [fun i => (hr i).isLinear_iff_subsingleton_ext_shiftObj_of_isExhaustive hneg S hS hSzero]
-  refine forall₂_congr fun i j => ?_
-  rw [bigradedExtPoincarePowerSeriesMatrix_apply, diagonal_bigradedExtPoincarePowerSeries_iff]
-  refine forall₃_congr fun n p _ => ?_
-  rw [← GradedModuleCat.shiftFunctor_obj]
-  exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
-    ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm n).toEquiv.subsingleton_congr
+  constructor
+  · intro hlin i j
+    simp only [bigradedExtPoincarePowerSeriesMatrix_apply]
+    apply (diagonal_bigradedExtPoincarePowerSeries_iff _).2
+    intro n p hnp
+    have hshift : Subsingleton (Ext.{uA} (S i).obj ((S j).obj.shiftObj p) n) :=
+      (hlin i).subsingleton_ext_shiftObj_of_ne (hSzero j) n p hnp
+    rw [← GradedModuleCat.shiftFunctor_obj] at hshift
+    exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
+      ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj) n).injective.subsingleton
+  · intro hdiag i
+    refine ((hr i).isLinear_iff_subsingleton_ext_shiftObj_family hneg hS hSzero).2
+      fun j n p hnp ↦ ?_
+    have hij := hdiag i j
+    simp only [bigradedExtPoincarePowerSeriesMatrix_apply] at hij
+    have hExt := ((diagonal_bigradedExtPoincarePowerSeries_iff (h i j)).1 hij) n p hnp
+    rw [← GradedModuleCat.shiftFunctor_obj]
+    exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
+      ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm n).injective.subsingleton
 
 /-- Over a finite-dimensional nonnegatively graded algebra with semisimple degree-zero part,
 every member of an exhaustive degree-zero simple family admits a linear resolution exactly

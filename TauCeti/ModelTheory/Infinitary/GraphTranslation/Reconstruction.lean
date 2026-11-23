@@ -118,13 +118,13 @@ structure. -/
 noncomputable def graphAxiomsSentence (F : Set (Σ n, L.Functions n)) (hF : F.Countable) :
     L.graphLanguage.Sentenceω :=
   iInfAlong (TauCeti.IndexCoding.ofEncodableWith hF.toEncodable) fun f : F =>
-    graphTotality f.1.2 ⊓ graphFunctionality f.1.2
+    graphTotality f.val.2 ⊓ graphFunctionality f.val.2
 
 /-- The graph axioms of `F` are the coded conjunction of totality and functionality of the graph
 relations of the symbols in `F`. -/
 theorem graphAxiomsSentence_def (F : Set (Σ n, L.Functions n)) (hF : F.Countable) :
     graphAxiomsSentence F hF = iInfAlong (TauCeti.IndexCoding.ofEncodableWith hF.toEncodable)
-      fun f : F => graphTotality f.1.2 ⊓ graphFunctionality f.1.2 :=
+      fun f : F => graphTotality f.val.2 ⊓ graphFunctionality f.val.2 :=
   (rfl)
 
 section Realize

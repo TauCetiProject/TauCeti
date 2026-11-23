@@ -154,15 +154,14 @@ theorem collapsesTo_orderedProd_interval_one (K : PreAbstractSimplicialComplex �
     CollapsesTo (orderedProd K (⊤ : PreAbstractSimplicialComplex (Fin 2)))
       (K.map (fun a => (a, (1 : Fin 2)))) := by
   classical
-  let R : Finset ι := hfin.toFinset.biUnion id
+  let R : Finset ι := faceUnion hfin
   have hR : trimmedCylinder K R = orderedProd K ⊤ := by
     apply SetLike.ext
     intro σ
     refine ⟨fun h => (mem_trimmedCylinder.mp h).1, fun h => mem_trimmedCylinder.mpr ⟨h, ?_⟩⟩
     intro p hp _
-    apply Finset.mem_biUnion.mpr
-    exact ⟨σ.image Prod.fst, hfin.mem_toFinset.mpr (mem_orderedProd_iff.mp h).1,
-      Finset.mem_image.mpr ⟨p, hp, rfl⟩⟩
+    exact subset_faceUnion hfin (mem_orderedProd_iff.mp h).1
+      (Finset.mem_image.mpr ⟨p, hp, rfl⟩)
   rw [← hR, ← trimmedCylinder_empty]
   exact collapsesTo_trimmedCylinder_empty K hfin R
 

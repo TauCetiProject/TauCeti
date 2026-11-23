@@ -39,8 +39,16 @@ sets, `LinearMap.exists_schwartzKernel_supportedIn`.
 * `ContDiffMapSupportedIn.instBaireSpace`: with the countably generated uniformity
   (`ContDiffMapSupportedIn.instIsCountablyGeneratedUniformity`), completeness makes
   `𝓓^{n}_{K}(E, F)` completely metrizable, hence a Baire space and barrelled.
+* `ContDiffMapSupportedIn.supSeminorm_apply_eq_of_scalars`: the seminorms `N_{≤i}` do not depend
+  on the field of scalars.
+* `ContDiffMapSupportedIn.supSeminorm_mono`: the seminorms `N_{≤i}` increase with `i`.
+* `ContDiffMapSupportedIn.supSeminorm_eq_zero_iff`: each seminorm `N_{≤i}` vanishes only at zero.
+* `ContDiffMapSupportedIn.withSeminorms_supSeminorm_self`: for finite `ℓ`, the single seminorm
+  `max_{j ≤ ℓ} N_j` defines the topology of `𝓓^{ℓ}_{K}(E, F)`.
 * `LinearMap.exists_bound_supportedIn_of_continuous`: a separately continuous bilinear map on two
   such spaces is bounded by `C N_{≤k}(φ) N_{≤k}(ψ)` for some `C` and `k`.
+* `ContDiffMapSupportedIn.supSeminorm_le_of_forall_norm_iteratedFDeriv_le`: a uniform bound `B`
+  on the derivatives of order at most `r` bounds the seminorm `N_{≤r}` by `B`.
 
 ## References
 
@@ -117,6 +125,101 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace 𝓓^{n}_{K}(E, F) 
 barrelled (`BaireSpace.instBarrelledSpace`), so the Banach–Steinhaus theorem applies to it. -/
 instance instBaireSpace [CompleteSpace F] : BaireSpace 𝓓^{n}_{K}(E, F) :=
   BaireSpace.of_completelyPseudoMetrizable
+
+section Scalars
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+
+/-- The seminorms `N_j` do not depend on the field of scalars. -/
+theorem seminorm_apply_eq_of_scalars (j : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.seminorm 𝕜 E F n K j f =
+      ContDiffMapSupportedIn.seminorm ℝ E F n K j f := by
+  rw [ContDiffMapSupportedIn.seminorm_apply, ContDiffMapSupportedIn.seminorm_apply,
+    structureMapCLM_eq_of_scalars 𝕜 ℝ]
+
+/-- The seminorms `max_{j ≤ i} N_j` do not depend on the field of scalars. -/
+theorem supSeminorm_apply_eq_of_scalars (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K i f =
+      ContDiffMapSupportedIn.supSeminorm ℝ E F n K i f :=
+  le_antisymm
+    (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
+      (seminorm_apply_eq_of_scalars _ f).trans_le (Seminorm.le_finset_sup_apply hj))
+    (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
+      (seminorm_apply_eq_of_scalars _ f).symm.trans_le (Seminorm.le_finset_sup_apply hj))
+
+/-- The seminorms `max_{j ≤ i} N_j` increase with `i`. -/
+theorem supSeminorm_mono : Monotone (ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K) := by
+  intro i j hij
+  -- By definition `max_{k ≤ i} N_k` is the supremum of the `N_k` over `Finset.Iic i`.
+  unfold ContDiffMapSupportedIn.supSeminorm
+  exact Finset.sup_mono (Finset.Iic_subset_Iic.2 hij)
+
+/-- Each seminorm `max_{j ≤ i} N_j` vanishes only at zero, since it bounds the sup norm `N_0`. -/
+theorem supSeminorm_eq_zero_iff (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K i f = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ ext fun x ↦ ?_, fun h ↦ h ▸ map_zero _⟩
+  have h0 := (norm_apply_le_seminorm 𝕜 (f := f) (x := x)).trans
+    ((Seminorm.le_finset_sup_apply (Finset.mem_Iic.2 (Nat.zero_le i))).trans h.le)
+  simpa using h0
+
+end Scalars
+
+end ContDiffMapSupportedIn
+
+/-! ### Finite order -/
+
+namespace ContDiffMapSupportedIn
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+  {ℓ : ℕ} {K : Compacts E}
+
+variable (𝕜) in
+/-- For a finite order `ℓ`, the seminorms of order above `ℓ` vanish, so every seminorm
+`max_{j ≤ i} N_j` is at most `max_{j ≤ ℓ} N_j`. -/
+theorem supSeminorm_le_supSeminorm_self (i : ℕ) (f : 𝓓^{ℓ}_{K}(E, F)) :
+    ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K i f ≤
+      ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K ℓ f := by
+  refine Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun j _ ↦ ?_
+  by_cases hjℓ : j ≤ ℓ
+  · exact Seminorm.le_finset_sup_apply (Finset.mem_Iic.2 hjℓ)
+  · rw [ContDiffMapSupportedIn.seminorm_eq_bot_of_gt 𝕜 (by exact_mod_cast not_le.1 hjℓ)]
+    exact apply_nonneg _ _
+
+variable (𝕜 E F ℓ K) in
+/-- **The `C^ℓ` norm defines the topology.** For a finite order `ℓ`, the single seminorm
+`max_{j ≤ ℓ} N_j` defines the topology of `𝓓^{ℓ}_{K}(E, F)`. -/
+theorem withSeminorms_supSeminorm_self :
+    WithSeminorms fun _ : Unit ↦ ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K ℓ := by
+  refine (ContDiffMapSupportedIn.withSeminorms' 𝕜 E F ℓ K).congr (fun _ ↦ ⟨{ℓ}, 1, ?_⟩)
+    fun i ↦ ⟨{()}, 1, ?_⟩
+  · rw [Finset.sup_singleton, one_smul]
+    rfl
+  · rw [Finset.sup_singleton, one_smul]
+    exact supSeminorm_le_supSeminorm_self 𝕜 i
+
+/-- For a finite order `ℓ`, the uniform structure of `𝓓^{ℓ}_{K}(E, F)` is the one of the
+seminorm `max_{j ≤ ℓ} N_j`. -/
+theorem uniformSpace_eq_supSeminorm_self :
+    (uniformSpace : UniformSpace 𝓓^{ℓ}_{K}(E, F)) =
+      (ContDiffMapSupportedIn.supSeminorm ℝ E F ℓ K ℓ).toSeminormedAddCommGroup.toUniformSpace := by
+  rw [(SeminormFamily.withSeminorms_iff_uniformSpace_eq_iInf _).1
+    (withSeminorms_supSeminorm_self ℝ E F ℓ K), ciInf_unique]
+
+end ContDiffMapSupportedIn
+
+namespace ContDiffMapSupportedIn
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F] {K : Compacts E}
+
+/-- A function supported in `K` whose derivatives of order at most `r` are bounded by `B`
+has `sup_{i ≤ r} N_i χ ≤ B`. -/
+theorem supSeminorm_le_of_forall_norm_iteratedFDeriv_le {χ : 𝓓_{K}(E, F)} {r : ℕ} {B : ℝ}
+    (hB : 0 ≤ B) (h : ∀ i ≤ r, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B) :
+    ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K r χ ≤ B :=
+  Seminorm.finset_sup_apply_le hB fun i hi ↦
+    (ContDiffMapSupportedIn.seminorm_top_le_iff ℂ hB i χ).2 fun x _ ↦ h i (Finset.mem_Iic.1 hi) x
 
 end ContDiffMapSupportedIn
 

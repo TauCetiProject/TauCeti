@@ -46,6 +46,10 @@ namespace FirstOrder.Language
 
 variable {L : Language} {M : Type*}
 
+/-- The theory of linear orders in any ordered language is finite. -/
+theorem finite_linearOrderTheory (L : Language) [L.IsOrdered] : L.linearOrderTheory.Finite := by
+  simp [linearOrderTheory, partialOrderTheory, preorderTheory]
+
 /-- The order structure of a type interprets the order symbol `≤` as the order of the type. -/
 instance orderedStructure_orderStructure (M : Type*) [LE M] :
     @OrderedStructure Language.order M _ _ (orderStructure M) :=

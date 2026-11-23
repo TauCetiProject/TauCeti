@@ -257,6 +257,9 @@ theorem subsingleton_of_isZero {M : GradedModuleCat.{v} 𝒜} (hM : Limits.IsZer
 theorem isZero_zeroObj : Limits.IsZero (zeroObj (𝒜 := 𝒜)) :=
   isZero_of_subsingleton zeroObj
 
+instance : Subsingleton (zeroObj (𝒜 := 𝒜)) :=
+  inferInstanceAs (Subsingleton PUnit)
+
 /-- The isomorphism of graded modules given by an `A`-linear equivalence which preserves and
 reflects degrees. -/
 @[expose, simps]

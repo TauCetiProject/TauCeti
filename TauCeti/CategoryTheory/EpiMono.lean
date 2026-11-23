@@ -8,22 +8,25 @@ module
 public import Mathlib.CategoryTheory.EpiMono
 
 /-!
-# Additional epimorphism and monomorphism lemmas
+# Isomorphisms from isomorphic composites
 
-This file records general categorical invertibility criteria derived from `Mono` and `IsSplitEpi`.
+If `f ≫ g` and `g ≫ h` are isomorphisms, then `g` is an isomorphism: the second composite makes
+`g` a split monomorphism and the first makes it a split epimorphism. This is the core of the
+two-out-of-six property of isomorphisms, and is how a homotopy equivalence is shown to induce
+isomorphisms on a homotopy-invariant functor.
 -/
 
 public section
 
-namespace CategoryTheory
+namespace CategoryTheory.IsIso
 
-/-- A morphism `f` is an isomorphism whenever both `f ≫ g` and `g ≫ f` are isomorphisms. -/
-theorem isIso_of_isIso_comp_of_isIso_comp {C : Type*} [Category* C] {X Y : C}
-    (f : X ⟶ Y) (g : Y ⟶ X) [IsIso (f ≫ g)] [IsIso (g ≫ f)] : IsIso f := by
-  have : Mono f := mono_of_mono f g
-  have : IsSplitEpi f := IsSplitEpi.mk'
-    { section_ := inv (g ≫ f) ≫ g
-      id := by simp }
-  exact isIso_of_mono_of_isSplitEpi f
+variable {C : Type*} [Category* C] {W X Y Z : C}
 
-end CategoryTheory
+/-- If `f ≫ g` and `g ≫ h` are isomorphisms, then so is `g`. -/
+theorem of_isIso_comp_of_isIso_comp {f : W ⟶ X} {g : X ⟶ Y} {h : Y ⟶ Z} (_ : IsIso (f ≫ g))
+    (_ : IsIso (g ≫ h)) : IsIso g :=
+  have : IsSplitMono g := .mk' ⟨h ≫ inv (g ≫ h), by rw [← Category.assoc, hom_inv_id]⟩
+  have : IsSplitEpi g := .mk' ⟨inv (f ≫ g) ≫ f, by rw [Category.assoc, inv_hom_id]⟩
+  isIso_of_mono_of_isSplitEpi g
+
+end CategoryTheory.IsIso

@@ -101,6 +101,28 @@ end Terms
 
 section FiniteResolution
 
+/-- Reinterpret a finite resolution in the abelian exact structure as one in the canonical
+graded exact structure, whose underlying exact structure coincides with `ExactStructure.abelian`. -/
+private def finiteResolutionOfAbelian {X : GradedModuleCat.{uA} 𝒜}
+    {P : ObjectProperty (GradedModuleCat.{uA} 𝒜)} :
+    (ExactStructure.abelian (GradedModuleCat.{uA} 𝒜)).FiniteResolution P X →
+      (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution P X
+  | .base hX => .base hX
+  | .step hQ i p zero hp r => .step hQ i p zero
+      (by
+        rw [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure]
+        exact hp)
+      (finiteResolutionOfAbelian r)
+
+private theorem foldAlternating_finiteResolutionOfAbelian {X : GradedModuleCat.{uA} 𝒜}
+    {P : ObjectProperty (GradedModuleCat.{uA} 𝒜)}
+    {B : Type*} [AddCommGroup B] (f : ∀ Z : GradedModuleCat.{uA} 𝒜, P Z → B)
+    (r : (ExactStructure.abelian (GradedModuleCat.{uA} 𝒜)).FiniteResolution P X) :
+    (finiteResolutionOfAbelian r).foldAlternating f = r.foldAlternating f := by
+  induction r with
+  | base _ => simp [finiteResolutionOfAbelian]
+  | step _ _ _ _ _ r ih => simp [finiteResolutionOfAbelian, ih]
+
 /-- A concrete graded projective resolution whose terms are finitely generated and whose
 `(n + 1)`-st term vanishes, packaged as a finite `gradedFiniteProjectiveModules`-resolution of `M`
 for the canonical graded exact structure. -/
@@ -108,25 +130,24 @@ noncomputable def toFiniteResolution {M : GradedModuleCat.{uA} 𝒜}
     (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
     [∀ n, Module.Finite A (r.X n)] {n : ℕ} (h : Subsingleton (r.X (n + 1))) :
     (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution
-      (gradedFiniteProjectiveModules 𝒜) M := by
+      (gradedFiniteProjectiveModules 𝒜) M :=
   have hK : ∀ i < n, (ShortComplex.mk (r.complex.d (i + 2) (i + 1)) (r.complex.d (i + 1) i)
       (r.complex.d_comp_d _ _ _)).Exact := fun i _ =>
     (HomologicalComplex.exactAt_iff' r.complex (i + 2) (i + 1) i (by simp) (by simp)).mp
       (r.complex_exactAt_succ i)
-  have hn : IsZero (r.complex.X (n + 1)) :=
-    haveI : Subsingleton (r.complex.X (n + 1)) := h
-    GradedModuleCat.isZero_of_subsingleton _
+  have hn : IsZero (r.complex.X (n + 1)) := by
+    rw [r.complex_X]
+    exact GradedModuleCat.isZero_of_subsingleton _
   have : Epi (X := r.complex.X 0) r.augmentation :=
-    (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
+    (GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π
   have : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderIsomorphisms :=
     ObjectProperty.isClosedUnderIsomorphisms_of_containsZero _
-  have hP : ∀ i ≤ n, gradedFiniteProjectiveModules 𝒜 (r.complex.X i) := fun i _ =>
-    gradedFiniteProjectiveModules_iff.mpr
+  have hP : ∀ i ≤ n, gradedFiniteProjectiveModules 𝒜 (r.complex.X i) := fun i _ => by
+    rw [r.complex_X]
+    exact gradedFiniteProjectiveModules_iff.mpr
       ⟨inferInstanceAs (Module.Finite A (r.X i)), r.projective i⟩
-  exact (GradedExactStructure.abelian_toExactStructure
-    (GradedModuleCat.shift (𝒜 := 𝒜))).symm ▸
-    ExactStructure.FiniteResolution.ofChainComplex
-      r.complex_exact_d_one_zero hK hn hP
+  finiteResolutionOfAbelian
+    (ExactStructure.FiniteResolution.ofChainComplex r.complex_exact_d_one_zero hK hn hP)
 
 /-- Alternating sums along `r.toFiniteResolution h` are alternating sums over the terms
 `r.termObj i` for `i : Fin (n + 1)`. -/
@@ -144,16 +165,11 @@ theorem foldAlternating_toFiniteResolution {M : GradedModuleCat.{uA} 𝒜}
           f (r.termObj i)
             (gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective i⟩) := by
   have : Epi (X := r.complex.X 0) r.augmentation :=
-    (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
+    (GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π
   have : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderIsomorphisms :=
     ObjectProperty.isClosedUnderIsomorphisms_of_containsZero _
-  have hcast : ∀ {E₁ E₂ : ExactStructure (GradedModuleCat.{uA} 𝒜)} (heq : E₁ = E₂)
-      (rf : E₁.FiniteResolution (gradedFiniteProjectiveModules 𝒜) M),
-      (heq ▸ rf).foldAlternating f = rf.foldAlternating f := by
-    rintro _ _ rfl _
-    rfl
-  rw [toFiniteResolution, hcast]
-  exact ExactStructure.FiniteResolution.foldAlternating_ofChainComplex
+  rw [toFiniteResolution, foldAlternating_finiteResolutionOfAbelian]
+  simpa only [r.complex_X] using ExactStructure.FiniteResolution.foldAlternating_ofChainComplex
     r.complex_exact_d_one_zero _ _ _ f hf
 
 end FiniteResolution
