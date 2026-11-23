@@ -26,9 +26,10 @@ expansion center `y`, which need not exist for a general Sobolev or integrable f
 `TauCeti.taylorPolynomial ℝ m u y` is a total function built from `iteratedFDeriv`, where each
 Fréchet derivative step defaults to `0` if its input map is not differentiable there, though a
 later step can still be nonzero; the integration-by-parts identification below requires `u` to be
-`C^m` on `tsupport φ`.) Following Sobolev and Brenner–Scott (Chapter 4, §4.1),
-averaging `T^m_y u (x)` against a `C^m` compactly supported cutoff `φ` and integrating every
-`y`-derivative of `u` by parts onto `z ↦ (∏ l, (x (I l) - z (I l))) * φ z` yields the **averaged
+`C^m` at every point of `tsupport φ` (ambient `ContDiffAt`).) Following Sobolev and
+Brenner–Scott (Chapter 4, §4.1), averaging `T^m_y u (x)` against a `C^m` compactly supported
+cutoff `φ` and integrating every `y`-derivative of `u` by parts onto
+`z ↦ (∏ l, (x (I l) - z (I l))) * φ z` yields the **averaged
 Taylor kernel** `TauCeti.averagedTaylorKernel φ m x y`:
 
 `Ψ_m(x, y) = ∑_{j = 0}^m ((-1)^j / j!) ∑_{I : Fin j → ι}
@@ -95,7 +96,8 @@ does not reproduce `x ↦ (x i) ^ 2`, whereas `averagedTaylorPolynomial_toLp_eq_
   `TauCeti.averagedTaylorPolynomialLp_restrict_eq_integral_taylorPolynomial`: for an additive
   Haar measure `μ`, a `C^m` compactly supported cutoff `φ` (with `tsupport φ ⊆ B` on
   `μ.restrict B` and `tsupport φ ⊆ Ω` on `μ.restrict Ω` for the two restricted identities), and a
-  representative `u` that is `C^m` on `tsupport φ`, `Q^m f (x) = ∫ y, T^m_y u (x) * φ y ∂μ`.
+  representative `u` that is `C^m` at every point of `tsupport φ` (ambient `ContDiffAt`),
+  `Q^m f (x) = ∫ y, T^m_y u (x) * φ y ∂μ`.
 * `TauCeti.averagedTaylorPolynomial_toLp_eq_self`,
   `TauCeti.averagedTaylorPolynomialLp_toLp_eq_self`: for an additive Haar measure `μ` and a `C^m`
   compactly supported cutoff `φ` with `∫ y, φ y ∂μ = 1` supported in the integration domain
@@ -155,11 +157,12 @@ def averagedTaylorKernelTerm (φ : EuclideanSpace ℝ ι → ℝ) (j : ℕ)
     ∑ I : Fin j → ι,
       iteratedFDerivAlong ℝ (coordDirections I) (kernelTestTerm φ x I) y
 
-/-- **Averaged Taylor kernel.** For a cutoff `φ : EuclideanSpace ℝ ι → ℝ`, degree `m : ℕ`, target
+/-- **Averaged Taylor kernel.** For a cutoff `φ : EuclideanSpace ℝ ι → ℝ`, order `m : ℕ`, target
 point `x`, and integration variable `y`, `y ↦ averagedTaylorKernel φ m x y` is the formal adjoint
 of `u ↦ (y ↦ taylorPolynomial ℝ m u y x)` applied to `φ` (so on an additive Haar measure `μ`,
 `∫ y, u y * averagedTaylorKernel φ m x y ∂μ = ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ` for
-`C^m` maps `u` on `tsupport φ` when `φ` is `C^m` and compactly supported). -/
+maps `u` that are `C^m` at every point of `tsupport φ` (ambient `ContDiffAt`) when `φ` is `C^m`
+and compactly supported). -/
 def averagedTaylorKernel (φ : EuclideanSpace ℝ ι → ℝ) (m : ℕ) (x y : EuclideanSpace ℝ ι) : ℝ :=
   ∑ j ∈ Finset.range (m + 1), averagedTaylorKernelTerm φ j x y
 

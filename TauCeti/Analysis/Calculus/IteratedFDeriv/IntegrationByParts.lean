@@ -20,15 +20,15 @@ moves the derivatives onto `f` in the reversed order with sign `(-1) ^ vs.length
   (-1 : ℝ) ^ vs.length • ∫ x, B (iteratedFDerivAlong ℝ vs.reverse f x) (g x) ∂μ`.
 
 Here `g` is `C^{vs.length}` with compact support, while `f` is only assumed to be `C^{vs.length}`
-at the points of `tsupport g`. Requiring smoothness of `f` only on the compact support of the test
-function `g` makes the formula directly applicable to locally smooth functions on open domains, as
-used for averaged Taylor polynomials and higher-order weak derivatives.
+at the points of `tsupport g`. Requiring smoothness of `f` only at points of the compact support
+of the test function `g` makes the formula directly applicable to locally smooth functions on open
+domains, as used for averaged Taylor polynomials and higher-order weak derivatives.
 
 ## Main results
 
 * `TauCeti.integral_bilinear_iteratedFDerivAlong_eq`: iterated integration by parts for a
   continuous bilinear pairing against a compactly supported test map `g`, requiring `f` to be
-  `C^{vs.length}` only on `tsupport g`.
+  `C^{vs.length}` at each point of `tsupport g`.
 * `TauCeti.integral_smul_iteratedFDerivAlong_eq`, `TauCeti.integral_mul_iteratedFDerivAlong_eq`:
   specializations to scalar multiplication and multiplication over a normed `ℝ`-algebra field `𝕜`.
 * `TauCeti.setIntegral_bilinear_iteratedFDerivAlong_eq`,

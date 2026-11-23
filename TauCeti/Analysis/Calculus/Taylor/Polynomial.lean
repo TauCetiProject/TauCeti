@@ -14,7 +14,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 # Multivariate Taylor polynomials and integral remainders
 
 For a map `u : E → F` between normed spaces over `𝕜`, a natural order `m`, and an expansion point
-`y : E`, `TauCeti.taylorPolynomial 𝕜 m u y` is the Taylor polynomial of degree `m` about `y`:
+`y : E`, `TauCeti.taylorPolynomial 𝕜 m u y` is the order-`m` Taylor polynomial about `y`:
 
 `T^m_y u (x) = ∑ j ∈ Finset.range (m + 1), (j ! : 𝕜)⁻¹ • iteratedFDeriv 𝕜 j u y (fun _ ↦ x - y)`.
 
@@ -42,7 +42,7 @@ equals its `m`-th Taylor polynomial at `x`
 
 ## Main definitions
 
-* `TauCeti.taylorPolynomial`: the Taylor polynomial of degree `m` of `u` about `y`.
+* `TauCeti.taylorPolynomial`: the order-`m` Taylor polynomial of `u` about `y`.
 
 ## Main results
 
@@ -73,7 +73,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 variable (𝕜) in
-/-- The Taylor polynomial of degree `m` of `u : E → F` expanded at `y` and evaluated at `x`:
+/-- The order-`m` Taylor polynomial of `u : E → F` expanded at `y` and evaluated at `x`:
 `∑ j ∈ Finset.range (m + 1), (j ! : 𝕜)⁻¹ • iteratedFDeriv 𝕜 j u y (fun _ ↦ x - y)`. -/
 def taylorPolynomial (m : ℕ) (u : E → F) (y x : E) : F :=
   finiteJetPolynomial m (fun i ↦ iteratedFDeriv 𝕜 i.val u y) y x
