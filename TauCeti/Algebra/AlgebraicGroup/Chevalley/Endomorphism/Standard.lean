@@ -530,7 +530,8 @@ noncomputable def IsStandard.fieldEnd (hF : D.IsStandard F) (α : Fin t.numRoots
     (by simp [inv_mul_cancel₀ (hF.rootParamHom_one_ne_zero α)])
     (fun s u => by simp only [AddMonoidHom.mk'_apply, hF.rootParamHom_torusCharacter_mul]; ring)
 
-private theorem IsStandard.fieldEnd_apply_eq (hF : D.IsStandard F) (α) (u : K) :
+/-- Explicit formula for `hF.fieldEnd α` in terms of `hF.rootParamHom α`. -/
+theorem IsStandard.fieldEnd_apply_eq (hF : D.IsStandard F) (α : Fin t.numRoots) (u : K) :
     hF.fieldEnd α u = (hF.rootParamHom α 1)⁻¹ * hF.rootParamHom α u := by
   rw [IsStandard.fieldEnd, AddMonoidHom.toRingHomOfTorusCharacter_apply, AddMonoidHom.mk'_apply]
 
@@ -545,11 +546,15 @@ theorem IsStandard.fieldEnd_bijective (hF : D.IsStandard F) (α : Fin t.numRoots
 noncomputable def IsStandard.rootUnit (hF : D.IsStandard F) (α : Fin t.numRoots) : Kˣ :=
   Units.mk0 (hF.rootParamHom α 1) (hF.rootParamHom_one_ne_zero α)
 
+/-- Coercion of `hF.rootUnit α` to `K` equals `hF.rootParamHom α 1`. -/
+@[simp] theorem IsStandard.coe_rootUnit (hF : D.IsStandard F) (α : Fin t.numRoots) :
+    (hF.rootUnit α : K) = hF.rootParamHom α 1 := Units.val_mk0 _
+
 /-- **Explicit root-subgroup formula**: `F (x_α(u)) = x_{σ α}(c_α * g_α u)`. -/
 theorem IsStandard.map_rootSubgroupPoints (hF : D.IsStandard F) (α : Fin t.numRoots) (u : K) :
     F (D.rootSubgroupPoints α K (ofAdd u)) =
       D.rootSubgroupPoints (hF.rootPerm α) K (ofAdd ((hF.rootUnit α : K) * hF.fieldEnd α u)) := by
-  rw [IsStandard.rootUnit, Units.val_mk0, hF.fieldEnd_apply_eq,
+  rw [IsStandard.coe_rootUnit, hF.fieldEnd_apply_eq,
     mul_inv_cancel_left₀ (hF.rootParamHom_one_ne_zero α)]
   exact (hF.rootSubgroupPoints_rootParamHom α u).symm
 

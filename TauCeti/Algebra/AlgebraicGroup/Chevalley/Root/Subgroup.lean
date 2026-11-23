@@ -221,6 +221,7 @@ theorem coe_weylElement_simpleIndex_one (i : Fin t.rank) (A : Type v) [CommRing 
 /-- **Conjugating a root subgroup by a simple Weyl element.** Over every ring of points,
 `nᵢ x_γ(u) nᵢ⁻¹ = x_{sᵢ γ}(ε u)` for the Weyl element `nᵢ = n_{αᵢ}(1)` of the simple root `αᵢ`
 and the sign `ε = chevalleyWeylSign αᵢ γ`. -/
+@[simp]
 theorem weylElement_conj_rootSubgroupPoints (i : Fin t.rank) (γ : Fin t.numRoots) (A : Type v)
     [CommRing A] (u : A) :
     D.weylElement (t.simpleIndex ht i) A 1 * D.rootSubgroupPoints γ A (Multiplicative.ofAdd u) *

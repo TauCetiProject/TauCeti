@@ -117,7 +117,7 @@ private theorem simpleWeylElement_eq_coroot_mul (s : Aˣ) :
 
 /-- Conjugation by a pinned simple Weyl representative acts by the simple reflection on
 all points of the actual torus, not just those extending to the full weight lattice. -/
-theorem weylElement_conj_torusPoints (s : Fin t.rank → Aˣ) :
+@[simp] theorem weylElement_conj_torusPoints (s : Fin t.rank → Aˣ) :
     D.weylElement (t.simpleIndex ht i) A 1 * D.torusPoints A s *
         (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ =
       D.torusPoints A (D.simpleReflectionTorusParameter i A s) := by

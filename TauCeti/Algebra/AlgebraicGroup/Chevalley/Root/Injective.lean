@@ -19,8 +19,9 @@ For `TauCeti.DynkinType.scChevalleyDatum`, every root subgroup is a closed immer
 `TauCeti.DynkinType.ChevalleyDatum`, we prove root-subgroup faithfulness and separation:
 `rootSubgroupPoints_injective`, `rootSubgroupPoints_inj`, `rootSubgroupPoints_eq_one_iff`, and
 `inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot` over every commutative ring, and
-`range_rootSubgroupPoints_le_iff`, `range_rootSubgroupPoints_injective`, and
-`range_rootSubgroupPoints_inj` over every nontrivial commutative ring.
+`rootSubgroupPoints_ofAdd_one_mem_range_iff`, `range_rootSubgroupPoints_le_iff`,
+`range_rootSubgroupPoints_injective`, and `range_rootSubgroupPoints_inj` over every nontrivial
+commutative ring.
 
 ## References
 
@@ -176,7 +177,7 @@ theorem rootSubgroupPoints_injective (A : Type v) [CommRing A] (γ : Fin t.numRo
   (D.rootSubgroupPoints_injective A γ).eq_iff
 
 /-- A root-subgroup element is trivial if and only if its parameter is `1`. -/
-@[simp] theorem rootSubgroupPoints_eq_one_iff (A : Type v) [CommRing A] (γ : Fin t.numRoots)
+theorem rootSubgroupPoints_eq_one_iff (A : Type v) [CommRing A] (γ : Fin t.numRoots)
     (u : Multiplicative A) : D.rootSubgroupPoints γ A u = 1 ↔ u = 1 :=
   map_eq_one_iff (D.rootSubgroupPoints γ A) (D.rootSubgroupPoints_injective A γ)
 
@@ -222,18 +223,27 @@ private theorem eq_of_rootSubgroupPoints_ofAdd_one_mem_range (K : Type v) [Field
       ((D.inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot K α).symm ▸
         ⟨⟨ofAdd 1, rfl⟩, ⟨b, hb⟩⟩))).elim
 
+/-- **Over any nontrivial commutative ring, `x_α(1)` belongs to the `β`-root subgroup iff
+`α = β`.** -/
+theorem rootSubgroupPoints_ofAdd_one_mem_range_iff (A : Type v) [CommRing A] [Nontrivial A]
+    {α β : Fin t.numRoots} :
+    D.rootSubgroupPoints α A (ofAdd 1) ∈ (D.rootSubgroupPoints β A).range ↔ α = β :=
+  ⟨fun ⟨b, hb⟩ => by
+    obtain ⟨𝔪, _⟩ := Ideal.exists_maximal A
+    let _ : Field (A ⧸ 𝔪) := Ideal.Quotient.field 𝔪; let K := AlgebraicClosure (A ⧸ 𝔪)
+    have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K)
+      ((algebraMap (A ⧸ 𝔪) K).comp (Ideal.Quotient.mk 𝔪))) hb
+    rw [D.map_rootSubgroupPoints, D.map_rootSubgroupPoints, toAdd_ofAdd, map_one] at hmap
+    exact D.eq_of_rootSubgroupPoints_ofAdd_one_mem_range K ⟨_, hmap⟩,
+   fun h => h ▸ ⟨ofAdd 1, rfl⟩⟩
+
 /-- **Over any nontrivial commutative ring, one root subgroup is contained in another only at the
 same root.** -/
 @[simp] theorem range_rootSubgroupPoints_le_iff (A : Type v) [CommRing A] [Nontrivial A]
     {α β : Fin t.numRoots} :
     (D.rootSubgroupPoints α A).range ≤ (D.rootSubgroupPoints β A).range ↔ α = β :=
-  ⟨fun hle => by
-    obtain ⟨b, hb⟩ := hle ⟨ofAdd 1, rfl⟩; obtain ⟨𝔪, _⟩ := Ideal.exists_maximal A
-    let _ : Field (A ⧸ 𝔪) := Ideal.Quotient.field 𝔪; let K := AlgebraicClosure (A ⧸ 𝔪)
-    have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K)
-      ((algebraMap (A ⧸ 𝔪) K).comp (Ideal.Quotient.mk 𝔪))) hb
-    rw [D.map_rootSubgroupPoints, D.map_rootSubgroupPoints, toAdd_ofAdd, map_one] at hmap
-    exact D.eq_of_rootSubgroupPoints_ofAdd_one_mem_range K ⟨_, hmap⟩, fun h => h ▸ le_rfl⟩
+  ⟨fun hle => (D.rootSubgroupPoints_ofAdd_one_mem_range_iff A).mp (hle ⟨ofAdd 1, rfl⟩),
+   fun h => h ▸ le_rfl⟩
 
 /-- **Over any nontrivial commutative ring, distinct root indices give distinct root subgroups.** -/
 theorem range_rootSubgroupPoints_injective (A : Type v) [CommRing A] [Nontrivial A] :
