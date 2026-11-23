@@ -45,7 +45,7 @@ factorial and inverse-factorial norm bounds in any normed algebra or normed divi
   `TauCeti.norm_inv_factorial_pow_prime`, `TauCeti.norm_inv_factorial_pow_prime_mul_rpow`,
   `TauCeti.le_norm_inv_factorial_pow_prime_mul_pow`,
   `TauCeti.norm_inv_factorial_mul_pow_le`, `TauCeti.norm_pow_div_le_of_le_norm`,
-  `TauCeti.norm_pow_div_factorial_le`, `TauCeti.norm_pow_mul_inv_factorial_le_sq`:
+  `TauCeti.norm_pow_div_factorial_le`:
   inverse-factorial and critical-radius estimates in any normed division algebra over `ℚ_[p]`.
 -/
 
@@ -276,24 +276,6 @@ term of degree at least two is strictly smaller than a nonzero `x`. -/
 theorem norm_pow_div_factorial_le (x : D) {n : ℕ} (hn : n ≠ 0) :
     ‖x ^ n / (n ! : D)‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) :=
   norm_pow_div_le_of_le_norm x hn (amiceRadius_zero_pow_sub_one_le_norm_factorial hn)
-
-/-- For `n ≥ 2` and any `x : D` with `‖x‖ ≤ p ^ (-1 / (p - 1))`,
-`‖x ^ n * (n!)⁻¹‖ ≤ ‖x‖ ^ 2 * p ^ (1 / (p - 1))`. -/
-theorem norm_pow_mul_inv_factorial_le_sq {x : D}
-    (hx : ‖x‖ ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) {n : ℕ} (hn : 2 ≤ n) :
-    ‖x ^ n * (n ! : D)⁻¹‖ ≤ ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := by
-  have hr0 := amiceRadius_pos (p := p) 0
-  have hq : ‖x‖ / amiceRadius p 0 ≤ 1 :=
-    (div_le_one hr0).mpr (hx.trans_eq (amiceRadius_zero p).symm)
-  calc
-    ‖x ^ n * (n ! : D)⁻¹‖ = ‖x ^ n / (n ! : D)‖ := by rw [div_eq_mul_inv]
-    _ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) :=
-      norm_pow_div_factorial_le x (by omega)
-    _ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) :=
-      mul_le_mul_of_nonneg_left (pow_le_of_le_one (by positivity) hq (by omega)) (norm_nonneg x)
-    _ = ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := by
-      rw [amiceRadius_zero, Real.rpow_neg (Nat.cast_nonneg p), div_inv_eq_mul]
-      ring
 
 end NormedDivisionRing
 

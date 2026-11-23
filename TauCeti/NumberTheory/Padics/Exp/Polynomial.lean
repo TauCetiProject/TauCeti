@@ -21,24 +21,25 @@ import TauCeti.RingTheory.PowerSeries.GaussNorm
 import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
-# Exponential polynomials over `p`-adic fields
+# Exponential polynomials over `p`-adic algebras and fields
 
-In a normed field `L` over `ℚ_[p]` (retaining its rational algebra structure `[Algebra ℚ L]` used
-by `PowerSeries.exp`), an exponential polynomial `Q(X) exp(ψ X)` is represented formally as the
-power series `(Q : PowerSeries L) * PowerSeries.rescale ψ (PowerSeries.exp L)`. By the Gauss-norm
-estimate `PowerSeries.gaussNorm_rescale_exp` of `TauCeti.RingTheory.PowerSeries.Exp.Padic`,
-whenever `0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, the rescaled exponential `exp(ψ X)` has
-Gauss norm `1` at radius `r`. By submultiplicativity of the ultrametric Gauss norm
-(`TauCeti.PowerSeries.gaussNorm_mul_le`), multiplying `(Q : PowerSeries L)` by `exp(ψ X)` preserves
+In an ultrametric seminormed commutative `ℚ_[p]`-algebra `A` with `‖(1 : A)‖ = 1` (retaining its
+rational algebra structure `[Algebra ℚ A]` used by `PowerSeries.exp`), an exponential polynomial
+`Q(X) exp(ψ X)` is represented formally as the power series
+`(Q : PowerSeries A) * PowerSeries.rescale ψ (PowerSeries.exp A)`. By the Gauss-norm estimate
+`PowerSeries.gaussNorm_rescale_exp` of `TauCeti.RingTheory.PowerSeries.Exp.Padic`, whenever
+`0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, the rescaled exponential `exp(ψ X)` has Gauss norm
+`1` at radius `r`. By submultiplicativity of the ultrametric Gauss norm
+(`TauCeti.PowerSeries.gaussNorm_mul_le`), multiplying `(Q : PowerSeries A)` by `exp(ψ X)` preserves
 any `r`-weighted bound `∀ j, ‖Q.coeff j‖ * r ^ j ≤ M`
 (`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`).
 
-When `L` is complete and `‖ψ * x‖ < p ^ (-1 / (p - 1))`, both `(Q : PowerSeries L)` and
-`rescale ψ (exp L)` are restricted at radius `‖x‖` (`PowerSeries.isRestricted_rescale_exp`), so
-`PowerSeries.IsRestricted.hasSum_evalAt` and `PowerSeries.IsRestricted.evalAt_mul` show that
-`(Q : PowerSeries L) * rescale ψ (exp L)` converges at `x` to `Q.eval x * NormedSpace.exp (ψ * x)`
-(`PowerSeries.hasSum_coeff_coe_mul_rescale_exp`), and its `m`-th formal derivative evaluates via
-`FormalMultilinearSeries.ofScalarsSum` to
+When `L` is a complete normed field over `ℚ_[p]` and `‖ψ * x‖ < p ^ (-1 / (p - 1))`, both
+`(Q : PowerSeries L)` and `rescale ψ (exp L)` are restricted at radius `‖x‖`
+(`PowerSeries.isRestricted_rescale_exp`), so `PowerSeries.IsRestricted.hasSum_evalAt` and
+`PowerSeries.IsRestricted.evalAt_mul` show that `(Q : PowerSeries L) * rescale ψ (exp L)` converges
+at `x` to `Q.eval x * NormedSpace.exp (ψ * x)` (`PowerSeries.hasSum_coeff_coe_mul_rescale_exp`), and
+its `m`-th formal derivative evaluates via `FormalMultilinearSeries.ofScalarsSum` to
 `(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`
 (`PowerSeries.ofScalarsSum_coeff_iterate_derivative_coe_mul_rescale_exp`).
 
@@ -46,7 +47,7 @@ When `L` is complete and `‖ψ * x‖ < p ^ (-1 / (p - 1))`, both `(Q : PowerSe
 
 * `PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`,
   `PowerSeries.norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le`: weighted coefficient
-  bounds for `(Q : L⟦X⟧) * exp(ψ X)` and its `m`-th formal derivative.
+  bounds for `(Q : A⟦X⟧) * exp(ψ X)` and its `m`-th formal derivative.
 * `PowerSeries.hasSum_coeff_coe_mul_rescale_exp`,
   `PowerSeries.hasSum_coeff_iterate_derivative_coe_mul_rescale_exp`: for
   `‖ψ * x‖ < p ^ (-(p - 1)⁻¹)` in complete `L`, `∑ coeff k (Q(X) exp(ψ X)) * x ^ k` sums to
@@ -70,47 +71,55 @@ open Polynomial
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
+section SeminormedCommRing
+
 -- Retain the caller's rational algebra structure, which occurs in `PowerSeries.exp`.
-variable {L : Type*} [NormedField L] [Algebra ℚ L] [NormedAlgebra ℚ_[p] L]
+variable {A : Type*} [SeminormedCommRing A] [NormOneClass A] [IsUltrametricDist A]
+  [Algebra ℚ A] [NormedAlgebra ℚ_[p] A]
 
 /-- **Coefficient bound for a `p`-adic exponential polynomial.** If `‖Q.coeff j‖ * r ^ j ≤ M` for
 all `j` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))` (`r ≥ 0`), then the coefficients of `Q(X) exp(ψ X)`
 satisfy the same `r`-weighted bound `M`. -/
-theorem norm_coeff_coe_mul_rescale_exp_mul_pow_le (Q : L[X]) {ψ : L}
+theorem norm_coeff_coe_mul_rescale_exp_mul_pow_le (Q : A[X]) {ψ : A}
     {r M : ℝ} (hr : 0 ≤ r) (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹))
     (hQ : ∀ j, ‖Q.coeff j‖ * r ^ j ≤ M) (k : ℕ) :
-    ‖coeff k ((Q : PowerSeries L) * rescale ψ (exp L))‖ * r ^ k ≤ M := by
-  have : IsUltrametricDist L := .of_normedAlgebra ℚ_[p]
-  have hQ_has : (Q : PowerSeries L).HasGaussNorm norm r :=
+    ‖coeff k ((Q : PowerSeries A) * rescale ψ (exp A))‖ * r ^ k ≤ M := by
+  have hQ_has : (Q : PowerSeries A).HasGaussNorm norm r :=
     ⟨M, Set.forall_mem_range.mpr fun j ↦ by simpa [Polynomial.coeff_coe] using hQ j⟩
-  have hQ_le : (Q : PowerSeries L).gaussNorm norm r ≤ M := by
+  have hQ_le : (Q : PowerSeries A).gaussNorm norm r ≤ M := by
     rw [gaussNorm_eq]
     exact ciSup_le fun j ↦ by simpa [Polynomial.coeff_coe] using hQ j
   have hψ' : ‖ψ‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by simpa using hψ
-  have hE_has : (rescale ψ (exp L)).HasGaussNorm norm r := hasGaussNorm_rescale_exp hr hψ'
-  have hE_eq : (rescale ψ (exp L)).gaussNorm norm r = 1 := gaussNorm_rescale_exp hr hψ'
+  have hE_has : (rescale ψ (exp A)).HasGaussNorm norm r := hasGaussNorm_rescale_exp hr hψ'
+  have hE_eq : (rescale ψ (exp A)).gaussNorm norm r = 1 := gaussNorm_rescale_exp hr hψ'
   calc
-    ‖coeff k ((Q : PowerSeries L) * rescale ψ (exp L))‖ * r ^ k
-        ≤ ((Q : PowerSeries L) * rescale ψ (exp L)).gaussNorm norm r :=
+    ‖coeff k ((Q : PowerSeries A) * rescale ψ (exp A))‖ * r ^ k
+        ≤ ((Q : PowerSeries A) * rescale ψ (exp A)).gaussNorm norm r :=
           le_gaussNorm norm r _ (TauCeti.PowerSeries.hasGaussNorm_mul hr hQ_has hE_has) k
-    _ ≤ (Q : PowerSeries L).gaussNorm norm r * (rescale ψ (exp L)).gaussNorm norm r :=
+    _ ≤ (Q : PowerSeries A).gaussNorm norm r * (rescale ψ (exp A)).gaussNorm norm r :=
           TauCeti.PowerSeries.gaussNorm_mul_le hr hQ_has hE_has
-    _ = (Q : PowerSeries L).gaussNorm norm r := by rw [hE_eq, mul_one]
+    _ = (Q : PowerSeries A).gaussNorm norm r := by rw [hE_eq, mul_one]
     _ ≤ M := hQ_le
 
 /-- Weighted coefficient bound for the `m`-th formal derivative of a `p`-adic exponential
 polynomial `Q(X) exp(ψ X)`: if `0 < r`, `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, and
 `∀ j, ‖Q.coeff j‖ * r ^ j ≤ M`, then every `r`-weighted coefficient of
 `(d⁄dX)^[m] (Q(X) exp(ψ X))` is at most `max r⁻¹ ‖ψ‖ ^ m * M`. -/
-theorem norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le (Q : L[X])
-    {ψ : L} {r M : ℝ} (hr : 0 < r) (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹))
+theorem norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le (Q : A[X])
+    {ψ : A} {r M : ℝ} (hr : 0 < r) (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹))
     (hQ : ∀ j, ‖Q.coeff j‖ * r ^ j ≤ M) (m k : ℕ) :
-    ‖coeff k ((d⁄dX)^[m] ((Q : PowerSeries L) * rescale ψ (exp L)))‖ * r ^ k ≤
+    ‖coeff k ((d⁄dX)^[m] ((Q : PowerSeries A) * rescale ψ (exp A)))‖ * r ^ k ≤
       max r⁻¹ ‖ψ‖ ^ m * M := by
-  have : IsUltrametricDist L := .of_normedAlgebra ℚ_[p]
   rw [iterate_derivative_coe_mul_rescale_exp]
   exact norm_coeff_coe_mul_rescale_exp_mul_pow_le (Polynomial.expDerivFactor ψ m Q) hr.le hψ
     (Polynomial.norm_coeff_expDerivFactor_mul_pow_le ψ hr hQ m) k
+
+end SeminormedCommRing
+
+section NormedField
+
+-- Retain the caller's rational algebra structure, which occurs in `PowerSeries.exp`.
+variable {L : Type*} [NormedField L] [Algebra ℚ L] [NormedAlgebra ℚ_[p] L]
 
 /-- **Value of a `p`-adic exponential polynomial** inside the disc of convergence: when `L` is
 complete and `‖ψ * x‖ < p ^ (-1 / (p - 1))`, the power series `Q(X) exp(ψ X)` evaluated at `x`
@@ -163,5 +172,7 @@ theorem ofScalarsSum_coeff_iterate_derivative_coe_mul_rescale_exp [CompleteSpace
       (Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x) := by
   simp_rw [iterate_derivative_coe_mul_rescale_exp]
   exact ofScalarsSum_coeff_coe_mul_rescale_exp (Polynomial.expDerivFactor ψ m Q) h
+
+end NormedField
 
 end PowerSeries

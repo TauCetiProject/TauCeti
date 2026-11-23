@@ -34,8 +34,9 @@ has the power series expansion `NormedSpace.expSeries K A` on the open ball of r
 
 On the open disc `{x | ‖x‖ < amiceRadius p 0}`:
 * In any complete normed `ℚ_[p]`-algebra `A`, `exp (n • x) = exp x ^ n`
-  (`TauCeti.PadicExp.exp_nsmul`, `TauCeti.PadicExp.exp_natCast_mul`), and `exp x ≠ 0` when `A` is
-  nontrivial (`TauCeti.PadicExp.exp_ne_zero`).
+  (`TauCeti.PadicExp.exp_nsmul`, `TauCeti.PadicExp.exp_natCast_mul`),
+  `exp (x + y) = exp x * exp y` for commuting `x` and `y` (`TauCeti.PadicExp.exp_add_of_commute`),
+  and `exp x ≠ 0` when `A` is nontrivial (`TauCeti.PadicExp.exp_ne_zero`).
 * In any complete commutative normed `ℚ_[p]`-algebra `A`, `NormedSpace.exp` satisfies the
   functional equation `exp (x + y) = exp x * exp y` (`TauCeti.PadicExp.exp_add`) and carries finite
   sums in the disc to products (`TauCeti.PadicExp.exp_sum`).
@@ -67,8 +68,9 @@ the subsequence `n = p ^ k` keeps norm at least `amiceRadius p 0`, so `∑ x ^ n
   `TauCeti.PadicExp.radius_expSeries_pos`, `TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`: radius of
   convergence and power-series expansion of `NormedSpace.expSeries K A` (exact radius
   `ENNReal.ofReal (amiceRadius p 0)` whenever `NormOneClass A`).
-* `TauCeti.PadicExp.exp_add`, `TauCeti.PadicExp.exp_neg`, `TauCeti.PadicExp.exp_sub`,
-  `TauCeti.PadicExp.exp_nsmul`, `TauCeti.PadicExp.exp_zsmul`, `TauCeti.PadicExp.exp_sum`:
+* `TauCeti.PadicExp.exp_add_of_commute`, `TauCeti.PadicExp.exp_add`, `TauCeti.PadicExp.exp_neg`,
+  `TauCeti.PadicExp.exp_sub`, `TauCeti.PadicExp.exp_nsmul`, `TauCeti.PadicExp.exp_zsmul`,
+  `TauCeti.PadicExp.exp_sum`:
   homomorphism properties of `NormedSpace.exp` on `{x | ‖x‖ < amiceRadius p 0}`.
 * `TauCeti.PadicExp.norm_exp_sub_one_sub_le`, `TauCeti.PadicExp.norm_exp_sub_one`,
   `TauCeti.PadicExp.norm_exp`, `TauCeti.PadicExp.norm_exp_sub_exp`, `TauCeti.PadicExp.injOn_exp`:
@@ -205,6 +207,15 @@ section NormedAlgebra
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ_[p] A] [CompleteSpace A]
 
+/-- **Functional equation of the `p`-adic exponential** on its open disc of convergence for
+commuting elements of a complete normed `ℚ_[p]`-algebra. -/
+theorem exp_add_of_commute {x y : A} (hxy : Commute x y) (hx : ‖x‖ < amiceRadius p 0)
+    (hy : ‖y‖ < amiceRadius p 0) :
+    NormedSpace.exp (x + y) = NormedSpace.exp x * NormedSpace.exp y :=
+  NormedSpace.exp_add_of_commute_of_mem_ball hxy
+    (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
+    (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hy)
+
 /-- In a complete normed `ℚ_[p]`-algebra `A`, since `‖n • x‖ ≤ ‖(n : ℚ_[p])‖ * ‖x‖ ≤ ‖x‖`,
 `exp (n • x) = exp x ^ n` for every `n : ℕ` whenever `x` lies in the open disc of convergence. -/
 theorem exp_nsmul {x : A} (hx : ‖x‖ < amiceRadius p 0) (n : ℕ) :
@@ -220,9 +231,7 @@ theorem exp_nsmul {x : A} (hx : ‖x‖ < amiceRadius p 0) (n : ℕ) :
               (IsUltrametricDist.norm_natCast_le_one ℚ_[p] n) (norm_nonneg x)
         _ = ‖x‖ := one_mul _
         _ < amiceRadius p 0 := hx
-    rw [succ_nsmul, NormedSpace.exp_add_of_commute_of_mem_ball ((Commute.refl x).smul_left n)
-      (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hnx)
-      (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx), ih, pow_succ]
+    rw [succ_nsmul, exp_add_of_commute ((Commute.refl x).smul_left n) hnx hx, ih, pow_succ]
 
 /-- On the open disc of convergence, `exp (n * x) = exp x ^ n` for every `n : ℕ`. -/
 theorem exp_natCast_mul {x : A} (hx : ‖x‖ < amiceRadius p 0) (n : ℕ) :
@@ -245,9 +254,7 @@ variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℚ_[p] A] [CompleteSpace
 complete commutative normed `ℚ_[p]`-algebra. -/
 theorem exp_add {x y : A} (hx : ‖x‖ < amiceRadius p 0) (hy : ‖y‖ < amiceRadius p 0) :
     NormedSpace.exp (x + y) = NormedSpace.exp x * NormedSpace.exp y :=
-  NormedSpace.exp_add_of_mem_ball
-    (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
-    (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hy)
+  exp_add_of_commute (Commute.all x y) hx hy
 
 /-- The exponential of a finite sum of elements in `{x : A | ‖x‖ < amiceRadius p 0}` is the
 product of their exponentials. -/
