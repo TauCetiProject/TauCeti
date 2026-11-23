@@ -35,6 +35,8 @@ maximal ideal of `Â` above it.
 
 * `TauCeti.Dagger.completion K A`: the completion `Â = T_n ⧸ I T_n` of a dagger algebra `A`.
 * `TauCeti.Dagger.toCompletion K A`: the completion map `τ : A →ₐ[K] Â`.
+* `TauCeti.Dagger.completionAlgebra K A`: the `A`-algebra structure on `completion K A` induced by
+  `toCompletion K A` (not a global instance, so `A` stays explicit).
 
 ## Main results
 
@@ -76,6 +78,18 @@ of the Monsky–Washnitzer algebra into the Tate algebra. -/
 noncomputable def toCompletion : A →ₐ[K] completion K A :=
   (Ideal.quotientMapₐ _ (washnitzerAlgebra.toTate _ K) Ideal.le_comap_map).comp
     (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm.toAlgHom
+
+/-- The `A`-algebra structure on `completion K A` induced by `toCompletion K A`. Kept as an explicit
+definition rather than a global instance so that `A` remains explicit on `completion K A`. -/
+noncomputable abbrev completionAlgebra : Algebra A (completion K A) :=
+  (toCompletion K A).toRingHom.toAlgebra
+
+/-- Under `completionAlgebra K A`, the structure map `A → completion K A` is `toCompletion K A`. -/
+@[simp↓]
+theorem algebraMap_completionAlgebra_apply (a : A) :
+    letI := completionAlgebra K A
+    algebraMap A (completion K A) a = toCompletion K A a :=
+  (rfl)
 
 variable {K A}
 

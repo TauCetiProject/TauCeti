@@ -19,15 +19,18 @@ Every compact Hausdorff boundaryless manifold has a smooth embedding into some E
 Whitney embedding theorem `exists_embedding_euclidean_of_compact` as a bundled
 `TauCeti.SmoothEmbedding`, reading its injective differential as an immersion.
 
-A compact subset `K` of a Hausdorff boundaryless manifold which need not be compact has an open
-neighbourhood with compact closure that embeds smoothly into some Euclidean space
-(`IsCompact.exists_opens_nonempty_smoothEmbedding_euclidean`). Here `K` lies in the interior of a
-compact set `L`. For a finite smooth bump covering `(ρ_i)` of `L`, with `φ_i` the extended chart at
-the centre of `ρ_i`, the map `x ↦ (ρ_i x • φ_i x, ρ_i x)_i` is injective on `L` with injective
-differential at each point of `L`, so it embeds the interior of `L`. This map is Mathlib's
-`SmoothBumpCovering.embeddingPiTangent`; Mathlib does not export it, so it is repeated here as a
-private auxiliary. This reduces statements about maps with relatively compact image into an
-arbitrary boundaryless manifold, such as Whitney approximation, to the case of an embedded target.
+A compact subset `K` of a Hausdorff manifold, which need not be compact or boundaryless, has a
+smooth map into some Euclidean space which is injective on `K` with injective differential at each
+point of `K` (`IsCompact.exists_contMDiff_injOn_injective_mfderiv_euclidean`). For a finite smooth
+bump covering `(ρ_i)` of `K`, with `φ_i` the extended chart at the centre of `ρ_i`, the map
+`x ↦ (ρ_i x • φ_i x, ρ_i x)_i` has these properties. If the manifold is boundaryless, `K` lies in
+the interior of a compact set `L`, and the map built for `L` embeds the interior of `L`: so `K` has
+an open neighbourhood with compact closure that embeds smoothly into some Euclidean space
+(`IsCompact.exists_opens_nonempty_smoothEmbedding_euclidean`). The map of a bump covering
+is Mathlib's `SmoothBumpCovering.embeddingPiTangent`; Mathlib does not export it, so it is
+repeated here as a private auxiliary. This reduces statements about maps with relatively compact
+image into an arbitrary boundaryless manifold, such as Whitney approximation, to the case of an
+embedded target.
 -/
 
 public section
@@ -102,6 +105,26 @@ private theorem injective_mfderiv_whitneyMap [T2Space M] (f : SmoothBumpCovering
 end TauCeti.SmoothEmbedding
 
 open TauCeti.SmoothEmbedding in
+/-- **A Euclidean immersion injective on a compact set.** A compact subset `K` of a Hausdorff
+manifold modelled on a finite-dimensional space has a smooth map into some Euclidean space which is
+injective on `K` and has injective differential at every point of `K`. The manifold need not be
+compact, σ-compact or boundaryless. -/
+theorem IsCompact.exists_contMDiff_injOn_injective_mfderiv_euclidean [T2Space M] {K : Set M}
+    (hK : IsCompact K) :
+    ∃ (n : ℕ) (g : M → EuclideanSpace ℝ (Fin n)),
+      ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ∞ g ∧ InjOn g K ∧
+        ∀ x ∈ K, Injective (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) g x) := by
+  obtain ⟨ι, _, f, -⟩ :=
+    hK.exists_smoothBumpCovering_isSubordinate I (U := fun _ ↦ univ) fun _ _ ↦ Filter.univ_mem
+  let V := ι → E × ℝ
+  let eV : V ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ V)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  refine ⟨_, eV ∘ whitneyMap f, eV.toDiffeomorph.contMDiff.comp (contMDiff_whitneyMap f),
+    eV.injective.comp_injOn (injOn_whitneyMap f), fun x hx ↦ ?_⟩
+  rw [mfderiv_comp _ eV.differentiableAt.mdifferentiableAt
+    ((contMDiff_whitneyMap f).mdifferentiableAt (by simp)), eV.mfderiv_eq]
+  exact eV.injective.comp (injective_mfderiv_whitneyMap f hx)
+
 /-- **A Euclidean embedding near a compact set.** A compact subset `K` of a Hausdorff
 boundaryless manifold modelled on a finite-dimensional space has an open neighbourhood `W` with
 compact closure which, as an open submanifold, has a smooth embedding into some Euclidean
@@ -114,29 +137,15 @@ theorem IsCompact.exists_opens_nonempty_smoothEmbedding_euclidean [I.Boundaryles
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
-  obtain ⟨ι, _, f, -⟩ :=
-    hL.exists_smoothBumpCovering_isSubordinate I (U := fun _ ↦ univ) fun _ _ ↦ Filter.univ_mem
-  -- The Whitney map of a finite bump covering of `L`, read in a Euclidean space.
-  let V := ι → E × ℝ
-  let eV : V ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ V)) :=
-    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  let F : M → EuclideanSpace ℝ (Fin (finrank ℝ V)) := eV ∘ whitneyMap f
-  have hF : ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ (Fin (finrank ℝ V))) ∞ F :=
-    eV.toDiffeomorph.contMDiff.comp (contMDiff_whitneyMap f)
-  have hFd {x : M} (hx : x ∈ L) :
-      Injective (mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin (finrank ℝ V))) F x) := by
-    rw [mfderiv_comp _ eV.differentiableAt.mdifferentiableAt
-      ((contMDiff_whitneyMap f).mdifferentiableAt (by simp)), eV.mfderiv_eq]
-    exact eV.injective.comp (injective_mfderiv_whitneyMap f hx)
-  -- On the interior of `L` it is a smooth embedding, being injective on the compact set `L`.
+  obtain ⟨n, F, hF, hFi, hFd⟩ := hL.exists_contMDiff_injOn_injective_mfderiv_euclidean (I := I)
+  -- On the interior of `L`, `F` is a smooth embedding, being injective on the compact set `L`.
   let W : Opens M := ⟨interior L, isOpen_interior⟩
   have hemb : IsEmbedding (F ∘ ((↑) : W → M)) := by
     have : CompactSpace L := isCompact_iff_compactSpace.1 hL
-    exact ((hF.continuous.comp continuous_subtype_val).isClosedEmbedding
-      (eV.injective.comp_injOn (injOn_whitneyMap f)).injective).isEmbedding.comp
-        (IsEmbedding.inclusion interior_subset)
-  refine ⟨W, hKL, hL.closure_of_subset interior_subset, _, ⟨.ofIsSmoothEmbedding _
-    ⟨(hF.comp contMDiff_subtype_val).isImmersion_of_injective_mfderiv (by simp) fun x v w hvw ↦
-      hFd (interior_subset x.2) ?_, hemb⟩⟩⟩
+    exact ((hF.continuous.comp continuous_subtypeVal).isClosedEmbedding
+      hFi.injective).isEmbedding.comp (IsEmbedding.inclusion interior_subset)
+  refine ⟨W, hKL, hL.closure_of_subset interior_subset, n, ⟨.ofIsSmoothEmbedding _
+    ⟨(hF.comp contMDiff_subtypeVal).isImmersion_of_injective_mfderiv (by simp) fun x v w hvw ↦
+      hFd _ (interior_subset x.property) ?_, hemb⟩⟩⟩
   rwa [← TauCeti.Manifold.mfderiv_comp_subtype_val_apply,
     ← TauCeti.Manifold.mfderiv_comp_subtype_val_apply]

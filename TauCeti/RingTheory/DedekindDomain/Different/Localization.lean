@@ -142,7 +142,7 @@ theorem span_traceDual_one_eq_traceDual_one :
   · intro x hx
     obtain ⟨b, hbx⟩ := exists_smul_mem_traceDual_of_mem_traceDual
       (R := R) (Rₘ := Rₘ) (S := S) (Sₘ := Sₘ) (K := K) (L := L) (M := M) hx
-    let bm : Algebra.algebraMapSubmonoid S M := ⟨algebraMap R S b, ⟨b, b.2, rfl⟩⟩
+    let bm : Algebra.algebraMapSubmonoid S M := ⟨algebraMap R S b, ⟨b, b.property, rfl⟩⟩
     have hbx' := Submodule.smul_mem (Submodule.span Sₘ
       (Submodule.traceDual R K (1 : Submodule S L) : Set L)) (IsLocalization.mk' Sₘ 1 bm)
       (Submodule.subset_span hbx)

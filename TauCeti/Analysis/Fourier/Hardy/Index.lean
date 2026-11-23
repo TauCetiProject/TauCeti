@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Fourier.Hardy.Toeplitz
 public import TauCeti.Analysis.Fredholm.Adjoint
+public import TauCeti.Analysis.Fredholm.HilbertBasis
 public import TauCeti.Analysis.Fredholm.Pow
+public import TauCeti.Data.Nat.Set
 
 /-!
 # Fredholm indices of Toeplitz operators with monomial symbols
@@ -18,8 +20,10 @@ multiplication by `e_m`, an isometry of Hardy space, and it is the `m`th power o
 
 The range of `S` is the orthogonal complement of the constant function `e₀`: a Hardy function `g`
 with `ĝ(0) = 0` is `S (e_{-1} g)`. Since `S` is an isometry, it is an injective Fredholm operator
-with one-dimensional cokernel, so its index is `-1`. Taking powers, and adjoints through
-`T_{e_{-m}} = T_{e_m}†`, the Toeplitz operator of every Fourier monomial is Fredholm with
+with one-dimensional cokernel, so its index is `-1`. Both facts are the case `f = Nat.succ` of the
+shifts `b i ↦ c (f i)` along Hilbert bases in `TauCeti.Analysis.Fredholm.HilbertBasis`. Taking
+powers, and adjoints through `T_{e_{-m}} = T_{e_m}†`, the Toeplitz operator of every Fourier
+monomial is Fredholm with
 
 `index T_{e_k} = -k` for every `k : ℤ`.
 
@@ -76,28 +80,28 @@ theorem range_toeplitz_fourierLp_one :
     rw [ContinuousLinearMap.coe_coe, coe_toeplitz_fourierLp_one_apply,
       fourierLp_smul_fourierLp_smul, add_neg_cancel, fourierLp_zero_smul]
 
+/-- The forward shift `S = T_{e_1}` is the isometry `hardyBasis n ↦ hardyBasis (n + 1)` along the
+Hilbert basis of Hardy space. -/
+private theorem toeplitz_fourierLp_one_eq_linearIsometryOfOrthonormal :
+    toeplitz (fourierLp (T := 1) ∞ 1) = (hardyBasis.linearIsometryOfOrthonormal
+      (hardyBasis.orthonormal.comp Nat.succ Nat.succ_injective)).toContinuousLinearMap :=
+  hardyBasis.eq_linearIsometryOfOrthonormal _ toeplitz_fourierLp_one_hardyBasis
+
 /-- The forward shift `S = T_{e_1}` on Hardy space is a Fredholm operator. -/
 private theorem isFredholm_toeplitz_fourierLp_one :
     (toeplitz (fourierLp (T := 1) ∞ 1)).IsFredholm := by
-  have hS := isometry_toeplitz_fourierLp_natCast 1
-  rw [Nat.cast_one] at hS
-  refine hS.isClosedEmbedding.isFredholm ?_
-  rw [range_toeplitz_fourierLp_one]
-  exact (Submodule.fg_span_singleton _).cofg_of_isCompl
-    (Submodule.isCompl_orthogonal _)
+  rw [toeplitz_fourierLp_one_eq_linearIsometryOfOrthonormal]
+  exact hardyBasis.isFredholm_linearIsometryOfOrthonormal_comp hardyBasis Nat.succ_injective
+    (Nat.compl_range_succ ▸ Set.finite_singleton 0)
 
 /-- The forward shift `S = T_{e_1}` on Hardy space has Fredholm index `-1`: it is injective, and
 its range has codimension one. -/
 private theorem index_toeplitz_fourierLp_one :
     (toeplitz (fourierLp (T := 1) ∞ 1)).index = -1 := by
-  have hS := isometry_toeplitz_fourierLp_natCast 1
-  rw [Nat.cast_one] at hS
-  rw [ContinuousLinearMap.index_of_injective _ hS.injective,
-    range_toeplitz_fourierLp_one,
-    (Submodule.quotientEquivOfIsCompl _ _
-      (Submodule.isCompl_orthogonal _).symm).finrank_eq,
-    finrank_span_singleton (hardyBasis.orthonormal.ne_zero 0)]
-  norm_num
+  rw [toeplitz_fourierLp_one_eq_linearIsometryOfOrthonormal,
+    hardyBasis.index_linearIsometryOfOrthonormal_comp hardyBasis Nat.succ_injective
+      (Nat.compl_range_succ ▸ Set.finite_singleton 0), Nat.compl_range_succ, Set.ncard_singleton,
+    Nat.cast_one]
 
 /-- The Toeplitz operator of every Fourier monomial `e_k`, `k : ℤ`, is a Fredholm operator. -/
 theorem isFredholm_toeplitz_fourierLp (k : ℤ) :

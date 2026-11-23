@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 
 /-!
@@ -31,6 +34,12 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 ## Main declarations
 
 * `TestFunction.smulLeftCLM`: multiplication `φ ↦ f φ` of test functions by a smooth function.
+* `TestFunction.norm_iteratedFDeriv_smulLeftCLM_le`: the Leibniz bound for `a Ψ` when the
+  derivatives of `a` are only controlled on a set containing the support of `Ψ`.
+* `TestFunction.exists_mul_eq_of_forall_ne_zero`: a test function divided by a smooth function
+  that does not vanish near its support is a test function, with derivative bounds.
+* `TestFunction.hasTemperateGrowth_mul`: the product `χ f` of a complex test function with a
+  smooth function has temperate growth.
 * `TestFunction.exists_coe_eq_clm_apply_of_tsupport_inter_subset`: the pairing `x ↦ A x (φ x)`
   of a test function on `Ω'` with a smooth operator field is a test function on any open `Ω`
   containing `tsupport A ∩ Ω'`.
@@ -86,6 +95,25 @@ theorem tsupport_smulLeftCLM_subset (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F
   rw [coe_smulLeftCLM]
   exact Set.subset_inter (tsupport_smul_subset_left f φ) (tsupport_smul_subset_right f φ)
 
+/-- Multiplying by a smooth function does not enlarge the support of a test function: the support
+of `f φ` lies in that of `φ`. -/
+theorem tsupport_smulLeftCLM_subset_right (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F)) :
+    tsupport (smulLeftCLM hf φ : E → F) ⊆ tsupport φ :=
+  (tsupport_smulLeftCLM_subset hf φ).trans Set.inter_subset_right
+
+/-- Multiplication by a smooth function is additive in the multiplier. -/
+theorem smulLeftCLM_add (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g) :
+    (smulLeftCLM (hf.add hg) : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) =
+      smulLeftCLM hf + smulLeftCLM hg := by
+  ext φ x
+  simp [add_smul]
+
+/-- Multiplication by a smooth function is homogeneous in the multiplier. -/
+theorem smulLeftCLM_smul (hf : ContDiff ℝ n f) (c : ℝ) :
+    (smulLeftCLM (hf.const_smul c) : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = c • smulLeftCLM hf := by
+  ext φ x
+  simp [smul_smul]
+
 /-- Multiplying by two smooth functions in turn is multiplying by their product. -/
 @[simp]
 theorem smulLeftCLM_smulLeftCLM (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g)
@@ -102,7 +130,71 @@ theorem smulLeftCLM_monoCLM (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω', F)) :
   ext x
   by_cases h : Ω' ≤ Ω <;> simp [monoCLM_apply, h]
 
+open scoped ContDiff in
+/-- The product of a complex test function with a smooth function has temperate growth: it is
+smooth with compact support. Such products are the multipliers that localize a differential
+operator near the support of the test function. -/
+theorem hasTemperateGrowth_mul (χ : 𝓓(Ω, ℂ)) {f : E → ℂ} (hf : ContDiff ℝ ∞ f) :
+    (fun x ↦ χ x * f x).HasTemperateGrowth :=
+  χ.hasCompactSupport.mul_right.hasTemperateGrowth (χ.contDiff.mul hf)
+
 end SmulLeft
+
+section Bounds
+
+open Set
+open scoped ContDiff
+
+/-- **Dividing a test function by a smooth function.** Let `φ` be a test function supported in
+`K`, and let `p` be smooth and nonvanishing on an open set `W ⊇ K`. Then `φ / p` is a test function
+`Ψ` supported in `K` with `p Ψ = φ`. If the derivatives of order at most `n` of `p⁻¹` are bounded
+by `Q ≥ 0` on `K` and those of `φ` by `B`, then those of `Ψ` are bounded by `2 ^ n Q B`. -/
+theorem exists_mul_eq_of_forall_ne_zero (φ : 𝓓(Ω, ℂ)) {K W : Set E} (hW : IsOpen W)
+    (hKW : K ⊆ W) (hφK : tsupport φ ⊆ K) {p : E → ℂ} (hp : ContDiffOn ℝ ∞ p W)
+    (hpW : ∀ y ∈ W, p y ≠ 0) {n : ℕ} {Q B : ℝ} (hQ0 : 0 ≤ Q)
+    (hQ : ∀ i ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ i (fun z ↦ (p z)⁻¹) y‖ ≤ Q)
+    (hB : ∀ i ≤ n, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) :
+    ∃ Ψ : 𝓓(Ω, ℂ), tsupport Ψ ⊆ K ∧ (∀ y, p y * Ψ y = φ y) ∧
+      ∀ i ≤ n, ∀ y, ‖iteratedFDeriv ℝ i Ψ y‖ ≤ 2 ^ n * Q * B := by
+  have hinv : ContDiffOn ℝ ∞ (fun y ↦ (p y)⁻¹) W := hp.inv hpW
+  have hcd : ContDiff ℝ ∞ (fun y ↦ (p y)⁻¹ * φ y) :=
+    (ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right hinv φ.contDiff.contDiffOn
+      hW (hφK.trans hKW)
+  have hts : tsupport (fun y ↦ (p y)⁻¹ * φ y) ⊆ tsupport φ := tsupport_mul_subset_right
+  refine ⟨⟨fun y ↦ (p y)⁻¹ * φ y, hcd, φ.hasCompactSupport.mono' (subset_tsupport _ |>.trans hts),
+    hts.trans φ.tsupport_subset⟩, hts.trans hφK, fun y ↦ ?_, fun i hi y ↦ ?_⟩
+  · by_cases hy : y ∈ W
+    · exact mul_inv_cancel_left₀ (hpW y hy) (φ y)
+    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hKW (hφK h))]
+  · refine (TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset hW hKW hinv φ.contDiff hφK
+      (by exact_mod_cast le_top) hQ0
+      (fun l hl z hz ↦ hQ l (hl.trans hi) z hz) (fun l hl z ↦ hB l (hl.trans hi) z) y).trans ?_
+    have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) y)
+    gcongr
+    exact one_le_two
+
+/-- The derivatives of order at most `n` of a smooth multiple `a Ψ` of a test function supported in
+`K` are bounded by `2 ^ n G B`, if those of `a` are bounded by `G ≥ 0` on `K` and those of `Ψ` by
+`B`. -/
+theorem norm_iteratedFDeriv_smulLeftCLM_le {a : E → ℝ} (ha : ContDiff ℝ ∞ a)
+    (Ψ : 𝓓(Ω, ℂ)) {K : Set E} (hΨK : tsupport Ψ ⊆ K) {n : ℕ} {G B : ℝ} (hG0 : 0 ≤ G)
+    (hG : ∀ l ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ l (fun z ↦ (a z : ℂ)) y‖ ≤ G)
+    (hB : ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l Ψ y‖ ≤ B) :
+    ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (smulLeftCLM ha Ψ) y‖ ≤ 2 ^ n * G * B := by
+  intro l hl y
+  have hcoe : ⇑(smulLeftCLM ha Ψ) = fun z ↦ (a z : ℂ) * Ψ z := by
+    ext z
+    simp [Complex.real_smul]
+  rw [hcoe]
+  refine (TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset isOpen_univ (subset_univ K)
+    (Complex.ofRealCLM.contDiff.comp ha).contDiffOn Ψ.contDiff hΨK (by exact_mod_cast le_top) hG0
+    (fun l' hl' z hz ↦ hG l' (hl'.trans hl) z hz) (fun l' hl' z ↦ hB l' (hl'.trans hl) z)
+    y).trans ?_
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) y)
+  gcongr
+  exact one_le_two
+
+end Bounds
 
 section ClmApply
 
@@ -138,7 +230,7 @@ noncomputable def oneFormWedgeCLM (hα : ContDiff ℝ n α) :
     𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) :=
   bilinLeftCLM
     ((ContinuousLinearMap.compL ℝ (E →L[ℝ] ℝ) _ _ (alternatizeUncurryFinCLM ℝ E F)) ∘L
-      (ContinuousLinearMap.smulRightL ℝ E (E [⋀^Fin k]→L[ℝ] F)).flip) hα
+      (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E (E [⋀^Fin k]→L[ℝ] F)).flip) hα
 
 @[simp]
 theorem oneFormWedgeCLM_apply (hα : ContDiff ℝ n α) (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :

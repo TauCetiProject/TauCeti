@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.WittExtension
-public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Ker
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
@@ -50,8 +49,6 @@ does not depend on the projection `P` up to symplectomorphisms fixing the zero s
   coisotropic, with orthogonal `ker B × 0`.
 * `LinearMap.BilinForm.IsAlt.exists_isSymplectomorphism_coisotropicModel`: uniqueness of
   coisotropic embeddings inducing `B`.
-* `LinearMap.BilinForm.IsAlt.isSymplectomorphism_coisotropicModel_prodCongr`: for a projection
-  commuting with a group action preserving `B`, the group acts on the model by symplectomorphisms.
 
 ## References
 
@@ -101,7 +98,7 @@ private theorem coisotropicModelBilinForm_nondegenerate (hB : B.IsAlt)
     simpa using h (0, a')
   -- Pairing with `K × 0` forces `a = 0`, since `B w k = 0` and `P k = k` there.
   have ha : a = 0 := LinearMap.ext fun k ↦ by
-    simpa [hP, hB.isRefl.apply_eq_zero_of_mem_ker _ k.2] using h ((k : W), 0)
+    simpa [hP, hB.isRefl.apply_eq_zero_of_mem_ker _ k.property] using h ((k : W), 0)
   -- Pairing with `W × 0` then puts `w` in `K`, where `P` is the identity.
   have hw : w ∈ LinearMap.ker B := LinearMap.mem_ker.2 <| LinearMap.ext fun w' ↦ by
     simpa [hPw, ha] using h (w', 0)
@@ -142,7 +139,7 @@ theorem orthogonal_range_inl_coisotropicModel :
   · intro h
     -- Testing against `K × 0` kills `a`; then `B w' w = 0` for all `w'` puts `w` in `K`.
     have ha : a = 0 := LinearMap.ext fun k ↦ by
-      simpa [hP, LinearMap.mem_ker.1 k.2] using h k
+      simpa [hP, LinearMap.mem_ker.1 k.property] using h k
     refine ⟨w, LinearMap.mem_ker.2 <| LinearMap.ext fun w' ↦ ?_, rfl, ha.symm⟩
     rw [LinearMap.zero_apply, ← hB.neg_eq, neg_eq_zero]
     simpa [ha] using h w'
@@ -170,7 +167,7 @@ theorem exists_isSymplectomorphism_coisotropicModel {V : Type*} [AddCommGroup V]
   have hdim := ω.finrank_ker_add_finrank_of_isCoisotropic hι hω hC
   let S := LinearMap.range (LinearMap.inl ℝ W (Module.Dual ℝ (LinearMap.ker B)))
   have hS (x : S) : (x : W × Module.Dual ℝ (LinearMap.ker B)).2 = 0 := by
-    obtain ⟨w, hw⟩ := x.2
+    obtain ⟨w, hw⟩ := x.property
     rw [← hw, LinearMap.inl_apply]
   obtain ⟨e, he, hext⟩ := SymplecticForm.exists_isSymplectomorphism_extend
     (hB.coisotropicModel P hP) ω
@@ -190,22 +187,5 @@ theorem exists_isSymplectomorphism_coisotropicModel_coisotropicModel [FiniteDime
         (hB.coisotropicModel P' hP') e ∧ ∀ w, e (w, 0) = (w, 0) :=
   hB.exists_isSymplectomorphism_coisotropicModel hP _ LinearMap.inl_injective (by simp)
     (hB.isCoisotropic_range_inl_coisotropicModel hP')
-
-section Equivariant
-
-variable {H : Type*} [Group H] {ρ : H →* W ≃ₗ[ℝ] W} (hρ : ∀ h, B.IsOrthogonal (ρ h))
-
-/-- For a projection `P` of `W` onto the kernel `K` of `B` which commutes with the action of `H`,
-each `h ∈ H` acts on the coisotropic model `W × K*` by a symplectomorphism, through `ρ h` on `W`
-and the contragredient action on `K*`. -/
-theorem isSymplectomorphism_coisotropicModel_prodCongr
-    (hPρ : ∀ h w, P (ρ h w) = B.kerRepresentation ρ hρ h (P w)) (h : H) :
-    SymplecticForm.IsSymplectomorphism (hB.coisotropicModel P hP) (hB.coisotropicModel P hP)
-      ((ρ h).prodCongr (B.kerDualRepresentation ρ hρ h)) := by
-  rw [SymplecticForm.isSymplectomorphism_iff]
-  rintro ⟨w, a⟩ ⟨w', a'⟩
-  simp [hPρ, hρ h w w']
-
-end Equivariant
 
 end LinearMap.BilinForm.IsAlt
