@@ -69,6 +69,14 @@ theorem exists_eq_sub_of (x : GrothendieckAddGroup M) : ∃ a b : M, x = of a - 
   obtain ⟨⟨a, s⟩, h⟩ := (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).surj x
   exact ⟨a, s, eq_sub_of_add_eq h⟩
 
+/-- Two elements of the monoid have the same image in the Grothendieck group exactly when they
+become equal after adding a common element. -/
+theorem of_eq_of_iff {a b : M} :
+    (of a : GrothendieckAddGroup M) = of b ↔ ∃ c : M, a + c = b + c :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).eq_iff_exists.trans
+    ⟨fun ⟨c, h⟩ ↦ ⟨c, by rwa [add_comm a, add_comm b]⟩,
+      fun ⟨c, h⟩ ↦ ⟨⟨c, trivial⟩, by rwa [add_comm _ a, add_comm _ b]⟩⟩
+
 /-- The universal property of the Grothendieck group, upgraded to an isomorphism of the additive
 groups of homomorphisms. -/
 noncomputable def liftAddEquiv : (M →+ G) ≃+ (GrothendieckAddGroup M →+ G) :=

@@ -24,7 +24,7 @@ lemma here, since the type already carries it.
 * `Kernel.probabilityMeasure` — the bundled kernel;
 * `Kernel.probabilityMeasure_toMeasure` — its underlying measure is the kernel's fibre, and the
   abstraction boundary for importing modules;
-* `Kernel.measurable_probabilityMeasure` — measurability into `ProbabilityMeasure Ω`.
+* `Kernel.measurable_probabilityMeasure` — measurability into `ProbabilityMeasure Ω`;
 * `samplingKernel` — the tautological Markov kernel from a probability measure to itself.
 
 Stated for an arbitrary Markov kernel rather than for any particular construction. The regular
@@ -60,9 +60,8 @@ theorem probabilityMeasure_toMeasure (κ : Kernel β Ω) [IsMarkovKernel κ] (b 
 /-- The bundled kernel is measurable into `ProbabilityMeasure Ω`. -/
 @[fun_prop]
 theorem measurable_probabilityMeasure (κ : Kernel β Ω) [IsMarkovKernel κ] :
-    Measurable (probabilityMeasure κ) := by
-  refine Measurable.subtype_mk ?_
-  exact Measure.measurable_of_measurable_coe _ fun s hs => Kernel.measurable_coe _ hs
+    Measurable (probabilityMeasure κ) :=
+  κ.measurable.subtype_mk
 
 end ProbabilityTheory.Kernel
 
@@ -72,10 +71,11 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
+variable (α) in
 /-- **The tautological Markov kernel.** It sends each bundled probability measure to its
 underlying measure on `α`, so the fibre at `P` is `P` itself. -/
-def samplingKernel (α : Type*) [MeasurableSpace α] : Kernel (ProbabilityMeasure α) α :=
-  ⟨fun P => (P : Measure α), measurable_subtype_coe⟩
+def samplingKernel : Kernel (ProbabilityMeasure α) α :=
+  ⟨fun P => (P : Measure α), measurable_subtypeVal⟩
 
 @[simp]
 theorem samplingKernel_apply (P : ProbabilityMeasure α) :
@@ -83,7 +83,7 @@ theorem samplingKernel_apply (P : ProbabilityMeasure α) :
   (rfl)
 
 instance : IsMarkovKernel (samplingKernel α) :=
-  ⟨fun P => P.2⟩
+  ⟨fun P => P.property⟩
 
 end Probability
 

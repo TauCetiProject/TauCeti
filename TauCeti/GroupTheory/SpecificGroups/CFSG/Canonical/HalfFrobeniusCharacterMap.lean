@@ -50,33 +50,33 @@ open DynkinType
 
 universe v
 
-variable (d : SuzukiReeIndex) {A : Type v} [CommRing A] [ExpChar A d.1.characteristic]
+variable (d : SuzukiReeIndex) {A : Type v} [CommRing A] [ExpChar A d.val.characteristic]
 
 /-- **Character compatibility of the exceptional isogeny.** An endomorphism of the points of the
 simply connected Chevalley group of a Suzuki--Ree index which sends `x_{±αᵢ}(u)` to
 `x_{±α_{σ i}}(cᵢ^{±1} u ^ eᵢ)`, for the length permutation `σ` and the exponents `eᵢ` of the index,
 pulls characters of the torus back by the weight map of the root-datum special isogeny. -/
 theorem isCharacterMap_datumSpecialIsogeny_of_rootSubgroupPoints
-    (τ : (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).points A →*
-      (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).points A)
-    (c : Fin d.1.rank → Aˣ)
+    (τ : (d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).points A →*
+      (d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).points A)
+    (c : Fin d.val.rank → Aˣ)
     (hpos : ∀ i (u : A),
-      τ ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).rootSubgroupPoints
-          (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) A (Multiplicative.ofAdd u)) =
-        (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).rootSubgroupPoints
-          (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.lengthPerm i)) A
+      τ ((d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).rootSubgroupPoints
+          (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i) A (Multiplicative.ofAdd u)) =
+        (d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).rootSubgroupPoints
+          (d.val.dynkinType.simpleIndex d.val.dynkinType_valid (d.lengthPerm i)) A
           (Multiplicative.ofAdd (c i * u ^ d.exponent i)))
     (hneg : ∀ i (u : A),
-      τ ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).rootSubgroupPoints
-          ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).reflectionPerm
-            (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)
-            (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)) A (Multiplicative.ofAdd u)) =
-        (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).rootSubgroupPoints
-          ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).reflectionPerm
-            (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.lengthPerm i))
-            (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.lengthPerm i))) A
+      τ ((d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).rootSubgroupPoints
+          ((d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).reflectionPerm
+            (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i)
+            (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i)) A (Multiplicative.ofAdd u)) =
+        (d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).rootSubgroupPoints
+          ((d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).reflectionPerm
+            (d.val.dynkinType.simpleIndex d.val.dynkinType_valid (d.lengthPerm i))
+            (d.val.dynkinType.simpleIndex d.val.dynkinType_valid (d.lengthPerm i))) A
           (Multiplicative.ofAdd (((c i)⁻¹ : Aˣ) * u ^ d.exponent i))) :
-    IsCharacterMap ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).torusPoints A) τ
+    IsCharacterMap ((d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).torusPoints A) τ
       d.datumSpecialIsogeny.weightMap :=
   isCharacterMap_scChevalleyDatum_of_rootSubgroupPoints τ d.lengthPerm c d.exponent
     d.neg_one_pow_exponent hpos hneg _ d.datumSpecialIsogeny_weightMap_apply
@@ -86,28 +86,28 @@ pinned simple-root values of the exceptional isogeny, its power with the index's
 exponent `2m + 1` pulls characters of the torus back by the weight map of the root-datum
 Steinberg map of the index. -/
 theorem isCharacterMap_datumSteinberg_of_rootSubgroupPoints
-    (τ : Monoid.End ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).points A))
-    (c : Fin d.1.rank → Aˣ)
+    (τ : Monoid.End ((d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).points A))
+    (c : Fin d.val.rank → Aˣ)
     (hpos : ∀ i (u : A),
-      τ ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).rootSubgroupPoints
-          (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) A (Multiplicative.ofAdd u)) =
-        (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).rootSubgroupPoints
-          (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.lengthPerm i)) A
+      τ ((d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).rootSubgroupPoints
+          (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i) A (Multiplicative.ofAdd u)) =
+        (d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).rootSubgroupPoints
+          (d.val.dynkinType.simpleIndex d.val.dynkinType_valid (d.lengthPerm i)) A
           (Multiplicative.ofAdd (c i * u ^ d.exponent i)))
     (hneg : ∀ i (u : A),
-      τ ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).rootSubgroupPoints
-          ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).reflectionPerm
-            (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)
-            (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)) A (Multiplicative.ofAdd u)) =
-        (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).rootSubgroupPoints
-          ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).reflectionPerm
-            (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.lengthPerm i))
-            (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.lengthPerm i))) A
+      τ ((d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).rootSubgroupPoints
+          ((d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).reflectionPerm
+            (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i)
+            (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i)) A (Multiplicative.ofAdd u)) =
+        (d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).rootSubgroupPoints
+          ((d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).reflectionPerm
+            (d.val.dynkinType.simpleIndex d.val.dynkinType_valid (d.lengthPerm i))
+            (d.val.dynkinType.simpleIndex d.val.dynkinType_valid (d.lengthPerm i))) A
           (Multiplicative.ofAdd (((c i)⁻¹ : Aˣ) * u ^ d.exponent i))) :
-    IsCharacterMap ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).torusPoints A)
-      (τ ^ d.1.fieldExponent) d.datumSteinberg.weightMap := by
+    IsCharacterMap ((d.val.dynkinType.scChevalleyDatum d.val.dynkinType_valid).torusPoints A)
+      (τ ^ d.val.fieldExponent) d.datumSteinberg.weightMap := by
   rw [datumSteinberg_weightMap_eq_pow]
   exact (d.isCharacterMap_datumSpecialIsogeny_of_rootSubgroupPoints τ c hpos hneg).pow
-    d.1.fieldExponent
+    d.val.fieldExponent
 
 end TauCeti.SuzukiReeIndex

@@ -115,12 +115,13 @@ theorem antipode_ne_self (x : OnePoint 𝕜) : antipode x ≠ x := by
 
 /-- The matrix `!![0, -1; 1, 0]` of the Möbius transformation `z ↦ -1 / z`. -/
 private noncomputable def antipodeGL : GL (Fin 2) 𝕜 :=
-  SpecialLinearGroup.toGL ⟨!![0, -1; 1, 0], by simp [det_fin_two]⟩
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
+  SpecialLinearGroup.toGL (.mk !![0, -1; 1, 0] (by simp [det_fin_two]))
 
 omit [DecidableEq 𝕜] in
 private theorem antipodeGL_apply (i j : Fin 2) :
-    (antipodeGL : GL (Fin 2) 𝕜) i j = !![0, -1; 1, 0] i j :=
-  rfl
+    (antipodeGL : GL (Fin 2) 𝕜) i j = !![0, -1; 1, 0] i j := by
+  rw [antipodeGL, Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- The antipodal map is complex conjugation followed by the Möbius transformation
 `z ↦ -1 / z`. -/
@@ -193,7 +194,7 @@ theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
     antipodeGL_apply, GeneralLinearGroup.map_apply, scalar_apply,
     SpecialLinearGroup.coe_GL_coe_matrix] at e
   have hdet : A 0 0 * A 1 1 - A 0 1 * A 1 0 = 1 := by
-    have h1 := A.2
+    have h1 := A.property
     rwa [det_fin_two] at h1
   -- Comparing entries, `Aᴴ A` is the scalar matrix `u`.
   have hAA : star (A : Matrix (Fin 2) (Fin 2) 𝕜) * A = scalar (Fin 2) (u : 𝕜) := by
@@ -215,6 +216,6 @@ theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
     · linear_combination A 0 0 * e11 + A 1 0 * e01
     · linear_combination A 0 1 * e11 + A 1 1 * e01 + (u : 𝕜) * hdet
   rw [specialUnitaryGroup.mk_mem_range_toPSL_iff]
-  exact mem_unitaryGroup_of_star_mul_self_eq_scalar (by simp [A.2]) hAA
+  exact mem_unitaryGroup_of_star_mul_self_eq_scalar (by simp [A.property]) hAA
 
 end Matrix.ProjectiveSpecialLinearGroup

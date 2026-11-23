@@ -285,6 +285,40 @@ end TauCeti
 
 namespace Diffeomorph
 
+section Membership
+
+omit [CompleteSpace E]
+
+/-- If the differential of `h` carries `D` onto `D'`, then the differential of `h⁻¹` carries `D'`
+onto `D`. -/
+theorem mem_iff_mfderiv_symm_apply_mem (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (hDD' : ∀ x v, v ∈ D x ↔ mfderiv I J h x v ∈ D' (h x)) (y : N) (w : TangentSpace J y) :
+    w ∈ D' y ↔ mfderiv J I h.symm y w ∈ D (h.symm y) := by
+  obtain ⟨x, rfl⟩ : ∃ x, h x = y := ⟨h.symm y, h.apply_symm_apply y⟩
+  -- Membership of a vector of the model space only depends on the base point up to equality.
+  have hcongr : ∀ {x' : M}, x' = x → ∀ v : E,
+      ((v : TangentSpace I x') ∈ D x' ↔ (v : TangentSpace I x) ∈ D x) := by
+    rintro _ rfl _
+    rfl
+  refine Iff.trans ?_ (hcongr (h.symm_apply_apply x) _).symm
+  refine Iff.trans ?_ (hDD' x _).symm
+  rw [h.mfderiv_apply_mfderiv_symm_apply hn x w]
+
+/-- If the differentials of `h` and `g` carry `D` onto `D'` and `D'` onto `D''`, then the
+differential of the composite carries `D` onto `D''`. -/
+theorem mem_iff_mfderiv_trans_apply_mem {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 G H''}
+    {X : Type*} [TopologicalSpace X] [ChartedSpace H'' X]
+    {D'' : Π z : X, Submodule 𝕜 (TangentSpace K z)} (h : M ≃ₘ^n⟮I, J⟯ N) (g : N ≃ₘ^n⟮J, K⟯ X)
+    (hn : n ≠ 0)
+    (hDD' : ∀ x v, v ∈ D x ↔ mfderiv I J h x v ∈ D' (h x))
+    (hD'D'' : ∀ y w, w ∈ D' y ↔ mfderiv J K g y w ∈ D'' (g y)) (x : M) (v : TangentSpace I x) :
+    v ∈ D x ↔ mfderiv I K (h.trans g) x v ∈ D'' ((h.trans g) x) := by
+  rw [coe_trans, mfderiv_comp_apply x (g.mdifferentiable hn (h x)) (h.mdifferentiable hn x), hDD',
+    hD'D'', Function.comp_apply]
+
+end Membership
+
 open TauCeti
 
 variable [CompleteSpace F] [IsManifold I (minSmoothness 𝕜 2) M]
@@ -297,17 +331,8 @@ theorem isInvolutiveDistribution_iff (h : M ≃ₘ^n⟮I, J⟯ N)
     IsInvolutiveDistribution I D ↔ IsInvolutiveDistribution J D' := by
   have hn0 : n ≠ 0 := ne_of_gt
     (lt_of_lt_of_le (by norm_num : (0 : ℕ∞ω) < 2) (le_minSmoothness.trans hn))
-  refine ⟨fun hD ↦ hD.diffeomorph h hn hDD', fun hD' ↦ ?_⟩
-  apply hD'.diffeomorph h.symm hn
-  intro y v
-  have hss : h.symm.symm = h := Diffeomorph.ext fun _ ↦ rfl
-  have hder : mfderiv I J h (h.symm y) (mfderiv J I h.symm y v) = v := by
-    have hh := h.symm.mfderiv_symm_apply_mfderiv_apply hn0 y v
-    rw [hss] at hh
-    exact hh
-  have hh := (hDD' (h.symm y) (mfderiv J I h.symm y v)).symm
-  rw [hder, h.apply_symm_apply] at hh
-  exact hh
+  exact ⟨fun hD ↦ hD.diffeomorph h hn hDD',
+    fun hD' ↦ hD'.diffeomorph h.symm hn (h.mem_iff_mfderiv_symm_apply_mem hn0 hDD')⟩
 
 /-- A distribution is involutive exactly when its pullback by a diffeomorphism is involutive.
 This form expresses the transported distribution directly as the preimage of each tangent

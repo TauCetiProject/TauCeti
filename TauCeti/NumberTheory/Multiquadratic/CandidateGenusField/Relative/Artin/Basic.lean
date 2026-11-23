@@ -536,7 +536,7 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
       NumberFieldArithmetic.integralIdealsAway (R := 𝓞 (candidateGenusFieldBase hd))
         (genusFieldArtinExcludedPrimes hd) := by
     rw [NumberFieldArithmetic.mem_integralIdealsAway_iff]
-    refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.2, fun v hv hdvdJ ↦ ?_⟩
+    refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.property, fun v hv hdvdJ ↦ ?_⟩
     have hdvdM : v.asIdeal ∣
         Ideal.span
           {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))

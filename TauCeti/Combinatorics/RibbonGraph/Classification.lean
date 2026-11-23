@@ -125,11 +125,11 @@ variable {n : ℕ}
 
 /-- Isomorphism of bipartite ribbon graphs with `n` edges, as an equivalence relation. -/
 def isoSetoid (n : ℕ) : Setoid {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n} where
-  r Γ Δ := Nonempty (Γ.1.Iso Δ.1)
-  iseqv := ⟨fun Γ ↦ ⟨Iso.refl Γ.1⟩, fun ⟨f⟩ ↦ ⟨f.symm⟩, fun ⟨f⟩ ⟨g⟩ ↦ ⟨f.trans g⟩⟩
+  r Γ Δ := Nonempty (Γ.val.Iso Δ.val)
+  iseqv := ⟨fun Γ ↦ ⟨Iso.refl Γ.val⟩, fun ⟨f⟩ ↦ ⟨f.symm⟩, fun ⟨f⟩ ⟨g⟩ ↦ ⟨f.trans g⟩⟩
 
 theorem isoSetoid_r {Γ Δ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n}} :
-    (isoSetoid n).r Γ Δ ↔ Nonempty (Γ.1.Iso Δ.1) := Iff.rfl
+    (isoSetoid n).r Γ Δ ↔ Nonempty (Γ.val.Iso Δ.val) := Iff.rfl
 
 /-- Isomorphism classes of bipartite ribbon graphs with `n` edges are isomorphism classes of
 degree-`n` permutation triples: a class of graphs goes to the class of the triple of any numbering
@@ -139,7 +139,7 @@ noncomputable def isoClassEquiv (n : ℕ) :
     Quotient (isoSetoid.{u} n) ≃ PermutationTriple.IsoClass n where
   toFun := Quotient.lift
     (fun Γ ↦ PermutationTriple.IsoClass.mk
-      (Γ.1.toPermutationTriple (Fintype.equivFinOfCardEq Γ.2)))
+      (Γ.val.toPermutationTriple (Fintype.equivFinOfCardEq Γ.property)))
     fun _ _ h ↦ by
       obtain ⟨f⟩ := isoSetoid_r.mp h
       exact PermutationTriple.IsoClass.mk_eq_mk_iff.mpr
@@ -151,7 +151,7 @@ noncomputable def isoClassEquiv (n : ℕ) :
         (uliftIso _).trans (f.trans (uliftIso _).symm)
   left_inv := Quotient.ind fun Γ ↦ by
     rw [Quotient.lift_mk, PermutationTriple.IsoClass.lift_mk]
-    exact Quotient.sound (isoSetoid_r.mpr ⟨(uliftIso _).trans (Γ.1.isoRibbonGraph _).symm⟩)
+    exact Quotient.sound (isoSetoid_r.mpr ⟨(uliftIso _).trans (Γ.val.isoRibbonGraph _).symm⟩)
   right_inv c := by
     obtain ⟨t, rfl⟩ := PermutationTriple.IsoClass.mk_surjective c
     rw [PermutationTriple.IsoClass.lift_mk, Quotient.lift_mk,
@@ -160,9 +160,9 @@ noncomputable def isoClassEquiv (n : ℕ) :
 
 /-- The class of a ribbon graph is the class of its triple along any numbering of its edges. -/
 theorem isoClassEquiv_mk (Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n})
-    (ν : Γ.1.E ≃ Fin n) :
-    isoClassEquiv n ⟦Γ⟧ = PermutationTriple.IsoClass.mk (Γ.1.toPermutationTriple ν) :=
-  PermutationTriple.IsoClass.mk_eq_mk_iff.mpr (Γ.1.equivalent_toPermutationTriple _ ν)
+    (ν : Γ.val.E ≃ Fin n) :
+    isoClassEquiv n ⟦Γ⟧ = PermutationTriple.IsoClass.mk (Γ.val.toPermutationTriple ν) :=
+  PermutationTriple.IsoClass.mk_eq_mk_iff.mpr (Γ.val.equivalent_toPermutationTriple _ ν)
 
 /-- The class of a ribbon graph is the class of its triple along the canonical numbering
 `Fintype.equivFinOfCardEq` of its edges; see `isoClassEquiv_mk` for an arbitrary numbering. -/
@@ -170,7 +170,8 @@ theorem isoClassEquiv_mk (Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ
 theorem isoClassEquiv_mk_equivFinOfCardEq
     (Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n}) :
     isoClassEquiv n ⟦Γ⟧ =
-      PermutationTriple.IsoClass.mk (Γ.1.toPermutationTriple (Fintype.equivFinOfCardEq Γ.2)) :=
+      PermutationTriple.IsoClass.mk (Γ.val.toPermutationTriple
+          (Fintype.equivFinOfCardEq Γ.property)) :=
   isoClassEquiv_mk Γ _
 
 /-- The class of a triple is the class of its (universe-lifted) ribbon graph. -/
@@ -201,14 +202,14 @@ noncomputable def autEquivAutomorphismGroup (ν : Γ.E ≃ Fin n) :
   toFun f := ⟨ν.permCongr f.edge, Γ.permCongr_edge_mem_automorphismGroup ν f⟩
   invFun τ := Iso.ofEdge (ν.trans ((τ : Perm (Fin n)).trans ν.symm))
     (fun e ↦ by
-      have h := congrArg (· (τ.1 (ν e)))
-        (PermutationTriple.mem_automorphismGroup_iff.mp τ.2).1
+      have h := congrArg (· (τ.val (ν e)))
+        (PermutationTriple.mem_automorphismGroup_iff.mp τ.property).1
       simp only [toPermutationTriple_σ0, Perm.mul_apply, Perm.inv_def, symm_apply_apply,
         permCongr_apply, symm_apply_apply] at h
       simp [h])
     (fun e ↦ by
-      have h := congrArg (· (τ.1 (ν e)))
-        (PermutationTriple.mem_automorphismGroup_iff.mp τ.2).2
+      have h := congrArg (· (τ.val (ν e)))
+        (PermutationTriple.mem_automorphismGroup_iff.mp τ.property).2
       simp only [toPermutationTriple_σ1, Perm.mul_apply, Perm.inv_def, symm_apply_apply,
         permCongr_apply, symm_apply_apply] at h
       simp [h])

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Quaternion
+public import TauCeti.Algebra.Quaternion.Map
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.BrauerGroup.BaseChange
 public import TauCeti.Algebra.BrauerGroup.ULift
@@ -23,7 +24,8 @@ It lets quaternion algebras and their splitting isomorphisms be transported alon
 The construction works over arbitrary commutative rings, including in characteristic two.
 
 The formula `baseChange_tmul` sends a pure tensor to the scalar multiple of the coefficientwise
-image. The inverse formula `baseChange_symm_mk` expands a quaternion in the basis `1, i, j, k`.
+image `TauCeti.QuaternionAlgebra.map`. The inverse formula `baseChange_symm_mk` expands a
+quaternion in the basis `1, i, j, k`.
 For the two-parameter notation, `baseChangeTwoParams` gives the equivalence directly with
 `ℍ[S,algebraMap R S a,algebraMap R S b]`.
 
@@ -45,53 +47,6 @@ namespace TauCeti.QuaternionAlgebra
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
-/-- Apply a ring homomorphism to the coefficients of a quaternion. -/
-def map (a b c : R) (f : R →+* S) :
-    ℍ[R,a,b,c] →+* ℍ[S,f a,f b,f c] where
-  toFun q := ⟨f q.re, f q.imI, f q.imJ, f q.imK⟩
-  map_zero' := by ext <;> simp
-  map_one' := by ext <;> simp
-  map_add' x y := by ext <;> simp
-  map_mul' x y := by ext <;> simp
-
-@[simp]
-theorem map_mk (a b c : R) (f : R →+* S) (w x y z : R) :
-    map a b c f ⟨w, x, y, z⟩ = ⟨f w, f x, f y, f z⟩ := (rfl)
-
-@[simp]
-theorem re_map (a b c : R) (f : R →+* S) (q : ℍ[R,a,b,c]) :
-    (map a b c f q).re = f q.re := (rfl)
-
-@[simp]
-theorem imI_map (a b c : R) (f : R →+* S) (q : ℍ[R,a,b,c]) :
-    (map a b c f q).imI = f q.imI := (rfl)
-
-@[simp]
-theorem imJ_map (a b c : R) (f : R →+* S) (q : ℍ[R,a,b,c]) :
-    (map a b c f q).imJ = f q.imJ := (rfl)
-
-@[simp]
-theorem imK_map (a b c : R) (f : R →+* S) (q : ℍ[R,a,b,c]) :
-    (map a b c f q).imK = f q.imK := (rfl)
-
-@[simp]
-theorem map_star (a b c : R) (f : R →+* S) (q : ℍ[R,a,b,c]) :
-    map a b c f (star q) = star (map a b c f q) := by
-  ext <;> simp
-
-@[simp]
-theorem map_coe (a b c : R) (f : R →+* S) (r : R) :
-    map a b c f (r : ℍ[R,a,b,c]) = (f r : ℍ[S,f a,f b,f c]) := by
-  ext <;> simp
-
-@[simp]
-theorem map_id (a b c : R) :
-    map a b c (RingHom.id R) = RingHom.id ℍ[R,a,b,c] := (rfl)
-
-@[simp]
-theorem map_comp {T : Type*} [CommRing T] (a b c : R) (f : R →+* S) (g : S →+* T) :
-    map a b c (g.comp f) = (map (f a) (f b) (f c) g).comp (map a b c f) := (rfl)
-
 variable (R S) [Algebra R S] (a b c : R)
 
 private noncomputable def baseChangeHom :
@@ -99,7 +54,7 @@ private noncomputable def baseChangeHom :
       ℍ[S,algebraMap R S a,algebraMap R S b,algebraMap R S c] := by
   let f : ℍ[R,a,b,c] →ₐ[R]
       ℍ[S,algebraMap R S a,algebraMap R S b,algebraMap R S c] :=
-    { map a b c (algebraMap R S) with
+    { map a b c (algebraMap R S) rfl rfl rfl with
       commutes' r := by
         rw [IsScalarTower.algebraMap_apply R S
           ℍ[S,algebraMap R S a,algebraMap R S b,algebraMap R S c]]
@@ -107,7 +62,7 @@ private noncomputable def baseChangeHom :
   exact AlgHom.liftEquiv R S _ _ f
 
 private theorem baseChangeHom_tmul (s : S) (q : ℍ[R,a,b,c]) :
-    baseChangeHom R S a b c (s ⊗ₜ[R] q) = s • map a b c (algebraMap R S) q := by
+    baseChangeHom R S a b c (s ⊗ₜ[R] q) = s • map a b c (algebraMap R S) rfl rfl rfl q := by
   exact AlgHom.liftEquiv_tmul _ s q
 
 /-- Extending scalars in a quaternion algebra applies the algebra map to its parameters. -/
@@ -137,7 +92,7 @@ private theorem baseChange_toAlgHom :
 /-- Base change sends a pure tensor to the scalar multiple of the coefficientwise image. -/
 @[simp]
 theorem baseChange_tmul (s : S) (q : ℍ[R,a,b,c]) :
-    baseChange R S a b c (s ⊗ₜ[R] q) = s • map a b c (algebraMap R S) q := by
+    baseChange R S a b c (s ⊗ₜ[R] q) = s • map a b c (algebraMap R S) rfl rfl rfl q := by
   rw [← AlgEquiv.coe_toAlgHom, baseChange_toAlgHom, baseChangeHom_tmul]
 
 /-- The inverse base-change equivalence expands a quaternion in the basis `1, i, j, k`. -/
@@ -185,6 +140,16 @@ theorem baseChangeTwoParams_symm_mk (w x y z : S) :
   generalize algebraMap R S 0 = t at h ⊢
   cases h
   rfl
+
+variable {R S a b} {c d : R}
+
+/-- Isomorphic quaternion algebras `ℍ[R,a,b] ≃ ℍ[R,c,d]` stay isomorphic after extending scalars
+to any commutative `R`-algebra `S`. -/
+theorem nonempty_algEquiv_baseChangeTwoParams (h : Nonempty (ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d])) :
+    Nonempty (ℍ[S,algebraMap R S a,algebraMap R S b] ≃ₐ[S]
+      ℍ[S,algebraMap R S c,algebraMap R S d]) :=
+  h.map fun f => (baseChangeTwoParams R S a b).symm.trans
+    ((Algebra.TensorProduct.congr AlgEquiv.refl f).trans (baseChangeTwoParams R S c d))
 
 end TauCeti.QuaternionAlgebra
 

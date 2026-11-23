@@ -40,10 +40,13 @@ points, on which the trajectory spaces of Morse homology are built.
 * `TauCeti.MorseChart.euclideanForm`: the Euclidean metric of a Morse chart, with
   `TauCeti.MorseChart.contMDiffOn_euclideanForm`, `TauCeti.MorseChart.euclideanForm_comm` and
   `TauCeti.MorseChart.euclideanForm_self_pos`, and its comparison with Euclidean metrics in
-  `TauCeti.MorseChart.isEuclidean_iff_euclideanForm`.
+  `TauCeti.MorseChart.isEuclidean_iff_euclideanForm`. A field which is linear in the chart is the
+  negative gradient of `f` for this metric
+  (`TauCeti.MorseChart.euclideanForm_apply_left_eq_neg_mvfderiv`).
 * `IsCompact.exists_contMDiffRiemannianMetric_inner_eq_euclideanForm`: a metric which is Euclidean
   in Morse charts, with sources of pairwise disjoint closures, at the critical points in a compact
-  set.
+  set; `IsCompact.exists_contMDiffRiemannianMetric_inner_eq_smul_euclideanForm` gives a prescribed
+  positive multiple of the Euclidean metric instead.
 * `TauCeti.IsMorse.exists_contMDiffRiemannianMetric_isAdaptedPseudoGradient_neg_mgradient`: on a
   compact manifold, a metric whose negative gradient is an adapted pseudo-gradient.
 
@@ -71,7 +74,7 @@ namespace MorseChart
 
 section EuclideanForm
 
-variable [FiniteDimensional ℝ E] (φ : MorseChart E f x)
+variable (φ : MorseChart E f x)
 
 /-- The dot product of the coordinates of a Morse chart, as a bilinear form on the model space. -/
 private noncomputable def coordDot : E →L[ℝ] E →L[ℝ] ℝ :=
@@ -155,6 +158,17 @@ theorem contMDiffOn_euclideanForm [IsManifold 𝓘(ℝ, E) ∞ M] :
     with_reducible_and_instances rfl
   exact (contMDiffAt_bilinearForm_pullback hQ hψ).contMDiffWithinAt
 
+/-- **A linear field is the Euclidean negative gradient**: on the source of a Morse chart in which
+a field `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, the Euclidean metric of the chart has
+`g (X, ·) = -df`. -/
+theorem euclideanForm_apply_left_eq_neg_mvfderiv {X : (y : M) → TangentSpace 𝓘(ℝ, E) y}
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {y : M} (hy : y ∈ φ.toChart.source) (w : TangentSpace 𝓘(ℝ, E) y) :
+    φ.euclideanForm y (X y) w = -mvfderiv 𝓘(ℝ, E) f y w := by
+  rw [euclideanForm_apply, hφ y hy, φ.mvfderiv_apply hy, dotProduct, ← Finset.sum_neg_distrib]
+  simp
+
 /-- A metric is Euclidean in a Morse chart exactly when it equals the Euclidean metric of the chart
 on its source. -/
 theorem isEuclidean_iff_euclideanForm [RiemannianBundle (fun y : M ↦ TangentSpace 𝓘(ℝ, E) y)] :
@@ -167,6 +181,50 @@ end EuclideanForm
 end MorseChart
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
+
+/-- **A metric which is a multiple of the Euclidean metric in Morse charts.** Let `K` be a compact
+subset of a Hausdorff σ-compact manifold, let `f` be smooth, and let `a > 0`. If every critical
+point of `f` in `K` is nondegenerate, then there are Morse charts `φ c` at the critical points `c`
+in `K`, whose sources have pairwise disjoint closures, and a smooth Riemannian metric which is `a`
+times the Euclidean metric of `φ c` on the whole source of `φ c`.
+
+No condition is imposed on the metric away from these charts, nor on the critical points of `f`
+outside `K`. -/
+theorem _root_.IsCompact.exists_contMDiffRiemannianMetric_inner_eq_smul_euclideanForm [T2Space M]
+    [SigmaCompactSpace M] {K : Set M} (hK : IsCompact K) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
+    (hnd : ∀ x ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 →
+      IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) {a : ℝ} (ha : 0 < a) :
+    ∃ g : ContMDiffRiemannianMetric 𝓘(ℝ, E) ∞ E (fun y : M ↦ TangentSpace 𝓘(ℝ, E) y),
+      ∃ φ : ∀ c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K), MorseChart E f c,
+        (∀ c, ∀ y ∈ (φ c).toChart.source, g.inner y = a • (φ c).euclideanForm y) ∧
+          Pairwise (Disjoint on fun c ↦ closure (φ c).toChart.source) := by
+  -- Take Morse charts at the finitely many critical points in `K`, and pairwise disjoint closed
+  -- neighbourhoods `A c` inside these charts.
+  obtain ⟨hC, φ, W, A, -, hWdisj, hAn, hAc, hAsub⟩ := hK.exists_morseChart_closed_nhds hf hnd
+  have : Finite ↥(criticalPoints 𝓘(ℝ, E) f ∩ K) := hC.to_subtype
+  have hAdisj : Pairwise (Disjoint on A) := fun c c' h ↦
+    (hWdisj h).mono (fun _ hy ↦ (hAsub c hy).2) fun _ hy ↦ (hAsub c' hy).2
+  -- Extend the rescaled Euclidean metrics of the charts from the sets `A c` to a metric on `M`.
+  obtain ⟨g, hg⟩ := exists_contMDiffRiemannianMetric_inner_eq_of_locallyFinite
+    (U := fun c ↦ (φ c).toChart.source) (β := fun c y ↦ a • (φ c).euclideanForm y) hAc
+    (locallyFinite_of_finite A) hAdisj (fun c ↦ (φ c).toChart.open_source)
+    (fun c _ hy ↦ (hAsub c hy).1) (fun c ↦ (φ c).contMDiffOn_euclideanForm.const_smul_section)
+    (fun c y _ v w ↦ by simp only [smul_apply, (φ c).euclideanForm_comm y v w])
+    fun c _ hy _ hv ↦ by
+      simpa only [smul_apply, smul_eq_mul] using mul_pos ha ((φ c).euclideanForm_self_pos hy hv)
+  -- The metric is the rescaled Euclidean metric in the restriction of each chart to the interior
+  -- of `A c`, whose source has closure inside `A c`.
+  let ψ (c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K)) : MorseChart E f c :=
+    (φ c).restr isOpen_interior (mem_interior_iff_mem_nhds.2 (hAn c))
+  have hψ (c) : (ψ c).toChart.source = (φ c).toChart.source ∩ interior (A c) :=
+    MorseChart.restr_source _ _ _
+  refine ⟨g, ψ, fun c y hy ↦ ?_, fun c c' h ↦ (hAdisj h).mono ?_ ?_⟩
+  · rw [hψ] at hy
+    rw [MorseChart.restr_euclideanForm]
+    exact hg c y (interior_subset hy.2)
+  all_goals
+    simp only [hψ]
+    exact closure_minimal (inter_subset_right.trans interior_subset) (hAc _)
 
 /-- **A metric which is Euclidean in Morse charts.** Let `K` be a compact subset of a Hausdorff
 σ-compact manifold and let `f` be smooth. If every critical point of `f` in `K` is nondegenerate,
@@ -184,31 +242,8 @@ theorem _root_.IsCompact.exists_contMDiffRiemannianMetric_inner_eq_euclideanForm
       ∃ φ : ∀ c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K), MorseChart E f c,
         (∀ c, ∀ y ∈ (φ c).toChart.source, g.inner y = (φ c).euclideanForm y) ∧
           Pairwise (Disjoint on fun c ↦ closure (φ c).toChart.source) := by
-  -- Take Morse charts at the finitely many critical points in `K`, and pairwise disjoint closed
-  -- neighbourhoods `A c` inside these charts.
-  obtain ⟨hC, φ, W, A, -, hWdisj, hAn, hAc, hAsub⟩ := hK.exists_morseChart_closed_nhds hf hnd
-  have : Finite ↥(criticalPoints 𝓘(ℝ, E) f ∩ K) := hC.to_subtype
-  have hAdisj : Pairwise (Disjoint on A) := fun c c' h ↦
-    (hWdisj h).mono (fun _ hy ↦ (hAsub c hy).2) fun _ hy ↦ (hAsub c' hy).2
-  -- Extend the Euclidean metrics of the charts from the sets `A c` to a metric on `M`.
-  obtain ⟨g, hg⟩ := exists_contMDiffRiemannianMetric_inner_eq_of_locallyFinite
-    (U := fun c ↦ (φ c).toChart.source) (β := fun c ↦ (φ c).euclideanForm) hAc
-    (locallyFinite_of_finite A) hAdisj (fun c ↦ (φ c).toChart.open_source)
-    (fun c _ hy ↦ (hAsub c hy).1) (fun c ↦ (φ c).contMDiffOn_euclideanForm)
-    (fun c _ _ ↦ (φ c).euclideanForm_comm _) fun c _ hy _ hv ↦ (φ c).euclideanForm_self_pos hy hv
-  -- The metric is Euclidean in the restriction of each chart to the interior of `A c`, whose
-  -- source has closure inside `A c`.
-  let ψ (c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K)) : MorseChart E f c :=
-    (φ c).restr isOpen_interior (mem_interior_iff_mem_nhds.2 (hAn c))
-  have hψ (c) : (ψ c).toChart.source = (φ c).toChart.source ∩ interior (A c) :=
-    MorseChart.restr_source _ _ _
-  refine ⟨g, ψ, fun c y hy ↦ ?_, fun c c' h ↦ (hAdisj h).mono ?_ ?_⟩
-  · rw [hψ] at hy
-    rw [MorseChart.restr_euclideanForm]
-    exact hg c y (interior_subset hy.2)
-  all_goals
-    simp only [hψ]
-    exact closure_minimal (inter_subset_right.trans interior_subset) (hAc _)
+  simpa only [one_smul] using hK.exists_contMDiffRiemannianMetric_inner_eq_smul_euclideanForm hf hnd
+    one_pos
 
 /-- **The negative gradient of a Morse function is an adapted pseudo-gradient for some metric.**
 Every Morse function on a compact manifold has a smooth Riemannian metric whose negative gradient

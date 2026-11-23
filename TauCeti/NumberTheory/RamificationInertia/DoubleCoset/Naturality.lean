@@ -60,8 +60,8 @@ noncomputable def primesOverFixedFieldMap (p : Ideal (𝓞 K))
   letI : IsScalarTower K ↥(fixedField H') ↥(fixedField H) :=
     IsScalarTower.of_algebraMap_eq' rfl
   exact fun q ↦
-    ⟨q.1.under (𝓞 ↥(fixedField H')), inferInstance,
-      ⟨by rw [under_under]; exact q.2.2.over⟩⟩
+    ⟨q.val.under (𝓞 ↥(fixedField H')), inferInstance,
+      ⟨by rw [under_under]; exact q.property.2.over⟩⟩
 
 omit [NumberField K] [NumberField M] in
 /-- `primesOverFixedFieldMap` is contraction of the underlying ideal. -/
@@ -69,7 +69,7 @@ omit [NumberField K] [NumberField M] in
 theorem primesOverFixedFieldMap_coe (p : Ideal (𝓞 K))
     {H H' : Subgroup (M ≃ₐ[K] M)} (h : H ≤ H') (q : p.primesOver (𝓞 ↥(fixedField H))) :
     (primesOverFixedFieldMap p h q : Ideal (𝓞 ↥(fixedField H'))) =
-      q.1.comap (NumberField.RingOfIntegers.mapRingHom
+      q.val.comap (NumberField.RingOfIntegers.mapRingHom
         (IntermediateField.inclusion (fixedField_le h))) :=
   (rfl)
 

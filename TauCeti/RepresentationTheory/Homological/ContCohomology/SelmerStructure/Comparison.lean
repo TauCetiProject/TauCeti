@@ -137,13 +137,13 @@ Neither nesting, agreement outside `S`, nor agreement of the localisation maps i
 to define the map. -/
 def localConditionComparison (S : Set ι) :
     𝓖.selmerGroup →+
-      ∀ i : S, 𝓖.localCondition i.1 ⧸
-        (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1) :=
+      ∀ i : S, 𝓖.localCondition i.val ⧸
+        (𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val) :=
   AddMonoidHom.pi fun i ↦
     (QuotientAddGroup.mk'
-      ((𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))).comp
-      (((𝓖.localization i.1).comp 𝓖.selmerGroup.subtype).codRestrict
-        (𝓖.localCondition i.1) fun c ↦ 𝓖.localization_mem c i.1)
+      ((𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val))).comp
+      (((𝓖.localization i.val).comp 𝓖.selmerGroup.subtype).codRestrict
+        (𝓖.localCondition i.val) fun c ↦ 𝓖.localization_mem c i.val)
 
 /-- The coordinate of the comparison map is the `𝓖`-localised class in `𝓖.localCondition i`
 modulo its intersection with `𝓕.localCondition i`. -/
@@ -151,7 +151,7 @@ modulo its intersection with `𝓕.localCondition i`. -/
 theorem localConditionComparison_apply (S : Set ι) (c : 𝓖.selmerGroup) (i : S) :
     𝓕.localConditionComparison 𝓖 S c i =
       QuotientAddGroup.mk
-        (⟨𝓖.localization i.1 c, 𝓖.localization_mem c i.1⟩ : 𝓖.localCondition i.1) :=
+        (⟨𝓖.localization i.val c, 𝓖.localization_mem c i.val⟩ : 𝓖.localCondition i.val) :=
   (rfl)
 
 /-- A comparison class vanishes precisely when its `𝓖`-localisations at `S` satisfy
@@ -188,8 +188,8 @@ theorem exact_inclusion_localConditionComparison
     (hle : ∀ i, 𝓕.localCondition i ≤ 𝓖.localCondition i) :
     Function.Exact (AddSubgroup.inclusion (𝓕.selmerGroup_le 𝓖 hloc hle))
       (𝓕.localConditionComparison 𝓖 S) := by
-  rw [AddMonoidHom.exact_iff (P := ∀ i : S, 𝓖.localCondition i.1 ⧸
-    (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1)),
+  rw [AddMonoidHom.exact_iff (P := ∀ i : S, 𝓖.localCondition i.val ⧸
+    (𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val)),
     𝓕.ker_localConditionComparison 𝓖 S hloc hout, AddSubgroup.inclusion_range]
 
 /-- Finiteness of `𝓕.selmerGroup` and of the local quotients over finite `S` implies
@@ -200,18 +200,18 @@ theorem finite_selmerGroup_of_finite_quotient
     (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
     (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i)
     [Finite S] [Finite 𝓕.selmerGroup]
-    [∀ i : S, Finite (𝓖.localCondition i.1 ⧸
-      (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))] :
+    [∀ i : S, Finite (𝓖.localCondition i.val ⧸
+      (𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val))] :
     Finite 𝓖.selmerGroup := by
   apply (AddMonoidHom.finite_iff_finite_ker_range
-    (G' := ∀ i : S, 𝓖.localCondition i.1 ⧸
-      (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))
+    (G' := ∀ i : S, 𝓖.localCondition i.val ⧸
+      (𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val))
     (𝓕.localConditionComparison 𝓖 S)).mpr
   refine ⟨?_, inferInstance⟩
   rw [𝓕.ker_localConditionComparison 𝓖 S hloc hout]
   exact Finite.of_injective
     (fun c : 𝓕.selmerGroup.addSubgroupOf 𝓖.selmerGroup ↦
-      (⟨c.1.1, c.2⟩ : 𝓕.selmerGroup))
+      (⟨c.val.val, c.property⟩ : 𝓕.selmerGroup))
     (fun _ _ h ↦ Subtype.ext (Subtype.ext
       (congrArg (fun c : 𝓕.selmerGroup ↦ (c : H1 G M)) h)))
 
@@ -223,12 +223,12 @@ theorem relIndex_selmerGroup_eq_card_range
     (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i) :
     𝓕.selmerGroup.relIndex 𝓖.selmerGroup =
       Nat.card ((𝓕.localConditionComparison 𝓖 S).range
-        (N := ∀ i : S, 𝓖.localCondition i.1 ⧸
-          (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))) := by
+        (N := ∀ i : S, 𝓖.localCondition i.val ⧸
+          (𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val))) := by
   have h := AddSubgroup.index_ker
     (G := 𝓖.selmerGroup)
-    (G' := ∀ i : S, 𝓖.localCondition i.1 ⧸
-      (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))
+    (G' := ∀ i : S, 𝓖.localCondition i.val ⧸
+      (𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val))
     (𝓕.localConditionComparison 𝓖 S)
   rw [𝓕.ker_localConditionComparison 𝓖 S hloc hout] at h
   simpa only [AddSubgroup.relIndex] using h
@@ -246,10 +246,10 @@ theorem relIndex_selmerGroup_dvd_prod (T : Finset ι)
   rw [𝓕.relIndex_selmerGroup_eq_card_range 𝓖 (T : Set ι) hloc hT]
   have h := AddSubgroup.card_addSubgroup_dvd_card
     ((𝓕.localConditionComparison 𝓖 (T : Set ι)).range
-      (N := ∀ i : (T : Set ι), 𝓖.localCondition i.1 ⧸
-        (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1)))
-  have hcard : Nat.card (∀ i : (T : Set ι), 𝓖.localCondition i.1 ⧸
-      (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1)) =
+      (N := ∀ i : (T : Set ι), 𝓖.localCondition i.val ⧸
+        (𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val)))
+  have hcard : Nat.card (∀ i : (T : Set ι), 𝓖.localCondition i.val ⧸
+      (𝓕.localCondition i.val).addSubgroupOf (𝓖.localCondition i.val)) =
         ∏ i ∈ T, (𝓕.localCondition i).relIndex (𝓖.localCondition i) := by
     rw [Nat.card_pi]
     simpa only [AddSubgroup.relIndex, AddSubgroup.index_eq_card] using

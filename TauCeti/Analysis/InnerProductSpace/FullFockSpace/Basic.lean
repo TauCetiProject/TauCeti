@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.FullFockSpace.Defs
+public import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Analysis.InnerProductSpace.RangeProjection
 
 /-!
-# Creation and annihilation operators on full Fock space
+# Creation, annihilation, and field operators on full Fock space
 
 On the full Fock space `FullFockSpace 𝕜 H` (`𝓕(H) = 𝕜 Ω ⊕ ⊕_{n ≥ 1} H^{\widehat{⊗} n}`, defined
 in `TauCeti.Analysis.InnerProductSpace.FullFockSpace.Defs`), we construct the vacuum state
-infrastructure and the left creation and annihilation operators:
+infrastructure, the left creation and annihilation operators, and the self-adjoint field operators:
 
 * **Left creation** `FullFockSpace.creation 𝕜 h` (`ℓ(h)`), sending `Ω ↦ h` and
   `x₁ ⊗ ⋯ ⊗ xₙ ↦ h ⊗ x₁ ⊗ ⋯ ⊗ xₙ`. Each `creation 𝕜 h` is `‖h‖` times an isometry on the entire
@@ -24,26 +25,31 @@ infrastructure and the left creation and annihilation operators:
 * **Left annihilation** `FullFockSpace.annihilation 𝕜 h` (`ℓ(h)*`), defined as the Hilbert-space
   adjoint of `creation 𝕜 h`. It annihilates the vacuum (`annihilation 𝕜 h vacuum = 0`) and
   satisfies the Cuntz–Toeplitz relation `annihilation 𝕜 h ∘L creation 𝕜 k = ⟪h, k⟫_𝕜 • id`.
+* **Vacuum functional and field operators.** Pairing bounded operators against `vacuum` defines the
+  normalized positive linear functional `FullFockSpace.vacuumState 𝕜 H` (`T ↦ ⟪Ω, T Ω⟫_𝕜`), and for
+  each `h : H` the sum `FullFockSpace.field 𝕜 h = creation 𝕜 h + annihilation 𝕜 h` (`ℓ(h) + ℓ(h)*`)
+  is self-adjoint of exact operator norm `2 * ‖h‖`, `ℝ`-linear in `h`, and satisfies
+  `vacuumState 𝕜 H (field 𝕜 h * field 𝕜 k) = ⟪h, k⟫_𝕜`.
 
 Finite pure tensor words `FullFockSpace.wordVector 𝕜 [h₁, …, hₙ] = h₁ ⊗ ⋯ ⊗ hₙ` span a dense
-subspace of `FullFockSpace 𝕜 H`. The self-adjoint field operators
-`creation 𝕜 h + annihilation 𝕜 h` (`ℓ(h) + ℓ(h)*`) have exact operator norm `2 * ‖h‖`. Unit
-vectors in `H` induce creation isometries and orthogonal range projections, finite orthonormal
-sums of creation range projections are self-adjoint projections, and for a `HilbertBasis` `b` of
-`H` the range projections `creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)` sum in the strong operator
-topology to `1 - vacuumProj`.
+subspace of `FullFockSpace 𝕜 H`. Unit vectors in `H` induce creation isometries and orthogonal range
+projections, finite orthonormal sums of creation range projections are self-adjoint projections, and
+for a `HilbertBasis` `b` of `H` the range projections `creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)` sum
+in the strong operator topology to `1 - vacuumProj`.
 
 Free (left) gauge (conservation) operators `Λ(T)`, acting on the first tensor factor of
 `FullFockSpace 𝕜 H`, are developed in `TauCeti.Analysis.InnerProductSpace.FullFockSpace.Gauge`.
 
 ## Main definitions
 
-* `TauCeti.FullFockSpace.vacuum`, `TauCeti.FullFockSpace.vacuumProj`: the unit vacuum vector `Ω`
-  and the orthogonal projection onto `𝕜 ∙ Ω`.
+* `TauCeti.FullFockSpace.vacuum`, `TauCeti.FullFockSpace.vacuumProj`,
+  `TauCeti.FullFockSpace.vacuumState`: the unit vacuum vector `Ω`, the orthogonal projection onto
+  `𝕜 ∙ Ω`, and the normalized positive vacuum functional `T ↦ ⟪vacuum, T vacuum⟫_𝕜`.
 * `TauCeti.FullFockSpace.creation`, `TauCeti.FullFockSpace.creationₗᵢ`: left creation operators and
   their bundled linear isometric embedding.
 * `TauCeti.FullFockSpace.annihilation`, `TauCeti.FullFockSpace.annihilationₗᵢ`: left annihilation
   operators and their bundled conjugate-linear isometric embedding.
+* `TauCeti.FullFockSpace.field`: the self-adjoint field operator `creation 𝕜 h + annihilation 𝕜 h`.
 * `TauCeti.FullFockSpace.wordVector`: pure tensor words `h₁ ⊗ ⋯ ⊗ hₙ` indexed by `List H`.
 
 ## Main results
@@ -54,7 +60,8 @@ Free (left) gauge (conservation) operators `Λ(T)`, acting on the first tensor f
   `ℓ(h)* ∘L ℓ(k) = ⟪h, k⟫ • id`.
 * `TauCeti.FullFockSpace.topologicalClosure_span_range_wordVector`: finite tensor words span a
   dense subspace of `FullFockSpace 𝕜 H`.
-* `TauCeti.FullFockSpace.norm_creation_add_annihilation`: `‖ℓ(h) + ℓ(h)*‖ = 2 * ‖h‖`.
+* `TauCeti.FullFockSpace.norm_creation_add_annihilation`, `TauCeti.FullFockSpace.norm_field`:
+  `‖ℓ(h) + ℓ(h)*‖ = 2 * ‖h‖`.
 * `TauCeti.FullFockSpace.creation_comp_annihilation_eq_starProjection`: for a unit vector `h`,
   `ℓ(h) ∘L ℓ(h)*` is the orthogonal projection onto `(creation 𝕜 h).range`.
 * `HilbertBasis.hasSum_creation_comp_annihilation`: for a `HilbertBasis` `b`,
@@ -74,7 +81,7 @@ public section
 noncomputable section
 
 open UniformSpace Filter
-open scoped InnerProductSpace TensorProduct Topology ENNReal NNReal
+open scoped ComplexOrder InnerProductSpace TensorProduct Topology ENNReal NNReal
 
 namespace TauCeti
 
@@ -107,6 +114,11 @@ theorem norm_vacuum : ‖(vacuum : FullFockSpace 𝕜 H)‖ = 1 := by
 
 theorem inner_vacuum_self : ⟪(vacuum : FullFockSpace 𝕜 H), vacuum⟫_𝕜 = 1 := by
   simp
+
+@[simp]
+theorem inner_vacuum_smul_vacuum (c : 𝕜) :
+    ⟪(vacuum : FullFockSpace 𝕜 H), c • vacuum⟫_𝕜 = c := by
+  rw [inner_smul_right, inner_vacuum_self, mul_one]
 
 theorem vacuum_ne_zero : (vacuum : FullFockSpace 𝕜 H) ≠ 0 := by
   intro h
@@ -727,6 +739,183 @@ theorem norm_creation_add_annihilation (h : H) :
         (two_le_norm_creation_add_annihilation_of_norm_eq_one (𝕜 := 𝕜) he_norm) (norm_nonneg h)
 
 end FieldNorm
+
+/-! ### The vacuum functional and self-adjoint field operators -/
+
+section VacuumState
+
+/-- The normalized *vacuum functional* `T ↦ ⟪vacuum, T vacuum⟫_𝕜` on bounded operators on
+`FullFockSpace 𝕜 H`, bundled as a positive linear map for the Loewner partial order. When `𝕜 = ℂ`
+and `H` is complete, this is the vacuum vector state on the C⋆-algebra `𝓑(𝓕(H))`. -/
+def vacuumState (𝕜 : Type u) (H : Type v) [RCLike 𝕜]
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] :
+    (FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) →ₚ[𝕜] 𝕜 :=
+  ContinuousLinearMap.innerPositiveLinearMap 𝕜 (vacuum : FullFockSpace 𝕜 H)
+
+section
+
+variable {𝕜 : Type u} {H : Type v} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+
+theorem vacuumState_def :
+    vacuumState 𝕜 H =
+      ContinuousLinearMap.innerPositiveLinearMap 𝕜 (vacuum : FullFockSpace 𝕜 H) :=
+  (rfl)
+
+@[simp]
+theorem vacuumState_apply (T : FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) :
+    vacuumState 𝕜 H T = ⟪vacuum, T vacuum⟫_𝕜 :=
+  ContinuousLinearMap.innerPositiveLinearMap_apply (vacuum : FullFockSpace 𝕜 H) T
+
+theorem vacuumState_one : vacuumState 𝕜 H 1 = 1 := by
+  simp
+
+theorem norm_vacuumState_apply_le (T : FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) :
+    ‖vacuumState 𝕜 H T‖ ≤ ‖T‖ := by
+  simpa using ContinuousLinearMap.norm_innerPositiveLinearMap_apply_le
+    (𝕜 := 𝕜) (vacuum : FullFockSpace 𝕜 H) T
+
+theorem continuous_vacuumState :
+    Continuous (vacuumState 𝕜 H : (FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) → 𝕜) := by
+  have h : (vacuumState 𝕜 H : (FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) → 𝕜) =
+      (innerSL 𝕜 (vacuum : FullFockSpace 𝕜 H)) ∘
+        (ContinuousLinearMap.apply 𝕜 (FullFockSpace 𝕜 H) vacuum) := by
+    ext T
+    simp
+  rw [h]
+  exact (innerSL 𝕜 (vacuum : FullFockSpace 𝕜 H)).continuous.comp
+    (ContinuousLinearMap.apply 𝕜 (FullFockSpace 𝕜 H) vacuum).continuous
+
+theorem vacuumState_vacuumProj : vacuumState 𝕜 H vacuumProj = 1 := by
+  simp
+
+theorem vacuumState_creation (h : H) : vacuumState 𝕜 H (creation 𝕜 h) = 0 := by
+  simp
+
+theorem vacuumState_annihilation (h : H) : vacuumState 𝕜 H (annihilation 𝕜 h) = 0 := by
+  simp
+
+theorem vacuumState_annihilation_mul_creation (h k : H) :
+    vacuumState 𝕜 H (annihilation 𝕜 h * creation 𝕜 k) = ⟪h, k⟫_𝕜 := by
+  simp
+
+theorem vacuumState_creation_mul_annihilation (h k : H) :
+    vacuumState 𝕜 H (creation 𝕜 h * annihilation 𝕜 k) = 0 := by
+  simp
+
+theorem vacuumState_creation_mul_creation (h k : H) :
+    vacuumState 𝕜 H (creation 𝕜 h * creation 𝕜 k) = 0 := by
+  simp
+
+theorem vacuumState_annihilation_mul_annihilation (h k : H) :
+    vacuumState 𝕜 H (annihilation 𝕜 h * annihilation 𝕜 k) = 0 := by
+  simp
+
+end
+
+end VacuumState
+
+section Field
+
+/-- The self-adjoint *field* (or *position*) operator `s(h) = ℓ(h) + ℓ(h)*` on
+`FullFockSpace 𝕜 H`. -/
+def field (𝕜 : Type u) {H : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] (h : H) :
+    FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H :=
+  creation 𝕜 h + annihilation 𝕜 h
+
+section
+
+variable {𝕜 : Type u} {H : Type v} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+
+theorem field_def (h : H) : field 𝕜 h = creation 𝕜 h + annihilation 𝕜 h :=
+  (rfl)
+
+theorem field_apply (h : H) (x : FullFockSpace 𝕜 H) :
+    field 𝕜 h x = creation 𝕜 h x + annihilation 𝕜 h x :=
+  (rfl)
+
+@[simp]
+theorem adjoint_field (h : H) : (field 𝕜 h).adjoint = field 𝕜 h := by
+  rw [field_def, map_add, adjoint_creation, adjoint_annihilation, add_comm]
+
+@[simp]
+theorem star_field (h : H) : star (field 𝕜 h) = field 𝕜 h :=
+  adjoint_field h
+
+theorem isSelfAdjoint_field (h : H) : IsSelfAdjoint (field 𝕜 h) :=
+  star_field h
+
+@[simp]
+theorem field_zero : field 𝕜 (0 : H) = 0 := by
+  simp [field_def]
+
+@[simp]
+theorem field_add (h k : H) : field 𝕜 (h + k) = field 𝕜 h + field 𝕜 k := by
+  rw [field_def, creation_add, annihilation_add, field_def, field_def, add_add_add_comm]
+
+@[simp]
+theorem field_neg (h : H) : field 𝕜 (-h) = -field 𝕜 h := by
+  rw [field_def, creation_neg, annihilation_neg, ← neg_add, ← field_def]
+
+@[simp]
+theorem field_sub (h k : H) : field 𝕜 (h - k) = field 𝕜 h - field 𝕜 k := by
+  rw [sub_eq_add_neg, field_add, field_neg, ← sub_eq_add_neg]
+
+theorem field_smul_of_isSelfAdjoint {c : 𝕜} (hc : IsSelfAdjoint c) (h : H) :
+    field 𝕜 (c • h) = c • field 𝕜 h := by
+  rw [field_def, field_def, smul_add, creation_smul, annihilation_smul, hc.star_eq]
+
+@[simp]
+theorem field_ofReal_smul (r : ℝ) (h : H) :
+    field 𝕜 ((r : 𝕜) • h) = (r : 𝕜) • field 𝕜 h :=
+  field_smul_of_isSelfAdjoint (by simp [IsSelfAdjoint, RCLike.conj_ofReal]) h
+
+@[simp]
+theorem norm_field (h : H) : ‖field 𝕜 h‖ = 2 * ‖h‖ :=
+  norm_creation_add_annihilation h
+
+theorem field_injective : Function.Injective (field 𝕜 (H := H)) := by
+  intro h k hhk
+  have hnorm : 2 * ‖h - k‖ = 0 := by
+    rw [← norm_field (𝕜 := 𝕜), field_sub, hhk, sub_self, norm_zero]
+  simp only [mul_eq_zero, OfNat.ofNat_ne_zero, false_or, norm_eq_zero] at hnorm
+  exact sub_eq_zero.mp hnorm
+
+@[simp]
+theorem field_eq_zero_iff {h : H} : field 𝕜 h = 0 ↔ h = 0 :=
+  ⟨fun hh => field_injective (hh.trans field_zero.symm), fun hh => hh ▸ field_zero⟩
+
+@[simp]
+theorem field_vacuum (h : H) : field 𝕜 h vacuum = creation 𝕜 h vacuum := by
+  simp [field_apply]
+
+@[simp]
+theorem inner_vacuum_field (h : H) (x : FullFockSpace 𝕜 H) :
+    ⟪vacuum, field 𝕜 h x⟫_𝕜 = ⟪vacuum, annihilation 𝕜 h x⟫_𝕜 := by
+  rw [field_apply, inner_add_right, inner_vacuum_creation, zero_add]
+
+theorem inner_vacuum_field_vacuum (h : H) : ⟪vacuum, field 𝕜 h vacuum⟫_𝕜 = 0 := by
+  simp
+
+@[simp]
+theorem inner_vacuum_field_sq (h : H) :
+    ⟪vacuum, (field 𝕜 h ^ 2) vacuum⟫_𝕜 = (‖h‖ ^ 2 : 𝕜) := by
+  simp [sq, inner_self_eq_norm_sq_to_K]
+
+theorem vacuumState_field (h : H) : vacuumState 𝕜 H (field 𝕜 h) = 0 := by
+  simp
+
+theorem vacuumState_field_mul_field (h k : H) :
+    vacuumState 𝕜 H (field 𝕜 h * field 𝕜 k) = ⟪h, k⟫_𝕜 := by
+  simp
+
+theorem vacuumState_field_sq (h : H) :
+    vacuumState 𝕜 H (field 𝕜 h ^ 2) = (‖h‖ ^ 2 : 𝕜) := by
+  simp
+
+end
+
+end Field
 
 /-! ### Creation range projections and the strong sum over a `HilbertBasis` -/
 

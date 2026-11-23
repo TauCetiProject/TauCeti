@@ -76,7 +76,7 @@ variable {A}
 
 /-- Unfolding lemma for `TauCeti.Huber.IsUniform`. -/
 theorem isUniform_iff : IsUniform A ↔ IsBounded {a : A | IsPowerBounded a} :=
-  ⟨fun h ↦ h.1, fun h ↦ ⟨h⟩⟩
+  ⟨fun h ↦ h.isBounded_setOf_isPowerBounded, fun h ↦ ⟨h⟩⟩
 
 /-- **Discrete rings are uniform**: in the discrete topology every set is bounded. -/
 instance (priority := 100) IsUniform.of_discreteTopology [DiscreteTopology A] : IsUniform A :=
@@ -219,7 +219,8 @@ inclusion. The unbundled form, for a ring isomorphism continuous in both directi
 theorem isUniform_iff {R S : TopCommRingCat} (e : R ≅ S) : IsUniform R ↔ IsUniform S :=
   -- a morphism `⟨f, hf⟩` of `TopCommRingCat` is a ring homomorphism `f` with `hf : Continuous f`,
   -- and applying it applies `f`, so `Iso.inv_hom_id_apply` is the inverse law for `e.hom.1`
-  isUniform_iff_of_ringEquiv (RingEquiv.ofRingHom e.hom.1 e.inv.1 (RingHom.ext e.inv_hom_id_apply)
-    (RingHom.ext e.hom_inv_id_apply)) e.hom.2 e.inv.2
+  isUniform_iff_of_ringEquiv (RingEquiv.ofRingHom e.hom.val e.inv.val
+      (RingHom.ext e.inv_hom_id_apply)
+    (RingHom.ext e.hom_inv_id_apply)) e.hom.property e.inv.property
 
 end CategoryTheory.Iso
