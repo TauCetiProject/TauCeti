@@ -44,7 +44,9 @@ the boundary on orientation lines squares to zero exactly when the integral boun
 choice of orientations
 (`TauCeti.IsAdaptedPseudoGradient.orientationLineBoundary_comp_self_eq_zero_iff`), and the
 integral boundaries of any two choices of orientations in the same charts are conjugate, as
-`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_reverse` makes explicit.
+`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_reverse` makes explicit. Reversing the
+chosen orientations at the critical points of a set `S` changes the evaluation by the sign reversal
+`Finsupp.signReversal` (`TauCeti.MorseOrientation.orientationLineEquiv_reverse`).
 
 Nor does the boundary on orientation lines depend on the Morse charts, when `X` is linear in them.
 Two Morse charts at the same critical point differ, on their coordinates of negative weight, by the
@@ -83,6 +85,8 @@ The transports are coherent: the one from a family of charts to itself is the id
   orientations identify the boundary on orientation lines with the integral Morse boundary.
 * `TauCeti.IsAdaptedPseudoGradient.orientationLineBoundary_comp_self_eq_zero_iff`: the boundary on
   orientation lines squares to zero if and only if the integral Morse boundary does.
+* `TauCeti.MorseOrientation.orientationLineEquiv_reverse`: reversing orientations changes the
+  evaluation at them by a sign reversal.
 * `TauCeti.orientationLineChartEquiv_orientationLineBoundary`: the boundary on orientation lines
   does not depend on the Morse charts in which `X` is linear.
 * `TauCeti.orientationLineChartEquiv_self` and
@@ -189,6 +193,19 @@ theorem orientationLineEquiv_symm_apply (c : criticalPoints 𝓘(ℝ, E) f →�
     ((𝔬.orientationLineEquiv hf R).symm c p).val (𝔬.orientation p) = c p := by
   rw [← orientationLineEquiv_apply (hf := hf) ((𝔬.orientationLineEquiv hf R).symm c),
     LinearEquiv.apply_symm_apply]
+
+/-- **Reversing orientations changes the evaluation by a sign reversal**: evaluating at the
+orientations reversed at the critical points of `S` negates the coefficients of the points of `S`.
+The charts, hence the chains on orientation lines, are unchanged. -/
+theorem orientationLineEquiv_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f))
+    [DecidablePred (· ∈ S)]
+    (c : (p : criticalPoints 𝓘(ℝ, E) f) → (𝔬.chart p).unstableOrientationLine R) :
+    (𝔬.reverse S).orientationLineEquiv hf R c =
+      Finsupp.signReversal R S (𝔬.orientationLineEquiv hf R c) := by
+  ext p
+  refine (orientationLineEquiv_apply (𝔬 := 𝔬.reverse S) c p).trans ?_
+  rw [Finsupp.signReversal_apply, orientationLineEquiv_apply, reverse_orientation]
+  split_ifs <;> simp
 
 end MorseOrientation
 
