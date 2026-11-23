@@ -185,26 +185,14 @@ theorem comap_map {f : X → Y} (x : StdSimplex R X)
     (hf : Set.BijOn f (f ⁻¹' ↑(x.map f).weights.support) ↑(x.map f).weights.support) :
     comap (x.map f) hf = x := by
   classical
+  have hS : (x.weights.support : Set X) ⊆ f ⁻¹' ↑(x.map f).weights.support := by
+    rw [weights_map, Finsupp.support_mapDomain_of_nonneg x.nonneg f, Finset.coe_image]
+    exact Set.subset_preimage_image f _
   ext a
   rw [weights_comap_apply]
-  have hsum : (x.map f).weights (f a) =
-      ∑ i ∈ x.weights.support, Finsupp.single (f i) (x.weights i) (f a) := by
-    rw [weights_map, Finsupp.mapDomain, Finsupp.sum_apply, Finsupp.sum]
   by_cases ha : f a ∈ (x.map f).weights.support
-  · rw [hsum, Finset.sum_eq_single a]
-    · simp
-    · intro i _ hia
-      refine Finsupp.single_eq_of_ne fun h ↦ hia (hf.injOn (by simpa [← h] using ha) ha h.symm)
-    · intro hnot
-      simp [Finsupp.notMem_support_iff.mp hnot]
-  · have hzero : (x.map f).weights (f a) = 0 := Finsupp.notMem_support_iff.mp ha
-    rw [hzero]
-    by_cases hmem : a ∈ x.weights.support
-    · refine (le_antisymm ?_ (x.weights_nonneg a)).symm
-      rw [← hzero, hsum]
-      simpa using Finset.single_le_sum (f := fun i ↦ Finsupp.single (f i) (x.weights i) (f a))
-        (fun i _ ↦ by simp [Finsupp.single_apply]; split_ifs <;> simp) hmem
-    · exact (Finsupp.notMem_support_iff.mp hmem).symm
+  · rw [weights_map, Finsupp.mapDomain_apply' _ _ hS hf.injOn ha]
+  · rw [Finsupp.notMem_support_iff.mp ha, Finsupp.notMem_support_iff.mp fun h ↦ ha (hS h)]
 
 /-- A point of a standard simplex lies on the facet opposite `j` exactly when its `j`-th weight
 vanishes. -/
