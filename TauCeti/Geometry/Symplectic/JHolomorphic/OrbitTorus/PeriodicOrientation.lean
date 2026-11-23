@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Complex
+public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Antiperiodic
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.ComplexOrientation
-public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.OrbitTwistSobolev
+public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.PeriodicSobolev
 
 /-!
 # The determinant signs of the orbit-torus operators periodic along the circle factor
