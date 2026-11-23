@@ -35,6 +35,8 @@ are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
   label masses and cumulative masses are proportions of inputs.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
+* `Equiv.measurePreserving_uniformOn_univ`: a bijection out of a countable type with measurable
+  singletons is measure preserving between the uniform laws, for any σ-algebra on its codomain.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
   samples from `Fin 2` differ with probability `1 / 2`.
 -/
@@ -199,6 +201,14 @@ theorem map_uniformOn_univ (e : α ≃ β) :
     have hβ : Infinite β := Infinite.of_injective e e.injective
     rw [(uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ),
       (uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ), Measure.map_zero]
+
+/-- A bijection out of a countable type with measurable singletons is measure preserving from the
+uniform law on its domain to the uniform law on its codomain, whatever the σ-algebra on the
+codomain. -/
+theorem measurePreserving_uniformOn_univ [Countable α] (e : α ≃ β) :
+    MeasurePreserving e (uniformOn (_root_.Set.univ : Set α))
+      (uniformOn (_root_.Set.univ : Set β)) :=
+  ⟨.of_discrete, e.map_uniformOn_univ⟩
 
 end Equiv
 

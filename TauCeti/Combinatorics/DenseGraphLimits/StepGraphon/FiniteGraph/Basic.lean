@@ -69,11 +69,10 @@ and measurability is a composition through the countable discrete space `ℕ × 
 * `TauCeti.DenseGraphLimits.prod_edgeFactor_finiteGraphGraphon` — on the unit interval, the edge
   product of `F` is the indicator that the cell index carries every edge of `F` to an edge of the
   transported graph `G.map Fin.valEmbedding` on `ℕ`;
-* `TauCeti.DenseGraphLimits.prod_edgeFactor_finiteGraphGraphonOnFin` — on `Fin m`, the edge product
-  of `F` is the indicator that the vertex assignment carries every edge of `F` to an edge of `G`;
 * `TauCeti.DenseGraphLimits.homDensity_eq_homDensityFin_of_apply_eq_ite` — finite-graph
-  compatibility for the adjacency indicator of a graph on any nonempty finite carrier with its
-  uniform measure;
+  compatibility for a graphon that is the adjacency indicator of a graph on a nonempty finite
+  carrier with its uniform measure; the carrier's σ-algebra need not be discrete, but the
+  indicator must then be measurable for it;
 * `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphonOnFin`,
   `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphon` — finite-graph compatibility, on the
   uniform finite carrier `Fin m` and on the unit interval.
@@ -229,19 +228,19 @@ theorem stepGraphonAvg_finiteGraphGraphon [NeZero m] (G : SimpleGraph (Fin m)) :
   rw [preimage_cellFin_singleton, volume_preimage_cellIdx (cellFin m x).isLt]
   exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top m)
 
-variable {V : Type*} [Fintype V]
+variable {V : Type*}
 
 open scoped Classical in
 /-- **The edge product is an adjacency-preservation indicator.** For the graphon of a finite graph
 `G`, the product of `edgeFactor` over the edges of `F` is `1` exactly when the cell index carries
 every edge of `F` to an edge of the transported graph `G.map Fin.valEmbedding` on `ℕ`, and `0`
-otherwise.
+otherwise. Only the edge set of `F` has to be finite.
 
 This holds for every `m`, which is why the target is the transported graph rather than `G`. For
 `m ≠ 0`, the same indicator in terms of `G.Adj` on `Fin m` is
-`prod_edgeFactor_finiteGraphGraphonOnFin`, read through `finiteGraphGraphon_eq_comap` and
-`edgeFactor_comap`. -/
-theorem prod_edgeFactor_finiteGraphGraphon (F : SimpleGraph V) [DecidableRel F.Adj]
+`prod_edgeFactor_eq_ite_of_apply_eq_ite F (finiteGraphGraphonOnFin_apply G) ψ` at `ψ : V → Fin m`,
+read through `finiteGraphGraphon_eq_comap` and `edgeFactor_comap`. -/
+theorem prod_edgeFactor_finiteGraphGraphon (F : SimpleGraph V) [Fintype F.edgeSet]
     (G : SimpleGraph (Fin m)) (x : V → I) :
     ∏ e ∈ F.edgeFinset, edgeFactor (finiteGraphGraphon G) x e
       = if ∀ a b, F.Adj a b → (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b))
@@ -253,15 +252,7 @@ theorem prod_edgeFactor_finiteGraphGraphon (F : SimpleGraph V) [DecidableRel F.A
     simpa only [SimpleGraph.comap_adj] using finiteGraphGraphon_apply G y z
   simpa only [SimpleGraph.comap_adj] using prod_edgeFactor_eq_ite_of_apply_eq_ite F hW x
 
-open scoped Classical in
-/-- **The edge product on the uniform finite carrier is a homomorphism indicator.** For the graphon
-of `G` on `Fin m`, the product of `edgeFactor` over the edges of `F` at `ψ : V → Fin m` is `1`
-exactly when `ψ` carries every edge of `F` to an edge of `G`, and `0` otherwise. -/
-theorem prod_edgeFactor_finiteGraphGraphonOnFin [NeZero m] (F : SimpleGraph V)
-    [DecidableRel F.Adj] (G : SimpleGraph (Fin m)) (ψ : V → Fin m) :
-    ∏ e ∈ F.edgeFinset, edgeFactor (finiteGraphGraphonOnFin G) ψ e
-      = if ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b) then (1 : ℝ) else 0 := by
-  convert prod_edgeFactor_eq_ite_of_apply_eq_ite F (finiteGraphGraphonOnFin_apply G) ψ
+variable [Fintype V]
 
 section UniformCarrier
 
@@ -294,18 +285,15 @@ private theorem homDensity_eq_homDensityFin_of_apply_eq_ite_of_measurableSinglet
 finite carrier with its uniform measure is the adjacency indicator of a graph `G` on the carrier,
 the graphon homomorphism density of `F` in `W` is the finite homomorphism density of `F` in `G`.
 
-The carrier may have any σ-algebra: `W` is pulled back along the identity from the discrete
-σ-algebra, which preserves the uniform measure and the density by `homDensity_comap`. -/
+The carrier's σ-algebra need not be discrete. Since `W` is a graphon, `hW` can hold only if the
+adjacency indicator of `G` is measurable for that σ-algebra on `Ω × Ω`; for a discrete carrier
+such as `Fin m` this is automatic. -/
 theorem homDensity_eq_homDensityFin_of_apply_eq_ite
     (hW : ∀ a b, W a b = if G.Adj a b then 1 else 0) :
     homDensity F W = homDensityFin F G := by
   -- the identity out of the discrete σ-algebra carries uniform measure to uniform measure
-  have hid : @MeasurePreserving Ω Ω ⊤ _ id (@uniformOn Ω ⊤ Set.univ) (uniformOn Set.univ) := by
-    refine @MeasurePreserving.mk Ω Ω ⊤ _ id _ _ (@measurable_from_top Ω Ω _ id) ?_
-    ext s hs
-    rw [Measure.map_apply (mα := ⊤) (@measurable_from_top Ω Ω _ id) hs, Set.preimage_id,
-      @uniformOn_univ Ω ⊤ _ s, uniformOn_univ,
-      @Measure.count_apply Ω ⊤ s MeasurableSpace.measurableSet_top, Measure.count_apply hs]
+  have hid : @MeasurePreserving Ω Ω ⊤ _ id (@uniformOn Ω ⊤ Set.univ) (uniformOn Set.univ) :=
+    @Equiv.measurePreserving_uniformOn_univ Ω Ω ⊤ _ _ _ (Equiv.refl Ω)
   rw [← @homDensity_comap Ω Ω _ ⊤ _ _ _ (@instIsProbabilityMeasure_uniformOn_univ Ω ⊤ _ _) V _ F _
     W id hid]
   exact @homDensity_eq_homDensityFin_of_apply_eq_ite_of_measurableSingletonClass V _ Ω _ _ ⊤ F _
