@@ -313,7 +313,7 @@ theorem ae_totalVariationOn_line_lt_top {u : E → ℝ} (hu : Integrable u)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The restriction of an indicator to a line is the indicator of the line section. -/
-private theorem indicator_one_line (s : Set E) (y e : E) :
+theorem indicator_one_line (s : Set E) (y e : E) :
     (fun t : ℝ => s.indicator (1 : E → ℝ) (y + t • e)) =
       {t : ℝ | y + t • e ∈ s}.indicator 1 :=
   funext fun _ => (indicator_comp_right (fun t : ℝ => y + t • e)).symm
