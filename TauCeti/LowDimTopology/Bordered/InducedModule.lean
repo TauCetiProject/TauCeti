@@ -449,6 +449,11 @@ private noncomputable def entrywiseDifferential (hd : IsUngradedDGAlgebra d)
   map_add' φ ψ := by ext; simp
   map_smul' r φ := by ext; simp
 
+private theorem coe_entrywiseDifferential_apply (hd : IsUngradedDGAlgebra d)
+    (hι : ∀ s, d (ι s) = 0) (φ : N.inducedModule) :
+    (N.entrywiseDifferential hd hι φ : X → A) = fun x => d ((φ : X → A) x) :=
+  (rfl)
+
 /-- A Leibniz differential of the induced module differs from the entrywise differential by an
 `A`-linear map. -/
 private noncomputable def leibnizDefect (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
@@ -459,7 +464,20 @@ private noncomputable def leibnizDefect (hd : IsUngradedDGAlgebra d) (hι : ∀ 
   map_add' φ ψ := by simp only [map_add]; abel
   map_smul' b φ := by
     ext x
-    simp [entrywiseDifferential, hD, hd.map_mul, mul_sub]
+    simp [coe_entrywiseDifferential_apply, hD, hd.map_mul, mul_sub]
+
+private theorem coe_leibnizDefect_apply (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (D : N.inducedModule →ₗ[R] N.inducedModule)
+    (hD : ∀ (b : A) φ, D (b • φ) = d b • φ + b • D φ) (φ : N.inducedModule) :
+    (leibnizDefect hd hι D hD φ : X → A) = (D φ : X → A) - fun x => d ((φ : X → A) x) :=
+  (rfl)
+
+/-- The morphism corresponding to the defect `D - d` of a Leibniz differential. -/
+private noncomputable def leibnizDefectMorphism [DecidableEq X] (hd : IsUngradedDGAlgebra d)
+    (hidem : ∀ s, IsIdempotentElem (ι s)) (hι : ∀ s, d (ι s) = 0)
+    (D : N.inducedModule →ₗ[R] N.inducedModule)
+    (hD : ∀ (b : A) φ, D (b • φ) = d b • φ + b • D φ) : morphisms N N :=
+  (inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)
 
 /-- A Leibniz differential is the entrywise differential plus the map of the morphism
 corresponding to its defect. -/
@@ -468,23 +486,21 @@ private theorem coe_apply_eq_add_continuationMap [DecidableEq X] (hd : IsUngrade
     (D : N.inducedModule →ₗ[R] N.inducedModule)
     (hD : ∀ (b : A) φ, D (b • φ) = d b • φ + b • D φ) (φ : N.inducedModule) :
     (D φ : X → A) = (fun x => d ((φ : X → A) x)) + continuationMap R A
-      ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD) : Matrix X X A) φ := by
+      (leibnizDefectMorphism hd hidem hι D hD : Matrix X X A) φ := by
   have h := congrArg (fun T : N.inducedModule →ₗ[A] N.inducedModule => (T φ : X → A))
     ((inducedHomEquiv N N hidem).apply_symm_apply (leibnizDefect hd hι D hD))
-  simp only [inducedHomEquiv_apply, coe_inducedHom_apply] at h
-  rw [h]
-  ext x
-  simp [leibnizDefect, entrywiseDifferential]
+  simp only [inducedHomEquiv_apply, coe_inducedHom_apply, coe_leibnizDefect_apply] at h
+  rw [leibnizDefectMorphism, h, add_sub_cancel]
 
 /-- The entrywise differential vanishes on the generators, so the row at `x` of the morphism of
 the defect is `D (1 ⊗ x)`. -/
-private theorem coe_inducedHomEquiv_symm_leibnizDefect [DecidableEq X]
+private theorem coe_leibnizDefectMorphism_apply [DecidableEq X]
     (hd : IsUngradedDGAlgebra d) (hidem : ∀ s, IsIdempotentElem (ι s)) (hι : ∀ s, d (ι s) = 0)
     (D : N.inducedModule →ₗ[R] N.inducedModule)
     (hD : ∀ (b : A) φ, D (b • φ) = d b • φ + b • D φ) (x y : X) :
-    ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD) : Matrix X X A) x y =
+    (leibnizDefectMorphism hd hidem hι D hD : Matrix X X A) x y =
       (D (N.generator hidem x) : X → A) y := by
-  simp [leibnizDefect, entrywiseDifferential, Pi.single_apply, apply_ite d, hι]
+  simp [leibnizDefectMorphism, coe_leibnizDefect_apply, Pi.single_apply, apply_ite d, hι]
 
 variable (N) in
 /-- The **type `D` structure of a Leibniz differential** `D` of square zero on the induced module
@@ -497,21 +513,21 @@ noncomputable def ofInducedDifferential [DecidableEq X] (hd : IsUngradedDGAlgebr
     (hD : ∀ (b : A) φ, D (b • φ) = d b • φ + b • D φ) (hDD : ∀ φ, D (D φ) = 0) :
     TypeDStructure d ι X where
   idem := N.idem
-  coeff := (inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)
-  idem_mul_coeff x y := (mem_morphisms_iff.mp
-    ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)).property x y).1
-  coeff_mul_idem x y := (mem_morphisms_iff.mp
-    ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)).property x y).2
+  coeff := leibnizDefectMorphism hd hidem hι D hD
+  idem_mul_coeff x y := (mem_morphisms_iff.mp (leibnizDefectMorphism hd hidem hι D hD).property
+    x y).1
+  coeff_mul_idem x y := (mem_morphisms_iff.mp (leibnizDefectMorphism hd hidem hι D hD).property
+    x y).2
   map_coeff_add_coeff_mul_coeff := by
     -- `D (D (1 ⊗ x)) = 0` is the row at `x` of `d δ + δ * δ`, since `D (1 ⊗ x)` is the row `δ x`.
     ext x y
     have hrow (z : X) : (D (N.generator hidem x) : X → A) z =
-        ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD) : Matrix X X A) x z :=
-      (coe_inducedHomEquiv_symm_leibnizDefect hd hidem hι D hD x z).symm
+        (leibnizDefectMorphism hd hidem hι D hD : Matrix X X A) x z :=
+      (coe_leibnizDefectMorphism_apply hd hidem hι D hD x z).symm
     have h := congrArg (fun φ : N.inducedModule => (φ : X → A) y) (hDD (N.generator hidem x))
     rw [coe_apply_eq_add_continuationMap hd hidem hι D hD, Pi.add_apply,
       continuationMap_apply (R := R) (M := A)
-        ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD) : Matrix X X A)] at h
+        (leibnizDefectMorphism hd hidem hι D hD : Matrix X X A)] at h
     simp only [hrow, op_smul_eq_mul, ZeroMemClass.coe_zero, Pi.zero_apply] at h
     simpa only [Matrix.add_apply, Matrix.map_apply, Matrix.mul_apply, Matrix.zero_apply] using h
 
@@ -530,7 +546,7 @@ theorem ofInducedDifferential_idem :
 theorem ofInducedDifferential_coeff (x y : X) :
     (N.ofInducedDifferential hd hidem hι D hD hDD).coeff x y =
       (D (N.generator hidem x) : X → A) y :=
-  coe_inducedHomEquiv_symm_leibnizDefect hd hidem hι D hD x y
+  coe_leibnizDefectMorphism_apply hd hidem hι D hD x y
 
 /-- The type `D` structure of `D` has the induced module of `N`. -/
 @[simp]
@@ -567,7 +583,8 @@ theorem coe_inducedDifferential_ofInducedDifferential
     (φ : (N.ofInducedDifferential hd hidem hι D hD hDD).inducedModule) :
     ((N.ofInducedDifferential hd hidem hι D hD hDD).inducedDifferential hd hι φ : X → A) =
       D ⟨φ, inducedModule_ofInducedDifferential hd hidem hι D hD hDD ▸ φ.property⟩ :=
-  boxDifferential_ofInducedDifferential_of_mem hd hidem hι D hD hDD _
+  (coe_inducedDifferential_apply hd hι φ).trans
+    (boxDifferential_ofInducedDifferential_of_mem hd hidem hι D hD hDD _)
 
 /-- The induced differential of the type `D` structure of `D` is `D`, as an `R`-linear map,
 transported along `TauCeti.TypeDStructure.inducedModule_ofInducedDifferential`. -/
@@ -592,10 +609,10 @@ theorem eq_ofInducedDifferential_iff {N' : TypeDStructure d ι X} :
   rcases N' with ⟨idem', coeff', hl', hr', hs'⟩
   rintro ⟨rfl, hN⟩
   have hF : ⟨coeff', mem_morphisms_iff.mpr fun x y => ⟨hl' x y, hr' x y⟩⟩ =
-      (inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD) := by
-    rw [LinearEquiv.eq_symm_apply, inducedHomEquiv_apply]
+      leibnizDefectMorphism hd hidem hι D hD := by
+    rw [leibnizDefectMorphism, LinearEquiv.eq_symm_apply, inducedHomEquiv_apply]
     ext φ y
-    simp [leibnizDefect, entrywiseDifferential, ← hN, boxDifferential_apply]
+    simp [coe_leibnizDefect_apply, ← hN, boxDifferential_apply]
   exact TypeDStructure.ext rfl (congrArg Subtype.val hF)
 
 end OfInducedDifferential
