@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Group.Subgroup.Basic
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Basic
 public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Relabel
 import Mathlib.Basic.Real.Pointwise
-import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SingleEdge
 import TauCeti.Order.Hom.PowersetCard
 
 /-!
@@ -31,11 +30,10 @@ once `X.triangles` is nonempty. Moreover, `Cochain.defect` equals an unoriented 
 `X.triangles`, is independent of the vertex `LinearOrder`, and is preserved by vertex relabellings.
 
 Pushing a cochain forward along a norm-nonincreasing homomorphism `φ : G →* H` (`Cochain.map φ`)
-does not increase `defect` or `gaugeDist`. Specializing `φ` to `L.subtype` for a subgroup `L ≤ G`
-shows that embedding `L`-valued cochains into `G` preserves `defect` and `cost` (on embedded gauges)
-and can only decrease `gaugeDist`. For any single-edge cochain `singleEdge (complete V) u₀ v₀ g`
-(`u₀ ≠ v₀`), the gauge distance is `ℓ g` on at least three vertices for every conjugation-invariant
-group norm `ℓ` (`Cochain.gaugeDist_singleEdge_of_three_le_card`).
+does not increase `defect` or `gaugeDist`, and preserves `gaugeDist` when `φ` admits a
+norm-nonincreasing retraction (`Cochain.gaugeDist_map_eq_of_comp_eq_id`). Specializing `φ` to
+`L.subtype` for a subgroup `L ≤ G` shows that embedding `L`-valued cochains into `G` preserves
+`defect` and `cost` (on embedded gauges) and can only decrease `gaugeDist`.
 
 ## References
 
@@ -641,6 +639,17 @@ theorem gaugeDist_map_le {φ : G →* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNor
   (α.le_gaugeDist_iff ℓ_G).mpr fun β =>
     ((α.map φ).gaugeDist_le_cost ℓ_H (φ ∘ β)).trans (α.cost_map_le hφ β)
 
+/-- Pushing a cochain forward along a norm-nonincreasing homomorphism `i : G →* H` that admits a
+norm-nonincreasing retraction `r : H →* G` (`r.comp i = MonoidHom.id G`) preserves `gaugeDist`. -/
+theorem gaugeDist_map_eq_of_comp_eq_id {i : G →* H} {r : H →* G}
+    {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
+    (hi : ∀ g, ℓ_H (i g) ≤ ℓ_G g) (hr : ∀ h, ℓ_G (r h) ≤ ℓ_H h)
+    (hri : r.comp i = MonoidHom.id G) (α : Cochain X G) :
+    (α.map i).gaugeDist ℓ_H = α.gaugeDist ℓ_G := by
+  refine le_antisymm (α.gaugeDist_map_le hi) ?_
+  have hmap : (α.map i).map r = α := by rw [map_map, hri, map_id]
+  simpa only [hmap] using (α.map i).gaugeDist_map_le hr
+
 /-- Along a norm-preserving homomorphism, `defect` is unchanged. -/
 theorem defect_map_eq {φ : G →* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
     (hφ : ∀ g, ℓ_H (φ g) = ℓ_G g) (α : Cochain X G) :
@@ -688,32 +697,6 @@ theorem gaugeDist_map_subtype_le (ℓ : GroupNorm G) (L : Subgroup G) (α : Coch
 end Metric
 
 end ChangeOfCoefficients
-
-/-! ### Single-edge cochains on the complete complex -/
-
-section SingleEdge
-
-variable {V G : Type*} [Fintype V] [LinearOrder V] [Group G]
-
-/-- On `complete V` with `3 ≤ Fintype.card V` and a conjugation-invariant group norm `ℓ`, the
-gauge distance of `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`) equals `ℓ g`. -/
-theorem gaugeDist_singleEdge_of_three_le_card {ℓ : GroupNorm G}
-    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (hV : 3 ≤ Fintype.card V)
-    {u₀ v₀ : V} (huv : u₀ ≠ v₀) (g : G) :
-    (singleEdge (complete V) u₀ v₀ g).gaugeDist ℓ = ℓ g := by
-  obtain ⟨w, hwu, hwv⟩ := ENat.exists_ne_ne_of_three_le
-    (by rw [ENat.card_eq_coe_fintype_card]; exact_mod_cast hV) u₀ v₀
-  have hadj_uv := (adj_complete u₀ v₀).mpr huv
-  have hlo : ℓ g ≤ (singleEdge (complete V) u₀ v₀ g).gaugeDist ℓ := by
-    simpa [holonomy_singleEdge hadj_uv hwu hwv g] using
-      (singleEdge (complete V) u₀ v₀ g).norm_holonomy_le_gaugeDist hℓ hadj_uv
-        ((adj_complete v₀ w).mpr hwv.symm) ((adj_complete w u₀).mpr hwu)
-  have hhi : (singleEdge (complete V) u₀ v₀ g).gaugeDist ℓ ≤ ℓ g :=
-    ((singleEdge (complete V) u₀ v₀ g).gaugeDist_le_cost ℓ 1).trans_eq
-      (cost_singleEdge_complete_one ℓ huv g)
-  exact le_antisymm hhi hlo
-
-end SingleEdge
 
 end Cochain
 

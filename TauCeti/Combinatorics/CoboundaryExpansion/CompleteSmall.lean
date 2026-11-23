@@ -85,9 +85,8 @@ theorem defect_movedNorm_fin_two_eq_card_sub_two_mul_gaugeDist_of_card_le_four
     (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
     α.defect (Equiv.Perm.movedNorm (Fin 2)) =
       ((Fintype.card V - 2 : ℕ) : ℝ) * α.gaugeDist (Equiv.Perm.movedNorm (Fin 2)) := by
-  let G := (simpleGraphEquivPermFinTwo V).symm α
-  rw [← (simpleGraphEquivPermFinTwo V).apply_symm_apply α, simpleGraphEquivPermFinTwo_eq_toCochain]
-  exact G.defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV
+  rw [← α.toCochain_supportGraph]
+  exact α.supportGraph.defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV
     (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one)
 
 end Cochain
@@ -96,15 +95,10 @@ end Cochain
 `h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2))` equals `(Fintype.card V - 2 : ℕ)`. -/
 theorem h1_complete_movedNorm_fin_two_of_card_le_four {V : Type*} [Fintype V] [LinearOrder V]
     (hV : Fintype.card V ≤ 4) :
-    h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2)) = (Fintype.card V - 2 : ℕ) := by
-  by_cases hV3 : 3 ≤ Fintype.card V
-  · have : Nontrivial (Equiv.Perm (Fin 2)) := ⟨⟨1, Equiv.swap 0 1, by decide⟩⟩
-    exact h1_eq_of_forall_defect_eq_mul_gaugeDist
-      (exists_gaugeDist_pos_complete hV3 (Equiv.Perm.movedNorm (Fin 2)))
-      fun α _ ↦ α.defect_movedNorm_fin_two_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV
-  · have hsub : Fintype.card V - 2 = 0 := by omega
-    rw [hsub, Nat.cast_zero]
-    exact h1_complete_of_card_le_two (by omega) _
+    h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2)) = (Fintype.card V - 2 : ℕ) :=
+  have : Nontrivial (Equiv.Perm (Fin 2)) := ⟨⟨1, Equiv.swap 0 1, by decide⟩⟩
+  h1_complete_eq_card_sub_two_of_forall_defect_eq_mul_gaugeDist (Equiv.Perm.movedNorm (Fin 2))
+    fun α ↦ α.defect_movedNorm_fin_two_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV
 
 /-- **Four-vertex binary Cheeger constant**: when `Fintype.card V = 4`,
 `h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2)) = 2`. -/
@@ -121,17 +115,11 @@ theorem h1_complete_zpowers_swap_of_card_le_four {V α : Type*} [Fintype V] [Lin
     [Fintype α] [DecidableEq α] (hV : Fintype.card V ≤ 4) {t : Equiv.Perm α} (ht : t.IsSwap) :
     h1 (TwoComplex.complete V)
         ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) =
-      (Fintype.card V - 2 : ℕ) := by
-  by_cases hV3 : 3 ≤ Fintype.card V
-  · have : Nontrivial (Subgroup.zpowers t) :=
-      ⟨⟨1, ⟨t, Subgroup.mem_zpowers t⟩, fun h ↦
-        ht.isCycle.ne_one (congrArg Subtype.val h).symm⟩⟩
-    exact h1_eq_of_forall_defect_eq_mul_gaugeDist
-      (exists_gaugeDist_pos_complete hV3 _)
-      fun γ _ ↦ γ.defect_zpowers_swap_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV ht
-  · have hsub : Fintype.card V - 2 = 0 := by omega
-    rw [hsub, Nat.cast_zero]
-    exact h1_complete_of_card_le_two (by omega) _
+      (Fintype.card V - 2 : ℕ) :=
+  have : Nontrivial (Subgroup.zpowers t) :=
+    ⟨⟨1, ⟨t, Subgroup.mem_zpowers t⟩, fun h ↦ ht.isCycle.ne_one (congrArg Subtype.val h).symm⟩⟩
+  h1_complete_eq_card_sub_two_of_forall_defect_eq_mul_gaugeDist _
+    fun γ ↦ γ.defect_zpowers_swap_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV ht
 
 /-- **Four-vertex transposition-subgroup Cheeger constant**: when `Fintype.card V = 4`, the Cheeger
 constant of `Subgroup.zpowers t` under the restricted moved-point norm equals `2`. -/

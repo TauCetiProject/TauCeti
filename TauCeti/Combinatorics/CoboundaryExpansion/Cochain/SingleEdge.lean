@@ -5,19 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Basic
+public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Invariance
 import TauCeti.Order.Hom.PowersetCard
 
 /-!
-# Single-edge cochain evaluations on the complete complex
+# Single-edge cochain evaluations
 
-Trivial-gauge cost and defect formulas for `TauCeti.Cochain.singleEdge` on
-`TauCeti.TwoComplex.complete V`:
+Cost, defect, and gauge-distance formulas for `TauCeti.Cochain.singleEdge`:
 
-* `TauCeti.Cochain.cost_singleEdge_complete_one`: under the trivial gauge `1`, the cost of
-  `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`) equals `ℓ g`.
-* `TauCeti.Cochain.defect_singleEdge`: for any group norm `ℓ`, the defect of
+* `TauCeti.Cochain.cost_singleEdge_one`, `TauCeti.Cochain.cost_singleEdge_complete_one`: under the
+  trivial gauge `1`, the cost of `singleEdge X u₀ v₀ g` along an edge `h : X.Adj u₀ v₀` (and in
+  particular on `complete V` for `u₀ ≠ v₀`) equals `ℓ g`.
+* `TauCeti.Cochain.defect_singleEdge`: on `complete V`, for any group norm `ℓ`, the defect of
   `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`) equals `((Fintype.card V - 2 : ℕ) : ℝ) * ℓ g`.
+* `TauCeti.Cochain.gaugeDist_singleEdge`, `TauCeti.Cochain.gaugeDist_singleEdge_of_three_le_card`:
+  under a conjugation-invariant group norm `ℓ`, the gauge distance of `singleEdge X u₀ v₀ g` equals
+  `ℓ g` whenever `(u₀, v₀)` belongs to a filled triangle `(u₀, v₀, w)` of `X`, and in particular on
+  `complete V` whenever `3 ≤ Fintype.card V` and `u₀ ≠ v₀`.
 -/
 
 public section
@@ -34,39 +38,57 @@ section SingleEdge
 
 variable {V G : Type*} [Fintype V] [LinearOrder V] [Group G]
 
-/-- Under the trivial gauge `1`, the cost of `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`)
+/-- Under the trivial gauge `1`, the cost of `singleEdge X u₀ v₀ g` along an edge `h : X.Adj u₀ v₀`
 equals `ℓ g` for any group norm `ℓ`. -/
-theorem cost_singleEdge_complete_one (ℓ : GroupNorm G) {u₀ v₀ : V} (huv : u₀ ≠ v₀) (g : G) :
-    (singleEdge (complete V) u₀ v₀ g).cost ℓ 1 = ℓ g := by
+theorem cost_singleEdge_one {X : TwoComplex V} (ℓ : GroupNorm G) {u₀ v₀ : V}
+    (h : X.Adj u₀ v₀) (g : G) :
+    (singleEdge X u₀ v₀ g).cost ℓ 1 = ℓ g := by
   classical
+  have huv : u₀ ≠ v₀ := h.ne
   let a := min u₀ v₀
   let b := max u₀ v₀
   have hab : a < b := min_lt_max.mpr huv
-  have hmem : (a, b) ∈ univ.filter fun p : V × V => p.1 < p.2 := by simp [a, b, hab]
-  rw [cost_complete, ← sum_erase_add _ _ hmem]
+  have hedge : ({a, b} : Finset V) ∈ X.edges := by
+    have hpair : ({a, b} : Finset V) = {u₀, v₀} := by
+      rcases lt_or_gt_of_ne huv with hlt | hlt
+      · simp [a, b, min_eq_left hlt.le, max_eq_right hlt.le]
+      · simp [a, b, min_eq_right hlt.le, max_eq_left hlt.le, pair_comm]
+    rw [hpair]
+    exact (X.adj_iff_pair_mem_edges u₀ v₀).mp h
+  have hmem : (a, b) ∈ univ.filter fun p : V × V =>
+      p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges := by
+    simp [hab, hedge]
+  rw [cost_def, ← sum_erase_add _ _ hmem]
   have hzero :
-      ∑ p ∈ (univ.filter fun p : V × V => p.1 < p.2).erase (a, b),
-        ℓ (((1 : V → G) p.1)⁻¹ * singleEdge (complete V) u₀ v₀ g p.1 p.2 * (1 : V → G) p.2) =
+      ∑ p ∈ (univ.filter fun p : V × V =>
+          p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges).erase (a, b),
+        ℓ (((1 : V → G) p.1)⁻¹ * singleEdge X u₀ v₀ g p.1 p.2 * (1 : V → G) p.2) =
         0 := by
     refine sum_eq_zero fun ⟨u, v⟩ hp => ?_
     obtain ⟨hne, hflt⟩ := mem_erase.mp hp
-    have hlt : u < v := (mem_filter.mp hflt).2
+    have hlt : u < v := (mem_filter.mp hflt).2.1
     have h₁ : ¬ (u = u₀ ∧ v = v₀) := by
       rintro ⟨rfl, rfl⟩; exact hne (Prod.ext (min_eq_left hlt.le).symm (max_eq_right hlt.le).symm)
     have h₂ : ¬ (u = v₀ ∧ v = u₀) := by
       rintro ⟨rfl, rfl⟩; exact hne (Prod.ext (min_eq_right hlt.le).symm (max_eq_left hlt.le).symm)
     simp [h₁, h₂]
   have hterm :
-      ℓ (((1 : V → G) a)⁻¹ * singleEdge (complete V) u₀ v₀ g a b * (1 : V → G) b) = ℓ g := by
+      ℓ (((1 : V → G) a)⁻¹ * singleEdge X u₀ v₀ g a b * (1 : V → G) b) = ℓ g := by
     simp only [Pi.one_apply, inv_one, one_mul, mul_one]
-    rcases lt_or_gt_of_ne huv with h | h
-    · have ha : a = u₀ := min_eq_left h.le
-      have hb : b = v₀ := max_eq_right h.le
-      rw [ha, hb, singleEdge_apply_self ((adj_complete u₀ v₀).mpr huv)]
-    · have ha : a = v₀ := min_eq_right h.le
-      have hb : b = u₀ := max_eq_left h.le
-      rw [ha, hb, singleEdge_apply_swap ((adj_complete u₀ v₀).mpr huv), map_inv_eq_map]
+    rcases lt_or_gt_of_ne huv with hlt | hlt
+    · have ha : a = u₀ := min_eq_left hlt.le
+      have hb : b = v₀ := max_eq_right hlt.le
+      rw [ha, hb, singleEdge_apply_self h]
+    · have ha : a = v₀ := min_eq_right hlt.le
+      have hb : b = u₀ := max_eq_left hlt.le
+      rw [ha, hb, singleEdge_apply_swap h, map_inv_eq_map]
   rw [hzero, zero_add, hterm]
+
+/-- Under the trivial gauge `1`, the cost of `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`)
+equals `ℓ g` for any group norm `ℓ`. -/
+theorem cost_singleEdge_complete_one (ℓ : GroupNorm G) {u₀ v₀ : V} (huv : u₀ ≠ v₀) (g : G) :
+    (singleEdge (complete V) u₀ v₀ g).cost ℓ 1 = ℓ g :=
+  cost_singleEdge_one ℓ ((adj_complete u₀ v₀).mpr huv) g
 
 private theorem holonomy_singleEdge_norm_eq {u₀ v₀ a b c : V} (huv : u₀ ≠ v₀)
     (hab : a < b) (hbc : b < c) (ℓ : GroupNorm G) (g : G) :
@@ -129,6 +151,30 @@ theorem defect_singleEdge (ℓ : GroupNorm G) {u₀ v₀ : V} (huv : u₀ ≠ v�
       fun _ ht ↦ (mem_powersetCard.mp (mem_filter.mp ht).1).2
   rw [hcard, card_filter_powersetCard_subset {u₀, v₀} univ 3 (subset_univ _)
     (by rw [card_pair huv]; decide), card_pair huv, card_univ, Nat.choose_one_right]
+
+/-- Under a conjugation-invariant group norm `ℓ`, the gauge distance of `singleEdge X u₀ v₀ g`
+equals `ℓ g` whenever `(u₀, v₀)` belongs to a filled triangle `(u₀, v₀, w)` of `X`. -/
+theorem gaugeDist_singleEdge {X : TwoComplex V} {ℓ : GroupNorm G}
+    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) {u₀ v₀ w : V}
+    (huv : X.Adj u₀ v₀) (hvw : X.Adj v₀ w) (hwu : X.Adj w u₀) (g : G) :
+    (singleEdge X u₀ v₀ g).gaugeDist ℓ = ℓ g := by
+  have hlo : ℓ g ≤ (singleEdge X u₀ v₀ g).gaugeDist ℓ := by
+    simpa [holonomy_singleEdge huv hwu.ne hvw.ne.symm g] using
+      (singleEdge X u₀ v₀ g).norm_holonomy_le_gaugeDist hℓ huv hvw hwu
+  have hhi : (singleEdge X u₀ v₀ g).gaugeDist ℓ ≤ ℓ g :=
+    ((singleEdge X u₀ v₀ g).gaugeDist_le_cost ℓ 1).trans_eq (cost_singleEdge_one ℓ huv g)
+  exact le_antisymm hhi hlo
+
+/-- On `complete V` with `3 ≤ Fintype.card V` and a conjugation-invariant group norm `ℓ`, the
+gauge distance of `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`) equals `ℓ g`. -/
+theorem gaugeDist_singleEdge_of_three_le_card {ℓ : GroupNorm G}
+    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (hV : 3 ≤ Fintype.card V)
+    {u₀ v₀ : V} (huv : u₀ ≠ v₀) (g : G) :
+    (singleEdge (complete V) u₀ v₀ g).gaugeDist ℓ = ℓ g := by
+  obtain ⟨w, hwu, hwv⟩ := ENat.exists_ne_ne_of_three_le
+    (by rw [ENat.card_eq_coe_fintype_card]; exact_mod_cast hV) u₀ v₀
+  exact gaugeDist_singleEdge hℓ ((adj_complete u₀ v₀).mpr huv)
+    ((adj_complete v₀ w).mpr hwv.symm) ((adj_complete w u₀).mpr hwu) g
 
 end SingleEdge
 

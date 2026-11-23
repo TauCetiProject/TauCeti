@@ -134,36 +134,19 @@ theorem prod_filter_lt_triple_eq_prod_of_card_eq_three [Fintype I] {M : Type*} [
         p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset I) ∈ s, g p =
       ∏ t ∈ s, f t := by
   classical
-  have hleft :
-      (∏ p : I × I × I with
-          p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset I) ∈ s, g p) =
-        ∏ t ∈ Finset.univ.filter (fun t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2} ↦
-          (ofLtTriple t).val ∈ s), f (ofLtTriple t).val := by
-    symm
-    refine Finset.prod_bij (fun t _ ↦ t.val) ?_ (fun _ _ _ _ h ↦ Subtype.ext h) ?_ ?_
-    · intro t ht
-      rw [mem_filter] at ht
-      exact mem_filter.mpr ⟨Finset.mem_univ _, t.property.1, t.property.2, val_ofLtTriple t ▸ ht.2⟩
-    · rintro ⟨a, b, c⟩ hp
-      obtain ⟨hab, hbc, hmem⟩ := (mem_filter.mp hp).2
-      exact ⟨⟨(a, b, c), hab, hbc⟩,
-        mem_filter.mpr ⟨Finset.mem_univ _, by simpa using hmem⟩, rfl⟩
-    · intro t ht
-      have hmem : ({t.val.1, t.val.2.1, t.val.2.2} : Finset I) ∈ s :=
-        val_ofLtTriple t ▸ (mem_filter.mp ht).2
-      rw [val_ofLtTriple, hfg t.property.1 t.property.2 hmem]
-  have hmid :
-      (∏ t ∈ Finset.univ.filter (fun t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2} ↦
-          (ofLtTriple t).val ∈ s), f (ofLtTriple t).val) =
-        ∏ u ∈ Finset.univ.filter (fun u : powersetCard I 3 ↦ u.val ∈ s), f u.val :=
-    Finset.prod_equiv ofLtTriple (by simp) (fun _ _ ↦ rfl)
-  have hright :
-      (∏ u ∈ Finset.univ.filter (fun u : powersetCard I 3 ↦ u.val ∈ s), f u.val) = ∏ t ∈ s, f t :=
-    Finset.prod_bij (fun u _ ↦ u.val) (fun _ hu ↦ (mem_filter.mp hu).2)
-      (fun _ _ _ _ h ↦ Subtype.ext h)
-      (fun t ht ↦ ⟨⟨t, hs t ht⟩, mem_filter.mpr ⟨Finset.mem_univ _, ht⟩, rfl⟩)
-      (fun _ _ ↦ rfl)
-  exact (hleft.trans hmid).trans hright
+  refine Finset.prod_bij (fun p _ ↦ ({p.1, p.2.1, p.2.2} : Finset I)) ?_ ?_ ?_ ?_
+  · intro p hp
+    exact (mem_filter.mp hp).2.2.2
+  · rintro ⟨a₁, b₁, c₁⟩ hp₁ ⟨a₂, b₂, c₂⟩ hp₂ h
+    obtain ⟨hab₁, hbc₁, _⟩ := (mem_filter.mp hp₁).2
+    obtain ⟨hab₂, hbc₂, _⟩ := (mem_filter.mp hp₂).2
+    exact eq_of_lt_lt_triple_eq hab₁ hbc₁ hab₂ hbc₂ h
+  · intro t ht
+    obtain ⟨a, b, c, hab, hbc, hval⟩ := exists_lt_lt_val_eq ⟨t, hs t ht⟩
+    exact ⟨(a, b, c), mem_filter.mpr ⟨Finset.mem_univ _, hab, hbc, hval ▸ ht⟩, hval.symm⟩
+  · rintro ⟨a, b, c⟩ hp
+    obtain ⟨hab, hbc, hmem⟩ := (mem_filter.mp hp).2
+    exact hfg hab hbc hmem
 
 /-- The number of increasing triples `a < b < c` spanning a set in `s` equals `#s`, when every
 element of `s` has cardinality `3`. -/

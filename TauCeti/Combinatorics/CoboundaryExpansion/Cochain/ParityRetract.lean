@@ -50,17 +50,17 @@ theorem gaugeDist_map_zpowers_subtype {V α : Type*} [Fintype V] [LinearOrder V]
     rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (sq t ▸ ht.mul_self)).mp x.property with
       hx | hx <;>
       simp [ρ, hx]
-  have hmap : (γ.map (Subgroup.zpowers t).subtype).map ρ = γ := by
-    rw [map_map, hρ_id, map_id]
-  have hle := (γ.map (Subgroup.zpowers t).subtype).gaugeDist_map_le
-    (ℓ_G := Equiv.Perm.movedNorm α)
-    (ℓ_H := (Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective)
-    (φ := ρ)
-    fun g ↦ by
+  exact γ.gaugeDist_map_eq_of_comp_eq_id
+    (ℓ_G := (Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective)
+    (ℓ_H := Equiv.Perm.movedNorm α)
+    (i := (Subgroup.zpowers t).subtype)
+    (r := ρ)
+    (fun g ↦ (GroupNorm.comp_apply (Equiv.Perm.movedNorm α)
+      (Subgroup.zpowers t).subtype_injective g).symm.le)
+    (fun g ↦ by
       rw [GroupNorm.comp_apply, Subgroup.coe_subtype]
-      exact Equiv.Perm.movedNorm_parityRetract_le ht g
-  rw [hmap] at hle
-  exact le_antisymm (γ.gaugeDist_map_subtype_le (Equiv.Perm.movedNorm α) (Subgroup.zpowers t)) hle
+      exact Equiv.Perm.movedNorm_parityRetract_le ht g)
+    hρ_id
 
 end Cochain
 

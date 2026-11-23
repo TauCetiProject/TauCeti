@@ -21,7 +21,7 @@ non-adjacent pairs carry `1`, while the inverse map takes a cochain `α` to `α.
 
 * `TauCeti.simpleGraphEquivPermFinTwo`: equivalence between `SimpleGraph V` and
   `Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))`.
-* `TauCeti.simpleGraphEquivPermFinTwo_symm_smul`: gauge action on binary cochains corresponds to
+* `TauCeti.Cochain.supportGraph_smul_fin_two`: gauge action on binary cochains corresponds to
   complete-graph cut switching on `supportGraph`.
 * `TauCeti.Cochain.isCoboundary_fin_two_iff`: an `Equiv.Perm (Fin 2)`-valued `1`-cochain on
   `TwoComplex.complete V` is a coboundary iff its support graph is a complete-graph cut.
@@ -86,36 +86,27 @@ theorem simpleGraphEquivPermFinTwo_symm_eq_supportGraph {V : Type*} [Fintype V]
     (simpleGraphEquivPermFinTwo V).symm α = α.supportGraph :=
   (rfl)
 
-/-- The inverse of `TauCeti.simpleGraphEquivPermFinTwo` makes `u` and `v` adjacent precisely when
-`α u v ≠ 1`. -/
-@[grind =]
-theorem simpleGraphEquivPermFinTwo_symm_adj {V : Type*} [Fintype V]
-    (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) (u v : V) :
-    ((simpleGraphEquivPermFinTwo V).symm α).Adj u v ↔ α u v ≠ 1 := by
-  rw [simpleGraphEquivPermFinTwo_symm_eq_supportGraph, Cochain.supportGraph_adj]
-
-/-- Adjacency in `(simpleGraphEquivPermFinTwo V).symm α` is decidable because equality in
-`Equiv.Perm (Fin 2)` is decidable. -/
-instance instDecidableRelSimpleGraphEquivPermFinTwoSymm {V : Type*} [Fintype V]
+/-- Every `Equiv.Perm (Fin 2)`-valued `1`-cochain on `TwoComplex.complete V` is recovered from
+its `supportGraph` via `SimpleGraph.toCochain`. -/
+@[simp]
+theorem Cochain.toCochain_supportGraph {V : Type*} [Fintype V]
     (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
-    DecidableRel ((simpleGraphEquivPermFinTwo V).symm α).Adj :=
-  fun u v ↦ decidable_of_iff (α u v ≠ 1) (simpleGraphEquivPermFinTwo_symm_adj α u v).symm
+    α.supportGraph.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self = α :=
+  (simpleGraphEquivPermFinTwo V).apply_symm_apply α
 
 /-- Acting on `α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))` by a gauge `β` switches
 its support graph by the cut `{w | β w ≠ 1}`. -/
-theorem simpleGraphEquivPermFinTwo_symm_smul {V : Type*} [Fintype V]
+theorem Cochain.supportGraph_smul_fin_two {V : Type*} [Fintype V]
     (β : V → Equiv.Perm (Fin 2)) (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
-    (simpleGraphEquivPermFinTwo V).symm (β • α) =
-      (simpleGraphEquivPermFinTwo V).symm α ∆
-        (⊤ : SimpleGraph V).between {w | β w ≠ 1} {w | β w ≠ 1}ᶜ := by
+    (β • α).supportGraph =
+      α.supportGraph ∆ (⊤ : SimpleGraph V).between {w | β w ≠ 1} {w | β w ≠ 1}ᶜ := by
   classical
   have hβ : β = fun v ↦ if v ∈ {w | β w ≠ 1} then Equiv.swap 0 1 else 1 :=
     funext fun v ↦ Equiv.Perm.eq_ite_ne_one_fin_two (β v)
   have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one
   conv_lhs =>
-    rw [← (simpleGraphEquivPermFinTwo V).apply_symm_apply α,
-      simpleGraphEquivPermFinTwo_eq_toCochain, hβ,
-      ((simpleGraphEquivPermFinTwo V).symm α).smul_ite_mem_toCochain hswap.mul_self {w | β w ≠ 1}]
+    rw [← α.toCochain_supportGraph, hβ,
+      α.supportGraph.smul_ite_mem_toCochain hswap.mul_self {w | β w ≠ 1}]
   exact SimpleGraph.supportGraph_toCochain _ hswap.mul_self hswap.isCycle.ne_one
 
 /-- An `Equiv.Perm (Fin 2)`-valued `1`-cochain on `TwoComplex.complete V` is a coboundary if and
@@ -123,13 +114,10 @@ only if its support graph is a complete-graph cut. -/
 theorem Cochain.isCoboundary_fin_two_iff {V : Type*} [Fintype V]
     (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
     α.IsCoboundary ↔
-      ∃ S : Set V, (simpleGraphEquivPermFinTwo V).symm α = (⊤ : SimpleGraph V).between S Sᶜ := by
+      ∃ S : Set V, α.supportGraph = (⊤ : SimpleGraph V).between S Sᶜ := by
   have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one
-  conv_lhs =>
-    rw [← (simpleGraphEquivPermFinTwo V).apply_symm_apply α,
-      simpleGraphEquivPermFinTwo_eq_toCochain]
-  exact ((simpleGraphEquivPermFinTwo V).symm α).isCoboundary_toCochain_iff hswap.mul_self
-    hswap.isCycle.ne_one
+  conv_lhs => rw [← α.toCochain_supportGraph]
+  exact α.supportGraph.isCoboundary_toCochain_iff hswap.mul_self hswap.isCycle.ne_one
 
 end PermFinTwo
 

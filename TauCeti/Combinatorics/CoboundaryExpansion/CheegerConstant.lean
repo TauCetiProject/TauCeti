@@ -134,6 +134,30 @@ theorem h1_eq_zero_of_forall_gaugeDist_eq_zero {X : TwoComplex V} {ℓ : GroupNo
   h1_eq_zero_of_forall_gaugeDist_eq_zero fun α =>
     (Cochain.isCoboundary_complete_of_card_le_two hV α).gaugeDist_eq_zero ℓ
 
+/-- On `complete V` with a nontrivial coefficient group `G` and any group norm `ℓ`, if every
+cochain satisfies `α.defect ℓ = (Fintype.card V - 2 : ℕ) * α.gaugeDist ℓ`, then
+`h1 (complete V) ℓ = (Fintype.card V - 2 : ℕ)`. -/
+theorem h1_complete_eq_card_sub_two_of_forall_defect_eq_mul_gaugeDist [Nontrivial G]
+    (ℓ : GroupNorm G)
+    (hdef : ∀ α : Cochain (complete V) G,
+      α.defect ℓ = ((Fintype.card V - 2 : ℕ) : ℝ) * α.gaugeDist ℓ) :
+    h1 (complete V) ℓ = (Fintype.card V - 2 : ℕ) := by
+  by_cases hV3 : 3 ≤ Fintype.card V
+  · have htri : (complete V).triangles.Nonempty :=
+      card_pos.mp (card_triangles_complete (V := V) ▸ Nat.choose_pos hV3)
+    obtain ⟨α, u, v, w, -, -, -, hhol⟩ := exists_holonomy_ne_one_of_triangles_nonempty (G := G) htri
+    have hdef_pos : 0 < α.defect ℓ :=
+      (α.defect_nonneg ℓ).lt_of_ne'
+        (mt (α.defect_complete_eq_zero_iff ℓ).mp fun h => hhol (h u v w))
+    have hgd_pos : 0 < α.gaugeDist ℓ := by
+      rw [hdef α] at hdef_pos
+      exact (mul_pos_iff_of_pos_left
+        (by exact_mod_cast (by omega : 0 < Fintype.card V - 2))).mp hdef_pos
+    exact h1_eq_of_forall_defect_eq_mul_gaugeDist ⟨α, hgd_pos⟩ fun γ _ => hdef γ
+  · have hsub : Fintype.card V - 2 = 0 := by omega
+    rw [hsub, Nat.cast_zero]
+    exact h1_complete_of_card_le_two (by omega) ℓ
+
 /-- Over a trivial coefficient group every cochain is trivial, so `h1 X ℓ = 0`. -/
 @[simp] theorem h1_subsingleton [Subsingleton G] (X : TwoComplex V) (ℓ : GroupNorm G) :
     h1 X ℓ = 0 :=

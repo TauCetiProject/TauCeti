@@ -193,6 +193,15 @@ theorem map_toCochain {H : Type*} [Fintype V] [Group Γ] [Group H] (G : SimpleGr
   ext u v _
   by_cases h : G.Adj u v <;> simp [h]
 
+/-- Pulling `G.toCochain hc` back along a vertex map `f : W → V` yields `(G.comap f).toCochain hc`.
+-/
+@[simp]
+theorem comapComplete_toCochain {W : Type*} [Fintype V] [Fintype W] [Group Γ]
+    (G : SimpleGraph V) {c : Γ} (hc : c * c = 1) (f : W → V) :
+    (G.toCochain hc).comapComplete f = (G.comap f).toCochain hc := by
+  ext u v _
+  by_cases h : G.Adj (f u) (f v) <;> simp [h]
+
 /-- Acting on `G.toCochain hc` by the `{1, c}`-valued indicator gauge of `S` switches `G` by the
 complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ`. -/
 theorem smul_ite_mem_toCochain [Fintype V] [Group Γ] (G : SimpleGraph V)
