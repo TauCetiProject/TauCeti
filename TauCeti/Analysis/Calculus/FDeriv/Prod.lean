@@ -73,6 +73,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative along the first factor.
 * `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
   second coordinate, with no differentiability assumption.
+* `TauCeti.fderiv_apply_fst`: the first coordinate of the derivative of a map into a product is
+  the derivative of its first coordinate.
 * `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
   derivative `(σ, τ) ↦ τ • x'`.
 * `HasDerivAt.hasFDerivAt_comp_fst_sub_comp_snd`: the map `p ↦ u₁ p.1 - u₂ p.2` of two scalar
@@ -209,6 +211,12 @@ theorem fderiv_const_prodMk (c : F) (g : E → G) (x : E) :
     ext w <;> simp
   rw [h, fderiv_const_add, (ContinuousLinearMap.inr 𝕜 F G).fderiv_comp_left_of_leftInverse
     (ContinuousLinearMap.snd 𝕜 F G) (fun _ ↦ rfl)]
+
+/-- The first coordinate of the derivative of a map `f : E → F × G` is the derivative of its first
+coordinate `x ↦ (f x).1`. -/
+theorem fderiv_apply_fst {f : E → F × G} {L : E →L[𝕜] F} (hf : DifferentiableAt 𝕜 f a)
+    (hL : HasFDerivAt (fun x ↦ (f x).1) L a) (v : E) : (fderiv 𝕜 f a v).1 = L v := by
+  simp [← hL.fderiv, fderiv.fst hf]
 
 /-- A function `p ↦ x p.2` of a scalar second variable alone, where `x` has derivative `x'` at
 `z.2`, has derivative `(σ, τ) ↦ τ • x'` at `z`. -/
