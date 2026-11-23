@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.BumpFunction
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Global sections with a prescribed value
@@ -29,7 +28,7 @@ Equivalently, evaluation of global `C^n` sections at a point is surjective.
 
 For applications requiring a linear family of global sections agreeing with the constant-coordinate
 local sections of `FiberBundle.trivializationAt F V x` near `x`, `ContMDiffSection.liftModel`
-cuts off `symmL` with a smooth bump function equal to `1` near `x`.
+composes `FiberBundle.contMDiffExtendₗ` with `(FiberBundle.trivializationAt F V x).symmL ℝ x`.
 
 Every fibre vector is moreover the value of a compactly supported `C^n` section supported in any
 prescribed neighbourhood of its base point
@@ -282,36 +281,30 @@ section LiftModel
 open scoped Topology
 
 variable (I F V) in
-/-- Cut off the constant-coordinate local sections of `trivializationAt F V x` by a smooth bump
-equal to `1` near `x`, producing an `ℝ`-linear lift from the model fibre `F` to global `C^n`
-sections. -/
+/-- Compose `FiberBundle.contMDiffExtendₗ I F V x` with `(trivializationAt F V x).symmL ℝ x`,
+producing an `ℝ`-linear lift from the model fibre `F` to global `C^n` sections agreeing near `x`
+with the constant-coordinate local sections of `trivializationAt F V x`. -/
 noncomputable def liftModel (n : ℕ∞ω) [ENat.LEInfty n] [IsManifold I n M]
     [ContMDiffVectorBundle n F V I] (x : M) :
     F →ₗ[ℝ] Cₛ^n⟮I; F, V⟯ :=
-  let e := FiberBundle.trivializationAt F V x
-  let hx := e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt F V x)
-  let hρ := (SmoothBumpFunction.nhds_basis_support (I := I) hx).mem_iff.mp hx
-  let ρ := hρ.choose
-  { toFun u :=
-      ⟨(ρ : M → ℝ) • fun y ↦ e.symmL ℝ y u,
-        ρ.contMDiff_of_isManifold.contMDiffOn.smul_section_of_tsupport
-          e.open_baseSet hρ.choose_spec.left <|
-          (TauCeti.Manifold.contMDiffOn_symm_baseSet (e := e) u).congr fun y hy ↦ by
-            simp [Trivialization.symmL_apply e hy]⟩
-    map_add' u₁ u₂ := by ext y; simp [smul_add]
-    map_smul' c u := by ext y; simp [smul_comm c] }
+  let L := (FiberBundle.contMDiffExtendₗ I F V x).comp
+    ((FiberBundle.trivializationAt F V x).symmL ℝ x).toLinearMap
+  { toFun u := ⟨L u, FiberBundle.contMDiff_contMDiffExtend I F _⟩
+    map_add' u₁ u₂ := by ext y; exact congr_fun (L.map_add u₁ u₂) y
+    map_smul' c u := by ext y; exact congr_fun (L.map_smul c u) y }
 
 /-- Near `x`, `ContMDiffSection.liftModel` agrees with the constant-coordinate local sections of
 `trivializationAt F V x`. -/
 theorem liftModel_eventuallyEq {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M]
     [ContMDiffVectorBundle n F V I] (x : M) (u : F) :
     ∀ᶠ y in 𝓝 x, liftModel I F V n x u y = (FiberBundle.trivializationAt F V x).symmL ℝ y u := by
-  let hx := (FiberBundle.trivializationAt F V x).open_baseSet.mem_nhds
-    (FiberBundle.mem_baseSet_trivializationAt F V x)
-  let hρ := (SmoothBumpFunction.nhds_basis_support (I := I) hx).mem_iff.mp hx
-  filter_upwards [hρ.choose.eventuallyEq_one] with y hy
-  dsimp [liftModel]
-  rw [hy, Pi.one_apply, one_smul]
+  let e := FiberBundle.trivializationAt F V x
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x
+  filter_upwards [FiberBundle.eventually_contMDiffExtend_eq_extend I F (e.symmL ℝ x u),
+    e.open_baseSet.mem_nhds hx] with y hy hye
+  change FiberBundle.contMDiffExtend I F (e.symmL ℝ x u) y = e.symmL ℝ y u
+  rw [hy, FiberBundle.extend, Trivialization.symmL_apply e hx, Trivialization.symmL_apply e hye]
+  simp [e, hx]
 
 /-- At the base point `x`, `ContMDiffSection.liftModel` evaluates to
 `(trivializationAt F V x).symmL`. -/

@@ -54,8 +54,9 @@ theorem _root_.ContMDiffWithinAt.wedgeWith_form
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) s x) :
     ContMDiffWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + l)]→L[ℝ] F₃) y (φ.wedgeWith μ ψ y)) s x := by
-  simpa only [bundleWedgeWith_trivial] using
-    ContMDiffWithinAt.bundleWedgeWith_form (fun _ ↦ μ.continuous₂)
+  rw [← bundleWedgeWith_trivial μ φ ψ]
+  simpa only [bundleWedgeWith_apply'] using
+    ContMDiffWithinAt.pairedWedge_bundle (fun _ ↦ μ.continuous₂)
       ((contMDiff_const_bundlePairing μ x).contMDiffWithinAt) hφ hψ
 
 /-- The paired wedge of two `C^n` sections of the alternating bundle is a `C^n` section on an
