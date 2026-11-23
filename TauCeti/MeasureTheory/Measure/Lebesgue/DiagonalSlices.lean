@@ -73,7 +73,7 @@ theorem lintegral_eq_lintegral_indicator_mul_lintegral_sub_const (i₀ : ι)
       (hH.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd)
   calc ∫⁻ x, H x = ∫⁻ y : ι → ℝ, ∫⁻ u : ℝ, F (u, y) := by
         refine lintegral_congr fun y ↦ ?_
-        change H y = ∫⁻ u, k (y i₀ + u) * H y
+        simp only [F]
         rw [lintegral_mul_const (f := fun u ↦ k (y i₀ + u)) _ (hk.comp (measurable_const_add _)),
           hk1, one_mul]
     _ = ∫⁻ p : ℝ × (ι → ℝ), F (p.1, fun i ↦ p.2 i - p.1) ∂(volume.prod volume) := by

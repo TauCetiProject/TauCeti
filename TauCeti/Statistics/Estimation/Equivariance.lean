@@ -12,9 +12,10 @@ import Mathlib.Tactic.Linarith
 # Location-equivariant estimators
 
 An estimator `δ : ℝ^ι → ℝ` on samples indexed by `ι` is *location equivariant* if shifting every
-observation by `a` shifts the estimate by `a`: `δ (x + a·1) = δ x + a`. The squared-error risk of
-the Pitman estimator is at most that of every square-integrable location-equivariant estimator
-(`TauCeti.pitmanEstimator_risk_zero_le_of_equivariant`).
+observation by `a` shifts the estimate by `a`: `δ (x + a·1) = δ x + a`. At `θ = 0`, the
+squared-error risk of the Pitman estimator is at most that of every square-integrable
+location-equivariant estimator (`TauCeti.pitmanEstimator_risk_zero_le_of_equivariant`); the
+theorem compares the risks at `θ = 0` only.
 
 ## Main definitions
 

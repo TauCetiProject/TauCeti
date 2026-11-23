@@ -133,8 +133,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   multiple of `ν` is from `f` on `t`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
-* `TauCeti.lintegral_ofReal_sub_sq_mul_le`: for a nonnegative integrable weight `w`, the
-  weighted mean `(∫ X w) / (∫ w)` minimizes the weighted squared deviation `∫⁻ (c - X)² w`.
+* `TauCeti.lintegral_ofReal_sub_sq_mul_le`: for an integrable weight `w ≥ 0`, `(∫ X w) / (∫ w)`
+  (the weighted mean if `X w` is integrable, else all deviations are `∞`) minimizes `∫⁻ (c - X)² w`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.measureReal_mul_sq_norm_setAverage_le`: the real form `μ s ‖f_s‖² ≤ ∫_s ‖f‖²`, for
@@ -1020,11 +1020,11 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X w : Ω → ℝ}
 
 /-- **The weighted mean minimizes the weighted squared deviation.** For an integrable a.e.
 nonnegative weight `w` and an `X` that is a.e. strongly measurable for the weighted measure
-`μ.withDensity (ofReal ∘ w)`, the weighted squared deviation
-`∫⁻ ω, ofReal ((c - X ω)² w ω) ∂μ`, which may be infinite, is smallest at the weighted mean
-`c = (∫ X w ∂μ) / (∫ w ∂μ)`. When `w` has zero mass, it vanishes a.e. and every center `c`
-has zero deviation. No first moment is assumed: if the deviation about `c` is finite, `X` is
-square integrable for the weighted measure.
+`μ.withDensity (ofReal ∘ w)`, the weighted squared deviation `∫⁻ ω, ofReal ((c - X ω)² w ω) ∂μ`,
+which may be infinite, is smallest at `c = (∫ X w ∂μ) / (∫ w ∂μ)`, the weighted mean when `X w` is
+integrable. No first moment is assumed: otherwise `X` is not square integrable for the weighted
+measure, every center has infinite deviation, and Lean's totalized formula satisfies the inequality
+too. When `w` has zero mass, it vanishes a.e. and every center has zero deviation.
 
 The proof applies `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq` to the
 weighted measure `μ.withDensity (ofReal ∘ w)`. The statement is adapted from the lean-CKSD project
@@ -1052,19 +1052,14 @@ theorem lintegral_ofReal_sub_sq_mul_le
     have hν : ν.real Set.univ = ∫ ω, w ω ∂μ := by
       simpa using TauCeti.MeasureTheory.measureReal_withDensity_ofReal (s := Set.univ)
         (ae_restrict_of_ae hw0) MeasurableSet.univ.nullMeasurableSet hwi.aemeasurable.restrict
-    rw [average_eq, hν,
-      TauCeti.MeasureTheory.integral_withDensity_ofReal hwi.aemeasurable hw0, smul_eq_mul,
-      inv_mul_eq_div]
+    rw [average_eq, hν, TauCeti.MeasureTheory.integral_withDensity_ofReal hwi.aemeasurable hw0,
+      smul_eq_mul, inv_mul_eq_div]
     simp_rw [smul_eq_mul, mul_comm (w _)]
   rw [hlin, hlin, ← hmean]
-  by_cases hfin : ∫⁻ ω, ‖X ω - c‖ₑ ^ 2 ∂ν = ∞
+  rcases eq_top_or_lt_top (∫⁻ ω, ‖X ω - c‖ₑ ^ 2 ∂ν) with hfin | hfin
   · exact hfin ▸ le_top
-  have hc : MemLp (fun ω ↦ X ω - c) 2 ν :=
-    (hXc c).memLp_two_iff_lintegral_enorm_sq_lt_top.2 (lt_top_iff_ne_top.2 hfin)
-  have h2 : MemLp X 2 ν := by
-    convert hc.add (memLp_const c) using 1
-    ext ω
-    simp
+  have hc := (hXc c).memLp_two_iff_lintegral_enorm_sq_lt_top.2 hfin
+  have h2 : MemLp X 2 ν := by simpa [Pi.add_def] using hc.add (memLp_const c)
   have hm : MemLp (fun ω ↦ X ω - ⨍ ω, X ω ∂ν) 2 ν := h2.sub (memLp_const _)
   have key := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq
     (measure_ne_top ν Set.univ) (h2.integrable one_le_two).integrableOn

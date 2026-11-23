@@ -5,14 +5,11 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Statistics.Estimation.Equivariance
 public import TauCeti.Statistics.Experiments.Density
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Measure.Lebesgue.DiagonalSlices
 import TauCeti.Statistics.Experiments.Location
 
 /-!
@@ -70,9 +67,9 @@ estimator vanishes, so its contribution at `θ = 0` is zero.
 
 ## Implementation notes
 
-The density is not assumed nonnegative everywhere: it is replaced by its positive part, which is
-another density of the same law. For each fixed sample the two likelihoods agree at
-Lebesgue-almost every location, so the two estimators agree at every sample.
+The density is nonnegative only almost everywhere, so its likelihood on each diagonal line is
+nonnegative at almost every location (`TauCeti.prod_apply_sub_ae_nonneg`), which is all that the
+comparison on one line uses.
 
 The optimality theorem does not assume that the good set has full measure. Off the good set of an
 a.e. nonnegative density the Pitman estimator takes the value `0`
@@ -218,48 +215,45 @@ theorem pitmanEstimator_eq_zero_of_notMem (hf0 : 0 ≤ᵐ[volume] f) {x : ι →
   · rw [integral_undef hl, div_zero]
   · rw [le_antisymm hpos (integral_nonneg_of_ae (prod_apply_sub_ae_nonneg hf0 x)), div_zero]
 
-/-- For a density `f` of `P`, the law `Pⁿ` is Lebesgue measure weighted by the product
-`∏ i, f (x i)`, so the lower integral of `g²` against it is the integral of the likelihood
-weighted `g²`, decomposed along the diagonal lines. -/
+/-- For a density `f` of `P`, the lower integral of `g²` against `Pⁿ` is the integral of the
+likelihood-weighted `g²`, decomposed along the diagonal lines: the squared-loss case of
+`TauCeti.HasDensity.lintegral_pi_eq_lintegral_indicator_mul_lintegral_sub_const`. -/
 private theorem lintegral_ofReal_sq_pi_eq {P : Measure ℝ} (i₀ : ι)
     (hf : HasDensity P volume f) {g : (ι → ℝ) → ℝ}
     (hg : AEMeasurable g (Measure.pi fun _ : ι ↦ P)) :
     ∫⁻ x, ENNReal.ofReal (g x ^ 2) ∂(Measure.pi fun _ : ι ↦ P) =
       ∫⁻ z : ι → ℝ, (Icc (0 : ℝ) 1).indicator 1 (z i₀) *
         ∫⁻ u : ℝ, ENNReal.ofReal (g (fun i ↦ z i - u) ^ 2 * ∏ i, f (z i - u)) := by
-  -- `Pⁿ` is Lebesgue measure with the density `ofReal (∏ i, f (x i))`.
-  have hPn : Measure.pi (fun _ : ι ↦ P) =
-      volume.withDensity fun x ↦ ENNReal.ofReal (∏ i, f (x i)) := by
-    rw [(HasDensity.pi fun _ : ι ↦ hf).eq_withDensity, volume_pi]
-  have hd : AEMeasurable (fun x : ι → ℝ ↦ ENNReal.ofReal (∏ i, f (x i))) :=
-    (Finset.measurable_prod _ fun i _ ↦
-      hf.measurable.comp (measurable_pi_apply i)).ennreal_ofReal.aemeasurable
-  rw [hPn, lintegral_withDensity_eq_lintegral_indicator_mul_lintegral_sub_const i₀ hd
-    (hPn ▸ (hg.pow_const 2).ennreal_ofReal)]
+  rw [hf.lintegral_pi_eq_lintegral_indicator_mul_lintegral_sub_const i₀
+    (hg.pow_const 2).ennreal_ofReal]
   refine lintegral_congr fun z ↦ ?_
   congr 1
   refine lintegral_congr fun u ↦ ?_
   rw [ENNReal.ofReal_mul (sq_nonneg _), mul_comm]
 
-/-- On each diagonal line, the likelihood-weighted squared error of the Pitman estimator of a
-nonnegative `f` is at most that of any location-equivariant `δ`. -/
-private theorem lintegral_ofReal_pitmanEstimator_sq_mul_le (hf0 : ∀ t, 0 ≤ f t)
+/-- On each diagonal line, the likelihood-weighted squared error of the Pitman estimator of an
+a.e. nonnegative `f` is at most that of any location-equivariant `δ`. -/
+private theorem lintegral_ofReal_pitmanEstimator_sq_mul_le (hf0 : 0 ≤ᵐ[volume] f)
     {δ : (ι → ℝ) → ℝ} (heq : IsLocationEquivariant δ) (z : ι → ℝ) :
     ∫⁻ u : ℝ, ENNReal.ofReal (pitmanEstimator f (fun i ↦ z i - u) ^ 2 * ∏ i, f (z i - u)) ≤
       ∫⁻ u : ℝ, ENNReal.ofReal (δ (fun i ↦ z i - u) ^ 2 * ∏ i, f (z i - u)) := by
-  simp only [sub_eq_add_neg, isLocationEquivariant_iff.1 heq z]
+  have hδ (u : ℝ) : δ (fun i ↦ z i - u) = δ z - u := by
+    simpa only [← sub_eq_add_neg] using isLocationEquivariant_iff.1 heq z (-u)
   by_cases hz : z ∈ pitmanGoodSet f
-  · obtain ⟨-, hl, -⟩ := mem_pitmanGoodSet.mp hz
-    simp only [pitmanEstimator_add_const hz]
-    simp only [← sub_eq_add_neg]
+  · have hpit (u : ℝ) : pitmanEstimator f (fun i ↦ z i - u) = pitmanEstimator f z - u := by
+      simpa only [← sub_eq_add_neg] using pitmanEstimator_add_const hz (-u)
+    simp only [hpit, hδ]
     exact lintegral_ofReal_sub_sq_mul_le aestronglyMeasurable_id
-      (ae_of_all _ fun u ↦ Finset.prod_nonneg fun i _ ↦ hf0 _) hl (δ z)
-  · simp [pitmanEstimator_eq_zero_of_notMem (ae_of_all _ hf0), hz]
+      (prod_apply_sub_ae_nonneg hf0 z) (mem_pitmanGoodSet.mp hz).2.1 (δ z)
+  · have hpit (u : ℝ) : pitmanEstimator f (fun i ↦ z i - u) = 0 :=
+      pitmanEstimator_eq_zero_of_notMem hf0 fun h ↦
+        hz (add_const_mem_pitmanGoodSet_iff.1 (by simpa only [sub_eq_add_neg] using h))
+    simp [hpit]
 
-/-- The lower integral of the squared error of the Pitman estimator of an everywhere nonnegative
-density, under `Pⁿ`, is at most that of every a.e. measurable location-equivariant estimator. -/
+/-- The lower integral of the squared error of the Pitman estimator under `Pⁿ` is at most that of
+every a.e. measurable location-equivariant estimator. -/
 private theorem lintegral_ofReal_pitmanEstimator_sq_le {P : Measure ℝ}
-    (hf : HasDensity P volume f) (hf0 : ∀ t, 0 ≤ f t) {δ : (ι → ℝ) → ℝ}
+    (hf : HasDensity P volume f) {δ : (ι → ℝ) → ℝ}
     (hδ : AEMeasurable δ (Measure.pi fun _ : ι ↦ P)) (heq : IsLocationEquivariant δ) :
     ∫⁻ x, ENNReal.ofReal (pitmanEstimator f x ^ 2) ∂(Measure.pi fun _ : ι ↦ P) ≤
       ∫⁻ x, ENNReal.ofReal (δ x ^ 2) ∂(Measure.pi fun _ : ι ↦ P) := by
@@ -268,7 +262,7 @@ private theorem lintegral_ofReal_pitmanEstimator_sq_le {P : Measure ℝ}
       (measurable_pitmanEstimator hf.measurable.aemeasurable).aemeasurable,
     lintegral_ofReal_sq_pi_eq i₀ hf hδ]
   exact lintegral_mono fun z ↦
-    mul_le_mul_right (lintegral_ofReal_pitmanEstimator_sq_mul_le hf0 heq z) _
+    mul_le_mul_right (lintegral_ofReal_pitmanEstimator_sq_mul_le hf.ae_nonneg heq z) _
 
 /-- **Optimality of the Pitman estimator.** Let `f` be a density of `P`. If `δ` is a
 square-integrable location-equivariant estimator under `Pⁿ`, then the Pitman estimator is square
@@ -279,17 +273,9 @@ theorem pitmanEstimator_risk_zero_le_of_equivariant (P : Measure ℝ) (f : ℝ �
     MemLp (pitmanEstimator f) 2 (Measure.pi fun _ : ι ↦ P) ∧
       ∫ x, pitmanEstimator f x ^ 2 ∂(Measure.pi fun _ : ι ↦ P) ≤
         ∫ x, δ x ^ 2 ∂(Measure.pi fun _ : ι ↦ P) := by
-  -- Replace `f` by its positive part `g`, another density of `P`. For each fixed sample the
-  -- likelihoods agree at Lebesgue-a.e. location, so the two estimators agree at every sample.
-  set g : ℝ → ℝ := fun t ↦ max (f t) 0
-  have hg : HasDensity P volume g := hf.congr_ae (hf.measurable.max measurable_const)
-    (hf.ae_nonneg.mono fun t ht ↦ (max_eq_left ht).symm)
-  have hpit : pitmanEstimator (ι := ι) f = pitmanEstimator g :=
-    pitmanEstimator_congr_ae (hf.ae_nonneg.mono fun t ht ↦ (max_eq_left ht).symm)
-  have hle := lintegral_ofReal_pitmanEstimator_sq_le hg (fun t ↦ le_max_right _ _)
-    h2.aestronglyMeasurable.aemeasurable heq
-  have hpm : AEStronglyMeasurable (pitmanEstimator g) (Measure.pi fun _ : ι ↦ P) :=
-    (measurable_pitmanEstimator hg.measurable.aemeasurable).aestronglyMeasurable
+  have hle := lintegral_ofReal_pitmanEstimator_sq_le hf h2.aestronglyMeasurable.aemeasurable heq
+  have hpm : AEStronglyMeasurable (pitmanEstimator f) (Measure.pi fun _ : ι ↦ P) :=
+    (measurable_pitmanEstimator hf.measurable.aemeasurable).aestronglyMeasurable
   -- Squared-error risks as lower integrals of squared extended norms.
   have hlint {h : (ι → ℝ) → ℝ} (hh : AEStronglyMeasurable h (Measure.pi fun _ : ι ↦ P)) :
       ∫ x, h x ^ 2 ∂(Measure.pi fun _ : ι ↦ P) =
@@ -297,9 +283,8 @@ theorem pitmanEstimator_risk_zero_le_of_equivariant (P : Measure ℝ) (f : ℝ �
     integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun x ↦ sq_nonneg (h x)) (hh.pow 2)
   simp only [← Real.enorm_sq_eq_ofReal_sq] at hle hlint
   have hfin := h2.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 h2
-  have hpi : MemLp (pitmanEstimator g) 2 (Measure.pi fun _ : ι ↦ P) :=
-    hpm.memLp_two_iff_lintegral_enorm_sq_lt_top.2 (hle.trans_lt hfin)
-  rw [hpit, hlint hpm, hlint h2.aestronglyMeasurable]
-  exact ⟨hpi, ENNReal.toReal_mono hfin.ne hle⟩
+  rw [hlint hpm, hlint h2.aestronglyMeasurable]
+  exact ⟨hpm.memLp_two_iff_lintegral_enorm_sq_lt_top.2 (hle.trans_lt hfin),
+    ENNReal.toReal_mono hfin.ne hle⟩
 
 end TauCeti

@@ -5,7 +5,6 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.MeasureTheory.Measure.PiWithDensity
