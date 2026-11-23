@@ -26,7 +26,8 @@ faithful, and an étale `Y`-scheme admitting a `Y`-morphism to an étale `X`-sch
 in which sheafification exists, and it is exact when the values have a zero object and finite
 limits. Its geometric stalks are computed as follows: at `s ≫ j` for a geometric point
 `s : Spec Ω ⟶ X` the stalk of `j_! F` is the stalk of `F` at `s`, and at a geometric point of
-`Y` not factoring through `j` it is zero (the latter for every étale `j`). For sheaves of
+`Y` not factoring through `j` it is zero when the coefficient category has zero morphisms (the
+latter for every étale `j`). For sheaves of
 `Λ`-modules, `j_!` preserves short exact sequences.
 
 ## Main declarations
@@ -138,8 +139,9 @@ noncomputable abbrev smallEtaleExtensionByZeroCompSheafFiberIso (s : Spec (.of �
     (j.pointSmallEtaleFiberSmallEtaleMapIso s) A
 
 omit [Mono j] in
-/-- **Stalks of an extension by zero off the image.** At a geometric point `s : Spec Ω ⟶ Y` that
-does not factor through the étale morphism `j`, the stalk of `j_! F` is zero. -/
+/-- **Stalks of an extension by zero off the image.** When the coefficient category has zero
+morphisms, at a geometric point `s : Spec Ω ⟶ Y` that does not factor through the étale morphism
+`j`, the stalk of `j_! F` is zero. -/
 theorem isZero_sheafFiber_smallEtaleExtensionByZero_obj [HasZeroMorphisms A]
     {s : Spec (.of Ω) ⟶ Y} (hs : ∀ s' : Spec (.of Ω) ⟶ X, s' ≫ j ≠ s)
     (F : Sheaf (smallEtaleTopology X) A) :
