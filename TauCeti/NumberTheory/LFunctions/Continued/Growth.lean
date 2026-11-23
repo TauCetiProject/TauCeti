@@ -13,8 +13,9 @@ import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
 /-!
 # Order of the pole-cleared continued functions of the Dirichlet and zeta records
 
-* `dirichletData_orderLE_continuedL`: for a nonprincipal primitive character the record has no
-  poles, so its continued function is entire of order at most one.
+* `dirichletData_orderLE_continuedL`: for a primitive character the continued function has
+  order at most one. For a nonprincipal character it is entire; for the character modulo `1` it
+  is zeta, with its pole at `1`.
 * `riemannZetaData_orderLE_poleClearedContinuedL`: clearing the pole of zeta at `1` by `X - 1`
   gives an entire function of order at most one.
 * `riemannZetaData_poleClearedContinuedL_one`: its value at `1` is the residue `1`, whereas the
@@ -29,12 +30,11 @@ open Complex Filter Topology Polynomial
 
 namespace TauCeti.LFunctions
 
-/-- **Order of a nonprincipal Dirichlet continued function.** For a primitive character
-`χ ≠ 1`, the continued function of `dirichletData χ hχ` is entire of order at most one. -/
+/-- **Order of a Dirichlet continued function.** For a primitive character `χ`, the continued
+function of `dirichletData χ hχ` has order at most one. -/
 theorem dirichletData_orderLE_continuedL {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-    (hχ : χ.IsPrimitive) (hne : χ ≠ 1) : OrderLE (dirichletData χ hχ).continuedL 1 :=
+    (hχ : χ.IsPrimitive) : OrderLE (dirichletData χ hχ).continuedL 1 :=
   (dirichletData_hasMeromorphicContinuation χ hχ).orderLE_continuedL
-    (dirichletData_polarOrder_eq_zero χ hχ hne)
     (dirichletData_entireCompletion_orderLE_one χ hχ) le_rfl
 
 /-- The polynomial `X - 1` clears the only pole of the zeta continued function. -/
@@ -54,11 +54,11 @@ theorem riemannZetaData_continuedL_cleared_by_X_sub_one (s : ℂ) :
       (by exact_mod_cast Nat.zero_le _)
 
 /-- **Order of the pole-cleared zeta function.** Clearing the pole of zeta at `1` by `X - 1`
-gives an entire function of order at most one. -/
+gives a function of order at most one. It is entire by `differentiable_poleClearedContinuedL`
+and `riemannZetaData_continuedL_cleared_by_X_sub_one`. -/
 theorem riemannZetaData_orderLE_poleClearedContinuedL :
     OrderLE (riemannZetaData.poleClearedContinuedL (X - C 1)) 1 :=
-  riemannZetaData_hasMeromorphicContinuation.orderLE_poleClearedContinuedL (X_sub_C_ne_zero 1)
-    riemannZetaData_continuedL_cleared_by_X_sub_one
+  riemannZetaData_hasMeromorphicContinuation.orderLE_poleClearedContinuedL
     (by rw [riemannZetaData_entireCompletion]; exact orderLE_zetaEntireCompletion) le_rfl
 
 /-- **The repaired value at the pole of zeta is its residue.** Clearing by `X - 1` gives the
