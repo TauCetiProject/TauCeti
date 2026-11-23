@@ -38,8 +38,9 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
 * `MvPolynomial.degreeOf_eval_C_finSuccEquiv_le`: specializing `X₀ = a` via `finSuccEquiv` bounds
   the degree in `Xⱼ` by `P.degreeOf j.succ`.
-* `MvPolynomial.uniqueAlgEquiv_pderiv`: in one variable, `uniqueAlgEquiv` takes the partial
-  derivative to the univariate polynomial derivative.
+* `MvPolynomial.uniqueAlgEquiv_pderiv`, `MvPolynomial.eval_uniqueAlgEquiv`: in one variable,
+  `uniqueAlgEquiv` takes the partial derivative to the univariate polynomial derivative and
+  evaluation at `x default` to `eval x`.
 * `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
   commutes with mapping the coefficients along a ring homomorphism.
 * `MvPolynomial.polynomial_eval_map_finSuccEquiv'`, `MvPolynomial.polynomial_eval_map_finSuccEquiv`:
@@ -164,6 +165,12 @@ theorem uniqueAlgEquiv_pderiv {σ : Type*} [Unique σ] (i : σ) (f : MvPolynomia
   ext n
   simp only [Polynomial.coeff_derivative, coeff_uniqueAlgEquiv, Unique.eq_default i, coeff_pderiv,
     Finsupp.single_eq_same, ← Finsupp.single_add]
+
+/-- In one variable, evaluating `uniqueAlgEquiv R σ g` at `x default` equals evaluating `g` at
+`x`. -/
+theorem eval_uniqueAlgEquiv {σ : Type*} [Unique σ] (x : σ → R) (g : MvPolynomial σ R) :
+    Polynomial.eval (x default) (uniqueAlgEquiv R σ g) = eval x g := by
+  rw [← MvPolynomial.eval₂_id, ← Polynomial.eval₂_id, eval₂_uniqueAlgEquiv]
 
 section Map
 

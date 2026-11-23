@@ -12,35 +12,56 @@ public import TauCeti.RingTheory.TrivSqZeroExt
 /-!
 # Double points in affine space
 
-For finitely many points `Pᵢ : σ → R`, `TauCeti.doubleIdeal P` is the square `(⋂ᵢ 𝔪_{Pᵢ})²` of the
+For a family of points `Pᵢ : σ → R`, `TauCeti.doubleIdeal P` is the square `(⋂ᵢ 𝔪_{Pᵢ})²` of the
 ideal of polynomials vanishing at all of them, `𝔪_P = ker (eval P)`. The quotient
 `R[X] ⧸ doubleIdeal P` is the coordinate ring of the affine scheme of the doubled points `2Pᵢ`.
 
-Over a field and for distinct points, the ideals `𝔪_{Pᵢ}` are pairwise coprime, so `doubleIdeal P`
-is the intersection `⋂ᵢ 𝔪_{Pᵢ}²` of the squared point ideals, and the Chinese remainder theorem
-splits the quotient into the local factors `k[X] ⧸ 𝔪_{Pᵢ}²`. For finitely many variables, each
-factor is the algebra of first jets `TrivSqZeroExt k (σ → k)` (`TauCeti.ker_jetAlgebra`), so
-`k[X] ⧸ doubleIdeal P ≃ₐ[k] ∏ᵢ TrivSqZeroExt k (σ → k)`, sending the class of `f` to its values
-and gradients at the points. In particular values and first derivatives at distinct points can be
-prescribed independently by some polynomial, and with `r` variables and `n` points the quotient
-has dimension `n (r + 1)`, the length of `n` distinct double points in `r`-space. The product of
-square-zero algebras keeps the nilpotents: it is not the product of the residue fields.
+Over a commutative ring, when finitely many points `Pᵢ` have pairwise unit coordinate differences
+(for each `i ≠ j`, some `Pᵢ s - Pⱼ s` is a unit), the ideals `𝔪_{Pᵢ}` are pairwise comaximal, so
+`doubleIdeal P` is the intersection `⋂ᵢ 𝔪_{Pᵢ}²` of the squared point ideals. For any variable
+type `σ`, each squared point ideal `𝔪_P²` is the kernel of the first-jet algebra
+`TauCeti.jetAlgebra P` (`TauCeti.ker_jetAlgebra`). When `σ` is also finite, `jetAlgebra P` is
+surjective and the Chinese remainder theorem splits the quotient as
+`R[X] ⧸ doubleIdeal P ≃ₐ[R] ∏ᵢ TrivSqZeroExt R (σ → R)`
+(`TauCeti.doublePointQuotientEquivOfPairwiseIsUnit`), sending the class of `f` to its values and
+gradients at the points. In particular, values and first derivatives at such points can be
+prescribed independently by some polynomial, and under `[StrongRankCondition R]` with `r` variables
+and `n` points the quotient has rank `n (r + 1)`. Distinct points over a field satisfy the
+unit-difference hypothesis (`TauCeti.pairwise_exists_isUnit_sub_of_injective`), yielding the field
+results as special cases. The product of square-zero algebras keeps the nilpotents: it is not the
+product of the residue rings.
 
 ## Main definitions
 
 * `TauCeti.doubleIdeal P`: the square of the ideal of the points `Pᵢ`.
-* `TauCeti.doublePointQuotientEquiv`: for distinct points over a field, the quotient by
-  `doubleIdeal P` is the product of the first-jet algebras at the points.
+* `TauCeti.doublePointQuotientEquivOfPairwiseIsUnit`: for finitely many points with pairwise unit
+  coordinate differences over a commutative ring, the quotient by `doubleIdeal P` is the product
+  of the first-jet algebras at the points.
+* `TauCeti.doublePointQuotientEquiv`: specialization of
+  `doublePointQuotientEquivOfPairwiseIsUnit` to distinct points over a field.
 
 ## Main results
 
-* `TauCeti.doubleIdeal_eq_iInf`: for distinct points over a field, `doubleIdeal P = ⋂ᵢ 𝔪_{Pᵢ}²`.
-* `TauCeti.mem_doubleIdeal_iff`: a polynomial lies in `doubleIdeal P` exactly when its value and
-  first partial derivatives vanish at every point.
-* `TauCeti.exists_forall_jetAlgebra_eq`: first jets at distinct points can be prescribed
-  independently.
-* `TauCeti.finrank_quotient_doubleIdeal`: `n` distinct double points in `r`-space have length
-  `n (r + 1)`.
+* `TauCeti.doubleIdeal_comp`, `TauCeti.doubleIdeal_eq_top_of_isEmpty`: reindexing invariance and
+  the empty-family unit ideal.
+* `TauCeti.doubleIdeal_eq_iInf_of_pairwise_isUnit`,
+  `TauCeti.doubleIdeal_eq_iInf_ker_jetAlgebra_of_pairwise_isUnit`: over a commutative ring, for
+  finitely many points with pairwise unit coordinate differences, `doubleIdeal P = ⋂ᵢ 𝔪_{Pᵢ}²` and
+  equals `⋂ᵢ ker (jetAlgebra (P i))`.
+* `TauCeti.mem_doubleIdeal_iff_of_pairwise_isUnit`: a polynomial lies in `doubleIdeal P` iff its
+  value and first partial derivatives vanish at every point.
+* `TauCeti.exists_forall_jetAlgebra_eq_of_pairwise_isUnit`: simultaneous first-jet interpolation at
+  finitely many points with pairwise unit coordinate differences.
+* `TauCeti.doublePointQuotientEquivOfPairwiseIsUnit_mk`,
+  `TauCeti.doublePointQuotientEquivOfPairwiseIsUnit_comp_equiv`: evaluation on quotient classes and
+  reindexing compatibility.
+* `TauCeti.finrank_quotient_doubleIdeal_of_pairwise_isUnit`: under `[StrongRankCondition R]`, `n`
+  points with pairwise unit coordinate differences in `r`-space have length `n (r + 1)`.
+* `TauCeti.pairwise_exists_isUnit_sub_of_injective`, `TauCeti.doubleIdeal_eq_iInf`,
+  `TauCeti.doubleIdeal_eq_iInf_ker_jetAlgebra`, `TauCeti.exists_forall_jetAlgebra_eq`,
+  `TauCeti.doublePointQuotientEquiv_mk`, `TauCeti.doublePointQuotientEquiv_comp_equiv`,
+  `TauCeti.mem_doubleIdeal_iff`, `TauCeti.finrank_quotient_doubleIdeal`: specializations to
+  distinct points over a field.
 
 ## References
 

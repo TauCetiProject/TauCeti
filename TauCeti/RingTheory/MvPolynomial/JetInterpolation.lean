@@ -78,8 +78,10 @@ when `d + 1 ≤ 2 * card ι` and surjective when `2 * card ι ≤ d + 1`; under 
   `TauCeti.wellPoised_comp_equiv`: raising the degree and passing to a subfamily or a
   reindexing of the points preserve well-poisedness.
 * `TauCeti.wellPoised_of_isEmpty`, `TauCeti.wellPoised_of_subsingleton`,
-  `TauCeti.not_wellPoised_zero`: empty and singleton configurations are well poised in positive
-  degree, and no nonempty point family is well poised in degree zero.
+  `TauCeti.not_wellPoised_zero`: empty configurations are well poised in every degree, singleton
+  configurations (in finitely many variables over a commutative ring) are well poised in positive
+  degree, and over a nontrivial commutative semiring with at least one variable, no nonempty point
+  family is well poised in degree zero.
 * `TauCeti.firstJetMap_injective_of_unique`, `TauCeti.wellPoised_of_unique`,
   `TauCeti.rank_firstJetMatrix_of_unique`, `TauCeti.wellPoised_iff_of_unique`,
   `TauCeti.rank_firstJetMatrix_of_unique_of_injective`,
@@ -491,11 +493,6 @@ private theorem firstJetRowsEquivFinTwo_apply {ι σ R : Type*} [CommSemiring R]
     firstJetRowsEquivFinTwo ι σ R v i k = v i ((optionUniqueEquivFinTwo σ).symm k) := by
   rw [firstJetRowsEquivFinTwo, LinearEquiv.piCongrRight_apply, LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply]
-
-private theorem eval_uniqueAlgEquiv {σ R : Type*} [CommSemiring R] [Unique σ]
-    (x : σ → R) (g : MvPolynomial σ R) :
-    Polynomial.eval (x default) (uniqueAlgEquiv R σ g) = eval x g := by
-  rw [← MvPolynomial.eval₂_id, ← Polynomial.eval₂_id, eval₂_uniqueAlgEquiv]
 
 private theorem firstJetMap_unique_eq_hasseJet {σ ι R : Type*} [CommSemiring R] [Unique σ]
     (P : ι → σ → R) (d : ℕ) (f : restrictTotalDegree σ R d) (i : ι) (k : Fin 2) :

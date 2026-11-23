@@ -39,7 +39,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
-* `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.degree_optionElim`, `Finsupp.degree_eq_apply_none_add_degree_some`: extending by `y` at
+  `none` adds `y` to the degree, and the degree on `Option σ` splits into the `none` value and
+  the restriction's degree.
 * `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
@@ -114,6 +116,13 @@ theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y 
   have h (g : Option σ →₀ R) : g.degree = g.sum fun _ e ↦ e := degree_apply g
   rw [h, sum_option_index _ _ (fun _ ↦ rfl) fun _ _ _ ↦ rfl, optionElim_apply_none,
     some_optionElim, degree_apply, Finsupp.sum]
+
+/-- The degree of a finitely supported function on `Option σ` splits into its value at `none` and
+the degree of its restriction to `σ`. -/
+theorem degree_eq_apply_none_add_degree_some {σ R : Type*} [AddCommMonoid R]
+    (t : Option σ →₀ R) :
+    t.degree = t none + t.some.degree := by
+  conv_lhs => rw [← optionElim_some t, degree_optionElim]
 
 /-- The weighted product of `f.optionElim n` splits off the factor `c none ^ n`. This is the
 form of Mathlib's `Finsupp.prod_option_index` used to separate one variable from the monomial
@@ -300,11 +309,6 @@ theorem ncard_setOf_degree_eq {σ : Type*} [Fintype σ] (n : ℕ) :
     ext s
     simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
   rw [h, Set.ncard_coe_finset, Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
-
-private theorem degree_eq_apply_none_add_degree_some {σ R : Type*} [AddCommMonoid R]
-    (t : Option σ →₀ R) :
-    t.degree = t none + t.some.degree := by
-  conv_lhs => rw [← optionElim_some t, degree_optionElim]
 
 /-- Adjoining the slack exponent `n - s.degree` at `none` identifies the exponent vectors on `σ`
 of degree at most `n` with the exponent vectors on `Option σ` of degree `n`. -/
