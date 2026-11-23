@@ -20,19 +20,21 @@ functional coding space the product of that with the topology of relational conf
 countable carrier, with countably many symbols, it is Polish.
 
 Permutations of `V` act by transporting the decoded structure: `σ` sends a table `F` to
-`(f, v) ↦ σ (F (f, σ⁻¹ ∘ v))`, and acts on relational configurations by the logic action. The
-action is continuous, and its orbits are the isomorphism classes of decoded structures.
+`(f, v) ↦ σ (F (f, σ⁻¹ ∘ v))`, and acts on relational configurations by the logic action. For
+discrete `V` the action is continuous, and its orbits are the isomorphism classes of decoded
+structures.
 
 The *graph code* of a functional configuration is the relational configuration, in the graph
-language `L.graphLanguage`, of the graph expansion of its decoded structure: it keeps the
-relations, and records the graph of each function symbol. The graph code is continuous,
-injective and equivariant, and two functional configurations decode to isomorphic structures
+language `L.graphLanguage`, of the graph expansion of its decoded structure: it keeps the relations,
+and records the graph of each function symbol. The graph code is injective and equivariant,
+continuous for discrete `V`, and two functional configurations decode to isomorphic structures
 exactly when their graph codes are isomorphic. Its range is the set of codes in which the graph
 relation of every function symbol is the graph of a total function (`IsGraphCode`), and it is a
-homeomorphism onto this range. With countably many symbols on a countable carrier the range is a
-Gδ set. It is not closed when `L` has a function symbol and `V` is infinite: tables taking a
-constant value `y` converge, as `y` escapes to infinity, to a code with empty graph relations.
-For a relational language it is the whole coding space.
+homeomorphism onto this range when `V` is discrete. With countably many symbols on a countable
+carrier the range is a Gδ set. It is not closed when `L` has a function symbol and `V` is infinite:
+the graph codes of the configurations with constant table value `y` and empty base relations
+converge, as `y` leaves every finite set, to the all-false code. For a relational language it is the
+whole coding space.
 
 This reduces questions about the isomorphism relation of structures with function symbols to
 relational languages, where they are stated for `TauCeti.RelationalConfiguration`.
@@ -53,20 +55,22 @@ relational languages, where they are stated for `TauCeti.RelationalConfiguration
 
 * `TauCeti.FunctionalConfiguration.isoSetoid_eq_orbitRel`: isomorphism is the orbit relation of
   the action of `Equiv.Perm V`.
-* `TauCeti.FunctionalConfiguration.instContinuousSMulPerm`: the action is jointly continuous.
+* `TauCeti.FunctionalConfiguration.instContinuousSMulPerm`: for discrete `V`, the action is jointly
+  continuous.
 * `TauCeti.FunctionalConfiguration.continuous_graphCode`,
   `TauCeti.FunctionalConfiguration.graphCode_injective` and
-  `TauCeti.FunctionalConfiguration.graphCode_perm_smul`: the graph code is continuous, injective
-  and equivariant.
+  `TauCeti.FunctionalConfiguration.graphCode_perm_smul`: the graph code is continuous (for discrete
+  `V`), injective and equivariant.
 * `TauCeti.FunctionalConfiguration.isoSetoid_graphCode_iff`: graph codes are isomorphic exactly
   when the functional configurations are.
 * `TauCeti.FunctionalConfiguration.range_graphCode`,
   `TauCeti.FunctionalConfiguration.isEmbedding_graphCode`,
   `TauCeti.FunctionalConfiguration.isGδ_setOf_isGraphCode`,
   `TauCeti.FunctionalConfiguration.not_isClosed_setOf_isGraphCode` and
-  `TauCeti.FunctionalConfiguration.isGraphCode_of_isRelational`: the range of the graph code, a
-  Gδ set onto which the graph code is a homeomorphism, not closed in the presence of a function
-  symbol on an infinite carrier, and everything for a relational language.
+  `TauCeti.FunctionalConfiguration.isGraphCode_of_isRelational`: the range of the graph code, onto
+  which the graph code is a homeomorphism for discrete `V`, a Gδ set for countable `V` with
+  countably many function symbols in each arity, not closed in the presence of a function symbol
+  on an infinite carrier, and everything for a relational language.
 
 ## References
 
@@ -329,6 +333,7 @@ theorem isGraphCode_iff {c : RelationalConfiguration L.graphLanguage V} :
       ∃! y, c.eval (atom (L := L.graphLanguage) (GraphRelation.graph f) (Fin.snoc v y)) = true :=
   Iff.rfl
 
+@[simp]
 theorem isGraphCode_graphCode (F : FunctionalConfiguration L V) : IsGraphCode (graphCode F) :=
   fun k f v => ⟨F.table (arg f v), by simp, fun y hy => by
     have := (eval_graphCode_graph F f _).1 hy
@@ -336,6 +341,7 @@ theorem isGraphCode_graphCode (F : FunctionalConfiguration L V) : IsGraphCode (g
     exact this.symm⟩
 
 /-- In a relational language every code is a graph code. -/
+@[simp]
 theorem isGraphCode_of_isRelational [L.IsRelational]
     (c : RelationalConfiguration L.graphLanguage V) : IsGraphCode c :=
   fun _ f => isEmptyElim f
@@ -424,8 +430,9 @@ theorem isGδ_setOf_isGraphCode [∀ n, Countable (L.Functions n)] [Countable V]
     · simpa [hyy] using hopen (fun s t => ¬(s = true ∧ t = true)) _ _
 
 /-- **The graph codes are not closed** in the presence of a function symbol on an infinite
-carrier: tables with constant value `y` converge, as `y` leaves every finite set, to the code
-whose relations are all empty, in which `f` has no value. -/
+carrier: the graph codes of the configurations with constant table value `y` and empty base
+relations converge, as `y` leaves every finite set, to the all-false code, in which `f` has no
+value. -/
 theorem not_isClosed_setOf_isGraphCode [Infinite V] {k : ℕ} (f : L.Functions k) :
     ¬IsClosed {c : RelationalConfiguration L.graphLanguage V | IsGraphCode c} := by
   intro hclosed
@@ -482,17 +489,20 @@ theorem continuous_mk {X : Type*} [TopologicalSpace X] {T : X → Arg L V → V}
 instance [T2Space V] : T2Space (FunctionalConfiguration L V) :=
   inferInstanceAs (T2Space ((Arg L V → V) × RelationalConfiguration L V))
 
-instance [∀ n, Countable (L.Functions n)] [∀ n, Countable (L.Relations n)] [Countable V]
-    [SecondCountableTopology V] : SecondCountableTopology (FunctionalConfiguration L V) :=
-  inferInstanceAs (SecondCountableTopology ((Arg L V → V) × RelationalConfiguration L V))
+instance [Countable (Arg L V)] [Countable (Atom L V)] [SecondCountableTopology V] :
+    SecondCountableTopology (FunctionalConfiguration L V) :=
+  inferInstanceAs (SecondCountableTopology ((Arg L V → V) × (Atom L V → Bool)))
 
-/-- **The functional coding space is Polish** on a countable Polish carrier (for instance a
-countable discrete one), with countably many symbols. -/
-instance [∀ n, Countable (L.Functions n)] [∀ n, Countable (L.Relations n)] [Countable V]
-    [PolishSpace V] : PolishSpace (FunctionalConfiguration L V) := by
+/-- **The functional coding space is Polish** on a Polish carrier when the table and the
+relational configuration have countably many coordinates, for instance on a countable discrete
+carrier with countably many symbols. -/
+instance [Countable (Arg L V)] [Countable (Atom L V)] [PolishSpace V] :
+    PolishSpace (FunctionalConfiguration L V) := by
   have : IsCompletelyMetrizableSpace (Arg L V → V) := IsCompletelyMetrizableSpace.pi_countable
   have : PolishSpace (Arg L V → V) := {}
-  exact inferInstanceAs (PolishSpace ((Arg L V → V) × RelationalConfiguration L V))
+  have : IsCompletelyMetrizableSpace (Atom L V → Bool) := IsCompletelyMetrizableSpace.pi_countable
+  have : PolishSpace (Atom L V → Bool) := {}
+  exact inferInstanceAs (PolishSpace ((Arg L V → V) × (Atom L V → Bool)))
 
 /-- Reading a graph code back into a functional configuration is continuous, for every topology on
 the carrier: the value at `(f, v)` is `y` on the open set of graph codes whose graph relation
