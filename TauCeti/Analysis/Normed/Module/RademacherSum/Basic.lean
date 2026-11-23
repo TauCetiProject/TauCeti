@@ -256,11 +256,24 @@ theorem inv_card_smul_sum_units_smul_mul₄ {𝕜 A : Type*} [DecidableEq ι]
     simp_rw [← Finset.sum_smul, sum_units_apply_mul₄, mul_zsmul, natCast_zsmul, ← Finset.smul_sum]
     congr 1
     simp_rw [sub_smul, add_smul, Finset.sum_sub_distrib, Finset.sum_add_distrib]
-    refine congrArg₂ Sub.sub (congrArg₂ HAdd.hAdd (congrArg₂ HAdd.hAdd ?_ ?_) ?_) ?_
-    · rw [Finset.sum_mul]; simp [ite_smul, ite_and, Finset.mul_sum, mul_assoc]
-    · simp [ite_smul, ite_and]
-    · simp [ite_smul, ite_and, Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    · simp [mul_ite, ite_smul, ite_and, Finset.smul_sum, two_smul]
+    have hmatch₁ :
+        ∑ i, ∑ j, ∑ k, ∑ l, (if i = j ∧ k = l then (1 : ℤ) else 0) • (x i * x j * x k * x l) =
+          (∑ i, x i * x i) * (∑ i, x i * x i) := by
+      rw [Finset.sum_mul]; simp [ite_smul, ite_and, Finset.mul_sum, mul_assoc]
+    have hmatch₂ :
+        ∑ i, ∑ j, ∑ k, ∑ l, (if i = k ∧ j = l then (1 : ℤ) else 0) • (x i * x j * x k * x l) =
+          ∑ i, ∑ j, x i * x j * x i * x j := by
+      simp [ite_smul, ite_and]
+    have hmatch₃ :
+        ∑ i, ∑ j, ∑ k, ∑ l, (if i = l ∧ j = k then (1 : ℤ) else 0) • (x i * x j * x k * x l) =
+          ∑ i, x i * (∑ j, x j * x j) * x i := by
+      simp [ite_smul, ite_and, Finset.sum_mul, Finset.mul_sum, mul_assoc]
+    have hdiag :
+        ∑ i, ∑ j, ∑ k, ∑ l,
+            (2 * if i = j ∧ j = k ∧ k = l then (1 : ℤ) else 0) • (x i * x j * x k * x l) =
+          2 • ∑ i, x i * x i * x i * x i := by
+      simp [mul_ite, ite_smul, ite_and, Finset.smul_sum, two_smul]
+    rw [hmatch₁, hmatch₂, hmatch₃, hdiag]
   rw [hsum, ← Nat.cast_smul_eq_nsmul 𝕜,
     inv_smul_smul₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
 

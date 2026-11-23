@@ -22,6 +22,8 @@ formulas, and operator Cauchy–Schwarz inequality.
 
 * `TauCeti.columnSquare`, `TauCeti.rowSquare`: column and row square functions.
 * `TauCeti.columnSquare_eq_of_mul_self`, `TauCeti.rowSquare_eq_of_mul_self`: uniqueness from square.
+* `TauCeti.columnSquare_extend_zero`, `TauCeti.rowSquare_extend_zero`,
+  `TauCeti.columnSquare_single`, `TauCeti.rowSquare_single`: zero-extension and singleton laws.
 * `TauCeti.norm_columnSquare`, `TauCeti.norm_rowSquare`: C⋆-norm formulas.
 * `TauCeti.norm_sum_mul_le_norm_rowSquare_mul_norm_columnSquare`: operator Cauchy–Schwarz.
 
@@ -151,6 +153,63 @@ theorem rowSquare_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (a : ι �
     rowSquare (a ∘ e) = rowSquare a := by
   simp only [rowSquare_def, Function.comp_apply]
   rw [Fintype.sum_equiv e _ (fun i => a i * star (a i)) fun _ => rfl]
+
+/-- Extending a family by zero along an injection preserves `columnSquare`. -/
+theorem columnSquare_extend_zero {κ : Type*} [Fintype κ] {f : κ → ι}
+    (hf : Function.Injective f) (a : κ → A) :
+    columnSquare (Function.extend f a 0) = columnSquare a := by
+  classical
+  simp only [columnSquare_def]
+  congr 1
+  refine (Fintype.sum_of_injective f hf _ _ (fun i hi => ?_) fun k => ?_).symm
+  · rw [Function.extend_apply' _ _ _ (by simpa using hi)]
+    simp
+  · rw [hf.extend_apply]
+
+/-- Extending a family by zero along an injection preserves `rowSquare`. -/
+theorem rowSquare_extend_zero {κ : Type*} [Fintype κ] {f : κ → ι}
+    (hf : Function.Injective f) (a : κ → A) :
+    rowSquare (Function.extend f a 0) = rowSquare a := by
+  have hstar : (fun i => star (Function.extend f a 0 i)) =
+      Function.extend f (fun k => star (a k)) 0 := by
+    ext i
+    by_cases hi : ∃ k, f k = i
+    · rcases hi with ⟨k, rfl⟩; simp [hf.extend_apply]
+    · simp [Function.extend_apply' _ _ _ hi]
+  rw [rowSquare_eq_columnSquare_star, hstar, columnSquare_extend_zero hf,
+    ← rowSquare_eq_columnSquare_star]
+
+/-- Padding a family with zeros preserves `columnSquare`. -/
+theorem columnSquare_sumElim_zero {κ : Type*} [Fintype κ] (a : ι → A) :
+    columnSquare (Sum.elim a (0 : κ → A)) = columnSquare a := by
+  simp [columnSquare_def, Fintype.sum_sum_type]
+
+/-- Padding a family with zeros preserves `rowSquare`. -/
+theorem rowSquare_sumElim_zero {κ : Type*} [Fintype κ] (a : ι → A) :
+    rowSquare (Sum.elim a (0 : κ → A)) = rowSquare a := by
+  simp [rowSquare_def, Fintype.sum_sum_type]
+
+/-- On a single-element index type, `columnSquare a` equals
+`CFC.sqrt (star (a default) * a default)`. -/
+@[simp] theorem columnSquare_unique [Unique ι] (a : ι → A) :
+    columnSquare a = CFC.sqrt (star (a default) * a default) := by
+  simp [columnSquare_def]
+
+/-- On a single-element index type, `rowSquare a` equals
+`CFC.sqrt (a default * star (a default))`. -/
+@[simp] theorem rowSquare_unique [Unique ι] (a : ι → A) :
+    rowSquare a = CFC.sqrt (a default * star (a default)) := by
+  simp [rowSquare_def]
+
+/-- The `columnSquare` of a single-entry family `Pi.single i x` is `CFC.sqrt (star x * x)`. -/
+@[simp] theorem columnSquare_single [DecidableEq ι] (i : ι) (x : A) :
+    columnSquare (Pi.single i x) = CFC.sqrt (star x * x) := by
+  simp [columnSquare_def, Pi.single_apply]
+
+/-- The `rowSquare` of a single-entry family `Pi.single i x` is `CFC.sqrt (x * star x)`. -/
+@[simp] theorem rowSquare_single [DecidableEq ι] (i : ι) (x : A) :
+    rowSquare (Pi.single i x) = CFC.sqrt (x * star x) := by
+  simp [rowSquare_def, Pi.single_apply]
 
 /-- Flipping signs by `δ : ι → ℤˣ` preserves `columnSquare`. -/
 @[simp] theorem columnSquare_units_smul (δ : ι → ℤˣ) (a : ι → A) :

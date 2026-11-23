@@ -28,6 +28,8 @@ is proved first.
 
 * `Finset.norm_sum_mul_sq_le`: `‖∑ aₖ bₖ‖² ≤ ‖∑ aₖ aₖ⋆‖ ‖∑ bₖ⋆ bₖ‖`.
 * `Finset.norm_sum_mul_mul_sq_le`: `‖∑ aₖ x bₖ‖² ≤ ‖∑ aₖ aₖ⋆‖ ‖x‖² ‖∑ bₖ⋆ bₖ‖`.
+* `Finset.norm_sum_star_mul_mul_le`: `‖∑ aₖ⋆ b aₖ‖ ≤ ‖b‖ ‖∑ aₖ⋆ aₖ‖`.
+* `Finset.norm_sum_mul_mul_star_le`: `‖∑ aₖ b aₖ⋆‖ ≤ ‖b‖ ‖∑ aₖ aₖ⋆‖`.
 
 ## References
 
@@ -81,5 +83,20 @@ theorem norm_sum_mul_mul_sq_le (s : Finset ι) (a b : ι → D) (x : D) :
     rw [norm_smul, norm_norm, CStarRing.norm_self_mul_star, sq, mul_comm]
   refine (norm_sum_mul_sq_le s (fun k => a k * x) b).trans ?_
   gcongr
+
+/-- Conjugating an element `b` by a finite family `a` satisfies
+`‖∑ k ∈ s, star (a k) * b * a k‖ ≤ ‖b‖ * ‖∑ k ∈ s, star (a k) * a k‖`. -/
+theorem norm_sum_star_mul_mul_le (s : Finset ι) (a : ι → D) (b : D) :
+    ‖∑ k ∈ s, star (a k) * b * a k‖ ≤ ‖b‖ * ‖∑ k ∈ s, star (a k) * a k‖ := by
+  rw [← sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _)), mul_pow]
+  have h := norm_sum_mul_mul_sq_le s (fun k => star (a k)) a b
+  simp only [star_star] at h
+  exact h.trans_eq (by ring)
+
+/-- Right-starred conjugation of `b` by a finite family `a` satisfies
+`‖∑ k ∈ s, a k * b * star (a k)‖ ≤ ‖b‖ * ‖∑ k ∈ s, a k * star (a k)‖`. -/
+theorem norm_sum_mul_mul_star_le (s : Finset ι) (a : ι → D) (b : D) :
+    ‖∑ k ∈ s, a k * b * star (a k)‖ ≤ ‖b‖ * ‖∑ k ∈ s, a k * star (a k)‖ := by
+  simpa only [star_star] using norm_sum_star_mul_mul_le s (fun k => star (a k)) b
 
 end Finset

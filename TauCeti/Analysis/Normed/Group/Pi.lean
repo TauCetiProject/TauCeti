@@ -43,6 +43,12 @@ theorem Pi.norm_pow_le_sum_norm_pow {ι : Type*} [Fintype ι] {E : ι → Type*}
   exact Finset.single_le_sum (f := fun i ↦ ‖f i‖ ^ n) (fun _ _ ↦ by positivity)
     (Finset.mem_univ i)
 
+/-- The norm on a finite product indexed by an empty type is `0`. -/
+@[simp]
+theorem Pi.norm_of_isEmpty {ι : Type*} [Fintype ι] [IsEmpty ι] {E : ι → Type*}
+    [∀ i, SeminormedAddGroup (E i)] (f : ∀ i, E i) : ‖f‖ = 0 :=
+  norm_of_subsingleton f
+
 /-- The norm of prepending an entry `a` to `v : Fin n → E` in the product sup-norm is
 `max ‖a‖ ‖v‖`. -/
 @[simp]
@@ -59,7 +65,7 @@ theorem Pi.norm_vecCons {n : ℕ} {E : Type*} [SeminormedAddGroup E] (a : E) (v 
 /-- The norm of a two-entry vector `![a, b]` in the product sup-norm is `max ‖a‖ ‖b‖`. -/
 theorem Pi.norm_pair {E : Type*} [SeminormedAddGroup E] (a b : E) :
     ‖![a, b]‖ = max ‖a‖ ‖b‖ := by
-  simp [Subsingleton.elim (Matrix.vecEmpty : Fin 0 → E) 0]
+  simp
 
 /-- Every coordinate of `Pi.single i c` has norm at most `‖c‖`, over any index type. -/
 theorem Pi.norm_single_apply_le {ι : Type*} [DecidableEq ι] {E : ι → Type*}

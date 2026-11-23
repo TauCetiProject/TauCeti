@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CauchySchwarz
 import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
@@ -87,9 +88,9 @@ theorem sum_star_rademacherCoeff_mul_le (Φ : (ι → ℤˣ) → A) :
   have hcross2 : c • ∑ ε : ι → ℤˣ, star (Φ ε) * S ε = ∑ k, star (y k) * y k := htransfer Φ y
   have hcross1 : c • ∑ ε : ι → ℤˣ, star (S ε) * Φ ε = ∑ k, star (y k) * y k := by
     simpa only [star_smul, star_trivial, star_sum, star_mul, star_star] using congrArg star hcross2
+  have hS_coeff : rademacherCoeff ℝ S = y := rademacherCoeff_sum_units_smul y
   have hsq : c • ∑ ε : ι → ℤˣ, star (S ε) * S ε = ∑ k, star (y k) * y k :=
-    (htransfer S y).trans <| by
-      simp only [show rademacherCoeff ℝ S = y from rademacherCoeff_sum_units_smul y]
+    (htransfer S y).trans (by rw [hS_coeff])
   have hnonneg : 0 ≤ c • ∑ ε : ι → ℤˣ, star (Φ ε - S ε) * (Φ ε - S ε) :=
     smul_nonneg (by positivity) (Finset.sum_nonneg fun ε _ => star_mul_self_nonneg _)
   have hexpand : c • ∑ ε : ι → ℤˣ, star (Φ ε - S ε) * (Φ ε - S ε) =
@@ -145,16 +146,9 @@ private theorem norm_apply_le_sqrt_norm_sum_mul_self {x : ι → A} (hx : ∀ i,
 
 private theorem norm_sum_conj_sum_sq_le {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i)) :
     ‖∑ i, x i * (∑ j, x j * x j) * x i‖ ≤ ‖∑ i, x i * x i‖ ^ 2 := by
-  set M : A := ∑ j, x j * x j
-  have hM : 0 ≤ M := Finset.sum_nonneg fun j _ => by
-    simpa only [(hx j).star_eq] using star_mul_self_nonneg (x j)
-  have hle : ∑ i, x i * M * x i ≤ ‖M‖ • M := by
-    rw [Finset.smul_sum]; exact Finset.sum_le_sum fun i _ => by
-      simpa only [(hx i).star_eq] using
-        CStarAlgebra.star_left_conjugate_le_norm_smul (x i) M hM.isSelfAdjoint
-  refine (CStarAlgebra.norm_le_norm_of_le_of_nonneg hle (Finset.sum_nonneg fun i _ => by
-    simpa only [(hx i).star_eq] using star_left_conjugate_nonneg hM (x i))).trans_eq ?_
-  rw [norm_smul, Real.norm_of_nonneg (norm_nonneg M), sq]
+  have h := Finset.norm_sum_star_mul_mul_le Finset.univ x (∑ j, x j * x j)
+  have hstar (i : ι) : star (x i) = x i := (hx i).star_eq
+  simpa only [hstar, sq] using h
 
 private theorem norm_sum_alternating_four_le {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i)) :
     ‖∑ i, ∑ j, x i * x j * x i * x j‖ ≤ ‖∑ i, x i * x i‖ ^ 2 := by
@@ -250,8 +244,8 @@ variable {ι A : Type*} [Fintype ι] [DecidableEq ι] [NonUnitalCStarAlgebra A]
 
 private def pisierTruncate (x : ι → A) (ε : ι → ℤˣ) : A := cfcₙ pisierCutoff (∑ i, ε i • x i)
 
-private def pisierRemainder (x : ι → A) (i : ι) : A :=
-  x i - rademacherCoeff ℝ (pisierTruncate x) i
+private def pisierRemainder (x : ι → A) : ι → A :=
+  x - rademacherCoeff ℝ (pisierTruncate x)
 
 omit [DecidableEq ι] [PartialOrder A] [StarOrderedRing A] in
 private theorem isSelfAdjoint_pisierTruncate (x : ι → A) (ε : ι → ℤˣ) :
@@ -264,8 +258,9 @@ private theorem norm_pisierTruncate_le (x : ι → A) (ε : ι → ℤˣ) :
 
 omit [PartialOrder A] [StarOrderedRing A] in
 private theorem isSelfAdjoint_pisierRemainder {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i)) (i : ι) :
-    IsSelfAdjoint (pisierRemainder x i) :=
-  (hx i).sub (isSelfAdjoint_rademacherCoeff (isSelfAdjoint_pisierTruncate x) i)
+    IsSelfAdjoint (pisierRemainder x i) := by
+  rw [pisierRemainder, Pi.sub_apply]
+  exact (hx i).sub (isSelfAdjoint_rademacherCoeff (isSelfAdjoint_pisierTruncate x) i)
 
 omit [Fintype ι] [DecidableEq ι] in
 private theorem sub_cfcₙ_pisierCutoff_sq_le {s : A} (hsa : IsSelfAdjoint s) :
@@ -298,23 +293,24 @@ private theorem norm_sum_pisierRemainder_sq_le {x : ι → A} (hx : ∀ i, IsSel
     (hnorm : ‖∑ i, x i * x i‖ ≤ 1) : ‖∑ i, pisierRemainder x i * pisierRemainder x i‖ ≤ 1 / 4 := by
   set c : ℝ := (Fintype.card (ι → ℤˣ) : ℝ)⁻¹
   set S : (ι → ℤˣ) → A := fun ε => ∑ i, ε i • x i
-  set δ : (ι → ℤˣ) → A := fun ε => S ε - pisierTruncate x ε
+  set δ : (ι → ℤˣ) → A := S - pisierTruncate x
   have hS_sa (ε : ι → ℤˣ) : IsSelfAdjoint (S ε) := isSelfAdjoint_sum_units_smul hx ε
   have hrem_eq : pisierRemainder x = rademacherCoeff ℝ δ := by
-    have hδ : δ = S - pisierTruncate x := rfl
-    rw [hδ, map_sub, rademacherCoeff_sum_units_smul]
-    rfl
+    rw [pisierRemainder, map_sub, rademacherCoeff_sum_units_smul]
   have hbessel : ∑ i, pisierRemainder x i * pisierRemainder x i ≤ c • ∑ ε : ι → ℤˣ, δ ε * δ ε :=
     (Finset.sum_congr rfl fun i _ => by
       rw [← hrem_eq, (isSelfAdjoint_pisierRemainder hx i).star_eq]).symm.trans_le <|
       (sum_star_rademacherCoeff_mul_le δ).trans_eq <| congrArg (c • ·) <|
         Finset.sum_congr rfl fun ε _ => by
-          rw [((hS_sa ε).sub (isSelfAdjoint_pisierTruncate x ε)).star_eq]
+          dsimp only [δ]
+          rw [Pi.sub_apply, ((hS_sa ε).sub (isSelfAdjoint_pisierTruncate x ε)).star_eq]
   have hchain : ∑ i, pisierRemainder x i * pisierRemainder x i ≤
       (1 / 12 : ℝ) • (c • ∑ ε : ι → ℤˣ, S ε * S ε * S ε * S ε) := hbessel.trans <| by
     rw [smul_comm (1 / 12 : ℝ), Finset.smul_sum (r := (1 / 12 : ℝ))]
-    exact smul_le_smul_of_nonneg_left
-      (Finset.sum_le_sum fun ε _ => sub_cfcₙ_pisierCutoff_sq_le (hS_sa ε)) (by positivity)
+    refine smul_le_smul_of_nonneg_left (Finset.sum_le_sum fun ε _ => ?_) (by positivity)
+    dsimp only [δ]
+    rw [Pi.sub_apply]
+    exact sub_cfcₙ_pisierCutoff_sq_le (hS_sa ε)
   calc _ ≤ ‖(1 / 12 : ℝ) • (c • ∑ ε : ι → ℤˣ, S ε * S ε * S ε * S ε)‖ :=
         CStarAlgebra.norm_le_norm_of_le_of_nonneg hchain (Finset.sum_nonneg fun i _ => by
           simpa only [(isSelfAdjoint_pisierRemainder hx i).star_eq] using
@@ -328,14 +324,14 @@ private theorem norm_sum_pisierRemainder_sq_le {x : ι → A} (hx : ∀ i, IsSel
 
 private def pisierIter (x : ι → A) : ℕ → ι → A
   | 0 => x
-  | m + 1 => fun i => (2 : ℝ) • pisierRemainder (pisierIter x m) i
+  | m + 1 => (2 : ℝ) • pisierRemainder (pisierIter x m)
 
 omit [PartialOrder A] [StarOrderedRing A] in
 private theorem isSelfAdjoint_pisierIter {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i)) :
     ∀ m i, IsSelfAdjoint (pisierIter x m i)
   | 0, i => hx i
   | m + 1, i => by
-    rw [pisierIter, IsSelfAdjoint, star_smul, star_trivial,
+    rw [pisierIter, Pi.smul_apply, IsSelfAdjoint, star_smul, star_trivial,
       (isSelfAdjoint_pisierRemainder (isSelfAdjoint_pisierIter hx m) i).star_eq]
 
 private theorem norm_sum_pisierIter_sq_le_one {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i))
@@ -347,20 +343,19 @@ private theorem norm_sum_pisierIter_sq_le_one {x : ι → A} (hx : ∀ i, IsSelf
     have hsum : ∑ i, pisierIter x (m + 1) i * pisierIter x (m + 1) i =
         (4 : ℝ) • ∑ i, pisierRemainder (pisierIter x m) i * pisierRemainder (pisierIter x m) i := by
       rw [Finset.smul_sum]; exact Finset.sum_congr rfl fun i _ => by
-        rw [pisierIter, smul_mul_assoc, mul_smul_comm, smul_smul]; norm_num
+        rw [pisierIter, Pi.smul_apply, smul_mul_assoc, mul_smul_comm, smul_smul]; norm_num
     rw [hsum, norm_smul, Real.norm_of_nonneg (by norm_num : (0 : ℝ) ≤ 4)]; linarith
 
 omit [PartialOrder A] [StarOrderedRing A] in
 private theorem pisierIter_step (x : ι → A) (i : ι) (m : ℕ) :
-    rademacherCoeff ℝ (fun ε => ((1 / 2 : ℝ) ^ m) • pisierTruncate (pisierIter x m) ε) i =
+    rademacherCoeff ℝ (((1 / 2 : ℝ) ^ m) • pisierTruncate (pisierIter x m)) i =
       ((1 / 2 : ℝ) ^ m) • pisierIter x m i -
         ((1 / 2 : ℝ) ^ (m + 1)) • pisierIter x (m + 1) i := by
-  change rademacherCoeff ℝ (((1 / 2 : ℝ) ^ m) • pisierTruncate (pisierIter x m)) i = _
   rw [map_smul, Pi.smul_apply]
   have hrec : rademacherCoeff ℝ (pisierTruncate (pisierIter x m)) i =
       pisierIter x m i - pisierRemainder (pisierIter x m) i := by
-    simp [pisierRemainder]
-  rw [hrec, smul_sub, pisierIter, smul_smul, pow_succ, mul_assoc]
+    rw [pisierRemainder, Pi.sub_apply, sub_sub_cancel]
+  rw [hrec, smul_sub, pisierIter, Pi.smul_apply, smul_smul, pow_succ, mul_assoc]
   norm_num
 
 private theorem tendsto_pisierIter_tail {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i))
@@ -378,12 +373,13 @@ private theorem exists_isSelfAdjoint_rademacherCoeff_eq_of_norm_le_one
     ∃ Φ : (ι → ℤˣ) → A, (∀ ε, IsSelfAdjoint (Φ ε)) ∧
       rademacherCoeff ℝ Φ = x ∧ ∀ ε, ‖Φ ε‖ ≤ Real.sqrt 3 := by
   -- Geometric truncation series with summand norm `≤ (1 / 2)^m * (√3 / 2)`.
-  let g : ℕ → (ι → ℤˣ) → A := fun m ε => ((1 / 2 : ℝ) ^ m) • pisierTruncate (pisierIter x m) ε
+  let g : ℕ → (ι → ℤˣ) → A := fun m => ((1 / 2 : ℝ) ^ m) • pisierTruncate (pisierIter x m)
   have hgeom : HasSum (fun m : ℕ => ((1 / 2 : ℝ) ^ m) * (Real.sqrt 3 / 2)) (Real.sqrt 3) := by
     simpa [mul_div_cancel₀ _ (two_ne_zero' ℝ)] using
       hasSum_geometric_two.mul_right (Real.sqrt 3 / 2)
   have hg_norm (m : ℕ) (ε : ι → ℤˣ) : ‖g m ε‖ ≤ ((1 / 2 : ℝ) ^ m) * (Real.sqrt 3 / 2) := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+    dsimp only [g]
+    rw [Pi.smul_apply, norm_smul, Real.norm_of_nonneg (by positivity)]
     exact mul_le_mul_of_nonneg_left (norm_pisierTruncate_le _ ε) (by positivity)
   have hg_summ (ε : ι → ℤˣ) : Summable (fun m => g m ε) :=
     Summable.of_norm_bounded hgeom.summable fun m => hg_norm m ε
@@ -391,7 +387,8 @@ private theorem exists_isSelfAdjoint_rademacherCoeff_eq_of_norm_le_one
     fun ε => tsum_of_norm_bounded hgeom fun m => hg_norm m ε⟩
   -- Self-adjointness passes through the convergent `tsum`.
   · exact ((hg_summ ε).hasSum.star.congr_fun fun m => by
-      simp [g, (isSelfAdjoint_pisierTruncate _ ε).star_eq]).unique (hg_summ ε).hasSum
+      simp [g, Pi.smul_apply, (isSelfAdjoint_pisierTruncate _ ε).star_eq]).unique
+      (hg_summ ε).hasSum
   -- Termwise Rademacher averaging telescopes to `x i - (1 / 2)^N • pisierIter x N i → x i`.
   · have hsum_hasSum : HasSum (fun m => ∑ ε : ι → ℤˣ, ε i • g m ε)
         (∑ ε : ι → ℤˣ, ε i • ∑' m, g m ε) := by
@@ -419,23 +416,24 @@ theorem exists_isSelfAdjoint_rademacherCoeff_eq_and_norm_le
     ext i
     simpa [map_zero] using
       (norm_le_zero_iff.mp ((norm_apply_le_sqrt_norm_sum_mul_self hx i).trans_eq hs)).symm
-  · let y : ι → A := fun i => s⁻¹ • x i
+  · let y : ι → A := s⁻¹ • x
     have hscale : (∑ i, y i * y i) = (s⁻¹ ^ 2) • ∑ i, x i * x i := by
       rw [Finset.smul_sum]
       exact Finset.sum_congr rfl fun i _ => by
-        simp [y, sq, smul_mul_assoc, mul_smul_comm, smul_smul]
+        simp [y, Pi.smul_apply, sq, smul_mul_assoc, mul_smul_comm, smul_smul]
     have hy_norm : ‖∑ i, y i * y i‖ ≤ 1 := by
       rw [hscale, norm_smul, Real.norm_of_nonneg (by positivity),
         ← Real.sq_sqrt (norm_nonneg (∑ i, x i * x i)), inv_pow, inv_mul_cancel₀ (pow_ne_zero 2 hs)]
     obtain ⟨Ψ, hΨ_sa, hΨ_avg, hΨ_norm⟩ :=
       exists_isSelfAdjoint_rademacherCoeff_eq_of_norm_le_one
-        (fun i => by simp [y, IsSelfAdjoint, (hx i).star_eq]) hy_norm
-    refine ⟨fun ε => s • Ψ ε, fun ε => by simp [IsSelfAdjoint, (hΨ_sa ε).star_eq], ?_,
-      fun ε => by rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_comm]; exact
-        mul_le_mul_of_nonneg_right (hΨ_norm ε) (Real.sqrt_nonneg _)⟩
-    change rademacherCoeff ℝ (s • Ψ) = x
+        (fun i => by simp [y, Pi.smul_apply, IsSelfAdjoint, (hx i).star_eq]) hy_norm
+    refine ⟨s • Ψ, fun ε => by simp [Pi.smul_apply, IsSelfAdjoint, (hΨ_sa ε).star_eq], ?_,
+      fun ε => by
+        rw [Pi.smul_apply, norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_comm]
+        exact mul_le_mul_of_nonneg_right (hΨ_norm ε) (Real.sqrt_nonneg _)⟩
     rw [map_smul, hΨ_avg]
     ext i
+    rw [Pi.smul_apply]
     exact smul_inv_smul₀ hs (x i)
 
 /-- **Dual Rademacher factorization in a non-unital C⋆-algebra** (Haagerup–Musat, Pisier): for any
