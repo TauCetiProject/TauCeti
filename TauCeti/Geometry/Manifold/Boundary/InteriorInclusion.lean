@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Interior
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The inclusion of the interior of a manifold with corners
@@ -141,37 +142,6 @@ theorem contMDiff_subtypeVal_comp_interior_iff {f : N → I.interior M} :
     ContMDiff J I n (Subtype.val ∘ f) ↔ ContMDiff J 𝓘(𝕜, E) n f :=
   forall_congr' fun _ ↦ contMDiffAt_subtypeVal_comp_interior_iff
 
-/-- A map into `M` with values in the interior is `C^n` within a set at a point as a map into the
-interior exactly when it is as a map into `M`. -/
-@[simp]
-theorem contMDiffWithinAt_codRestrict_interior_iff {f : N → M} (hf : ∀ y, f y ∈ I.interior M)
-    {s : Set N} {x : N} :
-    ContMDiffWithinAt J 𝓘(𝕜, E) n (codRestrict f (I.interior M) hf) s x ↔
-      ContMDiffWithinAt J I n f s x :=
-  contMDiffWithinAt_subtypeVal_comp_interior_iff.symm
-
-/-- A map into `M` with values in the interior is `C^n` at a point as a map into the interior
-exactly when it is as a map into `M`. -/
-@[simp]
-theorem contMDiffAt_codRestrict_interior_iff {f : N → M} (hf : ∀ y, f y ∈ I.interior M) {x : N} :
-    ContMDiffAt J 𝓘(𝕜, E) n (codRestrict f (I.interior M) hf) x ↔ ContMDiffAt J I n f x :=
-  contMDiffWithinAt_codRestrict_interior_iff hf
-
-/-- A map into `M` with values in the interior is `C^n` on a set as a map into the interior exactly
-when it is as a map into `M`. -/
-@[simp]
-theorem contMDiffOn_codRestrict_interior_iff {f : N → M} (hf : ∀ y, f y ∈ I.interior M)
-    {s : Set N} :
-    ContMDiffOn J 𝓘(𝕜, E) n (codRestrict f (I.interior M) hf) s ↔ ContMDiffOn J I n f s :=
-  forall₂_congr fun _ _ ↦ contMDiffWithinAt_codRestrict_interior_iff hf
-
-/-- A map into `M` with values in the interior is `C^n` as a map into the interior exactly when it
-is `C^n` as a map into `M`. -/
-@[simp]
-theorem contMDiff_codRestrict_interior_iff {f : N → M} (hf : ∀ y, f y ∈ I.interior M) :
-    ContMDiff J 𝓘(𝕜, E) n (codRestrict f (I.interior M) hf) ↔ ContMDiff J I n f :=
-  forall_congr' fun _ ↦ contMDiffAt_codRestrict_interior_iff hf
-
 /-! ### The inclusion as a local diffeomorphism -/
 
 variable (I M)
@@ -228,24 +198,14 @@ theorem isLocalDiffeomorph_subtypeVal_interior (n : WithTop ℕ∞) :
   IsLocalDiffeomorphAt.comp I M ((I.interiorDiffeomorphOpens M n).isLocalDiffeomorph x)
     (TauCeti.isLocalDiffeomorph_subtype_val (U := I.interiorOpens M) _)
 
-/-- The inclusion of the interior reads as the identity in extended charts, near the image of the
-base point. -/
-theorem writtenInExtChartAt_subtypeVal_interior_eventuallyEq (x : I.interior M) :
-    writtenInExtChartAt 𝓘(𝕜, E) I x Subtype.val =ᶠ[𝓝 (extChartAt 𝓘(𝕜, E) x x)] id := by
-  filter_upwards [extChartAt_target_mem_nhds x] with v hv
-  rw [writtenInExtChartAt, comp_apply, comp_apply, coe_extChartAt_interior_symm_apply I x hv, id]
-  exact (extChartAt I (x : M)).right_inv ((extChartAt_interior_target I x ▸ hv).1)
-
 /-- The inclusion of the interior has the identity of `E` as its manifold derivative. -/
 theorem hasMFDerivAt_subtypeVal_interior (x : I.interior M) :
-    HasMFDerivAt 𝓘(𝕜, E) I Subtype.val x (ContinuousLinearMap.id 𝕜 E) := by
-  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
-  rw [modelWithCornersSelf_coe, range_id]
-  exact (hasFDerivWithinAt_id _ _).congr_of_eventuallyEq
+    HasMFDerivAt 𝓘(𝕜, E) I Subtype.val x (ContinuousLinearMap.id 𝕜 E) :=
+  continuous_subtypeVal.continuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq _
     (nhdsWithin_le_nhds (writtenInExtChartAt_subtypeVal_interior_eventuallyEq x))
-    (writtenInExtChartAt_subtypeVal_interior_eventuallyEq x).eq_of_nhds
 
 /-- **The derivative of the inclusion of the interior** is the identity of `E`. -/
+@[simp]
 theorem mfderiv_subtypeVal_interior (x : I.interior M) :
     mfderiv 𝓘(𝕜, E) I Subtype.val x = ContinuousLinearMap.id 𝕜 E :=
   (hasMFDerivAt_subtypeVal_interior x).mfderiv

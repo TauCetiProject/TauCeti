@@ -55,6 +55,8 @@ For a manifold `M` that is already boundaryless as a `C¹` manifold,
   the interior.
 * `ModelWithCorners.instIsManifoldInterior`: the interior of a `C^n` manifold with corners is a
   `C^n` manifold modelled on `E`.
+* `ModelWithCorners.writtenInExtChartAt_subtypeVal_interior_eventuallyEq`: its inclusion into `M`
+  reads as the identity in extended charts near each point.
 * `ModelWithCorners.contMDiff_subtypeVal_interior`: its inclusion into `M` is `C^n`.
 * `ModelWithCorners.range_subtypeVal_interior`: the interior is the complement of the boundary.
 
@@ -227,27 +229,33 @@ instance instIsManifoldInterior {n : WithTop ℕ∞} [IsManifold I n M] :
       OpenPartialHomeomorph.interiorExtend_apply]
     rw [OpenPartialHomeomorph.coe_interiorExtend_symm_apply I e (by simpa using And.intro h₁ h₂)]
 
+variable {I} in
+/-- The inclusion of the interior reads as the identity in extended charts, near the image of the
+base point: on the target of the chart of the interior, its inverse is the inverse of the extended
+chart of `M` at `x`, which the extended chart of `M` at `x` undoes. -/
+theorem writtenInExtChartAt_subtypeVal_interior_eventuallyEq (x : I.interior M) :
+    writtenInExtChartAt 𝓘(𝕜, E) I x Subtype.val =ᶠ[𝓝 (extChartAt 𝓘(𝕜, E) x x)] id := by
+  have hx : extChartAt 𝓘(𝕜, E) x x ∈ (chartAt E x).target := by
+    simpa using (chartAt E x).map_source (mem_chart_source E x)
+  filter_upwards [(chartAt E x).open_target.mem_nhds hx] with v hv
+  have hv' := hv
+  rw [chartAt_interior_target] at hv'
+  simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_coe, extChartAt_coe_symm,
+    modelWithCornersSelf_coe_symm, id_eq]
+  rw [coe_chartAt_interior_symm_apply I x hv, (chartAt H (x : M)).right_inv hv'.1,
+    I.right_inv (interior_subset hv'.2)]
+
 /-- **The inclusion of the interior is smooth.** For every `n`, the inclusion of the interior of
 `M`, with its charts in `E`, into `M` is `C^n`: read in the preferred charts it is the identity
-of `E` near each point. No smoothness of `M` is needed. -/
+of `E` near each point (`writtenInExtChartAt_subtypeVal_interior_eventuallyEq`). No smoothness
+of `M` is needed. -/
 theorem contMDiff_subtypeVal_interior {n : WithTop ℕ∞} :
     ContMDiff 𝓘(𝕜, E) I n (Subtype.val : I.interior M → M) := by
   intro x
   rw [contMDiffAt_iff]
   refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   simp only [modelWithCornersSelf_coe, range_id, contDiffWithinAt_univ]
-  have hx : extChartAt 𝓘(𝕜, E) x x ∈ (chartAt E x).target := by
-    simpa using (chartAt E x).map_source (mem_chart_source E x)
-  refine contDiffAt_id.congr_of_eventuallyEq ?_
-  filter_upwards [(chartAt E x).open_target.mem_nhds hx] with v hv
-  -- On the target of the chart of the interior, its inverse is the inverse of the extended chart
-  -- of `M` at `x`, which the extended chart of `M` at `x` undoes.
-  have hv' := hv
-  rw [chartAt_interior_target] at hv'
-  simp only [Function.comp_apply, extChartAt_coe, extChartAt_coe_symm,
-    modelWithCornersSelf_coe_symm, id_eq]
-  rw [coe_chartAt_interior_symm_apply I x hv, (chartAt H (x : M)).right_inv hv'.1,
-    I.right_inv (interior_subset hv'.2)]
+  exact contDiffAt_id.congr_of_eventuallyEq (writtenInExtChartAt_subtypeVal_interior_eventuallyEq x)
 
 omit [FiniteDimensional 𝕜 E] in
 /-- The interior of `M` is the complement of its boundary. -/
