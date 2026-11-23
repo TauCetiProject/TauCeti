@@ -393,8 +393,13 @@ by `monomial μ 1`, yielding a homogeneous polynomial of degree `d`. -/
 theorem IsHomogeneous.divMonomial {d e : ℕ} {p : MvPolynomial σ R}
     (hp : p.IsHomogeneous (d + e)) {μ : σ →₀ ℕ} (hμ : μ.degree = e) :
     (p.divMonomial μ).IsHomogeneous d := fun γ hγ ↦ by
-  have hdeg := hp (by rwa [coeff_divMonomial] at hγ)
-  rw [map_add] at hdeg; rw [Finsupp.degree_eq_weight_one, ← Pi.one_def] at hμ; omega
+  have hdeg : (μ + γ).degree = e + d := by
+    rw [Finsupp.degree_apply,
+      ← hp.degree_eq_sum_deg_support (mem_support_iff.mpr (by rwa [coeff_divMonomial] at hγ)),
+      add_comm]
+  rw [map_add, hμ] at hdeg
+  rw [Pi.one_def, ← Finsupp.degree_eq_weight_one]
+  exact Nat.add_left_cancel hdeg
 
 /-- Taking the monomial remainder `p.modMonomial μ` (discarding terms divisible by `monomial μ 1`)
 preserves homogeneity of degree `d` for any monomial exponent `μ`. -/
