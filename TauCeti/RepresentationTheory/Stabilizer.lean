@@ -50,7 +50,9 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
   invariants of subgroups, their monotonicity, and their transport under conjugation.
 * `Representation.stabilizer_ofMulAction_single`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
-  `Representation.range_orbitMap`
+  `Representation.range_orbitMap`, `Representation.finsum_mem_range_eq_finsum_orbitMap` and
+  `Representation.natCard_range_eq_index_stabilizer`: the orbit is in bijection with the cosets of
+  the stabilizer.
 * `Representation.biInf_stabilizer_span`: pointwise stabilizer of `Submodule.span R s`.
 * `Representation.stabilizer_comp`, `Representation.map_stabilizer_comp_of_surjective`,
   `Representation.comap_mk'_stabilizer_ofQuotient`, and `Representation.map_mk'_stabilizer`:
@@ -181,6 +183,19 @@ theorem orbitMap_injective : Function.Injective (ρ.orbitMap v) := by
 /-- The range of the orbit map is the orbit `{ρ g v | g ∈ G}` of `v`. -/
 theorem range_orbitMap : Set.range (ρ.orbitMap v) = Set.range fun g : G ↦ ρ g v :=
   (QuotientGroup.mk_surjective.range_comp (ρ.orbitMap v)).symm
+
+/-- The sum over the orbit of `v` is the sum over the cosets of its stabilizer. -/
+theorem finsum_mem_range_eq_finsum_orbitMap :
+    ∑ᶠ w ∈ Set.range fun g : G ↦ ρ g v, w = ∑ᶠ q : G ⧸ ρ.stabilizer v, ρ q.out v := by
+  rw [← range_orbitMap, finsum_mem_range (ρ.orbitMap_injective v)]
+  refine finsum_congr fun q ↦ ?_
+  conv_lhs => rw [← QuotientGroup.out_eq' q]
+  exact ρ.orbitMap_mk v _
+
+/-- **Orbit–stabilizer**: the orbit of `v` has as many points as the cosets of its stabilizer. -/
+theorem natCard_range_eq_index_stabilizer :
+    Nat.card (Set.range fun g : G ↦ ρ g v) = (ρ.stabilizer v).index := by
+  rw [← range_orbitMap, Nat.card_range_of_injective (ρ.orbitMap_injective v), Subgroup.index]
 
 end OrbitMap
 

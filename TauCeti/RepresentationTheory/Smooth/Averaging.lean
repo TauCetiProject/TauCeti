@@ -43,7 +43,7 @@ Bernstein's notes onto `V^U`.
   (`Representation.smoothAverage_smoothAverage`).
 * `Representation.smoothAverage_apply_apply`: `e_K (σ k v) = e_K v`.
 * `Representation.ker_smoothAverage`: the kernel of `e_K` is the span of the vectors `σ k x - x`.
-* `Representation.IntertwiningMap.smoothAverage_apply`: `e_K` commutes with intertwining maps.
+* `Representation.IntertwiningMap.map_smoothAverage`: `e_K` commutes with intertwining maps.
 * `Representation.smoothAverage_comp_smoothAverage_subgroup`,
   `Representation.smoothAverage_subgroup_comp_smoothAverage`: for a compact subgroup `H` of
   invertible pro-order, `e_K e_H = e_H e_K = e_K`.
@@ -93,19 +93,6 @@ private theorem smul_finsum_out_of_le {H H' : Subgroup K} (hle : H' ≤ H) [Fini
   congr 1
   rw [Ring.inverse_mul (Or.inl hr), Ring.inverse_mul_cancel_right _ _ hr]
 
-/-- The sum over the orbit of `v` is the sum over the cosets of its stabilizer. -/
-private theorem finsum_mem_range_eq (v : V) :
-    ∑ᶠ w ∈ range fun k : K ↦ σ k v, w = ∑ᶠ q : K ⧸ σ.stabilizer v, σ q.out v := by
-  rw [← range_orbitMap, finsum_mem_range (σ.orbitMap_injective v)]
-  refine finsum_congr fun q ↦ ?_
-  conv_lhs => rw [← QuotientGroup.out_eq' q]
-  exact σ.orbitMap_mk v _
-
-/-- The orbit of `v` has as many points as the cosets of its stabilizer. -/
-private theorem natCard_range_eq (v : V) :
-    Nat.card (range fun k : K ↦ σ k v) = (σ.stabilizer v).index := by
-  rw [← range_orbitMap, Nat.card_range_of_injective (σ.orbitMap_injective v), Subgroup.index]
-
 end Formula
 
 section Compact
@@ -122,7 +109,7 @@ private theorem orbitAverage_eq {H : Subgroup K} (hH : IsOpen (H : Set K)) {v : 
     Ring.inverse (Nat.card (range fun k : K ↦ σ k v) : A) • ∑ᶠ w ∈ range fun k : K ↦ σ k v, w =
       Ring.inverse (H.index : A) • ∑ᶠ q : K ⧸ H, σ q.out v := by
   have := H.quotient_finite_of_isOpen hH
-  rw [natCard_range_eq, finsum_mem_range_eq,
+  rw [natCard_range_eq_index_stabilizer, finsum_mem_range_eq_finsum_orbitMap,
     smul_finsum_out_of_le σ hv (hK.isUnit_index hH) le_rfl]
 
 /-- **The averaging projector** of a smooth representation of a compact group whose pro-order is
@@ -238,7 +225,7 @@ theorem ker_smoothAverage : LinearMap.ker (σ.smoothAverage hK) = Coinvariants.k
     simp
 
 /-- The averaging projector commutes with intertwining maps between smooth representations. -/
-theorem IntertwiningMap.smoothAverage_apply {ρ : Representation A K W} [IsSmooth ρ]
+theorem IntertwiningMap.map_smoothAverage {ρ : Representation A K W} [IsSmooth ρ]
     (f : σ.IntertwiningMap ρ) (v : V) :
     f (σ.smoothAverage hK v) = ρ.smoothAverage hK (f v) := by
   have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
