@@ -140,6 +140,7 @@ theorem inner_riemannianBundle (g : ContMDiffRiemannianMetric IB n F V) (x : B) 
     Inner.inner ℝ v w = g.inner x v w := by
   rfl
 
+
 end Bundle.ContMDiffRiemannianMetric
 
 namespace Bundle.IsContinuousRiemannianBundle
@@ -191,6 +192,16 @@ instance vectorSpace {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E
 end IsContMDiffRiemannianBundle
 
 namespace Bundle.ContMDiffRiemannianMetric
+
+/-- The canonical Riemannian metric on the real line is multiplication of tangent vectors. -/
+theorem ofIsContMDiffRiemannianBundle_inner_real {n : ℕ∞ω} (s : ℝ) (a b : TangentSpace 𝓘(ℝ) s) :
+    (ofIsContMDiffRiemannianBundle (IB := 𝓘(ℝ)) (n := n) (F := ℝ)
+      (V := (TangentSpace 𝓘(ℝ) : ℝ → Type _))).inner s a b = @Mul.mul ℝ _ a b := by
+  rw [ofIsContMDiffRiemannianBundle_inner]
+  -- The tangent metric of the real line is induced by its usual scalar inner product.
+  change @Inner.inner ℝ ℝ _ a b = @Mul.mul ℝ _ a b
+  exact Real.inner_apply _ _
+
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}

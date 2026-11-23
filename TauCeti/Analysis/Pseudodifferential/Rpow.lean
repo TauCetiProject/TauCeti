@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Positive.FunctionalCalculus
 public import TauCeti.Analysis.Pseudodifferential.PolarDecomposition
 public import TauCeti.Analysis.Pseudodifferential.StrictlyPositive
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 
 /-!
 # Real powers of strictly positive homogeneous symbols
