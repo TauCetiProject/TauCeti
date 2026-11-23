@@ -189,26 +189,13 @@ private theorem linked_raiseList (hlam : lam ∈ dominantChamber P b)
   have hj₀ : j₀ < l.length := by omega
   set τ := l[j₀].1 with hτ
   set d := l[j₀].2 with hd
-  set s := (weylCoxeterSystem P b).simple i with hs
-  have hτmin : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) τ :=
-    hlmin _ (List.getElem_mem hj₀)
+  set s := (weylCoxeterSystem P b).simple i
   -- Subdivide the entry `j₀` at the fraction `θ`; the list stays linked.
   set Dp : List (P.weylGroup × ℚ) :=
     l.take j₀ ++ (τ, θ * d) :: (τ, (1 - θ) * d) :: l.drop (j₀ + 1) with hDp
-  have hDp_linked : Linked P b lam 0 Dp := by
-    have hsplit : l = l.take j₀ ++ (τ, θ * d + (1 - θ) * d) :: l.drop (j₀ + 1) := by
-      rw [show θ * d + (1 - θ) * d = d by ring, ← List.drop_eq_getElem_cons hj₀,
-        List.take_append_drop]
-    rw [hsplit] at hl
-    exact Linked.split hτmin hl
-  have hDpmin : ∀ p ∈ Dp, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 := by
-    intro p hp
-    simp only [Dp, List.mem_append, List.mem_cons] at hp
-    rcases hp with hp | rfl | rfl | hp
-    · exact hlmin p (List.mem_of_mem_take hp)
-    · exact hτmin
-    · exact hτmin
-    · exact hlmin p (List.mem_of_mem_drop hp)
+  obtain ⟨hDp_linked, hDpmin⟩ : Linked P b lam 0 Dp ∧
+      ∀ p ∈ Dp, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 :=
+    hl.subdivide hlmin hj₀ rfl θ
   -- The entries and break times of the subdivided list.
   have hlen_take : (l.take j₀).length = j₀ := by simp; omega
   have hDp_len : Dp.length = l.length + 1 := by simp [Dp]; omega
