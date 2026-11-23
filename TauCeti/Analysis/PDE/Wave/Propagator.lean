@@ -54,7 +54,9 @@ identity and Duhamel's formula.
 * `TauCeti.integrable_waveCosSymbol_smul`, `TauCeti.integrable_waveSinSymbol_smul`: both symbols
   are bounded, so multiplying by them preserves integrability.
 * `TauCeti.waveCosPropagator`, `TauCeti.waveSinPropagator`: the operators on `L²(E, F)`, with
-  their Fourier-side description, their values at `t = 0` and their norm bounds.
+  their Fourier-side description, their values at `t = 0` and their norm bounds. Both commute with
+  every `L²` Fourier multiplier (`TauCeti.fourierMultiplierCLM_waveCosPropagator_apply`,
+  `TauCeti.fourierMultiplierCLM_waveSinPropagator_apply`).
 * `TauCeti.waveCosPropagator_eq_halfWavePropagator`: `cos(tD) = (W₊(t) + W₋(t)) / 2`.
 * `TauCeti.norm_waveSinPropagator_sub_le`: `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm,
   and `TauCeti.continuous_waveSinPropagator_uncurry`: `(t, g) ↦ D⁻¹ sin(tD) g` is jointly
@@ -271,6 +273,20 @@ theorem coeFn_fourier_waveCosPropagator (t : ℝ) (f : Lp F 2 (volume : Measure 
 theorem coeFn_fourier_waveSinPropagator (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
     𝓕 (waveSinPropagator F t f) =ᵐ[volume] fun ξ ↦ waveSinSymbol t ξ • 𝓕 f ξ :=
   Lp.coeFn_fourier_fourierMultiplierCLM_toLp f (memLp_waveSinSymbol t)
+
+/-- `cos(tD)` commutes with every `L²` Fourier multiplier, applied form. -/
+theorem fourierMultiplierCLM_waveCosPropagator_apply (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    Lp.fourierMultiplierCLM F m (waveCosPropagator F t f) =
+      waveCosPropagator F t (Lp.fourierMultiplierCLM F m f) :=
+  Lp.fourierMultiplierCLM_fourierMultiplierCLM_comm _ _ f
+
+/-- `D⁻¹ sin(tD)` commutes with every `L²` Fourier multiplier, applied form. -/
+theorem fourierMultiplierCLM_waveSinPropagator_apply (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    Lp.fourierMultiplierCLM F m (waveSinPropagator F t f) =
+      waveSinPropagator F t (Lp.fourierMultiplierCLM F m f) :=
+  Lp.fourierMultiplierCLM_fourierMultiplierCLM_comm _ _ f
 
 /-- `cos(0D)` is the identity. -/
 @[simp]

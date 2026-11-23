@@ -37,11 +37,17 @@ On the whole line in `L²`, the autonomous operator of an invertible `ι`-symmet
 * if `A(s)` converges to an invertible `ι`-symmetric `B` as `s → ∞`, there are `C` and `T` with
   `‖u‖ ≤ C ‖(ι ∘ u)' + A u‖` for every path `u` vanishing on `(-∞, T)`
   (`exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atTop`),
-  and likewise at `-∞`.
+  and likewise at `-∞`;
+* if `A(s)` converges along a filter to an `ι`-symmetric `A₀` for which only `A₀ - c ι` is
+  invertible, paths supported where `A` is near `A₀` satisfy
+  `‖u‖ ≤ C (‖(ι ∘ u)' + A u‖ + |c| ‖ι ∘ u‖)`
+  (`exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_of_tendsto`); along
+  `𝓝 s₀` this is the estimate near a time `s₀` at which `A(s₀)` need not be invertible.
 
-The last estimate is the control of the ends in the Fredholm theory of `∂ₛ + A(s)` for a family
-with invertible limits `A±`: after cutting a path off near the two ends, only a piece supported in a
-bounded interval remains, which is where the compactness of `D → H` enters.
+The last two estimates are the control of the ends and of finite times in the Fredholm theory of
+`∂ₛ + A(s)` for a family with invertible limits `A±`; they are spliced into the semi-Fredholm
+estimate in `TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Localization`, where the
+compactness of `D → H` enters.
 
 ## Main declarations
 
@@ -53,6 +59,8 @@ bounded interval remains, which is where the compactness of `D → H` enters.
   the estimate for paths supported where `A` is near its limit along a filter, with the versions
   `exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atTop`
   and `..._atBot` at the two ends.
+* `exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_of_tendsto`: the same
+  for a limit that is invertible only after subtracting a multiple of `ι`.
 
 ## References
 
@@ -175,6 +183,46 @@ theorem exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_ten
   have := mul_norm_le_mul_norm_familyDomainTrajectoryOperator hSymm hA₀ hδ.le hAs hu
   rw [show M * (2 * M)⁻¹ = 1 / 2 by field_simp] at this
   linarith
+
+/-- **The estimate along a filter, for a limit that is invertible after a shift.** If `A(s)`
+converges along a filter `l` on `ℝ` to an `ι`-symmetric operator `A₀` for which `A₀ - c ι` is
+invertible, there are a set `S ∈ l` and a constant `C` with
+`‖u‖ ≤ C (‖(ι ∘ u)' + A u‖ + |c| ‖ι ∘ u‖)` on `L²(ℝ)` for every path `u` vanishing almost everywhere
+off `S`. For `c = 0` this is
+`exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto`; for `l = 𝓝 s₀` it
+is the local estimate near a time `s₀` at which `A(s₀)` need not be invertible. -/
+theorem exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_of_tendsto
+    (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) {c : ℝ} (hc : (A₀ - c • ι).IsInvertible)
+    {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} (hAL : AL =ᵐ[μ₀] A) {l : Filter ℝ}
+    (hA : Tendsto A l (𝓝 A₀)) :
+    ∃ C : ℝ, ∃ S ∈ l, ∀ u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀),
+      (∀ᵐ s ∂volume, s ∉ S → prev (ι.compLpL 2 μ₀) u s = 0) →
+        ‖u‖ ≤ C * (‖familyDomainTrajectoryOperator ι AL u‖ +
+          |c| * ‖ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) u)‖) := by
+  set cι := (memLp_top_const (μ := μ₀) (c • ι)).toLp _
+  have hSymm' (x y : D) : ⟪(A₀ - c • ι) x, ι y⟫_ℝ = ⟪ι x, (A₀ - c • ι) y⟫_ℝ := by
+    simp only [sub_apply, smul_apply, inner_sub_left, inner_sub_right, inner_smul_left,
+      inner_smul_right, hSymm x y, RCLike.conj_to_real]
+  have hAL' : AL - cι =ᵐ[μ₀] fun s ↦ A s - c • ι := by
+    filter_upwards [Lp.coeFn_sub AL cι, hAL, (memLp_top_const (μ := μ₀) (c • ι)).coeFn_toLp]
+      with s h₁ h₂ h₃
+    rw [h₁, Pi.sub_apply, h₂, h₃]
+  obtain ⟨C, S, hS, hC⟩ :=
+    exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto hSymm' hc hAL'
+      (hA.sub_const (c • ι))
+  refine ⟨|C|, S, hS, fun u hu ↦ (hC u hu).trans ?_⟩
+  -- Shifting the coefficient by `c ι` subtracts `c (ι ∘ u)` from the operator.
+  have hshift : familyDomainTrajectoryOperator ι (AL - cι) u =
+      familyDomainTrajectoryOperator ι AL u - c • ι.compLpL 2 μ₀ (prev _ u) := by
+    have h := congrArg (· u) (familyDomainTrajectoryOperator_sub (p := 2) ι AL (AL - cι))
+    rw [sub_sub_cancel, Lp.operatorMultiplication_of_ae_eq_const
+      (memLp_top_const (μ := μ₀) (c • ι)).coeFn_toLp, ContinuousLinearMap.smul_compLpL] at h
+    simp only [sub_apply, ContinuousLinearMap.comp_apply, prevL_apply, smul_apply] at h
+    rw [← h, sub_sub_cancel]
+  rw [hshift]
+  refine (mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
+    (mul_le_mul_of_nonneg_left ((norm_sub_le _ _).trans ?_) (abs_nonneg C))
+  rw [norm_smul, Real.norm_eq_abs]
 
 /-- **The estimate at `+∞`.** If `A(s)` converges as `s → ∞` to an invertible `ι`-symmetric
 operator `B`, there are `C` and `T` with `‖u‖ ≤ C ‖(ι ∘ u)' + A u‖` on `L²(ℝ)` for every path `u`

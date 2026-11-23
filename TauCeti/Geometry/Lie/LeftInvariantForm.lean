@@ -8,7 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import TauCeti.Algebra.Lie.Cohomology.FiniteDimensional
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+public import TauCeti.Geometry.Lie.Tangent.Differential
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
@@ -28,7 +30,13 @@ On the left-invariant vector fields `X^L` (`mulInvariantVectorField X`) the form
 form preserved by every left translation is the extension of its value at the identity
 (`TauCeti.forall_mpullback_mul_left_eq_iff`). The extension is smooth
 (`TauCeti.isSmoothForm_leftInvariantForm`); on a smooth Lie group it is bundled as a smooth form,
-`TauCeti.leftInvariantSmoothForm`.
+`TauCeti.leftInvariantSmoothForm`. It vanishes nowhere unless `α = 0`, and its pullback along a
+homomorphism of Lie groups `φ : G → G'` is again left-invariant: the extension of `α` precomposed
+with the differential of `φ` at the identity (`TauCeti.mpullback_leftInvariantForm`). In top degree,
+with real coefficients, a nonzero left-invariant form on a compact Lie group of positive dimension
+has positive integral for the orientation it defines
+(`TauCeti.integralTopForm_leftInvariantForm_pos`). Together, these let a top form on the Lie
+algebra of `G'` detect a homomorphism from a compact group `G` through a nonzero integral.
 
 The exterior derivative of a left-invariant form is left-invariant, and on `𝔤` it is the
 Chevalley–Eilenberg differential `d` with trivial coefficients,
@@ -64,11 +72,17 @@ since the exterior derivative has no term in which `𝔤` acts on the values of 
 * `TauCeti.mpullback_mul_left_leftInvariantForm`,
   `TauCeti.mpullback_mul_left_leftInvariantSmoothForm`: left translations preserve `α^L`.
 * `TauCeti.forall_mpullback_mul_left_eq_iff`: the left-invariant forms are the forms `α^L`.
+* `TauCeti.leftInvariantForm_apply_eq_zero_iff`, `TauCeti.leftInvariantForm_apply_ne_zero`:
+  `α^L` vanishes at a point exactly when `α = 0`, so it vanishes nowhere unless `α = 0`.
+* `TauCeti.mpullback_leftInvariantForm`, `TauCeti.mpullback_leftInvariantSmoothForm`: the pullback
+  of `α^L` along a homomorphism `φ` is the extension of `α ∘ dφ₁`.
 * `TauCeti.isSmoothForm_leftInvariantForm`: on a `C^n` Lie group, `α^L` is `C^m` for `m + 1 ≤ n`.
 * `TauCeti.mextDeriv_leftInvariantForm`, `TauCeti.mextDerivₗ_leftInvariantSmoothForm`:
   `d (α^L) = (d α)^L`.
 * `TauCeti.mextDeriv_leftInvariantForm_eq_zero_iff`,
   `TauCeti.isClosed_leftInvariantSmoothForm_iff`: `α^L` is closed exactly when `d α = 0`.
+* `TauCeti.integralTopForm_leftInvariantForm_pos`: on a compact Lie group of positive dimension, a
+  nonzero left-invariant top form has positive integral for the orientation it defines.
 
 ## References
 
@@ -146,6 +160,21 @@ theorem leftInvariantForm_apply_mulInvariantVectorField
     (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) (g : G) (X : Fin k → GroupLieAlgebra I G) :
     leftInvariantForm I G F k α g (fun i ↦ mulInvariantVectorField (X i) g) = α X := by
   simp only [leftInvariantForm_apply, mfderiv_inv_mul_mulInvariantVectorField]
+
+/-- A left-invariant form vanishes at one point exactly when its value at the identity is zero. -/
+@[simp]
+theorem leftInvariantForm_apply_eq_zero_iff {α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} {g : G} :
+    leftInvariantForm I G F k α g = 0 ↔ α = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero, Pi.zero_apply]⟩
+  ext X
+  rw [← leftInvariantForm_apply_mulInvariantVectorField α g X, h,
+    ContinuousAlternatingMap.coe_zero, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
+    Pi.zero_apply]
+
+/-- A left-invariant form vanishes nowhere unless its value at the identity is zero. -/
+theorem leftInvariantForm_apply_ne_zero {α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} (hα : α ≠ 0)
+    (g : G) : leftInvariantForm I G F k α g ≠ 0 :=
+  leftInvariantForm_apply_eq_zero_iff.not.mpr hα
 
 /-- Every left translation preserves the left-invariant extension of `α`. -/
 @[simp]
@@ -258,6 +287,71 @@ theorem mpullback_mul_left_leftInvariantSmoothForm (α : GroupLieAlgebra I G [�
       mpullback_mul_left_leftInvariantForm]
 
 end Smooth
+
+/-! ### Pullback along homomorphisms -/
+
+section Homomorphism
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
+
+/-- **Naturality of the left-invariant extension**: the pullback of `α^L` along a differentiable
+homomorphism `φ` is the left-invariant extension of `α` precomposed with the differential of `φ`
+at the identity. -/
+@[simp]
+theorem mpullback_leftInvariantForm [ContMDiffMul I 1 G] [ContMDiffMul I' 1 G'] {n : WithTop ℕ∞}
+    (φ : ContMDiffMonoidMorphism I I' n G G') (hn : n ≠ 0)
+    (α : GroupLieAlgebra I' G' [⋀^Fin k]→L[ℝ] F) :
+    mpullback I I' φ (leftInvariantForm I' G' F k α) =
+      leftInvariantForm I G F k (α.compContinuousLinearMap (φ.toMonoidHom.groupLieAlgebraMap I I'))
+    := by
+  have hφ : MDifferentiable I I' φ := φ.contMDiff_toFun.mdifferentiable hn
+  funext g
+  -- Both sides differentiate `x ↦ φ(g)⁻¹ * φ(x) = φ(g⁻¹ * x)` at `g`.
+  have hcomp : (fun y : G' ↦ (φ g)⁻¹ * y) ∘ φ = φ ∘ (g⁻¹ * ·) := by
+    funext x
+    simp [map_mul, map_inv]
+  have key (u : TangentSpace I g) : mfderiv I' I' ((φ g)⁻¹ * ·) (φ g) (mfderiv I I' φ g u) =
+      φ.toMonoidHom.groupLieAlgebraMap I I' (mfderiv I I (g⁻¹ * ·) g u) := by
+    rw [← mfderiv_comp_apply_of_eq g mdifferentiableAt_mul_left (hφ g) rfl, hcomp,
+      mfderiv_comp_apply_of_eq g (hφ _) mdifferentiableAt_mul_left (inv_mul_cancel g)]
+    exact (MonoidHom.groupLieAlgebraMap_apply _ _ _).symm
+  ext v
+  rw [mpullback_apply, leftInvariantForm_apply, leftInvariantForm_apply]
+  -- On the left, `α` takes vectors in `TangentSpace I' ((φ g)⁻¹ * φ g)`, which is definitionally
+  -- the Lie algebra (both are the model space), so `compContinuousLinearMap_apply` does not rewrite
+  -- syntactically; it is applied as a term instead.
+  exact (congrArg α (funext fun i ↦ key (v i))).trans
+    (α.compContinuousLinearMap_apply _ _).symm
+
+/-- The pullback of the smooth left-invariant extension of `α` along a smooth homomorphism `φ` is
+the smooth left-invariant extension of `α` precomposed with the differential of `φ` at the
+identity. -/
+@[simp]
+theorem mpullback_leftInvariantSmoothForm [IsManifold I 1 G] [LieGroup I ∞ G]
+    [IsManifold I' 1 G'] [LieGroup I' ∞ G'] (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    (α : GroupLieAlgebra I' G' [⋀^Fin k]→L[ℝ] F) :
+    SmoothForm.mpullback φ φ.contMDiff_toFun (leftInvariantSmoothForm I' G' F k α) =
+      leftInvariantSmoothForm I G F k
+        (α.compContinuousLinearMap (φ.toMonoidHom.groupLieAlgebraMap I I')) :=
+  Subtype.ext <| by
+    rw [SmoothForm.coe_mpullback, leftInvariantSmoothForm_val, leftInvariantSmoothForm_val,
+      mpullback_leftInvariantForm φ (by simp)]
+
+end Homomorphism
+
+/-! ### Integration of top forms -/
+
+/-- **A nonzero left-invariant top form has positive integral** over a compact Lie group of
+positive dimension, for the orientation it defines. In particular its integral is not zero. -/
+theorem integralTopForm_leftInvariantForm_pos [FiniteDimensional ℝ E] [LieGroup I 1 G]
+    [CompactSpace G] [NeZero k] (hk : Module.finrank ℝ E = k)
+    {α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] ℝ} (hα : α ≠ 0) :
+    0 < integralTopForm (Manifold.Orientation.ofTopForm hk (leftInvariantForm I G ℝ k α)
+      (isSmoothForm_leftInvariantForm (m := 0) (n := 1) (zero_add 1).le α)
+      (leftInvariantForm_apply_ne_zero hα)) (leftInvariantForm I G ℝ k α) :=
+  integralTopForm_ofTopForm_pos hk _ _
 
 /-! ### The exterior derivative -/
 
