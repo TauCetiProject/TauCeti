@@ -38,10 +38,11 @@ and an operator `B`, the **local linear perturbation**
 
 It fixes `p`, is the identity outside the support of `χ`, and has derivative `1 + B` at `p`. Its
 displacement `ψ_B(x) - x = χ(x) • B (x - p)` is linear in `B`
-(`TauCeti.localLinearPerturbation_sub_self`), so for a fixed cutoff the size of the perturbation is
-controlled by `‖B‖` alone. If the support of `χ` avoids the other points
-of the orbit, then `p` is still a periodic point of period `k` of `φ ∘ ψ_B`, and its linearized
-return map is `L * (1 + B)` (`HasFDerivAt.iterate_comp_of_eventuallyEq_id`). For a generic `B` no
+(`TauCeti.localLinearPerturbation_sub_self`), with the pointwise bound
+`‖ψ_B(x) - x‖ ≤ ‖χ x‖ * (‖B‖ * ‖x - p‖)` (`TauCeti.norm_localLinearPerturbation_sub_self_le`).
+If the support of `χ` avoids the other points of the orbit, then `p` is still a periodic point of
+period `k` of `φ ∘ ψ_B`, and its linearized return map is `L * (1 + B)`
+(`HasFDerivAt.iterate_comp_of_eventuallyEq_id`). For a generic `B` no
 power `(L * (1 + B)) ^ m` with `m` in a prescribed set of positive integers has the
 eigenvalue `1` (`ContinuousLinearMap.dense_setOf_forall_det_one_sub_pow_mul_ne_zero`), so such
 `B` can be found of arbitrarily small norm. The prescribed set can be finite, as for the closed
@@ -68,8 +69,8 @@ iterates of its fixed point.
   eigenvalue `1`.
 * `TauCeti.exists_cutoff_forall_exists_norm_lt_isPeriodicPt_comp_localLinearPerturbation`: for
   the minimal period, a smooth compactly supported cutoff inside any prescribed neighbourhood of
-  `p` exists, so that the orbit can be made nondegenerate in the covers `m ∈ s` by
-  arbitrarily small local linear perturbations.
+  `p` exists, so that the orbit can be made nondegenerate in the covers `m ∈ s` by local
+  linear perturbations `ψ_B` with `‖B‖` arbitrarily small.
 
 ## References
 
@@ -190,7 +191,7 @@ supported in `U`, such that for every `δ > 0` some local linear perturbation
 `ψ_B(x) = x + χ x • B (x - p)` with `‖B‖ < δ` keeps `p` periodic of period `k` for `φ ∘ ψ_B`, with
 linearized return map `L * (1 + B)`, none of whose powers `(L * (1 + B)) ^ m`, `m ∈ s`, has the
 eigenvalue `1`. The cutoff does not depend on `δ`, and the displacement `χ(x) • B (x - p)` of
-`ψ_B` is linear in `B`, so the perturbations are as small as `‖B‖`. -/
+`ψ_B` is linear in `B`. -/
 theorem exists_cutoff_forall_exists_norm_lt_isPeriodicPt_comp_localLinearPerturbation
     [FiniteDimensional ℝ E] (hp : p ∈ periodicPts φ) (hL : HasFDerivAt φ^[minimalPeriod φ p] L p)
     (hφ : ∀ j < minimalPeriod φ p, ContinuousAt φ (φ^[j] p)) {U : Set E} (hU : U ∈ 𝓝 p)
