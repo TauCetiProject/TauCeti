@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Polynomial
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.VectorField
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Holomorphic sections of `𝒪(k)` on the Riemann sphere
@@ -48,7 +49,8 @@ holomorphic vector fields `(a + b z + c z²) ∂_z` correspond to the holomorphi
 * `OnePoint.holomorphicTwistSections k`: the space of holomorphic sections of `𝒪(k)`.
 * `OnePoint.holomorphicTwistSections_eq_bot`: `H⁰(𝒪(k)) = 0` for `k < 0`.
 * `OnePoint.holomorphicTwistSectionsEquiv n`: `H⁰(𝒪(n)) ≃ Polynomial.degreeLT ℂ (n + 1)`, and
-  `OnePoint.finrank_holomorphicTwistSections`: complex dimension `n + 1`.
+  `OnePoint.finrank_holomorphicTwistSections`: complex dimension `n + 1`; in particular
+  `H⁰(𝒪(k))` is finite-dimensional for every `k`.
 * `OnePoint.contMDiff_section_twistCore_iff_mdifferentiable`: holomorphic sections of `𝒪(k)` are
   analytic.
 
@@ -84,6 +86,12 @@ def twistInvCoeff (k : ℤ) (s : OnePoint 𝕜 → 𝕜) (w : 𝕜) : 𝕜 :=
 @[simp]
 theorem twistInvCoeff_zero (k : ℤ) (s : OnePoint 𝕜 → 𝕜) : twistInvCoeff k s 0 = s ∞ := by
   simp [twistInvCoeff, invChart_symm_zero]
+
+/-- The inverted coordinate of the zero section vanishes. -/
+@[simp]
+theorem twistInvCoeff_zero_section (k : ℤ) : twistInvCoeff k (0 : OnePoint 𝕜 → 𝕜) = 0 := by
+  funext w
+  simp [twistInvCoeff]
 
 theorem twistInvCoeff_of_ne_zero (k : ℤ) (s : OnePoint 𝕜 → 𝕜) {w : 𝕜} (hw : w ≠ 0) :
     twistInvCoeff k s w = w ^ k * s (w⁻¹ : 𝕜) := by
@@ -205,9 +213,8 @@ theorem twistInvCoeff_polynomialSection {n : ℕ} {p : 𝕜[X]} (hp : p ∈ degr
   · simp [← coeff_zero_eq_eval_zero, coeff_reflect]
   · rw [twistInvCoeff_of_ne_zero _ _ hw, polynomialSection_coe, zpow_natCast]
     let : Invertible w⁻¹ := invertibleOfNonzero (inv_ne_zero hw)
-    have hn : p.natDegree ≤ n :=
-      natDegree_le_iff_degree_le.2 <| mem_degreeLE.1 <| by rwa [← degreeLT_succ_eq_degreeLE]
-    have h := eval₂_reflect_mul_pow (RingHom.id 𝕜) w⁻¹ n p hn
+    have h := eval₂_reflect_mul_pow (RingHom.id 𝕜) w⁻¹ n p
+      (mem_degreeLT_succ_iff_natDegree_le.1 hp)
     rw [invOf_eq_inv, inv_inv] at h
     simp only [eval₂_id] at h
     rw [← h, inv_pow, mul_comm, inv_mul_cancel_right₀ (pow_ne_zero n hw)]
@@ -400,6 +407,14 @@ theorem finrank_holomorphicTwistSections (n : ℕ) :
   rw [(holomorphicTwistSectionsEquiv n).finrank_eq, (degreeLTEquiv ℂ (n + 1)).finrank_eq,
     Module.finrank_fin_fun]
 
+/-- The holomorphic sections of `𝒪(k)` form a finite-dimensional complex vector space. -/
+instance (k : ℤ) : FiniteDimensional ℂ (holomorphicTwistSections k) := by
+  rcases lt_or_ge k 0 with hk | hk
+  · rw [holomorphicTwistSections_eq_bot hk]
+    infer_instance
+  · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hk
+    exact Module.finite_of_finrank_pos (by rw [finrank_holomorphicTwistSections]; omega)
+
 /-- The holomorphic sections of `𝒪(n)` form a real vector space of dimension `2 (n + 1)`. -/
 theorem finrank_real_holomorphicTwistSections (n : ℕ) :
     Module.finrank ℝ (holomorphicTwistSections n) = 2 * (n + 1) := by
@@ -427,8 +442,8 @@ theorem not_mdifferentiable_section_twistCore_zero_of_coe {s : OnePoint ℂ → 
       (fun x ↦ TotalSpace.mk' ℂ (E := (twistCore (0 : ℤ)).Fiber) x (s x)) := by
   intro h
   obtain ⟨p, hp, rfl⟩ := (mdifferentiable_section_twistCore_natCast_iff 0 s).1 h
-  have hp0 : p = C (p.coeff 0) := eq_C_of_natDegree_eq_zero <| Nat.le_zero.1 <|
-    natDegree_le_iff_degree_le.2 <| mem_degreeLE.1 <| by rwa [← degreeLT_succ_eq_degreeLE]
+  have hp0 : p = C (p.coeff 0) :=
+    eq_C_of_natDegree_eq_zero <| Nat.le_zero.1 <| mem_degreeLT_succ_iff_natDegree_le.1 hp
   have h0 := hs 0
   have h1 := hs 1
   rw [polynomialSection_coe, hp0, eval_C] at h0 h1

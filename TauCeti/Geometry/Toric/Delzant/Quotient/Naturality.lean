@@ -150,7 +150,7 @@ def relabel : DelzantQuotient i (u ∘ e) (c ∘ e) ≃ₜ DelzantQuotient i u c
 theorem relabel_mk (x : delzantLevel i (u ∘ e) (c ∘ e)) :
     relabel e (mk x) = mk ⟨Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e)
       (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) x,
-        (prodMap_piLpCongrLeft_mem_delzantLevel_iff e).2 x.2⟩ := by
+        (prodMap_piLpCongrLeft_mem_delzantLevel_iff e).2 x.property⟩ := by
   rw [relabel, congr_mk]
   exact congrArg mk (Subtype.ext (coe_delzantLevelCongr _ _ x))
 
@@ -202,13 +202,13 @@ def translate : DelzantQuotient i u c ≃ₜ DelzantQuotient i u (fun j ↦ c j 
 
 @[simp]
 theorem translate_mk (x : delzantLevel i u c) :
-    translate y (mk x) = mk ⟨x, by rw [delzantLevel_add]; exact x.2⟩ := by
+    translate y (mk x) = mk ⟨x, by rw [delzantLevel_add]; exact x.property⟩ := by
   rw [translate, congr_mk]
   exact congrArg mk (Subtype.ext (by simp))
 
 @[simp]
 theorem translate_symm_mk (x : delzantLevel i u (fun j ↦ c j + y (i (u j)))) :
-    (translate y).symm (mk x) = mk ⟨x, by rw [← delzantLevel_add y]; exact x.2⟩ := by
+    (translate y).symm (mk x) = mk ⟨x, by rw [← delzantLevel_add y]; exact x.property⟩ := by
   rw [translate, congr_symm_mk]
   exact congrArg mk (Subtype.ext (by simp))
 
@@ -254,14 +254,15 @@ def latticeCongr : DelzantQuotient i u c ≃ₜ DelzantQuotient i' (fun j ↦ f 
 
 @[simp]
 theorem latticeCongr_mk (x : delzantLevel i u c) :
-    latticeCongr hf hg hfg (mk x) = mk ⟨x, by rw [delzantLevel_comp_left hg hfg]; exact x.2⟩ := by
+    latticeCongr hf hg hfg (mk x) = mk ⟨x, by rw [delzantLevel_comp_left hg hfg]; exact x.property⟩
+        := by
   rw [latticeCongr, congr_mk]
   exact congrArg mk (Subtype.ext (by simp))
 
 @[simp]
 theorem latticeCongr_symm_mk (x : delzantLevel i' (fun j ↦ f (u j)) c) :
     (latticeCongr hf hg hfg).symm (mk x) =
-      mk ⟨x, by rw [← delzantLevel_comp_left hg hfg]; exact x.2⟩ := by
+      mk ⟨x, by rw [← delzantLevel_comp_left hg hfg]; exact x.property⟩ := by
   rw [latticeCongr, congr_symm_mk]
   exact congrArg mk (Subtype.ext (by simp))
 

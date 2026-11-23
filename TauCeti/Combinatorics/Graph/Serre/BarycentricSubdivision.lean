@@ -323,8 +323,8 @@ private theorem isReduced_cons_dart {a : Γ.V} {e : Γ.E} (q : Γ.Path a (Γ.src
   | nil => exact Path.isReduced_toPath Γ (Γ.dart e)
   | cons q d =>
     refine (Path.isReduced_cons_cons Γ q d _).mpr ⟨hq, fun he => ?_⟩
-    have hne : e ≠ Γ.rev d.1 := by
-      simpa using h (Γ.barycentricDart (Γ.rev d.1) false) (by simp [barycentricHalves])
+    have hne : e ≠ Γ.rev d.val := by
+      simpa using h (Γ.barycentricDart (Γ.rev d.val) false) (by simp [barycentricHalves])
     exact hne (by simpa using he)
 
 /-- Two darts `e` and `f` with the same midpoint are mutually reverse as soon as the reverse of
@@ -343,9 +343,9 @@ private theorem exists_darts_eq_of_isReduced {a : Γ.V} {y : Γ.barycentricSubdi
     (∀ b, y = Γ.barycentricVertex b → ∃ q : Γ.Path a b, Path.IsReduced Γ q ∧
       Path.darts _ p = (Path.darts Γ q).flatMap Γ.barycentricHalves) ∧
     (∀ m, y = Γ.barycentricMidpoint m → ∃ (b c : Γ.V) (q : Γ.Path a b) (f : b ⟶ c),
-      Γ.toGeomEdge f.1 = m ∧ Path.IsReduced Γ (q.cons f) ∧
+      Γ.toGeomEdge f.val = m ∧ Path.IsReduced Γ (q.cons f) ∧
       Path.darts _ p =
-        (Path.darts Γ q).flatMap Γ.barycentricHalves ++ [Γ.barycentricDart f.1 true]) := by
+        (Path.darts Γ q).flatMap Γ.barycentricHalves ++ [Γ.barycentricDart f.val true]) := by
   induction p with
   | nil =>
     refine ⟨fun b hb => ?_, fun m hm => by simp at hm⟩

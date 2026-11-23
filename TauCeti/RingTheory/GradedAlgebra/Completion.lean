@@ -192,7 +192,7 @@ theorem mem_range_toGradedCompletion_iff {f : gradedCompletion 𝒜} :
     f ∈ (toGradedCompletion 𝒜).range ↔
       (Function.support fun n => coeff n (f : PowerSeries A)).Finite := by
   refine Iff.trans ?_ <| (mem_range_gradedComponentSeries_iff 𝒜).trans <|
-    and_iff_right ((mem_gradedCompletion_iff 𝒜).1 f.2)
+    and_iff_right ((mem_gradedCompletion_iff 𝒜).1 f.property)
   simp only [AlgHom.mem_range, Subtype.ext_iff, coe_toGradedCompletion_apply]
 
 end TauCeti

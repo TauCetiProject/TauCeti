@@ -74,11 +74,11 @@ theorem IsFormalAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_orthogonalFa
   -- As `V i` lies in the domain of `A`, the restriction of `A` to `V i` is an endomorphism of
   -- `V i`, and it is symmetric.
   let T (i : ι) : V i →ₗ[𝕜] V i :=
-    (A.toFun ∘ₗ inclusion (hdom i)).codRestrict (V i) fun x ↦ (hinv i).apply_mem _ x.2
-  have hT_apply (i : ι) (x : V i) : (T i x : E) = A ⟨x, hdom i x.2⟩ := rfl
+    (A.toFun ∘ₗ inclusion (hdom i)).codRestrict (V i) fun x ↦ (hinv i).apply_mem _ x.property
+  have hT_apply (i : ι) (x : V i) : (T i x : E) = A ⟨x, hdom i x.property⟩ := rfl
   have hT (i : ι) : (T i).IsSymmetric := fun x y ↦ by
     rw [coe_inner, coe_inner, hT_apply, hT_apply]
-    exact hA ⟨x, hdom i x.2⟩ ⟨y, hdom i y.2⟩
+    exact hA ⟨x, hdom i x.property⟩ ⟨y, hdom i y.property⟩
   -- Collect orthonormal eigenbases of the restrictions into one orthonormal family in `E`.
   let b (i : ι) : OrthonormalBasis (Fin (finrank 𝕜 (V i))) 𝕜 (V i) :=
     (hT i).eigenvectorBasis rfl
@@ -94,7 +94,7 @@ theorem IsFormalAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_orthogonalFa
   -- The family consists of eigenvectors of `A`.
   have hev (p : Σ i, Fin (finrank 𝕜 (V i))) : ∃ hk : v p ∈ A.domain,
       A ⟨v p, hk⟩ = ((hT p.1).eigenvalues rfl p.2 : 𝕜) • v p := by
-    refine ⟨hdom p.1 (b p.1 p.2).2, ?_⟩
+    refine ⟨hdom p.1 (b p.1 p.2).property, ?_⟩
     have h := congrArg Subtype.val ((hT p.1).apply_eigenvectorBasis rfl p.2)
     rw [hT_apply] at h
     simpa [v, b] using h
