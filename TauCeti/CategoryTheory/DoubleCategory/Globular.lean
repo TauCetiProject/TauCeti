@@ -40,6 +40,8 @@ double category compares an edge path with a single generating edge.
 ## Main declarations
 
 * `TauCeti.StrictDoubleCategory.HorizontalGlobular` and its `Category` instance;
+* `TauCeti.StrictDoubleCategory.hComp_comp_cell`: horizontal pasting of horizontal globular
+  cells is functorial in both arguments;
 * `TauCeti.StrictDoubleCategory.hWhiskerLeft` and `TauCeti.StrictDoubleCategory.hWhiskerRight`;
 * `TauCeti.StrictDoubleCategory.VerticalGlobular`, with `VerticalGlobular.homEquiv_comp`
   describing its composition by horizontal pasting;
@@ -52,7 +54,7 @@ double category compares an edge path with a single generating edge.
   Structures **34** (2026), article 26; arXiv:2506.23651.
 -/
 
-@[expose] public section
+public section
 
 universe s u h v
 
@@ -120,46 +122,39 @@ theorem comp_cell {p q r : D.HorizontalGlobular a b} (α : p ⟶ q) (β : q ⟶ 
 
 /-- Horizontal globular cells from `p` to `q` are the cells of `D` with boundary
 `(p, q, 𝟙, 𝟙)`. -/
-@[simps]
 def homEquiv (p q : D.HorizontalGlobular a b) :
     (p ⟶ q) ≃ D.Cell p.edge q.edge (edgeId V a) (edgeId V b) where
   toFun α := α.cell
   invFun α := ⟨α⟩
 
+@[simp]
+theorem homEquiv_apply {p q : D.HorizontalGlobular a b} (α : p ⟶ q) :
+    homEquiv p q α = α.cell :=
+  (rfl)
+
+@[simp]
+theorem homEquiv_symm_apply_cell {p q : D.HorizontalGlobular a b}
+    (α : D.Cell p.edge q.edge (edgeId V a) (edgeId V b)) :
+    ((homEquiv p q).symm α).cell = α :=
+  (rfl)
+
 end HorizontalGlobular
 
 variable {a b c : O}
 
-/-- Pasting the vertical identity cell of `r` on the right of a horizontal globular cell
-gives a horizontal globular cell between the composites with `r`. -/
-private theorem hComp_vComp_vId {p q t : D.HorizontalGlobular a b} (α : p ⟶ q) (β : q ⟶ t)
-    (r : Edge H b c) :
-    D.hComp (α ≫ β).cell (D.vId r) =
-      ((D.vComp (D.hComp α.cell (D.vId r)) (D.hComp β.cell (D.vId r))).cast rfl rfl
-        (Category.id_comp (self := V) _) (Category.id_comp (self := V) _)) := by
-  have hr : D.vId r = (D.vComp (D.vId r) (D.vId r)).cast rfl rfl
-      (Category.id_comp (self := V) _) (Category.id_comp (self := V) _) := by
-    simp
-  rw [D.interchange, HorizontalGlobular.comp_cell]
-  conv_lhs => rw [hr]
-  rw [hComp_cast_cast]
-
-/-- Pasting the vertical identity cell of `p` on the left of a horizontal globular cell
-gives a horizontal globular cell between the composites with `p`. -/
-private theorem vId_hComp_vComp {q r t : D.HorizontalGlobular b c} (p : Edge H a b) (α : q ⟶ r)
-    (β : r ⟶ t) :
-    D.hComp (D.vId p) (α ≫ β).cell =
-      ((D.vComp (D.hComp (D.vId p) α.cell) (D.hComp (D.vId p) β.cell)).cast rfl rfl
-        (Category.id_comp (self := V) _) (Category.id_comp (self := V) _)) := by
-  have hp : D.vId p = (D.vComp (D.vId p) (D.vId p)).cast rfl rfl
-      (Category.id_comp (self := V) _) (Category.id_comp (self := V) _) := by
-    simp
-  rw [D.interchange, HorizontalGlobular.comp_cell]
-  conv_lhs => rw [hp]
-  rw [hComp_cast_cast]
+/-- Horizontal pasting of horizontal globular cells is functorial in both arguments: pasting two
+vertical composites side by side is the vertical composite of the side-by-side pastings. -/
+theorem hComp_comp_cell {p q t : D.HorizontalGlobular a b} {p' q' t' : D.HorizontalGlobular b c}
+    (α : p ⟶ q) (β : q ⟶ t) (γ : p' ⟶ q') (δ : q' ⟶ t') :
+    D.hComp (α ≫ β).cell (γ ≫ δ).cell =
+      (D.vComp (D.hComp α.cell γ.cell) (D.hComp β.cell δ.cell)).cast rfl rfl
+        (Category.id_comp (self := V) _) (Category.id_comp (self := V) _) := by
+  rw [HorizontalGlobular.comp_cell, HorizontalGlobular.comp_cell, hComp_cast_cast,
+    ← D.interchange]
 
 /-- Right whiskering of horizontal globular cells by a horizontal edge `r`: composition with
 `r` on edges, and horizontal pasting with the vertical identity cell of `r` on cells. -/
+@[expose]
 def hWhiskerRight (r : Edge H b c) : D.HorizontalGlobular a b ⥤ D.HorizontalGlobular a c where
   obj p := ⟨edgeComp H p.edge r⟩
   map α := ⟨D.hComp α.cell (D.vId r)⟩
@@ -168,10 +163,12 @@ def hWhiskerRight (r : Edge H b c) : D.HorizontalGlobular a b ⥤ D.HorizontalGl
     exact (D.vId_comp p.edge r).symm
   map_comp α β := by
     ext
-    exact D.hComp_vComp_vId α β r
+    have h := D.hComp_comp_cell α β (𝟙 (⟨r⟩ : D.HorizontalGlobular b c)) (𝟙 _)
+    rwa [Category.comp_id] at h
 
 /-- Left whiskering of horizontal globular cells by a horizontal edge `p`: composition with
 `p` on edges, and horizontal pasting with the vertical identity cell of `p` on cells. -/
+@[expose]
 def hWhiskerLeft (p : Edge H a b) : D.HorizontalGlobular b c ⥤ D.HorizontalGlobular a c where
   obj q := ⟨edgeComp H p q.edge⟩
   map α := ⟨D.hComp (D.vId p) α.cell⟩
@@ -180,7 +177,8 @@ def hWhiskerLeft (p : Edge H a b) : D.HorizontalGlobular b c ⥤ D.HorizontalGlo
     exact (D.vId_comp p q.edge).symm
   map_comp α β := by
     ext
-    exact D.vId_hComp_vComp p α β
+    have h := D.hComp_comp_cell (𝟙 (⟨p⟩ : D.HorizontalGlobular a b)) (𝟙 _) α β
+    rwa [Category.comp_id] at h
 
 @[simp]
 theorem hWhiskerRight_obj (r : Edge H b c) (p : D.HorizontalGlobular a b) :
@@ -226,17 +224,17 @@ def homEquiv (l r : D.VerticalGlobular a b) :
 
 theorem homEquiv_apply {l r : D.VerticalGlobular a b} (α : l ⟶ r) :
     homEquiv l r α = α.cell :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem homEquiv_symm_apply_cell {l r : D.VerticalGlobular a b}
     (α : D.Cell (edgeId H a) (edgeId H b) l.edge r.edge) :
     ((homEquiv l r).symm α).cell = α :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem homEquiv_id (l : D.VerticalGlobular a b) : homEquiv l l (𝟙 l) = D.hId l.edge :=
-  rfl
+  (rfl)
 
 /-- Composition of vertical globular cells is horizontal pasting, transported back from the
 horizontal boundaries `𝟙 ≫ 𝟙` to identity edges. -/
