@@ -100,15 +100,12 @@ theorem mvPolynomialSubst_mvPolynomialMinor_of_isLowerTriangular_of_isUpperTrian
       (∏ j with p j, A j j * B j j) • mvPolynomialMinor R (Subtype.val : {j // p j} → ι)
         Subtype.val := by
   have hp' : ∀ ⦃i j⦄, id j ≤ id i → p i → p j := hp
-  have hblock (M : Matrix ι ι (MvPolynomial (ι × ι) R)) :
-      M.toSquareBlockProp p = M.submatrix (Subtype.val : {j // p j} → ι) Subtype.val := by
-    ext
-    simp [toSquareBlockProp_def]
   have hval : StrictMono (Subtype.val : {j // p j} → ι) := Subtype.strictMono_coe _
   rw [mvPolynomialMinor_eq_det_submatrix, AlgHom.map_det, AlgHom.mapMatrix_apply, ← submatrix_map,
-    mvPolynomialX_map_mvPolynomialSubst, ← hblock,
-    det_toSquareBlockProp_mul_mul (b := id) (hA.map C) (hB.map C) hp', hblock, hblock, hblock,
-    det_of_isLowerTriangular ((A.map C).submatrix Subtype.val Subtype.val)
+    mvPolynomialX_map_mvPolynomialSubst, ← toSquareBlockProp_eq_submatrix _ p,
+    det_toSquareBlockProp_mul_mul (b := id) (hA.map C) (hB.map C) hp']
+  simp only [toSquareBlockProp_eq_submatrix]
+  rw [det_of_isLowerTriangular ((A.map C).submatrix Subtype.val Subtype.val)
       fun _ _ h ↦ (hA.map C) (hval h),
     det_of_isUpperTriangular (M := (B.map C).submatrix Subtype.val Subtype.val)
       fun _ _ h ↦ (hB.map C) (hval h), ← prod_subtype_eq_prod_filter,
@@ -203,6 +200,10 @@ largest value of `c` at a later index (`0` if there is none). For an antitone `c
 def leadingMinorExponent (c : ι → ℕ) (a : ι) : ℕ :=
   c a - (univ.filter fun b ↦ a < b).sup c
 
+/-- The defining formula of `TauCeti.leadingMinorExponent`. -/
+theorem leadingMinorExponent_def (c : ι → ℕ) (a : ι) :
+    leadingMinorExponent c a = c a - (univ.filter fun b ↦ a < b).sup c := (rfl)
+
 /-- Every partition is the weight of a product of leading principal minors: the one with exponents
 `TauCeti.leadingMinorExponent c`. -/
 theorem leadingMinorWeight_leadingMinorExponent {c : ι → ℕ} (hc : Antitone c) :
@@ -211,14 +212,15 @@ theorem leadingMinorWeight_leadingMinorExponent {c : ι → ℕ} (hc : Antitone 
   induction j using WellFoundedGT.induction with
   | _ j ih =>
     rw [leadingMinorWeight_eq_add_sup, sup_congr rfl fun b hb ↦ ih b (by simpa using hb),
-      leadingMinorExponent, Nat.sub_add_cancel (Finset.sup_le fun b hb ↦ hc (mem_filter.1 hb).2.le)]
+      leadingMinorExponent_def,
+      Nat.sub_add_cancel (Finset.sup_le fun b hb ↦ hc (mem_filter.1 hb).2.le)]
 
 /-- The exponents are recovered from the weight. -/
 @[simp]
 theorem leadingMinorExponent_leadingMinorWeight (m : ι → ℕ) :
     leadingMinorExponent (leadingMinorWeight m) = m := by
   ext j
-  rw [leadingMinorExponent, leadingMinorWeight_eq_add_sup m j, Nat.add_sub_cancel]
+  rw [leadingMinorExponent_def, leadingMinorWeight_eq_add_sup m j, Nat.add_sub_cancel]
 
 /-- Products of leading principal minors with different exponents have different weights. -/
 theorem leadingMinorWeight_injective :

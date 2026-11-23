@@ -40,6 +40,8 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
   `Matrix.toBlocks₂₁_eq_submatrix`, and `Matrix.toBlocks₂₂_eq_submatrix`: block extraction
   as submatrix restriction.
+* `Matrix.toSquareBlockProp_eq_submatrix`: a square block is the submatrix along the subtype
+  inclusion.
 * `Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero`: a matrix with vanishing
   off-diagonal blocks is block diagonal.
 * `Matrix.det_blockDiagonal'`: `(blockDiagonal' M).det = ∏ i, (M i).det`.
@@ -89,6 +91,11 @@ public theorem toBlocks₂₁_eq_submatrix {m n p q α : Type*} (M : Matrix (m �
 /-- The lower-right block is the submatrix along the right sum injections. -/
 public theorem toBlocks₂₂_eq_submatrix {m n p q α : Type*} (M : Matrix (m ⊕ n) (p ⊕ q) α) :
     M.toBlocks₂₂ = M.submatrix Sum.inr Sum.inr :=
+  (rfl)
+
+/-- The square block on `{a | p a}` is the submatrix along the subtype inclusion. -/
+public theorem toSquareBlockProp_eq_submatrix {m α : Type*} (M : Matrix m m α) (p : m → Prop) :
+    M.toSquareBlockProp p = M.submatrix (Subtype.val : {a // p a} → m) Subtype.val :=
   (rfl)
 
 /-- A matrix with vanishing off-diagonal blocks is the block-diagonal matrix of its diagonal

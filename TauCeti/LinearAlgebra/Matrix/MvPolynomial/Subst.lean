@@ -162,7 +162,7 @@ theorem mvPolynomialMatrixRep_apply (g : GL ι R × GL ι R) (f : MvPolynomial (
 
 /-- The representation acts by algebra automorphisms. -/
 @[simp]
-theorem mvPolynomialMatrixRep_mul (g : GL ι R × GL ι R) (f f' : MvPolynomial (ι × ι) R) :
+theorem mvPolynomialMatrixRep_apply_mul (g : GL ι R × GL ι R) (f f' : MvPolynomial (ι × ι) R) :
     mvPolynomialMatrixRep R ι g (f * f') =
       mvPolynomialMatrixRep R ι g f * mvPolynomialMatrixRep R ι g f' := by
   simp only [mvPolynomialMatrixRep_apply, map_mul]
