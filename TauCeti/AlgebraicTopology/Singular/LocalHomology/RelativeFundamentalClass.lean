@@ -119,7 +119,7 @@ namespace TauCeti
 
 section Collar
 
-variable {X M : Type w} {N : Type*} [TopologicalSpace X] [TopologicalSpace N] {ι : M → X}
+variable {X : Type w} {M N : Type*} [TopologicalSpace X] [TopologicalSpace N] {ι : M → X}
   {f : N → X} {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCollar f c) (hιf : range ι = (range f)ᶜ)
 include hc hιf
