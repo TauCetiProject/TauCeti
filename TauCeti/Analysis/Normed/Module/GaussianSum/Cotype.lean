@@ -110,7 +110,7 @@ theorem HasCotype.hasGaussianCotype_two (h : HasCotype Y 2 C) : HasGaussianCotyp
           pow_le_pow_left₀ (norm_nonneg _) (h.norm_toLp_le _) 2
       _ = _ := by
           rw [mul_pow, rademacherSecondMoment_sq]
-          simp_rw [smul_comm (g _)]
+          simp_rw [rademacherSum_eq_sum_units_smul, smul_comm (g _)]
   have hint (ε : Fin n → ℤˣ) :
       Integrable (fun g : EuclideanSpace ℝ (Fin n) ↦ ‖∑ i, g i • ε i • y i‖ ^ 2)
         (stdGaussian (EuclideanSpace ℝ (Fin n))) :=

@@ -127,7 +127,7 @@ private theorem integral_norm_sum_lowPart_sq_le [DecidableEq ι] {t : ℝ} (ht :
   have h := pow_le_pow_left₀ (rademacherSecondMoment_nonneg _)
     (rademacherSecondMoment_smul_le (abs_lowPart_le t ht g) y) 2
   rw [rademacherSecondMoment_sq] at h
-  simpa only [lowPart_signFlip, smul_assoc] using h
+  simpa only [rademacherSum_eq_sum_units_smul, lowPart_signFlip, smul_assoc] using h
 
 omit [Fintype ι] in
 private theorem norm_highPart_apply_le (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
@@ -191,8 +191,9 @@ private theorem integral_norm_apply_highPart_sq_le {t : ℝ} (ht : 0 < t)
       = ∫ g, ∑ i, w i ^ 2 * highPart t g i ^ 2 ∂γ := by
         rw [integral_eq_integral_expect_signFlip hint]
         refine integral_congr_ae (ae_of_all _ fun g ↦ ?_)
-        have h := expect_norm_sum_units_smul_sq (𝕜 := ℝ) fun i ↦ highPart t g i * w i
-        simp only [hf_apply, highPart_signFlip, smul_mul_assoc] at h ⊢
+        have h := expect_norm_rademacherSum_sq (𝕜 := ℝ) fun i ↦ highPart t g i * w i
+        simp only [rademacherSum_eq_sum_units_smul, hf_apply, highPart_signFlip,
+          smul_mul_assoc] at h ⊢
         rw [h]
         refine Finset.sum_congr rfl fun i _ ↦ ?_
         rw [Real.norm_eq_abs, sq_abs]
