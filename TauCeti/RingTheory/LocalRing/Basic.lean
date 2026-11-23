@@ -23,6 +23,7 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
 
 * `IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing`: an idempotent of a local ring is `0`
   or `1`.
+* `DivisionRing.isLocalRing`: a possibly noncommutative division ring is a local ring.
 * `TauCeti.IsLocalRing.isDedekindFiniteMonoid`: a local ring is Dedekind-finite.
 * `TauCeti.IsLocalRing.maximalIdeal_pow_ne_top`: a positive power of the maximal ideal is proper.
 * `TauCeti.isUnit_add_of_isUnit_of_not_isUnit`: adding a nonunit to a unit in a local ring
@@ -56,6 +57,13 @@ theorem IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing {R : Type*} [Ring R] [
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self a with hu | hu
   · exact Or.inr ((IsIdempotentElem.iff_eq_one_of_isUnit hu).mp ha)
   · exact Or.inl (sub_eq_self.mp ((IsIdempotentElem.iff_eq_one_of_isUnit hu).mp ha.one_sub))
+
+/-- A division ring is a local ring: its nonzero elements are units. This extends Mathlib's
+instance for fields to possibly noncommutative division rings. -/
+instance (priority := 100) DivisionRing.isLocalRing {D : Type*} [DivisionRing D] :
+    IsLocalRing D :=
+  IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun a ↦
+    (eq_or_ne a 0).elim (fun h ↦ Or.inr (by simp [h])) (fun h ↦ Or.inl h.isUnit)
 
 namespace TauCeti
 

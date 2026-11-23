@@ -43,6 +43,8 @@ Over a possibly noncommutative ring `R` of Bass stable range at most `s`
 
 * `TauCeti.AlgebraicK1.mk_surjective`, `TauCeti.AlgebraicK1.ker_mk_eq_elementarySubgroup`:
   finite-rank surjectivity and kernel identification for `AlgebraicK1.mk` in the stable range.
+* `TauCeti.AlgebraicK1.ofUnits_surjective`: in stable range one, every class of `K₁(R)` is the
+  class of a `1 × 1` matrix.
 * `TauCeti.commutator_le_elementarySubgroup_of_hasStableRangeLE`,
   `TauCeti.elementarySubgroup_eq_commutator_of_hasStableRangeLE`: finite-rank commutator
   descriptions in the stable range.
@@ -90,6 +92,23 @@ theorem mk_surjective {R : Type*} [Ring R] {s n : ℕ} (hR : HasStableRangeLE R 
     refine ⟨h, ?_⟩
     rw [hu, map_mul, mk_stabilizeGL hnm h,
       elementarySubgroup_le_ker_mk m ((φ.reindexGL_mem_elementarySubgroup_iff).mpr he), mul_one]
+
+/-- If `R` has Bass stable range at most `1`, every class of `K₁(R)` is the class of a `1 × 1`
+matrix: `AlgebraicK1.ofUnits R : Rˣ →* K₁(R)` is surjective. -/
+theorem ofUnits_surjective {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
+    Function.Surjective (ofUnits R) := by
+  intro x
+  obtain ⟨h, rfl⟩ := mk_surjective hR le_rfl x
+  -- The only entry of `h` is a unit, with inverse the only entry of `h⁻¹`.
+  have entry (g g' : GL (Fin 1) R) : (g * g' : GL (Fin 1) R) 0 0 = g 0 0 * g' 0 0 := by
+    simp [Units.val_mul, Matrix.mul_apply]
+  refine ⟨⟨h 0 0, (h⁻¹ : GL (Fin 1) R) 0 0, ?_, ?_⟩, ?_⟩
+  · rw [← entry, mul_inv_cancel, Units.val_one, Matrix.one_apply_eq]
+  · rw [← entry, inv_mul_cancel, Units.val_one, Matrix.one_apply_eq]
+  rw [ofUnits_apply]
+  congr 1
+  ext i j
+  simp [Subsingleton.elim i 0, Subsingleton.elim j 0]
 
 /-- When `R` has Bass stable range at most `s` and `s ≤ n` (including at the boundary `n = s` where
 injective stability need not yet hold), `K₁(R)` is the quotient of `GL (Fin n) R` by the actual
