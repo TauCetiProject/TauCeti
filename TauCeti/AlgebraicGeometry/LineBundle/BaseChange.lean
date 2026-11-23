@@ -8,10 +8,11 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import TauCeti.AlgebraicGeometry.LineBundle.Degree
+public import TauCeti.AlgebraicGeometry.LineBundle.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 
 /-!
-# Line-bundle degree under extension of the base field
+# Line-bundle Euler characteristics and degree under extension of the base field
 
 The Euler-characteristic degree of a line bundle is unchanged by extension of the ground field
 when the source is quasi-compact and quasi-separated, for instance separated of finite type over
@@ -26,6 +27,8 @@ and hence the subgroup of degree-zero line-bundle classes, compatible with exten
 field. Pullback along an isomorphism of schemes over the field preserves degree on every scheme,
 with no quasi-compactness or quasi-separation hypothesis
 (`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_pullback_of_isIso`).
+More generally, `LineBundleClass.eulerCharBelow_pullback` preserves every truncated Euler
+characteristic under a field extension.
 
 ## References
 
@@ -65,6 +68,16 @@ theorem eulerDegree_pullback [CompactSpace X] [QuasiSeparatedSpace X]
 end InvertibleSheaf
 
 namespace LineBundleClass
+
+include H in
+/-- Extension of the ground field preserves every truncated Euler characteristic of a
+line-bundle class on a quasi-compact quasi-separated scheme. -/
+theorem eulerCharBelow_pullback [CompactSpace X] [QuasiSeparatedSpace X]
+    (a : LineBundleClass X) (n : ℕ) :
+    eulerCharBelow K (pullback g a) n = eulerCharBelow k a n := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [pullback_mk, eulerCharBelow_mk, eulerCharBelow_mk,
+    InvertibleSheaf.pullback_obj_obj, eulerCharBelow_pullback_eq_of_isPullback H]
 
 include H in
 /-- Pullback under a field extension preserves the Euler-characteristic degree of a
