@@ -153,7 +153,8 @@ noncomputable def addCommGroup (hdense : A.retractClosure = ⊤) : AddCommGroup 
 of `X` to the class of `X⟦1⟧`. -/
 @[simp]
 theorem addCommGroup_neg_mk (hdense : A.retractClosure = ⊤) (X : C) :
-    (addCommGroup A hdense).neg (mk A X) = mk A (X⟦(1 : ℤ)⟧) :=
+    letI := addCommGroup A hdense;
+    -mk A X = mk A (X⟦(1 : ℤ)⟧) :=
   shift_mk (1 : ℤ) X
 
 end TauCeti.StableClasses
