@@ -105,21 +105,21 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] (H : Ope
 @[to_additive /-- An open additive subgroup of an additive group with measurable addition has
 measurable addition. -/]
 instance instMeasurableMul [MeasurableMul G] : MeasurableMul H where
-  measurable_const_mul c := ((measurable_const_mul (c : G)).comp measurable_subtype_coe).subtype_mk
-  measurable_mul_const c := ((measurable_mul_const (c : G)).comp measurable_subtype_coe).subtype_mk
+  measurable_const_mul c := ((measurable_const_mul (c : G)).comp measurable_subtypeVal).subtype_mk
+  measurable_mul_const c := ((measurable_mul_const (c : G)).comp measurable_subtypeVal).subtype_mk
 
 /-- An open subgroup of a group with measurable inversion has measurable inversion. -/
 @[to_additive /-- An open additive subgroup of an additive group with measurable negation has
 measurable negation. -/]
 instance instMeasurableInv [MeasurableInv G] : MeasurableInv H where
-  measurable_inv := (measurable_inv.comp measurable_subtype_coe).subtype_mk
+  measurable_inv := (measurable_inv.comp measurable_subtypeVal).subtype_mk
 
 /-- The subtype inclusion `(↑) : H → G` of an open subgroup is a measurable embedding. -/
 @[to_additive /-- The subtype inclusion `(↑) : H → G` of an open additive subgroup is a measurable
 embedding. -/]
 theorem measurableEmbedding_coe [OpensMeasurableSpace G] :
     MeasurableEmbedding ((↑) : H → G) :=
-  MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
+  MeasurableEmbedding.subtypeVal H.isOpen.measurableSet
 
 /-- Pulling a measure finite on compact sets back to an open subgroup yields a measure finite on
 compact sets. -/
@@ -127,14 +127,14 @@ compact sets. -/
 a measure finite on compact sets. -/]
 instance instIsFiniteMeasureOnCompactsComap [OpensMeasurableSpace G]
     [IsFiniteMeasureOnCompacts μ] : IsFiniteMeasureOnCompacts (μ.comap ((↑) : H → G)) :=
-  IsFiniteMeasureOnCompacts.comap' μ continuous_subtype_val H.measurableEmbedding_coe
+  IsFiniteMeasureOnCompacts.comap' μ continuous_subtypeVal H.measurableEmbedding_coe
 
 /-- Pulling an outer regular measure back to an open subgroup yields an outer regular measure. -/
 @[to_additive /-- Pulling an outer regular measure back to an open additive subgroup yields an outer
 regular measure. -/]
 instance instOuterRegularComap [OpensMeasurableSpace G] [μ.OuterRegular] :
     (μ.comap ((↑) : H → G)).OuterRegular :=
-  Measure.OuterRegular.comap' μ continuous_subtype_val H.measurableEmbedding_coe
+  Measure.OuterRegular.comap' μ continuous_subtypeVal H.measurableEmbedding_coe
 
 /-- If `H` is σ-compact and `μ` is finite on compact sets, the restricted measure
 `μ.comap ((↑) : H → G)` is σ-finite. -/
@@ -206,8 +206,8 @@ theorem map_mul_left_comap (g : G) :
     simp [mem_leftCoset_iff]
   have hmap := (MeasurableEquiv.mulLeft g).restrict_map μ (g • (H : Set G))
   rw [MeasurableEquiv.coe_mulLeft, map_mul_left_eq_self, hpre,
-    ← map_comap_subtype_coe H.isOpen.measurableSet,
-    Measure.map_map (measurable_const_mul g) measurable_subtype_coe] at hmap
+    ← map_comap_subtypeVal H.isOpen.measurableSet,
+    Measure.map_map (measurable_const_mul g) measurable_subtypeVal] at hmap
   exact hmap.symm
 
 /-- Almost-everywhere properties on the left coset `g • (H : Set G)` reduce to
@@ -304,8 +304,8 @@ theorem restrict_op_smul_eq_smul_map_comap (g : G) :
     simp [mem_rightCoset_iff]
   have hmap := (MeasurableEquiv.mulRight g).restrict_map μ (op g • (H : Set G))
   rw [MeasurableEquiv.coe_mulRight, Measure.map_right_mul_eq_modularCharacter_smul_of_regular,
-    Measure.restrict_smul, hpre, ← map_comap_subtype_coe H.isOpen.measurableSet,
-    Measure.map_map (measurable_mul_const g) measurable_subtype_coe] at hmap
+    Measure.restrict_smul, hpre, ← map_comap_subtypeVal H.isOpen.measurableSet,
+    Measure.map_map (measurable_mul_const g) measurable_subtypeVal] at hmap
   have hinv : Measure.modularCharacter g⁻¹ * Measure.modularCharacter g = 1 := by
     rw [← map_mul, inv_mul_cancel, map_one]
   calc μ.restrict (op g • (H : Set G))

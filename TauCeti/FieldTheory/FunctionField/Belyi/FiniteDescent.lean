@@ -109,7 +109,7 @@ private theorem mem_constants {c : k} : c ∈ constants X E ↔ algebraMap k X c
 /-- The constants of `k` lying in `E` act on `E`. -/
 private noncomputable instance : Algebra (constants X E) E :=
   ((algebraMap (constants X E) X).codRestrict E fun c ↦
-    (IsScalarTower.algebraMap_apply (constants X E) k X c).symm ▸ c.2).toAlgebra
+    (IsScalarTower.algebraMap_apply (constants X E) k X c).symm ▸ c.property).toAlgebra
 
 private theorem algebraMap_constants_coe (c : constants X E) :
     (algebraMap (constants X E) E c : X) = algebraMap k X c :=
@@ -133,7 +133,7 @@ private theorem isIntegrallyClosedIn_constants : IsIntegrallyClosedIn (constants
       (algebraMap (constants X E) k).injective
   obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp
     X.isAlgebraicBelyiPair.isIntegrallyClosedIn _ hxk
-  exact ⟨⟨c, (mem_constants X E).mpr (hc ▸ x.2)⟩,
+  exact ⟨⟨c, (mem_constants X E).mpr (hc ▸ x.property)⟩,
     Subtype.ext ((algebraMap_constants_coe X E _).trans hc)⟩
 
 /-- If `E` is a function field over `K₀`, the constants of `k` lying in `E` are finite over
@@ -249,7 +249,7 @@ theorem finite_orbit [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
     rw [← inv_smul_eq_iff, ← mul_smul]
     exact hc.smul_eq fun a ↦ by
       simpa [res] using congrArg (τ.symm ·) (DFunLike.congr_fun h a)
-  refine (Set.finite_range fun φ : Set.range res ↦ φ.2.choose • c).subset ?_
+  refine (Set.finite_range fun φ : Set.range res ↦ φ.property.choose • c).subset ?_
   rintro _ ⟨σ, rfl⟩
   exact ⟨⟨res σ, σ, rfl⟩, hres (Exists.choose_spec (⟨σ, rfl⟩ : ∃ τ, res τ = res σ))⟩
 

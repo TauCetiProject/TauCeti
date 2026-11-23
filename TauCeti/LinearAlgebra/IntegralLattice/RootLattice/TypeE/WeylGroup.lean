@@ -38,11 +38,15 @@ The same isomorphism transports the order of the automorphism group of the datum
 
 ## Main definitions
 
+* `TauCeti.IntegralLattice.typeE₈WeightEquiv`: the identification of the E₈ lattice with the
+  weight lattice of the pinned E₈ root datum, by pairing with the simple roots.
 * `TauCeti.IntegralLattice.typeE₈IsometryEquivAut`: the isomorphism from the isometry group of the
   E₈ lattice onto the automorphism group of the pinned E₈ root datum.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.typeE₈IsometryEquivAut_weightMap`: the isomorphism acts on weights as
+  the isometry acts on the lattice, through `typeE₈WeightEquiv`.
 * `TauCeti.IntegralLattice.typeE₈RootVector_typeE₈IsometryEquivAut_indexEquiv`: the isomorphism
   permutes the root indices as the isometry permutes the lattice roots.
 * `TauCeti.IntegralLattice.typeE₈IsometryEquivAut_rootReflection`: it sends root reflections to
@@ -96,35 +100,56 @@ private theorem integralForm_typeE₈CoordinateEquiv (u w : Fin 8 → ℤ) :
 /-- Multiplication of row vectors by the E₈ Cartan matrix, a linear equivalence because the
 Cartan matrix has determinant `1`. -/
 private noncomputable def cartanVecMulEquiv : (Fin 8 → ℤ) ≃ₗ[ℤ] (Fin 8 → ℤ) :=
+  have hu : IsUnit (CartanMatrix.E 8) := by
+    rw [Matrix.isUnit_iff_isUnit_det, CartanMatrix.E₈_det]
+    exact isUnit_one
   LinearEquiv.ofBijective (CartanMatrix.E 8).vecMulLinear
-    ⟨fun _ _ h ↦ sub_eq_zero.mp (Matrix.eq_zero_of_vecMul_eq_zero
-        (by rw [CartanMatrix.E₈_det]; norm_num) (by rw [sub_vecMul]; exact sub_eq_zero.mpr h)),
-      by
-        rw [Matrix.coe_vecMulLinear, Matrix.vecMul_surjective_iff_isUnit,
-          Matrix.isUnit_iff_isUnit_det, CartanMatrix.E₈_det]
-        exact isUnit_one⟩
+    ⟨Matrix.vecMul_injective_of_isUnit hu, Matrix.vecMul_surjective_iff_isUnit.mpr hu⟩
 
 /-- The identification of the E₈ lattice with the weight lattice of the pinned E₈ datum, written
-in the basis of fundamental weights: a lattice vector goes to its pairings with the simple roots. -/
-private noncomputable def typeE₈WeightEquiv : typeE₈RootLattice ≃ₗ[ℤ] (Fin 8 → ℤ) :=
+in the basis of fundamental weights: a lattice vector goes to its pairings with the simple roots
+(`typeE₈WeightEquiv_apply`). It is a bijection because the E₈ lattice is unimodular. -/
+noncomputable def typeE₈WeightEquiv : typeE₈RootLattice ≃ₗ[ℤ] (Fin 8 → ℤ) :=
   typeE₈CoordinateEquiv.symm ≪≫ₗ cartanVecMulEquiv
 
-private theorem typeE₈WeightEquiv_apply (x : typeE₈RootLattice) :
+private theorem typeE₈WeightEquiv_eq_vecMul (x : typeE₈RootLattice) :
     typeE₈WeightEquiv x = typeE₈CoordinateEquiv.symm x ᵥ* CartanMatrix.E 8 :=
   (rfl)
 
 /-- The weight identification carries the enumerated lattice roots to the roots of the datum. -/
-private theorem typeE₈WeightEquiv_typeE₈RootVector (i : Fin 240) :
+@[simp]
+theorem typeE₈WeightEquiv_typeE₈RootVector (i : Fin 240) :
     typeE₈WeightEquiv (typeE₈RootVector i) = e8Root i := by
-  rw [typeE₈WeightEquiv_apply, ← typeE₈CoordinateEquiv_e8Coroot, LinearEquiv.symm_apply_apply,
-    e8Root_apply]
+  rw [typeE₈WeightEquiv_eq_vecMul, ← typeE₈CoordinateEquiv_e8Coroot,
+    LinearEquiv.symm_apply_apply, e8Root_apply]
 
 /-- The perfect pairing of the datum is the lattice form, read through the weight identification
 on the left and simple-root coordinates on the right. -/
 private theorem dotProduct_typeE₈WeightEquiv (x y : typeE₈RootLattice) :
     typeE₈WeightEquiv x ⬝ᵥ typeE₈CoordinateEquiv.symm y = typeE₈RootLattice.integralForm x y := by
-  rw [typeE₈WeightEquiv_apply, ← integralForm_typeE₈CoordinateEquiv, LinearEquiv.apply_symm_apply,
-    LinearEquiv.apply_symm_apply]
+  rw [typeE₈WeightEquiv_eq_vecMul, ← integralForm_typeE₈CoordinateEquiv,
+    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
+/-- Pairing with a coroot of the datum is the lattice form with the corresponding lattice root. -/
+theorem dotProduct_typeE₈WeightEquiv_e8Coroot (y : typeE₈RootLattice) (i : Fin 240) :
+    typeE₈WeightEquiv y ⬝ᵥ e8Coroot i = typeE₈RootLattice.integralForm y (typeE₈RootVector i) := by
+  rw [← dotProduct_typeE₈WeightEquiv, ← typeE₈CoordinateEquiv_e8Coroot,
+    LinearEquiv.symm_apply_apply]
+
+/-- **A lattice vector goes to its pairings with the simple roots**: the `j`-th coordinate of the
+weight of `x` is the lattice form of `x` with the `j`-th simple root. -/
+@[simp]
+theorem typeE₈WeightEquiv_apply (x : typeE₈RootLattice) (j : Fin 8) :
+    typeE₈WeightEquiv x j =
+      typeE₈RootLattice.integralForm x (typeE₈RootVector (e8SimpleIndex j)) := by
+  rw [← dotProduct_typeE₈WeightEquiv_e8Coroot, coroot_e8SimpleIndex, dotProduct_single, mul_one]
+
+/-- The lattice vector with weight `m` pairs with the `j`-th simple root to `m j`. -/
+@[simp]
+theorem integralForm_typeE₈WeightEquiv_symm (m : Fin 8 → ℤ) (j : Fin 8) :
+    typeE₈RootLattice.integralForm (typeE₈WeightEquiv.symm m)
+        (typeE₈RootVector (e8SimpleIndex j)) = m j := by
+  rw [← typeE₈WeightEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-! ## Isometries as automorphisms of the datum -/
 
@@ -175,12 +200,6 @@ private theorem typeE₈IsometryToAut_injective : Function.Injective typeE₈Iso
   apply typeE₈WeightEquiv.injective
   rw [← typeE₈IsometryToAut_weightMap_apply, ← typeE₈IsometryToAut_weightMap_apply, hgh]
 
-/-- Pairing with a coroot of the datum is the lattice form with the corresponding lattice root. -/
-private theorem dotProduct_typeE₈WeightEquiv_e8Coroot (y : typeE₈RootLattice) (i : Fin 240) :
-    typeE₈WeightEquiv y ⬝ᵥ e8Coroot i = typeE₈RootLattice.integralForm y (typeE₈RootVector i) := by
-  rw [← dotProduct_typeE₈WeightEquiv, ← typeE₈CoordinateEquiv_e8Coroot,
-    LinearEquiv.symm_apply_apply]
-
 private theorem typeE₈IsometryToAut_rootReflection (i : Fin 240) :
     typeE₈IsometryToAut (rootReflection _ (integralNorm_typeE₈RootVector i)) =
       RootPairing.Equiv.reflection _ i := by
@@ -205,8 +224,9 @@ private theorem typeE₈IsometryToAutHom_surjective : Function.Surjective typeE�
   exact ⟨_, typeE₈IsometryToAut_rootReflection i⟩
 
 /-- **The isometry group of the E₈ lattice is the automorphism group of the pinned E₈ root
-datum.** An isometry acts on the weight lattice of the datum through the identification of the
-lattice with the weight lattice by pairing with the simple roots. -/
+datum.** An isometry acts on the weight lattice of the datum through the identification
+`typeE₈WeightEquiv` of the lattice with the weight lattice by pairing with the simple roots
+(`typeE₈IsometryEquivAut_weightMap`). -/
 noncomputable def typeE₈IsometryEquivAut :
     Isometry typeE₈RootLattice typeE₈RootLattice ≃* e8SimplyConnectedRootDatum.Aut :=
   MulEquiv.ofBijective typeE₈IsometryToAutHom
@@ -215,6 +235,42 @@ noncomputable def typeE₈IsometryEquivAut :
 private theorem typeE₈IsometryEquivAut_apply (g : Isometry typeE₈RootLattice typeE₈RootLattice) :
     typeE₈IsometryEquivAut g = typeE₈IsometryToAut g :=
   rfl
+
+/-- **The isomorphism acts on weights as the isometry acts on the lattice**: the weight map of the
+induced automorphism of the datum is the isometry, transported along `typeE₈WeightEquiv`. -/
+@[simp]
+theorem typeE₈IsometryEquivAut_weightMap (g : Isometry typeE₈RootLattice typeE₈RootLattice) :
+    (typeE₈IsometryEquivAut g).weightMap =
+      (typeE₈WeightEquiv.symm ≪≫ₗ g.carrierEquiv ≪≫ₗ typeE₈WeightEquiv).toLinearMap :=
+  LinearMap.ext fun m ↦ by
+    obtain ⟨x, rfl⟩ := typeE₈WeightEquiv.surjective m
+    rw [typeE₈IsometryEquivAut_apply, typeE₈IsometryToAut_weightMap_apply]
+    simp
+
+/-- The weight equivalence of the induced automorphism of the datum is the isometry, transported
+along `typeE₈WeightEquiv`. -/
+@[simp]
+theorem typeE₈IsometryEquivAut_weightEquiv (g : Isometry typeE₈RootLattice typeE₈RootLattice) :
+    (typeE₈IsometryEquivAut g).weightEquiv =
+      typeE₈WeightEquiv.symm ≪≫ₗ g.carrierEquiv ≪≫ₗ typeE₈WeightEquiv :=
+  LinearEquiv.toLinearMap_inj.mp (typeE₈IsometryEquivAut_weightMap g)
+
+/-- The induced automorphism of the datum sends the weight of `x` to the weight of `g x`. -/
+theorem typeE₈IsometryEquivAut_weightMap_typeE₈WeightEquiv
+    (g : Isometry typeE₈RootLattice typeE₈RootLattice) (x : typeE₈RootLattice) :
+    (typeE₈IsometryEquivAut g).weightMap (typeE₈WeightEquiv x) =
+      typeE₈WeightEquiv (g.carrierEquiv x) := by
+  simp
+
+/-- The isometry corresponding to an automorphism `u` of the datum is its weight equivalence,
+transported back along `typeE₈WeightEquiv`. -/
+@[simp]
+theorem typeE₈IsometryEquivAut_symm_carrierEquiv (u : e8SimplyConnectedRootDatum.Aut) :
+    (typeE₈IsometryEquivAut.symm u).carrierEquiv =
+      typeE₈WeightEquiv ≪≫ₗ u.weightEquiv ≪≫ₗ typeE₈WeightEquiv.symm := by
+  obtain ⟨g, rfl⟩ := typeE₈IsometryEquivAut.surjective u
+  ext x
+  simp
 
 /-- **The isomorphism permutes the root indices as the isometry permutes the lattice roots.** This
 characterizes it, since an automorphism of a root system is determined by its permutation of the

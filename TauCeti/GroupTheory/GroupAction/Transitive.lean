@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
+import Mathlib.Data.ZMod.QuotientGroup
 
 /-!
 # Transitive actions
@@ -42,6 +44,10 @@ assumed.
   transitive action of a group with as many elements as the finite set acted on is regular, so
   only the identity fixes a point.
 * `TauCeti.isPretransitive_prod_left`: a product with a subsingleton stays pretransitive.
+* `TauCeti.isPretransitive_of_prime_natCard_of_smul_ne`: an action on a set with a prime number
+  `p` of points is transitive as soon as some element `g` moves a point fixed by `g ^ p`.
+* `MonoidHom.isPretransitive_range_iff`: the image of a permutation representation is
+  transitive exactly when every point is reached from a fixed base point.
 * `MonoidHom.isCycleOn_apply_of_zpowers_eq_top`: the image of a generator under a transitive
   permutation representation of a cyclic group is one cycle on the whole set.
 
@@ -76,6 +82,24 @@ theorem isPretransitive_prod_left [IsPretransitive G X] [Subsingleton Y] :
   ⟨fun p q => (exists_smul_eq G p.1 q.1).imp fun _ hg => Prod.fst_injective hg⟩
 
 end SMul
+
+/-- **An element moving a point of prime period acts transitively in prime degree.** If a group
+acts on a set with a prime number `p` of points, and some element `g` moves a point `x` that
+`g ^ p` fixes, then the action is transitive. -/
+theorem isPretransitive_of_prime_natCard_of_smul_ne {G X : Type*} [Group G] [MulAction G X]
+    (hp : (Nat.card X).Prime) {g : G} {x : X} (hg : g ^ Nat.card X • x = x) (hx : g • x ≠ x) :
+    IsPretransitive G X := by
+  have : Finite X := Nat.finite_of_card_ne_zero hp.ne_zero
+  -- The period of `x` under `g` divides the prime `p` and is not `1`, so the orbit of `x` under
+  -- the powers of `g` has `p` points: it is the whole set.
+  have hper : Function.minimalPeriod (g • ·) x = Nat.card X :=
+    ((Nat.dvd_prime hp).mp (pow_smul_eq_iff_minimalPeriod_dvd.mp hg)).resolve_left fun h ↦
+      hx (Function.minimalPeriod_eq_one_iff_isFixedPt.mp h).eq
+  have huniv : orbit (Subgroup.zpowers g) x = Set.univ := by
+    rw [Set.eq_univ_iff_ncard, ← Nat.card_coe_set_eq, Nat.card_congr (orbitZPowersEquiv g x),
+      Nat.card_zmod, hper]
+  rw [isPretransitive_iff_orbit_eq_univ x]
+  exact Set.eq_univ_of_univ_subset (huniv ▸ orbit_subgroup_subset (Subgroup.zpowers g) x)
 
 variable (G : Type*) {X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
 
@@ -132,6 +156,17 @@ namespace MonoidHom
 open Equiv
 
 variable {G X : Type*} [Group G]
+
+/-- The image of a permutation representation is transitive exactly when every point is
+reached from a fixed base point. -/
+theorem isPretransitive_range_iff (ρ : G →* Perm X) (a : X) :
+    IsPretransitive ρ.range X ↔ ∀ x, ∃ g, ρ g a = x := by
+  rw [isPretransitive_iff_base a]
+  refine forall_congr' fun x => ⟨?_, ?_⟩
+  · rintro ⟨⟨_, g, rfl⟩, hg⟩
+    exact ⟨g, hg⟩
+  · rintro ⟨g, hg⟩
+    exact ⟨⟨ρ g, g, rfl⟩, hg⟩
 
 /-- **A generator of a cyclic group acts as one cycle in every transitive permutation
 representation.** If `g` generates `G` and the image of `ρ : G →* Perm X` acts transitively,

@@ -73,11 +73,11 @@ theorem IsAdmissible.exists_hilbertSymbol_eq_of_rank_eq_two
           v.unitAtFinitePlace (-d) := Units.ext (by simp)
       rwa [he]
     exact (hS v).mp hv (hI.finiteHasse_eq_one_of_rank_eq_two hn v heq)
-  have hreal (w) (hw : w ∈ T) : embedding_of_isReal w.2 (-d : Kˣ) < 0 := by
+  have hreal (w) (hw : w ∈ T) : embedding_of_isReal w.property (-d : Kˣ) < 0 := by
     have hzero := (I.realHasse_ne_one_iff_realPositiveIndex_eq_zero_of_rank_eq_two hn w).mp
       ((hT w).mp hw)
     have hdisc := hI.discrAtRealPlace_eq w
-    have hdpos : squareClass (Units.map (embedding_of_isReal w.2).toMonoidHom d) = 0 := by
+    have hdpos : squareClass (Units.map (embedding_of_isReal w.property).toMonoidHom d) = 0 := by
       simpa [discrAtRealPlace_def, ← hd, realNegativeIndex_def, hn, hzero,
         ← squareClass_pow] using hdisc
     have hpos := (Units.squareClass_eq_zero_iff_pos _).mp hdpos
