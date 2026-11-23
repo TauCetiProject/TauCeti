@@ -31,6 +31,10 @@ variable {n : ℕ}
 def dB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   diagonal fun a => if a.val + 1 = n then 1 else 2
 
+theorem dB_apply (a b : Fin n) : dB n a b = if a = b then (if a.val + 1 = n then 1 else 2) else 0 :=
+  diagonal_apply _ _ _
+
+/-- **`diag (2, …, 2, 1)` intertwines the simple reflections of types `Bₙ` and `Cₙ`.** -/
 theorem dB_mul_reflMatrix_B (i : Fin n) :
     dB n * reflMatrix (CartanMatrix.B n) i = reflMatrix (CartanMatrix.C n) i * dB n := by
   ext k j
@@ -38,6 +42,7 @@ theorem dB_mul_reflMatrix_B (i : Fin n) :
   simp only [reflMatrix, CartanMatrix.B, CartanMatrix.C, Matrix.of_apply, Fin.ext_iff]
   split_ifs <;> omega
 
+/-- **`diag (2, …, 2, 1)` intertwines the Coxeter elements of types `Bₙ` and `Cₙ`.** -/
 theorem dB_mul_coxeterElement :
     dB n * coxeterElement (CartanMatrix.B n) = coxeterElement (CartanMatrix.C n) * dB n :=
   mul_list_map_prod_eq_list_map_prod_mul dB_mul_reflMatrix_B _

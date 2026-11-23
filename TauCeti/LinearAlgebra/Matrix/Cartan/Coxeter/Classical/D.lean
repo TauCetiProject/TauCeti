@@ -36,6 +36,12 @@ def epsD (m : ℕ) : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ :=
     if i.val < m + 2 then (if a.val = i.val then 1 else 0) - (if a.val = i.val + 1 then 1 else 0)
     else (if a.val = m + 1 then 1 else 0) + (if a.val = m + 2 then 1 else 0)
 
+theorem epsD_apply (a i : Fin (m + 3)) :
+    epsD m a i =
+      if i.val < m + 2 then (if a.val = i.val then 1 else 0) - (if a.val = i.val + 1 then 1 else 0)
+      else (if a.val = m + 1 then 1 else 0) + (if a.val = m + 2 then 1 else 0) :=
+  (rfl)
+
 /-- The signed swap `ε_{m+1} ↦ -ε_{m+2}`, `ε_{m+2} ↦ -ε_{m+1}`. -/
 private def flipPair (m : ℕ) : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ :=
   Matrix.of fun a b =>
@@ -81,9 +87,14 @@ private theorem epsD_mul_reflMatrix_last (i : Fin (m + 3)) (hi : i.val = m + 2) 
   ext a j
   rw [mul_reflMatrix_apply, flipPair_mul_apply]
   have h2 : ¬ (m + 3 ≤ 2) := by omega
-  simp only [epsD, CartanMatrix.D, Matrix.of_apply, Fin.ext_iff, Fin.val_last, hi, h2,
+  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Fin.ext_iff, Fin.val_last, hi, h2,
     ite_false, lt_irrefl, or_true, and_true]
   split_ifs <;> omega
+
+/-! The simple reflections `sᵢ`, `i < n - 1`, are transpositions in the `ε`-model. The proof splits
+by where `sᵢ` sits in the Dynkin diagram (the chain, the branch node, the node before the fork), so
+that `simp` can settle the branches of `CartanMatrix.D` before `split_ifs`. The three cases are
+separate declarations because together they exceed the default heartbeat budget. -/
 
 private theorem epsD_mul_reflMatrix_chain (i : Fin (m + 3)) (hi : i.val < m) :
     epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
@@ -95,7 +106,7 @@ private theorem epsD_mul_reflMatrix_chain (i : Fin (m + 3)) (hi : i.val < m) :
   have h4 : ¬ (i.val + 3 = m + 3) := by omega
   have h5 : ¬ (i.val + 2 = m + 3 ∨ i.val + 1 = m + 3) := by omega
   have h6 : i.val < m + 2 := by omega
-  simp only [epsD, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, h2, h3,
+  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, h2, h3,
     h4, h5, h6, ite_false, and_true, and_false, false_and]
   split_ifs <;> (try simp only at *) <;> omega
 
@@ -108,8 +119,8 @@ private theorem epsD_mul_reflMatrix_branch (i : Fin (m + 3)) (hi : i.val = m) :
   have h3 : m + 2 < m + 3 := by omega
   have h5 : ¬ (m + 2 = m + 3 ∨ m + 1 = m + 3) := by omega
   have h6 : m < m + 2 := by omega
-  simp only [epsD, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, hi, h2, h3,
-    h5, h6, ite_false, ite_true, and_true, and_false, true_and]
+  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, hi,
+    h2, h3, h5, h6, ite_false, ite_true, and_true, and_false, true_and]
   split_ifs <;> (try simp only [not_true_eq_false] at *) <;>
     omega
 
@@ -122,8 +133,8 @@ private theorem epsD_mul_reflMatrix_pre (i : Fin (m + 3)) (hi : i.val = m + 1) :
   have h3 : ¬ (m + 1 + 2 < m + 3) := by omega
   have h4 : ¬ (m + 1 + 3 = m + 3) := by omega
   have h6 : m + 1 < m + 2 := by omega
-  simp only [epsD, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, hi, h2, h3,
-    h4, h6, ite_false, ite_true, and_false, false_and]
+  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, hi,
+    h2, h3, h4, h6, ite_false, ite_true, and_false, false_and]
   split_ifs <;> (try simp only [not_true_eq_false, and_true, true_or] at *) <;>
     omega
 
@@ -150,13 +161,15 @@ theorem negaD_apply (a b : Fin (m + 3)) :
       else if b.val = m + 2 ∧ a.val = m + 2 then -1 else 0 :=
   (rfl)
 
+/-- **The Coxeter element of type `Dₙ` is `negaD`** in the `ε`-model. -/
 theorem epsD_mul_coxeterElement :
     epsD m * coxeterElement (CartanMatrix.D (m + 3)) = negaD m * epsD m := by
   have hlong : ∀ i : Fin (m + 2), epsD m * reflMatrix (CartanMatrix.D (m + 3)) i.castSucc =
       permMatrixHom (R := ℤ) (BraidGroup.transposition (n := m + 3) i) * epsD m := fun i => by
-    rw [epsD_mul_reflMatrix_of_lt i.castSucc (by simp),
-      BraidGroup.transposition_eq_swap_castSucc_succ]
-    rfl
+    rw [BraidGroup.transposition_eq_swap_castSucc_succ,
+      show i.succ = ⟨i.castSucc.val + 1, by have := i.isLt; simp only [Fin.val_castSucc]; omega⟩
+        from Fin.ext (by simp)]
+    exact epsD_mul_reflMatrix_of_lt _ (by simp)
   rw [coxeterElement, List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
     Function.comp_def, ← Matrix.mul_assoc,
     mul_prod_map_finRange_eq_permMatrixHom_finRotate_mul hlong, List.map_cons, List.map_nil,
@@ -201,24 +214,16 @@ theorem reindex_negaD (m : ℕ) :
       Subsingleton.elim i j]
     split_ifs <;> omega
 
-private theorem fromBlocks_zero_zero_pow {p q : Type*} [Fintype p] [Fintype q] [DecidableEq p]
-    [DecidableEq q] (A : Matrix p p ℤ) (D : Matrix q q ℤ) (k : ℕ) :
-    fromBlocks A 0 0 D ^ k = fromBlocks (A ^ k) 0 0 (D ^ k) := by
-  induction k with
-  | zero => rw [pow_zero, pow_zero, pow_zero, fromBlocks_one]
-  | succ k ih =>
-    rw [pow_succ, ih, fromBlocks_multiply]
-    simp [pow_succ]
-
 /-- **The `Dₙ` Coxeter matrix `negaD` has order `2n - 2`**, the order of its block
 `negaShift (n - 1)`. -/
 theorem orderOf_negaD : orderOf (negaD m) = 2 * (m + 2) := by
-  rw [← MulEquiv.orderOf_eq (reindexAlgEquiv ℤ ℤ
-    (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3)).symm).toRingEquiv.toMulEquiv]
-  change orderOf (reindex _ _ (negaD m)) = _
-  rw [reindex_negaD]
+  have h := MulEquiv.orderOf_eq (reindexAlgEquiv ℤ ℤ
+    (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3)).symm).toRingEquiv.toMulEquiv (negaD m)
+  rw [RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, AlgEquiv.coe_toRingEquiv,
+    coe_reindexAlgEquiv, reindex_negaD] at h
+  rw [← h]
   refine (orderOf_eq_orderOf_iff.2 fun k => ?_).trans orderOf_negaShift
-  rw [fromBlocks_zero_zero_pow, ← fromBlocks_one, fromBlocks_inj]
+  rw [fromBlocks_diagonal_pow, ← fromBlocks_one, fromBlocks_inj]
   refine ⟨fun h => h.1, fun h => ⟨h, rfl, rfl, ?_⟩⟩
   have hdvd := orderOf_dvd_of_pow_eq_one h
   rw [orderOf_negaShift] at hdvd
@@ -235,7 +240,7 @@ theorem epsD_mul_apply {k : Type*} (Z : Matrix (Fin (m + 3)) k ℤ) (a : Fin (m 
         (if c = Fin.last (m + 2) then (if a.val = m + 1 ∨ a.val = m + 2 then Z c j else 0)
           else 0) := by
     intro c
-    simp only [epsD, Matrix.of_apply, Fin.ext_iff, Fin.val_last]
+    simp only [epsD_apply, Fin.ext_iff, Fin.val_last]
     split_ifs <;> omega
   rw [Matrix.mul_apply, Finset.sum_congr rfl fun c _ => hsplit c, Finset.sum_add_distrib,
     Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.sum_ite_eq']

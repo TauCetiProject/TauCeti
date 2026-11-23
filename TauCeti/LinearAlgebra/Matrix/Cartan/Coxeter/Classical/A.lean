@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.Intertwining
 public import TauCeti.LinearAlgebra.Matrix.Permutation
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.Data.List.OneDegenerateOrder
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
 /-!
@@ -21,6 +22,9 @@ reflection `sᵢ` becomes the permutation matrix of the adjacent transposition
 Coxeter element becomes the permutation matrix of their product, the rotation `finRotate (n + 1)`
 (`TauCeti.permCoxeterSystem_wordProd_finRange`), an `(n+1)`-cycle. The `ε`-embedding is injective,
 so the order of the Coxeter element is `n + 1`.
+
+In the basis of simple roots the Coxeter element is, up to relabelling, the companion matrix of
+`1 + X + ⋯ + Xⁿ` (`TauCeti.Coxeter.coxeterElement_A_apply`).
 -/
 
 public section
@@ -46,7 +50,7 @@ theorem epsA_mul_reflMatrix (i : Fin n) :
   rw [BraidGroup.transposition_eq_swap_castSucc_succ]
   ext a j
   rw [mul_reflMatrix_apply, permMatrixHom_mul_apply, Equiv.symm_swap]
-  simp only [epsA, CartanMatrix.A, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff,
+  simp only [epsA_apply, CartanMatrix.A, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff,
     Fin.val_castSucc, Fin.val_succ]
   split_ifs <;> simp_all <;> omega
 
@@ -61,7 +65,8 @@ theorem mul_prod_map_finRange_eq_permMatrixHom_finRotate_mul {k : Type*} [Fintyp
   rw [mul_list_map_prod_eq_list_map_prod_mul h]
   refine congrArg (· * E) ?_
   rw [← permCoxeterSystem_wordProd_finRange, permCoxeterSystem_wordProd, map_list_prod,
-    List.map_map]
+    List.map_map, Function.comp_def]
+  -- the two sides differ only in the index type `Fin (n + 1 - 1)`, which reduces to `Fin n`
   rfl
 
 /-- **The Coxeter element of type `Aₙ` is the rotation `finRotate (n + 1)`** in the `ε`-model. -/
@@ -74,9 +79,13 @@ theorem epsA_mul_coxeterElement :
 def epsALeftInv (n : ℕ) : Matrix (Fin n) (Fin (n + 1)) ℤ :=
   Matrix.of fun i a => if a.val ≤ i.val then 1 else 0
 
+theorem epsALeftInv_apply (i : Fin n) (a : Fin (n + 1)) :
+    epsALeftInv n i a = if a.val ≤ i.val then 1 else 0 :=
+  (rfl)
+
 theorem epsALeftInv_mul_epsA : epsALeftInv n * epsA n = 1 := by
   ext i k
-  simp only [epsALeftInv, epsA, Matrix.mul_apply, Matrix.of_apply, Matrix.one_apply, mul_sub,
+  simp only [epsALeftInv_apply, epsA_apply, Matrix.mul_apply, Matrix.one_apply, mul_sub,
     mul_ite, mul_one, mul_zero, Finset.sum_sub_distrib]
   rw [Finset.sum_eq_single k.castSucc (fun a _ ha =>
       ite_eq_right_iff.2 fun h => absurd (Fin.ext (by simpa using h)) ha) (by simp),
@@ -85,11 +94,44 @@ theorem epsALeftInv_mul_epsA : epsALeftInv n * epsA n = 1 := by
   simp only [Fin.val_castSucc, Fin.val_succ, ite_true, Fin.ext_iff]
   split_ifs <;> omega
 
-/-- `epsA` can be cancelled on the left. -/
-theorem epsA_mul_left_cancel {X Y : Matrix (Fin n) (Fin n) ℤ} (h : epsA n * X = epsA n * Y) :
-    X = Y := by
-  rw [← Matrix.one_mul X, ← Matrix.one_mul Y, ← epsALeftInv_mul_epsA, Matrix.mul_assoc,
-    Matrix.mul_assoc, h]
+/-- Row sums of `epsA`: they telescope. -/
+theorem sum_epsA_row (a : Fin (n + 1)) :
+    ∑ j : Fin n, epsA n a j = (if a.val = 0 then 1 else 0) - (if a.val = n then 1 else 0) := by
+  simp only [epsA_apply]
+  rw [Fin.sum_univ_eq_sum_range
+    (fun i => (if a.val = i then (1 : ℤ) else 0) - (if a.val = i + 1 then 1 else 0)) n]
+  exact Finset.sum_range_sub' (fun i => if a.val = i then (1 : ℤ) else 0) n
+
+/-- **The Coxeter element of type `Aₙ` is the companion matrix of `1 + X + ⋯ + Xⁿ`** (up to
+relabelling): it sends `eₖ` to `e_{k+1}` for `k + 1 < n`, and `e_{n-1}` to `-(e₀ + ⋯ + e_{n-1})`. -/
+theorem coxeterElement_A_apply (a k : Fin n) :
+    coxeterElement (CartanMatrix.A n) a k =
+      if k.val + 1 < n then (if a.val = k.val + 1 then 1 else 0) else -1 := by
+  have hCe : epsA n * Matrix.of (fun a k : Fin n =>
+      if k.val + 1 < n then (if a.val = k.val + 1 then (1 : ℤ) else 0) else -1) =
+      permMatrixHom (R := ℤ) (finRotate (n + 1)) * epsA n := by
+    ext a k
+    rw [permMatrixHom_mul_apply, Matrix.mul_apply]
+    have hs : ((finRotate (n + 1)).symm a).val = if a.val = 0 then n else a.val - 1 := by
+      by_cases ha : a = 0
+      · rw [ha, (Equiv.symm_apply_eq _).2 finRotate_last.symm, Fin.val_last, Fin.val_zero,
+          ite_eq_left rfl]
+      · rw [coe_finRotate_symm_of_ne_zero ha,
+          ite_eq_right fun h => ha (Fin.ext (by rw [h, Fin.val_zero]))]
+    by_cases hk : k.val + 1 < n
+    · rw [Finset.sum_eq_single ⟨k.val + 1, hk⟩]
+      · simp only [epsA_apply, Matrix.of_apply, hk, ite_true, mul_one]
+        split_ifs at hs ⊢ <;> omega
+      · intro j _ hj
+        simp only [Matrix.of_apply, hk, ite_true]
+        rw [ite_eq_right (fun h => absurd (Fin.ext h) hj), mul_zero]
+      · simp
+    · simp only [Matrix.of_apply, hk, ite_false, mul_neg, mul_one, Finset.sum_neg_distrib,
+        sum_epsA_row]
+      simp only [epsA_apply]
+      split_ifs at hs ⊢ <;> omega
+  rw [mul_right_injective_of_inv _ _ epsALeftInv_mul_epsA
+    (epsA_mul_coxeterElement.trans hCe.symm), Matrix.of_apply]
 
 /-- A permutation matrix fixing every column of `epsA` is the identity. -/
 theorem eq_one_of_permMatrixHom_mul_epsA {τ : Equiv.Perm (Fin (n + 1))}
@@ -103,11 +145,11 @@ theorem eq_one_of_permMatrixHom_mul_epsA {τ : Equiv.Perm (Fin (n + 1))}
     intro b
     by_cases hb : b.val < n
     · have := hcol b ⟨b.val, hb⟩
-      simp only [epsA, Matrix.of_apply] at this
+      simp only [epsA_apply] at this
       ext
       split_ifs at this <;> omega
     · have := hcol b ⟨n - 1, by omega⟩
-      simp only [epsA, Matrix.of_apply] at this
+      simp only [epsA_apply] at this
       ext
       split_ifs at this <;> omega
   ext b
@@ -123,7 +165,8 @@ theorem orderOf_coxeterElement_A (n : ℕ) :
       orderOf (finRotate (n + 1)) := orderOf_eq_orderOf_iff.2 fun k =>
     ⟨fun h => hfix k (by rw [h, Matrix.one_mul]), fun h => by rw [← map_pow, h, map_one]⟩
   rw [orderOf_eq_orderOf_of_mul_eq_mul epsA_mul_coxeterElement
-      (fun k h => epsA_mul_left_cancel (h.trans (Matrix.mul_one _).symm))
+      (fun k h => mul_right_injective_of_inv _ _ epsALeftInv_mul_epsA
+        (h.trans (Matrix.mul_one _).symm))
       (fun k h => by rw [← map_pow, hfix k h, map_one]),
     hrot, orderOf_finRotate (Nat.succ_ne_zero n)]
 

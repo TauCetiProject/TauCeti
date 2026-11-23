@@ -35,8 +35,8 @@ theorem permMatrix_nonneg {n R : Type*} [DecidableEq n]
 theorem permMatrixHom_mul_apply {n k R : Type*} [Fintype n] [DecidableEq n] [NonAssocSemiring R]
     (σ : Equiv.Perm n) (M : Matrix n k R) (a : n) (j : k) :
     (Matrix.permMatrixHom (R := R) σ * M) a j = M (σ.symm a) j := by
-  rw [Matrix.permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul]
-  rfl
+  rw [Matrix.permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul,
+    Matrix.submatrix_apply, id, Equiv.Perm.inv_def]
 
 end Equiv.Perm
 
