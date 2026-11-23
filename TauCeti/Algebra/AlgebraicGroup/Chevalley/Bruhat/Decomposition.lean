@@ -159,7 +159,7 @@ theorem bruhatCell_subset_iff {w v : (t.simplyConnectedRootDatum ht).weylGroup} 
   obtain ⟨n, rfl⟩ := D.weylProjection_surjective K w
   have hn : (n : D.points K) ∈ D.bruhatCell K (D.weylProjection K n) := by
     rw [D.bruhatCell_weylProjection]
-    exact DoubleCoset.mem_doubleCoset.mpr ⟨1, one_mem _, 1, one_mem _, by rw [one_mul, mul_one]⟩
+    exact DoubleCoset.mem_doubleCoset_self _ _ _
   exact D.eq_of_mem_bruhatCell_of_mem K hn (h hn)
 
 /-- Every element of `D.elementarySubgroup K` belongs to a unique Bruhat cell. -/
@@ -293,7 +293,7 @@ private theorem exists_inversionPoints_mul_borelSubgroup_of_ncard_eq (k : ℕ) :
     have hnB : (n : D.points K) ∈ D.borelSubgroup K := by
       have hn : (n : D.points K) ∈ D.bruhatCell K (D.weylProjection K n) := by
         rw [D.bruhatCell_weylProjection]
-        exact DoubleCoset.mem_doubleCoset.mpr ⟨1, one_mem _, 1, one_mem _, by rw [one_mul, mul_one]⟩
+        exact DoubleCoset.mem_doubleCoset_self _ _ _
       rwa [hw1, D.bruhatCell_one] at hn
     refine ⟨1, one_mem _, (n : D.points K)⁻¹ * u₁ * (n : D.points K),
       mul_mem (mul_mem (inv_mem hnB) (D.positivePoints_le_borelSubgroup K hu₁)) hnB, ?_⟩

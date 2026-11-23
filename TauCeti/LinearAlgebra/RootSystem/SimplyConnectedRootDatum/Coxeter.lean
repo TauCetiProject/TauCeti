@@ -23,7 +23,8 @@ Tits' theorem (`TauCeti.weylCoxeterSystem`) makes the Weyl group of a finite red
 crystallographic root pairing into a Coxeter system indexed by the support of a base. Transporting
 `TauCeti.weylCoxeterSystem` along `t.simpleSupportEquivSimplyConnectedBase ht` gives a canonical
 `CoxeterSystem t.coxeterMatrix (t.simplyConnectedRootDatum ht).weylGroup` whose `i`-th simple
-reflection is `ofIdx (t.simpleIndex ht i)` and whose word product is `t.geckWeylWordProd ht`.
+reflection is `ofIdx (t.simpleIndex ht i)` and whose word product is
+`t.simplyConnectedWeylWordProd ht`.
 
 ## Main definitions
 
@@ -39,7 +40,7 @@ reflection is `ofIdx (t.simpleIndex ht i)` and whose word product is `t.geckWeyl
 * `TauCeti.DynkinType.simplyConnectedWeylCoxeterSystem_simple`: the `i`-th simple reflection
   is `RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)`.
 * `TauCeti.DynkinType.simplyConnectedWeylCoxeterSystem_wordProd`: the Coxeter word product
-  agrees with `t.geckWeylWordProd ht`.
+  agrees with `t.simplyConnectedWeylWordProd ht`.
 * `TauCeti.DynkinType.length_simplyConnectedWeylCoxeterSystem_eq` and
   `TauCeti.DynkinType.isReduced_simplyConnectedWeylCoxeterSystem_iff`: the Coxeter length is
   the inversion count with respect to `t.simplyConnectedBase ht`.
@@ -106,14 +107,24 @@ theorem simplyConnectedWeylCoxeterSystem_simple (i : Fin t.rank) :
   simp [simplyConnectedWeylCoxeterSystem]
 
 /-- Evaluating a word in `Fin t.rank` through `t.simplyConnectedWeylCoxeterSystem ht` gives
-`t.geckWeylWordProd ht`. -/
+`t.simplyConnectedWeylWordProd ht`. -/
 @[simp]
 theorem simplyConnectedWeylCoxeterSystem_wordProd (l : List (Fin t.rank)) :
-    (t.simplyConnectedWeylCoxeterSystem ht).wordProd l = t.geckWeylWordProd ht l := by
-  induction l with
-  | nil => simp
-  | cons i l ih => rw [CoxeterSystem.wordProd_cons, simplyConnectedWeylCoxeterSystem_simple,
-      ih, geckWeylWordProd_cons]
+    (t.simplyConnectedWeylCoxeterSystem ht).wordProd l = t.simplyConnectedWeylWordProd ht l := by
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  have hmap :
+      l.map
+          ((weylCoxeterSystem (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).reindex
+            (t.simpleSupportEquivSimplyConnectedBase ht).symm).simple =
+        (l.map (t.simpleSupportEquivSimplyConnectedBase ht)).map
+          (weylCoxeterSystem (t.simplyConnectedRootDatum ht)
+            (t.simplyConnectedBase ht)).simple := by
+    simp [Function.comp_def]
+  rw [simplyConnectedWeylCoxeterSystem, CoxeterSystem.wordProd_castMatrix,
+    CoxeterSystem.wordProd, hmap]
+  simpa only [CoxeterSystem.wordProd, simplyConnectedWeylWordProd] using
+    weylCoxeterSystem_wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+      (l.map (t.simpleSupportEquivSimplyConnectedBase ht))
 
 /-- The Coxeter length in `t.simplyConnectedWeylCoxeterSystem ht` is the number of positive
 roots of `t.simplyConnectedBase ht` inverted by `w`. -/
@@ -129,11 +140,11 @@ theorem length_simplyConnectedWeylCoxeterSystem_eq
     CoxeterSystem.length_reindex, length_weylCoxeterSystem_eq]
 
 /-- A node word is reduced for `t.simplyConnectedWeylCoxeterSystem ht` if and only if the
-element `t.geckWeylWordProd ht l` it spells has `l.length` inversions. -/
+element `t.simplyConnectedWeylWordProd ht l` it spells has `l.length` inversions. -/
 theorem isReduced_simplyConnectedWeylCoxeterSystem_iff (l : List (Fin t.rank)) :
     (t.simplyConnectedWeylCoxeterSystem ht).IsReduced l ↔
       (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-        (t.geckWeylWordProd ht l)).ncard = l.length := by
+        (t.simplyConnectedWeylWordProd ht l)).ncard = l.length := by
   rw [CoxeterSystem.IsReduced, simplyConnectedWeylCoxeterSystem_wordProd,
     length_simplyConnectedWeylCoxeterSystem_eq]
 

@@ -16,10 +16,11 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Positive
 For a Chevalley datum `D` over any nontrivial commutative ring `A`, combining the Weyl-word
 factorization (`ChevalleyDatum.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints`), the
 big-cell Weyl-word separation criterion
-(`ChevalleyDatum.geckWeylWordProd_eq_one_of_mem_borelSubgroup`), and the Coxeter quotient lift
-(`ChevalleyDatum.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`) shows that a word in
-the pinned simple Weyl representatives lies in `D.borelSubgroup A` if and only if it spells `1` in
-the Weyl group (`ChevalleyDatum.weylWord_mem_borelSubgroup_iff`).
+(`ChevalleyDatum.simplyConnectedWeylWordProd_eq_one_of_mem_borelSubgroup`), and the Coxeter
+quotient lift
+(`ChevalleyDatum.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one`) shows that a
+word in the pinned simple Weyl representatives lies in `D.borelSubgroup A` if and only if it spells
+`1` in the Weyl group (`ChevalleyDatum.weylWord_mem_borelSubgroup_iff`).
 
 Consequently `D.weylSubgroup A ⊓ D.borelSubgroup A = (D.torusPoints A).range`
 (`ChevalleyDatum.weylSubgroup_inf_borelSubgroup`) and `D.borelSubgroup A ⊓ D.weylSubgroup A =
@@ -54,10 +55,10 @@ nontrivial commutative ring `A`, a product of pinned simple Weyl representatives
 `D.borelSubgroup A` precisely when its image in the Weyl group is the identity. -/
 theorem weylWord_mem_borelSubgroup_iff [Nontrivial A] (l : List (Fin t.rank)) :
     (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.borelSubgroup A ↔
-      t.geckWeylWordProd ht l = 1 :=
-  ⟨D.geckWeylWordProd_eq_one_of_mem_borelSubgroup A l, fun hl =>
+      t.simplyConnectedWeylWordProd ht l = 1 :=
+  ⟨D.simplyConnectedWeylWordProd_eq_one_of_mem_borelSubgroup A l, fun hl =>
     D.range_torusPoints_le_borelSubgroup A
-      (D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A hl)⟩
+      (D.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one A hl)⟩
 
 /-- **The Weyl subgroup meets the Borel subgroup in the actual torus**, over every commutative
 ring `A` (including nonreduced rings, finite fields, bad characteristic, and the zero ring). -/
@@ -75,9 +76,10 @@ theorem weylSubgroup_inf_borelSubgroup :
       have hsB : (D.torusPoints A s)⁻¹ ∈ D.borelSubgroup A :=
         (D.borelSubgroup A).inv_mem (D.range_torusPoints_le_borelSubgroup A ⟨s, rfl⟩)
       simpa only [mul_assoc, mul_inv_cancel, mul_one] using (D.borelSubgroup A).mul_mem hgB hsB
-    have hl : t.geckWeylWordProd ht l = 1 := (D.weylWord_mem_borelSubgroup_iff A l).mp hwordB
+    have hl : t.simplyConnectedWeylWordProd ht l = 1 :=
+      (D.weylWord_mem_borelSubgroup_iff A l).mp hwordB
     exact (D.torusPoints A).range.mul_mem
-      (D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A hl) ⟨s, rfl⟩
+      (D.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one A hl) ⟨s, rfl⟩
   · have : Subsingleton A := not_nontrivial_iff_subsingleton.mp hA
     refine ⟨1, ?_⟩
     apply Subtype.ext

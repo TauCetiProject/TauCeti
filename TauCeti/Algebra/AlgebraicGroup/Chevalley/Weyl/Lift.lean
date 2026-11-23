@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Word
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Coxeter
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coxeter
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
 # The Coxeter lift to the Weyl-subgroup quotient of a Chevalley datum
@@ -28,7 +27,7 @@ Consequently, the assignment `sᵢ ↦ [nᵢ(1)]` extends via Tits' Coxeter pres
 `ChevalleyDatum.weylQuotientLift A : W →* D.weylSubgroup A ⧸ T_D(A)`, sending each reflection
 `s_γ` to the coset `[n_γ(1)]` (and `[n_γ(s)]` for every unit `s : Aˣ`), and any word in the
 pinned simple Weyl representatives spelling `1` in `W` lies in `T_D(A)`
-(`ChevalleyDatum.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`).
+(`ChevalleyDatum.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one`).
 
 ## Main definitions
 
@@ -38,14 +37,17 @@ pinned simple Weyl representatives spelling `1` in `W` lies in `T_D(A)`
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.mk_weylElement_eq_mk_one`: `[n_γ(s)] = [n_γ(1)]` in
-  `D.weylSubgroup A ⧸ T_D(A)` for every root `γ` and unit `s`.
-* `TauCeti.DynkinType.ChevalleyDatum.weylQuotientLift_ofIdx` and
-  `TauCeti.DynkinType.ChevalleyDatum.weylQuotientLift_geckWeylWordProd`: values on root
-  reflections and Bourbaki-numbered Weyl words.
+* `TauCeti.DynkinType.ChevalleyDatum.mk_eq_one_iff_mem_range_torusPoints`: characterization of
+  trivial cosets in `D.weylSubgroup A ⧸ T_D(A)`.
+* `TauCeti.DynkinType.ChevalleyDatum.mk_weylElement_eq_mk_weylElement_one`: `[n_γ(s)] = [n_γ(1)]`
+  in `D.weylSubgroup A ⧸ T_D(A)` for every root `γ` and unit `s`.
+* `TauCeti.DynkinType.ChevalleyDatum.weylQuotientLift_ofIdx_simpleIndex`,
+  `TauCeti.DynkinType.ChevalleyDatum.weylQuotientLift_ofIdx`, and
+  `TauCeti.DynkinType.ChevalleyDatum.weylQuotientLift_simplyConnectedWeylWordProd`: values on
+  simple reflections, root reflections, and Bourbaki-numbered Weyl words.
 * `TauCeti.DynkinType.ChevalleyDatum.weylQuotientLift_surjective`: surjectivity of
   `weylQuotientLift` over any commutative ring `A`.
-* `TauCeti.DynkinType.ChevalleyDatum.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`:
+* `ChevalleyDatum.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one`:
   words spelling `1` in `W` evaluate into `(D.torusPoints A).range`.
 
 ## References
@@ -62,27 +64,33 @@ universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
+/-- A coset in `D.weylSubgroup A ⧸ T_D(A)` is trivial if and only if its representative lies in
+the actual torus `(D.torusPoints A).range`. -/
+theorem mk_eq_one_iff_mem_range_torusPoints (A : Type v) [CommRing A] (n : D.weylSubgroup A) :
+    (QuotientGroup.mk n :
+        D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 ↔
+      (n : D.points A) ∈ (D.torusPoints A).range := by
+  rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
+
 private theorem isLiftable_weylQuotient (A : Type v) [CommRing A] :
     t.coxeterMatrix.IsLiftable (fun i : Fin t.rank =>
-      (QuotientGroup.mk
-        ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ :
+      (QuotientGroup.mk (D.simpleWeylLift A i) :
         D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)))) := by
-  let n_sub (k : Fin t.rank) : D.weylSubgroup A :=
-    ⟨D.weylElement (t.simpleIndex ht k) A 1, D.weylElement_mem_weylSubgroup A k⟩
   let q := QuotientGroup.mk' (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))
   have hcoe (l : List (Fin t.rank)) :
-      ((l.map n_sub).prod : D.points A) =
+      ((l.map (D.simpleWeylLift A)).prod : D.points A) =
         (l.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod := by
-    simpa only [Subgroup.coe_subtype, List.map_map, Function.comp_def] using
-      (D.weylSubgroup A).subtype.map_list_prod (l.map n_sub)
-  apply t.coxeterMatrix.isLiftable_of_mul_self_of_braidWord (f := fun i => q (n_sub i))
+    simpa only [Subgroup.coe_subtype, List.map_map, Function.comp_def, D.coe_simpleWeylLift] using
+      (D.weylSubgroup A).subtype.map_list_prod (l.map (D.simpleWeylLift A))
+  apply t.coxeterMatrix.isLiftable_of_mul_self_of_braidWord (f := fun i => q (D.simpleWeylLift A i))
   · intro i
-    rw [← map_mul, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf,
-      Subgroup.coe_mul, D.weylElement_mul_self i A, D.simpleCorootPoints_eq_torusPoints]
+    rw [← map_mul, QuotientGroup.mk'_apply, D.mk_eq_one_iff_mem_range_torusPoints,
+      Subgroup.coe_mul, D.coe_simpleWeylLift, D.weylElement_mul_self i A,
+      D.simpleCorootPoints_eq_torusPoints]
     exact ⟨_, rfl⟩
   · intro i j
-    have hsub : ((CoxeterSystem.braidWord t.coxeterMatrix i j).map n_sub).prod =
-        ((CoxeterSystem.braidWord t.coxeterMatrix j i).map n_sub).prod :=
+    have hsub : ((CoxeterSystem.braidWord t.coxeterMatrix i j).map (D.simpleWeylLift A)).prod =
+        ((CoxeterSystem.braidWord t.coxeterMatrix j i).map (D.simpleWeylLift A)).prod :=
       Subtype.ext <| (hcoe _).trans <|
         (D.weylWord_braidWord_eq i j A).trans (hcoe _).symm
     simpa only [map_list_prod, List.map_map, Function.comp_def] using congrArg q hsub
@@ -102,21 +110,19 @@ def weylQuotientLift (A : Type v) [CommRing A] :
 theorem mk_torusPoints_eq_one (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :
         D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
-  (QuotientGroup.eq_one_iff _).mpr ⟨s, rfl⟩
+  (D.mk_eq_one_iff_mem_range_torusPoints A _).mpr ⟨s, rfl⟩
 
 /-- Modulo the actual torus, every coroot point `h_γ(s)` has trivial coset. -/
 @[simp]
 theorem mk_corootPoints_eq_one (A : Type v) [CommRing A] (γ : Fin t.numRoots) (s : Aˣ) :
     (QuotientGroup.mk ⟨D.corootPoints γ A s, D.corootPoints_mem_weylSubgroup A γ s⟩ :
-        D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 := by
-  have h : (⟨D.corootPoints γ A s, D.corootPoints_mem_weylSubgroup A γ s⟩ : D.weylSubgroup A) =
-      ⟨D.torusPoints A _, D.torusPoints_mem_weylSubgroup A _⟩ :=
-    Subtype.ext (D.corootPoints_apply γ A s)
-  rw [h, D.mk_torusPoints_eq_one]
+        D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
+  (D.mk_eq_one_iff_mem_range_torusPoints A _).mpr ⟨_, (D.corootPoints_apply γ A s).symm⟩
 
 /-- Modulo the actual torus, every Steinberg Weyl representative `n_γ(s)` lies in the same coset
 as `n_γ(1)`. -/
-theorem mk_weylElement_eq_mk_one (A : Type v) [CommRing A] (γ : Fin t.numRoots) (s : Aˣ) :
+theorem mk_weylElement_eq_mk_weylElement_one (A : Type v) [CommRing A] (γ : Fin t.numRoots)
+    (s : Aˣ) :
     (QuotientGroup.mk ⟨D.weylElement γ A s, D.weylElement_root_mem_weylSubgroup A γ s⟩ :
         D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) =
       QuotientGroup.mk
@@ -128,31 +134,38 @@ theorem mk_weylElement_eq_mk_one (A : Type v) [CommRing A] (γ : Fin t.numRoots)
     Subtype.ext (D.weylElement_eq_corootPoints_mul γ A s)
   rw [hfac, QuotientGroup.mk_mul, D.mk_corootPoints_eq_one, one_mul]
 
-/-- Modulo the actual torus, conjugating the coset of `n_γ(1)` by the coset of a pinned simple
+/-- Modulo the actual torus, conjugating the coset of `n_γ(s)` by the coset of a pinned simple
 Weyl representative `n_i(1)` produces the coset of `n_{s_i γ}(1)`. -/
 theorem mk_weylElement_simpleIndex_conj (A : Type v) [CommRing A]
-    (i : Fin t.rank) (γ : Fin t.numRoots) :
-    (QuotientGroup.mk ⟨D.weylElement (t.simpleIndex ht i) A 1,
-        D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩ :
+    (i : Fin t.rank) (γ : Fin t.numRoots) (s : Aˣ) :
+    (QuotientGroup.mk (D.simpleWeylLift A i) :
         D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) *
-      QuotientGroup.mk ⟨D.weylElement γ A 1, D.weylElement_root_mem_weylSubgroup A γ 1⟩ *
-      (QuotientGroup.mk ⟨D.weylElement (t.simpleIndex ht i) A 1,
-        D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩)⁻¹ =
+      QuotientGroup.mk ⟨D.weylElement γ A s, D.weylElement_root_mem_weylSubgroup A γ s⟩ *
+      (QuotientGroup.mk (D.simpleWeylLift A i))⁻¹ =
       QuotientGroup.mk
         ⟨D.weylElement ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A 1,
           D.weylElement_root_mem_weylSubgroup A _ 1⟩ := by
   rw [← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul]
   have hweyl :
-      (⟨D.weylElement (t.simpleIndex ht i) A 1,
-          D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩ *
-        ⟨D.weylElement γ A 1, D.weylElement_root_mem_weylSubgroup A γ 1⟩ *
-        (⟨D.weylElement (t.simpleIndex ht i) A 1,
-          D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩)⁻¹ :
-          D.weylSubgroup A) =
-        ⟨D.corootPoints _ A _, D.corootPoints_mem_weylSubgroup A _ _⟩ *
-          ⟨D.weylElement _ A 1, D.weylElement_root_mem_weylSubgroup A _ 1⟩ :=
-    Subtype.ext (D.weylElement_simpleIndex_conj_weylElement i γ A)
-  rw [hweyl, QuotientGroup.mk_mul, D.mk_corootPoints_eq_one, one_mul]
+      D.simpleWeylLift A i *
+        ⟨D.weylElement γ A s, D.weylElement_root_mem_weylSubgroup A γ s⟩ *
+        (D.simpleWeylLift A i)⁻¹ =
+        ⟨D.weylElement ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A _,
+          D.weylElement_root_mem_weylSubgroup A _ _⟩ :=
+    Subtype.ext (by
+      simpa only [Subgroup.coe_mul, Subgroup.coe_inv, D.coe_simpleWeylLift] using
+        D.weylElement_simpleIndex_conj_weylElement i γ A s)
+  rw [hweyl, D.mk_weylElement_eq_mk_weylElement_one]
+
+/-- `weylQuotientLift` sends each simple reflection `s_i` to the coset of `D.simpleWeylLift A i`.
+-/
+@[simp high]
+theorem weylQuotientLift_ofIdx_simpleIndex (A : Type v) [CommRing A] (i : Fin t.rank) :
+    D.weylQuotientLift A
+        (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
+      QuotientGroup.mk (D.simpleWeylLift A i) := by
+  rw [weylQuotientLift, ← t.simplyConnectedWeylCoxeterSystem_simple ht i,
+    CoxeterSystem.lift_apply_simple]
 
 /-- `weylQuotientLift` sends each root reflection `s_γ` to the coset of the Steinberg Weyl
 representative `n_γ(1)`. -/
@@ -162,18 +175,11 @@ theorem weylQuotientLift_ofIdx (A : Type v) [CommRing A] (γ : Fin t.numRoots) :
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ) =
       QuotientGroup.mk
         ⟨D.weylElement γ A 1, D.weylElement_root_mem_weylSubgroup A γ 1⟩ := by
-  have hsimple (i : Fin t.rank) :
-      D.weylQuotientLift A
-          (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
-        QuotientGroup.mk
-          ⟨D.weylElement (t.simpleIndex ht i) A 1,
-            D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩ := by
-    rw [weylQuotientLift, ← t.simplyConnectedWeylCoxeterSystem_simple ht i,
-      CoxeterSystem.lift_apply_simple]
   induction γ using (t.rationalBase ht).induction_simple_reflect with
   | h₁ γ hγ =>
     obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hγ
-    exact hsimple i
+    rw [D.weylQuotientLift_ofIdx_simpleIndex A i]
+    exact congrArg QuotientGroup.mk (Subtype.ext (D.coe_simpleWeylLift A i))
   | h₂ γ j ih hj =>
     obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
     rw [t.reflectionPerm_rationalRootSystem ht]
@@ -187,23 +193,30 @@ theorem weylQuotientLift_ofIdx (A : Type v) [CommRing A] (γ : Fin t.numRoots) :
       simpa only [RootPairing.weylGroupToPerm_ofIdx_apply] using
         RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj (t.simplyConnectedRootDatum ht)
           (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) γ
-    rw [hconj_w, map_mul, map_mul, map_inv, hsimple i, ih, D.mk_weylElement_simpleIndex_conj]
+    rw [hconj_w, map_mul, map_mul, map_inv, D.weylQuotientLift_ofIdx_simpleIndex A i, ih,
+      D.mk_weylElement_simpleIndex_conj]
 
 /-- `weylQuotientLift` sends the Weyl element spelled by a node word `l` to the coset of the
 corresponding product of pinned simple Weyl representatives. -/
 @[simp]
-theorem weylQuotientLift_geckWeylWordProd (A : Type v) [CommRing A] (l : List (Fin t.rank)) :
-    D.weylQuotientLift A (t.geckWeylWordProd ht l) =
+theorem weylQuotientLift_simplyConnectedWeylWordProd (A : Type v) [CommRing A]
+    (l : List (Fin t.rank)) :
+    D.weylQuotientLift A (t.simplyConnectedWeylWordProd ht l) =
       QuotientGroup.mk ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
         D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ := by
-  induction l with
-  | nil =>
-    rw [geckWeylWordProd_nil, map_one, eq_comm, QuotientGroup.eq_one_iff]
-    exact Subgroup.one_mem _
-  | cons i l ih =>
-    rw [geckWeylWordProd_cons, map_mul, D.weylQuotientLift_ofIdx A (t.simpleIndex ht i), ih,
-      ← QuotientGroup.mk_mul]
-    exact congrArg QuotientGroup.mk (Subtype.ext (by simp [List.map_cons, List.prod_cons]))
+  let q := QuotientGroup.mk' (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))
+  have hqprod : (l.map fun i => q (D.simpleWeylLift A i)).prod =
+      q (l.map (D.simpleWeylLift A)).prod := by
+    rw [map_list_prod, List.map_map]
+    rfl
+  rw [← t.simplyConnectedWeylCoxeterSystem_wordProd ht l, CoxeterSystem.wordProd, map_list_prod,
+    List.map_map]
+  simp only [Function.comp_def, t.simplyConnectedWeylCoxeterSystem_simple ht,
+    D.weylQuotientLift_ofIdx_simpleIndex A, ← QuotientGroup.mk'_apply]
+  change (l.map fun i => q (D.simpleWeylLift A i)).prod = _
+  rw [hqprod, QuotientGroup.mk'_apply]
+  exact congrArg QuotientGroup.mk <| Subtype.ext <| by
+    simp only [Subgroup.val_list_prod, List.map_map, Function.comp_def, D.coe_simpleWeylLift]
 
 /-- `weylQuotientLift` is surjective over every commutative ring `A`. -/
 theorem weylQuotientLift_surjective (A : Type v) [CommRing A] :
@@ -211,22 +224,23 @@ theorem weylQuotientLift_surjective (A : Type v) [CommRing A] :
   intro x
   obtain ⟨⟨g, hg⟩, rfl⟩ := QuotientGroup.mk_surjective x
   obtain ⟨l, s, rfl⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints A).mp hg
-  refine ⟨t.geckWeylWordProd ht l, ?_⟩
+  refine ⟨t.simplyConnectedWeylWordProd ht l, ?_⟩
   have hfac : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.torusPoints A s,
       hg⟩ : D.weylSubgroup A) =
       ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
         D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ *
         ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ := Subtype.ext (by simp)
-  rw [D.weylQuotientLift_geckWeylWordProd A l, hfac, QuotientGroup.mk_mul,
+  rw [D.weylQuotientLift_simplyConnectedWeylWordProd A l, hfac, QuotientGroup.mk_mul,
     D.mk_torusPoints_eq_one, mul_one]
 
 /-- Over every commutative ring `A`, any word in the pinned simple Weyl representatives that
 spells `1` in the Weyl group lies in the actual torus `(D.torusPoints A).range`. -/
-theorem weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one
-    (A : Type v) [CommRing A] {l : List (Fin t.rank)} (hl : t.geckWeylWordProd ht l = 1) :
+theorem weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one
+    (A : Type v) [CommRing A] {l : List (Fin t.rank)}
+    (hl : t.simplyConnectedWeylWordProd ht l = 1) :
     (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ (D.torusPoints A).range := by
-  have hq := D.weylQuotientLift_geckWeylWordProd A l
-  rw [hl, map_one, eq_comm, QuotientGroup.eq_one_iff] at hq
+  have hq := D.weylQuotientLift_simplyConnectedWeylWordProd A l
+  rw [hl, map_one, eq_comm, D.mk_eq_one_iff_mem_range_torusPoints] at hq
   exact hq
 
 end TauCeti.DynkinType.ChevalleyDatum

@@ -462,14 +462,14 @@ simple reflections. -/
 theorem weylProjection_surjective (k : Type v) [Field k] :
     Function.Surjective (D.weylProjection k) := by
   have hword (l : List (Fin t.rank)) :
-      ∃ g : D.weylSubgroup k, D.weylProjection k g = t.geckWeylWordProd ht l := by
+      ∃ g : D.weylSubgroup k, D.weylProjection k g = t.simplyConnectedWeylWordProd ht l := by
     induction l with
     | nil => exact ⟨1, by simp⟩
     | cons i l ih =>
       obtain ⟨g, hg⟩ := ih
       exact ⟨D.simpleWeylLift k i * g, by simp [hg]⟩
   intro w
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
   exact hword l
 
 /-- The kernel consists of those points that commute with all represented full-weight torus

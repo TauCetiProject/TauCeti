@@ -29,10 +29,11 @@ type `G₂`) over every nontrivial commutative ring `A`, and identifies the kern
    surjective (`ChevalleyDatum.weylQuotientLift_surjective`).
 2. Over any nontrivial commutative ring `A` (`Nontrivial A` being necessary since every valid
    Dynkin type has positive rank and hence a nontrivial Weyl group),
-   `ChevalleyDatum.geckWeylWordProd_eq_one_of_mem_borelSubgroup` forces `weylQuotientLift` to be
-   injective (`ChevalleyDatum.weylQuotientLift_injective`), yielding the canonical isomorphism
-   `weylQuotientEquiv : N(A) ⧸ T(A) ≃* W` sending `[n_γ(s)]` to `s_γ` for every root `γ` and
-   unit `s : Aˣ` (`ChevalleyDatum.weylQuotientEquiv_mk_weylElement`).
+   `ChevalleyDatum.simplyConnectedWeylWordProd_eq_one_of_mem_borelSubgroup` forces
+   `weylQuotientLift` to be injective (`ChevalleyDatum.weylQuotientLift_injective`), yielding the
+   canonical isomorphism `weylQuotientEquiv : N(A) ⧸ T(A) ≃* W` sending `[n_γ(s)]` to `s_γ` for
+   every root `γ` and unit `s : Aˣ` (`ChevalleyDatum.weylQuotientEquiv_mk_weylElement`), compatible
+   with scalar extension (`ChevalleyDatum.weylQuotientEquiv_mk_weylSubgroupMap`).
 3. Over any field `k` (including finite fields and bad characteristic), `weylQuotientEquiv`
    agrees on cosets with `D.weylProjection k`
    (`ChevalleyDatum.weylQuotientEquiv_mk_eq_weylProjection`), sending every `n_γ(s)` to `s_γ`
@@ -51,9 +52,14 @@ in `D.points A` or Bruhat decomposition of `D.points A` is asserted here.
 
 * `TauCeti.DynkinType.ChevalleyDatum.weylQuotientLift_injective`: injectivity of `weylQuotientLift`
   over any nontrivial commutative ring `A`.
-* `TauCeti.DynkinType.ChevalleyDatum.weylQuotientEquiv_mk_weylElement`: `weylQuotientEquiv` sends
-  the coset of every Steinberg Weyl representative `n_γ(s)` to `s_γ`.
+* `TauCeti.DynkinType.ChevalleyDatum.weylQuotientEquiv_mk_weylSubgroupMap`: compatibility of
+  `weylQuotientEquiv` with scalar extension along ring homomorphisms.
+* `TauCeti.DynkinType.ChevalleyDatum.weylQuotientEquiv_mk_simpleWeylLift`,
+  `TauCeti.DynkinType.ChevalleyDatum.weylQuotientEquiv_mk_weylElement`, and
+  `TauCeti.DynkinType.ChevalleyDatum.weylQuotientEquiv_mk_weylWord`: values of `weylQuotientEquiv`
+  on simple lifts, all Steinberg Weyl representatives `n_γ(s)`, and Weyl words.
 * `TauCeti.DynkinType.ChevalleyDatum.weylQuotientEquiv_mk_eq_weylProjection`,
+  `TauCeti.DynkinType.ChevalleyDatum.weylProjection_weylWord`,
   `TauCeti.DynkinType.ChevalleyDatum.weylProjection_weylElement_root`,
   `TauCeti.DynkinType.ChevalleyDatum.weylProjection_eq_one_iff_mem_range_torusPoints`, and
   `TauCeti.DynkinType.ChevalleyDatum.ker_weylProjection`: over any field `k`, the quotient map
@@ -78,12 +84,12 @@ variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 /-- Over any nontrivial commutative ring `A`, `weylQuotientLift` is injective. -/
 theorem weylQuotientLift_injective (A : Type v) [CommRing A] [Nontrivial A] :
     Function.Injective (D.weylQuotientLift A) := by
-  rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
+  apply (injective_iff_map_eq_one (D.weylQuotientLift A)).mpr
   intro w hw
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
-  rw [MonoidHom.mem_ker, D.weylQuotientLift_geckWeylWordProd A l,
-    QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hw
-  exact D.geckWeylWordProd_eq_one_of_mem_borelSubgroup A l
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
+  rw [D.weylQuotientLift_simplyConnectedWeylWordProd A l,
+    D.mk_eq_one_iff_mem_range_torusPoints] at hw
+  exact D.simplyConnectedWeylWordProd_eq_one_of_mem_borelSubgroup A l
     (D.range_torusPoints_le_borelSubgroup A hw)
 
 /-- **The Weyl quotient isomorphism** `N(A) ⧸ T(A) ≃* W`. Over every nontrivial commutative
@@ -110,15 +116,26 @@ theorem weylQuotientEquiv_symm_apply (A : Type v) [CommRing A] [Nontrivial A]
 @[simp]
 theorem weylQuotientEquiv_weylQuotientLift (A : Type v) [CommRing A] [Nontrivial A]
     (w : (t.simplyConnectedRootDatum ht).weylGroup) :
-    D.weylQuotientEquiv A (D.weylQuotientLift A w) = w :=
-  (D.weylQuotientEquiv A).apply_symm_apply w
+    D.weylQuotientEquiv A (D.weylQuotientLift A w) = w := by
+  rw [← D.weylQuotientEquiv_symm_apply]
+  exact (D.weylQuotientEquiv A).apply_symm_apply w
 
 /-- `weylQuotientLift` is a left inverse to `weylQuotientEquiv`. -/
 @[simp]
 theorem weylQuotientLift_weylQuotientEquiv (A : Type v) [CommRing A] [Nontrivial A]
     (x : D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) :
-    D.weylQuotientLift A (D.weylQuotientEquiv A x) = x :=
-  (D.weylQuotientEquiv A).symm_apply_apply x
+    D.weylQuotientLift A (D.weylQuotientEquiv A x) = x := by
+  rw [← D.weylQuotientEquiv_symm_apply]
+  exact (D.weylQuotientEquiv A).symm_apply_apply x
+
+/-- `weylQuotientEquiv` sends the coset of `D.simpleWeylLift A i` to the `i`-th simple reflection.
+-/
+@[simp]
+theorem weylQuotientEquiv_mk_simpleWeylLift (A : Type v) [CommRing A] [Nontrivial A]
+    (i : Fin t.rank) :
+    D.weylQuotientEquiv A (QuotientGroup.mk (D.simpleWeylLift A i)) =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
+  rw [← D.weylQuotientLift_ofIdx_simpleIndex A i, D.weylQuotientEquiv_weylQuotientLift]
 
 /-- `weylQuotientEquiv` sends the coset of every Steinberg Weyl representative `n_γ(s)` to the
 root reflection `s_γ`. -/
@@ -129,7 +146,7 @@ theorem weylQuotientEquiv_mk_weylElement (A : Type v) [CommRing A] [Nontrivial A
         (QuotientGroup.mk
           ⟨D.weylElement γ A s, D.weylElement_root_mem_weylSubgroup A γ s⟩) =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
-  rw [D.mk_weylElement_eq_mk_one A γ s, ← D.weylQuotientLift_ofIdx A γ,
+  rw [D.mk_weylElement_eq_mk_weylElement_one A γ s, ← D.weylQuotientLift_ofIdx A γ,
     D.weylQuotientEquiv_weylQuotientLift]
 
 /-- `weylQuotientEquiv` sends the coset of a word in the pinned simple Weyl representatives to
@@ -140,15 +157,42 @@ theorem weylQuotientEquiv_mk_weylWord (A : Type v) [CommRing A] [Nontrivial A]
     D.weylQuotientEquiv A
         (QuotientGroup.mk ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
           D.list_prod_map_weylElement_mem_weylSubgroup A l⟩) =
-      t.geckWeylWordProd ht l := by
-  rw [← D.weylQuotientLift_geckWeylWordProd A l, D.weylQuotientEquiv_weylQuotientLift]
+      t.simplyConnectedWeylWordProd ht l := by
+  rw [← D.weylQuotientLift_simplyConnectedWeylWordProd A l, D.weylQuotientEquiv_weylQuotientLift]
 
-/-- Cosets of points of the actual torus map to `1` under `weylQuotientEquiv`. -/
-theorem weylQuotientEquiv_mk_torusPoints (A : Type v) [CommRing A] [Nontrivial A]
-    (s : Fin t.rank → Aˣ) :
-    D.weylQuotientEquiv A
-        (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩) = 1 := by
-  rw [D.mk_torusPoints_eq_one, map_one]
+/-- Scalar extension along a ring homomorphism between nontrivial commutative rings commutes with
+`weylQuotientEquiv`. -/
+@[simp]
+theorem weylQuotientEquiv_mk_weylSubgroupMap (A : Type*) [CommRing A] [Nontrivial A]
+    {B : Type*} [CommRing B] [Nontrivial B] (f : A →+* B) (g : D.weylSubgroup A) :
+    D.weylQuotientEquiv B (QuotientGroup.mk (D.weylSubgroupMap A f g)) =
+      D.weylQuotientEquiv A (QuotientGroup.mk g) := by
+  have hgen : Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
+      (Set.range (D.torusPoints A) ∪
+        Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1))) = ⊤ := by
+    rw [D.weylSubgroup_def]
+    exact Subgroup.closure_preimage_eq_top _
+  refine DFunLike.congr_fun (MonoidHom.eq_of_eqOn_dense hgen ?_ :
+    (((D.weylQuotientEquiv B).toMonoidHom.comp
+      (QuotientGroup.mk' (((D.torusPoints B).range).subgroupOf (D.weylSubgroup B)))).comp
+        (D.weylSubgroupMap A f)) =
+      (D.weylQuotientEquiv A).toMonoidHom.comp
+        (QuotientGroup.mk' (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)))) g
+  rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+  · simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply,
+      D.weylSubgroupMap_torusPoints, D.mk_torusPoints_eq_one, map_one]
+  · have hB :
+        (⟨D.weylElement (t.simpleIndex ht i) B 1,
+          D.weylElement_mem_weylSubgroup B i⟩ : D.weylSubgroup B) =
+          D.simpleWeylLift B i :=
+      Subtype.ext (D.coe_simpleWeylLift B i).symm
+    have hA :
+        (⟨D.weylElement (t.simpleIndex ht i) A 1, hx⟩ : D.weylSubgroup A) =
+          D.simpleWeylLift A i :=
+      Subtype.ext (D.coe_simpleWeylLift A i).symm
+    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, QuotientGroup.mk'_apply]
+    rw [D.weylSubgroupMap_weylElement, hB, hA, D.weylQuotientEquiv_mk_simpleWeylLift,
+      D.weylQuotientEquiv_mk_simpleWeylLift]
 
 /-! ## Comparison with `weylProjection` over a field -/
 
@@ -175,6 +219,16 @@ theorem weylQuotientEquiv_mk_eq_weylProjection (k : Type v) [Field k] (g : D.wey
   have h := DFunLike.congr_fun (D.weylQuotientLift_comp_weylProjection k) g
   simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply] at h
   rw [← h, D.weylQuotientEquiv_weylQuotientLift]
+
+/-- Over any field `k`, `D.weylProjection k` sends a word in the pinned simple Weyl
+representatives to `t.simplyConnectedWeylWordProd ht l`. -/
+@[simp]
+theorem weylProjection_weylWord (k : Type v) [Field k] (l : List (Fin t.rank)) :
+    D.weylProjection k
+        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
+          D.list_prod_map_weylElement_mem_weylSubgroup k l⟩ =
+      t.simplyConnectedWeylWordProd ht l := by
+  rw [← D.weylQuotientEquiv_mk_eq_weylProjection, D.weylQuotientEquiv_mk_weylWord]
 
 /-- Over any field `k`, `D.weylProjection k` sends every Steinberg Weyl representative `n_γ(s)`
 to the root reflection `s_γ`. -/

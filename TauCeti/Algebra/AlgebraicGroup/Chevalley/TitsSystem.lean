@@ -33,10 +33,10 @@ to `w ∈ W`,
 * if `w⁻¹(αᵢ)` is negative, `(B nᵢ(1) B)(B n B) ⊆ B (nᵢ(1) n) B ∪ B n B`.
 
 Comparing the positive double-coset equality with the length-decreasing union formula in the Tits
-Weyl group proves without Coxeter braid presentations that `D.weylProjection K` descends to an
-isomorphism `D.titsWeylGroupMulEquiv K : (D.titsSystem K).WeylGroup ≃* W`. (See
-`Chevalley.Weyl.Quotient` for the direct Coxeter-presentation isomorphism
-`ChevalleyDatum.weylQuotientEquiv` and kernel `ChevalleyDatum.ker_weylProjection`.)
+Weyl group proves by rank-one double-coset multiplication that `D.weylProjection K` descends to
+an isomorphism `D.titsWeylGroupMulEquiv K : (D.titsSystem K).WeylGroup ≃* W`, while the Tits
+system construction itself uses the braid-dependent Borel intersection theorem
+(`ChevalleyDatum.mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup`).
 
 ## Main definitions and results
 
@@ -483,7 +483,7 @@ theorem titsSimpleReflection_mem_simple (i : Fin t.rank) :
     D.titsSimpleReflection K i ∈ (D.titsSystem K).simple :=
   ⟨i, rfl⟩
 
-/-! ### Identification of the Tits Weyl group and the kernel of `weylProjection` -/
+/-! ### Identification of the Tits Weyl group -/
 
 private noncomputable def titsWeylProjectionHom :
     (D.titsSystem K).WeylGroup →* (t.simplyConnectedRootDatum ht).weylGroup :=

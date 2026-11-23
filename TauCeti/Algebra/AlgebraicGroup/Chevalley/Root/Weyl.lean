@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Coroot
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Steinberg's rank-one relations at every root of a Chevalley datum
@@ -40,6 +41,8 @@ and the Killing coroot of `γ`.
   `h_γ(s) h_γ(s') = h_γ(s s')` for `h_γ(s) = n_γ(s) n_γ(1)⁻¹`.
 * `TauCeti.DynkinType.ChevalleyDatum.weylElement_conj_rootSubgroupPoints_self`:
   `n_γ(s) x_γ(u) n_γ(s)⁻¹ = x_{-γ}(-s⁻² u)`.
+* `TauCeti.DynkinType.ChevalleyDatum.weylElement_simpleIndex_conj_weylElement`:
+  `n_i(1) n_γ(s) n_i(1)⁻¹ = n_{s_i γ}(ε s)`.
 
 ## References
 
@@ -131,6 +134,45 @@ theorem weylElement_conj_rootSubgroupPoints_self (s : Aˣ) (u : A) :
   apply Subtype.ext
   simpa only [map_mul, map_inv, Subgroup.coe_mul, Subgroup.coe_inv, weylElement_def,
     coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe] using h
+
+/-- Conjugating any Steinberg Weyl representative `n_γ(s)` by a pinned simple Weyl representative
+`n_i(1)` produces `n_{s_i γ}(ε * s)` where `ε = t.chevalleyWeylSign ht (t.simpleIndex ht i) γ`. -/
+theorem weylElement_simpleIndex_conj_weylElement (i : Fin t.rank) (γ : Fin t.numRoots)
+    (A : Type v) [CommRing A] (s : Aˣ) :
+    D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement γ A s *
+        (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ =
+      D.weylElement ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A
+        (Units.map (Int.castRingHom A).toMonoidHom
+          (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) * s) := by
+  let n := D.weylElement (t.simpleIndex ht i) A 1
+  let γ' := (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ
+  let ε := t.chevalleyWeylSign ht (t.simpleIndex ht i) γ
+  let sε : Aˣ := Units.map (Int.castRingHom A).toMonoidHom ε
+  have hsε_inv : sε⁻¹ = sε := by
+    rcases Int.units_eq_one_or ε with hε | hε <;> simp [sε, hε]
+  have hneg :
+      (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
+          ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) =
+        (t.simplyConnectedRootDatum ht).reflectionPerm γ' γ' :=
+    (t.simplyConnectedRootDatum ht).reflectionPerm_reflectionPerm_self_right
+      (t.simpleIndex ht i) γ
+  have hconj :
+      n * D.weylElement γ A s * n⁻¹ =
+        (n * D.rootSubgroupPoints γ A (ofAdd (s : A)) * n⁻¹) *
+          (n * D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) A
+            (ofAdd (-((s⁻¹ : Aˣ) : A))) * n⁻¹) *
+          (n * D.rootSubgroupPoints γ A (ofAdd (s : A)) * n⁻¹) := by
+    rw [D.weylElement_def]
+    group
+  rw [hconj, D.weylElement_conj_rootSubgroupPoints i γ A (s : A),
+    D.weylElement_conj_rootSubgroupPoints i _ A (-((s⁻¹ : Aˣ) : A)),
+    t.chevalleyWeylSign_reflectionPerm_self ht, hneg, D.weylElement_def]
+  have h1 : (((ε : ℤ) : A) * (s : A)) = ((sε * s : Aˣ) : A) := by
+    simp [sε]
+  have h2 : (((ε : ℤ) : A) * -((s⁻¹ : Aˣ) : A)) = -(((sε * s)⁻¹ : Aˣ) : A) := by
+    rw [mul_inv_rev, hsε_inv, mul_neg]
+    simp [sε, mul_comm]
+  rw [h1, h2]
 
 end
 

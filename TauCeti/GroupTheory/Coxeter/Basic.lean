@@ -140,9 +140,8 @@ theorem isLiftable_of_mul_self_of_braidWord [Monoid G] (M : CoxeterMatrix B) {f 
   let u (i : B) : Gˣ := ⟨f i, f i, hsq i, hsq i⟩
   have hu_sq (i : B) : u i * u i = 1 := Units.ext (hsq i)
   have hcoe (ω : List B) : (((ω.map u).prod : Gˣ) : G) = (ω.map f).prod := by
-    induction ω with
-    | nil => rfl
-    | cons k ω ih => simp [u, ih]
+    simpa [u, Function.comp_def, Units.coeHom_apply] using
+      (List.prod_map_hom ω u (Units.coeHom G)).symm
   intro i i'
   have hb : ((CoxeterSystem.alternatingWord i i' (M i i')).map u).prod =
       ((CoxeterSystem.alternatingWord i' i (M i i')).map u).prod := by
@@ -163,11 +162,8 @@ theorem isLiftable_iff_mul_self_and_braidWord [Monoid G] (M : CoxeterMatrix B) {
     fun ⟨hsq, hbraid⟩ => M.isLiftable_of_mul_self_of_braidWord hsq hbraid⟩
   let φ : M.Group →* G := M.toCoxeterSystem.lift ⟨f, hf⟩
   have hword (ω : List B) : (ω.map f).prod = φ (M.toCoxeterSystem.wordProd ω) := by
-    induction ω with
-    | nil => simp
-    | cons k ω ih =>
-      rw [List.map_cons, List.prod_cons, CoxeterSystem.wordProd_cons, map_mul,
-        M.toCoxeterSystem.lift_apply_simple hf k, ih]
+    rw [CoxeterSystem.wordProd, map_list_prod, List.map_map]
+    simp only [Function.comp_def, φ, M.toCoxeterSystem.lift_apply_simple hf]
   rw [hword, hword, M.toCoxeterSystem.wordProd_braidWord_eq]
 
 end CoxeterMatrix

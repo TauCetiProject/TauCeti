@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.Algebra.Lie.Weights.Chevalley.Weyl
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Vector
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
@@ -178,10 +177,8 @@ theorem chevalleyWeylSign_reflectionPerm_self (α β : Fin t.numRoots) :
           ((t.simplyConnectedRootDatum ht).reflectionPerm β β) =
         (t.simplyConnectedRootDatum ht).reflectionPerm
           ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
-          ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
-    simpa only [RootPairing.weylGroupToPerm_ofIdx_apply] using
-      (t.simplyConnectedRootDatum ht).weylGroupToPerm_reflectionPerm_self
-        (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) α) β
+          ((t.simplyConnectedRootDatum ht).reflectionPerm α β) :=
+    (t.simplyConnectedRootDatum ht).reflectionPerm_reflectionPerm_self_right α β
   have hL :
       ω (TauCeti.weylAut (t.isSl2Triple_chevalleySystem ht α)
           (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
