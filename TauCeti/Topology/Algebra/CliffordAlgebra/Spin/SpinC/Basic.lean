@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import Mathlib.Topology.Covering.Quotient
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Proper
@@ -29,11 +29,15 @@ is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMu
 
 For a positive- or negative-definite form on a finite-dimensional real space, `Spinᶜ(Q)` is
 compact (`CliffordAlgebra.spinCGroup.compactSpace_of_posDef_or_negDef`), as a quotient of the
-compact group `Spin(Q) × U(1)`. On any finite-dimensional real space, the rotation map
-`Spinᶜ(Q) → SO(Q)` is continuous for the topology of `SO(Q)` as a subgroup of the linear
-automorphisms (`CliffordAlgebra.spinCGroup.continuous_toSpecialOrthogonal`); for coordinate forms,
-`CliffordAlgebra.spinCGroup.continuous_toSpecialOrthogonal_pi` is the same statement for the native
-coordinate topology on `SO(n)`.
+compact group `Spin(Q) × U(1)`. The quotient map
+(`CliffordAlgebra.spinCGroup.continuous_mk`), the inclusions `s ↦ [s, 1]` and `z ↦ [1, z]`
+(`CliffordAlgebra.spinCGroup.continuous_ofSpin`, `CliffordAlgebra.spinCGroup.continuous_ofCircle`)
+and the map `[s, z] ↦ [f s, z]` induced by a quadratic isometry `f`
+(`QuadraticMap.Isometry.continuous_spinCGroupMap`) are continuous. On any finite-dimensional real
+space, the rotation map `Spinᶜ(Q) → SO(Q)` is continuous for the topology of `SO(Q)` as a
+subgroup of the linear automorphisms (`CliffordAlgebra.spinCGroup.continuous_toSpecialOrthogonal`);
+for coordinate forms, `CliffordAlgebra.spinCGroup.continuous_toSpecialOrthogonal_pi` is the same
+statement for the native coordinate topology on `SO(n)`.
 
 These are topological group covers. No smoothness or covering statement about classifying
 spaces is asserted.
@@ -90,14 +94,23 @@ theorem continuous_det : Continuous (det Q hQ) := by
   -- Function powers are pointwise, so this is the square of the second projection.
   exact continuous_snd.pow 2
 
+/-- The quotient map `Spin(Q) × U(1) → Spinᶜ(Q)`, `(s, z) ↦ [s, z]`, is continuous. -/
+@[fun_prop]
+theorem continuous_mk : Continuous (mk Q hQ) := by
+  rw [coe_mk]
+  exact (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous
+
+/-- The inclusion `Spin(Q) → Spinᶜ(Q)`, `s ↦ [s, 1]`, is continuous for the quotient topology. -/
+@[fun_prop]
+theorem continuous_ofSpin : Continuous (ofSpin Q hQ) :=
+  ((continuous_mk Q hQ).comp (continuous_id.prodMk continuous_const)).congr
+    fun s ↦ (ofSpin_apply Q hQ s).symm
+
 /-- The weight-one central circle inclusion is continuous for the quotient topology. -/
 @[fun_prop]
-theorem continuous_ofCircle : Continuous (ofCircle Q hQ) := by
-  have h : Continuous (fun z : Circle ↦ mk Q hQ (1, z)) := by
-    simpa only [coe_mk, Function.comp_def, id_eq] using
-      (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous.comp
-        (continuous_const.prodMk continuous_id)
-  exact h.congr fun z ↦ (ofCircle_apply Q hQ z).symm
+theorem continuous_ofCircle : Continuous (ofCircle Q hQ) :=
+  ((continuous_mk Q hQ).comp (continuous_const.prodMk continuous_id)).congr
+    fun z ↦ (ofCircle_apply Q hQ z).symm
 
 /-- Charge conjugation `[s, z] ↦ [s, z⁻¹]` is continuous for the quotient topology. -/
 @[fun_prop]
@@ -212,3 +225,21 @@ theorem isQuotientCoveringMap_toSpecialOrthogonal_prod_det
 end spinCGroup
 
 end CliffordAlgebra
+
+namespace QuadraticMap.Isometry
+
+open CliffordAlgebra
+
+variable {M N : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Module ℝ N]
+  {Q : QuadraticForm ℝ M} {P : QuadraticForm ℝ N} (f : Q →qᵢ P) (hQ : Q ≠ 0) (hP : P ≠ 0)
+
+/-- The homomorphism `[s, z] ↦ [f s, z]` of `Spinᶜ` groups induced by a quadratic isometry `f` is
+continuous for the quotient topologies. -/
+@[fun_prop]
+theorem continuous_spinCGroupMap : Continuous (f.spinCGroupMap hQ hP) := by
+  apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous_iff.mpr
+  simp only [Function.comp_def, ← spinCGroup.mk_apply, spinCGroupMap_mk]
+  exact (spinCGroup.continuous_mk P hP).comp
+    ((f.continuous_spinGroupMap.comp continuous_fst).prodMk continuous_snd)
+
+end QuadraticMap.Isometry
