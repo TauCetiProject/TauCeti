@@ -340,7 +340,7 @@ theorem singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMap :
   rw [thomPairSignChainMap, ← Category.assoc,
     singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMapAux, Preadditive.neg_comp]
 
-variable (k : Type) [Ring k] [Linear k (ModuleCat.{0} R)] (M : ModuleCat.{0} R)
+variable (k : Type*) [Ring k] [Linear k (ModuleCat.{0} R)] (M : ModuleCat.{0} R)
 
 variable (F E) in
 /-- **The lift of orientation-twisted cochains to the Thom pair of the orientation cover**:
