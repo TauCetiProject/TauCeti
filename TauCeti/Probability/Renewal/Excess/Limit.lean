@@ -231,17 +231,7 @@ theorem tendsto_measureReal_renewalExcess_le_integral_tail
       (𝓝 (((∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹).toReal *
         ∫ s in Ioc 0 (x : ℝ), P.real {ω | s < (T 0 ω : ℝ)})) := by
   have := hindep.isProbabilityMeasure
-  have htail (s : ℝ) : (P.map (T 0)).real {u | s < (u : ℝ)} =
-      P.real {ω | s < (T 0 ω : ℝ)} :=
-    map_measureReal_apply_of_aemeasurable (hid 0).aemeasurable_fst
-      (measurableSet_lt measurable_const measurable_coe_nnreal_real)
-  have heq : (P.map (T 0)).equilibriumExcessLaw.real (Iic (x : ℝ)) =
-      ((∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹).toReal *
-        ∫ s in Ioc 0 (x : ℝ), P.real {ω | s < (T 0 ω : ℝ)} := by
-    rw [Measure.equilibriumExcessLaw_real_Iic,
-      lintegral_map' measurable_coe_nnreal_ennreal.aemeasurable (hid 0).aemeasurable_fst]
-    simp_rw [htail]
-  rw [← heq]
+  rw [← Measure.equilibriumExcessLaw_map_real_Iic P (hid 0).aemeasurable_fst]
   exact tendsto_measureReal_renewalExcess_le hindep hid hNL x
 
 /-- **Limiting cumulative distribution function of the excess life.** For a nonlattice
@@ -264,21 +254,21 @@ theorem tendsto_cdf_renewalExcess
     hindep hid hzero hmean ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
 /-- **Limiting distribution of the excess life.** For i.i.d. nonnegative increments whose
-common law is nonlattice, the real-valued excess life `(renewalExcess T t · : ℝ)` converges in
-distribution as `t → ∞` in `ℝ≥0` to any random variable `Z` with law
-`(P.map (T 0)).equilibriumExcessLaw`. The existence of `Z` forces the extended mean to be
-finite, since the equilibrium law is otherwise not a probability measure. Precomposing via
-`MeasureTheory.TendstoInDistribution.comp_tendsto` yields convergence along any family or
-sequence of observation times tending to `atTop`. -/
+common law is nonlattice, the real-valued excess life `(renewalExcess T (t i) · : ℝ)`
+converges in distribution, along any filter of observation times `t i` tending to infinity in
+`ℝ≥0`, to any random variable `Z` with law `(P.map (T 0)).equilibriumExcessLaw`. Both processes
+may live on arbitrary probability spaces. The existence of `Z` forces the extended mean to be
+finite, since the equilibrium law is otherwise not a probability measure. -/
 theorem tendstoInDistribution_renewalExcess
     [IsProbabilityMeasure P]
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hNL : ¬ (P.map (T 0)).IsLattice)
     {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'} [IsProbabilityMeasure Q]
-    {Z : Ω' → ℝ} (hZ : HasLaw Z (P.map (T 0)).equilibriumExcessLaw Q) :
-    TendstoInDistribution (fun (t : ℝ≥0) ω ↦ (renewalExcess T t ω : ℝ)) atTop
+    {Z : Ω' → ℝ} (hZ : HasLaw Z (P.map (T 0)).equilibriumExcessLaw Q)
+    {ι : Type*} {l : Filter ι} {t : ι → ℝ≥0} (ht : Tendsto t l atTop) :
+    TendstoInDistribution (fun i ω ↦ (renewalExcess T (t i) ω : ℝ)) l
       Z (fun _ ↦ P) Q :=
   tendstoInDistribution_renewalExcess_of_tendsto_measureReal_Ioc
-    hindep hid ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) hZ tendsto_id
+    hindep hid ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) hZ ht
 
 end TauCeti.Probability

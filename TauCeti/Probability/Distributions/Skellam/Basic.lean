@@ -61,6 +61,12 @@ theorem map_neg_skellamMeasure (r₁ r₂ : ℝ≥0) :
   funext z
   simp
 
+/-- Negating an integer-valued random variable with a Skellam law exchanges its rates. -/
+theorem _root_.ProbabilityTheory.HasLaw.neg_skellamMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℤ} {r₁ r₂ : ℝ≥0} (hX : HasLaw X (skellamMeasure r₁ r₂) P) :
+    HasLaw (fun ω ↦ -X ω) (skellamMeasure r₂ r₁) P :=
+  HasLaw.comp ⟨by fun_prop, map_neg_skellamMeasure r₁ r₂⟩ hX
+
 /-- The mass of a nonnegative integer is a sum over the possible subtracted counts. -/
 theorem skellamMeasure_singleton_natCast (r₁ r₂ : ℝ≥0) (k : ℕ) :
     skellamMeasure r₁ r₂ {(k : ℤ)} =
@@ -122,6 +128,20 @@ theorem skellamMeasure_real_singleton_eq_tsum (r₁ r₂ : ℝ≥0) (k : ℤ) :
         Nat.cast_add, Nat.cast_one]
     rw [hmass]
     simpa [mul_comm] using (hasSum_skellamMeasure_mass r₂ r₁ (n + 1)).tsum_eq.symm
+
+/-- The Skellam law as a weighted sum of Dirac measures, with every integer mass given by its
+absolutely convergent Poisson-product series. -/
+theorem skellamMeasure_eq_sum_dirac (r₁ r₂ : ℝ≥0) :
+    skellamMeasure r₁ r₂ = Measure.sum fun k : ℤ ↦
+      ENNReal.ofReal (∑' j : ℕ,
+        (Real.exp (-(r₁ : ℝ)) * (r₁ : ℝ) ^ (j + k.toNat) / (j + k.toNat).factorial) *
+        (Real.exp (-(r₂ : ℝ)) * (r₂ : ℝ) ^ (j + (-k).toNat) /
+          (j + (-k).toNat).factorial)) • Measure.dirac k := by
+  rw [← Measure.sum_smul_dirac (skellamMeasure r₁ r₂)]
+  congr 1
+  funext k
+  rw [← ENNReal.ofReal_toReal (measure_ne_top (skellamMeasure r₁ r₂) {k}),
+    ← measureReal_def, skellamMeasure_real_singleton_eq_tsum]
 
 /-- Every integer has positive mass when both rates are positive. -/
 theorem skellamMeasure_singleton_pos {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h₂ : 0 < r₂)

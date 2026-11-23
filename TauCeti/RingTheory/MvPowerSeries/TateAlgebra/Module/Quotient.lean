@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
 public import TauCeti.Analysis.Normed.Module.Quotient
-public import TauCeti.Analysis.Normed.Group.Submodule
 public import TauCeti.Analysis.Normed.Group.Quotient
+public import TauCeti.Topology.MetricSpace.Algebra
 import TauCeti.Analysis.Normed.Group.OpenMapping
 
 /-!
