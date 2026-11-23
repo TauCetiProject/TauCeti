@@ -146,12 +146,16 @@ def inverseShift (P : E.toExactStructure.ProjectivePresentation X) :
     P.shift.P = E.shift.functor.obj P.P := by
   simp [shift]
 
+/-- After identifying the kernel and projective terms, the shifted presentation starts with the
+shifted inflation. -/
 @[simp] theorem shift_i (P : E.toExactStructure.ProjectivePresentation X) :
-    HEq P.shift.i (E.shift.functor.map P.i) := by
+    eqToHom P.shift_K.symm ≫ P.shift.i ≫ eqToHom P.shift_P = E.shift.functor.map P.i := by
   simp [shift]
 
+/-- After identifying the projective term, the shifted presentation ends with the shifted
+deflation. -/
 @[simp] theorem shift_p (P : E.toExactStructure.ProjectivePresentation X) :
-    HEq P.shift.p (E.shift.functor.map P.p) := by
+    eqToHom P.shift_P.symm ≫ P.shift.p = E.shift.functor.map P.p := by
   simp [shift]
 
 @[simp] theorem inverseShift_K (P : E.toExactStructure.ProjectivePresentation X) :
@@ -162,12 +166,17 @@ def inverseShift (P : E.toExactStructure.ProjectivePresentation X) :
     P.inverseShift.P = E.shift.inverse.obj P.P := by
   simp [inverseShift]
 
+/-- After identifying the kernel and projective terms, the inversely shifted presentation starts
+with the inversely shifted inflation. -/
 @[simp] theorem inverseShift_i (P : E.toExactStructure.ProjectivePresentation X) :
-    HEq P.inverseShift.i (E.shift.inverse.map P.i) := by
+    eqToHom P.inverseShift_K.symm ≫ P.inverseShift.i ≫ eqToHom P.inverseShift_P =
+      E.shift.inverse.map P.i := by
   simp [inverseShift]
 
+/-- After identifying the projective term, the inversely shifted presentation ends with the
+inversely shifted deflation. -/
 @[simp] theorem inverseShift_p (P : E.toExactStructure.ProjectivePresentation X) :
-    HEq P.inverseShift.p (E.shift.inverse.map P.p) := by
+    eqToHom P.inverseShift_P.symm ≫ P.inverseShift.p = E.shift.inverse.map P.p := by
   simp [inverseShift]
 
 end ExactStructure.ProjectivePresentation

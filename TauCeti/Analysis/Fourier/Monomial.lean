@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import TauCeti.Topology.Algebra.Module.Matrix
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
 # Pointwise identities and estimates for the Fourier monomials
@@ -28,7 +30,8 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.norm_fourier_apply`: every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
 * `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
   `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
-* `TauCeti.fourier_apply_add`: `fourier n (x + y) = fourier n x * fourier n y`.
+* `TauCeti.fourier_apply_add`, `TauCeti.fourier_apply_sub`: `fourier n` turns sums and differences
+  of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
 * `TauCeti.norm_fourier_sub_one_le`: `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖` on the circle, where `‖h‖` is
@@ -36,13 +39,16 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
 * `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
   `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
-* `UnitAddTorus.mFourier_apply_add`, `TauCeti.UnitAddTorus.mFourier_coe_apply` and
+* `UnitAddTorus.mFourier_apply_add`, `UnitAddTorus.mFourier_apply_sub`,
+  `TauCeti.UnitAddTorus.mFourier_coe_apply` and
   `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
   monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
   is `exp (2πi ∑ i, n i * x i)`.
 * `TauCeti.UnitAddTorus.contDiff_mFourier_coe` and
   `TauCeti.UnitAddTorus.norm_iteratedFDeriv_mFourier_coe_le`: this lift of `mFourier n` is smooth,
   and its `k`-th derivative is bounded by `(2π ∑ i, |n i|) ^ k`.
+* `Matrix.mFourier_smulVecHom`, `Matrix.mFourier_comp_smulVecHom`: pulling `mFourier n` back
+  along the map of tori induced by an integer matrix `A` gives `mFourier (Aᵀ *ᵥ n)`.
 -/
 
 public section
@@ -79,11 +85,23 @@ theorem fourier_one_pow (m : ℕ) :
     fourier (T := T) 1 ^ m = fourier (T := T) (m : ℤ) := by
   simpa using fourier_pow (T := T) 1 m
 
+/-- Pointwise, the `m`-th power of the fundamental Fourier monomial is the monomial
+of natural frequency `m`. -/
+theorem fourier_one_pow_apply (m : ℕ) (x : AddCircle T) :
+    fourier 1 x ^ m = fourier (m : ℤ) x := by
+  simpa only [ContinuousMap.pow_apply] using
+    congrArg (fun f : C(AddCircle T, ℂ) ↦ f x) (fourier_one_pow m)
+
 /-- A Fourier monomial turns a sum of points into a product:
 `fourier n (x + y) = fourier n x * fourier n y`. -/
 theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
     fourier n (x + y) = fourier n x * fourier n y := by
   simp [AddCircle.toCircle_add]
+
+/-- A Fourier monomial turns a difference of points into `fourier n x * fourier (-n) y`. -/
+theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
+    fourier n (x - y) = fourier n x * fourier (-n) y := by
+  simp [sub_eq_add_neg, AddCircle.toCircle_add]
 
 /-- The frequency factor `2πin/T` by which differentiation multiplies the Fourier monomial
 `fourier n` (`hasDerivAt_fourier`) has norm `2π/T |n|`. -/
@@ -198,6 +216,13 @@ theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
   simp only [mFourier, ContinuousMap.coe_mk, Pi.add_apply, TauCeti.fourier_apply_add,
     Finset.prod_mul_distrib]
 
+/-- A multivariate Fourier monomial turns a difference of points into a product with the
+monomial of the opposite index: `mFourier n (x - y) = mFourier n x * mFourier (-n) y`. -/
+theorem mFourier_apply_sub (n : d → ℤ) (x y : UnitAddTorus d) :
+    mFourier n (x - y) = mFourier n x * mFourier (-n) y := by
+  rw [sub_eq_add_neg, mFourier_apply_add]
+  simp only [mFourier, ContinuousMap.coe_mk, Pi.neg_apply, fourier_apply, smul_neg, neg_smul]
+
 /-- Multivariate Fourier monomials take values in the unit circle. -/
 @[simp]
 theorem norm_mFourier_apply (n : d → ℤ) (z : UnitAddTorus d) : ‖mFourier n z‖ = 1 := by
@@ -266,3 +291,40 @@ theorem norm_iteratedFDeriv_mFourier_coe_le (n : d → ℤ) (k : ℕ) (x : d →
   exact pow_le_pow_left₀ (norm_nonneg _) hnorm k
 
 end TauCeti.UnitAddTorus
+
+namespace Matrix
+
+open UnitAddTorus
+
+variable {d d' : Type*} [Fintype d] [Fintype d']
+
+/-- The Fourier monomial `mFourier n` at the image of `θ` under the map of unit tori induced by an
+integer matrix `A` is the monomial `mFourier (Aᵀ *ᵥ n)` at `θ`. -/
+@[simp]
+theorem mFourier_smulVecHom (A : Matrix d d' ℤ) (n : d → ℤ) (θ : UnitAddTorus d') :
+    mFourier n (A.smulVecHom UnitAddCircle θ) = mFourier (Aᵀ *ᵥ n) θ := by
+  obtain ⟨x, rfl⟩ := TauCeti.UnitAddTorus.surjective_coe θ
+  have h : A.smulVecHom UnitAddCircle (fun j ↦ (x j : UnitAddCircle)) =
+      fun i ↦ ((∑ j, (A i j : ℝ) * x j : ℝ) : UnitAddCircle) := by
+    ext i
+    simp_rw [smulVecHom_apply, ← zsmul_eq_mul]
+    rw [← QuotientAddGroup.mk'_apply, map_sum]
+    simp
+  simp only [h, TauCeti.UnitAddTorus.mFourier_coe_apply]
+  congr 2
+  simp only [mulVec, dotProduct, transpose_apply]
+  push_cast
+  simp only [Finset.mul_sum, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ by ring
+
+/-- The Fourier monomial `mFourier n` pulled back along the map of unit tori induced by an
+integer matrix `A` is the monomial `mFourier (Aᵀ *ᵥ n)`. -/
+@[simp]
+theorem mFourier_comp_smulVecHom (A : Matrix d d' ℤ) (n : d → ℤ) :
+    (mFourier n).comp (A.smulVecHom UnitAddCircle : C(UnitAddTorus d', UnitAddTorus d)) =
+      mFourier (Aᵀ *ᵥ n) := by
+  ext θ
+  simp
+
+end Matrix

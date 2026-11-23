@@ -19,7 +19,8 @@ bialgebra equivalence induces a multiplicative equivalence of group-like element
 ## Main declarations
 
 * `BialgHom.mapGroupLike`: the monoid homomorphism of group-like elements induced by a bialgebra
-  morphism, compatible with `BialgHom.id` and `BialgHom.comp`.
+  morphism, compatible with `BialgHom.id` and `BialgHom.comp`, and injective when the morphism
+  is (`BialgHom.mapGroupLike_injective`).
 * `BialgEquiv.mapGroupLike`: the multiplicative equivalence of group-like elements induced by a
   bialgebra equivalence, upgrading `CoalgEquiv.mapGroupLike` and compatible with
   `BialgEquiv.refl`, `BialgEquiv.trans` and `BialgEquiv.symm`.
@@ -44,6 +45,11 @@ morphism. -/
 theorem val_mapGroupLike (f : A →ₐc[R] B) (x : GroupLike R A) :
     (f.mapGroupLike x).val = f x.val :=
   (rfl)
+
+/-- An injective bialgebra morphism induces an injective map of group-like elements. -/
+theorem mapGroupLike_injective {f : A →ₐc[R] B} (hf : Function.Injective f) :
+    Function.Injective f.mapGroupLike := fun _ _ hxy ↦
+  GroupLike.val_injective (hf (by simpa only [val_mapGroupLike] using congr(($hxy).val)))
 
 /-- Mapping group-like elements respects identity bialgebra morphisms. -/
 @[simp]

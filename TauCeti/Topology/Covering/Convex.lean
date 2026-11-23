@@ -38,6 +38,6 @@ locally path-connected. -/
 theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_convex (hp : IsCoveringMap p)
     (hs : Convex ℝ s) (f : C(s, X)) (x : s) (e : E) (he : p e = f x) :
     ∃! F : C(s, E), F x = e ∧ p ∘ F = f :=
-  have := hs.contractibleSpace ⟨x, x.2⟩
+  have := hs.contractibleSpace ⟨x, x.property⟩
   have := hs.locallyPathConnectedSpace'
   hp.existsUnique_continuousMap_lifts f x e he
