@@ -5,320 +5,252 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Composition
-import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
-# Strongly parameter-dependent symbols at a fixed spectral parameter
+# Parameter-dependent symbols at a fixed spectral parameter
 
-At a fixed spectral parameter `z ∈ Λ`, a strongly parameter-dependent symbol `a` of order `m`
-(`TauCeti.ParameterSymbol`) is an ordinary symbol `(x, ξ) ↦ a((x, ξ), z)` of order `m`
-(`TauCeti.ParameterSymbol.eval`), since the weight `1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)` is comparable to
-`⟨ξ⟩` for fixed `z`. Evaluation commutes with the operations of the calculus: the linear
-operations, the pointwise composition, the derivatives and the terms of the composition expansion
-(`TauCeti.ParameterSymbol.eval_sharpTerm`). The quantization `Op(a(·, ·, z))` is therefore a
-family of pseudodifferential operators to which the calculus of `TauCeti.Symbol` applies at each
-`z`, while the parameter-dependent class records the estimates uniform in `z`.
+A strongly parameter-dependent symbol `a((x, ξ), z)` of order `m` (`TauCeti.ParameterSymbol`)
+is, at each fixed spectral parameter `z`, an ordinary symbol `x, ξ ↦ a((x, ξ), z)` of order `m`
+(`TauCeti.ParameterSymbol.toSymbol`). This is how the parameter-dependent calculus is quantized:
+`Op(a(z))` is the quantization of this ordinary symbol.
 
-In particular the parametrices with parameter of
-`TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Composition` are, at every spectral
-parameter, parametrices in the ordinary symbol calculus whose remainders have order `-N` uniformly
-in `z` (`TauCeti.ParameterSymbol.IsElliptic.exists_sub_sum_sharpTerm_eval_left`,
-`TauCeti.ParameterSymbol.IsElliptic.exists_sub_sum_sharpTerm_eval_right`).
+The point of the parameter-dependent class is the dependence of these symbols on `z`. On each
+compact set of positions, every spatial and frequency derivative of `a` is bounded by
+`C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (m - |β|)`, with `C` depending on the compact set, uniformly in
+`z ∈ Λ` (`TauCeti.ParameterSymbol.exists_norm_mixedDeriv_coefficient_le`), and the weight is at
+least both `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)` and `1 + ‖z‖ ^ (1 / 2)`. So for `m ≤ m' ≤ 0` a symbol of
+order `m` trades `m' - m` frequency orders for decay in the spectral parameter: as a symbol of
+order `m'`, `a(z)` has seminorms
 
-## Implementation notes
+`p_{K,α,β}(a(z)) ≤ C (1 + ‖z‖ ^ (1 / 2)) ^ (m - m')`
 
-The ordinary symbol estimates bound the mixed derivatives `∂ₓ^α ∂_ξ^β`, which are iterated
-derivatives of `a` along unit position and frequency directions. Writing a unit frequency direction
-as the dilation by `t = parameterWeight ξ z` of a direction of norm `t⁻¹` bounds them by the
-dilated derivatives `parameterIteratedFDeriv` times `t ^ (-|β|)`.
+uniformly on `Λ` (`TauCeti.ParameterSymbol.exists_seminorm_inclusion_toSymbol_le`). For instance
+the seminorms of order `0` of a remainder of order `-N` in a resolvent parametrix decay like
+`‖z‖ ^ (-N / 2)`. The corresponding bound of the operators on Sobolev spaces, for symbols vanishing
+outside a fixed compact set of positions, is
+`TauCeti.ParameterSymbol.exists_norm_quantizeSobolev_inclusion_toSymbol_le`. At fixed `z` the
+frequency estimates of order `m` hold with a constant that depends on `z`, since then the weight is
+at most a multiple of `⟨ξ⟩`.
+
+## Main declarations
+
+* `TauCeti.ParameterSymbol.exists_norm_mixedDeriv_coefficient_le`: the estimates of the mixed
+  derivatives `∂ₓ^α ∂_ξ^β a((x, ξ), z)` at a fixed spectral parameter on a compact set of
+  positions, uniformly on `Λ`.
+* `TauCeti.ParameterSymbol.toSymbol`: the ordinary symbol of order `m` at a spectral parameter;
+  it is linear in the symbol and commutes with the order inclusions and the composition.
+* `TauCeti.ParameterSymbol.exists_seminorm_inclusion_toSymbol_le`: the decay of its seminorms of
+  order `m' ∈ [m, 0]` in the spectral parameter.
+
+## References
+
+* M. A. Shubin, *Pseudodifferential Operators and Spectral Theory*, Chapter II, §9.
 -/
 
 public section
 
 noncomputable section
 
-open Set Finset
+open Set
 open scoped ContDiff
 
 namespace TauCeti
 
+variable {n : ℕ}
+
 namespace ParameterSymbol
 
-variable {n : ℕ} {Λ : TopologicalSpace.Opens ℂ} {V W U : Type*} [NormedAddCommGroup V]
-  [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U]
-  [NormedSpace ℂ U] {m m' : ℝ} {z : ℂ}
+variable {Λ : TopologicalSpace.Opens ℂ} {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U] {m m' : ℝ}
 
-/-! ### Estimates at a fixed spectral parameter -/
+/-! ### Slices at a fixed spectral parameter -/
 
-/-- At a fixed spectral parameter `z`, every power of the weight `1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)` is
-bounded by a multiple of the same power of `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)`. -/
-private theorem exists_rpow_parameterWeight_le (z : ℂ) (e : ℝ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ ξ : CoordinateSpace n,
-      parameterWeight ξ z ^ e ≤ C * (1 + ‖ξ‖ ^ 2) ^ (e / 2) := by
-  set K := Real.sqrt 2 * (1 + Real.sqrt ‖z‖)
-  refine ⟨max 1 (K ^ e), le_max_of_le_left zero_le_one, fun ξ => ?_⟩
-  set u := Real.sqrt (1 + ‖ξ‖ ^ 2) with hu_def
-  have hu : 0 < u := Real.sqrt_pos.2 (by positivity)
-  have hbr : (1 + ‖ξ‖ ^ 2) ^ (e / 2) = u ^ e := by
-    rw [hu_def, Real.sqrt_eq_rpow, ← Real.rpow_mul (by positivity)]
-    ring_nf
-  -- The weight lies between `u` and `K u`.
-  have hlow : u ≤ parameterWeight ξ z :=
-    (sqrt_one_add_norm_sq_le ξ).trans (by
-      rw [parameterWeight_def]
-      linarith [Real.sqrt_nonneg ‖z‖])
-  have hup : parameterWeight ξ z ≤ K * u := by
-    have h := one_add_norm_le_sqrt_two_mul_sqrt ξ
-    have hz := Real.sqrt_nonneg ‖z‖
-    rw [parameterWeight_def]
-    calc 1 + ‖ξ‖ + Real.sqrt ‖z‖ ≤ (1 + ‖ξ‖) * (1 + Real.sqrt ‖z‖) := by
-          nlinarith [norm_nonneg ξ]
-      _ ≤ (Real.sqrt 2 * u) * (1 + Real.sqrt ‖z‖) :=
-          mul_le_mul_of_nonneg_right h (by positivity)
-      _ = K * u := by ring
-  rw [hbr]
-  rcases le_or_gt 0 e with he | he
-  · calc parameterWeight ξ z ^ e ≤ (K * u) ^ e :=
-          Real.rpow_le_rpow (parameterWeight_pos ξ z).le hup he
-      _ = K ^ e * u ^ e := Real.mul_rpow (by positivity) hu.le
-      _ ≤ max 1 (K ^ e) * u ^ e :=
-          mul_le_mul_of_nonneg_right (le_max_right _ _) (Real.rpow_nonneg hu.le e)
-  · calc parameterWeight ξ z ^ e ≤ u ^ e := Real.rpow_le_rpow_of_nonpos hu hlow he.le
-      _ ≤ max 1 (K ^ e) * u ^ e :=
-          le_mul_of_one_le_left (Real.rpow_nonneg hu.le e) (le_max_left _ _)
+/-- At a spectral parameter outside `Λ` the coefficient vanishes in the position and the
+frequency. -/
+theorem coefficient_slice_of_notMem (a : ParameterSymbol n Λ V W m) {z : ℂ} (hz : z ∉ Λ) :
+    (fun q : CoordinateSpace n × CoordinateSpace n => a.coefficient (q, z)) = 0 :=
+  funext fun q => a.coefficient_of_notMem (q, z) hz
 
-/-- A mixed derivative `∂ₓ^α ∂_ξ^β` of the slice `q ↦ a(q, z)` is bounded by the dilated
-derivative of `a` of order `|α| + |β|` times `parameterWeight ξ z ^ (-|β|)`. -/
-private theorem norm_mixedDeriv_slice_le (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ)
-    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+/-- At a fixed spectral parameter the coefficient is smooth in the position and the frequency. -/
+theorem contDiff_coefficient_slice (a : ParameterSymbol n Λ V W m) (z : ℂ) :
+    ContDiff ℝ ∞ fun q : CoordinateSpace n × CoordinateSpace n => a.coefficient (q, z) := by
+  by_cases hz : z ∈ Λ
+  · exact contDiff_iff_contDiffAt.2 fun q =>
+      (a.contDiffAt_coefficient (p := (q, z)) hz).comp q (contDiff_prodMk_left z).contDiffAt
+  · rw [a.coefficient_slice_of_notMem hz]
+    exact contDiff_const
+
+/-- In terms of the dilated derivatives defining the class, a mixed derivative `∂ₓ^α ∂_ξ^β` of
+the coefficient takes `|β|` frequency directions, each the image under the dilation by the weight
+`t` of a vector of norm `t⁻¹`. -/
+private theorem norm_mixedDeriv_coefficient_le_aux (a : ParameterSymbol n Λ V W m)
+    (α β : List (Fin n)) {x ξ : CoordinateSpace n} {z : ℂ} (hz : z ∈ Λ) :
     ‖mixedDeriv α β (fun q => a.coefficient (q, z)) x ξ‖ ≤
       ‖parameterIteratedFDeriv (α.length + β.length) a.coefficient ((x, ξ), z)‖ *
-        parameterWeight ξ z ^ (-(β.length : ℝ)) := by
+        (parameterWeight ξ z)⁻¹ ^ β.length := by
   set t := parameterWeight ξ z
   have ht : 0 < t := parameterWeight_pos ξ z
-  have hcd : ContDiff ℝ ∞ fun q => a.coefficient (q, z) :=
-    contDiff_iff_contDiffAt.2 fun q =>
-      (a.contDiffAt_coefficient (p := (q, z)) hz).comp q (contDiffAt_id.prodMk contDiffAt_const)
-  -- The directions of `∂ₓ^α ∂_ξ^β`, and their preimages under the dilation by `t`.
-  set w : Fin (α.length + β.length) → CoordinateSpace n × CoordinateSpace n :=
+  -- The directions of the mixed derivative, and their preimages under the dilation.
+  set d : Fin (α.length + β.length) → CoordinateSpace n × CoordinateSpace n :=
     Fin.append (fun i => (EuclideanSpace.single (α.get i) 1, 0))
       fun i => (0, EuclideanSpace.single (β.get i) 1)
-  set v : Fin (α.length + β.length) → (CoordinateSpace n × CoordinateSpace n) × ℂ :=
-    fun i => parameterDilation n t⁻¹ (w i, 0)
-  have hv : (fun i => (w i, (0 : ℂ))) = fun i => parameterDilation n t (v i) := by
-    funext i
-    simp [v, smul_smul, ht.ne']
-  have hprod : ∏ i, ‖v i‖ = t ^ (-(β.length : ℝ)) := by
-    rw [Fin.prod_univ_add, Real.rpow_neg ht.le, Real.rpow_natCast, ← inv_pow]
-    simp only [v, w, Fin.append_left, Fin.append_right, parameterDilation_apply, Prod.norm_def,
-      norm_smul, PiLp.norm_single, norm_zero, smul_zero, Real.norm_eq_abs, abs_of_pos ht,
-      abs_inv, norm_one, mul_one, max_eq_left zero_le_one, max_eq_right (inv_pos.2 ht).le,
-      max_eq_left (inv_pos.2 ht).le, prod_const_one, one_mul, prod_const, card_univ,
-      Fintype.card_fin]
-  rw [mixedDeriv_eq_iteratedFDeriv_append α β (hcd.of_le (by exact_mod_cast le_top)),
-    (a.contDiffAt_coefficient (p := ((x, ξ), z)) hz).iteratedFDeriv_prod_left _ (by simp),
-    ContinuousMultilinearMap.compContinuousLinearMap_apply]
-  simp only [ContinuousLinearMap.inl_apply]
-  rw [hv, ← parameterIteratedFDeriv_apply, ← hprod]
-  exact ContinuousMultilinearMap.le_opNorm _ _
+  have hd : ∀ i, parameterDilation n t (((d i).1, t⁻¹ • (d i).2), 0) = ((d i), 0) := fun i => by
+    simp [smul_smul, mul_inv_cancel₀ ht.ne']
+  rw [mixedDeriv_eq_iteratedFDeriv_append α β
+      ((a.contDiff_coefficient_slice z).of_le (by exact_mod_cast le_top)),
+    (a.contDiffAt_coefficient (p := ((x, ξ), z)) hz).iteratedFDeriv_prod_left _
+      (by exact_mod_cast le_top), ContinuousMultilinearMap.compContinuousLinearMap_apply]
+  have heq : (iteratedFDeriv ℝ (α.length + β.length) a.coefficient ((x, ξ), z))
+      (fun i => ContinuousLinearMap.inl ℝ _ ℂ (d i)) =
+      parameterIteratedFDeriv (α.length + β.length) a.coefficient ((x, ξ), z)
+        (fun i => (((d i).1, t⁻¹ • (d i).2), 0)) := by
+    rw [parameterIteratedFDeriv_apply]
+    simp only [hd, ContinuousLinearMap.inl_apply, t]
+  rw [heq]
+  refine (ContinuousMultilinearMap.le_opNorm _ _).trans_eq ?_
+  congr 1
+  -- A spatial direction has norm `1`, a rescaled frequency direction norm `t⁻¹`.
+  simp [d, Fin.prod_univ_add, Prod.norm_def, norm_smul, abs_of_pos ht, ht.le]
 
-/-! ### Evaluation at a spectral parameter -/
+/-- **Estimates at a fixed spectral parameter.** On a compact set of positions, the mixed
+derivatives of a parameter-dependent symbol of order `m` in the position and the frequency satisfy
+`‖∂ₓ^α ∂_ξ^β a((x, ξ), z)‖ ≤ C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (m - |β|)`, uniformly in the spectral
+parameter `z ∈ Λ`. -/
+theorem exists_norm_mixedDeriv_coefficient_le (a : ParameterSymbol n Λ V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ∀ z ∈ Λ,
+      ‖mixedDeriv α β (fun q => a.coefficient (q, z)) x ξ‖ ≤
+        C * parameterWeight ξ z ^ (m - β.length) := by
+  obtain ⟨C, hC, h⟩ := a.exists_bound K hK (α.length + β.length)
+  refine ⟨C, hC, fun x hx ξ z hz => (a.norm_mixedDeriv_coefficient_le_aux α β hz).trans ?_⟩
+  have ht := parameterWeight_pos ξ z
+  calc _ ≤ C * parameterWeight ξ z ^ m * (parameterWeight ξ z)⁻¹ ^ β.length :=
+        mul_le_mul_of_nonneg_right (h x hx ξ z hz) (by positivity)
+    _ = C * parameterWeight ξ z ^ (m - β.length) := by
+        rw [Real.rpow_sub ht, Real.rpow_natCast, inv_pow, div_eq_mul_inv, mul_assoc]
 
-/-- The symbol `(x, ξ) ↦ a((x, ξ), z)` of order `m` of a strongly parameter-dependent symbol `a` of
-order `m` at a spectral parameter `z ∈ Λ`. -/
-def eval (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) : Symbol n V W m where
+/-- **The symbol at a spectral parameter.** At a fixed spectral parameter `z`, a
+parameter-dependent symbol of order `m` is the ordinary symbol `(x, ξ) ↦ a((x, ξ), z)` of order
+`m`, its quantization being the operator `Op(a(z))` of the family. The constants of its estimates
+depend on `z`; for `z ∉ Λ` it is `0`. -/
+def toSymbol (a : ParameterSymbol n Λ V W m) (z : ℂ) : Symbol n V W m where
   coefficient q := a.coefficient (q, z)
-  contDiff_coefficient := contDiff_iff_contDiffAt.2 fun q =>
-    (a.contDiffAt_coefficient (p := (q, z)) hz).comp q (contDiffAt_id.prodMk contDiffAt_const)
+  contDiff_coefficient := a.contDiff_coefficient_slice z
   exists_bound K hK α β := by
-    obtain ⟨C, hC, ha⟩ := a.exists_bound K hK (α.length + β.length)
-    obtain ⟨D, hD, hw⟩ := exists_rpow_parameterWeight_le (n := n) z (m - β.length)
-    refine ⟨C * D, mul_nonneg hC hD, fun x hx ξ => ?_⟩
-    have ht := parameterWeight_pos ξ z
-    calc ‖mixedDeriv α β (fun q => a.coefficient (q, z)) x ξ‖
-        ≤ ‖parameterIteratedFDeriv (α.length + β.length) a.coefficient ((x, ξ), z)‖ *
-            parameterWeight ξ z ^ (-(β.length : ℝ)) := norm_mixedDeriv_slice_le a hz α β x ξ
-      _ ≤ C * parameterWeight ξ z ^ m * parameterWeight ξ z ^ (-(β.length : ℝ)) :=
-          mul_le_mul_of_nonneg_right (ha x hx ξ z hz) (Real.rpow_nonneg ht.le _)
-      _ = C * parameterWeight ξ z ^ (m - β.length) := by
-          rw [mul_assoc, ← Real.rpow_add ht, ← sub_eq_add_neg]
-      _ ≤ C * (D * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :=
-          mul_le_mul_of_nonneg_left (hw ξ) hC
-      _ = C * D * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by ring
+    by_cases hz : z ∈ Λ
+    · obtain ⟨C, hC, h⟩ := a.exists_norm_mixedDeriv_coefficient_le hK α β
+      refine ⟨C * (3 * (1 + ‖z‖)) ^ (|m - β.length| / 2), by positivity, fun x hx ξ => ?_⟩
+      rw [mul_assoc]
+      exact (h x hx ξ z hz).trans
+        (mul_le_mul_of_nonneg_left (parameterWeight_rpow_le_mul_one_add_norm_sq_rpow ξ z _) hC)
+    · refine ⟨0, le_rfl, fun x _ ξ => ?_⟩
+      rw [a.coefficient_slice_of_notMem hz, mixedDeriv_zero, norm_zero, zero_mul]
 
 @[simp]
-theorem coefficient_eval (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ)
+theorem coefficient_toSymbol (a : ParameterSymbol n Λ V W m) (z : ℂ)
     (q : CoordinateSpace n × CoordinateSpace n) :
-    (a.eval hz).coefficient q = a.coefficient (q, z) := (rfl)
+    (a.toSymbol z).coefficient q = a.coefficient (q, z) :=
+  (rfl)
+
+/-- Outside `Λ` the symbol at a spectral parameter is `0`. -/
+theorem toSymbol_of_notMem (a : ParameterSymbol n Λ V W m) {z : ℂ} (hz : z ∉ Λ) :
+    a.toSymbol z = 0 :=
+  Symbol.ext (a.coefficient_slice_of_notMem hz)
 
 @[simp]
-theorem eval_zero (hz : z ∈ Λ) : (0 : ParameterSymbol n Λ V W m).eval hz = 0 := by
-  ext1
-  rfl
+theorem toSymbol_zero (z : ℂ) : (0 : ParameterSymbol n Λ V W m).toSymbol z = 0 :=
+  (rfl)
 
 @[simp]
-theorem eval_add (a b : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) :
-    (a + b).eval hz = a.eval hz + b.eval hz := by
-  ext1
-  rfl
+theorem toSymbol_add (a b : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (a + b).toSymbol z = a.toSymbol z + b.toSymbol z :=
+  (rfl)
 
 @[simp]
-theorem eval_smul (c : ℂ) (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) :
-    (c • a).eval hz = c • a.eval hz := by
-  ext1
-  rfl
+theorem toSymbol_smul (c : ℂ) (a : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (c • a).toSymbol z = c • a.toSymbol z :=
+  (rfl)
 
 @[simp]
-theorem eval_neg (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) : (-a).eval hz = -a.eval hz := by
-  ext1
-  funext q
-  simp
+theorem toSymbol_neg (a : ParameterSymbol n Λ V W m) (z : ℂ) : (-a).toSymbol z = -a.toSymbol z :=
+  Symbol.ext <| funext fun q => by simp
 
 @[simp]
-theorem eval_sub (a b : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) :
-    (a - b).eval hz = a.eval hz - b.eval hz := by
-  ext1
-  funext q
-  simp
+theorem toSymbol_sub (a b : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (a - b).toSymbol z = a.toSymbol z - b.toSymbol z :=
+  Symbol.ext <| funext fun q => by simp
 
 @[simp]
-theorem eval_sum {ι : Type*} (s : Finset ι) (a : ι → ParameterSymbol n Λ V W m) (hz : z ∈ Λ) :
-    (∑ i ∈ s, a i).eval hz = ∑ i ∈ s, (a i).eval hz := by
-  ext1
-  funext q
-  simp [Symbol.coefficient_sum]
+theorem toSymbol_nsmul (k : ℕ) (a : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (k • a).toSymbol z = k • a.toSymbol z :=
+  Symbol.ext <| funext fun q => by simp
 
 @[simp]
-theorem eval_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) :
-    (inclusion h a).eval hz = Symbol.inclusion h (a.eval hz) := by
-  ext1
-  funext q
-  rw [coefficient_eval, coefficient_inclusion, Symbol.coefficient_inclusion, coefficient_eval]
+theorem toSymbol_zsmul (k : ℤ) (a : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (k • a).toSymbol z = k • a.toSymbol z :=
+  Symbol.ext <| funext fun q => by simp
 
 @[simp]
-theorem eval_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) :
-    (b.comp a).eval hz = (b.eval hz).comp (a.eval hz) := by
-  ext1
-  funext q
-  rw [coefficient_eval, coefficient_comp, Symbol.coefficient_comp, coefficient_eval,
-    coefficient_eval]
+theorem toSymbol_sum {ι : Type*} (s : Finset ι) (a : ι → ParameterSymbol n Λ V W m) (z : ℂ) :
+    (∑ i ∈ s, a i).toSymbol z = ∑ i ∈ s, (a i).toSymbol z :=
+  map_sum (AddMonoidHom.mk' (toSymbol · z) (toSymbol_add · · z)) a s
 
+/-- Evaluation at a spectral parameter commutes with the inclusion of orders. -/
 @[simp]
-theorem eval_const (T : V →L[ℂ] W) (hz : z ∈ Λ) :
-    (const T : ParameterSymbol n Λ V W 0).eval hz = Symbol.const T := by
-  ext1
-  funext ⟨x, ξ⟩
-  simp [coefficient_const T x ξ hz, Symbol.coefficient_const]
+theorem toSymbol_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (inclusion h a).toSymbol z = Symbol.inclusion h (a.toSymbol z) :=
+  Symbol.ext <| funext fun q => by simp
 
-/-- The pointwise inverse of a parameter-elliptic symbol evaluates to the pointwise inverse. -/
-theorem coefficient_eval_inverse [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
-    (ha : a.IsElliptic) (hz : z ∈ Λ) (q : CoordinateSpace n × CoordinateSpace n) :
-    ((a.inverse ha).eval hz).coefficient q = ((a.eval hz).coefficient q).inverse := by
-  rw [coefficient_eval, coefficient_inverse, coefficient_eval]
-
-/-- At a spectral parameter in `Λ`, the position derivative of a parameter-dependent symbol is the
-position derivative of the symbol at that parameter. -/
+/-- Evaluation at a spectral parameter commutes with the pointwise composition. -/
 @[simp]
-theorem eval_spatialDeriv (j : Fin n) (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) :
-    (spatialDeriv j a).eval hz = Symbol.spatialDeriv j (a.eval hz) := by
-  ext1
-  funext ⟨x, ξ⟩
-  rw [coefficient_eval, coefficient_spatialDeriv j a x ξ hz, Symbol.coefficient_spatialDeriv,
-    coordinateDeriv_cons, coordinateDeriv_nil]
-  have hd : HasFDerivAt (fun y => a.coefficient ((y, ξ), z))
-      ((fderiv ℝ a.coefficient ((x, ξ), z)).comp
-        ((ContinuousLinearMap.inl ℝ _ _).comp (ContinuousLinearMap.inl ℝ _ _))) x :=
-    (a.differentiableAt_coefficient (p := ((x, ξ), z)) hz).hasFDerivAt.comp x
-      (((hasFDerivAt_prodMk_left x ξ).prodMk (hasFDerivAt_const z x)).congr_fderiv
-        (by ext <;> simp))
-  simp only [coefficient_eval]
-  rw [hd.fderiv]
-  simp
+theorem toSymbol_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (b.comp a).toSymbol z = (b.toSymbol z).comp (a.toSymbol z) :=
+  Symbol.ext <| funext fun q => by simp
 
-/-- At a spectral parameter in `Λ`, the frequency derivative of a parameter-dependent symbol is the
-frequency derivative of the symbol at that parameter. -/
+/-- At a spectral parameter in `Λ`, the symbol of a function of the position is the ordinary symbol
+of that function. -/
 @[simp]
-theorem eval_frequencyDeriv (j : Fin n) (a : ParameterSymbol n Λ V W m) (hz : z ∈ Λ) :
-    (frequencyDeriv j a).eval hz = Symbol.frequencyDeriv j (a.eval hz) := by
-  ext1
-  funext ⟨x, ξ⟩
-  rw [coefficient_eval, coefficient_frequencyDeriv j a x ξ hz, Symbol.coefficient_frequencyDeriv,
-    coordinateDeriv_cons, coordinateDeriv_nil]
-  have hd : HasFDerivAt (fun η => a.coefficient ((x, η), z))
-      ((fderiv ℝ a.coefficient ((x, ξ), z)).comp
-        ((ContinuousLinearMap.inl ℝ _ _).comp (ContinuousLinearMap.inr ℝ _ _))) ξ :=
-    (a.differentiableAt_coefficient (p := ((x, ξ), z)) hz).hasFDerivAt.comp ξ
-      (((hasFDerivAt_prodMk_right x ξ).prodMk (hasFDerivAt_const z ξ)).congr_fderiv
-        (by ext <;> simp))
-  simp only [coefficient_eval]
-  rw [hd.fderiv]
-  simp
+theorem toSymbol_ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) {z : ℂ}
+    (hz : z ∈ Λ) :
+    (ofSpatial f hf : ParameterSymbol n Λ V W 0).toSymbol z = Symbol.ofSpatial f hf :=
+  Symbol.ext <| funext fun q => by
+    rw [coefficient_toSymbol, ← q.eta, coefficient_ofSpatial f hf _ _ hz,
+      Symbol.coefficient_ofSpatial]
 
-/-- **Evaluation commutes with the composition expansion.** At a spectral parameter in `Λ`, the
-terms of the composition expansion of parameter-dependent symbols are those of the symbols at that
-parameter. -/
-@[simp]
-theorem eval_sharpTerm (a : ParameterSymbol n Λ W U m') (b : ParameterSymbol n Λ V W m)
-    (k : ℕ) (hz : z ∈ Λ) :
-    (a.sharpTerm b k).eval hz = (a.eval hz).sharpTerm (b.eval hz) k := by
-  induction k generalizing m m' with
-  | zero => rw [sharpTerm_zero, Symbol.sharpTerm_zero, eval_inclusion, eval_comp]
-  | succ k ih =>
-    rw [sharpTerm_succ, Symbol.sharpTerm_succ, eval_inclusion, eval_smul, eval_sum]
-    simp only [ih, eval_frequencyDeriv, eval_spatialDeriv]
+/-- If a parameter-dependent symbol vanishes, at a spectral parameter `z`, at the positions outside
+a compact set `K` for every frequency, then its symbol at `z` has compact spatial support. -/
+theorem hasCompactSpatialSupport_toSymbol (a : ParameterSymbol n Λ V W m) (z : ℂ)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (ha : ∀ x ∉ K, ∀ ξ, a.coefficient ((x, ξ), z) = 0) :
+    (a.toSymbol z).HasCompactSpatialSupport :=
+  Symbol.hasCompactSpatialSupport_iff.2 ⟨K, hK, ha⟩
 
-/-! ### Parametrices at each spectral parameter -/
-
-section Parametrix
-
-variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
-
-/-- **Left parametrices with parameter, in the ordinary calculus.** If `a` has order `m` and is
-elliptic with parameter, then for every `N` there are parameter-dependent symbols `b` of order `-m`,
-equal to `a⁻¹` up to order `-m - 1`, and `r` of order `-N` such that at every spectral parameter
-`z ∈ Λ`, `1 - ∑_{k < N} sharpTerm b_z a_z k = r_z` in the ordinary symbol calculus. The remainder
-`r_z` is a symbol of order `-N` whose estimates are uniform in `z`. -/
-theorem IsElliptic.exists_sub_sum_sharpTerm_eval_left (ha : a.IsElliptic) (N : ℕ) :
-    ∃ b : ParameterSymbol n Λ W V (-m),
-      (∃ d : ParameterSymbol n Λ W V (-m - 1),
-        b.coefficient = (a.inverse ha).coefficient + d.coefficient) ∧
-      ∃ r : ParameterSymbol n Λ V V (-N), ∀ (z : ℂ) (hz : z ∈ Λ),
-        (Symbol.const (.id ℂ V) : Symbol n V V 0).coefficient -
-          ∑ k ∈ range N, ((b.eval hz).sharpTerm (a.eval hz) k).coefficient =
-            (r.eval hz).coefficient := by
-  obtain ⟨b, hd, r, hr⟩ := ha.exists_sub_sum_sharpTerm_left N
-  refine ⟨b, hd, r, fun z hz => ?_⟩
-  funext q
-  have h := congrFun hr (q, z)
-  simp only [Pi.sub_apply, Finset.sum_apply] at h
-  simpa [← eval_sharpTerm, coefficient_const _ q.1 q.2 hz, Symbol.coefficient_const,
-    Symbol.coefficient_sum] using h
-
-/-- **Right parametrices with parameter, in the ordinary calculus.** If `a` has order `m` and is
-elliptic with parameter, then for every `N` there are parameter-dependent symbols `b` of order `-m`,
-equal to `a⁻¹` up to order `-m - 1`, and `r` of order `-N` such that at every spectral parameter
-`z ∈ Λ`, `1 - ∑_{k < N} sharpTerm a_z b_z k = r_z` in the ordinary symbol calculus. The remainder
-`r_z` is a symbol of order `-N` whose estimates are uniform in `z`. -/
-theorem IsElliptic.exists_sub_sum_sharpTerm_eval_right (ha : a.IsElliptic) (N : ℕ) :
-    ∃ b : ParameterSymbol n Λ W V (-m),
-      (∃ d : ParameterSymbol n Λ W V (-m - 1),
-        b.coefficient = (a.inverse ha).coefficient + d.coefficient) ∧
-      ∃ r : ParameterSymbol n Λ W W (-N), ∀ (z : ℂ) (hz : z ∈ Λ),
-        (Symbol.const (.id ℂ W) : Symbol n W W 0).coefficient -
-          ∑ k ∈ range N, ((a.eval hz).sharpTerm (b.eval hz) k).coefficient =
-            (r.eval hz).coefficient := by
-  obtain ⟨b, hd, r, hr⟩ := ha.exists_sub_sum_sharpTerm_right N
-  refine ⟨b, hd, r, fun z hz => ?_⟩
-  funext q
-  have h := congrFun hr (q, z)
-  simp only [Pi.sub_apply, Finset.sum_apply] at h
-  simpa [← eval_sharpTerm, coefficient_const _ q.1 q.2 hz, Symbol.coefficient_const,
-    Symbol.coefficient_sum] using h
-
-end Parametrix
+/-- **Decay in the spectral parameter.** For orders `m ≤ m' ≤ 0`, a parameter-dependent symbol of
+order `m`, viewed at each spectral parameter as an ordinary symbol of order `m'`, has seminorms
+`p_{K,α,β}(a(z)) ≤ C (1 + ‖z‖ ^ (1 / 2)) ^ (m - m')`, uniformly in `z ∈ Λ`. -/
+theorem exists_seminorm_inclusion_toSymbol_le (a : ParameterSymbol n Λ V W m) (h : m ≤ m')
+    (h' : m' ≤ 0) (K : TopologicalSpace.Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ z ∈ Λ,
+      Symbol.seminorm K α β (Symbol.inclusion h (a.toSymbol z)) ≤
+        C * (1 + Real.sqrt ‖z‖) ^ (m - m') := by
+  obtain ⟨C, hC, hb⟩ := a.exists_norm_mixedDeriv_coefficient_le K.isCompact α β
+  refine ⟨C, hC, fun z hz => Symbol.seminorm_le_bound K α β _ (by positivity) fun x hx ξ => ?_⟩
+  have ht := parameterWeight_pos ξ z
+  have hβ : m' - β.length ≤ 0 := by linarith [(Nat.cast_nonneg β.length : (0 : ℝ) ≤ _)]
+  rw [Symbol.coefficient_inclusion]
+  calc _ ≤ C * parameterWeight ξ z ^ (m - β.length) := hb x hx ξ z hz
+    _ = C * (parameterWeight ξ z ^ (m' - β.length) * parameterWeight ξ z ^ (m - m')) := by
+        rw [← Real.rpow_add ht]
+        ring_nf
+    _ ≤ C * ((1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) * (1 + Real.sqrt ‖z‖) ^ (m - m')) := by
+        exact mul_le_mul_of_nonneg_left
+          (mul_le_mul (parameterWeight_rpow_le_one_add_norm_sq_rpow ξ z hβ)
+            (parameterWeight_rpow_le_one_add_sqrt_rpow ξ z (by linarith)) (by positivity)
+            (by positivity)) hC
+    _ = _ := by ring
 
 end ParameterSymbol
 

@@ -164,7 +164,7 @@ theorem existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self {i : Fin n}
 /-- The unique fixed point of the involution pairing a side with itself. It is an interior
 point of that side even when both endpoints are ideal. -/
 noncomputable def selfPairedSideFixedPoint (i : {i : Fin n // σ.pair i = i}) : ℍ :=
-  Classical.choose (σ.existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self i.2)
+  Classical.choose (σ.existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self i.property)
 
 /-- The fixed point of a self-paired side lies on the side, avoids its endpoints, and is
 fixed by the pairing map. -/
@@ -174,7 +174,7 @@ theorem selfPairedSideFixedPoint_spec (i : {i : Fin n // σ.pair i = i}) :
       P.vertex (i + 1) ≠ .inl (σ.selfPairedSideFixedPoint i) ∧
       σ.map i • σ.selfPairedSideFixedPoint i = σ.selfPairedSideFixedPoint i := by
   exact (Classical.choose_spec
-    (σ.existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self i.2)).1
+    (σ.existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self i.property)).1
 
 /-- The self-pairing involution fixes its distinguished side point. -/
 @[simp]
@@ -206,7 +206,7 @@ theorem stabilizer_eq_bot_iff_of_mem_side {i : Fin n}
     exact σ.map_ne_one i (congrArg Subtype.val hg)
   · apply (Subgroup.eq_bot_iff_forall _).mpr
     intro g hg
-    have hfix := (σ.smul_eq_self_iff_of_mem_side hmap hdisj hz hzp hzq g.2).mp
+    have hfix := (σ.smul_eq_self_iff_of_mem_side hmap hdisj hz hzp hzq g.property).mp
       (mem_stabilizer_iff.mp hg)
     exact Subtype.ext (hfix.resolve_right fun hc ↦ h hc.2)
 
@@ -222,7 +222,7 @@ theorem map_stabilizer_eq_zpowers_map_of_mem_side {i : Fin n}
     (stabilizer Γ z).map Γ.subtype = Subgroup.zpowers (σ.map i) := by
   apply le_antisymm
   · rintro g ⟨γ, hγ, rfl⟩
-    rcases (σ.smul_eq_self_iff_of_mem_side hmap hdisj hz hzp hzq γ.2).mp
+    rcases (σ.smul_eq_self_iff_of_mem_side hmap hdisj hz hzp hzq γ.property).mp
         (mem_stabilizer_iff.mp hγ) with h | ⟨h, -⟩
     · simpa only [Subgroup.coe_subtype, h] using (Subgroup.zpowers (σ.map i)).one_mem
     · simpa only [Subgroup.coe_subtype, h] using Subgroup.mem_zpowers (σ.map i)
@@ -253,7 +253,8 @@ theorem mem_orbit_iff_eq_of_mem_side_map_smul_eq_self {i : Fin n}
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ mem_orbit_self _⟩
   obtain ⟨g, hgz⟩ := mem_orbit_iff.mp h
   rcases σ.eq_one_or_eq_map_pair_of_smul_mem_side
-    (by simpa only [σ.map_pair] using Γ.inv_mem hmap) hdisj g.2 hz hw hwp hwq hgz with hg | hg
+    (by simpa only [σ.map_pair] using Γ.inv_mem hmap) hdisj g.property hz hw hwp hwq hgz with hg |
+        hg
   · simpa only [Subgroup.smul_def, hg, one_smul] using hgz
   · have hgw : g • w = w := by
       rw [Subgroup.smul_def, hg, σ.map_pair, inv_smul_eq_iff]

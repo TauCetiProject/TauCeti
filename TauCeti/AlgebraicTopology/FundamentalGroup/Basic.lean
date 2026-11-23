@@ -290,7 +290,7 @@ theorem _root_.Path.homotopic_refl_of_forall_mem_of_subsingleton {s : Set X} {x 
     [Subsingleton (_root_.FundamentalGroup s x)] (γ : Path x.val x.val) (hγ : ∀ t, γ t ∈ s) :
     γ.Homotopic (Path.refl x.val) := by
   have h := (subsingleton_fundamentalGroup_iff.1 ‹_› (γ.codRestrict hγ)).map
-    ⟨_, continuous_subtype_val⟩
+    ⟨_, continuous_subtypeVal⟩
   rwa [Path.map_codRestrict, Path.map_refl] at h
 
 /-- **A path-connected space with a trivial fundamental group is simply connected.** It suffices

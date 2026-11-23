@@ -42,7 +42,8 @@ replacing `f` by `f + c Xⁿ` changes the defect in degree `n` by `c ((X + Y)ⁿ
 (`FormalGroup.homogeneousComponent_homDefect_add_sub`).
 
 Base change along a ring homomorphism `φ : R →+* S` applies `φ` to the coefficients of the
-series: `TauCeti.FormalGroupHom.map` and `TauCeti.FormalGroupIso.map` carry homomorphisms and
+series, commuting with `FormalGroup.homDefect` (`FormalGroup.map_homDefect`):
+`TauCeti.FormalGroupHom.map` and `TauCeti.FormalGroupIso.map` carry homomorphisms and
 isomorphisms between `F` and `G` to ones between `F.map φ` and `G.map φ`, compatibly with
 identities, composition, inverses and strictness. Base change along the identity ring
 homomorphism does nothing, and successive base changes agree with base change along the composite.
@@ -840,6 +841,19 @@ section BaseChange
 
 variable {S : Type*} [CommRing S]
 
+/-- Base change along a ring homomorphism `φ` commutes with the homomorphism defect of any series
+with zero constant coefficient. -/
+theorem _root_.FormalGroup.map_homDefect {f : PowerSeries R}
+    (hf : PowerSeries.constantCoeff f = 0) (φ : R →+* S) :
+    (F.homDefect G f).map φ = (F.map φ).homDefect (G.map φ) (f.map φ) := by
+  rw [FormalGroup.homDefect_def, FormalGroup.homDefect_def, map_sub,
+    FormalGroup.map_toPowerSeries, FormalGroup.map_toPowerSeries,
+    PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
+    MvPowerSeries.map_subst (MvPowerSeries.HasSubst.toMvPowerSeries hf)]
+  congr 2
+  funext i
+  exact PowerSeries.map_toMvPowerSeries φ i f
+
 namespace FormalGroupHom
 
 /-- The base change of a formal group homomorphism along a ring homomorphism `φ`: its series is
@@ -851,10 +865,10 @@ noncomputable def map (f : FormalGroupHom F G) (φ : R →+* S) :
     rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
       PowerSeries.coeff_zero_eq_constantCoeff_apply, f.zero_constantCoeff, map_zero]
   hom := by
-    have h := congrArg (MvPowerSeries.map φ) f.hom
-    rw [PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
-      MvPowerSeries.map_subst (.toMvPowerSeries f.zero_constantCoeff)] at h
-    simpa only [FormalGroup.map_toPowerSeries, PowerSeries.map_toMvPowerSeries] using h
+    rw [← FormalGroup.homDefect_eq_zero_iff,
+      ← FormalGroup.map_homDefect
+        (by rw [PowerSeries.constantCoeff_eq]; exact f.zero_constantCoeff),
+      f.homDefect_toPowerSeries, map_zero]
 
 @[simp]
 theorem map_toPowerSeries (f : FormalGroupHom F G) (φ : R →+* S) :

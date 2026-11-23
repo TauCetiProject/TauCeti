@@ -58,16 +58,17 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 component of a ray `ρ` exactly when `ρ` is a ray of `σ` and the coordinate indexed by `ρ`
 vanishes. -/
 theorem analyticAffineChartι_mem_analyticBoundaryComponent_iff (σ : Φ.cones) {ι : Type*}
-    {b : Module.Basis (ToricRay σ.1 ⊕ ι) ℤ N}
+    {b : Module.Basis (ToricRay σ.val ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (ρ : Φ.Ray)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
     Φ.analyticAffineChartι hΦ σ x ∈ Φ.analyticBoundaryComponent hΦ ρ ↔
       ∃ h : ρ.toCone ≤ σ, (coneChartEquiv Φ.lattice
-        ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hb x).1 (ρ.toToricRay Φ σ h) = 0 := by
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+        ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hb x).1 (ρ.toToricRay Φ σ h) = 0
+            := by
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   by_cases h : ρ.toCone ≤ σ
   · have hF : Φ.orbitFace h =
-        (ρ.toToricRay Φ σ h).1 :=
+        (ρ.toToricRay Φ σ h).val :=
       PointedCone.Face.ext fun v ↦ SetLike.ext_iff.mp
         ((Φ.coe_orbitFace h).trans (Ray.toPointedCone_toToricRay Φ ρ σ h).symm) v
     rw [exists_prop_of_true h]
@@ -100,16 +101,16 @@ theorem exists_partialDiffeomorph_analyticBoundaryComponent_normalForm
   -- Step 1: choose regular coordinates on the affine chart of the cone `σ` whose orbit contains
   -- `x`, and identify them linearly with `ℂ ^ n`.
   obtain ⟨σ, hxσ⟩ := Φ.exists_mem_analyticConeOrbit hΦ x
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
-  have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
-  let κ := Finite.equivFin (ToricRay σ.1)
-  have hk : Nat.card (ToricRay σ.1) + l = Module.finrank ℤ N := by
+  have : Finite (ToricRay σ.val) := ToricRay.finite_of_fg hσ.fg
+  let κ := Finite.equivFin (ToricRay σ.val)
+  have hk : Nat.card (ToricRay σ.val) + l = Module.finrank ℤ N := by
     rw [Module.finrank_eq_nat_card_basis B, Nat.card_sum, Nat.card_eq_fintype_card (α := Fin l),
       Fintype.card_fin]
-  let eN : Fin (Nat.card (ToricRay σ.1)) ⊕ Fin l ≃ Fin (Module.finrank ℤ N) :=
+  let eN : Fin (Nat.card (ToricRay σ.val)) ⊕ Fin l ≃ Fin (Module.finrank ℤ N) :=
     finSumFinEquiv.trans (finCongr hk)
-  let L : ((Fin (Nat.card (ToricRay σ.1)) → ℂ) × (Fin l → ℂ)) ≃L[ℂ]
+  let L : ((Fin (Nat.card (ToricRay σ.val)) → ℂ) × (Fin l → ℂ)) ≃L[ℂ]
       (Fin (Module.finrank ℤ N) → ℂ) :=
     ((LinearEquiv.sumArrowLequivProdArrow _ _ ℂ ℂ).symm.trans
       (LinearEquiv.funCongrLeft ℂ ℂ eN.symm)).toContinuousLinearEquiv
@@ -119,22 +120,22 @@ theorem exists_partialDiffeomorph_analyticBoundaryComponent_normalForm
   have := isManifold_coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g n
   -- Step 2: `e` inverts the chart inclusion, then applies the regular chart and `L`.
   let P := Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n
-  let C := extChartPartialDiffeomorph 𝓘(ℂ, (Fin (Nat.card (ToricRay σ.1)) → ℂ) × (Fin l → ℂ)) n
+  let C := extChartPartialDiffeomorph 𝓘(ℂ, (Fin (Nat.card (ToricRay σ.val)) → ℂ) × (Fin l → ℂ)) n
     (P.symm x)
   let D : PartialDiffeomorph _ _ _ _ n := PartialDiffeomorph.ofOpenPartialHomeomorph
     L.toHomeomorph.toOpenPartialHomeomorph (by simpa using L.contDiff.contDiffOn)
     (by simpa using L.symm.contDiff.contDiffOn)
   let e := P.symm.trans (C.trans D)
   -- On the affine chart, `e` is the ambient regular chart followed by `L`.
-  have hP (x' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+  have hP (x' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
       P.symm (Φ.analyticAffineChartι hΦ σ x') = x' :=
     Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ σ hB κ g n x'
-  have he (x' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+  have he (x' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
       e (Φ.analyticAffineChartι hΦ σ x') =
         L (coneChartAmbient Φ.lattice hσ.toIsToricCone hB κ x') := by
     conv_rhs => rw [← hP x']
     simp [e, C, D, coe_coneChartedSpace_chartAt]
-  have hsource : ∀ y ∈ e.source, ∃ x' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1),
+  have hsource : ∀ y ∈ e.source, ∃ x' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val),
       Φ.analyticAffineChartι hΦ σ x' = y := by
     intro y hy
     have hy' : y ∈ P.target := hy.1

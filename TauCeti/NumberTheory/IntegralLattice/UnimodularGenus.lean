@@ -20,9 +20,10 @@ the same signature and are both even or both odd.
 
 The determinant of a unimodular lattice is `(-1) ^ n₋`, so only the prime `2` needs a local
 comparison. There the unimodular forms over `ℤ_[2]` are classified by rank, type, determinant
-square class and oddity, and the oddity of a unimodular lattice is its signature modulo `8` by
-van der Blij's theorem (`TauCeti.IntegralLattice.vanDerBlij`). For instance, the odd unimodular
-lattices of signature `(p, q)` form the single genus of `I_{p,q} = ⟨1⟩ ^ p ⊕ ⟨-1⟩ ^ q`.
+square class and oddity, and the oddity of a unimodular lattice is the difference `n₊ - n₋` of its
+signature, taken modulo `8`, by van der Blij's theorem (`TauCeti.IntegralLattice.vanDerBlij`). For
+instance, if `p + q ≥ 1`, the odd unimodular lattices of signature `(p, 0, q)` form the single genus
+of `I_{p,q} = ⟨1⟩ ^ p ⊕ ⟨-1⟩ ^ q`.
 
 ## Main results
 
