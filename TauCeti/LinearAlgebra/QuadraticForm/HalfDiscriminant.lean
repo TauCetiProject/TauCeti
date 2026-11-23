@@ -46,7 +46,8 @@ nondegenerate although its polar form is zero.
 * `QuadraticForm.two_mul_halfDiscr`: `2 disc'(q) = disc(q)` in odd rank.
 * `QuadraticForm.halfDiscr_basis_change`, `QuadraticForm.halfDiscr_reindex`:
   `disc'(q)` is well defined up to the square of a unit.
-* `QuadraticForm.halfDiscr_baseChange`: compatibility with base change.
+* `QuadraticForm.polarDiscr_baseChange`, `QuadraticForm.halfDiscr_baseChange`,
+  `QuadraticForm.IsDiscrNondegenerate.baseChange`: compatibility with base change.
 * `QuadraticForm.isDiscrNondegenerate_iff`: nondegeneracy can be read in any basis;
   `QuadraticForm.isDiscrNondegenerate_iff_of_even` and
   `QuadraticForm.isDiscrNondegenerate_iff_of_odd` read it on `disc(q)` and `disc'(q)`.
@@ -150,6 +151,20 @@ theorem halfDiscr_reindex (q : QuadraticForm R M) (b : Basis ι R M) (e : ι ≃
   rw [halfDiscr_eq_halfDet _ hB, halfDiscr_eq_halfDet _ hB,
     LinearMap.BilinForm.toMatrix_reindex, reindex_apply, halfDet_submatrix_equiv_self]
 
+/-- The discriminant is compatible with base change: for a bilinear form `B` with
+`B(x, x) = q(x)`, the form `x ↦ B_A(x, x)` on `A ⊗ M`, which has the same coefficients as `q`, has
+discriminant the image of `disc(q)`. -/
+theorem polarDiscr_baseChange (A : Type*) [CommRing A] [Algebra R A] {q : QuadraticForm R M}
+    (b : Basis ι R M) {B : BilinForm R M} (hB : B.toQuadraticMap = q) :
+    polarDiscr (B.baseChange A).toQuadraticMap (Algebra.TensorProduct.basis A b) =
+      algebraMap R A (polarDiscr q b) := by
+  rw [polarDiscr, polarDiscr, ← hB, LinearMap.BilinMap.polarBilin_toQuadraticMap,
+    LinearMap.BilinMap.polarBilin_toQuadraticMap, RingHom.map_det]
+  congr 1
+  ext i j
+  simp [LinearMap.BilinForm.toMatrix_apply, Algebra.TensorProduct.basis_apply,
+    Algebra.algebraMap_eq_smul_one, add_smul]
+
 /-- The half-discriminant is compatible with base change: for a bilinear form `B` with
 `B(x, x) = q(x)`, the form `x ↦ B_A(x, x)` on `A ⊗ M`, which has the same coefficients as `q`, has
 half-discriminant the image of `disc'(q)`. -/
@@ -192,6 +207,16 @@ theorem normalizedDiscr_reindex (q : QuadraticForm R M) (b : Basis ι R M) (e : 
   rw [normalizedDiscr, normalizedDiscr, polarDiscr_reindex, halfDiscr_reindex,
     Fintype.card_congr e]
 
+/-- `normalizedDiscr` is compatible with base change, in the form of
+`QuadraticForm.polarDiscr_baseChange` and `QuadraticForm.halfDiscr_baseChange`. -/
+theorem normalizedDiscr_baseChange (A : Type*) [CommRing A] [Algebra R A]
+    {q : QuadraticForm R M} (b : Basis ι R M) {B : BilinForm R M} (hB : B.toQuadraticMap = q) :
+    normalizedDiscr (B.baseChange A).toQuadraticMap (Algebra.TensorProduct.basis A b) =
+      algebraMap R A (normalizedDiscr q b) := by
+  rcases Nat.even_or_odd (Fintype.card ι) with hι | hι
+  · rw [normalizedDiscr_of_even hι, normalizedDiscr_of_even hι, polarDiscr_baseChange A b hB]
+  · rw [normalizedDiscr_of_odd hι, normalizedDiscr_of_odd hι, halfDiscr_baseChange A b hB]
+
 /-- A quadratic form on a free module of finite rank is *nondegenerate* (Conrad, *Reductive group
 schemes*, Appendix C.1) if in some basis its discriminant (even rank) or half-discriminant (odd
 rank) is a unit; then this holds in every basis (`QuadraticForm.isDiscrNondegenerate_iff`). In
@@ -219,6 +244,16 @@ theorem isDiscrNondegenerate_iff_of_even {q : QuadraticForm R M} (b : Basis ι R
 theorem isDiscrNondegenerate_iff_of_odd {q : QuadraticForm R M} (b : Basis ι R M)
     (hι : Odd (Fintype.card ι)) : IsDiscrNondegenerate q ↔ IsUnit (halfDiscr q b) := by
   rw [isDiscrNondegenerate_iff b, normalizedDiscr_of_odd hι]
+
+/-- Nondegeneracy is preserved by base change: if `q` is nondegenerate and `B` is a bilinear form
+with `B(x, x) = q(x)`, the form `x ↦ B_A(x, x)` on `A ⊗ M` is nondegenerate. -/
+theorem IsDiscrNondegenerate.baseChange (A : Type*) [CommRing A] [Algebra R A]
+    {q : QuadraticForm R M} (h : IsDiscrNondegenerate q) {B : BilinForm R M}
+    (hB : B.toQuadraticMap = q) : IsDiscrNondegenerate (B.baseChange A).toQuadraticMap := by
+  obtain ⟨n, b, hb⟩ := h
+  exact ⟨n, Algebra.TensorProduct.basis A b, by
+    rw [normalizedDiscr_baseChange A b hB]
+    exact hb.map _⟩
 
 /-- The form `x²` on `R` has half-discriminant `1`. -/
 theorem halfDiscr_sq :
