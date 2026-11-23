@@ -131,9 +131,10 @@ theorem isLittleO_cexp_neg_mul_cpow_cobounded {c α : ℝ} (hc : 0 < c) (hα : 0
   have hα₁ : |α| ≤ 1 := abs_le.2 ⟨by linarith, by linarith⟩
   exact (IsBigO.of_norm_le fun z => norm_cexp_neg_mul_cpow_le hc.le hα₁ z).trans_isLittleO h
 
-/-- The damping exponential `exp (-b z ^ α)` is holomorphic on the slit plane. -/
-theorem differentiableAt_cexp_neg_mul_cpow (b α : ℝ) {z : ℂ} (hz : z ∈ slitPlane) :
-    DifferentiableAt ℂ (fun w : ℂ => cexp (-(b * w ^ (α : ℂ)))) z :=
+/-- The damping exponential `exp (-b z ^ α)` is holomorphic on the slit plane, for all complex
+`b` and `α`. -/
+theorem differentiableAt_cexp_neg_mul_cpow (b α : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
+    DifferentiableAt ℂ (fun w : ℂ => cexp (-(b * w ^ α))) z :=
   ((differentiableAt_id.cpow_const hz).const_mul _).neg.cexp
 
 end Cpow
