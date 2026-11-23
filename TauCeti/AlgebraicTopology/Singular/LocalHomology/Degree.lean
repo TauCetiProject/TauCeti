@@ -493,10 +493,11 @@ theorem localDegree_eq_add (hF : finrank ℝ F = n) {M₁ M₂ : Type} [Topologi
       ⟨fun x ↦ ⟨j x, mem_range_self x⟩, j.continuous.subtype_mk _⟩
     have hk : IsOpenEmbedding k :=
       (IsOpenEmbedding.of_comp_iff _ (TopologicalSpace.Opens.isOpenEmbedding' _)).1 hj
+    have hkj : (⟨Subtype.val, continuous_subtypeVal⟩ : C(_, M)).comp k = j :=
+      ContinuousMap.ext fun _ ↦ rfl
     rw [← (o.comap _).localDegree_comap o' hE hF hk _ fun z _ ↦
         (z.property.imp fun _ hx ↦ Subtype.ext hx),
-      comap_comap_of_comp_eq _ _ hk hj rfl]
-    rfl
+      comap_comap_of_comp_eq _ _ hk hj rfl, ContinuousMap.comp_assoc, hkj]
   rw [o.localDegree_eq_sum o' hE hF f hc
       (U := fun b ↦ cond b ⟨range j₁, hj₁.isOpen_range⟩ ⟨range j₂, hj₂.isOpen_range⟩)
       (by rintro (_ | _) (_ | _) h <;> first | exact absurd rfl h | exact hdisj | exact hdisj.symm)
