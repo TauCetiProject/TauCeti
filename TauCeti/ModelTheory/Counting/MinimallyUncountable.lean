@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Counting.Scattered.SentenceSplits
-public import TauCeti.ModelTheory.Counting.Scattered.Spectrum
 public import TauCeti.ModelTheory.Counting.Scattered.Vaught
 import TauCeti.ModelTheory.Counting.Scattered.AnalyticSplits
 import TauCeti.ModelTheory.RelationalConfiguration.Saturation
+import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Spectrum
 
 /-!
 # Minimally uncountable sentences and the Harnik–Makkai reduction

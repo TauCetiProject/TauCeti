@@ -41,6 +41,8 @@ itself (Mathlib's `MulAction.IsInvariantBlock` for the logic action), or it equa
 
 * `TauCeti.RelationalConfiguration.isoSetoid L V` — isomorphism of decoded structures, as a setoid
   on the configurations on `V`.
+* `TauCeti.RelationalConfiguration.classIso K` — isomorphism restricted to a class `K` of
+  configurations.
 * `TauCeti.RelationalConfiguration.IsomorphismInvariant` — a set of configurations closed under
   isomorphism.
 
@@ -49,9 +51,10 @@ itself (Mathlib's `MulAction.IsInvariantBlock` for the logic action), or it equa
 * `TauCeti.RelationalConfiguration.isoSetoid_iff_exists_perm_smul_eq` and
   `TauCeti.RelationalConfiguration.isoSetoid_eq_orbitRel` — isomorphism is the orbit relation of
   the relabelling action of `Equiv.Perm V`;
-* `TauCeti.RelationalConfiguration.isoSetoid_iff_eq_of_subsingleton` and
-  `TauCeti.RelationalConfiguration.isoSetoid_eq_bot_of_subsingleton` — on a subsingleton carrier,
-  isomorphism of configurations is equality;
+* `TauCeti.RelationalConfiguration.classIso_apply`,
+  `TauCeti.RelationalConfiguration.classIso_iff_exists_perm_smul_eq`, and
+  `TauCeti.RelationalConfiguration.comap_inclusion_classIso` — basic API for isomorphism restricted
+  to a class;
 * `Equiv.isoSetoid_encodeVia_iff` — encodings of two structures on a common carrier are
   isomorphic exactly when the structures are;
 * `TauCeti.RelationalConfiguration.isClosed_setOf_isoSetoid` and
@@ -152,17 +155,43 @@ theorem isoSetoid_eq_orbitRel :
   rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, ← (isoSetoid L V).comm',
     isoSetoid_iff_exists_perm_smul_eq]
 
-/-- On a subsingleton carrier, the isomorphism setoid on relational configurations is equality. -/
-theorem isoSetoid_eq_bot_of_subsingleton [Subsingleton V] : isoSetoid L V = ⊥ := by
-  rw [isoSetoid_eq_orbitRel]
-  exact MulAction.orbitRel_of_subsingleton
+section ClassIso
 
-/-- On a subsingleton carrier, two relational configurations are isomorphic if and only if they are
-equal. -/
+variable {α : Type w} {K A : Set (RelationalConfiguration L α)}
+
+/-- **Isomorphism restricted to a class.** For a set `K` of configurations on `α`, two members of
+`K` are related when their decoded structures are isomorphic: the pullback of `isoSetoid L α`
+along the inclusion of `K`. It is an abbreviation, so results stated for that pullback apply to
+it. -/
+abbrev classIso (K : Set (RelationalConfiguration L α)) : Setoid K :=
+  (isoSetoid L α).comap Subtype.val
+
+/-- Isomorphism on a class is the pullback of isomorphism along the inclusion of the class. -/
+theorem classIso_def (K : Set (RelationalConfiguration L α)) :
+    classIso K = (isoSetoid L α).comap Subtype.val :=
+  (rfl)
+
+/-- Two members of a class are related exactly when they are isomorphic as configurations. -/
 @[simp]
-theorem isoSetoid_iff_eq_of_subsingleton [Subsingleton V] {c d : RelationalConfiguration L V} :
-    isoSetoid L V c d ↔ c = d :=
-  Setoid.ext_iff.mp isoSetoid_eq_bot_of_subsingleton c d
+theorem classIso_apply {x y : K} : classIso K x y ↔ isoSetoid L α x y :=
+  Iff.rfl
+
+/-- Isomorphism on a class is the orbit relation of the logic action, pulled back to the class. -/
+theorem classIso_eq_comap_orbitRel :
+    classIso K = (MulAction.orbitRel (Equiv.Perm α) _).comap Subtype.val := by
+  rw [classIso_def, isoSetoid_eq_orbitRel]
+
+/-- Two members of a class are related exactly when a permutation of the carrier relabels the
+first into the second. -/
+theorem classIso_iff_exists_perm_smul_eq {x y : K} :
+    classIso K x y ↔ ∃ σ : Equiv.Perm α, σ • (x : RelationalConfiguration L α) = y :=
+  isoSetoid_iff_exists_perm_smul_eq
+
+/-- Isomorphism on a subclass is isomorphism on the class, pulled back along the inclusion. -/
+theorem comap_inclusion_classIso (h : A ⊆ K) : (classIso K).comap (inclusion h) = classIso A :=
+  (rfl)
+
+end ClassIso
 
 /-- Structures transported to a common carrier have isomorphic encodings exactly when they are
 isomorphic, whatever their universes. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Infinite
-public import TauCeti.ModelTheory.RelationalConfiguration.ClassIso
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 import TauCeti.ModelTheory.Syntax
 

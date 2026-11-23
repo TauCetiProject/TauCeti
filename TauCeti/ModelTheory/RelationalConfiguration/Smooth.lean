@@ -83,11 +83,11 @@ theorem isSmooth_comap_isoSetoid_iff_exists_sentenceTheory [∀ n, Countable (L.
       ∃ θ : ℕ → L.Sentenceω, ∀ c ∈ C, ∀ d ∈ C,
         isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d := by
   refine ⟨fun hsmooth => ?_, isSmooth_comap_isoSetoid_of_exists_sentenceTheory⟩
+  have := hC.standardBorel
   obtain ⟨g, hg, hgE⟩ := Setoid.isSmooth_iff.1 hsmooth
-  obtain ⟨θ, hθ⟩ := exists_sentenceTheory_eq_on hC hg fun {x y} hxy => (hgE x y).1 hxy
-  exact ⟨θ, fun c hc d hd => (hgE ⟨c, hc⟩ ⟨d, hd⟩).trans
-    ⟨fun h => by rw [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩, h],
-      fun h => by rwa [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩] at h⟩⟩
+  obtain ⟨θ, hθ⟩ := exists_sentenceTheory_eq_iff_of_countablySeparated
+    measurable_subtypeVal hg fun x y hxy => (hgE x y).1 hxy
+  exact ⟨θ, fun c hc d hd => (hgE ⟨c, hc⟩ ⟨d, hd⟩).trans (hθ ⟨c, hc⟩ ⟨d, hd⟩)⟩
 
 /-- **Characterization of Borel classes with countably many isomorphism classes.** On a countable
 carrier in a countable relational vocabulary, a Borel set `C` meets countably many isomorphism

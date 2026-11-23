@@ -7,7 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Counting.Scattered.Vaught
 public import TauCeti.ModelTheory.RelationalConfiguration.FragmentSpectrum
-import TauCeti.ModelTheory.Counting.Scattered.Spectrum
+import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Spectrum
 
 /-!
 # Fragment-spectrum characterizations of scattered classes and sentences

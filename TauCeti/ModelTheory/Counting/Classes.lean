@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration.ClassIso
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.SetTheory.Descriptive.Antichain
 import TauCeti.SetTheory.Descriptive.Silver

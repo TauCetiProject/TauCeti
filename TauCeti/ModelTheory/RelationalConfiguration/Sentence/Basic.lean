@@ -104,17 +104,6 @@ theorem measurable_sentenceTheory [Countable ι] [Countable V] (θ : κ → L.Se
     Measurable (sentenceTheory (V := V) θ) :=
   TauCeti.measurable_pi_decide_mem fun i => measurableSet_modelsOf (V := V) (θ i)
 
-/-- Agreement of `sentenceTheory θ` defines a measurable equivalence graph on configurations over a
-countable carrier for any countable family of countable-branching sentences. -/
-theorem measurableSet_setOf_sentenceTheory_eq [Countable ι] [Countable κ] [Countable V]
-    (θ : κ → L.SentenceInf ι) :
-    MeasurableSet
-      {p : RelationalConfiguration L V × RelationalConfiguration L V |
-        sentenceTheory θ p.1 = sentenceTheory θ p.2} :=
-  measurableSet_eq_fun
-    ((measurable_sentenceTheory θ).comp measurable_fst)
-    ((measurable_sentenceTheory θ).comp measurable_snd)
-
 end TauCeti.RelationalConfiguration
 
 namespace FirstOrder.Language.Equiv

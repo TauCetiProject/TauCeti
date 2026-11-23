@@ -9,7 +9,7 @@ public import TauCeti.ModelTheory.Basic
 public import TauCeti.ModelTheory.Interpolation.Craig
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
 import TauCeti.Topology.Algebra.Group.Perm
-import TauCeti.Topology.Instances.CantorSpace
+import TauCeti.Topology.MetricSpace.PiNat.WordCylinder
 
 /-!
 # The López–Escobar theorem and invariant analytic separation

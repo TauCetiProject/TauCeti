@@ -99,9 +99,9 @@ theorem countable_image_sentenceTheory_of_isThinOn [Countable ι] [Countable κ]
     (sentenceTheory θ '' C).Countable := by
   let g : C → ι → Bool := fun c => sentenceTheory θ c.val
   let F : Setoid C := Setoid.ker g
+  have hg : Measurable g := (measurable_sentenceTheory θ).comp measurable_subtypeVal
   have hF_meas : MeasurableSet {p : C × C | F p.1 p.2} :=
-    (measurableSet_setOf_sentenceTheory_eq θ).preimage
-      (measurable_subtypeVal.prodMap measurable_subtypeVal)
+    measurableSet_eq_fun (hg.comp measurable_fst) (hg.comp measurable_snd)
   have hcount : Countable (Quotient F) :=
     hthin.countable_quotient_of_measurableSet hC F
       (fun _ _ hxy => sentenceTheory_eq_of_isoSetoid hxy θ) hF_meas

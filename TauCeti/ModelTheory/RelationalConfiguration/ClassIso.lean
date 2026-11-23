@@ -9,32 +9,25 @@ public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.SetTheory.Descriptive.BorelReducibility
 
 /-!
-# Isomorphism restricted to a class of configurations
+# Borel reducibility of isomorphism on classes of configurations
 
-For a relational language `L` and a carrier `α`, a *class* is any set `K` of configurations on
-`α`, isomorphism invariant or not. Isomorphism on `K` is the isomorphism relation of the decoded
-structures, `isoSetoid L α`, pulled back to the subtype `K`, which carries the subtype
-σ-algebra. This is the equivalence relation whose position in the Borel reducibility order
-measures how hard it is to classify the members of `K` up to isomorphism; for instance, a class
-of codes on `ℕ` is Borel complete when the isomorphism relation of every invariant Borel class, in
-every countable relational language, is Borel reducible to its own.
+For a relational language `L` and a carrier `α`, `TauCeti.RelationalConfiguration.classIso K` is the
+isomorphism relation of decoded structures restricted to a class `K` of configurations on `α`, which
+carries the subtype σ-algebra. This module proves the basic Borel-reducibility results for
+`classIso`:
 
-The classes are arbitrary sets rather than model classes of sentences, because subclasses that
-are not invariant arise when comparing classes: the inclusion of a subclass, or the corestriction
-of a measurable map that preserves and reflects isomorphism, is a Borel reduction. On the model
-class of an infinitary sentence it is `TauCeti.RelationalConfiguration.isoSetoidOn`, which is
-defined through it.
-
-## Main definitions
-
-* `TauCeti.RelationalConfiguration.classIso K`: isomorphism restricted to the class `K`.
+* on the whole coding space, `classIso univ` is Borel bireducible with `isoSetoid L α`
+  (`TauCeti.RelationalConfiguration.borelBireducible_classIso_univ`);
+* inclusion of a subclass, or corestriction of a measurable map that preserves and reflects
+  isomorphism, is a Borel reduction
+  (`TauCeti.RelationalConfiguration.borelReducible_classIso_of_subset`,
+  `TauCeti.RelationalConfiguration.borelReducible_classIso_of_mapsTo`);
+* isomorphism on the empty class reduces to every class, and a class reduces to the empty class
+  precisely when it is empty (`TauCeti.RelationalConfiguration.classIso_empty_borelReducible`,
+  `TauCeti.RelationalConfiguration.borelReducible_classIso_empty_iff`).
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.classIso_apply` and
-  `TauCeti.RelationalConfiguration.classIso_iff_exists_perm_smul_eq`: two members of `K` are
-  related when their decoded structures are isomorphic, equivalently when they lie in one orbit of
-  the logic action of `Equiv.Perm α`.
 * `TauCeti.RelationalConfiguration.borelBireducible_classIso_univ`: on the whole coding space it
   is Borel bireducible with `isoSetoid L α`.
 * `TauCeti.RelationalConfiguration.borelReducible_classIso_of_subset`: isomorphism on a subclass is
@@ -61,36 +54,7 @@ open FirstOrder FirstOrder.Language Set
 namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {α : Type w}
-
-/-- **Isomorphism restricted to a class.** For a set `K` of configurations on `α`, two members of
-`K` are related when their decoded structures are isomorphic: the pullback of `isoSetoid L α`
-along the inclusion of `K`. It is an abbreviation, so results stated for that pullback apply to
-it. -/
-abbrev classIso (K : Set (RelationalConfiguration L α)) : Setoid K :=
-  (isoSetoid L α).comap Subtype.val
-
-variable {K A : Set (RelationalConfiguration L α)}
-
-/-- Isomorphism on a class is the pullback of isomorphism along the inclusion of the class. -/
-theorem classIso_def (K : Set (RelationalConfiguration L α)) :
-    classIso K = (isoSetoid L α).comap Subtype.val :=
-  (rfl)
-
-/-- Two members of a class are related exactly when they are isomorphic as configurations. -/
-@[simp]
-theorem classIso_apply {x y : K} : classIso K x y ↔ isoSetoid L α x y :=
-  Iff.rfl
-
-/-- Isomorphism on a class is the orbit relation of the logic action, pulled back to the class. -/
-theorem classIso_eq_comap_orbitRel :
-    classIso K = (MulAction.orbitRel (Equiv.Perm α) _).comap Subtype.val := by
-  rw [classIso_def, isoSetoid_eq_orbitRel]
-
-/-- Two members of a class are related exactly when a permutation of the carrier relabels the
-first into the second. -/
-theorem classIso_iff_exists_perm_smul_eq {x y : K} :
-    classIso K x y ↔ ∃ σ : Equiv.Perm α, σ • (x : RelationalConfiguration L α) = y :=
-  isoSetoid_iff_exists_perm_smul_eq
+  {K A : Set (RelationalConfiguration L α)}
 
 /-- On the whole coding space, isomorphism restricted to the class `univ` is Borel bireducible
 with isomorphism. -/
@@ -101,10 +65,6 @@ theorem borelBireducible_classIso_univ :
     ⟨Setoid.borelReducible_iff.2 ⟨Subtype.val, measurable_subtypeVal, fun _ _ => Iff.rfl⟩,
       Setoid.borelReducible_iff.2
         ⟨fun c => ⟨c, mem_univ c⟩, measurable_id.subtype_mk, fun _ _ => Iff.rfl⟩⟩
-
-/-- Isomorphism on a subclass is isomorphism on the class, pulled back along the inclusion. -/
-theorem comap_inclusion_classIso (h : A ⊆ K) : (classIso K).comap (inclusion h) = classIso A :=
-  (rfl)
 
 /-- **Restriction.** Isomorphism on a subclass, invariant or not, is Borel reducible to
 isomorphism on the class, through the inclusion. -/
