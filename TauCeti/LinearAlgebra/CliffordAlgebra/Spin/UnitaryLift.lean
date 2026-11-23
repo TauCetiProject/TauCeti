@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
-import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # The `Spinᶜ` lift of the unitary group `U(2)`
@@ -228,8 +227,7 @@ theorem eq_spinCUnitary {φ : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀}
     (hdet : ∀ g, spinCGroup.det Q hQ₀ (φ g) = UnitaryGroup.detCircle g) :
     φ = b.spinCUnitary hQ hQ₀ := by
   have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
-  refine spinCGroup.hom_ext_of_isSquare Q hQ₀
-    (QuadraticMap.Anisotropic.nondegenerate fun v hv => by simpa [hQ] using hv)
+  refine spinCGroup.hom_ext_of_isSquare Q hQ₀ (QuadraticMap.nondegenerate_of_eq_neg_norm_sq hQ)
     UnitaryGroup.isSquare (MonoidHom.ext fun g => ?_)
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.prod_apply, MonoidHom.prod_apply, hdet,
     det_spinCUnitary]
@@ -246,13 +244,11 @@ theorem spinCUnitary_unitaryTorusHom_mulSingle_one (z : Circle) :
   have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
   have hQb (i : Fin 4) : Q (b i) = -1 := by simp [hQ]
   have hortho {i j : Fin 4} (hij : i ≠ j) : Q.IsOrtho (b i) (b j) := b.isOrtho_apply hQ hij
-  have huw := b.isOrtho_apply hQ (by decide : (2 : Fin 4) ≠ 3)
-  have h := b.map_apply_mul_map_apply hQ 2 3
   let φ : Circle →* spinCGroup Q hQ₀ := (b.spinCUnitary hQ hQ₀).comp
     ((unitaryTorusHom (Fin 2)).comp (MonoidHom.mulSingle (fun _ : Fin 2 => Circle) 1))
-  have hφ : φ = spinCCircle Q hQ₀ (b 2) (b 3) huw h := by
-    refine eq_spinCCircle hQ₀ huw h
-      (QuadraticMap.Anisotropic.nondegenerate fun v hv => by simpa [hQ] using hv) ?_ ?_
+  have hφ : φ = spinCCircle Q hQ₀ (b 2) (b 3) (hortho (by decide))
+      (b.map_apply_mul_map_apply hQ 2 3) := by
+    refine eq_spinCCircle hQ₀ _ _ (QuadraticMap.nondegenerate_of_eq_neg_norm_sq hQ) ?_ ?_
     · -- Compare the two rotations on the frame, using the complex coordinates for `φ`.
       refine MonoidHom.ext fun w => Subtype.ext (LinearEquiv.toLinearMap_injective
         (b.toBasis.ext fun i => ?_))
