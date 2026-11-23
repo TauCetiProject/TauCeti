@@ -252,9 +252,6 @@ instance isNonarchimedeanLocalField_adicCompletion [Finite (R ⧸ v.asIdeal)] :
     Valuation.IsRankOneDiscrete.rankOne _ (by norm_num : (1 : NNReal) < 2)
   let _ : NormedField (v.adicCompletion K) :=
     Valued.toNormedField (v.adicCompletion K) ℤᵐ⁰
-  -- The residue field of `𝒪_v` is `R ⧸ v`, which is finite.
-  let _ : Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
-    Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
   -- Local compactness comes from Mathlib's criterion for the `Valued` structure of `K_v`. That
   -- criterion is stated for `Valued.integer`, which unfolds to `v.adicCompletionIntegers K`, so
   -- its two inputs are supplied by `inferInstanceAs` at the latter.
@@ -294,15 +291,9 @@ theorem isUniformizer_iff_valued_eq_exp_neg_one [Finite (R ⧸ v.asIdeal)]
 instance compactSpace_adicCompletionIntegers
     [IsNonarchimedeanLocalField (v.adicCompletion K)] :
     CompactSpace (v.adicCompletionIntegers K) := by
-  let f : 𝒪[v.adicCompletion K] ≃ₜ v.adicCompletionIntegers K := {
-    toEquiv := (v.integerEquivAdicCompletionIntegers (K := K)).toEquiv
-    continuous_toFun := continuous_induced_rng.mpr <|
-      continuous_subtypeVal.congr fun x ↦
-        (v.coe_integerEquivAdicCompletionIntegers (K := K) x).symm
-    continuous_invFun := continuous_induced_rng.mpr <|
-      continuous_subtypeVal.congr fun x ↦
-        (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
-  exact f.compactSpace
+  change CompactSpace ↥(v.adicCompletionIntegers K).toSubring
+  rw [← v.integer_eq_adicCompletionIntegers]
+  infer_instance
 
 /-- **The unit filtration of `K_v` in terms of the adic valuation.** A unit `u` of `K_v` lies in
 the `n`-th step `U(K_v, n)` of the unit filtration exactly when it is a unit of `𝒪_v` and
@@ -379,19 +370,12 @@ theorem not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even
   have hval : Valued.v (algebraMap K (v.adicCompletion K) a) = WithZero.exp n := by
     rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation']
     exact ha
-  -- The adic value of a square is the square of the adic value of its root, and here it is nonzero.
-  have hprod : Valued.v y * Valued.v y = WithZero.exp n := by
-    rw [← hval, hy, Valued.v.map_mul]
-  have hvy : Valued.v y ≠ 0 := by
-    rintro h
-    rw [h, zero_mul] at hprod
-    exact WithZero.exp_ne_zero hprod.symm
-  -- Taking logarithms, the order of vanishing is a sum of two equal integers, so it is even.
-  have hlog : n = WithZero.log (Valued.v y) + WithZero.log (Valued.v y) := by
-    have h := WithZero.log_mul hvy hvy
-    rw [hprod, WithZero.log_exp] at h
-    exact h
-  exact hn ⟨WithZero.log (Valued.v y), hlog⟩
+  -- Taking logarithms (`WithZero.log_pow` holds unconditionally), the order of vanishing is a sum
+  -- of two equal integers, so it is even.
+  apply hn
+  refine ⟨WithZero.log (Valued.v y), ?_⟩
+  simpa only [hy, ← pow_two, map_pow, WithZero.log_pow, two_nsmul, WithZero.log_exp] using
+    congrArg WithZero.log hval.symm
 
 end IsDedekindDomain.HeightOneSpectrum
 
