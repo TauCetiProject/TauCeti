@@ -285,7 +285,7 @@ private theorem exists_cutoff_graphHomotopy {K : Set E} (hKc : IsCompact K) (hK�
   exact ⟨ψ, hψ01, fun x hx t ht ↦
     hψ1.filter_mono (nhds_le_nhdsSet (s := S) (mem_image_of_mem _ ⟨hx, ht⟩))⟩
 
-omit [FiniteDimensional ℝ E'] [CompleteSpace F] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [CompleteSpace F] in
 /-- If the cutoff `ψ` is equal to one near the graph of the homotopy over the support of a current
 `T`, then `T` takes the same value on the end slice `x ↦ (x, φ x)` of the cut-off pullback of `ω`
 as on the pushforward test `χ φ^* ω`. -/
@@ -447,7 +447,7 @@ section Pushforward
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [CompleteSpace F]
   {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ}
 
-omit [FiniteDimensional ℝ E'] [CompleteSpace F] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [CompleteSpace F] in
 /-- **The mass of a pushforward, bounded on the support**: if `χ` is one near the support of `T`
 and `‖DΦ‖ ≤ L` at the points of the support, then `M(T ∘ (χ Φ^*)) ≤ L ^ k M(T)`. -/
 theorem mass_comp_cutoffPullbackCLM_le_of_forall_mem_dsupport (hT : HasLocallyFiniteMass T)
