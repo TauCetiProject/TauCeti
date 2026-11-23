@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 
 /-!
@@ -61,7 +62,8 @@ theorem isEmpty_fiber_iso_of_isClopen {U : Set S} (hU : IsClopen U) {x : Spec (.
     IsEmpty (fiber x ≅ fiber y) := by
   refine ⟨fun e ↦ hy ?_⟩
   let V : S.Opens := ⟨U, hU.isOpen⟩
-  have : IsClosedImmersion V.ι := .of_isPreimmersion _ (by simpa [V] using hU.isClosed)
+  have : IsClosedImmersion V.ι :=
+    Scheme.Opens.isClosedImmersion_ι_of_isClosed V hU.isClosed
   obtain ⟨a⟩ := (nonempty_fiber_obj_ofHom_ι_iff V x).mpr hx
   exact (nonempty_fiber_obj_ofHom_ι_iff V y).mp ⟨e.hom.app _ a⟩
 

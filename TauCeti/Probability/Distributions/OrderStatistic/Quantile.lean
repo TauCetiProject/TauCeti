@@ -22,6 +22,9 @@ adjunction, so it requires no continuity assumption on the source law or its qua
 
 * `quantile_map_orderStatistic_pi` computes the quantile of the product-measure law.
 * `quantile_of_hasLaw_orderStatistic_iid` gives the same formula for an independent sample.
+* `quantile_map_orderStatistic_zero_pi` and `quantile_map_orderStatistic_last_pi` specialize the
+  inverse-Beta product-measure quantile at the extreme positions `0` and `Fin.last n` to elementary
+  power levels.
 * `tendsto_quantile_map_orderStatistic_pi_nhdsGT_zero` and
   `tendsto_quantile_map_orderStatistic_pi_nhdsLT_one` identify the endpoint limits with those
   of the source law.
@@ -68,13 +71,32 @@ theorem quantile_of_hasLaw_orderStatistic_iid {Ω : Type*} [MeasurableSpace Ω]
   rw [hstat.map_eq]
   exact quantile_map_orderStatistic_pi k hu
 
+/-- At `k = 0`, the inverse-Beta order-statistic quantile formula specializes to
+`μ.quantile (1 - (1 - u) ^ (n : ℝ)⁻¹)`, matching the sample minimum quantile even for atomic
+laws. -/
+theorem quantile_map_orderStatistic_zero_pi [NeZero n] (hu : u ∈ Ioo 0 1) :
+    ((Measure.pi fun _ : Fin n ↦ μ).map (orderStatistic 0)).quantile u =
+      μ.quantile (1 - (1 - u) ^ (n : ℝ)⁻¹) := by
+  have hn : (0 : ℝ) < n := Nat.cast_pos.mpr (NeZero.pos n)
+  rw [quantile_map_orderStatistic_pi 0 hu]
+  simp [hn, hu.1, hu.2]
+
+/-- At `k = Fin.last n`, the inverse-Beta order-statistic quantile formula specializes to
+`μ.quantile (u ^ ((n : ℝ) + 1)⁻¹)`, matching the sample maximum quantile even for atomic laws. -/
+theorem quantile_map_orderStatistic_last_pi (hu : u ∈ Ioo 0 1) :
+    ((Measure.pi fun _ : Fin (n + 1) ↦ μ).map (orderStatistic (Fin.last n))).quantile u =
+      μ.quantile (u ^ ((n : ℝ) + 1)⁻¹) := by
+  have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
+  rw [quantile_map_orderStatistic_pi (Fin.last n) hu]
+  simp [Nat.cast_add_one, add_sub_cancel_left, hn, hu.1, hu.2]
+
 /-- As the probability level tends to zero from above, the quantiles of an iid order statistic
 tend to the infimum of the source law's topological support. The infimum is taken in `EReal`, so
 this includes source laws unbounded below. -/
 theorem tendsto_quantile_map_orderStatistic_pi_nhdsGT_zero (k : Fin n) :
     Tendsto
       (fun u ↦ (((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)).quantile u : EReal))
-      (𝓝[>] 0) (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
+      (𝓝[>] 0) (𝓝 (⨅ x : μ.support, (x.val : EReal))) := by
   have ha : (0 : ℝ) < (k : ℝ) + 1 := by positivity
   have hb : (0 : ℝ) < (n : ℝ) - k := sub_pos.mpr (by exact_mod_cast k.isLt)
   have hbeta : Tendsto
@@ -95,7 +117,7 @@ this includes source laws unbounded above. -/
 theorem tendsto_quantile_map_orderStatistic_pi_nhdsLT_one (k : Fin n) :
     Tendsto
       (fun u ↦ (((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)).quantile u : EReal))
-      (𝓝[<] 1) (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
+      (𝓝[<] 1) (𝓝 (⨆ x : μ.support, (x.val : EReal))) := by
   have ha : (0 : ℝ) < (k : ℝ) + 1 := by positivity
   have hb : (0 : ℝ) < (n : ℝ) - k := sub_pos.mpr (by exact_mod_cast k.isLt)
   have hbeta : Tendsto

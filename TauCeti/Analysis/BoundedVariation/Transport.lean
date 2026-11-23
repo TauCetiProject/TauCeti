@@ -5,33 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Dilation
 public import TauCeti.Analysis.BoundedVariation.Isometry
 public import TauCeti.Analysis.BoundedVariation.Space
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
-# Transport of BV functions by affine isometries and dilations
+# Transport of BV functions by affine isometries
 
 Global BV membership and the Banach space `BV(Ω)` of `TauCeti.Analysis.BoundedVariation.Space`
-are transported along the two kinds of change of variables under which variation behaves
-predictably.
+are transported along a measure-preserving affine isometry equivalence `f` identifying `V` with
+`Ω`, into a space with a translation-invariant measure: `u ↦ u ∘ f` preserves BV membership
+(`AffineIsometryEquiv.memBV_comp_iff`) and induces a linear isometry equivalence
+`AffineIsometryEquiv.compBV f hf hVO hOV : BV ν Ω ≃ₗᵢ[ℝ] BV μ V`. Rigid motions of a Euclidean
+space with its Lebesgue measure are the main instance. This extends
+`TauCeti.BV.compLinearIsometryEquiv` from linear to affine isometries. Dilations of BV classes are
+`TauCeti.BV.compSmul`.
 
-* A measure-preserving affine isometry equivalence `f` identifying `V` with `Ω`, into a space with
-  a translation-invariant measure: `u ↦ u ∘ f` preserves BV membership
-  (`AffineIsometryEquiv.memBV_comp_iff`) and induces a linear isometry equivalence
-  `AffineIsometryEquiv.compBV f hf hVO hOV : BV ν Ω ≃ₗᵢ[ℝ] BV μ V`. Rigid motions of a
-  Euclidean space with its Lebesgue measure are the main instance.
-* A positive dilation `x ↦ r • x` identifying `V` with `Ω`, for an additive Haar measure on a
-  space of dimension `n`: `u ↦ u (r • ·)` preserves BV membership (`TauCeti.memBV_comp_smul_iff`)
-  and induces a continuous linear equivalence
-  `TauCeti.BV.compSMul hr hVO hOV : BV μ Ω ≃L[ℝ] BV μ V`, whose inverse is the dilation by
-  `r⁻¹`. It multiplies the `L¹` norm by `r⁻ⁿ` and the variation by `r¹⁻ⁿ`, so its operator norm
-  is at most the larger of these two factors.
-
-The domains are arbitrary open sets, with no boundedness or regularity assumption. Each operator
-is characterized on representatives (`coeFn_compBV`, `BV.coeFn_compSMul`) and on classes formed
-from functions (`compBV_ofFunction`, `BV.compSMul_ofFunction`).
+The domains are arbitrary open sets, with no boundedness or regularity assumption. The operator
+is characterized on representatives (`AffineIsometryEquiv.coeFn_compBV`) and on classes formed
+from functions (`AffineIsometryEquiv.compBV_ofFunction`).
 
 ## References
 
@@ -45,7 +36,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace TauCeti
-open scoped ENNReal Pointwise
+open scoped ENNReal
 
 variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
@@ -197,147 +188,3 @@ theorem totalVariationOn_compBV (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreservin
   rw [totalVariationOn_congr_ae (coeFn_compBV f hf hVO hOV u), totalVariationOn_comp f hf hVO hOV]
 
 end AffineIsometryEquiv
-
-/-! ### Positive dilations -/
-
-namespace TauCeti
-
-variable {μ : Measure E} {V Ω : Opens E} {r : ℝ} {u : E → ℝ}
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem coe_eq_preimage_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω)
-    (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) : (V : Set E) = (r • ·) ⁻¹' Ω :=
-  Set.ext fun x => ⟨fun hx => hVO hx, fun hx => by simpa [inv_smul_smul₀ hr.ne'] using hOV hx⟩
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem smul_coe_eq (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω)
-    (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) : r • (V : Set E) = Ω := by
-  ext y
-  rw [mem_smul_set_iff_inv_smul_mem₀ hr.ne']
-  exact ⟨fun hy => by simpa [smul_inv_smul₀ hr.ne'] using hVO hy, fun hy => hOV hy⟩
-
-variable [μ.IsAddHaarMeasure]
-
-/-- **BV membership is invariant under positive dilations.** For an additive Haar measure, if
-`x ↦ r • x` with `r > 0` identifies `V` with `Ω`, then `u (r • ·)` is BV on `V` exactly when `u`
-is BV on `Ω`. -/
-theorem memBV_comp_smul_iff (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω)
-    (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) :
-    MemBV μ V (fun x => u (r • x)) ↔ MemBV μ Ω u := by
-  have hint : IntegrableOn (fun x => u (r • x)) V μ ↔ IntegrableOn u Ω μ := by
-    rw [← integrable_indicator_iff V.isOpen.measurableSet,
-      ← integrable_indicator_iff Ω.isOpen.measurableSet, coe_eq_preimage_smul hr hVO hOV]
-    exact integrable_comp_smul_iff μ ((Ω : Set E).indicator u) hr.ne'
-  have hpos : ENNReal.ofReal (r / r ^ Module.finrank ℝ E) ≠ 0 :=
-    (ENNReal.ofReal_pos.mpr (by positivity)).ne'
-  rw [memBV_iff, memBV_iff, totalVariationOn_comp_smul hr hVO hOV, hint]
-  refine and_congr Iff.rfl ⟨fun h => ?_, fun h => ENNReal.mul_lt_top (by finiteness) h⟩
-  rcases ENNReal.mul_lt_top_iff.mp h with ⟨-, h⟩ | h | h
-  · exact h
-  · exact absurd h hpos
-  · simp [h]
-
-namespace BV
-
-/-- The BV norm of `u (r • ·)` on `V` is at most the larger of the `L¹` factor `r⁻ⁿ` and the
-variation factor `r¹⁻ⁿ` times the BV norm of `u` on `Ω`. -/
-private theorem norm_ofFunction_comp_smul_le (hr : 0 < r)
-    (hVO : MapsTo (fun x : E => r • x) V Ω) (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V)
-    (u : BV μ Ω) (hu : MemBV μ V (fun x => u (r • x))) :
-    ‖ofFunction _ hu‖ ≤
-      max (r ^ Module.finrank ℝ E)⁻¹ (r / r ^ Module.finrank ℝ E) * ‖u‖ := by
-  have hL1 : ‖(ofFunction _ hu).toL1‖ = (r ^ Module.finrank ℝ E)⁻¹ * ‖u.toL1‖ := by
-    rw [norm_toL1_ofFunction, L1.norm_eq_integral_norm,
-      Measure.setIntegral_comp_smul_of_pos μ (fun y => ‖u y‖) V hr, smul_coe_eq hr hVO hOV,
-      smul_eq_mul]
-  rw [norm_def, hL1, totalVariationOn_ofFunction, totalVariationOn_comp_smul hr hVO hOV,
-    ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), norm_def, mul_add]
-  gcongr
-  · exact le_max_left _ _
-  · exact le_max_right _ _
-
-/-- Pulling BV classes back by the positive dilation `x ↦ r • x` identifying `V` with `Ω`, for an
-additive Haar measure, as a continuous linear equivalence for the BV norm. Its inverse is the
-dilation by `r⁻¹` (`TauCeti.BV.compSMul_symm`). -/
-def compSMul (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω)
-    (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) : BV μ Ω ≃L[ℝ] BV μ V :=
-  have hr' : 0 < r⁻¹ := inv_pos.mpr hr
-  have hVO' : MapsTo (fun y : E => r⁻¹⁻¹ • y) V Ω := by simpa only [inv_inv] using hVO
-  have hg := (Measure.quasiMeasurePreserving_smul μ hr.ne').restrict hVO
-  have hg' := (Measure.quasiMeasurePreserving_smul μ hr'.ne').restrict hOV
-  have hmem (u : E → ℝ) (hu : MemBV μ Ω u) : MemBV μ V (u ∘ fun x => r • x) :=
-    (memBV_comp_smul_iff hr hVO hOV).mpr hu
-  have hmem' (w : E → ℝ) (hw : MemBV μ V w) : MemBV μ Ω (w ∘ fun y => r⁻¹ • y) :=
-    (memBV_comp_smul_iff hr' hOV hVO').mpr hw
-  LinearEquiv.toContinuousLinearEquivOfBounds
-    { compₗ _ hg hmem with
-      invFun := compₗ _ hg' hmem'
-      left_inv := compₗ_compₗ _ _ (fun y => smul_inv_smul₀ hr.ne' y) hg hmem hg' hmem'
-      right_inv := compₗ_compₗ _ _ (fun x => inv_smul_smul₀ hr.ne' x) hg' hmem' hg hmem }
-    _ _ (fun u => norm_ofFunction_comp_smul_le hr hVO hOV u _)
-    (fun w => norm_ofFunction_comp_smul_le hr' hOV hVO' w _)
-
-variable (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω)
-  (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V)
-
-private theorem compSMul_apply (u : BV μ Ω) :
-    compSMul hr hVO hOV u =
-      ofFunction (fun x => u (r • x)) ((memBV_comp_smul_iff hr hVO hOV).mpr u.memBV) :=
-  (rfl)
-
-/-- The dilated class is represented by `u (r • ·)` almost everywhere on `V`. -/
-theorem coeFn_compSMul (u : BV μ Ω) :
-    (compSMul hr hVO hOV u : E → ℝ) =ᵐ[μ.restrict V] fun x => u (r • x) := by
-  rw [compSMul_apply]
-  exact coeFn_ofFunction _ _
-
-/-- The inverse of a positive dilation of BV classes is the dilation by the inverse ratio. -/
-theorem compSMul_symm :
-    (compSMul (μ := μ) hr hVO hOV).symm =
-      compSMul (inv_pos.mpr hr) hOV (by simpa only [inv_inv] using hVO) :=
-  ContinuousLinearEquiv.ext <| funext fun w => by
-    rw [ContinuousLinearEquiv.symm_apply_eq]
-    have hVO' : MapsTo (fun y : E => r⁻¹⁻¹ • y) V Ω := by simpa only [inv_inv] using hVO
-    refine ext ?_
-    filter_upwards [coeFn_compSMul hr hVO hOV (compSMul (inv_pos.mpr hr) hOV hVO' w),
-      ((Measure.quasiMeasurePreserving_smul μ hr.ne').restrict hVO).ae_eq_comp
-        (coeFn_compSMul (inv_pos.mpr hr) hOV hVO' w)] with x h₁ h₂
-    rw [h₁]
-    simpa [inv_smul_smul₀ hr.ne'] using h₂.symm
-
-/-- Dilation commutes with forming a BV class. -/
-@[simp]
-theorem compSMul_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
-    compSMul hr hVO hOV (ofFunction u hu) =
-      ofFunction (fun x => u (r • x)) ((memBV_comp_smul_iff hr hVO hOV).mpr hu) :=
-  ext <| (coeFn_compSMul hr hVO hOV _).trans <|
-    (((Measure.quasiMeasurePreserving_smul μ hr.ne').restrict hVO).ae_eq_comp
-      (coeFn_ofFunction u hu)).trans (coeFn_ofFunction _ _).symm
-
-/-- A positive dilation multiplies total variation by `r / r ^ n`, where `n` is the dimension. -/
-@[simp]
-theorem totalVariationOn_compSMul (u : BV μ Ω) :
-    totalVariationOn μ V (compSMul hr hVO hOV u) =
-      ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * totalVariationOn μ Ω u := by
-  rw [totalVariationOn_congr_ae (coeFn_compSMul hr hVO hOV u)]
-  exact totalVariationOn_comp_smul hr hVO hOV
-
-/-- A positive dilation multiplies the `L¹` norm by `r⁻ⁿ`, where `n` is the dimension. -/
-@[simp]
-theorem norm_toL1_compSMul (u : BV μ Ω) :
-    ‖(compSMul hr hVO hOV u).toL1‖ = (r ^ Module.finrank ℝ E)⁻¹ * ‖u.toL1‖ := by
-  rw [compSMul_apply, norm_toL1_ofFunction, L1.norm_eq_integral_norm,
-    Measure.setIntegral_comp_smul_of_pos μ (fun y => ‖u y‖) V hr, smul_coe_eq hr hVO hOV,
-    smul_eq_mul]
-
-/-- The BV norm of a dilated class is at most the larger of the `L¹` and variation scaling
-factors times the original norm. -/
-theorem norm_compSMul_le (u : BV μ Ω) :
-    ‖compSMul hr hVO hOV u‖ ≤
-      max (r ^ Module.finrank ℝ E)⁻¹ (r / r ^ Module.finrank ℝ E) * ‖u‖ := by
-  rw [compSMul_apply]
-  exact norm_ofFunction_comp_smul_le hr hVO hOV u _
-
-end BV
-
-end TauCeti

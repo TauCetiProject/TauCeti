@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Modular.Relations
 public import TauCeti.GroupTheory.TriangleGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
+public import TauCeti.NumberTheory.Modular.Relations
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -81,6 +82,19 @@ theorem U_pow_three : U ^ 3 = 1 := by
 theorem S_mul_R_inv_mul_S_inv : S * R⁻¹ * S⁻¹ = -U := by
   decide
 
+/-- Coordinate reflection sends `R = S T` to `-U`. -/
+@[simp]
+theorem conjJ_R : SpecialLinearGroup.conjJ R = -U := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp
+
+/-- Conjugating `R⁻¹` by `S⁻¹` on the left and `S` on the right yields `conjJ R`. -/
+theorem S_inv_mul_R_inv_mul_S : S⁻¹ * (R⁻¹ * S) = SpecialLinearGroup.conjJ R := by
+  rw [conjJ_R]; decide
+
+/-- The square of `R` is the rotation `T⁻¹ S` fixing `ρ`, with no central sign. -/
+theorem R_sq : R ^ 2 = T⁻¹ * S := by
+  decide
+
 /-- Recovering the translation from `R`, with the inverse of `S`. -/
 theorem S_inv_mul_R : S⁻¹ * R = T := by
   simp [R]
@@ -111,6 +125,10 @@ theorem coe_R_pow_three : (R : PSL(2, ℤ)) ^ 3 = 1 := by
 @[simp]
 theorem coe_U_pow_three : (U : PSL(2, ℤ)) ^ 3 = 1 := by
   rw [← QuotientGroup.mk_pow, U_pow_three, QuotientGroup.mk_one]
+
+/-- Projectively, the square of `R` is its inverse. -/
+theorem coe_R_sq : (R : PSL(2, ℤ)) ^ 2 = (R : PSL(2, ℤ))⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← pow_succ, coe_R_pow_three])
 
 /-- The triangle relation in the convention with positive cusp translation. -/
 theorem coe_T_mul_coe_S_mul_coe_U : (T : PSL(2, ℤ)) * S * U = 1 := by
