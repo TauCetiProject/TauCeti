@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
+import Mathlib.RepresentationTheory.Rep.Basic
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Quotient
 import TauCeti.Topology.Algebra.Group.Subgroup
@@ -461,7 +462,7 @@ variable {A G V : Type*} [Ring A] [Group G] [TopologicalSpace G] [SeparatelyCont
 /-- A quotient of a smooth representation by an invariant submodule is smooth. -/
 instance [IsSmooth ρ] (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
     IsSmooth (ρ.quotient W le_comap) :=
-  IsSmooth.of_surjective (ρ.mkQ W le_comap) (by simpa only [coe_mkQ] using W.mkQ_surjective)
+  IsSmooth.of_surjective (Rep.mkQ (Rep.of ρ) W le_comap).hom W.mkQ_surjective
 
 /-- The quotient of a smooth representation by a subrepresentation is smooth. -/
 instance [IsSmooth ρ] (ρ' : Subrepresentation ρ) : IsSmooth ρ'.quotient :=

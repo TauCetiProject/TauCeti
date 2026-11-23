@@ -51,8 +51,6 @@ taking invariants under it.
   of the source and of the target.
 * `Representation.Equiv.ofBasisAction`: build an equivalence from matching coordinate actions.
 * `Representation.Equiv.ofClosureEqTop`: build an equivalence from equivariance on generators.
-* `Representation.mkQ`: quotient projection `V →ₗ[A] V ⧸ W` by an invariant submodule, as an
-  intertwining map.
 
 ## Main results
 
@@ -513,33 +511,6 @@ theorem ofClosureEqTop_symm_apply (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup
   (rfl)
 
 end Equiv
-
-section Quotient
-
-variable {A G V : Type*} [Ring A] [Monoid G] [AddCommGroup V] [Module A V]
-
-/-- The quotient projection `V →ₗ[A] V ⧸ W` by an invariant submodule, bundled as an intertwining
-map `ρ → ρ.quotient W le_comap`. -/
-def mkQ (ρ : Representation A G V) (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
-    ρ.IntertwiningMap (ρ.quotient W le_comap) where
-  toLinearMap := W.mkQ
-  isIntertwining' _ := rfl
-
-/-- The quotient intertwining map acts as `Submodule.mkQ`. -/
-@[simp]
-theorem coe_mkQ (ρ : Representation A G V) (W : Submodule A V)
-    (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
-    ⇑(ρ.mkQ W le_comap) = W.mkQ :=
-  (rfl)
-
-/-- The linear map underlying `Representation.mkQ` is `Submodule.mkQ`. -/
-@[simp]
-theorem toLinearMap_mkQ (ρ : Representation A G V) (W : Submodule A V)
-    (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
-    (ρ.mkQ W le_comap).toLinearMap = W.mkQ :=
-  (rfl)
-
-end Quotient
 
 end Representation
 

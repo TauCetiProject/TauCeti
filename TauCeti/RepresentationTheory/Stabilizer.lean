@@ -15,7 +15,7 @@ import Mathlib.Algebra.Module.Submodule.Union
 import Mathlib.Algebra.Pointwise.Stabilizer
 import Mathlib.Data.Set.Pointwise.Support
 import Mathlib.LinearAlgebra.FixedSubmodule
-import TauCeti.RepresentationTheory.Intertwining
+import Mathlib.RepresentationTheory.Rep.Basic
 import TauCeti.RepresentationTheory.Quotient
 
 /-!
@@ -109,11 +109,9 @@ theorem stabilizer_toRepresentation {A G V : Type*} [Semiring A] [Group G]
 /-- Taking the quotient by a subrepresentation can only enlarge the stabilizer of a vector. -/
 theorem le_stabilizer_quotient_mk {A G V : Type*} [Ring A] [Group G]
     [AddCommGroup V] [Module A V] {ρ : Representation A G V} (S : Subrepresentation ρ) (v : V) :
-    ρ.stabilizer v ≤ S.quotient.stabilizer (Submodule.Quotient.mk v) := by
-  have h := Representation.IntertwiningMap.stabilizer_le
-    (ρ.mkQ S.toSubmodule fun g _ hw ↦ S.apply_mem_toSubmodule g hw) v
-  rw [Representation.coe_mkQ, Submodule.mkQ_apply] at h
-  exact h
+    ρ.stabilizer v ≤ S.quotient.stabilizer (Submodule.Quotient.mk v) :=
+  Representation.IntertwiningMap.stabilizer_le
+    (Rep.mkQ (Rep.of ρ) S.toSubmodule fun g _ hw ↦ S.apply_mem_toSubmodule g hw).hom v
 
 end Subrepresentation
 
