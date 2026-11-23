@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.RealProjective
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface.Basic
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Torus
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 
