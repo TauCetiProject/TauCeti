@@ -679,44 +679,40 @@ theorem pullback_connecting_of_comp_eq {A B Q : Sheaf J GrpCat.{w}} {i : A ⟶ B
     (q : (Q.obj ⋙ forget GrpCat).sections) (q' : (Q'.obj ⋙ forget GrpCat).sections)
     (hq : ∀ U, γ.hom.app U (q.val U) = q'.val (u.op.obj U)) :
     pullback α (connecting hE q) = connecting hE' q' := by
+  -- Applying `β` to a local lift of `q` gives a local lift of `q'`.
+  have hβ (U : Cᵒᵖ) (b : (hE.lifts q).sheaf.obj.obj U) :
+      π'.hom.app (u.op.obj U) (β.hom.app U (hE.liftsObjEquiv q U b).val) = q'.val (u.op.obj U) := by
+    have := ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hγ) U)
+      (hE.liftsObjEquiv q U b).val
+    simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+      ConcreteCategory.comp_apply, (hE.liftsObjEquiv q U b).property, hq] at this
+    exact this
   -- The equivariant map from the torsor of lifts of `q` to the pushforward of the torsor of lifts
   -- of `q'` applies `β` to a local lift.
   let h : (hE.lifts q).sheaf ⟶
       (u.sheafPushforwardContinuous (Type w) J K).obj (hE'.lifts q').sheaf :=
     ObjectProperty.homMk
-      { app U := ↾fun b ↦ (hE'.liftsObjEquiv q' (u.op.obj U)).symm
-          ⟨β.hom.app U (hE.liftsObjEquiv q U b).val, by
-            have := ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hγ) U)
-              (hE.liftsObjEquiv q U b).val
-            simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-              ConcreteCategory.comp_apply, (hE.liftsObjEquiv q U b).property, hq] at this
-            exact this⟩
+      { app U := ↾fun b ↦ (hE'.liftsObjEquiv q' (u.op.obj U)).symm ⟨_, hβ U b⟩
         naturality U V f := by
           ext b
           refine (hE'.liftsObjEquiv q' _).injective (Subtype.ext ?_)
-          -- Unfold the components of `h` and the restriction maps of the pushforward.
-          change (hE'.liftsObjEquiv q' _ ((hE'.liftsObjEquiv q' _).symm ⟨β.hom.app V
-              (hE.liftsObjEquiv q V ((hE.lifts q).sheaf.obj.map f b)).val, _⟩)).val =
-            (hE'.liftsObjEquiv q' _ ((hE'.lifts q').sheaf.obj.map (u.map f.unop).op
-              ((hE'.liftsObjEquiv q' _).symm ⟨β.hom.app U (hE.liftsObjEquiv q U b).val, _⟩))).val
           refine (congrArg Subtype.val (Equiv.apply_symm_apply _ _)).trans ?_
-          simp only [IsGroupExtension.liftsObjEquiv_map, Equiv.apply_symm_apply]
-          exact NatTrans.naturality_apply β.hom f _ }
+          refine (congrArg (β.hom.app V) (hE.liftsObjEquiv_map q f b)).trans
+            ((NatTrans.naturality_apply β.hom f _).trans ?_)
+          exact ((hE'.liftsObjEquiv_map q' (u.map f.unop).op _).trans
+            (congrArg _ (congrArg Subtype.val (Equiv.apply_symm_apply _ ⟨_, hβ U b⟩)))).symm }
+  have hh (U : Cᵒᵖ) (b : (hE.lifts q).sheaf.obj.obj U) :
+      (hE'.liftsObjEquiv q' (u.op.obj U) (h.hom.app U b)).val =
+        β.hom.app U (hE.liftsObjEquiv q U b).val :=
+    congrArg Subtype.val (Equiv.apply_symm_apply _ _)
   rw [connecting_def, connecting_def]
   refine pullback_mk_eq_mk h fun U a b ↦ ?_
   refine (hE'.liftsObjEquiv q' _).injective (Subtype.ext ?_)
   have := ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hα) U) a
   simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
     ConcreteCategory.comp_apply] at this
-  refine ((congrArg Subtype.val (Equiv.apply_symm_apply _ _)).trans ?_).trans
-    (hE'.liftsObjEquiv_smul q' (α.hom.app U a) _).symm
-  refine (congrArg (β.hom.app U) (hE.liftsObjEquiv_smul q a b)).trans ?_
-  rw [map_mul, this]
-  -- Unfold the component of `h` at `b`.
-  change _ = _ * (hE'.liftsObjEquiv q' _ ((hE'.liftsObjEquiv q' _).symm
-    ⟨β.hom.app U (hE.liftsObjEquiv q U b).val, _⟩)).val
-  rw [Equiv.apply_symm_apply]
-  rfl
+  rw [hh, IsGroupExtension.liftsObjEquiv_smul, map_mul, this, ← hh U b]
+  exact (hE'.liftsObjEquiv_smul q' (α.hom.app U a) _).symm
 
 end NonabelianH1
 

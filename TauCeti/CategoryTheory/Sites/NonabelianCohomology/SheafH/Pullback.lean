@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Pullback
-public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.SheafH
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.SheafH.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Pullback
 
 /-!
@@ -59,35 +59,13 @@ namespace Functor
 
 /-- The unit `F ⟶ u_* u^* F` of the adjunction `u^* ⊣ u_*` on abelian sheaves, as a morphism from
 the sheaf of groups underlying `F` to the pushforward of the sheaf of groups underlying
-`u^* F`. Use `abelianSheafToGrpSheafUnit_hom_app` to compute it. -/
+`u^* F`: the image of the unit under `abelianSheafToGrpSheaf J`. Use
+`abelianSheafToGrpSheafUnit_hom_app` to compute it. -/
 def abelianSheafToGrpSheafUnit (F : Sheaf J AddCommGrpCat.{w}) :
     (abelianSheafToGrpSheaf J).obj F ⟶ (u.sheafPushforwardContinuous GrpCat.{w} J K).obj
       ((abelianSheafToGrpSheaf K).obj ((u.sheafPullback AddCommGrpCat.{w} J K).obj F)) :=
-  ObjectProperty.homMk
-    { app U := GrpCat.ofHom ((abelianSheafToGrpSheafObjEquiv _ (u.op.obj U)).toMonoidHom.comp
-        ((AddMonoidHom.toMultiplicative
-          (((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom.app U).hom).comp
-            (abelianSheafToGrpSheafObjEquiv F U).symm.toMonoidHom))
-      naturality U V f := by
-        ext x
-        obtain ⟨a, rfl⟩ := (abelianSheafToGrpSheafObjEquiv F U).surjective x
-        -- Unfold the components and the restriction maps of the pushforward.
-        change abelianSheafToGrpSheafObjEquiv _ (u.op.obj V) (.ofAdd
-            (((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom.app V
-              ((abelianSheafToGrpSheafObjEquiv F V).symm (((abelianSheafToGrpSheaf J).obj F).obj.map
-                f (abelianSheafToGrpSheafObjEquiv F U a))).toAdd)) =
-          ((abelianSheafToGrpSheaf K).obj ((u.sheafPullback AddCommGrpCat.{w} J K).obj F)).obj.map
-            (u.map f.unop).op (abelianSheafToGrpSheafObjEquiv _ (u.op.obj U) (.ofAdd
-              (((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom.app U
-                ((abelianSheafToGrpSheafObjEquiv F U).symm
-                  (abelianSheafToGrpSheafObjEquiv F U a)).toAdd)))
-        simp only [abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv,
-          MulEquiv.symm_apply_apply, toAdd_ofAdd]
-        exact (congrArg (fun b ↦ abelianSheafToGrpSheafObjEquiv _ (u.op.obj V) (.ofAdd b))
-          (NatTrans.naturality_apply
-            ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom f a.toAdd)).trans
-          (abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv
-            ((u.sheafPullback AddCommGrpCat.{w} J K).obj F) (u.map f.unop).op _).symm }
+  (abelianSheafToGrpSheaf J).map ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F) ≫
+    (abelianSheafToGrpSheafPushforwardIso J K u).hom.app _
 
 /-- The unit `F ⟶ u_* u^* F` on the underlying sheaves of groups applies the unit to sections. -/
 @[simp]
@@ -95,10 +73,11 @@ lemma abelianSheafToGrpSheafUnit_hom_app (F : Sheaf J AddCommGrpCat.{w}) (U : C�
     (a : Multiplicative (F.obj.obj U)) :
     (u.abelianSheafToGrpSheafUnit J K F).hom.app U (abelianSheafToGrpSheafObjEquiv F U a) =
       abelianSheafToGrpSheafObjEquiv _ (u.op.obj U) (.ofAdd
-        (((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom.app U a.toAdd)) :=
-  congrArg (fun b ↦ abelianSheafToGrpSheafObjEquiv _ (u.op.obj U) (.ofAdd
-    (((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom.app U b.toAdd)))
-    ((abelianSheafToGrpSheafObjEquiv F U).symm_apply_apply a)
+        (((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom.app U a.toAdd)) := by
+  simp only [abelianSheafToGrpSheafUnit]
+  rw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ConcreteCategory.comp_apply,
+    abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv]
+  exact abelianSheafToGrpSheafPushforwardIso_hom_app_hom_app J K u _ U _
 
 variable {J K} in
 /-- The unit `F ⟶ u_* u^* F` on underlying sheaves of groups is natural in `F`. -/
@@ -106,16 +85,10 @@ lemma abelianSheafToGrpSheafUnit_naturality {F G : Sheaf J AddCommGrpCat.{w}} (f
     (abelianSheafToGrpSheaf J).map f ≫ u.abelianSheafToGrpSheafUnit J K G =
       u.abelianSheafToGrpSheafUnit J K F ≫ (u.sheafPushforwardContinuous GrpCat.{w} J K).map
         ((abelianSheafToGrpSheaf K).map ((u.sheafPullback AddCommGrpCat.{w} J K).map f)) := by
-  ext U x
-  obtain ⟨a, rfl⟩ := (abelianSheafToGrpSheafObjEquiv F U).surjective x
-  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-    ConcreteCategory.comp_apply, abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv,
-    abelianSheafToGrpSheafUnit_hom_app, toAdd_ofAdd]
-  exact (congrArg (fun b ↦ abelianSheafToGrpSheafObjEquiv _ (u.op.obj U) (.ofAdd b))
-    (ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom)
-      ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.naturality f)) U) a.toAdd)).trans
-    (abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv
-      ((u.sheafPullback AddCommGrpCat.{w} J K).map f) (u.op.obj U) _).symm
+  rw [abelianSheafToGrpSheafUnit, abelianSheafToGrpSheafUnit, ← Functor.map_comp_assoc,
+    ← (u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit_naturality, Functor.map_comp_assoc,
+    Category.assoc]
+  exact congrArg (_ ≫ ·) ((abelianSheafToGrpSheafPushforwardIso J K u).hom.naturality _)
 
 end Functor
 
