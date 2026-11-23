@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finite.Perm
-public import Mathlib.LinearAlgebra.RootSystem.BaseChange
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
-import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic
 
 /-!
 # Permutation actions of Weyl groups
@@ -35,8 +33,6 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.smul_eq_self_of_mem_ker_weylGroupToPerm` says a Weyl-group element fixing every
   root index fixes the root span pointwise.
 * `RootPairing.weylGroup_smul_of_mem_corootKer` says the Weyl group fixes `P.corootKer` pointwise.
-* `RootPairing.weylGroupToPerm_injective_of_isBalanced` says the Weyl group acts faithfully on
-  root indices for any balanced root pairing.
 * `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
@@ -219,23 +215,6 @@ theorem weylGroupToPerm_injective_of_span_eq_top
 theorem weylGroupToPerm_injective
     [P.IsRootSystem] : Function.Injective P.weylGroupToPerm :=
   (Equiv.indexHom_injective P).comp Subtype.val_injective
-
-/-- In a balanced root pairing, the permutation action of the Weyl group on root indices is
-faithful. -/
-theorem weylGroupToPerm_injective_of_isBalanced [P.IsBalanced] :
-    Function.Injective P.weylGroupToPerm := by
-  rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
-  intro w hw
-  apply Subtype.ext
-  apply Equiv.weightHom_injective P
-  rw [OneMemClass.coe_one, map_one]
-  refine LinearEquiv.ext fun x ↦ ?_
-  have h1 : w • (P.rootSpanProj x : M) = (P.rootSpanProj x : M) :=
-    smul_eq_self_of_mem_ker_weylGroupToPerm P hw (P.rootSpanProj x).property
-  have h2 : w • (x - (P.rootSpanProj x : M)) = x - (P.rootSpanProj x : M) :=
-    weylGroup_smul_of_mem_corootKer (P.sub_coe_rootSpanProj_mem_corootKer x) w
-  have hsum := congrArg₂ (· + ·) h1 h2
-  rwa [← smul_add, add_sub_cancel] at hsum
 
 /-- The Weyl-group permutation is the root-index equivalence of the underlying automorphism.
 Use this explicitly: `MonoidHom.domRestrict_apply` already simplifies its left-hand side. -/

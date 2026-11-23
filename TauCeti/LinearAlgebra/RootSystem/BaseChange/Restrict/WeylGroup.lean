@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Hom
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectionPerm
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.WeylGroup
 
 /-!
 # Weyl group isomorphism under scalar restriction

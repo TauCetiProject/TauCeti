@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
-public import TauCeti.LinearAlgebra.RootSystem.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Height
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
@@ -85,10 +84,8 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
   coroot functional takes an integer value on a weight on which the simple ones do.
-* `RootPairing.coroot'_eq_zero_of_forall_mem_support` says a weight killed by the simple coroots
-  is killed by every coroot, `RootPairing.Base.iInf_ker_coroot'_support_eq_corootKer` expresses
-  this as equality of the simple-coroot kernel with `P.corootKer`, and
-  `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` deduces that the whole Weyl group fixes it.
+* `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` says a weight killed by the simple coroots is
+  fixed by the whole Weyl group.
 * `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
   at a point of the coweight space where every simple root is nonnegative.
   `TauCeti.toWeightBasis_repr_nonneg_of_mem_posRootCone` says its coordinates in the basis of
@@ -500,31 +497,6 @@ theorem _root_.RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support {x : 
   | smul z n _ hn =>
     obtain ⟨m, hm⟩ := hn
     exact ⟨z * m, by simp [hm]⟩
-
-omit [CharZero R] in
-/-- **A weight killed by the simple coroots is killed by every coroot**, since every coroot is an
-integer combination of the simple coroots. -/
-theorem _root_.RootPairing.coroot'_eq_zero_of_forall_mem_support {x : M}
-    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 := by
-  suffices ∀ n ∈ Submodule.span ℤ (P.coroot '' b.support), P.toLinearMap.flip n x = 0
-    from this _ (b.coroot_mem_span_int j)
-  intro n hn
-  induction hn using Submodule.span_induction with
-  | mem n hn =>
-    obtain ⟨i, hi, rfl⟩ := hn
-    exact hx i hi
-  | zero => simp
-  | add n n' _ _ hn hn' => simp [hn, hn']
-  | smul z n _ hn => simp [hn]
-
-omit [CharZero R] in
-variable {P} in
-/-- For any base `b`, the common kernel of the *simple* coroot functionals equals `P.corootKer`. -/
-theorem _root_.RootPairing.Base.iInf_ker_coroot'_support_eq_corootKer :
-    (⨅ i ∈ b.support, LinearMap.ker (P.coroot' i)) = P.corootKer := by
-  ext x
-  simp only [Submodule.mem_iInf, LinearMap.mem_ker, RootPairing.mem_corootKer]
-  exact ⟨fun hx ↦ P.coroot'_eq_zero_of_forall_mem_support b hx, fun hx i _ ↦ hx i⟩
 
 omit [CharZero R] in
 variable {P} in

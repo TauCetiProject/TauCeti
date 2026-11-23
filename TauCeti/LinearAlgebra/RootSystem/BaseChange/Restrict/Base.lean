@@ -7,15 +7,15 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Base
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Hom
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
 
 /-!
 # Restriction of a base under scalar restriction
 
 A base `b` of a balanced root pairing `P` taking values in `K` restricts to a base
 `b.restrictScalars' K` of `P.restrictScalars' K` with the same simple-root support. This file
-defines that restricted base and records compatibility with duality (`Base.flip`), transport along
-equivalences (`Base.map`), and crystallographic restriction (`Base.restrictScalars`).
+defines that restricted base and records compatibility with duality (`Base.flip`) and
+crystallographic restriction (`Base.restrictScalars`).
 
 ## Main definitions
 
@@ -26,9 +26,8 @@ equivalences (`Base.map`), and crystallographic restriction (`Base.restrictScala
 
 ## Main results
 
-* `RootPairing.Base.support_restrictScalars'`, `RootPairing.Base.flip_restrictScalars'`, and
-  `RootPairing.Base.map_restrictScalars'`: support, duality, and equivalence transport for
-  `b.restrictScalars' K`.
+* `RootPairing.Base.support_restrictScalars'` and `RootPairing.Base.flip_restrictScalars'`: support
+  and duality for `b.restrictScalars' K`.
 
 ## References
 
@@ -98,18 +97,6 @@ theorem Base.support_restrictScalars' : (b.restrictScalars' K).support = b.suppo
 theorem Base.flip_restrictScalars' :
     (b.restrictScalars' K).flip = b.flip.restrictScalars' K :=
   Base.ext rfl
-
-/-- `Base.restrictScalars'` commutes with transporting a base along an equivalence. -/
-@[simp]
-theorem Base.map_restrictScalars' {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [AddCommGroup N₂]
-    [Module L M₂] [Module L N₂] {Q : RootPairing ι₂ L M₂ N₂} [Module K M₂] [Module K N₂]
-    [IsScalarTower K L M₂] [IsScalarTower K L N₂] [Q.IsBalanced] [Q.IsValuedIn K]
-    (e : P.Equiv Q) :
-    (b.map e).restrictScalars' K = (b.restrictScalars' K).map (e.restrictScalars' K) := by
-  classical
-  apply Base.ext
-  rw [support_restrictScalars', support_map_eq, support_map_eq, support_restrictScalars',
-    Equiv.indexEquiv_restrictScalars']
 
 /-- The canonical identification between the support subtype of `b.restrictScalars' K` and that of
 `b` (`Base.support_restrictScalars'`). -/
