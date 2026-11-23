@@ -258,37 +258,6 @@ end Chart
 
 namespace SmoothTwoForm.IsMomentMap
 
-section Linearize
-
-variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Monoid G] [MulAction G M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- **Linearizing an equivariant chart at a fixed point.** If a chart intertwines the action of
-`g` near a fixed point `p` of `g` with a continuous linear map `R` of the model space, then the
-differential of the chart at `p` intertwines the differential of `g` at `p` with `R`. -/
-private theorem mfderiv_chart_smul_of_eventuallyEq [ContMDiffSMul I I' ∞ G M]
-    {chart : PartialDiffeomorph I' 𝓘(ℝ, F) M F ∞} {R : F →L[ℝ] F} {g : G} {p : M}
-    (hp : g • p = p) (hpchart : p ∈ chart.source)
-    (hequiv : ∀ y ∈ chart.source, chart (g • y) = R (chart y)) (v : TangentSpace I' p) :
-    mfderiv I' 𝓘(ℝ, F) chart p (mfderiv I' I' (fun y : M ↦ g • y) p v) =
-      R (mfderiv I' 𝓘(ℝ, F) chart p v) := by
-  have hchart := chart.mdifferentiableAt (by simp) hpchart
-  have h := congr($(Filter.EventuallyEq.mfderiv_eq (I := I') (I' := 𝓘(ℝ, F))
-    (eventually_of_mem (chart.open_source.mem_nhds hpchart) hequiv :
-      (chart ∘ fun y : M ↦ g • y) =ᶠ[𝓝 p] R ∘ chart)) v)
-  rwa [mfderiv_comp_apply_of_eq p hchart
-      ((ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) g).mdifferentiableAt
-        (by simp)) hp,
-    ContinuousLinearMap.comp_apply, mfderiv_comp_apply _ R.mdifferentiableAt hchart,
-    R.mfderiv_eq] at h
-
-end Linearize
-
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [T2Space M]
@@ -342,8 +311,12 @@ theorem exists_weights_manifoldMorseIndex
     rfl
   refine ⟨n, χ, α, L, hα, fun v w ↦ by simpa only [hLv] using hform p hpchart v w, fun g v ↦ ?_,
     fun ξ ↦ ?_⟩
-  · rw [hLv v, mvfderiv_apply_eq_mfderiv_apply, ← mfderiv_chart_smul_of_eventuallyEq (I := I)
-      (hp g) hpchart (fun y hy ↦ (hequiv g y hy).2) v]
+  · have hg := (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) g).mdifferentiableAt
+      (x := p) (by simp)
+    rw [hLv v, mvfderiv_apply_eq_mfderiv_apply,
+      ← mfderiv_apply_mfderiv_of_apply_eq_self_of_eventuallyEq
+        (chart.mdifferentiableAt (by simp) hpchart) hg (hp g)
+        (eventually_of_mem (chart.open_source.mem_nhds hpchart) fun y hy ↦ (hequiv g y hy).2)]
     exact (hLv _).trans (mvfderiv_apply_eq_mfderiv_apply _ _ _)
   · have hf : ∀ y ∈ chart.source, μ y ξ = μ p ξ + weightMomentMap α (chart y) ξ :=
       fun y hy ↦ hμchart y hy ξ
@@ -357,8 +330,7 @@ theorem exists_weights_manifoldMorseIndex
           fun k ↦ hp k, LinearMap.mem_ker,
         ContinuousLinearMap.coe_coe, hμ.criticalHessian_apply_eq_zero_iff hσ.isNondegenerate
           (fundamentalVectorField_eq_zero_of_forall_smul_eq hp ξ), Subtype.forall]
-      -- An element of the subgroup `T_ξ` acts on `M` as its image in `G`, by definition.
-      rfl
+      simp only [Subgroup.mk_smul]
     exact ⟨manifoldMorseIndex_eq_two_mul_ncard_pos_of_weightMomentMap hf hpchart hcrit,
       manifoldMorseIndex_neg_eq_two_mul_ncard_neg_of_weightMomentMap hf hpchart hcrit,
       hfix ▸ finrank_ker_criticalHessian_eq_two_mul_ncard_of_weightMomentMap hf hpchart hcrit,

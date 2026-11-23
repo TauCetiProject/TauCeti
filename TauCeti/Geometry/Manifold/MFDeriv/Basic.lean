@@ -19,6 +19,8 @@ manifold-derivative API.
 * `TauCeti.mfderiv_comp_of_apply_eq_self`: the chain rule at a fixed point `f x = x` of the
   inner map, with both derivatives taken at `x`, so no cast between `T_(f x) M` and `T_x M` is
   needed.
+* `TauCeti.mfderiv_apply_mfderiv_of_apply_eq_self_of_eventuallyEq`: if `f ∘ φ = R ∘ f` near a
+  fixed point `x` of `φ`, with `R` continuous linear, then `df_x ∘ dφ_x = R ∘ df_x`.
 * `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
 * `TauCeti.mdifferentiableAt_iterate`: if `f` is differentiable at the first `n` points of the
   orbit of `x`, then `f^[n]` is differentiable at `x`.
@@ -55,6 +57,18 @@ theorem mfderiv_comp_of_apply_eq_self {f : M → M} {g : M → N} (hg : MDiffere
   generalize hz : f x = z at h
   obtain rfl : z = x := hz.symm.trans hfx
   exact h
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
+/-- **Linearizing a conjugacy at a fixed point.** If `f ∘ φ = R ∘ f` near a fixed point `x` of
+`φ`, for a map `f` into a normed space and a continuous linear map `R`, then the differential of
+`f` at `x` intertwines the differential of `φ` at `x` with `R`. -/
+theorem mfderiv_apply_mfderiv_of_apply_eq_self_of_eventuallyEq {φ : M → M} {f : M → F}
+    {R : F →L[𝕜] F} (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) (hφ : MDifferentiableAt I I φ x)
+    (hx : φ x = x) (hfφ : f ∘ φ =ᶠ[𝓝 x] R ∘ f) (v : TangentSpace I x) :
+    mfderiv I 𝓘(𝕜, F) f x (mfderiv I I φ x v) = R (mfderiv I 𝓘(𝕜, F) f x v) := by
+  have h := congr($(hfφ.mfderiv_eq (I := I) (I' := 𝓘(𝕜, F))) v)
+  rwa [mfderiv_comp_of_apply_eq_self hf hφ hx, ContinuousLinearMap.comp_apply,
+    mfderiv_comp_apply x R.mdifferentiableAt hf, R.mfderiv_eq] at h
 
 /-- **The chain rule for iterates at a fixed point.** If `f x = x` and `f` has differential `f'`
 at `x`, an endomorphism of `T_x M`, then `f^[n]` has differential `f' ^ n` at `x`. This is the
