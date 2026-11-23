@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Exact
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Permutation
+public import TauCeti.Topology.Covering.Quotient
 
 /-!
 # The local system associated to the sign representation of `ℤˣ`
@@ -62,38 +63,10 @@ noncomputable section
 
 open CategoryTheory MonoidalCategory TauCeti
 
-namespace TauCeti
-
-/-- The action of `-1` is an involution. -/
-theorem involutive_of_forall_eq_neg_one_smul {α : Type*} [MulAction ℤˣ α] {σ : α → α}
-    (hσ : ∀ a, σ a = (-1 : ℤˣ) • a) : Function.Involutive σ := fun a ↦ by
-  rw [hσ, hσ, smul_smul, neg_one_mul, neg_neg, one_smul]
-
-end TauCeti
-
 namespace IsQuotientCoveringMap
 
 variable {E B : TopCat.{0}} {p : E ⟶ B} [MulAction ℤˣ E] (hG : IsQuotientCoveringMap p ℤˣ)
   (k : Type) [CommRing k] {σ : C(E, E)} (hσ : ∀ e, σ e = (-1 : ℤˣ) • e)
-
-include hG hσ in
-/-- The action of `-1` is a map over the base of the quotient covering. -/
-theorem comp_eq_of_forall_eq_neg_one_smul : ⇑p ∘ ⇑σ = ⇑p :=
-  funext fun e ↦ (congrArg p (hσ e)).trans (hG.map_smul (-1))
-
-include hG hσ in
-/-- The action of `-1` has no fixed point. -/
-theorem apply_ne_self_of_forall_eq_neg_one_smul (e : E) : σ e ≠ e := fun h ↦ by
-  have := hG.isCancelSMul
-  exact absurd (IsCancelSMul.eq_one_of_smul ((hσ e).symm.trans h)) (by decide)
-
-include hG hσ in
-/-- The fibre of the quotient covering through `e` is `{e, σ e}`. -/
-theorem eq_or_eq_of_apply_eq {e e' : E} (h : p e' = p e) : e' = e ∨ e' = σ e := by
-  obtain ⟨g, rfl⟩ := hG.apply_eq_iff_mem_orbit.1 h
-  rcases Int.units_eq_one_or g with rfl | rfl
-  · exact .inl (one_smul _ _)
-  · exact .inr (hσ e).symm
 
 /-- In the permutation representation on a fibre, `-1` moves the sheets by `σ`. -/
 private theorem fiberRepresentation_neg_one_apply (x : FundamentalGroupoid B)
@@ -245,8 +218,8 @@ theorem bijective_associatedLocalSystemSignHom_app (x : FundamentalGroupoid B) :
       (comp_eq_of_forall_eq_neg_one_smul hG hσ) x).injective ?_
     rw [associatedLocalSystemSignHom_app_associatedLocalSystemFiberIso_inv]
     simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
-    -- `i.inv` is the inverse of the linear equivalence of `i`.
-    exact congrArg _ (i.toLinearEquiv.apply_symm_apply c).symm
+    congr 1
+    rw [Iso.toLinearEquiv_apply, Iso.inv_hom_id_apply]
   rw [h]
   exact LinearEquiv.bijective _
 
