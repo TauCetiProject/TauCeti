@@ -75,9 +75,10 @@ elements has no proper subgroup of index less than `p`.
   the iterated sum along its two constituent transversals.
 * `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
   `K` has finite index relative to `f(H)`.
-* `Subgroup.instFiniteIndexSubgroupOfConjSMul`, `Subgroup.finiteIndex_conj_smul_subgroupOf`:
-  if `Q ∩ P` has finite index in `P`, so has `gQg⁻¹ ∩ gPg⁻¹` in `gPg⁻¹`, and so has `T ∩ xQx⁻¹`
-  in `T` for `T ≤ P` and `x ∈ P`.
+* `Subgroup.instFiniteIndexSubgroupOfSMul`, `Subgroup.finiteIndex_conj_smul_subgroupOf`:
+  if `Q ∩ P` has finite index in `P`, so has `hQ ∩ hP` in `hP` for any group `H` acting by
+  automorphisms (for instance `gQg⁻¹ ∩ gPg⁻¹` in `gPg⁻¹`), and so has `T ∩ xQx⁻¹` in `T` for
+  `T ≤ P` and `x ∈ P`.
 * `Subgroup.infinite_of_finiteIndex`: a finite-index subgroup of an infinite group is infinite.
 * `Subgroup.finiteIndex_map_mk'`: the instance making the image of a finite-index subgroup in a
   quotient group finite-index.
@@ -298,11 +299,12 @@ theorem finiteIndex_inf_comap {G N : Type*} [Group G] [Group N] (H : Subgroup G)
   exact mul_ne_zero IsFiniteRelIndex.relIndex_ne_zero FiniteIndex.index_ne_zero
 
 open scoped Pointwise in
-/-- Conjugating both subgroups preserves the relative index, so `gQg⁻¹ ∩ gPg⁻¹` has finite index
-in `gPg⁻¹` whenever `Q ∩ P` has finite index in `P`. -/
-instance instFiniteIndexSubgroupOfConjSMul {G : Type*} [Group G] {Q P : Subgroup G}
-    [(Q.subgroupOf P).FiniteIndex] (g : G) :
-    ((MulAut.conj g • Q).subgroupOf (MulAut.conj g • P)).FiniteIndex :=
+/-- Acting on both subgroups by a group of automorphisms preserves the relative index, so
+`hQ ∩ hP` has finite index in `hP` whenever `Q ∩ P` has finite index in `P`. For conjugation,
+`gQg⁻¹ ∩ gPg⁻¹` has finite index in `gPg⁻¹`. -/
+instance instFiniteIndexSubgroupOfSMul {G H : Type*} [Group G] [Group H]
+    [MulDistribMulAction H G] {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex] (h : H) :
+    ((h • Q).subgroupOf (h • P)).FiniteIndex :=
   ⟨by
     rw [← relIndex, relIndex_pointwise_smul]
     exact FiniteIndex.index_ne_zero⟩
@@ -314,7 +316,7 @@ cannot be recovered from the goal. -/
 theorem finiteIndex_conj_smul_subgroupOf {G : Type*} [Group G] {T P : Subgroup G}
     (Q : Subgroup G) [(Q.subgroupOf P).FiniteIndex] (hTP : T ≤ P) {x : G} (hx : x ∈ P) :
     ((MulAut.conj x • Q).subgroupOf T).FiniteIndex := by
-  have h := instFiniteIndexSubgroupOfConjSMul (Q := Q) (P := P) x
+  have h := instFiniteIndexSubgroupOfSMul (Q := Q) (P := P) (MulAut.conj x)
   rw [conj_smul_eq_self_of_mem hx, ← isFiniteRelIndex_iff_finiteIndex] at h
   exact isFiniteRelIndex_iff_finiteIndex.1 (isFiniteRelIndex_of_le_right _ hTP)
 

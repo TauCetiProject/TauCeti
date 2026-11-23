@@ -454,22 +454,10 @@ theorem inclusion_relTrace_eq_sum_doubleCoset {T Q P : Subgroup G} [(Q.subgroupO
     Subalgebra.inclusion (conjInvariants_anti hTP) (relTrace R Q P a) =
       ∑ q : DoubleCoset.Quotient (T.subgroupOf P : Set P) (Q.subgroupOf P),
         haveI := Subgroup.finiteIndex_conj_smul_subgroupOf Q hTP q.out.property
-        relTrace R (MulAut.conj (q.out : G) • Q) T (conjInvariantsEquiv R (q.out : G) Q a) := by
-  refine inclusion_relTrace_eq_sum_relTrace_conj (ι := DoubleCoset.Quotient
-    (T.subgroupOf P : Set P) (Q.subgroupOf P)) hTP (fun q => Quotient.out q) (fun y hy => ?_) a
-  refine ⟨DoubleCoset.mk _ _ ⟨y, hy⟩, ?_, fun q hq => ?_⟩
-  · obtain ⟨t, ht, k, hk, he⟩ := DoubleCoset.mem_doubleCoset.1
-      ((DoubleCoset.mem_quotToDoubleCoset_iff (DoubleCoset.mk (T.subgroupOf P) (Q.subgroupOf P)
-        ⟨y, hy⟩) ⟨y, hy⟩).2 rfl)
-    exact DoubleCoset.mem_doubleCoset.2 ⟨t, ht, k, hk, congrArg Subtype.val he⟩
-  · obtain ⟨t, ht, k, hk, he⟩ := DoubleCoset.mem_doubleCoset.1 hq
-    have hkP : k ∈ P := by
-      rw [show k = ((q.out : G))⁻¹ * t⁻¹ * y by rw [he]; group]
-      exact P.mul_mem (P.mul_mem (P.inv_mem q.out.property) (P.inv_mem (hTP ht))) hy
-    refine ((DoubleCoset.mem_quotToDoubleCoset_iff q ⟨y, hy⟩).1
-      (DoubleCoset.mem_doubleCoset.2 ⟨⟨t, hTP ht⟩, ?_, ⟨k, hkP⟩, ?_, Subtype.ext he⟩)).symm
-    · simpa [Subgroup.mem_subgroupOf] using ht
-    · simpa [Subgroup.mem_subgroupOf] using hk
+        relTrace R (MulAut.conj (q.out : G) • Q) T (conjInvariantsEquiv R (q.out : G) Q a) :=
+  inclusion_relTrace_eq_sum_relTrace_conj (ι := DoubleCoset.Quotient (T.subgroupOf P : Set P)
+    (Q.subgroupOf P)) hTP (fun q => Quotient.out q)
+    (fun _ hy => Subgroup.existsUnique_mem_doubleCoset_out hTP hy) a
 
 end Conj
 
