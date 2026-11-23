@@ -17,6 +17,7 @@ import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialLinear
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
@@ -153,8 +154,9 @@ theorem traceDual_apply [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin
     traceDual K n X Y = trace (X.val * Y.val) := by
   rw [traceDual, LinearMap.BilinForm.toDual_def, traceForm_apply]
 
-/-- The trace pairing is invariant under the adjoint representation. -/
-@[simp]
+/-- The trace pairing is invariant under the adjoint representation.
+Not a simp lemma: `traceForm_apply` and `coe_adjointRep_apply` rewrite the left-hand side, so the
+simp-normal form is `trace_conj_mul_conj`. -/
 theorem traceForm_adjointRep (g : SpecialLinearGroup (Fin n) K)
     (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
     traceForm K n (adjointRep K n g X) (adjointRep K n g Y) = traceForm K n X Y := by
@@ -166,6 +168,20 @@ theorem traceForm_adjointRep (g : SpecialLinearGroup (Fin n) K)
   rw [hsmul X.val, hsmul Y.val, ← ConjAct.toConjAct_toGL_smul, ← ConjAct.toConjAct_toGL_smul,
     ← smul_mul', ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct]
   exact trace_units_conj (SpecialLinearGroup.toGL g) (X.val * Y.val)
+
+/-- Conjugation by a special linear matrix preserves the trace of a product.
+This is the simp-normal form of `traceForm_adjointRep`: `coe_inv` rewrites the inverse to an
+adjugate, so the left-hand side is stated with `adjugate`. -/
+@[simp]
+theorem trace_conj_mul_conj (g : SpecialLinearGroup (Fin n) K)
+    (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
+    (((g : Matrix (Fin n) (Fin n) K) * X.val * (g : Matrix (Fin n) (Fin n) K).adjugate) *
+        ((g : Matrix (Fin n) (Fin n) K) * Y.val *
+          (g : Matrix (Fin n) (Fin n) K).adjugate)).trace =
+      (X.val * Y.val).trace := by
+  have h := traceForm_adjointRep K n g X Y
+  simp only [traceForm_apply, coe_adjointRep_apply, SpecialLinearGroup.coe_inv] at h
+  exact h
 
 /-- The trace pairing is an equivariant self-duality of the adjoint representation. -/
 noncomputable def traceDualEquiv [NeZero (n : K)] :
@@ -194,15 +210,7 @@ noncomputable def alternatingProductMap :
     change ⁅adjointRep K n g X, adjointRep K n g Y⁆.val =
       (adjointRep K n g ⁅X, Y⁆).val
     simp only [LieAlgebra.SpecialLinear.sl_bracket, coe_adjointRep_apply]
-    -- Conjugation is the `ConjAct` action of the image in `GL`, which preserves products
-    -- and differences.
-    have hsmul (A : Matrix (Fin n) (Fin n) K) :
-        (g : Matrix (Fin n) (Fin n) K) * A * (g⁻¹ : SpecialLinearGroup (Fin n) K) =
-          ConjAct.toConjAct g • A := by
-      simp [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct]
-    rw [hsmul X.val, hsmul Y.val, hsmul (X.val * Y.val - Y.val * X.val),
-      ← ConjAct.toConjAct_toGL_smul, ← ConjAct.toConjAct_toGL_smul, ← ConjAct.toConjAct_toGL_smul,
-      ← smul_mul', ← smul_mul', ← smul_sub]
+    exact Matrix.SpecialLinearGroup.conj_commutator g X.val Y.val
 
 /-- On a simple tensor the alternating intertwiner is the commutator. -/
 @[simp]

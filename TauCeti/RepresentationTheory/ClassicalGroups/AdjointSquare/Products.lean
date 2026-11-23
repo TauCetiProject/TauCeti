@@ -43,7 +43,7 @@ noncomputable def symmetricProductMap [NeZero (3 : K)] :
       TensorProduct.lift.tmul, LinearMap.comp_apply, TensorProduct.lift.tmul]
     apply Subtype.ext
     simp only [coe_symmetricProduct, TauCeti.coe_adjointRep_apply]
-    exact symmetricProductMatrix_sl_conj g X.val Y.val
+    exact tracelessAnticommutator_sl_conj g X.val Y.val
 
 /-- On a simple tensor the symmetric intertwiner is the traceless anticommutator. -/
 @[simp]

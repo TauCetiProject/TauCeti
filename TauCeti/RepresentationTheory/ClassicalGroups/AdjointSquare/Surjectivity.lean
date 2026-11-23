@@ -47,49 +47,69 @@ private def offDiagPreimage (X : 𝔰 K) : 𝔰 K ⊗[K] 𝔰 K :=
     X.val 2 0 • pair 2 1 1 0 (by decide) (by decide) +
     X.val 2 1 • pair 2 0 0 1 (by decide) (by decide)
 
+/-- The two diagonal corrections. `alt = true` is the commutator preimage. -/
+private def diagPreimage (alt : Bool) (X : 𝔰 K) : 𝔰 K ⊗[K] 𝔰 K :=
+  bif alt then
+    X.val 0 0 • pair 0 2 2 0 (by decide) (by decide) +
+      X.val 1 1 • pair 1 2 2 1 (by decide) (by decide)
+  else
+    X.val 0 0 • (pair 0 1 1 0 (by decide) (by decide) - pair 2 1 1 2 (by decide) (by decide)) +
+      X.val 1 1 • (pair 1 0 0 1 (by decide) (by decide) - pair 2 0 0 2 (by decide) (by decide))
+
+local syntax "close_fin3" term : tactic
+
+macro_rules
+| `(tactic| close_fin3 $h) =>
+  `(tactic| (
+      apply Matrix.ext
+      intro i j
+      fin_cases i <;> fin_cases j <;>
+        norm_num [tracelessAnticommutator_apply, Matrix.mul_apply, Matrix.trace, Matrix.diag,
+          Fin.sum_univ_succ, Matrix.single, Matrix.one_apply, Matrix.add_apply, Matrix.sub_apply,
+          Matrix.smul_apply, smul_eq_mul] <;>
+        first | (solve | ring) | linear_combination -$h))
+
+/-- Both contractions send their explicit preimage to `X`. The `fin_cases` / `norm_num` tail is
+`close_fin3`; `alt` only changes the diagonal summand and the simple-tensor formula. -/
+private theorem preimage_val_eq (alt : Bool)
+    (f : (𝔰 K ⊗[K] 𝔰 K) →ₗ[K] 𝔰 K)
+    (hf : ∀ X Y, (f (X ⊗ₜ[K] Y)).val =
+      bif alt then X.val * Y.val - Y.val * X.val else tracelessAnticommutator X.val Y.val)
+    (X : 𝔰 K) : (f (offDiagPreimage X + diagPreimage alt X)).val = X.val := by
+  have htrace := diagonal_sum_zero X
+  cases alt
+  -- `sl.toSubmodule.subtype` is the inclusion, definitionally the underlying matrix.
+  -- `cases` on `Bool` produces the `false` goal first.
+  on_goal 1 =>
+    change (𝔰 K).toSubmodule.subtype _ = X.val
+    dsimp only [diagPreimage, offDiagPreimage]
+    simp only [map_add, map_sub, map_smul, pair, hf, val_single, Submodule.subtype_apply,
+      Bool.cond_false]
+    close_fin3 htrace
+  -- Closing the false goal leaves the true goal at index 1.
+  on_goal 1 =>
+    change (𝔰 K).toSubmodule.subtype _ = X.val
+    dsimp only [diagPreimage, offDiagPreimage]
+    simp only [map_add, map_smul, pair, hf, val_single, Submodule.subtype_apply, Bool.cond_true]
+    close_fin3 htrace
+
 private theorem alternating_surjective_of_tmul
     (f : (𝔰 K ⊗[K] 𝔰 K) →ₗ[K] 𝔰 K)
     (hf : ∀ X Y, (f (X ⊗ₜ[K] Y)).val = X.val * Y.val - Y.val * X.val) :
     Function.Surjective f := by
   intro X
-  have htrace := diagonal_sum_zero X
-  refine ⟨offDiagPreimage X +
-      X.val 0 0 • pair 0 2 2 0 (by decide) (by decide) +
-      X.val 1 1 • pair 1 2 2 1 (by decide) (by decide), ?_⟩
+  refine ⟨offDiagPreimage X + diagPreimage true X, ?_⟩
   apply Subtype.ext
-  -- `sl.toSubmodule.subtype` is the inclusion, definitionally the underlying matrix.
-  change (𝔰 K).toSubmodule.subtype _ = X.val
-  simp only [map_add, map_smul, offDiagPreimage, pair, Submodule.subtype_apply, hf, val_single]
-  apply Matrix.ext
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    norm_num [Matrix.mul_apply, Matrix.trace,
-      Matrix.diag, Fin.sum_univ_succ, Matrix.single, Matrix.one_apply,
-      Matrix.add_apply, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul];
-    first | (solve | ring) | linear_combination -htrace
+  exact preimage_val_eq true f (by simpa using hf) X
 
 private theorem symmetric_surjective_of_tmul
     (f : (𝔰 K ⊗[K] 𝔰 K) →ₗ[K] 𝔰 K)
-    (hf : ∀ X Y, (f (X ⊗ₜ[K] Y)).val = symmetricProductMatrix X.val Y.val) :
+    (hf : ∀ X Y, (f (X ⊗ₜ[K] Y)).val = tracelessAnticommutator X.val Y.val) :
     Function.Surjective f := by
   intro X
-  have htrace := diagonal_sum_zero X
-  refine ⟨offDiagPreimage X +
-      X.val 0 0 • (pair 0 1 1 0 (by decide) (by decide) - pair 2 1 1 2 (by decide) (by decide)) +
-      X.val 1 1 • (pair 1 0 0 1 (by decide) (by decide) -
-        pair 2 0 0 2 (by decide) (by decide)), ?_⟩
+  refine ⟨offDiagPreimage X + diagPreimage false X, ?_⟩
   apply Subtype.ext
-  -- `sl.toSubmodule.subtype` is the inclusion, definitionally the underlying matrix.
-  change (𝔰 K).toSubmodule.subtype _ = X.val
-  simp only [map_add, map_sub, map_smul, offDiagPreimage, pair, Submodule.subtype_apply, hf,
-    val_single]
-  apply Matrix.ext
-  intro i j
-  fin_cases i <;> fin_cases j <;>
-    norm_num [symmetricProductMatrix_apply, Matrix.mul_apply, Matrix.trace,
-      Matrix.diag, Fin.sum_univ_succ, Matrix.single, Matrix.one_apply,
-      Matrix.add_apply, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul];
-    first | (solve | ring) | linear_combination -htrace
+  exact preimage_val_eq false f (by simpa using hf) X
 
 /-- The Lie-bracket contraction onto the trace-zero three-by-three matrices is surjective. -/
 theorem alternatingProductMap_surjective (K : Type*) [Field K] :
@@ -109,7 +129,7 @@ theorem symmetricProductMap_surjective (K : Type*) [Field K] [NeZero (3 : K)] :
   symmetric_surjective_of_tmul (symmetricProductMap K).toLinearMap fun X Y => by
     -- The intertwiner coerces to `toLinearMap`, and that coercion is definitional.
     change (symmetricProductMap K (X ⊗ₜ[K] Y) : Matrix (Fin 3) (Fin 3) K) =
-      symmetricProductMatrix X.val Y.val
+      tracelessAnticommutator X.val Y.val
     rw [symmetricProductMap_tmul, coe_symmetricProduct]
 
 end TauCeti.AdjointSquare
