@@ -76,13 +76,15 @@ private theorem IsWeakSolutionDirichlet.setIntegral_mul_value_eq
       ∫ x in Omega, f x * ∫ y, G x y * ψ y := by
   obtain ⟨w, hw, -⟩ := existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball hΩ
     (hψ.toLp ψ)
+  have h1 := (isWeakSolutionDirichlet_iff _ _).1 hw u
+  have h2 := (isWeakSolutionDirichlet_iff _ _).1 hu w
   calc ∫ x in Omega, ψ x * W1p.value (u : W1p volume Omega 2) x
       = ∫ x in Omega, hψ.toLp ψ x * W1p.value (u : W1p volume Omega 2) x := by
         refine integral_congr_ae ?_
         filter_upwards [hψ.coeFn_toLp] with x hx
         rw [hx]
-    _ = ∫ x in Omega, f x * W1p.value (w : W1p volume Omega 2) x :=
-        hw.setIntegral_mul_value_eq_of_isSymm_ae (ae_of_all _ fun _ => Matrix.isSymm_one) hu
+    _ = ∫ x in Omega, f x * W1p.value (w : W1p volume Omega 2) x := by
+        rw [← h1, energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ => Matrix.isSymm_one), h2]
     _ = _ := by
         refine integral_congr_ae ?_
         filter_upwards [hrep w hw] with x hx
