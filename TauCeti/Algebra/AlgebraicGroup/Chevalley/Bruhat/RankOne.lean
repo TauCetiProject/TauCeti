@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 public import TauCeti.Algebra.Group.Subgroup.Map
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion
 
 /-!
 # Uniqueness in a simple Bruhat cell

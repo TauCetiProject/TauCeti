@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Generation
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Closure
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion
 import TauCeti.FieldTheory.IsAlgClosed.Units
 
 /-!

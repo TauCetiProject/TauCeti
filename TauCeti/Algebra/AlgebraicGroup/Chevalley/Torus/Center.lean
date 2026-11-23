@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion
 
 /-!
 # The toral part of the centre of a Chevalley group

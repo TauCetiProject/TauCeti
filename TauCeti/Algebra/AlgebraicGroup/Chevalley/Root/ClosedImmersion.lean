@@ -24,6 +24,8 @@ nonreduced rings and rings of bad characteristic, and across all isogeny types.
   every factored root coordinate map of `D` is unconditionally surjective over `ℤ`.
 * `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup`: every root morphism
   `D.rootSubgroup γ : 𝔾ₐ ⟶ D.groupScheme` is unconditionally a closed immersion over `ℤ`.
+* `TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints_injective`: every root subgroup of `D`
+  is injective on `A`-points over every commutative ring.
 
 ## References
 
@@ -42,6 +44,8 @@ noncomputable section
 
 -- Match the scalar-action instance used by the integral exponential and its matrix API.
 attribute [local instance high] Algebra.toModule
+
+universe v
 
 variable {t : DynkinType} {ht : t.Valid}
 
@@ -188,6 +192,53 @@ instance isClosedImmersion_rootSubgroup (γ : Fin t.numRoots) :
   rw [D.rootSubgroup_def, chevalleyRootSubgroupToToral_def]
   exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff _ _).2
     (D.chevalleyRootSubgroupToralCoordinateMap_surjective γ)
+
+/-- Every root subgroup of a Chevalley datum is injective over every commutative ring, including
+nonreduced rings and rings of small characteristic. -/
+theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
+    Function.Injective (D.rootSubgroupPoints γ A) := by
+  intro u v huv
+  let q₁ := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u
+  let q₂ := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm v
+  have hmat :
+      (D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) =
+        (D.rootSubgroupPoints γ A v : Matrix.GeneralLinearGroup (Fin D.dim) A) :=
+    congrArg Subtype.val huv
+  rw [D.coe_rootSubgroupPoints, D.coe_rootSubgroupPoints] at hmat
+  have hu : u = AdditiveGroup.gaPointsMulEquiv q₁ :=
+    (AdditiveGroup.gaPointsMulEquiv.apply_symm_apply u).symm
+  have hv : v = AdditiveGroup.gaPointsMulEquiv q₂ :=
+    (AdditiveGroup.gaPointsMulEquiv.apply_symm_apply v).symm
+  rw [hu, hv, ← kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup,
+    ← kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup,
+    ← pointsMulEquiv_kostantRootSubgroupCoordinateMap,
+    ← pointsMulEquiv_kostantRootSubgroupCoordinateMap] at hmat
+  have hpt := (GeneralLinear.pointsMulEquiv D.dim).injective (by
+    simpa only [GeneralLinear.pointsMulEquiv_apply] using hmat)
+  have hcomp := congrArg WithConv.ofConv hpt
+  have hq : q₁ = q₂ := by
+    apply WithConv.ofConv_injective
+    apply AlgHom.ext
+    intro x
+    obtain ⟨y, rfl⟩ := D.rootCoordinateMap_surjective γ x
+    exact congrArg (fun f : GeneralLinear.coordinateHopfAlgebra ℤ D.dim →ₐ[ℤ] A => f y) hcomp
+  exact AdditiveGroup.gaPointsMulEquiv.symm.injective hq
+
+/-- Two elements of the same root subgroup of a Chevalley datum are equal if and only if their
+parameters coincide. -/
+@[simp]
+theorem rootSubgroupPoints_inj (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    {u v : Multiplicative A} :
+    D.rootSubgroupPoints γ A u = D.rootSubgroupPoints γ A v ↔ u = v :=
+  (D.rootSubgroupPoints_injective γ A).eq_iff
+
+/-- An element of a root subgroup of a Chevalley datum is the identity if and only if its
+parameter is `1`. -/
+@[simp]
+theorem rootSubgroupPoints_eq_one_iff (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    {u : Multiplicative A} :
+    D.rootSubgroupPoints γ A u = 1 ↔ u = 1 :=
+  map_eq_one_iff _ (D.rootSubgroupPoints_injective γ A)
 
 end ChevalleyDatum
 
