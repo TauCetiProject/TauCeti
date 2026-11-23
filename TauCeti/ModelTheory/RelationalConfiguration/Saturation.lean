@@ -7,18 +7,20 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
+import TauCeti.ModelTheory.BackAndForth.Karp
 import TauCeti.ModelTheory.RelationalConfiguration.Separation
 
 /-!
 # Asymptotic back-and-forth saturation of model classes
 
-On a countable carrier `V` in a relational language `L` with countably many relation symbols of
-each arity, every infinitary sentence `θ` with countable branching is asymptotically saturated by
+Every infinitary sentence `θ` with countable branching is asymptotically saturated by
 back-and-forth equivalence: there is a countable threshold `α < ω₁` such that for all `β ≥ α`,
 `bfEquivSetoid L V β`-equivalent configurations agree on `modelsOf θ`
-(`exists_bfLevel_saturated_modelsOf`). More generally, on any analytic set `C` of configurations,
-membership in `modelsOf θ` is invariant under `bfEquivSetoid L V β` within `C` from some countable
-level `α < ω₁` onward (`exists_bfLevel_mem_modelsOf_iff_of_analyticSet`).
+(`exists_bfLevel_saturated_modelsOf`). The threshold is the quantifier rank of `θ`, so no
+countability of the carrier or of the vocabulary is needed. On a countable carrier in a vocabulary
+with countably many relation symbols of each arity, uniform back-and-forth separation also gives
+the relative form on any analytic set `C` of configurations
+(`exists_bfLevel_mem_modelsOf_iff_of_analyticSet`).
 
 Asymptotic sentence saturation lets counting and splitting-tree arguments refine sentence cuts of a
 configuration class into unions of back-and-forth classes at a common countable level below `ω₁`.
@@ -28,7 +30,7 @@ configuration class into unions of back-and-forth classes at a common countable 
 * `TauCeti.RelationalConfiguration.exists_bfLevel_mem_modelsOf_iff_of_analyticSet`: relative
   asymptotic back-and-forth saturation of `modelsOf θ` on an analytic set of configurations.
 * `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_modelsOf`: global asymptotic
-  back-and-forth saturation of `modelsOf θ` on a countable carrier.
+  back-and-forth saturation of `modelsOf θ`, from the quantifier rank of `θ` on.
 
 ## References
 
@@ -67,19 +69,28 @@ theorem exists_bfLevel_mem_modelsOf_iff_of_analyticSet [Countable V]
   exists_bfLevel_mem_iff_of_measurableSet hC (measurableSet_modelsOf θ) fun _ _ _ _ hcd =>
     ((isomorphismInvariant_modelsOf θ).mem_iff hcd).mp
 
-/-- **Asymptotic back-and-forth saturation of model classes.** On a countable carrier in a
-relational language with countably many relation symbols of each arity, for every infinitary
-sentence `θ` with countable branching there is a countable ordinal `α < ω₁` such that from level
-`α` onward, back-and-forth equivalent configurations agree on `θ`. -/
-theorem exists_bfLevel_saturated_modelsOf [Countable V] [∀ n, Countable (L.Relations n)]
-    [Countable ι] (θ : L.SentenceInf ι) :
+/-- **Asymptotic back-and-forth saturation of model classes.** For every infinitary sentence `θ`
+with countable branching there is a countable ordinal `α < ω₁` such that from level `α` onward,
+back-and-forth equivalent configurations agree on `θ`. The level is the quantifier rank of `θ`,
+which is countable; no countability of the carrier or of the vocabulary is needed. -/
+theorem exists_bfLevel_saturated_modelsOf [Countable ι] (θ : L.SentenceInf ι) :
     ∃ α : Ordinal.{o}, α < ω₁ ∧
       ∀ β ≥ α, ∀ c d : RelationalConfiguration L V,
         bfEquivSetoid L V β c d → (c ∈ modelsOf θ ↔ d ∈ modelsOf θ) := by
-  have huniv : AnalyticSet (univ : Set (RelationalConfiguration L V)) :=
-    MeasurableSet.univ.analyticSet
-  obtain ⟨α, hα, hsat⟩ :=
-    exists_bfLevel_mem_modelsOf_iff_of_analyticSet.{u, v, w, uι, o} huniv θ
-  exact ⟨α, hα, fun β hαβ c d hcd => hsat β hαβ c (mem_univ c) d (mem_univ d) hcd⟩
+  -- the quantifier rank of `θ` is countable, so it is the lift of a countable level `α`
+  have hθ : Ordinal.lift.{o} θ.qrank ≤ Ordinal.lift.{uι} (ω₁ : Ordinal.{o}) := by
+    simpa only [Ordinal.lift_omega, Ordinal.lift_one] using
+      Ordinal.lift_le.{o}.2 (BoundedFormulaInf.qrank_lt_omega_one θ).le
+  obtain ⟨α, hα⟩ := Ordinal.mem_range_lift_of_le hθ
+  refine ⟨α, ?_, fun β hβ c d hcd => ?_⟩
+  · rw [← Ordinal.lift_lt.{uι}, hα]
+    simpa only [Ordinal.lift_omega, Ordinal.lift_one] using
+      Ordinal.lift_lt.{o}.2 (BoundedFormulaInf.qrank_lt_omega_one θ)
+  · have h := @BFEquiv.realize_iff_of_qrank_le L V V c.toStructure d.toStructure _ ι 0 θ β
+      Fin.elim0 Fin.elim0 (bfEquivSetoid_apply.1 hcd) (hα ▸ Ordinal.lift_le.2 hβ)
+      Empty.elim Empty.elim
+    simpa only [mem_modelsOf, SentenceInf.realize_def, FormulaInf.realize_def,
+      Subsingleton.elim default (Fin.elim0 : Fin 0 → V),
+      Subsingleton.elim default (Empty.elim : Empty → V)] using h
 
 end TauCeti.RelationalConfiguration

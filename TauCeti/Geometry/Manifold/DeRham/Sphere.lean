@@ -112,12 +112,9 @@ theorem subsingleton_deRhamCohomology_sphere_one (hn : 1 < n) :
   rw [(deRhamCohomology.equivOfDiffeomorph
     (Diffeomorph.ofTop _ (compl_singleton_sup_compl_singleton_neg_eq_top v)) 1).toEquiv
       |>.subsingleton_congr]
-  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
-  obtain ⟨d, rfl⟩ := deRhamCohomology.mayerVietorisδ_surjective
+  exact subsingleton_deRhamCohomology_one_sup
     (subsingleton_deRhamCohomology_sphere_compl_singleton v 0)
-    (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) 0) c
-  obtain ⟨r, rfl⟩ := deRhamCohomology.exists_eq_const d
-  exact deRhamCohomology.mayerVietorisδ_const U V r
+    (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) 0)
 
 end Cover
 

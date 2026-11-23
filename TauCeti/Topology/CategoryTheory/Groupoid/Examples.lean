@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Metrizable.Basic
 
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Unit, pair and one-object topological groupoids
@@ -248,6 +248,20 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Codiscrete X) where
         ((arrowHomeomorph X p.val.2).1, (arrowHomeomorph X p.val.1).2)) := by fun_prop
     simpa only [Function.comp_def, arrowHomeomorph_apply,
       Quiver.Total.comp_left, Quiver.Total.comp_right] using h
+
+instance instT2SpaceObjects [T2Space X] : T2Space (Codiscrete X) :=
+  (objectHomeomorph X).symm.t2Space
+
+instance instT2SpaceArrows [T2Space X] : T2Space (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).symm.t2Space
+
+instance instSecondCountableTopologyObjects [SecondCountableTopology X] :
+    SecondCountableTopology (Codiscrete X) :=
+  (objectHomeomorph X).isInducing.secondCountableTopology
+
+instance instSecondCountableTopologyArrows [SecondCountableTopology X] :
+    SecondCountableTopology (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).isInducing.secondCountableTopology
 
 /-- Composable arrows, in categorical order, have coordinates `(z, y, x)` when they run
 from `x` to `y` and then from `y` to `z`. The topology is the inherited subspace topology. -/

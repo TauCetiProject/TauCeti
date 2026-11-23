@@ -27,8 +27,12 @@ At a continuous field `x`:
   supported test field `η` (`TauCeti.Vortex.mem_weakGaugeFixedKernel_iff`), and by uniform `C¹`
   mollification of compactly supported fields the same holds against compactly supported `C¹` or
   `C²` test fields (`mem_weakGaugeFixedKernel_iff_contDiff_one`,
-  `mem_weakGaugeFixedKernel_iff_contDiff_two`). In particular, the weak right inverse takes values
-  orthogonal to `weakGaugeFixedKernel x`
+  `mem_weakGaugeFixedKernel_iff_contDiff_two`). Thus the weak kernel consists of the weak
+  solutions `TauCeti.Vortex.IsGaugeFixedWeakSolution` of `L_x w = 0`
+  (`TauCeti.Vortex.isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel`), and the minimal
+  weak solutions of `L_x y = f` are the weak solutions orthogonal to the weak kernel
+  (`TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal`). In particular, the weak
+  right inverse takes values orthogonal to `weakGaugeFixedKernel x`
   (`exists_continuousLinearMap_mem_orthogonal_weakGaugeFixedKernel`).
 * A `C¹` square-integrable solution of `L_x y = 0` lies in `weakGaugeFixedKernel x` by integration
   by parts (`toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero`), so taking `L²` classes
@@ -79,6 +83,8 @@ satisfying the full vortex equation, the cokernel of that operator also vanishes
   `TauCeti.Vortex.mem_weakGaugeFixedKernel_iff_contDiff_two`: at a continuous field, the weak
   kernel consists of the weak solutions of `L_x u = 0` against compactly supported `C^∞`, `C¹`,
   and `C²` test fields.
+* `TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal`: at a continuous field,
+  minimal weak solutions are the weak solutions orthogonal to the weak kernel.
 * `TauCeti.Vortex.range_gaugeFixedKernelToLp`: at a smooth field with bounded derivatives, the
   weak kernel is the space of `L²` classes of the classical kernel.
 * `TauCeti.Vortex.mem_gaugeFixedKernel_iff_mem_sobolevFields`: order-independence of the kernel on
@@ -119,6 +125,14 @@ def weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
   (Submodule.span ℝ {g | ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η ∧
     HasCompactSupport η ∧ (g : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] gaugeFixedAdjoint x η})ᗮ
 
+/-- The defining formula of the weak kernel. -/
+theorem weakGaugeFixedKernel_def (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    weakGaugeFixedKernel x =
+      (Submodule.span ℝ {g : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) |
+        ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η ∧ HasCompactSupport η ∧
+          (g : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] gaugeFixedAdjoint x η})ᗮ :=
+  (rfl)
+
 /-- The weak kernel of `L_x` is a closed subspace of `L²(ℂ; ℝ⁴)`. -/
 theorem isClosed_weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     IsClosed
@@ -146,8 +160,7 @@ theorem mem_weakGaugeFixedKernel_iff (hx : Continuous x)
   refine ⟨fun h η hη hηc ↦ ?_, fun h g hg ↦ ?_⟩
   · -- The field `L_x* η` is continuous with compact support, so it has an `L²` class.
     have hm : MemLp (gaugeFixedAdjoint x η) 2 volume :=
-      (continuous_gaugeFixedAdjoint hx (hη.of_le (by simp))).memLp_of_hasCompactSupport
-        (hasCompactSupport_gaugeFixedAdjoint hηc)
+      memLp_gaugeFixedAdjoint hx (hη.of_le (by simp)) hηc
     rw [← L2.inner_toLp u hm, real_inner_comm]
     exact h _ (Submodule.subset_span ⟨η, hη, hηc, hm.coeFn_toLp⟩)
   · induction hg using Submodule.span_induction with
@@ -312,8 +325,8 @@ theorem mem_weakGaugeFixedKernel_iff_contDiff_one (hx : Continuous x)
 
 /-- **Testing against `C²` fields.** At a continuous field `x`, a square-integrable field `u`
 lies in `weakGaugeFixedKernel x` if and only if `∫ ⟪u, L_x* η⟫ = 0` for every compactly supported
-`C²` test field `η`. This matches the orthogonality condition of the weak right inverse in
-`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`. -/
+`C²` test field `η`. This matches the `C²` test fields of the weak solutions
+`TauCeti.Vortex.IsGaugeFixedWeakSolution` of the weak right inverse. -/
 theorem mem_weakGaugeFixedKernel_iff_contDiff_two (hx : Continuous x)
     {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
     u ∈ weakGaugeFixedKernel x ↔
@@ -323,22 +336,40 @@ theorem mem_weakGaugeFixedKernel_iff_contDiff_two (hx : Continuous x)
     (hη.of_le (by norm_num)) hηc,
    fun hu ↦ (mem_weakGaugeFixedKernel_iff hx).2 fun η hη hηc ↦ hu η (hη.of_le (by simp)) hηc⟩
 
+/-- **The weak kernel consists of the weak solutions of `L_x w = 0`.** At a continuous field, a
+square-integrable field lies in the weak kernel of `L_x` exactly when it is a weak solution of
+`L_x w = 0` in the sense of `TauCeti.Vortex.IsGaugeFixedWeakSolution`. -/
+theorem isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel (hx : Continuous x)
+    {w : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
+    IsGaugeFixedWeakSolution volume x 0 w ↔ w ∈ weakGaugeFixedKernel x := by
+  rw [isGaugeFixedWeakSolution_zero_iff, mem_weakGaugeFixedKernel_iff_contDiff_two hx]
+
+/-- **Minimal weak solutions are the weak solutions orthogonal to the weak kernel.** At a
+continuous field, a minimal weak solution of `L_x y = f` is a weak solution lying in the
+orthogonal complement of `weakGaugeFixedKernel x`. -/
+theorem isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal (hx : Continuous x)
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
+    IsMinimalGaugeFixedWeakSolution volume x f y ↔
+      IsGaugeFixedWeakSolution volume x f y ∧ y ∈ (weakGaugeFixedKernel x)ᗮ := by
+  rw [isMinimalGaugeFixedWeakSolution_iff]
+  refine and_congr_right fun _ ↦ ?_
+  rw [Submodule.mem_orthogonal']
+  refine forall_congr' fun w ↦ ?_
+  rw [isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel hx, L2.inner_def]
+
 /-- **The weak right inverse takes values orthogonal to `weakGaugeFixedKernel x`.** At a `C¹`
 solution `x` of the plane vortex equation with `|α|² → 1` at infinity, there is a bounded right
-inverse `Q` on `L²(ℂ; ℝ⁴)` such that `Q f ∈ (weakGaugeFixedKernel x)ᗮ` for every `f ∈ L²`. -/
+inverse `Q` on `L²(ℂ; ℝ⁴)` such that `Q f` is a weak solution of `L_x y = f` lying in
+`(weakGaugeFixedKernel x)ᗮ` for every `f ∈ L²`. -/
 theorem exists_continuousLinearMap_mem_orthogonal_weakGaugeFixedKernel (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) →L[ℝ]
         Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
-      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) ∧
-      ∀ f, Q f ∈ (weakGaugeFixedKernel x)ᗮ := by
-  obtain ⟨Q, hQ, hQK⟩ := exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq
+      ∀ f, IsGaugeFixedWeakSolution volume x f (Q f) ∧ Q f ∈ (weakGaugeFixedKernel x)ᗮ := by
+  obtain ⟨Q, hQ⟩ := exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution
     (μ := volume) hx hsol hlim
-  refine ⟨Q, hQ, fun f ↦ (Submodule.mem_orthogonal' _ _).2 fun u hu ↦ ?_⟩
-  rw [L2.inner_def]
-  exact hQK f u ((mem_weakGaugeFixedKernel_iff_contDiff_two hx.continuous).1 hu)
+  exact ⟨Q, fun f ↦ (isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal hx.continuous).1 (hQ f)⟩
 
 /-! ### From the classical kernel to the weak kernel -/
 

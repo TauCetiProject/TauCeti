@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 
 /-!
@@ -22,6 +23,17 @@ applied to every entry (`HomologicalComplex.toMatrix_matrixBaseChange_d`). The m
 differentials are the images of those of `C` by definition, for complexes in every universe. The
 shapes in use are `ℤ`-graded chain complexes and two-periodic complexes, graded by `ZMod 2`.
 
+A chain map `f : D ⟶ C` between based complexes has the coordinate base change
+`HomologicalComplex.matrixBaseChangeMap c φ e f`, whose components are the matrices of the
+components of `f`, with `φ` applied to every entry
+(`HomologicalComplex.toMatrix_matrixBaseChangeMap_f`); it preserves identities and composites. The
+coordinate maps `Module.Basis.semilinearMap φ (c i) _ : C.X i → Kⁿ⁽ⁱ⁾`, which apply `φ` to the
+coordinates in the basis `c i`, intertwine the differentials of `C` and of its base change
+(`HomologicalComplex.matrixBaseChange_d_apply_semilinearMap`), and the components of `f` and of
+its base change (`HomologicalComplex.matrixBaseChangeMap_f_apply_semilinearMap`). So a relation
+among vectors of `C` built from its differentials, from `f` and from its basis vectors holds in the
+base change as well.
+
 When `K` is a field, the base changes along `φ` and along `ψ ∘ φ`, for a homomorphism of fields
 `ψ : K →+* L`, are acyclic together (`HomologicalComplex.acyclic_matrixBaseChange_comp_iff`). Over
 a field `F`, the base change along the identity of `F` is acyclic exactly when `C` is
@@ -32,11 +44,19 @@ a field `F`, the base change along the identity of `F` is acyclic exactly when `
 * `HomologicalComplex.matrixBaseChange c φ`: the base change of a based complex along a ring
   homomorphism into a commutative ring, in coordinates.
 * `HomologicalComplex.matrixBaseChangeBasis c φ`: its standard bases.
+* `HomologicalComplex.matrixBaseChangeMap c φ e f`: the coordinate base change of a chain map.
 
 ## Main results
 
 * `HomologicalComplex.toMatrix_matrixBaseChange_d`: the matrices of the differentials of the
   coordinate base change.
+* `HomologicalComplex.toMatrix_matrixBaseChangeMap_f`: the matrices of the components of the
+  coordinate base change of a chain map.
+* `HomologicalComplex.matrixBaseChangeMap_id`, `HomologicalComplex.matrixBaseChangeMap_comp`: the
+  coordinate base change of chain maps preserves identities and composites.
+* `HomologicalComplex.matrixBaseChange_d_apply_semilinearMap`,
+  `HomologicalComplex.matrixBaseChangeMap_f_apply_semilinearMap`: the coordinate maps intertwine the
+  differentials and the chain maps with their base changes.
 * `HomologicalComplex.acyclic_matrixBaseChange_comp_iff`: acyclicity of the coordinate base change
   to a field is invariant under homomorphisms of fields.
 -/
@@ -112,6 +132,77 @@ theorem hom_matrixBaseChange_d (i j : ι) :
       Matrix.toLin (C.matrixBaseChangeBasis c φ i) (C.matrixBaseChangeBasis c φ j)
         ((LinearMap.toMatrix (c i) (c j) (C.d i j).hom).map φ) := by
   rw [← toMatrix_matrixBaseChange_d, Matrix.toLin_toMatrix]
+
+/-- The coordinate maps `C.X i → Kⁿ⁽ⁱ⁾`, which apply `φ` to the coordinates in the basis `c i`,
+intertwine the differentials of `C` and of its coordinate base change. -/
+theorem matrixBaseChange_d_apply_semilinearMap (i j : ι) (x : C.X i) :
+    ((C.matrixBaseChange c φ).d i j).hom
+        ((c i).semilinearMap φ (C.matrixBaseChangeBasis c φ i) x) =
+      (c j).semilinearMap φ (C.matrixBaseChangeBasis c φ j) ((C.d i j).hom x) :=
+  Basis.semilinearMap_comp_apply_of_toMatrix_eq (toMatrix_matrixBaseChange_d C c φ i j) x
+
+section Map
+
+/-! ### The coordinate base change of a chain map -/
+
+variable {C} {D : HomologicalComplex (ModuleCat A) s} {m : ι → ℕ}
+  (e : ∀ i, Basis (Fin (m i)) A (D.X i))
+
+/-- The coordinate base change of a chain map `f : D ⟶ C` between based complexes along a ring
+homomorphism `φ : A →+* K`: the chain map `Kᵐ⁽ⁱ⁾ → Kⁿ⁽ⁱ⁾` whose components are the matrices of
+the components of `f` in the bases `e i` and `c i`, with `φ` applied to every entry. -/
+noncomputable def matrixBaseChangeMap (f : D ⟶ C) :
+    D.matrixBaseChange e φ ⟶ C.matrixBaseChange c φ where
+  f i := ModuleCat.ofHom (Matrix.toLin' ((LinearMap.toMatrix (e i) (c i) (f.f i).hom).map φ))
+  comm' i j _ := by
+    ext1
+    simp only [matrixBaseChange, ModuleCat.hom_comp, ModuleCat.hom_ofHom, ← Matrix.toLin'_mul,
+      ← Matrix.map_mul, ← LinearMap.toMatrix_comp]
+    rw [← ModuleCat.hom_comp, ← ModuleCat.hom_comp, f.comm]
+
+/-- The matrices of the components of the coordinate base change of a chain map, in the standard
+bases, are the images under `φ` of the matrices of the components of the chain map. -/
+@[simp]
+theorem toMatrix_matrixBaseChangeMap_f (f : D ⟶ C) (i : ι) :
+    LinearMap.toMatrix (D.matrixBaseChangeBasis e φ i) (C.matrixBaseChangeBasis c φ i)
+        ((matrixBaseChangeMap c φ e f).f i).hom =
+      (LinearMap.toMatrix (e i) (c i) (f.f i).hom).map φ := by
+  simp only [matrixBaseChangeMap, matrixBaseChange, ModuleCat.hom_ofHom]
+  -- As in `toMatrix_matrixBaseChange_d`, this is `LinearMap.toMatrix_toLin` in the standard bases,
+  -- which are `Pi.basisFun` by definition; the module structures agree only after unfolding
+  -- `ModuleCat.of`, so the lemma is applied with `exact`.
+  exact LinearMap.toMatrix_toLin (Pi.basisFun K (Fin (m i))) (Pi.basisFun K (Fin (n i))) _
+
+/-- The coordinate base change of the identity is the identity. -/
+@[simp]
+theorem matrixBaseChangeMap_id :
+    matrixBaseChangeMap c φ c (𝟙 C) = 𝟙 (C.matrixBaseChange c φ) := by
+  ext i : 2
+  apply (LinearMap.toMatrix (C.matrixBaseChangeBasis c φ i)
+    (C.matrixBaseChangeBasis c φ i)).injective
+  simp
+
+/-- The coordinate base change of a composite of chain maps is the composite of their coordinate
+base changes. -/
+@[reassoc]
+theorem matrixBaseChangeMap_comp {E : HomologicalComplex (ModuleCat A) s} {p : ι → ℕ}
+    (b : ∀ i, Basis (Fin (p i)) A (E.X i)) (h : E ⟶ D) (f : D ⟶ C) :
+    matrixBaseChangeMap c φ b (h ≫ f) =
+      matrixBaseChangeMap e φ b h ≫ matrixBaseChangeMap c φ e f := by
+  ext i : 2
+  apply (LinearMap.toMatrix (E.matrixBaseChangeBasis b φ i)
+    (C.matrixBaseChangeBasis c φ i)).injective
+  simp [LinearMap.toMatrix_comp _ (D.matrixBaseChangeBasis e φ i), Matrix.map_mul,
+    LinearMap.toMatrix_comp _ (e i)]
+
+/-- The coordinate maps intertwine a chain map `f : D ⟶ C` and its coordinate base change. -/
+theorem matrixBaseChangeMap_f_apply_semilinearMap (f : D ⟶ C) (i : ι) (y : D.X i) :
+    ((matrixBaseChangeMap c φ e f).f i).hom
+        ((e i).semilinearMap φ (D.matrixBaseChangeBasis e φ i) y) =
+      (c i).semilinearMap φ (C.matrixBaseChangeBasis c φ i) ((f.f i).hom y) :=
+  Basis.semilinearMap_comp_apply_of_toMatrix_eq (toMatrix_matrixBaseChangeMap_f c φ e f i) y
+
+end Map
 
 end CommRing
 

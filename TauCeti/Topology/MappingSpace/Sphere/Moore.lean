@@ -9,6 +9,7 @@ public import TauCeti.Topology.MappingSpace.Sphere.Circle
 public import TauCeti.Topology.MappingSpace.Sphere.FreeLoop
 public import TauCeti.Topology.MappingSpace.Sphere.Group
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Between
+public import TauCeti.Topology.PathSpace.Moore.From
 public import TauCeti.Topology.Sphere.Suspension
 
 /-!
@@ -34,6 +35,10 @@ comparisons gives homotopy and fibre homotopy equivalences with Moore models:
   `𝓛₀Q` from `constContractibleLoop x` to constant loops) and `BasedMap Sphere2 Q Sphere2.north x`
   over south-pole evaluation, sending the duration-zero constant path at `x` to the constant based
   map.
+* `TauCeti.basedConstContractibleMoorePathsHomotopyEquiv` composes this with the homeomorphism
+  `Map_*(S², Q) ≃ₜ Ω²Q`, so `P_{⋆→Q} 𝓛₀Q` is homotopy equivalent to the double loop space; and
+  `TauCeti.basedConstContractibleMoorePathsInclusion` includes `P_{⋆→Q} 𝓛₀Q` into the Moore paths
+  in `𝓛₀Q` starting at the constant loop at `x`.
 
 ## Main declarations
 
@@ -44,10 +49,13 @@ comparisons gives homotopy and fibre homotopy equivalences with Moore models:
 * `TauCeti.contractibleConstLoopPathHomeomorphUnitPathsBetween`,
   `TauCeti.sphere2FiberHomotopyEquivMoorePaths`, `TauCeti.sphere2HomotopyEquivMoorePaths`:
   `P_{Q→Q} 𝓛₀Q ≃ₕ Map(S², Q)` over `Q × Q`.
+* `TauCeti.constContractibleMoorePathsInclusion`: the inclusion
+  `P_{Q→Q} 𝓛₀Q ↪ P_{Q→𝓛₀Q} 𝓛₀Q`.
 * `TauCeti.basedContractibleConstLoopPathHomeomorphUnitPathsBetween`,
   `TauCeti.basedMapSphere2FiberHomotopyEquivMoorePaths`,
   `TauCeti.basedMapSphere2HomotopyEquivMoorePaths`:
   `P_{⋆→Q} 𝓛₀Q ≃ₕ Map_*(S², Q)` over `Q`.
+* `TauCeti.basedConstContractibleMoorePathsHomotopyEquiv`: `P_{⋆→Q} 𝓛₀Q ≃ₕ Ω²Q`.
 
 ## References
 
@@ -59,7 +67,7 @@ public section
 
 noncomputable section
 
-open scoped NNReal unitInterval ContinuousMap
+open scoped NNReal unitInterval ContinuousMap Topology.Homotopy
 open unitInterval
 
 namespace TauCeti
@@ -248,6 +256,20 @@ theorem constContractibleMooreEndpoints_apply (γ : ConstContractibleMoorePaths 
     constContractibleMooreEndpoints Q γ =
       (basepointContractibleLoop γ.val.source, basepointContractibleLoop γ.val.target) := by
   simp [constContractibleMooreEndpoints, MoorePath.endpointsBetween_apply]
+
+/-- The inclusion `P_{Q→Q} 𝓛₀Q ↪ P_{Q→𝓛₀Q} 𝓛₀Q` of the Moore paths in the contractible loops
+between constant loops into the Moore paths starting at a constant loop. -/
+def constContractibleMoorePathsInclusion :
+    C(ConstContractibleMoorePaths Q,
+      MoorePath.pathsBetween (Set.range (constContractibleLoop (Q := Q))) Set.univ) :=
+  ⟨Set.inclusion fun _ hγ ↦ MoorePath.mem_pathsBetween.2 ⟨(MoorePath.mem_pathsBetween.1 hγ).1,
+    Set.mem_univ _⟩, continuous_inclusion _⟩
+
+variable {Q} in
+@[simp]
+theorem coe_constContractibleMoorePathsInclusion (γ : ConstContractibleMoorePaths Q) :
+    (constContractibleMoorePathsInclusion Q γ : MoorePath (contractibleLoops Q)) = γ :=
+  (rfl)
 
 /-- Evaluation of a two-sphere map at `(north, south) : Sphere2 × Sphere2`. -/
 def sphere2Poles : C(C(Sphere2, Q), Q × Q) :=
@@ -652,6 +674,64 @@ theorem basedMapSphere2HomotopyEquivMoorePaths_refl :
   ext s
   obtain ⟨⟨t, z⟩, rfl⟩ := suspensionToSphere_surjective s
   simp [basedConstContractibleMooreRefl]
+
+variable (Q x) in
+/-- The inclusion `P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q` of the Moore paths in the contractible free loops
+from the constant loop at `x` to a constant loop into all Moore paths starting at the constant loop
+at `x`: the map of total spaces of path fibrations over the inclusion of the constant loops. -/
+def basedConstContractibleMoorePathsInclusion :
+    C(BasedConstContractibleMoorePaths Q x,
+      MoorePathFrom (contractibleLoops Q) (constContractibleLoop x)) :=
+  ⟨fun γ ↦ ⟨γ.val, (MoorePath.mem_pathsBetween.mp γ.property).1⟩,
+    continuous_subtypeVal.subtype_mk _⟩
+
+@[simp]
+theorem coe_basedConstContractibleMoorePathsInclusion_apply
+    (γ : BasedConstContractibleMoorePaths Q x) :
+    (basedConstContractibleMoorePathsInclusion Q x γ : MoorePath (contractibleLoops Q)) = γ.val :=
+  (rfl)
+
+variable (Q x) in
+/-- **`P_{⋆→Q} 𝓛₀Q` is a double loop space.** The Moore paths in `𝓛₀Q` from the constant loop at
+`x` to a constant loop are homotopy equivalent to `Ω²Q = Ω (Ω Q x) (Path.refl x)`, through the
+based maps `Map_*(S², Q)`. -/
+def basedConstContractibleMoorePathsHomotopyEquiv :
+    BasedConstContractibleMoorePaths Q x ≃ₕ Ω (Ω Q x) (Path.refl x) :=
+  (basedMapSphere2HomotopyEquivMoorePaths Q x).trans
+    (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩
+      Sphere2.north).toHomotopyEquiv
+
+/-- `TauCeti.basedConstContractibleMoorePathsHomotopyEquiv` is
+`TauCeti.basedMapSphere2HomotopyEquivMoorePaths` followed by the homeomorphism
+`Map_*(S², Q) ≃ₜ Ω²Q`. -/
+theorem basedConstContractibleMoorePathsHomotopyEquiv_apply
+    (γ : BasedConstContractibleMoorePaths Q x) :
+    basedConstContractibleMoorePathsHomotopyEquiv Q x γ =
+      BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩ Sphere2.north
+        (basedMapSphere2HomotopyEquivMoorePaths Q x γ) :=
+  (rfl)
+
+/-- The homotopy inverse of `TauCeti.basedConstContractibleMoorePathsHomotopyEquiv` is the inverse
+homeomorphism `Ω²Q ≃ₜ Map_*(S², Q)` followed by the homotopy inverse of
+`TauCeti.basedMapSphere2HomotopyEquivMoorePaths`. -/
+theorem basedConstContractibleMoorePathsHomotopyEquiv_symm_apply
+    (γ : Ω (Ω Q x) (Path.refl x)) :
+    (basedConstContractibleMoorePathsHomotopyEquiv Q x).symm γ =
+      (basedMapSphere2HomotopyEquivMoorePaths Q x).symm
+        ((BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩
+          Sphere2.north).symm γ) :=
+  (rfl)
+
+/-- The homotopy equivalence `TauCeti.basedConstContractibleMoorePathsHomotopyEquiv` sends the
+constant path of duration zero at the constant loop to the constant double loop. -/
+@[simp]
+theorem basedConstContractibleMoorePathsHomotopyEquiv_refl :
+    basedConstContractibleMoorePathsHomotopyEquiv Q x (basedConstContractibleMooreRefl Q x) =
+      Path.refl (Path.refl x) := by
+  -- the composite is the homeomorphism applied to the image in `Map_*(S², Q)`, the constant map
+  exact (congrArg (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩
+      Sphere2.north) (basedMapSphere2HomotopyEquivMoorePaths_refl (Q := Q) (x := x))).trans
+    (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace_const 2 ⟨Q, x⟩ _)
 
 end BasedSphere2
 

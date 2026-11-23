@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
-public import TauCeti.Analysis.Complex.AtInfinity
+public import TauCeti.Analysis.Normed.Field.AtInfinity
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
