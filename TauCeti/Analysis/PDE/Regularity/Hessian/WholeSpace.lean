@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 /-!
 # The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)` for uniformly continuous coefficients
 
-Let `0 < n` and `1 < p < ∞`. This file proves the global `W^{2,p}` estimate on the whole space for
+Let `1 < p < ∞`. This file proves the global `W^{2,p}` estimate on the whole space for
 strong solutions of a non-divergence-form equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` whose coefficients are
 uniformly elliptic, bounded and uniformly continuous: there is a constant `C` such that every
 `u ∈ W^{2,p}(ℝⁿ)` with `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f ∈ Lᵖ(ℝⁿ)` almost everywhere satisfies
@@ -67,7 +67,7 @@ open scoped ENNReal NNReal InnerProductSpace
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)` for coefficients of small local
-oscillation.** Let `0 < n` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on
+oscillation.** Let `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on
 `n` and `p`, with the following property. Let `a` be a measurable matrix-valued coefficient with
 `λ ‖ξ‖² ≤ ξᵀ a(x) ξ`, `0 < λ`, and `|aᵢⱼ(x)| ≤ Λ` for every `x`, whose entries vary by at most
 `δ λ` between points at distance less than `ρ`, where `0 < ρ`. Then every `u ∈ W^{2,p}(ℝⁿ)` with
@@ -76,7 +76,7 @@ oscillation.** Let `0 < n` and `1 < p < ∞`. There are constants `C` and `δ > 
 `‖D²u‖_{Lᵖ} ≤ C (‖f‖_{Lᵖ} / λ + (1 + Λ / λ)² / ρ² ‖u‖_{Lᵖ})`,
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`. -/
-theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_dist_lt_abs_sub_le (hn : 0 < n)
+theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_dist_lt_abs_sub_le
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ {lam Λ ρ : ℝ}, 0 < lam → 0 < ρ →
       ∀ {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ}, AEStronglyMeasurable a volume →
@@ -91,22 +91,9 @@ theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_dist_lt_abs_sub_l
         ‖Wkp.iteratedGradient 1 u‖ ≤
           C * (‖f‖ / lam + (1 + Λ / lam) ^ 2 / ρ ^ 2 * ‖Wkp.value 2 u‖) := by
   obtain ⟨C₀, δ, hδ, hball⟩ :=
-    exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq hn hp hp_top
+    exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq (n := n) hp
+      hp_top
   refine ⟨8 * 2 ^ n * C₀, δ, hδ, fun {lam Λ ρ} hlam hρ {a} ha hA haΛ hosc u f heq => ?_⟩
-  have hμ : (volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n))) = volume := by
-    simp
-  -- Elements of `Lᵖ` over `⊤` are `Lᵖ` functions for `volume`, with the same norm.
-  have hmem : ∀ {G : Type} [NormedAddCommGroup G]
-      (g : Lp G p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-        (⊤ : Opens (EuclideanSpace ℝ (Fin n))))), MemLp g p volume := fun g => by
-    convert Lp.memLp g using 1
-    exact hμ.symm
-  have hnorm : ∀ {G : Type} [NormedAddCommGroup G]
-      (g : Lp G p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-        (⊤ : Opens (EuclideanSpace ℝ (Fin n))))), ‖g‖ = lpNorm g p volume := fun g => by
-    rw [Lp.norm_def, ← toReal_eLpNorm]
-    exact congrArg (fun ν => (eLpNorm (⇑g) p ν).toReal) hμ
   set r := ρ / 2 with hr_def
   have hr : 0 < r := half_pos hρ
   have h2r : 2 * r = ρ := by rw [hr_def]; ring
@@ -132,16 +119,20 @@ theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_dist_lt_abs_sub_l
     rw [hr_def, hc₁_def, hc₂_def]
     field_simp
     ring
-  have hglobal := lpNorm_le_of_ae_lpNorm_restrict_ball_le_add hp.le hp_top (hmem _) (hmem f)
-    (hmem _) (by positivity) (by positivity) hr (Eventually.of_forall hlocal)
-  rw [finrank_euclideanSpace_fin, ← hnorm, ← hnorm, ← hnorm] at hglobal
+  have hglobal := lpNorm_le_of_ae_lpNorm_restrict_ball_le_add hp.le hp_top
+    (Lp.memLp_of_restrict_coe_opens_top _) (Lp.memLp_of_restrict_coe_opens_top f)
+    (Lp.memLp_of_restrict_coe_opens_top _) (by positivity) (by positivity) hr
+    (Eventually.of_forall hlocal)
+  rw [finrank_euclideanSpace_fin, ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top,
+    ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top,
+    ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top] at hglobal
   refine hglobal.trans_eq ?_
   rw [hc₁_def, hc₂_def]
   push_cast
   ring
 
 /-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)` for uniformly continuous coefficients.**
-Let `0 < n` and `1 < p < ∞`, and let `a` be a uniformly continuous matrix-valued coefficient with
+Let `1 < p < ∞`, and let `a` be a uniformly continuous matrix-valued coefficient with
 `λ ‖ξ‖² ≤ ξᵀ a(x) ξ`, `0 < λ`, and `|aᵢⱼ(x)| ≤ Λ` for every `x`. Then there is a constant `C`,
 depending on `n`, `p`, `λ`, `Λ` and the modulus of continuity of `a`, such that every
 `u ∈ W^{2,p}(ℝⁿ)` with `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f ∈ Lᵖ(ℝⁿ)` almost everywhere satisfies
@@ -149,7 +140,7 @@ depending on `n`, `p`, `λ`, `Λ` and the modulus of continuity of `a`, such tha
 `‖D²u‖_{Lᵖ} ≤ C (‖f‖_{Lᵖ} + ‖u‖_{Lᵖ})`,
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`. -/
-theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_uniformContinuous (hn : 0 < n)
+theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_uniformContinuous
     (hp : 1 < p) (hp_top : p ≠ ∞) {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ}
     (ha : UniformContinuous a) {lam Λ : ℝ} (hlam : 0 < lam)
     (hA : ∀ x (ξ : EuclideanSpace ℝ (Fin n)), lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
@@ -161,7 +152,7 @@ theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_uniformContinuous
         EuclideanSpace.single j 1⟫_ℝ = f x) →
       ‖Wkp.iteratedGradient 1 u‖ ≤ C * (‖f‖ + ‖Wkp.value 2 u‖) := by
   obtain ⟨C, δ, hδ, hest⟩ :=
-    exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_dist_lt_abs_sub_le hn hp hp_top
+    exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_dist_lt_abs_sub_le (n := n) hp hp_top
   obtain ⟨ρ, hρ, hosc⟩ := ha.exists_pos_forall_abs_sub_le (mul_pos hδ hlam)
   set M := max lam⁻¹ ((1 + Λ / lam) ^ 2 / ρ ^ 2)
   refine ⟨C * M, fun u f heq => ?_⟩

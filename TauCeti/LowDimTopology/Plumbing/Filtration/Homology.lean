@@ -77,8 +77,6 @@ theorem latticeWeightSublevelHomologyFunctor_map (P : PlumbingGraph V)
     Functor.map_comp, Functor.map_comp, eqToHom_map, eqToHom_map]
   simp only [latticeWeightSublevelHomologyFunctor, Functor.comp_map,
     HomologicalComplex.homologyFunctor_map]
-  -- Both sides now differ only in the equality proofs carried by `eqToHom`.
-  rfl
 
 /-- The canonical cocone from weight-sublevel homology modules to the homology of the full lattice
 chain complex. Its legs are the maps on homology induced by inclusion of sublevel complexes. -/

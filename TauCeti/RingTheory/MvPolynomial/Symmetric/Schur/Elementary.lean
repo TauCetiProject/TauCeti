@@ -77,17 +77,17 @@ variable {N : ℕ} {μ : YoungDiagram}
 through its number `μ.colLen 0` of rows, so this reads the first column of any bounded tableau;
 for a one-column shape it reads the whole tableau. -/
 def colEntry (T : BoundedSSYT N μ) (i : Fin (μ.colLen 0)) : Fin N :=
-  ⟨T.1 i 0, entry_lt T (YoungDiagram.mem_iff_lt_colLen.mpr i.isLt)⟩
+  ⟨T.val i 0, entry_lt T (YoungDiagram.mem_iff_lt_colLen.mpr i.isLt)⟩
 
 @[simp]
 theorem colEntry_val (T : BoundedSSYT N μ) (i : Fin (μ.colLen 0)) :
-    (colEntry T i : ℕ) = T.1 i 0 :=
+    (colEntry T i : ℕ) = T.val i 0 :=
   (rfl)
 
 /-- **The first column of a bounded tableau increases strictly**, entries increasing strictly down
 every column of a semistandard tableau. -/
 theorem colEntry_strictMono (T : BoundedSSYT N μ) : StrictMono (colEntry T) := fun _ j hij =>
-  T.1.col_strict hij (YoungDiagram.mem_iff_lt_colLen.mpr j.isLt)
+  T.val.col_strict hij (YoungDiagram.mem_iff_lt_colLen.mpr j.isLt)
 
 /-- The set of letters the first column of a bounded tableau uses. -/
 def colFinset (T : BoundedSSYT N μ) : Finset (Fin N) :=
@@ -117,7 +117,7 @@ theorem orderEmbOfFin_colFinset (T : BoundedSSYT N μ) :
 
 /-- The cells of a one-column shape carrying a given letter, read off the rows that carry it. -/
 private theorem filter_cells_eq_image (h : μ.rowLen 0 ≤ 1) (T : BoundedSSYT N μ) (y : Fin N) :
-    (μ.cells.filter fun c => T.1 c.1 c.2 = (y : ℕ))
+    (μ.cells.filter fun c => T.val c.1 c.2 = (y : ℕ))
       = (Finset.univ.filter fun i : Fin (μ.colLen 0) => colEntry T i = y).image
           fun i : Fin (μ.colLen 0) => ((i : ℕ), 0) := by
   ext c
@@ -196,7 +196,7 @@ def ofColFinset (h : μ.rowLen 0 ≤ 1) (s : Finset (Fin N)) (hs : s.card = μ.c
 
 theorem ofColFinset_apply (h : μ.rowLen 0 ≤ 1) (s : Finset (Fin N)) (hs : s.card = μ.colLen 0)
     (i j : ℕ) :
-    (ofColFinset h s hs).1 i j
+    (ofColFinset h s hs).val i j
       = if hij : i < μ.colLen 0 ∧ j = 0 then (s.orderEmbOfFin hs ⟨i, hij.1⟩ : ℕ) else 0 :=
   colTableau_apply h s hs i j
 
@@ -220,7 +220,7 @@ theorem ofColFinset_colFinset (h : μ.rowLen 0 ≤ 1) (T : BoundedSSYT N μ) :
   · obtain ⟨hi, rfl⟩ := (YoungDiagram.mem_iff_of_rowLen_le_one h).mp hij
     rw [dite_eq_left ⟨hi, rfl⟩, orderEmbOfFin_colFinset T, colEntry_val]
   · rw [dite_eq_right fun hc => hij ((YoungDiagram.mem_iff_of_rowLen_le_one h).mpr hc),
-      T.1.zeros hij]
+      T.val.zeros hij]
 
 /-- **The bounded tableaux of a one-column shape are the sets of letters of the right size**: a
 tableau is the set of the letters of its column, and a set of letters is listed down the column in
@@ -228,9 +228,9 @@ increasing order. -/
 def colFinsetEquiv (h : μ.rowLen 0 ≤ 1) :
     BoundedSSYT N μ ≃ {s : Finset (Fin N) // s.card = μ.colLen 0} where
   toFun T := ⟨colFinset T, card_colFinset T⟩
-  invFun s := ofColFinset h s.1 s.2
+  invFun s := ofColFinset h s.val s.property
   left_inv T := ofColFinset_colFinset h T
-  right_inv s := Subtype.ext (colFinset_ofColFinset h s.1 s.2)
+  right_inv s := Subtype.ext (colFinset_ofColFinset h s.val s.property)
 
 @[simp]
 theorem colFinsetEquiv_apply_coe (h : μ.rowLen 0 ≤ 1) (T : BoundedSSYT N μ) :
@@ -241,7 +241,7 @@ theorem colFinsetEquiv_apply_coe (h : μ.rowLen 0 ≤ 1) (T : BoundedSSYT N μ) 
 @[simp]
 theorem colFinsetEquiv_symm_apply (h : μ.rowLen 0 ≤ 1)
     (s : {s : Finset (Fin N) // s.card = μ.colLen 0}) :
-    (colFinsetEquiv h).symm s = ofColFinset h s.1 s.2 :=
+    (colFinsetEquiv h).symm s = ofColFinset h s.val s.property :=
   (rfl)
 
 end BoundedSSYT

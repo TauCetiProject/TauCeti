@@ -24,10 +24,23 @@ usual adjoint identity. `LinearMap.IsAdjointPair.inner_eq_cstarModule` recovers 
 For right Hilbert A-modules, instantiate the coefficient type below with `Aᵐᵒᵖ`.
 No unit, fullness, countable generation, or nonzero-module hypothesis is needed.
 
+The predicate `CStarModule.IsAdjointable A T` records that a plain function `T : E → F` admits a
+plain adjoint `S : F → E`. Its closure under the algebraic operations and the automatic additivity,
+complex linearity, and coefficient compatibility of adjointable functions
+(`CStarModule.IsAdjointable.map_add`, `CStarModule.IsAdjointable.map_smul`,
+`CStarModule.IsAdjointable.map_smul_coeff`) need no `[StarModule ℂ A]` hypothesis.
+
+For bounded adjoint pairs, `LinearMap.IsAdjointPair.norm_adjoint_comp_self_cstarModule` proves
+the C⋆-identity `‖S ∘ T‖ = ‖T‖ ^ 2`, and `LinearMap.IsAdjointPair.norm_eq_cstarModule` proves
+`‖S‖ = ‖T‖`.
+
 ## References
 
 * Raeburn–Williams, *Morita Equivalence and Continuous-Trace C*-Algebras*,
   Definition 2.17 and the discussion of adjointable operators.
+* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapter 1.
+* The proof of the C⋆-identity follows Mathlib's `ContinuousLinearMap.norm_adjoint_comp_self` for
+  inner product spaces.
 -/
 
 public section
@@ -214,4 +227,149 @@ theorem exists_continuousLinearMaps_cstarModule
 
 end Analytic
 
+section Norm
+
+variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+  {T : E →L[ℂ] F} {S : F →L[ℂ] E}
+
+/-- For a bounded C⋆-module adjoint pair, `‖T‖ ^ 2 ≤ ‖S ∘ T‖`. -/
+private theorem sq_norm_le_norm_comp_cstarModule
+    (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+      (innerₛₗ (A := A) (E := F)).flip T S) :
+    ‖T‖ ^ 2 ≤ ‖S.comp T‖ := by
+  -- `‖T x‖ ^ 2 = ‖⟨x, S (T x)⟩‖ ≤ ‖S ∘ T‖ * ‖x‖ ^ 2` for every `x`.
+  rw [← Real.sqrt_le_sqrt_iff (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)]
+  refine T.opNorm_le_bound (Real.sqrt_nonneg _) fun x ↦ ?_
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
+  calc ‖T x‖ ^ 2 = ‖inner A x (S (T x))‖ := by
+        rw [CStarModule.norm_sq_eq A, h.inner_eq_cstarModule]
+    _ ≤ ‖x‖ * ‖S.comp T x‖ := norm_inner_le E
+    _ ≤ ‖x‖ * (‖S.comp T‖ * ‖x‖) := by gcongr; exact (S.comp T).le_opNorm x
+    _ = (√‖S.comp T‖ * ‖x‖) ^ 2 := by
+        rw [mul_pow, Real.sq_sqrt (norm_nonneg _)]
+        ring
+
+/-- The two members of a bounded C⋆-module adjoint pair have the same operator norm. -/
+theorem norm_eq_cstarModule
+    (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+      (innerₛₗ (A := A) (E := F)).flip T S) :
+    ‖S‖ = ‖T‖ := by
+  -- Each norm is bounded by the other: `‖T‖ ^ 2 ≤ ‖S ∘ T‖ ≤ ‖S‖ * ‖T‖`, and symmetrically.
+  have hT : ‖T‖ ^ 2 ≤ ‖S‖ * ‖T‖ :=
+    (sq_norm_le_norm_comp_cstarModule h).trans (S.opNorm_comp_le T)
+  have hS : ‖S‖ ^ 2 ≤ ‖T‖ * ‖S‖ :=
+    (sq_norm_le_norm_comp_cstarModule h.symm_cstarModule).trans (T.opNorm_comp_le S)
+  apply le_antisymm <;> nlinarith [norm_nonneg T, norm_nonneg S]
+
+/-- The C⋆-identity for a bounded C⋆-module adjoint pair: `‖S ∘ T‖ = ‖T‖ ^ 2`. This is the
+analytic input for the C⋆-algebra of adjointable operators on a Hilbert C⋆-module. -/
+theorem norm_adjoint_comp_self_cstarModule
+    (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+      (innerₛₗ (A := A) (E := F)).flip T S) :
+    ‖S.comp T‖ = ‖T‖ ^ 2 :=
+  le_antisymm ((S.opNorm_comp_le T).trans_eq (by rw [h.norm_eq_cstarModule, sq]))
+    (sq_norm_le_norm_comp_cstarModule h)
+
+end Norm
+
 end LinearMap.IsAdjointPair
+
+/-! ### The adjointability predicate on functions -/
+
+namespace CStarModule
+
+/-- A plain function `T : E → F` between `A`-inner-product spaces is *adjointable* if there exists a
+plain function `S : F → E` satisfying `⟪T x, y⟫_A = ⟪x, S y⟫_A` for all `x` and `y`. On complete
+Hilbert C⋆-modules, this forces both `T` and `S` to be bounded `ℂ`-linear `A`-module maps. -/
+def IsAdjointable (A : Type*) {E F : Type*} [Inner A E] [Inner A F] (T : E → F) : Prop :=
+  ∃ S : F → E, ∀ x y, inner A (T x) y = inner A x (S y)
+
+section Inner
+
+variable {A E F G : Type*}
+
+theorem isAdjointable_def [Inner A E] [Inner A F] {T : E → F} :
+    IsAdjointable A T ↔ ∃ S : F → E, ∀ x y, inner A (T x) y = inner A x (S y) :=
+  Iff.rfl
+
+@[simp]
+theorem isAdjointable_id [Inner A E] : IsAdjointable A (id : E → E) :=
+  ⟨id, fun _ _ => rfl⟩
+
+theorem IsAdjointable.comp [Inner A E] [Inner A F] [Inner A G] {S : F → G} {T : E → F}
+    (hS : IsAdjointable A S) (hT : IsAdjointable A T) :
+    IsAdjointable A (S ∘ T) := by
+  rcases hS with ⟨S', hS'⟩
+  rcases hT with ⟨T', hT'⟩
+  exact ⟨T' ∘ S', fun x z => (hS' (T x) z).trans (hT' x (S' z))⟩
+
+end Inner
+
+section Basic
+
+variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+  [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
+
+@[simp]
+theorem isAdjointable_zero : IsAdjointable A (0 : E → F) :=
+  ⟨0, fun _ _ => by simp⟩
+
+theorem IsAdjointable.add {T₁ T₂ : E → F} (h₁ : IsAdjointable A T₁) (h₂ : IsAdjointable A T₂) :
+    IsAdjointable A (T₁ + T₂) :=
+  let ⟨S₁, h₁⟩ := h₁; let ⟨S₂, h₂⟩ := h₂
+  ⟨S₁ + S₂, fun x y => by simp [h₁ x y, h₂ x y]⟩
+
+theorem IsAdjointable.neg {T : E → F} (h : IsAdjointable A T) : IsAdjointable A (-T) :=
+  let ⟨S, h⟩ := h
+  ⟨-S, fun x y => by simp only [Pi.neg_apply, inner_neg_left', inner_neg_right', h x y]⟩
+
+theorem IsAdjointable.sub {T₁ T₂ : E → F} (h₁ : IsAdjointable A T₁) (h₂ : IsAdjointable A T₂) :
+    IsAdjointable A (T₁ - T₂) :=
+  sub_eq_add_neg T₁ T₂ ▸ h₁.add h₂.neg
+
+theorem IsAdjointable.map_add {T : E → F} (h : IsAdjointable A T) (x y : E) :
+    T (x + y) = T x + T y :=
+  let ⟨_, h⟩ := h
+  CStarModule.ext_inner_right (A := A) fun z => by
+    rw [h (x + y) z, CStarModule.inner_add_left, ← h x z, ← h y z, ← CStarModule.inner_add_left]
+
+theorem IsAdjointable.map_smul {T : E → F} (h : IsAdjointable A T) (c : ℂ) (x : E) :
+    T (c • x) = c • T x :=
+  let ⟨S, h⟩ := h
+  CStarModule.ext_inner_left (A := A) fun z => by
+    rw [← CStarModule.star_inner, h (c • x) z, CStarModule.star_inner,
+      CStarModule.inner_smul_right_complex, ← CStarModule.star_inner x (S z), ← h x z,
+      CStarModule.star_inner, ← CStarModule.inner_smul_right_complex]
+
+theorem IsAdjointable.map_smul_coeff {T : E → F} (h : IsAdjointable A T) (a : A) (x : E) :
+    T (a • x) = a • T x :=
+  let ⟨_, h⟩ := h
+  CStarModule.ext_inner_right (A := A) fun z => by
+    rw [h (a • x) z, CStarModule.inner_op_smul_left, CStarModule.inner_op_smul_left, ← h x z]
+
+end Basic
+
+section StarModule
+
+variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+  [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+  [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
+
+theorem isAdjointable_iff_exists_isAdjointPair {T : E → F} :
+    IsAdjointable A T ↔
+      ∃ S : F → E, LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+        (innerₛₗ (A := A) (E := F)).flip T S := by
+  simp_rw [isAdjointPair_inner_iff, IsAdjointable]
+
+theorem IsAdjointable.smul {T : E → F} (c : ℂ) (h : IsAdjointable A T) :
+    IsAdjointable A (c • T) :=
+  let ⟨S, h⟩ := h
+  ⟨star c • S, fun x y => by simp [h x y]⟩
+
+end StarModule
+
+end CStarModule

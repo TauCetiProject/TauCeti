@@ -114,7 +114,7 @@ definition, for an arbitrary `φ`. -/
 noncomputable def expCoderiv (φ : ReducedTensorWords R M →ₗ[R] M) :
     ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M :=
   DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦
-    ∑ r ∈ Finset.range n.1, algebraMap ℚ R (r.factorial : ℚ)⁻¹ • ((coderiv R φ ^ r) ∘ₗ of R M n)
+    ∑ r ∈ Finset.range n.val, algebraMap ℚ R (r.factorial : ℚ)⁻¹ • ((coderiv R φ ^ r) ∘ₗ of R M n)
 
 variable {φ : ReducedTensorWords R M →ₗ[R] M}
 
@@ -227,7 +227,7 @@ theorem map_expCoderiv_deconcatenation_eq_sum (hφ : φ ∘ₗ ofLetter R M = 0)
     induction w using TensorProduct.inductionOn with
     | tmul u v =>
         simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype]
-        rw [expCoderiv_apply_eq_sum hφ u.2, expCoderiv_apply_eq_sum hφ v.2]
+        rw [expCoderiv_apply_eq_sum hφ u.property, expCoderiv_apply_eq_sum hφ v.property]
         simp only [S, c, LinearMap.sum_apply, LinearMap.smul_apply]
     | add u v hu hv => simp only [map_add, hu, hv]
   -- The tensor square of `S` expands into the summands.
@@ -286,7 +286,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [Algebra ℚ R] [AddCommMonoid
 
 /-- The exponential of the coderivation of a degree-zero family of Taylor components with no unary
 component has degree zero. -/
-theorem isHomogeneous_expCoderiv (G : InternalGrading R M) {φ : ReducedTensorWords R M →ₗ[R] M}
+theorem isHomogeneous_expCoderiv (G : InternalGrading R M ℤ) {φ : ReducedTensorWords R M →ₗ[R] M}
     (hφ : LinearMap.IsHomogeneous φ (gradedPiece G) G.piece 0) (hφ₁ : φ ∘ₗ ofLetter R M = 0) :
     LinearMap.IsHomogeneous (expCoderiv R φ) (gradedPiece G) (gradedPiece G) 0 := by
   have hD : LinearMap.IsHomogeneous (coderiv R φ) (gradedPiece G) (gradedPiece G) 0 := by

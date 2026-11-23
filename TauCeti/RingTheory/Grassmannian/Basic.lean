@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Grassmannian
 
+import Mathlib.RingTheory.Flat.LocallyFree
 -- Proof-only: the body of `Module.Grassmannian.baseChangeMkQ` is not exposed.
 import all Mathlib.RingTheory.Grassmannian
 
@@ -17,7 +18,10 @@ Let `M` be a module over a commutative ring `R`. Mathlib's `Module.Grassmannian 
 `G(k, M; R)`, is the set of submodules `N ≤ M` whose quotient `M ⧸ N` is finite projective of
 constant rank `k`. This file adds general facts about it: the kernel of a surjection onto a
 finite projective module of constant rank `k` is a point of `G(k, M; R)`, a point of the
-Grassmannian of a finite module is finitely generated, and the behaviour of
+Grassmannian of a finite module is finitely generated, extreme-dimension characterisations
+(`G(0, M; R)` has unique point `⊤`, `G(k, M; R)` is empty when `M` is finite flat of rank `< k` at
+some prime, and `G(n, M; R)` has unique point `⊥` when `M` is finite projective of constant rank
+`n`), field-point dimensions (`finrank_quotient`, `finrank_toSubmodule`), and the behaviour of
 `Module.Grassmannian.baseChangeMkQ`, the map underlying base change of points, on pure tensors and
 on vectors coming from `A ⊗[R] M`. In particular a vector of a point maps into each of its base
 changes, and, when `B` is an `A`-algebra, the base change of `N` along the structure map is the
@@ -34,6 +38,9 @@ of `M`, naturally in `A`. This is the functorial form of base change of the Gras
 
 * `Module.Grassmannian.ofSurjective`: the kernel of a surjection onto a finite projective module
   of constant rank `k`, as a point of `G(k, M; R)`.
+* `Module.Grassmannian.uniqueZero`: `G(0, M; R)` has unique point `⊤`.
+* `Module.Grassmannian.uniqueOfRankAtStalkEq`: for finite projective `M` of constant rank `n`,
+  `G(n, M; R)` has unique point `⊥`.
 * `LinearEquiv.grassmannianCongr`: a linear equivalence `M ≃ₗ[R] M'` identifies `G(k, M; R)` with
   `G(k, M'; R)`.
 * `Module.Grassmannian.baseChangeEquiv`: the points of the Grassmannian of `R' ⊗[R] M` over an
@@ -42,6 +49,11 @@ of `M`, naturally in `A`. This is the functorial form of base change of the Gras
 ## Main results
 
 * `Module.Grassmannian.fg_toSubmodule`: over a finite module, every point is finitely generated.
+* `Module.Grassmannian.toSubmodule_eq_top_zero`, `Module.Grassmannian.isEmpty_of_rankAtStalk_lt`,
+  and `Module.Grassmannian.toSubmodule_eq_bot_of_rankAtStalk_eq`: extreme-dimension behaviour of
+  `G(k, M; R)`.
+* `Module.Grassmannian.finrank_quotient` and `Module.Grassmannian.finrank_toSubmodule`: dimensions
+  of `V ⧸ N` and `N` for a field point `N ∈ G(k, V; K)`.
 * `Module.Grassmannian.baseChangeMkQ_tmul`: `baseChangeMkQ B N` sends `b ⊗ₜ m` to
   `b ⊗ₜ [1 ⊗ₜ m]`.
 * `Module.Grassmannian.baseChangeMkQ_rTensor`: `baseChangeMkQ B N` sends the image of
@@ -104,6 +116,75 @@ theorem fg_toSubmodule [Module.Finite R M] (N : G(k, M; R)) : N.toSubmodule.FG :
   have : Module.FinitePresentation R (M ⧸ N.toSubmodule) :=
     Module.finitePresentation_of_projective _ _
   simpa using Module.FinitePresentation.fg_ker N.toSubmodule.mkQ N.toSubmodule.mkQ_surjective
+
+section Extreme
+
+/-- Every point of `G(0, M; R)` is the full submodule `⊤`. -/
+@[simp]
+theorem toSubmodule_eq_top_zero (N : G(0, M; R)) : N.toSubmodule = ⊤ := by
+  have := (Module.rankAtStalk_eq_zero_iff_subsingleton (R := R) (M := M ⧸ N.toSubmodule)).mp
+    (funext N.rankAtStalk_eq)
+  ext x
+  exact ⟨fun _ ↦ trivial, fun _ ↦ (Submodule.Quotient.mk_eq_zero _).mp (Subsingleton.elim _ 0)⟩
+
+/-- `G(0, M; R)` has a unique point, namely the full submodule `⊤`, whose quotient is zero. -/
+@[instance_reducible]
+noncomputable instance uniqueZero : Unique G(0, M; R) where
+  default := ofSurjective (0 : M →ₗ[R] Fin 0 → R)
+    (fun x ↦ ⟨0, Subsingleton.elim _ x⟩)
+    (fun p ↦ congrFun (Module.rankAtStalk_eq_zero_of_subsingleton (R := R) (M := Fin 0 → R)) p)
+  uniq N := Grassmannian.ext ((toSubmodule_eq_top_zero N).trans (toSubmodule_eq_top_zero _).symm)
+
+/-- If `M` is finite flat over `R` and has rank strictly less than `k` at some prime of `R`, then
+`G(k, M; R)` is empty. -/
+theorem isEmpty_of_rankAtStalk_lt [Module.Finite R M] [Module.Flat R M]
+    (h : ∃ p, rankAtStalk (R := R) M p < k) : IsEmpty G(k, M; R) := by
+  refine ⟨fun N ↦ ?_⟩
+  obtain ⟨p, hp⟩ := h
+  have hle := LinearMap.finrank_le_finrank_of_surjective
+    (f := N.toSubmodule.mkQ.baseChange p.asIdeal.ResidueField)
+    (LinearMap.lTensor_surjective _ N.toSubmodule.mkQ_surjective)
+  rw [← Module.rankAtStalk_eq, ← Module.rankAtStalk_eq, N.rankAtStalk_eq] at hle
+  omega
+
+/-- If `M` is finite flat over `R` of constant rank `n`, then every point of `G(n, M; R)` is the
+zero submodule `⊥`. -/
+theorem toSubmodule_eq_bot_of_rankAtStalk_eq [Module.Finite R M] [Module.Flat R M] {n : ℕ}
+    (h : ∀ p, rankAtStalk (R := R) M p = n) (N : G(n, M; R)) : N.toSubmodule = ⊥ := by
+  have hbij := Module.bijective_of_surjective_of_rankAtStalk_eq N.toSubmodule.mkQ_surjective
+    fun m _ ↦ (h _).trans (N.rankAtStalk_eq _).symm
+  rw [← Submodule.ker_mkQ N.toSubmodule, LinearMap.ker_eq_bot.mpr hbij.1]
+
+/-- If `M` is finite projective over `R` of constant rank `n`, then `G(n, M; R)` has a unique point,
+namely the zero submodule `⊥`. -/
+@[instance_reducible]
+noncomputable def uniqueOfRankAtStalkEq [Module.Finite R M] [Module.Projective R M] {n : ℕ}
+    (h : ∀ p, rankAtStalk (R := R) M p = n) : Unique G(n, M; R) where
+  default := ofSurjective LinearMap.id Function.surjective_id h
+  uniq N := Grassmannian.ext <|
+    (toSubmodule_eq_bot_of_rankAtStalk_eq h N).trans (toSubmodule_eq_bot_of_rankAtStalk_eq h _).symm
+
+end Extreme
+
+section Field
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+
+/-- Over a field `K`, the quotient of a point `N ∈ G(k, V; K)` has dimension `k`. -/
+@[simp]
+theorem finrank_quotient (N : G(k, V; K)) : Module.finrank K (V ⧸ N.toSubmodule) = k := by
+  have h := congrFun (Module.rankAtStalk_eq_finrank_of_free (R := K) (M := V ⧸ N.toSubmodule)) ⊥
+  simpa [N.rankAtStalk_eq] using h.symm
+
+/-- Over a field `K`, a point `N ∈ G(k, V; K)` of a finite-dimensional vector space `V` has
+dimension `finrank K V - k`. -/
+theorem finrank_toSubmodule [Module.Finite K V] (N : G(k, V; K)) :
+    Module.finrank K N.toSubmodule = Module.finrank K V - k := by
+  have hsum := N.toSubmodule.finrank_quotient_add_finrank
+  rw [N.finrank_quotient] at hsum
+  omega
+
+end Field
 
 @[simp]
 theorem baseChangeMkQ_tmul {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
@@ -273,7 +354,7 @@ theorem baseChangeEquiv_map (f : A →ₐ[R'] B) (N : G(k, A ⊗[R'] (R' ⊗[R] 
   ext : 1
   simp only [toSubmodule_baseChangeEquiv, map_toSubmodule_eq_span, Submodule.map_span,
     Submodule.map_coe, ← Set.image_comp]
-  refine congrArg _ (Set.image_congr' fun x ↦ ?_)
+  refine congrArg _ (Set.image_congr' rfl fun x ↦ ?_)
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
   | tmul a y =>

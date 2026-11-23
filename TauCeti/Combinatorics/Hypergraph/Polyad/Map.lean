@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Basic
-import TauCeti.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
 # Mapping the cells and colors of polyads
@@ -35,7 +35,7 @@ skeletons' pair colorings is required. -/
 def map (P : Polyad3 S) (f : S.vertexPart.parts → T.vertexPart.parts) (g : κ → κ') :
     Polyad3 T :=
   ofData (f ⟨P.c₀, P.hc₀⟩) (f ⟨P.c₁, P.hc₁⟩) (f ⟨P.c₂, P.hc₂⟩)
-    (f ⟨P.c₀, P.hc₀⟩).2 (f ⟨P.c₁, P.hc₁⟩).2 (f ⟨P.c₂, P.hc₂⟩).2
+    (f ⟨P.c₀, P.hc₀⟩).property (f ⟨P.c₁, P.hc₁⟩).property (f ⟨P.c₂, P.hc₂⟩).property
     (g P.color₀₁) (g P.color₀₂) (g P.color₁₂)
 
 /-- The role-zero cell after mapping. -/
@@ -100,8 +100,8 @@ colors, its polyad maps to its new polyad. -/
 theorem map_ofTriple (f : S.vertexPart.parts → T.vertexPart.parts) (g : κ → κ')
     (hcolors : ∀ p, g (S.pairColors.color p) = T.pairColors.color p)
     (x : {x : Fin 3 → V // Function.Injective x})
-    (hcells : ∀ i, (f ⟨S.vertexPart.part (x.1 i),
-      S.vertexPart.part_mem.2 (Finset.mem_univ _)⟩ : Finset V) = T.vertexPart.part (x.1 i)) :
+    (hcells : ∀ i, (f ⟨S.vertexPart.part (x.val i),
+      S.vertexPart.part_mem.2 (Finset.mem_univ _)⟩ : Finset V) = T.vertexPart.part (x.val i)) :
     (ofTriple S x).map f g = ofTriple T x := by
   apply ext_data
   · simpa using hcells 0
@@ -120,7 +120,7 @@ theorem card_ofTriple_ne_map_le [DecidableEq κ']
       S.vertexPart.part_mem.2 (mem_univ _)⟩ : Finset V) = T.vertexPart.part v) :
     #{x | ofTriple T x ≠ (ofTriple S x).map f g} ≤
       3 * #B * Fintype.card V ^ 2 := by
-  calc _ ≤ #{x : {x : Fin 3 → V // Function.Injective x} | ∃ i, x.1 i ∈ B} := by
+  calc _ ≤ #{x : {x : Fin 3 → V // Function.Injective x} | ∃ i, x.val i ∈ B} := by
           refine card_le_card fun x hx ↦ mem_filter.2 ⟨mem_univ _, ?_⟩
           by_contra! h
           exact (mem_filter.1 hx).2

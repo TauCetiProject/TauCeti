@@ -81,7 +81,7 @@ theorem exists_basePointsRepresentation_eq_smul
   let _ : N.Normal := CommHopfAlgCat.quotientPointsSubgroup_normal A I hI _
   let ρ := Comodule.basePointsRepresentation (R := k) (H := H) V
   have heigen (n : N) : ρ n v = (n.val.ofConv a) • v := by
-    obtain ⟨x, hx⟩ := n.2
+    obtain ⟨x, hx⟩ := n.property
     rw [← hx, CommHopfAlgCat.quotientPointsHom_apply_apply,
       CommHopfAlgCat.quotientPointsHom_apply]
     have hxv : Comodule.basePointsRepresentation (R := k) (H := Q) V x v =

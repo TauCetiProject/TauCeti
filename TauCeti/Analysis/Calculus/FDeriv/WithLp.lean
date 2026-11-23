@@ -42,6 +42,8 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   `‖df v‖² + ‖dg v‖²`.
 * `TauCeti.fderiv_toLp_const_prodMk_apply`: with a constant first coordinate the derivative is
   `v ↦ (0, dg v)` at every point.
+* `DifferentiableAt.fderiv_withLp_snd`: the derivative of the second component of a map into
+  the product is the second component of its derivative.
 * `HasFDerivWithinAt.normalGraphEmbedding`, `HasFDerivAt.normalGraphEmbedding`: the derivative
   of a graph parametrization is the graph of the derivative.
 * `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
@@ -154,6 +156,13 @@ theorem fderiv_toLp_const_prodMk_apply (c : F) (g : G → E) (y v : G) :
       zero_apply, zero_apply]
     exact (WithLp.toLp_zero (V := F × E) p).symm
 
+/-- The derivative of the second component `w ↦ (g w).snd` of a map into `WithLp p (F × E)`,
+differentiable at `y`, is the second component of the derivative of `g`. -/
+theorem _root_.DifferentiableAt.fderiv_withLp_snd {g : G → WithLp p (F × E)} {y : G}
+    (hg : DifferentiableAt 𝕜 g y) :
+    fderiv 𝕜 (fun w ↦ (g w).snd) y = (WithLp.sndL p 𝕜 F E).comp (fderiv 𝕜 g y) :=
+  ((WithLp.sndL p 𝕜 F E).hasFDerivAt.comp y hg.hasFDerivAt).fderiv
+
 section NormalGraph
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -165,15 +174,13 @@ theorem _root_.HasFDerivWithinAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V 
     HasFDerivWithinAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL s x := by
   have h : TauCeti.normalGraphEmbedding φ =
       (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm ∘ fun y ↦ (φ y, y) :=
-    funext fun y ↦ (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ y)
-      (normalGraphEmbedding_snd φ y)
+    funext fun y ↦ by simp [normalGraphEmbedding_apply]
   rw [h]
   refine (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm :
     (ℝ × V) →L[ℝ] WithLp 2 (ℝ × V)).hasFDerivAt.comp_hasFDerivWithinAt x
       (hφ.prodMk (hasFDerivWithinAt_id x s))).congr_fderiv ?_
   ext v
-  simpa using (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ' v).symm
-    (normalGraphEmbedding_snd φ' v).symm
+  simp [normalGraphEmbedding_apply]
 
 /-- The derivative of a graph parametrization is the graph of the derivative. -/
 theorem _root_.HasFDerivAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V →L[ℝ] ℝ} {x : V}

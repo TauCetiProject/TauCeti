@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
 /-!
 # The intrinsic mixed Hessian of a function on a product of manifolds
@@ -35,6 +36,8 @@ definition, so the mixed Hessian is a continuous linear map from `T_Q N` to `E �
 * It is natural under maps of either factor: for `f : M₁ → M` and `g : N₁ → N`,
   `d_Q d_q (S ∘ (f × g)) (w, v) = d_Q d_q S (dg w, df v)`
   (`TauCeti.mixedHessian_comp_prodMap_apply`). Only differentiability of `f` and `g` is needed.
+  In particular, restricting `S` to a product of open subsets does not change its mixed Hessian
+  (`TauCeti.mixedHessian_comp_prodMap_subtype_val`), with no regularity assumption at all.
 * Hence, on boundaryless manifolds, it is computed in **any** charts of the `C²` maximal atlases
   as the linear mixed Hessian of the coordinate expression of `S`, evaluated on the images of the
   tangent vectors under the chart derivatives
@@ -84,6 +87,20 @@ theorem mixedHessian_def (S : M × N → ℝ) (x : M × N) :
     mixedHessian I J S x =
       mvfderiv (F := E →L[ℝ] ℝ) J (fun Q ↦ mvfderiv I (fun q ↦ S (q, Q)) x.1) x.2 :=
   (rfl)
+
+/-- The mixed Hessian depends only on the germ of the function. -/
+theorem _root_.Filter.EventuallyEq.mixedHessian_eq {S T : M × N → ℝ} {x : M × N}
+    (h : S =ᶠ[𝓝 x] T) :
+    TauCeti.mixedHessian I J S x = TauCeti.mixedHessian I J T x := by
+  have hs : (fun Q ↦ mvfderiv I (fun q ↦ S (q, Q)) x.1) =ᶠ[𝓝 x.2]
+      fun Q ↦ mvfderiv I (fun q ↦ T (q, Q)) x.1 := by
+    filter_upwards [(continuous_const.prodMk continuous_id).continuousAt.eventually
+      h.eventuallyEq_nhds] with Q hQ
+    have hsQ : (fun q ↦ S (q, Q)) =ᶠ[𝓝 x.1] fun q ↦ T (q, Q) :=
+      (continuous_id.prodMk continuous_const).continuousAt.eventually hQ
+    exact hsQ.mvfderiv_eq (I := I)
+  rw [TauCeti.mixedHessian_def, TauCeti.mixedHessian_def]
+  exact hs.mvfderiv_eq (I := J) (F := E →L[ℝ] ℝ)
 
 /-- **The mixed Hessian on normed spaces.** For a function on a product of normed spaces which is
 `C²` at `x`, the mixed Hessian is the linear mixed Hessian `δQ ↦ D²S (0, δQ) (·, 0)`. -/
@@ -156,6 +173,19 @@ theorem mixedHessian_comp_prodMap_apply [IsManifold I 1 M] [IsManifold J 1 N]
   rw [← heq.mvfderiv_eq, L.mvfderiv_comp_apply (hσ.comp Q hg), mvfderiv_comp_apply Q hσ hg]
   -- `L φ v` unfolds to `φ (df v)`.
   rfl
+
+/-- **The mixed Hessian on open subsets.** Restricting `S` to a product `U × V` of open subsets
+does not change its mixed Hessian, the tangent spaces of `U` and `V` being those of `M` and `N`.
+No regularity of `S` is needed. -/
+theorem mixedHessian_comp_prodMap_subtype_val {U : TopologicalSpace.Opens M}
+    {V : TopologicalSpace.Opens N} (S : M × N → ℝ) (x : U × V) :
+    mixedHessian I J (S ∘ Prod.map Subtype.val Subtype.val) x =
+      mixedHessian I J S ((x.1 : M), (x.2 : N)) := by
+  have h : (fun Q : V ↦ mvfderiv I (fun q : U ↦ (S ∘ Prod.map Subtype.val Subtype.val) (q, Q))
+      x.1) = (fun Q : N ↦ mvfderiv I (fun q ↦ S (q, Q)) (x.1 : M)) ∘ Subtype.val :=
+    funext fun Q ↦ Manifold.mvfderiv_comp_subtype_val (fun q ↦ S (q, (Q : N))) x.1
+  rw [mixedHessian_def, mixedHessian_def, h]
+  exact Manifold.mvfderiv_comp_subtype_val _ x.2
 
 end Naturality
 

@@ -8,10 +8,12 @@ module
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.Idempotents
-public import TauCeti.RingTheory.Ideal.GoingUp
-public import TauCeti.RingTheory.Idempotents.Jacobson
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 import Mathlib.RingTheory.Nakayama
 import TauCeti.LinearAlgebra.Matrix.Charpoly.LinearMap
+import TauCeti.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.Ideal.Quotient.Defs
+import TauCeti.RingTheory.Idempotents.Jacobson
 
 /-!
 # Idempotents and locality in Henselian rings
@@ -22,12 +24,13 @@ idempotent is a root of `X² - X`, and every root of `X² - X` modulo `J` is sim
 control whether `S` is local. An Artinian ring with only the trivial idempotents is local, and a
 ring whose quotient by an ideal in its Jacobson radical is local is itself local.
 
-Lifts of idempotents are unique modulo any ideal in the Jacobson radical
-(`IsIdempotentElem.eq_of_sub_mem_of_le_jacobson_bot`), and along an integral ring map the
+Commuting idempotents congruent modulo the Jacobson radical are equal
+(`IsIdempotentElem.eq_of_commute_of_sub_mem_jacobson`), so in a commutative ring lifts of
+idempotents are unique modulo any ideal in the Jacobson radical. Along an integral ring map the
 extension of an ideal in the Jacobson radical stays in the Jacobson radical
-(`Ideal.map_le_jacobson_bot_of_isIntegral`). Since a Henselian ideal lies in the Jacobson radical,
-lifts are unique over a Henselian pair and in every integral, in particular every finite, algebra
-over it.
+(`Ideal.map_le_jacobson_of_isIntegral`). Since a Henselian ideal lies in the Jacobson radical,
+lifts are unique over a Henselian pair and in every commutative integral, in particular every
+commutative finite, algebra over it.
 
 The typical example is a finite algebra over a complete Noetherian local ring, Henselian along the
 extension of the maximal ideal: such an algebra with no nontrivial idempotents is local. This is
@@ -47,8 +50,8 @@ local rings.
   of orthogonal idempotents of `S ⧸ J` lifts uniquely to such a family in `S` for a Henselian
   pair `(S, J)`.
 * `TauCeti.HenselianRing.injOn_quotient_mk_map_isIdempotentElem`: for a Henselian pair `(S, J)`
-  and an integral `S`-algebra `T`, the quotient map `T → T ⧸ JT` is injective on idempotents (the
-  injectivity half of conditions (3) and (4) of 09XI).
+  and a commutative integral `S`-algebra `T`, the quotient map `T → T ⧸ JT` is injective on
+  idempotents (the injectivity half of conditions (3) and (4) of 09XI).
 * `TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map`: for a Henselian pair `(S, J)` and
   a finite `S`-algebra `T`, an idempotent of `T ⧸ JT` cutting out a summand that is cyclic over
   `S ⧸ J` lifts to an idempotent of `T`.
@@ -143,8 +146,7 @@ theorem existsUnique_isIdempotentElem_mk_eq (J : Ideal S) [HenselianRing S J] {t
   obtain ⟨e, he, hea⟩ := exists_isIdempotentElem_sub_mem J
     (Ideal.Quotient.isIdempotentElem_mk_iff.mp ht)
   refine ⟨e, ⟨he, Ideal.Quotient.eq.mpr hea⟩, fun e' ⟨he', h⟩ ↦ ?_⟩
-  exact Ideal.injOn_quotient_mk_isIdempotentElem
-    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))) he' he
+  exact Ideal.injOn_quotient_mk_isIdempotentElem HenselianRing.jac he' he
     (h.trans (Ideal.Quotient.eq.mpr hea).symm)
 
 /-- A finite complete family of orthogonal idempotents lifts uniquely through a henselian
@@ -154,8 +156,7 @@ theorem _root_.CompleteOrthogonalIdempotents.existsUnique_lift_of_henselianRing
     (he : CompleteOrthogonalIdempotents e) :
     ∃! f : ι → S, CompleteOrthogonalIdempotents f ∧ ∀ i, Ideal.Quotient.mk J (f i) = e i := by
   choose f hf hfe using fun i ↦ (existsUnique_isIdempotentElem_mk_eq J (he.idem i)).exists
-  have hinj := Ideal.injOn_quotient_mk_isIdempotentElem
-    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J)))
+  have hinj := Ideal.injOn_quotient_mk_isIdempotentElem (HenselianRing.jac (R := S) (I := J))
   have hortho : OrthogonalIdempotents f := ⟨hf, fun i j hij ↦
     hinj ((hf i).mul (hf j)) .zero (by simp [hfe, he.ortho hij])⟩
   refine ⟨f, ⟨⟨hortho, ?_⟩, hfe⟩, ?_⟩
@@ -189,19 +190,19 @@ theorem isLocalRing_of_forall_isIdempotentElem [Nontrivial S] (J : Ideal S) [Hen
 @[stacks 09XI "(1) ⇒ (3), for the finite algebra `B = A` only"]
 theorem bijOn_quotient_mk_isIdempotentElem (J : Ideal S) [HenselianRing S J] :
     Set.BijOn (Ideal.Quotient.mk J) {e | IsIdempotentElem e} {t | IsIdempotentElem t} :=
-  ⟨fun _ he ↦ he.map _, Ideal.injOn_quotient_mk_isIdempotentElem
-      (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))),
+  ⟨fun _ he ↦ he.map _, Ideal.injOn_quotient_mk_isIdempotentElem HenselianRing.jac,
     fun _ ht ↦ (existsUnique_isIdempotentElem_mk_eq J ht).exists⟩
 
 /-- **Uniqueness of idempotent lifts in integral algebras.** If `S` is Henselian along `J` and `T`
-is an integral `S`-algebra, for instance a finite one, then idempotents of `T` congruent modulo
-`JT` are equal. -/
+is a commutative integral `S`-algebra, for instance a commutative finite one, then idempotents of
+`T` congruent modulo `JT` are equal. -/
 @[stacks 09XI "(1) ⇒ (3) and (4), injectivity on idempotents only"]
 theorem injOn_quotient_mk_map_isIdempotentElem {T : Type*} [CommRing T] [Algebra S T]
     [Algebra.IsIntegral S T] (J : Ideal S) [HenselianRing S J] :
     Set.InjOn (Ideal.Quotient.mk (J.map (algebraMap S T))) {e | IsIdempotentElem e} :=
-  Ideal.injOn_quotient_mk_isIdempotentElem (Ideal.map_le_jacobson_bot_of_isIntegral
-    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))))
+  Ideal.injOn_quotient_mk_isIdempotentElem <| (Ideal.map_le_jacobson_of_isIntegral bot_le
+    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J)))).trans_eq
+      Ideal.jacobson_bot
 
 /-- If `γ` is idempotent modulo `JT` and `γ T ⊆ S γ + JT`, with `J` in the Jacobson radical,
 then `γ` together with `(1 - γ) gᵢ` spans `T` whenever the `gᵢ` do. -/
