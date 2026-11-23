@@ -64,6 +64,10 @@ Pairing a covector field along a map `u` with the image of a tangent field under
 `End(TM)` is continuous wherever both fields are continuous into their bundles
 (`ContMDiffSection.continuousAt_apply_apply`).
 
+In a chart `c` into a normed space, differentiable with its inverse, a covector `ξ` at `x` is read
+as the covector `ξ ∘ D(c⁻¹)(c x)` of the model space, and this reading is a bijection
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`).
+
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
 already supply the cotangent total space with its manifold structure.
@@ -441,3 +445,23 @@ theorem continuousAt_apply_apply
     ((Bundle.Trivial.homeomorphProd M 𝕜).continuous.continuousAt.comp h)
 
 end ContMDiffSection
+
+namespace OpenPartialHomeomorph.MDifferentiable
+
+variable {𝕜 E H G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {c : OpenPartialHomeomorph M G}
+
+/-- **Covectors read in a chart.** For an open partial homeomorphism `c` into a normed space,
+differentiable with its inverse, and `x` in its source, reading a covector `ξ` at `x` in `c` as
+`ξ ∘ D(c⁻¹)(c x)` is a bijection onto the covectors of `G`. -/
+theorem comp_mfderiv_symm_bijective (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x : M}
+    (hx : x ∈ c.source) :
+    Function.Bijective fun ξ : TangentSpace I x →L[𝕜] 𝕜 ↦ ξ ∘L mfderiv 𝓘(𝕜, G) I c.symm (c x) := by
+  refine ⟨fun ξ₁ ξ₂ h ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun η ↦ ?_⟩
+  · obtain ⟨u, rfl⟩ := hc.symm.mfderiv_surjective (c.map_source hx) w
+    exact congr($h u)
+  · refine ⟨η ∘L mfderiv I 𝓘(𝕜, G) c (c.symm (c x)), ContinuousLinearMap.ext fun u ↦ ?_⟩
+    exact congr_arg η congr($(hc.comp_symm_deriv (c.map_source hx)) u)
+
+end OpenPartialHomeomorph.MDifferentiable
