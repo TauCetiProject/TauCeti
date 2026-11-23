@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Functor.TypeValuedFlat
 public import Mathlib.CategoryTheory.Sites.JointlySurjective
 public import Mathlib.CategoryTheory.Sites.Point.Category
 public import Mathlib.CategoryTheory.Sites.PrecoverageToGrothendieck
-public import TauCeti.CategoryTheory.Action.EssentiallySmall
+public import TauCeti.CategoryTheory.Action.Basic
 public import TauCeti.CategoryTheory.Galois.ContAction
 
 /-!
@@ -35,8 +35,8 @@ continuous `G`-set because `G` is compact and stabilizers are open.
 
 * `ContAction.jointlySurjectiveTopology G`: the jointly surjective topology on finite continuous
   `G`-sets.
-* `ContAction.isSmooth G`, `ContAction.SmoothSet G`: `G`-sets whose stabilizers are open, and
-  their category.
+* `Action.isSmooth G`, `Action.SmoothSet G`: `G`-sets whose stabilizers are open, and their
+  category.
 * `ContAction.point G`: the forgetful functor as a point of the site.
 * `ContAction.stalk G`: the stalk of a presheaf at this point, as a `G`-set.
 * `ContAction.homPresheaf G`: the presheaf of `G`-maps into a `G`-set.
@@ -55,24 +55,36 @@ continuous `G`-set because `G` is compact and stabilizers are open.
 * [A. Grothendieck, M. Artin, J.-L. Verdier, *SGA 4*, Exposé IV, 2.7 and Exposé VIII, 2]
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits Opposite PreGaloisCategory FintypeCatDiscrete
 
 universe u
 
+namespace Action
+
+variable (G : Type u) [Group G] [TopologicalSpace G]
+
+/-- A `G`-set is smooth when every stabilizer is open; for the discrete topology on the set,
+this is continuity of the action (`continuousSMul_iff_stabilizer_isOpen`). -/
+def isSmooth : ObjectProperty (Action (Type u) G) :=
+  fun X ↦ ∀ x : X.V, IsOpen (MulAction.stabilizer G x : Set G)
+
+/-- The category of smooth `G`-sets: sets with an action of `G` whose stabilizers are open. -/
+abbrev SmoothSet : Type (u + 1) := (isSmooth G).FullSubcategory
+
+variable {G}
+
+/-- A `G`-set is smooth exactly when the stabilizer of every point is open. -/
+theorem isSmooth_iff (X : Action (Type u) G) :
+    isSmooth G X ↔ ∀ x : X.V, IsOpen (MulAction.stabilizer G x : Set G) :=
+  Iff.rfl
+
+end Action
+
 namespace ContAction
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- The underlying set of a finite continuous `G`-set, as a functor to types. -/
-abbrev fiberFunctor : ContAction FintypeCat.{u} G ⥤ Type u :=
-  forget₂ (ContAction FintypeCat.{u} G) FintypeCat.{u} ⋙ FintypeCat.incl
-
-/-- `G` acts on the underlying set of a finite continuous `G`-set. -/
-instance instMulActionFiberFunctorObj (S : ContAction FintypeCat.{u} G) :
-    MulAction G ((fiberFunctor G).obj S) :=
-  inferInstanceAs (MulAction G S.obj.V)
 
 /-- The jointly surjective topology on finite continuous `G`-sets: its covering sieves are
 those whose maps are jointly surjective on underlying sets. -/
@@ -113,15 +125,6 @@ theorem ofArrows_mem_jointlySurjectiveTopology_iff {S : ContAction FintypeCat.{u
 
 variable (G)
 
-/-- Finite types form an essentially small category. -/
-instance instEssentiallySmallFintypeCat : EssentiallySmall.{u} FintypeCat.{u} :=
-  .mk' FintypeCat.Skeleton.equivalence.symm
-
-/-- Finite continuous `G`-sets form an essentially small category. -/
-instance instEssentiallySmallIsContinuous :
-    ObjectProperty.EssentiallySmall.{u} (Action.isContinuous FintypeCat.{u} G) :=
-  .of_le (Q := ⊤) le_top
-
 /-- The forgetful functor is a point of the jointly surjective topology. -/
 noncomputable abbrev point : (jointlySurjectiveTopology G).Point where
   fiber := fiberFunctor G
@@ -131,37 +134,14 @@ noncomputable abbrev point : (jointlySurjectiveTopology G).Point where
     obtain ⟨T, f, hf, t, rfl⟩ := mem_jointlySurjectiveTopology_iff.1 hR s
     exact ⟨T, f, hf, t, rfl⟩
 
-variable {G}
-
-omit [IsTopologicalGroup G] in
-/-- Morphisms of finite continuous `G`-sets are `G`-equivariant. -/
-theorem fiberFunctor_map_smul {S T : ContAction FintypeCat.{u} G} (f : S ⟶ T) (g : G)
-    (s : (fiberFunctor G).obj S) :
-    (fiberFunctor G).map f (g • s) = g • (fiberFunctor G).map f s :=
-  ConcreteCategory.congr_hom (f.hom.comm g) s
-
-omit [IsTopologicalGroup G] in
-/-- Stabilizers of points of a finite continuous `G`-set are open. -/
-theorem isOpen_stabilizer (S : ContAction FintypeCat.{u} G) (s : (fiberFunctor G).obj S) :
-    IsOpen (MulAction.stabilizer G s : Set G) :=
-  have : DiscreteTopology ((forget₂ (Action FintypeCat.{u} G) TopCat).obj S.obj) := ⟨rfl⟩
-  have : ContinuousSMul G ((forget₂ (Action FintypeCat.{u} G) TopCat).obj S.obj) := S.property
-  stabilizer_isOpen G (X := (forget₂ (Action FintypeCat.{u} G) TopCat).obj S.obj) s
-
-variable (G)
-
 /-- An element `g : G` acts on the point `point G` by translation. -/
-@[simps]
+@[expose, simps]
 def pointSMul (g : G) : point G ⟶ point G where
   hom :=
     { app S := TypeCat.ofHom fun (s : (fiberFunctor G).obj S) ↦ g • s
       naturality S T f := by ext s; exact (fiberFunctor_map_smul f g s).symm }
 
 variable {G}
-
-/-- The action of `G` on the underlying set of a `G`-set. -/
-instance instMulActionV (X : Action (Type u) G) : MulAction G X.V :=
-  Action.instMulAction X
 
 /-- The identity acts trivially on the point. -/
 theorem pointSMul_one : pointSMul G 1 = 𝟙 _ := by
@@ -176,7 +156,7 @@ theorem pointSMul_mul (g h : G) : pointSMul G (g * h) = pointSMul G g ≫ pointS
 variable (G)
 
 /-- The stalk of a presheaf at `point G`, with `G` acting by translating the point. -/
-@[simps]
+@[expose, simps]
 noncomputable def stalk : ((ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u) ⥤ Action (Type u) G where
   obj P :=
     { V := (point G).presheafFiber.obj P
@@ -199,13 +179,14 @@ noncomputable abbrev germ (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
   (point G).toPresheafFiber S s P z
 
 /-- `G` acts on germs by translating the point. -/
+@[simp]
 theorem smul_germ (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
     (S : ContAction FintypeCat.{u} G) (s : (fiberFunctor G).obj S) (z : P.obj (op S)) (g : G) :
     g • germ P S s z = germ P S (g • s) z := by
-  change ((point G).toPresheafFiber S s P ≫ (pointSMul G g).presheafFiber.app P) z = _
-  simp only [GrothendieckTopology.Point.Hom.presheafFiber_app,
-    GrothendieckTopology.Point.toPresheafFiber_presheafFiberDesc]
-  rfl
+  -- By definition of `stalk`, `g` acts on the stalk by the map of fibres that the translation
+  -- `pointSMul G g` induces.
+  change (pointSMul G g).presheafFiber.app P ((point G).toPresheafFiber S s P z) = _
+  exact ConcreteCategory.congr_hom ((point G).toPresheafFiber_presheafFiberDesc (P := P) _ _ S s) z
 
 /-- Germs are compatible with restriction. -/
 theorem germ_map (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
@@ -214,49 +195,26 @@ theorem germ_map (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
     germ P S s (P.map f.op z) = germ P T ((fiberFunctor G).map f s) z :=
   (point G).toPresheafFiber_w_apply f s P z
 
-variable (G)
-
-/-- A `G`-set is smooth when every stabilizer is open; for the discrete topology on the set,
-this is continuity of the action (`continuousSMul_iff_stabilizer_isOpen`). -/
-def isSmooth : ObjectProperty (Action (Type u) G) :=
-  fun X ↦ ∀ x : X.V, IsOpen (MulAction.stabilizer G x : Set G)
-
-/-- The category of smooth `G`-sets: sets with an action of `G` whose stabilizers are open. -/
-abbrev SmoothSet : Type (u + 1) := (isSmooth G).FullSubcategory
-
-variable {G}
-
 /-- The stalk of a presheaf is a smooth `G`-set. -/
 theorem isSmooth_stalk (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u) :
-    isSmooth G ((stalk G).obj P) := by
+    Action.isSmooth G ((stalk G).obj P) := by
   intro p
   obtain ⟨S, s, z, rfl⟩ := (point G).toPresheafFiber_jointly_surjective (P := P) p
-  refine Subgroup.isOpen_mono (fun g (hg : g • s = s) ↦ ?_) (isOpen_stabilizer S s)
-  change g • germ P S s z = germ P S s z
-  rw [smul_germ, hg]
-
-/-- A morphism of finite continuous `G`-sets as a `G`-map of underlying sets. -/
-def fiberHom {S T : ContAction FintypeCat.{u} G} (f : S ⟶ T) :
-    (fiberFunctor G).obj S →[G] (fiberFunctor G).obj T where
-  toFun := (fiberFunctor G).map f
-  map_smul' := fiberFunctor_map_smul f
-
-/-- A morphism of `G`-sets as a `G`-map. -/
-def actionHom {X Y : Action (Type u) G} (f : X ⟶ Y) : X.V →[G] Y.V where
-  toFun := f.hom
-  map_smul' g x := ConcreteCategory.congr_hom (f.comm g) x
+  refine Subgroup.isOpen_mono (fun g hg ↦ MulAction.mem_stabilizer_iff.2 ?_)
+    (isOpen_stabilizer S s)
+  rw [smul_germ, MulAction.mem_stabilizer_iff.1 hg]
 
 variable (G)
 
 /-- The presheaf of `G`-maps from finite continuous `G`-sets into a fixed `G`-set. -/
-@[simps]
+@[expose]
 def homPresheaf : Action (Type u) G ⥤ (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u where
   obj X :=
     { obj S := (fiberFunctor G).obj S.unop →[G] X.V
       map f := TypeCat.ofHom fun φ ↦ φ.comp (fiberHom f.unop)
       map_id _ := rfl
       map_comp _ _ := rfl }
-  map f := { app S := TypeCat.ofHom fun φ ↦ (actionHom f).comp φ }
+  map f := { app S := TypeCat.ofHom fun φ ↦ f.toMulActionHom.comp φ }
   map_id _ := rfl
   map_comp _ _ := rfl
 
@@ -273,7 +231,16 @@ theorem homPresheafObjEquiv_map (X : Action (Type u) G) {S T : ContAction Fintyp
     (f : T ⟶ S) (φ : ((homPresheaf G).obj X).obj (op S)) (t : (fiberFunctor G).obj T) :
     homPresheafObjEquiv X T (((homPresheaf G).obj X).map f.op φ) t =
       homPresheafObjEquiv X S φ ((fiberFunctor G).map f t) :=
-  rfl
+  (rfl)
+
+omit [IsTopologicalGroup G] in
+/-- A morphism of `G`-sets acts on `G`-maps into its source by postcomposition. -/
+theorem homPresheafObjEquiv_map_app {X Y : Action (Type u) G} (f : X ⟶ Y)
+    (S : ContAction FintypeCat.{u} G) (φ : ((homPresheaf G).obj X).obj (op S))
+    (s : (fiberFunctor G).obj S) :
+    homPresheafObjEquiv Y S (((homPresheaf G).map f).app (op S) φ) s =
+      f.hom (homPresheafObjEquiv X S φ s) :=
+  (rfl)
 
 omit [IsTopologicalGroup G] in
 /-- Sections of `(homPresheaf G).obj X` are determined by their values. -/
@@ -281,16 +248,6 @@ theorem homPresheafObj_ext {X : Action (Type u) G} {S : ContAction FintypeCat.{u
     {φ ψ : ((homPresheaf G).obj X).obj (op S)}
     (h : ∀ s, homPresheafObjEquiv X S φ s = homPresheafObjEquiv X S ψ s) : φ = ψ :=
   (homPresheafObjEquiv X S).injective (MulActionHom.ext h)
-
-/-- The underlying set of a pullback of finite continuous `G`-sets is the fibre product. -/
-theorem exists_fiberFunctor_pullback {S T₁ T₂ : ContAction FintypeCat.{u} G} (f₁ : T₁ ⟶ S)
-    (f₂ : T₂ ⟶ S) (t₁ : (fiberFunctor G).obj T₁) (t₂ : (fiberFunctor G).obj T₂)
-    (h : (fiberFunctor G).map f₁ t₁ = (fiberFunctor G).map f₂ t₂) :
-    ∃ p : (fiberFunctor G).obj (pullback f₁ f₂),
-      (fiberFunctor G).map (pullback.fst f₁ f₂) p = t₁ ∧
-        (fiberFunctor G).map (pullback.snd f₁ f₂) p = t₂ :=
-  ⟨(fiberPullbackEquiv (forget₂ _ FintypeCat.{u}) f₁ f₂).symm ⟨(t₁, t₂), h⟩,
-    fiberPullbackEquiv_symm_fst_apply .., fiberPullbackEquiv_symm_snd_apply ..⟩
 
 /-- `G`-maps into a fixed `G`-set form a sheaf for the jointly surjective topology. -/
 theorem isSheaf_homPresheaf (X : Action (Type u) G) :
@@ -325,16 +282,16 @@ theorem isSheaf_homPresheaf (X : Action (Type u) G) :
 noncomputable def evalStalk (X : Action (Type u) G) :
     ((stalk G).obj ((homPresheaf G).obj X)).V ⟶ X.V :=
   (point G).presheafFiberDesc
-    (fun S s ↦ TypeCat.ofHom fun φ : (fiberFunctor G).obj S →[G] X.V ↦ φ s) (fun _ _ _ _ ↦ rfl)
+    (fun S s ↦ TypeCat.ofHom fun φ ↦ homPresheafObjEquiv X S φ s) (fun _ _ _ _ ↦ rfl)
 
 /-- Evaluating the germ at `s` of a `G`-map `φ` gives `φ s`. -/
+@[simp]
 theorem evalStalk_germ (X : Action (Type u) G) (S : ContAction FintypeCat.{u} G)
     (s : (fiberFunctor G).obj S) (φ : ((homPresheaf G).obj X).obj (op S)) :
     evalStalk X (germ _ S s φ) = homPresheafObjEquiv X S φ s :=
   ConcreteCategory.congr_hom ((point G).toPresheafFiber_presheafFiberDesc
     (P := (homPresheaf G).obj X)
-    (fun S s ↦ TypeCat.ofHom fun φ : (fiberFunctor G).obj S →[G] X.V ↦ φ s)
-    (fun _ _ _ _ ↦ rfl) S s) φ
+    (fun S s ↦ TypeCat.ofHom fun φ ↦ homPresheafObjEquiv X S φ s) (fun _ _ _ _ ↦ rfl) S s) φ
 
 /-- Evaluation of germs is `G`-equivariant. -/
 theorem evalStalk_smul (X : Action (Type u) G) (g : G)
@@ -342,9 +299,7 @@ theorem evalStalk_smul (X : Action (Type u) G) (g : G)
     evalStalk X (g • p) = g • evalStalk X p := by
   obtain ⟨S, s, φ, rfl⟩ :=
     (point G).toPresheafFiber_jointly_surjective (P := (homPresheaf G).obj X) p
-  exact (congrArg (evalStalk X) (smul_germ _ S s φ g)).trans
-    ((evalStalk_germ X S (g • s) φ).trans (((homPresheafObjEquiv X S φ).map_smul
-      g s).trans (congrArg (g • ·) (evalStalk_germ X S s φ).symm)))
+  rw [smul_germ, evalStalk_germ, evalStalk_germ, map_smul]
 
 /-- Evaluation of germs as a morphism of `G`-sets. -/
 noncomputable def evalAction (X : Action (Type u) G) :
@@ -352,13 +307,10 @@ noncomputable def evalAction (X : Action (Type u) G) :
   hom := evalStalk X
   comm g := by ext p; exact evalStalk_smul X g p
 
-/-- An action on a finite set with open stabilizers is continuous. -/
-theorem isContinuous_of_isOpen_stabilizer (X : Action FintypeCat.{u} G)
-    (h : ∀ x : X.V, IsOpen (MulAction.stabilizer G x : Set G)) :
-    Action.isContinuous FintypeCat G X := by
-  have : DiscreteTopology ((forget₂ (Action FintypeCat.{u} G) TopCat).obj X) := ⟨rfl⟩
-  exact (continuousSMul_iff_stabilizer_isOpen
-    (X := (forget₂ (Action FintypeCat.{u} G) TopCat).obj X)).2 h
+/-- The underlying map of `evalAction X` is evaluation of germs. -/
+@[simp]
+theorem evalAction_hom (X : Action (Type u) G) : (evalAction X).hom = evalStalk X :=
+  (rfl)
 
 variable (G)
 
@@ -369,11 +321,21 @@ noncomputable def germHom (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
   toFun s := germ P S s z
   map_smul' g s := (smul_germ P S s z g).symm
 
+variable {G}
+
+/-- `germHom G P S z` sends a point to the germ of `z` there. -/
+theorem germHom_apply (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
+    (S : ContAction FintypeCat.{u} G) (z : P.obj (op S)) (s : (fiberFunctor G).obj S) :
+    germHom G P S z s = germ P S s z :=
+  (rfl)
+
+variable (G)
+
 /-- A presheaf maps to the presheaf of `G`-maps into its stalk, by taking germs. -/
 noncomputable def germNatTrans :
     𝟭 ((ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u) ⟶ stalk G ⋙ homPresheaf G where
   app P :=
-    { app S := TypeCat.ofHom (germHom G P S.unop)
+    { app S := TypeCat.ofHom fun z ↦ (homPresheafObjEquiv _ S.unop).symm (germHom G P S.unop z)
       naturality S T f := by
         ext z
         exact homPresheafObj_ext fun s ↦ germ_map P f.unop s z }
@@ -383,6 +345,13 @@ noncomputable def germNatTrans :
       ((point G).toPresheafFiber_naturality_apply f S.unop s z).symm
 
 variable {G}
+
+/-- The section of `G`-maps into the stalk given by a section of a presheaf sends a point to the
+germ of the section there. -/
+theorem homPresheafObjEquiv_germNatTrans_app_app (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
+    (S : (ContAction FintypeCat.{u} G)ᵒᵖ) (z : P.obj S) :
+    homPresheafObjEquiv _ S.unop (((germNatTrans G).app P).app S z) = germHom G P S.unop z :=
+  (rfl)
 
 /-- Sections of a sheaf are determined by their germs. -/
 theorem germ_ext (P : Sheaf (jointlySurjectiveTopology G) (Type u))
@@ -408,20 +377,19 @@ theorem germHom_surjective (P : Sheaf (jointlySurjectiveTopology G) (Type u))
   obtain ⟨d, hd_def⟩ : ∃ d : ∀ s, P.obj.obj (op (A s)),
       ∀ s, d s = P.obj.map (q s ≫ prod.snd).op (c s) :=
     ⟨_, fun _ ↦ rfl⟩
+  -- `(fiberFunctor G).map` applies `(forget₂ _ FintypeCat).map`, in which `hq` is stated.
   have hpa s : (fiberFunctor G).map (p s) (a s) = s := by
     change (forget₂ _ FintypeCat.{u}).map prod.fst
       ((forget₂ _ FintypeCat.{u}).map (q s) (a s)) = s
     rw [hq, fiberBinaryProductEquiv_symm_fst_apply]
-  have hd s b : germ P.obj (A s) b (d s) = φ ((fiberFunctor G).map (p s) b) := by
-    have : MulAction.IsPretransitive G
-        ((forget₂ (ContAction FintypeCat.{u} G) FintypeCat.{u}).obj (A s)) :=
-      isPretransitive_of_isConnected (A s)
-    obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G (a s) b
-    rw [← smul_germ, fiberFunctor_map_smul, map_smul, hpa, hd_def, germ_map]
-    congr 1
-    change germ P.obj (T s) ((forget₂ _ FintypeCat.{u}).map prod.snd
-      ((forget₂ _ FintypeCat.{u}).map (q s) (a s))) (c s) = φ s
+  have hpt s : (fiberFunctor G).map (q s ≫ prod.snd) (a s) = t s := by
+    change (forget₂ _ FintypeCat.{u}).map prod.snd
+      ((forget₂ _ FintypeCat.{u}).map (q s) (a s)) = t s
     rw [hq, fiberBinaryProductEquiv_symm_snd_apply]
+  have hd s b : germ P.obj (A s) b (d s) = φ ((fiberFunctor G).map (p s) b) := by
+    refine congr($(mulActionHom_ext_of_isConnected (φ := germHom G P.obj (A s) (d s))
+      (ψ := φ.comp (fiberHom (p s))) (a s) ?_) b)
+    rw [germHom_apply, MulActionHom.comp_apply, fiberHom_apply, hpa, hd_def, germ_map, hpt]
     exact hc s
   have hR : Sieve.ofArrows A p ∈ jointlySurjectiveTopology G S :=
     mem_jointlySurjectiveTopology_iff.2 fun s ↦ ⟨A s, p s, Sieve.ofArrows_mk _ _ s, a s, hpa s⟩
@@ -430,20 +398,37 @@ theorem germHom_surjective (P : Sheaf (jointlySurjectiveTopology G) (Type u))
     fun i j Z gi gj h ↦ germ_ext P fun y ↦ by
       rw [germ_map, germ_map, hd, hd]
       exact congrArg φ congr((fiberFunctor G).map $h y)
-  refine ⟨z, ?_⟩
-  ext s
-  change germ P.obj S s z = φ s
-  rw [← hpa s, ← germ_map, hz, hd]
+  refine ⟨z, MulActionHom.ext fun s ↦ ?_⟩
+  rw [germHom_apply, ← hpa s, ← germ_map, hz, hd]
 
 variable (G)
 
 /-- Sheaves on finite continuous `G`-sets give smooth `G`-sets, by taking the stalk. -/
-noncomputable def fromSheaf : Sheaf (jointlySurjectiveTopology G) (Type u) ⥤ SmoothSet G :=
+@[expose]
+noncomputable def fromSheaf :
+    Sheaf (jointlySurjectiveTopology G) (Type u) ⥤ Action.SmoothSet G :=
   ObjectProperty.lift _ (sheafToPresheaf _ _ ⋙ stalk G) fun P ↦ isSmooth_stalk P.obj
 
 /-- Smooth `G`-sets give sheaves on finite continuous `G`-sets, by taking `G`-maps into them. -/
-noncomputable def toSheaf : SmoothSet G ⥤ Sheaf (jointlySurjectiveTopology G) (Type u) :=
-  ObjectProperty.lift _ ((isSmooth G).ι ⋙ homPresheaf G) fun X ↦ isSheaf_homPresheaf X.obj
+@[expose]
+noncomputable def toSheaf : Action.SmoothSet G ⥤ Sheaf (jointlySurjectiveTopology G) (Type u) :=
+  ObjectProperty.lift _ ((Action.isSmooth G).ι ⋙ homPresheaf G) fun X ↦ isSheaf_homPresheaf X.obj
+
+variable {G}
+
+/-- The `G`-set underlying `(fromSheaf G).obj P` is the stalk of `P`. -/
+@[simp]
+theorem fromSheaf_obj_obj (P : Sheaf (jointlySurjectiveTopology G) (Type u)) :
+    ((fromSheaf G).obj P).obj = (stalk G).obj P.obj :=
+  (rfl)
+
+/-- The presheaf underlying `(toSheaf G).obj X` is the presheaf of `G`-maps into `X`. -/
+@[simp]
+theorem toSheaf_obj_obj (X : Action.SmoothSet G) :
+    ((toSheaf G).obj X).obj = (homPresheaf G).obj X.obj :=
+  (rfl)
+
+variable (G)
 
 /-- The unit of `sheafEquiv`: a sheaf maps to `G`-maps into its stalk. -/
 noncomputable def sheafEquivUnit : 𝟭 _ ⟶ fromSheaf G ⋙ toSheaf G where
@@ -458,84 +443,125 @@ noncomputable def sheafEquivCounit : toSheaf G ⋙ fromSheaf G ⟶ 𝟭 _ where
     ext p
     obtain ⟨S, s, φ, rfl⟩ :=
       (point G).toPresheafFiber_jointly_surjective (P := (homPresheaf G).obj X.obj) p
+    -- `toSheaf G ⋙ fromSheaf G` sends `f` to the map of stalks induced by postcomposition.
     change evalStalk Y.obj ((point G).presheafFiber.map ((homPresheaf G).map f.hom)
       (germ _ S s φ)) = f.hom.hom (evalStalk X.obj (germ _ S s φ))
-    rw [GrothendieckTopology.Point.toPresheafFiber_naturality_apply]
-    exact (evalStalk_germ Y.obj S s _).trans
-      (congrArg f.hom.hom (evalStalk_germ X.obj S s φ)).symm
+    rw [GrothendieckTopology.Point.toPresheafFiber_naturality_apply, evalStalk_germ,
+      evalStalk_germ, homPresheafObjEquiv_map_app]
+
+variable {G}
+
+/-- The unit of `sheafEquiv` at a sheaf `P` takes germs of sections of `P`. -/
+@[simp]
+theorem sheafEquivUnit_app_hom (P : Sheaf (jointlySurjectiveTopology G) (Type u)) :
+    ((sheafEquivUnit G).app P).hom = (germNatTrans G).app P.obj :=
+  (rfl)
+
+/-- The counit of `sheafEquiv` at a smooth `G`-set `X` evaluates germs. -/
+@[simp]
+theorem sheafEquivCounit_app_hom (X : Action.SmoothSet G) :
+    ((sheafEquivCounit G).app X).hom = evalAction X.obj :=
+  (rfl)
+
+variable (G)
 
 instance instIsIsoSheafEquivUnit : IsIso (sheafEquivUnit G) := by
-  refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun P ↦ ?_
-  have : IsIso ((germNatTrans G).app P.obj) := by
-    refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun S ↦ ?_
-    exact (isIso_iff_bijective _).2 ⟨fun z₁ z₂ h ↦ germ_ext P fun s ↦
-      congr(homPresheafObjEquiv _ _ $h s), germHom_surjective P S.unop⟩
-  have : IsIso ((ObjectProperty.ι _).map ((sheafEquivUnit G).app P)) := this
-  exact (ObjectProperty.fullyFaithfulι _).isIso_of_isIso_map ((sheafEquivUnit G).app P)
+  have (P : Sheaf (jointlySurjectiveTopology G) (Type u)) : IsIso ((sheafEquivUnit G).app P) := by
+    have (S : (ContAction FintypeCat.{u} G)ᵒᵖ) : IsIso (((germNatTrans G).app P.obj).app S) :=
+      (isIso_iff_bijective _).2 ⟨fun z₁ z₂ h ↦ germ_ext P fun s ↦ by
+        have := congr(homPresheafObjEquiv _ _ $h s)
+        rwa [homPresheafObjEquiv_germNatTrans_app_app, homPresheafObjEquiv_germNatTrans_app_app,
+          germHom_apply, germHom_apply] at this, germHom_surjective P S.unop⟩
+    have : IsIso ((germNatTrans G).app P.obj) := NatIso.isIso_of_isIso_app _
+    have : IsIso ((ObjectProperty.ι _).map ((sheafEquivUnit G).app P)) := by
+      rw [ObjectProperty.ι_map, sheafEquivUnit_app_hom]
+      exact this
+    exact (ObjectProperty.fullyFaithfulι _).isIso_of_isIso_map ((sheafEquivUnit G).app P)
+  exact NatIso.isIso_of_isIso_app _
 
 variable {G}
 
 variable [CompactSpace G]
 
 /-- For compact `G`, orbits in a smooth `G`-set are finite. -/
-theorem finite_orbit {X : Action (Type u) G} (hX : isSmooth G X) (x : X.V) :
+theorem finite_orbit {X : Action (Type u) G} (hX : Action.isSmooth G X) (x : X.V) :
     Finite (MulAction.orbit G x) :=
   have := Subgroup.quotient_finite_of_isOpen _ (hX x)
   (MulAction.orbitEquivQuotientStabilizer G x).finite_iff.2 this
 
 /-- The orbit of a point of a smooth `G`-set, as a finite continuous `G`-set. -/
-noncomputable def orbitObj {X : Action (Type u) G} (hX : isSmooth G X) (x : X.V) :
+@[expose]
+noncomputable def orbitObj {X : Action (Type u) G} (hX : Action.isSmooth G X) (x : X.V) :
     ContAction FintypeCat.{u} G :=
   have := finite_orbit hX x
   have := Fintype.ofFinite (MulAction.orbit G x)
   ⟨Action.FintypeCat.ofMulAction G (FintypeCat.of (MulAction.orbit G x)),
-    isContinuous_of_isOpen_stabilizer _ fun y ↦ by
+    (Action.isContinuous_iff_isOpen_stabilizer _).2 fun y ↦ by
       convert hX y.val using 2
       ext g
       exact Subtype.ext_iff⟩
 
 /-- The inclusion of an orbit, as a `G`-map. -/
-def orbitHom {X : Action (Type u) G} (hX : isSmooth G X) (x : X.V) :
+def orbitHom {X : Action (Type u) G} (hX : Action.isSmooth G X) (x : X.V) :
     (fiberFunctor G).obj (orbitObj hX x) →[G] X.V where
   toFun y := (y : MulAction.orbit G x).val
   map_smul' _ _ := rfl
 
+/-- `orbitHom hX x` sends a point of the orbit of `x` to itself. -/
+theorem orbitHom_apply {X : Action (Type u) G} (hX : Action.isSmooth G X) (x : X.V)
+    (y : (fiberFunctor G).obj (orbitObj hX x)) :
+    orbitHom hX x y = (y : MulAction.orbit G x).val :=
+  (rfl)
+
 /-- For compact `G`, the stalk of `G`-maps into a smooth `G`-set `X` is `X`. -/
-theorem evalStalk_bijective {X : Action (Type u) G} (hX : isSmooth G X) :
+theorem evalStalk_bijective {X : Action (Type u) G} (hX : Action.isSmooth G X) :
     Function.Bijective (evalStalk X) := by
   refine ⟨fun p₁ p₂ h ↦ ?_, fun x ↦ ?_⟩
   · obtain ⟨S, s, φ₁, φ₂, rfl, rfl⟩ :=
       (point G).toPresheafFiber_jointly_surjective₂ (P := (homPresheaf G).obj X) p₁ p₂
-    replace h := (evalStalk_germ X S s φ₁).symm.trans (h.trans (evalStalk_germ X S s φ₂))
+    rw [evalStalk_germ, evalStalk_germ] at h
     refine ((point G).toPresheafFiber_eq_iff' S s φ₁ φ₂).2 ?_
     obtain ⟨A, f, a, hA, rfl⟩ :=
       exists_hom_from_galois_of_fiber (forget₂ (ContAction FintypeCat.{u} G) FintypeCat.{u}) S s
-    refine ⟨A, f, a, rfl, ?_⟩
-    have : MulAction.IsPretransitive G
-        ((forget₂ (ContAction FintypeCat.{u} G) FintypeCat.{u}).obj A) :=
-      isPretransitive_of_isConnected A
-    refine homPresheafObj_ext fun b ↦ ?_
-    obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G a b
-    rw [homPresheafObjEquiv_map, homPresheafObjEquiv_map, fiberFunctor_map_smul, map_smul,
-      map_smul]
-    exact congrArg (g • ·) h
-  · exact ⟨germ _ (orbitObj hX x) ⟨x, MulAction.mem_orbit_self x⟩ (orbitHom hX x),
-      evalStalk_germ _ _ _ _⟩
+    refine ⟨A, f, a, rfl, homPresheafObj_ext fun b ↦ ?_⟩
+    simp only [homPresheafObjEquiv_map]
+    exact congr($(mulActionHom_ext_of_isConnected
+      (φ := (homPresheafObjEquiv X S φ₁).comp (fiberHom f))
+      (ψ := (homPresheafObjEquiv X S φ₂).comp (fiberHom f)) a h) b)
+  · refine ⟨germ _ (orbitObj hX x) ⟨x, MulAction.mem_orbit_self x⟩
+      ((homPresheafObjEquiv X _).symm (orbitHom hX x)), ?_⟩
+    refine (evalStalk_germ _ _ _ _).trans ?_
+    simp only [Equiv.apply_symm_apply]
+    exact orbitHom_apply hX x _
 
 variable (G)
 
 instance instIsIsoSheafEquivCounit : IsIso (sheafEquivCounit G) := by
-  refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun X ↦ ?_
-  have : IsIso (evalAction X.obj).hom :=
-    (isIso_iff_bijective _).2 (evalStalk_bijective X.property)
-  have : IsIso ((isSmooth G).ι.map ((sheafEquivCounit G).app X)) :=
-    Action.isIso_of_hom_isIso (evalAction X.obj)
-  exact (ObjectProperty.fullyFaithfulι _).isIso_of_isIso_map ((sheafEquivCounit G).app X)
+  have (X : Action.SmoothSet G) : IsIso ((sheafEquivCounit G).app X) := by
+    have : IsIso (evalAction X.obj).hom := by
+      rw [evalAction_hom, isIso_iff_bijective]
+      exact evalStalk_bijective X.property
+    have : IsIso ((Action.isSmooth G).ι.map ((sheafEquivCounit G).app X)) := by
+      rw [ObjectProperty.ι_map, sheafEquivCounit_app_hom]
+      exact Action.isIso_of_hom_isIso (evalAction X.obj)
+    exact (ObjectProperty.fullyFaithfulι _).isIso_of_isIso_map ((sheafEquivCounit G).app X)
+  exact NatIso.isIso_of_isIso_app _
 
 /-- **Sheaves on finite continuous `G`-sets are smooth `G`-sets.** For a compact group `G`,
 sheaves of sets on the site of finite continuous `G`-sets with the jointly surjective topology
 are equivalent to sets with a `G`-action whose stabilizers are open. -/
-noncomputable def sheafEquiv : Sheaf (jointlySurjectiveTopology G) (Type u) ≌ SmoothSet G :=
+noncomputable def sheafEquiv :
+    Sheaf (jointlySurjectiveTopology G) (Type u) ≌ Action.SmoothSet G :=
   .mk (fromSheaf G) (toSheaf G) (asIso (sheafEquivUnit G)) (asIso (sheafEquivCounit G))
+
+/-- The functor of `sheafEquiv` takes stalks. -/
+@[simp]
+theorem sheafEquiv_functor : (sheafEquiv G).functor = fromSheaf G :=
+  (rfl)
+
+/-- The inverse of `sheafEquiv` takes `G`-maps into a smooth `G`-set. -/
+@[simp]
+theorem sheafEquiv_inverse : (sheafEquiv G).inverse = toSheaf G :=
+  (rfl)
 
 end ContAction
