@@ -8,15 +8,14 @@ module
 public import TauCeti.Algebra.BigOperators.NatAntidiagonal
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Prepend
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Taylor
-public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Inserting letters into tensor words
 
-Every tensor word is either the empty word or a letter `x` followed by a shorter word `w`, written
-`TauCeti.TensorWords.cons x w`.  This file uses the recursion `TauCeti.TensorWords.consRec` on the
-first letter to build two operations on the coaugmented tensor coalgebra `Tᶜ(M)`, and computes
-their deconcatenations.
+Every pure tensor word is either the empty word or a letter `x` followed by a shorter pure
+word `w`, written `TauCeti.TensorWords.cons x w`, and the pure words span `Tᶜ(M)`.  This file uses
+the recursion `TauCeti.TensorWords.consRec` on the first letter to build two operations on the
+coaugmented tensor coalgebra `Tᶜ(M)`, and computes their deconcatenations.
 
 * `TauCeti.TensorWords.insertions a t` sends a word to the sum of all the words obtained from it by
   inserting `t` copies of the letter `a`, each of the `n + 1` gaps of a word of length `n` receiving
@@ -24,8 +23,9 @@ their deconcatenations.
 
   `insertions a t (x₁ ⋯ xₙ) = ∑_{k₀ + ⋯ + kₙ = t} a^{k₀} x₁ a^{k₁} ⋯ xₙ a^{kₙ}`.
 
-  The family is a graded coalgebra morphism:
-  `Δ ∘ insertions a t = ∑_{i + j = t} (insertions a i ⊗ insertions a j) ∘ Δ`.  Summed over all
+  The family satisfies the coefficientwise coproduct identity
+  `Δ ∘ insertions a t = ∑_{i + j = t} (insertions a i ⊗ insertions a j) ∘ Δ`; this is a property
+  of the family, not of the individual maps.  Summed over all
   `t`, the insertions would form the coalgebra automorphism of a completed tensor coalgebra with
   linear part the identity and constant part `a`; keeping the number of inserted letters as a
   grading keeps every identity finite, and no completion is formed here.
@@ -36,10 +36,12 @@ their deconcatenations.
   differential.
 
 The main result, `TauCeti.TensorWords.IsGradedCoderivation.comp_insertions`, says how a graded
-coderivation `D` passes through the insertions: if the coderivations `E v` have Taylor maps
-`(letter ∘ D) ∘ insertions a v`, then `D ∘ insertions a t = ∑_{u + v = t} insertions a u ∘ E v`.
-This is the identity behind twisting an `A∞` structure by a Maurer--Cartan element `a`: the
-difference of the two sides is a graded coderivation with zero Taylor map, hence zero by
+coderivation `D` passes through the insertions of a letter `a` fixed by the Koszul twist: if the
+coderivations `E v` have Taylor maps `(letter ∘ D) ∘ insertions a v`, then
+`D ∘ insertions a t = ∑_{u + v = t} insertions a u ∘ E v`.  A suspended Maurer--Cartan element has
+degree zero, so the Koszul twist fixes it.  This is the identity behind twisting an `A∞`
+structure by a Maurer--Cartan element `a`: the difference of the two sides is a graded
+coderivation with zero Taylor map, hence zero by
 `TauCeti.TensorWords.IsGradedCoderivation.eq_zero_of_letter_reducedProjection_eq_zero`.
 
 ## Main definitions
@@ -49,11 +51,11 @@ difference of the two sides is a graded coderivation with zero Taylor map, hence
 
 ## Main results
 
-* `TauCeti.TensorWords.deconcatenation_insertions`: the insertions form a graded coalgebra
-  morphism.
+* `TauCeti.TensorWords.deconcatenation_insertions`: the coefficientwise coproduct identity for the
+  family of insertions.
 * `TauCeti.TensorWords.map_insertions` and `TauCeti.TensorWords.isHomogeneous_insertions`: the
-  insertions commute with letterwise maps fixing the inserted letter, and preserve total degrees
-  when it has degree zero.
+  insertions commute with letterwise maps fixing the inserted letter, and inserting `t` copies of
+  a letter of degree `p` raises total degrees by `t * p`.
 * `TauCeti.TensorWords.deconcatenation_twistedInsert` and
   `TauCeti.TensorWords.isGradedCoderivation_twistedInsert`: the twisted insertion of a letter is a
   graded coderivation.
@@ -151,9 +153,9 @@ theorem counit_insertions_succ (a : M) (t : ℕ) (w : TensorWords R M) :
   · simp [pow_succ', mul_apply_eq_comp]
   · simp [insertions_cons, counit_cons_pow_cons]
 
-/-- **The insertions form a graded coalgebra morphism**: inserting `t` letters and cutting is the
-same as cutting and inserting `i` letters on the left and `j` on the right, for all
-`i + j = t`. -/
+/-- **The coproduct identity for the insertions**, coefficientwise in the number of inserted
+letters: inserting `t` letters and cutting is the same as cutting and inserting `i` letters on the
+left and `j` on the right, summed over all `i + j = t`. -/
 theorem deconcatenation_comp_insertions (a : M) (t : ℕ) :
     deconcatenation R M ∘ₗ insertions R a t =
       ∑ p ∈ Finset.antidiagonal t,
@@ -202,7 +204,7 @@ theorem deconcatenation_comp_insertions (a : M) (t : ℕ) :
     rw [Finset.Nat.sum_antidiagonal_sum_antidiagonal_fst t T₁,
       Finset.Nat.sum_antidiagonal_sum_antidiagonal_fst t T₂]
 
-/-- **The insertions form a graded coalgebra morphism**, applied to a word. -/
+/-- **The coproduct identity for the insertions**, applied to a word. -/
 theorem deconcatenation_insertions (a : M) (t : ℕ) (w : TensorWords R M) :
     deconcatenation R M (insertions R a t w) =
       ∑ p ∈ Finset.antidiagonal t,
@@ -399,42 +401,50 @@ theorem isGradedCoderivation_twistedInsert (G : InternalGrading R M ℤ) (q : �
   refine LinearMap.ext fun w ↦ ?_
   simp only [LinearMap.comp_apply, LinearMap.add_apply, deconcatenation_twistedInsert]
 
-/-- Inserting copies of a letter of degree zero preserves total degrees. -/
-theorem insertions_mem_gradedPiece {a : M} (ha : a ∈ G.piece 0) (t : ℕ) {D : ℤ}
-    {w : TensorWords R M} (hw : w ∈ gradedPiece G D) : insertions R a t w ∈ gradedPiece G D := by
+/-- Inserting `t` copies of a letter of degree `p` raises total degrees by `t * p`. -/
+theorem insertions_mem_gradedPiece {a : M} {p : ℤ} (ha : a ∈ G.piece p) (t : ℕ) {D : ℤ}
+    {w : TensorWords R M} (hw : w ∈ gradedPiece G D) :
+    insertions R a t w ∈ gradedPiece G (D + t * p) := by
+  have hdeg {E E' : ℤ} {v : TensorWords R M} (h : E = E') (hv : v ∈ gradedPiece G E) :
+      v ∈ gradedPiece G E' := h ▸ hv
   have hpow (k : ℕ) {E : ℤ} {v : TensorWords R M} (hv : v ∈ gradedPiece G E) :
-      (cons R M a ^ k) v ∈ gradedPiece G E := by
+      (cons R M a ^ k) v ∈ gradedPiece G (E + k * p) := by
     induction k with
     | zero => simpa using hv
-    | succ k ih => simpa [pow_succ', mul_apply_eq_comp] using cons_mem_gradedPiece ha ih
+    | succ k ih =>
+      rw [pow_succ', mul_apply_eq_comp]
+      exact hdeg (by push_cast; ring) (cons_mem_gradedPiece ha ih)
   have h₁ : (1 : TensorWords R M) ∈ gradedPiece G 0 := by
     simpa [← one_eq_of_zero] using
       mem_gradedPiece_of_tprod G (fun i : Fin 0 ↦ (i.elim0 : M)) (fun i ↦ i.elim0) (fun i ↦ i.elim0)
-  have key (n : ℕ) : ∀ (𝒟 : Fin n → ℤ) (x : Fin n → M), (∀ i, x i ∈ G.piece (𝒟 i)) → ∀ t,
-      insertions R a t (of R M n (PiTensorProduct.tprod R x)) ∈ gradedPiece G (∑ i, 𝒟 i) := by
+  have key (n : ℕ) : ∀ (𝒟 : Fin n → ℤ) (x : Fin n → M), (∀ i, x i ∈ G.piece (𝒟 i)) →
+      ∀ t : ℕ, insertions R a t (of R M n (PiTensorProduct.tprod R x)) ∈
+        gradedPiece G (∑ i, 𝒟 i + t * p) := by
     induction n with
     | zero =>
       intro 𝒟 x _ t
       rw [Subsingleton.elim x fun i ↦ i.elim0, ← one_eq_of_zero, insertions_apply_one,
         Finset.univ_eq_empty, Finset.sum_empty]
-      exact hpow t h₁
+      simpa using hpow t h₁
     | succ n ih =>
       intro 𝒟 x hx t
       rw [← Fin.cons_self_tail x, ← cons_of_tprod, insertions_cons, Fin.sum_univ_succ]
-      exact Submodule.sum_mem _ fun p _ ↦ hpow p.1 (cons_mem_gradedPiece (hx 0)
-        (ih (Fin.tail 𝒟) (Fin.tail x) (fun i ↦ hx i.succ) p.2))
-  refine gradedPiece_induction (motive := fun w ↦ insertions R a t w ∈ gradedPiece G D) hw
+      refine Submodule.sum_mem _ fun k hk ↦ hdeg ?_ (hpow k.1 (cons_mem_gradedPiece (hx 0)
+        (ih (Fin.tail 𝒟) (Fin.tail x) (fun i ↦ hx i.succ) k.2)))
+      rw [← Finset.mem_antidiagonal.1 hk]
+      push_cast
+      simp only [Fin.tail]
+      ring
+  refine gradedPiece_induction
+    (motive := fun w ↦ insertions R a t w ∈ gradedPiece G (D + t * p)) hw
     (fun n 𝒟 x hx hD ↦ hD ▸ key n 𝒟 x hx t) (by simp)
     (fun u v _ _ hu hv ↦ by simpa using add_mem hu hv)
     (fun r u _ hu ↦ by simpa using Submodule.smul_mem _ r hu)
 
-/-- Inserting copies of a letter of degree zero is homogeneous of degree zero. -/
-theorem isHomogeneous_insertions {a : M} (ha : a ∈ G.piece 0) (t : ℕ) :
-    LinearMap.IsHomogeneous (insertions R a t) (gradedPiece G) (gradedPiece G) 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro D w hw
-  rw [add_zero]
-  exact insertions_mem_gradedPiece ha t hw
+/-- Inserting `t` copies of a letter of degree `p` is homogeneous of degree `t * p`. -/
+theorem isHomogeneous_insertions {a : M} {p : ℤ} (ha : a ∈ G.piece p) (t : ℕ) :
+    LinearMap.IsHomogeneous (insertions R a t) (gradedPiece G) (gradedPiece G) (t * p) :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hw ↦ insertions_mem_gradedPiece ha t hw
 
 /-! ### Coderivations through the insertions -/
 

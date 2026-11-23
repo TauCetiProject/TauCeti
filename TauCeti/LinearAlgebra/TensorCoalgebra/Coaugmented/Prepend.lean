@@ -23,9 +23,10 @@ is the single letter.  The remaining lemmas evaluate it on blocks of a tuple, as
 splices, which is the form in which coderivations are expanded.
 
 Its composite with the inclusion of the reduced words is the endomorphism
-`TauCeti.TensorWords.cons x` of all tensor words.  Every tensor word is either the empty word or a
-letter followed by a shorter word, which gives an induction principle and a recursor
-`TauCeti.TensorWords.consRec` for linear maps out of tensor words.
+`TauCeti.TensorWords.cons x` of all tensor words.  Every pure tensor word is either the empty word
+or a letter followed by a shorter pure word, and the pure words span the tensor words.  This gives
+an induction principle and a recursor `TauCeti.TensorWords.consRec` for linear maps out of tensor
+words.
 
 ## Main definitions
 

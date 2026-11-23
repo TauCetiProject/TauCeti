@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Extension
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Primitives
 
 /-!
 # Taylor correspondence for coaugmentation-preserving coderivations
@@ -25,7 +26,6 @@ of homogeneity, as in the reduced correspondence.
 * `gradedCoderivEquivTaylor`: the linear equivalence with positive-arity Taylor maps.
 * `IsGradedCoderivation.eq_extendReduced_gradedCoderiv`: reconstruction from those maps.
 * `IsGradedCoderivation.isHomogeneous_iff`: homogeneity is detected on Taylor maps.
-* `eq_reducedInclusion_ofLetter_of_deconcatenation_eq`: the primitive elements are the letters.
 * `IsGradedCoderivation.eq_zero_of_letter_reducedProjection_eq_zero`: a signed coderivation, not
   necessarily annihilating the empty word, vanishes when its letter component does.
 
@@ -210,29 +210,7 @@ theorem gradedCoderivEquivTaylor_symm_apply (G : InternalGrading R M ℤ) (q : �
       extendReduced (ReducedTensorWords.gradedCoderiv G F q) :=
   (rfl)
 
-/-! ### Primitive elements and the constant Taylor coefficient -/
-
-/-- **The primitive elements of `Tᶜ(M)` are the letters.**  An element `z` with
-`Δ z = z ⊗ 1 + 1 ⊗ z` is the one-letter word on its letter component. -/
-theorem eq_reducedInclusion_ofLetter_of_deconcatenation_eq {z : TensorWords R M}
-    (hz : deconcatenation R M z = z ⊗ₜ[R] 1 + 1 ⊗ₜ[R] z) :
-    z = reducedInclusion R M (ReducedTensorWords.ofLetter R M
-      (ReducedTensorWords.letter R M (reducedProjection R M z))) := by
-  -- The counit of a primitive element vanishes.
-  have hε : counit R M z = 0 := by
-    have h := LinearMap.congr_fun (rTensor_counit_comp_deconcatenation R M) z
-    rw [LinearMap.comp_apply, hz, map_add, LinearMap.rTensor_tmul, LinearMap.rTensor_tmul,
-      counit_one, TensorProduct.mk_apply, add_eq_right] at h
-    simpa using congrArg (fun y ↦ counit R M (TensorProduct.lid R (TensorWords R M) y)) h
-  set u := reducedProjection R M z
-  have hzu : z = reducedInclusion R M u := by
-    simpa [hε] using (reducedInclusion_reducedProjection_add_algebraMap_counit R M z).symm
-  -- The reduced coproduct of `u` vanishes.
-  have hu : ReducedTensorWords.deconcatenation R M u = 0 := by
-    rw [← map_reducedProjection_deconcatenation_reducedInclusion, ← hzu, hz]
-    simp
-  obtain ⟨x, hx⟩ := (ReducedTensorWords.deconcatenation_eq_zero_iff R M).1 hu
-  rw [hzu, ← hx, ReducedTensorWords.letter_ofLetter]
+/-! ### The constant Taylor coefficient -/
 
 /-- **A graded coderivation is determined by its Taylor map**, including its constant coefficient:
 a graded coderivation with vanishing letter component is zero. -/

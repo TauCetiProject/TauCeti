@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.CoaugmentedBar
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.MaurerCartan
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Brace
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Insertion
 
 /-!
@@ -47,7 +46,8 @@ For a DG algebra the twist is the familiar one: the twisted differential is
 
 * `TauCeti.AInfinityAlgebra.insertionTaylor`: the Taylor map after inserting `t` copies of `α`,
   on all tensor words.
-* `TauCeti.AInfinityAlgebra.IsInsertionBound`: the Taylor map vanishes after `T` insertions.
+* `TauCeti.AInfinityAlgebra.IsInsertionBound`: the Taylor map vanishes after `t` insertions for
+  every `t ≥ T`.
 * `TauCeti.AInfinityAlgebra.twistTaylor`: the twisted Taylor map.
 * `TauCeti.AInfinityAlgebra.twist`: the `A∞` algebra twisted by a Maurer--Cartan element.
 
@@ -59,7 +59,8 @@ For a DG algebra the twist is the familiar one: the twisted differential is
 * `TauCeti.AInfinityAlgebra.twist_zero`: twisting by zero gives back the algebra.
 * `TauCeti.AInfinityAlgebra.isInsertionBound_of_m_eq_zero`: insertion bounds for algebras with
   bounded arity.
-* `TauCeti.IsNonUnitalDGAlgebra.twist_m_one_apply` and
+* `TauCeti.IsNonUnitalDGAlgebra.twist_m_one_apply`,
+  `TauCeti.IsNonUnitalDGAlgebra.twist_m_one_apply_of_mem` and
   `TauCeti.IsNonUnitalDGAlgebra.twist_m_two_apply`: the twisted differential and product of a DG
   algebra.
 
@@ -127,7 +128,8 @@ theorem IsInsertionBound.mono {α : A} {T T' : ℕ} (hT : 𝒜.IsInsertionBound 
     𝒜.IsInsertionBound α T' :=
   fun t ht ↦ hT t (h.trans ht)
 
-/-- The twisted Taylor map does not depend on the insertion bound. -/
+/-- The twisted Taylor map does not depend on the insertion bound: the sum with cutoff an insertion
+bound `T` equals the sum with any larger cutoff `T'`. -/
 theorem IsInsertionBound.twistTaylor_eq {α : A} {T T' : ℕ} (hT : 𝒜.IsInsertionBound α T)
     (hTT' : T ≤ T') : 𝒜.twistTaylor α T' = 𝒜.twistTaylor α T := by
   rw [twistTaylor, twistTaylor]
@@ -146,7 +148,7 @@ theorem isHomogeneous_twistTaylor {α : A} (hα : α ∈ 𝒜.grading.piece 1) (
     (by rwa [InternalGrading.shift_piece, zero_add] : α ∈ (𝒜.grading.shift 1).piece 0) t
     (mem_gradedPiece_of_reducedInclusion hw)
   have h₂ := (isHomogeneous_reducedProjection (𝒜.grading.shift 1)).map_mem h₁
-  rw [add_zero] at h₂
+  rw [mul_zero, add_zero, add_zero] at h₂
   exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).map_mem h₂
 
 /-! ### Algebras of bounded arity -/
@@ -352,12 +354,12 @@ theorem isInsertionBound_toAInfinityAlgebra (h : IsNonUnitalDGAlgebra 𝒜 d) (�
   h.toAInfinityAlgebra.isInsertionBound_of_m_eq_zero (N := 2)
     (fun _ hn ↦ h.toAInfinityAlgebra_m_of_three_le hn) α
 
-/-- **The twisted differential of a DG algebra** is `d - [α, -]`: on an element `x` of degree `p`,
-`d^α x = d x - α x + (-1)^p x α`. -/
+/-- **The twisted differential of a DG algebra** is `d - [α, -]`:
+`d^α x = d x - α x + κ(x) α`, where `κ` is the Koszul sign `x ↦ (-1)^|x| x`. -/
 theorem twist_m_one_apply (h : IsNonUnitalDGAlgebra 𝒜 d) {α : A}
-    (hα : h.toAInfinityAlgebra.IsMaurerCartan α) {p : ℤ} {x : A} (hx : x ∈ 𝒜 p) :
+    (hα : h.toAInfinityAlgebra.IsMaurerCartan α) (x : A) :
     (h.toAInfinityAlgebra.twist α hα 3 (h.isInsertionBound_toAInfinityAlgebra α)).m 1 ![x] =
-      d x - α * x + ((p.negOnePow : ℤ) : R) • (x * α) := by
+      d x - α * x + (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 x * α := by
   have hα1 : α ∈ 𝒜 1 := by
     simpa using hα.mem_piece_one
   have hins : h.toAInfinityAlgebra.insertionTaylor α 2 (cons R A x 1) = 0 := by
@@ -373,11 +375,19 @@ theorem twist_m_one_apply (h : IsNonUnitalDGAlgebra 𝒜 d) {α : A}
     reducedProjection_cons_cons_one, taylor_of_two]
   simp only [cons_one, reducedProjection_reducedInclusion, taylor_ofLetter,
     toAInfinityAlgebra_m_one_apply, toAInfinityAlgebra_m_two_apply, toAInfinityAlgebra_grading,
-    InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hx,
     InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hα1, Matrix.cons_val_zero,
     Matrix.cons_val_one, one_mul, Int.negOnePow_one, Units.val_neg, Units.val_one, Int.cast_neg,
-    Int.cast_one, neg_one_smul, neg_mul, smul_mul_assoc]
+    Int.cast_one, neg_one_smul, neg_mul]
   abel
+
+/-- **The twisted differential of a DG algebra** on an element `x` of degree `p`:
+`d^α x = d x - α x + (-1)^p x α`. -/
+theorem twist_m_one_apply_of_mem (h : IsNonUnitalDGAlgebra 𝒜 d) {α : A}
+    (hα : h.toAInfinityAlgebra.IsMaurerCartan α) {p : ℤ} {x : A} (hx : x ∈ 𝒜 p) :
+    (h.toAInfinityAlgebra.twist α hα 3 (h.isInsertionBound_toAInfinityAlgebra α)).m 1 ![x] =
+      d x - α * x + ((p.negOnePow : ℤ) : R) • (x * α) := by
+  rw [twist_m_one_apply, InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hx, one_mul,
+    smul_mul_assoc]
 
 /-- **The twisted product of a DG algebra** is the product. -/
 theorem twist_m_two_apply (h : IsNonUnitalDGAlgebra 𝒜 d) {α : A}
