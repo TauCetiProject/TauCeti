@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Delete
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+public import TauCeti.Combinatorics.SimpleGraph.Paths
+public import TauCeti.Combinatorics.Graph.Simple
 
 /-!
 # Walks in graphs constructed from simple graphs
@@ -17,19 +21,26 @@ walks in `Graph.ofSimpleGraph H`.  In the latter graph, the edge joining `x` and
 unordered pair `s(x, y)`, so no edge choice is lost in either direction.
 
 The two conversions preserve length, vertex support, edge lists, concatenation, reversal,
-trails, paths, and cycles.  Their equivalence also identifies the two reachability predicates,
-providing the basic bridge through which simple-graph connectivity results can be used for
-multigraph walks.
+trails, paths, cycles, and internal vertex-disjointness. Their equivalence also identifies the
+two reachability predicates, providing the basic bridge through which simple-graph connectivity
+results can be used for multigraph walks. Edge-disjointness follows directly from preservation of
+the edge lists.
 
 In the other direction, reachability by edge-labelled walks in a multigraph `G` agrees with
 reachability in its underlying simple graph `G.toSimpleGraph`. A walk in the underlying simple
 graph can be lifted to the multigraph by choosing one actual edge for each adjacency; this lift
 preserves the vertex sequence and hence the path predicate.
+
+For any subgraph `S : H.Subgraph`, ambient simple-graph walks `p : H.Walk x y` with
+`p.toSubgraph ≤ S` transfer to walks in `S.toGraph` via `SimpleGraph.Subgraph.walkToGraph`,
+yielding a bijection `SimpleGraph.Subgraph.walkToGraphEquiv` when `x ∈ S.verts` and identifying
+reachability in `S.toGraph` with reachability in `S.coe`
+(`SimpleGraph.Subgraph.reachable_toGraph_iff`).
 -/
 
 public section
 
-open scoped Sym2
+open scoped Graph Sym2
 
 universe u
 
@@ -160,6 +171,29 @@ theorem toSimpleGraph_reverse (p : (Graph.ofSimpleGraph H).Walk x y) :
   conv_lhs => rw [← toGraph_toSimpleGraph p, ← SimpleGraph.Walk.toGraph_reverse,
     SimpleGraph.Walk.toSimpleGraph_toGraph]
 
+/-- The traced graph of a walk in `Graph.ofSimpleGraph H` becomes the subgraph traced by the
+corresponding simple-graph walk. -/
+@[simp]
+theorem toSimpleGraphSubgraph_walkGraph (p : (Graph.ofSimpleGraph H).Walk x y)
+    (h : (Graph.ofSimpleGraph H).walkGraph p ≤ Graph.ofSimpleGraph H) :
+    ((Graph.ofSimpleGraph H).walkGraph p).toSimpleGraphSubgraph h =
+      p.toSimpleGraph.toSubgraph := by
+  ext a b
+  · simp
+  · rw [← SimpleGraph.Subgraph.mem_edgeSet, ← SimpleGraph.Subgraph.mem_edgeSet]
+    simp
+
+/-- Converting the subgraph traced by a simple-graph walk to a graph recovers the graph traced by
+the corresponding edge-labelled walk. -/
+@[simp]
+theorem _root_.SimpleGraph.Walk.toGraph_toSubgraph (p : H.Walk x y) :
+    p.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p.toGraph := by
+  have h := Graph.Walk.toSimpleGraphSubgraph_walkGraph p.toGraph
+    (p.toGraph.walkGraph_le (by simp))
+  apply_fun SimpleGraph.Subgraph.toGraph at h
+  rw [Graph.toGraph_toSimpleGraphSubgraph, SimpleGraph.Walk.toSimpleGraph_toGraph] at h
+  exact h.symm
+
 @[simp]
 theorem nil_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.toSimpleGraph.Nil ↔ p.Nil := by
@@ -218,6 +252,13 @@ theorem isCycle_toGraph_iff (p : H.Walk x x) : p.toGraph.IsCycle ↔ p.IsCycle :
   rw [hne]
   tauto
 
+/-- Converting simple-graph walks to edge-labelled walks preserves and reflects internal
+vertex-disjointness. -/
+@[simp]
+theorem internallyDisjoint_toGraph_iff (p q : H.Walk x y) :
+    p.toGraph.InternallyDisjoint q.toGraph ↔ p.InternallyDisjoint q := by
+  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_toGraph]
+
 end Walk
 
 /-- Multigraph reachability in `Graph.ofSimpleGraph H` is simple-graph reachability in `H`. -/
@@ -251,6 +292,14 @@ theorem isPath_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :
 theorem isCycle_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x x) :
     p.toSimpleGraph.IsCycle ↔ p.IsCycle := by
   rw [← SimpleGraph.Walk.isCycle_toGraph_iff, toGraph_toSimpleGraph]
+
+/-- Forgetting the redundant edge labels preserves and reflects internal vertex-disjointness. -/
+@[simp]
+theorem internallyDisjoint_toSimpleGraph_iff
+    (p q : (Graph.ofSimpleGraph H).Walk x y) :
+    p.toSimpleGraph.InternallyDisjoint q.toSimpleGraph ↔ p.InternallyDisjoint q := by
+  rw [← SimpleGraph.Walk.internallyDisjoint_toGraph_iff, toGraph_toSimpleGraph,
+    toGraph_toSimpleGraph]
 
 end Graph.Walk
 
@@ -297,6 +346,22 @@ theorem support_liftToGraph (p : G.toSimpleGraph.Walk x y) :
   | cons h p ih =>
       rw [liftToGraph_cons, Graph.Walk.support_cons, ih, support_cons, List.map_cons]
 
+/-- Lifting walks of the underlying simple graph preserves and reflects internal disjointness,
+since the lift keeps every vertex sequence. -/
+@[simp]
+theorem internallyDisjoint_liftToGraph_iff {p q : G.toSimpleGraph.Walk x y} :
+    p.liftToGraph.InternallyDisjoint q.liftToGraph ↔ p.InternallyDisjoint q := by
+  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_liftToGraph,
+    List.forall_mem_map, List.mem_map_of_injective Subtype.val_injective, Subtype.val_inj]
+
+/-- Lifting preserves and reflects disjointness of whole supports, including for walks with
+different endpoints. -/
+theorem disjoint_support_liftToGraph_iff {s t s' t' : G.vertexSet}
+    (p : G.toSimpleGraph.Walk s t) (q : G.toSimpleGraph.Walk s' t') :
+    p.liftToGraph.support.Disjoint q.liftToGraph.support ↔ p.support.Disjoint q.support := by
+  simp only [support_liftToGraph]
+  exact ⟨List.Disjoint.of_map, List.disjoint_map Subtype.val_injective⟩
+
 /-- Lifting a simplified walk preserves its length. -/
 @[simp]
 theorem length_liftToGraph (p : G.toSimpleGraph.Walk x y) :
@@ -333,7 +398,7 @@ variable {α β : Type*} {G H : Graph α β}
 /-- A subgraph inclusion `H ≤ G` induces a homomorphism of underlying simple graphs, sending each
 actual vertex of `H` to itself. -/
 def toSimpleGraphHomOfLE (hHG : H ≤ G) : H.toSimpleGraph →g G.toSimpleGraph where
-  toFun z := ⟨z, hHG.vertexSet_mono z.2⟩
+  toFun z := ⟨z, hHG.vertexSet_mono z.property⟩
   map_rel' hzw :=
     ⟨fun h ↦ hzw.1 (Subtype.ext (Subtype.mk.inj h)), hzw.2.mono hHG⟩
 
@@ -399,3 +464,164 @@ theorem toSimpleGraph_reachable_induce_compl_iff {X : Set α} {s t : V(G)}
   simp
 
 end Graph
+
+namespace SimpleGraph.Subgraph
+
+variable {α : Type u} {H : SimpleGraph α} {S : H.Subgraph}
+
+/-- Transfer an ambient simple-graph walk contained in `S` to an edge-labelled walk in
+`S.toGraph`. -/
+def walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) : S.toGraph.Walk x y :=
+  p.toGraph.transfer S.toGraph_le_ofSimpleGraph fun e he ↦ by
+    rw [S.edgeSet_toGraph]; rw [SimpleGraph.Walk.edges_toGraph] at he
+    exact Subgraph.edgeSet_mono hp (p.mem_edges_toSubgraph.mpr he)
+
+@[simp]
+theorem mapLe_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).mapLe S.toGraph_le_ofSimpleGraph = p.toGraph :=
+  Graph.Walk.mapLe_transfer S.toGraph_le_ofSimpleGraph p.toGraph _
+
+@[simp]
+theorem walkToGraph_nil {x : α} (hx : (SimpleGraph.Walk.nil : H.Walk x x).toSubgraph ≤ S) :
+    S.walkToGraph .nil hx = .nil :=
+  Graph.Walk.mapLe_injective S.toGraph_le_ofSimpleGraph x x (by simp)
+
+@[simp]
+theorem walkToGraph_cons {x y z : α} (h : H.Adj x y) (p : H.Walk y z)
+    (hp : (SimpleGraph.Walk.cons h p).toSubgraph ≤ S) :
+    S.walkToGraph (.cons h p) hp =
+      .cons s(x, y) ((S.toGraph_isLink _ _ _).mpr ⟨rfl, hp.2 (by simp)⟩)
+        (S.walkToGraph p (le_trans le_sup_right hp)) :=
+  Graph.Walk.mapLe_injective S.toGraph_le_ofSimpleGraph x z (by simp)
+
+/-- `walkToGraph` is independent of the proof that `p.toSubgraph ≤ S`. -/
+theorem walkToGraph_congr {x y : α} {p q : H.Walk x y}
+    (hp : p.toSubgraph ≤ S) (hq : q.toSubgraph ≤ S) (hpq : p = q) :
+    S.walkToGraph p hp = S.walkToGraph q hq := by
+  subst hpq
+  rfl
+
+@[simp]
+theorem support_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).support = p.support := by
+  rw [← Graph.Walk.support_mapLe_eq_support S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
+    SimpleGraph.Walk.support_toGraph]
+
+@[simp]
+theorem edges_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).edges = p.edges := by
+  rw [← Graph.Walk.edges_mapLe_eq_edges S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
+    SimpleGraph.Walk.edges_toGraph]
+
+@[simp]
+theorem length_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).length = p.length := by
+  rw [← Graph.Walk.length_mapLe S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
+    SimpleGraph.Walk.length_toGraph]
+
+@[simp]
+theorem walkToGraph_append {x y z : α} (p : H.Walk x y) (q : H.Walk y z)
+    (hpq : (p.append q).toSubgraph ≤ S) :
+    S.walkToGraph (p.append q) hpq =
+      (S.walkToGraph p (le_trans (by rw [SimpleGraph.Walk.toSubgraph_append]; exact le_sup_left)
+        hpq)).append
+      (S.walkToGraph q (le_trans (by rw [SimpleGraph.Walk.toSubgraph_append]; exact le_sup_right)
+        hpq)) :=
+  Graph.Walk.mapLe_injective S.toGraph_le_ofSimpleGraph x z (by simp)
+
+@[simp]
+theorem reverse_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).reverse =
+      S.walkToGraph p.reverse (by simpa [SimpleGraph.Walk.toSubgraph_reverse] using hp) :=
+  Graph.Walk.mapLe_injective S.toGraph_le_ofSimpleGraph y x (by
+    rw [← Graph.Walk.reverse_mapLe, mapLe_walkToGraph, mapLe_walkToGraph,
+      SimpleGraph.Walk.toGraph_reverse])
+
+@[simp]
+theorem nil_walkToGraph_iff {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).Nil ↔ p.Nil := by
+  cases p <;> simp
+
+@[simp]
+theorem isTrail_walkToGraph_iff {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).IsTrail ↔ p.IsTrail := by
+  rw [← Graph.Walk.isTrail_mapLe S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
+    SimpleGraph.Walk.isTrail_toGraph_iff]
+
+@[simp]
+theorem isPath_walkToGraph_iff {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).IsPath ↔ p.IsPath := by
+  rw [← Graph.Walk.isPath_mapLe S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
+    SimpleGraph.Walk.isPath_toGraph_iff]
+
+@[simp]
+theorem isCycle_walkToGraph_iff {x : α} (p : H.Walk x x) (hp : p.toSubgraph ≤ S) :
+    (S.walkToGraph p hp).IsCycle ↔ p.IsCycle := by
+  rw [← Graph.Walk.isCycle_mapLe S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
+    SimpleGraph.Walk.isCycle_toGraph_iff]
+
+@[simp]
+theorem walkGraph_walkToGraph {x y : α} (p : H.Walk x y) (hp : p.toSubgraph ≤ S) :
+    S.toGraph.walkGraph (S.walkToGraph p hp) = p.toSubgraph.toGraph := by
+  rw [← Graph.Walk.walkGraph_mapLe S.toGraph_le_ofSimpleGraph, mapLe_walkToGraph,
+    SimpleGraph.Walk.toGraph_toSubgraph]
+
+@[simp]
+theorem walkToGraph_inj {x y : α} {p q : H.Walk x y}
+    (hp : p.toSubgraph ≤ S) (hq : q.toSubgraph ≤ S) :
+    S.walkToGraph p hp = S.walkToGraph q hq ↔ p = q :=
+  ⟨fun h ↦ by
+    have hmap := congrArg (fun w ↦ (w.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph) h
+    simpa only [mapLe_walkToGraph, SimpleGraph.Walk.toSimpleGraph_toGraph] using hmap,
+    walkToGraph_congr hp hq⟩
+
+@[simp]
+theorem walkToGraph_toSimpleGraph_mapLe {x y : α} (q : S.toGraph.Walk x y)
+    (hq : (q.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph.toSubgraph ≤ S) :
+    S.walkToGraph (q.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph hq = q :=
+  Graph.Walk.mapLe_injective S.toGraph_le_ofSimpleGraph x y (by simp)
+
+/-- When `x ∈ S.verts`, an edge-labelled walk from `x` to `y` in `S.toGraph` traces a simple-graph
+walk in `H` whose `toSubgraph` is contained in `S`. -/
+theorem toSubgraph_toSimpleGraph_mapLe_le {x y : α} (hx : x ∈ S.verts)
+    (p : S.toGraph.Walk x y) :
+    (p.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph.toSubgraph ≤ S := by
+  rw [← toGraph_le_toGraph, SimpleGraph.Walk.toGraph_toSubgraph, Graph.Walk.toGraph_toSimpleGraph,
+    Graph.Walk.walkGraph_mapLe]
+  exact p.walkGraph_le (S.vertexSet_toGraph.symm ▸ hx)
+
+/-- For `x ∈ S.verts`, ambient walks `p : H.Walk x y` with `p.toSubgraph ≤ S` correspond
+bijectively to edge-labelled walks in `S.toGraph`. -/
+def walkToGraphEquiv (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α) :
+    {p : H.Walk x y // p.toSubgraph ≤ S} ≃ S.toGraph.Walk x y where
+  toFun p := S.walkToGraph p.val p.property
+  invFun q := ⟨(q.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph,
+    S.toSubgraph_toSimpleGraph_mapLe_le hx q⟩
+  left_inv _ := Subtype.ext (by simp)
+  right_inv _ := by simp
+
+@[simp] theorem walkToGraphEquiv_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
+    (p : {p : H.Walk x y // p.toSubgraph ≤ S}) :
+    S.walkToGraphEquiv hx y p = S.walkToGraph p.val p.property := (rfl)
+
+@[simp] theorem coe_walkToGraphEquiv_symm_apply (S : H.Subgraph) {x : α} (hx : x ∈ S.verts) (y : α)
+    (q : S.toGraph.Walk x y) :
+    ((S.walkToGraphEquiv hx y).symm q : H.Walk x y) =
+      (q.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph := (rfl)
+
+/-- Reachability in `S.toGraph` agrees with reachability in `S.coe` on `S.verts`. -/
+@[simp]
+theorem reachable_toGraph_iff {x y : α} :
+    S.toGraph.Reachable x y ↔
+      ∃ (hx : x ∈ S.verts) (hy : y ∈ S.verts), S.coe.Reachable ⟨x, hx⟩ ⟨y, hy⟩ := by
+  have key (hx : x ∈ S.verts) (hy : y ∈ S.verts) :
+      S.toGraph.Reachable x y ↔ S.coe.Reachable ⟨x, hx⟩ ⟨y, hy⟩ := by
+    simpa only [coe_toSimpleGraphToGraphIso_symm_apply] using
+      (Graph.toSimpleGraph_reachable_iff (G := S.toGraph)
+        (u := S.toSimpleGraphToGraphIso.symm ⟨x, hx⟩)
+        (v := S.toSimpleGraphToGraphIso.symm ⟨y, hy⟩)).symm.trans
+        S.toSimpleGraphToGraphIso.symm.reachable_iff
+  exact ⟨fun h ↦ ⟨S.vertexSet_toGraph ▸ h.left_mem, S.vertexSet_toGraph ▸ h.right_mem,
+    (key _ _).mp h⟩, fun ⟨hx, hy, hr⟩ ↦ (key hx hy).mpr hr⟩
+
+end SimpleGraph.Subgraph

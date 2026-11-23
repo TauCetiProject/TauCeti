@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import TauCeti.AlgebraicGeometry.Rigidity.Relative
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.StructureSheaf
+import TauCeti.AlgebraicGeometry.GroupScheme.Separated
 
 /-!
 # Pointed morphisms, uniqueness of group laws, and commutativity of proper flat group schemes
@@ -181,7 +182,7 @@ noncomputable def commGrpHomEquivPointed (A B : CommGrp (Over S))
     [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom] :
     (A ⟶ B) ≃ {f : A.X ⟶ B.X // η[A.X] ≫ f = η[B.X]} where
   toFun F := ⟨F.hom.hom.hom, IsMonHom.one_hom F.hom.hom.hom⟩
-  invFun f := commGrpHomOfOneHom hA f.1 f.2
+  invFun f := commGrpHomOfOneHom hA f.val f.property
   left_inv _ := CommGrp.hom_ext _ _ (commGrpHomOfOneHom_hom_hom_hom hA _ _)
   right_inv _ := Subtype.ext (commGrpHomOfOneHom_hom_hom_hom hA _ _)
 
@@ -203,7 +204,7 @@ theorem commGrpHomEquivPointed_symm_apply {A B : CommGrp (Over S)}
     (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
     [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom]
     (f : {f : A.X ⟶ B.X // η[A.X] ≫ f = η[B.X]}) :
-    (commGrpHomEquivPointed A B hA).symm f = commGrpHomOfOneHom hA f.1 f.2 := by
+    (commGrpHomEquivPointed A B hA).symm f = commGrpHomOfOneHom hA f.val f.property := by
   simp [commGrpHomEquivPointed]
 
 end Relative
@@ -213,10 +214,10 @@ section Field
 variable {K : Type u} [Field K]
 
 /-- A morphism of monoid schemes over a field `K` from a proper geometrically integral source to a
-separated locally finite type group scheme is a homomorphism if it preserves the identity. -/
+locally finite type group scheme is a homomorphism if it preserves the identity. -/
 theorem isMonHom_of_one_hom {A B : Over (Spec (.of K))} [MonObj A] [GrpObj B]
     [IsProper A.hom] [GeometricallyIntegral A.hom]
-    [IsSeparated B.hom] [LocallyOfFiniteType B.hom]
+    [LocallyOfFiniteType B.hom]
     (f : A ⟶ B) (hf : η[A] ≫ f = η[B]) : IsMonHom f :=
   isMonHom_of_one_hom_of_flat
     (fun V ↦ A.hom.isIso_app_of_universallyClosed_of_geometricallyIntegral V) f hf

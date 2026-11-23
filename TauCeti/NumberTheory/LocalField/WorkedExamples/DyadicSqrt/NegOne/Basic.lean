@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.PadicTwo
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value

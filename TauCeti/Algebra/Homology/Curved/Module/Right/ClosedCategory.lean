@@ -40,13 +40,13 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
 noncomputable def closedHom
     (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) : M →ₗ[Aᵐᵒᵖ] N :=
-  (dgClosedHomEquivZeroCocycles M N f).1.1
+  (dgClosedHomEquivZeroCocycles M N f).val.val
 
 /-- The underlying map is the cochain of the closed degree-zero component. -/
 theorem closedHom_eq
     (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
-    closedHom f = (dgHomLinearEquivCochains M N 0 (dgClosedHom R f)).1 := by
+    closedHom f = (dgHomLinearEquivCochains M N 0 (dgClosedHom R f)).val := by
   ext x
   exact coe_dgClosedHomEquivZeroCocycles_apply f x
 
@@ -93,7 +93,7 @@ theorem closedHom_mem
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
     {p : ℤ} {x : M} (hx : x ∈ M.grading p) : closedHom f x ∈ N.grading p := by
   simpa only [closedHom, add_zero] using dgRightModuleCochains.map_mem
-    (dgClosedHomEquivZeroCocycles M N f).1 hx
+    (dgClosedHomEquivZeroCocycles M N f).val hx
 
 /-- The ground-ring linear map underlying a closed morphism is homogeneous of degree zero. -/
 theorem isHomogeneous_closedHom
@@ -110,8 +110,8 @@ theorem differential_closedHom
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) (x : M) :
     N.differential (closedHom f x) = closedHom f (M.differential x) :=
   (dgRightModuleCochains.curvedDifferential_zero_eq_zero_iff
-    (dgClosedHomEquivZeroCocycles M N f).1).mp
-      (LinearMap.mem_ker.mp (dgClosedHomEquivZeroCocycles M N f).2) x
+    (dgClosedHomEquivZeroCocycles M N f).val).mp
+      (LinearMap.mem_ker.mp (dgClosedHomEquivZeroCocycles M N f).property) x
 
 /-- The ground-ring linear map underlying a closed morphism commutes with the differentials. -/
 theorem differential_comp_closedHom
@@ -129,7 +129,7 @@ theorem closedHom_id (M : CurvedDGRightModuleCat.{u, u, u} h) :
   ext x
   simpa only [closedHom, dgRightModuleCochains.id_apply, LinearMap.id_apply] using
     congrArg (fun c : dgRightModuleCochains (R := R) (A := A)
-    (ℳ := M.grading) (ℳN := M.grading) 0 ↦ c.1 x)
+    (ℳ := M.grading) (ℳN := M.grading) 0 ↦ c.val x)
       (dgClosedHomEquivZeroCocycles_id (M := M))
 
 /-- Composition of closed morphisms is composition of right-linear maps. -/
@@ -143,7 +143,7 @@ theorem closedHom_comp
   ext x
   simpa only [closedHom, dgRightModuleCochains.comp_apply, LinearMap.comp_apply] using
     congrArg (fun c : dgRightModuleCochains (R := R) (A := A)
-    (ℳ := M.grading) (ℳN := P.grading) 0 ↦ c.1 x)
+    (ℳ := M.grading) (ℳN := P.grading) 0 ↦ c.val x)
       (dgClosedHomEquivZeroCocycles_comp f g)
 
 /-- The zero closed morphism has zero underlying linear map. -/

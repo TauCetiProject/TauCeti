@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
 -- The monomial description of the diagonal normalizer supplies its permutation quotient.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Transvection
+-- Conjugating by an adjacent transposition uses how it reorders the indices.
+import TauCeti.GroupTheory.Perm.Fin
 
 /-!
 # The diagonal normalizer and the Bruhat data of `GL₂`
@@ -227,13 +229,6 @@ section Adjacent
 
 variable {k : Type u} [Field k] {m : ℕ} {a b : Fin m}
 
-/-- The adjacent transposition `(a b)` reverses the order of exactly one pair. -/
-private theorem swap_lt_swap_of_lt (hab : a.val + 1 = b.val) {i j : Fin m} (hji : j < i)
-    (hne : ¬ (j = a ∧ i = b)) : Equiv.swap a b j < Equiv.swap a b i := by
-  simp only [Equiv.swap_apply_def]
-  simp only [Fin.lt_def, Fin.ext_iff] at hji hne ⊢
-  split_ifs <;> simp_all <;> omega
-
 private theorem permutationGL_swap_inv :
     (permutationGL (k := k) (Equiv.swap a b))⁻¹ = permutationGL (k := k) (Equiv.swap a b) := by
   rw [← map_inv, Equiv.swap_inv]
@@ -253,7 +248,7 @@ private theorem conj_swap_mem_of_apply_eq_zero (hab : a.val + 1 = b.val) {x : GL
   by_cases h : j = a ∧ i = b
   · obtain ⟨rfl, rfl⟩ := h
     simpa using hx0
-  · exact (UpperTriangularGroup.mem_iff.mp hx) (swap_lt_swap_of_lt hab hji h)
+  · exact (UpperTriangularGroup.mem_iff.mp hx) (Fin.swap_apply_lt_swap_apply hab hji h)
 
 /-- An upper-triangular matrix is a product of one whose `(a, b)` entry vanishes and a
 transvection at `(a, b)`. -/

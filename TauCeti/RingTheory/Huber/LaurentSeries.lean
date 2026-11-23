@@ -135,7 +135,7 @@ private theorem ball_mem_nhds (n : ℕ) :
 private theorem exists_ball_subset {s : Set K⸨X⸩} (hs : s ∈ 𝓝 (0 : K⸨X⸩)) :
     ∃ c : ℤᵐ⁰, c ≠ 0 ∧ {x : K⸨X⸩ | Valued.v x < c} ⊆ s := by
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp hs
-  exact ⟨MonoidWithZeroHom.ValueGroup₀.embedding γ.1, by simp,
+  exact ⟨MonoidWithZeroHom.ValueGroup₀.embedding γ.val, by simp,
     fun x hx ↦ hγ (Valued.v.restrict_lt_iff_lt_embedding.mpr hx)⟩
 
 /-- The subspace topology on `K⟦X⟧ ⊆ K⸨X⸩` is the `X`-adic topology. -/

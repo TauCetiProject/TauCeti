@@ -48,10 +48,10 @@ theorem exists_projectiveSpaceMaximalCone_chart (p :
   let Φ := Fan.projectiveSpace b hi
   obtain ⟨σ, x, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq
     (Fan.isRegular_projectiveSpace b hi) p
-  obtain ⟨k, hk⟩ := Fan.exists_le_projectiveSpaceCone_compl b hi σ.2
+  obtain ⟨k, hk⟩ := Fan.exists_le_projectiveSpaceCone_compl b hi σ.property
   have hle : σ ≤ Fan.projectiveSpaceMaximalCone b hi k := Subtype.coe_le_coe.mp hk
   exact ⟨k, faceAffinePointMap hi (Φ.isFaceOf_of_le
-    (Fan.projectiveSpaceMaximalCone b hi k).2 σ.2 hle) x,
+    (Fan.projectiveSpaceMaximalCone b hi k).property σ.property hle) x,
     Φ.analyticAffineChartι_faceAffinePointMap (Fan.isRegular_projectiveSpace b hi) hle x⟩
 
 private theorem overlap_coordinates (k l : Option ι)
@@ -68,10 +68,10 @@ private theorem overlap_coordinates (k l : Option ι)
   let Φ := Fan.projectiveSpace b hi
   let σ := Fan.projectiveSpaceMaximalCone b hi k
   let τ := Fan.projectiveSpaceMaximalCone b hi l
-  let a (j : Option ι) : dualSemigroup hi (σ ⊓ τ).1 :=
+  let a (j : Option ι) : dualSemigroup hi (σ ⊓ τ).val :=
     ⟨projectiveSpaceRatioCharacter b j k, dualSemigroup_anti hi inf_le_left
       (projectiveSpaceRatioCharacter_mem_dualSemigroup b hi j k (by simp))⟩
-  let c (j : Option ι) : dualSemigroup hi (σ ⊓ τ).1 :=
+  let c (j : Option ι) : dualSemigroup hi (σ ⊓ τ).val :=
     ⟨projectiveSpaceRatioCharacter b j l, dualSemigroup_anti hi inf_le_right
       (projectiveSpaceRatioCharacter_mem_dualSemigroup b hi j l (by simp))⟩
   have hleft (j) : projectiveSpaceHomogeneousCoordinate b hi k
@@ -139,17 +139,17 @@ theorem projectiveSpace_chart_mem_range_iff (k l : Option ι)
   · rintro ⟨y, hy⟩
     exact (coordinates_of_chart_eq b hi k l x y hy.symm).1
   · intro hx
-    let m : dualSemigroup hi σ.1 := ⟨projectiveSpaceRatioCharacter b l k,
+    let m : dualSemigroup hi σ.val := ⟨projectiveSpaceRatioCharacter b l k,
       projectiveSpaceRatioCharacter_mem_dualSemigroup b hi l k (by simp)⟩
-    have hker : σ.1 ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) =
-        (σ ⊓ τ).1 := projectiveSpaceCone_inf_ker_ratioCharacter b hi k l
+    have hker : σ.val ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) =
+        (σ ⊓ τ).val := projectiveSpaceCone_inf_ker_ratioCharacter b hi k l
     have hrange : x ∈ Set.range (faceAffinePointMap hi
-        (Φ.isFaceOf_of_le σ.2 (σ ⊓ τ).2 inf_le_left)) := by
+        (Φ.isFaceOf_of_le σ.property (σ ⊓ τ).property inf_le_left)) := by
       rw [range_faceAffinePointMap_of_inf_ker_eq hi
         (isRegularCone_projectiveSpaceCone b hi (by simp)).fg _ m hker]
       simpa only [Set.mem_ofPred_eq, projectiveSpaceHomogeneousCoordinate_def, m] using hx
     obtain ⟨z, hz⟩ := hrange
-    refine ⟨faceAffinePointMap hi (Φ.isFaceOf_of_le τ.2 (σ ⊓ τ).2 inf_le_right) z, ?_⟩
+    refine ⟨faceAffinePointMap hi (Φ.isFaceOf_of_le τ.property (σ ⊓ τ).property inf_le_right) z, ?_⟩
     exact (Φ.analyticAffineChartι_faceAffinePointMap_eq
       (Fan.isRegular_projectiveSpace b hi) (υ := σ ⊓ τ) inf_le_right inf_le_left z).trans
         (congrArg (Φ.analyticAffineChartι (Fan.isRegular_projectiveSpace b hi) σ) hz)

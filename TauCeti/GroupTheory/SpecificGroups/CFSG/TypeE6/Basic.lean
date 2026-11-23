@@ -102,22 +102,22 @@ full-weight type-`E₆` minuscule Chevalley carrier over the algebraic closure o
 finiteness, reductivity, pinning or maximality statement is attached to it, and it is not claimed
 to be the points of the pinned `E₆` group scheme, an identification discussed in the module
 docstring. -/
-abbrev AmbientGroup : Type := E6Minuscule.points d.1.Closure
+abbrev AmbientGroup : Type := E6Minuscule.points d.val.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `E₆` diagram. It is
 the carrier's numbered raising subgroup at the same node, the index type `Fin d.1.rank` being the
 upstream Bourbaki index type of the index's own Dynkin type. -/
-def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  E6Minuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_six i)) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  E6Minuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_six i)) d.val.Closure
 
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding node.
 This is the equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`. It
 is not a `simp` lemma: `steinberg_simpleRootSubgroup` is the normal form the pinned equations of
 this file are stated against, and unfolding to `TauCeti.E6Minuscule.rootSubgroupPoints` would keep
 it from firing. -/
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
     d.simpleRootSubgroup i =
-      E6Minuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_six i)) d.1.Closure :=
+      E6Minuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_six i)) d.val.Closure :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the `E₆` root datum.** The character by
@@ -126,7 +126,7 @@ simple root of `TauCeti.DynkinType.simplyConnectedRootDatum` at `E₆`, in the s
 numbering. This is the sense in which the minuscule carrier serves the diagram that the index
 names; it is not a claim that the carrier is the pinned group of that diagram, no pinning being
 constructed for it. -/
-theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
+theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.val.rank) :
     E6.rootGeneratorWeight (.inl (finCongr d.rank_eq_six i)) =
       (E6.simplyConnectedRootDatum valid_E6).root
         (E6.simpleIndex valid_E6 (finCongr d.rank_eq_six i)) := by
@@ -143,7 +143,7 @@ ambient group, `q` being the field order the index records. The family is untwis
 automorphism and no half-Frobenius enters; `diagramPerm_toGraphTwistedIndex` is the check that its
 diagram permutation is trivial. -/
 def steinberg : d.AmbientGroup →* d.AmbientGroup :=
-  E6Minuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure
+  E6Minuscule.frobenius d.val.characteristic d.val.fieldExponent d.val.Closure
 
 /-- The Steinberg map of an `E₆` index is the carrier's Frobenius at the exponent the index
 records. This is its unfolding lemma; the definition itself stays sealed.
@@ -152,62 +152,62 @@ It is deliberately not a `simp` lemma: `steinberg_simpleRootSubgroup` and `coe_s
 are the normal forms the pinned equations of this file are stated against, and unfolding to
 `TauCeti.E6Minuscule.frobenius` would keep them from firing. -/
 theorem steinberg_def :
-    d.steinberg = E6Minuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure :=
+    d.steinberg = E6Minuscule.frobenius d.val.characteristic d.val.fieldExponent d.val.Closure :=
   (rfl)
 
 /-- The Steinberg map acts on the ambient group by raising every matrix entry to the `q`-th
 power. -/
 @[simp]
 theorem coe_steinberg_apply (g : d.AmbientGroup) (r c : Fin 27) :
-    ((d.steinberg g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
-        Matrix (Fin 27) (Fin 27) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
-        Matrix (Fin 27) (Fin 27) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [steinberg_def, d.1.fieldOrder_eq_characteristic_pow]
+    ((d.steinberg g : Matrix.GeneralLinearGroup (Fin 27) d.val.Closure) :
+        Matrix (Fin 27) (Fin 27) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 27) d.val.Closure) :
+        Matrix (Fin 27) (Fin 27) d.val.Closure) r c ^ d.val.fieldOrder := by
+  rw [steinberg_def, d.val.fieldOrder_eq_characteristic_pow]
   exact E6Minuscule.coe_frobenius_apply _ _ _ g r c
 
 /-- **The Steinberg map fixes the Bourbaki numbering of a simple-root subgroup and raises its
 parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the
 simple-root-subgroup equation of the Steinberg map of an untwisted family. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def, simpleRootSubgroup_def, E6Minuscule.frobenius_rootSubgroupPoints,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-- **The prime-field Frobenius of the minuscule `E₆` carrier**, the `p`-power map for `p` the
 defining characteristic. The Steinberg endomorphism of the family, which is its `q`-power
 Frobenius, is the `e`-th power of this map, for `e` the field exponent the index records, by
 `steinberg_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  E6Minuscule.frobenius d.1.characteristic 1 d.1.Closure
+  E6Minuscule.frobenius d.val.characteristic 1 d.val.Closure
 
 /-- The prime-field Frobenius is the carrier's Frobenius at exponent one. -/
 -- Not a `simp` lemma, for the reason `steinberg_def` is not.
 theorem primeFrobenius_def :
-    d.primeFrobenius = E6Minuscule.frobenius d.1.characteristic 1 d.1.Closure :=
+    d.primeFrobenius = E6Minuscule.frobenius d.val.characteristic 1 d.val.Closure :=
   (rfl)
 
 /-- The prime-field Frobenius raises every matrix entry to the `p`-th power. -/
 @[simp]
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 27) :
-    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
-        Matrix (Fin 27) (Fin 27) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
-        Matrix (Fin 27) (Fin 27) d.1.Closure) r c ^ d.1.characteristic := by
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 27) d.val.Closure) :
+        Matrix (Fin 27) (Fin 27) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 27) d.val.Closure) :
+        Matrix (Fin 27) (Fin 27) d.val.Closure) r c ^ d.val.characteristic := by
   rw [primeFrobenius_def]
   simpa only [pow_one] using
-    E6Minuscule.coe_frobenius_apply d.1.characteristic 1 d.1.Closure g r c
+    E6Minuscule.coe_frobenius_apply d.val.characteristic 1 d.val.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, E6Minuscule.frobenius_rootSubgroupPoints,
     pow_one]
 
@@ -217,7 +217,7 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- **The Steinberg endomorphism is the `e`-th power of the prime-field Frobenius**, for `e` the
 field exponent the index records. -/
 theorem steinberg_eq_primeFrobenius_pow :
-    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, steinberg_def, E6Minuscule.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Steinberg map exactly when all of its matrix
@@ -232,11 +232,11 @@ left-hand side to `d.steinberg g = g` through `MonoidHom.mem_eqLocus`, and the `
 rejects the annotation. -/
 theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
-      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
-        Matrix (Fin 27) (Fin 27) d.1.Closure) r c ∈ d.1.fixedField := by
+      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 27) d.val.Closure) :
+        Matrix (Fin 27) (Fin 27) d.val.Closure) r c ∈ d.val.fixedField := by
   rw [mem_fixedSubgroup, steinberg_def, E6Minuscule.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-! ## The classification candidate -/
 

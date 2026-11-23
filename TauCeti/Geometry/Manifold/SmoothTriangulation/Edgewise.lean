@@ -89,13 +89,13 @@ map of `g` on `ρ`, the map of `ρ` that is linear in barycentric coordinates an
 theorem eventually_isSimplexImmersion_edgewiseSubdivision (h : IsSimplexImmersion 𝓘(ℝ, E) n g)
     (hn : 1 ≤ n) (K : PreAbstractSimplicialComplex ι) :
     ∀ᶠ k in atTop, ∀ ρ ∈ K.edgewiseSubdivision k, ∀ p : ρ → StandardSimplex σ,
-      (∀ a, (p a : ι →₀ ℝ) = edgewisePoint a.1.1) → ∀ m : WithTop ℕ∞,
-        IsSimplexImmersion 𝓘(ℝ, E) m fun x : StandardSimplex ρ => ∑ a : ρ, x.1 a • g (p a) := by
+      (∀ a, (p a : ι →₀ ℝ) = edgewisePoint a.val.val) → ∀ m : WithTop ℕ∞,
+        IsSimplexImmersion 𝓘(ℝ, E) m fun x : StandardSimplex ρ => ∑ a : ρ, x.val a • g (p a) := by
   rcases σ.eq_empty_or_nonempty with rfl | hσ
   · -- The simplex on no vertices is empty, so there are no such faces.
     refine Eventually.of_forall fun k ρ hρ p _ => ?_
     obtain ⟨a, ha⟩ := (mem_edgewiseSubdivision_iff.mp hρ).1
-    have hmem := (p ⟨a, ha⟩).2
+    have hmem := (p ⟨a, ha⟩).property
     simp at hmem
   obtain ⟨δ, hδ, hsecant⟩ :=
     h.exists_pos_forall_isSimplexImmersion_sum_smul hn (t := ((2 : ℝ) * #σ ^ 2)⁻¹)
@@ -106,13 +106,13 @@ theorem eventually_isSimplexImmersion_edgewiseSubdivision (h : IsSimplexImmersio
   have hkδ : δ⁻¹ < k := hN.trans_le (Nat.cast_le.mpr hk)
   have hk0 : (0 : ℝ) < k := (inv_pos.mpr hδ).trans hkδ
   -- The vertices of `ρ` have their entries in `σ`, since their points lie in the simplex on `σ`.
-  have hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ := fun u hu l => by
+  have hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ := fun u hu l => by
     have hsupp := StandardSimplex.support_subset (p ⟨u, hu⟩)
     rw [hp, support_edgewisePoint] at hsupp
     exact hsupp (mem_image_of_mem _ (mem_univ l))
   refine hsecant p k⁻¹ (inv_pos.mpr hk0) (inv_lt_of_inv_lt₀ hδ hkδ) (fun a b => ?_)
     (fun v hv => ?_) m
-  · simpa only [hp] using norm_edgewisePoint_sub_edgewisePoint_le hρ a.2 b.2 σ
+  · simpa only [hp] using norm_edgewisePoint_sub_edgewisePoint_le hρ a.property b.property σ
   · simpa only [hp] using mul_sum_abs_le_norm_sum_smul_edgewisePoint hρ hρσ v hv
 
 end TauCeti.IsSimplexImmersion
@@ -134,8 +134,8 @@ theorem edgewiseSubdivisionRealizationHomeomorph_trans {K : AbstractSimplicialCo
   refine isSmoothTriangulation_iff.mpr fun ρ => ?_
   -- The canonical homeomorphism maps the simplex `ρ` into the face `σ` of `K` spanned by the
   -- entries of its vertices.
-  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
-  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩
+  have hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val := fun u hu l =>
     mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
   have hfactor : (edgewiseSubdivisionRealizationHomeomorph K hk).trans f ∘ faceInclusion _ ρ =
       (f ∘ faceInclusion K σ) ∘ edgewiseSubdivisionFaceMap hρσ := by
@@ -148,15 +148,16 @@ theorem edgewiseSubdivisionRealizationHomeomorph_trans {K : AbstractSimplicialCo
   -- In barycentric coordinates, the face map is the linear map sending the vertex `u` of `ρ` to
   -- `edgewisePoint u`.
   refine (isSmoothTriangulation_iff.mp h σ).comp_linear (Fintype.linearCombination ℝ
-    fun (a : ρ.1) (b : σ.1) => edgewisePoint a.1.1 b) (fun x => funext fun b => ?_)
+    fun (a : ρ.val) (b : σ.val) => edgewisePoint a.val.val b) (fun x => funext fun b => ?_)
     (fun v hv hv0 => ?_)
   · simp only [Fintype.linearCombination_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
     rw [edgewiseSubdivisionFaceMap_apply]
-    exact (Finset.sum_coe_sort ρ.1 fun u => x.1 u * edgewisePoint u.1 b).symm
+    exact (Finset.sum_coe_sort ρ.val fun u => x.val u * edgewisePoint u.val b).symm
   · -- A linear relation among the vertices of `ρ` is trivial, by the uniform fatness of the
     -- edgewise subdivision.
-    have hσ : 0 < #σ.1 := card_pos.mpr (by simpa using K.isRelLowerSet_faces.prop_of_mem σ.2)
-    have hfat := mul_sum_abs_le_norm_sum_smul_edgewisePoint ρ.2 hρσ v hv
+    have hσ : 0 < #σ.val := card_pos.mpr
+        (by simpa using K.isRelLowerSet_faces.prop_of_mem σ.property)
+    have hfat := mul_sum_abs_le_norm_sum_smul_edgewisePoint ρ.property hρσ v hv
     rw [← Fintype.linearCombination_apply, hv0, norm_zero] at hfat
     have hsum : ∑ a, |v a| = 0 := le_antisymm
       (nonpos_of_mul_nonpos_right hfat (by positivity)) (sum_nonneg fun a _ => abs_nonneg _)
@@ -178,28 +179,28 @@ variable {ι : Type*} [LinearOrder ι] {E : Type*} [NormedAddCommGroup E] [Norme
 /-- The vertex `a` of a simplex `ρ` of the edgewise subdivision, placed at `edgewisePoint a` in
 the closed simplex on a set `σ` containing the entries of all vertices of `ρ`. -/
 noncomputable def edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (a : ρ) : StandardSimplex σ :=
-  ⟨edgewisePoint a.1.1, by
-    simpa only [coe_image] using edgewisePoint_mem_convexHull a.1.ne_zero (hρσ a.1 a.2)⟩
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (a : ρ) : StandardSimplex σ :=
+  ⟨edgewisePoint a.val.val, by
+    simpa only [coe_image] using edgewisePoint_mem_convexHull a.val.ne_zero (hρσ a.val a.property)⟩
 
 /-- The placed vertex `edgewiseVertexPoint hρσ a` has coordinates `edgewisePoint a`. -/
 @[simp]
 theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
-    (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (a : ρ) :
-    (edgewiseVertexPoint hρσ a : ι →₀ ℝ) = edgewisePoint a.1.1 :=
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (a : ρ) :
+    (edgewiseVertexPoint hρσ a : ι →₀ ℝ) = edgewisePoint a.val.val :=
   (rfl)
 
 /-- On a simplex `ρ` of the edgewise subdivision whose vertices have their entries in a face `σ`
 of `K`, the secant map of `f` pulled back to the subdivision is the secant map of `f` on `σ`
 through the points `edgewisePoint a` of the vertices `a` of `ρ`. -/
 theorem secantMap_faceInclusion_edgewiseSubdivision (f : Realization K → E)
-    (ρ : Face (K.edgewiseSubdivision k)) (σ : Face K) (hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1)
-    (x : StandardSimplex ρ.1) :
+    (ρ : Face (K.edgewiseSubdivision k)) (σ : Face K) (hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val)
+    (x : StandardSimplex ρ.val) :
     (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
         (faceInclusion _ ρ x) =
-      ∑ a : ρ.1, x.1 a • (f ∘ faceInclusion K σ) (edgewiseVertexPoint hρσ a) := by
+      ∑ a : ρ.val, x.val a • (f ∘ faceInclusion K σ) (edgewiseVertexPoint hρσ a) := by
   rw [secantMap_faceInclusion]
-  refine Finset.sum_congr rfl fun a _ => congrArg (x.1 a • ·) (congrArg f (Subtype.ext ?_))
+  refine Finset.sum_congr rfl fun a _ => congrArg (x.val a • ·) (congrArg f (Subtype.ext ?_))
   rw [edgewiseSubdivisionRealizationMap_vertex, faceInclusion_val, coe_edgewiseVertexPoint]
 
 /-- **Secant approximation of a finite complex.** Let `f` be a map of the realization of a
@@ -221,15 +222,15 @@ theorem eventually_isSimplexImmersion_secantMap_edgewiseSubdivision (hK : K.face
     (hf σ).eventually_isSimplexImmersion_edgewiseSubdivision hn
       K.toPreAbstractSimplicialComplex] with k hk ρ m
   -- The simplex `ρ` lies in the face of `K` spanned by the entries of its vertices.
-  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
-  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩
+  have hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val := fun u hu l =>
     mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
   have hsecant : (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) ∘
       faceInclusion _ ρ =
-      fun x => ∑ a : ρ.1, x.1 a • (f ∘ faceInclusion K σ) (edgewiseVertexPoint hρσ a) :=
+      fun x => ∑ a : ρ.val, x.val a • (f ∘ faceInclusion K σ) (edgewiseVertexPoint hρσ a) :=
     funext (secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ)
   rw [hsecant]
-  exact hk σ ρ.1 ρ.2 (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) m
+  exact hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) m
 
 end AbstractSimplicialComplex
 
@@ -257,16 +258,17 @@ theorem eventually_norm_secantMap_sub_lt_edgewiseSubdivision {f : Realization K 
   -- The point `x` lies in the closed simplex `ρ` spanned by its carrier, and `ρ` lies in the face
   -- of `K` spanned by the entries of its vertices.
   let ρ := carrier _ x
-  let y : StandardSimplex ρ.1 := ⟨x.1, mem_convexHull_carrier _ x⟩
+  let y : StandardSimplex ρ.val := ⟨x.val, mem_convexHull_carrier _ x⟩
   have hy : faceInclusion _ ρ y = x := Subtype.ext (faceInclusion_val _ _ _)
-  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
-  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩
+  have hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val := fun u hu l =>
     mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
   rw [← hy, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ,
     ← Function.comp_apply (f := edgewiseSubdivisionRealizationMap K k),
     edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ]
-  refine hk σ ρ.1 ρ.2 (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) y _ fun i => ?_
+  refine hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) y _ fun i =>
+      ?_
   rw [edgewiseSubdivisionFaceMap_apply]
-  exact (Finset.sum_coe_sort ρ.1 fun a => y.1 a * edgewisePoint a.1 i).symm
+  exact (Finset.sum_coe_sort ρ.val fun a => y.val a * edgewisePoint a.val i).symm
 
 end Continuous

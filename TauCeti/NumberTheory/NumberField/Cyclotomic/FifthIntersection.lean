@@ -11,7 +11,6 @@ import Mathlib.FieldTheory.Relrank
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.Tactic.NormNum.Prime
 import TauCeti.Algebra.Squarefree
-import TauCeti.NumberTheory.Cyclotomic.Adjoin
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
 
 /-!
@@ -171,7 +170,8 @@ theorem adjoin_inf_adjoin_eq_adjoin_of_sq_eq_two (ha : a ^ 2 = 2) (hb : b ^ 2 = 
     have hamem : a ∈ ℚ⟮ζ⟯ := by
       rw [hζba]
       exact IntermediateField.subset_adjoin ℚ _ (by simp)
-    have : IsCyclotomicExtension {5} ℚ ℚ⟮ζ⟯ := hζ.isCyclotomicExtension_adjoin_singleton
+    have : IsCyclotomicExtension {5} ℚ ℚ⟮ζ⟯ :=
+      hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
     have : _root_.NumberField ℚ⟮ζ⟯ := ⟨⟩
     -- Mathlib has no `coe_ofNat` lemma for intermediate fields: the two numerals are the same
     -- underlying element of `Ω` by definition of the numeral on the subtype.

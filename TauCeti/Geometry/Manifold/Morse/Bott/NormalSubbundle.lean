@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Morse.Bott.MetricChange
 public import TauCeti.Geometry.Manifold.Morse.Bott.Splitting
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-import TauCeti.Geometry.Manifold.Morse.Bott.Index
+import TauCeti.Geometry.Manifold.Morse.Bott.Index.Basic
 import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
 import TauCeti.Geometry.Manifold.VectorBundle.ComplementarySubbundle
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -32,11 +34,16 @@ indices are constant, the spaces `ν⁻ s` and `ν⁺ s` have `C^k` local frames
 `IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_positiveNormalSpace`, in the
 namespace `TauCeti.SmoothEmbedding`). By the smooth local frame criterion
 `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle` they are therefore `C^k`
-subbundles of the normal bundle, the **negative and positive normal bundles** `ν⁻` and `ν⁺`; the
+subbundles of the normal bundle, the **negative and positive normal bundles** `ν⁻` and `ν⁺`.
+Conversely, local frames of the negative normal spaces of any size `r` force the index to be `r`
+(`IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames`), so the
 rank of `ν⁻` is the index of the submanifold. The indices are locally constant along a Morse–Bott
 submanifold, so on a connected one the hypothesis holds automatically (the `_of_preconnectedSpace`
-versions). The negative normal bundle is the bundle whose disc bundle is attached when the
-critical level of the submanifold is crossed.
+versions). For a smooth function and a smooth fibre metric, the negative normal spaces of a
+submanifold of constant index therefore form a topological vector bundle whose rank is the index
+(`IsNondegenerateCriticalSubmanifold.hasLocalSubbundleFrames_negativeNormalSpace`). The negative
+normal bundle is the bundle whose disc bundle is attached when the critical level of the
+submanifold is crossed.
 
 The subbundles depend on the metric `g`, but their ranks do not. No eigenbasis of the normal
 Hessian is chosen. In the preferred normal-bundle trivialization at `s₀`, with fibre model `P`, the
@@ -53,8 +60,9 @@ Although the subbundles depend on the metric, their isomorphism classes do not. 
 fibre metrics `g` and `g'`, projecting along the positive normal bundle relative to `g'` is a
 `C^k` diffeomorphism from the total space of the negative normal bundle relative to `g` onto that
 relative to `g'`, linear on each fibre
-(`IsNondegenerateCriticalSubmanifold.exists_bundleDiffeomorph_negativeNormalSpace`), and similarly
-for the positive normal bundles
+(`IsNondegenerateCriticalSubmanifold.exists_bundleDiffeomorph_negativeNormalSpace`; its continuity
+on total spaces is `IsNondegenerateCriticalSubmanifold.continuous_negativeNormalSpaceEquiv`), and
+similarly for the positive normal bundles
 (`IsNondegenerateCriticalSubmanifold.exists_bundleDiffeomorph_positiveNormalSpace`). Read in a
 trivialization, the projection onto the negative normal spaces along the positive ones is the
 `C^k` family of projections above, so it is a `C^k` map of the total space of the normal bundle to
@@ -62,6 +70,13 @@ itself. On each fibre it restricts to the linear isomorphism
 `IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquiv`, since the negative normal space for
 `g` meets the positive normal space for `g'` only in `0`: the normal Hessian is negative definite
 on the first and positive definite on the second.
+
+Both bundles can be carried across at once: the change of fibre metric
+`IsNondegenerateCriticalSubmanifold.normalMetricChange g g'`, which is the sum of these projections
+on the negative and positive parts, is a `C^k` automorphism of the normal bundle carrying the
+negative and positive normal bundles relative to `g` onto those relative to `g'`
+(`IsNondegenerateCriticalSubmanifold.contMDiff_normalMetricChange` and
+`IsNondegenerateCriticalSubmanifold.normalMetricChangeDiffeomorph`).
 
 Together the two subbundles recover the normal bundle. When both indices are constant, adding a
 negative and a positive normal vector over the same point is a `C^k` diffeomorphism from the total
@@ -317,7 +332,7 @@ theorem contMDiff_projection_negativeNormalSpace
       (fun w : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
         TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj ((h.negativeNormalSpace hn
           g.toRiemannianMetric w.proj).projection (h.positiveNormalSpace hn g.toRiemannianMetric
-            w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj) w.2)) := by
+            w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj) w.snd)) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -342,7 +357,7 @@ theorem contMDiff_projection_negativeNormalSpace
   obtain ⟨hidem, hrange, hker, -, -⟩ := hps w.proj hw
   -- Split the coordinate vector `y` of `w` along the range and the kernel of `p`.
   set y := (e w).2
-  have hy : w.2 = e.symmₗ ℝ w.proj (p w.proj y) + e.symmₗ ℝ w.proj (y - p w.proj y) := by
+  have hy : w.snd = e.symmₗ ℝ w.proj (p w.proj y) + e.symmₗ ℝ w.proj (y - p w.proj y) := by
     rw [← map_add, add_sub_cancel, e.symmₗ_apply hw, e.symm_proj_apply w hw]
   have hneg : e.symmₗ ℝ w.proj (p w.proj y) ∈
       h.negativeNormalSpace hn g.toRiemannianMetric w.proj :=
@@ -378,7 +393,7 @@ theorem contMDiff_projection_positiveNormalSpace
         TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj ((h.positiveNormalSpace hn
           g.toRiemannianMetric w.proj).projection (h.negativeNormalSpace hn g.toRiemannianMetric
             w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj).symm
-          w.2)) := by
+          w.snd)) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -436,7 +451,7 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
         ≃ₘ^k⟮J.prod 𝓘(ℝ, Fin r → ℝ), J.prod 𝓘(ℝ, Fin r → ℝ)⟯
         TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s),
       ∀ v, Φ v = ⟨v.proj, h.negativeNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
-        v.proj v.2⟩ := by
+        v.proj v.snd⟩ := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -459,13 +474,50 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
         TotalSpace.mk' (Fin r → ℝ)
           (E := fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s) v.proj
           ((h.negativeNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
-            v.proj).toContinuousLinearEquiv v.2)) := fun v ↦
-    (hV'.contMDiffAt_totalSpace_mk (b := TotalSpace.proj)
+            v.proj).toContinuousLinearEquiv v.snd)) := fun v ↦
+    (hV'.contMDiffAt_totalSpace_mk le_rfl (b := TotalSpace.proj)
       ((contMDiff_projection_negativeNormalSpace hn h hk hf hdim g').comp
         hV.contMDiff_totalSpace_inclusion v) fun _ ↦ Submodule.coe_mem _).congr_of_eventuallyEq
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
   exact ⟨bundleDiffeomorph (fun s ↦ (h.negativeNormalSpaceEquiv hn g.toRiemannianMetric
     g'.toRiemannianMetric s).toContinuousLinearEquiv) hΦ, fun v ↦ by simp⟩
+
+/-- Projecting the negative normal spaces of `g'` along the positive normal spaces of `g` is
+continuous on the total spaces of the negative normal bundles. -/
+theorem continuous_negativeNormalSpaceEquiv
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g g' : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
+    Continuous fun v : TotalSpace (Fin r → ℝ)
+        (fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s) ↦
+      TotalSpace.mk' (Fin r → ℝ) (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
+        v.proj ((h.negativeNormalSpaceEquiv hn g'.toRiemannianMetric g.toRiemannianMetric
+          v.proj).toContinuousLinearEquiv v.snd) := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g hr).fiberBundle
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g'.toRiemannianMetric)
+  let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn hk hf hdim g' hr).fiberBundle
+  obtain ⟨Φ, hΦ⟩ := h.exists_bundleDiffeomorph_negativeNormalSpace hn hk hf hdim g' g hr
+  refine Φ.continuous.congr fun v ↦ (hΦ v).trans ?_
+  rw [LinearEquiv.coe_toContinuousLinearEquiv']
 
 /-- **The positive normal bundle does not depend on the metric, up to isomorphism.** Let `i` be a
 nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it, `i` of class
@@ -498,7 +550,7 @@ theorem exists_bundleDiffeomorph_positiveNormalSpace
         ≃ₘ^k⟮J.prod 𝓘(ℝ, Fin r → ℝ), J.prod 𝓘(ℝ, Fin r → ℝ)⟯
         TotalSpace (Fin r → ℝ) (fun s ↦ h.positiveNormalSpace hn g'.toRiemannianMetric s),
       ∀ v, Φ v = ⟨v.proj, h.positiveNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
-        v.proj v.2⟩ := by
+        v.proj v.snd⟩ := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -521,13 +573,145 @@ theorem exists_bundleDiffeomorph_positiveNormalSpace
         TotalSpace.mk' (Fin r → ℝ)
           (E := fun s ↦ h.positiveNormalSpace hn g'.toRiemannianMetric s) v.proj
           ((h.positiveNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
-            v.proj).toContinuousLinearEquiv v.2)) := fun v ↦
-    (hV'.contMDiffAt_totalSpace_mk (b := TotalSpace.proj)
+            v.proj).toContinuousLinearEquiv v.snd)) := fun v ↦
+    (hV'.contMDiffAt_totalSpace_mk le_rfl (b := TotalSpace.proj)
       ((contMDiff_projection_positiveNormalSpace hn h hk hf hdim g').comp
         hV.contMDiff_totalSpace_inclusion v) fun _ ↦ Submodule.coe_mem _).congr_of_eventuallyEq
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
   exact ⟨bundleDiffeomorph (fun s ↦ (h.positiveNormalSpaceEquiv hn g.toRiemannianMetric
     g'.toRiemannianMetric s).toContinuousLinearEquiv) hΦ, fun v ↦ by simp⟩
+
+/-- **A change of fibre metric is a `C^k` automorphism of the normal bundle.** Let `i` be a
+nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `i` of class
+`C^{k+1}`, and let `g₀` and `g₁` be two `C^k` fibre metrics on the normal bundle, with fibre model
+`P`. Then the change of fibre metric `normalMetricChange g₀ g₁`, which carries the negative and
+positive normal spaces relative to `g₀` onto those relative to `g₁`
+(`map_negativeNormalSpace_normalMetricChange` and `map_positiveNormalSpace_normalMetricChange`),
+induces a `C^k` map of total spaces. No condition on the indices is needed.
+
+So it is a `C^k` automorphism of the normal bundle with `C^k` inverse
+(`normalMetricChangeDiffeomorph`), which carries the negative normal bundle of `g₀` onto that of
+`g₁` and the positive normal bundle of `g₀` onto that of `g₁`, fibre by fibre. Unlike
+`exists_bundleDiffeomorph_negativeNormalSpace` and `exists_bundleDiffeomorph_positiveNormalSpace`,
+it transports both normal bundles at once. -/
+theorem contMDiff_normalMetricChange
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g₀ g₁ : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ContMDiff (J.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, P)) k
+      (fun v : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
+        TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) v.proj
+          (h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj v.snd)) := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  -- The change of metric is the sum of the composites of the projections for `g₀` and for `g₁`
+  -- (`normalMetricChange_apply`), and each projection is a `C^k` map of total spaces.
+  have hA := (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₁).comp
+    (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₀)
+  have hB := (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₁).comp
+    (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₀)
+  exact (hA.add_sectionAlong hB).congr fun v ↦ by rw [normalMetricChange_apply]
+
+/-- **The change of fibre metric as a `C^k` automorphism of the normal bundle.** For two `C^k`
+fibre metrics `g₀` and `g₁` on the normal bundle, this is the `C^k` diffeomorphism of the total
+space which is the change of fibre metric `normalMetricChange g₀ g₁` on each fibre
+(`contMDiff_normalMetricChange`). It carries the negative and positive normal bundles of `g₀` onto
+those of `g₁` (`map_negativeNormalSpace_normalMetricChange` and
+`map_positiveNormalSpace_normalMetricChange`). -/
+def normalMetricChangeDiffeomorph
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g₀ g₁ : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    TotalSpace P (fun s ↦ i.NormalSpace s hn) ≃ₘ^k⟮J.prod 𝓘(ℝ, P), J.prod 𝓘(ℝ, P)⟯
+      TotalSpace P (fun s ↦ i.NormalSpace s hn) :=
+  haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  letI := i.normalSpaceFiberBundle hn hdim
+  letI := i.normalSpaceVectorBundle hn hdim
+  bundleDiffeomorph
+    (fun s ↦ (h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric
+      s).toContinuousLinearEquiv)
+    (h.contMDiff_normalMetricChange hn hk hf hdim g₀ g₁)
+
+/-- The change of fibre metric as an automorphism of the normal bundle keeps the base point and
+applies `normalMetricChange g₀ g₁` in the fibre. -/
+@[simp]
+theorem normalMetricChangeDiffeomorph_apply
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g₀ g₁ : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn)
+    (v : TotalSpace P fun s ↦ i.NormalSpace s hn) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    h.normalMetricChangeDiffeomorph hn hk hf hdim g₀ g₁ v =
+      ⟨v.proj, h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj v.snd⟩ :=
+  haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  letI := i.normalSpaceFiberBundle hn hdim
+  letI := i.normalSpaceVectorBundle hn hdim
+  bundleDiffeomorph_apply _ _ v
+
+/-- The inverse of the change of fibre metric as an automorphism of the normal bundle keeps the
+base point and applies the inverse of `normalMetricChange g₀ g₁` in the fibre
+(`normalMetricChange_symm_apply`). -/
+@[simp]
+theorem normalMetricChangeDiffeomorph_symm_apply
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g₀ g₁ : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn)
+    (v : TotalSpace P fun s ↦ i.NormalSpace s hn) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    (h.normalMetricChangeDiffeomorph hn hk hf hdim g₀ g₁).symm v =
+      ⟨v.proj,
+        (h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj).symm v.snd⟩ :=
+  haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  letI := i.normalSpaceFiberBundle hn hdim
+  letI := i.normalSpaceVectorBundle hn hdim
+  bundleDiffeomorph_symm_apply _ _ v
 
 /-- **The normal bundle of a Morse–Bott submanifold is the sum of its negative and positive normal
 bundles.** Let `i` be a nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}`
@@ -561,7 +745,7 @@ theorem exists_bundleDiffeomorph_prod_negativeNormalSpace_positiveNormalSpace
             fun s ↦ h.positiveNormalSpace hn g.toRiemannianMetric s)
         ≃ₘ^k⟮J.prod 𝓘(ℝ, (Fin r → ℝ) × (Fin r' → ℝ)), J.prod 𝓘(ℝ, P)⟯
         TotalSpace P (fun s ↦ i.NormalSpace s hn),
-      ∀ v, Φ v = ⟨v.proj, (v.2.1 : i.NormalSpace v.proj hn) + v.2.2⟩ := by
+      ∀ v, Φ v = ⟨v.proj, (v.snd.1 : i.NormalSpace v.proj hn) + v.snd.2⟩ := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -573,5 +757,66 @@ theorem exists_bundleDiffeomorph_prod_negativeNormalSpace_positiveNormalSpace
     ).exists_bundleDiffeomorph_prod_of_isCompl
     (h.hasLocalContMDiffSubbundleFrames_positiveNormalSpace hn hk hf hdim g hr')
     (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _)
+
+end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+/-! ### Smooth Morse–Bott submanifolds -/
+
+namespace TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S]
+  {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
+  [I.Boundaryless] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+
+/-- **The negative normal bundle of a smooth Morse–Bott submanifold.** For a smooth function `f`
+and a smooth fibre metric `g` on the normal bundle of a nondegenerate critical submanifold of
+constant Morse index `r`, the negative normal spaces relative to `g` have continuous local frames
+of size `r`: they form the negative normal bundle, a topological vector bundle of rank `r`
+(`TauCeti.HasLocalSubbundleFrames.vectorBundle`). This is the smooth case of
+`hasLocalContMDiffSubbundleFrames_negativeNormalSpace`. -/
+theorem hasLocalSubbundleFrames_negativeNormalSpace
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric) := by
+  have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
+  have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  exact (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
+    (fun s ↦ hfs.contMDiffAt.of_le (by simp)) hdim g hr).hasLocalSubbundleFrames
+
+end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+/-! ### The rank of the negative normal bundle -/
+
+namespace TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
+  {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
+  [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ E] {P : Type*}
+
+/-- **The rank of the negative normal bundle is the Morse index.** If the negative normal spaces
+of a nondegenerate critical submanifold relative to a fibre metric `g` have continuous local frames
+of size `r`, then the Morse index of `f` is `r` all along the submanifold, since every negative
+normal space has the dimension of the index (`finrank_negativeNormalSpace`). This is the converse
+of `hasLocalSubbundleFrames_negativeNormalSpace`. -/
+theorem manifoldMorseIndex_eq_of_hasLocalSubbundleFrames
+    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    {r : ℕ} (hV : HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g)) (s : S) :
+    manifoldMorseIndex I f (i s) = r := by
+  rw [← h.finrank_negativeNormalSpace hn g, hV.finrank_eq, Fintype.card_fin]
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

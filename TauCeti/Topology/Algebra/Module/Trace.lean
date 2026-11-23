@@ -57,17 +57,24 @@ theorem _root_.ContinuousLinearMap.traceCLM_comp_comm (S T : V →L[𝕜] V) :
     ContinuousLinearMap.toLinearMap_comp]
   exact LinearMap.trace_comp_comm' (T : V →ₗ[𝕜] V) (S : V →ₗ[𝕜] V)
 
+/-- The trace is invariant under conjugation by a one-sided inverse pair: if `M ∘ N = 1`, then
+`tr (N ∘ T ∘ M) = tr T`. -/
+theorem _root_.ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id {W : Type*} [AddCommGroup W]
+    [Module 𝕜 W] [TopologicalSpace W] [IsTopologicalAddGroup W] [ContinuousSMul 𝕜 W] [T2Space W]
+    [FiniteDimensional 𝕜 W] {M : W →L[𝕜] V} {N : V →L[𝕜] W}
+    (h : M ∘L N = ContinuousLinearMap.id 𝕜 V) (T : V →L[𝕜] V) :
+    traceCLM 𝕜 W (N ∘L T ∘L M) = traceCLM 𝕜 V T := by
+  rw [traceCLM_apply, traceCLM_apply, ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.trace_comp_comm']
+  simp [← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.comp_assoc, h]
+
 /-- The trace is invariant under conjugation by a continuous linear equivalence:
 `tr (e ∘ T ∘ e⁻¹) = tr T`. -/
 theorem _root_.ContinuousLinearEquiv.traceCLM_comp_comp_symm {W : Type*} [AddCommGroup W]
     [Module 𝕜 W] [TopologicalSpace W] [IsTopologicalAddGroup W] [ContinuousSMul 𝕜 W] [T2Space W]
     [FiniteDimensional 𝕜 W]
     (e : V ≃L[𝕜] W) (T : V →L[𝕜] V) :
-    traceCLM 𝕜 W ((e : V →L[𝕜] W) ∘L T ∘L (e.symm : W →L[𝕜] V)) = traceCLM 𝕜 V T := by
-  have h : (((e : V →L[𝕜] W) ∘L T ∘L (e.symm : W →L[𝕜] V) : W →L[𝕜] W) : W →ₗ[𝕜] W) =
-      e.toLinearEquiv.conj (T : V →ₗ[𝕜] V) := by
-    ext x
-    simp [LinearEquiv.conj_apply]
-  rw [traceCLM_apply, traceCLM_apply, h, LinearMap.trace_conj']
+    traceCLM 𝕜 W ((e : V →L[𝕜] W) ∘L T ∘L (e.symm : W →L[𝕜] V)) = traceCLM 𝕜 V T :=
+  ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id (by ext; simp) T
 
 end TauCeti

@@ -66,13 +66,13 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
   have hWopen : IsOpen W := tq.isOpen_sheet hVopen (fun v hv => (hVsub hv).2) j₀
   have hgW := tp.map_mem_sheet_iff hg hqg tq hVconn hVsub hf₀V j₀
   refine ⟨inferInstance, W, ⟨hf₀V, rfl⟩, hWopen, hWopen.preimage hg,
-    { toFun := fun e => (⟨g e.1, e.2⟩, ⟨(tp e.1).2, (hgW e.1).mp e.2 |>.2⟩)
-      invFun := fun wi => ⟨tp.toOpenPartialHomeomorph.symm (q wi.1.1, wi.2.1), by
+    { toFun := fun e => (⟨g e.val, e.property⟩, ⟨(tp e.val).2, (hgW e.val).mp e.property |>.2⟩)
+      invFun := fun wi => ⟨tp.toOpenPartialHomeomorph.symm (q wi.1.val, wi.2.val), by
         refine (hgW _).mpr ⟨?_, ?_⟩
-        · rw [tp.proj_symm_apply' (hVsub wi.1.2.1).1]
-          exact wi.1.2.1
-        · rw [tp.apply_symm_apply' (hVsub wi.1.2.1).1]
-          exact wi.2.2⟩
+        · rw [tp.proj_symm_apply' (hVsub wi.1.property.1).1]
+          exact wi.1.property.1
+        · rw [tp.apply_symm_apply' (hVsub wi.1.property.1).1]
+          exact wi.2.property⟩
       left_inv := by
         rintro ⟨e, he⟩
         refine Subtype.ext ?_
@@ -87,17 +87,17 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
         dsimp only
         rw [tp.apply_symm_apply' (hVsub hw.1).1]
       continuous_toFun := by
-        refine Continuous.prodMk (Continuous.subtype_mk (hg.comp continuous_subtype_val) _)
+        refine Continuous.prodMk (Continuous.subtype_mk (hg.comp continuous_subtypeVal) _)
           (Continuous.subtype_mk ?_ _)
         refine continuous_snd.comp_continuousOn tp.continuousOn_toFun
-          |>.comp_continuous continuous_subtype_val fun e => ?_
-        exact tp.mem_source.mpr (hVsub ((hgW e.1).mp e.2).1).1
+          |>.comp_continuous continuous_subtypeVal fun e => ?_
+        exact tp.mem_source.mpr (hVsub ((hgW e.val).mp e.property).1).1
       continuous_invFun := by
         refine Continuous.subtype_mk ?_ _
         refine tp.toOpenPartialHomeomorph.continuousOn_symm.comp_continuous ?_ fun wi => ?_
-        · exact ((hq.comp continuous_subtype_val).comp continuous_fst).prodMk
-            (continuous_subtype_val.comp continuous_snd)
-        · exact tp.mem_target.mpr (hVsub wi.1.2.1).1 },
+        · exact ((hq.comp continuous_subtypeVal).comp continuous_fst).prodMk
+            (continuous_subtypeVal.comp continuous_snd)
+        · exact tp.mem_target.mpr (hVsub wi.1.property.1).1 },
     fun _ => rfl⟩
 
 /-- **A map of covering spaces with locally connected target is a covering map.** If `p : E → X`
