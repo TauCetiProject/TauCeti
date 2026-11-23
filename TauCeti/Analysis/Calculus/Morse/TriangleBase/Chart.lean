@@ -24,10 +24,11 @@ The chart is the **gluing parameter** `σ = e^{-T}` (`TauCeti.triangleBaseGluing
 
 `σ(u, v) = v √(1 - u²) / (u √(1 - v²))`,
 
-which is defined and continuous on the whole triangle away from the source and the sink
-(`TauCeti.continuousOn_triangleBaseGluingParameter`). There it is constant along the flow, takes
-values in `[0, 1]`, equals `1` exactly on the diagonal and `0` exactly on the broken orbit, and its
-level sets with `0 < σ` are single orbits. So `σ` identifies the compactified orbit interval
+which is continuous on the whole triangle away from the source and the sink
+(`TauCeti.continuousOn_triangleBaseGluingParameter`). It is constant along the flow, takes values
+in `[0, 1]` on the triangle and vanishes there exactly on the broken orbit. Away from the source
+and the sink it equals `1` exactly on the diagonal, and its level sets with `0 < σ` are single
+orbits. So `σ` identifies the compactified orbit interval
 `[0, ∞]` with `[0, 1]`, the broken orbit being `σ = 0`.
 
 The orbits are evaluated on two slices, `u = c` and `v = c` for `0 < c < 1`. The orbit with gluing
@@ -67,8 +68,9 @@ slices give the same chart of the orbit interval.
   orbits through the open square.
 * `TauCeti.triangleBaseGluingParameter_mem_Icc`, `TauCeti.triangleBaseGluingParameter_eq_zero_iff`,
   `TauCeti.triangleBaseGluingParameter_eq_one_iff`, `TauCeti.triangleBaseGluingParameter_pos_iff`:
-  on the triangle away from the source and the sink, `σ ∈ [0, 1]`, it vanishes exactly on the
-  broken orbit, equals `1` exactly on the diagonal, and is positive exactly on the open square.
+  on the triangle `σ ∈ [0, 1]`, it vanishes exactly on the broken orbit and is positive exactly
+  on the open square, and away from the source and the sink it equals `1` exactly on the
+  diagonal.
 * `TauCeti.bijOn_triangleBaseFstSlice`, `TauCeti.bijOn_triangleBaseSndSlice`: the slice evaluations
   are bijections from `[0, 1]` onto the slices of the triangle.
 * `TauCeti.hasDerivAt_snd_triangleBaseFstSlice_zero`,
@@ -96,8 +98,9 @@ variable {C : ℝ}
 base through `z = (u, v)`. On the open square `(0, 1)²` it is `e^{-T}` for the orbit parameter
 `T = U(u) - U(v)` (`TauCeti.triangleBaseGluingParameter_eq_exp`), so it is constant along the flow
 and classifies the orbits. Unlike `T`, it is continuous on the triangle away from the source
-`(0, 0)` and the sink `(1, 1)`, where it vanishes exactly on the broken orbit `v = 0` or `u = 1`.
-Its values where `u = 0` or `1 ≤ v²` are meaningless. -/
+`(0, 0)` and the sink `(1, 1)`; on the triangle it vanishes exactly on the broken orbit `v = 0` or
+`u = 1`. Where `u = 0` or `1 ≤ v²` its denominator vanishes, so it is `0` there, in particular at
+the source and the sink. -/
 noncomputable def triangleBaseGluingParameter (z : WithLp 2 (ℝ × ℝ)) : ℝ :=
   z.snd * √(1 - z.fst ^ 2) / (z.fst * √(1 - z.snd ^ 2))
 
@@ -131,18 +134,22 @@ theorem sq_triangleBaseGluingParameter {z : WithLp 2 (ℝ × ℝ)} (hu : z.fst ^
   rw [triangleBaseGluingParameter, div_pow, mul_pow, mul_pow, Real.sq_sqrt (by linarith),
     Real.sq_sqrt (by linarith)]
 
-/-- **The gluing parameter is a first integral** of the flow on the triangle away from the source
-and the sink: on the part of the square where `0 < u ≤ 1` and `0 ≤ v < 1`. -/
+/-- **The gluing parameter is a first integral** of the flow on the closed square `[0, 1]²`, in
+particular on the whole triangle. -/
 @[simp]
 theorem triangleBaseGluingParameter_triangleBaseFlow (C s : ℝ) {z : WithLp 2 (ℝ × ℝ)}
-    (hu : z.fst ∈ Ioc 0 1) (hv : z.snd ∈ Ico 0 1) :
+    (hu : z.fst ∈ Icc 0 1) (hv : z.snd ∈ Icc 0 1) :
     triangleBaseGluingParameter (triangleBaseFlow C s z) = triangleBaseGluingParameter z := by
   rcases hv.1.eq_or_lt with hv0 | hv0
   · simp [triangleBaseGluingParameter, ← hv0, intervalBaseFlow_apply_zero]
   rcases hu.2.eq_or_lt with hu1 | hu1
   · simp [triangleBaseGluingParameter, hu1, intervalBaseFlow_apply_one]
-  have hu' : z.fst ∈ Ioo 0 1 := ⟨hu.1, hu1⟩
-  have hv' : z.snd ∈ Ioo 0 1 := ⟨hv0, hv.2⟩
+  rcases hu.1.eq_or_lt with hu0 | hu0
+  · simp [triangleBaseGluingParameter, ← hu0, intervalBaseFlow_apply_zero]
+  rcases hv.2.eq_or_lt with hv1 | hv1
+  · simp [triangleBaseGluingParameter, hv1, intervalBaseFlow_apply_one]
+  have hu' : z.fst ∈ Ioo 0 1 := ⟨hu0, hu1⟩
+  have hv' : z.snd ∈ Ioo 0 1 := ⟨hv0, hv1⟩
   have hu'' : (triangleBaseFlow C s z).fst ∈ Ioo 0 1 := by
     rw [fst_triangleBaseFlow]
     exact intervalBaseFlow_mem_Ioo_zero_one C s hu'
@@ -169,21 +176,30 @@ theorem continuousOn_triangleBaseGluingParameter :
   ContinuousOn.div (by fun_prop) (by fun_prop) fun z hz ↦
     mul_ne_zero hz.1 (Real.sqrt_pos.2 (by linarith [hz.2])).ne'
 
-/-- On the triangle away from the source and the sink, the gluing parameter lies in `[0, 1]`. -/
-theorem triangleBaseGluingParameter_mem_Icc {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase)
-    (hu : 0 < z.fst) (hv : z.snd < 1) : triangleBaseGluingParameter z ∈ Icc 0 1 := by
-  obtain ⟨hv0, hvu, -⟩ := mem_triangleBase.1 hz
+/-- On the triangle the gluing parameter lies in `[0, 1]`. -/
+theorem triangleBaseGluingParameter_mem_Icc {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase) :
+    triangleBaseGluingParameter z ∈ Icc 0 1 := by
+  obtain ⟨hv0, hvu, hu1⟩ := mem_triangleBase.1 hz
+  rcases (hv0.trans hvu).eq_or_lt with hu | hu
+  · simp [triangleBaseGluingParameter, ← hu]
+  rcases (hvu.trans hu1).eq_or_lt with hv | hv
+  · simp [triangleBaseGluingParameter, hv]
   have hden : 0 < z.fst * √(1 - z.snd ^ 2) := mul_pos hu (Real.sqrt_pos.2 (by nlinarith))
   refine ⟨div_nonneg (mul_nonneg hv0 (Real.sqrt_nonneg _)) hden.le, (div_le_one hden).2 ?_⟩
   have := pow_le_pow_left₀ hv0 hvu 2
   exact mul_le_mul hvu (Real.sqrt_le_sqrt (by linarith)) (Real.sqrt_nonneg _) hu.le
 
-/-- On the triangle away from the source and the sink, the gluing parameter vanishes exactly on
-the broken orbit, the edges `v = 0` and `u = 1`. -/
-theorem triangleBaseGluingParameter_eq_zero_iff {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase)
-    (hu : 0 < z.fst) (hv : z.snd < 1) :
+/-- On the triangle the gluing parameter vanishes exactly on the broken orbit, the edges `v = 0`
+and `u = 1`. -/
+theorem triangleBaseGluingParameter_eq_zero_iff {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase) :
     triangleBaseGluingParameter z = 0 ↔ z.snd = 0 ∨ z.fst = 1 := by
   rw [mem_triangleBase] at hz
+  rcases (hz.1.trans hz.2.1).eq_or_lt with hu | hu
+  · have hv : z.snd = 0 := le_antisymm (hu ▸ hz.2.1) hz.1
+    simp [triangleBaseGluingParameter, ← hu, hv]
+  rcases (hz.2.1.trans hz.2.2).eq_or_lt with hv | hv
+  · have hu1 : z.fst = 1 := le_antisymm hz.2.2 (hv ▸ hz.2.1)
+    simp [triangleBaseGluingParameter, hv, hu1]
   have hden : z.fst * √(1 - z.snd ^ 2) ≠ 0 :=
     (mul_pos hu (Real.sqrt_pos.2 (by nlinarith [hz.1]))).ne'
   rw [triangleBaseGluingParameter, div_eq_zero_iff, or_iff_left hden, mul_eq_zero,
@@ -209,17 +225,18 @@ theorem triangleBaseGluingParameter_eq_one_iff {z : WithLp 2 (ℝ × ℝ)} (hz :
       _ < z.fst * √(1 - z.snd ^ 2) := mul_lt_mul_of_pos_right hlt hv1
   exact this.ne h
 
-/-- On the triangle away from the source and the sink, the gluing parameter is positive exactly
-on the open square `(0, 1)²`, where the source-to-sink orbits run. -/
-theorem triangleBaseGluingParameter_pos_iff {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase)
-    (hu : 0 < z.fst) (hv : z.snd < 1) :
+/-- On the triangle the gluing parameter is positive exactly on the open square `(0, 1)²`, where
+the source-to-sink orbits run. -/
+theorem triangleBaseGluingParameter_pos_iff {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase) :
     0 < triangleBaseGluingParameter z ↔ z.fst ∈ Ioo 0 1 ∧ z.snd ∈ Ioo 0 1 := by
-  rw [(triangleBaseGluingParameter_mem_Icc hz hu hv).1.lt_iff_ne', ne_eq,
-    triangleBaseGluingParameter_eq_zero_iff hz hu hv, not_or]
+  rw [(triangleBaseGluingParameter_mem_Icc hz).1.lt_iff_ne', ne_eq,
+    triangleBaseGluingParameter_eq_zero_iff hz, not_or]
   rw [mem_triangleBase] at hz
   constructor
   · rintro ⟨h0, h1⟩
-    exact ⟨⟨hu, lt_of_le_of_ne hz.2.2 h1⟩, ⟨lt_of_le_of_ne hz.1 (Ne.symm h0), hv⟩⟩
+    have hv : 0 < z.snd := lt_of_le_of_ne hz.1 (Ne.symm h0)
+    have hu : z.fst < 1 := lt_of_le_of_ne hz.2.2 h1
+    exact ⟨⟨hv.trans_le hz.2.1, hu⟩, ⟨hv, hz.2.1.trans_lt hu⟩⟩
   · rintro ⟨hu', hv'⟩
     exact ⟨hv'.1.ne', hu'.2.ne⟩
 
@@ -344,7 +361,7 @@ theorem bijOn_triangleBaseFstSlice {c : ℝ} (hc : c ∈ Ioo 0 1) :
   · obtain ⟨hzT, rfl⟩ := hz
     have hz' := mem_triangleBase.1 hzT
     refine ⟨triangleBaseGluingParameter z,
-      triangleBaseGluingParameter_mem_Icc hzT hc.1 (hz'.2.1.trans_lt hc.2),
+      triangleBaseGluingParameter_mem_Icc hzT,
       triangleBaseFstSlice_triangleBaseGluingParameter hc.1.ne' hc₁ ?_⟩
     nlinarith [hz'.1, hz'.2.1, hc.2]
 
@@ -480,7 +497,7 @@ theorem bijOn_triangleBaseSndSlice {c : ℝ} (hc : c ∈ Ioo 0 1) :
   · obtain ⟨hzT, rfl⟩ := hz
     have hz' := mem_triangleBase.1 hzT
     have hu : 0 < z.fst := hc.1.trans_le hz'.2.1
-    refine ⟨triangleBaseGluingParameter z, triangleBaseGluingParameter_mem_Icc hzT hu hc.2,
+    refine ⟨triangleBaseGluingParameter z, triangleBaseGluingParameter_mem_Icc hzT,
       triangleBaseSndSlice_triangleBaseGluingParameter hu ?_ hc.1 hc₁⟩
     nlinarith [hz'.2.2]
 
