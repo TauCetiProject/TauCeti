@@ -95,15 +95,6 @@ theorem toSelmerStructure_coeffHom_apply (i : ι) (x : X.V) :
     𝓕.toSelmerStructure.coeffHom i x = (𝓕.coeffHom i).hom x :=
   (rfl)
 
-omit [IsTopologicalGroup G] [ContinuousSMul G X.V] [∀ i, IsTopologicalGroup (H i)]
-  [DiscreteTopology X.V] [∀ i, DiscreteTopology (Y i).V] in
-/-- Discrete Selmer structures with the same local groups, coefficient maps and local conditions
-are equal. -/
-private theorem selmerStructure_ext {S T : SelmerStructure G X.V H fun i => (Y i).V}
-    (h₁ : S.groupHom = T.groupHom) (h₂ : S.coeffHom = T.coeffHom)
-    (h₃ : S.localCondition = T.localCondition) : S = T := by
-  cases S; cases T; cases h₁; cases h₂; cases h₃; rfl
-
 omit [IsTopologicalGroup G] [ContinuousSMul G X.V] in
 /-- The local conditions of `𝓕.toSelmerStructure` are those of `𝓕` pulled back along the
 explicit comparison. Membership is unfolded by the simp lemma
@@ -121,7 +112,7 @@ theorem toSelmerStructure_withLocalConditions
     (𝓕.withLocalConditions L).toSelmerStructure =
       𝓕.toSelmerStructure.withLocalConditions fun i => (L i).toAddSubgroup.comap
         (Y i).explicitH1AddEquivContinuousCohomologyOfDiscrete.toAddMonoidHom :=
-  selmerStructure_ext (funext fun i => by simp) (funext fun i => by ext; simp)
+  SelmerStructure.ext (funext fun i => by simp) (funext fun i => by ext; simp)
     (funext fun i => by simp [toSelmerStructure_localCondition])
 
 omit [IsTopologicalGroup G] [ContinuousSMul G X.V] in
