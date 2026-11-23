@@ -24,7 +24,8 @@ determine the multiplicities modulo `p`
 (`IsSemisimpleModule.natCast_jordanHolderMultiplicity_eq_of_trace_eq`).
 
 The proof is the classical one. By Burnside's theorem and the isotypic projections, `A` maps onto
-`∏ j, End_k(T_j)` for pairwise non-isomorphic simple modules `T_j`
+`∏ j, End_k(T_j)` for a finite family of pairwise non-isomorphic finite-dimensional simple modules
+`T_j`
 (`IsSemisimpleModule.exists_forall_lsmul_eq`). An element acting on one `T_j` by an endomorphism of
 trace `1` and by zero on the others therefore reads off the multiplicity of `T_j`, cast into `k`,
 from the trace. If two semisimple modules have equal characteristic polynomials, cancel their
@@ -35,11 +36,14 @@ modules with multiplicities divided by `p`, which again agree because Frobenius 
 
 ## Main results
 
-* `IsSemisimpleModule.exists_forall_lsmul_eq`: for pairwise non-isomorphic finite-dimensional simple
-  modules `T_j` over an algebraically closed field, `A → ∏ j, End_k(T_j)` is surjective.
+* `IsSemisimpleModule.exists_forall_lsmul_eq`: for a finite family of pairwise non-isomorphic
+  finite-dimensional simple modules `T_j` over an algebraically closed field,
+  `A → ∏ j, End_k(T_j)` is surjective.
 * `IsSemisimpleModule.natCast_jordanHolderMultiplicity_eq_of_trace_eq`: semisimple modules with
-  the same trace on every element have the same multiplicities of every simple module, cast into
-  `k`.
+  the same trace on the elements of a spanning set have the same multiplicities of every simple
+  module, cast into `k`.
+* `LinearMap.trace_eq_neg_charpoly_nextCoeff`: the trace of an endomorphism of a finite free
+  module is minus the next coefficient of its characteristic polynomial.
 * `IsSemisimpleModule.nonempty_linearEquiv_of_charpoly_eq`: **Brauer–Nesbitt.** Semisimple
   modules with the same characteristic polynomials on a spanning set of `A` are isomorphic.
 
@@ -222,12 +226,12 @@ end Generic
 
 variable {k A : Type*} [Field k] [Ring A] [Algebra k A]
 
-/-- The trace of the action of `a` is minus the next coefficient of its characteristic
-polynomial. -/
-private theorem trace_lsmul_eq_neg_nextCoeff {M : Type*} [AddCommGroup M] [Module k M]
-    [Module A M] [IsScalarTower k A M] [FiniteDimensional k M] (a : A) :
-    LinearMap.trace k M (Algebra.lsmul k k M a) = -(Algebra.lsmul k k M a).charpoly.nextCoeff := by
-  rw [LinearMap.trace_eq_matrix_trace k (Module.Free.chooseBasis k M),
+/-- The trace of an endomorphism of a finite free module is minus the next coefficient of its
+characteristic polynomial (Mathlib's `Matrix.trace_eq_neg_charpoly_nextCoeff`, read in a basis). -/
+theorem _root_.LinearMap.trace_eq_neg_charpoly_nextCoeff {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M] (f : Module.End R M) :
+    LinearMap.trace R M f = -f.charpoly.nextCoeff := by
+  rw [LinearMap.trace_eq_matrix_trace R (Module.Free.chooseBasis R M),
     Matrix.trace_eq_neg_charpoly_nextCoeff, LinearMap.charpoly_toMatrix]
 
 /-- The trace combination `∑ i, c i • tr(a | T i)` is minus the next coefficient of
@@ -240,7 +244,8 @@ private theorem sum_smul_trace_eq {ι : Type*} [Fintype ι] {T : ι → Type*}
   rw [Monic.nextCoeff_prod _ _ fun i _ => (LinearMap.charpoly_monic _).pow _,
     ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [(LinearMap.charpoly_monic _).nextCoeff_pow, trace_lsmul_eq_neg_nextCoeff, smul_neg]
+  rw [(LinearMap.charpoly_monic _).nextCoeff_pow, LinearMap.trace_eq_neg_charpoly_nextCoeff,
+    smul_neg]
 
 section Decomposition
 
@@ -292,7 +297,7 @@ private theorem trace_lsmul_eq_sum (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ
     LinearMap.trace k M (Algebra.lsmul k k M a) =
       ∑ i, jordanHolderMultiplicity A M (T i) • LinearMap.trace k (T i) (Algebra.lsmul k k (T i) a)
     := by
-  rw [trace_lsmul_eq_neg_nextCoeff, charpoly_lsmul_eq_prod hT hM, sum_smul_trace_eq]
+  rw [LinearMap.trace_eq_neg_charpoly_nextCoeff, charpoly_lsmul_eq_prod hT hM, sum_smul_trace_eq]
 
 end Decomposition
 
@@ -366,19 +371,20 @@ the multiplicities are thus congruent modulo `p`, and need not be equal: over `�
 of the trivial representation of `ℤ/2` and three copies of its sign representation have the same
 trace everywhere, and contain the trivial representation `3` and `0` times. -/
 theorem natCast_jordanHolderMultiplicity_eq_of_trace_eq [Module.Finite A M] [Module.Finite A N]
-    (h : ∀ a : A, LinearMap.trace k M (Algebra.lsmul k k M a) =
-      LinearMap.trace k N (Algebra.lsmul k k N a))
+    {Γ : Type*} {g : Γ → A} (hg : Submodule.span k (Set.range g) = ⊤)
+    (h : ∀ γ, LinearMap.trace k M (Algebra.lsmul k k M (g γ)) =
+      LinearMap.trace k N (Algebra.lsmul k k N (g γ)))
     (S : Type*) [AddCommGroup S] [Module A S] :
     (jordanHolderMultiplicity A M S : k) = jordanHolderMultiplicity A N S := by
   obtain ⟨ι, _, T, hTs, hT, hM, hN⟩ := exists_simple_family (A := A) M N
   have (i : ι) : FiniteDimensional k (T i) :=
     .of_injective ((T i).subtype.restrictScalars k) Subtype.val_injective
   have (i : ι) : IsSimpleModule A (T i) := hTs i
-  have hmult := natCast_eq_of_sum_trace_eq hT (Γ := A) (g := id) (by simp)
+  have hmult := natCast_eq_of_sum_trace_eq hT hg
     (fun i => jordanHolderMultiplicity A M (T i)) (fun i => jordanHolderMultiplicity A N (T i))
-    fun a => by
+    fun γ => by
       rw [← trace_lsmul_eq_sum (k := k) hT hM, ← trace_lsmul_eq_sum (k := k) hT hN]
-      exact h a
+      exact h γ
   exact forall_jordanHolderMultiplicity_eq (Nat.cast : ℕ → k) hM hN hmult S
 
 /-- **Brauer–Nesbitt.** Over an algebraically closed field `k` of any characteristic, two
