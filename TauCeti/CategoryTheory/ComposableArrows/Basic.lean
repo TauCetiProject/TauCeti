@@ -170,6 +170,12 @@ theorem ext_succ_of_totalArrow {F G : ComposableArrows C (n + 1)} (h : F.δ₀ =
   obtain ⟨h₀, h₁, hw⟩ := Quiver.Total.mk.inj w
   exact ext_succ h₀ h ((conj_eqToHom_iff_heq _ _ h₀ h₁).2 hw)
 
+/-- Applying `Φ.mapComposableArrows n` to a string `F` postcomposes `F` with `Φ`. -/
+theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj {D : Type*} [Category D]
+    (Φ : C ⥤ D) (n : ℕ) (F : ComposableArrows C n) :
+    (Φ.mapComposableArrows n).obj F = F ⋙ Φ :=
+  (rfl)
+
 /-- Applying a functor to a string with a prepended arrow prepends the image of that arrow to the
 image of the string. -/
 @[simp]

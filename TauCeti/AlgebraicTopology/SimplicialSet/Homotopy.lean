@@ -143,6 +143,15 @@ lemma verticalEdge_fst {X : SSet.{w}} (v : X _⦋0⦌) : (verticalEdge v).1 = X.
 lemma verticalEdge_snd {X : SSet.{w}} (v : X _⦋0⦌) :
     (verticalEdge v).2 = stdSimplex.edge 1 0 1 (by decide) := (rfl)
 
+/-- The component of `verticalEdge v` in `Δ[1]` corresponds under `stdSimplex.objEquiv` to the
+identity `𝟙 ⦋1⦌`. -/
+@[simp]
+lemma objEquiv_verticalEdge_snd {X : SSet.{w}} (v : X _⦋0⦌) :
+    stdSimplex.objEquiv (verticalEdge v).2 = 𝟙 ⦋1⦌ := by
+  rw [verticalEdge_snd]
+  ext i : 3
+  fin_cases i <;> rfl
+
 /-- The vertical edge over `v` starts at `(v, 0)`. -/
 lemma δ_one_verticalEdge {X : SSet.{w}} (v : X _⦋0⦌) :
     (X ⊗ Δ[1]).δ 1 (verticalEdge v) = ι₀.app _ v :=

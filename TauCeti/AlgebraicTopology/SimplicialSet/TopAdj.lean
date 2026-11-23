@@ -349,6 +349,7 @@ lemma toTop_map_yonedaEquiv_symm_toTopHomeo_symm {n : ℕ} (x : X _⦋n⦌)
     (ULift.up w)).symm
 
 /-- Every point on a `0`-simplex `x` coincides with the vertex point `toTopPoint x`. -/
+@[simp]
 lemma toTopObjMk_eq_toTopPoint (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
     toTopObjMk x w = toTopPoint x := by
   rw [← toTop_map_yonedaEquiv_symm_toTopHomeo_symm,

@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplex
 public import Mathlib.CategoryTheory.Category.ULift
+public import TauCeti.CategoryTheory.Category.ULift
 public import TauCeti.CategoryTheory.ComposableArrows.Basic
 
 /-!
@@ -72,9 +73,6 @@ public section
 open CategoryTheory MonoidalCategory Opposite Simplicial
 universe w v u
 namespace CategoryTheory
-local macro "functor_ext_rfl" : term =>
-  `(CategoryTheory.Functor.ext (fun _ ↦ rfl)
-    fun _ _ _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm)
 section Functoriality
 variable {C D E : Type u} [Category.{v} C] [Category.{v} D] [Category.{v} E]
 @[simp] lemma nerveMap_id (C : Type u) [Category.{v} C] : nerveMap (𝟭 C) = 𝟙 (nerve C) :=
@@ -84,7 +82,9 @@ variable {C D E : Type u} [Category.{v} C] [Category.{v} D] [Category.{v} E]
   nerveFunctor.map_comp F.toCatHom G.toCatHom
 @[simp] lemma nerveMap_const (C : Type u) [Category.{v} C] {D : Type u} [Category.{v} D] (d : D) :
     nerveMap ((Functor.const C).obj d) = SSet.const (nerveEquiv.symm d) := by
-  ext ⟨n⟩ σ : 4; induction n using SimplexCategory.rec with | _ n => exact functor_ext_rfl
+  ext ⟨n⟩ σ : 4
+  induction n using SimplexCategory.rec with | _ n =>
+  exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 end Functoriality
 
 namespace nerve
@@ -341,8 +341,9 @@ def prodIso (C D : Type u) [Category.{v} C] [Category.{v} D] :
     nerve (C × D) ≅ (nerve C ⊗ nerve D : SSet.{max u v}) :=
   NatIso.ofComponents (fun _ ↦ Equiv.toIso
     { toFun σ := (σ ⋙ CategoryTheory.Prod.fst C D, σ ⋙ CategoryTheory.Prod.snd C D)
-      invFun p := p.1.prod' p.2, left_inv _ := functor_ext_rfl
-      right_inv _ := Prod.ext functor_ext_rfl functor_ext_rfl }) fun _ ↦ rfl
+      invFun p := p.1.prod' p.2, left_inv _ := Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
+      right_inv _ := Prod.ext (Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl)
+        (Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl) }) fun _ ↦ rfl
 @[simp] lemma prodIso_hom_app_fst {C D : Type u} [Category.{v} C] [Category.{v} D]
     {n : SimplexCategoryᵒᵖ} (σ : (nerve (C × D)).obj n) :
     dsimp% ((prodIso C D).hom.app n σ).1 = σ ⋙ CategoryTheory.Prod.fst C D := (rfl)
@@ -355,11 +356,11 @@ def prodIso (C D : Type u) [Category.{v} C] [Category.{v} D] :
 @[reassoc (attr := simp)] lemma prodIso_hom_fst {C D : Type u} [Category.{v} C] [Category.{v} D] :
     (prodIso C D).hom ≫ CartesianMonoidalCategory.fst (nerve C) (nerve D) =
       nerveMap (CategoryTheory.Prod.fst C D) := by
-  ext ⟨m⟩ σ : 4; exact functor_ext_rfl
+  ext ⟨m⟩ σ : 4; exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 @[reassoc (attr := simp)] lemma prodIso_hom_snd {C D : Type u} [Category.{v} C] [Category.{v} D] :
     (prodIso C D).hom ≫ CartesianMonoidalCategory.snd (nerve C) (nerve D) =
       nerveMap (CategoryTheory.Prod.snd C D) := by
-  ext ⟨m⟩ σ : 4; exact functor_ext_rfl
+  ext ⟨m⟩ σ : 4; exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 @[reassoc] lemma prodIso_hom_naturality {C₁ C₂ D₁ D₂ : Type u} [Category.{v} C₁] [Category.{v} C₂]
     [Category.{v} D₁] [Category.{v} D₂] (F₁ : C₁ ⥤ D₁) (F₂ : C₂ ⥤ D₂) :
     nerveMap (F₁.prod F₂) ≫ (prodIso D₁ D₂).hom =
@@ -372,7 +373,8 @@ def asSmallIso (C : Type u) [Category.{v} C] :
   NatIso.ofComponents (fun _ ↦ Equiv.toIso
     { toFun σ := ULift.up ((AsSmall.down.mapComposableArrows _).obj σ)
       invFun τ := (AsSmall.up.mapComposableArrows _).obj τ.down
-      left_inv _ := functor_ext_rfl, right_inv _ := ULift.ext functor_ext_rfl }) fun _ ↦ rfl
+      left_inv _ := Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
+      right_inv _ := ULift.ext <| Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl }) fun _ ↦ rfl
 @[simp] lemma asSmallIso_hom_app_down {C : Type u} [Category.{v} C] {n : SimplexCategoryᵒᵖ}
     (σ : ComposableArrows (AsSmall.{w} C) n.unop.len) :
     ((asSmallIso.{w} C).hom.app n σ).down = (AsSmall.down.mapComposableArrows n.unop.len).obj σ :=
@@ -391,7 +393,7 @@ def asSmallIso (C : Type u) [Category.{v} C] :
     nerveMap (AsSmall.down ⋙ F ⋙ AsSmall.up : AsSmall.{w} C ⥤ AsSmall.{w} D) ≫
         (asSmallIso.{w} D).hom =
       (asSmallIso.{w} C).hom ≫ SSet.uliftFunctor.{w, max u v}.map (nerveMap F) := by
-  ext ⟨m⟩ σ : 4; exact ULift.ext functor_ext_rfl
+  ext ⟨m⟩ σ : 4; exact ULift.ext <| Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 /-- The nerve of `Fin (n + 1)` is isomorphic to the standard `n`-simplex `Δ[n]` in `SSet.{0}`. -/
 def finSuccIsoStdSimplex (n : ℕ) : nerve (Fin (n + 1)) ≅ (Δ[n] : SSet.{0}) :=
   (SSet.stdSimplex.isoOfRepresentableBy (representableBy (Fin (n + 1)) (.refl _))).symm

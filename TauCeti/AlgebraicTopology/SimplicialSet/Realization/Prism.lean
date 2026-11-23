@@ -482,7 +482,8 @@ lemma prism_zero_dim (s : StdSimplex ℝ (Fin 1)) (t : I) :
       (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)) : (Δ[0] ⊗ Δ[1] : SSet.{u}) _⦋1⦌)) =
       fun b ↦ (0, b) := funext fun b ↦
     Prod.ext (Fin.eq_zero _) ((prodStdSimplex.objEquiv_apply_snd _ b).trans
-      (by fin_cases b <;> rw [verticalEdge_snd] <;> rfl))
+      (congrArg (fun φ : ⦋1⦌ ⟶ ⦋1⦌ ↦ φ b)
+        (objEquiv_verticalEdge_snd (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))))
   refine prism_eq _ _ ?_
   rw [hobj, ← StdSimplex.weights_inj]; ext ⟨i, b⟩
   obtain rfl : i = 0 := Fin.eq_zero i
@@ -578,31 +579,33 @@ lemma toTopCylinder_toTopObjMk_of_prism {p n : ℕ} (x : X _⦋p⦌) (s : StdSim
   rw [toTopCylinder_toTopObjMk, hprism]
   let p₀ : (Δ[p] ⊗ Δ[1] : SSet.{u}) _⦋n⦌ :=
     (stdSimplex.objEquiv.symm α, stdSimplex.objEquiv.symm β)
-  refine (toTop_map_toTopObjMk (yonedaEquiv.symm x ▷ Δ[1]) p₀ w).trans
-    (congrArg (toTopObjMk (X := X ⊗ Δ[1]) · w) ?_)
-  exact show ((yonedaEquiv.symm x).app (Opposite.op ⦋n⦌) (stdSimplex.objEquiv.symm α),
-      stdSimplex.objEquiv.symm β) =
-      ((X.map α.op x, stdSimplex.objEquiv.symm β) : X _⦋n⦌ × Δ[1] _⦋n⦌) from
-    Prod.ext (yonedaEquiv_symm_app_objEquiv_symm x α) rfl
-
-@[simp] lemma toTopCylinder_toTopObjMk_zero (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) (t : I) :
-    toTopCylinder X (toTopObjMk v w, t) =
-      toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
-  have hprism : prodStdSimplex₁.prism.{u} 0 (w, t) =
-      toTopObjMk (X := (Δ[0] ⊗ Δ[1] : SSet.{u}))
-        (stdSimplex.objEquiv.symm (SimplexCategory.σ 0), stdSimplex.objEquiv.symm (𝟙 ⦋1⦌))
-        (StdSimplex.homeomorphI.symm t) :=
-    (prodStdSimplex₁.prism_zero_dim w t).trans <| congrArg (toTopObjMk · _) <| Prod.ext
-      (stdSimplex.ext _ _ fun _ ↦ Fin.ext (by omega)) (stdSimplex.ext _ _ fun b ↦ by
-        fin_cases b <;> rw [verticalEdge_snd] <;> rfl)
-  refine (toTopCylinder_toTopObjMk_of_prism v w t hprism).trans <| congrArg (toTopObjMk · _) ?_
-  refine Prod.ext (verticalEdge_fst v).symm ?_
-  exact stdSimplex.ext _ _ fun b ↦ by fin_cases b <;> rw [verticalEdge_snd] <;> rfl
+  let p₁ : (X ⊗ Δ[1]) _⦋n⦌ := (X.map α.op x, stdSimplex.objEquiv.symm β)
+  have hp : (yonedaEquiv.symm x ▷ Δ[1]).app (Opposite.op ⦋n⦌) p₀ = p₁ :=
+    (SSet.whiskerRight_app_apply (yonedaEquiv.symm x) Δ[1] p₀).trans
+      (congrArg (·, p₀.2) (yonedaEquiv_symm_app_objEquiv_symm x α))
+  exact (toTop_map_toTopObjMk (yonedaEquiv.symm x ▷ Δ[1]) p₀ w).trans
+    (congrArg (toTopObjMk (X := X ⊗ Δ[1]) · w) hp)
 
 @[simp] lemma toTopCylinder_toTopPoint (v : X _⦋0⦌) (t : I) :
     toTopCylinder X (toTopPoint v, t) =
       toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
-  rw [← toTopObjMk_eq_toTopPoint v (StdSimplex.single 0), toTopCylinder_toTopObjMk_zero]
+  rw [← toTopObjMk_eq_toTopPoint v (StdSimplex.single 0)]
+  have hprism : prodStdSimplex₁.prism.{u} 0 (StdSimplex.single 0, t) =
+      toTopObjMk (X := (Δ[0] ⊗ Δ[1] : SSet.{u}))
+        (stdSimplex.objEquiv.symm (SimplexCategory.σ 0), stdSimplex.objEquiv.symm (𝟙 ⦋1⦌))
+        (StdSimplex.homeomorphI.symm t) :=
+    (prodStdSimplex₁.prism_zero_dim _ t).trans <| congrArg (toTopObjMk · _) <| Prod.ext
+      (stdSimplex.ext _ _ fun _ ↦ Fin.ext (by omega))
+      (stdSimplex.objEquiv.injective <|
+        (objEquiv_verticalEdge_snd _).trans (Equiv.apply_symm_apply _ _).symm)
+  refine (toTopCylinder_toTopObjMk_of_prism v _ t hprism).trans <| congrArg (toTopObjMk · _) ?_
+  exact Prod.ext (verticalEdge_fst v).symm <| stdSimplex.objEquiv.injective <|
+    (Equiv.apply_symm_apply _ _).trans (objEquiv_verticalEdge_snd v).symm
+
+lemma toTopCylinder_toTopObjMk_zero (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) (t : I) :
+    toTopCylinder X (toTopObjMk v w, t) =
+      toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
+  rw [toTopObjMk_eq_toTopPoint, toTopCylinder_toTopPoint]
 
 /-- If at the end `t` the triangulation of every prism is the realization of `j`, for a natural
 family `j : Z ⟶ Z ⊗ Δ[1]`, then so is the triangulation of the realized cylinder. -/

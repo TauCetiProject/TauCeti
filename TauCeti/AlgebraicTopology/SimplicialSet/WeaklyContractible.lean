@@ -282,8 +282,7 @@ private noncomputable def boundaryLoop (g : G) : (∂Δ[2] : SSet.{u}) ⟶ nerve
   -- The value on a simplex only depends on its vertices, so it commutes with reindexing.
   naturality n m θ := by
     ext s
-    exact CategoryTheory.Functor.ext (fun _ ↦ rfl)
-      (fun _ _ _ ↦ by simp only [eqToHom_refl, Category.id_comp, Category.comp_id]; rfl)
+    exact CategoryTheory.Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 
 /-- The boundary `∂Δ[2]` is connected (`SSet.boundary.isConnected`) but not weakly contractible:
 its map to the nerve of `ℤ` sending the edge from `0` to `2` to `1` and the other edges to `0` is

@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Op
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
+import TauCeti.AlgebraicTopology.SimplexCategory.Basic
 import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 
 /-!
@@ -105,9 +106,6 @@ private lemma edgeExtension_diag {h : X _⦋1⦌ → ℝ} (hh : ∀ x : X _⦋0�
   rw [SimplexCategory.const_fac_thru_zero,
     ← SimplexCategory.eq_const_to_zero (SimplexCategory.σ 0), op_comp, Functor.map_comp_apply]
   exact hh _
-private lemma mkOfLe_eq_const {n : ℕ} {i j : Fin (n + 1)} (h : i ≤ j) (hij : i = j) :
-    SimplexCategory.mkOfLe i j h = ⦋1⦌.const ⦋n⦌ i := by
-  subst hij; exact SimplexCategory.mkOfLe_refl i
 private noncomputable def edgeExtension (h : X _⦋1⦌ → ℝ) (hh : ∀ x : X _⦋0⦌, h (X.σ 0 x) = 0) :
     |X| ⟶ TopCat.of (ULift.{u} ℝ) :=
   descToTop (fun n σ w ↦ ULift.up (∑ i : Fin (n + 1), ∑ j : Fin (n + 1), w.weights i * w.weights j *
@@ -125,7 +123,7 @@ private noncomputable def edgeExtension (h : X _⦋1⦌ → ℝ) (hh : ∀ x : X
           simp only [c, hab, hθ, ↓reduceDIte, ← Functor.map_comp_apply, ← op_comp, hcomp]
         · simp only [c, hab, ↓reduceDIte]; split_ifs with hθ; swap; · rfl
           have heq : θ a = θ b := le_antisymm hθ (θ.toOrderHom.monotone (le_of_not_ge hab))
-          rw [mkOfLe_eq_const hθ heq, edgeExtension_diag hh]
+          rw [SimplexCategory.mkOfLe_eq_const hθ heq, edgeExtension_diag hh]
       simp_rw [hcoeff, mul_assoc, ← Finset.mul_sum]
       exact (Finset.sum_congr rfl fun a _ ↦
         congrArg (w.weights a * ·) (StdSimplex.sum_weights_map_mul _ _ _).symm).trans
@@ -133,10 +131,10 @@ private noncomputable def edgeExtension (h : X _⦋1⦌ → ℝ) (hh : ∀ x : X
 
 @[simp] lemma toTopObjMk_single_zero (e : X _⦋1⦌) :
     toTopObjMk e (StdSimplex.single 0) = toTopPoint (X.δ 1 e) := by
-  rw [toTopObjMk_single, ← SimplexCategory.δ_one_eq_const]; rfl
+  rw [toTopObjMk_single, ← SimplexCategory.δ_one_eq_const, ← SimplicialObject.δ]
 @[simp] lemma toTopObjMk_single_one (e : X _⦋1⦌) :
     toTopObjMk e (StdSimplex.single 1) = toTopPoint (X.δ 0 e) := by
-  rw [toTopObjMk_single, ← SimplexCategory.δ_zero_eq_const]; rfl
+  rw [toTopObjMk_single, ← SimplexCategory.δ_zero_eq_const, ← SimplicialObject.δ]
 
 private lemma edgeExtension_midpoint {h : X _⦋1⦌ → ℝ} (hh : ∀ x : X _⦋0⦌, h (X.σ 0 x) = 0)
     (e : X _⦋1⦌) : (edgeExtension h hh (toTopObjMk e
@@ -347,7 +345,9 @@ noncomputable def uliftFunctorCompToTopIso :
   NatIso.ofComponents (fun X ↦
     { hom := uliftToTopHom.{v, u} X, inv := uliftToTopInv.{v, u} X
       hom_inv_id := toTop_hom_ext fun _ x w ↦ by
-        rw [ConcreteCategory.comp_apply, uliftToTopHom_toTopObjMk, uliftToTopInv_apply]; rfl
+        rw [ConcreteCategory.comp_apply, uliftToTopHom_toTopObjMk, uliftToTopInv_apply]
+        -- `ULift.up x.down` and the identity morphism `𝟙` are definitionally `x` and `id`.
+        rfl
       inv_hom_id := by
         ext z; obtain ⟨y, rfl⟩ := |X|.uliftFunctorObjHomeo.surjective z
         obtain ⟨n, x, w, rfl⟩ := exists_toTopObjMk y
@@ -356,7 +356,9 @@ noncomputable def uliftFunctorCompToTopIso :
     fun f ↦ toTop_hom_ext fun _ _ _ ↦ by
       simp only [Functor.comp_obj, Functor.comp_map, ConcreteCategory.comp_apply,
         toTop_map_toTopObjMk, uliftToTopHom_toTopObjMk,
-        TopCat.uliftFunctorObjHomeo_naturality_apply]; rfl
+        TopCat.uliftFunctorObjHomeo_naturality_apply]
+      -- `((SSet.uliftFunctor.map f).app _ x).down` is definitionally `f.app _ x.down`.
+      rfl
 
 section ULiftLemmas
 variable (X : SSet.{u})
@@ -398,7 +400,9 @@ lemma toTopUliftHomeomorph_naturality_apply (f : X ⟶ Y) (z : |SSet.uliftFuncto
     toTopUliftHomeomorph.{v, u} Y (toTop.map (SSet.uliftFunctor.map f) z) =
       toTop.map f (toTopUliftHomeomorph.{v, u} X z) := by
   obtain ⟨n, x, w, rfl⟩ := exists_toTopObjMk z
-  simp only [toTop_map_toTopObjMk, toTopUliftHomeomorph_toTopObjMk]; rfl
+  simp only [toTop_map_toTopObjMk, toTopUliftHomeomorph_toTopObjMk]
+  -- `((SSet.uliftFunctor.map f).app _ x).down` is definitionally `f.app _ x.down`.
+  rfl
 
 /-! ### Realization of opposite simplicial sets -/
 
@@ -418,7 +422,7 @@ geometric realization, acting on each simplex by reversing barycentric coordinat
 noncomputable def opFunctorCompToTopIso : SSet.opFunctor.{u} ⋙ SSet.toTop ≅ SSet.toTop :=
   NatIso.ofComponents (fun X ↦
     { hom := toTopRevHom (fun _ y ↦ X.opObjEquiv y) fun _ _ _ _ ↦ by
-        rw [X.op_map, Equiv.apply_symm_apply]; rfl
+        rw [X.op_map, Equiv.apply_symm_apply, Quiver.Hom.unop_op]
       inv := toTopRevHom (fun _ x ↦ X.opObjEquiv.symm x) fun _ _ _ _ ↦ by
         rw [X.op_map, Equiv.apply_symm_apply, Quiver.Hom.unop_op, SimplexCategory.rev_map_rev_map]
       hom_inv_id := toTop_hom_ext fun _ _ _ ↦ by simp [toTopRevHom]
@@ -444,6 +448,8 @@ variable (X : SSet.{u})
 /-- Homeomorphism `|X.op| ≃ₜ |X|` reversing barycentric coordinates on each simplex. -/
 noncomputable def toTopOpHomeomorph : |X.op| ≃ₜ |X| :=
   TopCat.homeoOfIso (opFunctorCompToTopIso.app X)
+lemma toTopOpHomeomorph_apply (z : |X.op|) :
+    toTopOpHomeomorph X z = opFunctorCompToTopIso.hom.app X z := (rfl)
 @[simp] lemma toTopOpHomeomorph_toTopObjMk {n : ℕ} (y : X.op _⦋n⦌)
     (w : StdSimplex ℝ (Fin (n + 1))) :
     toTopOpHomeomorph X (toTopObjMk y w) = toTopObjMk (X.opObjEquiv y) (StdSimplex.map Fin.rev w) :=

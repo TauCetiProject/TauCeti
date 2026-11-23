@@ -48,41 +48,31 @@ lemma mapNerveCylinderObj_def {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) {n : Si
     (σ : ComposableArrows C n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
     η.mapNerveCylinderObj σ β =
       σ.prod' ((nerve (C ⥤ D)).map β.op (ComposableArrows.mk₁ η)) ⋙ evaluationUncurried C D := (rfl)
+private lemma nerve_map_mk₁_map {E₁ : Type u₁} [Category.{v₁} E₁]
+    {E₂ : Type u₂} [Category.{v₂} E₂] (Φ : E₁ ⥤ E₂) {X Y : E₁} (η : X ⟶ Y)
+    {m : ℕ} (β : ⦋m⦌ ⟶ ⦋1⦌) :
+    (nerve E₂).map β.op (ComposableArrows.mk₁ (Φ.map η)) =
+      (Φ.mapComposableArrows m).obj ((nerve E₁).map β.op (ComposableArrows.mk₁ η)) := by
+  rw [← Functor.mapComposableArrows_obj_mk₁]
+  exact Functor.assoc _ (ComposableArrows.mk₁ η) Φ
+
 @[simp] lemma whiskerLeft_mapNerveCylinderObj (K : B ⥤ C) {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁)
     {n : SimplexCategoryᵒᵖ} (σ : ComposableArrows B n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
     (Functor.whiskerLeft K η).mapNerveCylinderObj σ β =
       η.mapNerveCylinderObj ((K.mapComposableArrows n.unop.len).obj σ) β := by
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
-  rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def,
-    show Functor.whiskerLeft K η = ((Functor.whiskeringLeft B C D).obj K).map η from rfl,
-    ← Functor.mapComposableArrows_obj_mk₁ ((Functor.whiskeringLeft B C D).obj K) η]
-  have hnat : (nerve (B ⥤ D)).map β.op
-        ((((Functor.whiskeringLeft B C D).obj K).mapComposableArrows 1).obj
-          (ComposableArrows.mk₁ η)) =
-      (((Functor.whiskeringLeft B C D).obj K).mapComposableArrows m).obj
-        ((nerve (C ⥤ D)).map β.op (ComposableArrows.mk₁ η)) :=
-    Functor.assoc _ (ComposableArrows.mk₁ η) ((Functor.whiskeringLeft B C D).obj K)
-  rw [hnat]
-  exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦
-    ((Category.id_comp _).trans (Category.comp_id _)).symm
+  rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def, ← Functor.whiskeringLeft_obj_map,
+    nerve_map_mk₁_map]
+  exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
+
 @[simp] lemma whiskerRight_mapNerveCylinderObj {F₀ F₁ : B ⥤ C} (η : F₀ ⟶ F₁) (G : C ⥤ D)
     {n : SimplexCategoryᵒᵖ} (σ : ComposableArrows B n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
     (Functor.whiskerRight η G).mapNerveCylinderObj σ β =
       (G.mapComposableArrows n.unop.len).obj (η.mapNerveCylinderObj σ β) := by
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
-  rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def,
-    show Functor.whiskerRight η G = ((Functor.whiskeringRight B C D).obj G).map η from rfl,
-    ← Functor.mapComposableArrows_obj_mk₁ ((Functor.whiskeringRight B C D).obj G) η]
-  have hnat : (nerve (B ⥤ D)).map β.op
-        ((((Functor.whiskeringRight B C D).obj G).mapComposableArrows 1).obj
-          (ComposableArrows.mk₁ η)) =
-      (((Functor.whiskeringRight B C D).obj G).mapComposableArrows m).obj
-        ((nerve (B ⥤ C)).map β.op (ComposableArrows.mk₁ η)) :=
-    Functor.assoc _ (ComposableArrows.mk₁ η) ((Functor.whiskeringRight B C D).obj G)
-  rw [hnat]
-  refine Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ ?_
-  change G.map _ ≫ G.map _ = 𝟙 _ ≫ G.map (_ ≫ _) ≫ 𝟙 _
-  simp; rfl
+  rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def, ← Functor.whiskeringRight_obj_map,
+    nerve_map_mk₁_map]
+  exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (G.map_comp _ _).symm
 end
 
 section
@@ -96,11 +86,9 @@ noncomputable def nerveHomotopy {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) :
     SSet.Homotopy (nerveMap F₀) (nerveMap F₁) :=
   SSet.Homotopy.mk' (nerveHomotopyMap η)
     (by ext ⟨m⟩ σ : 4; induction m using SimplexCategory.rec with | _ m =>
-        exact CategoryTheory.Functor.ext (fun _ ↦ rfl)
-          fun _ _ g ↦ (Category.id_comp (F₀.map (σ.map g) ≫ 𝟙 _)).symm)
+        exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (Category.comp_id _))
     (by ext ⟨m⟩ σ : 4; induction m using SimplexCategory.rec with | _ m =>
-        exact CategoryTheory.Functor.ext (fun _ ↦ rfl)
-          fun _ _ g ↦ (Category.id_comp (F₁.map (σ.map g) ≫ 𝟙 _)).symm)
+        exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (Category.comp_id _))
 lemma nerveHomotopy_h_app {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) (n : SimplexCategoryᵒᵖ)
     (p : (nerve C ⊗ Δ[1]).obj n) :
     η.nerveHomotopy.h.app n p = η.mapNerveCylinderObj p.1 (SSet.stdSimplex.objEquiv p.2) := (rfl)
@@ -111,15 +99,14 @@ lemma nerveHomotopy_h_app {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) (n : Simple
   let v : (nerve C) _⦋0⦌ := nerveEquiv.symm c
   have h₁ : (SSet.verticalEdge v).1 = ComposableArrows.mk₁ (𝟙 c) :=
     (SSet.verticalEdge_fst v).trans (nerve.σ_zero_nerveEquiv_symm c)
-  have h₂_eq : SSet.stdSimplex.objEquiv (SSet.verticalEdge v).2 = 𝟙 ⦋1⦌ := by
-    rw [SSet.verticalEdge_snd]; ext i : 3; fin_cases i <;> rfl
-  have h₂ : (nerve (C ⥤ D)).map (SSet.stdSimplex.objEquiv (SSet.verticalEdge v).2).op
-      (ComposableArrows.mk₁ η) = ComposableArrows.mk₁ η :=
-    congrArg (fun φ : ⦋1⦌ ⟶ ⦋1⦌ ↦ (nerve (C ⥤ D)).map φ.op (ComposableArrows.mk₁ η)) h₂_eq
+  let η₁ : (nerve (C ⥤ D)) _⦋1⦌ := ComposableArrows.mk₁ η
+  have h₂ : (nerve (C ⥤ D)).map (SSet.stdSimplex.objEquiv (SSet.verticalEdge v).2).op η₁ = η₁ := by
+    rw [SSet.objEquiv_verticalEdge_snd, CategoryTheory.op_id, CategoryTheory.Functor.map_id]
+    exact types_id_apply _ _
   refine ((nerveHomotopy_h_app η (op ⦋1⦌) (SSet.verticalEdge v)).trans
     (η.mapNerveCylinderObj_def _ _)).trans ((congrArg (· ⋙ evaluationUncurried C D)
       (congrArg₂ Functor.prod' h₁ h₂)).trans (ComposableArrows.ext₁ rfl rfl ?_))
-  dsimp [evaluationUncurried, ComposableArrows.mk₁, ComposableArrows.Mk₁.obj,
+  dsimp [η₁, evaluationUncurried, ComposableArrows.mk₁, ComposableArrows.Mk₁.obj,
     ComposableArrows.Mk₁.map, ComposableArrows.hom]; simp
 @[simp] lemma whiskerLeft_nerveHomotopy_h (K : B ⥤ C) {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) :
     (Functor.whiskerLeft K η).nerveHomotopy.h = nerveMap K ▷ Δ[1] ≫ η.nerveHomotopy.h := by
@@ -137,16 +124,32 @@ variable {C : Type u} [Category.{v} C]
 /-- An initial object `x : C` induces a simplicial homotopy from `SSet.const` at `x` to
 `𝟙 (nerve C)`. -/
 noncomputable def IsInitial.nerveHomotopy {x : C} (hx : IsInitial x) :
-    SSet.Homotopy (SSet.const (nerveEquiv.symm x)) (𝟙 (nerve C)) := by
-  simpa only [nerveMap_const, nerveMap_id] using
-    ({ app := fun c ↦ hx.to c, naturality := fun _ _ _ ↦ hx.hom_ext _ _ } :
-      (Functor.const C).obj x ⟶ 𝟭 C).nerveHomotopy
+    SSet.Homotopy (SSet.const (nerveEquiv.symm x)) (𝟙 (nerve C)) :=
+  let η : (Functor.const C).obj x ⟶ 𝟭 C :=
+    { app := fun c ↦ hx.to c, naturality := fun _ _ _ ↦ hx.hom_ext _ _ }
+  SSet.Homotopy.mk' η.nerveHomotopy.h
+    (by rw [η.nerveHomotopy.h₀, nerveMap_const])
+    (by rw [η.nerveHomotopy.h₁, nerveMap_id])
+/-- The homotopy morphism of `IsInitial.nerveHomotopy` agrees with that of the natural
+transformation `{ app := hx.to }`. -/
+@[simp] lemma IsInitial.nerveHomotopy_h {x : C} (hx : IsInitial x) :
+    hx.nerveHomotopy.h =
+      ({ app := fun c ↦ hx.to c, naturality := fun _ _ _ ↦ hx.hom_ext _ _ } :
+        (Functor.const C).obj x ⟶ 𝟭 C).nerveHomotopy.h := (rfl)
 /-- A terminal object `x : C` induces a simplicial homotopy from `𝟙 (nerve C)` to `SSet.const` at
 `x`. -/
 noncomputable def IsTerminal.nerveHomotopy {x : C} (hx : IsTerminal x) :
-    SSet.Homotopy (𝟙 (nerve C)) (SSet.const (nerveEquiv.symm x)) := by
-  simpa only [nerveMap_id, nerveMap_const] using
-    ({ app := fun c ↦ hx.from c, naturality := fun _ _ _ ↦ hx.hom_ext _ _ } :
-      𝟭 C ⟶ (Functor.const C).obj x).nerveHomotopy
+    SSet.Homotopy (𝟙 (nerve C)) (SSet.const (nerveEquiv.symm x)) :=
+  let η : 𝟭 C ⟶ (Functor.const C).obj x :=
+    { app := fun c ↦ hx.from c, naturality := fun _ _ _ ↦ hx.hom_ext _ _ }
+  SSet.Homotopy.mk' η.nerveHomotopy.h
+    (by rw [η.nerveHomotopy.h₀, nerveMap_id])
+    (by rw [η.nerveHomotopy.h₁, nerveMap_const])
+/-- The homotopy morphism of `IsTerminal.nerveHomotopy` agrees with that of the natural
+transformation `{ app := hx.from }`. -/
+@[simp] lemma IsTerminal.nerveHomotopy_h {x : C} (hx : IsTerminal x) :
+    hx.nerveHomotopy.h =
+      ({ app := fun c ↦ hx.from c, naturality := fun _ _ _ ↦ hx.hom_ext _ _ } :
+        𝟭 C ⟶ (Functor.const C).obj x).nerveHomotopy.h := (rfl)
 end Limits
 end CategoryTheory
