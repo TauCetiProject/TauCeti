@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Products
+public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
 import TauCeti.Topology.Category.TopCat.MappingSpace
 import Mathlib.Topology.Category.TopCat.ULift
 
@@ -16,6 +17,8 @@ The invariants functor is right adjoint to the trivial-action functor, and hence
 limits. This is the topological counterpart of Mathlib's `Rep.invariantsAdjunction`.
 For a locally compact group, `coind₁Functor` also preserves limits because its underlying
 topological space is the compact-open mapping space, a right adjoint on `TopCat`.
+Each degree of the coinduced resolution, packaged as `TopRep.resolutionFunctor`, consequently
+preserves limits as well.
 -/
 
 public section
@@ -36,8 +39,14 @@ def trivialFunctor (G : Type v) [Monoid G] : TopModuleCat.{w} R ⥤ TopRep.{w} R
   obj X := of (ContRepresentation.trivial R G X)
   map f := ofHom ⟨f.hom, fun _ ↦ rfl⟩
 
-/-- The trivial-action functor acts on maps by their original continuous linear map. -/
+/-- The trivial-action functor equips a continuous linear map with trivial equivariance. -/
 @[simp]
+theorem trivialFunctor_map_hom (G : Type v) [Monoid G]
+    {X Y : TopModuleCat.{w} R} (f : X ⟶ Y) :
+    ((trivialFunctor R G).map f).hom = ⟨f.hom, fun _ ↦ rfl⟩ := (rfl)
+
+/-- The trivial-action functor acts on maps by their original continuous linear map. -/
+@[simp↓]
 theorem trivialFunctor_map_hom_apply (G : Type v) [Monoid G]
     {X Y : TopModuleCat.{w} R} (f : X ⟶ Y) (x : X) :
     ((trivialFunctor R G).map f).hom x = f.hom x := (rfl)
@@ -81,7 +90,23 @@ instance : (invariantsFunctor (k := R) (G := G) :
     TopRep.{w} R G ⥤ TopModuleCat.{w} R).IsRightAdjoint :=
   (invariantsAdjunction R G).isRightAdjoint
 
-variable [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
+variable [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- The functor taking a representation to a fixed degree of its coinduced resolution. -/
+@[expose, simps -isSimp obj map]
+def resolutionFunctor (n : ℕ) :
+    TopRep.{max v w} R G ⥤ TopRep.{max v w} R G where
+  obj X := resolutionX X n
+  map f := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n
+  map_id X := _root_.ContinuousCohomology.resolutionMap_id X n
+  map_comp f g := _root_.ContinuousCohomology.resolutionMap_comp
+    (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g n
+
+attribute [simp] resolutionFunctor_obj
+-- Let the generic functor laws simplify identities and composites first.
+attribute [simp low] resolutionFunctor_map
+
+variable [LocallyCompactSpace G]
 
 /-- Coinduction preserves limits of diagrams whose object type is small in the source carrier
 universe. -/
@@ -106,23 +131,26 @@ instance coind₁Functor_preservesLimitsOfSize [UnivLE.{t₂, w}] :
     (Homeomorph.ulift : ULift.{w} G ≃ₜ G).isOpenEmbedding.locallyCompactSpace
   let : (TopCat.mappingSpace (TopCat.of (ULift.{w} G))).IsRightAdjoint :=
     (TopCat.tensorLeftAdjunction (TopCat.of (ULift.{w} G))).isRightAdjoint
+  let eApp (X : TopRep.{w} R G) : TopCat.of C(G, X.V) ≅
+      TopCat.of C(ULift.{w} G, ULift.{v} X.V) := TopCat.isoOfHomeo
+        (Homeomorph.ulift.symm.arrowCongr (TopCat.of X.V).uliftFunctorObjHomeo)
+  have eApp_apply (X : TopRep.{w} R G) (F : C(G, X.V)) (g : ULift.{w} G) :
+      (eApp X).hom.hom F g = ULift.up (F g.down) := (rfl)
   have e : (coind₁Functor R G ⋙ U) ⋙ T ≅
       ((U₀ ⋙ T₀) ⋙ TopCat.uliftFunctor.{v}) ⋙ TopCat.mappingSpace (TopCat.of (ULift.{w} G)) :=
     NatIso.ofComponents
-      (fun X ↦ TopCat.isoOfHomeo
-        (Homeomorph.ulift.symm.arrowCongr (TopCat.of X.V).uliftFunctorObjHomeo))
+      eApp
       (fun {X Y} f ↦ by
         ext F
         apply ContinuousMap.ext
         intro g
-        -- The source of the comparison is the compact-open space of maps into `X`.
+        -- Pin the underlying coinduced carrier to its compact-open mapping space.
         change C(G, X.V) at F
         let liftedMap := TopCat.uliftFunctor.{v}.map (T₀.map (U₀.map f))
-        let liftedF :=
-          (Homeomorph.ulift.symm.arrowCongr ((U₀ ⋙ T₀).obj X).uliftFunctorObjHomeo) F
-        -- The component precomposes by `ULift.down` and postcomposes by `ULift.up`.
+        let liftedF := (eApp X).hom.hom F
         calc
-          _ = ULift.up (ContRepresentation.coind₁Map f.hom F g.down) := rfl
+          _ = ULift.up (ContRepresentation.coind₁Map f.hom F g.down) := by
+            exact eApp_apply Y (ContRepresentation.coind₁Map f.hom F) g
           _ = ULift.up (f.hom (F g.down)) := congrArg ULift.up
             (ContRepresentation.coind₁ResMap_apply (ContinuousMonoidHom.id G) f.hom F g.down)
           _ = _ := congrArg (fun K : C(ULift.{w} G, ULift.{v} Y.V) ↦ K g)
@@ -137,5 +165,30 @@ instance coind₁Functor_preservesLimitsOfSize [UnivLE.{t₂, w}] :
 instance (priority := low) coind₁Functor_preservesLimits :
     PreservesLimits (coind₁Functor.{u, v, max v w} R G) :=
   coind₁Functor_preservesLimitsOfSize.{u, v, max v w, max v w, max v w} R G
+
+/-- Each degree of the coinduced resolution preserves limits over a locally compact group. -/
+instance resolutionFunctor_preservesLimitsOfSize [UnivLE.{t₂, max v w}] (n : ℕ) :
+    PreservesLimitsOfSize.{t₁, t₂} (resolutionFunctor.{u, v, w} R G n) := by
+  induction n with
+  | zero =>
+    have e : 𝟭 (TopRep.{max v w} R G) ≅ resolutionFunctor R G 0 :=
+      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
+        apply (Category.comp_id _).trans
+        apply Eq.trans _ (Category.id_comp _).symm
+        exact (_root_.ContinuousCohomology.resolutionMap_zero
+          (ContinuousMonoidHom.id G) f).symm.trans (resolutionFunctor_map R G 0 f).symm)
+    exact preservesLimits_of_natIso e
+  | succ n ih =>
+    have := ih
+    have e : resolutionFunctor R G n ⋙ coind₁Functor R G ≅
+        resolutionFunctor R G (n + 1) :=
+      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
+        apply (Category.comp_id _).trans
+        apply Eq.trans _ (Category.id_comp _).symm
+        rw [Functor.comp_map, resolutionFunctor_map, resolutionFunctor_map]
+        exact (congrArg ofHom (ContRepresentation.coind₁ResMap_id _)).symm.trans
+          (_root_.ContinuousCohomology.resolutionMap_succ
+            (ContinuousMonoidHom.id G) f n).symm)
+    exact preservesLimits_of_natIso e
 
 end TopRep
