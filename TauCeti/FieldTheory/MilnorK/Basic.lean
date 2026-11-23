@@ -25,8 +25,7 @@ This file complements `TauCeti.RingTheory.MilnorK.Basic` by characterizing the S
 degree by degree via `TauCeti.MilnorK.relationSubmodule`, equipping `TauCeti.MilnorK R` with an
 internal `ℕ`-grading (`TauCeti.MilnorK.isInternal_degree`, `TauCeti.MilnorK.gradedAlgebraDegree`),
 proving general graded-commutativity and permutation-sign rules over fields, and establishing
-vanishing in degrees at least two for fields with cyclic unit group and positive characteristic
-(in particular, finite fields).
+vanishing in degrees at least two for finite fields.
 
 ## Main definitions
 
@@ -304,14 +303,15 @@ section Grading
 
 variable (R : Type*) [CommRing R]
 
+private abbrev tensorAlgDegree (n : ℕ) : Submodule ℤ (TensorAlgebra ℤ (Additive Rˣ)) :=
+  (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n
+
 /-- The kernel of `MilnorK.mk` is a homogeneous ideal of `TensorAlgebra ℤ (Additive Rˣ)`. -/
 theorem isHomogeneous_ker_mk :
     (RingHom.ker (mk (R := R))).IsHomogeneous
       (fun n : ℕ ↦
         (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n) := by
   classical
-  let 𝒜 : ℕ → Submodule ℤ (TensorAlgebra ℤ (Additive Rˣ)) :=
-    fun n ↦ (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n
   let toQuot : MilnorK R →+* RingQuot (milnorRel R) :=
     lift ((RingQuot.mkRingHom (milnorRel R)).toAddMonoidHom.comp
         (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] _).toAddMonoidHom)
@@ -342,35 +342,27 @@ theorem isHomogeneous_ker_mk :
       dsimp only [fromQuot] at h
       rwa [RingQuot.lift_mkRingHom_apply, map_zero] at h
   rw [hker]
-  have hhom : (RingHom.ker (RingQuot.mkAlgHom ℤ (milnorRel R))).IsHomogeneous 𝒜 := by
-    refine RingQuot.isHomogeneous_ker_mkAlgHom 𝒜 (milnorRel R) ?_
+  have hhom : (RingHom.ker (RingQuot.mkAlgHom ℤ (milnorRel R))).IsHomogeneous
+      (tensorAlgDegree R) := by
+    refine RingQuot.isHomogeneous_ker_mkAlgHom (tensorAlgDegree R) (milnorRel R) ?_
     intro _ _ h
     rcases (milnorRel_iff R).mp h with ⟨a, b, _, rfl, rfl⟩
     refine ⟨2, ?_⟩
-    dsimp only [𝒜]
-    rw [sub_zero, pow_two]
+    rw [tensorAlgDegree, sub_zero, pow_two]
     exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ _) (LinearMap.mem_range_self _ _)
   rwa [AlgHom.ker_coe, RingQuot.mkAlgHom_coe] at hhom
-
-private theorem degree_eq_map_range_pow (n : ℕ) :
-    degree R n =
-      ((TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n).map
-        (mk (R := R)).toIntAlgHom.toLinearMap :=
-  Submodule.ext fun _ ↦ mem_degree_iff
 
 /-- `MilnorK R` is internally `ℕ`-graded by `MilnorK.degree R`. -/
 theorem isInternal_degree : DirectSum.IsInternal (degree R) := by
   classical
-  let 𝒜 : ℕ → Submodule ℤ (TensorAlgebra ℤ (Additive Rˣ)) :=
-    fun n ↦ (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n
-  have hker : (RingHom.ker (mk (R := R)).toIntAlgHom).IsHomogeneous 𝒜 := by
+  have hker : (RingHom.ker (mk (R := R)).toIntAlgHom).IsHomogeneous (tensorAlgDegree R) := by
     have heq : RingHom.ker (mk (R := R)).toIntAlgHom = RingHom.ker (mk (R := R)) := by
       ext; simp [RingHom.toIntAlgHom_apply]
     simpa only [heq] using isHomogeneous_ker_mk R
-  have hint := TauCeti.GradedAlgebra.isInternal_map 𝒜 (mk (R := R)).toIntAlgHom
-    mk_surjective hker
-  rwa [show (fun i ↦ (𝒜 i).map (mk (R := R)).toIntAlgHom.toLinearMap) = degree R from
-    funext fun i ↦ (degree_eq_map_range_pow R i).symm] at hint
+  have hint := TauCeti.GradedAlgebra.isInternal_map (tensorAlgDegree R)
+    (mk (R := R)).toIntAlgHom mk_surjective hker
+  rwa [show (fun i ↦ (tensorAlgDegree R i).map (mk (R := R)).toIntAlgHom.toLinearMap) =
+      degree R from funext fun i ↦ (degree_eq_map_range_pow (R := R) i).symm] at hint
 
 /-- `MilnorK R` is a graded `ℤ`-algebra with homogeneous components `MilnorK.degree R`. -/
 noncomputable instance gradedAlgebraDegree : GradedAlgebra (degree R) :=
@@ -405,16 +397,15 @@ section Functoriality
 variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
 
 /-- The degree-`n` `ℤ`-linear map `MilnorK.degree R n →ₗ[ℤ] MilnorK.degree S n` induced by `f`. -/
-def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n where
-  toFun x := ⟨map f x.val, map_mem_degree f x.property⟩
-  map_add' x y := Subtype.ext (map_add (map f) x.val y.val)
-  map_smul' k x := Subtype.ext (map_zsmul (map f) k x.val)
+def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n :=
+  (map f).toIntAlgHom.toLinearMap.restrict fun _ hx ↦ map_mem_degree f hx
 
 /-- Underlying value of `mapDegree f n x`. -/
 @[simp]
 theorem mapDegree_apply (f : R →+* S) (n : ℕ) (x : degree R n) :
-    (mapDegree f n x : MilnorK S) = map f x.val := by
-  rw [mapDegree, LinearMap.coe_mk, AddHom.coe_mk]
+    (mapDegree f n x : MilnorK S) = map f x.val :=
+  congrArg Subtype.val (LinearMap.restrict_apply
+    (f := (map f).toIntAlgHom.toLinearMap) (fun _ hx ↦ map_mem_degree f hx) x)
 
 /-- `MilnorK.mapDegree` preserves the identity ring homomorphism. -/
 @[simp]
@@ -557,39 +548,27 @@ end FieldIdentities
 
 section FiniteField
 
-variable {F : Type*} [Field F]
+variable {F : Type*} [Field F] [Finite F]
 
-/-- Over a field with cyclic unit group and positive characteristic, every product of two
-degree-one classes vanishes in `MilnorK F`. -/
-theorem ofUnit_mul_ofUnit_eq_zero_of_isCyclic_of_ringChar_ne_zero [IsCyclic Fˣ]
-    (hchar : ringChar F ≠ 0) (a b : Fˣ) : ofUnit a * ofUnit b = 0 :=
-  isSteinbergPairing_ofUnit_mul.eq_zero_of_isCyclic_of_ringChar_ne_zero hchar a b
+/-- Over a finite field, every product of two degree-one classes vanishes in `MilnorK F`. -/
+theorem ofUnit_mul_ofUnit_eq_zero_of_finite (a b : Fˣ) : ofUnit a * ofUnit b = 0 :=
+  isSteinbergPairing_ofUnit_mul.eq_zero_of_finite a b
 
-/-- Over a field with cyclic unit group and positive characteristic, every symbol of length at
-least two vanishes. -/
-theorem symbol_eq_zero_of_isCyclic_of_ringChar_ne_zero [IsCyclic Fˣ] (hchar : ringChar F ≠ 0)
-    {l : List Fˣ} (hl : 2 ≤ l.length) : symbol l = 0 := by
+/-- Over a finite field, every symbol of length at least two vanishes. -/
+theorem symbol_eq_zero_of_finite {l : List Fˣ} (hl : 2 ≤ l.length) : symbol l = 0 := by
   match l with
   | a :: b :: rest =>
-    rw [symbol_cons, symbol_cons, ← mul_assoc,
-      ofUnit_mul_ofUnit_eq_zero_of_isCyclic_of_ringChar_ne_zero hchar a b, zero_mul]
-
-/-- Over a field with cyclic unit group and positive characteristic, `MilnorK.degree F n` vanishes
-for every `n ≥ 2`. -/
-theorem subsingleton_degree_of_isCyclic_of_ringChar_ne_zero [IsCyclic Fˣ] (hchar : ringChar F ≠ 0)
-    (n : ℕ) (hn : 2 ≤ n) : Subsingleton (degree F n) := by
-  refine subsingleton_iff_forall_eq 0 |>.mpr fun x ↦ ?_
-  induction x using degree_inductionOn with
-  | zero => rfl
-  | symbol l hl =>
-    exact Subtype.ext (symbol_eq_zero_of_isCyclic_of_ringChar_ne_zero hchar (hl.symm ▸ hn))
-  | add x y hx hy => rw [hx, hy, add_zero]
-  | smul k x hx => rw [hx, smul_zero]
+    rw [symbol_cons, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_eq_zero_of_finite a b, zero_mul]
 
 /-- Milnor K-groups of finite fields vanish in every degree at least two. -/
 theorem subsingleton_degree_of_finite (F : Type*) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :
-    Subsingleton (degree F n) :=
-  subsingleton_degree_of_isCyclic_of_ringChar_ne_zero (CharP.ringChar_ne_zero_of_finite F) n hn
+    Subsingleton (degree F n) := by
+  refine subsingleton_iff_forall_eq 0 |>.mpr fun x ↦ ?_
+  induction x using degree_inductionOn with
+  | zero => rfl
+  | symbol l hl => exact Subtype.ext (symbol_eq_zero_of_finite (hl.symm ▸ hn))
+  | add x y hx hy => rw [hx, hy, add_zero]
+  | smul k x hx => rw [hx, smul_zero]
 
 end FiniteField
 

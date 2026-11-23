@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
 public import Mathlib.LinearAlgebra.TensorPower.Basic
+public import TauCeti.FieldTheory.MatsumotoGroup
 public import TauCeti.FieldTheory.MilnorK.Basic
-public import TauCeti.FieldTheory.MilnorK.SymbolGroup
 import TauCeti.LinearAlgebra.TensorSquare
 
 /-!
@@ -17,7 +17,7 @@ import TauCeti.LinearAlgebra.TensorSquare
 
 This file bridges `MilnorK.degree R n` with the homogeneous tensor-power quotients
 `(⨂[ℤ]^n (Additive Rˣ)) ⧸ MilnorK.relationSubmodule R n` naturally in `R`, and derives the
-canonical degree-2 identification with `SymbolGroup R` (complementing the degree-0 and degree-1
+canonical degree-2 identification with `MatsumotoGroup R` (complementing the degree-0 and degree-1
 identifications in `TauCeti.RingTheory.MilnorK.Basic`).
 
 ## Main definitions
@@ -25,18 +25,16 @@ identifications in `TauCeti.RingTheory.MilnorK.Basic`).
 * `TauCeti.MilnorK.toDegree`: the canonical surjection `(⨂[ℤ]^n) (Additive Rˣ) →ₗ[ℤ] degree R n`.
 * `TauCeti.MilnorK.degreeEquivQuotient`: the canonical linear equivalence
   `degree R n ≃ₗ[ℤ] ((⨂[ℤ]^n) (Additive Rˣ)) ⧸ relationSubmodule R n`.
-* `TauCeti.MilnorK.directSumDegreeEquiv`: the graded algebra equivalence
-  `(⨁ n : ℕ, degree R n) ≃ₐ[ℤ] MilnorK R`.
 * `TauCeti.MilnorK.mapQuotient`: functorial map on degree-`n` tensor-power quotients.
-* `TauCeti.MilnorK.degreeTwoEquivSymbolGroup`: the canonical equivalence
-  `degree R 2 ≃ₗ[ℤ] SymbolGroup R`.
+* `TauCeti.MilnorK.degreeTwoEquivMatsumotoGroup`: the canonical equivalence
+  `degree R 2 ≃ₗ[ℤ] MatsumotoGroup R`.
 
 ## Main results
 
 * `TauCeti.MilnorK.degreeEquivQuotient_mapDegree`: naturality of the degree-`n` quotient bridge
   under ring homomorphisms.
-* `TauCeti.MilnorK.degreeTwoEquivSymbolGroup_mapDegree`: naturality of the degree-2 identification
-  with `SymbolGroup`.
+* `TauCeti.MilnorK.degreeTwoEquivMatsumotoGroup_mapDegree`: naturality of the degree-2
+  identification with `MatsumotoGroup`.
 
 ## References
 
@@ -135,10 +133,6 @@ theorem degreeEquivQuotient_symbol_ofFn {n : ℕ} (a : Fin n → Rˣ) :
     Subtype.ext (by rw [toDegree_tprod]; simp)
   rw [h, degreeEquivQuotient_toDegree]
 
-/-- The canonical graded `ℤ`-algebra equivalence `(⨁ n : ℕ, MilnorK.degree R n) ≃ₐ[ℤ] MilnorK R`. -/
-noncomputable def directSumDegreeEquiv : (⨁ n : ℕ, degree R n) ≃ₐ[ℤ] MilnorK R :=
-  (isInternal_degree R).coeAlgEquiv
-
 end DegreeQuotient
 
 section Functoriality
@@ -204,78 +198,76 @@ section DegreeTwo
 
 variable (R : Type*) [CommRing R]
 
-private noncomputable def tensorSquareEquivSymm :
-    (⨂[ℤ]^2) (Additive Rˣ) ≃ₗ[ℤ] Additive Rˣ ⊗[ℤ] Additive Rˣ where
-  __ := (tensorProductEquivTensorSquare ℤ (Additive Rˣ)).symm.toAddEquiv
-  map_smul' k x := by
-    rw [RingHom.id_apply]
-    exact map_zsmul (tensorProductEquivTensorSquare ℤ (Additive Rˣ)).symm.toAddMonoidHom k x
-
-private theorem tensorSquareEquivSymm_tprod (x : Fin 2 → Additive Rˣ) :
-    tensorSquareEquivSymm R (PiTensorProduct.tprod ℤ x) = x 0 ⊗ₜ[ℤ] x 1 :=
-  tensorProductEquivTensorSquare_symm_tprod ℤ (Additive Rˣ) x
-
 private theorem map_relationSubmodule_two :
-    (relationSubmodule R 2).map (tensorSquareEquivSymm R).toLinearMap = steinbergRelations R := by
+    (relationSubmodule R 2).map
+        ((tensorProductEquivTensorSquare ℤ
+          (Additive Rˣ)).symm.toAddEquiv.toIntLinearEquiv.toLinearMap) =
+      MatsumotoGroup.steinbergRelations R := by
   refine le_antisymm ?_ ?_
   · rw [relationSubmodule_def, Submodule.map_span_le]
     rintro _ ⟨x, i, hi, hab, rfl⟩
     obtain rfl : i = 0 := by omega
-    rw [LinearEquiv.coe_coe, tensorSquareEquivSymm_tprod, steinbergRelations_def]
+    rw [LinearEquiv.coe_coe, AddEquiv.coe_toIntLinearEquiv, LinearEquiv.coe_toAddEquiv,
+      LinearEquiv.coe_addEquiv_apply, tensorProductEquivTensorSquare_symm_tprod,
+      MatsumotoGroup.steinbergRelations_def]
     exact Submodule.subset_span ⟨Additive.toMul (x 0), Additive.toMul (x 1), hab, by simp⟩
-  · rw [steinbergRelations_def, Submodule.span_le]
+  · rw [MatsumotoGroup.steinbergRelations_def, Submodule.span_le]
     rintro _ ⟨a, b, hab, rfl⟩
     rw [SetLike.mem_coe, Submodule.mem_map]
     refine ⟨PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b],
       tprod_mem_relationSubmodule _ (i := 0) (by omega) (by simpa using hab), ?_⟩
-    rw [LinearEquiv.coe_coe, tensorSquareEquivSymm_tprod]
+    rw [LinearEquiv.coe_coe, AddEquiv.coe_toIntLinearEquiv, LinearEquiv.coe_toAddEquiv,
+      LinearEquiv.coe_addEquiv_apply, tensorProductEquivTensorSquare_symm_tprod]
     simp
 
-/-- The canonical `ℤ`-linear equivalence `MilnorK.degree R 2 ≃ₗ[ℤ] SymbolGroup R`, taking
-`MilnorK.symbol [a, b]` to `SymbolGroup.symbol a b`. -/
-noncomputable def degreeTwoEquivSymbolGroup : degree R 2 ≃ₗ[ℤ] SymbolGroup R :=
+/-- The canonical `ℤ`-linear equivalence `MilnorK.degree R 2 ≃ₗ[ℤ] MatsumotoGroup R`, taking
+`MilnorK.symbol [a, b]` to `MatsumotoGroup.symbol a b`. -/
+noncomputable def degreeTwoEquivMatsumotoGroup : degree R 2 ≃ₗ[ℤ] MatsumotoGroup R :=
   (degreeEquivQuotient R 2).trans
-    (Submodule.Quotient.equiv (relationSubmodule R 2) (steinbergRelations R)
-      (tensorSquareEquivSymm R) (map_relationSubmodule_two R))
+    (Submodule.Quotient.equiv (relationSubmodule R 2) (MatsumotoGroup.steinbergRelations R)
+      (tensorProductEquivTensorSquare ℤ (Additive Rˣ)).symm.toAddEquiv.toIntLinearEquiv
+      (map_relationSubmodule_two R))
 
-/-- `degreeTwoEquivSymbolGroup R` sends the two-entry Milnor symbol `{a, b}` to
-`SymbolGroup.symbol a b`. -/
-theorem degreeTwoEquivSymbolGroup_symbol_pair (a b : Rˣ) :
-    degreeTwoEquivSymbolGroup R ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ =
-      SymbolGroup.symbol a b := by
+/-- `degreeTwoEquivMatsumotoGroup R` sends the two-entry Milnor symbol `{a, b}` to
+`MatsumotoGroup.symbol a b`. -/
+theorem degreeTwoEquivMatsumotoGroup_symbol_pair (a b : Rˣ) :
+    degreeTwoEquivMatsumotoGroup R ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ =
+      MatsumotoGroup.symbol a b := by
   have hsub : (⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ : degree R 2) =
       ⟨symbol (List.ofFn ![a, b]), symbol_mem_degree_of_length (List.length_ofFn (f := ![a, b]))⟩ :=
     Subtype.ext (congrArg symbol (by simp))
-  rw [hsub, degreeTwoEquivSymbolGroup, LinearEquiv.trans_apply, degreeEquivQuotient_symbol_ofFn,
+  rw [hsub, degreeTwoEquivMatsumotoGroup, LinearEquiv.trans_apply, degreeEquivQuotient_symbol_ofFn,
     Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
-    tensorSquareEquivSymm_tprod]
-  simp [SymbolGroup.symbol_def]
+    AddEquiv.coe_toIntLinearEquiv, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    tensorProductEquivTensorSquare_symm_tprod]
+  simp
 
-/-- `degreeTwoEquivSymbolGroup R` sends `ofUnit a * ofUnit b` to `SymbolGroup.symbol a b`. -/
+/-- `degreeTwoEquivMatsumotoGroup R` sends `ofUnit a * ofUnit b` to
+`MatsumotoGroup.symbol a b`. -/
 @[simp]
-theorem degreeTwoEquivSymbolGroup_ofUnit_mul (a b : Rˣ) :
-    degreeTwoEquivSymbolGroup R
+theorem degreeTwoEquivMatsumotoGroup_ofUnit_mul (a b : Rˣ) :
+    degreeTwoEquivMatsumotoGroup R
       ⟨ofUnit a * ofUnit b,
         SetLike.GradedMul.mul_mem (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ =
-      SymbolGroup.symbol a b := by
-  simpa [Subtype.ext_iff, symbol_pair] using degreeTwoEquivSymbolGroup_symbol_pair R a b
+      MatsumotoGroup.symbol a b := by
+  simpa [Subtype.ext_iff, symbol_pair] using degreeTwoEquivMatsumotoGroup_symbol_pair R a b
 
-/-- `(degreeTwoEquivSymbolGroup R).symm` sends `SymbolGroup.symbol a b` to the two-entry Milnor
-symbol `{a, b}`. -/
+/-- `(degreeTwoEquivMatsumotoGroup R).symm` sends `MatsumotoGroup.symbol a b` to the two-entry
+Milnor symbol `{a, b}`. -/
 @[simp]
-theorem degreeTwoEquivSymbolGroup_symm_symbol (a b : Rˣ) :
-    (degreeTwoEquivSymbolGroup R).symm (SymbolGroup.symbol a b) =
+theorem degreeTwoEquivMatsumotoGroup_symm_symbol (a b : Rˣ) :
+    (degreeTwoEquivMatsumotoGroup R).symm (MatsumotoGroup.symbol a b) =
       ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ := by
-  rw [LinearEquiv.symm_apply_eq, degreeTwoEquivSymbolGroup_symbol_pair]
+  rw [LinearEquiv.symm_apply_eq, degreeTwoEquivMatsumotoGroup_symbol_pair]
 
-/-- The degree-two identification `degree R 2 ≃ₗ[ℤ] SymbolGroup R` is natural with respect to ring
-homomorphisms. -/
-theorem degreeTwoEquivSymbolGroup_mapDegree {S : Type*} [CommRing S] (f : R →+* S)
+/-- The degree-two identification `degree R 2 ≃ₗ[ℤ] MatsumotoGroup R` is natural with respect to
+ring homomorphisms. -/
+theorem degreeTwoEquivMatsumotoGroup_mapDegree {S : Type*} [CommRing S] (f : R →+* S)
     (x : degree R 2) :
-    degreeTwoEquivSymbolGroup S (mapDegree f 2 x) =
-      SymbolGroup.map f (degreeTwoEquivSymbolGroup R x) := by
+    degreeTwoEquivMatsumotoGroup S (mapDegree f 2 x) =
+      MatsumotoGroup.map f (degreeTwoEquivMatsumotoGroup R x) := by
   obtain ⟨t, rfl⟩ := surjective_toDegree R 2 x
-  simp only [degreeTwoEquivSymbolGroup, LinearEquiv.trans_apply, degreeEquivQuotient_mapDegree,
+  simp only [degreeTwoEquivMatsumotoGroup, LinearEquiv.trans_apply, degreeEquivQuotient_mapDegree,
     degreeEquivQuotient_toDegree]
   induction t using PiTensorProduct.induction_on with
   | smul_tprod r y =>
@@ -283,11 +275,14 @@ theorem degreeTwoEquivSymbolGroup_mapDegree {S : Type*} [CommRing S] (f : R →+
     congr 1
     rw [mapQuotient_mk_tprod, Submodule.Quotient.equiv_apply, Submodule.Quotient.equiv_apply,
       Submodule.mapQ_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      tensorSquareEquivSymm_tprod, tensorSquareEquivSymm_tprod]
+      AddEquiv.coe_toIntLinearEquiv, AddEquiv.coe_toIntLinearEquiv,
+      LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_toAddEquiv,
+      LinearEquiv.coe_addEquiv_apply, LinearEquiv.coe_addEquiv_apply,
+      tensorProductEquivTensorSquare_symm_tprod, tensorProductEquivTensorSquare_symm_tprod]
     have hy : y 0 ⊗ₜ[ℤ] y 1 =
         Additive.ofMul (Additive.toMul (y 0)) ⊗ₜ[ℤ] Additive.ofMul (Additive.toMul (y 1)) := by
       simp
-    rw [hy, ← SymbolGroup.symbol_def, ← SymbolGroup.symbol_def, SymbolGroup.map_symbol]
+    rw [hy, MatsumotoGroup.mk_tmul, MatsumotoGroup.mk_tmul, MatsumotoGroup.map_symbol]
   | add _ _ hu hv =>
     simp only [Submodule.Quotient.mk_add, map_add] at hu hv ⊢
     rw [hu, hv]

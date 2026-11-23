@@ -406,12 +406,17 @@ theorem mem_degree_iff {n : ℕ} {x : MilnorK R} :
       rw [map_mul, mk_ι, Nat.succ_eq_add_one, add_comm]
       exact mul_mem_degree (ofUnit_mem_degree_one _) hx
 
+/-- The degree-`n` Milnor K-group is the image of the degree-`n` part of the tensor algebra under
+`MilnorK.mk`. -/
+theorem degree_eq_map_range_pow (n : ℕ) :
+    degree R n =
+      (LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] _) ^ n).map
+        (mk (R := R)).toIntAlgHom.toLinearMap :=
+  Submodule.ext fun _ ↦ mem_degree_iff
+
 /-- Every element of the Milnor K-ring is a sum of elements of the degree submodules. -/
 theorem iSup_degree_eq_top : ⨆ n, degree R n = ⊤ := by
-  have hdeg (n : ℕ) : degree R n =
-      (LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] _) ^ n).map (mk (R := R)).toIntAlgHom.toLinearMap :=
-    Submodule.ext fun _ ↦ mem_degree_iff
-  simp_rw [hdeg, ← Submodule.map_iSup, (DirectSum.Decomposition.isInternal
+  simp_rw [degree_eq_map_range_pow, ← Submodule.map_iSup, (DirectSum.Decomposition.isInternal
     (fun n : ℕ ↦ LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] _) ^ n)).submodule_iSup_eq_top,
     Submodule.map_top]
   exact LinearMap.range_eq_top.2 mk_surjective
