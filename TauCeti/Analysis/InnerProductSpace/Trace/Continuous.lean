@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.LinearMap
-import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
@@ -27,10 +27,11 @@ the second Fréchet derivative (`TauCeti.laplacian_eq_traceL`).
   linear functional.
 * `ContinuousLinearMap.traceL_apply_eq_metricTrace`: it is the metric trace
   `LinearMap.BilinMap.metricTrace` of the underlying bilinear map.
-* `TauCeti.traceL_apply`: in the standard orthonormal basis it is the sum of the diagonal values.
+* `ContinuousLinearMap.traceL_apply`: in the standard orthonormal basis it is the sum of the
+  diagonal values.
 * `ContinuousLinearMap.norm_traceL_apply_le`: `‖traceL H‖ ≤ dim E * ‖H‖`.
-* `TauCeti.traceL_flip`, `TauCeti.traceL_innerSL`: the trace is invariant under transposition, and
-  the trace of the inner product is the dimension.
+* `ContinuousLinearMap.traceL_flip`, `TauCeti.traceL_innerSL`: the trace is invariant under
+  transposition, and the trace of the inner product is the dimension.
 * `ContinuousLinearMap.traceL_smulRight`: the trace of the rank-one map `f.smulRight A` is `A`
   evaluated at the Riesz representative of `f`.
 -/
@@ -47,8 +48,10 @@ is the bound making `TauCeti.traceL` continuous; use `ContinuousLinearMap.norm_t
 private theorem norm_metricTrace_toLinearMap₁₂_le (H : E →L[ℝ] E →L[ℝ] F) :
     ‖LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ H)‖ ≤
       Module.finrank ℝ E * ‖H‖ := by
-  simpa [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)] using
-    H.norm_sum_apply_apply_le Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+  have h := H.norm_sum_apply_apply_le Finset.univ
+    (stdOrthonormalBasis ℝ E) (stdOrthonormalBasis ℝ E)
+  rw [mul_comm] at h
+  simpa [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)] using h
 
 /-- The metric trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous linear
 functional: `LinearMap.BilinMap.metricTrace` of the underlying bilinear map, which is bounded by
@@ -65,7 +68,7 @@ theorem _root_.ContinuousLinearMap.traceL_apply_eq_metricTrace (H : E →L[ℝ] 
 
 /-- The trace of a bilinear map is the sum of its diagonal values on the standard orthonormal
 basis. -/
-theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
+theorem _root_.ContinuousLinearMap.traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
     traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
   rw [H.traceL_apply_eq_metricTrace,
     LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)]
@@ -79,7 +82,8 @@ theorem _root_.ContinuousLinearMap.norm_traceL_apply_le (H : E →L[ℝ] E →L[
   exact norm_metricTrace_toLinearMap₁₂_le H
 
 /-- Transposing the arguments of a bilinear map preserves its trace. -/
-@[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
+@[simp] theorem _root_.ContinuousLinearMap.traceL_flip (B : E →L[ℝ] E →L[ℝ] F) :
+    traceL B.flip = traceL B := by
   rw [B.flip.traceL_apply_eq_metricTrace, B.traceL_apply_eq_metricTrace,
     ContinuousLinearMap.toLinearMap₁₂_flip, LinearMap.BilinMap.metricTrace_flip]
 

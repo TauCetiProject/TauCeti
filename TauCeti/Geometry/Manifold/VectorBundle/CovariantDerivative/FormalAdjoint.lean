@@ -90,7 +90,7 @@ section Definition
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
@@ -202,20 +202,33 @@ theorem formalAdjoint_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x)
     LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe, neg_add,
     smul_neg, sub_eq_add_neg]
 
-variable [T2Space M] [ContMDiffCovariantDerivative cov ∞] {σ : Π x : M, V x}
+end Definition
+
+section RoughLaplacian
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  (cov : _root_.CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
+  (covT : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
+  {σ : Π x : M, V x}
 
 /-- **The rough Laplacian is the composite of the connection and its formal adjoint**:
 `∇*∇ σ = ∇*(∇σ)` for a smooth section `σ`. -/
 theorem roughLaplacian_eq_formalAdjoint (hσ : CMDiff ∞ (T% σ)) :
     cov.roughLaplacian covT σ = cov.formalAdjoint covT (cov σ) := by
   funext x
-  rw [roughLaplacian_def, formalAdjoint_def]
-  congr 2
-  refine LinearMap.ext₂ fun v w ↦ ?_
-  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
-  exact secondCovariantDerivative_eq_hom_apply cov covT hσ x v w
+  rw [roughLaplacian_def, formalAdjoint_def,
+    secondCovariantDerivative_eq_toLinearMap₁₂_hom cov covT hσ x]
 
-end Definition
+end RoughLaplacian
 
 /-! ### Integration by parts -/
 

@@ -196,7 +196,8 @@ noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [Topologica
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) : ℝ :=
   I.hessianForm f x v w
 
-theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
+theorem hessian_eq_inner_leviCivitaConnection_mgradient (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
@@ -229,7 +230,7 @@ theorem leviCivitaConnection_mgradient_eq_zero_of_hessian_eq_zero
     CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v = 0 := by
   apply ext_inner_right ℝ
   intro w
-  simpa only [hessian_def, inner_zero_left] using hzero w
+  simpa only [hessian_eq_inner_leviCivitaConnection_mgradient, inner_zero_left] using hzero w
 
 end HessianGradient
 
@@ -247,7 +248,7 @@ theorem leviCivitaConnection_mgradient_of_hessian_eq_mul_inner [IsManifold I 2 M
     CovariantDerivative.leviCivitaConnection I M (mgradient I f) x u = a • u := by
   apply ext_inner_right ℝ
   intro v
-  rw [← hessian_def, h, real_inner_smul_left]
+  rw [← hessian_eq_inner_leviCivitaConnection_mgradient, h, real_inner_smul_left]
 
 /-- The Hessian applied to a vector field and a differentiable vector field is the directional
 derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
@@ -286,7 +287,7 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     simpa only [Function.comp_apply] using hinner
   have hgrad := inner_mgradient (I := I) (f := f) (x := x)
     ((CovariantDerivative.leviCivitaConnection I M W) x (V x))
-  rw [hessian_def]
+  rw [hessian_eq_inner_leviCivitaConnection_mgradient]
   linarith
 
 /-- The Hessian of a twice continuously differentiable function is symmetric for the
@@ -559,7 +560,7 @@ protected theorem _root_.HasCompactSupport.laplaceBeltrami {f : M → ℝ}
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :
     hessian I (fun _ : M ↦ c) x v w = 0 := by
-  simp [hessian_def]
+  simp [hessian_eq_inner_leviCivitaConnection_mgradient]
 
 /-- The Hessian of the zero function is zero. -/
 @[simp]
@@ -929,7 +930,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v₁ v₂ w : TangentSpace I x) :
     hessian I f x (v₁ + v₂) w = hessian I f x v₁ w + hessian I f x v₂ w := by
-  simp only [hessian_def, map_add, inner_add_left]
+  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, map_add, inner_add_left]
 
 @[simp] theorem hessian_smul_left (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -937,7 +938,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (r : ℝ) (v w : TangentSpace I x) :
     hessian I f x (r • v) w = r * hessian I f x v w := by
-  simp only [hessian_def, map_smul, real_inner_smul_left]
+  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, map_smul, real_inner_smul_left]
 
 @[simp] theorem hessian_zero_left (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -945,7 +946,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (w : TangentSpace I x) :
     hessian I f x 0 w = 0 := by
-  simp only [hessian_def, map_zero, inner_zero_left]
+  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, map_zero, inner_zero_left]
 
 @[simp] theorem hessian_add_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -953,7 +954,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w₁ w₂ : TangentSpace I x) :
     hessian I f x v (w₁ + w₂) = hessian I f x v w₁ + hessian I f x v w₂ := by
-  simp only [hessian_def, inner_add_right]
+  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, inner_add_right]
 
 @[simp] theorem hessian_smul_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -961,7 +962,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (r : ℝ) (v w : TangentSpace I x) :
     hessian I f x v (r • w) = r * hessian I f x v w := by
-  simp only [hessian_def, real_inner_smul_right]
+  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, real_inner_smul_right]
 
 @[simp] theorem hessian_zero_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -969,7 +970,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     hessian I f x v 0 = 0 := by
-  simp only [hessian_def, inner_zero_right]
+  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, inner_zero_right]
 
 /-- The Laplace–Beltrami operator is the trace of the scalar Hessian in every orthonormal basis. -/
 theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -1115,7 +1116,7 @@ theorem hessian_eq_iteratedFDeriv_model_space
     hessian (modelWithCornersSelf ℝ F) f x v w =
       iteratedFDeriv ℝ 2 f x
         ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w] := by
-  rw [hessian_def]
+  rw [hessian_eq_inner_leviCivitaConnection_mgradient]
   have hm : mgradient (modelWithCornersSelf ℝ F) f = ∇ f :=
     funext fun y ↦ mgradient_eq_gradient f y
   have hmgrad : DifferentiableAt ℝ (mgradient (modelWithCornersSelf ℝ F) f) x := by

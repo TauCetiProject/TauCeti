@@ -142,7 +142,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
 theorem laplacian_eq_traceL (f : E → F) (x : E) :
     Δ f x = traceL (fderiv ℝ (fderiv ℝ f) x) := by
-  rw [traceL_apply, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  rw [ContinuousLinearMap.traceL_apply, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
   simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- The Laplacian of a function is the trace of its second iterated Fréchet derivative, expressed
@@ -285,11 +285,11 @@ theorem _root_.ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffA
     (hDf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   -- The Laplacian of `f` is the trace of the second derivative.
   have hΔ : Δ f =ᶠ[𝓝 x] fun y ↦ ∑ i, fderiv ℝ (fderiv ℝ f) y (b i) (b i) :=
-    .of_forall fun y ↦ by rw [laplacian_eq_traceL, traceL_apply]
+    .of_forall fun y ↦ by rw [laplacian_eq_traceL, ContinuousLinearMap.traceL_apply]
   ext v
   have hl : Δ (fderiv ℝ f) x v = Δ (fun y ↦ fderiv ℝ f y v) x :=
     (hDf.laplacian_CLM_comp_left (l := ContinuousLinearMap.apply ℝ F v)).symm
-  rw [hl, laplacian_eq_traceL, traceL_apply, hΔ.fderiv_eq,
+  rw [hl, laplacian_eq_traceL, ContinuousLinearMap.traceL_apply, hΔ.fderiv_eq,
     fderiv_fun_sum fun i _ ↦ (hD2.clm_apply (differentiableAt_const _)).clm_apply
       (differentiableAt_const _)]
   simp only [FunLike.coe_sum, Finset.sum_apply]

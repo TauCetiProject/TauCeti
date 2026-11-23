@@ -75,7 +75,7 @@ theorem contMDiffAt_hessian_pair (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {f : M �
   have heq : (fun y ↦ hessian I f (γ y) (P y) (Q y)) =
       (fun y ↦ inner ℝ (leviCivitaConnection I M (mgradient I f) (γ y) (P y)) (Q y)) := by
     funext y
-    exact hessian_def I f (γ y) (P y) (Q y)
+    exact hessian_eq_inner_leviCivitaConnection_mgradient I f (γ y) (P y) (Q y)
   rw [heq]
   exact ContMDiffAt.inner_bundle (IB := I) (F := E)
     (E := fun y : M ↦ TangentSpace I y) (b := γ) hAP hQ
@@ -92,7 +92,7 @@ theorem mdifferentiableAt_hessianForm_apply {f : M → ℝ} {x : M}
     MDiffAt (fun y ↦ I.hessianForm f y (σ y) (τ y)) x := by
   have hGσ : MDiffAt (T% (fun y ↦ leviCivitaConnection I M (mgradient I f) y (σ y))) x :=
     hf.clm_bundle_apply hσ
-  simp only [ModelWithCorners.hessianForm_apply, hessian_def]
+  simp only [ModelWithCorners.hessianForm_apply, hessian_eq_inner_leviCivitaConnection_mgradient]
   exact mdifferentiableAt_inner hGσ hτ
 
 /-- The Hessian form of a function that is `C³` at `x` pairs two tangent fields differentiable at
