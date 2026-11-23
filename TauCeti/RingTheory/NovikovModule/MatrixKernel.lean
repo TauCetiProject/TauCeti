@@ -28,7 +28,7 @@ Let `D` be square with integer degrees `e : ι → ℤ` on the generators, raisi
 `D * D = 0`, so that `K = gradedMatrixComplex e D` is a bounded integer-graded complex. For a
 degree on the generators `⟨i, g⟩` reading `e i` modulo `n`, for instance the Laurent degree
 `e i + c g` modulo `n` for a homomorphism `c : H →+ ℤ` with values in `nℤ`
-(`TauCeti.NovikovModule.laurentDegree_intCast_eq`), the Laurent extension is a Laurent differential,
+(`TauCeti.NovikovModule.intCast_add_eq_of_dvd`), the Laurent extension is a Laurent differential,
 and its cyclic complex is the complex of `D` with the degrees read modulo `n`
 (`TauCeti.NovikovModule.cyclicComplexMatrixKernelIso`), that is, the `n`-periodic compression of
 `K`. So its homology in residue `r` is the direct sum of the homology of `K` in the degrees
@@ -162,15 +162,9 @@ theorem kernelComp_matrixKernel [Semiring R] [Fintype ι₀] (M : Matrix ι₁ �
     (M' : Matrix ι₀ ι₂ R) :
     kernelComp (matrixKernel (H := H) M) (matrixKernel M') = matrixKernel (M * M') := by
   ext ⟨i, g⟩ ⟨k, h⟩
-  -- Only the generators `⟨l, g⟩` of the middle carry nonzero coefficients of the first kernel.
   have hfin : (support fun r : Σ _ : ι₀, H ↦
       matrixKernel M ⟨i, g⟩ r * matrixKernel M' r ⟨k, h⟩).Finite :=
-    (Set.finite_range fun l : ι₀ ↦ (⟨l, g⟩ : Σ _ : ι₀, H)).subset <| by
-      rintro ⟨l, g'⟩ hr
-      by_cases hg : g = g'
-      · subst hg
-        exact Set.mem_range_self l
-      · simp [hg] at hr
+    (finite_support_matrixKernel M ⟨i, g⟩).subset (support_mul_subset_left _ _)
   have hl (l : ι₀) : ∑ᶠ h' : H, matrixKernel M ⟨i, g⟩ ⟨l, h'⟩ * matrixKernel M' ⟨l, h'⟩ ⟨k, h⟩ =
       if g = h then M i l * M' l k else 0 := by
     rw [finsum_eq_single _ g fun g' hg' ↦ by simp [Ne.symm hg']]
@@ -200,7 +194,7 @@ variable {R : Type u} [CommRing R] {H : Type*} {ι : Type v} {n : ℕ} {e : ι �
 
 /-- The Laurent degree `e i + c g` of the generator `⟨i, g⟩`, for a homomorphism `c` with values
 in `nℤ`, reads `e i` modulo `n`. -/
-theorem laurentDegree_intCast_eq [AddGroup H] {c : H →+ ℤ} (hc : ∀ g, (n : ℤ) ∣ c g)
+theorem intCast_add_eq_of_dvd [AddGroup H] {c : H →+ ℤ} (hc : ∀ g, (n : ℤ) ∣ c g)
     (p : Σ _ : ι, H) : ((e p.fst + c p.snd : ℤ) : ZMod n) = e p.fst := by
   rw [Int.cast_add, (ZMod.intCast_zmod_eq_zero_iff_dvd _ n).2 (hc _), add_zero]
 
