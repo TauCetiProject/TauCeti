@@ -9,14 +9,13 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.CAff.RationalSite
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation
 
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
-import Mathlib.CategoryTheory.Sites.IsSheafFor
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafFor
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.OpenImmersion
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.OpenMapping
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Transport
-import TauCeti.CategoryTheory.Sites.IsSheafForTrans
+import TauCeti.CategoryTheory.Sites.IsSheafFor
+import TauCeti.CategoryTheory.Sites.TopologicalBasis
 
 /-!
 # Comparison between site-theoretic rational sheafiness and `Spa` structure presheaves
@@ -511,10 +510,6 @@ theorem isRationalSheafy_iff_isSheafyForEveryPresentation (X : CAff.{u}) [IsTate
     hAplus hT₀ hW le_rfl hV hVW]
   choose T' s' hT' hU'_eq using fun k ↦ mem_spaRationalOpens_iff_exists_spaBasicOpen.mp <|
     locOpensComap_mem_spaRationalOpens P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ (hV k)
-  have htop_loc : locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀
-      (spaBasicOpen X.pair.plus T₀ s₀) = ⊤ :=
-    le_antisymm le_top fun w _ ↦ (mem_locOpensComap P X.pair.plus T₀ s₀ _ hden₀ _ w).mpr <|
-      mem_spaBasicOpen.mpr (spaComapLoc_mem_rationalSubset P X.pair.plus T₀ s₀ _ hden₀ w)
   have hcovY : IsRationalCovering Y T' s' :=
     { isOpen_span := fun k ↦ hT' k
       iUnion_eq_univ := Set.eq_univ_of_forall fun w ↦ by
@@ -535,7 +530,9 @@ theorem isRationalSheafy_iff_isSheafyForEveryPresentation (X : CAff.{u}) [IsTate
         ((isRationalLocalization_rationalLocalizationHom X T₀ s₀ hT₀).comp_iso eIso)
         (rationalCoverPresieve_mem_rationalCoverage Y T' s' hcovY)
   rw [hY_plus] at hLim_Q₀
-  exact (isSheafFor_ofArrows_congr _ htop_loc (funext hU'_eq) _ _).mpr hLim_Q₀
+  exact (Presieve.isSheafFor_ofArrows_congr _
+    (locOpensComap_spaBasicOpen_self P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀)
+    (funext hU'_eq) _ _).mpr hLim_Q₀
 
 end TauCeti.CAff
 

@@ -232,10 +232,13 @@ theorem isSheaf_presentationLimitPresheaf_of_continuousLaurentGluing
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
     Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
       (presentationLimitPresheaf P Aplus) := by
+  have : IsHuberRing A := ⟨⟨P⟩⟩
   refine isSheaf_presentationLimitPresheaf_of_isSheaf_rational <|
     Presheaf.isSheaf_of_isSheaf_comp _ _ TopCommRingCat.isCompleteSeparated.ι fun E ↦ ?_
   -- a sheaf of topological rings is one whose continuous homomorphisms out of each `E` glue
-  exact isSheaf_rational_comp_of_isSheafFor_ofArrows P _ fun hW hU hcov ↦
+  exact isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows Aplus
+    (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+      coyoneda.obj (op E)) fun hW hU hcov ↦
     isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat P hC hA hP hAplus hW hU hcov E
 
 end TauCeti.ValuationSpectrum

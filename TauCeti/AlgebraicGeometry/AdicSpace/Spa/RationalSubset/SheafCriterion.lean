@@ -10,8 +10,6 @@ public import TauCeti.CategoryTheory.Sites.TopologicalBasis
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
 
-import TauCeti.CategoryTheory.Sites.IsSheafFor
-
 /-!
 # Sheaves on `Spa(A,A⁺)` are detected on rational covers
 
@@ -109,33 +107,11 @@ theorem isSheafFor_spaRationalOpens_of_finite [IsHuberRing A]
     {W : Opens ↥(spa Aplus)} (hW : W ∈ spaRationalOpens Aplus) {ι : Type u₂}
     {U : ι → Opens ↥(spa Aplus)} (hU : ∀ i, U i ∈ spaRationalOpens Aplus)
     (hcov : ⨆ i, U i = W) :
-    (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor F := by
-  classical
-  obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens hW hcov
-  let e := Equiv.ulift.{u₁}.trans (Finite.equivFin ↥I).symm
-  let κ' := ULift.{u₁} (Fin (Nat.card ↥I))
-  let U' : κ' → Opens ↥(spa Aplus) := fun k ↦ U (e k).val
-  have hcovI' : (⨆ k : κ', U' k) = W := by
-    rw [← hcovI]
-    exact le_antisymm (iSup_le fun k ↦ le_iSup (fun k : ↥I ↦ U k.val) (e k))
-      (iSup_le fun k ↦ le_iSup_of_le (e.symm k) (by simp [U']))
-  have hcovUi (i : ι) : (⨆ k : κ', U i ⊓ U' k) = U i := by
-    refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun x hx ↦ ?_
-    obtain ⟨k, hxk⟩ := Opens.mem_iSup.mp (hcovI' ▸ ((le_iSup U i).trans_eq hcov) hx)
-    exact Opens.mem_iSup.mpr ⟨k, hx, hxk⟩
-  refine Presieve.isSheafFor_ofArrows_of_factorsThru _
-    (fun i ↦ Presieve.ofArrows (fun k : κ' ↦ U i ⊓ U' k)
-      fun k ↦ homOfLE ((le_iSup (fun k : κ' ↦ U i ⊓ U' k) k).trans_eq (hcovUi i)))
-    (fun i ↦ (hfin (V := fun k : κ' ↦ U i ⊓ U' k) (hU i)
-      (fun k ↦ inf_mem_spaRationalOpens (hU i) (hU (e k).val)) (hcovUi i)).isSeparatedFor)
-    (S := Presieve.ofArrows U'
-      fun k ↦ homOfLE ((le_iSup U' k).trans_eq hcovI'))
-    (hfin (V := U') hW (fun k ↦ hU (e k).val) hcovI')
-    (fun V g ⟨k⟩ ↦ ⟨U (e k).val, 𝟙 _, homOfLE ((le_iSup U (e k).val).trans_eq hcov),
-      Presieve.ofArrows.mk (e k).val, Category.id_comp _⟩)
-    (fun i Z g ⟨k⟩ ↦ ⟨U' k, homOfLE inf_le_right,
-      homOfLE ((le_iSup U' k).trans_eq hcovI'), Presieve.ofArrows.mk k,
-      Subsingleton.elim _ _⟩)
+    (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor F :=
+  TauCeti.TopologicalSpace.Opens.isSheafFor_ofArrows_of_finite
+    (fun _ _ hU hV ↦ inf_mem_spaRationalOpens hU hV)
+    (fun _ hW ↦ isCompact_of_mem_spaRationalFamily (mem_spaRationalOpens.mp hW))
+    hfin hW hU hcov
 
 /-- **The sheaf condition on the rational basis.** For any presheaf of types `F` on `Spa(A, A⁺)`,
 if `F` satisfies the sheaf condition for every cover of a rational open by rational opens, then its
@@ -149,41 +125,9 @@ theorem isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows [IsHuber
       (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor F) :
     Presieve.IsSheaf
       ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
-      ((rationalOpensFunctor Aplus).op ⋙ F) := by
-  intro W S hS
-  obtain ⟨ι, U, π, rfl⟩ := S.exists_eq_ofArrows
-  rw [Functor.mem_restrictedTopology_iff, Sieve.functorPushforward_ofArrows] at hS
-  have hcov : ⨆ i, (U i).val = W.val := by
-    apply le_antisymm (iSup_le fun i ↦ (π i).hom.le)
-    intro x hx
-    obtain ⟨V, f, hf, hxV⟩ := hS x hx
-    obtain ⟨V', g, f', hf', rfl⟩ := hf
-    obtain ⟨i⟩ := hf'
-    exact Opens.mem_iSup.mpr ⟨i, g.le hxV⟩
-  have hrat := hrat W.property (fun i ↦ (U i).property) hcov
-  have hπ (i : ι) : (rationalOpensFunctor Aplus).map (π i) =
-      homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov) := Subsingleton.elim _ _
-  rw [← Presieve.isSheafFor_iff_generate, Presieve.isSheafFor_arrows_iff]
-  rw [Presieve.isSheafFor_arrows_iff] at hrat
-  intro x hx
-  -- Intersections of rational opens are rational, so compatibility on the basis supplies the
-  -- pairwise-intersection compatibility required in the ambient category of opens.
-  have hcompat : Presieve.Arrows.Compatible F
-      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov)) x := by
-    apply (Presieve.Arrows.compatible_homOfLE_iff _ _).mpr
-    intro i j
-    let V : spaRationalOpens Aplus :=
-      ⟨(U i).val ⊓ (U j).val, inf_mem_spaRationalOpens (U i).property (U j).property⟩
-    exact hx i j V (InducedCategory.homMk (homOfLE inf_le_left))
-      (InducedCategory.homMk (homOfLE inf_le_right))
-      (InducedCategory.hom_ext (Subsingleton.elim _ _))
-  obtain ⟨a, ha, hu⟩ := hrat x hcompat
-  refine ⟨a, ?_, ?_⟩
-  · intro i
-    simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using ha i
-  · intro b hb
-    exact hu b fun i ↦ by
-      simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using hb i
+      ((rationalOpensFunctor Aplus).op ⋙ F) :=
+  TauCeti.TopologicalSpace.Opens.isSheaf_restrictedTopology_of_isSheafFor_ofArrows
+    (fun _ _ hU hV ↦ inf_mem_spaRationalOpens hU hV) F hrat
 
 end
 

@@ -41,6 +41,8 @@ space.
 * `CategoryTheory.Presieve.isSheafFor_ofArrows_of_factorsThru`: the sheaf condition for a family of
   arrows follows from that of a finer presieve `S` (one factoring through the arrows), once
   separated presieves on the sources of the arrows refine `S` along them.
+* `CategoryTheory.Presieve.isSheafFor_ofArrows_congr`: congruence for `Presieve.IsSheafFor` of
+  `Presieve.ofArrows` in a preorder along equalities of the target and covering family.
 -/
 
 public section
@@ -121,5 +123,15 @@ theorem isSheafFor_ofArrows_of_factorsThru {W : C} {ι : Type*} {X : ι → C} (
     (href : ∀ i, (T i).FactorsThruAlong S (f i)) :
     (ofArrows X f).IsSheafFor P :=
   isSheafFor_of_factorsThru _ hfac hS fun _ _ ⟨i⟩ ↦ ⟨T i, hsep i, href i⟩
+
+/-- The sheaf condition for a family `Presieve.ofArrows U` in a preorder is invariant under
+equalities of the covered object and the covering family. -/
+theorem isSheafFor_ofArrows_congr {X : Type u} [Preorder X] (F : Xᵒᵖ ⥤ Type w) {ι : Type*}
+    {W₁ W₂ : X} (hW : W₁ = W₂) {U₁ U₂ : ι → X} (hU : U₁ = U₂)
+    (h₁ : ∀ i, U₁ i ≤ W₁) (h₂ : ∀ i, U₂ i ≤ W₂) :
+    (ofArrows U₁ fun i ↦ homOfLE (h₁ i)).IsSheafFor F ↔
+      (ofArrows U₂ fun i ↦ homOfLE (h₂ i)).IsSheafFor F := by
+  subst hW hU
+  rfl
 
 end CategoryTheory.Presieve

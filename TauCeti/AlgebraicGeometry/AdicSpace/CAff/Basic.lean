@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Ring.Basic
-public import Mathlib.Topology.Category.TopCat.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 
 import Mathlib.Topology.Algebra.IsUniformGroup.Constructions

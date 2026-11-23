@@ -35,6 +35,8 @@ indexed by.
   family of open sets exactly when their underlying sets cover it.
 * `TopologicalSpace.Opens.isEmpty_of_iSup_eq_top` : an empty family of open sets covers only the
   empty space.
+* `TopologicalSpace.Opens.exists_finite_subcover_of_isCompact` : a compact open covered by a family
+  of open sets admits a finite subcover.
 * `TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top` : every member of a
   pairwise-disjoint open cover is clopen.
 * `TopologicalSpace.Opens.instLocallyCompactSpace` : an open subset of a locally compact space is
@@ -118,6 +120,16 @@ theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X
 theorem isEmpty_of_iSup_eq_top {ι : Sort*} [IsEmpty ι] {U : ι → Opens X}
     (hcover : ⨆ i, U i = ⊤) : IsEmpty X :=
   ⟨fun x ↦ isEmptyElim (Opens.mem_iSup.1 (hcover ▸ Opens.mem_top x)).choose⟩
+
+/-- A compact open covered by a family of open sets admits a finite subcover. -/
+theorem exists_finite_subcover_of_isCompact {W : Opens X} (hW : IsCompact (W : Set X))
+    {ι : Type*} {U : ι → Opens X} (hcov : ⨆ i, U i = W) :
+    ∃ I : Finset ι, (⨆ k : ↥I, U k.val) = W := by
+  obtain ⟨I, hIW⟩ := hW.elim_finite_subcover (fun i ↦ (U i : Set X))
+    (fun i ↦ (U i).isOpen) (by rw [← Opens.coe_iSup, hcov])
+  refine ⟨I, le_antisymm (iSup_le fun k ↦ (le_iSup U k.val).trans_eq hcov) fun x hx ↦ ?_⟩
+  obtain ⟨i, hi, hxU⟩ := Set.mem_iUnion₂.mp (hIW hx)
+  exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxU⟩
 
 /-- Every member of a pairwise-disjoint open cover is clopen, without a finiteness assumption
 on the indexing type. -/

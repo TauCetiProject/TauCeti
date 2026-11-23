@@ -11,7 +11,6 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.PadicInt
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.OpenMapping
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.StableUniform
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglyNoetherian
-import TauCeti.CategoryTheory.Sites.IsSheafForTrans
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.Huber.Padic.TateAlgebra
 
@@ -24,7 +23,7 @@ Concrete positive checks, degenerate boundary checks, and sharpness non-examples
   `TauCeti.CAff.ratTopology`;
 * `TauCeti.CAff.IsRationalSheafy` and
   `TauCeti.CAff.isRationalSheafy_iff_isSheafyForEveryPresentation`;
-* `TauCeti.ValuationSpectrum.isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens` and
+* `TauCeti.ValuationSpectrum.isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens` and
   `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_iff_isSheaf_forget`.
 -/
 
@@ -148,9 +147,10 @@ example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopolo
   refine ⟨.of_isSheafyForEveryPresentation hsheaf,
     isSheaf_presentationLimitPresheaf_iff_isSheaf_forget P
       S.isRingOfIntegralElements.isPowerBounded_of_mem,
-    fun {W} {κ} _ {V} hW hV hcov ↦ isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens P
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hW hV
-      (fun k ↦ (le_iSup V k).trans_eq hcov) ?_⟩
+    fun {W} {κ} _ {V} hW hV hcov ↦
+      (isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens P
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hW hV
+        (fun k ↦ (le_iSup V k).trans_eq hcov) ?_).isInducing⟩
   subst hcov
   rw [Presieve.isSheafFor_iff_generate]
   refine hset.isSheafFor _ ?_

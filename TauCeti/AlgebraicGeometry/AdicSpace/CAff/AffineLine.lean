@@ -70,6 +70,9 @@ noncomputable def affineLine : CAff.{u} :=
   { ring := (ULift.{u} ℤ)[X]
     pair := affineLinePair.{u} }
 
+instance instDiscreteTopologyAffineLineRing : DiscreteTopology affineLine.{u}.ring :=
+  ⟨rfl⟩
+
 /-- Canonical ring isomorphism identifying `CAff.affineLine.ring` with `(ULift ℤ)[X]`. -/
 noncomputable def affineLineRingEquiv : (ULift.{u} ℤ)[X] ≃+* affineLine.{u}.ring :=
   RingEquiv.refl _
@@ -92,6 +95,7 @@ theorem mem_affineLine_plus_iff (p : (ULift.{u} ℤ)[X]) :
 /-- The indeterminate `T` does not lie in the plus ring `ℤ` of `CAff.affineLine = (ℤ[T], ℤ)`,
 reflecting that morphisms `(ℤ[T], ℤ) ⟶ (A, A⁺)` may evaluate `T` at arbitrary (not necessarily
 power-bounded) elements of `A`. -/
+@[simp]
 theorem affineLineVar_notMem_plus : affineLineVar.{u} ∉ affineLine.{u}.pair.plus := by
   rw [← affineLineRingEquiv_X, mem_affineLine_plus_iff]
   rintro ⟨c, hc⟩
@@ -101,7 +105,6 @@ theorem affineLineVar_notMem_plus : affineLineVar.{u} ∉ affineLine.{u}.pair.pl
 `CAff.affineLine ⟶ X` in `CAff`. Continuity is automatic because `ℤ[T]` carries the discrete
 topology, and plus-ring compatibility holds because `ℤ` maps into every subring `X.pair.plus`. -/
 noncomputable def eval (X : CAff.{u}) (a : X.ring) : affineLine.{u} ⟶ X :=
-  letI : DiscreteTopology affineLine.{u}.ring := ⟨rfl⟩
   { toRingHom :=
       (Polynomial.eval₂RingHom ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a).comp
         affineLineRingEquiv.symm.toRingHom
@@ -114,6 +117,7 @@ noncomputable def eval (X : CAff.{u}) (a : X.ring) : affineLine.{u} ⟶ X :=
         RingEquiv.coe_toRingHom, ← hc, coe_eval₂RingHom, eval₂_C, eq_intCast]
       exact intCast_mem X.pair.plus _ }
 
+@[simp]
 theorem eval_toRingHom_apply_affineLineRingEquiv (X : CAff.{u}) (a : X.ring)
     (p : (ULift.{u} ℤ)[X]) :
     (eval X a).toRingHom (affineLineRingEquiv p) =
@@ -131,20 +135,23 @@ theorem eval_affineLineVar (X : CAff.{u}) (a : X.ring) :
   rw [← affineLineRingEquiv_X, eval_toRingHom_apply_affineLineRingEquiv]
   exact eval₂_X _ a
 
-@[simp]
-theorem eval_comp {X Y : CAff.{u}} (a : X.ring) (f : X ⟶ Y) :
-    eval X a ≫ f = eval Y (f.toRingHom a) := by
+private theorem eq_of_toRingHom_affineLineVar {X : CAff.{u}} {f g : affineLine.{u} ⟶ X}
+    (hX : f.toRingHom affineLineVar = g.toRingHom affineLineVar) : f = g := by
   apply Pair.Hom.ext
   refine (RingHom.cancel_right (f := affineLineRingEquiv.toRingHom)
-    affineLineRingEquiv.surjective).mp ?_
-  refine RingHom.ext fun p ↦ ?_
-  have hcomp : f.toRingHom.comp ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) =
-      (Int.castRingHom Y.ring).comp ULift.ringEquiv.toRingHom := by
-    ext ⟨n⟩
-    simp
-  simp only [comp_toRingHom, RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, eval_toRingHom_apply_affineLineRingEquiv]
-  rw [Polynomial.hom_eval₂, ← RingEquiv.toRingHom_eq_coe, hcomp]
+    (by simpa using affineLineRingEquiv.surjective)).mp ?_
+  let e : ℤ ≃+* ULift.{u} ℤ := (ULift.ringEquiv (R := ℤ)).symm
+  have hconst :
+      (f.toRingHom.comp affineLineRingEquiv.toRingHom).comp Polynomial.C =
+        (g.toRingHom.comp affineLineRingEquiv.toRingHom).comp Polynomial.C :=
+    (RingHom.cancel_right (f := e.toRingHom) (by simpa using e.surjective)).mp
+      (RingHom.ext_int _ _)
+  exact Polynomial.ringHom_ext' hconst (by simpa [affineLineRingEquiv_X] using hX)
+
+@[simp]
+theorem eval_comp {X Y : CAff.{u}} (a : X.ring) (f : X ⟶ Y) :
+    eval X a ≫ f = eval Y (f.toRingHom a) :=
+  eq_of_toRingHom_affineLineVar (by simp)
 
 /-- Morphisms `CAff.affineLine ⟶ X` in `CAff` correspond bijectively to elements of `X.ring` via
 evaluation at `CAff.affineLineVar`. -/
@@ -152,25 +159,7 @@ noncomputable def evalEquiv (X : CAff.{u}) : X.ring ≃ (affineLine.{u} ⟶ X) w
   toFun := eval X
   invFun f := f.toRingHom affineLineVar
   left_inv a := eval_affineLineVar X a
-  right_inv f := by
-    apply Pair.Hom.ext
-    refine (RingHom.cancel_right (f := affineLineRingEquiv.toRingHom)
-      affineLineRingEquiv.surjective).mp ?_
-    let _ : Algebra (ULift.{u} ℤ) X.ring :=
-      RingHom.toAlgebra ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom)
-    let φ : (ULift.{u} ℤ)[X] →ₐ[ULift.{u} ℤ] X.ring :=
-      { toRingHom := f.toRingHom.comp affineLineRingEquiv.toRingHom
-        commutes' r := by
-          rcases r with ⟨n⟩
-          have hn : (Polynomial.C (⟨n⟩ : ULift.{u} ℤ)) = (n : (ULift.{u} ℤ)[X]) := by
-            rw [← Polynomial.C_eq_intCast]
-            rfl
-          change f.toRingHom (affineLineRingEquiv (Polynomial.C ⟨n⟩)) = (n : X.ring)
-          rw [hn, map_intCast, map_intCast] }
-    have h := congrArg AlgHom.toRingHom
-      ((Polynomial.aevalEquiv (ULift.{u} ℤ) X.ring).right_inv φ)
-    refine (eval_toRingHom_comp_affineLineRingEquiv X (f.toRingHom affineLineVar)).trans ?_
-    exact h
+  right_inv _ := eq_of_toRingHom_affineLineVar (eval_affineLineVar X _)
 
 @[simp]
 theorem evalEquiv_apply (X : CAff.{u}) (a : X.ring) : evalEquiv X a = eval X a := (rfl)

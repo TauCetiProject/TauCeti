@@ -491,13 +491,9 @@ theorem finsetInf_mem_spaRationalOpens [IsHuberRing A] {Aplus : Subring A} {ι :
 theorem exists_finite_subcover_spaRationalOpens [IsHuberRing A] {Aplus : Subring A}
     {W : Opens (spa Aplus)} (hW : W ∈ spaRationalOpens Aplus) {ι : Type*}
     {U : ι → Opens (spa Aplus)} (hcov : ⨆ i, U i = W) :
-    ∃ I : Finset ι, (⨆ k : ↥I, U k.val) = W := by
-  obtain ⟨I, hIW⟩ := (isCompact_of_mem_spaRationalFamily
-      (mem_spaRationalOpens.mp hW)).elim_finite_subcover (fun i ↦ (U i : Set (spa Aplus)))
-    (fun i ↦ (U i).isOpen) (by rw [← Opens.coe_iSup, hcov])
-  refine ⟨I, le_antisymm (iSup_le fun k ↦ (le_iSup U k.val).trans_eq hcov) fun x hx ↦ ?_⟩
-  obtain ⟨i, hi, hxU⟩ := Set.mem_iUnion₂.mp (hIW hx)
-  exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxU⟩
+    ∃ I : Finset ι, (⨆ k : ↥I, U k.val) = W :=
+  Opens.exists_finite_subcover_of_isCompact
+    (isCompact_of_mem_spaRationalFamily (mem_spaRationalOpens.mp hW)) hcov
 
 /-! ### Finite rational refinements -/
 

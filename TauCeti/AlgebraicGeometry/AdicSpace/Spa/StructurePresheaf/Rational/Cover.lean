@@ -46,10 +46,10 @@ statement is reduced to standard rational covers, for which it is
   the original cover.
 
 Intersections of rational opens are rational, so gluing along rational covers of rational opens is
-the sheaf condition on the basis of rational opens (`isSheaf_rational_comp_of_isSheafFor_ofArrows`).
-Since the presentation-limit presheaf is the limit of its values on that basis, the presheaf of
-sets underlying it is then a sheaf on all opens
-(`isSheaf_underlying_presentationLimitPresheaf_of_laurentGluing`).
+the sheaf condition on the basis of rational opens
+(`isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows`). Since the presentation-limit
+presheaf is the limit of its values on that basis, the presheaf of sets underlying it is then a
+sheaf on all opens (`isSheaf_underlying_presentationLimitPresheaf_of_laurentGluing`).
 
 The statements concern the sheaf condition in degree zero, for the presentation-limit presheaf as a
 presheaf of sets; neither the topology on the sections nor higher Čech cohomology is treated here.
@@ -61,8 +61,6 @@ presheaf of sets; neither the topology on the sections nor higher Čech cohomolo
   satisfying a predicate with `LaurentGluing`.
 * `TauCeti.ValuationSpectrum.isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq` : the same over a
   strongly noetherian Tate ring.
-* `TauCeti.ValuationSpectrum.isSheaf_rational_comp_of_isSheafFor_ofArrows` : gluing along rational
-  covers of rational opens is the sheaf condition on the basis of rational opens.
 * `TauCeti.ValuationSpectrum.isSheaf_underlying_presentationLimitPresheaf_of_laurentGluing` : over
   a Tate ring satisfying a predicate with `LaurentGluing`, the presheaf of sets underlying the
   presentation-limit presheaf is a sheaf.
@@ -194,32 +192,6 @@ end
 
 /-! ### The sheaf condition on all opens -/
 
-section BasisSheaf
-
-variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-  (P : PairOfDefinition A) {Aplus : Subring A}
-
-/-- **The sheaf condition on the rational basis.** Let `G` be a functor from complete separated
-topological rings into types. If the presentation-limit presheaf followed by `G` satisfies the
-sheaf condition for every cover of a rational open by rational opens, then its restriction to the
-rational opens is a sheaf for the topology restricted from `Spa(A, A⁺)`. Intersections of
-rational opens are rational, which is what lets compatibility on the basis stand in for
-compatibility on pairwise intersections. -/
-theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
-    (G : TopCommRingCat.isCompleteSeparated.{v}.FullSubcategory ⥤ Type w)
-    (hrat : ∀ {W : Opens ↥(spa Aplus)} {ι : Type v} {U : ι → Opens ↥(spa Aplus)},
-      W ∈ spaRationalOpens Aplus → (∀ i, U i ∈ spaRationalOpens Aplus) → ∀ hcov : ⨆ i, U i = W,
-      (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
-        (presentationLimitPresheaf P Aplus ⋙ G)) :
-    Presieve.IsSheaf
-      ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
-      ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙ G) :=
-  have : IsHuberRing A := ⟨⟨P⟩⟩
-  isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows Aplus
-    (presentationLimitPresheaf P Aplus ⋙ G) hrat
-
-end BasisSheaf
-
 section
 
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
@@ -247,9 +219,10 @@ theorem isSheaf_underlying_presentationLimitPresheaf_of_laurentGluing
   apply TopCat.Presheaf.isSheaf_of_isAdapted_of_isSheaf_restrictedTopology
     (X := TopCat.of ↥(spa Aplus)) _ _ (isBasis_spaRationalOpens Aplus) hAdapted
   exact (isSheaf_iff_isSheaf_of_type _ _).mpr
-    (isSheaf_rational_comp_of_isSheafFor_ofArrows P G fun hW hU hcov ↦
-      isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P hC hA hP hAplus hW hU
-        hcov)
+    (isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows Aplus
+      (presentationLimitPresheaf P Aplus ⋙ G) fun hW hU hcov ↦
+        isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P hC hA hP hAplus hW hU
+          hcov)
 
 /-! ### The strongly noetherian case -/
 
