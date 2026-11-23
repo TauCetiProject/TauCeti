@@ -14,7 +14,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
 For a morphism of schemes `f : X ⟶ Y` and an open `U` of `Y`, Mathlib's `f ∣_ U` is the
 restriction `f ⁻¹ᵁ U ⟶ U`. A property local on the target passes from this restriction to
 every smaller open. A property local on the source holds for a morphism that has it on an open
-neighbourhood of every point of its source. An open immersion restricts to an isomorphism over
+neighbourhood of every point of its source, and for a morphism out of a binary coproduct that has
+it on both summands. An open immersion restricts to an isomorphism over
 opens in its range.
 Restricting the source to an open equal to the full preimage gives a pullback square, which
 transfers properties stable under base change to `Scheme.Hom.resLE`. Between affine opens, a
@@ -29,6 +30,8 @@ global functions of the base change.
   passes from `f ∣_ U` to `f ∣_ V` when `V ≤ U`.
 * `AlgebraicGeometry.IsZariskiLocalAtSource.of_forall_exists_ι_comp`: a property local on the
   source holds for `f` if every point of `X` has an open neighbourhood `U` with `P (U.ι ≫ f)`.
+* `AlgebraicGeometry.IsZariskiLocalAtSource.coprodDesc`: a property local on the source holds for
+  `coprod.desc f g` when it holds for `f` and for `g`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_le_opensRange`: an open immersion
   restricts to an isomorphism over every open contained in its range.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_resLE_of_eq`: the restriction of `f` to an open `U`
@@ -78,6 +81,14 @@ theorem IsZariskiLocalAtSource.of_forall_exists_ι_comp {P : MorphismProperty Sc
   choose U hxU hU using H
   exact of_iSup_eq_top U
     (eq_top_iff.mpr fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxU x⟩) hU
+
+/-- A property local on the source holds for a morphism out of a binary coproduct when it holds
+for its restrictions to both summands. -/
+theorem IsZariskiLocalAtSource.coprodDesc {P : MorphismProperty Scheme.{u}}
+    [IsZariskiLocalAtSource P] {A B : Scheme.{u}} {f : A ⟶ Y} {g : B ⟶ Y} (hf : P f) (hg : P g) :
+    P (Limits.coprod.desc f g) :=
+  of_openCover (coprodOpenCover.{u, u} A B) fun i ↦ by
+    rcases i with ⟨⟩ | ⟨⟩ <;> simpa [coprodOpenCover]
 
 /-- An open immersion `f` restricts to an isomorphism over every open `V` contained in its
 range. -/
