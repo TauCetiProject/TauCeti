@@ -47,11 +47,12 @@ Specializing the skeletal pushout and sequential-colimit theorems of
   composition, where `thinClassifyingSpace C` is `T4`, Lindelöf, and compactly generated
   (`TauCeti.thinClassifyingSpace.t4Space_of_compactSpace`,
   `TauCeti.thinClassifyingSpace.lindelofSpace_of_compactSpace`,
-  `TauCeti.thinClassifyingSpace.compactlyGeneratedSpace_of_compactSpace`), packaged as typeclass
-  instances for compact Hausdorff topological groupoids (`IsTopologicalGroupoid C`:
-  `TauCeti.thinClassifyingSpace.instT4SpaceOfCompactSpace`,
-  `TauCeti.thinClassifyingSpace.instLindelofSpaceOfCompactSpace`,
-  `TauCeti.thinClassifyingSpace.instCompactlyGeneratedSpaceOfCompactSpace`).
+  `TauCeti.thinClassifyingSpace.compactlyGeneratedSpace_of_compactSpace`); for compact Hausdorff
+  topological groupoids (`IsTopologicalGroupoid C`), `T4Space` is provided by
+  `TauCeti.thinClassifyingSpace.instT4SpaceOfCompactSpace`, while `LindelofSpace` and
+  `CompactlyGeneratedSpace` follow from the levelwise instances
+  `TauCeti.thinClassifyingSpace.instLindelofSpace` and
+  `TauCeti.thinClassifyingSpace.instUCompactlyGeneratedSpace`.
 
 ## References
 
@@ -232,11 +233,24 @@ open geometricRealization (skeleton)
 
 variable {C : Type u} [Category.{v} C] [TopologicalSpace (Quiver.Total C)]
 
-instance [SecondCountableTopology (Quiver.Total C)] : LindelofSpace (thinClassifyingSpace C) :=
+/-- When every nerve level `ComposableArrows C n` is Lindelöf (for instance when
+`Quiver.Total C` is second-countable or `C` is a compact Hausdorff topological groupoid),
+`thinClassifyingSpace C` is Lindelöf in its colimit topology. -/
+instance instLindelofSpace [∀ n : ℕ, LindelofSpace (ComposableArrows C n)] :
+    LindelofSpace (thinClassifyingSpace C) :=
+  have : ∀ n : ℕ, LindelofSpace ((topologicalNerve C).obj (op ⦋n⦌)) :=
+    fun n ↦ inferInstanceAs (LindelofSpace (ComposableArrows C n))
   inferInstanceAs (LindelofSpace (geometricRealization (topologicalNerve C)))
 
-instance [FirstCountableTopology (Quiver.Total C)] :
+/-- For any fixed test-space universe `w`, when every nerve level `ComposableArrows C n`
+satisfies `UCompactlyGeneratedSpace.{w}` (for instance when `Quiver.Total C` is first-countable
+or `C` is a compact Hausdorff topological groupoid with `w = max u v`), `thinClassifyingSpace C`
+satisfies `UCompactlyGeneratedSpace.{w}` in its colimit topology. -/
+instance instUCompactlyGeneratedSpace
+    [∀ n : ℕ, UCompactlyGeneratedSpace.{w} (ComposableArrows C n)] :
     UCompactlyGeneratedSpace.{w} (thinClassifyingSpace C) :=
+  have : ∀ n : ℕ, UCompactlyGeneratedSpace.{w} ((topologicalNerve C).obj (op ⦋n⦌)) :=
+    fun n ↦ inferInstanceAs (UCompactlyGeneratedSpace.{w} (ComposableArrows C n))
   inferInstanceAs (UCompactlyGeneratedSpace.{w} (geometricRealization (topologicalNerve C)))
 
 /-- When `Quiver.Total C` is `T1`, `thinClassifyingSpace C` is `T1` in its colimit topology. -/
@@ -304,19 +318,6 @@ instance instT4SpaceOfRegularSecondCountable [T0Space (Quiver.Total C)]
   have : TopologicalSpace.MetrizableSpace (Quiver.Total C) := inferInstance
   instT4Space
 
-/-- When the identity arrows form a closed subset of `Quiver.Total C`, `Quiver.Total C` is
-regular, and every nerve level `ComposableArrows C n` is Lindelöf (for instance when
-`Quiver.Total C` is second-countable), `thinClassifyingSpace C` is normal in its colimit
-topology, with no `T0` assumption. -/
-theorem normalSpace_of_isClosed_range_unit_of_regularSpace_lindelofSpace
-    (hunit : IsClosed (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)))
-    [RegularSpace (Quiver.Total C)] [∀ n : ℕ, LindelofSpace (ComposableArrows C n)] :
-    NormalSpace (thinClassifyingSpace C) :=
-  have : ∀ n : ℕ, LindelofSpace ((topologicalNerve C).obj (op ⦋n⦌)) :=
-    fun n ↦ inferInstanceAs (LindelofSpace (ComposableArrows C n))
-  geometricRealization.normalSpace_of_isClosedEmbedding_σ_of_regularSpace_lindelofSpace
-    (topologicalNerve C) fun {_} j ↦ isClosedEmbedding_topologicalNerve_σ hunit j
-
 section CompactCategory
 
 variable [TopologicalSpace C] [CompactSpace (Quiver.Total C)]
@@ -370,14 +371,6 @@ variable (C : Type u) [Category.{v} C] [IsGroupoid C] [TopologicalSpace C]
 topology, without second-countability or étaleness. -/
 instance instT4SpaceOfCompactSpace : T4Space (thinClassifyingSpace C) :=
   t4Space_of_compactSpace continuous_source continuous_target continuous_unit continuous_comp
-
-instance instLindelofSpaceOfCompactSpace : LindelofSpace (thinClassifyingSpace C) :=
-  inferInstanceAs (LindelofSpace (geometricRealization (topologicalNerve C)))
-
-instance instCompactlyGeneratedSpaceOfCompactSpace :
-    CompactlyGeneratedSpace (thinClassifyingSpace C) :=
-  compactlyGeneratedSpace_of_compactSpace continuous_source continuous_target continuous_unit
-    continuous_comp
 
 end TopologicalGroupoidInstances
 
@@ -471,7 +464,8 @@ def thinClassifyingSpaceRestrictionHomeomorph
       (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
     thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
       ((P.thinClassifyingSpaceRestrictionHomeomorph hs hι).symm z) = z.val :=
-  congrArg Subtype.val ((P.thinClassifyingSpaceRestrictionHomeomorph hs hι).apply_symm_apply z)
+  (P.thinClassifyingSpaceRestrictionHomeomorph_apply_val hs hι _).symm.trans
+    (congrArg Subtype.val ((P.thinClassifyingSpaceRestrictionHomeomorph hs hι).apply_symm_apply z))
 
 end SaturatedGroupoid
 

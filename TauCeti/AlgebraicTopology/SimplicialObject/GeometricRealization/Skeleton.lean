@@ -13,7 +13,6 @@ public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Category.TopCat.Normal
 public import TauCeti.Topology.Compactness.Paracompact
 import TauCeti.Topology.Compactness.Lindelof
-import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
 # Normal form, skeletal filtration, and point-set topology of thin geometric realization
@@ -796,42 +795,23 @@ section Levelwise
 `UCompactlyGeneratedSpace.{v}` whenever each level `X _⦋k⦌` (`k ≤ n`) satisfies
 `UCompactlyGeneratedSpace.{v}`. -/
 instance instUCompactlyGeneratedSpaceSkeleton.{v} (n : ℕ)
-    [hcg : ∀ k : {k : ℕ // k ≤ n}, UCompactlyGeneratedSpace.{v} (X _⦋k.val⦌)] :
+    [∀ k : {k : ℕ // k ≤ n}, UCompactlyGeneratedSpace.{v} (X _⦋k.val⦌)] :
     UCompactlyGeneratedSpace.{v} ((skeleton X).obj n) :=
   have : ∀ k : {k : ℕ // k ≤ n},
-      UCompactlyGeneratedSpace.{v} (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) := fun k ↦
-    have := hcg k
-    UCompactlyGeneratedSpace.prod_right
+      UCompactlyGeneratedSpace.{v} (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) :=
+    fun _ ↦ inferInstance
   uCompactlyGeneratedSpace_of_coinduced (skeleton.isQuotientMap_sigma X n).continuous
     (skeleton.isQuotientMap_sigma X n).eq_coinduced
-
-/-- If each `X _⦋k⦌` (`k ≤ n`) is regular and Lindelöf and all degeneracies in degrees `k < n` are
-closed embeddings, stage `skₙ |X|` is normal. -/
-theorem normalSpace_skeleton_of_isClosedEmbedding_σ_of_regularSpace_lindelofSpace (n : ℕ)
-    (hσ : ∀ {k : ℕ}, k < n → ∀ j : Fin (k + 1), IsClosedEmbedding (X.σ j))
-    [∀ k : {k : ℕ // k ≤ n}, RegularSpace (X _⦋k.val⦌)]
-    [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌)] :
-    NormalSpace ((skeleton X).obj n) :=
-  have : ∀ k : {k : ℕ // k ≤ n}, NormalSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) :=
-    fun _ ↦ inferInstance
-  normalSpace_skeleton X n hσ
-
-/-- If each `X _⦋n⦌` is regular and Lindelöf and all degeneracies are closed embeddings, `|X|` is
-normal in its colimit topology. -/
-theorem normalSpace_of_isClosedEmbedding_σ_of_regularSpace_lindelofSpace
-    (hσ : ∀ {n : ℕ} (j : Fin (n + 1)), IsClosedEmbedding (X.σ j))
-    [∀ n : ℕ, RegularSpace (X _⦋n⦌)] [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :
-    NormalSpace X.geometricRealization :=
-  have : ∀ n : ℕ, NormalSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) := fun _ ↦ inferInstance
-  normalSpace X hσ
 
 /-- If each `X _⦋k⦌` (`k ≤ n`) is `T3` and Lindelöf, stage `skₙ |X|` is paracompact. -/
 instance instParacompactSpaceSkeleton (n : ℕ)
     [hT : ∀ k : {k : ℕ // k ≤ n}, T3Space (X _⦋k.val⦌)]
     [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌)] :
     ParacompactSpace ((skeleton X).obj n) := by
+  have : ∀ k : {k : ℕ // k ≤ n}, NormalSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) :=
+    fun _ ↦ inferInstance
   have : NormalSpace ((skeleton X).obj n) :=
-    normalSpace_skeleton_of_isClosedEmbedding_σ_of_regularSpace_lindelofSpace X n fun {k} hk j ↦
+    normalSpace_skeleton X n fun {k} hk j ↦
       have := hT ⟨k + 1, hk⟩
       X.isClosedEmbedding_σ j
   have : T1Space ((skeleton X).obj n) := instT1SpaceSkeleton X n
@@ -841,9 +821,8 @@ instance instParacompactSpaceSkeleton (n : ℕ)
 /-- If each `X _⦋n⦌` is `T3` and Lindelöf, `|X|` is paracompact in its colimit topology. -/
 instance instParacompactSpace [∀ n : ℕ, T3Space (X _⦋n⦌)] [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :
     ParacompactSpace X.geometricRealization :=
-  have : NormalSpace X.geometricRealization :=
-    normalSpace_of_isClosedEmbedding_σ_of_regularSpace_lindelofSpace X fun {_} j ↦
-      X.isClosedEmbedding_σ j
+  have : ∀ n : ℕ, NormalSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) := fun _ ↦ inferInstance
+  have : NormalSpace X.geometricRealization := normalSpace X fun {_} j ↦ X.isClosedEmbedding_σ j
   TauCeti.paracompactSpace_of_regularSpace_lindelofSpace
 
 end Levelwise
