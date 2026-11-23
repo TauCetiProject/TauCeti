@@ -43,9 +43,10 @@ graph patches.
 
 ## The argument
 
-* **Flattening.** The shear `φ y = y + γ y ν` maps the half-space `{0 < ⟪y, ν⟫}` onto `D` and the
-  hyperplane `{⟪y, ν⟫ = 0}` onto `∂D`, since `⟪φ y, ν⟫ - γ (φ y) = ⟪y, ν⟫`; its inverse is the
-  shear `ψ x = x - γ x ν`. Both are `(1 + G)`-Lipschitz.
+* **Flattening.** The shear `φ = TauCeti.shearAlong γ ν`, `φ y = y + γ y ν`, maps the half-space
+  `{0 < ⟪y, ν⟫}` onto `D` and the hyperplane `{⟪y, ν⟫ = 0}` onto `∂D`, since
+  `⟪φ y, ν⟫ - γ (φ y) = ⟪y, ν⟫`; its inverse is the shear `ψ = TauCeti.shearAlong (-γ) ν`,
+  `ψ x = x - γ x ν`. Both are `(1 + G)`-Lipschitz.
 * **The transformed equation.** For `v = u ∘ φ` the second-order chain rule reads
   `D²v(y)(h, k) = D²u(φ y)(S h, S k) + D²γ(y)(h, k) Du(φ y) ν` with `S = Dφ(y)`. Let `W` be the
   matrix whose rows `eᵢ - ∂ᵢγ ν` are the images of the basis vectors under `Dψ`, so that `S` maps
@@ -57,7 +58,7 @@ graph patches.
 * **Hölder bounds.** The entries of `ã` and `c` are Hölder and bounded with constants depending
   only on `n`, `α`, `G`, `L` and `M`, and `Du ∘ φ` is Lipschitz on the convex half-ball, so the
   first-order term is Hölder. The second derivative of a composition with a shear is Hölder by
-  `TauCeti.holderOnWith_fderiv_fderiv_comp_shear`.
+  `TauCeti.holderOnWith_fderiv_fderiv_comp_shearAlong`.
 * **The flat estimate.** Since the Hölder constant of `ã` does not depend on the radius, the
   smallness condition of the half-ball estimate holds for `v` on the half-ball of radius
   `R / (2 (1 + G))` about `ψ x₀` once `R` is small.
@@ -113,17 +114,17 @@ private theorem sum_shearRows_smul_single (y : E) (i : Fin (n + 1)) :
 `Wᵀ A W`, `W = shearRows γ ν y`, applied to `v` at `y` is the operator with the coefficients `A`
 applied to `u` at `φ y`, plus the first-order term `c(y) Du(φ y) ν` with
 `c = ∑ₖₗ (Wᵀ A W)ₖₗ ∂ₖ∂ₗγ`. -/
-private theorem sum_sum_smul_fderiv_fderiv_comp_shear (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
-    {u : E → ℝ} {y : E} (hu : ContDiffAt ℝ 2 u (y + γ y • ν)) (hγ : ContDiffAt ℝ 2 γ y)
+private theorem sum_sum_smul_fderiv_fderiv_comp_shearAlong (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
+    {u : E → ℝ} {y : E} (hu : ContDiffAt ℝ 2 u (shearAlong γ ν y)) (hγ : ContDiffAt ℝ 2 γ y)
     (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
     ∑ k, ∑ l, ((shearRows γ ν y)ᵀ * A * shearRows γ ν y) k l •
-        fderiv ℝ (fderiv ℝ (u ∘ fun z => z + γ z • ν)) y (EuclideanSpace.single k 1)
+        fderiv ℝ (fderiv ℝ (u ∘ shearAlong γ ν)) y (EuclideanSpace.single k 1)
           (EuclideanSpace.single l 1) =
-      ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ u) (y + γ y • ν) (EuclideanSpace.single i 1)
+      ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ u) (shearAlong γ ν y) (EuclideanSpace.single i 1)
           (EuclideanSpace.single j 1) +
         (∑ k, ∑ l, ((shearRows γ ν y)ᵀ * A * shearRows γ ν y) k l *
           fderiv ℝ (fderiv ℝ γ) y (EuclideanSpace.single k 1) (EuclideanSpace.single l 1)) *
-          fderiv ℝ u (y + γ y • ν) ν := by
+          fderiv ℝ u (shearAlong γ ν y) ν := by
   set S : E →L[ℝ] E := ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν
   have hS (h : E) : h + fderiv ℝ γ y h • ν = S h := by simp [S]
   have hrow (i : Fin (n + 1)) : S (∑ k, shearRows γ ν y i k • EuclideanSpace.single k (1 : ℝ)) =
@@ -131,11 +132,11 @@ private theorem sum_sum_smul_fderiv_fderiv_comp_shear (hγν : ∀ x (t : ℝ), 
     rw [sum_shearRows_smul_single]
     simp [S, fderiv_apply_eq_zero_of_apply_add_smul_neg (f := γ) (x := y) ν fun t => by
       rw [hγν, hγν]]
-  simp only [fderiv_fderiv_comp_shear_apply hu hγ, hS, smul_eq_mul, mul_add,
+  simp only [fderiv_fderiv_comp_shearAlong_apply hu hγ, hS, smul_eq_mul, mul_add,
     Finset.sum_add_distrib, Finset.sum_mul, mul_assoc]
   congr 1
   have h := Matrix.sum_sum_transpose_mul_mul_apply_mul A (shearRows γ ν y)
-    ((fderiv ℝ (fderiv ℝ u) (y + γ y • ν)).bilinearComp S S).toLinearMap₁₂
+    ((fderiv ℝ (fderiv ℝ u) (shearAlong γ ν y)).bilinearComp S S).toLinearMap₁₂
     fun k => EuclideanSpace.single k 1
   simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
     ContinuousLinearMap.bilinearComp_apply, hrow, Matrix.mul_assoc] at h
@@ -289,16 +290,16 @@ private theorem graph_facts {α : ℝ≥0} (hα1 : α ≤ 1) {γ : E → ℝ} {G
 /-- The shear `φ y = y + γ y ν` maps the part of the ball `closedBall y₀ r` above the hyperplane
 `⟪·, ν⟫ = 0` into the part of `ball x₀ R` above the graph of `γ`, where `x₀ = φ y₀` and
 `(1 + G) r < R`, and the part strictly above the hyperplane strictly above the graph. -/
-private theorem shear_mem_ball_inter {ν : E} (hν : ‖ν‖ = 1) {γ : E → ℝ}
+private theorem shearAlong_mem_ball_inter {ν : E} (hν : ‖ν‖ = 1) {γ : E → ℝ}
     (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) {G : ℝ≥0} (hγ : LipschitzWith G γ) {x₀ y₀ : E}
-    (hy₀ : y₀ + γ y₀ • ν = x₀) {r R : ℝ} (hr : (1 + G) * r < R) {y : E}
+    (hy₀ : shearAlong γ ν y₀ = x₀) {r R : ℝ} (hr : (1 + G) * r < R) {y : E}
     (hy : dist y y₀ ≤ r) :
-    (0 ≤ ⟪y, ν⟫_ℝ → y + γ y • ν ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ}) ∧
-      (0 < ⟪y, ν⟫_ℝ → y + γ y • ν ∈ ball x₀ R ∩ {x | γ x < ⟪x, ν⟫_ℝ}) := by
-  have hd : y + γ y • ν ∈ ball x₀ R := by
+    (0 ≤ ⟪y, ν⟫_ℝ → shearAlong γ ν y ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ}) ∧
+      (0 < ⟪y, ν⟫_ℝ → shearAlong γ ν y ∈ ball x₀ R ∩ {x | γ x < ⟪x, ν⟫_ℝ}) := by
+  have hd : shearAlong γ ν y ∈ ball x₀ R := by
     rw [mem_ball, ← hy₀]
-    exact (dist_shear_le hν.le hγ hy).trans_lt hr
-  have hi := real_inner_shear_sub hν hγν y
+    exact (dist_shearAlong_le hν.le hγ hy).trans_lt hr
+  have hi := real_inner_shearAlong_sub hν hγν y
   exact ⟨fun h => ⟨hd, by simp only [mem_ofPred_eq]; linarith⟩,
     fun h => ⟨hd, by simp only [mem_ofPred_eq]; linarith⟩⟩
 
@@ -311,27 +312,27 @@ private theorem holderOnWith_transpose_shearRows_mul_mul_apply {α : ℝ≥0} (h
     (hν : ‖ν‖ = 1) {γ : E → ℝ} {G : ℝ≥0} (hγ : ContDiff ℝ 2 γ)
     (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) (hG1 : ∀ x, ‖fderiv ℝ γ x‖ ≤ G)
     (hG2 : ∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) {L M : ℝ≥0}
-    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {x₀ y₀ : E} (hy₀ : y₀ + γ y₀ • ν = x₀)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {x₀ y₀ : E} (hy₀ : shearAlong γ ν y₀ = x₀)
     {r R : ℝ} (hr : (1 + G) * r < R)
     (hL : ∀ i j, HolderOnWith L α (fun x => a x i j) (closedBall x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ}))
     (hM : ∀ x ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ}, ∀ i j, |a x i j| ≤ M) (k l : Fin (n + 1)) :
     HolderOnWith ((n + 1) * ((n + 1) * ((1 + G) * M) * (G + 2 * G) +
         (1 + G) * ((n + 1) * ((1 + G) * (L * (1 + G) ^ (α : ℝ)) + M * (G + 2 * G))))) α
-        (fun y => ((shearRows γ ν y)ᵀ * a (y + γ y • ν) * shearRows γ ν y) k l)
+        (fun y => ((shearRows γ ν y)ᵀ * a (shearAlong γ ν y) * shearRows γ ν y) k l)
         (closedBall y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) ∧
       ∀ y ∈ closedBall y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ},
-        |((shearRows γ ν y)ᵀ * a (y + γ y • ν) * shearRows γ ν y) k l| ≤
+        |((shearRows γ ν y)ᵀ * a (shearAlong γ ν y) * shearRows γ ν y) k l| ≤
           (((n + 1) * ((n + 1) * ((1 + G) * M) * (1 + G)) : ℝ≥0) : ℝ) := by
   obtain ⟨hLγ, -, hH, -⟩ := graph_facts hα1 hγ hG1 hG2
   have hmaps (y : E) (hy : y ∈ closedBall y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) :
-      y + γ y • ν ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ} :=
-    (shear_mem_ball_inter hν hγν hLγ hy₀ hr (mem_closedBall.1 hy.1)).1 hy.2
+      shearAlong γ ν y ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ} :=
+    (shearAlong_mem_ball_inter hν hγν hLγ hy₀ hr (mem_closedBall.1 hy.1)).1 hy.2
   have hW (i j : Fin (n + 1)) :=
     holderOnWith_shearRows_apply (ν := ν) (s := closedBall y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) hν.le
       (fun y _ => hG1 y) (hH.holderOnWith _) i j
-  have h := holderOnWith_transpose_mul_mul_apply (A := fun y => a (y + γ y • ν))
+  have h := holderOnWith_transpose_mul_mul_apply (A := fun y => a (shearAlong γ ν y))
     (W := shearRows γ ν)
-    (fun i j => holderOnWith_comp_shear hν.le hLγ (hL i j) fun y hy =>
+    (fun i j => holderOnWith_comp_shearAlong hν.le hLγ (hL i j) fun y hy =>
       ⟨ball_subset_closedBall (hmaps y hy).1, (hmaps y hy).2⟩)
     (fun i j => (hW i j).1) (fun y hy i j => hM _ (hmaps y hy) i j)
     (fun y hy i j => (hW i j).2 y hy) k l
@@ -343,44 +344,44 @@ private theorem holderOnWith_transpose_shearRows_mul_mul_apply {α : ℝ≥0} (h
 and `‖D²u‖` bounded by `N` and `D²u` Hölder there, then on the part of `ball y₀ r` above the
 hyperplane `⟪·, ν⟫ = 0` the derivatives of `u ∘ φ` are bounded, `Du ∘ φ` is Hölder, and
 `D²(u ∘ φ)` is Hölder. -/
-private theorem shear_comp_bounds {α : ℝ≥0} (hα1 : α ≤ 1) {ν : E} (hν : ‖ν‖ = 1) {γ : E → ℝ}
+private theorem comp_shearAlong_bounds {α : ℝ≥0} (hα1 : α ≤ 1) {ν : E} (hν : ‖ν‖ = 1) {γ : E → ℝ}
     {G : ℝ≥0} (hγ : ContDiff ℝ 2 γ) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
     (hG1 : ∀ x, ‖fderiv ℝ γ x‖ ≤ G) (hG2 : ∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G)
-    (hG3 : HolderWith G α (fderiv ℝ (fderiv ℝ γ))) {x₀ y₀ : E} (hy₀ : y₀ + γ y₀ • ν = x₀)
+    (hG3 : HolderWith G α (fderiv ℝ (fderiv ℝ γ))) {x₀ y₀ : E} (hy₀ : shearAlong γ ν y₀ = x₀)
     {r R : ℝ} (hr : (1 + G) * r < R) {U : Set E} {u : E → ℝ} {N V : ℝ≥0} (hU : IsOpen U)
     (hBU : ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ} ⊆ U) (hu : ContDiffOn ℝ 2 u U)
     (hN1 : ∀ x ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ}, ‖fderiv ℝ u x‖ ≤ N)
     (hN2 : ∀ x ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ}, ‖iteratedFDeriv ℝ 2 u x‖ ≤ N)
     (hV : HolderOnWith V α (iteratedFDeriv ℝ 2 u) (ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ})) :
     (∀ y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ},
-        ‖fderiv ℝ (u ∘ fun z => z + γ z • ν) y‖ ≤ ((N * (1 + G) : ℝ≥0) : ℝ)) ∧
+        ‖fderiv ℝ (u ∘ shearAlong γ ν) y‖ ≤ ((N * (1 + G) : ℝ≥0) : ℝ)) ∧
       (∀ y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ},
-        ‖fderiv ℝ (fderiv ℝ (u ∘ fun z => z + γ z • ν)) y‖ ≤
+        ‖fderiv ℝ (fderiv ℝ (u ∘ shearAlong γ ν)) y‖ ≤
           ((N * (1 + G) * (1 + G) + N * G : ℝ≥0) : ℝ)) ∧
       HolderOnWith (N * (1 + G) * (2 * r).toNNReal ^ ((1 : ℝ) - α)) α
-        (fun y => fderiv ℝ u (y + γ y • ν)) (ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) ∧
-      ∃ V', HolderOnWith V' α (fderiv ℝ (fderiv ℝ (u ∘ fun z => z + γ z • ν)))
+        (fun y => fderiv ℝ u (shearAlong γ ν y)) (ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) ∧
+      ∃ V', HolderOnWith V' α (fderiv ℝ (fderiv ℝ (u ∘ shearAlong γ ν)))
         (ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) := by
   obtain ⟨hLγ, -, hH, -⟩ := graph_facts hα1 hγ hG1 hG2
   set s := ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}
-  have hmaps (y : E) (hy : y ∈ s) : y + γ y • ν ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ} :=
-    (shear_mem_ball_inter hν hγν hLγ hy₀ hr (mem_ball.1 hy.1).le).1 hy.2
-  have hcd (y : E) (hy : y ∈ s) : ContDiffAt ℝ 2 u (y + γ y • ν) :=
+  have hmaps (y : E) (hy : y ∈ s) : shearAlong γ ν y ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ} :=
+    (shearAlong_mem_ball_inter hν hγν hLγ hy₀ hr (mem_ball.1 hy.1).le).1 hy.2
+  have hcd (y : E) (hy : y ∈ s) : ContDiffAt ℝ 2 u (shearAlong γ ν y) :=
     hu.contDiffAt (hU.mem_nhds (hBU (hmaps y hy)))
-  have hφ (y : E) := hasFDerivAt_shear (ν := ν) (hγ.differentiable two_ne_zero y)
+  have hφ (y : E) := hasFDerivAt_shearAlong (ν := ν) (hγ.differentiable two_ne_zero y)
   have hS (y : E) := norm_id_add_smulRight_le hν.le (hG1 y)
-  have hN2' (y : E) (hy : y ∈ s) : ‖fderiv ℝ (fderiv ℝ u) (y + γ y • ν)‖ ≤ N := by
+  have hN2' (y : E) (hy : y ∈ s) : ‖fderiv ℝ (fderiv ℝ u) (shearAlong γ ν y)‖ ≤ N := by
     rw [norm_fderiv_fderiv]
     exact hN2 _ (hmaps y hy)
   have hcomp (A : E →L[ℝ] ℝ) (y : E) (hA : ‖A‖ ≤ N) :
       ‖A.comp (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν)‖ ≤
         ((N * (1 + G) : ℝ≥0) : ℝ) :=
     (A.opNorm_comp_le _).trans (by push_cast at hS ⊢; gcongr; exact hS y)
-  have hDD (y : E) (hy : y ∈ s) : HasFDerivAt (fun z => fderiv ℝ u (z + γ z • ν))
-      ((fderiv ℝ (fderiv ℝ u) (y + γ y • ν)).comp
+  have hDD (y : E) (hy : y ∈ s) : HasFDerivAt (fun z => fderiv ℝ u (shearAlong γ ν z))
+      ((fderiv ℝ (fderiv ℝ u) (shearAlong γ ν y)).comp
         (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν)) y :=
     ((hcd y hy).hasFDerivAt_fderiv le_rfl).comp y (hφ y)
-  have hDu (y : E) (hy : y ∈ s) : ‖fderiv ℝ (fun z => fderiv ℝ u (z + γ z • ν)) y‖ ≤
+  have hDu (y : E) (hy : y ∈ s) : ‖fderiv ℝ (fun z => fderiv ℝ u (shearAlong γ ν z)) y‖ ≤
       ((N * (1 + G) : ℝ≥0) : ℝ) := by
     rw [(hDD y hy).fderiv]
     refine ((fderiv ℝ (fderiv ℝ u) _).opNorm_comp_le _).trans ?_
@@ -391,15 +392,15 @@ private theorem shear_comp_bounds {α : ℝ≥0} (hα1 : α ≤ 1) {ν : E} (hν
     (TauCeti.convex_setOf_le_inner ν 0)).holderOnWith_of_norm_fderiv_le hα1 inter_subset_left
     (fun y hy => (hDD y hy).differentiableAt) hDu
   have hVu : HolderOnWith (V * (1 + G) ^ (α : ℝ)) α
-      (fun y => fderiv ℝ (fderiv ℝ u) (y + γ y • ν)) s :=
-    holderOnWith_comp_shear hν.le hLγ
+      (fun y => fderiv ℝ (fderiv ℝ u) (shearAlong γ ν y)) s :=
+    holderOnWith_comp_shearAlong hν.le hLγ
       ((holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hV) hmaps
-  refine ⟨fun y hy => ?_, fun y hy => ?_, hHu, ⟨_, holderOnWith_fderiv_fderiv_comp_shear hν.le
+  refine ⟨fun y hy => ?_, fun y hy => ?_, hHu, ⟨_, holderOnWith_fderiv_fderiv_comp_shearAlong hν.le
     (fun y _ => hγ.contDiffAt) hcd (fun y _ => hG1 y) (fun y _ => hG2 y) (hH.holderOnWith s)
     (hG3.holderOnWith s) (fun y hy => hN1 _ (hmaps y hy)) hN2' hVu hHu⟩⟩
   · rw [(((hcd y hy).differentiableAt two_ne_zero).hasFDerivAt.comp y (hφ y)).fderiv]
     exact hcomp _ y (hN1 _ (hmaps y hy))
-  · have h := norm_fderiv_fderiv_comp_shear_le hν.le hγ.contDiffAt (hcd y hy) (hG1 y) (hG2 y)
+  · have h := norm_fderiv_fderiv_comp_shearAlong_le hν.le hγ.contDiffAt (hcd y hy) (hG1 y) (hG2 y)
       (hN1 _ (hmaps y hy)) (hN2' y hy)
     push_cast
     exact h
@@ -408,25 +409,25 @@ private theorem shear_comp_bounds {α : ℝ≥0} (hα1 : α ≤ 1) {ν : E} (hν
 `φ` maps into the region where `u` is `C²` with `‖Du‖ ≤ N` and the operator
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu` is Hölder with constant `K`, the operator `∑ₖₗ ãₖₗ ∂ₖ∂ₗv` with the sheared
 coefficients `ã = Wᵀ (a ∘ φ) W` is Hölder, given Hölder bounds for `ã` and for `Du ∘ φ` on `t`. -/
-private theorem holderOnWith_sum_sum_smul_fderiv_fderiv_comp_shear {α : ℝ≥0} {ν : E}
+private theorem holderOnWith_sum_sum_smul_fderiv_fderiv_comp_shearAlong {α : ℝ≥0} {ν : E}
     {γ : E → ℝ} {G : ℝ≥0} (hν : ‖ν‖ ≤ 1) (hγ : ContDiff ℝ 2 γ)
     (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) (hLγ : LipschitzWith G γ)
     (hG2 : ∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) (hG3 : HolderWith G α (fderiv ℝ (fderiv ℝ γ)))
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {u : E → ℝ} {t T : Set E} {N K Kã Mã H : ℝ≥0}
-    (hmaps : MapsTo (fun z => z + γ z • ν) t T)
-    (hcd : ∀ y ∈ t, ContDiffAt ℝ 2 u (y + γ y • ν))
-    (hN1 : ∀ y ∈ t, ‖fderiv ℝ u (y + γ y • ν)‖ ≤ N)
+    (hmaps : MapsTo (shearAlong γ ν) t T)
+    (hcd : ∀ y ∈ t, ContDiffAt ℝ 2 u (shearAlong γ ν y))
+    (hN1 : ∀ y ∈ t, ‖fderiv ℝ u (shearAlong γ ν y)‖ ≤ N)
     (hã : ∀ k l, HolderOnWith Kã α
-      (fun y => ((shearRows γ ν y)ᵀ * a (y + γ y • ν) * shearRows γ ν y) k l) t)
+      (fun y => ((shearRows γ ν y)ᵀ * a (shearAlong γ ν y) * shearRows γ ν y) k l) t)
     (hMã : ∀ k l, ∀ y ∈ t,
-      |((shearRows γ ν y)ᵀ * a (y + γ y • ν) * shearRows γ ν y) k l| ≤ Mã)
-    (hH : HolderOnWith H α (fun y => fderiv ℝ u (y + γ y • ν)) t)
+      |((shearRows γ ν y)ᵀ * a (shearAlong γ ν y) * shearRows γ ν y) k l| ≤ Mã)
+    (hH : HolderOnWith H α (fun y => fderiv ℝ u (shearAlong γ ν y)) t)
     (hK : HolderOnWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
       (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) T) :
     HolderOnWith (K * (1 + G) ^ (α : ℝ) + ((n + 1) * ((n + 1) * (Mã * G)) * H +
         N * ((n + 1) * ((n + 1) * (Mã * G + G * Kã))))) α
-      (fun y => ∑ k, ∑ l, ((shearRows γ ν y)ᵀ * a (y + γ y • ν) * shearRows γ ν y) k l •
-        fderiv ℝ (fderiv ℝ (u ∘ fun z => z + γ z • ν)) y (EuclideanSpace.single k 1)
+      (fun y => ∑ k, ∑ l, ((shearRows γ ν y)ᵀ * a (shearAlong γ ν y) * shearRows γ ν y) k l •
+        fderiv ℝ (fderiv ℝ (u ∘ shearAlong γ ν)) y (EuclideanSpace.single k 1)
           (EuclideanSpace.single l 1)) t := by
   have he (k : Fin (n + 1)) : ‖(EuclideanSpace.single k (1 : ℝ) : E)‖ ≤ 1 := by simp
   -- The entries `∂ₖ∂ₗγ` are Hölder with constant `G` and bounded by `G`.
@@ -441,7 +442,7 @@ private theorem holderOnWith_sum_sum_smul_fderiv_fderiv_comp_shear {α : ℝ≥0
     (hã k l).smul_of_norm_le (hD2 k l) (hMã k l) fun y _ => hD2b k l y
   simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, smul_eq_mul] at hc
   have hcb (y : E) (hy : y ∈ t) :
-      ‖∑ k, ∑ l, ((shearRows γ ν y)ᵀ * a (y + γ y • ν) * shearRows γ ν y) k l *
+      ‖∑ k, ∑ l, ((shearRows γ ν y)ᵀ * a (shearAlong γ ν y) * shearRows γ ν y) k l *
         fderiv ℝ (fderiv ℝ γ) y (EuclideanSpace.single k 1) (EuclideanSpace.single l 1)‖ ≤
         (((n + 1) * ((n + 1) * (Mã * G)) : ℝ≥0) : ℝ) :=
     calc _ ≤ ∑ _ : Fin (n + 1), ∑ _ : Fin (n + 1), (Mã * G : ℝ) :=
@@ -449,20 +450,20 @@ private theorem holderOnWith_sum_sum_smul_fderiv_fderiv_comp_shear {α : ℝ≥0
             rw [norm_mul]
             exact mul_le_mul (hMã k l y hy) (hD2b k l y) (norm_nonneg _) Mã.coe_nonneg
       _ = _ := by simp
-  have hDν : HolderOnWith H α (fun y => fderiv ℝ u (y + γ y • ν) ν) t :=
+  have hDν : HolderOnWith H α (fun y => fderiv ℝ u (shearAlong γ ν y) ν) t :=
     hH.clm_apply_of_norm_le_one hν
-  have hDνb (y : E) (hy : y ∈ t) : |fderiv ℝ u (y + γ y • ν) ν| ≤ N :=
+  have hDνb (y : E) (hy : y ∈ t) : |fderiv ℝ u (shearAlong γ ν y) ν| ≤ N :=
     ((fderiv ℝ u _).unit_le_opNorm ν hν).trans (hN1 y hy)
   have hprod := hc.smul_of_norm_le hDν hcb hDνb
-  refine ((holderOnWith_comp_shear hν hLγ hK hmaps).add hprod).congr fun y hy => ?_
-  exact (sum_sum_smul_fderiv_fderiv_comp_shear hγν (hcd y hy) hγ.contDiffAt _).symm
+  refine ((holderOnWith_comp_shearAlong hν hLγ hK hmaps).add hprod).congr fun y hy => ?_
+  exact (sum_sum_smul_fderiv_fderiv_comp_shearAlong hγν (hcd y hy) hγ.contDiffAt _).symm
 
 /-- **Back through the inverse shear.** If `v` is `C²` near the part of `ball y₀ r` above the
 hyperplane `⟪·, ν⟫ = 0`, with `‖Dv‖` and `‖D²v‖` bounded by `N` there and `D²v` Hölder with
 constant `W` on the smaller closed half-ball of radius `ρ < r`, then for the inverse shear
 `ψ x = x - γ x ν` the second derivative of `v ∘ ψ` is Hölder on every set that `ψ` maps into that
 closed half-ball. -/
-private theorem holderOnWith_iteratedFDeriv_two_comp_shear_neg {α : ℝ≥0} (hα1 : α ≤ 1) {ν : E}
+private theorem holderOnWith_iteratedFDeriv_two_comp_shearAlong_neg {α : ℝ≥0} (hα1 : α ≤ 1) {ν : E}
     (hν : ‖ν‖ ≤ 1) {γ : E → ℝ} {G : ℝ≥0} (hγ : ContDiff ℝ 2 γ) (hG1 : ∀ x, ‖fderiv ℝ γ x‖ ≤ G)
     (hG2 : ∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) (hG3 : HolderWith G α (fderiv ℝ (fderiv ℝ γ)))
     {y₀ : E} {ρ r : ℝ} (hρr : ρ < r) {U : Set E} {v : E → ℝ} {N W : ℝ≥0} (hU : IsOpen U)
@@ -470,11 +471,11 @@ private theorem holderOnWith_iteratedFDeriv_two_comp_shear_neg {α : ℝ≥0} (h
     (hN1 : ∀ y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}, ‖fderiv ℝ v y‖ ≤ N)
     (hN2 : ∀ y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}, ‖iteratedFDeriv ℝ 2 v y‖ ≤ N)
     (hW : HolderOnWith W α (iteratedFDeriv ℝ 2 v) (closedBall y₀ ρ ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}))
-    {s : Set E} (hs : MapsTo (fun x => x + (-γ x) • ν) s (closedBall y₀ ρ ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ})) :
+    {s : Set E} (hs : MapsTo (shearAlong (-γ) ν) s (closedBall y₀ ρ ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ})) :
     HolderOnWith (W * (1 + G) ^ (α : ℝ) * (1 + G) * (1 + G) + N * (G + 2 * G) * (1 + G) +
         N * (1 + G) * (G + 2 * G) +
         (N * G + G * (N * (2 * r).toNNReal ^ ((1 : ℝ) - α) * (1 + G) ^ (α : ℝ)))) α
-      (iteratedFDeriv ℝ 2 (v ∘ fun x => x + (-γ x) • ν)) s := by
+      (iteratedFDeriv ℝ 2 (v ∘ shearAlong (-γ) ν)) s := by
   obtain ⟨-, hLγ', -, hH'⟩ := graph_facts hα1 hγ hG1 hG2
   set t := closedBall y₀ ρ ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}
   have htB : t ⊆ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ} :=
@@ -486,7 +487,7 @@ private theorem holderOnWith_iteratedFDeriv_two_comp_shear_neg {α : ℝ≥0} (h
   have hDv := ((convex_closedBall y₀ ρ).inter
     (TauCeti.convex_setOf_le_inner ν 0)).holderOnWith_fderiv_of_norm_iteratedFDeriv_two_le hα1
     ((inter_subset_left).trans (closedBall_subset_ball hρr)) hcd fun y hy => hN2 y (htB hy)
-  have h := holderOnWith_fderiv_fderiv_comp_shear (γ := fun x => -γ x) (w := v) (s := s) hν
+  have h := holderOnWith_fderiv_fderiv_comp_shearAlong (γ := fun x => -γ x) (w := v) (s := s) hν
     (fun y _ => hγ.neg.contDiffAt) (fun y hy => hcd _ (hs hy))
     (fun y _ => by rw [hneg1, Pi.neg_apply, norm_neg]; exact hG1 y)
     (fun y _ => by rw [hneg2]; exact (norm_neg (fderiv ℝ (fderiv ℝ γ) y)).trans_le (hG2 y))
@@ -496,9 +497,9 @@ private theorem holderOnWith_iteratedFDeriv_two_comp_shear_neg {α : ℝ≥0} (h
     (fun y hy => by
       rw [norm_fderiv_fderiv]
       exact hN2 _ (htB (hs hy)))
-    (holderOnWith_comp_shear hν hLγ' ((holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two v).2 hW)
-      hs)
-    (holderOnWith_comp_shear hν hLγ' hDv hs)
+    (holderOnWith_comp_shearAlong hν hLγ'
+      ((holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two v).2 hW) hs)
+    (holderOnWith_comp_shearAlong hν hLγ' hDv hs)
   exact (holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two _).1 h
 
 /-- **The choice of the radius.** For the shear by a function with `‖Dγ‖ ≤ G`, there is `R₀ > 0`
@@ -610,25 +611,27 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fder
       _ = F 1 1 * (K + N) := by simp only [F]; ring
   refine ⟨F 1 1, fun {a x₀} hx₀ hEll hEll' hL hM {U u N K V} hU hBU hu hu0 hN0 hN1 hN2 hV hK => ?_⟩
   -- Shear the boundary flat: `v = u ∘ φ` near `y₀ = ψ x₀`.
-  set y₀ : E := x₀ + (-γ x₀) • ν
-  have hy₀ : y₀ + γ y₀ • ν = x₀ := shear_shear_neg hγν x₀
+  set y₀ : E := shearAlong (-γ) ν x₀ with hy₀def
+  have hy₀ : shearAlong γ ν y₀ = x₀ := shearAlong_shearAlong_neg hγν x₀
   obtain ⟨hLγ, hLγ', -, -⟩ := graph_facts hα1.le hγ hG1 hG2
-  have hφ : ContDiff ℝ 2 fun z : E => z + γ z • ν := contDiff_id.add (hγ.smul contDiff_const)
-  have hmem (y : E) (hy : dist y y₀ ≤ r) := shear_mem_ball_inter hν hγν hLγ hy₀ hrR hy
-  have hU' : IsOpen ((fun z => z + γ z • ν) ⁻¹' U) := hU.preimage hφ.continuous
-  have hBU' : ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ} ⊆ (fun z => z + γ z • ν) ⁻¹' U :=
+  have hφ : ContDiff ℝ 2 (shearAlong γ ν) := by
+    rw [funext (shearAlong_def γ ν)]
+    exact contDiff_id.add (hγ.smul contDiff_const)
+  have hmem (y : E) (hy : dist y y₀ ≤ r) := shearAlong_mem_ball_inter hν hγν hLγ hy₀ hrR hy
+  have hU' : IsOpen ((shearAlong γ ν) ⁻¹' U) := hU.preimage hφ.continuous
+  have hBU' : ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ} ⊆ (shearAlong γ ν) ⁻¹' U :=
     fun y hy => hBU ((hmem y (mem_ball.1 hy.1).le).1 hy.2)
-  have hv : ContDiffOn ℝ 2 (u ∘ fun z => z + γ z • ν) ((fun z => z + γ z • ν) ⁻¹' U) :=
+  have hv : ContDiffOn ℝ 2 (u ∘ shearAlong γ ν) ((shearAlong γ ν) ⁻¹' U) :=
     hu.comp hφ.contDiffOn (mapsTo_preimage _ _)
   obtain ⟨hDv, hD2v, hHu, V', hV'⟩ :=
-    shear_comp_bounds hα1.le hν hγ hγν hG1 hG2 hG3 hy₀ hrR hU hBU hu hN1 hN2 hV
+    comp_shearAlong_bounds hα1.le hν hγ hγν hG1 hG2 hG3 hy₀ hrR hU hBU hu hN1 hN2 hV
   have hcoef (k l : Fin (n + 1)) :=
     holderOnWith_transpose_shearRows_mul_mul_apply hα1.le hν hγ hγν hG1 hG2 hy₀ hrR hL hM k l
   have hHo : ball y₀ r ∩ {y | 0 < ⟪y, ν⟫_ℝ} ⊆ closedBall y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ} :=
     inter_subset_inter ball_subset_closedBall fun _ hy => mem_ofPred_eq ▸ le_of_lt hy
   have hHo' : ball y₀ r ∩ {y | 0 < ⟪y, ν⟫_ℝ} ⊆ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ} :=
     inter_subset_inter_right _ fun _ hy => mem_ofPred_eq ▸ le_of_lt hy
-  have hop := holderOnWith_sum_sum_smul_fderiv_fderiv_comp_shear (a := a) (u := u)
+  have hop := holderOnWith_sum_sum_smul_fderiv_fderiv_comp_shearAlong (a := a) (u := u)
     (t := ball y₀ r ∩ {y | 0 < ⟪y, ν⟫_ℝ}) hν.le hγ hγν hLγ hG2 hG3
     (fun y hy => (hmem y (mem_ball.1 hy.1).le).2 hy.2)
     (fun y hy => hu.contDiffAt (hU.mem_nhds (hBU' (hHo' hy))))
@@ -636,42 +639,45 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fder
     (fun k l => (hcoef k l).1.mono hHo) (fun k l y hy => (hcoef k l).2 y (hHo hy))
     (hHu.mono hHo') hK
   -- The ellipticity of the sheared coefficients at `y₀`.
-  have hEllv (ξ : E) := toQuadraticForm'_transpose_shearRows_mul_mul (A := a (y₀ + γ y₀ • ν)) hν
+  have hEllv (ξ : E) := toQuadraticForm'_transpose_shearRows_mul_mul (A := a (shearAlong γ ν y₀)) hν
     (fderiv_apply_eq_zero_of_apply_add_smul_neg (f := γ) (x := y₀) ν fun t => by simp only [hγν])
     (hG1 y₀) hlam.le (by rwa [hy₀]) (by rwa [hy₀]) ξ
   -- Bounds for `v` by `N' = N (1 + G)² + N G`.
   obtain ⟨hNN', hNN''⟩ := le_mul_one_add_mul_one_add_add_mul N G
   have hD2v' (y : E) (hy : y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) :
-      ‖iteratedFDeriv ℝ 2 (u ∘ fun z => z + γ z • ν) y‖ ≤
+      ‖iteratedFDeriv ℝ 2 (u ∘ shearAlong γ ν) y‖ ≤
         ((N * (1 + G) * (1 + G) + N * G : ℝ≥0) : ℝ) := by
     have h := hD2v y hy
     rwa [norm_fderiv_fderiv] at h
   have hDv' (y : E) (hy : y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) :
-      ‖fderiv ℝ (u ∘ fun z => z + γ z • ν) y‖ ≤ ((N * (1 + G) * (1 + G) + N * G : ℝ≥0) : ℝ) :=
+      ‖fderiv ℝ (u ∘ shearAlong γ ν) y‖ ≤ ((N * (1 + G) * (1 + G) + N * G : ℝ≥0) : ℝ) :=
     (hDv y hy).trans (by exact_mod_cast hNN'')
   -- The flat estimate for `v`.
-  have hflatv := hC₁ (a := fun y => (shearRows γ ν y)ᵀ * a (y + γ y • ν) * shearRows γ ν y)
+  have hflatv := hC₁ (a := fun y => (shearRows γ ν y)ᵀ * a (shearAlong γ ν y) * shearRows γ ν y)
     (x₀ := y₀) (c₀ := 0) (ne_zero_of_norm_ne_zero (by rw [hν]; exact one_ne_zero))
-    (by rw [real_inner_add_smul_self_of_norm_eq_one hν]; linarith)
+    (by
+      rw [hy₀def, shearAlong_def, Pi.neg_apply, real_inner_add_smul_self_of_norm_eq_one hν]
+      linarith)
     (fun ξ => (hEllv ξ).1) (fun ξ => (hEllv ξ).2) (fun k l => (hcoef k l).1)
     (fun y hy k l => (hcoef k l).2 y (hHo hy)) hU' hBU' hv
     (fun y hy hy0 => by
       have h := (hmem y (mem_ball.1 hy).le).1 hy0.ge
-      have hi := real_inner_shear_sub hν hγν y
+      have hi := real_inner_shearAlong_sub hν hγν y
       exact hu0 _ h.1 (by linarith))
     (fun y hy => (hN0 _ ((hmem y (mem_ball.1 hy.1).le).1 hy.2)).trans (by exact_mod_cast hNN'))
     hDv' hD2v' ((holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two _).1 hV') hop
   -- Back to `u = v ∘ ψ` through the inverse shear `ψ x = x - γ x ν`.
-  have hmaps : MapsTo (fun x => x + (-γ x) • ν) (closedBall x₀ ρ ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ})
+  have hmaps : MapsTo (shearAlong (-γ) ν) (closedBall x₀ ρ ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ})
       (closedBall y₀ ((1 + G) * ρ) ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) := fun x hx =>
-    ⟨mem_closedBall.2 (dist_shear_le hν.le hLγ' (mem_closedBall.1 hx.1)), by
+    ⟨mem_closedBall.2 (dist_shearAlong_le hν.le hLγ' (mem_closedBall.1 hx.1)), by
       have h2 : γ x ≤ ⟪x, ν⟫_ℝ := hx.2
-      simp only [mem_ofPred_eq, real_inner_add_smul_self_of_norm_eq_one hν]
+      simp only [mem_ofPred_eq, shearAlong_def, Pi.neg_apply,
+        real_inner_add_smul_self_of_norm_eq_one hν]
       linarith⟩
-  have hback := holderOnWith_iteratedFDeriv_two_comp_shear_neg hα1.le hν.le hγ hG1 hG2 hG3 hρr
+  have hback := holderOnWith_iteratedFDeriv_two_comp_shearAlong_neg hα1.le hν.le hγ hG1 hG2 hG3 hρr
     hU' hBU' hv hDv' hD2v' hflatv hmaps
-  have hvu : ((u ∘ fun z => z + γ z • ν) ∘ fun x => x + (-γ x) • ν) = u :=
-    funext fun x => by simp only [Function.comp_apply, shear_shear_neg hγν x]
+  have hvu : ((u ∘ shearAlong γ ν) ∘ shearAlong (-γ) ν) = u :=
+    funext fun x => by simp only [Function.comp_apply, shearAlong_shearAlong_neg hγν x]
   rw [hvu] at hback
   exact hback.mono_const (hF K N)
 
