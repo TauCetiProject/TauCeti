@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Real.GoldenRatio
 
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Data.Rat.BoundedDen
 
 /-!
@@ -85,15 +86,16 @@ theorem finite_setOf_abs_goldenRatio_sub_lt_of_sqrt_five_lt {c : ℝ} (hc : √5
   have hcc : 0 < c * (c - √5) := mul_pos hc0 (sub_pos.mpr hc)
   refine ((Metric.isBounded_ball (x := φ) (r := (1 : ℝ))).finite_setOf_rat_den_le
     ⌊1 / (c * (c - √5))⌋₊).subset fun r hr ↦ ?_
-  have hr' : |φ - r| < 1 / (c * (r.den : ℝ) ^ 2) := hr
+  simp only [Set.mem_ofPred_eq] at hr ⊢
   have hd0 : (0 : ℝ) < r.den := mod_cast r.den_pos
   have hd : (1 : ℝ) ≤ r.den := mod_cast r.den_pos
   -- clearing the denominator bounds `q * φ - p`
   have hx : |(r.den : ℝ) * φ - r.num| * (c * r.den) < 1 := by
-    have hnum : (r.den : ℝ) * r = r.num := mod_cast r.den_mul_eq_num
-    rw [← hnum, ← mul_sub, abs_mul, abs_of_pos hd0]
-    calc r.den * |φ - r| * (c * r.den) = |φ - r| * (c * (r.den : ℝ) ^ 2) := by ring
-      _ < 1 := (lt_div_iff₀ (by positivity)).mp hr'
+    calc |(r.den : ℝ) * φ - r.num| * (c * r.den) = c * (r.den * |r.den * φ - r.num|) := by ring
+      _ = |φ - r| * (c * (r.den : ℝ) ^ 2) := by
+        rw [mul_abs_mul_sub_eq_sq_mul_abs_sub_div hd0, ← Rat.cast_def]
+        ring
+      _ < 1 := (lt_div_iff₀ (by positivity)).mp hr
   -- hence the denominator is bounded
   have hden : (r.den : ℝ) ^ 2 * (c * (c - √5)) < 1 :=
     sq_mul_lt_one_of_abs_mul_goldenRatio_sub_mul_lt hc0.le r.num r.den hx
@@ -102,7 +104,7 @@ theorem finite_setOf_abs_goldenRatio_sub_lt_of_sqrt_five_lt {c : ℝ} (hc : √5
     nlinarith
   -- and the approximation inequality puts `r` in the unit ball around `φ`
   · rw [Metric.mem_ball, Real.dist_eq, abs_sub_comm]
-    exact hr'.trans_le ((div_le_one (by positivity)).mpr
+    exact hr.trans_le ((div_le_one (by positivity)).mpr
       (one_le_mul_of_one_le_of_one_le hc1 (one_le_pow₀ hd)))
 
 end TauCeti

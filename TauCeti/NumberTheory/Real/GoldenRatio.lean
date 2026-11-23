@@ -99,9 +99,8 @@ theorem log_goldenRatio_lt_one_half : Real.log Real.goldenRatio < 1 / 2 := by
   rw [Real.log_pow, Nat.cast_ofNat, Real.log_exp] at h
   linarith
 
-/-- The norm form `p ^ 2 - p * q - q ^ 2` of `ℤ[φ]` does not vanish at integers `p` and `q` that are
-not both zero, so the product of `q * φ - p` and its conjugate `q * ψ - p` has absolute value at
-least `1`. -/
+/-- For integers `p` and `q` that are not both zero, the product of `|q * φ - p|` and
+`|q * ψ - p|` is at least `1`, where `ψ` is the conjugate of `φ`. -/
 theorem one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub {p q : ℤ} (h : p ≠ 0 ∨ q ≠ 0) :
     1 ≤ |q * φ - p| * |q * ψ - p| := by
   -- `q * x - p` vanishes for no irrational `x`: this is `p ≠ 0` when `q = 0`
@@ -124,8 +123,7 @@ theorem one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub {p q : ℤ} (h
   exact_mod_cast Int.one_le_abs h0
 
 /-- For integers `p` and `q` that are not both zero, `x = |q * φ - p|` satisfies
-`1 ≤ x * (x + |q| * √5)`. This follows from the bound on the norm form, because the conjugate
-`q * ψ - p` is `q * φ - p - q * √5`. -/
+`1 ≤ x * (x + |q| * √5)`. This bounds the approximation error `x` from below in terms of `|q|`. -/
 theorem one_le_abs_mul_goldenRatio_sub_mul_add {p q : ℤ} (h : p ≠ 0 ∨ q ≠ 0) :
     1 ≤ |q * φ - p| * (|q * φ - p| + |(q : ℝ)| * √5) := by
   have hy : (q : ℝ) * ψ - p = q * φ - p - q * √5 := by
