@@ -17,18 +17,16 @@ import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 /-!
 # Restriction and extension of states
 
-Restriction of states along star homomorphisms is functorial, and every state of a C⋆-subalgebra
-extends to a state of the ambient C⋆-algebra, with or without units.
+Every state of a C⋆-subalgebra extends to a state of the ambient C⋆-algebra, with or without
+units. The functoriality and norm bounds of restriction used here are in
+`TauCeti.Analysis.CStarAlgebra.State.Space`.
 
-* `TauCeti.pullbackFunctional_id` and `TauCeti.pullbackFunctional_comp`: restriction of functionals
-  `pullbackFunctional A f` along star homomorphisms is a contravariant functor.
-* `TauCeti.mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace`: if the
-  restriction of a state along a composite `A → B → C` is a state, so is its restriction to `B`.
+* `TauCeti.surjOn_pullbackFunctional_inr_stateSpace`: every state of `A` is the restriction of a
+  state of the unitization `Unitization ℂ A`.
 * `TauCeti.mem_extremePoints_stateSpace_of_pullbackFunctional_inr`: a state of the unitization
-  `Unitization ℂ A` restricting to a pure state of `A` is pure, and
+  restricting to a pure state of `A` is pure, and
   `TauCeti.pullbackFunctional_inr_mem_extremePoints_stateSpace`: a pure state of the unitization
-  restricting to a state of `A` restricts to a pure state. Both rest on each state of `A` being
-  the restriction of exactly one state of the unitization, proved here by private lemmas.
+  restricting to a state of `A` restricts to a pure state.
 * `TauCeti.isExtreme_stateSpace_inter_preimage_pullbackFunctional`: the states of `B` restricting
   along a star homomorphism `f : A → B` to a pure state of `A` form a face of the state space of
   `B`. When `B` is unital this face is weak-* compact, by
@@ -72,69 +70,6 @@ open Set WeakDual
 open scoped ComplexOrder
 
 namespace TauCeti
-
-section Functorial
-
-variable {A B C : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-  [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C]
-
-/-- Restriction of functionals along the identity is the identity. -/
-@[simp]
-theorem pullbackFunctional_id :
-    pullbackFunctional A (NonUnitalStarAlgHom.id ℂ A) = ContinuousLinearMap.id ℂ (WeakDual ℂ A) :=
-  ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => by simp
-
-/-- **Functoriality of restriction.** Restricting along `g.comp f` is restricting along `g` and
-then along `f`. -/
-theorem pullbackFunctional_comp (g : B →⋆ₙₐ[ℂ] C) (f : A →⋆ₙₐ[ℂ] B) :
-    pullbackFunctional A (g.comp f) = (pullbackFunctional A f).comp (pullbackFunctional B g) :=
-  ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => by simp
-
-end Functorial
-
-section Restriction
-
-variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-  [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] {φ : WeakDual ℂ B}
-
-/-- The restriction of a state along a star homomorphism is nonnegative on nonnegative
-elements. -/
-theorem map_nonneg_pullbackFunctional_of_mem_stateSpace (f : F) (hφ : φ ∈ stateSpace B) {a : A}
-    (ha : 0 ≤ a) : 0 ≤ pullbackFunctional A f φ a := by
-  rw [pullbackFunctional_apply]
-  exact map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha)
-
-/-- Restriction along a star homomorphism does not increase the norm of a functional. -/
-theorem norm_toStrongDual_pullbackFunctional_le (f : F) (φ : WeakDual ℂ B) :
-    ‖toStrongDual (pullbackFunctional A f φ)‖ ≤ ‖toStrongDual φ‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun x => ?_
-  calc ‖toStrongDual (pullbackFunctional A f φ) x‖ = ‖toStrongDual φ (f x)‖ := by
-        rw [toStrongDual_apply, pullbackFunctional_apply]; rfl
-    _ ≤ ‖toStrongDual φ‖ * ‖f x‖ := (toStrongDual φ).le_opNorm _
-    _ ≤ ‖toStrongDual φ‖ * ‖x‖ :=
-      mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f x) (norm_nonneg _)
-
-/-- The restriction of a state along a star homomorphism has norm at most `1`. -/
-theorem norm_toStrongDual_pullbackFunctional_le_one (f : F) (hφ : φ ∈ stateSpace B) :
-    ‖toStrongDual (pullbackFunctional A f φ)‖ ≤ 1 :=
-  (norm_toStrongDual_pullbackFunctional_le f φ).trans (norm_toStrongDual_of_mem_stateSpace hφ).le
-
-/-- If the restriction of a state of `C` along a composite `A → B → C` of star homomorphisms is a
-state of `A`, then its restriction to `B` is a state of `B`. -/
-theorem mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace
-    {C G : Type*} [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C]
-    [FunLike G B C] [NonUnitalAlgHomClass G ℂ B C] [StarHomClass G B C] (f : F) (g : G)
-    {ψ : WeakDual ℂ C} (hψ : ψ ∈ stateSpace C)
-    (h : pullbackFunctional A f (pullbackFunctional B g ψ) ∈ stateSpace A) :
-    pullbackFunctional B g ψ ∈ stateSpace B := by
-  refine mem_stateSpace_iff.2 ⟨fun b hb => map_nonneg_pullbackFunctional_of_mem_stateSpace g hψ hb,
-    le_antisymm (norm_toStrongDual_pullbackFunctional_le_one g hψ) ?_⟩
-  rw [← norm_toStrongDual_of_mem_stateSpace h]
-  exact norm_toStrongDual_pullbackFunctional_le f _
-
-end Restriction
 
 section Compact
 
@@ -180,23 +115,14 @@ theorem isExtreme_stateSpace_inter_preimage_pullbackFunctional (f : F) {φ : Wea
     calc (1 : ℝ) = ‖toStrongDual φ‖ := (norm_toStrongDual_of_mem_stateSpace hφ.1).symm
       _ ≤ _ := hsplit ▸ norm_add_le _ _
       _ = _ := by simp [norm_smul, abs_of_pos ha, abs_of_pos hb]
-  exact hφ.2 (mem_stateSpace_iff.2
-      ⟨fun _ hx => map_nonneg_pullbackFunctional_of_mem_stateSpace f hψ₁ hx, by nlinarith⟩)
-    (mem_stateSpace_iff.2
-      ⟨fun _ hx => map_nonneg_pullbackFunctional_of_mem_stateSpace f hψ₂ hx, by nlinarith⟩)
-    ⟨a, b, ha, hb, hab, hcomb⟩
+  exact hφ.2 ((mem_stateSpace_pullbackFunctional_iff f hψ₁).2 (by nlinarith))
+    ((mem_stateSpace_pullbackFunctional_iff f hψ₂).2 (by nlinarith)) ⟨a, b, ha, hb, hab, hcomb⟩
 
 end Face
 
 section Unitization
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-! The two private lemmas below can be replaced by the public
-`TauCeti.injOn_pullbackFunctional_inr_stateSpace` and
-`TauCeti.existsUnique_mem_stateSpace_unitization` of
-`TauCeti.Analysis.CStarAlgebra.State.Unitization` once
-https://github.com/TauCetiProject/TauCeti/pull/39824 adds them. -/
 
 /-- A state of `Unitization ℂ A` is determined by its restriction to `A`: it takes the value
 `λ + ψ a` at `λ + a`. -/
@@ -207,16 +133,14 @@ private theorem injOn_pullbackFunctional_inr_stateSpace_aux :
       (x : Unitization ℂ A) :
       ψ x = x.fst + pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ x.snd := by
     have hinl : (Unitization.inl x.fst : Unitization ℂ A) = x.fst • 1 := by ext <;> simp
-    conv_lhs => rw [← Unitization.inl_fst_add_inr_snd_eq x]
-    rw [map_add, hinl, map_smul, map_one_of_mem_stateSpace hψ, smul_eq_mul, mul_one,
-      pullbackFunctional_apply]
-    rfl
+    conv_lhs => rw [← Unitization.inl_fst_add_inr_snd_eq x, hinl]
+    simp [map_one_of_mem_stateSpace hψ]
   intro ψ₁ hψ₁ ψ₂ hψ₂ h
   exact DFunLike.ext _ _ fun x => by rw [key hψ₁, key hψ₂, h]
 
 /-- Every state `φ` of `A` is the restriction of a state of `Unitization ℂ A`, namely
 `λ + a ↦ λ + φ a`. -/
-private theorem surjOn_pullbackFunctional_inr_stateSpace_aux :
+theorem surjOn_pullbackFunctional_inr_stateSpace :
     SurjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
       (stateSpace (Unitization ℂ A)) (stateSpace A) := by
   intro φ hφ
@@ -226,9 +150,10 @@ private theorem surjOn_pullbackFunctional_inr_stateSpace_aux :
   · rw [PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff,
       PositiveContinuousLinearMap.norm_unitization]
     exact norm_toStrongDual_of_mem_stateSpace hφ
-  · -- `PositiveContinuousLinearMap.mk₀` has no evaluation lemma; `τ` evaluates as `φ`
-    rw [pullbackFunctional_apply]
-    exact τ.unitization_apply_inr a
+  · simp only [pullbackFunctional_apply, Unitization.inrNonUnitalStarAlgHom_apply,
+      StrongDual.toWeakDual_apply]
+    exact (τ.unitization_apply_inr a).trans
+      (PositiveContinuousLinearMap.mk₀_apply (R := ℂ) _ _ a)
 
 /-- A state of `Unitization ℂ A` restricting to a pure state of `A` is pure. -/
 theorem mem_extremePoints_stateSpace_of_pullbackFunctional_inr {φ : WeakDual ℂ A}
@@ -255,8 +180,8 @@ theorem pullbackFunctional_inr_mem_extremePoints_stateSpace {ψ : WeakDual ℂ (
     pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ ∈
       extremePoints ℝ (stateSpace A) := by
   refine ⟨hψA, fun χ₁ hχ₁ χ₂ hχ₂ hseg => ?_⟩
-  obtain ⟨χ₁', hχ₁', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace_aux hχ₁
-  obtain ⟨χ₂', hχ₂', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace_aux hχ₂
+  obtain ⟨χ₁', hχ₁', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hχ₁
+  obtain ⟨χ₂', hχ₂', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hχ₂
   obtain ⟨a, b, ha, hb, hab, hcomb⟩ := hseg
   -- the combination `a χ₁' + b χ₂'` is a state of the unitization restricting as `ψ` does
   have hψ' : a • χ₁' + b • χ₂' = ψ := by
@@ -324,7 +249,7 @@ be unital. -/
 theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f) :
     SurjOn (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
   intro φ hφ
-  obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace_aux hφ
+  obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hφ
   obtain ⟨ψ', hψ', rfl⟩ := surjOn_pullbackFunctional_stateSpace_of_unital
     (Unitization.starMap (.ofClass f : A →⋆ₙₐ[ℂ] B)) (Unitization.starMap_injective hf) hφ'
   rw [← pullbackFunctional_pullbackFunctional_inr] at hφ ⊢
@@ -338,7 +263,7 @@ theorem surjOn_pullbackFunctional_extremePoints_stateSpace (f : F) (hf : Functio
     SurjOn (pullbackFunctional A f) (extremePoints ℝ (stateSpace B))
       (extremePoints ℝ (stateSpace A)) := by
   intro φ hφ
-  obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace_aux hφ.1
+  obtain ⟨φ', hφ', rfl⟩ := surjOn_pullbackFunctional_inr_stateSpace hφ.1
   obtain ⟨ψ', hψ', rfl⟩ := surjOn_pullbackFunctional_extremePoints_stateSpace_of_unital
     (Unitization.starMap (.ofClass f : A →⋆ₙₐ[ℂ] B)) (Unitization.starMap_injective hf)
     (mem_extremePoints_stateSpace_of_pullbackFunctional_inr hφ hφ' rfl)
