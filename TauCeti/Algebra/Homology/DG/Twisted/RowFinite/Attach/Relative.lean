@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.QuasiIso
 import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
-# Semi-free models along a filtration, one stage of cells at a time
+# Semi-free models along a filtration, relative to a base model
 
 Let `M` be a differential graded left module over a DG algebra `A`, filtered by an increasing
 sequence of homogeneous `A`-submodules `N 0 ≤ N 1 ≤ ⋯`, and let `g : K_{m₀} → M` be a base model
@@ -19,14 +20,13 @@ of cells with a stage `st : G → ℕ`, and suppose that the free module on the 
 with its coefficient differential, is quasi-isomorphic to `N (n + 1)` modulo `N n` through
 prescribed relative cycles `c₀ x ∈ N (n + 1)` with `d (c₀ x) ∈ N n`. This is the situation of the
 chains on the based path space of a relative CW complex, filtered by the preimages of the skeleta,
-with one generator for each cell outside the base; for an absolute CW complex the base is empty
-and `N 0` is acyclic.
+with one generator for each cell outside the base.
 
-This file attaches the cells one stage at a time and passes to the union. The result
-(`TauCeti.exists_rowFiniteTwistingCocycle_sum_of_forall_exists`) is a row-finite twisting cocycle
-`m` on `P ⊕ G` extending `m₀`, whose rows of cells strictly lower the stage of the cells, together
-with images `c x ≡ c₀ x` modulo `N (st x)`, such that `Sum.elim g c : K_m → M` commutes with the
-differentials and:
+This file attaches the cells one stage at a time, keeping the base rows `m₀`, and passes to the
+union. The result (`TauCeti.exists_rowFiniteTwistingCocycle_sum_of_forall_exists`) is a row-finite
+twisting cocycle `m` on `P ⊕ G` extending `m₀`, whose rows of cells strictly lower the stage of
+the cells, together with images `c x ≡ c₀ x` modulo `N (st x)`, such that `Sum.elim g c : K_m → M`
+commutes with the differentials and:
 
 * for every `n`, every relative cycle of its restriction to the base and the cells of stage `< n`
   with target in `N n` is a relative boundary with target in `N n`, the elementwise form used by
@@ -34,34 +34,31 @@ differentials and:
 * every relative cycle of `Sum.elim g c` with target in the union `⨆ n, N n` is a relative
   boundary with target in the union.
 
-Over the empty base this is `TauCeti.exists_rowFiniteTwistingCocycle_of_forall_exists`, a model
-on `G` alone from an acyclic `N 0`.
+The absolute case, over the empty base with `N 0` acyclic, is
+`TauCeti.exists_semifreeModel_of_filtration` (`RowFinite/Attach/Filtration.lean`), built on the
+tower of attachments `TauCeti.RowFiniteAugmentedModule.tower`, which starts from the module with
+no generators. Here the stages instead start from the base model, and the base generators keep
+their prescribed rows `m₀`, which need not lower any stage.
 
 These elementwise statements do not require the `N n` to be stable under the differential. When
 they are, so that the `N n` and their union are subcomplexes, a relative cycle being a relative
 boundary is the acyclicity of the mapping cone, and the two statements say that the restriction of
 the model is a quasi-isomorphism onto each `N n`, and that the model is one onto `⨆ n, N n`,
 hence onto `M` when the filtration is exhaustive. The same reading applies to the hypotheses: the
-base model is a quasi-isomorphism onto `N 0` (for the empty base, `N 0` acyclic means that every
-cycle of `N 0` bounds in `N 0`), and the quasi-isomorphisms of the stages are elementwise.
-
-Over the empty base the rows strictly lower the stage, so the model is semi-free
-(`TauCeti.RowFiniteTwistingCocycle.wellFounded_mem_support_of_lt`), and the lifting properties of
-`TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Lifting` apply to `K_m`. No finiteness is assumed
-on the cells of a stage: the union is a direct sum of finite-support vectors, and a relative
-cycle of the union already lives at a finite stage of both the cells and the filtration.
+base model is a quasi-isomorphism onto `N 0`, and the quasi-isomorphisms of the stages are
+elementwise. No finiteness is assumed on the cells of a stage: the union is a direct sum of
+finite-support vectors, and a relative cycle of the union already lives at a finite stage of both
+the cells and the filtration.
 
 The inductive step is `TauCeti.RowFiniteTwistingCocycle.exists_attach_of_forall_exists`, applied
-to the base together with the cells of stages `< n`, and the new cells of stage `n`. The
-successive models are chosen to agree on the earlier cells, so they assemble to a single model on
-`P ⊕ G`.
+to the base together with the cells of stages `< n`, restricted to these generators by
+`TauCeti.RowFiniteTwistingCocycle.ofComapDomain`, and the new cells of stage `n`. The successive
+models are chosen to agree on the earlier cells, so they assemble to a single model on `P ⊕ G`.
 
 ## Main results
 
 * `TauCeti.exists_rowFiniteTwistingCocycle_sum_of_forall_exists`: the semi-free extension of a
   base model built along the filtration, a quasi-isomorphism onto each stage and onto the union.
-* `TauCeti.exists_rowFiniteTwistingCocycle_of_forall_exists`: its case of the empty base, a
-  semi-free model on the cells alone.
 
 ## References
 
@@ -265,9 +262,9 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
     (hc₀ : ∀ x, c₀ x ∈ ℳ (-ind x))
     (hc₀N : ∀ x, c₀ x ∈ N (st x + 1)) (hdc₀ : ∀ x, dM (c₀ x) ∈ N (st x))
     (hQ : ∀ (y : {x // st x = n} →₀ A) (w : M), mapRange.linearMap d y = 0 → w ∈ N (n + 1) →
-      linearCombination A (fun x ↦ c₀ x.1) y - dM w ∈ N n →
+      linearCombination A (fun x ↦ c₀ x.val) y - dM w ∈ N n →
         ∃ (y' : {x // st x = n} →₀ A) (w' : M), w' ∈ N (n + 1) ∧
-          mapRange.linearMap d y' = y ∧ linearCombination A (fun x ↦ c₀ x.1) y' + dM w' - w ∈ N n)
+          mapRange.linearMap d y' = y ∧ linearCombination A (fun x ↦ c₀ x.val) y' + dM w' - w ∈ N n)
     {m : G → P ⊕ G →₀ A} {c : G → M}
     (hs : IsStage (ind := ind) (ℳ := ℳ) (dM := dM) st N c₀ m₀ g n m c) :
     ∃ (m' : G → P ⊕ G →₀ A) (c' : G → M),
@@ -280,7 +277,7 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
   -- is the base and the cells of stage `≤ n`.
   let L := ↥(below P st n)
   let Q := {x : G // st x = n}
-  have hrow (z : L) : ↑(fullRows m₀ m z.1).support ⊆ Set.range (Subtype.val : L → P ⊕ G) := by
+  have hrow (z : L) : ↑(fullRows m₀ m z.val).support ⊆ Set.range (Subtype.val : L → P ⊕ G) := by
     rw [Subtype.range_coe]
     rcases z with ⟨p | x, hz⟩
     · intro y hy
@@ -288,18 +285,18 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
       exact inl_mem_below q
     · exact hs.support_subset (inr_mem_below.1 hz)
   have hgr (z y : L) :
-      fullRows m₀ m z.1 y.1 ∈ 𝒜 (Sum.elim indP ind y.1 - Sum.elim indP ind z.1 + 1) := by
+      fullRows m₀ m z.val y.val ∈ 𝒜 (Sum.elim indP ind y.val - Sum.elim indP ind z.val + 1) := by
     rcases z with ⟨p | x, hz⟩
-    exacts [fullRows_inl_mem_graded m₀ m p y.1, hs.mem_graded x (inr_mem_below.1 hz) y.1]
+    exacts [fullRows_inl_mem_graded m₀ m p y.val, hs.mem_graded x (inr_mem_below.1 hz) y.val]
   have htw (z : L) : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (fullRows m₀ m)
-      (fullRows m₀ m z.1) = 0 := by
+      (fullRows m₀ m z.val) = 0 := by
     rcases z with ⟨p | x, hz⟩
     exacts [rowFiniteTwistedDifferential_fullRows_inl m₀ m p, hs.twisting x (inr_mem_below.1 hz)]
-  let mL : RowFiniteTwistingCocycle 𝒜 d L (fun z ↦ Sum.elim indP ind z.1) :=
+  let mL : RowFiniteTwistingCocycle 𝒜 d L (fun z ↦ Sum.elim indP ind z.val) :=
     .ofComapDomain (fullRows m₀ m) Subtype.val Subtype.val_injective hrow hgr htw
-  have hmL (z : L) : mapDomain Subtype.val (mL.m z) = fullRows m₀ m z.1 :=
+  have hmL (z : L) : mapDomain Subtype.val (mL.m z) = fullRows m₀ m z.val :=
     RowFiniteTwistingCocycle.mapDomain_ofComapDomain_m z
-  let cL : L → M := fun z ↦ Sum.elim g c z.1
+  let cL : L → M := fun z ↦ Sum.elim g c z.val
   -- The relative cycles of the restriction with target in `N n` are relative boundaries.
   have hK := (forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain Subtype.val
     Subtype.val_injective (mP := mL.m)
@@ -307,7 +304,7 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
     (fun z : L ↦ rfl) (N n : Set M)).2 (by rw [Subtype.range_coe]; exact hs.exists_eq)
   -- Attach the cells of stage `n`.
   have hgL (z : L) : linearCombination A cL (mL.m z) = dM (cL z) := by
-    have : linearCombination A (Sum.elim g c) (fullRows m₀ m z.1) = dM (cL z) := by
+    have : linearCombination A (Sum.elim g c) (fullRows m₀ m z.val) = dM (cL z) := by
       rcases z with ⟨p | x, hz⟩
       exacts [linearCombination_fullRows_inl m₀ m hg c p, hs.hom x (inr_mem_below.1 hz)]
     rwa [← hmL z, linearCombination_mapDomain] at this
@@ -315,14 +312,14 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
     rcases z with ⟨p | x, hz⟩
     exacts [hN (Nat.zero_le n) (hgN p),
       hN (Nat.succ_le_of_lt (inr_mem_below.1 hz)) (hs.mem_succ x (inr_mem_below.1 hz))]
-  have hgLdeg (z : L) : cL z ∈ ℳ (-Sum.elim indP ind z.1) := by
+  have hgLdeg (z : L) : cL z ∈ ℳ (-Sum.elim indP ind z.val) := by
     rcases z with ⟨p | x, hz⟩
     exacts [hgdeg p, hs.mem x (inr_mem_below.1 hz)]
   obtain ⟨a, ha, hca, cQ, hcQ, hcQN, hcQsub, hak, hext⟩ :=
-    mL.exists_attach_of_forall_exists (Q := Q) (indQ := fun x ↦ ind x.1) hM hNn
-      (hN n.le_succ) hgLN hgLdeg hgL hK (c₀ := fun x ↦ c₀ x.1) (fun x ↦ hc₀ x.1)
-      (fun x ↦ by have := hc₀N x.1; rwa [x.2] at this)
-      (fun x ↦ by have := hdc₀ x.1; rwa [x.2] at this) hQ
+    mL.exists_attach_of_forall_exists (Q := Q) (indQ := fun x ↦ ind x.val) hM hNn
+      (hN n.le_succ) hgLN hgLdeg hgL hK (c₀ := fun x ↦ c₀ x.val) (fun x ↦ hc₀ x.val)
+      (fun x ↦ by have := hc₀N x.val; rwa [x.property] at this)
+      (fun x ↦ by have := hdc₀ x.val; rwa [x.property] at this) hQ
   -- The new rows and images of the cells: the old ones below stage `n`, the attached ones at
   -- stage `n`.
   let m' : G → P ⊕ G →₀ A := fun x ↦
@@ -331,14 +328,14 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
     if st x < n then c x else if hx' : st x = n then cQ ⟨x, hx'⟩ else 0
   have hm'P (x : G) (hx : st x < n) : m' x = m x := by simp [m', hx]
   have hc'P (x : G) (hx : st x < n) : c' x = c x := by simp [c', hx]
-  have hm'Q (x : Q) : m' x.1 = mapDomain Subtype.val (a x) := by
-    simp [m', x.2]
-  have hc'Q (x : Q) : c' x.1 = cQ x := by
-    simp [c', x.2]
-  have hfr (z : L) : fullRows m₀ m' z.1 = fullRows m₀ m z.1 := by
+  have hm'Q (x : Q) : m' x.val = mapDomain Subtype.val (a x) := by
+    simp [m', x.property]
+  have hc'Q (x : Q) : c' x.val = cQ x := by
+    simp [c', x.property]
+  have hfr (z : L) : fullRows m₀ m' z.val = fullRows m₀ m z.val := by
     rcases z with ⟨p | x, hz⟩
     exacts [rfl, hm'P x (inr_mem_below.1 hz)]
-  have hcL (z : L) : Sum.elim g c' z.1 = cL z := by
+  have hcL (z : L) : Sum.elim g c' z.val = cL z := by
     rcases z with ⟨p | x, hz⟩
     exacts [rfl, hc'P x (inr_mem_below.1 hz)]
   have hDL (f : L →₀ A) : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (fullRows m₀ m')
@@ -350,9 +347,9 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
   let φ : L ⊕ Q → P ⊕ G := Sum.elim Subtype.val (Sum.inr ∘ Subtype.val)
   have hφ : Function.Injective φ := Subtype.val_injective.sumElim
     (Sum.inr_injective.comp Subtype.val_injective) fun z y hzy ↦ by
-      have hz := z.2
+      have hz := z.property
       rw [hzy] at hz
-      exact (inr_mem_below.1 hz).ne y.2
+      exact (inr_mem_below.1 hz).ne y.property
   have hDφ (f : L ⊕ Q →₀ A) :
       rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (fullRows m₀ m') (mapDomain φ f) =
         mapDomain φ (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (mL.attach a ha hca).m f) := by
@@ -371,54 +368,54 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
   · rcases Nat.lt_succ_iff_lt_or_eq.1 hx with hx | hx
     · rw [hm'P x hx]
       exact hs.lt x hx
-    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.1 = x := ⟨⟨x, hx⟩, rfl⟩
+    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.val = x := ⟨⟨x, hx⟩, rfl⟩
       rw [hm'Q]
       intro y hy
       obtain ⟨z, -, hzy⟩ := Finset.mem_image.1 (mapDomain_support hy)
-      have hz : Sum.inr y ∈ below P st n := hzy ▸ z.2
-      rw [x.2]
+      have hz : Sum.inr y ∈ below P st n := hzy ▸ z.property
+      rw [x.property]
       exact inr_mem_below.1 hz
   · rcases Nat.lt_succ_iff_lt_or_eq.1 hx with hx | hx
     · rw [hm'P x hx]
       exact hs.mem_graded x hx
-    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.1 = x := ⟨⟨x, hx⟩, rfl⟩
+    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.val = x := ⟨⟨x, hx⟩, rfl⟩
       rw [hm'Q]
       intro z
       by_cases hz : z ∈ below P st n
-      · obtain ⟨p, rfl⟩ : ∃ p : L, p.1 = z := ⟨⟨z, hz⟩, rfl⟩
+      · obtain ⟨p, rfl⟩ : ∃ p : L, p.val = z := ⟨⟨z, hz⟩, rfl⟩
         rw [mapDomain_apply_of_injective Subtype.val_injective]
         exact ha x p
-      · rw [mapDomain_of_notMem_range _ _ (by rintro ⟨p, rfl⟩; exact hz p.2)]
+      · rw [mapDomain_of_notMem_range _ _ (by rintro ⟨p, rfl⟩; exact hz p.property)]
         exact zero_mem _
   · rcases Nat.lt_succ_iff_lt_or_eq.1 hx with hx | hx
     · rw [hm'P x hx, rowFiniteTwistedDifferential_congr (m' := fullRows m₀ m)
         fun z hz ↦ hfr ⟨z, hs.support_subset hx hz⟩]
       exact hs.twisting x hx
-    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.1 = x := ⟨⟨x, hx⟩, rfl⟩
+    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.val = x := ⟨⟨x, hx⟩, rfl⟩
       rw [hm'Q, hDL, hca, mapDomain_zero]
   · rcases Nat.lt_succ_iff_lt_or_eq.1 hx with hx | hx
     · rw [hc'P x hx]
       exact hs.mem x hx
-    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.1 = x := ⟨⟨x, hx⟩, rfl⟩
+    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.val = x := ⟨⟨x, hx⟩, rfl⟩
       rw [hc'Q]
       exact hcQ x
   · rcases Nat.lt_succ_iff_lt_or_eq.1 hx with hx | hx
     · rw [hc'P x hx]
       exact hs.mem_succ x hx
-    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.1 = x := ⟨⟨x, hx⟩, rfl⟩
-      rw [hc'Q, x.2]
+    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.val = x := ⟨⟨x, hx⟩, rfl⟩
+      rw [hc'Q, x.property]
       exact hcQN x
   · rcases Nat.lt_succ_iff_lt_or_eq.1 hx with hx | hx
     · rw [hc'P x hx]
       exact hs.sub_mem x hx
-    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.1 = x := ⟨⟨x, hx⟩, rfl⟩
-      rw [hc'Q, x.2]
+    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.val = x := ⟨⟨x, hx⟩, rfl⟩
+      rw [hc'Q, x.property]
       exact hcQsub x
   · rcases Nat.lt_succ_iff_lt_or_eq.1 hx with hx | hx
     · rw [hm'P x hx, linearCombination_congr (v' := Sum.elim g c)
         fun z hz ↦ hcL ⟨z, hs.support_subset hx hz⟩, hc'P x hx]
       exact hs.hom x hx
-    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.1 = x := ⟨⟨x, hx⟩, rfl⟩
+    · obtain ⟨x, rfl⟩ : ∃ y : Q, y.val = x := ⟨⟨x, hx⟩, rfl⟩
       -- On the base and the old cells, the new images are the old ones.
       have hcLfun : Sum.elim g c' ∘ Subtype.val = cL := funext hcL
       rw [hm'Q, linearCombination_mapDomain, hc'Q, hcLfun]
@@ -428,7 +425,7 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
       ext y
       refine ⟨?_, fun hy ↦ ?_⟩
       · rintro ⟨z | x, rfl⟩
-        exacts [below_mono n.le_succ z.2, inr_mem_below.2 (Nat.lt_succ_of_le x.2.le)]
+        exacts [below_mono n.le_succ z.property, inr_mem_below.2 (Nat.lt_succ_of_le x.property.le)]
       · rcases y with p | x
         · exact ⟨Sum.inl ⟨Sum.inl p, inl_mem_below p⟩, rfl⟩
         · rcases Nat.lt_succ_iff_lt_or_eq.1 (inr_mem_below.1 hy) with hx | hx
@@ -470,10 +467,10 @@ theorem exists_rowFiniteTwistingCocycle_sum_of_forall_exists (hM : IsDGLeftModul
     {c₀ : G → M} (hc₀ : ∀ x, c₀ x ∈ ℳ (-ind x)) (hc₀N : ∀ x, c₀ x ∈ N (st x + 1))
     (hdc₀ : ∀ x, dM (c₀ x) ∈ N (st x))
     (hQ : ∀ n (y : {x // st x = n} →₀ A) (w : M), mapRange.linearMap d y = 0 →
-      w ∈ N (n + 1) → linearCombination A (fun x ↦ c₀ x.1) y - dM w ∈ N n →
+      w ∈ N (n + 1) → linearCombination A (fun x ↦ c₀ x.val) y - dM w ∈ N n →
         ∃ (y' : {x // st x = n} →₀ A) (w' : M), w' ∈ N (n + 1) ∧
           mapRange.linearMap d y' = y ∧
-            linearCombination A (fun x ↦ c₀ x.1) y' + dM w' - w ∈ N n) :
+            linearCombination A (fun x ↦ c₀ x.val) y' + dM w' - w ∈ N n) :
     ∃ (m : RowFiniteTwistingCocycle 𝒜 d (P ⊕ G) (Sum.elim indP ind)) (c : G → M),
       (∀ p, m.m (Sum.inl p) = mapDomain Sum.inl (m₀.m p)) ∧
       (∀ x y, Sum.inr y ∈ (m.m (Sum.inr x)).support → st y < st x) ∧
@@ -544,103 +541,10 @@ theorem exists_rowFiniteTwistingCocycle_sum_of_forall_exists (hM : IsDGLeftModul
     exact ⟨f', w', subset_below_iff.1 hf', hw', hDf', hfw'⟩
   -- A relative cycle of the union lives at a finite stage of the cells and the filtration.
   · obtain ⟨k, hk⟩ := (Submodule.mem_iSup_of_directed N hN.directed_le).1 hw
-    let n := f.support.sup (Sum.elim (fun _ ↦ 0) st) + 1 + k
-    obtain ⟨f', w', -, hw', hDf', hfw'⟩ := (hfin n).exists_eq f w
-      (subset_below_iff.2 fun x hx ↦ by
-        have := Finset.le_sup (f := Sum.elim (fun _ ↦ 0) st) hx
-        simp only [Sum.elim_inr] at this
-        omega)
-      hf hfw (hN (by omega) hk)
+    obtain ⟨k₀, hk₀⟩ := exists_mem_supported_lt (R := A) (Sum.elim (fun _ ↦ 0) st) f
+    obtain ⟨f', w', -, hw', hDf', hfw'⟩ := (hfin (max k₀ k)).exists_eq f w
+      (subset_below_iff.2 fun x hx ↦ lt_max_of_lt_left ((mem_supported A f).1 hk₀ hx))
+      hf hfw (hN (le_max_right k₀ k) hk)
     exact ⟨f', w', Submodule.mem_iSup_of_mem _ hw', hDf', hfw'⟩
-
-/-- **A semi-free model along a filtration, built one stage of cells at a time.** Let `M` be a
-DG left module, filtered by homogeneous submodules `N 0 ≤ N 1 ≤ ⋯` with `N 0` acyclic, and let
-the generators `G` carry a stage `st : G → ℕ`. Suppose that the free module on the generators of
-stage `n`, with its coefficient differential, is quasi-isomorphic to `N (n + 1)` modulo `N n`
-through elements `c₀ x ∈ N (n + 1)` of degree `-ind x` with `d (c₀ x) ∈ N n`, in the elementwise
-form of `RowFiniteTwistingCocycle.exists_attach_of_forall_exists`.
-
-Then there are a row-finite twisting cocycle `m` on `G`, whose rows strictly lower the stage, and
-images `c x ≡ c₀ x` modulo `N (st x)`, of degree `-ind x` and in `N (st x + 1)`, such that
-`c : K_m → M` commutes with the differentials and:
-
-* for every `n`, every relative cycle of `c` on the generators of stage `< n` with target in
-  `N n` is a relative boundary there, with target in `N n`;
-* every relative cycle of `c` with target in `⨆ n, N n` is a relative boundary with target in
-  `⨆ n, N n`.
-
-No stability of the `N n` under `dM` is needed. When the `N n` are subcomplexes, these say that
-the restriction of `c` is a quasi-isomorphism onto `N n` and that `c` is one onto the union. This
-is `exists_rowFiniteTwistingCocycle_sum_of_forall_exists` over the empty base. -/
-theorem exists_rowFiniteTwistingCocycle_of_forall_exists (hM : IsDGLeftModule h ℳ dM)
-    (st : G → ℕ) {N : ℕ → Submodule A M} (hN : Monotone N) (hNh : ∀ n, (N n).IsHomogeneous ℳ)
-    (hN₀ : ∀ w ∈ N 0, dM w = 0 → ∃ w' ∈ N 0, dM w' = w)
-    {c₀ : G → M} (hc₀ : ∀ x, c₀ x ∈ ℳ (-ind x)) (hc₀N : ∀ x, c₀ x ∈ N (st x + 1))
-    (hdc₀ : ∀ x, dM (c₀ x) ∈ N (st x))
-    (hQ : ∀ n (y : {x // st x = n} →₀ A) (w : M), mapRange.linearMap d y = 0 →
-      w ∈ N (n + 1) → linearCombination A (fun x ↦ c₀ x.1) y - dM w ∈ N n →
-        ∃ (y' : {x // st x = n} →₀ A) (w' : M), w' ∈ N (n + 1) ∧
-          mapRange.linearMap d y' = y ∧
-            linearCombination A (fun x ↦ c₀ x.1) y' + dM w' - w ∈ N n) :
-    ∃ (m : RowFiniteTwistingCocycle 𝒜 d G ind) (c : G → M),
-      (∀ x y, y ∈ (m.m x).support → st y < st x) ∧ (∀ x, c x ∈ ℳ (-ind x)) ∧
-      (∀ x, c x ∈ N (st x + 1)) ∧ (∀ x, c x - c₀ x ∈ N (st x)) ∧
-      (∀ x, linearCombination A c (m.m x) = dM (c x)) ∧
-      (∀ n (f : G →₀ A) (w : M), ↑f.support ⊆ {x | st x < n} →
-        rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m f = 0 →
-          linearCombination A c f = dM w → w ∈ N n →
-            ∃ (f' : G →₀ A) (w' : M), ↑f'.support ⊆ {x | st x < n} ∧ w' ∈ N n ∧
-              rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m f' = f ∧
-                linearCombination A c f' + dM w' = w) ∧
-      ∀ (f : G →₀ A) (w : M), rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m f = 0 →
-        linearCombination A c f = dM w → w ∈ ⨆ n, N n →
-          ∃ (f' : G →₀ A) (w' : M), w' ∈ ⨆ n, N n ∧
-            rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m f' = f ∧
-              linearCombination A c f' + dM w' = w := by
-  classical
-  -- Over the empty base, the relative cycles with target in `N 0` are the cycles of `N 0`.
-  obtain ⟨mX, c, -, hlt, hc, hcN, hcsub, hom, hstage, hunion⟩ :=
-    exists_rowFiniteTwistingCocycle_sum_of_forall_exists hM
-      (0 : RowFiniteTwistingCocycle 𝒜 d Empty Empty.elim) st hN hNh (g := Empty.elim)
-      (fun p ↦ p.elim) (fun p ↦ p.elim) (fun p ↦ p.elim) (fun u w _ huw hw ↦ by
-        obtain ⟨w', hw', rfl⟩ := hN₀ w hw (by rw [← huw, Subsingleton.elim u 0, map_zero])
-        exact ⟨0, w', hw', Subsingleton.elim _ _, by simp⟩)
-      hc₀ hc₀N hdc₀ hQ
-  -- Every generator of `Empty ⊕ G` is a cell, so `mX` restricts to a cocycle on `G`.
-  have hrange (f : Empty ⊕ G →₀ A) : ↑f.support ⊆ Set.range (Sum.inr : G → Empty ⊕ G) := by
-    rintro (e | x) -
-    exacts [e.elim, ⟨x, rfl⟩]
-  let m : RowFiniteTwistingCocycle 𝒜 d G ind :=
-    mX.comap Sum.inr Sum.inr_injective fun x ↦ hrange _
-  have hD (f : G →₀ A) := mX.rowFiniteTwistedDifferential_mapDomain_comap
-    (he := Sum.inr_injective) (hsupp := fun x ↦ hrange (mX.m (Sum.inr x))) f
-  -- Vectors supported on the cells of a set `S` are those supported on `Sum.inr '' S`.
-  have himage (F : Empty ⊕ G →₀ A) (S : Set G) :
-      (F.support : Set (Empty ⊕ G)) ⊆ Sum.inr '' S ↔ ∀ x, Sum.inr x ∈ F.support → x ∈ S := by
-    refine ⟨fun hF x hx ↦ ?_, fun hF ↦ ?_⟩
-    · obtain ⟨y, hy, hyx⟩ := hF (Finset.mem_coe.2 hx)
-      exact Sum.inr_injective hyx ▸ hy
-    · rintro (e | x) hx
-      exacts [e.elim, ⟨x, hF x hx, rfl⟩]
-  -- The rows of `m` have the coefficients of the rows of `mX` on the cells.
-  have hrow (x y : G) (hy : y ∈ (m.m x).support) : Sum.inr y ∈ (mX.m (Sum.inr x)).support := by
-    rw [Finsupp.mem_support_iff, RowFiniteTwistingCocycle.comap_m_apply] at hy
-    exact Finsupp.mem_support_iff.2 hy
-  refine ⟨m, c, fun x y hy ↦ hlt x y (hrow x y hy), hc, hcN, hcsub, fun x ↦ ?_,
-    fun n ↦ ?_, ?_⟩
-  · have := hom x
-    rwa [← mX.mapDomain_comap_m (he := Sum.inr_injective)
-      (hsupp := fun x ↦ hrange (mX.m (Sum.inr x))) x, linearCombination_mapDomain,
-      Sum.elim_comp_inr] at this
-  · refine (forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain_image (dM := dM)
-      Sum.inr Sum.inr_injective hD (c := Sum.elim Empty.elim c) (fun _ ↦ rfl) {x | st x < n}
-      (N n : Set M)).2 fun F w hF hDF hFw hw ↦ ?_
-    obtain ⟨F', w', hF', hF'w⟩ := hstage n F w ((himage F _).1 hF) hDF hFw hw
-    exact ⟨F', w', (himage F' _).2 hF', hF'w⟩
-  · refine (forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain (dM := dM) Sum.inr
-      Sum.inr_injective hD (c := Sum.elim Empty.elim c) (fun _ ↦ rfl)
-      ((⨆ n, N n : Submodule A M) : Set M)).2 fun F w _ hDF hFw hw ↦ ?_
-    obtain ⟨F', w', hF'⟩ := hunion F w hDF hFw hw
-    exact ⟨F', w', hrange F', hF'⟩
 
 end TauCeti

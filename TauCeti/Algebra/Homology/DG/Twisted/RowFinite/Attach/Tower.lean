@@ -360,8 +360,8 @@ theorem towerCocycle_m_mem_supported (x : Σ k, Q k (tower step k)) :
 /-- **The union of the tower is semi-free**: the relation `y ∈ (m x).support` is well-founded. -/
 theorem wellFounded_mem_support_towerCocycle :
     WellFounded fun y x ↦ y ∈ ((towerCocycle step).m x).support :=
-  Subrelation.wf (r := InvImage (· < ·) Sigma.fst)
-    (fun {_ x} hy ↦ towerCocycle_m_mem_supported step x hy) (InvImage.wf _ wellFounded_lt)
+  (towerCocycle step).wellFounded_mem_support_of_lt Sigma.fst fun x _ hy ↦
+    towerCocycle_m_mem_supported step x hy
 
 /-- The augmentation of the union preserves degrees. -/
 theorem towerAugmentation_mem (x : Σ k, Q k (tower step k)) :
