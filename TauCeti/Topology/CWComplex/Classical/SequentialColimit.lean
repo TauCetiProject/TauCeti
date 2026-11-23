@@ -14,6 +14,7 @@ public import TauCeti.Topology.CWComplex.Classical.Tower.Union
 public import TauCeti.Topology.Homotopy.Extension.CWComplex
 public import TauCeti.Topology.Homotopy.Extension.Tower
 import TauCeti.Topology.Coherent
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Sequential colimits of CW complexes
@@ -439,8 +440,7 @@ theorem ι_app_cwComplexOfIsColimitSubcomplexHomeomorph (k : ℕ)
     dsimp% c.ι.app k (cwComplexOfIsColimitSubcomplexHomeomorph hF hι hc k x) = (x : c.pt) := by
   have hemb := (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isEmbedding
   rw [cwComplexOfIsColimitSubcomplexHomeomorph, Homeomorph.trans_apply,
-    ← hemb.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply, Homeomorph.setCongr,
-    Homeomorph.homeomorph_mk_coe, Set.equivOfEq_apply]
+    ← hemb.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply, Homeomorph.setCongr_apply]
 
 /-- The inverse of the homeomorphism of the subcomplex given by the stage `F k` with `F k` is
 `c.ι.app k`. -/
