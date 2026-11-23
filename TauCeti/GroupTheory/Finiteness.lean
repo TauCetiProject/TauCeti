@@ -364,7 +364,9 @@ theorem Subgroup.FG.exists_pow_mem_of_mem_of_pow_mem {G : Type*} [CommGroup G] {
   -- so the class of `y` is torsion, and the exponent of the torsion kills it
   have hq : IsOfFinOrder (QuotientGroup.mk (s := E.subgroupOf H) ⟨y, hy⟩) :=
     isOfFinOrder_iff_pow_eq_one.mpr ⟨a, Nat.pos_of_ne_zero ha, (key a).mpr hya⟩
-  exact (key _).mp (Subtype.ext_iff.mp
-    (Monoid.pow_exponent_eq_one (⟨_, hq⟩ : CommGroup.torsion (H ⧸ E.subgroupOf H))))
+  have h := congrArg Subtype.val
+    (Monoid.pow_exponent_eq_one (⟨_, hq⟩ : CommGroup.torsion (H ⧸ E.subgroupOf H)))
+  rw [SubgroupClass.coe_pow, OneMemClass.coe_one] at h
+  exact (key _).mp h
 
 end
