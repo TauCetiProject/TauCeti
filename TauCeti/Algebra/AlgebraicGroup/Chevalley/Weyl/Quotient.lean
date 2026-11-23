@@ -102,8 +102,9 @@ def weylQuotientEquiv (A : Type v) [CommRing A] [Nontrivial A] :
 @[simp]
 theorem weylQuotientEquiv_symm_apply (A : Type v) [CommRing A] [Nontrivial A]
     (w : (t.simplyConnectedRootDatum ht).weylGroup) :
-    (D.weylQuotientEquiv A).symm w = D.weylQuotientLift A w :=
-  (rfl)
+    (D.weylQuotientEquiv A).symm w = D.weylQuotientLift A w := by
+  rw [weylQuotientEquiv, MulEquiv.symm_symm]
+  exact MulEquiv.ofBijective_apply _ _ _
 
 /-- `weylQuotientEquiv` is a left inverse to `weylQuotientLift`. -/
 @[simp]
@@ -151,26 +152,29 @@ theorem weylQuotientEquiv_mk_torusPoints (A : Type v) [CommRing A] [Nontrivial A
 
 /-! ## Comparison with `weylProjection` over a field -/
 
+private theorem weylQuotientLift_comp_weylProjection (k : Type v) [Field k] :
+    (D.weylQuotientLift k).comp (D.weylProjection k) =
+      QuotientGroup.mk' (((D.torusPoints k).range).subgroupOf (D.weylSubgroup k)) := by
+  have hgen : Subgroup.closure ((D.weylSubgroup k).subtype ⁻¹'
+      (Set.range (D.torusPoints k) ∪
+        Set.range (fun i => D.weylElement (t.simpleIndex ht i) k 1))) = ⊤ := by
+    rw [D.weylSubgroup_def]
+    exact Subgroup.closure_preimage_eq_top _
+  apply MonoidHom.eq_of_eqOn_dense hgen
+  rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+  · simp only [MonoidHom.comp_apply, D.weylProjection_torusPoints, map_one,
+      QuotientGroup.mk'_apply, D.mk_torusPoints_eq_one]
+  · simp only [MonoidHom.comp_apply, D.weylProjection_weylElement, D.weylQuotientLift_ofIdx,
+      QuotientGroup.mk'_apply]
+
 /-- Over any field `k`, `weylQuotientEquiv` composed with the quotient map agrees with
 `D.weylProjection k`. -/
 @[simp]
 theorem weylQuotientEquiv_mk_eq_weylProjection (k : Type v) [Field k] (g : D.weylSubgroup k) :
     D.weylQuotientEquiv k (QuotientGroup.mk g) = D.weylProjection k g := by
-  obtain ⟨l, s, hg⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints k).mp g.property
-  have hfac : g =
-      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
-        D.list_prod_map_weylElement_mem_weylSubgroup k l⟩ *
-        ⟨D.torusPoints k s, D.torusPoints_mem_weylSubgroup k s⟩ :=
-    Subtype.ext hg.symm
-  have hproj : D.weylProjection k g = t.geckWeylWordProd ht l := by
-    have hsub : g =
-        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod * D.torusPoints k s,
-          mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup k l)
-            (D.torusPoints_mem_weylSubgroup k s)⟩ :=
-      Subtype.ext hg.symm
-    rw [hsub, D.weylProjection_list_prod_mul_torusPoints k l s]
-  rw [hproj, hfac, QuotientGroup.mk_mul, map_mul, D.weylQuotientEquiv_mk_weylWord,
-    D.weylQuotientEquiv_mk_torusPoints, mul_one]
+  have h := DFunLike.congr_fun (D.weylQuotientLift_comp_weylProjection k) g
+  simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply] at h
+  rw [← h, D.weylQuotientEquiv_weylQuotientLift]
 
 /-- Over any field `k`, `D.weylProjection k` sends every Steinberg Weyl representative `n_γ(s)`
 to the root reflection `s_γ`. -/
@@ -181,20 +185,20 @@ theorem weylProjection_weylElement_root (k : Type v) [Field k]
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
   rw [← D.weylQuotientEquiv_mk_eq_weylProjection, D.weylQuotientEquiv_mk_weylElement]
 
-/-- A point of `D.weylSubgroup k` has trivial Weyl projection if and only if it belongs to the
-actual character-lattice torus `(D.torusPoints k).range`, over every field `k`. -/
-theorem weylProjection_eq_one_iff_mem_range_torusPoints (k : Type v) [Field k]
-    (g : D.weylSubgroup k) :
-    D.weylProjection k g = 1 ↔ (g : D.points k) ∈ (D.torusPoints k).range := by
-  rw [← D.weylQuotientEquiv_mk_eq_weylProjection k g, MulEquiv.map_eq_one_iff,
-    QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
-
 /-- Over every field, the kernel of `D.weylProjection k` is precisely the actual torus inside
 `D.weylSubgroup k`. -/
 @[simp]
 theorem ker_weylProjection (k : Type v) [Field k] :
     (D.weylProjection k).ker = ((D.torusPoints k).range).subgroupOf (D.weylSubgroup k) := by
-  ext g
-  exact D.weylProjection_eq_one_iff_mem_range_torusPoints k g
+  rw [← MonoidHom.ker_comp_of_injective (D.weylProjection k) (D.weylQuotientLift k)
+    (D.weylQuotientLift_injective k), D.weylQuotientLift_comp_weylProjection k,
+    QuotientGroup.ker_mk']
+
+/-- A point of `D.weylSubgroup k` has trivial Weyl projection if and only if it belongs to the
+actual character-lattice torus `(D.torusPoints k).range`, over every field `k`. -/
+theorem weylProjection_eq_one_iff_mem_range_torusPoints (k : Type v) [Field k]
+    (g : D.weylSubgroup k) :
+    D.weylProjection k g = 1 ↔ (g : D.points k) ∈ (D.torusPoints k).range := by
+  rw [← MonoidHom.mem_ker, D.ker_weylProjection k, Subgroup.mem_subgroupOf]
 
 end TauCeti.DynkinType.ChevalleyDatum
