@@ -56,6 +56,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression, and the resulting transfer of injectivity.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
+* `TauCeti.mdifferentiable_of_mem_maximalAtlas`: a chart of the `C^1` maximal atlas and its inverse
+  are differentiable.
 * `TauCeti.isInvertible_mvfderiv_extend`: the derivative of an extended chart of the maximal
   atlas, read as a map into the model space, is invertible on the chart source.
 * `TauCeti.mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
@@ -128,6 +130,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   arbitrary preferred charts, is `C^n` at interior points of the source chart target.
 * `TauCeti.contDiffAt_ext_coord_change`: on a boundaryless manifold, a change of extended charts
   is `C^n` at every point of its domain.
+* `TauCeti.contDiffAt_ext_coord_change_extChartAt`: the same at the chart image of a point of
+  both chart domains.
 * `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt`: for a `C^n` map out of a
   boundaryless manifold, the open coordinate domain on which it reads as a `C^n` map between the
   extended charts at a point and at its image.
@@ -353,6 +357,14 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · obtain ⟨w, rfl⟩ := L.surjective v
     exact DFunLike.congr_fun h w
   · exact DFunLike.congr_fun h (L w)
+
+omit [IsManifold I 1 M] in
+/-- `mdifferentiable_of_mem_atlas` for the maximal atlas: a chart of the `C^1` maximal atlas is
+differentiable on its source, and its inverse on its target. -/
+theorem mdifferentiable_of_mem_maximalAtlas {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) : e.MDifferentiable I I :=
+  ⟨fun _ hy ↦ (mdifferentiableAt_of_mem_maximalAtlas he hy).mdifferentiableWithinAt,
+    fun _ hz ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas he hz).mdifferentiableWithinAt⟩
 
 omit [IsManifold I 1 M] in
 /-- The derivative of an extended chart of the `C¹` maximal atlas, read as a map into the model
@@ -1093,6 +1105,14 @@ theorem contDiffAt_ext_coord_change [I.Boundaryless] (x x' : M) {y : E}
     ContDiffAt 𝕜 n (extChartAt I x ∘ (extChartAt I x').symm) y := by
   have h := contDiffWithinAt_ext_coord_change (n := n) x x' hy
   rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
+
+/-- On a boundaryless manifold, the change of extended charts from `x'` to `x` is `C^n` at the
+image under the chart at `x'` of every point of both chart domains. -/
+theorem contDiffAt_ext_coord_change_extChartAt [I.Boundaryless] {x x' y : M}
+    (hx : y ∈ (chartAt H x).source) (hx' : y ∈ (chartAt H x').source) :
+    ContDiffAt 𝕜 n (extChartAt I x ∘ (extChartAt I x').symm) (extChartAt I x' y) :=
+  contDiffAt_ext_coord_change x x' (PartialEquiv.mem_symm_trans_source _
+    (by rwa [extChartAt_source]) (by rwa [extChartAt_source]))
 
 end InteriorCharts
 
