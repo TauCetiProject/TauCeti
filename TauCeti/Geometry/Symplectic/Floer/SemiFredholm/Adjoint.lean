@@ -470,14 +470,14 @@ private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : Symplec
           (hζ.of_le one_le_two)).norm.pow 2).integrableOn_Icc_prod_Icc
           ((continuousOn_const.mul (hDρ.norm.pow 2)).integrableOn_compact
             (isCompact_Icc.prod isCompact_Icc)) hm fun w hw ↦ hP hw
-      · exact setIntegral_mono_on (hζ.continuous.norm.pow 2).integrableOn_Icc_prod_Icc
+      · exact setIntegral_mono (hζ.continuous.norm.pow 2).integrableOn_Icc_prod_Icc
           (continuous_const.mul ((hη.continuous.comp reflectL.continuous).norm.pow 2)
-            ).integrableOn_Icc_prod_Icc (measurableSet_Icc.prod measurableSet_Icc)
-          fun w _ ↦ ω.norm_flatEquiv_symm_sq_le (η (reflectL w))
+            ).integrableOn_Icc_prod_Icc fun w ↦ ω.norm_flatEquiv_symm_sq_le (η (reflectL w))
     _ = _ := by
+      have hTr := setIntegral_comp_reflectL (fun z ↦ ‖η z‖ ^ 2) (-T) T
+      rw [neg_neg] at hTr
       rw [integral_const_mul, integral_const_mul,
-        setIntegral_comp_reflectL (fun z ↦ ‖D η z‖ ^ 2) a b,
-        ← neg_neg T, setIntegral_comp_reflectL (fun z ↦ ‖η z‖ ^ 2) (-T) (- -T), neg_neg]
+        setIntegral_comp_reflectL (fun z ↦ ‖D η z‖ ^ 2) a b, hTr]
       ring
 
 /-! ### The coefficients of the reflected adjoint at the ends -/
