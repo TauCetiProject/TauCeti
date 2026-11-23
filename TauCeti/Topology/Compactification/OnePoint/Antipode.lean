@@ -115,12 +115,13 @@ theorem antipode_ne_self (x : OnePoint 𝕜) : antipode x ≠ x := by
 
 /-- The matrix `!![0, -1; 1, 0]` of the Möbius transformation `z ↦ -1 / z`. -/
 private noncomputable def antipodeGL : GL (Fin 2) 𝕜 :=
-  SpecialLinearGroup.toGL ⟨!![0, -1; 1, 0], by simp [det_fin_two]⟩
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
+  SpecialLinearGroup.toGL (.mk !![0, -1; 1, 0] (by simp [det_fin_two]))
 
 omit [DecidableEq 𝕜] in
 private theorem antipodeGL_apply (i j : Fin 2) :
-    (antipodeGL : GL (Fin 2) 𝕜) i j = !![0, -1; 1, 0] i j :=
-  rfl
+    (antipodeGL : GL (Fin 2) 𝕜) i j = !![0, -1; 1, 0] i j := by
+  rw [antipodeGL, Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- The antipodal map is complex conjugation followed by the Möbius transformation
 `z ↦ -1 / z`. -/

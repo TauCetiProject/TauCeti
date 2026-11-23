@@ -136,8 +136,8 @@ theorem IsUnimodular.signedDiscr_eq_neg_one_pow {L : Submodule ℤ E} (h : IsUni
 /-- Every submodule of a zero-dimensional space has signed discriminant `1`. -/
 @[simp]
 theorem signedDiscr_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : signedDiscr L = 1 := by
-  have hu : IsUnimodular L := isUnimodular_iff_eq_dual.mpr (Subsingleton.elim _ _)
-  rw [hu.signedDiscr_eq_neg_one_pow, Module.finrank_zero_of_subsingleton, Nat.zero_div, pow_zero]
+  rw [(isUnimodular_of_subsingleton L).signedDiscr_eq_neg_one_pow,
+    Module.finrank_zero_of_subsingleton, Nat.zero_div, pow_zero]
 
 /-- In a nontrivial space, the zero lattice `⊥` has signed discriminant `0`: its dual is the whole
 space, so its discriminant group is infinite. -/

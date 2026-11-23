@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Fredholm
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Path
 import TauCeti.Analysis.InnerProductSpace.RankOne
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.LinearAlgebra.Submodule.Quotient
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Localized metric variations make the linearized gradient trajectory equation onto
@@ -124,7 +125,7 @@ continuous path `w` with `w s₀ ≠ 0` pairs positively with the path of some m
 localized in a given neighbourhood of `γ s₀`. The variation is `H = ψ B` for a bump function `ψ`
 at `γ s₀` and the symmetric operator `B u = ⟪∇f(γ s₀), u⟫ w(s₀) + ⟪w(s₀), u⟫ ∇f(γ s₀)`, which
 pairs `∇f(γ s)` positively with `w s` for `s` near `s₀`; the bump is so small that the trajectory
-only meets it at such times. -/
+only meets it at such times (`TauCeti.exists_contDiff_tsupport_subset_integral_comp_mul_pos`). -/
 private theorem exists_integral_inner_metricVariation_pos (hf : ContDiff ℝ 2 f)
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {U : Set E} {s₀ : ℝ} (hU : U ∈ 𝓝 (γ s₀))
     (hcrit : ∇ f (γ s₀) ≠ 0) {w : ℝ → E} (hwc : Continuous w) (hw0 : w s₀ ≠ 0) :
@@ -138,40 +139,20 @@ private theorem exists_integral_inner_metricVariation_pos (hf : ContDiff ℝ 2 f
   have hg : Continuous fun t ↦ ∇ f (γ t) :=
     (hf.continuous_gradient (by norm_num)).comp hγ.continuous
   have hq : Continuous fun s ↦ ⟪B (∇ f (γ s)), w s⟫ := (B.continuous.comp hg).inner hwc
-  obtain ⟨δ, hδ, hqδ⟩ := Metric.eventually_nhds_iff_ball.1
-    (hq.continuousAt.eventually (lt_mem_nhds (inner_rankOne_add_rankOne_apply_pos hcrit hw0)))
-  -- A small ball around `γ s₀` inside `U` meets the trajectory only at times within `δ` of `s₀`.
-  obtain ⟨r₁, hr₁, hrs⟩ := hγ.exists_pos_forall_dist_lt_mem_Ioo
-    (fun t ↦ hf.differentiable (by norm_num) _) hcrit hδ
-  obtain ⟨r₂, hr₂, hrU⟩ := Metric.mem_nhds_iff.1 hU
-  set r := min r₁ r₂
-  have hr : 0 < r := lt_min hr₁ hr₂
-  let ψ : ContDiffBump (γ s₀) := ⟨r / 4, r / 2, by positivity, by linarith⟩
-  have hψr : ψ.rOut = r / 2 := rfl
-  have hψγ {s : ℝ} (hs : ψ (γ s) ≠ 0) : s ∈ Ioo (s₀ - δ) (s₀ + δ) :=
-    hrs s ((Metric.mem_ball.1 (ψ.support_eq ▸ Function.mem_support.2 hs)).trans
-      (by rw [hψr]; linarith [min_le_left r₁ r₂]))
-  have hψsupp : HasCompactSupport fun s ↦ ψ (γ s) :=
-    HasCompactSupport.of_support_subset_isCompact (K := Icc (s₀ - δ) (s₀ + δ)) isCompact_Icc
-      fun s hs ↦ Ioo_subset_Icc_self (hψγ hs)
-  refine ⟨fun x ↦ ψ x • B, ψ.contDiff.smul contDiff_const, ψ.hasCompactSupport.smul_right,
-    (tsupport_smul_subset_left _ _).trans ?_, fun x ↦ (IsSelfAdjoint.all (ψ x)).smul hBsa,
-    hψsupp.mono fun s hs h ↦ hs (by simp [h]), ?_⟩
-  · rw [ψ.tsupport_eq]
-    exact (Metric.closedBall_subset_ball (by rw [hψr]; linarith [min_le_right r₁ r₂])).trans hrU
-  -- The pairing is the integral of a nonnegative function, positive at `s₀`.
-  simp only [smul_apply, real_inner_smul_left]
-  refine Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero (x := s₀)
-    (((ψ.contDiff (n := 0)).continuous.comp hγ.continuous).mul hq)
-    (hψsupp.mono fun s hs h ↦ hs (by simp [h])) (fun s ↦ ?_) ?_
-  · by_cases hs : ψ (γ s) = 0
-    · simp [hs]
-    · refine mul_nonneg ψ.nonneg (hqδ s ?_).le
-      have := hψγ hs
-      rw [Metric.mem_ball, Real.dist_eq, abs_lt]
-      constructor <;> linarith [this.1, this.2]
-  · rw [ψ.one_of_mem_closedBall (Metric.mem_closedBall_self ψ.rIn_pos.le), one_mul]
-    exact (inner_rankOne_add_rankOne_apply_pos hcrit hw0).ne'
+  -- A small ball around `γ s₀` meets the trajectory only at times close to `s₀`.
+  have hvisit : comap γ (𝓝 (γ s₀)) ≤ 𝓝 s₀ := by
+    intro S hS
+    obtain ⟨δ, hδ, hδS⟩ := Metric.mem_nhds_iff.1 hS
+    obtain ⟨r, hr, hrs⟩ := hγ.exists_pos_forall_dist_lt_mem_Ioo
+      (fun t ↦ hf.differentiable (by norm_num) _) hcrit hδ
+    exact mem_comap.2 ⟨Metric.ball (γ s₀) r, Metric.ball_mem_nhds _ hr,
+      fun s hs ↦ hδS (by rw [Real.ball_eq_Ioo]; exact hrs s hs)⟩
+  obtain ⟨ψ, hψ, hψc, hψU, hψγ, hpos⟩ := exists_contDiff_tsupport_subset_integral_comp_mul_pos
+    hγ.continuous hvisit hU hq (inner_rankOne_add_rankOne_apply_pos hcrit hw0)
+  refine ⟨fun x ↦ ψ x • B, hψ.smul contDiff_const, hψc.smul_right,
+    (tsupport_smul_subset_left _ _).trans hψU, fun x ↦ (IsSelfAdjoint.all (ψ x)).smul hBsa,
+    hψγ.mono fun s hs h ↦ hs (by simp [h]), ?_⟩
+  simpa only [smul_apply, real_inner_smul_left] using hpos
 
 /-! ### The cokernel is detected by metric variations -/
 
@@ -213,14 +194,9 @@ theorem eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_ze
     exact ((hHs.continuous.comp hγ.continuous).clm_apply
       ((hf.continuous_gradient (by norm_num)).comp hγ.continuous)).memLp_of_hasCompactSupport
         hpath_supp
-  have hint : ⟪hmem.toLp _, v⟫ = ∫ s, ⟪H (γ s) (∇ f (γ s)), w s⟫
-      ∂volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ) := by
-    rw [L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hmem.coeFn_toLp, hvw] with s hs hs'
-    rw [hs, hs']
-  exact hpos.ne' ((hint.trans (by rw [hvol])).symm.trans
-    (hvar _ ⟨H, hHs, hHc, hHU, hHsa, hmem.coeFn_toLp⟩))
+  have hint : ∫ s, ⟪H (γ s) (∇ f (γ s)), w s⟫ = ⟪hmem.toLp _, v⟫ := by
+    rw [L2.toLp_inner_of_ae_eq hmem hvw, hvol]
+  exact hpos.ne' (hint.trans (hvar _ ⟨H, hHs, hHc, hHU, hHsa, hmem.coeFn_toLp⟩))
 
 /-! ### Surjectivity of the universal linearization -/
 
