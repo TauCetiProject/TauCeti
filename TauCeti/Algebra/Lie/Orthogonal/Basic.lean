@@ -53,6 +53,8 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mulVec_apply` and
   `LieAlgebra.Orthogonal.vecMul_indefiniteDiagonal_apply`: it scales the coordinates of a vector by
   its diagonal entries.
+* `LieAlgebra.Orthogonal.transpose_mem_so'`: the indefinite orthogonal Lie algebra is closed under
+  transpose.
 * `LieAlgebra.Orthogonal.isSymm_JD`: the split even orthogonal Gram matrix is symmetric.
 * `LieAlgebra.Orthogonal.toBilin'_JD_comp_sumMap`: the split even orthogonal form is unchanged by
   renaming its hyperbolic pairs along an equivalence.
@@ -161,6 +163,22 @@ omit [Fintype p] [Fintype q] in
 theorem star_indefiniteDiagonal [StarRing R] :
     star (indefiniteDiagonal p q R) = indefiniteDiagonal p q R :=
   isHermitian_indefiniteDiagonal
+
+open Matrix in
+/-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under transpose: from
+`Xᵀ J = -J X` and `J * J = 1` it follows that `X J = -J Xᵀ`. -/
+theorem transpose_mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} (hX : X ∈ so' p q R) :
+    Xᵀ ∈ so' p q R := by
+  rw [so', mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
+    Matrix.IsSkewAdjoint, Matrix.IsAdjointPair] at hX ⊢
+  set J := indefiniteDiagonal p q R
+  have hJ : J * J = 1 := indefiniteDiagonal_mul_indefiniteDiagonal
+  have h1 : J * X = -(Xᵀ * J) := by rw [hX, Matrix.mul_neg, neg_neg]
+  rw [transpose_transpose]
+  calc X * J = J * (J * X) * J := by rw [← Matrix.mul_assoc, hJ, Matrix.one_mul]
+    _ = -(J * Xᵀ * (J * J)) := by
+        rw [h1]; simp only [Matrix.mul_neg, Matrix.neg_mul, Matrix.mul_assoc]
+    _ = J * -Xᵀ := by rw [hJ, Matrix.mul_one, Matrix.mul_neg]
 
 variable {ι : Type*} [DecidableEq ι]
 
