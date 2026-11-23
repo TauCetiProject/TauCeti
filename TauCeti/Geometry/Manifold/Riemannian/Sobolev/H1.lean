@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
@@ -46,8 +47,13 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
 ## Main results
 
 * `TauCeti.Manifold.SobolevH1`: the Sobolev space `H¹(M)`, with
-  `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions and
-  `TauCeti.Manifold.SobolevH1.inner_ofSmooth` the inner product of two smooth functions.
+  `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions,
+  `TauCeti.Manifold.SobolevH1.inner_ofSmooth` the inner product of two smooth functions, and
+  `TauCeti.Manifold.SobolevH1.subsingleton_of_isEmpty` showing `H¹(M)` is a subsingleton on an empty
+  manifold, and `TauCeti.Manifold.SobolevH1.nontrivial_of_nonempty` showing it is nontrivial on a
+  nonempty one.
+* `TauCeti.Manifold.SobolevH1.liftSmooth`: continuous linear extension of a bounded `ℝ`-linear map
+  from smooth functions to `H¹(M)`, characterized by `liftSmooth_ofSmooth` and `liftSmooth_unique`.
 * `TauCeti.Manifold.SobolevH1.toLp`: the value map `H¹(M) → L²(M)`, injective by
   `TauCeti.Manifold.SobolevH1.toLp_injective`.
 * `TauCeti.Manifold.SobolevH1.inner_ofSmooth_right`: Green's identity on `H¹(M)`.
@@ -216,6 +222,76 @@ theorem induction_on {p : SobolevH1 I M → Prop} (w : SobolevH1 I M) (hp : IsCl
     (h : ∀ u : C^∞⟮I, M; ℝ⟯, p (ofSmooth u)) : p w :=
   denseRange_ofSmooth.induction_on w hp h
 
+/-- On an empty manifold, `H¹(M)` is a subsingleton. -/
+instance subsingleton_of_isEmpty [IsEmpty M] : Subsingleton (SobolevH1 I M) :=
+  ⟨fun w₁ w₂ ↦ by
+    have hz (w : SobolevH1 I M) : w = 0 :=
+      induction_on w (isClosed_eq continuous_id continuous_const) fun v ↦ by
+        have hv : v = 0 := ContMDiffMap.ext isEmptyElim
+        rw [hv, map_zero]
+    exact (hz w₁).trans (hz w₂).symm⟩
+
+/-! ### Extending bounded linear maps from smooth functions -/
+
+section LiftSmooth
+
+variable {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F] [UniformContinuousConstSMul ℝ F]
+  [T0Space F] [CompleteSpace F]
+
+/-- **Extension of a bounded linear map from smooth functions to `H¹(M)`.** Any `ℝ`-linear map
+`L : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] F` into a complete separated seminormed space that is bounded in the `H¹`
+norm extends uniquely (`TauCeti.Manifold.SobolevH1.liftSmooth_unique`) to a continuous linear map
+`H¹(M) →L[ℝ] F` agreeing with `L` on smooth functions
+(`TauCeti.Manifold.SobolevH1.liftSmooth_ofSmooth`). -/
+def liftSmooth (L : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] F)
+    (hL : ∃ C : ℝ, ∀ u : C^∞⟮I, M; ℝ⟯, ‖L u‖ ≤ C * ‖ofSmooth u‖) :
+    SobolevH1 I M →L[ℝ] F :=
+  (LinearMap.mkContinuousOfExistsBound (L.comp ofPreSobolevH1.toLinearMap) <|
+    hL.imp fun C hC w ↦ by
+      obtain ⟨u, rfl⟩ := toPreSobolevH1.surjective w
+      have h := hC u
+      rw [ofSmooth_apply u, UniformSpace.Completion.norm_coe] at h
+      simpa only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+        ofPreSobolevH1_toPreSobolevH1] using h).fromCompletion
+
+/-- On a smooth function `u`, `liftSmooth L hL` agrees with `L u`. -/
+@[simp]
+theorem liftSmooth_ofSmooth (L : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] F)
+    (hL : ∃ C : ℝ, ∀ u : C^∞⟮I, M; ℝ⟯, ‖L u‖ ≤ C * ‖ofSmooth u‖) (u : C^∞⟮I, M; ℝ⟯) :
+    liftSmooth L hL (ofSmooth u) = L u := by
+  rw [liftSmooth, ofSmooth_apply u, ContinuousLinearMap.fromCompletion_apply_coe,
+    LinearMap.mkContinuousOfExistsBound_apply]
+  simp
+
+/-- Uniqueness of `liftSmooth`: any continuous linear map `H¹(M) →L[ℝ] F` agreeing with `L` on
+smooth functions equals `liftSmooth L hL`. -/
+theorem liftSmooth_unique (L : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] F)
+    (hL : ∃ C : ℝ, ∀ u : C^∞⟮I, M; ℝ⟯, ‖L u‖ ≤ C * ‖ofSmooth u‖)
+    {T : SobolevH1 I M →L[ℝ] F} (hT : ∀ u : C^∞⟮I, M; ℝ⟯, T (ofSmooth u) = L u) :
+    T = liftSmooth L hL := by
+  ext1 w
+  refine induction_on w (isClosed_eq T.continuous (liftSmooth L hL).continuous) fun u ↦ ?_
+  rw [hT u, liftSmooth_ofSmooth]
+
+/-- A norm bound on smooth functions extends to all of `H¹(M)` for `liftSmooth`. -/
+theorem norm_liftSmooth_apply_le (L : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] F)
+    (hL : ∃ C : ℝ, ∀ u : C^∞⟮I, M; ℝ⟯, ‖L u‖ ≤ C * ‖ofSmooth u‖)
+    {C : ℝ} (hC : ∀ u : C^∞⟮I, M; ℝ⟯, ‖L u‖ ≤ C * ‖ofSmooth u‖) (w : SobolevH1 I M) :
+    ‖liftSmooth L hL w‖ ≤ C * ‖w‖ := by
+  induction w using induction_on with
+  | hp => exact isClosed_le (liftSmooth L hL).continuous.norm (continuous_const.mul continuous_norm)
+  | h u => simpa only [liftSmooth_ofSmooth] using hC u
+
+end LiftSmooth
+
+/-- Operator-norm bound for `liftSmooth`. -/
+theorem norm_liftSmooth_le {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F] [T0Space F]
+    [CompleteSpace F] (L : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] F)
+    (hL : ∃ C : ℝ, ∀ u : C^∞⟮I, M; ℝ⟯, ‖L u‖ ≤ C * ‖ofSmooth u‖)
+    {C : ℝ} (hC0 : 0 ≤ C) (hC : ∀ u : C^∞⟮I, M; ℝ⟯, ‖L u‖ ≤ C * ‖ofSmooth u‖) :
+    ‖liftSmooth L hL‖ ≤ C :=
+  ContinuousLinearMap.opNorm_le_bound _ hC0 (norm_liftSmooth_apply_le L hL hC)
+
 /-! ### The value in `L²` -/
 
 /-- The inclusion of the smooth functions into `L²(M)`, on the pre-completion space. -/
@@ -254,6 +330,15 @@ theorem toLp_ofSmooth_ae_eq (u : C^∞⟮I, M; ℝ⟯) :
     toLp (ofSmooth u) =ᵐ[riemannianVolume I M] u := by
   rw [toLp_ofSmooth]
   exact ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) _ _
+
+/-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero, since its
+integral is the positive total volume. -/
+instance nontrivial_of_nonempty [Nonempty M] : Nontrivial (SobolevH1 I M) :=
+  nontrivial_of_ne (ofSmooth 1) 0 fun h ↦ (riemannianTotalVolume_pos (I := I) (M := M)).ne' <| by
+    have h0 := toLp_ofSmooth_ae_eq (1 : C^∞⟮I, M; ℝ⟯)
+    rw [h, map_zero] at h0
+    rw [← one_mul (riemannianTotalVolume I M), ← integral_const_riemannianVolume, ← integral_zero]
+    exact integral_congr_ae (h0.symm.trans (Lp.coeFn_zero ..))
 
 /-- The `L²` inner product of the values of two smooth functions is `∫ u v dV`. -/
 theorem inner_toLp_ofSmooth (u v : C^∞⟮I, M; ℝ⟯) :

@@ -63,7 +63,7 @@ theorem preimage_analyticMap_analyticConeOrbit_affinePlaneBlowUpFan :
   ext x
   simp only [Set.mem_iUnion, Set.mem_Ici, exists_prop, ← Subtype.coe_le_coe,
     coe_toCone_affinePlaneBlowUpDiagonalRay]
-  exact exists_congr fun σ ↦ and_congr_left fun _ ↦ leastCone_affinePlaneBlowUpFan_eq_iff σ.2
+  exact exists_congr fun σ ↦ and_congr_left fun _ ↦ leastCone_affinePlaneBlowUpFan_eq_iff σ.property
 
 /-! ### Explicit affine charts -/
 
@@ -396,7 +396,7 @@ theorem exists_affinePlaneBlowUpUpperChart_eq_or_exists_affinePlaneBlowUpLowerCh
       (∃ z, affinePlaneBlowUpLowerChart z = x) := by
   obtain ⟨σ, y, rfl⟩ := affinePlaneBlowUpFan.exists_analyticAffineChartι_apply_eq
     isRegular_affinePlaneBlowUpFan x
-  rcases mem_affinePlaneBlowUpFan_cones.1 σ.2 with hσ | hσ
+  rcases mem_affinePlaneBlowUpFan_cones.1 σ.property with hσ | hσ
   · let p : affinePlaneBlowUpFan.analyticAffineChartDiagram.obj
         ⟨affinePlaneBlowUpLowerCone, mem_affinePlaneBlowUpFan_cones.2
           (Or.inl (.refl _))⟩ :=

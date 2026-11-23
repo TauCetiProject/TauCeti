@@ -48,7 +48,8 @@ actual vertex set.
   with the simple-graph predicates.
 * `Graph.isEdgeReachable_iff_le_edgeReachability`, `Graph.isEdgeConnected_iff_le_edgeConnectivity`:
   the numerical invariants record exactly the thresholds at which the predicates hold.
-* `Graph.edgeConnectivity_ofSimpleGraph`: agreement with the simple-graph edge connectivity.
+* `Graph.edgeReachability_ofSimpleGraph`, `Graph.edgeConnectivity_ofSimpleGraph`: agreement with
+  the simple-graph numerical edge invariants.
 * `Graph.edgeConnectivity_eq_iInf_edgeReachability`: edge connectivity is the least local edge
   reachability between actual vertices.
 * `Graph.edgeReachability_le_nonloopIncidenceCount`: local edge reachability between distinct
@@ -319,6 +320,16 @@ theorem isEdgeConnected_iff_le_edgeConnectivity (k : ℕ) :
     G.IsEdgeConnected k ↔ k ≤ G.edgeConnectivity :=
   (Antitone.natCast_le_iSup_iff (fun _ _ hkl (h : G.IsEdgeConnected _) ↦ h.anti hkl)
     IsEdgeConnected.zero).symm
+
+/-- The local edge reachability in `Graph.ofSimpleGraph H` is the local edge reachability in
+`H`. -/
+@[simp]
+theorem edgeReachability_ofSimpleGraph (H : SimpleGraph α) (x y : α) :
+    (Graph.ofSimpleGraph H).edgeReachability x y = H.edgeReachability x y :=
+  ENat.eq_of_forall_natCast_le_iff fun k ↦ by
+    rw [← isEdgeReachable_iff_le_edgeReachability,
+      ← SimpleGraph.isEdgeReachable_iff_le_edgeReachability,
+      isEdgeReachable_ofSimpleGraph_iff]
 
 /-- The edge connectivity of `Graph.ofSimpleGraph H` is the edge connectivity of `H`. -/
 @[simp]

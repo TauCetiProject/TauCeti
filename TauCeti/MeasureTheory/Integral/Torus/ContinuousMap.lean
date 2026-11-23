@@ -48,7 +48,7 @@ theorem continuous_inv_prod_sub_pow {c : Fin n → ℂ} {R : Fin n → ℝ} (hR 
   apply Finset.prod_ne_zero_iff.mpr
   intro i _
   apply pow_ne_zero
-  exact sub_ne_zero.mpr (ne_of_mem_sphere (z i).2 (abs_ne_zero.mpr (hR i)))
+  exact sub_ne_zero.mpr (ne_of_mem_sphere (z i).property (abs_ne_zero.mpr (hR i)))
 
 /-- Torus integration as a continuous complex linear map on continuous boundary functions.
 The radii need not be positive. For an incomplete codomain the integral is zero, following

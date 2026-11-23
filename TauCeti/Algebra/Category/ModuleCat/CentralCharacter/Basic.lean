@@ -88,7 +88,8 @@ instance (J : Type*) [Category* J] :
     (centralCharacterModules.{v} χ).IsClosedUnderLimitsOfShape J where
   limitsOfShape_le := by
     rintro M ⟨p⟩ z m
-    have h := p.isLimit.hom_ext (f := ModuleCat.ofHom (Module.End.smulLeft (M := M) (z : A) z.2))
+    have h := p.isLimit.hom_ext (f := ModuleCat.ofHom (Module.End.smulLeft (M := M)
+        (z : A) z.property))
       (f' := ModuleCat.ofHom (Module.End.smulLeft (M := M) (algebraMap R A (χ z))
         (Set.algebraMap_mem_center _))) (fun j => by
           apply ModuleCat.hom_ext
@@ -103,7 +104,7 @@ instance (J : Type*) [Category* J] :
   colimitsOfShape_le := by
     rintro M ⟨p⟩ z m
     have h := p.isColimit.hom_ext
-      (f := ModuleCat.ofHom (Module.End.smulLeft (M := M) (z : A) z.2))
+      (f := ModuleCat.ofHom (Module.End.smulLeft (M := M) (z : A) z.property))
       (f' := ModuleCat.ofHom (Module.End.smulLeft (M := M) (algebraMap R A (χ z))
         (Set.algebraMap_mem_center _))) (fun j => by
           apply ModuleCat.hom_ext

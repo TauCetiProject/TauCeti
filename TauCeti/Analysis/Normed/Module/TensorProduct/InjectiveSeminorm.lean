@@ -81,8 +81,9 @@ variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜] [SeminormedAddCommGro
 tensor `x ⊗ₜ y` gives `f ↦ f x • y`. -/
 noncomputable def contractStrongDual : E ⊗[𝕜] F →ₗ[𝕜] StrongDual 𝕜 E →L[𝕜] F :=
   _root_.TensorProduct.lift
-    ((ContinuousLinearMap.smulRightLₗ 𝕜 (StrongDual 𝕜 E) F).comp
-      (NormedSpace.inclusionInDoubleDual 𝕜 E).toLinearMap)
+    (LinearMap.mk₂ 𝕜 (fun x y ↦ (NormedSpace.inclusionInDoubleDual 𝕜 E x).smulRight y)
+      (fun _ _ _ ↦ by ext; simp [add_smul]) (fun _ _ _ ↦ by ext; simp [mul_smul])
+      (fun _ _ _ ↦ by ext; simp) (fun _ _ _ ↦ by ext; simp [smul_smul, mul_comm]))
 
 variable {𝕜 E F}
 

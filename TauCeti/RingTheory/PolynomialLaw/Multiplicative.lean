@@ -234,9 +234,9 @@ def algHomEquiv :
     (A →ₐ[R] B) ≃ {f : A →ₚₗ[R] B // f.IsHomogeneousOfDegree 1 ∧ f.IsMultiplicative} where
   toFun φ := ⟨φ.toLinearMap.toPolynomialLaw,
     φ.toLinearMap.isHomogeneousOfDegree_toPolynomialLaw, φ.isMultiplicative_toPolynomialLaw⟩
-  invFun f := f.2.1.toAlgHom f.2.2
+  invFun f := f.property.1.toAlgHom f.property.2
   left_inv := AlgHom.toAlgHom_isHomogeneousOfDegree_toPolynomialLaw
-  right_inv f := Subtype.ext (f.2.1.toPolynomialLaw_toAlgHom f.2.2)
+  right_inv f := Subtype.ext (f.property.1.toPolynomialLaw_toAlgHom f.property.2)
 
 @[simp]
 theorem coe_algHomEquiv_apply (φ : A →ₐ[R] B) :
@@ -246,7 +246,7 @@ theorem coe_algHomEquiv_apply (φ : A →ₐ[R] B) :
 @[simp]
 theorem algHomEquiv_symm_apply
     (f : {f : A →ₚₗ[R] B // f.IsHomogeneousOfDegree 1 ∧ f.IsMultiplicative}) :
-    (algHomEquiv R A B).symm f = f.2.1.toAlgHom f.2.2 :=
+    (algHomEquiv R A B).symm f = f.property.1.toAlgHom f.property.2 :=
   (rfl)
 
 end PolynomialLaw

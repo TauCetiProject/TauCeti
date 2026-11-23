@@ -229,7 +229,8 @@ private theorem bijective_diagonalFst [LieModule.IsIrreducible K L M]
   · intro p q hpq
     have hfst : (p : M × N).1 = (q : M × N).1 := by
       simpa using hpq
-    have hd : ((p : M × N) - q) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} := sub_mem p.2 q.2
+    have hd : ((p : M × N) - q) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)}
+        := sub_mem p.property q.property
     have h1 : ((p : M × N) - q).1 = 0 := sub_eq_zero.mpr hfst
     have hmem : ((p : M × N) - q).2 ∈ diagonalComapInr K L v w := by
       refine mem_diagonalComapInr.mpr ?_
@@ -249,8 +250,8 @@ private theorem bijective_diagonalSnd [LieModule.IsIrreducible K L M]
   refine ⟨?_, (LieSubmodule.lieSpan K L {(v, w)}).prodSnd_surjective_of_mem_of_ne_zero
     (LieSubmodule.subset_lieSpan rfl) hw.ne_zero⟩
   intro p q hpq
-  have hp := prodComm_mem_lieSpan_diagonal p.2
-  have hq := prodComm_mem_lieSpan_diagonal q.2
+  have hp := prodComm_mem_lieSpan_diagonal p.property
+  have hq := prodComm_mem_lieSpan_diagonal q.property
   have hswap : (⟨(p : M × N).swap, hp⟩ : LieSubmodule.lieSpan K L {(w, v)}) =
       ⟨(q : M × N).swap, hq⟩ :=
     (bijective_diagonalFst hw hv).1 (by simpa using hpq)

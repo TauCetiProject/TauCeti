@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.Hardy.Hankel.Basic
+public import TauCeti.Analysis.Fourier.Hardy.Hankel.Classical
 public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # Compact Hankel operators and Toeplitz semicommutators of continuous symbols
@@ -24,6 +25,7 @@ is built.
 * `TauCeti.hasFiniteRange_hankel_fourierLp`: the Hankel operator of a Fourier monomial has
   finite rank.
 * `TauCeti.isCompactOperator_hankel_toLp`: the Hankel operator of a continuous symbol is compact.
+* `TauCeti.isCompactOperator_classicalHankel_toLp`: so is the classical Hankel operator.
 * `TauCeti.isCompactOperator_toeplitz_comp_sub_toeplitz_toLp`: if the right symbol is continuous,
   the Toeplitz semicommutator is compact.
 
@@ -95,6 +97,16 @@ theorem isCompactOperator_hankel_toLp (f : C(UnitAddCircle, ℂ)) :
     rw [span_fourier_closure_eq_top]
     exact Submodule.mem_top
   exact Submodule.topologicalClosure_minimal _ hspan hK hf
+
+/-- The classical Hankel operator of a continuous symbol on the unit circle is compact. -/
+theorem isCompactOperator_classicalHankel_toLp (f : C(UnitAddCircle, ℂ)) :
+    IsCompactOperator
+      (classicalHankel (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ f)) := by
+  have h := Lp.compMeasurePreserving_toLp (p := ∞) ℂ f ⟨fun t ↦ -t, continuous_neg⟩
+    (Measure.measurePreserving_neg AddCircle.haarAddCircle)
+  simp only [ContinuousMap.coe_mk] at h
+  rw [classicalHankel_apply, h, ContinuousLinearMap.coe_comp]
+  exact (isCompactOperator_hankel_toLp _).clm_comp _
 
 /-- **Compactness of Toeplitz semicommutators.** For an essentially bounded symbol `a` and a
 continuous symbol `b` on the unit circle, the semicommutator `T_a T_b - T_(ab)` is compact. -/

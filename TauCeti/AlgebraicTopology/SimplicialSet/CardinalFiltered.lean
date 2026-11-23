@@ -166,7 +166,7 @@ theorem isCardinalFiltered_nerve_iff :
   refine ⟨fun _ s hs ↦ ?_, fun h ↦ ⟨fun Y hY f ↦ ?_⟩⟩
   · -- The vertices of a cocone on `s` are bounded by its cone point.
     obtain ⟨z, hz⟩ := IsCardinalFiltered.exists_edge (K := nerve P) hs
-      fun i ↦ nerveEquiv.symm i.1
+      fun i ↦ nerveEquiv.symm i.val
     exact ⟨nerveEquiv z, fun a ha ↦ (nerve.homEquiv (hz ⟨a, ha⟩).some).le⟩
   -- The values of `f` on the vertices of `Y` form a set with fewer than `κ` elements, since the
   -- vertices of `Y` are nondegenerate.
