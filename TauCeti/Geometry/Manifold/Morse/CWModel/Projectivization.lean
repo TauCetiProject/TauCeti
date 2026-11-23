@@ -106,12 +106,18 @@ theorem nonempty_singularHomology_projectivization_complex_iso_sigma (m : ℕ) :
     Nonempty (((AlgebraicTopology.singularHomologyFunctor A m).obj R).obj
         (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) ≅
       ∐ fun _ : {k : Fin (n + 1) // 2 * k = m} ↦ R) := by
+  -- All critical points have even index, so no two indices differ by one.
+  have heven : ∀ x ∈ criticalPoints 𝓘(ℝ, Fin n → ℂ)
+      (projectiveMomentFunction ℂ fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)),
+      Even (manifoldMorseIndex 𝓘(ℝ, Fin n → ℂ)
+        (projectiveMomentFunction ℂ fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) x) := fun x hx ↦ by
+    obtain ⟨k, hk⟩ := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n _).symm ⟨x, hx, rfl⟩
+    rw [Complex.finrank_real_complex] at hk
+    exact ⟨k, by omega⟩
   obtain ⟨e⟩ := (isMorse_projectiveMomentFunction_natCast (𝕜 := ℂ) (n := n))
     |>.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one (fun x hx y hy ↦ by
-      -- All critical points have even index, so no two indices differ by one.
-      obtain ⟨k, hk⟩ := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n _).symm ⟨x, hx, rfl⟩
-      obtain ⟨l, hl⟩ := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n _).symm ⟨y, hy, rfl⟩
-      rw [Complex.finrank_real_complex] at hk hl
+      obtain ⟨k, hk⟩ := heven x hx
+      obtain ⟨l, hl⟩ := heven y hy
       omega) R m
   let c := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n m).symm.trans
     (Equiv.subtypeEquivRight fun k ↦ by rw [Complex.finrank_real_complex])
