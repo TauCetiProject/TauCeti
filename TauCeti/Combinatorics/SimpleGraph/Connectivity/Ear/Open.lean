@@ -239,7 +239,7 @@ theorem IsVertexConnected.exists_open_ear [Finite G.edgeSet] (hG : G.IsVertexCon
     ∃ e : G.Ear H, e.kind = .«open» := by
   classical
   have : Finite V :=
-    (hG.isEdgeConnected.preconnected two_ne_zero).finite_edgeSet_iff_finite.mp
+    (hG.preconnected two_ne_zero).finite_edgeSet_iff_finite.mp
       (Set.toFinite G.edgeSet)
   by_cases hspan : ∀ x : V, x ∈ H.verts
   · exact Subgraph.IsSpanning.exists_open_ear hspan hH
@@ -254,7 +254,7 @@ theorem IsVertexConnected.exists_isOpen_earDecomposition_of_earDecomposition [Fi
     (hG : G.IsVertexConnected 2) {H : G.Subgraph} (d₀ : G.EarDecomposition H) (hd₀ : d₀.IsOpen) :
     ∃ d : G.EarDecomposition (⊤ : G.Subgraph), d.IsOpen ∧ d.initial = d₀.initial := by
   have : Finite V :=
-    (hG.isEdgeConnected.preconnected two_ne_zero).finite_edgeSet_iff_finite.mp
+    (hG.preconnected two_ne_zero).finite_edgeSet_iff_finite.mp
       (Set.toFinite G.edgeSet)
   induction H using WellFoundedGT.induction with
   | ind H ih =>
