@@ -305,6 +305,12 @@ theorem mem_asIdeal_pow_iff_valued_algebraMap_le {r : R} {n : ℕ} :
   rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
     valuation_of_algebraMap, intValuation_le_pow_iff_mem]
 
+/-- An element of `R` lies outside `v` exactly when its image in `K_v` has valuation `1`. -/
+theorem notMem_asIdeal_iff_valued_algebraMap_eq_one {r : R} :
+    r ∉ v.asIdeal ↔ Valued.v (algebraMap R (v.adicCompletion K) r) = 1 := by
+  rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    valuation_of_algebraMap, intValuation_eq_one_iff]
+
 /-- The maximal ideal of the ring of integers of an adic completion contains a nonzero element
 whose valuation is below the valuations of `a` and `b`, and below `1`. -/
 theorem exists_ne_zero_mem_maximalIdeal_valued_lt {a b : v.adicCompletionIntegers K}
