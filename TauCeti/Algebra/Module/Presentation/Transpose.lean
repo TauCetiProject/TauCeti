@@ -196,15 +196,11 @@ def congr (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
     (e₁ : P₁ ≃ₗ[R] Q₁) (e₀ : P₀ ≃ₗ[R] Q₀)
     (hfg : e₀.toLinearMap ∘ₗ f = g ∘ₗ e₁.toLinearMap) :
     PresentationTranspose σ f ≃ₗ[S] PresentationTranspose σ g :=
-  Submodule.Quotient.equiv _ _ (ContragredientDual.congr σ e₁.symm) <| by
-    have hcomp :
-        (ContragredientDual.congr σ e₁.symm).toLinearMap ∘ₗ ContragredientDual.map σ f =
-          ContragredientDual.map σ g ∘ₗ (ContragredientDual.congr σ e₀.symm).toLinearMap := by
-      ext ψ q
-      have h : f (e₁.symm q) = e₀.symm (g q) :=
-        e₀.injective (by simpa using LinearMap.congr_fun hfg (e₁.symm q))
-      simp [h]
-    rw [← LinearMap.range_comp, hcomp, LinearEquiv.range_comp]
+  haveI := RingHomInvPair.of_ringEquiv σ
+  haveI := RingHomInvPair.of_ringEquiv_symm σ
+  ((toARTransposeLinearEquiv σ f).trans
+    ((AuslanderReitenTranspose.linearEquiv e₀ e₁ hfg).restrictScalars R)).trans
+    (toARTransposeLinearEquiv σ g).symm
 
 @[simp]
 theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
@@ -212,7 +208,12 @@ theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] 
     (hfg : e₀.toLinearMap ∘ₗ f = g ∘ₗ e₁.toLinearMap) (φ : ContragredientDual σ P₁) :
     congr σ e₁ e₀ hfg (Submodule.Quotient.mk φ) =
       Submodule.Quotient.mk (ContragredientDual.congr σ e₁.symm φ) := by
-  simp [congr, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  simp only [congr, LinearEquiv.trans_apply, toARTransposeLinearEquiv_mk,
+    LinearEquiv.restrictScalars_apply, AuslanderReitenTranspose.linearEquiv_mk,
+    toARTransposeLinearEquiv_symm_mk]
+  congr 1
+  ext x
+  simp [LinearMap.lcomp_apply]
 
 @[simp]
 theorem congr_symm_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
@@ -447,17 +448,18 @@ theorem fittingIdeal_toLin'_eq_map_minorsIdeal (σ : S ≃+* R) {m t : ℕ}
   have := RingHomInvPair.of_ringEquiv σ
   have := RingHomInvPair.of_ringEquiv_symm σ
   let Φ (k : ℕ) : (Fin k → R) ≃ₛₗ[(σ.symm : R →+* S)] (Fin k → S) :=
-    { toFun x i := σ.symm (x i)
-      invFun y i := σ (y i)
-      map_add' x y := funext fun i ↦ map_add σ.symm _ _
-      map_smul' a x := funext fun i ↦ map_mul σ.symm _ _
-      left_inv x := funext fun i ↦ σ.apply_symm_apply _
-      right_inv y := funext fun i ↦ σ.symm_apply_apply _ }
+    ((Finsupp.linearEquivFunOnFinite R R (Fin k)).symm.trans
+      (Finsupp.mapRange.linearEquiv σ.toSemilinearEquiv.symm)).trans
+      (Finsupp.linearEquivFunOnFinite S S (Fin k))
+  have hΦ (k : ℕ) (x : Fin k → R) : Φ k x = fun i ↦ σ.symm (x i) := by
+    ext i
+    simp [Φ]
   have hcomp :
       (Φ t : (Fin t → R) →ₛₗ[(σ.symm : R →+* S)] (Fin t → S)) ∘ₛₗ Aᵀ.mulVecLin =
         (Aᵀ.map σ.symm).mulVecLin ∘ₛₗ (Φ m : (Fin m → R) →ₛₗ[(σ.symm : R →+* S)] (Fin m → S)) := by
     ext x i
-    dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply, Φ]
+    dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply]
+    rw [hΦ, hΦ]
     simpa [Function.comp_def] using (σ.symm : R →+* S).map_mulVec Aᵀ x i
   have hrange :
       (LinearMap.range Aᵀ.mulVecLin).map (Φ t : (Fin t → R) →ₛₗ[(σ.symm : R →+* S)] (Fin t → S)) =
@@ -509,9 +511,7 @@ theorem fittingIdeal_eq_excess (σ : S ≃+* R) {t s : ℕ}
     [Module.Finite R M] :
     TauCeti.fittingIdeal S (PresentationTranspose σ f) 0 =
       Ideal.map σ.symm (TauCeti.fittingIdeal R M s) := by
-  have : Module.Finite R (AuslanderReitenTranspose f) :=
-    Module.Finite.of_surjective ((AuslanderReitenTranspose.mk f).restrictScalars R)
-      (AuslanderReitenTranspose.mk_surjective f)
+  have : Module.Finite R (AuslanderReitenTranspose f) := Module.Finite.trans Rᵐᵒᵖ _
   have := RingHomInvPair.of_ringEquiv σ
   have := RingHomInvPair.of_ringEquiv_symm σ
   rw [TauCeti.fittingIdeal_eq_map_of_semilinearEquiv (toARTransposeLinearEquiv σ f).symm 0]

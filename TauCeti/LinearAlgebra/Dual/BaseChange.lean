@@ -21,6 +21,8 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 ## Main declarations
 
 * `TauCeti.Module.Dual.baseChangeEvaluation`: the canonical scalar-extended evaluation map.
+* `TauCeti.Module.Dual.baseChangeEvaluation_tmul_eq_smul`: evaluation at `a ⊗ φ` is `a` times
+  the base change of `φ`.
 * `TauCeti.Module.Dual.baseChangeEvaluation_one_tmul`: evaluation at a scalar-extended
   functional with coefficient one is its base change.
 * `TauCeti.Module.Dual.baseChangeEvaluation_tmul`: its value on two pure tensors.
@@ -65,6 +67,12 @@ This map needs no finiteness hypothesis; for finite projective `M` it is an equi
 def baseChangeEvaluation :
     A ⊗[R] Module.Dual R M →ₗ[A] Module.Dual A (A ⊗[R] M) :=
   (Module.Dual.baseChange A).liftBaseChange A
+
+/-- Evaluating at the pure tensor `a ⊗ φ` is `a` times the base change of `φ`. -/
+theorem baseChangeEvaluation_tmul_eq_smul (a : A) (φ : Module.Dual R M) :
+    baseChangeEvaluation (R := R) (M := M) (A := A) (a ⊗ₜ[R] φ) =
+      a • Module.Dual.baseChange A φ := by
+  simp only [baseChangeEvaluation, LinearMap.liftBaseChange_tmul]
 
 /-- Evaluating at the pure tensor `1 ⊗ φ` is the base change of `φ`. -/
 theorem baseChangeEvaluation_one_tmul (φ : Module.Dual R M) :
