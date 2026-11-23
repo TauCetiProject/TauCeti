@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
+public import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!

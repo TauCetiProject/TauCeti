@@ -274,17 +274,18 @@ any particular pairing; `TauCeti.characterPairing_ind` is the same identity phra
 double count over `G × G` and holds for arbitrary class functions. -/
 theorem frobenius_reciprocity_classFunction [Fintype G] (hG : IsUnit (Nat.card G : k))
     (f : ClassFunction k S) (h : ClassFunction k G) :
-    (Nat.card G : k)⁻¹ * ∑ g : G, Subgroup.indClassFun S f.1 g * h.1 g⁻¹ =
-      (Nat.card S : k)⁻¹ * ∑ s : S, f.1 s * h.1 ((s : G)⁻¹) := by
+    (Nat.card G : k)⁻¹ * ∑ g : G, Subgroup.indClassFun S f.val g * h.val g⁻¹ =
+      (Nat.card S : k)⁻¹ * ∑ s : S, f.val s * h.val ((s : G)⁻¹) := by
   have hS : IsUnit (Nat.card S : k) := isUnit_natCard_subgroup S hG
-  set X : k := ∑ s : S, f.1 s * h.1 ((s : G)⁻¹) with hX
+  set X : k := ∑ s : S, f.val s * h.val ((s : G)⁻¹) with hX
   refine mul_left_cancel₀ hS.ne_zero ?_
-  calc (Nat.card S : k) * ((Nat.card G : k)⁻¹ * ∑ g : G, Subgroup.indClassFun S f.1 g * h.1 g⁻¹)
-      = (Nat.card G : k)⁻¹ * ((Nat.card S : k) * ∑ g : G, Subgroup.indClassFun S f.1 g * h.1 g⁻¹)
+  calc (Nat.card S : k) * ((Nat.card G : k)⁻¹ * ∑ g : G, Subgroup.indClassFun S f.val g * h.val g⁻¹)
+      = (Nat.card G : k)⁻¹ * ((Nat.card S : k) * ∑ g : G, Subgroup.indClassFun S f.val g * h.val
+          g⁻¹)
         := by
         ring
     _ = (Nat.card G : k)⁻¹ * ((Nat.card G : k) * X) := by
-        rw [hX, natCard_mul_sum_indClassFun_mul f.2 h.2]
+        rw [hX, natCard_mul_sum_indClassFun_mul f.property h.property]
     _ = X := by rw [← mul_assoc, inv_mul_cancel₀ hG.ne_zero, one_mul]
     _ = (Nat.card S : k) * ((Nat.card S : k)⁻¹ * X) := by
         rw [← mul_assoc, mul_inv_cancel₀ hS.ne_zero, one_mul]

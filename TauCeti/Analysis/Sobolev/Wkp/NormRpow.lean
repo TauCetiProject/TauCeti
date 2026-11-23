@@ -6,211 +6,217 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Calculus.IteratedGradient.Measurable
-import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
+import TauCeti.Algebra.Order.Ring.Basic
+import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
-import TauCeti.Analysis.Sobolev.Wkp.Chain
-import TauCeti.Analysis.Sobolev.Wkp.Classical
-import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
-# Second-order Sobolev regularity of a norm power
+# Second-order Sobolev regularity of norm powers
 
-Let `E` be a finite-dimensional real inner product space of dimension `n` with an additive Haar
-measure, and let `u(x) = ‖x‖ ^ γ`. Away from the origin its classical Hessian is
-`D²u(x) v = γ ‖x‖ ^ (γ - 2) v + γ (γ - 2) ‖x‖ ^ (γ - 4) ⟪x, v⟫ x`
-(`TauCeti.iteratedGradientChain_one_norm_rpow_apply`). Its operator norm is at most
-`|γ| (|γ - 2| + 1) ‖x‖ ^ (γ - 2)` (`TauCeti.norm_iteratedGradientChain_one_norm_rpow_le`). Its
-radial value and its trace, the Laplacian `γ (n + γ - 2) ‖x‖ ^ (γ - 2)`, bound it from below: its
-operator norm is at least `|γ (γ - 1)| ‖x‖ ^ (γ - 2)`
-(`TauCeti.abs_mul_sub_one_mul_rpow_le_norm_iteratedGradientChain_one_norm_rpow`) and at least
-`|γ (n + γ - 2)| / n · ‖x‖ ^ (γ - 2)`
-(`TauCeti.abs_mul_rpow_le_finrank_mul_norm_iteratedGradientChain_one_norm_rpow`). Thus for
-`γ ≠ 0`, unless `n = γ = 1`, the Hessian has size comparable to `‖x‖ ^ (γ - 2)`.
+Let `E` be a real inner product space of finite dimension `d` with an additive Haar measure, and
+let `s` be real. Away from the origin the power `u(x) = ‖x‖ ^ s` has the Hessian
 
-For `n + γ > 2` the Hessian is the weak derivative of the gradient across the origin
-(`TauCeti.hasWeakFDerivOn_gradient_norm_rpow`). The weak Hessian of every `W^{2,p}` function equal
-to `u` is therefore its classical Hessian
-(`TauCeti.Wkp.iteratedGradient_ae_eq_iteratedGradientChain_norm_rpow`). By the lower bound, that
-Hessian is `p`-integrable near the origin only for `p < n / (2 - γ)`
-(`TauCeti.lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow`). Consequently, for
-`γ ≠ 0` and `γ < 2`, unless `n = γ = 1`, on a bounded open set containing the origin,
+`D²u(x) w = s ‖x‖ ^ (s - 2) w + s (s - 2) ‖x‖ ^ (s - 4) ⟪x, w⟫ x`,
 
-`u ∈ W^{2,p}` exactly when `p < n / (2 - γ)`
+of size comparable to `‖x‖ ^ (s - 2)`: its trace is `s (d + s - 2) ‖x‖ ^ (s - 2)`. This file
+shows that for `s > 2 - d` the classical Hessian is the weak Hessian across the origin
+(`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow`), and that for `s ≠ 0` with
+`s > 2 - d`, on a bounded open set `Ω` containing the origin, `u` lies in `W^{2,p}(Ω)`,
+`1 ≤ p < ∞`, exactly when `(s - 2) p > -d` (`TauCeti.exists_wkp_two_value_ae_eq_norm_rpow_iff`).
+For `s < 2` this is the range `p < d / (2 - s)`.
 
-(`TauCeti.exists_wkp_two_value_ae_eq_norm_rpow_iff`), including `p = ∞`, which never qualifies.
-For `n + γ ≤ 2` the threshold is at most `1`, so no `p ≥ 1` qualifies.
-For `n ≥ 2` and `0 < γ < 1` the threshold `n / (2 - γ)` lies strictly between `n / 2` and `n`:
-`u` is then a `W^{2,p}` function for some `p > n / 2`, hence continuous, but it is not in
-`W^{2,n}`. Such power singularities are the standard witnesses for the sharpness of `W^{2,p}`
-regularity statements for elliptic equations with discontinuous coefficients.
-
-## Main declarations
-
-* `TauCeti.Wkp.iteratedGradient_ae_eq_iteratedGradientChain_norm_rpow`: the weak derivatives of a
-  `W^{k+1,p}` function equal to `‖x‖ ^ γ` are its classical derivatives.
-* `TauCeti.lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow`: the Hessian is `p`-integrable
-  near the origin only for `p < n / (2 - γ)`.
-* `TauCeti.exists_wkp_two_value_ae_eq_norm_rpow`: on a bounded open set, `‖x‖ ^ γ` lies in
-  `W^{2,p}` when `p < n / (2 - γ)`, and `TauCeti.exists_wkp_two_value_ae_eq_norm_rpow_iff`: on a
-  bounded open set containing the origin, exactly then.
-
-## References
-
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., §5.2.3, Example 2, for the first-order
-  analogue: `‖x‖ ^ (-α)` lies in `W^{1,p}` of the unit ball exactly when `α < (n - p) / p`.
+The weak first derivatives are the classical ones by `TauCeti.hasWeakFDerivOn_norm_rpow`. The
+coordinates `s ‖x‖ ^ (s - 2) ⟪x, v⟫` of the gradient are weakly differentiable with their
+classical derivatives by `TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`, which needs
+`s - 2 > -d`, and uniqueness of weak derivatives identifies the weak Hessian.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Metric Set Filter TopologicalSpace Module
-open scoped ENNReal NNReal Topology InnerProductSpace Gradient
-
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {γ : ℝ}
+open MeasureTheory Set Filter TopologicalSpace
+open scoped RealInnerProductSpace ENNReal
 
-variable [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {s : ℝ}
 
-/-! ### The weak Hessian -/
+/-- Away from the origin, the entries of the Hessian of `‖x‖ ^ s`:
+`⟪D²u(x) w, v⟫ = s ‖x‖ ^ (s - 2) ⟪w, v⟫ + s (s - 2) ‖x‖ ^ (s - 4) ⟪x, w⟫ ⟪x, v⟫`. -/
+private theorem inner_normRpowHessian_apply (x v w : E) :
+    ⟪((s * ‖x‖ ^ (s - 2)) • ContinuousLinearMap.id ℝ E +
+        (s * (s - 2) * ‖x‖ ^ (s - 4)) • (innerSL ℝ x).smulRight x) w, v⟫ =
+      s * ((‖x‖ ^ (s - 2) • innerSL ℝ v +
+        ((s - 2) * ‖x‖ ^ (s - 2 - 2) * ⟪x, v⟫) • innerSL ℝ x) w) := by
+  have h4 : s - 2 - 2 = s - 4 := by ring
+  simp only [add_apply, smul_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
+    inner_add_left, real_inner_smul_left, smul_eq_mul, h4]
+  rw [real_inner_comm w v]
+  ring
 
-variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+  [μ.IsAddHaarMeasure] {Ω : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- The weak derivatives of an element of `W^{k+1,p}(Ω)` equal to `‖x‖ ^ γ` are its classical
-derivatives; for `k = 1` its weak Hessian is its classical Hessian. -/
-theorem Wkp.iteratedGradient_ae_eq_iteratedGradientChain_norm_rpow (k : ℕ)
-    {Ω : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] (w : Wkp μ Ω p (k + 1))
-    (hw : (Wkp.value (k + 1) w : E → ℝ) =ᵐ[μ.restrict Ω] fun y => ‖y‖ ^ γ) :
-    (Wkp.iteratedGradient k w : E → IteratedGradient E k) =ᵐ[μ.restrict Ω]
-      iteratedGradientChain (fun y : E => ‖y‖ ^ γ) k := by
-  -- On the zero space both fields vanish.
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · have hsub : ∀ j, Subsingleton (IteratedGradient E j) := fun j => by
-      induction j with
-      | zero => exact hE
-      | succ j ih => exact (inferInstance : Subsingleton (E →L[ℝ] IteratedGradient E j))
-    exact ae_of_all _ fun _ => (hsub k).elim _ _
-  -- Away from the origin, a null set, the power is smooth.
-  let Ω' : Opens E := ⟨(Ω : Set E) \ {0}, Ω.isOpen.sdiff isClosed_singleton⟩
-  have hΩ' : Ω' ≤ Ω := fun _ hx => hx.1
-  have hres : μ.restrict (Ω' : Set E) = μ.restrict Ω :=
-    Measure.restrict_congr_set (sdiff_null_ae_eq_self (measure_singleton 0))
-  have h := Wkp.iteratedGradient_ae_eq_of_contDiffOn k (Wkp.restrictL hΩ' (k + 1) w)
-    (fun x hx => ((contDiffAt_norm ℝ hx.2).rpow_const_of_ne
-      (norm_ne_zero_iff.2 hx.2)).contDiffWithinAt)
-    ((Wkp.value_restrictL_ae hΩ' (k + 1) w).trans (by rw [hres]; exact hw))
-  have hae : ae (μ.restrict (Ω' : Set E)) = ae (μ.restrict Ω) := by rw [hres]
-  have h' := (Wkp.iteratedGradient_restrictL_ae hΩ' k w).symm.trans h
-  rwa [EventuallyEq, hae] at h'
+/-- **The weak Hessian of a norm power.** For `s > 2 - dim E`, the weak Hessian of an element of
+`W^{2,p}(Ω)` equal to `‖x‖ ^ s` is, almost everywhere on `Ω`, its classical Hessian
+`w ↦ s ‖x‖ ^ (s - 2) w + s (s - 2) ‖x‖ ^ (s - 4) ⟪x, w⟫ x`, although that Hessian is only defined
+away from the origin and, for `s < 2` with `s ≠ 0`, is unbounded there. -/
+theorem Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow
+    (hs : 2 - (Module.finrank ℝ E : ℝ) < s) (W : Wkp μ Ω p 2)
+    (hW : Wkp.value 2 W =ᵐ[μ.restrict Ω] fun x => ‖x‖ ^ s) :
+    Wkp.iteratedGradient 1 W =ᵐ[μ.restrict Ω] fun x =>
+      (s * ‖x‖ ^ (s - 2)) • ContinuousLinearMap.id ℝ E +
+        (s * (s - 2) * ‖x‖ ^ (s - 4)) • (innerSL ℝ x).smulRight x := by
+  -- Each entry `⟪D²W w, v⟫` is the classical one.
+  have hentry : ∀ v w : E, (fun x => ⟪Wkp.iteratedGradient 1 W x w, v⟫) =ᵐ[μ.restrict Ω]
+      fun x => ⟪((s * ‖x‖ ^ (s - 2)) • ContinuousLinearMap.id ℝ E +
+        (s * (s - 2) * ‖x‖ ^ (s - 4)) • (innerSL ℝ x).smulRight x) w, v⟫ := by
+    intro v w
+    obtain ⟨d, hdv, hdg⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq W v
+    -- The weak derivative of `‖x‖ ^ s` in the direction `v` is `s ‖x‖ ^ (s - 2) ⟪x, v⟫`.
+    have hline : HasWeakLineDerivOn μ Ω (Wkp.value 2 W)
+        (s • fun x => ‖x‖ ^ (s - 2) * ⟪x, v⟫) v :=
+      (((hasWeakFDerivOn_norm_rpow (μ := μ) (by linarith) Ω).hasWeakLineDerivOn v).congr_ae
+        hW.symm).congr_ae_deriv (Eventually.of_forall fun x => by
+          simp only [smul_apply, innerSL_apply_apply, smul_eq_mul,
+            Pi.smul_apply]
+          ring)
+    have hval := hdv.ae_eq hline
+    -- Its weak derivative is the classical one.
+    have hgrad := ((W1p.hasWeakFDerivOn d).congr_ae hval).ae_eq
+      ((hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) (s := s - 2) (by linarith) v Ω).const_smul s)
+    filter_upwards [hdg w, hgrad] with x h1 h2
+    rw [← h1, inner_normRpowHessian_apply, ← innerSL_apply_apply ℝ (W1p.gradient d x) w, h2]
+    simp only [Pi.smul_apply, smul_apply, smul_eq_mul]
+  -- Entries in an orthonormal basis determine the operator.
+  set b := stdOrthonormalBasis ℝ E
+  have hall := ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry (b i) (b j)
+  filter_upwards [hall] with x hx
+  refine ContinuousLinearMap.coe_injective (b.toBasis.ext fun j =>
+    InnerProductSpace.ext_inner_right_basis b.toBasis fun i => ?_)
+  simpa only [OrthonormalBasis.coe_toBasis, ContinuousLinearMap.coe_coe] using hx i j
 
-/-! ### Membership in `W^{2,p}` -/
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The classical Hessian of `‖x‖ ^ s` has operator norm at least
+`|s| (dim E + s - 2) / dim E ‖x‖ ^ (s - 2)` away from the origin, since its trace is
+`s (dim E + s - 2) ‖x‖ ^ (s - 2)`. -/
+private theorem le_norm_normRpowHessian (hs : 2 - (Module.finrank ℝ E : ℝ) < s) {x : E}
+    (hx : x ≠ 0) :
+    |s| * (Module.finrank ℝ E + s - 2) / Module.finrank ℝ E * ‖x‖ ^ (s - 2) ≤
+      ‖(s * ‖x‖ ^ (s - 2)) • ContinuousLinearMap.id ℝ E +
+        (s * (s - 2) * ‖x‖ ^ (s - 4)) • (innerSL ℝ x).smulRight x‖ := by
+  set H := (s * ‖x‖ ^ (s - 2)) • ContinuousLinearMap.id ℝ E +
+    (s * (s - 2) * ‖x‖ ^ (s - 4)) • (innerSL ℝ x).smulRight x
+  have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
+  set b := stdOrthonormalBasis ℝ E
+  have hd : (0 : ℝ) < Module.finrank ℝ E := Nat.cast_pos.2 Module.finrank_pos
+  -- The trace of `H` is the Laplacian of `‖x‖ ^ s`.
+  have htr : ∑ i, ⟪H (b i), b i⟫ = s * (Module.finrank ℝ E + s - 2) * ‖x‖ ^ (s - 2) := by
+    have hterm : ∀ i, ⟪H (b i), b i⟫ = iteratedFDeriv ℝ 2 (fun y : E => ‖y‖ ^ s) x ![b i, b i] := by
+      intro i
+      rw [iteratedFDeriv_two_norm_rpow_apply s hx]
+      simp only [H, add_apply, smul_apply, ContinuousLinearMap.id_apply,
+        ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, inner_add_left,
+        real_inner_smul_left]
+      ring
+    rw [Finset.sum_congr rfl fun i _ => hterm i,
+      ← congrFun (InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
+      laplacian_norm_rpow_of_ne s hx]
+    ring
+  have hle : |s * (Module.finrank ℝ E + s - 2) * ‖x‖ ^ (s - 2)| ≤ Module.finrank ℝ E * ‖H‖ := by
+    have htrH : traceCLM ℝ E H = ∑ i, ⟪H (b i), b i⟫ := by
+      rw [traceCLM_apply, LinearMap.trace_eq_sum_inner _ b]
+      simp only [ContinuousLinearMap.coe_coe, real_inner_comm]
+    rw [← htr, ← htrH, ← Real.norm_eq_abs]
+    exact H.norm_traceCLM_le
+  rw [abs_mul, abs_mul, abs_of_pos (by linarith : (0 : ℝ) < Module.finrank ℝ E + s - 2),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖x‖ ^ (s - 2))] at hle
+  rw [div_mul_eq_mul_div, div_le_iff₀ hd]
+  linarith
 
-/-- **The Hessian of a norm power is not `Lᵖ` near the origin for large `p`.** Let `γ ≠ 0` and
-`γ < 2` on a nonzero space of dimension `n`, excluding the case `n = γ = 1`, in which the Hessian
-vanishes away from the origin. If the Hessian of `‖x‖ ^ γ` is `p`-integrable on a neighbourhood of
-the origin, then `p < n / (2 - γ)`: its norm is at least a positive multiple of `‖x‖ ^ (γ - 2)`. -/
-theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow [Nontrivial E] (hγ0 : γ ≠ 0)
-    (hγ : γ < 2) (h : 1 < finrank ℝ E ∨ γ ≠ 1) {Ω : Set E} (hΩ : Ω ∈ 𝓝 0) {p : ℝ≥0∞}
-    (hH : MemLp (iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1) p (μ.restrict Ω)) :
-    p < ENNReal.ofReal (finrank ℝ E / (2 - γ)) := by
-  have h2γ : 0 < 2 - γ := by linarith
-  have hnpos : (0 : ℝ) < finrank ℝ E := by exact_mod_cast Module.finrank_pos
-  -- The Hessian has norm at least `c ‖x‖ ^ (γ - 2)` away from the origin, by its radial value
-  -- for `γ ≠ 1` and by its trace for `γ = 1`.
-  obtain ⟨c, hc, hle⟩ : ∃ c > 0, ∀ x : E, x ≠ 0 →
-      c * ‖x‖ ^ (γ - 2) ≤ ‖iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x‖ := by
-    rcases ne_or_eq γ 1 with hγ1 | rfl
-    · exact ⟨_, abs_pos.2 (mul_ne_zero hγ0 (sub_ne_zero.2 hγ1)),
-        fun x hx => abs_mul_sub_one_mul_rpow_le_norm_iteratedGradientChain_one_norm_rpow _ hx⟩
-    have h1 : (1 : ℝ) < finrank ℝ E := by exact_mod_cast h.resolve_right (not_not.2 rfl)
-    refine ⟨|(1 : ℝ) * (finrank ℝ E + 1 - 2)| / finrank ℝ E,
-      div_pos (abs_pos.2 (ne_of_gt (by linarith))) hnpos, fun x hx => ?_⟩
-    rw [div_mul_eq_mul_div, div_le_iff₀ hnpos, mul_comm _ (finrank ℝ E : ℝ)]
-    exact abs_mul_rpow_le_finrank_mul_norm_iteratedGradientChain_one_norm_rpow 1 hx
-  by_contra hq
-  rw [not_lt] at hq
-  set q := ENNReal.ofReal (finrank ℝ E / (2 - γ)) with hq_def
-  have hqr : q.toReal = finrank ℝ E / (2 - γ) := ENNReal.toReal_ofReal (div_pos hnpos h2γ).le
-  have hq0 : q ≠ 0 := by
-    rw [hq_def, ne_eq, ENNReal.ofReal_eq_zero, not_le]; exact div_pos hnpos h2γ
-  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 hΩ
-  have : IsFiniteMeasure (μ.restrict (ball (0 : E) r)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  -- The Hessian, of norm at least `c ‖x‖ ^ (γ - 2)`, would be `q`-integrable on a ball about the
-  -- origin.
-  have h := neg_finrank_lt_mul_toReal_of_memLp_restrict (s := γ - 2) hq0 ENNReal.ofReal_ne_top
-    (ball_mem_nhds 0 hr) hc
-    (ae_of_all _ fun x => by
-      rcases eq_or_ne x 0 with rfl | hx
-      · rw [norm_zero, Real.zero_rpow (by linarith), mul_zero]
-        exact norm_nonneg _
-      exact hle x hx)
-    ((hH.mono_measure (Measure.restrict_mono hball le_rfl)).mono_exponent hq)
-  rw [hqr, show (γ - 2) * (finrank ℝ E / (2 - γ)) = -finrank ℝ E by field_simp; ring] at h
-  exact lt_irrefl _ h
+/-- **Norm powers in `W^{2,p}`.** Let `Ω` be a bounded open set and `1 ≤ p < ∞`. If
+`(s - 2) p > -dim E`, then `x ↦ ‖x‖ ^ s` lies in `W^{2,p}(Ω)`: its derivatives of orders `0`, `1`
+and `2` are bounded by multiples of `‖x‖ ^ s`, `‖x‖ ^ (s - 1)` and `‖x‖ ^ (s - 2)`. -/
+theorem exists_wkp_two_value_ae_eq_norm_rpow (hb : Bornology.IsBounded (Ω : Set E))
+    (hp : p ≠ ∞) (h : -(Module.finrank ℝ E : ℝ) < (s - 2) * p.toReal) :
+    ∃ W : Wkp μ Ω p 2, Wkp.value 2 W =ᵐ[μ.restrict Ω] fun x => ‖x‖ ^ s := by
+  have hp1 : 1 ≤ p.toReal := ENNReal.toReal_mono hp (Fact.out : (1 : ℝ≥0∞) ≤ p) |>.trans_eq'
+    ENNReal.toReal_one.symm
+  have hs2 : -(Module.finrank ℝ E : ℝ) < s - 2 := neg_lt_of_neg_lt_mul (Nat.cast_nonneg _) hp1 h
+  -- The coordinates of the gradient, `s ‖x‖ ^ (s - 2) ⟪x, v⟫`, are in `W^{1,p}(Ω)`.
+  have hcoord : ∀ v : E, ∃ D : Wkp μ Ω p 1,
+      Wkp.value 1 D =ᵐ[μ.restrict Ω] s • fun x => ‖x‖ ^ (s - 2) * ⟪x, v⟫ := by
+    intro v
+    have hD := (hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) hs2 v Ω).const_smul s
+    refine Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn
+      (hb.memLp_of_norm_le_mul_norm_rpow (C := |s| * ‖v‖) (s := s - 1) hp (by nlinarith)
+        (by fun_prop : Measurable _).aestronglyMeasurable fun x => ?_) _
+      (fun w => hb.memLp_of_norm_le_mul_norm_rpow (C := |s| * ((1 + |s - 2|) * ‖v‖ * ‖w‖))
+        (s := s - 2) hp h (by fun_prop : Measurable _).aestronglyMeasurable fun x => ?_)
+      fun w => hD.hasWeakLineDerivOn w
+    · rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, mul_assoc]
+      have := abs_norm_rpow_mul_inner_le (s - 2) v x
+      rw [show s - 2 + 1 = s - 1 by ring] at this
+      exact mul_le_mul_of_nonneg_left this (abs_nonneg s)
+    · rw [Pi.smul_apply, smul_apply, norm_smul, Real.norm_eq_abs,
+        mul_assoc |s|]
+      refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg s)
+      refine (ContinuousLinearMap.le_opNorm _ w).trans ?_
+      have := norm_norm_rpow_smul_innerSL_add_le (s - 2) v x
+      nlinarith [norm_nonneg w, Real.rpow_nonneg (norm_nonneg x) (s - 2)]
+  choose D hD using hcoord
+  refine Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn 1
+    (hb.memLp_of_norm_le_mul_norm_rpow (C := 1) (s := s) hp (by nlinarith)
+      (by fun_prop : Measurable _).aestronglyMeasurable
+      fun x => by rw [Real.norm_of_nonneg (by positivity), one_mul]) D fun v => ?_
+  refine ((hasWeakFDerivOn_norm_rpow (μ := μ) (by linarith) Ω).hasWeakLineDerivOn v).congr_ae_deriv
+    ?_
+  filter_upwards [hD v] with x hx
+  rw [hx]
+  simp only [smul_apply, innerSL_apply_apply, smul_eq_mul, Pi.smul_apply]
+  ring
 
-/-- For `γ < 2` and `p < n / (2 - γ)`, where `n` is the dimension, `‖x‖ ^ γ` lies in `W^{2,p}` of
-every bounded open set. Since `p ≥ 1`, this forces `n + γ > 2`. -/
-theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ : γ < 2)
-    {Ω : Opens E} (hb : Bornology.IsBounded (Ω : Set E))
-    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p < ENNReal.ofReal (finrank ℝ E / (2 - γ))) :
-    ∃ w : Wkp μ Ω p 2, (Wkp.value 2 w : E → ℝ) =ᵐ[μ.restrict Ω] fun y => ‖y‖ ^ γ := by
-  have h2γ : 0 < 2 - γ := by linarith
-  have hp1 : 1 ≤ p := Fact.out
-  have hpt : p ≠ ∞ := ne_top_of_lt hp
-  have hpr : p.toReal * (2 - γ) < finrank ℝ E := by
-    have := (ENNReal.toReal_lt_toReal hpt ENNReal.ofReal_ne_top).2 hp
-    rwa [ENNReal.toReal_ofReal (by positivity), lt_div_iff₀ h2γ] at this
-  have hp1r : 1 ≤ p.toReal := by
-    simpa using ENNReal.toReal_mono hpt hp1
-  have hn : 2 < finrank ℝ E + γ := by nlinarith
-  have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E)
-    (by exact_mod_cast (by linarith : (0 : ℝ) < finrank ℝ E))
-  have hae : ∀ᵐ x ∂μ.restrict Ω, x ≠ 0 := ae_restrict_of_ae (μ.ae_ne 0)
-  -- The function, its gradient and its Hessian are dominated by multiples of powers of the norm.
-  have hu : MemLp (fun y : E => ‖y‖ ^ γ) p (μ.restrict Ω) :=
-    memLp_restrict_of_norm_le_mul_norm_rpow (C := 1) hpt hb
-      (by fun_prop : Measurable fun y : E => ‖y‖ ^ γ).aestronglyMeasurable
-      (ae_of_all _ fun x => by rw [one_mul, Real.norm_of_nonneg (by positivity)])
-      (by nlinarith)
-  have hg : MemLp (∇ fun y : E => ‖y‖ ^ γ) p (μ.restrict Ω) :=
-    memLp_restrict_of_norm_le_mul_norm_rpow hpt hb
-      (measurable_gradient _).aestronglyMeasurable
-      (hae.mono fun x hx => (norm_gradient_norm_rpow_of_ne hx).le)
-      (by nlinarith)
-  have hH : MemLp (iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1) p (μ.restrict Ω) :=
-    memLp_restrict_of_norm_le_mul_norm_rpow hpt hb
-      (aestronglyMeasurable_iteratedGradientChain _ 1)
-      (hae.mono fun x hx => norm_iteratedGradientChain_one_norm_rpow_le γ hx)
-      (by nlinarith)
-  obtain ⟨w, hw, -⟩ := Wkp.exists_value_iteratedGradient_ae_eq_of_chain 1
-    (G := iteratedGradientChain (fun y : E => ‖y‖ ^ γ)) hu
-    (by simpa only [iteratedGradientChain_zero] using
-      hasWeakFDerivOn_norm_rpow_innerSL_gradient (μ := μ) (by linarith) Ω)
-    (fun i hi => by
-      obtain rfl : i = 0 := by omega
-      simpa only [iteratedGradientChain_zero] using hasWeakFDerivOn_gradient_norm_rpow hn Ω)
-    (fun i hi => by
-      interval_cases i
-      · simpa only [iteratedGradientChain_zero] using hg
-      · exact hH)
-  exact ⟨w, hw⟩
-
-/-- **`W^{2,p}` regularity of a norm power.** Let `γ ≠ 0` and `γ < 2` on a nonzero space of
-dimension `n`, excluding the case `n = γ = 1`, and let `Ω` be a bounded open set containing the
-origin. Then `‖x‖ ^ γ` lies in `W^{2,p}(Ω)` exactly when `p < n / (2 - γ)`; the case `p = ∞` is
-included and never occurs. -/
-theorem exists_wkp_two_value_ae_eq_norm_rpow_iff [Nontrivial E] (hγ0 : γ ≠ 0) (hγ : γ < 2)
-    (h : 1 < finrank ℝ E ∨ γ ≠ 1) {Ω : Opens E} (hb : Bornology.IsBounded (Ω : Set E))
-    (h0 : (0 : E) ∈ Ω) {p : ℝ≥0∞} [Fact (1 ≤ p)] :
-    (∃ w : Wkp μ Ω p 2, (Wkp.value 2 w : E → ℝ) =ᵐ[μ.restrict Ω] fun y => ‖y‖ ^ γ) ↔
-      p < ENNReal.ofReal (finrank ℝ E / (2 - γ)) :=
-  ⟨fun ⟨w, hw⟩ => lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow hγ0 hγ h
-      (Ω.isOpen.mem_nhds h0) ((Lp.memLp (Wkp.iteratedGradient 1 w)).ae_eq
-        (Wkp.iteratedGradient_ae_eq_iteratedGradientChain_norm_rpow 1 w hw)),
-    exists_wkp_two_value_ae_eq_norm_rpow hγ hb⟩
+/-- **Norm powers in `W^{2,p}` near the origin.** Let `Ω` be a bounded open set containing the
+origin, `1 ≤ p < ∞`, and `s ≠ 0` with `s > 2 - dim E`. Then `x ↦ ‖x‖ ^ s` lies in `W^{2,p}(Ω)`
+exactly when `(s - 2) p > -dim E`, that is when `p < dim E / (2 - s)` for `s < 2`, and for every
+`p` when `s ≥ 2`. Its weak Hessian has size comparable to `‖x‖ ^ (s - 2)`. -/
+theorem exists_wkp_two_value_ae_eq_norm_rpow_iff (hb : Bornology.IsBounded (Ω : Set E))
+    (hp : p ≠ ∞) (h0 : (0 : E) ∈ Ω) (hs0 : s ≠ 0) (hs : 2 - (Module.finrank ℝ E : ℝ) < s) :
+    (∃ W : Wkp μ Ω p 2, Wkp.value 2 W =ᵐ[μ.restrict Ω] fun x => ‖x‖ ^ s) ↔
+      -(Module.finrank ℝ E : ℝ) < (s - 2) * p.toReal := by
+  refine ⟨fun ⟨W, hW⟩ => ?_, exists_wkp_two_value_ae_eq_norm_rpow hb hp⟩
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
+  have hp1 : 1 ≤ p.toReal := ENNReal.toReal_mono hp (Fact.out : (1 : ℝ≥0∞) ≤ p) |>.trans_eq'
+    ENNReal.toReal_one.symm
+  rcases le_or_gt 2 s with hs2 | hs2
+  · nlinarith
+  have hd : (0 : ℝ) < Module.finrank ℝ E := by linarith
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by exact_mod_cast hd)
+  set c : ℝ := |s| * (Module.finrank ℝ E + s - 2) / Module.finrank ℝ E
+  have hc : 0 < c := by
+    have := abs_pos.2 hs0
+    have : 0 < (Module.finrank ℝ E : ℝ) + s - 2 := by linarith
+    positivity
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen 0 h0
+  have hint : IntegrableOn (fun x => ‖Wkp.iteratedGradient 1 W x‖ ^ p.toReal)
+      (Metric.ball 0 r) μ :=
+    ((Lp.memLp (Wkp.iteratedGradient 1 W)).integrable_norm_rpow hp0 hp).mono_measure
+      (Measure.restrict_mono hball le_rfl)
+  -- `‖x‖ ^ ((s - 2) p) ≤ c⁻ᵖ ‖D²W‖ ^ p` almost everywhere near the origin.
+  have hpow : IntegrableOn (fun x : E => ‖x‖ ^ ((s - 2) * p.toReal)) (Metric.ball 0 r) μ := by
+    refine (hint.const_mul (c ^ (-p.toReal))).mono'
+      (by fun_prop : Measurable fun x : E => ‖x‖ ^ ((s - 2) * p.toReal)).aestronglyMeasurable ?_
+    have hH := (Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow hs W hW).filter_mono
+      (ae_mono (Measure.restrict_mono hball le_rfl))
+    filter_upwards [hH, ae_restrict_of_ae (μ.ae_ne 0)] with x hx hx0
+    rw [Real.norm_of_nonneg (by positivity), Real.rpow_mul (norm_nonneg x), Real.rpow_neg hc.le,
+      le_inv_mul_iff₀ (by positivity), ← Real.mul_rpow hc.le (by positivity), hx]
+    exact Real.rpow_le_rpow (by positivity) (le_norm_normRpowHessian hs hx0) (by linarith)
+  exact (integrableOn_norm_rpow_ball_iff hr).1 hpow
 
 end TauCeti

@@ -60,7 +60,7 @@ theorem infAffine_eq_of_mem_infCell {ι : Type*} (s : Finset ι) (hs : s.Nonempt
     (f : ι → (E →ᴬ[ℝ] ℝ)) (i : s) {x : E} (hx : x ∈ s.infCell f i) :
     s.inf' hs (fun j => f j x) = f i x := by
   apply le_antisymm
-  · exact s.inf'_le _ i.2
+  · exact s.inf'_le _ i.property
   · exact s.le_inf' hs _ (fun j hj => hx j hj)
 
 /-- A finite minimum of continuous affine functionals is piecewise affine on the whole source. -/
