@@ -7,12 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Complex
 public import TauCeti.Geometry.Manifold.VectorField.ComplexDerivation
-public import TauCeti.RingTheory.Derivation.FirstOrder
 public import TauCeti.RingTheory.Derivation.PrincipalSymbol
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 
 /-!
-# Differential operators on complex-valued smooth functions
+# Principal symbols of differential operators on complex-valued smooth functions
 
 Let `M` be a finite-dimensional Hausdorff real manifold and `A_ℂ = C^∞(M, ℂ)` the complex algebra
 of complex-valued (real-)smooth functions on `M`. A complex-linear endomorphism `D` of `A_ℂ` is a
@@ -46,19 +45,13 @@ extension of its restriction to real covectors, which enter as `Complex.ofRealCL
 Fourier principal symbol of an operator of order `m`, in which `∂ⱼ` has symbol `i ξⱼ`, is `i ^ m`
 times the geometric one.
 
-The second part of the file splits the operators of order at most one. On a boundaryless
-manifold, a complex-linear endomorphism `D` of `A_ℂ` has vanishing double commutators with
-multiplication operators if and only if
-
-`D f = df(X) + i df(Y) + f D(1)`
-
-for unique smooth real vector fields `X`, `Y`
-(`TauCeti.mem_differentialOperators_one_iff_existsUnique_vectorField_mul`). As complex vector
-spaces these operators are the product of the complexified vector fields `ℂ ⊗[ℝ] Γ(TM)` with
-`A_ℂ` (`TauCeti.differentialOperatorsOneEquivComplexifiedVectorFieldProd`), the operator above
-corresponding to `(1 ⊗ X + i ⊗ Y, D 1)`. Its principal symbol is `ξ ↦ ξ(X_x) + i ξ(Y_x)`
-(`complexSmoothPrincipalSymbol_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm`),
-so its Fourier principal symbol is `ξ ↦ i ξ(X_x) - ξ(Y_x)`.
+For an operator of order at most one, the principal symbol at `df_x` is
+`(D f)(x) - f(x) (D 1)(x)`, the value of its derivation part. On a boundaryless manifold, a complex
+derivation with complexified vector field `1 ⊗ X + i ⊗ Y` therefore has principal symbol
+`ξ ↦ ξ(X_x) + i ξ(Y_x)` (`TauCeti.complexSmoothPrincipalSymbol_derivation`), so its Fourier
+principal symbol is `ξ ↦ i ξ(X_x) - ξ(Y_x)`. The splitting of the operators of order at most one
+into such a derivation and multiplication by `D 1` is
+`TauCeti.complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd`.
 
 ## Main definitions
 
@@ -66,8 +59,6 @@ so its Fourier principal symbol is `ξ ↦ i ξ(X_x) - ξ(Y_x)`.
   complex-multilinear form on `T_x M →L[ℝ] ℂ`.
 * `TauCeti.complexSmoothPrincipalSymbol`: the principal symbol at an interior point, a homogeneous
   function of degree `m` on `T_x M →L[ℝ] ℂ`.
-* `TauCeti.differentialOperatorsOneEquivComplexifiedVectorFieldProd`: the splitting of operators of
-  order at most one into a complexified vector field and multiplication by a function.
 
 ## Main results
 
@@ -90,16 +81,8 @@ so its Fourier principal symbol is `ξ ↦ i ξ(X_x) - ξ(Y_x)`.
   `TauCeti.complexSmoothPrincipalSymbol_derivation_mvfderiv`: an operator `D` of order at most one
   has principal symbol `df_x ↦ (D f)(x) - f(x) (D 1)(x)`, and a derivation `δ` has principal symbol
   `df_x ↦ (δ f)(x)`.
-* `TauCeti.coe_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply`: the operator
-  corresponding to `(v, c)` is the derivation of `v` plus multiplication by `c`.
-* `TauCeti.differentialOperators_one_apply_eq_mvfderiv_add_I_mul_mvfderiv_add_mul`,
-  `TauCeti.mem_differentialOperators_one_iff_existsUnique_vectorField_mul`: an operator of order at
-  most one acts by `f ↦ df(X) + i df(Y) + c f`, with unique `X`, `Y` and `c`, and every such
-  expression has order at most one.
-* `complexSmoothPrincipalSymbol_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm`,
-  `TauCeti.complexSmoothPrincipalSymbol_derivation`: the operator `f ↦ df(X) + i df(Y) + c f`, and
-  the derivation with complexified vector field `1 ⊗ X + i ⊗ Y`, have principal symbol
-  `ξ ↦ ξ(X_x) + i ξ(Y_x)`.
+* `TauCeti.complexSmoothPrincipalSymbol_derivation`: on a boundaryless manifold, the derivation
+  with complexified vector field `1 ⊗ X + i ⊗ Y` has principal symbol `ξ ↦ ξ(X_x) + i ξ(Y_x)`.
 
 ## References
 
@@ -280,6 +263,23 @@ theorem complexSmoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (
     complexSmoothPrincipalSymbol I hx (c • D) ξ = c * complexSmoothPrincipalSymbol I hx D ξ :=
   pointPrincipalSymbol_smul _ _ _ c D ξ
 
+@[simp]
+theorem complexSmoothPrincipalSymbol_neg (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothPrincipalSymbol I hx (-D) ξ = -complexSmoothPrincipalSymbol I hx D ξ :=
+  pointPrincipalSymbol_neg _ _ _ D ξ
+
+@[simp]
+theorem complexSmoothPrincipalSymbol_sub (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D₁ D₂ : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothPrincipalSymbol I hx (D₁ - D₂) ξ =
+      complexSmoothPrincipalSymbol I hx D₁ ξ - complexSmoothPrincipalSymbol I hx D₂ ξ :=
+  pointPrincipalSymbol_sub _ _ _ D₁ D₂ ξ
+
 /-- The principal symbol of an operator of order at most `m` is homogeneous of degree `m` under
 complex scalars. -/
 theorem complexSmoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -345,142 +345,10 @@ theorem complexSmoothPrincipalSymbol_derivation_mvfderiv (hx : I.IsInteriorPoint
   rw [complexSmoothPrincipalSymbol_one_mvfderiv]
   simp
 
-variable [BoundarylessManifold I M]
-
-/-- **Operators of order at most one on complex smooth functions.** On a finite-dimensional,
-Hausdorff, boundaryless real manifold, a complex-linear endomorphism of `C^∞(M, ℂ)` of order at most
-one, that is with vanishing double commutators with multiplication operators, splits into a
-complexified vector field and multiplication by a function, linearly over `ℂ`: the operator
-`f ↦ df(X) + i df(Y) + c f` corresponds to `(1 ⊗ X + i ⊗ Y, c)`
-(`TauCeti.differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply_apply`). The second
-coordinate is the value of the operator on one. -/
-def differentialOperatorsOneEquivComplexifiedVectorFieldProd :
-    differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 1 ≃ₗ[ℂ]
-      (ℂ ⊗[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) × C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ :=
-  (differentialOperatorsOneEquiv ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯).trans
-    (complexDerivationEquivComplexifiedVectorField.prodCongr (LinearEquiv.refl _ _))
-
-/-- The complexified vector field of an operator of order at most one is that of its derivation
-part `f ↦ D f - f D(1)`. -/
-theorem differentialOperatorsOneEquivComplexifiedVectorFieldProd_apply_fst
-    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 1) :
-    (differentialOperatorsOneEquivComplexifiedVectorFieldProd D).1 =
-      complexDerivationEquivComplexifiedVectorField
-        (differentialOperatorsOneEquiv ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ D).1 :=
-  (rfl)
-
-/-- The multiplication coefficient of an operator of order at most one is its value on one. -/
-@[simp]
-theorem differentialOperatorsOneEquivComplexifiedVectorFieldProd_apply_snd
-    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 1) :
-    (differentialOperatorsOneEquivComplexifiedVectorFieldProd D).2 =
-      (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) 1 := by
-  simp [differentialOperatorsOneEquivComplexifiedVectorFieldProd]
-
-/-- The operator corresponding to `(v, c)` is the derivation corresponding to `v` plus
-multiplication by `c`. -/
-@[simp]
-theorem coe_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply
-    (p : (ℂ ⊗[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) × C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    (differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm p :
-        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) =
-      (complexDerivationEquivComplexifiedVectorField.symm p.1).toLinearMap +
-        LinearMap.mulLeft ℂ p.2 := by
-  ext f : 1
-  simp [differentialOperatorsOneEquivComplexifiedVectorFieldProd, mul_comm]
-
-/-- The operator corresponding to `(1 ⊗ X + i ⊗ Y, c)` acts by `f ↦ df(X) + i df(Y) + c f`. -/
-theorem differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply_apply
-    (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (c f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
-    (differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm
-        (1 ⊗ₜ X + Complex.I ⊗ₜ Y, c) : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) f x =
-      mvfderiv I f x (X x) + Complex.I * mvfderiv I f x (Y x) + f x * c x := by
-  rw [coe_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply, LinearMap.add_apply,
-    Derivation.coeFn_coe, ContMDiffMap.coe_add, Pi.add_apply,
-    complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv]
-  simp [mul_comm]
-
-/-- **The splitting of operators of order at most one.** An operator of order at most one on
-complex smooth functions acts by `f ↦ df(X) + i df(Y) + f D(1)`, where `1 ⊗ X + i ⊗ Y` is its
-complexified vector field. -/
-theorem differentialOperators_one_apply_eq_mvfderiv_add_I_mul_mvfderiv_add_mul
-    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 1)
-    (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
-    (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) f x =
-      mvfderiv I f x (realPart _ (differentialOperatorsOneEquivComplexifiedVectorFieldProd D).1 x) +
-        Complex.I * mvfderiv I f x
-          (imaginaryPart _ (differentialOperatorsOneEquivComplexifiedVectorFieldProd D).1 x) +
-          f x * (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) 1 x := by
-  conv_lhs => rw [← differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm_apply_apply D,
-    coe_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply]
-  simp [complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv, mul_comm]
-
-/-- Vanishing double commutators characterize the unique expression of a complex-linear operator
-on complex smooth functions as `f ↦ df(X) + i df(Y) + c f`, for smooth vector fields `X`, `Y` and
-a complex smooth function `c`. -/
-theorem mem_differentialOperators_one_iff_existsUnique_vectorField_mul
-    {D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} :
-    D ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-        C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 1 ↔
-      ∃! p : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ ×
-          Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ × C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯,
-        ∀ (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M),
-          D f x = mvfderiv I f x (p.1 x) + Complex.I * mvfderiv I f x (p.2.1 x) +
-            f x * p.2.2 x := by
-  set e := differentialOperatorsOneEquivComplexifiedVectorFieldProd (I := I) (M := M)
-  have hrep (p : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ ×
-      Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ × C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
-      (∀ (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M),
-        D f x = mvfderiv I f x (p.1 x) + Complex.I * mvfderiv I f x (p.2.1 x) +
-          f x * p.2.2 x) ↔
-      D = e.symm (1 ⊗ₜ p.1 + Complex.I ⊗ₜ p.2.1, p.2.2) := by
-    constructor
-    · intro h
-      ext f x
-      rw [h f x, differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply_apply]
-    · intro h f x
-      rw [h, differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm_apply_apply]
-  constructor
-  · intro hD
-    let d : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 1 := ⟨D, hD⟩
-    refine ⟨(realPart _ (e d).1, imaginaryPart _ (e d).1, D 1),
-      differentialOperators_one_apply_eq_mvfderiv_add_I_mul_mvfderiv_add_mul d, ?_⟩
-    rintro ⟨X, Y, c⟩ hp
-    have h := congrArg e (Subtype.ext ((hrep _).mp hp) : d = _)
-    rw [LinearEquiv.apply_symm_apply, Prod.ext_iff] at h
-    obtain ⟨h₁, h₂⟩ := h
-    simp only at h₁ h₂
-    refine Prod.ext ?_ (Prod.ext ?_ ?_)
-    · simp [h₁]
-    · simp [h₁]
-    · rw [← h₂]
-      exact differentialOperatorsOneEquivComplexifiedVectorFieldProd_apply_snd d
-  · rintro ⟨p, hp, -⟩
-    rw [(hrep p).mp hp]
-    exact (e.symm _).property
-
-/-- The principal symbol of the operator of order at most one corresponding to `(v, c)` is
-`ξ ↦ ξ(X_x) + i ξ(Y_x)`, where `v = 1 ⊗ X + i ⊗ Y`. -/
-@[simp]
-theorem complexSmoothPrincipalSymbol_differentialOperatorsOneEquivComplexifiedVectorFieldProd_symm
-    (p : (ℂ ⊗[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) × C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (ξ : TangentSpace I x →L[ℝ] ℂ) :
-    complexSmoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint
-        (differentialOperatorsOneEquivComplexifiedVectorFieldProd.symm p) ξ =
-      ξ (realPart _ p.1 x) + Complex.I * ξ (imaginaryPart _ p.1 x) := by
-  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℂ) ξ
-  rw [complexSmoothPrincipalSymbol_one_mvfderiv]
-  simp [complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv, mul_comm]
-
 /-- On a boundaryless manifold, a derivation `δ` of the complex smooth functions has principal
 symbol `ξ ↦ ξ(X_x) + i ξ(Y_x)`, where `1 ⊗ X + i ⊗ Y` is its complexified vector field. -/
 @[simp]
-theorem complexSmoothPrincipalSymbol_derivation
+theorem complexSmoothPrincipalSymbol_derivation [BoundarylessManifold I M]
     (δ : Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint
