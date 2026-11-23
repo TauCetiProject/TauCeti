@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
+import TauCeti.FieldTheory.Minpoly.IsConjRoot
 
 /-!
 # Minimal polynomials of inverses and reciprocal algebraic numbers
@@ -22,8 +23,8 @@ The minimal polynomial of the inverse of a nonzero element `x` is the reverse
 Over an integrally closed domain `R` with fraction field `K`, an integral element `x ≠ 0` is
 conjugate over `K` to its inverse exactly when its minimal polynomial `P` over `R` is reciprocal up
 to sign: `P* = P` or `P* = -P`. Then `P(0) = ±1`, the inverse `x⁻¹` is again integral over `R`,
-and the roots of `P` in any field are closed under inversion. The sign `P* = -P` only occurs for
-`P = X - 1`, as soon as `2 ≠ 0` in `R`.
+so `x` is a unit of the integral closure of `R`, and the roots of `P` in any field are closed under
+inversion. The sign `P* = -P` only occurs for `P = X - 1`, as soon as `2 ≠ 0` in `R`.
 
 For `R = ℤ` and `K = ℚ` this describes the reciprocal algebraic integers: the conjugates of a
 Salem number are closed under inversion, while Smyth's lower bound for the Mahler measure concerns
@@ -35,8 +36,9 @@ the nonreciprocal algebraic integers.
 * `TauCeti.isConjRoot_inv_iff_reverse_minpoly_eq_or_eq_neg`: over an integrally closed domain
   `R` with fraction field `K`, an integral `x ≠ 0` is conjugate over `K` to `x⁻¹` exactly when
   `P* = P` or `P* = -P`, where `P = minpoly R x`.
-* `IsConjRoot.isIntegral_of_isIntegrallyClosed`: a conjugate over `K` of an element integral over
-  `R` is integral over `R`; in particular a reciprocal algebraic integer is a unit.
+* `IsConjRoot.isIntegral_inv`: the inverse of a reciprocal integral element is integral over `R`.
+* `IsConjRoot.isUnit_integralClosure`: a reciprocal integral element `x ≠ 0` is a unit of the
+  integral closure of `R`; for `R = ℤ`, a reciprocal algebraic integer is a unit.
 * `IsConjRoot.coeff_zero_minpoly_eq_one_or_eq_neg_one`: a reciprocal integral `x ≠ 0` has
   `P(0) = ±1`.
 * `IsConjRoot.inv_mem_aroots_minpoly`: the roots of the minimal polynomial of a reciprocal
@@ -104,13 +106,18 @@ section IsIntegrallyClosed
 variable {R K L : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [Field K] [Algebra R K]
   [IsFractionRing R K] [Field L] [Algebra R L] [Algebra K L] [IsScalarTower R K L] {x : L}
 
-/-- Over an integrally closed domain `R` with fraction field `K`, a conjugate over `K` of an
-element integral over `R` is again integral over `R`. -/
-theorem _root_.IsConjRoot.isIntegral_of_isIntegrallyClosed {y : L} (h : IsConjRoot K x y)
-    (hx : IsIntegral R x) : IsIntegral R y := by
-  refine ⟨minpoly R x, minpoly.monic hx, ?_⟩
-  rw [← aeval_def, ← aeval_map_algebraMap K, ← minpoly.isIntegrallyClosed_eq_field_fractions' K hx]
-  exact h.aeval_eq_zero
+/-- If an element `x` integral over an integrally closed domain `R` is conjugate to `x⁻¹` over
+the fraction field, then `x⁻¹` is integral over `R` as well. -/
+theorem _root_.IsConjRoot.isIntegral_inv (h : IsConjRoot K x x⁻¹) (hx : IsIntegral R x) :
+    IsIntegral R x⁻¹ :=
+  h.isIntegral_of_isIntegrallyClosed hx
+
+/-- If a nonzero element `x` integral over an integrally closed domain `R` is conjugate to `x⁻¹`
+over the fraction field, then `x` is a unit of the integral closure of `R`. -/
+theorem _root_.IsConjRoot.isUnit_integralClosure (h : IsConjRoot K x x⁻¹) (hx : IsIntegral R x)
+    (hx0 : x ≠ 0) : IsUnit (⟨x, hx⟩ : integralClosure R L) :=
+  ⟨⟨⟨x, hx⟩, ⟨x⁻¹, h.isIntegral_inv hx⟩, Subtype.ext (mul_inv_cancel₀ hx0),
+    Subtype.ext (inv_mul_cancel₀ hx0)⟩, rfl⟩
 
 /-- Over an integrally closed domain `R` with fraction field `K`, a nonzero element `x` integral
 over `R` is conjugate over `K` to `x⁻¹` exactly when its minimal polynomial `P` over `R` is
@@ -126,24 +133,25 @@ theorem isConjRoot_inv_iff_reverse_minpoly_eq_or_eq_neg (hx : IsIntegral R x) (h
     · conv_rhs => rw [h]
       rw [← mul_assoc, ← C_mul, mul_inv_cancel₀ hc, C_1, one_mul]
     · rw [h, ← mul_assoc, ← C_mul, inv_mul_cancel₀ hc, C_1, one_mul]
-  rw [isConjRoot_def, TauCeti.minpoly.inv hx0, key _ h0,
-    minpoly.isIntegrallyClosed_eq_field_fractions' K hx, coeff_map,
-    reverse_map_of_isUnit_leadingCoeff (by rw [hP.leadingCoeff]; exact isUnit_one), ← map_C,
-    ← Polynomial.map_mul, (map_injective _ (IsFractionRing.injective R K)).eq_iff,
-    hP.reverse_eq_C_coeff_zero_mul_iff]
+  -- Both sides of `P* = C (P(0)) * P` over `K` are images of the same expressions over `R`.
+  have hK := minpoly.isIntegrallyClosed_eq_field_fractions' K hx
+  have hrev : (minpoly K x).reverse = (minpoly R x).reverse.map (algebraMap R K) := by
+    rw [hK, reverse_map_of_isUnit_leadingCoeff (by simp [hP.leadingCoeff])]
+  have hmul : C ((minpoly K x).coeff 0) * minpoly K x =
+      (C ((minpoly R x).coeff 0) * minpoly R x).map (algebraMap R K) := by
+    simp [hK, coeff_map]
+  rw [isConjRoot_def, TauCeti.minpoly.inv hx0, key _ h0, hrev, hmul,
+    (map_injective _ (IsFractionRing.injective R K)).eq_iff, hP.reverse_eq_C_coeff_zero_mul_iff]
 
 /-- If a nonzero element `x` integral over an integrally closed domain `R` is conjugate to `x⁻¹`
 over the fraction field, then the constant coefficient of its minimal polynomial over `R` is
 `1` or `-1`. -/
 theorem _root_.IsConjRoot.coeff_zero_minpoly_eq_one_or_eq_neg_one (h : IsConjRoot K x x⁻¹)
     (hx : IsIntegral R x) (hx0 : x ≠ 0) :
-    (minpoly R x).coeff 0 = 1 ∨ (minpoly R x).coeff 0 = -1 := by
-  have h1 : (minpoly R x).reverse.coeff 0 = 1 := by
-    rw [coeff_zero_reverse, (minpoly.monic hx).leadingCoeff]
-  obtain hr | hr := (isConjRoot_inv_iff_reverse_minpoly_eq_or_eq_neg hx hx0).mp h
-  · exact .inl (hr ▸ h1)
-  · rw [hr, coeff_neg, neg_eq_iff_eq_neg] at h1
-    exact .inr h1
+    (minpoly R x).coeff 0 = 1 ∨ (minpoly R x).coeff 0 = -1 :=
+  ((isConjRoot_inv_iff_reverse_minpoly_eq_or_eq_neg hx hx0).mp h).imp
+    (minpoly.monic hx).coeff_zero_eq_one_of_reverse_eq
+    (minpoly.monic hx).coeff_zero_eq_neg_one_of_reverse_eq_neg
 
 /-- If an element `x` integral over an integrally closed domain `R` is conjugate to `x⁻¹` over
 the fraction field, then the roots of its minimal polynomial over `R`, in any field, are closed
