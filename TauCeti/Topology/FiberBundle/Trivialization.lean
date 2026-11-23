@@ -131,6 +131,14 @@ theorem compHomeomorphOfEq_baseSet {Z' : Type*} [TopologicalSpace Z'] {proj' : Z
     (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
     (t.compHomeomorphOfEq h hproj).baseSet = t.baseSet := (rfl)
 
+/-- Source of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_source {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t.compHomeomorphOfEq h hproj).source = h ⁻¹' t.source := by
+  ext p
+  rw [mem_source, compHomeomorphOfEq_baseSet, ← hproj p, ← t.mem_source, mem_preimage]
+
 /-- Partial-homeomorphism inverse of `t.compHomeomorphOfEq h hproj`. -/
 @[simp]
 theorem compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply {Z' : Type*} [TopologicalSpace Z']

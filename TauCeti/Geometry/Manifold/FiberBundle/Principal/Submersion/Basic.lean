@@ -19,6 +19,7 @@ import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.Geometry.Lie.Interior
 import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Diffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.RegularValue.Section
@@ -32,17 +33,20 @@ group manifold `G` whose orbits are the fibres of `p` (the automatic real Lie-gr
 Kolář–Michor–Slovák Lemma 10.3, follows in
 `TauCeti.Geometry.Manifold.FiberBundle.Principal.Submersion.LieGroup`):
 
-1. **Banach `C^n` criterion (`1 ≤ n`, over `RCLike 𝕜`):** for `P` modelled on a boundaryless
-   model with corners (`[IP.Boundaryless]` / `[BoundarylessManifold IP P]`), Banach model spaces,
-   and `[ContMDiffMul IG n G]`, if at every `x : P` the orbit differential `d(g ↦ op g • x)_1` is
+1. **Banach `C^n` criterion (`1 ≤ n`, over `[RCLike 𝕜]`):** for Banach model spaces and
+   `[ContMDiffMul IG n G]`, if `P` is a boundaryless manifold (`[BoundarylessManifold IP P]`,
+   `[IsManifold IP n P]`) and at every `x : P` the orbit differential `d(g ↦ op g • x)_1` is
    injective and spans `ker (dp_x)`, then the action sweep `(b, g) ↦ op g • s b` of any `C^n` local
    section `s` over open `U ⊆ B` is a `C^n` local diffeomorphism on `U ×ˢ univ`; when the action
-   is also free along `s` and orbit-exact it is injective with image `p ⁻¹' U`, which gives
-   `contMDiffOn_sectionCoord`, `C^n` principal bundle structures on `MapFiber p`, and a
-   `G`-equivariant `C^n` diffeomorphism `ManifoldTotalSpace G (MapFiber p) ≃ₘ^n P` over `B`.
-2. **Finite-dimensional `C^n` criterion (`1 ≤ n`, over `𝕜`):** injectivity of `d(g ↦ op g • x)_1`
-   and `P → finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the vertical-range condition by
-   rank-nullity (`ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq`), and
+   is also free along `s` and orbit-exact it is injective with image `p ⁻¹' U`, giving
+   `contMDiffOn_sectionCoord`. Under the stronger model hypothesis `[IP.Boundaryless]`, these
+   charts yield `C^n` principal bundle structures on `MapFiber p`, a `G`-equivariant `C^n`
+   diffeomorphism `ManifoldTotalSpace G (MapFiber p) ≃ₘ^n P` over `B`, and `C^n` regularity of
+   `actionDivisionOrOne` (`contMDiffWithinAt_actionDivision`).
+2. **Finite-dimensional `C^n` criterion (`1 ≤ n`, over `[RCLike 𝕜]`):** injectivity of
+   `d(g ↦ op g • x)_1` and `P → finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the
+   vertical-range condition by rank-nullity
+   (`ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq`), and
    `contMDiffOn_sectionCoord_of_finrank_eq` gives local `C^n` smoothness of `sectionCoord`.
 
 ## Main definitions and results
@@ -52,24 +56,19 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
   `isRegularValue_of_isRegularPoint_of_orbit_eq_fiber`: vertical tangent and regularity lemmas.
 * `ContMDiff.contMDiffOn_op_smul_section`,
   `TauCeti.PrincipalBundle.isLocalDiffeomorphOn_op_smul_section`, `contMDiffOn_sectionCoord`,
-  `contMDiffOn_actionTrivializationOfSection`, `contMDiffOn_symm_actionTrivializationOfSection`,
-  `actionTrivializationOfContMDiffSection`,
-  `contMDiffOn_actionTrivializationOfContMDiffSection`,
-  `contMDiffOn_symm_actionTrivializationOfContMDiffSection`,
-  `isEquivariant_toMapFiber_actionTrivializationOfContMDiffSection`,
-  `actionTrivializationOfContMDiffSection_eq_actionTrivializationOfSection`,
-  `actionTrivializationOfContMDiffSection_coordChange`: action sweep local diffeomorphism, `C^n`
-  section coordinates, and smoothness/equivariance of section charts.
+  `ContMDiff.contMDiffOn_actionTrivializationOfSection`,
+  `ContMDiff.contMDiffOn_symm_actionTrivializationOfSection`: action sweep local diffeomorphism,
+  `C^n` section coordinates, and smoothness of `Continuous.actionTrivializationOfSection`.
 * `TauCeti.PrincipalBundle.fiberBundleOfSubmersion`,
   `mem_trivializationAtlas_fiberBundleOfSubmersion_iff`,
-  `toMapFiber_actionTrivializationOfContMDiffSection_mem_trivializationAtlas`,
+  `toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas`,
   `principalBundleOfSubmersion`, `contMDiffFiberBundleOfSubmersion`,
   `diffeomorphManifoldTotalSpaceOfSubmersion`: Banach `C^n` principal bundle structures, atlas
   characterization, and total-space diffeomorphism.
 * `Continuous.contMDiffWithinAt_actionDivision_of_section`,
   `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivision`, `contMDiffAt_actionDivision`,
-  `contMDiffOn_actionDivision`, `contMDiff_actionDivision`: `C^n` regularity of `actionDivision`
-  for a `C^n` Lie group `G`.
+  `contMDiffOn_actionDivision`, `contMDiff_actionDivision`: `C^n` regularity of
+  `actionDivisionOrOne` for a `C^n` Lie group `G`.
 * `TauCeti.PrincipalBundle.contMDiffOn_sectionCoord_of_finrank_eq`,
   `ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq`: finite-dimensional `C^n` section
   smoothness and vertical-range reduction.
@@ -158,9 +157,9 @@ end VerticalTangent
 open TauCeti.PrincipalBundle in
 /-- For a continuous map `p : P → B` and an orbit-exact right action of a `C^n` Lie group `G` on
 `P` that is free along a local section `σ` over an open neighbourhood `U` of `p (f₁ x₀)`, if
-`sectionCoord` is `C^n` on `p ⁻¹' U`, then `x ↦ actionDivision horbit (hf x)` is `C^n` within
-`s` at `x₀` for any `f₁, f₂ : M → P` that are `C^n` within `s` at `x₀` and satisfy
-`p (f₁ x) = p (f₂ x)`. -/
+`sectionCoord` is `C^n` on `p ⁻¹' U`, then `x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)` is `C^n`
+within `s` at `x₀` for any `f₁, f₂ : M → P` that are `C^n` within `s` at `x₀` and satisfy
+`p (f₁ x₀) = p (f₂ x₀)` and `∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x)`. -/
 theorem _root_.Continuous.contMDiffWithinAt_actionDivision_of_section {n : ℕ∞ω} {B : Type*}
     [TopologicalSpace B] [Group G] [LieGroup IG n G] [MulAction Gᵐᵒᵖ P]
     {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
@@ -171,18 +170,20 @@ theorem _root_.Continuous.contMDiffWithinAt_actionDivision_of_section {n : ℕ�
     (hfree : ∀ b ∈ U, ∀ g : G, op g • σ b = σ b → g = 1)
     (hσ : ∀ b ∈ U, p (σ b) = b)
     (hcoord : ContMDiffOn IP IG n (sectionCoord horbit hσ) (p ⁻¹' U))
-    {f₁ f₂ : M → P} (hf : ∀ x : M, p (f₁ x) = p (f₂ x)) {s : Set M} {x₀ : M}
+    {f₁ f₂ : M → P} {s : Set M} {x₀ : M}
+    (hf₀ : p (f₁ x₀) = p (f₂ x₀)) (hf : ∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x))
     (hx₀U : p (f₁ x₀) ∈ U) (hf₁ : ContMDiffWithinAt IM IP n f₁ s x₀)
     (hf₂ : ContMDiffWithinAt IM IP n f₂ s x₀) :
-    ContMDiffWithinAt IM IG n (fun x ↦ actionDivision horbit (hf x)) s x₀ := by
+    ContMDiffWithinAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s x₀ := by
   have hopen : IsOpen (p ⁻¹' U) := hU.preimage hp
   have h1 := (hcoord.contMDiffAt (hopen.mem_nhds hx₀U)).comp_contMDiffWithinAt x₀ hf₁
   have h2 := (hcoord.contMDiffAt
-    (hopen.mem_nhds (by rwa [mem_preimage, ← hf x₀]))).comp_contMDiffWithinAt x₀ hf₂
+    (hopen.mem_nhds (by rwa [mem_preimage, ← hf₀]))).comp_contMDiffWithinAt x₀ hf₂
   refine (h1.inv.mul h2).congr_of_eventuallyEq ?_
-    (actionDivision_eq_inv_sectionCoord_mul_sectionCoord horbit hfree hσ hx₀U (hf x₀))
-  filter_upwards [hf₁.continuousWithinAt.preimage_mem_nhdsWithin (hopen.mem_nhds hx₀U)] with x hx
-  exact actionDivision_eq_inv_sectionCoord_mul_sectionCoord horbit hfree hσ hx (hf x)
+    (actionDivisionOrOne_eq_inv_sectionCoord_mul_sectionCoord horbit hfree hσ hx₀U hf₀)
+  filter_upwards [hf₁.continuousWithinAt.preimage_mem_nhdsWithin (hopen.mem_nhds hx₀U), hf]
+    with x hx hfx
+  exact actionDivisionOrOne_eq_inv_sectionCoord_mul_sectionCoord horbit hfree hσ hx hfx
 
 end ManifoldBase
 
@@ -216,9 +217,9 @@ theorem _root_.ContMDiff.contMDiffOn_op_smul_section
 
 omit [CompleteSpace EP] [IsManifold IP n P] [BoundarylessManifold IP P]
   [CompleteSpace EB] [IsManifold IB n B] [CompleteSpace EG] [ContMDiffMul IG n G] in
-/-- Forward `C^n` smoothness of `actionTrivializationOfSection` on its source when `p` is `C^n`
-and `sectionCoord` is `C^n` on `p ⁻¹' U`. -/
-theorem contMDiffOn_actionTrivializationOfSection
+/-- Forward `C^n` smoothness of `Continuous.actionTrivializationOfSection` on its source when `p`
+is `C^n` and `sectionCoord` is `C^n` on `p ⁻¹' U`. -/
+theorem _root_.ContMDiff.contMDiffOn_actionTrivializationOfSection
     {p : P → B} (hp : ContMDiff IP IB n p)
     (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
     {U : Set B} (hU : IsOpen U) {s : B → P}
@@ -227,47 +228,46 @@ theorem contMDiffOn_actionTrivializationOfSection
     (hcoord : ContMDiffOn IP IG n (sectionCoord horbit hs) (p ⁻¹' U))
     (hsmul_s : ContinuousOn (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ)) :
     ContMDiffOn IP (IB.prod IG) n
-      (actionTrivializationOfSection hp.continuous horbit hU hfree hs hcoord.continuousOn
-        hsmul_s)
-      (actionTrivializationOfSection hp.continuous horbit hU hfree hs hcoord.continuousOn
+      (hp.continuous.actionTrivializationOfSection horbit hU hfree hs hcoord.continuousOn hsmul_s)
+      (hp.continuous.actionTrivializationOfSection horbit hU hfree hs hcoord.continuousOn
         hsmul_s).source := by
   have hsrc :
-      (actionTrivializationOfSection hp.continuous horbit hU hfree hs hcoord.continuousOn
+      (hp.continuous.actionTrivializationOfSection horbit hU hfree hs hcoord.continuousOn
         hsmul_s).source = p ⁻¹' U := by
     ext x
-    rw [Trivialization.mem_source, baseSet_actionTrivializationOfSection, mem_preimage]
+    rw [Trivialization.mem_source, Continuous.baseSet_actionTrivializationOfSection, mem_preimage]
   rw [hsrc]
   exact (hp.contMDiffOn.prodMk hcoord).congr fun x _ ↦
-    actionTrivializationOfSection_apply hp.continuous horbit hU hfree hs hcoord.continuousOn
+    hp.continuous.actionTrivializationOfSection_apply horbit hU hfree hs hcoord.continuousOn
       hsmul_s x
 
 omit [CompleteSpace EP] [IsManifold IP n P] [BoundarylessManifold IP P]
   [CompleteSpace EB] [IsManifold IB n B] [CompleteSpace EG] [ContMDiffMul IG n G] in
-/-- Inverse `C^n` smoothness of `actionTrivializationOfSection` on its target when `s` is `C^n` on
-`U` and the right `G`-action is jointly `C^n`. -/
-theorem contMDiffOn_symm_actionTrivializationOfSection
+/-- Inverse `C^n` smoothness of `Continuous.actionTrivializationOfSection` on its target when `s`
+is `C^n` on `U`, `p` is continuous, and the right `G`-action is jointly `C^n`. -/
+theorem _root_.ContMDiff.contMDiffOn_symm_actionTrivializationOfSection
     (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
-    {p : P → B} (hp : ContMDiff IP IB n p)
+    {p : P → B} (hp : Continuous p)
     (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
     {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
     (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1)
     (hs : ∀ b ∈ U, p (s b) = b)
     (hcoord : ContinuousOn (sectionCoord horbit hs) (p ⁻¹' U)) :
     ContMDiffOn (IB.prod IG) IP n
-      (actionTrivializationOfSection hp.continuous horbit hU hfree hs hcoord
+      (hp.actionTrivializationOfSection horbit hU hfree hs hcoord
         (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).toOpenPartialHomeomorph.symm
-      (actionTrivializationOfSection hp.continuous horbit hU hfree hs hcoord
+      (hp.actionTrivializationOfSection horbit hU hfree hs hcoord
         (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).target := by
   have htgt :
-      (actionTrivializationOfSection hp.continuous horbit hU hfree hs hcoord
+      (hp.actionTrivializationOfSection horbit hU hfree hs hcoord
         (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).target = U ×ˢ univ := by
     ext q
-    rw [Trivialization.mem_target, baseSet_actionTrivializationOfSection]
+    rw [Trivialization.mem_target, Continuous.baseSet_actionTrivializationOfSection]
     exact ⟨fun hq ↦ ⟨hq, mem_univ _⟩, fun hq ↦ hq.1⟩
   rw [htgt]
-  exact (hsmul.contMDiffOn_op_smul_section hs_smooth).congr fun q _ ↦
-    actionTrivializationOfSection_symm_apply hp.continuous horbit hU hfree hs hcoord
-      (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn q
+  exact (hsmul.contMDiffOn_op_smul_section hs_smooth).congr fun q hq ↦
+    hp.actionTrivializationOfSection_symm_apply horbit hU hfree hs hcoord
+      (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn hq.1
 
 variable (hn : 1 ≤ n) (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
   {p : P → B} (hp : ContMDiff IP IB n p)
@@ -348,16 +348,14 @@ theorem isLocalDiffeomorphOn_op_smul_section {U : Set B} (hU : IsOpen U) {s : B 
   have : ContMDiffConstSMul IP n Gᵐᵒᵖ P := hsmul.contMDiffConstSMul_op
   rintro ⟨⟨b, g⟩, hb, -⟩
   let φR : (B × G) ≃ₘ^n⟮IB.prod IG, IB.prod IG⟯ (B × G) :=
-    (Diffeomorph.refl IB B n).prodCongr (Diffeomorph.constSmul IG n (op g⁻¹))
+    (Diffeomorph.refl IB B n).prodCongr (Diffeomorph.constSmul IG n (op g))
   let φL : P ≃ₘ^n⟮IP, IP⟯ P := Diffeomorph.constSmul IP n (op g)
-  have heq : Ψ = φL ∘ (Ψ ∘ φR) := funext fun ⟨b', h⟩ ↦ by
+  have heq : Ψ ∘ φR = φL ∘ Ψ := funext fun ⟨b', h⟩ ↦ by
     simp only [comp_apply, Ψ, φR, φL, Diffeomorph.coe_prodCongr, Prod.map_apply,
       Diffeomorph.coe_refl, id_eq, Diffeomorph.constSmul_apply, op_smul_eq_mul, ← mul_smul,
-      ← op_mul, inv_mul_cancel_right]
-  have hbg' : φR (b, g) = (b, 1) := by simp [φR, Diffeomorph.constSmul_apply]
-  rw [heq]
-  exact ((φR.isLocalDiffeomorph (b, g)).comp IP P (hbg'.symm ▸ h_one b hb)).comp IP P
-    (φL.isLocalDiffeomorph _)
+      ← op_mul]
+  simpa [φR, Diffeomorph.constSmul_apply] using
+    (h_one b hb).of_comp_diffeomorph_eq φR φL le_rfl heq
 
 /-- **Smoothness of `sectionCoord`.** For a `C^n` map `p : P → B` (`1 ≤ n`, Banach model spaces,
 `[BoundarylessManifold IP P]`, `[ContMDiffMul IG n G]`), a jointly `C^n` orbit-exact right
@@ -399,108 +397,6 @@ theorem contMDiffOn_sectionCoord
     exact (congrArg Prod.snd hleft).symm
   exact ((contMDiff_snd.comp_contMDiffOn hinv).congr hcongr) x hx
 
-section ActionTriv
-
-variable (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y) {U : Set B} (hU : IsOpen U)
-  {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U) (hs : ∀ b ∈ U, p (s b) = b)
-  (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1)
-  (hinj : ∀ b ∈ U, Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
-  (hker : ∀ b ∈ U,
-    (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range)
-
-/-- The unbundled `Bundle.Trivialization G p` attached to a `C^n` local section `s : B → P` over an
-open set `U ⊆ B` under the Banach hypotheses (`1 ≤ n`, `[BoundarylessManifold IP P]`,
-`[ContMDiffMul IG n G]`, `C^n` `p` and right `G`-action, orbit-exactness `horbit`, freeness along
-`s` over `U`, and the vertical-tangent criterion `hinj` and `hker`). -/
-def actionTrivializationOfContMDiffSection : Trivialization G p :=
-  actionTrivializationOfSection hp.continuous horbit hU hfree hs
-    (contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj hker).continuousOn
-    (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn
-
-/-- `actionTrivializationOfContMDiffSection` equals `actionTrivializationOfSection` for any
-continuity witnesses on `sectionCoord` and `(b, g) ↦ op g • s b`. -/
-theorem actionTrivializationOfContMDiffSection_eq_actionTrivializationOfSection
-    (hcoord : ContinuousOn (sectionCoord horbit hs) (p ⁻¹' U))
-    (hsmul_s : ContinuousOn (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ)) :
-    actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj hker =
-      actionTrivializationOfSection hp.continuous horbit hU hfree hs hcoord hsmul_s := by
-  unfold actionTrivializationOfContMDiffSection
-  rfl
-
-/-- Forward map of `actionTrivializationOfContMDiffSection`. -/
-@[simp]
-theorem actionTrivializationOfContMDiffSection_apply (x : P) :
-    actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj hker x =
-      (p x, sectionCoord horbit hs x) := by simp [actionTrivializationOfContMDiffSection]
-
-/-- Partial-homeomorphism inverse of `actionTrivializationOfContMDiffSection`. -/
-@[simp]
-theorem actionTrivializationOfContMDiffSection_symm_apply (q : B × G) :
-    (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj
-      hker).toOpenPartialHomeomorph.symm q = op q.2 • s q.1 := by
-  simp [actionTrivializationOfContMDiffSection]
-
-/-- Base set of `actionTrivializationOfContMDiffSection`. -/
-@[simp]
-theorem baseSet_actionTrivializationOfContMDiffSection :
-    (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj
-      hker).baseSet = U := by simp [actionTrivializationOfContMDiffSection]
-
-/-- Forward smoothness of `actionTrivializationOfContMDiffSection` on its source. -/
-theorem contMDiffOn_actionTrivializationOfContMDiffSection :
-    ContMDiffOn IP (IB.prod IG) n
-      (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj hker)
-      (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj
-        hker).source :=
-  contMDiffOn_actionTrivializationOfSection hp horbit hU hfree hs
-    (contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj hker)
-    (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn
-
-/-- Inverse smoothness of `actionTrivializationOfContMDiffSection` on its target. -/
-theorem contMDiffOn_symm_actionTrivializationOfContMDiffSection :
-    ContMDiffOn (IB.prod IG) IP n
-      (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj
-        hker).toOpenPartialHomeomorph.symm
-      (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj
-        hker).target :=
-  contMDiffOn_symm_actionTrivializationOfSection hsmul hp horbit hU hs_smooth hfree hs
-    (contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj hker).continuousOn
-
-/-- Every `actionTrivializationOfContMDiffSection` transports to an equivariant trivialization of
-`MapFiber p`. -/
-theorem isEquivariant_toMapFiber_actionTrivializationOfContMDiffSection :
-    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-    (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU hs_smooth hs hfree hinj
-      hker).toMapFiber.IsEquivariant :=
-  isEquivariant_toMapFiber_actionTrivializationOfSection hp.continuous horbit hU hfree hs _ _
-
-end ActionTriv
-
-/-- Coordinate change between two `actionTrivializationOfContMDiffSection` trivializations. -/
-theorem actionTrivializationOfContMDiffSection_coordChange
-    (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
-    {U₁ : Set B} (hU₁ : IsOpen U₁) {s₁ : B → P} (hs₁_smooth : ContMDiffOn IB IP n s₁ U₁)
-    (hs₁ : ∀ b ∈ U₁, p (s₁ b) = b)
-    (hfree₁ : ∀ b ∈ U₁, ∀ g : G, op g • s₁ b = s₁ b → g = 1)
-    (hinj₁ : ∀ b ∈ U₁, Injective (mfderiv IG IP (fun g : G ↦ op g • s₁ b) 1))
-    (hker₁ : ∀ b ∈ U₁,
-      (mfderiv IP IB p (s₁ b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s₁ b) 1).range)
-    {U₂ : Set B} (hU₂ : IsOpen U₂) {s₂ : B → P} (hs₂_smooth : ContMDiffOn IB IP n s₂ U₂)
-    (hs₂ : ∀ b ∈ U₂, p (s₂ b) = b)
-    (hfree₂ : ∀ b ∈ U₂, ∀ g : G, op g • s₂ b = s₂ b → g = 1)
-    (hinj₂ : ∀ b ∈ U₂, Injective (mfderiv IG IP (fun g : G ↦ op g • s₂ b) 1))
-    (hker₂ : ∀ b ∈ U₂,
-      (mfderiv IP IB p (s₂ b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s₂ b) 1).range)
-    (b : B) (g : G) :
-    (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU₁ hs₁_smooth hs₁ hfree₁ hinj₁
-      hker₁).coordChange
-      (actionTrivializationOfContMDiffSection hn hsmul hp horbit hU₂ hs₂_smooth hs₂ hfree₂ hinj₂
-        hker₂) b g =
-      sectionCoord horbit hs₂ (op g • s₁ b) := by
-  simp only [Trivialization.coordChange,
-    actionTrivializationOfContMDiffSection_symm_apply,
-    actionTrivializationOfContMDiffSection_apply]
-
 end LocalSection
 
 section Submersion
@@ -516,8 +412,10 @@ variable [IP.Boundaryless] [ContMDiffMul IG n G]
 private def submersionTrivializationAtlas : Set (Trivialization G p) :=
   {t | ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
     (hs : ∀ b ∈ U, p (s b) = b),
-    t = actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff horbit hU hs_smooth
-      hs (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))}
+    t = hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU (fun b _ ↦ hfree (s b))
+      hs (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+        (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).continuousOn
+      (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn}
 
 include hsurj in
 private theorem exists_mem_submersionTrivializationAtlas (b : B) :
@@ -535,8 +433,11 @@ private theorem mem_charts_submersionAtlas_iff (t : Trivialization G p) :
     t ∈ (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).charts ↔
       ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
         (hs : ∀ b ∈ U, p (s b) = b),
-        t = actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff horbit hU hs_smooth
-          hs (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b)) := by
+        t = hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU
+          (fun b _ ↦ hfree (s b)) hs
+          (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+            (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).continuousOn
+          (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn := by
   simp [submersionAtlas, submersionTrivializationAtlas]
 
 private theorem isContMDiff_submersionAtlas :
@@ -544,10 +445,15 @@ private theorem isContMDiff_submersionAtlas :
   refine ⟨fun {t} ht ↦ ?_, fun {t} ht ↦ ?_⟩ <;>
     obtain ⟨U, hU, s, hs_smooth, hs, rfl⟩ :=
       (mem_charts_submersionAtlas_iff hn hsmul hsub hsurj hfree horbit hinj hker t).1 ht
-  · exact contMDiffOn_actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff horbit hU
-      hs_smooth hs (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))
-  · exact contMDiffOn_symm_actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff horbit hU
-      hs_smooth hs (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))
+  · exact hsub.contMDiff.contMDiffOn_actionTrivializationOfSection horbit hU
+      (fun b _ ↦ hfree (s b)) hs
+      (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+        (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b)))
+      (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn
+  · exact hsmul.contMDiffOn_symm_actionTrivializationOfSection hsub.contMDiff.continuous horbit hU
+      hs_smooth (fun b _ ↦ hfree (s b)) hs
+      (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+        (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).continuousOn
 
 /-- **`FiberBundle` structure on the fibres of a surjective free orbit-exact `C^n` submersion**
 (Banach version, `1 ≤ n`), for `p : P → B` with `Surjective p` (`hsurj`), `P` modelled on a
@@ -561,7 +467,7 @@ def fiberBundleOfSubmersion : FiberBundle G (MapFiber p) :=
   (submersionAtlas hn hsmul hsub hsurj hfree horbit hinj hker).fiberBundle
 
 /-- A trivialization belongs to the atlas of `fiberBundleOfSubmersion` iff it is the
-`MapFiber` transport of `actionTrivializationOfContMDiffSection` for some `C^n` local
+`MapFiber` transport of `Continuous.actionTrivializationOfSection` for some `C^n` local
 section `s` of `p` over an open set `U ⊆ B`. -/
 theorem mem_trivializationAtlas_fiberBundleOfSubmersion_iff
     (e : Trivialization G (π G (MapFiber p))) :
@@ -569,23 +475,26 @@ theorem mem_trivializationAtlas_fiberBundleOfSubmersion_iff
       e ∈ trivializationAtlas G (MapFiber p)) ↔
       ∃ (U : Set B) (hU : IsOpen U) (s : B → P) (hs_smooth : ContMDiffOn IB IP n s U)
         (hs : ∀ b ∈ U, p (s b) = b),
-        e = (actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff horbit hU hs_smooth
-          hs (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b))
-          (fun b _ ↦ hker (s b))).toMapFiber := by
+        e = (hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU
+          (fun b _ ↦ hfree (s b)) hs
+          (contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
+            (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).continuousOn
+          (hsmul.contMDiffOn_op_smul_section hs_smooth).continuousOn).toMapFiber := by
   rw [fiberBundleOfSubmersion, MapFiber.Atlas.trivializationAtlas_fiberBundle, mem_image]
   simp only [mem_charts_submersionAtlas_iff]
   exact ⟨fun ⟨_, ⟨U, hU, s, hs_s, hs, rfl⟩, ht⟩ ↦ ⟨U, hU, s, hs_s, hs, ht.symm⟩,
     fun ⟨U, hU, s, hs_s, hs, ht⟩ ↦ ⟨_, ⟨U, hU, s, hs_s, hs, rfl⟩, ht.symm⟩⟩
 
-/-- The `MapFiber` transport of `actionTrivializationOfContMDiffSection` for any `C^n` local
+/-- The `MapFiber` transport of `Continuous.actionTrivializationOfSection` for any `C^n` local
 section `s` of `p` over open `U ⊆ B` belongs to the atlas of `fiberBundleOfSubmersion`. -/
-theorem toMapFiber_actionTrivializationOfContMDiffSection_mem_trivializationAtlas
+theorem toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas
     {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
-    (hs : ∀ b ∈ U, p (s b) = b) :
+    (hs : ∀ b ∈ U, p (s b) = b)
+    (hcoord : ContinuousOn (sectionCoord horbit hs) (p ⁻¹' U))
+    (hsmul_s : ContinuousOn (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ)) :
     letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
-    (actionTrivializationOfContMDiffSection hn hsmul hsub.contMDiff horbit hU hs_smooth hs
-      (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))).toMapFiber ∈
-      trivializationAtlas G (MapFiber p) :=
+    (hsub.contMDiff.continuous.actionTrivializationOfSection horbit hU (fun b _ ↦ hfree (s b)) hs
+      hcoord hsmul_s).toMapFiber ∈ trivializationAtlas G (MapFiber p) :=
   (mem_trivializationAtlas_fiberBundleOfSubmersion_iff hn hsmul hsub hsurj hfree horbit hinj hker
     _).2 ⟨U, hU, s, hs_smooth, hs, rfl⟩
 
@@ -602,8 +511,8 @@ theorem principalBundleOfSubmersion :
     fun t ht x hx g ↦ by
       obtain ⟨U, hU, s, hs_smooth, hs, rfl⟩ :=
         (mem_charts_submersionAtlas_iff hn hsmul hsub hsurj hfree horbit hinj hker t).1 ht
-      rw [baseSet_actionTrivializationOfContMDiffSection] at hx
-      simpa only [actionTrivializationOfContMDiffSection_apply] using
+      rw [Continuous.baseSet_actionTrivializationOfSection] at hx
+      simpa only [Continuous.actionTrivializationOfSection_apply] using
         sectionCoord_op_smul horbit (fun b _ ↦ hfree (s b)) hs hx g
 
 /-- **`ContMDiffFiberBundle` structure on the fibres of a surjective free orbit-exact `C^n`
@@ -675,47 +584,54 @@ variable [IP.Boundaryless] [LieGroup IG n G]
   (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
   (hinj : ∀ x : P, Injective (mfderiv IG IP (fun g : G ↦ op g • x) 1))
   (hker : ∀ x : P, (mfderiv IP IB p x).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • x) 1).range)
-  {f₁ f₂ : M → P} (hf : ∀ x : M, p (f₁ x) = p (f₂ x))
+  {f₁ f₂ : M → P}
 
 include hn hsmul hfree hinj hker
 
-/-- **Smoothness of `actionDivision` along families in a common fibre** (`ContMDiffWithinAt` form).
-For a `C^n` map `p : P → B` (`1 ≤ n`) that is a submersion at `f₁ x₀` with a jointly `C^n` free
+/-- **Smoothness of `actionDivisionOrOne` along families in a common fibre** (`ContMDiffWithinAt`
+form). For a `C^n` map `p : P → B` (`1 ≤ n`) with `P` modelled on a boundaryless model with
+corners (`[IP.Boundaryless]`) that is a submersion at `f₁ x₀`, equipped with a jointly `C^n` free
 right action of a `C^n` Lie group `G` whose orbits are the fibres of `p` and whose orbit
 differentials at `1` are injective and span `ker (dp_x)`, if `f₁, f₂ : M → P` are `C^n` within `s`
-at `x₀` with `p (f₁ x) = p (f₂ x)`, then `x ↦ actionDivision horbit (hf x)` is `C^n` within `s`
-at `x₀`. -/
+at `x₀` with `p (f₁ x₀) = p (f₂ x₀)` and `∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x)`, then
+`x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)` is `C^n` within `s` at `x₀`. -/
 theorem contMDiffWithinAt_actionDivision (hp : ContMDiff IP IB n p) {s : Set M} {x₀ : M}
+    (hf₀ : p (f₁ x₀) = p (f₂ x₀)) (hf : ∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x))
     (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffWithinAt IM IP n f₁ s x₀) (hf₂ : ContMDiffWithinAt IM IP n f₂ s x₀) :
-    ContMDiffWithinAt IM IG n (fun x ↦ actionDivision horbit (hf x)) s x₀ := by
+    ContMDiffWithinAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s x₀ := by
   obtain ⟨U, hU, hx₀U, σ, -, hσ_smooth, hσ⟩ := hsub.exists_contMDiffOn_section
   exact hp.continuous.contMDiffWithinAt_actionDivision_of_section horbit hU
     (fun b _ ↦ hfree (σ b)) hσ
     (contMDiffOn_sectionCoord hn hsmul hp horbit hU hσ_smooth hσ (fun b _ ↦ hfree (σ b))
       (fun b _ ↦ hinj (σ b)) (fun b _ ↦ hker (σ b)))
-    hf hx₀U hf₁ hf₂
+    hf₀ hf hx₀U hf₁ hf₂
 
 /-- `ContMDiffAt` form of `contMDiffWithinAt_actionDivision`. -/
 theorem contMDiffAt_actionDivision (hp : ContMDiff IP IB n p) {x₀ : M}
+    (hf : ∀ᶠ x in 𝓝 x₀, p (f₁ x) = p (f₂ x))
     (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffAt IM IP n f₁ x₀) (hf₂ : ContMDiffAt IM IP n f₂ x₀) :
-    ContMDiffAt IM IG n (fun x ↦ actionDivision horbit (hf x)) x₀ :=
-  contMDiffWithinAt_actionDivision hn hsmul hfree horbit hinj hker hf hp hsub hf₁ hf₂
+    ContMDiffAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) x₀ :=
+  contMDiffWithinAt_actionDivision hn hsmul hfree horbit hinj hker hp hf.self_of_nhds
+    (nhdsWithin_univ x₀ ▸ hf) hsub hf₁ hf₂
 
 /-- `ContMDiffOn` form of `contMDiffWithinAt_actionDivision`. -/
 theorem contMDiffOn_actionDivision (hsub : IsSubmersion IP IB n p) {s : Set M}
+    (hf : EqOn (p ∘ f₁) (p ∘ f₂) s)
     (hf₁ : ContMDiffOn IM IP n f₁ s) (hf₂ : ContMDiffOn IM IP n f₂ s) :
-    ContMDiffOn IM IG n (fun x ↦ actionDivision horbit (hf x)) s :=
-  fun x hx ↦ contMDiffWithinAt_actionDivision hn hsmul hfree horbit hinj hker hf hsub.contMDiff
+    ContMDiffOn IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s :=
+  fun x hx ↦ contMDiffWithinAt_actionDivision hn hsmul hfree horbit hinj hker hsub.contMDiff
+    (hf hx) (eventually_mem_nhdsWithin.mono fun _ hy ↦ hf hy)
     (hsub.isSubmersionAt (f₁ x)) (hf₁ x hx) (hf₂ x hx)
 
 /-- `ContMDiff` form of `contMDiffWithinAt_actionDivision`. -/
 theorem contMDiff_actionDivision (hsub : IsSubmersion IP IB n p)
+    (hf : ∀ x : M, p (f₁ x) = p (f₂ x))
     (hf₁ : ContMDiff IM IP n f₁) (hf₂ : ContMDiff IM IP n f₂) :
-    ContMDiff IM IG n fun x ↦ actionDivision horbit (hf x) :=
-  fun x ↦ contMDiffAt_actionDivision hn hsmul hfree horbit hinj hker hf hsub.contMDiff
-    (hsub.isSubmersionAt (f₁ x)) (hf₁ x) (hf₂ x)
+    ContMDiff IM IG n fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x) :=
+  fun x ↦ contMDiffAt_actionDivision hn hsmul hfree horbit hinj hker hsub.contMDiff
+    (Eventually.of_forall hf) (hsub.isSubmersionAt (f₁ x)) (hf₁ x) (hf₂ x)
 
 end ActionDivisionSmooth
 
@@ -737,11 +653,11 @@ variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ∞ω}
 
 omit [IP.Boundaryless] in
 /-- Finite-dimensional smoothness of `sectionCoord`: for a `C^n` map `p : P → B` (`1 ≤ n`,
-finite-dimensional model spaces over `𝕜`, `[BoundarylessManifold IP P]`, `[ContMDiffMul IG n G]`)
-and a jointly `C^n` orbit-exact right `G`-action that is free along a `C^n` local section
-`s : B → P` over open `U ⊆ B`, if `d(g ↦ op g • s b)_1` is injective for all `b ∈ U` and
-`finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG`, then `sectionCoord horbit hs` is `C^n` on
-`p ⁻¹' U`. -/
+finite-dimensional model spaces over `[RCLike 𝕜]`, `[BoundarylessManifold IP P]`,
+`[ContMDiffMul IG n G]`) and a jointly `C^n` orbit-exact right `G`-action that is free along a
+`C^n` local section `s : B → P` over open `U ⊆ B`, if `d(g ↦ op g • s b)_1` is injective for all
+`b ∈ U` and `finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG`, then `sectionCoord horbit hs` is `C^n`
+on `p ⁻¹' U`. -/
 theorem contMDiffOn_sectionCoord_of_finrank_eq [BoundarylessManifold IP P] (hn : 1 ≤ n)
     (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
     {p : P → B} (hp : ContMDiff IP IB n p)
@@ -761,8 +677,8 @@ theorem contMDiffOn_sectionCoord_of_finrank_eq [BoundarylessManifold IP P] (hn :
 
 omit [IP.Boundaryless] [IsManifold IP n P] [FiniteDimensional 𝕜 EB] [IsManifold IB n B]
   [FiniteDimensional 𝕜 EG] [ContMDiffMul IG n G] in
-/-- In finite dimensions over `𝕜`, if `p : P → B` is a `C^n` submersion (`1 ≤ n`), the right
-`G`-orbits equal the fibres of `p`, `d(g ↦ op g • x)_1` is injective, and
+/-- In finite dimensions over `[RCLike 𝕜]`, if `p : P → B` is a `C^n` submersion (`1 ≤ n`), the
+right `G`-orbits equal the fibres of `p`, `d(g ↦ op g • x)_1` is injective, and
 `finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG`, then `ker (dp_x) ≤ range (d(g ↦ op g • x)_1)`. -/
 theorem ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq (hn : 1 ≤ n)
     {p : P → B} (hsub : IsSubmersion IP IB n p)

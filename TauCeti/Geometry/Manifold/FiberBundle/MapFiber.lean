@@ -126,7 +126,8 @@ theorem contMDiffFiberBundle (hA : A.IsContMDiff n IB IF IP) :
   rw [Bundle.Trivialization.toMapFiber_coordChange]
   -- The coordinate change from `t` to `t'` reads `(b, v) ↦ (t' (t⁻¹ (b, v))).2`.
   refine (contMDiff_snd.comp_contMDiffOn (hA.contMDiffOn ht') |>.comp
-    ((hA.contMDiffOn_symm ht).mono fun y hy ↦ ?_) fun y hy ↦ ?_).congr fun y _ ↦ rfl
+    ((hA.contMDiffOn_symm ht).mono fun y hy ↦ ?_) fun y hy ↦ ?_).congr fun y _ ↦ by
+      simp only [Bundle.Trivialization.coordChange, Function.comp_apply, Prod.mk.eta]
   · simp only [Bundle.Trivialization.toMapFiber_baseSet] at hy
     exact t.mem_target.2 hy.1.1
   · simp only [Bundle.Trivialization.toMapFiber_baseSet] at hy

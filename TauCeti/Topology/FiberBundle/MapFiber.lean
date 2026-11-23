@@ -184,9 +184,8 @@ theorem toMapFiber_baseSet : e.toMapFiber.baseSet = e.baseSet :=
 
 @[simp]
 theorem toMapFiber_source :
-    e.toMapFiber.source = (MapFiber.totalSpaceHomeomorph F proj) ⁻¹' e.source := by
-  ext x
-  simp [Trivialization.mem_source, e.mem_source, x.snd.property]
+    e.toMapFiber.source = (MapFiber.totalSpaceHomeomorph F proj) ⁻¹' e.source :=
+  e.compHomeomorphOfEq_source _ _
 
 /-- The coordinate changes between trivializations of the fibres of `proj` are those between the
 trivializations of `proj` they come from. -/

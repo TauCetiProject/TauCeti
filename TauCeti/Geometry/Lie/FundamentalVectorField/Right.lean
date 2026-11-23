@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 public import TauCeti.Geometry.Manifold.Algebra.LeftToRight
 import TauCeti.Geometry.Lie.Interior
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.MFDeriv.Translation
 import TauCeti.Geometry.Manifold.VectorField.Related
 
 /-!
@@ -253,24 +254,23 @@ private theorem op_smul_comp_smul_inv [ContMDiffMul I 1 G] (x : M) (g : G) :
     (fun h : G => op h • (op g • x)) ∘ (Diffeomorph.smul I I 1 g⁻¹) = fun h : G => op h • x :=
   funext fun h => by simp [Diffeomorph.smul_apply, ← mul_smul, ← op_mul]
 
+private theorem mfderiv_op_smul_const [ContMDiffMul I 1 G] (x : M) (g : G) :
+    mfderiv I I' (fun h : G => op h • x) g =
+      (mfderiv I I' (fun h : G => op h • (op g • x)) 1).comp (mfderiv I I (g⁻¹ * ·) g) := by
+  let φ : G ≃ₘ^(1 : ℕ∞ω)⟮I, I⟯ G := Diffeomorph.smul I I 1 g⁻¹
+  have hcoe : (⇑φ : G → G) = (g⁻¹ * ·) := funext fun h => Diffeomorph.smul_apply (g := g⁻¹) h
+  have hφg : φ g = 1 := inv_mul_cancel g
+  have hcomp := φ.mfderiv_comp_diffeomorph (K := I') one_ne_zero (fun h : G => op h • (op g • x)) g
+  rw [op_smul_comp_smul_inv (I := I) x g] at hcomp
+  rw [hcomp, mfderiv_congr hcoe, mfderiv_congr_point (I := I) (I' := I') hφg]
+  rfl
+
 /-- The derivative at `g` of the right orbit map `h ↦ op h • x` is that of the right orbit map of
 `op g • x` at `1`, precomposed with the derivative of left multiplication by `g⁻¹`. -/
 theorem mfderiv_op_smul_const_apply [ContMDiffMul I 1 G] {x : M} {g : G} (v : TangentSpace I g) :
     mfderiv I I' (fun h : G => op h • x) g v =
-      mfderiv I I' (fun h : G => op h • (op g • x)) 1 (mfderiv I I (g⁻¹ * ·) g v) := by
-  let φ : G ≃ₘ^(1 : ℕ∞ω)⟮I, I⟯ G := Diffeomorph.smul I I 1 g⁻¹
-  have h1 : φ g = 1 := inv_mul_cancel g
-  have hcoe : (⇑φ : G → G) = (g⁻¹ * ·) := funext fun _ => rfl
-  have hcomp := DFunLike.congr_fun
-    (φ.mfderiv_comp_diffeomorph (K := I') one_ne_zero (fun h : G => op h • (op g • x)) g) v
-  rw [ContinuousLinearMap.comp_apply] at hcomp
-  have hlhs : ∀ {f₁ f₂ : G → M}, f₁ = f₂ → mfderiv I I' f₁ g v = mfderiv I I' f₂ g v := by
-    rintro f₁ _ rfl; rfl
-  have hrhs : ∀ {y : G} (_ : y = 1) {ψ : G → G} (_ : ψ = (g⁻¹ * ·)),
-      mfderiv I I' (fun h : G => op h • (op g • x)) y (mfderiv I I ψ g v) =
-        mfderiv I I' (fun h : G => op h • (op g • x)) 1 (mfderiv I I (g⁻¹ * ·) g v) := by
-    rintro y rfl ψ rfl; rfl
-  exact (hlhs (op_smul_comp_smul_inv (I := I) x g).symm).trans (hcomp.trans (hrhs h1 hcoe))
+      mfderiv I I' (fun h : G => op h • (op g • x)) 1 (mfderiv I I (g⁻¹ * ·) g v) :=
+  DFunLike.congr_fun (mfderiv_op_smul_const (I := I) x g) v
 
 /-- For a `C¹` group manifold `G`, the derivative at `g` of `h ↦ op h • x` is injective if and only
 if the derivative at `1` of `h ↦ op h • (op g • x)` is injective. -/
@@ -278,18 +278,19 @@ theorem injective_mfderiv_op_smul_const_iff [ContMDiffMul I 1 G] {x : M} {g : G}
     Injective (mfderiv I I' (fun h : G => op h • x) g) ↔
       Injective (mfderiv I I' (fun h : G => op h • (op g • x)) 1) := by
   let φ : G ≃ₘ^(1 : ℕ∞ω)⟮I, I⟯ G := Diffeomorph.smul I I 1 g⁻¹
-  have h1 : φ g = 1 := inv_mul_cancel g
-  have hinj := φ.mfderiv_comp_diffeomorph_injective_iff (K := I') one_ne_zero
-    (f := fun h : G => op h • (op g • x)) (x := g)
-  have hlhs : Injective (mfderiv I I' (fun h : G => op h • x) g) ↔
-      Injective (mfderiv I I' ((fun h : G => op h • (op g • x)) ∘ φ) g) :=
-    (congrArg (fun L : E →L[𝕜] E' => Injective L)
-      (mfderiv_congr (op_smul_comp_smul_inv (I := I) x g).symm)).to_iff
-  have hrhs : ∀ {y : G} (_ : y = 1),
-      Injective (mfderiv I I' (fun h : G => op h • (op g • x)) y) ↔
-        Injective (mfderiv I I' (fun h : G => op h • (op g • x)) 1) := by
-    rintro y rfl; rfl
-  exact hlhs.trans (hinj.trans (hrhs h1))
+  have hcoe : (⇑(mfderiv I I' (fun h : G => op h • x) g) : E → E') =
+      (⇑(mfderiv I I' (fun h : G => op h • (op g • x)) 1) : E → E') ∘
+        (φ.mfderivToContinuousLinearEquiv one_ne_zero g) := funext fun v => by
+    have h1 := mfderiv_op_smul_const_apply (I := I) (I' := I') (x := x) (g := g) v
+    have h2 : (mfderiv I I (g⁻¹ * ·) g v : E) =
+        φ.mfderivToContinuousLinearEquiv one_ne_zero g v := by
+      change mfderiv I I (⇑φ) g v = _
+      rw [φ.mfderivToContinuousLinearEquiv_apply]
+    exact h1.trans (congrArg (mfderiv I I' (fun h : G => op h • (op g • x)) 1) h2)
+  change Injective (⇑(mfderiv I I' (fun h : G => op h • x) g) : E → E') ↔
+    Injective (⇑(mfderiv I I' (fun h : G => op h • (op g • x)) 1) : E → E')
+  rw [hcoe]
+  exact (φ.mfderivToContinuousLinearEquiv one_ne_zero g).toEquiv.injective_comp _
 
 /-- **Equivariance under right translation.** For a `C¹` Lie group `G`, the derivative of right
 translation `y ↦ op g • y` at `x` carries the right fundamental vector field of `ξ` at `x` to that
@@ -455,18 +456,6 @@ theorem _root_.HasMFDerivAt.hasDerivAt_comp_op_mulInvariantExp_smul_zero
   exact (mfderiv_comp_apply_of_eq (1 : G) hf.mdifferentiableAt horbit (by simp) ξ).trans
     (by rw [hf.mfderiv, ← rightFundamentalVectorField_apply]; rfl)
 
-private theorem hasMFDerivAt_comp_sub {f : ℝ → M} {f' : ℝ →L[ℝ] E'}
-    (hf : HasMFDerivAt 𝓘(ℝ, ℝ) I' f 0 f') (t : ℝ) :
-    HasMFDerivAt 𝓘(ℝ, ℝ) I' (fun u : ℝ => f (u - t)) t f' := by
-  have hshift : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun u : ℝ => u - t) t
-      (ContinuousLinearMap.id ℝ ℝ) :=
-    ((hasFDerivAt_id t).sub_const t).hasMFDerivAt
-  have hf' : HasMFDerivAt 𝓘(ℝ, ℝ) I' f (t - t) f' := by rw [sub_self]; exact hf
-  have hcomp : HasMFDerivAt 𝓘(ℝ, ℝ) I' (f ∘ fun u : ℝ => u - t) t f' :=
-    (hf'.comp (f := fun u : ℝ => u - t) t hshift).congr_mfderiv
-      (ContinuousLinearMap.ext fun _ => rfl)
-  exact hcomp
-
 /-- **The right exponential flow.** If every right orbit map `g ↦ op g • y` is differentiable at
 `1`, then `t ↦ op (exp(t ξ)) • x` is an integral curve of `rightFundamentalVectorField I' ξ`. -/
 theorem isMIntegralCurve_op_mulInvariantExp_smul
@@ -478,13 +467,13 @@ theorem isMIntegralCurve_op_mulInvariantExp_smul
   set y := op (mulInvariantExp (t • ξ)) • x
   /- Near time `t`, the curve is `s ↦ op (exp((s - t) ξ)) • y`: since `op` reverses products,
   `op (exp((s - t) ξ)) * op (exp(t ξ)) = op (exp(t ξ) * exp((s - t) ξ)) = op (exp(s ξ))`. -/
-  have hcurve := hasMFDerivAt_comp_sub
-    (hasMFDerivAt_op_mulInvariantExp_smul_zero (horbit y) ξ) t
-  have hfun : (fun s : ℝ => op (mulInvariantExp ((s - t) • ξ)) • y) =
-      fun s : ℝ => op (mulInvariantExp (s • ξ)) • x := funext fun s => by
-    simp only [y, ← mul_smul, ← op_mul, ← mulInvariantExp_add_smul, add_sub_cancel]
-  rw [hfun] at hcurve
-  exact hcurve
+  have h0 : HasMFDerivAt 𝓘(ℝ, ℝ) I' (fun s : ℝ => op (mulInvariantExp (s • ξ)) • y) (t + -t)
+      (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (rightFundamentalVectorField I' ξ y)) := by
+    rw [add_neg_cancel]
+    exact hasMFDerivAt_op_mulInvariantExp_smul_zero (horbit y) ξ
+  refine (h0.comp_add_right).congr_of_eventuallyEq (Filter.Eventually.of_forall fun w => ?_)
+  simp only [y, ← mul_smul, ← op_mul, ← mulInvariantExp_add_smul, ← sub_eq_add_neg,
+    add_sub_cancel]
 
 /-- **Constancy of a right exponential orbit with zero generator.** On a `C¹` manifold `M` (with no
 separation or completeness assumption on `M`), if `rightFundamentalVectorField I' ξ x = 0`, the
@@ -500,21 +489,22 @@ theorem
   have hγ0 : HasMFDerivAt 𝓘(ℝ, ℝ) I' γ 0 0 :=
     (hasMFDerivAt_op_mulInvariantExp_smul_zero horbit ξ).congr_mfderiv <|
       ContinuousLinearMap.ext_ring <| (one_smul ℝ _).trans hξ
-  -- Near any `s`, `γ u = op (exp(s ξ)) • γ (u - s)`, so its differential at `s` vanishes too.
+  -- Near any `s`, `γ u = op (exp(s ξ)) • γ (u + -s)`, so its differential at `s` vanishes too.
   have hγ : ∀ s : ℝ, HasMFDerivAt 𝓘(ℝ, ℝ) I' γ s 0 := fun s => by
-    have hγsub : HasMFDerivAt 𝓘(ℝ, ℝ) I' (fun u : ℝ => γ (u - s)) s 0 :=
-      hasMFDerivAt_comp_sub hγ0 s
+    have hγ0' : HasMFDerivAt 𝓘(ℝ, ℝ) I' γ (s + -s) 0 := by rwa [add_neg_cancel]
+    have hγsub : HasMFDerivAt 𝓘(ℝ, ℝ) I' (fun u : ℝ => γ (u + -s)) s 0 := hγ0'.comp_add_right
     have hsmul_s : MDifferentiableAt I' I' (fun y : M => op (mulInvariantExp (s • ξ)) • y)
-        (γ (s - s)) := by
-      simpa only [γ, sub_self, zero_smul, mulInvariantExp_zero, op_one, one_smul] using
+        (γ (s + -s)) := by
+      simpa only [γ, add_neg_cancel, zero_smul, mulInvariantExp_zero, op_one, one_smul] using
         hsmul (mulInvariantExp (s • ξ))
     have hcomp := hsmul_s.hasMFDerivAt.comp s hγsub
-    have hfun : ((fun y : M => op (mulInvariantExp (s • ξ)) • y) ∘ fun u : ℝ => γ (u - s)) = γ := by
-      funext u
-      simp only [comp_apply, γ, ← mul_smul, ← op_mul, ← mulInvariantExp_add_smul, sub_add_cancel]
+    have hfun : ((fun y : M => op (mulInvariantExp (s • ξ)) • y) ∘ fun u : ℝ => γ (u + -s)) =
+        γ := funext fun u => by
+      simp only [comp_apply, γ, ← mul_smul, ← op_mul, ← mulInvariantExp_add_smul, ← sub_eq_add_neg,
+        sub_add_cancel]
     rw [hfun] at hcomp
     exact hcomp.congr_mfderiv <| ContinuousLinearMap.ext_ring <|
-      map_zero (mfderiv I' I' (fun y : M => op (mulInvariantExp (s • ξ)) • y) (γ (s - s)))
+      map_zero (mfderiv I' I' (fun y : M => op (mulInvariantExp (s • ξ)) • y) (γ (s + -s)))
   exact (MDifferentiable.apply_eq_of_mfderiv_eq_zero (fun s => (hγ s).mdifferentiableAt)
     (fun s => (hγ s).mfderiv) t 0).trans (by simp [γ])
 
