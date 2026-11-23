@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 
 /-!
-# The weak derivative of the chart data of a higher-order Sobolev tuple
+# The weak derivative of the chart data of a Sobolev tuple
 
 Let `C : TauCeti.SectionChartData E F S` be chart data reading sections as `F`-valued functions
 on open subsets of a finite-dimensional real inner product space `E`. The chart data in chart `i`
@@ -20,20 +20,31 @@ weak derivative is an `E →L[ℝ] F`-valued function whose components, in the b
 of the weak directional derivatives `TauCeti.Wkp.lineDerivL` of the components of `w` along the
 vectors of `Module.finBasis ℝ E`.
 
-At order one, the same weak derivative is `TauCeti.SectionChartData.chartDerivL`, an `Lᵖ`
-function; the components constructed here record that it has `k` further weak derivatives.
+At order one, the weak derivative is `TauCeti.SectionChartData.chartDerivL`, an `Lᵖ` function
+assembled from the weak gradients of the components
+(`TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`); the components constructed at order
+`k + 1` record that it has `k` further weak derivatives
+(`TauCeti.SectionChartData.sum_value_chartDerivDataL_zero_ae_eq_chartDerivL`).
 
 ## Main definitions
 
+* `TauCeti.SectionChartData.chartDerivL`: the weak derivative of the chart data in chart `i` of a
+  tuple of order one, as an `Lᵖ` function.
 * `TauCeti.SectionChartData.chartDerivDataL`: the components of the weak derivative of the chart
   data in chart `i` of a tuple of order `k + 1`, as Sobolev functions of order `k`.
 
 ## Main results
 
+* `TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`: `chartDerivL` is a weak derivative of
+  the chart data of an order-one tuple.
 * `TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL_chartDerivDataL`: the function assembled
   from these components is a weak derivative of the chart data, and
   `TauCeti.SectionChartData.eq_chartDerivDataL_of_hasWeakFDerivOn`: any order-`k` components
   assembling to a weak derivative of the chart data are these.
+* `TauCeti.SectionChartData.sum_value_chartDerivDataL_zero_ae_eq_chartDerivL`: at order one the
+  assembled function is `chartDerivL`.
+* `TauCeti.SectionChartData.lowerOrderL_chartDerivDataL`: the components commute with forgetting
+  the highest weak derivative.
 -/
 
 public section
@@ -49,15 +60,81 @@ namespace TauCeti
 
 namespace SectionChartData
 
+section ChartDeriv
+
+/-! ### The weak derivative of the chart data of an order-one tuple -/
+
+variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E F S)
+  (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
+
+/-- The weak derivative of the chart data in chart `i` of a tuple of order-one Sobolev functions:
+the `Lᵖ` field `y ↦ ∑ j, ⟪∇ (w i j) y, ·⟫ • bⱼ` assembled from the weak gradients of the chart-`i`
+components of `w`, where `b` is the basis `Module.finBasis ℝ F`
+(`TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`). -/
+def chartDerivL (i : Fin C.n) :
+    C.SobolevData μ p 1 →L[ℝ] Lp (E →L[ℝ] F) p (μ.restrict (C.image i)) :=
+  ∑ j, ((((StrongDual.smulRightL ℝ E F).flip (finBasis ℝ F j)).comp
+      (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)).compLpL p _).comp
+    ((Wkp.iteratedGradientL 0).comp ((ContinuousLinearMap.proj (R := ℝ)
+      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (C.image i) p 1) j).comp
+      (ContinuousLinearMap.proj (R := ℝ)
+        (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p 1) i)))
+
+/-- Almost everywhere on the image of chart `i`, `chartDerivL` is the sum over the basis vectors
+`bⱼ` of `F` of the weak gradients of the chart-`i` components, paired with `bⱼ`. -/
+theorem chartDerivL_apply_ae (i : Fin C.n) (w : C.SobolevData μ p 1) :
+    ∀ᵐ y ∂μ.restrict (C.image i), C.chartDerivL μ p i w y =
+      ∑ j, (innerSL ℝ (W1p.gradient (w i j) y)).smulRight (finBasis ℝ F j) := by
+  set L : Fin (finrank ℝ F) → E →L[ℝ] E →L[ℝ] F := fun j ↦
+    ((StrongDual.smulRightL ℝ E F).flip (finBasis ℝ F j)).comp
+      (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)
+  have heq : C.chartDerivL μ p i w =
+      ∑ j, (L j).compLpL p _ (Wkp.iteratedGradientL 0 (w i j)) := by
+    simp only [chartDerivL, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.coe_comp,
+      Function.comp_apply, ContinuousLinearMap.proj_apply, L]
+  have hsum := Lp.coeFn_finsetSum (μ := μ.restrict (C.image i)) (p := p) Finset.univ fun j ↦
+    (L j).compLpL p _ (Wkp.iteratedGradientL 0 (w i j))
+  have hj (j : Fin (finrank ℝ F)) := ContinuousLinearMap.coeFn_compLpL (p := p)
+    (μ := μ.restrict (C.image i)) (L j) (Wkp.iteratedGradientL 0 (w i j))
+  filter_upwards [hsum, ae_all_iff.2 hj] with y hy hy'
+  rw [heq, hy, Finset.sum_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [hy' j, Wkp.iteratedGradientL_apply, Wkp.iteratedGradient_zero]
+  ext v
+  simp [L]
+
+/-- **Weak differentiability of the chart data.** The chart data in chart `i` of a tuple of
+order-one Sobolev functions have weak derivative `chartDerivL` on the image of chart `i`. -/
+theorem hasWeakFDerivOn_chartValueL (i : Fin C.n) (w : C.SobolevData μ p 1) :
+    HasWeakFDerivOn μ (C.image i) (C.chartValueL μ p 1 i w) (C.chartDerivL μ p i w) := by
+  have hsum := HasWeakFDerivOn.sum Finset.univ fun j _ ↦
+    (Wkp.hasWeakFDerivOn_value (w i j)).clm_comp
+      (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (finBasis ℝ F j))
+  refine (hsum.congr_ae ?_).congr_ae_deriv ?_
+  · filter_upwards [C.chartValueL_apply_ae μ p 1 i w] with y hy
+    simp [hy]
+  · filter_upwards [C.chartDerivL_apply_ae μ p i w] with y hy
+    rw [hy]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    ext v
+    simp
+
+end ChartDeriv
+
+section HigherOrder
+
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E F S)
   (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ)
 
 /-- The operator `v ↦ eₘ*(v) • bⱼ`, for the `m`th coordinate functional `eₘ*` of the basis
-`Module.finBasis ℝ E` and the `j`th vector `bⱼ` of the basis `Module.finBasis ℝ F`. -/
+`Module.finBasis ℝ E` and the `j`th vector `bⱼ` of the basis `Module.finBasis ℝ F`: the vector
+`(j, m)` of Mathlib's basis `Basis.linearMap` of `E →ₗ[ℝ] F`. -/
 private def coordSMulRight (m : Fin (finrank ℝ E)) (j : Fin (finrank ℝ F)) : E →L[ℝ] F :=
-  (LinearMap.toContinuousLinearMap ((finBasis ℝ E).coord m)).smulRight (finBasis ℝ F j)
+  LinearMap.toContinuousLinearMap ((finBasis ℝ E).linearMap (finBasis ℝ F) (j, m))
 
 /-- The components of the weak derivative of the chart data in chart `i` of a tuple `w` of
 Sobolev functions of order `k + 1`, in the basis `Module.finBasis ℝ (E →L[ℝ] F)`, as Sobolev
@@ -135,8 +212,8 @@ theorem hasWeakFDerivOn_chartValueL_chartDerivDataL (i : Fin C.n)
     simp [hy]
   · simp only [ContinuousLinearMap.smulRight_apply, one_apply_eq_self,
       FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul,
-      Pi.smul_apply, coordSMulRight, LinearMap.coe_toContinuousLinearMap', Basis.coord_apply,
-      Basis.repr_self, Finsupp.single_apply, ite_smul, one_smul, zero_smul, smul_ite, smul_zero]
+      Pi.smul_apply, coordSMulRight, LinearMap.coe_toContinuousLinearMap',
+      Basis.linearMap_apply_apply, smul_ite, smul_zero]
     rw [Finset.sum_comm]
     simp
 
@@ -152,6 +229,32 @@ theorem eq_chartDerivDataL_of_hasWeakFDerivOn (i : Fin C.n) (w : C.SobolevData �
   refine Wkp.ext k (Lp.ext ?_)
   filter_upwards [hv.ae_eq (C.hasWeakFDerivOn_chartValueL_chartDerivDataL μ p k i w)] with y hy
   simpa [Finsupp.single_apply] using congrArg (fun L ↦ (finBasis ℝ (E →L[ℝ] F)).repr L a) hy
+
+/-- **Agreement at order one.** Almost everywhere on the image of chart `i`, the function
+assembled from the order-zero components `chartDerivDataL` of an order-one tuple is the order-one
+weak derivative `chartDerivL`. -/
+theorem sum_value_chartDerivDataL_zero_ae_eq_chartDerivL (i : Fin C.n)
+    (w : C.SobolevData μ p 1) :
+    (fun y ↦ ∑ a, Wkp.value 0 (C.chartDerivDataL μ p 0 i w a) y • finBasis ℝ (E →L[ℝ] F) a)
+      =ᵐ[μ.restrict (C.image i)] C.chartDerivL μ p i w :=
+  (C.hasWeakFDerivOn_chartValueL_chartDerivDataL μ p 0 i w).ae_eq
+    (C.hasWeakFDerivOn_chartValueL μ p i w)
+
+/-- **Compatibility with the order.** Forgetting the highest weak derivative of the components
+`chartDerivDataL` of a tuple of order `k + 2` gives the components of the tuple regarded as one of
+order `k + 1`. -/
+theorem lowerOrderL_chartDerivDataL (i : Fin C.n) (w : C.SobolevData μ p (k + 1 + 1))
+    (a : Fin (finrank ℝ (E →L[ℝ] F))) :
+    Wkp.lowerOrderL k (C.chartDerivDataL μ p (k + 1) i w a) =
+      C.chartDerivDataL μ p k i (fun i j ↦ Wkp.lowerOrderL (k + 1) (w i j)) a := by
+  refine congrFun (C.eq_chartDerivDataL_of_hasWeakFDerivOn μ p k i
+    (fun i j ↦ Wkp.lowerOrderL (k + 1) (w i j))
+    (fun a ↦ Wkp.lowerOrderL k (C.chartDerivDataL μ p (k + 1) i w a)) ?_) a
+  rw [chartValueL_lowerOrderL]
+  convert C.hasWeakFDerivOn_chartValueL_chartDerivDataL μ p (k + 1) i w using 3 with y
+  rw [Wkp.lowerOrderL_apply, ← Wkp.value_succ]
+
+end HigherOrder
 
 end SectionChartData
 

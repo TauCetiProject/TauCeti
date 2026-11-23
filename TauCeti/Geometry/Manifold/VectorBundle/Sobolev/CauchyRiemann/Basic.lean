@@ -64,6 +64,8 @@ sections the realization agrees with `D`
   sections the realization is `D`.
 * `TauCeti.IsRealCauchyRiemannOperator.chartValueL_sobolevL_sub_ae`: the realizations of two
   smooth real Cauchy–Riemann operators differ by the zeroth-order term `(Zᵢ' - Zᵢ) uᵢ`.
+* `TauCeti.IsRealCauchyRiemannOperator.lowerOrderL_zeroOrderL`: the zeroth-order term commutes
+  with forgetting the highest weak derivative.
 
 ## References
 
@@ -165,6 +167,20 @@ theorem zeroOrderL_apply_ae (k : ℕ) (i : Fin A.n)
     ← A.sectionChartData.chartValueL_lowerOrderL μ p k i w, hv]
 
 include hD hDs in
+/-- **Compatibility with the order.** Forgetting the highest weak derivative of the zeroth-order
+term of a tuple of order `k + 2` gives the zeroth-order term of the tuple regarded as one of order
+`k + 1`. -/
+theorem lowerOrderL_zeroOrderL (k : ℕ) (i : Fin A.n)
+    (w : A.sectionChartData.SobolevData μ p (k + 1 + 1)) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))) :
+    Wkp.lowerOrderL k (zeroOrderL A hD hDs μ p (k + 1) i w c) =
+      zeroOrderL A hD hDs μ p k i (fun i j ↦ Wkp.lowerOrderL (k + 1) (w i j)) c := by
+  refine Wkp.ext k (Lp.ext ?_)
+  filter_upwards [zeroOrderL_apply_ae A hD hDs μ p (k + 1) i w,
+    zeroOrderL_apply_ae A hD hDs μ p k i (fun i j ↦ Wkp.lowerOrderL (k + 1) (w i j))]
+    with y h₁ h₂
+  rw [Wkp.lowerOrderL_apply, ← Wkp.value_succ, h₁, h₂,
+    A.sectionChartData.chartValueL_lowerOrderL μ p (k + 1) i w]
+
 /-- The `c`th component in chart `i` of the realization, on the image of chart `i`: the `c`th
 component of `∂bar uᵢ`, plus the matrix of the zeroth-order term applied to the components of
 `uᵢ`. -/

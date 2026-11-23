@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Deriv
-import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
 
 /-!
 # Smooth real Cauchy–Riemann operators on higher-order Sobolev sections
@@ -104,6 +103,15 @@ private def chartSuccL (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))) :
       (A.sectionChartData.chartDerivDataL μ p k i)) +
     (ContinuousLinearMap.proj c).comp (zeroOrderL A hD hDs μ p k i)
 
+/-- The `c`th component in chart `i` of the realization is that of `∂bar uᵢ` plus that of the
+zeroth-order term. -/
+private theorem chartSuccL_apply (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F)))
+    (w : A.sectionChartData.SobolevData μ p (k + 1)) :
+    chartSuccL A hD hDs μ p k i c w =
+      SectionChartData.fiberMap μ p k complexAntilinearPartL le_rfl
+        (A.sectionChartData.chartDerivDataL μ p k i w) c + zeroOrderL A hD hDs μ p k i w c :=
+  rfl
+
 include hD hDs in
 /-- The components of the realization, before restricting to Sobolev sections. -/
 private def dataSuccL :
@@ -157,16 +165,11 @@ private theorem chartValueL_dataSuccL_ae (w : A.sectionChartData.SobolevData μ 
             (fun a ↦ Wkp.value k (A.sectionChartData.chartDerivDataL μ p k i w a) y) c +
         (finBasis ℝ (ℂ →L[ℝ] F)).repr (A.chartZeroOrder D i y
           (A.sectionChartData.chartValueL μ p (k + 1) i w y)) c := by
-    rw [dataSuccL_apply, h₂ c]
+    rw [dataSuccL_apply, h₂ c, chartSuccL_apply]
     refine (h₃ c).trans ?_
     rw [Pi.add_apply, h₄ c, h₅ c]
-  have hrepr : ⇑((finBasis ℝ (ℂ →L[ℝ] F)).repr (chartDeriv A μ p k i w y)) =
-      fun a ↦ Wkp.value k (A.sectionChartData.chartDerivDataL μ p k i w a) y := by
-    rw [chartDeriv, (finBasis ℝ (ℂ →L[ℝ] F)).repr_sum_self]
-  have hL := LinearMap.toMatrix_mulVec_repr (finBasis ℝ (ℂ →L[ℝ] F)) (finBasis ℝ (ℂ →L[ℝ] F))
-    (complexAntilinearPartL (F := F)).toLinearMap (chartDeriv A μ p k i w y)
-  rw [hrepr, ContinuousLinearMap.coe_coe] at hL
-  simp_rw [hc, add_smul, Finset.sum_add_distrib, hL, Basis.sum_repr]
+  simp_rw [hc, add_smul, Finset.sum_add_distrib, Basis.sum_repr,
+    SectionChartData.sum_toMatrix_mulVec_smul, chartDeriv]
 
 /-- The order-one Sobolev section underlying a Sobolev section of order `k + 1`. -/
 private def toOrderOne (w : SobolevSection A μ p (k + 1)) : SobolevSection A μ p 1 :=
@@ -234,6 +237,12 @@ def sobolevSuccL : SobolevSection A μ p (k + 1) →L[ℝ] zeroOneSobolevSection
       (dataSuccL_mem A hD hDs μ p k)).codRestrict
     (zeroOneSobolevSections A μ p k) (dataSuccL_mem_zeroOne A hD hDs μ p k)
 
+/-- The underlying tuple of the realization of a Sobolev section is `dataSuccL`. -/
+private theorem coe_sobolevSuccL (w : SobolevSection A μ p (k + 1)) :
+    ((hD.sobolevSuccL A hDs μ p k w : SobolevSection A.tangentHom μ p k) :
+      A.tangentHom.sectionChartData.SobolevData μ p k) = dataSuccL A hD hDs μ p k w :=
+  rfl
+
 /-- **The chart formula of the realization.** In chart `i`, the realization of a Sobolev section
 of order `k + 1` with chart data `uᵢ` is `∂bar uᵢ + Zᵢ uᵢ` almost everywhere on the image of the
 chart, where `∂bar uᵢ` is the complex antilinear part of any weak derivative `Du` of `uᵢ` and `Zᵢ`
@@ -246,6 +255,7 @@ theorem chartValueL_sobolevSuccL_ae (w : SobolevSection A μ p (k + 1)) {i : Fin
           A.tangentHom.sectionChartData.SobolevData μ p k)
       =ᵐ[μ.restrict (A.image i)] fun y ↦ complexAntilinearPartL (Du y) +
         A.chartZeroOrder D i y (A.sectionChartData.chartValueL μ p (k + 1) i w y) := by
+  rw [coe_sobolevSuccL]
   filter_upwards [chartValueL_dataSuccL_ae A hD hDs μ p k w i,
     (A.sectionChartData.hasWeakFDerivOn_chartValueL_chartDerivDataL μ p k i w).ae_eq hDu]
     with y h hy
@@ -302,27 +312,9 @@ a Sobolev section of order `k + 2` gives the realization of the section regarded
 theorem zeroOneLowerOrdersL_sobolevSuccL (w : SobolevSection A μ p (k + 1 + 1)) :
     zeroOneLowerOrdersL A μ p k 1 (hD.sobolevSuccL A hDs μ p (k + 1) w) =
       hD.sobolevSuccL A hDs μ p k (A.sectionChartData.lowerOrderL μ p (k + 1) w) := by
-  refine Subtype.ext <| SectionChartData.eq_of_chartValueL_ae_eq fun (i : Fin A.n) ↦
-    (ae_image_tangentHom_iff A μ i).2 ?_
-  have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL_chartDerivDataL μ p (k + 1) i w
-  have hlow : A.sectionChartData.chartValueL μ p (k + 1) i
-      (A.sectionChartData.lowerOrderL μ p (k + 1) w) =
-        A.sectionChartData.chartValueL μ p (k + 1 + 1) i w :=
-    A.sectionChartData.chartValueL_coe_lowerOrderL μ p (k + 1) w i
-  have hDu' : HasWeakFDerivOn μ (A.image i) (A.sectionChartData.chartValueL μ p (k + 1) i
-      (A.sectionChartData.lowerOrderL μ p (k + 1) w)) _ := hlow ▸ hDu
-  have hcoe : A.tangentHom.sectionChartData.chartValueL μ p k i
-      ((zeroOneLowerOrdersL A μ p k 1 (hD.sobolevSuccL A hDs μ p (k + 1) w) :
-        SobolevSection A.tangentHom μ p k) : A.tangentHom.sectionChartData.SobolevData μ p k) =
-      A.tangentHom.sectionChartData.chartValueL μ p (k + 1) i
-        ((hD.sobolevSuccL A hDs μ p (k + 1) w : SobolevSection A.tangentHom μ p (k + 1)) :
-          A.tangentHom.sectionChartData.SobolevData μ p (k + 1)) := by
-    rw [coe_zeroOneLowerOrdersL]
-    exact A.tangentHom.sectionChartData.chartValueL_lowerOrdersL μ p k 1 _ i
-  rw [hcoe]
-  filter_upwards [chartValueL_sobolevSuccL_ae A hD hDs μ p (k + 1) w hDu,
-    chartValueL_sobolevSuccL_ae A hD hDs μ p k _ hDu'] with y h₁ h₂
-  rw [h₁, h₂, hlow]
+  have h := zeroOneLowerOrdersL_sobolevSuccL_add A hD hDs μ p k 1 w
+  rw [SectionChartData.lowerOrdersL_one] at h
+  exact h
 
 /-- **Agreement on smooth sections.** The realization of `D` sends the Sobolev section of a
 `C^{k+1}` section `s` to the `(0,1)`-form whose chart data are the readings of `D s`. -/
