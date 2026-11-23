@@ -76,10 +76,11 @@ aspherical.
   points are joined by a geodesic on `[0, 1]`, unique on `[0, 1]`.
 * `TauCeti.Manifold.cartanHadamard_pathELength_eq_edist`,
   `TauCeti.Manifold.cartanHadamard_pathELength_eq_edist_of_le`: for simply connected `M`, that
-  geodesic is minimizing, and so is every segment of any geodesic on a preconnected set.
-* `TauCeti.Manifold.cartanHadamard_exists_homeomorph_universalCover`: the universal cover based
-  at `p` is homeomorphic to `T_p M`, by a homeomorphism under which the projection becomes
-  `exp_p`.
+  geodesic is minimizing, and so is every segment `[s, t]` of a geodesic lying in its parameter
+  set.
+* `TauCeti.Manifold.cartanHadamard_exists_homeomorph_universalCover` and
+  `TauCeti.Manifold.cartanHadamardHomeomorphUniversalCover`: the universal cover based at `p` is
+  homeomorphic to `T_p M`, by a homeomorphism under which the projection becomes `exp_p`.
 * `TauCeti.Manifold.cartanHadamard_contractibleSpace_universalCover`: the universal cover is
   contractible.
 * `TauCeti.Manifold.cartanHadamard_isAspherical`: a connected complete manifold of nonpositive
@@ -172,6 +173,24 @@ theorem coe_cartanHadamardDiffeomorph [SimplyConnectedSpace M]
     ⇑(cartanHadamardDiffeomorph hK p) = riemannianExp I M p :=
   IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
 
+/-- The exponential map at `p` undoes the inverse of `cartanHadamardDiffeomorph`. -/
+@[simp]
+theorem riemannianExp_cartanHadamardDiffeomorph_symm [SimplyConnectedSpace M]
+    (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
+      (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
+        x u w ≤ 0) (p q : M) :
+    riemannianExp I M p ((cartanHadamardDiffeomorph hK p).symm q) = q := by
+  rw [← coe_cartanHadamardDiffeomorph hK, Diffeomorph.apply_symm_apply]
+
+/-- The inverse of `cartanHadamardDiffeomorph` undoes the exponential map at `p`. -/
+@[simp]
+theorem cartanHadamardDiffeomorph_symm_riemannianExp [SimplyConnectedSpace M]
+    (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
+      (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
+        x u w ≤ 0) (p : M) (v : TangentSpace I p) :
+    (cartanHadamardDiffeomorph hK p).symm (riemannianExp I M p v) = v := by
+  rw [← coe_cartanHadamardDiffeomorph hK, Diffeomorph.symm_apply_apply]
+
 /-- A simply connected complete Riemannian manifold of nonpositive sectional curvature is
 contractible. -/
 theorem cartanHadamard_contractibleSpace [SimplyConnectedSpace M]
@@ -203,8 +222,7 @@ theorem cartanHadamard_eqOn_riemannianExp_smul [SimplyConnectedSpace M]
   have hexp : riemannianExp I M (γ 0) v = γ 1 := by
     rw [← one_smul ℝ v, riemannianExp_smul, heq (right_mem_Icc.2 zero_le_one)]
   have hv : (cartanHadamardDiffeomorph hK (γ 0)).symm (γ 1) = v := by
-    rw [← hexp, ← coe_cartanHadamardDiffeomorph hK]
-    exact (cartanHadamardDiffeomorph hK (γ 0)).symm_apply_apply v
+    rw [← hexp, cartanHadamardDiffeomorph_symm_riemannianExp]
   intro t ht
   simp only [hv, riemannianExp_smul, heq ht]
 
@@ -224,8 +242,7 @@ theorem cartanHadamard_exists_geodesic_unique [SimplyConnectedSpace M]
   refine ⟨fun t ↦ riemannianExp I M p (t • v),
     isGeodesicCurveOn_riemannianExp_smul_Icc zero_lt_one (hJ ▸ mem_univ _) (hJ ▸ mem_univ _),
     by simp, ?_, fun γ' hγ' h0 h1 ↦ cartanHadamard_eqOn_riemannianExp_smul hK hγ' h0 h1⟩
-  simp only [one_smul, v]
-  rw [← coe_cartanHadamardDiffeomorph hK, Diffeomorph.apply_symm_apply]
+  simp only [one_smul, v, riemannianExp_cartanHadamardDiffeomorph_symm]
 
 /-- **The geodesic of a Cartan–Hadamard manifold is minimizing.** On a simply connected complete
 Riemannian manifold of nonpositive sectional curvature, every geodesic on `[0, 1]` from `p` to `q`
@@ -249,13 +266,13 @@ theorem cartanHadamard_pathELength_eq_edist [SimplyConnectedSpace M]
     (cartanHadamard_eqOn_riemannianExp_smul hK hγ₀ h00 h01).symm), hlen]
 
 /-- On a simply connected complete Riemannian manifold of nonpositive sectional curvature, every
-segment of a geodesic on a preconnected parameter set realizes the distance between its
+segment `[s, t]` of a geodesic lying in its parameter set realizes the distance between its
 endpoints. -/
 theorem cartanHadamard_pathELength_eq_edist_of_le [SimplyConnectedSpace M]
     (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
       (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
-        x u w ≤ 0) {γ : ℝ → M} {u : Set ℝ} (hγ : IsGeodesicCurveOn I γ u) (hu : IsPreconnected u)
-    {s t : ℝ} (hs : s ∈ u) (ht : t ∈ u) (hst : s ≤ t) :
+        x u w ≤ 0) {γ : ℝ → M} {u : Set ℝ} (hγ : IsGeodesicCurveOn I γ u) {s t : ℝ}
+    (hsub : Icc s t ⊆ u) (hst : s ≤ t) :
     pathELength I γ s t = edist (γ s) (γ t) := by
   rcases hst.eq_or_lt with rfl | hlt
   · simp
@@ -266,7 +283,6 @@ theorem cartanHadamard_pathELength_eq_edist_of_le [SimplyConnectedSpace M]
   have hmaps : MapsTo φ (Icc 0 1) (Icc s t) := fun r hr ↦ by
     simp only [φ, mem_Icc]
     constructor <;> nlinarith [hr.1, hr.2]
-  have hsub : Icc s t ⊆ u := hu.Icc_subset hs ht
   have hγ' : IsGeodesicCurveOn I (γ ∘ φ) (Icc 0 1) :=
     hγ.comp_affine _ _ (uniqueDiffOn_Icc zero_lt_one) (hmaps.mono_right hsub)
   have hmono : MonotoneOn φ (Icc 0 1) := fun a _ b _ hab ↦ by
@@ -296,6 +312,35 @@ theorem cartanHadamard_exists_homeomorph_universalCover
   exact (cartanHadamard_isCoveringMap hK p).exists_homeomorph_comp_eq_of_simplyConnectedSpace
     (TauCeti.UniversalCover.isCoveringMap p) (riemannianExp_zero p)
     (TauCeti.UniversalCover.proj_basepointLift p)
+
+/-- A homeomorphism from `T_p M` onto the universal cover based at `p`, sending `0` to the base
+point and under which the projection of the universal cover becomes `exp_p`
+(`cartanHadamard_exists_homeomorph_universalCover`). -/
+noncomputable def cartanHadamardHomeomorphUniversalCover
+    (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
+      (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
+        x u w ≤ 0) (p : M) :
+    TangentSpace I p ≃ₜ UniversalCover p :=
+  (cartanHadamard_exists_homeomorph_universalCover hK p).choose
+
+/-- `cartanHadamardHomeomorphUniversalCover` sends `0` to the base point. -/
+@[simp]
+theorem cartanHadamardHomeomorphUniversalCover_zero
+    (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
+      (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
+        x u w ≤ 0) (p : M) :
+    cartanHadamardHomeomorphUniversalCover hK p 0 = UniversalCover.basepointLift p :=
+  (cartanHadamard_exists_homeomorph_universalCover hK p).choose_spec.1
+
+/-- Under `cartanHadamardHomeomorphUniversalCover`, the projection of the universal cover is
+`exp_p`. -/
+@[simp]
+theorem proj_cartanHadamardHomeomorphUniversalCover
+    (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
+      (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
+        x u w ≤ 0) (p : M) (v : TangentSpace I p) :
+    UniversalCover.proj (cartanHadamardHomeomorphUniversalCover hK p v) = riemannianExp I M p v :=
+  congrFun (cartanHadamard_exists_homeomorph_universalCover hK p).choose_spec.2 v
 
 /-- The universal cover of a complete Riemannian manifold of nonpositive sectional curvature, at any
 base point, is contractible. -/
