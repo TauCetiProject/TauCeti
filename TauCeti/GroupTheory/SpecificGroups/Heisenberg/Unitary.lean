@@ -231,8 +231,7 @@ theorem nontrivial_unitarySubgroup [Nontrivial R] (hσ : Function.Involutive σ)
   -- The parameters `(2, 2)` satisfy the trace equation, and are nontrivial unless `2 = 0`, in
   -- which case the parameters `(0, 1)` do.
   by_cases h₂ : (2 : R) = 0
-  · refine nontrivial_of_ne (unitaryMk σ hσ 0 1 (by rw [map_one, one_add_one_eq_two, h₂,
-      zero_mul])) 1 ?_
+  · refine nontrivial_of_ne (unitaryMk σ hσ 0 1 (by simp [one_add_one_eq_two, h₂])) 1 ?_
     simp
   · refine nontrivial_of_ne (unitaryMk σ hσ 2 2 (by rw [map_ofNat]; ring)) 1 ?_
     simpa using h₂

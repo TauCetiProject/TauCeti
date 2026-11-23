@@ -261,8 +261,25 @@ private theorem smul_eq_of_mulVec_eq_smul {g : UnitaryRankOne.Group K σ}
   exact TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hv hw (c := c)
     (by rw [smul_def, h])
 
+/-- Conversely, an element sending `p` to `q` sends a representative of `p` to a multiple of a
+representative of `q`. -/
+private theorem exists_mulVec_eq_smul_of_smul_eq {g : UnitaryRankOne.Group K σ}
+    {p q : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ}
+    {v w : Fin 3 → K} (hv : v ≠ 0) (hw : w ≠ 0)
+    (hp : (p : ℙ K (Fin 3 → K)) = Projectivization.mk K v hv)
+    (hq : (q : ℙ K (Fin 3 → K)) = Projectivization.mk K w hw) (h : g • p = q) :
+    ∃ c : K, ((g : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) *ᵥ v = c • w := by
+  have h := congrArg Subtype.val h
+  rw [SubMulAction.val_smul, hp, hq, Subgroup.smul_def, Projectivization.smul_mk,
+    Projectivization.mk_eq_mk_iff'] at h
+  obtain ⟨c, hc⟩ := h
+  -- The projective action goes through the special linear group, whose action on vectors is the
+  -- action of `g` itself.
+  exact ⟨c, by rw [← smul_def, Subgroup.smul_def, hc]⟩
+
 variable (K σ) in
 /-- The Weyl representative sends the point at infinity to `[0 : 0 : 1]`. -/
+@[simp]
 theorem weyl_smul_infinity : weyl K σ • infinity K σ = origin K σ :=
   smul_eq_of_mulVec_eq_smul _ _ (coe_infinity K σ) (coe_origin K σ) 1
     (by simp [coe_typeAGraphConjugator_two, funext_iff, Fin.forall_fin_succ])
@@ -302,11 +319,10 @@ theorem mem_borel_iff (g : UnitaryRankOne.Group K σ) :
     fin_cases i <;> simp
   constructor
   · intro hg
-    have h := congrArg Subtype.val (mem_borel_iff_smul_infinity.mp hg)
-    rw [SubMulAction.val_smul, coe_infinity, Subgroup.smul_def, Projectivization.smul_mk,
-      Projectivization.mk_eq_mk_iff', ← Subgroup.smul_def, smul_def, he, mulVec_single_one] at h
-    obtain ⟨c, hc⟩ := h
-    exact ⟨by simpa using (congrFun hc 1).symm, by simpa using (congrFun hc 2).symm⟩
+    obtain ⟨c, hc⟩ := exists_mulVec_eq_smul_of_smul_eq _ _ (coe_infinity K σ) (coe_infinity K σ)
+      (mem_borel_iff_smul_infinity.mp hg)
+    rw [he, mulVec_single_one] at hc
+    exact ⟨by simpa using congrFun hc 1, by simpa using congrFun hc 2⟩
   · rintro ⟨h₁, h₂⟩
     refine mem_borel_iff_smul_infinity.mpr (smul_eq_of_mulVec_eq_smul _ _ (coe_infinity K σ)
       (coe_infinity K σ) (((g : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0) ?_)
@@ -477,6 +493,14 @@ theorem titsSystem_subgroupN (hσ : Function.Involutive σ) :
     (titsSystem K hσ).subgroupN = monomial K σ := by
   unfold titsSystem
   exact TitsSystem.ofRankOne_subgroupN
+
+/-- The only simple reflection of the Tits system is the class of the Weyl representative. -/
+@[simp]
+theorem titsSystem_simple (hσ : Function.Involutive σ) :
+    (titsSystem K hσ).simple =
+      {QuotientGroup.mk ⟨weyl K σ, by simpa using weyl_mem_monomial K σ⟩} := by
+  unfold titsSystem
+  exact TitsSystem.ofRankOne_simple
 
 /-- **The Tits system of the rank-one unitary group is irreducible.** -/
 theorem isIrreducible_titsSystem (hσ : Function.Involutive σ) :
