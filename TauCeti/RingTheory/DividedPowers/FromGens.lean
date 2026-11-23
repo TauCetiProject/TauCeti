@@ -43,6 +43,8 @@ be omitted.
   all axioms of `DividedPowers I` except `mul_dpow` and `dpow_comp`.
 * `DividedPowers.toAdditiveDividedPowers`: forgetful map from `DividedPowers I` to
   `TauCeti.AdditiveDividedPowers I`.
+* `TauCeti.AdditiveDividedPowers.dpow_eq_from_gens`: equality of `AdditiveDividedPowers` from
+  agreement on a generating set.
 * `TauCeti.AdditiveDividedPowers.mul_dpow_add`: stability of `mul_dpow` under addition.
 * `TauCeti.AdditiveDividedPowers.mul_dpow_of_span`: propagation of `mul_dpow` from a generating
   set to the whole ideal.
@@ -170,6 +172,30 @@ theorem dpow_sum {ι : Type*} [DecidableEq ι] {s : Finset ι} {x : ι → A}
     hI.dpow n (∑ i ∈ s, x i) =
       ∑ k ∈ s.sym n, ∏ i ∈ s, hI.dpow (Multiset.count i k) (x i) :=
   DividedPowers.dpow_sum' hI.dpow hI.dpow_zero hI.dpow_add hI.dpow_eval_zero hx
+
+/-- If two additive divided power structures on `I` agree on a generating set of `I`, then they
+are equal. -/
+theorem dpow_eq_from_gens (hI' : AdditiveDividedPowers I) {S : Set A} (hS : I = Ideal.span S)
+    (hdp : ∀ {n : ℕ}, ∀ a ∈ S, hI.dpow n a = hI'.dpow n a) : hI' = hI := by
+  suffices ∀ z ∈ Ideal.span S, ∀ n, hI.dpow n z = hI'.dpow n z by
+    ext n x hx
+    exact (this x (hS ▸ hx) n).symm
+  intro z hz
+  induction hz using Submodule.span_induction with
+  | mem s hs => exact fun n ↦ hdp s hs
+  | zero =>
+    intro n
+    rcases eq_or_ne n 0 with rfl | hn
+    · rw [hI.dpow_zero I.zero_mem, hI'.dpow_zero I.zero_mem]
+    · rw [hI.dpow_eval_zero hn, hI'.dpow_eval_zero hn]
+  | add x y hxS hyS ihx ihy =>
+    intro n
+    rw [hI.dpow_add (hS ▸ hxS) (hS ▸ hyS), hI'.dpow_add (hS ▸ hxS) (hS ▸ hyS)]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [ihx k.1, ihy k.2]
+  | smul a x hxS ihx =>
+    intro n
+    rw [smul_eq_mul, hI.dpow_mul (hS ▸ hxS), hI'.dpow_mul (hS ▸ hxS), ihx n]
 
 /-! ### Propagation of the multiplication identity -/
 
