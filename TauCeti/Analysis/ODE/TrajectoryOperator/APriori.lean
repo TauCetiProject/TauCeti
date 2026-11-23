@@ -18,8 +18,8 @@ Let `D_A u = u' + A u` be the trajectory operator from `W^{1,p}(ℝ, E)` to `L�
 supported paths, where `D_A` acts classically:
 
 * an estimate `‖φ‖_{Lᵖ} ≤ C ‖φ' + A φ‖_{Lᵖ}` for every smooth compactly supported `φ` extends to
-  all of `W^{1,p}(ℝ, E)` when `E` is finite-dimensional, since such paths are dense there and
-  both sides are continuous
+  all of `W^{1,p}(ℝ, E)` for a Banach space `E`, since such paths are dense there and both sides
+  are continuous
   (`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_of_forall_contDiff`);
 * such an estimate on the value of `u` controls its whole graph norm, because `u' = D_A u - A u`
   (`TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_norm_prev_le`, in
@@ -52,12 +52,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
 
-/-- **A priori estimates extend from smooth compactly supported paths.** Let `E` be
-finite-dimensional, `1 ≤ p < ∞`, `C ≥ 0`, and `AL` the `L∞` class of a coefficient `A`. If
+/-- **A priori estimates extend from smooth compactly supported paths.** Let `E` be a real
+Banach space, `1 ≤ p < ∞`, `C ≥ 0`, and `AL` the `L∞` class of a coefficient `A`. If
 `‖φ‖_{Lᵖ} ≤ C ‖φ' + A φ‖_{Lᵖ}` for every smooth compactly supported `φ`, then
 `‖u‖_{Lᵖ} ≤ C ‖D_A u‖_{Lᵖ}` for every `u ∈ W^{1,p}(ℝ, E)`. -/
-theorem norm_prev_le_mul_norm_trajectoryOperator_of_forall_contDiff [FiniteDimensional ℝ E]
-    (hp : p ≠ ∞) {A : ℝ → E →L[ℝ] E}
+theorem norm_prev_le_mul_norm_trajectoryOperator_of_forall_contDiff (hp : p ≠ ∞) {A : ℝ → E →L[ℝ] E}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ φ : ℝ → E, ContDiff ℝ (⊤ : ℕ∞) φ → HasCompactSupport φ →
       eLpNorm φ p volume ≤ ENNReal.ofReal C * eLpNorm (fun s ↦ deriv φ s + A s (φ s)) p volume)
