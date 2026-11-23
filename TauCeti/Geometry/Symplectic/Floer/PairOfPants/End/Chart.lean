@@ -870,6 +870,18 @@ theorem tendstoUniformly_endChart_of_positiveEndChart {α ι : Type*} [UniformSp
     funext i t; simp only [comp_apply, endChart_eq_positiveEndChart]
   exact hloop ▸ h.comp fun t ↦ q.endSign * t
 
+/-- Uniform convergence of `t ↦ u(φ_q(±r i, t))` to `y` transports to uniform convergence of
+`t ↦ (u ∘ φ'_q)(r i, t)` to `t ↦ y(±t)`. -/
+theorem tendstoUniformly_positiveEndChart_of_endChart {α ι : Type*} [UniformSpace α]
+    {l : Filter ι} {u : ℝ × ℝ → α} {q : Puncture} {r : ι → ℝ} {y : ℝ → α}
+    (h : TendstoUniformly (fun i t ↦ u (endChart q (q.endSign * r i, t))) y l) :
+    TendstoUniformly (fun i t ↦ (u ∘ positiveEndChart q) (r i, t))
+      (fun t ↦ y (q.endSign * t)) l := by
+  have hloop : (fun i t ↦ (u ∘ positiveEndChart q) (r i, t)) =
+      fun i ↦ (fun t ↦ u (endChart q (q.endSign * r i, t))) ∘ fun t ↦ q.endSign * t := by
+    funext i t; simp only [comp_apply, endChart_eq_positiveEndChart, endSign_mul_endSign_mul]
+  exact hloop ▸ h.comp fun t ↦ q.endSign * t
+
 /-- The positive end chart is `1`-periodic in the angular coordinate. -/
 theorem positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
     positiveEndChart q (s, t + 1) = positiveEndChart q (s, t) := by
@@ -877,6 +889,15 @@ theorem positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
   rcases q.endSign_eq_one_or_eq_neg_one with h | h <;> simp only [h, one_mul, neg_one_mul]
   · exact endChart_add_one q s t
   · rw [← endChart_add_one q (-s) (-(t + 1)), neg_add, neg_add_cancel_right]
+
+/-- A predicate on `positiveEndChart q z` holding on `Ioi b ×ˢ Icc 0 1` extends to all
+`z : ℝ × ℝ` with `b < z.1`, by `1`-periodicity of `positiveEndChart q` in the angular coordinate. -/
+theorem forall_positiveEndChart_of_mem_Ioi_prod_Icc {P : ℝ × ℝ → Prop} {q : Puncture} {b : ℝ}
+    (hP : ∀ z ∈ Ioi b ×ˢ Icc 0 1, P (positiveEndChart q z)) {z : ℝ × ℝ} (hz : b < z.1) :
+    P (positiveEndChart q z) := by
+  obtain ⟨t', ht', h⟩ := Periodic.exists_mem_Ico₀ (f := fun t ↦ positiveEndChart q (z.1, t))
+    (positiveEndChart_add_one q z.1) zero_lt_one z.2
+  exact h ▸ hP (z.1, t') ⟨hz, Ico_subset_Icc_self ht'⟩
 
 /-- The derivative of the positive end chart is the derivative of the end chart at the reflected
 point, composed with the reflection `v ↦ ±v`. -/
