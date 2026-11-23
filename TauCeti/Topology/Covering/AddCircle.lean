@@ -17,8 +17,8 @@ map (`TauCeti.isCoveringMap_addCircleDoubleCover`). Its fibre over `0` has the t
 `1 / 2` (`TauCeti.addCircleDoubleCover_eq_zero_iff`, `TauCeti.natCard_fiber_addCircleDoubleCover`),
 and the generator `t ↦ t` of the fundamental group of the circle exchanges them under monodromy
 (`TauCeti.coe_monodromyPerm_addCircleDoubleCover_zero`,
-`TauCeti.coe_monodromyPerm_addCircleDoubleCover_half`): its lifts from `0` and from `1 / 2` are the
-paths `t ↦ t / 2` and `t ↦ (1 + t) / 2`.
+`TauCeti.coe_monodromyPerm_addCircleDoubleCover_half`): its lift from a point `x` of the fibre is
+the path `t ↦ x + t / 2` (`TauCeti.coe_monodromyPerm_addCircleDoubleCover`).
 
 ## Main definitions
 
@@ -28,6 +28,8 @@ paths `t ↦ t / 2` and `t ↦ (1 + t) / 2`.
 
 * `TauCeti.isCoveringMap_addCircleDoubleCover`: the doubling map is a covering map.
 * `TauCeti.natCard_fiber_addCircleDoubleCover`: its fibre over `0` has two points.
+* `TauCeti.coe_monodromyPerm_addCircleDoubleCover`: the generator of the fundamental group
+  moves each point of the fibre by `1 / 2`.
 * `TauCeti.coe_monodromyPerm_addCircleDoubleCover_zero`,
   `TauCeti.coe_monodromyPerm_addCircleDoubleCover_half`: the generator of the fundamental group
   exchanges the two points of the fibre.
@@ -87,38 +89,38 @@ theorem addCircleDoubleCover_half :
     addCircleDoubleCover ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) = ((0 : ℝ) : AddCircle (1 : ℝ)) :=
   (addCircleDoubleCover_eq_zero_iff _).2 (Or.inr rfl)
 
-/-- **The generator of the fundamental group moves `0` to `1 / 2`**: the loop `t ↦ t` of the circle
-lifts along the double cover from `0` to the path `t ↦ t / 2`. -/
+/-- **The generator of the fundamental group moves each point of the fibre by `1 / 2`**: the loop
+`t ↦ t` of the circle lifts along the double cover from `x` to the path `t ↦ x + t / 2`. -/
+theorem coe_monodromyPerm_addCircleDoubleCover
+    (x : addCircleDoubleCover ⁻¹' {((0 : ℝ) : AddCircle (1 : ℝ))}) :
+    (isCoveringMap_addCircleDoubleCover.monodromyPerm _
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop 1 0 1)))
+        x : AddCircle (1 : ℝ)) = x + ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) := by
+  rw [IsCoveringMap.coe_monodromyPerm]
+  refine isCoveringMap_addCircleDoubleCover.monodromy_eq_apply_one
+    (Γ := ⟨fun t ↦ (x : AddCircle (1 : ℝ)) + ((t / 2 : ℝ) : AddCircle (1 : ℝ)), by fun_prop⟩)
+    ?_ ?_
+  · funext t
+    have hx : 2 • (x : AddCircle (1 : ℝ)) = 0 := x.property
+    rw [AddCircle.zsmulLoop_apply]
+    simp [smul_add, hx, ← AddCircle.coe_nsmul, mul_div_cancel₀]
+  · simp
+
+/-- **The generator of the fundamental group moves `0` to `1 / 2`**. -/
 theorem coe_monodromyPerm_addCircleDoubleCover_zero :
     (isCoveringMap_addCircleDoubleCover.monodromyPerm _
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop 1 0 1)))
         ⟨_, addCircleDoubleCover_zero⟩ : AddCircle (1 : ℝ)) =
       ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) := by
-  rw [IsCoveringMap.coe_monodromyPerm]
-  refine isCoveringMap_addCircleDoubleCover.monodromy_eq_apply_one
-    (Γ := ⟨fun t ↦ ((t / 2 : ℝ) : AddCircle (1 : ℝ)), by fun_prop⟩) ?_ ?_
-  · funext t
-    have h : (2 • ((t : ℝ) / 2) : ℝ) = t := by rw [nsmul_eq_mul]; push_cast; ring
-    rw [Function.comp_apply, addCircleDoubleCover_apply, ContinuousMap.coe_mk,
-      ← AddCircle.coe_nsmul, h, AddCircle.zsmulLoop_apply]
-    simp
-  · simp
+  rw [coe_monodromyPerm_addCircleDoubleCover]
+  simp
 
-/-- **The generator of the fundamental group moves `1 / 2` back to `0`**: the loop `t ↦ t` of the
-circle lifts along the double cover from `1 / 2` to the path `t ↦ (1 + t) / 2`. -/
+/-- **The generator of the fundamental group moves `1 / 2` back to `0`**. -/
 theorem coe_monodromyPerm_addCircleDoubleCover_half :
     (isCoveringMap_addCircleDoubleCover.monodromyPerm _
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop 1 0 1)))
         ⟨_, addCircleDoubleCover_half⟩ : AddCircle (1 : ℝ)) = ((0 : ℝ) : AddCircle (1 : ℝ)) := by
-  rw [IsCoveringMap.coe_monodromyPerm]
-  refine (isCoveringMap_addCircleDoubleCover.monodromy_eq_apply_one
-    (Γ := ⟨fun t ↦ (((1 + t) / 2 : ℝ) : AddCircle (1 : ℝ)), by fun_prop⟩) ?_ ?_).trans ?_
-  · funext t
-    have h : (2 • ((1 + (t : ℝ)) / 2) : ℝ) = t + 1 := by rw [nsmul_eq_mul]; push_cast; ring
-    rw [Function.comp_apply, addCircleDoubleCover_apply, ContinuousMap.coe_mk,
-      ← AddCircle.coe_nsmul, h, AddCircle.coe_add_period, AddCircle.zsmulLoop_apply]
-    simp
-  · simp
-  · norm_num [AddCircle.coe_period]
+  rw [coe_monodromyPerm_addCircleDoubleCover, ← AddCircle.coe_add]
+  norm_num [AddCircle.coe_period]
 
 end TauCeti

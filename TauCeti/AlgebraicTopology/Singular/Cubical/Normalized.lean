@@ -495,12 +495,8 @@ def zeroChainEquiv : (X →₀ R) ≃ₗ[R] NormalizedCubicalChain X R 0 :=
 @[simp]
 theorem zeroChainEquiv_single (x : X) (r : R) :
     zeroChainEquiv X R (Finsupp.single x r) = r • ofCube X R (SingularCube.point x) := by
-  rw [zeroChainEquiv, LinearEquiv.trans_apply, Finsupp.domLCongr_single, Homeomorph.coe_toEquiv,
-    Submodule.quotEquivOfEqBot_symm_apply, ofCube_def, ← Submodule.Quotient.mk_smul,
-    smul_single_one]
-  congr 2
-  ext t
-  rw [Homeomorph.continuousMapOfUnique_apply, SingularCube.point_apply]
+  have hx : Homeomorph.continuousMapOfUnique x = SingularCube.point (X := X) x := by ext; simp
+  simp [zeroChainEquiv, ofCube_def, ← Submodule.Quotient.mk_smul, hx]
 
 /-- **A totally disconnected space has no nonzero normalized chains of positive dimension**: every
 cube in it is constant, since the cube `Iⁿ` is connected, and a constant cube of positive dimension
