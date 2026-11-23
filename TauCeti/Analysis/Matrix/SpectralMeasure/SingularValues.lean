@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
+public import TauCeti.Analysis.Matrix.HoffmanWielandt
 public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Borel
+public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 /-!
 # Empirical singular-value measures
@@ -23,8 +25,10 @@ continuously and measurably on the entries of `A`. These identities connect sing
 with Gram-matrix spectral limits, as used in covariance laws and hermitization.
 
 The squared-singular-value measure needs no separate definition: it is the existing
-`Matrix.spectralMeasure` of `Aᴴ * A`. All singular values come from Mathlib's
-`LinearMap.singularValues` via `Matrix.toEuclideanLin`.
+`Matrix.spectralMeasure` of `Aᴴ * A`. Lipschitz statistics satisfy a squared perturbation bound
+by the squared Lipschitz constant times the average squared Frobenius error. This controls
+bounded approximations of covariance spectra using only second moments. All singular values come
+from Mathlib's `LinearMap.singularValues` via `Matrix.toEuclideanLin`.
 
 ## References
 
@@ -36,7 +40,7 @@ public section
 noncomputable section
 
 open MeasureTheory TauCeti.Probability
-open scoped ComplexOrder ENNReal
+open scoped ComplexOrder ENNReal Matrix.Norms.Frobenius NNReal
 
 namespace Matrix
 
@@ -142,5 +146,70 @@ theorem singularValueMeasure_unitary_mul [DecidableEq m] (A : Matrix m n 𝕜) (
 theorem singularValueMeasure_mul_unitary (A : Matrix m n 𝕜) (U : unitaryGroup n 𝕜) :
     (A * (U : Matrix n n 𝕜)).singularValueMeasure = A.singularValueMeasure := by
   simp only [singularValueMeasure_def, singularValues_toEuclideanLin_mul_unitary]
+
+/-- For a `K`-Lipschitz test, the squared change in its singular-value statistic is at most
+`K ^ 2 * ‖A - B‖ ^ 2 / card n`, with the Frobenius norm and domain-size normalization. -/
+theorem sq_norm_integral_singularValueMeasure_sub_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (A B : Matrix m n 𝕜) {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) :
+    ‖∫ x, f x ∂(A.singularValueMeasure : Measure ℝ) -
+        ∫ x, f x ∂(B.singularValueMeasure : Measure ℝ)‖ ^ 2 ≤
+      (K : ℝ) ^ 2 * ‖A - B‖ ^ 2 / Fintype.card n := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp only [integral_of_not_completeSpace hE, sub_self, norm_zero, zero_pow two_ne_zero]
+    positivity
+  let _ := hE
+  let a := (toEuclideanLin A).singularValues
+  let b := (toEuclideanLin B).singularValues
+  have hN : (0 : ℝ) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos
+  have hnorm : ‖∑ i : Fin (Fintype.card n), (f (a i) - f (b i))‖ ≤
+      (K : ℝ) * ∑ i : Fin (Fintype.card n), |a i - b i| := by
+    rw [Finset.mul_sum]
+    exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ by
+      simpa [← dist_eq_norm, Real.dist_eq] using hf.dist_le_mul (a i) (b i))
+  have hcs := sq_sum_le_card_mul_sum_sq
+    (s := Finset.univ) (f := fun i : Fin (Fintype.card n) ↦ |a i - b i|)
+  simp only [Finset.card_univ, Fintype.card_fin, sq_abs] at hcs
+  rw [integral_singularValueMeasure, integral_singularValueMeasure, ← smul_sub,
+    ← Finset.sum_sub_distrib, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow]
+  have hsq := pow_le_pow_left₀ (norm_nonneg _) hnorm 2
+  rw [mul_pow] at hsq
+  have hbound := mul_le_mul_of_nonneg_left
+    (sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq A B
+      (k := Fintype.card n)) hN.le
+  have hcs' := mul_le_mul_of_nonneg_left (hcs.trans hbound) (sq_nonneg (K : ℝ))
+  calc
+    _ ≤ (Fintype.card n : ℝ)⁻¹ ^ 2 * ((K : ℝ) ^ 2 *
+        ((Fintype.card n : ℝ) * ‖A - B‖ ^ 2)) :=
+      mul_le_mul_of_nonneg_left (hsq.trans hcs') (sq_nonneg _)
+    _ = _ := by field_simp
+
+/-- For a `K`-Lipschitz test, the change in its singular-value statistic is at most
+`K * ‖A - B‖ / √(card n)`, with the Frobenius norm and domain-size normalization. -/
+theorem norm_integral_singularValueMeasure_sub_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (A B : Matrix m n 𝕜) {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) :
+    ‖∫ x, f x ∂(A.singularValueMeasure : Measure ℝ) -
+        ∫ x, f x ∂(B.singularValueMeasure : Measure ℝ)‖ ≤
+      (K : ℝ) * ‖A - B‖ / Real.sqrt (Fintype.card n) := by
+  have h := Real.le_sqrt_of_sq_le (sq_norm_integral_singularValueMeasure_sub_le A B hf)
+  rw [Real.sqrt_div (by positivity), ← mul_pow, Real.sqrt_sq (by positivity)] at h
+  exact h
+
+/-- Weak convergence of Gram spectral laws is equivalent to weak convergence of the
+singular-value laws, for any filter and a nonnegative reference law. -/
+theorem tendsto_spectralMeasure_conjTranspose_mul_self_iff_tendsto_singularValueMeasure
+    {ι : Type*} {p n : ι → Type*} [∀ i, Fintype (p i)] [∀ i, Fintype (n i)]
+    [∀ i, DecidableEq (n i)] [∀ i, Nonempty (n i)]
+    (A : (i : ι) → Matrix (p i) (n i) 𝕜) {l : Filter ι} {μ : ProbabilityMeasure ℝ}
+    (hμ : ∀ᵐ x ∂(μ : Measure ℝ), 0 ≤ x) :
+    Filter.Tendsto (fun i ↦ ((A i)ᴴ * A i).spectralMeasure
+      (isHermitian_conjTranspose_mul_self (A i))) l (nhds μ) ↔
+    Filter.Tendsto (fun i ↦ (A i).singularValueMeasure) l (nhds (μ.map Real.sqrt)) := by
+  simpa only [map_spectralMeasure_conjTranspose_mul_self_sqrt] using
+    ProbabilityMeasure.tendsto_iff_tendsto_map_sqrt
+      (Filter.Eventually.of_forall fun i ↦
+        (posSemidef_conjTranspose_mul_self (A i)).ae_mem_Ici_spectralMeasure) hμ
 
 end Matrix

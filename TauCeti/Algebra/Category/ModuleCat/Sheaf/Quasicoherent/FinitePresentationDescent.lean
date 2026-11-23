@@ -48,9 +48,8 @@ instance _root_.SheafOfModules.QuasicoherentData.isFinitePresentation_shrink
 
 end Shrink
 
-variable {C : Type u₁} [Category.{v} C] [HasBinaryProducts C]
+variable {C : Type u₁} [Category.{v} C]
   {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
-  [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   [∀ X Y, HasSheafify ((J.over X).over Y) AddCommGrpCat.{u}]
@@ -70,8 +69,6 @@ instance _root_.SheafOfModules.QuasicoherentData.isFinitePresentation_bind
     apply +allowSynthFailures _root_.SheafOfModules.instIsFiniteOfIsIso
     apply +allowSynthFailures _root_.SheafOfModules.Presentation.isFinite_map
 
-omit [HasBinaryProducts C] [HasSheafify J AddCommGrpCat.{u}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
 /-- A sheaf of modules is finitely presented if its restrictions to a covering family are
 finitely presented. -/
 theorem _root_.SheafOfModules.IsFinitePresentation.of_coversTop

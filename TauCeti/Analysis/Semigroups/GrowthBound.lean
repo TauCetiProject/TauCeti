@@ -13,7 +13,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 # Growth bounds for strongly continuous semigroups
 
 This file contains exponential growth bounds for C₀-semigroups, including the
-contraction case and the existence of a finite exponential type.
+contraction case, the existence of a finite exponential type, and the passage of a common growth
+bound to a strong limit of semigroups.
 
 The uniform operator bound this provides also yields strong continuity of `(u, x) ↦ S u x` in
 both arguments at once (`StronglyContinuousSemigroup.tendsto_realOperator_apply` and its
@@ -126,6 +127,34 @@ theorem ContractionSemigroup.hasGrowthBound_of_nonneg_omega_of_one_le_const
     S.toStronglyContinuousSemigroup.HasGrowthBound ω M :=
   S.hasGrowthBound.mono hω hM
 
+/-- **A strong limit of semigroups with a common growth bound `(ω, M)` has the same growth
+bound.** -/
+theorem StronglyContinuousSemigroup.hasGrowthBound_of_tendsto_apply {ι : Type*} {l : Filter ι}
+    [l.NeBot] {S : ι → StronglyContinuousSemigroup X} {T : StronglyContinuousSemigroup X}
+    {ω M : ℝ} (hS : ∀ i, (S i).HasGrowthBound ω M)
+    (h : ∀ (t : ℝ≥0) (x : X), Filter.Tendsto (fun i => S i t x) l (𝓝 (T t x))) :
+    T.HasGrowthBound ω M := by
+  obtain ⟨i⟩ := l.nonempty_of_neBot
+  have hM : 0 ≤ M := zero_le_one.trans (hS i).one_le
+  refine hasGrowthBound_of_bound (hS i).one_le fun t ht => ?_
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x => ?_
+  rw [realOperator_def]
+  refine le_of_tendsto (h t.toNNReal x).norm (Filter.Eventually.of_forall fun j => ?_)
+  rw [← realOperator_def]
+  exact ((S j).realOperator t).le_of_opNorm_le ((hS j).bound t ht) x
+
+/-! ## Strong continuity from a growth bound -/
+
+/-- The real-time orbit of a semigroup with a growth bound is continuous on all of `ℝ`. Unlike
+`StronglyContinuousSemigroup.continuous_realOperator_apply` this needs no completeness: the
+growth bound replaces the Banach--Steinhaus bound on `[0, t₀]`. -/
+theorem StronglyContinuousSemigroup.HasGrowthBound.continuous_realOperator_apply
+    {S : StronglyContinuousSemigroup X} {ω M : ℝ} (hb : S.HasGrowthBound ω M) (x : X) :
+    Continuous (fun t : ℝ => S.realOperator t x) :=
+  continuous_iff_continuousAt.2 fun _ =>
+    S.realOperator_continuousAt_of_norm_le x
+      fun _ ht htt₀ => hb.norm_le_mul_exp_max_zero_mul_of_le ht htt₀
+
 variable [CompleteSpace X]
 
 /-! ## Growth Bounds and Exponential Type -/
@@ -157,7 +186,7 @@ theorem StronglyContinuousSemigroup.existsGrowthBound (S : StronglyContinuousSem
         apply mul_le_mul_of_nonneg_left _ (by linarith)
         calc (M : ℝ) ^ n
             = Real.exp (↑n * Real.log M) := by
-              rw [Real.exp_nat_mul, Real.exp_log hM_pos]
+              rw [Real.exp_natCast_mul, Real.exp_log hM_pos]
           _ ≤ Real.exp (Real.log M * t) := by
               apply Real.exp_le_exp.mpr
               calc ↑n * Real.log M ≤ t * Real.log M :=

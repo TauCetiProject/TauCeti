@@ -95,7 +95,7 @@ theorem exists_forall_ge_iteratedDeconcatenation_eq_zero (z : ReducedTensorWords
 
 /-- A pure input tensor of length at most the number of cuts is annihilated. -/
 theorem iteratedDeconcatenation_of_eq_zero (n : ℕ) {k : {n : ℕ // 0 < n}}
-    (hk : k.1 ≤ n) (x : TensorPower R k.1 M) :
+    (hk : k.val ≤ n) (x : TensorPower R k.val M) :
     iteratedDeconcatenation R M n (of R M k x) = 0 :=
   iteratedDeconcatenation_eq_zero_of_mem_filtration R M n (of_mem_filtration R M hk x)
 

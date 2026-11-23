@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Calculus.TangentCone.Pi
@@ -30,11 +31,14 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
+* `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 * `HasFDerivWithinAt.mapsTo_posTangentConeAt`: a differential carries positive tangent cones into
   positive tangent cones.
+* `ContinuousLinearEquiv.mem_posTangentConeAt_image_iff`: a continuous linear equivalence carries
+  positive tangent cones onto positive tangent cones.
 * `HasDerivWithinAt.mem_posTangentConeAt`: the right derivative of a curve which frequently lies
   in a set, just after the base time, is a positive tangent vector of that set.
 -/
@@ -108,6 +112,16 @@ theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : �
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
 
+/-- A real direction `v` is tangent to the horizontal line `{y : ℂ | y.im = c}` at each of its
+points. -/
+theorem TauCeti.mem_tangentConeAt_setOf_im_eq {c : ℝ} {v w : ℂ} (hw : w.im = c) (hv : v.im = 0) :
+    v ∈ tangentConeAt ℝ {y : ℂ | y.im = c} w := by
+  have hseg : segment ℝ w (w + v) ⊆ {y : ℂ | y.im = c} := by
+    rw [segment_eq_image']
+    rintro _ ⟨θ, -, rfl⟩
+    simp [hw, hv]
+  simpa using mem_tangentConeAt_of_segment_subset hseg
+
 /-- A preconnected set of reals containing two distinct points has unique derivatives. -/
 theorem IsPreconnected.uniqueDiffOn {s : Set ℝ} (hs : IsPreconnected s) {a b : ℝ} (ha : a ∈ s)
     (hb : b ∈ s) (hab : a ≠ b) : UniqueDiffOn ℝ s :=
@@ -129,6 +143,15 @@ theorem HasFDerivWithinAt.mapsTo_posTangentConeAt {E F : Type*} [NormedAddCommGr
     simpa using tendsto_const_nhds.add hd₀
   · exact hds.mono fun n hn ↦ ⟨x + d n, hn, by simp⟩
   · exact h.lim hd₀ hds hcd
+
+/-- A continuous linear equivalence `e` identifies the positive tangent cone of `e '' s` at `e x`
+with the image of the positive tangent cone of `s` at `x`. -/
+@[simp]
+theorem ContinuousLinearEquiv.mem_posTangentConeAt_image_iff {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (e : E ≃L[ℝ] F) {s : Set E}
+    {x y : E} : e y ∈ posTangentConeAt (e '' s) (e x) ↔ y ∈ posTangentConeAt s x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ e.hasFDerivAt.hasFDerivWithinAt.mapsTo_posTangentConeAt h⟩
+  simpa [e.symm_image_image] using e.symm.hasFDerivAt.hasFDerivWithinAt.mapsTo_posTangentConeAt h
 
 /-- If a curve `x` has right derivative `w` at `t` and lies in `s` at times arbitrarily close to
 `t` from the right, then `w` is a positive tangent vector of `s` at `x t`. -/
