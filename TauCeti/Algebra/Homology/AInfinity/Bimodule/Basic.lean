@@ -81,6 +81,12 @@ noncomputable instance barCarrierAddCommGroup {X : Type*} [AddCommMonoid X] [Mod
     AddCommGroup ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B) :=
   Module.addCommMonoidToAddCommGroup R
 
+/-- Additive inverses on `Tᶜ(sA) ⊗ (Tᶜ(sA) ⊗ X ⊗ Tᶜ(sB))`, the target of the left coaction of the
+two-sided bar carrier, supplied by the ground ring. -/
+noncomputable instance leftCoactCarrierAddCommGroup {X : Type*} [AddCommMonoid X] [Module R X] :
+    AddCommGroup (TensorWords R A ⊗[R] ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B)) :=
+  Module.addCommMonoidToAddCommGroup R
+
 /-- The total suspended grading on the cofree bar bicomodule `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)`. -/
 noncomputable def barGrading (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
     (G : InternalGrading R M ℤ) :

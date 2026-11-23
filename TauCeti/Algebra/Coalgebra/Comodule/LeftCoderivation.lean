@@ -60,8 +60,8 @@ bar constructions.
   `TauCeti.Comodule`): the square-zero law can be checked on the counit component.
 * `TauCeti.Comodule.comp_comp_eq_lTensor_comp_of_comp_self_eq_id`: two maps intertwining left
   coactions up to the same involution of the coalgebra factor compose to a map of left comodules.
-* `TauCeti.Comodule.comp_ringInverse_eq_lTensor_comp`: the inverse of an invertible map of left
-  comodules is a map of left comodules.
+* `TauCeti.Comodule.comp_ringInverse_eq_lTensor_comp`: the ring inverse of an endomorphism of
+  left comodules is an endomorphism of left comodules.
 * `TauCeti.Comodule.leftCofreeCoact_comp_leftCofreeCoact` and
   `TauCeti.Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact`: the cofree left
   coaction, and its extension to the cofree bicomodule `(C ⊗ P) ⊗ N`, are coassociative.
@@ -173,10 +173,15 @@ theorem comp_comp_eq_lTensor_comp_of_comp_self_eq_id {X Z : Type*} [AddCommMonoi
     δZ ∘ₗ g ∘ₗ f = (g ∘ₗ f).lTensor C ∘ₗ δX := by
   rw [comp_comp_eq_map_comp_comp hf hg, hτ, LinearMap.lTensor_def]
 
-/-- If an invertible endomorphism `U` is a map of left comodules, so is its inverse. -/
+/-- If an endomorphism `U` is a map of left comodules, so is its ring inverse: its inverse when `U`
+is invertible, and zero otherwise. -/
 theorem comp_ringInverse_eq_lTensor_comp {δY : Y →ₗ[R] C ⊗[R] Y} {U : Module.End R Y}
-    (hUnit : IsUnit U) (hU : δY ∘ₗ U = U.lTensor C ∘ₗ δY) :
+    (hU : δY ∘ₗ U = U.lTensor C ∘ₗ δY) :
     δY ∘ₗ Ring.inverse U = (Ring.inverse U).lTensor C ∘ₗ δY := by
+  by_cases hUnit : IsUnit U
+  swap
+  · rw [Ring.inverse_non_unit _ hUnit, LinearMap.lTensor_zero, LinearMap.zero_comp,
+      LinearMap.comp_zero]
   calc δY ∘ₗ Ring.inverse U
       = (Ring.inverse U * U).lTensor C ∘ₗ δY ∘ₗ Ring.inverse U := by
         rw [Ring.inverse_mul_cancel _ hUnit, Module.End.one_eq_id, LinearMap.lTensor_id,

@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Cohomology
 public import TauCeti.Algebra.Homology.Contraction.Linear.TensorProduct
 public import TauCeti.Algebra.Homology.Contraction.Perturbation
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
+import TauCeti.Algebra.Homology.Contraction.Linear.Homology.Equiv
 
 /-!
 # Homological transfer of right A-infinity modules
@@ -305,14 +306,6 @@ theorem isUnit_one_add_higherBarDifferential_mul_rTensor (k : Module.End R M) :
   Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero _
     (MM.exists_pow_higherBarDifferential_comp_rTensor_apply_eq_zero k)
 
-/-- A map `f ⊗ 1` acting on the module input only commutes with the cofree coactions. -/
-private theorem coact_comp_rTensor {P : Type*} [AddCommGroup P] [Module R P] (f : P →ₗ[R] N) :
-    Comodule.coact (R := R) (C := TensorWords R A) (M := N ⊗[R] TensorWords R A) ∘ₗ
-        f.rTensor (TensorWords R A) =
-      (f.rTensor (TensorWords R A)).rTensor (TensorWords R A) ∘ₗ
-        Comodule.coact (R := R) (C := TensorWords R A) (M := P ⊗[R] TensorWords R A) :=
-  (Comodule.Hom.cofreeMap (C := TensorWords R A) f).map_coact_eq.symm
-
 /-! ### The bar contraction and the perturbation -/
 
 section Transfer
@@ -495,8 +488,10 @@ theorem coact_comp_transferContraction_incl :
       (MM.transferContraction c hh hincl hproj).incl.rTensor (TensorWords R A) ∘ₗ
         Comodule.coact (R := R) (C := TensorWords R A) (M := N ⊗[R] TensorWords R A) := by
   refine LinearMap.ext fun z ↦ ?_
-  have hi := LinearMap.congr_fun (coact_comp_rTensor (A := A) c.incl)
-  have hh' := LinearMap.congr_fun (coact_comp_rTensor (A := A) c.homotopy)
+  have hi := LinearMap.congr_fun
+    (Comodule.cofree_coact_comp_rTensor (C := TensorWords R A) c.incl)
+  have hh' := LinearMap.congr_fun
+    (Comodule.cofree_coact_comp_rTensor (C := TensorWords R A) c.homotopy)
   have hX := LinearMap.congr_fun (MM.coact_comp_perturbationSeries c hh hincl hproj)
   simp only [LinearMap.comp_apply] at hi hh' hX
   simp only [transferContraction_incl, LinearMap.comp_apply, LinearMap.sub_apply, map_sub,
@@ -509,8 +504,10 @@ theorem coact_comp_transferContraction_proj :
       (MM.transferContraction c hh hincl hproj).proj.rTensor (TensorWords R A) ∘ₗ
         Comodule.coact (R := R) (C := TensorWords R A) (M := M ⊗[R] TensorWords R A) := by
   refine LinearMap.ext fun z ↦ ?_
-  have hp := LinearMap.congr_fun (coact_comp_rTensor (A := A) c.proj)
-  have hh' := LinearMap.congr_fun (coact_comp_rTensor (A := A) c.homotopy)
+  have hp := LinearMap.congr_fun
+    (Comodule.cofree_coact_comp_rTensor (C := TensorWords R A) c.proj)
+  have hh' := LinearMap.congr_fun
+    (Comodule.cofree_coact_comp_rTensor (C := TensorWords R A) c.homotopy)
   have hX := LinearMap.congr_fun (MM.coact_comp_perturbationSeries c hh hincl hproj)
   simp only [LinearMap.comp_apply] at hp hh' hX
   simp only [transferContraction_proj, LinearMap.comp_apply, LinearMap.sub_apply, map_sub,
@@ -521,8 +518,10 @@ the unary part for `d_N` plus the comodule morphism `(p ⊗ 1) X (i ⊗ 1)`. -/
 theorem isGradedCoderivationOver_transferBarDifferential :
     Comodule.IsGradedCoderivationOver (barGrading AA GN) 1 AA.coaugmentedBarDifferential
       (MM.transferBarDifferential c hh hincl hproj) := by
-  have hp := LinearMap.congr_fun (coact_comp_rTensor (A := A) c.proj)
-  have hi := LinearMap.congr_fun (coact_comp_rTensor (A := A) c.incl)
+  have hp := LinearMap.congr_fun
+    (Comodule.cofree_coact_comp_rTensor (C := TensorWords R A) c.proj)
+  have hi := LinearMap.congr_fun
+    (Comodule.cofree_coact_comp_rTensor (C := TensorWords R A) c.incl)
   have hX := LinearMap.congr_fun (MM.coact_comp_perturbationSeries c hh hincl hproj)
   have hD := (isGradedCoderivationOver_unaryBarDifferential AA GN dN).coact_apply
   simp only [LinearMap.comp_apply] at hp hi hX
@@ -677,14 +676,10 @@ theorem transferProjection_comp_transferInclusion :
 /-- The extending morphism is a quasi-isomorphism: its linear part is the inclusion of a
 contraction. -/
 theorem isQuasiIso_transferInclusion : (MM.transferInclusion c hh hincl hproj).IsQuasiIso := by
-  rw [AInfinityRightModuleHom.isQuasiIso_iff, linearPart_transferInclusion]
-  refine ⟨fun x _ hx ↦ ?_, fun y hy ↦ ⟨c.proj y, ?_, ?_⟩⟩
-  · obtain ⟨y, hy⟩ := (MM.mem_boundaries).1 hx
-    rw [mem_boundaries, differential_transfer]
-    exact ⟨c.proj y, by rw [← c.proj_dM_apply, hy, c.proj_incl_apply]⟩
-  · rw [mem_cycles, differential_transfer, ← c.proj_dM_apply, (MM.mem_cycles).1 hy, map_zero]
-  · rw [c.incl_proj_apply, (MM.mem_cycles).1 hy, map_zero, sub_zero, sub_sub_cancel]
-    exact (MM.mem_boundaries).2 ⟨c.homotopy y, rfl⟩
+  simp only [AInfinityRightModuleHom.isQuasiIso_iff, linearPart_transferInclusion, cycles_def,
+    boundaries_def, differential_transfer]
+  exact ⟨fun _ _ hx ↦ c.mem_range_of_incl_mem_range hx,
+    fun _ hy ↦ c.exists_mem_ker_sub_incl_mem_range hy⟩
 
 /-- The projecting morphism is a quasi-isomorphism. -/
 theorem isQuasiIso_transferProjection : (MM.transferProjection c hh hincl hproj).IsQuasiIso :=

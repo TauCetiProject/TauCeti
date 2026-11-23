@@ -38,6 +38,8 @@ co-Leibniz identity itself, the letterwise maps, and the total-letter-degree pie
 
 * `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential`: the bar coderivation extended to all
   tensor words by zero on the empty word.
+* `TauCeti.AInfinityAlgebra.leftUnaryDifferential`: the differential `b_A ⊗ 1 + τ ⊗ d` of
+  `Tᶜ(sA) ⊗ M`, for an endomorphism `d` of `M`.
 
 ## Main results
 
@@ -52,6 +54,8 @@ co-Leibniz identity itself, the letterwise maps, and the total-letter-degree pie
   degree by one.
 * `TauCeti.AInfinityAlgebra.map_koszulTwist_coaugmentedBarDifferential`: the Koszul twist of the
   suspended words anticommutes with it.
+* `TauCeti.AInfinityAlgebra.leftUnaryDifferential_comp_self`: the differential `b_A ⊗ 1 + τ ⊗ d`
+  of `Tᶜ(sA) ⊗ M` squares to zero when `d` does.
 * `TauCeti.AInfinityAlgebra.isGradedCoderivation_coaugmentedBarDifferential`: it is a
   twist-parameter-one graded coderivation of the coaugmented tensor coalgebra.
 
@@ -126,25 +130,78 @@ theorem isHomogeneous_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
       (gradedPiece (𝒜.grading.shift 1)) (gradedPiece (𝒜.grading.shift 1)) 1 :=
   isHomogeneous_extendReduced 𝒜.isHomogeneous_barDifferential
 
-/-- The extension has degree one for the grading of the suspended tensor words. -/
-theorem isHomogeneous_coaugmentedBarDifferential_grading (𝒜 : AInfinityAlgebra R A) :
-    LinearMap.IsHomogeneous 𝒜.coaugmentedBarDifferential
-      (TensorWords.grading (𝒜.grading.shift 1)).piece
-      (TensorWords.grading (𝒜.grading.shift 1)).piece 1 := by
-  simpa only [grading_piece] using 𝒜.isHomogeneous_coaugmentedBarDifferential
-
 /-- The Koszul twist of the suspended words anticommutes with the extension. -/
 theorem map_koszulTwist_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A)
     (w : TensorWords R A) :
     TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1) (𝒜.coaugmentedBarDifferential w) =
       -𝒜.coaugmentedBarDifferential (TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1) w) := by
+  have hD := 𝒜.isHomogeneous_coaugmentedBarDifferential
+  rw [← grading_piece] at hD
   rw [← koszulTwist_grading]
-  simpa using 𝒜.isHomogeneous_coaugmentedBarDifferential_grading.koszulTwist_apply 1 w
+  simpa using hD.koszulTwist_apply 1 w
 
 /-- The extension satisfies the graded co-Leibniz identity of the coaugmented tensor coalgebra. -/
 theorem isGradedCoderivation_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
     TensorWords.IsGradedCoderivation (𝒜.grading.shift 1) 1 𝒜.coaugmentedBarDifferential :=
   isGradedCoderivation_extendReduced 𝒜.isGradedCoderivation_barDifferential
+
+/-! ### The bar differential tensored with a differential -/
+
+section LeftUnary
+
+variable {M : Type*} [AddCommGroup M] [Module R M] (𝒜 : AInfinityAlgebra R A) (d : Module.End R M)
+
+/-- The differential `b_A ⊗ 1 + τ ⊗ d` of `Tᶜ(sA) ⊗ M`: the bar differential of `A` on the left
+word plus the operator `d` on the module factor, with the Koszul sign `τ` of moving `d` past the
+suspended left word. -/
+noncomputable def leftUnaryDifferential : Module.End R (TensorWords R A ⊗[R] M) :=
+  𝒜.coaugmentedBarDifferential.rTensor M +
+    TensorProduct.map ((TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1) d
+
+/-- The left unary differential is `b_A ⊗ 1 + τ ⊗ d`. -/
+theorem leftUnaryDifferential_def :
+    𝒜.leftUnaryDifferential d = 𝒜.coaugmentedBarDifferential.rTensor M +
+      TensorProduct.map ((TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1) d := (rfl)
+
+/-- The left unary differential on `w ⊗ x` is `b_A w ⊗ x + τ w ⊗ d x`. -/
+@[simp]
+theorem leftUnaryDifferential_tmul (w : TensorWords R A) (x : M) :
+    𝒜.leftUnaryDifferential d (w ⊗ₜ x) = 𝒜.coaugmentedBarDifferential w ⊗ₜ x +
+      TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1) w ⊗ₜ d x := by
+  simp [leftUnaryDifferential_def, koszulTwist_grading]
+
+variable {d}
+
+/-- The left unary differential has degree one for the total grading of `Tᶜ(sA) ⊗ M` when `d`
+has degree one. -/
+theorem isHomogeneous_leftUnaryDifferential {K : InternalGrading R M ℤ}
+    (hd : LinearMap.IsHomogeneous d K.piece K.piece 1) :
+    LinearMap.IsHomogeneous (𝒜.leftUnaryDifferential d)
+      ((TensorWords.grading (𝒜.grading.shift 1)).tensorProduct K).piece
+      ((TensorWords.grading (𝒜.grading.shift 1)).tensorProduct K).piece 1 := by
+  have hD := 𝒜.isHomogeneous_coaugmentedBarDifferential
+  rw [← grading_piece] at hD
+  rw [leftUnaryDifferential_def]
+  simpa only [zero_add] using (hD.rTensor K).add
+    (((TensorWords.grading (𝒜.grading.shift 1)).isHomogeneous_koszulTwist 1).tensorProduct hd)
+
+/-- The left unary differential squares to zero when `d` does, since the Koszul twist
+anticommutes with the bar differential of `A`. -/
+theorem leftUnaryDifferential_comp_self (hdd : d ∘ₗ d = 0) :
+    𝒜.leftUnaryDifferential d ∘ₗ 𝒜.leftUnaryDifferential d = 0 := by
+  refine TensorProduct.ext' fun w x ↦ ?_
+  have hdd := LinearMap.congr_fun hdd x
+  have hbb := LinearMap.congr_fun 𝒜.coaugmentedBarDifferential_sq w
+  have hττ : TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1)
+      (TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1) w) = w := by
+    rw [← koszulTwist_grading, InternalGrading.koszulTwist_koszulTwist]
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hdd hbb
+  simp only [LinearMap.comp_apply, leftUnaryDifferential_tmul, map_add, LinearMap.zero_apply,
+    hdd, hbb, hττ, 𝒜.map_koszulTwist_coaugmentedBarDifferential, TensorProduct.zero_tmul,
+    TensorProduct.tmul_zero, TensorProduct.neg_tmul]
+  abel
+
+end LeftUnary
 
 end AInfinityAlgebra
 

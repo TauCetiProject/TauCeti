@@ -42,7 +42,7 @@ with the bar constructions on both sides.
   conditions, with homogeneity lemmas for its three maps.
 * `TauCeti.LinearSpecialContraction.rTensor`: the special contraction `(i ⊗ 1, p ⊗ 1, h ⊗ 1)`.
 * `TauCeti.LinearContraction.lTensor`: the contraction `(1 ⊗ i, 1 ⊗ p, τ ⊗ h)` without side
-  conditions.
+  conditions, with homogeneity lemmas for its three maps.
 * `TauCeti.LinearSpecialContraction.lTensor`: the special contraction `(1 ⊗ i, 1 ⊗ p, τ ⊗ h)`.
 
 ## References
@@ -250,6 +250,30 @@ theorem lTensor_proj : (c.lTensor hb).proj = c.proj.lTensor C := (rfl)
 @[simp]
 theorem lTensor_homotopy :
     (c.lTensor hb).homotopy = TensorProduct.map (K.koszulTwist 1) c.homotopy := (rfl)
+
+variable {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
+
+/-- The left tensored contraction's inclusion has degree zero when the inclusion does. -/
+theorem isHomogeneous_lTensor_incl (hi : LinearMap.IsHomogeneous c.incl H.piece G.piece 0) :
+    LinearMap.IsHomogeneous (c.lTensor hb).incl (K.tensorProduct H).piece
+      (K.tensorProduct G).piece 0 := by
+  rw [lTensor_incl, LinearMap.lTensor_def]
+  simpa only [zero_add] using (LinearMap.isHomogeneous_id K.piece).tensorProduct hi
+
+/-- The left tensored contraction's projection has degree zero when the projection does. -/
+theorem isHomogeneous_lTensor_proj (hp : LinearMap.IsHomogeneous c.proj G.piece H.piece 0) :
+    LinearMap.IsHomogeneous (c.lTensor hb).proj (K.tensorProduct G).piece
+      (K.tensorProduct H).piece 0 := by
+  rw [lTensor_proj, LinearMap.lTensor_def]
+  simpa only [zero_add] using (LinearMap.isHomogeneous_id K.piece).tensorProduct hp
+
+/-- The left tensored contraction's homotopy has degree minus one when the homotopy does. -/
+theorem isHomogeneous_lTensor_homotopy
+    (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1)) :
+    LinearMap.IsHomogeneous (c.lTensor hb).homotopy (K.tensorProduct G).piece
+      (K.tensorProduct G).piece (-1) := by
+  rw [lTensor_homotopy]
+  simpa only [zero_add] using (K.isHomogeneous_koszulTwist 1).tensorProduct hh
 
 end LinearContraction
 
