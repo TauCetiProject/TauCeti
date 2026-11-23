@@ -22,6 +22,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -616,13 +617,14 @@ theorem contMDiffAt_circle_arg {n : WithTop ℕ∞} {z : Circle} (hz : |Complex.
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- `Circle.exp : ℝ → S¹` is a `C^n` local diffeomorphism at every point, for `1 ≤ n`. -/
-theorem isLocalDiffeomorphAt_circleExp {n : WithTop ℕ∞} (hn : 1 ≤ n) (t : ℝ) :
+/-- `Circle.exp : ℝ → S¹` is a `C^n` local diffeomorphism at every point, for every regularity `n`
+(for `n = 0` this says that it is a local homeomorphism). -/
+theorem isLocalDiffeomorphAt_circleExp {n : WithTop ℕ∞} (t : ℝ) :
     IsLocalDiffeomorphAt 𝓘(ℝ, ℝ) (𝓡 1) n Circle.exp t :=
-  isLocalDiffeomorphAt_of_injective_mfderiv
-    (contMDiff_circleExp (m := n)).contMDiffOn isOpen_univ (Set.mem_univ t)
-    BoundarylessManifold.isInteriorPoint hn (injective_mfderiv_circleExp t)
-    (by simp)
+  (isLocalDiffeomorphAt_of_injective_mfderiv (n := max 1 n)
+    (contMDiff_circleExp (m := max 1 n)).contMDiffOn isOpen_univ (Set.mem_univ t)
+    BoundarylessManifold.isInteriorPoint (le_max_left _ _) (injective_mfderiv_circleExp t)
+    (by simp)).of_le (le_max_right _ _)
 
 /-- The chain rule for a map `f` of the circle read along `Circle.exp`: the derivative of
 `s ↦ f (exp (s i))` at `t`, as a map out of `ℝ`, is the derivative of `f` at `exp (t i)` after that
@@ -635,7 +637,7 @@ theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ} :
   swap
   · -- Neither `f` nor `f ∘ Circle.exp` is differentiable, so both sides are zero.
     have hγ : ¬ DifferentiableAt ℝ (f ∘ Circle.exp) t := fun h ↦ hf
-      (((isLocalDiffeomorphAt_circleExp le_rfl t).mdifferentiableAt_comp_iff one_ne_zero).1
+      (((isLocalDiffeomorphAt_circleExp (n := 1) t).mdifferentiableAt_comp_iff one_ne_zero).1
         (mdifferentiableAt_iff_differentiableAt.2 h))
     rw [deriv_zero_of_not_differentiableAt hγ, mfderiv_zero_of_not_mdifferentiableAt hf]
     ext
