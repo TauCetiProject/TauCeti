@@ -275,7 +275,7 @@ of `TauCeti.realProjectiveMomentSpectralSequence N` is `H₀(ℝℙᴺ; ℤ) = �
 def realProjectiveMomentSpectralSequencePageThreeXZeroIso :
     ((𝔈[N]).page 3).X (0, 0) ≅ ModuleCat.of ℤ ℤ :=
   realProjectiveMomentSpectralSequencePageThreeXIso N 0 ≪≫
-    (RealProjectiveSpace.singularHomologyIsoProjectivization N (ModuleCat.of ℤ ℤ) 0).symm ≪≫
+    (RealProjectiveSpace.singularHomologyProjectivizationIso (N := N) ℤ 0).symm ≪≫
     (RealProjectiveSpace.singularHomologyZeroLinearEquiv ℤ).toModuleIso
 
 /-- **The second page in odd degrees below `N`.** For odd `k < N`, the object at `(-2k, k)` on
@@ -291,7 +291,7 @@ page (numbered `3`) of `TauCeti.realProjectiveMomentSpectralSequence N` is `H_N(
 def realProjectiveMomentSpectralSequencePageThreeXTopIsoOfOdd (hN : Odd N) :
     ((𝔈[N]).page 3).X (-2 * N, N) ≅ ModuleCat.of ℤ ℤ :=
   realProjectiveMomentSpectralSequencePageThreeXIso N N ≪≫
-    (RealProjectiveSpace.singularHomologyIsoProjectivization N (ModuleCat.of ℤ ℤ) N).symm ≪≫
+    (RealProjectiveSpace.singularHomologyProjectivizationIso (N := N) ℤ N).symm ≪≫
     (RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd ℤ hN).toModuleIso
 
 /-- **The second page in even positive degrees.** For even `k > 0`, the object at `(-2k, k)` on

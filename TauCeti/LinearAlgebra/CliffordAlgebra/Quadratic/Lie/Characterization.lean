@@ -124,7 +124,7 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
   let q : CliffordAlgebra Q := soEquivQuadratic Q hQ fs
   have hq_lie (v : V) : ⁅q, ι Q v⁆ = ι Q (f v) :=
     soEquivQuadratic_lie_ι Q hQ fs v
-  have hq_mem : q ∈ quadraticLieSubalgebra Q := (soEquivQuadratic Q hQ fs).2
+  have hq_mem : q ∈ quadraticLieSubalgebra Q := (soEquivQuadratic Q hQ fs).property
   let d : CliffordAlgebra Q := x - q
   have hd_even : d ∈ even Q := Subalgebra.sub_mem (even Q) hx_even
     (quadraticLieSubalgebra_le_even Q hq_mem)

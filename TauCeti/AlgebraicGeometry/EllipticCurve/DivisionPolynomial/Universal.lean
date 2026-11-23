@@ -154,8 +154,8 @@ lemma evalEval_φ : (W.φ n).evalEval x y = polyEval W x y (curve.φ n) := by
 no hypothesis on any coefficient.
 
 The proof recognises the family as a `normEDS` outright, which is what puts the whole `normEDS` API
-— including `Universal.lean`'s `universalNormEDS_ne_zero` — within reach of the universal division
-polynomials. The elliptic-*sequence* consequence is the shift `s = 0`, which
+— including `Universal.lean`'s `universalNormEDS_eq_zero_iff` — within reach of the universal
+division polynomials. The elliptic-*sequence* consequence is the shift `s = 0`, which
 `IsEllipticNet.isEllipticSequence` reads off; consumers that need a nonzero shift, as the
 addition formula for `n • (X, Y)` does, need the net. -/
 lemma isEllipticNet_polyToField_ψ :

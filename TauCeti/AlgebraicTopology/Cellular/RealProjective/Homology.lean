@@ -31,6 +31,11 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
   `0 < k ≤ N`, `Hₖ(RPᴺ; R)` is the `2`-torsion of `R`.
 * `TauCeti.RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd`: for odd `N`,
   `H_N(RPᴺ; R) ≅ R`.
+* `TauCeti.RealProjectiveSpace.cellularChainComplex_d_eq_zero_of_even` and
+  `TauCeti.RealProjectiveSpace.exists_cellularChainCoord_d_eq_two_mul_of_odd`: the cellular
+  differential out of degree `k + 1` vanishes for even `k`, and for odd `k` it is right
+  multiplication by twice a unit in the coordinates of the cells
+  `TauCeti.RealProjectiveSpace.cwComplexCell`.
 * `TauCeti.RealProjectiveSpace.cellularChainComplex_d_eq_zero_of_two_eq_zero`: if `2 = 0` in `R`,
   every cellular differential of `RPᴺ` vanishes.
 * `TauCeti.RealProjectiveSpace.isZero_singularHomology_of_lt`: `Hₖ(RPᴺ; R) = 0` for `k > N`.
@@ -39,19 +44,24 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
 * `TauCeti.RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd` and
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_int_of_even`: integrally, `Hₖ(RPᴺ; ℤ)` is
   `ℤ/2` for odd `k < N` and vanishes for even `k > 0`.
+* `TauCeti.RealProjectiveSpace.two_nsmul_singularHomology_one_eq_zero`: for `N ≠ 1`, every class
+  of `H₁(RPᴺ; ℤ)` is killed by `2`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero`: over a division ring in
   which `2 = 0`, `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero above.
+* `TauCeti.RealProjectiveSpace.finrank_range_cellularChainComplex_d_of_two_ne_zero`: over a
+  division ring in which `2 ≠ 0`, the cellular differential from degree `k + 1` to degree `k` has
+  rank `1` for odd `k < N` and `0` otherwise.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero`: over a division ring in
   which `2 ≠ 0`, `Hₖ(RPᴺ; R)` is one-dimensional only in degree `0` and, for odd `N`, in degree
   `N`.
-* `TauCeti.RealProjectiveSpace.singularHomologyIsoProjectivization`: the homology of `RPᴺ` is
-  that of the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero`,
+  `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero`,
   `TauCeti.RealProjectiveSpace.singularHomologyProjectivizationLinearEquivOfOdd`,
   `TauCeti.RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd` and
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_projectivization_of_even`: the same
-  statements on the projectivization, transported along
-  `TauCeti.RealProjectiveSpace.singularHomologyIsoProjectivization`.
+  statements on the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`, transported along
+  `TauCeti.RealProjectiveSpace.homeomorphProjectivization` by
+  `TauCeti.RealProjectiveSpace.singularHomologyProjectivizationIso`.
 
 ## References
 
@@ -72,8 +82,9 @@ attribute [local instance] cwComplex
 
 variable {N k : ℕ} (R : Type) [Ring R]
 
-/-- For `k ≤ N`, the `k`-cell of `RPᴺ`. -/
-private def theCell (hk : k ≤ N) : cell (univ : Set (RealProjectiveSpace N)) k :=
+/-- For `k ≤ N`, the `k`-cell of `RPᴺ`, the unique cell of dimension `k` of
+`TauCeti.RealProjectiveSpace.cwComplex`. -/
+def cwComplexCell (hk : k ≤ N) : cell (univ : Set (RealProjectiveSpace N)) k :=
   Classical.choice (nonempty_cell_cwComplex hk)
 
 /-- The cellular chain complex of `RPᴺ` with coefficients in `R`. -/
@@ -81,7 +92,7 @@ local notation "K" => cellularChainComplex (univ : Set (RealProjectiveSpace N)) 
 
 /-- For even `k`, the differential of the cellular chain complex of `RPᴺ` out of degree `k + 1`
 vanishes. -/
-private lemma d_eq_zero_of_even (hk : Even k) : (K).d (k + 1) k = 0 := by
+theorem cellularChainComplex_d_eq_zero_of_even (hk : Even k) : (K).d (k + 1) k = 0 := by
   rw [cellularChainComplex_d, (cellularDifferential_eq_zero_iff _ R k).2 fun c c' ↦
     cellularIncidence_cwComplex_eq_zero_of_even R hk c c']
   simp
@@ -90,14 +101,14 @@ private lemma d_eq_zero_of_even (hk : Even k) : (K).d (k + 1) k = 0 := by
 vanishes. -/
 private lemma d_eq_zero_of_odd (hk : Odd k) : (K).d k (k - 1) = 0 := by
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by have := hk.pos; omega⟩
-  exact d_eq_zero_of_even R (by simpa [Nat.odd_add_one] using hk)
+  exact cellularChainComplex_d_eq_zero_of_even R (by simpa [Nat.odd_add_one] using hk)
 
 /-- If `2 = 0` in `R`, every differential of the cellular chain complex of `RPᴺ` vanishes: it is
 zero or right multiplication by twice a unit. -/
 theorem cellularChainComplex_d_eq_zero_of_two_eq_zero (h2 : (2 : R) = 0) :
     (K).d (k + 1) k = 0 := by
   rcases Nat.even_or_odd k with hk | hk
-  · exact d_eq_zero_of_even R hk
+  · exact cellularChainComplex_d_eq_zero_of_even R hk
   rw [cellularChainComplex_d, (cellularDifferential_eq_zero_iff _ R k).2 fun c c' ↦ ?_]
   · simp
   obtain ⟨u, hu⟩ := exists_cellularIncidence_cwComplex_eq_two_mul_of_odd R hk c c'
@@ -111,7 +122,7 @@ private lemma d_eq_zero_of_le (hk : N ≤ k) : (K).d (k + 1) k = 0 := by
 
 /-- For odd `k`, in the coordinates `TauCeti.cellularChainCoord`, the differential of the cellular
 chain complex of `RPᴺ` out of degree `k + 1` is right multiplication by twice a unit. -/
-private lemma exists_chainCoord_d_of_odd (hk : Odd k)
+theorem exists_cellularChainCoord_d_eq_two_mul_of_odd (hk : Odd k)
     (c : cell (univ : Set (RealProjectiveSpace N)) k)
     (c' : cell (univ : Set (RealProjectiveSpace N)) (k + 1)) :
     ∃ u : Rˣ, ∀ x,
@@ -123,18 +134,20 @@ private lemma exists_chainCoord_d_of_odd (hk : Odd k)
 `k` of the cellular chain complex of `RPᴺ` onto `R ∙ 2`. -/
 private lemma map_range_d_eq_span_two (hk : Odd k) (hkN : k < N) :
     (LinearMap.range ((K).d (k + 1) k).hom).map
-        (cellularChainCoord _ R (theCell hkN.le) : _ →ₗ[R] R) =
+        (cellularChainCoord _ R (cwComplexCell hkN.le) : _ →ₗ[R] R) =
       R ∙ (2 : R) := by
-  obtain ⟨u, hu⟩ := exists_chainCoord_d_of_odd R hk (theCell hkN.le) (theCell hkN)
+  obtain ⟨u, hu⟩ :=
+    exists_cellularChainCoord_d_eq_two_mul_of_odd R hk (cwComplexCell hkN.le) (cwComplexCell hkN)
   ext y
   simp only [Submodule.mem_map, LinearMap.mem_range, Submodule.mem_span_singleton, smul_eq_mul]
   constructor
   · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-    refine ⟨cellularChainCoord _ R (theCell hkN) x * u, ?_⟩
+    refine ⟨cellularChainCoord _ R (cwComplexCell hkN) x * u, ?_⟩
     rw [mul_assoc, ← (Commute.ofNat_left 2 (u : R)).eq]
     exact (hu x).symm
   · rintro ⟨a, rfl⟩
-    refine ⟨_, ⟨(cellularChainCoord _ R (theCell hkN)).symm (a * ↑u⁻¹), rfl⟩, (hu _).trans ?_⟩
+    refine ⟨_, ⟨(cellularChainCoord _ R (cwComplexCell hkN)).symm (a * ↑u⁻¹), rfl⟩,
+      (hu _).trans ?_⟩
     rw [LinearEquiv.apply_symm_apply, (Commute.ofNat_left 2 (u : R)).eq, mul_assoc,
       Units.inv_mul_cancel_left]
 
@@ -142,12 +155,13 @@ private lemma map_range_d_eq_span_two (hk : Odd k) (hkN : k < N) :
 in degree `k + 1` of the cellular chain complex of `RPᴺ` onto the `2`-torsion of `R`. -/
 private lemma map_ker_d_eq_ker_two (hk : Odd k) (hkN : k + 1 ≤ N) :
     (LinearMap.ker ((K).d (k + 1) k).hom).map
-        (cellularChainCoord _ R (theCell hkN) : _ →ₗ[R] R) =
+        (cellularChainCoord _ R (cwComplexCell hkN) : _ →ₗ[R] R) =
       LinearMap.ker (LinearMap.toSpanSingleton R R (2 : R)) := by
-  obtain ⟨u, hu⟩ := exists_chainCoord_d_of_odd R hk (theCell (by omega)) (theCell hkN)
+  obtain ⟨u, hu⟩ := exists_cellularChainCoord_d_eq_two_mul_of_odd R hk
+    (cwComplexCell (by omega)) (cwComplexCell hkN)
   have key (x : (K).X (k + 1)) : (K).d (k + 1) k x = 0 ↔
-      cellularChainCoord _ R (theCell hkN) x * 2 = 0 := by
-    rw [← (cellularChainCoord _ R (theCell (by omega))).map_eq_zero_iff, hu, ← mul_assoc,
+      cellularChainCoord _ R (cwComplexCell hkN) x * 2 = 0 := by
+    rw [← (cellularChainCoord _ R (cwComplexCell (by omega))).map_eq_zero_iff, hu, ← mul_assoc,
       Units.mul_left_eq_zero]
   ext y
   simp only [Submodule.mem_map, LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul]
@@ -155,7 +169,27 @@ private lemma map_ker_d_eq_ker_two (hk : Odd k) (hkN : k + 1 ≤ N) :
   · rintro ⟨x, hx, rfl⟩
     exact (key x).1 hx
   · intro hy
-    exact ⟨(cellularChainCoord _ R (theCell hkN)).symm y, (key _).2 (by simpa using hy), by simp⟩
+    exact ⟨(cellularChainCoord _ R (cwComplexCell hkN)).symm y, (key _).2 (by simpa using hy),
+      by simp⟩
+
+/-- **Ranks of the cellular differentials of `RPᴺ` away from characteristic two.** If `2 ≠ 0` in
+the division ring `F`, the differential of the cellular chain complex of `RPᴺ` from degree `k + 1`
+to degree `k` has rank `1` for odd `k < N`, where it is multiplication by twice a unit, and rank
+`0` otherwise. For `RP²` the differentials `d₁` and `d₂` have ranks `0` and `1`. -/
+theorem finrank_range_cellularChainComplex_d_of_two_ne_zero {F : Type} [DivisionRing F]
+    (h2 : (2 : F) ≠ 0) :
+    Module.finrank F (LinearMap.range ((cellularChainComplex (univ : Set (RealProjectiveSpace N))
+      (ModuleCat.of F F)).d (k + 1) k).hom) = if Odd k ∧ k < N then 1 else 0 := by
+  split_ifs with hk
+  · rw [← LinearEquiv.finrank_map_eq (cellularChainCoord _ F (cwComplexCell hk.2.le)),
+      map_range_d_eq_span_two F hk.1 hk.2, IsSimpleModule.span_singleton_eq_top F h2,
+      finrank_top, Module.finrank_self]
+  · have hd : (cellularChainComplex (univ : Set (RealProjectiveSpace N))
+        (ModuleCat.of F F)).d (k + 1) k = 0 := by
+      rcases Nat.even_or_odd k with hke | hko
+      · exact cellularChainComplex_d_eq_zero_of_even F hke
+      · exact d_eq_zero_of_le F (by grind)
+    rw [hd, ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot]
 
 /-- The cellular homology of `RPᴺ` in a degree `k ≤ N` where both adjacent differentials vanish
 is `R`. -/
@@ -167,7 +201,7 @@ private def cellularHomologyLinearEquivOfZero (hk : k ≤ N) (hin : (K).d (k + 1
     Submodule.quotEquivOfEqBot _ (by
       rw [LinearMap.range_eq_bot]
       exact congrArg ModuleCat.Hom.hom hin) ≪≫ₗ
-    cellularChainCoord _ R (theCell hk)
+    cellularChainCoord _ R (cwComplexCell hk)
 
 /-- For odd `k < N`, the cellular homology of `RPᴺ` in degree `k` is `R / 2R`. -/
 private def cellularHomologyLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
@@ -175,7 +209,7 @@ private def cellularHomologyLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
   ((K).homologyIsoSc' (k + 1) k (k - 1) (by simp) (by cases k <;> simp) ≪≫
       ((K).sc' (k + 1) k (k - 1)).asIsoHomologyι (d_eq_zero_of_odd R hk) ≪≫
         ((K).sc' (k + 1) k (k - 1)).moduleCatOpcyclesIso).toLinearEquiv ≪≫ₗ
-    Submodule.Quotient.equiv _ _ (cellularChainCoord _ R (theCell hkN.le))
+    Submodule.Quotient.equiv _ _ (cellularChainCoord _ R (cwComplexCell hkN.le))
       (map_range_d_eq_span_two R hk hkN)
 
 /-- For even `k` with `0 < k ≤ N`, the cellular homology of `RPᴺ` in degree `k` is the
@@ -183,9 +217,10 @@ private def cellularHomologyLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
 private def cellularHomologyLinearEquivOfEven (hk : Even k) (hk0 : k ≠ 0) (hkN : k ≤ N) :
     (K).homology k ≃ₗ[R] LinearMap.ker (LinearMap.toSpanSingleton R R (2 : R)) :=
   ((K).homologyIsoSc' (k + 1) k (k - 1) (by simp) (by cases k <;> simp) ≪≫
-      (((K).sc' (k + 1) k (k - 1)).asIsoHomologyπ (d_eq_zero_of_even R hk)).symm ≪≫
+      (((K).sc' (k + 1) k (k - 1)).asIsoHomologyπ
+        (cellularChainComplex_d_eq_zero_of_even R hk)).symm ≪≫
         ((K).sc' (k + 1) k (k - 1)).moduleCatCyclesIso).toLinearEquiv ≪≫ₗ
-    LinearEquiv.ofSubmodules (cellularChainCoord _ R (theCell hkN)) _ _ (by
+    LinearEquiv.ofSubmodules (cellularChainCoord _ R (cwComplexCell hkN)) _ _ (by
       obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
       exact map_ker_d_eq_ker_two R (by simpa [Nat.even_add_one] using hk) hkN)
 
@@ -201,8 +236,8 @@ def singularHomologyZeroLinearEquiv :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) 0).obj (ModuleCat.of R R)).obj
       (TopCat.of (RealProjectiveSpace N)) ≃ₗ[R] R :=
   (singularHomologyIsoCellular R 0).toLinearEquiv ≪≫ₗ
-    cellularHomologyLinearEquivOfZero R (Nat.zero_le N) (d_eq_zero_of_even R .zero)
-      ((K).shape 0 0 (by simp))
+    cellularHomologyLinearEquivOfZero R (Nat.zero_le N)
+      (cellularChainComplex_d_eq_zero_of_even R .zero) ((K).shape 0 0 (by simp))
 
 /-- **Odd-degree homology of real projective space.** For odd `k < N`,
 `Hₖ(RPᴺ; R) ≅ R / 2R`. -/
@@ -254,8 +289,8 @@ theorem isZero_singularHomology_of_even (h2 : IsRightRegular (2 : R)) (hk : Even
   rcases le_or_gt k N with hkN | hkN
   · have : Subsingleton (LinearMap.ker (LinearMap.toSpanSingleton R R 2)) :=
       ⟨fun a b ↦ Subtype.ext <| by
-        have ha := a.2
-        have hb := b.2
+        have ha := a.property
+        have hb := b.property
         simp only [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul] at ha hb
         exact h2 (ha.trans hb.symm)⟩
     exact ModuleCat.isZero_iff_subsingleton.2
@@ -268,6 +303,21 @@ theorem isZero_singularHomology_int_of_even (hk : Even k) (hk0 : k ≠ 0) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
       (ModuleCat.of ℤ ℤ)).obj (TopCat.of (RealProjectiveSpace N))) :=
   isZero_singularHomology_of_even ℤ (isRegular_iff_ne_zero.2 two_ne_zero).right hk hk0
+
+/-- For `N ≠ 1`, every class of `H₁(RPᴺ; ℤ)` is killed by `2`: the group is `ℤ/2` for `N ≥ 2`
+and `0` for `N = 0`. -/
+theorem two_nsmul_singularHomology_one_eq_zero (hN : N ≠ 1)
+    (x : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of (RealProjectiveSpace N))) :
+    2 • x = 0 := by
+  rcases Nat.lt_or_gt_of_ne hN with hN | hN
+  · exact ModuleCat.subsingleton_of_isZero (isZero_singularHomology_of_lt ℤ hN) |>.elim _ _
+  let e := singularHomologyIntLinearEquivOfOdd (N := N) odd_one hN
+  apply e.injective
+  rw [map_nsmul, map_zero]
+  generalize e x = y
+  revert y
+  decide
 
 /-- **Homology of real projective space in characteristic two.** If `2 = 0` in the division ring
 `R`, then `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero for `k > N`. -/
@@ -318,18 +368,16 @@ theorem finrank_singularHomology_of_two_ne_zero {F : Type} [DivisionRing F] (h2 
 
 /-! ### The projectivization carrier -/
 
-variable (N) in
-/-- **The homology of `RPᴺ` is that of the projectivization.** For coefficients `M` in any
-category, `Hₖ(RPᴺ; M) ≅ Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); M)`, transported along
-`TauCeti.RealProjectiveSpace.homeomorphProjectivization`. -/
-def singularHomologyIsoProjectivization {C : Type*} [Category* C] [HasCoproducts.{0} C]
-    [Preadditive C] [CategoryWithHomology C] (M : C) (k : ℕ) :
-    ((AlgebraicTopology.singularHomologyFunctor C k).obj M).obj
-        (TopCat.of (RealProjectiveSpace N)) ≅
-      ((AlgebraicTopology.singularHomologyFunctor C k).obj M).obj
+/-- The singular homology of `RPᴺ` is isomorphic to that of `ℙ ℝ (Fin (N + 1) → ℝ)`, along
+`homeomorphProjectivization`. -/
+def singularHomologyProjectivizationIso (k : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
+      (TopCat.of (RealProjectiveSpace N)) ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
         (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) :=
-  ((AlgebraicTopology.singularHomologyFunctor C k).obj M).mapIso
-    (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N)) (homeomorphProjectivization N))
+  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+    (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
+      (homeomorphProjectivization N))
 
 /-- **Homology of `ℙ ℝ (Fin (N + 1) → ℝ)` in characteristic two.** If `2 = 0` in the division ring
 `R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)` is one-dimensional for `k ≤ N` and zero for `k > N`. -/
@@ -338,14 +386,25 @@ theorem finrank_singularHomology_projectivization_of_two_eq_zero {R : Type} [Div
     Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
       (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
       if k ≤ N then 1 else 0 :=
-  (singularHomologyIsoProjectivization N (ModuleCat.of R R) k).toLinearEquiv.finrank_eq.symm.trans
+  (singularHomologyProjectivizationIso (N := N) R k).toLinearEquiv.finrank_eq.symm.trans
     (finrank_singularHomology_of_two_eq_zero h2 k)
+
+/-- **Homology of `ℙ ℝ (Fin (N + 1) → ℝ)` away from characteristic two.** If `2 ≠ 0` in the
+division ring `F`, for instance `F = ℚ`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); F)` is one-dimensional in
+degree `0` and, for odd `N`, in degree `N`, and vanishes in every other degree. -/
+theorem finrank_singularHomology_projectivization_of_two_ne_zero {F : Type} [DivisionRing F]
+    (h2 : (2 : F) ≠ 0) (k : ℕ) :
+    Module.finrank F (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} F) k).obj
+      (ModuleCat.of F F)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
+      if k = 0 ∨ k = N ∧ Odd N then 1 else 0 :=
+  (singularHomologyProjectivizationIso (N := N) F k).toLinearEquiv.finrank_eq.symm.trans
+    (finrank_singularHomology_of_two_ne_zero h2 k)
 
 /-- For odd `k < N`, `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R) ≅ R / 2R`. -/
 def singularHomologyProjectivizationLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
       (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) ≃ₗ[R] R ⧸ R ∙ (2 : R) :=
-  (singularHomologyIsoProjectivization N (ModuleCat.of R R) k).toLinearEquiv.symm ≪≫ₗ
+  (singularHomologyProjectivizationIso (N := N) R k).toLinearEquiv.symm ≪≫ₗ
     singularHomologyLinearEquivOfOdd R hk hkN
 
 /-- If right multiplication by `2` is injective on `R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)`
@@ -355,14 +414,14 @@ theorem isZero_singularHomology_projectivization_of_even (h2 : IsRightRegular (2
     IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
       (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) :=
   (isZero_singularHomology_of_even (N := N) R h2 hk hk0).of_iso
-    (singularHomologyIsoProjectivization N (ModuleCat.of R R) k).symm
+    (singularHomologyProjectivizationIso (N := N) R k).symm
 
 /-- **Odd-degree integral homology of `ℙ ℝ (Fin (N + 1) → ℝ)`.** For odd `k < N`,
 `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); ℤ) ≅ ℤ/2`. -/
 def singularHomologyProjectivizationIntLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ ℤ)).obj
       (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) ≃ₗ[ℤ] ZMod 2 :=
-  (singularHomologyIsoProjectivization N (ModuleCat.of ℤ ℤ) k).symm.toLinearEquiv ≪≫ₗ
+  (singularHomologyProjectivizationIso (N := N) ℤ k).symm.toLinearEquiv ≪≫ₗ
     singularHomologyIntLinearEquivOfOdd hk hkN
 
 end TauCeti.RealProjectiveSpace

@@ -100,7 +100,7 @@ both tensor factors. -/
 @[simp]
 theorem coe_map (f : A →ₙₐ[k] B) (ω : UniversalOneForms k A) :
     ((map k f ω : UniversalOneForms k B) : Unitization k B ⊗[k] Unitization k B) =
-      TensorProduct.map (Unitization.map f).toLinearMap (Unitization.map f).toLinearMap ω.1 := by
+      TensorProduct.map (Unitization.map f).toLinearMap (Unitization.map f).toLinearMap ω.val := by
   induction ω using induction_on k A with
   | h x a =>
     simp only [map_smul_d, coe_smul_left, coe_d, map_sub, leftAction_tmul,

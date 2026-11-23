@@ -133,7 +133,7 @@ theorem exists_mem_scaledIntegerBox [IsDiscreteValuationRing 𝒪[K]] {ι : Type
     simp only [Algebra.algebraMap_ofSubsemiring_apply] at ha
     refine Filter.eventually_atTop.2 ⟨n, fun k hk ↦ ?_⟩
     rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i), ha]
-    exact mul_mem (pow_mem ϖ.2 _) a.2
+    exact mul_mem (pow_mem ϖ.property _) a.property
   exact (Filter.eventually_all.2 h).exists.imp fun _ ↦ mem_scaledIntegerBox.2
 
 variable [TopologicalSpace K] {ι : Type*}

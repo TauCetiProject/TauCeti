@@ -201,7 +201,7 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
     weilDifferentialDivisor hF hex
         (repartitionDualMul_mem_weilDifferentialSpace hF ((z⁻¹ : Fˣ) : F)
           (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-            ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2)
+            ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property)
         (repartitionDualMul_ne_zero hF (Units.ne_zero _)
           (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF)) =
       ((g.totalDegree : ℤ) - 3) • Divisor.poles hF
@@ -209,7 +209,7 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
           (Units.mk0 RatFunc.X RatFunc.X_ne_zero)) := by
   rw [weilDifferentialDivisor_repartitionDualMul hF hex
       (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2
+        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property
       (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF),
     weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential,
     Divisor.different_eq_principal_add_zsmul_poles hF hirr hlead hsm hsm' hgen hy hz,
@@ -302,7 +302,7 @@ theorem weilDifferentialFiltration_zero_eq_span_of_aeval_eq_zero (hF : IsFunctio
   have hW := isGreatest_weilDifferentialDivisor hF hex
     (repartitionDualMul_mem_weilDifferentialSpace hF ((z⁻¹ : Fˣ) : F)
       (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2) hω
+        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property) hω
   rw [weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_aeval_eq_zero hF
     hex hirr hlead hsm hsm' hgen hy rfl] at hW
   rw [← map_riemannRochSpace_repartitionDualMulRight hF hex hW 0, sub_zero,

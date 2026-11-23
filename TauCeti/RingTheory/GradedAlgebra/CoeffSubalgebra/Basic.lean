@@ -175,6 +175,14 @@ theorem coe_algebraMap (p : R[X]) :
   rw [coe_X]
   exact Polynomial.mapAlg_eq_map B p
 
+/-- A scalar polynomial acts on the coefficient subalgebra by multiplication in `B[X]`. -/
+@[simp]
+theorem coe_smul (p : R[X]) (f : coeffSubalgebra M) :
+    letI := algebra M h1
+    ((p • f : coeffSubalgebra M) : B[X]) = p.map (algebraMap R B) * f := by
+  let := algebra M h1
+  rw [Algebra.smul_def, Subalgebra.coe_mul, coe_algebraMap]
+
 /-- The parameter-ring algebra structure extends the coefficient-ring algebra structure. -/
 theorem isScalarTower :
     letI := algebra M h1
@@ -188,7 +196,7 @@ end parameter
 `coeffSubalgebra M`. -/
 theorem monomial_coeff_mem (f : coeffSubalgebra M) (n : ℕ) :
     Polynomial.monomial n ((f : B[X]).coeff n) ∈ coeffSubalgebra M :=
-  monomial_mem_coeffSubalgebra_iff.mpr (f.2 n)
+  monomial_mem_coeffSubalgebra_iff.mpr (f.property n)
 
 variable (M) in
 /-- The degree `n` piece of `coeffSubalgebra M`: the monomials `b Xⁿ` with `b ∈ M n`. -/
@@ -205,7 +213,7 @@ theorem mem_grade_iff {n : ℕ} {f : coeffSubalgebra M} :
 formed by its `n`-th coefficient. -/
 theorem mem_grade_iff_monomial_coeff {n : ℕ} {f : coeffSubalgebra M} :
     f ∈ grade M n ↔ Polynomial.monomial n ((f : B[X]).coeff n) = f := by
-  refine ⟨fun hf ↦ ?_, fun h ↦ mem_grade_iff.mpr ⟨_, f.2 n, h⟩⟩
+  refine ⟨fun hf ↦ ?_, fun h ↦ mem_grade_iff.mpr ⟨_, f.property n, h⟩⟩
   obtain ⟨b, -, hb⟩ := mem_grade_iff.mp hf
   rw [← hb, coeff_monomial_same]
 
@@ -247,7 +255,7 @@ instance gradedMonoid : SetLike.GradedMonoid (grade M) where
 formed by its `n`-th coefficient. -/
 private noncomputable def component (n : ℕ) (f : coeffSubalgebra M) : grade M n :=
   ⟨⟨Polynomial.monomial n ((f : B[X]).coeff n), monomial_coeff_mem f n⟩,
-    monomial_mem_grade n _ (f.2 n)⟩
+    monomial_mem_grade n _ (f.property n)⟩
 
 private theorem component_add (n : ℕ) (f g : coeffSubalgebra M) :
     component n (f + g) = component n f + component n g := by
@@ -292,7 +300,7 @@ private theorem decomposeAux_coe (x : ⨁ n, grade M n) :
   induction x using DirectSum.induction_on with
   | zero => ext1; ext1; simp [component]
   | of m y =>
-    rw [coeAddMonoidHom_of, component_of_mem y.2, of_apply]
+    rw [coeAddMonoidHom_of, component_of_mem y.property, of_apply]
   | add x y hx hy => rw [map_add, component_add, hx, hy, DirectSum.add_apply]
 
 variable (M) in
@@ -321,12 +329,12 @@ variable (M) in
 /-- The `R`-linear isomorphism `b ↦ b Xⁿ` from `M n` onto the degree `n` piece of
 `coeffSubalgebra M`. -/
 noncomputable def gradeEquiv (n : ℕ) : M n ≃ₗ[R] grade M n where
-  toFun b := ⟨monomial M n b.1 b.2, monomial_mem_grade n b.1 b.2⟩
-  invFun f := ⟨((f : coeffSubalgebra M) : B[X]).coeff n, (f : coeffSubalgebra M).2 n⟩
+  toFun b := ⟨monomial M n b.val b.property, monomial_mem_grade n b.val b.property⟩
+  invFun f := ⟨((f : coeffSubalgebra M) : B[X]).coeff n, (f : coeffSubalgebra M).property n⟩
   map_add' b c := by ext1; ext1; simp
   map_smul' r b := by ext1; ext1; simp
   left_inv b := by ext1; simp
-  right_inv f := by ext1; ext1; exact mem_grade_iff_monomial_coeff.mp f.2
+  right_inv f := by ext1; ext1; exact mem_grade_iff_monomial_coeff.mp f.property
 
 @[simp]
 theorem coe_gradeEquiv_apply (n : ℕ) (b : M n) :
@@ -417,7 +425,7 @@ theorem adjoin_grade_one_eq_top_iff :
     Algebra.adjoin R (grade M 1 : Set (coeffSubalgebra M)) = ⊤ ↔ ∀ n, M n ≤ M 1 ^ n := by
   rw [← coeffSubalgebra_le_coeffSubalgebra_iff, ← map_val_adjoin_grade_one, eq_top_iff]
   refine ⟨fun h f hf ↦ ⟨⟨f, hf⟩, h Algebra.mem_top, rfl⟩, fun h f _ ↦ ?_⟩
-  obtain ⟨g, hg, hgf⟩ := h f.2
+  obtain ⟨g, hg, hgf⟩ := h f.property
   have hgf : (g : B[X]) = f := by simpa using hgf
   rwa [Subtype.ext hgf] at hg
 
@@ -425,7 +433,7 @@ theorem adjoin_grade_one_eq_top_iff :
 `N = span R s` is generated as an `R`-algebra by the monomials `b X` with `b ∈ s`. -/
 theorem adjoin_monomial_one_eq_top (s : Set B) :
     Algebra.adjoin R (Set.range fun b : s ↦ monomial (fun n ↦ Submodule.span R s ^ n) 1 b
-      (by rw [pow_one]; exact Submodule.subset_span b.2)) = ⊤ := by
+      (by rw [pow_one]; exact Submodule.subset_span b.property)) = ⊤ := by
   refine Subalgebra.map_injective (f := (coeffSubalgebra fun n ↦ Submodule.span R s ^ n).val)
     Subtype.val_injective ?_
   rw [AlgHom.map_adjoin, Algebra.map_top]
@@ -443,7 +451,7 @@ theorem adjoin_monomial_one_eq_top (s : Set B) :
 theorem algebraMap_grade_pow_zero_surjective (N : Submodule R B) :
     Function.Surjective (algebraMap R (grade (fun n ↦ N ^ n) 0)) := by
   intro x
-  obtain ⟨b, hb, hx⟩ := mem_grade_iff.mp x.2
+  obtain ⟨b, hb, hx⟩ := mem_grade_iff.mp x.property
   rw [pow_zero, Submodule.mem_one] at hb
   obtain ⟨r, rfl⟩ := hb
   refine ⟨r, Subtype.ext (Subtype.ext ?_)⟩

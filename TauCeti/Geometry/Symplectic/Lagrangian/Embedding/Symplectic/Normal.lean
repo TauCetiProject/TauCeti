@@ -238,7 +238,7 @@ private theorem isInvertible_of_eval₂_mfderiv [FiniteDimensional ℝ E]
     (ha : ∀ u w, a u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w)) :
     a.IsInvertible := by
   let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  refine ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun u hu ↦ ?_
+  refine ContinuousLinearMap.isInvertible_of_separatingLeft fun u hu ↦ ?_
   have hdu := IsNondegenerate.hasSymplecticTangentImages_iff.1 h x u
     fun w ↦ (ha u w).symm.trans (hu w)
   exact (injective_iff_map_eq_zero _).1 (f.isImmersion.mfderiv_injective hn x) u hdu
@@ -348,7 +348,7 @@ theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbeddin
     (h : hσ.HasSymplecticTangentImages I f) (hn : n ≠ 0) (hm : m + 1 ≤ n) (hm' : m + 1 ≤ ∞) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨f p.proj, f.symplecticNormalRepresentative h p.proj hn (f.normalClass p.proj hn p.2)⟩ :
+        (⟨f p.proj, f.symplecticNormalRepresentative h p.proj hn (f.normalClass p.proj hn p.snd)⟩ :
           TangentBundle J N)) := by
   have hmtop : m ≤ ∞ := le_self_add.trans hm'
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
@@ -356,16 +356,16 @@ theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbeddin
   have : IsManifold I (m + 1) M := .of_le hm'
   have : IsManifold J (m + 1) N := .of_le hm'
   -- The flat map of the pulled-back form `f^* σ` is a `C^m` section, invertible at every point.
-  let τ := TauCeti.mpullback I J f σ.1
+  let τ := TauCeti.mpullback I J f σ.val
   have hτ : IsSmoothForm I m τ :=
-    IsSmoothForm.mpullback ((isSmoothForm_def m σ.1).2 ((SmoothForm.contMDiff σ).of_le hmtop))
+    IsSmoothForm.mpullback ((isSmoothForm_def m σ.val).2 ((SmoothForm.contMDiff σ).of_le hmtop))
       (f.contMDiff.of_le hm)
   let a : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
     fun x ↦ ContinuousAlternatingMap.flatL ℝ E ℝ (τ x)
   have ha (x : M) (u w : TangentSpace I x) :
       a x u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w) := by
     refine ((ContinuousAlternatingMap.flatL_apply_apply (E := E) (τ x) u w).trans
-      (mpullback_apply_pair f σ.1 x u w)).trans ?_
+      (mpullback_apply_pair f σ.val x u w)).trans ?_
     rw [SmoothBundleForm.eval₂_apply]
   have hacont : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) m
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
@@ -389,7 +389,7 @@ theorem contMDiff_symplecticNormalRepresentative (f : SmoothEmbedding I J n M N)
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
-        (⟨f p.proj, f.symplecticNormalRepresentative h p.proj hn p.2⟩ : TangentBundle J N)) := by
+        (⟨f p.proj, f.symplecticNormalRepresentative h p.proj hn p.snd⟩ : TangentBundle J N)) := by
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
   have : IsManifold J 1 N := .of_le (n := ∞) (by simp)
   have : IsManifold I (m + 1) M := .of_le hm'
