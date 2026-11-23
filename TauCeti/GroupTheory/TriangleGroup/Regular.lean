@@ -166,36 +166,37 @@ private noncomputable def cosetEquivFin [NeZero n] (N : Subgroup (TriangleGroup 
 private noncomputable def cosetRegularIsoClass [NeZero n]
     (N : {N : Subgroup (TriangleGroup a b c) // N.Normal ∧ N.index = n}) :
     regularIsoClasses a b c n :=
-  ⟨IsoClass.mk (cosetTriple N.1 (cosetEquivFin N.1 N.2.2)),
+  ⟨IsoClass.mk (cosetTriple N.val (cosetEquivFin N.val N.property.2)),
     mk_mem_regularIsoClasses_iff.mpr
-      ⟨(isRegular_cosetTriple_iff _ _).mpr N.2.1, hasDividingOrders_cosetTriple _ _⟩⟩
+      ⟨(isRegular_cosetTriple_iff _ _).mpr N.property.1, hasDividingOrders_cosetTriple _ _⟩⟩
 
 private theorem coe_cosetRegularIsoClass [NeZero n]
     (N : {N : Subgroup (TriangleGroup a b c) // N.Normal ∧ N.index = n})
-    (e : TriangleGroup a b c ⧸ N.1 ≃ Fin n) :
-    (cosetRegularIsoClass N : IsoClass n) = IsoClass.mk (cosetTriple N.1 e) :=
+    (e : TriangleGroup a b c ⧸ N.val ≃ Fin n) :
+    (cosetRegularIsoClass N : IsoClass n) = IsoClass.mk (cosetTriple N.val e) :=
   IsoClass.mk_eq_mk_iff.mpr (equivalent_cosetTriple _ _ _)
 
 private theorem bijective_cosetRegularIsoClass [NeZero n] :
     Function.Bijective (cosetRegularIsoClass (a := a) (b := b) (c := c) (n := n)) := by
   refine ⟨fun N N' h ↦ Subtype.ext ?_, fun C ↦ ?_⟩
   · -- Isomorphic coset triples have the same kernel, which is the normal subgroup.
-    have := N.2.1
-    have := N'.2.1
-    calc N.1 = (toPerm (cosetTriple N.1 (cosetEquivFin N.1 N.2.2)) (cosetTriple_σ0_pow _ _)
+    have := N.property.1
+    have := N'.property.1
+    calc N.val = (toPerm (cosetTriple N.val (cosetEquivFin N.val N.property.2))
+        (cosetTriple_σ0_pow _ _)
           (cosetTriple_σ1_pow _ _) (cosetTriple_σinf_pow _ _)).ker :=
           (ker_toPerm_cosetTriple_of_normal _ _).symm
-      _ = (toPerm (cosetTriple N'.1 (cosetEquivFin N'.1 N'.2.2)) (cosetTriple_σ0_pow _ _)
+      _ = (toPerm (cosetTriple N'.val (cosetEquivFin N'.val N'.property.2)) (cosetTriple_σ0_pow _ _)
           (cosetTriple_σ1_pow _ _) (cosetTriple_σinf_pow _ _)).ker :=
           ker_toPerm_eq_of_equivalent (IsoClass.mk_eq_mk_iff.mp (congrArg Subtype.val h)) ..
-      _ = N'.1 := ker_toPerm_cosetTriple_of_normal _ _
+      _ = N'.val := ker_toPerm_cosetTriple_of_normal _ _
   · -- A regular class is the class of the coset triple of the kernel of any of its triples.
-    obtain ⟨t, ⟨hr, hd⟩, hC⟩ := C.2
+    obtain ⟨t, ⟨hr, hd⟩, hC⟩ := C.property
     obtain ⟨ha, hb, hc⟩ := (hasDividingOrders_iff _).mp hd
     let N : {N : Subgroup (TriangleGroup a b c) // N.Normal ∧ N.index = n} :=
       ⟨(toPerm t ha hb hc).ker, inferInstance, index_ker_toPerm_of_isRegular _ _ _ _ hr⟩
     refine ⟨N, Subtype.ext ?_⟩
-    rw [coe_cosetRegularIsoClass N (cosetEquivFin N.1 N.2.2), ← hC, IsoClass.mk_eq_mk_iff]
+    rw [coe_cosetRegularIsoClass N (cosetEquivFin N.val N.property.2), ← hC, IsoClass.mk_eq_mk_iff]
     exact equivalent_cosetTriple_ker_toPerm t ha hb hc hr _
 
 /-- **Regular triples are finite-index normal subgroups of the triangle group.** For `n ≠ 0`, the
@@ -213,8 +214,8 @@ noncomputable def regularIsoClassEquiv [NeZero n] :
 numbering `e` of the cosets. -/
 theorem coe_regularIsoClassEquiv_symm_apply [NeZero n]
     (N : {N : Subgroup (TriangleGroup a b c) // N.Normal ∧ N.index = n})
-    (e : TriangleGroup a b c ⧸ N.1 ≃ Fin n) :
-    (regularIsoClassEquiv.symm N : IsoClass n) = IsoClass.mk (cosetTriple N.1 e) := by
+    (e : TriangleGroup a b c ⧸ N.val ≃ Fin n) :
+    (regularIsoClassEquiv.symm N : IsoClass n) = IsoClass.mk (cosetTriple N.val e) := by
   rw [regularIsoClassEquiv, Equiv.symm_symm, Equiv.ofBijective_apply, coe_cosetRegularIsoClass]
 
 /-- The normal subgroup of the class of a regular triple `t` is the kernel of the representation
@@ -229,7 +230,7 @@ theorem coe_regularIsoClassEquiv_mk [NeZero n] (h : IsoClass.mk t ∈ regularIso
     ⟨(toPerm t ha hb hc).ker, inferInstance, hN⟩
   have key : regularIsoClassEquiv ⟨IsoClass.mk t, h⟩ = N :=
     (Equiv.eq_symm_apply _).mp <| Subtype.ext <|
-      ((coe_regularIsoClassEquiv_symm_apply N (cosetEquivFin N.1 N.2.2)).trans
+      ((coe_regularIsoClassEquiv_symm_apply N (cosetEquivFin N.val N.property.2)).trans
         (IsoClass.mk_eq_mk_iff.mpr (equivalent_cosetTriple_ker_toPerm t ha hb hc hr _))).symm
   rw [key]
 

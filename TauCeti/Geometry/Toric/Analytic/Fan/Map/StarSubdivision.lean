@@ -138,7 +138,7 @@ private theorem nonempty_analyticRealization_starSubdivisionAlong (hσ0 : σ ≠
     Nonempty ((Φ.starSubdivisionAlong hΦ hσ).analyticRealization
       (Φ.isRegular_starSubdivisionAlong hΦ hσ)) :=
   ⟨(Φ.starSubdivisionAlong hΦ hσ).analyticDistinguishedPoint
-    (Φ.isRegular_starSubdivisionAlong hΦ hσ) (Φ.starSubdivisionAlongRay hΦ hσ hσ0).1⟩
+    (Φ.isRegular_starSubdivisionAlong hΦ hσ) (Φ.starSubdivisionAlongRay hΦ hσ hσ0).val⟩
 
 /-! ### The blow-down away from the exceptional divisor -/
 

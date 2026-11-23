@@ -31,13 +31,13 @@ public section
 namespace TauCeti.TitsLieIndex
 
 /-- The algebraic closure attached to the Tits index has characteristic two. -/
-instance charP_closure_two (d : TitsLieIndex) : CharP d.1.Closure 2 := by
+instance charP_closure_two (d : TitsLieIndex) : CharP d.val.Closure 2 := by
   rw [← d.characteristic_eq_two]
   infer_instance
 
 /-- The algebraic closure attached to the Tits index is an algebra over the field of two elements,
 the base ring over which its short-root carrier is defined. -/
-noncomputable instance algebraZModTwo (d : TitsLieIndex) : Algebra (ZMod 2) d.1.Closure :=
-  ZMod.algebra d.1.Closure 2
+noncomputable instance algebraZModTwo (d : TitsLieIndex) : Algebra (ZMod 2) d.val.Closure :=
+  ZMod.algebra d.val.Closure 2
 
 end TauCeti.TitsLieIndex

@@ -64,7 +64,7 @@ theorem exists_mem_jointEigenvector_of_pairwise_commute_of_involutive
     (fun i j hij ↦ LinearMap.restrict_commute (hcomm hij) (hmaps i) (hmaps j))
     fun i w ↦ Subtype.ext <| by rw [LinearMap.coe_restrict_apply, LinearMap.coe_restrict_apply,
       hinv i w]
-  refine ⟨v, v.2, Submodule.coe_eq_zero.not.mpr hv, fun i ↦ ?_⟩
+  refine ⟨v, v.property, Submodule.coe_eq_zero.not.mpr hv, fun i ↦ ?_⟩
   simpa only [Subtype.ext_iff, LinearMap.coe_restrict_apply, Submodule.coe_neg] using h i
 
 end TauCeti

@@ -53,11 +53,11 @@ variable {H : ℝ} {w : ℂ}
 /-- Off-curve avoidance for interior points: each piece is separated from `w` in one
 coordinate, the arc by the norm. -/
 theorem fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt (hre : |w.re| < 1 / 2)
-    (hnorm : 1 < ‖w‖) (him : w.im < H) : ∀ t ∈ Icc (0 : ℝ) 5, fdBoundary H t ≠ w := by
+    (hnorm : 1 < ‖w‖) (him : w.im < H) : ∀ t : ℝ, fdBoundary H t ≠ w := by
   obtain ⟨hx₁, hx₂⟩ := abs_lt.mp hre
-  intro t ht h_eq
+  intro t h_eq
   rcases le_or_gt t 1 with h1 | h1
-  · have := re_fdBoundarySegment1 H ⟨ht.1, h1⟩
+  · have := re_fdBoundary_of_le_one (H := H) h1
     rw [h_eq] at this
     linarith
   · rcases le_or_gt t 3 with h3 | h3
@@ -69,7 +69,7 @@ theorem fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt (hre : |w.re| < 
       · have := re_fdBoundarySegment4 H ⟨h3.le, h4⟩
         rw [h_eq] at this
         linarith
-      · have := im_fdBoundarySegment5 H ⟨h4.le, ht.2⟩
+      · have := im_fdBoundary_of_four_le (H := H) h4.le
         rw [h_eq] at this
         linarith
 
@@ -94,7 +94,7 @@ private theorem windingNumber_fdBoundary_eq_two_pi_I_inv_mul_sum_log (hx : |w.re
   obtain ⟨hx₁, hx₂⟩ := abs_lt.mp hx
   have hnorm : 1 < ‖w‖ := hy1.trans_le (Complex.im_le_norm w)
   rw [windingNumber_fdBoundary_eq_sum_pieces
-      (fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hx hnorm hyH),
+      (fun t _ ↦ fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hx hnorm hyH t),
     windingNumber_fdBoundarySegment1_eq_log hx₂, windingNumber_fdBoundary_arc_eq_log hy1,
     windingNumber_fdBoundarySegment4_eq_log hx₁, windingNumber_fdBoundarySegment5_eq_log hyH]
   ring
@@ -123,7 +123,7 @@ private theorem windingNumber_fdBoundary_eq_neg_one_of_one_lt_im (hx : |w.re| < 
   obtain ⟨n, hn⟩ := (isPiecewiseC1On_fdBoundary H).exists_int_windingNumber
     (fdBoundary_closed H).symm
     (by rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)]
-        exact fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hx hnorm hyH)
+        exact fun t _ ↦ fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hx hnorm hyH t)
   have hIm := two_pi_mul_int_eq_sum_arg_of_windingNumber_fdBoundary_eq hx hy1 hyH hn
   -- the four endpoint differences turn clockwise, so each argument lies in `(-π, 0)`; the
   -- sum is then in `(-4π, 0)`, which pins the integer to `-1`
@@ -219,10 +219,9 @@ theorem windingNumber_fdBoundary_eq_neg_one_of_interior (hH : 1 < H) {w : ℂ}
   have hdisj : (segment ℝ w ((w.re : ℂ) + (y : ℝ) * Complex.I) ∪
       {z : ℂ | |z.re| < 1 / 2 ∧ 1 < z.im ∧ z.im < H}) ⊆
         (fdBoundary H '' uIcc (0 : ℝ) 5)ᶜ := by
-    rintro z hz ⟨t, ht, h_eq⟩
-    rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht
+    rintro z hz ⟨t, -, h_eq⟩
     obtain ⟨hz_re, hz_norm, hz_im⟩ := interior_avoiding_facts hH hnorm hre him hpos hz
-    exact fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hz_re hz_norm hz_im t ht h_eq
+    exact fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hz_re hz_norm hz_im t h_eq
   rw [(isPiecewiseC1On_fdBoundary H).windingNumber_eq_of_mem_connectedComponentIn
       (fdBoundary_closed H).symm
       (hconn.subset_connectedComponentIn (Or.inr htop_mem_box) hdisj

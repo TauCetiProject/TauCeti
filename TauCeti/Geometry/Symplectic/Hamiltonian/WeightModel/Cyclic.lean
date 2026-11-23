@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.LinearAlgebra.FixedSubmodule
+public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+public import TauCeti.Geometry.Symplectic.StandardCompatible
 import Mathlib.Topology.Instances.AddCircle.Defs
 import TauCeti.NumberTheory.Real.Irrational
 
@@ -25,6 +27,10 @@ computes its fixed locus and characterizes when it has infinite order.
   (`TauCeti.mem_fixedSubmodule_weightRotation_iff`). The fixed locus is a complex subspace, of real
   dimension twice the number of angles in `2πℤ`
   (`TauCeti.finrank_fixedSubmodule_weightRotation`).
+* The fixed locus is a symplectic subspace (`TauCeti.isSymplectic_fixedSubmodule_weightRotation`):
+  the rotation commutes with the complex structure `J(q, p) = (-p, q)`, multiplication by `i`
+  (`TauCeti.weightRotation_product_apply`), so `J` preserves the fixed locus, and `ω` tames `J`
+  (`TauCeti.stdSymplecticForm_tames_product`).
 * The group is infinite cyclic, that is `n ↦ R^n` is injective, exactly when some `θ_i / 2π` is
   irrational (`TauCeti.weightRotation_zsmul_injective_iff`).
 
@@ -68,20 +74,19 @@ theorem mem_fixedSubmodule_weightRotation_iff (θ : ι → ℝ)
 has real dimension twice the number of angles `θ_i` in `2πℤ`. -/
 theorem finrank_fixedSubmodule_weightRotation (θ : ι → ℝ) :
     Module.finrank ℝ (LinearMap.fixedSubmodule (weightRotation θ).toLinearMap) =
-      2 * {i | ∃ k : ℤ, k * (2 * π) = θ i}.ncard := by
-  classical
-  -- The fixed subspace is the kernel of the generator with angle `0` on the coordinates whose
-  -- angle lies in `2πℤ` and `1` on the others.
-  let θ' : ι → ℝ := fun i ↦ if ∃ k : ℤ, k * (2 * π) = θ i then 0 else 1
-  have hθ' : ∀ i, θ' i = 0 ↔ ∃ k : ℤ, k * (2 * π) = θ i := fun i ↦ by
-    by_cases h : ∃ k : ℤ, k * (2 * π) = θ i <;> simp [θ', h]
-  have hker : LinearMap.fixedSubmodule (weightRotation θ).toLinearMap =
-      LinearMap.ker (weightGenerator θ').toLinearMap := by
-    ext x
-    rw [mem_fixedSubmodule_weightRotation_iff, mem_ker_weightGenerator_iff]
-    exact forall_congr' fun i ↦ by rw [Ne, hθ']
-  rw [hker, finrank_ker_weightGenerator]
-  simp only [hθ']
+      2 * {i | ∃ k : ℤ, k * (2 * π) = θ i}.ncard :=
+  finrank_eq_two_mul_ncard_of_mem_iff _ fun x ↦ by
+    simpa only [Set.mem_ofPred_eq] using mem_fixedSubmodule_weightRotation_iff θ x
+
+/-- **The fixed locus of a rotation is symplectic** for the standard symplectic form. -/
+theorem isSymplectic_fixedSubmodule_weightRotation (θ : ι → ℝ) :
+    (stdSymplecticForm (V := EuclideanSpace ℝ ι)).IsSymplectic
+      (LinearMap.fixedSubmodule (weightRotation θ).toLinearMap) :=
+  stdSymplecticForm_tames_product.isSymplectic_of_mem_invtSubmodule <|
+    (Module.End.mem_invtSubmodule _).2 fun x hx ↦ by
+      rw [LinearMap.mem_fixedSubmodule_iff, ContinuousLinearMap.coe_coe] at hx
+      rw [Submodule.mem_comap, LinearMap.mem_fixedSubmodule_iff, ContinuousLinearMap.coe_coe]
+      exact (weightRotation_product_apply θ x).trans (congrArg _ hx)
 
 /-- A point is fixed by every power of a rotation exactly when it is fixed by the rotation. -/
 theorem forall_weightRotation_zsmul_apply_eq_self_iff (θ : ι → ℝ)

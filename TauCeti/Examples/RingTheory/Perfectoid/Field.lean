@@ -46,7 +46,7 @@ example : ¬ ∀ ε : ℝ, 1 < ε → ∃ x : ℚ_[p], 1 < ‖x‖ ∧ ‖x‖ <
   intro hacc
   have hs (x : powerBoundedSubring ℚ_[p]) : ∃ y, (p : powerBoundedSubring ℚ_[p]) ∣ x - y ^ p := by
     refine ⟨x, powerBoundedSubring.dvd_iff_norm_le.mpr ?_⟩
-    let z : ℤ_[p] := ⟨x, isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.2)⟩
+    let z : ℤ_[p] := ⟨x, isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property)⟩
     have hz : z - z ^ p ∈ Ideal.span {(p : ℤ_[p]) ^ 1} := by
       rw [pow_one, ← PadicInt.maximalIdeal_eq_span_p, ← PadicInt.ker_toZMod, RingHom.mem_ker,
         map_sub, map_pow, ZMod.pow_card, sub_self]
