@@ -436,30 +436,6 @@ theorem hiveCount_productBoundary_eq_natCard_lrTableau (hlam : lam.colLen 0 ≤ 
   rw [← natCard_fixedIntegerHive]
   exact Nat.card_congr (fixedIntegerHiveEquivLRTableau hlam hγ hμ)
 
-/-- **Hive counts of polynomial weights are Littlewood–Richardson coefficients**: for polynomial
-dominant weights `λ, μ, γ` of `GL n`, the number of integer hives with boundary `(λ, μ, γ*)` is
-the Littlewood–Richardson coefficient of their Young diagrams. -/
-theorem hiveCount_productBoundary_eq_natCard_lrTableau_shape {lam μ γ : DominantWeight n}
-    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) :
-    hiveCount (productBoundary lam μ γ) = Nat.card (LRTableau lam.shape γ.shape μ.shape) := by
-  conv_lhs => rw [← weightOfShape_shape hlam, ← weightOfShape_shape hμ,
-    ← weightOfShape_shape hγ]
-  exact hiveCount_productBoundary_eq_natCard_lrTableau (DominantWeight.colLen_zero_shape_le lam)
-    (DominantWeight.colLen_zero_shape_le γ) (DominantWeight.colLen_zero_shape_le μ)
-
-/-- **Hive counts of signed weights are Littlewood–Richardson coefficients**: if determinant
-shifts by `a` of `λ`, by `b` of `μ` and by `a + b` of `γ` make all three dominant weights of
-`GL n` polynomial, the number of integer hives with boundary `(λ, μ, γ*)` is the
-Littlewood–Richardson coefficient of the Young diagrams of the shifted weights. In particular this
-coefficient does not depend on the choice of such shifts. -/
-theorem hiveCount_productBoundary_eq_natCard_lrTableau_shift {lam μ γ : DominantWeight n}
-    {a b : ℤ} (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
-    (hγ : (γ.shift (a + b)).IsPolynomial) :
-    hiveCount (productBoundary lam μ γ) =
-      Nat.card (LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape) := by
-  rw [← hiveCount_productBoundary_shift lam μ γ a b]
-  exact hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ hγ
-
 end Equiv
 
 /-! ### Polynomial and shifted equivalences -/
@@ -502,6 +478,15 @@ theorem natCast_rowCount_fixedIntegerHiveShapeEquivLRTableau {lam μ γ : Domina
   rw [fixedIntegerHiveShapeEquivLRTableau, Equiv.trans_apply,
     natCast_rowCount_fixedIntegerHiveEquivLRTableau _ _ _ _ hr k]
   rfl
+
+/-- **Hive counts of polynomial weights are Littlewood–Richardson coefficients**: for polynomial
+dominant weights `λ, μ, γ` of `GL n`, the number of integer hives with boundary `(λ, μ, γ*)` is
+the Littlewood–Richardson coefficient of their Young diagrams. -/
+theorem hiveCount_productBoundary_eq_natCard_lrTableau_shape {lam μ γ : DominantWeight n}
+    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) :
+    hiveCount (productBoundary lam μ γ) = Nat.card (LRTableau lam.shape γ.shape μ.shape) := by
+  rw [← natCard_fixedIntegerHive]
+  exact Nat.card_congr (fixedIntegerHiveShapeEquivLRTableau hlam hμ hγ)
 
 section
 variable {lam μ γ : DominantWeight n} (a b : ℤ)
@@ -572,6 +557,19 @@ theorem rowCount_fixedIntegerHiveShiftEquivLRTableau
     Int.toNat_natCast]
 
 end
+
+/-- **Hive counts of signed weights are Littlewood–Richardson coefficients**: if determinant
+shifts by `a` of `λ`, by `b` of `μ` and by `a + b` of `γ` make all three dominant weights of
+`GL n` polynomial, the number of integer hives with boundary `(λ, μ, γ*)` is the
+Littlewood–Richardson coefficient of the Young diagrams of the shifted weights. In particular this
+coefficient does not depend on the choice of such shifts. -/
+theorem hiveCount_productBoundary_eq_natCard_lrTableau_shift {lam μ γ : DominantWeight n}
+    {a b : ℤ} (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
+    (hγ : (γ.shift (a + b)).IsPolynomial) :
+    hiveCount (productBoundary lam μ γ) =
+      Nat.card (LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape) := by
+  rw [← natCard_fixedIntegerHive]
+  exact Nat.card_congr (fixedIntegerHiveShiftEquivLRTableau a b hlam hμ hγ)
 
 section
 variable {lam μ γ : DominantWeight n}
