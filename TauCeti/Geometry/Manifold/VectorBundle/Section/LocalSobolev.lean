@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.ChangeOfVariables
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.VectorValued
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 
@@ -104,8 +103,9 @@ private theorem isLocallySobolevAt_chartComponent_of_basis {ι : Type*} [Finite 
     (b : Module.Basis ι ℝ F) (T : BundleTest I F V →L_c[ℝ] ℝ) {s : ℝ} {y : E} (hy : y ∈ c.target)
     (h : ∀ i, (t.chartComponent c hc hct T (b i)).IsLocallySobolevAt s y) (v : F) :
     (t.chartComponent c hc hct T v).IsLocallySobolevAt s y := by
-  simp only [chartComponent_def] at h ⊢
-  exact isLocallySobolevAt_mapCLM_apply_of_basis b hy h v
+  have := Fintype.ofFinite ι
+  rw [chartComponent_eq_sum_basis _ _ _ _ b]
+  exact Distribution.IsLocallySobolevAt.sum hy fun i _ ↦ (h i).smul _
 
 /-- If every component of the local representative in `(t, c)` is `H^s` near `κ y`, for the
 transition `κ = c ∘ c'⁻¹`, then every component in `(t', c')` is `H^s` near `y`. -/
