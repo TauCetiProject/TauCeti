@@ -96,39 +96,50 @@ The object map is transparent to `simp` when it identifies the carriers in morph
 
 variable {𝕜 G}
 
+/-- The underlying `FDRep` bundles the original linear action on the same carrier. -/
 @[simp]
 theorem toContFDRep_obj_obj (X : (isFiniteDimensional.{u} 𝕜 G).FullSubcategory) :
     ((toContFDRep 𝕜 G).obj X).obj = FDRep.of X.obj.ρ.toRepresentation :=
   (rfl)
 
+/-- Forgetting the norm sends a continuous intertwiner to its underlying linear map. -/
 @[simp]
 theorem toContFDRep_map_hom_hom_hom_hom {X Y : (isFiniteDimensional.{u} 𝕜 G).FullSubcategory}
     (f : X ⟶ Y) : ((toContFDRep 𝕜 G).map f).hom.hom.hom.hom = f.hom.hom.toLinearMap :=
   (rfl)
 
+private noncomputable def toContFDRepPreimage {X Y : (isFiniteDimensional.{u} 𝕜 G).FullSubcategory}
+    (f : (toContFDRep 𝕜 G).obj X ⟶ (toContFDRep 𝕜 G).obj Y) : X ⟶ Y :=
+  let φ : X.obj →ₗ[𝕜] Y.obj := f.hom.hom.hom.hom
+  ObjectProperty.homMk ⟨LinearMap.toContinuousLinearMap φ, fun g x => by
+    simp only [LinearMap.coe_toContinuousLinearMap']
+    exact LinearMap.congr_fun (FDRep.hom_hom_hom_comm f.hom g) x⟩
+
+private theorem toContFDRepPreimage_apply {X Y : (isFiniteDimensional.{u} 𝕜 G).FullSubcategory}
+    (f : (toContFDRep 𝕜 G).obj X ⟶ (toContFDRep 𝕜 G).obj Y) (x : X.obj) :
+    (toContFDRepPreimage f).hom.hom x = f.hom.hom.hom.hom x := by
+  simp only [toContFDRepPreimage, ObjectProperty.homMk_hom, LinearMap.coe_toContinuousLinearMap']
+
 /-- Forgetting the norm is fully faithful since every linear map on a finite-dimensional space
 over a complete field is continuous. -/
 noncomputable def fullyFaithfulToContFDRep : (toContFDRep 𝕜 G).FullyFaithful where
-  preimage {X Y} f :=
-    let φ : X.obj →ₗ[𝕜] Y.obj := f.hom.hom.hom.hom
-    ObjectProperty.homMk ⟨LinearMap.toContinuousLinearMap φ, fun g x => by
-      simp only [LinearMap.coe_toContinuousLinearMap']
-      exact LinearMap.congr_fun (FDRep.hom_hom_hom_comm f.hom g) x⟩
+  preimage := toContFDRepPreimage
   map_preimage {X Y} f := by
     ext x
-    rw [toContFDRep_map_hom_hom_hom_hom, ObjectProperty.homMk_hom]
-    let φ : X.obj →ₗ[𝕜] Y.obj := f.hom.hom.hom.hom
-    exact LinearMap.congr_fun (LinearMap.coe_toContinuousLinearMap φ) x
+    rw [toContFDRep_map_hom_hom_hom_hom]
+    exact toContFDRepPreimage_apply f x
   preimage_map f := by
     ext x
-    simp
+    rw [toContFDRepPreimage_apply, toContFDRep_map_hom_hom_hom_hom]
+    rfl
 
+/-- The lifted continuous intertwiner agrees with the original intertwiner on every vector. -/
 @[simp]
 theorem fullyFaithfulToContFDRep_preimage_apply
     {X Y : (isFiniteDimensional.{u} 𝕜 G).FullSubcategory}
     (f : (toContFDRep 𝕜 G).obj X ⟶ (toContFDRep 𝕜 G).obj Y) (x : X.obj) :
     (fullyFaithfulToContFDRep.preimage f).hom.hom x = f.hom.hom.hom.hom x :=
-  (rfl)
+  toContFDRepPreimage_apply f x
 
 end BanachRep
 
@@ -182,14 +193,11 @@ theorem _root_.CategoryTheory.ShortComplex.conflation_map_ι_iff_shortExact_map_
     exactStructure.Conflation (S.map (isFiniteDimensional 𝕜 G).ι) ↔
       ((S.map (toContFDRep 𝕜 G)).map (forget₂ (ContFDRep 𝕜 G) (ModuleCat 𝕜))).ShortExact := by
   let M := (S.map (toContFDRep 𝕜 G)).map (forget₂ (ContFDRep 𝕜 G) (ModuleCat 𝕜))
-  have hf : ⇑M.f = ⇑S.f.hom.hom := by
-    simp only [M, ShortComplex.map_f, ContFDRep.forget₂_map, toContFDRep_map_hom_hom_hom_hom,
-      ContinuousLinearMap.coe_coe]
-  have hg : ⇑M.g = ⇑S.g.hom.hom := by
-    simp only [M, ShortComplex.map_g, ContFDRep.forget₂_map, toContFDRep_map_hom_hom_hom_hom,
-      ContinuousLinearMap.coe_coe]
+  have hmap {X Y : (isFiniteDimensional.{u} 𝕜 G).FullSubcategory} (f : X ⟶ Y) :
+      ⇑((forget₂ (ContFDRep 𝕜 G) (ModuleCat 𝕜)).map ((toContFDRep 𝕜 G).map f)) = ⇑f.hom.hom := by
+    simp only [ContFDRep.forget₂_map, toContFDRep_map_hom_hom_hom_hom, ContinuousLinearMap.coe_coe]
   simp only [exactStructure_conflation_iff, ShortComplex.map_f, ShortComplex.map_g,
-    ObjectProperty.ι_map, ← hf, ← hg]
+    ObjectProperty.ι_map, ← hmap S.f, ← hmap S.g]
   exact ⟨fun ⟨hi, hs, he⟩ => ModuleCat.shortComplex_shortExact M he hi hs, fun h =>
     ⟨h.moduleCat_injective_f, h.moduleCat_surjective_g,
       (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact M).1 h.exact⟩⟩
@@ -198,14 +206,9 @@ theorem _root_.CategoryTheory.ShortComplex.conflation_map_ι_iff_shortExact_map_
 gives a conflation under the inverse comparison and inclusion into Banach representations. -/
 theorem _root_.CategoryTheory.ShortComplex.conflation_map_inv_toContFDRep
     (S : ShortComplex (ContFDRep 𝕜 G))
-    (hf : Function.Injective S.f.hom.hom.hom.hom) (hg : Function.Surjective S.g.hom.hom.hom.hom)
-    (hex : Function.Exact S.f.hom.hom.hom.hom S.g.hom.hom.hom.hom) :
+    (hS : (S.map (forget₂ (ContFDRep 𝕜 G) (ModuleCat 𝕜))).ShortExact) :
     exactStructure.Conflation (S.map ((toContFDRep 𝕜 G).inv ⋙ (isFiniteDimensional 𝕜 G).ι)) := by
   let U := forget₂ (ContFDRep 𝕜 G) (ModuleCat 𝕜)
-  have hS : (S.map U).ShortExact := by
-    apply ModuleCat.shortComplex_shortExact
-    all_goals simp only [ShortComplex.map_f, ShortComplex.map_g, U, ContFDRep.forget₂_map]
-    all_goals assumption
   rw [ShortComplex.map_comp, ShortComplex.conflation_map_ι_iff_shortExact_map_toContFDRep]
   -- The counit identifies the underlying complex of the Banach realization with the original.
   exact ShortComplex.shortExact_of_iso
