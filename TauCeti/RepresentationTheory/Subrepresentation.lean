@@ -53,7 +53,11 @@ subrepresentations of a representation on a module over a ring form a modular la
 `ρ ≃ ρ₁ × ρ₂`: `Submodule.prodEquivOfIsCompl` supplies the linear isomorphism and each `ρ g`,
 being additive and preserving both summands, supplies the equivariance.  Being about
 `Submodule.prodEquivOfIsCompl`, it asks for the coefficients to be a ring and the module to be a
-group, as that construction does.
+group, as that construction does.  Its first component is the projection
+`Submodule.projectionOnto` along the complement, which therefore intertwines
+(`Subrepresentation.isIntertwiningMap_projectionOnto`); its transpose, given by
+`Representation.IsIntertwiningMap.dualMap`, extends linear forms on `ρ₁` by zero on `ρ₂`, which
+includes the dual of `ρ₁` equivariantly into the dual of `ρ`.
 
 The subrepresentations whose underlying submodule is finitely generated form a join-semilattice
 (`Subrepresentation.instSemilatticeSupFG`), as the finitely generated submodules do in Mathlib, so
@@ -97,6 +101,7 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
+* `Subrepresentation.isIntertwiningMap_projectionOnto`
 * `Subrepresentation.instSemilatticeSupFG`
 -/
 
@@ -394,6 +399,22 @@ theorem equivProdOfIsCompl_symm_apply {ρ₁ ρ₂ : Subrepresentation ρ} (h : 
   -- `(rfl)`, not `rfl`: the body of `equivProdOfIsCompl` is not `@[expose]`d, so this must not be
   -- inferred `@[defeq]`.
   (rfl)
+
+/-- **The projection onto a summand along a complementary subrepresentation intertwines.** For
+complementary subrepresentations `ρ₁` and `ρ₂` of `ρ`, the linear projection
+`Submodule.projectionOnto` of `W` onto `ρ₁` along `ρ₂` intertwines `ρ` with `ρ₁`. -/
+theorem isIntertwiningMap_projectionOnto {ρ₁ ρ₂ : Subrepresentation ρ} (h : IsCompl ρ₁ ρ₂) :
+    Representation.IsIntertwiningMap ρ ρ₁.toRepresentation
+      (ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h)) := by
+  -- `Submodule.projectionOnto` is the first component of the inverse of
+  -- `Submodule.prodEquivOfIsCompl` (`Submodule.prodEquivOfIsCompl_symm_apply`), which
+  -- `equivProdOfIsCompl_apply` identifies with the splitting.
+  obtain ⟨f, hf⟩ : ∃ f : Representation.IntertwiningMap ρ ρ₁.toRepresentation,
+      f.toLinearMap = ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h) :=
+    ⟨(Representation.IntertwiningMap.fst A ρ₁.toRepresentation ρ₂.toRepresentation).comp
+      (equivProdOfIsCompl h).toIntertwiningMap,
+      LinearMap.ext fun v => by simp [equivProdOfIsCompl_apply]⟩
+  exact hf ▸ ⟨f.isIntertwining⟩
 
 end Splitting
 
