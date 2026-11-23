@@ -88,39 +88,6 @@ variable {K α ε : ℝ≥0} {A P : X →L[ℝ] X} {N : X → X}
   (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
   (hα : 0 < α) (hN : LipschitzWith ε N) (hsmall : 2 * K * ε < α)
 
-omit [CompleteSpace X] in
-include hs in
-/-- The homogeneous term of the Lyapunov--Perron equation is bounded by `K ‖ξ‖` in forward
-time. -/
-private theorem norm_exp_smul_apply_le (ξ : X) (t : ℝ≥0) :
-    ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * ‖ξ‖ :=
-  calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.2 ξ
-    _ ≤ K * 1 * ‖ξ‖ := by
-      gcongr
-      exact Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg
-        (neg_nonpos.2 α.coe_nonneg) t.2)
-    _ = K * ‖ξ‖ := by ring
-
-/-- The homogeneous term `ξ ↦ (t ↦ exp (t A) (P ξ))` of the Lyapunov--Perron equation, as a
-bounded linear map into bounded continuous curves on `[0, ∞)`. -/
-def lyapunovPerronHomogeneousCLM : X →L[ℝ] (ℝ≥0 →ᵇ X) :=
-  LinearMap.mkContinuous
-    { toFun := fun ξ ↦ BoundedContinuousFunction.ofNormedAddCommGroup
-        (fun t : ℝ≥0 ↦ exp ((t : ℝ) • A) (P ξ))
-        (((differentiable_exp_smul_const ℝ A).continuous.comp NNReal.continuous_coe).clm_apply
-          continuous_const)
-        (K * ‖ξ‖) (norm_exp_smul_apply_le hs ξ)
-      map_add' := fun ξ ζ ↦ by ext t; simp
-      map_smul' := fun c ξ ↦ by ext t; simp }
-    K fun ξ ↦ BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (by positivity)
-      (norm_exp_smul_apply_le hs ξ)
-
-/-- The homogeneous term is the decaying linear evolution of the stable coordinate. -/
-@[simp]
-theorem lyapunovPerronHomogeneousCLM_apply (ξ : X) (t : ℝ≥0) :
-    lyapunovPerronHomogeneousCLM hs ξ t = exp ((t : ℝ) • A) (P ξ) :=
-  (rfl)
-
 /-- The Lyapunov--Perron operator splits as the homogeneous term plus the integral operator
 applied to the superposition `N ∘ γ`. -/
 private theorem lyapunovPerronMap_eq_add (ξ : X) (γ : ℝ≥0 →ᵇ X) :

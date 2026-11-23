@@ -8,14 +8,14 @@ module
 public import TauCeti.Analysis.ODE.LyapunovPerron.Basic
 
 /-!
-# The Lyapunov--Perron integral as a bounded linear operator
+# The linear operators of the Lyapunov--Perron equation
 
-The two integral terms of the Lyapunov--Perron equation act linearly on a bounded continuous
-forcing term on the nonnegative time axis. Forward and backward exponential estimates bound this
-operator in the sup norm by `2 K / α`. This is the linear part of the derivative of the
-Lyapunov--Perron map;
-packaging it as a continuous linear map makes the implicit-function argument for smooth stable
-and unstable manifolds possible.
+The homogeneous term sends the initial parameter to its forward evolution under the linear flow
+and is bounded in the sup norm by `K` times the norm of the parameter. The two integral terms act
+linearly on a bounded continuous forcing term on the nonnegative time axis. Forward and backward
+exponential estimates bound the integral operator in the sup norm by `2 K / α`. Packaging these
+terms as continuous linear maps makes the implicit-function argument for smooth stable and
+unstable manifolds possible.
 
 The integral and exponential estimates follow Coppel, *Dichotomies in Stability Theory*,
 Chapter 5.
@@ -29,6 +29,47 @@ open scoped NNReal BoundedContinuousFunction
 noncomputable section
 
 namespace ContinuousLinearMap
+
+section Homogeneous
+
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {K α : ℝ≥0} {A P : X →L[ℝ] X}
+  (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+
+omit [CompleteSpace X] in
+include hs in
+/-- The homogeneous term of the Lyapunov--Perron equation is bounded by `K ‖ξ‖` in forward
+time. -/
+private theorem norm_exp_smul_apply_le (ξ : X) (t : ℝ≥0) :
+    ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * ‖ξ‖ :=
+  calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.2 ξ
+    _ ≤ K * 1 * ‖ξ‖ := by
+      gcongr
+      exact Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg
+        (neg_nonpos.2 α.coe_nonneg) t.2)
+    _ = K * ‖ξ‖ := by ring
+
+/-- The homogeneous term `ξ ↦ (t ↦ exp (t A) (P ξ))` of the Lyapunov--Perron equation, as a
+bounded linear map into bounded continuous curves on `[0, ∞)`. -/
+def lyapunovPerronHomogeneousCLM : X →L[ℝ] (ℝ≥0 →ᵇ X) :=
+  LinearMap.mkContinuous
+    { toFun := fun ξ ↦ BoundedContinuousFunction.ofNormedAddCommGroup
+        (fun t : ℝ≥0 ↦ exp ((t : ℝ) • A) (P ξ))
+        (((differentiable_exp_smul_const ℝ A).continuous.comp NNReal.continuous_coe).clm_apply
+          continuous_const)
+        (K * ‖ξ‖) (norm_exp_smul_apply_le hs ξ)
+      map_add' := fun ξ ζ ↦ by ext t; simp
+      map_smul' := fun c ξ ↦ by ext t; simp }
+    K fun ξ ↦ BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (by positivity)
+      (norm_exp_smul_apply_le hs ξ)
+
+/-- The homogeneous term is the decaying linear evolution of the stable coordinate. -/
+@[simp]
+theorem lyapunovPerronHomogeneousCLM_apply (ξ : X) (t : ℝ≥0) :
+    lyapunovPerronHomogeneousCLM hs ξ t = exp ((t : ℝ) • A) (P ξ) :=
+  (rfl)
+
+end Homogeneous
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 variable {A P : X →L[ℝ] X} {K α : ℝ≥0}
