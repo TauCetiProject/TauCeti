@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.LocalField.Haar.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.RingTheory.RamificationInertia.Inertia
 
 /-!
 # Normalized additive Haar measure and character on adic completions of Dedekind domains
@@ -93,15 +94,8 @@ theorem distribHaarChar_adicCompletion_of_isUniformizer_of_liesOver
     (hϖ : IsUniformizer (v.adicCompletion K) ϖ) :
     distribHaarChar (v.adicCompletion K) ϖ =
       ((Ideal.absNorm p : ℝ≥0) ^ v.asIdeal.inertiaDeg A)⁻¹ := by
-  have hp_prime : p.IsPrime := Ideal.isPrime_of_liesOver v.asIdeal p
-  have _ : p.IsMaximal := hp_prime.isMaximal hp
-  let _ : Field (A ⧸ p) := Ideal.Quotient.field p
-  have _ : Module.Finite (A ⧸ p) (R ⧸ v.asIdeal) := Module.Finite.of_finite
-  have hnorm : Ideal.absNorm v.asIdeal = Ideal.absNorm p ^ v.asIdeal.inertiaDeg A := by
-    rw [Ideal.absNorm_of_ne_bot v.ne_bot, Ideal.absNorm_of_ne_bot hp, Submodule.cardQuot_apply,
-      Submodule.cardQuot_apply, Ideal.inertiaDeg_eq_of_isMaximal p v.asIdeal,
-      Module.natCard_eq_pow_finrank (K := A ⧸ p) (V := R ⧸ v.asIdeal)]
-  rw [v.distribHaarChar_adicCompletion_of_isUniformizer hϖ, hnorm, Nat.cast_pow]
+  rw [v.distribHaarChar_adicCompletion_of_isUniformizer hϖ,
+    ← Ideal.absNorm_pow_inertiaDeg_of_finite p v.asIdeal hp v.ne_bot, Nat.cast_pow]
 
 /-- If `v.asIdeal` lies over `Ideal.span {(p : ℤ)}`, then any uniformizer `ϖ` of
 `v.adicCompletion K` has distributive Haar character `p ^ (-f)`, where

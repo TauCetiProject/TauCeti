@@ -70,11 +70,11 @@ for any `T ∈ GL(L)`).
 * `LinearEquiv.distribHaarChar_eq_normalizedAbsoluteValue_det`,
   `LinearMap.GeneralLinearGroup.distribHaarChar_eq_normalizedAbsoluteValue_det`,
   `Units.distribHaarChar_eq_normalizedAbsoluteValue_det`: `distribHaarChar V T = |det T|_E`.
-* `Submodule.IsFullLattice.map_localAddHaar`,
+* `Submodule.IsFullLattice.map_localAddHaar`, `Submodule.IsFullLattice.localAddHaar_congr`,
   `Submodule.IsFullLattice.map_linearEquiv_addHaar_of_mem_stabilizer`,
   `Module.Basis.map_localAddHaar`, `Module.Basis.localAddHaar_eq_smul`,
   `Module.Basis.localAddHaar_eq_of_valuation_det_eq_one`: transport along linear equivalences,
-  invariance under `GL(L)`, and change-of-basis scaling.
+  congruence of equal lattices, invariance under `GL(L)`, and change-of-basis scaling.
 
 ## References
 
@@ -471,7 +471,10 @@ open TauCeti
 variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E] [AddCommGroup V] [Module E V] [Module 𝒪[E] V]
   [IsScalarTower 𝒪[E] E V] [TopologicalSpace V] [IsModuleTopology E V]
-  (L : Submodule 𝒪[E] V) [L.IsFullLattice E]
+
+section Lattice
+
+variable (L : Submodule 𝒪[E] V) [L.IsFullLattice E]
 
 /-- A full `𝒪[E]`-lattice `L` in `V` packaged as a `PositiveCompacts V`: `L` is compact and open,
 and contains `0`. -/
@@ -590,6 +593,16 @@ theorem map_linearEquiv_addHaar_of_mem_stabilizer [MeasurableSpace V] [BorelSpac
   rw [Measure.map_linearEquiv_addHaar μ T, normalizedAbsoluteValue_det_of_mem_stabilizer L hT]
   simp
 
+end Lattice
+
+/-- Equal lattices with separately inferred `IsFullLattice` instances define the same
+`Submodule.IsFullLattice.localAddHaar`. -/
+theorem localAddHaar_congr [MeasurableSpace V] [BorelSpace V]
+    {L₁ L₂ : Submodule 𝒪[E] V} [L₁.IsFullLattice E] [L₂.IsFullLattice E] (h : L₁ = L₂) :
+    localAddHaar L₁ = localAddHaar L₂ := by
+  subst h
+  rfl
+
 end Submodule.IsFullLattice
 
 namespace Module.Basis
@@ -668,13 +681,8 @@ theorem map_localAddHaar {W : Type*} [AddCommGroup W] [Module E W] [Module 𝒪[
     congr 1
     ext x
     simp [Basis.map_apply]
-  have hcongr : ∀ {L₁ L₂ : Submodule 𝒪[E] W} [L₁.IsFullLattice E] [L₂.IsFullLattice E],
-      L₁ = L₂ →
-        Submodule.IsFullLattice.localAddHaar L₁ = Submodule.IsFullLattice.localAddHaar L₂ := by
-    rintro L₁ _ _ _ rfl
-    rfl
   rw [localAddHaar_def, Submodule.IsFullLattice.map_localAddHaar, localAddHaar_def]
-  exact hcongr hspan
+  exact Submodule.IsFullLattice.localAddHaar_congr hspan
 
 /-- **Change-of-basis formula for normalized Haar measures.** For two finite `E`-bases `b` and `b'`
 of `V` indexed by a `Fintype ι`, `b'.localAddHaar = |b.det b'|_E⁻¹ • b.localAddHaar`. -/
