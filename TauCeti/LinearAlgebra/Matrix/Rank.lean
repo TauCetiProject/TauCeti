@@ -30,6 +30,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 
 * `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
   rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.exists_det_submatrix_ne_zero_of_linearIndepOn`: over a field, for a matrix with
+  independent rows, independent columns extend to a column basis with a nonzero maximal minor.
 * `Matrix.linearIndependent_row_of_map`: row independence over a domain lifts along every ring
   homomorphism of domains, such as a reduction `ℤ → ZMod ℓ`.
 * `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
@@ -123,24 +125,41 @@ section LinearIndependent
 
 variable {m n R : Type*} [Fintype m] [DecidableEq m] [Finite n]
 
+/-- **Column basis extension.** For a matrix with linearly independent rows over a field, every
+linearly independent set of columns extends to a column basis: an embedding `e` of the rows into
+the columns whose range contains the set and whose square submatrix is invertible. -/
+theorem exists_det_submatrix_ne_zero_of_linearIndepOn {K : Type*} [Field K] {A : Matrix m n K}
+    (hA : LinearIndependent K A.row) {s : Set n} (hs : LinearIndepOn K A.col s) :
+    ∃ e : m ↪ n, s ⊆ Set.range e ∧ (A.submatrix id e).det ≠ 0 := by
+  classical
+  have := Fintype.ofFinite n
+  -- The columns span, since the rows are independent.
+  have hspan : Submodule.span K (Set.range A.col) = ⊤ := by
+    apply Submodule.eq_top_of_finrank_eq
+    rw [finrank_span_range_col, hA.rank_matrix, Module.finrank_fintype_fun_eq_card]
+  -- Extend `s` to a set `B` of columns forming a basis; it has as many elements as there are rows.
+  obtain ⟨B, -, hsB, hBspan, hBli⟩ := exists_linearIndepOn_extension hs (Set.subset_univ s)
+  have hBtop : ⊤ ≤ Submodule.span K (Set.range fun j : B => A.col j) := by
+    rw [← Set.image_eq_range, ← hspan, Submodule.span_le, ← Set.image_univ]
+    exact hBspan
+  have hcard : Fintype.card m = Fintype.card B := by
+    rw [← Module.finrank_fintype_fun_eq_card (R := K),
+      Module.finrank_eq_card_basis (Module.Basis.mk hBli hBtop)]
+  let e : m ≃ B := Fintype.equivOfCardEq hcard
+  refine ⟨e.toEmbedding.trans (Function.Embedding.subtype _),
+    fun j hj => ⟨e.symm ⟨j, hsB hj⟩, by simp⟩, ?_⟩
+  -- The columns of the square submatrix are the basis `B`.
+  exact ((isUnit_iff_isUnit_det _).1
+    (linearIndependent_col_iff_isUnit.1 (hBli.comp e e.injective))).ne_zero
+
 /-- The field case of `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: a family
 of independent columns of the size of the row rank exists. -/
 private theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field {K : Type*}
     [Field K] {A : Matrix m n K} :
     LinearIndependent K A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
-  have : Fintype n := Fintype.ofFinite n
   refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ ↦ ?_⟩
-  · obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K A.col
-    have : Finite κ := Finite.of_injective a ha
-    have : Fintype κ := Fintype.ofFinite κ
-    have hcard : Fintype.card m = Fintype.card κ := by
-      rw [linearIndependent_iff_card_eq_finrank_span.1 hli, Set.finrank, hspan,
-        finrank_span_range_col, h.rank_matrix]
-    let e : m ↪ n := (Fintype.equivOfCardEq hcard).toEmbedding.trans ⟨a, ha⟩
-    -- The columns of the square submatrix are the columns `A.col (e j)` (`col_submatrix_eq_comp`).
-    have hcol : LinearIndependent K (A.submatrix id e).col :=
-      hli.comp _ (Fintype.equivOfCardEq hcard).injective
-    exact ⟨e, ((isUnit_iff_isUnit_det _).1 (linearIndependent_col_iff_isUnit.1 hcol)).ne_zero⟩
+  · obtain ⟨e, -, he⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn h (linearIndepOn_empty K _)
+    exact ⟨e, he⟩
   · -- The rows of the square submatrix are the rows of `A` restricted to the columns `e`.
     exact LinearIndependent.of_comp (LinearMap.funLeft K K e)
       (linearIndependent_rows_of_det_ne_zero he)

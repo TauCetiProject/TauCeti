@@ -297,7 +297,8 @@ theorem HasWeakFDerivOn.integral_laplacian_mul_cutoff_mul_eq {v f : E → ℝ} {
   -- Integrability of the five terms, each a continuous coefficient vanishing off `tsupport χ`.
   have hint : ∀ {c q : E → ℝ}, Continuous c → (∀ x ∉ tsupport χ, c x = 0) →
       LocallyIntegrableOn q Ω μ → Integrable (fun x ↦ c x * q x) μ := fun {c _} hc hc0 hq ↦ by
-    simpa only [smul_eq_mul] using hq.integrable_smul_left_of_hasCompactSupport hc (.intro hχc hc0)
+    simpa only [smul_eq_mul] using hq.integrable_smul_left_of_hasCompactSupport hc.continuousOn
+      (.intro hχc hc0)
       ((tsupport_subset_of_forall_notMem_eq_zero hc0 (isClosed_tsupport χ)).trans hχΩ)
   have I₁ : Integrable (fun x ↦ Δ (fun y ↦ χ y * φ y) x * v x) μ :=
     hint ((hχ.mul hφ).of_le (m := 2) (by simp)).continuous_laplacian (fun _ hx ↦
@@ -317,7 +318,7 @@ theorem HasWeakFDerivOn.integral_laplacian_mul_cutoff_mul_eq {v f : E → ℝ} {
       simp [gradient_of_notMem_tsupport hx]
     simpa only [real_inner_smul_left] using
       hv.locallyIntegrableOn_gradient.integrable_inner_left_of_hasCompactSupport (𝕜 := ℝ)
-        (g := fun x ↦ φ x • ∇ χ x) (hφ.continuous.smul hcgχ) (.intro hχc h0)
+        (g := fun x ↦ φ x • ∇ χ x) (hφ.continuous.smul hcgχ).continuousOn (.intro hχc h0)
         ((tsupport_subset_of_forall_notMem_eq_zero h0 (isClosed_tsupport χ)).trans hχΩ)
   -- Poisson's equation against `χ φ`, then split both sides by linearity.
   have hB : ∫ x, Δ (fun y ↦ χ y * φ y) x * v x ∂μ = ∫ x, χ x * φ x * f x ∂μ := by

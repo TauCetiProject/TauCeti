@@ -19,8 +19,9 @@ For a trivial value bundle, `mpullbackWithin` and `mpullback` retain the fixed c
 space. On model spaces they agree with precomposition by the Fréchet derivative.
 Pullback at `x` only depends on the germ of `f` at `x`, within-set pullback at `x` only on the
 value at `x` and the germ within the set, and when the derivative of `f` at `x`
-is surjective it determines the form at `f x`. On a normed space, the pullback along a translate
-`w ↦ u (w + c)` is the pullback along `u` at the translated point
+is surjective it determines the form at `f x`. Pullback along a constant map sends every form
+of positive degree to zero (`TauCeti.mpullback_const`). On a normed space, the pullback along a
+translate `w ↦ u (w + c)` is the pullback along `u` at the translated point
 (`TauCeti.mpullback_comp_add_right`).
 
 This construction follows Lee, *Introduction to Smooth Manifolds*, second edition,
@@ -325,6 +326,15 @@ theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M
     (h : ω (f x) = 0) : mpullback I I' f ω x = 0 := by
   ext v
   simp [mpullback_apply, h]
+
+/-- The pullback of a form of positive degree along a constant map vanishes: the derivative of a
+constant map is zero, and a form of positive degree vanishes on zero vectors. -/
+@[simp]
+theorem mpullback_const (hk : k ≠ 0) (y : M') (ω : RoughForm I' M' F k) :
+    mpullback I I' (fun _ : M ↦ y) ω = 0 := by
+  ext x v
+  rw [mpullback_apply, mfderiv_const]
+  exact (ω y).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ (zero_apply _)
 
 /-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
 theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
