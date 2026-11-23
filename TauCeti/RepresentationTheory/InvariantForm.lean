@@ -73,6 +73,8 @@ representation, makes `G` a group, as does averaging over `G`
   homomorphism and to a subrepresentation.
 * `TauCeti.Representation.isInvariantForm_iff_isIntertwiningMap`: a form is invariant exactly when
   it intertwines `ρ` with `ρ.dual`.
+* `TauCeti.Representation.IsInvariantForm.dual_apply`: the dual representation acts on a covector
+  `B v` through `ρ`.
 * `TauCeti.Representation.IsInvariantForm.stabilizer_dual_apply_eq_stabilizer`: for an injective
   invariant form, the stabilizer of the covector `B v` is the stabilizer of `v`.
 * `TauCeti.Representation.invariantForms_eq_invariants_linHom_dual`: the invariant forms are the
@@ -345,6 +347,13 @@ theorem isInvariantForm_iff_isIntertwiningMap (ρ : Representation k G V) (B : B
     refine BilinForm.isIsometry_iff.mpr fun x y => ?_
     have h := DFunLike.congr_fun (hB.isIntertwining g x) (ρ g y)
     simpa [Module.Dual.transpose_apply] using h
+
+/-- **The dual action on covectors given by an invariant form.** For an invariant form `B`, the
+dual representation acts on the covector `B v` through `ρ`: `ρ.dual g (B v) = B (ρ g v)`. This is
+`TauCeti.Representation.isInvariantForm_iff_isIntertwiningMap` evaluated at `v`. -/
+theorem IsInvariantForm.dual_apply (hB : IsInvariantForm ρ B) (g : G) (v : V) :
+    ρ.dual g (B v) = B (ρ g v) :=
+  (((isInvariantForm_iff_isIntertwiningMap ρ B).mp hB).isIntertwining g v).symm
 
 /-- The left radical `ker B = {x | B x = 0}` of an invariant form is invariant. -/
 theorem IsInvariantForm.apply_mem_ker (hB : IsInvariantForm ρ B) (g : G) {x : V}
