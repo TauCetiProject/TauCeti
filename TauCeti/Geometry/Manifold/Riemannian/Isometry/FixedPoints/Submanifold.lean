@@ -116,6 +116,10 @@ theorem comap_mfderiv_riemannianExp_fixedTangentSubspace {p : M} (hp : p ∈ fix
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) w).toLinearMap =
       fixedTangentSubspace I K p := by
   refine Submodule.ext fun (v : TangentSpace I p) ↦ ?_
+  -- Unfold `Submodule.mem_comap` and the `toLinearMap` coercion by `change`: `v` lives in
+  -- `TangentSpace I p` while the comap is taken over `TangentSpace 𝓘(ℝ, TangentSpace I p) w`.
+  -- These agree only after unfolding the semireducible `TangentSpace`, so the goal is not
+  -- type-correct at reducible transparency and `rw`/`simp only [Submodule.mem_comap]` fail.
   change mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) w v ∈
     fixedTangentSubspace I K (riemannianExp I M p w) ↔ v ∈ fixedTangentSubspace I K p
   rw [mem_fixedTangentSubspace_iff_of_mem_fixedPoints (riemannianExp_mem_fixedPoints hK hp hw),
