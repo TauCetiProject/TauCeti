@@ -457,6 +457,21 @@ theorem map_apply (φ : A →ₐ[K] B) (x : hA.SupNormModel) :
     map hA hB φ x = toSupNorm (φ x.ofSupNorm) :=
   (rfl)
 
+/-- `SupNormModel.map` sends the identity algebra homomorphism to the identity continuous algebra
+homomorphism. -/
+@[simp]
+theorem map_id (hA : IsAffinoidAlgebra K A) :
+    map hA hA (AlgHom.id K A) = ContinuousAlgHom.id K hA.SupNormModel :=
+  ContinuousAlgHom.ext fun x ↦ by simp [map_apply]
+
+/-- Composition of induced continuous algebra homomorphisms `SupNormModel.map` is the map induced
+by the composite algebra homomorphism. -/
+@[simp]
+theorem map_comp {C : Type*} [CommRing C] [Algebra K C] {hC : IsAffinoidAlgebra K C}
+    (ψ : B →ₐ[K] C) (φ : A →ₐ[K] B) :
+    (map hB hC ψ).comp (map hA hB φ) = map hA hC (ψ.comp φ) :=
+  ContinuousAlgHom.ext fun x ↦ by simp [map_apply]
+
 /-- Every induced map `SupNormModel.map hA hB φ` between supremum-normed models is
 `1`-Lipschitz. -/
 theorem lipschitzWith_map (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
