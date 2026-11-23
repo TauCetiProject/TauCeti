@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
+public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.Coprod.Abelianization
-public import TauCeti.GroupTheory.Coprod.Torsion
-public import TauCeti.GroupTheory.Index.TorsionFree
 public import TauCeti.GroupTheory.TriangleGroup.Basic
 import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.GroupTheory.Coprod.Torsion
+import TauCeti.GroupTheory.Index.TorsionFree
 
 /-!
 # Free-product presentation of triangle groups `Δ(a, b, 0)`
@@ -159,19 +160,17 @@ private abbrev inrHom (a b : ℕ) :
 when `a = 0`). -/
 @[simp]
 theorem orderOf_x_zero (a b : ℕ) : orderOf (x a b 0) = a := by
-  have h1 := orderOf_injective (equivCoprod a b).toMonoidHom (equivCoprod a b).injective (x a b 0)
-  have h2 := orderOf_injective (inlHom a b) Monoid.Coprod.inl_injective (.ofAdd 1)
-  rw [MulEquiv.coe_toMonoidHom, equivCoprod_x] at h1
-  rw [← h1, h2, orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_x,
+    orderOf_injective (inlHom a b) Monoid.Coprod.inl_injective (.ofAdd 1),
+    orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
 
 /-- In `Δ(a, b, 0)`, the generator `y` has exact order `b` (equal to `0`, encoding infinite order,
 when `b = 0`). -/
 @[simp]
 theorem orderOf_y_zero (a b : ℕ) : orderOf (y a b 0) = b := by
-  have h1 := orderOf_injective (equivCoprod a b).toMonoidHom (equivCoprod a b).injective (y a b 0)
-  have h2 := orderOf_injective (inrHom a b) Monoid.Coprod.inr_injective (.ofAdd 1)
-  rw [MulEquiv.coe_toMonoidHom, equivCoprod_y] at h1
-  rw [← h1, h2, orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_y,
+    orderOf_injective (inrHom a b) Monoid.Coprod.inr_injective (.ofAdd 1),
+    orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
 
 private theorem ofAdd_one_inv_ne_one {n : ℕ} (hn : n ≠ 1) :
     (Multiplicative.ofAdd (1 : ZMod n))⁻¹ ≠ 1 := by
@@ -183,9 +182,8 @@ private theorem ofAdd_one_inv_ne_one {n : ℕ} (hn : n ≠ 1) :
 order (`orderOf = 0`), since under `equivCoprod` it is a product of nonidentity elements from
 distinct factors. -/
 theorem orderOf_z_zero {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) : orderOf (z a b 0) = 0 := by
-  have h1 := orderOf_injective (equivCoprod a b).toMonoidHom (equivCoprod a b).injective (z a b 0)
-  rw [MulEquiv.coe_toMonoidHom, equivCoprod_z, ← (inlHom a b).map_inv, ← (inrHom a b).map_inv] at h1
-  rw [← h1]
+  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_z,
+    ← (inlHom a b).map_inv, ← (inrHom a b).map_inv]
   exact Monoid.Coprod.orderOf_inl_mul_inr_eq_zero
     (ofAdd_one_inv_ne_one ha) (ofAdd_one_inv_ne_one hb)
 
