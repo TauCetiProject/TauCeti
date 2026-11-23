@@ -8,9 +8,9 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import TauCeti.LinearAlgebra.LinearIndependent.BaseChange
 import TauCeti.LinearAlgebra.Matrix.Idempotent
 import TauCeti.LinearAlgebra.Matrix.Triangular
-import TauCeti.LinearAlgebra.LinearIndependent.RingHom
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
