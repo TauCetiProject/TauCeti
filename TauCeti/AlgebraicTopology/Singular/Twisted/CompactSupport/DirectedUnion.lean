@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
-public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
@@ -61,7 +60,7 @@ noncomputable section
 
 open CategoryTheory Limits Simplicial
 
-universe u v w
+universe u v w t
 
 namespace TauCeti.LocalCoefficientSystem
 
@@ -111,7 +110,7 @@ end Cocone
 
 section Colimit
 
-variable {J : Type} [Preorder J] [IsDirectedOrder J] {U : J → Set X}
+variable {J : Type*} [Preorder J] [IsDirectedOrder J] {U : J → Set X}
   (hU : Monotone U) {V : Set X} (hUV : ∀ j, U j ⊆ V)
   (hK : ∀ K : Set X, IsCompact K → K ⊆ V → ∃ j, K ⊆ U j)
 
@@ -124,12 +123,19 @@ def isColimitSubsetTwistedChainComplexCocone :
   HomologicalComplex.isColimitOfEval _ _ fun n ↦
     TauCeti.ModuleCat.isColimitOfJointlySurjectiveOfMapEqZero _
       (fun z ↦ exists_subsetTwistedChainComplexMap_f_eq L hUV hK z) fun i x hx ↦ ⟨i, le_rfl, by
-        -- The leg at `i` is injective: followed by the split mono to the chains of `X`, it gives
-        -- the split mono from the chains of `U i`.
-        have : Mono ((subsetTwistedChainComplexMap L (hUV i)).f n) := mono_of_mono_fac (by
-          rw [← HomologicalComplex.comp_f, subsetTwistedChainComplexMap_twistedChainComplexMap])
-        obtain rfl : x = 0 := (ModuleCat.mono_iff_injective _).1 this (hx.trans (map_zero _).symm)
+        -- The leg at `i` is injective, by `mono_subsetTwistedChainComplexMap_f`.
+        obtain rfl : x = 0 :=
+          (ModuleCat.mono_iff_injective ((subsetTwistedChainComplexMap L (hUV i)).f n)).1
+            inferInstance (hx.trans (map_zero _).symm)
         exact map_zero _⟩
+
+end Colimit
+
+section HomologyColimit
+
+variable {J : Type t} [Preorder J] [IsDirectedOrder J] [UnivLE.{t, max v w}] {U : J → Set X}
+  (hU : Monotone U) {V : Set X} (hUV : ∀ j, U j ⊆ V)
+  (hK : ∀ K : Set X, IsCompact K → K ⊆ V → ∃ j, K ⊆ U j)
 
 include hK in
 /-- **Twisted singular homology has compact supports.** For a monotone directed family `U` of
@@ -142,6 +148,6 @@ def isColimitMapCoconeTwistedHomologySubset (k : ℕ) :
   have : Nonempty J := let ⟨j, _⟩ := hK ∅ isCompact_empty (Set.empty_subset _); ⟨j⟩
   isColimitOfPreserves _ (isColimitSubsetTwistedChainComplexCocone L hU hUV hK)
 
-end Colimit
+end HomologyColimit
 
 end TauCeti.LocalCoefficientSystem

@@ -108,6 +108,14 @@ instance mono_subsetTwistedChainComplexMap (h : A ⊆ B) :
     Mono (subsetTwistedChainComplexMap L h) :=
   mono_of_mono_fac (subsetTwistedChainComplexMap_twistedChainComplexMap L h)
 
+/-- In each degree, the map of twisted chains induced by an inclusion of subsets is a
+monomorphism. -/
+-- Mathlib's degreewise instance for a monomorphism of complexes gives this, but inside larger
+-- terms its search for finite limits of modules can fail to unify their universes.
+instance mono_subsetTwistedChainComplexMap_f (h : A ⊆ B) (n : ℕ) :
+    Mono ((subsetTwistedChainComplexMap L h).f n) :=
+  inferInstance
+
 end Subset
 
 /-! ### Compact supports of chains and of homology classes -/
