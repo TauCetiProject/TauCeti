@@ -39,12 +39,12 @@ maps `u` and `\bar∂u - g` lie in `Lᵖ(V)` with uniform bounds, so the interio
 Cauchy–Riemann operator
 (`TauCeti.exists_eLpNorm_fderiv_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm`) bounds the
 derivative `Du` in `Lᵖ(K)` uniformly over the family. Applied to a closed thickening `L` of `K`
-inside `U`, Morrey's inequality on the ball of radius `|x - y|` about the midpoint of `x` and `y`
-(`TauCeti.dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt`) bounds `‖u x - u y‖` by a
+inside `U`, Morrey's inequality on `L`
+(`TauCeti.dist_le_of_contDiffOn_cthickening_of_finrank_lt`) bounds `‖u x - u y‖` by a
 multiple of `|x - y|^(1 - 2 / p)` for nearby points `x, y ∈ K`, and the sup bound handles
 distant points (`HolderOnWith.of_dist_lt_of_dist_le`). The subsequence comes from the
-Arzelà–Ascoli theorem on the open set `U`
-(`EquicontinuousOn.exists_strictMono_tendstoLocallyUniformlyOn`).
+Arzelà–Ascoli theorem for locally Hölder families on the open set `U`
+(`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith`).
 
 ## Main results
 
@@ -151,19 +151,10 @@ theorem exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le {p : ℝ≥0} (hp 
   refine ⟨c.toNNReal * N + 2 * A * δ' ^ (-(α : ℝ)), fun u g hu hA hM hB ↦
     HolderOnWith.of_dist_lt_of_dist_le (by rw [← NNReal.coe_pos, hδ']; positivity)
       (fun x hx y _ hxy ↦ ?_) fun x hx y hy ↦ ?_⟩
-  · -- Morrey's inequality on the ball of radius `|x - y|` about the midpoint of `x` and `y`.
+  · -- Morrey's inequality on the `δ`-thickening of `K`.
     rw [hδ'] at hxy
-    have hball : ball (midpoint ℝ x y) ‖x - y‖ ⊆ cthickening δ K := fun z hz ↦
-      closedBall_subset_cthickening hx δ <| mem_closedBall.2 <| by
-        have hmid : dist (midpoint ℝ x y) x = dist x y / 2 := by
-          rw [dist_comm, dist_left_midpoint]
-          norm_num
-          ring
-        rw [mem_ball, ← dist_eq_norm] at hz
-        linarith [dist_triangle z (midpoint ℝ x y) x]
-    refine (dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := volume)
-      ((hu.mono (hball.trans hLU)).of_le (by simp)) hp2 ((eLpNorm_mono_measure _
-        (Measure.restrict_mono hball le_rfl)).trans (hN u g hu hA hM hB))).trans ?_
+    refine (dist_le_of_contDiffOn_cthickening_of_finrank_lt (μ := volume)
+      ((hu.mono hLU).of_le (by simp)) hp2 hx (by linarith) (hN u g hu hA hM hB)).trans ?_
     rw [← hα, NNReal.coe_mul]
     gcongr
     exact Real.le_coe_toNNReal c
@@ -185,22 +176,15 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_s
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : ℂ → F,
       TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop U ∧
       ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) v K := by
-  classical
   have hH : ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, ∀ n, HolderOnWith C (1 - 2 / p) (u n) K :=
     fun K hK hKU ↦ (exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le hp hU hK hKU A M B).imp
       fun C hC n ↦ hC (u n) (g n) (hu n) (hA n) (hM n) (hB n)
-  have hα : 0 < 1 - 2 / p := tsub_pos_of_lt ((div_lt_one₀ (zero_lt_two.trans hp)).2 hp)
-  -- A common Hölder bound on a closed disc about each point of `U` gives equicontinuity.
-  have hequi : EquicontinuousOn u U := equicontinuousOn_of_forall_holderOnWith hα fun x hx ↦ by
-    obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 hU x hx
-    obtain ⟨C, hC⟩ := hH (closedBall x (r / 2)) (isCompact_closedBall x _)
-      ((closedBall_subset_ball (by linarith)).trans hrU)
-    exact ⟨C, _, closedBall_mem_nhds x (by positivity), hC⟩
-  obtain ⟨φ, hφ, v, hconvOn⟩ := hequi.exists_strictMono_tendstoLocallyUniformlyOn hU fun z hz ↦
-    ⟨closedBall 0 A, isCompact_closedBall _ _, fun n ↦ mem_closedBall_zero_iff.2 (hA n z hz)⟩
+  obtain ⟨φ, hφ, v, -, hconvOn, hlim⟩ := exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith hU
+    (tsub_pos_of_lt ((div_lt_one₀ (zero_lt_two.trans hp)).2 hp)) (fun K hKU hK ↦ hH K hK hKU)
+    fun z hz ↦
+      ⟨closedBall 0 A, isCompact_closedBall _ _, fun n ↦ mem_closedBall_zero_iff.2 (hA n z hz)⟩
   refine ⟨φ, hφ, v, hconvOn, fun K hK hKU ↦ ?_⟩
   obtain ⟨C, hC⟩ := hH K hK hKU
-  exact ⟨C, HolderOnWith.of_tendsto (fun z hz ↦ hconvOn.tendsto_at (hKU hz))
-    (Eventually.of_forall fun n ↦ hC (φ n))⟩
+  exact ⟨C, hlim K hKU C hC⟩
 
 end TauCeti

@@ -8,9 +8,9 @@ module
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Hölder bounds and compactness from `Lᵖ` bounds on `\bar∂`, `p > 2`
@@ -19,7 +19,7 @@ Let `2 < p < ∞` and let `U ⊆ ℂ` be open. For a map `u` smooth on `U` with 
 Hilbert space, the interior Calderón–Zygmund estimate
 (`TauCeti.exists_eLpNorm_fderiv_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm`) bounds the `Lᵖ` norm
 of the derivative of `u` on a compact subset of `U` by the `Lᵖ(U)` norms of `\bar∂u` and `u`, and
-Morrey's inequality (`TauCeti.enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt`) turns an
+Morrey's inequality (`TauCeti.edist_le_of_contDiffOn_cthickening_of_finrank_lt`) turns an
 `Lᵖ` bound on the derivative, `p > 2`, into a Hölder bound of exponent `1 - 2 / p`. Together they
 give a local Hölder estimate controlled by `\bar∂u` and `u` alone
 (`TauCeti.exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm`): for `K ⊆ U` compact there are
@@ -29,10 +29,10 @@ give a local Hölder estimate controlled by `\bar∂u` and `u` alone
 
 for all `x ∈ K` and `|x - y| < δ`.
 
-Consequently a family of maps that is bounded on compact subsets of `U`, and whose `\bar∂` is
-bounded in `Lᵖ` on compact subsets of `U`, is Hölder continuous of exponent `1 - 2 / p` on each
-compact subset with a common constant
-(`TauCeti.exists_holderOnWith_of_eLpNorm_conjWirtingerDeriv_le`).
+A family of maps that is bounded on compact subsets of `U`, and whose `\bar∂` is bounded in `Lᵖ`
+on compact subsets of `U`, is Hölder continuous of exponent `1 - 2 / p` on each compact subset
+with a common constant (`TauCeti.exists_holderOnWith_of_eLpNorm_conjWirtingerDeriv_le`): apply
+`TauCeti.exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le` on a thickening of that subset.
 By the Arzelà–Ascoli theorem for locally Hölder families
 (`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith`) a sequence of such maps, with
 values in a proper space, has a subsequence converging locally uniformly on `U`; the limit is
@@ -97,42 +97,27 @@ theorem exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm {p : ℝ≥0} (hp
   set M : ℝ := 2 ^ (Module.finrank ℝ ℂ + 1) /
       (Module.finrank ℝ ℂ * volume.real (ball (0 : ℂ) 1)) *
       (Module.finrank ℝ ℂ * volume.real (ball (0 : ℂ) 1) * (p - 1) /
-        (p - Module.finrank ℝ ℂ)) ^ (1 - 1 / (p : ℝ)) * 2 ^ ((1 - 2 / p : ℝ≥0) : ℝ)
+        (p - Module.finrank ℝ ℂ)) ^ (1 - 1 / (p : ℝ)) * 2 ^ (1 - Module.finrank ℝ ℂ / (p : ℝ))
   have hα : ((1 - 2 / p : ℝ≥0) : ℝ) = 1 - (Module.finrank ℝ ℂ : ℝ) / (p : ℝ) := by
     rw [Complex.finrank_real_complex, NNReal.coe_sub ((div_le_one₀ (zero_lt_two.trans hp)).2
       hp.le), NNReal.coe_div]
     norm_num
-  have hα0 : 0 ≤ 1 - (Module.finrank ℝ ℂ : ℝ) / (p : ℝ) := hα ▸ NNReal.coe_nonneg _
   refine ⟨M.toNNReal * C₁, (δ₀ / 2).toNNReal, by simpa using hδ₀, fun u hu x hx y hxy ↦ ?_⟩
-  have hxy' : dist x y < δ₀ / 2 := by
-    simpa [Real.coe_toNNReal _ (half_pos hδ₀).le] using hxy
-  -- The ball of radius `|x - y|` about the midpoint of `x` and `y` lies in the `δ₀`-thickening
-  -- of `K`.
-  set z := midpoint ℝ x y
-  have hzx : dist z x = dist x y / 2 := by
-    rw [dist_comm, dist_left_midpoint, Real.norm_eq_abs, abs_of_pos (by norm_num)]
-    ring
-  have hball : ball z ‖x - y‖ ⊆ cthickening δ₀ K := fun w hw ↦
-    mem_cthickening_of_dist_le w x δ₀ K hx (by
-      rw [mem_ball, ← dist_eq_norm] at hw
-      linarith [dist_triangle w z x, dist_nonneg (x := x) (y := y)])
-  have hmorrey := enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := volume)
-    ((hu.mono (hball.trans hδ₀U)).of_le (by exact_mod_cast le_top)) hfin
-  -- The factor `(2 |x - y|) ^ (1 - 2 / p)` of Morrey's inequality splits off
-  -- `|x - y| ^ (1 - 2 / p)`.
-  rw [Real.mul_rpow zero_le_two (norm_nonneg _), ← mul_assoc,
-    ENNReal.ofReal_mul' (Real.rpow_nonneg (norm_nonneg _) _), ← dist_eq_norm,
-    ← ENNReal.ofReal_rpow_of_nonneg dist_nonneg hα0, ← edist_dist, ← hα] at hmorrey
-  rw [eDist_eq_eNorm_sub]
-  calc ‖u x - u y‖ₑ
-      ≤ ENNReal.ofReal M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
-          eLpNorm (fderiv ℝ u) p (volume.restrict (ball z (dist x y))) := hmorrey
+  have hxy' : 2 * dist x y ≤ δ₀ := by
+    rw [Real.coe_toNNReal _ (half_pos hδ₀).le] at hxy
+    linarith
+  -- Morrey's inequality on the `δ₀`-thickening of `K`, then the interior estimate there.
+  calc edist (u x) (u y)
+    _ ≤ ENNReal.ofReal M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
+          eLpNorm (fderiv ℝ u) p (volume.restrict (cthickening δ₀ K)) := by
+      rw [hα]
+      exact edist_le_of_contDiffOn_cthickening_of_finrank_lt
+        ((hu.mono hδ₀U).of_le (by exact_mod_cast le_top)) hfin hx hxy'
     _ ≤ ENNReal.ofReal M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
           (C₁ * (eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict U) +
             eLpNorm u p (volume.restrict U))) := by
       gcongr
-      rw [dist_eq_norm]
-      exact (eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)).trans (hC₁ u hu)
+      exact hC₁ u hu
     _ = _ := by
       rw [ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal]
       ring
@@ -149,51 +134,19 @@ theorem exists_holderOnWith_of_eLpNorm_conjWirtingerDeriv_le {ι : Type*} {p : �
       ∀ i, eLpNorm (fun z ↦ conjWirtingerDeriv (u i) z 1) p (volume.restrict K) ≤ A)
     {K : Set ℂ} (hK : IsCompact K) (hKU : K ⊆ U) :
     ∃ C : ℝ≥0, ∀ i, HolderOnWith C (1 - 2 / p) (u i) K := by
-  -- Work on the open `δ₀`-thickening `V` of `K`, whose closure is a compact subset of `U`.
+  -- Apply the uniform Hölder bound on the open `δ₀`-thickening `V` of `K`, whose closure is a
+  -- compact subset of `U`, with `g = \bar∂(u i)` and no error term.
   obtain ⟨δ₀, hδ₀, hδ₀U⟩ := hK.exists_cthickening_subset_open hU hKU
-  set V := thickening δ₀ K
-  have hKV : K ⊆ V := self_subset_thickening hδ₀ K
-  have hVK' : V ⊆ cthickening δ₀ K := thickening_subset_cthickening δ₀ K
+  have hVK' : thickening δ₀ K ⊆ cthickening δ₀ K := thickening_subset_cthickening δ₀ K
   obtain ⟨A, hA, hAle⟩ := hdbar _ hδ₀U hK.cthickening
   obtain ⟨B, hB⟩ := hbdd _ hδ₀U hK.cthickening
-  obtain ⟨C₀, δ, hδ, hC₀⟩ :=
-    exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm (F := F) hp isOpen_thickening hK hKV
-  have hVfin : volume V ≠ (∞ : ℝ≥0∞) := (hK.isBounded.thickening.measure_lt_top).ne
-  -- The `Lᵖ(V)` norms of `\bar∂(u i)` and `u i` are bounded uniformly in `i`.
-  set N : ℝ≥0∞ := A + volume V ^ (p : ℝ≥0∞).toReal⁻¹ * ENNReal.ofReal B
-  have hN : N ≠ (∞ : ℝ≥0∞) := ENNReal.add_ne_top.2 ⟨hA, ENNReal.mul_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (by positivity) hVfin) ENNReal.ofReal_ne_top⟩
-  have hNle (i : ι) : eLpNorm (fun z ↦ conjWirtingerDeriv (u i) z 1) p (volume.restrict V) +
-      eLpNorm (u i) p (volume.restrict V) ≤ N := by
-    refine add_le_add ((eLpNorm_mono_measure _ (Measure.restrict_mono hVK' le_rfl)).trans
-      (hAle i)) ?_
-    have hmeas : AEStronglyMeasurable (u i) (volume.restrict V) :=
-      ((hu i).continuousOn.mono (hVK'.trans hδ₀U)).aestronglyMeasurable
-        isOpen_thickening.measurableSet
-    have h := eLpNorm_le_of_ae_bound (p := p) hmeas
-      ((ae_restrict_iff' isOpen_thickening.measurableSet).2
-        (Eventually.of_forall fun z hz ↦ hB i z (hVK' hz)))
-    rwa [Measure.restrict_apply_univ] at h
-  -- Nearby points: the local Hölder estimate. Distant points: the uniform bound on values.
-  set α : ℝ≥0 := 1 - 2 / p
-  have hnear (i : ι) : ∀ x ∈ K, ∀ y ∈ K, dist x y < δ →
-      dist (u i x) (u i y) ≤ ((C₀ * N).toNNReal : ℝ) * dist x y ^ (α : ℝ) := by
-    intro x hx y _ hxy
-    have h : edist (u i x) (u i y) ≤ (C₀ * N).toNNReal * edist x y ^ (α : ℝ) := by
-      rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.coe_ne_top hN)]
-      exact (hC₀ (u i) ((hu i).mono (hVK'.trans hδ₀U)) x hx y hxy).trans (by gcongr; exact hNle i)
-    rw [edist_nndist, edist_nndist, ← ENNReal.coe_rpow_of_nonneg _ α.coe_nonneg,
-      ← ENNReal.coe_mul, ENNReal.coe_le_coe] at h
-    rw [dist_nndist, dist_nndist]
-    exact_mod_cast h
-  have hfar (i : ι) : ∀ x ∈ K, ∀ y ∈ K, dist (u i x) (u i y) ≤ ((2 * B).toNNReal : ℝ) := by
-    intro x hx y hy
-    rw [dist_eq_norm]
-    refine (norm_sub_le _ _).trans ?_
-    have h₁ := hB i x (hKV.trans hVK' hx)
-    have h₂ := hB i y (hKV.trans hVK' hy)
-    exact (by linarith : ‖u i x‖ + ‖u i y‖ ≤ 2 * B).trans (Real.le_coe_toNNReal _)
-  exact ⟨_, fun i ↦ HolderOnWith.of_dist_lt_of_dist_le hδ (hnear i) (hfar i)⟩
+  obtain ⟨C, hC⟩ := exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le (F := F) hp
+    isOpen_thickening hK (self_subset_thickening hδ₀ K) B.toNNReal 0 A.toNNReal
+  refine ⟨C, fun i ↦ hC (u i) (fun z ↦ conjWirtingerDeriv (u i) z 1)
+    ((hu i).mono (hVK'.trans hδ₀U)) (fun z hz ↦ (hB i z (hVK' hz)).trans B.le_coe_toNNReal)
+    (fun z _ ↦ by simp) ?_⟩
+  rw [ENNReal.coe_toNNReal hA]
+  exact (eLpNorm_mono_measure _ (Measure.restrict_mono hVK' le_rfl)).trans (hAle i)
 
 /-- **Compactness from `Lᵖ` bounds on `\bar∂`, `p > 2`.** Let `2 < p < ∞`, let `U ⊆ ℂ` be open,
 and let `u n` be maps smooth on `U`, with values in a proper complex Hilbert space, that are bounded
