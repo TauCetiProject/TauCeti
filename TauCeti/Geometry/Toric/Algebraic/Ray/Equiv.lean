@@ -48,7 +48,7 @@ def map (rho : ToricRay σ) (e : V ≃ₗ[ℝ] V') :
     ToricRay (σ.map (e : V →ₗ[ℝ] V')) where
   val :=
     { toSubmodule := rho.toPointedCone.map (e : V →ₗ[ℝ] V')
-      isFaceOf := rho.1.isFaceOf.map_equiv e }
+      isFaceOf := rho.val.isFaceOf.map_equiv e }
   property := by
     -- Normalize the nested ray/face/cone coercion before applying the span-map theorem.
     rw [show Submodule.span ℝ
@@ -158,7 +158,7 @@ private theorem map_surjective (e : V ≃ₗ[ℝ] V') :
   let F : σ.Face :=
     { toSubmodule := tau.toPointedCone.comap (e : V →ₗ[ℝ] V')
       isFaceOf := by
-        have hface := tau.1.isFaceOf.comap (e : V →ₗ[ℝ] V')
+        have hface := tau.val.isFaceOf.comap (e : V →ₗ[ℝ] V')
         rwa [hcone] at hface }
   have hspan :
       (Submodule.span ℝ ((F.toPointedCone : PointedCone ℝ V) : Set V)).map

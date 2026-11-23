@@ -131,26 +131,26 @@ private theorem exists_compact_normal_subgroup_nat (U : ℕ → Set G) (hU : ∀
     exists_mem_nhds_one_isClosed_isCompact_inv_eq_subset (hU 0)
   choose W hW_mem hW_cl _ hW_symm hW_sub hW_mul hW_conj using
     fun (S : {S : Set G // S ∈ 𝓝 (1 : G)}) (n : ℕ) ↦
-      exists_kakutaniKodaira_step_one S.2 (hU (n + 1)) n
+      exists_kakutaniKodaira_step_one S.property (hU (n + 1)) n
   let V : ℕ → {S : Set G // S ∈ 𝓝 (1 : G)} := fun n ↦
     Nat.recOn n ⟨V₀, hV₀_mem⟩ fun m ih ↦ ⟨W ih m, hW_mem ih m⟩
-  have hV_zero : (V 0).1 = V₀ := rfl
-  have hV_succ (n : ℕ) : (V (n + 1)).1 = W (V n) n := rfl
-  have hV_cl : ∀ n, IsClosed (V n).1 := Nat.rec hV₀_cl fun n _ ↦ hW_cl (V n) n
-  have hV_symm : ∀ n, (V n).1⁻¹ = (V n).1 := Nat.rec hV₀_symm fun n _ ↦ hW_symm (V n) n
-  have hV_sub : ∀ n, (V n).1 ⊆ U n := Nat.rec hV₀_sub fun n _ ↦ hW_sub (V n) n
-  have hV_mul (n : ℕ) : (V (n + 1)).1 * (V (n + 1)).1 ⊆ interior (V n).1 := by
+  have hV_zero : (V 0).val = V₀ := rfl
+  have hV_succ (n : ℕ) : (V (n + 1)).val = W (V n) n := rfl
+  have hV_cl : ∀ n, IsClosed (V n).val := Nat.rec hV₀_cl fun n _ ↦ hW_cl (V n) n
+  have hV_symm : ∀ n, (V n).val⁻¹ = (V n).val := Nat.rec hV₀_symm fun n _ ↦ hW_symm (V n) n
+  have hV_sub : ∀ n, (V n).val ⊆ U n := Nat.rec hV₀_sub fun n _ ↦ hW_sub (V n) n
+  have hV_mul (n : ℕ) : (V (n + 1)).val * (V (n + 1)).val ⊆ interior (V n).val := by
     rw [hV_succ]
     exact hW_mul (V n) n
-  have hV_conj (n : ℕ) : ∀ k ≤ n, ∀ x ∈ compactCovering G k, ∀ y ∈ (V (n + 1)).1,
-      x * y * x⁻¹ ∈ interior (V n).1 := by
+  have hV_conj (n : ℕ) : ∀ k ≤ n, ∀ x ∈ compactCovering G k, ∀ y ∈ (V (n + 1)).val,
+      x * y * x⁻¹ ∈ interior (V n).val := by
     rw [hV_succ]
     exact hW_conj (V n) n
-  have hV_anti : Antitone (fun n ↦ (V n).1) := antitone_nat_of_succ_le fun n x hx ↦
-    interior_subset <| hV_mul n ⟨x, hx, 1, mem_of_mem_nhds (V (n + 1)).2, mul_one x⟩
+  have hV_anti : Antitone (fun n ↦ (V n).val) := antitone_nat_of_succ_le fun n x hx ↦
+    interior_subset <| hV_mul n ⟨x, hx, 1, mem_of_mem_nhds (V (n + 1)).property, mul_one x⟩
   let K : Subgroup G :=
-    { carrier := ⋂ n, (V n).1
-      one_mem' := mem_iInter.mpr fun n ↦ mem_of_mem_nhds (V n).2
+    { carrier := ⋂ n, (V n).val
+      one_mem' := mem_iInter.mpr fun n ↦ mem_of_mem_nhds (V n).property
       mul_mem' {a b} ha hb := mem_iInter.mpr fun n ↦
         interior_subset <| hV_mul n ⟨a, mem_iInter.mp ha (n + 1), b, mem_iInter.mp hb (n + 1), rfl⟩
       inv_mem' {a} ha := mem_iInter.mpr fun n ↦ by
@@ -162,10 +162,10 @@ private theorem exists_compact_normal_subgroup_nat (U : ℕ → Set G) (hU : ∀
       hV_conj (max n k) k (le_max_right n k) g hk y (mem_iInter.mp hy (max n k + 1))⟩
   have hK_cl : IsClosed (K : Set G) := isClosed_iInter hV_cl
   have hK_cp : IsCompact (K : Set G) :=
-    hV₀_cp.of_isClosed_subset hK_cl (hV_zero ▸ iInter_subset (fun n ↦ (V n).1) 0)
+    hV₀_cp.of_isClosed_subset hK_cl (hV_zero ▸ iInter_subset (fun n ↦ (V n).val) 0)
   have : K.Normal := hK_norm
   exact ⟨K, hK_norm, hK_cp, hK_cl, iInter_mono hV_sub,
-    isCountablyGenerated_nhds_one_quotient_of_iInter (fun n ↦ (V n).2) hV_cl
+    isCountablyGenerated_nhds_one_quotient_of_iInter (fun n ↦ (V n).property) hV_cl
       (hV_zero.symm ▸ hV₀_cp) hV_anti K rfl⟩
 
 /-- **The Kakutani–Kodaira theorem.** In a σ-compact weakly locally compact topological group `G`,

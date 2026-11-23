@@ -30,6 +30,8 @@ the GNS spaces of positive-definite functions on it.
 
 * `TauCeti.HasHaagerupProperty.finite_of_relativePropertyT`: in a group with the Haagerup property,
   a subgroup with relative property (T) is finite.
+* `TauCeti.not_hasHaagerupProperty_of_relativePropertyT`: a group containing an infinite subgroup
+  with relative property (T) does not have the Haagerup property.
 * `TauCeti.not_hasHaagerupProperty_of_relativePropertyT_top`: an infinite group with property (T)
   does not have the Haagerup property.
 
@@ -47,7 +49,7 @@ open Filter Topology InnerProductSpace
 
 namespace TauCeti
 
-universe v
+universe u v
 
 variable {Γ : Type v} [Group Γ]
 
@@ -85,11 +87,23 @@ theorem HasHaagerupProperty.finite_of_relativePropertyT (hΓ : HasHaagerupProper
   refine Set.finite_coe_iff.mpr ((eventually_cofinite.mp hev).subset fun g hg ↦ ?_)
   simp [hvΛ' g hg]
 
+/-- A group containing an infinite subgroup with relative property (T) does not have the Haagerup
+property. -/
+theorem not_hasHaagerupProperty_of_relativePropertyT {Λ : Subgroup Γ} [Infinite Λ]
+    (hΛ : Λ.RelativePropertyT.{max u v}) : ¬ HasHaagerupProperty Γ := fun hΓ ↦ by
+  let e : Γ ≃* ULift.{u, v} Γ := MulEquiv.ulift.symm
+  have hU : HasHaagerupProperty (ULift.{u, v} Γ) :=
+    hΓ.of_injective e.symm.toMonoidHom e.symm.injective
+  have hfin : Finite (Λ.map (e : Γ →* ULift.{u, v} Γ)) :=
+    hU.finite_of_relativePropertyT (hΛ.map (e : Γ →* ULift.{u, v} Γ))
+  have : Finite Λ := @Finite.of_equiv _ _ hfin (e.subgroupMap Λ).symm.toEquiv
+  exact not_finite Λ
+
 /-- An infinite group with property (T) does not have the Haagerup property. -/
 theorem not_hasHaagerupProperty_of_relativePropertyT_top [Infinite Γ]
-    (hT : (⊤ : Subgroup Γ).RelativePropertyT.{v}) : ¬ HasHaagerupProperty Γ := fun hΓ ↦
-  have := hΓ.finite_of_relativePropertyT hT
-  have := Finite.of_equiv _ (Subgroup.topEquiv (G := Γ)).toEquiv
-  not_finite Γ
+    (hT : (⊤ : Subgroup Γ).RelativePropertyT.{v}) : ¬ HasHaagerupProperty Γ :=
+  have : Infinite (⊤ : Subgroup Γ) :=
+    Infinite.of_injective _ (Subgroup.topEquiv (G := Γ)).symm.injective
+  not_hasHaagerupProperty_of_relativePropertyT.{v, v} hT
 
 end TauCeti

@@ -32,7 +32,7 @@ theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
   obtain ⟨k, rfl⟩ := h
   have hn : n ≠ 0 := left_ne_zero_of_mul hm
   have hk : k ≠ 0 := right_ne_zero_of_mul hm
-  rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn), ← Complex.exp_nat_mul]
+  rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn), ← Complex.exp_natCast_mul]
   congr 1
   push_cast
   field_simp
@@ -48,7 +48,7 @@ theorem multiset_eq_map_exp_of_mem_iff_of_nodup {s : Multiset ℂ} {es : List �
   let ζ := Complex.exp (2 * Real.pi * Complex.I / h)
   have hζ : IsPrimitiveRoot ζ h := Complex.isPrimitiveRoot_exp h hh.ne'
   have hpow : ∀ e : ℕ, Complex.exp (2 * Real.pi * Complex.I * (e / (h : ℕ))) = ζ ^ e := fun e ↦ by
-    dsimp [ζ]; rw [← Complex.exp_nat_mul]; congr 1; ring
+    dsimp [ζ]; rw [← Complex.exp_natCast_mul]; congr 1; ring
   refine (Multiset.Nodup.ext hs_nd (Multiset.Nodup.map_on (fun x hx y hy hxy ↦ ?_)
     (Multiset.coe_nodup.mpr hes_nd))).mpr fun z ↦ ?_
   · rw [hpow, hpow] at hxy

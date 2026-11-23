@@ -38,6 +38,8 @@ and `W_{c₁}` are disjoint. The program `splitProgram c₁ c₀` computes the o
   disjoint c.e. splitting is Turing reducible to the whole.
 * `Disjoint.turingEquivalent_union_join`: the whole is Turing equivalent to the join of the
   halves.
+* `Disjoint.degree_union_eq_sup`: the degree of the whole is the supremum of the degrees of the
+  halves.
 
 ## References
 
@@ -209,5 +211,18 @@ theorem turingEquivalent_union_join (hd : Disjoint A₀ A₁) (h₀ : REPred (·
     (h₁ : REPred (· ∈ A₁)) : TuringEquivalent (A₀ ∪ A₁).oracle (A₀.join A₁).oracle :=
   ⟨Set.union_turingReducible_join, Set.join_turingReducible
     (hd.turingReducible_union_left h₀ h₁) (hd.turingReducible_union_right h₀ h₁)⟩
+
+/-- **Splitting and degrees.** If `A₀` and `A₁` are disjoint c.e. sets, then in Mathlib's quotient
+of partial functions the degree of `A₀ ∪ A₁` is the supremum of the degrees of `A₀` and `A₁`. -/
+theorem degree_union_eq_sup (hd : Disjoint A₀ A₁) (h₀ : REPred (· ∈ A₀))
+    (h₁ : REPred (· ∈ A₁)) :
+    toAntisymmetrization TuringReducible (A₀ ∪ A₁).oracle =
+      toAntisymmetrization TuringReducible A₀.oracle ⊔
+        toAntisymmetrization TuringReducible A₁.oracle := by
+  refine le_antisymm ?_ (sup_le ?_ ?_)
+  · rw [TuringDegree.toAntisymmetrization_sup_toAntisymmetrization, TauCeti.turingDegree_le_iff]
+    exact Set.union_turingReducible (.turingJoin_left _ _) (.turingJoin_right _ _)
+  · exact TauCeti.turingDegree_le_iff.2 (hd.turingReducible_union_left h₀ h₁)
+  · exact TauCeti.turingDegree_le_iff.2 (hd.turingReducible_union_right h₀ h₁)
 
 end Disjoint

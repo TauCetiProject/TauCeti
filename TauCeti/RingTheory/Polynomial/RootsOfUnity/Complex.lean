@@ -32,7 +32,7 @@ theorem roots_geom_sum_complex (n : ℕ) :
         Complex.exp (2 * Real.pi * Complex.I * (e / (n + 1 : ℕ))) := by
   rw [roots_geom_sum_of_isPrimitiveRoot (Complex.isPrimitiveRoot_exp (n + 1) (Nat.succ_ne_zero n))]
   refine Multiset.map_congr rfl fun e _ ↦ ?_
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   congr 1
   ring
 
@@ -45,7 +45,7 @@ theorem roots_X_pow_add_one_complex {m : ℕ} (hm : 1 ≤ m) :
   have hm0 : m ≠ 0 := by omega
   have hmC : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hm0
   have hα : (Complex.exp (Real.pi * Complex.I / m)) ^ m = -1 := by
-    rw [← Complex.exp_nat_mul, mul_div_cancel₀ _ hmC, Complex.exp_pi_mul_I]
+    rw [← Complex.exp_natCast_mul, mul_div_cancel₀ _ hmC, Complex.exp_pi_mul_I]
   have hnth : nthRoots m (-1 : ℂ) =
       (Multiset.range m).map ((Complex.exp (2 * Real.pi * Complex.I / m)) ^ · *
         Complex.exp (Real.pi * Complex.I / m)) :=
@@ -56,7 +56,7 @@ theorem roots_X_pow_add_one_complex {m : ℕ} (hm : 1 ≤ m) :
   congr 1
   refine List.map_congr_left fun k _ ↦ ?_
   simp only [Function.comp_apply]
-  rw [← Complex.exp_nat_mul, ← Complex.exp_add]
+  rw [← Complex.exp_natCast_mul, ← Complex.exp_add]
   congr 1
   push_cast
   field_simp
