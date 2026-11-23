@@ -305,19 +305,13 @@ omit [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
 private theorem mem_interiorChart_source (hCo : IsOpen (C \ range f)) (x : C)
     (hx : (x : M) ∉ range f) {c : C} (hc : c ∈ (interiorChart (n := n) hCo x hx).source) :
     (c : M) ∉ range f ∧ (c : M) ∈ (chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)).source := by
-  have hcf : (c : M) ∉ range f := by
-    rintro ⟨y, hy⟩
-    simp only [interiorChart, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source, IsOpenEmbedding.toOpenPartialHomeomorph_target,
-      mem_inter_iff] at hc
-    obtain ⟨⟨c', hc'⟩, -⟩ := hc
-    rw [← hc'] at hy
-    exact c'.property.2 ⟨y, hy⟩
   have : Nonempty ↥(C \ range f) := ⟨⟨x, x.property, hx⟩⟩
-  have hsymm := inclusion_sdiff_symm_apply hCo hcf
-  have hc' : (∀ y, f y ≠ c) ∧ (c : M) ∈ (chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)).source :=
-    by simpa [interiorChart, hsymm] using hc
-  exact ⟨hcf, hc'.2⟩
+  simp only [interiorChart, OpenPartialHomeomorph.trans_source,
+    OpenPartialHomeomorph.symm_source, IsOpenEmbedding.toOpenPartialHomeomorph_target,
+    mem_inter_iff, mem_preimage] at hc
+  obtain ⟨⟨c', rfl⟩, hc'⟩ := hc
+  rw [IsOpenEmbedding.toOpenPartialHomeomorph_left_inv] at hc'
+  exact ⟨c'.property.2, hc'.2.1⟩
 
 omit [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
 private theorem mem_interiorChart_target (hCo : IsOpen (C \ range f)) (x : C)
@@ -331,19 +325,13 @@ private theorem mem_interiorChart_target (hCo : IsOpen (C \ range f)) (x : C)
           (((EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph
             _).symm z) := by
   have : Nonempty ↥(C \ range f) := ⟨⟨x, x.property, hx⟩⟩
-  let ie := (EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph
-    (EuclideanHalfSpace.interiorEmbedding n)
-  let e := chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)
-  have hz' : ((∃ v, EuclideanHalfSpace.interiorEmbedding n v = z) ∧ ie.symm z ∈ e.target) ∧
-      e.symm (ie.symm z) ∈ C ∧ ∀ y, f y ≠ e.symm (ie.symm z) := by
-    simpa [interiorChart, ie, e] using hz
-  obtain ⟨⟨⟨v, rfl⟩, hv⟩, hC', hf'⟩ := hz'
-  refine ⟨by rw [EuclideanHalfSpace.interiorEmbedding_coe_apply_zero]; exact Real.exp_pos _,
-    hv, ?_⟩
-  have hm : e.symm (ie.symm (EuclideanHalfSpace.interiorEmbedding n v)) ∈
-      range (Subtype.val : ↥(C \ range f) → M) :=
-    ⟨⟨_, hC', fun ⟨y, hy⟩ ↦ hf' y hy⟩, rfl⟩
-  simpa [interiorChart] using hCo.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph_right_inv _ hm
+  simp only [interiorChart, OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.symm_target,
+    OpenPartialHomeomorph.coe_trans_symm, IsOpenEmbedding.toOpenPartialHomeomorph_target,
+    mem_inter_iff, mem_preimage] at hz
+  obtain ⟨⟨⟨⟨v, rfl⟩, hv⟩, hm⟩, -⟩ := hz
+  -- The inclusion `C \ range f → C` followed by the coercion to `M` is the coercion.
+  exact ⟨by rw [EuclideanHalfSpace.interiorEmbedding_coe_apply_zero]; exact Real.exp_pos _, hv,
+    hCo.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph_right_inv _ hm⟩
 
 /-- A point of the source of a chart transition `e.symm ≫ₕ e'` lies in the target of `e`, and
 `e.symm` sends it into the source of `e'`. -/
@@ -563,12 +551,14 @@ private theorem contMDiffOn_interiorChart_symm_trans_collarChart [IsManifold (�
             EuclideanHalfSpace.normalRay (invFunOn b univ (σ w)).2) := by
     intro w hw
     obtain ⟨q, hq, -, -, hσ⟩ := exists_collarPiece_eq_interiorChart_symm hb hC hCo x hx y hw
+    -- Only folds the local `let σ`: the hypothesis is `σ _ = _` with `σ` unfolded.
     replace hσ : σ w = b (q.1, q.2.val 0) := hσ
     rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply, ← hq, collarChart_apply_collarPiece,
       hσ, hbinv, EuclideanHalfSpace.normalRay_normalCoord]
   refine ContMDiffOn.congr ?_ hF
   intro z hz
   obtain ⟨q, -, hq1, hq2, hσz⟩ := exists_collarPiece_eq_interiorChart_symm hb hC hCo x hx y hz
+  -- Only folds the local `let σ`: the hypothesis is `σ _ = _` with `σ` unfolded.
   replace hσz : σ z = b (q.1, q.2.val 0) := hσz
   obtain ⟨hzt, -⟩ := mem_target_and_mem_source_of_mem_symm_trans_source hz
   obtain ⟨hz0, hzt', -⟩ := mem_interiorChart_target hCo x hx hzt
