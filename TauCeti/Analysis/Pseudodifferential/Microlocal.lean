@@ -67,9 +67,11 @@ elliptic at the large frequencies of an open cone `Γ` over a neighbourhood of `
 is `H^{s - m}` in the frequencies of `Γ`, then the cut-off distributions `φ u`, for `φ` supported
 near `x₀`, are `H^s` in an open cone around each frequency of `Γ`
 (`Symbol.HasCompactSpatialSupport.exists_nhds_cone_forall_memLp_smul_fourier_toLp_smulLeftCLM`).
-This is a Fourier-side estimate from which the inclusion `WF_s(u) ⊆ WF_{s - m}(Op(a) u) ∪ Char(a)`
-follows after localizing `Op(a) u` in position; this file does not state that inclusion for
-distributions through `Distribution.IsMicrolocallySobolevAt`.
+Localizing `Op(a) u` in position turns this Fourier-side estimate into a statement about the
+`H^s` wave front set: if `Op(a) u` is microlocally `H^s` at `(x, ξ)` and `a` is elliptic in a conic
+neighbourhood of `(x, ξ)`, then `u` is microlocally `H^{s + m}` there
+(`Symbol.HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_of_quantizeSobolev`), so
+`WF_{s + m}(u) ⊆ WF_s(Op(a) u) ∪ Char(a)`.
 
 ## The argument
 
@@ -127,7 +129,10 @@ The first term is `H^s` near `ξ₀` by the microlocal Sobolev mapping, the seco
 * `Symbol.HasCompactSpatialSupport.memLp_smul_fourier_toLp_quantizeSobolev_of_coefficient_eq_zero`:
   `Op(a) u` is `H^s` for every `s` in the frequencies where `a` vanishes conically.
 * `Symbol.HasCompactSpatialSupport.exists_nhds_cone_forall_memLp_smul_fourier_toLp_smulLeftCLM`:
-  microlocal elliptic regularity on `H^t`.
+  microlocal elliptic regularity on `H^t`, on the Fourier side.
+* `Symbol.HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_of_quantizeSobolev`:
+  microlocal elliptic regularity on `H^t`: if `Op(a) u` is microlocally `H^s` at a point where `a`
+  is elliptic, then `u` is microlocally `H^{s + m}` there.
 
 ## References
 
@@ -821,6 +826,85 @@ theorem HasCompactSpatialSupport.sobolevSingularSupport_toDistribution_quantizeS
       (toDistribution Ω u.toDistr).sobolevSingularSupport s := by
   rw [← fst_image_sobolevWaveFrontSet, ← fst_image_sobolevWaveFrontSet]
   exact image_mono (ha.sobolevWaveFrontSet_toDistribution_quantizeSobolev_subset s u)
+
+/-! ### Microlocal elliptic regularity through `IsMicrolocallySobolevAt` -/
+
+/-- An element `u ∈ H^t` is microlocally `H^s` at `(x, ξ)`, as a distribution on `Ω ∋ x`, if
+`⟨η⟩ ^ s 𝓕 (φ u)` is square integrable on an open cone around `ξ` for every Schwartz function `φ`
+supported in a neighbourhood of `x`. -/
+private theorem isMicrolocallySobolevAt_toDistribution_of_forall_memLp {s t : ℝ}
+    {u : H^{t}(CoordinateSpace n, ℂ)} {x ξ : CoordinateSpace n} (hx : x ∈ Ω)
+    {U : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x) {Γ : Set (CoordinateSpace n)} (hΓ : IsOpen Γ)
+    (hξ : ξ ∈ Γ) (hcone : ∀ r : ℝ, 0 < r → ∀ η ∈ Γ, r • η ∈ Γ)
+    (h : ∀ φ : 𝓢(CoordinateSpace n, ℂ), tsupport φ ⊆ U →
+      MemLp (fun η ↦ (((1 + ‖η‖ ^ 2) ^ ((s - t) / 2) : ℝ) : ℂ) •
+        (𝓕 (BesselPotentialSpace.smulLeftCLM t φ u).toLp : Lp ℂ 2 _) η) 2 (volume.restrict Γ)) :
+    (toDistribution Ω u.toDistr).IsMicrolocallySobolevAt s x ξ := by
+  obtain ⟨φ, hφU, hφx⟩ := TestFunction.exists_tsupport_subset_apply_eq (n := ⊤)
+    (inter_mem hU (Ω.isOpen.mem_nhds hx)) inter_subset_right (1 : ℂ)
+  set v := BesselPotentialSpace.smulLeftCLM t (TestFunction.toSchwartzMapCLM ℂ φ) u
+  have hφv : TemperedDistribution.smulLeftCLM ℂ (φ : CoordinateSpace n → ℂ) u.toDistr =
+      v.toDistr := by
+    simp [v]
+  have hφS := hφv ▸ v.memSobolev_toDistr
+  refine TemperedDistribution.isMicrolocallySobolevAt_toDistribution_iff.2
+    ⟨φ, by simp [hφx], Γ, hΓ, hξ, hcone, t, hφS, ?_⟩
+  rw [hφS.toBesselPotentialSpace_eq_of_toDistr_eq hφv]
+  exact h _ (by rw [TestFunction.coe_toSchwartzMapCLM]; exact hφU.trans inter_subset_left)
+
+/-- **Microlocal elliptic regularity on `H^t`.** Let `a` be a scalar symbol of order `m` with
+compact spatial support which is elliptic at the frequencies of norm at least `R` in an open cone
+`Γ ∋ ξ`, at all positions of a neighbourhood `U` of `x`, and let `u ∈ H^t`. If `Op(a) u`, as a
+distribution on an open set `Ω ⊆ ℝⁿ`, is microlocally `H^s` at `(x, ξ)`, then `u` is microlocally
+`H^{s + m}` at `(x, ξ)`. No regularity of `Op(a) u` away from `x`, or in other directions, is
+needed. -/
+theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_of_quantizeSobolev
+    (ha : a.HasCompactSpatialSupport) {x ξ : CoordinateSpace n} {U : Set (CoordinateSpace n)}
+    (hU : U ∈ 𝓝 x) {Γ : Set (CoordinateSpace n)} (hΓ : IsOpen Γ)
+    (hcone : ∀ r : ℝ, 0 < r → ∀ η ∈ Γ, r • η ∈ Γ) (hξ : ξ ∈ Γ) {R : ℝ}
+    (hell : a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R ≤ ‖p.2‖}) {s t : ℝ}
+    {u : H^{t}(CoordinateSpace n, ℂ)}
+    (hu : (toDistribution Ω (a.quantizeSobolev ha t u).toDistr).IsMicrolocallySobolevAt s x ξ) :
+    (toDistribution Ω u.toDistr).IsMicrolocallySobolevAt (s + m) x ξ := by
+  have hx : x ∈ Ω := hu.mem
+  obtain ⟨U₁, hU₁, Γ₁, hΓ₁, hξΓ₁, hcone₁, hL⟩ := hu.exists_nhds_cone
+  -- Cut `Op(a) u` off by `ψ`, supported in `U₁` and equal to `1` on an open neighbourhood `V` of
+  -- `x`: `ψ Op(a) u = Op(c) u` for the symbol `c = ψ # a`.
+  obtain ⟨ψ, V, hV, hxV, hψV, hψU₁⟩ :=
+    TestFunction.exists_eqOn_one_tsupport_subset (n := ⊤) (𝕜 := ℂ) hU₁ hx
+  set ψ' := TestFunction.toSchwartzMapCLM ℂ ψ
+  have hψ' : (ψ' : CoordinateSpace n → ℂ) = ψ := TestFunction.coe_toSchwartzMapCLM ψ
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := ℂ) (hψ' ▸ ψ.hasCompactSupport)
+  set c := (ofSpatial (fun y ↦ ψ' y • ContinuousLinearMap.id ℂ ℂ)
+    ((ψ'.smooth ⊤).smul contDiff_const)).sharp a ha
+  have hc := hF.sharp ha
+  -- Since `c(y, η) = ψ(y) a(y, η)`, the symbol `c` agrees with `a` on `V`, so it is elliptic there.
+  have hellc : c.IsEllipticOn {p | p.1 ∈ U ∩ V ∧ p.2 ∈ Γ ∩ Γ₁ ∧ R ≤ ‖p.2‖} := by
+    refine (hell.mono fun _ hp ↦ ?_).congr (zero_add m) fun ⟨y, η⟩ hp ↦ ?_
+    · exact ⟨hp.1.1, hp.2.1.1, hp.2.2⟩
+    · rw [coefficient_ofSpatial_smul_id_sharp, hψ', hψV hp.1.2, Pi.one_apply, one_smul]
+  -- `Op(c) u = ψ Op(a) u` is `H^s` in the cone `Γ₁`.
+  have hψc : TemperedDistribution.smulLeftCLM ℂ (ψ : CoordinateSpace n → ℂ)
+      (a.quantizeSobolev ha t u).toDistr = (c.quantizeSobolev hc t u).toDistr :=
+    hψ' ▸ smulLeftCLM_toDistr_quantizeSobolev ha hF t u
+  have hT : MemSobolev (t - (0 + m)) 2
+      ((toDistribution Ω (a.quantizeSobolev ha t u).toDistr).cutoffTempered ψ) := by
+    rw [cutoffTempered_toDistribution, hψc]
+    exact BesselPotentialSpace.memSobolev_toDistr _
+  have hFou : MemLp (fun η ↦ (((1 + ‖η‖ ^ 2) ^ ((s + m - t) / 2) : ℝ) : ℂ) •
+      (𝓕 (c.quantizeSobolev hc t u).toLp : Lp ℂ 2 _) η) 2 (volume.restrict (Γ ∩ Γ₁)) := by
+    have h := (hL ψ hψU₁).ae_eq
+      (ae_restrict_of_ae (one_add_norm_sq_rpow_smul_localFourier_ae_eq hT s))
+    rw [hT.toBesselPotentialSpace_eq_of_toDistr_eq (by rw [cutoffTempered_toDistribution, hψc]),
+      show s - (t - (0 + m)) = s + m - t by ring] at h
+    exact h.mono_measure (Measure.restrict_mono inter_subset_right le_rfl)
+  -- The Fourier-side elliptic regularity of `c` gives `φ u ∈ H^{s + m}` in a cone around `ξ`, for
+  -- every `φ` supported near `x`.
+  obtain ⟨U', hU', Γ', hΓ', hξΓ', hcone', hφ⟩ :=
+    hc.exists_nhds_cone_forall_memLp_smul_fourier_toLp_smulLeftCLM
+      (inter_mem hU (hV.mem_nhds hxV)) (hΓ.inter hΓ₁)
+      (fun r hr η hη ↦ ⟨hcone r hr η hη.1, hcone₁ r hr η hη.2⟩) ⟨hξ, hξΓ₁⟩ hellc hFou
+  exact isMicrolocallySobolevAt_toDistribution_of_forall_memLp hx hU' hΓ' hξΓ' hcone' hφ
 
 end Symbol
 

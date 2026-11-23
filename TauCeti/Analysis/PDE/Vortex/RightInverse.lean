@@ -64,8 +64,10 @@ The Hilbert space adjoint `Q†` of such a `Q` is the left inverse of `L_x*` van
 kernel: it sends `L_x* η` to `η` for every test field `η`
 (`TauCeti.Vortex.adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint`) and vanishes on the weak kernel
 (`TauCeti.Vortex.adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero`); formally it
-is `(L_x L_x*)⁻¹ L_x`. It satisfies the same weighted estimate,
-`‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂` for `|c| < 1/2`
+is `(L_x L_x*)⁻¹ L_x`. On the `L²`-orthogonal complement of the weak kernel it solves the
+adjoint equation: `Q† g` is a weak solution of `L_x* η = g` there
+(`TauCeti.Vortex.integral_inner_adjoint_apply_gaugeFixedOperator_eq`). It satisfies the same
+weighted estimate, `‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂` for `|c| < 1/2`
 (`TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_adjoint_apply_le`). This is dual to the estimate for
 `Q` at the rate `-c`, by `ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le`.
 
@@ -110,6 +112,8 @@ are not proved here.
 * `TauCeti.Vortex.adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint`,
   `TauCeti.Vortex.adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero`: the adjoint
   of the weak right inverse is the left inverse of `L_x*` vanishing on the weak kernel.
+* `TauCeti.Vortex.integral_inner_adjoint_apply_gaugeFixedOperator_eq`: on the complement of the
+  weak kernel, the adjoint of the weak right inverse is a weak solution of `L_x* η = g`.
 * `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_adjoint_apply_le`: the exponentially weighted `L²`
   estimate for the adjoint.
 * `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le`,
@@ -874,6 +878,56 @@ theorem adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero
   refine ext_inner_right ℝ fun f ↦ ?_
   rw [ContinuousLinearMap.adjoint_inner_left, inner_zero_left, real_inner_comm, L2.inner_def]
   exact hQ f u hu
+
+/-- **The adjoint of a weak right inverse solves the adjoint equation on the complement of the
+weak kernel.** Let `x` be continuous and let `Q` be a bounded operator on `L²(ℂ; ℝ⁴)` such that
+`Q f` is a weak solution of `L_x y = f` for every `f`. If `g ∈ L²` is orthogonal to the weak
+kernel of `L_x`, then `Q† g` is a weak solution of `L_x* η = g`: `∫ ⟪Q† g, L_x v⟫ = ∫ ⟪g, v⟫` for
+every compactly supported `C¹` field `v`. -/
+theorem integral_inner_adjoint_apply_gaugeFixedOperator_eq (hx : Continuous x)
+    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (hQ : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    {g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (hg : ∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪g z, u z⟫ ∂μ = 0)
+    {v : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
+    ∫ z, ⟪ContinuousLinearMap.adjoint Q g z, gaugeFixedOperator x v z⟫ ∂μ =
+      ∫ z, ⟪g z, v z⟫ ∂μ := by
+  have hLv : MemLp (gaugeFixedOperator x v) 2 μ :=
+    (continuous_gaugeFixedOperator hx hv).memLp_of_hasCompactSupport
+      (hasCompactSupport_gaugeFixedOperator hvc)
+  have hv₂ : MemLp v 2 μ := hv.continuous.memLp_of_hasCompactSupport hvc
+  -- `Q (L_x v) - v` is a weak solution of `L_x y = 0`, by integration by parts against `v`.
+  have hker : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪(Q (hLv.toLp _) - hv₂.toLp v) z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+    intro η hη hηc
+    have hL : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+      memLp_gaugeFixedAdjoint hx (hη.of_le one_le_two) hηc
+    have e₁ : ∫ z, ⟪(Q (hLv.toLp _) - hv₂.toLp v) z, gaugeFixedAdjoint x η z⟫ ∂μ =
+        (∫ z, ⟪Q (hLv.toLp _) z, gaugeFixedAdjoint x η z⟫ ∂μ) -
+          ∫ z, ⟪v z, gaugeFixedAdjoint x η z⟫ ∂μ := by
+      rw [← integral_sub ((Lp.memLp _).integrable_inner (𝕜 := ℝ) hL)
+        (hv₂.integrable_inner (𝕜 := ℝ) hL)]
+      refine integral_congr_ae ?_
+      filter_upwards [Lp.coeFn_sub (Q (hLv.toLp _)) (hv₂.toLp v), hv₂.coeFn_toLp] with z h₁ h₂
+      rw [h₁, Pi.sub_apply, h₂, inner_sub_left]
+    have e₂ : ∫ z, ⟪(hLv.toLp _ : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) z, η z⟫ ∂μ =
+        ∫ z, ⟪gaugeFixedOperator x v z, η z⟫ ∂μ :=
+      integral_congr_ae (hLv.coeFn_toLp.mono fun z hz ↦ by simp only [hz])
+    rw [e₁, hQ _ η hη hηc, e₂, integral_inner_gaugeFixedOperator hv (hη.of_le one_le_two)
+      (.inl hvc), sub_self]
+  -- Hence `⟪Q† g, L_x v⟫ = ⟪g, Q (L_x v)⟫ = ⟪g, v⟫`, as `g` is orthogonal to the weak kernel.
+  have horth := hg _ hker
+  calc ∫ z, ⟪ContinuousLinearMap.adjoint Q g z, gaugeFixedOperator x v z⟫ ∂μ
+      = ⟪ContinuousLinearMap.adjoint Q g, hLv.toLp _⟫ := (L2.inner_toLp _ _).symm
+    _ = ⟪g, Q (hLv.toLp _)⟫ := ContinuousLinearMap.adjoint_inner_left _ _ _
+    _ = ⟪g, hv₂.toLp v⟫ := by
+        have h0 : ⟪g, Q (hLv.toLp _) - hv₂.toLp v⟫ = 0 := (L2.inner_def _ _).trans horth
+        rwa [inner_sub_right, sub_eq_zero] at h0
+    _ = ∫ z, ⟪g z, v z⟫ ∂μ := L2.inner_toLp _ _
 
 /-- **Weighted estimates pass to the adjoint by duality.** Suppose every square-integrable weak
 solution `y` of `L_x y = f` orthogonal to the weak kernel of `L_x` satisfies
