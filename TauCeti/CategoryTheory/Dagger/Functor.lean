@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Dagger.Basic
+public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.CategoryTheory.NatIso
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Dagger-preserving functors and natural transformations
@@ -14,13 +16,15 @@ public import Mathlib.CategoryTheory.NatIso
 Preserving a chosen dagger is a property of a native functor. Natural transformations between
 dagger-preserving functors admit a pointwise dagger, and pointwise unitary transformations
 give natural isomorphisms. These constructions require no additive or analytic structure.
+A linear dagger-preserving functor restricts to unital star algebra homomorphisms between
+endomorphism algebras.
 -/
 
 public section
 
 open CategoryTheory TauCeti
 
-universe v₁ v₂ v₃ u₁ u₂ u₃
+universe w v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace CategoryTheory.Functor
 
@@ -61,6 +65,34 @@ theorem map_isUnitary (F : C ⥤ D) [F.PreservesDagger] {X Y : C} {f : X ⟶ Y}
     {X Y : C} (f : X ⟶ Y) : IsUnitary (F.map f) ↔ IsUnitary f := by
   simp only [isUnitary_iff, ← map_dagger, ← Functor.map_comp, ← Functor.map_id,
     F.map_injective.eq_iff]
+
+section Linear
+
+variable {R : Type w} [CommSemiring R]
+variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [CategoryTheory.Linear R C]
+  [DaggerCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [Preadditive D] [CategoryTheory.Linear R D]
+  [DaggerCategory D]
+variable (F : C ⥤ D) [F.Additive] [F.Linear R] [F.PreservesDagger]
+
+variable (R) in
+/-- A linear dagger-preserving functor as a unital star algebra homomorphism between
+endomorphism algebras: the algebra homomorphism `CategoryTheory.Functor.mapEndAlgHom`, which
+also preserves the star. -/
+def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
+  __ := F.mapEndAlgHom R X
+  map_star' a := by ext; simp
+
+/-- The underlying algebra homomorphism of `F.mapEndStarAlgHom R X` is `F.mapEndAlgHom R X`. -/
+@[simp] theorem toAlgHom_mapEndStarAlgHom (X : C) :
+    (F.mapEndStarAlgHom R X).toAlgHom = F.mapEndAlgHom R X := (rfl)
+
+/-- The star algebra homomorphism of a functor applies the functor to the underlying arrow. -/
+@[simp] theorem mapEndStarAlgHom_asHom (X : C) (a : End X) :
+    (F.mapEndStarAlgHom R X a).asHom = F.map a.asHom :=
+  F.mapEndAlgHom_asHom R X a
+
+end Linear
 
 end CategoryTheory.Functor
 

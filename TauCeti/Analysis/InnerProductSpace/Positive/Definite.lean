@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
@@ -40,6 +41,13 @@ half-space.
 * `ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`: a
   positive-definite symmetric operator factors as `e e†`, with `e†` fixing the direction of a
   given vector.
+* `ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_two_inv_smul_add`: the same
+  factorization for the symmetric part `(A + A†) / 2` of a coercive operator `A` that need not be
+  symmetric (`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`), which has the same real
+  quadratic form as `A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
+* `TauCeti.exists_linearEquiv_inner_eq_of_posDef`: a symmetric positive-definite bilinear form on a
+  finite-dimensional real vector space transfers along a linear equivalence to the inner product of
+  any real inner product space of the same dimension.
 
 Only the existence of `e` is exported, since `e` is determined only up to a unitary automorphism:
 with `e`, every `e ∘ U` for a unitary `U` works as well. The operator is
@@ -168,5 +176,64 @@ theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_
     refine e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => ?_) x
     have h := hRn (O y)
     rwa [← he, O.norm_map] at h
+
+omit [FiniteDimensional 𝕜 V] in
+/-- The symmetric part `(A + A†) / 2` of an operator `A` is symmetric. -/
+theorem _root_.ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint [CompleteSpace V]
+    (A : V →L[𝕜] V) : (((2⁻¹ : 𝕜) • (A + A.adjoint) : V →L[𝕜] V) : V →ₗ[𝕜] V).IsSymmetric :=
+  fun x y => by
+    simp only [ContinuousLinearMap.coe_coe, smul_apply, add_apply, inner_smul_left,
+      inner_smul_right, inner_add_left, inner_add_right, ContinuousLinearMap.adjoint_inner_left,
+      ContinuousLinearMap.adjoint_inner_right, map_inv₀, map_ofNat]
+    ring
+
+omit [FiniteDimensional 𝕜 V] in
+/-- The symmetric part `(A + A†) / 2` of an operator `A` has the same real quadratic form
+`re ⟪A ξ, ξ⟫` as `A`. -/
+theorem _root_.ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply [CompleteSpace V]
+    (A : V →L[𝕜] V) (ξ : V) :
+    re ⟪((2⁻¹ : 𝕜) • (A + A.adjoint)) ξ, ξ⟫_𝕜 = re ⟪A ξ, ξ⟫_𝕜 := by
+  simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
+    inner_re_symm ξ (A ξ), normSq_apply]
+  ring
+
+/-- **Factoring the symmetric part of a coercive operator through a prescribed direction.** Let
+`A` be an operator on a finite-dimensional inner product space, not necessarily symmetric, with
+`λ ‖ξ‖² ≤ re ⟪A ξ, ξ⟫` for some `λ > 0`, and let `ν` be a vector. Then there is a continuous linear
+automorphism `e` with `e e† = (A + A†) / 2`, whose adjoint maps `ν` to a positive real multiple
+of `ν`, and with `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`. -/
+theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_two_inv_smul_add
+    [CompleteSpace V] (A : V →L[𝕜] V) {lam : ℝ} (hlam : 0 < lam)
+    (hpos : ∀ ξ : V, lam * ‖ξ‖ ^ 2 ≤ re ⟪A ξ, ξ⟫_𝕜) {ν : V} :
+    ∃ e : V ≃L[𝕜] V,
+      (e : V →L[𝕜] V) ∘L (e : V →L[𝕜] V).adjoint = (2⁻¹ : 𝕜) • (A + A.adjoint) ∧
+      (∃ c : ℝ, 0 < c ∧ (e : V →L[𝕜] V).adjoint ν = (c : 𝕜) • ν) ∧
+      ∀ x : V, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖ :=
+  ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _
+    A.isSymmetric_two_inv_smul_add_adjoint hlam fun ξ =>
+      (hpos ξ).trans_eq (A.re_inner_two_inv_smul_add_adjoint_apply ξ).symm
+
+/-- A symmetric positive-definite bilinear form on a finite-dimensional real vector space `W`
+transfers along a linear equivalence to the inner product of any real inner product space `E` of
+the same finite dimension. -/
+theorem exists_linearEquiv_inner_eq_of_posDef {W E : Type*} [AddCommGroup W] [Module ℝ W]
+    [FiniteDimensional ℝ W] [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    (hdim : Module.finrank ℝ W = Module.finrank ℝ E) {B : LinearMap.BilinForm ℝ W}
+    (hpos : B.toQuadraticMap.PosDef) (hsymm : B.IsSymm) :
+    ∃ φ : W ≃ₗ[ℝ] E, ∀ x y, ⟪φ x, φ y⟫_ℝ = B x y := by
+  let core : InnerProductSpace.Core ℝ W :=
+    { inner x y := B x y
+      conj_inner_symm x y := by simp [hsymm.eq y x]
+      re_inner_nonneg x := hpos.nonneg x
+      add_left x y z := by simp
+      smul_left x y r := by simp
+      definite x hx := hpos.anisotropic x hx }
+  let _ : NormedAddCommGroup W := core.toNormedAddCommGroup
+  let _ : InnerProductSpace ℝ W := InnerProductSpace.ofCore core.toCore
+  let φ : W ≃ₗᵢ[ℝ] E :=
+    (stdOrthonormalBasis ℝ W).equiv (stdOrthonormalBasis ℝ E) (finCongr hdim)
+  refine ⟨φ.toLinearEquiv, fun x y ↦ ?_⟩
+  rw [LinearIsometryEquiv.coe_toLinearEquiv]
+  exact φ.inner_map_map x y
 
 end TauCeti

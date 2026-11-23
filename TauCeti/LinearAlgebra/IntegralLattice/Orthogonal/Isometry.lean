@@ -59,7 +59,7 @@ noncomputable def orthogonalSumIsometryOfIsCompl (h : IsCompl S T)
     ((eS.symm.prodCongr eT.symm).trans (S.prodEquivOfIsCompl T h))
   refine Isometry.ofCarrierEquiv e ?_
   intro x y
-  have hST (s : S) (t : T) : L.integralForm s t = 0 := horth t.2 s s.2
+  have hST (s : S) (t : T) : L.integralForm s t = 0 := horth t.property s s.property
   have hTS (t : T) (s : S) : L.integralForm t s = 0 := by
     rw [L.isSymm_integralForm.eq]
     exact hST s t

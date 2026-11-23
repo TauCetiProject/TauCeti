@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Prod.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
+import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -42,6 +43,13 @@ In a Darboux basis, pairing with the basis vectors reads off the coordinates of 
 `ω(qᵢ, v)` is its `pᵢ`-coordinate and `ω(pᵢ, v)` is minus its `qᵢ`-coordinate
 (`TauCeti.SymplecticForm.IsDarbouxBasis.apply_fst`,
 `TauCeti.SymplecticForm.IsDarbouxBasis.apply_snd`).
+Conversely, a family satisfying the Darboux relations has Gram matrix `Matrix.J` after
+relabelling (`TauCeti.SymplecticForm.apply_darbouxIndexEquiv_symm_eq_J_iff`), so it is linearly
+independent (`TauCeti.SymplecticForm.linearIndependent_of_apply_fst_snd`), and `finrank V` such
+vectors form a Darboux basis (`TauCeti.SymplecticForm.exists_isDarbouxBasis_coe_eq`). In
+particular, pairs `(xᵢ, yᵢ)` with `ω(xᵢ, yᵢ) = 1` taken from pairwise `ω`-orthogonal subspaces
+form a Darboux basis when there are `dim V / 2` of them
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_of_forall_mem`).
 
 Darboux bases are carried to Darboux bases by linear symplectomorphisms
 (`TauCeti.SymplecticForm.IsDarbouxBasis.map`), and the concatenation of Darboux bases of `ω₁` and
@@ -146,31 +154,39 @@ theorem darbouxIndexEquiv_symm_inr (i : Fin n) :
     (darbouxIndexEquiv n).symm (Sum.inr i) = (i, 0) :=
   (darbouxIndexEquiv n).symm_apply_eq.2 (by simp [darbouxIndexEquiv])
 
+/-- **The Darboux relations as a Gram matrix.** A family with `qᵢ = v (i, 0)` and `pᵢ = v (i, 1)`
+satisfies `ω(qᵢ, qⱼ) = 0`, `ω(pᵢ, pⱼ) = 0` and `ω(qᵢ, pⱼ) = δᵢⱼ` exactly when, relabelled by
+`darbouxIndexEquiv`, its Gram matrix for `ω` is `Matrix.J`. -/
+theorem apply_darbouxIndexEquiv_symm_eq_J_iff {v : Fin n × Fin 2 → V} :
+    (∀ x y, ω.toBilinForm (v ((darbouxIndexEquiv n).symm x)) (v ((darbouxIndexEquiv n).symm y)) =
+        Matrix.J (Fin n) ℝ x y) ↔
+      (∀ i j, ω (v (i, 0)) (v (j, 0)) = 0) ∧ (∀ i j, ω (v (i, 1)) (v (j, 1)) = 0) ∧
+        ∀ i j, ω (v (i, 0)) (v (j, 1)) = if i = j then 1 else 0 := by
+  constructor
+  · intro h
+    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
+    · simpa [Matrix.J] using h (.inr i) (.inr j)
+    · simpa [Matrix.J] using h (.inl i) (.inl j)
+    · simpa [Matrix.J, Matrix.one_apply] using h (.inr i) (.inl j)
+  · rintro ⟨h₁, h₂, h₃⟩ (i | i) (j | j) <;>
+      simp only [darbouxIndexEquiv_symm_inl, darbouxIndexEquiv_symm_inr, Matrix.J,
+        Matrix.fromBlocks_apply₁₁, Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁,
+        Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, Matrix.neg_apply, Matrix.one_apply]
+    · exact h₂ i j
+    · rw [← ω.isAlt.neg_eq, neg_inj]
+      exact (h₃ j i).trans (by simp [eq_comm])
+    · exact h₃ i j
+    · exact h₁ i j
+
 /-- A basis is a Darboux basis exactly when, relabelled by `darbouxIndexEquiv`, it is a basis in
 which the matrix of `ω` is `Matrix.J`. -/
 theorem isDarbouxBasis_iff_toMatrix_reindex :
     ω.IsDarbouxBasis b ↔
       LinearMap.BilinForm.toMatrix (b.reindex (darbouxIndexEquiv n)) ω.toBilinForm =
         Matrix.J (Fin n) ℝ := by
-  constructor
-  · intro hb
-    ext (i | i) (j | j) <;>
-      simp only [LinearMap.BilinForm.toMatrix_apply, Basis.reindex_apply,
-        darbouxIndexEquiv_symm_inl, darbouxIndexEquiv_symm_inr, Matrix.J, Matrix.fromBlocks_apply₁₁,
-        Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
-        Matrix.zero_apply, Matrix.neg_apply, Matrix.one_apply]
-    · exact hb.apply_snd_snd i j
-    · exact (hb.apply_snd_fst i j).trans (by split_ifs <;> simp)
-    · exact hb.apply_fst_snd i j
-    · exact hb.apply_fst_fst i j
-  · intro h
-    have h' (x y) : ω (b ((darbouxIndexEquiv n).symm x)) (b ((darbouxIndexEquiv n).symm y)) =
-        Matrix.J (Fin n) ℝ x y := by
-      rw [← h, LinearMap.BilinForm.toMatrix_apply, Basis.reindex_apply, Basis.reindex_apply]
-    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
-    · simpa [Matrix.J] using h' (.inr i) (.inr j)
-    · simpa [Matrix.J] using h' (.inl i) (.inl j)
-    · simpa [Matrix.J, Matrix.one_apply] using h' (.inr i) (.inl j)
+  simp only [← Matrix.ext_iff, LinearMap.BilinForm.toMatrix_apply, Basis.reindex_apply,
+    apply_darbouxIndexEquiv_symm_eq_J_iff]
+  exact ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
 
 /-- A basis `d` indexed by `Fin n ⊕ Fin n`, relabelled by `darbouxIndexEquiv`, is a Darboux basis
 exactly when the matrix of `ω` in `d` is `Matrix.J`. -/
@@ -198,6 +214,57 @@ theorem exists_isDarbouxBasis_of_finrank_eq [FiniteDimensional ℝ V] (ω : Symp
     simp only [Fintype.card_prod, Fintype.card_fin] at this
     omega
   exact ⟨b, hb⟩
+
+/-- **Families satisfying the Darboux relations are linearly independent.** If the vectors
+`qᵢ = v (i, 0)` and `pᵢ = v (i, 1)` satisfy `ω(qᵢ, qⱼ) = 0`, `ω(pᵢ, pⱼ) = 0` and
+`ω(qᵢ, pⱼ) = δᵢⱼ`, then, relabelled by `darbouxIndexEquiv`, their Gram matrix is `Matrix.J`
+(`TauCeti.SymplecticForm.apply_darbouxIndexEquiv_symm_eq_J_iff`), so the family is linearly
+independent. -/
+theorem linearIndependent_of_apply_fst_snd {v : Fin n × Fin 2 → V}
+    (h₁ : ∀ i j, ω (v (i, 0)) (v (j, 0)) = 0) (h₂ : ∀ i j, ω (v (i, 1)) (v (j, 1)) = 0)
+    (h₃ : ∀ i j, ω (v (i, 0)) (v (j, 1)) = if i = j then 1 else 0) : LinearIndependent ℝ v :=
+  (linearIndependent_equiv (darbouxIndexEquiv n).symm).1 <|
+    ω.toBilinForm.linearIndependent_of_apply_eq_J <|
+      apply_darbouxIndexEquiv_symm_eq_J_iff.2 ⟨h₁, h₂, h₃⟩
+
+/-- **Darboux bases from the Darboux relations.** A family of `finrank ℝ V = n * 2` vectors
+`qᵢ = v (i, 0)`, `pᵢ = v (i, 1)` with `ω(qᵢ, qⱼ) = 0`, `ω(pᵢ, pⱼ) = 0` and `ω(qᵢ, pⱼ) = δᵢⱼ` is a
+Darboux basis. -/
+theorem exists_isDarbouxBasis_coe_eq [FiniteDimensional ℝ V] (hn : finrank ℝ V = n * 2)
+    {v : Fin n × Fin 2 → V}
+    (h₁ : ∀ i j, ω (v (i, 0)) (v (j, 0)) = 0) (h₂ : ∀ i j, ω (v (i, 1)) (v (j, 1)) = 0)
+    (h₃ : ∀ i j, ω (v (i, 0)) (v (j, 1)) = if i = j then 1 else 0) :
+    ∃ b : Basis (Fin n × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧ ⇑b = v := by
+  have hv := linearIndependent_of_apply_fst_snd h₁ h₂ h₃
+  have hcard : Fintype.card (Fin n × Fin 2) = finrank ℝ V := by simp [hn]
+  refine ⟨basisOfLinearIndependentOfCardEqFinrank' v hv hcard, ⟨?_, ?_, ?_⟩,
+    coe_basisOfLinearIndependentOfCardEqFinrank' v hv hcard⟩ <;>
+    simpa only [coe_basisOfLinearIndependentOfCardEqFinrank']
+
+/-- **Darboux bases from orthogonal pairs.** Pairs `(xₖ, yₖ)` with `ω(xₖ, yₖ) = 1`, taken from
+pairwise `ω`-orthogonal subspaces `Gₖ`, form a Darboux basis `(x₁, y₁, …, xₙ, yₙ)` when
+`finrank ℝ V = n * 2`. -/
+theorem exists_isDarbouxBasis_of_forall_mem [FiniteDimensional ℝ V] (hn : finrank ℝ V = n * 2)
+    {G : Fin n → Submodule ℝ V} (hG : Pairwise fun k l ↦ ∀ v ∈ G k, ∀ w ∈ G l, ω v w = 0)
+    {x y : Fin n → V} (hx : ∀ k, x k ∈ G k) (hy : ∀ k, y k ∈ G k)
+    (hxy : ∀ k, ω (x k) (y k) = 1) :
+    ∃ b : Basis (Fin n × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧ (∀ k, b (k, 0) = x k) ∧
+      ∀ k, b (k, 1) = y k := by
+  obtain ⟨b, hb, hbf⟩ := exists_isDarbouxBasis_coe_eq (ω := ω) hn
+    (v := fun i ↦ ![x i.1, y i.1] i.2)
+    (fun k l ↦ by
+      rcases eq_or_ne k l with rfl | hkl
+      · exact ω.self_eq_zero _
+      · exact hG hkl _ (hx k) _ (hx l))
+    (fun k l ↦ by
+      rcases eq_or_ne k l with rfl | hkl
+      · exact ω.self_eq_zero _
+      · exact hG hkl _ (hy k) _ (hy l))
+    (fun k l ↦ by
+      rcases eq_or_ne k l with rfl | hkl
+      · simpa using hxy k
+      · simpa [hkl] using hG hkl _ (hx k) _ (hy l))
+  exact ⟨b, hb, fun k ↦ by simp [hbf], fun k ↦ by simp [hbf]⟩
 
 /-- **Darboux bases have unit relative determinant**: the change of basis between two Darboux
 bases of `(V, ω)` is a symplectic matrix, of determinant `1`. -/

@@ -5,6 +5,8 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.LinearAlgebra.Contraction
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Coalgebra.TensorProduct
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
@@ -26,6 +28,8 @@ an algebra structure on the coalgebra.
   commutes with comultiplication on a scalar-extended tensor factor.
 * `TensorProduct.rid_counit_cancelBaseChange`: contraction against the counit commutes
   with cancellation of scalar extension.
+* `TensorProduct.counit_eq_dualDistrib`, `TensorProduct.counit_baseChange_eq_dualBaseChange`:
+  counits of tensor products and scalar extensions via `dualDistrib` and `Module.Dual.baseChange`.
 * `LinearMap.counit_rTensor`: the counit of `B ⊗[R] H` on the image of `x ∈ A ⊗[R] H` under
   `f ⊗ id`, for an `R`-linear map `f : A → B`, is `f` of the counit of `x`.
 * `TauCeti.Coalgebra.IsCocomm.of_baseChange`: cocommutativity descends along a faithfully flat
@@ -114,6 +118,27 @@ theorem rid_counit_cancelBaseChange (z : M ⊗[A] (A ⊗[R] C)) :
         TensorProduct.rid_tmul,
         TensorProduct.counit_tmul, CommSemiring.counit_apply, AlgebraTensorModule.rid_tmul]
       rw [← IsScalarTower.algebraMap_smul A, smul_smul, _root_.Algebra.smul_def, mul_comm]
+
+end TensorProduct
+
+namespace TensorProduct
+
+/-- The counit of `A ⊗[R] B` over `R` is `TensorProduct.dualDistrib` applied to the pure tensor of
+counits. -/
+theorem counit_eq_dualDistrib {R A B : Type*} [CommSemiring R]
+    [AddCommMonoid A] [Module R A] [CoalgebraStruct R A]
+    [AddCommMonoid B] [Module R B] [CoalgebraStruct R B] :
+    Coalgebra.counit (R := R) (A := A ⊗[R] B) =
+      TensorProduct.dualDistrib R A B (Coalgebra.counit ⊗ₜ[R] Coalgebra.counit) := by
+  ext a b; simp [mul_comm]
+
+/-- The counit of a scalar-extended coalgebra `S ⊗[R] B` is `Module.Dual.baseChange S` applied to
+the counit of `B`. -/
+theorem counit_baseChange_eq_dualBaseChange {R S B : Type*} [CommSemiring R] [CommSemiring S]
+    [Algebra R S] [AddCommMonoid B] [Module R B] [CoalgebraStruct R B] :
+    Coalgebra.counit (R := S) (A := S ⊗[R] B) =
+      Module.Dual.baseChange S (Coalgebra.counit (R := R) (A := B)) :=
+  TensorProduct.AlgebraTensorModule.ext fun _ _ => by simp
 
 end TensorProduct
 
