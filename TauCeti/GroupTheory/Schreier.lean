@@ -104,7 +104,7 @@ private theorem IsPartialPredecessorTransversal.card_le_index [H.FiniteIndex] {R
   rw [← Nat.card_eq_finsetCard, index_eq_card]
   refine Nat.card_le_card_of_injective (fun r : R ↦ (((r : G)⁻¹ : G) : G ⧸ H)) fun r r' h ↦ ?_
   rw [QuotientGroup.eq, inv_inv] at h
-  exact Subtype.ext (hR.eq_of_mul_inv_mem r r.2 r' r'.2 h)
+  exact Subtype.ext (hR.eq_of_mul_inv_mem r r.property r' r'.property h)
 
 /-- If `S` generates `G` and some right coset of `H` is not represented by `R`, then some product
 `r * s` with `r ∈ R` and `s ∈ S` represents a coset that `R` misses. -/
@@ -120,16 +120,16 @@ private theorem IsPartialPredecessorTransversal.exists_mul_mem_forall_mul_inv_no
   -- set of cosets represented by `R`; surjectivity is stability under `s⁻¹`.
   have hinv : ∀ s ∈ S, ∀ r' ∈ R, ∃ r ∈ R, r * s * r'⁻¹ ∈ H := by
     intro s hs
-    choose σ hσR hσ using fun r : R ↦ hcon r r.2 s hs
+    choose σ hσR hσ using fun r : R ↦ hcon r r.property s hs
     have hτ : Function.Injective fun r : R ↦ (⟨σ r, hσR r⟩ : R) := by
       intro r₁ r₂ h
       have h' : σ r₁ = σ r₂ := congrArg Subtype.val h
-      refine Subtype.ext (hR.eq_of_mul_inv_mem r₁ r₁.2 r₂ r₂.2 ?_)
+      refine Subtype.ext (hR.eq_of_mul_inv_mem r₁ r₁.property r₂ r₂.property ?_)
       simpa [h', mul_assoc] using H.mul_mem (hσ r₁) (H.inv_mem (hσ r₂))
     intro r' hr'
     obtain ⟨r, hr⟩ := Finite.injective_iff_surjective.mp hτ ⟨r', hr'⟩
     have hr' : σ r = r' := congrArg Subtype.val hr
-    exact ⟨r, r.2, hr' ▸ hσ r⟩
+    exact ⟨r, r.property, hr' ▸ hσ r⟩
   -- Every element of `G = ⟨S⟩` lies in a coset represented by `R`.
   have key : ∀ x ∈ closure S, ∃ r ∈ R, x * r⁻¹ ∈ H := by
     intro x hx
@@ -173,7 +173,7 @@ private theorem IsPartialPredecessorTransversal.isPredecessorTransversal {R : Fi
     refine isComplement_iff_existsUnique_mul_inv_mem.mpr fun g ↦ ?_
     obtain ⟨r, hr, hgr⟩ := hcomp g
     refine ⟨⟨r, Finset.mem_coe.mpr hr⟩, hgr, fun t ht ↦ Subtype.ext ?_⟩
-    exact hR.eq_of_mul_inv_mem t (Finset.mem_coe.mp t.2) r hr
+    exact hR.eq_of_mul_inv_mem t (Finset.mem_coe.mp t.property) r hr
       (by simpa [mul_assoc] using H.mul_mem (H.inv_mem ht) hgr)
   one_mem := Finset.mem_coe.mpr hR.one_mem
   exists_mul_eq r hr := hR.exists_mul_eq r (Finset.mem_coe.mp hr)

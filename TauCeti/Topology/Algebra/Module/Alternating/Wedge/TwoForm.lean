@@ -80,8 +80,6 @@ theorem pairedWedge_mul_apply_two_two (ω β : E [⋀^Fin 2]→L[ℝ] ℝ) (a b 
   have h₃ {n : ℕ} (e : Equiv.Perm (Fin (n + 3))) (p : Fin (n + 4)) :
       Equiv.Perm.decomposeFin.symm (p, e) 3 = Equiv.swap 0 p (e 2).succ :=
     Equiv.Perm.decomposeFin_symm_apply_succ e p 2
-  have hswap (γ : E [⋀^Fin 2]→L[ℝ] ℝ) (v w : E) : γ ![w, v] = -γ ![v, w] := by
-    simpa using γ.map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
   -- Expand the sum over the `24` permutations of `Fin 4` and evaluate each of them.
   rw [pairedWedge_apply]
   simp only [apply_comp_castAdd, apply_comp_natAdd]
@@ -96,8 +94,10 @@ theorem pairedWedge_mul_apply_two_two (ω β : E [⋀^Fin 2]→L[ℝ] ℝ) (a b 
     Matrix.cons_val_one, Fin.succ_one_eq_two, Fin.reduceEq, Matrix.cons_val, Fin.reduceSucc,
     ContinuousLinearMap.mul_apply', one_smul, mul_neg, Units.neg_smul, neg_neg, smul_eq_mul]
   -- Each of the six terms appears four times, with the two arguments of `ω` or `β` reversed.
-  simp only [hswap ω b a, hswap ω c a, hswap ω d a, hswap ω c b, hswap ω d b, hswap ω d c,
-    hswap β b a, hswap β c a, hswap β d a, hswap β c b, hswap β d b, hswap β d c]
+  simp only [apply_vecCons_swap ω b a, apply_vecCons_swap ω c a, apply_vecCons_swap ω d a,
+    apply_vecCons_swap ω c b, apply_vecCons_swap ω d b, apply_vecCons_swap ω d c,
+    apply_vecCons_swap β b a, apply_vecCons_swap β c a, apply_vecCons_swap β d a,
+    apply_vecCons_swap β c b, apply_vecCons_swap β d b, apply_vecCons_swap β d c]
   ring
 
 /-- The square of a two-form is its wedge with itself. -/

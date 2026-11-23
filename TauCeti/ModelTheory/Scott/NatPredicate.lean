@@ -14,7 +14,7 @@ In a finite relational language, the Scott sentence of a finite structure is equ
 first-order sentence (`TauCeti.realize_scottSentence_iff_realize_characteristicSentence`).
 Finiteness of the language cannot be dropped. In the language with a unary predicate `P i` for
 every natural number `i`, no first-order sentence characterizes a one-point structure up to
-isomorphism, even among countable structures: a first-order sentence mentions only finitely
+isomorphism, even among finite structures: a first-order sentence mentions only finitely
 many predicates, and changing the interpretation of an unmentioned predicate gives a
 non-isomorphic model. The Scott sentence of such a structure, an infinitary sentence, still
 characterizes it.
@@ -94,12 +94,13 @@ private theorem exists_forall_realize_iff {α : Type*} {n : ℕ}
     exact forall_congr' fun x => hk S T h v (Fin.snoc xs x)
 
 /-- In the language of countably many unary predicates, no first-order sentence characterizes a
-one-point structure up to isomorphism, even among countable structures. Its Scott sentence, an
-infinitary sentence, does characterize it (`realize_scottSentence_iff_of_finite`). -/
+one-point structure up to isomorphism, even among finite structures. Its Scott sentence, an
+infinitary sentence, does characterize it among structures of every cardinality
+(`realize_scottSentence_iff_of_finite`). -/
 theorem not_exists_sentence_iff_nonempty_equiv_natPredicateStructure (S : Set ℕ) :
     letI := natPredicateStructure S
     ¬ ∃ φ : natPredicateLanguage.Sentence, ∀ (N : Type) [natPredicateLanguage.Structure N]
-      [Countable N], N ⊨ φ ↔ Nonempty (Unit ≃[natPredicateLanguage] N) := by
+      [Finite N], N ⊨ φ ↔ Nonempty (Unit ≃[natPredicateLanguage] N) := by
   let := natPredicateStructure S
   rintro ⟨φ, hφ⟩
   obtain ⟨k, hk⟩ := exists_forall_realize_iff φ

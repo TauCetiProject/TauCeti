@@ -109,7 +109,8 @@ averaging operator `TauCeti.peterWeylBlockAveraging` *is* built here, but not as
 `ContRepresentation.isotypicProjector`: that projector is built from
 `ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
 norm-continuous representation, while `L²(G)` is in general infinite-dimensional and its regular
-representation then only strongly continuous (`TauCeti.continuous_rightRegularLp_apply`). Both
+representation then only strongly continuous
+(`MeasureTheory.Measure.continuous_rightRegular_apply`). Both
 obstructions disappear for a finite `G`, where `L²(G)` has dimension `|G|`, and
 `TauCeti/RepresentationTheory/Compact/IsotypicBlock/Finite.lean` identifies the two operators there;
 but nothing here assumes `G` finite, so the general route is the one taken. The averaging is carried
@@ -143,7 +144,7 @@ available.
   chosen.
 * `TauCeti.toLp_star_character_mem_peterWeylBlock`: the conjugate character of a model lies in its
   own block, spanning the trace direction of it.
-* `TauCeti.rightRegularLp_mem_peterWeylBlock` and
+* `TauCeti.rightRegular_mem_peterWeylBlock` and
   `TauCeti.leftRegularLp_mem_peterWeylBlock`: **each block is stable under right and left
   translation**; `TauCeti.biRegularLp_mem_peterWeylBlock` packages both as stability under the
   biregular `G × G`-action.
@@ -324,17 +325,17 @@ theorem iSup_peterWeylBlock_eq_span_peterWeylFamily (models : ι → IrrepModel 
 /-! ### Stability under translation -/
 
 /-- **Each block is stable under right translation**, that is, under the right regular
-representation `TauCeti.rightRegularLp` of `G` on `L²(G)`: right translating a matrix coefficient of
-a model absorbs the translation into its first vector
-(`ContRepresentation.matrixCoeff_comp_mulRight`), so the translate is again a matrix
+representation `(haarProb G).rightRegular 𝕜 𝕜 2` (`MeasureTheory.Measure.rightRegular`) of `G` on
+`L²(G)`: right translating a matrix coefficient of a model absorbs the translation into its first
+vector (`ContRepresentation.matrixCoeff_comp_mulRight`), so the translate is again a matrix
 coefficient of the same model. -/
-theorem rightRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
+theorem rightRegular_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
     {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
-    rightRegularLp 𝕜 G g f ∈ peterWeylBlock model := by
+    (haarProb G).rightRegular 𝕜 𝕜 2 g f ∈ peterWeylBlock model := by
   induction hf using Submodule.span_induction with
   | mem x hx =>
     obtain ⟨v, w, rfl⟩ := hx
-    rw [ContRepresentation.matrixCoeffLp_def, rightRegularLp_toLp,
+    rw [ContRepresentation.matrixCoeffLp_def, (haarProb G).rightRegular_toLp,
       ContRepresentation.matrixCoeff_comp_mulRight, ← ContRepresentation.matrixCoeffLp_def]
     exact matrixCoeffLp_mem_peterWeylBlock model _ _
   | zero => simp
@@ -347,8 +348,9 @@ unitary model moves the inverse translation onto its second vector
 coefficient of the same model.
 
 Left translation is spelled as Mathlib's precomposition operator
-`MeasureTheory.Lp.compMeasurePreserving`, which is also what `TauCeti.rightRegularLp_apply` unfolds
-right translation to, while `leftRegularLp_apply` identifies this operator with left translation. -/
+`MeasureTheory.Lp.compMeasurePreserving`, which is also what
+`MeasureTheory.Measure.rightRegular_apply` unfolds right translation to, while
+`leftRegularLp_apply` identifies this operator with left translation. -/
 theorem compMeasurePreserving_mulLeft_mem_peterWeylBlock (model : IrrepModel 𝕜 G)
     (g : G) {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
     Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g) f ∈
@@ -395,7 +397,7 @@ theorem biRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (p : G × G)
     biRegularLp 𝕜 G p f ∈ peterWeylBlock model := by
   rw [biRegularLp_apply_eq_left_right]
   exact leftRegularLp_mem_peterWeylBlock model p.1
-    (rightRegularLp_mem_peterWeylBlock model p.2 hf)
+    (rightRegular_mem_peterWeylBlock model p.2 hf)
 
 /-! ### A block is a copy of the endomorphism algebra of its model
 
@@ -587,7 +589,7 @@ theorem isHilbertSum_euclideanSpace_peterWeylBlock [IsAlgClosed 𝕜] (h : IsIrr
       intro i
       refine le_antisymm ?_ ?_
       · rintro - ⟨v, rfl⟩
-        exact ((peterWeylBlockOrthonormalBasis (models i)).repr.symm v).2
+        exact ((peterWeylBlockOrthonormalBasis (models i)).repr.symm v).property
       · intro x hx
         exact ⟨(peterWeylBlockOrthonormalBasis (models i)).repr ⟨x, hx⟩, by simp⟩
     simp only [hrange]

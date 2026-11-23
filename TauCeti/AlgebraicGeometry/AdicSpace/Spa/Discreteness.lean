@@ -102,7 +102,7 @@ private theorem exists_isAnalyticPoint_isContinuous_of_valuation
   have hopen' : IsOpen ((v.supp.comap P.ringOfDefinition.subtype :
       Ideal P.ringOfDefinition) : Set P.ringOfDefinition) := by
     rw [Ideal.coe_comap]
-    exact hopen.preimage continuous_subtype_val
+    exact hopen.preimage continuous_subtypeVal
   obtain ⟨n, -, hn⟩ := P.isAdic_idealOfDefinition.hasBasis_nhds_zero.mem_iff.mp
     (hopen'.mem_nhds (v.supp.comap P.ringOfDefinition.subtype).zero_mem)
   have ht₀pow : t₀ ^ n ∈ v.supp.comap P.ringOfDefinition.subtype := hn

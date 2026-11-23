@@ -94,8 +94,8 @@ private theorem mono_pullback_map_of_flat_of_isAffineTarget [IsAffine Y]
     [M.IsQuasicoherent] [N.IsQuasicoherent] [Mono g] : Mono ((pullback f).map g) := by
   apply (mono_iff_of_isOpenCover X.isBasis_affineOpens.isOpenCover _).mpr
   intro U
-  let V : X.Opens := U.1
-  have : IsAffine V.toScheme := U.2
+  let V : X.Opens := U.val
+  have : IsAffine V.toScheme := U.property
   have : Mono ((pullback (V.ι ≫ f)).map g) :=
     mono_pullback_map_of_flat_of_isAffine (V.ι ≫ f) g
   exact mono_of_mono_fac ((pullbackComp V.ι f).hom.naturality g)
@@ -107,8 +107,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.mono_pullback_map_of_flat
     [M.IsQuasicoherent] [N.IsQuasicoherent] [Mono g] : Mono ((pullback f).map g) := by
   apply (mono_iff_of_isOpenCover (Y.isBasis_affineOpens.isOpenCover.comap f.base.hom) _).mpr
   intro U
-  let V : Y.Opens := U.1
-  have : IsAffine V.toScheme := U.2
+  let V : Y.Opens := U.val
+  have : IsAffine V.toScheme := U.property
   have hm : Mono ((pullback V.ι ⋙ pullback (f ∣_ V)).map g) :=
     mono_pullback_map_of_flat_of_isAffineTarget (f ∣_ V) ((pullback V.ι).map g)
   let e : pullback f ⋙ pullback (f ⁻¹ᵁ V).ι ≅
@@ -164,7 +164,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.preservesKernel_pullback_of_flat
     [M.IsQuasicoherent] [N.IsQuasicoherent] :
     PreservesLimit (parallelPair g 0) (pullback f) := by
   apply preservesLimit_of_preserves_limit_cone (kernelIsKernel g)
-  apply (KernelFork.isLimitMapConeEquiv _ (pullback f)).2
+  apply (KernelFork.isLimitMapConeEquiv _ (pullback f)).invFun
   have : Mono (((ShortComplex.mk _ _ (kernel.condition g)).map (pullback f)).f) :=
     f.mono_pullback_map_of_flat (kernel.ι g)
   exact (f.exact_map_pullback_of_flat (ShortComplex.mk _ _ (kernel.condition g))

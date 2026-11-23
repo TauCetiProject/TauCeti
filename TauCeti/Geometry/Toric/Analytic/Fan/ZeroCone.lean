@@ -155,7 +155,7 @@ theorem isLocalDiffeomorph_analyticTorusι (n : ℕ∞ω) :
       (Φ.analyticTorusι hΦ hΦ0) := by
   intro _
   let _ := Φ.analyticChartedSpace hΦ
-  let τ : Φ.cones := ⟨⊥, Φ.bot_mem hΦ0.some.2⟩
+  let τ : Φ.cones := ⟨⊥, Φ.bot_mem hΦ0.some.property⟩
   have hbot := isRegularCone_bot Φ.lattice
   obtain ⟨l, B, hB⟩ := hbot.exists_basis_sum
   have : Finite (ToricRay (⊥ : PointedCone ℝ V)) := ToricRay.finite_of_fg hbot.fg

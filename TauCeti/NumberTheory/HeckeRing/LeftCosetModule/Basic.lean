@@ -98,7 +98,7 @@ noncomputable def smulOrbit (H : Subgroup G) [IsHeckeTriple Δ H H] (g β : Δ) 
     Finset (HeckeCoset Δ ⊥ H) :=
   Finset.univ.image fun i : DecompQuotient H H (g : G) ↦
     mk ⊥ H ⟨(β : G) * i.out * g,
-      Δ.mul_mem (Δ.mul_mem β.2 (IsHeckeTriple.mem_of_mem_left H i.out.2)) g.2⟩
+      Δ.mul_mem (Δ.mul_mem β.property (IsHeckeTriple.mem_of_mem_left H i.out.property)) g.property⟩
 
 open Classical in
 /-- The orbit as an explicit image: the defining equation, exported for consumers that
@@ -106,7 +106,8 @@ count over the enumeration. -/
 lemma smulOrbit_eq_image (g β : Δ) :
     smulOrbit H g β = Finset.univ.image fun i : DecompQuotient H H (g : G) ↦
       mk ⊥ H ⟨(β : G) * i.out * g,
-        Δ.mul_mem (Δ.mul_mem β.2 (IsHeckeTriple.mem_of_mem_left H i.out.2)) g.2⟩ := (rfl)
+        Δ.mul_mem (Δ.mul_mem β.property (IsHeckeTriple.mem_of_mem_left H i.out.property))
+            g.property⟩ := (rfl)
 
 open Classical in
 /-- Membership in the orbit: the left cosets of the products `β · σᵢ · g` over the
@@ -115,7 +116,8 @@ decomposition representatives. -/
 lemma mem_smulOrbit {g β : Δ} {x : HeckeCoset Δ ⊥ H} :
     x ∈ smulOrbit H g β ↔ ∃ i : DecompQuotient H H (g : G),
       mk ⊥ H ⟨(β : G) * i.out * g,
-        Δ.mul_mem (Δ.mul_mem β.2 (IsHeckeTriple.mem_of_mem_left H i.out.2)) g.2⟩ = x := by
+        Δ.mul_mem (Δ.mul_mem β.property (IsHeckeTriple.mem_of_mem_left H i.out.property))
+            g.property⟩ = x := by
   simp [smulOrbit]
 
 /-- Membership in an orbit, tested at an arbitrary representative: the left coset `ξH` lies
@@ -128,7 +130,7 @@ lemma mk_bot_mem_smulOrbit_iff {g w ξ : Δ} :
     obtain ⟨i, hi⟩ := mem_smulOrbit.mp hx
     have hrep := mk_bot_eq_mk_bot.mp hi
     -- hrep : (w·σᵢ·g)⁻¹·ξ ∈ H, so w⁻¹·ξ = σᵢ·g·(w·σᵢ·g)⁻¹·ξ with σᵢ ∈ H
-    exact mem_doubleCoset.mpr ⟨(i.out : G), i.out.2,
+    exact mem_doubleCoset.mpr ⟨(i.out : G), i.out.property,
       ((w : G) * (i.out : G) * (g : G))⁻¹ * (ξ : G), hrep, by group⟩
   · intro hmem
     obtain ⟨h₁, hh₁, h₂, hh₂, heq⟩ := mem_doubleCoset.mp hmem
@@ -163,10 +165,10 @@ private lemma smulOrbit_subset {g β₁ β₂ : Δ} {k : G} (hk : k ∈ H)
   simp only [smulOrbit, Finset.mem_image, Finset.mem_univ, true_and] at hx ⊢
   obtain ⟨i, hi⟩ := hx
   set j : DecompQuotient H H (g : G) :=
-    QuotientGroup.mk ⟨k⁻¹ * i.out, H.mul_mem (H.inv_mem hk) i.out.2⟩ with hj
+    QuotientGroup.mk ⟨k⁻¹ * i.out, H.mul_mem (H.inv_mem hk) i.out.property⟩ with hj
   obtain ⟨n, hn⟩ := QuotientGroup.mk_out_eq_mul
     ((ConjAct.toConjAct (g : G) • H).subgroupOf H)
-    (⟨k⁻¹ * i.out, H.mul_mem (H.inv_mem hk) i.out.2⟩ : H)
+    (⟨k⁻¹ * i.out, H.mul_mem (H.inv_mem hk) i.out.property⟩ : H)
   have hout : ((j.out : H) : G) = k⁻¹ * (i.out : G) * n := by
     rw [hj]
     simpa [Subgroup.coe_mul, mul_assoc] using congrArg (Subtype.val : H → G) hn
@@ -242,7 +244,8 @@ cosets. -/
 lemma smulOrbit_map_injective (g β : Δ) :
     Function.Injective fun i : DecompQuotient H H (g : G) ↦
       (mk ⊥ H ⟨(β : G) * i.out * g,
-        Δ.mul_mem (Δ.mul_mem β.2 (IsHeckeTriple.mem_of_mem_left H i.out.2)) g.2⟩ :
+        Δ.mul_mem (Δ.mul_mem β.property (IsHeckeTriple.mem_of_mem_left H i.out.property))
+            g.property⟩ :
         HeckeCoset Δ ⊥ H) := by
   intro i₁ i₂ heq
   have hmem : ((β : G) * ((i₁.out : H) : G) * (g : G))⁻¹ *
@@ -280,7 +283,7 @@ lemma smulOrbit_disjoint {g₁ g₂ : Δ} (β : Δ)
     mk_bot_eq_mk_bot.mp (hi₁.trans hi₂.symm)
   refine hne (HeckeCoset.mk_eq_mk_of_mem (mem_doubleCoset.mpr
     ⟨((i₁.out : H) : G)⁻¹ * ((i₂.out : H) : G),
-      H.mul_mem (H.inv_mem i₁.out.2) i₂.out.2,
+      H.mul_mem (H.inv_mem i₁.out.property) i₂.out.property,
       (((β : G) * ((i₁.out : H) : G) * (g₁ : G))⁻¹ *
         ((β : G) * ((i₂.out : H) : G) * (g₂ : G)))⁻¹,
       H.inv_mem hmem, by group⟩))

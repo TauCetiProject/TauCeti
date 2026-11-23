@@ -110,4 +110,19 @@ theorem coe_expNeg_tsum {ι : Type*} (a : ι → ℝ≥0∞) :
 /-- Measurability of the extended negative exponential. -/
 @[fun_prop] theorem measurable_expNeg : Measurable expNeg := continuous_expNeg.measurable
 
+/-- Exponentiating the negated extended-real logarithm recovers any argument at most one,
+including zero (where `-log 0 = ∞` maps to `0`) and one. -/
+theorem coe_expNeg_toENNReal_neg_log {x : ℝ≥0∞} (hx : x ≤ 1) :
+    (expNeg (-log x).toENNReal : ℝ≥0∞) = x := by
+  have hnn : 0 ≤ -log x := EReal.neg_nonneg.mpr (log_le_zero_iff.mpr hx)
+  rw [coe_expNeg]
+  -- `((-log x).toENNReal).toEReal` is the coercion `((-log x).toENNReal : EReal)`.
+  rw [show ((-log x).toENNReal).toEReal = ((-log x).toENNReal : EReal) from rfl,
+    EReal.coe_toENNReal hnn, neg_neg, exp_log]
+
+/-- The extended-real logarithm of the coerced negative exponential negates the argument,
+including at `∞` (`log 0 = ⊥ = -(∞ : EReal)`). -/
+@[simp] theorem log_coe_expNeg (x : ℝ≥0∞) : log (expNeg x : ℝ≥0∞) = -(x : EReal) := by
+  rw [coe_expNeg, EReal.log_exp]
+
 end ENNReal

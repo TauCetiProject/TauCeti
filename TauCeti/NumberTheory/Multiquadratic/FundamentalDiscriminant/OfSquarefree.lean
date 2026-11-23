@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Rat.SquarefreePart
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
 
 /-!
@@ -21,6 +22,10 @@ The genus field of `ℚ(√d)` is the compositum of the `ℚ(√(radicand D*))` 
 discriminants `D*` dividing the discriminant of `ℚ(√d)`; this function supplies that discriminant
 from the squarefree radicand `d`.
 
+Conversely, every fundamental discriminant `D` arises this way from exactly one squarefree
+radicand, the squarefree part `Rat.squarefreePart D` of `D`: the radicand of the quadratic field
+of discriminant `D`.
+
 It also records which primes divide the fundamental discriminant, feeding the prime-ramification
 law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly when it divides
 `d`, and `2` divides it exactly when `d ≢ 1 (mod 4)`.
@@ -29,8 +34,21 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
 
 * `TauCeti.Multiquadratic.fundamentalDiscriminant`: `d` if `d ≡ 1 (mod 4)`, else `4 * d`, with its
   defining equation `fundamentalDiscriminant_def`.
-* `TauCeti.Multiquadratic.isFundamentalDiscr_fundamentalDiscriminant`: for squarefree `d`,
-  its fundamental discriminant is a fundamental discriminant.
+* `TauCeti.Multiquadratic.isFundamentalDiscr_fundamentalDiscriminant`,
+  `TauCeti.Multiquadratic.isFundamentalDiscr_fundamentalDiscriminant_iff`:
+  `fundamentalDiscriminant d` is a fundamental discriminant if and only if `d` is squarefree.
+* `TauCeti.Multiquadratic.fundamentalDiscriminant_injective`,
+  `TauCeti.Multiquadratic.fundamentalDiscriminant_inj`,
+  `TauCeti.Multiquadratic.fundamentalDiscriminant_eq_one_iff`: `fundamentalDiscriminant` is
+  injective on `ℤ` and takes the value `1` only at `1`.
+* `Int.IsFundamentalDiscr.squarefree_ite`, `Int.IsFundamentalDiscr.fundamentalDiscriminant_ite`,
+  `Int.IsFundamentalDiscr.existsUnique_squarefree_fundamentalDiscriminant_eq`,
+  `TauCeti.Multiquadratic.isFundamentalDiscr_iff_exists_squarefree`: every fundamental discriminant
+  `D` equals `fundamentalDiscriminant d` for a unique squarefree `d`, namely `D` if `D ≡ 1 (mod 4)`
+  and `D / 4` otherwise.
+* `TauCeti.Multiquadratic.squarefreePart_fundamentalDiscriminant`,
+  `Int.IsFundamentalDiscr.fundamentalDiscriminant_squarefreePart`: the squarefree part inverts
+  `fundamentalDiscriminant` on squarefree radicands and on fundamental discriminants.
 * `TauCeti.Multiquadratic.exists_sq_mul_eq_fundamentalDiscriminant`: it equals `c² * d` for some
   `c ∈ {1, 2}`, so it lies in the square class of `d`.
 * `TauCeti.Multiquadratic.dvd_fundamentalDiscriminant_iff`: for `p` coprime to `2`,
@@ -61,6 +79,26 @@ theorem fundamentalDiscriminant_def (d : ℤ) :
   by_cases h : d % 4 = 1
   · rw [ite_eq_left h]; exact fundamentalDiscriminant_of_mod_four_eq_one h
   · rw [ite_eq_right h]; exact fundamentalDiscriminant_of_mod_four_ne_one h
+
+/-- The fundamental discriminant attached to `1` is `1`. -/
+@[simp] theorem fundamentalDiscriminant_one : fundamentalDiscriminant 1 = 1 := (rfl)
+
+/-- `fundamentalDiscriminant` is injective on all integers: its residue modulo `4` distinguishes
+the `d ≡ 1 (mod 4)` branch from the `4 * d` branch. -/
+theorem fundamentalDiscriminant_injective : Function.Injective fundamentalDiscriminant := by
+  intro d₁ d₂ h
+  rw [fundamentalDiscriminant_def, fundamentalDiscriminant_def] at h
+  split_ifs at h <;> omega
+
+/-- `fundamentalDiscriminant` is injective, stated as an equality equivalence for `simp`. -/
+@[simp] theorem fundamentalDiscriminant_inj {d₁ d₂ : ℤ} :
+    fundamentalDiscriminant d₁ = fundamentalDiscriminant d₂ ↔ d₁ = d₂ :=
+  fundamentalDiscriminant_injective.eq_iff
+
+/-- `fundamentalDiscriminant d = 1` if and only if `d = 1`. -/
+@[simp] theorem fundamentalDiscriminant_eq_one_iff {d : ℤ} :
+    fundamentalDiscriminant d = 1 ↔ d = 1 :=
+  fundamentalDiscriminant_injective.eq_iff' fundamentalDiscriminant_one
 
 /-- `fundamentalDiscriminant d` is `d` or `4 * d`. Implementation helper for
 `exists_sq_mul_eq_fundamentalDiscriminant`. -/
@@ -103,6 +141,79 @@ theorem isFundamentalDiscr_fundamentalDiscriminant {d : ℤ} (hd : Squarefree d)
     exact Int.isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨hmod, hd⟩)
   · rw [fundamentalDiscriminant_of_mod_four_ne_one hmod]
     exact Int.isFundamentalDiscr_four_mul.mpr ⟨hd, by omega⟩
+
+/-- `fundamentalDiscriminant d` is a fundamental discriminant if and only if `d` is squarefree. -/
+@[simp] theorem isFundamentalDiscr_fundamentalDiscriminant_iff {d : ℤ} :
+    Int.IsFundamentalDiscr (fundamentalDiscriminant d) ↔ Squarefree d := by
+  refine ⟨fun hD ↦ ?_, isFundamentalDiscr_fundamentalDiscriminant⟩
+  by_cases hmod : d % 4 = 1
+  · rw [fundamentalDiscriminant_of_mod_four_eq_one hmod] at hD
+    exact ((Int.isFundamentalDiscr_iff_squarefree.mp hD).resolve_right (by omega)).2
+  · rw [fundamentalDiscriminant_of_mod_four_ne_one hmod] at hD
+    exact (Int.isFundamentalDiscr_four_mul.mp hD).1
+
+/-- The radicand `if D % 4 = 1 then D else D / 4` of a fundamental discriminant `D` is
+squarefree. -/
+theorem _root_.Int.IsFundamentalDiscr.squarefree_ite {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
+    Squarefree (if D % 4 = 1 then D else D / 4) := by
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨hmod, hsf⟩ | ⟨hmod, hsf, -⟩
+  · rwa [ite_eq_left hmod]
+  · rwa [ite_eq_right (by omega)]
+
+/-- Applying `fundamentalDiscriminant` to `if D % 4 = 1 then D else D / 4` recovers a fundamental
+discriminant `D`. -/
+theorem _root_.Int.IsFundamentalDiscr.fundamentalDiscriminant_ite {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminant (if D % 4 = 1 then D else D / 4) = D := by
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨hmod, -⟩ | ⟨hmod, -, hdiv⟩
+  · rw [ite_eq_left hmod, fundamentalDiscriminant_of_mod_four_eq_one hmod]
+  · rw [ite_eq_right (by omega), fundamentalDiscriminant_of_mod_four_ne_one (by omega)]
+    omega
+
+/-- **Unique squarefree radicand of a fundamental discriminant.** Every fundamental discriminant
+`D` equals `fundamentalDiscriminant d` for a unique squarefree integer `d`, namely `D` when
+`D ≡ 1 (mod 4)` and `D / 4` otherwise. -/
+theorem _root_.Int.IsFundamentalDiscr.existsUnique_squarefree_fundamentalDiscriminant_eq {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) :
+    ∃! d : ℤ, Squarefree d ∧ fundamentalDiscriminant d = D := by
+  refine ⟨if D % 4 = 1 then D else D / 4, ⟨hD.squarefree_ite, hD.fundamentalDiscriminant_ite⟩, ?_⟩
+  rintro d ⟨-, hd⟩
+  exact fundamentalDiscriminant_injective (hd.trans hD.fundamentalDiscriminant_ite.symm)
+
+/-- An integer is a fundamental discriminant if and only if it is `fundamentalDiscriminant d` for
+some squarefree integer `d`. -/
+theorem isFundamentalDiscr_iff_exists_squarefree {D : ℤ} :
+    Int.IsFundamentalDiscr D ↔ ∃ d : ℤ, Squarefree d ∧ fundamentalDiscriminant d = D := by
+  refine ⟨fun hD ↦ ⟨_, hD.squarefree_ite, hD.fundamentalDiscriminant_ite⟩, ?_⟩
+  rintro ⟨d, hd, rfl⟩
+  exact isFundamentalDiscr_fundamentalDiscriminant hd
+
+/-- The squarefree part of the fundamental discriminant of a squarefree `d` is `d`, the two
+differing by the square `1` or `4`. -/
+@[simp]
+theorem squarefreePart_fundamentalDiscriminant {d : ℤ} (hd : Squarefree d) :
+    (fundamentalDiscriminant d : ℚ).squarefreePart = d := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  refine (Rat.squarefreePart_eq_iff hd).mpr ⟨c, ?_, ?_⟩
+  · rcases hc with rfl | rfl <;> norm_num
+  · rw [← hcd]
+    push_cast
+    ring
+
+/-- **A fundamental discriminant is the fundamental discriminant of its squarefree part.** The
+squarefree part of `D` is its unique squarefree radicand, `D` if `D ≡ 1 (mod 4)` and `D / 4`
+otherwise. -/
+theorem _root_.Int.IsFundamentalDiscr.fundamentalDiscriminant_squarefreePart {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) : fundamentalDiscriminant (D : ℚ).squarefreePart = D := by
+  obtain ⟨d, ⟨hd, rfl⟩, -⟩ := hD.existsUnique_squarefree_fundamentalDiscriminant_eq
+  rw [squarefreePart_fundamentalDiscriminant hd]
+
+/-- The squarefree part of a fundamental discriminant `D` is `1` exactly when `D = 1`. -/
+theorem _root_.Int.IsFundamentalDiscr.squarefreePart_eq_one_iff {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) : (D : ℚ).squarefreePart = 1 ↔ D = 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  rw [← hD.fundamentalDiscriminant_squarefreePart, h]
+  exact fundamentalDiscriminant_of_mod_four_eq_one rfl
 
 /-- For `p` coprime to `2`, divisibility by `fundamentalDiscriminant d` is the same as divisibility
 by `d`: the only extra factor in the `d ≢ 1 (mod 4)` case is `4`, which is coprime to `p`. -/

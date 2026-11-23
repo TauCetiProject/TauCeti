@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IsSepClosed
 -- Proof-only: the quadratic formula, which solves the equation once the discriminant is a square.
 import Mathlib.Algebra.QuadraticDiscriminant
+import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Separably closed fields
@@ -59,6 +60,15 @@ its conclusion, so instance search could not find it.
 -/
 
 public section
+
+/-- A separably closed field is infinite: over a finite field, the separable polynomial
+`X ^ q - X - 1` would have no root. -/
+instance IsSepClosed.infinite (K : Type*) [Field K] [IsSepClosed K] : Infinite K := by
+  refine Infinite.of_not_fintype fun _ ↦ ?_
+  obtain ⟨root, root_eq⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C
+    (1 : K) (-1) (-1) (FiniteField.cast_card_eq_zero K)
+    (Fintype.one_lt_card (α := K)) (by simp)
+  simp [FiniteField.pow_card] at root_eq
 
 /-- A separable element of a domain algebra over a separably closed field belongs to the image
 of the base field. -/

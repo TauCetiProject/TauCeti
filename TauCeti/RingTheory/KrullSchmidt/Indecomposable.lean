@@ -33,6 +33,8 @@ local-endomorphism-ring theorem. Both are supplied here.
 
 * `TauCeti.isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem`: indecomposability
   says exactly that `M` is nontrivial and `0` and `1` are the only idempotents of `Module.End A M`.
+* `RingEquiv.isIndecomposableModule_iff`: modules with anti-isomorphic endomorphism rings, nonzero
+  together, are indecomposable together.
 * `TauCeti.isIndecomposableModule_iff_isIndecomposableModule_of_algebraMap_surjective`:
   indecomposability is unchanged by restricting scalars along a surjective algebra map.
 * `TauCeti.IsIndecomposableModule.bijective_of_bijective_comp`: a split injection into an
@@ -193,6 +195,23 @@ theorem isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem :
       Nontrivial M ∧ ∀ f : Module.End A M, IsIdempotentElem f → f = 0 ∨ f = 1 :=
   ⟨fun h ↦ ⟨h.nontrivial, fun _ hf ↦ h.eq_zero_or_eq_one_of_isIdempotentElem hf⟩,
     fun ⟨_, h⟩ ↦ isIndecomposableModule_of_forall_isIdempotentElem h⟩
+
+/-- Indecomposability is detected by the endomorphism ring with multiplication reversed: two
+modules that are nonzero together, with anti-isomorphic endomorphism rings, are indecomposable
+together. This is how a duality transfers indecomposability. -/
+theorem _root_.RingEquiv.isIndecomposableModule_iff {B : Type*} [Ring B] {N : Type*}
+    [AddCommGroup N] [Module B N] (d : (Module.End B N)ᵐᵒᵖ ≃+* Module.End A M)
+    (h : Nontrivial M ↔ Nontrivial N) :
+    IsIndecomposableModule A M ↔ IsIndecomposableModule B N := by
+  rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem,
+    isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem]
+  refine and_congr h ⟨fun H f hf ↦ ?_, fun H g hg ↦ ?_⟩
+  · have hop : IsIdempotentElem (MulOpposite.op f) := congrArg MulOpposite.op hf
+    simpa using (H _ (hop.map d)).imp
+      (congrArg fun g ↦ (d.symm g).unop) (congrArg fun g ↦ (d.symm g).unop)
+  · have hunop : IsIdempotentElem (d.symm g).unop := congrArg MulOpposite.unop (hg.map d.symm)
+    simpa using (H _ hunop).imp
+      (congrArg fun f ↦ d (MulOpposite.op f)) (congrArg fun f ↦ d (MulOpposite.op f))
 
 /-- A simple module is indecomposable: it has no proper nonzero submodule to decompose along. -/
 theorem IsSimpleModule.isIndecomposableModule [IsSimpleModule A M] :
