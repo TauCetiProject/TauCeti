@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 import Mathlib.Topology.Algebra.Star.Unitary
+import TauCeti.Topology.Algebra.Module.Matrix
 
 /-!
 # Orthogonal groups in continuous matrix coordinates
@@ -41,8 +42,6 @@ def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
   let : ContinuousStar R := ⟨continuous_id⟩
   let : ContinuousAdd (Module.End R V) := IsModuleTopology.toContinuousAdd R _
   let : ContinuousAdd (Module.End R (n → R)) := IsModuleTopology.toContinuousAdd R _
-  let : IsModuleTopology R (Matrix n n R) :=
-    inferInstanceAs (IsModuleTopology R (n → n → R))
   let E := e.orthogonalGroupCongr.trans (standardOrthogonalGroupEquiv h2)
   let C := (e.toLinearEquiv.conjAlgEquiv (R := R)).toLinearMap
   have hC (g : QuadraticMap.orthogonalGroup Q) :
