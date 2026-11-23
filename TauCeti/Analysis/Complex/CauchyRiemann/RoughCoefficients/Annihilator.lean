@@ -100,12 +100,8 @@ theorem memWkpLoc_one_of_forall_integral_inner_cauchyRiemann_eq_zero {V : Type*}
       S z ((φ : ℂ → V) z), v z⟫_ℝ = 0)
     (hr : 1 < r) (hr_top : r ≠ ⊤) : MemWkpLoc r Ω 1 v := by
   -- Continuous coefficients are Sobolev coefficients for the exponent `∞`.
-  have hJ' : ContinuousOn (fderiv ℝ J) Ω := hJ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
-  have hc : IsSobolevCRCoefficients ⊤ Ω J (fderiv ℝ J) S :=
-    ⟨hasWeakFDerivOn_of_differentiableOn (hJ'.locallyIntegrableOn Ω.isOpen.measurableSet)
-      fun z hz ↦ (hJ.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz),
-      hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
-  exact hc.memWkpLoc_one_of_forall_integral_inner_eq_zero (by simp)
+  exact (IsSobolevCRCoefficients.of_contDiffOn (p := ⊤) hJ hS)
+    |>.memWkpLoc_one_of_forall_integral_inner_eq_zero (by simp)
     (ae_restrict_of_forall_mem Ω.isOpen.measurableSet hJ2)
     (by simpa using ENNReal.inv_lt_one.2 hq) hv h hr hr_top le_top
 
