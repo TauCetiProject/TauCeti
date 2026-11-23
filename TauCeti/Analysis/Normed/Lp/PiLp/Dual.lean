@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Lp.BoundedContinuous
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Coordinate dual representation for finite `Lᵖ` products of `ℓ¹` spaces
@@ -19,8 +19,9 @@ coordinate space `α i` carries the discrete topology and `𝕜` is an `RCLike` 
 
 When the index type `ι` is finite, `Λ` is recovered as the sum of the `ℓ¹`-pairings
 `lp.bcfPairing 𝕜 (α i) 𝕜 (v i) (Λ.piLpCoordBCF i)` (`StrongDual.apply_eq_sum_bcfPairing`).
-Conversely, `StrongDual.ofPiLpCoordBCF` assembles a continuous linear functional from any family
-of bounded continuous coordinate functions by summing the coordinate pairings composed with
+Conversely, on arbitrary topological coordinate spaces `α i` over a complete nontrivially normed
+field `𝕜`, `StrongDual.ofPiLpCoordBCF` assembles a continuous linear functional from any family of
+bounded continuous coordinate functions by summing the coordinate pairings composed with
 `PiLp.proj`. For discrete coordinate spaces over an `RCLike` field, these two constructions form
 the linear equivalence `StrongDual.piLpCoordBCFEquiv`.
 
@@ -42,8 +43,11 @@ the linear equivalence `StrongDual.piLpCoordBCFEquiv`.
 * `StrongDual.norm_piLpCoordBCF_le`: `‖Λ.piLpCoordBCF i‖ ≤ ‖Λ‖` when `ι` is finite and `1 ≤ p`.
 * `StrongDual.apply_eq_sum_bcfPairing`: finite-product coordinate pairing decomposition for discrete
   coordinate spaces over `RCLike 𝕜`.
-* `StrongDual.piLpCoordBCF_ofPiLpCoordBCF`, `StrongDual.piLpCoordBCF_injective`: coordinate
-  recovery and uniqueness for `StrongDual.piLpCoordBCF`.
+* `StrongDual.ofPiLpCoordBCF_piLpSingle`: single-coordinate pairing formula for
+  `StrongDual.ofPiLpCoordBCF` on arbitrary topological coordinate spaces.
+* `StrongDual.piLpCoordBCF_ofPiLpCoordBCF`, `StrongDual.piLpCoordBCF_injective`,
+  `StrongDual.ext_piLpCoordBCF`: coordinate recovery, uniqueness, and extensionality for
+  `StrongDual.piLpCoordBCF`.
 -/
 
 public section
@@ -56,7 +60,7 @@ namespace StrongDual
 
 section PiLpCoordBCF
 
-variable {ι : Type*} {α : ι → Type*} {𝕜 : Type*} [DecidableEq ι]
+variable {ι : Type*} {α : ι → Type*} {𝕜 : Type*}
   [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)] [RCLike 𝕜] {p : ℝ≥0∞}
 
 /-- For discrete coordinate spaces `α i` over an `RCLike` field `𝕜`, the `i`-th coordinate bounded
@@ -64,32 +68,85 @@ function `y ↦ Λ (PiLp.single p i (lp.single 1 y 1))` of a continuous linear f
 `PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1)`. -/
 def piLpCoordBCF (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι) :
     α i →ᵇ 𝕜 :=
+  letI := Classical.decEq ι
   (lp.bcfDualEquiv 𝕜 (α i)).symm
     (Λ.comp (PiLp.singleCLM p 𝕜 (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1) i))
 
 /-- The `i`-th coordinate bounded function of `Λ` evaluates at `y` to
 `Λ (PiLp.single p i (lp.single 1 y 1))`. -/
 @[simp]
-theorem piLpCoordBCF_apply
+theorem piLpCoordBCF_apply [DecidableEq ι]
     (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι)
     [DecidableEq (α i)] (y : α i) :
     Λ.piLpCoordBCF i y = Λ (PiLp.single p i (lp.single 1 y 1)) := by
-  simp [piLpCoordBCF]
+  simp only [piLpCoordBCF, lp.bcfDualEquiv_symm_apply, ContinuousLinearMap.comp_apply,
+    PiLp.singleCLM_apply]
+  congr 1
+  ext j
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [h]
+
+@[simp]
+theorem piLpCoordBCF_zero :
+    piLpCoordBCF (ι := ι) (α := α) (𝕜 := 𝕜) (p := p) 0 = 0 := by
+  classical
+  ext i y
+  simp [piLpCoordBCF_apply]
+
+@[simp]
+theorem piLpCoordBCF_add
+    (Λ₁ Λ₂ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) :
+    (Λ₁ + Λ₂).piLpCoordBCF = Λ₁.piLpCoordBCF + Λ₂.piLpCoordBCF := by
+  classical
+  ext i y
+  simp [piLpCoordBCF_apply]
+
+@[simp]
+theorem piLpCoordBCF_neg
+    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) :
+    (-Λ).piLpCoordBCF = -Λ.piLpCoordBCF := by
+  classical
+  ext i y
+  simp [piLpCoordBCF_apply]
+
+@[simp]
+theorem piLpCoordBCF_sub
+    (Λ₁ Λ₂ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) :
+    (Λ₁ - Λ₂).piLpCoordBCF = Λ₁.piLpCoordBCF - Λ₂.piLpCoordBCF := by
+  classical
+  ext i y
+  simp [piLpCoordBCF_apply]
+
+@[simp]
+theorem piLpCoordBCF_smul (c : 𝕜)
+    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) :
+    (c • Λ).piLpCoordBCF = c • Λ.piLpCoordBCF := by
+  classical
+  ext i y
+  simp [piLpCoordBCF_apply]
 
 /-- For discrete coordinate spaces `α i` over an `RCLike` field `𝕜`, evaluating `Λ` on a single
 coordinate vector `PiLp.single p i u` agrees with the `ℓ¹`-pairing of `u` against
 `Λ.piLpCoordBCF i`. -/
-theorem apply_piLpSingle_eq_bcfPairing
+theorem apply_piLpSingle_eq_bcfPairing [DecidableEq ι]
     (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι)
     (u : lp (fun _ : α i ↦ 𝕜) 1) :
     Λ (PiLp.single p i u) = lp.bcfPairing 𝕜 (α i) 𝕜 u (Λ.piLpCoordBCF i) := by
-  simp [piLpCoordBCF]
+  simp only [piLpCoordBCF, lp.bcfPairing_bcfDualEquiv_symm, ContinuousLinearMap.comp_apply,
+    PiLp.singleCLM_apply]
+  congr 1
+  ext j
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [h]
 
 /-- When the coordinate index type `ι` is finite and `1 ≤ p`, each coordinate bounded function of
 `Λ` has supremum norm at most `‖Λ‖`. -/
 theorem norm_piLpCoordBCF_le [Fintype ι] [Fact (1 ≤ p)]
     (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) (i : ι) :
     ‖Λ.piLpCoordBCF i‖ ≤ ‖Λ‖ := by
+  classical
   rw [piLpCoordBCF, LinearIsometryEquiv.norm_map]
   exact (Λ.opNorm_comp_le _).trans
     (mul_le_of_le_one_right (norm_nonneg Λ) (PiLp.norm_singleCLM_le i))
@@ -101,6 +158,7 @@ theorem apply_eq_sum_bcfPairing [Fintype ι]
     (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1)))
     (v : PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1)) :
     Λ v = ∑ i : ι, lp.bcfPairing 𝕜 (α i) 𝕜 (v i) (Λ.piLpCoordBCF i) := by
+  classical
   rw [← Λ.sum_comp_piLpSingleCLM v]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simpa only [ContinuousLinearMap.comp_apply, PiLp.singleCLM_apply] using
@@ -130,11 +188,51 @@ theorem ofPiLpCoordBCF_apply (p : ℝ≥0∞) (f : ∀ i, α i →ᵇ 𝕜)
     ofPiLpCoordBCF p f v = ∑ i : ι, lp.bcfPairing 𝕜 (α i) 𝕜 (v i) (f i) := by
   simp [ofPiLpCoordBCF]
 
+@[simp]
+theorem ofPiLpCoordBCF_zero (p : ℝ≥0∞) :
+    ofPiLpCoordBCF (ι := ι) (α := α) (𝕜 := 𝕜) p 0 = 0 := by
+  ext v
+  simp
+
+@[simp]
+theorem ofPiLpCoordBCF_add (p : ℝ≥0∞) (f g : ∀ i, α i →ᵇ 𝕜) :
+    ofPiLpCoordBCF p (f + g) = ofPiLpCoordBCF p f + ofPiLpCoordBCF p g := by
+  ext v
+  simp [Finset.sum_add_distrib]
+
+@[simp]
+theorem ofPiLpCoordBCF_neg (p : ℝ≥0∞) (f : ∀ i, α i →ᵇ 𝕜) :
+    ofPiLpCoordBCF p (-f) = -ofPiLpCoordBCF p f := by
+  ext v
+  simp
+
+@[simp]
+theorem ofPiLpCoordBCF_sub (p : ℝ≥0∞) (f g : ∀ i, α i →ᵇ 𝕜) :
+    ofPiLpCoordBCF p (f - g) = ofPiLpCoordBCF p f - ofPiLpCoordBCF p g := by
+  ext v
+  simp [Finset.sum_sub_distrib]
+
+@[simp]
+theorem ofPiLpCoordBCF_smul (p : ℝ≥0∞) (c : 𝕜) (f : ∀ i, α i →ᵇ 𝕜) :
+    ofPiLpCoordBCF p (c • f) = c • ofPiLpCoordBCF p f := by
+  ext v
+  simp [Finset.mul_sum]
+
+/-- Evaluating `ofPiLpCoordBCF p f` on a single coordinate vector `PiLp.single p i u` yields the
+`ℓ¹`-pairing of `u` with `f i`. -/
+theorem ofPiLpCoordBCF_piLpSingle [DecidableEq ι] (p : ℝ≥0∞) (f : ∀ i, α i →ᵇ 𝕜)
+    (i : ι) (u : lp (fun _ : α i ↦ 𝕜) 1) :
+    ofPiLpCoordBCF p f (PiLp.single p i u) = lp.bcfPairing 𝕜 (α i) 𝕜 u (f i) := by
+  rw [ofPiLpCoordBCF_apply, Fintype.sum_eq_single i]
+  · simp
+  · intro j hj
+    simp [hj]
+
 end OfPiLpCoordBCF
 
 section PiLpCoordBCFEquiv
 
-variable {ι : Type*} [DecidableEq ι] {α : ι → Type*} {𝕜 : Type*}
+variable {ι : Type*} {α : ι → Type*} {𝕜 : Type*}
   [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)] [RCLike 𝕜]
 
 /-- For discrete coordinate spaces `α i` over an `RCLike` field `𝕜`, extracting the coordinate
@@ -144,10 +242,8 @@ theorem piLpCoordBCF_ofPiLpCoordBCF [Fintype ι] {p : ℝ≥0∞} (f : ∀ i, α
     (ofPiLpCoordBCF p f).piLpCoordBCF i = f i := by
   classical
   ext y
-  rw [piLpCoordBCF_apply, ofPiLpCoordBCF_apply, Fintype.sum_eq_single i]
-  · simp
-  · intro j hj
-    simp [hj]
+  rw [piLpCoordBCF_apply, ofPiLpCoordBCF_piLpSingle]
+  simp
 
 /-- For discrete coordinate spaces `α i` over an `RCLike` field `𝕜`, reassembling a continuous
 linear functional `Λ` from `Λ.piLpCoordBCF` recovers `Λ`. -/
@@ -170,7 +266,8 @@ theorem piLpCoordBCF_injective [Finite ι] {p : ℝ≥0∞} :
 /-- For finite `ι` and discrete coordinate spaces `α i` over an `RCLike` field `𝕜`, two continuous
 linear functionals on `PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1)` are equal if all their coordinate
 bounded functions `StrongDual.piLpCoordBCF` are equal. -/
-theorem eq_of_piLpCoordBCF_eq [Finite ι] {p : ℝ≥0∞}
+@[ext]
+theorem ext_piLpCoordBCF [Finite ι] {p : ℝ≥0∞}
     {Λ₁ Λ₂ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))}
     (h : ∀ i, Λ₁.piLpCoordBCF i = Λ₂.piLpCoordBCF i) : Λ₁ = Λ₂ :=
   piLpCoordBCF_injective (funext h)
@@ -183,33 +280,26 @@ section Equiv
 equivalence identifying `StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))` with families of
 bounded continuous functions `(i : ι) → (α i →ᵇ 𝕜)` via `StrongDual.piLpCoordBCF`. -/
 def piLpCoordBCFEquiv (p : ℝ≥0∞) (𝕜 : Type*) {ι : Type*} (α : ι → Type*)
-    [Fintype ι] [DecidableEq ι] [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)]
-    [RCLike 𝕜] :
+    [Fintype ι] [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)] [RCLike 𝕜] :
     StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1)) ≃ₗ[𝕜] (∀ i, α i →ᵇ 𝕜) where
   toFun := piLpCoordBCF
-  map_add' Λ₁ Λ₂ := by
-    classical
-    ext i y
-    simp [piLpCoordBCF_apply]
-  map_smul' c Λ := by
-    classical
-    ext i y
-    simp [piLpCoordBCF_apply]
+  map_add' := piLpCoordBCF_add
+  map_smul' := piLpCoordBCF_smul
   invFun := ofPiLpCoordBCF p
   left_inv := ofPiLpCoordBCF_piLpCoordBCF
   right_inv f := funext (piLpCoordBCF_ofPiLpCoordBCF f)
 
 @[simp]
 theorem piLpCoordBCFEquiv_apply {p : ℝ≥0∞} {𝕜 : Type*} {ι : Type*} {α : ι → Type*}
-    [Fintype ι] [DecidableEq ι] [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)]
-    [RCLike 𝕜] (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) :
+    [Fintype ι] [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)] [RCLike 𝕜]
+    (Λ : StrongDual 𝕜 (PiLp p (fun i ↦ lp (fun _ : α i ↦ 𝕜) 1))) :
     piLpCoordBCFEquiv p 𝕜 α Λ = Λ.piLpCoordBCF := by
   rfl
 
 @[simp]
 theorem piLpCoordBCFEquiv_symm_apply {p : ℝ≥0∞} {𝕜 : Type*} {ι : Type*} {α : ι → Type*}
-    [Fintype ι] [DecidableEq ι] [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)]
-    [RCLike 𝕜] (f : ∀ i, α i →ᵇ 𝕜) :
+    [Fintype ι] [∀ i, TopologicalSpace (α i)] [∀ i, DiscreteTopology (α i)] [RCLike 𝕜]
+    (f : ∀ i, α i →ᵇ 𝕜) :
     (piLpCoordBCFEquiv p 𝕜 α).symm f = ofPiLpCoordBCF p f := by
   rfl
 

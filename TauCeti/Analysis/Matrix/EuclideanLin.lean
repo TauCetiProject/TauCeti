@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!

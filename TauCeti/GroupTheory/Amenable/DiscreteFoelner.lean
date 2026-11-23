@@ -10,7 +10,7 @@ public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.GroupTheory.Amenable.Reiter
 public import TauCeti.GroupTheory.Amenable.Sequence
 import Mathlib.Analysis.LocallyConvex.Separation
-import TauCeti.Analysis.Normed.Lp.CoordinateDual
+import TauCeti.Analysis.Normed.Lp.PiLp.Dual
 import TauCeti.Geometry.Convex.ConvexSpace.Topology
 import TauCeti.Topology.Algebra.Group.UCB.Discrete
 
@@ -214,10 +214,10 @@ theorem Amenable.zero_mem_closure_range_stdSimplexLeftTranslationSub [Amenable G
   have hF (x : G) :
       ((∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g) : UCB G) : G →ᵇ ℝ) x =
         Λ (stdSimplexLeftTranslationSub K (.single x)) := by
-    rw [hv, ← UCB.discreteAlgEquiv_apply, map_sum]
-    simp only [map_sub, ← UCB.discreteAlgEquiv_symm_compContinuous_mulLeft, inv_inv, F,
-      AlgEquiv.apply_symm_apply, FunLike.coe_sum, FunLike.coe_sub, Finset.sum_apply,
-      Pi.sub_apply, BoundedContinuousFunction.compContinuous_apply, ContinuousMap.coe_mulLeft]
+    rw [hv, ← UCB.discreteAlgEquiv_apply, ← BoundedContinuousFunction.evalCLM_apply ℝ x]
+    simp only [map_sum, map_sub, BoundedContinuousFunction.evalCLM_apply,
+      UCB.discreteAlgEquiv_apply, UCB.leftTranslation_apply, inv_inv, F,
+      UCB.coe_discreteAlgEquiv_symm]
   have hu : u ≤ m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) :=
     m.le_apply_of_forall_le fun x ↦ by
       rw [hF]

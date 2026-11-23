@@ -6,7 +6,7 @@ Authors: Jon Crall, Claude Opus 4.8
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Entrywise bounds for the Euclidean action of a matrix

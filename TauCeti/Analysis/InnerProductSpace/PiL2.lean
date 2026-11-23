@@ -13,7 +13,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.Algebra.BigOperators.Finset.Fiber
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
