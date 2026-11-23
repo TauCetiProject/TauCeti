@@ -711,12 +711,9 @@ theorem _root_.Convex.contDiffOn_parametric_primitive {n : ℕ∞} {s : Set E} {
     {f : E × ℝ → F} (hs : Convex ℝ s) (ht : Convex ℝ t) (hsu : UniqueDiffOn ℝ s) (ha : a ∈ t)
     (hf : ContDiffOn ℝ n f (s ×ˢ t)) :
     ContDiffOn ℝ n (fun p : E × ℝ ↦ ∫ r in a..p.2, f (p.1, r)) (s ×ˢ t) := by
-  -- a convex subset of `ℝ` containing two points has nonempty interior
   rcases t.subsingleton_or_nontrivial with htriv | hnt
   · exact contDiffOn_const.congr fun p hp ↦ by rw [htriv hp.2 ha, intervalIntegral.integral_same]
-  obtain ⟨y, hy, z, hz, hyz⟩ := hnt.exists_lt
-  have htu : UniqueDiffOn ℝ t := uniqueDiffOn_convex ht <| (nonempty_Ioo.2 hyz).mono
-    (interior_maximal (Ioo_subset_Icc_self.trans (ht.ordConnected.out hy hz)) isOpen_Ioo)
+  have htu : UniqueDiffOn ℝ t := uniqueDiffOn_convex ht (ht.nontrivial_iff_nonempty_interior.1 hnt)
   have hW : UniqueDiffOn ℝ ((s ×ˢ t) ×ˢ Icc (0 : ℝ) 1) :=
     (hsu.prod htu).prod (uniqueDiffOn_Icc zero_lt_one)
   have hmaps : MapsTo (fun q : (E × ℝ) × ℝ ↦ (q.1.1, a + q.2 • (q.1.2 - a)))
@@ -726,12 +723,13 @@ theorem _root_.Convex.contDiffOn_parametric_primitive {n : ℕ∞} {s : Set E} {
       ((s ×ˢ t) ×ˢ Icc (0 : ℝ) 1) :=
     (contDiff_fst.snd.sub contDiff_const).contDiffOn.smul (hf.comp (by fun_prop) hmaps)
   refine ((hs.prod ht).contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure unitInterval))
-    (g := fun _ ↦ (1 : ℝ)) (integrable_const 1) continuous_subtype_val (hsu.prod htu) hW hF
-    fun p hp τ ↦ ⟨hp, τ.2⟩).congr fun p _ ↦ ?_
-  have h := intervalIntegral.integral_comp_add_left (fun r ↦ f (p.1, r)) (a := 0) (b := p.2 - a) a
-  rw [add_zero, add_sub_cancel] at h
-  simp only [one_smul, smul_eq_mul, ← h, intervalIntegral_zero_eq_integral_unitInterval_smul,
-    mul_comm]
+    (g := fun _ ↦ (1 : ℝ)) (integrable_const 1) continuous_subtypeVal (hsu.prod htu) hW hF
+    fun p hp τ ↦ ⟨hp, τ.property⟩).congr fun p _ ↦ ?_
+  have h := intervalIntegral.smul_integral_comp_add_mul (fun r ↦ f (p.1, r)) (a := 0) (b := 1)
+    (p.2 - a) a
+  rw [mul_zero, add_zero, mul_one, add_sub_cancel] at h
+  rw [← h, ← intervalIntegral.integral_smul, intervalIntegral_eq_integral_unitInterval]
+  simp only [one_smul, smul_eq_mul, mul_comm]
 
 end ParametricPrimitive
 

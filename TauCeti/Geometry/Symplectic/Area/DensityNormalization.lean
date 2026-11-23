@@ -15,7 +15,6 @@ import Mathlib.Dynamics.Circle.RotationNumber.TranslationNumber
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.LinearAlgebra.Determinant.Prod
-import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # Normalizing an area density on the strip
@@ -55,8 +54,8 @@ differentiable; smoothness of the inverse of `Φ` is not proved here.
 All derivatives are taken within the closed strip, where they are unique; only the values of `ρ` on
 the strip enter (`TauCeti.stripColumnMass_congr`, `TauCeti.stripMass_congr`,
 `TauCeti.stripNormalizedAngle_congr`, `TauCeti.eqOn_stripNormalization`). Smoothness up to the
-boundary of the strip comes from `Convex.contDiffOn_integral_smul_of_contDiffOn` for the column
-mass and from `Convex.contDiffOn_parametric_primitive` for the vertical primitive.
+boundary of the strip comes from `ContDiffOn.parametric_intervalIntegral` for the column mass and
+from `Convex.contDiffOn_parametric_primitive` for the vertical primitive.
 
 ## Main definitions
 
@@ -89,7 +88,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter intervalIntegral
-open scoped ContDiff unitInterval Topology
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -201,11 +200,9 @@ theorem stripColumnMass_add_one (hper : ∀ p ∈ unitStrip, ρ (p.1 + 1, p.2) =
 /-- The column mass of a `C^n` density on the strip is `C^n`. -/
 theorem contDiff_stripColumnMass {n : ℕ∞} (hρ : ContDiffOn ℝ n ρ unitStrip) :
     ContDiff ℝ n (stripColumnMass ρ) := by
-  rw [← contDiffOn_univ]
-  refine (convex_univ.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
-    (g := fun _ ↦ (1 : ℝ)) (integrable_const 1) continuous_subtype_val uniqueDiffOn_univ
-    uniqueDiffOn_unitStrip hρ fun _ _ t ↦ mem_unitStrip.2 t.2).congr fun x _ ↦ ?_
-  simp [stripColumnMass_def, intervalIntegral_eq_integral_unitInterval]
+  rw [show stripColumnMass ρ = _ from funext stripColumnMass_def]
+  exact contDiffOn_univ.1 <| ContDiffOn.parametric_intervalIntegral (f := Function.curry ρ)
+    (μ := volume) isOpen_univ (by rw [uIcc_of_le zero_le_one, Function.uncurry_curry]; exact hρ)
 
 theorem continuous_stripColumnMass (hρ : ContinuousOn ρ unitStrip) :
     Continuous (stripColumnMass ρ) :=
@@ -278,17 +275,17 @@ theorem stripNormalizedAngle_strictMono (hρ : ContinuousOn ρ unitStrip)
   strictMono_of_hasDerivAt_pos (hasDerivAt_stripNormalizedAngle hρ)
     fun x ↦ div_pos (stripColumnMass_pos hρ hpos x) (stripMass_pos hρ hpos)
 
-/-- For a periodic density continuous and positive on the strip the first coordinate of the
-normalization commutes with the unit translation: `u(x + 1) = u(x) + 1`. -/
-theorem stripNormalizedAngle_add_one (hρ : ContinuousOn ρ unitStrip)
-    (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (hper : ∀ p ∈ unitStrip, ρ (p.1 + 1, p.2) = ρ p)
-    (x : ℝ) : stripNormalizedAngle ρ (x + 1) = stripNormalizedAngle ρ x + 1 := by
+/-- For a periodic density continuous on the strip whose fundamental domain has nonzero mass, the
+first coordinate of the normalization commutes with the unit translation: `u(x + 1) = u(x) + 1`. -/
+theorem stripNormalizedAngle_add_one (hρ : ContinuousOn ρ unitStrip) (h : stripMass ρ ≠ 0)
+    (hper : ∀ p ∈ unitStrip, ρ (p.1 + 1, p.2) = ρ p) (x : ℝ) :
+    stripNormalizedAngle ρ (x + 1) = stripNormalizedAngle ρ x + 1 := by
   have hs := continuous_stripColumnMass hρ
   have hperiodic : Function.Periodic (stripColumnMass ρ) 1 := stripColumnMass_add_one hper
   rw [stripNormalizedAngle_def, stripNormalizedAngle_def,
     ← integral_add_adjacent_intervals (hs.intervalIntegrable 0 x) (hs.intervalIntegrable x (x + 1)),
     hperiodic.intervalIntegral_add_eq x 0, zero_add, add_div, ← stripMass_def,
-    div_self (stripMass_pos hρ hpos).ne']
+    div_self h]
 
 /-- For a periodic density continuous and positive on the strip the first coordinate of the
 normalization is onto `ℝ`: it is a continuous lift of a degree-one circle map. -/
@@ -297,7 +294,7 @@ theorem stripNormalizedAngle_surjective (hρ : ContinuousOn ρ unitStrip)
     Function.Surjective (stripNormalizedAngle ρ) :=
   let u : CircleDeg1Lift :=
     ⟨⟨stripNormalizedAngle ρ, (stripNormalizedAngle_strictMono hρ hpos).monotone⟩,
-      stripNormalizedAngle_add_one hρ hpos hper⟩
+      stripNormalizedAngle_add_one hρ (stripMass_pos hρ hpos).ne' hper⟩
   u.continuous_iff_surjective.1 (continuous_stripNormalizedAngle hρ)
 
 /-! ### The second coordinate -/
@@ -344,18 +341,11 @@ theorem bijOn_stripNormalization_snd (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (x : ℝ) :
     BijOn (fun y ↦ (stripNormalization ρ (x, y)).2) (Icc 0 1) (Icc 0 1) := by
   have hmono := stripNormalization_snd_strictMonoOn hρ hpos x
-  have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-  have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
-  have hv0 : (stripNormalization ρ (x, 0)).2 = 0 := by rw [stripNormalization_mk_zero]
-  have hv1 : (stripNormalization ρ (x, 1)).2 = 1 := by
-    rw [stripNormalization_mk_one (stripColumnMass_pos hρ hpos x).ne']
-  refine ⟨fun y hy ↦ ⟨?_, ?_⟩, hmono.injOn, ?_⟩
-  · exact hv0 ▸ hmono.monotoneOn h0 hy hy.1
-  · exact hv1 ▸ hmono.monotoneOn hy h1 hy.2
-  · intro v hv
-    have h := intermediate_value_Icc zero_le_one (continuousOn_stripNormalization_snd hρ x)
-    rw [hv0, hv1] at h
-    exact h hv
+  have himg := (continuousOn_stripNormalization_snd hρ x).image_Icc_of_monotoneOn zero_le_one
+    hmono.monotoneOn
+  simp only [stripNormalization_mk_zero,
+    stripNormalization_mk_one (stripColumnMass_pos hρ hpos x).ne'] at himg
+  simpa only [himg] using hmono.injOn.bijOn_image
 
 /-! ### The normalization map -/
 
@@ -391,12 +381,13 @@ theorem eqOn_stripNormalization {ρ₁ ρ₂ : ℝ × ℝ → ℝ} (h : EqOn ρ�
   exact integral_congr fun r hr ↦ h (mem_unitStrip.2
     (uIcc_subset_Icc ⟨le_rfl, zero_le_one⟩ (mem_unitStrip.1 hp) hr))
 
-/-- **The normalization commutes with the deck translation** `(x, y) ↦ (x + 1, y)` of the strip. -/
-theorem stripNormalization_add_one (hρ : ContinuousOn ρ unitStrip)
-    (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (hper : ∀ p ∈ unitStrip, ρ (p.1 + 1, p.2) = ρ p)
+/-- **The normalization commutes with the deck translation** `(x, y) ↦ (x + 1, y)` of the strip,
+for a periodic density continuous on the strip whose fundamental domain has nonzero mass. -/
+theorem stripNormalization_add_one (hρ : ContinuousOn ρ unitStrip) (h : stripMass ρ ≠ 0)
+    (hper : ∀ p ∈ unitStrip, ρ (p.1 + 1, p.2) = ρ p)
     {p : ℝ × ℝ} (hp : p ∈ unitStrip) :
     stripNormalization ρ (p.1 + 1, p.2) = stripNormalization ρ p + (1, 0) := by
-  refine Prod.ext (stripNormalizedAngle_add_one hρ hpos hper p.1) ?_
+  refine Prod.ext (stripNormalizedAngle_add_one hρ h hper p.1) ?_
   simp only [stripNormalization_snd, stripColumnMass_add_one hper, Prod.snd_add, add_zero]
   congr 1
   refine integral_congr fun r hr ↦ hper (p.1, r) (mem_unitStrip.2 ?_)
