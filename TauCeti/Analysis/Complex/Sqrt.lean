@@ -74,17 +74,15 @@ theorem sqrt_neg_of_im_pos {z : ℂ} (hz : 0 < z.im) : sqrt (-z) = -I * sqrt z :
   rw [sqrt_eq_real_add_ite, sqrt_eq_real_add_ite]
   simp only [norm_neg, neg_re, neg_im, sub_neg_eq_add, ← sub_eq_add_neg, hz.le, ↓reduceIte,
     not_le.mpr (neg_lt_zero.mpr hz)]
-  ring_nf
-  simp
+  rw [mul_add, one_mul, mul_left_comm (-I) _ I, neg_mul I I, I_mul_I, neg_neg, mul_one]
+  ring
 
 /-- In the open lower half-plane, negating rotates the principal square root by `i`:
 `√(-z) = i √z`. -/
 theorem sqrt_neg_of_im_neg {z : ℂ} (hz : z.im < 0) : sqrt (-z) = I * sqrt z := by
   have h := sqrt_neg_of_im_pos (z := -z) (by simpa)
   rw [neg_neg] at h
-  rw [h]
-  ring_nf
-  simp
+  rw [h, ← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul]
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]

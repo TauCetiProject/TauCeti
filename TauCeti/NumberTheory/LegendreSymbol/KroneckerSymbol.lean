@@ -507,6 +507,30 @@ private theorem kroneckerSym_of_odd_eq_negOnePow_mul_jacobiSym (a : ℤ) {b : �
     jacobiSym_int_eq_negOnePow_mul_natAbs a (Int.natAbs_odd.mpr hb),
     ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add]
 
+/-- Parity congruence for the `negOnePow` exponents in `kroneckerSym_quadratic_reciprocity`. -/
+private theorem kroneckerSym_quadratic_reciprocity_exp_modEq {a b : ℤ} (ha : Odd a) (hb : Odd b) :
+    ((if a < 0 then (1 : ℤ) else 0) * (if b < 0 then 1 else 0) +
+      (if a < 0 then 1 else 0) * (b.natAbs / 2 : ℕ) +
+      (a.natAbs / 2 : ℕ) * (b.natAbs / 2 : ℕ) : ℤ) ≡
+    (if a < 0 then 1 else 0) * (if b < 0 then 1 else 0) +
+      ((a - 1) / 2) * ((b - 1) / 2) +
+      ((if b < 0 then 1 else 0) * (if a < 0 then 1 else 0) +
+        (if b < 0 then 1 else 0) * (a.natAbs / 2 : ℕ)) [ZMOD 2] := by
+  set sa : ℤ := if a < 0 then 1 else 0
+  set sb : ℤ := if b < 0 then 1 else 0
+  set ha2 : ℤ := ((a.natAbs / 2 : ℕ) : ℤ)
+  set hb2 : ℤ := ((b.natAbs / 2 : ℕ) : ℤ)
+  have hmul : ((a - 1) / 2) * ((b - 1) / 2) ≡ (ha2 + sa) * (hb2 + sb) [ZMOD 2] :=
+    (Int.sub_one_ediv_two_modEq_natAbs ha).mul (Int.sub_one_ediv_two_modEq_natAbs hb)
+  calc
+    sa * sb + sa * hb2 + ha2 * hb2
+      = sa * sb + sa * hb2 + ha2 * hb2 + 0 := (add_zero _).symm
+    _ ≡ sa * sb + sa * hb2 + ha2 * hb2 + 2 * (sb * sa + sb * ha2) [ZMOD 2] :=
+      Int.ModEq.add_left _ (Int.modEq_iff_dvd.mpr (by rw [sub_zero]; exact dvd_mul_right 2 _))
+    _ = sa * sb + (ha2 + sa) * (hb2 + sb) + (sb * sa + sb * ha2) := by ring
+    _ ≡ sa * sb + ((a - 1) / 2) * ((b - 1) / 2) + (sb * sa + sb * ha2) [ZMOD 2] :=
+      (hmul.symm.add_left _).add_right _
+
 /-- **Quadratic reciprocity for the Kronecker symbol**: for odd integers `a` and `b` of either
 sign, `(a / b) = s * (-1) ^ (((a - 1) / 2) * ((b - 1) / 2)) * (b / a)`, where `s = -1` when
 both `a < 0` and `b < 0` and `s = 1` otherwise. -/
@@ -520,11 +544,8 @@ theorem kroneckerSym_quadratic_reciprocity {a b : ℤ} (ha : Odd a) (hb : Odd b)
   simp only [← Int.coe_negOnePow_natCast, Nat.cast_mul, ← mul_assoc, ← Units.val_mul,
     ← Int.negOnePow_add]
   congr 2
-  rw [Int.negOnePow_eq_iff, even_iff_two_dvd]
-  obtain ⟨k, hk⟩ := ((Int.sub_one_ediv_two_modEq_natAbs ha).mul
-    (Int.sub_one_ediv_two_modEq_natAbs hb)).symm.dvd
-  exact ⟨-k - (if b < 0 then (1 : ℤ) else 0) * (if a < 0 then 1 else 0) -
-    (if b < 0 then (1 : ℤ) else 0) * (a.natAbs / 2 : ℕ), by linarith⟩
+  rw [Int.negOnePow_eq_iff, even_iff_two_dvd, ← Int.modEq_iff_dvd]
+  exact (kroneckerSym_quadratic_reciprocity_exp_modEq ha hb).symm
 
 /-- Modulo-8 helper for the `(2 * χ₄ m / ·)` factor in
 `kroneckerSym_add_self_right_of_emod_four_eq_two`. -/
