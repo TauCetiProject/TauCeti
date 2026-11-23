@@ -34,8 +34,7 @@ namespace TauCeti.LFunctions
 function of `dirichletData χ hχ` has order at most one. -/
 theorem dirichletData_orderLE_continuedL {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
     (hχ : χ.IsPrimitive) : OrderLE (dirichletData χ hχ).continuedL 1 :=
-  (dirichletData_hasMeromorphicContinuation χ hχ).orderLE_continuedL
-    (dirichletData_entireCompletion_orderLE_one χ hχ) le_rfl
+  AnalyticLFunctionData.orderLE_continuedL (dirichletData_entireCompletion_orderLE_one χ hχ) le_rfl
 
 /-- The polynomial `X - 1` clears the only pole of the zeta continued function. -/
 theorem riemannZetaData_continuedL_cleared_by_X_sub_one (s : ℂ) :
@@ -58,7 +57,7 @@ gives a function of order at most one. It is entire by `differentiable_poleClear
 and `riemannZetaData_continuedL_cleared_by_X_sub_one`. -/
 theorem riemannZetaData_orderLE_poleClearedContinuedL :
     OrderLE (riemannZetaData.poleClearedContinuedL (X - C 1)) 1 :=
-  riemannZetaData_hasMeromorphicContinuation.orderLE_poleClearedContinuedL
+  AnalyticLFunctionData.orderLE_poleClearedContinuedL
     (by rw [riemannZetaData_entireCompletion]; exact orderLE_zetaEntireCompletion) le_rfl
 
 /-- **The repaired value at the pole of zeta is its residue.** Clearing by `X - 1` gives the
