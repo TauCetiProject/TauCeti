@@ -122,7 +122,8 @@ theorem exists_mem_of_mem_iSup [IsLocalRing he.Corner] {ι : Type*} (J : ι → 
     Submodule.iSup_induction J (motive := fun x ↦ he.compress x ∈ nonunits he.Corner) h hmem
       (by simp [compress_zero])
       fun x y hx hy ↦ by simpa [compress_add] using IsLocalRing.nonunits_add hx hy
-  exact hsum (he.compress_val 1 ▸ isUnit_one)
+  have he1 : he.compress e = 1 := by simpa only [Corner.val_one] using he.compress_val 1
+  exact hsum (he1 ▸ isUnit_one)
 
 end IsIdempotentElem
 
