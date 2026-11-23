@@ -9,9 +9,9 @@ public import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 public import TauCeti.Analysis.Variational.BoundedSublevels
 import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
-import TauCeti.Logic.Equiv.Set
 import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
+import TauCeti.Topology.Algebra.Module.WeakSpace.Semicontinuity
 import TauCeti.Topology.Semicontinuity.Basic
 
 /-!
@@ -247,13 +247,6 @@ section SequentialBoundedSublevels
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   {β : Type*} [LinearOrder β] {E : V → β} {S : Set V}
-
-private theorem isSeqClosed_toWeakSpace_sublevel
-    (hS : IsSeqClosed (toWeakSpace 𝕜 V '' S))
-    (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
-      (toWeakSpace 𝕜 V '' S))
-    (b : β) : IsSeqClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) :=
-  (toWeakSpace 𝕜 V).toEquiv.image_inter_preimage S E (Iic b) ▸ hE.isSeqClosed_sublevel hS b
 
 /-- On a sequentially weakly closed set in a reflexive normed space, every norm-bounded sublevel
 of a sequentially weakly lower semicontinuous energy is weakly compact. -/

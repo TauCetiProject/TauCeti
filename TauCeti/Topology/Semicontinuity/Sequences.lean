@@ -9,6 +9,7 @@ public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Sequences
 import Mathlib.Order.Filter.AtTopBot.Archimedean
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
+import TauCeti.Logic.Equiv.Set
 import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Order.IsLUB
 import TauCeti.Topology.Semicontinuity.ENat
@@ -964,16 +965,6 @@ theorem seqLowerSemicontinuous_iSup {ι : Sort*} {γ : Type*} [CompleteLinearOrd
 
 end AlgebraAndLimits
 
-private theorem equiv_forall_mem_image_seq_iff {X Y : Type*} (e : X ≃ Y) (s : Set X)
-    (P : Y → (ℕ → Y) → Prop) :
-    (∀ y ∈ e '' s, ∀ ⦃u : ℕ → Y⦄, (∀ n, u n ∈ e '' s) → P y u) ↔
-      ∀ (u : ℕ → X) (x : X), (∀ n, u n ∈ s) → x ∈ s → P (e x) (fun n ↦ e (u n)) := by
-  rw [e.surjective.forall]
-  simp_rw [(Equiv.arrowCongr (Equiv.refl ℕ) e).surjective.forall]
-  simp only [Equiv.arrowCongr_apply, Equiv.refl_symm, Equiv.coe_refl, Function.comp_apply,
-    id_eq, e.injective.mem_set_image]
-  exact ⟨fun h u x hu hx ↦ h x hx u hu, fun h x hx u hu ↦ h u x hu hx⟩
-
 /-- Sequential lower semicontinuity of `f ∘ e.symm` on `e '' s` along an equivalence `e : X ≃ Y`
 into a topological space `Y`, unpacked in terms of sequences in `X` whose images under `e`
 converge. -/
@@ -984,7 +975,7 @@ theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff {X Y β : Type*} [Topolo
         Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)) →
         ∀ b < f x, ∀ᶠ n in atTop, b < f (u n) := by
   simp only [seqLowerSemicontinuousOn_iff, seqLowerSemicontinuousWithinAt_iff]
-  simpa only [e.symm_apply_apply] using equiv_forall_mem_image_seq_iff e s
+  simpa only [e.symm_apply_apply] using e.forall_mem_image_fun_iff s s
     (fun y u ↦ Tendsto u atTop (𝓝 y) → ∀ b < f (e.symm y), ∀ᶠ n in atTop, b < f (e.symm (u n)))
 
 /-- Along a sequence in `s` whose images under an equivalence `e : X ≃ Y` converge to `e x` with
@@ -1012,7 +1003,7 @@ theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff_forall_le_of_tendsto {X 
   have hb' : BddBelow ((fun y ↦ f (e.symm y)) '' (e '' s)) := by
     simpa only [← image_image, e.symm_image_image] using hb
   rw [seqLowerSemicontinuousOn_iff_forall_le_of_tendsto hb']
-  have h := equiv_forall_mem_image_seq_iff e s (fun y u ↦ ∀ r : ℝ, Tendsto u atTop (𝓝 y) →
+  have h := e.forall_mem_image_fun_iff (ι := ℕ) s s (fun y u ↦ ∀ r : ℝ, Tendsto u atTop (𝓝 y) →
     Tendsto ((fun y ↦ f (e.symm y)) ∘ u) atTop (𝓝 r) → f (e.symm y) ≤ r)
   simp only [Function.comp_def, e.symm_apply_apply] at h
   exact ⟨fun hf u x r hu hx ↦ h.1 (fun y hy u hu r ↦ hf u y r hu hy) u x hu hx r,
@@ -1029,7 +1020,7 @@ theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff_le_liminf_ereal {X Y : T
         Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)) →
         (f x : EReal) ≤ liminf (fun n ↦ (f (u n) : EReal)) atTop := by
   rw [seqLowerSemicontinuousOn_real_iff_le_liminf_ereal]
-  simpa only [e.symm_apply_apply] using equiv_forall_mem_image_seq_iff e s
+  simpa only [e.symm_apply_apply] using e.forall_mem_image_fun_iff s s
     (fun y u ↦ Tendsto u atTop (𝓝 y) →
       (f (e.symm y) : EReal) ≤ liminf (fun n ↦ (f (e.symm (u n)) : EReal)) atTop)
 
