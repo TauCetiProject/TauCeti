@@ -175,6 +175,18 @@ theorem hatDomains_subset_minusDomains : H.hatDomains χ x y ⊆ H.minusDomains 
   rw [hatDomains_eq_setOf_mem_minusDomains]
   exact Set.sep_subset _ _
 
+/-- The domains counted by the minus differential do not involve the basepoints. -/
+@[simp]
+theorem minusDomains_withBasepoints {B : Type*} (b : B → Region) :
+    (H.withBasepoints b).minusDomains χ x y = H.minusDomains χ x y := by
+  ext D
+  simp only [mem_minusDomains_iff, isDomainBetween_withBasepoints, maslovIndex_withBasepoints]
+
+/-- A counted domain has nonnegative multiplicity at each basepoint. -/
+theorem basepoint_nonneg_of_mem_minusDomains (hD : D ∈ H.minusDomains χ x y) (z : Basepoint) :
+    0 ≤ D (H.basepoint z) :=
+  (mem_minusDomains_iff.mp hD).2.1 _
+
 /-- In a singly pointed diagram of a closed surface of genus `n` that is strongly admissible at
 `y`, only finitely many domains are counted by the minus differential from any generator to `y`,
 whatever their multiplicity at the basepoint. -/
@@ -208,7 +220,7 @@ theorem minusCoefficient_def : H.minusCoefficient χ x y =
 /-- A counted domain has nonnegative total multiplicity at the basepoints. -/
 theorem sum_basepoint_nonneg_of_mem_minusDomains (hD : D ∈ H.minusDomains χ x y) :
     0 ≤ ∑ z, D (H.basepoint z) :=
-  Finset.sum_nonneg fun _ _ => (mem_minusDomains_iff.mp hD).2.1 _
+  Finset.sum_nonneg fun z _ => basepoint_nonneg_of_mem_minusDomains hD z
 
 /-- When finitely many domains are counted, the minus coefficient is a finite sum. -/
 theorem minusCoefficient_eq_sum (hfin : (H.minusDomains χ x y).Finite) :
@@ -239,7 +251,7 @@ theorem coeff_zero_minusCoefficient (hfin : (H.minusDomains χ x y).Finite) :
   ext D
   refine and_congr_right fun hD => ?_
   rw [Nat.cast_zero, Finset.sum_eq_zero_iff_of_nonneg (f := fun z => D (H.basepoint z))
-    fun _ _ => (mem_minusDomains_iff.mp hD).2.1 _]
+    fun z _ => basepoint_nonneg_of_mem_minusDomains hD z]
   simp
 
 /-- When infinitely many domains are counted, the minus coefficient is `0`. -/

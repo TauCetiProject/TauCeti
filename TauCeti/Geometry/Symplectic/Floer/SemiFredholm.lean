@@ -128,6 +128,51 @@ theorem isCylindricalNearEnds_comp_snd {J : ℝ → V → AlmostComplexStructure
   contDiffAt_hamiltonianS _ := contDiffAt_const
   contDiffAt_hamiltonianT _ := (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
 
+variable {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+  {Jm Jp : ℝ → V → AlmostComplexStructure V} {Hm Hp : ℝ → V → ℝ} {R : ℝ} {u : ℝ × ℝ → V}
+
+/-- Data that are `C¹` on the whole cylinder (with `C²` Hamiltonians) and cylindrical near the
+ends along one map are cylindrical near the ends along every map. -/
+theorem isCylindricalNearEnds_of_contDiff (hcyl : IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt)) (v : ℝ × ℝ → V) :
+    IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R v :=
+  { hcyl with
+    contDiffAt_almostComplex := fun _ ↦ hJ.contDiffAt
+    contDiffAt_hamiltonianS := fun _ ↦ hKs.contDiffAt
+    contDiffAt_hamiltonianT := fun _ ↦ hKt.contDiffAt }
+
+/-- Floer data cylindrical near the ends with radius `R` take at `(s, t)` the values they take at
+the point `(projIcc (-|R|) |R| _ s, t)` of `[-|R|, |R|] × ℝ` nearest to it. -/
+theorem IsCylindricalNearEnds.eq_projIcc (hcyl : IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (s t : ℝ) :
+    J (s, t) = J (projIcc (-|R|) |R| (neg_le_self (abs_nonneg R)) s, t) ∧
+      Ks (s, t) = Ks (projIcc (-|R|) |R| (neg_le_self (abs_nonneg R)) s, t) ∧
+      Kt (s, t) = Kt (projIcc (-|R|) |R| (neg_le_self (abs_nonneg R)) s, t) := by
+  have hR := le_abs_self R
+  rcases le_or_gt s (-|R|) with hs | hs
+  · -- On the negative end both points carry the data of the negative end.
+    have h₁ : s ≤ -R := by linarith
+    have h₂ : -|R| ≤ -R := by linarith
+    rw [projIcc_of_le_left _ hs]
+    exact ⟨(hcyl.almostComplex_eq_of_le_neg (s, t) h₁).trans
+        (hcyl.almostComplex_eq_of_le_neg (-|R|, t) h₂).symm,
+      (hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ absurd h.1 (not_lt.2 h₁)).trans
+        (hcyl.hamiltonianS_eq_zero (-|R|, t) fun h ↦ absurd h.1 (not_lt.2 h₂)).symm,
+      (hcyl.hamiltonianT_eq_of_le_neg (s, t) h₁).trans
+        (hcyl.hamiltonianT_eq_of_le_neg (-|R|, t) h₂).symm⟩
+  rcases le_or_gt |R| s with hs' | hs'
+  · -- On the positive end both points carry the data of the positive end.
+    have h₁ : R ≤ s := hR.trans hs'
+    rw [projIcc_of_right_le _ hs']
+    exact ⟨(hcyl.almostComplex_eq_of_le (s, t) h₁).trans
+        (hcyl.almostComplex_eq_of_le (|R|, t) hR).symm,
+      (hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ absurd h.2 (not_lt.2 h₁)).trans
+        (hcyl.hamiltonianS_eq_zero (|R|, t) fun h ↦ absurd h.2 (not_lt.2 hR)).symm,
+      (hcyl.hamiltonianT_eq_of_le (s, t) h₁).trans (hcyl.hamiltonianT_eq_of_le (|R|, t) hR).symm⟩
+  · rw [projIcc_of_mem _ ⟨hs.le, hs'.le⟩]
+    exact ⟨rfl, rfl, rfl⟩
+
 end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
