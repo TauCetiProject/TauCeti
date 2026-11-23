@@ -42,7 +42,8 @@ is why the base is assumed boundaryless.
   base point it is the tuple of iterated derivatives of the local representative at `x`
   (`TauCeti.JetBundle.toJets_jet`), and in every chart it is the tuple of iterated derivatives of
   the local representative in that chart (`TauCeti.JetBundle.toJets_trivializationAt_jet`). The
-  jet of a `C^(n+r)` section is a `C^n` section of `JᵣV` (`TauCeti.JetBundle.contMDiff_jet`), and
+  jet of a `C^(n+r)` section is a `C^n` section of `JᵣV` (`TauCeti.JetBundle.contMDiff_jet`, and
+  `TauCeti.JetBundle.contMDiff_infty_jet` for smooth sections), and
   every `r`-jet is the jet of a section, `C^n` at the base point for any `n`
   (`TauCeti.JetBundle.exists_contMDiffAt_jet_eq`) and `C^n` near it when `M` and `V` are `C^n`
   (`TauCeti.JetBundle.exists_contMDiffOn_jet_eq`). The jet is local
@@ -555,6 +556,16 @@ theorem contMDiff_jet {n : ℕ∞ω} [IsManifold I (n + r) M] [ContMDiffVectorBu
       fun x ↦ TotalSpace.mk' (SymmetricJet 𝕜 E F r) x (jet I F r s x) := by
   rw [← contMDiffOn_univ] at hs ⊢
   exact contMDiffOn_jet isOpen_univ hs
+
+/-- **The `r`-jet of a smooth section is a smooth section of `JᵣV`.** -/
+theorem contMDiff_infty_jet [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I] {s : ∀ x, V x}
+    (hs : ContMDiff I (I.prod 𝓘(𝕜, F)) ∞ fun x ↦ TotalSpace.mk' F x (s x)) :
+    ContMDiff I (I.prod 𝓘(𝕜, SymmetricJet 𝕜 E F r)) ∞
+      fun x ↦ TotalSpace.mk' (SymmetricJet 𝕜 E F r) x (jet I F r s x) := by
+  have h : (∞ : ℕ∞ω) + r = ∞ := by exact_mod_cast top_add (r : ℕ∞)
+  have : IsManifold I (∞ + r) M := by rw [h]; infer_instance
+  have : ContMDiffVectorBundle (∞ + r) F V I := by rw [h]; infer_instance
+  exact contMDiff_jet (n := ∞) (by rw [h]; exact hs)
 
 section Truncate
 

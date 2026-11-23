@@ -79,6 +79,8 @@ finite union of trivializing open sets
 * `TauCeti.thomPairTwistedHomologyFinrankIso`: `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)` over a compact base.
 * `TauCeti.thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass`: it sends the fibre class
   over `b` to the class of `b`.
+* `TauCeti.thomPairTwistedHomology_hom_ext`: over a compact base, morphisms out of
+  `Hᵣ(E, E₀; π^*o(E))` are determined by their values on the fibre classes.
 
 ## References
 
@@ -123,6 +125,12 @@ theorem thomPairSignLocalSystem_def :
       (LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
         ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι) :=
   (rfl)
+
+/-- The fibres of the pulled-back orientation system are fibres of `o(E)`, so they are projective.
+-/
+instance projective_thomPairSignLocalSystem_obj (v : FundamentalGroupoid (thomPair F E).fst) :
+    Projective ((thomPairSignLocalSystem F E R hι).obj v) :=
+  LocalCoefficientSystem.projective_pullback_obj_obj (X := TopCat.of (TotalSpace F E)) _ _ v
 
 variable (F E R) in
 /-- The pulled-back orientation system `π^*o(E)` restricted to the part `E|_W` of the total space
@@ -344,8 +352,7 @@ theorem thomPairOverSignFiberClassOf_eq (e e' : Trivialization F (π F E)) [e.Is
     simp only [TopPair.singularHomologyMapIso_inv] at hinv
     rw [thomPairOverSignFiberClassOf, thomPairOverSignFiberClassOf, h', hinv]
   · have h' : (e'.mapOrientation ι hx').symm ω = -o := by
-      rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, h]
-      exact (neg_neg ω).symm
+      rw [← neg_neg ω, ← h, Trivialization.mapOrientation_symm_neg, Equiv.symm_apply_apply]
     have hinv : TopPair.singularHomologyMap
         (e'.continuousLinearEquivAt ℝ x hx').complZeroPairIso.inv
         (ModuleCat.of R R) (finrank ℝ F) =
@@ -820,6 +827,26 @@ theorem thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass [CompactSpa
     singularHomology₀Section_naturality]
   simp only [TopCat.isoOfHomeo_hom, TopCat.hom_ofHom, ContinuousMap.coe_ofClass,
     Homeomorph.Set.univ_apply]
+
+/-- **Morphisms out of `Hᵣ(E, E₀; π^*o(E))` are determined by the fibre classes.** Over a compact
+base, two morphisms to a module `M` that agree on the fibre class over every point are equal. -/
+theorem thomPairTwistedHomology_hom_ext [CompactSpace B] {M : ModuleCat.{w} R}
+    {f g : (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) (finrank ℝ F) ⟶ M}
+    (h : ∀ b, f.hom (thomPairSignFiberClass F E R hι ω b) =
+      g.hom (thomPairSignFiberClass F E R hι ω b)) :
+    f = g := by
+  rw [← Iso.hom_inv_id_assoc (thomPairTwistedHomologyFinrankIso F E R hι ω) f,
+    ← Iso.hom_inv_id_assoc (thomPairTwistedHomologyFinrankIso F E R hι ω) g]
+  congr 1
+  refine singularHomology₀_hom_ext _ fun b ↦ ?_
+  -- The class of `b` is the image of the fibre class over `b`.
+  have hb : singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b =
+      ModuleCat.ofHom (LinearMap.toSpanSingleton R _ ((thomPairTwistedHomologyFinrankIso F E R hι
+        ω).hom (thomPairSignFiberClass F E R hι ω b))) := by
+    rw [thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass]
+    exact ModuleCat.hom_ext (LinearMap.ext_ring (by simp))
+  rw [hb, ModuleCat.ofHom_toSpanSingleton_comp, ModuleCat.ofHom_toSpanSingleton_comp,
+    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, Iso.hom_inv_id_apply, h b]
 
 end FiberClass
 
