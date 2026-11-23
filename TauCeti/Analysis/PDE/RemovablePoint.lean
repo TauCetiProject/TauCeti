@@ -17,9 +17,9 @@ import TauCeti.Analysis.Normed.Operator.Basic
 # A point is removable for bounded weakly divergence-free fields
 
 Let `Ω` be an open subset of a real inner product space `E` of dimension `n ≥ 2`, let `p` be a
-point and let `V` be a measurable vector field on `Ω` with `|V| ≤ C`. If
-`∫_Ω ⟨V, ∇ψ⟩ = 0` for every test function `ψ` whose support avoids `p`, then the same holds for
-every test function on `Ω`.
+point and let `V` be an a.e. strongly measurable vector field on `Ω` with `|V| ≤ C` almost
+everywhere. If `∫_Ω ⟨V, ∇ψ⟩ = 0` for every test function `ψ` whose support avoids `p`, then the
+same holds for every test function on `Ω`.
 
 The proof cuts off near `p`. For a smooth `η_ε` equal to `1` on `B_ε(p)`, supported in
 `B_{2ε}(p)`, with `|∇η_ε| ≤ K/ε`, the test function `φ (1 - η_ε)` avoids `p`, so
@@ -49,14 +49,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {Ω : Opens E} {V : E → E} {C : ℝ}
 
 private theorem integrableOn_inner_gradient (hV : AEStronglyMeasurable V (μ.restrict Ω))
-    (hC : ∀ x ∈ Ω, ‖V x‖ ≤ C) {g : E → ℝ} (hg : ContDiff ℝ 1 g) (hgc : HasCompactSupport g) :
+    (hC : ∀ᵐ x ∂μ.restrict Ω, ‖V x‖ ≤ C) {g : E → ℝ} (hg : ContDiff ℝ 1 g)
+    (hgc : HasCompactSupport g) :
     IntegrableOn (fun x ↦ ⟪V x, ∇ g x⟫_ℝ) Ω μ := by
-  refine (innerSL ℝ).integrable_of_bilin_of_bdd_left C hV ?_
+  exact (innerSL ℝ).integrable_of_bilin_of_bdd_left C hV hC
     ((hg.continuous_gradient one_ne_zero).integrable_of_hasCompactSupport hgc.gradient).integrableOn
-  exact (ae_restrict_iff' Ω.isOpen.measurableSet).2 (Eventually.of_forall hC)
 
 private theorem setIntegral_inner_gradient_eq_cutoff
-    (p : E) (hV : AEStronglyMeasurable V (μ.restrict Ω)) (hC : ∀ x ∈ Ω, ‖V x‖ ≤ C)
+    (p : E) (hV : AEStronglyMeasurable V (μ.restrict Ω)) (hC : ∀ᵐ x ∂μ.restrict Ω, ‖V x‖ ≤ C)
     (h : ∀ ψ : 𝓓(Ω, ℝ), p ∉ tsupport (ψ : E → ℝ) →
       ∫ x in Ω, ⟪V x, ∇ (ψ : E → ℝ) x⟫_ℝ ∂μ = 0)
     (φ : 𝓓(Ω, ℝ)) {ε : ℝ} (hε : 0 < ε) (η : E → ℝ) (hηs : ContDiff ℝ ∞ η)
@@ -88,7 +88,7 @@ private theorem setIntegral_inner_gradient_eq_cutoff
   simp only [hdiff]
 
 private theorem norm_setIntegral_inner_gradient_le_of_cutoff
-    (p : E) (hV : AEStronglyMeasurable V (μ.restrict Ω)) (hC : ∀ x ∈ Ω, ‖V x‖ ≤ C)
+    (p : E) (hV : AEStronglyMeasurable V (μ.restrict Ω)) (hC : ∀ᵐ x ∂μ.restrict Ω, ‖V x‖ ≤ C)
     (hC0 : 0 ≤ C)
     (h : ∀ ψ : 𝓓(Ω, ℝ), p ∉ tsupport (ψ : E → ℝ) →
       ∫ x in Ω, ⟪V x, ∇ (ψ : E → ℝ) x⟫_ℝ ∂μ = 0)
@@ -100,14 +100,14 @@ private theorem norm_setIntegral_inner_gradient_le_of_cutoff
     (hηderiv0 : ∀ x, 2 * ε < dist x p → fderiv ℝ η x = 0) :
     ‖∫ x in Ω, ⟪V x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ‖ ≤
       μ.real (closedBall p (2 * ε)) * (C * A + B * (K / ε) * C) := by
-  have hpt (x : E) (hx : x ∈ Ω) : ‖η x * fderiv ℝ φ x (V x) + φ x * fderiv ℝ η x (V x)‖ ≤
+  have hpt (x : E) (hx : ‖V x‖ ≤ C) : ‖η x * fderiv ℝ φ x (V x) + φ x * fderiv ℝ η x (V x)‖ ≤
       C * A + B * (K / ε) * C := by
     obtain ⟨hηnonneg, hηle⟩ := hη01 x
-    simpa only [smul_eq_mul, mul_comm A C] using
+    simpa only [smul_eq_mul, one_mul, mul_comm A C] using
       (fderiv ℝ φ x).norm_smul_apply_add_smul_apply_le (fderiv ℝ η x)
-        (a := η x) (b := φ x) (v := V x) (w := V x)
+        (a := η x) (b := φ x) (v := V x) (w := V x) (A := 1)
         (by simpa only [Real.norm_of_nonneg hηnonneg] using hηle)
-        (hB x) (hA x) (hηbound x) (hC x hx) (hC x hx)
+        (hB x) (hA x) (hηbound x) hx hx
   -- The error vanishes outside the cutoff support, so only the ball of radius 2ε contributes.
   rw [setIntegral_inner_gradient_eq_cutoff p hV hC h φ hε η hηs hη1,
     setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Ω.isOpen.measurableSet
@@ -116,9 +116,9 @@ private theorem norm_setIntegral_inner_gradient_le_of_cutoff
       have := (norm_nonneg _).trans (hA 0)
       have := (norm_nonneg _).trans (hB 0)
       positivity
-    refine (norm_setIntegral_le_of_norm_le_const
+    refine (norm_setIntegral_le_of_norm_le_const_ae
       (measure_lt_top_of_subset inter_subset_right measure_closedBall_lt_top.ne)
-      (fun x hx ↦ hpt x hx.1)).trans ?_
+      ((ae_restrict_of_ae_restrict_of_subset inter_subset_left hC).mono hpt)).trans ?_
     rw [mul_comm]
     exact mul_le_mul_of_nonneg_right
       (measureReal_mono inter_subset_right measure_closedBall_lt_top.ne) hM
@@ -129,16 +129,17 @@ private theorem norm_setIntegral_inner_gradient_le_of_cutoff
     simp
 
 /-- **A point is removable for bounded weakly divergence-free fields** in dimension at least
-`2`: if `V` is bounded on `Ω` and `∫_Ω ⟨V, ∇ψ⟩ = 0` for every test function `ψ` whose support
-avoids `p`, then `∫_Ω ⟨V, ∇φ⟩ = 0` for every test function `φ` on `Ω`. -/
+`2`: if `V` is bounded almost everywhere on `Ω` and `∫_Ω ⟨V, ∇ψ⟩ = 0` for every test function `ψ`
+whose support avoids `p`, then `∫_Ω ⟨V, ∇φ⟩ = 0` for every test function `φ` on `Ω`. -/
 theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
     (hE : 2 ≤ Module.finrank ℝ E) (p : E) (hV : AEStronglyMeasurable V (μ.restrict Ω))
-    (hC : ∀ x ∈ Ω, ‖V x‖ ≤ C)
+    (hC : ∀ᵐ x ∂μ.restrict Ω, ‖V x‖ ≤ C)
     (h : ∀ ψ : 𝓓(Ω, ℝ), p ∉ tsupport (ψ : E → ℝ) →
       ∫ x in Ω, ⟪V x, ∇ (ψ : E → ℝ) x⟫_ℝ ∂μ = 0)
     (φ : 𝓓(Ω, ℝ)) : ∫ x in Ω, ⟪V x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ = 0 := by
   set C' := max C 0
-  have hC' (x : E) (hx : x ∈ Ω) : ‖V x‖ ≤ C' := (hC x hx).trans (le_max_left _ _)
+  have hC' : ∀ᵐ x ∂μ.restrict Ω, ‖V x‖ ≤ C' :=
+    hC.mono fun _ hx ↦ hx.trans (le_max_left _ _)
   obtain ⟨K, hK, hcut⟩ := exists_cutoff_fderiv_bound (E := E)
   have hφ1 : ContDiff ℝ 1 (φ : E → ℝ) := φ.contDiff.of_le (by simp)
   obtain ⟨A, hA⟩ := (hφ1.continuous_fderiv one_ne_zero).bounded_above_of_compact_support

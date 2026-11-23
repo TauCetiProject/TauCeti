@@ -1062,9 +1062,9 @@ theorem norm_cutoff_fderiv_le (χ : ContDiffBump (0 : E)) {φ : ℝ × E → ℝ
   have hsw : ‖s • w‖ ≤ 1 + ‖w‖ := by
     rw [norm_smul]
     nlinarith [norm_nonneg w, norm_nonneg s]
-  simpa only [smul_eq_mul, ← add_mul] using
+  simpa only [smul_eq_mul, one_mul, ← add_mul] using
     (fderiv ℝ φ q).norm_smul_apply_add_smul_apply_le (fderiv ℝ χ (s • q.2))
-      (a := χ (s • q.2)) (b := φ q) (v := (1, w)) (w := s • w) (R := 1 + ‖w‖)
+      (a := χ (s • q.2)) (b := φ q) (v := (1, w)) (w := s • w) (A := 1) (R := 1 + ‖w‖)
       (by simpa only [Real.norm_of_nonneg χ.nonneg] using χ.le_one) hB hC hD
       (norm_prod_le_iff.2 ⟨by simp, by simp⟩) hsw
 
