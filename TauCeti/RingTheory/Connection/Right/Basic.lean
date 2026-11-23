@@ -240,8 +240,7 @@ theorem curvature_swap (c₁ : RightConnection (E := E) D₁)
 /-- The gauge group `E ≃ₗ[Aᵐᵒᵖ] E` acts on connections by conjugation, `u • c = u c u⁻¹`. -/
 instance : MulAction (E ≃ₗ[Aᵐᵒᵖ] E) (RightConnection (E := E) D) where
   smul u c :=
-    { toLinearMap := (u.toLinearMap.restrictScalars k).comp
-        (c.toLinearMap.comp (u.symm.toLinearMap.restrictScalars k))
+    { toLinearMap := (u.restrictScalars k).conj c.toLinearMap
       leibniz' a x := by simp [c.leibniz'] }
   one_smul c := ext fun x ↦ rfl
   mul_smul u v c := ext fun x ↦ rfl
@@ -250,11 +249,12 @@ instance : MulAction (E ≃ₗ[Aᵐᵒᵖ] E) (RightConnection (E := E) D) where
 protected theorem smul_apply (u : E ≃ₗ[Aᵐᵒᵖ] E) (c : RightConnection (E := E) D) (x : E) :
     (u • c) x = u (c (u.symm x)) := (rfl)
 
-/-- Gauge transformations conjugate the curvature. -/
-theorem curvature_smul_apply (c₁ : RightConnection (E := E) D₁)
+/-- Gauge transformations conjugate the curvature: `F(u • c₁, u • c₂) = u F(c₁, c₂) u⁻¹`. -/
+theorem curvature_smul (c₁ : RightConnection (E := E) D₁)
     (c₂ : RightConnection (E := E) D₂)
-    (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) (u : E ≃ₗ[Aᵐᵒᵖ] E) (x : E) :
-    curvature (u • c₁) (u • c₂) hD x = u (curvature c₁ c₂ hD (u.symm x)) := by
+    (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) (u : E ≃ₗ[Aᵐᵒᵖ] E) :
+    curvature (u • c₁) (u • c₂) hD = u.conjRingEquiv (curvature c₁ c₂ hD) := by
+  ext x
   simp
 
 /-- The coordinate connection on a coordinate product differentiates each coordinate.
