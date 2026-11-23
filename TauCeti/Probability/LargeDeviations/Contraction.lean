@@ -101,6 +101,7 @@ theorem mem_contractedRate_sublevel_iff (hI : IsGoodRateFunction I) (hf : Contin
     rw [← hI.contractedRate_sublevel hf α hα] at hmem
     exact hmem
 
+omit [T1Space Y] in
 /-- The contraction of a good rate function by a continuous map is a good rate function. -/
 protected theorem contractedRate [T2Space Y] (hI : IsGoodRateFunction I) (hf : Continuous f) :
     IsGoodRateFunction (contractedRate f I) := by

@@ -62,6 +62,10 @@ The algebraic tensor product `B ⊗[A] C` maps to `A⟨X, Y⟩ ⧸ (I, J)` with 
 * `TauCeti.AffinoidPushout.algHom_ext`: maps out of the pushout are determined by their
   compositions with `inl` and `inr`.
 * `TauCeti.AffinoidPushout.existsUnique_algHom`: the universal property of the pushout.
+* `TauCeti.AffinoidPushout.surjective_of_mem_range`: a map from an affinoid algebra whose range
+  contains the images of `inl` and `inr` is surjective.
+* `TauCeti.AffinoidPushout.exists_surjective_algHom_of_surjective`: the pushout is presented by
+  any presentations of its two factors.
 * `TauCeti.AffinoidPushout.denseRange_productMap`: the image of `B ⊗[A] C` is dense.
 
 ## References
@@ -367,6 +371,78 @@ theorem existsUnique_algHom {F : Type*} [CommRing F] [Algebra K F] (hF : IsAffin
   have := hF.completeSpace_residueNormedCommRing
   exact ⟨lift hA hF β γ h, ⟨lift_inl hA hF β γ h, lift_inr hA hF β γ h⟩, fun _ ⟨hl, hr⟩ ↦
     algHom_ext hA hF (fun x ↦ by rw [hl, lift_inl]) (fun y ↦ by rw [hr, lift_inr])⟩
+
+include hA in
+/-- **Maps from affinoid algebras onto the affinoid pushout.** A `K`-algebra map
+`Θ : D → A⟨X, Y⟩ ⧸ (I, J)` from an affinoid algebra `D` whose range contains the images of `inl`
+and `inr` is surjective. -/
+theorem surjective_of_mem_range {D : Type*} [CommRing D] [Algebra K D] (hD : IsAffinoidAlgebra K D)
+    (Θ : D →ₐ[K] AffinoidPushout I J) (hl : ∀ x, inl I J x ∈ Θ.range)
+    (hr : ∀ y, inr I J y ∈ Θ.range) : Function.Surjective Θ := by
+  have hS : IsAffinoidAlgebra K Θ.range := hD.of_surjective _ Θ.rangeRestrict_surjective
+  have hP := isAffinoidAlgebra I J hA
+  have hA' (a : A) : (inl I J) (algebraMap A _ a) = (inr I J) (algebraMap A _ a) := by
+    rw [AlgHom.commutes, AlgHom.commutes]
+  -- The pushout maps to the range of `Θ`, compatibly with `inl` and `inr`.
+  obtain ⟨σ, ⟨hσl, hσr⟩, -⟩ := existsUnique_algHom hA hS
+    (((inl I J).restrictScalars K).codRestrict _ hl)
+    (((inr I J).restrictScalars K).codRestrict _ hr)
+    fun a ↦ Subtype.ext (hA' a)
+  -- Composing with the inclusion of the range gives the identity of the pushout.
+  obtain ⟨δ, -, huniq⟩ := existsUnique_algHom hA hP ((inl I J).restrictScalars K)
+    ((inr I J).restrictScalars K) hA'
+  have hσ : Θ.range.val.comp σ = AlgHom.id K _ :=
+    (huniq _ ⟨fun x ↦ congrArg Subtype.val (hσl x), fun y ↦ congrArg Subtype.val (hσr y)⟩).trans
+      (huniq _ ⟨fun _ ↦ rfl, fun _ ↦ rfl⟩).symm
+  intro p
+  obtain ⟨d, hd⟩ := (σ p).property
+  exact ⟨d, hd.trans congr($hσ p)⟩
+
+include hA in
+/-- **The affinoid pushout is presented by any presentations of its factors.** Let
+`ψ : A⟨X'₁, …, X'ₖ⟩ → A⟨X⟩ ⧸ I` and `χ : A⟨Y'₁, …, Y'ₗ⟩ → A⟨Y⟩ ⧸ J` be surjective `K`-algebra
+maps compatible with `A`. Then the `K`-algebra map `A⟨X', Y'⟩ → A⟨X, Y⟩ ⧸ (I, J)` compatible with
+`A` and sending `X'ᵢ` to `inl (ψ X'ᵢ)` and `Y'ⱼ` to `inr (χ Y'ⱼ)` is surjective. The variable
+`X'ᵢ` is the variable of index `i` and `Y'ⱼ` is the variable of index `k + j`. -/
+theorem exists_surjective_algHom_of_surjective {k l : ℕ}
+    {ψ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) →ₐ[K]
+      IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ I}
+    (hψ : Function.Surjective ψ) (hψA : ∀ a, ψ (algebraMap A _ a) = algebraMap A _ a)
+    {χ : IsRestricted.subring (R := A) (fun _ : Fin l ↦ 1) →ₐ[K]
+      IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) ⧸ J}
+    (hχ : Function.Surjective χ) (hχA : ∀ a, χ (algebraMap A _ a) = algebraMap A _ a) :
+    ∃ Θ : IsRestricted.subring (R := A) (fun _ : Fin (k + l) ↦ 1) →ₐ[K] AffinoidPushout I J,
+      Function.Surjective Θ ∧ (∀ a, Θ (algebraMap A _ a) = algebraMap A _ a) ∧
+        (∀ i, Θ ⟨X (Fin.castAdd l i), isRestricted_X _ _⟩ =
+          inl I J (ψ ⟨X i, isRestricted_X _ i⟩)) ∧
+        ∀ j, Θ ⟨X (Fin.natAdd k j), isRestricted_X _ _⟩ =
+          inr I J (χ ⟨X j, isRestricted_X _ j⟩) := by
+  let eψ := Ideal.quotientKerAlgEquivOfSurjective hψ
+  let eχ := Ideal.quotientKerAlgEquivOfSurjective hχ
+  have heψ (a : A) : eψ (algebraMap A _ a) = algebraMap A _ a := by
+    rw [← Ideal.Quotient.mk_algebraMap, Ideal.quotientKerAlgEquivOfSurjective_mk, hψA]
+  have heχ (a : A) : eχ (algebraMap A _ a) = algebraMap A _ a := by
+    rw [← Ideal.Quotient.mk_algebraMap, Ideal.quotientKerAlgEquivOfSurjective_mk, hχA]
+  -- The pushout of the presentations `ψ` and `χ` maps to `A⟨X, Y⟩ ⧸ (I, J)` through `ψ` and `χ`.
+  obtain ⟨σ, ⟨hσl, hσr⟩, -⟩ := existsUnique_algHom hA (isAffinoidAlgebra I J hA)
+    (((inl I J).restrictScalars K).comp eψ.toAlgHom)
+    (((inr I J).restrictScalars K).comp eχ.toAlgHom) fun a ↦ by
+      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, heψ, heχ,
+        AlgHom.restrictScalars_apply, AlgHom.commutes]
+  -- It is surjective, since its range contains the images of `inl` and `inr`.
+  have hσ := surjective_of_mem_range hA (isAffinoidAlgebra _ _ hA) σ
+    (fun x ↦ ⟨inl (RingHom.ker ψ) (RingHom.ker χ) (eψ.symm x), by simp [hσl]⟩)
+    (fun y ↦ ⟨inr (RingHom.ker ψ) (RingHom.ker χ) (eχ.symm y), by simp [hσr]⟩)
+  refine ⟨σ.comp (Ideal.Quotient.mkₐ K _), hσ.comp Ideal.Quotient.mk_surjective, fun a ↦ ?_,
+    fun i ↦ ?_, fun j ↦ ?_⟩
+  · rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mk_algebraMap,
+      ← (inl (RingHom.ker ψ) (RingHom.ker χ)).commutes, hσl]
+    simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, heψ, AlgHom.restrictScalars_apply,
+      AlgHom.commutes]
+  · rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ← restrictedRename_X, ← inl_mk, hσl]
+    simp [eψ]
+  · rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ← restrictedRename_X, ← inr_mk, hσr]
+    simp [eχ]
 
 variable (I J) in
 /-- **The algebraic tensor product is dense in the affinoid pushout.** The `A`-algebra map

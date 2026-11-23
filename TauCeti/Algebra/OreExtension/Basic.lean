@@ -446,6 +446,10 @@ theorem C_mul (a b : R) : C (σ := σ) (δ := δ) (a * b) = C a * C b := by
 theorem smul_eq_C_mul (a : R) (p : OreExtension σ δ) : a • p = C a * p := by
   rw [← monomial_zero_left, monomial_mul_apply, pow_zero, one_apply_eq_self]
 
+/-- Left scalar multiplication by `R` associates with multiplication in `R[X; σ, δ]`. -/
+instance instIsScalarTowerSelf : IsScalarTower R (OreExtension σ δ) (OreExtension σ δ) where
+  smul_assoc a p q := by rw [smul_eq_C_mul, smul_eq_C_mul, smul_eq_mul, smul_eq_mul, mul_assoc]
+
 @[simp]
 theorem coeff_C_mul (a : R) (p : OreExtension σ δ) (n : ℕ) :
     coeff (C a * p) n = a * coeff p n := by
@@ -544,6 +548,34 @@ theorem coeff_X_mul_succ (p : OreExtension σ δ) (n : ℕ) :
       · subst m
         simp [add_comm, add_left_comm]
       · simp [h, h']
+
+/-- Right multiplication of `a Xⁿ` by `X` raises its degree by one. -/
+theorem monomial_mul_X (n : ℕ) (a : R) :
+    monomial (σ := σ) (δ := δ) n a * X = monomial (n + 1) a := by
+  rw [← C_mul_X_pow_eq_monomial, mul_assoc, ← pow_succ, C_mul_X_pow_eq_monomial]
+
+/-- Right multiplication by `X` clears the constant left coefficient. -/
+@[simp]
+theorem coeff_mul_X_zero (p : OreExtension σ δ) : coeff (p * X) 0 = 0 := by
+  induction p using induction_on with
+  | zero => simp
+  | add n a p _ _ ih => rw [add_mul, coeff_add, monomial_mul_X, coeff_monomial, ih]; simp
+
+/-- Right multiplication by `X` shifts left coefficients upward by one. -/
+@[simp]
+theorem coeff_mul_X_succ (p : OreExtension σ δ) (n : ℕ) :
+    coeff (p * X) (n + 1) = coeff p n := by
+  induction p using induction_on with
+  | zero => simp
+  | add m a p _ _ ih => rw [add_mul, coeff_add, monomial_mul_X, coeff_monomial, ih]; simp
+
+/-- Right multiplication by `Xᵐ` shifts left coefficients upward by `m`. -/
+@[simp]
+theorem coeff_mul_X_pow_add (p : OreExtension σ δ) (n m : ℕ) :
+    coeff (p * X ^ m) (n + m) = coeff p n := by
+  induction m with
+  | zero => simp
+  | succ m ih => rw [pow_succ, ← mul_assoc, ← Nat.add_assoc, coeff_mul_X_succ, ih]
 
 section UniversalProperty
 

@@ -38,6 +38,17 @@ noncomputable def symmetricThreeBruhatComplex : AbstractSimplicialComplex (Equiv
   letI := (permCoxeterSystem 3).bruhatPartialOrder
   AbstractSimplicialComplex.orderComplex (Equiv.Perm (Fin 3))
 
+/-- A finite set of permutations on three letters is a face of `symmetricThreeBruhatComplex` if and
+only if it is nonempty and pairwise comparable in Bruhat order. -/
+theorem mem_symmetricThreeBruhatComplex_iff_bruhatLE {σ : Finset (Equiv.Perm (Fin 3))} :
+    σ ∈ symmetricThreeBruhatComplex ↔
+      σ.Nonempty ∧ ∀ u ∈ σ, ∀ v ∈ σ,
+        (permCoxeterSystem 3).BruhatLE u v ∨ (permCoxeterSystem 3).BruhatLE v u := by
+  classical
+  let : PartialOrder (Equiv.Perm (Fin 3)) := (permCoxeterSystem 3).bruhatPartialOrder
+  simp only [symmetricThreeBruhatComplex, AbstractSimplicialComplex.mem_orderComplex_iff',
+    CoxeterSystem.bruhatPartialOrder_le]
+
 /-- A face is a nonempty set containing at most one permutation of each Coxeter length. -/
 @[simp]
 theorem mem_symmetricThreeBruhatComplex_iff {σ : Finset (Equiv.Perm (Fin 3))} :

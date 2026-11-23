@@ -144,7 +144,7 @@ theorem exists_equiv_restrict_eq_adicOfIrreducible_X_sub_one (hn : (n : k) ≠ 0
     ∃ e : (normalizedFactors (X ^ n - 1 : k[X])).toFinset ≃
         {P : Place k (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k))) //
           P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (1 : k))},
-      ∀ q, Place.relativeDegree k (RatFunc k) (e q).1 = (q : k[X]).natDegree := by
+      ∀ q, Place.relativeDegree k (RatFunc k) (e q).val = (q : k[X]).natDegree := by
   set P := Place.adicOfIrreducible (irreducible_X_sub_C (1 : k))
   have hX : (RatFunc.X : RatFunc k) ∈ P.integers := Place.X_mem_integers_adicOfIrreducible _
   -- The residue field of `t = 1` is `k`.
@@ -169,7 +169,7 @@ theorem exists_equiv_restrict_eq_adicOfIrreducible_X_sub_one (hn : (n : k) ≠ 0
   have hmonic₁ : (X ^ n - 1 : k[X]).Monic := by
     simpa using monic_X_pow_sub_C (1 : k) (NeZero.ne n)
   have hmonic (q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset) : (q : k[X]).Monic := by
-    have hq := Multiset.mem_toFinset.mp q.2
+    have hq := Multiset.mem_toFinset.mp q.property
     rw [← normalize_normalized_factor _ hq]
     exact monic_normalize (ne_zero_of_mem_normalizedFactors hq)
   have hprod : ∏ q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset,
@@ -181,7 +181,7 @@ theorem exists_equiv_restrict_eq_adicOfIrreducible_X_sub_one (hn : (n : k) ≠ 0
     (γ := fun q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset ↦
       (q : k[X]).map (σ : k →+* P.ResidueField)) (fun q ↦ (hmonic q).map _)
     (fun q ↦ by simpa using (irreducible_of_normalized_factor _
-      (Multiset.mem_toFinset.mp q.2)).map (mapEquiv σ))
+      (Multiset.mem_toFinset.mp q.property)).map (mapEquiv σ))
     (fun q r h ↦ Subtype.ext (map_injective _ σ.injective h)) hprod
   exact ⟨e, fun q ↦ (he q).trans (natDegree_map _)⟩
 
@@ -224,12 +224,12 @@ theorem exists_setOf_restrict_eq_adicOfIrreducible_X_sub_one_eq_pair
     have h' := congrArg natDegree h
     rw [natDegree_X_sub_C, hdeg₂] at h'
     omega
-  refine ⟨(e ⟨_, h₁⟩).1, (e ⟨_, h₂⟩).1, fun h ↦ hne ?_, ?_, ?_, ?_⟩
+  refine ⟨(e ⟨_, h₁⟩).val, (e ⟨_, h₂⟩).val, fun h ↦ hne ?_, ?_, ?_, ?_⟩
   · simpa using e.injective (Subtype.ext h)
   · ext P
     refine ⟨fun hP ↦ ?_, ?_⟩
-    · have hmem := (e.symm ⟨P, hP⟩).2
-      have hP' : P = (e (e.symm ⟨P, hP⟩)).1 := by simp
+    · have hmem := (e.symm ⟨P, hP⟩).property
+      have hP' : P = (e (e.symm ⟨P, hP⟩)).val := by simp
       simp only [hfac, Multiset.insert_eq_cons, Multiset.toFinset_cons,
         Multiset.toFinset_singleton, Finset.mem_insert, Finset.mem_singleton] at hmem
       rcases hmem with h | h
@@ -242,7 +242,7 @@ theorem exists_setOf_restrict_eq_adicOfIrreducible_X_sub_one_eq_pair
         congr 2
         exact Subtype.ext h
     · rintro (rfl | rfl)
-      exacts [(e _).2, (e _).2]
+      exacts [(e _).property, (e _).property]
   · rw [he]
     exact natDegree_X_sub_C 1
   · rw [he]
