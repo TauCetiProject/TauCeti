@@ -109,8 +109,6 @@ theorem isRegular_map_of_span_range_eq_maximalIdeal {ι : Type*} [Finite ι] {z 
     (hspan : span (Set.range z) = maximalIdeal R)
     (hcard : Nat.card ι ≤ (maximalIdeal R).spanFinrank) {l : List ι} (hl : l.Nodup) :
     IsRegular R (l.map z) := by
-  classical
-  let : Fintype ι := Fintype.ofFinite ι
   obtain ⟨l', hnodup, hmem⟩ := hl.exists_append_forall_mem
   have hofList : ofList ((l ++ l').map z) = maximalIdeal R := by
     rw [ofList, ← hspan]
@@ -118,7 +116,7 @@ theorem isRegular_map_of_span_range_eq_maximalIdeal {ι : Type*} [Finite ι] {z 
       simp only [Set.mem_ofPred_eq, List.mem_map, Set.mem_range, hmem, true_and])
   have hlen : ((l ++ l').map z).length ≤ (maximalIdeal R).spanFinrank := by
     rw [List.length_map]
-    exact (hnodup.length_le_card.trans_eq (Nat.card_eq_fintype_card (α := ι)).symm).trans hcard
+    exact hnodup.length_le_natCard.trans hcard
   have hfull := isRegular_of_ofList_eq_maximalIdeal hofList hlen
   rw [List.map_append] at hfull
   exact hfull.of_append_left
