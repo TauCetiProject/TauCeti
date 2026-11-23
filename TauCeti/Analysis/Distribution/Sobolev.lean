@@ -12,7 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 
 /-!
 # Bessel-potential regularity from first derivatives
@@ -45,6 +45,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
+* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_eq_of_toDistr_eq`: the element of
+  `H^{s,p}` defined by the tempered distribution of `v ∈ H^{s,p}` is `v`.
 * `TemperedDistribution.MemSobolev.toBesselPotentialSpace_add`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_neg`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sub`,
@@ -175,6 +177,13 @@ theorem MemSobolev.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
     (hf : MemSobolev s p f) : MemSobolev s p (c • f) := by
   rw [← smul_one_smul ℂ c f]
   exact hf.smul _
+
+/-- The element of `H^{s,p}` defined by `f` is `v` whenever `f` is the tempered distribution
+of `v`. -/
+theorem MemSobolev.toBesselPotentialSpace_eq_of_toDistr_eq {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {v : BesselPotentialSpace E F s p}
+    (h : f = v.toDistr) : hf.toBesselPotentialSpace = v :=
+  BesselPotentialSpace.ext (by rw [toBesselPotentialSpace_toDistr, h])
 
 /-- The element of `H^{s,p}` defined by a sum is the sum of the elements defined by the
 summands. -/
@@ -405,7 +414,8 @@ theorem MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add
         (hC k ξ).trans (by gcongr; exact Real.le_norm_self _)
     _ ≤ _ := by
         gcongr
-        exact Real.one_add_sq_rpow_neg_le (norm_pos_iff.mpr hξ) k
+        simpa [add_comm, one_div] using
+          TauCeti.norm_sq_add_rpow_div_two_le zero_le_one hξ (neg_nonpos.2 (Nat.cast_nonneg k))
 
 /-- For `1 < p < ∞`, `H^{s,p}` is contained in `H^{s',p}` whenever `s' ≤ s`. For `p = 2` this is
 `MemSobolev.mono`. -/

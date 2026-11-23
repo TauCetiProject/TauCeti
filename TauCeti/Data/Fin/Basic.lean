@@ -30,9 +30,10 @@ import Mathlib.Tactic.Ring
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, sums of families vanishing beyond an index, and the cyclic index
-arithmetic of `Fin 3`.
+permutations of `Fin 2`, the consecutive pair `(castSucc i, succ i)` that is the extreme pair
+`(0, n)` of `Fin (n + 1)`, sums of indices and of reversed indices, indicator sums indexed by
+`Fin n`, the final value of a partial product, sums of families vanishing beyond an index, and the
+cyclic index arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -60,6 +61,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
+* `Fin.sum_val_eq_choose_two`: the sum of the values of `Fin n` is `n.choose 2`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
 * `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
@@ -157,6 +159,10 @@ range, so the value is a `dite` rather than a plain application.
   ends below it and never equals it drops below the level at some step.
 * `Antitone.eq_of_mem_Ioo_of_mem_Icc_fin`: for an antitone `Fin` family, the open interval between
   two consecutive values meets the closed interval of no other step.
+* `Fin.append_init_castLE`, `Fin.append_init_zero`, `Fin.append_init_last`,
+  `Fin.append_init_eq_or_eq`, `Fin.forall_append_init_castSucc_succ`: two chains with a common
+  point glue to the chain `Fin.append (Fin.init x₁) x₂`, whose endpoints, points and steps are
+  those of the two chains.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 * `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
@@ -216,10 +222,28 @@ end Finset
 
 namespace Fin
 
+/-- Two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are the extreme pair `(0, n)`
+only when `n = 1`. -/
+theorem castSucc_eq_zero_and_succ_eq_last_iff {n : ℕ} (i : Fin n) :
+    i.castSucc = 0 ∧ i.succ = last n ↔ n = 1 := by
+  rw [Fin.ext_iff, Fin.ext_iff, val_castSucc, val_zero, val_succ, val_last]
+  have := i.isLt
+  constructor <;> intro h <;> omega
+
+/-- For `n ≥ 2`, two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are never the
+extreme pair `(0, n)`. -/
+theorem not_castSucc_eq_zero_and_succ_eq_last {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
+    ¬ (i.castSucc = 0 ∧ i.succ = last n) :=
+  mt (castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
+
 /-- The last index of the initial segment ending at `i` embeds as `i`. -/
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
   rfl
+
+/-- The sum of the positions `0, 1, …, n - 1` is `n.choose 2`. -/
+theorem sum_val_eq_choose_two (n : ℕ) : ∑ i : Fin n, (i : ℕ) = n.choose 2 := by
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ i) n, Finset.sum_range_id, Nat.choose_two_right]
 
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
 theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
@@ -264,6 +288,17 @@ theorem partialProd_last_eq_prod_ofFn {M : Type*} [Monoid M] {n : ℕ} (f : Fin 
 theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) :
     partialProd f (last n) = ∏ i, f i := by
   rw [partialProd_last_eq_prod_ofFn, prod_ofFn]
+
+/-- The partial product up to the `i`-th entry is the product of the entries of index less than
+`i`. -/
+@[to_additive /-- The partial sum up to the `i`-th entry is the sum of the entries of index less
+than `i`. -/]
+theorem partialProd_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M)
+    (i : Fin (n + 1)) : partialProd f i.castSucc = ∏ k < i, f k := by
+  rw [partialProd, val_castSucc, List.prod_take_ofFn]
+  congr 1
+  ext k
+  simp
 
 /-- The last entry times the preceding partial product is the product of all entries. -/
 theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
@@ -962,6 +997,61 @@ theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : 
   obtain ⟨i, hi⟩ := TauCeti.exists_mem_Icc_castSucc_succ (β := αᵒᵈ)
     (fun j ↦ OrderDual.toDual (g j)) hk (x := OrderDual.toDual c) ⟨h0.le, hl.le⟩
   exact ⟨i, lt_of_le_of_ne hi.2 (hne _), lt_of_le_of_ne hi.1 (hne _).symm⟩
+
+/-! ### Gluing two chains at a common point
+
+A chain `x₁ : Fin (k₁ + 1) → α` ending where a chain `x₂ : Fin (k₂ + 1) → α` starts glues to the
+chain `Fin.append (Fin.init x₁) x₂ : Fin (k₁ + k₂ + 1) → α`, which runs through `x₁` and then
+through `x₂`. -/
+
+section AppendInit
+
+variable {α β : Type*} {k₁ k₂ : ℕ} {x₁ : Fin (k₁ + 1) → α} {x₂ : Fin (k₂ + 1) → α}
+
+/-- Two chains glued at a common point run through the first one on its indices. -/
+theorem append_init_castLE (h : x₁ (last k₁) = x₂ 0) (l : Fin (k₁ + 1)) :
+    append (init x₁) x₂ (castLE (by omega) l : Fin (k₁ + k₂ + 1)) = x₁ l := by
+  rcases eq_castSucc_or_eq_last l with ⟨l, rfl⟩ | rfl
+  · rw [castLE_castSucc, append_left', init]
+  · rw [show (castLE (by omega) (last k₁) : Fin (k₁ + (k₂ + 1))) = natAdd k₁ 0 from
+      Fin.ext (by simp), append_right, h]
+
+/-- Two chains glued at a common point start where the first one starts. -/
+theorem append_init_zero (h : x₁ (last k₁) = x₂ 0) :
+    append (init x₁) x₂ (0 : Fin (k₁ + k₂ + 1)) = x₁ 0 := by
+  rw [← castLE_zero (show k₁ + 1 ≤ k₁ + k₂ + 1 by omega), append_init_castLE h]
+
+/-- Two chains glued at a common point end where the second one ends. -/
+theorem append_init_last : append (init x₁) x₂ (last (k₁ + k₂)) = x₂ (last k₂) := by
+  rw [← natAdd_last, append_right]
+
+/-- Every point of two chains glued together is a point of one of them. -/
+theorem append_init_eq_or_eq (l : Fin (k₁ + k₂ + 1)) :
+    (∃ l₁, append (init x₁) x₂ l = x₁ l₁) ∨ ∃ l₂, append (init x₁) x₂ l = x₂ l₂ :=
+  addCases (motive := fun l : Fin (k₁ + (k₂ + 1)) ↦
+    (∃ l₁, append (init x₁) x₂ l = x₁ l₁) ∨ ∃ l₂, append (init x₁) x₂ l = x₂ l₂)
+    (fun l ↦ .inl ⟨l.castSucc, append_left _ _ l⟩) (fun l ↦ .inr ⟨l, append_right _ _ l⟩) l
+
+/-- **The steps of two chains glued together are the steps of the two chains.** If every step
+`(x₁ j.castSucc, x₁ j.succ)` of the first chain, labelled by `z₁ j`, and every step of the second
+chain, labelled by `z₂ j`, satisfies `P`, then so does every step of the glued chain, labelled by
+`Fin.append z₁ z₂`. -/
+theorem forall_append_init_castSucc_succ {z₁ : Fin k₁ → β} {z₂ : Fin k₂ → β}
+    (h : x₁ (last k₁) = x₂ 0) {P : α → α → β → Prop}
+    (h₁ : ∀ j, P (x₁ j.castSucc) (x₁ j.succ) (z₁ j))
+    (h₂ : ∀ j, P (x₂ j.castSucc) (x₂ j.succ) (z₂ j)) (j : Fin (k₁ + k₂)) :
+    P (append (init x₁) x₂ j.castSucc) (append (init x₁) x₂ j.succ) (append z₁ z₂ j) := by
+  refine addCases (motive := fun j : Fin (k₁ + k₂) ↦
+    P (append (init x₁) x₂ j.castSucc) (append (init x₁) x₂ j.succ) (append z₁ z₂ j))
+    (fun j ↦ ?_) (fun j ↦ ?_) j
+  · rw [castSucc_castAdd, append_left, append_left, init,
+      show (castAdd k₂ j).succ = (castLE (by omega) j.succ : Fin (k₁ + k₂ + 1)) from
+        Fin.ext (by simp), append_init_castLE h]
+    exact h₁ j
+  · rw [← natAdd_castSucc, succ_natAdd, append_right, append_right, append_right]
+    exact h₂ j
+
+end AppendInit
 
 end Fin
 

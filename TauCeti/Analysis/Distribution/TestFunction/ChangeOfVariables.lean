@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
-import Mathlib.Analysis.Calculus.Deriv.Abs
-import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -96,12 +94,8 @@ private theorem exists_eqOn_abs_det_fderiv_symm [FiniteDimensional ℝ E] {K : S
   obtain ⟨χ, hχ, -⟩ := exists_eventually_eq_one (n := (⊤ : ℕ∞)) hL hLW
   -- On the target the Jacobian is smooth, since its determinant does not vanish there.
   have hg : ContDiffOn ℝ (⊤ : ℕ∞) (fun y ↦ |(fderiv ℝ e.symm y).det|)
-      (⟨e.target, e.open_target⟩ ⊓ Ω : Opens E) := fun y hy ↦
-    (ContDiffAt.comp (g := fun t : ℝ ↦ |t|) y
-      (contDiffAt_abs (e.symm.det_fderiv_ne_zero_of_contDiffOn he' he (by simp) hy.1))
-      (ContinuousLinearMap.contDiff_det.contDiffAt.comp y
-        ((he'.fderiv_of_isOpen e.open_target (by simp)).contDiffAt
-          (e.open_target.mem_nhds hy.1)))).contDiffWithinAt
+      (⟨e.target, e.open_target⟩ ⊓ Ω : Opens E) :=
+    (e.symm.contDiffOn_abs_det_fderiv_of_contDiffOn (by simp) he' he).mono fun _ hy ↦ hy.1
   obtain ⟨ρ, hρ⟩ := exists_coe_eq_smul_of_contDiffOn hg χ
   exact ⟨ρ, fun y hy ↦ by simp [hρ, hχ.self_of_nhdsSet y hy]⟩
 
