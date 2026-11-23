@@ -34,6 +34,8 @@ The real chart of an injective map is injective (`TauCeti.Complex.realChart_inje
 the real chart of a map injective on a set, on the corresponding set
 (`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
 of its image (`TauCeti.Complex.image_realChart_preimage`).
+Subtracting a real number `c` is subtracting `(c, 0)` in real coordinates
+(`TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero`).
 -/
 
 public section
@@ -156,6 +158,11 @@ theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff
 theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :
     Function.Injective (realChart f) :=
   Complex.equivRealProdCLM.injective.comp (hf.comp Complex.equivRealProdCLM.symm.injective)
+
+/-- In real coordinates, subtracting `(c, 0)` is subtracting the real number `c`. -/
+theorem equivRealProdCLM_symm_sub_prodMk_zero (z : ℝ × ℝ) (c : ℝ) :
+    Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
+  apply Complex.ext <;> simp
 
 /-- The real chart of a map injective on the image of `s` in `ℂ` is injective on `s`. -/
 theorem injOn_realChart {f : ℂ → ℂ} {s : Set (ℝ × ℝ)}
