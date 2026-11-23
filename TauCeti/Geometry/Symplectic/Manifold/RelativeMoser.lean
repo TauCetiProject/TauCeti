@@ -356,19 +356,10 @@ private theorem moserRate_eq_zero {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ�
   have hvel : mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
       (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) (moserFamily σ₀ σ₁).val) y =
       deriv Real.smoothTransition t • (σ₁ - σ₀).val y := by
-    have h := (moserFamily σ₀ σ₁).hasDerivAt_mpullback_prodMk_timeDeriv t y
-    simp only [moserFamily, SmoothForm.mpullback_prodMk_lineMapFamily, SmoothForm.coe_mpullback,
-      SmoothForm.coe_timeDeriv] at h
-    refine h.unique ?_
-    have hc : HasDerivAt Real.smoothTransition (deriv Real.smoothTransition t) t :=
-      ((Real.smoothTransition.contDiff (n := 1)).differentiable one_ne_zero t).hasDerivAt
-    -- The values of the slices are read in the model fibre `E [⋀^Fin 2]→L[ℝ] ℝ`.
-    have h2 : HasDerivAt (F := E [⋀^Fin 2]→L[ℝ] ℝ)
-        (fun u ↦ (σ₀.val y : E [⋀^Fin 2]→L[ℝ] ℝ) +
-          Real.smoothTransition u • ((σ₁ - σ₀).val y : E [⋀^Fin 2]→L[ℝ] ℝ))
-        (deriv Real.smoothTransition t • ((σ₁ - σ₀).val y : E [⋀^Fin 2]→L[ℝ] ℝ)) t :=
-      (hc.smul_const _).const_add _
-    exact h2
+    simpa only [moserFamily, SmoothForm.coe_mpullback, SmoothForm.coe_timeDeriv, Submodule.coe_smul,
+      Pi.smul_apply] using
+      congrArg (fun β ↦ β.val y) (SmoothForm.mpullback_prodMk_timeDeriv_lineMapFamily σ₀ σ₁
+        (Real.smoothTransition.contDiff (n := ⊤)) t)
   -- The slice at time `t` is closed, since `σ₁ - σ₀ = dβ` is exact.
   have hclosed : (σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).IsClosed := by
     refine h₀.add (SmoothForm.IsClosed.smul _ ?_)
@@ -526,12 +517,9 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
   have hcomp : ⇑Φ ∘ (Subtype.val : W → M) = Subtype.val ∘ ⇑Ψ := funext hΦW
   -- On `W`, the differential of `Φ` at `f q` is that of `Ψ` at `g q`, the identity.
   have hΦ1 (q : Q) : mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
-    ext v
-    have h := Manifold.tangentSpaceOpenEquiv_mfderiv_apply (I := I) (I' := I) (f := ⇑Ψ) (A := ⇑Φ)
-      (x := g q) hcomp.symm v
-    rw [Manifold.tangentSpaceOpenEquiv_apply, hΨ1 (g q) (mem_range_self q) (hβW1 q (hη q))] at h
-    exact (congrArg (mfderiv I I Φ (f q))
-      (Manifold.tangentSpaceOpenEquiv_apply (I := I) (g q) v)).symm.trans h.symm
+    exact ContinuousLinearMap.ext fun v ↦
+      (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I) hcomp.symm v).symm.trans
+        (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q (hη q))) v)
   refine ⟨Φ, fun q ↦ (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q))),
     ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩, ?_, hΦ1⟩
   -- On `W`, the pullback by `Φ` is the pullback by `Ψ` of the restricted forms.
@@ -578,11 +566,9 @@ theorem exists_diffeomorph_opens_of_eq_along [SecondCountableTopology M]
   refine ⟨U₀, U₁, Φ.subtype hU₀₁, fun q ↦
     ⟨hfU (mem_range_self q), (Φ.subtype_apply_coe hU₀₁ _).trans (hΦf q), ?_⟩, ?_⟩
   · -- The restriction `φ` has the differential of `Φ`, read through the inclusions.
-    ext v
-    have h := Manifold.tangentSpaceOpenEquiv_mfderiv_apply (I' := I) (f := Φ.subtype hU₀₁)
-      (A := Φ) (x := ⟨f q, hfU (mem_range_self q)⟩) (funext (Φ.subtype_apply_coe hU₀₁)) v
-    rw [Manifold.tangentSpaceOpenEquiv_apply, Manifold.tangentSpaceOpenEquiv_apply, hΦ1 q] at h
-    exact h
+    exact ContinuousLinearMap.ext fun v ↦
+      (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I)
+        (funext fun x ↦ Φ.subtype_apply_coe hU₀₁ x) v).trans (DFunLike.congr_fun (hΦ1 q) v)
   apply Subtype.ext
   funext z
   rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_subtypeVal Φ.contMDiff

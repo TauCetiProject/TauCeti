@@ -9,15 +9,18 @@ public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
-# The Japanese bracket in `L²` and the `L¹` bound by a weighted `L²` norm
+# The Japanese bracket in `Lᵖ` and the `L¹` bound by a weighted `L²` norm
 
 Let `V` be a finite-dimensional real normed space of dimension `d`. For `2s > d` the negative
 power `(1 + ‖x‖ ^ 2) ^ (-s / 2)` of the Japanese bracket is square integrable for every additive
 Haar measure (`TauCeti.memLp_rpow_neg_one_add_norm_sq`), since its square is the integrable
-function `(1 + ‖x‖ ^ 2) ^ (-2s / 2)` (`integrable_rpow_neg_one_add_norm_sq`). Consequently a
+function `(1 + ‖x‖ ^ 2) ^ (-2s / 2)` (`integrable_rpow_neg_one_add_norm_sq`). More generally, on a
+nontrivial space and for `0 < p < ∞`, the power lies in `Lᵖ` exactly when `d < p s`
+(`TauCeti.memLp_rpow_neg_one_add_norm_sq_iff`). A
 function of polynomial growth `C (1 + ‖x‖) ^ k` becomes square integrable after multiplication by
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` once `d < -2 (s + k)`
 (`TauCeti.memLp_two_one_add_norm_sq_rpow_smul_of_norm_le`). For every `s`, the
@@ -62,6 +65,23 @@ theorem memLp_rpow_neg_one_add_norm_sq [NormedSpace ℝ V] [FiniteDimensional �
     ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← Real.rpow_mul hpos.le]
   ring_nf
 
+/-- **Exact `Lᵖ` integrability of the Japanese bracket.** On a nontrivial finite-dimensional real
+normed space of dimension `d`, for `0 < p < ∞`, `x ↦ (1 + ‖x‖ ^ 2) ^ (-s / 2)` lies in `Lᵖ` of an
+additive Haar measure exactly when `d < p s`. -/
+theorem memLp_rpow_neg_one_add_norm_sq_iff [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+    [BorelSpace V] [Nontrivial V] (μ : Measure V) [μ.IsAddHaarMeasure] (s : ℝ) {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) :
+    MemLp (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-s / 2)) p μ ↔ (finrank ℝ V : ℝ) < p.toReal * s := by
+  have hc : Continuous fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-s / 2) :=
+    (by fun_prop : Continuous fun x : V ↦ 1 + ‖x‖ ^ 2).rpow_const fun x ↦
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2).ne'
+  rw [← integrable_norm_rpow_iff hc.aestronglyMeasurable hp0 hp,
+    ← integrable_rpow_neg_one_add_norm_sq_iff μ]
+  refine integrable_congr (Filter.Eventually.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_mul (by positivity)]
+  ring_nf
+
 /-- **A negative Japanese bracket weight makes polynomial growth square integrable.** If
 `‖f x‖ ≤ C (1 + ‖x‖) ^ k` almost everywhere, then `x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x` is square
 integrable for every additive Haar measure on a finite-dimensional real normed space of dimension
@@ -78,7 +98,7 @@ theorem memLp_two_one_add_norm_sq_rpow_smul_of_norm_le [NormedSpace ℝ V] [Fini
   -- `⟨x⟩ ^ s (1 + ‖x‖) ^ k ≤ 2 ^ k ⟨x⟩ ^ (s + k)`.
   have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hx) (by positivity)
   have hk : (1 + ‖x‖) ^ k ≤ 2 ^ k * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
-    simpa [one_add_one_eq_two] using one_add_mul_norm_pow_le zero_le_one x k
+    simpa [one_add_one_eq_two] using Real.one_add_mul_abs_rpow_le ‖x‖ zero_le_one k.cast_nonneg
   rw [norm_smul, Real.norm_of_nonneg (by positivity)]
   calc (1 + ‖x‖ ^ 2) ^ (s / 2) * ‖f x‖
       ≤ (1 + ‖x‖ ^ 2) ^ (s / 2) * (C * (2 ^ k * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2))) := by

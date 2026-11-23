@@ -45,8 +45,9 @@ covariant in the coefficients.
 * `TauCeti.LieModule.Cohomology.cochainMap_d`: `cochainMap` commutes with the Chevalley–Eilenberg
   differential.
 * `TauCeti.LieModule.Cohomology.oneCochainEquiv_cochainMap`,
-  `TauCeti.LieModule.Cohomology.twoCochainEquiv_cochainMap`: compatibility with the low-degree
-  cochain identifications.
+  `TauCeti.LieModule.Cohomology.twoCochainEquiv_cochainMap`,
+  `TauCeti.LieModule.Cohomology.cochainMap_twoCochainEquiv_symm`: compatibility with the
+  low-degree cochain identifications.
 
 ## References
 
@@ -179,6 +180,14 @@ theorem twoCochainEquiv_cochainMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L
   congr 2
   ext i
   exact Fin.cases rfl (fun j ↦ Fin.cases rfl (fun k ↦ k.elim0) j) i
+
+/-- In degree two, `cochainMap` corresponds under the inverse of `twoCochainEquiv` to
+`twoCochainMap`. -/
+theorem cochainMap_twoCochainEquiv_symm (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (c : twoCochain R L M) :
+    cochainMap e φ 2 ((twoCochainEquiv R L M).symm c) =
+      (twoCochainEquiv R L' M').symm (twoCochainMap e φ c) := by
+  rw [LinearEquiv.eq_symm_apply, twoCochainEquiv_cochainMap, LinearEquiv.apply_symm_apply]
 
 end CochainMap
 

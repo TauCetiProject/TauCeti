@@ -21,10 +21,13 @@ index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with 
 terms of positive norm), each term dominates the sum of its predecessors and the partial sums
 diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
 series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
+**Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
+products with a sequence of bounded partial sums have Cauchy partial sums.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
-norm. Finite products of geometric series converge unconditionally over all exponent vectors,
+norm; the affine case `∑ (a k + b) xᵏ` holds more generally in a normed division ring.
+Finite products of geometric series converge unconditionally over all exponent vectors,
 giving the product Cauchy kernel expansion. Over a complete normed field, the Lambert series
 `∑_{n ≥ 1} f(qⁿw)` is the power series `∑_{k ≥ 1} c(k - 1) qᵏ wᵏ / (1 - qᵏ)` in `w` for every
 power series `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` whose coefficients grow slowly enough. This applies
@@ -32,6 +35,11 @@ to `z / (1 - z)²`, `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients ar
 
 The geometric weights `(1 - q) qᵏ` sum to `1` and have mean `q / (1 - q)`, so over a normed
 field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`.
+
+Dirichlet's test `Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub` is adapted from the
+lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Hypergeometric/AnalyticProperties.lean`, where it is
+`exists_tendsto_sum_mul_of_bdd_variation`.
 -/
 
 public section
@@ -191,6 +199,27 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
 
+/-- **Dirichlet's test** for coefficients of bounded variation. If `f n → 0`, the series of the
+differences `‖f (n + 1) - f n‖` converges, and the partial sums of `z` are bounded, then the
+partial sums of `∑ f n • z n` form a Cauchy sequence. Mathlib's
+`Monotone.cauchySeq_series_mul_of_tendsto_zero_of_bounded` is the case of a monotone real `f`. -/
+theorem _root_.Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub {R E : Type*}
+    [SeminormedRing R] [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] {f : ℕ → R}
+    {z : ℕ → E} {b : ℝ} (hf0 : Filter.Tendsto f Filter.atTop (nhds 0))
+    (hvar : Summable fun n ↦ ‖f (n + 1) - f n‖) (hzb : ∀ n, ‖∑ i ∈ Finset.range n, z i‖ ≤ b) :
+    CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i • z i := by
+  rw [← cauchySeq_shift 1]
+  simp_rw [Finset.sum_range_by_parts _ _ (_ + 1), add_tsub_cancel_right, sub_eq_add_neg]
+  refine CauchySeq.add (Filter.Tendsto.cauchySeq (x := 0) ?_) (CauchySeq.neg ?_)
+  · refine squeeze_zero_norm (fun n ↦ (norm_smul_le _ _).trans
+      (mul_le_mul_of_nonneg_left (hzb (n + 1)) (norm_nonneg _))) ?_
+    simpa using (tendsto_norm_zero.comp hf0).mul_const b
+  · refine cauchySeq_range_of_norm_bounded (g := fun i ↦ b * ‖f (i + 1) + -f i‖)
+      (by simpa only [← sub_eq_add_neg] using (hvar.mul_left b).hasSum.tendsto_sum_nat.cauchySeq)
+      fun i ↦ ?_
+    rw [mul_comm]
+    exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hzb _) (norm_nonneg _))
+
 variable {K : Type*} [NormedField K]
 
 /-- The geometric series with coefficients `(k + 1)²` sums to `(1 + x) / (1 - x)³`. -/
@@ -207,6 +236,21 @@ theorem hasSum_succ_sq_mul_geometric_of_norm_lt_one {x : K} (hx : ‖x‖ < 1) :
       simp only [this, norm_one, lt_self_iff_false] at hx)
     field_simp
     ring
+
+/-- The geometric series with affine coefficients `a k + b` sums to
+`(b + (a - b) x) / (1 - x)²`, in any normed division ring. -/
+theorem hasSum_affine_mul_geometric_of_norm_lt_one {D : Type*} [NormedDivisionRing D] {x : D}
+    (hx : ‖x‖ < 1) (a b : D) :
+    HasSum (fun k : ℕ ↦ (a * k + b) * x ^ k) ((b + (a - b) * x) / (1 - x) ^ 2) := by
+  have hx1 : 1 - x ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [← h] at hx
+  convert ((hasSum_coe_mul_geometric_of_norm_lt_one hx).mul_left a).add
+    ((hasSum_geometric_of_norm_lt_one hx).mul_left b) using 1
+  · ext k
+    rw [add_mul, mul_assoc]
+  · have hc : (1 - x) * ((1 - x) ^ 2)⁻¹ = (1 - x)⁻¹ := by
+      rw [pow_two, mul_inv_rev, ← mul_assoc, mul_inv_cancel₀ hx1, one_mul]
+    rw [div_eq_mul_inv, div_eq_mul_inv, ← hc]
+    noncomm_ring
 
 /-- The geometric series with coefficient and exponent both shifted by one. -/
 theorem tsum_natCast_succ_mul_pow_succ (r : K) (hr : ‖r‖ < 1) :
@@ -337,10 +381,10 @@ mean `q / (1 - q)`: `∑ₖ (1 - q) qᵏ (c k + B) = c q / (1 - q) + B`, for `�
 theorem hasSum_one_sub_mul_geometric_mul_affine {q : K} (hq : ‖q‖ < 1) (c B : K) :
     HasSum (fun k : ℕ ↦ (1 - q) * q ^ k * (c * k + B)) (c * q / (1 - q) + B) := by
   have hq1 : 1 - q ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [← h] at hq
-  convert ((hasSum_coe_mul_geometric_of_norm_lt_one hq).mul_left ((1 - q) * c)).add
-    ((hasSum_geometric_of_norm_lt_one hq).mul_left ((1 - q) * B)) using 1
+  convert (hasSum_affine_mul_geometric_of_norm_lt_one hq c B).mul_left (1 - q) using 1
   · ext k; ring
   · field_simp
+    ring
 
 variable [CompleteSpace K]
 

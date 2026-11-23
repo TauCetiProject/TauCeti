@@ -224,6 +224,14 @@ theorem map_subtype_injective_of_coprime_natCard {A : Rep.{u} k G}
     Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
   map_subtype_injective_of_coprime S (fun _ ↦ card_nsmul_eq_zero') hcop n
 
+omit [S.FiniteIndex] in
+/-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when the underlying
+additive group of `A` is a `p`-group (possibly infinite) and `p` is coprime to `[G : S]`. -/
+theorem map_subtype_injective_of_isAddPGroup {p : ℕ} {A : Rep.{u} k G}
+    (hA : IsAddPGroup p A) (hcop : p.Coprime S.index) (n : ℕ) :
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
+  map_subtype_injective_of_bijective_nsmul S (hA.nsmulEquiv hcop).bijective n
+
 /-- Corestriction from a finite-index subgroup commutes with the connecting maps of
 any short exact sequence of representations, in every ordinary cohomological degree. -/
 @[reassoc]

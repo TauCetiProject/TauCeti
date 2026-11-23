@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Codiscrete
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
+public import Mathlib.Topology.Metrizable.Basic
 
 import TauCeti.Topology.IsLocalHomeomorph
 
@@ -248,6 +249,20 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Codiscrete X) where
     simpa only [Function.comp_def, arrowHomeomorph_apply,
       Quiver.Total.comp_left, Quiver.Total.comp_right] using h
 
+instance instT2SpaceObjects [T2Space X] : T2Space (Codiscrete X) :=
+  (objectHomeomorph X).symm.t2Space
+
+instance instT2SpaceArrows [T2Space X] : T2Space (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).symm.t2Space
+
+instance instSecondCountableTopologyObjects [SecondCountableTopology X] :
+    SecondCountableTopology (Codiscrete X) :=
+  (objectHomeomorph X).isInducing.secondCountableTopology
+
+instance instSecondCountableTopologyArrows [SecondCountableTopology X] :
+    SecondCountableTopology (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).isInducing.secondCountableTopology
+
 /-- Composable arrows, in categorical order, have coordinates `(z, y, x)` when they run
 from `x` to `y` and then from `y` to `z`. The topology is the inherited subspace topology. -/
 def composablePairsHomeomorph :
@@ -366,6 +381,23 @@ instance instSecondCountableTopologyArrows [SecondCountableTopology G] :
 
 instance instCompactSpaceArrows [CompactSpace G] : CompactSpace (Quiver.Total (SingleObj G)) :=
   (arrowHomeomorph G).symm.compactSpace
+
+instance instT0SpaceArrows [T0Space G] : T0Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t0Space
+
+instance instT1SpaceArrows [T1Space G] : T1Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t1Space
+
+instance instRegularSpaceArrows [RegularSpace G] : RegularSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.regularSpace
+
+instance instFirstCountableTopologyArrows [FirstCountableTopology G] :
+    FirstCountableTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.firstCountableTopology
+
+instance instMetrizableSpaceArrows [TopologicalSpace.MetrizableSpace G] :
+    TopologicalSpace.MetrizableSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.metrizableSpace
 
 /-- For a discrete label space, the source map of `SingleObj G` is a local homeomorphism. -/
 theorem isLocalHomeomorph_source [DiscreteTopology G] :

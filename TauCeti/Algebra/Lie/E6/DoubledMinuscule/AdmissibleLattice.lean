@@ -108,27 +108,8 @@ theorem cartanGeneratorMatrixQ_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
 /-- The rational doubled minuscule matrices satisfy the type-`E₆` Serre relations. -/
 theorem isSerreSystemQ :
     TauCeti.IsSerreSystem ℚ (CartanMatrix.E 6)ᵀ cartanGeneratorMatrixQ raisingMatrixQ
-      loweringMatrixQ := by
-  have h := isSerreSystem.map (matrixIntCastLieHom ℚ)
-  have hH : matrixIntCastLieHom ℚ ∘ cartanGeneratorMatrix = cartanGeneratorMatrixQ := by
-    funext i
-    rfl
-  have hE : matrixIntCastLieHom ℚ ∘ raisingMatrix = raisingMatrixQ := by
-    funext i
-    rfl
-  have hF : matrixIntCastLieHom ℚ ∘ loweringMatrix = loweringMatrixQ := by
-    funext i
-    rfl
-  rw [hH, hE, hF] at h
-  refine { h with
-    ad_pow_lie_E_E := ?_
-    ad_pow_lie_F_F := ?_ }
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_E_E i j
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_F_F i j
+      loweringMatrixQ :=
+  (isSerreSystem.map (matrixIntCastLieHom ℚ)).changeScalars
 
 /-- At every node, the rational Cartan, raising, and lowering matrices of the doubled minuscule
 representation form an `sl₂` triple. -/
@@ -208,11 +189,11 @@ theorem rep_serreRootGenerator_sq (k : Fin 6 ⊕ Fin 6) :
   | inl i =>
       simpa only [TauCeti.serreRootGenerator_inl, rep_ι_apply,
         rationalSerreRepresentation_serreE, LinearMap.zero_apply] using
-        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (raisingMatrixQ_sq i) v
+        Matrix.mulVec_mulVec_eq_zero_of_sq_eq_zero (raisingMatrixQ_sq i) v
   | inr i =>
       simpa only [TauCeti.serreRootGenerator_inr, rep_ι_apply,
         rationalSerreRepresentation_serreF, LinearMap.zero_apply] using
-        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (loweringMatrixQ_sq i) v
+        Matrix.mulVec_mulVec_eq_zero_of_sq_eq_zero (loweringMatrixQ_sq i) v
 
 /-- Every represented Serre root generator acts nilpotently. -/
 theorem isNilpotent_rep_serreRootGenerator (k : Fin 6 ⊕ Fin 6) :

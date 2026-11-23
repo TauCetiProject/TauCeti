@@ -61,6 +61,11 @@ that `k !` is a unit, its ordinary-derivative counterpart
   `MvPolynomial.natDegree_powerSubstitution_le`: the exponents of `F(X, X ^ B)` are among the
   weights `μ 0 + B * μ 1` of the exponents of `F`, so its degree is at most
   `degreeOf 0 F + B * degreeOf 1 F`.
+* `MvPolynomial.powerSubstitution_mem_degreeLT`,
+  `MvPolynomial.map_restrictSupport_powerSubstitution`,
+  `MvPolynomial.powerSubstitutionEquivDegreeLT`: for `0 < B`, the substitution is a linear
+  equivalence from the polynomials supported on the weighted strip
+  `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` onto `Polynomial.degreeLT R N`.
 * `MvPolynomial.powerSubstitution_map`: naturality under a ring map of the coefficients.
 * `MvPolynomial.aeval_powerSubstitution`, `MvPolynomial.eval_powerSubstitution`: `F(X, X ^ B)`
   evaluated at `a` is `F(a, a ^ B)`.
@@ -207,6 +212,84 @@ theorem eval_powerSubstitution (B : ℕ) (a : R) (F : MvPolynomial (Fin 2) R) :
     (powerSubstitution B F).eval a = eval ![a, a ^ B] F := by
   rw [← Polynomial.coe_aeval_eq_eval, ← aeval_eq_eval]
   exact aeval_powerSubstitution B a F
+
+/-! ### The weighted strip and `Polynomial.degreeLT` -/
+
+/-- A polynomial supported on the exponents of weight `μ 0 + B * μ 1` below `N` is sent by the
+power substitution to a polynomial of degree below `N`. -/
+theorem powerSubstitution_mem_degreeLT {B N : ℕ} {F : MvPolynomial (Fin 2) R}
+    (hF : F ∈ restrictSupport R {μ : Fin 2 →₀ ℕ | weight ![1, B] μ < N}) :
+    powerSubstitution B F ∈ Polynomial.degreeLT R N := by
+  refine Polynomial.mem_degreeLT.mpr ((Polynomial.degree_lt_iff_coeff_zero _ _).mpr fun n hn ↦ ?_)
+  refine Polynomial.notMem_support_iff.mp fun hmem ↦ ?_
+  obtain ⟨μ, hμ, rfl⟩ := Finset.mem_image.mp (support_powerSubstitution_subset B F hmem)
+  have hμN : weight ![1, B] μ < N := hF hμ
+  rw [weight_vecCons_one] at hμN
+  omega
+
+/-- For `0 < B`, the power substitution maps the polynomials supported on the weighted strip
+`{μ | μ 0 < B ∧ weight ![1, B] μ < N}` onto `Polynomial.degreeLT R N`: every `X ^ n` with `n < N`
+is the image of `Z ^ (n % B) * W ^ (n / B)`. -/
+theorem map_restrictSupport_powerSubstitution {B : ℕ} (hB : 0 < B) (N : ℕ) :
+    (restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ weight ![1, B] μ < N}).map
+      (powerSubstitution B).toLinearMap = Polynomial.degreeLT R N := by
+  classical
+  refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun F hF ↦
+    powerSubstitution_mem_degreeLT (restrictSupport_mono R (fun _ ↦ And.right) hF)) ?_
+  rw [Polynomial.degreeLT_eq_span_X_pow, Submodule.span_le]
+  intro f hf
+  obtain ⟨n, hn, rfl⟩ := Finset.mem_image.mp (Finset.mem_coe.mp hf)
+  have hn : n < N := Finset.mem_range.mp hn
+  refine ⟨monomial (single 0 (n % B) + single 1 (n / B)) 1,
+    (monomial_mem_restrictSupport R).mpr (Or.inl ?_), ?_⟩
+  · simpa [weight_vecCons_one, Nat.mod_add_div] using ⟨Nat.mod_lt n hB, hn⟩
+  · simp [Nat.mod_add_div, Polynomial.monomial_one_right_eq_X_pow]
+
+/-- **The power substitution on the weighted strip.** For `0 < B`, `F ↦ F(X, X ^ B)` is a linear
+equivalence from the polynomials supported on `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` onto
+`Polynomial.degreeLT R N`: the exponents `(μ 0, μ 1)` of the strip are the remainders and
+quotients on division by `B` of the exponents `n < N`. -/
+def powerSubstitutionEquivDegreeLT {B : ℕ} (hB : 0 < B) (N : ℕ) :
+    restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ weight ![1, B] μ < N} ≃ₗ[R]
+      Polynomial.degreeLT R N :=
+  LinearEquiv.ofBijective
+    (((powerSubstitution B).toLinearMap.comp (Submodule.subtype _)).codRestrict _ fun F ↦
+      powerSubstitution_mem_degreeLT (restrictSupport_mono R (fun _ ↦ And.right) F.property))
+    ⟨fun F G h ↦ Subtype.ext <| powerSubstitution_injOn B
+      (degreeOf_lt_of_mem_restrictSupport F.property hB fun _ h ↦ h.1)
+      (degreeOf_lt_of_mem_restrictSupport G.property hB fun _ h ↦ h.1) (congrArg Subtype.val h),
+    fun f ↦ by
+      obtain ⟨F, hF, hFf⟩ := (map_restrictSupport_powerSubstitution (R := R) hB N).ge f.property
+      exact ⟨⟨F, hF⟩, Subtype.ext hFf⟩⟩
+
+/-- `powerSubstitutionEquivDegreeLT` is the power substitution `F ↦ F(X, X ^ B)`. -/
+@[simp]
+theorem coe_powerSubstitutionEquivDegreeLT_apply {B : ℕ} (hB : 0 < B) (N : ℕ)
+    (F : restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ weight ![1, B] μ < N}) :
+    (powerSubstitutionEquivDegreeLT hB N F : Polynomial R) = powerSubstitution B (F : _) :=
+  (rfl)
+
+/-- The inverse of `powerSubstitutionEquivDegreeLT` reads the coefficient of `Z ^ μ 0 W ^ μ 1`,
+for `μ 0 < B`, off the coefficient of `X ^ (μ 0 + B * μ 1)`. -/
+@[simp]
+theorem coeff_powerSubstitutionEquivDegreeLT_symm_apply {B : ℕ} (hB : 0 < B) {N : ℕ}
+    (f : Polynomial.degreeLT R N) {μ : Fin 2 →₀ ℕ} (hμ : μ 0 < B) :
+    (((powerSubstitutionEquivDegreeLT hB N).symm f : MvPolynomial (Fin 2) R)).coeff μ =
+      (f : Polynomial R).coeff (μ 0 + B * μ 1) := by
+  set F := (powerSubstitutionEquivDegreeLT hB N).symm f
+  have hf : (f : Polynomial R) = powerSubstitution B (F : MvPolynomial (Fin 2) R) := by
+    rw [← coe_powerSubstitutionEquivDegreeLT_apply hB, LinearEquiv.apply_symm_apply]
+  rw [hf, coeff_powerSubstitution
+    (degreeOf_lt_of_mem_restrictSupport F.property hB fun _ h ↦ h.1) hμ]
+
+/-- The inverse of `powerSubstitutionEquivDegreeLT` has zero coefficient of `Z ^ μ 0 W ^ μ 1`
+for `B ≤ μ 0`, since such `μ` lie outside the weighted strip. -/
+@[simp]
+theorem coeff_powerSubstitutionEquivDegreeLT_symm_apply_of_le {B : ℕ} (hB : 0 < B) {N : ℕ}
+    (f : Polynomial.degreeLT R N) {μ : Fin 2 →₀ ℕ} (hμ : B ≤ μ 0) :
+    (((powerSubstitutionEquivDegreeLT hB N).symm f : MvPolynomial (Fin 2) R)).coeff μ = 0 :=
+  notMem_support_iff.mp fun h ↦
+    (((powerSubstitutionEquivDegreeLT hB N).symm f).property h).1.not_ge hμ
 
 /-- When `(B : R) = 0`, differentiating `F(X, X ^ B)` in `X` suppresses the `W`-term
 `B · X ^ (B - 1) = 0` and computes `(∂_Z F)(X, X ^ B)`. -/
@@ -447,5 +530,24 @@ example {K : Type*} [Field K] {p : ℕ} [Fact p.Prime] [CharP K p] {e : ℕ} (he
     (∃ a ∈ S, ∃ k ≤ m, eval ![a, a ^ p ^ e] ((pderiv (0 : Fin 2))^[k] F) ≠ 0) :=
   ⟨exists_nonzero_hasse_jet_on_frobenius_graph hF hZ (hm.trans_le (Nat.le_self_pow he.ne' p)) hdeg,
     exists_nonzero_ordinary_jet_on_frobenius_graph he hF hZ hm hdeg⟩
+
+/-- The hypothesis `0 < B` in `map_restrictSupport_powerSubstitution` cannot be dropped: at
+`B = 0` the weighted strip is empty, so its image is `⊥`, while `Polynomial.degreeLT ℤ 1`
+contains `1`. -/
+example : (restrictSupport ℤ {μ : Fin 2 →₀ ℕ | μ 0 < 0 ∧ weight ![1, 0] μ < 1}).map
+    (powerSubstitution 0).toLinearMap ≠ Polynomial.degreeLT ℤ 1 := by
+  intro h
+  obtain ⟨F, hF, hF1⟩ := h.ge (Polynomial.mem_degreeLT.mpr (by simp) : (1 : Polynomial ℤ) ∈ _)
+  have : F = 0 := by
+    ext μ
+    simpa using fun hμ ↦ (Nat.not_lt_zero _ (hF hμ).1)
+  simp [this] at hF1
+
+/-- For `B = 2`, the coefficient of `Z * W` in the preimage of `f` of degree below `4` is the
+coefficient of `X ^ 3 = X ^ (1 + 2 * 1)` in `f`. -/
+example (f : Polynomial.degreeLT ℤ 4) :
+    (((powerSubstitutionEquivDegreeLT two_pos 4).symm f : MvPolynomial (Fin 2) ℤ)).coeff
+      (single 0 1 + single 1 1) = (f : Polynomial ℤ).coeff 3 := by
+  simp
 
 end MvPolynomial

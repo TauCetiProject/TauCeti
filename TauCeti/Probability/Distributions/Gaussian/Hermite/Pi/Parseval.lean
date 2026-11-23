@@ -115,7 +115,7 @@ theorem tsum_norm_sq_integral_prod_hermite_mul_pi_gaussianReal
       (aeval (x i) (hermite (a i)) / Real.sqrt ((a i).factorial : ℝ))) * f x
         ∂(Measure.pi fun _ : ι => (gaussianReal 0 1 : Measure ℝ))‖ ^ 2 = ‖f‖ ^ 2 := by
   simpa only [← HilbertBasis.repr_apply_apply, gaussianHermitePiBasis_repr_apply] using
-    (gaussianHermitePiBasis 𝕜 ι).tsum_norm_sq_inner f
+    (gaussianHermitePiBasis 𝕜 ι).tsum_norm_inner_sq f
 
 /-- The squared multivariate Gaussian Hermite coefficients of an `L²(γ^ι)` function are
 summable. -/
@@ -125,7 +125,7 @@ theorem summable_norm_sq_integral_prod_hermite_mul_pi_gaussianReal
       (aeval (x i) (hermite (a i)) / Real.sqrt ((a i).factorial : ℝ))) * f x
         ∂(Measure.pi fun _ : ι => (gaussianReal 0 1 : Measure ℝ))‖ ^ 2 := by
   simpa only [← HilbertBasis.repr_apply_apply, gaussianHermitePiBasis_repr_apply] using
-    (gaussianHermitePiBasis 𝕜 ι).summable_norm_sq_inner f
+    (gaussianHermitePiBasis 𝕜 ι).summable_norm_inner_sq f
 
 /-- **The multivariate Gaussian Hermite expansion.** Every `f ∈ L²(γ^ι; 𝕜)` is the sum of its
 multi-index Hermite series, summed over multi-indices `a : ι → ℕ` in the unordered sense. -/

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
+public import TauCeti.Topology.PathSpace.Moore.Between.Basic
+public import Mathlib.Topology.Connected.PathConnected
 
 /-!
 # Comparing path spaces with constrained endpoints
@@ -23,6 +25,9 @@ Constant unit-interval paths become Moore paths of duration one, whereas the Moo
 section has duration zero. The explicit `constantBetweenHomotopy` compares these sections by
 shrinking the duration while keeping the path constant. This supplies compatibility with
 constant sections when transporting constructions between the two path models.
+
+Two points are joined by a Moore path exactly when they are joined by a path on the unit interval
+(`TauCeti.nonempty_moorePathBetween_iff`).
 
 ## References
 
@@ -212,5 +217,14 @@ theorem coe_constantBetweenHomotopy (s : I) (x : ↥(A ∩ B)) :
   (rfl)
 
 end MoorePath
+
+/-! ### Moore paths between two points -/
+
+/-- Two points are joined by a Moore path exactly when they are joined by a path on the unit
+interval. -/
+theorem nonempty_moorePathBetween_iff {a b : X} : Nonempty (MoorePathBetween X a b) ↔ Joined a b :=
+  ⟨fun ⟨γ⟩ ↦ ⟨γ.toMoorePath.toPath.cast γ.source.symm γ.target.symm⟩,
+    fun h ↦ ⟨⟨h.somePath.toMoorePath, h.somePath.source_toMoorePath,
+      h.somePath.target_toMoorePath⟩⟩⟩
 
 end TauCeti
