@@ -105,26 +105,9 @@ noncomputable def extendByZero (hU : IsOpen U) (f : LocallyConstant U M)
     (hf : HasCompactSupport f) : LocallyConstant X M where
   toFun := extend Subtype.val f 0
   isLocallyConstant := by
-    have hext (y : X) (hy : y ∉ U) : extend Subtype.val f 0 y = 0 :=
-      extend_apply' _ _ _ fun ⟨a, ha⟩ => hy (by subst ha; exact a.property)
-    refine (IsLocallyConstant.iff_eventually_eq _).2 fun x => ?_
-    by_cases hx : x ∈ U
-    · -- Near a point of `U`, the extension is `f`, which is locally constant.
-      lift x to U using hx
-      rw [← hU.isOpenEmbedding_subtypeVal.map_nhds_eq x, Filter.eventually_map]
-      filter_upwards [(IsLocallyConstant.iff_eventually_eq _).1 f.isLocallyConstant x] with y hy
-      simpa [Subtype.val_injective.extend_apply] using hy
-    · -- Off `U`, the extension vanishes outside the closed image of the support of `f`.
-      have hS : IsClosed (Subtype.val '' support f) :=
-        ((hasCompactSupport_iff_isCompact_support.1 hf).image continuous_subtypeVal).isClosed
-      have hxS : x ∉ Subtype.val '' support f := fun ⟨y, _, hy⟩ => hx (hy ▸ y.property)
-      filter_upwards [hS.isOpen_compl.mem_nhds hxS] with y hy
-      rw [hext x hx]
-      by_cases hyU : y ∈ U
-      · lift y to U using hyU
-        rw [Subtype.val_injective.extend_apply]
-        exact by_contra fun hne => hy ⟨y, hne, rfl⟩
-      · exact hext y hyU
+    let : TopologicalSpace M := ⊥
+    have : DiscreteTopology M := ⟨rfl⟩
+    exact (IsLocallyConstant.iff_continuous _).2 (hf.continuous_extend_zero hU f.continuous)
 
 variable (hU : IsOpen U) (f : LocallyConstant U M) (hf : HasCompactSupport f)
 
@@ -134,20 +117,6 @@ theorem extendByZero_apply_coe (x : U) : extendByZero hU f hf x = f x :=
 
 theorem extendByZero_apply_of_notMem {x : X} (hx : x ∉ U) : extendByZero hU f hf x = 0 :=
   extend_apply' _ _ _ fun ⟨a, ha⟩ => hx (by subst ha; exact a.property)
-
-/-- The support of the extension by zero is the image of the support. -/
-theorem support_extendByZero : support (extendByZero hU f hf) = Subtype.val '' support f := by
-  ext x
-  by_cases hx : x ∈ U
-  · lift x to U using hx
-    simp
-  · simp only [mem_support, extendByZero_apply_of_notMem hU f hf hx, ne_eq, not_true_eq_false,
-      false_iff]
-    exact fun ⟨y, _, hy⟩ => hx (hy ▸ y.property)
-
-theorem hasCompactSupport_extendByZero : HasCompactSupport (extendByZero hU f hf) := by
-  rw [hasCompactSupport_iff_isCompact_support, support_extendByZero]
-  exact (hasCompactSupport_iff_isCompact_support.1 hf).image continuous_subtypeVal
 
 end ExtendByZero
 
@@ -165,7 +134,8 @@ as an `R`-linear map. -/
 noncomputable def extendByZero :
     compactlySupported R U M →ₗ[R] compactlySupported R X M where
   toFun f := ⟨LocallyConstant.extendByZero hU f (mem_compactlySupported.1 f.property),
-    mem_compactlySupported.2 (hasCompactSupport_extendByZero hU _ _)⟩
+    mem_compactlySupported.2 ((mem_compactlySupported.1 f.property).extend_zero
+      continuous_subtypeVal)⟩
   map_add' f g := compactlySupported.ext fun x => by
     by_cases hx : x ∈ U
     · lift x to U using hx
@@ -254,16 +224,15 @@ theorem exact_extendByZero_restrict [T2Space X] {U : Set X} (hU : IsOpen U) :
     have hfU : ∀ x, x ∉ U → (f : LocallyConstant X M) x = 0 := fun x hx => by
       simpa using congr_arg
         (fun g : compactlySupported R (Uᶜ : Set X) M => g.val ⟨x, hx⟩) hf
-    have hsupp : support (f : LocallyConstant X M) ⊆ U := fun x hx =>
-      by_contra fun h => hx (hfU x h)
+    have hsupp : support (f : LocallyConstant X M) ⊆ U := Function.support_subset_iff'.2 hfU
     let g : LocallyConstant U M := (f : LocallyConstant X M).comap
       ⟨Subtype.val, continuous_subtypeVal⟩
     have hg : HasCompactSupport g := by
-      rw [hasCompactSupport_iff_isCompact_support, Subtype.isCompact_iff]
-      have : Subtype.val '' support g = support (f : LocallyConstant X M) := by
-        rw [show support g = Subtype.val ⁻¹' support (f : LocallyConstant X M) from rfl,
-          image_preimage_eq_inter_range, Subtype.range_coe, inter_eq_left.2 hsupp]
-      rw [this, ← tsupport_eq_support]
+      rw [hasCompactSupport_iff_isCompact_support]
+      change IsCompact (Subtype.val ⁻¹' support (f : LocallyConstant X M))
+      refine hU.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' ?_
+        (by rwa [Subtype.range_coe])
+      rw [← tsupport_eq_support]
       exact (mem_compactlySupported.1 f.property).isCompact
     refine ⟨⟨g, mem_compactlySupported.2 hg⟩, compactlySupported.ext fun x => ?_⟩
     by_cases hx : x ∈ U
