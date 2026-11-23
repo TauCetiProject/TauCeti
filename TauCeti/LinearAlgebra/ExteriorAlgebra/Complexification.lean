@@ -83,8 +83,7 @@ theorem sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
     (B : BilinForm ℝ V) {p q : ℕ} (hpq : p ≠ q) {x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V}
     (hx : x ∈ (⋀[ℝ]^p V).baseChange ℂ) (hy : y ∈ (⋀[ℝ]^q V).baseChange ℂ) :
     sesqComplexification B.sesqExteriorAlgebra x y = 0 := by
-  rw [← Submodule.range_subtype (⋀[ℝ]^p V), LinearMap.baseChange_range] at hx
-  rw [← Submodule.range_subtype (⋀[ℝ]^q V), LinearMap.baseChange_range] at hy
+  rw [Submodule.baseChange] at hx hy
   obtain ⟨x', rfl⟩ := hx
   obtain ⟨y', rfl⟩ := hy
   induction x' using TensorProduct.inductionOn with
@@ -116,15 +115,9 @@ theorem sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv (B : BilinForm 
         sesqComplexification_sesqExteriorPower_equivBaseChange]
     · simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, e,
         ← TauCeti.exteriorPower.subtype_baseChange_equivBaseChange]
-      have hmem {m : ℕ} (z : ℂ ⊗[ℝ] ⋀[ℝ]^m V) :
-          (⋀[ℝ]^m V).subtype.baseChange ℂ z ∈ (⋀[ℝ]^m V).baseChange ℂ := by
-        have hr : LinearMap.range ((⋀[ℝ]^m V).subtype.baseChange ℂ) =
-            (⋀[ℝ]^m V).baseChange ℂ := by
-          rw [← LinearMap.baseChange_range, Submodule.range_subtype]
-        rw [← hr]
-        exact LinearMap.mem_range_self _ z
       exact sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne B hpq
-        (hmem _) (hmem _)
+        (by rw [Submodule.baseChange]; exact LinearMap.mem_range_self _ _)
+        (by rw [Submodule.baseChange]; exact LinearMap.mem_range_self _ _)
   simpa [e] using
     (LinearMap.congr_fun₂ h (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
       (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y)).symm

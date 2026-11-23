@@ -32,13 +32,7 @@ spinor tensors (`AlgEquiv.cliffordFormsEquivTensor`):
   strictly positive definite on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V` without finite-dimensionality on `V`;
 * under `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`, the Hermitian form making
   `(b.toBasis.baseChange ℂ).ExteriorAlgebra` orthonormal pulls back to
-  `LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra`, independent of `b`;
-* when `V` is finite-dimensional, its restriction in homogeneous degree `k` along
-  `(⋀[ℝ]^k V).subtype.baseChange ℂ` is
-  `LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))` (while orthogonality of distinct
-  complexified exterior powers is
-  `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne`
-  in `TauCeti.LinearAlgebra.ExteriorAlgebra.Complexification`).
+  `LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra`, independent of `b`.
 
 ## Main results
 
@@ -51,9 +45,6 @@ spinor tensors (`AlgEquiv.cliffordFormsEquivTensor`):
   `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv`:
   identification of the complexified orthonormal wedge-basis form with the complexified
   Euclidean exterior Gram metric.
-* `exteriorPower.sesqComplexification_sesqExteriorAlgebra_innerₗ_subtype_baseChange`: in degree
-  `k`, `LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra` restricts to
-  `LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))`.
 * `ExteriorAlgebra.isSymm_sesqComplexification_sesqExteriorAlgebra_innerₗ` and
   `ExteriorAlgebra.sesqComplexification_sesqExteriorAlgebra_innerₗ_self_pos`: Hermitian symmetry
   and strict positive definiteness of the complexified Euclidean exterior Gram metric.
@@ -114,24 +105,6 @@ theorem toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv
     LinearMap.BilinForm.sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv]
 
 end OrthonormalBasis
-
-namespace exteriorPower
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- In homogeneous degree `k`,
-`LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra` restricts along
-`(⋀[ℝ]^k V).subtype.baseChange ℂ` to
-`LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))`. -/
-theorem sesqComplexification_sesqExteriorAlgebra_innerₗ_subtype_baseChange (k : ℕ)
-    (x y : ℂ ⊗[ℝ] ⋀[ℝ]^k V) :
-    LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra
-        ((⋀[ℝ]^k V).subtype.baseChange ℂ x) ((⋀[ℝ]^k V).subtype.baseChange ℂ y) =
-      LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V)) x y := by
-  rw [LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange,
-    sesqExteriorPower_innerₗ]
-
-end exteriorPower
 
 namespace ExteriorAlgebra
 

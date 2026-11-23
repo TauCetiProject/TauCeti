@@ -267,14 +267,9 @@ theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ 
 @[simp]
 theorem sesqExteriorPower_innerₗ (k : ℕ) :
     (innerₗ E).sesqExteriorPower k = innerₗ (⋀[ℝ]^k E) := by
-  symm
-  rw [LinearMap.eq_sesqExteriorPower_iff]
-  intro u v
-  simp only [innerₗ_apply_apply, inner_ιMulti_ιMulti]
-  rw [← Matrix.det_transpose]
-  refine congrArg Matrix.det ?_
-  ext i j
-  simp [Matrix.transpose_apply]
+  rw [LinearMap.BilinForm.sesqExteriorPower_eq_exteriorPower]
+  refine linearMap_ext (AlternatingMap.ext fun u ↦ linearMap_ext (AlternatingMap.ext fun v ↦ ?_))
+  simp [LinearMap.BilinForm.bilinForm_ιMulti_ιMulti, inner_ιMulti_ιMulti]
 
 omit [FiniteDimensional ℝ E] in
 /-- Two orthonormal frames have the same wedge exactly when one is obtained from the other by a

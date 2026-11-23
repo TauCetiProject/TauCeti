@@ -95,8 +95,9 @@ theorem inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_subtype_baseChange {
         ((ρ.cliffordFormsEquivEnd ((⋀[ℝ]^k V).subtype.baseChange ℂ x)).adjoint *
           ρ.cliffordFormsEquivEnd ((⋀[ℝ]^k V).subtype.baseChange ℂ y)) =
       LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V)) x y := by
-  rw [ρ.inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_mul hQ hρ,
-    exteriorPower.sesqComplexification_sesqExteriorAlgebra_innerₗ_subtype_baseChange]
+  rw [ρ.inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_mul hQ hρ]
+  simp only [LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange,
+    exteriorPower.sesqExteriorPower_innerₗ]
 
 /-- **Distinct exterior degrees are Hilbert–Schmidt orthogonal** under
 `ρ.cliffordFormsEquivEnd`. -/
@@ -105,13 +106,12 @@ theorem trace_adjoint_cliffordFormsEquivEnd_subtype_baseChange_mul_eq_zero_of_ne
     LinearMap.trace ℂ S
         ((ρ.cliffordFormsEquivEnd ((⋀[ℝ]^k V).subtype.baseChange ℂ x)).adjoint *
           ρ.cliffordFormsEquivEnd ((⋀[ℝ]^l V).subtype.baseChange ℂ y)) = 0 := by
-  have hmem {m : ℕ} (z : ℂ ⊗[ℝ] ⋀[ℝ]^m V) :
-      (⋀[ℝ]^m V).subtype.baseChange ℂ z ∈ (⋀[ℝ]^m V).baseChange ℂ := by
-    simpa [← LinearMap.baseChange_range] using
-      LinearMap.mem_range_self ((⋀[ℝ]^m V).subtype.baseChange ℂ) z
   rw [ρ.trace_adjoint_cliffordFormsEquivEnd_mul hQ hρ,
     LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
-      (innerₗ V) hkl (hmem x) (hmem y), mul_zero]
+      (innerₗ V) hkl
+      (by rw [Submodule.baseChange]; exact LinearMap.mem_range_self _ x)
+      (by rw [Submodule.baseChange]; exact LinearMap.mem_range_self _ y),
+    mul_zero]
 
 /-- **Spinor tensor metric comparison**: under `ρ.cliffordFormsEquivTensor`, the ordinary tensor
 metric `tensorDualMetric ℂ S S` on `S ⊗[ℂ] Dual ℂ S` is `2 ^ (dim V / 2)` times
@@ -136,8 +136,9 @@ theorem tensorDualMetric_cliffordFormsEquivTensor_subtype_baseChange {k : ℕ}
         (ρ.cliffordFormsEquivTensor ((⋀[ℝ]^k V).subtype.baseChange ℂ y)) =
       (2 ^ (finrank ℝ V / 2) : ℂ) *
         LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V)) x y := by
-  rw [ρ.tensorDualMetric_cliffordFormsEquivTensor hQ hρ,
-    exteriorPower.sesqComplexification_sesqExteriorAlgebra_innerₗ_subtype_baseChange]
+  rw [ρ.tensorDualMetric_cliffordFormsEquivTensor hQ hρ]
+  simp only [LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange,
+    exteriorPower.sesqExteriorPower_innerₗ]
 
 /-- **Inverse spinor tensor metric comparison**: under `ρ.cliffordFormsEquivTensor.symm`, the
 complexified exterior Gram metric is `2 ^ (-dim V / 2)` times `tensorDualMetric ℂ S S`. -/
