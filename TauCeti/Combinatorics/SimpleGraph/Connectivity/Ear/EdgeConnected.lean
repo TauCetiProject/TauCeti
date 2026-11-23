@@ -23,7 +23,7 @@ stopping it at its first vertex `w` of `H` gives a closed ear when `w = u` and a
 otherwise. In a `2`-edge-connected graph no edge is a bridge, so every proper subgraph with a
 vertex admits an ear: if it misses a vertex, connectivity supplies an edge leaving it; otherwise
 it misses an edge, which is a single-edge open ear. With finitely many edges (`[Finite G.edgeSet]`),
-preconnectedness implies `Finite V` (`SimpleGraph.Preconnected.finite_of_finite_edgeSet`), so the
+preconnectedness implies `Finite V` (`SimpleGraph.Preconnected.finite_edgeSet_iff_finite`), so the
 subgraphs form a finite lattice and adjoining ears until the whole graph is reached extends every
 ear decomposition of a subgraph to one of `⊤` with the same initial subgraph.
 
@@ -130,7 +130,8 @@ subgraph extends to an ear decomposition of `⊤` with the same initial subgraph
 theorem IsEdgeConnected.exists_earDecomposition_of_earDecomposition [Finite G.edgeSet]
     (hG : G.IsEdgeConnected 2) (d₀ : G.EarDecomposition H) :
     ∃ d : G.EarDecomposition (⊤ : G.Subgraph), d.initial = d₀.initial := by
-  have : Finite V := (hG.preconnected two_ne_zero).finite_of_finite_edgeSet
+  have : Finite V := (hG.preconnected two_ne_zero).finite_edgeSet_iff_finite.mp
+    (Set.toFinite G.edgeSet)
   induction H using WellFoundedGT.induction with
   | ind H ih =>
     by_cases htop : H = ⊤
