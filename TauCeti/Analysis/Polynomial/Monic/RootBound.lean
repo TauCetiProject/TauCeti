@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import Mathlib.Algebra.Field.GeomSum
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import Mathlib.Algebra.Polynomial.Degree.Operations
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Tactic.LinearCombination
@@ -25,6 +27,10 @@ coefficients satisfy `‖aᵢ‖ ≤ c^(d - i)`. Then every root `z` of `p` sati
 
 If `‖z‖ > 2 c`, then `‖aᵢ zⁱ‖ ≤ 2^-(d - i) ‖z‖ᵈ`, and these weights sum to less than one, which
 contradicts `zᵈ = -∑_{i < d} aᵢ zⁱ`.
+
+The converse bound of the coefficients by the roots is
+`‖s.esymm k‖ ≤ (card s).choose k * M ^ k` for a multiset `s` of elements of norm at most `M`
+(`Multiset.norm_esymm_le`); the coefficients of `∏_{a ∈ s} (X - a)` are `± s.esymm k`.
 
 ## References
 
@@ -84,3 +90,24 @@ theorem IsRoot.norm_le_two_mul {p : K[X]} (hp : p.Monic) {c : ℝ}
   linarith
 
 end Polynomial
+
+/-- **Elementary symmetric functions are bounded by the elements.** If every element of a
+multiset `s` has norm at most `M`, then `‖s.esymm k‖ ≤ (card s).choose k * M ^ k`. Since the
+coefficients of `∏_{a ∈ s} (X - a)` are `± s.esymm k`, this bounds the coefficients of a monic
+polynomial by its roots, converse to `Polynomial.IsRoot.norm_le_two_mul`. The argument is the
+one inside the proof of Mathlib's `Polynomial.coeff_le_of_roots_le`. -/
+theorem Multiset.norm_esymm_le {K : Type*} [NormedField K] {s : Multiset K} {M : ℝ}
+    (hM : ∀ a ∈ s, ‖a‖ ≤ M) (k : ℕ) :
+    ‖s.esymm k‖ ≤ (Multiset.card s).choose k * M ^ k := by
+  rw [Multiset.esymm]
+  refine (norm_multiset_sum_le _).trans ?_
+  rw [Multiset.map_map]
+  refine (Multiset.sum_le_card_nsmul _ (M ^ k) fun r hr ↦ ?_).trans_eq ?_
+  · obtain ⟨t, ht, rfl⟩ := Multiset.mem_map.1 hr
+    rw [Multiset.mem_powersetCard] at ht
+    rw [Function.comp_apply, Multiset.norm_prod, ← ht.2]
+    calc (t.map norm).prod ≤ (t.map fun _ ↦ M).prod :=
+          Multiset.prod_map_le_prod_map₀ _ _ (fun a _ ↦ norm_nonneg a) fun a ha ↦
+            hM a (Multiset.mem_of_le ht.1 ha)
+      _ = M ^ Multiset.card t := by rw [Multiset.map_const', Multiset.prod_replicate]
+  · rw [Multiset.card_map, Multiset.card_powersetCard, nsmul_eq_mul]

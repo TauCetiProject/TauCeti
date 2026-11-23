@@ -44,7 +44,7 @@ noncomputable def rootTilt (k : ℕ) :
     by
       rw [uniformTilt.mem_plusSubring_iff_coeff_zero, uniformTilt.coeff_mk, zero_add,
         ← ϖ.coe_rootPB]
-      exact (ϖ.rootPB k).2⟩
+      exact (ϖ.rootPB k).property⟩
 
 theorem plusSharp_rootTilt (k : ℕ) :
     uniformTilt.plusSharp p (isRingOfIntegralElements_powerBoundedSubring ℂ_[p]) (rootTilt ϖ k) =
@@ -79,7 +79,7 @@ theorem rootPB_one_notMem_span_rootPB_zero : ϖ.rootPB 1 ∉ Ideal.span {ϖ.root
     rw [ϖ.root_succ_pow 0]
     simpa using congrArg Subtype.val hc
   have hc1 : ‖(c : ℂ_[p])‖ ≤ 1 :=
-    isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2)
+    isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.property)
   obtain ⟨h0, h1⟩ := isPseudoUniformizer_iff_norm_lt_one.mp (ϖ.isPseudoUniformizer_root 1)
   have hle : ‖ϖ.root 1‖ ≤ ‖ϖ.root 1‖ ^ p :=
     calc ‖ϖ.root 1‖ = ‖ϖ.root 1‖ ^ p * ‖(c : ℂ_[p])‖ := by rw [← norm_pow, ← norm_mul, ← hc']

@@ -49,8 +49,8 @@ noncomputable def reflectionPairSpecialOrthogonal
   ⟨(reflectionOrthogonal Q u : V ≃ₗ[K] V) * reflectionOrthogonal Q v, by
     rw [mem_specialOrthogonalGroup_iff]
     constructor
-    · exact (orthogonalGroup Q).mul_mem (reflectionOrthogonal Q u).2
-        (reflectionOrthogonal Q v).2
+    · exact (orthogonalGroup Q).mul_mem (reflectionOrthogonal Q u).property
+        (reflectionOrthogonal Q v).property
     · simp⟩
 
 /-- The underlying orthogonal isometry of a pair of reflections. -/
@@ -88,8 +88,8 @@ theorem exists_even_reflectionOrthogonal_list_prod_eq
       (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
         QuadraticMap.reflectionOrthogonal Q v = r) ∧
       l.length ≤ Module.finrank K V ∧ Even l.length ∧
-      l.prod = ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).1⟩ := by
-  have hg := QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2
+      l.prod = ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.property).1⟩ := by
+  have hg := QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.property
   obtain ⟨l, hlrefl, hllen, hprod⟩ := exists_reflectionOrthogonal_list_prod_eq Q hQ
     (⟨g, hg.1⟩ : QuadraticMap.orthogonalGroup Q)
   refine ⟨l, hlrefl, hllen, ?_, hprod⟩

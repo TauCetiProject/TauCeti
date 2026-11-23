@@ -211,7 +211,7 @@ variable (R : Type u) (M : Type*) [CommRing R] [AddCommGroup M] [Module R M] {n 
 theorem isZero_cyclicCohomology_self_of_odd (hn : Odd n) :
     IsZero (cyclicCohomology R R M n) := by
   have h (φ : cyclicCocycles R R M n) : φ = 0 :=
-    Subtype.ext ((Submodule.eq_bot_iff _).1 (cyclicCocycles_self_of_odd R M hn) φ φ.2)
+    Subtype.ext ((Submodule.eq_bot_iff _).1 (cyclicCocycles_self_of_odd R M hn) φ φ.property)
   refine @ModuleCat.isZero_of_subsingleton _ _ _ ⟨fun x y ↦ ?_⟩
   obtain ⟨φ, rfl⟩ := cyclicCohomology.mk_surjective R R M n x
   obtain ⟨ψ, rfl⟩ := cyclicCohomology.mk_surjective R R M n y
@@ -232,14 +232,14 @@ theorem isZero_hochschildCohomology_self (hn : n ≠ 0) :
   rcases Nat.even_or_odd n with hn | hn
   · -- in odd degree `n + 1` the cocycle condition forces `φ (1, …, 1) = 0`
     have h := congrArg (fun ψ ↦ ψ fun _ ↦ (1 : R))
-      (hochschildCoboundary_self_of_odd R M hn.add_one φ.1)
-    simp only [mem_hochschildCocycles_iff.1 φ.2, zero_apply,
+      (hochschildCoboundary_self_of_odd R M hn.add_one φ.val)
+    simp only [mem_hochschildCocycles_iff.1 φ.property, zero_apply,
       MultilinearMap.mkPiRing_apply, Finset.prod_const_one, one_smul] at h
     refine ⟨0, ?_⟩
-    rw [map_zero, ← φ.1.mkPiRing_apply_one_eq_self, ← h, MultilinearMap.mkPiRing_zero]
+    rw [map_zero, ← φ.val.mkPiRing_apply_one_eq_self, ← h, MultilinearMap.mkPiRing_zero]
   · -- in even degree `n + 1` the cochain is the coboundary of a product cochain
-    exact ⟨MultilinearMap.mkPiRing R (Fin (n + 1)) (φ.1 fun _ ↦ 1), by
-      rw [hochschildCoboundary_mkPiRing_of_odd R M hn, φ.1.mkPiRing_apply_one_eq_self]⟩
+    exact ⟨MultilinearMap.mkPiRing R (Fin (n + 1)) (φ.val fun _ ↦ 1), by
+      rw [hochschildCoboundary_mkPiRing_of_odd R M hn, φ.val.mkPiRing_apply_one_eq_self]⟩
 
 namespace cyclicCohomology
 
@@ -286,7 +286,7 @@ theorem mkPiRing_eq_zero_iff (hn : Even n) (hn₀ : n ≠ 0) {m : M} :
       coe_mkPiRingCocycle, MultilinearMap.mkPiRing_eq_iff] at h
     rw [← h,
       (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ R) M).mkPiRing_apply_one_eq_self]
-    exact ψ.2
+    exact ψ.property
   · intro hm
     exact ⟨⟨_, hm⟩, Subtype.ext <| by
       rw [coe_cyclicHochschildCoboundary_apply, hochschildCoboundary_mkPiRing_of_odd R M hk,
@@ -301,7 +301,7 @@ theorem ker_mkPiRing (hn : Even n) (hn₀ : n ≠ 0) :
 /-- In degree zero the class map is injective. -/
 theorem mkPiRing_zero_injective : Function.Injective (mkPiRing R M 0 even_zero) :=
   (mk_zero_injective R R M).comp fun _ _ h ↦ MultilinearMap.mkPiRing_eq_iff.1
-    (congrArg (fun φ : cyclicCocycles R R M 0 ↦ (φ : cyclicCochains R R M 0).1) h)
+    (congrArg (fun φ : cyclicCocycles R R M 0 ↦ (φ : cyclicCochains R R M 0).val) h)
 
 /-- In even degree the class map is injective when `M` has no `2`-torsion. -/
 theorem mkPiRing_injective (hn : Even n) (h2 : IsSMulRegular M (2 : R)) :

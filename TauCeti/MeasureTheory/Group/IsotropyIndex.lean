@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coset.Basic
-public import TauCeti.MeasureTheory.Group.Action
 public import TauCeti.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+-- Private: `FiniteDimensional.continuousConstSMul` is used only inside a proof.
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The isotropy-index formula for averaged integrals over finite actions
@@ -115,7 +116,7 @@ theorem inv_card_smul_setIntegral_iUnion_smul_addHaar {F : Type*} [NormedAddComm
     (Nat.card G : ℝ)⁻¹ • ∫ x in ⋃ g : G, g • V, f x ∂μ =
       (Nat.card H : ℝ)⁻¹ • ∫ x in V, f x ∂μ :=
   have := smulInvariantMeasure_addHaar (G := G) μ
-  have := measurableConstSMul_of_finiteDimensional (G := G) (E := E)
+  have := FiniteDimensional.continuousConstSMul ℝ G E
   TauCeti.inv_card_smul_setIntegral_iUnion_smul hV hH hdisj hf
 
 end MeasureTheory.Measure

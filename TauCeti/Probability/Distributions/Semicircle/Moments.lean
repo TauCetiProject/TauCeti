@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Enumerative.Catalan
 public import TauCeti.Probability.Distributions.Semicircle.LocationScale
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Probability.Moments.Basic
 
 /-!
 # Moments of the semicircle law
@@ -121,16 +122,16 @@ theorem integral_sub_pow_two_mul_add_one_semicircleReal (a : ℝ) (v : ℝ≥0) 
 /-- The `2n`th central moment of `semicircleReal a v` is `v ^ n * catalan n`. -/
 @[simp]
 theorem centralMoment_id_two_mul_semicircleReal (a : ℝ) (v : ℝ≥0) (n : ℕ) :
-    centralMoment id (2 * n) (semicircleReal a v) = (v : ℝ) ^ n * catalan n := by
-  simpa only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq, integral_id_semicircleReal]
-    using integral_sub_pow_two_mul_semicircleReal a v n
+    centralMoment id (2 * n) (semicircleReal a v) = (v : ℝ) ^ n * catalan n :=
+  (centralMoment_eq_integral_sub_pow (X := id) (integral_id_semicircleReal a v) _).trans
+    (integral_sub_pow_two_mul_semicircleReal a v n)
 
 /-- Every odd central moment of `semicircleReal a v` vanishes. -/
 @[simp]
 theorem centralMoment_id_two_mul_add_one_semicircleReal (a : ℝ) (v : ℝ≥0) (n : ℕ) :
-    centralMoment id (2 * n + 1) (semicircleReal a v) = 0 := by
-  simpa only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq, integral_id_semicircleReal]
-    using integral_sub_pow_two_mul_add_one_semicircleReal a v n
+    centralMoment id (2 * n + 1) (semicircleReal a v) = 0 :=
+  (centralMoment_eq_integral_sub_pow (X := id) (integral_id_semicircleReal a v) _).trans
+    (integral_sub_pow_two_mul_add_one_semicircleReal a v n)
 
 /-- The `2n`th moment of a centred semicircle law of variance `v` is `v ^ n * catalan n`; for the
 standard law `semicircleReal 0 1` it is the Catalan number `catalan n`. -/

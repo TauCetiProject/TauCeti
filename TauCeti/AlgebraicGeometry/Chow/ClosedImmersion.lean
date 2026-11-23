@@ -58,7 +58,7 @@ noncomputable def cyclesPushforward {k : ℤ} : cyclesOfDimension Z k →+ cycle
       rw [mem_cyclesOfDimension_iff, AlgebraicCycle.support_map_height_of_isClosedImmersion]
       rintro _ ⟨y, hy, rfl⟩
       simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
-        mem_cyclesOfDimension_iff.mp α.2 hy⟩)
+        mem_cyclesOfDimension_iff.mp α.property hy⟩)
     fun α β ↦ Subtype.ext (AlgebraicCycle.map_add i height height _ _)
 
 variable {i}
@@ -85,7 +85,7 @@ lemma cyclesPushforward_apply_of_notMem_range {k : ℤ} (α : cyclesOfDimension 
 lemma cyclesPushforward_injective {k : ℤ} :
     Function.Injective (cyclesPushforward i : cyclesOfDimension Z k → cyclesOfDimension X k) :=
   fun _ _ h ↦ Subtype.ext
-    (AlgebraicCycle.map_height_injective_of_isClosedImmersion i congr($h.1))
+    (AlgebraicCycle.map_height_injective_of_isClosedImmersion i congr(($h).val))
 
 /-- A `k`-cycle on `X` is a pushforward along the closed immersion `i` exactly when it is supported
 on the image of `i`. -/
@@ -101,7 +101,7 @@ lemma mem_range_cyclesPushforward_iff {k : ℤ} {α : cyclesOfDimension X k} :
   have hβ : β ∈ cyclesOfDimension Z k := mem_cyclesOfDimension_iff.mpr fun y hy ↦ by
     rw [Function.locallyFinsupp.support_comap] at hy
     simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
-      mem_cyclesOfDimension_iff.mp α.2 hy
+      mem_cyclesOfDimension_iff.mp α.property hy
   refine ⟨⟨β, hβ⟩, Subtype.ext ?_⟩
   ext x
   by_cases hx : x ∈ Set.range i
