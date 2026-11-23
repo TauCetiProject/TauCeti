@@ -219,6 +219,13 @@ lemma toTopStdSimplexIsoDisk_inv_diskHomeomorphClosedBall_symm (n : ℕ)
       ⦋n⦌.toTopHomeo.symm (TauCeti.standardCellBallToOrderedSimplex n x) := by
   simp [toTopStdSimplexIsoDisk]
 
+private lemma coe_homeoOfIso_toTopStdSimplexIsoDisk (n : ℕ) :
+    ⇑(TopCat.homeoOfIso (toTopStdSimplexIsoDisk.{u} n)) =
+      ⇑((TauCeti.diskHomeomorphClosedBall.{u} n).trans
+        (TauCeti.standardCellBallToOrderedSimplex n)).symm ∘
+        ⇑(SimplexCategory.toTopHomeo.{u} ⦋n⦌) :=
+  rfl
+
 private lemma range_toTopBoundary_toDisk_eq (n : ℕ) :
     Set.range (⇑(TopCat.homeoOfIso (toTopStdSimplexIsoDisk.{u} n)) ∘
         ⇑(toTop.map (∂Δ[n].ι : (∂Δ[n] : SSet.{u}) ⟶ Δ[n]))) =
@@ -227,7 +234,7 @@ private lemma range_toTopBoundary_toDisk_eq (n : ℕ) :
     (TauCeti.diskHomeomorphClosedBall.{u} n).trans (TauCeti.standardCellBallToOrderedSimplex n)
   let k : |(∂Δ[n] : SSet.{u})| → StdSimplex ℝ (Fin (n + 1)) :=
     ⦋n⦌.toTopHomeo ∘ toTop.map (∂Δ[n].ι : (∂Δ[n] : SSet.{u}) ⟶ Δ[n])
-  change Set.range (h.symm ∘ k) = Set.range (TopCat.diskBoundaryInclusion.{u} n)
+  rw [coe_homeoOfIso_toTopStdSimplexIsoDisk, Function.comp_assoc]
   ext z
   rw [Set.range_comp, h.symm.image_eq_preimage_symm, Homeomorph.symm_symm, Set.mem_preimage]
   dsimp only [k]
@@ -254,12 +261,14 @@ lemma toTopBoundaryIsoDiskBoundary_hom_comp_diskBoundaryInclusion (n : ℕ) :
       toTop.map (∂Δ[n].ι : (∂Δ[n] : SSet.{u}) ⟶ Δ[n]) ≫ (toTopStdSimplexIsoDisk.{u} n).hom := by
   ext x
   have hι := (TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion.{u} n).isEmbedding
-  change TopCat.diskBoundaryInclusion.{u} n ((toTopBoundaryIsoDiskBoundary.{u} n).hom x) =
-    (toTopStdSimplexIsoDisk.{u} n).hom (toTop.map (∂Δ[n].ι : (∂Δ[n] : SSet.{u}) ⟶ Δ[n]) x)
-  rw [← hι.toHomeomorph_apply_coe]
+  have hcomp := (TopCat.homeoOfIso (toTopStdSimplexIsoDisk.{u} n)).isEmbedding.comp
+    (isClosedEmbedding_toTop_map_boundary_ι.{u} n).isEmbedding
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ← hι.toHomeomorph_apply_coe]
   simp only [toTopBoundaryIsoDiskBoundary, TopCat.isoOfHomeo_hom, TopCat.hom_ofHom,
     ContinuousMap.coe_ofClass, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
-  rfl
+  -- `Homeomorph.setCongr` is backed by `Set.equivOfEq`, preserving `.val` definitionally,
+  -- and `hcomp.toHomeomorph_apply_coe` unwraps the embedding's `.toHomeomorph` coercion.
+  exact (hcomp.toHomeomorph_apply_coe x).trans rfl
 
 /-- The isomorphism in `Arrow TopCat` identifying the realized simplex boundary inclusion
 `|∂Δ[n].ι| : |∂Δ[n]| ⟶ |Δ[n]|` with the standard sphere-to-disk inclusion

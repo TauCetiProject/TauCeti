@@ -117,7 +117,9 @@ lemma toTopRelativeCWComplexStageIso_hom_comp {X Y : SSet.{u}} (i : X ⟶ Y) [Mo
       (toTopRelativeCWComplex i).incl.app n := by
   rw [toTopRelativeCWComplexStageIso, eqToIso.hom]
   simp only [toTopRelativeCWComplex, RelativeCellComplex.reindexCellTypes_incl_app,
-    RelativeCellComplex.map_incl_app]
+    RelativeCellComplex.map_incl_app, relativeCellComplexOfMono_incl_app]
+  -- `(toTopRelativeCWComplex i).F.obj n` reduces definitionally to
+  -- `|(skeletonOfMono i n : SSet.{u})|`, so `eqToHom _` reduces to `𝟙 _`.
   rfl
 
 /-- The stage isomorphism `SSet.toTopRelativeCWComplexStageIso` intertwines the realization of
@@ -155,7 +157,10 @@ lemma toTopCWComplexStageIso_hom_comp (X : SSet.{u}) (n : ℕ) :
     Functor.mapIso_hom, ← toTop.map_comp, ← hι, toTopRelativeCWComplexStageIso_hom_comp]
   dsimp only [toTopCWComplex]
   rw [eqToIso.hom, RelativeCellComplex.ofArrowIso_incl_app, toTopBotArrowIso_hom_right]
-  exact (eqToHom_refl _ _ =≫ _).trans ((Category.id_comp _).trans (Category.comp_id _).symm)
+  -- `(toTopCWComplex X).F.obj n` reduces definitionally to
+  -- `(toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex))).F.obj n`,
+  -- so `eqToHom _` reduces to `𝟙 _`, cancelling with `𝟙 |X|` on the RHS.
+  rfl
 
 /-- The stage isomorphism `SSet.toTopCWComplexStageIso` intertwines the realization of
 `(X.skeleton n).ι` with the stage inclusion of `SSet.toTopCWComplex X`. -/
@@ -165,14 +170,18 @@ lemma toTopCWComplexStageIso_inv_comp (X : SSet.{u}) (n : ℕ) :
       toTop.map (X.skeleton n).ι := by
   rw [← toTopCWComplexStageIso_hom_comp, Iso.inv_hom_id_assoc]
 
+private noncomputable abbrev toTopRelativeCWComplexReindexEquiv
+    {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : ℕ) :=
+  RelativeCellComplex.reindexCellTypesAttachCellsEquiv
+    ((relativeCellComplexOfMono i).map toTop) TopCat.RelativeCWComplex.basicCell
+    (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n)
+
 /-- The `n`-cells attached in `toTopRelativeCWComplex i` identify canonically with the simplicial
 `n`-cells of `relativeCellComplexOfMono i`. -/
 def toTopRelativeCWComplexCellEquiv {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : ℕ) :
     ((toTopRelativeCWComplex i).attachCells n (not_isMax n)).ι ≃
       relativeCellComplexOfMono.Cell i n :=
-  (RelativeCellComplex.reindexCellTypesAttachCellsEquiv
-      ((relativeCellComplexOfMono i).map toTop) TopCat.RelativeCWComplex.basicCell
-      (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n)).trans
+  (toTopRelativeCWComplexReindexEquiv i n).trans
     (RelativeCellComplex.mapAttachCellsEquiv
       (relativeCellComplexOfMono i) toTop n (not_isMax n))
 
@@ -183,14 +192,14 @@ lemma toTopRelativeCWComplex_cells_ι {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n
     (⟨n, not_isMax n, c⟩ : (toTopRelativeCWComplex i).Cells).ι =
       (toTopStdSimplexIsoDisk.{u} n).inv ≫
         toTop.map (yonedaEquiv.symm (toTopRelativeCWComplexCellEquiv i n c).simplex) := by
-  have h1 := RelativeCellComplex.reindexCellTypes_cells_ι_attachCellsEquiv
-    ((relativeCellComplexOfMono i).map toTop) TopCat.RelativeCWComplex.basicCell
-    (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n) c
+  have h1 : (⟨n, not_isMax n, c⟩ : (toTopRelativeCWComplex i).Cells).ι =
+      Arrow.rightFunc.map (toTopBoundaryInclusionArrowIso.{u} n).inv ≫
+        (⟨n, not_isMax n, toTopRelativeCWComplexReindexEquiv i n c⟩ :
+          ((relativeCellComplexOfMono i).map toTop).Cells).ι :=
+    RelativeCellComplex.reindexCellTypes_cells_ι_attachCellsEquiv _ _ _ _ n (not_isMax n) c
   have h2 := RelativeCellComplex.map_cells_ι_attachCellsEquiv
     (relativeCellComplexOfMono i) toTop n (not_isMax n)
-    (RelativeCellComplex.reindexCellTypesAttachCellsEquiv
-      ((relativeCellComplexOfMono i).map toTop) TopCat.RelativeCWComplex.basicCell
-      (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n) c)
+    (toTopRelativeCWComplexReindexEquiv i n c)
   have h3 := congrArg toTop.map (relativeCellComplexOfMono.Cell.ι_b_ι
     (toTopRelativeCWComplexCellEquiv i n c))
   refine h1.trans ?_
@@ -209,6 +218,15 @@ def toTopCWComplexCellEquiv (X : SSet.{u}) (n : ℕ) :
       (toTopBotArrowIso X) n (not_isMax n)).trans
     (toTopRelativeCWComplexCellEquiv (Subcomplex.ι (⊥ : X.Subcomplex)) n)
 
+private lemma toTopCWComplexCellEquiv_apply (X : SSet.{u}) (n : ℕ)
+    (c : ((toTopCWComplex X).attachCells n (not_isMax n)).ι) :
+    toTopCWComplexCellEquiv X n c =
+      toTopRelativeCWComplexCellEquiv (Subcomplex.ι (⊥ : X.Subcomplex)) n
+        (RelativeCellComplex.ofArrowIsoAttachCellsEquiv
+          (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
+          (toTopBotArrowIso X) n (not_isMax n) c) :=
+  Equiv.trans_apply _ _ c
+
 /-- The inclusion of an `n`-cell of `toTopCWComplex X` is the classifying map of its
 nondegenerate simplex, precomposed with `(toTopStdSimplexIsoDisk n).inv`. -/
 lemma toTopCWComplex_cells_ι (X : SSet.{u}) (n : ℕ)
@@ -220,8 +238,8 @@ lemma toTopCWComplex_cells_ι (X : SSet.{u}) (n : ℕ)
     (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
     (toTopBotArrowIso X) n (not_isMax n) c
   refine h1.trans ?_
-  rw [toTopBotArrowIso_hom_right, Category.comp_id, toTopRelativeCWComplex_cells_ι]
-  rfl
+  rw [toTopBotArrowIso_hom_right, Category.comp_id, toTopRelativeCWComplex_cells_ι,
+    toTopCWComplexCellEquiv_apply]
 
 /-- The classical CW complex structure on the geometric realization `|X|` of a simplicial set `X`
 induced by `SSet.toTopCWComplex X`. Its `n`-cells correspond canonically to the nondegenerate
@@ -350,8 +368,7 @@ lemma closedCell_subset_range_toTop_map_ι {X : SSet.{u}} (A : X.Subcomplex) {n 
   refine ⟨toTopObjMk
       (⟨(simplicialRealizationCWCellEquiv X n i).val, hi⟩ : (A : SSet.{u}) _⦋n⦌)
       (TauCeti.standardCellBallToOrderedSimplex n ⟨x, hx⟩), ?_⟩
-  rw [toTop_map_toTopObjMk]
-  rfl
+  simp [toTop_map_toTopObjMk]
 
 /-- The image of `SSet.toTop.map A.ι` is covered by the open cells of
 `SSet.simplicialRealizationCW X` indexed by nondegenerate simplices belonging to `A`. -/

@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 public import TauCeti.Analysis.Convex.CoordinateSimplex
-public import TauCeti.Geometry.Convex.ConvexSpace.CellBall
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # A simplex and its boundary as a ball and its sphere
@@ -18,19 +18,16 @@ The weak realization of the standard `n`-simplex is homeomorphic to the Euclidea
 `n`-ball. The same homeomorphism takes exactly the proper faces to the unit sphere, so it
 identifies the pair consisting of a simplex and its boundary with the ball and sphere pair.
 This supplies compatible geometric models for combinatorial balls and their boundaries.
-The same holds for the sup-norm closed ball used by Mathlib's classical CW complexes
-(`AbstractSimplicialComplex.realizationTopHomeomorphPiClosedBall`), obtained by composing
-`AbstractSimplicialComplex.realizationTopHomeomorphStdSimplex` with the inverse of the explicit
-radial homeomorphism `TauCeti.standardCellBallToOrderedSimplex`.
+The same holds for the sup-norm closed ball used by Mathlib's classical CW complexes.
 Dimension zero is included: the simplex and ball are singletons and their boundaries empty.
 An injective vertex enumeration gives the same ball model for every closed face of a complex;
 its barycentric support detects the open ball and boundary sphere.
 
 Dropping the last barycentric coordinate gives an explicit homeomorphism to the coordinate
-simplex. The omitted coordinate is one minus the sum of the others. The Euclidean ball
+simplex. The omitted coordinate is one minus the sum of the others. The subsequent ball
 identification uses Mathlib's convex-body gauge rescaling through
-`TauCeti.exists_homeomorph_coordinateSimplex`, while the sup-norm ball identification reuses
-`TauCeti.standardCellBallToOrderedSimplex` and `realizationTopHomeomorphStdSimplex`.
+`TauCeti.exists_homeomorph_coordinateSimplex`. The first comparison reuses
+`realizationTopHomeomorphStdSimplex` and Mathlib's `Convexity.StdSimplex`.
 
 `simplexCoordinateReindex` distinguishes the last retained coordinate, and
 `simplexBoundaryCoordinateMap` gives the shared ambient linear coordinates for the solid
@@ -343,7 +340,10 @@ Its proper-face boundary is taken to the sphere. -/
 def realizationTopHomeomorphPiClosedBall (n : ℕ) :
     Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) ≃ₜ
       closedBall (0 : Fin n → ℝ) 1 :=
-  realizationTopHomeomorphStdSimplex.trans (TauCeti.standardCellBallToOrderedSimplex n).symm
+  let L := PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)
+  (realizationTopHomeomorphClosedBall n).trans
+    ((L.unitBallHomeomorph.image _).trans
+      (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall))
 
 /-- Under the simplex-to-sup-norm-ball homeomorphism, exactly the proper faces land on the
 sphere. -/
@@ -352,29 +352,8 @@ theorem realizationTopHomeomorphPiClosedBall_norm_eq_one_iff (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
     ‖(realizationTopHomeomorphPiClosedBall n x).val‖ = 1 ↔
       x.val.support ≠ Finset.univ := by
-  rw [realizationTopHomeomorphPiClosedBall, Homeomorph.trans_apply,
-    TauCeti.norm_standardCellBallToOrderedSimplex_symm_eq_one_iff, ne_eq,
-    Finset.eq_univ_iff_forall, not_forall]
-  simp only [realizationTopHomeomorphStdSimplex_apply, Finsupp.mem_support_iff, ne_eq, not_not]
-
-/-- Applying `TauCeti.standardCellBallToOrderedSimplex n` after
-`realizationTopHomeomorphPiClosedBall n` recovers `realizationTopHomeomorphStdSimplex`. -/
-@[simp]
-theorem standardCellBallToOrderedSimplex_realizationTopHomeomorphPiClosedBall (n : ℕ)
-    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
-    TauCeti.standardCellBallToOrderedSimplex n (realizationTopHomeomorphPiClosedBall n x) =
-      realizationTopHomeomorphStdSimplex x := by
-  simp [realizationTopHomeomorphPiClosedBall]
-
-/-- The barycentric weights of `(realizationTopHomeomorphPiClosedBall n).symm z` agree with those
-of `TauCeti.standardCellBallToOrderedSimplex n z`. -/
-@[simp]
-theorem realizationTopHomeomorphPiClosedBall_symm_apply_val (n : ℕ)
-    (z : closedBall (0 : Fin n → ℝ) 1) (i : Fin (n + 1)) :
-    ((realizationTopHomeomorphPiClosedBall n).symm z).val i =
-      (TauCeti.standardCellBallToOrderedSimplex n z).weights i := by
-  rw [realizationTopHomeomorphPiClosedBall, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
-    realizationTopHomeomorphStdSimplex_symm_apply_val]
+  rw [← realizationTopHomeomorphClosedBall_norm_eq_one_iff]
+  exact ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff _
 
 section EnumeratedFace
 
@@ -458,5 +437,3 @@ theorem nonempty_homeomorph_simplex_closedBall {V : Finset ι}
   exact ⟨r.trans (AbstractSimplicialComplex.realizationTopHomeomorphClosedBall n)⟩
 
 end PreAbstractSimplicialComplex
-
-end
