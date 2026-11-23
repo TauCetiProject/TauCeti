@@ -691,19 +691,22 @@ private lemma regradeSingleIso_inv_whiskerRight_comp_regradeSingleLeftUnitor_f (
           (regradeSingleLeftUnitor n₁ n₂ L).f k =
       (singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ▷ (L.restriction (embeddingUpIntDownIntSub n₂)).X k ≫
         (λ_ ((L.restriction (embeddingUpIntDownIntSub n₂)).X k)).hom := by
-  rw [regradeSingleIso_inv_f_zero]
-  -- `ChainComplex.regradeTensorSummand` is the signed inclusion of `𝟙[n₁]_(n₁) ⊗ L_(n₂ - k)` into
-  -- `(𝟙[n₁] ⊗ L).X (n₁ + n₂ - k)`, the degree-`k` object of the regrading by definition of
-  -- `HomologicalComplex.restriction`.
+  rw [regradeSingleIso_inv_f_zero, regradeTensorSummand_def]
+  -- State both sides through `𝟙[n₁]_(n₁ - 0)`, `L_(n₂ - k)` and `(𝟙[n₁] ⊗ L)_(n₁ + n₂ - k)`, the
+  -- objects of the regradings by definition of `HomologicalComplex.restriction` and
+  -- `ComplexShape.embeddingUpIntDownIntSub`, and `(regradeSingleLeftUnitor n₁ n₂ L).f k` through
+  -- its summands. `rw` and `simp` cannot match `Linear.units_smul_comp` or
+  -- `ChainComplex.ι_regradeSingleLeftUnitor_f` before this, as `embeddingUpIntDownIntSub` is not
+  -- reducible.
   change ((singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
       (singleObjXIsoOfEq (down ℤ) n₁ (𝟙_ C) (n₁ - 0) (sub_zero n₁)).inv) ▷ L.X (n₂ - k) ≫
     ((n₁ * (n₂ - k)).negOnePow • ιTensorObj ((single C (down ℤ) n₁).obj (𝟙_ C)) L (n₁ - 0)
       (n₂ - k) (n₁ + n₂ - k) (by omega)) ≫ mapBifunctorDesc (j := n₁ + n₂ - k)
-        (fun p q h ↦ regradeSingleLeftUnitorSummand n₁ n₂ L k p q h) = _
-  simp [Linear.units_smul_comp, regradeSingleLeftUnitorSummand, smul_smul]
-  -- The two sides are stated through the defeq degrees `n₂ - k` and
-  -- `(embeddingUpIntDownIntSub n₂).f k`.
-  rfl
+        (fun p q h ↦ regradeSingleLeftUnitorSummand n₁ n₂ L k p q h) =
+    (singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ▷ L.X (n₂ - k) ≫ (λ_ (L.X (n₂ - k))).hom
+  simp only [comp_whiskerRight, π_def, regradeSingleLeftUnitorSummand, Linear.units_smul_comp,
+    ι_mapBifunctorDesc, sub_zero, ↓reduceDIte, XIsoOfEq_rfl, Iso.refl_hom, Category.comp_id,
+    smul_smul, Int.units_mul_self, one_smul, Category.assoc, inv_hom_whiskerRight_assoc]
 
 /-- The summand components of `ChainComplex.regradeSingleRightUnitor` in cochain degree `k`: on
 `K_p ⊗ 𝟙_q` with `q = n₂`, the right unitor of `K_p`, and zero on the other summands, which are
@@ -788,19 +791,21 @@ private lemma whiskerLeft_regradeSingleIso_inv_comp_regradeSingleRightUnitor_f (
       (n₁ * n₂).negOnePow •
         ((K.restriction (embeddingUpIntDownIntSub n₁)).X k ◁ (singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
           (ρ_ ((K.restriction (embeddingUpIntDownIntSub n₁)).X k)).hom) := by
-  rw [regradeSingleIso_inv_f_zero]
-  -- `ChainComplex.regradeTensorSummand` is the signed inclusion of `K_(n₁ - k) ⊗ 𝟙[n₂]_(n₂)` into
-  -- `(K ⊗ 𝟙[n₂]).X (n₁ + n₂ - k)`, the degree-`k` object of the regrading by definition of
-  -- `HomologicalComplex.restriction`.
+  rw [regradeSingleIso_inv_f_zero, regradeTensorSummand_def]
+  -- State both sides through `K_(n₁ - k)`, `𝟙[n₂]_(n₂ - 0)` and `(K ⊗ 𝟙[n₂])_(n₁ + n₂ - k)`, the
+  -- objects of the regradings by definition of `HomologicalComplex.restriction` and
+  -- `ComplexShape.embeddingUpIntDownIntSub`, and `(regradeSingleRightUnitor n₁ n₂ K).f k` through
+  -- its summands, as in the left unitor case.
   change K.X (n₁ - k) ◁ ((singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
       (singleObjXIsoOfEq (down ℤ) n₂ (𝟙_ C) (n₂ - 0) (sub_zero n₂)).inv) ≫
     ((n₁ * (n₂ - 0)).negOnePow • ιTensorObj K ((single C (down ℤ) n₂).obj (𝟙_ C)) (n₁ - k)
       (n₂ - 0) (n₁ + n₂ - k) (by omega)) ≫ mapBifunctorDesc (j := n₁ + n₂ - k)
-        (fun p q h ↦ regradeSingleRightUnitorSummand n₁ n₂ K k p q h) = _
-  simp [Linear.units_smul_comp, regradeSingleRightUnitorSummand]
-  -- The two sides are stated through the defeq degrees `n₁ - k` and
-  -- `(embeddingUpIntDownIntSub n₁).f k`.
-  rfl
+        (fun p q h ↦ regradeSingleRightUnitorSummand n₁ n₂ K k p q h) =
+    (n₁ * n₂).negOnePow • (K.X (n₁ - k) ◁ (singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
+      (ρ_ (K.X (n₁ - k))).hom)
+  simp only [whiskerLeft_comp, sub_zero, π_def, regradeSingleRightUnitorSummand,
+    Linear.units_smul_comp, ι_mapBifunctorDesc, ↓reduceDIte, XIsoOfEq_rfl, Iso.refl_hom,
+    Category.comp_id, Linear.comp_units_smul, Category.assoc, whiskerLeft_inv_hom_assoc]
 
 variable [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
   [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
