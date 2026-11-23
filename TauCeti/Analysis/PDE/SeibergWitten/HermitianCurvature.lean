@@ -41,10 +41,12 @@ the formula for `c` into the refined bound `|F_a⁻| ≤ (r / (4 √2)) w₊ + O
 forms on one fixed inner product space `V` with a constant `J`, that is, the case of a global
 unitary frame in which `J` is constant. A general symplectic four-manifold has no such frame, and
 in a frame the Laplacian of the components of `F` differs from the rough Laplacian of the bundle
-by connection terms; applying the estimate there needs a version for sections of the bundle
-`Λ²T*M` with the rough Laplacian, which is not proved here. The differential inequality at the
-eigenvectors of `λ`, which comes from the curvature, Dirac and Weitzenböck equations, is a
-hypothesis.
+by connection terms; applying the estimate there needs the intrinsic version with the rough
+Laplacian. For a field of symmetric endomorphisms of the tangent bundle, such as `B` read through
+the metric, that version is
+`TauCeti.Manifold.forall_le_inner_apply_self_of_inner_roughLaplacian_pos`. The differential
+inequality at the eigenvectors of `λ`, which comes from the curvature, Dirac and Weitzenböck
+equations, is a hypothesis.
 
 ## Main results
 

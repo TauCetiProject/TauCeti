@@ -18,6 +18,9 @@ different index types is the product of the determinants of its blocks. This is 
 version of Mathlib's `Matrix.det_blockDiagonal`, and computes the determinant of a coordinatewise
 endomorphism of a finite dependent product.
 
+Multiplying a matrix indexed by `n × ι` on both sides by block-diagonal matrices multiplies each
+of its blocks on both sides by the corresponding diagonal blocks.
+
 On a set of indices that is down-closed for a ranking `b`, the square block of a product with a
 block lower triangular left factor, or a block upper triangular right factor, is the product of
 the square blocks. If the leading blocks on the initial segments `{j | b j ≤ b i}` have unit
@@ -43,6 +46,8 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 * `Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero`: a matrix with vanishing
   off-diagonal blocks is block diagonal.
 * `Matrix.det_blockDiagonal'`: `(blockDiagonal' M).det = ∏ i, (M i).det`.
+* `Matrix.submatrix_blockDiagonal_mul_mul_blockDiagonal`: the blocks of
+  `blockDiagonal d * X * blockDiagonal d'`.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
 * `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
@@ -113,6 +118,17 @@ public theorem det_blockDiagonal' {o R : Type*} {m : o → Type*} [Fintype o] [D
   -- The `@[simps]` lemmas of `Equiv.sigmaSubtype` only give the first component of
   -- `(Equiv.sigmaSubtype i).symm j`, so the definition is unfolded to see that it is `⟨i, j⟩`.
   simp [toSquareBlock_def, Equiv.sigmaSubtype]
+
+/-- Multiplying on the left by `blockDiagonal d` and on the right by `blockDiagonal d'` sends the
+block `X_(i,j)` to `d i * X_(i,j) * d' j`. -/
+public theorem submatrix_blockDiagonal_mul_mul_blockDiagonal {n ι R : Type*} [Fintype n]
+    [Fintype ι] [DecidableEq ι] [NonUnitalNonAssocSemiring R] (d d' : ι → Matrix n n R)
+    (X : Matrix (n × ι) (n × ι) R) (i j : ι) :
+    (blockDiagonal d * X * blockDiagonal d').submatrix (·, i) (·, j) =
+      d i * X.submatrix (·, i) (·, j) * d' j := by
+  ext a b
+  simp [Matrix.mul_apply, blockDiagonal_apply, Fintype.sum_prod_type, Finset.sum_mul, ite_mul,
+    mul_ite]
 
 /-- Restricting to a square block commutes with any entrywise map. -/
 @[simp]

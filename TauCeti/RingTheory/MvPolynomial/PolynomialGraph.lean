@@ -227,7 +227,7 @@ example : polynomialGraph ℤ 2 0 (X 1) = 1 := by simp
 -- A non-strict exponent bound would allow this collision.
 example : polynomialGraph (ZMod 2) 2 2 (X 1 - X 0 ^ 2) = 0 := by simp
 
--- The nonlinear graph succeeds over F₂ even where all rational lines fail.
+-- The nonlinear graph avoids this hypersurface, which contains every F₂-line through the origin.
 example : polynomialGraph (ZMod 2) 2 3 (X 0 ^ 2 * X 1 - X 0 * X 1 ^ 2) ≠ 0 := by
   intro h
   have hc := congrArg (fun p : Polynomial (ZMod 2) ↦ p.coeff 5) h
