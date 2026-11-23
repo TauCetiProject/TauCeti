@@ -6,17 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
+public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.FieldTheory.IsRealClosed.Basic
 public import TauCeti.FieldTheory.MatsumotoGroup.Basic
 
 /-!
 # The sign symbol on the Matsumoto group of an ordered field
 
-Let `F` be a linearly ordered field, such as `ℝ`. Write `ε a ∈ ZMod 2` for `1` if the unit `a`
-is negative and `0` if it is positive. The pairing `(a, b) ↦ ε a * ε b` is biadditive, and it
-satisfies the Steinberg relation, since two units adding up to one cannot both be negative. So it
-descends to a homomorphism `sign` from the Matsumoto group `(Fˣ ⊗ Fˣ) / ⟨x ⊗ y : x + y = 1⟩`
-to `ZMod 2`. It sends `{x, y}` to `1` exactly when both entries are negative.
+Let `F` be a linearly ordered field, such as `ℝ`. Write `ε a ∈ ZMod 2` (`Units.signAddHom`) for
+`1` if the unit `a` is negative and `0` if it is positive. The pairing `(a, b) ↦ ε a * ε b` is
+biadditive, and it satisfies the Steinberg relation, since two units adding up to one cannot both
+be negative. So it descends to a homomorphism `sign` from the Matsumoto group
+`(Fˣ ⊗ Fˣ) / ⟨x ⊗ y : x + y = 1⟩` to `ZMod 2`. It sends `{x, y}` to `1` exactly when both
+entries are negative.
 
 The sign map detects the symbol `{-1, -1}`: this symbol has order exactly two. In particular,
 the Matsumoto group is not the exterior square of `Fˣ`. Let `D` be the subgroup spanned by the
@@ -64,38 +66,21 @@ namespace MatsumotoGroup
 variable {F : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
 
 variable (F) in
-/-- The sign of a unit of an ordered field as an element of `ZMod 2`: `1` on negative units and
-`0` on positive units. It is additive on `Additive Fˣ`, since the product of two units is
-negative exactly when one of them is. -/
-private def unitSign : Additive Fˣ →+ ZMod 2 :=
-  AddMonoidHom.mk' (fun a ↦ if ((Additive.toMul a : Fˣ) : F) < 0 then 1 else 0) fun a b ↦ by
-    have ha := (Additive.toMul a).ne_zero
-    have hb := (Additive.toMul b).ne_zero
-    rcases ha.lt_or_gt with ha | ha <;> rcases hb.lt_or_gt with hb | hb
-    · simp [ha, hb, (mul_pos_of_neg_of_neg ha hb).not_gt, CharTwo.add_self_eq_zero]
-    · simp [ha, hb.not_gt, mul_neg_of_neg_of_pos ha hb]
-    · simp [ha.not_gt, hb, mul_neg_of_pos_of_neg ha hb]
-    · simp [ha.not_gt, hb.not_gt, (mul_pos ha hb).not_gt]
-
-private theorem unitSign_ofMul (x : Fˣ) :
-    unitSign F (Additive.ofMul x) = if (x : F) < 0 then 1 else 0 :=
-  (rfl)
-
-variable (F) in
 /-- The **sign pairing** `(a, b) ↦ ε a * ε b` on the units of an ordered field, with values in
-`ZMod 2`. It is `1` exactly when both units are negative. -/
-def signPairing : Additive Fˣ →+ Additive Fˣ →+ ZMod 2 :=
-  (AddMonoidHom.mul.comp (unitSign F)).compl₂ (unitSign F)
+`ZMod 2`, where `ε` is the additive sign `Units.signAddHom F`. It is `1` exactly when both units
+are negative. -/
+noncomputable def signPairing : Additive Fˣ →+ Additive Fˣ →+ ZMod 2 :=
+  (AddMonoidHom.mul.comp (Units.signAddHom F)).compl₂ (Units.signAddHom F)
 
 private theorem signPairing_apply (a b : Additive Fˣ) :
-    signPairing F a b = unitSign F a * unitSign F b :=
+    signPairing F a b = Units.signAddHom F a * Units.signAddHom F b :=
   (rfl)
 
 @[simp]
 theorem signPairing_ofMul (x y : Fˣ) :
     signPairing F (Additive.ofMul x) (Additive.ofMul y) =
       if (x : F) < 0 ∧ (y : F) < 0 then 1 else 0 := by
-  rw [signPairing_apply, unitSign_ofMul, unitSign_ofMul]
+  rw [signPairing_apply, Units.signAddHom_ofMul, Units.signAddHom_ofMul]
   split_ifs <;> simp_all
 
 /-- **The sign pairing satisfies the Steinberg relation**: two units adding up to one are not
@@ -109,7 +94,7 @@ theorem signPairing_of_add_eq_one {x y : Fˣ} (h : (x : F) + y = 1) :
 variable (F) in
 /-- The **sign map** of the Matsumoto group of an ordered field, induced by the sign pairing:
 it sends `{x, y}` to `1` if `x` and `y` are both negative, and to `0` otherwise. -/
-def sign : MatsumotoGroup F →+ ZMod 2 :=
+noncomputable def sign : MatsumotoGroup F →+ ZMod 2 :=
   lift (signPairing F) fun _ _ ↦ signPairing_of_add_eq_one
 
 /-- The value of the sign map on a symbol is the sign pairing. -/
@@ -246,7 +231,7 @@ variable (F) in
 /-- **The splitting of the Matsumoto group of an ordered field**: every class is uniquely
 `ε • {-1, -1} + d` with `ε ∈ ZMod 2` and `d` in the positive-entry span. The first component is
 the sign map. -/
-def positiveEntryEquiv : MatsumotoGroup F ≃ₗ[ℤ] ZMod 2 × positiveEntrySpan F :=
+noncomputable def positiveEntryEquiv : MatsumotoGroup F ≃ₗ[ℤ] ZMod 2 × positiveEntrySpan F :=
   AddEquiv.toIntLinearEquiv
     { toFun q := (sign F q, ⟨q - signSection (sign F q),
         sign_eq_zero_iff.1 (by rw [map_sub, sign_signSection, sub_self])⟩)
