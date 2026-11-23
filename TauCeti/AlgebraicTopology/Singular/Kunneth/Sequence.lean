@@ -13,7 +13,6 @@ import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Category.ModuleCat.End
-import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
 import TauCeti.CategoryTheory.GradedObject
 import TauCeti.CategoryTheory.Monoidal.Tor
@@ -260,12 +259,15 @@ principal ideal domain, and every homology module `Hₚ(X; M)` is flat, then the
 `⨁_{p + q = m + 1} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₘ₊₁(X × Y; M ⊗ N)` is an isomorphism: every `Tor₁`
 summand of the Künneth sequence vanishes. No hypothesis is placed on the homology of `Y`. -/
 theorem isIso_singularHomologyKunneth_of_flat
-    [∀ p, Module.Flat k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)] (m : ℕ) :
-    IsIso (singularHomologyKunneth X Y M N (m + 1)) := by
-  refine (singularHomologyKunnethShortComplex_shortExact X Y M N m).isIso_f_iff.2 ?_
-  rw [IsZero.iff_id_eq_zero]
-  exact GradedObject.mapBifunctorMapObj_ext (h := fun p q _ ↦
-    (ModuleCat.isZero_Tor_succ_of_flat _ _ 0).eq_of_src _ _)
+    [hX : ∀ p, Module.Flat k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
+    (m : ℕ) : IsIso (singularHomologyKunneth X Y M N (m + 1)) := by
+  -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
+  have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).homology p) := hX p
+  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
+  -- The instances are passed explicitly, as in `TopCat.mono_singularHomologyKunneth`.
+  exact @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_homologyKunneth_of_flat_homology
+    ((toSSet.obj X).chainComplex M) ((toSSet.obj Y).chainComplex N) m)
+    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso (m + 1)).isIso_inv
 
 /-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
 `C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a principal ideal
