@@ -98,6 +98,12 @@ theorem conjRepresentation_apply (g : G) (x : MonoidAlgebra R G) :
     conjRepresentation R G g x = MonoidAlgebra.domCongr R R (MulAut.conj g) x := by
   simp [conjRepresentation]
 
+/-- The algebra automorphism `MonoidAlgebra.domCongrAut` of the inner automorphism of `g` is the
+conjugation representation of `g`. -/
+theorem domCongrAut_conj_apply (g : G) (x : MonoidAlgebra R G) :
+    MonoidAlgebra.domCongrAut (R := R) (A := R) (MulAut.conj g) x = conjRepresentation R G g x := by
+  rw [conjRepresentation_apply, MonoidAlgebra.domCongrAut_apply]
+
 /-- The coefficient of `g x g⁻¹` at `h` is the coefficient of `x` at `g⁻¹ h g`. -/
 @[simp]
 theorem coeff_conjRepresentation (g : G) (x : MonoidAlgebra R G) (h : G) :
@@ -381,7 +387,8 @@ theorem map_conjInvariants (g : G) (H : Subgroup G) :
   · rintro _ ⟨x, hx, rfl⟩
     exact conjRepresentation_mem_conjInvariants g hx
   · simpa [map_inv, inv_smul_smul] using conjRepresentation_mem_conjInvariants g⁻¹ hy
-  · change conjRepresentation R G g _ = y
+  · -- the `AlgHom` coercion of an `AlgEquiv` applies as the `AlgEquiv` (`AlgEquiv.coe_toAlgHom`)
+    refine (domCongrAut_conj_apply g _).trans ?_
     simp [← mul_apply_eq_comp, ← map_mul]
 
 variable (R) in
@@ -394,16 +401,18 @@ noncomputable def conjInvariantsEquiv (g : G) (H : Subgroup G) :
 /-- The isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}` is conjugation by `g`. -/
 @[simp]
 theorem coe_conjInvariantsEquiv (g : G) (H : Subgroup G) (x : conjInvariants R H) :
-    (conjInvariantsEquiv R g H x : MonoidAlgebra R G) = conjRepresentation R G g x :=
-  (rfl)
+    (conjInvariantsEquiv R g H x : MonoidAlgebra R G) = conjRepresentation R G g x := by
+  rw [conjInvariantsEquiv, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply,
+    AlgEquiv.subalgebraMap_apply_coe, domCongrAut_conj_apply]
 
 /-- The inverse of `R[G]^H ≃ R[G]^{gHg⁻¹}` is conjugation by `g⁻¹`. -/
 @[simp]
 theorem coe_conjInvariantsEquiv_symm (g : G) (H : Subgroup G)
     (y : conjInvariants R (MulAut.conj g • H)) :
     ((conjInvariantsEquiv R g H).symm y : MonoidAlgebra R G) = conjRepresentation R G g⁻¹ y := by
-  rw [conjRepresentation_apply, map_inv]
-  rfl
+  obtain ⟨x, rfl⟩ := (conjInvariantsEquiv R g H).surjective y
+  rw [AlgEquiv.symm_apply_apply, coe_conjInvariantsEquiv]
+  simp [← mul_apply_eq_comp, ← map_mul]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex Fintype.ofFinite
 
