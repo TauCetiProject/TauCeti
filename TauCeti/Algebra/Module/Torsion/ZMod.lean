@@ -32,8 +32,6 @@ to a `ZMod n`-linear map `f.torsionByZModLinearMap n : A[n] →ₗ[ZMod n] B[n]`
 * `AddMonoidHom.torsionByZModLinearMap_zero`, `AddMonoidHom.torsionByZModLinearMap_add`,
   `AddMonoidHom.torsionByZModLinearMap_neg`: additivity of `torsionByZModLinearMap`.
 * `AddMonoidHom.injective_torsionByZModLinearMap`: injectivity is preserved on `n`-torsion.
-* `LinearMap.toAddMonoidHom_torsionByZModLinearMap_id`,
-  `LinearMap.toAddMonoidHom_torsionByZModLinearMap_comp`: restriction laws for `ℤ`-linear maps.
 * `AddEquiv.torsionByZModLinearEquiv`: the `ZMod n`-linear equivalence induced by `e : A ≃+ B`
   on `n`-torsion subgroups.
 -/
@@ -146,36 +144,6 @@ theorem injective_torsionByZModLinearMap {f : A →+ B} (hf : Function.Injective
   exact TauCeti.injective_torsionByMap hf'
 
 end AddMonoidHom
-
-namespace LinearMap
-
-variable {A B C : Type*} [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
-
-/-- The identity `ℤ`-linear map restricts to the identity `ZMod n`-linear map on `n`-torsion. -/
-@[simp]
-theorem toAddMonoidHom_torsionByZModLinearMap_id (n : ℕ)
-    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))] :
-    (LinearMap.id (R := ℤ) (M := A)).toAddMonoidHom.torsionByZModLinearMap n = LinearMap.id := by
-  have hid : (LinearMap.id (R := ℤ) (M := A)).toAddMonoidHom = AddMonoidHom.id A := by
-    ext x
-    rw [LinearMap.toAddMonoidHom_coe, LinearMap.id_apply, AddMonoidHom.id_apply]
-  rw [hid, AddMonoidHom.torsionByZModLinearMap_id]
-
-/-- Restriction of `ℤ`-linear maps to `n`-torsion commutes with composition. -/
-@[simp]
-theorem toAddMonoidHom_torsionByZModLinearMap_comp (g : B →ₗ[ℤ] C) (f : A →ₗ[ℤ] B) (n : ℕ)
-    [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
-    [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))]
-    [Module (ZMod n) (AddSubgroup.torsionBy C (n : ℤ))] :
-    (g.comp f).toAddMonoidHom.torsionByZModLinearMap n =
-      g.toAddMonoidHom.torsionByZModLinearMap n ∘ₗ f.toAddMonoidHom.torsionByZModLinearMap n := by
-  have hcomp : (g.comp f).toAddMonoidHom = g.toAddMonoidHom.comp f.toAddMonoidHom := by
-    ext x
-    rw [LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply, AddMonoidHom.comp_apply,
-      LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe]
-  rw [hcomp, AddMonoidHom.torsionByZModLinearMap_comp]
-
-end LinearMap
 
 namespace AddEquiv
 

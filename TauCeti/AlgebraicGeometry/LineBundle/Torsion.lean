@@ -66,7 +66,7 @@ lemma coe_pullbackTorsionLinearMap_apply (f : X ⟶ Y) (N : ℕ)
 lemma pullbackTorsionLinearMap_id (X : Scheme.{u}) (N : ℕ) :
     pullbackTorsionLinearMap (𝟙 X) N = LinearMap.id := by
   rw [pullbackTorsionLinearMap, pullbackLinearMap_id]
-  exact LinearMap.toAddMonoidHom_torsionByZModLinearMap_id N
+  exact AddMonoidHom.torsionByZModLinearMap_id N
 
 /-- `pullbackTorsionLinearMap` is contravariantly functorial under composition of scheme morphisms.
 -/
@@ -76,8 +76,8 @@ lemma pullbackTorsionLinearMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (N : ℕ) :
       pullbackTorsionLinearMap f N ∘ₗ pullbackTorsionLinearMap g N := by
   rw [pullbackTorsionLinearMap, pullbackTorsionLinearMap, pullbackTorsionLinearMap,
     pullbackLinearMap_comp]
-  exact LinearMap.toAddMonoidHom_torsionByZModLinearMap_comp
-    (pullbackLinearMap f) (pullbackLinearMap g) N
+  exact AddMonoidHom.torsionByZModLinearMap_comp
+    (pullbackLinearMap f).toAddMonoidHom (pullbackLinearMap g).toAddMonoidHom N
 
 /-- Post-composing `pullbackTorsionLinearMap g N` with a `ZMod N`-torsion restriction of `φ`
 agrees with restricting `φ ∘ₗ pullbackLinearMap g`. -/
@@ -87,7 +87,8 @@ lemma torsionByZModLinearMap_comp_pullbackTorsionLinearMap {A : Type*} [AddCommG
     φ.toAddMonoidHom.torsionByZModLinearMap N ∘ₗ pullbackTorsionLinearMap g N =
       (φ ∘ₗ pullbackLinearMap g).toAddMonoidHom.torsionByZModLinearMap N := by
   rw [pullbackTorsionLinearMap]
-  exact (LinearMap.toAddMonoidHom_torsionByZModLinearMap_comp φ (pullbackLinearMap g) N).symm
+  exact (AddMonoidHom.torsionByZModLinearMap_comp φ.toAddMonoidHom
+    (pullbackLinearMap g).toAddMonoidHom N).symm
 
 /-- The underlying additive homomorphism of `MulEquiv.toAdditive (pullbackEquiv e)` agrees with
 `(pullbackLinearMap e.hom).toAddMonoidHom`. -/

@@ -118,49 +118,6 @@ variable [IsProper toBase] (hX : ∀ x : X, coheight x ≤ 2)
   (h₀ : toBase.SpecialFiberCohomologyFiniteDimensional 0)
   (h₁ : toBase.SpecialFiberCohomologyFiniteDimensional 1)
 
-/-- Multidegree homomorphism `Additive (LineBundleClass Y) →+ (_ → ℤ)` for a scheme `Y` receiving
-morphisms from the special-fibre components `C_i`. -/
-private def componentMultidegreeHom {Y : Scheme.{u}}
-    (f : ∀ i : (toBase.finite_setOf_base_eq_closedPoint
-        (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
-      (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme ⟶ Y) :
-    Additive (LineBundleClass Y) →+
-      ((toBase.finite_setOf_base_eq_closedPoint
-          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) where
-  toFun a i :=
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-          ((mem_toFinset _).mp i.property))
-    intersectionNumber (ResidueField R) (f i) a.toMul /
-      (toBase.specialFiberWeight ((mem_toFinset _).mp i.property) : ℤ)
-  map_zero' := funext fun i ↦ by
-    let := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-          ((mem_toFinset _).mp i.property))
-    rw [toMul_zero, LineBundleClass.intersectionNumber_one, Int.zero_ediv, Pi.zero_apply]
-  map_add' a b := funext fun i ↦ by
-    have hi : toBase i.val = closedPoint R := (mem_toFinset _).mp i.property
-    let :=
-      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
-    have := isProper_subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
-    have := toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
-      (fun h ↦ one_ne_zero (i.val.property.symm.trans (coheight_eq_zero.mpr h))) hi
-    have := h₀ i.val hi; have := h₁ i.val hi
-    have hdvd := toBase.specialFiberWeight_dvd_intersectionNumber hi (f i) a.toMul
-    rw [toMul_add, LineBundleClass.intersectionNumber_mul_of_isIntegral,
-      Int.add_ediv_of_dvd_left hdvd, Pi.add_apply]
-
-/-- Evaluation of `componentMultidegreeHom` at `i`. -/
-private lemma componentMultidegreeHom_apply {Y : Scheme.{u}} {f}
-    (a : Additive (LineBundleClass Y)) (i) :
-    toBase.componentMultidegreeHom hX hη h₀ h₁ f a i =
-      letI := subschemeOverResidueField
-        (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-            ((mem_toFinset _).mp i.property))
-      intersectionNumber (ResidueField R) (f i) a.toMul /
-        (toBase.specialFiberWeight ((mem_toFinset _).mp i.property) : ℤ) := rfl
-
 /-- `ℤ`-linear multidegree homomorphism `Additive (LineBundleClass Y) →ₗ[ℤ] (_ → ℤ)` for a
 scheme `Y` receiving morphisms from the special-fibre components `C_i`. -/
 private def componentMultidegreeLinear {Y : Scheme.{u}}
@@ -170,10 +127,35 @@ private def componentMultidegreeLinear {Y : Scheme.{u}}
     Additive (LineBundleClass Y) →ₗ[ℤ]
       ((toBase.finite_setOf_base_eq_closedPoint
           (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) :=
-  (toBase.componentMultidegreeHom hX hη h₀ h₁ f).toIntLinearMap
+  let hom : Additive (LineBundleClass Y) →+
+      ((toBase.finite_setOf_base_eq_closedPoint
+          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) :=
+    { toFun a i :=
+        letI := subschemeOverResidueField
+          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+              ((mem_toFinset _).mp i.property))
+        intersectionNumber (ResidueField R) (f i) a.toMul /
+          (toBase.specialFiberWeight ((mem_toFinset _).mp i.property) : ℤ)
+      map_zero' := funext fun i ↦ by
+        let := subschemeOverResidueField
+          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+              ((mem_toFinset _).mp i.property))
+        rw [toMul_zero, LineBundleClass.intersectionNumber_one, Int.zero_ediv, Pi.zero_apply]
+      map_add' a b := funext fun i ↦ by
+        have hi : toBase i.val = closedPoint R := (mem_toFinset _).mp i.property
+        let := subschemeOverResidueField
+          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
+        have := isProper_subschemeOverResidueField
+          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
+        have := toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
+          (fun h ↦ one_ne_zero (i.val.property.symm.trans (coheight_eq_zero.mpr h))) hi
+        have := h₀ i.val hi; have := h₁ i.val hi
+        have hdvd := toBase.specialFiberWeight_dvd_intersectionNumber hi (f i) a.toMul
+        rw [toMul_add, LineBundleClass.intersectionNumber_mul_of_isIntegral,
+          Int.add_ediv_of_dvd_left hdvd, Pi.add_apply] }
+  hom.toIntLinearMap
 
-/-- Componentwise evaluation of `componentMultidegreeLinear`, bridging through
-`AddMonoidHom.coe_toIntLinearMap`. -/
+/-- Componentwise evaluation of `componentMultidegreeLinear`. -/
 private lemma componentMultidegreeLinear_apply {Y : Scheme.{u}} {f}
     (a : Additive (LineBundleClass Y)) (i) :
     toBase.componentMultidegreeLinear hX hη h₀ h₁ f a i =
@@ -181,8 +163,7 @@ private lemma componentMultidegreeLinear_apply {Y : Scheme.{u}} {f}
         (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
             ((mem_toFinset _).mp i.property))
       intersectionNumber (ResidueField R) (f i) a.toMul /
-        (toBase.specialFiberWeight ((mem_toFinset _).mp i.property) : ℤ) := by
-  rw [componentMultidegreeLinear, AddMonoidHom.coe_toIntLinearMap, componentMultidegreeHom_apply]
+        (toBase.specialFiberWeight ((mem_toFinset _).mp i.property) : ℤ) := rfl
 
 /-- Multiplying the `i`-th coordinate of `componentMultidegreeLinear` by `w_i` recovers the
 intersection number over the residue field. -/
