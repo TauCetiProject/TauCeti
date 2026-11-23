@@ -36,9 +36,10 @@ that complex, and the total space of the pullback is homotopy equivalent to `E`
 (`IsCoveringMap.pullbackHomotopyEquiv`). Hence `χ(E) = d · χ(B)` for every `d`-sheeted cover of a
 space of finite CW type.
 
-If `X` has finite CW type and a continuous map `f : X → B` meets only finite fibres of `p`,
-all of cardinality `d`, then the pullback has Euler characteristic `d * eulerChar X`
-(`IsCoveringMap.eulerChar_pullback`). The image of `f` may meet several connected components.
+If `X` has finite CW type, `f : X → B` is continuous, and `p` is a covering over the image of
+`f` with finite fibres all of cardinality `d`, then the pullback has Euler characteristic
+`d * eulerChar X` (`IsCoveringMapOn.eulerChar_pullback`). The image of `f` may meet several
+connected components.
 
 ## Main results
 
@@ -152,7 +153,7 @@ theorem eulerChar_eq_mul_of_isCoveringMap [FiniteCWType B] {d : ℕ}
   have hq := hp.pullback_fst e.symm.toFun.continuous
   have hqfin (z : Z) :
       Finite ↥((Function.Pullback.fst : Function.Pullback e.symm p → Z) ⁻¹' {z}) :=
-    Function.Pullback.finite_preimage_fst_singleton z (hfin _)
+    (Function.Pullback.finite_preimage_fst_singleton_iff z).mpr (hfin _)
   have h := eulerChar_eq_mul_of_isCoveringMap_of_cwComplex hq hqfin fun z ↦ by
     simpa only [Nat.card_coe_set_eq, Function.Pullback.ncard_preimage_fst_singleton]
       using hd (e.symm z)
@@ -161,15 +162,16 @@ theorem eulerChar_eq_mul_of_isCoveringMap [FiniteCWType B] {d : ℕ}
 
 end FiniteCWType
 
-/-- If `X` has finite CW type and every covering fibre over the image of `f` is finite with
-cardinality `d`, the Euler characteristic of the pullback is `d` times `eulerChar X`. -/
-theorem _root_.IsCoveringMap.eulerChar_pullback {X Z : Type u} {Y : Type*}
+/-- If `X` has finite CW type, `f` is continuous, and `p` is a covering over the image of `f`
+with finite fibres of cardinality `d`, the Euler characteristic of the pullback is `d` times
+`eulerChar X`. -/
+theorem _root_.IsCoveringMapOn.eulerChar_pullback {X Z : Type u} {Y : Type*}
     [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] [FiniteCWType X]
-    {f : X → Y} {p : Z → Y} (hp : IsCoveringMap p) (hf : Continuous f)
+    {f : X → Y} {p : Z → Y} (hp : IsCoveringMapOn p (Set.range f)) (hf : Continuous f)
     (hfin : ∀ x, Finite (p ⁻¹' {f x})) {d : ℕ}
     (hd : ∀ x, Nat.card (p ⁻¹' {f x}) = d) :
-    let hq := hp.pullback_fst hf
-    let hqfin := fun x ↦ Function.Pullback.finite_preimage_fst_singleton x (hfin x)
+    let hq := hp.isCoveringMap_pullback_fst hf (fun x ↦ ⟨x, rfl⟩)
+    let hqfin := fun x ↦ (Function.Pullback.finite_preimage_fst_singleton_iff x).mpr (hfin x)
     letI : FiniteCWType (f.Pullback p) := hq.finiteCWType hqfin
     eulerChar (f.Pullback p) = d * eulerChar X := by
   intro hq hqfin

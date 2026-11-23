@@ -28,11 +28,8 @@ variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalS
 theorem IsFiniteCover.pullback_fst (hp : IsFiniteCover p) (hf : Continuous f) :
     IsFiniteCover (Pullback.fst : f.Pullback p → X) where
   isCoveringMap := hp.isCoveringMap.pullback_fst hf
-  surjective := by
-    intro x
-    obtain ⟨z, hz⟩ := hp.surjective (f x)
-    exact ⟨(Pullback.fstPreimageEquiv x).symm ⟨z, hz⟩,
-      Pullback.fst_fstPreimageEquiv_symm_apply x ⟨z, hz⟩⟩
-  finite_fiber := fun x ↦ Pullback.finite_preimage_fst_singleton x (hp.finite_fiber (f x))
+  surjective := Pullback.surjective_fst_iff.mpr (by simp [hp.surjective.range_eq])
+  finite_fiber := fun x ↦ (Pullback.finite_preimage_fst_singleton_iff x).mpr
+    (hp.finite_fiber (f x))
 
 end TauCeti

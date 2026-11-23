@@ -50,11 +50,12 @@ def Function.Pullback.fstPreimageEquiv (x : X) :
   left_inv y := Subtype.ext (Pullback.ext y.property.symm rfl)
   right_inv _ := rfl
 
-/-- The fibre of the first pullback projection over `x` is finite if the original fibre over
-`f x` is finite. -/
-theorem Function.Pullback.finite_preimage_fst_singleton (x : X) (h : Finite (g ⁻¹' {f x})) :
-    Finite ((Pullback.fst : f.Pullback g → X) ⁻¹' {x}) :=
-  (Pullback.fstPreimageEquiv x).finite_iff.mpr h
+/-- The fibre of the first pullback projection over `x` is finite exactly when the original
+fibre over `f x` is finite. -/
+@[simp]
+theorem Function.Pullback.finite_preimage_fst_singleton_iff (x : X) :
+    Finite ((Pullback.fst : f.Pullback g → X) ⁻¹' {x}) ↔ Finite (g ⁻¹' {f x}) :=
+  (Pullback.fstPreimageEquiv x).finite_iff
 
 @[simp]
 theorem Function.Pullback.fstPreimageEquiv_apply_coe (x : X)
@@ -71,3 +72,16 @@ theorem Function.Pullback.fst_fstPreimageEquiv_symm_apply (x : X) (z : g ⁻¹' 
 theorem Function.Pullback.snd_fstPreimageEquiv_symm_apply (x : X) (z : g ⁻¹' {f x}) :
     ((Pullback.fstPreimageEquiv x).symm z : f.Pullback g).snd = z :=
   (rfl)
+
+/-- The first pullback projection is surjective exactly when the range of the base map is
+contained in the range of the other map. -/
+@[simp]
+theorem Function.Pullback.surjective_fst_iff :
+    Surjective (Pullback.fst : f.Pullback g → X) ↔ Set.range f ⊆ Set.range g := by
+  constructor
+  · rintro h _ ⟨x, rfl⟩
+    obtain ⟨w, hw⟩ := h x
+    exact ⟨w.snd, w.property.symm.trans (congrArg f hw)⟩
+  · intro h x
+    obtain ⟨z, hz⟩ := h (Set.mem_range_self x)
+    exact ⟨⟨(x, z), hz.symm⟩, rfl⟩

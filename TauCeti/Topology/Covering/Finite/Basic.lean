@@ -52,18 +52,6 @@ namespace TauCeti
 
 open CategoryTheory
 
-section Fibers
-
-variable {E : Type u} {X : Type v} [TopologicalSpace E] [TopologicalSpace X] {p : E → X}
-
-/-- Over a preconnected base, a covering map with one finite fibre has all fibres finite. -/
-theorem finite_fiber_of_finite_fiber [PreconnectedSpace X] (hp : IsCoveringMap p) {x₀ : X}
-    (h : Finite ↥(p ⁻¹' {x₀})) (x : X) : Finite ↥(p ⁻¹' {x}) :=
-  hp.finite_fiber_of_mem_connectedComponent
-    (by simp only [PreconnectedSpace.connectedComponent_eq_univ, Set.mem_univ]) h
-
-end Fibers
-
 namespace Over
 
 /-- The property of an object of `TopCat / X` that all fibres of its structure morphism are
@@ -124,6 +112,6 @@ end FiniteCoveringSpace
 theorem hasFiniteFibers_of_finite_fiber {X : TopCat.{u}} [PreconnectedSpace X]
     (p : CoveringSpace X) (x₀ : X) (h : Finite ↥(⇑p.proj ⁻¹' {x₀})) :
     Over.hasFiniteFibers X p.obj :=
-  Over.hasFiniteFibers_iff.2 fun x => finite_fiber_of_finite_fiber p.isCoveringMap_proj h x
+  Over.hasFiniteFibers_iff.2 fun x => p.isCoveringMap_proj.finite_fiber_of_finite_fiber h x
 
 end TauCeti

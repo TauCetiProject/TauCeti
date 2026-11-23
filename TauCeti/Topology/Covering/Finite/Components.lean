@@ -24,7 +24,10 @@ namespace TauCeti
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- A covering map with finite fibres over a space with finitely many connected components has
-finitely many connected components in its total space. -/
+finitely many connected components in its total space.
+
+This applies `IsOpenMap.finite_connectedComponents_of_finite_preimage_singleton`; properness
+of the covering map supplies its closed-map hypothesis. -/
 theorem _root_.IsCoveringMap.finite_connectedComponents [Finite (ConnectedComponents Y)]
     {p : X → Y} (hp : IsCoveringMap p) (hfin : ∀ y, Finite (p ⁻¹' {y})) :
     Finite (ConnectedComponents X) := by
