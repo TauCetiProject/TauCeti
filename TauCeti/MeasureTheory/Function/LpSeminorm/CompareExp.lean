@@ -23,7 +23,9 @@ bounds `‖u‖ ≤ ‖f‖ ^ r`.
 
 On an arbitrary measure space, a common bound for the `Lᵖ` seminorm and the essential supremum
 also bounds every intermediate `Lᵠ` seminorm (`MeasureTheory.eLpNorm_le_of_exponent_le`).
-This comparison is useful for embeddings of real interpolation spaces.
+This comparison is useful for embeddings of real interpolation spaces. A function bounded almost
+everywhere and vanishing off a set of finite measure lies in every `Lᵖ`
+(`MeasureTheory.memLp_of_norm_le_of_measure_support_ne_top`).
 
 ## Main declarations
 
@@ -34,6 +36,8 @@ This comparison is useful for embeddings of real interpolation spaces.
   `‖f‖ ^ r` and `‖g‖ ^ r` is a bound between seminorms of `f` and `g` at `r` times the exponents.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm`: convergence to zero in `Lᵖ`
   for `1 ≤ p` implies convergence to zero in `L¹`.
+* `TauCeti.MeasureTheory.tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq`: on
+  sets of bounded measure, convergence to zero of `L²` norms implies that of `L¹` norms.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_of_tendsto_eLpNorm_one`: convergence to zero in `L¹`
   implies convergence to zero in `Lᵖ` for `p ≤ 1`.
 * `TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm`: if `eLpNorm (f i) p μ → 0`
@@ -118,6 +122,38 @@ theorem tendsto_eLpNorm_one_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGrou
     fun _ => eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hp one_pos
   simpa using ENNReal.Tendsto.mul_const h (.inr (ENNReal.rpow_ne_top_of_nonneg
     (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hp) (measure_ne_top μ Set.univ)))
+
+/-- **`L²` control gives `L¹` control on sets of bounded measure.** If the sets `A i` eventually
+have measure at most `C < ∞` and the `L²` norms of `g i` over `A i` tend to zero, then so do their
+`L¹` norms. -/
+theorem tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq {ι F : Type*}
+    [NormedAddCommGroup F] {μ : Measure Ω} {l : Filter ι} {A : ι → Set Ω}
+    {g : ι → Ω → F} {C : ℝ≥0∞} (hC : C ≠ ∞) (hA : ∀ᶠ i in l, μ (A i) ≤ C)
+    (hg : ∀ᶠ i in l, AEStronglyMeasurable (g i) (μ.restrict (A i)))
+    (h : Tendsto (fun i ↦ ∫⁻ x in A i, ENNReal.ofReal (‖g i x‖ ^ 2) ∂μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫⁻ x in A i, ‖g i x‖ₑ ∂μ) l (𝓝 0) := by
+  have h2 : Tendsto (fun i ↦ (∫⁻ x in A i, ‖g i x‖ₑ ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) *
+      C ^ (1 / (2 : ℝ))) l (𝓝 0) := by
+    have h' : Tendsto (fun i ↦ ∫⁻ x in A i, ‖g i x‖ₑ ^ (2 : ℝ) ∂μ) l (𝓝 0) := by
+      refine h.congr fun i ↦ lintegral_congr fun x ↦ ?_
+      rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two,
+        Real.rpow_two]
+    have h'' := ((ENNReal.continuous_rpow_const (y := 1 / (2 : ℝ))).tendsto 0).comp h'
+    rw [ENNReal.zero_rpow_of_pos (by norm_num)] at h''
+    simpa using ENNReal.Tendsto.mul_const h''
+      (Or.inr (ENNReal.rpow_ne_top_of_nonneg (by norm_num) hC))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h2
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hA, hg] with i hiA hig
+  -- Hölder's inequality on `A i`, which has measure at most `C`.
+  have hL := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2) one_le_two hig
+  rw [eLpNorm_one_eq_lintegral_eNorm hig,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hig,
+    Measure.restrict_apply_univ] at hL
+  refine hL.trans (mul_le_mul' (le_of_eq ?_) ?_)
+  · norm_num
+  · rw [show (1 / ENNReal.toReal 1 - 1 / ENNReal.toReal 2 : ℝ) = 1 / 2 by norm_num]
+    exact ENNReal.rpow_le_rpow hiA (by norm_num)
 
 /-- On a finite measure space, convergence to zero in `L¹` implies convergence to zero in `Lᵖ`
 for every exponent `p ≤ 1`. No measurability hypothesis is needed: `eLpNorm (F i) 1 μ` is finite
@@ -237,5 +273,12 @@ theorem eLpNorm_le_of_exponent_le
   rw [hnorm, ENNReal.inv_mul_le_iff (ENNReal.ofReal_ne_zero_iff.2 hM)
     ENNReal.ofReal_ne_top, mul_one] at h
   exact h
+
+/-- A function bounded almost everywhere and vanishing off a set of finite measure lies in every
+`Lᵖ`. -/
+theorem memLp_of_norm_le_of_measure_support_ne_top {F : Type*} [NormedAddCommGroup F]
+    {u : α → F} (hu : AEStronglyMeasurable u μ) {c : ℝ} (hc : ∀ᵐ x ∂μ, ‖u x‖ ≤ c) {s : Set α}
+    (hs : μ s ≠ ∞) (hsupp : ∀ x, x ∉ s → u x = 0) (p : ℝ≥0∞) : MemLp u p μ :=
+  (memLp_top_of_bound hu c hc).mono_exponent_of_measure_support_ne_top hsupp hs le_top
 
 end MeasureTheory

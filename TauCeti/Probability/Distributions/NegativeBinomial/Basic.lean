@@ -35,7 +35,9 @@ and the additivity of the shape parameter under convolution.
 * `negativeBinomialMeasure_singleton_ne_zero_iff` characterizes their exact support, including the
   shape-zero and success-probability-one boundary laws;
 * `pgf_negativeBinomialMeasure` computes the probability-generating function on its exact domain;
-* `negativeBinomialMeasure_conv_negativeBinomialMeasure` proves that convolution adds shapes.
+* `negativeBinomialMeasure_conv_negativeBinomialMeasure` proves that convolution adds shapes;
+* `ProbabilityTheory.IndepFun.hasLaw_add_negativeBinomialMeasure` gives the corresponding law of
+  a sum of independent variables.
 
 The normalization uses Mathlib's real binomial power series, after identifying its coefficients
 with the Gamma quotient. The distributional convention follows Johnson, Kemp, and Kotz,
@@ -440,3 +442,58 @@ theorem negativeBinomialMeasure_conv_negativeBinomialMeasure {r s p : ℝ}
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+/-- The sum of independent negative-binomial variables with the same success probability is
+negative-binomial, with the shape parameters added. -/
+theorem IndepFun.hasLaw_add_negativeBinomialMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X Y : Ω → ℕ} {r s p : ℝ} (hXY : IndepFun X Y P)
+    (hX : HasLaw X (negativeBinomialMeasure r p) P)
+    (hY : HasLaw Y (negativeBinomialMeasure s p) P) :
+    HasLaw (X + Y) (negativeBinomialMeasure (r + s) p) P := by
+  by_cases hp : 0 < p ∧ p ≤ 1
+  · by_cases hr : 0 ≤ r
+    · let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp.1 hp.2
+      let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
+      have hs : 0 ≤ s := by
+        by_contra hs
+        have hzero : negativeBinomialMeasure s p = 0 :=
+          negativeBinomialMeasure_eq_zero_of_invalid fun h ↦ hs h.1
+        have hprob : IsProbabilityMeasure (negativeBinomialMeasure s p) :=
+          hY.isProbabilityMeasure_iff.1 inferInstance
+        rw [hzero] at hprob
+        let _ := hprob
+        exact IsProbabilityMeasure.ne_zero (0 : Measure ℕ) rfl
+      let _ := isProbabilityMeasure_negativeBinomialMeasure hs hp.1 hp.2
+      rw [← negativeBinomialMeasure_conv_negativeBinomialMeasure hr hs]
+      exact hXY.hasLaw_add hX hY
+    · have hr' : r < 0 := not_le.mp hr
+      have hzero_r : negativeBinomialMeasure r p = 0 :=
+        negativeBinomialMeasure_eq_zero_of_invalid fun h ↦ hr h.1
+      have hs : s < 0 := by
+        by_contra hs
+        let _ := isProbabilityMeasure_negativeBinomialMeasure (not_lt.mp hs) hp.1 hp.2
+        let _ : IsProbabilityMeasure P := hY.isProbabilityMeasure
+        have hprob : IsProbabilityMeasure (negativeBinomialMeasure r p) :=
+          hX.isProbabilityMeasure_iff.1 inferInstance
+        rw [hzero_r] at hprob
+        let _ := hprob
+        exact IsProbabilityMeasure.ne_zero (0 : Measure ℕ) rfl
+      have hzero_s : negativeBinomialMeasure s p = 0 :=
+        negativeBinomialMeasure_eq_zero_of_invalid fun h ↦ (not_le_of_gt hs) h.1
+      have hzero_add : negativeBinomialMeasure (r + s) p = 0 :=
+        negativeBinomialMeasure_eq_zero_of_invalid fun h ↦
+          (not_le_of_gt (add_neg hr' hs)) h.1
+      rw [hzero_r] at hX
+      rw [hzero_s] at hY
+      rw [hzero_add]
+      simpa using hXY.hasLaw_add hX hY
+  · have hzero (a : ℝ) : negativeBinomialMeasure a p = 0 :=
+      negativeBinomialMeasure_eq_zero_of_invalid fun h ↦ hp h.2
+    rw [hzero] at hX hY ⊢
+    simpa using hXY.hasLaw_add hX hY
+
+end ProbabilityTheory

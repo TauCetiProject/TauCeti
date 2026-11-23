@@ -22,7 +22,8 @@ in the positive degrees at most `k` (`TauCeti.isZero_singularHomology_of_isIso_l
 the connectedness hypothesis the conclusion holds for the path component of `x`, which has the
 same loop space (`TauCeti.isIso_singularHomologyMap_pathComponent_of_isIso_loopSpace`). The
 same holds for the Moore loop space
-(`TauCeti.isIso_singularHomologyMap_of_isIso_mooreLoopSpace`).
+(`TauCeti.isIso_singularHomologyMap_of_isIso_mooreLoopSpace`,
+`TauCeti.isIso_singularHomologyMap_pathComponent_of_isIso_mooreLoopSpace`).
 
 The proof is the spectral sequence argument for the path fibration `Ω X x → P → X`, with total
 space the paths ending at `x`, done through the comparison theorem for Serre fibrations
@@ -51,7 +52,9 @@ groups of a simply connected space then applies.
   homology of `X` in positive degrees.
 * `TauCeti.isIso_singularHomologyMap_pathComponent_of_isIso_loopSpace`: the same for the path
   component of `x` in an arbitrary space.
-* `TauCeti.isIso_singularHomologyMap_of_isIso_mooreLoopSpace`: the same with the Moore loop space.
+* `TauCeti.isIso_singularHomologyMap_of_isIso_mooreLoopSpace`,
+  `TauCeti.isIso_singularHomologyMap_pathComponent_of_isIso_mooreLoopSpace`: the same with the
+  Moore loop space.
 
 ## References
 
@@ -148,6 +151,18 @@ theorem isIso_singularHomologyMap_pathComponent_of_isIso_loopSpace (x : X) (k : 
   exact (isIso_singularHomologyMap_isTerminalPUnit_from_iff (ModuleCat.of R R) e.hom q
     (h q hq)).2 inferInstance
 
+/-- The loop space `Ω X x` has the homology of a point in every degree in which the Moore loop
+space has, since the two are homotopy equivalent (`TauCeti.MooreLoopSpace.homotopyEquivPath`). -/
+private theorem isIso_singularHomologyMap_loopSpace_of_isIso_mooreLoopSpace (x : X) (q : ℕ)
+    (h : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (TopCat.isTerminalPUnit.from (TopCat.of (MooreLoopSpace X x))))) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (TopCat.isTerminalPUnit.from (TopCat.of (Ω X x)))) :=
+  let e := (MooreLoopSpace.homotopyEquivPath x).symm
+  (isIso_singularHomologyMap_isTerminalPUnit_from_iff (ModuleCat.of R R)
+    (TopCat.ofHom e.toFun) q h).2
+      (e.isWeakHomotopyEquivalence.isIso_singularHomologyMap (ModuleCat.of R R) q)
+
 /-- **A path-connected space whose Moore loop space has the homology of a point has the homology
 of a point.** This is `TauCeti.isIso_singularHomologyMap_of_isIso_loopSpace` for the Moore loop
 space `MooreLoopSpace X x`, which is homotopy equivalent to `Ω X x`
@@ -156,11 +171,21 @@ theorem isIso_singularHomologyMap_of_isIso_mooreLoopSpace [PathConnectedSpace X]
     (h : ∀ q ≤ k, IsIso (((singularHomologyFunctor (ModuleCat.{u} R) q).obj
       (ModuleCat.of R R)).map (TopCat.isTerminalPUnit.from (TopCat.of (MooreLoopSpace X x))))) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) k).obj (ModuleCat.of R R)).map
-      (TopCat.isTerminalPUnit.from (TopCat.of X))) := by
-  refine isIso_singularHomologyMap_of_isIso_loopSpace R x k fun q hq ↦ ?_
-  let e := (MooreLoopSpace.homotopyEquivPath x).symm
-  exact (isIso_singularHomologyMap_isTerminalPUnit_from_iff (ModuleCat.of R R)
-    (TopCat.ofHom e.toFun) q (h q hq)).2
-      (e.isWeakHomotopyEquivalence.isIso_singularHomologyMap (ModuleCat.of R R) q)
+      (TopCat.isTerminalPUnit.from (TopCat.of X))) :=
+  isIso_singularHomologyMap_of_isIso_loopSpace R x k fun q hq ↦
+    isIso_singularHomologyMap_loopSpace_of_isIso_mooreLoopSpace R x q (h q hq)
+
+/-- **The path component of a point whose Moore loop space has the homology of a point has the
+homology of a point.** This is `TauCeti.isIso_singularHomologyMap_pathComponent_of_isIso_loopSpace`
+for the Moore loop space `MooreLoopSpace X x`. For `X = MooreLoopSpace Q x` and its unit `1`, the
+path component is the space of contractible Moore loops, and the hypothesis is on the double Moore
+loop space. -/
+theorem isIso_singularHomologyMap_pathComponent_of_isIso_mooreLoopSpace (x : X) (k : ℕ)
+    (h : ∀ q ≤ k, IsIso (((singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (TopCat.isTerminalPUnit.from (TopCat.of (MooreLoopSpace X x))))) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} R) k).obj (ModuleCat.of R R)).map
+      (TopCat.isTerminalPUnit.from (TopCat.of (pathComponent x)))) :=
+  isIso_singularHomologyMap_pathComponent_of_isIso_loopSpace R x k fun q hq ↦
+    isIso_singularHomologyMap_loopSpace_of_isIso_mooreLoopSpace R x q (h q hq)
 
 end TauCeti

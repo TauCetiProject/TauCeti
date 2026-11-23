@@ -53,7 +53,10 @@ is the input which forces the coefficients `b_j ∈ H⁰(C, N ^ j)`, `1 ≤ j �
 curve in the total space of `N` covering `C` with degree `m` to vanish, so that the curve lies on
 the zero section. `TauCeti.Analysis.Complex.QuasiPeriodic.Multisection` uses it this way for
 curves described by their fibres over the torus, with holomorphic power sums or local defining
-functions; that a compact curve has this form is not shown here.
+functions. For compact curves in the integrable flat model, the total space `TauCeti.FlatLine ψ`
+of `N` over `ℂ / L`, this is `TauCeti.FlatLine.exists_eq_mk_zero_of_mdifferentiable` in
+`TauCeti.Analysis.Complex.RiemannSurface.FlatLine`; transporting it to a neighbourhood of `C` in
+the four-manifold is not formalized here.
 
 For a lattice in `ℂ` with a basis `ω₁, ω₂`, `TauCeti.Analysis.Complex.Wirtinger.FlatTorus` proves
 the quantitative counterpart: an `L²` coercivity estimate for `∂bar` on `C²` sections over the

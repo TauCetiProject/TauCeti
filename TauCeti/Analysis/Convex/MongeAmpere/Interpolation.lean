@@ -223,10 +223,10 @@ theorem map_smul_add_smul_gradient_absolutelyContinuous (hf : Convex ℝ {p : E 
     hμ hμD
   -- Change variables on `S`, with the positive Jacobian `det ((1 - t) • 1 + t • H' x)`.
   rw [← hμS]
-  exact map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ
-    (measurable_smul_add_smul_gradient t) hSm
-    (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t)
-    (fun x hx => (ENNReal.ofReal_pos.2
+  exact map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ ρ
+    (measurable_smul_add_smul_gradient t).aemeasurable hSm
+    (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t).aemeasurable
+    (ae_restrict_of_forall_mem hSm fun x hx => (ENNReal.ofReal_pos.2
       ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne')
     (withDensity_image_smul_add_smul_gradient_eq_setLIntegral_of_subset ρ hS ht₀ ht₁) hμ
 
@@ -262,7 +262,7 @@ theorem rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradien
     ((measurable_rnDeriv (μ.map T) ρ).comp hT)
   -- `μ` has density `φ` on `S`, by the change of variables along the injective map `T`.
   have hμφ : μ = ρ.withDensity (S.indicator φ) := by
-    have := restrict_eq_withDensity_indicator_rnDeriv_map_restrict ρ hT hSm
+    have := restrict_eq_withDensity_indicator_rnDeriv_map_restrict ρ ρ hT.aemeasurable hSm
       (injOn_smul_add_smul_gradient hS ht₀ ht₁)
       (fun s hs hsS => measurableSet_image_smul_add_smul_gradient hs (fun x hx => hS x (hsS hx))
         ht₀ ht₁) (withDensity_image_smul_add_smul_gradient_eq_setLIntegral_of_subset ρ hS ht₀ ht₁)
@@ -302,11 +302,10 @@ theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
     exists_measurableSet_restrict_eq_self ρ hf hbot hH hμ hμD
   -- Change variables along the injective map `T` on `S`, which carries `μ` and is `D` up to a
   -- null set.
-  have h := lintegral_comp_rnDeriv_map_restrict ρ hT hSm (injOn_smul_add_smul_gradient hS ht₀ ht₁)
+  have h := lintegral_comp_rnDeriv_map_restrict ρ ρ hT hSm
+    (injOn_smul_add_smul_gradient hS ht₀ ht₁)
     (fun s hs hsS => measurableSet_image_smul_add_smul_gradient hs (fun x hx => hS x (hsS hx))
-      ht₀ ht₁) (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t)
-    (fun x hx => ⟨(ENNReal.ofReal_pos.2
-      ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne', ENNReal.ofReal_ne_top⟩)
+      ht₀ ht₁) (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t).aemeasurable
     (withDensity_image_smul_add_smul_gradient_eq_setLIntegral_of_subset ρ hS ht₀ ht₁)
     (hμS ▸ map_smul_add_smul_gradient_absolutelyContinuous ρ hf hbot hμ hμD ht₀ ht₁) hΦ
   rw [hμS] at h
@@ -395,9 +394,10 @@ private theorem exists_map_gradient_restrict_decomposition
         (hS x (hsZ hx).1).2.2) (hinj.mono hsZ)
   · filter_upwards [hDS.mem_iff] with x hx hxD hxZ
     exact (hSZ x (hx.1 hxD)).1 hxZ
-  · exact map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ (measurable_gradient _) hZm
-      (ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp hH'm))
-      (fun x hx => (ENNReal.ofReal_pos.2 (hpos x hx)).ne') hcov hμ
+  · exact map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ ρ
+      (measurable_gradient _).aemeasurable hZm (ENNReal.measurable_ofReal.comp
+        (ContinuousLinearMap.continuous_det.measurable.comp hH'm)).aemeasurable
+      (ae_restrict_of_forall_mem hZm fun x hx => (ENNReal.ofReal_pos.2 (hpos x hx)).ne') hcov hμ
   · rw [restrict_congr_set hZc']
     exact map_restrict_gradient_mutuallySingular ρ hf (H := H') (hSm.diff hZm)
       (fun x hx => hS x hx.1) (fun x hx => not_not.1 fun h => hx.2 ⟨hx.1, h⟩) μ
@@ -449,7 +449,7 @@ theorem lintegral_comp_rnDeriv_map_gradient (hf : Convex ℝ {p : E × ℝ | f p
   set G := ∇ fun x' => (f x').toReal
   set D := interior {x | f x ≠ ⊤}
   have hG : Measurable G := measurable_gradient _
-  obtain ⟨Z, hZm, hZD, himage, hpos, hinj, ⟨H', hH'm, hHZ, hcov⟩, hdeg, -, hac, hsing⟩ :=
+  obtain ⟨Z, hZm, hZD, himage, -, hinj, ⟨H', hH'm, hHZ, hcov⟩, hdeg, -, hac, hsing⟩ :=
     exists_map_gradient_restrict_decomposition ρ hf hbot hH hμ hμD
   set ν := (μ.restrict Z).map G
   -- The absolutely continuous part of `μ₁` is `ν`, so its density is that of `ν`.
@@ -460,10 +460,10 @@ theorem lintegral_comp_rnDeriv_map_gradient (hf : Convex ℝ {p : E × ℝ | f p
   calc ∫⁻ y, Φ ((μ.map G).rnDeriv ρ y) ∂ρ = ∫⁻ y, Φ (ν.rnDeriv ρ y) ∂ρ :=
         lintegral_congr_ae (hg.mono fun y hy => congrArg Φ hy.symm)
     _ = ∫⁻ x in Z, ENNReal.ofReal (H' x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H' x).det) ∂ρ :=
-        lintegral_comp_rnDeriv_map_restrict ρ hG hZm hinj himage
+        lintegral_comp_rnDeriv_map_restrict ρ ρ hG hZm hinj himage
           (J := fun x => ENNReal.ofReal (H' x).det)
-          (ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp hH'm))
-          (fun x hx => ⟨(ENNReal.ofReal_pos.2 (hHZ x hx ▸ hpos x hx)).ne', ENNReal.ofReal_ne_top⟩)
+          (ENNReal.measurable_ofReal.comp
+            (ContinuousLinearMap.continuous_det.measurable.comp hH'm)).aemeasurable
           hcov hac hΦ
     _ = ∫⁻ x in Z, ENNReal.ofReal (H x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H x).det) ∂ρ :=
         setLIntegral_congr_fun hZm fun x hx => by rw [hHZ x hx]

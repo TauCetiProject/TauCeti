@@ -306,7 +306,7 @@ theorem _root_.Real.self_le_artanh {x : ℝ} (hx : 0 ≤ x) (hx₁ : x < 1) : x 
 `Real.self_le_artanh` evaluated at `tanh x`, which lies in `[0, 1)`. -/
 theorem _root_.Real.tanh_le_self {x : ℝ} (hx : 0 ≤ x) : Real.tanh x ≤ x := by
   simpa only [Real.artanh_tanh] using
-    Real.self_le_artanh (Real.tanh_nonneg hx) (Real.tanh_lt_one x)
+    Real.self_le_artanh (Real.tanh_nonneg_iff.2 hx) (Real.tanh_lt_one x)
 
 /-- For `0 ≤ u`, `(1 - u) e^u ≤ (1 + u) e^{-u}`: this is `sinh u ≤ u cosh u`, that is
 `Real.tanh_le_self`. -/

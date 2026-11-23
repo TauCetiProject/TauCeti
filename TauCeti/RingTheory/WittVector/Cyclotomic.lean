@@ -182,8 +182,8 @@ theorem isDistinguished_cyclotomicXi {ε : S} (hε : ε - 1 ∈ Ring.jacobson S)
 coordinate of `ξ' = φ(ξ)` is a unit: it is the `p`-th power of that of `ξ`. -/
 theorem isDistinguished_cyclotomicXiTilde {ε : S} (hε : ε - 1 ∈ Ring.jacobson S) :
     (cyclotomicXiTilde p ε).IsDistinguished := by
-  rw [cyclotomicXiTilde_def, isDistinguished_iff, coeff_frobenius_charP]
-  exact (isDistinguished_iff.mp (isDistinguished_cyclotomicXi p hε)).pow p
+  rw [cyclotomicXiTilde_def, isDistinguished_frobenius_iff]
+  exact isDistinguished_cyclotomicXi p hε
 
 end Perfect
 
