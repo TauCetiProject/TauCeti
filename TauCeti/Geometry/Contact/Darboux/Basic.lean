@@ -354,14 +354,14 @@ theorem exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mu
         𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)⟯
         EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) (g : V → ℝ), Φ x₀ = 0 ∧
       ∀ᶠ x in 𝓝 x₀, 0 < g x ∧ ∀ v : V,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (Φ x) ![fderiv ℝ Φ x v] =
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (Φ x) ![fderiv ℝ Φ x v] =
           g x * α x ![v] := by
   obtain ⟨n, e, hae, hωe⟩ := exists_continuousLinearEquiv_stdContact hc.ne_zero
     fun v hv hvw ↦ hc.nondegenerate v (RoughForm.mem_ker.2 hv) fun (w : V) hw ↦
       (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv (E := V) (F := ℝ) (k := 1) α x₀)).trans
         (hvw w (RoughForm.mem_ker.1 hw))
   set P := EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ
-  set σ : P → P [⋀^Fin 1]→L[ℝ] ℝ := (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1
+  set σ : P → P [⋀^Fin 1]→L[ℝ] ℝ := (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val
   have hσ : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) σ :=
     isSmoothForm_modelSpace_iff.1 (innerProductContactForm (EuclideanSpace ℝ (Fin n))).isSmoothForm
   -- The standard form and its exterior derivative, read on the model space itself.

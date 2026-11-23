@@ -81,7 +81,7 @@ theorem restrictClopen_map_subtype (s : Clopens X) (ν : AbstractMeasure s R E) 
   congr 1
   ext x
   rw [comp_apply, subtypeVal_apply]
-  exact zeroExtendClopen_apply_mem s f x.2
+  exact zeroExtendClopen_apply_mem s f x.property
 
 /-- Extension of measures from a clopen subset is injective. -/
 theorem map_subtype_injective (s : Clopens X) :
@@ -94,7 +94,7 @@ theorem restrictClopen_map_subtype_of_disjoint {s t : Clopens X} (hst : Disjoint
   refine toCLMEquiv.injective (ContinuousLinearMap.ext fun f ↦ ?_)
   have hzero : (zeroExtendClopen R s f).comp (subtypeVal (t : Set X)) = 0 := by
     ext x
-    have hx : (x : X) ∉ s := fun hx ↦ (Clopens.coe_disjoint.2 hst).notMem_of_mem_right x.2 hx
+    have hx : (x : X) ∉ s := fun hx ↦ (Clopens.coe_disjoint.2 hst).notMem_of_mem_right x.property hx
     rw [comp_apply, subtypeVal_apply, zeroExtendClopen_apply_not_mem s f hx,
       ContinuousMap.zero_apply]
   rw [map_zero, _root_.zero_apply, coe_toCLMEquiv, restrictClopen_apply, map_apply,
@@ -249,7 +249,7 @@ example : restrictClopen zeroClopen (dirac ℤ (1 : Fin 2)) = 0 :=
 -- Every measure restricts to zero on the empty clopen.
 example (μ : D(Fin 2, ℤ)) : restrictClopen (⊥ : Clopens (Fin 2)) μ = 0 := by
   refine toCLMEquiv.injective (ContinuousLinearMap.ext fun f ↦ ?_)
-  have hf : f = 0 := ContinuousMap.ext fun x ↦ (Set.notMem_empty (x : Fin 2) x.2).elim
+  have hf : f = 0 := ContinuousMap.ext fun x ↦ (Set.notMem_empty (x : Fin 2) x.property).elim
   simp [hf]
 
 -- The decomposition of `2δ₀ - 3δ₁` along `{0}` is `(2δ₀, -3δ₁)`.

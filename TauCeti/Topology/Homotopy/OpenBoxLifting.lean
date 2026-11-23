@@ -74,7 +74,7 @@ theorem IsHurewiczFibration.exists_lift_openBox (hp : IsHurewiczFibration.{w} p)
       y.2 ∈ cylinderExtensionDomain (Cube.boundary Unit)}, E) :=
     (g.comp D).restrict _
   obtain ⟨G, hG, hGJ⟩ := (hp.hasHomotopyLiftingProperty _).exists_lift_openBox
-    f (H.comp D) (fun y ↦ hg y.1.1 (d y.1.2) ((hbox _).1 y.2))
+    f (H.comp D) (fun y ↦ hg y.val.1 (d y.val.2) ((hbox _).1 y.property))
   refine ⟨G.comp ⟨fun y ↦ (y.1, e y.2),
     continuous_fst.prodMk (he.comp continuous_snd)⟩, funext fun y ↦ ?_, fun a x hx ↦ ?_⟩
   · simpa [D, e, d] using congrFun hG (y.1, e y.2)

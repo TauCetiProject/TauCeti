@@ -65,7 +65,7 @@ theorem exists_isInternal_isIrreducible [FiniteDimensional K M]
     exists_sSupIndep_of_sSup_atoms_eq_top (α := LieSubmodule K L M) sSup_atoms_eq_top
   have : Fintype S := (WellFoundedGT.finite_of_sSupIndep hindep).fintype
   refine ⟨Fintype.card S, fun i ↦ ((Fintype.equivFin S).symm i : LieSubmodule K L M), ?_,
-    fun i ↦ (isIrreducible_iff_isAtom _).2 (hSatom ((Fintype.equivFin S).symm i).2)⟩
+    fun i ↦ (isIrreducible_iff_isAtom _).2 (hSatom ((Fintype.equivFin S).symm i).property)⟩
   refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
   · rw [LieSubmodule.iSupIndep_toSubmodule]
     exact ((sSupIndep_iff S).1 hindep).comp (Fintype.equivFin S).symm.injective

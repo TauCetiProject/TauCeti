@@ -45,6 +45,9 @@ formula replaces the circle average of `log ‖f‖` by `log ‖f c‖`, so the 
 * `AnalyticOnNhd.le_circleAverage_log_norm`: Jensen's inequality from below, the circle average of
   `log ‖f‖` is at least `k * log r + log ‖τ‖`, where `k` is the order of `f` at the centre and `τ`
   its trailing coefficient there.
+* `AnalyticOnNhd.log_norm_le_circleAverage_log_norm`: sub-mean-value inequality
+  `Real.log ‖f c‖ ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r` when `f` is analytic near
+  `closedBall c |r|` and `f c ≠ 0` (the order-zero case, valid also at `r = 0`).
 * `AnalyticOnNhd.exists_forall_le_circleAverage_log_norm`: for `f` analytic on `ball c R` and
   `s > 0`, a uniform lower bound for these averages on the circles with radii in `[s, R)`.
 * `AnalyticOnNhd.circleAverage_abs_log_norm_of_ne_zero`: for `f` holomorphic and zero-free on a
@@ -224,6 +227,21 @@ theorem le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (closedBall c |r|)) 
         exact Real.log_nonneg (by simpa [← div_eq_mul_inv, abs_div, one_le_div hpos] using hu)
     · simp [hu]
   linarith
+
+/-- **Sub-mean-value inequality for `log ‖f‖`** (Jensen's inequality at a nonvanishing centre).
+If `f` is analytic on a neighbourhood of `closedBall c |r|` and `f c ≠ 0`, then
+`Real.log ‖f c‖ ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r`. -/
+theorem log_norm_le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (closedBall c |r|))
+    (hfc : f c ≠ 0) :
+    Real.log ‖f c‖ ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp
+  · have hord : analyticOrderNatAt f c = 0 := by
+      by_contra hne
+      exact hfc (apply_eq_zero_of_analyticOrderNatAt_ne_zero hne)
+    have htrail : meromorphicTrailingCoeffAt f c = f c :=
+      (hf c (mem_closedBall_self (abs_nonneg r))).meromorphicTrailingCoeffAt_of_ne_zero hfc
+    simpa [hord, htrail] using hf.le_circleAverage_log_norm hr
 
 /-- By Jensen's inequality, the circle averages of `log ‖f‖` of a function analytic on `ball c R`
 are bounded below on the circles about `c` with radii in `[s, R)`, for any `s > 0`. -/

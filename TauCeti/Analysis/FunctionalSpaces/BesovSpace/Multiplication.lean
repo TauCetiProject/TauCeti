@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.ChangeOfVariables
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
-import TauCeti.Analysis.FunctionalSpaces.BesovSpace.ChangeOfVariables
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
@@ -59,6 +59,8 @@ So multiplication by `g` is almost diagonal, and for `N > |s|` it is bounded on 
   functions of temperate growth whose derivatives of order at most `⌊|s|⌋₊ + 1` are bounded.
 * `TauCeti.BesovSpace.smulLeftCLM`: the multiplication as a bounded operator on `B^s_{p,q}`, with
   operator norm at most `C G` (`TauCeti.BesovSpace.exists_norm_smulLeftCLM_le`).
+* `TauCeti.BesovSpace.compCLM_smulLeftCLM`: pulling back `g u` along a diffeomorphism `Φ` gives
+  `(g ∘ Φ) Φ^* u`.
 
 ## References
 
@@ -208,5 +210,19 @@ theorem exists_norm_smulLeftCLM_le (φ : ContDiffBump (0 : E)) {N : ℕ} (hN : |
   obtain ⟨v, hv, hvn⟩ := hmul hg hgG (p := p) (q := q) u
   have : smulLeftCLM F φ s p q g hg hbd u = v := ext (by simp [hv])
   rwa [this]
+
+/-- Pulling back `g u` along `Φ` on `B^s_{p,q}` gives `(g ∘ Φ) Φ^* u`. -/
+theorem compCLM_smulLeftCLM {Φ : E ≃ E}
+    (hΦ : (Φ : E → E).HasTemperateGrowth) (hΨ : (Φ.symm : E → E).HasTemperateGrowth)
+    (hΦb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C)
+    {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
+    (hbdΦ : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (g ∘ Φ) x‖ ≤ C)
+    (u : BesovSpace F φ s p q) :
+    BesovSpace.compCLM F φ s p q Φ hΦ hΨ hΦb hΨb (smulLeftCLM F φ s p q g hg hbd u) =
+      smulLeftCLM F φ s p q (g ∘ Φ) (hg.comp hΦ) hbdΦ
+        (BesovSpace.compCLM F φ s p q Φ hΦ hΨ hΦb hΨb u) :=
+  ext (by simp [TemperedDistribution.compCLM_smulLeftCLM hΦ hΨ hg])
 
 end TauCeti.BesovSpace

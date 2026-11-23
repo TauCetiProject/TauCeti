@@ -71,7 +71,7 @@ theorem weightedMap_surjective [(𝓝 (0 : A)).IsCountablyGenerated] {φ : A →
     (fun ν ↦ MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B)) (fun ν ↦ hsurj _)
     (fun n ↦ by
       simp only [hmap]
-      exact (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp g.2)) (W n))
+      exact (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp g.property)) (W n))
   let f : MvPowerSeries (Fin k) A := L
   have hf : IsWeightedRestricted T f := by
     rw [isWeightedRestricted_iff]

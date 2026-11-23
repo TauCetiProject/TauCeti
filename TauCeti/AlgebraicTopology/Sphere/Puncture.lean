@@ -123,7 +123,7 @@ private theorem coe_normalizeSegmentToSphere_apply_of_normalize_eq {y : Y} {v : 
       (1 - (u : ℝ) + (u : ℝ) * ‖g y‖) • v := by
     conv_lhs => rw [hfy, hg, smul_smul, ← add_smul]
   have hcoeff : 0 ≤ 1 - (u : ℝ) + (u : ℝ) * ‖g y‖ :=
-    add_nonneg (sub_nonneg.mpr u.2.2) (mul_nonneg u.2.1 (norm_nonneg _))
+    add_nonneg (sub_nonneg.mpr u.property.2) (mul_nonneg u.property.1 (norm_nonneg _))
   have hcoeff_ne : 1 - (u : ℝ) + (u : ℝ) * ‖g y‖ ≠ 0 := by
     intro hzero
     exact h0 (u, y) (by rw [hsegment, hzero, zero_smul])
@@ -141,11 +141,12 @@ theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ
     (h : ∀ z : I × I,
       (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) +
         (z.1 : ℝ) • f z.2 ≠ 0) : γ.Homotopic γ' := by
-  have hanorm : ‖((a : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp a.2
-  have hbnorm : ‖((b : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp b.2
-  have hγnorm (t : I) : ‖((γ t : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp (γ t).2
+  have hanorm : ‖((a : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp a.property
+  have hbnorm : ‖((b : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp b.property
+  have hγnorm (t : I) : ‖((γ t : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp
+      (γ t).property
   have hγ'norm (t : I) : ‖((γ' t : sphere (0 : E) 1) : E)‖ = 1 :=
-    mem_sphere_zero_iff_norm.mp (γ' t).2
+    mem_sphere_zero_iff_norm.mp (γ' t).property
   -- The straight segment from `γ` to `γ'` avoids the origin, since that from `γ` to `f` does.
   have h0 : ∀ z : I × I, (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) +
       (z.1 : ℝ) • ((γ' z.2 : sphere (0 : E) 1) : E) ≠ 0 := by
@@ -163,7 +164,7 @@ theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ
   refine Path.homotopic_of_continuous_square
     (normalizeSegmentToSphere (fun t => ((γ t : sphere (0 : E) 1) : E))
       (fun t => ((γ' t : sphere (0 : E) 1) : E))
-      (continuous_subtype_val.comp γ.continuous) (continuous_subtype_val.comp γ'.continuous) h0)
+      (continuous_subtypeVal.comp γ.continuous) (continuous_subtypeVal.comp γ'.continuous) h0)
     (ContinuousMap.continuous _) ?_ ?_ ?_ ?_
   · intro s
     refine Subtype.ext ?_
@@ -197,8 +198,8 @@ private theorem normalize_smul_sub_smul_ne_of_ne {x p : E} (hx : ‖x‖ = 1) (h
     rw [add_smul, hscale]
     simp only [v]
     abel
-  have hleft : 0 < ‖v‖ + (u : ℝ) := add_pos_of_pos_of_nonneg hvnorm u.2.1
-  have hright : 0 ≤ 1 - (u : ℝ) := sub_nonneg.mpr u.2.2
+  have hleft : 0 < ‖v‖ + (u : ℝ) := add_pos_of_pos_of_nonneg hvnorm u.property.1
+  have hright : 0 ≤ 1 - (u : ℝ) := sub_nonneg.mpr u.property.2
   have hcoeff : ‖v‖ + (u : ℝ) = 1 - (u : ℝ) := by
     simpa [norm_smul, hp, hx, Real.norm_eq_abs, abs_of_pos hleft, abs_of_nonneg hright] using
       congrArg norm heq
@@ -213,23 +214,23 @@ the antipode of the deleted point gives a contraction that stays inside the punc
 theorem contractibleSpace_sphere_compl_singleton (p : sphere (0 : E) 1) :
     ContractibleSpace ({p}ᶜ : Set (sphere (0 : E) 1)) := by
   refine (contractible_iff_id_nullhomotopic _).mpr ?_
-  have hp : ‖(p : E)‖ = 1 := mem_sphere_zero_iff_norm.mp p.2
+  have hp : ‖(p : E)‖ = 1 := mem_sphere_zero_iff_norm.mp p.property
   let inclusion : ({p}ᶜ : Set (sphere (0 : E) 1)) → E := fun q =>
     ((q : sphere (0 : E) 1) : E)
-  have hinclusion : Continuous inclusion := continuous_subtype_val.comp continuous_subtype_val
+  have hinclusion : Continuous inclusion := continuous_subtypeVal.comp continuous_subtypeVal
   have hsegment : ∀ z : I × ({p}ᶜ : Set (sphere (0 : E) 1)),
       (1 - (z.1 : ℝ)) • inclusion z.2 + (z.1 : ℝ) • (-(p : E)) ≠ 0 := by
     rintro ⟨u, q⟩
     simpa only [inclusion, smul_neg, sub_eq_add_neg] using smul_sub_smul_ne_zero_of_ne
-      (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).2) hp
-      (fun hq => q.2 (Set.mem_singleton_iff.mpr (Subtype.ext hq))) u
+      (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).property) hp
+      (fun hq => q.property (Set.mem_singleton_iff.mpr (Subtype.ext hq))) u
   let G := normalizeSegmentToSphere inclusion (fun _ => -(p : E))
     hinclusion continuous_const hsegment
   have hGne : ∀ z, G z ≠ p := by
     rintro ⟨u, q⟩ hG
     refine normalize_smul_sub_smul_ne_of_ne
-      (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).2) hp
-      (fun hq => q.2 (Set.mem_singleton_iff.mpr (Subtype.ext hq))) u ?_
+      (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).property) hp
+      (fun hq => q.property (Set.mem_singleton_iff.mpr (Subtype.ext hq))) u ?_
     have hval := congrArg Subtype.val hG
     simpa only [G, coe_normalizeSegmentToSphere_apply, inclusion, smul_neg,
       ← sub_eq_add_neg] using hval
@@ -244,7 +245,7 @@ theorem contractibleSpace_sphere_compl_singleton (p : sphere (0 : E) 1) :
         apply Subtype.ext ∘ Subtype.ext
         rw [coe_normalizeSegmentToSphere_zero_left]
         exact normalize_eq_self_of_norm_eq_one
-          (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).2)
+          (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).property)
       map_one_left := fun q => by
         apply Subtype.ext ∘ Subtype.ext
         rw [coe_normalizeSegmentToSphere_one_left]
@@ -254,12 +255,12 @@ theorem contractibleSpace_sphere_compl_singleton (p : sphere (0 : E) 1) :
 /-- **The inclusion of the unit sphere minus one point into the sphere is null-homotopic.** -/
 theorem nullhomotopic_inclusion_sphere_compl_singleton (p : sphere (0 : E) 1) :
     (ContinuousMap.mk (Subtype.val : ({p}ᶜ : Set (sphere (0 : E) 1)) → sphere (0 : E) 1)
-      continuous_subtype_val).Nullhomotopic := by
+      continuous_subtypeVal).Nullhomotopic := by
   let _ : ContractibleSpace ({p}ᶜ : Set (sphere (0 : E) 1)) :=
     contractibleSpace_sphere_compl_singleton p
   simpa using (id_nullhomotopic ({p}ᶜ : Set (sphere (0 : E) 1))).comp_right
     (ContinuousMap.mk (Subtype.val : ({p}ᶜ : Set (sphere (0 : E) 1)) → sphere (0 : E) 1)
-      continuous_subtype_val)
+      continuous_subtypeVal)
 
 /-- **A loop on the unit sphere that omits a point of the sphere is null-homotopic.** The loop
 runs in the punctured sphere, whose inclusion into the sphere is null-homotopic. -/

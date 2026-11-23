@@ -108,7 +108,7 @@ theorem scalarTensorBialgEquiv_lTensor_val_mem_symmetricAlgebraInvariants
   induction x with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul s a =>
-      simp [(ρ.mem_symmetricAlgebraInvariants a).1 a.2 g]
+      simp [(ρ.mem_symmetricAlgebraInvariants a).1 a.property g]
 
 end CommSemiring
 
@@ -152,7 +152,7 @@ private theorem exists_scalarTensorBialgEquiv_lTensor_val_eq
   let e := ρ.symmetricAlgebraBaseChangeEquiv S
   have hy' : e.symm y ∈ (ρ.symmetricAlgebra.baseChange S).invariants := by
     have := (e.symm.invariantsLinearEquiv ⟨y, (mem_invariants _ y).2
-      (((ρ.baseChange S).mem_symmetricAlgebraInvariants y).1 hy)⟩).2
+      (((ρ.baseChange S).mem_symmetricAlgebraInvariants y).1 hy)⟩).property
     rwa [Equiv.coe_invariantsLinearEquiv_apply] at this
   obtain ⟨x, hx⟩ := ρ.exists_lTensor_val_eq_of_mem_invariants_baseChange hy'
   refine ⟨x, ?_⟩

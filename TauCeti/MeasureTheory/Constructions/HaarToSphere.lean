@@ -1,16 +1,18 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen, Giada Franz
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -65,9 +67,14 @@ Public formalization references:
   integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
-* `TauCeti.integral_toSphere_coe_eq_zero`: the surface measure has barycenter zero.
+* `MeasureTheory.Measure.isNegInvariant_toSphere`, `MeasureTheory.Measure.integral_coe_toSphere`:
+  the sphere measure is antipodally invariant and has barycentre zero.
+* `MeasureTheory.Measure.toSphere_singleton`: points are null in dimension at least two.
 * `ContinuousOn.hasDerivAt_setIntegral_ball`: the derivative in the radius of the integral of a
   continuous function over a ball is its integral over the sphere of that radius.
+
+The antipodal-invariance and singleton lemmas are adapted from Giada Franz's local
+formalization of Hersch's balancing lemma.
 -/
 
 public section
@@ -101,11 +108,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 against the weight `r ^ k`. -/
 theorem integral_volumeIoiPow (k : ℕ) (h : ℝ → F) :
     ∫ r : Ioi (0 : ℝ), h r ∂(Measure.volumeIoiPow k) = ∫ r in Ioi (0 : ℝ), r ^ k • h r := by
-  simp only [Measure.volumeIoiPow, ENNReal.ofReal]
-  rw [integral_withDensity_eq_integral_smul (measurable_subtype_coe.pow_const _).real_toNNReal,
-    integral_subtype_comap measurableSet_Ioi fun r ↦ Real.toNNReal (r ^ k) • h r]
-  refine setIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
-  rw [NNReal.smul_def, Real.coe_toNNReal _ (pow_nonneg (le_of_lt hr) _)]
+  rw [Measure.volumeIoiPow, integral_withDensity_eq_integral_toReal_smul
+      (measurable_subtypeVal.pow_const k).ennreal_ofReal
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
+    integral_subtype_comap measurableSet_Ioi fun r ↦ (ENNReal.ofReal (r ^ k)).toReal • h r]
+  exact setIntegral_congr_fun measurableSet_Ioi fun r hr ↦ by
+    rw [ENNReal.toReal_ofReal (pow_nonneg (le_of_lt hr) _)]
 
 /-- Lower Lebesgue integration against `MeasureTheory.Measure.volumeIoiPow k` is integration on
 `(0, ∞)` against the weight `r ^ k`. No measurability hypothesis is needed. -/
@@ -113,7 +121,7 @@ theorem lintegral_volumeIoiPow (k : ℕ) (h : ℝ → ℝ≥0∞) :
     ∫⁻ r : Ioi (0 : ℝ), h r ∂(Measure.volumeIoiPow k) =
       ∫⁻ r in Ioi (0 : ℝ), ENNReal.ofReal (r ^ k) * h r := by
   rw [Measure.volumeIoiPow, lintegral_withDensity_eq_lintegral_mul_non_measurable _
-      (measurable_subtype_coe.pow_const k).ennreal_ofReal
+      (measurable_subtypeVal.pow_const k).ennreal_ofReal
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
     ← lintegral_subtype_comap measurableSet_Ioi (fun r ↦ ENNReal.ofReal (r ^ k) * h r)]
   simp only [Pi.mul_apply]
@@ -123,23 +131,10 @@ theorem ae_volumeIoiPow_iff (k : ℕ) (P : ℝ → Prop) :
     (∀ᵐ t : Ioi (0 : ℝ) ∂Measure.volumeIoiPow k, P t) ↔
       ∀ᵐ t : ℝ, 0 < t → P t := by
   rw [Measure.volumeIoiPow, ae_withDensity_iff (by fun_prop)]
-  have hpos (t : Ioi (0 : ℝ)) : ENNReal.ofReal ((t : ℝ) ^ k) ≠ 0 :=
-    (ENNReal.ofReal_pos.mpr (pow_pos t.property _)).ne'
-  have hsub :
-      (∀ᵐ t : Ioi (0 : ℝ) ∂Measure.comap Subtype.val volume, P t) ↔
-        ∀ᵐ t : ℝ, 0 < t → P t :=
-    (ae_restrict_iff_subtype measurableSet_Ioi).symm.trans
-      (ae_restrict_iff' measurableSet_Ioi)
-  constructor
-  · intro h
-    apply hsub.mp
-    filter_upwards [h] with t ht
-    exact ht (hpos t)
-  · intro h
-    have hp := hsub.mpr h
-    filter_upwards [hp] with t ht
-    intro _
-    exact ht
+  -- The density `ENNReal.ofReal (t ^ k)` is positive at every positive radius `t`.
+  refine (eventually_congr (ae_of_all _ fun t : Ioi (0 : ℝ) ↦
+    imp_iff_right (ENNReal.ofReal_pos.mpr (pow_pos t.property _)).ne')).trans ?_
+  exact (ae_restrict_iff_subtype measurableSet_Ioi).symm.trans (ae_restrict_iff' measurableSet_Ioi)
 
 /-- **Integration in polar coordinates**, for nonnegative functions. A measurable function
 `f : E → ℝ≥0∞` on a finite-dimensional real normed space is integrated by first integrating along
@@ -225,14 +220,14 @@ theorem _root_.ContinuousOn.integral_toSphere_smul_uncurry {g : E → E → F} {
   have hmem : ∀ r ∈ Icc (0 : ℝ) R, ∀ u : sphere (0 : E) 1,
       (r • (u : E), (u : E)) ∈ closedBall (0 : E) R ×ˢ sphere (0 : E) 1 := by
     intro r hr u
-    refine ⟨?_, u.2⟩
+    refine ⟨?_, u.property⟩
     rw [mem_closedBall_zero_iff, norm_smul, norm_eq_of_mem_sphere u, mul_one,
       Real.norm_of_nonneg hr.1]
     exact hr.2
   refine continuousOn_of_dominated (bound := fun _ ↦ C) (fun r hr ↦ ?_) (fun r hr ↦ ?_)
     (integrable_const C) (ae_of_all _ fun u ↦ ?_)
-  · exact (hg.comp_continuous ((continuous_const.smul continuous_subtype_val).prodMk
-      continuous_subtype_val) (hmem r hr)).aestronglyMeasurable
+  · exact (hg.comp_continuous ((continuous_const.smul continuous_subtypeVal).prodMk
+      continuous_subtypeVal) (hmem r hr)).aestronglyMeasurable
   · exact ae_of_all _ fun u ↦ hC _ (hmem r hr u)
   · exact hg.comp ((continuous_id.smul continuous_const).prodMk continuous_const).continuousOn
       fun r hr ↦ hmem r hr u
@@ -292,15 +287,10 @@ origin to an arbitrary center. -/
 theorem integrableOn_fun_norm_sub_addHaar {f : ℝ → F} {c : E} {r : ℝ} :
     IntegrableOn (fun x ↦ f ‖x - c‖) (ball c r) μ ↔
       IntegrableOn (fun y ↦ y ^ (Module.finrank ℝ E - 1) • f y) (Ioo 0 r) := by
-  rw [← integrableOn_fun_norm_addHaar μ, ← integrable_indicator_iff measurableSet_ball,
-    ← integrable_indicator_iff measurableSet_ball]
-  have h : (ball c r).indicator (fun x ↦ f ‖x - c‖) =
-      fun x ↦ (ball (0 : E) r).indicator (fun x ↦ f ‖x‖) (x - c) := funext fun x ↦ by
-    simp only [indicator, mem_ball, dist_eq_norm, sub_zero]
-  rw [h]
-  refine ⟨fun hf ↦ (hf.comp_add_right c).congr (ae_of_all _ fun x ↦ ?_),
-    fun hf ↦ hf.comp_sub_right c⟩
-  simp
+  rw [← integrableOn_fun_norm_addHaar μ,
+    ← (measurePreserving_add_right μ c).integrableOn_comp_preimage
+      (measurableEmbedding_addRight c), preimage_add_right_ball, sub_self]
+  simp only [Function.comp_def, add_sub_cancel_right]
 
 omit [MeasurableSpace E] [BorelSpace E] [Nontrivial E] in
 /-- Along the ray through a point `u` of the unit sphere, the radially weighted integrand of the
@@ -360,8 +350,7 @@ theorem integral_norm_rpow_neg_finrank_mul_fderiv_apply_self {f : E → ℝ} (hf
       exact (fderiv ℝ f x).le_opNorm x
   rw [integral_eq_integral_toSphere_integral_Ioi _ hint]
   -- Along each ray, the weighted integrand is the derivative of `r ↦ f (r • u)`.
-  have hray := integral_Ioi_ray_fderiv_apply_smul_eq_neg
-    (E := E) hf hc
+  have hray := integral_Ioi_ray_fderiv_apply_smul_eq_neg hf hc
   rw [integral_congr_ae (ae_of_all _ hray), integral_const, smul_eq_mul,
     Measure.toSphere_real_apply_univ]
   ring
@@ -407,6 +396,49 @@ end Isometry
 
 end LinearIsometryEquiv
 
+namespace MeasureTheory.Measure
+
+open Metric Set Module
+open scoped Pointwise
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+
+/-- The sphere measure of a negation-invariant measure is invariant under `x ↦ -x`. -/
+instance isNegInvariant_toSphere [μ.IsNegInvariant] : μ.toSphere.IsNegInvariant := by
+  constructor
+  rw [Measure.neg_def]
+  have hneg :
+      (Subtype.map (LinearIsometryEquiv.neg ℝ (E := E)) (fun x hx ↦ by simpa using hx) :
+        sphere (0 : E) 1 → sphere (0 : E) 1) = Neg.neg :=
+    funext fun x ↦ Subtype.ext (by simp)
+  have h := (LinearIsometryEquiv.neg ℝ (E := E)).map_toSphere μ
+  rw [hneg] at h
+  simpa using h
+
+/-- The sphere measure of a negation-invariant measure has barycentre zero. -/
+theorem integral_coe_toSphere [μ.IsNegInvariant] :
+    ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
+  exact integral_eq_zero_of_odd (Filter.Eventually.of_forall coe_neg_sphere)
+
+/-- In dimension at least two, the points of the sphere are null for the sphere measure. -/
+theorem toSphere_singleton [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
+    (hE : 1 < finrank ℝ E) (p : sphere (0 : E) 1) :
+    μ.toSphere {p} = 0 := by
+  rw [μ.toSphere_apply' (measurableSet_singleton p), image_singleton]
+  have hp : (p : E) ≠ 0 := ne_zero_of_mem_unit_sphere p
+  have hspan : (ℝ ∙ (p : E)) ≠ ⊤ := by
+    intro htop
+    have h1 := finrank_span_singleton (K := ℝ) hp
+    rw [htop, finrank_top] at h1
+    omega
+  refine mul_eq_zero_of_right _ (measure_mono_null ?_ (Measure.addHaar_submodule μ _ hspan))
+  rw [Set.smul_singleton]
+  rintro _ ⟨r, -, rfl⟩
+  exact Submodule.smul_mem _ r (Submodule.mem_span_singleton_self _)
+
+end MeasureTheory.Measure
+
 namespace TauCeti
 
 open MeasureTheory Measure Metric Set Module Filter
@@ -430,9 +462,8 @@ theorem isRadialGraph_iff {A : Set E} : IsRadialGraph A ↔
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- A subset of a radial graph is a radial graph. -/
 theorem IsRadialGraph.mono {A B : Set E} (hA : IsRadialGraph A) (h : B ⊆ A) :
-    IsRadialGraph B := by
-  intro u hu r₁ r₂ h₁ h₂ hr₁ hr₂
-  exact hA u hu r₁ r₂ h₁ h₂ (h hr₁) (h hr₂)
+    IsRadialGraph B :=
+  fun u hu r₁ r₂ h₁ h₂ hr₁ hr₂ ↦ hA u hu r₁ r₂ h₁ h₂ (h hr₁) (h hr₂)
 
 /-- In a nontrivial space, a measurable set with almost-everywhere volume-null positive-ray
 slices is Haar-null. -/
@@ -442,29 +473,25 @@ theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_ae_ray_notMem
     (hslice : ∀ᵐ ω : sphere (0 : E) 1 ∂μ.toSphere,
       volume {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A} = 0) :
     μ A = 0 := by
-  classical
-  rw [← lintegral_indicator_one hAmeas]
-  rw [lintegral_eq_lintegral_toSphere_lintegral_Ioi (μ := μ)
-    (f := A.indicator 1) (measurable_one.indicator hAmeas)]
+  rw [← lintegral_indicator_one hAmeas,
+    lintegral_eq_lintegral_toSphere_lintegral_Ioi (measurable_one.indicator hAmeas)]
   apply lintegral_eq_zero_of_ae_eq_zero
   filter_upwards [hslice] with ω hω
   apply lintegral_eq_zero_of_ae_eq_zero
   filter_upwards [ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.mp hω),
     ae_restrict_mem measurableSet_Ioi] with t ht htpos
-  have hnot : t • (ω : E) ∉ A := fun h ↦ ht ⟨htpos, h⟩
-  simp only [indicator_of_notMem hnot, mul_zero, Pi.zero_apply]
+  simp only [indicator_of_notMem fun h ↦ ht ⟨htpos, h⟩, mul_zero, Pi.zero_apply]
 
 /-- In a nontrivial space, a measurable radial graph has zero additive Haar measure. -/
 theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_isRadialGraph
     [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
     {A : Set E} (hAmeas : MeasurableSet A) (hray : IsRadialGraph A) :
     μ A = 0 := by
-  apply μ.addHaar_eq_zero_of_ae_ray_notMem hAmeas
-  apply Eventually.of_forall
-  intro ω
+  refine μ.addHaar_eq_zero_of_ae_ray_notMem hAmeas (.of_forall fun ω ↦ ?_)
+  -- Each positive-ray slice of a radial graph has at most one point.
   have hslice : {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A}.Subsingleton :=
-    fun s hs t ht ↦ hray ω ω.2 s t hs.1 ht.1 hs.2 ht.2
-  exact hslice.countable.measure_zero volume
+    fun s hs t ht ↦ hray ω ω.property s t hs.1 ht.1 hs.2 ht.2
+  exact hslice.measure_zero volume
 
 /-- An arbitrary Haar almost-everywhere predicate transports to the polar product measure; no
 measurability of its truth set is required. -/
@@ -490,7 +517,7 @@ theorem _root_.MeasureTheory.Measure.ae_toSphere_ae_Ioi_of_ae (μ : Measure E) [
   filter_upwards [hp] with θ hθ
   exact (ae_volumeIoiPow_iff _ (fun t ↦ P (t • (θ : E)))).mp hθ
 
-/-! ### The barycenter of the sphere and the radial derivative of ball integrals -/
+/-! ### The radial derivative of ball integrals -/
 
 section Radial
 
@@ -498,8 +525,8 @@ variable {μ : Measure E} [μ.IsAddHaarMeasure]
 
 /-- **The derivative of a ball integral in the radius.** If `f` is continuous on the closed ball
 `closedBall c R` and `0 < σ < R`, the integral of `f` over `ball c s` has derivative
-`σ ^ (n - 1) ∫ f (c + σ θ) dμ.toSphere` in `s` at `σ`: the integral of `f` over the sphere of
-radius `σ` about `c`. -/
+`σ ^ (d - 1) ∫ f (c + σ θ) dμ.toSphere` in `s` at `σ`, where `d = finrank ℝ E`: the integral of
+`f` over the sphere of radius `σ` about `c`. -/
 theorem _root_.ContinuousOn.hasDerivAt_setIntegral_ball {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {c : E} {R σ : ℝ}
     (hf : ContinuousOn f (closedBall c R)) (hσ : σ ∈ Ioo 0 R) :
@@ -531,29 +558,6 @@ theorem _root_.ContinuousOn.hasDerivAt_setIntegral_ball {F : Type*} [NormedAddCo
   refine (hg.integral_hasDerivAt_of_mem_Ioo hσ).congr_of_eventuallyEq ?_
   filter_upwards [isOpen_Ioo.mem_nhds hσ] with s hs
   exact heq s (Ioo_subset_Icc_self hs)
-
-/-- **The surface measure of the unit sphere has barycenter zero**: `∫ θ dμ.toSphere = 0`, since
-`μ.toSphere` is invariant under `θ ↦ -θ`. -/
-theorem integral_toSphere_coe_eq_zero :
-    ∫ θ : sphere (0 : E) 1, (θ : E) ∂μ.toSphere = 0 := by
-  set ι : E ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.neg ℝ
-  set g : sphere (0 : E) 1 → sphere (0 : E) 1 := Subtype.map ι fun x hx ↦ by simpa using hx
-  have hmap : μ.toSphere.map g = μ.toSphere := by
-    rw [LinearIsometryEquiv.map_toSphere ι μ]
-    -- `ι` is negation, so `μ.map ι = μ` is the reflection invariance of the Haar measure.
-    rw [show (ι : E → E) = Neg.neg from LinearIsometryEquiv.coe_neg, Measure.map_neg_eq_self]
-  have hg : Measurable g := ι.continuous.measurable.subtype_map _
-  have h := integral_map (μ := μ.toSphere) hg.aemeasurable
-    (f := fun θ : sphere (0 : E) 1 ↦ (θ : E)) continuous_subtype_val.aestronglyMeasurable
-  rw [hmap] at h
-  have hg' : ∀ θ : sphere (0 : E) 1, (g θ : E) = -(θ : E) := fun θ ↦ by
-    simp only [g]
-    rw [Subtype.map_coe]
-    simp [ι]
-  -- `h : ∫ θ = -∫ θ`.
-  simp_rw [hg', integral_neg] at h
-  rw [eq_neg_iff_add_eq_zero, ← two_smul ℝ] at h
-  exact (smul_eq_zero.mp h).resolve_left two_ne_zero
 
 end Radial
 

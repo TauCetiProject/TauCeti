@@ -67,7 +67,7 @@ def DirectSum.restrictSubtypeLinearEquiv (p : ι → Prop) [DecidablePred p]
       if h : p i then DirectSum.lof R {i // p i} (fun j ↦ M j) ⟨i, h⟩ else 0)
     (DirectSum.toModule R {i // p i} _ fun i ↦ DirectSum.lof R ι M i)
     (DirectSum.linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ by
-      simp [i.2])
+      simp [i.property])
     (DirectSum.linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ by
       by_cases h : p i
       · simp [h]

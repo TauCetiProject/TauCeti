@@ -201,7 +201,7 @@ theorem span_gradedPow_gradedMkZero_union_gradedBracket_eq_top
   rw [eq_top_iff]
   rintro y -
   obtain ⟨y, rfl⟩ := gradedMk_surjective 1 y
-  obtain ⟨w, hw, hwy⟩ := hlam₁ y.2
+  obtain ⟨w, hw, hwy⟩ := hlam₁ y.property
   rw [← gradedPieceInclusion_gradedMk] at hwy
   exact gradedPieceInclusion_injective 1 hwy ▸ hw
 
@@ -252,7 +252,7 @@ theorem linearMap_ext_gradedPiece_one_of_continuous {M : Type*} [AddCommGroup M]
     · exact hUmem _ (by simpa using hbr g h)
   refine LinearMap.ext fun ρ ↦ ?_
   obtain ⟨y, rfl⟩ := gradedMk_surjective 1 ρ
-  obtain ⟨z, hz, hzy⟩ := Subgroup.mem_map.mp (hlam y.2)
+  obtain ⟨z, hz, hzy⟩ := Subgroup.mem_map.mp (hlam y.property)
   obtain rfl : z = y := Subtype.ext hzy
   exact Multiplicative.ofAdd.injective hz
 
@@ -296,7 +296,7 @@ theorem span_range_gradedPow_union_range_gradedBracket_eq_top {k : ℕ}
   rw [eq_top_iff]
   rintro y -
   obtain ⟨y, rfl⟩ := gradedMk_surjective (k + 1) y
-  obtain ⟨w, hw, hwy⟩ := hlam y.2
+  obtain ⟨w, hw, hwy⟩ := hlam y.property
   rw [← gradedPieceInclusion_gradedMk] at hwy
   exact gradedPieceInclusion_injective (k + 1) hwy ▸ hw
 
@@ -342,7 +342,7 @@ group on a finite linearly ordered type it is a basis. -/
 def degreeOneFamily {ι : Type*} [LT ι] (y : ι → G) :
     ι ⊕ {ij : ι × ι // ij.1 < ij.2} → gradedPiece p G 1 :=
   Sum.elim (fun i ↦ gradedPow p G 0 (gradedMkZero p G (y i)))
-    fun ij ↦ gradedBracket p G 0 0 (gradedMkZero p G (y ij.1.1)) (gradedMkZero p G (y ij.1.2))
+    fun ij ↦ gradedBracket p G 0 0 (gradedMkZero p G (y ij.val.1)) (gradedMkZero p G (y ij.val.2))
 
 section DegreeOneFamily
 
@@ -356,7 +356,7 @@ theorem degreeOneFamily_inl (i : ι) :
 @[simp]
 theorem degreeOneFamily_inr (ij : {ij : ι × ι // ij.1 < ij.2}) :
     degreeOneFamily p y (Sum.inr ij) =
-      gradedBracket p G 0 0 (gradedMkZero p G (y ij.1.1)) (gradedMkZero p G (y ij.1.2)) := by
+      gradedBracket p G 0 0 (gradedMkZero p G (y ij.val.1)) (gradedMkZero p G (y ij.val.2)) := by
   rw [degreeOneFamily, Sum.elim_inr]
 
 variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
