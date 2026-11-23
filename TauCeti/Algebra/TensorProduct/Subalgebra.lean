@@ -15,16 +15,17 @@ import TauCeti.Algebra.Module.LocalizedModule.Submodule
 # Tensor squares and base change of a subalgebra over a subring
 
 Let `H` be an algebra over `K`, and `A` an `R`-subalgebra of `H` for an `R`-algebra `K`. This file
-compares `A` with `H` when `K` is the fraction field of `R`.
+compares `A` with `H` when `K` is the localization of `R` at its non-zero-divisors (the fraction
+field when `R` is a domain).
 
 ## Main declarations
 
 * `Subalgebra.tensorSquareMap`: the canonical map `A ⊗[R] A → H ⊗[K] H`, the `Subalgebra`
   analogue of `Subring.tensorSquareMap`.
 * `Subalgebra.tensorSquareMap_injective`: it is injective when `A` is flat over the domain `R`
-  and `K` is the fraction field of `R`.
-* `Subalgebra.isBaseChange_val`: when `A` spans `H` over the fraction field `K` of `R`, the
-  inclusion `A → H` is the base change of `A` to `K`.
+  and `K ⊗ -` is balanced over `R` on `H`, for instance when `K` is the fraction field of `R`.
+* `Subalgebra.isBaseChange_val`: when `A` spans `H` over the localization `K` of `R` at its
+  non-zero-divisors, the inclusion `A → H` is the base change of `A` to `K`.
 -/
 
 public section
@@ -58,9 +59,9 @@ theorem tensorSquareMap_tmul (A : Subalgebra R H) (x y : A) :
   rw [tensorSquareMap, Algebra.TensorProduct.lift_tmul]
   simp
 
-/-- An `R`-subalgebra `A` of an algebra `H` over the fraction field `K` of `R` which spans `H`
-over `K` has `H` as its localization at the nonzero elements of `R`: the inclusion `A → H` is the
-base change of `A` to `K`. -/
+/-- An `R`-subalgebra `A` of an algebra `H` over the localization `K` of `R` at its
+non-zero-divisors which spans `H` over `K` has `H` as its localization at the non-zero-divisors of
+`R`: the inclusion `A → H` is the base change of `A` to `K`. -/
 theorem isBaseChange_val [IsFractionRing R K] (A : Subalgebra R H)
     (hspan : Submodule.span K (A : Set H) = ⊤) :
     IsBaseChange K (A.val.toLinearMap : A →ₗ[R] H) :=
@@ -72,14 +73,14 @@ end Semiring
 variable {R K H : Type*} [CommRing R] [IsDomain R] [CommRing K] [Algebra R K] [Ring H]
   [Algebra K H] [Algebra R H] [IsScalarTower R K H]
 
-/-- For a flat `R`-subalgebra `A` of an algebra over the fraction field `K` of the domain `R`, the
-canonical map `A ⊗[R] A → H ⊗[K] H` is injective. -/
+/-- For a flat `R`-subalgebra `A` of a `K`-algebra `H` over the domain `R`, the canonical map
+`A ⊗[R] A → H ⊗[K] H` is injective as soon as `K`-balanced and `R`-balanced tensors in `H ⊗ H`
+agree, for instance when `K` is the fraction field of `R`
+(`IsLocalization.tensorProduct_compatibleSMul`). -/
 -- Composed with the isomorphism `H ⊗[K] H ≅ H ⊗[R] H` of a localization, it is the tensor square
 -- of the inclusion of `A`, which is injective since `A` is flat over the domain `R`.
-theorem tensorSquareMap_injective [IsFractionRing R K] (A : Subalgebra R H)
+theorem tensorSquareMap_injective [TensorProduct.CompatibleSMul R K H H] (A : Subalgebra R H)
     [Module.Flat R A] : Function.Injective (tensorSquareMap K A) := by
-  have : TensorProduct.CompatibleSMul R K H H :=
-    IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors R) K H H
   have hcomp : (TensorProduct.mapOfCompatibleSMul R K R H H : H ⊗[K] H →ₗ[R] H ⊗[R] H) ∘ₗ
       (tensorSquareMap K A).toLinearMap =
         TensorProduct.map A.val.toLinearMap A.val.toLinearMap :=
