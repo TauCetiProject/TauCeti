@@ -24,7 +24,9 @@ Let `M` be a Hausdorff boundaryless manifold, `n ≥ 2`, and `γ` the restrictio
 (`TauCeti.Floer.RawCap.exists_contMDiff_isLoopCylinder`). Its seam `t = 0` stays at `x`, since
 `s ↦ u (s, ·)` is a path of based loops. The target need not be compact. This is the case of a
 constant second loop in `TauCeti.exists_contMDiff_isLoopCylinder_homotopic`, which smooths paths
-of loops by relative Whitney approximation.
+of loops by relative Whitney approximation. For `C^∞` loops, the based version with a smooth based
+cap is `TauCeti.Floer.RawCap.exists_isSmoothBasedCap_homotopyClass_eq` in
+`Geometry/Symplectic/Floer/Cap/Smoothing.lean`.
 
 ## Main results
 

@@ -26,7 +26,10 @@ between `T*M` and `T*N`. It is parametrized by `(q, Q)` through its source proje
 `(q, Q) ↦ (Q, -d_Q S)` (`TauCeti.CotangentBundle.generatingTarget`); together they form the map
 `TauCeti.CotangentBundle.generatingCorrespondence I J S : M × N → T*M × T*N`. This is the manifold
 version of the linear relation of `TauCeti.cotangentGeneratingSource` and
-`TauCeti.cotangentGeneratingTarget`.
+`TauCeti.cotangentGeneratingTarget`. The target point of the relation of `S` over `(q, Q)` is the
+source point of the relation of a second function `T` on `N × P` over `(Q, Q')` exactly when the
+two covectors at `Q` agree
+(`TauCeti.CotangentBundle.generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq`).
 
 * The relation is the graph of `dS` in `T*(M × N)` with the second covector reversed: the
   identification `T*(M × N) ≃ T*M × T*N` of `TauCeti.CotangentBundle.prodDiffeomorph` sends the
@@ -110,7 +113,7 @@ omit [TopologicalSpace N] in
 /-- The source projection carries the differential of `S` in the first variable. -/
 @[simp]
 theorem generatingSource_snd (x : M × N) :
-    (generatingSource I S x).2 = mvfderiv I (fun q ↦ S (q, x.2)) x.1 :=
+    (generatingSource I S x).snd = mvfderiv I (fun q ↦ S (q, x.2)) x.1 :=
   (rfl)
 
 omit [TopologicalSpace M] in
@@ -123,8 +126,31 @@ omit [TopologicalSpace M] in
 /-- The target projection carries minus the differential of `S` in the second variable. -/
 @[simp]
 theorem generatingTarget_snd (x : M × N) :
-    (generatingTarget J S x).2 = -mvfderiv J (fun Q ↦ S (x.1, Q)) x.2 :=
+    (generatingTarget J S x).snd = -mvfderiv J (fun Q ↦ S (x.1, Q)) x.2 :=
   (rfl)
+
+omit [TopologicalSpace N] in
+/-- The source projection, as a covector at the first base point. -/
+theorem generatingSource_eq_mk (x : M × N) :
+    generatingSource I S x =
+      TotalSpace.mk' (E →L[ℝ] ℝ) x.1 (mvfderiv I (fun q ↦ S (q, x.2)) x.1) :=
+  (rfl)
+
+omit [TopologicalSpace M] in
+/-- The target projection, as a covector at the second base point. -/
+theorem generatingTarget_eq_mk (x : M × N) :
+    generatingTarget J S x =
+      TotalSpace.mk' (F →L[ℝ] ℝ) x.2 (-mvfderiv J (fun Q ↦ S (x.1, Q)) x.2) :=
+  (rfl)
+
+omit [TopologicalSpace M] in
+/-- The target point of the relation of `S` over `(a, b)` is the source point of the relation of
+`T` over `(b, c)` exactly when their covectors at `b` agree. -/
+theorem generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq {P : Type*} {T : N × P → ℝ}
+    {a : M} {b : N} {c : P} :
+    generatingTarget J S (a, b) = generatingSource J T (b, c) ↔
+      -mvfderiv J (fun x ↦ S (a, x)) b = mvfderiv J (fun x ↦ T (x, c)) b := by
+  rw [generatingTarget_eq_mk, generatingSource_eq_mk, TotalSpace.mk_inj]
 
 /-- The generated relation is the pair of its source and target projections. -/
 @[simp]
@@ -179,13 +205,7 @@ theorem generatingTarget_eq_generatingSource_iff {K : Type*} {T : N × K → ℝ
   have hadd : mvfderiv J (fun a' ↦ S (q, a') + T (a', Q)) a =
       mvfderiv J (fun a' ↦ S (q, a')) a + mvfderiv J (fun a' ↦ T (a', Q)) a :=
     mvfderiv_add hS hT
-  have hTgt : generatingTarget J S (q, a) =
-      TotalSpace.mk' (F →L[ℝ] ℝ) a (-mvfderiv J (fun a' ↦ S (q, a')) a) :=
-    CotangentBundle.ext (proj_generatingTarget (q, a)) fun v ↦ by rw [generatingTarget_snd]; rfl
-  have hSrc : generatingSource J T (a, Q) =
-      TotalSpace.mk' (F →L[ℝ] ℝ) a (mvfderiv J (fun a' ↦ T (a', Q)) a) :=
-    CotangentBundle.ext (proj_generatingSource (a, Q)) fun v ↦ by rw [generatingSource_snd]; rfl
-  rw [hTgt, hSrc, TotalSpace.mk_inj, hadd, neg_eq_iff_add_eq_zero]
+  rw [generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq, hadd, neg_eq_iff_add_eq_zero]
 
 /-! ### The relation as the graph of `dS` -/
 
@@ -235,6 +255,34 @@ theorem contMDiff_generatingCorrespondence (hS : ContMDiff (I.prod J) 𝓘(ℝ) 
 
 /-! ### Exactness -/
 
+/-- The Liouville primitive `pr₁^*λ_M - pr₂^*λ_N` of `T*M × T*N`, pulled back along a pair of smooth
+maps `ψ₁, ψ₂` into the two cotangent bundles, pairs a tangent vector `v` with the covectors of
+`ψ₁` and `ψ₂` on the derivatives of their base points. -/
+theorem mpullback_prodMk_liouvilleForm_apply
+    {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
+    {K : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X] [IsManifold K 1 X]
+    {ψ₁ : X → CotangentBundle I M} {ψ₂ : X → CotangentBundle J N} {g₁ : X → M} {g₂ : X → N}
+    (h₁ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ψ₁)
+    (h₂ : ContMDiff K (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞ ψ₂) (hg₁ : ∀ x, (ψ₁ x).proj = g₁ x)
+    (hg₂ : ∀ x, (ψ₂ x).proj = g₂ x) (x : X) (v : Fin 1 → TangentSpace K x) :
+    mpullback (F := ℝ) (k := 1) K ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)))
+        (fun x ↦ (ψ₁ x, ψ₂ x))
+        (SmoothForm.mpullback (Prod.fst : CotangentBundle I M × CotangentBundle J N → _)
+            (contMDiff_fst (I := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J := J.prod 𝓘(ℝ, F →L[ℝ] ℝ)))
+            (liouvilleForm I M) -
+          SmoothForm.mpullback (Prod.snd : CotangentBundle I M × CotangentBundle J N → _)
+            (contMDiff_snd (I := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J := J.prod 𝓘(ℝ, F →L[ℝ] ℝ)))
+            (liouvilleForm J N)).val x v =
+      (ψ₁ x).snd (mfderiv K I g₁ x (v 0)) - (ψ₂ x).snd (mfderiv K J g₂ x (v 0)) := by
+  rw [← SmoothForm.coe_mpullback _ (h₁.prodMk h₂), map_sub, SmoothForm.mpullback_mpullback,
+    SmoothForm.mpullback_mpullback, Submodule.coe_sub, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+    mpullback_liouvilleForm_apply_of_proj_comp_eq (ψ := Prod.fst ∘ fun x ↦ (ψ₁ x, ψ₂ x)) hg₁
+      ((h₁ x).mdifferentiableAt (by simp)),
+    mpullback_liouvilleForm_apply_of_proj_comp_eq (ψ := Prod.snd ∘ fun x ↦ (ψ₁ x, ψ₂ x)) hg₂
+      ((h₂ x).mdifferentiableAt (by simp))]
+  simp only [Function.comp_apply]
+
 /-- **The generated relation is exact with primitive `S`.** The relation generated by a smooth
 function `S` pulls the one-form `pr₁^*λ_M - pr₂^*λ_N` on `T*M × T*N` back to `dS`. -/
 theorem mpullback_generatingCorrespondence_liouvilleForm
@@ -242,21 +290,16 @@ theorem mpullback_generatingCorrespondence_liouvilleForm
     mpullback (I.prod J) ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)))
         (generatingCorrespondence I J S)
         (SmoothForm.mpullback Prod.fst contMDiff_fst (liouvilleForm I M) -
-          SmoothForm.mpullback Prod.snd contMDiff_snd (liouvilleForm J N)).1 =
+          SmoothForm.mpullback Prod.snd contMDiff_snd (liouvilleForm J N)).val =
       mextDeriv (RoughForm.ofFunction (I.prod J) S) := by
-  have hf := contMDiff_generatingCorrespondence hS
-  rw [← SmoothForm.coe_mpullback _ hf, map_sub, SmoothForm.mpullback_mpullback,
-    SmoothForm.mpullback_mpullback]
+  have hG :
+      generatingCorrespondence I J S = fun x ↦ (generatingSource I S x, generatingTarget J S x) :=
+    funext generatingCorrespondence_apply
   funext x
   ext v
-  rw [Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
-    SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-    mpullback_liouvilleForm_apply_of_proj_comp_eq (ψ := Prod.fst ∘ generatingCorrespondence I J S)
-      (g := Prod.fst) (fun _ ↦ rfl)
-      ((contMDiff_generatingSource hS x).mdifferentiableAt (by simp)),
-    mpullback_liouvilleForm_apply_of_proj_comp_eq (ψ := Prod.snd ∘ generatingCorrespondence I J S)
-      (g := Prod.snd) (fun _ ↦ rfl)
-      ((contMDiff_generatingTarget hS x).mdifferentiableAt (by simp)),
+  rw [hG, mpullback_prodMk_liouvilleForm_apply (contMDiff_generatingSource hS)
+      (contMDiff_generatingTarget hS) (g₁ := Prod.fst) (g₂ := Prod.snd) proj_generatingSource
+      proj_generatingTarget x v,
     mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     ((hS x).mdifferentiableAt (by simp)).mvfderiv_prod_eq_add_apply, mfderiv_fst, mfderiv_snd,
     sub_eq_add_neg]

@@ -140,7 +140,7 @@ def δInf : Path infBasePt infBasePt :=
 
 /-- Inclusion of the local loop into the thrice-punctured sphere is the clockwise large circle. -/
 @[simp]
-theorem map_val_δInf : δInf.map continuous_subtype_val = δ.symm :=
+theorem map_val_δInf : δInf.map continuous_subtypeVal = δ.symm :=
   Path.map_codRestrict _ _
 
 /-- The local loop has the same affine values as the clockwise large circle. -/
@@ -214,7 +214,7 @@ theorem zpowers_δInf :
 theorem transport_δInf_eq_periphInf :
     (FundamentalGroup.fundamentalGroupMulEquivOfPath αPlus).symm
       (FundamentalGroup.map
-        (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodInf, _)) infBasePt
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(puncturedNeighborhoodInf, _)) infBasePt
         (FundamentalGroup.fromPath (.mk δInf))) = periphInf := by
   rw [FundamentalGroup.map_fromPath _ _ δInf, map_val_δInf,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periphInf_eq_fromPath]
@@ -228,7 +228,7 @@ conjugacy class at infinity. Thus the class is independent of the transporting p
 theorem conjClassesEquivOfPath_δInf {x : ThricePuncturedSphere} (γ : Path pPlus x) :
     FundamentalGroup.conjClassesEquivOfPath γ
       (ConjClasses.mk (FundamentalGroup.map
-        (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodInf, _)) infBasePt
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(puncturedNeighborhoodInf, _)) infBasePt
         (FundamentalGroup.fromPath (.mk δInf)))) = periphInfClass x := by
   have h := congrArg ConjClasses.mk
     ((MulEquiv.symm_apply_eq _).mp transport_δInf_eq_periphInf)

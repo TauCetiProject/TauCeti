@@ -242,7 +242,7 @@ theorem Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype [DiscreteTopolog
       (V.subtype.restrictScalars ℤ) le_rfl) := by
   have : FiniteDimensional ℝ V := .of_injective (V.subtype.restrictScalars ℝ) V.injective_subtype
   refine Continuous.isClosedEmbedding ?_ ?_
-  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtype_val
+  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtypeVal
   · exact (Submodule.orbitRelQuotientMap_injective_iff _ _ _ _).2 le_rfl
 
 end Subtorus
@@ -274,7 +274,7 @@ def Submodule.orbitRelQuotientToKerOrbitRelQuotientMap :
       -- of `ZLattice.comap` (hence `le_rfl`), so it is used as a term rather than by `rw`.
       refine AddMonoidHom.mem_ker.2 <|
         (congrArg _ (Submodule.orbitRelQuotientMap_mk _ L _ le_rfl x)).trans ?_
-      simp [LinearMap.mem_ker.1 x.2]
+      simp [LinearMap.mem_ker.1 x.property]
 
 /-- Followed by the inclusion of the kernel into `E / L`,
 `Submodule.orbitRelQuotientToKerOrbitRelQuotientMap` is the map of quotients induced by the
@@ -313,7 +313,7 @@ theorem mem_smul_submoduleOf_iff {c : ℕ} {v : L} :
   · rintro ⟨w, hw, h⟩
     exact ⟨⟨w, hw⟩, Subtype.ext (by rw [← h, Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul])⟩
   · rintro ⟨w, rfl⟩
-    exact ⟨w, w.2, by rw [Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul]⟩
+    exact ⟨w, w.property, by rw [Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul]⟩
 
 variable (L) in
 /-- For `c : ℕ`, the lattice `cL = (c : ℝ) • L` is contained in `L`. -/

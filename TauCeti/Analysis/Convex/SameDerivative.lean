@@ -194,7 +194,7 @@ theorem _root_.IsOpen.exists_eq_add_of_subset_closure_hasFDerivAt_eq (hΩ : IsOp
   have := isPreconnected_iff_preconnectedSpace.1 hΩc
   have hlc : IsLocallyConstant fun x : Ω => (u x).toReal - (v x).toReal :=
     (IsLocallyConstant.iff_eventually_eq _).2 fun x =>
-      (continuous_subtype_val.tendsto x).eventually (hloc x x.2)
+      (continuous_subtypeVal.tendsto x).eventually (hloc x x.property)
   refine ⟨(u x₀).toReal - (v x₀).toReal, fun x hx => ?_⟩
   have hconst : (u x).toReal - (v x).toReal = (u x₀).toReal - (v x₀).toReal :=
     hlc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨x₀, hx₀⟩

@@ -30,8 +30,9 @@ one-element index type, where the Dirichlet law is a Dirac mass, is
 * `TauCeti.Probability.map_sum_dirichletMeasure` — the total of a block of coordinates is a Beta
   law.
 * `TauCeti.Probability.map_eval_dirichletMeasure` — a coordinate marginal is a Beta law.
-* `TauCeti.Probability.map_eval_zero_dirichletMeasure_fin_two` — the two-parameter case, where the
-  first coordinate carries the Beta law of the two concentration parameters themselves.
+* `TauCeti.Probability.map_eval_zero_dirichletMeasure_fin_two` and
+  `TauCeti.Probability.map_eval_one_dirichletMeasure_fin_two` — the two-parameter case, where the
+  two coordinates carry the Beta laws of the two concentration parameters in order and reversed.
 
 ## References
 
@@ -116,6 +117,13 @@ theorem map_eval_zero_dirichletMeasure_fin_two {a : Fin 2 → ℝ} (ha : ∀ i, 
     (dirichletMeasure a).map (fun x ↦ x 0) = betaMeasure (a 0) (a 1) := by
   have herase : Finset.univ.erase (0 : Fin 2) = {1} := by decide
   rw [map_eval_dirichletMeasure ha 0, Finset.filter_ne', herase, Finset.sum_singleton]
+
+/-- The `Fin 2` Dirichlet law has the Beta law with reversed parameters as its second
+coordinate. -/
+theorem map_eval_one_dirichletMeasure_fin_two {a : Fin 2 → ℝ} (ha : ∀ i, 0 < a i) :
+    (dirichletMeasure a).map (fun x ↦ x 1) = betaMeasure (a 1) (a 0) := by
+  have herase : Finset.univ.erase (1 : Fin 2) = {0} := by decide
+  rw [map_eval_dirichletMeasure ha 1, Finset.filter_ne', herase, Finset.sum_singleton]
 
 end Probability
 

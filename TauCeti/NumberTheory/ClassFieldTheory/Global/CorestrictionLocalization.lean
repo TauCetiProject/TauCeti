@@ -112,7 +112,7 @@ theorem ideleBrLocalization_explicitCor2 (x : H2 U (IdeleCoeff K)) :
               SeparableClosure K))).subgroupComap U)
             (ideleCoeffComponent (τ.comp (r D : SeparableClosure K →ₐ[K] SeparableClosure K)))
             continuous_of_discreteTopology (fun y m ↦
-              ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.1 m)
+              ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.val m)
             x)) := by
   -- The statements are large, so the proof is a chain of `trans` rather than `rw`, whose closing
   -- `rfl` attempt on them exhausts the heartbeats.
@@ -151,7 +151,7 @@ theorem invMap_ideleBrLocalization_explicitCor2 (x : H2 U (IdeleCoeff K)) :
             SeparableClosure K))).subgroupComap U)
           (ideleCoeffComponent (τ.comp (r D : SeparableClosure K →ₐ[K] SeparableClosure K)))
           continuous_of_discreteTopology (fun y m ↦
-            ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.1 m)
+            ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.val m)
           x) := by
   refine (congrArg _ (ideleBrLocalization_explicitCor2 U hU τ r hr x)).trans <|
     (map_sum _ _ _).trans (Finset.sum_congr rfl fun D _ ↦ ?_)
@@ -186,7 +186,7 @@ theorem ideleLocalInvAt_eq_sum_subgroupInvMap (L : NormalLayer (AbsoluteGaloisGr
             SeparableClosure K))).subgroupComap L.ground.toSubgroup)
           (ideleCoeffComponent (τ.comp (r D : SeparableClosure K →ₐ[K] SeparableClosure K)))
           continuous_of_discreteTopology (fun y m ↦
-            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.1 m)
+            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.val m)
           (L.explicitInfl2 (ideleCoeffEquivIdeleFormation K)
             (ideleCoeffEquivIdeleFormation_smul K) x)) :=
   (ideleLocalInvAt_apply K L v x).trans <|
@@ -229,7 +229,7 @@ theorem ideleInfiniteBrLocalization_explicitCor2 (x : H2 U (IdeleCoeff K)) :
               SeparableClosure K)))
             continuous_of_discreteTopology
             (fun y m ↦ ContinuousMonoidHom.subgroupComap_smul _ U y m ▸
-              ideleCoeffInfiniteComponent_smul _ y.1 m) x)) := by
+              ideleCoeffInfiniteComponent_smul _ y.val m) x)) := by
   refine (ideleInfiniteBrLocalization_apply τ _).trans <| (congrArg _ <|
     explicitMap2_explicitCor2_eq_sum (absoluteGaloisGroupMap τ) (ideleCoeffInfiniteComponent τ)
       (ideleCoeffInfiniteComponent_smul τ) U continuous_of_discreteTopology hU r hr

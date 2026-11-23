@@ -75,8 +75,8 @@ theorem isRegular_affineSpace (hi : IsIntegralLattice i) : (affineSpace b hi).Is
 space, so it defines a monomial function on its toric variety. -/
 theorem coord_mem_dualSemigroup_affineSpace (hi : IsIntegralLattice i) (j : ι)
     (σ : (affineSpace b hi).cones) :
-    (b.coord j).toAddMonoidHom ∈ dualSemigroup (affineSpace b hi).lattice σ.1 := by
-  refine dualSemigroup_anti hi ((mem_ofCone_cones hi _).1 σ.2).le ?_
+    (b.coord j).toAddMonoidHom ∈ dualSemigroup (affineSpace b hi).lattice σ.val := by
+  refine dualSemigroup_anti hi ((mem_ofCone_cones hi _).1 σ.property).le ?_
   rw [← projectiveSpaceRatioCharacter_some_none]
   exact projectiveSpaceRatioCharacter_mem_dualSemigroup b hi _ _ (by simp)
 
@@ -85,9 +85,9 @@ faces of the maximal cone omitting the extra ray. -/
 theorem affineSpace_eq_subfan (hi : IsIntegralLattice i) :
     affineSpace b hi = (projectiveSpace b hi).subfan
       {τ | τ.IsFaceOf (projectiveSpaceCone b i {none}ᶜ)}
-      ((projectiveSpace b hi).isFaceOf_subset_cones (projectiveSpaceMaximalCone b hi none).2)
+      ((projectiveSpace b hi).isFaceOf_subset_cones (projectiveSpaceMaximalCone b hi none).property)
       fun _ _ hτ hυ ↦ hυ.trans hτ :=
-  (projectiveSpace b hi).ofCone_eq_subfan (projectiveSpaceMaximalCone b hi none).2
+  (projectiveSpace b hi).ofCone_eq_subfan (projectiveSpaceMaximalCone b hi none).property
 
 /-- The fan of affine space is complete exactly when the lattice has rank zero. -/
 theorem isComplete_affineSpace_iff (hi : IsIntegralLattice i) :

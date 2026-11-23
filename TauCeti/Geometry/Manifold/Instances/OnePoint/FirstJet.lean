@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Deriv
 
 /-!
 # First jets of Möbius transformations
@@ -44,6 +45,13 @@ Möbius transformation is determined by its first jet at `0` together with its v
   tangent direction, of the parametrization of `PGL(2, 𝕜)` by ordered triples of distinct points
   (`OnePoint.existsUnique_pgl_smul_zero_one_infty_eq`). The derivative is taken in the preferred
   chart at `g • 0`, the affine chart when `p` is finite and the inverted chart when `p = ∞`.
+* **Derivatives in charts.** The derivative `mfderiv` on the tangent vector `1` is the derivative
+  of the local expression `writtenInExtChartAt`, so the latter never vanishes
+  (`OnePoint.deriv_writtenInExtChartAt_pgl_smul_ne_zero`). When `g • z₀ = p` is finite and
+  nonzero at a finite point `z₀`, both the affine chart and the inverted chart apply at `p`. Read
+  in the inverted chart, the local expression of `g` at `z₀` is the reciprocal of the affine one
+  (`OnePoint.invChart_eq_inv_writtenInExtChartAt_coe`), so its derivative `v` at `z₀` becomes
+  `-v / p ^ 2` (`OnePoint.deriv_invChart_pgl_smul_coe`).
 
 For the Riemann sphere, where `PGL(2, ℂ)` is the group of automorphisms, these coordinates
 normalize the reparametrizations of a genus-zero domain carrying two marked points and a tangent
@@ -64,6 +72,10 @@ direction at one of them, in the way that ordered triples normalize three marked
   `z ↦ a z` multiplies the derivative at `0` by `a`.
 * `OnePoint.existsUnique_pgl_smul_zero_infty_mfderiv_eq`: the first-jet coordinates of
   `PGL(2, 𝕜)`.
+* `OnePoint.deriv_writtenInExtChartAt_pgl_smul_ne_zero`: the derivative of a Möbius
+  transformation read in the preferred charts is nonzero.
+* `OnePoint.deriv_invChart_pgl_smul_coe`: the change of the first derivative from the affine to
+  the inverted chart at the target.
 
 ## References
 
@@ -140,12 +152,9 @@ charts at `z` and at its image. -/
 theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 1 ≠ 0) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) z v =
       ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2 * v : 𝕜) := by
-  refine mfderiv_apply_eq_of_hasDerivAt
-    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).mdifferentiable (by simp) _)
-    (Eventually.of_forall fun w ↦ ?_) ?_ v
-    (φ := writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x)
-  · simp [writtenInExtChartAt]
-  · simpa using hasDerivAt_writtenInExtChartAt_smul_coe g hz
+  refine ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).continuous.continuousAt
+    |>.mfderiv_apply_eq_of_hasDerivWithinAt EventuallyEq.rfl ?_ v).trans (mul_comm v _)
+  simpa using hasDerivAt_writtenInExtChartAt_smul_coe g hz
 
 end Matrix.GeneralLinearGroup
 
@@ -157,25 +166,26 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [Prope
 theorem mfderiv_pglFixingZeroInftyEquiv_symm_zero (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       ((0 : 𝕜) : OnePoint 𝕜) v = (a * v : 𝕜) := by
-  refine mfderiv_apply_eq_of_hasDerivAt (mdifferentiableAt_pgl_smul _ _) ?_
-    (((hasDerivAt_id _).const_mul (a : 𝕜)).congr_deriv (mul_one _)) v
-    (φ := fun w : 𝕜 ↦ (a : 𝕜) * w)
-  · refine Eventually.of_forall fun w ↦ ?_
-    simp
+  refine ((mdifferentiableAt_pgl_smul _ _).continuousAt.mfderiv_apply_eq_of_hasDerivWithinAt
+    (Eventually.of_forall fun w ↦ ?_) (φ := fun w : 𝕜 ↦ (a : 𝕜) * w)
+    (((hasDerivAt_id _).const_mul (a : 𝕜)).congr_deriv (mul_one _)).hasDerivWithinAt v).trans
+    (mul_comm v _)
+  simp [writtenInExtChartAt]
 
 /-- **The dilation `z ↦ a z` has derivative `a⁻¹` at `∞`**, read in the inverted chart, in which
 it is `w ↦ a⁻¹ w`. -/
 theorem mfderiv_pglFixingZeroInftyEquiv_symm_infty (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       (∞ : OnePoint 𝕜) v = (((a⁻¹ : 𝕜ˣ) : 𝕜) * v : 𝕜) := by
-  refine mfderiv_apply_eq_of_hasDerivAt (mdifferentiableAt_pgl_smul _ _) ?_
-    (((hasDerivAt_id _).const_mul ((a⁻¹ : 𝕜ˣ) : 𝕜)).congr_deriv (mul_one _)) v
-    (φ := fun w : 𝕜 ↦ ((a⁻¹ : 𝕜ˣ) : 𝕜) * w)
-  · refine Eventually.of_forall fun w ↦ ?_
-    rw [pglFixingZeroInftyEquiv_symm_smul_infty, chartAt_infty]
-    by_cases hw : w = 0
-    · simp [hw]
-    · simp [hw, mul_comm]
+  refine ((mdifferentiableAt_pgl_smul _ _).continuousAt.mfderiv_apply_eq_of_hasDerivWithinAt
+    (Eventually.of_forall fun w ↦ ?_) (φ := fun w : 𝕜 ↦ ((a⁻¹ : 𝕜ˣ) : 𝕜) * w)
+    (((hasDerivAt_id _).const_mul ((a⁻¹ : 𝕜ˣ) : 𝕜)).congr_deriv (mul_one _)).hasDerivWithinAt
+    v).trans (mul_comm v _)
+  simp only [writtenInExtChartAt, extChartAt_coe, modelWithCornersSelf_coe, Function.comp_apply]
+  rw [pglFixingZeroInftyEquiv_symm_smul_infty, chartAt_infty]
+  by_cases hw : w = 0
+  · simp [hw]
+  · simp [hw, mul_comm]
 
 /-- **The coordinate of an element fixing `0` and `∞` is its first jet at `0`**: the unit `a`
 attached to it by `OnePoint.pglFixingZeroInftyEquiv` is its derivative at `0`. -/
@@ -250,5 +260,37 @@ theorem existsUnique_pgl_smul_zero_infty_mfderiv_eq {p q : OnePoint 𝕜} (hpq :
     rw [mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero] at hgv
     have ha : a = Units.mk0 (v / u) (div_ne_zero hv hu) := Units.ext (eq_div_of_mul_eq hu hgv)
     rw [ha]
+
+/-! ### Derivatives in charts and the inverted chart at the target -/
+
+/-- The derivative of a Möbius transformation, read in the preferred charts, is nonzero. -/
+theorem deriv_writtenInExtChartAt_pgl_smul_ne_zero (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) :
+    deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x fun y ↦ g • y) (extChartAt 𝓘(𝕜) x x) ≠ 0 := by
+  rw [← (mdifferentiableAt_pgl_smul g x).mfderiv_apply_one_eq_deriv_writtenInExtChartAt]
+  exact mfderiv_pgl_smul_ne_zero g x one_ne_zero
+
+/-- The derivative at a finite point `z` of a Möbius transformation, read in the affine chart at
+`z` and the preferred chart at its image, is nonzero. -/
+theorem deriv_writtenInExtChartAt_pgl_smul_coe_ne_zero (g : PGL(2, 𝕜)) (z : 𝕜) :
+    deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun y ↦ g • y) z ≠ 0 := by
+  have h : extChartAt 𝓘(𝕜) (z : OnePoint 𝕜) (z : OnePoint 𝕜) = z := by simp
+  simpa only [h] using deriv_writtenInExtChartAt_pgl_smul_ne_zero g (z : OnePoint 𝕜)
+
+/-- **First jets in the inverted chart.** When `g • z₀ = p` is finite and nonzero, reading `g` in
+the inverted chart at `p` instead of the affine chart changes its derivative at `z₀` from `v` to
+`-v / p ^ 2`. -/
+theorem deriv_invChart_pgl_smul_coe {g : PGL(2, 𝕜)} {z₀ p : 𝕜} (hp0 : p ≠ 0)
+    (hp : g • (z₀ : OnePoint 𝕜) = p) :
+    deriv (fun z : 𝕜 ↦ invChart (g • (z : OnePoint 𝕜))) z₀ =
+      -deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z₀ : OnePoint 𝕜) fun y ↦ g • y) z₀ / p ^ 2 := by
+  have h0 : writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z₀ : OnePoint 𝕜) (fun y ↦ g • y) z₀ = p :=
+    writtenInExtChartAt_coe_self_of_eq_coe hp
+  have hd := (differentiableAt_of_deriv_ne_zero
+    (deriv_writtenInExtChartAt_pgl_smul_coe_ne_zero g z₀)).hasDerivAt.inv (by rwa [h0])
+  have hfun : (fun z : 𝕜 ↦ invChart (g • (z : OnePoint 𝕜))) =
+      (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z₀ : OnePoint 𝕜) fun y ↦ g • y)⁻¹ :=
+    funext (invChart_eq_inv_writtenInExtChartAt_coe (f := fun y ↦ g • y) (hp ▸ coe_ne_infty p))
+  rw [hfun, ← h0]
+  exact hd.deriv
 
 end OnePoint

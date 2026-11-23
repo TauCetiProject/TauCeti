@@ -529,20 +529,20 @@ theorem exists_contMDiff_periodic_homotopic (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I 
   have hu := contMDiff_comp_fract hg₀ hgp₀ hγ₀ hg₁ hgp₁ hγ₁ P hu₀ hframe
   refine ⟨u, hu, fun z ↦ by simp [u, Int.fract_add_one], hu_left, hu_right, ?_⟩
   -- The path of loops of `u` is homotopic to that of `G` by smoothing, and so to `P`.
-  let Pu : Path γ₀ γ₁ := Path.ofContinuousSquare (fun q ↦ u (q.1, q.2))
-    (hu.continuous.comp (by fun_prop)) (fun t ↦ (hu_left t).trans (hγ₀ t).symm)
+  let Pu : Path γ₀ γ₁ := Path.ofContinuousFamily (fun s t ↦ u (s, t))
+    (hu.continuous.comp (by fun_prop)) (fun s ↦ hu_seam s (Or.inl rfl))
+    (fun s ↦ hu_seam s (Or.inr rfl)) (fun t ↦ (hu_left t).trans (hγ₀ t).symm)
     (fun t ↦ (hu_right t).trans (hγ₁ t).symm)
-    (fun s ↦ hu_seam s (Or.inl rfl)) (fun s ↦ hu_seam s (Or.inr rfl))
-  let PG : Path γ₀ γ₁ := Path.ofContinuousSquare (fun q ↦ G (q.1, q.2)) (by fun_prop)
+  let PG : Path γ₀ γ₁ := Path.ofContinuousFamily (fun s t ↦ G (s, t)) (by fun_prop)
+    (fun s ↦ reparamDisc_seam P s (Or.inl rfl)) (fun s ↦ reparamDisc_seam P s (Or.inr rfl))
     (fun t ↦ (reparamDisc_zero_left hgp₀ hγ₀ P t).trans (hγ₀ t).symm)
     (fun t ↦ (reparamDisc_one_left hgp₁ hγ₁ P t).trans (hγ₁ t).symm)
-    (fun s ↦ reparamDisc_seam P s (Or.inl rfl)) (fun s ↦ reparamDisc_seam P s (Or.inr rfl))
-  refine ⟨Pu, fun s t ↦ Path.ofContinuousSquare_apply s t, ?_⟩
+  refine ⟨Pu, fun s t ↦ Path.ofContinuousFamily_apply .. s t, ?_⟩
   have hPG : P.Homotopic PG :=
-    homotopic_reparamDisc P PG fun s t ↦ Path.ofContinuousSquare_apply s t
+    homotopic_reparamDisc P PG fun s t ↦ Path.ofContinuousFamily_apply .. s t
   have hPu : PG.Homotopic Pu :=
-    homotopic_of_homotopicRel hGu₀ (fun s t ↦ Path.ofContinuousSquare_apply s t)
-      fun s t ↦ (Path.ofContinuousSquare_apply s t).trans (hu_eq s t)
+    homotopic_of_homotopicRel hGu₀ (fun s t ↦ Path.ofContinuousFamily_apply .. s t)
+      fun s t ↦ (Path.ofContinuousFamily_apply .. s t).trans (hu_eq s t)
   exact (hPG.trans hPu).symm
 
 end TauCeti
