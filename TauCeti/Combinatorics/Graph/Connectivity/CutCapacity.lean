@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Set.Card
 
 /-!
@@ -278,7 +279,8 @@ def toOfSimpleGraphFinset (S : Finset V) :
     Finset (Graph.ofSimpleGraph G).vertexSet :=
   S.map G.ofSimpleGraphVertexEquiv.toEmbedding
 
-/-- Including a finite vertex set is the map of the canonical vertex equivalence. -/
+/-- Including a finite vertex set is the map of the canonical vertex equivalence. This public
+equation exposes the opaque definition across module boundaries. -/
 theorem toOfSimpleGraphFinset_eq_map (S : Finset V) :
     G.toOfSimpleGraphFinset S = S.map G.ofSimpleGraphVertexEquiv.toEmbedding :=
   (rfl)
@@ -371,5 +373,47 @@ theorem unitCutCapacity_eq_edgeCutCapacity
       rw [← Graph.edgeSet_ofSimpleGraph]
       exact (Graph.ofSimpleGraph G).edgeCut_subset_edgeSet he
     exact ⟨heG, (G.mem_edgeCut_ofSimpleGraph_iff_crosses heG).1 he⟩
+
+/-- Unit cut capacity as the pair cut capacity of the edge-set indicator. -/
+theorem unitCutCapacity_apply_eq_pairCutCapacity [Fintype V]
+    (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity S =
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S := by
+  have hcap :
+      G.ofSimpleGraphCapacity (G.edgeSet.indicator fun _ ↦ 1) =
+        fun _ ↦ (1 : ℕ) := by
+    funext e
+    have he : e.val ∈ G.edgeSet := by
+      rw [← Graph.edgeSet_ofSimpleGraph]
+      exact e.property
+    simp [ofSimpleGraphCapacity, he]
+  rw [G.unitCutCapacity_eq_edgeCutCapacity, ← hcap]
+  exact G.edgeCutCapacity_eq_pairCutCapacity _ (by simp) S
+
+/-- Unit cut capacity is pair cut capacity for the indicator of the graph's edge set. -/
+theorem unitCutCapacity_eq_pairCutCapacity [Fintype V] (G : SimpleGraph V) :
+    G.unitCutCapacity =
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) :=
+  funext G.unitCutCapacity_apply_eq_pairCutCapacity
+
+/-- The universal cut has unit capacity zero. -/
+@[simp]
+theorem unitCutCapacity_univ [Fintype V] (G : SimpleGraph V) :
+    G.unitCutCapacity Finset.univ = 0 := by
+  rw [unitCutCapacity_apply_eq_pairCutCapacity, TauCeti.pairCutCapacity_univ]
+
+/-- Exchanging the two sides of a cut does not change its unit capacity. -/
+@[simp]
+theorem unitCutCapacity_compl [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity Sᶜ = G.unitCutCapacity S := by
+  rw [unitCutCapacity_apply_eq_pairCutCapacity,
+    unitCutCapacity_apply_eq_pairCutCapacity, TauCeti.pairCutCapacity_compl]
+
+/-- Unit cut capacity is a symmetric submodular set function. -/
+theorem isSymmSubmodular_unitCutCapacity [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) : TauCeti.IsSymmSubmodular G.unitCutCapacity := by
+  rw [G.unitCutCapacity_eq_pairCutCapacity]
+  exact TauCeti.isSymmSubmodular_pairCutCapacity _ (by simp)
 
 end SimpleGraph

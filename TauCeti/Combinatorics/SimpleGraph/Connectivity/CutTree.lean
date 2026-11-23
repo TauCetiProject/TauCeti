@@ -21,7 +21,6 @@ tree edge also records the global edge connectivity.
 
 ## Main results
 
-* `SimpleGraph.unitCutCapacity`: the number of graph edges crossing a vertex cut.
 * `SimpleGraph.exists_isUnitCutTree`: every nonempty finite simple graph has a unit cut tree.
 * `IsFlowEquivalentTree.reachable_deleteEdges_iff_simpleGraph_isEdgeReachable`: the threshold
   partition of a unit cut tree is local edge reachability in the original graph.
