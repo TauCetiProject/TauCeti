@@ -78,6 +78,15 @@ theorem toSymbol_sharpTerm (b : ParameterSymbol n Λ W U m') (a : ParameterSymbo
     simp [mixedDeriv_def]
   · simp [Symbol.coefficient_sharpTerm, toSymbol_of_notMem _ hz, mixedDeriv_def, ← Pi.zero_def]
 
+/-- The orders of the composition terms in the remainders of the truncated parametrices: for a
+symbol `a` of order `m` and a parametrix term `bⱼ` of order `-m - j`, the terms `sharpTerm a bⱼ k`
+and `sharpTerm bⱼ a k` have order `-(j + k)`, which is at most `-L` for `k = L - j + l`. -/
+theorem sharpTerm_inverseTerms_order_le (L j l : ℕ) :
+    m + (-m - j) - ((L - j + l : ℕ) : ℝ) ≤ -(L : ℝ) := by
+  have : (L : ℝ) ≤ j + ((L - j + l : ℕ) : ℝ) := by
+    exact_mod_cast (by omega : L ≤ j + (L - j + l))
+  linarith
+
 variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
 
 /-! ### The truncated left parametrix -/
@@ -144,10 +153,8 @@ theorem exists_sum_coefficient_sharpTerm_leftParametrix_eq_add (ha : a.IsEllipti
     simp_rw [coefficient_sharpTerm_leftParametrix ha N _ x ξ z]
     rcases Nat.min_eq_zero_iff.1 h with rfl | rfl <;> simp [hz]
   -- The terms `sharpTerm bⱼ a k` with `j + k ≥ min N K`, of order `-(j + k) ≤ -min N K`.
-  refine ⟨∑ j ∈ range N, ∑ l ∈ range (K - (min N K - j)), inclusion (by
-      have : ((min N K : ℕ) : ℝ) ≤ j + (min N K - j + l : ℕ) := by
-        exact_mod_cast le_add_tsub.trans (Nat.add_le_add_left (Nat.le_add_right _ _) _)
-      linarith)
+  refine ⟨∑ j ∈ range N, ∑ l ∈ range (K - (min N K - j)),
+    inclusion (by linarith [sharpTerm_inverseTerms_order_le (m := m) (min N K) j l])
     ((a.leftInverseTerms ha j).sharpTerm a (min N K - j + l)), fun x ξ z hz => ?_⟩
   simp_rw [coefficient_sharpTerm_leftParametrix ha N _ x ξ z]
   rw [sum_comm, Nat.sum_range_sum_range_eq_add _ (min_le_left N K) (min_le_right N K),
@@ -221,10 +228,8 @@ theorem exists_sum_coefficient_sharpTerm_rightParametrix_eq_add (ha : a.IsEllipt
     simp_rw [coefficient_sharpTerm_rightParametrix ha N _ x ξ z]
     rcases Nat.min_eq_zero_iff.1 h with rfl | rfl <;> simp [hz]
   -- The terms `sharpTerm a bⱼ k` with `j + k ≥ min N K`, of order `-(j + k) ≤ -min N K`.
-  refine ⟨∑ j ∈ range N, ∑ l ∈ range (K - (min N K - j)), inclusion (by
-      have : ((min N K : ℕ) : ℝ) ≤ j + (min N K - j + l : ℕ) := by
-        exact_mod_cast le_add_tsub.trans (Nat.add_le_add_left (Nat.le_add_right _ _) _)
-      linarith)
+  refine ⟨∑ j ∈ range N, ∑ l ∈ range (K - (min N K - j)),
+    inclusion (sharpTerm_inverseTerms_order_le (min N K) j l)
     (a.sharpTerm (a.rightInverseTerms ha j) (min N K - j + l)), fun x ξ z hz => ?_⟩
   simp_rw [coefficient_sharpTerm_rightParametrix ha N _ x ξ z]
   rw [sum_comm, Nat.sum_range_sum_range_eq_add _ (min_le_left N K) (min_le_right N K),

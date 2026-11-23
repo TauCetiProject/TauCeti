@@ -95,10 +95,7 @@ polynomial of degree less than `d` in the frequency: the sum of the composition 
 (`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_rightParametrix`). -/
 noncomputable def rightParametrixRemainder (ha : a.IsElliptic) (d N : ℕ) :
     ParameterSymbol n Λ W W (-N) :=
-  ∑ j ∈ range N, ∑ i ∈ range d, inclusion (by
-      have : (N : ℝ) ≤ j + (N - j + i : ℕ) := by
-        exact_mod_cast le_add_tsub.trans (Nat.add_le_add_left (Nat.le_add_right _ _) _)
-      linarith)
+  ∑ j ∈ range N, ∑ i ∈ range d, inclusion (sharpTerm_inverseTerms_order_le N j i)
     (a.sharpTerm (a.rightInverseTerms ha j) (N - j + i))
 
 @[simp]
