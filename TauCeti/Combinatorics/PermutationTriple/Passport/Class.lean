@@ -169,42 +169,42 @@ theorem disjoint_classSet {P Q : PassportSpec n} (hG : P.G = Q.G) (hne : P ≠ Q
 
 /-- Two connected triples in the same passport have identical ordered full cycle partitions. -/
 theorem cycleData_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
-    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.cycleData = t'.1.cycleData := by
+    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.val.cycleData = t'.val.cycleData := by
   rcases (hasPassport_iff t P).mp ht with ⟨_, ht0, ht1, htinf⟩
   rcases (hasPassport_iff t' P).mp ht' with ⟨_, ht0', ht1', htinf'⟩
   ext <;> simp_all
 
 /-- Two connected triples in the same passport have equal Euler characteristic. -/
 theorem eulerChar_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
-    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.eulerChar = t'.1.eulerChar := by
+    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.val.eulerChar = t'.val.eulerChar := by
   simp only [PermutationTriple.eulerChar_eq_cycleCounts,
     PermutationTriple.cycleCounts_eq_card_cycleData, cycleData_eq_of_hasPassport ht ht']
 
 /-- Two connected triples in the same passport have equal genus. -/
 theorem genus_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
-    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.genus = t'.1.genus := by
+    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.val.genus = t'.val.genus := by
   rw [PermutationTriple.genus_def, PermutationTriple.genus_def,
     eulerChar_eq_of_hasPassport ht ht']
 
 /-- Two connected triples in the same passport have equal ordered triples of permutation orders. -/
 theorem orderTriple_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
-    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.orderTriple = t'.1.orderTriple := by
+    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.val.orderTriple = t'.val.orderTriple := by
   rw [PermutationTriple.orderTriple_eq_lcm_cycleData,
     PermutationTriple.orderTriple_eq_lcm_cycleData, cycleData_eq_of_hasPassport ht ht']
 
 /-- Two connected triples in the same passport have the same spherical, Euclidean, or hyperbolic
 geometry type. -/
 theorem geometryType_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
-    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.geometryType = t'.1.geometryType := by
+    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.val.geometryType = t'.val.geometryType := by
   apply PermutationTriple.geometryType_eq_of_sum_eq
   rw [orderTriple_eq_of_hasPassport ht ht']
 
 /-- Two connected triples in the same passport are either both primitive or both imprimitive:
 their monodromy subgroups are conjugate in the ambient symmetric group. -/
 theorem isPrimitive_iff_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
-    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.IsPrimitive ↔ t'.1.IsPrimitive := by
+    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.val.IsPrimitive ↔ t'.val.IsPrimitive := by
   have key (s : ConnectedTriple n) (hs : HasPassport s P) :
-      s.1.IsPrimitive ↔ IsPreprimitive P.G (Fin n) := by
+      s.val.IsPrimitive ↔ IsPreprimitive P.G (Fin n) := by
     obtain ⟨⟨τ, hτ⟩, -⟩ := (hasPassport_iff s P).mp hs
     rw [← hτ, Equiv.conj_eq_permCongrHom, Equiv.isPreprimitive_map_permCongrHom_iff,
       PermutationTriple.isPrimitive_iff]

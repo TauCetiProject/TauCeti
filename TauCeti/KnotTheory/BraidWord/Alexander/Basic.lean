@@ -94,9 +94,9 @@ private theorem prefixMatrix_length :
   simp [prefixMatrix]
 
 private theorem prefixMatrix_succ (j : Fin w.length) :
-    w.prefixMatrix (j + 1) = w.prefixMatrix j * letterMatrix w[j.1] := by
+    w.prefixMatrix (j + 1) = w.prefixMatrix j * letterMatrix w[j.val] := by
   rw [prefixMatrix, prefixMatrix, letterMatrix, List.take_add_one,
-    List.getElem?_eq_getElem j.2, Option.toList_some, toBraid_append, map_mul, Units.val_mul,
+    List.getElem?_eq_getElem j.isLt, Option.toList_some, toBraid_append, map_mul, Units.val_mul,
     toBraid_cons, toBraid_nil, mul_one]
 
 /-- The basis vector `T ^ (-p) • e p` of a strand position, in which the Burau matrix of a letter
@@ -194,7 +194,7 @@ private theorem firstAbove_zero_eq_none_iff {p : Fin n} :
 
 private theorem firstAbove_succ_of_not_mem {p : Fin n} {j : Fin w.length}
     (hj : j ∉ w.crossingsAt p) : w.firstAbove p (j + 1) = w.firstAbove p j := by
-  refine List.find?_congr fun k hk ↦ ?_
+  refine List.find?_congr rfl fun k hk ↦ ?_
   have : k ≠ j := fun h ↦ hj (h ▸ hk)
   have : (k : ℕ) ≠ j := fun h ↦ this (Fin.ext h)
   simp only [decide_eq_decide]
@@ -314,7 +314,7 @@ along `p`. -/
 private theorem cokerValue_succ_eq_nextCrossing {p : Fin n} {j : Fin w.length}
     (hj : j ∈ w.crossingsAt p) :
     w.cokerValue (j + 1) p = w.cokerValue (w.nextCrossing p j) p := by
-  rw [w.cokerValue_aboveHeight p (Nat.succ_le_of_lt j.2), aboveHeight]
+  rw [w.cokerValue_aboveHeight p (Nat.succ_le_of_lt j.isLt), aboveHeight]
   rcases w.firstAbove_succ_of_mem hj with h | ⟨h, h₀⟩
   · rw [h, Option.map_some, Option.getD_some]
   · rw [h, Option.map_none, Option.getD_none, cokerValue_length,
@@ -325,7 +325,7 @@ private theorem cokerValue_succ_eq_nextCrossing {p : Fin n} {j : Fin w.length}
 crossing for an incoming slot and above it for an outgoing slot. -/
 private def slotValue (x : Fin w.length × Fin 4) : (Fin n → ℤ[T;T⁻¹]) ⧸ w.burauRelations :=
   w.cokerValue (if x.2 = 1 ∨ x.2 = 2 then x.1 + 1 else x.1)
-    (if x.2 = 0 ∨ x.2 = 1 then strandSucc w[x.1.1].1 else strand w[x.1.1].1)
+    (if x.2 = 0 ∨ x.2 = 1 then strandSucc w[x.1.val].1 else strand w[x.1.val].1)
 
 private theorem slotValue_incomingSlot {p : Fin n} {j : Fin w.length}
     (hj : j ∈ w.crossingsAt p) : w.slotValue (j, w.incomingSlot j p) = w.cokerValue j p := by
@@ -344,18 +344,18 @@ private theorem slotValue_outgoingSlot {p : Fin n} {j : Fin w.length}
 
 /-- The weight of the incoming slot of a crossing on the upper position of its letter. -/
 private theorem alexanderWeight_closure_zero (j : Fin w.length) :
-    w.closure.alexanderWeight j 0 = letterCoeff w[j.1].2 * T 1 := by
+    w.closure.alexanderWeight j 0 = letterCoeff w[j.val].2 * T 1 := by
   rw [OrientedPDCode.alexanderWeight_def]
-  rcases Int.units_eq_one_or w[j.1].2 with h | h
+  rcases Int.units_eq_one_or w[j.val].2 with h | h
   · simp [h, letterCoeff]
   · have hT : (T (-1) : ℤ[T;T⁻¹]) * T 1 = 1 := by rw [← T_add]; simp
     simp [h, letterCoeff, hT]
 
 /-- The weight of the incoming slot of a crossing on the lower position of its letter. -/
 private theorem alexanderWeight_closure_three (j : Fin w.length) :
-    w.closure.alexanderWeight j 3 = letterCoeff w[j.1].2 := by
+    w.closure.alexanderWeight j 3 = letterCoeff w[j.val].2 := by
   rw [OrientedPDCode.alexanderWeight_def]
-  rcases Int.units_eq_one_or w[j.1].2 with h | h <;> simp [h, letterCoeff]
+  rcases Int.units_eq_one_or w[j.val].2 with h | h <;> simp [h, letterCoeff]
 
 /-- The values of the generators of the Alexander module of the closure in the Burau cokernel. -/
 private def cokerGen :
@@ -476,18 +476,18 @@ private theorem levelGen_succ_of_not_mem {p : Fin n} {j : Fin w.length}
   rw [levelGen, levelGen, w.firstAbove_succ_of_not_mem hj]
 
 private theorem levelGen_crossing_strand (j : Fin w.length) :
-    (letterCoeff w[j.1].2 * T 1) • w.levelGen j (strandSucc w[j.1].1) +
-        (1 - letterCoeff w[j.1].2 * T 1) • w.levelGen j (strand w[j.1].1) =
-      w.outGen j (strand w[j.1].1) := by
+    (letterCoeff w[j.val].2 * T 1) • w.levelGen j (strandSucc w[j.val].1) +
+        (1 - letterCoeff w[j.val].2 * T 1) • w.levelGen j (strand w[j.val].1) =
+      w.outGen j (strand w[j.val].1) := by
   rw [w.levelGen_of_mem (w.mem_crossingsAt_strandSucc j),
     w.levelGen_of_mem (w.mem_crossingsAt_strand j), ← alexanderWeight_closure_zero, outGen, inGen,
     inGen, outgoingSlot_strand, incomingSlot_strand, incomingSlot_strandSucc]
   exact (w.closure.alexanderGenerator_crossing_two j).symm
 
 private theorem levelGen_crossing_strandSucc (j : Fin w.length) :
-    letterCoeff w[j.1].2 • w.levelGen j (strand w[j.1].1) +
-        (1 - letterCoeff w[j.1].2) • w.levelGen j (strandSucc w[j.1].1) =
-      w.outGen j (strandSucc w[j.1].1) := by
+    letterCoeff w[j.val].2 • w.levelGen j (strand w[j.val].1) +
+        (1 - letterCoeff w[j.val].2) • w.levelGen j (strandSucc w[j.val].1) =
+      w.outGen j (strandSucc w[j.val].1) := by
   rw [w.levelGen_of_mem (w.mem_crossingsAt_strand j),
     w.levelGen_of_mem (w.mem_crossingsAt_strandSucc j), ← alexanderWeight_closure_three, outGen,
     inGen, inGen, outgoingSlot_strandSucc, incomingSlot_strand, incomingSlot_strandSucc]
@@ -551,14 +551,14 @@ private theorem ofCoker_slotValue_incomingSlot {p : Fin n} {j : Fin w.length}
     (hj : j ∈ w.crossingsAt p) :
     w.ofCoker (w.slotValue (j, w.incomingSlot j p)) =
       w.closure.alexanderGenerator (.inl (crossingSlotEquiv w.length (j, w.incomingSlot j p))) := by
-  rw [w.slotValue_incomingSlot hj, w.ofCoker_cokerValue p j.2.le, w.levelGen_of_mem hj, inGen,
+  rw [w.slotValue_incomingSlot hj, w.ofCoker_cokerValue p j.isLt.le, w.levelGen_of_mem hj, inGen,
     crossing_closure]
 
 private theorem ofCoker_slotValue_outgoingSlot {p : Fin n} {j : Fin w.length}
     (hj : j ∈ w.crossingsAt p) :
     w.ofCoker (w.slotValue (j, w.outgoingSlot j p)) =
       w.closure.alexanderGenerator (.inl (crossingSlotEquiv w.length (j, w.outgoingSlot j p))) := by
-  rw [w.slotValue_outgoingSlot hj, w.ofCoker_cokerValue p j.2, w.levelGen_succ_of_mem hj, outGen,
+  rw [w.slotValue_outgoingSlot hj, w.ofCoker_cokerValue p j.isLt, w.levelGen_succ_of_mem hj, outGen,
     crossing_closure]
 
 /-- The bottom generator on `q` is sent to the class of `T ^ (-q) • e q`. -/

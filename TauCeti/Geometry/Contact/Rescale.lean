@@ -47,7 +47,7 @@ by the same factor. No positivity of `u` is required. -/
 theorem IsContactHamiltonianVectorField.of_eq_smul
     (hX : α.IsContactHamiltonianVectorField f X) (hα : α.IsContactForm)
     (hu : ContMDiff I 𝓘(ℝ) 1 u) (hu₀ : ∀ x, u x ≠ 0)
-    (hβ : ∀ x, β.1 x = u x • α.1 x) (hf : MDifferentiable I 𝓘(ℝ) f) :
+    (hβ : ∀ x, β.val x = u x • α.val x) (hf : MDifferentiable I 𝓘(ℝ) f) :
     β.IsContactHamiltonianVectorField (u * f) X := by
   have hβc := (isContactForm_iff_of_eq_smul hu hu₀ hβ).2 hα
   apply hβc.isContactHamiltonianVectorField_iff_kerDistribution.2
@@ -55,7 +55,7 @@ theorem IsContactHamiltonianVectorField.of_eq_smul
   refine ⟨by simp [hβ, hX.apply_eq], fun v hv ↦ ?_⟩
   rw [kerDistribution_of_eq_smul hu₀ hβ] at hv
   have hvα := mem_kerDistribution.1 hv
-  have hβ' : β.1 = fun y ↦ u y • α.1 y := funext hβ
+  have hβ' : β.val = fun y ↦ u y • α.val y := funext hβ
   rw [hβ', mextDeriv_fun_smul_apply ((hu x).mdifferentiableAt one_ne_zero)
     (α.mdifferentiableAt x), hvα, hX.apply_eq, hX.mextDeriv_apply_eq,
     hvα, mvfderiv_mul ((hu x).mdifferentiableAt one_ne_zero) (hf x)]
@@ -71,7 +71,7 @@ include hα
 simultaneously multiplying the form and the Hamiltonian by `u` leaves the field unchanged. -/
 theorem contactHamiltonianVectorField_of_eq_smul
     (hu : ContMDiff I 𝓘(ℝ) 1 u) (hu₀ : ∀ x, u x ≠ 0)
-    (hβ : ∀ x, β.1 x = u x • α.1 x) (hf : MDifferentiable I 𝓘(ℝ) f) :
+    (hβ : ∀ x, β.val x = u x • α.val x) (hf : MDifferentiable I 𝓘(ℝ) f) :
     β.contactHamiltonianVectorField (u * f) = α.contactHamiltonianVectorField f := by
   have hβc := (isContactForm_iff_of_eq_smul hu hu₀ hβ).2 hα
   exact (hβc.isContactHamiltonianVectorField_iff_eq.1
@@ -82,7 +82,7 @@ theorem contactHamiltonianVectorField_of_eq_smul
 of its contact field, corrected by the derivative of the change of form. -/
 theorem mul_mvfderiv_reebVectorField_of_eq_smul
     (hu : ContMDiff I 𝓘(ℝ) 1 u) (hu₀ : ∀ x, u x ≠ 0)
-    (hβ : ∀ x, β.1 x = u x • α.1 x) (hf : MDifferentiable I 𝓘(ℝ) f) (x : M) :
+    (hβ : ∀ x, β.val x = u x • α.val x) (hf : MDifferentiable I 𝓘(ℝ) f) (x : M) :
     u x * mvfderiv I (u * f) x (β.reebVectorField x) =
       mvfderiv I u x (α.contactHamiltonianVectorField f x) +
         u x * mvfderiv I f x (α.reebVectorField x) := by
@@ -90,7 +90,7 @@ theorem mul_mvfderiv_reebVectorField_of_eq_smul
     hα hu hu₀ hβ hf
   -- Evaluate the transformed contraction equation on the original Reeb vector.
   have h := hX.mextDeriv_apply_eq x (α.reebVectorField x)
-  have hβ' : β.1 = fun y ↦ u y • α.1 y := funext hβ
+  have hβ' : β.val = fun y ↦ u y • α.val y := funext hβ
   rw [hβ', mextDeriv_fun_smul_apply ((hu x).mdifferentiableAt one_ne_zero)
     (α.mdifferentiableAt x), hα.apply_reebVectorField,
     hα.apply_contactHamiltonianVectorField, hα.mextDeriv_reebVectorField_right,
@@ -105,7 +105,7 @@ theorem mul_mvfderiv_reebVectorField_of_eq_smul
 `β = u α`, the bracket of `u f` and `u g` is `u {f,g}_α`, also for negative multipliers. -/
 theorem jacobiBracket_of_eq_smul
     (hu : ContMDiff I 𝓘(ℝ) 1 u) (hu₀ : ∀ x, u x ≠ 0)
-    (hβ : ∀ x, β.1 x = u x • α.1 x)
+    (hβ : ∀ x, β.val x = u x • α.val x)
     (hf : MDifferentiable I 𝓘(ℝ) f) (hg : MDifferentiable I 𝓘(ℝ) g) (x : M) :
     β.jacobiBracket (u * f) (u * g) x = u x * α.jacobiBracket f g x := by
   have hβc := (isContactForm_iff_of_eq_smul hu hu₀ hβ).2 hα

@@ -74,8 +74,8 @@ theorem tendsto_quantile_map_cast_negativeBinomialMeasure_atomMixture_zero_nhdsG
     have hpow := rpow_pos_of_pos hp r
     by_cases hw : (w : ℝ) = 1
     · simp [hw]
-    · have hden : 0 < 1 - (w : ℝ) := sub_pos.mpr (lt_of_le_of_ne w.2.2 hw)
-      exact add_pos_of_nonneg_of_pos w.2.1 (mul_pos hden hpow)
+    · have hden : 0 < 1 - (w : ℝ) := sub_pos.mpr (lt_of_le_of_ne w.property.2 hw)
+      exact add_pos_of_nonneg_of_pos w.property.1 (mul_pos hden hpow)
   apply tendsto_const_nhds.congr'
   filter_upwards [Ioo_mem_nhdsGT (lt_min hmass zero_lt_one)] with u hu
   have hu' : u ∈ Ioo (0 : ℝ) 1 := ⟨hu.1, hu.2.trans_le (min_le_right _ _)⟩
@@ -109,7 +109,7 @@ theorem tendsto_quantile_map_cast_negativeBinomialMeasure_atomMixture_zero_nhdsL
     have hr0 : 0 < r := lt_of_le_of_ne hr (by tauto)
     have hpone : p < 1 := lt_of_le_of_ne hp1 (by tauto)
     have hw : (w : ℝ) < 1 :=
-      lt_of_le_of_ne w.2.2 (unitInterval.coe_ne_one.2 (by tauto))
+      lt_of_le_of_ne w.property.2 (unitInterval.coe_ne_one.2 (by tauto))
     apply Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one
     intro x
     by_cases hx : 0 ≤ x
@@ -138,7 +138,7 @@ theorem
         tendsto_quantile_map_cast_negativeBinomialMeasure_cond_compl_zero_nhdsGT_zero hr hp hp1
     · rw [ite_eq_right hw]
       have hwpos : 0 < (w : ℝ) :=
-        lt_of_le_of_ne w.2.1 (unitInterval.coe_ne_zero.2 hw).symm
+        lt_of_le_of_ne w.property.1 (unitInterval.coe_ne_zero.2 hw).symm
       apply tendsto_const_nhds.congr'
       filter_upwards [Ioo_mem_nhdsGT (lt_min hwpos zero_lt_one)] with u hu
       have hu' : u ∈ Ioo (0 : ℝ) 1 := ⟨hu.1, hu.2.trans_le (min_le_right _ _)⟩
@@ -170,7 +170,7 @@ theorem
     obtain ⟨hr, hp, hp1⟩ := h.resolve_right hw
     let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
     let _ := isProbabilityMeasure_negativeBinomialMeasure_cond_compl_zero hr hp hp1
-    have hwlt : (w : ℝ) < 1 := lt_of_le_of_ne w.2.2 (unitInterval.coe_ne_one.2 hw)
+    have hwlt : (w : ℝ) < 1 := lt_of_le_of_ne w.property.2 (unitInterval.coe_ne_one.2 hw)
     have hden : 0 < 1 - p ^ r := sub_pos.mpr (rpow_lt_one hp.le hp1 hr)
     apply Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one
     intro x

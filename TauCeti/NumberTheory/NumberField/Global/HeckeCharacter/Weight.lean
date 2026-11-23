@@ -59,7 +59,7 @@ class character. -/
 @[simp]
 theorem val_toUnitaryIdealWeightAt (χ : HeckeCharacter K) (𝔪 : Modulus K)
     (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) :
-    (toUnitaryIdealWeightAt χ 𝔪 hχ).1 =
+    (toUnitaryIdealWeightAt χ 𝔪 hχ).val =
       (rayClassCharacterAt χ 𝔪 hχ).toMultiplicativeIdealWeight := by
   simp [toUnitaryIdealWeightAt]
 

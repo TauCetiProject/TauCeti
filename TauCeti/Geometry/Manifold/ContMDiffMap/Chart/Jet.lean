@@ -133,17 +133,20 @@ noncomputable def chartIteratedFDerivLinearMap (x : M) (m : ℕ) (hm : m ≤ n) 
     simp only [ContinuousMap.add_apply, chartIteratedFDeriv_self_target_apply]
     simpa only [ContMDiffMap.coe_add, Function.comp_def, Pi.add_def] using
       iteratedFDerivWithin_add_apply
-      (((f.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z z.2)
-      (((g.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z z.2)
-      (uniqueDiffOn_extChartAt_target x) z.2
+      (((f.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z
+          z.property)
+      (((g.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z
+          z.property)
+      (uniqueDiffOn_extChartAt_target x) z.property
   map_smul' c f := by
     apply ContinuousMap.ext
     intro z
     simp only [ContinuousMap.smul_apply, chartIteratedFDeriv_self_target_apply]
     simpa only [ContMDiffMap.coe_smul, Function.comp_def, Pi.smul_def, RingHom.id_apply] using
       (iteratedFDerivWithin_const_smul_apply (a := c)
-      (((f.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z z.2)
-      (uniqueDiffOn_extChartAt_target x) z.2)
+      (((f.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z
+          z.property)
+      (uniqueDiffOn_extChartAt_target x) z.property)
 
 /-- The linear coordinate-derivative map agrees with the existing chart jet. -/
 -- Spell out the chart target in the coercion type, as for `chartIteratedFDeriv_apply`.

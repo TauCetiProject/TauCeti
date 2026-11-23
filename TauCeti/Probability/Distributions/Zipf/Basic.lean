@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The Zipf distribution

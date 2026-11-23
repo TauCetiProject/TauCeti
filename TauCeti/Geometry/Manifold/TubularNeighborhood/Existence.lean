@@ -99,10 +99,10 @@ theorem exists_contMDiffOn_retraction [Nonempty M] (f : SmoothEmbedding I J ∞ 
   -- A tubular neighbourhood `Φ` of `f`; the retraction is its base projection.
   obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
   let r : N → M := fun y ↦ if h : y ∈ W then (Φ.symm ⟨y, h⟩).proj else Classical.arbitrary M
-  have hrW (w : W) : r w = (Φ.symm w).proj := by simp [r, w.2]
+  have hrW (w : W) : r w = (Φ.symm w).proj := by simp [r, w.property]
   have hfW (x : M) : f x ∈ W := by
     rw [← hΦ x]
-    exact (Φ _).2
+    exact (Φ _).property
   refine ⟨W, W.isOpen, range_subset_iff.2 hfW, hWO, r, fun y hy ↦ ?_, fun x ↦ ?_⟩
   · have hsmooth : ContMDiff J I ∞ fun w : W ↦ r w := by
       simp only [hrW]
@@ -131,10 +131,10 @@ theorem exists_isTubularNeighborhood_subset
   · simpa using starConvex_univ (𝕜 := ℝ) (0 : f.NormalSpace x hn)
   · exact W.isOpen.isOpenEmbedding_subtypeVal.comp
       (Φ.toHomeomorph.isOpenEmbedding.comp isOpen_univ.isOpenEmbedding_subtypeVal)
-  · exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
-      (continuous_subtype_val.comp continuous_snd)
+  · exact (continuous_subtypeVal.comp continuous_fst).smul_totalSpace
+      (continuous_subtypeVal.comp continuous_snd)
   · rintro _ ⟨v, rfl⟩
-    exact hWO (Φ v).2
+    exact hWO (Φ v).property
 
 /-- **The image of a smooth embedding is a strong deformation retract of a tubular
 neighbourhood.** Every open neighbourhood `O` of the image of a smooth embedding `f : M → N`

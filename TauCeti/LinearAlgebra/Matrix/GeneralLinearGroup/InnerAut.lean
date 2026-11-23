@@ -86,23 +86,16 @@ variable [CommRing R]
 central**, that is, an invertible scalar matrix. -/
 theorem innerAut_eq_one_iff (g : GL n R) :
     innerAut g = 1 ↔ g ∈ Subgroup.center (GL n R) := by
-  have key : innerAut g = 1 ↔ ∀ x : Matrix n n R, (g : Matrix n n R) * x = x * g := by
-    rw [AlgEquiv.ext_iff]
-    refine forall_congr' fun x => ?_
-    rw [innerAut_apply, AlgEquiv.one_apply, Units.mul_inv_eq_iff_eq_mul]
-  rw [key]
-  constructor
-  · exact fun h => Subgroup.mem_center_iff.mpr fun h' => Units.ext (h h').symm
-  · intro hg x
-    obtain ⟨a, ha⟩ := mem_center_iff_val_mem_range_scalar.mp hg
-    rw [← ha]
-    exact (Matrix.scalar_commute a (fun _ => Commute.all _ _) x).eq
+  -- Both sides say that `g` commutes with every matrix.
+  rw [mem_center_iff_val_mem_range_scalar, ← center_eq_range, Semigroup.mem_center_iff,
+    AlgEquiv.ext_iff]
+  refine forall_congr' fun x => ?_
+  rw [innerAut_apply, AlgEquiv.one_apply, Units.mul_inv_eq_iff_eq_mul, eq_comm]
 
 /-- The kernel of conjugation is the center of the general linear group. -/
 @[simp]
-theorem ker_innerAut : (innerAut (n := n) (R := R)).ker = Subgroup.center (GL n R) := by
-  ext g
-  exact innerAut_eq_one_iff g
+theorem ker_innerAut : (innerAut (n := n) (R := R)).ker = Subgroup.center (GL n R) :=
+  Subgroup.ext fun g => MonoidHom.mem_ker.trans (innerAut_eq_one_iff g)
 
 section LocallyInner
 
@@ -132,23 +125,16 @@ private theorem apply_mul_intertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A)
 
 private theorem mul_coIntertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A) (a b : n)
     (x : Matrix n n A) : x * coIntertwiner σ a b = coIntertwiner σ a b * σ x := by
-  induction x using Matrix.induction_on' with
-  | h_zero => simp
-  | h_add p q hp hq => rw [map_add, add_mul, mul_add, hp, hq]
-  | h_std_basis k l c =>
-    rw [← mul_one c, ← smul_eq_mul c 1, ← smul_single, map_smul, smul_mul_assoc, mul_smul_comm]
-    congr 1
-    simp only [coIntertwiner, Finset.mul_sum, Finset.sum_mul, mul_assoc, ← map_mul]
-    rw [Finset.sum_eq_single l (fun j _ hj => by simp [← mul_assoc, Ne.symm hj]) (by simp),
-      Finset.sum_eq_single k (fun j _ hj => by simp [hj]) (by simp)]
-    simp [← mul_assoc]
+  -- `Hᵦ` is the image under `σ` of the intertwiner `∑ⱼ σ⁻¹(Eⱼᵦ) Eₐⱼ` of `σ⁻¹`.
+  have h : coIntertwiner σ a b = σ (intertwiner σ.symm b a) := by
+    simp [coIntertwiner, intertwiner]
+  simpa [h] using congrArg σ (apply_mul_intertwiner σ.symm b a x)
 
 private theorem sum_intertwiner_mul_coIntertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A) (a : n) :
     ∑ b, intertwiner σ a b * coIntertwiner σ a b = 1 := by
   have key (j l : n) : ∑ b, single b j (1 : A) * single l b 1 = if j = l then 1 else 0 := by
     split_ifs with h
-    · subst h
-      simp [sum_single_one]
+    · simp [h, sum_single_one]
     · simp [h]
   calc ∑ b, intertwiner σ a b * coIntertwiner σ a b
       = ∑ l, ∑ j, σ (single j a 1) * (∑ b, single b j 1 * single l b 1) * σ (single a l 1) := by
@@ -193,8 +179,10 @@ theorem exists_span_eq_top_forall_map_eq_innerAut (σ : Matrix n n A ≃ₐ[A] M
     obtain ⟨r, hr⟩ := mem_range_scalar_of_commute_single
       (M := intertwiner σ a b * coIntertwiner σ a b) fun i j _ => by
         obtain ⟨x, hx⟩ := σ.surjective (single i j 1)
-        rw [← hx, Commute, SemiconjBy, ← mul_assoc, apply_mul_intertwiner, mul_assoc,
-          mul_coIntertwiner, mul_assoc]
+        rw [← hx]
+        -- `G` semiconjugates `x` to `σ x` and `H` semiconjugates `σ x` back to `x`.
+        exact Commute.symm <| SemiconjBy.mul_left (apply_mul_intertwiner σ a b x).symm
+          (mul_coIntertwiner σ a b x).symm
     rw [← hr]
     simp
   have hsum : ∑ b, (intertwiner σ a b * coIntertwiner σ a b) a a = 1 := by
