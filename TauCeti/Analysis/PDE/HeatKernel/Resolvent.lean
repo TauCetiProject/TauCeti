@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
 import TauCeti.Analysis.PDE.HeatKernel.Generator
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Function.Lp.Dilation
@@ -54,8 +55,8 @@ are approximate solutions of `Δ u = 0`: they lie in the domain of the generator
 them as the Laplacian (`TauCeti.generator_heatSemigroup`), and their Laplacian has `Lᵖ` norm `r⁻²`
 times smaller than their own. Writing `φ(r⁻¹ ·) = (λ - A)⁻¹ (λ φ(r⁻¹ ·) - Δ φ(r⁻¹ ·))` therefore
 gives `1 ≤ λ ‖(λ - A)⁻¹‖ + O(r⁻²)`, and `r → ∞` gives `λ ‖(λ - A)⁻¹‖ ≥ 1`; this approximate
-eigenvector argument holds for any C₀-semigroup
-(`TauCeti.Semigroups.StronglyContinuousSemigroup.inv_abs_sub_le_norm_resolvent_of_tendsto`).
+eigenvector argument holds for the resolvent of any operator
+(`LinearPMap.IsResolventAt.inv_norm_sub_le_norm_of_tendsto`).
 
 ## Main declarations
 
@@ -67,8 +68,7 @@ eigenvector argument holds for any C₀-semigroup
   `Lᵖ` is convolution with `G_λ`.
 * `TauCeti.isResolventAt_generator_heatSemigroup`, `TauCeti.resolvent_generator_heatSemigroup`:
   convolution with `G_λ` is the resolvent `(λ - A)⁻¹` of the heat generator `A`.
-* `TauCeti.resolvent_heatSemigroup_ae_eq_convolution`,
-  `TauCeti.resolvent_heatSemigroup_ae_eq_convolution_coeFn`: the resolvent of the class of `f` is
+* `TauCeti.resolvent_heatSemigroup_ae_eq_convolution`: the resolvent of the class of `f` is
   represented by the classical convolution `G_λ ⋆ f`.
 * `TauCeti.norm_resolvent_heatSemigroup`: on `Lᵖ(E; F)` the resolvent has norm exactly `1 / λ`.
 
@@ -244,13 +244,6 @@ theorem resolvent_heatSemigroup_ae_eq_convolution (hp : p ≠ ∞) (hlam : 0 < l
   rw [resolvent_heatSemigroup hp hlam]
   exact convolutionLp_ae_eq_convolution hp (integrable_heatResolventKernel hlam) hf
 
-/-- For `1 ≤ p < ∞` and `λ > 0`, the heat resolvent applied to `f : Lp` is represented almost
-everywhere by convolution of `G_λ` with the chosen representative of `f`. -/
-theorem resolvent_heatSemigroup_ae_eq_convolution_coeFn (hp : p ≠ ∞) (hlam : 0 < lam)
-    (f : Lp F p (volume : Measure E)) :
-    (heatSemigroup hp).resolvent lam hlam f =ᵐ[volume] heatResolventKernel lam ⋆ (f : E → F) := by
-  simpa only [Lp.toLp_coeFn] using resolvent_heatSemigroup_ae_eq_convolution hp hlam (Lp.memLp f)
-
 /-- **The resolvent of the heat semigroup preserves positivity.** -/
 theorem resolvent_heatSemigroup_nonneg (hp : p ≠ ∞) (hlam : 0 < lam)
     {f : Lp ℝ p (volume : Measure E)} (hf : 0 ≤ f) :
@@ -318,7 +311,7 @@ theorem norm_resolvent_heatSemigroup [Nontrivial F] (hp : p ≠ ∞) (hlam : 0 <
     exact mem_domain_heatSemigroup hp (hφr n) (hφrc n) (hf n).coeFn_toLp⟩
   -- They are nonzero approximate solutions of `Δ u = 0`: the `Lᵖ` norms of the dilate and of its
   -- Laplacian scale like `r^{n/p}` and `r^{n/p - 2}`.
-  have hf_ratio (n : ℕ) : (f n : Lp F p (volume : Measure E)) ≠ 0 ∧
+  have hf_ratio (n : ℕ) : ‖(f n : Lp F p (volume : Measure E))‖ ≠ 0 ∧
       ‖S.generator (f n) - (0 : ℝ) • (f n : Lp F p (volume : Measure E))‖ /
         ‖(f n : Lp F p (volume : Measure E))‖ = (((n : ℝ) + 1) ^ 2)⁻¹ * (c / a) := by
     set s := ((n : ℝ) + 1) ^ ((Module.finrank ℝ E : ℝ) / p.toReal)
@@ -334,15 +327,15 @@ theorem norm_resolvent_heatSemigroup [Nontrivial F] (hp : p ≠ ∞) (hlam : 0 <
       rw [Lp.norm_toLp, hΔ, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ (hr n).ne',
         abs_of_pos (hr n)]
       simp [ENNReal.toReal_ofReal hs.le, abs_of_pos (hr n), s, c]
-    refine ⟨norm_ne_zero_iff.1 (hnf ▸ (mul_pos hs ha).ne'), ?_⟩
+    refine ⟨hnf ▸ (mul_pos hs ha).ne', ?_⟩
     rw [zero_smul, sub_zero,
       generator_heatSemigroup hp (hφr n) (hφrc n) (hf n).coeFn_toLp (hg n).coeFn_toLp, hng, hnf]
     field_simp
   -- Let `r → ∞`.
-  have h := S.inv_abs_sub_le_norm_resolvent_of_tendsto S.hasGrowthBound (lambda := lam)
-    (by simpa using hlam) (mu := 0) (l := atTop) f
+  have h := (S.isResolventAt_generator S.hasGrowthBound (lambda := lam)
+    (by simpa using hlam)).inv_norm_sub_le_norm_of_tendsto (mu := 0) (l := atTop) f
     (Eventually.of_forall fun n ↦ (hf_ratio n).1) ?_
-  · rwa [sub_zero, abs_of_pos hlam,
+  · rwa [sub_zero, Real.norm_eq_abs, abs_of_pos hlam,
       ← ContractionSemigroup.resolvent_eq_stronglyContinuousSemigroup_resolvent] at h
   · refine (tendsto_congr fun n ↦ (hf_ratio n).2).2 ?_
     simpa [one_div, inv_pow] using

@@ -361,7 +361,7 @@ through the left-inverse identity `R(lambda) (lambda x - A x) = x`. -/
 theorem norm_le_norm_smul_sub_generator (S : StronglyContinuousSemigroup X) {ω M : ℝ}
     (hb : S.HasGrowthBound ω M) {lambda : ℝ} (hlambda : ω < lambda) (x : S.generator.domain) :
     ‖(x : X)‖ ≤ M / (lambda - ω) * ‖lambda • (x : X) - S.generator x‖ :=
-  (S.norm_le_norm_resolvent_mul_norm_smul_sub_generator hb hlambda x).trans
+  ((S.isResolventAt_generator hb hlambda).norm_le_norm_mul_norm_smul_sub x).trans
     (by gcongr; exact S.resolvent_norm_le hb lambda hlambda)
 
 /-- For `lambda` beyond the growth exponent, `lambda • I - A` is injective on `D(A)`: the
