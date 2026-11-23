@@ -631,7 +631,7 @@ theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq
       (continuous_of_discreteTopology (f := ⇑ψ)).comp q.continuous⟩
   have hcharEval (x : MonoidAlgebra K (Γ ⧸ U.toSubgroup)) :
       ψ.charEval x = ∑ a, ψ' a * x.coeff a := by
-    change MonoidAlgebra.liftNC (algebraMap K K : K →+ K) ((Units.coeHom K).comp ψ) x = _
+    rw [MonoidHom.charEval, TauCeti.DiagonalizableGroup.point, MonoidAlgebra.lift_def]
     simpa [ψ', mul_comm] using
       MonoidAlgebra.liftNC_eq_sum (algebraMap K K : K →+ K) ((Units.coeHom K).comp ψ) x
   have hchar (ρ : D(Γ, K)) :

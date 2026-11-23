@@ -71,13 +71,9 @@ private theorem liftPS_of (x : ℤ_[p]ˣ) :
     liftPS ε η (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) =
       η (padicIntUnitsEquivZModUnitsProd p x).1 *
         ε (PowerSeries.binomialSeries ℤ_[p] (padicIntUnitsEquivZModUnitsProd p x).2.toAdd) := by
-  have hmap (s : ℤ_[p]) :
-      PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) s =
-        PowerSeries.map MonoidAlgebra.singleOneRingHom (PowerSeries.binomialSeries ℤ_[p] s) := by
-    ext n; simp [PowerSeries.binomialSeries_coeff, MonoidAlgebra.one_def]
   rw [← (padicUnitsCoordinate p).apply_symm_apply (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x),
-    padicUnitsCoordinate_symm_of, hmap, map_mul, map_mul, liftPS_C_single, liftPS_map_singleOne,
-    map_one, one_mul]
+    padicUnitsCoordinate_symm_of, MonoidAlgebra.binomialSeries_eq_map_singleOneRingHom,
+    map_mul, map_mul, liftPS_C_single, liftPS_map_singleOne, map_one, one_mul]
 
 variable {ε}
 
