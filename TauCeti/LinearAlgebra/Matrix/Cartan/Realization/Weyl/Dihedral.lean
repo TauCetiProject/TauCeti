@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.Coxeter
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.Basic
 
 /-!
 # Rank-two Weyl groups and two-reflection dihedral subgroups

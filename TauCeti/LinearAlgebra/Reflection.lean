@@ -99,7 +99,7 @@ theorem apply_preReflection (y : M) : f (preReflection x f y) = -f y := by
   ring
 
 /-- A module reflection acts as negation on the span `R ∙ x` of its defining vector. -/
-theorem reflection_eq_neg_of_mem_span {y : M} (hy : y ∈ R ∙ x) :
+theorem reflection_apply_of_mem_span {y : M} (hy : y ∈ R ∙ x) :
     reflection h y = -y := by
   obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
   rw [map_smul, reflection_apply_self, smul_neg]
