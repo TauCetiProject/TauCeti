@@ -8,22 +8,15 @@ module
 public import Mathlib.Order.Interval.Basic
 
 /-!
-# Membership in nonempty closed intervals
+# Decidable membership for nonempty closed intervals
 
-Membership in a `NonemptyInterval α` is given by `s.fst ≤ a ∧ a ≤ s.snd`, that is, by
-membership in `Set.Icc s.fst s.snd`. When those endpoint comparisons are decidable, membership is
-decidable as well.
+Membership in a `NonemptyInterval α` is given by `s.fst ≤ a ∧ a ≤ s.snd`. When those endpoint
+comparisons are decidable, membership is decidable as well.
 -/
 
 public section
 
 namespace NonemptyInterval
-
-/-- Membership in a nonempty closed interval is membership in the closed set interval between its
-endpoints. -/
-theorem mem_iff_mem_Icc {α : Type*} [Preorder α] {a : α} {s : NonemptyInterval α} :
-    a ∈ s ↔ a ∈ Set.Icc s.fst s.snd :=
-  mem_def.trans Set.mem_Icc.symm
 
 /-- Membership in a nonempty closed interval is decidable when the endpoint comparisons are. -/
 instance decidableMem {α : Type*} [Preorder α] {a : α} {s : NonemptyInterval α}

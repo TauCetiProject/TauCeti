@@ -120,8 +120,8 @@ theorem finrank_grade_standardSpace (a : ℤ) :
   let f : {x : StandardIndex m // (x.2 : ℤ) = a} ≃
       {i : Fin m.card // a ∈ occurrenceInterval m i} :=
     { toFun x := ⟨x.val.1, (congrArg (· ∈ occurrenceInterval m x.val.1) x.property).mp
-        (NonemptyInterval.mem_iff_mem_Icc.2 x.val.2.property)⟩
-      invFun i := ⟨⟨i.val, a, NonemptyInterval.mem_iff_mem_Icc.1 i.property⟩, rfl⟩
+        (NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.val.2.property))⟩
+      invFun i := ⟨⟨i.val, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 i.property)⟩, rfl⟩
       left_inv := by
         rintro ⟨⟨i, b, hb⟩, rfl⟩
         rfl
@@ -136,14 +136,15 @@ open Classical in
 `i`-th interval of `m`, and `0` otherwise. -/
 noncomputable def standardVector (i : Fin m.card) (a : ℤ) : (standardSpace m).Carrier :=
   if h : a ∈ occurrenceInterval m i then
-    standardBasis m ⟨i, a, NonemptyInterval.mem_iff_mem_Icc.1 h⟩
+    standardBasis m ⟨i, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 h)⟩
   else 0
 
 variable {m}
 
 /-- On a valid label the standard vector is the corresponding basis vector. -/
 theorem standardVector_of_mem {i : Fin m.card} {a : ℤ} (h : a ∈ occurrenceInterval m i) :
-    standardVector m i a = standardBasis m ⟨i, a, NonemptyInterval.mem_iff_mem_Icc.1 h⟩ := by
+    standardVector m i a =
+      standardBasis m ⟨i, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 h)⟩ := by
   simp [standardVector, h]
 
 /-- On an invalid label the standard vector is zero. -/
@@ -155,7 +156,7 @@ theorem standardVector_of_notMem {i : Fin m.card} {a : ℤ} (h : a ∉ occurrenc
 /-- Each basis vector of the standard space is a standard vector. -/
 theorem standardBasis_eq_standardVector (x : StandardIndex m) :
     standardBasis m x = standardVector m x.1 x.2 :=
-  (standardVector_of_mem (NonemptyInterval.mem_iff_mem_Icc.2 x.2.property)).symm
+  (standardVector_of_mem (NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.2.property))).symm
 
 /-- A standard vector vanishes exactly when its degree lies outside its interval. -/
 @[simp]
@@ -232,15 +233,13 @@ private theorem isHomogeneous_standardOperator (m : Multisegment) (d : StepDirec
   rw [LinearMap.isHomogeneous_def]
   intro a v hv
   rw [grade_standardSpace] at hv
-  rw [← Submodule.mem_comap]
-  refine Submodule.span_le.2 ?_ hv
+  refine (Submodule.image_span_subset _ _ _).2 ?_ ⟨v, hv, rfl⟩
   rintro _ ⟨i, rfl⟩
   dsimp only
   by_cases h : a ∈ occurrenceInterval m i
-  · rw [SetLike.mem_coe, Submodule.mem_comap, standardVector_of_mem h, standardOperator,
-      Basis.constr_basis]
+  · rw [standardVector_of_mem h, standardOperator, Basis.constr_basis]
     exact standardVector_mem_grade i _
-  · rw [SetLike.mem_coe, Submodule.mem_comap, standardVector_of_notMem h, map_zero]
+  · rw [standardVector_of_notMem h, map_zero]
     exact zero_mem _
 
 variable (m) in
@@ -313,8 +312,8 @@ theorem standardPair_operator_pow_standardBasis (d : StepDirection) (x : Standar
     (k : ℕ) :
     ((standardPair m d).operator ^ k) (standardBasis m x) =
       standardVector m x.1 (x.2 + k * d.step) := by
-  rw [standardBasis_eq_standardVector,
-    standardPair_operator_pow_standardVector d (NonemptyInterval.mem_iff_mem_Icc.2 x.2.property)]
+  rw [standardBasis_eq_standardVector, standardPair_operator_pow_standardVector d
+    (NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.2.property))]
 
 end Multisegment
 
