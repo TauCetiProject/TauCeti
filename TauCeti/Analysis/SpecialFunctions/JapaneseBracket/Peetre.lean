@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Convex.Segment
 public import Mathlib.Analysis.Normed.Group.Basic
-public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -61,9 +60,6 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor.
 * `TauCeti.one_add_norm_add_smul_sq_rpow_le`: Peetre's inequality for the shift `ξ + c • θ`
   with `c ≥ 1`, `⟨ξ + c • θ⟩ ^ s ≤ 2 ^ (|s| / 2) c ^ |s| ⟨ξ⟩ ^ s ⟨θ⟩ ^ |s|`.
-* `ContinuousLinearEquiv.exists_one_add_norm_apply_sq_rpow_le`: a continuous linear equivalence `e`
-  changes the weight by a bounded factor, `⟨e x⟩ ^ s ≤ C ⟨x⟩ ^ s`, as needed to change linear
-  coordinates in a weighted estimate.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
@@ -305,23 +301,6 @@ theorem one_add_norm_add_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace
       ≤ 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (c ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2)) := by
         gcongr
     _ = _ := by ring
-
-/-- A continuous linear equivalence `e` changes the Japanese bracket weight by a bounded factor:
-there is `C ≥ 0` with `(1 + ‖e x‖ ^ 2) ^ (s / 2) ≤ C (1 + ‖x‖ ^ 2) ^ (s / 2)` for all `x`, for
-every real `s`. Applied to `e⁻¹` it gives the reverse comparison. -/
-theorem _root_.ContinuousLinearEquiv.exists_one_add_norm_apply_sq_rpow_le {𝕜 X Y : Type*}
-    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-    [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y] (e : X ≃L[𝕜] Y) (s : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ x, (1 + ‖e x‖ ^ 2) ^ (s / 2) ≤ C * (1 + ‖x‖ ^ 2) ^ (s / 2) := by
-  set c := max 1 (max ‖(e : X →L[𝕜] Y)‖ ‖(e.symm : Y →L[𝕜] X)‖)
-  have hc : 1 ≤ c := le_max_left _ _
-  refine ⟨c ^ |s|, by positivity, fun x ↦ one_add_norm_sq_rpow_le_of_norm_le_mul hc s ?_ ?_⟩
-  · calc ‖e x‖ = ‖(e : X →L[𝕜] Y) x‖ := by rw [ContinuousLinearEquiv.coe_coe]
-      _ ≤ ‖(e : X →L[𝕜] Y)‖ * ‖x‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ c * ‖x‖ := by gcongr; exact (le_max_left _ _).trans (le_max_right _ _)
-  · calc ‖x‖ = ‖(e.symm : Y →L[𝕜] X) (e x)‖ := by simp
-      _ ≤ ‖(e.symm : Y →L[𝕜] X)‖ * ‖e x‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ c * ‖e x‖ := by gcongr; exact (le_max_right _ _).trans (le_max_right _ _)
 
 /-- **Peetre's inequality, subadditive form.** The Japanese bracket weight
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` is subadditive up to a constant: for `s ≥ 0`,

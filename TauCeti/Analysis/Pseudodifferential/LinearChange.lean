@@ -185,13 +185,10 @@ theorem frequencyDeriv_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSp
     frequencyDeriv j (compProdMap P Q a) =
       ∑ k, (Q (EuclideanSpace.single j 1) k : ℂ) • compProdMap P Q (frequencyDeriv k a) := by
   refine Symbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_)
-  have hd : DifferentiableAt ℝ (fun η ↦ a.coefficient (P x, η)) (Q ξ) :=
-    (a.contDiff_coefficient.comp (contDiff_prodMk_right (P x))).differentiable (by simp) _
   have hcomp : (fun η ↦ (compProdMap P Q a).coefficient (x, η)) =
       (fun η ↦ a.coefficient (P x, η)) ∘ Q :=
     (rfl)
-  rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil, hcomp,
-    (hd.hasFDerivAt.comp ξ Q.hasFDerivAt).fderiv,
+  rw [← fderiv_coefficient_slice_single, hcomp, Q.comp_right_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_eq_sum_single, coefficient_sum,
     Finset.sum_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -210,9 +207,9 @@ theorem spatialDeriv_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpac
   have hcomp : (fun y ↦ (compProdMap P Q a).coefficient (y, ξ)) =
       (fun y ↦ a.coefficient (y, Q ξ)) ∘ P :=
     (rfl)
-  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil, hcomp,
-    (hd.hasFDerivAt.comp x P.hasFDerivAt).fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.apply_eq_sum_single, coefficient_sum, Finset.sum_apply]
+  rw [← fderiv_coefficient_single, hcomp, fderiv_comp x hd P.differentiableAt, P.fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_eq_sum_single, coefficient_sum,
+    Finset.sum_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [coefficient_smul, Pi.smul_apply, coefficient_compProdMap, fderiv_coefficient_single,
     Complex.coe_smul]
