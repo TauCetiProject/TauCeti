@@ -76,7 +76,9 @@ derivatives of `a` of order up to `n + 1`, through Mihlin's condition.
 
 * `TauCeti.Symbol.quantizeBesselPotentialSpace`: the bounded operator `H^{s,p} → H^{s - m,p}`,
   which extends `Op(a)` from Schwartz functions
-  (`TauCeti.Symbol.quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM`).
+  (`TauCeti.Symbol.quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM`). For `p = 2` and
+  finite-dimensional inner product spaces as fibres it is `TauCeti.Symbol.quantizeSobolev`
+  (`TauCeti.Symbol.quantizeBesselPotentialSpace_two`).
 * `TauCeti.Symbol.exists_norm_quantizeBesselPotentialSpace_le_seminorm`: for symbols vanishing
   outside a fixed compact set, the operator norm is at most a continuous seminorm of the symbol.
 * `TauCeti.Symbol.continuous_quantizeBesselPotentialSpace`: continuity of `Op(a)` in the operator
@@ -575,6 +577,21 @@ theorem quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM (ha : a.HasCompac
   set e := (toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := V) s p).toLinearMap
   simpa [f, e] using LinearMap.extendOfNorm_eq (f := f) (e := e)
     (denseRange_toBesselPotentialSpaceCLM s hp_top) ⟨C, fun u ↦ by simpa [f, e] using hC u⟩ u
+
+/-- For `p = 2` and finite-dimensional complex inner product spaces as fibres, the operator
+`Op(a) : H^{s,p} → H^{s - m,p}` is the operator `TauCeti.Symbol.quantizeSobolev` on `H^s`. -/
+theorem quantizeBesselPotentialSpace_two {H₁ H₂ : Type*} [NormedAddCommGroup H₁]
+    [InnerProductSpace ℂ H₁] [FiniteDimensional ℂ H₁] [CompleteSpace H₁] [NormedAddCommGroup H₂]
+    [InnerProductSpace ℂ H₂] [FiniteDimensional ℂ H₂] [CompleteSpace H₂] (a : Symbol n H₁ H₂ m)
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) :
+    a.quantizeBesselPotentialSpace ha s 2 = a.quantizeSobolev ha s := by
+  refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
+    BesselPotentialSpace.ext ?_
+  ext φ
+  rw [quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM (p := 2) ha s (by norm_num)
+    ENNReal.ofNat_ne_top, toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    toDistr_toBesselPotentialSpaceCLM]
+  simp [quantizeUniformCLM_apply]
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is additive in the symbol. -/
 theorem quantizeBesselPotentialSpace_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
