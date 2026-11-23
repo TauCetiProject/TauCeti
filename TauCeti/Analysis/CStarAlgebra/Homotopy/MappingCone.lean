@@ -448,7 +448,7 @@ private theorem map_star_mul_self_sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) 
   · ext t
     simp only [CStarMatrix.map_apply, snd_sectionLinearMap_apply, CStarCone.linearPath_apply,
       CStarMatrix.mul_apply, CStarMatrix.star_apply, hS, map_sum, map_mul, map_star, snd_sum,
-      snd_mul, snd_star, snd_mk, ZeroAtInftyContinuousMap.coe_sum, Finset.sum_apply]
+      snd_mul, snd_star, snd_mk, FunLike.coe_sum, Finset.sum_apply]
     refine Finset.sum_congr rfl fun l _ => ?_
     simp only [mul_apply, ZeroAtInftyContinuousMap.star_apply, sqrtConePath_apply,
       ← Complex.coe_smul, star_smul, Complex.star_def, Complex.conj_ofReal, smul_mul_smul_comm,
