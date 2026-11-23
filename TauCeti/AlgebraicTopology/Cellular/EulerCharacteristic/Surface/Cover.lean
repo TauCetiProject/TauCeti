@@ -27,16 +27,18 @@ open Module
 
 namespace TauCeti
 
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {T S : Type} [TopologicalSpace T] [ChartedSpace E T] [ConnectedSpace T]
   [TopologicalSpace S] [T2Space S] [CompactSpace S] [FiniteCWType S] {q : T → S}
 
 /-- The degree of a connected finite cover times the Euler characteristic of a compact Hausdorff
 base of finite CW type is at most two if the covering surface is homologically oriented. -/
 theorem IsFiniteCover.natCard_fiber_mul_eulerChar_le_two (hq : IsFiniteCover q)
-    (o : haveI := hq.isCoveringMap.t2Space
-      HomologicalOrientation T E 2) (hn : finrank ℝ E = 2) (y : S) :
+    (hn : finrank ℝ E = 2) (o : haveI := hq.isCoveringMap.t2Space
+      haveI : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hn
+      HomologicalOrientation T E 2) (y : S) :
     (Nat.card (q ⁻¹' {y}) : ℤ) * eulerChar S ≤ 2 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hn
   let : ConnectedSpace S := hq.connectedSpace
   let : T2Space T := hq.isCoveringMap.t2Space
   let : CompactSpace T := hq.isCoveringMap.compactSpace hq.finite_fiber
@@ -52,10 +54,11 @@ theorem IsFiniteCover.natCard_fiber_mul_eulerChar_le_two (hq : IsFiniteCover q)
 /-- A connected homologically oriented surface finitely covering a compact Hausdorff base of
 finite CW type with Euler characteristic two has exactly one sheet. -/
 theorem IsFiniteCover.natCard_fiber_eq_one_of_eulerChar_eq_two (hq : IsFiniteCover q)
-    (o : haveI := hq.isCoveringMap.t2Space
-      HomologicalOrientation T E 2) (hn : finrank ℝ E = 2)
+    (hn : finrank ℝ E = 2) (o : haveI := hq.isCoveringMap.t2Space
+      haveI : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hn
+      HomologicalOrientation T E 2)
     (hχS : eulerChar S = 2) (y : S) : Nat.card (q ⁻¹' {y}) = 1 := by
-  have h := hq.natCard_fiber_mul_eulerChar_le_two o hn y
+  have h := hq.natCard_fiber_mul_eulerChar_le_two hn o y
   rw [hχS] at h
   obtain ⟨x, hx⟩ := hq.surjective y
   have hpos : 0 < Nat.card (q ⁻¹' {y}) :=
