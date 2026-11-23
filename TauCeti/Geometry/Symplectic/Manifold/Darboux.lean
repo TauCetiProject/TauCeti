@@ -304,15 +304,11 @@ theorem exists_standardDarbouxChart_of_nondegenerate_of_finrank_eq_of_isInterior
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w =
           stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) := by
-  obtain ⟨m, chart, hx₀', h0, hchart⟩ :=
-    exists_standardDarbouxChart_of_nondegenerate_of_isInteriorPoint hcl hnd₀ hx₀
-  have hm : Module.finrank ℝ E =
-      Module.finrank ℝ (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m)) :=
-    ((chart.isLocalDiffeomorphAt _ _ _ hx₀').mfderivToContinuousLinearEquiv
-      (by simp)).toLinearEquiv.finrank_eq
-  rw [Module.finrank_prod, finrank_euclideanSpace_fin] at hm
-  obtain rfl : m = n := by omega
-  exact ⟨chart, hx₀', h0, hchart⟩
+  obtain ⟨chart₁, ω₁, hx₀₁, h0₁, hchart₁⟩ :=
+    exists_darbouxChart_of_nondegenerate_of_isInteriorPoint hcl hnd₀ hx₀
+  obtain ⟨L, hL⟩ := ω₁.exists_continuousLinearEquiv_stdSymplecticForm_of_finrank_eq hn
+  obtain ⟨hx₀', h0', -, hpull⟩ := trans_toDiffeomorph_darboux hx₀₁ h0₁ hchart₁ L hL
+  exact ⟨_, hx₀', h0', hpull⟩
 
 /-- **Standard Euclidean Darboux coordinates at fixed dimension `2 * n` (interior point).** -/
 theorem IsSymplectic.exists_standardDarbouxChart_of_finrank_eq_of_isInteriorPoint

@@ -262,9 +262,7 @@ private theorem exists_symplecticSliceDarboux_opens {K : Type*} [NormedAddCommGr
     SmoothTwoForm.exists_standardDarbouxChart_of_nondegenerate_of_isInteriorPoint
       (SmoothForm.isClosed_mextDerivₗ β) hnd₀ BoundarylessManifold.isInteriorPoint
   have hdim : finrank ℝ K = 2 * n := by
-    have hL : finrank ℝ K = finrank ℝ (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) :=
-      ((ψ.isLocalDiffeomorphAt _ _ _ hs₀).mfderivToContinuousLinearEquiv
-        (by simp)).toLinearEquiv.finrank_eq
+    have hL := (ψ.isLocalDiffeomorphAt _ _ _ hs₀).finrank_eq (by simp)
     rw [finrank_prod, finrank_euclideanSpace_fin] at hL
     omega
   refine ⟨n, ψ, hdim, hs₀, h0, fun z hz u w ↦ ?_⟩
