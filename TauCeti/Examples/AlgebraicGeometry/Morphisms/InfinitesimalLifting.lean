@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.TrivSqZeroExt.Ideal
+public import Mathlib.AlgebraicGeometry.AffineSpace
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallySmooth
@@ -13,15 +14,15 @@ public import TauCeti.AlgebraicGeometry.Morphisms.FormallySmooth
 /-!
 # Examples for thickenings and the infinitesimal lifting properties
 
-For a field `k`:
+For a commutative ring `k` (nontrivial where the statement needs it, e.g. a field):
 
 * **A thickening of no finite order.** For `A = k[x₁, x₂, …] ⧸ (x₁, x₂², x₃³, …)`, the closed
   immersion `Spec k ⟶ Spec A` with every `x_n ↦ 0` is a thickening, but its ideal `I` is not
   nilpotent: `x_{m+1}^m` is a nonzero element of `I^m` for every `m`. A definition of thickenings
   asking for a nilpotent ideal would reject it.
-* **Affine spaces are formally smooth.** For a ring `R`, `𝔸^σ_R = Spec R[x_i, i ∈ σ] ⟶ Spec R` is
-  formally smooth: a lift across a square-zero thickening amounts to lifting the coordinates. For
-  `σ` empty it is formally étale: the lift is unique.
+* **Affine spaces are formally smooth.** For a scheme `S`, `𝔸(σ; S) ⟶ S` is formally smooth: it is
+  the base change of `Spec ℤ[x_i, i ∈ σ] ⟶ Spec ℤ`, and a lift across a square-zero thickening
+  amounts to lifting the coordinates. For `σ` empty it is formally étale: the lift is unique.
 * **A closed point of the line is not formally smooth.** The origin `Spec k ⟶ 𝔸¹_k` is not formally
   smooth: the test map `Spec k[ε] ⟶ 𝔸¹_k` with coordinate `ε` would need to factor through the
   origin, forcing `ε = 0`; formally, the ideal `(x)` of the origin is not idempotent.
@@ -37,11 +38,11 @@ public section
 
 universe u
 
-open CategoryTheory AlgebraicGeometry TauCeti.AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry TauCeti.AlgebraicGeometry
 
 namespace TauCeti.InfinitesimalLiftingExamples
 
-variable (k : Type u) [Field k]
+variable (k : Type u) [CommRing k]
 
 /-! ### A thickening of no finite order -/
 
@@ -58,12 +59,8 @@ abbrev A : Type u := MvPolynomial ℕ k ⧸ powIdeal k
 
 /-- The map `A → k` sending every `x_n` to `0`. -/
 noncomputable def evalZero : A k →+* k :=
-  Ideal.Quotient.lift _ (eval 0) fun p hp ↦ by
-    refine Submodule.span_induction (fun q ⟨n, hn⟩ ↦ ?_) (by simp) (fun _ _ _ _ h₁ h₂ ↦ ?_)
-      (fun a _ _ h ↦ ?_) hp
-    · simp [← hn]
-    · rw [map_add, h₁, h₂, add_zero]
-    · rw [smul_eq_mul, map_mul, h, mul_zero]
+  Ideal.Quotient.lift _ (eval 0) fun _ hp ↦
+    (Ideal.span_le (I := RingHom.ker (eval 0))).mpr (by rintro _ ⟨n, rfl⟩; simp) hp
 
 /-- `A → k` evaluates a representative at `0`. -/
 theorem evalZero_mk (p : MvPolynomial ℕ k) : evalZero k (Ideal.Quotient.mk _ p) = eval 0 p := by
@@ -98,14 +95,14 @@ theorem isThickening_evalZero : IsThickening (Spec.map (CommRingCat.ofHom (evalZ
 
 /-- The class of `x_{m+1}^m` is nonzero in `A`: the monomial ideal `(x₁, x₂², x₃³, …)` contains no
 monomial `x_{m+1}^m`. -/
-theorem mk_X_pow_ne_zero (m : ℕ) : Ideal.Quotient.mk (powIdeal k) (X m ^ m) ≠ 0 := by
+theorem mk_X_pow_ne_zero [Nontrivial k] (m : ℕ) :
+    Ideal.Quotient.mk (powIdeal k) (X m ^ m) ≠ 0 := by
   rw [Ne, Ideal.Quotient.eq_zero_iff_mem]
   have hgen : (Set.range fun n ↦ (X n ^ (n + 1) : MvPolynomial ℕ k)) =
       (fun s ↦ monomial s 1) '' Set.range fun n ↦ Finsupp.single n (n + 1) := by
     ext
     simp [X_pow_eq_monomial]
-  rw [show powIdeal k = Ideal.span _ from rfl, hgen, X_pow_eq_monomial,
-    mem_ideal_span_monomial_image]
+  rw [powIdeal, hgen, X_pow_eq_monomial, mem_ideal_span_monomial_image]
   intro h
   obtain ⟨_, ⟨n, rfl⟩, hn⟩ := h (Finsupp.single m m) (by simp)
   have := Finsupp.le_def.mp hn n
@@ -122,7 +119,8 @@ theorem mk_X_pow_mem_ker_pow (m : ℕ) :
 
 /-- **A thickening of no finite order.** The kernel of `A → k` is not nilpotent, although
 `Spec k ⟶ Spec A` is a thickening. -/
-theorem not_isNilpotent_ker_evalZero : ¬ IsNilpotent (RingHom.ker (evalZero k)) := by
+theorem not_isNilpotent_ker_evalZero [Nontrivial k] :
+    ¬ IsNilpotent (RingHom.ker (evalZero k)) := by
   rintro ⟨m, hm⟩
   exact mk_X_pow_ne_zero k m (by simpa [hm] using mk_X_pow_mem_ker_pow k m)
 
@@ -130,18 +128,36 @@ end InfiniteOrder
 
 /-! ### Affine spaces -/
 
-/-- **Affine space over an affine base is formally smooth**: `Spec R[x_i, i ∈ σ] ⟶ Spec R`. -/
-theorem formallySmooth_affineSpace (R σ : Type u) [CommRing R] :
-    FormallySmooth (Spec.algebraMap R (MvPolynomial σ R)) :=
-  formallySmooth_Spec_algebraMap_iff.mpr inferInstance
+/-- **Affine space is formally smooth**: `𝔸(σ; S) ⟶ S` is the base change of
+`Spec ℤ[x_i, i ∈ σ] ⟶ Spec ℤ`, which is formally smooth. -/
+theorem formallySmooth_affineSpace (σ : Type u) (S : Scheme.{u}) :
+    FormallySmooth (𝔸(σ; S) ↘ S) := by
+  have := isIso_of_isTerminal specULiftZIsTerminal.{u} terminalIsTerminal (terminal.from _)
+  have : FormallySmooth (Spec.map (CommRingCat.ofHom
+      (MvPolynomial.C : ULift.{u} ℤ →+* MvPolynomial σ (ULift.{u} ℤ)))) := by
+    rw [formallySmooth_SpecMap_iff, CommRingCat.hom_ofHom, ← MvPolynomial.algebraMap_eq,
+      RingHom.formallySmooth_algebraMap]
+    infer_instance
+  have : FormallySmooth (terminal.from (Spec (.of (MvPolynomial σ (ULift.{u} ℤ))))) := by
+    rw [← terminal.comp_from (Spec.map (CommRingCat.ofHom MvPolynomial.C))]
+    infer_instance
+  exact FormallySmooth.pullback_fst (terminal.from S) _
 
-/-- **Affine space of dimension `0` is formally étale**: for `σ` empty,
-`Spec R[x_i, i ∈ σ] ⟶ Spec R` is an isomorphism, and lifts across square-zero thickenings are
-unique. -/
-theorem formallyEtale_affineSpace_of_isEmpty (R σ : Type u) [CommRing R] [IsEmpty σ] :
-    FormallyEtale (Spec.algebraMap R (MvPolynomial σ R)) :=
-  formallyEtale_Spec_algebraMap_iff.mpr
-    (Algebra.FormallyEtale.of_equiv (MvPolynomial.isEmptyAlgEquiv R σ).symm)
+/-- **Affine space of dimension `0` is formally étale**: for `σ` empty, `𝔸(σ; S) ⟶ S` is the base
+change of the isomorphism `Spec ℤ[x_i, i ∈ σ] ⟶ Spec ℤ`, and lifts across square-zero thickenings
+are unique. -/
+theorem formallyEtale_affineSpace_of_isEmpty (σ : Type u) [IsEmpty σ] (S : Scheme.{u}) :
+    FormallyEtale (𝔸(σ; S) ↘ S) := by
+  have := isIso_of_isTerminal specULiftZIsTerminal.{u} terminalIsTerminal (terminal.from _)
+  have : FormallyEtale (Spec.map (CommRingCat.ofHom
+      (MvPolynomial.C : ULift.{u} ℤ →+* MvPolynomial σ (ULift.{u} ℤ)))) := by
+    rw [formallyEtale_SpecMap_iff, CommRingCat.hom_ofHom, ← MvPolynomial.algebraMap_eq,
+      RingHom.formallyEtale_algebraMap]
+    exact Algebra.FormallyEtale.of_equiv (MvPolynomial.isEmptyAlgEquiv _ σ).symm
+  have : FormallyEtale (terminal.from (Spec (.of (MvPolynomial σ (ULift.{u} ℤ))))) := by
+    rw [← terminal.comp_from (Spec.map (CommRingCat.ofHom MvPolynomial.C))]
+    infer_instance
+  exact FormallyEtale.pullback_fst (terminal.from S) _
 
 /-! ### The origin of the affine line -/
 
@@ -149,17 +165,17 @@ open Polynomial
 
 /-- **The origin of `𝔸¹_k` is not formally smooth.** The kernel `(x)` of `k[x] → k[x] ⧸ (x)` is not
 idempotent, since `x ∉ (x²)`. -/
-theorem not_formallySmooth_origin : ¬ FormallySmooth
+theorem not_formallySmooth_origin [Nontrivial k] : ¬ FormallySmooth
     (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (Ideal.span {(X : k[X])})))) := by
-  rw [formallySmooth_SpecMap_iff, CommRingCat.hom_ofHom, RingHom.FormallySmooth,
+  rw [formallySmooth_SpecMap_iff, CommRingCat.hom_ofHom, ← Ideal.Quotient.algebraMap_eq,
+    RingHom.formallySmooth_algebraMap,
     Algebra.FormallySmooth.iff_of_surjective Ideal.Quotient.mk_surjective]
   intro h
-  change IsIdempotentElem (RingHom.ker (Ideal.Quotient.mk (Ideal.span {(X : k[X])}))) at h
   have hX : (X : k[X]) ∈ Ideal.span {(X : k[X])} := Ideal.mem_span_singleton_self _
-  rw [Ideal.mk_ker] at h
+  rw [Ideal.Quotient.algebraMap_eq, Ideal.mk_ker] at h
   rw [← h.eq, Ideal.span_singleton_mul_span_singleton, Ideal.mem_span_singleton] at hX
-  have := Polynomial.natDegree_le_of_dvd hX X_ne_zero
-  simp at this
+  obtain ⟨p, hp⟩ := hX
+  simpa [mul_assoc, coeff_X_mul] using congr(($hp).coeff 1)
 
 /-- **The origin of `𝔸¹_k` is formally unramified**, as is every closed immersion. -/
 theorem formallyUnramified_origin : FormallyUnramified
@@ -170,7 +186,7 @@ theorem formallyUnramified_origin : FormallyUnramified
 
 /-- **`𝔸¹_k ⟶ Spec k` is not formally unramified.** The `k`-algebra maps `k[x] → k[ε]` with
 `x ↦ 0` and `x ↦ ε` agree modulo the square-zero ideal `(ε)` but are distinct. -/
-theorem not_formallyUnramified_affineLine :
+theorem not_formallyUnramified_affineLine [Nontrivial k] :
     ¬ FormallyUnramified (Spec.algebraMap k k[X]) := by
   rw [Spec.algebraMap, HasRingHomProperty.Spec_iff (P := @FormallyUnramified),
     CommRingCat.hom_ofHom, RingHom.formallyUnramified_algebraMap]
