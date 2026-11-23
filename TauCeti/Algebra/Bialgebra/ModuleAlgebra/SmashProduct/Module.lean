@@ -108,7 +108,7 @@ theorem includeH_smul (h : H) (m : M) : μ.includeH h • m = h • m := by
   simp
 
 /-- An `R`-compatible `IsSmashModule` satisfies `IsCompatibleAction`. -/
-theorem toIsCompatibleAction [Module R M] [IsScalarTower R A M] [IsScalarTower R H M] :
+instance toIsCompatibleAction [Module R M] [IsScalarTower R A M] [IsScalarTower R H M] :
     μ.IsCompatibleAction M := by
   rw [μ.isCompatibleAction_iff_sum M (ℛ R)]
   intro h a m
@@ -278,15 +278,13 @@ private theorem toSmashModule_ofSmashModule [AddCommMonoid M] [Module R M]
     toSmashModule μ M (ofSmashModule μ M m) = m := by
   rcases m with ⟨m, hm⟩
   let _ : Module μ.SmashProduct M := m
-  let _ : IsScalarTower R μ.SmashProduct M := hm
-  let mA := moduleA μ M
-  let tA := isScalarTower_moduleA μ M
-  let mH := moduleH μ M
-  let tH := isScalarTower_moduleH μ M
-  have hs := isSmashModule_moduleA_moduleH μ M
-  have hc : @IsCompatibleAction R H A _ _ _ _ _ μ M _ _ mA tA mH tH :=
-    @IsSmashModule.toIsCompatibleAction R H A _ _ _ _ _ μ M _ mA mH m hs _ tA tH
-  have hF : @lsmulAlgHom R H A _ _ _ _ _ μ M _ _ mA tA mH tH hc = Algebra.lsmul R R M := by
+  have _ : IsScalarTower R μ.SmashProduct M := hm
+  let _ := moduleA μ M
+  have _ := isScalarTower_moduleA μ M
+  let _ := moduleH μ M
+  have _ := isScalarTower_moduleH μ M
+  have _ := isSmashModule_moduleA_moduleH μ M
+  have hF : lsmulAlgHom μ M = Algebra.lsmul R R M := by
     ext a x
     · simp only [AlgHom.comp_apply, lsmulAlgHom, lift_includeA, Algebra.lsmul_coe]
       exact (IsSmashModule.includeA_smul (μ := μ) a x).symm

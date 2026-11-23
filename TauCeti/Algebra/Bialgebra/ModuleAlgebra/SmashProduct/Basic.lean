@@ -310,9 +310,8 @@ noncomputable instance instSemiring : Semiring μ.SmashProduct where
   mul x y := mulLinear μ x y
   one := μ.smash 1 1
   left_distrib x y z := map_add (mulLinear μ x) y z
-  right_distrib x y z := LinearMap.add_apply (mulLinear μ x) (mulLinear μ y) z ▸
-    congrArg (· z) (map_add (mulLinear μ) x y)
-  zero_mul x := (congrArg (· x) (map_zero (mulLinear μ))).trans (LinearMap.zero_apply x)
+  right_distrib x y z := LinearMap.map_add₂ (mulLinear μ) x y z
+  zero_mul x := LinearMap.map_zero₂ (mulLinear μ) x
   mul_zero x := map_zero (mulLinear μ x)
   mul_assoc x y z := by exact mulLinear_assoc μ x y z
   one_mul x := by exact mulLinear_one_left μ x
@@ -797,6 +796,28 @@ theorem congr_smash {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B
     (a : A) (k : K) :
     congr g f hf (μ.smash a k) = ν.smash (f a) (g k) :=
   map_smash (g : K →ₐc[R] H) ⟨f.toAlgHom, fun k' a' => by simp [hf]⟩ a k
+
+@[simp]
+theorem congr_symm_smash {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a))
+    (b : B) (h : H) :
+    (congr g f hf).symm (ν.smash b h) = μ.smash (f.symm b) (g.symm h) :=
+  map_smash (g.symm : H →ₐc[R] K) ⟨f.symm.toAlgHom, fun _ _ => f.injective (by simp [hf])⟩ b h
+
+/-- The inverse of `SmashProduct.congr` is `SmashProduct.congr` of the inverse equivalences. -/
+theorem congr_symm {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a)) :
+    (congr g f hf).symm = congr g.symm f.symm (fun _ _ => f.injective (by simp [hf])) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  ext <;> simp
+
+/-- `SmashProduct.congr` of identity equivalences is the identity algebra equivalence. -/
+@[simp]
+theorem congr_refl (μ : LeftModuleAlgebra R H A) :
+    congr (BialgEquiv.refl R H) (AlgEquiv.refl : A ≃ₐ[R] A) (fun _ _ => by simp) =
+      (AlgEquiv.refl : μ.SmashProduct ≃ₐ[R] μ.SmashProduct) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  ext <;> simp
 
 end Functoriality
 
