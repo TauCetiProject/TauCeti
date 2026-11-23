@@ -8,13 +8,13 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 public import Mathlib.RingTheory.Polynomial.Vieta
-import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.Algebra.Polynomial.Derivative
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Ring.Parity
 import TauCeti.RingTheory.MvPolynomial.Rescale
+import TauCeti.RingTheory.Polynomial.UniversalFactorizationRing
 
 /-!
 # Vieta's formulas for indexed families of roots
@@ -212,8 +212,7 @@ theorem map_vietaAlgHom_freeMonic (R : Type*) [CommRing R] (m : ℕ) :
     rw [hv, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
     simp [P]
   rw [hv_eq]
-  exact congrArg Subtype.val
-    ((mapEquivMonic R _ m).apply_symm_apply (.mk P hmon hdeg))
+  exact hmon.map_aeval_coeff_freeMonic hdeg
 
 /-- `MvPolynomial.vietaAlgHom R m` reflects units. -/
 theorem isUnit_of_isUnit_vietaAlgHom {R : Type*} [CommRing R] {m : ℕ}

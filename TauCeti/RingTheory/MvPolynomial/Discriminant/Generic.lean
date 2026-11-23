@@ -5,59 +5,40 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
-public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Alternant
 public import TauCeti.RingTheory.Polynomial.Vieta
 
-import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.Algebra.Prime.Lemmas
 import TauCeti.RingTheory.MvPolynomial.IrreducibleQuadratic
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Alternant.Divisibility
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
-import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
 
 /-!
-# Weighted homogeneity and primality of the generic monic discriminant
+# Primality of the generic monic discriminant
 
 Let `R` be a commutative ring. A monic polynomial of degree `m` over `R` has `m` free lower
 coefficients, represented universally by `Polynomial.freeMonic R m` over `MvPolynomial (Fin m) R`.
-Under uniform scaling `rᵢ ↦ t rᵢ` of the roots, the elementary symmetric coefficient `aₖ` of
-`X ^ (m - k)` acquires weight `k`, and over any commutative ring `R` and degree `m` the universal
-monic discriminant `(Polynomial.freeMonic R m).discr` is weighted homogeneous of weight
-`m * (m - 1)`. Over a unique factorization domain `R` and for `2 ≤ m`,
-`(Polynomial.freeMonic R m).discr` is prime if and only if `(2 : R) ≠ 0` (and is a square when
-`(2 : R) = 0`), so under those hypotheses the repeated-root locus where the generic monic
-discriminant vanishes is an irreducible weighted-homogeneous hypersurface of weight `m * (m - 1)`.
+Via Vieta's formulas and the fundamental theorem of symmetric polynomials, `MvPolynomial (Fin m) R`
+embeds `R`-algebraically onto the symmetric polynomials in `m` root variables, sending
+`(Polynomial.freeMonic R m).discr` to the square `δ ^ 2` of the Vandermonde product
+`δ = ∏_{i < j} (X i - X j)`.
 
-1. **Weighted homogeneity.** Specializing `Polynomial.isWeightedHomogeneous_discr` to the
-   universal monic polynomial `Polynomial.freeMonic R m` shows that
-   `(Polynomial.freeMonic R m).discr` is weighted homogeneous of weight `m * (m - 1)` when `X k` is
-   given weight `m - k` (`Polynomial.isWeightedHomogeneous_discr_freeMonic`).
-
-2. **Primality of the generic monic discriminant.** Via Vieta's formulas and the fundamental
-   theorem of symmetric polynomials, `MvPolynomial (Fin m) R` embeds `R`-algebraically onto the
-   symmetric polynomials in `m` root variables, sending `(Polynomial.freeMonic R m).discr` to the
-   square `δ ^ 2` of the Vandermonde product `δ = ∏_{i < j} (X i - X j)`. Over a unique
-   factorization domain `R` with `2 ≤ m`, the linear factors `X i - X j` (`i < j`) are pairwise
-   non-associated primes permuted transitively on ordered pairs of distinct indices by
-   `Equiv.Perm (Fin m)`. Any symmetric factor of `δ ^ 2` divisible by one root difference is
-   therefore divisible by `δ`, whereas permuting two variables negates `δ` and rules out symmetric
-   unit multiples of `δ` whenever `(2 : R) ≠ 0`. Conversely, when `(2 : R) = 0`, `δ` is symmetric
-   and the generic monic discriminant is a square
-   (`Polynomial.isSquare_discr_freeMonic_of_two_eq_zero`). Hence `(Polynomial.freeMonic R m).discr`
-   is prime if and only if `(2 : R) ≠ 0` (`Polynomial.prime_discr_freeMonic_iff`).
+Over any integral domain `R` with `2 ≤ m`, each root difference `X i - X j` (`i ≠ j`) generates a
+prime ideal in `MvPolynomial (Fin m) R`, and any symmetric polynomial divisible by one root
+difference is divisible by `δ`. Contracting the prime ideal `(X 1 - X 0)` along
+`MvPolynomial.vietaAlgHom` shows that `(Polynomial.freeMonic R m).discr` is prime if and only if
+`(2 : R) ≠ 0` (`Polynomial.prime_discr_freeMonic_iff`), and is a square when `(2 : R) = 0`
+(`Polynomial.isSquare_discr_freeMonic_of_two_eq_zero`), without any unique factorization assumption
+on `R`.
 
 ## Main results
 
-* `Polynomial.isWeightedHomogeneous_discr_freeMonic`: weighted homogeneity of the universal monic
-  discriminant.
 * `MvPolynomial.vietaAlgHom_discr_freeMonic`: `MvPolynomial.vietaAlgHom` sends
   `(Polynomial.freeMonic R m).discr` to the square of the Vandermonde alternant.
 * `Polynomial.isSquare_discr_freeMonic_of_two_eq_zero`,
   `Polynomial.prime_discr_freeMonic`, `Polynomial.prime_discr_freeMonic_iff`: squareness when
-  `2 = 0` and unique factorization primality of `(Polynomial.freeMonic R m).discr` when `2 ≤ m`.
+  `2 = 0` and integral-domain primality of `(Polynomial.freeMonic R m).discr` when `2 ≤ m`.
 
 ## References
 
@@ -70,28 +51,7 @@ public section
 
 open Finset MvPolynomial Polynomial
 
-/-! ### Weighted homogeneity of discriminants -/
-
 namespace Polynomial
-
-/-- The discriminant of `Polynomial.freeMonic R m` is weighted homogeneous of weight `m * (m - 1)`
-when the variable `X i` (the coefficient in degree `i`) is given weight `m - i`. -/
-theorem isWeightedHomogeneous_discr_freeMonic (R : Type*) [CommRing R] (m : ℕ) :
-    (freeMonic R m).discr.IsWeightedHomogeneous (fun i : Fin m ↦ m - (i : ℕ)) (m * (m - 1)) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · rw [Subsingleton.elim (freeMonic R m).discr 0]
-    exact isWeightedHomogeneous_zero R _ _
-  let w : Fin m → ℕ := fun i ↦ m - (i : ℕ)
-  have h := isWeightedHomogeneous_discr (w := w) (1 : ℕ) (p := freeMonic R m) fun i ↦ by
-    rw [natDegree_freeMonic, coeff_freeMonic, smul_eq_mul, mul_one]
-    split_ifs with hi him
-    · exact isWeightedHomogeneous_X R w ⟨i, hi⟩
-    · rw [him, Nat.sub_self]; exact isWeightedHomogeneous_one R w
-    · exact isWeightedHomogeneous_zero R w (m - i)
-  rw [natDegree_freeMonic] at h
-  simpa [w] using h
-
-/-! ### Primality of the generic monic discriminant -/
 
 section FreeMonicPrime
 
@@ -101,9 +61,12 @@ theorem _root_.MvPolynomial.vietaAlgHom_discr_freeMonic (R : Type*) [CommRing R]
     vietaAlgHom R m (freeMonic R m).discr =
       TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2 := by
   have h := congrArg Polynomial.discr (map_vietaAlgHom_freeMonic R m)
-  rw [(monic_freeMonic R m).discr_map, discr_prod_X_sub_C_eq_sq, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom] at h
-  exact h.trans (TauCeti.alternant_fin_val_sq m).symm
+  rw [(monic_freeMonic R m).discr_map, discr_prod_X_sub_C_eq_sq] at h
+  have h' : vietaAlgHom R m (freeMonic R m).discr =
+      (∏ i : Fin m, ∏ j ∈ Ioi i, (MvPolynomial.X i - MvPolynomial.X j :
+        MvPolynomial (Fin m) R)) ^ 2 := by
+    simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using h
+  exact h'.trans (TauCeti.alternant_fin_val_sq m).symm
 
 /-- When `(2 : R) = 0`, the discriminant of `Polynomial.freeMonic R m` is a square in
 `MvPolynomial (Fin m) R`. -/
@@ -116,13 +79,93 @@ theorem isSquare_discr_freeMonic_of_two_eq_zero {R : Type*} [CommRing R] (h2 : (
   refine ⟨s, vietaAlgHom_injective R m ?_⟩
   rw [vietaAlgHom_discr_freeMonic, map_mul, ← sq, hs]
 
-/-- **Primality of the generic monic discriminant.** Over any unique factorization domain `R` in
-which `2 ≠ 0`, the discriminant of `Polynomial.freeMonic R m` is prime in `MvPolynomial (Fin m) R`
-for every `m ≥ 2`. -/
-theorem prime_discr_freeMonic {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
+private theorem X_sub_X_dvd_sub_rename_swap {R : Type*} [CommRing R] {m : ℕ}
+    (i₀ i₁ : Fin m) (p : MvPolynomial (Fin m) R) :
+    MvPolynomial.X i₁ - MvPolynomial.X i₀ ∣ p - rename (Equiv.swap i₀ i₁) p := by
+  induction p using MvPolynomial.induction_on with
+  | C r =>
+    simp
+  | add p q hp hq =>
+    have hadd : (p + q) - rename (Equiv.swap i₀ i₁) (p + q) =
+        (p - rename (Equiv.swap i₀ i₁) p) + (q - rename (Equiv.swap i₀ i₁) q) := by
+      rw [map_add]; ring
+    rw [hadd]
+    exact dvd_add hp hq
+  | mul_X p k hp =>
+    have hmul : (p * MvPolynomial.X k) - rename (Equiv.swap i₀ i₁) (p * MvPolynomial.X k) =
+        (p - rename (Equiv.swap i₀ i₁) p) * MvPolynomial.X k +
+          rename (Equiv.swap i₀ i₁) p *
+            (MvPolynomial.X k - MvPolynomial.X (Equiv.swap i₀ i₁ k)) := by
+      rw [map_mul, rename_X]; ring
+    rw [hmul]
+    refine dvd_add (dvd_mul_of_dvd_left hp _) (dvd_mul_of_dvd_right ?_ _)
+    by_cases hk0 : k = i₀
+    · subst hk0; rw [Equiv.swap_apply_left]; exact ⟨-1, by ring⟩
+    · by_cases hk1 : k = i₁
+      · subst hk1; rw [Equiv.swap_apply_right]
+      · rw [Equiv.swap_apply_of_ne_of_ne hk0 hk1, sub_self]; exact dvd_zero _
+
+private theorem discr_freeMonic_dvd_of_X_sub_X_dvd {R : Type*} [CommRing R] [IsDomain R]
+    (h2 : (2 : R) ≠ 0) {m : ℕ} {i₀ i₁ : Fin m} (h01 : i₀ ≠ i₁)
+    {f : MvPolynomial (Fin m) R}
+    (hdvd : MvPolynomial.X i₁ - MvPolynomial.X i₀ ∣ vietaAlgHom R m f) :
+    (freeMonic R m).discr ∣ f := by
+  let δ : MvPolynomial (Fin m) R := TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ))
+  have hδ0 : δ ≠ 0 := TauCeti.alternant_ne_zero_of_injective Fin.val_injective
+  obtain ⟨h, hh⟩ := TauCeti.alternant_fin_val_dvd_of_isSymmetric
+    (isSymmetric_vietaAlgHom f) h01.symm hdvd
+  have hanti : ∀ e : Equiv.Perm (Fin m), rename (R := R) e h = e.sign • h := by
+    intro e
+    have hf := isSymmetric_vietaAlgHom f e
+    rw [hh, map_mul, TauCeti.rename_alternant] at hf
+    rcases Int.units_eq_one_or e.sign with hs | hs
+    · rw [hs, one_smul] at hf ⊢
+      exact mul_left_cancel₀ hδ0 hf
+    · rw [hs, Units.smul_def, Units.val_neg, Units.val_one, neg_one_smul] at hf ⊢
+      have hf' : δ * (-rename (R := R) e h) = δ * h := by
+        calc δ * (-rename (R := R) e h) = (-δ) * rename (R := R) e h := by ring
+          _ = δ * h := hf
+      exact neg_eq_iff_eq_neg.mp (mul_left_cancel₀ hδ0 hf')
+  have hswap : rename (R := R) (Equiv.swap i₀ i₁) h = -h := by
+    rw [hanti (Equiv.swap i₀ i₁), Equiv.Perm.sign_swap h01, Units.smul_def, Units.val_neg,
+      Units.val_one, neg_one_smul]
+  have hdvd2h : MvPolynomial.X i₁ - MvPolynomial.X i₀ ∣ (2 : MvPolynomial (Fin m) R) * h := by
+    have heq : h - rename (R := R) (Equiv.swap i₀ i₁) h = 2 * h := by
+      rw [hswap]; ring
+    rw [← heq]
+    exact X_sub_X_dvd_sub_rename_swap i₀ i₁ h
+  have hnot2 : ¬ (MvPolynomial.X i₁ - MvPolynomial.X i₀ ∣ (2 : MvPolynomial (Fin m) R)) := by
+    intro hd
+    have hev := _root_.map_dvd (MvPolynomial.eval (R := R) (fun _ ↦ 0)) hd
+    simp only [map_sub, MvPolynomial.eval_X, sub_self, map_ofNat, zero_dvd_iff] at hev
+    exact h2 hev
+  have hdvdh : MvPolynomial.X i₁ - MvPolynomial.X i₀ ∣ h :=
+    ((prime_X_sub_X h01.symm).dvd_or_dvd hdvd2h).resolve_left hnot2
+  have hass_h : ∀ e : Equiv.Perm (Fin m), Associated (rename (R := R) e h) h := by
+    intro e
+    rcases Int.units_eq_one_or e.sign with hs | hs
+    · exact ⟨1, by rw [hanti e, hs, one_smul]; simp⟩
+    · exact ⟨-1, by rw [hanti e, hs, Units.smul_def, Units.val_neg, Units.val_one, neg_one_smul,
+        Units.val_neg, Units.val_one, mul_neg_one, neg_neg]⟩
+  obtain ⟨k, hk⟩ := TauCeti.alternant_fin_val_dvd_of_associated_rename hass_h h01.symm hdvdh
+  have hfk : vietaAlgHom R m f = δ ^ 2 * k := by
+    rw [hh, hk, sq]; ring
+  have hk_symm : k.IsSymmetric := by
+    intro e
+    have hf := isSymmetric_vietaAlgHom f e
+    rw [hfk, map_mul, ← vietaAlgHom_discr_freeMonic,
+      isSymmetric_vietaAlgHom (freeMonic R m).discr e, vietaAlgHom_discr_freeMonic] at hf
+    exact mul_left_cancel₀ (pow_ne_zero 2 hδ0) hf
+  obtain ⟨k', hk'⟩ := mem_range_vietaAlgHom_iff.mpr hk_symm
+  refine ⟨k', vietaAlgHom_injective R m ?_⟩
+  rw [map_mul, vietaAlgHom_discr_freeMonic, hk', hfk]
+
+/-- **Primality of the generic monic discriminant.** Over any integral domain `R` in which
+`2 ≠ 0`, the discriminant of `Polynomial.freeMonic R m` is prime in `MvPolynomial (Fin m) R` for
+every `m ≥ 2`. -/
+theorem prime_discr_freeMonic {R : Type*} [CommRing R] [IsDomain R]
     (h2 : (2 : R) ≠ 0) {m : ℕ} (hm : 2 ≤ m) :
     Prime (freeMonic R m).discr := by
-  rw [← UniqueFactorizationMonoid.irreducible_iff_prime]
   let i₀ : Fin m := ⟨0, by omega⟩
   let i₁ : Fin m := ⟨1, by omega⟩
   have h01 : i₀ < i₁ := Fin.mk_lt_mk.mpr (by omega)
@@ -133,42 +176,29 @@ theorem prime_discr_freeMonic {R : Type*} [CommRing R] [IsDomain R] [UniqueFacto
       (Finset.dvd_prod_of_mem (fun j ↦ MvPolynomial.X j - MvPolynomial.X i₀) (mem_Ioi.mpr h01))
       (Finset.dvd_prod_of_mem
         (fun i ↦ ∏ j ∈ Ioi i, (MvPolynomial.X j - MvPolynomial.X i)) (mem_univ i₀))
-  refine ⟨fun hu ↦ ?_, fun f g hfg ↦ ?_⟩
+  refine ⟨?_, fun hu ↦ ?_, fun f g hfg ↦ ?_⟩
+  · intro h0
+    have hsq0 : TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2 = 0 := by
+      rw [← vietaAlgHom_discr_freeMonic, h0, map_zero]
+    exact pow_ne_zero 2 (TauCeti.alternant_ne_zero_of_injective Fin.val_injective) hsq0
   · have hu' : IsUnit (TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2) := by
       rw [← vietaAlgHom_discr_freeMonic]
       exact hu.map (vietaAlgHom R m)
     have hv_unit : IsUnit (TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ))) :=
       (isUnit_pow_iff (by decide : 2 ≠ 0)).mp hu'
-    exact (irreducible_X_sub_X h01.ne').not_isUnit (isUnit_of_dvd_unit hdvd_vand hv_unit)
-  · have hprod : vietaAlgHom R m f * vietaAlgHom R m g =
-        TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2 := by
-      rw [← map_mul, ← hfg, vietaAlgHom_discr_freeMonic]
-    rcases TauCeti.isUnit_or_alternant_fin_val_dvd_of_isSymmetric_of_dvd_sq
-      (isSymmetric_vietaAlgHom f) ⟨vietaAlgHom R m g, hprod.symm⟩ with hf | ⟨q₁, hq₁⟩
-    · exact Or.inl (isUnit_of_isUnit_vietaAlgHom hf)
-    rcases TauCeti.isUnit_or_alternant_fin_val_dvd_of_isSymmetric_of_dvd_sq
-      (isSymmetric_vietaAlgHom g) ⟨vietaAlgHom R m f, by rw [mul_comm, hprod]⟩ with
-        hg | ⟨q₂, hq₂⟩
-    · exact Or.inr (isUnit_of_isUnit_vietaAlgHom hg)
-    have hne0 : TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ≠ 0 :=
-      TauCeti.alternant_ne_zero_of_injective Fin.val_injective
-    have hmul : TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2 * (q₁ * q₂) =
-        TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2 * 1 := by
-      calc TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2 * (q₁ * q₂)
-        _ = (TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) * q₁) *
-              (TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) * q₂) := by ring
-        _ = vietaAlgHom R m f * vietaAlgHom R m g := by rw [← hq₁, ← hq₂]
-        _ = TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ)) ^ 2 * 1 := by rw [hprod, mul_one]
-    have hq₁_unit : IsUnit q₁ :=
-      IsUnit.of_mul_eq_one q₂ (mul_left_cancel₀ (pow_ne_zero 2 hne0) hmul)
-    obtain ⟨r, hr, rfl⟩ := MvPolynomial.isUnit_iff_eq_C_of_isReduced.mp hq₁_unit
-    exact absurd (hq₁ ▸ isSymmetric_vietaAlgHom f)
-      (TauCeti.not_isSymmetric_alternant_mul_C h2 (by simpa using hm) Fin.val_injective hr.ne_zero)
+    exact (prime_X_sub_X h01.ne').not_isUnit (isUnit_of_dvd_unit hdvd_vand hv_unit)
+  · have hprod : MvPolynomial.X i₁ - MvPolynomial.X i₀ ∣
+        vietaAlgHom R m f * vietaAlgHom R m g := by
+      have hmap := _root_.map_dvd (vietaAlgHom R m) hfg
+      rw [vietaAlgHom_discr_freeMonic, map_mul] at hmap
+      exact dvd_trans (dvd_trans hdvd_vand (dvd_pow_self _ (by decide))) hmap
+    rcases (prime_X_sub_X h01.ne').dvd_or_dvd hprod with hf | hg
+    · exact Or.inl (discr_freeMonic_dvd_of_X_sub_X_dvd h2 h01.ne hf)
+    · exact Or.inr (discr_freeMonic_dvd_of_X_sub_X_dvd h2 h01.ne hg)
 
-/-- Over a unique factorization domain `R` and for `m ≥ 2`, the discriminant of
-`Polynomial.freeMonic R m` is prime if and only if `(2 : R) ≠ 0`. -/
-theorem prime_discr_freeMonic_iff {R : Type*} [CommRing R] [IsDomain R]
-    [UniqueFactorizationMonoid R] {m : ℕ} (hm : 2 ≤ m) :
+/-- Over an integral domain `R` and for `m ≥ 2`, the discriminant of `Polynomial.freeMonic R m`
+is prime if and only if `(2 : R) ≠ 0`. -/
+theorem prime_discr_freeMonic_iff {R : Type*} [CommRing R] [IsDomain R] {m : ℕ} (hm : 2 ≤ m) :
     Prime (freeMonic R m).discr ↔ (2 : R) ≠ 0 :=
   ⟨fun hp h2 ↦ (isSquare_discr_freeMonic_of_two_eq_zero h2 m).not_prime hp,
     fun h2 ↦ prime_discr_freeMonic h2 hm⟩

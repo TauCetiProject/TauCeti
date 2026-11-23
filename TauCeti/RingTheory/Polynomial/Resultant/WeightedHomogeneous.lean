@@ -30,6 +30,9 @@ coefficients of `p` yields the general monoid statement.
 
 * `Polynomial.isWeightedHomogeneous_discr_freePoly`: the discriminant of `Polynomial.freePoly R n`
   is weighted homogeneous of weight `n * (n - 1)` when `X i` has weight `n - i`.
+* `Polynomial.isWeightedHomogeneous_discr_freeMonic`: the discriminant of
+  `Polynomial.freeMonic R m` is weighted homogeneous of weight `m * (m - 1)` when `X i` has
+  weight `m - i`.
 * `Polynomial.isWeightedHomogeneous_discr`: the discriminant of a polynomial whose coefficient of
   `X ^ i` has weight `(natDegree - i) • u` is weighted homogeneous of weight
   `(natDegree * (natDegree - 1)) • u`.
@@ -112,5 +115,22 @@ theorem isWeightedHomogeneous_discr {M : Type*} [AddCommMonoid M] {w : σ → M}
       AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
   rw [hdiscr]
   exact hP_smul.aeval fun i ↦ hp i
+
+/-- The discriminant of `Polynomial.freeMonic R m` is weighted homogeneous of weight `m * (m - 1)`
+when the variable `X i` (the coefficient in degree `i`) is given weight `m - i`. -/
+theorem isWeightedHomogeneous_discr_freeMonic (R : Type*) [CommRing R] (m : ℕ) :
+    (freeMonic R m).discr.IsWeightedHomogeneous (fun i : Fin m ↦ m - (i : ℕ)) (m * (m - 1)) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim (freeMonic R m).discr 0]
+    exact MvPolynomial.isWeightedHomogeneous_zero R _ _
+  let w : Fin m → ℕ := fun i ↦ m - (i : ℕ)
+  have h := isWeightedHomogeneous_discr (w := w) (1 : ℕ) (p := freeMonic R m) fun i ↦ by
+    rw [natDegree_freeMonic, coeff_freeMonic, smul_eq_mul, mul_one]
+    split_ifs with hi him
+    · exact MvPolynomial.isWeightedHomogeneous_X R w ⟨i, hi⟩
+    · rw [him, Nat.sub_self]; exact MvPolynomial.isWeightedHomogeneous_one R w
+    · exact MvPolynomial.isWeightedHomogeneous_zero R w (m - i)
+  rw [natDegree_freeMonic] at h
+  simpa [w] using h
 
 end Polynomial
