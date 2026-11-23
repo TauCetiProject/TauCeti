@@ -66,6 +66,9 @@ function.
 * `TauCeti.isSymm_leviForm`: the Levi form of a `C²` function is Hermitian.
 * `TauCeti.leviForm_add`, `TauCeti.leviForm_sum`, `TauCeti.leviForm_neg`,
   `TauCeti.leviForm_smul`: the Levi form is real linear in the function.
+* `TauCeti.imLeviFormCLM_add`, `TauCeti.imLeviFormCLM_neg`, `TauCeti.imLeviFormCLM_smul`: so is
+  its imaginary part.
+* `TauCeti.leviForm_I_smul_I_smul`: the Levi form is invariant under `I • ·` in both arguments.
 * `TauCeti.leviForm_mul_apply`: the product rule
   `L(f g) = f L g + g L f + (conj (∂f) ⊗ ∂g + conj (∂g) ⊗ ∂f)`.
 * `TauCeti.leviForm_scalar_comp_apply`: the composition rule
@@ -226,6 +229,31 @@ theorem leviForm_smul (a : ℝ) (f : V → ℝ) (x : V) :
     leviForm (a • f) x = (a : ℂ) • leviForm f x := by
   rw [leviForm_def, leviForm_def, fderiv_fderiv_const_smul, ← LinearMap.BilinForm.leviForm_smul]
   exact congrArg _ (map_smul ContinuousLinearMap.toLinearMap₁₂ a _)
+
+/-- The Levi form is invariant under applying the complex structure `I • ·` to both arguments,
+because it is sesquilinear. -/
+theorem leviForm_I_smul_I_smul (f : V → ℝ) (x v w : V) :
+    leviForm f x (I • v) (I • w) = leviForm f x v w := by
+  simp [← mul_assoc]
+
+/-- **The sum rule** for the imaginary part of the Levi form. -/
+theorem imLeviFormCLM_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
+    imLeviFormCLM (f + g) x = imLeviFormCLM f x + imLeviFormCLM g x := by
+  ext v w
+  simp [leviForm_add hf hg]
+
+/-- Negating a function negates the imaginary part of its Levi form. -/
+@[simp]
+theorem imLeviFormCLM_neg (f : V → ℝ) (x : V) : imLeviFormCLM (-f) x = -imLeviFormCLM f x := by
+  ext v w
+  simp
+
+/-- The imaginary part of the Levi form is real homogeneous in the function. -/
+@[simp]
+theorem imLeviFormCLM_smul (a : ℝ) (f : V → ℝ) (x : V) :
+    imLeviFormCLM (a • f) x = a • imLeviFormCLM f x := by
+  ext v w
+  simp
 
 /-- **The sum rule** for finite sums. -/
 theorem leviForm_sum {ι : Type*} (s : Finset ι) {f : ι → V → ℝ}

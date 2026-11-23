@@ -106,10 +106,8 @@ the Levi form is sesquilinear. -/
 @[simp]
 theorem ddbarForm_apply_I_smul (u : M → ℝ) (x : M) (v w : E) :
     ddbarForm E u x ![I • v, I • w] = ddbarForm E u x ![v, w] := by
-  have key (a b : E) : manifoldLeviForm E u x (I • a) (I • b) = manifoldLeviForm E u x a b := by
-    rw [LinearMap.map_smulₛₗ₂, LinearMap.map_smul, smul_eq_mul, smul_eq_mul, conj_I, ← mul_assoc,
-      neg_mul, I_mul_I, neg_neg, one_mul]
-  rw [ddbarForm_apply_vecCons, ddbarForm_apply_vecCons, key, key]
+  rw [ddbarForm_apply_vecCons, ddbarForm_apply_vecCons, manifoldLeviForm_I_smul_I_smul,
+    manifoldLeviForm_I_smul_I_smul]
 
 /-- **The Hermitian form of `i∂∂bar u` is `2·L_u`.** For `u` which is `C²` at `x`, the Hermitian
 form `H(v, w) = (i∂∂bar u)(v, J w) + i·(i∂∂bar u)(v, w)` of the real (1,1)-form `i∂∂bar u` at `x`
@@ -142,37 +140,22 @@ theorem ddbarForm_const (c : ℝ) : ddbarForm E (fun _ : M ↦ c) = 0 := by
 theorem ddbarForm_add (hu : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 u x)
     (hw : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 w x) :
     ddbarForm E (u + w) x = ddbarForm E u x + ddbarForm E w x := by
-  have h : imLeviFormCLM ((u + w) ∘ (chartAt E x).symm) (chartAt E x x) =
-      imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x) +
-        imLeviFormCLM (w ∘ (chartAt E x).symm) (chartAt E x x) := by
-    ext a b
-    simp only [add_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def,
-      manifoldLeviForm_add hu hw, LinearMap.add_apply, add_im]
-  rw [ddbarForm_def, ddbarForm_def, ddbarForm_def, h]
+  rw [ddbarForm_def, ddbarForm_def, ddbarForm_def, Pi.add_comp,
+    imLeviFormCLM_add hu.contDiffAt_comp_chartAt_symm hw.contDiffAt_comp_chartAt_symm]
   exact map_add _ _ _
 
 /-- `i∂∂bar (-u) = -i∂∂bar u`. -/
 @[simp]
 theorem ddbarForm_neg (u : M → ℝ) : ddbarForm E (-u) = -ddbarForm E u := by
   funext x
-  have h : imLeviFormCLM ((-u) ∘ (chartAt E x).symm) (chartAt E x x) =
-      -imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x) := by
-    ext a b
-    simp only [neg_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def,
-      manifoldLeviForm_neg, LinearMap.neg_apply, neg_im]
-  rw [Pi.neg_apply, ddbarForm_def, ddbarForm_def, h]
+  rw [Pi.neg_apply, ddbarForm_def, ddbarForm_def, Pi.neg_comp, imLeviFormCLM_neg]
   exact map_neg _ _
 
 /-- `i∂∂bar (a • u) = a • i∂∂bar u` for a real constant `a`. -/
 @[simp]
 theorem ddbarForm_smul (a : ℝ) (u : M → ℝ) : ddbarForm E (a • u) = a • ddbarForm E u := by
   funext x
-  have h : imLeviFormCLM ((a • u) ∘ (chartAt E x).symm) (chartAt E x x) =
-      a • imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x) := by
-    ext b c
-    simp only [smul_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def, manifoldLeviForm_smul,
-      LinearMap.smul_apply, smul_eq_mul, im_ofReal_mul]
-  rw [Pi.smul_apply, ddbarForm_def, ddbarForm_def, h]
+  rw [Pi.smul_apply, ddbarForm_def, ddbarForm_def, Pi.smul_comp, imLeviFormCLM_smul]
   exact map_smul _ _ _
 
 /-! ### Charts and continuity -/
@@ -211,20 +194,14 @@ theorem inChartAt_ddbarForm [IsManifold 𝓘(ℂ, E) 2 M] (hu : ContMDiff 𝓘(�
   have hmd : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, E) c y :=
     mdifferentiableAt_of_mem_maximalAtlas (IsManifold.maximalAtlas_subset_of_le
       (by norm_num : (1 : WithTop ℕ∞) ≤ 2) (IsManifold.chart_mem_maximalAtlas x₀)) hy
-  -- The real derivative of the chart at `y` is its complex derivative.
-  have hR : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c y = (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) c y).restrictScalars ℝ := by
-    have h := MDifferentiableAt.mfderiv_restrictScalars ℝ hmd
-    rw [ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf ℝ (E := E) (E' := E)
-      (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) c y)] at h
-    rwa [modelWithCornersSelf_restrictScalars] at h
-  -- So the complex derivative of the chart at `y` inverts the real derivative of its inverse.
+  -- The complex derivative of the chart at `y`, which is its real derivative, inverts the real
+  -- derivative of its inverse.
   have hinv (v : E) : mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) c y
       (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm (range 𝓘(ℝ, E)) z v) = v := by
     have h := congr($(mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm
       (I := 𝓘(ℝ, E)) hzt) v)
     simp only [extChartAt_coe, modelWithCornersSelf_coe, id_comp, comp_apply] at h
-    rw [hR] at h
-    exact h
+    exact (hmd.mfderiv_modelWithCornersSelf_restrictScalars_apply ℝ _).symm.trans h
   have key (a b : E) : manifoldLeviForm E u y
       (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm (range 𝓘(ℝ, E)) z a)
       (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm (range 𝓘(ℝ, E)) z b) =
