@@ -63,8 +63,9 @@ only the interval values of the section; any endpoint where the section vanishes
   geodesics leaving the curve with the velocities given by the field.
 * `TauCeti.Manifold.acceleration_exponentialVariation_zero`: its transverse curves have zero
   covariant acceleration at `s = 0`.
-* `TauCeti.Manifold.isFixedEndpointVariation_exponentialVariation`: when `V` vanishes at both
-  endpoints, the exponential variation is a fixed-endpoint variation.
+* `TauCeti.Manifold.isFixedEndpointVariation_exponentialVariation`: when `V` has a `ContMDiffAt`
+  lift at every point of `uIcc a b` (including both endpoints) and vanishes at `a` and `b`, the
+  exponential variation is a fixed-endpoint variation.
 * `TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn`: a closed-interval `C^k`
   section lift agrees on `uIcc a b` with a two-sided `C^k` lift having the same exponential
   variation on `uIcc a b`.
@@ -185,15 +186,16 @@ zero covariant acceleration. -/
 @[simp]
 theorem acceleration_exponentialVariation_zero (t : ℝ) :
     acceleration (leviCivitaConnection I M) (fun s ↦ exponentialVariation I γ V s t) 0 = 0 := by
-  have hgeo := (isGeodesicCurveOnFrom_exponentialVariation γ V t).isGeodesicCurveOn
-  have hmem : geodesicInterval I M (γ t) (V t) ∈ 𝓝 (0 : ℝ) :=
-    isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval
-  rw [← accelerationWithin_of_mem_nhds (leviCivitaConnection I M)
-    (fun s ↦ exponentialVariation I γ V s t) hmem]
-  exact hgeo.accelerationWithin_eq_zero 0 zero_mem_geodesicInterval
+  have hcurve : (fun s ↦ exponentialVariation I γ V s t) = maximalGeodesic I M (γ t) (V t) := by
+    funext s
+    rw [exponentialVariation_apply, riemannianExp_smul]
+  rw [hcurve]
+  exact acceleration_maximalGeodesic_eq_zero zero_mem_geodesicInterval
 
-/-- If a field `V` along `γ` has a `C^n` tangent-bundle lift along `uIcc a b` and vanishes at `a`
-and `b`, then its exponential variation is a `C^n` fixed-endpoint variation between `a` and `b`. -/
+/-- If `V` vanishes at `a` and `b` and its tangent-bundle lift is `ContMDiffAt` (`C^n`) at every
+point of `uIcc a b`, including both endpoints `a` and `b` (two-sided regularity rather than mere
+`ContMDiffOn`), then its exponential variation is a `C^n` fixed-endpoint variation between `a`
+and `b`. -/
 theorem isFixedEndpointVariation_exponentialVariation {n : ℕ∞} {a b : ℝ}
     (hV : ∀ t ∈ uIcc a b,
       ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t)

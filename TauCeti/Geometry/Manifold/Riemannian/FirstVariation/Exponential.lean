@@ -117,7 +117,7 @@ private theorem inner_curveVelocity_eq_inner_curveVelocityWithin_of_totalSpaceMk
       hγ't.mdifferentiableWithinAt).symm
   have hvel_lift := (eventuallyEq_of_mem self_mem_nhdsWithin hγEq).curveVelocityLiftWithin_eq
     (I := I) (hγEq ht)
-  rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply] at hvel_lift
+  simp only [curveVelocityLiftWithin_apply] at hvel_lift
   rw [hvel_eq]
   exact TauCeti.inner_eq_of_totalSpaceMk_eq (hEq t ht) hvel_lift
 
@@ -172,17 +172,15 @@ theorem hasDerivAt_energy_exponentialVariation {a b : ℝ}
   · simpa only [energy_def, intervalIntegral.integral_same, zero_div, sub_self] using
       hasDerivAt_const (0 : ℝ) (0 : ℝ)
   obtain ⟨γ', V', hV', hEq, hExp⟩ := exists_contMDiffAt_exponentialVariation_eqOn γ V hV
-  have hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
-      (fun z : ℝ × ℝ ↦ exponentialVariation I γ' V' z.1 z.2) (0, t) :=
-    fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t ht)
   have hderiv' : HasDerivAt (fun s ↦ energy I (exponentialVariation I γ' V' s) a b)
       (inner ℝ (V' b) (curveVelocity I γ' b) - inner ℝ (V' a) (curveVelocity I γ' a) -
         ∫ t in a..b, inner ℝ (V' t) (acceleration (leviCivitaConnection I M) γ' t)) 0 := by
-    have h := hasDerivAt_energy hF
+    have h := hasDerivAt_energy fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t ht)
     rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
-  rw [show (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
-      fun s ↦ energy I (exponentialVariation I γ' V' s) a b from
-    funext fun s ↦ (energy_congr ((hExp s).mono uIoo_subset_uIcc_self)).symm]
+  have henergy : (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
+      fun s ↦ energy I (exponentialVariation I γ' V' s) a b :=
+    funext fun s ↦ (energy_congr ((hExp s).mono uIoo_subset_uIcc_self)).symm
+  rw [henergy]
   refine hderiv'.congr_deriv ?_
   rw [inner_curveVelocity_eq_inner_curveVelocityWithin_of_totalSpaceMk_eq hab right_mem_uIcc
       ((hV' b right_mem_uIcc).of_le one_le_two) hEq,
@@ -288,9 +286,8 @@ theorem hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn {a b : 
           (Eventually.of_forall fun r ↦ TauCeti.inner_eq_of_totalSpaceMk_eq
             (TotalSpace.ext (congrFun (exponentialVariation_zero (γi i) (Vi i)) r)
               (heq_of_eq (variationField_exponentialVariation (γi i) (Vi i) r)))
-            ((EventuallyEq.of_eq
-              (exponentialVariation_zero (γi i) (Vi i))).totalSpaceMk_acceleration_eq
-              (leviCivitaConnection I M)))).continuousWithinAt
+            ((EventuallyEq.of_eq (exponentialVariation_zero (γi i)
+              (Vi i))).totalSpaceMk_acceleration_eq (leviCivitaConnection I M)))).continuousWithinAt
     refine hcont.intervalIntegrable.congr_uIoo fun t ht ↦ ?_
     have hnear : γi i =ᶠ[𝓝 t] γ := eventuallyEq_of_mem
       (mem_of_superset (isOpen_Ioo.mem_nhds ht) uIoo_subset_uIcc_self)
@@ -340,20 +337,19 @@ theorem hasDerivAt_toReal_pathELength_exponentialVariation {a b : ℝ} (hab : a 
   obtain ⟨γ', V', hV', hEq, hExp⟩ :=
     exists_contMDiffAt_exponentialVariation_eqOn γ V (by rwa [uIcc_of_le hab])
   have hspeed' := norm_curveVelocity_eq_Icc_of_totalSpaceMk_eq one_le_two hlt hV' hEq hspeed
-  have hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
-      (fun z : ℝ × ℝ ↦ exponentialVariation I γ' V' z.1 z.2) (0, t) :=
-    fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t (by rwa [uIcc_of_le hab]))
   have hderiv' : HasDerivAt
       (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal)
       ((⟪V' b, curveVelocity I γ' b⟫_ℝ - ⟪V' a, curveVelocity I γ' a⟫_ℝ -
         ∫ t in a..b, ⟪V' t, acceleration (leviCivitaConnection I M) γ' t⟫_ℝ) / C) 0 := by
-    have h := hasDerivAt_toReal_pathELength hab hF hC
-      (fun t ht ↦ by rw [exponentialVariation_zero]; exact hspeed' t ht)
+    have h := hasDerivAt_toReal_pathELength hab
+      (fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t (by rwa [uIcc_of_le hab])))
+      hC (fun t ht ↦ by rw [exponentialVariation_zero]; exact hspeed' t ht)
     rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
-  rw [show (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal) =
-      fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal from
+  have hlen : (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal) =
+      fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal :=
     funext fun s ↦ congrArg ENNReal.toReal
-      (Manifold.pathELength_congr ((hExp s).mono (by rw [uIcc_of_le hab]))).symm]
+      (Manifold.pathELength_congr ((hExp s).mono (by rw [uIcc_of_le hab]))).symm
+  rw [hlen]
   refine hderiv'.congr_deriv ?_
   have hb := inner_curveVelocity_eq_inner_curveVelocityWithin_of_totalSpaceMk_eq
     hlt.ne right_mem_uIcc ((hV' b right_mem_uIcc).of_le one_le_two) hEq

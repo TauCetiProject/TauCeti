@@ -94,38 +94,26 @@ theorem exists_contDiffOn_norm_curveVelocity {m n : WithTop ℕ∞} [IsManifold 
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := m)
   have hone : (1 : WithTop ℕ∞) ≤ n := le_add_self.trans hmn
-  have hne : n ≠ 0 := ne_of_gt (lt_of_lt_of_le (by norm_num) hone)
   obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV⟩ :=
     TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc hn hF
   have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
-  let G : ℝ × ℝ → ℝ := fun z ↦
-    ⟪mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ F z.1 z.2) z (0, 1),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ F z.1 z.2) z (0, 1)⟫_ℝ
+  let G : ℝ × ℝ → ℝ := fun z ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2
   have hG : ContDiffOn ℝ m G (U ×ˢ V) :=
-    hfUV.contDiffOn_inner_mfderiv hmn hUVo (0, 1) (0, 1)
-  have hGeq : ∀ {s t : ℝ}, s ∈ U → t ∈ V → G (s, t) = ‖curveVelocity I (F s) t‖ ^ 2 := by
-    intro s t hs ht
-    dsimp only [G]
-    rw [← curveVelocity_eq_mfderiv_snd
-      ((hfUV.contMDiffAt (hUVo.mem_nhds ⟨hs, ht⟩)).mdifferentiableAt hne),
-      real_inner_self_eq_norm_sq]
+    contDiffOn_norm_sq_curveVelocity hUVo hmn hfUV
   let W := (U ×ˢ V) ∩ G ⁻¹' Ioi 0
   have hWo : IsOpen W := hG.continuousOn.isOpen_inter_preimage hUVo isOpen_Ioi
   let L : ℝ × ℝ → ℝ := fun z ↦ Real.sqrt (G z)
   have hL : ContDiffOn ℝ m L W := (hG.mono inter_subset_left).sqrt fun _ hz ↦ ne_of_gt hz.2
   have hsub : {0} ×ˢ uIcc a b ⊆ W := by
     rintro ⟨s, t⟩ ⟨rfl, ht⟩
-    refine ⟨⟨h0U, hV ht⟩, ?_⟩
-    rw [mem_preimage, mem_Ioi, hGeq h0U (hV ht)]
-    exact pow_pos (norm_pos_iff.2 (hγ t ht)) 2
-  have hLeq : ∀ {s t : ℝ}, s ∈ U → t ∈ V → L (s, t) = ‖curveVelocity I (F s) t‖ := by
-    intro s t hs ht
-    dsimp only [L]
-    rw [hGeq hs ht, Real.sqrt_sq (norm_nonneg _)]
+    exact ⟨⟨h0U, hV ht⟩, pow_pos (norm_pos_iff.2 (hγ t ht)) 2⟩
+  have hLeq : ∀ s t, L (s, t) = ‖curveVelocity I (F s) t‖ := fun s t ↦ by
+    dsimp only [L, G]
+    exact Real.sqrt_sq (norm_nonneg _)
   obtain ⟨U₀, V₀, hU₀o, hV₀o, h0U₀, hV₀, hU₀V₀⟩ :=
     generalized_tube_lemma isCompact_singleton isCompact_uIcc hWo hsub
   refine ⟨U₀, V₀, L, hU₀o, hV₀o, h0U₀ rfl, hV₀, hL.mono hU₀V₀,
-    fun s hs t ht ↦ hLeq (hU₀V₀ (mk_mem_prod hs (hV₀ ht))).1.1 (hV ht), fun q hq ↦ ?_⟩
+    fun s _ t _ ↦ hLeq s t, fun q hq ↦ ?_⟩
   have hqU : q ∈ U := (hU₀V₀ (mk_mem_prod hq (hV₀ left_mem_uIcc))).1.1
   have hγq : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (F q) V :=
     (hfUV.of_le hone).comp (contDiff_prodMk_right q).contMDiff.contMDiffOn fun t ht ↦ ⟨hqU, ht⟩
@@ -133,7 +121,7 @@ theorem exists_contDiffOn_norm_curveVelocity {m n : WithTop ℕ∞} [IsManifold 
   rw [hγq.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hVs,
     ENNReal.toReal_ofReal (intervalIntegral.integral_nonneg hab fun _ _ ↦ norm_nonneg _)]
   refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [curveVelocityWithin_of_mem_nhds (hVo.mem_nhds (hV ht)), hLeq hqU (hV ht)]
+  rw [curveVelocityWithin_of_mem_nhds (hVo.mem_nhds (hV ht)), hLeq q t]
 
 end SpeedRegularity
 
@@ -186,11 +174,9 @@ theorem continuousAt_inner_alongCurve_variationField_curveVelocity {t : ℝ}
   have hfUV : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (U ×ˢ V) :=
     fun z hz ↦ (hUV hz).contMDiffWithinAt
   -- the squared speed `G (s, r) = ‖∂_r F (s, r)‖ ^ 2`, jointly `C¹` on `U ×ˢ V`
-  let G : ℝ × ℝ → ℝ := fun z ↦
-    ⟪mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ F z.1 z.2) z (0, 1),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ F z.1 z.2) z (0, 1)⟫_ℝ
+  let G : ℝ × ℝ → ℝ := fun z ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2
   have hG : ContDiffOn ℝ 1 G (U ×ˢ V) :=
-    hfUV.contDiffOn_inner_mfderiv (by norm_num) hUVo (0, 1) (0, 1)
+    contDiffOn_norm_sq_curveVelocity hUVo (by norm_num) hfUV
   have hGcont : ContinuousAt (fun r ↦ fderiv ℝ G (0, r) (1, 0)) t :=
     (((hG.continuousOn_fderiv_of_isOpen hUVo le_rfl).continuousAt
       (hUVo.mem_nhds ⟨h0U, htV⟩)).comp (Continuous.prodMk_right (0 : ℝ)).continuousAt).clm_apply
@@ -203,13 +189,7 @@ theorem continuousAt_inner_alongCurve_variationField_curveVelocity {t : ℝ}
     (hasDerivAt_id' (x := (0 : ℝ))).prodMk (hasDerivAt_const (0 : ℝ) r)
   have hGd := ((hG.differentiableOn one_ne_zero (0, r) ⟨h0U, hr⟩).differentiableAt
     (hUVo.mem_nhds ⟨h0U, hr⟩)).hasFDerivAt.comp_hasDerivAt (0 : ℝ) hpath
-  have heq : (fun s ↦ ‖curveVelocity I (F s) r‖ ^ 2) =ᶠ[𝓝 0] fun s ↦ G (s, r) := by
-    filter_upwards [hUo.mem_nhds h0U] with s hs
-    dsimp only [G]
-    rw [← curveVelocity_eq_mfderiv_snd
-      ((hUV ⟨hs, hr⟩ : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 _ (s, r)).mdifferentiableAt two_ne_zero),
-      real_inner_self_eq_norm_sq]
-  have he := (hGd.congr_of_eventuallyEq heq).unique (hasDerivAt_norm_sq_curveVelocity hr')
+  have he := hGd.unique (hasDerivAt_norm_sq_curveVelocity hr')
   simp only [he]
   ring
 

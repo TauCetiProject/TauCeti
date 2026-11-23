@@ -18,9 +18,10 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metr
 Along a geodesic `γ` in a smooth Riemannian manifold, covariant differentiation commutes with
 orthogonal projection onto the tangent line `ℝ ∙ γ'`
 (`TauCeti.Manifold.IsGeodesicCurveOn.alongCurveWithin_sub_starProjection_singleton`), while the
-curvature term `⟪R(V, γ') γ', W⟫` vanishes whenever `V` or `W` is tangential. Consequently, for
-any two tangent fields `V` and `W` along `γ`, the index form of their normal components
-`V^⊥ = V - proj_{ℝ ∙ γ'} V` and `W^⊥ = W - proj_{ℝ ∙ γ'} W` satisfies the bilinear identity
+curvature term `⟪R(V, γ') γ', W⟫` vanishes whenever `V` or `W` is tangential. Consequently, when
+`γ` is a geodesic on `uIoo a b` and `V`, `W` have `C¹` tangent-bundle lifts on `uIcc a b`, the
+index form of their normal components `V^⊥ = V - proj_{ℝ ∙ γ'} V` and `W^⊥ = W - proj_{ℝ ∙ γ'} W`
+satisfies the bilinear identity
 
 `I(V^⊥, W^⊥) = I(V, W) - ∫_a^b ⟪D_t V, γ'⟫ ⟪D_t W, γ'⟫ / ‖γ'‖² dt`.
 
@@ -152,13 +153,11 @@ theorem IsGeodesicCurveOn.indexForm_sub_starProjection_singleton
       simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ (uIcc a b))] using
         hγc.contMDiffOn_curveVelocityLiftWithin (m := 0) (by simp)
           (uniqueDiffOn_uIcc hab).uniqueMDiffOn
-    have hcont (U : ∀ r, TangentSpace I (γ r))
-        (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
-          (fun r ↦ TotalSpace.mk' E (γ r) (U r)) (uIcc a b)) :
+    have hcont (U : ∀ r, TangentSpace I (γ r)) (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+        (fun r ↦ TotalSpace.mk' E (γ r) (U r)) (uIcc a b)) :
         ContinuousOn (fun r ↦ ⟪alongCurveWithin (leviCivitaConnection I M) γ U (uIcc a b) r,
           curveVelocityWithin I γ (uIcc a b) r⟫_ℝ) (uIcc a b) :=
-      (ContMDiffOn.inner_bundle (IB := I) (F := E)
-        (E := fun x : M ↦ TangentSpace I x) (b := γ)
+      (ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := γ)
         (h := IsContMDiffRiemannianBundle.of_le (n := ∞) zero_le)
         (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) (m := ∞) (k := ∞)
           (by simp) (by simp) (uniqueDiffOn_uIcc hab) (by simpa using hU)) hvel).continuousOn
@@ -176,14 +175,13 @@ theorem IsGeodesicCurveOn.indexForm_sub_starProjection_singleton
     ← intervalIntegral.integral_sub (intervalIntegrable_indexFormIntegrand hV hW) hintT]
   refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
   have hmemIoo : uIoo a b ∈ 𝓝 t := (isOpen_Ioo : IsOpen (uIoo a b)).mem_nhds ht
-  have hmemIcc : uIcc a b ∈ 𝓝 t := mem_of_superset hmemIoo uIoo_subset_uIcc_self
-  exact hγ.indexFormIntegrand_sub_starProjection_singleton hmemIoo
-    (differentiableAt_sectionCoord γ V ((hV t (uIoo_subset_uIcc_self ht)).contMDiffAt
-      hmemIcc |>.mdifferentiableAt one_ne_zero)
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
-    (differentiableAt_sectionCoord γ W ((hW t (uIoo_subset_uIcc_self ht)).contMDiffAt
-      hmemIcc |>.mdifferentiableAt one_ne_zero)
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
+  have hdiff (U : ∀ r, TangentSpace I (γ r))
+      (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (U r)) (uIcc a b)) :
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ U (γ t)) t :=
+    differentiableAt_sectionCoord γ U ((hU t (uIoo_subset_uIcc_self ht)).contMDiffAt
+      (mem_of_superset hmemIoo uIoo_subset_uIcc_self) |>.mdifferentiableAt one_ne_zero)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+  exact hγ.indexFormIntegrand_sub_starProjection_singleton hmemIoo (hdiff V hV) (hdiff W hW)
 
 /-- **Tangential fields are `indexForm`-orthogonal to normal fields along a geodesic.** If `γ` is a
 geodesic on `uIoo a b`, `V` and `W` have differentiable coordinates on `uIoo a b`, `V t ∈ ℝ ∙ γ'(t)`

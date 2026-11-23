@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 public import Mathlib.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.Calculus.Jet.Realization
 
 /-!
 # Smooth extension from a closed real interval
@@ -104,40 +105,40 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
   have hr : 0 < r := lt_min zero_lt_one (div_pos hε hC)
   have hr1 : r ≤ 1 := min_le_left _ _
   have hrC : r * C ≤ ε := (le_div_iff₀ hC).mp (min_le_right 1 (ε / C))
-  let f : ℝ → E := fun x ↦ r ^ k • φ (r⁻¹ * x)
+  let f : ℝ → E := fun x ↦ r ^ k • φ (r⁻¹ • x)
   have hf : ContDiff ℝ ∞ f :=
-    (hφ.comp (contDiff_const.mul contDiff_id)).const_smul (r ^ k)
+    (hφ.comp ((contDiff_id : ContDiff ℝ ∞ (id : ℝ → ℝ)).const_smul r⁻¹)).const_smul (r ^ k)
   have hfsupp : HasCompactSupport f := (hsupp.comp_smul (inv_ne_zero hr.ne')).smul_left
   have hderiv (m : ℕ) (x : ℝ) :
-      iteratedFDeriv ℝ m f x = (r ^ k * (r⁻¹) ^ m) • iteratedFDeriv ℝ m φ (r⁻¹ * x) := by
+      iteratedFDeriv ℝ m f x = (r ^ k * (r⁻¹) ^ m) • iteratedFDeriv ℝ m φ (r⁻¹ • x) := by
     have hm : (m : ℕ∞ω) ≤ ∞ := WithTop.coe_le_coe.mpr le_top
     have hc : ContDiff ℝ ∞ (fun y : ℝ ↦ φ (r⁻¹ • y)) :=
       hφ.comp ((contDiff_id : ContDiff ℝ ∞ (id : ℝ → ℝ)).const_smul r⁻¹)
-    rw [show f = fun x ↦ r ^ k • φ (r⁻¹ • x) by simp only [f, smul_eq_mul],
-      iteratedFDeriv_const_smul_apply' (i := m) (a := r ^ k) (hc.of_le hm).contDiffAt,
+    rw [iteratedFDeriv_const_smul_apply' (i := m) (a := r ^ k) (hc.of_le hm).contDiffAt,
       iteratedFDeriv_comp_const_smul r⁻¹ (hφ.of_le hm)]
     simp only [smul_smul, smul_eq_mul]
   have hsmall (m : ℕ) (hm : m < k) (x : ℝ) : ‖iteratedFDeriv ℝ m f x‖ ≤ ε := by
     have hfactor : r ^ k * (r⁻¹) ^ m = r ^ (k - m) := by
       rw [pow_sub₀ r hr.ne' hm.le, inv_pow]
+    have hkm : 1 ≤ k - m := Nat.succ_le_of_lt (Nat.sub_pos_of_lt hm)
     have hpow : r ^ (k - m) ≤ r := by
-      simpa only [pow_one] using
-        pow_le_pow_of_le_one hr.le hr1 (show 1 ≤ k - m by omega)
+      simpa only [pow_one] using pow_le_pow_of_le_one hr.le hr1 hkm
     rw [hderiv, hfactor, norm_smul, Real.norm_eq_abs, abs_of_nonneg (pow_nonneg hr.le _)]
     calc
-      r ^ (k - m) * ‖iteratedFDeriv ℝ m φ (r⁻¹ * x)‖ ≤ r ^ (k - m) * C :=
+      r ^ (k - m) * ‖iteratedFDeriv ℝ m φ (r⁻¹ • x)‖ ≤ r ^ (k - m) * C :=
         mul_le_mul_of_nonneg_left
           ((hB m hm.le _).trans (by dsimp only [C]; linarith)) (pow_nonneg hr.le _)
       _ ≤ r * C := mul_le_mul_of_nonneg_right hpow hC.le
       _ ≤ ε := hrC
   have hnear : f =ᶠ[𝓝 0] endpointJetPolynomial k A := by
-    have hc : Tendsto (fun x : ℝ ↦ r⁻¹ * x) (𝓝 0) (𝓝 0) := by
-      simpa only [ContinuousAt, mul_zero] using (continuous_const_mul r⁻¹).continuousAt (x := 0)
+    have hc : Tendsto (fun x : ℝ ↦ r⁻¹ • x) (𝓝 0) (𝓝 0) := by
+      simpa only [ContinuousAt, smul_zero] using
+        (continuous_const_smul r⁻¹).continuousAt (x := (0 : ℝ))
     filter_upwards [hc.eventually (endpointJetBase_eventually_eq k A)] with x hx
     dsimp only [f, φ]
     rw [hx]
     unfold endpointJetPolynomial
-    rw [smul_smul, mul_pow, ← mul_div_assoc, ← mul_assoc, ← mul_pow,
+    rw [smul_eq_mul, smul_smul, mul_pow, ← mul_div_assoc, ← mul_assoc, ← mul_pow,
       mul_inv_cancel₀ hr.ne', one_pow, one_mul]
   exact ⟨f, hf, hfsupp, hsmall, fun m ↦
     (hnear.iteratedDeriv_eq m).trans (endpointJetPolynomial_deriv k m A)⟩
@@ -146,15 +147,15 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
 without requiring completeness of `E`. -/
 theorem exists_contDiff_finite_endpoint_jets (n : ℕ) (A : ℕ → E) :
     ∃ p : ℝ → E, ContDiff ℝ ∞ p ∧ ∀ k ≤ n, iteratedDeriv k p 0 = A k := by
-  let p : ℝ → E := fun x ↦ ∑ j ∈ Finset.range (n + 1), endpointJetPolynomial j (A j) x
-  refine ⟨p, ContDiff.sum fun j _ ↦ endpointJetPolynomial_contDiff j (A j), fun k hk ↦ ?_⟩
-  have hsum : iteratedDeriv k p 0 =
-      ∑ j ∈ Finset.range (n + 1), iteratedDeriv k (endpointJetPolynomial j (A j)) 0 := by
-    have hcd : ∀ j ∈ Finset.range (n + 1), ContDiffAt ℝ k (endpointJetPolynomial j (A j)) 0 :=
-      fun j _ ↦ ((endpointJetPolynomial_contDiff j (A j)).of_le (by simp)).contDiffAt
-    simpa only [p] using iteratedDeriv_fun_sum hcd
-  rw [hsum]
-  simp [endpointJetPolynomial_deriv, Nat.lt_succ_of_le hk]
+  let c : (i : Fin (n + 1)) → ℝ [×i.val]→L[ℝ] E :=
+    fun i ↦ ContinuousMultilinearMap.mkPiRing ℝ (Fin i.val) (A i.val)
+  refine ⟨finiteJetPolynomial n c 0, contDiff_finiteJetPolynomial n c 0, fun k hk ↦ ?_⟩
+  let i : Fin (n + 1) := ⟨k, Nat.lt_succ_of_le hk⟩
+  have hsym (v : Fin i.val → ℝ) (σ : Equiv.Perm (Fin i.val)) : c i (v ∘ σ) = c i v := by
+    simp [c, ContinuousMultilinearMap.mkPiRing_apply, Equiv.prod_comp σ]
+  rw [iteratedDeriv_eq_iteratedFDeriv,
+    iteratedFDeriv_finiteJetPolynomial_self n c 0 i hsym]
+  simp [c, i, ContinuousMultilinearMap.mkPiRing_apply]
 
 variable [CompleteSpace E]
 

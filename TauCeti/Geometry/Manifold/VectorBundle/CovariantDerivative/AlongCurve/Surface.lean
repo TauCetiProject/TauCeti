@@ -235,9 +235,7 @@ theorem sectionCoord_alongCurve_snd_eventuallyEq
       hV.differentiableWithinAt,
     e.continuousLinearMapAt_symmL (R := 𝕜) hqb, alongCurveInChartWithin_apply,
     derivWithin_univ, derivWithin_univ, Function.comp_def,
-    show sectionCoord 𝕜 (F := E) (f q) (W q) (f u v) =
-      fun r ↦ e.continuousLinearMapAt 𝕜 (f q r) (W q r) from
-      funext fun r ↦ sectionCoord_apply (f q) (W q) (f u v) r]
+    funext (sectionCoord_apply (f q) (W q) (f u v))]
 
 /-- **Chart formula for the first-parameter covariant derivative along a surface.** Near `v`, the
 covariant derivative along the first-parameter curve `fun q ↦ f q r` of a `C¹` field `W` on a

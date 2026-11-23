@@ -244,20 +244,18 @@ theorem _root_.ContMDiffOn.exists_contMDiffAt_Icc [I.Boundaryless] {k : ℕ} [Is
     have hEq : EqOn δ γ (Icc a b) := fun t ht ↦ by
       by_cases htm : t < m
       · simpa only [δ, htm, ↓reduceIte] using hEq₁ ht
-      · have h2 : δ₂ (-t) = δ₁ t := by
-          simpa only [neg_neg] using
-            hEq₂ (show -t ∈ Icc (-b) (-a) from ⟨by linarith [ht.2], by linarith [ht.1]⟩)
-        simpa only [δ, htm, ↓reduceIte] using h2.trans (hEq₁ ht)
+      · have h2 := hEq₂ (x := -t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
+        simp only [neg_neg] at h2; simpa only [δ, htm, ↓reduceIte] using h2.trans (hEq₁ ht)
     refine ⟨δ, fun t ht ↦ ?_, hEq⟩
     rcases eq_or_lt_of_le ht.1 with rfl | hat
-    · exact hδ₁a.congr_of_eventuallyEq <| eventuallyEq_of_mem
-        (Iio_mem_nhds (show a < m by dsimp only [m]; linarith))
+    · have ham : a < m := by dsimp only [m]; linarith
+      exact hδ₁a.congr_of_eventuallyEq <| eventuallyEq_of_mem (Iio_mem_nhds ham)
         fun s hs ↦ by simp only [δ, mem_Iio.1 hs, ↓reduceIte]
     · rcases eq_or_lt_of_le ht.2 with rfl | htb
-      · exact (hδ₂b.comp t contDiff_neg.contMDiff.contMDiffAt).congr_of_eventuallyEq <|
-          eventuallyEq_of_mem (Ioi_mem_nhds (show m < t by dsimp only [m]; linarith))
-            fun s hs ↦ by
-              simp only [δ, not_lt.2 (mem_Ioi.1 hs).le, ↓reduceIte, Function.comp_apply]
+      · have hmt : m < t := by dsimp only [m]; linarith
+        exact (hδ₂b.comp t contDiff_neg.contMDiff.contMDiffAt).congr_of_eventuallyEq <|
+          eventuallyEq_of_mem (Ioi_mem_nhds hmt) fun s hs ↦ by
+            simp only [δ, not_lt.2 (mem_Ioi.1 hs).le, ↓reduceIte, Function.comp_apply]
       · exact (hγ.contMDiffAt (Icc_mem_nhds hat htb)).congr_of_eventuallyEq
           (eventuallyEq_of_mem (Icc_mem_nhds hat htb) hEq)
   · exact ⟨fun _ ↦ γ a, fun _ _ ↦ contMDiffAt_const, fun t ht ↦ by rw [le_antisymm ht.2 ht.1]⟩
