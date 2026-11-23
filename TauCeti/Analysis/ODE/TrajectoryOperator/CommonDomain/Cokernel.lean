@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.SemiFredholm
 public import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.InnerProductSpace.Lions
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -322,24 +323,6 @@ section Fredholm
 variable {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {Bbot Btop : D →L[ℝ] H}
 
 omit [CompleteSpace D] [CompleteSpace H] in
-/-- The limits `B₋` and `B₊` at `-∞` and `∞` of an almost everywhere `ι`-symmetric family are
-`ι`-symmetric. -/
-private theorem inner_apply_eq_inner_of_tendsto_atBot_atTop
-    (hSymm : ∀ᵐ s ∂volume, ∀ x y : D, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
-    (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop)) :
-    (∀ x y : D, ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ) ∧
-      ∀ x y : D, ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ := by
-  -- A property of almost every `s` holds on every half-line, which has positive measure.
-  refine ⟨ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot
-      (frequently_atBot.2 fun a ↦ ?_),
-    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
-      (frequently_atTop.2 fun a ↦ ?_)⟩
-  · have : (ae (volume.restrict (Iic a))).NeBot := ae_restrict_neBot.2 (by simp)
-    exact ((ae_restrict_mem measurableSet_Iic).and (ae_restrict_of_ae hSymm)).exists
-  · have : (ae (volume.restrict (Ici a))).NeBot := ae_restrict_neBot.2 (by simp)
-    exact ((ae_restrict_mem measurableSet_Ici).and (ae_restrict_of_ae hSymm)).exists
-
-omit [CompleteSpace D] [CompleteSpace H] in
 /-- A property of almost every `A s` holds for almost every `AL s`, when `AL = A` almost
 everywhere. -/
 private theorem ae_of_ae_eq (hAL : AL =ᵐ[μ₀] A) {P : (D →L[ℝ] H) → Prop}
@@ -354,8 +337,11 @@ private theorem isClosed_range_familyDomainTrajectoryOperator_of_ae (hι : IsCom
     (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop)) {c : ℝ}
     (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     IsClosed ((familyDomainTrajectoryOperator (p := 2) ι AL).range : Set (Lp H 2 μ₀)) :=
-  have hlim := inner_apply_eq_inner_of_tendsto_atBot_atTop hSymm hbot htop
-  isClosed_range_familyDomainTrajectoryOperator hι hlim.1 hBbot hlim.2 hBtop hAL hbot htop
+  isClosed_range_familyDomainTrajectoryOperator hι
+    (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (frequently_atBot_of_ae hSymm))
+    hBbot
+    (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop (frequently_atTop_of_ae hSymm))
+    hBtop hAL hbot htop
     fun _ ↦ ⟨c, hc.mono fun _ hs _ ↦ hs⟩
 
 /-- The formal adjoint `D_{-A}` has a finite-dimensional kernel: the coefficient `-A` satisfies the
@@ -405,7 +391,8 @@ private noncomputable def quotientRangeEquivMapKer (hι : IsCompactOperator ι)
     hc).completeSpace_coe
   (familyDomainTrajectoryOperator (p := 2) ι AL).range.quotientEquivOrthogonal.toLinearEquiv.trans
     (LinearEquiv.ofEq _ _ (orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker_of_tendsto
-      hSymm (inner_apply_eq_inner_of_tendsto_atBot_atTop hSymm hbot htop).2 hBtop hAL hc))
+      hSymm (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
+        (frequently_atTop_of_ae hSymm)) hBtop hAL hc))
 
 /-- **The trajectory operator over a compactly embedded domain is Fredholm.** Let `ι : D →L[ℝ] H`
 be a compact operator, and let `A : ℝ → (D →L[ℝ] H)` be a family of operators, `ι`-symmetric for
@@ -420,7 +407,10 @@ theorem isFredholm_familyDomainTrajectoryOperator (hι : IsCompactOperator ι)
     (hc : ∃ c, ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     (familyDomainTrajectoryOperator (p := 2) ι AL).IsFredholm := by
   obtain ⟨c, hc⟩ := hc
-  obtain ⟨hSymmbot, hSymmtop⟩ := inner_apply_eq_inner_of_tendsto_atBot_atTop hSymm hbot htop
+  have hSymmbot :=
+    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (frequently_atBot_of_ae hSymm)
+  have hSymmtop :=
+    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop (frequently_atTop_of_ae hSymm)
   have := finiteDimensional_ker_familyDomainTrajectoryOperator_neg hι hSymmbot hBbot hSymmtop hBtop
     hAL hbot htop hc
   refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker _
