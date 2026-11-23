@@ -196,9 +196,7 @@ theorem pdFiltration_one : hI.pdFiltration 1 = I := by
     intro l hl hsum
     obtain ⟨m, hm_mem, hm_pos⟩ := List.sum_pos_iff_exists_pos_nat.mp hsum
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hm_mem
-    obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hp
-    rw [← Fin.prod_univ_fun_getElem l fun q ↦ hI.dpow q.1 q.2]
-    exact I.mem_of_dvd (Finset.dvd_prod_of_mem _ (Finset.mem_univ ⟨i, hi⟩))
+    exact I.mem_of_dvd (List.dvd_prod (List.mem_map.mpr ⟨p, hp, rfl⟩))
       (hI.dpow_mem hm_pos.ne' (hl _ hp))
   · intro x hx
     simpa [hI.dpow_one hx] using hI.dpow_mem_pdFiltration (n := 1) hx

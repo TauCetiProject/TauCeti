@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.DividedPowers.Padic
-public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
-public import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.Data.ZMod.Nilpotent
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.DividedPowers.SubDPIdeal
 
@@ -125,15 +125,6 @@ theorem sub_one_mul_valuation_dpow_p (n : ℕ) :
       _ = (p - 2) * n + n := by ring
   omega
 
-/-- For `e ≠ 0`, `Ideal.span {(p : ℤ_[p]) ^ e}` is a sub-dp-ideal of `PadicInt.dividedPowers p`. -/
-theorem isSubDPIdeal_span_pow {e : ℕ} (he : e ≠ 0) :
-    (dividedPowers p).IsSubDPIdeal (Ideal.span {(p : ℤ_[p]) ^ e}) := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero he
-  have h := (DividedPowers.SubDPIdeal.prod (hI := dividedPowers p)
-    (Ideal.span {(p : ℤ_[p]) ^ k})).toIsSubDPIdeal
-  simpa [DividedPowers.SubDPIdeal.prod, smul_eq_mul, Ideal.span_singleton_mul_span_singleton,
-    ← pow_succ'] using h
-
 /-- The intersection `RingHom.ker (toZModPow e) ⊓ Ideal.span {(p : ℤ_[p])}` is a sub-dp-ideal of
 `PadicInt.dividedPowers p` for every `e : ℕ`. -/
 theorem isSubDPIdeal_ker_toZModPow_inf (e : ℕ) :
@@ -146,7 +137,7 @@ theorem isSubDPIdeal_ker_toZModPow_inf (e : ℕ) :
       rw [Ideal.span_singleton_le_span_singleton]
       exact dvd_pow_self _ he
     rw [inf_of_le_left hle]
-    exact isSubDPIdeal_span_pow p he
+    simpa only [Ideal.span_singleton_pow] using (dividedPowers p).isSubDPIdeal_pow he
 
 end GeneralPrime
 
@@ -257,9 +248,8 @@ theorem exists_unit_mul_two_eq_dpow_two_pow (e a : ℕ) :
 `γ₂(2) = 2`) differs from `DividedPowers.OfSquareZero.dividedPowers` (with `γ₂(2) = 0`). -/
 theorem dividedPowers_two_two_ne_ofSquareZero
     [DecidablePred fun x : ZMod (2 ^ 2) ↦ x ∈ Ideal.span {((2 : ℕ) : ZMod (2 ^ 2))}] :
-    ZMod.dividedPowers 2 2 ≠ DividedPowers.OfSquareZero.dividedPowers (by
-      rw [Ideal.span_singleton_pow, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
-      simpa only [Nat.cast_ofNat] using ZMod.natCast_pow_eq_zero_of_le 2 (le_refl 2)) := by
+    ZMod.dividedPowers 2 2 ≠ DividedPowers.OfSquareZero.dividedPowers
+      (by simpa only [Nat.cast_ofNat] using ZMod.span_natCast_pow_eq_zero (p := 2) (n := 2)) := by
   intro h
   have h0 : (ZMod.dividedPowers 2 2).dpow 2 (2 : ZMod (2 ^ 2)) = 0 := by
     rw [h]

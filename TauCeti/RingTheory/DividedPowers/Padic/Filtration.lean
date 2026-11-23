@@ -74,12 +74,12 @@ theorem pdFiltration_le_span_pow {n e : ℕ} (h : (p - 1) * e ≤ (p - 2) * n) :
     (dividedPowers p).pdFiltration n ≤ Ideal.span {(p : ℤ_[p]) ^ e} := by
   rw [(dividedPowers p).pdFiltration_le_iff_of_eq_span_singleton rfl]
   intro m hm
-  rw [mem_span_pow_iff_le_valuation _ (dpow_p_ne_zero p m)]
+  rw [dpow_p_mem_span_pow_iff]
   have hp1 : 0 < p - 1 := Nat.sub_pos_of_lt hp.out.one_lt
   have hleg := sub_one_mul_valuation_dpow_p p m
+  rw [valuation_dpow_p p m] at hleg
   have hmul : (p - 2) * n ≤ (p - 2) * m := Nat.mul_le_mul_left (p - 2) hm
-  have hineq : (p - 1) * e ≤ (p - 1) * ((dividedPowers p).dpow m (p : ℤ_[p])).valuation := by
-    omega
+  have hineq : (p - 1) * e ≤ (p - 1) * (m - multiplicity p m.factorial) := by omega
   exact Nat.le_of_mul_le_mul_left hineq hp1
 
 /-- For an odd prime `p`, the divided power filtration on `(p) ⊂ ℤ_[p]` satisfies
