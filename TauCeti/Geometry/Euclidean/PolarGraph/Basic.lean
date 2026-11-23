@@ -64,6 +64,11 @@ theorem PolarPoint.ext {p q : PolarPoint} (hr : radius p = radius q)
 def deckShift (k : ℤ) (p : PolarPoint) : PolarPoint :=
   ⟨(radius p, angle p + (k : ℝ) * (2 * Real.pi)), radius_pos p⟩
 
+/-- Deck translation is continuous on the polar cover. -/
+@[fun_prop] theorem continuous_deckShift (k : ℤ) : Continuous (deckShift k) :=
+  ((continuous_fst.comp continuous_subtypeVal).prodMk
+    ((continuous_snd.comp continuous_subtypeVal).add continuous_const)).subtype_mk _
+
 @[simp, grind =] theorem radius_deckShift (k : ℤ) (p : PolarPoint) :
     radius (deckShift k p) = radius p := (rfl)
 

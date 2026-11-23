@@ -13,10 +13,18 @@ public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
 /-!
 # The minimal graph equation on the polar cover
 
-A height on the polar cover solves the minimal graph equation if it locally agrees with a
-Cartesian solution through the planar projection. Local agreement allows different sheets to
-take different values over the same point of the plane. On any continuous local section of the
-projection the height is a classical solution, and translating sheets preserves the equation.
+A height on the polar cover solves the minimal graph equation if near each point of its domain
+it agrees, through the planar projection, with a twice continuously differentiable Cartesian
+height whose minimal graph operator vanishes at the projected point. Local agreement allows
+different sheets to take different values over the same point of the plane. On any continuous
+local section over an open domain the height is a classical solution, and translating sheets
+preserves the equation.
+
+## References
+
+* T. H. Colding and W. P. Minicozzi II, *The space of embedded minimal surfaces of fixed
+  genus in a 3-manifold IV*, Section 0.
+* T. H. Colding and W. P. Minicozzi II, *A Course in Minimal Surfaces*, Section 1.9.
 -/
 
 public noncomputable section
@@ -33,35 +41,33 @@ def planeProjection (p : PolarPoint) : EuclideanSpace ℝ (Fin 2) :=
 theorem planeProjection_def (p : PolarPoint) :
     planeProjection p = Complex.orthonormalBasisOneI.repr (projection p) := (rfl)
 
-@[simp] theorem planeProjection_deckShift (k : ℤ) (p : PolarPoint) :
+@[simp, grind =] theorem planeProjection_deckShift (k : ℤ) (p : PolarPoint) :
     planeProjection (deckShift k p) = planeProjection p := by
   simp only [planeProjection_def, projection_deckShift]
 
-@[fun_prop] theorem continuous_deckShift (k : ℤ) : Continuous (deckShift k) := by
-  apply continuous_induced_rng.mpr
-  change Continuous (fun p : PolarPoint ↦ (deckShift k p).val)
-  rw [show (fun p : PolarPoint ↦ (deckShift k p).val) =
-      fun p ↦ (p.val.1, p.val.2 + (k : ℝ) * (2 * Real.pi)) by
-    funext p
-    exact Prod.ext (by rw [← radius_def, radius_deckShift, radius_def])
-      (by rw [← angle_def, angle_deckShift, angle_def])]
-  fun_prop
-
 /-- Around each point of the domain the height is the pullback of a twice continuously
 differentiable Cartesian height satisfying the minimal graph equation at the projected point. -/
-@[expose] def IsMinimalHeightOn (u : PolarPoint → ℝ) (Ω : Set PolarPoint) : Prop :=
+def IsMinimalHeightOn (u : PolarPoint → ℝ) (Ω : Set PolarPoint) : Prop :=
   ∀ p ∈ Ω, ∃ f : EuclideanSpace ℝ (Fin 2) → ℝ,
     ContDiffAt ℝ 2 f (planeProjection p) ∧
     MinimalGraph.nondivergenceOperator f (planeProjection p) = 0 ∧
     u =ᶠ[𝓝 p] f ∘ planeProjection
 
+/-- The local Cartesian germs characterizing a minimal height on the polar cover. -/
+theorem isMinimalHeightOn_iff {u : PolarPoint → ℝ} {Ω : Set PolarPoint} :
+    IsMinimalHeightOn u Ω ↔ ∀ p ∈ Ω, ∃ f : EuclideanSpace ℝ (Fin 2) → ℝ,
+      ContDiffAt ℝ 2 f (planeProjection p) ∧
+      MinimalGraph.nondivergenceOperator f (planeProjection p) = 0 ∧
+      u =ᶠ[𝓝 p] f ∘ planeProjection := (Iff.rfl)
+
 theorem IsMinimalHeightOn.mono {u : PolarPoint → ℝ} {Ω V : Set PolarPoint}
     (hu : IsMinimalHeightOn u Ω) (hV : V ⊆ Ω) : IsMinimalHeightOn u V :=
-  fun p hp ↦ hu p (hV hp)
+  isMinimalHeightOn_iff.mpr fun p hp ↦ isMinimalHeightOn_iff.mp hu p (hV hp)
 
 /-- A continuous section of the projection reads a polar solution as a classical Cartesian
 solution throughout its open domain. -/
-theorem IsMinimalHeightOn.in_chart {u : PolarPoint → ℝ} {Ω : Set PolarPoint}
+theorem IsMinimalHeightOn.contDiffOn_comp_and_nondivergenceOperator_comp_eq_zero
+    {u : PolarPoint → ℝ} {Ω : Set PolarPoint}
     (hu : IsMinimalHeightOn u Ω) {s : Set (EuclideanSpace ℝ (Fin 2))} (hs : IsOpen s)
     {σ : EuclideanSpace ℝ (Fin 2) → PolarPoint} (hσ : ContinuousOn σ s)
     (hπ : ∀ x ∈ s, planeProjection (σ x) = x) (hΩ : MapsTo σ s Ω) :
@@ -69,7 +75,7 @@ theorem IsMinimalHeightOn.in_chart {u : PolarPoint → ℝ} {Ω : Set PolarPoint
   suffices H : ∀ x ∈ s, ContDiffAt ℝ 2 (u ∘ σ) x ∧ MinimalGraph.nondivergenceOperator (u ∘ σ) x = 0
     from ⟨fun x hx ↦ (H x hx).1.contDiffWithinAt, fun x hx ↦ (H x hx).2⟩
   intro x hx
-  obtain ⟨f, hf, hPDE, he⟩ := hu _ (hΩ hx)
+  obtain ⟨f, hf, hPDE, he⟩ := isMinimalHeightOn_iff.mp hu _ (hΩ hx)
   rw [hπ x hx] at hf hPDE
   have hloc : u ∘ σ =ᶠ[𝓝 x] f := by
     filter_upwards [((hσ.continuousAt (hs.mem_nhds hx)).tendsto.eventually he),
@@ -79,12 +85,13 @@ theorem IsMinimalHeightOn.in_chart {u : PolarPoint → ℝ} {Ω : Set PolarPoint
     (MinimalGraph.nondivergenceOperator_congr_of_eventuallyEq hloc).trans hPDE⟩
 
 /-- Translating a polar minimal height to another sheet preserves its equation on the
-common domain of the two sheets. -/
-theorem IsMinimalHeightOn.deckShift {u : PolarPoint → ℝ} {Ω : Set PolarPoint}
+preimage of its domain under the deck translation. -/
+theorem IsMinimalHeightOn.comp_deckShift {u : PolarPoint → ℝ} {Ω : Set PolarPoint}
     (hu : IsMinimalHeightOn u Ω) (k : ℤ) :
-    IsMinimalHeightOn (u ∘ deckShift k) (overlap Ω k) := by
+    IsMinimalHeightOn (u ∘ deckShift k) (deckShift k ⁻¹' Ω) := by
+  refine isMinimalHeightOn_iff.mpr ?_
   intro p hp
-  obtain ⟨f, hf, hPDE, he⟩ := hu _ (mem_overlap_iff.mp hp).2
+  obtain ⟨f, hf, hPDE, he⟩ := isMinimalHeightOn_iff.mp hu _ hp
   refine ⟨f, by simpa only [planeProjection_deckShift] using hf,
     by simpa only [planeProjection_deckShift] using hPDE, ?_⟩
   filter_upwards [(continuous_deckShift k).continuousAt.tendsto.eventually he] with q hq
