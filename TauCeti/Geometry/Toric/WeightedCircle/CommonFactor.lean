@@ -155,8 +155,9 @@ theorem fixingSubgroup_univ_weightedEllipsoid (hε : 0 < ε) :
     obtain ⟨z, hz, h₂⟩ := exists_mem_weightedEllipsoid_fst_ne_zero (b := a) hb hε
     exact (h z.swap (swap_mem_weightedEllipsoid.2 hz)).2 h₂
 
-/-- **The ineffective kernel has order `gcd(a, b)`** for `ε > 0`. For `a = b = 0` the kernel is
-the whole circle, whose cardinality is `0` as an infinite type. -/
+/-- **The `Nat.card` of the ineffective kernel is `gcd(a, b)`** for `ε > 0`. When at least one
+weight is positive, this is the finite order of the kernel. For `a = b = 0` the kernel is the whole
+circle, which is infinite, so its `Nat.card` is `0` rather than an order. -/
 theorem natCard_fixingSubgroup_univ_weightedEllipsoid (hε : 0 < ε) :
     Nat.card (fixingSubgroup Circle (univ : Set (weightedEllipsoid a b ε))) = a.gcd b := by
   rw [fixingSubgroup_univ_weightedEllipsoid hε]
