@@ -16,7 +16,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 
 This file defines the predicate that an endomorphism preserves a bilinear form and provides its
 elementary API, including the bridge to Mathlib's bundled isometric maps. It also records that
-scaling two forms by the same left-regular scalar preserves whether they are isometric
+scaling two forms by the same regular scalar preserves whether they are isometric
 (`LinearMap.BilinForm.equivalent_smul_iff`), and gives the underlying-equivalence and evaluation
 lemmas `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_refl`,
 `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm`,
@@ -142,12 +142,12 @@ open LinearMap (BilinForm)
 variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
   [Module R M'] {C : BilinForm R M} {C' : BilinForm R M'} {a : R}
 
-/-- Scaling two bilinear forms by the same left-regular scalar `a` neither creates nor destroys an
+/-- Scaling two bilinear forms by the same regular scalar `a` neither creates nor destroys an
 isometry between them. In particular the constituents `a • C` and `a • C'` of two Jordan splittings
 are isometric exactly when their unimodular rescalings `C` and `C'` are. -/
-@[simp] theorem equivalent_smul_iff (ha : IsLeftRegular a) :
+@[simp] theorem equivalent_smul_iff (ha : IsRegular a) :
     (a • C).Equivalent (a • C') ↔ C.Equivalent C' :=
-  ⟨fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ ha (by simpa using e.map_app y x)⟩⟩,
+  ⟨fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ ha.left (by simpa using e.map_app y x)⟩⟩,
     fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ by simp⟩⟩⟩
 
 namespace IsometryEquiv
