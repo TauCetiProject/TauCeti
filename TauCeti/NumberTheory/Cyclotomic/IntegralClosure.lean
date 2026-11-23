@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.Discriminant
 public import Mathlib.RingTheory.Polynomial.Eisenstein.IsIntegral
+import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
@@ -113,18 +114,18 @@ theorem integralClosure_eq_adjoin_sub_one [IsCyclotomicExtension {p ^ k} K L]
   have hirr := irreducible_cyclotomic_prime_pow_of_prime K hpR k
   have := IsCyclotomicExtension.isSeparable {p ^ k} K L
   have := IsCyclotomicExtension.finiteDimensional {p ^ k} K L
-  -- The discriminant `± p ^ m` of the power basis of `ζ` multiplies `z` into `R[ζ] ≤ R[ζ - 1]`.
-  have hle : Algebra.adjoin R {ζ} ≤ Algebra.adjoin R {ζ - 1} := by
-    rw [Algebra.adjoin_le_iff, Set.singleton_subset_iff, SetLike.mem_coe]
-    simpa using add_mem (Algebra.self_mem_adjoin_singleton R (ζ - 1)) (one_mem _)
-  have H := hle (Algebra.discr_mul_isIntegral_mem_adjoin K (B := hζ.powerBasis K)
-    (by rwa [hζ.powerBasis_gen K]) hz)
+  -- The discriminant `± p ^ m` of the power basis of `ζ` multiplies `z` into `R[ζ] = R[ζ - 1]`.
+  have H := (TauCeti.Algebra.adjoin_sub_one_eq_adjoin ζ).ge
+    (Algebra.discr_mul_isIntegral_mem_adjoin K (B := hζ.powerBasis K)
+      (by rwa [hζ.powerBasis_gen K]) hz)
   obtain ⟨u, m, hum⟩ := IsCyclotomicExtension.discr_prime_pow_eq_unit_mul_pow hζ hirr
+  -- Multiplying the discriminant `u * p ^ m` by the unit `u` leaves `p ^ m`, as `u * u = 1`.
+  have hu : ((u : ℤ) : K) * (u * (p : K) ^ m) = algebraMap R K ((p : R) ^ m) := by
+    rw [← mul_assoc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
+    simp
   have hpm : (p : R) ^ m • z ∈ Algebra.adjoin R {ζ - 1} := by
     convert Subalgebra.zsmul_mem _ H (u : ℤ) using 1
-    rw [hum, ← smul_assoc, zsmul_eq_mul, ← mul_assoc, ← Int.cast_mul, ← Units.val_mul,
-      Int.units_mul_self, Units.val_one, Int.cast_one, one_mul, ← map_natCast (algebraMap R K),
-      ← map_pow, algebraMap_smul]
+    rw [hum, ← smul_assoc, zsmul_eq_mul, hu, algebraMap_smul]
   rcases k with - | k
   · -- For `k = 0` we have `L = K`, and `z` comes from the integrally closed `R`.
     have : IsCyclotomicExtension {1} K L := by simpa using ‹IsCyclotomicExtension {p ^ 0} K L›
@@ -142,11 +143,8 @@ theorem integralClosure_eq_adjoin_sub_one [IsCyclotomicExtension {p ^ k} K L]
 primitive `p ^ k`-th root of unity `ζ ∈ L`. -/
 theorem integralClosure_eq_adjoin [IsCyclotomicExtension {p ^ k} K L]
     (hζ : IsPrimitiveRoot ζ (p ^ k)) (hpR : Prime (p : R)) :
-    integralClosure R L = Algebra.adjoin R {ζ} := by
-  refine (hζ.integralClosure_eq_adjoin_sub_one R K hpR).trans (le_antisymm ?_ ?_) <;>
-    rw [Algebra.adjoin_le_iff, Set.singleton_subset_iff, SetLike.mem_coe]
-  · exact sub_mem (Algebra.self_mem_adjoin_singleton R ζ) (one_mem _)
-  · simpa using add_mem (Algebra.self_mem_adjoin_singleton R (ζ - 1)) (one_mem _)
+    integralClosure R L = Algebra.adjoin R {ζ} :=
+  (hζ.integralClosure_eq_adjoin_sub_one R K hpR).trans (TauCeti.Algebra.adjoin_sub_one_eq_adjoin ζ)
 
 /-- The power basis `1, ζ - 1, …, (ζ - 1) ^ (φ(p ^ k) - 1)` of the integral closure of `R` in a
 `p ^ k`-th cyclotomic extension `L` of `K`, where `ζ ∈ L` is a primitive `p ^ k`-th root of
