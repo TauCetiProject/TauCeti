@@ -135,7 +135,8 @@ def complexSmoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
     differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m →ₗ[ℂ]
       MultilinearMap (RingHom.id ℂ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℂ) ℂ :=
-  pointCommutatorSymbol (ContMDiffMap.complexEvalAlgHom x) (complexSmoothCotangentEquiv hx)
+  pointCommutatorSymbol (ContMDiffMap.complexEvalAlgHom x)
+    (ker_complexEvalAlgHom_eq_complexSmoothVanishingIdeal x).ge (complexSmoothCotangentEquiv hx)
 
 /-- The commutator symbol at `x`, evaluated on the differentials at `x` of complex smooth
 functions `f₁, …, fₘ`, is the value at `x` of the iterated commutator `[⋯[D, f₁], …, fₘ] 1`. -/
@@ -231,7 +232,8 @@ def complexSmoothPrincipalSymbol (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℂ) : ℂ :=
-  pointPrincipalSymbol (ContMDiffMap.complexEvalAlgHom x) (complexSmoothCotangentEquiv hx) D ξ
+  pointPrincipalSymbol (ContMDiffMap.complexEvalAlgHom x)
+    (ker_complexEvalAlgHom_eq_complexSmoothVanishingIdeal x).ge (complexSmoothCotangentEquiv hx) D ξ
 
 theorem complexSmoothPrincipalSymbol_def (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
@@ -239,7 +241,7 @@ theorem complexSmoothPrincipalSymbol_def (hx : I.IsInteriorPoint x) {m : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx D ξ =
       (m.factorial : ℂ)⁻¹ * complexSmoothCommutatorSymbol I hx D fun _ ↦ ξ :=
-  pointPrincipalSymbol_def _ _ D ξ
+  pointPrincipalSymbol_def _ _ _ D ξ
 
 /-- The principal symbol at the differential of `f` is `1 / m!` times the value at `x` of the
 `m`-fold commutator `[⋯[D, f], …, f] 1`. -/
@@ -259,7 +261,7 @@ theorem complexSmoothPrincipalSymbol_zero (hx : I.IsInteriorPoint x) {m : ℕ}
     complexSmoothPrincipalSymbol I hx
       (0 : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) ξ = 0 :=
-  pointPrincipalSymbol_zero _ _ ξ
+  pointPrincipalSymbol_zero _ _ _ ξ
 
 @[simp]
 theorem complexSmoothPrincipalSymbol_add (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -268,7 +270,7 @@ theorem complexSmoothPrincipalSymbol_add (hx : I.IsInteriorPoint x) {m : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx (D₁ + D₂) ξ =
       complexSmoothPrincipalSymbol I hx D₁ ξ + complexSmoothPrincipalSymbol I hx D₂ ξ :=
-  pointPrincipalSymbol_add _ _ D₁ D₂ ξ
+  pointPrincipalSymbol_add _ _ _ D₁ D₂ ξ
 
 @[simp]
 theorem complexSmoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (c : ℂ)
@@ -276,7 +278,7 @@ theorem complexSmoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx (c • D) ξ = c * complexSmoothPrincipalSymbol I hx D ξ :=
-  pointPrincipalSymbol_smul _ _ c D ξ
+  pointPrincipalSymbol_smul _ _ _ c D ξ
 
 /-- The principal symbol of an operator of order at most `m` is homogeneous of degree `m` under
 complex scalars. -/
@@ -286,7 +288,7 @@ theorem complexSmoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx D (c • ξ) =
       c ^ m * complexSmoothPrincipalSymbol I hx D ξ :=
-  pointPrincipalSymbol_smul_covector _ _ D c ξ
+  pointPrincipalSymbol_smul_covector _ _ _ D c ξ
 
 /-- The principal symbol of an operator of order at most `m + 1` on complex smooth functions
 vanishes if the operator has order at most `m`. -/

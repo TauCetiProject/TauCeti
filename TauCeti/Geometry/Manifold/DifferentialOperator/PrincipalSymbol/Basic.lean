@@ -196,7 +196,8 @@ principal symbol `TauCeti.smoothPrincipalSymbol`. -/
 def smoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
     differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m →ₗ[ℝ]
       MultilinearMap (RingHom.id ℝ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℝ) ℝ :=
-  pointCommutatorSymbol (ContMDiffMap.evalAlgHom x) (smoothCotangentEquiv hx)
+  pointCommutatorSymbol (ContMDiffMap.evalAlgHom x)
+    (ker_evalAlgHom_eq_smoothVanishingIdeal x).ge (smoothCotangentEquiv hx)
 
 /-- The commutator symbol at `x`, evaluated on the differentials at `x` of smooth functions
 `f₁, …, fₘ`, is the value at `x` of the iterated commutator `[⋯[D, f₁], …, fₘ] 1`. -/
@@ -288,14 +289,15 @@ commutator symbol `TauCeti.smoothCommutatorSymbol`. -/
 def smoothPrincipalSymbol (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : ℝ :=
-  pointPrincipalSymbol (ContMDiffMap.evalAlgHom x) (smoothCotangentEquiv hx) D ξ
+  pointPrincipalSymbol (ContMDiffMap.evalAlgHom x)
+    (ker_evalAlgHom_eq_smoothVanishingIdeal x).ge (smoothCotangentEquiv hx) D ξ
 
 theorem smoothPrincipalSymbol_def (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx D ξ =
       (m.factorial : ℝ)⁻¹ * smoothCommutatorSymbol I hx D fun _ ↦ ξ :=
-  pointPrincipalSymbol_def _ _ D ξ
+  pointPrincipalSymbol_def _ _ _ D ξ
 
 /-- The principal symbol at the differential of `f` is `1 / m!` times the value at `x` of the
 `m`-fold commutator `[⋯[D, f], …, f] 1`. -/
@@ -312,7 +314,7 @@ theorem smoothPrincipalSymbol_zero (hx : I.IsInteriorPoint x) {m : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx
       (0 : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) ξ = 0 :=
-  pointPrincipalSymbol_zero _ _ ξ
+  pointPrincipalSymbol_zero _ _ _ ξ
 
 @[simp]
 theorem smoothPrincipalSymbol_add (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -320,14 +322,14 @@ theorem smoothPrincipalSymbol_add (hx : I.IsInteriorPoint x) {m : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx (D₁ + D₂) ξ =
       smoothPrincipalSymbol I hx D₁ ξ + smoothPrincipalSymbol I hx D₂ ξ :=
-  pointPrincipalSymbol_add _ _ D₁ D₂ ξ
+  pointPrincipalSymbol_add _ _ _ D₁ D₂ ξ
 
 @[simp]
 theorem smoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (c : ℝ)
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx (c • D) ξ = c * smoothPrincipalSymbol I hx D ξ :=
-  pointPrincipalSymbol_smul _ _ c D ξ
+  pointPrincipalSymbol_smul _ _ _ c D ξ
 
 @[simp]
 theorem smoothPrincipalSymbol_neg (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -377,7 +379,7 @@ theorem smoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) (c : ℝ)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx D (c • ξ) = c ^ m * smoothPrincipalSymbol I hx D ξ :=
-  pointPrincipalSymbol_smul_covector _ _ D c ξ
+  pointPrincipalSymbol_smul_covector _ _ _ D c ξ
 
 /-- The principal symbol of an operator of order at most `m + 1` vanishes if the operator has
 order at most `m`. -/
