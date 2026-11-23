@@ -41,6 +41,8 @@ to the normalized extension to `K`, and the ramification indices multiply.
 
 ## Main results
 
+* `Valuation.isDiscreteValuationRing_integralClosure`: the integral closure of the valuation ring
+  of `v` in `E` is a discrete valuation ring.
 * `Valuation.normalizedExtension_def`: the normalized extension is the adic valuation of the
   integral closure.
 * `Valuation.normalizedExtension_surjective`: the normalized extension is surjective.
@@ -81,15 +83,13 @@ section Extension
 
 variable (E : Type*) [Field E] [Algebra F E] [FiniteDimensional F E]
 
-private theorem isDiscreteValuationRing_integralClosure (hv : Function.Surjective v) :
+/-- For a surjective `ℤᵐ⁰`-valued valuation `v` of `F` with henselian valuation ring, the
+integral closure of the valuation ring of `v` in a finite extension `E` is a discrete valuation
+ring. This is not an instance, because it depends on the surjectivity hypothesis `hv`. -/
+theorem isDiscreteValuationRing_integralClosure (hv : Function.Surjective v) :
     IsDiscreteValuationRing (integralClosure v.valuationSubring E) :=
   have := valuationSubring_isDiscreteValuationRing_of_surjective v hv
   TauCeti.integralClosure.isDiscreteValuationRing v.valuationSubring F E
-
-omit [HenselianRing v.valuationSubring (maximalIdeal v.valuationSubring)] in
-private theorem isFractionRing_integralClosure :
-    IsFractionRing (integralClosure v.valuationSubring E) E :=
-  integralClosure.isFractionRing_of_finite_extension F E
 
 /-- The **normalized extension** of a surjective `ℤᵐ⁰`-valued valuation `v` of `F`, whose
 valuation ring is henselian, to a finite extension `E` of `F`: the unique surjective
@@ -98,7 +98,7 @@ valuation ring is henselian, to a finite extension `E` of `F`: the unique surjec
 closure of the valuation ring of `v` in `E`, which is a discrete valuation ring. -/
 noncomputable def normalizedExtension (hv : Function.Surjective v) : Valuation E ℤᵐ⁰ :=
   have := isDiscreteValuationRing_integralClosure v E hv
-  have := isFractionRing_integralClosure v E
+  have := integralClosure.isFractionRing_of_finite_extension (A := v.valuationSubring) F E
   (IsDiscreteValuationRing.maximalIdeal (integralClosure v.valuationSubring E)).valuation E
 
 variable (hv : Function.Surjective v)
@@ -114,7 +114,7 @@ theorem normalizedExtension_def [IsDiscreteValuationRing (integralClosure v.valu
 /-- The normalized extension is surjective onto `ℤᵐ⁰`. -/
 theorem normalizedExtension_surjective : Function.Surjective (v.normalizedExtension E hv) := by
   have := isDiscreteValuationRing_integralClosure v E hv
-  have := isFractionRing_integralClosure v E
+  have := integralClosure.isFractionRing_of_finite_extension (A := v.valuationSubring) F E
   rw [normalizedExtension_def]
   exact HeightOneSpectrum.valuation_surjective E _
 
@@ -123,11 +123,11 @@ ring of `v` in `E`. -/
 theorem normalizedExtension_le_one_iff {x : E} :
     v.normalizedExtension E hv x ≤ 1 ↔ IsIntegral v.valuationSubring x := by
   have := isDiscreteValuationRing_integralClosure v E hv
-  have := isFractionRing_integralClosure v E
+  have := integralClosure.isFractionRing_of_finite_extension (A := v.valuationSubring) F E
   rw [normalizedExtension_def]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨y, rfl⟩ := IsDiscreteValuationRing.exists_lift_of_le_one h
-    exact y.2
+    exact y.property
   · exact HeightOneSpectrum.valuation_le_one _ (⟨x, h⟩ : integralClosure v.valuationSubring E)
 
 /-- The valuation subring of the normalized extension is the integral closure of the valuation
@@ -137,14 +137,6 @@ theorem valuationSubring_normalizedExtension :
       (integralClosure v.valuationSubring E).toSubring := by
   ext x
   exact normalizedExtension_le_one_iff v E hv
-
-omit [HenselianRing v.valuationSubring (maximalIdeal v.valuationSubring)]
-  [FiniteDimensional F E] in
-/-- An element of `F` is integral over the valuation ring of `v`, when viewed in `E`, exactly when
-it lies in that valuation ring. -/
-private theorem isIntegral_algebraMap_iff_le_one {a : F} :
-    IsIntegral v.valuationSubring (algebraMap F E a) ↔ v a ≤ 1 := by
-  rw [isIntegral_algebraMap_iff, (valuationSubring.integers v).isIntegral_iff_v_le_one]
 
 /-- **The restriction of the normalized extension to `F` is equivalent to `v`.** -/
 theorem isEquiv_comap_normalizedExtension :
@@ -163,10 +155,8 @@ theorem ord_normalizedExtension_algebraMap (a : F) :
 
 /-- **The ramification index of the normalized extension is positive.** -/
 theorem ordIndex_comap_normalizedExtension_pos :
-    0 < ordIndex ((v.normalizedExtension E hv).comap (algebraMap F E)) := by
-  obtain ⟨t, ht⟩ := ord_surjective v hv 1
-  exact ordIndex_pos _ (f := t)
-    ((IsEquiv.ord_eq_zero_iff (isEquiv_comap_normalizedExtension v E hv) t).not.mpr (by omega))
+    0 < ordIndex ((v.normalizedExtension E hv).comap (algebraMap F E)) :=
+  (isEquiv_comap_normalizedExtension v E hv).ordIndex_pos hv
 
 /-- **Uniqueness of the normalized extension.** A surjective `ℤᵐ⁰`-valued valuation of `E` that is
 at most `1` on the valuation ring of `v` is the normalized extension. -/
@@ -174,14 +164,14 @@ theorem eq_normalizedExtension_of_forall_le_one {w : Valuation E ℤᵐ⁰}
     (hw : Function.Surjective w) (h : ∀ a : F, v a ≤ 1 → w (algebraMap F E a) ≤ 1) :
     w = v.normalizedExtension E hv := by
   have := isDiscreteValuationRing_integralClosure v E hv
-  have := isFractionRing_integralClosure v E
+  have := integralClosure.isFractionRing_of_finite_extension (A := v.valuationSubring) F E
   have := isNontrivial_of_surjective hw
   -- The ring of integers of `w` is integrally closed in `E` and contains the valuation ring of
   -- `v`, so it contains the integral closure `S` of the latter.
   have hS : ∀ s : integralClosure v.valuationSubring E,
       w (algebraMap (integralClosure v.valuationSubring E) E s) ≤ 1 := fun s ↦
     (Subring.integralClosure_le_iff (R := v.valuationSubring) (T := w.integer).mpr
-      fun r ↦ h r r.2) s.2
+      fun r ↦ h r r.property) s.property
   -- So `w` is the adic valuation of a height one prime of the discrete valuation ring `S`, and the
   -- maximal ideal is the only one.
   rw [normalizedExtension_def, ← HeightOneSpectrum.eq_maximalIdeal (heightOneSpectrum _ w hS),
