@@ -59,11 +59,14 @@ the energy of nearby exponential-variation curves.
   of the squared speed `‖∂_t F (s, t)‖²` at `s = 0`.
 * `TauCeti.Manifold.hasDerivAt_deriv_energy`: **the second variation of energy** for a `C³` family
   with free endpoints.
-* `TauCeti.Manifold.hasDerivAt_deriv_energy_of_acceleration_eq_zero` and
-  `TauCeti.Manifold.hasDerivAt_deriv_energy_of_isGeodesicCurveOn`: specialization to a central
+* `TauCeti.Manifold.hasDerivAt_deriv_energy_of_isGeodesicCurveOn`: specialization to a central
   curve which is a geodesic on `uIoo a b`.
-* `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy`,
-  `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_acceleration_eq_zero`, and
+* `TauCeti.Manifold.acceleration_fst_eq_zero`,
+  `TauCeti.Manifold.IsFixedEndpointVariation.acceleration_left_eq_zero`,
+  `TauCeti.Manifold.IsFixedEndpointVariation.acceleration_right_eq_zero`, and
+  `TauCeti.Manifold.inner_acceleration_fst_curveVelocity_eq_of_curveVelocityLift_eq`:
+  vanishing and periodic cancellation of endpoint transverse-acceleration terms.
+* `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy` and
   `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_isGeodesicCurveOn`:
   fixed-endpoint specializations.
 * `TauCeti.Manifold.hasDerivAt_deriv_energy_of_isGeodesicCurveOn_of_curveVelocityLift_eq`:
@@ -134,6 +137,41 @@ theorem continuousAt_inner_acceleration_fst_acceleration {u t : ℝ}
         (by norm_num) (by norm_num) (by simpa using hvel)
   exact (ContMDiffAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
     (b := F u) (h := IsContMDiffRiemannianBundle.of_le (n := 1) zero_le) hA hacc).continuousAt
+
+/-- A transverse curve `s ↦ F s t` which is stationary near `s = 0` has zero covariant
+acceleration at `s = 0`. -/
+theorem acceleration_fst_eq_zero {t : ℝ} (ht : ∀ᶠ s in 𝓝 (0 : ℝ), F s t = F 0 t) :
+    acceleration (leviCivitaConnection I M) (fun s ↦ F s t) 0 = 0 :=
+  (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M) ht).trans
+    (acceleration_const _ _ 0)
+
+/-- The transverse acceleration at the stationary left endpoint of a fixed-endpoint variation
+vanishes at `s = 0`. -/
+theorem IsFixedEndpointVariation.acceleration_left_eq_zero {n : WithTop ℕ∞} {a b : ℝ}
+    (hF : IsFixedEndpointVariation I n F a b) :
+    acceleration (leviCivitaConnection I M) (fun s ↦ F s a) 0 = 0 :=
+  acceleration_fst_eq_zero hF.eventually_apply_left
+
+/-- The transverse acceleration at the stationary right endpoint of a fixed-endpoint variation
+vanishes at `s = 0`. -/
+theorem IsFixedEndpointVariation.acceleration_right_eq_zero {n : WithTop ℕ∞} {a b : ℝ}
+    (hF : IsFixedEndpointVariation I n F a b) :
+    acceleration (leviCivitaConnection I M) (fun s ↦ F s b) 0 = 0 :=
+  acceleration_fst_eq_zero hF.eventually_apply_right
+
+/-- If the transverse curves of `F` at `a` and `b` agree near `s = 0` and the central curve `F 0`
+has matching endpoint velocity lifts at `a` and `b`, then the endpoint transverse-acceleration
+pairings `⟪A(a), γ'(a)⟫` and `⟪A(b), γ'(b)⟫` agree. -/
+theorem inner_acceleration_fst_curveVelocity_eq_of_curveVelocityLift_eq {a b : ℝ}
+    (hper : ∀ᶠ s in 𝓝 (0 : ℝ), F s a = F s b)
+    (hvel : curveVelocityLift I (F 0) a = curveVelocityLift I (F 0) b) :
+    inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ F s a) 0)
+        (curveVelocity I (F 0) a) =
+      inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ F s b) 0)
+        (curveVelocity I (F 0) b) :=
+  TauCeti.inner_eq_of_totalSpaceMk_eq
+    (Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M) hper)
+    (by simpa only [curveVelocityLift_apply] using hvel)
 
 end AccelerationContinuity
 
@@ -410,27 +448,6 @@ theorem hasDerivAt_deriv_energy {a b : ℝ}
     integral_inner_alongCurve_acceleration_fst_curveVelocity hF]
   ring
 
-/-- **The second variation of energy along a geodesic.** If the central curve `γ = F 0` of a
-family which is `C³` at every point of `{0} × [a, b]` has vanishing covariant acceleration on the
-open interval between `a` and `b`, that is, it is a geodesic there, then the derivative of the
-energy of `F s` is differentiable at `s = 0`, with derivative `I(V, V) + ⟪A(b), γ'(b)⟫ -
-⟪A(a), γ'(a)⟫`, where `I` is the index form, `V` the variation field and
-`A(t) = D_s ∂_s F (0, t)` the transverse acceleration. -/
-theorem hasDerivAt_deriv_energy_of_acceleration_eq_zero {a b : ℝ}
-    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
-    (hγ : ∀ t ∈ uIoo a b, acceleration (leviCivitaConnection I M) (F 0) t = 0) :
-    HasDerivAt (deriv fun s ↦ energy I (F s) a b)
-      (indexForm I (F 0) (variationField I F) (variationField I F) a b +
-        inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q b) 0)
-          (curveVelocity I (F 0) b) -
-        inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q a) 0)
-          (curveVelocity I (F 0) a)) 0 := by
-  have hzero : ∫ t in a..b, inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q t) 0)
-      (acceleration (leviCivitaConnection I M) (F 0) t) = 0 :=
-    (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ 0) fun t ht ↦ by
-      rw [hγ t ht, inner_zero_right]).trans intervalIntegral.integral_zero
-  simpa only [hzero, sub_zero] using hasDerivAt_deriv_energy hF
-
 /-- **The second variation of energy of a geodesic.** If `F` is `C³` along `{0} × [a, b]` and its
 central curve `γ = F 0` is a geodesic on the open segment `uIoo a b`, then
 
@@ -464,24 +481,8 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy {a b : ℝ}
         ∫ t in a..b, inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ F s t) 0)
           (acceleration (leviCivitaConnection I M) (F 0) t)) 0 := by
   refine (TauCeti.Manifold.hasDerivAt_deriv_energy hF.contMDiffAt).congr_deriv ?_
-  rw [Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_left,
-    Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_right,
-    acceleration_const, acceleration_const, inner_zero_left, inner_zero_left]
+  rw [hF.acceleration_left_eq_zero, hF.acceleration_right_eq_zero, inner_zero_left, inner_zero_left]
   ring
-
-/-- **The second variation of energy at a geodesic with fixed endpoints is the index form.** For
-a `C³` variation `F` with fixed endpoints between `a` and `b` of a curve `γ = F 0` which is a
-geodesic on `uIoo a b`, the derivative of the energy of `F s` is differentiable at `s = 0`, with
-derivative the index form `I(V, V)` of the variation field `V`. -/
-theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_acceleration_eq_zero {a b : ℝ}
-    (hF : IsFixedEndpointVariation I 3 F a b)
-    (hγ : ∀ t ∈ uIoo a b, acceleration (leviCivitaConnection I M) (F 0) t = 0) :
-    HasDerivAt (deriv fun s ↦ energy I (F s) a b)
-      (indexForm I (F 0) (variationField I F) (variationField I F) a b) 0 := by
-  simpa only [Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_left,
-    Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_right,
-    acceleration_const, inner_zero_left, add_zero, sub_zero] using
-    TauCeti.Manifold.hasDerivAt_deriv_energy_of_acceleration_eq_zero hF.contMDiffAt hγ
 
 /-- **Second variation of energy of a geodesic for fixed endpoints.** For a `C³` fixed-endpoint
 variation `F` of a curve `γ = F 0` which is a geodesic on `uIoo a b`, the second derivative of
@@ -509,9 +510,7 @@ theorem hasDerivAt_deriv_energy_of_isGeodesicCurveOn_of_curveVelocityLift_eq {a 
     HasDerivAt (deriv fun s ↦ energy I (F s) a b)
       (indexForm I (F 0) (variationField I F) (variationField I F) a b) 0 := by
   refine (hasDerivAt_deriv_energy_of_isGeodesicCurveOn hF hγ).congr_deriv ?_
-  have hA := Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M) hper
-  rw [curveVelocityLift_apply, curveVelocityLift_apply] at hvel
-  rw [TauCeti.inner_eq_of_totalSpaceMk_eq hA hvel]; ring
+  rw [inner_acceleration_fst_curveVelocity_eq_of_curveVelocityLift_eq hper hvel]; ring
 
 section ExponentialVariation
 
@@ -533,17 +532,13 @@ theorem hasDerivAt_deriv_energy_exponentialVariation {a b : ℝ}
     fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t ht)
   have hd' : HasDerivAt (deriv fun s ↦ energy I (exponentialVariation I γ' V' s) a b)
       (indexForm I γ' V' V' a b) 0 := by
-    have h0 := exponentialVariation_zero γ' V'
-    have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ' V') t) (V' t) :=
-      fun t ↦ heq_of_eq (variationField_exponentialVariation γ' V' t)
-    have hA := acceleration_exponentialVariation_zero γ' V'
-    generalize exponentialVariation I γ' V' = G at hF h0 hVF hA ⊢; subst h0
-    simpa only [funext fun t ↦ eq_of_heq (hVF t), hA, inner_zero_left,
-      intervalIntegral.integral_zero, add_zero, sub_zero] using hasDerivAt_deriv_energy hF
-  have henergy : (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
-      fun s ↦ energy I (exponentialVariation I γ' V' s) a b :=
-    funext fun s ↦ (energy_congr ((hExp s).mono uIoo_subset_uIcc_self)).symm
-  rw [henergy]
+    have h := hasDerivAt_deriv_energy hF
+    simp only [acceleration_exponentialVariation_zero, inner_zero_left,
+      intervalIntegral.integral_zero, add_zero, sub_zero] at h
+    rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
+  rw [show (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
+      fun s ↦ energy I (exponentialVariation I γ' V' s) a b from
+    funext fun s ↦ (energy_congr ((hExp s).mono uIoo_subset_uIcc_self)).symm]
   refine hd'.congr_deriv (indexForm_congr
     (fun t ht ↦ congrArg TotalSpace.proj (hEq t (uIoo_subset_uIcc_self ht)))
     (fun t ht ↦ (Bundle.TotalSpace.ext_iff.mp (hEq t (uIoo_subset_uIcc_self ht))).2)
@@ -579,9 +574,8 @@ theorem IsFixedEndpointVariation.indexForm_nonneg_of_isLocalMin_energy {a b : �
     (hmin : IsLocalMin (fun s ↦ energy I (F s) a b) 0) :
     0 ≤ indexForm I (F 0) (variationField I F) (variationField I F) a b :=
   TauCeti.Manifold.indexForm_nonneg_of_isLocalMin_energy hF.contMDiffAt hγ (by
-    rw [Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_left,
-      Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_right,
-      acceleration_const, acceleration_const, inner_zero_left, inner_zero_left]) hmin
+    rw [hF.acceleration_left_eq_zero, hF.acceleration_right_eq_zero,
+      inner_zero_left, inner_zero_left]) hmin
 
 /-- **Nonnegativity of the index form at a local minimum of the energy for closed geodesics.** If
 `F` is `C³` along `{0} × uIcc a b` with `F s a = F s b` near `0`, `γ = F 0` is a geodesic on
@@ -593,11 +587,9 @@ theorem indexForm_nonneg_of_isLocalMin_energy_of_curveVelocityLift_eq {a b : ℝ
     (hper : ∀ᶠ s in 𝓝 0, F s a = F s b)
     (hvel : curveVelocityLift I (F 0) a = curveVelocityLift I (F 0) b)
     (hmin : IsLocalMin (fun s ↦ energy I (F s) a b) 0) :
-    0 ≤ indexForm I (F 0) (variationField I F) (variationField I F) a b := by
-  have hA := Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M) hper
-  rw [curveVelocityLift_apply, curveVelocityLift_apply] at hvel
-  exact indexForm_nonneg_of_isLocalMin_energy hF hγ
-    (TauCeti.inner_eq_of_totalSpaceMk_eq hA hvel).symm.le hmin
+    0 ≤ indexForm I (F 0) (variationField I F) (variationField I F) a b :=
+  indexForm_nonneg_of_isLocalMin_energy hF hγ
+    (inner_acceleration_fst_curveVelocity_eq_of_curveVelocityLift_eq hper hvel).symm.le hmin
 
 section ExponentialExtremum
 
@@ -634,9 +626,8 @@ theorem eventually_energy_exponentialVariation_lt_of_indexForm_neg {a b : ℝ}
   have hd₁ := hasDerivAt_energy_exponentialVariation (hV.of_le (by norm_num))
   have hd₁_zero : deriv (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 = 0 := by
     rw [hd₁.deriv, hγ.integral_inner_acceleration_eq_zero Subset.rfl, hbdry, sub_self, sub_zero]
-  have hd₂ := hasDerivAt_deriv_energy_exponentialVariation hV
-  simpa only [exponentialVariation_zero] using
-    TauCeti.eventually_gt_of_deriv_deriv_neg (hd₂.deriv.symm ▸ hneg) hd₁_zero hd₁.continuousAt
+  simpa only [exponentialVariation_zero] using TauCeti.eventually_gt_of_deriv_deriv_neg
+    ((hasDerivAt_deriv_energy_exponentialVariation hV).deriv.symm ▸ hneg) hd₁_zero hd₁.continuousAt
 
 end ExponentialExtremum
 

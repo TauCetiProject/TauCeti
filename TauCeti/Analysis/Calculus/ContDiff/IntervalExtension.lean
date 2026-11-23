@@ -113,8 +113,8 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
     have hm : (m : ℕ∞ω) ≤ ∞ := WithTop.coe_le_coe.mpr le_top
     have hc : ContDiff ℝ ∞ (fun y : ℝ ↦ φ (r⁻¹ • y)) :=
       hφ.comp ((contDiff_id : ContDiff ℝ ∞ (id : ℝ → ℝ)).const_smul r⁻¹)
-    change iteratedFDeriv ℝ m (fun x ↦ r ^ k • φ (r⁻¹ • x)) x = _
-    rw [iteratedFDeriv_const_smul_apply' (i := m) (a := r ^ k) (hc.of_le hm).contDiffAt,
+    rw [show f = fun x ↦ r ^ k • φ (r⁻¹ • x) by simp only [f, smul_eq_mul],
+      iteratedFDeriv_const_smul_apply' (i := m) (a := r ^ k) (hc.of_le hm).contDiffAt,
       iteratedFDeriv_comp_const_smul r⁻¹ (hφ.of_le hm)]
     simp only [smul_smul, smul_eq_mul]
   have hsmall (m : ℕ) (hm : m < k) (x : ℝ) : ‖iteratedFDeriv ℝ m f x‖ ≤ ε := by
@@ -134,7 +134,7 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
     have hc : Tendsto (fun x : ℝ ↦ r⁻¹ * x) (𝓝 0) (𝓝 0) := by
       simpa only [ContinuousAt, mul_zero] using (continuous_const_mul r⁻¹).continuousAt (x := 0)
     filter_upwards [hc.eventually (endpointJetBase_eventually_eq k A)] with x hx
-    change r ^ k • endpointJetBase k A (r⁻¹ * x) = endpointJetPolynomial k A x
+    dsimp only [f, φ]
     rw [hx]
     unfold endpointJetPolynomial
     rw [smul_smul, mul_pow, ← mul_div_assoc, ← mul_assoc, ← mul_pow,

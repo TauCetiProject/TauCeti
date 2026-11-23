@@ -53,7 +53,8 @@ only the interval values of the section; any endpoint where the section vanishes
 
 * `TauCeti.Manifold.exponentialVariation`: the exponential variation of a curve along a field.
 * `TauCeti.Manifold.exponentialVariation_zero`: its central curve is the original curve.
-* `TauCeti.Manifold.variationField_exponentialVariation`: its variation field is the given field.
+* `TauCeti.Manifold.variationField_exponentialVariation` and
+  `TauCeti.Manifold.variationField_exponentialVariation_eq`: its variation field is the given field.
 * `TauCeti.Manifold.contMDiffAt_exponentialVariation`: its joint regularity on the domain of the
   exponential map.
 * `TauCeti.Manifold.contMDiffAt_exponentialVariation_zero`: its joint regularity along the
@@ -128,6 +129,11 @@ theorem variationField_exponentialVariation (t : ℝ) :
     variationField I (exponentialVariation I γ V) t = V t := by
   rw [variationField_apply]
   exact curveVelocity_riemannianExp_smul_zero (γ t) (V t)
+
+/-- The variation field of the exponential variation equals the given field as a function. -/
+theorem variationField_exponentialVariation_eq :
+    variationField I (exponentialVariation I γ V) = V :=
+  funext (variationField_exponentialVariation γ V)
 
 /-- The exponential variation is jointly `C^n` at every `(s, t)` with `s • V t` in the domain of
 the exponential map at `γ t`, when the lift of `V` to the tangent bundle is `C^n` at `t`. -/

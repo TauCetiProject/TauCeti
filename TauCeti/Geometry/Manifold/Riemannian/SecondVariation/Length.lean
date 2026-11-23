@@ -323,10 +323,7 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_toReal_pathELength_of_isGeodes
           (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t)) a b / C) 0 := by
   refine (TauCeti.Manifold.hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn hab
     (fun t ht ↦ hF.contMDiffAt t (by rwa [uIcc_of_le hab])) hγ hC hspeed).congr_deriv ?_
-  rw [(Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_left).trans
-      (acceleration_const _ _ 0),
-    (Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_right).trans
-      (acceleration_const _ _ 0),
+  rw [hF.acceleration_left_eq_zero, hF.acceleration_right_eq_zero,
     inner_zero_left, inner_zero_left, add_zero, sub_zero]
 
 /-- **Second variation of length of a smoothly closed geodesic.** If `F` is `C³` along
@@ -349,10 +346,7 @@ theorem hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn_of_curveVelocit
           (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t)) a b / C) 0 := by
   refine (hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn hab hF hγ hC hspeed).congr_deriv
     ?_
-  rw [curveVelocityLift_apply, curveVelocityLift_apply] at hvel
-  rw [TauCeti.inner_eq_of_totalSpaceMk_eq
-    (Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M) hper) hvel]
-  ring
+  rw [inner_acceleration_fst_curveVelocity_eq_of_curveVelocityLift_eq hper hvel]; ring
 
 /-- **Tangential degeneracy of the second variation of length.** Along a geodesic `γ = F 0` on
 `(a, b)` of constant speed `C > 0` on `[a, b]` (`a ≤ b`), if the variation field `V` lies in the
@@ -373,13 +367,12 @@ theorem hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn_of_mem_span_cur
           curveVelocity I (F 0) a⟫_ℝ) / C) 0 := by
   refine (hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn hab hF hγ hC hspeed).congr_deriv
     ?_
-  have hzero_field (t : ℝ) (ht : t ∈ uIoo a b) :
+  have hzero (t : ℝ) (ht : t ∈ uIoo a b) :
       HEq (variationField I F t -
           (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t))
         ((0 : ∀ r, TangentSpace I (F 0 r)) t) := by
-    rw [uIoo_of_le hab] at ht
-    simp [Submodule.starProjection_eq_self_iff.mpr (htan t ht)]
-  rw [indexForm_congr (fun _ _ ↦ rfl) hzero_field hzero_field, indexForm_zero_right, zero_add]
+    rw [uIoo_of_le hab] at ht; simp [Submodule.starProjection_eq_self_iff.mpr (htan t ht)]
+  rw [indexForm_congr (fun _ _ ↦ rfl) hzero hzero, indexForm_zero_right, zero_add]
 
 /-! ### Nonnegativity of `I(V^⊥, V^⊥)` at local minima of length -/
 
@@ -431,10 +424,7 @@ theorem IsFixedEndpointVariation.indexForm_sub_starProjection_nonneg_of_isLocalM
         (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t)) a b :=
   TauCeti.Manifold.indexForm_sub_starProjection_nonneg_of_isLocalMin_pathELength hab
     (fun t ht ↦ hF.contMDiffAt t (by rwa [uIcc_of_le hab])) hγ hC hspeed
-    (by rw [(Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_left).trans
-        (acceleration_const _ _ 0),
-      (Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_right).trans
-        (acceleration_const _ _ 0),
+    (by rw [hF.acceleration_left_eq_zero, hF.acceleration_right_eq_zero,
       inner_zero_left, inner_zero_left]) hmin
 
 /-- **Nonnegativity of `I(V^⊥, V^⊥)` at a local minimum of length for closed geodesics.** If `F` is
@@ -453,12 +443,9 @@ theorem indexForm_sub_starProjection_nonneg_of_isLocalMin_pathELength_of_curveVe
       (fun t ↦ variationField I F t -
         (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t))
       (fun t ↦ variationField I F t -
-        (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t)) a b := by
-  rw [curveVelocityLift_apply, curveVelocityLift_apply] at hvel
-  exact indexForm_sub_starProjection_nonneg_of_isLocalMin_pathELength hab hF hγ hC hspeed
-    (TauCeti.inner_eq_of_totalSpaceMk_eq
-      (Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M) hper)
-      hvel).symm.le
+        (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t)) a b :=
+  indexForm_sub_starProjection_nonneg_of_isLocalMin_pathELength hab hF hγ hC hspeed
+    (inner_acceleration_fst_curveVelocity_eq_of_curveVelocityLift_eq hper hvel).symm.le
     hmin
 
 /-! ### Exponential variations and length shortening -/
@@ -489,14 +476,7 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation
     exists_contMDiffAt_exponentialVariation_eqOn γ V (by rwa [uIcc_of_le hab])
   have hγEq : EqOn γ' γ (Icc a b) := fun r hr ↦
     congrArg TotalSpace.proj (hEq r (by rwa [uIcc_of_le hab]))
-  have hspeed' : ∀ t ∈ Icc a b, ‖curveVelocity I γ' t‖ = C := by
-    have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-      IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-    exact norm_curveVelocity_eq_Icc_of_Ioo hlt
-      (fun t ht ↦ (contMDiff_proj (TangentSpace I)).contMDiffAt.comp t
-        ((hV' t (by rwa [uIcc_of_le hab])).of_le (by norm_num)))
-      fun t ht ↦ by
-        rw [(eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2) hγEq).norm_curveVelocity_eq, hspeed t ht]
+  have hspeed' := norm_curveVelocity_eq_Icc_of_totalSpaceMk_eq (by norm_num) hlt hV' hEq hspeed
   have hd' : HasDerivAt
       (deriv fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal)
       (indexForm I γ'
@@ -505,15 +485,11 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation
     have hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3
         (fun z : ℝ × ℝ ↦ exponentialVariation I γ' V' z.1 z.2) (0, t) :=
       fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t (by rwa [uIcc_of_le hab]))
-    have h0 := exponentialVariation_zero γ' V'
-    have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ' V') t) (V' t) :=
-      fun t ↦ heq_of_eq (variationField_exponentialVariation γ' V' t)
-    have hA := acceleration_exponentialVariation_zero γ' V'
-    generalize exponentialVariation I γ' V' = G at hF h0 hVF hA ⊢
-    subst h0
-    simpa only [funext fun t ↦ eq_of_heq (hVF t), hA, inner_zero_left, add_zero, sub_zero] using
-      hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn hab hF
-        (hγ.congr fun r hr ↦ hγEq (Ioo_subset_Icc_self hr)) hC hspeed'
+    have h := hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn hab hF
+      (by rw [exponentialVariation_zero]; exact hγ.congr fun r hr ↦ hγEq (Ioo_subset_Icc_self hr))
+      hC (fun t ht ↦ by rw [exponentialVariation_zero]; exact hspeed' t ht)
+    simp only [acceleration_exponentialVariation_zero, inner_zero_left, add_zero, sub_zero] at h
+    rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
   have hVperp (t : ℝ) (ht : t ∈ uIoo a b) :
       HEq (V' t - (ℝ ∙ curveVelocity I γ' t).starProjection (V' t))
         (V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t)) := by
@@ -568,8 +544,7 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation_of_orthogonal
       (indexForm I γ V V a b / C) 0 := by
   refine (hγ.hasDerivAt_deriv_toReal_pathELength_exponentialVariation hab hV
     hC hspeed).congr_deriv ?_
-  congr 1
-  refine indexForm_congr (fun _ _ ↦ rfl) (fun t ht ↦ ?_) (fun t ht ↦ ?_) <;>
+  congr 1; refine indexForm_congr (fun _ _ ↦ rfl) (fun t ht ↦ ?_) (fun t ht ↦ ?_) <;>
   · rw [uIoo_of_le hab] at ht
     simp [Submodule.starProjection_singleton, real_inner_comm, horth t ht]
 
@@ -626,18 +601,17 @@ theorem eventually_pathELength_exponentialVariation_lt_of_indexForm_sub_starProj
       deriv (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal) 0 = 0 := by
     rw [hd₁.deriv, hγ.integral_inner_acceleration_eq_zero (by rw [uIoo_of_le hab]),
       hbdry, sub_self, sub_zero, zero_div]
-  have hd₂ := hγ.hasDerivAt_deriv_toReal_pathELength_exponentialVariation hab hV hC hspeed
   have hltR : ∀ᶠ s in 𝓝[≠] (0 : ℝ),
       (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal <
         (Manifold.pathELength I γ a b).toReal := by
     simpa only [exponentialVariation_zero] using TauCeti.eventually_gt_of_deriv_deriv_neg
-      (hd₂.deriv.symm ▸ div_neg_of_neg_of_pos hneg hC) hd₁_zero hd₁.continuousAt
+      ((hγ.hasDerivAt_deriv_toReal_pathELength_exponentialVariation hab hV hC hspeed).deriv.symm ▸
+        div_neg_of_neg_of_pos hneg hC) hd₁_zero hd₁.continuousAt
   have hfin := eventually_pathELength_exponentialVariation_ne_top
     (by rw [uIcc_of_le hab]; exact hV.of_le (by norm_num))
-  have hfin0 : Manifold.pathELength I γ a b ≠ ⊤ := by
-    simpa only [exponentialVariation_zero] using hfin.self_of_nhds
   filter_upwards [hltR, nhdsWithin_le_nhds hfin] with s hs hfs
-  exact (ENNReal.toReal_lt_toReal hfs hfin0).mp hs
+  exact (ENNReal.toReal_lt_toReal hfs (by simpa only [exponentialVariation_zero] using
+    hfin.self_of_nhds)).mp hs
 
 end ExponentialLength
 
