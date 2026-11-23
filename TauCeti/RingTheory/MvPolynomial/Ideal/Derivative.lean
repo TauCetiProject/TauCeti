@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
-public import TauCeti.RingTheory.Derivation.Ideal
+public import TauCeti.RingTheory.Derivation.DerivationIdeal
 public import TauCeti.RingTheory.MvPolynomial.LocalOrder
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.Derivation.Order.Bound

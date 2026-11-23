@@ -7,7 +7,8 @@ module
 
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Localization.Module
-public import TauCeti.RingTheory.Derivation.Ideal
+public import TauCeti.RingTheory.Derivation.DerivationIdeal
+import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
 # Derivations of a localization
@@ -132,16 +133,23 @@ theorem exists_extendOfIsLocalization_eq_smul {k R A : Type*} [CommRing k] [Comm
   obtain ⟨g, s, hg⟩ :=
     Module.FinitePresentation.exists_lift_of_isLocalizedModule S (Algebra.linearMap R A) f
   let δ : Derivation k R R := g.compDer (KaehlerDifferential.D k R)
+  have hf (r : R) : f (KaehlerDifferential.D k R r) = D (algebraMap R A r) := by
+    simp only [f, LinearMap.comp_apply, LinearMap.coe_restrictScalars,
+      KaehlerDifferential.map_D, Derivation.liftKaehlerDifferential_comp_D]
+  have hδ (r : R) :
+      ((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S (algebraMap R A r) =
+        (Algebra.linearMap R A ∘ₗ g) (KaehlerDifferential.D k R r) := by
+    simp only [extendOfIsLocalization_algebraMap, δ, coe_comp, LinearMap.comp_apply, coeFn_coe,
+      LinearMap.coe_restrictScalars]
   refine ⟨s, δ, Derivation.ext fun a ↦ congrFun (IsLocalization.eq_of_leibniz S
     (δ₁ := ((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S)
     (δ₂ := algebraMap R A s • D)
     (fun x y ↦ (((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S).leibniz x y)
     (fun x y ↦ (algebraMap R A s • D).leibniz x y)
     fun r ↦ ?_) a⟩
-  simp only [extendOfIsLocalization_algebraMap, coe_comp, LinearMap.comp_apply,
-    FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
-  simpa [δ, f, Submonoid.smul_def, Algebra.smul_def] using
-    LinearMap.congr_fun hg (KaehlerDifferential.D k R r)
+  have hg_r := LinearMap.congr_fun hg (KaehlerDifferential.D k R r)
+  rw [LinearMap.smul_apply, hf, Submonoid.smul_def, Algebra.smul_def] at hg_r
+  exact (hδ r).trans hg_r
 
 end Derivation
 
