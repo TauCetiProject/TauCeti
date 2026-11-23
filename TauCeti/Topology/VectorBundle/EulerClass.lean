@@ -49,7 +49,12 @@ The projection `π : E → B` is a homotopy equivalence with homotopy inverse th
 isomorphism `Hⁿ(E) ≅ Hⁿ(B)` with inverse `π^*`
 (`TauCeti.singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj`,
 `TauCeti.isIso_singularCohomologyMap_zeroSectionHom`,
-`TauCeti.isIso_singularCohomologyMap_thomPairProj`).
+`TauCeti.isIso_singularCohomologyMap_thomPairProj`); so pulling the Euler class of `u` back along
+`π` gives the image of `u` in `Hⁿ(E)` (`TauCeti.singularCohomologyMap_thomPairProj_eulerClass`).
+In rank zero, when the model fibre `F` is zero, `E₀` is empty
+(`TauCeti.zeroSectionCompl_eq_empty`) and the zero section is inverse to `π`
+(`TauCeti.thomPairProj_comp_zeroSectionHom`), so the Euler class map is an isomorphism in every
+degree (`TauCeti.isIso_eulerClass`).
 Replacing `Hⁿ(E)` by `Hⁿ(B)` in the long exact sequence of the Thom pair gives the exact sequence
 
 `⋯ ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(E₀) ⟶ Hᵐ⁺¹(E, E₀) ⟶ Hᵐ⁺¹(B) ⟶ ⋯`
@@ -896,6 +901,50 @@ theorem singularCohomologyδ_comp_eulerClass (l m : ℕ) (hl : l + 1 = m) :
     (thomPair F E).singularCohomologyδ R k M l m hl ≫ eulerClass R k M F E m = 0 := by
   ext y
   exact (exact_singularCohomologyδ_eulerClass R k M F E l m hl).apply_apply_eq_zero y
+
+/-- Pulling the Euler class of a relative class `u ∈ Hⁿ(E, E₀)` back along the projection gives
+the image of `u` in `Hⁿ(E)`. -/
+theorem singularCohomologyMap_thomPairProj_eulerClass (n : ℕ)
+    (u : (thomPair F E).singularCohomology R k M n) :
+    TopCat.singularCohomologyMap (thomPairProj F E) n (eulerClass R k M F E n u) =
+      (thomPair F E).singularCohomologyπ R k M n u := by
+  rw [eulerClass_def, ConcreteCategory.comp_apply,
+    singularCohomologyMap_thomPairProj_singularCohomologyMap_zeroSectionHom_apply]
+
+section Subsingleton
+
+variable [Subsingleton F]
+
+include F in
+/-- The fibres of a real vector bundle with zero model fibre are zero. -/
+theorem subsingleton_fiber (b : B) : Subsingleton (E b) :=
+  ((trivializationAt F E b).linearEquivAt ℝ b
+    (FiberBundle.mem_baseSet_trivializationAt' b)).toEquiv.subsingleton
+
+/-- A real vector bundle with zero model fibre has no nonzero vectors: `E₀` is empty. -/
+theorem zeroSectionCompl_eq_empty : zeroSectionCompl F E = ∅ :=
+  eq_empty_iff_forall_notMem.2 fun v hv ↦
+    mem_zeroSectionCompl.1 hv ((subsingleton_fiber F E v.proj).elim _ _)
+
+/-- In a real vector bundle with zero model fibre, every vector is the zero vector of its fibre:
+the projection followed by the zero section is the identity of the total space. -/
+@[reassoc (attr := simp)]
+theorem thomPairProj_comp_zeroSectionHom : thomPairProj F E ≫ zeroSectionHom F E = 𝟙 _ :=
+  TopCat.ext fun v ↦ by
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.id_apply, thomPairProj_apply F E v,
+      zeroSectionHom_apply]
+    exact TotalSpace.ext (zeroSection_proj F E _)
+      (heq_of_eq ((subsingleton_fiber F E v.proj).elim _ _))
+
+/-- **In rank zero the Euler class map is an isomorphism** `Hⁿ(E, E₀) ≅ Hⁿ(B)` in every degree:
+`E₀` is empty, so restriction `Hⁿ(E, E₀) ⟶ Hⁿ(E)` is an isomorphism, and so is pull-back along
+the zero section. -/
+instance isIso_eulerClass (n : ℕ) : IsIso (eulerClass R k M F E n) := by
+  have : IsEmpty (thomPair F E).snd := isEmpty_coe_sort.2 (zeroSectionCompl_eq_empty F E)
+  rw [eulerClass_def]
+  infer_instance
+
+end Subsingleton
 
 end EulerClass
 

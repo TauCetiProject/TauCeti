@@ -18,8 +18,9 @@ Its Thom pair `(E, E₀)` has empty second member (`TauCeti.zeroSectionCompl_eq_
 zero section is a homeomorphism `B ≅ E`, inverse to the projection
 (`TauCeti.thomPairProj_comp_zeroSectionHom`). So the Euler class map
 `Hⁿ(E, E₀) ⟶ Hⁿ(B)`, restriction to `Hⁿ(E)` followed by pull-back along the zero section, is an
-isomorphism in every degree and for all coefficients (`TauCeti.isIso_eulerClass`): in rank zero a
-relative class is the same thing as its Euler class. With coefficients in a commutative ring `K`,
+isomorphism in every degree and for all coefficients (`TauCeti.isIso_eulerClass`, in
+`TauCeti.Topology.VectorBundle.EulerClass`): in rank zero a relative class is the same thing as
+its Euler class. With coefficients in a commutative ring `K`,
 a degree-zero class restricts to a generator of `H⁰(E_b, E_b ∖ {0}; K) ≅ K` on the fibre over `b`
 exactly when its Euler class takes a unit value at `b`
 (`TauCeti.span_singularCohomologyMap_fiberThomPairMap_eq_top_iff`). Hence the Thom classes of a
@@ -31,7 +32,8 @@ space has two orientations, the positive orientation `positiveOrientation` (that
 basis) and its opposite, so an orientation of the bundle is a choice of sign over each point, and
 the sign is locally constant: the points where an orientation `o` is positive form a clopen set
 (`TauCeti.VectorBundleOrientation.isClopen_setOf_eq_positiveOrientation`). Every rank-zero bundle
-carries the positive orientation `TauCeti.VectorBundleOrientation.positive`.
+carries the positive orientation `TauCeti.VectorBundleOrientation.positive`. These orientation
+facts live in `TauCeti.Topology.VectorBundle.Orientation.Basic`.
 
 This sign is the degree-zero Thom and Euler generator of the oriented bundle. The *Euler class*
 `e(E, o) ∈ H⁰(B; K)` (`TauCeti.VectorBundleOrientation.rankZeroEulerClass`) is the degree-zero
@@ -45,7 +47,6 @@ The Euler class squares to the unit for the cup product.
 
 ## Main definitions
 
-* `TauCeti.VectorBundleOrientation.positive`: the positive orientation of a rank-zero bundle.
 * `TauCeti.VectorBundleOrientation.rankZeroThomClass`: the Thom class `U ∈ H⁰(E, E₀; K)` of an
   oriented rank-zero bundle.
 * `TauCeti.VectorBundleOrientation.rankZeroEulerClass`: its Euler class `e(E, o) ∈ H⁰(B; K)`, the
@@ -53,12 +54,12 @@ The Euler class squares to the unit for the cup product.
 
 ## Main results
 
-* `TauCeti.isIso_eulerClass`: in rank zero the Euler class map is an isomorphism.
 * `TauCeti.isThomClass_iff_forall_isUnit`: in rank zero a class is a Thom class exactly when its
   Euler class takes unit values.
 * `TauCeti.VectorBundleOrientation.singularCohomologyZeroEval_rankZeroEulerClass_of_eq` and
   `TauCeti.VectorBundleOrientation.singularCohomologyZeroEval_rankZeroEulerClass_of_eq_neg`: the
-  values `±1` of the Euler class.
+  values `±1` of the Euler class, which square to `1`
+  (`TauCeti.VectorBundleOrientation.singularCohomologyZeroEval_rankZeroEulerClass_mul_self`).
 * `TauCeti.VectorBundleOrientation.eq_rankZeroThomClass_iff`: the Thom class is the class with
   that Euler class.
 * `TauCeti.VectorBundleOrientation.isThomClass_rankZeroThomClass`: it is a Thom class.
@@ -78,73 +79,16 @@ noncomputable section
 
 open Bundle CategoryTheory Limits MonoidalCategory Module Set
 
-universe w v u
+universe w
 
 namespace TauCeti
 
 section Subsingleton
 
-variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  [Subsingleton F]
-
-include F in
-/-- The fibres of a real vector bundle with zero model fibre are zero. -/
-theorem subsingleton_fiber (b : B) : Subsingleton (E b) :=
-  ((trivializationAt F E b).linearEquivAt ℝ b
-    (FiberBundle.mem_baseSet_trivializationAt' b)).toEquiv.subsingleton
-
-/-- A real vector bundle with zero model fibre has no nonzero vectors: `E₀` is empty. -/
-theorem zeroSectionCompl_eq_empty : zeroSectionCompl F E = ∅ :=
-  eq_empty_iff_forall_notMem.2 fun v hv ↦
-    mem_zeroSectionCompl.1 hv ((subsingleton_fiber F E v.proj).elim _ _)
-
-/-- In a real vector bundle with zero model fibre, every vector is the zero vector of its fibre:
-the projection followed by the zero section is the identity of the total space. -/
-theorem thomPairProj_comp_zeroSectionHom :
-    thomPairProj F E ≫ zeroSectionHom F E = 𝟙 _ := by
-  have h (v : TotalSpace F E) : zeroSection F E v.proj = v := by
-    obtain ⟨b, x⟩ := v
-    obtain rfl : x = 0 := (subsingleton_fiber F E b).elim _ _
-    rfl
-  exact TopCat.ext fun v ↦ (ConcreteCategory.comp_apply _ _ v).trans <|
-    (zeroSectionHom_apply F E _).trans <|
-      (congrArg (zeroSection F E) (thomPairProj_apply F E v)).trans <|
-        (h v).trans (ConcreteCategory.id_apply v).symm
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-  (k : Type*) [Ring k] [Linear k C] (M : C)
-
-/-- **In rank zero the Euler class map is an isomorphism** `Hⁿ(E, E₀) ≅ Hⁿ(B)` in every degree:
-`E₀` is empty, so restriction `Hⁿ(E, E₀) ⟶ Hⁿ(E)` is an isomorphism, and the zero section is a
-homeomorphism `B ≅ E`. -/
-instance isIso_eulerClass (n : ℕ) : IsIso (eulerClass R k M F E n) := by
-  have : IsEmpty (thomPair F E).snd := isEmpty_coe_sort.2 (zeroSectionCompl_eq_empty F E)
-  have hzero : zeroSectionHom F E ≫ thomPairProj F E = 𝟙 _ := TopCat.ext fun b ↦ by
-    rw [ConcreteCategory.comp_apply, zeroSectionHom_apply, thomPairProj_apply,
-      ConcreteCategory.id_apply]
-    rfl
-  have : IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n) :=
-    ⟨TopCat.singularCohomologyMap (thomPairProj F E) n,
-      by rw [← TopCat.singularCohomologyMap_comp, thomPairProj_comp_zeroSectionHom,
-        TopCat.singularCohomologyMap_id],
-      by rw [← TopCat.singularCohomologyMap_comp, hzero,
-        TopCat.singularCohomologyMap_id]⟩
-  rw [eulerClass_def]
-  infer_instance
-
-/-- In rank zero, pulling the Euler class of a relative class `u ∈ Hⁿ(E, E₀)` back along the
-projection gives the image of `u` in `Hⁿ(E)`. -/
-theorem singularCohomologyMap_thomPairProj_eulerClass (n : ℕ)
-    (u : (thomPair F E).singularCohomology R k M n) :
-    TopCat.singularCohomologyMap (thomPairProj F E) n (eulerClass R k M F E n u) =
-      (thomPair F E).singularCohomologyπ R k M n u := by
-  rw [eulerClass_def, ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply
-    (TopCat.singularCohomologyMap (zeroSectionHom F E) n), ← TopCat.singularCohomologyMap_comp,
-    thomPairProj_comp_zeroSectionHom, TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
-
-variable {F E} {K : Type w} [CommRing K]
+  [Subsingleton F] {K : Type w} [CommRing K]
 
 /-- **The fibre generators in rank zero.** A degree-zero relative class `u ∈ H⁰(E, E₀; K)`
 restricts to a generator of `H⁰(E_b, E_b ∖ {0}; K) ≅ K` on the fibre over `b` exactly when its
@@ -216,56 +160,6 @@ end Subsingleton
 
 namespace VectorBundleOrientation
 
-section Positive
-
-variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
-  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  (ι : Type*) [IsEmpty ι]
-
-/-- **The positive orientation** of a bundle oriented by an empty index type: every fibre carries
-its positive orientation `positiveOrientation`, the orientation of its empty basis. For a bundle of
-rank zero this is the canonical orientation. -/
-def positive : VectorBundleOrientation F E ι where
-  toFun _ := positiveOrientation
-  eventually_mapOrientation_eq' _ := Filter.Eventually.of_forall fun _ _ ↦ by
-    rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply,
-      Orientation.map_positiveOrientation_of_isEmpty,
-      Orientation.map_positiveOrientation_of_isEmpty]
-
-@[simp]
-theorem positive_apply (b : B) : positive F E ι b = positiveOrientation :=
-  (rfl)
-
-variable {F E ι}
-
-/-- At every point, an orientation indexed by an empty type is the positive orientation of the
-fibre or its opposite. -/
-theorem eq_positiveOrientation_or_eq_neg (o : VectorBundleOrientation F E ι) (b : B) :
-    o b = positiveOrientation ∨ o b = -positiveOrientation := by
-  -- Read the orientation in a trivialization, where the model fibre is an additive group.
-  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
-  have hpos := Orientation.map_positiveOrientation_of_isEmpty (R := ℝ) (ι := ι)
-    ((trivializationAt F E b).linearEquivAt ℝ b hb)
-  refine (Orientation.eq_or_eq_neg_of_isEmpty
-    ((trivializationAt F E b).mapOrientation ι hb (o b))).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
-    refine ((trivializationAt F E b).mapOrientation ι hb).injective ?_
-  · rw [h, Trivialization.mapOrientation_apply, hpos]
-  · rw [h, Trivialization.mapOrientation_neg, Trivialization.mapOrientation_apply, hpos]
-
-/-- An orientation indexed by an empty type is positive on a clopen set of the base, and negative,
-`-positiveOrientation`, on its complement. -/
-theorem isClopen_setOf_eq_positiveOrientation (o : VectorBundleOrientation F E ι) :
-    IsClopen {b | o b = positiveOrientation} := by
-  refine ⟨?_, o.isOpen_setOf_eq (positive F E ι)⟩
-  have h : {b | o b = positiveOrientation}ᶜ = {b | o b = (-positive F E ι) b} := by
-    ext b
-    rcases o.eq_positiveOrientation_or_eq_neg b with hb | hb <;>
-      simp [hb, Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self _).symm]
-  exact isOpen_compl_iff.1 (h ▸ o.isOpen_setOf_eq _)
-
-end Positive
-
 section ThomClass
 
 variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -328,6 +222,7 @@ private theorem singularCohomologyZeroEval_rankZeroEulerClass (b : B) :
 
 /-- The Euler class of an oriented rank-zero bundle has the value `1` at a point where the
 orientation is positive. -/
+@[simp]
 theorem singularCohomologyZeroEval_rankZeroEulerClass_of_eq {b : B}
     (h : o b = positiveOrientation) :
     singularCohomologyZeroEval b (o.rankZeroEulerClass K) = 1 := by
@@ -335,10 +230,17 @@ theorem singularCohomologyZeroEval_rankZeroEulerClass_of_eq {b : B}
 
 /-- The Euler class of an oriented rank-zero bundle has the value `-1` at a point where the
 orientation is negative. -/
+@[simp]
 theorem singularCohomologyZeroEval_rankZeroEulerClass_of_eq_neg {b : B}
     (h : o b = -positiveOrientation) :
     singularCohomologyZeroEval b (o.rankZeroEulerClass K) = -1 := by
   simp [singularCohomologyZeroEval_rankZeroEulerClass, h, (Module.Ray.ne_neg_self _).symm]
+
+/-- The values `±1` of the Euler class of an oriented rank-zero bundle square to `1`. -/
+theorem singularCohomologyZeroEval_rankZeroEulerClass_mul_self (b : B) :
+    singularCohomologyZeroEval b (o.rankZeroEulerClass K) *
+      singularCohomologyZeroEval b (o.rankZeroEulerClass K) = 1 := by
+  rcases o.eq_positiveOrientation_or_eq_neg b with h | h <;> simp [h]
 
 /-- **The Thom class is determined by its Euler class**: in rank zero the Euler class map is an
 isomorphism (`TauCeti.isIso_eulerClass`). -/
@@ -359,11 +261,7 @@ theorem isThomClass_rankZeroThomClass :
         (finrank ℝ F)) := by
   refine (isThomClass_iff_forall_isUnit _).2 fun b ↦ ?_
   rw [← rankZeroEulerClass_def]
-  rcases o.eq_positiveOrientation_or_eq_neg b with h | h
-  · rw [o.singularCohomologyZeroEval_rankZeroEulerClass_of_eq K h]
-    exact isUnit_one
-  · rw [o.singularCohomologyZeroEval_rankZeroEulerClass_of_eq_neg K h]
-    exact isUnit_one.neg
+  exact .of_mul_eq_one _ (o.singularCohomologyZeroEval_rankZeroEulerClass_mul_self K b)
 
 /-- The positive orientation of a rank-zero bundle has the unit class as Euler class. -/
 @[simp]
@@ -378,10 +276,9 @@ of the total space. -/
 theorem singularCohomologyπ_rankZeroThomClass_positive :
     (thomPair F E).singularCohomologyπ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0
         ((positive F E ι).rankZeroThomClass K) =
-      (TopCat.of (TotalSpace F E)).singularCohomologyZeroOne := by
+      (thomPair F E).fst.singularCohomologyZeroOne := by
   rw [← singularCohomologyMap_thomPairProj_eulerClass, ← rankZeroEulerClass_def,
     rankZeroEulerClass_positive, singularCohomologyMap_singularCohomologyZeroOne]
-  rfl
 
 /-- Reversing the orientation negates the Euler class. -/
 @[simp]
@@ -412,10 +309,8 @@ theorem singularCup_rankZeroEulerClass_self :
       (o.rankZeroEulerClass K) = (TopCat.of B).singularCohomologyZeroOne :=
   singularCohomologyZero_ext fun b ↦ by
     rw [singularCohomologyZeroEval_singularCup,
-      singularCohomologyZeroEval_singularCohomologyZeroOne]
-    rcases o.eq_positiveOrientation_or_eq_neg b with h | h
-    · rw [o.singularCohomologyZeroEval_rankZeroEulerClass_of_eq K h, one_mul]
-    · rw [o.singularCohomologyZeroEval_rankZeroEulerClass_of_eq_neg K h, neg_one_mul, neg_neg]
+      singularCohomologyZeroEval_singularCohomologyZeroOne,
+      singularCohomologyZeroEval_rankZeroEulerClass_mul_self]
 
 /-- **Naturality of the Euler class**: the Euler class of the pulled-back orientation of `f*E` is
 the pull-back along `f` of the Euler class of `E`. -/
@@ -423,15 +318,13 @@ theorem rankZeroEulerClass_pullback {B' : Type w} [TopologicalSpace B'] (f : C(B
     (o.pullback f).rankZeroEulerClass K =
       TopCat.singularCohomologyMap (TopCat.ofHom f) 0 (o.rankZeroEulerClass K) :=
   singularCohomologyZero_ext fun b' ↦ by
-    rw [singularCohomologyZeroEval_naturality]
-    rcases o.eq_positiveOrientation_or_eq_neg (f b') with h | h
-    -- The point `TopCat.ofHom f b'` is `f b'`.
-    · exact (singularCohomologyZeroEval_rankZeroEulerClass_of_eq _ K
-        (by rw [pullback_apply]; exact h)).trans
-        (o.singularCohomologyZeroEval_rankZeroEulerClass_of_eq K h).symm
-    · exact (singularCohomologyZeroEval_rankZeroEulerClass_of_eq_neg _ K
-        (by rw [pullback_apply]; exact h)).trans
-        (o.singularCohomologyZeroEval_rankZeroEulerClass_of_eq_neg K h).symm
+    classical
+    rw [singularCohomologyZeroEval_naturality, singularCohomologyZeroEval_rankZeroEulerClass,
+      singularCohomologyZeroEval_rankZeroEulerClass]
+    -- The signs agree, since `(o.pullback f) b'` is `o (f b')` and the point `TopCat.ofHom f b'`
+    -- is `f b'`. `rw [pullback_apply]` applies to the condition inside `if_congr`, but not under
+    -- the `if`, where the rewritten term is not type-correct at `implicit` transparency.
+    exact if_congr (by rw [pullback_apply]; exact Iff.rfl) rfl rfl
 
 /-- **Naturality of the Thom class**: pulling the Thom class of `E` back along the map of Thom
 pairs `(f*E, (f*E)₀) ⟶ (E, E₀)` covering `f` gives the Thom class of the pulled-back orientation of
