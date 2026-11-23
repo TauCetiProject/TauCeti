@@ -59,8 +59,8 @@ imposed later as structure data.
   conjugation, for arbitrary complex models.
 * `TauCeti.Hodge.latticeConj_rationalToComplexLinearEquiv_one_tmul`: lattice conjugation fixes
   every purely rational vector of the ambient complexification.
-* `TauCeti.Hodge.rationalBasis` and `TauCeti.Hodge.latticeConjugation_rationalBasis`: the basis of
-  the complexification induced by a rational basis, which lattice conjugation fixes.
+* `TauCeti.Hodge.rationalBasis` and `TauCeti.Hodge.latticeConjugation_toEquiv_rationalBasis`: the
+  basis of the complexification induced by a rational basis, which lattice conjugation fixes.
 * `TauCeti.Hodge.rationalToComplexSubmodule_conj`: the complexification of a rational subspace is
   stable under lattice-induced conjugation.
 * `TauCeti.Hodge.rationalToComplexSubmodule_sup`: complexification preserves joins of rational
@@ -350,7 +350,7 @@ theorem rationalBasis_apply {ι : Type*} (hℚ : IsBaseChange ℚ ιℚ) {hℂ :
   IsBaseChange.basis_apply _ _ i
 
 /-- The lattice conjugation fixes a basis induced by a rational basis. -/
-theorem latticeConjugation_rationalBasis {ι : Type*} (hℚ : IsBaseChange ℚ ιℚ)
+theorem latticeConjugation_toEquiv_rationalBasis {ι : Type*} (hℚ : IsBaseChange ℚ ιℚ)
     {hℂ : IsBaseChange ℂ ιℂ} (b : Module.Basis ι ℚ Vℚ) (i : ι) :
     (latticeConjugation hℂ).toEquiv (rationalBasis hℚ hℂ b i) = rationalBasis hℚ hℂ b i := by
   simp

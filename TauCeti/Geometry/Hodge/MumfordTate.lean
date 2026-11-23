@@ -89,7 +89,7 @@ theorem characterPiece_ofAdd (p : ℤ) :
 
 /-- The summand of a character off the line `a + b = -n` vanishes. -/
 @[simp]
-theorem characterPiece_of_ne {g : Multiplicative (ℤ × ℤ)} (h : g.toAdd.1 + g.toAdd.2 ≠ -n) :
+theorem characterPiece_eq_bot_of_ne {g : Multiplicative (ℤ × ℤ)} (h : g.toAdd.1 + g.toAdd.2 ≠ -n) :
     hs.characterPiece g = ⊥ := by
   simp [characterPiece, h]
 
@@ -99,7 +99,7 @@ theorem isInternal_characterPiece : DirectSum.IsInternal hs.characterPiece := by
   have hline {g : Multiplicative (ℤ × ℤ)} (hg : hs.characterPiece g ≠ ⊥) :
       g.toAdd.1 + g.toAdd.2 = -n := by
     by_contra h
-    exact hg (hs.characterPiece_of_ne h)
+    exact hg (hs.characterPiece_eq_bot_of_ne h)
   refine ⟨iSupIndep_ne_bot.mp ?_, eq_top_iff.mpr ?_⟩
   · have hinj : Function.Injective
         fun g : {g // hs.characterPiece g ≠ ⊥} ↦ -(g : Multiplicative (ℤ × ℤ)).toAdd.1 := by
@@ -234,8 +234,12 @@ theorem complexCoordinateBialgHom_map (he : ∀ i, ω.toEquiv (e i) = e i) (σ :
     rw [TensorProduct.map_tmul, LinearMap.id_apply, AlgEquiv.toLinearMap_apply,
       TensorProduct.tmul_eq_smul_one_tmul, TensorProduct.tmul_eq_smul_one_tmul c, map_smul,
       map_smul]
-    exact (congrArg _ (hs.map_complexCoordinateBialgHom_one_tmul he σ a)).symm.trans
-      (TauCeti.ScalarAut.smul_smulₛₗ σ c _).symm
+    conv_lhs => rw [← hs.map_complexCoordinateBialgHom_one_tmul he σ a]
+    -- It remains that `TensorProduct.map σ id` is `σ`-semilinear for the scalar action of `ℂ`.
+    generalize hs.complexCoordinateBialgHom e (1 ⊗ₜ a) = y
+    induction y using TensorProduct.inductionOn with
+    | tmul z s => simp [TensorProduct.smul_tmul']
+    | add y z hy hz => simp [smul_add, hy, hz]
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
 
 /-- **The homomorphism `h : S → GL_{d,ℝ}` of a Hodge structure, on coordinate rings**, in a
@@ -298,14 +302,14 @@ noncomputable def deligneHom :
       _root_.CommHopfAlgCat.of ℝ S :=
   (coordinateHopfAlgebraBaseChangeIso ℚ ℝ d).hom ≫
     _root_.CommHopfAlgCat.ofHom
-      (hs.realCoordinateBialgHom (latticeConjugation_rationalBasis hℚ b))
+      (hs.realCoordinateBialgHom (latticeConjugation_toEquiv_rationalBasis hℚ b))
 
 /-- On the generic matrix, `deligneHom` is `realCoordinateBialgHom` in the induced basis. -/
 @[simp]
 theorem deligneHom_one_tmul_X (i j : Fin d) :
     (hs.deligneHom hℚ b).hom
         (1 ⊗ₜ coordinateHopfAlgebraAlgEquiv ℚ d (coordinateRingMap ℚ d (MvPolynomial.X (i, j)))) =
-      hs.realCoordinateBialgHom (latticeConjugation_rationalBasis hℚ b)
+      hs.realCoordinateBialgHom (latticeConjugation_toEquiv_rationalBasis hℚ b)
         (coordinateHopfAlgebraAlgEquiv ℝ d (coordinateRingMap ℝ d (MvPolynomial.X (i, j)))) := by
   rw [deligneHom, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
     coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X, _root_.CommHopfAlgCat.hom_ofHom]
