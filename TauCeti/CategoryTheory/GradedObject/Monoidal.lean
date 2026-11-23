@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Antidiag.Prod
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
-public import Mathlib.CategoryTheory.Monoidal.Preadditive
+public import Mathlib.Algebra.Order.Antidiag.Prod
 
 /-!
 # Exactness and reindexing for tensor products of graded objects
@@ -41,9 +40,6 @@ facts about these coproducts which are used to compare homology of tensor produc
   product vanishes in a degree when one factor vanishes in every degree contributing to it
   (`CategoryTheory.GradedObject.Monoidal.isZero_tensorObj_of_isZero_right`,
   `CategoryTheory.GradedObject.Monoidal.isZero_tensorObj_of_isZero_left`).
-  In a monoidal preadditive category, `tensorHom f₁ g₁ ≫ tensorHom f₂ g₂` vanishes as soon as
-  every `g₁ j ≫ g₂ j` does
-  (`CategoryTheory.GradedObject.Monoidal.tensorHom_comp_tensorHom_eq_zero`).
 * If `Y` vanishes in the degrees which are not of the form `q + 1`, for instance in degree `0` for
   graded objects indexed by `ℕ`, then the summands of `X ⊗ Y` in degree `m + 1` are those of `X`
   tensored with `Y` shifted down by one, in degree `m`
@@ -219,18 +215,6 @@ lemma isIso_ιTensorObj_of_isZero_left [AddMonoid I] [IsLeftCancelAdd I] [Monoid
     obtain rfl : j' = j := add_left_cancel (h'.trans h.symm)
     simp
   · exact ((tensorRight _).map_isZero (hX i' hi)).eq_of_src _ _
-
-/-- If the composites `g₁ j ≫ g₂ j` of two morphisms of graded objects vanish in every degree, then
-so does the composite `tensorHom f₁ g₁ ≫ tensorHom f₂ g₂`, for any `f₁` and `f₂`, in a monoidal
-preadditive category. -/
-lemma tensorHom_comp_tensorHom_eq_zero [AddMonoid I] [Preadditive C] [MonoidalCategory C]
-    [MonoidalPreadditive C] {X₁ X₂ X₃ Y₁ Y₂ Y₃ : GradedObject I C} (f₁ : X₁ ⟶ X₂) (f₂ : X₂ ⟶ X₃)
-    (g₁ : Y₁ ⟶ Y₂) (g₂ : Y₂ ⟶ Y₃) [HasTensor X₁ Y₁] [HasTensor X₂ Y₂] [HasTensor X₃ Y₃]
-    (hg : ∀ j, g₁ j ≫ g₂ j = 0) (n : I) :
-    tensorHom f₁ g₁ n ≫ tensorHom f₂ g₂ n = 0 := by
-  refine tensorObj_ext _ _ fun i j h ↦ ?_
-  rw [ι_tensorHom_assoc, ι_tensorHom, ← Category.assoc, MonoidalCategory.tensorHom_comp_tensorHom,
-    hg, MonoidalPreadditive.tensor_zero, zero_comp, comp_zero]
 
 /-- If `Y` vanishes in every degree `j` with `i + j = n` for some `i`, the tensor product of graded
 objects vanishes in degree `n`. -/

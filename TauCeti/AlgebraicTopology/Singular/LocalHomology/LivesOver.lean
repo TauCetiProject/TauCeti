@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+import TauCeti.AlgebraicTopology.Singular.Kunneth.Pair
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
@@ -69,12 +70,12 @@ needed for the statements below.
   with closed fibres, the converse holds
   (`TauCeti.LivesOverFundamentalClass.singularHomologyCross_prodMap`,
   `TauCeti.livesOverFundamentalClass_prodMap_singularHomologyCross_iff_of_field`). Write
-  `A = E ∖ p⁻¹(b)` and `B = Y ∖ q⁻¹(c)`. By excision, a class of `Hₙ(E × Y, A × Y)` dies in
-  `Hₙ(E × Y, A × Y ∪ E × B)` only if it comes from `Hₙ(E × B, A × B)`
-  (`TopCat.exists_singularHomologyMap_ofSubsetMap_tensorHom_eq`); by the relative Künneth
-  theorem the class `(loc α) × β` does not when `β` does not come from `B`
-  (`TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel_of_field`). This
-  is the localization statement behind the source's Proposition 6.13 (products of manifolds
+  `A = E ∖ p⁻¹(b)` and `B = Y ∖ q⁻¹(c)`, so that the complement of the fibre is
+  `A × Y ∪ E × B`. The image of `α × β` in `Hₙ(E × Y, A × Y ∪ E × B)` is the Künneth map of the
+  relative singular chain complexes, applied to `(loc α) ⊗ (loc β)`, followed by the shuffle map of
+  the product of pairs (`TopCat.shufflePair`). Over a field the Künneth map is injective, and for
+  open `A` and `B` the shuffle map is a quasi-isomorphism (`TopCat.quasiIso_shufflePair_of_isOpen`).
+  This is the localization statement behind the source's Proposition 6.13 (products of manifolds
   abundant with 2-spheres), with coefficients in a field.
 * **The trivial fibration.** For the identity of a compact oriented `n`-manifold `M` and integer
   coefficients, the localization of `Hₙ(M)` at a point is the map to the local homology
@@ -134,7 +135,7 @@ namespace TauCeti
 section Localization
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-  {E E' M : Type w} [TopologicalSpace E] [TopologicalSpace E']
+  {E E' M M' : Type w} [TopologicalSpace E] [TopologicalSpace E']
 
 /-- The **localization at the fibre** of a map `p : E → M` over a point `b`: the map
 `Hₖ(E) → Hₖ(E, E ∖ p⁻¹(b))` from the singular homology of `E` to its homology relative to the
@@ -182,6 +183,31 @@ theorem fiberLocalization_coefficient_naturality {R R' : A} (φ : R ⟶ R') (p :
           (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))))) k :=
   SSetPair.homologyπ_coefficient_naturality
     (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E)))) φ k
+
+/-- **Localizing at a smaller fibre.** If the fibre of `p'` over `b'` lies in the fibre of `p`
+over `b`, the localization at the fibre of `p'` is the localization at the fibre of `p` followed by
+the restriction of local homology. -/
+@[reassoc]
+theorem fiberLocalization_comp_localHomologyRestriction {p : E → M} {p' : E → M'} {b : M}
+    {b' : M'} (h : p' ⁻¹' {b'} ⊆ p ⁻¹' {b}) (k : ℕ) :
+    fiberLocalization R p b k ≫ localHomologyRestriction R h k = fiberLocalization R p' b' k := by
+  rw [localHomologyRestriction_def]
+  exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R _ k
+
+/-- A map `σ : E' → E` missing the fibre of `p` over `b` is killed by the localization at that
+fibre: `σ_*` followed by `Hₖ(E) → Hₖ(E, E ∖ p⁻¹(b))` is zero. -/
+@[reassoc]
+theorem homologyMap_comp_fiberLocalization_eq_zero (σ : C(E', E)) {p : E → M} {b : M}
+    (hσ : ∀ x, p (σ x) ≠ b) (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k ≫ fiberLocalization R p b k = 0 := by
+  -- By naturality the composite is the localization of `E'` at the empty fibre of `p ∘ σ`,
+  -- whose target `Hₖ(E', E')` vanishes.
+  rw [homologyMap_comp_fiberLocalization R σ rfl b k]
+  have he : (p ∘ σ) ⁻¹' {b} = ∅ := eq_empty_of_forall_notMem hσ
+  have hz : IsZero (localHomology R ((p ∘ σ) ⁻¹' {b}) k) := by
+    rw [he]
+    exact isZero_localHomology_empty R k
+  rw [hz.eq_of_tgt (fiberLocalization R (p ∘ σ) b k) 0, zero_comp]
 
 end Localization
 
@@ -599,38 +625,6 @@ section ProdMap
 
 /-! ### Products of two maps -/
 
-section Restriction
-
-variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-  {E E' M M' : Type w} [TopologicalSpace E] [TopologicalSpace E']
-
-/-- **Localizing at a smaller fibre.** If the fibre of `p'` over `b'` lies in the fibre of `p`
-over `b`, the localization at the fibre of `p'` is the localization at the fibre of `p` followed by
-the restriction of local homology. -/
-@[reassoc]
-theorem fiberLocalization_comp_localHomologyRestriction {p : E → M} {p' : E → M'} {b : M}
-    {b' : M'} (h : p' ⁻¹' {b'} ⊆ p ⁻¹' {b}) (k : ℕ) :
-    fiberLocalization R p b k ≫ localHomologyRestriction R h k = fiberLocalization R p' b' k := by
-  rw [localHomologyRestriction_def]
-  exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R _ k
-
-/-- A map `σ : E' → E` missing the fibre of `p` over `b` is killed by the localization at that
-fibre: `σ_*` followed by `Hₖ(E) → Hₖ(E, E ∖ p⁻¹(b))` is zero. -/
-@[reassoc]
-theorem homologyMap_comp_fiberLocalization_eq_zero (σ : C(E', E)) {p : E → M} {b : M}
-    (hσ : ∀ x, p (σ x) ≠ b) (k : ℕ) :
-    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k ≫ fiberLocalization R p b k = 0 := by
-  -- By naturality the composite is the localization of `E'` at the empty fibre of `p ∘ σ`,
-  -- whose target `Hₖ(E', E')` vanishes.
-  rw [homologyMap_comp_fiberLocalization R σ rfl b k]
-  have hz : IsZero (localHomology R ((p ∘ σ) ⁻¹' {b}) k) :=
-    TopPair.isZero_singularHomology_of_surjective_map _ R
-      (fun x ↦ ⟨(⟨x, fun h' ↦ hσ x (Set.mem_singleton_iff.1 (Set.mem_preimage.1 h'))⟩ :
-        ↥(((p ∘ σ) ⁻¹' {b})ᶜ : Set E')), rfl⟩) k
-  rw [hz.eq_of_tgt (fiberLocalization R (p ∘ σ) b k) 0, zero_comp]
-
-end Restriction
-
 variable {E Y M N : Type w} [TopologicalSpace E] [TopologicalSpace Y]
 
 section CommRing
@@ -704,32 +698,55 @@ theorem LivesOverFundamentalClass.singularHomologyCross_prodMap {p : E → M} {q
     LivesOverFundamentalClass (R ⊗ S) (Prod.map p q) (b, c)
       ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) := by
   intro h₀
-  -- Write `A = E ∖ p⁻¹(b)` and `B = Y ∖ q⁻¹(c)`. In `E × Y` the complement `A × Y` of the fibre
-  -- of `p ∘ fst` lies in the complement `Z = A × Y ∪ E × B` of the fibre of `p × q`.
+  -- Write `A = E ∖ p⁻¹(b)` and `B = Y ∖ q⁻¹(c)`; the complement of the fibre `p⁻¹(b) × q⁻¹(c)`
+  -- lies in `A × Y ∪ E × B`, so `α × β` vanishes in `Hₙ(E × Y, A × Y ∪ E × B)`.
   let A : Set (TopCat.of E) := (p ⁻¹' {b})ᶜ
   let B : Set (TopCat.of Y) := (q ⁻¹' {c})ᶜ
-  let Z : Set (TopCat.of E ⊗ TopCat.of Y) := (Prod.map p q ⁻¹' {(b, c)})ᶜ
-  have hAZ : CartesianMonoidalCategory.fst (TopCat.of E) (TopCat.of Y) ⁻¹' A ⊆ Z :=
-    fun x hx hx' ↦ hx (congrArg Prod.fst hx' :)
-  have hBZ : CartesianMonoidalCategory.snd (TopCat.of E) (TopCat.of Y) ⁻¹' B ⊆ Z :=
-    fun x hx hx' ↦ hx (congrArg Prod.snd hx' :)
-  have hZ : Z ⊆ CartesianMonoidalCategory.fst (TopCat.of E) (TopCat.of Y) ⁻¹' A ∪
-      CartesianMonoidalCategory.snd (TopCat.of E) (TopCat.of Y) ⁻¹' B := fun x hx ↦ by
-    by_cases hb : p x.1 = b
-    · exact Or.inr fun hc ↦ hx (Prod.ext hb hc)
-    · exact Or.inl hb
-  -- `h₀` says that `α × β` vanishes in `Hₙ(E × Y, Z)`, so its image `(loc α) × β` in
-  -- `Hₙ(E × Y, A × Y)` comes from `Hₙ(E × B, A × B)`; the relative Künneth theorem rules this out.
-  obtain ⟨y, hy⟩ := TopCat.exists_singularHomologyMap_ofSubsetMap_tensorHom_eq (R ⊗ S)
-    hp.isOpen_compl hq.isOpen_compl hAZ hBZ hZ
-    ((congrArg (fun φ ↦ φ.hom
-      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)))
-      (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (R ⊗ S)
-        (X := TopCat.of E ⊗ TopCat.of Y) (S := Z) (fun _ hx ↦ hAZ hx) n)).trans h₀)
-  exact TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel_of_field _ _
-    A B R S h hα hβ y (hy.trans (congrArg (fun φ ↦ φ.hom (α ⊗ₜ β))
-      (TopCat.singularHomologyCross_comp_singularHomologyπ (TopCat.of E) (TopCat.of Y) A R S i j n
-        h)))
+  let Z : Set ↑(TopCat.of E ⊗ TopCat.of Y) :=
+    CartesianMonoidalCategory.fst (TopCat.of E) (TopCat.of Y) ⁻¹' A ∪
+      CartesianMonoidalCategory.snd (TopCat.of E) (TopCat.of Y) ⁻¹' B
+  have hZ : MapsTo (𝟙 (TopCat.of E ⊗ TopCat.of Y)) (Prod.map p q ⁻¹' {(b, c)})ᶜ Z := fun x hx ↦
+    (em (p x.1 = b)).elim (fun hb ↦ Or.inr fun hc ↦ hx (Prod.ext hb hc)) Or.inl
+  have h₁ : ((TopPair.ofSubset Z).singularHomologyπ (R ⊗ S) n).hom
+      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) = 0 :=
+    (ConcreteCategory.congr_hom
+      (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (R ⊗ S) hZ n) _).symm.trans
+      ((congrArg (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hZ) (R ⊗ S) n).hom h₀).trans
+        (map_zero _))
+  -- That image is the Künneth map of `C(E, A; R)` and `C(Y, B; S)` on `(loc α) ⊗ (loc β)`,
+  -- followed by the shuffle map of the product of pairs.
+  have e : TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h ≫
+        (TopPair.ofSubset Z).singularHomologyπ (R ⊗ S) n =
+      (fiberLocalization R p b i ⊗ₘ fiberLocalization S q c j) ≫
+        HomologicalComplex.homologyCross ((TopPair.ofSubset A).singularChainComplex R)
+          ((TopPair.ofSubset B).singularChainComplex S) i j n h ≫
+        HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of E) (TopCat.of Y) A B R S) n :=
+    (congrArg (· ≫ _) (TopCat.singularHomologyCross_def _ _ R S i j n h)).trans <|
+      (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n).symm).trans <|
+      (congrArg (fun φ ↦ _ ≫ HomologicalComplex.homologyMap φ n)
+        (TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair _ _ A B R S).symm
+        ).trans <|
+      (congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n)).trans <|
+      (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
+        (HomologicalComplex.homologyCross_naturality _ _ i j n h).symm).trans (Category.assoc _ _ _)
+  -- Over a field the cycles split off, so the Künneth map is injective, and the shuffle map is a
+  -- quasi-isomorphism since `A` and `B` are open.
+  have := HomologicalComplex.isSplitMono_homologyKunneth
+    ((TopPair.ofSubset A).singularChainComplex R) ((TopPair.ofSubset B).singularChainComplex S) n
+  have := TopCat.quasiIso_shufflePair_of_isOpen (TopCat.of E) (TopCat.of Y) R S hp.isOpen_compl
+    hq.isOpen_compl
+  have hinj := (ModuleCat.mono_iff_injective (GradedObject.Monoidal.ιTensorObj
+    (fun m ↦ ((TopPair.ofSubset A).singularChainComplex R).homology m)
+    (fun m ↦ ((TopPair.ofSubset B).singularChainComplex S).homology m) i j n h ≫
+      HomologicalComplex.homologyKunneth ((TopPair.ofSubset A).singularChainComplex R)
+        ((TopPair.ofSubset B).singularChainComplex S) n ≫
+      HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of E) (TopCat.of Y) A B R S) n)).1
+    inferInstance
+  rw [HomologicalComplex.ι_homologyKunneth_assoc] at hinj
+  refine tmul_ne_zero hα hβ (hinj ?_)
+  rw [map_zero]
+  exact (ConcreteCategory.congr_hom e (α ⊗ₜ β)).symm.trans h₁
 
 /-- **Classes living over the fundamental class of a product.** With coefficients in a field and
 closed fibres, the cross product `α × β` lives over the fundamental class at `(b, c)` for
