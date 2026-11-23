@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 public import Mathlib.RingTheory.Ideal.Cotangent
 import Mathlib.LinearAlgebra.Dual.Basis
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
-import TauCeti.RingTheory.Ideal.Cotangent.Basic
+import TauCeti.RingTheory.Ideal.Cotangent.LocalRing
 
 /-!
 # The cotangent space of a holomorphic stalk
