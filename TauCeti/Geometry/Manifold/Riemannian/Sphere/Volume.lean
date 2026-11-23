@@ -5,15 +5,22 @@ Authors: Riccardo Brasca
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
-public import TauCeti.MeasureTheory.Integral.OddSymmetric
+public import Mathlib.MeasureTheory.Group.Measure
+public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
 
 /-!
-# Odd functions on a round sphere have zero mean
+# Antipodal invariance of volume on the round unit sphere
 
-The antipodal isometry preserves native Riemannian volume. Its odd functions therefore integrate
-to zero. This is the mean-zero step in the stability calculation for the projective equator.
+The instance `TauCeti.isNegInvariant_riemannianVolume_sphere` states that the antipodal map
+preserves native Riemannian volume on the round unit sphere.
+
+For mean-zero cancellation, also import `TauCeti.MeasureTheory.Integral.OddSymmetric` and apply
+`MeasureTheory.integral_eq_zero_of_odd`; this instance supplies negation invariance. For a
+pointwise odd function, pass `Filter.Eventually.of_forall hodd` as the symmetry hypothesis.
+This gives the mean-zero step in the stability calculation for the projective equator.
 
 The proof originated in
 [`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/1666783/ForTauCeti/Geometry/Manifold/Riemannian/Examples/Immersion/ProjectiveEquator/OddMean.lean).
