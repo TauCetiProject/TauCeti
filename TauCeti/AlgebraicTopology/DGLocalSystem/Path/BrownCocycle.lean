@@ -31,13 +31,14 @@ Two consequences are proved.
   `𝓕 ⊗^L R`, the loop chains acting on `R` through their augmentation: tensoring with the free
   module of the Brown cocycle induces, on any localizations at the quasi-isomorphisms, a functor
   isomorphic to the derived tensor product
-  (`TauCeti.nonempty_brownCocycle_localizedFunctor_iso_derivedTensor`). So the cohomology of
-  `𝓕 ⊗ K_m` is `Tor^{C_*(Ω_b B; R)}(𝓕, R)`.
+  (`TauCeti.nonempty_brownCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`). So
+  the cohomology of `𝓕 ⊗ K_m` is `Tor^{C_*(Ω_b B; R)}(𝓕, R)`.
 * **Brown's cocycle does not depend on the choices.** The Brown cocycle is homologous to every
   semi-free model of `C_*(P_b B; R)` quasi-isomorphic to it, compatibly with the comparisons
-  (`TauCeti.exists_rowFiniteHomologous_brownCocycle`). In particular the Brown cocycles of two CW
-  structures on `B`, built with any two choices of paths to the centres of the cells, are
-  homologous (`TauCeti.exists_rowFiniteHomologous_brownCocycle_brownCocycle`), so their twisted
+  (`TauCeti.exists_rowFiniteHomologous_brownCocycle_homotopy`). In particular the Brown cocycles
+  of two CW structures on `B`, built with any two choices of paths to the centres of the cells and
+  any two phantom parameters `H` of the chains on the path space, are homologous
+  (`TauCeti.nonempty_rowFiniteHomologous_brownCocycle_brownCocycle`), so their twisted
   complexes with coefficients in any DG right module are homotopy equivalent
   (`TauCeti.RowFiniteHomologous.homotopyEquiv`), through specified continuation maps.
 
@@ -50,11 +51,11 @@ Two consequences are proved.
 
 * `TauCeti.exists_rowFiniteTwistedDifferential_brownCocycle_eq`: the comparison is a
   quasi-isomorphism.
-* `TauCeti.nonempty_brownCocycle_localizedFunctor_iso_derivedTensor`: the Brown cocycle computes
-  the derived tensor product with the ground ring.
-* `TauCeti.exists_rowFiniteHomologous_brownCocycle`,
-  `TauCeti.exists_rowFiniteHomologous_brownCocycle_brownCocycle`: the Brown cocycle is unique up
-  to homology, independently of the paths and of the CW structure.
+* `TauCeti.nonempty_brownCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`: the
+  Brown cocycle computes the derived tensor product with the ground ring.
+* `TauCeti.exists_rowFiniteHomologous_brownCocycle_homotopy`,
+  `TauCeti.nonempty_rowFiniteHomologous_brownCocycle_brownCocycle`: the Brown cocycle is unique up
+  to homology, independently of the paths, of the CW structure and of the phantom parameter.
 
 ## References
 
@@ -200,7 +201,7 @@ variable {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
 cocycle induces, on any localizations at the quasi-isomorphisms, a functor isomorphic to the
 derived tensor product `- ⊗^L R` with the ground ring, on which the loop chains act through their
 augmentation. So the twisted complex `𝓕 ⊗ K_m` has cohomology `Tor^{C_*(Ω_b B; R)}(𝓕, R)`. -/
-theorem nonempty_brownCocycle_localizedFunctor_iso_derivedTensor :
+theorem nonempty_brownCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation :
     Nonempty (((brownCocycle H R τ hC).coefficientLocalizerMorphism
         (loopChain_isDGAlgebra B b R) (wellFounded_mem_support_brownCocycle τ hC)).localizedFunctor
         L₁ L₂ ≅
@@ -225,7 +226,7 @@ twisted complexes with coefficients in any DG right module are homotopy equivale
 (`TauCeti.RowFiniteHomologous.homotopyEquiv`), and the equivalence is compatible with the
 comparisons: a homotopy `k`, of degree `-1` and given on the cells, joins `g ∘ ν` to the comparison
 of Brown's cocycle, where `ν` is the continuation cocycle from Brown's cocycle to `m`. -/
-theorem exists_rowFiniteHomologous_brownCocycle {Q : Type} {ind : Q → ℤ}
+theorem exists_rowFiniteHomologous_brownCocycle_homotopy {Q : Type} {ind : Q → ℤ}
     {m : RowFiniteTwistingCocycle (R := R) (A := loopChainAlgebra B b R)
       (cubicalChainGrading (MooreLoopSpace B b) R) (cubicalChainDifferential (MooreLoopSpace B b) R)
       Q ind}
@@ -257,20 +258,47 @@ theorem exists_rowFiniteHomologous_brownCocycle {Q : Type} {ind : Q → ℤ}
     (linearCombination_brownComparison_brownCocycle_m τ hC) hgd
     (exists_rowFiniteTwistedDifferential_brownCocycle_eq τ hC) hgrel
 
-/-- **Brown's cocycle does not depend on the paths or on the CW structure.** For two CW
-structures `C` and `C'` on `B` and any choices of Moore paths `τ` and `τ'` from `b` to the centres
-of their cells, the two Brown cocycles are homologous, so their twisted complexes with
+/-- **Brown's cocycle does not depend on the paths, on the CW structure or on the phantom
+parameter.** For two CW structures `C` and `C'` on `B`, any choices of Moore paths `τ` and `τ'`
+from `b` to the centres of their cells and any two phantom parameters `H` and `H'` of the chains
+on the path space, the two Brown cocycles are homologous, so their twisted complexes with
 coefficients in any DG right module are homotopy equivalent
 (`TauCeti.RowFiniteHomologous.homotopyEquiv`), through specified continuation maps. -/
-theorem exists_rowFiniteHomologous_brownCocycle_brownCocycle {C' : Set B} [CWComplex C']
-    (τ' : ∀ (n : ℕ) (j : cell C' n), MoorePathBetween B b (map n j 0)) (hC' : ∀ x, x ∈ C') :
+theorem nonempty_rowFiniteHomologous_brownCocycle_brownCocycle {C' : Set B} [CWComplex C']
+    {H' : Type*} (τ' : ∀ (n : ℕ) (j : cell C' n), MoorePathBetween B b (map n j 0))
+    (hC' : ∀ x, x ∈ C') :
     Nonempty (RowFiniteHomologous (loopChain_isDGAlgebra B b R) (brownCocycle H R τ hC)
-      (brownCocycle H R τ' hC')) :=
-  let ⟨E, _⟩ := exists_rowFiniteHomologous_brownCocycle τ hC
-    (wellFounded_mem_support_brownCocycle τ' hC')
-    (brownComparison_mem_cubicalChainModuleGrading τ' hC')
-    (linearCombination_brownComparison_brownCocycle_m τ' hC')
-    (exists_rowFiniteTwistedDifferential_brownCocycle_eq τ' hC')
-  ⟨E⟩
+      (brownCocycle H' R τ' hC')) := by
+  -- The identity of the path space changes the phantom parameter, linearly over the loop chains.
+  let e := ContinuousMap.id (MoorePathFrom B b)
+  let L : cubicalChainModule (MoorePathFrom B b) H' R →ₗ[loopChainAlgebra B b R]
+      cubicalChainModule (MoorePathFrom B b) H R :=
+    { cubicalChainModuleLinearMap R e with
+      map_smul' := cubicalChainModuleLinearMap_smul e fun _ _ ↦ rfl }
+  have hLe (x) : L x = cubicalChainModuleLinearMap R e x := rfl
+  have hL' (x : cubicalChainModule (MoorePathFrom B b) H' R) :
+      cubicalChainModuleLinearMap (G' := H') R e (L x) = x :=
+    (cubicalChainModuleLinearMap_linearMap e e x).trans <| by
+      rw [ContinuousMap.id_comp, cubicalChainModuleLinearMap_id, LinearMap.id_apply]
+  have hL (x : cubicalChainModule (MoorePathFrom B b) H R) :
+      L (cubicalChainModuleLinearMap (G' := H') R e x) = x :=
+    (cubicalChainModuleLinearMap_linearMap e e x).trans <| by
+      rw [ContinuousMap.id_comp, cubicalChainModuleLinearMap_id, LinearMap.id_apply]
+  obtain ⟨E, _⟩ := exists_rowFiniteHomologous_brownCocycle_homotopy τ hC
+    (wellFounded_mem_support_brownCocycle τ' hC') (g := L ∘ brownComparison H' R τ' hC')
+    (fun x ↦ cubicalChainModuleLinearMap_mem e
+      (brownComparison_mem_cubicalChainModuleGrading τ' hC' x))
+    (fun x ↦ by
+      rw [← apply_linearCombination, linearCombination_brownComparison_brownCocycle_m]
+      exact (cubicalChainModuleDifferential_linearMap e _).symm)
+    fun u w hDu huw ↦ by
+      obtain ⟨u', w', hu', hw'⟩ := exists_rowFiniteTwistedDifferential_brownCocycle_eq τ' hC' u
+        (cubicalChainModuleLinearMap R e w) hDu (by
+          rw [cubicalChainModuleDifferential_linearMap, ← huw, ← apply_linearCombination, hL'])
+      refine ⟨u', L w', hu', ?_⟩
+      rw [← apply_linearCombination, hLe, hLe, cubicalChainModuleDifferential_linearMap, ← map_add,
+        hw']
+      exact hL w
+  exact ⟨E⟩
 
 end TauCeti
