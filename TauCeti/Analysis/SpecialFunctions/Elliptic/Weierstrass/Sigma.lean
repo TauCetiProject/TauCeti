@@ -117,12 +117,9 @@ theorem differentiable_weierstrassSigma : Differentiable ℂ L.weierstrassSigma 
 
 private theorem weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattice) (l : L.lattice) :
     weierstrassFactor 2 (z / l) ≠ 0 := by
-  rw [ne_eq, weierstrassFactor_eq_zero_iff]
-  intro h
-  have hl : (l : ℂ) ≠ 0 := by
-    rintro hl
-    simp [hl] at h
-  exact hz ((div_eq_one_iff_eq hl).mp h ▸ l.property)
+  rw [ne_eq, weierstrassFactor_div_eq_zero_iff]
+  rintro ⟨_, hlz⟩
+  exact hz (hlz ▸ l.property)
 
 /-- **The zeros of `σ` are the lattice points.** -/
 theorem weierstrassSigma_eq_zero_iff {z : ℂ} : L.weierstrassSigma z = 0 ↔ z ∈ L.lattice := by

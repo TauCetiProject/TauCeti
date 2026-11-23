@@ -132,6 +132,15 @@ theorem weierstrassFactor_eq_zero_iff (p : ℕ) {z : ℂ} :
   rw [weierstrassFactor_def, mul_eq_zero, or_iff_left (exp_ne_zero _), sub_eq_zero]
   exact eq_comm
 
+/-- With total division `z / 0 = 0`, `weierstrassFactor p (z / a)` vanishes if and only if `a ≠ 0`
+and `a = z`. -/
+theorem weierstrassFactor_div_eq_zero_iff (p : ℕ) (a z : ℂ) :
+    weierstrassFactor p (z / a) = 0 ↔ a ≠ 0 ∧ a = z := by
+  rw [weierstrassFactor_eq_zero_iff]
+  by_cases ha : a = 0
+  · simp [ha]
+  · simp [ha, div_eq_one_iff_eq ha, eq_comm]
+
 /-- The derivative of `E_p` is `-z ^ p * exp (-logTaylor (p + 1) (-z))`. -/
 theorem hasDerivAt_weierstrassFactor (p : ℕ) (z : ℂ) :
     HasDerivAt (weierstrassFactor p)

@@ -197,9 +197,10 @@ theorem hasProdUniformlyOn_weierstrassFactor_one_pow {K : Set ℂ} (hK : Bornolo
 /-- Products with natural multiplicities converge locally uniformly on the whole plane. -/
 theorem hasProdLocallyUniformlyOn_weierstrassFactor_one_pow :
     HasProdLocallyUniformlyOn (fun i z ↦ weierstrassFactor 1 (a i * z) ^ m i)
-      (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) Set.univ :=
-  hasProdLocallyUniformlyOn_of_forall_compact isOpen_univ fun _ _ hK ↦
-    hasProdUniformlyOn_weierstrassFactor_one_pow a m hm hK.isBounded
+      (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) Set.univ := by
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a] using
+    hasProdLocallyUniformlyOn_weierstrassFactor_div_pow (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
+      (m := m) (summable_mul_div_pow_inv a m hm)
 
 /-- The repeated-index product, in which the slope `a i` occurs `m i` times, converges locally
 uniformly on the whole plane to the product with natural multiplicities. -/

@@ -97,34 +97,25 @@ theorem exists_differentiableOn_eqOn_mul_exp_of_divisor_eq {U : Set ℂ} {f g : 
 
 /-- On a preconnected open domain, the holomorphic exponent in `g · * exp (L ·)` is unique up to
 an integer multiple of `2 * π * I` whenever `g` is continuous on the domain and not identically
-zero there. Applies `ContinuousOn.eqOn_of_eqOn_exp_comp`
-(`TauCeti.Analysis.Complex.BranchLogRoot`) on a small disc where `g` does not vanish, then extends
-the resulting local equality to `U` via the analytic identity theorem
-(`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`). -/
+zero there. Cancels `g` near a nonzero point, extends equality of the exponentials to `U` via the
+analytic identity theorem (`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`), then applies
+`ContinuousOn.eqOn_of_eqOn_exp_comp` (`TauCeti.Analysis.Complex.BranchLogRoot`) on `U`. -/
 theorem exists_int_eqOn_add_mul_two_pi_I_of_eqOn_mul_exp {U : Set ℂ} {g L₁ L₂ : ℂ → ℂ}
     (hUc : IsPreconnected U) (hUo : IsOpen U) (hg : ContinuousOn g U) (hg0 : ∃ z ∈ U, g z ≠ 0)
     (hL₁ : DifferentiableOn ℂ L₁ U) (hL₂ : DifferentiableOn ℂ L₂ U)
     (heq : EqOn (fun z ↦ g z * exp (L₁ z)) (fun z ↦ g z * exp (L₂ z)) U) :
     ∃ k : ℤ, EqOn L₁ (fun z ↦ L₂ z + k * (2 * Real.pi * I)) U := by
   obtain ⟨z₀, hz₀U, hgz₀⟩ := hg0
-  have hexp₀ : exp (L₁ z₀) = exp (L₂ z₀) := mul_left_cancel₀ hgz₀ (heq hz₀U)
-  obtain ⟨k, hk⟩ := exp_eq_exp_iff_exists_int.mp hexp₀
-  refine ⟨k, ?_⟩
-  have hloc : ∀ᶠ w in 𝓝 z₀, w ∈ U ∧ g w ≠ 0 :=
-    (eventually_of_mem (hUo.mem_nhds hz₀U) fun _ h ↦ h).and
-      ((hg.continuousAt (hUo.mem_nhds hz₀U)).eventually_ne hgz₀)
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp hloc
-  have hBsub : Metric.ball z₀ r ⊆ U := fun w hw ↦ (hball (Metric.mem_ball.mp hw)).1
-  have hball_eq : EqOn L₁ (fun w ↦ L₂ w + k * (2 * Real.pi * I)) (Metric.ball z₀ r) :=
-    ((hL₁.mono hBsub).continuousOn).eqOn_of_eqOn_exp_comp
-      ((hL₂.add_const _).mono hBsub).continuousOn
-      (convex_ball z₀ r).isPreconnected
-      (fun w hw ↦ (mul_left_cancel₀ (hball (Metric.mem_ball.mp hw)).2 (heq (hBsub hw))).trans
-        (exp_eq_exp_iff_exists_int.mpr ⟨k, rfl⟩).symm)
-      (Metric.mem_ball_self hr) hk
-  exact (hL₁.analyticOnNhd hUo).eqOn_of_preconnected_of_eventuallyEq
-    ((hL₂.add_const _).analyticOnNhd hUo) hUc hz₀U
-    (eventuallyEq_of_mem (Metric.ball_mem_nhds z₀ hr) fun w hw ↦ hball_eq hw)
+  have hexp_loc : (fun z ↦ exp (L₁ z)) =ᶠ[𝓝 z₀] fun z ↦ exp (L₂ z) := by
+    filter_upwards [hUo.mem_nhds hz₀U, (hg.continuousAt (hUo.mem_nhds hz₀U)).eventually_ne hgz₀]
+      with w hwU hgw
+    exact mul_left_cancel₀ hgw (heq hwU)
+  have hexp : EqOn (fun z ↦ exp (L₁ z)) (fun z ↦ exp (L₂ z)) U :=
+    ((hL₁.analyticOnNhd hUo).cexp).eqOn_of_preconnected_of_eventuallyEq
+      ((hL₂.analyticOnNhd hUo).cexp) hUc hz₀U hexp_loc
+  obtain ⟨k, hk⟩ := exp_eq_exp_iff_exists_int.mp (hexp hz₀U)
+  refine ⟨k, hL₁.continuousOn.eqOn_of_eqOn_exp_comp (hL₂.add_const _).continuousOn hUc
+    (fun z hz ↦ (hexp hz).trans (exp_eq_exp_iff_exists_int.mpr ⟨k, rfl⟩).symm) hz₀U hk⟩
 
 end TauCeti
 

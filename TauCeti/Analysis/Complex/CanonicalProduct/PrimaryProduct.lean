@@ -193,13 +193,6 @@ theorem summable_norm_weierstrassFactor_div_sub_one
   (summableUniformlyOn_norm_weierstrassFactor_div_sub_one hsum isCompact_singleton).summable
     (mem_singleton z)
 
-private theorem weierstrassFactor_div_eq_zero_iff (p : ℕ) (a z : ℂ) :
-    weierstrassFactor p (z / a) = 0 ↔ a ≠ 0 ∧ a = z := by
-  rw [weierstrassFactor_eq_zero_iff]
-  by_cases ha : a = 0
-  · simp [ha]
-  · simp [ha, div_eq_one_iff_eq ha, eq_comm]
-
 /-- The primary product vanishes at `z` if and only if `z` occurs as a nonzero value in the root
 family `a`. -/
 theorem tprod_weierstrassFactor_div_eq_zero_iff
