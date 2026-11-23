@@ -16,6 +16,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 
 This file adapts Mathlib's `contDiff_tsum` and `iteratedFDeriv_tsum` in two directions: to bounds
 on the derivatives that decay geometrically, and to summable bounds that only hold near each point.
+It also records that a sum which is locally a finite sum of functions smooth at a point is smooth
+there.
 
 ## Geometric bounds
 
