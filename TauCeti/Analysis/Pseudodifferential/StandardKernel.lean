@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Dyadic
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!

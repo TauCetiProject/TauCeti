@@ -58,6 +58,8 @@ in `TauCeti.Analysis.Pseudodifferential.StandardKernel`.
 * `TauCeti.Symbol.exists_norm_offDiagonalKernel_le`: `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x` in a
   compact set, for every `N` with `m - 2N < -n`; in particular the kernel decays faster than any
   power of `‖x - y‖` as `y → ∞`.
+* `TauCeti.Symbol.offDiagonalKernel_congr`: the kernel at `(x, y)` only depends on the coefficient
+  of the symbol at `x`, whatever its order.
 * `TauCeti.Symbol.IsSmoothing.offDiagonalKernel_eq_quantizationKernel`: for a smoothing symbol it
   is the absolutely convergent kernel.
 * `TauCeti.Symbol.hasSum_quantizationKernel_littlewoodPaleyPiece`: off the diagonal it is the sum
@@ -302,22 +304,34 @@ theorem exists_norm_offDiagonalKernel_le (a : Symbol n V W m) {K : Set (Coordina
   gcongr
   exact hk.trans (mul_le_mul_of_nonneg_left hint (by positivity))
 
+/-- The off-diagonal kernel at `(x, y)` only depends on the coefficient of the symbol at the
+position `x`, and not on the order at which the symbol is regarded. -/
+theorem offDiagonalKernel_congr {m' : ℝ} {a : Symbol n V W m} {b : Symbol n V W m'}
+    {x : CoordinateSpace n} (h : ∀ ξ, a.coefficient (x, ξ) = b.coefficient (x, ξ))
+    (y : CoordinateSpace n) : offDiagonalKernel a x y = offDiagonalKernel b x y := by
+  rcases eq_or_ne x y with rfl | hxy
+  · simp
+  -- Use a common exponent `N`, admissible for both orders.
+  set N := max (⌊(m + n) / 2⌋₊ + 1) (⌊(m' + n) / 2⌋₊ + 1)
+  have hN {μ : ℝ} (hμ : ⌊(μ + n) / 2⌋₊ + 1 ≤ N) : μ - 2 * N < -n :=
+    lt_of_le_of_lt (by gcongr) (sub_two_mul_floor_lt μ n)
+  have hΔ (ξ : CoordinateSpace n) := (coefficient_frequencyLaplacianPow_eventuallyEq
+    (Filter.Eventually.of_forall h) N (ξ := ξ)).eq_of_nhds
+  rw [offDiagonalKernel_eq a (hN (le_max_left _ _)) hxy,
+    offDiagonalKernel_eq b (hN (le_max_right _ _)) hxy, quantizationKernel_def,
+    quantizationKernel_def]
+  simp only [hΔ]
+
 /-- For a smoothing symbol, the off-diagonal kernel is the absolutely convergent kernel
 `TauCeti.quantizationKernel`. -/
 theorem IsSmoothing.offDiagonalKernel_eq_quantizationKernel {a : Symbol n V W m}
     (ha : a.IsSmoothing) {x y : CoordinateSpace n} (hxy : x ≠ y) :
     offDiagonalKernel a x y = quantizationKernel a.coefficient x y := by
   obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - 1)
-  set N := ⌊(m + n) / 2⌋₊ + 1
-  have hN : (-n - 1 : ℝ) - 2 * N < -n := by
-    have : (0 : ℝ) ≤ N := N.cast_nonneg
-    linarith
   -- Compare with a representative `b` of order `-n - 1`; the root-namespace lemma for symbols of
   -- order below `-n` is shadowed here by the name of this theorem.
-  rw [offDiagonalKernel_eq a (sub_two_mul_floor_lt m n) hxy, ← hb,
-    ← TauCeti.Symbol.offDiagonalKernel_eq_quantizationKernel b (by linarith) hxy,
-    offDiagonalKernel_eq b hN hxy,
-    coefficient_frequencyLaplacianPow_congr hb N]
+  rw [offDiagonalKernel_congr (fun ξ => congrFun hb.symm (x, ξ)), ← hb]
+  exact TauCeti.Symbol.offDiagonalKernel_eq_quantizationKernel b (by linarith) hxy
 
 /-! ### Littlewood–Paley decomposition of the kernel -/
 
@@ -361,11 +375,8 @@ theorem hasSum_quantizationKernel_littlewoodPaleyPiece (a : Symbol n V W m)
     exact h.congr fun j => Real.rpow_pow_comm zero_le_two _ j
   have hF_sum : Summable fun j => ∫ ζ, ‖𝐞 ⟪ζ, x - y⟫ • g j (x, (2 * π) • ζ)‖ := by
     refine Summable.of_nonneg_of_le (fun j => integral_nonneg fun _ => norm_nonneg _)
-      (fun j => ?_) ((hgeo.mul_left C).mul_left |((2 * π) ^ n)⁻¹|)
-    simp_rw [Circle.norm_smul (E := V →L[ℂ] W)]
-    rw [Measure.integral_comp_smul (μ := volume) (f := fun ξ => ‖g j (x, ξ)‖),
-      finrank_euclideanSpace_fin,
-      smul_eq_mul]
+      (fun j => ?_) ((hgeo.mul_left C).mul_left ((2 * π) ^ n)⁻¹)
+    rw [integral_norm_quantizationKernel_integrand, finrank_euclideanSpace_fin]
     gcongr
     exact hC j x rfl
   convert hasSum_integral_of_summable_integral_norm hF_int hF_sum using 1

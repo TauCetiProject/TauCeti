@@ -51,8 +51,6 @@ the pieces with constants independent of `j`.
   `α = β = []`, `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)`.
 * `TauCeti.Symbol.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow`: the dyadic estimates for
   positions in a compact set, for any symbol.
-* `TauCeti.Symbol.coefficient_frequencyLaplacianPow_eq_zero_of_isOpen`: `Δ_ξ^N a` vanishes
-  wherever `a` vanishes for all frequencies in an open set.
 * `TauCeti.Symbol.hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece`: the frequency
   Laplacian powers `Δ_ξ^N aⱼ` of the pieces sum to `Δ_ξ^N a`.
 * `TauCeti.Symbol.exists_integral_norm_frequencyLaplacianPow_littlewoodPaleyPiece_le`: the
@@ -340,46 +338,6 @@ theorem exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow (a : Symbol n V W
 
 /-! ### Frequency Laplacians of the pieces -/
 
-/-- The coefficient of `Δ_ξ^N a` only depends on the coefficient of `a`, and not on the order at
-which `a` is regarded as a symbol. -/
-theorem coefficient_frequencyLaplacianPow_congr {m' : ℝ} {a : Symbol n V W m}
-    {b : Symbol n V W m'} (h : a.coefficient = b.coefficient) (N : ℕ) :
-    (frequencyLaplacianPow N a).coefficient = (frequencyLaplacianPow N b).coefficient := by
-  induction N generalizing m m' with
-  | zero => simpa using h
-  | succ N ih =>
-    rw [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacianPow_succ]
-    exact ih (funext fun ⟨x, ξ⟩ => by simp only [coefficient_frequencyLaplacian, h])
-
-/-- The mixed derivatives of `Δ_ξ a` are the sums of the mixed derivatives of `a` with two more
-frequency derivatives along each coordinate. -/
-@[simp]
-theorem mixedDeriv_frequencyLaplacian (a : Symbol n V W m) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (frequencyLaplacian a).coefficient x ξ =
-      ∑ j, mixedDeriv α (β ++ [j, j]) a.coefficient x ξ := by
-  rw [frequencyLaplacian_eq_sum, coefficient_sum,
-    mixedDeriv_sum fun j _ => Symbol.contDiff_coefficient _]
-  simp [coefficient_inclusion]
-
-/-- **Locality of the frequency Laplacian.** If at a position `x` the coefficient of `a` vanishes
-for all frequencies in an open set `U`, then so does the coefficient of `Δ_ξ^N a`. -/
-theorem coefficient_frequencyLaplacianPow_eq_zero_of_isOpen {U : Set (CoordinateSpace n)}
-    (hU : IsOpen U) {a : Symbol n V W m} (x : CoordinateSpace n)
-    (ha : ∀ ξ ∈ U, a.coefficient (x, ξ) = 0) (N : ℕ) {ξ : CoordinateSpace n} (hξ : ξ ∈ U) :
-    (frequencyLaplacianPow N a).coefficient (x, ξ) = 0 := by
-  -- A coordinate derivative of a function vanishing on `U` vanishes on `U`.
-  have hderiv (f : CoordinateSpace n → V →L[ℂ] W) (hf : ∀ η ∈ U, f η = 0) (j : Fin n) :
-      ∀ η ∈ U, coordinateDeriv [j] f η = 0 := fun η hη => by
-    have h : f =ᶠ[nhds η] 0 := Filter.eventually_of_mem (hU.mem_nhds hη) hf
-    rw [(h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
-  induction N generalizing ξ with
-  | zero => simpa using ha ξ hξ
-  | succ N ih =>
-    rw [coefficient_frequencyLaplacianPow_succ', coefficient_frequencyLaplacian]
-    exact Finset.sum_eq_zero fun j _ =>
-      hderiv _ (hderiv _ (fun η hη => ih hη) j) j ξ hξ
-
 /-- **The frequency Laplacian powers of the pieces sum to that of the symbol.** At every point
 `∑ⱼ Δ_ξ^N aⱼ = Δ_ξ^N a`, with only finitely many nonzero terms. -/
 theorem hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece (a : Symbol n V W m)
@@ -387,36 +345,21 @@ theorem hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece (a : Symbo
     HasSum (fun j => (frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient (x, ξ))
       ((frequencyLaplacianPow N a).coefficient (x, ξ)) := by
   obtain ⟨J, hJ⟩ := pow_unbounded_of_one_lt (‖ξ‖ / φ.rIn) (one_lt_two (α := ℝ))
-  have hJ' : ‖ξ‖ < 2 ^ J * φ.rIn := (div_lt_iff₀ φ.rIn_pos).1 hJ
-  -- The pieces of index `k + 1 > J` vanish for frequencies of norm below `2^k φ.rIn`.
-  have hzero : ∀ j ∉ Finset.range (J + 1),
-      (frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient (x, ξ) = 0 := by
-    intro j hj
-    simp only [Finset.mem_range, not_lt] at hj
-    obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := Nat.exists_eq_add_one.2 (by omega)
-    exact coefficient_frequencyLaplacianPow_eq_zero_of_isOpen (U := ball 0 (2 ^ k * φ.rIn))
-      isOpen_ball x (fun ξ' hξ' => a.coefficient_littlewoodPaleyPiece_succ_eq_zero_of_norm_le φ x
-        (mem_ball_zero_iff.1 hξ').le) N (mem_ball_zero_iff.2 (hJ'.trans_le
-          (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le)))
-  suffices h : (frequencyLaplacianPow N a).coefficient (x, ξ) =
-      ∑ j ∈ Finset.range (J + 1),
-        (frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient (x, ξ) by
-    rw [h]
-    exact hasSum_sum_of_ne_finset_zero hzero
-  -- The partial sum up to `J` agrees with `a` for frequencies of norm below `2^J φ.rIn`.
-  have hdiff := coefficient_frequencyLaplacianPow_eq_zero_of_isOpen
-    (a := ∑ j ∈ Finset.range (J + 1), a.littlewoodPaleyPiece φ j - a)
-    (U := ball 0 (2 ^ J * φ.rIn)) isOpen_ball x (fun ξ' hξ' => ?_) N (mem_ball_zero_iff.2 hJ')
-  · rw [map_sub, map_sum, coefficient_sub, coefficient_sum, Pi.sub_apply, Finset.sum_apply,
-      sub_eq_zero] at hdiff
-    exact hdiff.symm
-  · rw [coefficient_sub, coefficient_sum, Pi.sub_apply, Finset.sum_apply]
-    simp only [coefficient_littlewoodPaleyPiece, ← Finset.sum_smul,
-      φ.sum_inhomogeneousLittlewoodPaley_range]
-    rw [φ.one_of_mem_closedBall, one_smul, sub_self]
-    rw [mem_closedBall_zero_iff, norm_inv_smul_of_nonneg (pow_nonneg zero_le_two _),
-      div_le_iff₀ (pow_pos two_pos _), mul_comm]
-    exact (mem_ball_zero_iff.1 hξ').le
+  -- On the ball of radius `2^J φ.rIn`, a neighbourhood of `ξ`, the partition is finite.
+  have hξ : ξ ∈ ball (0 : CoordinateSpace n) (2 ^ J * φ.rIn) :=
+    mem_ball_zero_iff.2 ((div_lt_iff₀ φ.rIn_pos).1 hJ)
+  have hsum := coefficient_frequencyLaplacianPow_eventuallyEq
+    (a := ∑ j ∈ Finset.range (J + 1), a.littlewoodPaleyPiece φ j) (b := a) (x := x) (ξ := ξ) ?_ N
+  · rw [← hsum.eq_of_nhds, map_sum, coefficient_sum, Finset.sum_apply]
+    refine hasSum_sum_of_ne_finset_zero fun j hj =>
+      coefficient_frequencyLaplacianPow_eq_zero_of_isOpen isOpen_ball x (fun η hη => ?_) N hξ
+    rw [coefficient_littlewoodPaleyPiece, φ.inhomogeneousLittlewoodPaley_eq_zero_of_norm_le_of_lt
+      (by simpa using hj) (mem_ball_zero_iff.1 hη).le, zero_smul]
+  · filter_upwards [isOpen_ball.mem_nhds hξ] with η hη
+    simp only [coefficient_sum, Finset.sum_apply, coefficient_littlewoodPaleyPiece,
+      ← Finset.sum_smul,
+      φ.sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le (mem_ball_zero_iff.1 hη).le,
+      one_smul]
 
 /-- Dyadic estimates `‖∂_ξ^β bⱼ(x, ξ)‖ ≤ C (2^j) ^ (μ - |β|)` of a family of symbols, for positions
 in a set `S`, persist for their frequency Laplacian powers, with `μ` lowered by `2N`. -/
