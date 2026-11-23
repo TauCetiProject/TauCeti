@@ -156,25 +156,9 @@ variable [AddCommGroup K] [AddRightMono K]
 @[simp]
 theorem shift_shift (N : Network K V) (h k : N.Assignment K) :
     (N.shift h).shift k = N.shift (h + k) := by
-  let h₁ : ∀ {x y} (e : N.Hom x y), (N.lower - h) e ≤ (N.upper - h) e := fun e ↦
-    sub_le_sub_right (N.lower_le_upper e) (h e)
-  let h₂ : ∀ {x y} (e : N.Hom x y), ((N.lower - h) - k) e ≤ ((N.upper - h) - k) e :=
-    fun e ↦ sub_le_sub_right (h₁ e) (k e)
-  let h₃ : ∀ {x y} (e : N.Hom x y), (N.lower - (h + k)) e ≤ (N.upper - (h + k)) e :=
-    fun e ↦ sub_le_sub_right (N.lower_le_upper e) ((h + k) e)
-  change
-    (N.replaceBounds (N.lower - h) (N.upper - h) h₁).replaceBounds
-      ((N.lower - h) - k) ((N.upper - h) - k) h₂ =
-        N.replaceBounds (N.lower - (h + k)) (N.upper - (h + k)) h₃
-  calc
-    _ = N.replaceBounds ((N.lower - h) - k) ((N.upper - h) - k) h₂ :=
-      N.replaceBounds_replaceBounds _ _ h₁ _ _ h₂
-    _ = N.replaceBounds (N.lower - (h + k)) (N.upper - (h + k)) h₃ :=
-      (N.replaceBounds_inj (h₁ := h₂) (h₂ := h₃)).mpr ⟨by
-        funext x y e
-        exact sub_sub (N.lower e) (h e) (k e), by
-        funext x y e
-        exact sub_sub (N.upper e) (h e) (k e)⟩
+  cases N
+  simp only [shift, replaceBounds, mk.injEq, heq_eq_eq, true_and]
+  constructor <;> funext x y e <;> apply sub_sub
 
 end ShiftCommGroup
 
