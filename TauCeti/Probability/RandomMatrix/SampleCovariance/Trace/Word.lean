@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.Independence.Integration
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Data.Fintype.SmallRange
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Function.L1Space.Integrable

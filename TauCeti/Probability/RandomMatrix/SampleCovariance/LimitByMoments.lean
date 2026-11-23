@@ -10,8 +10,7 @@ public import TauCeti.Probability.RandomMatrix.SampleCovariance.RectangularMomen
 import TauCeti.Data.Nat.Factorial.Asymptotics
 import TauCeti.Probability.Distributions.MarchenkoPastur.Moments
 import TauCeti.Probability.Moments.WeakConvergence
-import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
-import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceIntegrability
+import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Integrability
 
 /-!
 # The Marchenko–Pastur moment limit for sample covariance matrices

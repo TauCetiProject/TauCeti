@@ -104,8 +104,7 @@ theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
     push_cast
     ring
   have hcenterLimit := hX.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero
-    (k := 3) hmean (fun _ ↦ Real.rpow_pos_of_pos (by positivity) _)
-    (fun _ ↦ Real.sqrt_nonneg _) hquot
+    (k := 3) hmean hquot
   refine squeeze_zero (fun n ↦ norm_nonneg _) (fun n ↦ ?_)
     (by simpa only [add_zero] using htail.add hcenterLimit)
   let R : ℝ≥0 := ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩

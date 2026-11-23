@@ -52,53 +52,52 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
 variable [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- Finite coordinates embedded in the Wigner array. -/
-def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper ⊕ ℕ :=
-  Sum.swap ∘ Sum.map Fin.val FinStrictUpper.toStrictUpper
-
-/-- A diagonal coordinate maps to its diagonal array index. -/
-@[simp] theorem wignerCoordinateIndex_inl (n : ℕ) (i : Fin n) :
-    wignerCoordinateIndex n (.inl i) = .inr i.val := by rfl
+def wignerCoordinateIndex (n : ℕ) : WignerCoordinateIndex n → StrictUpper ⊕ ℕ :=
+  Sum.map FinStrictUpper.toStrictUpper Fin.val
 
 /-- A strict-upper coordinate maps to its upper array index. -/
-@[simp] theorem wignerCoordinateIndex_inr (n : ℕ) (p : FinStrictUpper n) :
-    wignerCoordinateIndex n (.inr p) = .inl p.toStrictUpper := by rfl
+@[simp] theorem wignerCoordinateIndex_inl (n : ℕ) (p : FinStrictUpper n) :
+    wignerCoordinateIndex n (.inl p) = .inl p.toStrictUpper := by rfl
+
+/-- A diagonal coordinate maps to its diagonal array index. -/
+@[simp] theorem wignerCoordinateIndex_inr (n : ℕ) (i : Fin n) :
+    wignerCoordinateIndex n (.inr i) = .inr i.val := by rfl
 
 /-- Distinct finite coordinates are distinct coordinates of the Wigner array. -/
 theorem wignerCoordinateIndex_injective (n : ℕ) :
     Function.Injective (wignerCoordinateIndex n) :=
-  Sum.swap_leftInverse.injective.comp
-    (Fin.val_injective.sumMap FinStrictUpper.toStrictUpper_injective)
+  FinStrictUpper.toStrictUpper_injective.sumMap Fin.val_injective
 
-/-- Diagonal coordinates carry weight one and strict-upper coordinates weight two. -/
-def wignerCoordinateWeight (n : ℕ) : Fin n ⊕ FinStrictUpper n → ℝ
-  | .inl _ => 1
-  | .inr _ => 2
-
-/-- Diagonal coordinates have weight one. -/
-@[simp] theorem wignerCoordinateWeight_inl (n : ℕ) (i : Fin n) :
-    wignerCoordinateWeight n (.inl i) = 1 := by rfl
+/-- Strict-upper coordinates carry weight two and diagonal coordinates weight one. -/
+def wignerCoordinateWeight (n : ℕ) : WignerCoordinateIndex n → ℝ
+  | .inl _ => 2
+  | .inr _ => 1
 
 /-- Strict-upper coordinates have weight two. -/
-@[simp] theorem wignerCoordinateWeight_inr (n : ℕ) (p : FinStrictUpper n) :
-    wignerCoordinateWeight n (.inr p) = 2 := by rfl
+@[simp] theorem wignerCoordinateWeight_inl (n : ℕ) (p : FinStrictUpper n) :
+    wignerCoordinateWeight n (.inl p) = 2 := by rfl
+
+/-- Diagonal coordinates have weight one. -/
+@[simp] theorem wignerCoordinateWeight_inr (n : ℕ) (i : Fin n) :
+    wignerCoordinateWeight n (.inr i) = 1 := by rfl
 
 /-- Squared absolute value of each Wigner coordinate. -/
 noncomputable def wignerCoordinateSquare (ξ : StrictUpper → Ω → ℂ)
-    (η : ℕ → Ω → ℝ) (n : ℕ) : Fin n ⊕ FinStrictUpper n → Ω → ℝ :=
+    (η : ℕ → Ω → ℝ) (n : ℕ) : WignerCoordinateIndex n → Ω → ℝ :=
   fun i ω ↦ ‖(Sum.elim ξ (fun j ω ↦ (η j ω : ℂ)) (wignerCoordinateIndex n i)) ω‖ ^ 2
 
 omit [MeasurableSpace Ω] in
-/-- The diagonal statistic is the square of the corresponding entry. -/
-@[simp] theorem wignerCoordinateSquare_inl (n : ℕ) (i : Fin n) (ω : Ω) :
-    wignerCoordinateSquare ξ η n (.inl i) ω = η i.val ω ^ 2 := by
-  simp [wignerCoordinateSquare, Complex.norm_real, Real.norm_eq_abs]
-
-omit [MeasurableSpace Ω] in
 /-- The strict-upper statistic is the squared norm of the corresponding entry. -/
-@[simp] theorem wignerCoordinateSquare_inr (n : ℕ) (p : FinStrictUpper n) (ω : Ω) :
-    wignerCoordinateSquare ξ η n (.inr p) ω =
+@[simp] theorem wignerCoordinateSquare_inl (n : ℕ) (p : FinStrictUpper n) (ω : Ω) :
+    wignerCoordinateSquare ξ η n (.inl p) ω =
       ‖ξ p.toStrictUpper ω‖ ^ 2 := by
   simp [wignerCoordinateSquare]
+
+omit [MeasurableSpace Ω] in
+/-- The diagonal statistic is the square of the corresponding entry. -/
+@[simp] theorem wignerCoordinateSquare_inr (n : ℕ) (i : Fin n) (ω : Ω) :
+    wignerCoordinateSquare ξ η n (.inr i) ω = η i.val ω ^ 2 := by
+  simp [wignerCoordinateSquare, Complex.norm_real, Real.norm_eq_abs]
 
 /-- Squared coordinate norms remain independent. -/
 theorem wignerCoordinateSquare_independent
@@ -122,7 +121,7 @@ omit [MeasurableSpace Ω] in
 theorem integral_sq_spectralMeasure_wignerMatrix_weighted (n : ℕ) (ω : Ω) :
     (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) =
-      ∑ i : Fin (n + 1) ⊕ FinStrictUpper (n + 1),
+      ∑ i : WignerCoordinateIndex (n + 1),
         ((n + 1 : ℝ)⁻¹ ^ 2 * wignerCoordinateWeight (n + 1) i) *
           wignerCoordinateSquare ξ η (n + 1) i ω := by
   rw [integral_sq_spectralMeasure_wignerMatrix_coordinates]
@@ -133,12 +132,11 @@ theorem integral_sq_spectralMeasure_wignerMatrix_weighted (n : ℕ) (ω : Ω) :
   ring
 
 private theorem wignerCoordinate_card_le (n : ℕ) :
-    Fintype.card (Fin n ⊕ FinStrictUpper n) ≤ n + n ^ 2 := by
-  have h : Fintype.card (FinStrictUpper n) ≤ Fintype.card (Fin n × Fin n) :=
-    Fintype.card_le_of_injective Subtype.val Subtype.val_injective
-  simpa [Fintype.card_sum, Fintype.card_prod, pow_two] using Nat.add_le_add_left h n
+    Fintype.card (WignerCoordinateIndex n) ≤ n + n ^ 2 := by
+  rw [Fintype.card_sum, card_finStrictUpper, Fintype.card_fin, add_comm]
+  exact Nat.add_le_add_left (Nat.choose_le_pow n 2) n
 
-private theorem wignerCoordinateWeight_sq_le (n : ℕ) (i : Fin n ⊕ FinStrictUpper n) :
+private theorem wignerCoordinateWeight_sq_le (n : ℕ) (i : WignerCoordinateIndex n) :
     wignerCoordinateWeight n i ^ 2 ≤ 4 := by
   cases i <;> norm_num [wignerCoordinateWeight]
 
@@ -149,15 +147,15 @@ private theorem wignerCoordinate_variance_bound (n : ℕ)
       Var[wignerCoordinateSquare ξ η (n + 1) i; P]) ≤
       8 * V / (n + 1 : ℝ) ^ 2 := by
   have hV : 0 ≤ V :=
-    (variance_nonneg (wignerCoordinateSquare ξ η (n + 1) (.inl 0)) P).trans (hv (.inl 0))
+    (variance_nonneg (wignerCoordinateSquare ξ η (n + 1) (.inr 0)) P).trans (hv (.inr 0))
   have hn : (n + 1 : ℝ) ≠ 0 := by positivity
-  have hc : (Fintype.card (Fin (n + 1) ⊕ FinStrictUpper (n + 1)) : ℝ) ≤
+  have hc : (Fintype.card (WignerCoordinateIndex (n + 1)) : ℝ) ≤
       2 * (n + 1 : ℝ) ^ 2 := by
     have h := wignerCoordinate_card_le (n + 1)
-    have hh : (Fintype.card (Fin (n + 1) ⊕ FinStrictUpper (n + 1)) : ℝ) ≤
+    have hh : (Fintype.card (WignerCoordinateIndex (n + 1)) : ℝ) ≤
         (n + 1 : ℝ) + (n + 1 : ℝ) ^ 2 := by exact_mod_cast h
     nlinarith
-  have hp (i : Fin (n + 1) ⊕ FinStrictUpper (n + 1)) :
+  have hp (i : WignerCoordinateIndex (n + 1)) :
       wignerCoordinateWeight (n + 1) i ^ 2 *
         Var[wignerCoordinateSquare ξ η (n + 1) i; P] ≤ 4 * V := by
     calc
@@ -175,9 +173,9 @@ private theorem wignerCoordinate_variance_bound (n : ℕ)
     _ ≤ ((n + 1 : ℝ)⁻¹ ^ 2) ^ 2 * ((2 * (n + 1 : ℝ) ^ 2) * (4 * V)) := by
       apply mul_le_mul_of_nonneg_left _ (sq_nonneg _)
       calc
-        _ ≤ ∑ _i : Fin (n + 1) ⊕ FinStrictUpper (n + 1), 4 * V :=
+        _ ≤ ∑ _i : WignerCoordinateIndex (n + 1), 4 * V :=
           Finset.sum_le_sum (fun i _ ↦ hp i)
-        _ = (Fintype.card (Fin (n + 1) ⊕ FinStrictUpper (n + 1)) : ℝ) * (4 * V) := by simp
+        _ = (Fintype.card (WignerCoordinateIndex (n + 1)) : ℝ) * (4 * V) := by simp
         _ ≤ (2 * (n + 1 : ℝ) ^ 2) * (4 * V) :=
           mul_le_mul_of_nonneg_right hc (by positivity)
     _ = 8 * V / (n + 1 : ℝ) ^ 2 := by field_simp; ring

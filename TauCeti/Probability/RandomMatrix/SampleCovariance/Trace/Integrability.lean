@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.Probability.RandomMatrix.Integrability
 

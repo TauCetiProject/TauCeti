@@ -57,7 +57,7 @@ upper entries of the corner share a centered, square-integrable law, and the ine
 assumption on the diagonal entries. It is mean-square control when the squared difference is
 integrable, for instance when the diagonal entries of the corner are almost everywhere
 measurable. -/
-theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
+theorem integral_norm_integral_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) (R : ℝ≥0) (n : ℕ)
     (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :
     ∫ ω, ‖(∫ x, f x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -80,7 +80,7 @@ Lipschitz test function over the corner and over its centered truncation differ 
 positive threshold is bounded independently of the dimension. The upper entries of the corner
 share a centered, square-integrable law, and the diagonal is unrestricted. This is an ordinary
 probability bound whenever the event is measurable. -/
-theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
+theorem measure_norm_integral_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε)
     (R : ℝ≥0) (n : ℕ) (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :
     P {ω | ε ≤ ‖(∫ x, f x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -104,7 +104,7 @@ theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
 all positive matrix sizes, for the empirical spectral average of every Lipschitz test function
 when the upper entries have a common centered, square-integrable law. These are ordinary
 probabilities whenever the events are measurable. -/
-theorem tendsto_iSup_measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation
+theorem tendsto_iSup_measure_norm_integral_spectralMeasure_wignerMatrix_sub_centeredTruncation
     (hd : ∀ ij, IdentDistrib (ξ ij) X P Q)
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun R : ℝ≥0 ↦ ⨆ n : ℕ,
@@ -120,7 +120,7 @@ theorem tendsto_iSup_measure_norm_spectralMeasure_wignerMatrix_sub_centeredTrunc
       (hX.tendsto_integral_indicator_norm_sq.const_mul ((K : ℝ) ^ 2 / ε ^ 2))
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ht
     (fun _ ↦ bot_le) (fun R ↦ iSup_le fun n ↦
-      measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
+      measure_norm_integral_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
         hX hmean hf hε R n fun ij _ ↦ hd ij)
 
 end TauCeti.Probability

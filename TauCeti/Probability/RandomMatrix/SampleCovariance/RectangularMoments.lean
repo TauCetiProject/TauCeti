@@ -9,8 +9,8 @@ public import TauCeti.Combinatorics.TraceWord.Bipartite.Leading
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectralMeasure
 public import Mathlib.Probability.Independence.Integration
 import TauCeti.Probability.RandomMatrix.SampleCovariance.Moment
-import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
-import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceIntegrability
+import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Word
+import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Integrability
 
 /-!
 # The rectangular trace-word method for sample covariance moments

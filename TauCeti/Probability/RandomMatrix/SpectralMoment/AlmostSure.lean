@@ -111,8 +111,8 @@ theorem ae_tendsto_second_spectralMoment {V σ2 : ℝ}
     have hξi : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P := fun ij ↦
       Integrable.of_integral_ne_zero (by rw [hξ ij]; exact one_ne_zero)
     have hηi (i : ℕ) : Integrable (fun ω ↦ η i ω ^ 2) P := by
-      exact ((hmem i (.inl ⟨i, Nat.lt_succ_self i⟩)).integrable (by norm_num)).congr
-        (ae_of_all P (fun ω ↦ wignerCoordinateSquare_inl (i + 1) ⟨i, Nat.lt_succ_self i⟩ ω))
+      exact ((hmem i (.inr ⟨i, Nat.lt_succ_self i⟩)).integrable (by norm_num)).congr
+        (ae_of_all P (fun ω ↦ wignerCoordinateSquare_inr (i + 1) ⟨i, Nat.lt_succ_self i⟩ ω))
     have h := integral_re_trace_wignerMatrix_mul_self hξi hξ hηi hη (n + 1)
     have heq (ω : Ω) :
         (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure

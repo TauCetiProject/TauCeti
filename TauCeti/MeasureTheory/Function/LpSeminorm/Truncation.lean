@@ -34,7 +34,8 @@ The integral of a norm cutoff also tends to the original integral for any integr
 a finite absolute moment of order `k + 1`, the integral of its cutoff at a level `r > 0` has norm
 at most that moment divided by `r ^ k`, for an arbitrary measure
 (`MeasureTheory.MemLp.norm_integral_indicator_setOf_norm_le_le_of_integral_eq_zero`). Hence
-weights that are small compared with `r ^ k` still send it to zero
+weights that are small compared with `r ^ k` still send it to zero, with no sign condition on
+the weights or cutoffs
 (`MeasureTheory.MemLp.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero`).
 -/
 
@@ -220,21 +221,34 @@ theorem MemLp.norm_integral_indicator_setOf_norm_le_le_of_integral_eq_zero
     exact div_nonneg (integral_nonneg fun _ ↦ by positivity) (pow_nonneg hr.le _)
 
 /-- The weighted truncated mean tends to zero when the weight divided by the
-cutoff to the power `k` tends to zero and the centered variable has moment `k + 1`. -/
+cutoff to the power `k` tends to zero and the centered variable has moment `k + 1`. The cutoffs
+and weights are arbitrary real families: a nonpositive cutoff keeps only zero values. -/
 theorem MemLp.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : Ω → E}
     {k : ℕ} (hf : MemLp f (↑(k + 1 : ℕ)) P)
     (hmean : ∫ ω, f ω ∂P = 0)
-    {ι : Type*} {l : Filter ι} {R w : ι → ℝ} (hR : ∀ i, 0 < R i) (hw : ∀ i, 0 ≤ w i)
+    {ι : Type*} {l : Filter ι} {R w : ι → ℝ}
     (hlim : Tendsto (fun i ↦ w i / R i ^ k) l (𝓝 0)) :
     Tendsto (fun i ↦ w i * ‖∫ ω, {ω' | ‖f ω'‖ ≤ R i}.indicator f ω ∂P‖) l (𝓝 0) := by
   let C := ∫ ω, ‖f ω‖ ^ (k + 1) ∂P
-  refine squeeze_zero (fun i ↦ mul_nonneg (hw i) (norm_nonneg _)) (fun i ↦ ?_)
-    (by simpa only [mul_zero] using hlim.const_mul C)
-  calc
-    _ ≤ w i * (C / R i ^ k) :=
-      mul_le_mul_of_nonneg_left
-        (hf.norm_integral_indicator_setOf_norm_le_le_of_integral_eq_zero hmean (hR i)) (hw i)
-    _ = C * (w i / R i ^ k) := by rw [mul_div_left_comm, ← mul_div_assoc]
+  have hC : 0 ≤ C := integral_nonneg fun _ ↦ by positivity
+  refine squeeze_zero_norm (fun i ↦ ?_)
+    (by simpa only [abs_zero, mul_zero] using hlim.abs.const_mul C)
+  rw [norm_mul, Real.norm_eq_abs, norm_norm]
+  rcases le_or_gt (R i) 0 with hR | hR
+  · -- At a nonpositive cutoff only zero values are kept, so the truncated mean vanishes.
+    have h0 : {ω' | ‖f ω'‖ ≤ R i}.indicator f = 0 := by
+      ext ω
+      by_cases hω : ‖f ω‖ ≤ R i
+      · rw [indicator_of_mem hω, Pi.zero_apply, ← norm_le_zero_iff]
+        exact hω.trans hR
+      · rw [indicator_of_notMem hω, Pi.zero_apply]
+    rw [h0, Pi.zero_def, integral_zero, norm_zero, mul_zero]
+    exact mul_nonneg hC (abs_nonneg _)
+  · calc
+      _ ≤ |w i| * (C / R i ^ k) := mul_le_mul_of_nonneg_left
+          (hf.norm_integral_indicator_setOf_norm_le_le_of_integral_eq_zero hmean hR)
+          (abs_nonneg _)
+      _ = C * |w i / R i ^ k| := by rw [abs_div, abs_of_pos (pow_pos hR k)]; ring
 
 end MeasureTheory

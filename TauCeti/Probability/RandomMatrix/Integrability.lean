@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
-import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 

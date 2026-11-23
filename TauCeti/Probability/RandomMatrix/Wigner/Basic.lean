@@ -882,7 +882,7 @@ theorem integral_norm_wignerMatrix_sub_sq {ξ' : StrictUpper → Ω → ℂ} {n 
   have hcard : (Fintype.card (FinStrictUpper (n + 1)) : ℝ) * 2 = (n + 1) * n := by
     have h := Nat.add_one_mul_choose_eq n 1
     rw [Nat.choose_one_right] at h
-    rw [Fintype.card_subtype, Fintype.card_product_filter_lt, Fintype.card_fin]
+    rw [card_finStrictUpper]
     exact_mod_cast h.symm
   rw [integral_norm_wignerMatrix_sub_sq_eq_sum hξ]
   simp only [hs _ (FinStrictUpper.toStrictUpper_val_snd_lt _), Finset.sum_const,

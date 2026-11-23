@@ -9,7 +9,6 @@ public import TauCeti.Probability.RandomMatrix.Covariance
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Expected
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Probability.Moments.Variance
-import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
 
 /-!
 # Covariance, variance, and concentration of Wigner empirical spectral moments
@@ -31,8 +30,6 @@ Borel--Cantelli lemma is established in
 
 ## Main results
 
-* `memLp_integral_pow_spectralMeasure_wignerMatrix`: the `k`-th empirical spectral moment of
-  `Hₙ₊₁` lies in `Lᵖ` under `L^(p * k)` corner entries.
 * `abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le` and
   `variance_integral_pow_spectralMeasure_wignerMatrix_le`: quantitative `O((n + 1)⁻²)` covariance
   and variance bounds for empirical spectral moments of all orders.
@@ -65,18 +62,6 @@ section FixedSpace
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
-
-/-- If the entries in the `(n + 1) × (n + 1)` corner of the Wigner array lie in `L^(p * k)`, the
-`k`-th empirical spectral moment of `Hₙ₊₁` lies in `Lᵖ` for every `p : ℝ≥0∞`, without
-independence or centering. The measure is assumed finite when `k = 0`. -/
-theorem memLp_integral_pow_spectralMeasure_wignerMatrix {p : ℝ≥0∞} {k : ℕ}
-    (hP : k = 0 → IsFiniteMeasure P) (n : ℕ)
-    (hξp : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (ξ ij) (p * k) P)
-    (hηp : ∀ i < n + 1, MemLp (η i) (p * k) P) :
-    MemLp (fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) p P := by
-  simp_rw [Matrix.integral_pow_spectralMeasure, Fintype.card_fin]
-  exact (memLp_trace_pow_wignerMatrix hP hξp hηp).re.const_mul _
 
 /-- **Empirical spectral moment covariance bound.** Under independent centered entries in
 `L^(k₁ + k₂)` with `(k₁ + k₂)`-th absolute moments bounded by `B`, the covariance between the

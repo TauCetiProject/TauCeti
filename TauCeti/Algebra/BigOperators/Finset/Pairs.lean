@@ -74,7 +74,8 @@ by `ℕ`, and the positions of `Fin n` form the initial segment of length `n.cho
   bimultiplicative pairing.
 * `TauCeti.strictUpperEquivNat`: the column-order enumeration `StrictUpper ≃ ℕ`, sending `(i, j)`
   to `j.choose 2 + i`; its restriction `TauCeti.finStrictUpperEquiv` to `FinStrictUpper n` has
-  range `Fin (n.choose 2)`.
+  range `Fin (n.choose 2)`, so `FinStrictUpper n` has `n.choose 2` elements
+  (`TauCeti.card_finStrictUpper`).
 * `TauCeti.sum_finStrictUpper_eq_sum_range`: a sum over `FinStrictUpper n` as a sum over the first
   `n.choose 2` positions of the column enumeration.
 -/
@@ -532,6 +533,11 @@ noncomputable def finStrictUpperEquiv (n : ℕ) : FinStrictUpper n ≃ Fin (n.ch
   ((finStrictUpperEquivSubtype n).trans (strictUpperEquivNat.subtypeEquiv fun ij ↦ by
     simp only [strictUpperEquivNat_apply, choose_two_add_lt_choose_two_iff])).trans
       Fin.equivSubtype.symm
+
+/-- There are `n.choose 2` strictly increasing pairs in `Fin n`. -/
+@[simp]
+theorem card_finStrictUpper (n : ℕ) : Fintype.card (FinStrictUpper n) = n.choose 2 :=
+  (Fintype.card_congr (finStrictUpperEquiv n)).trans (Fintype.card_fin _)
 
 /-- The finite enumeration gives the same index as the infinite column enumeration. -/
 @[simp]

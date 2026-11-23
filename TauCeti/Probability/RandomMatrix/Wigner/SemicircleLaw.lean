@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Resolvent
-import TauCeti.Probability.RandomMatrix.Wigner.Corner.Average
+import TauCeti.Probability.StrongLaw
 import TauCeti.Probability.RandomMatrix.Wigner.Centering.SpectralMeasure
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.SpectralMeasure
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
