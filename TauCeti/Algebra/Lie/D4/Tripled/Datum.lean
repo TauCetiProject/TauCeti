@@ -54,7 +54,7 @@ Its character basis is the standard basis of fundamental weights. -/
 -- Expose the inherited carrier and dimension for dependent coordinate-space equations.
 @[expose] def chevalleyDatum : ChevalleyDatum (.D 4) (by decide) :=
   weightTable.chevalleyDatum (t := .D 4) (by decide)
-    (by exact weightTable_pinnedCartanMatrix) (by exact weightTable_span) (Equiv.refl _)
+    (by exact weightTable_pinnedCartanMatrix) (by exact weightTable_span)
 
 /-- The tripled datum uses the pinned rational weight-table action. -/
 @[simp] theorem chevalleyDatum_representation :
@@ -102,8 +102,7 @@ Its character basis is the standard basis of fundamental weights. -/
 /-- The tripled datum uses the existing coordinate basis. -/
 @[simp] theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := by
   refine (weightTable.chevalleyDatum_basis (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)).trans ?_
-  rw [Module.Basis.reindex_refl]
+    weightTable_pinnedCartanMatrix weightTable_span).trans ?_
   apply Module.Basis.eq_of_apply_eq
   intro i
   apply Subtype.ext
@@ -114,31 +113,31 @@ Its character basis is the standard basis of fundamental weights. -/
 @[simp] theorem chevalleyDatum_weight :
     chevalleyDatum.weight = d4TripledWeight := by
   exact (weightTable.chevalleyDatum_weight (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)).trans weightTable_weight
+    weightTable_pinnedCartanMatrix weightTable_span).trans weightTable_weight
 
 /-- The tripled datum has the full simply connected weight lattice. -/
 @[simp] theorem chevalleyDatum_weightLattice : chevalleyDatum.weightLattice = ⊤ := by
   exact weightTable.chevalleyDatum_weightLattice (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)
+    weightTable_pinnedCartanMatrix weightTable_span
 
 /-- The character basis is the standard fundamental-weight basis. -/
 @[simp↓] theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin (DynkinType.D 4).rank) :
     (chevalleyDatum.weightLatticeBasis i : Fin (DynkinType.D 4).rank → ℤ) = Pi.single i 1 := by
   exact weightTable.coe_chevalleyDatum_weightLatticeBasis (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _) i
+    weightTable_pinnedCartanMatrix weightTable_span i
 
 /-- The torus coordinates of the tripled datum are its original fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
     chevalleyDatum.coordinateWeight = d4TripledWeight := by
   exact (weightTable.chevalleyDatum_coordinateWeight (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)).trans weightTable_weight
+    weightTable_pinnedCartanMatrix weightTable_span).trans weightTable_weight
 
 /-- The coordinate roots are the original roots in fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateRoot (γ : Fin (DynkinType.D 4).numRoots) :
     chevalleyDatum.coordinateRoot γ =
       ((DynkinType.D 4).simplyConnectedRootDatum (by decide)).root γ := by
   exact congrFun (weightTable.chevalleyDatum_coordinateRoot (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)) γ
+    weightTable_pinnedCartanMatrix weightTable_span) γ
 
 end
 
