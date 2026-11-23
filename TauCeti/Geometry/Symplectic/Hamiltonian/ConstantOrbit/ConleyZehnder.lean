@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.Signature
 import TauCeti.Algebra.Lie.Symplectic.Basic
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Geometry.Lie.Subgroup.Symplectic
+import TauCeti.Geometry.Symplectic.ConleyZehnder
 
 /-!
 # The Conley–Zehnder index of the constant orbits of a small Hamiltonian
@@ -171,13 +172,12 @@ Hessian of `F` at `p`. The point `p` need not be critical. -/
 theorem toMatrix_fderiv_hamiltonianVectorField_eq_J_mul (b : Module.Basis (n ⊕ n) ℝ V)
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J n ℝ) (hF : ContDiffAt ℝ 2 F p) :
     LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p) =
-      J n ℝ * LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ F) p).toBilinForm := by
-  have h := ω.toMatrix_mul_toMatrix_fderiv_hamiltonianVectorField b hF
-  rw [hb] at h
-  set M := LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p)
-  -- `J M = -S`, so `M = -J (J M) = J S`.
-  calc M = -J n ℝ * (J n ℝ * M) := by rw [← Matrix.mul_assoc, neg_J_mul_J, Matrix.one_mul]
-    _ = _ := by rw [h, neg_mul_neg]
+      J n ℝ * LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ F) p).toBilinForm :=
+  ω.toMatrix_eq_J_mul_toMatrix_of_apply_eq
+    (ω.apply_fderiv_hamiltonianVectorField
+      ((hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero))
+    ((LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).1
+      (isHermitian_toMatrix_toBilinForm_fderiv_fderiv b hF).isSymm) hb
 
 /-- **The matrix of the linearized Hamiltonian vector field in a complex basis.** In a basis `b` in
 which `ω` has matrix `-J`, the matrix of `dX_F(p)` is `J (-S)`, for the matrix `S` of the Hessian
@@ -261,15 +261,10 @@ private theorem eventually_conleyZehnderIndex_eq_neg_signature_div_two
         LinearMap.toMatrix b b
           (fderiv ℝ (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX 0 t) p)) →
       GLSymplectic.conleyZehnderIndex γ = -(signature T : ℝ) / 2 := by
-  have ht : Tendsto (fun ε : ℝ ↦ ε • T) (𝓝[>] 0) (𝓝 0) := by
-    simpa using ((tendsto_id.smul_const T).mono_left nhdsWithin_le_nhds :
-      Tendsto (fun ε : ℝ ↦ ε • T) (𝓝[>] 0) (𝓝 ((0 : ℝ) • T)))
-  filter_upwards [ht.eventually (GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two
-    (n := n)), self_mem_nhdsWithin] with ε hε hε0 K hX A B γ hγ
-  rw [hε (hT.smul (IsSelfAdjoint.all ε))
-      (by rw [det_smul]; exact ((IsUnit.mk0 ε (ne_of_gt hε0)).pow _).mul hTdet) γ
-      fun t ↦ by rw [hγ t, ω.toMatrix_fderiv_timeDependentHamiltonianFlow_eq_exp b hM hF hp ε hX],
-    signature_smul_of_pos hε0]
+  filter_upwards [GLSymplectic.eventually_conleyZehnderIndex_exp_smul_eq_neg_signature_div_two hT
+    hTdet] with ε hε K hX A B γ hγ
+  exact hε γ fun t ↦ by
+    rw [hγ t, ω.toMatrix_fderiv_timeDependentHamiltonianFlow_eq_exp b hM hF hp ε hX]
 
 variable (b : Module.Basis (n ⊕ n) ℝ V)
 
