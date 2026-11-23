@@ -208,13 +208,15 @@ theorem isPullback_subschemeMap_comap {X' S' : Scheme.{u}} (I : X.IdealSheafData
     isPullback_of_isClosedImmersion _ _ _ _ (by simp) (by simp)
   simpa [Category.assoc] using (hI.paste_horiz H.flip).flip
 
-/-- **Schematic images of quasi-compact morphisms commute with flat base change.** If `f' : U ⟶ V`
-is the base change of a quasi-compact morphism `f : X ⟶ Y` along a flat morphism `iV : V ⟶ Y`,
-then pulling the schematic image `I.map f` back along `iV` gives the schematic image along `f'` of
-the inverse image `I.comap iU`. -/
+/-- **Schematic images of ideal sheaves commute with flat base change** when the restriction of
+`f` to the closed subscheme `I.subscheme` is quasi-compact. If `f' : U ⟶ V` is the base change of
+`f : X ⟶ Y` along a flat morphism `iV : V ⟶ Y` and `I.subschemeι ≫ f` is quasi-compact, then
+pulling the schematic image `I.map f` back along `iV` gives the schematic image along `f'` of the
+inverse image `I.comap iU`. -/
 theorem comap_map_of_isPullback_of_flat {U V Y : Scheme.{u}} (I : X.IdealSheafData)
-    {f : X ⟶ Y} {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [Flat iV] [QuasiCompact f]
-    (H : IsPullback f' iU iV f) : (I.map f).comap iV = (I.comap iU).map f' :=
+    {f : X ⟶ Y} {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [Flat iV]
+    [QuasiCompact (I.subschemeι ≫ f)] (H : IsPullback f' iU iV f) :
+    (I.map f).comap iV = (I.comap iU).map f' :=
   (ker_eq_comap_of_isPullback_of_flat iV (I.isPullback_subschemeMap_comap f H.flip).flip).symm
 
 /-- The degree of a finite flat closed subscheme is preserved by base change. More precisely, if
