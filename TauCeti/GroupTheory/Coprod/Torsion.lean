@@ -18,9 +18,8 @@ two nonidentity elements from distinct factors corresponds under `Monoid.Coprod.
 two-letter reduced word with distinct endpoint factors, so it has infinite order.
 
 When the factors are groups, transporting the indexed classification
-`Monoid.CoprodI.eq_one_or_exists_isConj_of_of_isOfFinOrder` across `Monoid.Coprod.toCoprodI`
-shows that every finite-order element of `G ∗ H` is conjugate to an element of `G` or `H` of the
-same order.
+`Monoid.CoprodI.isOfFinOrder_iff` across `Monoid.Coprod.toCoprodI` shows that every finite-order
+element of `G ∗ H` is conjugate to an element of `G` or `H` of the same order.
 
 ## Main results
 
@@ -95,7 +94,7 @@ theorem isOfFinOrder_iff {g : G ∗ H} :
   refine ⟨fun hg ↦ ?_, ?_⟩
   · have hg' : IsOfFinOrder (toCoprodI g) :=
       (toCoprodI (M := G) (N := H)).toMonoidHom.isOfFinOrder hg
-    rcases CoprodI.eq_one_or_exists_isConj_of_of_isOfFinOrder hg' with h1 | ⟨b, x, -, hx, hconj⟩
+    rcases CoprodI.isOfFinOrder_iff.mp hg' with h1 | ⟨b, x, -, hx, hconj⟩
     · have hg1 : g = 1 := toCoprodI.injective (by simpa using h1)
       exact Or.inl ⟨1, IsOfFinOrder.one, by simp [hg1]⟩
     · cases b

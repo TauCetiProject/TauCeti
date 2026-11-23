@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
-public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+public import TauCeti.NumberTheory.Modular.Generators
 import Mathlib.Data.ZMod.Basic
+import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
 
 /-!
 # The abelianization of the modular group

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.Coprod.Abelianization
 public import TauCeti.GroupTheory.TriangleGroup.Basic
 import TauCeti.Data.ZMod.MonoidHomEquiv
@@ -87,18 +86,12 @@ def equivCoprod (a b : ℕ) :
       (by simp [toCoprodHom, fromCoprodHom])
       (by simp [toCoprodHom, fromCoprodHom]))
     (Monoid.Coprod.hom_ext
-      (MonoidHom.ext fun u ↦ by
-        obtain ⟨k, hk⟩ := ZMod.intCast_surjective u.toAdd
-        have hu : u = .ofAdd (k : ZMod a) := by rw [hk, ofAdd_toAdd]
-        simp only [hu, MonoidHom.comp_apply, MonoidHom.id_apply, fromCoprodHom,
-          Monoid.Coprod.lift_apply_inl, zmodLift_ofAdd_intCast, toCoprodHom, map_zpow, lift_x]
-        rw [← map_zpow, ← ofAdd_zsmul, zsmul_one])
-      (MonoidHom.ext fun v ↦ by
-        obtain ⟨k, hk⟩ := ZMod.intCast_surjective v.toAdd
-        have hv : v = .ofAdd (k : ZMod b) := by rw [hk, ofAdd_toAdd]
-        simp only [hv, MonoidHom.comp_apply, MonoidHom.id_apply, fromCoprodHom,
-          Monoid.Coprod.lift_apply_inr, zmodLift_ofAdd_intCast, toCoprodHom, map_zpow, lift_y]
-        rw [← map_zpow, ← ofAdd_zsmul, zsmul_one]))
+      (MonoidHom.eq_of_eqOn_dense (Multiplicative.closure_ofAdd_one a) <| by
+        rintro _ rfl
+        simp [toCoprodHom, fromCoprodHom])
+      (MonoidHom.eq_of_eqOn_dense (Multiplicative.closure_ofAdd_one b) <| by
+        rintro _ rfl
+        simp [toCoprodHom, fromCoprodHom]))
 
 @[simp]
 theorem equivCoprod_x (a b : ℕ) :

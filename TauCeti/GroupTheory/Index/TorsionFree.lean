@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.OrderOfElement
-import TauCeti.GroupTheory.GroupAction.Free
+import Mathlib.Data.ZMod.QuotientGroup
+import TauCeti.GroupTheory.Index.CosetAction
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -53,18 +53,16 @@ theorem isCancelSMul_quotient_of_isMulTorsionFree (H K : Subgroup G) [IsMulTorsi
 /-- The cardinality of any finite subgroup `K ≤ G` divides the index of any torsion-free subgroup
 `H ≤ G`. -/
 theorem natCard_dvd_index_of_isMulTorsionFree (H K : Subgroup G) [IsMulTorsionFree H] [Finite K] :
-    Nat.card K ∣ H.index := by
-  have : IsCancelSMul K (G ⧸ H) :=
-    isCancelSMul_quotient_of_isMulTorsionFree H K isOfFinOrder_of_finite
-  rw [H.index_eq_card]
-  exact MulAction.natCard_dvd_natCard_of_isCancelSMul
+    Nat.card K ∣ H.index :=
+  natCard_dvd_index_of_forall_conj_mem
+    (isCancelSMul_quotient_iff.mp
+      (isCancelSMul_quotient_of_isMulTorsionFree H K isOfFinOrder_of_finite))
 
 /-- The order of any finite-order element `x : G` divides the index of any torsion-free subgroup
 `H ≤ G`. -/
 theorem orderOf_dvd_index_of_isMulTorsionFree (H : Subgroup G) [IsMulTorsionFree H] {x : G}
     (hx : IsOfFinOrder x) : orderOf x ∣ H.index := by
-  have : Finite (zpowers x) := Finite.of_equiv _ (finEquivZPowers hx)
-  rw [← Nat.card_fin (orderOf x), Nat.card_congr (finEquivZPowers hx)]
-  exact natCard_dvd_index_of_isMulTorsionFree H (zpowers x)
+  have : Finite (zpowers x) := hx.finite_zpowers
+  simpa only [Nat.card_zpowers] using H.natCard_dvd_index_of_isMulTorsionFree (zpowers x)
 
 end Subgroup

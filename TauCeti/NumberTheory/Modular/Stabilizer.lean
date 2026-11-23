@@ -12,6 +12,8 @@ public import TauCeti.NumberTheory.Modular.Orbits
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.NumberTheory.ModularForms.ProperlyDiscontinuous
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
+import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.OrderOf
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # Orders of the point stabilisers of the modular group
@@ -67,6 +69,9 @@ positive-determinant matrix fixing a point as elliptic.
   `TauCeti.ModularGroup.ellipticOrder_ρ`, `TauCeti.ModularGroup.ellipticOrder_pos`,
   `TauCeti.ModularGroup.ellipticOrder_le_three` and
   `TauCeti.ModularGroup.cardStabilizerOnOrbit_eq_two_mul_ellipticOrder`.
+* `TauCeti.ModularGroup.exists_smul_eq_self_of_isOfFinOrder` and
+  `TauCeti.ModularGroup.isOfFinOrder_iff_exists_smul_eq_self`: an element of `PSL(2, ℤ)` has
+  finite order exactly when it fixes a point of the upper half-plane.
 
 ## References
 
@@ -313,6 +318,36 @@ theorem ellipticOrder_le_three (q : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) 
   · rw [hρ, ellipticOrder_ρ]
   · rw [ellipticOrder_eq_one_of_orbit_ne_I_of_orbit_ne_ρ hI hρ]
     omega
+
+/-- **Torsion elements of `PSL(2, ℤ)` are elliptic**: an element of finite order fixes a point
+of the upper half-plane. -/
+theorem exists_smul_eq_self_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) :
+    ∃ z : ℍ, g • z = z := by
+  obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
+  by_cases h1 : (γ : PSL(2, ℤ)) = 1
+  · exact ⟨I, by rw [h1, one_smul]⟩
+  have hell := Matrix.ProjectiveSpecialLinearGroup.isElliptic_of_isOfFinOrder_mk hg h1
+  have hd : (Matrix.SpecialLinearGroup.mapGL ℝ γ).val.det = 1 := by
+    rw [← Matrix.GeneralLinearGroup.val_det_apply]
+    simp
+  have hellR : (Matrix.SpecialLinearGroup.mapGL ℝ γ).IsElliptic := by
+    rw [Matrix.GeneralLinearGroup.IsElliptic, Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+    exact Matrix.IsElliptic.map_intCast hell
+  refine ⟨fixedPt _ hellR, ?_⟩
+  rw [pslMk_smul]
+  exact (gl_smul_eq_self_iff_eq_fixedPt (by rw [hd]; norm_num) hellR).2 rfl
+
+/-- **The elliptic elements of `PSL(2, ℤ)` are its torsion**: an element has finite order exactly
+when it fixes a point of the upper half-plane. Point stabilisers are finite, of order at most
+`3`. -/
+theorem isOfFinOrder_iff_exists_smul_eq_self {g : PSL(2, ℤ)} :
+    IsOfFinOrder g ↔ ∃ z : ℍ, g • z = z := by
+  refine ⟨exists_smul_eq_self_of_isOfFinOrder, fun ⟨z, hz⟩ ↦ ?_⟩
+  have hpos := ellipticOrder_pos (Quotient.mk'' z)
+  rw [ellipticOrder_mk] at hpos
+  have : Finite (MulAction.stabilizer PSL(2, ℤ) z) := Nat.finite_of_card_ne_zero hpos.ne'
+  exact (MulAction.stabilizer PSL(2, ℤ) z).subtype.isOfFinOrder
+    (isOfFinOrder_of_finite (⟨g, hz⟩ : MulAction.stabilizer PSL(2, ℤ) z))
 
 end ModularGroup
 

@@ -27,9 +27,9 @@ factor, of the same order.
   in distinct factors has infinite order.
 * `Monoid.CoprodI.NeWord.exists_isConj_length_lt`: a nonempty reduced word of length at least `2`
   whose endpoints lie in the same factor is conjugate to a strictly shorter reduced word.
-* `Monoid.CoprodI.eq_one_or_exists_isConj_of_of_isOfFinOrder`, `Monoid.CoprodI.isOfFinOrder_iff`,
-  `Monoid.CoprodI.orderOf_eq_iff`: classification of finite-order elements and elements of given
-  finite order `n > 1` in an indexed free product of groups.
+* `Monoid.CoprodI.isOfFinOrder_iff`, `Monoid.CoprodI.orderOf_eq_iff`: classification of
+  finite-order elements and elements of given finite order `n > 1` in an indexed free product of
+  groups.
 
 ## References
 
@@ -146,22 +146,17 @@ private theorem word_prod_eq_one_or_exists_isConj_of :
         · exact Or.inr ⟨k, z, hz1, hzfin, hconj.trans hconj_z⟩
       · exact False.elim (u.not_isOfFinOrder_prod_of_ne hij hfin)
 
-/-- **Torsion in an indexed free product of groups.** Every element of finite order in `CoprodI G`
-is either `1` or conjugate to `of x` for a nonidentity element `x` of finite order in some factor
-`G i`. -/
-theorem eq_one_or_exists_isConj_of_of_isOfFinOrder {g : CoprodI G} (hg : IsOfFinOrder g) :
-    g = 1 ∨ ∃ (i : ι) (x : G i), x ≠ 1 ∧ IsOfFinOrder x ∧ IsConj g (of x) := by
-  obtain ⟨w, rfl⟩ := Word.prod_surjective g
-  exact word_prod_eq_one_or_exists_isConj_of w.toList.length w rfl hg
-
-/-- An element of `CoprodI G` has finite order if and only if it is `1` or conjugate to `of x` for
-a nonidentity finite-order element `x` of some factor `G i`. -/
+/-- **Torsion in an indexed free product of groups.** An element of `CoprodI G` has finite order
+if and only if it is `1` or conjugate to `of x` for a nonidentity finite-order element `x` of some
+factor `G i`. -/
 theorem isOfFinOrder_iff {g : CoprodI G} :
     IsOfFinOrder g ↔ g = 1 ∨ ∃ (i : ι) (x : G i), x ≠ 1 ∧ IsOfFinOrder x ∧ IsConj g (of x) := by
-  refine ⟨eq_one_or_exists_isConj_of_of_isOfFinOrder, ?_⟩
-  rintro (rfl | ⟨i, x, -, hx, hconj⟩)
-  · exact IsOfFinOrder.one
-  · exact hconj.symm.isOfFinOrder (of.isOfFinOrder hx)
+  refine ⟨fun hg ↦ ?_, ?_⟩
+  · obtain ⟨w, rfl⟩ := Word.prod_surjective g
+    exact word_prod_eq_one_or_exists_isConj_of w.toList.length w rfl hg
+  · rintro (rfl | ⟨i, x, -, hx, hconj⟩)
+    · exact IsOfFinOrder.one
+    · exact hconj.symm.isOfFinOrder (of.isOfFinOrder hx)
 
 /-- For `1 < n`, an element of `CoprodI G` has order `n` if and only if it is conjugate to `of x`
 for an element `x` of order `n` in some factor `G i`. -/
@@ -169,7 +164,7 @@ theorem orderOf_eq_iff {g : CoprodI G} {n : ℕ} (hn : 1 < n) :
     orderOf g = n ↔ ∃ (i : ι) (x : G i), orderOf x = n ∧ IsConj g (of x) := by
   refine ⟨fun hg ↦ ?_, ?_⟩
   · have hfin : IsOfFinOrder g := orderOf_pos_iff.mp (by omega)
-    rcases eq_one_or_exists_isConj_of_of_isOfFinOrder hfin with rfl | ⟨i, x, -, -, hconj⟩
+    rcases isOfFinOrder_iff.mp hfin with rfl | ⟨i, x, -, -, hconj⟩
     · simp at hg
       omega
     · let ⟨_, hc⟩ := hconj

@@ -29,7 +29,8 @@ multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (ZMod N × ZM
 
 ## Main results
 
-* `Multiplicative.mem_zpowers_ofAdd_one`: the element `1` generates `ℤ/Nℤ`.
+* `Multiplicative.mem_zpowers_ofAdd_one`, `Multiplicative.closure_ofAdd_one`: the element `1`
+  generates `ℤ/Nℤ`.
 * `TauCeti.zmodLift_ofAdd_intCast`, `TauCeti.zmodLift_ofAdd_natCast`,
   `TauCeti.zmodLift_ofAdd_one`, `TauCeti.zmodLift_ofAdd`: evaluation of `TauCeti.zmodLift` on
   integer casts, natural casts, `1`, and arbitrary elements of `ZMod N` (for `N ≠ 0`).
@@ -48,6 +49,13 @@ variable {N : ℕ}
 theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
     x ∈ Subgroup.zpowers (.ofAdd 1) :=
   ⟨x.toAdd.cast, by simp [← ofAdd_zsmul]⟩
+
+/-- The standard generator `1` of `ℤ/Nℤ`, written multiplicatively, has subgroup closure `⊤`. -/
+theorem Multiplicative.closure_ofAdd_one (N : ℕ) :
+    Subgroup.closure {(.ofAdd 1 : Multiplicative (ZMod N))} = ⊤ :=
+  eq_top_iff.mpr fun x _ ↦
+    Subgroup.zpowers_eq_closure (Multiplicative.ofAdd (1 : ZMod N)) ▸
+      Multiplicative.mem_zpowers_ofAdd_one x
 
 namespace TauCeti
 

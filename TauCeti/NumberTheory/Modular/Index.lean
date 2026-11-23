@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Index
-public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import TauCeti.GroupTheory.Index.TorsionFree
 import TauCeti.NumberTheory.Modular.Generators
