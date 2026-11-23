@@ -106,8 +106,8 @@ theorem coe_sphereJoinMap_mk (x : sphere (0 : E) 1) (y : sphere (0 : F) 1) (t : 
 /-- The map from the join of the unit spheres to the unit sphere of `E ⊕₂ F` is injective. -/
 theorem injective_sphereJoinMap : Function.Injective (sphereJoinMap (E := E) (F := F)) := by
   intro z z' h
-  induction z using Join.ind with | h x y t => ?_
-  induction z' using Join.ind with | h x' y' t' => ?_
+  induction z using Join.induction with | h x y t => ?_
+  induction z' using Join.induction with | h x' y' t' => ?_
   have hxy := congrArg (fun p : sphere (0 : WithLp 2 (E × F)) 1 ↦ ofLp (p : WithLp 2 (E × F))) h
   simp only [coe_sphereJoinMap_mk, ofLp_toLp, Prod.mk.injEq] at hxy
   obtain ⟨hx, hy⟩ := hxy
@@ -177,6 +177,7 @@ variable {n m : ℕ}
 
 /-- The first `n + 1` coordinates of the image of `[x, y, t]` under
 `TauCeti.euclideanSphereJoinHomeomorph` are those of `√(1 - t) x`. -/
+@[simp]
 theorem coe_euclideanSphereJoinHomeomorph_mk_castAdd
     (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
     (y : sphere (0 : EuclideanSpace ℝ (Fin (m + 1))) 1) (t : I) (i : Fin (n + 1)) :
@@ -187,6 +188,7 @@ theorem coe_euclideanSphereJoinHomeomorph_mk_castAdd
 
 /-- The last `m + 1` coordinates of the image of `[x, y, t]` under
 `TauCeti.euclideanSphereJoinHomeomorph` are those of `√t y`. -/
+@[simp]
 theorem coe_euclideanSphereJoinHomeomorph_mk_natAdd
     (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
     (y : sphere (0 : EuclideanSpace ℝ (Fin (m + 1))) 1) (t : I) (i : Fin (m + 1)) :

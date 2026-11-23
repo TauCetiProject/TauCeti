@@ -15,8 +15,9 @@ public import Mathlib.Topology.UnitInterval
 The join `X * Y` of two spaces is the space of formal segments from a point of `X` to a point of
 `Y`: it is the quotient of `X × Y × I` in which the triple `(x, y, t)` is identified with
 `(x, y', 0)` for every `y'` when `t = 0`, and with `(x', y, 1)` for every `x'` when `t = 1`.
-So the end `t = 0` is a copy of `X`, the end `t = 1` is a copy of `Y`, and every point of `X` is
-joined to every point of `Y` by a segment. It carries the quotient topology.
+So when `Y` is nonempty the end `t = 0` is a copy of `X`, when `X` is nonempty the end `t = 1`
+is a copy of `Y`, and every point of `X` is joined to every point of `Y` by a segment (if either
+space is empty, so is the join). It carries the quotient topology.
 
 The join is the source of the Hopf construction: a map `μ : X × Y → Z` gives a map
 `X * Y → ΣZ` to the unreduced suspension by `[x, y, t] ↦ [μ (x, y), t]`. For unit spheres the
@@ -70,7 +71,8 @@ def joinSetoid : Setoid (X × Y × I) where
           fun ht ↦ (hy ht).trans (hy' (h ▸ ht))⟩ }
 
 /-- The join `X * Y` of two spaces: the quotient of `X × Y × I` collapsing `X × Y × {0}` onto `X`
-and `X × Y × {1}` onto `Y`, with the quotient topology. -/
+and `X × Y × {1}` onto `Y` (onto a copy of `X` when `Y` is nonempty, and of `Y` when `X` is
+nonempty; the join is empty when either space is), with the quotient topology. -/
 def Join : Type _ :=
   Quotient (joinSetoid X Y)
 
@@ -101,13 +103,13 @@ theorem mk_one (x x' : X) (y : Y) : mk x y 1 = mk x' y 1 :=
 
 /-- Every point of the join is of the form `[x, y, t]`. -/
 @[elab_as_elim]
-theorem ind {motive : Join X Y → Prop} (h : ∀ x y t, motive (mk x y t)) (z : Join X Y) :
+theorem induction {motive : Join X Y → Prop} (h : ∀ x y t, motive (mk x y t)) (z : Join X Y) :
     motive z :=
   Quotient.ind (fun p ↦ h p.1 p.2.1 p.2.2) z
 
 /-- Every point of the join is of the form `[x, y, t]`. -/
 theorem exists_mk_eq (z : Join X Y) : ∃ x y t, mk x y t = z :=
-  ind (fun x y t ↦ ⟨x, y, t, rfl⟩) z
+  induction (fun x y t ↦ ⟨x, y, t, rfl⟩) z
 
 variable [TopologicalSpace X] [TopologicalSpace Y]
 
@@ -156,7 +158,7 @@ theorem lift_mk (f : C(X × Y × I, Z)) (h₀ : ∀ x y y', f (x, y, 0) = f (x, 
 /-- Continuous maps out of the join that agree on every point `[x, y, t]` are equal. -/
 theorem continuousMap_ext {g g' : C(Join X Y, Z)} (h : ∀ x y t, g (mk x y t) = g' (mk x y t)) :
     g = g' :=
-  ContinuousMap.ext (ind h)
+  ContinuousMap.ext (induction h)
 
 /-- The descended map is the only continuous map out of the join through which `f` factors. -/
 theorem eq_lift_iff (f : C(X × Y × I, Z)) (h₀ : ∀ x y y', f (x, y, 0) = f (x, y', 0))

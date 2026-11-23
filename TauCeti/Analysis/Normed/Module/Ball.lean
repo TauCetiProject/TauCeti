@@ -236,10 +236,8 @@ theorem exists_mem_sphere_norm_smul_eq {F : Type*} [NormedAddCommGroup F] [Norme
   by_cases ha : a = 0
   · obtain ⟨x, hx⟩ := (NormedSpace.sphere_nonempty (x := (0 : F))).2 zero_le_one
     exact ⟨⟨x, hx⟩, by simp [ha]⟩
-  · refine ⟨⟨‖a‖⁻¹ • a, ?_⟩, ?_⟩
-    · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-        inv_mul_cancel₀ (norm_ne_zero_iff.2 ha)]
-    · rw [smul_inv_smul₀ (norm_ne_zero_iff.2 ha)]
+  · refine ⟨⟨‖a‖⁻¹ • a, mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm (𝕜 := ℝ) ha)⟩, ?_⟩
+    rw [smul_inv_smul₀ (norm_ne_zero_iff.2 ha)]
 
 end Sphere
 
