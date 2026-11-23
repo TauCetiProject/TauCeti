@@ -272,6 +272,7 @@ private theorem contDiffOn_comp_negFst (hu : ContDiffOn ℝ 1 u (Iio a ×ˢ univ
 
 /-- Reflecting the `s`-coordinate does not change the `t`-slices: the defect of
 `(s, t) ↦ u(-s, t)` at `z` is the defect of `u` at `(-z.1, z.2)`. -/
+@[simp]
 theorem sliceDefect_comp_neg_fst {z : ℝ × ℝ} :
     sliceDefect X (fun w ↦ u (-w.1, w.2)) z = sliceDefect X u (-z.1, z.2) := by
   simp only [comp_negFst u, sliceDefect_def, negFst.comp_right_fderiv,
@@ -955,7 +956,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_Iio_ne_top
       (by rwa [setLIntegral_norm_sq_sliceDefect_comp_neg_fst])
   refine ⟨x, hxper, hx, fun n ↦ -φ n, fun n ↦ neg_lt.2 (hφa n),
     tendsto_neg_atTop_atBot.comp hφ, hux, ?_⟩
-  simpa [sliceDefect_comp_neg_fst] using hdef
+  simpa using hdef
 
 /-- **Convergence of the loops to an isolated periodic solution at the negative end.** Let `X` be
 a continuous, `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder
