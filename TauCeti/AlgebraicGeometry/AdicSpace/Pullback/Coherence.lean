@@ -65,21 +65,25 @@ section General
 
 variable {X Y Z S : AdicSpace.{u}} {f : X ⟶ S} {g : Y ⟶ S} {h : Z ⟶ S}
 
-/-- The iterated fibre product `(X ×_S Y) ×_S Z` exists when `f`, `g`, `h` are locally of weakly
-finite type and `X` is locally stably sheafy. -/
-theorem hasPullback_snd_comp [HasPullback f g] (hf : LocallyOfWeaklyFiniteType f)
-    (hg : LocallyOfWeaklyFiniteType g) (hh : LocallyOfWeaklyFiniteType h)
-    (hX : X.IsLocallyStablySheafy) : HasPullback (pullback.snd f g ≫ g) h :=
+/-- The iterated fibre product `(X ×_S Y) ×_S Z` exists when `f` is adic, `g`, `h` are locally of
+weakly finite type and `X` is locally stably sheafy; so does the inner `X ×_S Y`. -/
+theorem hasPullback_snd_comp (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g)
+    (hh : LocallyOfWeaklyFiniteType h) (hX : X.IsLocallyStablySheafy) :
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
+    HasPullback (pullback.snd f g ≫ g) h :=
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
   hasPullback_of_locallyOfWeaklyFiniteType_right
     (IsAdic.isMultiplicative.comp_mem _ _
-      (IsAdic.pullback_snd_of_locallyOfWeaklyFiniteType hf.isAdic hg hX) hg.isAdic) hh
-    (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX)
+      (IsAdic.pullback_snd_of_locallyOfWeaklyFiniteType hf hg hX) hg.isAdic) hh
+    (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_right hf hg hX)
 
 /-- The iterated fibre product `X ×_S (Y ×_S Z)` exists when `f`, `g` are locally of weakly finite
-type, `h` is adic and `Z` is locally stably sheafy. -/
-theorem hasPullback_fst_comp [HasPullback g h] (hf : LocallyOfWeaklyFiniteType f)
+type, `h` is adic and `Z` is locally stably sheafy; so does the inner `Y ×_S Z`. -/
+theorem hasPullback_fst_comp (hf : LocallyOfWeaklyFiniteType f)
     (hg : LocallyOfWeaklyFiniteType g) (hh : IsAdic h) (hZ : Z.IsLocallyStablySheafy) :
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh hZ
     HasPullback f (pullback.fst g h ≫ g) :=
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh hZ
   hasPullback_of_locallyOfWeaklyFiniteType_left hf
     (IsAdic.isMultiplicative.comp_mem _ _
       (IsAdic.pullback_fst_of_locallyOfWeaklyFiniteType hg hh hZ) hg.isAdic)
@@ -88,53 +92,69 @@ theorem hasPullback_fst_comp [HasPullback g h] (hf : LocallyOfWeaklyFiniteType f
 /-- **Associativity of fibre products of adic spaces**: for `f`, `g`, `h` locally of weakly
 finite type with `X` and `Z` locally stably sheafy, the iterated fibre products exist and
 `(X ×_S Y) ×_S Z ≅ X ×_S (Y ×_S Z)` (Mathlib's `pullbackAssoc`). -/
-noncomputable def associator [HasPullback f g] [HasPullback g h]
+noncomputable def associator
     (hf : LocallyOfWeaklyFiniteType f) (hg : LocallyOfWeaklyFiniteType g)
     (hh : LocallyOfWeaklyFiniteType h) (hX : X.IsLocallyStablySheafy)
     (hZ : Z.IsLocallyStablySheafy) :
-    haveI := hasPullback_snd_comp hf hg hh hX
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
+    haveI := hasPullback_snd_comp hf.isAdic hg hh hX
     haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
     pullback (pullback.snd f g ≫ g) h ≅ pullback f (pullback.fst g h ≫ g) :=
-  haveI := hasPullback_snd_comp hf hg hh hX
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
+  haveI := hasPullback_snd_comp hf.isAdic hg hh hX
   haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
   pullbackAssoc f g g h
 
 section Associator
 
-variable [HasPullback f g] [HasPullback g h] (hf : LocallyOfWeaklyFiniteType f)
+variable (hf : LocallyOfWeaklyFiniteType f)
   (hg : LocallyOfWeaklyFiniteType g) (hh : LocallyOfWeaklyFiniteType h)
   (hX : X.IsLocallyStablySheafy) (hZ : Z.IsLocallyStablySheafy)
 
 /-- The associator preserves the projection to `X`. -/
 @[reassoc]
 theorem associator_hom_fst :
-    haveI := hasPullback_snd_comp hf hg hh hX
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
+    haveI := hasPullback_snd_comp hf.isAdic hg hh hX
     haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
     (associator hf hg hh hX hZ).hom ≫ pullback.fst _ _ =
       pullback.fst _ _ ≫ pullback.fst f g :=
-  haveI := hasPullback_snd_comp hf hg hh hX
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
+  haveI := hasPullback_snd_comp hf.isAdic hg hh hX
   haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
   pullbackAssoc_hom_fst f g g h
 
 /-- The associator preserves the projection to `Y`. -/
 @[reassoc]
 theorem associator_hom_snd_fst :
-    haveI := hasPullback_snd_comp hf hg hh hX
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
+    haveI := hasPullback_snd_comp hf.isAdic hg hh hX
     haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
     (associator hf hg hh hX hZ).hom ≫ pullback.snd _ _ ≫ pullback.fst g h =
       pullback.fst _ _ ≫ pullback.snd f g :=
-  haveI := hasPullback_snd_comp hf hg hh hX
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
+  haveI := hasPullback_snd_comp hf.isAdic hg hh hX
   haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
   pullbackAssoc_hom_snd_fst f g g h
 
 /-- The associator preserves the projection to `Z`. -/
 @[reassoc]
 theorem associator_hom_snd_snd :
-    haveI := hasPullback_snd_comp hf hg hh hX
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
+    haveI := hasPullback_snd_comp hf.isAdic hg hh hX
     haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
     (associator hf hg hh hX hZ).hom ≫ pullback.snd _ _ ≫ pullback.snd g h =
       pullback.snd _ _ :=
-  haveI := hasPullback_snd_comp hf hg hh hX
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
+  haveI := hasPullback_snd_comp hf.isAdic hg hh hX
   haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
   pullbackAssoc_hom_snd_snd f g g h
 
