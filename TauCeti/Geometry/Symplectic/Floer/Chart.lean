@@ -207,7 +207,8 @@ theorem contDiffOn_almostComplexInChartAt_uncurry_const {R : Type*} [NormedAddCo
     (hJ : ContDiffOn ℝ n (almostComplexInChartAt I α J) S)
     (hT : MapsTo (fun q : (R × P) × E ↦ (q.1.2, q.2)) T S) :
     ContDiffOn ℝ n (almostComplexInChartAt I α (Function.uncurry fun (_ : R) ↦ J)) T :=
-  hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn hT
+  (hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn hT).congr
+    fun _ _ ↦ almostComplexInChartAt_uncurry _ _ _ _
 
 /-- For a jointly regular family of structures over the domain `ℝ × ℝ`, the structure in the chart
 is the coordinate expression of the family in the product chart at `(p, α)`, whatever `p`. In
@@ -312,7 +313,8 @@ theorem contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const {Q R : Type*}
     (hX : ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α K) S)
     (hT : MapsTo (fun q : (R × Q) × E ↦ (q.1.2, q.2)) T S) :
     ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry fun (_ : R) ↦ K)) T :=
-  hX.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn hT
+  (hX.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn hT).congr
+    fun _ _ ↦ ω.hamiltonianVectorFieldInChartAt_uncurry α _ _ _ _
 
 /-- **The Hamiltonian vector field in a chart is smooth.** For a nondegenerate two-form `ω` and a
 family of Hamiltonians `K(z)` which is jointly `C^(n+1)` at every point of `U × M`, for an open set
