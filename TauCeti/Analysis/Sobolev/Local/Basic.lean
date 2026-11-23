@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.ReImTopology
-public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.MemLpLoc
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -276,17 +275,6 @@ theorem MemWkpLoc.prodMap {E₁ E₂ E₃ E₄ : Type*} [NormedAddCommGroup E₁
     {A : ℂ → E₁ →L[ℝ] E₂} {B : ℂ → E₃ →L[ℝ] E₄} (hA : MemWkpLoc p U k A)
     (hB : MemWkpLoc p U k B) : MemWkpLoc p U k (fun z => (A z).prodMap (B z)) := by
   simpa using (hA.prodMk hB).clm_comp (ContinuousLinearMap.prodMapL ℝ E₁ E₂ E₃ E₄)
-
-/-- **`L^r` block sums of operator fields.** If two fields of continuous linear maps are in the
-local Sobolev class of order `k`, so is their pointwise `L^r` block sum
-`(A z).withLpProdMap r (B z)`. -/
-theorem MemWkpLoc.withLpProdMap {E₁ E₂ E₃ E₄ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
-    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [CompleteSpace E₂] [NormedAddCommGroup E₃]
-    [NormedSpace ℝ E₃] [NormedAddCommGroup E₄] [NormedSpace ℝ E₄] [CompleteSpace E₄]
-    {A : ℂ → E₁ →L[ℝ] E₂} {B : ℂ → E₃ →L[ℝ] E₄} (hA : MemWkpLoc p U k A)
-    (r : ENNReal) [Fact (1 ≤ r)] (hB : MemWkpLoc p U k B) :
-    MemWkpLoc p U k (fun z => (A z).withLpProdMap r (B z)) := by
-  simpa using (hA.prodMk hB).clm_comp (ContinuousLinearMap.withLpProdMapL r ℝ E₁ E₃ E₂ E₄)
 
 /-- A continuous linear change of codomain preserves and reflects every local weak
 Sobolev order. -/

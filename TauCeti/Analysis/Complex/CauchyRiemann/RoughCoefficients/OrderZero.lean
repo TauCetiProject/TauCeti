@@ -267,6 +267,14 @@ theorem IsSobolevCRCoefficients.memLpLoc_top_coeff [FiniteDimensional ℝ V]
   (memWkpLoc_succ_iff_of_isOpen.2 ⟨hc.memLpLoc_coeff, DJ, hc.hasWeakFDerivOn,
     memWkpLoc_zero_iff.2 hc.memLpLoc_deriv⟩ : MemWkpLoc p Ω (0 + 1) J).memLpLoc_top hp
 
+/-- `M ↦ Mᵀ v`, as a continuous linear map. -/
+private noncomputable def adjointApply (v : V) : (V →L[ℝ] V) →L[ℝ] V :=
+  (ContinuousLinearMap.apply ℝ V v).comp (ContinuousLinearMap.adjointRealCLM (𝕜 := ℝ))
+
+private theorem inner_adjointApply (v : V) (M : V →L[ℝ] V) (w : V) :
+    ⟪adjointApply v M, w⟫_ℝ = ⟪v, M w⟫_ℝ := by
+  simp [adjointApply, ContinuousLinearMap.adjoint_inner_left]
+
 /-- The coefficient `f = η + (∂_t J) ξ - S ξ` of `∂_s` in the divergence-form Laplace equation
 `Δξ = ∂_s f + ∂_t g`. -/
 private noncomputable def orderZeroS (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (S : ℂ → V →L[ℝ] V)
@@ -308,17 +316,14 @@ private theorem lineDerivOp_eq_zero_of_notMem (φ : 𝓓(Ω, ℝ)) (c : ℂ) {z 
 
 /-- The test field `ψ = ∂_s φ • v - ∂_t φ • Jᵀ v`. -/
 private noncomputable def crTestField (J : ℂ → V →L[ℝ] V) (φ : 𝓓(Ω, ℝ)) (v : V) (z : ℂ) : V :=
-  (∂_{(1 : ℂ)} φ : 𝓓(Ω, ℝ)) z • v -
-    (∂_{I} φ : 𝓓(Ω, ℝ)) z • ContinuousLinearMap.adjointApplyRealCLM (𝕜 := ℝ) v (J z)
+  (∂_{(1 : ℂ)} φ : 𝓓(Ω, ℝ)) z • v - (∂_{I} φ : 𝓓(Ω, ℝ)) z • adjointApply v (J z)
 
 /-- The weak derivative of the test field `TauCeti.crTestField`. -/
 private noncomputable def crTestFieldDeriv (J : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V)
     (φ : 𝓓(Ω, ℝ)) (v : V) (z : ℂ) : ℂ →L[ℝ] V :=
   (fderiv ℝ (∂_{(1 : ℂ)} φ : 𝓓(Ω, ℝ)) z).smulRight v -
-    ((∂_{I} φ : 𝓓(Ω, ℝ)) z •
-        (ContinuousLinearMap.adjointApplyRealCLM (𝕜 := ℝ) v).comp (DJ z) +
-      (fderiv ℝ (∂_{I} φ : 𝓓(Ω, ℝ)) z).smulRight
-        (ContinuousLinearMap.adjointApplyRealCLM (𝕜 := ℝ) v (J z)))
+    ((∂_{I} φ : 𝓓(Ω, ℝ)) z • (adjointApply v).comp (DJ z) +
+      (fderiv ℝ (∂_{I} φ : 𝓓(Ω, ℝ)) z).smulRight (adjointApply v (J z)))
 
 private theorem crTestField_eq_zero (φ : 𝓓(Ω, ℝ)) (v : V) {z : ℂ}
     (hz : z ∉ tsupport (φ : ℂ → ℝ)) :
@@ -336,7 +341,7 @@ private theorem crTestField_props (hc : IsSobolevCRCoefficients p Ω J DJ S)
       MemLp (crTestField J φ v) ⊤ ∧ MemLp (crTestFieldDeriv J DJ φ v) p (volume.restrict Ω) := by
   set a : 𝓓(Ω, ℝ) := ∂_{(1 : ℂ)} φ
   set b : 𝓓(Ω, ℝ) := ∂_{I} φ
-  set A : (V →L[ℝ] V) →L[ℝ] V := ContinuousLinearMap.adjointApplyRealCLM (𝕜 := ℝ) v
+  set A := adjointApply v
   have hs : Function.support (crTestField J φ v) ⊆ tsupport φ := fun z hz =>
     by_contra fun h' => hz (crTestField_eq_zero (DJ := DJ) φ v h').1
   have hw : HasWeakFDerivOn volume Ω (fun z => a z • v) (fun z => (fderiv ℝ a z).smulRight v) :=
@@ -392,8 +397,7 @@ private theorem inner_crTestField_eq (φ : 𝓓(Ω, ℝ)) (v : V) (z : ℂ)
   · simp only [crTestField, crTestFieldDeriv, orderZeroS, orderZeroT, sub_apply, add_apply,
       smul_apply, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
       inner_sub_left, inner_add_left, inner_sub_right, inner_add_right, real_inner_smul_left,
-      inner_smul_right, ContinuousLinearMap.adjointApplyRealCLM_apply,
-      ContinuousLinearMap.adjoint_inner_left, hJJ hz, inner_neg_right, hsymm]
+      inner_smul_right, inner_adjointApply, hJJ hz, inner_neg_right, hsymm]
     ring
   · obtain ⟨ha, hda⟩ := lineDerivOp_eq_zero_of_notMem φ 1 hz
     obtain ⟨hb, hdb⟩ := lineDerivOp_eq_zero_of_notMem φ I hz
@@ -448,8 +452,7 @@ theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V]
       ((hJb.clm_apply hη).locallyIntegrableOn hr.le hloc) φ I).const_inner (𝕜 := ℝ) v
     refine (h1.sub h2).congr (.of_forall fun z => ?_)
     simp only [Pi.sub_apply, crTestField, TestFunction.lineDerivOp_apply_eq_fderiv,
-      inner_sub_left, real_inner_smul_left, inner_smul_right,
-      ContinuousLinearMap.adjointApplyRealCLM_apply, ContinuousLinearMap.adjoint_inner_left]
+      inner_sub_left, real_inner_smul_left, inner_smul_right, inner_adjointApply]
   -- `J² = -1` almost everywhere on the support of `φ`.
   have hJJ : ∀ᵐ z ∂volume, z ∈ tsupport (φ : ℂ → ℝ) → J z (J z (ξ z)) = -ξ z := by
     filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hJ2] with z hz hzT

@@ -82,11 +82,6 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.smul_contDiff` and `TauCeti.HasWeakFDerivOn.smul_contDiff`: the
   rule with the roles exchanged, for a weakly differentiable scalar `a` and a smooth
   vector-valued `g`: `D(a g) = a Dg + Da ⊗ g`.
-* `TauCeti.HasWeakLineDerivOn.contDiffOn_bilin`, `TauCeti.HasWeakLineDerivOn.contDiff_bilin`,
-  `TauCeti.HasWeakLineDerivOn.integral_lineDeriv_smul_bilin_of_contDiff`,
-  `TauCeti.HasWeakFDerivOn.contDiffOn_bilin`, and `TauCeti.HasWeakFDerivOn.contDiff_bilin`: the
-  bilinear rule for a smooth finite-dimensional factor `f` and a weakly differentiable `g`:
-  `D(B(f, g)) = B(Df, g) + B(f, Dg)`, together with its scalar-test integration-by-parts form.
 * `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul` and
   `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`: the rule in a direction `v` for a Lipschitz
   factor, with its almost-everywhere directional derivative.
@@ -246,123 +241,6 @@ theorem HasWeakFDerivOn.smul_contDiff [FiniteDimensional ℝ F] {a : E → ℝ} 
   intro v
   convert (h v).smul_contDiff hg using 2 with x
   simp
-
-/-- **The bilinear Leibniz rule with a smooth factor, local form.** If `g'` is a weak derivative
-of `g` in the direction `v` on `Ω`, `f` is smooth on `Ω` with values in a finite-dimensional
-space `F`, and `B : F →L[ℝ] G →L[ℝ] H` is continuous bilinear into a complete space `H`, then
-`B(f, g)` is weakly differentiable in the direction `v` on `Ω` with derivative
-`B(f, g') + B(∂_v f, g)`. -/
-theorem HasWeakLineDerivOn.contDiffOn_bilin {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [FiniteDimensional ℝ F]
-    (B : F →L[ℝ] G →L[ℝ] H) {f : E → F} {g g' : E → G}
-    (hg : HasWeakLineDerivOn μ Ω g g' v) (hf : ContDiffOn ℝ ∞ f Ω) :
-    HasWeakLineDerivOn μ Ω (fun x => B (f x) (g x))
-      (fun x => B (f x) (g' x) + B (fderiv ℝ f x v) (g x)) v := by
-  let b := Module.finBasis ℝ F
-  let ℓ : Fin (Module.finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
-  have hBrep (x : F) (y : G) : ∑ i, ℓ i x • B (b i) y = B x y := by
-    have hx : ∑ i, ℓ i x • b i = x := by simp [ℓ]
-    conv_rhs => rw [← hx, map_sum, sum_apply]
-    simp [map_smul]
-  have hc (i : Fin (Module.finrank ℝ F)) : ContDiffOn ℝ ∞ (fun w => ℓ i (f w)) Ω :=
-    (ℓ i).contDiff.comp_contDiffOn hf
-  have hsum := HasWeakLineDerivOn.sum (F := H) Finset.univ fun i _ =>
-    (hg.clm_comp (B (b i))).contDiffOn_smul (hc i)
-  refine (hsum.congr_ae (Filter.Eventually.of_forall fun x => ?_)).congr_ae_deriv
-    (ae_restrict_of_forall_mem Ω.isOpen.measurableSet fun x hx => ?_)
-  · simp only [hBrep]
-  · have hfd (i : Fin (Module.finrank ℝ F)) :
-        fderiv ℝ (fun w => ℓ i (f w)) x v = ℓ i (fderiv ℝ f x v) := by
-      rw [fderiv_fun_comp x (ℓ i).differentiableAt
-        ((hf.differentiableOn (by simp) x hx).differentiableAt (Ω.isOpen.mem_nhds hx)),
-        ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply]
-    simp only [Finset.sum_add_distrib, hfd, hBrep]
-
-/-- **The bilinear Leibniz rule with a smooth factor.** If `g'` is a weak derivative of `g` in the
-direction `v` on `Ω` and `f` is smooth with values in a finite-dimensional space `F`, then
-`B(f, g)` has weak directional derivative `B(f, g') + B(∂_v f, g)` on `Ω`. -/
-theorem HasWeakLineDerivOn.contDiff_bilin {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [FiniteDimensional ℝ F]
-    (B : F →L[ℝ] G →L[ℝ] H) {f : E → F} {g g' : E → G}
-    (hg : HasWeakLineDerivOn μ Ω g g' v) (hf : ContDiff ℝ ∞ f) :
-    HasWeakLineDerivOn μ Ω (fun x => B (f x) (g x))
-      (fun x => B (f x) (g' x) + B (fderiv ℝ f x v) (g x)) v :=
-  hg.contDiffOn_bilin B hf.contDiffOn
-
-section
-
-open LineDeriv
-
-/-- For a smooth `F`-valued map `f` (`F` finite-dimensional) and `g` with weak directional
-derivative `g'` in direction `v` on `Ω`, testing `TauCeti.HasWeakLineDerivOn.contDiff_bilin`
-against a scalar test function `ψ ∈ 𝓓(Ω, ℝ)` gives
-`∫ (∂_v ψ) • B(f, g) + ∫ ψ • B(∂_v f, g) = -∫ ψ • B(f, g')`. -/
-theorem HasWeakLineDerivOn.integral_lineDeriv_smul_bilin_of_contDiff {G H : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H]
-    [CompleteSpace H] [FiniteDimensional ℝ F]
-    (B : F →L[ℝ] G →L[ℝ] H) {f : E → F} {g g' : E → G}
-    (hg : HasWeakLineDerivOn μ Ω g g' v) (hf : ContDiff ℝ ∞ f) (ψ : 𝓓(Ω, ℝ)) :
-    (∫ x, (∂_{v} ψ : 𝓓(Ω, ℝ)) x • B (f x) (g x) ∂μ) +
-        (∫ x, (ψ : E → ℝ) x • B (fderiv ℝ f x v) (g x) ∂μ) =
-      -∫ x, (ψ : E → ℝ) x • B (f x) (g' x) ∂μ := by
-  let b := Module.finBasis ℝ F
-  let ℓ : Fin (Module.finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
-  have hB_loc {ϕ : E → F} (hϕ : Continuous ϕ) {G' : E → G}
-      (hG' : ∀ i, LocallyIntegrableOn (fun x => B (b i) (G' x)) Ω μ) :
-      LocallyIntegrableOn (fun x => B (ϕ x) (G' x)) Ω μ := by
-    have hrep : (fun x => B (ϕ x) (G' x)) =
-        fun x => ∑ i, ℓ i (ϕ x) • B (b i) (G' x) := by
-      ext x
-      have hx : ∑ i, ℓ i (ϕ x) • b i = ϕ x := by simp [ℓ]
-      conv_lhs => rw [← hx, map_sum, sum_apply]
-      simp [map_smul]
-    rw [hrep]
-    exact locallyIntegrableOn_finsetSum Finset.univ fun i _ =>
-      (hG' i).continuousOn_smul_of_isOpen Ω.isOpen ((ℓ i).continuous.comp hϕ).continuousOn
-  have hDfv_c : Continuous fun x => fderiv ℝ f x v :=
-    (ContinuousLinearMap.apply ℝ F v).continuous.comp
-      ((hf.of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))).continuous_fderiv one_ne_zero)
-  have h1 : Integrable (fun x => (ψ : E → ℝ) x • B (f x) (g' x)) μ :=
-    ψ.integrable_smul <| hB_loc hf.continuous fun i =>
-      (hg.clm_comp (B (b i))).locallyIntegrableOn_deriv
-  have h2 : Integrable (fun x => (ψ : E → ℝ) x • B (fderiv ℝ f x v) (g x)) μ :=
-    ψ.integrable_smul <| hB_loc hDfv_c fun i => (hg.clm_comp (B (b i))).locallyIntegrableOn
-  have hibp := (hg.contDiff_bilin B hf).integral_lineDeriv_smul_eq_neg_integral_smul ψ
-  have hsplit : ∫ x, (ψ : E → ℝ) x • (B (f x) (g' x) + B (fderiv ℝ f x v) (g x)) ∂μ =
-      (∫ x, (ψ : E → ℝ) x • B (f x) (g' x) ∂μ) +
-        ∫ x, (ψ : E → ℝ) x • B (fderiv ℝ f x v) (g x) ∂μ := by
-    rw [← integral_add h1 h2]
-    exact integral_congr_ae (.of_forall fun x => smul_add _ _ _)
-  simp only [← TestFunction.lineDerivOp_apply] at hibp
-  rw [hsplit] at hibp
-  exact eq_neg_of_add_eq_zero_left (by rw [hibp]; abel)
-
-end
-
-/-- **The bilinear Leibniz rule with a smooth factor, local Fréchet form**:
-`D(B(f, g)) = B(Df, g) + B(f, Dg)` on `Ω` for `f` smooth on `Ω` with finite-dimensional codomain
-`F` and `g` weakly differentiable with derivative `Dg`. -/
-theorem HasWeakFDerivOn.contDiffOn_bilin {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [FiniteDimensional ℝ F]
-    (B : F →L[ℝ] G →L[ℝ] H) {f : E → F} {g : E → G} {Dg : E → E →L[ℝ] G}
-    (hg : HasWeakFDerivOn μ Ω g Dg) (hf : ContDiffOn ℝ ∞ f Ω) :
-    HasWeakFDerivOn μ Ω (fun x => B (f x) (g x))
-      (fun x => B.precompL E (fderiv ℝ f x) (g x) + B.precompR E (f x) (Dg x)) := by
-  rw [hasWeakFDerivOn_iff] at hg ⊢
-  intro v
-  convert (hg v).contDiffOn_bilin B hf using 2 with x
-  simp [add_comm]
-
-/-- **The bilinear Leibniz rule with a smooth factor, Fréchet form**:
-`D(B(f, g)) = B(Df, g) + B(f, Dg)` on `Ω` for smooth `f` with finite-dimensional codomain `F` and
-weakly differentiable `g`. -/
-theorem HasWeakFDerivOn.contDiff_bilin {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [FiniteDimensional ℝ F]
-    (B : F →L[ℝ] G →L[ℝ] H) {f : E → F} {g : E → G} {Dg : E → E →L[ℝ] G}
-    (hg : HasWeakFDerivOn μ Ω g Dg) (hf : ContDiff ℝ ∞ f) :
-    HasWeakFDerivOn μ Ω (fun x => B (f x) (g x))
-      (fun x => B.precompL E (fderiv ℝ f x) (g x) + B.precompR E (f x) (Dg x)) :=
-  hg.contDiffOn_bilin B hf.contDiffOn
 
 end General
 

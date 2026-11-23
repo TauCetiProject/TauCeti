@@ -28,8 +28,7 @@ assumed.
 ## Main declarations
 
 * `TauCeti.HasWeakLineDerivOn.comm`: weak derivatives in two directions commute.
-* `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_comm`,
-  `TauCeti.HasWeakFDerivOn.integral_inner_fderiv_comm`: the distributional symmetry of
+* `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_comm`: the distributional symmetry of
   mixed partials, tested against vector-valued test functions.
 -/
 
@@ -38,7 +37,7 @@ public section
 namespace TauCeti
 
 open LineDeriv MeasureTheory TopologicalSpace
-open scoped Distributions InnerProductSpace
+open scoped Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}
@@ -83,17 +82,6 @@ theorem HasWeakLineDerivOn.integral_inner_lineDeriv_comm (h₁ : HasWeakLineDeri
   have e₂ := h₂.integral_inner_lineDeriv_eq_neg (∂_{v} φ)
   simp only [TestFunction.lineDeriv_lineDerivOp_comm φ w v] at e₁
   simpa only [TestFunction.lineDerivOp_apply, neg_inj] using e₁.symm.trans e₂
-
-/-- **Symmetry of second derivatives against a weak Fréchet derivative.** If `f` has weak Fréchet
-derivative `D` on `Ω`, then for any directions `v, w : E` and test function `Ψ ∈ 𝓓(Ω, V)`,
-`∫ ⟪DΨ(x) v, D(x) w⟫ = ∫ ⟪DΨ(x) w, D(x) v⟫`. Both sides equal `-∫ ⟪∂_v ∂_w Ψ(x), f x⟫` by
-commutativity of test-function directional derivatives. -/
-theorem HasWeakFDerivOn.integral_inner_fderiv_comm
-    {f : E → V} {D : E → E →L[ℝ] V} (hD : HasWeakFDerivOn μ Ω f D) (v w : E) (Ψ : 𝓓(Ω, V)) :
-    ∫ x, ⟪fderiv ℝ (Ψ : E → V) x v, D x w⟫_ℝ ∂μ =
-      ∫ x, ⟪fderiv ℝ (Ψ : E → V) x w, D x v⟫_ℝ ∂μ := by
-  simpa only [TestFunction.lineDeriv_eq_fderiv] using
-    (hD.hasWeakLineDerivOn w).integral_inner_lineDeriv_comm (hD.hasWeakLineDerivOn v) Ψ
 
 end Inner
 

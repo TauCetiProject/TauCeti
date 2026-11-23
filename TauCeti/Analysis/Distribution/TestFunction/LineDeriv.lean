@@ -47,10 +47,9 @@ test function on `Ω` whose gradient obeys the product rule.
   direction of a complex test function real on the real axis is real there.
 * `TestFunction.lineDeriv_eq_fderiv`: the classical directional derivative of a test function is
   its Fréchet derivative in that direction.
-* `TestFunction.lineDerivCLM_postcompCLM`, `TestFunction.lineDerivOp_postcompCLM`,
-  `TestFunction.fderiv_postcompCLM`, `TestFunction.iteratedLineDerivOp_postcompCLM`:
-  directional, iterated directional, and Fréchet derivatives commute with postcomposition by a
-  continuous linear map.
+* `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
+  by a continuous linear map.
+* `TestFunction.iteratedLineDerivOp_postcompCLM`: so do iterated directional derivatives.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -183,27 +182,6 @@ theorem lineDerivCLM_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [
     rw [ContinuousLinearMap.coe_restrictScalars'] at hL
     rw [hL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars']
   · simp
-
-/-- The directional derivative `∂_{v}` of `postcompCLM L φ` is `postcompCLM L (∂_{v} φ)`. -/
-@[simp]
-theorem lineDerivOp_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜]
-    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {F' : Type*} [NormedAddCommGroup F']
-    [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [IsScalarTower ℝ 𝕜 F'] (L : F →L[𝕜] F') (v : E)
-    (φ : 𝓓(Ω, F)) :
-    ∂_{v} (postcompCLM L φ) = postcompCLM L (∂_{v} φ) := by
-  simpa only [lineDerivOp_eq_lineDerivCLM 𝕜] using lineDerivCLM_postcompCLM L v φ
-
-/-- The Fréchet derivative of `postcompCLM L φ` at `x` is
-`(L.restrictScalars ℝ).comp (fderiv ℝ φ x)`. -/
-theorem fderiv_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜]
-    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {F' : Type*} [NormedAddCommGroup F']
-    [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [IsScalarTower ℝ 𝕜 F'] (L : F →L[𝕜] F')
-    (φ : 𝓓(Ω, F)) (x : E) :
-    fderiv ℝ (postcompCLM L φ : E → F') x =
-      (L.restrictScalars ℝ).comp (fderiv ℝ (φ : E → F) x) := by
-  ext v
-  rw [← lineDerivOp_apply_eq_fderiv, lineDerivOp_postcompCLM]
-  simp [lineDeriv_eq_fderiv]
 
 /-- Iterated directional derivatives of test functions commute with postcomposition by a
 continuous linear map. -/

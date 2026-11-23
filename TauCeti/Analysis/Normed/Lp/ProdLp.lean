@@ -34,8 +34,7 @@ factors.
 
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
-Mathlib's `LinearIsometry.withLpProdMap`, together with its continuous linear lift
-`ContinuousLinearMap.withLpProdMapL`. For `p = 2` and inner product spaces this is the
+Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
 orthogonal block sum `f ⊕ g`. It is compatible with the algebraic operations on the pair
 `(f, g)` and continuous in it, its rank is the sum of the ranks of `f` and `g`, it is invertible
 exactly when `f` and `g` are, so the spectrum of a block sum of endomorphisms is the union of
@@ -61,8 +60,7 @@ linear maps is identified with the product of their sources.
 * `TauCeti.isBounded_range_toLp` — `Set.range (fun i ↦ WithLp.toLp p (f i, g i))` is bounded if
   and only if `Set.range f` and `Set.range g` are bounded.
 * `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
-* `ContinuousLinearMap.withLpProdMap`, `ContinuousLinearMap.withLpProdMapL` — the block sum `f ⊕ g`
-  on `WithLp p (α × β)`, and as a continuous linear map in `(f, g)`.
+* `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `WithLp.finrank_prod` — `WithLp p (M × M')` has dimension `finrank M + finrank M'`.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
@@ -463,25 +461,6 @@ theorem nnnorm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     ‖f.withLpProdMap p g‖₊ = max ‖f‖₊ ‖g‖₊ :=
   NNReal.eq <| by simp
 
-variable (p 𝕜 α β α' β') in
-/-- `ContinuousLinearMap.withLpProdMap` as a continuous linear map. -/
-noncomputable def withLpProdMapL :
-    (α →L[𝕜] α') × (β →L[𝕜] β') →L[𝕜] WithLp p (α × β) →L[𝕜] WithLp p (α' × β') :=
-  ContinuousLinearMap.copy
-    (((WithLp.prodContinuousLinearEquiv p 𝕜 α β).arrowCongr
-      (WithLp.prodContinuousLinearEquiv p 𝕜 α' β')).symm.toContinuousLinearMap ∘L
-        prodMapL 𝕜 α α' β β')
-    (fun fg => fg.1.withLpProdMap p fg.2)
-    (by
-      funext fg
-      ext ⟨a, b⟩
-      simp)
-
-@[simp]
-theorem withLpProdMapL_apply (fg : (α →L[𝕜] α') × (β →L[𝕜] β')) :
-    withLpProdMapL p 𝕜 α β α' β' fg = fg.1.withLpProdMap p fg.2 :=
-  (rfl)
-
 /-- The block sum of scalar multiples is the scalar multiple of the block sum. -/
 theorem withLpProdMap_smul (c : 𝕜) (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     (c • f).withLpProdMap p (c • g) = c • f.withLpProdMap p g :=
@@ -521,6 +500,7 @@ theorem spectrum_withLpProdMap {R : Type*} [CommSemiring R] [Algebra R 𝕜] [Al
     simp only [Algebra.algebraMap_eq_smul_one, withLpProdMap_smul, withLpProdMap_one]
   simp only [spectrum.mem_iff, Set.mem_union, h, ← withLpProdMap_sub, isUnit_withLpProdMap_iff,
     not_and_or]
+
 end Normed
 
 section KerEquivProd

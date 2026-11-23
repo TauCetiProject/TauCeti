@@ -63,8 +63,6 @@ Compression is its inverse on this corner, and extension preserves composition a
   (`ContinuousLinearEquiv.norm_le_norm_symm_mul_norm_adjointEquiv`).
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
-* `ContinuousLinearMap.adjointApplyRealCLM`: the adjoint evaluation `T ↦ T† w` at a vector `w`
-  as a real-linear continuous map.
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
   continuous family it is continuous (`Continuous.clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
@@ -257,18 +255,6 @@ theorem _root_.ContDiff.clm_adjoint {G : Type*} [NormedAddCommGroup G] [NormedSp
     ContDiff ℝ n fun x ↦ adjoint (f x) := by
   simpa only [Function.comp_def, adjointRealCLM_apply] using
     hf.continuousLinearMap_comp adjointRealCLM
-
-/-- Evaluating the Hilbert space adjoint at a vector `w : W`, namely `T ↦ T† w`, as a real-linear
-continuous map `(V →L[𝕜] W) →L[ℝ] V`. -/
-noncomputable def adjointApplyRealCLM (w : W) : (V →L[𝕜] W) →L[ℝ] V :=
-  ((apply 𝕜 V w).restrictScalars ℝ).comp adjointRealCLM
-
-/-- Pointwise evaluation of `ContinuousLinearMap.adjointApplyRealCLM`:
-`adjointApplyRealCLM w T = T† w`. -/
-@[simp]
-theorem adjointApplyRealCLM_apply (w : W) (T : V →L[𝕜] W) :
-    adjointApplyRealCLM w T = adjoint T w := by
-  simp [adjointApplyRealCLM]
 
 end RealAdjoint
 

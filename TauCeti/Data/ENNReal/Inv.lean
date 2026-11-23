@@ -52,9 +52,6 @@ is at most `2 b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
-* `ENNReal.inv_add_inv_lt_one_of_two_lt`: `p⁻¹ + q⁻¹ < 1` for `p > 2` and `q ≥ 2`.
-* `ENNReal.exists_gt_ne_top_and_inv_add_inv_lt_one`: constructing a finite `p > c` with
-  `p⁻¹ + q⁻¹ < 1` from `c < ∞` and `1 < q`.
 * `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
   `L^(p * c)` is `p`, for `c` finite and nonzero.
 -/
@@ -273,32 +270,6 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   field_simp
-
-/-- If `p > 2` and `q ≥ 2` in `ℝ≥0∞`, then `1/p + 1/q < 1` (with `1/∞ = 0`). -/
-theorem inv_add_inv_lt_one_of_two_lt {p q : ℝ≥0∞} (hp : 2 < p) (hq : 2 ≤ q) :
-    p⁻¹ + q⁻¹ < 1 :=
-  calc p⁻¹ + q⁻¹ ≤ p⁻¹ + 2⁻¹ := add_le_add le_rfl (ENNReal.inv_le_inv.2 hq)
-    _ < (2 : ℝ≥0∞)⁻¹ + 2⁻¹ := ENNReal.add_lt_add_right (inv_ne_top.2 two_ne_zero)
-        (ENNReal.inv_lt_inv.2 hp)
-    _ = 1 := ENNReal.inv_two_add_inv_two
-
-/-- For any finite `c : ℝ≥0∞` and any `q > 1` in `ℝ≥0∞` (including `q = ∞`), there exists a
-finite exponent `p > c` with `1/p + 1/q < 1`: take `p = max (1 - q⁻¹)⁻¹ c + 1`. -/
-theorem exists_gt_ne_top_and_inv_add_inv_lt_one {c q : ℝ≥0∞} (hc : c ≠ ∞) (hq : 1 < q) :
-    ∃ p : ℝ≥0∞, c < p ∧ p ≠ ∞ ∧ p⁻¹ + q⁻¹ < 1 := by
-  have hq_inv_lt : q⁻¹ < 1 := ENNReal.inv_lt_one.2 hq
-  have hsub_ne : 1 - q⁻¹ ≠ 0 := (tsub_pos_of_lt hq_inv_lt).ne'
-  have hm_ne : max (1 - q⁻¹)⁻¹ c ≠ ∞ := max_ne_top (inv_ne_top.2 hsub_ne) hc
-  refine ⟨max (1 - q⁻¹)⁻¹ c + 1, ?_, add_ne_top.2 ⟨hm_ne, one_ne_top⟩, ?_⟩
-  · exact (le_max_right _ _).trans_lt (ENNReal.lt_add_right hm_ne one_ne_zero)
-  · have hlt : (max (1 - q⁻¹)⁻¹ c + 1)⁻¹ < 1 - q⁻¹ := by
-      conv_rhs => rw [← inv_inv (1 - q⁻¹)]
-      exact ENNReal.inv_lt_inv.2
-        ((le_max_left _ _).trans_lt (ENNReal.lt_add_right hm_ne one_ne_zero))
-    calc (max (1 - q⁻¹)⁻¹ c + 1)⁻¹ + q⁻¹
-      _ < (1 - q⁻¹) + q⁻¹ :=
-        ENNReal.add_lt_add_right (ne_top_of_lt (hq_inv_lt.trans one_lt_top)) hlt
-      _ = 1 := tsub_add_cancel_of_le hq_inv_lt.le
 
 /-- **Equal Hölder exponents.** For `c` finite and nonzero, `c` reciprocal exponents
 `(p * c)⁻¹` add up to the reciprocal exponent `p⁻¹`. -/

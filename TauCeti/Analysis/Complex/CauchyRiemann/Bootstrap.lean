@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Regularity
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 
@@ -31,7 +31,7 @@ Theorem B.4.1 and Remark B.4.3). Because `u` is already continuous on `Ω` as pa
 The proof freezes coefficients along the solution: if `u ∈ W^{m,p}_loc(Ω)` with `1 ≤ m ≤ ℓ`, the
 higher-order local Sobolev chain rule (`TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ`) places
 `z ↦ J(z, u z)` and `z ↦ η(z, u z)` in `W^{m,p}_loc(Ω)`, and linear interior regularity for
-Sobolev coefficients (`TauCeti.memWkpLoc_of_ae_cauchyRiemann`, with `S = 0`) upgrades `u` to
+Sobolev coefficients (`TauCeti.memWkpLoc_succ_of_ae_linearCR`, with `S = 0`) upgrades `u` to
 `W^{m+1,p}_loc(Ω)`.
 
 At `ℓ = 0`, `u ∈ W^{1,p}_loc` is already part of the hypothesis `IsWeakCauchyRiemannOn` (including
@@ -95,7 +95,9 @@ theorem IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn [FiniteDimensional ℝ V] 
   lift p to ℝ≥0 using hp_top
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hpNN : 2 < p := by exact_mod_cast hp
-  have hp1 : (1 : ℝ≥0∞) < p := (by exact_mod_cast one_lt_two : (1 : ℝ≥0∞) < 2).trans hp
+  have hp2 : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ < 1 :=
+    (ENNReal.add_lt_add (ENNReal.inv_lt_inv.2 hp) (ENNReal.inv_lt_inv.2 hp)).trans_eq
+      ENNReal.inv_two_add_inv_two
   obtain ⟨huc, -, D, hD, -, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 hu
   have hu1 : MemWkpLoc p Ω 1 u := hu.memWkpLoc_one
   have hJsq_ae : ∀ᵐ z ∂volume.restrict Ω,
@@ -116,8 +118,8 @@ theorem IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn [FiniteDimensional ℝ V] 
     have hηu : MemWkpLoc p Ω (d' + 1) (fun z => η z (u z)) :=
       hud.contDiffOn_comp_graph_succ hpNN huc hW
         (hη.of_le (by exact_mod_cast hd)) huW
-    exact memWkpLoc_of_ae_cauchyRiemann hp hp1.le hp1 ENNReal.coe_ne_top le_rfl
-      (Nat.succ_pos d') le_rfl le_rfl hJu hJsq_ae memWkpLoc_zero_fun hu1 hD hae_lin hηu
+    exact memWkpLoc_succ_of_ae_linearCR hpNN hp2 le_rfl (hJu.of_le (Nat.succ_pos d')) hJu
+      hJsq_ae memWkpLoc_zero_fun hu1 hD hae_lin hηu
 
 /-- **`C^n` interior bootstrapping with local `C^n` data.** For every `2 < p ≤ ∞` and `n : ℕ∞`, if
 `J` and `η` are `C^n` on an open neighbourhood `W ⊆ ℂ × V` of the graph of `u` over `Ω` and
