@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Units.Basic
 public import Mathlib.Order.Filter.TendstoCofinite
 import Mathlib.NumberTheory.NumberField.Norm
 import TauCeti.NumberTheory.NumberField.Minpoly
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # Units of a number field
@@ -25,6 +26,8 @@ to see that a non-torsion unit of a field of prime degree generates the field.
 
 ## Main results
 
+* `TauCeti.NumberField.Units.val_unitsMap_algebraMap_ringOfIntegers_subfield`: the image in
+  `(𝓞 K)ˣ` of an integral unit of a subfield `F` has the same value in `K`.
 * `TauCeti.NumberField.Units.coeff_zero_minpoly_eq_one_or_neg_one`: the constant coefficient
   of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
@@ -42,15 +45,14 @@ open scoped NumberField
 
 namespace NumberField.InfinitePlace
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
 
-omit [NumberField K] in
 /-- At a real place, multiply a unit by a torsion unit so that its real embedding is its
 (positive) absolute value. -/
 theorem exists_torsion_mul_embedding_eq_abs (w : InfinitePlace K) (hw : w.IsReal)
     (v : (𝓞 K)ˣ) :
     ∃ ε : torsion K,
-      embedding_of_isReal hw ((ε.1 * v : (𝓞 K)ˣ) : K) = w v := by
+      embedding_of_isReal hw ((ε.val * v : (𝓞 K)ˣ) : K) = w v := by
   let φ := embedding_of_isReal hw
   have hv : |φ (v : K)| = w v := by
     simpa [Real.norm_eq_abs] using (norm_embedding_of_isReal hw (v : K))
@@ -70,14 +72,24 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- The absolute values of the conjugates of a unit `u` have product `|N(u)| = 1`. -/
 @[simp]
 theorem prod_norm_embedding_eq_one (u : (𝓞 K)ˣ) : ∏ σ : K →+* ℂ, ‖σ u‖ = 1 := by
-  have h := congr(‖$(Algebra.norm_eq_prod_embeddings ℚ ℂ (u : K))‖)
-  rw [norm_prod, ← Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ ↦ ‖σ (u : K)‖) _
-    fun _ ↦ by simp [RingHom.equivRatAlgHom_apply]] at h
-  simpa [← Rat.cast_abs] using h.symm
+  simp [NumberField.prod_norm_embedding_eq_abs_norm, ← Rat.cast_abs, NumberField.Units.norm]
 
 end Units
 
 namespace TauCeti.NumberField.Units
+
+section Coe
+
+variable {K : Type*} [Field K]
+
+/-- The image in `(𝓞 K)ˣ` of an integral unit of a subfield `F` has the same value in `K`. -/
+theorem val_unitsMap_algebraMap_ringOfIntegers_subfield (F : Subfield K) (u : (𝓞 F)ˣ) :
+    (((Units.map (algebraMap (𝓞 F) (𝓞 K)).toMonoidHom u : (𝓞 K)ˣ) : 𝓞 K) : K) =
+      (((u : 𝓞 F) : F) : K) := by
+  simp [RingOfIntegers.coe_eq_algebraMap, ← IsScalarTower.algebraMap_apply (𝓞 F) (𝓞 K) K,
+    IsScalarTower.algebraMap_apply (𝓞 F) F K, Subfield.algebraMap_ofSubfield]
+
+end Coe
 
 variable {K : Type*} [Field K] [NumberField K]
 

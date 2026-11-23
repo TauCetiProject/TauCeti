@@ -103,9 +103,9 @@ theorem integrable_vectorMeasureIcc_bondPrice_iff (hr : ContinuousOn r (Icc 0 T)
   have hint : IntegrableOn (fun t ↦ r t * bondPrice r β₀ t) (Ioc 0 T) :=
     (hr.mul (continuousOn_bondPrice hr β₀)).integrableOn_Icc.mono_set Ioc_subset_Icc_self
   rw [VectorMeasure.Integrable, variation_vectorMeasureIcc_bondPrice hr hT,
-    integrable_withDensity_iff_integrable_smul₀' hint.aestronglyMeasurable.enorm
-      (ae_of_all _ fun _ ↦ enorm_lt_top)]
-  simp only [toReal_enorm, smul_eq_mul, IntegrableOn]
+    integrable_withDensity_iff_integrable_smul₀' hint.aestronglyMeasurable.eNorm
+      (ae_of_all _ fun _ ↦ eNorm_lt_top)]
+  simp only [toReal_eNorm, smul_eq_mul, IntegrableOn]
 
 /-- For any holding, integration against the bond's Stieltjes measure is the time integral
 of its interest income. As usual, both integrals take the value zero when not integrable. -/

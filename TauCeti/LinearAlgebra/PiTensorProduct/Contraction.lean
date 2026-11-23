@@ -42,7 +42,7 @@ variable {R : Type u} [CommSemiring R] {M : Type v} [AddCommMonoid M] [Module R 
 
 private noncomputable def contractTensorPairMultilinear (B : LinearMap.BilinForm R M)
     (i j : ι) (hij : i ≠ j) :
-    MultilinearMap R (fun _ : ι => M) (⨂[R] _ : {a : ι // a ≠ i ∧ a ≠ j}, M) := by
+    MultilinearMap (RingHom.id R) (fun _ : ι => M) (⨂[R] _ : {a : ι // a ≠ i ∧ a ≠ j}, M) := by
   classical
   refine MultilinearMap.mk'
     (fun v => B (v i) (v j) •
@@ -56,7 +56,7 @@ private noncomputable def contractTensorPairMultilinear (B : LinearMap.BilinForm
       simp [hup, update_of_ne ha.1.symm, update_of_ne ha.2.symm, smul_comm (B (v i) (v j))]
     · have hup (z : M) : (fun b : {b : ι // b ≠ i ∧ b ≠ j} => update v a z b.val) =
           fun b => v b.val :=
-        funext fun b => update_of_ne (by rintro rfl; exact ha b.2) ..
+        funext fun b => update_of_ne (by rintro rfl; exact ha b.property) ..
       obtain rfl | rfl : a = i ∨ a = j := by tauto
       · simp [hup, update_of_ne hij.symm, add_smul, mul_smul]
       · simp [hup, update_of_ne hij, add_smul, mul_smul]
@@ -145,7 +145,7 @@ theorem contractTensorPair_comp_insertPair (B : LinearMap.BilinForm R M) {i j : 
     B.contractTensorPair i j hij ∘ₗ PiTensorProduct.insertPair R i j p q =
       B p q • LinearMap.id := by
   ext w
-  have hw (a : {a : ι // a ≠ i ∧ a ≠ j}) : ¬(a : ι) = i ∧ ¬(a : ι) = j := a.2
+  have hw (a : {a : ι // a ≠ i ∧ a ≠ j}) : ¬(a : ι) = i ∧ ¬(a : ι) = j := a.property
   simp [hij.symm, hw]
 
 end LinearMap

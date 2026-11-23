@@ -41,6 +41,7 @@ nonnegative entries, after a shift by a natural number.
 ## Main results
 
 * `TauCeti.GTPattern.topWeight_shift`: shifting a pattern shifts its top weight.
+* `TauCeti.GTPattern.rowWeight_shift`: shifting adds the same integer to every weight coordinate.
 * `TauCeti.GTPattern.card_topWeight_shift`: determinant translation preserves the pattern count.
 * `TauCeti.GTPattern.card_topWeight_eq_card_boundedSSYT_detShiftShape`: the corresponding pattern
   and tableau fibers have the same cardinality.
@@ -141,7 +142,7 @@ theorem shiftEquiv_symm_apply (n : ℕ) (m : ℤ) (P : GTPattern n) :
 theorem topRow_shift (P : GTPattern n) (m : ℤ) :
     (P.shift m).topRow = fun i => P.topRow i + m := by
   funext i
-  rw [topRow_apply, shift_apply_of_lt_of_le P m i.2 le_rfl, topRow_apply]
+  rw [topRow_apply, shift_apply_of_lt_of_le P m i.isLt le_rfl, topRow_apply]
 
 /-- Translating every entry of a pattern translates its top weight, exactly as tensoring the
 corresponding representation by a determinant power translates its highest weight. -/
@@ -162,21 +163,21 @@ of top weight `l.shift m`. -/
 def shiftTopWeightEquiv (l : DominantWeight n) (m : ℤ) :
     {P : GTPattern n // P.topWeight = l} ≃
       {P : GTPattern n // P.topWeight = l.shift m} where
-  toFun P := ⟨P.1.shift m, by rw [topWeight_shift, P.2]⟩
-  invFun P := ⟨P.1.shift (-m), by
-    rw [topWeight_shift, P.2, DominantWeight.shift_shift, add_neg_cancel,
+  toFun P := ⟨P.val.shift m, by rw [topWeight_shift, P.property]⟩
+  invFun P := ⟨P.val.shift (-m), by
+    rw [topWeight_shift, P.property, DominantWeight.shift_shift, add_neg_cancel,
       DominantWeight.shift_zero]⟩
   left_inv P := by
     apply Subtype.ext
-    simpa only [add_neg_cancel, shift_zero] using shift_shift P.1 m (-m)
+    simpa only [add_neg_cancel, shift_zero] using shift_shift P.val m (-m)
   right_inv P := by
     apply Subtype.ext
-    simpa only [neg_add_cancel, shift_zero] using shift_shift P.1 (-m) m
+    simpa only [neg_add_cancel, shift_zero] using shift_shift P.val (-m) m
 
 @[simp]
 theorem shiftTopWeightEquiv_apply_coe (l : DominantWeight n) (m : ℤ)
     (P : {P : GTPattern n // P.topWeight = l}) :
-    (shiftTopWeightEquiv l m P).1 = P.1.shift m :=
+    (shiftTopWeightEquiv l m P).val = P.val.shift m :=
   (rfl)
 
 /-- The inverse of `TauCeti.GTPattern.shiftTopWeightEquiv` subtracts the same translation from
@@ -184,7 +185,7 @@ every entry. -/
 @[simp]
 theorem shiftTopWeightEquiv_symm_apply_coe (l : DominantWeight n) (m : ℤ)
     (P : {P : GTPattern n // P.topWeight = l.shift m}) :
-    ((shiftTopWeightEquiv l m).symm P).1 = P.1.shift (-m) :=
+    ((shiftTopWeightEquiv l m).symm P).val = P.val.shift (-m) :=
   (rfl)
 
 /-- A determinant translation does not change the number of Gelfand-Tsetlin patterns over a top
@@ -214,13 +215,13 @@ private def topWeightFiberEquivTopRow (μ : YoungDiagram) :
 @[simp]
 private theorem topWeightFiberEquivTopRow_apply_coe (μ : YoungDiagram)
     (P : {P : GTPattern n // P.topWeight = weightOfShape n μ}) :
-    (topWeightFiberEquivTopRow μ P).1 = P.1 := by
+    (topWeightFiberEquivTopRow μ P).val = P.val := by
   rw [topWeightFiberEquivTopRow, Equiv.subtypeEquivRight_apply]
 
 @[simp]
 private theorem topWeightFiberEquivTopRow_symm_apply_coe (μ : YoungDiagram)
     (P : {P : GTPattern n // ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)}) :
-    ((topWeightFiberEquivTopRow μ).symm P).1 = P.1 := by
+    ((topWeightFiberEquivTopRow μ).symm P).val = P.val := by
   rw [topWeightFiberEquivTopRow, Equiv.subtypeEquivRight_symm_apply]
 
 private def shiftedTopWeightFiberEquivShape (l : DominantWeight n) :
@@ -232,13 +233,13 @@ private def shiftedTopWeightFiberEquivShape (l : DominantWeight n) :
 @[simp]
 private theorem shiftedTopWeightFiberEquivShape_apply_coe (l : DominantWeight n)
     (P : {P : GTPattern n // P.topWeight = l.shift (-l.detShift)}) :
-    (shiftedTopWeightFiberEquivShape l P).1 = P.1 := by
+    (shiftedTopWeightFiberEquivShape l P).val = P.val := by
   rw [shiftedTopWeightFiberEquivShape, Equiv.subtypeEquivRight_apply]
 
 @[simp]
 private theorem shiftedTopWeightFiberEquivShape_symm_apply_coe (l : DominantWeight n)
     (P : {P : GTPattern n // P.topWeight = weightOfShape n l.detShiftShape}) :
-    ((shiftedTopWeightFiberEquivShape l).symm P).1 = P.1 := by
+    ((shiftedTopWeightFiberEquivShape l).symm P).val = P.val := by
   rw [shiftedTopWeightFiberEquivShape, Equiv.subtypeEquivRight_symm_apply]
 
 /-- **Determinant normalization of Gelfand-Tsetlin patterns.**  Patterns whose top weight is an
@@ -257,14 +258,14 @@ top weight. -/
 @[simp]
 theorem detShiftEquivBoundedSSYT_apply_coe (l : DominantWeight n)
     (P : {P : GTPattern n // P.topWeight = l}) :
-    (detShiftEquivBoundedSSYT l P).1 =
-      (P.1.shift (-l.detShift)).toTableau l.colLen_zero_detShiftShape_le
+    (detShiftEquivBoundedSSYT l P).val =
+      (P.val.shift (-l.detShift)).toTableau l.colLen_zero_detShiftShape_le
         (fun i => by
           calc
-            (P.1.shift (-l.detShift)).topRow i =
-                ((P.1.shift (-l.detShift)).topWeight : Fin n → ℤ) i :=
+            (P.val.shift (-l.detShift)).topRow i =
+                ((P.val.shift (-l.detShift)).topWeight : Fin n → ℤ) i :=
               congrFun (topWeight_coe _).symm i
-            _ = (l.shift (-l.detShift) : Fin n → ℤ) i := by rw [topWeight_shift, P.2]
+            _ = (l.shift (-l.detShift) : Fin n → ℤ) i := by rw [topWeight_shift, P.property]
             _ = (weightOfShape n l.detShiftShape : Fin n → ℤ) i :=
               congrFun (congrArg Subtype.val
                 (DominantWeight.weightOfShape_detShiftShape l).symm) i
@@ -278,8 +279,8 @@ by the determinant weight. -/
 @[simp]
 theorem detShiftEquivBoundedSSYT_symm_apply_coe (l : DominantWeight n)
     (T : BoundedSSYT n l.detShiftShape) :
-    ((detShiftEquivBoundedSSYT l).symm T).1 =
-      (SemistandardYoungTableau.toGTPattern T.1 n).shift l.detShift := by
+    ((detShiftEquivBoundedSSYT l).symm T).val =
+      (SemistandardYoungTableau.toGTPattern T.val n).shift l.detShift := by
   simp only [detShiftEquivBoundedSSYT, Equiv.symm_trans_apply,
     gtPatternEquivSSYT_symm_apply_coe, topWeightFiberEquivTopRow_symm_apply_coe,
     shiftedTopWeightFiberEquivShape_symm_apply_coe, shiftTopWeightEquiv_symm_apply_coe,
@@ -301,6 +302,12 @@ theorem shift_eq_add_const (P : GTPattern n) (m : ℤ) : P.shift m = P + const n
   split_ifs with h
   · rfl
   · rw [P.entry_eq_zero (by omega), add_zero]
+
+/-- A determinant shift adds its parameter to every row-weight coordinate. -/
+@[simp]
+theorem rowWeight_shift (P : GTPattern n) (m : ℤ) :
+    (P.shift m).rowWeight = fun r => P.rowWeight r + m := by
+  rw [shift_eq_add_const, rowWeight_add, rowWeight_const, Pi.add_def]
 
 /-- **Every pattern is a polynomial pattern up to a determinant shift**: some shift by a natural
 number makes all of its entries nonnegative. -/

@@ -14,14 +14,15 @@ import TauCeti.GroupTheory.Coset.Fiber
 
 A linear character of a group `G`, a homomorphism `G →* Mˣ` into the units of a commutative
 monoid, kills every commutator, so it factors uniquely through the abelianization. Mathlib's
-`Abelianization.lift` is that bijection, and Mathlib's
+`Group.Abelianization.lift` is that bijection, and Mathlib's
 `CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity` counts the characters of a finite *commutative*
 group. Composing the two counts the characters of an arbitrary finite group:
 
-`Nat.card (G →* Mˣ) = Nat.card (Abelianization G)`.
+`Nat.card (G →* Mˣ) = Nat.card (Group.Abelianization G)`.
 
 The hypothesis is the one Mathlib's counting theorem carries, asked of the abelianization rather
-than of `G`: writing `n` for `Monoid.exponent (Abelianization G)`, `HasEnoughRootsOfUnity M n` asks
+than of `G`: writing `n` for `Monoid.exponent (Group.Abelianization G)`, `HasEnoughRootsOfUnity M n`
+asks
 that `M` contain a primitive `n`-th root of unity and that the `n`-th roots of unity in `M` form a
 cyclic group. An algebraically closed field of characteristic zero satisfies it for every `n`. It is
 a sufficient condition, not one shown here to be necessary, but some hypothesis on `M` is needed:
@@ -43,6 +44,9 @@ complete list of linear characters.
 * `CommGroup.finsum_domRestrictHom`: for a subgroup `H` of a finite commutative group `G`, a
   function of the restriction to `H`, summed over the characters of `G`, is `#(G ⧸ H)` times its
   sum over the characters of `H`.
+* `MonoidHom.exists_comp_eq_iff_ker_le_ker`: a character extends along a homomorphism into a
+  finite commutative group exactly when it kills the kernel of that homomorphism. This is
+  Mathlib's `MonoidHom.domRestrict_surjective` applied to the range of the homomorphism.
 
 ## References
 
@@ -55,13 +59,14 @@ public section
 namespace TauCeti
 
 /-- **The linear characters of a finite group are counted by its abelianization.** Every
-homomorphism `G →* Mˣ` factors uniquely through `Abelianization G`, and the characters of a finite
+homomorphism `G →* Mˣ` factors uniquely through `Group.Abelianization G`, and the characters of a
+finite
 commutative group with enough roots of unity in `M` are as many as its elements. -/
 theorem card_monoidHom_eq_card_abelianization (G M : Type*) [Group G] [Finite G] [CommMonoid M]
-    [HasEnoughRootsOfUnity M (Monoid.exponent (Abelianization G))] :
-    Nat.card (G →* Mˣ) = Nat.card (Abelianization G) := by
-  rw [← CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity (Abelianization G) M]
-  exact Nat.card_congr Abelianization.lift
+    [HasEnoughRootsOfUnity M (Monoid.exponent (Group.Abelianization G))] :
+    Nat.card (G →* Mˣ) = Nat.card (Group.Abelianization G) := by
+  rw [← CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity (Group.Abelianization G) M]
+  exact Nat.card_congr Group.Abelianization.lift
 
 end TauCeti
 
@@ -103,3 +108,24 @@ theorem finsum_domRestrictHom {N : Type*} [AddCommMonoid N] (H : Subgroup G)
       (MonoidHom.domRestrict_surjective M H) (Multiplicative.ofAdd ∘ g)
 
 end CommGroup
+
+namespace MonoidHom
+
+variable {A B R : Type*} [Group B] [CommMonoid R]
+
+/-- A character extends along a homomorphism into a finite commutative group exactly when it kills
+the kernel of that homomorphism. -/
+theorem exists_comp_eq_iff_ker_le_ker [CommGroup A] [Finite A]
+    [HasEnoughRootsOfUnity R (Monoid.exponent A)] (f : B →* A) (χ : B →* Rˣ) :
+    (∃ ψ : A →* Rˣ, ψ.comp f = χ) ↔ f.ker ≤ χ.ker := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    rw [← comap_ker]
+    exact f.ker_le_comap _
+  · intro hχ
+    obtain ⟨ψ, hψ⟩ := domRestrict_surjective (M := R) _
+      (f.rangeRestrict.liftOfSurjective f.rangeRestrict_surjective ⟨χ, by rwa [ker_rangeRestrict]⟩)
+    refine ⟨ψ, MonoidHom.ext fun b ↦ ?_⟩
+    simpa using DFunLike.congr_fun hψ (f.rangeRestrict b)
+
+end MonoidHom

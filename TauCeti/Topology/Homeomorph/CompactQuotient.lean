@@ -34,10 +34,10 @@ theorem exists_homeomorph_image_of_forall_eq_iff {X Y T : Type*} [TopologicalSpa
     [TopologicalSpace Y] [TopologicalSpace T] [T2Space Y] [T2Space T] {π : X → Y} {S : Set X}
     (hπ : ContinuousOn π S) (hS : IsCompact S) (f : S → T) (hf : Continuous f)
     (hsurj : Surjective f) (hfib : ∀ x y : S, f x = f y ↔ π x = π y) :
-    ∃ h : π '' S ≃ₜ T, ∀ x : S, h ⟨π x, mem_image_of_mem π x.2⟩ = f x := by
+    ∃ h : π '' S ≃ₜ T, ∀ x : S, h ⟨π x, mem_image_of_mem π x.property⟩ = f x := by
   have : CompactSpace S := isCompact_iff_compactSpace.mp hS
   let q : C(S, π '' S) :=
-    ⟨fun x ↦ ⟨π x, x, x.2, rfl⟩, hπ.domRestrict.subtype_mk _⟩
+    ⟨fun x ↦ ⟨π x, x, x.property, rfl⟩, hπ.domRestrict.subtype_mk _⟩
   have hqs : Surjective q := by
     rintro ⟨_, x, hx, rfl⟩
     exact ⟨⟨x, hx⟩, rfl⟩
@@ -80,7 +80,7 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {C : Set X} (hC
 /-- The homeomorphism `IsCompact.imageHomeomorph` sends a point `x` of `C` to `g x`. -/
 @[simp]
 theorem imageHomeomorph_apply (x : C) :
-    hC.imageHomeomorph hg hgi x = ⟨g x, mem_image_of_mem g x.2⟩ := by
+    hC.imageHomeomorph hg hgi x = ⟨g x, mem_image_of_mem g x.property⟩ := by
   unfold imageHomeomorph
   rfl
 

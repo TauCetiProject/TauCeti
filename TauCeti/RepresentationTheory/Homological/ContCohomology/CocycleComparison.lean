@@ -51,13 +51,12 @@ noncomputable def cocycle0 (m : H0 G M) :
     (CochainComplex.next ℕ 0) (by
       rw [d_cochainEquiv0]
       have h : (⟨d0 G M (m : M), mem_C1_iff.mpr (continuous_d0_apply (m : M))⟩ : C1 G M) = 0 :=
-        Subtype.ext (funext fun g ↦ by simp [d0_apply, m.2 g])
+        Subtype.ext (funext fun g ↦ by simp [d0_apply, m.property g])
       rw [h, map_zero])
 
 /-- The inclusion of the homogeneous `0`-cocycle `cocycle0 m` is the cochain `g ↦ g • m`, read
 through the short complex in degree zero as `iCycles_cocycleEquiv1` and `iCycles_cocycleEquiv2` do
 in degrees one and two. -/
-@[simp]
 theorem sc_iCycles_cocycle0 (m : H0 G M) :
     ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).sc 0).iCycles.hom (cocycle0 G M m) =
       cochainEquiv0 G M m :=
@@ -113,7 +112,6 @@ noncomputable def cocycleEquiv1 :
         (by simp))).toContinuousLinearEquiv.toAddEquiv :)
 
 /-- The inclusion of a compared one-cocycle is the existing cochain comparison. -/
-@[simp]
 theorem iCycles_cocycleEquiv1 (c : Z1 G M) :
     ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).sc 1).iCycles.hom
         (cocycleEquiv1 G M c) =
@@ -241,7 +239,6 @@ noncomputable def cocycleEquiv2 :
         (by simp))).toContinuousLinearEquiv.toAddEquiv :)
 
 /-- The inclusion of a compared cocycle is the existing cochain comparison. -/
-@[simp]
 theorem iCycles_cocycleEquiv2 (c : Z2 G M) :
     ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).sc 2).iCycles.hom
         (cocycleEquiv2 G M c) =

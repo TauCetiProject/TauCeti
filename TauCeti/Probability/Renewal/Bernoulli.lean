@@ -75,7 +75,6 @@ theorem measure_renewalCountNat_le_of_bernoulliMeasure
       {ω | t < arrival T (n + 1) ω} := by
     filter_upwards [ae_tendsto_arrival_atTop_of_bernoulliMeasure hindep hlaw ha hq]
       with ω hω
-    apply propext
     rw [← not_le, ← le_renewalCountNat_iff hω]
     omega
   rw [measure_congr hae,
@@ -97,7 +96,7 @@ theorem hasLaw_renewalCountNat_negativeBinomialMeasure (hT : ∀ n, Measurable (
   have := hindep.isProbabilityMeasure
   let k := ⌊t / a⌋₊
   have hk : (0 : ℝ) < k + 1 := by positivity
-  let _ := isProbabilityMeasure_negativeBinomialMeasure hk.le hq q.2.2
+  let _ := isProbabilityMeasure_negativeBinomialMeasure hk.le hq q.property.2
   refine ⟨(measurable_renewalCountNat hT t).aemeasurable,
     Measure.ext_of_Iic _ _ fun n ↦ ?_⟩
   rw [Measure.map_apply (measurable_renewalCountNat hT t) measurableSet_Iic,
@@ -111,7 +110,7 @@ theorem hasLaw_renewalCountNat_negativeBinomialMeasure (hT : ∀ n, Measurable (
       omega
     rw [hpre]
     apply (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).mp
-    rw [← measureReal_def, ← measureReal_def, negativeBinomialMeasure_real_Iic hk hq q.2.2]
+    rw [← measureReal_def, ← measureReal_def, negativeBinomialMeasure_real_Iic hk hq q.property.2]
     have htail := binomial_tail_eq_regularizedIncompleteBeta
       (n := n + 1) (m := k + 1) q
     have hset : Ioi k = {j : ℕ | k + 1 ≤ j} := by
@@ -151,7 +150,7 @@ theorem integral_renewalCountNat_of_bernoulliMeasure (hT : ∀ n, Measurable (T 
   let k := ⌊t / a⌋₊
   let ν := negativeBinomialMeasure (k + 1) q
   have hk : (0 : ℝ) ≤ k + 1 := by positivity
-  let _ : IsProbabilityMeasure ν := isProbabilityMeasure_negativeBinomialMeasure hk hq q.2.2
+  let _ : IsProbabilityMeasure ν := isProbabilityMeasure_negativeBinomialMeasure hk hq q.property.2
   have hcast : HasLaw (Nat.cast : ℕ → ℝ) (ν.map (Nat.cast : ℕ → ℝ)) ν :=
     ⟨Measurable.of_discrete.aemeasurable, rfl⟩
   have hi : Integrable (fun j : ℕ ↦ (j : ℝ)) ν :=
@@ -164,7 +163,7 @@ theorem integral_renewalCountNat_of_bernoulliMeasure (hT : ∀ n, Measurable (T 
       .of_discrete, ← hshift.integral_comp (f := fun j : ℕ ↦ (j : ℝ)) .of_discrete]
   simp only [Function.comp_apply, Nat.cast_add]
   rw [integral_add (integrable_const _) hi, integral_const, probReal_univ, one_smul,
-    hcast.integral_eq, integral_id_map_cast_negativeBinomialMeasure hk hq q.2.2]
+    hcast.integral_eq, integral_id_map_cast_negativeBinomialMeasure hk hq q.property.2]
   field_simp; ring
 
 /-- The renewal function of a two-point law, as a real number, is `(⌊t/a⌋₊ + 1) / q - 1`.

@@ -15,11 +15,11 @@ public import Mathlib.Topology.ContinuousMap.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Order.Hom.Set
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
@@ -34,7 +34,8 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 
 ## Main declarations
 
-* `AddCircle.periodic_deriv_of_lift`: the derivative of a lift is `T`-periodic.
+* `AddCircle.periodic_of_hasDerivAt_of_lift`: the derivative of a lift, or more generally of any
+  `F` with `F (x + T) = F x + c`, is `T`-periodic.
 * `AddCircle.derivOfLift`: the derivative `F'` of a lift, as a continuous complex function on the
   circle; it is smooth when `F'` is (`AddCircle.contDiff_derivOfLift`).
 * `AddCircle.hasDerivAt_add_mul_sub`, `AddCircle.one_sub_add_mul_pos`: for a weight
@@ -59,20 +60,19 @@ namespace AddCircle
 
 variable {T : ℝ} {F F' : ℝ → ℝ}
 
-/-- The derivative of a lift `F` with `F (x + T) = F x + T` is `T`-periodic. -/
-theorem periodic_deriv_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
-    (hper : ∀ x, F (x + T) = F x + T) : Function.Periodic F' T := fun x ↦ by
-  have h₁ : HasDerivAt (fun y ↦ F (y + T)) (F' (x + T)) x := (hF (x + T)).comp_add_const x T
-  have h₂ : HasDerivAt (fun y ↦ F (y + T)) (F' x) x := by
-    simpa only [hper] using (hF x).add_const T
-  exact h₁.unique h₂
+/-- The derivative `F'` of a function `F` with `F (x + T) = F x + c`, such as a lift (`c = T`), is
+`T`-periodic. For the derivative `deriv F`, without a differentiability hypothesis, see
+`TauCeti.periodic_deriv_of_apply_add_eq_add`. -/
+theorem periodic_of_hasDerivAt_of_lift {c : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
+    (hper : ∀ x, F (x + T) = F x + c) : Function.Periodic F' T :=
+  funext (fun x ↦ (hF x).deriv) ▸ TauCeti.periodic_deriv_of_apply_add_eq_add hper
 
 /-- The derivative `F'` of a lift `F`, `F (x + T) = F x + T`, regarded as a continuous complex
 function on the circle; it is well defined since `F'` is `T`-periodic
-(`AddCircle.periodic_deriv_of_lift`). -/
+(`AddCircle.periodic_of_hasDerivAt_of_lift`). -/
 noncomputable def derivOfLift (hF : ∀ x, HasDerivAt F (F' x) x)
     (hper : ∀ x, F (x + T) = F x + T) (hF'c : Continuous F') : C(AddCircle T, ℂ) where
-  toFun z := ((periodic_deriv_of_lift hF hper).lift z : ℂ)
+  toFun z := ((periodic_of_hasDerivAt_of_lift hF hper).lift z : ℂ)
   continuous_toFun :=
     (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 (Complex.continuous_ofReal.comp hF'c)
 
@@ -126,7 +126,7 @@ derivative in some `[c, M]` with `0 < c`. -/
 theorem exists_pos_le_deriv_le_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
     (hper : ∀ x, F (x + T) = F x + T) (hF' : Continuous F') (hpos : ∀ x, 0 < F' x) :
     ∃ c M : ℝ, 0 < c ∧ (∀ x, c ≤ F' x) ∧ ∀ x, F' x ≤ M := by
-  have hK := (periodic_deriv_of_lift hF hper).compact_of_continuous hT.out.ne' hF'
+  have hK := (periodic_of_hasDerivAt_of_lift hF hper).compact_of_continuous hT.out.ne' hF'
   obtain ⟨_, ⟨x₀, rfl⟩, hmin⟩ := hK.exists_isLeast (Set.range_nonempty F')
   obtain ⟨M, hM⟩ := hK.isBounded.bddAbove
   exact ⟨F' x₀, M, hpos x₀, fun x ↦ hmin ⟨x, rfl⟩, fun x ↦ hM ⟨x, rfl⟩⟩
@@ -192,7 +192,7 @@ omit hT in
 metric of the circle. -/
 theorem lipschitzWith_of_lift {φ : AddCircle T → AddCircle T} (hF : ∀ x, HasDerivAt F (F' x) x)
     (hφ : ∀ x : ℝ, φ x = F x) {C : NNReal} (hC : ∀ x, ‖F' x‖₊ ≤ C) : LipschitzWith C φ := by
-  have hL : LipschitzWith C F := lipschitzWith_of_nnnorm_deriv_le
+  have hL : LipschitzWith C F := lipschitzWith_of_nnNorm_deriv_le
     (fun x ↦ (hF x).differentiableAt) fun x ↦ (hF x).deriv ▸ hC x
   refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
   obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective x
@@ -219,7 +219,7 @@ theorem lipschitzWith_toNNReal_of_lift {φ : AddCircle T → AddCircle T} {M : �
     (hF : ∀ x, HasDerivAt F (F' x) x) (hφ : ∀ x : ℝ, φ x = F x) (h0F : ∀ x, 0 ≤ F' x)
     (hMF : ∀ x, F' x ≤ M) : LipschitzWith M.toNNReal φ :=
   lipschitzWith_of_lift hF hφ fun x ↦ by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_of_nonneg (h0F x)]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_of_nonneg (h0F x)]
     exact (hMF x).trans (Real.le_coe_toNNReal M)
 
 end AddCircle

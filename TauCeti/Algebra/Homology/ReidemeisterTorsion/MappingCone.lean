@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Homology
 public import TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber
 public import TauCeti.Algebra.Homology.ModuleCat.Shift.Basic
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
-import TauCeti.LinearAlgebra.Alternating.Append
 
 /-!
 # Torsion of shifted complexes and of mapping cones
@@ -43,6 +43,27 @@ bounded, this reads `τ(L) = ε · τ(cone φ) · τ(K)`
 acyclic, so this compares the torsions of `K` and `L` through the torsion of the cone, which is
 in general not `±1`.
 
+A complex `C` that is not acyclic has torsion `0`, but a choice of bases `h i` of its homology
+groups gives the torsion `τ(C, c, h)` (`HomologicalComplex.reidemeisterTorsionWithHomology`),
+nonzero for a bounded complex. This is the torsion of an acyclic mapping cone. Let `G` be a
+complex with zero differential and bases `g i` of `G.X i`, and let `ζ : G ⟶ C` be a chain map
+carrying each `g i k` to a cycle representing `h i k`; for instance `G` may be the complex of
+homology groups of `C`, with `g = h`. Every cycle of `C` is then a boundary plus a value of `ζ`,
+and a value of `ζ` is a boundary only if it is zero, so the mapping cone of `ζ` is acyclic. This
+holds over any ring and needs no bases: the mapping cone of a chain map from a complex with zero
+differential is acyclic as soon as the chain map induces bijections from the terms of that complex
+onto the homology groups of its target (`HomologicalComplex.acyclic_homotopyCofiber_of_bijective`,
+from `TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber`); here the bijections hold because `ζ`
+carries the bases `g i` to cycles representing the bases `h i`
+(`HomologicalComplex.moduleCatHomologyClass_bijective_of_basis`). The boundaries of the cone of
+`ζ` in degree `j` are the cycles `Zⱼ` of `C`, based by a basis of the boundaries `Bⱼ` followed by
+the representatives `ζ (g j)`, and these lift to the lifts of the basis of `Bⱼ` followed by the
+basis `g j`. So the brackets of the cone are exactly the brackets `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of `C`
+with its homology bases, and `τ(cone ζ) = τ(C, c, h)`, with no sign
+(`HomologicalComplex.reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology`).
+The torsion of a complex with based homology is thereby the torsion of a based acyclic complex,
+to which the formulas for acyclic complexes apply.
+
 ## Main declarations
 
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_inv_of_shift`: the torsion of a shifted complex
@@ -50,6 +71,9 @@ in general not `±1`.
 * `HomologicalComplex.reidemeisterTorsion_homotopyCofiber`: the torsion of a mapping cone.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_quasiIso`: the change of the torsion under a
   quasi-isomorphism of based complexes.
+* `HomologicalComplex.reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology`: the
+  torsion of the acyclic mapping cone of a chain map carrying bases to cycles representing homology
+  bases is the torsion of the complex with these homology bases.
 
 ## References
 
@@ -87,30 +111,11 @@ private theorem torsionBracket_of_shift {j : ℤ} (h : D.ExactAt (j + 1 + 1))
     (s : Fin q → D.X (j + 1 + 1)) (hs : ∀ k, (D.d (j + 1 + 1) (j + 1)).hom (s k) = b₀ k)
     (hs' : ∀ k, (C.d (j + 1) j).hom (-e (j + 1) (s k)) =
       b₀.map (boundaryEquivOfShift e he j) k) :
-    torsionBracket c h' (b₁.map (boundaryEquivOfShift e he (j + 1)))
+    torsionBracket c (by simp) (by simp) h' (b₁.map (boundaryEquivOfShift e he (j + 1)))
         (b₀.map (boundaryEquivOfShift e he j)) (fun k ↦ -e (j + 1) (s k)) hs' =
-      (-1) ^ q * torsionBracket d h b₁ b₀ s hs := by
-  have : Module.Finite F (D.X (j + 1 + 1)) := .of_basis (d _)
-  have hn : m (j + 1 + 1) = p + q := by
-    have := (exactAt_iff_finrank_add_finrank D (i := j + 1 + 1 + 1) (k := j + 1) (by simp)
-      (by simp)).1 h
-    rwa [finrank_eq_card_basis b₁, finrank_eq_card_basis b₀, finrank_eq_card_basis (d _),
-      Fintype.card_fin, Fintype.card_fin, Fintype.card_fin, eq_comm] at this
-  -- The basis of `C.X (j + 1)` is the transport along `e` of the basis of `D.X (j + 1 + 1)`.
-  have hc : c (j + 1) = ((d (j + 1 + 1)).map (e (j + 1))).reindex (finCongr (hm (j + 1))) :=
-    Basis.eq_of_apply_eq fun k ↦ by simp [hd]
-  rw [torsionBracket_eq_det_append c h' _ _ _ hs' ((hm (j + 1)).symm.trans hn),
-    torsionBracket_eq_det_append d h _ _ _ hs hn, hc, Basis.det_reindex, Basis.det_map]
-  have hneg := ((d (j + 1 + 1)).det.domDomCongr (finCongr hn)).map_append_neg
-    (fun k ↦ (b₁ k : D.X (j + 1 + 1))) s
-  have hcast : (finCongr hn : Fin (m (j + 1 + 1)) → Fin (p + q)) = Fin.cast hn := rfl
-  rw [AlternatingMap.domDomCongr_apply, AlternatingMap.domDomCongr_apply, hcast,
-    smul_eq_mul] at hneg
-  rw [← hneg]
-  congr 1
-  ext k
-  obtain ⟨l, rfl⟩ := (finCongr hn.symm).surjective k
-  induction l using Fin.addCases <;> simp
+      (-1) ^ q * torsionBracket d (by simp) (by simp) h b₁ b₀ s hs :=
+  torsionBracket_eq_pow_mul d _ _ h b₁ b₀ s hs _ _ h' _ _ _ hs' (e (j + 1)) (hm (j + 1)).symm
+    (fun k ↦ by simp [hd]) (fun k ↦ by simp) (-1) fun k ↦ by simp
 
 include he hd in
 /-- **The torsion of a shifted complex.** Let `D` be the complex `C` shifted up by one degree with
@@ -161,10 +166,11 @@ theorem reidemeisterTorsion_eq_mul_inv_of_shift :
       (-1 : F) ^ finrank F (LinearMap.range (C.d (j + 1) j).hom) := by
     simpa using hasFiniteMulSupport_neg_one_pow_finrank_mul C c hn fun _ ↦ 1
   have hτ : Function.HasFiniteMulSupport fun j : ℤ ↦
-      (torsionBracket c (hC (j + 1)) (b (j + 1)) (b j) _ (hs j) ^ (j.negOnePow : ℤ))⁻¹ :=
+      (torsionBracket c (by simp) (by simp) (hC (j + 1)) (b (j + 1)) (b j) _ (hs j) ^
+        (j.negOnePow : ℤ))⁻¹ :=
     (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
       Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-        rw [torsionBracket_eq_one c _ _ _ _ _ (by simpa using hj), one_zpow, inv_one]
+        rw [torsionBracket_eq_one c _ _ _ _ _ _ _ (by simpa using hj), one_zpow, inv_one]
   rw [reidemeisterTorsion_eq_finprod (hfin.2 hn) hD b' s' hs',
     reidemeisterTorsion_eq_finprod hn hC b _ hs, ← finprod_inv_distrib,
     ← finprod_mul_distrib hε hτ, ← finprod_comp_equiv (Equiv.addRight (1 : ℤ))]
@@ -276,5 +282,141 @@ theorem reidemeisterTorsion_eq_mul_of_quasiIso {K L : ChainComplex (ModuleCat F)
   simp [← mul_assoc, hε, reidemeisterTorsion_ne_zero K cK hn hK]
 
 end MappingCone
+
+section HomologySection
+
+open homotopyCofiber
+
+variable {C G : ChainComplex (ModuleCat F) ℤ} (ζ : G ⟶ C) (hG : ∀ i j, G.d i j = 0)
+  {m : ℤ → ℕ} (g : ∀ i, Basis (Fin (m i)) F (G.X i))
+  (h : ∀ i, Basis (Fin (m i)) F (C.homology i))
+  (y : ∀ i, Fin (m i) → C.cycles i) (hy : ∀ i k, C.homologyπ i (y i k) = h i k)
+  (hζ : ∀ i k, C.iCycles i (y i k) = ζ.f i (g i k))
+
+/-- The basis of the boundaries of the mapping cone in degree `j`: a basis of the boundaries `Bⱼ`
+of `C` followed by the cycles representing the homology basis `h j`, included into the cone. -/
+private def coneBoundaryBasis {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) :
+    Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom) + m j)) F
+      (LinearMap.range ((homotopyCofiber ζ).d (j + 1) j).hom) :=
+  ((kerBasisOfHomology (ChainComplex.prev ℤ j) (ChainComplex.next ℤ j)
+    (chosenBoundaryBasis C c (j + 1) j) (h j) (y j) (hy j)).map
+      ((LinearEquiv.ofInjective ((inrX ζ j).hom ∘ₗ (LinearMap.ker (C.d j (j - 1)).hom).subtype)
+        ((inrX_hom_injective ζ j).comp Subtype.val_injective)).trans
+        (LinearEquiv.ofEq _ _ (range_inrX_comp_subtype ζ hG
+          fun i ↦ moduleCatHomologyClass_bijective_of_basis C _ _ _ (g i) (h i) (y i) (hy i)
+            (hζ i))))).reindex
+    finSumFinEquiv
+
+private theorem coe_coneBoundaryBasis {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ)
+    (k : Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom) + m j)) :
+    (coneBoundaryBasis ζ hG g h y hy hζ c j k : (homotopyCofiber ζ).X j) =
+      (inrX ζ j).hom (Fin.append (fun k ↦ (chosenBoundaryBasis C c (j + 1) j k : C.X j))
+        (fun k ↦ C.iCycles j (y j k)) k) := by
+  induction k using Fin.addCases <;> simp [coneBoundaryBasis]
+
+/-- Lifts to the mapping cone of the basis `coneBoundaryBasis` of its boundaries. -/
+private def coneLift {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) :
+    Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom) + m j) → (homotopyCofiber ζ).X (j + 1) :=
+  Fin.append (fun k ↦ (inrX ζ (j + 1)).hom (chosenBoundaryLift C c (j + 1) j k))
+    fun k ↦ (inlX ζ j (j + 1) (by simp)).hom (g j k)
+
+private theorem coneLift_spec {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) (k) :
+    ((homotopyCofiber ζ).d (j + 1) j).hom (coneLift ζ g c j k) =
+      coneBoundaryBasis ζ hG g h y hy hζ c j k := by
+  rw [coe_coneBoundaryBasis, homotopyCofiber_d]
+  induction k using Fin.addCases with
+  | left k => simp [coneLift, chosenBoundaryLift_spec]
+  | right k => simp [coneLift, inlX_d_apply_of_d_eq_zero ζ _ (hG _ _), hζ]
+
+/-- Including the basis of `G.X a` into the mapping cone along `a = j`; the degrees `j` and
+`j + 1 - 1` are only propositionally equal. -/
+private theorem inlX_hom_cast {j a : ℤ} (ha : a = j) (k : Fin (m a))
+    (h₁ : (ComplexShape.down ℤ).Rel (j + 1) a) (h₂ : (ComplexShape.down ℤ).Rel (j + 1) j) :
+    (inlX ζ j (j + 1) h₂).hom (g j (Fin.cast (by rw [ha]) k)) =
+      (inlX ζ a (j + 1) h₁).hom (g a k) := by
+  subst ha
+  rfl
+
+include hG hy hζ in
+/-- The brackets of the mapping cone are the brackets of `C` with its homology bases. -/
+private theorem torsionBracket_coneBoundaryBasis {n : ℤ → ℕ}
+    (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ) (hj : (homotopyCofiber ζ).ExactAt (j + 1)) :
+    torsionBracket (basis ζ g c) (by simp) (by simp) hj
+        (coneBoundaryBasis ζ hG g h y hy hζ c (j + 1)) (coneBoundaryBasis ζ hG g h y hy hζ c j)
+        (coneLift ζ g c j) (coneLift_spec ζ hG g h y hy hζ c j) =
+      torsionBracketWithHomology c (by simp) (by simp)
+        (chosenBoundaryBasis C c (j + 1 + 1) (j + 1)) (h (j + 1))
+        (y (j + 1)) (hy (j + 1)) (chosenBoundaryBasis C c (j + 1) j)
+        (chosenBoundaryLift C c (j + 1) j) (chosenBoundaryLift_spec C c (j + 1) j) := by
+  have hn₁ := eq_add_of_exactAt (basis ζ g c) (by simp) (by simp) hj
+    (coneBoundaryBasis ζ hG g h y hy hζ c (j + 1)) (coneBoundaryBasis ζ hG g h y hy hζ c j)
+  have hm : m (j + 1 - 1) = m j := by rw [add_sub_cancel_right]
+  have hn₂ : n (j + 1) = finrank F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom) + m (j + 1) +
+      finrank F (LinearMap.range (C.d (j + 1) j).hom) := by omega
+  set u := Fin.append (Fin.append (fun k ↦ (chosenBoundaryBasis C c (j + 1 + 1) (j + 1) k :
+    C.X (j + 1))) fun k ↦ C.iCycles (j + 1) (y (j + 1) k)) (chosenBoundaryLift C c (j + 1) j) ∘
+      Fin.cast hn₂ with hu
+  rw [torsionBracket_eq_det_append (basis ζ g c) _ _ hj _ _ _ _ hn₁,
+    torsionBracketWithHomology_eq_det_append c _ _ _ _ _ _ _ _ _ hn₂, ← hu,
+    basis_det_eq_mul ζ g c (j + 1) _ u (g (j + 1 - 1)), Basis.det_self, mul_one]
+  · intro k
+    obtain ⟨k, rfl⟩ := (finCongr hn₂).symm.surjective k
+    -- The index `k` of `u` sits in the cone family at the index with the same value.
+    have hk (k' : Fin _) (hk' : (k : ℕ) = k') :
+        Fin.cast hn₁ (Fin.castAdd (m (j + 1 - 1)) (Fin.cast hn₂.symm k)) = k' :=
+      Fin.ext hk'
+    simp only [hu, Function.comp_apply, finCongr_symm, finCongr_apply]
+    induction k using Fin.addCases with
+    | left k =>
+      rw [hk (Fin.castAdd _ k) (by simp), Fin.append_left, coe_coneBoundaryBasis]
+      simp
+    | right k =>
+      rw [hk (Fin.natAdd _ (Fin.castAdd _ k)) (by simp)]
+      simp [coneLift]
+  · intro k
+    have hk : Fin.cast hn₁ (Fin.natAdd (n (j + 1)) k) =
+        Fin.natAdd _ (Fin.natAdd _ (Fin.cast hm k)) :=
+      Fin.ext (by simp; omega)
+    simp only [Function.comp_apply, hk, Fin.append_right, coneLift]
+    exact inlX_hom_cast ζ g (add_sub_cancel_right j 1) k _ _
+
+include hG hy hζ in
+/-- **The torsion with homology bases is the torsion of a mapping cone.** Let `ζ : G ⟶ C` be a
+chain map from a complex `G` with zero differential, with bases `g i` of `G.X i`, which carries
+each basis vector `g i k` to a cycle representing the vector `h i k` of a basis of `Hᵢ(C)`. Then
+the mapping cone of `ζ` is acyclic (`acyclic_homotopyCofiber_of_bijective`, applied to
+`moduleCatHomologyClass_bijective_of_basis`), and its torsion, for
+the basis `homotopyCofiber.basis` made of the basis of `C.X i` followed by that of `G.X (i - 1)`,
+is the torsion `τ(C, c, h)` of `C` with the homology bases `h`. -/
+theorem reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology {n : ℤ → ℕ}
+    (c : ∀ i, Basis (Fin (n i)) F (C.X i)) :
+    (homotopyCofiber ζ).reidemeisterTorsion (basis ζ g c) =
+      C.reidemeisterTorsionWithHomology c h := by
+  by_cases hn : {i | n i ≠ 0}.Finite
+  swap
+  · rw [reidemeisterTorsionWithHomology_of_not_finite _ _ _ hn,
+      reidemeisterTorsion_of_not_finite _ _ fun h' ↦ hn (h'.subset fun i hi ↦ by
+        simp only [Set.mem_ofPred_eq] at hi ⊢
+        omega)]
+  have hn' : {i | n i + m (i - 1) ≠ 0}.Finite := by
+    refine (hn.union (hn.image (· + 1))).subset fun i hi ↦ ?_
+    by_cases h0 : n i = 0
+    · refine Or.inr ⟨i - 1, fun h1 ↦ hi ?_, by simp⟩
+      have := Module.Finite.of_basis (c (i - 1))
+      have := C.finrank_homology_le_finrank_X (i - 1)
+      rw [finrank_eq_card_basis (h (i - 1)), finrank_eq_card_basis (c (i - 1))] at this
+      simp only [Fintype.card_fin] at this
+      omega
+    · exact Or.inl h0
+  have hacyc := acyclic_homotopyCofiber_of_bijective ζ hG
+    fun i ↦ moduleCatHomologyClass_bijective_of_basis C _ _ _ (g i) (h i) (y i) (hy i) (hζ i)
+  rw [reidemeisterTorsionWithHomology_eq_finprod hn (fun j ↦ chosenBoundaryBasis C c (j + 1) j) y
+      hy (fun j ↦ chosenBoundaryLift C c (j + 1) j) (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j),
+    reidemeisterTorsion_eq_finprod hn' hacyc (coneBoundaryBasis ζ hG g h y hy hζ c)
+      (coneLift ζ g c) (coneLift_spec ζ hG g h y hy hζ c)]
+  exact finprod_congr fun j ↦ by
+    rw [torsionBracket_coneBoundaryBasis ζ hG g h y hy hζ c j (hacyc (j + 1))]
+
+end HomologySection
 
 end HomologicalComplex

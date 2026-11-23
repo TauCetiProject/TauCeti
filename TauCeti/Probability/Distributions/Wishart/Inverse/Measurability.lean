@@ -59,7 +59,7 @@ theorem measurable_inverseWishartMeasure :
         (measurable_matrix_inv.comp ((Matrix.measurable_of (Fin p) (Fin p) ℝ).comp measurable_snd)))
   have hsource : Measurable fun q : ℝ × (Fin p → Fin p → ℝ) =>
       nonsingularWishartMeasure q.1 (Matrix.of q.2)⁻¹ := by
-    simpa [Function.comp_def] using measurable_nonsingularWishartMeasure.comp hcoords
+    exact measurable_nonsingularWishartMeasure.comp hcoords
   simp only [inverseWishartMeasure_def]
   exact (Measure.measurable_map _ measurable_symmetricInv).comp hsource
 
@@ -70,6 +70,6 @@ theorem measurable_inverseWishartMeasure_selfAdjoint :
     Measurable fun q : ℝ × selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       inverseWishartMeasure q.1 (q.2 : Matrix (Fin p) (Fin p) ℝ) :=
   measurable_inverseWishartMeasure.comp
-    (measurable_fst.prodMk (measurable_subtype_coe.comp measurable_snd))
+    (measurable_fst.prodMk (measurable_subtypeVal.comp measurable_snd))
 
 end TauCeti.Probability

@@ -260,5 +260,71 @@ transitions of the core. -/
   rw [det_def, coordChange_exteriorPower_obj]
   exact ContinuousLinearMap.exteriorPowerCoords_self _
 
+/-- The determinant core of a bundle has transition scalar equal to the determinant of the
+bundle transition in the preferred charts. -/
+theorem coordChange_det_ofBundle (n : ℕ) (E : B → Type*)
+    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+    [∀ x, TopologicalSpace (E x)] [TopologicalSpace (Bundle.TotalSpace (Fin n → 𝕜) E)]
+    [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] (i i' x : B) :
+    (ofBundle 𝕜 n E).det.core.coordChange i i' x =
+      ((trivializationAt (Fin n → 𝕜) E i).coordChangeL 𝕜
+        (trivializationAt (Fin n → 𝕜) E i') x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)).det •
+        ContinuousLinearMap.id 𝕜 _ := by
+  rw [coordChange_det, core_ofBundle, pointIndexedCore_coordChange]
+
+/-! ### Pullback -/
+
+section Pullback
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- Pulling back commutes strictly with exterior powers of finite-rank cores. -/
+@[simp] theorem pullback_exteriorPower_obj (j : ℕ) (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
+    ((exteriorPower 𝕜 B j).obj A).pullback f = (exteriorPower 𝕜 X j).obj (A.pullback f) := (rfl)
+
+/-- Pulling back commutes with the action of exterior powers on bundle maps. -/
+@[simp] theorem pullbackMap_exteriorPower_map (j : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
+    (a : A ⟶ D) (f : C(X, B)) :
+    pullbackMap ((exteriorPower 𝕜 B j).map a) f =
+      (exteriorPower 𝕜 X j).map (pullbackMap a f) :=
+  ((CoordinateFunctor.exteriorPower 𝕜 j).mapHom_pullbackMap a f).symm
+
+/-- Exterior powers commute strictly with pullback as functors. -/
+theorem exteriorPower_comp_pullbackFunctor (j : ℕ) (f : C(X, B)) :
+    exteriorPower 𝕜 B j ⋙ pullbackFunctor f = pullbackFunctor f ⋙ exteriorPower 𝕜 X j :=
+  (CoordinateFunctor.exteriorPower 𝕜 j).functor_comp_pullbackFunctor f
+
+@[simp] theorem pullbackMap_exteriorPowerZeroIso_hom (A : FiniteRankBundleCore 𝕜 B)
+    (f : C(X, B)) :
+    pullbackMap (exteriorPowerZeroIso A).hom f = (exteriorPowerZeroIso (A.pullback f)).hom :=
+  hom_ext fun x => by
+    simp only [fiberMap_pullbackMap, fiberMap_exteriorPowerZeroIso_hom]
+    -- `((exteriorPower 𝕜 B 0).obj A).pullback f` and `(trivial 𝕜 B 1).pullback f` coincide with
+    -- `(exteriorPower 𝕜 X 0).obj (A.pullback f)` and `trivial 𝕜 X 1` at default transparency.
+    exact (fiberMap_exteriorPowerZeroIso_hom (A.pullback f) x).symm
+
+@[simp] theorem pullbackMap_exteriorPowerZeroIso_inv (A : FiniteRankBundleCore 𝕜 B)
+    (f : C(X, B)) :
+    pullbackMap (exteriorPowerZeroIso A).inv f = (exteriorPowerZeroIso (A.pullback f)).inv :=
+  hom_ext fun x => by
+    simp only [fiberMap_pullbackMap, fiberMap_exteriorPowerZeroIso_inv]
+    exact (fiberMap_exteriorPowerZeroIso_inv (A.pullback f) x).symm
+
+@[simp] theorem pullbackMap_exteriorPowerOneIso_hom (A : FiniteRankBundleCore 𝕜 B)
+    (f : C(X, B)) :
+    pullbackMap (exteriorPowerOneIso A).hom f = (exteriorPowerOneIso (A.pullback f)).hom :=
+  pullbackMap_constIso_hom _ _ _ f
+
+@[simp] theorem pullbackMap_exteriorPowerOneIso_inv (A : FiniteRankBundleCore 𝕜 B)
+    (f : C(X, B)) :
+    pullbackMap (exteriorPowerOneIso A).inv f = (exteriorPowerOneIso (A.pullback f)).inv :=
+  pullbackMap_constIso_inv _ _ _ f
+
+/-- Pulling back commutes strictly with forming the determinant line of a finite-rank core. -/
+@[simp] theorem pullback_det (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
+    A.det.pullback f = (A.pullback f).det := (rfl)
+
+end Pullback
+
 end FiniteRankBundleCore
 end TauCeti

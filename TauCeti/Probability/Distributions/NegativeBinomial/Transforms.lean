@@ -64,7 +64,7 @@ theorem integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff
   have hcomp : ((fun x : ℝ ↦ exp (t * x)) ∘ (Nat.cast : ℕ → ℝ)) =
       fun n : ℕ ↦ exp t ^ n := by
     funext n
-    rw [Function.comp_apply, mul_comm, Real.exp_nat_mul]
+    rw [Function.comp_apply, mul_comm, Real.exp_natCast_mul]
   rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff, hcomp,
     integrable_pow_negativeBinomialMeasure_iff hr hp hp1,
     abs_of_nonneg (mul_nonneg (sub_nonneg.mpr hp1) (exp_nonneg t))]
@@ -119,7 +119,7 @@ theorem zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure {
           by_contra h
           exact hrp ⟨lt_of_le_of_ne hv.1 (Ne.symm h), hv.2.1⟩
         rw [negativeBinomialMeasure_zero hv.2.1 hv.2.2, Measure.map_dirac' (by fun_prop)]
-        exact integrable_dirac enorm_lt_top
+        exact integrable_dirac eNorm_lt_top
       · rw [negativeBinomialMeasure_eq_zero_of_invalid hv, Measure.map_zero]
         exact integrable_zero_measure
     rw [huniv, interior_univ]
@@ -309,7 +309,7 @@ theorem charFun_map_cast_negativeBinomialMeasure
     have hmul : ((t : ℂ) * ((k : ℝ) : ℂ)) * Complex.I = k * (Complex.I * t) := by
       push_cast
       ring
-    rw [hmul, Complex.exp_nat_mul]
+    rw [hmul, Complex.exp_natCast_mul]
   rw [negativeBinomialWeight_toReal hr.le hp.le hp1,
     negativeBinomialWeightReal_eq_coeff hr.le k, hexp]
   rw [mul_pow]

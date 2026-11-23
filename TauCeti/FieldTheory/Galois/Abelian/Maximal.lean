@@ -54,10 +54,9 @@ separable closure of `K` in `Ω`.
 
 ## References
 
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Ch. I §1 and
-  Ch. VI §1, for the Galois correspondence over an infinite extension.
-* J. S. Milne, *Fields and Galois Theory*, Ch. 7, for Krull's correspondence between closed
-  normal subgroups and Galois subextensions.
+* J. S. Milne, *Fields and Galois Theory*, Ch. 7 (Prop. 7.12 and Thm. 7.13), for the Galois
+  correspondence over an infinite extension: Krull's correspondence between closed subgroups and
+  intermediate fields, and between closed normal subgroups and Galois subextensions.
 -/
 
 public section
@@ -95,7 +94,7 @@ variable (K Ω) in
 instance isAbelianGalois_maximalAbelianExtension :
     IsAbelianGalois K (maximalAbelianExtension K Ω) := by
   have : ∀ E : {E : IntermediateField K Ω // IsAbelianGalois K E},
-      IsAbelianGalois K (E : IntermediateField K Ω) := fun E ↦ E.2
+      IsAbelianGalois K (E : IntermediateField K Ω) := fun E ↦ E.property
   rw [maximalAbelianExtension_def]
   infer_instance
 
@@ -177,7 +176,7 @@ theorem fixingSubgroup_maximalAbelianExtension :
     refine (commutator Gal(Ω/K)).topologicalClosure_minimal ?_
       (fixingSubgroup_isClosed_of_isAlgebraic _)
     rw [← IntermediateField.restrictNormalHom_ker]
-    exact Abelianization.commutator_le_ker _
+    exact Group.Abelianization.commutator_le_ker _
 
 variable (K Ω) in
 /-- **The maximal abelian extension is the separable part of the fixed field of the closed

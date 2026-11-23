@@ -69,6 +69,12 @@ open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
+/-- A nonpositive integer index has positive-part Smale threshold one, so any order at
+least one meets the threshold. This numerical bound needs no geometric or module assumptions. -/
+theorem toNat_add_one_le_of_nonpos {i : ℤ} {n : ℕ∞ω} (hi : i ≤ 0) (hn : 1 ≤ n) :
+    ((i.toNat + 1 : ℕ) : ℕ∞ω) ≤ n := by
+  simpa only [Int.toNat_of_nonpos hi, zero_add, Nat.cast_one] using hn
+
 variable {X Λ M B F EB HB : Type*} {E : B → Type*}
   [NormedAddCommGroup X] [NormedSpace ℝ X]
   [TopologicalSpace M] [ChartedSpace X M]
@@ -155,7 +161,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     rintro rfl
     exact absurd hn1 (by simp)
   have hcn : ContMDiffAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) n c (x, l) :=
-    (contMDiffAt_totalSpace.mp hcont).2
+    (contMDiffAt_totalSpace_iff.mp hcont).2
   have hcd : MDifferentiableAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) c (x, l) :=
     hcn.mdifferentiableAt hn0
   have hfeq : c ∘ (extChartAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (x, l)).symm = f := by
@@ -233,7 +239,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   -- outside them need not be section zeros. The intrinsic linearization is recovered here.
   refine ⟨Subtype.val ⁻¹' ((chartAt X x).source ×ˢ univ ∩ b ⁻¹' e.baseSet ∩
       ψ ⁻¹' (V ∩ {p | DifferentiableAt ℝ f p})),
-    continuous_subtype_val.continuousAt.preimage_mem_nhds
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (inter_mem (inter_mem hsource hbase) (hψ.preimage_mem_nhds (inter_mem hV hdiff))),
     A, hA, ?_⟩
   rintro ⟨⟨x', k⟩, hw⟩ ⟨⟨⟨hx', -⟩, hwe⟩, hwV, hwd⟩ hbad
@@ -309,10 +315,10 @@ index of the slice linearization. -/
 theorem isMeagre_setOf_not_isRegularSectionParameter :
     IsMeagre {l | ¬ IsRegularSectionParameter (F := F) X b s l} := by
   have hb : ∀ z, s z = 0 → ContinuousAt b z := fun z hz ↦
-    (contMDiffAt_totalSpace.mp (hcont z hz)).1.continuousAt
+    (contMDiffAt_totalSpace_iff.mp (hcont z hz)).1.continuousAt
   have hlocal := fun z : ↥{z | s z = 0} ↦
-    exists_section_badParameter_neighborhood (hcont z z.2) (hFred z z.2)
-      (htotal z z.2) (hn z z.2) z.2 hb
+    exists_section_badParameter_neighborhood (hcont z z.property) (hFred z z.property)
+      (htotal z z.property) (hn z z.property) z.property hb
   choose! Q hQ A hA hQA using hlocal
   obtain ⟨t, -, htcount, htcover⟩ := TopologicalSpace.countable_cover_nhdsWithin
     (f := Q) (s := (univ : Set ↥{z | s z = 0})) fun z _ ↦ nhdsWithin_le_nhds (hQ z)
@@ -357,7 +363,7 @@ theorem eventually_residual_exists_isManifold_sectionZero {d : ℕ}
         ∀ z : ↥{x | s (x, l) = 0},
           (mfderiv 𝓘(ℝ, Fin d → ℝ) 𝓘(ℝ, X) Subtype.val z).range =
             (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
-              (fun y ↦ s (y, l)) z.1).ker := by
+              (fun y ↦ s (y, l)) z.val).ker := by
   have : IsManifold 𝓘(ℝ, X) 1 M := .of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn0)
   filter_upwards [mem_residual_setOf_isRegularSectionParameter hcont hFred htotal hn] with l hl
   exact exists_isManifold_sectionZero_of_contMDiff hn0
@@ -390,9 +396,8 @@ theorem mem_residual_setOf_forall_section_ne_zero_of_index_neg :
     {l | ∀ x, s (x, l) ≠ 0} ∈ residual Λ := by
   have hn : ∀ z, s z = 0 → (((LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X)
       (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).toLinearMap).toNat + 1 : ℕ) : ℕ∞ω) ≤ n :=
-    fun z hz ↦ by
-      rw [Int.toNat_of_nonpos (hindex z hz).le]
-      exact ENat.one_le_iff_ne_zero_withTop.mpr hn0
+    fun z hz ↦ toNat_add_one_le_of_nonpos (hindex z hz).le
+      (ENat.one_le_iff_ne_zero_withTop.mpr hn0)
   filter_upwards [mem_residual_setOf_isRegularSectionParameter hcont hFred htotal hn] with l hl
   exact (isRegularSectionParameter_iff_forall_ne_zero_of_index_neg
     (fun x hx ↦ hindex (x, l) hx)).mp hl

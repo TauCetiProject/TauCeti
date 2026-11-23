@@ -95,8 +95,6 @@ a profinite group computes with.
 * `TauCeti.ProfiniteGroupExtension.contCohomologyClassEquiv`: **`H²(G, M)` classifies profinite
   extensions of `G` by `M` inducing the given action up to continuous equivalence**, as a
   bijection of sets.
-* `TauCeti.ProfiniteGroupExtension.continuousSection`: a continuous normalized section of a
-  profinite extension with compact kernel, chosen once and for all.
 * `TauCeti.ProfiniteGroupExtension.map`: the pushforward of a profinite extension along a
   continuous equivariant homomorphism of profinite coefficient modules, and
   `TauCeti.ProfiniteGroupExtension.mapHom`, the canonical continuous homomorphism from the
@@ -260,7 +258,7 @@ theorem exists_contCohomologyClass_eq (c : H2 G (Additive M)) :
     with hb_def
   have hb : b ∈ B2 G (Additive M) := mem_B2_iff.2 ⟨_, continuous_const, rfl⟩
   have hz' : (z : G × G → Additive M) - b ∈ Z2 G (Additive M) :=
-    (Z2 G (Additive M)).sub_mem z.2 (B2_le_Z2 G (Additive M) hb)
+    (Z2 G (Additive M)).sub_mem z.property (B2_le_Z2 G (Additive M) hb)
   have hz'₁ : ((z : G × G → Additive M) - b) (1, 1) = 0 := by
     simp [hb_def, d1_apply]
   refine ⟨ofMemZ2 hz' hz'₁, continuous_ofMemZ2 hz' hz'₁, ?_⟩
@@ -276,7 +274,7 @@ variable (G M)
 /-- Being continuously cohomologous is an equivalence relation on continuous factor sets: by
 `TauCeti.FactorSet.contCohomologyClass_eq_iff` it is the kernel of the class map. -/
 def isContCohomologousSetoid : Setoid {α : FactorSet G M // Continuous ⇑α} :=
-  Setoid.ker fun α : {α : FactorSet G M // Continuous ⇑α} => α.1.contCohomologyClass α.2
+  Setoid.ker fun α : {α : FactorSet G M // Continuous ⇑α} => α.val.contCohomologyClass α.property
 
 /-- **`H²(G, M)` classifies continuous factor sets up to continuous cohomology.** The class descends
 to a bijection from the continuous factor sets of `G` with values in `M`, taken modulo the
@@ -291,12 +289,12 @@ variable {G M}
 
 @[simp]
 theorem isContCohomologousSetoid_apply {α β : {α : FactorSet G M // Continuous ⇑α}} :
-    isContCohomologousSetoid G M α β ↔ IsContCohomologous α.1 β.1 :=
-  Setoid.ker_def.trans (contCohomologyClass_eq_iff α.1 β.1 α.2 β.2)
+    isContCohomologousSetoid G M α β ↔ IsContCohomologous α.val β.val :=
+  Setoid.ker_def.trans (contCohomologyClass_eq_iff α.val β.val α.property β.property)
 
 @[simp]
 theorem contCohomologyClassEquiv_apply_mk (α : {α : FactorSet G M // Continuous ⇑α}) :
-    contCohomologyClassEquiv G M (Quotient.mk _ α) = α.1.contCohomologyClass α.2 :=
+    contCohomologyClassEquiv G M (Quotient.mk _ α) = α.val.contCohomologyClass α.property :=
   (rfl)
 
 end Class
@@ -503,10 +501,10 @@ which `TauCeti.GroupExtension.exists_continuous_section` provides one. By
 noncomputable def _root_.GroupExtension.contCohomologyClass (S : GroupExtension M E G)
     (hinl : Continuous S.inl) (hrh : Continuous S.rightHom) (hact : InducesAction S) :
     H2 G (Additive M) :=
-  (factorSet (exists_continuous_section hinl hrh).choose
-    (exists_continuous_section hinl hrh).choose_spec.2 hact).contCohomologyClass
+  (factorSet (exists_continuous_section hrh).choose
+    (exists_continuous_section hrh).choose_spec.2 hact).contCohomologyClass
     (continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding
-      (exists_continuous_section hinl hrh).choose_spec.1 _ hact)
+      (exists_continuous_section hrh).choose_spec.1 _ hact)
 
 variable (S : GroupExtension M E G) (hinl : Continuous S.inl) (hrh : Continuous S.rightHom)
   (hact : InducesAction S)
@@ -518,8 +516,8 @@ theorem _root_.GroupExtension.contCohomologyClass_eq {σ : S.Section} (hσc : Co
     S.contCohomologyClass hinl hrh hact = (factorSet σ hσ hact).contCohomologyClass
       (continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσc hσ hact) :=
   contCohomologyClass_factorSet_eq (hinl.isClosedEmbedding S.inl_injective).isEmbedding
-    (exists_continuous_section hinl hrh).choose_spec.2 hσ hact
-    (exists_continuous_section hinl hrh).choose_spec.1 hσc
+    (exists_continuous_section hrh).choose_spec.2 hσ hact
+    (exists_continuous_section hrh).choose_spec.1 hσc
 
 /-- **Continuous `H²` classifies profinite extensions.** Two profinite extensions of `G` by the
 compact kernel `M`, both inducing the ambient action, are equivalent by a continuous equivalence
@@ -532,8 +530,8 @@ theorem _root_.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_eq
     (hact' : InducesAction S') :
     (∃ e : S.Equiv S', Continuous ⇑e) ↔
       S.contCohomologyClass hinl hrh hact = S'.contCohomologyClass hinl' hrh' hact' := by
-  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hinl hrh
-  obtain ⟨σ', hσ'c, hσ'⟩ := exists_continuous_section hinl' hrh'
+  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
+  obtain ⟨σ', hσ'c, hσ'⟩ := exists_continuous_section hrh'
   rw [S.contCohomologyClass_eq hinl hrh hact hσc hσ,
     S'.contCohomologyClass_eq hinl' hrh' hact' hσ'c hσ',
     ← exists_equiv_continuous_iff_contCohomologyClass_factorSet_eq
@@ -544,7 +542,7 @@ theorem _root_.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_eq
 vanishes.** -/
 theorem _root_.GroupExtension.exists_splitting_continuous_iff_contCohomologyClass_eq_zero :
     (∃ s : S.Splitting, Continuous ⇑s) ↔ S.contCohomologyClass hinl hrh hact = 0 := by
-  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hinl hrh
+  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   rw [S.contCohomologyClass_eq hinl hrh hact hσc hσ]
   exact exists_splitting_continuous_iff_contCohomologyClass_factorSet_eq_zero
     (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσ hact hσc
@@ -655,27 +653,6 @@ theorem contCohomologyClassEquiv_apply_mk (X : ProfiniteGroupExtension G M) :
   (rfl)
 
 end Realization
-
-/-! ### The chosen section -/
-
-section Section
-
-variable [T2Space G] (X : ProfiniteGroupExtension G M)
-
-/-- **A continuous normalized section of a profinite extension with compact kernel**, chosen once
-and for all from `TauCeti.GroupExtension.exists_continuous_section`. The pushforwards
-`TauCeti.ProfiniteGroupExtension.map` of `X` are the twisted products of the pushforwards of the
-factor set of this section. -/
-noncomputable def continuousSection : X.toGroupExtension.Section :=
-  (GroupExtension.exists_continuous_section X.continuous_inl X.continuous_rightHom).choose
-
-theorem continuous_continuousSection : Continuous ⇑X.continuousSection :=
-  (GroupExtension.exists_continuous_section X.continuous_inl X.continuous_rightHom).choose_spec.1
-
-theorem continuousSection_one : X.continuousSection 1 = 1 :=
-  (GroupExtension.exists_continuous_section X.continuous_inl X.continuous_rightHom).choose_spec.2
-
-end Section
 
 /-! ### Naturality in the coefficient module -/
 
@@ -837,7 +814,7 @@ theorem contCohomologyClass_map_eq_of_continuous_monoidHom (φ : X.E →* Y.E) (
   -- section of `Y` whose factor set is the pushforward along `f` of the factor set of `X`
   -- (`GroupExtension.factorSet_monoidHomComp`); both classes are then read off that factor set.
   have hσ' : X.continuousSection.monoidHomComp φ hright 1 = 1 := by
-    simp [X.continuousSection_one]
+    simp
   have hσ'c : Continuous ⇑(X.continuousSection.monoidHomComp φ hright) :=
     (hφ.comp X.continuous_continuousSection).congr fun g =>
       (GroupExtension.Section.monoidHomComp_apply X.continuousSection φ hright g).symm

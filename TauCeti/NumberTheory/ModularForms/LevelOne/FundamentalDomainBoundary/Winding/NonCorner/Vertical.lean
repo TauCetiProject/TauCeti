@@ -168,7 +168,7 @@ private lemma fdBoundary_ne_right (hre : w.re = 1 / 2) (hnorm : 1 < ‖w‖)
       · have hr := re_fdBoundarySegment4 H ⟨h3.le, h4⟩
         rw [heq, hre] at hr
         norm_num at hr
-      · have hi := im_fdBoundary_of_gt_four (H := H) h4
+      · have hi := im_fdBoundary_of_four_le (H := H) h4.le
         rw [heq] at hi
         linarith
 
@@ -198,7 +198,7 @@ private lemma fdBoundary_ne_left (hre : w.re = -(1 / 2)) (hnorm : 1 < ‖w‖)
           rw [eq_div_iff hk.ne']
           linarith
         linarith
-      · have hi := im_fdBoundary_of_gt_four (H := H) h4
+      · have hi := im_fdBoundary_of_four_le (H := H) h4.le
         rw [heq] at hi
         linarith
 
@@ -206,8 +206,8 @@ private lemma fdBoundary_ne_left (hre : w.re = -(1 / 2)) (hnorm : 1 < ‖w‖)
 point: at least `1` on the opposite vertical, `‖w‖ - 1` on the arc, and `H - w.im` on the
 ceiling. -/
 private lemma lt_norm_sub_right_of_off_segment (hre : w.re = 1 / 2)
-    (hε₁ : ε < 1) (hεa : ε < ‖w‖ - 1) (hεc : ε < H - w.im) (h1 : 1 ≤ s)
-    (h5 : s ≤ 5) : ε < ‖fdBoundary H s - w‖ := by
+    (hε₁ : ε < 1) (hεa : ε < ‖w‖ - 1) (hεc : ε < H - w.im) (h1 : 1 ≤ s) :
+    ε < ‖fdBoundary H s - w‖ := by
   rcases le_or_gt s 3 with h3 | h3
   · calc ε < ‖w‖ - ‖fdBoundary H s‖ := by rw [norm_fdBoundary_arc h1 h3]; linarith
       _ ≤ ‖w - fdBoundary H s‖ := norm_sub_norm_le _ _
@@ -220,7 +220,7 @@ private lemma lt_norm_sub_right_of_off_segment (hre : w.re = 1 / 2)
         _ = |(fdBoundary H s - w).re| := by rw [hr]; norm_num
         _ ≤ ‖fdBoundary H s - w‖ := Complex.abs_re_le_norm _
     · have hi : (fdBoundary H s - w).im = H - w.im := by
-        rw [Complex.sub_im, im_fdBoundarySegment5 H ⟨h4.le, h5⟩]
+        rw [Complex.sub_im, im_fdBoundary_of_four_le (H := H) h4.le]
       calc ε < H - w.im := hεc
         _ ≤ |(fdBoundary H s - w).im| := by rw [hi]; exact le_abs_self _
         _ ≤ ‖fdBoundary H s - w‖ := Complex.abs_im_le_norm _
@@ -229,7 +229,7 @@ private lemma lt_norm_sub_right_of_off_segment (hre : w.re = 1 / 2)
 at least `1` on the opposite vertical, `‖w‖ - 1` on the arc, and `H - w.im` on the
 ceiling. -/
 private lemma lt_norm_sub_left_of_off_segment (hre : w.re = -(1 / 2))
-    (hε₁ : ε < 1) (hεa : ε < ‖w‖ - 1) (hεc : ε < H - w.im) (hs : s ∈ Icc (0 : ℝ) 5)
+    (hε₁ : ε < 1) (hεa : ε < ‖w‖ - 1) (hεc : ε < H - w.im)
     (hoff : s ≤ 3 ∨ 4 ≤ s) : ε < ‖fdBoundary H s - w‖ := by
   rcases hoff with h3 | h4
   · rcases le_or_gt s 1 with h1 | h1
@@ -243,7 +243,7 @@ private lemma lt_norm_sub_left_of_off_segment (hre : w.re = -(1 / 2))
         _ ≤ ‖w - fdBoundary H s‖ := norm_sub_norm_le _ _
         _ = ‖fdBoundary H s - w‖ := norm_sub_rev _ _
   · have hi : (fdBoundary H s - w).im = H - w.im := by
-      rw [Complex.sub_im, im_fdBoundarySegment5 H ⟨h4, hs.2⟩]
+      rw [Complex.sub_im, im_fdBoundary_of_four_le (H := H) h4]
     calc ε < H - w.im := hεc
       _ ≤ |(fdBoundary H s - w).im| := by rw [hi]; exact le_abs_self _
       _ ≤ ‖fdBoundary H s - w‖ := Complex.abs_im_le_norm _
@@ -309,7 +309,7 @@ private lemma right_window_bounds (hre : w.re = 1 / 2) (hε : 0 < ε) (hε₁ : 
       rw [norm_fdBoundary_sub_of_le_one hre h1]
       exact lt_of_lt_of_le
         (show ε < -(H - w.im - s * (H - Real.sqrt 3 / 2)) by linarith) (neg_le_abs _)
-    · exact lt_norm_sub_right_of_off_segment hre hε₁ hεa hεc h1.le hs.2.le
+    · exact lt_norm_sub_right_of_off_segment hre hε₁ hεa hεc h1.le
   · have hl := mul_le_mul_of_nonneg_right hs.1 hk.le
     have hr := mul_le_mul_of_nonneg_right hs.2 hk.le
     rw [sub_mul, ht₀k, hδk] at hl
@@ -333,7 +333,7 @@ private lemma truncated_integral_spec_right (hre : w.re = 1 / 2)
   obtain ⟨hwl, hwr, hL, hR⟩ := right_window_endpoints hre hε hεc hεv
   obtain ⟨hfl, hfr, hnear⟩ := right_window_bounds hre hε hε₁ hεa hεc hεv
   obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := -1)
-    (neg_ne_zero.mpr one_ne_zero) hwl.le hδpos (by linarith)
+    hwl.le hδpos (by linarith)
     (fun t ht htw ↦ slit_branch_vertical_right hre ht.2 (fdBoundary_ne_right hre
       (by linarith) him_lo himH fun h ↦ htw (by rw [h]; exact ⟨by linarith, by linarith⟩)))
     hfl hfr hnear
@@ -419,8 +419,7 @@ private lemma left_window_bounds (hre : w.re = -(1 / 2)) (hε : 0 < ε) (hε₁ 
   have hδk : δ * (H - Real.sqrt 3 / 2) = ε := div_mul_cancel₀ _ hk.ne'
   refine ⟨fun s hs ↦ ?_, fun s hs ↦ ?_⟩
   · rcases le_or_gt s 3 with h3 | h3
-    · exact lt_norm_sub_left_of_off_segment hre hε₁ hεa hεc
-        ⟨hs.1.le, by linarith [hs.2, hwr]⟩ (Or.inl h3)
+    · exact lt_norm_sub_left_of_off_segment hre hε₁ hεa hεc (Or.inl h3)
     · have hlt := mul_lt_mul_of_pos_right (show s - 3 < u - δ by linarith [hs.2]) hk
       rw [sub_mul u δ, ht₀k, hδk] at hlt
       rw [norm_fdBoundary_sub_of_mem_Icc_three_four hre ⟨h3.le, by linarith [hs.2, hwr]⟩]
@@ -434,8 +433,7 @@ private lemma left_window_bounds (hre : w.re = -(1 / 2)) (hε : 0 < ε) (hε₁ 
       exact lt_of_lt_of_le
         (show ε < Real.sqrt 3 / 2 + (s - 3) * (H - Real.sqrt 3 / 2) - w.im by linarith)
         (le_abs_self _)
-    · exact lt_norm_sub_left_of_off_segment hre hε₁ hεa hεc
-        ⟨by linarith [hs.1], hs.2.le⟩ (Or.inr h4.le)
+    · exact lt_norm_sub_left_of_off_segment hre hε₁ hεa hεc (Or.inr h4.le)
 
 /-- **The excision collapse at a left-vertical point**: for small `ε`, the `ε`-excised index
 integrand of the boundary contour about `w` is interval integrable, and its integral is
@@ -453,7 +451,7 @@ private lemma truncated_integral_spec_left (hre : w.re = -(1 / 2))
   obtain ⟨hwl, hwr, hL, hR⟩ := left_window_endpoints hre hε hεc hεv
   obtain ⟨hfl, hfr⟩ := left_window_bounds hre hε hε₁ hεa hεc hεv
   have hnear := left_window_near hre hε hεc hεv
-  obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := 1) one_ne_zero
+  obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := 1)
     (t₀ := 3 + (w.im - Real.sqrt 3 / 2) / (H - Real.sqrt 3 / 2)) (by linarith) hδpos
     (by linarith)
     (fun t ht htw ↦ by

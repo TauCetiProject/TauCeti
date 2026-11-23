@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 -- `Mathlib.Analysis.SpecialFunctions.ImproperIntegrals` is imported privately: it supplies
 -- `not_integrableOn_Ioi_rpow`, used only inside the proof of
@@ -64,6 +66,11 @@ there, and the right because every superlevel set then has measure at least that
 and `∫⁻ t in (0, ∞), t ^ (p - 1)` diverges. That is where `TauCeti.lintegral_ofReal_rpow_Ioi` is
 used, and it is why the statement needs no finiteness hypothesis on `u`.
 
+Finally, for `γ > 1` and a height `K > 0`, the primitive of `γ (min (t⁺, K)) ^ (γ - 1)` is a `C¹`
+function with bounded derivative that agrees with `t ^ γ` on `[0, K]`. Composing a Sobolev
+function with it is the standard way to raise a truncated positive part to the power `γ` without
+leaving the Sobolev space.
+
 ## Main declarations
 
 * `TauCeti.lintegral_ofReal_rpow_Ioo`: `∫⁻ t in (0, a), t ^ s = a ^ (s + 1) / (s + 1)` for
@@ -93,6 +100,10 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
   against the weight `t ^ q`.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
+* `TauCeti.lintegral_rpow_le_of_measure_lt_le_rpow_mul`: a power tail bound
+  `ν {u > t} ≤ t ^ (-ε) W` above a level `m` bounds `∫⁻ u ^ p` for `p < ε`.
+* `TauCeti.exists_contDiff_deriv_eq_rpow`: a `C¹` primitive of `γ (min (t⁺, K)) ^ (γ - 1)` with
+  bounded derivative, vanishing on `(-∞, 0]` and dominating `(min (t⁺, K)) ^ γ`.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
   power integral is carried by a σ-finite part of the measure.
 
@@ -550,6 +561,25 @@ theorem sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top (hf : AEMeasurable f �
       exact Set.mem_iUnion.2
         ⟨n, Set.mem_union_left _ ((ENNReal.inv_le_inv' le_self_add).trans hn.le)⟩
 
+/-- A positive power of `f` vanishes off `{f > 0}`, so restricting `μ` to `{f > 0}` changes none
+of its set integrals. With `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top` this
+reduces estimates for `f` in `Lᵖ` to a σ-finite measure. -/
+theorem setLIntegral_rpow_restrict_pos (hf : Measurable f) {r : ℝ} (hr : 0 < r) (S : Set α) :
+    ∫⁻ x in S, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x in S, f x ^ r ∂μ := by
+  have hpos : MeasurableSet {x | 0 < f x} := measurableSet_lt measurable_const hf
+  have hsupp : Function.support (fun x => f x ^ r) ⊆ {x | 0 < f x} := by
+    refine Function.support_subset_iff'.2 fun x hx => ?_
+    have hx0 : f x = 0 := by simpa [Set.mem_ofPred, nonpos_iff_eq_zero] using hx
+    simp [hx0, ENNReal.zero_rpow_of_pos hr]
+  rw [Measure.restrict_restrict' hpos, Set.inter_comm, ← Measure.restrict_restrict hpos]
+  exact setLIntegral_eq_of_support_subset hsupp
+
+/-- The whole-space case of `TauCeti.setLIntegral_rpow_restrict_pos`: restricting `μ` to
+`{f > 0}` does not change the integral of a positive power of `f`. -/
+theorem lintegral_rpow_restrict_pos (hf : Measurable f) {r : ℝ} (hr : 0 < r) :
+    ∫⁻ x, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x, f x ^ r ∂μ := by
+  simpa using setLIntegral_rpow_restrict_pos hf hr univ
+
 variable {β : Type*} [MeasurableSpace β]
 
 /-- **The layer cake formula** for an `ℝ≥0∞`-valued function: for `0 < p`,
@@ -578,7 +608,7 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
     refine congrArg _ (setLIntegral_congr_fun measurableSet_Ioi fun t ht => congrArg₂ _ ?_ rfl)
     refine measure_congr ?_
     filter_upwards [hfin] with y hy
-    exact propext (ENNReal.ofReal_lt_iff_lt_toReal (le_of_lt ht) hy).symm
+    exact (ENNReal.ofReal_lt_iff_lt_toReal (le_of_lt ht) hy).symm
   · -- `u = ∞` on a set of positive measure: both sides are `∞`.
     have hL : ∫⁻ y, u y ^ p ∂ν = ∞ := by
       have hlevel : {y | u y ^ p = ∞} = {y | u y = ∞} :=
@@ -599,5 +629,92 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
             (lintegral_const_mul _ (by fun_prop)).symm
         _ ≤ _ := lintegral_mono fun t => mul_le_mul_left (measure_mono hsub) _
     rw [hL, hR, ENNReal.mul_top (ENNReal.ofReal_pos.2 hp).ne']
+
+/-- **A power tail bound gives integrability below its exponent.** Let `0 ≤ p < ε` and `m > 0`,
+and suppose that the superlevel sets of `u` above `m` decay like a power,
+`ν {u > t} ≤ t ^ (-ε) W` for every `t > m`. Then
+
+`∫⁻ u ^ p ∂ν ≤ m ^ p ν univ + p / (ε - p) m ^ (p - ε) W`.
+
+On a finite measure space this is the quantitative inclusion of weak `L^ε` into `Lᵖ`: below the
+level `m` the superlevel sets are bounded by the whole space, above it by the tail bound. -/
+theorem lintegral_rpow_le_of_measure_lt_le_rpow_mul (ν : Measure β) {u : β → ℝ≥0∞}
+    (hu : AEMeasurable u ν) {p ε m : ℝ} (hp : 0 ≤ p) (hpε : p < ε) (hm : 0 < m) {W : ℝ≥0∞}
+    (h : ∀ t, m < t → ν {y | ENNReal.ofReal t < u y} ≤ ENNReal.ofReal (t ^ (-ε)) * W) :
+    ∫⁻ y, u y ^ p ∂ν ≤
+      ENNReal.ofReal (m ^ p) * ν univ + ENNReal.ofReal (p / (ε - p) * m ^ (p - ε)) * W := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simp
+  rw [lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν hu hp, ← Ioc_union_Ioi_eq_Ioi hm.le,
+    lintegral_union measurableSet_Ioi Ioc_disjoint_Ioi_same]
+  -- Below `m`, the superlevel sets are bounded by the whole space.
+  have h₁ : ∫⁻ t in Ioc 0 m, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
+      ν univ * ENNReal.ofReal (m ^ p / p) := by
+    calc _ ≤ ∫⁻ t in Ioc 0 m, ν univ * ENNReal.ofReal (t ^ (p - 1)) :=
+          lintegral_mono fun t ↦ by gcongr; exact subset_univ _
+      _ = ν univ * ENNReal.ofReal (m ^ p / p) := by
+          rw [lintegral_const_mul _ (by fun_prop), setLIntegral_congr Ioo_ae_eq_Ioc.symm,
+            lintegral_ofReal_rpow_Ioo (by linarith) hm.le, sub_add_cancel]
+  -- Above `m`, they are bounded by the tail bound.
+  have h₂ : ∫⁻ t in Ioi m, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
+      W * ENNReal.ofReal (m ^ (p - ε) / (ε - p)) := by
+    calc _ ≤ ∫⁻ t in Ioi m, W * ENNReal.ofReal (t ^ (p - 1 - ε)) := by
+          refine setLIntegral_mono (by fun_prop) fun t ht ↦ ?_
+          have ht0 : 0 < t := hm.trans ht
+          calc _ ≤ ENNReal.ofReal (t ^ (-ε)) * W * ENNReal.ofReal (t ^ (p - 1)) := by
+                gcongr; exact h t ht
+            _ = W * ENNReal.ofReal (t ^ (p - 1 - ε)) := by
+                rw [mul_comm _ W, mul_assoc, ← ENNReal.ofReal_mul (by positivity),
+                  ← Real.rpow_add ht0, neg_add_eq_sub]
+      _ = W * ENNReal.ofReal (m ^ (p - ε) / (ε - p)) := by
+          rw [lintegral_const_mul _ (by fun_prop),
+            lintegral_ofReal_rpow_Ioi_of_lt (by linarith) hm,
+            show p - 1 - ε + 1 = p - ε by ring, neg_div, ← div_neg, neg_sub]
+  calc _ ≤ ENNReal.ofReal p * (ν univ * ENNReal.ofReal (m ^ p / p) +
+        W * ENNReal.ofReal (m ^ (p - ε) / (ε - p))) := by gcongr
+    _ = ENNReal.ofReal (p * (m ^ p / p)) * ν univ +
+        ENNReal.ofReal (p * (m ^ (p - ε) / (ε - p))) * W := by
+      rw [ENNReal.ofReal_mul hp.le, ENNReal.ofReal_mul hp.le]
+      ring
+    _ = _ := by rw [mul_div_cancel₀ _ hp.ne', mul_div_assoc', div_mul_eq_mul_div]
+
+/-! ### A `C¹` primitive of a truncated power -/
+
+/-- For `γ > 1` and `K > 0`, the primitive `F` of `γ (min (t⁺, K))^{γ - 1}` vanishing at `0` is a
+`C¹` function with bounded derivative, vanishes on `(-∞, 0]` and dominates `(min (t⁺, K))^γ`. It
+agrees with `t^γ` on `[0, K]` and continues linearly beyond `K`. -/
+theorem exists_contDiff_deriv_eq_rpow (γ : ℝ) (hγ : 1 < γ) {K : ℝ} (hK : 0 < K) :
+    ∃ F : ℝ → ℝ, ContDiff ℝ 1 F ∧ (∀ t, HasDerivAt F (γ * min (max t 0) K ^ (γ - 1)) t) ∧
+      (∀ t ≤ 0, F t = 0) ∧ ∀ t, min (max t 0) K ^ γ ≤ F t := by
+  set φ : ℝ → ℝ := fun t => γ * min (max t 0) K ^ (γ - 1)
+  have hφc : Continuous φ := continuous_const.mul
+    (((continuous_id.max continuous_const).min continuous_const).rpow_const fun _ =>
+      Or.inr (by linarith))
+  have hφ0 : ∀ t, 0 ≤ φ t := fun t =>
+    mul_nonneg (by linarith) (Real.rpow_nonneg (le_min (le_max_right _ _) hK.le) _)
+  set F : ℝ → ℝ := fun t => ∫ τ in (0 : ℝ)..t, φ τ
+  have hFd : ∀ t, HasDerivAt F (φ t) t := fun t => (hφc.integral_hasStrictDerivAt 0 t).hasDerivAt
+  have hFderiv : deriv F = φ := funext fun t => (hFd t).deriv
+  have hFdiff : Differentiable ℝ F := fun t => (hFd t).differentiableAt
+  have hF0 : ∀ t ≤ 0, F t = 0 := fun t ht => by
+    -- `φ` vanishes on `[t, 0]`, hence so does its integral from `0` to `t`.
+    have hφt : EqOn φ (fun _ => 0) (uIcc 0 t) := fun τ hτ => by
+      rw [uIcc_of_ge ht] at hτ
+      simp only [φ, max_eq_right hτ.2, min_eq_left hK.le, Real.zero_rpow (by linarith : γ - 1 ≠ 0),
+        mul_zero]
+    exact (intervalIntegral.integral_congr hφt).trans intervalIntegral.integral_zero
+  have hFpow : ∀ t, 0 ≤ t → t ≤ K → F t = t ^ γ := fun t ht0 htK => by
+    have hd : ∀ τ ∈ uIcc 0 t, HasDerivAt (fun τ => τ ^ γ) (φ τ) τ := fun τ hτ => by
+      rw [uIcc_of_le ht0] at hτ
+      convert Real.hasDerivAt_rpow_const (x := τ) (Or.inr hγ.le) using 1
+      simp only [φ, max_eq_left hτ.1, min_eq_left (hτ.2.trans htK)]
+    have hFt : F t = t ^ γ - 0 ^ γ :=
+      intervalIntegral.integral_eq_sub_of_hasDerivAt hd (hφc.intervalIntegrable _ _)
+    rw [hFt, Real.zero_rpow (by linarith), sub_zero]
+  refine ⟨F, contDiff_one_iff_deriv.2 ⟨hFdiff, hFderiv ▸ hφc⟩, hFd, hF0, fun t => ?_⟩
+  rcases le_total t 0 with ht | ht
+  · rw [max_eq_right ht, min_eq_left hK.le, Real.zero_rpow (by linarith), hF0 t ht]
+  · rw [max_eq_left ht, ← hFpow _ (le_min ht hK.le) (min_le_right _ _)]
+    exact monotone_of_deriv_nonneg hFdiff (fun t => hFderiv ▸ hφ0 t) (min_le_left _ _)
 
 end TauCeti

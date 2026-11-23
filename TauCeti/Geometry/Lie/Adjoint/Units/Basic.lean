@@ -21,9 +21,6 @@ the tangent formula by differentiating exponential equivariance along a line, re
 established compatibility between the abstract Lie-group exponential and the Banach-algebra
 exponential.
 
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main result
 
 * `tangentAd_units`: on the tangent Lie algebra of the unit group, `tangentAd g x` is
@@ -35,11 +32,6 @@ This advances Deliverable A, Layer 1 of
 * `unitsLieAlgebraLieEquiv`: the canonical units identification as a Lie equivalence.
 * `unitsLieAlgebraEquiv_ad`: the units identification transports the abstract adjoint operator to
   the bounded commutator operator.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 -/
 
 public section
@@ -106,7 +98,7 @@ section FiniteDimensional
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
 local instance finiteDimensionalCompleteSpaceAdjointUnits : CompleteSpace R :=
-  FiniteDimensional.complete ℝ R
+  FiniteDimensional.completeSpace ℝ R
 
 /-- The Lie bracket on the tangent Lie algebra of algebra units is the associative commutator. -/
 @[simp]

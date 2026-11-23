@@ -100,12 +100,12 @@ theorem isSeparatingIdeal_of_finiteDimensional (J : Submodule 𝕜 B) [FiniteDim
       antitone_nat_of_succ_le fun n ↦ by
         simpa [List.range_succ, Module.End.mul_eq_comp, Submodule.map_comp] using
           Submodule.map_mono (hf n)
-    simp_rw [(J.map _).closed_of_finiteDimensional.submodule_topologicalClosure_eq]
+    simp_rw [(J.map _).isClosed_of_finiteDimensional.submodule_topologicalClosure_eq]
     obtain ⟨k, hk⟩ := WellFoundedLT.antitone_chain_condition
       (f := fun n ↦ Module.finrank 𝕜 (J.map ((List.range n).map f).prod))
       fun m n h ↦ Submodule.finrank_mono (hanti h)
     exact eventuallyConst_atTop.2 ⟨k, fun m hm ↦ eq_of_le_of_finrank_eq (hanti hm) (hk m hm).symm⟩
-  refine ⟨J.closed_of_finiteDimensional, hleft, hright, fun b ↦ key ?_, fun b ↦ key ?_⟩
+  refine ⟨J.isClosed_of_finiteDimensional, hleft, hright, fun b ↦ key ?_, fun b ↦ key ?_⟩
   · rintro n _ ⟨y, hy, rfl⟩
     exact hleft (b n) hy
   · rintro n _ ⟨y, hy, rfl⟩

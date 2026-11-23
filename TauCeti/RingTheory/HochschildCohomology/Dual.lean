@@ -111,9 +111,9 @@ variable {R A N : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [AddCommGro
 /-- Each coface with coefficients in the dual bimodule is the corresponding Hochschild coface of
 the uncurried cochain. -/
 theorem hochschildBimoduleCoface_multilinearCurryFirstEquiv (i : Fin (n + 2))
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) N) (a : Fin (n + 1) → A) (x : A) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) N) (a : Fin (n + 1) → A) (x : A) :
     hochschildBimoduleCoface R A (A →ₗ[R] N) i
-        (multilinearCurryFirstEquiv R (fun _ : Fin (n + 1) ↦ A) N φ) a x =
+        (multilinearCurryFirstEquiv (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) N φ) a x =
       φ (hochschildFace i (Fin.cons x a)) := by
   induction i using Fin.cases with
   | zero =>
@@ -136,10 +136,11 @@ theorem hochschildBimoduleCoface_multilinearCurryFirstEquiv (i : Fin (n + 2))
 /-- Under currying of the first argument, the Hochschild coboundary `b` of `N`-valued cochains
 is the Hochschild coboundary `δ` with coefficients in the dual bimodule `A →ₗ[R] N`. -/
 theorem multilinearCurryFirstEquiv_hochschildCoboundary
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) N) :
-    multilinearCurryFirstEquiv R (fun _ : Fin (n + 2) ↦ A) N (hochschildCoboundary R A N n φ) =
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) N) :
+    multilinearCurryFirstEquiv (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) N
+        (hochschildCoboundary R A N n φ) =
       hochschildBimoduleCoboundary R A (A →ₗ[R] N) n
-        (multilinearCurryFirstEquiv R (fun _ : Fin (n + 1) ↦ A) N φ) := by
+        (multilinearCurryFirstEquiv (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) N φ) := by
   ext a x
   rw [multilinearCurryFirstEquiv_apply_apply, hochschildCoboundary_apply,
     hochschildBimoduleCoboundary_apply, LinearMap.sum_apply]
@@ -148,10 +149,10 @@ theorem multilinearCurryFirstEquiv_hochschildCoboundary
 /-- Uncurrying the first argument turns the Hochschild coboundary `δ` with coefficients in the
 dual bimodule into the Hochschild coboundary `b` of `N`-valued cochains. -/
 theorem hochschildCoboundary_multilinearCurryFirstEquiv_symm
-    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) (A →ₗ[R] N)) :
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) (A →ₗ[R] N)) :
     hochschildCoboundary R A N n
-        ((multilinearCurryFirstEquiv R (fun _ : Fin (n + 1) ↦ A) N).symm ψ) =
-      (multilinearCurryFirstEquiv R (fun _ : Fin (n + 2) ↦ A) N).symm
+        ((multilinearCurryFirstEquiv (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) N).symm ψ) =
+      (multilinearCurryFirstEquiv (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) N).symm
         (hochschildBimoduleCoboundary R A (A →ₗ[R] N) n ψ) := by
   rw [LinearEquiv.eq_symm_apply, multilinearCurryFirstEquiv_hochschildCoboundary,
     LinearEquiv.apply_symm_apply]

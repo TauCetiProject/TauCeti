@@ -15,7 +15,10 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 A labelled graph is folded when the label and initial vertex determine a dart. This makes
 the word and endpoints determine a path and ensures that a reduced path has a freely reduced
 label. Consequently a freely reduced word is accepted at a vertex exactly when it labels a
-closed path there (`StallingsGraph.mem_subgroup_iff_folded`).
+closed path there (`StallingsGraph.mem_subgroup_iff_folded`), and a preconnected folded graph
+accepts only the trivial subgroup exactly when it is acyclic
+(`StallingsGraph.IsFolded.subgroup_eq_bot_iff_isAcyclic`). Over a finite alphabet, a folded graph
+with finitely many vertices has finitely many darts.
 
 ## References
 
@@ -60,6 +63,12 @@ theorem IsFolded.labels_not_inverse (hS : S.IsFolded) {e f : S.graph.E}
     (hsrc.trans (S.graph.src_rev e).symm) (by simpa only [S.label_rev] using h)
   exact hne hfr
 
+/-- Over a finite alphabet, a folded graph with finitely many vertices has finitely many
+darts. -/
+theorem IsFolded.finite_E [Finite α] [Finite S.graph.V] (hS : S.IsFolded) : Finite S.graph.E :=
+  Finite.of_injective (fun e => (S.graph.src e, S.label e)) fun e f h =>
+    hS e f (congrArg Prod.fst h) (congrArg Prod.snd h)
+
 /-- A reduced path in a folded graph reads a freely reduced word. -/
 theorem IsFolded.isReduced_word (hS : S.IsFolded) {a b : S.graph.V}
     (p : S.graph.Path a b) (hp : SerreGraph.Path.IsReduced S.graph p) :
@@ -69,18 +78,18 @@ theorem IsFolded.isReduced_word (hS : S.IsFolded) {a b : S.graph.V}
   | cons p e ih =>
     cases p with
     | nil => simpa only [word_cons, word_nil, List.nil_append] using
-        (FreeGroup.IsReduced.singleton (a := S.label e.1))
+        (FreeGroup.IsReduced.singleton (a := S.label e.val))
     | cons p f =>
       obtain ⟨hprev, hne⟩ := (SerreGraph.Path.isReduced_cons_cons S.graph p f e).mp hp
       have hword := ih hprev
-      have hlocal : (S.label f.1).1 = (S.label e.1).1 →
-          (S.label f.1).2 = (S.label e.1).2 := by
+      have hlocal : (S.label f.val).1 = (S.label e.val).1 →
+          (S.label f.val).2 = (S.label e.val).2 := by
         intro ha
         by_contra hb
-        apply IsFolded.labels_not_inverse S hS (e.2.1.trans f.2.2.symm) hne
+        apply IsFolded.labels_not_inverse S hS (e.property.1.trans f.property.2.symm) hne
         apply Prod.ext
         · exact ha.symm
-        · cases he : (S.label e.1).2 <;> cases hf : (S.label f.1).2 <;>
+        · cases he : (S.label e.val).2 <;> cases hf : (S.label f.val).2 <;>
             simp_all
       simp only [word_cons, List.append_assoc, List.singleton_append,
         FreeGroup.IsReduced, List.isChain_append_cons_cons, List.isChain_singleton,
@@ -102,10 +111,10 @@ theorem IsFolded.path_eq_of_word_eq (hS : S.IsFolded) {a b : S.graph.V}
       simp only [word_cons] at h
       obtain ⟨hword, hlabel⟩ := List.append_inj' h (by simp)
       simp only [List.singleton_inj] at hlabel
-      have he : e.1 = f.1 := IsFolded.eq_of_tgt_label S hS
-        (e.2.2.trans f.2.2.symm) hlabel
+      have he : e.val = f.val := IsFolded.eq_of_tgt_label S hS
+        (e.property.2.trans f.property.2.symm) hlabel
       have hsrc : _ := congrArg S.graph.src he
-      simp only [e.2.1, f.2.1] at hsrc
+      simp only [e.property.1, f.property.1] at hsrc
       cases hsrc
       have hef : e = f := Subtype.ext he
       cases hef
@@ -128,9 +137,9 @@ theorem IsFolded.eq_tgt_of_word_eq (hS : S.IsFolded) {a b c : S.graph.V}
       simp only [word_cons] at h
       obtain ⟨hw, hl⟩ := List.append_inj' h (by simp)
       obtain rfl := ih q hw
-      have he : e.1 = f.1 := hS _ _ (e.2.1.trans f.2.1.symm)
+      have he : e.val = f.val := hS _ _ (e.property.1.trans f.property.1.symm)
         (List.singleton_inj.mp hl)
-      exact e.2.2.symm.trans ((congrArg S.graph.tgt he).trans f.2.2)
+      exact e.property.2.symm.trans ((congrArg S.graph.tgt he).trans f.property.2)
 
 /-- The reduced word of a reduced path's reading is its actual label word. -/
 @[simp] theorem IsFolded.toWord_read_eq_word [DecidableEq α] (hS : S.IsFolded)
@@ -197,6 +206,20 @@ theorem IsFolded.eq_tgt_iff_read_mul_inv_mem (hS : S.IsFolded) {a b c : S.graph.
     obtain ⟨l, hl⟩ := S.mem_subgroup_iff.mp h
     apply hS.eq_tgt_of_read_eq S p (l.comp q)
     simp [hl]
+
+/-- A folded preconnected labelled graph accepts the trivial subgroup at a vertex exactly when
+it is acyclic: a nonempty reduced closed path anywhere reads a nontrivial element, a conjugate of
+which is accepted at the vertex. -/
+theorem IsFolded.subgroup_eq_bot_iff_isAcyclic (hS : S.IsFolded) (hc : S.graph.Preconnected)
+    (a : S.graph.V) : S.subgroup a = ⊥ ↔ S.graph.IsAcyclic := by
+  refine ⟨fun h => S.graph.isAcyclic_iff.mpr fun u r hr => ?_,
+    fun h => S.subgroup_eq_bot_of_isAcyclic h a⟩
+  obtain ⟨q⟩ := S.graph.preconnected_iff.mp hc a u
+  have h0 : S.read ((q.comp r).comp q.reverse) = 1 :=
+    Subgroup.mem_bot.mp (h ▸ S.read_mem_subgroup _)
+  have h1 : S.read r = S.read (.nil : S.graph.Path u u) := by
+    simpa [← mul_assoc, mul_inv_eq_one] using h0
+  exact hS.path_eq_of_read_eq S r .nil hr (SerreGraph.Path.isReduced_nil _ _) h1
 
 end StallingsGraph
 end TauCeti

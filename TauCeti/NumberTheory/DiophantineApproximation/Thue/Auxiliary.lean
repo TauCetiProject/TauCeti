@@ -70,8 +70,8 @@ private theorem exists_thue_auxiliary_polynomials_of_numberField [NumberField K]
     (fun i ↦ ((i : ℕ).choose k : K) * ((b : K) ^ (m + 1) * α ^ ((i : ℕ) - k + 1)))
   have he (k j) : IsIntegral ℤ (e k j) := by
     rcases j with i | i <;> have := i.is_lt
-    · exact (isIntegral_natCast _).mul (isIntegral_natCast_pow_mul_pow hbα (by omega))
-    · exact (isIntegral_natCast _).mul (isIntegral_natCast_pow_mul_pow hbα (by omega))
+    · exact (isIntegral_natCast _).mul (hbα.natCast_pow_mul_pow (by omega))
+    · exact (isIntegral_natCast _).mul (hbα.natCast_pow_mul_pow (by omega))
   let a : Matrix (Fin r) (Fin (m + 1) ⊕ Fin (m + 1)) (𝓞 K) :=
     fun k j ↦ (⟨e k j, he k j⟩ : 𝓞 K)
   have hH : 1 ≤ H := le_max_left _ _
@@ -95,8 +95,10 @@ private theorem exists_thue_auxiliary_polynomials_of_numberField [NumberField K]
     by_contra! h
     refine hx0 (funext fun j ↦ ?_)
     rcases j with i | i
-    · simpa [P, ofFn_coeff_eq_val_of_lt _ i.is_lt] using congrArg (coeff · i) h.1
-    · simpa [Q, ofFn_coeff_eq_val_of_lt _ i.is_lt] using congrArg (coeff · i) h.2
+    · simpa [P, ofFn_coeff_eq_val_of_lt _ i.is_lt] using
+        congrArg (fun p : ℤ[X] ↦ p.coeff i) h.1
+    · simpa [Q, ofFn_coeff_eq_val_of_lt _ i.is_lt] using
+        congrArg (fun p : ℤ[X] ↦ p.coeff i) h.2
   · have hmap : P.map (Int.castRingHom K) - C α * Q.map (Int.castRingHom K) =
         ofFn (m + 1) fun i ↦ (x (.inl i) : K) + α * x (.inr i) := by
       ext n

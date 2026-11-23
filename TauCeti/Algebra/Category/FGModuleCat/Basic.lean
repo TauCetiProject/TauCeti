@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.CategoryTheory.ObjectProperty
 
@@ -35,6 +36,11 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
   the analogue of Mathlib's `ModuleCat.biprodIsoProd`, with its projection lemmas
   `FGModuleCat.biprodIsoProd_inv_comp_fst` and `FGModuleCat.biprodIsoProd_inv_comp_snd`.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
+* The finitely generated modules are closed under finite products and direct summands, and
+  `FGModuleCat R` has finite biproducts.
+* `FGModuleCat.preservesMonomorphisms_ι`: a monomorphism of `FGModuleCat R` is injective.
+* `ModuleCat.isFG_isClosedUnderSubobjects`: over a left Noetherian ring, finitely generated modules
+  are closed under subobjects.
 * `TauCeti.FGModuleCat.homLinearEquivOfIsScalarTower`: for an algebra `R` over a field `k`,
   morphisms into `FGModuleCat.of R M` are the `R`-linear maps into `M`, `k`-linearly for the
   original `k`-action on `M` rather than the category's restricted scalar action.
@@ -214,6 +220,53 @@ instance : (ModuleCat.isFG.{v} R).IsClosedUnderBinaryProducts :=
     have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
     exact (ModuleCat.isFG_iff _).mpr
       (Module.Finite.equiv (ModuleCat.biprodIsoProd M N).toLinearEquiv.symm)
+
+instance : (ModuleCat.isFG.{v} R).IsClosedUnderFiniteProducts :=
+  ObjectProperty.IsClosedUnderFiniteProducts.mk'
+
+/-- A direct summand of a finitely generated module is finitely generated, as a quotient of it. -/
+instance : (ModuleCat.isFG.{v} R).IsStableUnderRetracts where
+  of_retract {M N} h hN := by
+    have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
+    refine (ModuleCat.isFG_iff M).mpr (Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, ?_⟩)
+    simp [← ModuleCat.comp_apply]
+
+/-- **A monomorphism of finitely generated modules is injective**: the inclusion
+`FGModuleCat R ⥤ ModuleCat R` preserves monomorphisms, over any ring `R`. -/
+instance _root_.FGModuleCat.preservesMonomorphisms_ι :
+    (ModuleCat.isFG.{v} R).ι.PreservesMonomorphisms where
+  preserves {X Y} f _ := by
+    refine (ModuleCat.mono_iff_injective _).2 ((injective_iff_map_eq_zero _).2 fun x hx ↦ ?_)
+    let N := Submodule.span R {x}
+    let Z : FGModuleCat.{v} R :=
+      ⟨ModuleCat.of R N, Module.Finite.iff_fg.2 (Submodule.fg_span_singleton x)⟩
+    have h : (ObjectProperty.homMk (ModuleCat.ofHom N.subtype) : Z ⟶ X) =
+        ObjectProperty.homMk 0 := by
+      refine (cancel_mono f).1 (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext ?_)))
+      intro y
+      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+        ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp, Function.comp_apply,
+        ObjectProperty.homMk_zero, Limits.zero_comp, ObjectProperty.zero_hom, ModuleCat.hom_zero,
+        LinearMap.zero_apply]
+      -- `N.subtype y` is `y`, and `ConcreteCategory.hom` of a morphism of modules is its
+      -- underlying linear map, both definitionally.
+      exact LinearMap.mem_ker.1
+        ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hx) y.property)
+    simpa [Z] using congr_arg (fun g ↦ g.hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩) h
+
+/-- **Over a left Noetherian ring, finitely generated modules are closed under subobjects**: a
+submodule of a finitely generated module is finitely generated. -/
+instance _root_.ModuleCat.isFG_isClosedUnderSubobjects [IsNoetherianRing R] :
+    (ModuleCat.isFG.{v} R).IsClosedUnderSubobjects where
+  prop_of_mono f _ hY := by
+    rw [ModuleCat.isFG_iff] at hY ⊢
+    exact Module.Finite.of_injective f.hom ((ModuleCat.mono_iff_injective f).1 inferInstance)
+
+instance : HasFiniteBiproducts (FGModuleCat.{v} R) :=
+  .of_hasFiniteProducts
+
+instance : HasBinaryBiproducts (FGModuleCat.{v} R) :=
+  hasBinaryBiproducts_of_finite_biproducts _
 
 end TauCeti
 

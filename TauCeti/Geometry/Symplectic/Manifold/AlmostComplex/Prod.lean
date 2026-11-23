@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
+public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -35,6 +36,16 @@ product two-form. When the vertical family also depends smoothly on a parameter,
 block structure (`TauCeti.SmoothAlmostComplexStructure.contMDiff_prodFamily_family`).
 Equivariance under a product map reduces to equivariance of its two blocks; for a translation
 and a monodromy map this is precisely the vertical seam equation.
+
+The smooth product `TauCeti.SmoothAlmostComplexStructure.prod` of two smooth almost complex
+structures is the block structure with a vertical block independent of the domain point. It is
+compatible with the product of two compatible forms
+(`TauCeti.SmoothAlmostComplexStructure.compatible_prod`), it is the finite-regularity product at
+every finite order (`TauCeti.SmoothAlmostComplexStructure.prod_toContMDiff`), and a map into the
+product is pseudoholomorphic for it exactly when both of its components are
+(`TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphicAt_prod_iff`): the two projections are
+pseudoholomorphic, and the differential of a map into a product is the pair of the differentials
+of its components.
 
 ## References
 
@@ -259,19 +270,28 @@ theorem eval₂_prod_prodFamily (σ : SmoothTwoForm I P) (τ : SmoothTwoForm I' 
         (K p (Manifold.tangentSpaceProdEquiv p v).2) := by
   rw [SmoothTwoForm.eval₂_prod, prodFamily_apply, ContinuousLinearEquiv.apply_symm_apply]
 
-/-- A product map intertwines the block structure at a point precisely when its horizontal
-differential intertwines `J` and its vertical differential intertwines the corresponding
-members of `K`. In a suspension the second condition is the seam equation. -/
-theorem mfderiv_prodMap_prodFamily_iff {f : P → P} {g : M → M} (p : P × M)
-    (hf : MDifferentiableAt I I f p.1) (hg : MDifferentiableAt I' I' g p.2) :
+/-- A product map `f × g : P × M → P × N` intertwines the block structures with vertical families
+`K` and `K'` at a point precisely when its horizontal differential intertwines `J` and its
+vertical differential intertwines the corresponding members of `K` and `K'`. In a suspension the
+second condition is the seam equation. -/
+theorem mfderiv_prodMap_prodFamily_iff {F' H'' N : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [FiniteDimensional ℝ F'] [TopologicalSpace H'']
+    {I'' : ModelWithCorners ℝ F' H''} [TopologicalSpace N] [ChartedSpace H'' N]
+    [IsManifold I'' ∞ N] (K' : ∀ p : P × N, AlmostComplexStructure (TangentSpace I'' p.2))
+    (hK' : ContMDiff (I.prod I'') (I''.prod 𝓘(ℝ, F' →L[ℝ] F')) n
+      (fun p ↦ TotalSpace.mk' (F' →L[ℝ] F')
+        (E := fun y : N ↦ TangentSpace I'' y →L[ℝ] TangentSpace I'' y)
+        p.2 (K' p).toLinearMap.toContinuousLinearMap))
+    {f : P → P} {g : M → N} (p : P × M)
+    (hf : MDifferentiableAt I I f p.1) (hg : MDifferentiableAt I' I'' g p.2) :
     (∀ v : TangentSpace (I.prod I') p,
-      mfderiv (I.prod I') (I.prod I') (Prod.map f g) p (prodFamily J K hK p v) =
-        prodFamily J K hK (f p.1, g p.2)
-          (mfderiv (I.prod I') (I.prod I') (Prod.map f g) p v)) ↔
+      mfderiv (I.prod I') (I.prod I'') (Prod.map f g) p (prodFamily J K hK p v) =
+        prodFamily J K' hK' (f p.1, g p.2)
+          (mfderiv (I.prod I') (I.prod I'') (Prod.map f g) p v)) ↔
       (∀ u : TangentSpace I p.1,
         mfderiv I I f p.1 (J p.1 u) = J (f p.1) (mfderiv I I f p.1 u)) ∧
       (∀ w : TangentSpace I' p.2,
-        mfderiv I' I' g p.2 (K p w) = K (f p.1, g p.2) (mfderiv I' I' g p.2 w)) := by
+        mfderiv I' I'' g p.2 (K p w) = K' (f p.1, g p.2) (mfderiv I' I'' g p.2 w)) := by
   constructor
   · intro h
     constructor
@@ -379,20 +399,15 @@ theorem tames_prodFamily {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M}
   rw [SmoothTwoForm.tames_iff]
   intro p v hv
   -- Vertical tameness at `p` makes the fibre form a linear symplectic form.
-  have hτalt := SmoothForm.isAlt_bilinFormAt τ p.2
-  let ωτ : SymplecticForm (TangentSpace I' p.2) :=
-    { toBilinForm := τ.bilinFormAt p.2
-      isAlt := hτalt
-      nondegenerate := hτalt.isRefl.nondegenerate_iff_separatingLeft.2 fun w hw ↦ by
-        by_contra hw0
-        exact (hτ p w hw0).ne' (by simpa only [SmoothForm.bilinFormAt_apply] using hw (K p w)) }
-  have hωτ : ωτ.Tames (K p) := fun w hw ↦ by
-    simpa only [ωτ, SmoothForm.bilinFormAt_apply] using hτ p w hw
+  have hτK : ∀ w, w ≠ 0 → 0 < τ.bilinFormAt p.2 w (K p w) := fun w hw ↦ by
+    simpa only [SmoothForm.bilinFormAt_apply] using hτ p w hw
+  let ωτ := SymplecticForm.ofTames _ (SmoothForm.isAlt_bilinFormAt τ p.2) hτK
+  have hωτ : ωτ.Tames (K p) := SymplecticForm.tames_ofTames _ hτK
   have h := SymplecticForm.prod_tames (hσ.isNondegenerate.tames_iff.1 hσ p.1) hωτ
     (Manifold.tangentSpaceProdEquiv p v) ((Manifold.tangentSpaceProdEquiv p).map_ne_zero_iff.2 hv)
   rw [SymplecticForm.prod_apply_prod_self] at h
   rw [eval₂_prod_prodFamily]
-  simpa only [ωτ, SmoothForm.bilinFormAt_apply,
+  simpa only [ωτ, SymplecticForm.ofTames_apply, SmoothForm.bilinFormAt_apply,
     SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply,
     SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using h
 
@@ -422,23 +437,32 @@ theorem compatible_prodFamily {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M}
     simpa only [SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply] using
       (hcompat p).tames v hv
 
-/-- A product map intertwines the block structure at a point precisely when its horizontal
-differential intertwines `J` and its vertical differential intertwines the corresponding
-members of `K`. In a suspension the second condition is the seam equation. -/
-theorem mfderiv_prodMap_prodFamily_iff {f : P → P} {g : M → M} (p : P × M)
-    (hf : MDifferentiableAt I I f p.1) (hg : MDifferentiableAt I' I' g p.2) :
+/-- A product map `f × g : P × M → P × N` intertwines the block structures with vertical families
+`K` and `K'` at a point precisely when its horizontal differential intertwines `J` and its
+vertical differential intertwines the corresponding members of `K` and `K'`. In a suspension the
+second condition is the seam equation. -/
+theorem mfderiv_prodMap_prodFamily_iff {F' H'' N : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [FiniteDimensional ℝ F'] [TopologicalSpace H'']
+    {I'' : ModelWithCorners ℝ F' H''} [TopologicalSpace N] [ChartedSpace H'' N]
+    [IsManifold I'' ∞ N] (K' : ∀ p : P × N, AlmostComplexStructure (TangentSpace I'' p.2))
+    (hK' : ContMDiff (I.prod I'') (I''.prod 𝓘(ℝ, F' →L[ℝ] F')) ∞
+      (fun p ↦ TotalSpace.mk' (F' →L[ℝ] F')
+        (E := fun y : N ↦ TangentSpace I'' y →L[ℝ] TangentSpace I'' y)
+        p.2 (K' p).toLinearMap.toContinuousLinearMap))
+    {f : P → P} {g : M → N} (p : P × M)
+    (hf : MDifferentiableAt I I f p.1) (hg : MDifferentiableAt I' I'' g p.2) :
     (∀ v : TangentSpace (I.prod I') p,
-      mfderiv (I.prod I') (I.prod I') (Prod.map f g) p (prodFamily J K hK p v) =
-        prodFamily J K hK (f p.1, g p.2)
-          (mfderiv (I.prod I') (I.prod I') (Prod.map f g) p v)) ↔
+      mfderiv (I.prod I') (I.prod I'') (Prod.map f g) p (prodFamily J K hK p v) =
+        prodFamily J K' hK' (f p.1, g p.2)
+          (mfderiv (I.prod I') (I.prod I'') (Prod.map f g) p v)) ↔
       (∀ u : TangentSpace I p.1,
         mfderiv I I f p.1 (J p.1 u) = J (f p.1) (mfderiv I I f p.1 u)) ∧
       (∀ w : TangentSpace I' p.2,
-        mfderiv I' I' g p.2 (K p w) = K (f p.1, g p.2) (mfderiv I' I' g p.2 w)) := by
+        mfderiv I' I'' g p.2 (K p w) = K' (f p.1, g p.2) (mfderiv I' I'' g p.2 w)) := by
   simpa only [prodFamily, ContMDiffAlmostComplexStructure.toSmooth_toEndomorphism,
     toContMDiff_toEndomorphism_apply] using
     ContMDiffAlmostComplexStructure.mfderiv_prodMap_prodFamily_iff
-      (J.toContMDiff ⊤) K hK p hf hg
+      (J.toContMDiff ⊤) K hK K' hK' p hf hg
 
 end TauCeti.SmoothAlmostComplexStructure
 
@@ -486,7 +510,7 @@ theorem mfderiv_translation_prodFamily_iff (c : ℝ × ℝ) (g : M ≃ₘ⟮I', 
         mfderiv I' I' g p.2 (K p w) = K (p.1 + c, g p.2) (mfderiv I' I' g p.2 w) := by
   have hf : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) (fun q ↦ q + c) p.1 :=
     (differentiableAt_id.add_const c).mdifferentiableAt
-  rw [mfderiv_prodMap_prodFamily_iff _ _ _ _ hf (g.mdifferentiable (by simp) p.2)]
+  rw [mfderiv_prodMap_prodFamily_iff _ _ _ K hK _ hf (g.mdifferentiable (by simp) p.2)]
   have hhorizontal : ∀ u : TangentSpace 𝓘(ℝ, ℝ × ℝ) p.1,
       mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) (fun q ↦ q + c) p.1
           ((AlmostComplexStructure.product ℝ).constSmooth p.1 u) =
@@ -499,5 +523,99 @@ theorem mfderiv_translation_prodFamily_iff (c : ℝ × ℝ) (g : M ≃ₘ⟮I', 
       fderiv_add_const, fderiv_fun_id, ContinuousLinearMap.id_apply,
       AlmostComplexStructure.fromTangentSpace_constSmooth_apply]
   exact and_iff_right hhorizontal
+
+end TauCeti.SmoothAlmostComplexStructure
+
+/-! ### The product of two smooth almost complex structures -/
+
+namespace TauCeti.SmoothAlmostComplexStructure
+
+variable {E H P F H' M : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace P] [ChartedSpace H P] [IsManifold I ∞ P]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ F H'}
+  [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M]
+  (J : SmoothAlmostComplexStructure I P) (L : SmoothAlmostComplexStructure I' M)
+
+/-- The product `J × L` of smooth almost complex structures on `P` and `M`: the smooth almost
+complex structure on `P × M` acting by `J` on the first and by `L` on the second tangent component
+(`TauCeti.SmoothAlmostComplexStructure.prod_apply`). It is the block structure with the vertical
+family `(p, x) ↦ L_x`, independent of `p`. -/
+def prod : SmoothAlmostComplexStructure (I.prod I') (P × M) :=
+  prodFamily J (fun p ↦ L.almostComplexStructureAt p.2)
+    (by
+      simpa only [almostComplexStructureAt_toLinearMap,
+        LinearMap.toContinuousLinearMap_coe, Function.comp_def]
+        using L.toEndomorphism.contMDiff.comp (contMDiff_snd (I := I)))
+
+/-- The product structure acts componentwise under the canonical tangent identification. -/
+@[simp]
+theorem prod_apply (p : P × M) (v : TangentSpace (I.prod I') p) :
+    prod J L p v = (Manifold.tangentSpaceProdEquiv p).symm
+      (J p.1 (Manifold.tangentSpaceProdEquiv p v).1,
+        L p.2 (Manifold.tangentSpaceProdEquiv p v).2) := by
+  simp only [prod, prodFamily_apply, almostComplexStructureAt_apply]
+
+/-- Viewing the smooth product at finite regularity gives the finite-regularity product. -/
+@[simp]
+theorem prod_toContMDiff (n : ℕ∞) :
+    (prod J L).toContMDiff n =
+      ContMDiffAlmostComplexStructure.prod (J.toContMDiff n) (L.toContMDiff n) := by
+  ext p v
+  simp only [toContMDiff_apply, prod_apply, ContMDiffAlmostComplexStructure.prod_apply]
+
+variable {J L}
+
+/-- **Products of compatible pairs are compatible.** If `σ` is compatible with `J` and `τ` with
+`L`, the product form `pr₁^*σ + pr₂^*τ` is compatible with `J × L`. -/
+theorem compatible_prod {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M} (hσ : σ.Compatible J)
+    (hτ : τ.Compatible L) : (σ.prod τ).Compatible (prod J L) :=
+  compatible_prodFamily J _ _ hσ hτ.isNondegenerate fun p ↦ hτ.compatibleAt p.2
+
+/-- The first projection `P × M → P` is pseudoholomorphic from `J × L` to `J`. -/
+theorem isPseudoholomorphic_fst_prod :
+    IsPseudoholomorphic (prod J L) J (Prod.fst : P × M → P) :=
+  isPseudoholomorphic_iff.2 fun p ↦
+    isPseudoholomorphicAt_of_hasMFDerivAt (hasMFDerivAt_fst (I := I) (I' := I') p) fun _ ↦ by
+      simp only [prod_apply, Manifold.tangentSpaceProdEquiv_apply,
+        Manifold.tangentSpaceProdEquiv_symm_apply]
+      -- `ContinuousLinearMap.fst` evaluates a pair to its component by definition.
+      rfl
+
+/-- The second projection `P × M → M` is pseudoholomorphic from `J × L` to `L`. -/
+theorem isPseudoholomorphic_snd_prod :
+    IsPseudoholomorphic (prod J L) L (Prod.snd : P × M → M) :=
+  isPseudoholomorphic_iff.2 fun p ↦
+    isPseudoholomorphicAt_of_hasMFDerivAt (hasMFDerivAt_snd (I := I) (I' := I') p) fun _ ↦ by
+      simp only [prod_apply, Manifold.tangentSpaceProdEquiv_apply,
+        Manifold.tangentSpaceProdEquiv_symm_apply]
+      -- `ContinuousLinearMap.snd` evaluates a pair to its component by definition.
+      rfl
+
+variable {E'' H'' C : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+  {I'' : ModelWithCorners ℝ E'' H''} [TopologicalSpace C] [ChartedSpace H'' C]
+  [IsManifold I'' ∞ C] {j : SmoothAlmostComplexStructure I'' C} {u : C → P × M} {c : C}
+
+/-- **Maps into a product.** A map `u : C → P × M` is pseudoholomorphic at `c` for `J × L` exactly
+when its components `pr₁ ∘ u` and `pr₂ ∘ u` are pseudoholomorphic at `c` for `J` and `L`. -/
+theorem isPseudoholomorphicAt_prod_iff :
+    IsPseudoholomorphicAt j (prod J L) u c ↔
+      IsPseudoholomorphicAt j J (Prod.fst ∘ u) c ∧ IsPseudoholomorphicAt j L (Prod.snd ∘ u) c := by
+  refine ⟨fun hu ↦ ⟨isPseudoholomorphic_fst_prod.isPseudoholomorphicAt _ |>.comp hu,
+    isPseudoholomorphic_snd_prod.isPseudoholomorphicAt _ |>.comp hu⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  refine isPseudoholomorphicAt_of_hasMFDerivAt
+    (h₁.mdifferentiableAt.hasMFDerivAt.prodMk h₂.mdifferentiableAt.hasMFDerivAt) fun w ↦ ?_
+  simp only [prod_apply, Manifold.tangentSpaceProdEquiv_apply,
+    Manifold.tangentSpaceProdEquiv_symm_apply]
+  exact congrArg₂ Prod.mk (h₁.mfderiv_apply_commute w) (h₂.mfderiv_apply_commute w)
+
+/-- A map `u : C → P × M` is pseudoholomorphic for `J × L` exactly when its components are
+pseudoholomorphic for `J` and `L`. -/
+theorem isPseudoholomorphic_prod_iff :
+    IsPseudoholomorphic j (prod J L) u ↔
+      IsPseudoholomorphic j J (Prod.fst ∘ u) ∧ IsPseudoholomorphic j L (Prod.snd ∘ u) := by
+  simp only [isPseudoholomorphic_iff, isPseudoholomorphicAt_prod_iff, forall_and]
 
 end TauCeti.SmoothAlmostComplexStructure

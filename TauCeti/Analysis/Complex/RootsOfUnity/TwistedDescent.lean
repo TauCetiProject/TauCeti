@@ -39,6 +39,7 @@ unique continuous function with this factorization (`TauCeti.eqOn_descendPowTwis
 * `TauCeti.descendPowTwist`: the descent of a function transforming by `ζ ↦ ζ ^ r`.
 * `TauCeti.differentiableOn_descendPowTwist` and `TauCeti.analyticOnNhd_descendPowTwist`: it is
   holomorphic, hence analytic, on `(· ^ m) '' s`.
+* `TauCeti.differentiableAt_descendPowTwist_pow`: the pointwise form away from `0`.
 * `TauCeti.pow_smul_descendPowTwist_pow`: the factorization `f u = u ^ r • g (u ^ m)` on `s`.
 * `TauCeti.eqOn_descendPowTwist`: uniqueness of the factorization.
 * `TauCeti.analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul`: `ord₀ f = r + ord₀ g * m`.
@@ -74,7 +75,7 @@ private theorem pow_sub_smul_invariant {f : ℂ → E} {u : ℂ} (hr : r ≤ m)
     (hf : ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • f u) (ζ : rootsOfUnity m ℂ) :
     (ζ • u) ^ (m - r) • f (ζ • u) = u ^ (m - r) • f u := by
   have hζ : ((ζ : ℂˣ) : ℂ) ^ m = 1 := by
-    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity m (ζ : ℂˣ)).mp ζ.2, Units.val_one]
+    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity m (ζ : ℂˣ)).mp ζ.property, Units.val_one]
   rw [hf, rootsOfUnity.smul_eq_mul, smul_smul, mul_pow, mul_assoc, mul_comm (u ^ (m - r)),
     ← mul_assoc, ← pow_add, Nat.sub_add_cancel hr, hζ, one_mul]
 
@@ -94,6 +95,17 @@ theorem pow_smul_descendPowTwist_pow_of_ne_zero (hr : r < m) {f : ℂ → E} {u 
     sub_zero, sub_zero, descendPow_pow (pow_sub_smul_invariant hr.le hf), smul_smul, smul_smul]
   convert one_smul ℂ (f u) using 2
   rw [mul_right_comm, ← pow_add, Nat.add_sub_cancel' hr.le, mul_inv_cancel₀ hum]
+
+/-- **The descent is holomorphic away from `0`.** If `f` transforms by `ζ ↦ ζ ^ r` near a
+nonzero point `u` and is complex differentiable at `u`, then `descendPowTwist m r f` is complex
+differentiable at `u ^ m`. -/
+theorem differentiableAt_descendPowTwist_pow {f : ℂ → E} {u : ℂ} (hr : r ≤ m)
+    (hf : ∀ᶠ v in 𝓝 u, ∀ ζ : rootsOfUnity m ℂ, f (ζ • v) = ((ζ : ℂˣ) : ℂ) ^ r • f v)
+    (hu : u ≠ 0) (hfu : DifferentiableAt ℂ f u) :
+    DifferentiableAt ℂ (descendPowTwist m r f) (u ^ m) := by
+  rw [descendPowTwist, differentiableAt_dslope_of_ne (pow_ne_zero m hu)]
+  exact differentiableAt_descendPow_pow (hf.mono fun v hv ↦ pow_sub_smul_invariant hr hv) hu
+    ((differentiableAt_id.pow _).smul hfu)
 
 /-- **The descent of a holomorphic equivariant function is holomorphic.** If `f` is holomorphic
 on an open set `s` and transforms by `ζ ↦ ζ ^ r` at every point of `s`, then
@@ -193,7 +205,8 @@ theorem apply_rootsOfUnity_two_smul_of_apply_neg {f : ℂ → E} {u : ℂ}
     (hf : f (-u) = (-1 : ℂ) ^ r • f u) (ζ : rootsOfUnity 2 ℂ) :
     f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • f u := by
   have hζ : ((ζ : ℂˣ) : ℂ) * ((ζ : ℂˣ) : ℂ) = 1 := by
-    rw [← sq, ← Units.val_pow_eq_pow_val, (mem_rootsOfUnity 2 (ζ : ℂˣ)).mp ζ.2, Units.val_one]
+    rw [← sq, ← Units.val_pow_eq_pow_val, (mem_rootsOfUnity 2 (ζ : ℂˣ)).mp ζ.property,
+        Units.val_one]
   rw [rootsOfUnity.smul_eq_mul]
   rcases mul_self_eq_one_iff.mp hζ with h | h <;> rw [h]
   · simp

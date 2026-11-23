@@ -22,6 +22,9 @@ These are algebraic chart extension maps for constructing locally convex test-se
 No topology on compactly supported sections is installed here. The chart only needs to be
 smooth in the forward direction; the support and smoothness arguments do not require
 smoothness of its inverse, finite-dimensional fibres, or a countable atlas.
+
+The exact nonzero-locus formula is adapted from Tau Ceti PR #22144
+(commit `8cab1a135d7b2826fcb4508770e82aebf9713614`).
 -/
 
 public noncomputable section
@@ -115,20 +118,20 @@ def chartTestSection : 𝓓^{n}(⟨c.target, c.open_target⟩, F) →ₗ[ℝ]
 /-- On the chart source, extension is the inverse frame applied to the coefficient value. -/
 theorem chartTestSection_apply_of_mem (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
     {x : M} (hx : x ∈ c.source) :
-    (e.chartTestSection c hc hce φ).1 x = e.symmL ℝ x (φ (c x)) :=
+    (e.chartTestSection c hc hce φ).val x = e.symmL ℝ x (φ (c x)) :=
   testSection_of_mem e c φ hx
 
 /-- The section vanishes outside the chart source. -/
 @[simp]
 theorem chartTestSection_apply_of_notMem (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
-    {x : M} (hx : x ∉ c.source) : (e.chartTestSection c hc hce φ).1 x = 0 := by
+    {x : M} (hx : x ∉ c.source) : (e.chartTestSection c hc hce φ).val x = 0 := by
   simp [chartTestSection, testSection, hx]
 
 /-- Reading the extended section in its defining frame recovers the native test function. -/
 @[simp]
 theorem continuousLinearMapAt_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
     {x : M} (hx : x ∈ c.source) :
-    e.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).1 x) = φ (c x) := by
+    e.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).val x) = φ (c x) := by
   rw [chartTestSection_apply_of_mem e c hc hce φ hx, e.continuousLinearMapAt_symmL (hce hx)]
 
 /-- Native test functions are determined by their extended bundle sections. -/
@@ -137,39 +140,51 @@ theorem chartTestSection_injective : Function.Injective (e.chartTestSection c hc
   ext y
   by_cases hy : y ∈ c.target
   · have hval := congrArg (fun s : ContMDiffSection.compactlySupported I F n V ↦
-      e.continuousLinearMapAt ℝ (c.symm y) (s.1 (c.symm y))) h
+      e.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y))) h
     simpa [continuousLinearMapAt_chartTestSection e c hc hce _ (c.map_target hy),
       c.right_inv hy] using hval
   · exact (φ.zero_on_compl hy).trans (ψ.zero_on_compl hy).symm
 
+/-- Extension preserves the exact nonzero locus, transported by the inverse chart. -/
+theorem support_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    {x | (e.chartTestSection c hc hce φ).val x ≠ 0} = c.symm '' Function.support φ := by
+  ext x
+  by_cases hx : x ∈ c.source
+  · rw [mem_ofPred_eq, chartTestSection_apply_of_mem e c hc hce φ hx]
+    constructor
+    · intro h
+      refine ⟨c x, ?_, c.left_inv hx⟩
+      intro hz
+      exact h (by simp [hz])
+    · rintro ⟨y, hy, hxy⟩ hz
+      have hyt := φ.tsupport_subset (subset_tsupport φ hy)
+      have heq : c x = y := by rw [← hxy, c.right_inv hyt]
+      have := congrArg (e.continuousLinearMapAt ℝ x) hz
+      exact hy (by simpa [e.continuousLinearMapAt_symmL (hce hx), heq] using this)
+  · simp only [chartTestSection_apply_of_notMem e c hc hce φ hx,
+      ne_self_iff_false, mem_ofPred_eq, false_iff, mem_image, not_exists, not_and]
+    intro y hy hxy
+    exact hx (hxy ▸ c.map_target (φ.tsupport_subset (subset_tsupport φ hy)))
+
 /-- Extension preserves the exact closed support, transported by the inverse chart. -/
 @[simp]
 theorem tsupport_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
-    (e.chartTestSection c hc hce φ).1.tsupport = c.symm '' tsupport φ := by
+    (e.chartTestSection c hc hce φ).val.tsupport = c.symm '' tsupport φ := by
   apply le_antisymm
   · exact tsupport_testSection_subset e c hc hce φ
-  · rw [ContMDiffSection.tsupport_def]
-    rintro _ ⟨y, hy, rfl⟩
-    have hcont : ContinuousWithinAt c.symm (Function.support φ) y :=
-      (c.continuousOn_symm y (φ.tsupport_subset hy)).mono
-        ((subset_tsupport φ).trans φ.tsupport_subset)
-    refine hcont.mem_closure hy fun z hz ↦ ?_
-    have ht := φ.tsupport_subset (subset_tsupport φ hz)
-    intro hzero
-    have hcoeff := e.continuousLinearMapAt_chartTestSection c hc hce φ (c.map_target ht)
-    rw [hzero, map_zero, c.right_inv ht] at hcoeff
-    exact hz hcoeff.symm
+  · rw [ContMDiffSection.tsupport_def, support_chartTestSection]
+    exact (c.continuousOn_symm.mono φ.tsupport_subset).image_closure
 
 /-- The closed support of an extended test lies entirely in the chart source. -/
 theorem tsupport_chartTestSection_subset_source (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
-    (e.chartTestSection c hc hce φ).1.tsupport ⊆ c.source := by
+    (e.chartTestSection c hc hce φ).val.tsupport ⊆ c.source := by
   rw [tsupport_chartTestSection]
   exact image_subset_iff.2 fun _ hy ↦ c.map_target (φ.tsupport_subset hy)
 
 /-- A support bound in an arbitrary set `K` becomes a support bound in `c.symm '' K`. -/
 theorem chartTestSection_mem_supportedIn (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
     {K : Set E} (hφ : tsupport φ ⊆ K) :
-    (e.chartTestSection c hc hce φ).1 ∈ ContMDiffSection.supportedIn I F n V (c.symm '' K) := by
+    (e.chartTestSection c hc hce φ).val ∈ ContMDiffSection.supportedIn I F n V (c.symm '' K) := by
   rw [ContMDiffSection.mem_supportedIn, tsupport_chartTestSection]
   exact image_mono hφ
 
@@ -179,7 +194,7 @@ theorem continuousLinearMapAt_chartTestSection_eq_coordChangeL
     (e' : Trivialization F (π F V)) [e'.IsLinear ℝ]
     (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) {x : M}
     (hx : x ∈ c.source) (hx' : x ∈ e'.baseSet) :
-    e'.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).1 x) =
+    e'.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).val x) =
       e.coordChangeL ℝ e' x (φ (c x)) := by
   rw [chartTestSection_apply_of_mem e c hc hce φ hx,
     e.symmL_apply (hce hx), e'.continuousLinearMapAt_apply_of_mem (R := ℝ) hx',

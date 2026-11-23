@@ -102,10 +102,8 @@ private theorem exists_smooth_approx_of_isCompact_closure (hu : HasWeakFDerivOn 
   have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) :=
     ContDiffBump.tendsto_rOut_shrinking (half_pos hδ)
   have hball (n : ℕ) (x : E) (hx : x ∈ S) : closedBall x (φ n).rOut ⊆ Ω' := fun y hy => by
-    have hr : (φ n).rOut < δ := by
-      simp only [φ, ContDiffBump.rOut_shrinking]
-      exact (div_le_self (half_pos hδ).le (by linarith [n.cast_nonneg' (α := ℝ)])).trans_lt
-        (half_lt_self hδ)
+    have hr : (φ n).rOut < δ :=
+      (ContDiffBump.rOut_shrinking_le (half_pos hδ) n).trans_lt (half_lt_self hδ)
     exact mem_thickening_iff.2 ⟨x, hx, (mem_closedBall.1 hy).trans_lt hr⟩
   set uext := (Ω' : Set E).indicator u
   set Dext := (Ω' : Set E).indicator Du
@@ -215,7 +213,7 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
     refine hDgu.tendsto_setLIntegral_enorm_clm_comp_sub V.isOpen.measurableSet (C := C.toNNReal)
       (fun x hx => ?_) (fun n => (hDn n).aestronglyMeasurable)
       (hDuS.mono_set hVS).aestronglyMeasurable hDD (hDuS.mono_set hVS).hasFiniteIntegral.ne
-    rw [← NNReal.coe_le_coe, coe_nnnorm]
+    rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hC x (hVS hx)).trans (Real.le_coe_toNNReal C)
 
 /-- **The weak chain rule for continuous maps.** If `u` is continuous on `Ω` with weak derivative

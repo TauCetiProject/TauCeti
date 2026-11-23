@@ -83,8 +83,10 @@ private theorem partialCycleMap_eq_of_coe_eq {j : Fin n} {z : ℍ} (hz : P.verte
         (σ.partialCycleMap j m)⁻¹ • P.vertexSector (σ.next^[m] j)) ∧
       ((σ.partialCycleMap j m')⁻¹ • P.carrier =ᶠ[𝓝 y]
         (σ.partialCycleMap j m')⁻¹ • P.vertexSector (σ.next^[m'] j)) :=
-    (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m).eventuallyEq_nhds.and
-      (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m').eventuallyEq_nhds
+    (Filter.Eventually.eventually_nhds
+        (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m)).and
+      (Filter.Eventually.eventually_nhds
+        (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m'))
   obtain ⟨w, hwx, ⟨hm, hm'⟩, hwz⟩ := ((frequently_orientedAngle_eq z
     (geodesicLine (rayToward z (P.vertex (j - 1))) 1) ((-x : ℝ) : Real.Angle)).and_eventually
       ((hev.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin)).exists
@@ -278,7 +280,7 @@ theorem map_stabilizer_eq_zpowers_cycleMap {j : Fin n} {z : ℍ} (hz : P.vertex 
   simp only [Subgroup.mem_map, MulAction.mem_stabilizer_iff, Subgroup.coe_subtype]
   refine ⟨fun ⟨γ, hγ, hγg⟩ ↦ ?_, fun hg ↦ ?_⟩
   · rw [← hγg]
-    exact (σ.smul_eq_self_iff_mem_zpowers_cycleMap hz hmap hdisj γ.2).1 hγ
+    exact (σ.smul_eq_self_iff_mem_zpowers_cycleMap hz hmap hdisj γ.property).1 hγ
   · have hgΓ : g ∈ Γ := (Subgroup.zpowers_le.2 (σ.cycleMap_mem hmap j)) hg
     exact ⟨⟨g, hgΓ⟩, (σ.smul_eq_self_iff_mem_zpowers_cycleMap hz hmap hdisj hgΓ).2 hg, rfl⟩
 

@@ -83,13 +83,13 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K
 @[simp]
 theorem isRankLeOne_classicalPoint (x : spa (powerBoundedSubring K)) (a : Fin k → K)
     (ha : ∀ i, IsPowerBounded (a i)) :
-    @ValuativeRel.IsRankLeOne _ _ (classicalPoint x a ha).1.toValuativeRel :=
-  letI := (classicalPoint x a ha).1.toValuativeRel
+    @ValuativeRel.IsRankLeOne _ _ (classicalPoint x a ha).val.toValuativeRel :=
+  letI := (classicalPoint x a ha).val.toValuativeRel
   haveI : ((NormedField.valuation (K := K)).comap (evalAtHom a ha)).Compatible :=
     ⟨fun f g ↦ by
       simpa only [Valuation.comap_apply, NormedField.valuation_apply, ← NNReal.coe_le_coe,
-        coe_nnnorm] using (classicalPoint_vle x a ha f g).trans
-          (vle_iff_norm_le_of_mem_spa x.2 _ _)⟩
+        coe_nnNorm] using (classicalPoint_vle x a ha f g).trans
+          (vle_iff_norm_le_of_mem_spa x.property _ _)⟩
   ValuativeRel.IsRankLeOne.of_compatible_mulArchimedean
     ((NormedField.valuation (K := K)).comap (evalAtHom a ha))
 
@@ -102,8 +102,8 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Nonarchi
 takes values in `ℝ≥0`. These are the points of types (2) and (3). -/
 @[simp]
 theorem isRankLeOne_discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    @ValuativeRel.IsRankLeOne _ _ (discPoint a ha hr₀ hr₁).1.toValuativeRel :=
-  letI := (discPoint a ha hr₀ hr₁).1.toValuativeRel
+    @ValuativeRel.IsRankLeOne _ _ (discPoint a ha hr₀ hr₁).val.toValuativeRel :=
+  letI := (discPoint a ha hr₀ hr₁).val.toValuativeRel
   haveI : ((closedDiscGaussValuation hr₀ hr₁).comap
       (taylorHom (fun _ ↦ a) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha)).Compatible :=
     ⟨fun f g ↦ discPoint_vle_iff a ha hr₀ hr₁ f g⟩
@@ -119,8 +119,8 @@ type (4). -/
 theorem isRankLeOne_nestedDiscPoint (a : ℕ → K) (ha : ∀ n, ‖a n‖ ≤ 1) (c : ℕ → K)
     (hc₀ : ∀ n, c n ≠ 0) (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
     (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖) :
-    @ValuativeRel.IsRankLeOne _ _ (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).1.toValuativeRel :=
-  letI := (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).1.toValuativeRel
+    @ValuativeRel.IsRankLeOne _ _ (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).val.toValuativeRel :=
+  letI := (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).val.toValuativeRel
   haveI : (nestedDiscValuation a ha c hc₀ hc₁ hac hcc).Compatible :=
     ⟨nestedDiscPoint_vle_iff a ha c hc₀ hc₁ hac hcc⟩
   ValuativeRel.IsRankLeOne.of_compatible_mulArchimedean
@@ -134,10 +134,11 @@ of `K`. The value of `T - a` is larger than that of `c`, but every power `(T - a
 @[simp]
 theorem not_isRankLeOne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1)
     (hr : ∃ c : K, ‖c‖ = r) :
-    ¬ @ValuativeRel.IsRankLeOne _ _ (discPointAbove a ha hr₀ hr₁).1.toValuativeRel := by
+    ¬ @ValuativeRel.IsRankLeOne _ _ (discPointAbove a ha hr₀ hr₁).val.toValuativeRel := by
   obtain ⟨c, hc⟩ := hr
+  have hc₀ : c ≠ 0 := norm_ne_zero_iff.mp (hc ▸ hr₀.ne')
   obtain ⟨d, hd⟩ := NormedField.exists_one_lt_norm K
-  let := (discPointAbove a ha hr₀ hr₁).1.toValuativeRel
+  let := (discPointAbove a ha hr₀ hr₁).val.toValuativeRel
   refine ValuativeRel.not_isRankLeOne_of_forall_pow_vle (f := T - C a) (g := C c) (h := C d)
     (ValuativeRel.not_vle.mp ?_) fun n ↦ ?_
   · -- translation by `a` sends `T - a` to `T`, which lies strictly above `c` just above `r`
@@ -148,7 +149,7 @@ theorem not_isRankLeOne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 <
     have hlt := closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le
       ((closedDiscGaussValuation_weightedX_pow hr₀ hr₁.le hc n).trans_lt
         (closedDiscGaussValuation_lt_mul_weightedC hr₀ hr₁.le hd
-          (closedDiscGaussValuation_weightedC_pow_pos hr₀ hr₁.le hc n)))
+          (closedDiscGaussValuation_weightedC_pow_pos hr₀ hr₁.le hc₀ n)))
     rw [discPointAbove_vle_iff]
     simpa only [map_pow, map_mul, map_sub, taylorHom_weightedX, taylorHom_weightedC,
       add_sub_cancel_right] using hlt.le
@@ -160,10 +161,11 @@ type (5). -/
 @[simp]
 theorem not_isRankLeOne_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (hr : ∃ c : K, ‖c‖ = r) :
-    ¬ @ValuativeRel.IsRankLeOne _ _ (discPointBelow a ha hr₀ hr₁).1.toValuativeRel := by
+    ¬ @ValuativeRel.IsRankLeOne _ _ (discPointBelow a ha hr₀ hr₁).val.toValuativeRel := by
   obtain ⟨c, hc⟩ := hr
+  have hc₀ : c ≠ 0 := norm_ne_zero_iff.mp (hc ▸ hr₀.ne')
   obtain ⟨d, hd⟩ := NormedField.exists_one_lt_norm K
-  let := (discPointBelow a ha hr₀ hr₁).1.toValuativeRel
+  let := (discPointBelow a ha hr₀ hr₁).val.toValuativeRel
   refine ValuativeRel.not_isRankLeOne_of_forall_pow_vle (f := C c) (g := T - C a) (h := C d)
     (ValuativeRel.not_vle.mp ?_) fun n ↦ ?_
   · -- translation by `a` sends `T - a` to `T`, which lies strictly below `c` just below `r`
@@ -171,7 +173,7 @@ theorem not_isRankLeOne_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 <
     simpa only [map_sub, taylorHom_weightedX, taylorHom_weightedC, add_sub_cancel_right,
       closedDiscGaussValuationBelow_weightedC_le_iff, not_lt] using hc.ge
   · -- the Gauss norms of `cⁿ` and `Tⁿ d` are `rⁿ < rⁿ ‖d‖`
-    have hpos := closedDiscGaussValuation_weightedC_pow_pos hr₀ hr₁ hc n
+    have hpos := closedDiscGaussValuation_weightedC_pow_pos hr₀ hr₁ hc₀ n
     rw [← closedDiscGaussValuation_weightedX_pow hr₀ hr₁ hc n] at hpos
     have hlt := closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁
       ((closedDiscGaussValuation_weightedX_pow hr₀ hr₁ hc n).symm.trans_lt
@@ -187,7 +189,7 @@ omit [IsUltrametricDist K] [CompleteSpace K] in
 closed unit disc over an algebraically closed field these are the points of types (1) to (4), so
 this subspace is the Berkovich disc, which Wedhorn's Example 7.57 notes is Hausdorff. -/
 theorem t2Space_closedPolydisc_isRankLeOne (k : ℕ) :
-    T2Space {x : closedPolydisc k K // @ValuativeRel.IsRankLeOne _ _ x.1.toValuativeRel} := by
+    T2Space {x : closedPolydisc k K // @ValuativeRel.IsRankLeOne _ _ x.val.toValuativeRel} := by
   -- a constant `c` with `0 < ‖c‖ < 1` is a topologically nilpotent unit of `K⟨T₁, …, Tₖ⟩`
   obtain ⟨c, hc₀, hc₁⟩ := NormedField.exists_norm_lt_one K
   have hc := (IsPseudoUniformizer.of_norm_lt_one (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hc₀))

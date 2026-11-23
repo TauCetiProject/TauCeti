@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
+public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Data.Set.Countable
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.RieszLemma
@@ -47,7 +48,7 @@ private theorem exists_eigenvector_span_chain (μ : ℕ → 𝕜) (hinj : Functi
   have hmono : Monotone V := fun _ _ h ↦ span_mono (Set.image_mono (Set.Iio_subset_Iio h))
   have hclosed (n : ℕ) : IsClosed (V n : Set E) := by
     have := FiniteDimensional.span_of_finite 𝕜 ((Set.finite_Iio n).image v)
-    exact (V n).closed_of_finiteDimensional
+    exact (V n).isClosed_of_finiteDimensional
   have hstrict (n : ℕ) : V n < V (n + 1) := by
     refine (hmono (Nat.le_succ n)).lt_of_ne ?_
     intro heq
@@ -105,8 +106,8 @@ theorem finite_eigenvalues_norm_ge (hK : IsCompactOperator K) {ε : ℝ} (hε : 
   classical
   by_contra h
   let e := (Set.not_finite.mp h).natEmbedding
-  exact hK.not_injective_eigenvalues_of_norm_ge hε (fun n ↦ (e n).1)
-    (fun n ↦ (e n).2.1) (fun n ↦ (e n).2.2) (Subtype.coe_injective.comp e.injective)
+  exact hK.not_injective_eigenvalues_of_norm_ge hε (fun n ↦ (e n).val)
+    (fun n ↦ (e n).property.1) (fun n ↦ (e n).property.2) (Subtype.coe_injective.comp e.injective)
 
 /-- The set of eigenvalues of a compact operator is countable, even when the ambient space
 is not complete. -/
@@ -156,5 +157,19 @@ theorem eq_zero_of_accPt_spectrum (hK : IsCompactOperator K) {μ : 𝕜}
   obtain ⟨ν, ⟨hne, hν⟩, hnorm, hnot⟩ :=
     ((accPt_iff_frequently.mp hμ).and_eventually (hnear.and havoid)).exists
   exact hnot ⟨⟨hν, hnorm.le⟩, hne⟩
+
+open Filter Topology in
+/-- The nonzero points of the real spectrum of a compact operator on a complex Banach space are
+isolated. -/
+theorem eventually_mem_spectrum_real_imp_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {T : E →L[ℂ] E} (hT : IsCompactOperator T) {μ : ℝ}
+    (hμ : μ ≠ 0) : ∀ᶠ y in 𝓝 μ, y ∈ spectrum ℝ T → y = μ := by
+  by_contra hacc
+  simp only [not_eventually, Classical.not_imp] at hacc
+  have hacc' : AccPt (μ : ℂ) (𝓟 (spectrum ℂ T)) :=
+    accPt_iff_frequently.2 <| Complex.continuous_ofReal.tendsto μ |>.frequently <|
+      hacc.mono fun _ ⟨hy, hne⟩ ↦
+        ⟨Complex.ofReal_injective.ne hne, (spectrum.algebraMap_mem_iff ℂ).2 hy⟩
+  exact hμ (Complex.ofReal_eq_zero.1 (hT.eq_zero_of_accPt_spectrum hacc'))
 
 end IsCompactOperator

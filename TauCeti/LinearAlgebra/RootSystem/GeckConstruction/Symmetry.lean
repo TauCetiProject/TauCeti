@@ -168,7 +168,7 @@ end
 
 section Numbered
 
-variable [CharZero R] [P.IsCrystallographic] [P₂.IsCrystallographic]
+variable [P.IsCrystallographic] [P₂.IsCrystallographic]
 
 /-! ## Conjugating the numbered matrices -/
 
@@ -190,7 +190,7 @@ private theorem submatrix_geckIndexEquiv_h (hτ : ∀ i : b.support, (τ i : ι�
 
 section RootGenerators
 
-variable [Finite ι] [Finite ι₂] [IsDomain R]
+variable [Finite ι] [Finite ι₂] [IsDomain R] [CharZero R]
 
 /-- The entrywise computation behind `RootPairing.Equiv.reindex_geckIndexEquiv_e`: pulling back
 `RootPairing.GeckConstruction.e (τ i)` along the index equivalence gives the matrix numbered by
@@ -210,7 +210,7 @@ private theorem submatrix_geckIndexEquiv_e (hτ : ∀ i : b.support, (τ i : ι�
       Equiv.apply_eq_iff_eq,
       Base.cartanMatrixIn_def, Hom.pairingIn_indexEquiv,
       g.toHom.root_indexEquiv_eq_add_iff g.bijective_weightMap.injective,
-      g.toHom.chainBotCoeff_indexEquiv g.bijective_weightMap.injective]
+      Hom.chainBotCoeff_indexEquiv]
 
 /-- The entrywise computation behind `RootPairing.Equiv.reindex_geckIndexEquiv_f`: pulling back
 `RootPairing.GeckConstruction.f (τ i)` along the index equivalence gives the matrix numbered by
@@ -230,7 +230,7 @@ private theorem submatrix_geckIndexEquiv_f (hτ : ∀ i : b.support, (τ i : ι�
       Equiv.apply_eq_iff_eq,
       Base.cartanMatrixIn_def, Hom.pairingIn_indexEquiv,
       g.toHom.root_indexEquiv_eq_sub_iff g.bijective_weightMap.injective,
-      g.toHom.chainTopCoeff_indexEquiv g.bijective_weightMap.injective]
+      Hom.chainTopCoeff_indexEquiv]
 
 end RootGenerators
 
@@ -251,7 +251,7 @@ theorem reindex_geckIndexEquiv_h (hτ : ∀ i : b.support, (τ i : ι₂) = g.in
 
 section LieAlgebra
 
-variable [IsDomain R]
+variable [IsDomain R] [CharZero R]
 
 /-- Conjugation by the index permutation carries the raising matrix numbered by `i` to the one
 numbered by `τ i`. -/
@@ -368,7 +368,7 @@ theorem geckModuleEquiv_mulVec_h (hτ : ∀ i : b.support, (τ i : ι₂) = g.in
 
 section RootMulVec
 
-variable [IsDomain R]
+variable [IsDomain R] [CharZero R]
 
 /-- The coordinate permutation carries the action of the raising matrix numbered by `i` to the
 action of the one numbered by `τ i`. This is the intertwining relation that a numbered symmetry of

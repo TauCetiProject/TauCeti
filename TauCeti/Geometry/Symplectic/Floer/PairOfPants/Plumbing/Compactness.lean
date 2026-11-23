@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Action
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Energy
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Manifold
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness of plumbed four-punctured spheres as the neck stretches
@@ -20,7 +24,9 @@ result is the four-punctured sphere `Σ_L = ℂ ∖ {0, 1, ψ_L(1)}`, where `ψ_
 `TauCeti.Floer.plumbedPerturbation`. As `L → ∞` these domains break into the two pairs of pants:
 this is the broken-product end of the one-parameter families of four-punctured spheres that prove
 the associativity of the pair-of-pants product. This file proves the interior part of
-Gromov–Floer compactness at that end, for a symplectic vector space target `(V, ω)`.
+Gromov–Floer compactness at that end, for a symplectic vector space target `(V, ω)` and, through
+symplectic charts, for a manifold target with a nondegenerate two-form (see the paragraph on
+manifold targets below).
 
 Fix a truncation `S_R` (`TauCeti.ThricePuncturedSphere.truncation`) and let `L ≥ 2R + 2`. On the
 receiving pair of pants, `S_R` lies in `Σ_L` and the plumbed datum there is the datum of `S`
@@ -52,6 +58,27 @@ plumbed structure `TauCeti.Floer.plumbedAlmostComplex` does so on `S_R` for `L�
 (`TauCeti.Floer.plumbedAlmostComplex_of_re_endCoord_le`,
 `TauCeti.Floer.plumbedAlmostComplex_plumbingMap`). The regularity of the limits, the bubbles at
 the points of `Z` and `Z'`, and the breaking of Floer cylinders off the neck are not treated here.
+
+**Manifold targets.** For a manifold `M` with a nondegenerate two-form `ω`, such as a closed
+symplectic manifold, and period-one `C³` Hamiltonians on `M`, the same argument runs through
+symplectic charts, in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`
+(`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPerturbation`). On the
+inserted pair of pants `u ∘ ψ_L` solves the Floer equation of `S'`, because the plumbing map is
+holomorphic
+(`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap`), and its
+energy over a region `B` is the energy of `u` over `ψ_L(B)`
+(`TauCeti.SmoothTwoForm.integral_floerEnergyDensity_plumbedPerturbation_inserted`). The compactness
+theorem for Floer pairs of pants in a symplectic chart with energy bounded over the region
+considered (in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`,
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le`)
+then applies on each piece, to
+the part `Ω` of the receiving truncation that the solutions map into a compact subset `K` of the
+source of a chart `φ`, and to the part `Ω'` of the inserted truncation that the maps
+`uₖ ∘ ψ_{Lₖ}` send into a compact subset `K'` of the source of a chart `φ'`, such as Darboux
+charts. The structures are read in the charts by families `Jφ`, `Jφ'` on `V` with
+`dφ_x ∘ J(z, x) = Jφ(z, φ x) ∘ dφ_x`, as in the chart theorem. The limits are read in the charts:
+the coordinate maps converge locally uniformly off the bubbling points, and the maps themselves
+converge pointwise in `M`. Covering the pieces by several charts is not treated here.
 
 ## References
 
@@ -209,8 +236,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
     rw [setIntegral_congr_fun hΩ.measurableSet fun z hz ↦
       ω.floerEnergyDensity_congr_perturbation _ (hKb k (hΩT hz) 1).symm
         (hKb k (hΩT hz) I).symm]
-    exact (ENNReal.ofReal_le_ofReal_iff E.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
-      ((setLIntegral_le_lintegral _ _).trans ((hE k).trans_eq ENNReal.ofReal_coe_nnreal.symm)))
+    exact setIntegral_le_of_lintegral_ofReal_le (hE k) _
   have hEa (k : ℕ) : ∫ w in Ω', ω.floerEnergyDensity (Ka 1) (Ka I) (u k ∘ ψ k) w ≤ E := by
     have hsub : Ω' ⊆ {w | (Complex.equivRealProdCLM.symm w ≠ 0 ∧
         Complex.equivRealProdCLM.symm w ≠ 1) ∧
@@ -222,8 +248,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
     rw [← integral_floerEnergyDensity_image_plumbingMap ω hq hHa hHb
       (fun r ↦ (hHas r).of_le (by norm_num)) (fun r ↦ (hHbs r).of_le (by norm_num)) hab (hL4 k)
       hΩ'.measurableSet hsub ((hu k).differentiableOn (by norm_num))]
-    exact (ENNReal.ofReal_le_ofReal_iff E.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
-      ((setLIntegral_le_lintegral _ _).trans ((hE k).trans_eq ENNReal.ofReal_coe_nnreal.symm)))
+    exact setIntegral_le_of_lintegral_ofReal_le (hE k) _
   -- Compactness on the receiving pair of pants, then on the inserted one along the subsequence.
   obtain ⟨φ, Z, v, hφ, hZΩ, hZE, -, -, hvc, hvK, hlim⟩ := hconv hΩ hΩT
     (fun k ↦ (hu k).mono fun z hz ↦ hTP k (hΩT hz))
@@ -238,7 +263,285 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
   refine ⟨φ ∘ φ', Z, Z', v, v', hφ.comp hφ', hZΩ,
     (mul_le_mul_of_nonneg_left (min_le_left δ δ') (Nat.cast_nonneg _)).trans hZE, hZΩ',
     (mul_le_mul_of_nonneg_left (min_le_right δ δ') (Nat.cast_nonneg _)).trans hZE', hvc, hvK,
-    fun U hU z hz ↦ (hlim U hU z hz).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, hφ'.tendsto_atTop.eventually h⟩,
+    hlim.comp_tendsto hφ'.tendsto_atTop,
     hvc', hvK', hlim'⟩
 
 end TauCeti.SymplecticForm
+
+open scoped Manifold
+
+namespace TauCeti.SmoothTwoForm.IsNondegenerate
+
+open Floer TauCeti.MeasureTheory
+
+variable {E G M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  [IsManifold I ⊤ M] [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture}
+
+/-- The truncations for a neck length `L > 4` with `L ≥ 2R + 2`: the truncation `S_R` lies in the
+truncation `S_{max R 0}` at a nonnegative height, which lies in the plumbed four-punctured sphere
+`Σ_L` and is carried into `Σ_L` by the plumbing map `ψ_L`. -/
+private theorem preimage_truncation_max_subset_plumbedSphere (hq : q ≠ inf) {R L : ℝ} (hL : 4 < L)
+    (hLR : 2 * R + 2 ≤ L) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆
+        Complex.equivRealProdCLM.symm ⁻¹' truncation (max R 0) ∧
+      Complex.equivRealProdCLM.symm ⁻¹' truncation (max R 0) ⊆ {z : ℝ × ℝ |
+        (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+          Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ∧
+      MapsTo (realChart (q.plumbingMap L)) (Complex.equivRealProdCLM.symm ⁻¹' truncation (max R 0))
+        {z | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+          Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+  have hR₀ : max R 0 ≤ L / 2 := max_le (by linarith) (by linarith)
+  refine ⟨preimage_mono (truncation_mono (le_max_left R 0)), fun z hz ↦
+    mem_plumbedSphere_of_mem_truncation hq hL (truncation_mono hR₀ hz), fun w hw ↦ ?_⟩
+  simp only [mem_ofPred_eq, equivRealProdCLM_symm_realChart]
+  exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL (truncation_mono hR₀ hw)
+
+omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- **The receiving piece.** Let `u` be a `C³` solution of the Floer equation of the plumbed
+perturbation on the four-punctured sphere `Σ_L`, `L > 4`, with Floer energy at most `E`. On an
+open subset `Ω` of the truncation `S_R` of the receiving pair of pants, `L ≥ 2R + 2`, it is a `C³`
+solution of the Floer equation of the receiving pair of pants, with integrable energy density
+and energy at most `E` over `Ω`. -/
+private theorem floer_restrict_receiving (hω : ω.IsNondegenerate) (hq : q ≠ inf)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (Hb r))) (hab : Hb q = Ha inf)
+    {R L : ℝ} (hL : 4 < L) (hLR : 2 * R + 2 ≤ L) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u {z | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧ Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
+    {Jk : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hfl : ∀ z ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧ Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jk z (u z)) (ω.perturbedMFDeriv
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z).toLinearMap) {E : ℝ≥0}
+    (hE : ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u z) ≤ E) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    (hΩT : Ω ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R) :
+    ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω ∧
+      (∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jk z (u z))
+        (ω.perturbedMFDeriv
+          (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap) ∧
+      IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+        Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z ≤ E := by
+  -- The truncation `S_{max R 0}` lies in `Σ_L`.
+  obtain ⟨hTT₀, hTP, -⟩ := preimage_truncation_max_subset_plumbedSphere hq hL hLR
+  -- On `S_R` the plumbed datum is the datum of the receiving pair of pants.
+  have hK {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) :
+      (fun x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v) =
+        fun x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x v :=
+    funext fun x ↦ DFunLike.congr_fun
+      (plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation hq hab (by linarith)
+        (hΩT hz) x) v
+  have hD {z : ℝ × ℝ} (hz : z ∈ Ω) : ω.perturbedMFDeriv
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      ω.perturbedMFDeriv
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z := by
+    refine ContinuousLinearMap.ext fun v ↦ ?_
+    rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hK hz 1, hK hz Complex.I]
+  refine ⟨hu.mono fun z hz ↦ hTP (hTT₀ (hΩT hz)), fun z hz ↦ hD hz ▸ hfl z (hTP (hTT₀ (hΩT hz))),
+    (hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_truncationAt hHb
+      (fun r ↦ (hHbs r).of_le (by norm_num)) (fun _ ↦ le_max_right R 0)
+      (isOpen_plumbedSphere q L) (by rwa [truncationAt_const]) (hu.of_le (by norm_num))).mono_set
+      (by rw [truncationAt_const]; exact hΩT.trans hTT₀), ?_⟩
+  have hdens {z : ℝ × ℝ} (hz : z ∈ Ω) : ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z := by
+    rw [floerEnergyDensity_def, floerEnergyDensity_def, hD hz]
+  rw [setIntegral_congr_fun hΩ.measurableSet fun z hz ↦ hdens hz]
+  exact setIntegral_le_of_lintegral_ofReal_le hE _
+
+omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- **The inserted piece.** Let `u` be a `C³` solution of the Floer equation of the plumbed
+perturbation on the four-punctured sphere `Σ_L`, `L > 4`, with Floer energy at most `E`. On an
+open subset `Ω'` of the truncation `S_R` of the inserted pair of pants, `L ≥ 2R + 2`, the map
+`u ∘ ψ_L` is a `C³` solution of the Floer equation of the inserted pair of pants, for the
+structures `Jk ∘ ψ_L`, with integrable energy density and energy at most `E` over `Ω'`. -/
+private theorem floer_comp_plumbingMap_inserted (hω : ω.IsNondegenerate) (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (Hb r))) (hab : Hb q = Ha inf)
+    {R L : ℝ} (hL : 4 < L) (hLR : 2 * R + 2 ≤ L) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u {z | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧ Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
+    {Jk : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hfl : ∀ z ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧ Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jk z (u z)) (ω.perturbedMFDeriv
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z).toLinearMap) {E : ℝ≥0}
+    (hE : ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u z) ≤ E) {Ω' : Set (ℝ × ℝ)} (hΩ' : IsOpen Ω')
+    (hΩ'T : Ω' ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R) :
+    ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u ∘ realChart (q.plumbingMap L)) Ω' ∧
+      (∀ w ∈ Ω', IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (Jk (realChart (q.plumbingMap L) w) (u (realChart (q.plumbingMap L) w)))
+        (ω.perturbedMFDeriv
+          (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+          (u ∘ realChart (q.plumbingMap L)) w).toLinearMap) ∧
+      IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ realChart (q.plumbingMap L))) Ω' ∧
+      ∫ w in Ω', ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ realChart (q.plumbingMap L)) w ≤ E := by
+  -- The plumbing chart carries the truncation `S_{max R 0}` into `Σ_L`.
+  obtain ⟨hTT₀, -, hψP⟩ := preimage_truncation_max_subset_plumbedSphere hq hL hLR
+  have hψ : ContDiff ℝ 3 (realChart (q.plumbingMap L)) := contDiff_realChart_plumbingMap q L
+  have hua := hu.comp hψ.contMDiff.contMDiffOn (mapsTo_preimage _ _)
+  refine ⟨hua.mono fun w hw ↦ hψP (hTT₀ (hΩ'T hw)), fun w hw ↦
+    ω.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap hq hHa hHb
+      (fun r ↦ (hHas r).of_le (by norm_num)) (fun r ↦ (hHbs r).of_le (by norm_num)) hab hL
+      (mem_thricePuncturedSphereReal_iff.1
+        (preimage_truncation_subset_thricePuncturedSphereReal R (hΩ'T hw)))
+      (by linarith [(mem_truncation.1 (hΩ'T hw)).2.2 inf])
+      (((hu.contMDiffAt ((isOpen_plumbedSphere q L).mem_nhds
+        (hψP (hTT₀ (hΩ'T hw))))).mdifferentiableAt (by norm_num)))
+      (hfl _ (hψP (hTT₀ (hΩ'T hw)))),
+    (hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_truncationAt hHa
+      (fun r ↦ (hHas r).of_le (by norm_num)) (fun _ ↦ le_max_right R 0)
+      ((isOpen_plumbedSphere q L).preimage hψ.continuous) (by rwa [truncationAt_const])
+      (hua.of_le (by norm_num))).mono_set (by rw [truncationAt_const]; exact hΩ'T.trans hTT₀), ?_⟩
+  -- The energy of `u ∘ ψ_L` over `Ω'` is the energy of `u` over `ψ_L(Ω')`.
+  rw [← ω.integral_floerEnergyDensity_plumbedPerturbation_inserted hq hHa hHb
+    (fun r ↦ (hHas r).of_le (by norm_num)) (fun r ↦ (hHbs r).of_le (by norm_num)) hab hL
+    (hu.of_le (by norm_num)) hΩ'.measurableSet fun w hw ↦
+      ⟨preimage_truncation_subset_thricePuncturedSphereReal R (hΩ'T hw), by
+        linarith [(mem_truncation.1 (hΩ'T hw)).2.2 inf]⟩]
+  exact setIntegral_le_of_lintegral_ofReal_le hE _
+
+/-- **Floer solutions on plumbed four-punctured spheres in a manifold converge on both pieces.**
+Let `ω` be a nondegenerate two-form on `M`, let `Ha`, `Hb` be period-one `C³` Hamiltonians on `M`
+with `Hb q = Ha ∞`, `q ≠ ∞`, and fix a truncation `S_R`. Let `φ` and `φ'` be smooth partial
+diffeomorphisms from `M` onto open subsets of `V` pulling the symplectic form `ω₀` back to `ω` on
+compact sets `K ⊆ φ.source` and `K' ⊆ φ'.source`, such as Darboux charts, and let `J`, `J'` be
+families of structures on the tangent spaces of `M` over the receiving and the inserted pair of
+pants, tamed by `ω` over `S_R × K` and `S_R × K'`, read in the charts by families `Jφ`, `Jφ'`
+which are `C²` on open sets containing `S_R × φ(K)` and `S_R × φ'(K')`. There is a threshold
+`δ > 0` with the following property. Let `uₖ` be `C³` solutions of the Floer equation
+`(du - X_K)^{0,1} = 0` of the plumbed perturbation `K` on the four-punctured spheres `Σ_{Lₖ}`,
+with neck lengths `Lₖ > 4` and `Lₖ ≥ 2R + 2`, for structures `Jₖ(z, u)`, and with Floer energy at
+most `E`. Let `Ω` and `Ω'` be open subsets of `S_R`, on which `Jₖ = J` and `Jₖ ∘ ψ_{Lₖ} = J'`
+respectively, with `uₖ(Ω) ⊆ K` and `uₖ(ψ_{Lₖ}(Ω')) ⊆ K'`. Then there are a subsequence `σ`,
+finite sets `Z ⊆ Ω` and `Z' ⊆ Ω'` with `#Z * δ ≤ E` and `#Z' * δ ≤ E`, and maps `v`, `v'`,
+continuous on `Ω \ Z` and `Ω' \ Z'` with values in `K` and `K'`, such that along `σ` the
+coordinate maps `φ ∘ uₖ` converge to `φ ∘ v` locally uniformly on `Ω \ Z` and `uₖ → v` pointwise
+there, and on the inserted pair of pants the coordinate maps `φ' ∘ uₖ ∘ ψ_{Lₖ}` converge to
+`φ' ∘ v'` locally uniformly on `Ω' \ Z'` and `uₖ ∘ ψ_{Lₖ} → v'` pointwise there. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPerturbation
+    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (Hb r))) (hab : Hb q = Ha inf)
+    (R : ℝ) (φ φ' : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {K K' : Set M}
+    {J J' : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {Jφ Jφ' : ℝ × ℝ → V → AlmostComplexStructure V} {W W' : Set ((ℝ × ℝ) × V)}
+    (hφ : ∀ x ∈ K, ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hφ' : ∀ x ∈ K', ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ' x v) (mvfderiv I φ' x w))
+    (hJJ : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, ∀ x ∈ K,
+      IsComplexLinearMap (J z x) (Jφ z (φ x)) (mvfderiv I φ x).toLinearMap)
+    (hJJ' : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, ∀ x ∈ K',
+      IsComplexLinearMap (J' z x) (Jφ' z (φ' x)) (mvfderiv I φ' x).toLinearMap)
+    (hW : IsOpen W) (hW' : IsOpen W')
+    (hJφ : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (Jφ p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJφ' : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (Jφ' p.1 p.2).toLinearMap.toContinuousLinearMap) W')
+    (hK : IsCompact K) (hK' : IsCompact K') (hKφ : K ⊆ φ.source) (hKφ' : K' ⊆ φ'.source)
+    (hTKW : (Complex.equivRealProdCLM.symm ⁻¹' truncation R) ×ˢ (φ '' K) ⊆ W)
+    (hTKW' : (Complex.equivRealProdCLM.symm ⁻¹' truncation R) ×ˢ (φ' '' K') ⊆ W')
+    (hJt : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, ∀ x ∈ K,
+      (hω.symplecticFormAt x).Tames (J z x))
+    (hJ't : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, ∀ x ∈ K',
+      (hω.symplecticFormAt x).Tames (J' z x)) :
+    ∃ δ > (0 : ℝ), ∀ ⦃Ω Ω' : Set (ℝ × ℝ)⦄ ⦃L : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → M⦄
+      ⦃Jk : ℕ → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)⦄ ⦃E : ℝ≥0⦄,
+      IsOpen Ω → Ω ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R →
+      IsOpen Ω' → Ω' ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R →
+      (∀ k, 4 < L k) → (∀ k, 2 * R + 2 ≤ L k) →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) {z | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap (L k) 1}) →
+      (∀ k, ∀ z ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap (L k) 1},
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jk k z (u k z)) (ω.perturbedMFDeriv
+          (fun z x ↦ plumbedPerturbation Ha Hb q (L k) (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q (L k) (Complex.equivRealProdCLM.symm z) x
+            Complex.I)
+          (u k) z).toLinearMap) →
+      (∀ k, ∀ z ∈ Ω, Jk k z = J z) →
+      (∀ k, ∀ w ∈ Ω', Jk k (realChart (q.plumbingMap (L k)) w) = J' w) →
+      (∀ k, ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ plumbedPerturbation Ha Hb q (L k) (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q (L k) (Complex.equivRealProdCLM.symm z) x
+            Complex.I)
+          (u k) z) ≤ E) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, MapsTo (u k ∘ realChart (q.plumbingMap (L k))) Ω' K') →
+      ∃ (σ : ℕ → ℕ) (Z Z' : Finset (ℝ × ℝ)) (v v' : ℝ × ℝ → M), StrictMono σ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧ ↑Z' ⊆ Ω' ∧ Z'.card * δ ≤ E ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (σ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
+        (∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (σ n) y) atTop (𝓝 (v y))) ∧
+        ContinuousOn v' (Ω' \ ↑Z') ∧ MapsTo v' (Ω' \ ↑Z') K' ∧
+        TendstoLocallyUniformlyOn (fun n ↦ φ' ∘ (u (σ n) ∘ realChart (q.plumbingMap (L (σ n)))))
+          (φ' ∘ v') atTop (Ω' \ ↑Z') ∧
+        ∀ y ∈ Ω' \ ↑Z', Tendsto (fun n ↦ u (σ n) (realChart (q.plumbingMap (L (σ n))) y)) atTop
+          (𝓝 (v' y)) := by
+  set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
+  have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
+  -- The thresholds of the chart compactness theorem for the two pairs of pants.
+  obtain ⟨δ, hδ, hconv⟩ :=
+    hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le
+      φ hHb hHbs hφ hJJ hW hJφ (isCompact_preimage_truncation R) hTS hK hKφ hTKW hJt
+  obtain ⟨δ', hδ', hconv'⟩ :=
+    hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le
+      φ' hHa hHas hφ' hJJ' hW' hJφ' (isCompact_preimage_truncation R) hTS hK' hKφ' hTKW' hJ't
+  refine ⟨min δ δ', lt_min hδ hδ', fun Ω Ω' L u Jk E hΩ hΩT hΩ' hΩ'T hL4 hLR hu hfl hJΩ hJΩ' hE
+    huK huK' ↦ ?_⟩
+  -- Restricted to each piece, the solutions solve the Floer equation of that pair of pants.
+  have hb (k : ℕ) := floer_restrict_receiving hω hq hHb hHbs hab (hL4 k) (hLR k) (hu k) (hfl k)
+    (hE k) hΩ hΩT
+  have ha (k : ℕ) := floer_comp_plumbingMap_inserted hω hq hHa hHb hHas hHbs hab (hL4 k) (hLR k)
+    (hu k) (hfl k) (hE k) hΩ' hΩ'T
+  -- Compactness on the receiving pair of pants, then on the inserted one along the subsequence.
+  obtain ⟨σ, Z, v, hσ, hZΩ, hZE, -, -, hvc, hvK, hlim, hpt⟩ := hconv hΩ hΩT (fun k ↦ (hb k).1)
+    (fun k z hz ↦ hJΩ k z hz ▸ (hb k).2.1 z hz) huK (fun k ↦ (hb k).2.2.1) fun k ↦ (hb k).2.2.2
+  obtain ⟨σ', Z', v', hσ', hZΩ', hZE', -, -, hvc', hvK', hlim', hpt'⟩ := hconv' hΩ' hΩ'T
+    (fun n ↦ (ha (σ n)).1) (fun n w hw ↦ hJΩ' (σ n) w hw ▸ (ha (σ n)).2.1 w hw)
+    (fun n ↦ huK' (σ n)) (fun n ↦ (ha (σ n)).2.2.1) fun n ↦ (ha (σ n)).2.2.2
+  refine ⟨σ ∘ σ', Z, Z', v, v', hσ.comp hσ', hZΩ,
+    (mul_le_mul_of_nonneg_left (min_le_left δ δ') (Nat.cast_nonneg _)).trans hZE, hZΩ',
+    (mul_le_mul_of_nonneg_left (min_le_right δ δ') (Nat.cast_nonneg _)).trans hZE', hvc, hvK,
+    hlim.comp_tendsto hσ'.tendsto_atTop,
+    fun y hy ↦ (hpt y hy).comp hσ'.tendsto_atTop, hvc', hvK', hlim', hpt'⟩
+
+end TauCeti.SmoothTwoForm.IsNondegenerate

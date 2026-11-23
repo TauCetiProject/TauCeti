@@ -106,7 +106,7 @@ theorem pow_pow_mem_congruenceSubgroup_pow_succ {I : Ideal R} {p : ℕ} (hp : (p
 /-- **The first congruence subgroup is pro-`p`.** If the topology of `R` is `I`-adic, `(p : R) ∈ I`
 and `H` is of finite type over `k`, then the congruence subgroup of level `I`, with its subspace
 topology, is pro-`p`: each of its quotients by an open normal subgroup is a `p`-group. -/
-theorem isProP_congruenceSubgroup [TopologicalSpace R] [IsTopologicalRing R]
+theorem isProP_congruenceSubgroup [TopologicalSpace R]
     [Algebra.FiniteType k H] {I : Ideal R} (hI : IsAdic I) {p : ℕ} (hp : (p : R) ∈ I) :
     IsProP p (congruenceSubgroup k H I) := by
   refine isProP_iff.2 fun U ↦ ?_
@@ -117,7 +117,7 @@ theorem isProP_congruenceSubgroup [TopologicalSpace R] [IsTopologicalRing R]
   rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
   refine hVU (hn ?_)
   exact congruenceSubgroup_mono k H R (Ideal.pow_le_pow_right n.le_succ)
-    (pow_pow_mem_congruenceSubgroup_pow_succ hp x.2 n)
+    (pow_pow_mem_congruenceSubgroup_pow_succ hp x.property n)
 
 variable (k H R) in
 /-- Over a compact Hausdorff noetherian local ring `R` whose residue field has characteristic `p`,

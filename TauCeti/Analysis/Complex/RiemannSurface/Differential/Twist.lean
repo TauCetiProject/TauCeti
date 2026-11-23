@@ -34,6 +34,11 @@ discrete set they are the pointwise operations `η ↦ η / ω` and `f ↦ f ω`
 `TauCeti.RiemannSurface.differentialSheafIsoDivisorSheafAdd_hom_app_smul` and
 `TauCeti.RiemannSurface.differentialSheafIsoDivisorSheafAdd_inv_app`).
 
+These identifications commute with the inclusions `Ω_D ⟶ Ω_D'` and `𝒪_E ⟶ 𝒪_E'`
+(`TauCeti.RiemannSurface.differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheaf_hom`);
+on a compact surface this is the naturality of `Ω_D ≅ 𝒪_(D + div ω)` in `D`
+(`TauCeti.RiemannSurface.differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheafAdd_hom`).
+
 Consequently, on a compact Riemann surface the holomorphic `1`-forms are the global sections of
 `𝒪_(div ω)` (`TauCeti.RiemannSurface.holomorphicOneFormsEquivDivisorSections`). The resulting
 finite-dimensionality of the global sections of every `Ω_D` is in
@@ -148,7 +153,7 @@ private def extendSection (s : (x : U) → TangentSpace 𝓘(ℂ) (x : X) →L[�
 omit [IsManifold 𝓘(ℂ) 1 X] in
 private theorem extendSection_apply (s : (x : U) → TangentSpace 𝓘(ℂ) (x : X) →L[ℂ] ℂ) (y : U) :
     extendSection s y = s y := by
-  simp [extendSection, y.2]
+  simp [extendSection, y.property]
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 private theorem isDifferentialSectionAt_extendSection
@@ -161,14 +166,14 @@ private theorem isDifferentialSectionAt_extendSection
   rw [extendSection_apply, hy]
 
 private theorem differentialSections_ext_nhdsNE {s t : differentialSections D U}
-    (h : ∀ x : U, ∀ᶠ y in 𝓝[≠] x, s.1 y = t.1 y) : s = t :=
-  Subtype.ext (eq_of_eventually_codiscrete s.2 t.2
+    (h : ∀ x : U, ∀ᶠ y in 𝓝[≠] x, s.val y = t.val y) : s = t :=
+  Subtype.ext (eq_of_eventually_codiscrete s.property t.property
     (eventually_codiscrete_iff_forall_eventually_nhdsNE.2 h))
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 private theorem divisorSections_ext_nhdsNE {f g : divisorSections E U}
-    (h : ∀ x : U, ∀ᶠ y in 𝓝[≠] x, f.1 y = g.1 y) : f = g :=
-  Subtype.ext (eq_of_eventuallyEq_codiscrete f.2 g.2
+    (h : ∀ x : U, ∀ᶠ y in 𝓝[≠] x, f.val y = g.val y) : f = g :=
+  Subtype.ext (eq_of_eventuallyEq_codiscrete f.property g.property
     (eventually_codiscrete_iff_forall_eventually_nhdsNE.2 h))
 
 variable (hω : ∀ x, ω.MeromorphicAt x)
@@ -178,33 +183,33 @@ include hω ho
 omit ho in
 private theorem eventually_apply_ne_zero (ho : ∀ x, ω.order x ≠ ⊤) (x : U) :
     ∀ᶠ y : U in 𝓝[≠] x, ω y ≠ 0 :=
-  (continuous_subtype_val.continuousAt.tendsto_nhdsNE Subtype.val_injective).eventually
+  (continuous_subtypeVal.continuousAt.tendsto_nhdsNE Subtype.val_injective).eventually
     ((hω x).eventually_apply_ne_zero (ho x))
 
 /-- Division of a section of `Ω_D` by `ω`, as a function. -/
 private def divideSection (s : differentialSections D U) : divisorSections E U :=
-  ⟨toDivisorSection E (OneForm.ratio (extendSection s.1) ω) ∘ Subtype.val,
+  ⟨toDivisorSection E (OneForm.ratio (extendSection s.val) ω) ∘ Subtype.val,
     comp_val_mem_divisorSections fun x hx ↦ isDivisorSectionAt_toDivisorSection_ratio
-      (isDifferentialSectionAt_extendSection s.2 ⟨x, hx⟩) (hω x) (ho x)⟩
+      (isDifferentialSectionAt_extendSection s.property ⟨x, hx⟩) (hω x) (ho x)⟩
 
 private theorem divideSection_apply (s : differentialSections D U) (y : U) :
-    (divideSection hω ho s).1 y = toDivisorSection E (OneForm.ratio (extendSection s.1) ω) y :=
+    (divideSection hω ho s).val y = toDivisorSection E (OneForm.ratio (extendSection s.val) ω) y :=
   rfl
 
 private theorem divideSection_smul_eventuallyEq (s : differentialSections D U) (x : U) :
-    ∀ᶠ y in 𝓝[≠] x, (divideSection hω ho s).1 y • ω y = s.1 y := by
-  have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
+    ∀ᶠ y in 𝓝[≠] x, (divideSection hω ho s).val y • ω y = s.val y := by
+  have ht := continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
   filter_upwards [ht.eventually
       (toDivisorSection_eventuallyEq E (OneForm.meromorphicAt_ratio
-        (isDifferentialSectionAt_extendSection s.2 x).meromorphicAt (hω x))),
+        (isDifferentialSectionAt_extendSection s.property x).meromorphicAt (hω x))),
     eventually_apply_ne_zero hω (fun x ↦ by rw [ho x]; exact WithTop.coe_ne_top) x] with y hy hne
   rw [divideSection_apply, hy, OneForm.ratio_smul hne, extendSection_apply]
 
 /-- Multiplication of a section of `𝒪_E` by `ω`, as a function. -/
 private def multiplySection (f : divisorSections E U) : differentialSections D U :=
-  ⟨fun y ↦ normalizeForm D ((Subtype.val.extend f.1 0 : X → ℂ) • ω) y,
+  ⟨fun y ↦ normalizeForm D ((Subtype.val.extend f.val 0 : X → ℂ) • ω) y,
     restrict_mem_differentialSections fun x hx ↦ by
-      have hf := isDivisorSectionAt_extend f.2 ⟨x, hx⟩
+      have hf := isDivisorSectionAt_extend f.property ⟨x, hx⟩
       refine isDifferentialSectionAt_normalizeForm ((hω x).smul hf.meromorphicAt) ?_
       rw [OneForm.order_smul hf.meromorphicAt (hω x), ho x]
       calc ((-D x : ℤ) : WithTop ℤ) = ((-E x : ℤ) : WithTop ℤ) + ((E x - D x : ℤ) : WithTop ℤ) := by
@@ -213,15 +218,16 @@ private def multiplySection (f : divisorSections E U) : differentialSections D U
         _ ≤ _ := add_le_add_left hf.neg_le_meromorphicOrderAt _⟩
 
 private theorem multiplySection_apply (f : divisorSections E U) (y : U) :
-    (multiplySection hω ho f).1 y = normalizeForm D ((Subtype.val.extend f.1 0 : X → ℂ) • ω) y :=
+    (multiplySection hω ho f).val y = normalizeForm D ((Subtype.val.extend f.val 0 : X → ℂ) • ω) y
+        :=
   rfl
 
 private theorem multiplySection_eventuallyEq (f : divisorSections E U) (x : U) :
-    ∀ᶠ y in 𝓝[≠] x, (multiplySection hω ho f).1 y = f.1 y • ω y := by
-  have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
+    ∀ᶠ y in 𝓝[≠] x, (multiplySection hω ho f).val y = f.val y • ω y := by
+  have ht := continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
   filter_upwards [ht.eventually
       (normalizeForm_eventuallyEq (D := D)
-        ((hω x).smul (isDivisorSectionAt_extend f.2 x).meromorphicAt))] with y hy
+        ((hω x).smul (isDivisorSectionAt_extend f.property x).meromorphicAt))] with y hy
   rw [multiplySection_apply, hy, Pi.smul_apply', Subtype.val_injective.extend_apply]
 
 /-- **Division by `ω` on sections.** If `ω` is meromorphic everywhere with `ord_x ω = E x - D x`,
@@ -264,29 +270,30 @@ def differentialSectionsEquivDivisorSections (U : Opens X) :
 `(η / ω) ω = η`. -/
 theorem differentialSectionsEquivDivisorSections_smul (s : differentialSections D U) :
     ∀ᶠ y in codiscrete U,
-      (differentialSectionsEquivDivisorSections hω ho U s).1 y • ω y = s.1 y :=
+      (differentialSectionsEquivDivisorSections hω ho U s).val y • ω y = s.val y :=
   eventually_codiscrete_iff_forall_eventually_nhdsNE.2 (divideSection_smul_eventuallyEq hω ho s)
 
 /-- Off a closed discrete set, the inverse of `differentialSectionsEquivDivisorSections` is
 multiplication by `ω`. -/
 theorem differentialSectionsEquivDivisorSections_symm_apply (f : divisorSections E U) :
     ∀ᶠ y in codiscrete U,
-      ((differentialSectionsEquivDivisorSections hω ho U).symm f).1 y = f.1 y • ω y :=
+      ((differentialSectionsEquivDivisorSections hω ho U).symm f).val y = f.val y • ω y :=
   eventually_codiscrete_iff_forall_eventually_nhdsNE.2 (multiplySection_eventuallyEq hω ho f)
 
 /-- `differentialSectionsEquivDivisorSections` commutes with restriction to a smaller open set. -/
 private theorem differentialSectionsEquivDivisorSections_restrict {V : Opens X} (h : V ≤ U)
     (s : differentialSections D U) :
     (differentialSectionsEquivDivisorSections hω ho V
-      ⟨fun y ↦ s.1 (Opens.inclusion h y), comp_inclusion_mem_differentialSections h s.2⟩).1 =
-      (differentialSectionsEquivDivisorSections hω ho U s).1 ∘ Opens.inclusion h := by
+      ⟨fun y ↦ s.val (Opens.inclusion h y), comp_inclusion_mem_differentialSections h
+          s.property⟩).val =
+      (differentialSectionsEquivDivisorSections hω ho U s).val ∘ Opens.inclusion h := by
   refine congrArg Subtype.val (divisorSections_ext_nhdsNE (f := ⟨_, _⟩)
     (g := ⟨_, comp_inclusion_mem_divisorSections h
-      (differentialSectionsEquivDivisorSections hω ho U s).2⟩) fun x ↦ ?_)
+      (differentialSectionsEquivDivisorSections hω ho U s).property⟩) fun x ↦ ?_)
   have ht : Tendsto (Opens.inclusion h) (𝓝[≠] x) (𝓝[≠] (Opens.inclusion h x)) :=
     (continuous_inclusion h).continuousAt.tendsto_nhdsNE (Set.inclusion_injective h)
   filter_upwards [divideSection_smul_eventuallyEq hω ho
-      (⟨fun y ↦ s.1 (Opens.inclusion h y), comp_inclusion_mem_differentialSections h s.2⟩ :
+      (⟨fun y ↦ s.val (Opens.inclusion h y), comp_inclusion_mem_differentialSections h s.property⟩ :
         differentialSections D V) x,
     ht.eventually (divideSection_smul_eventuallyEq hω ho s (Opens.inclusion h x)),
     eventually_apply_ne_zero hω (fun x ↦ by rw [ho x]; exact WithTop.coe_ne_top) x]
@@ -346,14 +353,14 @@ def differentialSheafIsoDivisorSheaf (ω : OneForm X) (hω : ∀ x, ω.Meromorph
         -- produce from these wrappers; restate both composites in that form.
         change (divisorSheafSectionsEquiv E V.unop
             ((differentialSheafIsoDivisorSheafComponent hω ho V.unop).hom
-              ((differentialSheaf D).obj.map i.unop.op s))).1 =
+              ((differentialSheaf D).obj.map i.unop.op s))).val =
           (divisorSheafSectionsEquiv E V.unop ((divisorSheaf E).obj.map i.unop.op
-            ((differentialSheafIsoDivisorSheafComponent hω ho U.unop).hom s))).1
+            ((differentialSheafIsoDivisorSheafComponent hω ho U.unop).hom s))).val
         have hres : differentialSheafSectionsEquiv D V.unop
             ((differentialSheaf D).obj.map i.unop.op s) =
-            ⟨fun y ↦ (differentialSheafSectionsEquiv D U.unop s).1 (Opens.inclusion i.unop.le y),
+            ⟨fun y ↦ (differentialSheafSectionsEquiv D U.unop s).val (Opens.inclusion i.unop.le y),
               comp_inclusion_mem_differentialSections i.unop.le
-                (differentialSheafSectionsEquiv D U.unop s).2⟩ :=
+                (differentialSheafSectionsEquiv D U.unop s).property⟩ :=
           Subtype.ext (funext fun y ↦ differentialSheafSectionsEquiv_map D i.unop s y)
         rw [differentialSheafIsoDivisorSheafComponent_hom_apply, divisorSheafSectionsEquiv_map,
           differentialSheafIsoDivisorSheafComponent_hom_apply, hres]
@@ -386,8 +393,8 @@ theorem differentialSheafIsoDivisorSheaf_hom_app_smul (U : Opens X)
     (s : (differentialSheaf D).obj.obj (op U)) :
     ∀ᶠ y in codiscrete U,
       (divisorSheafSectionsEquiv E U
-        ((differentialSheafIsoDivisorSheaf ω hω ho).hom.hom.app (op U) s)).1 y • ω y =
-        (differentialSheafSectionsEquiv D U s).1 y :=
+        ((differentialSheafIsoDivisorSheaf ω hω ho).hom.hom.app (op U) s)).val y • ω y =
+        (differentialSheafSectionsEquiv D U s).val y :=
   differentialSheafIsoDivisorSheaf_hom_app hω ho U s ▸
     differentialSectionsEquivDivisorSections_smul hω ho _
 
@@ -397,12 +404,71 @@ theorem differentialSheafIsoDivisorSheaf_inv_app (U : Opens X)
     (f : (divisorSheaf E).obj.obj (op U)) :
     ∀ᶠ y in codiscrete U,
       (differentialSheafSectionsEquiv D U
-        ((differentialSheafIsoDivisorSheaf ω hω ho).inv.hom.app (op U) f)).1 y =
-        (divisorSheafSectionsEquiv E U f).1 y • ω y :=
+        ((differentialSheafIsoDivisorSheaf ω hω ho).inv.hom.app (op U) f)).val y =
+        (divisorSheafSectionsEquiv E U f).val y • ω y :=
   differentialSheafIsoDivisorSheaf_inv_app_eq hω ho U f ▸
     differentialSectionsEquivDivisorSections_symm_apply hω ho _
 
 end Sheaf
+
+/-! ### Naturality in the divisors -/
+
+section Naturality
+
+variable {ω : OneForm X} {D D' E E' : WeilDivisor X}
+
+/-- Two morphisms `Ω_D' ⟶ 𝒪_E'` and `Ω_D ⟶ 𝒪_E` which are both division by `ω` off a closed
+discrete set commute with the inclusions. -/
+private theorem differentialSheafMapOfLE_comp_eq_of_smul (hω : ∀ x, ω.MeromorphicAt x)
+    (hω₀ : ∀ x, ω.order x ≠ ⊤) (h : D ≤ D') (hE : E ≤ E')
+    (e' : differentialSheaf D' ⟶ divisorSheaf E') (e : differentialSheaf D ⟶ divisorSheaf E)
+    (he' : ∀ (U : Opens X) (s : (differentialSheaf D').obj.obj (op U)),
+      ∀ᶠ y in codiscrete U, (divisorSheafSectionsEquiv E' U (e'.hom.app (op U) s)).val y • ω y =
+        (differentialSheafSectionsEquiv D' U s).val y)
+    (he : ∀ (U : Opens X) (s : (differentialSheaf D).obj.obj (op U)),
+      ∀ᶠ y in codiscrete U, (divisorSheafSectionsEquiv E U (e.hom.app (op U) s)).val y • ω y =
+        (differentialSheafSectionsEquiv D U s).val y) :
+    differentialSheafMapOfLE h ≫ e' = e ≫ divisorSheafMapOfLE hE := by
+  have := ChartedSpace.t1Space ℂ X
+  apply Sheaf.hom_ext
+  apply NatTrans.ext
+  funext U
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro s
+  apply (divisorSheafSectionsEquiv E' U.unop).injective
+  apply Subtype.ext
+  refine eq_of_eventuallyEq_codiscrete (Subtype.prop _) (Subtype.prop _) ?_
+  refine eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun x ↦ ?_
+  have ht : Tendsto (Subtype.val : U.unop → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
+    continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
+  have hlhs := he' U.unop ((differentialSheafMapOfLE h).hom.app U s)
+  have hrhs := he U.unop s
+  rw [eventually_codiscrete_iff_forall_eventually_nhdsNE] at hlhs hrhs
+  filter_upwards [hlhs x, hrhs x, ht.eventually ((hω x).eventually_apply_ne_zero (hω₀ x)),
+    ht.eventually ((D'.eventually_eq_zero_nhdsNE x).mono fun _ hy ↦ hy.le),
+    ht.eventually ((E'.eventually_eq_zero_nhdsNE x).mono fun _ hy ↦ hy.le)]
+    with y h₁ h₂ hy hD hE'
+  refine smul_left_injective ℂ hy ?_
+  simp only [TopCat.Sheaf.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [h₁, differentialSheafMapOfLE_app, ite_eq_left hD, divisorSheafMapOfLE_app,
+    Set.indicator_of_mem (s := {y : U.unop | E' y ≤ 0}) hE', h₂]
+
+/-- **Division by `ω` commutes with the inclusions of differential and divisor sheaves.** If `ω`
+is meromorphic everywhere with `ord_x ω = E x - D x` and `ord_x ω = E' x - D' x`, `D ≤ D'` and
+`E ≤ E'` (the latter follows from the former), then `Ω_D ⟶ Ω_D' ≅ 𝒪_E'` equals
+`Ω_D ≅ 𝒪_E ⟶ 𝒪_E'`. -/
+@[reassoc]
+theorem differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheaf_hom
+    (hω : ∀ x, ω.MeromorphicAt x) (ho : ∀ x, ω.order x = ((E x - D x : ℤ) : WithTop ℤ))
+    (ho' : ∀ x, ω.order x = ((E' x - D' x : ℤ) : WithTop ℤ)) (h : D ≤ D') (hE : E ≤ E') :
+    differentialSheafMapOfLE h ≫ (differentialSheafIsoDivisorSheaf ω hω ho').hom =
+      (differentialSheafIsoDivisorSheaf ω hω ho).hom ≫ divisorSheafMapOfLE hE :=
+  differentialSheafMapOfLE_comp_eq_of_smul hω (fun x ↦ by rw [ho x]; exact WithTop.coe_ne_top)
+    h hE _ _ (differentialSheafIsoDivisorSheaf_hom_app_smul hω ho')
+    (differentialSheafIsoDivisorSheaf_hom_app_smul hω ho)
+
+end Naturality
 
 /-! ### Compact surfaces -/
 
@@ -438,8 +504,8 @@ theorem differentialSheafIsoDivisorSheafAdd_hom_app_smul (hω : ∀ x, ω.Meromo
     (s : (differentialSheaf D).obj.obj (op U)) :
     ∀ᶠ y in codiscrete U,
       (divisorSheafSectionsEquiv (D + ω.divisor) U
-        ((differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).hom.hom.app (op U) s)).1 y • ω y =
-        (differentialSheafSectionsEquiv D U s).1 y :=
+        ((differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).hom.hom.app (op U) s)).val y • ω y =
+        (differentialSheafSectionsEquiv D U s).val y :=
   differentialSheafIsoDivisorSheaf_hom_app_smul hω _ U s
 
 /-- Off a closed discrete set, the inverse of `differentialSheafIsoDivisorSheafAdd` sends a
@@ -449,9 +515,20 @@ theorem differentialSheafIsoDivisorSheafAdd_inv_app (hω : ∀ x, ω.Meromorphic
     (f : (divisorSheaf (D + ω.divisor)).obj.obj (op U)) :
     ∀ᶠ y in codiscrete U,
       (differentialSheafSectionsEquiv D U
-        ((differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).inv.hom.app (op U) f)).1 y =
-        (divisorSheafSectionsEquiv (D + ω.divisor) U f).1 y • ω y :=
+        ((differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).inv.hom.app (op U) f)).val y =
+        (divisorSheafSectionsEquiv (D + ω.divisor) U f).val y • ω y :=
   differentialSheafIsoDivisorSheaf_inv_app hω _ U f
+
+/-- **`Ω_D ≅ 𝒪_(D + div ω)` is natural in `D`.** On a compact surface, for a `1`-form `ω`
+meromorphic and of finite order everywhere and `D ≤ D'`, the inclusion `Ω_D ⟶ Ω_D'` corresponds
+under division by `ω` to the inclusion `𝒪_(D + div ω) ⟶ 𝒪_(D' + div ω)`. -/
+@[reassoc]
+theorem differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheafAdd_hom
+    (hω : ∀ x, ω.MeromorphicAt x) (hω₀ : ∀ x, ω.order x ≠ ⊤) {D D' : WeilDivisor X} (h : D ≤ D') :
+    differentialSheafMapOfLE h ≫ (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D').hom =
+      (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).hom ≫
+        divisorSheafMapOfLE ((add_le_add_iff_right ω.divisor).2 h) :=
+  differentialSheafMapOfLE_comp_differentialSheafIsoDivisorSheaf_hom hω _ _ h _
 
 /-- **Holomorphic `1`-forms are divisor sections.** On a compact Riemann surface, a `1`-form `ω`
 which is meromorphic and of finite order everywhere identifies the holomorphic `1`-forms with the
@@ -466,7 +543,7 @@ def holomorphicOneFormsEquivDivisorSections (ω : OneForm X) (hω : ∀ x, ω.Me
 theorem holomorphicOneFormsEquivDivisorSections_smul (hω : ∀ x, ω.MeromorphicAt x)
     (hω₀ : ∀ x, ω.order x ≠ ⊤) (η : holomorphicOneForms X) :
     ∀ᶠ y in codiscrete (⊤ : Opens X),
-      (holomorphicOneFormsEquivDivisorSections ω hω hω₀ η).1 y • ω y = η.1 y :=
+      (holomorphicOneFormsEquivDivisorSections ω hω hω₀ η).val y • ω y = η.val y :=
   (differentialSectionsEquivDivisorSections_smul hω (order_eq_coeff_divisor_sub_zero hω hω₀)
     (differentialSectionsZeroEquiv.symm η)).mono
     fun y hy ↦ by rwa [differentialSectionsZeroEquiv_symm_apply] at hy

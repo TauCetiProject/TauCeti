@@ -33,15 +33,17 @@ In particular, a complex place above a real place contributes dimension two, rat
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, Proposition (8.3).
 
 The completion algebra structures and local degrees are Mathlib's
-`NumberField.LiesOver.completionMap` and `NumberField.InfinitePlace.inertiaDeg`.
-The argument parallels `TauCeti.semilocalEquiv`, the finite-place decomposition.
+`AbsoluteValue.Completion.map` and `NumberField.InfinitePlace.inertiaDeg`.
+The argument parallels `IsDedekindDomain.HeightOneSpectrum.adicCompletionSemilocalEquiv`, the
+finite-place decomposition.
 -/
 
 public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace Module
-open scoped TensorProduct NumberField.LiesOver
+open scoped TensorProduct
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -52,9 +54,9 @@ variable (L) (v : InfinitePlace K)
 /-- The semilocal algebra map at an infinite place, with one component for each place above it. -/
 def infiniteSemilocalHom :
     v.Completion ⊗[K] L →ₐ[v.Completion]
-      ((w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion) :=
+      ((w : {w : InfinitePlace L // w.LiesOver v}) → w.val.Completion) :=
   Algebra.TensorProduct.lift (Algebra.ofId _ _)
-    (AlgHom.pi fun w ↦ IsScalarTower.toAlgHom K L w.1.Completion)
+    (AlgHom.pi fun w ↦ IsScalarTower.toAlgHom K L w.val.Completion)
     fun _ _ ↦ .all _ _
 
 variable {L v}
@@ -64,7 +66,7 @@ variable {L v}
 theorem infiniteSemilocalHom_tmul (a : v.Completion) (x : L)
     (w : {w : InfinitePlace L // w.LiesOver v}) :
     infiniteSemilocalHom L v (a ⊗ₜ x) w =
-      algebraMap v.Completion w.1.Completion a * algebraMap L w.1.Completion x := by
+      algebraMap v.Completion w.val.Completion a * algebraMap L w.val.Completion x := by
   simp [infiniteSemilocalHom]
 
 variable [NumberField K] [NumberField L] (L v)
@@ -73,31 +75,31 @@ omit [NumberField K] in
 /-- The field is dense in the product of its archimedean completions above a fixed place. -/
 theorem denseRange_algebraMap_pi_infinitePlaceLiesOver :
     DenseRange fun (x : L) (w : {w : InfinitePlace L // w.LiesOver v}) ↦
-      algebraMap L w.1.Completion x := by
+      algebraMap L w.val.Completion x := by
   classical
   let p : InfiniteAdeleRing L →
-      ((w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion) := fun a w ↦ a w.1
+      ((w : {w : InfinitePlace L // w.LiesOver v}) → w.val.Completion) := fun a w ↦ a w.val
   have hp : Function.Surjective p := by
     intro y
     refine ⟨fun w ↦ if h : w.LiesOver v then y ⟨w, h⟩ else 0, ?_⟩
     funext w
-    simp [p, w.2]
+    simp [p, w.property]
   exact hp.denseRange.comp (InfiniteAdeleRing.denseRange_algebraMap L)
-    (continuous_pi fun w ↦ continuous_apply w.1)
+    (continuous_pi fun w ↦ continuous_apply w.val)
 
 omit [NumberField K] in
 open scoped Classical in
 /-- The sum of the archimedean completed degrees above `v` is the global degree. -/
 theorem sum_finrank_infiniteCompletion_eq_finrank :
     ∑ w : {w : InfinitePlace L // w.LiesOver v},
-      finrank v.Completion w.1.Completion = finrank K L := by
+      finrank v.Completion w.val.Completion = finrank K L := by
   classical
   -- `K` is a number field, as a subfield of the number field `L`.
   have : CharZero K := RingHom.charZero (algebraMap K L)
   have : NumberField K := .of_tower ℚ L K
   calc
-    _ = ∑ w : {w : InfinitePlace L // w.LiesOver v}, v.inertiaDeg w.1 :=
-      Finset.sum_congr rfl fun w _ ↦ (inertiaDeg_eq_finrank v w.1).symm
+    _ = ∑ w : {w : InfinitePlace L // w.LiesOver v}, v.inertiaDeg w.val :=
+      Finset.sum_congr rfl fun w _ ↦ (inertiaDeg_eq_finrank v w.val).symm
     _ = ∑ w ∈ (v.placesOver L).toFinset, v.inertiaDeg w :=
       Finset.sum_set_coe (v.placesOver L)
     _ = finrank K L := sum_inertiaDeg_eq_finrank K L v
@@ -107,18 +109,18 @@ omit [NumberField K] in
 theorem infiniteSemilocalHom_surjective : Function.Surjective (infiniteSemilocalHom L v) := by
   let s := LinearMap.range (infiniteSemilocalHom L v).toLinearMap
   have hs : Set.range (fun (x : L) (w : {w : InfinitePlace L // w.LiesOver v}) ↦
-      algebraMap L w.1.Completion x) ⊆ s := by
+      algebraMap L w.val.Completion x) ⊆ s := by
     rintro _ ⟨x, rfl⟩
     exact ⟨1 ⊗ₜ x, funext fun w ↦ by simp⟩
   intro y
-  exact s.closed_of_finiteDimensional.closure_subset_iff.mpr hs
+  exact s.isClosed_of_finiteDimensional.closure_subset_iff.mpr hs
     (denseRange_algebraMap_pi_infinitePlaceLiesOver L v y)
 
 /-- The semilocal map is injective: the local degrees account for the whole scalar extension. -/
 theorem infiniteSemilocalHom_injective : Function.Injective (infiniteSemilocalHom L v) := by
   classical
   have hdim : finrank v.Completion (v.Completion ⊗[K] L) =
-      finrank v.Completion ((w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion) := by
+      finrank v.Completion ((w : {w : InfinitePlace L // w.LiesOver v}) → w.val.Completion) := by
     rw [finrank_pi_fintype, finrank_baseChange, sum_finrank_infiniteCompletion_eq_finrank]
   exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
     (f := (infiniteSemilocalHom L v).toLinearMap)).2 (infiniteSemilocalHom_surjective L v)
@@ -126,7 +128,7 @@ theorem infiniteSemilocalHom_injective : Function.Injective (infiniteSemilocalHo
 /-- Scalar extension to an archimedean completion decomposes into the completions above it. -/
 def infiniteSemilocalEquiv :
     v.Completion ⊗[K] L ≃ₐ[v.Completion]
-      ((w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion) :=
+      ((w : {w : InfinitePlace L // w.LiesOver v}) → w.val.Completion) :=
   AlgEquiv.ofBijective (infiniteSemilocalHom L v)
     -- Keep `Bijective` folded so the coercion lemmas for `ofBijective` remain applicable.
     (show Function.Bijective (infiniteSemilocalHom L v) from
@@ -139,7 +141,7 @@ variable {L v}
 theorem infiniteSemilocalEquiv_tmul (a : v.Completion) (x : L)
     (w : {w : InfinitePlace L // w.LiesOver v}) :
     infiniteSemilocalEquiv L v (a ⊗ₜ x) w =
-      algebraMap v.Completion w.1.Completion a * algebraMap L w.1.Completion x := by
+      algebraMap v.Completion w.val.Completion a * algebraMap L w.val.Completion x := by
   rw [infiniteSemilocalEquiv, AlgEquiv.ofBijective_apply]
   exact infiniteSemilocalHom_tmul a x w
 
@@ -148,7 +150,7 @@ variable (L v)
 /-- The inverse algebraic comparison sends a diagonal field element to `1 ⊗ x`. -/
 theorem infiniteSemilocalEquiv_symm_algebraMap (x : L) :
     (infiniteSemilocalEquiv L v).symm
-      (fun w : {w : InfinitePlace L // w.LiesOver v} ↦ algebraMap L w.1.Completion x) =
+      (fun w : {w : InfinitePlace L // w.LiesOver v} ↦ algebraMap L w.val.Completion x) =
         1 ⊗ₜ[K] x := by
   apply (infiniteSemilocalEquiv L v).symm_apply_eq.mpr
   funext w
@@ -159,11 +161,12 @@ omit [NumberField K] in
 open scoped Classical in
 /-- **The norm is the product of the archimedean local norms.** For `x ∈ L` and an infinite place
 `v` of `K`, the image of `N_{L/K}(x)` in `K_v` is the product over the places `w ∣ v` of the norms
-`N_{L_w/K_v}(x)`. This is the archimedean counterpart of `TauCeti.algebraMap_norm_eq_prod_norm`. -/
+`N_{L_w/K_v}(x)`. This is the archimedean counterpart of
+`IsDedekindDomain.HeightOneSpectrum.algebraMap_norm_eq_prod_norm_adicCompletion`. -/
 theorem algebraMap_norm_eq_prod_norm_infiniteCompletion (x : L) :
     algebraMap K v.Completion (Algebra.norm K x) =
       ∏ w : {w : InfinitePlace L // w.LiesOver v},
-        Algebra.norm v.Completion (algebraMap L w.1.Completion x) := by
+        Algebra.norm v.Completion (algebraMap L w.val.Completion x) := by
   have : CharZero K := RingHom.charZero (algebraMap K L)
   have : NumberField K := .of_tower ℚ L K
   rw [← Algebra.norm_baseChange_tmul (A := v.Completion) (B := L) x,
@@ -178,14 +181,14 @@ variable [TopologicalSpace (v.Completion ⊗[K] L)]
 module topology over the base completion. Both it and its inverse are continuous. -/
 def infiniteSemilocalContinuousEquiv :
     v.Completion ⊗[K] L ≃A[v.Completion]
-      ((w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion) where
+      ((w : {w : InfinitePlace L // w.LiesOver v}) → w.val.Completion) where
   toAlgEquiv := infiniteSemilocalEquiv L v
   continuous_toFun := IsModuleTopology.continuous_of_linearMap
     (infiniteSemilocalEquiv L v).toLinearMap
   continuous_invFun := by
     let := IsModuleTopology.toContinuousAdd v.Completion (v.Completion ⊗[K] L)
     let := isModuleTopologyOfFiniteDimensional (𝕜 := v.Completion)
-      (E := (w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completion)
+      (E := (w : {w : InfinitePlace L // w.LiesOver v}) → w.val.Completion)
     exact IsModuleTopology.continuous_of_linearMap (infiniteSemilocalEquiv L v).symm.toLinearMap
 
 /-- Forgetting continuity recovers the algebraic semilocal comparison. -/
@@ -201,14 +204,14 @@ variable {L v}
 theorem infiniteSemilocalContinuousEquiv_tmul (a : v.Completion) (x : L)
     (w : {w : InfinitePlace L // w.LiesOver v}) :
     infiniteSemilocalContinuousEquiv L v (a ⊗ₜ x) w =
-      algebraMap v.Completion w.1.Completion a * algebraMap L w.1.Completion x := by
+      algebraMap v.Completion w.val.Completion a * algebraMap L w.val.Completion x := by
   rw [← ContinuousAlgEquiv.coe_toAlgEquiv, infiniteSemilocalContinuousEquiv_toAlgEquiv]
   exact infiniteSemilocalEquiv_tmul a x w
 
 /-- The inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 theorem infiniteSemilocalContinuousEquiv_symm_algebraMap (x : L) :
     (infiniteSemilocalContinuousEquiv L v).symm
-      (fun w : {w : InfinitePlace L // w.LiesOver v} ↦ algebraMap L w.1.Completion x) =
+      (fun w : {w : InfinitePlace L // w.LiesOver v} ↦ algebraMap L w.val.Completion x) =
         1 ⊗ₜ[K] x := by
   rw [← ContinuousAlgEquiv.coe_toAlgEquiv, ContinuousAlgEquiv.symm_toAlgEquiv,
     infiniteSemilocalContinuousEquiv_toAlgEquiv]

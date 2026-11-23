@@ -11,7 +11,9 @@ public import TauCeti.Algebra.Lie.Prod
 public import Mathlib.Algebra.Module.Torsion.Prod
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+public import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 import TauCeti.Algebra.Lie.Submodule.Atom
+import TauCeti.Algebra.Lie.Submodule.Torsion
 
 /-!
 # The highest weight of a `gl n`-module determines it
@@ -24,7 +26,8 @@ irreducible `gl n R`-modules carrying highest weight vectors of the same weight 
 (`TauCeti.nonempty_lieModuleEquiv_of_isGlHighestWeightVector`), and that an irreducible one has the
 smallest rank among the finitely generated modules carrying such a vector
 (`TauCeti.finrank_le_of_isGlHighestWeightVector`). The scalars form a commutative domain of
-characteristic zero acting without torsion on the modules; no field is needed.
+characteristic zero acting without torsion on the modules; no field is needed. The rank bound
+needs no torsion-freeness at all.
 
 The Killing form of `gl n R` is degenerate as soon as the index type is nonempty, the scalar
 matrices being central, so none of Mathlib's `LieAlgebra.IsKilling` machinery applies to it and the
@@ -201,7 +204,8 @@ theorem lieSpan_toSubmodule_le_of_isGlHighestWeightVector (hv : IsGlHighestWeigh
         lie_mem_of_lie_mem_strictLowerTriangular_of_lie_mem_upperTriangular _ hlow hup hm } :
           LieSubmodule R (Matrix n n R) M))).mpr (Set.singleton_subset_iff.mpr hv0) hm
   refine hle.trans fun m hm => ?_
-  exact (LieSubmodule.lieSpan_le (N := ({ __ := N, lie_mem := fun {x _} hm => hstab x x.2 _ hm } :
+  exact (LieSubmodule.lieSpan_le (N :=
+      ({ __ := N, lie_mem := fun {x _} hm => hstab x x.property _ hm } :
     LieSubmodule R ↥(strictLowerTriangular R n) M))).mpr (Set.singleton_subset_iff.mpr hvN) hm
 
 end Exhaustion
@@ -447,28 +451,6 @@ variable {M' : Type w₁} [AddCommGroup M'] [Module R M'] [LieRingModule (Matrix
 
 /-! ### The diagonal argument -/
 
-variable (R n v v') in
-/-- The vectors of the first factor that the diagonal submodule contains. -/
-private def comapInl : LieSubmodule R (Matrix n n R) M :=
-  (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}).comap
-    (LieModuleHom.inl R (Matrix n n R) M M')
-
-private theorem mem_comapInl {x : M} :
-    x ∈ comapInl R n v v' ↔
-      ((x, 0) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} := by
-  simp only [comapInl, LieSubmodule.mem_comap, LieModuleHom.inl_apply]
-
-variable (R n v v') in
-/-- The vectors of the second factor that the diagonal submodule contains. -/
-private def comapInr : LieSubmodule R (Matrix n n R) M' :=
-  (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}).comap
-    (LieModuleHom.inr R (Matrix n n R) M M')
-
-private theorem mem_comapInr {y : M'} :
-    y ∈ comapInr R n v v' ↔
-      ((0, y) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} := by
-  simp only [comapInr, LieSubmodule.mem_comap, LieModuleHom.inr_apply]
-
 variable [LinearOrder n] {mu : n → R}
 
 /-- The diagonal of two highest weight vectors of the same weight is a highest weight vector of the
@@ -516,34 +498,25 @@ private theorem inr_notMem_lieSpan_prod (hv : IsGlHighestWeightVector mu v)
   rw [hc1, one_smul] at h1
   exact hv.ne_zero h1.symm
 
-/-- A vector of the first factor lying in the diagonal submodule is zero: those vectors form a Lie
-submodule of the irreducible `M`, and it is not everything. -/
+/-- A vector of the first factor lying in the diagonal submodule is zero. -/
 private theorem eq_zero_of_inl_mem_lieSpan_prod
     [LieModule.IsIrreducible R (Matrix n n R) M] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') {x : M}
     (hx : ((x, 0) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
-    x = 0 := by
-  rcases IsSimpleOrder.eq_bot_or_eq_top (comapInl R n v v' (M' := M')) with hb | ht
-  · have hxS : x ∈ comapInl R n v v' (M' := M') := mem_comapInl.mpr hx
-    rw [hb, LieSubmodule.mem_bot] at hxS
-    exact hxS
-  · refine absurd (mem_comapInl.mp ?_) (inl_notMem_lieSpan_prod hv hv')
-    rw [ht]
-    exact LieSubmodule.mem_top _
+    x = 0 :=
+  eq_zero_of_apply_notMem_of_apply_mem (f := LieModuleHom.inl R (Matrix n n R) M M')
+    (D := LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v)
+    (by simpa using inl_notMem_lieSpan_prod hv hv') (by simpa using hx)
 
 /-- A vector of the second factor lying in the diagonal submodule is zero. -/
 private theorem eq_zero_of_inr_mem_lieSpan_prod
     [LieModule.IsIrreducible R (Matrix n n R) M'] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') {y : M'}
     (hy : ((0, y) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
-    y = 0 := by
-  rcases IsSimpleOrder.eq_bot_or_eq_top (comapInr R n v v' (M := M)) with hb | ht
-  · have hyS : y ∈ comapInr R n v v' (M := M) := mem_comapInr.mpr hy
-    rw [hb, LieSubmodule.mem_bot] at hyS
-    exact hyS
-  · refine absurd (mem_comapInr.mp ?_) (inr_notMem_lieSpan_prod hv hv')
-    rw [ht]
-    exact LieSubmodule.mem_top _
+    y = 0 :=
+  eq_zero_of_apply_notMem_of_apply_mem (f := LieModuleHom.inr R (Matrix n n R) M M')
+    (D := LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v')
+    (by simpa using inr_notMem_lieSpan_prod hv hv') (by simpa using hy)
 
 private theorem injective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M']
     (hv : IsGlHighestWeightVector mu v) (hv' : IsGlHighestWeightVector mu v') :
@@ -551,7 +524,7 @@ private theorem injective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M']
   intro p q hpq
   have h1 : ((p : M × M') - q).1 = 0 := sub_eq_zero.mpr (by simpa using hpq)
   have hd : ((p : M × M') - q) ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} :=
-    sub_mem p.2 q.2
+    sub_mem p.property q.property
   have h2 : ((p : M × M') - q).2 = 0 := by
     refine eq_zero_of_inr_mem_lieSpan_prod hv hv' ?_
     have hpair : ((0, ((p : M × M') - q).2) : M × M') = (p : M × M') - q :=
@@ -565,7 +538,7 @@ private theorem injective_prodSnd [LieModule.IsIrreducible R (Matrix n n R) M]
   intro p q hpq
   have h2 : ((p : M × M') - q).2 = 0 := sub_eq_zero.mpr (by simpa using hpq)
   have hd : ((p : M × M') - q) ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} :=
-    sub_mem p.2 q.2
+    sub_mem p.property q.property
   have h1 : ((p : M × M') - q).1 = 0 := by
     refine eq_zero_of_inl_mem_lieSpan_prod hv hv' ?_
     have hpair : (((p : M × M') - q).1, (0 : M')) = (p : M × M') - q :=
@@ -628,14 +601,29 @@ theorem nonempty_lieModuleEquiv_of_isGlHighestWeightVector
     Nonempty (M ≃ₗ⁅R, Matrix n n R⁆ M') :=
   ⟨lieModuleEquivOfIsGlHighestWeightVector hv hv'⟩
 
+omit [Module.IsTorsionFree R M] [Module.IsTorsionFree R M'] in
 /-- **An irreducible highest weight module is the smallest one of its weight.** If `M` is an
 irreducible `gl n R`-module with a highest weight vector of weight `μ`, then every finitely
 generated module carrying a highest weight vector of weight `μ` has at least the rank of `M`.
 Cyclicity of the second vector is not needed: the submodule it generates already has rank at
-least that of `M`, and has finite rank even though it need not be finitely generated. -/
+least that of `M`, and has finite rank even though it need not be finitely generated.
+Torsion-freeness of neither module is needed: an irreducible torsion module has rank zero, and
+when `M` is irreducible and torsion-free every nonzero scalar is a unit (the line through `v` is
+the whole top weight space of the module `r • v` generates), so `M'` is torsion-free as well. -/
 theorem finrank_le_of_isGlHighestWeightVector [LieModule.IsIrreducible R (Matrix n n R) M]
     [Module.Finite R M'] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') : finrank R M ≤ finrank R M' := by
+  rcases isTorsion_or_isTorsionFree_of_isIrreducible R (Matrix n n R) M with htors | hM
+  · rw [Module.IsTorsion.finrank_eq_zero htors]
+    exact Nat.zero_le _
+  have hunit (r : R) (hr : r ≠ 0) : IsUnit r := by
+    obtain ⟨c, hc⟩ := exists_eq_smul_of_isGlHighestWeightVector_of_mem_lieSpan (hv.smul hr)
+      (by simp [lieSpan_singleton_eq_top_of_ne_zero (hv.smul hr).ne_zero])
+      hv.lie_single_self_eq_smul
+    rw [smul_smul] at hc
+    exact .of_mul_eq_one_right c
+      (smul_left_injective R hv.ne_zero (hc.symm.trans (one_smul R v).symm))
+  have : Module.IsTorsionFree R M' := ⟨fun r hr ↦ (hunit r hr.ne_zero).isSMulRegular M'⟩
   let D := LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}
   have hinj : Function.Injective D.prodSnd := injective_prodSnd hv hv'
   have hsurj : Function.Surjective D.prodFst :=

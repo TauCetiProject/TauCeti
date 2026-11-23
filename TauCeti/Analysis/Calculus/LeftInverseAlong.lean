@@ -1,0 +1,114 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
+public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+public import TauCeti.Analysis.Normed.Operator.Splitting.RangeComplement
+
+/-!
+# Derivatives of the Lyapunov–Schmidt projections of a family of operators
+
+Let `L(σ) : E →L[𝕜] F` and `P(σ) : F →L[𝕜] Y` be families of continuous linear maps between
+normed spaces, depending on a parameter `σ` in a normed space, with `E` complete. At a parameter
+where `A(σ) = P(σ) L(σ)` is invertible, the left inverse `K = A⁻¹ P`
+(`ContinuousLinearMap.leftInverseAlong`) of `L` along `ker P` is differentiable when the families
+are (`DifferentiableAt.leftInverseAlong`, with `WithinAt`, `On` and global variants). Writing
+`Π = 1 - L K` for the projection onto `ker P` along the range of `L`, the derivatives along a
+direction `v` are
+
+`∂ᵥ K = A⁻¹ (∂ᵥ P) Π - K (∂ᵥ L) K` (`DifferentiableAt.fderiv_leftInverseAlong`),
+
+`∂ᵥ Π = -Π (∂ᵥ L) K - L A⁻¹ (∂ᵥ P) Π` (`DifferentiableAt.fderiv_id_sub_comp_leftInverseAlong`).
+
+In a perturbative construction, `P` and its kernel `W` are often chosen once near a base parameter
+and then held fixed. Then `∂ᵥ P = 0` and the terms containing it vanish, and for a family of
+equations `L(σ) f + S(σ) = 0` the reduced section `σ ↦ Π_σ S(σ)` takes values in the fixed space
+`W`; its zeros are the parameters at which the equation is solvable
+(`ContinuousLinearMap.apply_add_eq_zero_iff`).
+
+## References
+
+* S. N. Chow and J. K. Hale, *Methods of Bifurcation Theory*, Springer, 1982, Chapter 2.
+* C. H. Taubes, *Gr ⇒ SW: from pseudo-holomorphic curves to Seiberg–Witten solutions*,
+  J. Differential Geom. 51 (1999), 203–334.
+-/
+
+public section
+
+open ContinuousLinearMap
+
+variable {𝕜 X E F Y : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+  {L : X → E →L[𝕜] F} {P : X → F →L[𝕜] Y} {s : Set X} {x : X}
+
+/-- The left inverse along `ker (P x)` of a family `L x` is differentiable within a set at every
+parameter where both families are and `P x ∘ L x` is invertible. -/
+theorem DifferentiableWithinAt.leftInverseAlong (hL : DifferentiableWithinAt 𝕜 L s x)
+    (hP : DifferentiableWithinAt 𝕜 P s x) (h : (P x ∘L L x).IsInvertible) :
+    DifferentiableWithinAt 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) s x :=
+  ((contDiffAt_leftInverseAlong (n := 1) h).differentiableAt one_ne_zero)
+    |>.comp_differentiableWithinAt (f := fun y ↦ (L y, P y)) x (hL.prodMk hP)
+
+/-- The left inverse along `ker (P x)` of a family `L x` is differentiable at every parameter
+where both families are and `P x ∘ L x` is invertible. -/
+theorem DifferentiableAt.leftInverseAlong (hL : DifferentiableAt 𝕜 L x)
+    (hP : DifferentiableAt 𝕜 P x) (h : (P x ∘L L x).IsInvertible) :
+    DifferentiableAt 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) x :=
+  differentiableWithinAt_univ.1 <|
+    hL.differentiableWithinAt.leftInverseAlong hP.differentiableWithinAt h
+
+/-- The left inverse along `ker (P x)` of a family `L x` is differentiable on a set on which both
+families are differentiable and every `P x ∘ L x` is invertible. -/
+theorem DifferentiableOn.leftInverseAlong (hL : DifferentiableOn 𝕜 L s)
+    (hP : DifferentiableOn 𝕜 P s) (h : ∀ x ∈ s, (P x ∘L L x).IsInvertible) :
+    DifferentiableOn 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) s :=
+  fun x hx ↦ (hL x hx).leftInverseAlong (hP x hx) (h x hx)
+
+/-- The left inverse along `ker (P x)` of a differentiable family `L x` is differentiable when `P`
+is differentiable and every `P x ∘ L x` is invertible. -/
+theorem Differentiable.leftInverseAlong (hL : Differentiable 𝕜 L) (hP : Differentiable 𝕜 P)
+    (h : ∀ x, (P x ∘L L x).IsInvertible) :
+    Differentiable 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) :=
+  fun x ↦ (hL x).leftInverseAlong (hP x) (h x)
+
+/-- The derivative of the left inverse `K = A⁻¹ P`, `A = P L`, of `L` along `ker P` for
+differentiable families, along a direction `v`, at a parameter where `A` is invertible:
+`∂ᵥ K = A⁻¹ (∂ᵥ P) (1 - L K) - K (∂ᵥ L) K`. -/
+theorem DifferentiableAt.fderiv_leftInverseAlong (hL : DifferentiableAt 𝕜 L x)
+    (hP : DifferentiableAt 𝕜 P x) (h : (P x ∘L L x).IsInvertible) (v : X) :
+    fderiv 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) x v =
+      (P x ∘L L x).inverse ∘L fderiv 𝕜 P x v ∘L (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x)) -
+        (L x).leftInverseAlong (P x) ∘L fderiv 𝕜 L x v ∘L (L x).leftInverseAlong (P x) := by
+  have hA : DifferentiableAt 𝕜 (fun y ↦ P y ∘L L y) x := hP.clm_comp hL
+  simp only [leftInverseAlong_def]
+  rw [fderiv_clm_comp (hA.clm_inverse_of_completeSpace h) hP]
+  simp only [add_apply, coe_comp, Function.comp_apply, compL_apply, flip_apply]
+  rw [hA.fderiv_clm_inverse h, fderiv_clm_comp hP hL]
+  ext f
+  simp only [add_apply, sub_apply, neg_apply, coe_comp, Function.comp_apply, compL_apply,
+    flip_apply, id_apply, map_sub, map_add]
+  abel
+
+/-- The derivative of the Lyapunov–Schmidt projections `Π = 1 - L A⁻¹ P`, `A = P L`, of
+differentiable families along a direction `v`, at a parameter where `A` is invertible:
+`∂ᵥ Π = -Π (∂ᵥ L) A⁻¹ P - L A⁻¹ (∂ᵥ P) Π`. -/
+theorem DifferentiableAt.fderiv_id_sub_comp_leftInverseAlong (hL : DifferentiableAt 𝕜 L x)
+    (hP : DifferentiableAt 𝕜 P x) (h : (P x ∘L L x).IsInvertible) (v : X) :
+    fderiv 𝕜 (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L (L y).leftInverseAlong (P y)) x v =
+      -((.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x)) ∘L fderiv 𝕜 L x v ∘L
+          (L x).leftInverseAlong (P x)) -
+        L x ∘L (P x ∘L L x).inverse ∘L fderiv 𝕜 P x v ∘L
+          (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x)) := by
+  rw [fderiv_const_sub, fderiv_clm_comp hL (hL.leftInverseAlong hP h)]
+  simp only [neg_apply, add_apply, coe_comp, Function.comp_apply, compL_apply, flip_apply]
+  rw [hL.fderiv_leftInverseAlong hP h]
+  ext f
+  simp only [add_apply, sub_apply, neg_apply, coe_comp, Function.comp_apply, id_apply, map_sub]
+  abel

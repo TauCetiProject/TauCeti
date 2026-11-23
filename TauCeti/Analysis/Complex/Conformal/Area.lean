@@ -8,7 +8,12 @@ module
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Determinant
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Area and change of variables for a holomorphic map
@@ -84,6 +89,17 @@ because that is what Mathlib's versions of them ask for.
   `TauCeti.integrableOn_image_iff_integrableOn_norm_deriv_sq_smul` and
   `TauCeti.integral_image_eq_integral_norm_deriv_sq_smul` — the change of variables formula for a
   holomorphic injection, in Lebesgue, integrability and Bochner form.
+* `TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff` — inversion preserves finite energy: on any
+  measurable set `s`, the squared norm of the derivative of `w ↦ u w⁻¹` is integrable on `s`
+  exactly when that of `u` is integrable on `s⁻¹`.
+* `TauCeti.integral_inv_sq_norm_sq_smul_eq` — the change of variables formula for the inversion:
+  `∫ |w|⁻⁴ • g w = ∫ g z⁻¹`.
+* `TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le` — each directional energy after the
+  inversion is bounded by the Dirichlet energy:
+  `∫ ‖∂_v (f ∘ (·⁻¹))‖² ≤ ‖v‖² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)`.
+* `TauCeti.integrableOn_norm_fderiv_comp_inv_apply_one_sq` — for a solution of the
+  Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` with `‖J‖` bounded along it, integrability of
+  `‖∂ₛu‖ ^ 2` outside a disc gives integrability of the same density for `w ↦ u w⁻¹` near `0`.
 
 ## References
 
@@ -169,7 +185,7 @@ theorem integrableOn_norm_deriv_sq (hf : ∀ z ∈ s, DifferentiableAt ℂ f z)
     (hs : NullMeasurableSet s volume) (hinj : InjOn f s) (hfin : volume (f '' s) ≠ ⊤) :
     IntegrableOn (fun z => ‖deriv f z‖ ^ 2) s := by
   simpa [IntegrableOn] using integrable_toReal_of_lintegral_ne_top
-    ((measurable_deriv f).enorm.pow_const 2).aemeasurable
+    ((measurable_deriv f).eNorm.pow_const 2).aemeasurable
     (lintegral_enorm_deriv_sq_ne_top hf hs hinj hfin)
 
 /-- The bounded-image form of `TauCeti.integrableOn_norm_deriv_sq`: the area distortion of a
@@ -188,7 +204,7 @@ theorem integral_norm_deriv_sq_eq_toReal_volume_image (hf : ∀ z ∈ s, Differe
     (hs : NullMeasurableSet s volume) (hinj : InjOn f s) :
     ∫ z in s, ‖deriv f z‖ ^ 2 = (volume (f '' s)).toReal := by
   rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs hinj,
-    ← integral_toReal ((measurable_deriv f).enorm.pow_const 2).aemeasurable
+    ← integral_toReal ((measurable_deriv f).eNorm.pow_const 2).aemeasurable
       (.of_forall fun _ => by finiteness)]
   simp
 
@@ -209,7 +225,7 @@ theorem volume_image_eq_zero_iff (hf : ∀ z ∈ s, DifferentiableAt ℂ f z)
     (hd : ∀ᵐ z ∂volume.restrict s, deriv f z ≠ 0) :
     volume (f '' s) = 0 ↔ volume s = 0 := by
   rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs hinj,
-    lintegral_eq_zero_iff ((measurable_deriv f).enorm.pow_const 2)]
+    lintegral_eq_zero_iff ((measurable_deriv f).eNorm.pow_const 2)]
   refine ⟨fun h => ?_, fun h => by simp [Measure.restrict_eq_zero.mpr h, Filter.EventuallyEq]⟩
   have hfalse : ∀ᵐ _ ∂volume.restrict s, False := by
     filter_upwards [h, hd] with z hz hz0
@@ -270,5 +286,121 @@ theorem integral_image_eq_integral_norm_deriv_sq_smul (hf : ∀ z ∈ s, Differe
   rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
     (hasFDerivWithinAt_smulRight_deriv hf) hinj g]
   exact setIntegral_congr_fun hs fun z _ => by rw [abs_det_restrictScalars_smulRight_one]
+
+
+/-! ### Inversion -/
+
+/-- **Inversion preserves finite energy.** On a measurable set `s`, the squared norm of the
+derivative of `w ↦ u w⁻¹` is integrable on `s` exactly when that of `u` is integrable on the image
+`s⁻¹` of `s` under inversion: the area distortion `‖w‖⁻⁴` of the inversion is the square of the
+factor `‖w‖⁻²` by which it scales derivatives. -/
+theorem integrableOn_norm_fderiv_comp_inv_sq_iff {u : ℂ → E} (hs : MeasurableSet s) :
+    IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) s ↔
+      IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) ((·⁻¹) '' s) := by
+  -- Removing the origin, a null set fixed by the inversion, changes neither side.
+  have hs0 : MeasurableSet (s \ {0}) := hs.diff (measurableSet_singleton 0)
+  have himage : (·⁻¹) '' (s \ {0}) = (·⁻¹) '' s \ {(0 : ℂ)} := by
+    rw [image_sdiff inv_injective, image_singleton, inv_zero]
+  rw [← integrableOn_congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)),
+    ← integrableOn_congr_set_ae (s := (·⁻¹) '' s \ {(0 : ℂ)})
+      (sdiff_null_ae_eq_self (measure_singleton 0)), ← himage,
+    integrableOn_image_iff_integrableOn_norm_deriv_sq_smul
+      (fun w (hw : w ∈ s \ {0}) ↦ differentiableAt_inv_iff.2 hw.2) hs0 inv_injective.injOn]
+  refine integrableOn_congr_fun (fun w hw ↦ ?_) hs0
+  have hw : (w : ℂ) ≠ 0 := hw.2
+  rw [norm_fderiv_comp_inv hw, deriv_inv, smul_eq_mul, norm_neg, norm_inv, norm_pow]
+  field_simp
+
+/-- **The change of variables formula for the inversion.** The area distortion of `z ↦ z⁻¹` is
+`‖z‖⁻⁴`, so the integral over `ℂ` of `g` weighted by `|w|⁻⁴` is the integral of `g` read in the
+coordinate `z = w⁻¹`. As in `TauCeti.integral_image_eq_integral_norm_deriv_sq_smul`, no
+integrability hypothesis is needed. -/
+theorem integral_inv_sq_norm_sq_smul_eq (g : ℂ → E) :
+    ∫ w, ((‖w‖ ^ 2) ^ 2)⁻¹ • g w = ∫ z, g z⁻¹ := by
+  have h := integral_image_eq_integral_norm_deriv_sq_smul (f := (·⁻¹))
+    (fun z (hz : z ∈ ({0}ᶜ : Set ℂ)) ↦ differentiableAt_inv hz)
+    (measurableSet_singleton 0).compl inv_injective.injOn fun w ↦ g w⁻¹
+  rw [image_inv_eq_inv, compl_inv, inv_singleton, inv_zero, restrict_compl_singleton] at h
+  rw [h]
+  congr 1
+  ext z
+  simp [deriv_inv]
+
+/-- **Each directional energy after the inversion is bounded by the Dirichlet energy.** For a map
+`f` of `ℂ` with integrable Dirichlet energy, the energy of the derivative of `z ↦ f z⁻¹` in a
+direction `v` is at most `‖v‖ ^ 2` times the Dirichlet energy of `f`. The target norm is
+arbitrary, so the bound comes from Cauchy–Schwarz (`TauCeti.norm_smul_add_smul_sq_le`) rather than
+from conformal invariance. -/
+theorem integral_norm_fderiv_comp_inv_apply_sq_le {f : ℂ → E} (v : ℂ)
+    (hE : Integrable fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :
+    ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2 ≤
+      ‖v‖ ^ 2 * ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) := by
+  set G : ℂ → ℝ := fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2
+  have hs : MeasurableSet ({0}ᶜ : Set ℂ) := (measurableSet_singleton 0).compl
+  have hd (z : ℂ) (hz : z ∈ ({0}ᶜ : Set ℂ)) : DifferentiableAt ℂ (·⁻¹) z := differentiableAt_inv hz
+  have himage : (·⁻¹) '' ({0}ᶜ : Set ℂ) = {0}ᶜ := by
+    rw [image_inv_eq_inv, compl_inv, inv_singleton, inv_zero]
+  -- Pointwise, `‖∂_v (f ∘ inv)‖² ≤ ‖v‖² ‖(z⁻¹)'‖² G(z⁻¹)`, by Cauchy–Schwarz in the real
+  -- coordinates of the direction `-(z²)⁻¹ v`.
+  have hpt (z : ℂ) (hz : z ∈ ({0}ᶜ : Set ℂ)) :
+      ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2 ≤ ‖v‖ ^ 2 * ‖deriv (·⁻¹) z‖ ^ 2 • G z⁻¹ := by
+    have hc : -(z ^ 2)⁻¹ * v = (-(z ^ 2)⁻¹ * v).re • (1 : ℂ) + (-(z ^ 2)⁻¹ * v).im • I := by
+      rw [Complex.real_smul, Complex.real_smul, mul_one, Complex.re_add_im]
+    have hn : (-(z ^ 2)⁻¹ * v).re ^ 2 + (-(z ^ 2)⁻¹ * v).im ^ 2 =
+        ‖v‖ ^ 2 * ‖deriv (·⁻¹) z‖ ^ 2 := by
+      rw [deriv_inv, ← mul_pow, ← norm_mul, mul_comm, Complex.sq_norm, Complex.normSq_apply]
+      ring
+    rw [fderiv_comp_inv_apply hz, hc, map_add, map_smul, map_smul, smul_eq_mul, ← mul_assoc,
+      ← hn]
+    exact norm_smul_add_smul_sq_le _ _ _ _
+  have hGi : IntegrableOn (fun z ↦ ‖deriv (·⁻¹) z‖ ^ 2 • G z⁻¹) {0}ᶜ :=
+    (integrableOn_image_iff_integrableOn_norm_deriv_sq_smul hd hs inv_injective.injOn G).1
+      (himage ▸ hE.integrableOn)
+  calc ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2
+      = ∫ z in {0}ᶜ, ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2 := by
+        rw [restrict_compl_singleton]
+    _ ≤ ∫ z in {0}ᶜ, ‖v‖ ^ 2 * ‖deriv (·⁻¹) z‖ ^ 2 • G z⁻¹ :=
+        integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ ↦ sq_nonneg _) (hGi.const_mul _)
+          ((ae_restrict_iff' hs).2 (Filter.Eventually.of_forall hpt))
+    _ = ‖v‖ ^ 2 * ∫ w in (·⁻¹) '' {0}ᶜ, G w := by
+        rw [integral_const_mul, integral_image_eq_integral_norm_deriv_sq_smul hd hs
+          inv_injective.injOn G]
+    _ = ‖v‖ ^ 2 * ∫ w, G w := by rw [himage, restrict_compl_singleton]
+
+/-- **The energy near infinity is the energy of the inverted map near zero**, up to a constant:
+for a solution of `∂ₜu = J(u) ∂ₛu` outside the disc of radius `R`, with `‖J‖ ≤ M` along it, the
+map `w ↦ u w⁻¹` has integrable energy density on the disc of radius `R⁻¹` whenever `u` has
+integrable energy density outside the disc of radius `R`. The Cauchy--Riemann equation bounds
+`‖du‖` by `(1 + M) ‖∂ₛu‖`, and inversion preserves finite energy
+(`TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff`). -/
+theorem integrableOn_norm_fderiv_comp_inv_apply_one_sq [CompleteSpace E] {u : ℂ → E}
+    {J : E → E →L[ℝ] E} {R M : ℝ}
+    (hCR : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hM : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ‖J (u z)‖ ≤ M)
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (closedBall 0 R)ᶜ) :
+    IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) (ball 0 R⁻¹) := by
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  set D : Set ℂ := ball 0 R⁻¹ \ {0}
+  have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
+  have hDm : MeasurableSet D := measurableSet_ball.diff (measurableSet_singleton 0)
+  -- By the Cauchy--Riemann equation, `‖du‖ ≤ (1 + M) ‖∂ₛu‖` outside the disc of radius `R`.
+  have hfull : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (closedBall 0 R)ᶜ := by
+    refine (henergy.const_mul ((1 + M) ^ 2)).mono'
+      ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
+      (ae_restrict_of_forall_mem isClosed_closedBall.isOpen_compl.measurableSet fun z hz ↦ ?_)
+    rw [norm_pow, norm_norm, ← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _)
+      ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hM z hz) le_rfl) 2
+  -- Inversion preserves finite energy.
+  have hD : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) D :=
+    (integrableOn_norm_fderiv_comp_inv_sq_iff hDm).2 (hfull.mono_set hDE.image_subset)
+  have hD1 : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) D := by
+    refine hD.mono' ((measurable_fderiv_apply_const ℝ _ 1).norm.pow_const 2).aestronglyMeasurable
+      (ae_of_all _ fun w ↦ ?_)
+    rw [norm_pow, norm_norm]
+    exact pow_le_pow_left₀ (norm_nonneg _)
+      (by simpa using (fderiv ℝ (fun w ↦ u w⁻¹) w).le_opNorm (1 : ℂ)) 2
+  exact hD1.congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)).symm
 
 end TauCeti

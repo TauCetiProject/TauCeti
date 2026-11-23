@@ -9,8 +9,10 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.W1p
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
+import TauCeti.MeasureTheory.Function.LpSeminorm.Const
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -38,10 +40,17 @@ applied on such a `W`; the vector-valued statement follows coordinatewise in a b
 * `TauCeti.MemWkpLoc.continuousOn_preciseRepresentative`: the precise representative is continuous
   on `Ω`.
 * `TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le`: the local Morrey inequality.
+* `TauCeti.MemWkpLoc.exists_norm_preciseRepresentative_le`: the local Morrey sup bound
+  `‖u*(x)‖ ≤ r^{-2/p} ‖u‖_{Lᵖ(B(x, r))} + C ‖Du‖_{Lᵖ(B(x, 2 r))} r^α`, obtained by averaging the
+  local Morrey inequality over `B(x, r)`.
+* `TauCeti.MemWkpLoc.eqOn_preciseRepresentative_sub`: precise representatives of members of
+  `MemWkpLoc p Ω 1` subtract on `Ω`.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_preciseRepresentative_of_isCompact`: Hölder continuity
   with exponent `1 - 2 / p` on compact subsets of `Ω`.
 * `TauCeti.MemWkpLoc.exists_lipschitzOnWith_preciseRepresentative_of_isCompact`: the endpoint
   `p = ∞`.
+* `TauCeti.not_memWkpLoc_two_top_of_not_isBoundedUnder`: a `C¹` map whose classical second
+  derivative is unbounded near a point of `Ω` is not in `W^{2,∞}_loc`.
 * `TauCeti.MemWkpLoc.contDiffOn_one_of_continuousOn`: a continuous member of `W^{2,p}_loc` is `C¹`
   on `Ω`.
 
@@ -56,7 +65,7 @@ public section
 
 noncomputable section
 
-open Metric Set MeasureTheory Module TopologicalSpace TauCeti.MeasureTheory
+open Filter Metric Set MeasureTheory Module TopologicalSpace TauCeti.MeasureTheory
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
@@ -76,13 +85,12 @@ private theorem continuousOn_preciseRepresentative_real (hp : 2 < p) {u : ℂ �
   have : Fact (1 ≤ p) := ⟨one_le_two.trans hp.le⟩
   obtain ⟨D, hD, -⟩ := hu.exists_weakFDeriv_of_isOpen
   intro x hx
-  obtain ⟨W, hxW, hWΩ, hWc⟩ :=
-    Opens.exists_between_and_isCompact_closure isCompact_singleton (singleton_subset_iff.2 hx)
+  obtain ⟨W, hxW, hWΩ, hWc⟩ := Opens.exists_mem_and_isCompact_closure hx
   obtain ⟨v, hv, -⟩ := hu.exists_w1p hD hWc hWΩ
   have heq : EqOn (preciseRepresentative volume u) (preciseRepresentative volume (W1p.value v))
       W := fun z hz => (preciseRepresentative_congr_ae_nhds (W.isOpen.mem_nhds hz) hv).symm
   exact (((W1p.continuousOn_preciseRepresentative (finrank_real_complex_lt hp) v).congr
-    heq).continuousAt (W.isOpen.mem_nhds (hxW rfl))).continuousWithinAt
+    heq).continuousAt (W.isOpen.mem_nhds hxW)).continuousWithinAt
 
 /-- The real-valued case of `TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le`. -/
 private theorem exists_dist_preciseRepresentative_le_real (hp : 2 < p) :
@@ -134,22 +142,16 @@ private theorem eqOn_preciseRepresentative_coord (hp : 2 < p) (hu : MemWkpLoc p 
         (fun w => ((Module.finBasis ℝ F).coord i).toContinuousLinearMap (u w)) z •
           Module.finBasis ℝ F i) Ω := by
   set b := Module.finBasis ℝ F
-  set ℓ : Fin (finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
   have hp1 : 1 ≤ p := one_le_two.trans hp.le
-  have hcont : ContinuousOn
-      (fun z => ∑ i, preciseRepresentative volume (fun w => ℓ i (u w)) z • b i) Ω :=
-    continuousOn_finsetSum _ fun i _ =>
-      (continuousOn_preciseRepresentative_real hp (hu.clm_comp (ℓ i))).smul continuousOn_const
-  refine ⟨eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
-    (hu.memLpLoc.locallyIntegrableOn hp1 Ω.isOpen.isLocallyClosed) ?_ hcont, hcont⟩
-  have hcoord : ∀ i, (fun w => ℓ i (u w)) =ᵐ[volume.restrict Ω]
-      preciseRepresentative volume (fun w => ℓ i (u w)) := fun i =>
-    (hu.clm_comp (ℓ i)).memLpLoc.ae_eq_preciseRepresentative hp1
-  filter_upwards [ae_all_iff.2 hcoord] with z hz
-  conv_lhs => rw [← b.sum_repr (u z)]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← hz i]
-  simp [ℓ]
+  have hℓ : ∀ i w, (b.coord i).toContinuousLinearMap w = b.repr w i := fun i w => by
+    rw [LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
+  have hc : ∀ i, ContinuousOn (preciseRepresentative volume fun w => b.repr (u w) i) Ω :=
+    fun i => by
+      simpa only [hℓ] using continuousOn_preciseRepresentative_real hp
+        (hu.clm_comp (b.coord i).toContinuousLinearMap)
+  simp only [hℓ]
+  exact ⟨b.eqOn_preciseRepresentative_sum_repr hp1 hu.memLpLoc hc,
+    continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const⟩
 
 /-- **Continuity of `W^{1,p}_loc` maps for `p > 2`.** The precise representative of
 `u ∈ MemWkpLoc p Ω 1`, which agrees with `u` almost everywhere on `Ω`
@@ -158,6 +160,21 @@ theorem MemWkpLoc.continuousOn_preciseRepresentative (hp : 2 < p) (hu : MemWkpLo
     ContinuousOn (preciseRepresentative volume u) Ω :=
   let h := eqOn_preciseRepresentative_coord hp hu
   h.2.congr h.1
+
+/-- For `p > 2`, on `Ω` the precise representative of a difference of members of
+`MemWkpLoc p Ω 1` is the difference of their precise representatives, both being continuous
+there. -/
+theorem MemWkpLoc.eqOn_preciseRepresentative_sub (hp : 2 < p) {f g : ℂ → F}
+    (hf : MemWkpLoc p Ω 1 f) (hg : MemWkpLoc p Ω 1 g) :
+    EqOn (preciseRepresentative volume (f - g))
+      (preciseRepresentative volume f - preciseRepresentative volume g) Ω := by
+  have hp1 : 1 ≤ p := one_le_two.trans hp.le
+  refine eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
+    ((hf.sub hg).memLpLoc.locallyIntegrableOn hp1 Ω.isOpen.isLocallyClosed) ?_
+    ((hf.continuousOn_preciseRepresentative hp).sub (hg.continuousOn_preciseRepresentative hp))
+  filter_upwards [hf.memLpLoc.ae_eq_preciseRepresentative hp1,
+    hg.memLpLoc.ae_eq_preciseRepresentative hp1] with z hfz hgz
+  simp only [Pi.sub_apply, hfz, hgz]
 
 /-- **The local Morrey inequality for `W^{1,p}_loc` maps.** Let `2 < p ≤ ∞` and `α = 1 - 2 / p`.
 There is a constant `C > 0`, depending only on `p` and `F`, such that the following holds. Let
@@ -219,6 +236,60 @@ theorem MemWkpLoc.exists_dist_preciseRepresentative_le (hp : 2 < p) :
         gcongr
         linarith
 
+/-- **The local Morrey sup bound.** Let `2 < p ≤ ∞` and `α = 1 - 2 / p`. There is a constant
+`C > 0`, depending only on `p` and `F`, such that the following holds. Let `u ∈ MemWkpLoc p Ω 1`
+with weak derivative `D` on `Ω`, let `r > 0` and let `x` be a point with `closedBall x (2 r) ⊆ Ω`.
+Then the precise representative `u*` of `u` satisfies
+
+`‖u*(x)‖ ≤ r^{-2/p} ‖u‖_{Lᵖ(B(x, r))} + C ‖D‖_{Lᵖ(B(x, 2 r))} r^α`.
+
+The proof averages the local Morrey inequality
+`TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le` over `B(x, r)`, through
+`Complex.le_rpow_neg_mul_toReal_eLpNorm_restrict_ball_of_ae_le`. -/
+theorem MemWkpLoc.exists_norm_preciseRepresentative_le (hp : 2 < p) :
+    ∃ C : ℝ, 0 < C ∧ ∀ {Ω : Opens ℂ} {u : ℂ → F} {D : ℂ → ℂ →L[ℝ] F}, MemWkpLoc p Ω 1 u →
+      HasWeakFDerivOn volume Ω u D → ∀ {x : ℂ} {r : ℝ}, 0 < r → closedBall x (2 * r) ⊆ Ω →
+        ‖preciseRepresentative volume u x‖ ≤
+          r ^ (-(2 / p.toReal)) * (eLpNorm u p (volume.restrict (ball x r))).toReal +
+            C * (eLpNorm D p (volume.restrict (ball x (2 * r)))).toReal *
+              r ^ (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ) := by
+  obtain ⟨C, hC, hdist⟩ := MemWkpLoc.exists_dist_preciseRepresentative_le (F := F) hp
+  refine ⟨C, hC, fun {Ω u D} hu hD x r hr hxr => ?_⟩
+  have hp1 : 1 ≤ p := one_le_two.trans hp.le
+  set α : ℝ := (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ)
+  set B := ball x r
+  set N := (eLpNorm D p (volume.restrict (ball x (2 * r)))).toReal
+  set c := preciseRepresentative volume u x
+  have hBK : B ⊆ closedBall x (2 * r) :=
+    ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith))
+  have hDfin : eLpNorm D p (volume.restrict (ball x (2 * r))) ≠ ∞ :=
+    ((memLpLoc_iff.1 (hu.memLpLoc_of_hasWeakFDerivOn hD) _ hxr
+      (isCompact_closedBall _ _)).mono_measure
+        (Measure.restrict_mono ball_subset_closedBall le_rfl)).eLpNorm_ne_top
+  -- Pointwise: `‖u*(x)‖ - C N r ^ α ≤ ‖u*(y)‖` for `y ∈ B`.
+  have hpt : ∀ y ∈ B, ‖c‖ - C * N * r ^ α ≤ ‖preciseRepresentative volume u y‖ := by
+    intro y hy
+    have hxy : dist x y ≤ r := (dist_comm x y ▸ mem_ball.1 hy).le
+    have hN : (eLpNorm D p (volume.restrict (ball x (2 * dist x y)))).toReal ≤ N :=
+      ENNReal.toReal_mono hDfin (eLpNorm_mono_measure _
+        (Measure.restrict_mono (ball_subset_ball (by linarith)) le_rfl))
+    have h : dist c (preciseRepresentative volume u y) ≤ C * N * r ^ α :=
+      (hdist hu hD ((closedBall_subset_closedBall (by linarith)).trans hxr)).trans (by gcongr)
+    rw [dist_eq_norm] at h
+    linarith [norm_le_norm_add_norm_sub' c (preciseRepresentative volume u y)]
+  have hae : ∀ᵐ y ∂volume.restrict B, ‖c‖ - C * N * r ^ α ≤ ‖u y‖ := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (hBK.trans hxr)
+      (hu.memLpLoc.ae_eq_preciseRepresentative hp1), self_mem_ae_restrict measurableSet_ball]
+      with y hy hyB
+    rw [hy]
+    exact hpt y hyB
+  -- Average the pointwise bound over `B`.
+  have := Complex.le_rpow_neg_mul_toReal_eLpNorm_restrict_ball_of_ae_le
+    (zero_lt_one.trans_le hp1).ne' hr
+    ((memLpLoc_iff.1 hu.memLpLoc _ hxr (isCompact_closedBall _ _)).mono_measure
+      (Measure.restrict_mono hBK le_rfl)).eLpNorm_ne_top hae
+  linarith
+
 /-- **Morrey's embedding for `W^{1,p}_loc` maps on compact sets.** If `2 < p ≤ ∞`, the precise
 representative of `u ∈ MemWkpLoc p Ω 1` is Hölder continuous with exponent `1 - 2 / p` on every
 compact subset of `Ω`. -/
@@ -262,13 +333,44 @@ theorem MemWkpLoc.exists_lipschitzOnWith_preciseRepresentative_of_isCompact
   simp only [ENNReal.div_top, tsub_zero, ENNReal.toNNReal_one] at hC
   exact ⟨C, holderOnWith_one.1 hC⟩
 
+/-- **Unbounded second derivatives rule out `W^{2,∞}_loc`.** A map that is `C¹` on an open set
+`Ω` and whose classical second derivative is unbounded near a point `z₀ ∈ Ω` is not in
+`W^{2,∞}_loc` on `Ω`: its derivative would be in `W^{1,∞}_loc`, hence Lipschitz near `z₀`. -/
+theorem not_memWkpLoc_two_top_of_not_isBoundedUnder {z₀ : ℂ} (hu : ContDiffOn ℝ 1 u Ω)
+    (hz₀ : z₀ ∈ Ω)
+    (hunb : ¬ IsBoundedUnder (· ≤ ·) (𝓝[≠] z₀) fun z ↦ ‖fderiv ℝ (fderiv ℝ u) z‖) :
+    ¬ MemWkpLoc ∞ Ω 2 u := by
+  intro h
+  have hloc : LocallyIntegrableOn (fderiv ℝ u) Ω volume :=
+    (hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
+      Ω.isOpen.measurableSet
+  obtain ⟨D, hD, hDk⟩ := h.exists_weakFDeriv_of_isOpen
+  have hdu : MemWkpLoc ∞ Ω 1 (fderiv ℝ u) := hDk.congr_ae (hD.ae_eq_fderiv hloc
+    fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz))
+  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
+  have hK : closedBall z₀ (r / 2) ⊆ Ω :=
+    (closedBall_subset_ball (half_lt_self hr)).trans hrΩ
+  obtain ⟨C, hC⟩ := hdu.exists_lipschitzOnWith_preciseRepresentative_of_isCompact
+    (isCompact_closedBall z₀ (r / 2)) hK
+  have heq : EqOn (preciseRepresentative volume (fderiv ℝ u)) (fderiv ℝ u) (ball z₀ (r / 2)) :=
+    eqOn_preciseRepresentative_of_continuousOn isOpen_ball
+      (hloc.mono_set (ball_subset_closedBall.trans hK)) EventuallyEq.rfl
+      ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).mono
+        (ball_subset_closedBall.trans hK))
+  have hlip : LipschitzOnWith C (fderiv ℝ u) (ball z₀ (r / 2)) := fun x hx y hy ↦ by
+    rw [← heq hx, ← heq hy]
+    exact hC (ball_subset_closedBall hx) (ball_subset_closedBall hy)
+  refine hunb (isBoundedUnder_of_eventually_le (a := (C : ℝ)) ?_)
+  filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds z₀ (half_pos hr))] with z hz
+  exact norm_fderiv_le_of_lipschitzOn ℝ (isOpen_ball.mem_nhds hz) hlip
+
 /-- **Continuous `W^{2,p}_loc` maps are `C¹` for `p > 2`.** The weak derivative of
 `u ∈ MemWkpLoc p Ω 2` is in `W^{1,p}_loc`, so it agrees almost everywhere with its continuous
 precise representative, which is then a continuous weak derivative of `u`. If `u` itself is
 continuous on `Ω`, it is therefore `C¹` there. -/
 theorem MemWkpLoc.contDiffOn_one_of_continuousOn (hp : 2 < p) (hv : MemWkpLoc p Ω 2 u)
     (hc : ContinuousOn u Ω) : ContDiffOn ℝ 1 u Ω := by
-  have : CompleteSpace F := FiniteDimensional.complete ℝ F
+  have : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   obtain ⟨D, hD, hD1⟩ := hv.exists_weakFDeriv_of_isOpen
   have hD' := hD.congr_ae_deriv (hD1.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le))
   simpa using hD'.contDiffOn_succ hc (n := 0)

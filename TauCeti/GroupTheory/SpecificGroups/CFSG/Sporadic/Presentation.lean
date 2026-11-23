@@ -41,9 +41,7 @@ total function `TauCeti.SporadicName.presentation`. Each branch is the explicit,
 `TauCeti.SporadicName.Group` is the concrete group defined by the
 selected presentation.
 
-This is milestone S1 of `TauCetiRoadmap/CFSGStatement/README.md`. The dispatcher and its interface
-follow the target signatures in the human-authored roadmap's `CFSGStatement/Suggested.lean`; the
-mathematical and bibliographic sources for each presentation are recorded in the corresponding
+The mathematical and bibliographic sources for each presentation are recorded in the corresponding
 imported module.
 
 ## Main definitions
@@ -144,6 +142,13 @@ to importing modules, so this equation is how they reach it. -/
 theorem SporadicName.presentation_M11 : SporadicName.M11.presentation = Sporadic.m11Presentation :=
   (rfl)
 
+/-- The presentation selected for `Suz` is the transcribed presentation
+`TauCeti.Sporadic.suzPresentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Suz : SporadicName.Suz.presentation = Sporadic.suzPresentation :=
+  (rfl)
+
 /-- The presentation selected for `M₁₂` is the transcribed presentation
 `TauCeti.Sporadic.m12Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
 to importing modules, so this equation is how they reach it. -/
@@ -157,6 +162,20 @@ theorem SporadicName.presentation_M12 : SporadicName.M12.presentation = Sporadic
 theorem SporadicName.presentation_M22 : SporadicName.M22.presentation = Sporadic.m22Presentation :=
   (rfl)
 
+/-- The presentation selected for `M₂₃` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.m23Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_M23 : SporadicName.M23.presentation = Sporadic.m23Presentation :=
+  (rfl)
+
+/-- The presentation selected for `Fi₂₂` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.fi22Presentation`. The body of `TauCeti.SporadicName.presentation` is not
+exposed to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Fi22 :
+    SporadicName.Fi22.presentation = Sporadic.fi22Presentation :=
+  (rfl)
+
 /-- The sporadic group concretely defined by its selected finite presentation. -/
 abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
 
@@ -167,16 +186,57 @@ to importing modules, so this equation is how they reach it. -/
 theorem SporadicName.presentation_M24 : SporadicName.M24.presentation = Sporadic.m24Presentation :=
   (rfl)
 
+/-- The presentation selected for `Ru` is Soicher's transcribed presentation
+`TauCeti.Sporadic.ruPresentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Ru : SporadicName.Ru.presentation = Sporadic.ruPresentation :=
+  (rfl)
+
+/-- The presentation selected for `Co₂` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.co2Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Co2 : SporadicName.Co2.presentation = Sporadic.co2Presentation :=
+  (rfl)
+
 /-- The presentation selected for `McL` is the transcribed ATLAS presentation
 `TauCeti.Sporadic.mclPresentation`. -/
 @[simp]
 theorem SporadicName.presentation_McL : SporadicName.McL.presentation = Sporadic.mclPresentation :=
   (rfl)
 
+/-- The presentation selected for `Co₃` is Djoković's transcribed presentation
+`TauCeti.Sporadic.co3Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Co3 : SporadicName.Co3.presentation = Sporadic.co3Presentation :=
+  (rfl)
+
 /-- The presentation selected for `J₂` is Stoytchev's transcribed presentation
 `TauCeti.Sporadic.j2Presentation`. -/
 @[simp]
 theorem SporadicName.presentation_J2 : SporadicName.J2.presentation = Sporadic.j2Presentation :=
+  (rfl)
+
+/-- The presentation selected for `He` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.hePresentation`. -/
+@[simp]
+theorem SporadicName.presentation_He : SporadicName.He.presentation = Sporadic.hePresentation :=
+  (rfl)
+
+/-- The presentation selected for `J₃` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.j3Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_J3 : SporadicName.J3.presentation = Sporadic.j3Presentation :=
+  (rfl)
+
+/-- The presentation selected for `J₄` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.j4Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_J4 : SporadicName.J4.presentation = Sporadic.j4Presentation :=
   (rfl)
 
 end TauCeti

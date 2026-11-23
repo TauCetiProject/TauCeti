@@ -114,14 +114,14 @@ theorem peterssonInnerCosets_sum_slash_left {Γ Γ' : Subgroup SL(2, ℤ)} [Γ.F
   have hwc : Γ'.withCenter ≤ Γ.withCenter :=
     Subgroup.withCenter_le_iff.mpr ⟨hle.trans Γ.le_withCenter, Γ.center_le_withCenter⟩
   set j : ι → Γ.withCenter ⧸ Γ'.withCenter.subgroupOf Γ.withCenter :=
-    fun i ↦ QuotientGroup.mk ⟨γ i, Γ.le_withCenter (γ i).2⟩
+    fun i ↦ QuotientGroup.mk ⟨γ i, Γ.le_withCenter (γ i).property⟩
   have hj : Function.Bijective j := by
     refine ⟨fun i i' hii' ↦ hγ.1 (QuotientGroup.eq.mpr ?_), fun q ↦ ?_⟩
     · have hx : (γ i : SL(2, ℤ))⁻¹ * γ i' ∈ Γ ⊓ Γ'.withCenter :=
-        ⟨Γ.mul_mem (Γ.inv_mem (γ i).2) (γ i').2,
+        ⟨Γ.mul_mem (Γ.inv_mem (γ i).property) (γ i').property,
           Subgroup.mem_subgroupOf.mp ((QuotientGroup.eq (s := Γ'.withCenter.subgroupOf _)).mp hii')⟩
       rwa [Subgroup.inf_withCenter_eq_of_le hle hneg] at hx
-    · obtain ⟨x, hx, hsign⟩ := Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mp q.out.2
+    · obtain ⟨x, hx, hsign⟩ := Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mp q.out.property
       obtain ⟨i, hi⟩ := hγ.2 (QuotientGroup.mk ⟨x, hx⟩)
       have hix : (γ i : SL(2, ℤ))⁻¹ * x ∈ Γ' := by
         have := (QuotientGroup.eq (s := Γ'.subgroupOf Γ)).mp hi
@@ -144,7 +144,7 @@ theorem peterssonInnerCosets_sum_slash_left {Γ Γ' : Subgroup SL(2, ℤ)} [Γ.F
   -- `g ∣ (γ i)⁻¹ = g`
   have hsummand : ∀ i, (⇑g ∣[k] (p.out)⁻¹) = (⇑g ∣[k] ((γ i : SL(2, ℤ))⁻¹ * (p.out)⁻¹)) :=
     fun i ↦ by
-      rw [SlashAction.slash_mul, SlashInvariantFormClass.SL_slash_eq g _ (Γ.inv_mem (γ i).2)]
+      rw [SlashAction.slash_mul, SlashInvariantFormClass.SL_slash_eq g _ (Γ.inv_mem (γ i).property)]
   rw [hF, SlashAction.sum_slash, UpperHalfPlane.peterssonInner_sum_left k fd Finset.univ _ _
     fun i _ ↦ by
       rw [hsummand i, ← SlashAction.slash_mul]
@@ -184,7 +184,7 @@ theorem peterssonInnerCosets_trace_left {𝒢 : Subgroup (GL (Fin 2) ℝ)} {Γ �
     have hy : mapGL ℝ ((e.symm y : Γ) : SL(2, ℤ)) = y := by
       rw [← Subgroup.coe_equivMapOfInjective_apply Γ (mapGL ℝ) hinj, MulEquiv.apply_symm_apply]
     rw [← Subgroup.mem_map_iff_mem hinj, hΓ', Subgroup.mem_inf, hy]
-    exact and_iff_left y.2
+    exact and_iff_left y.property
   -- the instance `CuspForm.trace` sums with
   let : Fintype (Γ.map (mapGL ℝ) ⧸ 𝒢.subgroupOf (Γ.map (mapGL ℝ))) := Fintype.ofFinite _
   -- the coset spaces of the trace and of `Γ / Γ'` correspond along `e`
@@ -312,15 +312,8 @@ theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
 
 /-! ### Orthogonality across two levels -/
 
-/-- **Orthogonality to the lower level survives restriction to the intersection.** Let
-`L = A ⊓ B`, with `A, B ≤ D` and every element of `D` a product of one of `A` and one of `B`. If a
-cusp form `F` for `B` is Petersson-orthogonal to (the restriction of) every cusp form for `D`,
-then on `L` its restriction is orthogonal to the restriction of every cusp form for `A`.
-
-For `A = Γ₁(N)`, `B = Γ₁(M)`, `D = Γ₁(gcd N M)` and `L = Γ₁(lcm N M)` this compares forms of two
-levels neither of which divides the other: a form of level `M` orthogonal to the forms of level
-`gcd N M` stays orthogonal, at level `lcm N M`, to all forms of level `N`. -/
-theorem peterssonInnerCosets_restrict_restrict_eq_zero {A B D L : Subgroup SL(2, ℤ)}
+/-- The case `A ≤ D` of `peterssonInnerCosets_restrict_restrict_eq_zero`. -/
+private theorem peterssonInnerCosets_restrict_restrict_eq_zero_of_le {A B D L : Subgroup SL(2, ℤ)}
     [A.FiniteIndex] [B.FiniteIndex] [D.FiniteIndex] [L.FiniteIndex] (hAD : A ≤ D) (hBD : B ≤ D)
     (hL : L = A ⊓ B) (hmul : ∀ d ∈ D, ∃ a ∈ A, ∃ b ∈ B, a * b = d)
     {F : CuspForm (B.map (mapGL ℝ)) k}
@@ -360,5 +353,33 @@ theorem peterssonInnerCosets_restrict_restrict_eq_zero {A B D L : Subgroup SL(2,
       ← peterssonInnerCosets_trace_left (hLAB.trans (inf_comm _ _)) (fun h ↦ absurd h hA1) F φ,
       ← CuspForm.restrict_trace (Subgroup.map_mono hAD) (hmap hmul), htr,
       (CuspForm.restrict_eq_zero_iff _).mpr rfl, peterssonInnerCosets_zero_left, map_zero]
+
+/-- **Orthogonality to the lower level survives restriction to the intersection.** Let
+`L = A ⊓ B`, with `B ≤ D` and every element of `D` a product of one of `A` and one of `B`. If a
+cusp form `F` for `B` is Petersson-orthogonal to (the restriction of) every cusp form for `D`,
+then on `L` its restriction is orthogonal to the restriction of every cusp form for `A`.
+
+For `A = Γ₁(N)`, `B = Γ₁(M)`, `D = Γ₁(gcd N M)` and `L = Γ₁(lcm N M)` this compares forms of two
+levels neither of which divides the other: a form of level `M` orthogonal to the forms of level
+`gcd N M` stays orthogonal, at level `lcm N M`, to all forms of level `N`. -/
+theorem peterssonInnerCosets_restrict_restrict_eq_zero {A B D L : Subgroup SL(2, ℤ)}
+    [A.FiniteIndex] [B.FiniteIndex] [D.FiniteIndex] [L.FiniteIndex] (hBD : B ≤ D)
+    (hL : L = A ⊓ B) (hmul : ∀ d ∈ D, ∃ a ∈ A, ∃ b ∈ B, a * b = d)
+    {F : CuspForm (B.map (mapGL ℝ)) k}
+    (hF : ∀ ψ : CuspForm (D.map (mapGL ℝ)) k,
+      peterssonInnerCosets (CuspForm.restrict (Subgroup.map_mono hBD) ψ) F = 0)
+    (φ : CuspForm (A.map (mapGL ℝ)) k) :
+    peterssonInnerCosets (CuspForm.restrict (Subgroup.map_mono (hL.trans_le inf_le_left)) φ)
+      (CuspForm.restrict (Subgroup.map_mono (hL.trans_le inf_le_right)) F) = 0 := by
+  -- replace `A` by `A ⊓ D`, which lies in `D`
+  have hL' : L = (A ⊓ D) ⊓ B := by rw [hL, inf_assoc, inf_eq_right.mpr hBD]
+  have hmul' : ∀ d ∈ D, ∃ a ∈ A ⊓ D, ∃ b ∈ B, a * b = d := fun d hd ↦ by
+    obtain ⟨a, ha, b, hb, rfl⟩ := hmul d hd
+    exact ⟨a, ⟨ha, by simpa using mul_mem_cancel_right (hBD hb) |>.mp hd⟩, b, hb, rfl⟩
+  have key := peterssonInnerCosets_restrict_restrict_eq_zero_of_le inf_le_right hBD hL' hmul' hF
+    (CuspForm.restrict (Subgroup.map_mono inf_le_left) φ)
+  convert key using 2
+  ext
+  simp
 
 end CuspForm

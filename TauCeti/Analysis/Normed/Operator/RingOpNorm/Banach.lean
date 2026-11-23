@@ -264,8 +264,8 @@ operator norm, with constant `‖g‖ * ‖f‖`. -/
 theorem lipschitzWith_comp_comp (g : G →L[R] H) (f : E →L[R] F) :
     LipschitzWith (‖g‖₊ * ‖f‖₊) fun X : F →L[R] G ↦ g.comp (X.comp f) :=
   LipschitzWith.of_dist_le_mul fun X Y ↦ by
-    rw [dist_eq_norm, dist_eq_norm, ← comp_sub, ← sub_comp, NNReal.coe_mul, coe_nnnorm,
-      coe_nnnorm]
+    rw [dist_eq_norm, dist_eq_norm, ← comp_sub, ← sub_comp, NNReal.coe_mul, coe_nnNorm,
+      coe_nnNorm]
     calc ‖g.comp ((X - Y).comp f)‖ ≤ ‖g‖ * (‖X - Y‖ * ‖f‖) :=
           (ringOpNorm_comp_le _ _).trans <| by gcongr; exact ringOpNorm_comp_le _ _
       _ = ‖g‖ * ‖f‖ * ‖X - Y‖ := by ring
@@ -296,6 +296,15 @@ theorem apply_comp_apply_of_mem_closure_adjoin (hri : r.comp i = .id R M) {X : N
   have hX' := (Subalgebra.mem_centralizer_iff R).1
     (Subalgebra.topologicalClosure_adjoin_le_centralizer_centralizer R _ hX) _ he
   exact congr($hX' y)
+
+end Retract
+
+section RetractSeminormed
+
+variable {R : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
+  {M N : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+  {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
 
 /-- For a retract `r ∘ i = id` of `M` through `N`, compression `X ↦ r ∘ X ∘ i` sends the
 operator-norm closure of the polynomials in the extension `i ∘ u ∘ r` of an endomorphism `u` of
@@ -332,7 +341,7 @@ theorem comp_comp_mem_closure_adjoin (hri : r.comp i = .id R M) {X : N →L[R] N
     ext z
     simp [hy.1, hri']
 
-end Retract
+end RetractSeminormed
 
 variable {R E : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] [CompleteSpace E]

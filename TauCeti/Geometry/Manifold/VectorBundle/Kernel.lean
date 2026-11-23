@@ -97,9 +97,9 @@ theorem contMDiffWithinAt_kernel_iff
     letI := kernelFiberBundle hA.continuous h
     ContMDiffWithinAt J (I.prod 𝓘(𝕜, G)) n f s y ↔
       ContMDiffWithinAt J I n (fun z ↦ (f z).proj) s y ∧
-      ContMDiffWithinAt J 𝓘(𝕜, E) n (fun z ↦ ((f z).2 : E)) s y := by
+      ContMDiffWithinAt J 𝓘(𝕜, E) n (fun z ↦ ((f z).snd : E)) s y := by
   let := kernelFiberBundle hA.continuous h
-  rw [Bundle.contMDiffWithinAt_totalSpace]
+  rw [Bundle.contMDiffWithinAt_totalSpace_iff]
   simp only [trivializationAt_kernelFiberBundle, kernelTrivialization_apply]
   constructor
   · rintro ⟨hb, hv⟩
@@ -107,8 +107,8 @@ theorem contMDiffWithinAt_kernel_iff
     have hs := (((ContinuousLinearMap.contMDiff_kerSection hA h) (f y).proj).comp_contMDiffWithinAt
       y hb).clm_apply hv
     exact hs.congr (fun z _ ↦
-      (ContinuousLinearMap.kerSection_apply_of_mem_ker (h (f z).proj) (f z).2.property).symm)
-      (ContinuousLinearMap.kerSection_apply_of_mem_ker (h (f y).proj) (f y).2.property).symm
+      (ContinuousLinearMap.kerSection_apply_of_mem_ker (h (f z).proj) (f z).snd.property).symm)
+      (ContinuousLinearMap.kerSection_apply_of_mem_ker (h (f y).proj) (f y).snd.property).symm
   · rintro ⟨hb, hv⟩
     exact ⟨hb, q.contDiff.comp_contMDiffWithinAt hv⟩
 
@@ -119,7 +119,7 @@ theorem contMDiff_kernel_iff
     letI := kernelFiberBundle hA.continuous h
     ContMDiff J (I.prod 𝓘(𝕜, G)) n f ↔
       ContMDiff J I n (fun z ↦ (f z).proj) ∧
-      ContMDiff J 𝓘(𝕜, E) n (fun z ↦ ((f z).2 : E)) := by
+      ContMDiff J 𝓘(𝕜, E) n (fun z ↦ ((f z).snd : E)) := by
   let := kernelFiberBundle hA.continuous h
   constructor
   · intro hf
@@ -138,7 +138,7 @@ product is `C^n` when the operator family is `C^n`. -/
 theorem contMDiff_kernel_inclusion :
     letI := kernelFiberBundle hA.continuous h
     ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, E)) n
-      (fun p : TotalSpace G (fun x ↦ (A x).ker) ↦ (p.proj, (p.2 : E))) := by
+      (fun p : TotalSpace G (fun x ↦ (A x).ker) ↦ (p.proj, (p.snd : E))) := by
   let := kernelFiberBundle hA.continuous h
   have hi := (contMDiff_kernel_iff hA h).mp
     (contMDiff_id (I := I.prod 𝓘(𝕜, G)) (n := n))

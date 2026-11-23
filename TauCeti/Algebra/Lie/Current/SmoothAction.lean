@@ -324,17 +324,17 @@ currents, by extension and by restriction along `ofLoop`. -/
 def smoothLieHomEquiv :
     {ρ : P →ₗ⁅R⁆ Module.End R M // IsLoopSmooth ρ.toLinearMap} ≃
       {σ : C →ₗ⁅R⁆ Module.End R M // IsSmooth σ.toLinearMap} where
-  toFun ρ := ⟨extendLieHom ρ.1 ρ.2, isSmooth_extendAction _ ρ.2⟩
-  invFun σ := ⟨σ.1.comp (ofLoop R L), σ.2.comp_ofLoop⟩
-  left_inv ρ := Subtype.ext (extendLieHom_comp_ofLoop ρ.1 ρ.2)
+  toFun ρ := ⟨extendLieHom ρ.val ρ.property, isSmooth_extendAction _ ρ.property⟩
+  invFun σ := ⟨σ.val.comp (ofLoop R L), σ.property.comp_ofLoop⟩
+  left_inv ρ := Subtype.ext (extendLieHom_comp_ofLoop ρ.val ρ.property)
   right_inv σ := Subtype.ext <| LieHom.ext fun u ↦ LinearMap.congr_fun
-    ((eq_extendAction_iff _ σ.2.comp_ofLoop σ.2).mpr rfl).symm u
+    ((eq_extendAction_iff _ σ.property.comp_ofLoop σ.property).mpr rfl).symm u
 
 /-- The correspondence sends a smooth representation of polynomial currents to its extension. -/
 @[simp]
 theorem coe_smoothLieHomEquiv_apply
     (ρ : {ρ : P →ₗ⁅R⁆ Module.End R M // IsLoopSmooth ρ.toLinearMap}) :
-    (smoothLieHomEquiv ρ : C →ₗ⁅R⁆ Module.End R M) = extendLieHom ρ.1 ρ.2 :=
+    (smoothLieHomEquiv ρ : C →ₗ⁅R⁆ Module.End R M) = extendLieHom ρ.val ρ.property :=
   (rfl)
 
 /-- The inverse correspondence restricts a smooth representation of formal currents along
@@ -342,7 +342,7 @@ theorem coe_smoothLieHomEquiv_apply
 @[simp]
 theorem coe_smoothLieHomEquiv_symm_apply
     (σ : {σ : C →ₗ⁅R⁆ Module.End R M // IsSmooth σ.toLinearMap}) :
-    (smoothLieHomEquiv.symm σ : P →ₗ⁅R⁆ Module.End R M) = σ.1.comp (ofLoop R L) :=
+    (smoothLieHomEquiv.symm σ : P →ₗ⁅R⁆ Module.End R M) = σ.val.comp (ofLoop R L) :=
   (rfl)
 
 end LieHom
@@ -566,11 +566,11 @@ smooth on currents, by extension and by restriction along `ofLoopExtension`. -/
 def smoothExtensionLieHomEquiv :
     {ρ : ofTwoCocycle cP →ₗ⁅R⁆ Module.End R M // IsLoopSmooth (ρ.toLinearMap ∘ₗ sP)} ≃
       {σ : ofTwoCocycle cC →ₗ⁅R⁆ Module.End R M // IsSmooth (σ.toLinearMap ∘ₗ sC)} where
-  toFun ρ := ⟨extendExtensionLieHom ρ.1 ρ.2, isSmooth_extendExtensionAction _ ρ.2⟩
-  invFun σ := ⟨σ.1.comp (ofLoopExtension Φ hΦ hΦs), σ.2.comp_ofLoopExtension⟩
-  left_inv ρ := Subtype.ext (extendExtensionLieHom_comp_ofLoopExtension ρ.1 ρ.2)
+  toFun ρ := ⟨extendExtensionLieHom ρ.val ρ.property, isSmooth_extendExtensionAction _ ρ.property⟩
+  invFun σ := ⟨σ.val.comp (ofLoopExtension Φ hΦ hΦs), σ.property.comp_ofLoopExtension⟩
+  left_inv ρ := Subtype.ext (extendExtensionLieHom_comp_ofLoopExtension ρ.val ρ.property)
   right_inv σ := Subtype.ext <| LieHom.ext fun x ↦ LinearMap.congr_fun
-    ((eq_extendExtensionAction_iff _ _ σ.2).mpr rfl).symm x
+    ((eq_extendExtensionAction_iff _ _ σ.property).mpr rfl).symm x
 
 /-- The correspondence sends a representation of the polynomial residue central extension to its
 extension. -/
@@ -578,7 +578,7 @@ extension. -/
 theorem coe_smoothExtensionLieHomEquiv_apply
     (ρ : {ρ : ofTwoCocycle cP →ₗ⁅R⁆ Module.End R M // IsLoopSmooth (ρ.toLinearMap ∘ₗ sP)}) :
     (smoothExtensionLieHomEquiv ρ : ofTwoCocycle cC →ₗ⁅R⁆ Module.End R M) =
-      extendExtensionLieHom ρ.1 ρ.2 :=
+      extendExtensionLieHom ρ.val ρ.property :=
   (rfl)
 
 /-- The inverse correspondence restricts along the embedding of the polynomial residue central
@@ -587,7 +587,7 @@ extension. -/
 theorem coe_smoothExtensionLieHomEquiv_symm_apply
     (σ : {σ : ofTwoCocycle cC →ₗ⁅R⁆ Module.End R M // IsSmooth (σ.toLinearMap ∘ₗ sC)}) :
     (smoothExtensionLieHomEquiv.symm σ : ofTwoCocycle cP →ₗ⁅R⁆ Module.End R M) =
-      σ.1.comp (ofLoopExtension Φ hΦ hΦs) :=
+      σ.val.comp (ofLoopExtension Φ hΦ hΦs) :=
   (rfl)
 
 end LieHom

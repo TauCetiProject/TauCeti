@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.PathGraph
+public import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
@@ -140,8 +140,8 @@ theorem hasCartanType_A_of_isSimplyLaced_of_degree_le_two (b : P.Base)
 
 /-- **An irreducible root system whose Dynkin diagram is simply laced and has no branch node has
 exactly one valid Dynkin type.** Existence is the identification with type `Aₙ` above and
-uniqueness is `TauCeti.HasCartanType.eq_of_valid`, so this is the classification target
-`existsUnique_dynkinType` on the diagrams this file names. -/
+uniqueness is `TauCeti.HasCartanType.eq_of_valid`, so this is the classification theorem
+`TauCeti.existsUnique_dynkinType` on the diagrams this file names. -/
 theorem existsUnique_dynkinType_of_isSimplyLaced_of_degree_le_two (b : P.Base)
     (hsl : b.cartanMatrix.IsSimplyLaced)
     (hdeg : ∀ i, (diagramGraph b.cartanMatrix).degree i ≤ 2) :

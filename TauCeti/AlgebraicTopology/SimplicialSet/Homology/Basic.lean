@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Finsupp
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
+public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
@@ -18,8 +20,9 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 This file records how the coproduct inclusion associated to a simplex behaves under the
 simplicial operators and under a morphism of coefficient objects, and how the degreewise
 components of the chain maps induced by maps of simplicial sets compose with each other and with
-changes of coefficients. It also records that simplicial chain modules with semisimple
-coefficients are semisimple, and those with projective coefficients are projective, both as
+changes of coefficients. It also records that, for modules over a ring, simplicial chain modules
+with semisimple coefficients are semisimple and, over a commutative ring, those with flat
+coefficients are flat. Simplicial chains with projective coefficients are projective, both as
 modules and, for coefficients in any preadditive category with coproducts, as objects of that
 category.
 
@@ -67,6 +70,10 @@ lemma ιChainComplex_chainComplexFunctor_map_app_f (f : R ⟶ R') {n : ℕ} (x :
   dsimp [chainComplexFunctor, ιChainComplex, chainComplex]
   simp
 
+/-- The identity of a simplicial set induces the identity chain map. -/
+lemma chainComplexMap_id (X : SSet.{w}) (R : C) : chainComplexMap (𝟙 X) R = 𝟙 _ :=
+  CategoryTheory.Functor.map_id _ _
+
 /-- The degreewise components of the chain maps induced by maps of simplicial sets compose like
 the maps themselves. -/
 @[reassoc]
@@ -94,6 +101,15 @@ lemma ιChainComplex_map {m n : ℕ} (x : X _⦋n⦌) (f : ⦋m⦌ ⟶ ⦋n⦌) 
       X.ιChainComplex (X.map f.op x) := by
   simp [ιChainComplex]
 
+/-- A morphism out of the simplicial `n`-chains of `Y` vanishes on the chains pushed forward along
+a map `f : X ⟶ Y` exactly when it vanishes on the summand of every simplex in the image of `f`. -/
+lemma chainComplexMap_f_comp_eq_zero_iff {Y : SSet.{w}} (f : X ⟶ Y) (R : C) {n : ℕ} {T : C}
+    (c : (Y.chainComplex R).X n ⟶ T) :
+    (chainComplexMap f R).f n ≫ c = 0 ↔ ∀ x : X _⦋n⦌, Y.ιChainComplex (f.app _ x) ≫ c = 0 := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ chainComplex_hom_ext fun x ↦ ?_⟩
+  · rw [← ι_chainComplexMap_f_assoc, h, comp_zero]
+  · rw [ι_chainComplexMap_f_assoc, h, comp_zero]
+
 end
 
 /-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with semisimple coefficients `M` are
@@ -114,6 +130,14 @@ instance projective_chainComplex_X {k : Type*} [Ring k] (X : SSet.{w})
   classical
   -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
   exact .of_equiv' (ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv.symm
+
+/-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with flat coefficients `M` are flat. -/
+instance flat_chainComplex_X {R : Type*} [CommRing R] (X : SSet.{w})
+    (M : ModuleCat.{max w v} R) [Module.Flat R M] (n : ℕ) :
+    Module.Flat R ((X.chainComplex M).X n) := by
+  classical
+  -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
+  exact .of_linearEquiv (ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv
 
 /-- The simplicial chains `Cₙ(X; R) = ∐ R` with coefficients in a projective object `R` of a
 preadditive category with coproducts are projective. -/

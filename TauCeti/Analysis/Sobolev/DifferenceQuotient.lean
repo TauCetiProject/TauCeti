@@ -97,7 +97,6 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
     · rw [hwS hx]
     · simp [lineDeriv_of_notMem_tsupport hx]
   obtain ⟨L, hL⟩ := φ.contDiff.lipschitzWith_of_hasCompactSupport φ.hasCompactSupport (by simp)
-  obtain ⟨M, hφM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
   -- For small `t`, the translation moves onto the test function.
   have hEq : ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ =
       ∫ x, t⁻¹ * (u (x + t • v) - u x) * φ x ∂μ := by
@@ -108,7 +107,8 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
       · rw [ht x hx, hwS hx]
       · simp [image_eq_zero_of_notMem_tsupport hx]
     simp_rw [hpt]
-    have key := integral_comp_add_sub_mul_eq hw φ.continuous.measurable hφM (t • v)
+    have key := integral_comp_add_sub_mul_eq hw
+      (φ.continuous.memLp_top_of_hasCompactSupport φ.hasCompactSupport μ) (t • v)
     calc ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ
         = ∫ y, t⁻¹ * ((φ (y - t • v) - φ y) * w y) ∂μ := by
           congr 1 with y
@@ -183,15 +183,15 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le {
   have hHolder : ‖∫ x in S, D x * φ x ∂μ‖ₑ ≤ ENNReal.ofReal C * eLpNorm (φ : E → ℝ) 2 μ := by
     let _ : ENNReal.HolderTriple 2 2 1 := ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
     calc ‖∫ x in S, D x * φ x ∂μ‖ₑ ≤ eLpNorm (fun x => D x * φ x) 1 (μ.restrict S) :=
-          (enorm_integral_le_lintegral_enorm _).trans_eq
-            (eLpNorm_one_eq_lintegral_enorm (hDmeas.restrict.mul φ.aestronglyMeasurable)).symm
+          (eNorm_integral_le_lintegral_eNorm _).trans_eq
+            (eLpNorm_one_eq_lintegral_eNorm (hDmeas.restrict.mul φ.aestronglyMeasurable)).symm
       _ ≤ eLpNorm D 2 (μ.restrict S) * eLpNorm (φ : E → ℝ) 2 (μ.restrict S) := by
           simpa using eLpNorm_le_eLpNorm_mul_eLpNorm (p := 2) (q := 2) (r := 1)
             (· * ·) 1 continuous_mul hDmeas.restrict φ.aestronglyMeasurable
-            (Eventually.of_forall fun _ => by simp [nnnorm_mul])
+            (Eventually.of_forall fun _ => by simp [nnNorm_mul])
       _ ≤ ENNReal.ofReal C * eLpNorm (φ : E → ℝ) 2 μ :=
           mul_le_mul' hDbound (eLpNorm_restrict_le _ _ _ _)
-  rw [hint, ← Real.norm_eq_abs, ← toReal_enorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
+  rw [hint, ← Real.norm_eq_abs, ← toReal_eNorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).eLpNorm_ne_top) hHolder
 

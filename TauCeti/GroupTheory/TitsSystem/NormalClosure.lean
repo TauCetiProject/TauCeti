@@ -103,7 +103,7 @@ theorem le_normalCore_subgroupOf_or_eq_top_of_normal
   set P := Subgroup.normalClosure (U : Set G)
   intro K _
   rcases T.le_normalCore_or_sup_eq_top_of_normal hirr P with hP | hP
-  · exact Or.inl fun x _ ↦ Subgroup.mem_subgroupOf.mpr (hP x.2)
+  · exact Or.inl fun x _ ↦ Subgroup.mem_subgroupOf.mpr (hP x.property)
   -- Now `G = P B ≤ P (B ∩ N)` since `U ≤ P`, so `(B, N)` pulls back to an irreducible Tits
   -- system on `P`.
   have hf : ∀ g : G, ∃ x : P, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, P.subtype x * t = g := by
@@ -147,6 +147,7 @@ theorem center_normalClosure_eq_normalCore_subgroupOf
     · exact h
     -- A perfect commutative group is trivial.
     have : IsMulCommutative P := Subgroup.center_eq_top_iff.mp h
+    have := Group.IsPerfect.subsingleton_of_isMulCommutative (G := P)
     intro x _
     rw [Subsingleton.elim x 1]
     exact one_mem _
@@ -155,7 +156,7 @@ theorem center_normalClosure_eq_normalCore_subgroupOf
     Subgroup.le_centralizer_iff.mpr (Subgroup.normalClosure_le_normal
       (Subgroup.le_centralizer_iff.mp (TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot
         (T.subgroupB.normalCore_le.trans hBU) Subgroup.le_normalizer_of_normal hZU)))
-  exact Subgroup.mem_centralizer_iff.mp (hZ (Subgroup.mem_subgroupOf.mp hx)) y y.2
+  exact Subgroup.mem_centralizer_iff.mp (hZ (Subgroup.mem_subgroupOf.mp hx)) y y.property
 
 /-- **Tits's simplicity criterion for the normal closure of `U`.** Under the hypotheses of
 `TauCeti.TitsSystem.le_normalCore_subgroupOf_or_eq_top_of_normal`, the quotient `H⁺ / (Z ∩ H⁺)`

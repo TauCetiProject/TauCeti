@@ -93,7 +93,7 @@ noncomputable abbrev MonoidHom.charEval (ψ : G →* Oˣ) : MonoidAlgebra O G �
 /-- The trivial character evaluates by the coefficient-sum augmentation. -/
 @[simp]
 theorem MonoidAlgebra.charEval_one_apply (x : MonoidAlgebra O G) :
-    (1 : G →* Oˣ).charEval x = TauCeti.MonoidAlgebra.augmentation O G x := by
+    (1 : G →* Oˣ).charEval x = MonoidAlgebra.augmentation O G x := by
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp
   | add x y hx hy => rw [map_add, map_add, hx, hy]
@@ -105,7 +105,7 @@ namespace MonoidHom
 augmentation. -/
 theorem charEval_one :
     ((1 : G →* Oˣ).charEval : MonoidAlgebra O G →+* O) =
-      TauCeti.MonoidAlgebra.augmentation O G :=
+      MonoidAlgebra.augmentation O G :=
   RingHom.ext MonoidAlgebra.charEval_one_apply
 
 /-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
@@ -114,7 +114,7 @@ theorem charEval_subgroupCharSum_of_le_ker (χ ψ : G →* Oˣ) (H : Subgroup G)
     (hH : H ≤ (χ * ψ).ker) :
     ψ.charEval (TauCeti.subgroupCharSum ((Units.coeHom O).comp χ) H) = Nat.card H := by
   have h (h : H) : ((χ h : Oˣ) : O) * ψ h = 1 := by
-    rw [← Units.val_mul, ← MonoidHom.mul_apply, hH h.2, Units.val_one]
+    rw [← Units.val_mul, ← MonoidHom.mul_apply, hH h.property, Units.val_one]
   simp [TauCeti.subgroupCharSum_def, map_sum, h, Nat.card_eq_fintype_card]
 
 /-- The norm element `∑_{h ∈ H} h` of a finite subgroup `H` on which `ψ` is trivial evaluates
@@ -132,12 +132,12 @@ namespace Set
 /-- The joint evaluation `ev_Ψ : O[G] → ∏_{ψ ∈ Ψ} O`, `x ↦ (ψ(x))_{ψ ∈ Ψ}`, at a set `Ψ` of
 characters of `G`. -/
 noncomputable def jointEval (Ψ : Set (G →* Oˣ)) : MonoidAlgebra O G →ₐ[O] (Ψ → O) :=
-  AlgHom.pi fun ψ ↦ ψ.1.charEval
+  AlgHom.pi fun ψ ↦ ψ.val.charEval
 
 /-- The `ψ`-coordinate of the joint evaluation is the evaluation at `ψ`. -/
 @[simp]
 theorem jointEval_apply (Ψ : Set (G →* Oˣ)) (x : MonoidAlgebra O G) (ψ : Ψ) :
-    jointEval Ψ x ψ = ψ.1.charEval x :=
+    jointEval Ψ x ψ = ψ.val.charEval x :=
   (rfl)
 
 /-- The *character group ring* `R_Ψ` of a set `Ψ` of characters of `G`: the image of the joint
@@ -159,7 +159,7 @@ variable {Ψ : Set (G →* Oˣ)}
 /-- A function on `Ψ` lies in the character group ring exactly when it is the family of values
 of some element of `O[G]` at the members of `Ψ`. -/
 theorem mem_iff {y : Ψ → O} :
-    y ∈ charGroupRing Ψ ↔ ∃ x : MonoidAlgebra O G, ∀ ψ : Ψ, ψ.1.charEval x = y ψ := by
+    y ∈ charGroupRing Ψ ↔ ∃ x : MonoidAlgebra O G, ∀ ψ : Ψ, ψ.val.charEval x = y ψ := by
   simp [charGroupRing, funext_iff]
 
 /-- Two elements of the character group ring are equal when all their `ψ`-coordinates are. -/
@@ -175,7 +175,7 @@ noncomputable def proj : MonoidAlgebra O G →ₐ[O] charGroupRing Ψ :=
 /-- The `ψ`-coordinate of `α_Ψ(x)` is `ψ(x)`. -/
 @[simp]
 theorem coe_proj_apply (x : MonoidAlgebra O G) (ψ : Ψ) :
-    (proj Ψ x : Ψ → O) ψ = ψ.1.charEval x :=
+    (proj Ψ x : Ψ → O) ψ = ψ.val.charEval x :=
   (rfl)
 
 variable (Ψ) in

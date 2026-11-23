@@ -38,6 +38,8 @@ formal multilinear series with the same coefficient norms. Through this comparis
   `f` is restricted at every `r` with `|r| < radius f` and at no `r` with `radius f < |r|`.
 * `PowerSeries.le_radius_of_bound`: bounded weighted coefficient norms at `r` give
   `r ≤ radius f`.
+* `PowerSeries.inv_le_radius_of_norm_coeff_le_mul_pow`: a geometric bound `‖aₙ‖ ≤ B * Cⁿ` gives
+  `C⁻¹ ≤ radius f` (with `0⁻¹ = ∞`).
 * `PowerSeries.radius_eq_top_iff`: the radius is infinite exactly for entire series; in
   particular `PowerSeries.radius_coe`: polynomials have infinite radius.
 * `PowerSeries.radius_pos_iff`: the radius is positive exactly when the series is restricted at
@@ -80,15 +82,15 @@ theorem radius_def (f : R⟦X⟧) : f.radius = ⨆ (r : ℝ≥0) (_ : f.IsRestri
 
 /-- A series restricted at `r` has radius at least `|r|`. -/
 theorem le_radius_of_isRestricted {r : ℝ} (hf : f.IsRestricted r) : ‖r‖ₑ ≤ f.radius := by
-  have hr : f.IsRestricted (‖r‖₊ : ℝ) := by rwa [coe_nnnorm, Real.norm_eq_abs, isRestricted_abs_iff]
-  rw [enorm_eq_nnnorm]
+  have hr : f.IsRestricted (‖r‖₊ : ℝ) := by rwa [coe_nnNorm, Real.norm_eq_abs, isRestricted_abs_iff]
+  rw [eNorm_eq_nnNorm]
   exact le_iSup₂ (f := fun (s : ℝ≥0) (_ : f.IsRestricted s) ↦ (s : ℝ≥0∞)) _ hr
 
 /-- A series is restricted at every radius of absolute value strictly below its radius. -/
 theorem isRestricted_of_lt_radius {r : ℝ} (h : ‖r‖ₑ < f.radius) : f.IsRestricted r := by
   obtain ⟨s, hs⟩ := lt_iSup_iff.mp h
   obtain ⟨hfs, hrs⟩ := lt_iSup_iff.mp hs
-  rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nnnorm,
+  rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nnNorm,
     Real.norm_eq_abs] at hrs
   exact TauCeti.PowerSeries.isRestricted_of_abs_le hfs (hrs.le.trans (le_abs_self _))
 
@@ -104,10 +106,34 @@ theorem le_radius_of_bound (C : ℝ) {r : ℝ≥0} (h : ∀ n, ‖coeff n f‖ *
     ⟨C, by rintro _ ⟨n, rfl⟩; exact h n⟩ (by simpa using hs)
   simpa using le_radius_of_isRestricted hf
 
+/-- If the coefficient norms satisfy `‖coeff n f‖ ≤ B * (C : ℝ) ^ n` for all `n`, then the radius
+of `f` is at least `C⁻¹` (with `0⁻¹ = ∞`). -/
+theorem inv_le_radius_of_norm_coeff_le_mul_pow {B : ℝ} {C : ℝ≥0}
+    (h : ∀ n, ‖coeff n f‖ ≤ B * (C : ℝ) ^ n) :
+    (C : ℝ≥0∞)⁻¹ ≤ f.radius := by
+  rcases eq_or_ne C 0 with rfl | hC
+  · rw [ENNReal.coe_zero, ENNReal.inv_zero, top_le_iff]
+    refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ le_radius_of_bound B fun n ↦ ?_
+    cases n with
+    | zero => simpa using h 0
+    | succ n =>
+      have hB : 0 ≤ B := by simpa using (norm_nonneg (coeff 0 f)).trans (h 0)
+      have h0 : ‖coeff (n + 1) f‖ = 0 := le_antisymm (by simpa using h (n + 1)) (norm_nonneg _)
+      simpa [h0] using hB
+  · rw [← ENNReal.coe_inv hC]
+    refine le_radius_of_bound B fun n ↦ ?_
+    calc ‖coeff n f‖ * ((C⁻¹ : ℝ≥0) : ℝ) ^ n
+        ≤ B * (C : ℝ) ^ n * (C : ℝ)⁻¹ ^ n := by
+          rw [NNReal.coe_inv]
+          gcongr
+          exact h n
+      _ = B * ((C : ℝ) * (C : ℝ)⁻¹) ^ n := by rw [mul_assoc, ← mul_pow]
+      _ = B := by rw [mul_inv_cancel₀ (NNReal.coe_ne_zero.mpr hC), one_pow, mul_one]
+
 /-- The radius is infinite exactly when the series is entire. -/
 @[simp]
 theorem radius_eq_top_iff : f.radius = ⊤ ↔ f.IsEntire := by
-  refine ⟨fun h ↦ isEntire_iff.mpr fun r ↦ isRestricted_of_lt_radius (h ▸ enorm_lt_top),
+  refine ⟨fun h ↦ isEntire_iff.mpr fun r ↦ isRestricted_of_lt_radius (h ▸ eNorm_lt_top),
     fun h ↦ ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_⟩
   simpa using le_radius_of_isRestricted (h.isRestricted r)
 
@@ -126,7 +152,7 @@ theorem radius_pos_iff : 0 < f.radius ↔ ∃ r : ℝ, 0 < r ∧ f.IsRestricted 
   refine ⟨fun h ↦ ?_, fun ⟨r, hr, hf⟩ ↦ ?_⟩
   · obtain ⟨r, hr, hrf⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp h
     exact ⟨r, by simpa using hr, isRestricted_of_lt_radius (by simpa using hrf)⟩
-  · exact (enorm_pos.mpr hr.ne').trans_le (le_radius_of_isRestricted hf)
+  · exact (eNorm_pos.mpr hr.ne').trans_le (le_radius_of_isRestricted hf)
 
 /-- **Comparison with formal multilinear series.** The radius of `f` is the radius of any formal
 multilinear series whose terms have the norms of the coefficients of `f`. -/
@@ -196,17 +222,17 @@ the constant `1` and the radius is `∞`. -/
 theorem radius_mk_pow [NormMulClass R] (a : R) :
     (mk fun n ↦ a ^ n).radius = (‖a‖₊ : ℝ≥0∞)⁻¹ := by
   rcases eq_or_ne a 0 with rfl | ha
-  · rw [nnnorm_zero, ENNReal.coe_zero, ENNReal.inv_zero]
+  · rw [nnNorm_zero, ENNReal.coe_zero, ENNReal.inv_zero]
     refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ le_radius_of_bound ‖(1 : R)‖ fun n ↦ ?_
     cases n <;> simp
   have : Nontrivial R := ⟨⟨a, 0, ha⟩⟩
   have : NormOneClass R := NormMulClass.toNormOneClass
-  have ha' : ‖a‖₊ ≠ 0 := nnnorm_ne_zero_iff.mpr ha
+  have ha' : ‖a‖₊ ≠ 0 := nnNorm_ne_zero_iff.mpr ha
   rw [← ENNReal.coe_inv ha']
   refine le_antisymm (le_of_not_gt fun h ↦ ?_) (le_radius_of_bound 1 fun n ↦ ?_)
   · refine TauCeti.PowerSeries.not_isRestricted_mk_pow ha (isRestricted_of_lt_radius ?_)
-    rwa [enorm_eq_nnnorm, nnnorm_inv, nnnorm_norm]
-  · rw [coeff_mk, norm_pow, NNReal.coe_inv, coe_nnnorm, ← mul_pow,
+    rwa [eNorm_eq_nnNorm, nnNorm_inv, nnNorm_norm]
+  · rw [coeff_mk, norm_pow, NNReal.coe_inv, coe_nnNorm, ← mul_pow,
       mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha), one_pow]
 
 end NormedRing

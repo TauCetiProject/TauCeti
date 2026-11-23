@@ -37,11 +37,15 @@ The predicate `TauCeti.ContinuousCohomology.ResolutionVanishesOn X T n F` record
 `F` of the resolution `C(G, C(G, …, X))` vanishes on all `n`-tuples of points of a subset `T ⊆ G`,
 and `TauCeti.ContinuousCohomology.ResolutionVanishesOn.exists_isOpen` shows that vanishing on a
 compact set already holds on an open neighbourhood of it. For an arbitrary compact set that is
-all one gets; when the compact set is a closed subgroup of a profinite `G`, the neighbourhood
-contains an open subgroup, so the vanishing holds on an open subgroup containing the closed one
+all one gets. The vanishing locus is closed
+(`TauCeti.ContinuousCohomology.isClosed_setOfPred_resolutionVanishesOn`), so for a Hausdorff
+coefficient module vanishing passes to the closure
+(`TauCeti.ContinuousCohomology.ResolutionVanishesOn.closure`). When the compact set is the
+closure of a subgroup of a profinite `G`, the neighbourhood contains an open subgroup, so the
+vanishing holds on an open subgroup containing the subgroup itself, for any subgroup
 (`TauCeti.ContinuousCohomology.exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero` in
-`ClosedSubgroup.lean`). This is how cohomological statements about a closed subgroup descend to the
-open subgroups containing it.
+`ClosedSubgroup.lean`). This is how cohomological statements about a subgroup descend to the open
+subgroups containing it.
 -/
 
 public section
@@ -49,7 +53,11 @@ public section
 namespace TauCeti
 
 variable {k G : Type*} [Ring k] [TopologicalSpace k] [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [CompactSpace G] (X : TopRep k G) [DiscreteTopology X.V] (n : ℕ)
+  [IsTopologicalGroup G]
+
+section Discrete
+
+variable [CompactSpace G] (X : TopRep k G) [DiscreteTopology X.V] (n : ℕ)
 
 /-- Every term of the coinduced resolution of a discrete representation of a compact group is
 discrete: it is an iterated space of continuous maps out of the compact group `G`. -/
@@ -71,13 +79,14 @@ instance discreteTopology_homogeneousCochains :
 instance discreteTopology_cocycles : DiscreteTopology (ContinuousCohomology.cocycles X n) :=
   HomologicalComplex.discreteTopology_cycles _ n
 
+end Discrete
+
 section Smooth
 
-variable {X}
+variable [CompactSpace G] {X : TopRep k G}
 
 attribute [local instance] TopRep.distribMulAction
 
-omit [DiscreteTopology X.V] in
 /-- **Coinduction from the trivial subgroup preserves smoothness** over a compact group: if `X` is
 a smooth discrete representation of the compact group `G`, so is `X.coind₁ = C(G, X)`. -/
 theorem IsSmoothDiscrete.coind₁ (hX : IsSmoothDiscrete k X) : IsSmoothDiscrete k X.coind₁ := by
@@ -107,7 +116,6 @@ theorem IsSmoothDiscrete.coind₁ (hX : IsSmoothDiscrete k X) : IsSmoothDiscrete
   ext x
   exact huv (Set.mk_mem_prod hg (hv (Set.mem_univ x)))
 
-omit [DiscreteTopology X.V] in
 /-- **The coinduced resolution of a smooth discrete representation of a compact group is smooth
 discrete in every degree.** -/
 theorem IsSmoothDiscrete.resolutionX (hX : IsSmoothDiscrete k X) :
@@ -127,20 +135,21 @@ namespace ContinuousCohomology
 vanishes on all `n`-tuples of points of `T`. For a subgroup `S` it is the vanishing of the
 restriction of `F` to `S`. -/
 
-omit [CompactSpace G] [DiscreteTopology X.V] in
+section Basic
+
+variable (X : TopRep k G)
+
 /-- An element `F` of the `n`-th term `C(G, C(G, …, X))` of the coinduced resolution **vanishes on
 `T`** when it is zero on every `n`-tuple of points of `T`. -/
 def ResolutionVanishesOn (T : Set G) : (n : ℕ) → (TopRep.resolutionX X n).V → Prop
   | 0, v => v = 0
   | n + 1, F => ∀ g ∈ T, ResolutionVanishesOn T n ((F : C(G, (TopRep.resolutionX X n).V)) g)
 
-omit [CompactSpace G] [DiscreteTopology X.V] in
 @[simp]
 theorem resolutionVanishesOn_zero (T : Set G) (v : (TopRep.resolutionX X 0).V) :
     ResolutionVanishesOn X T 0 v ↔ v = 0 :=
   Iff.rfl
 
-omit [CompactSpace G] [DiscreteTopology X.V] in
 @[simp]
 theorem resolutionVanishesOn_succ (T : Set G) (n : ℕ) (F : (TopRep.resolutionX X (n + 1)).V) :
     ResolutionVanishesOn X T (n + 1) F ↔
@@ -149,7 +158,6 @@ theorem resolutionVanishesOn_succ (T : Set G) (n : ℕ) (F : (TopRep.resolutionX
 
 variable {X}
 
-omit [CompactSpace G] [DiscreteTopology X.V] in
 /-- Vanishing on a set implies vanishing on every subset. -/
 theorem ResolutionVanishesOn.mono {T T' : Set G} (h : T' ⊆ T) :
     ∀ (n : ℕ) {F : (TopRep.resolutionX X n).V},
@@ -157,6 +165,9 @@ theorem ResolutionVanishesOn.mono {T T' : Set G} (h : T' ⊆ T) :
   | 0, _, hF => hF
   | n + 1, _, hF => fun g hg ↦ (hF g (h hg)).mono h n
 
+end Basic
+
+variable [CompactSpace G] {X : TopRep k G} [DiscreteTopology X.V] in
 /-- **Vanishing on a compact set spreads to an open neighbourhood.** An element of the coinduced
 resolution of a discrete representation of a compact group that vanishes on a compact set `T`
 vanishes on an open set containing `T`. -/
@@ -173,17 +184,56 @@ theorem ResolutionVanishesOn.exists_isOpen {T : Set G} (hT : IsCompact T) (n : �
     have : Finite (F' '' T) := ((hT.image F'.continuous).finite_of_discrete).to_subtype
     -- each of the finitely many values of `F'` on `T` vanishes on an open set containing `T`
     choose W hWopen hTW hW using fun v : F' '' T ↦
-      ih (F := v) (by obtain ⟨g, hg, hgv⟩ := v.2; exact hgv ▸ hF g hg)
+      ih (F := v) (by obtain ⟨g, hg, hgv⟩ := v.property; exact hgv ▸ hF g hg)
     refine ⟨F' ⁻¹' (F' '' T) ∩ ⋂ v, W v, ((isOpen_discrete _).preimage F'.continuous).inter
       (isOpen_iInter_of_finite fun v ↦ hWopen v),
       Set.subset_inter (Set.subset_preimage_image _ _) (Set.subset_iInter fun v ↦ hTW v),
       fun g hg ↦ ?_⟩
     exact (hW ⟨F' g, hg.1⟩).mono (Set.inter_subset_right.trans (Set.iInter_subset _ _)) n
 
+section Closure
+
+variable {X : TopRep k G}
+
+/-- **The vanishing locus is closed.** For a Hausdorff coefficient module, the elements of the
+coinduced resolution that vanish on a set `T` form a closed subset. -/
+theorem isClosed_setOfPred_resolutionVanishesOn [T2Space X.V] (T : Set G) (n : ℕ) :
+    IsClosed {F : (TopRep.resolutionX X n).V | ResolutionVanishesOn X T n F} := by
+  -- an intersection of the preimages of closed sets under the continuous evaluations at `T`
+  induction n with
+  | zero => exact isClosed_singleton
+  | succ n ih =>
+    have : {F : (TopRep.resolutionX X (n + 1)).V | ResolutionVanishesOn X T (n + 1) F} =
+        ⋂ g ∈ T, (fun F : C(G, (TopRep.resolutionX X n).V) ↦ F g) ⁻¹'
+          {v | ResolutionVanishesOn X T n v} := by
+      ext F
+      simp [Set.mem_iInter]
+    rw [this]
+    exact isClosed_biInter fun g _ ↦ ih.preimage (continuous_eval_const g)
+
+/-- **Vanishing on a set spreads to its closure.** An element of the coinduced resolution that
+vanishes on a set `T` vanishes on the closure of `T`, for a Hausdorff coefficient module. -/
+theorem ResolutionVanishesOn.closure [T2Space X.V] {T : Set G} (n : ℕ) :
+    ∀ {F : (TopRep.resolutionX X n).V}, ResolutionVanishesOn X T n F →
+      ResolutionVanishesOn X (_root_.closure T) n F := by
+  induction n with
+  | zero => exact fun hF ↦ hF
+  | succ n ih =>
+    intro F hF
+    set F' : C(G, (TopRep.resolutionX X n).V) := F
+    have hsub : T ⊆ F' ⁻¹' {v | ResolutionVanishesOn X (_root_.closure T) n v} :=
+      fun g hg ↦ ih (hF g hg)
+    exact fun g hg ↦ closure_minimal hsub
+      ((isClosed_setOfPred_resolutionVanishesOn (X := X) (_root_.closure T) n).preimage
+        F'.continuous) hg
+
+end Closure
+
 end ContinuousCohomology
 
 end Vanishing
 
+variable [CompactSpace G] (X : TopRep k G) [DiscreteTopology X.V] (n : ℕ) in
 /-- The continuous cohomology of a discrete representation of a compact group is discrete.
 
 This is the statement that lets a comparison with an explicit low-degree model be phrased as an

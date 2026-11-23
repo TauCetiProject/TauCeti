@@ -12,6 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Cdf
 import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The Kumaraswamy distribution
@@ -238,7 +239,7 @@ theorem integrable_kumaraswamyMeasure_iff (a b : ℝ) {g : ℝ → E} :
     Integrable g (kumaraswamyMeasure a b) ↔
       Integrable (fun x ↦ kumaraswamyPDFReal a b x • g x) := by
   rw [kumaraswamyMeasure_eq_withDensity, funext (kumaraswamyPDF_eq_ofReal a b)]
-  exact Probability.integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_kumaraswamyPDFReal a b).aemeasurable (ae_of_all _ (kumaraswamyPDFReal_nonneg a b))
 
 /-- **Integral transfer.** An integral against a Kumaraswamy law is the density-weighted Lebesgue
@@ -246,7 +247,7 @@ integral. This holds at every parameter, the zero measure included. -/
 theorem integral_kumaraswamyMeasure_eq (a b : ℝ) (g : ℝ → E) :
     ∫ x, g x ∂kumaraswamyMeasure a b = ∫ x, kumaraswamyPDFReal a b x • g x := by
   rw [kumaraswamyMeasure_eq_withDensity, funext (kumaraswamyPDF_eq_ofReal a b)]
-  exact Probability.integral_withDensity_ofReal (measurable_kumaraswamyPDFReal a b).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_kumaraswamyPDFReal a b).aemeasurable
     (ae_of_all _ (kumaraswamyPDFReal_nonneg a b)) g
 
 end Transfer
@@ -378,7 +379,7 @@ theorem cdf_kumaraswamyMeasure_of_nonneg (ha : 0 < a) (hb : 0 < b) (hx : 0 ≤ x
   have := isProbabilityMeasure_kumaraswamyMeasure ha hb
   have hset : Iic x =ᵐ[kumaraswamyMeasure a b] (fun y : ℝ ↦ y ^ a) ⁻¹' Iic (x ^ a) := by
     filter_upwards [ae_mem_Ioo_kumaraswamyMeasure a b] with y hy
-    exact propext (Real.rpow_le_rpow_iff hy.1.le hx ha).symm
+    exact (Real.rpow_le_rpow_iff hy.1.le hx ha).symm
   rw [cdf_eq_real, ← measureReal_Iic_betaMeasure zero_lt_one hb,
     ← map_rpow_kumaraswamyMeasure ha hb, measureReal_def, measureReal_def,
     Measure.map_apply (by fun_prop) measurableSet_Iic, measure_congr hset]

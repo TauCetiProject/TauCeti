@@ -142,7 +142,7 @@ theorem span_traceDual_one_eq_traceDual_one :
   · intro x hx
     obtain ⟨b, hbx⟩ := exists_smul_mem_traceDual_of_mem_traceDual
       (R := R) (Rₘ := Rₘ) (S := S) (Sₘ := Sₘ) (K := K) (L := L) (M := M) hx
-    let bm : Algebra.algebraMapSubmonoid S M := ⟨algebraMap R S b, ⟨b, b.2, rfl⟩⟩
+    let bm : Algebra.algebraMapSubmonoid S M := ⟨algebraMap R S b, ⟨b, b.property, rfl⟩⟩
     have hbx' := Submodule.smul_mem (Submodule.span Sₘ
       (Submodule.traceDual R K (1 : Submodule S L) : Set L)) (IsLocalization.mk' Sₘ 1 bm)
       (Submodule.subset_span hbx)
@@ -188,7 +188,7 @@ theorem extended_dual_one_eq_dual_one [IsDomain S] :
   change FractionalIdeal.extended L h
       (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) = _
   apply FractionalIdeal.coeToSubmodule_injective
-  refine (FractionalIdeal.coe_extended_eq_span L h _).trans ?_
+  refine (FractionalIdeal.coeToSubmodule_extended_eq_span L h _).trans ?_
   have hmap : IsLocalization.map L (algebraMap S Sₘ) h = RingHom.id L := by
     apply IsFractionRing.ringHom_ext (A := S)
     intro s

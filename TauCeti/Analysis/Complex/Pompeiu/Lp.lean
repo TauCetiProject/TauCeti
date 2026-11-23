@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.CauchyKernel
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
+public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.MeasureTheory.Integral.SchurTest
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
@@ -17,7 +18,8 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 The normalization `TauCeti.cauchyTransform f w = π⁻¹ ∫ z, (w - z)⁻¹ • f z` corresponds to
 `bar∂ = (∂ₛ + i ∂ₜ) / 2`. For input supported in the closed disc of radius `r` about `c`, the
 transform belongs to `Lᵖ` on the output disc of radius `R`, for every `1 ≤ p ≤ ∞`.
-The operator `TauCeti.cauchyTransformLp` has norm at most `2 * (r + R)`.
+The operator `TauCeti.cauchyTransformLp` has norm at most `2 * (r + R)`. Consequently the
+transform of compactly supported `Lᵖ` data is locally `Lᵖ` (`TauCeti.memLpLoc_cauchyTransform`).
 
 The proof applies the existing operator-valued Schur test. Integrating the reciprocal kernel over
 the input or output disc gives the common bound `2π(r + R)` before normalization. The result
@@ -28,6 +30,9 @@ On data supported in the input disc the operator is the Cauchy transform
 disc, `Lᵖ` convergence of the transforms on each output disc from `Lᵖ` convergence of the data
 (`TauCeti.tendsto_toLp_cauchyTransform`), and continuous dependence of the transform on data that
 depends continuously on a parameter (`TauCeti.continuous_toLp_cauchyTransform`).
+
+`TauCeti.cauchyTransform_comp_ae` states that Cauchy integration commutes almost everywhere
+with continuous complex-linear coefficient maps.
 
 ## References
 
@@ -90,7 +95,7 @@ private theorem lintegral_cauchyKernelL_le {c w : ℂ} (r R : ℝ≥0)
     (hw : w ∈ closedBall c (R : ℝ)) :
     ∫⁻ z, ‖cauchyKernelL (F := F) w z‖ₑ ∂(volume.restrict (closedBall c r)) ≤
       (2 * (r + R) : ℝ≥0) := by
-  rw [← ofReal_integral_norm_eq_lintegral_enorm (integrableOn_cauchyKernelL c w r),
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm (integrableOn_cauchyKernelL c w r),
     ← ENNReal.ofReal_coe_nnreal]
   apply ENNReal.ofReal_le_ofReal
   have hi := (Complex.locallyIntegrable_sub_inv w).integrableOn_isCompact
@@ -103,7 +108,7 @@ private theorem lintegral_cauchyKernelL_le {c w : ℂ} (r R : ℝ≥0)
     _ = Real.pi⁻¹ * ∫ z in closedBall c (r : ℝ), ‖z - w‖⁻¹ := integral_const_mul _ _
     _ ≤ Real.pi⁻¹ * (2 * Real.pi * ((r : ℝ) + R)) := by
         gcongr
-        exact integral_norm_sub_inv_closedBall_le_add r.2 hw
+        exact integral_norm_sub_inv_closedBall_le_add r.property hw
     _ = (2 * (r + R) : ℝ≥0) := by
         push_cast
         field_simp
@@ -173,6 +178,19 @@ theorem memLp_cauchyTransform {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} {p : ℝ
   rw [cauchyTransform_eq_kernel_integral hs]
   exact h
 
+/-- The Cauchy transform of compactly supported `Lᵖ` data, `1 ≤ p ≤ ∞`, is locally `Lᵖ` on every
+subset of the plane. -/
+theorem memLpLoc_cauchyTransform {p : ℝ≥0∞} (hp : 1 ≤ p) {h : ℂ → F} (hh : MemLp h p)
+    (hc : HasCompactSupport h) {U : Set ℂ} : MemLpLoc p U (cauchyTransform h) := by
+  have hball (s : Set ℂ) (hs : Bornology.IsBounded s) : ∃ R : ℝ≥0, s ⊆ closedBall 0 R := by
+    obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall 0).1 hs
+    exact ⟨R.toNNReal, hR.trans (closedBall_subset_closedBall (Real.le_coe_toNNReal R))⟩
+  obtain ⟨r, hr⟩ := hball _ hc.isCompact.isBounded
+  refine memLpLoc_iff.2 fun K _ hK ↦ ?_
+  obtain ⟨R, hR⟩ := hball K hK.isBounded
+  exact (memLp_cauchyTransform (R := R) hp (hh.restrict _)
+    ((subset_tsupport h).trans hr)).mono_measure (Measure.restrict_mono hR le_rfl)
+
 /-- The fixed-support function bound, with input and output radii explicit. It controls only the
 output disc, and includes every exponent from one through infinity. -/
 theorem eLpNorm_cauchyTransform_le {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} {p : ℝ≥0∞}
@@ -208,6 +226,26 @@ theorem ae_integrable_cauchyTransform {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} 
     exact heq ▸ hw'.smul (Real.pi : ℂ)
   exact hi.integrable_of_forall_notMem_eq_zero fun z hz ↦ by
     rw [notMem_support.mp (fun h ↦ hz (hs h)), smul_zero]
+
+section CoefficientMaps
+
+variable [CompleteSpace F] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+  [CompleteSpace G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Cauchy integration commutes a.e. with a complex-linear coefficient map. -/
+theorem cauchyTransform_comp_ae (L : F →L[ℂ] G) {f : ℂ → F} {c : ℂ} {r R : ℝ≥0}
+    (hf : MemLp f p (volume.restrict (closedBall c (r : ℝ))))
+    (hs : support f ⊆ closedBall c (r : ℝ)) :
+    cauchyTransform (fun z ↦ L (f z)) =ᵐ[volume.restrict (closedBall c (R : ℝ))]
+      fun w ↦ L (cauchyTransform f w) := by
+  filter_upwards [ae_integrable_cauchyTransform (R := R) Fact.out hf hs] with w hw
+  simp only [cauchyTransform_apply, map_smul]
+  rw [← L.integral_comp_comm hw]
+  apply congrArg fun t : G ↦ (Real.pi : ℂ)⁻¹ • t
+  apply integral_congr_ae
+  exact .of_forall fun z ↦ (L.map_smul _ _).symm
+
+end CoefficientMaps
 
 /-- On data supported in the input disc, the bounded Cauchy operator `TauCeti.cauchyTransformLp`
 is the Cauchy transform. -/
