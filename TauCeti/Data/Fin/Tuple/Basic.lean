@@ -81,8 +81,6 @@ once.
   change the set of entries.
 * `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
   the right one that never steps back steps from left to right exactly once.
-* `Fin.comp_removeNth` and `Fin.eval_removeNth`: composing with or pointwise evaluating a tuple
-  with an entry removed via `Fin.removeNth`.
 * `Fin.comp_succ_succAbove_comp_predAbove`: when adjacent entries at `p.castSucc` and `p.succ`
   agree, deleting `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers the
   tuple.
@@ -532,22 +530,6 @@ theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
     omega
   · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
     omega
-
-/-- Post-composition with a function commutes with `Fin.removeNth`. -/
-@[simp]
-theorem comp_removeNth {α : Sort*} {β : Sort*} {n : ℕ} (f : α → β) (i : Fin (n + 1))
-    (v : Fin (n + 1) → α) :
-    f ∘ i.removeNth v = i.removeNth (f ∘ v) := by
-  funext j
-  simp [removeNth_apply]
-
-/-- Pointwise evaluation at `x` commutes with `Fin.removeNth` on a tuple of function-like
-objects. -/
-theorem eval_removeNth {M : Type*} {V : M → Type*} {α : Type*} [DFunLike α M V]
-    {n : ℕ} (i : Fin (n + 1)) (s : Fin (n + 1) → α) (x : M) :
-    (fun j ↦ i.removeNth s j x) = i.removeNth (fun j ↦ s j x) := by
-  funext j
-  simp [removeNth_apply]
 
 /-- When `f` takes equal values at the adjacent indices `p.castSucc` and `p.succ`, deleting
 `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers `f`. -/

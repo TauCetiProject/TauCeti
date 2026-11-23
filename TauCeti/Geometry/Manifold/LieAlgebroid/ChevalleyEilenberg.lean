@@ -11,8 +11,6 @@ public import TauCeti.Algebra.Lie.Cohomology.LieRinehart
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge
-import TauCeti.Data.Fin.Tuple.Basic
-import TauCeti.Data.Fin.VecNotation
 
 /-!
 # The Chevalley–Eilenberg complex of a Lie algebroid
@@ -174,7 +172,8 @@ private theorem cochainSectionsEquiv_removeNth {k : ℕ} (φ : A.Cochain k)
     (s : Fin (k + 1) → Cₛ^∞⟮I; F, V⟯) (i : Fin (k + 1)) :
     A.cochainSectionsEquiv k φ (i.removeNth (A.sectionsEquiv.symm ∘ s)) =
       φ.evalSection (i.removeNth s) := by
-  rw [← comp_removeNth, ← A.evalSection_eq_cochainSectionsEquiv]
+  rw [A.evalSection_eq_cochainSectionsEquiv]
+  exact congrArg _ (funext fun j ↦ by simp only [Fin.removeNth_apply, Function.comp_apply])
 
 private theorem cochain_ext_evalSection {k : ℕ} {φ₁ φ₂ : A.Cochain k}
     (h : ∀ s : Fin k → Cₛ^∞⟮I; F, V⟯, φ₁.evalSection s = φ₂.evalSection s) : φ₁ = φ₂ :=
@@ -187,8 +186,10 @@ private theorem cochain_ext_evalSection {k : ℕ} {φ₁ φ₂ : A.Cochain k}
       (A.cochainSectionsEquiv (k + 1) φ).curryLeft (A.sectionsEquiv.symm a) := by
   ext s x
   simp only [cochainSectionsEquiv_apply, ContMDiffSection.evalSection_apply,
-    ContMDiffSection.curryLeft_apply_apply, AlternatingMap.curryLeft_apply_apply,
-    Matrix.comp_vecCons, LinearEquiv.apply_symm_apply, Matrix.eval_vecCons]
+    ContMDiffSection.curryLeft_apply_apply, AlternatingMap.curryLeft_apply_apply, Matrix.vecCons]
+  refine congrArg (φ x) ?_
+  simpa only [Function.comp_def, LinearEquiv.apply_symm_apply] using
+    (Fin.comp_cons (fun z : A.Sections ↦ A.sectionsEquiv z x) (A.sectionsEquiv.symm a) s).symm
 
 /-! ### Lie derivative and Chevalley–Eilenberg differential -/
 
@@ -262,8 +263,10 @@ theorem evalSection_extDeriv_succ {k : ℕ} (φ : A.Cochain (k + 1))
     rw [Function.comp_apply, lie_sectionsEquiv_symm, cochainSectionsEquiv_removeNth]
   · refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
       congrArg ((-1 : ℤ) ^ (i + j + 1 : ℕ) • ·) ?_
-    rw [A.evalSection_eq_cochainSectionsEquiv, Matrix.comp_vecCons, comp_removeNth, comp_removeNth,
-      Function.comp_apply, Function.comp_apply, sectionsEquiv_symm_bracket]
+    rw [A.evalSection_eq_cochainSectionsEquiv]
+    congr 1
+    simp only [Matrix.vecCons, Fin.comp_cons, Function.comp_apply, sectionsEquiv_symm_bracket]
+    exact congrArg _ (funext fun m ↦ by simp only [Fin.removeNth_apply, Function.comp_apply])
 
 /-- On a `1`-cochain and two smooth sections `a`, `b`,
 `(d_A φ)(a, b) = ρ(a)(φ(b)) - ρ(b)(φ(a)) - φ([a, b])`. -/
@@ -401,9 +404,11 @@ theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k
     A.lieDeriv a (φ.wedge ψ) = (A.lieDeriv a φ).wedge ψ + φ.wedge (A.lieDeriv a ψ) := by
   refine A.cochain_ext_evalSection fun s ↦ ?_
   simp only [A.evalSection_lieDeriv, ContMDiffSection.evalSection_add,
-    ContMDiffSection.evalSection_wedge, A.anchorDeriv_const_smul_right,
-    A.anchorDeriv_sum_right, Units.smul_def, A.anchorDeriv_zsmul_right,
-    A.anchorDeriv_mul_right, ← Finset.smul_sum]
+    ContMDiffSection.evalSection_wedge, A.anchorDeriv_const_smul_right]
+  conv_lhs =>
+    rw [← A.lie_sectionsEquiv_symm a]
+    simp only [lie_sum, Units.smul_def, lie_zsmul, LieRinehartRing.leibniz_mul_right]
+  simp only [A.lie_sectionsEquiv_symm, smul_eq_mul, ← Finset.smul_sum]
   rw [Finset.sum_comm]
   simp_rw [← Finset.smul_sum, A.sum_update_evalSection_wedge]
   simp only [← smul_sub, ← smul_add, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
@@ -592,7 +597,8 @@ private theorem evalSection_removeNth_coeFn {m : ℕ} (φ : (tangent I M).Cochai
     (s : Fin (m + 2) → Cₛ^∞⟮I; E, TangentSpace I⟯) (i : Fin (m + 2)) :
     ⇑(φ.evalSection (i.removeNth s)) = fun y ↦ φ y (i.removeNth (s · y)) :=
   funext fun y ↦ by
-    rw [ContMDiffSection.evalSection_apply, eval_removeNth]
+    rw [ContMDiffSection.evalSection_apply]
+    exact congrArg (φ y) (funext fun j ↦ by simp only [Fin.removeNth_apply])
 
 private theorem cochainZeroEquiv_coeFn (φ : (tangent I M).Cochain 0)
     (v : ∀ y : M, Fin 0 → TangentSpace I y) :
@@ -626,7 +632,10 @@ private theorem tangent_extDeriv_succ_evalSection_apply (m : ℕ)
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
     rw [pow_succ, mul_neg, mul_one, neg_zsmul]
     refine congrArg (- ·) (congrArg (_ • ·) (congrArg (φ x) ?_))
-    rw [Matrix.eval_vecCons, eval_removeNth, eval_removeNth, tangent_bracket_apply]
+    dsimp only [Matrix.vecCons]
+    rw [← Function.comp_def (fun z : Cₛ^∞⟮I; E, TangentSpace I⟯ ↦ z x), Fin.comp_cons]
+    simp only [tangent_bracket_apply]
+    exact congrArg _ (funext fun k ↦ by simp only [Fin.removeNth_apply, Function.comp_apply])
 
 /-- On the tangent Lie algebroid `LieAlgebroid.tangent I M`, the Chevalley–Eilenberg differential
 agrees pointwise with the manifold exterior derivative `mextDeriv`. -/

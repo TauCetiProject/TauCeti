@@ -364,9 +364,8 @@ theorem curryLeft_cast_alternating {p q : ℕ} (h : p + 1 = q + 1)
     (φ.curryLeft a).evalAlternatingMap = φ.evalAlternatingMap.curryLeft a := by
   ext s x
   simp only [evalAlternatingMap_apply_apply, curryLeft_apply_apply,
-    AlternatingMap.curryLeft_apply_apply]
-  refine congrArg (φ x) (funext fun i ↦ ?_)
-  cases i using Fin.cases <;> simp
+    AlternatingMap.curryLeft_apply_apply, Matrix.vecCons]
+  exact congrArg (φ x) (Fin.comp_cons (fun z ↦ z x) a s).symm
 
 end CurryLeft
 
@@ -392,10 +391,9 @@ theorem ext_curryLeft {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n F
     (h : ∀ a : Cₛ^n⟮I; F, V⟯, φ₁.curryLeft a = φ₂.curryLeft a) : φ₁ = φ₂ := by
   ext x v
   obtain ⟨a, ha⟩ := evalLinearMap_surjective (I := I) (F := F) (V := V) n x (v 0)
+  rw [evalLinearMap_apply] at ha
   have hcons : Matrix.vecCons (a x) (Fin.tail v) = v := by
-    ext i; cases i using Fin.cases with
-    | zero => simpa only [Matrix.cons_val_zero, evalLinearMap_apply] using ha
-    | succ j => rfl
+    simpa only [ha, Matrix.vecCons] using Fin.cons_self_tail v
   rw [← hcons, ← curryLeft_apply_apply, h a, curryLeft_apply_apply]
 
 section Tensoriality
