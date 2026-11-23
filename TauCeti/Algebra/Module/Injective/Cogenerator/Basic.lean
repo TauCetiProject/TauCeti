@@ -35,7 +35,7 @@ of finite length, an injective map between modules of the same finite length bei
   other variable.
 * `TauCeti.bijective_of_injective_of_injective_flip`: a pairing into `E` that is non-degenerate in
   both variables, one of which has finite length, identifies each side with the dual of the other.
-* `TauCeti.annihilatorOrderEmbedding`,
+* `TauCeti.dualAnnihilatorOrderEmbedding`,
   `TauCeti.isArtinian_of_isNoetherian_linearMap_of_forall_isMaximal`, and
   `TauCeti.isNoetherian_of_isArtinian_linearMap_of_forall_isMaximal`: annihilation embeds the
   submodule lattice into the opposite submodule lattice of the dual over any commuting scalar
@@ -152,18 +152,18 @@ theorem ker_lcomp_subtype_le_iff_of_forall_isMaximal
     intro x
     exact LinearMap.congr_fun hf ⟨x, h x.property⟩
 
-/-- Annihilation embeds the submodule lattice into the opposite lattice of submodules of the
+/-- Dual annihilation embeds the submodule lattice into the opposite lattice of submodules of the
 `E`-dual. The dual scalars act on the target `E` and need only commute with `R`. -/
-def annihilatorOrderEmbedding {M : Type w} [AddCommGroup M] [Module R M] :
+def dualAnnihilatorOrderEmbedding {M : Type w} [AddCommGroup M] [Module R M] :
     Submodule R M ↪o (Submodule S (M →ₗ[R] E))ᵒᵈ :=
   OrderEmbedding.ofMapLEIff (fun N ↦ OrderDual.toDual (ker (N.subtype.lcomp S E)))
     (fun _ _ ↦ ker_lcomp_subtype_le_iff_of_forall_isMaximal hE S _ _)
 
-/-- The annihilator embedding assigns to `N` the maps vanishing on `N`. -/
+/-- The dual annihilator embedding assigns to `N` the maps vanishing on `N`. -/
 @[simp]
-theorem annihilatorOrderEmbedding_apply {M : Type w} [AddCommGroup M] [Module R M]
+theorem dualAnnihilatorOrderEmbedding_apply {M : Type w} [AddCommGroup M] [Module R M]
     (N : Submodule R M) :
-    annihilatorOrderEmbedding hE S N =
+    dualAnnihilatorOrderEmbedding hE S N =
       OrderDual.toDual (ker (N.subtype.lcomp S E)) :=
   (rfl)
 
@@ -172,7 +172,7 @@ commuting scalar action on the dual. -/
 theorem isArtinian_of_isNoetherian_linearMap_of_forall_isMaximal
     {M : Type w} [AddCommGroup M] [Module R M] [IsNoetherian S (M →ₗ[R] E)] :
     IsArtinian R M :=
-  (annihilatorOrderEmbedding (M := M) hE S).wellFoundedLT
+  (dualAnnihilatorOrderEmbedding (M := M) hE S).wellFoundedLT
 
 /-- A module is Noetherian if its dual into an injective cogenerator is Artinian, even for a
 commuting scalar action on the dual. -/
@@ -180,7 +180,7 @@ theorem isNoetherian_of_isArtinian_linearMap_of_forall_isMaximal
     {M : Type w} [AddCommGroup M] [Module R M] [IsArtinian S (M →ₗ[R] E)] :
     IsNoetherian R M := by
   rw [isNoetherian_iff]
-  exact (annihilatorOrderEmbedding (M := M) hE S).dual.wellFounded ‹_›
+  exact (dualAnnihilatorOrderEmbedding (M := M) hE S).dual.wellFounded ‹_›
 
 end Annihilator
 

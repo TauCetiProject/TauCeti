@@ -24,7 +24,7 @@ over `R̂` then establishes the finiteness/Artinian criteria and evaluation equi
 Artinian `R`-modules and finitely generated `R̂`-modules (Stacks Project Remark 47.7.9, Tag 0EGL),
 with no finiteness hypothesis on `κ`:
 * An `R̂`-module `N` is finitely generated over `R̂` if and only if `Hom_{R̂}(N, E)` is Artinian
-  over `R` (`TauCeti.IsInjectiveEnvelope.finite_adicCompletion_iff_isArtinian_adicCompletionDual`),
+  over `R` (`TauCeti.IsInjectiveEnvelope.finite_adicCompletion_iff_isArtinian_linearMap`),
   and evaluation gives `N ≃ₗ[R̂] ((N →ₗ[R̂] E) →ₗ[R] E)`
   (`TauCeti.IsInjectiveEnvelope.evalEquivAdicCompletionOfFinite`).
 * Conversely, for an Artinian `R`-module `M`, `Hom_R(M, E)` is finitely generated over `R̂` and
@@ -66,7 +66,7 @@ variable (N : Type w) [AddCommGroup N] [Module (_root_.AdicCompletion (maximalId
 /-- For a finitely generated `R̂`-module `N`, the completion-linear Matlis dual `Hom_{R̂}(N, E)` is
 Artinian over `R`. -/
 @[stacks 0EGL]
-theorem isArtinian_adicCompletionDual_of_finite
+theorem isArtinian_linearMap_of_finite_adicCompletion
     [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N] :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
@@ -82,7 +82,7 @@ theorem isArtinian_adicCompletionDual_of_finite
 
 /-- An `R̂`-module `N` is finitely generated over `R̂` if and only if its completion-linear Matlis
 dual `Hom_{R̂}(N, E)` is Artinian over `R`. -/
-theorem finite_adicCompletion_iff_isArtinian_adicCompletionDual :
+theorem finite_adicCompletion_iff_isArtinian_linearMap :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
     Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N ↔
@@ -90,7 +90,7 @@ theorem finite_adicCompletion_iff_isArtinian_adicCompletionDual :
   let A := _root_.AdicCompletion (maximalIdeal R) R
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  refine ⟨fun _ ↦ hι.isArtinian_adicCompletionDual_of_finite N, fun hArt ↦ ?_⟩
+  refine ⟨fun _ ↦ hι.isArtinian_linearMap_of_finite_adicCompletion N, fun hArt ↦ ?_⟩
   have : IsArtinian A (N →ₗ[A] E) := isArtinian_of_tower R hArt
   exact hι.adicCompletion.finite_iff_isArtinian_linearMap N |>.mpr ‹_›
 
@@ -105,7 +105,7 @@ def evalEquivAdicCompletionOfFinite
       ((N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) →ₗ[R] E) := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.isArtinian_adicCompletionDual_of_finite N
+  have := hι.isArtinian_linearMap_of_finite_adicCompletion N
   exact hι.adicCompletion.evalEquivOfFinite N ≪≫ₗ
     AdicCompletion.restrictScalarsEquivOfMemPrimaryComponent
       (maximalIdeal R).fg_of_isNoetherianRing
@@ -119,7 +119,7 @@ theorem evalEquivAdicCompletionOfFinite_apply_apply
     hι.evalEquivAdicCompletionOfFinite N x f = f x := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.isArtinian_adicCompletionDual_of_finite N
+  have := hι.isArtinian_linearMap_of_finite_adicCompletion N
   simp [evalEquivAdicCompletionOfFinite]
 
 @[simp]
@@ -219,6 +219,17 @@ theorem adicCompletionEquivDoubleDualOfFinite_apply_apply
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
   have := hι.isArtinian_linearMap_of_finite N
   simp [adicCompletionEquivDoubleDualOfFinite]
+
+@[simp]
+theorem adicCompletionEquivDoubleDualOfFinite_symm_apply_apply
+    (φ : (N →ₗ[R] E) →ₗ[R] E) (f : N →ₗ[R] E) :
+    AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent f
+      ((hι.adicCompletionEquivDoubleDualOfFinite N).symm φ) = φ f := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+  simpa only [adicCompletionEquivDoubleDualOfFinite_apply_apply] using
+    congrArg (fun ψ : (N →ₗ[R] E) →ₗ[R] E ↦ ψ f)
+      ((hι.adicCompletionEquivDoubleDualOfFinite N).apply_symm_apply φ)
 
 end DoubleDualCompletion
 

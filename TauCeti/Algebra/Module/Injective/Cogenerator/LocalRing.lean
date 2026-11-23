@@ -24,7 +24,7 @@ injective envelope.
   evaluation map `M → Hom_R(Hom_R(M, E), E)` is injective and `E` separates points for every
   module `M`, so `E` is a cogenerator.
 * `TauCeti.isArtinian_of_isNoetherian_linearMap` and
-  `TauCeti.isNoetherian_of_isArtinian_linearMap`: applying `TauCeti.annihilatorOrderEmbedding`,
+  `TauCeti.isNoetherian_of_isArtinian_linearMap`: applying `TauCeti.dualAnnihilatorOrderEmbedding`,
   chain conditions transfer contravariantly between a module and its `E`-dual over any commuting
   scalar semiring.
 * `TauCeti.annihilator_torsionBySet_of_injective`: the annihilator of `E[J]` is `J` for every
