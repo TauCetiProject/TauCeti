@@ -22,7 +22,9 @@ functions `φ n` on `Ω`, supported in a fixed compact neighbourhood `K' ⊆ Ω`
 whose derivatives on `K'` are the mollifications of `Dψ`
 (`TauCeti.HasWeakFDerivOn.exists_seq_testFunction_convolution_normed`). Pairings of these
 derivatives with a fixed field in the conjugate exponent converge to the pairings with `Dψ`
-(`TauCeti.tendsto_integral_inner_fderiv_mollify`). This is how an identity tested against smooth
+(`TauCeti.tendsto_integral_inner_fderiv_mollify`), and for a bounded `ψ`, pairings of the
+mollifications themselves with an integrable field converge to the pairings with `ψ`
+(`TauCeti.tendsto_integral_inner_mollify`). This is how an identity tested against smooth
 test functions extends to Sobolev test fields such as `ψ`.
 
 As an application, the symmetry `∫ ⟪∂_v φ, Dξ w⟫ = ∫ ⟪∂_w φ, Dξ v⟫` of the weak derivative of
@@ -34,9 +36,9 @@ a field `ξ`, tested against test functions `φ`
 
 * `TauCeti.HasWeakFDerivOn.exists_seq_testFunction_convolution_normed`: the mollifications of a
   compactly supported Sobolev field, as test functions on `Ω`.
+* `TauCeti.tendsto_integral_inner_mollify`: for a bounded field, pairings of the mollifications
+  converge.
 * `TauCeti.tendsto_integral_inner_fderiv_mollify`: pairings of their derivatives converge.
-* `TauCeti.HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport`: a weak derivative vanishes
-  almost everywhere off the support of the field.
 * `TauCeti.HasWeakFDerivOn.setIntegral_inner_apply_comm`: mixed weak derivatives of a
   `W^{1,q}_loc` field commute when tested against a compactly supported Sobolev field.
 
@@ -79,6 +81,39 @@ theorem HasWeakFDerivOn.exists_seq_testFunction_convolution_normed
     fun z hz => hball z hz (mem_closedBall_self hδ.le), self_subset_cthickening _,
     _, φ, ContDiffBump.tendsto_rOut_shrinking hδ, hφ, hφs, hderiv⟩
 
+/-- **Pairings of mollifications converge.** Let `φ n = ρ n ⋆ ψ` be test functions on `Ω`, the
+mollifications of a bounded field `ψ` by normalized bumps `ρ n` with radii tending to zero,
+supported in a measurable set `K'`. Then for every field `a` integrable on `K'`,
+`∫ ⟪φ n, a⟫ → ∫_{K'} ⟪ψ, a⟫`. -/
+theorem tendsto_integral_inner_mollify [CompleteSpace V] {K' : Set E} (hK'm : MeasurableSet K')
+    {ρ : ℕ → ContDiffBump (0 : E)} (hρ : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0))
+    {φ : ℕ → 𝓓(Ω, V)} (hφ : ∀ n, ⇑(φ n) = (ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] ψ)
+    (hφs : ∀ n, tsupport (φ n : E → V) ⊆ K') (hψb : MemLp ψ ⊤ μ) {a : E → V}
+    (ha : IntegrableOn a K' μ) :
+    Tendsto (fun n => ∫ z, ⟪(φ n : E → V) z, a z⟫_ℝ ∂μ) atTop
+      (𝓝 (∫ z in K', ⟪ψ z, a z⟫_ℝ ∂μ)) := by
+  have : ENNReal.HolderConjugate ∞ 1 := ENNReal.HolderConjugate.top_one
+  have := (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).tendsto_integral_bilin_normed_convolution
+    (p := ∞) (q := 1) hρ
+    (memLp_one_iff_integrable.2 ((integrable_indicator_iff hK'm).2 ha)) hψb
+  convert this using 1
+  · funext n
+    refine integral_congr_ae (.of_forall fun z => ?_)
+    dsimp only
+    rw [innerSL_apply_apply, ← hφ n]
+    by_cases hz : z ∈ K'
+    · rw [indicator_of_mem hz, real_inner_comm]
+    · rw [indicator_of_notMem hz, image_eq_zero_of_notMem_tsupport fun h' => hz (hφs n h'),
+        inner_zero_left, inner_zero_left]
+  · rw [← integral_indicator hK'm]
+    congr 1
+    refine integral_congr_ae (.of_forall fun z => ?_)
+    dsimp only
+    rw [innerSL_apply_apply]
+    by_cases hz : z ∈ K'
+    · rw [indicator_of_mem hz, indicator_of_mem hz, real_inner_comm]
+    · rw [indicator_of_notMem hz, indicator_of_notMem hz, inner_zero_left]
+
 /-- **Pairings of mollified derivatives converge.** Let `φ n` be test functions on `Ω` supported in
 a measurable set `K' ⊆ Ω`, whose derivatives on `K'` are the mollifications of the zero extension
 of a field `Dψ ∈ Lˢ(Ω)` by normalized bumps `ρ n` with radii tending to zero. Then for every
@@ -118,14 +153,6 @@ theorem tendsto_integral_inner_fderiv_mollify [CompleteSpace V] {K' : Set E}
         real_inner_comm]
     · rw [indicator_of_notMem hz, indicator_of_notMem hz, map_zero,
         zero_apply]
-
-omit [HasContDiffBump E] [μ.IsAddHaarMeasure] in
-/-- **A weak derivative vanishes off the support.** If `Dψ` is a weak derivative of `ψ` on `Ω`,
-then for every direction `c`, `Dψ z c = 0` for almost every `z ∈ Ω` outside the support of `ψ`. -/
-theorem HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport (hψ : HasWeakFDerivOn μ Ω ψ Dψ)
-    (c : E) : ∀ᵐ z ∂μ.restrict Ω, z ∉ tsupport ψ → Dψ z c = 0 :=
-  (hψ.hasWeakLineDerivOn c).ae_eq_zero_of_isOpen (isClosed_tsupport ψ).isOpen_compl
-    (.of_forall fun _ hz => image_eq_zero_of_notMem_tsupport hz)
 
 /-- **Mixed weak derivatives commute against Sobolev test fields.** Let `ξ` have a weak derivative
 `Dξ` on `Ω` that is `L^q` on compact subsets of `Ω`. Let `ψ` be compactly supported in `Ω`, with a

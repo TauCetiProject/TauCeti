@@ -34,10 +34,10 @@ climb in the order of differentiation (McDuff–Salamon, Proposition B.4.9, Step
 `e = 1` and `e = i` the two equations are the components of the differentiated system for
 `Ξ = (∂_s ξ, ∂_t ξ)`, whose zeroth-order coefficient is `TauCeti.differentiatedCRCoefficient`.
 This file proves the two component equations separately and does not combine them into one weak
-system for `Ξ` on `V × V`. Once they are so combined, with `J` acting diagonally, the order-zero
-regularity of weak solutions (`TauCeti.IsWeakCRSolution.memWkpLoc_one`) applies to `Ξ`. The
-almost-everywhere form of the system for `ξ ∈ W^{2,q}_loc` is
-`TauCeti.ae_differentiated_cauchyRiemann`.
+system for `Ξ` on `V × V`. The case `e = i`, with `(∂_t J) ∂_t ξ` moved into the zeroth-order
+coefficient, is `TauCeti.IsWeakCRSolution.apply_I_of_hasWeakFDerivOn`, which drives interior
+regularity of every order (`TauCeti.IsWeakCRSolution.memWkpLoc_succ`). The almost-everywhere form
+of the system for `ξ ∈ W^{2,q}_loc` is `TauCeti.ae_differentiated_cauchyRiemann`.
 
 The identity behind it is a Green's formula for `∂_e ξ`
 (`TauCeti.IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_partial`): for every test

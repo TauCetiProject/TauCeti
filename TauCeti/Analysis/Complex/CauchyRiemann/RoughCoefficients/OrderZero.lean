@@ -13,7 +13,6 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Analysis.Sobolev.Mollification.TestField
-import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 
 /-!
 # Order-zero regularity for real Cauchy–Riemann equations with Sobolev coefficients
@@ -52,7 +51,7 @@ derivative in `Lˢ`, `1/s + 1/q ≤ 1`
 (`TauCeti.IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn`). The proof mollifies the test
 field: the mollifications are smooth test functions, their derivatives are the mollifications of
 the weak derivative, and every pairing in the weak equation converges, by the strong `Lˢ`
-convergence of mollifications (`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`,
+convergence of mollifications (`TauCeti.tendsto_integral_inner_mollify`,
 `TauCeti.tendsto_integral_inner_fderiv_mollify`).
 
 ## Main results
@@ -86,36 +85,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteS
 section Mollify
 
 variable {ψ : ℂ → V} {Dψ : ℂ → ℂ →L[ℝ] V}
-
-/-- Pairings of mollifications of a bounded field with a fixed integrable field converge. -/
-private theorem tendsto_integral_inner_mollify {K' : Set ℂ} (hK'm : MeasurableSet K')
-    {ρ : ℕ → ContDiffBump (0 : ℂ)} (hρ : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0))
-    {φ : ℕ → 𝓓(Ω, V)}
-    (hφ : ∀ n, ⇑(φ n) = (ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] ψ)
-    (hφs : ∀ n, tsupport (φ n : ℂ → V) ⊆ K') (hψb : MemLp ψ ⊤) {a : ℂ → V}
-    (ha : IntegrableOn a K') :
-    Tendsto (fun n => ∫ z, ⟪(φ n : ℂ → V) z, a z⟫_ℝ) atTop (𝓝 (∫ z in K', ⟪ψ z, a z⟫_ℝ)) := by
-  have : ENNReal.HolderConjugate ∞ 1 := ENNReal.HolderConjugate.top_one
-  have := (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).tendsto_integral_bilin_normed_convolution
-    (p := ∞) (q := 1) hρ
-    (memLp_one_iff_integrable.2 ((integrable_indicator_iff hK'm).2 ha)) hψb
-  convert this using 1
-  · funext n
-    refine integral_congr_ae (.of_forall fun z => ?_)
-    dsimp only
-    rw [innerSL_apply_apply, ← hφ n]
-    by_cases hz : z ∈ K'
-    · rw [indicator_of_mem hz, real_inner_comm]
-    · rw [indicator_of_notMem hz, image_eq_zero_of_notMem_tsupport fun h' => hz (hφs n h'),
-        inner_zero_left, inner_zero_left]
-  · rw [← integral_indicator hK'm]
-    congr 1
-    refine integral_congr_ae (.of_forall fun z => ?_)
-    dsimp only
-    rw [innerSL_apply_apply]
-    by_cases hz : z ∈ K'
-    · rw [indicator_of_mem hz, indicator_of_mem hz, real_inner_comm]
-    · rw [indicator_of_notMem hz, indicator_of_notMem hz, inner_zero_left]
 
 omit [CompleteSpace V] in
 /-- The weak equation tested against `ψ` localizes: since `Dψ` vanishes almost everywhere on `Ω`
