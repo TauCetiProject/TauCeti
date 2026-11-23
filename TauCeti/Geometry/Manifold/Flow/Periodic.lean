@@ -460,8 +460,10 @@ theorem mfderiv_timeDependentFlowOf_add_period_apply [FiniteDimensional ℝ E] (
     rw [← timeDependentFlowOf_comp_add_right hX T, funext hT]
   rw [mfderiv_timeDependentFlowOf_trans_of_mem hX h
     (timeDependentFlowOf_add_period_of_mem hX hT ht).1, hshift]
-  -- The tangent spaces at the two images of `x` are the same model space, and the cast between
-  -- them is the identity.
+  -- The goal is `ContinuousLinearMap.comp_apply`, except that the coercion on the left still has
+  -- the codomain `TangentSpace I (φ_{s, t + T} x)` of the original derivative, while the composite
+  -- lands in `TangentSpace I (φ_{s, t} (φ_{s, s + T} x))`. Both unfold to `E`, so `rfl` closes it,
+  -- whereas rewriting with `comp_apply` fails on the mismatched codomain.
   rfl
 
 omit [CompleteSpace E] in
