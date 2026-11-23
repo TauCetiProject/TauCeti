@@ -74,18 +74,6 @@ theorem coe_commutatorElement_eq_smul_one_iff {α : Type*} [CommRing α] [StarRi
       Unitary.mul_star_self_of_mem (specialUnitaryGroup_le_unitaryGroup A.property), mul_one,
       Unitary.mul_star_self_of_mem (specialUnitaryGroup_le_unitaryGroup B.property)]
 
-/-- **Twisted commutation shifts eigenvalues.** If `A B = ζ • (B A)` and `v` is an eigenvector of
-`A` with eigenvalue `μ`, then `B ^ m v` is an eigenvector of `A` with eigenvalue `μ ζ ^ m`. -/
-theorem mulVec_pow_mulVec_of_mul_eq_smul_mul {R : Type*} [CommRing R] {A B : Matrix n n R}
-    {ζ μ : R} (h : A * B = ζ • (B * A)) {v : n → R} (hv : A *ᵥ v = μ • v) (m : ℕ) :
-    A *ᵥ (B ^ m *ᵥ v) = (μ * ζ ^ m) • (B ^ m *ᵥ v) := by
-  induction m with
-  | zero => simpa using hv
-  | succ m ih =>
-    rw [pow_succ', ← mulVec_mulVec, mulVec_mulVec, h, smul_mulVec, ← mulVec_mulVec, ih,
-      mulVec_smul, smul_smul]
-    ring_nf
-
 section Eigenframe
 
 /-! ### The eigenframe of a twisted pair -/
