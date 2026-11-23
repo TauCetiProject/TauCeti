@@ -72,7 +72,11 @@ For the differential symbol of order `m`:
   `i ^ m` times the geometric principal symbol `TauCeti.smoothPrincipalSymbol` of `D` at the
   covector `⟪ξ, ·⟫` (`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialOperator`), so
   the two notions of ellipticity agree
-  (`TauCeti.ClassicalSymbol.isElliptic_ofDifferentialOperator_iff`);
+  (`TauCeti.ClassicalSymbol.isElliptic_ofDifferentialOperator_iff`). The symbol vanishes at every
+  position at which all outputs of `D` vanish
+  (`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperator_eq_zero`), so it has
+  compact spatial support when the outputs of `D` vanish outside a compact set
+  (`TauCeti.ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialOperator`);
 * `TauCeti.ClassicalSymbol.negLaplacian`: the classical symbol of the negative Laplacian
   `-∑ⱼ ∂ⱼ²`, with full symbol `‖ξ‖²` (`TauCeti.ClassicalSymbol.coefficient_toSymbol_negLaplacian`)
   and principal symbol `HomogeneousSymbol.normRpow _ _ V 2`
@@ -554,6 +558,23 @@ theorem coefficient_toSymbol_ofDifferentialOperator (x ξ : CoordinateSpace n) :
           ∏ i, (Complex.I * ξ i) ^ α i) • ContinuousLinearMap.id ℂ V := by
   rw [ofDifferentialOperator, coefficient_toSymbol_ofDifferentialSymbol,
     differentialSymbol_multiIndexWord, sum_biUnion_piAntidiag]
+
+/-- The full symbol of `ofDifferentialOperator V D` vanishes at every position `x` at which every
+output of `D` vanishes. -/
+theorem coefficient_toSymbol_ofDifferentialOperator_eq_zero {x : CoordinateSpace n}
+    (hD : ∀ f, D.val f x = 0) (ξ : CoordinateSpace n) :
+    (ofDifferentialOperator V D).toSymbol.coefficient (x, ξ) = 0 := by
+  rw [coefficient_toSymbol_ofDifferentialOperator]
+  refine sum_eq_zero fun k _ ↦ sum_eq_zero fun α _ ↦ ?_
+  simp [coordinateCoeff_def, hD]
+
+/-- If the outputs of `D` vanish outside a compact set `K`, then the symbol of `D` has compact
+spatial support. -/
+theorem hasCompactSpatialSupport_toSymbol_ofDifferentialOperator {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) (hD : ∀ x ∉ K, ∀ f, D.val f x = 0) :
+    (ofDifferentialOperator V D).toSymbol.HasCompactSpatialSupport :=
+  Symbol.hasCompactSpatialSupport_iff.2
+    ⟨K, hK, fun x hx ↦ coefficient_toSymbol_ofDifferentialOperator_eq_zero D (hD x hx)⟩
 
 /-- **Differential operators are pseudodifferential operators.** On Schwartz input `u`, the
 quantization of `ofDifferentialOperator V D` is the differential operator `D` acting on `V`-valued
