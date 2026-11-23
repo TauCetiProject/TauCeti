@@ -194,7 +194,7 @@ theorem TauCeti.continuous_algebraMap_integerRing (K L : Type*)
       algebraMap K L ∘ ((↑) : Valuation.integer (valuation K) → K) :=
     funext Valuation.HasExtension.val_algebraMap
   rw [this]
-  exact (continuous_algebraMap_of_valuativeExtension K L).comp continuous_subtype_val
+  exact (continuous_algebraMap_of_valuativeExtension K L).comp continuous_subtypeVal
 
 section RingHom
 
@@ -226,11 +226,11 @@ theorem isEquiv_comap_valuation_of_continuous (f : K →+* L) (hf : Continuous f
   have hfa : valuation L (f a) ≠ 0 := by simpa using f.injective.ne ha
   obtain ⟨n, hn⟩ := exists_pow_lt₀ hx (Units.mk0 _ hfa)
   have hlt : valuation K (a / x ^ n) < 1 := by
-    rw [map_div₀, map_pow, div_lt_one₀ (pow_pos (zero_lt_iff.mpr (by simpa using hx0)) n)]
+    rw [map_div₀, map_pow, div_lt_one₀ (pow_pos (pos_iff_ne_zero.mpr (by simpa using hx0)) n)]
     exact hπ.trans_le (one_le_pow₀ hx1)
   have hlt' := ((TauCeti.isTopologicallyNilpotent_of_valuation_lt_one hlt).map hf).valuation_lt_one
   rw [map_div₀, map_pow, map_div₀, map_pow,
-    div_lt_one₀ (pow_pos (zero_lt_iff.mpr (by simpa using f.injective.ne hx0)) n)] at hlt'
+    div_lt_one₀ (pow_pos (pos_iff_ne_zero.mpr (by simpa using f.injective.ne hx0)) n)] at hlt'
   exact hn.not_gt hlt'
 
 /-- **A continuous ring homomorphism preserves and reflects the valuative relation.** -/

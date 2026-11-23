@@ -120,7 +120,7 @@ theorem Subalgebra.baseChange_bot {R S : Type*} [CommSemiring R] [Semiring S] [A
   rintro _ ⟨x, rfl⟩
   induction x using TensorProduct.inductionOn with
   | tmul t s =>
-    obtain ⟨r, hr⟩ := Algebra.mem_bot.1 s.2
+    obtain ⟨r, hr⟩ := Algebra.mem_bot.1 s.property
     have : t ⊗ₜ[R] (s : S) = algebraMap T (T ⊗[R] S) (r • t) := by
       rw [← hr, Algebra.algebraMap_eq_smul_one, ← smul_tmul,
         Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
@@ -513,5 +513,72 @@ theorem semilinearTwist_apply {E : Type*} [Semiring E] [Algebra C E] (y : D →�
   (rfl)
 
 end SemilinearTwist
+
+end AlgHom
+
+namespace AlgHom
+
+/-- Extending scalars preserves centrality of the image of an algebra map. -/
+theorem tensorProductMap_mul_comm
+    {R T B C : Type*} [CommSemiring R] [CommSemiring T] [Semiring B] [Semiring C]
+    [Algebra R T] [Algebra R B] [Algebra R C] (φ : B →ₐ[R] C)
+    (hφ : ∀ b c, φ b * c = c * φ b)
+    (x : TensorProduct R T B) (y : TensorProduct R T C) :
+    Algebra.TensorProduct.map (AlgHom.id R T) φ x * y =
+      y * Algebra.TensorProduct.map (AlgHom.id R T) φ x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul t b =>
+    induction y using TensorProduct.inductionOn with
+    | tmul t' c =>
+      simp only [Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+        Algebra.TensorProduct.tmul_mul_tmul, hφ, mul_comm t t']
+    | add y z hy hz => simp only [mul_add, add_mul, hy, hz]
+  | add x y hx hy => simp only [map_add, add_mul, mul_add, hx, hy]
+
+/-- Generators of an algebra relative to an algebra map remain generators after scalar
+extension, over the scalar extension of its coefficient algebra. The central-image hypothesis
+supplies the coefficient-algebra structures even when the target semiring is noncommutative. -/
+theorem adjoin_one_tmul_image_eq_top_of_map
+    {R T B C : Type*} [CommSemiring R] [CommSemiring T] [CommSemiring B] [Semiring C]
+    [Algebra R T] [Algebra R B] [Algebra R C] (φ : B →ₐ[R] C)
+    (hφ : ∀ b c, φ b * c = c * φ b) (s : Set C)
+    (hs : letI := φ.toRingHom.toAlgebra' hφ; Algebra.adjoin B s = ⊤) :
+    let ψ := Algebra.TensorProduct.map (AlgHom.id R T) φ
+    letI := ψ.toRingHom.toAlgebra' (φ.tensorProductMap_mul_comm hφ)
+    Algebra.adjoin (TensorProduct R T B)
+      ((fun c ↦ TensorProduct.tmul R (1 : T) c) '' s) = ⊤ := by
+  let ψ := Algebra.TensorProduct.map (AlgHom.id R T) φ
+  let := ψ.toRingHom.toAlgebra' (φ.tensorProductMap_mul_comm hφ)
+  let D := Algebra.adjoin (TensorProduct R T B)
+    ((fun c ↦ TensorProduct.tmul R (1 : T) c) '' s)
+  have hright (c : C) : TensorProduct.tmul R (1 : T) c ∈ D := by
+    let := φ.toRingHom.toAlgebra' hφ
+    have hc : c ∈ Algebra.adjoin B s := by rw [hs]; trivial
+    induction hc using Algebra.adjoin_induction with
+    | mem x hx => exact Algebra.subset_adjoin ⟨x, hx, rfl⟩
+    | algebraMap b =>
+      exact D.algebraMap_mem (TensorProduct.tmul R (1 : T) b)
+    | add x y _ _ ihx ihy =>
+      simpa only [TensorProduct.tmul_add] using D.add_mem ihx ihy
+    | mul x y _ _ ihx ihy =>
+      simpa only [Algebra.TensorProduct.tmul_mul_tmul, one_mul] using D.mul_mem ihx ihy
+  apply top_unique
+  intro z _
+  change z ∈ D -- Expose membership in the named adjoin before tensor induction.
+  induction z using TensorProduct.inductionOn with
+  | tmul t c =>
+    have ht : TensorProduct.tmul R t (1 : C) ∈ D := by
+      have heq :
+          algebraMap (TensorProduct R T B) (TensorProduct R T C)
+            (TensorProduct.tmul R t (1 : B)) =
+          TensorProduct.tmul R t (1 : C) := by
+        -- Expose the algebra map induced by the relative tensor homomorphism.
+        change ψ (TensorProduct.tmul R t (1 : B)) = _
+        simp only [ψ, Algebra.TensorProduct.map_tmul, AlgHom.id_apply, map_one]
+      rw [← heq]
+      exact D.algebraMap_mem _
+    simpa only [Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul] using
+      D.mul_mem ht (hright c)
+  | add x y ihx ihy => exact D.add_mem (ihx trivial) (ihy trivial)
 
 end AlgHom

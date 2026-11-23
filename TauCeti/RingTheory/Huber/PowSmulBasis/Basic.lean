@@ -114,7 +114,7 @@ theorem eventually_smul_mem_pow_smul (P : PairOfDefinition A) {s : A} (hs : IsPs
     hs.isTopologicallyNilpotent M₀ hm
   have hnhd : ∀ᶠ a : P.ringOfDefinition in 𝓝 0,
       (a : A) ∈ (s ^ (n + k)) • (P.ringOfDefinition : Set A) :=
-    continuous_subtype_val.continuousAt.preimage_mem_nhds
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (by simpa using (hs.hasBasis_nhds_zero P).mem_of_mem (i := n + k) trivial)
   filter_upwards [hnhd] with a ha
   obtain ⟨b, hb, hab⟩ := ha

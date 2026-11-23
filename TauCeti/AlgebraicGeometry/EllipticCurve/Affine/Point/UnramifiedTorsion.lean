@@ -67,7 +67,7 @@ theorem exists_addOrderOf_eq_of_hasSplitMultiplicativeReduction
   obtain ⟨P, ⟨hP, hred⟩, -⟩ :=
     W.toAffine.existsUnique_nonsingularReduction_torsion_lift_of_localField hn Q
       (hQ ▸ addOrderOf_nsmul_eq_zero Q)
-  refine ⟨P, P.2, ?_⟩
+  refine ⟨P, P.property, ?_⟩
   have hPn : ℓ • (P : W.toAffine.Point) = 0 := congrArg Subtype.val hP
   apply Nat.dvd_antisymm (addOrderOf_dvd_of_nsmul_eq_zero hPn)
   rw [← hQ, ← hred]

@@ -68,7 +68,7 @@ theorem toUnits_polarUnitary_mem {A : GL n 𝕜} (hA : A ∈ GLOrthogonal n 𝕜
   have hV : ((inverseTranspose (Unitary.toUnits U) : GL n 𝕜) : Matrix n n 𝕜) ∈
       unitary (Matrix n n 𝕜) := by
     rw [coe_inverseTranspose, Unitary.val_inv_toUnits_apply]
-    exact transpose_mem_unitaryGroup_iff.mpr (U⁻¹).2
+    exact transpose_mem_unitaryGroup_iff.mpr (U⁻¹).property
   -- The first factor `(P⁻¹)ᵀ` is positive, `P` being positive definite.
   have hQ : 0 ≤ ((inverseTranspose P : GL n 𝕜) : Matrix n n 𝕜) := by
     rw [coe_inverseTranspose, GeneralLinearGroup.coe_inv, coe_mul_inv_toUnits_polarUnitary]

@@ -28,6 +28,8 @@ homotopy between the two bracketings of the product
 * `NovikovModule.eq_novikovTrilinearOfMatrix`: every Novikov-trilinear map is the trilinear map
   of a family.
 * `NovikovModule.novikovTrilinearOfMatrix_mem_gradeBy`: homogeneous entries give a degree shift.
+* `NovikovModule.novikovTrilinearOfMatrix_vadd_single_mul`: moving the reference generators by
+  `gₗ` and multiplying the entries by `e^(g₁ + g₂ + g₃ - g₀)` gives the same trilinear map.
 -/
 
 public section
@@ -116,6 +118,41 @@ theorem eq_novikovTrilinearOfMatrix (B :
   refine (basis hF₁ r₁).ext fun i => (basis hF₂ r₂).ext fun j => (basis hF₃ r₃).ext fun k => ?_
   refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
   rw [coordinates_novikovTrilinearOfMatrix_basis]
+
+/-- **The trilinear map of a family does not depend on the reference generators.** Moving the
+reference generators to `g₁ i +ᵥ r₁ i`, `g₂ j +ᵥ r₂ j`, `g₃ k +ᵥ r₃ k` and `g₀ l +ᵥ r₀ l`, and
+multiplying the `(i, j, k, l)` entry by the monomial `e^(g₁ i + g₂ j + g₃ k - g₀ l)`, gives the
+same trilinear map. -/
+theorem novikovTrilinearOfMatrix_vadd_single_mul (g₁ : ι₁ → H) (g₂ : ι₂ → H) (g₃ : ι₃ → H)
+    (g₀ : ι₀ → H) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ (fun i => g₁ i +ᵥ r₁ i) (fun j => g₂ j +ᵥ r₂ j)
+        (fun k => g₃ k +ᵥ r₃ k) (fun l => g₀ l +ᵥ r₀ l)
+        (fun i j k l => NovikovSeries.single (g₁ i + g₂ j + g₃ k - g₀ l) 1 * K i j k l) =
+      novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K := by
+  let := module (R := R) hF₁
+  let := module (R := R) hF₂
+  let := module (R := R) hF₃
+  let := module (R := R) hF₀
+  refine LinearMap.ext fun a => LinearMap.ext fun b => LinearMap.ext fun c =>
+    (coordinates hF₀ fun l => g₀ l +ᵥ r₀ l).injective (funext fun l => ?_)
+  rw [coordinates_novikovTrilinearOfMatrix,
+    coordinates_apply_eq_mul_single hF₀ r₀ fun l => g₀ l +ᵥ r₀ l,
+    coordinates_novikovTrilinearOfMatrix]
+  simp only [coordinates_apply_eq_mul_single hF₁ r₁ fun i => g₁ i +ᵥ r₁ i,
+    coordinates_apply_eq_mul_single hF₂ r₂ fun j => g₂ j +ᵥ r₂ j,
+    coordinates_apply_eq_mul_single hF₃ r₃ fun k => g₃ k +ᵥ r₃ k, vsub_vadd_eq_vsub_sub, vsub_self,
+    zero_sub, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
+    Finset.sum_congr rfl fun k _ => ?_
+  -- The four monomials multiply to the monomial `e^(-g₀ l)` of the output coordinates.
+  have hs : (NovikovSeries.single (-g₁ i) 1 * NovikovSeries.single (-g₂ j) 1 *
+      NovikovSeries.single (-g₃ k) 1 * NovikovSeries.single (g₁ i + g₂ j + g₃ k - g₀ l) 1 :
+        NovikovSeries R H N) = NovikovSeries.single (-g₀ l) 1 := by
+    simp only [NovikovSeries.single_mul_single, mul_one]
+    congr 1
+    abel
+  rw [← hs]
+  ring
 
 /-- **Degree of the trilinear map of a family.** Let the generators be graded by functions `dₗ`
 that change by `δ h` under the translation by `h`. If every entry `Kᵢⱼₖₗ` is homogeneous of the

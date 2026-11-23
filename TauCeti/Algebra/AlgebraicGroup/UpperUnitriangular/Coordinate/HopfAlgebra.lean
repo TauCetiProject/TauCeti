@@ -56,7 +56,7 @@ noncomputable def antipode : CoordinateRing R m →ₐ[R] CoordinateRing R m :=
   let h := isUpperUnitriangular_genericMatrix R m
   MvPolynomial.aeval fun ij : Index m =>
     ((↑((h.toGL : Matrix.GeneralLinearGroup m (CoordinateRing R m))⁻¹) :
-      Matrix m m (CoordinateRing R m)) ij.1.1 ij.1.2)
+      Matrix m m (CoordinateRing R m)) ij.val.1 ij.val.2)
 
 /-- The inverse of the generic matrix is upper unitriangular. -/
 theorem isUpperUnitriangular_inv_genericMatrix :
@@ -85,9 +85,9 @@ theorem antipode_genericMatrix_apply (i j : m) :
 @[simp]
 theorem antipode_X (ij : Index m) :
     antipode R m (MvPolynomial.X ij) =
-      (genericMatrix R m)⁻¹ ij.1.1 ij.1.2 := by
-  rw [← genericMatrix_apply_of_lt R m ij.2]
-  exact antipode_genericMatrix_apply R m ij.1.1 ij.1.2
+      (genericMatrix R m)⁻¹ ij.val.1 ij.val.2 := by
+  rw [← genericMatrix_apply_of_lt R m ij.property]
+  exact antipode_genericMatrix_apply R m ij.val.1 ij.val.2
 
 private theorem mul_antipode_rTensor_comul :
     (Algebra.TensorProduct.lift (antipode R m) (.id R (CoordinateRing R m))
@@ -97,9 +97,9 @@ private theorem mul_antipode_rTensor_comul :
   rintro ij
   simp only [AlgHom.comp_apply, comul_X, map_sum, counit_X]
   have hentry := congrFun (congrFun
-    (isUpperUnitriangular_genericMatrix R m).toGL.inv_mul ij.1.1) ij.1.2
+    (isUpperUnitriangular_genericMatrix R m).toGL.inv_mul ij.val.1) ij.val.2
   simpa [antipode_genericMatrix_apply, Matrix.mul_apply,
-    Matrix.one_apply, ij.2.ne] using hentry
+    Matrix.one_apply, ij.property.ne] using hentry
 
 private theorem mul_antipode_lTensor_comul :
     (Algebra.TensorProduct.lift (.id R (CoordinateRing R m)) (antipode R m)
@@ -109,9 +109,9 @@ private theorem mul_antipode_lTensor_comul :
   intro ij
   simp only [AlgHom.comp_apply, comul_X, map_sum, counit_X]
   have hentry := congrFun (congrFun
-    (isUpperUnitriangular_genericMatrix R m).toGL.mul_inv ij.1.1) ij.1.2
+    (isUpperUnitriangular_genericMatrix R m).toGL.mul_inv ij.val.1) ij.val.2
   simpa [antipode_genericMatrix_apply, Matrix.mul_apply,
-    Matrix.one_apply, ij.2.ne] using hentry
+    Matrix.one_apply, ij.property.ne] using hentry
 
 /-- The Hopf-algebra structure dual to the upper-unitriangular group law.
 
@@ -227,8 +227,8 @@ theorem coordinateHopfAlgebra_comul_X (ij : Index m) :
     Coalgebra.comul (R := R) (A := coordinateHopfAlgebra R m)
         (coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
       ∑ k : m,
-        coordinateHopfAlgebraAlgEquiv R m (genericMatrix R m ij.1.1 k) ⊗ₜ[R]
-          coordinateHopfAlgebraAlgEquiv R m (genericMatrix R m k ij.1.2) := by
+        coordinateHopfAlgebraAlgEquiv R m (genericMatrix R m ij.val.1 k) ⊗ₜ[R]
+          coordinateHopfAlgebraAlgEquiv R m (genericMatrix R m k ij.val.2) := by
   rw [coordinateHopfAlgebra_comul_apply, comul_X, map_sum]
   simp
 
@@ -266,7 +266,7 @@ theorem coordinateHopfAlgebra_antipode_X (ij : Index m) :
     HopfAlgebra.antipode R (A := coordinateHopfAlgebra R m)
         (coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
       coordinateHopfAlgebraAlgEquiv R m
-        ((genericMatrix R m)⁻¹ ij.1.1 ij.1.2) := by
+        ((genericMatrix R m)⁻¹ ij.val.1 ij.val.2) := by
   rw [coordinateHopfAlgebra_antipode_apply, antipode_X]
 
 /-- The bundled antipode sends a generic entry to the corresponding inverse-matrix entry. -/

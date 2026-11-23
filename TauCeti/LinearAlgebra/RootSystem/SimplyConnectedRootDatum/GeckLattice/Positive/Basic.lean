@@ -85,7 +85,7 @@ def geckTorusPositiveDefiningIdeal :
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)
+    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.val)
 
 /-- The positive defining ideal is the Kostant common-kernel ideal for the positive simple roots. -/
 theorem geckTorusPositiveDefiningIdeal_def :
@@ -95,7 +95,7 @@ theorem geckTorusPositiveDefiningIdeal_def :
         (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-        (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) := (rfl)
+        (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.val) := (rfl)
 
 /-- **Coordinate universal property of the positive Geck carrier.** A Hopf ideal is contained in
 the positive defining ideal exactly when every positive simple-root coordinate map and the weight
@@ -119,7 +119,7 @@ theorem le_geckTorusPositiveDefiningIdeal_iff
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) J
+    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.val) J
   constructor
   · intro hJ
     have h := hiff.mp hJ
@@ -151,7 +151,7 @@ noncomputable def geckTorusPositiveGroupScheme : Grp (Over (Spec (CommRingCat.of
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)
+    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.val)
 
 /-- The positive Geck carrier is the Kostant torus-subsystem group scheme for the positive simple
 roots. -/
@@ -162,7 +162,7 @@ theorem geckTorusPositiveGroupScheme_def :
         (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-        (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) := (rfl)
+        (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.val) := (rfl)
 
 /-- The positive Geck carrier is the quotient spectrum cut out by its named defining ideal. -/
 theorem geckTorusPositiveGroupScheme_eq_quotientSpec :
@@ -193,7 +193,7 @@ theorem geckTorusPositiveInclusion_comp_geckGroupSchemeι :
           (t.geckCoordinateLattice ht).toAddSubgroup
           (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
           (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-          (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) := by
+          (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.val) := by
   rw [geckTorusPositiveInclusion, geckGroupSchemeι_def]
   slice_lhs 3 5 =>
     simp only [Functor.comp_obj, Functor.leftOp_obj, eqToHom_trans_assoc, eqToHom_refl,
@@ -230,7 +230,7 @@ def geckTorusPositiveClosedSubgroup : ClosedSubgroupScheme (t.geckGroupScheme ht
 inclusion. -/
 @[simp]
 theorem coe_geckTorusPositiveClosedSubgroup :
-    (t.geckTorusPositiveClosedSubgroup ht).1 =
+    (t.geckTorusPositiveClosedSubgroup ht).val =
       Subobject.mk (t.geckTorusPositiveInclusion ht) :=
   ClosedSubgroupScheme.coe_mk _
 
@@ -244,7 +244,7 @@ def geckRootSubgroupToTorusPositive (i : Fin t.rank) :
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun j => t.isNilpotent_geckRepresentation_rootGenerator ht j.1)
+    (fun j => t.isNilpotent_geckRepresentation_rootGenerator ht j.val)
     (Set.mem_range_self i) ≫
       eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm
 
@@ -304,7 +304,7 @@ def geckWeightTorusToTorusPositive :
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) ≫
+    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.val) ≫
       eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm
 
 /-- Factoring the weight torus through the positive carrier and then including it into the full
@@ -361,11 +361,11 @@ theorem geckTorusPositiveClosedSubgroup_le_iff
     (P : ClosedSubgroupScheme (t.geckGroupScheme ht)) :
     t.geckTorusPositiveClosedSubgroup ht ≤ P ↔
       (∀ i : Fin t.rank, ∃! f : AdditiveGroup.groupScheme ℤ ⟶
-        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-          f ≫ P.1.arrow = t.geckRootSubgroup ht (.inl i)) ∧
+        (P.val : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.val.arrow = t.geckRootSubgroup ht (.inl i)) ∧
       ∃! f : SplitTorus.groupScheme ℤ (Fin t.rank) ⟶
-        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-          f ≫ P.1.arrow = t.geckWeightTorus ht := by
+        (P.val : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.val.arrow = t.geckWeightTorus ht := by
   let eB := eqToIso (t.geckTorusPositiveGroupScheme_def ht)
   let eG := eqToIso (t.geckGroupScheme_def ht)
   have hmap : ClosedSubgroupScheme.mapIso eG (t.geckTorusPositiveClosedSubgroup ht) =
@@ -406,7 +406,7 @@ theorem geckTorusPositiveGroupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)
+    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.val)
     (eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm ≫ φ)
     (eqToHom (t.geckTorusPositiveGroupScheme_def ht).symm ≫ ψ)
   · intro i hi

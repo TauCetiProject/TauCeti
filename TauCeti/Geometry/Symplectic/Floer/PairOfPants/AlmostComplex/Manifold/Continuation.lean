@@ -319,7 +319,8 @@ theorem contMDiff_pairOfPantsContinuationAlmostComplex
       (h₀.tames_pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ _ _) (b y))
     (fun q _ => h₀.tames_continuationAlmostComplex _ _ _ _ _)
     (fun y => cayley_pairOfPantsContinuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ _ _ _) (hb y₀)
-    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q 1 (hf y₀) (hq q)) fun q => ?_
+    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q (hf y₀) contMDiffAt_const (hq q))
+    fun q => ?_
   -- The continuation homotopy of the end `q` is read at `(σ_q - L q, t_q)`: its longitudinal
   -- argument is smooth away from the center of the end, and the end families are smooth at the
   -- angular coordinate by periodicity.
