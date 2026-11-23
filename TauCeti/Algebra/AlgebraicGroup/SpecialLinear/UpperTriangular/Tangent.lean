@@ -174,7 +174,7 @@ Use this for explicit rewriting: `HopfIdeal.mem_lieSubalgebra_iff` already deter
 theorem tangentLieEquivSl_symm_single_mem_lieSubalgebra_iff_isPos [Nontrivial B] (r : ℕ)
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (SpecialLinear.tangentLieEquivSl (R := R) (B := B) (r + 1)).symm
-        (LieAlgebra.SpecialLinear.single p.1.1 p.1.2 p.2 (1 : B)) ∈
+        (LieAlgebra.SpecialLinear.single p.val.1 p.val.2 p.property (1 : B)) ∈
         HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R (r + 1)) ↔
       (SpecialLinear.diagonalRootBase r).IsPos p := by
   rw [mem_lieSubalgebra_definingHopfIdeal_iff,

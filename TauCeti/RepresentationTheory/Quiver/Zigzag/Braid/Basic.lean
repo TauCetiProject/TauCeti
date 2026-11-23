@@ -436,7 +436,7 @@ theorem isInternal_zigzagBraidBimoduleGrade (i : V) :
     DirectSum.IsInternal (zigzagBraidBimoduleGrade k G i) :=
   DirectSum.isInternal_comap (zigzagEnvelopingGrading k G).piece _
     ((zigzagBraidBimodule k G i).subtype.restrictScalars k) Subtype.val_injective
-    (fun _ _ ↦ Iff.rfl) fun p u ↦ ⟨⟨_, isHomogeneous_zigzagBraidBimodule i p u.2⟩, rfl⟩
+    (fun _ _ ↦ Iff.rfl) fun p u ↦ ⟨⟨_, isHomogeneous_zigzagBraidBimodule i p u.property⟩, rfl⟩
 
 /-- **The evaluation has internal degree `0`**: it is a degree-`0` map `P_i ⊗_k e_i Z → Z` of
 graded bimodules. -/

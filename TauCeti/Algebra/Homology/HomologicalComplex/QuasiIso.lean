@@ -21,9 +21,10 @@ import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.Subobject
 # Stability of monomorphic quasi-isomorphisms
 
 Monomorphic quasi-isomorphisms of complexes in an abelian category are stable under
-pushouts. If filtered colimits are exact, they are also stable under transfinite
-composition. These closure properties allow cell attachments by monomorphic
-quasi-isomorphisms in the construction of injective resolutions of unbounded complexes.
+pushouts. If coproducts are exact, they are stable under coproducts, and if filtered colimits are
+exact, they are also stable under transfinite composition. These closure properties allow cell
+attachments by monomorphic quasi-isomorphisms in the construction of injective resolutions of
+unbounded complexes.
 
 The pushout assertion uses the acyclicity of the cokernel and the canonical
 isomorphism between the cokernels of parallel arrows of a pushout square.
@@ -32,7 +33,10 @@ to quasi-isomorphisms without a monomorphism hypothesis. The filtered-colimit
 instances combine with Mathlib's generic transfinite-composition instance, so no
 separate transfinite induction is needed here. In a Grothendieck abelian category, the
 supremum of a directed family of subcomplexes is their colimit, so it is included by a
-quasi-isomorphism when they all are (`HomologicalComplex.quasiIso_iSup_arrow`).
+quasi-isomorphism when they all are (`HomologicalComplex.quasiIso_iSup_arrow`). A commutative
+square of quasi-isomorphisms between two monomorphisms induces a quasi-isomorphism of their
+cokernels (`HomologicalComplex.quasiIso_cokernel_map`), by the five lemma on the long exact
+homology sequences of the cokernel sequences.
 
 ## References
 
@@ -58,8 +62,8 @@ variable {C I : Type*} [Category* C] [Abelian C] {c : ComplexShape I}
 lemma quasiIso_inr_of_mono_of_quasiIso (sq : IsPushout f g i j) [Mono f] [QuasiIso f] :
     QuasiIso j := by
   have : Mono j := Abelian.mono_inr_of_isColimit _ _ sq.isColimit
-  have hIso : IsIso (cokernel.map f j g i sq.w) := isIso_cokernel_map_of_isPushout sq
-  let e := asIso (cokernel.map f j g i sq.w)
+  have hIso : IsIso (cokernel.map f j g i sq.w.symm) := isIso_cokernel_map_of_isPushout sq
+  let e := asIso (cokernel.map f j g i sq.w.symm)
   have h := (TauCeti.cokernelSequence_shortExact f).quasiIso_f_iff.mp ‹QuasiIso f›
   apply (TauCeti.cokernelSequence_shortExact j).quasiIso_f_iff.mpr
   intro n
@@ -70,6 +74,24 @@ end CategoryTheory.IsPushout
 namespace HomologicalComplex
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {I : Type*} (c : ComplexShape I)
+
+variable {c} in
+/-- **Quasi-isomorphisms of subcomplexes and ambient complexes induce a quasi-isomorphism of the
+quotients.** Given monomorphisms of complexes `f₁ : K₁ ⟶ L₁` and `f₂ : K₂ ⟶ L₂` and a commutative
+square of quasi-isomorphisms `a : K₁ ⟶ K₂`, `b : L₁ ⟶ L₂`, the induced map of cokernels is a
+quasi-isomorphism. -/
+lemma quasiIso_cokernel_map {K₁ L₁ K₂ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [Mono f₁] [Mono f₂] (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (w : f₁ ≫ b = a ≫ f₂)
+    [QuasiIso a] [QuasiIso b] :
+    QuasiIso (cokernel.map f₁ f₂ a b w.symm) :=
+  HomologySequence.quasiIso_τ₃
+    (S₁ := ShortComplex.cokernelSequence f₁) (S₂ := ShortComplex.cokernelSequence f₂)
+    { τ₁ := a
+      τ₂ := b
+      τ₃ := cokernel.map f₁ f₂ a b w.symm
+      comm₁₂ := w.symm
+      comm₂₃ := (cokernel.π_desc _ _ _).symm }
+    (TauCeti.cokernelSequence_shortExact f₁) (TauCeti.cokernelSequence_shortExact f₂) ‹_› ‹_›
 
 /-- Monomorphic quasi-isomorphisms are stable under pushout, without any exactness
 assumption on infinite colimits. -/
@@ -97,6 +119,10 @@ instance {J : Type w} [Category.{w'} J] [HasColimitsOfShape J C]
     exact h (fun j ↦ by
       have : QuasiIso (f.app j) := hf j
       exact (quasiIsoAt_iff_isIso_homologyMap _ n).mp inferInstance) φ hφ
+
+/-- Under AB4, quasi-isomorphisms are stable under coproducts. -/
+instance [HasCoproducts.{w} C] [AB4OfSize.{w} C] :
+    MorphismProperty.IsStableUnderCoproducts.{w} (quasiIso C c) where
 
 /-- Under AB5, quasi-isomorphisms are stable under filtered colimits. -/
 instance [HasFilteredColimitsOfSize.{w', w} C] [AB5OfSize.{w', w} C] :

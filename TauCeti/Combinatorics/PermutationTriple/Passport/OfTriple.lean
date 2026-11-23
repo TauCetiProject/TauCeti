@@ -48,25 +48,25 @@ variable {n : ℕ}
 /-- The passport determined by a connected permutation triple: its monodromy subgroup together
 with its ordered full cycle partitions. -/
 noncomputable def passportOf (t : ConnectedTriple n) : PassportSpec n where
-  G := t.1.monodromyGroup
-  lam0 := t.1.cycleData.1
-  lam1 := t.1.cycleData.2.1
-  laminf := t.1.cycleData.2.2
+  G := t.val.monodromyGroup
+  lam0 := t.val.cycleData.1
+  lam1 := t.val.cycleData.2.1
+  laminf := t.val.cycleData.2.2
 
 @[simp]
-theorem passportOf_G (t : ConnectedTriple n) : t.passportOf.G = t.1.monodromyGroup :=
+theorem passportOf_G (t : ConnectedTriple n) : t.passportOf.G = t.val.monodromyGroup :=
   (rfl)
 
 @[simp]
-theorem passportOf_lam0 (t : ConnectedTriple n) : t.passportOf.lam0 = t.1.cycleData.1 :=
+theorem passportOf_lam0 (t : ConnectedTriple n) : t.passportOf.lam0 = t.val.cycleData.1 :=
   (rfl)
 
 @[simp]
-theorem passportOf_lam1 (t : ConnectedTriple n) : t.passportOf.lam1 = t.1.cycleData.2.1 :=
+theorem passportOf_lam1 (t : ConnectedTriple n) : t.passportOf.lam1 = t.val.cycleData.2.1 :=
   (rfl)
 
 @[simp]
-theorem passportOf_laminf (t : ConnectedTriple n) : t.passportOf.laminf = t.1.cycleData.2.2 :=
+theorem passportOf_laminf (t : ConnectedTriple n) : t.passportOf.laminf = t.val.cycleData.2.2 :=
   (rfl)
 
 /-- Relabeling the sheets conjugates the reference subgroup of the attached passport and leaves
@@ -104,11 +104,11 @@ noncomputable def orderedPassportOf (t : ConnectedTriple n) : OrderedPassport n 
   ⟨t.passportOf, t.isAdmissible_passportOf⟩
 
 @[simp] theorem coe_orderedPassportOf (t : ConnectedTriple n) :
-    t.orderedPassportOf.1 = t.passportOf := (rfl)
+    t.orderedPassportOf.val = t.passportOf := (rfl)
 
 /-- The indexed partition of the attached passport is the full partition of the component. -/
 @[simp] theorem passportOf_partition (t : ConnectedTriple n) (i : Fin 3) :
-    t.passportOf.partition i = (t.1.component i).partition.parts := by
+    t.passportOf.partition i = (t.val.component i).partition.parts := by
   fin_cases i <;> simp
 
 /-- A connected triple belongs to `passportOf t` exactly when its monodromy subgroup is conjugate
@@ -116,8 +116,8 @@ to that of `t` and its ordered full cycle data agrees with that of `t`. -/
 theorem hasPassport_passportOf_iff (t t' : ConnectedTriple n) :
     PassportSpec.HasPassport t' t.passportOf ↔
       (∃ tau : Perm (Fin n),
-        t'.1.monodromyGroup.map (MulAut.conj tau).toMonoidHom = t.1.monodromyGroup) ∧
-        t'.1.cycleData = t.1.cycleData := by
+        t'.val.monodromyGroup.map (MulAut.conj tau).toMonoidHom = t.val.monodromyGroup) ∧
+        t'.val.cycleData = t.val.cycleData := by
   rw [PassportSpec.hasPassport_iff]
   constructor
   · rintro ⟨hG, h0, h1, hinf⟩
@@ -163,8 +163,8 @@ membership of a representative triple. -/
 theorem mk_mem_classSet_passportOf_iff (t t' : ConnectedTriple n) :
     ConnectedIsoClass.mk t' ∈ t.passportOf.classSet ↔
       (∃ tau : Perm (Fin n),
-        t'.1.monodromyGroup.map (MulAut.conj tau).toMonoidHom = t.1.monodromyGroup) ∧
-        t'.1.cycleData = t.1.cycleData := by
+        t'.val.monodromyGroup.map (MulAut.conj tau).toMonoidHom = t.val.monodromyGroup) ∧
+        t'.val.cycleData = t.val.cycleData := by
   rw [PassportSpec.mem_classSet, ConnectedIsoClass.hasPassport_mk,
     hasPassport_passportOf_iff]
 

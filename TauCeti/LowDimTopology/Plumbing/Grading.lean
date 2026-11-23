@@ -20,8 +20,9 @@ submodules and restricts the lattice differential to maps
 Every term in the differential of a cube is one of its lower or upper codimension-one faces, so
 the degree drop follows from the face-dimension API. Restricting the already-proved total
 square-zero identity then shows that consecutive graded differentials compose to zero. These
-maps are the data needed to package lattice homology as a `ℕ`-indexed chain complex, rather than
-only as the ungraded short complex currently used for its total homology.
+maps are the differentials of the `ℕ`-indexed lattice chain complex `latticeChainComplex` in
+`ChainComplex.lean`; the ungraded total homology `latticeHomology` in `Homology.lean` is instead
+the homology of a single short complex.
 
 Since a cube's directions form a finite subset of the plumbing vertices, this file also records
 the sharp bound on the nonzero cubical degrees and the resulting vanishing of differentials whose
