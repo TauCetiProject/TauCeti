@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
 public import TauCeti.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
 # The normalized hypergeometric inverse-ratio germ
@@ -153,12 +154,10 @@ theorem iteratedDeriv_succ_inverseRatio_zero {N : ℕ} (hN : N ≠ 0) :
     simp [ordinaryHypergeometric_zero, a, b]
     ring
   obtain ⟨p, r, hp⟩ := hG
-  -- Rewrite the Taylor series in scalar form to substitute `u ^ N`.
-  have hp_eq : FormalMultilinearSeries.ofScalars ℂ p.coeff = p := by
-    ext n
-    simp
   have hcG : p.coeff 1 = 1 / (2 * N) := hp.hasFPowerSeriesAt.hasDerivAt.unique hdG
-  have hs := (hp_eq.symm ▸ hp).mono (lt_min hp.r_pos zero_lt_one) (min_le_left _ _)
+  -- Rewrite the Taylor series in scalar form to substitute `u ^ N`.
+  have hs := ((FormalMultilinearSeries.ofScalars_coeff p).symm ▸ hp).mono
+    (lt_min hp.r_pos zero_lt_one) (min_le_left _ _)
   have h := hs.comp_pow_ofScalars (min_le_right _ _) (m := N) (Nat.pos_of_ne_zero hN)
   have h' : iteratedDeriv N (fun u : ℂ ↦ G (u ^ N)) 0 = N.factorial * (1 / (2 * N)) := by
     simpa [← iteratedDeriv_eq_iteratedFDeriv, FormalMultilinearSeries.ofScalars_apply_eq,
@@ -169,10 +168,9 @@ theorem iteratedDeriv_succ_inverseRatio_zero {N : ℕ} (hN : N ≠ 0) :
     have hscale (t : ℂ) : 2 * (t / (2 * (N : ℂ))) = t / N := by
       rw [← mul_div_assoc, mul_div_mul_left _ _ (by norm_num : (2 : ℂ) ≠ 0)]
     simp only [a, b, G, hscale, inverseRatio_def, mul_div_assoc]
-  rw [hEq, iteratedDeriv_fun_mul (f := fun u : ℂ ↦ u)
-    analyticAt_id.contDiffAt h.analyticAt.contDiffAt,
-    Finset.sum_eq_single_of_mem 1 (by simp) (fun i _ hi ↦ by simp [iteratedDeriv_fun_id_zero, hi])]
-  simp [iteratedDeriv_fun_id_zero, h', Nat.factorial_succ, div_eq_mul_inv, mul_assoc]
+  rw [hEq]
+  simpa [Nat.descFactorial_one, h', Nat.factorial_succ, div_eq_mul_inv, mul_assoc] using
+    iteratedDeriv_pow_sub_smul (N + 1) 1 (a := (0 : ℂ)) h.analyticAt.contDiffAt
 
 /-- The third derivative of `inverseRatio 2` at zero is `3 / 2`, corresponding to a
 cubic Taylor coefficient of `1 / 4`. -/
