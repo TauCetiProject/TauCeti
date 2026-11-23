@@ -13,6 +13,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 -- `MonoidHom.noncommCoprod` packages products of commuting one-parameter subgroups.
 public import Mathlib.GroupTheory.NoncommCoprod
+-- `Matrix.GeneralLinearGroup.transvection` occurs in the bridge statement below.
+public import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
 -- Non-public: the diagonal-matrix-unit product law is used only in a proof below.
 import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.Matrix.Diagonal
@@ -26,7 +28,9 @@ Mathlib's `Matrix.transvection i j c = 1 + c Eᵢⱼ` is the elementary matrix a
 file packages the invertible matrix `1 + c Eᵢⱼ` in `GL n A` as `TauCeti.transvectionUnit`, over a
 possibly noncommutative ring `A`, where its inverse is `1 - c Eᵢⱼ`, and packages the resulting
 one-parameter subgroup as `TauCeti.transvectionHom`. Over a commutative ring the transvection is
-Mathlib's one viewed along `Matrix.SpecialLinearGroup.toGL`.
+Mathlib's one viewed along `Matrix.SpecialLinearGroup.toGL`
+(`TauCeti.toGL_transvection_eq_transvectionUnit`), and it is also Mathlib's
+`Matrix.GeneralLinearGroup.transvection` (`TauCeti.transvectionUnit_eq_transvection`).
 
 Writing `xᵢⱼ(c)` for the transvection, the relations are
 
@@ -157,6 +161,14 @@ higher-priority `TauCeti.coe_transvectionUnit` fires first and rewrites to Mathl
 theorem coe_transvectionUnit_eq_one_add_single (hij : i ≠ j) (c : A) :
     (transvectionUnit hij c : Matrix n n A) = 1 + single i j c :=
   (rfl)
+
+/-- A transvection acts on column vectors by the elementary row operation adding `c` times the
+`j`-th coordinate to the `i`-th one. -/
+theorem transvectionUnit_mulVec (hij : i ≠ j) (c : A) (v : n → A) :
+    (transvectionUnit hij c : Matrix n n A) *ᵥ v = Function.update v i (v i + c * v j) := by
+  rw [coe_transvectionUnit_eq_one_add_single, add_mulVec, one_mulVec, single_mulVec]
+  ext k
+  rcases eq_or_ne k i with rfl | hk <;> simp [*]
 
 /-- The transvection of parameter zero is the identity. -/
 @[simp]
@@ -309,6 +321,12 @@ theorem coe_transvectionUnit (hij : i ≠ j) (c : A) :
 theorem toGL_transvection_eq_transvectionUnit (hij : i ≠ j) (c : A) :
     SpecialLinearGroup.toGL (SpecialLinearGroup.transvection hij c) =
       transvectionUnit hij c :=
+  Units.ext (rfl)
+
+/-- Over a commutative ring, `TauCeti.transvectionUnit` is Mathlib's
+`Matrix.GeneralLinearGroup.transvection`. -/
+theorem transvectionUnit_eq_transvection (hij : i ≠ j) (c : A) :
+    transvectionUnit hij c = Matrix.GeneralLinearGroup.transvection i j hij c :=
   Units.ext (rfl)
 
 /-- A transvection has determinant one, so the root subgroup lands in `SLₙ`. -/

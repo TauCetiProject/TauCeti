@@ -121,7 +121,7 @@ block of exactly `a` letters to a single letter.  So its words of length `j` com
 of length `m = j + a - 1` alone. -/
 theorem lengthProj_comp_gradedCoderiv (G : InternalGrading R M ℤ)
     {F : ReducedTensorWords R M →ₗ[R] M} (q : ℤ) {a : {a : ℕ // 0 < a}}
-    (hF : F ∘ₗ lengthProj R M a = F) {j m : {j : ℕ // 0 < j}} (hm : m.1 + 1 = j.1 + a.1) :
+    (hF : F ∘ₗ lengthProj R M a = F) {j m : {j : ℕ // 0 < j}} (hm : m.val + 1 = j.val + a.val) :
     lengthProj R M j ∘ₗ gradedCoderiv G F q = gradedCoderiv G F q ∘ₗ lengthProj R M m := by
   obtain ⟨a, ha⟩ := a
   obtain ⟨j, hj⟩ := j
