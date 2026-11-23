@@ -71,7 +71,8 @@ of `Z` which obstruct its intrinsic formality.
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   https://arxiv.org/abs/2301.06757, Sections 3 and 4, for the comparison of zigzag Hochschild
   cohomology with the cyclic quotient of the preprojective algebra.
 * R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 6.1, for the

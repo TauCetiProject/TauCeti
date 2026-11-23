@@ -330,11 +330,11 @@ private theorem taylor_coalgHom_letter_add_sub_sub_coderiv
   simp only [map_add, hcomp, hkill, hdiff, LinearMap.comp_zero, TensorProduct.map_zero_left,
     TensorProduct.map_zero_right, LinearMap.zero_apply, zero_add]
 
-/-- On a pure tensor word of length `n + 2` (`n ≥ 1`), a cochain `ψ` vanishing on single letters
-evaluates the binary cut sum over `Finset.Icc 2 n`. -/
+/-- On a pure tensor word of length `n + 2`, a cochain `ψ` vanishing on single letters evaluates
+the binary cut sum over `Finset.Icc 2 n`. -/
 private theorem lift_mul_map_deconcatenation_of_tprod (ℋ : AInfinityAlgebra R A)
     {ψ : ReducedTensorWords R A →ₗ[R] A} (hψ₁ : ∀ w ∈ filtration R A 1, ψ w = 0)
-    {n : ℕ} (hn : 1 ≤ n) (x : Fin (n + 2) → A) :
+    {n : ℕ} (x : Fin (n + 2) → A) :
     TensorProduct.lift ℋ.mul
         (TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ ψ) ψ
           (deconcatenation R A (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)))) =
@@ -386,7 +386,7 @@ private theorem obstruction_of_tprod_eq_hochschildDifferential_add_sum
     brace_taylor_apply_eq_of_mem_filtration hψ₁ h (by rwa [Nat.add_comm 1 (n + 1)])] at key
   have hquad := taylor_coalgHom_letter_add_sub_sub_coderiv hℋ hm ψ z
   rw [map_sub, map_sub, hℋz, sub_zero, hzdef,
-    lift_mul_map_deconcatenation_of_tprod ℋ hψ₁ hn x, ← hzdef] at hquad
+    lift_mul_map_deconcatenation_of_tprod ℋ hψ₁ x, ← hzdef] at hquad
   rw [obstruction_apply_of_mem_filtration h hz, hℋz, sub_zero, key,
     ℋ.hochschildDifferential_zero_apply, ← hquad]
   abel

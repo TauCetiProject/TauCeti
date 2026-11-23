@@ -89,7 +89,8 @@ octahedral and icosahedral groups.
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   https://arxiv.org/abs/2301.06757, Sections 3 and 4, for the Hochschild cohomology of zigzag
   algebras of trees and its comparison with the cyclic quotient of the preprojective algebra.
 * T. Kadeishvili, *The structure of the `A(∞)`-algebra, and the Hochschild and Harrison

@@ -84,7 +84,8 @@ commutative ring, some are not (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInf
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Section 4, for minimal `A∞` deformations of zigzag algebras and Example 4.7.
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.1, for the Stasheff
   identities.

@@ -79,7 +79,8 @@ Two involutions combine without dividing by `2`:
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Section 4, for minimal `A∞` deformations of zigzag algebras.
 * T. Kadeishvili, *The structure of the `A(∞)`-algebra, and the Hochschild and Harrison
   cohomologies*, Trudy Tbiliss. Mat. Inst. 91 (1988), 19--27.
@@ -181,6 +182,18 @@ section WordParity
 
 variable [Fintype G.Dart]
 
+omit hns [Fintype G.Dart] in
+/-- For a dart word `w` of length `N` rotated by `r`, the complementary cut blocks at `N - r`
+agree with those of `w` at `r` in reverse order. -/
+private theorem subword_comp_finCycle {N : ℕ} (w : Fin N → G.Dart) (r : Fin N) :
+    subword k (fun t ↦ 𝔞 (w (finCycle r t))) 0 (N - r) = subword k (fun t ↦ 𝔞 (w t)) r (N - r) ∧
+      subword k (fun t ↦ 𝔞 (w (finCycle r t))) (N - r) r = subword k (fun t ↦ 𝔞 (w t)) 0 r := by
+  have hcomp : (fun t ↦ 𝔞 (w (finCycle r t))) = fun t ↦ 𝔞 (w (t + r)) :=
+    funext fun t ↦ congrArg (fun i ↦ 𝔞 (w i)) (finCycle_apply r t)
+  rw [hcomp]
+  exact ⟨subword_shift_zero_eq k (fun t ↦ 𝔞 (w t)) r,
+    subword_shift_right_eq k (fun t ↦ 𝔞 (w t)) r⟩
+
 /-- Reindexing by a cyclic shift of `d` steps relates the `(2 * m + 2 - d, d)` cut to the
 `(d, 2 * m + 2 - d)` cut up to the anticyclicity sign `(-1) ^ d`. -/
 private theorem sum_word_cut_sub_eq_neg_one_pow_mul {m : ℕ}
@@ -205,12 +218,10 @@ private theorem sum_word_cut_sub_eq_neg_one_pow_mul {m : ℕ}
   refine Finset.sum_congr rfl fun w _ ↦ ?_
   have hw : a (σ w) = (-1 : k) ^ d * a w :=
     apply_comp_finCycle_of_anticyclic hrot rFin w
-  have hcomp : (fun t ↦ 𝔞 (σ w t)) = fun t ↦ 𝔞 (w (t + rFin)) :=
-    funext fun t ↦ congrArg (fun i ↦ 𝔞 (w i)) (finCycle_apply rFin t)
-  have hs0 := subword_shift_zero_eq k (fun t ↦ 𝔞 (w t)) rFin
-  have hs1 := subword_shift_right_eq k (fun t ↦ 𝔞 (w t)) rFin
+  obtain ⟨hs0, hs1⟩ := subword_comp_finCycle (k := k) w rFin
   dsimp only [rFin] at hs0 hs1 ⊢
-  rw [hw, hcomp, hs0, hs1, zigzagTrace_mul_comm]
+  dsimp only [σ, Function.comp_apply]
+  rw [hw, hs0, hs1, zigzagTrace_mul_comm]
   ring
 
 /-- At the midpoint cut `d = m + 1` of a word of length `2 * m + 2`, shifting by `m + 1` steps is
@@ -233,27 +244,19 @@ private theorem exists_sum_word_cut_mid_eq_two_mul {m : ℕ}
     have hsum : rFin.val + rFin.val = 2 * m + 2 := by dsimp [rFin]; omega
     have h0 : rFin + rFin = 0 := Fin.ext (by rw [Fin.val_add, Fin.val_zero, hsum, Nat.mod_self])
     rw [finCycle_apply, finCycle_apply, add_assoc, h0, add_zero]
-  have hcomp (w : Fin (2 * m + 2) → G.Dart) :
-      (fun t ↦ 𝔞 (τ w t)) = fun t ↦ 𝔞 (w (t + rFin)) :=
-    funext fun t ↦ congrArg (fun i ↦ 𝔞 (w i)) (finCycle_apply rFin t)
-  have hsw0 (w : Fin (2 * m + 2) → G.Dart) :
-      subword k (fun t ↦ 𝔞 (τ w t)) 0 (m + 1) =
-        subword k (fun t ↦ 𝔞 (w t)) (m + 1) (m + 1) := by
-    rw [hcomp]
-    simpa only [rFin, hsub] using subword_shift_zero_eq k (fun t ↦ 𝔞 (w t)) rFin
-  have hsw1 (w : Fin (2 * m + 2) → G.Dart) :
-      subword k (fun t ↦ 𝔞 (τ w t)) (m + 1) (m + 1) =
-        subword k (fun t ↦ 𝔞 (w t)) 0 (m + 1) := by
-    rw [hcomp]
-    simpa only [rFin, hsub] using subword_shift_right_eq k (fun t ↦ 𝔞 (w t)) rFin
+  have hsw (w : Fin (2 * m + 2) → G.Dart) := by
+    simpa only [rFin, hsub] using subword_comp_finCycle (k := k) w rFin
   refine Finset.sum_mem_of_involution Finset.univ τ (fun _ _ ↦ Finset.mem_univ _)
     (fun w _ ↦ hτ w) (fun w _ hw ↦ ?_) (fun w _ _ ↦ ?_)
-  · have heq := (hsw0 w).symm
-    rw [hw] at heq
+  · have heq := (hsw w).1.symm
+    have hfun : (fun t ↦ 𝔞 (w (finCycle rFin t))) = fun t ↦ 𝔞 (w t) :=
+      funext fun t ↦ congrArg (fun d ↦ 𝔞 d) (congrFun hw t)
+    rw [hfun] at heq
     rw [AddSubmonoid.mem_even, heq]
     exact (even_zigzagTrace_mul_self_apply_subword hψ w 0 (m + 1)).mul_left _
   · have haτ : a (τ w) = (-1 : k) ^ (m + 1) * a w := apply_comp_finCycle_of_anticyclic hrot rFin w
-    rw [AddSubmonoid.mem_even, haτ, hsw0, hsw1,
+    dsimp only [τ, Function.comp_apply]
+    rw [AddSubmonoid.mem_even, haτ, (hsw w).1, (hsw w).2,
       zigzagTrace_mul_comm k G hns (ψ (subword k (fun t ↦ 𝔞 (w t)) (m + 1) _)),
       mul_assoc, ← one_add_mul]
     exact ((odd_neg_one (α := k)).pow (n := m + 1)).one_add.mul_right _

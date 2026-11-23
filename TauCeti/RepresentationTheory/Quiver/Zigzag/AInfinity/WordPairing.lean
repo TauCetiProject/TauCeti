@@ -102,7 +102,8 @@ operation of a single closed walk `w` is not a coboundary as soon as
 
 * R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 6.1, for the
   quadratic dual of the zigzag algebra.
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Sections 3 and 4, for the comparison of zigzag Hochschild cohomology with the cyclic quotient of
   the preprojective algebra.
 * J.-L. Loday, *Cyclic Homology*, Chapter 1, for Hochschild chains and cochains and their duality.

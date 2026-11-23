@@ -60,7 +60,8 @@ all `n ≥ 4`. Explicit quartic deformations of the affine `D₄` zigzag algebra
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   https://arxiv.org/abs/2301.06757, Sections 3 and 4.
 * T. Kadeishvili, *The structure of the `A(∞)`-algebra, and the Hochschild and Harrison
   cohomologies*, Trudy Tbiliss. Mat. Inst. 91 (1988), 19--27.

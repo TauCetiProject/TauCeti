@@ -87,7 +87,8 @@ zigzag algebra is not intrinsically formal (see `TauCeti.not_isIntrinsicallyForm
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Example 4.7.
 -/
 

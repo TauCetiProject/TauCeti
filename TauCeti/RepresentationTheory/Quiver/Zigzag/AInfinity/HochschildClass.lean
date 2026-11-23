@@ -140,7 +140,8 @@ the strict zigzag algebra over every nontrivial commutative ring is proved in
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Section 4, for minimal `A∞` deformations of zigzag algebras and their Hochschild cohomology.
 * J.-L. Loday, *Cyclic Homology*, Chapter 1, for Hochschild chains and cochains and their duality.
 -/

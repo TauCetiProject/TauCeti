@@ -91,7 +91,8 @@ see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four` and
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Section 4, for minimal `A∞` deformations of zigzag algebras and their intrinsic formality.
 * T. Kadeishvili, *The structure of the `A(∞)`-algebra, and the Hochschild and Harrison
   cohomologies*, Trudy Tbiliss. Mat. Inst. 91 (1988), 19--27, for the obstruction method.
