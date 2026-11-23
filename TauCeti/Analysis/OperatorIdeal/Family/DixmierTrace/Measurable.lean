@@ -292,18 +292,23 @@ section DiagonalModels
 
 /-! #### 1. The harmonic diagonal model and non-normality -/
 
+private theorem isPositive_diagonalCLM_invNatSucc :
+    (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).IsPositive := by
+  rw [lp.invNatSucc_eq_ofAntitone]
+  exact lp.isPositive_diagonalCLM_ofAntitone _
+
 /-- The logarithmic Ky Fan means of `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` converge to
 `1`. -/
 theorem tendsto_kyFanLogMean_diagonalCLM_invNatSucc :
     Tendsto (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).kyFanLogMean atTop (𝓝 1) :=
-  tendsto_kyFanLogMean_of_singularValue_eq fun j ↦ by simp [lp.invNatSucc]
+  tendsto_kyFanLogMean_of_singularValue_eq fun j ↦ by simp [lp.invNatSucc_eq_ofAntitone]
 
 /-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` is Dixmier
 measurable. -/
 theorem isDixmierMeasurable_diagonalCLM_invNatSucc :
     IsDixmierMeasurable (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)) :=
   isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean
-    (lp.isPositive_diagonalCLM_ofAntitone antitone_inv_natCast_add_one)
+    isPositive_diagonalCLM_invNatSucc
     tendsto_kyFanLogMean_diagonalCLM_invNatSucc
 
 /-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` belongs to the
@@ -318,9 +323,7 @@ theorem diagonalCLM_invNatSucc_mem_logarithmic :
 @[simp]
 theorem complexDixmierTrace_diagonalCLM_invNatSucc (ω : GeneralizedLimit) :
     complexDixmierTrace ω (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)) = 1 := by
-  have hpos : (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)).IsPositive :=
-    lp.isPositive_diagonalCLM_ofAntitone antitone_inv_natCast_add_one
-  rw [complexDixmierTrace_of_isPositive ω hpos,
+  rw [complexDixmierTrace_of_isPositive ω isPositive_diagonalCLM_invNatSucc,
     dixmierTrace_diagonalCLM_eq_one ω _ (lp.norm_invNatSucc_apply ℂ), Complex.ofReal_one]
 
 /-- **Singularity and non-normality of the Dixmier trace.** On `ℓ²(ℕ, ℂ)` there exist a monotone
@@ -339,7 +342,7 @@ theorem exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne :
   have hd_nonneg : ∀ j, 0 ≤ lp.invNatSucc ℂ j := lp.invNatSucc_apply_nonneg ℂ
   exact ⟨fun n ↦ lp.diagonalTruncation (p := 2) (lp.invNatSucc ℂ) (Finset.range n),
     lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ), diagonalCLM_invNatSucc_mem_logarithmic,
-    lp.isPositive_diagonalCLM_ofAntitone antitone_inv_natCast_add_one,
+    isPositive_diagonalCLM_invNatSucc,
     isDixmierMeasurable_diagonalCLM_invNatSucc,
     fun n ↦ (lp.isPositive_diagonalTruncation_iff _ _).2 fun i _ ↦ hd_nonneg i,
     fun m n hmn ↦ lp.diagonalTruncation_mono hd_nonneg (Finset.range_mono hmn),
@@ -662,7 +665,7 @@ theorem exists_isPositive_mem_logarithmic_not_isDixmierMeasurable :
   have hpos : T.IsPositive := lp.isPositive_diagonalCLM_ofAntitone oscNNSeq_antitone
   have hmem : T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule :=
     mem_finiteSubmodule_of_forall_kyFanGauge_le diagonalCLM_invNatSucc_mem_logarithmic fun k ↦ by
-      simpa [hT, lp.invNatSucc] using
+      simpa [hT, lp.invNatSucc_eq_ofAntitone] using
         Finset.sum_le_sum fun j _ ↦ (by exact_mod_cast oscSeq_le_inv j)
   obtain ⟨g, hg⟩ := exists_coe_eq_kyFanLogMean hmem
   have hlin (b : ℕ) : Tendsto (fun r : ℕ ↦ 2 * r + b) atTop atTop :=

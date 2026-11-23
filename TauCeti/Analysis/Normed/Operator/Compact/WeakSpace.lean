@@ -161,15 +161,6 @@ theorem tendsto_of_tendsto_toWeakSpace_of_isBounded (hJ : IsCompactOperator J) {
   hJ.tendsto_of_tendsto_toWeakSpace_of_isVonNBounded
     (by rwa [NormedSpace.isVonNBounded_iff]) hu h
 
-/-- A compact operator `J : V →L[𝕜] F` is continuous within the weak image of any norm-bounded set
-`B ⊆ V` at every point `w : WeakSpace 𝕜 V`. -/
-theorem continuousWithinAt_toWeakSpace_symm (hJ : IsCompactOperator J) {B : Set V}
-    (hB : IsBounded B) (w : WeakSpace 𝕜 V) :
-    ContinuousWithinAt (fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z))
-      (toWeakSpace 𝕜 V '' B) w :=
-  hJ.continuousWithinAt_toWeakSpace_symm_of_isVonNBounded
-    (by rwa [NormedSpace.isVonNBounded_iff]) w
-
 /-- **Weak-to-norm continuity of compact operators on bounded sets.** A compact operator is
 continuous from the weak topology to the original topology on every bounded set. -/
 theorem continuousOn_comp_toWeakSpace_symm_of_isBounded (hJ : IsCompactOperator J) {B : Set V}

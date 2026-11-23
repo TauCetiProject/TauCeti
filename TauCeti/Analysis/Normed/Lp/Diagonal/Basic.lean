@@ -389,15 +389,18 @@ theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥
     0 ≤ ofAntitone 𝕜 hc n := by simp
 
 /-- The bounded harmonic multiplier sequence `n ↦ ((n + 1 : 𝕜)⁻¹)` in `ℓ^∞(ℕ, 𝕜)`. -/
-@[expose]
 noncomputable def invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ℓ^∞(ℕ, 𝕜) :=
   ofAntitone 𝕜 (TauCeti.antitone_inv_natCast_add_one (α := ℝ≥0))
+
+/-- `lp.invNatSucc 𝕜` is `lp.ofAntitone` applied to `TauCeti.antitone_inv_natCast_add_one`. -/
+theorem invNatSucc_eq_ofAntitone (𝕜 : Type*) [RCLike 𝕜] :
+    invNatSucc 𝕜 = ofAntitone 𝕜 (TauCeti.antitone_inv_natCast_add_one (α := ℝ≥0)) := (rfl)
 
 /-- The `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : 𝕜) + 1)⁻¹`. -/
 @[simp]
 theorem invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     invNatSucc 𝕜 n = ((n : 𝕜) + 1)⁻¹ := by
-  rw [invNatSucc, ofAntitone_apply]
+  rw [invNatSucc_eq_ofAntitone, ofAntitone_apply]
   push_cast
   rfl
 
@@ -405,20 +408,20 @@ open scoped ComplexOrder in
 /-- Every entry of `lp.invNatSucc 𝕜` is nonnegative in the `RCLike` order. -/
 theorem invNatSucc_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     0 ≤ invNatSucc 𝕜 n := by
-  rw [invNatSucc]
+  rw [invNatSucc_eq_ofAntitone]
   exact ofAntitone_apply_nonneg 𝕜 _ n
 
 /-- The norm of the `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : ℝ) + 1)⁻¹`. -/
 theorem norm_invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     ‖invNatSucc 𝕜 n‖ = ((n : ℝ) + 1)⁻¹ := by
-  rw [invNatSucc, norm_ofAntitone_apply]
+  rw [invNatSucc_eq_ofAntitone, norm_ofAntitone_apply]
   push_cast
   rfl
 
 /-- The `ℓ^∞` norm of `lp.invNatSucc 𝕜` is `1`. -/
 @[simp]
 theorem norm_invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ‖invNatSucc 𝕜‖ = 1 := by
-  rw [invNatSucc, norm_ofAntitone]
+  rw [invNatSucc_eq_ofAntitone, norm_ofAntitone]
   simp
 
 /-- The norms of the entries of `lp.invNatSucc 𝕜` tend to `0`. -/
