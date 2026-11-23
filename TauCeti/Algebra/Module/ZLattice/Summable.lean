@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Summable
 import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+import TauCeti.Algebra.Module.ZLattice.Basic
 import TauCeti.Analysis.Normed.Group.Int
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
-import TauCeti.LinearAlgebra.Basis.RestrictScalars
 import TauCeti.Topology.DiscreteSubset
 
 /-!
@@ -33,9 +33,10 @@ standard lattice.
 
 For a finite index type `d`, the integer vectors `d → ℤ` are the standard lattice
 `ℤ^d ⊆ ℝ^d`, so summability over them is summability over that lattice
-(`TauCeti.summable_pi_int_iff_summable_span`). Read with the sup norm on `d → ℤ`, the power sum
-`∑ n, ‖n‖ ^ r` converges for `r < -card d` (`TauCeti.summable_pi_int_norm_rpow`). This is the
-majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
+(`TauCeti.summable_pi_int_iff_summable_span`, in `TauCeti.Algebra.Module.ZLattice.Basic`). Read
+with the sup norm on `d → ℤ`, the power sum `∑ n, ‖n‖ ^ r` converges for `r < -card d`
+(`TauCeti.summable_pi_int_norm_rpow`). This is the majorant used to sum Fourier coefficients on
+the torus `(ℝ / ℤ)^d`.
 
 ## Main statements
 
@@ -49,8 +50,6 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
   number `k` exceeding the rank, written `((1 + ‖ℓ‖) ^ k)⁻¹`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm_of_decay`: a function decaying faster than every
   power of `1 + ‖x‖` is summable along `L` against every power of `1 + ‖ℓ‖`.
-* `TauCeti.summable_pi_int_iff_summable_span`: for a finite index type `d`, summability over
-  `d → ℤ` is summability over the standard lattice `ℤ^d ⊆ ℝ^d`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
 * `TauCeti.summable_pi_int_one_add_norm_rpow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ r` converges for real
   `r < -card d`; `TauCeti.summable_pi_int_one_add_norm_pow_inv` specialises it to `r = -k` for a
@@ -130,22 +129,6 @@ theorem summable_one_add_norm_pow_mul_norm_of_decay {F : Type*} [SeminormedAddCo
 end ZLattice
 
 namespace TauCeti
-
-/-- For a finite index type `d`, through `n ↦ (fun i ↦ (n i : ℝ))`, the integer vectors `d → ℤ`
-are the standard lattice `ℤ^d ⊆ ℝ^d`, the `ℤ`-span of the standard basis. So a function on `d → ℝ`
-is summable over the integer vectors exactly when it is summable over that lattice. The
-equivalence is the coordinate map of the integral basis `Module.Basis.restrictScalars ℤ` of the
-standard basis (`Module.Basis.coe_restrictScalars_equivFun_symm`). -/
-theorem summable_pi_int_iff_summable_span {d : Type*} [Finite d] {α : Type*} [AddCommMonoid α]
-    [TopologicalSpace α] {f : (d → ℝ) → α} :
-    (Summable fun n : d → ℤ ↦ f fun i ↦ (n i : ℝ)) ↔
-      Summable fun ℓ : Submodule.span ℤ (Set.range (Pi.basisFun ℝ d)) ↦ f ℓ := by
-  -- The lattice vector with coordinates `n` is the real vector `fun i ↦ (n i : ℝ)`.
-  have hcoe (n : d → ℤ) :
-      (((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun.symm n : d → ℝ) = fun i ↦ (n i : ℝ) := by
-    simp [Module.Basis.coe_restrictScalars_equivFun_symm]
-  rw [← ((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun.symm.toEquiv.summable_iff]
-  simp only [Function.comp_def, LinearEquiv.coe_toEquiv, hcoe]
 
 /-- The sup norms of the integer vectors `n : d → ℤ` satisfy `∑ n, ‖n‖ ^ r < ∞` when
 `r < -card d`. Here `‖0‖ ^ r = 0`. -/
