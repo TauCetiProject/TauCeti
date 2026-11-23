@@ -185,7 +185,12 @@ private theorem realV_ode {a x : ℝ} (ha : a ∈ Ioo (0 : ℝ) 1) (hxa : |x| < 
     simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hv.deriv_ofScalars.hasSum hxb
   have hv2 := hv.hasSum_mul_deriv_ofScalars hxe
   have hv3 := hv.deriv_ofScalars.hasSum_mul_deriv_ofScalars hxe
-  have hv4 := hv.hasSum_mul_sq_deriv_deriv_ofScalars hxe
+  have hv4 : HasSum (fun n : ℕ ↦ (n : ℝ) * ((n : ℝ) - 1) * D n * x ^ n)
+      (x ^ 2 * deriv (deriv (realV a)) x) := by
+    refine (hv.hasSum_sq_mul_deriv_deriv_ofScalars hxe).congr_fun fun n ↦ ?_
+    cases n with
+    | zero => simp
+    | succ m => simp [Nat.cast_add_one]
   have hLHS := (hv3.add hv1).sub ((hv4.add (hv2.mul_left (2 * a + 1))).add (hv0.mul_left (a ^ 2)))
   have hu0 : HasSum (fun n : ℕ ↦ C n * x ^ n) (₂F₁ a a 1 x) := by
     simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hu.hasSum hxb
