@@ -350,18 +350,13 @@ private theorem isOpen_setOf_forall_pos_apply_reebVectorField {β : SmoothForm I
     ![(mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) A).reebVectorField q.2]
   -- `g` is continuous at the points over `N`, where all slices of `A` are contact. It is the
   -- Reeb component of the constant family with slices `β`.
-  have hβ (t : ℝ) : mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
-      (mpullback Prod.snd contMDiff_snd β) = β :=
-    (mpullback_mpullback (Prod.mk t) Prod.snd (I' := 𝓘(ℝ, ℝ).prod I)
-      (contMDiff_const.prodMk contMDiff_id) contMDiff_snd β).trans
-        (LinearMap.congr_fun mpullback_id β)
   have hg (p : ℝ × M) (hp : p.2 ∈ N) : ContinuousAt g p := by
     have hgp := contMDiffAt_apply_reebVectorField_mpullback_prodMk A
       (mpullback Prod.snd contMDiff_snd β) (p := p)
       (Filter.mem_of_superset ((hN.preimage continuous_snd).mem_nhds hp) fun q hq ↦ by
         simp only [mem_ofPred_eq, A, mpullback_prodMk_lineMapFamily]
         exact hcN q.2 hq _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩)
-    simp only [hβ] at hgp
+    simp only [mpullback_prodMk_mpullback_snd] at hgp
     exact hgp.continuousAt
   refine isOpen_iff_mem_nhds.2 fun x ⟨hxN, hx⟩ ↦ ?_
   have hev : ∀ᶠ y in 𝓝 x, ∀ t ∈ Icc (0 : ℝ) 1, 0 < g (t, y) :=
