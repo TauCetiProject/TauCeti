@@ -88,21 +88,16 @@ theorem Spec.Γevaluation_eq_toStalk_stalkSpecializes (R : CommRingCat.{u})
     (Scheme.ΓSpecIso R).inv ≫ (Spec R).Γevaluation x =
       StructureSheaf.toStalk R y ≫ (Spec R).presheaf.stalkSpecializes h ≫
         (Spec R).residue x := by
-  have hgerm : (Scheme.ΓSpecIso R).inv ≫
-      (Spec R).presheaf.germ ⊤ x trivial = StructureSheaf.toStalk R x :=
-    (congrArg (· ≫ (Spec R).presheaf.germ ⊤ x trivial)
-      (Scheme.ΓSpecIso_inv R)).trans (StructureSheaf.algebraMap_germ ⊤ x trivial)
-  calc
-    _ = (Scheme.ΓSpecIso R).inv ≫ (Spec R).presheaf.germ ⊤ x trivial ≫
-        (Spec R).residue x :=
-      congrArg ((Scheme.ΓSpecIso R).inv ≫ ·)
-        ((Spec R).germ_residue x trivial).symm
-    _ = ((Scheme.ΓSpecIso R).inv ≫ (Spec R).presheaf.germ ⊤ x trivial) ≫
-        (Spec R).residue x := (Category.assoc _ _ _).symm
-    _ = StructureSheaf.toStalk R x ≫ (Spec R).residue x :=
-      congrArg (· ≫ (Spec R).residue x) hgerm
-    _ = _ := (congrArg (· ≫ (Spec R).residue x)
-      (StructureSheaf.toStalk_stalkSpecializes h).symm).trans (Category.assoc _ _ _)
+  have heval : (Spec R).Γevaluation x =
+      (Spec R).presheaf.germ ⊤ x trivial ≫ (Spec R).residue x :=
+    ((Spec R).germ_residue (U := ⊤) x trivial).symm
+  have hgerm : ((Scheme.ΓSpecIso R).inv ≫ (Spec R).presheaf.germ ⊤ x trivial) ≫
+      (Spec R).residue x = StructureSheaf.toStalk R x ≫ (Spec R).residue x :=
+    (Scheme.ΓSpecIso_inv R).symm ▸
+      StructureSheaf.algebraMap_germ_assoc ⊤ x trivial ((Spec R).residue x)
+  rw [heval, ← Category.assoc, hgerm]
+  exact (StructureSheaf.toStalk_stalkSpecializes_assoc h ((Spec R).residue x)).symm.trans
+    (Category.assoc _ _ _)
 
 /-- For a specialization `x ⤳ y`, the stalk `𝒪_{X,x}` is the localization of `𝒪_{X,y}` at the
 prime lying under the maximal ideal of `𝒪_{X,x}`, via the specialization map. -/
