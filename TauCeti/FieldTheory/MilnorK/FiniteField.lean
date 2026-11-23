@@ -100,28 +100,29 @@ theorem eq_zero_of_isCyclic_of_exists_odd_add_eq_one (hc : IsSteinbergPairing c)
     simp [htwo]
   exact hodd_smul.symm.trans hmn_zero
 
+private theorem exists_odd_zpow_add_eq_one_of_finite [Finite F] (hchar : ringChar F ≠ 2)
+    {g : Fˣ} (hg : ∀ x : Fˣ, x ∈ Subgroup.zpowers g) :
+    ∃ m n : ℤ, Odd m ∧ Odd n ∧ ((g ^ m : Fˣ) : F) + (g ^ n : Fˣ) = 1 := by
+  obtain ⟨x, hx, hx1⟩ := FiniteField.exists_not_isSquare_and_not_isSquare_one_sub hchar
+  have hx0 : x ≠ 0 := by rintro rfl; exact hx IsSquare.zero
+  have hx10 : 1 - x ≠ 0 := by rintro h; rw [h] at hx1; exact hx1 IsSquare.zero
+  obtain ⟨m, hm⟩ := hg (Units.mk0 x hx0)
+  obtain ⟨n, hn⟩ := hg (Units.mk0 (1 - x) hx10)
+  have hm' : ((g ^ m : Fˣ) : F) = x := congrArg Units.val hm
+  have hn' : ((g ^ n : Fˣ) : F) = 1 - x := congrArg Units.val hn
+  exact ⟨m, n,
+    Int.not_even_iff_odd.mp fun he ↦ hx (hm' ▸ (he.isSquare_zpow g).map (Units.coeHom F)),
+    Int.not_even_iff_odd.mp fun he ↦ hx1 (hn' ▸ (he.isSquare_zpow g).map (Units.coeHom F)),
+    by rw [hm', hn', add_sub_cancel]⟩
+
 /-- Every Steinberg pairing on a finite field into an additive group is identically zero. -/
 theorem eq_zero_of_finite [Finite F] (hc : IsSteinbergPairing c) (a b : Fˣ) : c a b = 0 := by
   by_cases hchar : ringChar F = 2
   · have : CharP F 2 := ringChar.of_eq hchar
     exact hc.eq_zero_of_isCyclic_of_charTwo a b
   · obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Fˣ)
-    obtain ⟨x, hx, hx1⟩ := FiniteField.exists_not_isSquare_and_not_isSquare_one_sub hchar
-    have hx0 : x ≠ 0 := by rintro rfl; exact hx IsSquare.zero
-    have hx10 : 1 - x ≠ 0 := by rintro h; rw [h] at hx1; exact hx1 IsSquare.zero
-    let u : Fˣ := Units.mk0 x hx0
-    let v : Fˣ := Units.mk0 (1 - x) hx10
-    have huv : (u : F) + v = 1 := by simp [u, v]
-    have hu : ¬IsSquare u := fun ⟨y, hy⟩ ↦ hx ⟨y, by simpa [u] using congrArg Units.val hy⟩
-    have hv : ¬IsSquare v := fun ⟨y, hy⟩ ↦ hx1 ⟨y, by simpa [v] using congrArg Units.val hy⟩
-    obtain ⟨m, hm⟩ := hg u
-    obtain ⟨n, hn⟩ := hg v
-    dsimp only at hm hn
-    have hodd_of : ∀ k : ℤ, ¬IsSquare (g ^ k) → Odd k := fun k hk ↦
-      (Int.even_or_odd k).resolve_left fun ⟨r, hr⟩ ↦
-        hk ⟨g ^ r, by rw [hr, zpow_add]⟩
     exact hc.eq_zero_of_isCyclic_of_exists_odd_add_eq_one hg
-      ⟨m, n, hodd_of m (hm.symm ▸ hu), hodd_of n (hn.symm ▸ hv), by rw [hm, hn, huv]⟩ a b
+      (exists_odd_zpow_add_eq_one_of_finite hchar hg) a b
 
 end IsSteinbergPairing
 

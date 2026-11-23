@@ -190,8 +190,8 @@ corresponding Milnor symbol. -/
 theorem mkRingHom_tprod {n : ℕ} (a : Fin n → Rˣ) :
     RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.tprod ℤ (Additive Rˣ) n (Additive.ofMul ∘ a)) =
       symbol (List.ofFn a) := by
-  rw [TensorAlgebra.tprod_apply, map_list_prod, symbol, List.map_ofFn, List.map_ofFn]
-  rfl
+  simp only [TensorAlgebra.tprod_apply, map_list_prod, symbol, List.map_ofFn, Function.comp_def,
+    ofUnit_def]
 
 variable (R)
 
