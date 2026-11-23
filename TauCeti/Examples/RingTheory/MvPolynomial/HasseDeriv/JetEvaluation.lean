@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.FinCases
 import TauCeti.RingTheory.MvPolynomial.HasseDeriv.JetEvaluation
@@ -12,9 +13,10 @@ import TauCeti.RingTheory.MvPolynomial.HasseDeriv.JetEvaluation
 /-!
 # Worked jet maps in monomial coordinates
 
-These examples compute a rectangular jet matrix in its actual monomial basis, exhibit a
-nonzero kernel element, and reduce a jet row modulo `3`. Repeated nodes and an order above the
-polynomial degree test that rows record the prescribed jets rather than just the points.
+These examples compute a rectangular jet matrix in its actual monomial basis and its rank,
+exhibit a nonzero kernel element, and reduce a jet row modulo `3`. Repeated nodes and an order
+above the polynomial degree test that rows record the prescribed jets rather than just the
+points.
 -/
 
 open MvPolynomial Finsupp
@@ -22,19 +24,28 @@ open MvPolynomial Finsupp
 namespace TauCeti.JetEvaluationExamples
 
 /-- Rows are the value at `0` and the first jet at `1`; columns are `1`, `X`, `X²`, in that order.
--/
+The jet matrix `[[1, 0, 0], [0, 1, 2]]` has rank `2`: its minor on the columns of `1` and `X` is
+`1`. -/
 example :
     let s : Finset (Fin 1 →₀ ℕ) := {0, single 0 1, single 0 2}
     let col (j : Fin 3) : (s : Set (Fin 1 →₀ ℕ)) :=
       ⟨single 0 j, by fin_cases j <;> simp [s]⟩
-    (LinearMap.toMatrix (basisRestrictSupport ℤ (s : Set (Fin 1 →₀ ℕ)))
+    let M := (LinearMap.toMatrix (basisRestrictSupport ℤ (s : Set (Fin 1 →₀ ℕ)))
       (Pi.basisFun ℤ (Fin 2))
       (jetEval (s : Set (Fin 1 →₀ ℕ)) ![fun _ ↦ 0, fun _ ↦ 1]
-        ![0, single 0 1])).submatrix id col = !![1, 0, 0; 0, 1, 2] := by
-  intro s col
-  rw [toMatrix_jetEval]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [col, eval_monomial, constantCoeff_monomial]
+        ![0, single 0 1])).submatrix id col
+    M = !![1, 0, 0; 0, 1, 2] ∧ M.rank = 2 := by
+  intro s col M
+  have hM : M = !![1, 0, 0; 0, 1, 2] := by
+    simp only [M]
+    rw [toMatrix_jetEval]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [col, eval_monomial, constantCoeff_monomial]
+  refine ⟨hM, le_antisymm (Matrix.rank_le_height _) ?_⟩
+  rw [hM]
+  calc 2 = (Matrix.submatrix !![(1 : ℤ), 0, 0; 0, 1, 2] id ![0, 1]).rank := by
+        rw [Matrix.rank_of_det_ne_zero (by simp [Matrix.det_fin_two]), Fintype.card_fin]
+    _ ≤ _ := Matrix.rank_submatrix_le _ _ _
 
 /-- The nonzero polynomial `X² - 2X` satisfies both prescribed vanishing conditions. -/
 example :
