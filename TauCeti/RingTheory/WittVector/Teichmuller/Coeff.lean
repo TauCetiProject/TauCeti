@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 
+import TauCeti.RingTheory.WittVector.Teichmuller.Basic
+
 /-!
 # Teichmüller coordinates of Witt vectors over a perfect ring
 
@@ -152,13 +154,7 @@ by `c`. -/
 @[simp]
 theorem teichmullerCoeff_teichmuller_mul (c : R) (x : 𝕎 R) (n : ℕ) :
     (teichmuller p c * x).teichmullerCoeff n = c * x.teichmullerCoeff n := by
-  have h : (p : 𝕎 R) ^ (n + 1) ∣ teichmuller p c * x -
-      ∑ i ≤ n, teichmuller p (c * x.teichmullerCoeff i) * (p : 𝕎 R) ^ i := by
-    convert (pow_dvd_sub_sum_teichmullerCoeff x n).mul_left (teichmuller p c) using 1
-    simp only [mul_sub, Finset.mul_sum, map_mul, mul_assoc]
-  rw [pow_dvd_sub_iff_forall_teichmullerCoeff_eq.mp h n le_rfl,
-    teichmullerCoeff_sum_teichmuller_mul_pow]
-  simp
+  rw [teichmullerCoeff_eq_iff, teichmuller_mul_coeff, mul_pow, teichmullerCoeff_pow]
 
 /-- A Witt vector over a perfect ring is determined by its Teichmüller coordinates. -/
 theorem teichmullerCoeff_injective : Function.Injective (teichmullerCoeff : 𝕎 R → ℕ → R) :=
