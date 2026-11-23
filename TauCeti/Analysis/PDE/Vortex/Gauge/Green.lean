@@ -126,7 +126,7 @@ private def greenFun (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f
     (hcont : Continuous x) (g : realSubmodule ℂ (Nat.cast_nonneg j)) :
     realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two) :=
   ofRealSobolev (exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq hk
-    hjk hx hcont (reValue_mem_realSobolevFunctions g.2)).choose_spec.1
+    hjk hx hcont (reValue_mem_realSobolevFunctions g.property)).choose_spec.1
 
 /-- The real part of `greenFun g` is a weak solution of `d₀* d₀ u = g`, for `C²` test functions. -/
 private theorem greenFun_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
@@ -135,7 +135,7 @@ private theorem greenFun_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFie
     ∫ z, reValue (greenFun f m hk hjk hx hcont g : H^{(j : ℝ) + 2}(ℂ)) z *
         gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, reValue (g : H^{(j : ℝ)}(ℂ)) z * φ z := by
   set h := exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq hk hjk hx
-    hcont (reValue_mem_realSobolevFunctions g.2)
+    hcont (reValue_mem_realSobolevFunctions g.property)
   rw [← h.choose_spec.2 φ hφ hc]
   exact integral_congr_ae ((reValue_ofRealSobolev (by positivity) h.choose_spec.1).mono
     fun z hz ↦ by simp only [greenFun, hz])
@@ -149,7 +149,7 @@ private theorem eq_greenFun (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedField
       ∫ z, reValue (v : H^{(j : ℝ) + 2}(ℂ)) z * gaugeAdjoint x (gaugeDirection x φ) z =
         ∫ z, reValue (g : H^{(j : ℝ)}(ℂ)) z * φ z) :
     v = greenFun f m hk hjk hx hcont g :=
-  Subtype.ext <| eq_of_reValue_ae_eq v.2 (greenFun f m hk hjk hx hcont g).2 <|
+  Subtype.ext <| eq_of_reValue_ae_eq v.property (greenFun f m hk hjk hx hcont g).property <|
     ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq (by exact_mod_cast hk) hx hcont
       (memLp_reValue _) (memLp_reValue _) hv
       fun φ hφ hc ↦ greenFun_spec hk hjk hx hcont g φ (hφ.of_le (by simp)) hc
@@ -187,9 +187,9 @@ def gaugeGreen (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
     have hψ := memLp_neg_laplacian_add_sq_add_sq_mul hcont hφ2 hc
     have hφL : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hc
     -- Test the weak equations of the `gaugeGreen (g n)` and pass to the limit in `L²`.
-    have hl := (((continuous_integral_reValue_mul hψ).comp continuous_subtype_val).tendsto v).comp
+    have hl := (((continuous_integral_reValue_mul hψ).comp continuous_subtypeVal).tendsto v).comp
       hv
-    have hr := (((continuous_integral_reValue_mul hφL).comp continuous_subtype_val).tendsto
+    have hr := (((continuous_integral_reValue_mul hφL).comp continuous_subtypeVal).tendsto
       g₀).comp hg
     have heq (n : ℕ) : ((fun u : H^{(j : ℝ) + 2}(ℂ) ↦ ∫ z, reValue u z *
         (-Δ φ z + (x z 2 ^ 2 + x z 3 ^ 2) * φ z)) ∘ Subtype.val ∘ greenLinear f m hk hjk hx hcont ∘
@@ -227,7 +227,7 @@ equation. -/
 theorem gaugeGreen_injective (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
     (hcont : Continuous x) : Function.Injective (gaugeGreen f m hk hjk hx hcont) := by
   intro g₁ g₂ h
-  refine Subtype.ext (eq_of_reValue_ae_eq g₁.2 g₂.2 ?_)
+  refine Subtype.ext (eq_of_reValue_ae_eq g₁.property g₂.property ?_)
   refine ae_eq_of_integral_contDiff_smul_eq ((memLp_reValue _).locallyIntegrable one_le_two)
     ((memLp_reValue _).locallyIntegrable one_le_two) fun φ hφ hc ↦ ?_
   have e₁ := gaugeGreen_spec hk hjk hx hcont g₁ φ (hφ.of_le (by simp)) hc
@@ -245,7 +245,7 @@ theorem gaugeGreen_surjective (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFie
   intro v
   obtain ⟨g, hg, hweak⟩ :=
     exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem_add_two hk
-      hjk hx (reValue_mem_realSobolevFunctions v.2)
+      hjk hx (reValue_mem_realSobolevFunctions v.property)
   refine ⟨ofRealSobolev hg, ((eq_gaugeGreen_iff hk hjk hx hcont).2 fun φ hφ hc ↦ ?_).symm⟩
   rw [hweak φ hφ hc]
   exact integral_congr_ae ((reValue_ofRealSobolev (by positivity) hg).mono fun z hz ↦ by

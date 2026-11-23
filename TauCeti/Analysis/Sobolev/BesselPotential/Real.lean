@@ -503,8 +503,9 @@ theorem reValue_ofRealSobolev (hs : 0 ≤ s) {f : E → ℝ} (hf : f ∈ realSob
 
 /-- An element of the real subspace is recovered from its real part by `ofRealSobolev`. -/
 theorem ofRealSobolev_reValue (u : realSubmodule E h) :
-    ofRealSobolev (reValue_mem_realSobolevFunctions u.2) h = u :=
-  Subtype.ext <| eq_of_reValue_ae_eq (ofRealSobolev _ h).2 u.2 (reValue_ofRealSobolev h _)
+    ofRealSobolev (reValue_mem_realSobolevFunctions u.property) h = u :=
+  Subtype.ext <|
+    eq_of_reValue_ae_eq (ofRealSobolev _ h).property u.property (reValue_ofRealSobolev h _)
 
 /-- Testing the real part against a fixed real `L²` function is continuous on `H^s(E)`. -/
 theorem continuous_integral_reValue_mul {ψ : E → ℝ} (hψ : MemLp ψ 2 volume) :
