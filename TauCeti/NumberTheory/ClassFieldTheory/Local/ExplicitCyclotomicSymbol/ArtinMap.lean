@@ -12,7 +12,6 @@ import TauCeti.Data.ZMod.Units
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.Norm
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
-import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.Norm.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
@@ -66,6 +65,8 @@ norms `a² - 3b²` fill only `1 + 3ℤ_3`, while the image is all of `ℤ_3ˣ`.
   character of the Artin symbol of `pᵏ u` is `u⁻¹`.
 * `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_padic`: a representative of the
   Artin symbol of a unit `u ∈ ℤ_pˣ` has cyclotomic character `u⁻¹`.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_mul_normUnits`: for
+  `F/ℚ_p` finite and any `x : Fˣ`, `χ_cyc(Art_F x) · N_{F/ℚ_p}(x) = p ^ v_{ℚ_p}(N_{F/ℚ_p}(x))`.
 * `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_unit`: for `F/ℚ_p` finite, a
   representative of the Artin symbol of a unit `u` of the valuation ring of `F` has cyclotomic
   character `N_{F/ℚ_p}(u)⁻¹`, for every finite `ℚ_p`-algebra structure on the local field `F`.
@@ -297,20 +298,32 @@ theorem localCyclotomicCharacter_artinMap_padic (u : ℤ_[p]ˣ)
   rw [← abelianizedLocalCyclotomicCharacter_mk, hσ]
   exact abelianizedLocalCyclotomicCharacter_artinMap_padic p (k := 0) (by simp)
 
-private theorem localCyclotomicCharacter_artinMap_mul_normUnits (F : Type) [Field F]
+/-- **The cyclotomic normalization of the local Artin map of a finite extension of `ℚ_p` for
+arbitrary elements.** Let `F` be a nonarchimedean local field with any finite `ℚ_p`-algebra
+structure. For every `x : Fˣ`,
+
+```text
+χ_cyc (Art_F x) · N_{F/ℚ_p}(x) = p ^ v_{ℚ_p}(N_{F/ℚ_p}(x)).
+```
+
+No compatibility of the valuation of `F` with that of `ℚ_p` is assumed: it is automatic
+(`ValuativeExtension.of_isIntegral`). -/
+theorem abelianizedLocalCyclotomicCharacter_artinMap_mul_normUnits (F : Type) [Field F]
     [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra ℚ_[p] F]
-    [FiniteDimensional ℚ_[p] F] [ValuativeExtension ℚ_[p] F] (x : Fˣ)
-    (σ : Field.absoluteGaloisGroup F)
-    (hσ : (σ : Field.absoluteGaloisGroupAbelianization F) = artinMap F x) :
-    Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom (localCyclotomicCharacter p F σ) *
+    [FiniteDimensional ℚ_[p] F] (x : Fˣ) :
+    Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom
+          (abelianizedLocalCyclotomicCharacter p F (artinMap F x)) *
         Algebra.normUnits ℚ_[p] x =
       padicPrimeUnit p ^ (Algebra.normUnits ℚ_[p] x : ℚ_[p]).valuation := by
+  -- Instance search does not find `Nontrivial ℚ_[p]` within its budget, so it is supplied from
+  -- the field structure.
   have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
+  -- The valuation of `F` restricts to the `p`-adic valuation, whatever the `ℚ_p`-algebra structure.
+  have : ValuativeExtension ℚ_[p] F := ValuativeExtension.of_isIntegral ℚ_[p] F
   obtain ⟨u, hu⟩ := _root_.Padic.exists_eq_zpow_valuation_mul
     (Units.ne_zero (Algebra.normUnits ℚ_[p] x))
-  have hχ : localCyclotomicCharacter p F σ = u⁻¹ := by
-    rw [← abelianizedLocalCyclotomicCharacter_mk, hσ,
-      abelianizedLocalCyclotomicCharacter_artinMap_norm ℚ_[p] p]
+  have hχ : abelianizedLocalCyclotomicCharacter p F (artinMap F x) = u⁻¹ := by
+    rw [abelianizedLocalCyclotomicCharacter_artinMap_norm ℚ_[p] p]
     exact abelianizedLocalCyclotomicCharacter_artinMap_padic p hu
   have hnorm : Algebra.normUnits ℚ_[p] x =
       padicPrimeUnit p ^ (Algebra.normUnits ℚ_[p] x : ℚ_[p]).valuation *
@@ -350,12 +363,10 @@ theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRe
     rw [← _root_.Padic.toAdd_normalizedValuation_eq_valuation,
       normalizedValuation_norm_eq_one_of_eq_one u ((normalizedValuation_eq_one_iff u).2 hu),
       toAdd_one]
-  have hmul := localCyclotomicCharacter_artinMap_mul_normUnits p F u σ hσ
-  rw [hv, zpow_zero] at hmul
-  refine eq_inv_of_mul_eq_one_left (Units.ext ?_)
-  have hmul' := congrArg Units.val hmul
-  simp only [Units.val_mul, Units.coe_map, Algebra.coe_normUnits, Units.val_one] at hmul' ⊢
-  exact hmul'
+  have hmul := abelianizedLocalCyclotomicCharacter_artinMap_mul_normUnits p F u
+  rw [hv, zpow_zero, ← hσ, abelianizedLocalCyclotomicCharacter_mk] at hmul
+  have hmul' := eq_inv_of_mul_eq_one_left hmul
+  exact Units.ext (by simpa using congrArg Units.val hmul')
 
 /-! ### Finite-level Artin symbols on roots of unity of `p`-power order -/
 
@@ -506,8 +517,8 @@ theorem localCyclotomicCharacter_artinMap_uniformizer (ϖ : Kˣ)
     rw [← _root_.Padic.toAdd_normalizedValuation_eq_valuation,
       toAdd_normalizedValuation_norm, (isUniformizer_def ϖ).mp hϖ]
     simp
-  rw [← zpow_natCast, ← hval]
-  exact localCyclotomicCharacter_artinMap_mul_normUnits p K ϖ σ hσ
+  rw [← zpow_natCast, ← hval, ← abelianizedLocalCyclotomicCharacter_mk, hσ]
+  exact abelianizedLocalCyclotomicCharacter_artinMap_mul_normUnits p K ϖ
 
 /-- **The image of the cyclotomic character, from unit norms and a uniformizer.** Let `K/ℚ_p` be
 finite with inertia degree `f`, let `ϖ` be a uniformizer of `K`, and let `w ∈ ℤ_pˣ` be the unit
