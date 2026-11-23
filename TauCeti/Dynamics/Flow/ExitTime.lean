@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
 public import TauCeti.Dynamics.Flow.Basic
 import TauCeti.Dynamics.Flow.OmegaLimit
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Exit times of a flow from a closed set
@@ -229,15 +230,6 @@ variable {ϕ P} {x : α} {t : ℝ≥0}
 theorem stopAtExit_eq : ϕ.stopAtExit P t x = ϕ (min (t : ℝ≥0∞) (ϕ.exitTime P x)).toReal x := by
   rw [stopAtExit, ENNReal.truncateToReal]
 
-/-- The time `min t (exitTime x)` for which the stopped flow runs is at most the exit time. -/
-theorem ofReal_truncateToReal_exitTime_le (t : ℝ≥0) :
-    ENNReal.ofReal (ENNReal.truncateToReal t (ϕ.exitTime P x)) ≤ ϕ.exitTime P x := by
-  rcases le_total (ϕ.exitTime P x) t with h | h
-  · rw [ENNReal.truncateToReal_eq_toReal ENNReal.coe_ne_top h]
-    exact ENNReal.ofReal_toReal_le
-  · refine (ENNReal.ofReal_le_ofReal (ENNReal.truncateToReal_le ENNReal.coe_ne_top)).trans ?_
-    simpa using h
-
 /-- Stopping the flow at time `0` does nothing. -/
 @[simp]
 theorem stopAtExit_zero : ϕ.stopAtExit P 0 x = x := by
@@ -260,7 +252,7 @@ theorem stopAtExit_of_exitTime_le (h : ϕ.exitTime P x ≤ t) :
 /-- The stopped flow maps a closed set `P` into itself. -/
 theorem mapsTo_stopAtExit (hP : IsClosed P) (t : ℝ≥0) : MapsTo (ϕ.stopAtExit P t) P P :=
   fun _ hx ↦ apply_mem_of_le_exitTime hP hx ENNReal.truncateToReal_nonneg
-    (ofReal_truncateToReal_exitTime_le _)
+    (ENNReal.ofReal_truncateToReal_le _ _)
 
 /-- **The stopped flow ends at the exit.** At time `t`, the stopped flow sends the points of a
 closed set `P` which leave `P` by time `t` to points of `P` of exit time zero. -/
@@ -308,7 +300,7 @@ theorem homotopicRel_stopAtExitMap (hP : IsClosed P) (hτ : ContinuousOn (ϕ.exi
       (mul_nonneg u.property.1 ENNReal.truncateToReal_nonneg) ?_
     calc ENNReal.ofReal (u * T x) ≤ ENNReal.ofReal (T x) := ENNReal.ofReal_le_ofReal
           (mul_le_of_le_one_left ENNReal.truncateToReal_nonneg u.property.2)
-      _ ≤ ϕ.exitTime P x := ofReal_truncateToReal_exitTime_le _
+      _ ≤ ϕ.exitTime P x := ENNReal.ofReal_truncateToReal_le _ _
   refine ⟨{ toFun := fun p ↦ ⟨ϕ (p.1 * T p.2) p.2, hmem p.1 p.2⟩
             continuous_toFun := (ϕ.continuous
               ((continuous_subtypeVal.comp continuous_fst).mul (hTc.comp continuous_snd))
