@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.NumberTheory.Padics.Complex.GaloisAction
 
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.FieldTheory.Galois.AxSen
 import TauCeti.NumberTheory.Padics.Complex.Basic
 
@@ -30,11 +29,12 @@ By infinite Galois theory the closed subgroups `H` of `G_{ℚ_p}` are exactly th
 with `L` the fixed field of `H`, so the theorem also computes the fixed points of every closed
 subgroup.
 
-The proof approximates a fixed point `x ∈ ℂ_p` by an algebraic `y` with `‖x - y‖ ≤ δ`. Every
-`σ ∈ G_L` is an isometry fixing `x`, so `‖σ y - y‖ ≤ δ`, and the Ax–Sen lemma
-`TauCeti.exists_norm_sub_algebraMap_le_of_forall_norm_smul_sub_le` gives `a ∈ L` with
-`‖y - a‖ ≤ C δ` for a constant `C` depending only on `p`. Conversely the fixed points form a
-closed set, by continuity of the action, which contains `L`.
+These are the specializations to `E = PadicAlgCl p`, whose completion is `ℂ_p`, of the general
+Ax–Sen–Tate theorems `TauCeti.fixedPoints_algEquiv_completion_eq_closure`,
+`TauCeti.fixedPoints_completion_eq_closure_fixedField` and
+`TauCeti.fixedPoints_algEquiv_completion_eq_range` (`TauCeti.FieldTheory.Galois.AxSen`), which
+deduce them from the Ax–Sen lemma: a fixed point is approximated by algebraic elements whose
+conjugates are close to them, hence by elements of `L`.
 
 ## Main results
 
@@ -65,52 +65,16 @@ namespace PadicComplex
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
+private theorem norm_natCast_p_lt_one : ‖(p : PadicAlgCl p)‖ < 1 := by
+  rw [← norm_extends, coe_natCast]
+  exact norm_p_lt_one p
+
 /-- **The Ax–Sen–Tate theorem.** For every field `L` between `ℚ_p` and `PadicAlgCl p`, the
 elements of `ℂ_p` fixed by `Gal(PadicAlgCl p / L)` are the closure of `L` in `ℂ_p`. -/
 theorem fixedPoints_algEquiv_eq_closure (L : IntermediateField ℚ_[p] (PadicAlgCl p)) :
     MulAction.fixedPoints (PadicAlgCl p ≃ₐ[L] PadicAlgCl p) ℂ_[p] =
-      closure (Set.range fun a : L ↦ ((a : PadicAlgCl p) : ℂ_[p])) := by
-  refine subset_antisymm (fun x hx ↦ Metric.mem_closure_iff.mpr fun ε hε ↦ ?_) <|
-    closure_minimal ?_ ?_
-  · -- Approximate `x` by an algebraic `y`, then `y` by an element of `L` (Ax–Sen).
-    have hpE : ‖(p : PadicAlgCl p)‖ < 1 := by
-      rw [← norm_extends, coe_natCast]
-      exact norm_p_lt_one p
-    set C : ℝ := ‖(p : PadicAlgCl p)‖ ^ (-((p : ℝ) / (p - 1) ^ 2))
-    have hC : 1 ≤ C := Real.one_le_rpow_of_pos_of_le_one_of_nonpos
-      (norm_pos_iff.mpr (Nat.cast_ne_zero.mpr hp.out.ne_zero)) hpE.le
-      (neg_nonpos.mpr (div_nonneg (Nat.cast_nonneg _) (sq_nonneg _)))
-    set δ := ε / (2 * C)
-    have hδ : 0 < δ := by positivity
-    obtain ⟨y, hy⟩ := Metric.denseRange_iff.mp (denseRange_coe (α := PadicAlgCl p)) x δ hδ
-    have hconj (σ : PadicAlgCl p ≃ₐ[L] PadicAlgCl p) : ‖σ • y - y‖ ≤ δ := by
-      rw [← dist_eq_norm, ← UniformSpace.Completion.dist_eq, UniformSpace.Completion.coe_smul]
-      calc dist (σ • (y : ℂ_[p])) y ≤ max (dist (σ • (y : ℂ_[p])) (σ • x)) (dist (σ • x) y) :=
-            dist_triangle_max _ _ _
-        _ ≤ δ := by
-            rw [dist_smul, hx σ, dist_comm]
-            exact max_le hy.le hy.le
-    obtain ⟨a, ha⟩ := TauCeti.exists_norm_sub_algebraMap_le_of_forall_norm_smul_sub_le hp.out
-      hpE hconj
-    refine ⟨_, ⟨a, rfl⟩, ?_⟩
-    calc dist x ((a : PadicAlgCl p) : ℂ_[p])
-        ≤ max (dist x y) (dist (y : ℂ_[p]) ((a : PadicAlgCl p) : ℂ_[p])) :=
-          dist_triangle_max _ _ _
-      _ < ε := by
-          rw [UniformSpace.Completion.dist_eq, dist_eq_norm y]
-          refine max_lt (hy.trans_le ?_) (ha.trans_lt ?_)
-          · rw [div_le_iff₀ (by positivity)]
-            nlinarith
-          · have hCδ : C * δ = ε / 2 := by
-              simp only [δ]
-              field_simp
-            rw [hCδ]
-            linarith
-  · rintro _ ⟨a, rfl⟩ σ
-    rw [algEquiv_smul_coe]
-    exact congrArg _ (σ.commutes a)
-  · rw [MulAction.fixedPoints, Set.ofPred_forall]
-    exact isClosed_iInter fun σ ↦ isClosed_eq (continuous_const_smul σ) continuous_id
+      closure (Set.range fun a : L ↦ ((a : PadicAlgCl p) : ℂ_[p])) :=
+  TauCeti.fixedPoints_algEquiv_completion_eq_closure hp.out norm_natCast_p_lt_one
 
 /-- **The Ax–Sen–Tate theorem for closed subgroups.** For a closed subgroup `H` of
 `Gal(PadicAlgCl p / ℚ_p)`, the elements of `ℂ_p` fixed by `H` are the closure in `ℂ_p` of the
@@ -119,39 +83,15 @@ theorem fixedPoints_eq_closure_fixedField
     (H : ClosedSubgroup (PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p)) :
     MulAction.fixedPoints H.toSubgroup ℂ_[p] =
       closure (Set.range fun a : IntermediateField.fixedField H.toSubgroup ↦
-        ((a : PadicAlgCl p) : ℂ_[p])) := by
-  set L := IntermediateField.fixedField H.toSubgroup
-  have hL : L.fixingSubgroup = H.toSubgroup := InfiniteGalois.fixingSubgroup_fixedField H
-  rw [← fixedPoints_algEquiv_eq_closure]
-  -- An `L`-automorphism acts on `ℂ_p` as the underlying `ℚ_p`-automorphism does.
-  have hsmul (τ : PadicAlgCl p ≃ₐ[L] PadicAlgCl p) (x : ℂ_[p]) :
-      τ.restrictScalars ℚ_[p] • x = τ • x := by
-    rw [algEquiv_smul_def, algEquiv_smul_def, AlgEquiv.coe_restrictScalars]
-  ext x
-  refine ⟨fun hx τ ↦ ?_, fun hx σ ↦ ?_⟩
-  · have hτ : τ.restrictScalars ℚ_[p] ∈ H.toSubgroup := by
-      rw [← hL, IntermediateField.mem_fixingSubgroup_iff]
-      exact fun a ha ↦ τ.commutes ⟨a, ha⟩
-    rw [← hsmul]
-    exact hx ⟨_, hτ⟩
-  · have hσ : (σ : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p) ∈ L.fixingSubgroup := by
-      rw [hL]
-      exact σ.property
-    have h := hx (L.fixingSubgroupEquiv ⟨σ, hσ⟩)
-    rwa [← hsmul] at h
+        ((a : PadicAlgCl p) : ℂ_[p])) :=
+  TauCeti.fixedPoints_completion_eq_closure_fixedField hp.out norm_natCast_p_lt_one H
 
 /-- **The Ax–Sen–Tate theorem for finite extensions.** For a finite extension `K` of `ℚ_p` inside
 `PadicAlgCl p`, the elements of `ℂ_p` fixed by `Gal(PadicAlgCl p / K)` are the elements of `K`. -/
 theorem fixedPoints_algEquiv_eq_range (K : IntermediateField ℚ_[p] (PadicAlgCl p))
     [FiniteDimensional ℚ_[p] K] :
     MulAction.fixedPoints (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) ℂ_[p] =
-      Set.range fun a : K ↦ ((a : PadicAlgCl p) : ℂ_[p]) := by
-  rw [fixedPoints_algEquiv_eq_closure, closure_eq_iff_isClosed]
-  -- The image of `K` is a finite-dimensional `ℚ_p`-subspace of `ℂ_p`, hence closed; the function
-  -- underlying `f` is `a ↦ ((a : PadicAlgCl p) : ℂ_[p])` by definition.
-  let f : K →ₗ[ℚ_[p]] ℂ_[p] :=
-    (IsScalarTower.toAlgHom ℚ_[p] (PadicAlgCl p) ℂ_[p]).toLinearMap ∘ₗ K.val.toLinearMap
-  have h := (LinearMap.range f).isClosed_of_finiteDimensional
-  rwa [LinearMap.coe_range] at h
+      Set.range fun a : K ↦ ((a : PadicAlgCl p) : ℂ_[p]) :=
+  TauCeti.fixedPoints_algEquiv_completion_eq_range K hp.out norm_natCast_p_lt_one
 
 end PadicComplex

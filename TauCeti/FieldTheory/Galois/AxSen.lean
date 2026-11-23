@@ -5,25 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.HasseDeriv
-public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.Topology.MetricSpace.IsometricSMul
+public import TauCeti.Topology.MetricSpace.IsometricSMul
 
-import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import Mathlib.Algebra.Order.Field.GeomSum
-import Mathlib.Algebra.Polynomial.Taylor
+import Mathlib.Algebra.Polynomial.HasseDeriv
+import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.FieldTheory.Normal.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Ring.Ultra
-import TauCeti.Analysis.Normed.Unbundled.RootBound
+import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.Data.Nat.Choose.Factorization
+import TauCeti.Topology.Algebra.UniformMulAction
+import TauCeti.Topology.MetricSpace.Ultra.Completion
 
 /-!
-# The Ax–Sen lemma
+# The Ax–Sen lemma and the Ax–Sen–Tate theorem
 
 Let `E` be an algebraically closed field of characteristic zero with an ultrametric norm,
 algebraic over a subfield `F`, such that every `F`-automorphism of `E` is an isometry, and let `p`
@@ -53,139 +55,46 @@ as those of `α` are to `α`, up to `‖α - β‖`.
 Along the induction the degree drops below each power `p ^ k` at most once, so the total loss is
 at most `∑_{k ≥ 1} 1 / (p ^ (k - 1) (p - 1)) = p / (p - 1) ^ 2`.
 
-This is the approximation step in the proof of the Ax–Sen–Tate theorem: the elements of the
-completion of an algebraic closure of `ℚ_p` fixed by a closed subgroup of its Galois group form the
-closure of the corresponding fixed field.
+**The Ax–Sen–Tate theorem** follows: the elements of the completion `Ê` of `E` fixed by
+`Gal(E/F)` form the closure of `F` in `Ê`. A fixed point `x ∈ Ê` is approximated by some `y ∈ E`
+with `‖x - y‖ ≤ δ`; every `σ` is an isometry fixing `x`, so `‖σ y - y‖ ≤ δ`, and the Ax–Sen lemma
+gives `a ∈ F` with `‖y - a‖ ≤ C δ` for a constant `C` depending only on `p`. Conversely the fixed
+points form a closed set, by continuity of the action, which contains `F`. By infinite Galois
+theory the closed subgroups `H` of `Gal(E/F)` are exactly the groups `Gal(E/L)`, with `L` the fixed
+field of `H`, so the theorem also computes the fixed points of every closed subgroup. When `F` is
+finite-dimensional over a complete subfield, it is closed in `Ê`, and the fixed points are exactly
+`F`. For `E` an algebraic closure of `ℚ_p` this is the Ax–Sen–Tate theorem for `ℂ_p`
+(`TauCeti.NumberTheory.Padics.Complex.FixedPoints`).
 
 ## Main results
 
-* `IsUltrametricDist.norm_natCast_eq_one_of_not_dvd`: in an ultrametric normed ring with
-  `‖p‖ < 1`, a natural number not divisible by `p` has norm one.
-* `IsUltrametricDist.norm_choose_prime_pow_succ`: `(p ^ (k + 1)).choose (p ^ k)` has the norm of
-  `p`.
-* `Polynomial.Monic.norm_eval_hasseDeriv_le`: if the roots of a split monic polynomial `P` lie
-  within `r` of `α`, then `‖(hasseDeriv d P).eval α‖ ≤ r ^ (natDegree P - d)`.
-* `Polynomial.Monic.exists_isRoot_hasseDeriv_norm_sub_le`: some root `β` of the `d`-th Hasse
-  derivative then satisfies `‖n.choose d‖ * ‖α - β‖ ^ (n - d) ≤ r ^ (n - d)`.
 * `TauCeti.exists_norm_sub_algebraMap_le_of_forall_norm_smul_sub_le`: the Ax–Sen lemma.
+* `TauCeti.fixedPoints_algEquiv_completion_eq_closure`: the fixed points of `Gal(E/F)` in the
+  completion of `E` are the closure of `F`.
+* `TauCeti.fixedPoints_completion_eq_closure_fixedField`: the fixed points of a closed subgroup `H`
+  of `Gal(E/F)` are the closure of the fixed field of `H`.
+* `TauCeti.fixedPoints_algEquiv_completion_eq_range`: for `L` finite-dimensional over a complete
+  subfield, the fixed points of `Gal(E/L)` are `L`.
+
+The estimates on Hasse derivatives near the roots of a split polynomial used in the induction are
+`Polynomial.Monic.norm_eval_hasseDeriv_le` and
+`Polynomial.Monic.exists_isRoot_hasseDeriv_norm_sub_le`, in `TauCeti.Analysis.Polynomial.Ultra`.
 
 ## References
 
 * J. Ax, *Zeros of polynomials over local fields — the Galois action*, J. Algebra 15 (1970),
   417–428.
+* J. Tate, *p-divisible groups*, Proceedings of a Conference on Local Fields (Driebergen, 1966),
+  Springer, 1967, §3.
 * J.-M. Fontaine and Y. Ouyang, *Theory of p-adic Galois representations*, §4.1.1,
-  Proposition 4.3 (the Ax–Sen lemma) and its proof.
-* O. Brinon and B. Conrad, *CMI summer school notes on p-adic Hodge theory* (2009), §2.1.
+  Proposition 4.3 (the Ax–Sen lemma) and its proof, and §4.1.2, Proposition 4.9.
+* O. Brinon and B. Conrad, *CMI summer school notes on p-adic Hodge theory* (2009), §2.1,
+  Proposition 2.1.2.
 -/
 
 public section
 
 open Polynomial
-
-/-- In an ultrametric normed ring in which a prime `p` has norm less than one, every natural
-number not divisible by `p` has norm one. -/
-theorem IsUltrametricDist.norm_natCast_eq_one_of_not_dvd {R : Type*} [SeminormedRing R]
-    [NormOneClass R] [IsUltrametricDist R] {p m : ℕ} (hp : p.Prime) (hpR : ‖(p : R)‖ < 1)
-    (hm : ¬p ∣ m) : ‖(m : R)‖ = 1 := by
-  refine (IsUltrametricDist.norm_natCast_le_one R m).antisymm (not_lt.mp fun hmR ↦ ?_)
-  obtain ⟨u, v, huv⟩ :=
-    Nat.isCoprime_iff_coprime.mpr (Nat.coprime_comm.mp (hp.coprime_iff_not_dvd.mpr hm))
-  have hsum : (u : R) * m + (v : R) * p = 1 := by exact_mod_cast congrArg (Int.cast (R := R)) huv
-  have hlt (z : ℤ) (n : ℕ) (hn : ‖(n : R)‖ < 1) : ‖(z : R) * n‖ < 1 :=
-    (norm_mul_le _ _).trans_lt <| by
-      calc ‖(z : R)‖ * ‖(n : R)‖ ≤ 1 * ‖(n : R)‖ := by
-            gcongr
-            simpa using IsUltrametricDist.norm_intCast_le_norm_one (R := R) z
-        _ < 1 := by rwa [one_mul]
-  have h := IsUltrametricDist.norm_add_le_max ((u : R) * m) ((v : R) * p)
-  rw [hsum, norm_one] at h
-  exact (h.trans_lt (max_lt (hlt u m hmR) (hlt v p hpR))).false
-
-/-- In an ultrametric normed ring in which a prime `p` has norm less than one, the binomial
-coefficient `(p ^ (k + 1)).choose (p ^ k)`, which is exactly divisible by `p`, has the norm of `p`.
--/
-theorem IsUltrametricDist.norm_choose_prime_pow_succ {R : Type*} [SeminormedRing R]
-    [NormOneClass R] [NormMulClass R] [IsUltrametricDist R] {p : ℕ} (hp : p.Prime)
-    (hpR : ‖(p : R)‖ < 1) (k : ℕ) : ‖((p ^ (k + 1)).choose (p ^ k) : R)‖ = ‖(p : R)‖ := by
-  have hc : (p ^ (k + 1)).choose (p ^ k) ≠ 0 :=
-    (Nat.choose_pos (Nat.pow_le_pow_right hp.pos (Nat.le_succ k))).ne'
-  have hfact : ((p ^ (k + 1)).choose (p ^ k)).factorization p = 1 := by
-    rw [Nat.factorization_choose_prime_pow hp (Nat.pow_le_pow_right hp.pos (Nat.le_succ k))
-      (pow_ne_zero _ hp.ne_zero), Nat.factorization_pow_self hp]
-    omega
-  have h := Nat.ordProj_mul_ordCompl_eq_self ((p ^ (k + 1)).choose (p ^ k)) p
-  have hu := Nat.not_dvd_ordCompl hp hc
-  rw [hfact, pow_one] at h hu
-  rw [← h, Nat.cast_mul, norm_mul, norm_natCast_eq_one_of_not_dvd hp hpR hu, mul_one]
-
-namespace Polynomial.Monic
-
-variable {E : Type*} [NormedField E] [IsUltrametricDist E]
-
-/-- **Hasse derivatives near the roots.** If a monic polynomial `P` over an ultrametric normed
-field splits, and all its roots lie within `r` of a point `α`, then the `d`-th Hasse derivative of
-`P` at `α` has norm at most `r ^ (natDegree P - d)`. It is the coefficient of `Y ^ d` in
-`P(α + Y) = ∏ (Y - (αᵢ - α))`. -/
-theorem norm_eval_hasseDeriv_le {P : E[X]} (hP : P.Monic) (hsplit : P.Splits) {α : E} {r : ℝ}
-    (hr : ∀ β ∈ P.roots, ‖β - α‖ ≤ r) (d : ℕ) :
-    ‖(hasseDeriv d P).eval α‖ ≤ r ^ (P.natDegree - d) := by
-  have hT : (taylor α P).Monic := by
-    rw [Monic, leadingCoeff_taylor]
-    exact hP
-  -- The roots of `P(α + Y)` are the differences `β - α` for the roots `β` of `P`. The function
-  -- underlying `normRingSeminorm E` is the norm itself.
-  have hroots : ∀ γ ∈ (taylor α P).roots, normRingSeminorm E γ ≤ r := by
-    intro γ hγ
-    have h0 : P.IsRoot (γ + α) := by
-      rw [IsRoot, ← taylor_eval]
-      exact (mem_roots hT.ne_zero).mp hγ
-    have h := hr _ ((mem_roots hP.ne_zero).mpr h0)
-    rwa [add_sub_cancel_right] at h
-  have h := hT.apply_coeff_le_pow_of_card_roots (f := normRingSeminorm E) (norm_one (α := E)).le
-    IsUltrametricDist.isNonarchimedean_norm
-    (splits_iff_card_roots.mp (hsplit.taylor α)) hroots d
-  rwa [taylor_coeff, natDegree_taylor] at h
-
-/-- **A root of a Hasse derivative near a point.** Let `P` be a monic polynomial over an
-algebraically closed ultrametric normed field of characteristic zero, all of whose roots lie within
-`r` of a point `α`, and let `d < natDegree P`. Then the `d`-th Hasse derivative of `P` has a root
-`β` with `‖n.choose d‖ * ‖α - β‖ ^ (n - d) ≤ r ^ (n - d)`, where `n = natDegree P`. -/
-theorem exists_isRoot_hasseDeriv_norm_sub_le [IsAlgClosed E] [CharZero E] {P : E[X]}
-    (hP : P.Monic) {α : E} {r : ℝ} (hr : ∀ β ∈ P.roots, ‖β - α‖ ≤ r) {d : ℕ}
-    (hd : d < P.natDegree) :
-    ∃ β, (hasseDeriv d P).IsRoot β ∧
-      ‖(P.natDegree.choose d : E)‖ * ‖α - β‖ ^ (P.natDegree - d) ≤ r ^ (P.natDegree - d) := by
-  classical
-  set Q := hasseDeriv d P
-  set n := P.natDegree
-  have hcoeff : Q.coeff (n - d) = (n.choose d : E) := by
-    rw [hasseDeriv_coeff, Nat.sub_add_cancel hd.le, hP.coeff_natDegree, mul_one]
-  have hchoose : (n.choose d : E) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.choose_pos hd.le).ne'
-  have hdeg : Q.natDegree = n - d :=
-    (natDegree_hasseDeriv_le P d).antisymm (le_natDegree_of_ne_zero (hcoeff ▸ hchoose))
-  have hlead : Q.leadingCoeff = (n.choose d : E) := by rw [Polynomial.leadingCoeff, hdeg, hcoeff]
-  have hsplit : Q.Splits := IsAlgClosed.splits Q
-  have hne : Q.roots.toFinset.Nonempty := by
-    rw [Multiset.toFinset_nonempty]
-    exact hsplit.roots_ne_zero (by omega)
-  obtain ⟨β, hβ, hmin⟩ := Q.roots.toFinset.exists_min_image (fun γ ↦ ‖α - γ‖) hne
-  rw [Multiset.mem_toFinset] at hβ
-  refine ⟨β, (mem_roots (ne_zero_of_natDegree_gt (n := 0) (by omega))).mp hβ, ?_⟩
-  have hcard : Multiset.card Q.roots = n - d := by
-    rw [← hdeg, ← splits_iff_card_roots.mp hsplit]
-  calc ‖(n.choose d : E)‖ * ‖α - β‖ ^ (n - d)
-      = ‖(n.choose d : E)‖ * (Q.roots.map fun _ ↦ ‖α - β‖).prod := by
-        rw [Multiset.map_const', Multiset.prod_replicate, hcard]
-    _ ≤ ‖(n.choose d : E)‖ * (Q.roots.map fun γ ↦ ‖α - γ‖).prod := by
-        gcongr
-        exact Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ norm_nonneg _)
-          fun γ hγ ↦ hmin γ (Multiset.mem_toFinset.mpr hγ)
-    _ = ‖Q.eval α‖ := by
-        rw [hsplit.eval_eq_prod_roots, norm_mul, hlead, Multiset.norm_prod, Multiset.map_map,
-          Function.comp_def]
-    _ ≤ r ^ (n - d) := hP.norm_eval_hasseDeriv_le (IsAlgClosed.splits P) hr d
-
-end Polynomial.Monic
 
 namespace TauCeti
 
@@ -282,7 +191,8 @@ private theorem exists_norm_sub_pow_le_of_lt_natDegree [IsUltrametricDist E] [Ch
     rw [mem_roots (map_ne_zero (minpoly.ne_zero hαi)), IsRoot, eval_map_algebraMap] at hβ
     obtain ⟨σ, rfl⟩ := minpoly.exists_algEquiv_of_root' hαi.isAlgebraic hβ
     exact hα σ
-  obtain ⟨β, hβ, hle⟩ := hP.exists_isRoot_hasseDeriv_norm_sub_le hr (hPdeg ▸ hd)
+  obtain ⟨β, hβ, hle⟩ := hP.exists_isRoot_hasseDeriv_norm_sub_le (IsAlgClosed.splits P) hr
+    (hPdeg ▸ hd) (IsAlgClosed.splits _) (Nat.cast_ne_zero.mpr (Nat.choose_pos (hPdeg ▸ hd).le).ne')
   rw [hPdeg] at hle
   refine ⟨β, hle, ?_⟩
   -- The `d`-th Hasse derivative of the minimal polynomial has coefficients in `F` and is nonzero,
@@ -322,8 +232,8 @@ private theorem exists_natDegree_minpoly_lt [IsUltrametricDist E] [CharZero E] [
   rcases hvn.lt_or_eq with hlt | heq
   · -- `n` is not a power of `p`: no loss.
     obtain ⟨β, hle, hdeg⟩ := key _ hlt
-    rw [IsUltrametricDist.norm_natCast_eq_one_of_not_dvd hp hpE
-      (Nat.not_dvd_choose_pow_factorization hp hn0), one_mul] at hle
+    rw [IsUltrametricDist.norm_natCast_eq_one_of_coprime hpE
+      (hp.coprime_iff_not_dvd.mpr (Nat.not_dvd_choose_pow_factorization hp hn0)), one_mul] at hle
     have hαβ : ‖α - β‖ ≤ r := (pow_le_pow_iff_left₀ (norm_nonneg _) hr0 (by omega)).mp hle
     refine ⟨β, 0, le_rfl, by omega, ?_, by simpa using hαβ⟩
     simpa using axSenExponent_mono hp (hdeg.trans (Nat.sub_le _ _))
@@ -409,6 +319,110 @@ theorem exists_norm_sub_algebraMap_le_of_forall_norm_smul_sub_le {α : E} {r : �
   exact ⟨a, ha.trans (mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_exponent_ge hc0 hpE.le
     (neg_le_neg (axSenExponent_le hp _))) hr0)⟩
 
+open UniformSpace.Completion in
+/-- **The Ax–Sen–Tate theorem.** Let `E` be an algebraically closed ultrametric normed field of
+characteristic zero, algebraic over a subfield `F`, on which every `F`-automorphism acts by
+isometries, and let `p` be a prime with `‖p‖ < 1` in `E`. Then the elements of the completion of
+`E` fixed by `Gal(E/F)` are the closure of `F`. -/
+theorem fixedPoints_algEquiv_completion_eq_closure :
+    MulAction.fixedPoints Gal(E/F) (UniformSpace.Completion E) =
+      closure (Set.range fun a : F ↦ (algebraMap F E a : UniformSpace.Completion E)) := by
+  refine subset_antisymm (fun x hx ↦ Metric.mem_closure_iff.mpr fun ε hε ↦ ?_) <|
+    closure_minimal ?_ ?_
+  · -- Approximate `x` by some `y ∈ E`, then `y` by an element of `F` (Ax–Sen).
+    set C : ℝ := ‖(p : E)‖ ^ (-((p : ℝ) / (p - 1) ^ 2))
+    have hC : 1 ≤ C := Real.one_le_rpow_of_pos_of_le_one_of_nonpos
+      (norm_pos_iff.mpr (Nat.cast_ne_zero.mpr hp.ne_zero)) hpE.le
+      (neg_nonpos.mpr (div_nonneg (Nat.cast_nonneg _) (sq_nonneg _)))
+    set δ := ε / (2 * C)
+    have hδ : 0 < δ := by positivity
+    obtain ⟨y, hy⟩ := Metric.denseRange_iff.mp (denseRange_coe (α := E)) x δ hδ
+    have hconj (σ : Gal(E/F)) : ‖σ • y - y‖ ≤ δ := by
+      rw [← dist_eq_norm, ← UniformSpace.Completion.dist_eq, UniformSpace.Completion.coe_smul]
+      calc dist (σ • (y : UniformSpace.Completion E)) y
+          ≤ max (dist (σ • (y : UniformSpace.Completion E)) (σ • x)) (dist (σ • x) y) :=
+            dist_triangle_max _ _ _
+        _ ≤ δ := by
+            rw [dist_smul, hx σ, dist_comm]
+            exact max_le hy.le hy.le
+    obtain ⟨a, ha⟩ := exists_norm_sub_algebraMap_le_of_forall_norm_smul_sub_le hp hpE hconj
+    refine ⟨_, ⟨a, rfl⟩, ?_⟩
+    calc dist x (algebraMap F E a : UniformSpace.Completion E)
+        ≤ max (dist x y) (dist (y : UniformSpace.Completion E) (algebraMap F E a)) :=
+          dist_triangle_max _ _ _
+      _ < ε := by
+          rw [UniformSpace.Completion.dist_eq, dist_eq_norm y]
+          refine max_lt (hy.trans_le ?_) (ha.trans_lt ?_)
+          · rw [div_le_iff₀ (by positivity)]
+            nlinarith
+          · have hCδ : C * δ = ε / 2 := by
+              simp only [δ]
+              field_simp
+            rw [hCδ]
+            linarith
+  · rintro _ ⟨a, rfl⟩ σ
+    rw [algEquiv_smul_coe]
+    exact congrArg _ (σ.commutes a)
+  · rw [MulAction.fixedPoints, Set.ofPred_forall]
+    exact isClosed_iInter fun σ ↦ isClosed_eq (continuous_const_smul σ) continuous_id
+
+/-- **The Ax–Sen–Tate theorem for closed subgroups.** In the setting of the Ax–Sen lemma, the
+elements of the completion of `E` fixed by a closed subgroup `H` of `Gal(E/F)` are the closure of
+the fixed field of `H`. -/
+theorem fixedPoints_completion_eq_closure_fixedField (H : ClosedSubgroup Gal(E/F)) :
+    MulAction.fixedPoints H.toSubgroup (UniformSpace.Completion E) =
+      closure (Set.range fun a : IntermediateField.fixedField H.toSubgroup ↦
+        ((a : E) : UniformSpace.Completion E)) := by
+  set L := IntermediateField.fixedField H.toSubgroup
+  have : CharZero F := (RingHom.charZero_iff (algebraMap F E).injective).mpr inferInstance
+  have : IsAlgClosure F E := ⟨inferInstance, inferInstance⟩
+  have hL : L.fixingSubgroup = H.toSubgroup := InfiniteGalois.fixingSubgroup_fixedField H
+  -- An `L`-automorphism acts on `E` and on its completion as the underlying `F`-automorphism.
+  have hsmulE (τ : Gal(E/L)) (x : E) : τ.restrictScalars F • x = τ • x := rfl
+  have : IsIsometricSMul Gal(E/L) E :=
+    ⟨fun τ ↦ by simpa only [← hsmulE] using isometry_smul E (τ.restrictScalars F)⟩
+  have : Algebra.IsAlgebraic L E := Algebra.IsAlgebraic.tower_top (K := F) L
+  refine (?_ : _ = MulAction.fixedPoints Gal(E/L) _).trans
+    (fixedPoints_algEquiv_completion_eq_closure hp hpE)
+  have hsmul (τ : Gal(E/L)) (x : UniformSpace.Completion E) :
+      τ.restrictScalars F • x = τ • x := by
+    rw [UniformSpace.Completion.algEquiv_smul_def, UniformSpace.Completion.algEquiv_smul_def,
+      AlgEquiv.coe_restrictScalars]
+  ext x
+  refine ⟨fun hx τ ↦ ?_, fun hx σ ↦ ?_⟩
+  · have hτ : τ.restrictScalars F ∈ H.toSubgroup := by
+      rw [← hL, IntermediateField.mem_fixingSubgroup_iff]
+      exact fun a ha ↦ τ.commutes ⟨a, ha⟩
+    rw [← hsmul]
+    exact hx ⟨_, hτ⟩
+  · have hσ : (σ : Gal(E/F)) ∈ L.fixingSubgroup := by
+      rw [hL]
+      exact σ.property
+    have h := hx (L.fixingSubgroupEquiv ⟨σ, hσ⟩)
+    rwa [← hsmul] at h
+
 end AxSen
+
+section Finite
+
+variable {K E : Type*} [NontriviallyNormedField K] [CompleteSpace K] [NormedField E]
+  [NormedAlgebra K E] [IsUltrametricDist E] [CharZero E] [IsAlgClosed E] (L : IntermediateField K E)
+  [Algebra.IsAlgebraic L E] [IsIsometricSMul Gal(E/L) E] [FiniteDimensional K L]
+
+/-- **The Ax–Sen–Tate theorem for finite extensions.** In the setting of the Ax–Sen lemma, if the
+subfield `L` is finite-dimensional over a complete nontrivially normed field `K`, then the elements
+of the completion of `E` fixed by `Gal(E/L)` are the elements of `L`. -/
+theorem fixedPoints_algEquiv_completion_eq_range {p : ℕ} (hp : p.Prime) (hpE : ‖(p : E)‖ < 1) :
+    MulAction.fixedPoints Gal(E/L) (UniformSpace.Completion E) =
+      Set.range fun a : L ↦ ((a : E) : UniformSpace.Completion E) := by
+  refine (fixedPoints_algEquiv_completion_eq_closure hp hpE).trans (closure_eq_iff_isClosed.mpr ?_)
+  -- The image of `L` is a finite-dimensional `K`-subspace of the completion, hence closed; the
+  -- function underlying `f` is `a ↦ ((a : E) : UniformSpace.Completion E)` by definition.
+  let f : L →ₗ[K] UniformSpace.Completion E :=
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := K) (E := E)).toLinearMap ∘ₗ L.val.toLinearMap
+  have h := (LinearMap.range f).isClosed_of_finiteDimensional
+  rwa [LinearMap.coe_range] at h
+
+end Finite
 
 end TauCeti
