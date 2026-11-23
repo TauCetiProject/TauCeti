@@ -180,8 +180,7 @@ private theorem holderOnWith_fderiv_fderiv_comp_shear (hν : ‖ν‖ ≤ 1) {w 
   have hc : HolderOnWith H α (fun y => fderiv ℝ w (y + γ y • ν) ν) s :=
     hH.clm_apply_of_norm_le_one hν
   have hcb (y : E) (hy : y ∈ s) : ‖fderiv ℝ w (y + γ y • ν) ν‖ ≤ N :=
-    ((fderiv ℝ w _).le_of_opNorm_le (hN1 y hy) ν).trans (by
-      simpa using mul_le_of_le_one_right N.coe_nonneg hν)
+    ((fderiv ℝ w _).unit_le_opNorm ν hν).trans (hN1 y hy)
   have h2 := hc.smul_of_norm_le hH2 hcb hG2
   exact (h1.add h2).congr fun y hy => (fderiv_fderiv_comp_shear (hw y hy) (hγ y hy)).symm
 
@@ -193,8 +192,7 @@ private theorem norm_fderiv_fderiv_comp_shear_le (hν : ‖ν‖ ≤ 1) {w : E �
     ‖fderiv ℝ (fderiv ℝ (w ∘ fun z => z + γ z • ν)) y‖ ≤ N * (1 + G) * (1 + G) + N * G := by
   have hSb := norm_id_add_smulRight_le hν hG1
   have hc : ‖fderiv ℝ w (y + γ y • ν) ν‖ ≤ N :=
-    ((fderiv ℝ w _).le_of_opNorm_le hN1 ν).trans (by
-      simpa using mul_le_of_le_one_right N.coe_nonneg hν)
+    ((fderiv ℝ w _).unit_le_opNorm ν hν).trans hN1
   rw [fderiv_fderiv_comp_shear hw hγ]
   refine (norm_add_le (_ : E →L[ℝ] E →L[ℝ] ℝ) _).trans (add_le_add ?_ ?_)
   · refine (ContinuousLinearMap.norm_bilinearComp_le _ _ _).trans ?_
@@ -551,7 +549,7 @@ private theorem shear_comp_bounds {α : ℝ≥0} (hα1 : α ≤ 1) {ν : E} (hν
   have hφ (y : E) := hasFDerivAt_shear (ν := ν) (hγ.differentiable two_ne_zero y)
   have hS (y : E) := norm_id_add_smulRight_le (γ := γ) hν.le (hG1 y)
   have hN2' (y : E) (hy : y ∈ s) : ‖fderiv ℝ (fderiv ℝ u) (y + γ y • ν)‖ ≤ N := by
-    rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
+    rw [norm_fderiv_fderiv]
     exact hN2 _ (hmaps y hy)
   have hcomp (A : E →L[ℝ] ℝ) (y : E) (hA : ‖A‖ ≤ N) :
       ‖A.comp (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν)‖ ≤
@@ -633,8 +631,7 @@ private theorem holderOnWith_sum_sum_smul_fderiv_fderiv_comp_shear {α : ℝ≥0
   have hDν : HolderOnWith H α (fun y => fderiv ℝ u (y + γ y • ν) ν) t :=
     hH.clm_apply_of_norm_le_one hν
   have hDνb (y : E) (hy : y ∈ t) : |fderiv ℝ u (y + γ y • ν) ν| ≤ N :=
-    ((fderiv ℝ u _).le_of_opNorm_le (hN1 y hy) ν).trans (by
-      simpa using mul_le_of_le_one_right N.coe_nonneg hν)
+    ((fderiv ℝ u _).unit_le_opNorm ν hν).trans (hN1 y hy)
   have hprod := hc.smul_of_norm_le hDν hcb hDνb
   refine ((holderOnWith_comp_shear hν hLγ hK hmaps).add hprod).congr fun y hy => ?_
   exact (sum_sum_smul_fderiv_fderiv_comp_shear hγν (hcd y hy) hγ.contDiffAt _).symm
@@ -676,7 +673,7 @@ private theorem holderOnWith_iteratedFDeriv_two_comp_shear_neg {α : ℝ≥0} (h
     ((hG3.neg.holderOnWith s).congr fun x _ => (hneg2 x).symm)
     (fun y hy => hN1 _ (htB (hs hy)))
     (fun y hy => by
-      rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
+      rw [norm_fderiv_fderiv]
       exact hN2 _ (htB (hs hy)))
     (holderOnWith_comp_shear hν hLγ' ((holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two v).2 hW)
       hs)
@@ -826,7 +823,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fder
       ‖iteratedFDeriv ℝ 2 (u ∘ fun z => z + γ z • ν) y‖ ≤
         ((N * (1 + G) * (1 + G) + N * G : ℝ≥0) : ℝ) := by
     have h := hD2v y hy
-    rwa [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map] at h
+    rwa [norm_fderiv_fderiv] at h
   have hDv' (y : E) (hy : y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) :
       ‖fderiv ℝ (u ∘ fun z => z + γ z • ν) y‖ ≤ ((N * (1 + G) * (1 + G) + N * G : ℝ≥0) : ℝ) :=
     (hDv y hy).trans (by exact_mod_cast hNN'')
