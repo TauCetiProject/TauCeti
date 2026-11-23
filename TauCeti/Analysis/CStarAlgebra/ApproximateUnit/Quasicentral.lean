@@ -120,22 +120,17 @@ private theorem eventually_forall_mem_mul_sub_lt {α A : Type*} [NonUnitalSemino
     (tendsto_nhds_iff_norm_lt.mp (hmr x hx) ε hε).and
       (tendsto_nhds_iff_norm_lt.mp (hml x hx) ε hε)
 
-private theorem coe_mul {A : Type*} [NonUnitalCStarAlgebra A] {I : TwoSidedIdeal A}
-    [IsClosed (I : Set A)] (x y : I) :
-    ((x * y : I) : A) = (x : A) * (y : A) := by
-  simpa only [I.starAlgHom_apply] using map_mul I.starAlgHom x y
-
 private theorem tendsto_mul_left_coe_iff {A : Type*} [NonUnitalCStarAlgebra A]
-    {I : TwoSidedIdeal A} [IsClosed (I : Set A)] {l : Filter I} {x : I} :
+    {I : TwoSidedIdeal A} {l : Filter I} {x : I} :
     Tendsto (fun e : I => (x : A) * (e : A)) l (𝓝 (x : A)) ↔ Tendsto (x * ·) l (𝓝 x) := by
   rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-  simp only [Function.comp_def, coe_mul]
+  simp only [Function.comp_def, MulMemClass.coe_mul]
 
 private theorem tendsto_mul_right_coe_iff {A : Type*} [NonUnitalCStarAlgebra A]
-    {I : TwoSidedIdeal A} [IsClosed (I : Set A)] {l : Filter I} {x : I} :
+    {I : TwoSidedIdeal A} {l : Filter I} {x : I} :
     Tendsto (fun e : I => (e : A) * (x : A)) l (𝓝 (x : A)) ↔ Tendsto (· * x) l (𝓝 x) := by
   rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-  simp only [Function.comp_def, coe_mul]
+  simp only [Function.comp_def, MulMemClass.coe_mul]
 
 section Basic
 
@@ -659,20 +654,12 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
     by rwa [AddSubgroupClass.coe_norm] at hv₁, hvG,
     fun i hi a ha => hvF i (Finset.mem_range.mpr hi) a ha⟩
 
-private structure QuasicentralElement (I : TwoSidedIdeal A) (G : Finset I) (ε : ℝ) (e : A) :
-    Prop where
-  mem : e ∈ I
-  nonneg : 0 ≤ e
-  norm_le_one : ‖e‖ ≤ 1
-  mul_left_lt : ∀ x ∈ G, ‖e * (x : A) - x‖ < ε
-  mul_right_lt : ∀ x ∈ G, ‖(x : A) * e - x‖ < ε
-
 /-- Iterated choice of `n` positive contractions `u_0, …, u_{n-1} ∈ I` with pairwise controlled
 commutator inner products. -/
 private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (G : Finset I) (F : Finset A) {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ) (n : ℕ) :
     ∃ u : ℕ → A,
-      (∀ k < n, QuasicentralElement I G ε (u k)) ∧
+      (∀ k < n, u k ∈ I.quasicentralSet G ∅ ε) ∧
       (∀ i j, i < j → j < n → ∀ a ∈ F,
         ‖star (u i * a - a * u i) * (u j * a - a * u j)‖ ≤ δ * (‖a‖ + 1)) := by
   induction n with
@@ -681,9 +668,10 @@ private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : S
     classical
     obtain ⟨u, hu, hoff⟩ := ih
     obtain ⟨v, hvI, hv₀, hv₁, hvG, hvF⟩ :=
-      exists_next_quasicentral_step I (fun i hi => (hu i hi).mem) G F hε hδ
-    have hv : QuasicentralElement I G ε v :=
-      ⟨hvI, hv₀, hv₁, fun x hx => (hvG x hx).1, fun x hx => (hvG x hx).2⟩
+      exists_next_quasicentral_step I (fun i hi => (mem_quasicentralSet_iff.mp (hu i hi)).1)
+        G F hε hδ
+    have hv : v ∈ I.quasicentralSet G ∅ ε :=
+      mem_quasicentralSet_iff.mpr ⟨hvI, hv₀, hv₁, hvG, by simp⟩
     refine ⟨Function.update u n v, fun k hk => ?_, fun i j hij hjn a ha => ?_⟩
     · rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hkn | rfl
       · simpa only [Function.update_of_ne hkn.ne] using hu k hkn
@@ -698,11 +686,12 @@ private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : S
 a positive contraction in `I` and preserves strict `ε`-approximation on `G`. -/
 private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     {G : Finset I} {ε : ℝ} {n : ℕ} (hn_pos : 0 < n) {u : ℕ → A}
-    (hu : ∀ k < n, QuasicentralElement I G ε (u k)) :
+    (hu : ∀ k < n, u k ∈ I.quasicentralSet G ∅ ε) :
     let e : A := (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k
     e ∈ I ∧ 0 ≤ e ∧ ‖e‖ ≤ 1 ∧
       ∀ x ∈ G, ‖e * (x : A) - x‖ < ε ∧ ‖(x : A) * e - x‖ < ε := by
   intro e
+  have hu' (k : ℕ) (hk : k < n) := mem_quasicentralSet_iff.mp (hu k hk)
   have hw_pos : 0 < ∑ _k ∈ Finset.range n, (1 : ℝ) := by
     simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one, Nat.cast_pos]
     exact hn_pos
@@ -718,15 +707,15 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
     rw [hec]
     exact I.smul_mem_of_isClosed _ <| I.mem_toSubmodule.mp <|
       Submodule.sum_mem I.toSubmodule fun k hk =>
-        I.mem_toSubmodule.mpr (hu k (Finset.mem_range.mp hk)).mem
+        I.mem_toSubmodule.mpr (hu' k (Finset.mem_range.mp hk)).1
   have he₀ : 0 ≤ e := smul_nonneg (by positivity)
-    (Finset.sum_nonneg fun k hk => (hu k (Finset.mem_range.mp hk)).nonneg)
+    (Finset.sum_nonneg fun k hk => (hu' k (Finset.mem_range.mp hk)).2.1)
   have he₁ : ‖e‖ ≤ 1 := by
     rw [← mem_closedBall_zero_iff]
     dsimp only [e]
     rw [← hcm u]
     exact (convex_closedBall (0 : A) 1).centerMass_mem (fun _ _ => zero_le_one) hw_pos fun k hk =>
-      mem_closedBall_zero_iff.mpr (hu k (Finset.mem_range.mp hk)).norm_le_one
+      mem_closedBall_zero_iff.mpr (hu' k (Finset.mem_range.mp hk)).2.2.1
   have havg (f : ℕ → A) (y : A) (hf : ∀ k < n, ‖f k - y‖ < ε) :
       ‖((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f k) - y‖ < ε := by
     rw [← mem_ball_iff_norm, ← hcm f]
@@ -734,9 +723,9 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
       mem_ball_iff_norm.mpr (hf k (Finset.mem_range.mp hk))
   refine ⟨heI, he₀, he₁, fun x hx => ⟨?_, ?_⟩⟩
   · simpa only [e, smul_mul_assoc, Finset.sum_mul] using
-      havg (fun k => u k * (x : A)) x (fun k hk => (hu k hk).mul_left_lt x hx)
+      havg (fun k => u k * (x : A)) x (fun k hk => ((hu' k hk).2.2.2.1 x hx).1)
   · simpa only [e, mul_smul_comm, Finset.mul_sum] using
-      havg (fun k => (x : A) * u k) x (fun k hk => (hu k hk).mul_right_lt x hx)
+      havg (fun k => (x : A) * u k) x (fun k hk => ((hu' k hk).2.2.2.1 x hx).2)
 
 omit [PartialOrder A] [StarOrderedRing A] in
 private theorem norm_average_sq_le {ι : Type*} {s : Finset ι}
@@ -802,7 +791,8 @@ theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
   have haM : ‖a‖ ≤ M :=
     (Finset.single_le_sum (fun b _ => norm_nonneg b) ha).trans (le_add_of_nonneg_right zero_le_one)
   have havg_sq : ‖e * a - a * e‖ ^ 2 ≤ 4 * ‖a‖ ^ 2 / (n : ℝ) + ε ^ 2 / 4 :=
-    norm_commutator_average_sq_le (by positivity) (fun k hk => (hu k hk).norm_le_one)
+    norm_commutator_average_sq_le (by positivity)
+      (fun k hk => (mem_quasicentralSet_iff.mp (hu k hk)).2.2.1)
       fun i j hij hjn => (hoff i j hij hjn a ha).trans <| by
         calc δ * (‖a‖ + 1) ≤ δ * (M + 1) := by gcongr
           _ = ε ^ 2 / 4 := by dsimp [δ]; field_simp
