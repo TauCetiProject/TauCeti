@@ -37,11 +37,13 @@ private def conjugateAlternating (n : ℕ) :
     ((ιMulti ℂ n).toMultilinearMap.compLinearMap
       fun _ => (toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V).symm.toLinearMap)
   map_eq_zero_of_eq' a i j hij hne := by
-    change (toConjₗ : (⋀[ℂ]^n V) ≃ₗ⋆[ℂ] Conjugate (⋀[ℂ]^n V))
-      ((ιMulti ℂ n) (fun k => (toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V).symm (a k))) = 0
-    simp only [coe_toConjₗ, coe_toConjₗ_symm]
-    rw [(ιMulti ℂ n (M := V)).map_eq_zero_of_eq (fun k => ofConj (a k))
-      (congrArg (ofConj : Conjugate V ≃ V) hij) hne, toConj_zero]
+    simpa only [MultilinearMap.toFun_eq_coe, LinearMap.compMultilinearMap_apply,
+      MultilinearMap.compLinearMap_apply,
+      LinearEquiv.coe_coe, coe_toConjₗ, coe_toConjₗ_symm, toConj_zero,
+      AlternatingMap.coe_multilinearMap] using
+      congrArg (toConj : (⋀[ℂ]^n V) ≃ Conjugate (⋀[ℂ]^n V))
+        ((ιMulti ℂ n (M := V)).map_eq_zero_of_eq (fun k => ofConj (a k))
+          (congrArg (ofConj : Conjugate V ≃ V) hij) hne)
 
 /-- The canonical map from an exterior power of a conjugate to the conjugate exterior power. -/
 def conjugateMap (n : ℕ) : ⋀[ℂ]^n (Conjugate V) →ₗ[ℂ] Conjugate (⋀[ℂ]^n V) :=
@@ -52,8 +54,8 @@ def conjugateMap (n : ℕ) : ⋀[ℂ]^n (Conjugate V) →ₗ[ℂ] Conjugate (⋀
   rw [conjugateMap, alternatingMapLinearEquiv_apply_ιMulti]
   simp only [conjugateAlternating, AlternatingMap.coe_mk,
     LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply,
-    LinearEquiv.coe_coe, coe_toConjₗ, coe_toConjₗ_symm]
-  rfl
+    LinearEquiv.coe_coe, coe_toConjₗ, coe_toConjₗ_symm, Function.comp_def,
+    AlternatingMap.coe_multilinearMap]
 
 /-- The inverse map is obtained by applying the same construction to the conjugate module
 and cancelling the two conjugations. -/
@@ -67,7 +69,8 @@ private theorem conjugateMapInv_ιMulti (n : ℕ) (a : Fin n → V) :
     conjugateMapInv n (toConj (ιMulti ℂ n a)) = ιMulti ℂ n (toConj ∘ a) := by
   simp [conjugateMapInv, map_apply_ιMulti, Function.comp_def]
 
-private theorem linearMap_ext_conjugate {n : ℕ}
+/-- Linear maps out of a conjugated exterior power agree when they agree on universal wedges. -/
+@[ext] theorem conjugate_linearMap_ext {n : ℕ}
     {f g : Conjugate (⋀[ℂ]^n V) →ₗ[ℂ] W}
     (h : ∀ a : Fin n → V, f (toConj (ιMulti ℂ n a)) = g (toConj (ιMulti ℂ n a))) : f = g := by
   have h' : f.conjugate.comp doubleConjugateLinearEquiv.symm.toLinearMap =
@@ -88,7 +91,7 @@ private theorem conjugateMapInv_comp (n : ℕ) :
 
 private theorem conjugateMap_comp_inv (n : ℕ) :
     (conjugateMap n (V := V)).comp (conjugateMapInv n) = LinearMap.id := by
-  apply linearMap_ext_conjugate
+  apply conjugate_linearMap_ext
   intro a
   simp [conjugateMapInv_ιMulti, Function.comp_def]
 
@@ -124,8 +127,7 @@ theorem conjugateEquiv_naturality (n : ℕ) (f : V →ₗ[ℂ] W)
     (a : ⋀[ℂ]^n (Conjugate V)) :
     conjugateEquiv n (map n f.conjugate a) =
       (map n f).conjugate (conjugateEquiv n a) := by
-  change conjugateMap n (map n f.conjugate a) = (map n f).conjugate (conjugateMap n a)
-  exact congrArg (fun k => k a) (conjugateMap_naturality n f)
+  exact LinearMap.congr_fun (conjugateMap_naturality n f) a
 
 /-- Applying the exterior comparison twice agrees with the canonical double-conjugation
 identification of the original module. -/

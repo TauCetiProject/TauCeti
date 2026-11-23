@@ -48,6 +48,10 @@ non-definitionally-equal real module structures on `Conjugate V` when the scalar
 * `LinearMap.toConjugate`: conjugate-linear maps `V → W` are equivalent to complex-linear maps
   `V → Conjugate W`.
 * `Submodule.conjugate`: a real subspace of `V`, read as a real subspace of `Conjugate V`.
+* `LinearMap.conjugate` and `LinearEquiv.conjugate`: functorial conjugation of complex-linear
+  maps and equivalences.
+* `TauCeti.Conjugate.doubleConjugateLinearEquiv`: the complex-linear identification of the
+  double conjugate with the original module.
 -/
 
 public section
@@ -266,6 +270,12 @@ theorem conjugate_comp (g : W →ₗ[ℂ] U) (f : V →ₗ[ℂ] W) :
 @[simp] theorem conjugate_add (f g : V →ₗ[ℂ] W) :
     (f + g).conjugate = f.conjugate + g.conjugate := by ext; rfl
 
+@[simp] theorem conjugate_neg (f : V →ₗ[ℂ] W) :
+    (-f).conjugate = -f.conjugate := by ext; rfl
+
+@[simp] theorem conjugate_sub (f g : V →ₗ[ℂ] W) :
+    (f - g).conjugate = f.conjugate - g.conjugate := by ext; rfl
+
 /-- Conjugating a scalar multiple of a map conjugates its scalar. -/
 @[simp] theorem conjugate_smul (c : ℂ) (f : V →ₗ[ℂ] W) :
     (c • f).conjugate = starRingEnd ℂ c • f.conjugate := by
@@ -301,6 +311,16 @@ def conjugate (e : V ≃ₗ[ℂ] W) : Conjugate V ≃ₗ[ℂ] Conjugate W where
 
 @[simp] theorem conjugate_toLinearMap (e : V ≃ₗ[ℂ] W) :
     e.conjugate.toLinearMap = e.toLinearMap.conjugate := by rfl
+
+@[simp] theorem conjugate_refl : (LinearEquiv.refl ℂ V).conjugate = .refl ℂ _ := by
+  ext v
+  rfl
+
+@[simp] theorem conjugate_trans {U : Type*} [AddCommGroup U] [Module ℂ U]
+    (e : V ≃ₗ[ℂ] W) (e' : W ≃ₗ[ℂ] U) :
+    (e.trans e').conjugate = e.conjugate.trans e'.conjugate := by
+  ext v
+  rfl
 
 end LinearEquiv
 

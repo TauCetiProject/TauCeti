@@ -25,7 +25,7 @@ including an empty base. Rank zero is included.
 * `conjugateModelEquiv` records the change between independently chosen model bases. Its nonzero
   coefficient `conjugateModelCoefficient` is retained in `chartCoord_conjugateLinearEquiv`.
 * `conjugateHomeomorph` is continuous on the whole native total space, with forward, inverse and
-  projection formulas. Fibrewise continuity alone is not used as a substitute for this assertion.
+  projection formulas.
 * `conjugateLinearEquiv_naturality` is the square for every linear fibre map between equal-rank
   model presentations in independent universes, with their degree casts explicit. The corollary
   `conjugateLinearEquiv_bundleIso_naturality` derives rank equality at each given base point.
@@ -89,7 +89,7 @@ theorem conjugateLinearEquiv_ιMulti (x : B)
     LinearEquiv.conjugate_apply]
   rw [exteriorPower.ofEq_ιMulti (R := ℂ) (M := Conjugate (E x))
     (finrank_complex (V := F)) a, exteriorPower.conjugateEquiv_ιMulti, ofConj_toConj]
-  rfl
+  simp only [Function.comp_def]
 
 /-- The native fibre comparison is a continuous linear equivalence for the actual module
 topologies on the determinant fibres and the inherited conjugate topology. -/
@@ -270,17 +270,6 @@ section Chart
 
 variable [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)] [FiniteDimensional ℂ F]
 
-omit [FiniteDimensional ℂ F] in
-private theorem conjugate_linearEquivAt (e : Trivialization F (π F E)) [e.IsLinear ℂ]
-    {x : B} (hx : x ∈ e.baseSet) :
-    (e.conjugate.linearEquivAt ℂ x
-      (by simpa only [Trivialization.baseSet_conjugate] using hx)).toLinearMap =
-      (e.linearEquivAt ℂ x hx).toLinearMap.conjugate := by
-  ext v
-  simp only [LinearMap.conjugate_apply, LinearEquiv.coe_toLinearMap,
-    Trivialization.linearEquivAt_apply, Trivialization.conjugate_apply,
-    ConjugateBundle.toConjHomeomorph_symm_apply]
-
 /-- The full coordinate square for the independently defined native fibre comparison.
 The scalar-model comparison retains the coefficient arising from the two model bases. -/
 theorem chartCoord_conjugateLinearEquiv (e : Trivialization F (π F E)) [e.IsLinear ℂ]
@@ -288,11 +277,11 @@ theorem chartCoord_conjugateLinearEquiv (e : Trivialization F (π F E)) [e.IsLin
     (v : DetBundle ℂ (Conjugate F) (ConjugateBundle E) x) :
     toConj (chartCoord e hx (ofConj (conjugateLinearEquiv (F := F) (E := E) x v))) =
       conjugateModelEquiv (F := F) (chartCoord e.conjugate
-        (by simpa only [Trivialization.baseSet_conjugate] using hx) v) := by
+        ((Trivialization.mem_baseSet_conjugate e).mpr hx) v) := by
   have h := exteriorPower.conjugateEquiv_ofEq_map (finrank_complex (V := F))
     (e.linearEquivAt ℂ x hx).toLinearMap
     (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) x v)
-  rw [← conjugate_linearEquivAt e hx] at h
+  rw [← Trivialization.linearEquivAt_conjugate e hx] at h
   have h' := congrArg (fun a : Conjugate (⋀[ℂ]^(finrank ℂ F) F) =>
     toConj (modelCoord F (ofConj a))) h
   simp only [conjugateLinearEquiv_apply, conjugateModelEquiv_formula, chartCoord_apply,
@@ -302,7 +291,7 @@ theorem chartCoord_conjugateLinearEquiv (e : Trivialization F (π F E)) [e.IsLin
     LinearEquiv.coe_toLinearMap,
     ← LinearEquiv.coe_toLinearMap ((e.linearEquivAt ℂ x hx).exteriorPower (finrank ℂ F)),
     ← LinearEquiv.coe_toLinearMap ((e.conjugate.linearEquivAt ℂ x
-      (by simpa only [Trivialization.baseSet_conjugate] using hx)).exteriorPower
+      ((Trivialization.mem_baseSet_conjugate e).mpr hx)).exteriorPower
         (finrank ℂ (Conjugate F))), LinearEquiv.exteriorPower_toLinearMap] using h'.symm
 
 /-- The inverse chart formula retains the inverse of the actual model comparison. -/
@@ -310,7 +299,7 @@ theorem chartCoord_conjugateLinearEquiv_symm
     (e : Trivialization F (π F E)) [e.IsLinear ℂ] {x : B} (hx : x ∈ e.baseSet)
     (w : Conjugate (DetBundle ℂ F E x)) :
     chartCoord e.conjugate
-      (by simpa only [Trivialization.baseSet_conjugate] using hx)
+      ((Trivialization.mem_baseSet_conjugate e).mpr hx)
       ((conjugateLinearEquiv (F := F) (E := E) x).symm w) =
     (conjugateModelEquiv (F := F)).symm (toConj (chartCoord e hx (ofConj w))) := by
   apply (conjugateModelEquiv (F := F)).injective
@@ -327,7 +316,7 @@ variable [TopologicalSpace B] [FiniteDimensional ℂ F]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
   [FiberBundle F E] [VectorBundle ℂ F E]
 
-/-- Continuity of the actual native determinant-conjugation map, proved in induced charts. -/
+/-- Continuity of the actual native determinant-conjugation map on total spaces. -/
 theorem continuous_conjugate :
     Continuous (fun p : TotalSpace ℂ (DetBundle ℂ (Conjugate F) (ConjugateBundle E)) =>
       (TotalSpace.mk' (Conjugate ℂ) p.proj (conjugateEquiv (F := F) (E := E) p.proj p.snd) :
@@ -348,8 +337,8 @@ theorem continuous_conjugate :
   · rintro ⟨x, v⟩ hxS _
     have hxe : x ∈ e.baseSet := by
       simpa only [eS, trivialization_baseSet, Trivialization.baseSet_conjugate] using hxS
-    have hxc : x ∈ e.conjugate.baseSet := by
-      simpa only [Trivialization.baseSet_conjugate] using hxe
+    have hxc : x ∈ e.conjugate.baseSet :=
+      (Trivialization.mem_baseSet_conjugate e).mpr hxe
     simp only [eS, eT, Trivialization.conjugate_apply,
       ConjugateBundle.toConjHomeomorph_symm_apply, conjugateEquiv_apply]
     rw [trivialization_apply_mk e hxe, trivialization_apply_mk e.conjugate hxc]
@@ -389,6 +378,16 @@ private def conjugateTwiceHomeomorph :
         ((ConjugateBundle.toConjHomeomorph (Conjugate ℂ)
           (ConjugateBundle (DetBundle ℂ F E))).trans
             (ConjugateBundle.doubleConjugateHomeomorph ℂ (DetBundle ℂ F E)))))
+
+private theorem conjugateTwiceHomeomorph_eq_composition :
+    conjugateTwiceHomeomorph (F := F) (E := E) =
+  (conjugateHomeomorph (F := Conjugate F) (E := ConjugateBundle E)).trans
+    (((ConjugateBundle.toConjHomeomorph ℂ
+      (DetBundle ℂ (Conjugate F) (ConjugateBundle E))).symm).trans
+      ((conjugateHomeomorph (F := F) (E := E)).trans
+        ((ConjugateBundle.toConjHomeomorph (Conjugate ℂ)
+          (ConjugateBundle (DetBundle ℂ F E))).trans
+            (ConjugateBundle.doubleConjugateHomeomorph ℂ (DetBundle ℂ F E))))) := rfl
 
 private theorem conjugateTwiceHomeomorph_apply
     (p : TotalSpace ℂ (DetBundle ℂ (Conjugate (Conjugate F))
@@ -442,7 +441,7 @@ theorem conjugateHomeomorph_double :
             (ConjugateBundle (DetBundle ℂ F E))).trans
               (ConjugateBundle.doubleConjugateHomeomorph ℂ (DetBundle ℂ F E))))) =
       doubleConjugateHomeomorph (F := F) (E := E) := by
-  change conjugateTwiceHomeomorph (F := F) (E := E) = _
+  rw [← conjugateTwiceHomeomorph_eq_composition]
   ext p : 1
   exact (conjugateTwiceHomeomorph_apply p).trans (doubleConjugateHomeomorph_apply p).symm
 
@@ -466,20 +465,12 @@ def pulledConjugateHomeomorph (f : X → B) :
   invFun p := ⟨p.proj, (conjugateEquiv (F := F) (E := E) (f p.proj)).symm p.snd⟩
   left_inv p := by
     rcases p with ⟨x, v⟩
-    change (⟨x, (conjugateEquiv (F := F) (E := E) (f x)).symm
-      (conjugateEquiv (F := F) (E := E) (f x) v)⟩ : TotalSpace ℂ
-        (f *ᵖ (DetBundle ℂ (Conjugate F) (ConjugateBundle E)))) = ⟨x, v⟩
-    exact congrArg (fun z => (⟨x, z⟩ : TotalSpace ℂ
-      (f *ᵖ (DetBundle ℂ (Conjugate F) (ConjugateBundle E)))))
-      ((conjugateEquiv (F := F) (E := E) (f x)).symm_apply_apply v)
+    apply TotalSpace.mk_inj.mpr
+    exact (conjugateEquiv (F := F) (E := E) (f x)).symm_apply_apply v
   right_inv p := by
     rcases p with ⟨x, v⟩
-    change (⟨x, conjugateEquiv (F := F) (E := E) (f x)
-      ((conjugateEquiv (F := F) (E := E) (f x)).symm v)⟩ : TotalSpace (Conjugate ℂ)
-        (f *ᵖ (ConjugateBundle (DetBundle ℂ F E)))) = ⟨x, v⟩
-    exact congrArg (fun z => (⟨x, z⟩ : TotalSpace (Conjugate ℂ)
-      (f *ᵖ (ConjugateBundle (DetBundle ℂ F E)))))
-      ((conjugateEquiv (F := F) (E := E) (f x)).apply_symm_apply v)
+    apply TotalSpace.mk_inj.mpr
+    exact (conjugateEquiv (F := F) (E := E) (f x)).apply_symm_apply v
   continuous_toFun := by
     apply (inducing_pullbackTotalSpaceEmbedding (Conjugate ℂ)
       (ConjugateBundle (DetBundle ℂ F E)) f).continuous_iff.mpr
@@ -504,6 +495,11 @@ def pulledConjugateHomeomorph (f : X → B) :
     pulledConjugateHomeomorph (F := F) (E := E) f p =
       ⟨p.proj, conjugateEquiv (F := F) (E := E) (f p.proj) p.snd⟩ := by rfl
 
+@[simp] theorem pulledConjugateHomeomorph_symm_apply (f : X → B)
+    (p : TotalSpace (Conjugate ℂ) (f *ᵖ (ConjugateBundle (DetBundle ℂ F E)))) :
+    (pulledConjugateHomeomorph (F := F) (E := E) f).symm p =
+      ⟨p.proj, (conjugateEquiv (F := F) (E := E) (f p.proj)).symm p.snd⟩ := by rfl
+
 variable {K : Type*} [FunLike K X B] [ContinuousMapClass K X B]
 
 /-- The source-side determinant-pullback comparison is the canonical main comparison for
@@ -518,9 +514,10 @@ homeomorphism, using the independently defined conjugation homeomorphisms of tot
 def conjugateTargetPullbackHomeomorph (f : K) :
     TotalSpace (Conjugate ℂ) ((f : X → B) *ᵖ (ConjugateBundle (DetBundle ℂ F E))) ≃ₜ
       TotalSpace (Conjugate ℂ) (ConjugateBundle (DetBundle ℂ F ((f : X → B) *ᵖ E))) :=
-  ((ConjugateBundle.toConjHomeomorph ℂ ((f : X → B) *ᵖ (DetBundle ℂ F E))).symm.trans
-    (pullbackHomeomorph (𝕜 := ℂ) (F := F) (E := E) f)).trans
-    (ConjugateBundle.toConjHomeomorph ℂ (DetBundle ℂ F ((f : X → B) *ᵖ E)))
+  (ConjugateBundle.pullbackHomeomorph ℂ (DetBundle ℂ F E) (f : X → B)).trans
+    (((ConjugateBundle.toConjHomeomorph ℂ ((f : X → B) *ᵖ (DetBundle ℂ F E))).symm.trans
+      (pullbackHomeomorph (𝕜 := ℂ) (F := F) (E := E) f)).trans
+        (ConjugateBundle.toConjHomeomorph ℂ (DetBundle ℂ F ((f : X → B) *ᵖ E))))
 
 @[simp] theorem conjugateSourcePullbackHomeomorph_apply (f : K)
     (p : TotalSpace ℂ ((f : X → B) *ᵖ
@@ -537,42 +534,10 @@ def conjugateTargetPullbackHomeomorph (f : K) :
     conjugateTargetPullbackHomeomorph (F := F) (E := E) f p =
       ⟨p.proj, toConj (pullbackEquiv (𝕜 := ℂ) (F := F) (E := E)
         (f : X → B) p.proj (ofConj p.snd))⟩ := by
-  let a := (ConjugateBundle.toConjHomeomorph ℂ ((f : X → B) *ᵖ (DetBundle ℂ F E))).symm
-  let b := pullbackHomeomorph (𝕜 := ℂ) (F := F) (E := E) f
-  let c := ConjugateBundle.toConjHomeomorph ℂ (DetBundle ℂ F ((f : X → B) *ᵖ E))
-  have h : conjugateTargetPullbackHomeomorph (F := F) (E := E) f p = c (b (a p)) :=
-    (Homeomorph.trans_apply (a.trans b) c p).trans
-      (congrArg c (Homeomorph.trans_apply a b p))
-  rw [h]
-  change ConjugateBundle.toConjHomeomorph ℂ (DetBundle ℂ F ((f : X → B) *ᵖ E))
-    ((pullbackHomeomorph (𝕜 := ℂ) (F := F) (E := E) f)
-      ((ConjugateBundle.toConjHomeomorph ℂ ((f : X → B) *ᵖ (DetBundle ℂ F E))).symm p)) = _
-  erw [ConjugateBundle.toConjHomeomorph_symm_apply, pullbackHomeomorph_apply,
-    ConjugateBundle.toConjHomeomorph_apply]
-
-omit [FiniteDimensional ℂ F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
-  [VectorBundle ℂ F E] in
-private theorem conjugate_pullback_linearEquivAt
-    (e : Trivialization F (π F E)) [e.IsLinear ℂ] (f : K) {y : X}
-    (hy : y ∈ (e.pullback f).baseSet) :
-    let ePB : Trivialization (Conjugate F)
-      (π (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E))) := e.conjugate.pullback f
-    let : ePB.IsLinear ℂ := Trivialization.pullback_linear ℂ e.conjugate f
-    (ePB.linearEquivAt ℂ y
-      (by simpa only [ePB, Trivialization.pullback_baseSet,
-        Trivialization.baseSet_conjugate] using hy)).toLinearMap =
-    ((e.pullback f).conjugate.linearEquivAt ℂ y
-      (by simpa only [Trivialization.baseSet_conjugate] using hy)).toLinearMap := by
-  dsimp only
-  ext v
-  simp only [LinearEquiv.coe_toLinearMap]
-  erw [Trivialization.linearEquivAt_apply (F := Conjugate F)
-    (E := ConjugateBundle ((f : X → B) *ᵖ E))]
-  simp only [Trivialization.linearEquivAt_apply, Trivialization.pullback_apply,
-    Trivialization.conjugate_apply, ConjugateBundle.toConjHomeomorph_symm_apply]
-  erw [Trivialization.pullback_apply (F := Conjugate F) (E := ConjugateBundle E)]
-  rw [Trivialization.conjugate_apply, ConjugateBundle.toConjHomeomorph_symm_apply]
-  rfl
+  rw [conjugateTargetPullbackHomeomorph, Homeomorph.trans_apply,
+    ConjugateBundle.pullbackHomeomorph_apply, Homeomorph.trans_apply,
+    Homeomorph.trans_apply, ConjugateBundle.toConjHomeomorph_symm_apply,
+    pullbackHomeomorph_apply, ConjugateBundle.toConjHomeomorph_apply]
 
 omit [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℂ F E] in
 private theorem chartCoord_conjugate_pullback
@@ -587,12 +552,12 @@ private theorem chartCoord_conjugate_pullback
       (by simpa only [ePB, Trivialization.pullback_baseSet,
         Trivialization.baseSet_conjugate] using hy) v =
     chartCoord (e.pullback f).conjugate
-      (by simpa only [Trivialization.baseSet_conjugate] using hy) v := by
+      ((Trivialization.mem_baseSet_conjugate (e.pullback f)).mpr hy) v := by
   dsimp only
   let ePB : Trivialization (Conjugate F)
     (π (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E))) := e.conjugate.pullback f
   let : ePB.IsLinear ℂ := Trivialization.pullback_linear ℂ e.conjugate f
-  have h := conjugate_pullback_linearEquivAt e f hy
+  have h := Trivialization.linearEquivAt_conjugate_pullback e f hy
   dsimp only at h
   have h' := congrArg (fun g => exteriorPower.map (finrank ℂ (Conjugate F)) g
     (linearEquiv ℂ (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E)) y v)) h
@@ -616,8 +581,10 @@ private theorem chartCoord_conjugateLinearEquiv_pullback
       (ofConj (conjugateLinearEquiv (F := F) (E := E) (f y) v))) := by
   have hx : f y ∈ e.baseSet := by
     simpa only [Trivialization.pullback_baseSet, Set.mem_preimage] using hy
-  have hxc : f y ∈ e.conjugate.baseSet := by
-    simpa only [Trivialization.baseSet_conjugate] using hx
+  have hxc : f y ∈ e.conjugate.baseSet :=
+    (Trivialization.mem_baseSet_conjugate e).mpr hx
+  -- Pullback's AddCommMonoid/Module instances and the original fibre's AddCommGroup
+  -- must use the same Module dictionary here. Fix both families through E (f x).
   let : ∀ x, AddCommGroup (((f : X → B) *ᵖ E) x) := fun x =>
     inferInstanceAs (AddCommGroup (E (f x)))
   let : ∀ x, Module ℂ (((f : X → B) *ᵖ E) x) := fun x =>
@@ -634,7 +601,7 @@ private theorem chartCoord_conjugateLinearEquiv_pullback
     (f : X → B) y v
   have hs : chartCoord (𝕜 := ℂ) (F := Conjugate F)
       (E := ConjugateBundle ((f : X → B) *ᵖ E)) (e.pullback f).conjugate
-      (by simpa only [Trivialization.baseSet_conjugate] using hy) u =
+      ((Trivialization.mem_baseSet_conjugate (e.pullback f)).mpr hy) u =
       chartCoord (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E)
         e.conjugate hxc v :=
     (chartCoord_conjugate_pullback e f hy u).symm.trans
@@ -685,6 +652,8 @@ theorem conjugateEquiv_pullback (f : K) (y : X)
         (f : X → B) y v) =
       toConj (pullbackEquiv (𝕜 := ℂ) (F := F) (E := E) (f : X → B) y
         (ofConj (conjugateEquiv (F := F) (E := E) (f y) v))) := by
+  -- Use the original fibre dictionaries, as in chartCoord_conjugateLinearEquiv_pullback;
+  -- this selects the AddCommGroup path rather than Pullback's AddCommMonoid projection.
   have hleft := @conjugateEquiv_apply X F _ _ ((f : X → B) *ᵖ E)
     (fun x => inferInstanceAs (AddCommGroup (E (f x))))
     (fun x => inferInstanceAs (Module ℂ (E (f x)))) y

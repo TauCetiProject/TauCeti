@@ -167,43 +167,48 @@ variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [TopologicalSpace V]
 /-- The conjugate of a continuous complex-linear map: the same map, read between the conjugate
 spaces. -/
 def conjugate (f : V →L[ℂ] W) : Conjugate V →L[ℂ] Conjugate W where
-  toFun v := toConj (f (ofConj v))
-  map_add' v w := by simp
-  map_smul' c v := by simp
-  cont := f.continuous
+  toLinearMap := f.toLinearMap.conjugate
+  cont := ((continuous_toConj.comp f.continuous).comp continuous_ofConj).congr
+    fun v => (LinearMap.conjugate_apply f.toLinearMap v).symm
+
+@[simp] theorem conjugate_toLinearMap (f : V →L[ℂ] W) :
+    f.conjugate.toLinearMap = f.toLinearMap.conjugate := by rfl
 
 @[simp] theorem conjugate_apply (f : V →L[ℂ] W) (v : Conjugate V) :
-    f.conjugate v = toConj (f (ofConj v)) := (rfl)
+    f.conjugate v = toConj (f (ofConj v)) :=
+  LinearMap.conjugate_apply f.toLinearMap v
 
 @[simp] theorem conjugate_add [ContinuousAdd W] (f g : V →L[ℂ] W) :
     (f + g).conjugate = f.conjugate + g.conjugate :=
-  (rfl)
+  coe_injective (LinearMap.conjugate_add f.toLinearMap g.toLinearMap)
 
 @[simp] theorem conjugate_sub [IsTopologicalAddGroup W] (f g : V →L[ℂ] W) :
     (f - g).conjugate = f.conjugate - g.conjugate :=
-  (rfl)
+  coe_injective (LinearMap.conjugate_sub f.toLinearMap g.toLinearMap)
 
-@[simp] theorem conjugate_id : (ContinuousLinearMap.id ℂ V).conjugate = .id ℂ _ := (rfl)
+@[simp] theorem conjugate_id : (ContinuousLinearMap.id ℂ V).conjugate = .id ℂ _ :=
+  coe_injective LinearMap.conjugate_id
 
 theorem conjugate_comp {U : Type*} [AddCommGroup U] [Module ℂ U] [TopologicalSpace U]
     (g : W →L[ℂ] U) (f : V →L[ℂ] W) : (g.comp f).conjugate = g.conjugate.comp f.conjugate :=
-  (rfl)
+  coe_injective (LinearMap.conjugate_comp g.toLinearMap f.toLinearMap)
 
-@[simp] theorem conjugate_zero : (0 : V →L[ℂ] W).conjugate = 0 := (rfl)
+@[simp] theorem conjugate_zero : (0 : V →L[ℂ] W).conjugate = 0 :=
+  coe_injective LinearMap.conjugate_zero
 
 @[simp] theorem conjugate_neg [IsTopologicalAddGroup W] (f : V →L[ℂ] W) :
     (-f).conjugate = -f.conjugate :=
-  (rfl)
+  coe_injective (LinearMap.conjugate_neg f.toLinearMap)
 
 /-- A scalar picks up a complex conjugate when the map is conjugated. -/
 @[simp] theorem conjugate_smul [ContinuousConstSMul ℂ W] (c : ℂ) (f : V →L[ℂ] W) :
     (c • f).conjugate = conj c • f.conjugate := by
-  ext v
-  simp
+  exact coe_injective (LinearMap.conjugate_smul c f.toLinearMap)
 
 theorem conjugate_injective :
     Function.Injective (conjugate : (V →L[ℂ] W) → Conjugate V →L[ℂ] Conjugate W) :=
-  fun f g h ↦ ext fun v ↦ by simpa using congr($h (toConj v))
+  fun _ _ h ↦ coe_injective (LinearMap.conjugate_injective
+    (congrArg ContinuousLinearMap.toLinearMap h))
 
 /-- Continuous conjugate-linear maps `V → W` are the continuous complex-linear maps
 `V → Conjugate W`. -/
@@ -268,27 +273,40 @@ variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [TopologicalSpace V]
 
 /-- Conjugating twice gives back the original space. -/
 def doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V where
-  toFun v := ofConj (ofConj v)
-  invFun v := toConj (toConj v)
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' c v := by simp
-  continuous_toFun := continuous_id
-  continuous_invFun := continuous_id
+  toLinearEquiv := doubleConjugateLinearEquiv
+  continuous_toFun := (continuous_ofConj.comp continuous_ofConj).congr
+    fun v => (doubleConjugateLinearEquiv_apply v).symm
+  continuous_invFun := (continuous_toConj.comp continuous_toConj).congr
+    fun v => (doubleConjugateLinearEquiv_symm_apply v).symm
+
+@[simp] theorem doubleConjugateL_toLinearEquiv :
+    (doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V).toLinearEquiv =
+      doubleConjugateLinearEquiv := by rfl
 
 @[simp] theorem doubleConjugateL_apply (v : Conjugate (Conjugate V)) :
-    doubleConjugateL v = ofConj (ofConj v) := (rfl)
+    doubleConjugateL v = ofConj (ofConj v) :=
+  doubleConjugateLinearEquiv_apply v
 
 @[simp] theorem doubleConjugateL_symm_apply (v : V) :
-    (doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V).symm v = toConj (toConj v) := (rfl)
+    (doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V).symm v = toConj (toConj v) :=
+  doubleConjugateLinearEquiv_symm_apply v
 
 /-- Conjugating a map twice gives back the map, up to `doubleConjugateL`. -/
 theorem _root_.ContinuousLinearMap.conjugate_conjugate (f : V →L[ℂ] W) :
     f.conjugate.conjugate = ((doubleConjugateL : Conjugate (Conjugate W) ≃L[ℂ] W).symm :
       W →L[ℂ] Conjugate (Conjugate W)) ∘L f ∘L
-        (doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V) :=
-  (rfl)
+        (doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V) := by
+  ext v
+  apply (doubleConjugateL (V := W)).injective
+  have h := LinearMap.congr_fun (doubleConjugateLinearEquiv_naturality f.toLinearMap) v
+  rw [← ContinuousLinearMap.conjugate_toLinearMap f,
+    ← ContinuousLinearMap.conjugate_toLinearMap f.conjugate,
+    ← doubleConjugateL_toLinearEquiv (V := W),
+    ← doubleConjugateL_toLinearEquiv (V := V)] at h
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using h
 
 /-- The conjugate of a product is the product of the conjugates. -/
 def prodL : Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W where

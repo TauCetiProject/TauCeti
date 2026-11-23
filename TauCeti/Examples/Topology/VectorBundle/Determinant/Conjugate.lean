@@ -13,7 +13,6 @@ public import TauCeti.Topology.VectorBundle.Determinant.Conjugate
 These clients exercise nonreal scalar conjugation on an infinite complex module, the nonzero
 zeroth exterior product, native rank-two and rank-zero bundles, an empty base, a model in an
 independent universe, pullback along a nonidentity continuous map and double conjugation.
-They keep the actual model coefficient; no compatible basis or coefficient-one hypothesis is used.
 -/
 
 public section
@@ -66,7 +65,7 @@ theorem rankTwo_generator (a : Fin (finrank ℂ (Conjugate Plane)) → Conjugate
           ofConj (a (Fin.cast (finrank_complex (V := Plane)).symm i))))) :=
   DetBundle.conjugateLinearEquiv_ιMulti (F := Plane) (E := Trivial Unit Plane) () a
 
-/-- The rank-two chart factor is nonzero, without replacing it by one. -/
+/-- The rank-two chart factor is nonzero, in its actual model coordinates. -/
 theorem rankTwo_modelCoefficient_ne_zero : DetBundle.conjugateModelCoefficient (F := Plane) ≠ 0 :=
   DetBundle.conjugateModelCoefficient_ne_zero
 
@@ -145,8 +144,8 @@ theorem rankTwo_nonreal_inverse_chart :
       (toConj ((DetBundle.chartCoord (Trivial.trivialization Unit Plane) (by simp)).symm
         Complex.I))
 
-/-- Bundle-isomorphism naturality derives the ranks at each point, even for an empty base and
-models in independent universes. The proof applies the corollary; it does not eliminate `x`. -/
+/-- The pointwise bundle-isomorphism corollary elaborates over an empty base without a
+`Nonempty` hypothesis, with model presentations in independent universes. -/
 theorem emptyBase_bundleIso_naturality (x : Empty)
     (v : DetBundle ℂ (Conjugate Plane) (ConjugateBundle (Trivial Empty Plane)) x) :
     let e : Plane ≃L[ℂ] ULift.{u} Plane :=
@@ -177,6 +176,40 @@ theorem emptyBase_bundleIso_naturality (x : Empty)
   exact DetBundle.conjugateLinearEquiv_bundleIso_naturality
     (F := Plane) (G := ULift.{u} Plane) (E := Trivial Empty Plane)
     (E' := Trivial Empty (ULift.{u} Plane))
+    (fun _ => (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv) x v
+
+/-- Pointwise bundle-isomorphism naturality at a point of a nonempty base, with independent
+model universes and an arbitrary determinant vector. -/
+theorem unitBase_bundleIso_naturality (x : Unit)
+    (v : DetBundle ℂ (Conjugate Plane) (ConjugateBundle (Trivial Unit Plane)) x) :
+    let e : Plane ≃L[ℂ] ULift.{u} Plane :=
+      (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv
+    let eModel := (VectorBundle.continuousLinearEquivAt ℂ Plane (Trivial Unit Plane) x).symm.trans
+      (e.trans (VectorBundle.continuousLinearEquivAt ℂ (ULift.{u} Plane)
+        (Trivial Unit (ULift.{u} Plane)) x))
+    let h := eModel.toLinearEquiv.finrank_eq
+    let hc := (finrank_complex (V := Plane)).trans
+      (h.trans (finrank_complex (V := ULift.{u} Plane)).symm)
+    DetBundle.conjugateLinearEquiv (F := ULift.{u} Plane)
+      (E := Trivial Unit (ULift.{u} Plane)) x
+      ((DetBundle.linearEquiv ℂ (Conjugate (ULift.{u} Plane))
+        (ConjugateBundle (Trivial Unit (ULift.{u} Plane))) x).symm
+          (LinearEquiv.ofEq _ _
+            (congrArg (fun n => ⋀[ℂ]^n (Conjugate (ULift.{u} Plane))) hc)
+            (exteriorPower.map (finrank ℂ (Conjugate Plane)) e.toLinearEquiv.toLinearMap.conjugate
+              (DetBundle.linearEquiv ℂ (Conjugate Plane)
+                (ConjugateBundle (Trivial Unit Plane)) x v)))) =
+      toConj ((DetBundle.linearEquiv ℂ (ULift.{u} Plane)
+        (Trivial Unit (ULift.{u} Plane)) x).symm
+          (LinearEquiv.ofEq _ _ (congrArg (fun n => ⋀[ℂ]^n (ULift.{u} Plane)) h)
+            (exteriorPower.map (finrank ℂ Plane) e.toLinearEquiv.toLinearMap
+              (DetBundle.linearEquiv ℂ Plane (Trivial Unit Plane) x
+                (ofConj (DetBundle.conjugateLinearEquiv (F := Plane)
+                  (E := Trivial Unit Plane) x v)))))) := by
+  dsimp only
+  exact DetBundle.conjugateLinearEquiv_bundleIso_naturality
+    (F := Plane) (G := ULift.{u} Plane) (E := Trivial Unit Plane)
+    (E' := Trivial Unit (ULift.{u} Plane))
     (fun _ => (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv) x v
 
 end TauCeti.Examples.DetBundleConjugate
