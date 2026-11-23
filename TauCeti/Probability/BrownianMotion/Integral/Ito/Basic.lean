@@ -53,10 +53,10 @@ is its Itô integral against every process with almost surely continuous paths
 (`TauCeti.Probability.isItoIntegral_simpleGains`). This file also establishes linearity,
 bounded initial and post-`u` multipliers, `(dt × P)`-a.e. integrand congruence for an `SFinite`
 measure `P` (`TauCeti.Probability.IsItoIntegral.congr_integrand`), and gains convergence in measure
-for arbitrary approximating sequences against a filtered pre-Brownian motion. Existence of the
-integral is proved in `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry` for
-square-integrable integrands and in `TauCeti.Probability.BrownianMotion.Integral.Ito.Local` for
-localized integrands.
+for arbitrary approximating sequences against a filtered pre-Brownian motion. Against a filtered
+pre-Brownian integrator with almost surely continuous paths, existence of the integral is proved in
+`TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry` for square-integrable integrands and in
+`TauCeti.Probability.BrownianMotion.Integral.Ito.Local` for localized integrands.
 
 ## References
 
@@ -381,14 +381,6 @@ theorem sub (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
 
 /-! ### Uniqueness, congruence, and post-`u` multipliers -/
 
-/-- Two Itô integrals of the same integrand against a filtered pre-Brownian motion agree a.s. at
-each horizon, without assuming path continuity of `W`. -/
-theorem ae_eq_eval (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W H J) (t : ℝ≥0) :
-    I t =ᵐ[P] J t := by
-  obtain ⟨n, τ, a, hτ, ha, he, hg⟩ := hJ.exists_approx t
-  exact hI.ae_eq_of_tendstoInMeasure hW hτ ha he hg
-
 end IsItoIntegral
 
 /-- Against a pre-Brownian motion relative to the filtration, the Itô integrals of an integrand
@@ -398,16 +390,6 @@ theorem isItoIntegral_iff_indist (hW : IsFilteredPreBrownianReal ℱ W P)
   ⟨isItoIntegral_unique hW hI, hI.congr⟩
 
 namespace IsItoIntegral
-
-/-- Any Itô integral of `0` against a filtered pre-Brownian motion vanishes a.s. at each horizon. -/
-theorem ae_eq_zero_of_zero (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W 0 I) (t : ℝ≥0) : I t =ᵐ[P] 0 :=
-  hI.ae_eq_eval hW zero t
-
-/-- Any Itô integral of `0` against a filtered pre-Brownian motion is indistinguishable from `0`. -/
-theorem indist_zero_of_zero (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W 0 I) : I ≡ᵐ[P] 0 :=
-  isItoIntegral_unique hW hI zero
 
 /-- **Integrand congruence**: predictable integrands agreeing `(dt × P)`-a.e. on every finite
 horizon have `P`-indistinguishable continuous Itô integrals against `W`. -/

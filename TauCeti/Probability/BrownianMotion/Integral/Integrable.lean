@@ -28,16 +28,17 @@ by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
 variable, held constant in time, belongs to the pathwise domain without any moment assumption,
-while left-measurable `L²` (or bounded) heights on any finite deterministic grid belong to
-`BrownianIntegrable` (`TauCeti.BrownianIntegrable.simpleHolding`, `simpleHolding_of_bdd`).
+while on any finite deterministic grid, left-measurable `L²` heights belong to `BrownianIntegrable`
+for s-finite `P` (`TauCeti.BrownianIntegrable.simpleHolding`), and bounded left-measurable heights
+belong to `BrownianIntegrable` for finite `P` (`TauCeti.BrownianIntegrable.simpleHolding_of_bdd`).
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
 of the pullback Lebesgue measure to `(0,T]`, that is `TauCeti.Probability.timeMeasure T`
 (`TauCeti.BrownianIntegrable.memLp_timeMeasure`). Pathwise membership uses native `MemLp`, so
 square energy means a finite nonnegative lower integral, never the default value of a divergent
-Bochner integral. Product-`L²` convergence between two predictable process families yields
-convergence in probability of their pathwise square energies
+Bochner integral. Product-`L²` convergence to zero of differences between two predictable process
+families yields convergence to zero in measure of the pathwise square energy of their difference
 (`TauCeti.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm`).
 
 ## References
@@ -292,8 +293,9 @@ theorem BrownianIntegrable.simpleHolding_of_bdd [IsFiniteMeasure P]
     let ⟨C, hC⟩ := hb j hj
     MemLp.of_bound ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (.of_forall hC)
 
-/-- Product-`L²` convergence of differences between two families of strongly predictable processes
-implies convergence in `P`-measure of their pathwise square energies. -/
+/-- Product-`L²` convergence to zero of differences between two families of strongly predictable
+processes implies that the pathwise square energy of their difference tends to zero in
+`Q`-measure. -/
 theorem tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
     {ι Ω' E κ : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
     [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]

@@ -25,11 +25,12 @@ thus boundedness and Lᵖ control survive refinement without additional moment a
 `exists_simpleHolding_simpleGains_eq_sub` specializes this to the difference of two simple
 strategies on monotone grids, subtracting both their holdings and their gains.
 
-This bridges finite sums of predictable rectangles and finite-grid trading strategies. In
-particular, `exists_simpleHolding_simpleGains_eq_add` and `exists_simpleHolding_simpleGains_eq_sub`
-evaluate sums and differences of elementary stochastic-integral approximants on one common grid
-before applying an isometry or energy estimate. All equalities are pointwise, including at
-trading dates, with no regularity assumption on the price path.
+This bridges finite sums of predictable rectangles and finite-grid trading strategies. For simple
+strategies on nondecreasing input grids, `exists_simpleHolding_simpleGains_eq_add` and
+`exists_simpleHolding_simpleGains_eq_sub` evaluate sums and differences of elementary
+stochastic-integral approximants on one common grid before applying an isometry or energy
+estimate. All equalities are pointwise, including at trading dates, with no regularity assumption
+on the price path.
 
 ## References
 
@@ -176,9 +177,9 @@ theorem exists_simpleHolding_simpleGains_eq_sum [OrderBot ι] {mΩ : MeasurableS
       exact hτ.le_iff_le (hL i hi).1 (hU i hi).1 |>.symm
     simp only [horder, (hL i hi).2, (hU i hi).2]
 
-/-- The sum of two simple strategies is one simple strategy on a strictly increasing common grid
-starting at the bottom time, with heights still chosen at the left endpoints of their intervals.
-Holdings and gains against every price path are added. -/
+/-- The sum of two simple strategies on nondecreasing grids is one simple strategy on a strictly
+increasing common grid starting at the bottom time, with heights still chosen at the left endpoints
+of their intervals. Holdings and gains against every price path are added. -/
 theorem exists_simpleHolding_simpleGains_eq_add [OrderBot ι] {mΩ : MeasurableSpace Ω}
     (ℱ : Filtration ι mΩ) {τ σ : ℕ → ι} {n m : ℕ} {a b : ℕ → Ω → ℝ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hσ : MonotoneOn σ (Set.Iic m))
@@ -205,9 +206,9 @@ theorem exists_simpleHolding_simpleGains_eq_add [OrderBot ι] {mΩ : MeasurableS
     · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
     · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
-/-- The difference of two simple strategies is one simple strategy on a strictly increasing
-common grid starting at the bottom time, with heights still chosen at the left endpoints of
-their intervals. Holdings and gains against every price path are subtracted. -/
+/-- The difference of two simple strategies on nondecreasing grids is one simple strategy on a
+strictly increasing common grid starting at the bottom time, with heights still chosen at the left
+endpoints of their intervals. Holdings and gains against every price path are subtracted. -/
 theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableSpace Ω}
     (ℱ : Filtration ι mΩ) {τ σ : ℕ → ι} {n m : ℕ} {a b : ℕ → Ω → ℝ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hσ : MonotoneOn σ (Set.Iic m))

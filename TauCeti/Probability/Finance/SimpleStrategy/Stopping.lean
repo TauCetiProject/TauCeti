@@ -14,10 +14,10 @@ import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 # Dyadic stopping of simple trading strategies
 
 Stopping a left-measurable simple strategy on a nondecreasing grid at `dyadicCeilTime k ∘ τ` up to
-horizon `T` produces a left-measurable simple strategy on a strictly increasing deterministic grid
-starting at `0`, with holding `1_{t ≤ dyadicCeilTime k (τ ω)}` times the original holding on
-`(0, T]` and gains equal to `stoppedProcess (simpleGains σ n a X) (dyadicCeilTime k ∘ τ) s` for
-all `s ≤ T`.
+horizon `T`, where `τ` is a stopping time for the same filtration as the input strategy, produces a
+left-measurable simple strategy on a strictly increasing deterministic grid starting at `0`, with
+holding `1_{t ≤ dyadicCeilTime k (τ ω)}` times the original holding on `(0, T]` and gains equal
+to `stoppedProcess (simpleGains σ n a X) (dyadicCeilTime k ∘ τ) s` for all `s ≤ T`.
 
 ## Main results
 

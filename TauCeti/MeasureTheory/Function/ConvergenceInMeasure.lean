@@ -50,9 +50,10 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   bounded function preserves convergence in measure without measurability or finiteness.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
-* `MeasureTheory.tendsto_measure_ge_of_ae_eventually_le`: convergence to zero in measure of
-  measurable `ℝ≥0∞`-valued errors transfers to an eventually dominated family on a finite
-  measure space.
+* `MeasureTheory.tendsto_measure_ge_of_ae_eventually_le`: fixed-threshold tail convergence to
+  zero of measurable `ℝ≥0∞`-valued errors transfers along a countably generated filter on a
+  finite measure space to a measurable family dominated eventually in the filter for almost every
+  sample point.
 * `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
   can be checked on a family of metric-valued tests inducing the topology, even when the
   measure spaces vary with the index.
@@ -540,9 +541,9 @@ theorem TendstoInMeasure.mul [Zero R] [Mul R] [PseudoMetricSpace R] [IsBoundedSM
 
 end Algebra
 
-/-- On a finite measure space, convergence in measure to `0` of measurable `ℝ≥0∞`-valued errors
-transfers along any countably generated filter to another measurable error family that is
-eventually dominated by it almost everywhere. -/
+/-- On a finite measure space, fixed-threshold tail convergence to `0` of measurable `ℝ≥0∞`-valued
+errors transfers along any countably generated filter to another measurable error family that is
+dominated by it eventually in the filter for almost every sample point. -/
 theorem tendsto_measure_ge_of_ae_eventually_le {α ι : Type*} {mα : MeasurableSpace α}
     {μ : Measure α} [IsFiniteMeasure μ] {l : Filter ι} [l.IsCountablyGenerated]
     {E F : ι → α → ℝ≥0∞} (hE : ∀ i, Measurable (E i)) (hF : ∀ i, Measurable (F i))
