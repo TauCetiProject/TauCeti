@@ -165,7 +165,7 @@ end Restrict
 
 section Constant
 
-variable [HasSheafify J (ModuleCat.{w} Λ)] [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
+variable [HasWeakSheafify J (ModuleCat.{w} Λ)] [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
 
 /-- **Morphisms between constant sheaves are locally constant.** Let `φ : F ⟶ G` be a morphism of
 sheaves of `Λ`-modules whose restrictions to `Over Y` are isomorphic to the restrictions of the
@@ -275,6 +275,12 @@ theorem IsLocallyConstantIn.locallyConstantMapSieve_mem {F G : Sheaf J (ModuleCa
   obtain ⟨g, hg⟩ := hRg h hh
   exact ⟨M, N, hM, hN, g, overIsoRestrict eF h, overIsoRestrict eG h, hg⟩
 
+end Constant
+
+section Closure
+
+variable [HasSheafify J (ModuleCat.{w} Λ)] [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
+
 /-- **Kernels of locally constant sheaves.** Over a Noetherian ring `Λ`, the kernel of a morphism
 between sheaves of `Λ`-modules that are locally constant of finite type is locally constant of
 finite type. -/
@@ -315,6 +321,6 @@ theorem IsLocallyConstantIn.cokernel
       (J.overPullback (ModuleCat.{w} Λ) Y).mapIso
         (PreservesCokernel.iso (constantSheaf J (ModuleCat.{w} Λ)) g).symm⟩⟩
 
-end Constant
+end Closure
 
 end CategoryTheory.Sheaf
