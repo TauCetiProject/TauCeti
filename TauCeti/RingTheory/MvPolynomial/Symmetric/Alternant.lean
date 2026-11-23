@@ -65,8 +65,7 @@ sign appears: that is the dual Pieri rule.
   is the Vandermonde product `∏_{i < j} (X_j - X_i)`.
 * `TauCeti.prod_Ioi_X_sub_X_eq_neg_one_pow_mul_alternant`, `TauCeti.alternant_fin_val_sq`: sign
   and square conversion between `∏_{i < j} (X_i - X_j)` and the Vandermonde alternant.
-* `TauCeti.isSymmetric_alternant_of_two_eq_zero`, `TauCeti.not_isSymmetric_alternant_mul_C`:
-  symmetry in characteristic `2` and nonsymmetry of nonzero scalar multiples when `2 ≠ 0`.
+* `TauCeti.isSymmetric_alternant_of_two_eq_zero`: symmetry of alternants when `2 = 0`.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
 * `TauCeti.psum_mul_alternant_eq_sum_filter`: for `r > 0`, only the exponent moves onto a free
   position contribute to `p_r · a_α`.
@@ -372,28 +371,5 @@ theorem isSymmetric_alternant_of_two_eq_zero (h2 : (2 : R) = 0) (α : σ → ℕ
         _ = 1 := by rw [h2', sub_zero]
     rw [hs, Units.smul_def, Units.val_neg, Units.val_one, neg_smul, one_smul, neg_eq_neg_one_mul,
       hneg, one_mul]
-
-/-- Over an integral domain in which `2 ≠ 0`, if `σ` has at least two elements,
-`α : σ → ℕ` is injective, and `r ≠ 0`, then `alternant σ R α * C r` is not symmetric. -/
-theorem not_isSymmetric_alternant_mul_C [IsDomain R] (h2 : (2 : R) ≠ 0)
-    (hσ : 2 ≤ Fintype.card σ) {α : σ → ℕ} (hα : Function.Injective α) {r : R}
-    (hr : r ≠ 0) :
-    ¬ (alternant σ R α * C r).IsSymmetric := by
-  have hcard : 1 < Fintype.card σ := by omega
-  obtain ⟨i₀, i₁, h01⟩ := Fintype.one_lt_card_iff.mp hcard
-  intro hsymm
-  have hswap := hsymm (Equiv.swap i₀ i₁)
-  rw [map_mul, rename_alternant, Equiv.Perm.sign_swap h01, rename_C] at hswap
-  have hswap' : -(alternant σ R α * C r) = alternant σ R α * C r := by simpa using hswap
-  have hzero : C (2 : R) * (alternant σ R α * C r) = 0 := by
-    calc C (2 : R) * (alternant σ R α * C r)
-      _ = (1 + 1) * (alternant σ R α * C r) := by rw [← one_add_one_eq_two, map_add, map_one]
-      _ = -(alternant σ R α * C r) + alternant σ R α * C r := by
-          rw [add_mul, one_mul]
-          nth_rw 1 [← hswap']
-      _ = 0 := neg_add_cancel _
-  have hne0 : alternant σ R α * C r ≠ 0 :=
-    mul_ne_zero (alternant_ne_zero_of_injective hα) (by simpa using hr)
-  exact h2 (C_eq_zero.mp ((mul_eq_zero.mp hzero).resolve_right hne0))
 
 end TauCeti

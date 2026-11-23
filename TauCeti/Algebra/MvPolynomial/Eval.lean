@@ -43,7 +43,6 @@ Evaluation at a family `x` is surjective exactly when `x` generates the algebra.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
 * `MvPolynomial.aeval_surjective_iff_adjoin_range_eq_top`: `aeval x` is surjective exactly when
   the `x i` generate the algebra.
-* `MvPolynomial.eq_C_of_map_eq_C`: an injective coefficient map reflects constant polynomials.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
 -/
@@ -130,16 +129,6 @@ private theorem exists_pos_eval_eq_mul_eval_div_of_forall {α β K : Type*} [Fie
     simp only [map_mul, eval_X, hA₁]
     rw [hmul]
     ring
-
-/-- If `φ : R →+* S` is injective and `MvPolynomial.map φ p` is a constant `C s`, then `p` is
-already the constant `C (p.coeff 0)`. -/
-theorem eq_C_of_map_eq_C {R : Type*} [CommSemiring R] {φ : R →+* S}
-    (hφ : Function.Injective φ) {p : MvPolynomial σ R} {s : S} (h : map φ p = C s) :
-    p = C (p.coeff 0) := by
-  apply map_injective φ hφ
-  have hs : s = φ (p.coeff 0) := by
-    simpa [coeff_map] using congrArg (fun q : MvPolynomial σ S ↦ q.coeff 0) h.symm
-  rw [h, hs, map_C]
 
 /-- **Clearing polynomial denominators by a strictly positive polynomial factor.** Over an ordered
 field, if the denominators `D a` for variables `a ∈ p.vars` do not vanish on `u`, then there exist

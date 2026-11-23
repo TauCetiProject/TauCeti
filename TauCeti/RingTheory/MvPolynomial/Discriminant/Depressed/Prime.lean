@@ -11,7 +11,9 @@ import Mathlib.Algebra.MvPolynomial.Division
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Localization.Away.Basic
 import Mathlib.RingTheory.Prime
+import TauCeti.Algebra.MvPolynomial.Coeff
 import TauCeti.RingTheory.MvPolynomial.Discriminant.Generic
+import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
 
 /-!
@@ -34,8 +36,8 @@ over any integral domain `R` with `(2 : R) ≠ 0` and `(m : R) ≠ 0` (`3 ≤ m`
 unique factorization (`TauCeti.prime_depressedDiscr_of_three_le`).
 
 For `m = 2`, `TauCeti.depressedDiscr R 2 = -4 X₀` is prime over an integral domain `R` if and only
-if `IsUnit (2 : R)` (`TauCeti.prime_depressedDiscr_two_iff`), and counterexamples in
-characteristics `2`, `3`, and over `ℤ` show sharpness.
+if `IsUnit (2 : R)` (`TauCeti.prime_depressedDiscr_two_iff`), and counterexamples when `2 = 0`,
+when `3 = 0`, and over `ℤ` show sharpness.
 
 ## Main results
 
@@ -46,8 +48,8 @@ characteristics `2`, `3`, and over `ℤ` show sharpness.
   `TauCeti.prime_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_ne_zero`,
   `TauCeti.depressedDiscr_prime`: unit content for `3 ≤ m` and integral-domain primality of
   `depressedDiscr`.
-* `TauCeti.prime_depressedDiscr_two_iff`, `TauCeti.not_prime_depressedDiscr_two_of_charTwo`,
-  `TauCeti.not_prime_depressedDiscr_three_of_charThree`,
+* `TauCeti.prime_depressedDiscr_two_iff`, `TauCeti.not_prime_depressedDiscr_two_of_two_eq_zero`,
+  `TauCeti.not_prime_depressedDiscr_three_of_three_eq_zero`,
   `TauCeti.not_prime_depressedDiscr_int_two`: degree-`2` criterion and sharpness counterexamples.
 
 ## References
@@ -189,48 +191,6 @@ theorem isUnit_of_C_dvd_depressedDiscr_of_three_le {R : Type*} [CommRing R] {m :
     ring
   exact hcop.isUnit_of_dvd' hdvd_m hdvd_m1
 
-/-- A multivariate polynomial over `Fin n` with a regular coefficient is regular. -/
-private theorem isRegular_mvPolynomial_fin_of_exists_isRegular_coeff {A : Type*} [CommRing A] :
-    ∀ {n : ℕ} {P : MvPolynomial (Fin n) A}, (∃ d : Fin n →₀ ℕ, IsRegular (P.coeff d)) →
-      IsRegular P
-  | 0, P, ⟨d, hd⟩ => by
-    have hd0 : d = 0 := Subsingleton.elim d 0
-    have hP : P = MvPolynomial.C (P.coeff 0) := by
-      ext e
-      rw [Subsingleton.elim e 0, MvPolynomial.coeff_C, ite_eq_left rfl]
-    rw [hd0] at hd
-    rw [hP]
-    refine ⟨fun x y h ↦ ?_, fun x y h ↦ ?_⟩
-    · ext e
-      have he0 : e = 0 := Subsingleton.elim e 0
-      subst he0
-      have hc := congrArg (fun q : MvPolynomial (Fin 0) A ↦ q.coeff 0) h
-      simp only [MvPolynomial.coeff_C_mul] at hc
-      exact hd.left hc
-    · ext e
-      have he0 : e = 0 := Subsingleton.elim e 0
-      subst he0
-      have hc := congrArg (fun q : MvPolynomial (Fin 0) A ↦ q.coeff 0) h
-      simp only [mul_comm _ (MvPolynomial.C _), MvPolynomial.coeff_C_mul] at hc
-      exact hd.left hc
-  | n + 1, P, ⟨d, hd⟩ => by
-    let e := MvPolynomial.finSuccEquiv A n
-    let d' : Fin n →₀ ℕ := Finsupp.equivFunOnFinite.symm fun j ↦ d j.succ
-    have hcons : d'.cons (d 0) = d := by
-      ext k
-      refine Fin.cases rfl (fun j ↦ ?_) k
-      simp [d', Finsupp.cons_succ]
-    have hcoeff : ((e P).coeff (d 0)).coeff d' = P.coeff d := by
-      rw [MvPolynomial.finSuccEquiv_coeff_coeff, hcons]
-    have hreg_coeff : IsRegular ((e P).coeff (d 0)) :=
-      isRegular_mvPolynomial_fin_of_exists_isRegular_coeff ⟨d', hcoeff.symm ▸ hd⟩
-    have hreg_eP : IsRegular (e P) := isRegular_iff_mem_nonZeroDivisors.mpr
-      (Polynomial.mem_nonZeroDivisors_of_coeff_mem (d 0)
-        (isRegular_iff_mem_nonZeroDivisors.mp hreg_coeff))
-    refine ⟨fun x y h ↦ e.injective (hreg_eP.left ?_), fun x y h ↦ e.injective (hreg_eP.right ?_)⟩
-    · dsimp only at h ⊢; rw [← map_mul, h, map_mul]
-    · dsimp only at h ⊢; rw [← map_mul, h, map_mul]
-
 /-- Evaluating an `MvPolynomial` by sending `j₀` to `Polynomial.X` and all other variables to `0`
 yields a univariate polynomial whose `X ^ k` coefficient is `P.coeff (Finsupp.single j₀ k)`. -/
 private theorem coeff_aeval_ite_X {A σ : Type*} [CommRing A] [DecidableEq σ]
@@ -306,76 +266,7 @@ private theorem isRegular_depressedDiscr_quotient {R : Type*} [CommRing R] {m : 
   have hunit : IsUnit ((depressedDiscr R₀ m).coeff (Finsupp.single j₀ m)) := by
     rw [← coeff_aeval_ite_X j₀ (depressedDiscr R₀ m) m, hdiscr_val, Polynomial.coeff_monomial_same]
     exact u.isUnit
-  exact isRegular_mvPolynomial_fin_of_exists_isRegular_coeff ⟨Finsupp.single j₀ m, hunit.isRegular⟩
-
-/-- If `D : MvPolynomial σ R` is regular modulo `r` and `r` is regular in `R`, then divisibility
-by `D` is saturated with respect to `MvPolynomial.C (r ^ k)`. -/
-private theorem dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient {R σ : Type*} [CommRing R]
-    {r : R} (hr : IsRegular r) {D : MvPolynomial σ R}
-    (hreg : IsRegular (MvPolynomial.map (Ideal.Quotient.mk (Ideal.span {r})) D)) :
-    ∀ k : ℕ, ∀ f : MvPolynomial σ R, D ∣ MvPolynomial.C (r ^ k) * f → D ∣ f := by
-  have hsat1 : ∀ h₀ : MvPolynomial σ R, D ∣ MvPolynomial.C r * h₀ → D ∣ h₀ := by
-    intro h₀ ⟨h, hh⟩
-    let mk := Ideal.Quotient.mk (Ideal.span {r})
-    have hmap0 : MvPolynomial.map mk D * MvPolynomial.map mk h = 0 := by
-      have h1 := congrArg (MvPolynomial.map mk) hh
-      have hmkr : mk r = 0 :=
-        Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
-      rw [map_mul, MvPolynomial.map_C, hmkr, map_zero, zero_mul, map_mul] at h1
-      exact h1.symm
-    have hmh0 : MvPolynomial.map mk h = 0 := hreg.left (by simpa using hmap0)
-    have hdvd_coeff : ∀ d : σ →₀ ℕ, r ∣ h.coeff d := by
-      intro d
-      have hc : mk (h.coeff d) = 0 := by
-        simpa [MvPolynomial.coeff_map] using
-          congrArg (fun p : MvPolynomial σ (R ⧸ Ideal.span {r}) ↦ p.coeff d) hmh0
-      exact Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hc)
-    obtain ⟨h₁, hh₁⟩ := (MvPolynomial.C_dvd_iff_dvd_coeff r h).mpr hdvd_coeff
-    have hmul : MvPolynomial.C r * h₀ = MvPolynomial.C r * (D * h₁) := by
-      rw [hh, hh₁]; ring
-    refine ⟨h₁, ?_⟩
-    ext d
-    exact hr.left (by
-      simpa only [MvPolynomial.coeff_C_mul] using
-        congrArg (fun p : MvPolynomial σ R ↦ p.coeff d) hmul)
-  intro k
-  induction k with
-  | zero => intro f hf; simpa using hf
-  | succ k ih =>
-    intro f hf
-    refine ih f (hsat1 _ ?_)
-    rwa [pow_succ', map_mul, mul_assoc] at hf
-
-/-- If `algebraMap R (Localization.Away r)` is injective and divisibility by `D` is `r`-saturated,
-then divisibility by `D` after base change to `Localization.Away r` descends back to `R`. -/
-private theorem dvd_of_map_localizationAway_dvd {R σ : Type*} [CommRing R] {r : R}
-    (hinj : Function.Injective (algebraMap R (Localization.Away r)))
-    {D f : MvPolynomial σ R}
-    (hsat : ∀ k : ℕ, ∀ g : MvPolynomial σ R, D ∣ MvPolynomial.C (r ^ k) * g → D ∣ g)
-    (hdvd : MvPolynomial.map (algebraMap R (Localization.Away r)) D ∣
-      MvPolynomial.map (algebraMap R (Localization.Away r)) f) : D ∣ f := by
-  let Rₘ := Localization.Away r
-  obtain ⟨q, hq⟩ := hdvd
-  let deg : (σ →₀ ℕ) → ℕ := fun d ↦ (IsLocalization.Away.sec r (q.coeff d)).2
-  let k : ℕ := q.support.sup deg
-  let q₀ : MvPolynomial σ R :=
-    ∑ d ∈ q.support, MvPolynomial.monomial d
-      ((IsLocalization.Away.sec r (q.coeff d)).1 * r ^ (k - deg d))
-  have hq₀ : MvPolynomial.map (algebraMap R Rₘ) q₀ =
-      MvPolynomial.C (algebraMap R Rₘ (r ^ k)) * q := by
-    rw [map_sum]
-    conv_rhs => rw [MvPolynomial.as_sum q, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun d hd ↦ ?_
-    have hle : (IsLocalization.Away.sec r (q.coeff d)).2 ≤ k := Finset.le_sup (f := deg) hd
-    rw [MvPolynomial.map_monomial, MvPolynomial.C_mul_monomial, map_mul, map_pow,
-      ← IsLocalization.Away.sec_spec (x := r) (s := q.coeff d),
-      mul_comm (algebraMap R Rₘ (r ^ k)), mul_assoc, ← map_pow, ← map_mul, ← pow_add,
-      Nat.add_sub_of_le hle, map_pow]
-  have hmulp : MvPolynomial.map (algebraMap R Rₘ) (MvPolynomial.C (r ^ k) * f) =
-      MvPolynomial.map (algebraMap R Rₘ) (D * q₀) := by
-    rw [map_mul, MvPolynomial.map_C, hq, map_mul, hq₀]
-    ring
-  exact hsat k f ⟨q₀, MvPolynomial.map_injective (algebraMap R Rₘ) hinj hmulp⟩
+  exact MvPolynomial.isRegular_of_isRegular_coeff (Finsupp.single j₀ m) hunit.isRegular
 
 /-- **Primality of the generic depressed discriminant over an integral domain for `3 ≤ m`.**
 Unlike degree `m = 2` (where `depressedDiscr ℤ 2 = -4 X 0` is divisible by `2`), for every `m ≥ 3`
@@ -427,7 +318,7 @@ theorem prime_depressedDiscr_of_three_le {R : Type*} [CommRing R] [IsDomain R]
     exact isRegular_depressedDiscr_quotient hm
   have hm_reg : IsRegular (m : R) :=
     isRegular_iff_mem_nonZeroDivisors.mpr (mem_nonZeroDivisors_of_ne_zero hm0)
-  have hsat := dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient hm_reg hreg_quot
+  have hsat := MvPolynomial.dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient hm_reg hreg_quot
   refine ⟨hD0, hDnu, fun f g hfg ↦ ?_⟩
   have hfgM : MvPolynomial.map (algebraMap R Rₘ) D ∣
       MvPolynomial.map (algebraMap R Rₘ) f * MvPolynomial.map (algebraMap R Rₘ) g := by
@@ -435,8 +326,8 @@ theorem prime_depressedDiscr_of_three_le {R : Type*} [CommRing R] [IsDomain R]
     exact _root_.map_dvd (MvPolynomial.map (algebraMap R Rₘ)) hfg
   rw [← map_depressedDiscr (algebraMap R Rₘ) m] at hprimeM
   rcases hprimeM.dvd_or_dvd hfgM with hf | hg
-  · exact Or.inl (dvd_of_map_localizationAway_dvd hinjM hsat hf)
-  · exact Or.inr (dvd_of_map_localizationAway_dvd hinjM hsat hg)
+  · exact Or.inl (MvPolynomial.dvd_of_map_isLocalization_away_dvd Rₘ hinjM hsat hf)
+  · exact Or.inr (MvPolynomial.dvd_of_map_isLocalization_away_dvd Rₘ hinjM hsat hg)
 
 /-- Over a field `K` of characteristic zero, `TauCeti.depressedDiscr K m` is prime in
 `MvPolynomial (Fin (m - 1)) K` for every `m ≥ 2`. -/
@@ -489,17 +380,19 @@ theorem prime_depressedDiscr_two_iff {R : Type*} [CommRing R] [IsDomain R] :
     exact ((associated_unit_mul_left (MvPolynomial.X (0 : Fin 1) : MvPolynomial (Fin 1) R) _
       h4u).symm).prime MvPolynomial.prime_X
 
-/-- In characteristic `2`, `depressedDiscr R 2` is not prime. -/
-theorem not_prime_depressedDiscr_two_of_charTwo (R : Type*) [CommRing R] [CharP R 2] :
+/-- When `(2 : R) = 0`, `depressedDiscr R 2` is not prime. -/
+theorem not_prime_depressedDiscr_two_of_two_eq_zero {R : Type*} [CommRing R] (h2 : (2 : R) = 0) :
     ¬ Prime (depressedDiscr R 2) := by
-  rw [depressedDiscr_two_of_charTwo]
+  rw [depressedDiscr_two_of_two_eq_zero h2]
   exact not_prime_zero
 
-/-- In characteristic `3`, `depressedDiscr R 3` is not prime. -/
-theorem not_prime_depressedDiscr_three_of_charThree (R : Type*) [CommRing R] [CharP R 3] :
-    ¬ Prime (depressedDiscr R 3) := by
-  have := CharP.nontrivial_of_char_ne_one (R := R) (by decide : 3 ≠ 1)
-  rw [depressedDiscr_three_of_charThree]
+/-- When `(3 : R) = 0`, `depressedDiscr R 3` is not prime. -/
+theorem not_prime_depressedDiscr_three_of_three_eq_zero {R : Type*} [CommRing R]
+    (h3 : (3 : R) = 0) : ¬ Prime (depressedDiscr R 3) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim (depressedDiscr R 3) 0]
+    exact not_prime_zero
+  rw [depressedDiscr_three_of_three_eq_zero h3]
   intro hp
   have hp' : Prime (MvPolynomial.X 0 ^ 3 : MvPolynomial (Fin 2) R) := by
     simpa using Prime.neg hp

@@ -34,8 +34,8 @@ monic depressed polynomial of degree `m` by specializing the variables to its co
   homogeneous of weight `(m * (m - 1)) • u` (and `m * (m - 1)` for `depressedWeight m`).
 * `TauCeti.depressedDiscr_zero`, `TauCeti.depressedDiscr_one`, `TauCeti.depressedDiscr_two`,
   `TauCeti.depressedDiscr_three`, `TauCeti.depressedDiscr_four`,
-  `TauCeti.depressedDiscr_two_of_charTwo`, `TauCeti.depressedDiscr_three_of_charThree`: explicit
-  discriminants in degrees `0` through `4` and reductions in characteristics `2` and `3`.
+  `TauCeti.depressedDiscr_two_of_two_eq_zero`, `TauCeti.depressedDiscr_three_of_three_eq_zero`:
+  explicit discriminants in degrees `0` through `4` and reductions when `2 = 0` or `3 = 0`.
 -/
 
 public section
@@ -165,18 +165,20 @@ theorem depressedDiscr_four (R : Type*) [CommRing R] :
         4 * MvPolynomial.X 0 ^ 3 * MvPolynomial.X 1 ^ 2 := by
   rw [← discr_genericDepressed, genericDepressed_four, discr_depressedQuartic]
 
-/-- In characteristic `2`, `depressedDiscr R 2` vanishes identically. -/
-theorem depressedDiscr_two_of_charTwo (R : Type*) [CommRing R] [CharP R 2] :
+/-- When `(2 : R) = 0`, `depressedDiscr R 2` vanishes identically. -/
+theorem depressedDiscr_two_of_two_eq_zero {R : Type*} [CommRing R] (h2 : (2 : R) = 0) :
     depressedDiscr R 2 = 0 := by
   rw [depressedDiscr_two]
-  have h2 : (2 : MvPolynomial (Fin 1) R) = 0 := CharP.ofNat_eq_zero (MvPolynomial (Fin 1) R) 2
-  linear_combination -2 * MvPolynomial.X 0 * h2
+  have h2' : (2 : MvPolynomial (Fin 1) R) = 0 := by
+    rw [← map_ofNat MvPolynomial.C 2, h2, map_zero]
+  linear_combination -2 * MvPolynomial.X 0 * h2'
 
-/-- In characteristic `3`, `depressedDiscr R 3` collapses to `-X 0 ^ 3`. -/
-theorem depressedDiscr_three_of_charThree (R : Type*) [CommRing R] [CharP R 3] :
+/-- When `(3 : R) = 0`, `depressedDiscr R 3` collapses to `-X 0 ^ 3`. -/
+theorem depressedDiscr_three_of_three_eq_zero {R : Type*} [CommRing R] (h3 : (3 : R) = 0) :
     depressedDiscr R 3 = -MvPolynomial.X 0 ^ 3 := by
   rw [depressedDiscr_three]
-  have h3 : (3 : MvPolynomial (Fin 2) R) = 0 := CharP.ofNat_eq_zero (MvPolynomial (Fin 2) R) 3
-  linear_combination (-MvPolynomial.X 0 ^ 3 - 9 * MvPolynomial.X 1 ^ 2) * h3
+  have h3' : (3 : MvPolynomial (Fin 2) R) = 0 := by
+    rw [← map_ofNat MvPolynomial.C 3, h3, map_zero]
+  linear_combination (-MvPolynomial.X 0 ^ 3 - 9 * MvPolynomial.X 1 ^ 2) * h3'
 
 end TauCeti

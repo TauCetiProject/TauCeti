@@ -443,15 +443,16 @@ private theorem tschirnhausFromDepressed_comp_tschirnhausToDepressed {R : Type*}
       (tschirnhausFromDepressed hmu).toRingHom = freeMonic R m := by
     rw [map_tschirnhausToDepressed_freeMonic, Polynomial.map_comp, Polynomial.map_map,
       map_tschirnhausFromDepressed_comp_C_genericDepressed]
+    have hX_from :
+        tschirnhausFromDepressed hmu Polynomial.X = tschirnhausNegBarycenter hmu := by
+      rw [tschirnhausFromDepressed, Polynomial.aevalTower_X]
     have hX_inv : (Polynomial.X + Polynomial.C (Polynomial.X :
           (MvPolynomial (Fin (m - 1)) R)[X])).map
         (tschirnhausFromDepressed hmu).toRingHom =
         Polynomial.X + Polynomial.C (tschirnhausNegBarycenter hmu) := by
       simp only [Polynomial.map_add, Polynomial.map_X, Polynomial.map_C]
       simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
-        congrArg (fun q ↦ Polynomial.X + Polynomial.C q)
-          (show tschirnhausFromDepressed hmu Polynomial.X = tschirnhausNegBarycenter hmu by
-            simp [tschirnhausFromDepressed])
+        congrArg (fun q ↦ Polynomial.X + Polynomial.C q) hX_from
     rw [hX_inv, tschirnhausCentered]
     have htay := Polynomial.taylor_neg_taylor (-tschirnhausNegBarycenter hmu) (freeMonic R m)
     rw [neg_neg, Polynomial.taylor_apply, Polynomial.taylor_apply, map_neg,
@@ -474,7 +475,7 @@ noncomputable def tschirnhausAlgEquiv {R : Type*} [CommRing R] {m : ℕ} (hmu : 
 private theorem tschirnhausAlgEquiv_toAlgHom {R : Type*} [CommRing R] {m : ℕ}
     (hmu : IsUnit (m : R)) :
     (tschirnhausAlgEquiv hmu).toAlgHom = tschirnhausToDepressed R m :=
-  rfl
+  AlgEquiv.toAlgHom_ofAlgHom _ _ _ _
 
 /-- Mapping `Polynomial.freeMonic R m` along `TauCeti.tschirnhausAlgEquiv` produces the generic
 depressed polynomial translated by `Polynomial.X`. -/
@@ -484,8 +485,10 @@ theorem map_tschirnhausAlgEquiv_freeMonic {R : Type*} [CommRing R] {m : ℕ}
       ((genericDepressed R m).map Polynomial.C).comp
         (Polynomial.X + Polynomial.C Polynomial.X) := by
   have hhom : (tschirnhausAlgEquiv hmu).toRingHom =
-      (tschirnhausAlgEquiv hmu).toAlgHom.toRingHom := rfl
-  rw [hhom, tschirnhausAlgEquiv_toAlgHom]
+      (tschirnhausToDepressed R m).toRingHom := by
+    rw [RingEquiv.toRingHom_eq_coe, ← AlgEquiv.toRingHom_toAlgHom,
+      tschirnhausAlgEquiv_toAlgHom, AlgHom.toRingHom_eq_coe]
+  rw [hhom]
   exact map_tschirnhausToDepressed_freeMonic R m
 
 /-- `TauCeti.tschirnhausAlgEquiv` maps `X k` to the `k`-th coefficient of the shifted generic

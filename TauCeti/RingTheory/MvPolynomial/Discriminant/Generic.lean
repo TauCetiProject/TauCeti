@@ -110,6 +110,7 @@ private theorem discr_freeMonic_dvd_of_X_sub_X_dvd {R : Type*} [CommRing R] [IsD
     {f : MvPolynomial (Fin m) R}
     (hdvd : MvPolynomial.X i₁ - MvPolynomial.X i₀ ∣ vietaAlgHom R m f) :
     (freeMonic R m).discr ∣ f := by
+  -- Step 1: Factor out the antisymmetric quotient `h` with `vietaAlgHom R m f = δ * h`.
   let δ : MvPolynomial (Fin m) R := TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ))
   have hδ0 : δ ≠ 0 := TauCeti.alternant_ne_zero_of_injective Fin.val_injective
   obtain ⟨h, hh⟩ := TauCeti.alternant_fin_val_dvd_of_isSymmetric
@@ -118,14 +119,16 @@ private theorem discr_freeMonic_dvd_of_X_sub_X_dvd {R : Type*} [CommRing R] [IsD
     intro e
     have hf := isSymmetric_vietaAlgHom f e
     rw [hh, map_mul, TauCeti.rename_alternant] at hf
-    rcases Int.units_eq_one_or e.sign with hs | hs
-    · rw [hs, one_smul] at hf ⊢
-      exact mul_left_cancel₀ hδ0 hf
-    · rw [hs, Units.smul_def, Units.val_neg, Units.val_one, neg_one_smul] at hf ⊢
-      have hf' : δ * (-rename (R := R) e h) = δ * h := by
-        calc δ * (-rename (R := R) e h) = (-δ) * rename (R := R) e h := by ring
-          _ = δ * h := hf
-      exact neg_eq_iff_eq_neg.mp (mul_left_cancel₀ hδ0 hf')
+    have hf' : δ * rename (R := R) e h = δ * (e.sign • h) := by
+      calc δ * rename (R := R) e h
+        _ = (e.sign ^ 2) • (δ * rename (R := R) e h) := by
+            rw [Int.units_sq, one_smul]
+        _ = e.sign • ((e.sign • δ) * rename (R := R) e h) := by
+            rw [sq, mul_smul, smul_mul_assoc]
+        _ = e.sign • (δ * h) := by rw [hf]
+        _ = δ * (e.sign • h) := by rw [mul_smul_comm]
+    exact mul_left_cancel₀ hδ0 hf'
+  -- Step 2: Antisymmetry under `swap i₀ i₁` gives `X i₁ - X i₀ ∣ 2 * h`, hence `∣ h`.
   have hswap : rename (R := R) (Equiv.swap i₀ i₁) h = -h := by
     rw [hanti (Equiv.swap i₀ i₁), Equiv.Perm.sign_swap h01, Units.smul_def, Units.val_neg,
       Units.val_one, neg_one_smul]
@@ -141,12 +144,13 @@ private theorem discr_freeMonic_dvd_of_X_sub_X_dvd {R : Type*} [CommRing R] [IsD
     exact h2 hev
   have hdvdh : MvPolynomial.X i₁ - MvPolynomial.X i₀ ∣ h :=
     ((prime_X_sub_X h01.symm).dvd_or_dvd hdvd2h).resolve_left hnot2
+  -- Step 3: Permutations leave `h` associated to itself, so `δ ∣ h` and `δ ^ 2` divides `f`.
   have hass_h : ∀ e : Equiv.Perm (Fin m), Associated (rename (R := R) e h) h := by
     intro e
-    rcases Int.units_eq_one_or e.sign with hs | hs
-    · exact ⟨1, by rw [hanti e, hs, one_smul]; simp⟩
-    · exact ⟨-1, by rw [hanti e, hs, Units.smul_def, Units.val_neg, Units.val_one, neg_one_smul,
-        Units.val_neg, Units.val_one, mul_neg_one, neg_neg]⟩
+    refine ⟨e.sign⁻¹.map (Int.castRingHom (MvPolynomial (Fin m) R)), ?_⟩
+    rw [hanti e, Units.smul_def, zsmul_eq_mul, Units.coe_map, MonoidHom.coe_ofClass,
+      Int.coe_castRingHom, mul_comm _ h, mul_assoc, ← Int.cast_mul, ← Units.val_mul,
+      mul_inv_cancel, Units.val_one, Int.cast_one, mul_one]
   obtain ⟨k, hk⟩ := TauCeti.alternant_fin_val_dvd_of_associated_rename hass_h h01.symm hdvdh
   have hfk : vietaAlgHom R m f = δ ^ 2 * k := by
     rw [hh, hk, sq]; ring

@@ -7,7 +7,10 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import Mathlib.Algebra.MvPolynomial.Equiv
+public import Mathlib.Algebra.Regular.Basic
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.Polynomial.Ideal
+import Mathlib.Algebra.MvPolynomial.Division
 import TauCeti.RingTheory.Localization.Ideal
 
 /-!
@@ -75,6 +78,9 @@ its graph equations `Y i - f i`. These formulas need no monomial order.
   the contraction of an ideal in one more variable, and the contraction from the localization.
 * `Ideal.adjoin_range_quotient_mk_X_eq_top`: the residue classes of the variables generate any
   quotient `MvPolynomial σ R ⧸ I` as an `R`-algebra.
+* `MvPolynomial.dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient` and
+  `MvPolynomial.dvd_of_map_isLocalization_away_dvd`: divisibility saturation from regularity modulo
+  `r` and descent from a localization away from `r`.
 
 ## References
 
@@ -438,6 +444,76 @@ theorem C_mem_sup_ker_eval_iff (a : σ → R) (H : Ideal (MvPolynomial σ R)) (r
     Ideal.mem_comap, eval_C]
 
 end PointEvaluation
+
+section SaturationLocalization
+
+variable {R : Type*} [CommRing R]
+
+/-- If `D : MvPolynomial σ R` is regular modulo `r` and `r` is regular in `R`, then divisibility
+by `D` is saturated with respect to `MvPolynomial.C (r ^ k)`. -/
+theorem dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient {r : R} (hr : IsRegular r)
+    {D : MvPolynomial σ R}
+    (hreg : IsRegular (MvPolynomial.map (Ideal.Quotient.mk (Ideal.span {r})) D)) :
+    ∀ k : ℕ, ∀ f : MvPolynomial σ R, D ∣ C (r ^ k) * f → D ∣ f := by
+  have hsat1 : ∀ h₀ : MvPolynomial σ R, D ∣ C r * h₀ → D ∣ h₀ := by
+    intro h₀ ⟨h, hh⟩
+    let mk := Ideal.Quotient.mk (Ideal.span {r})
+    have hmap0 : map mk D * map mk h = 0 := by
+      have h1 := congrArg (map mk) hh
+      have hmkr : mk r = 0 :=
+        Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
+      rw [map_mul, map_C, hmkr, map_zero, zero_mul, map_mul] at h1
+      exact h1.symm
+    have hmh0 : map mk h = 0 := hreg.left (by simpa using hmap0)
+    have hdvd_coeff : ∀ d : σ →₀ ℕ, r ∣ h.coeff d := by
+      intro d
+      have hc : mk (h.coeff d) = 0 := by
+        simpa [coeff_map] using
+          congrArg (fun p : MvPolynomial σ (R ⧸ Ideal.span {r}) ↦ p.coeff d) hmh0
+      exact Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hc)
+    obtain ⟨h₁, hh₁⟩ := (C_dvd_iff_dvd_coeff r h).mpr hdvd_coeff
+    have hmul : C r * h₀ = C r * (D * h₁) := by
+      rw [hh, hh₁]; ring
+    refine ⟨h₁, ?_⟩
+    ext d
+    exact hr.left (by
+      simpa only [coeff_C_mul] using congrArg (fun p : MvPolynomial σ R ↦ p.coeff d) hmul)
+  intro k
+  induction k with
+  | zero => intro f hf; simpa using hf
+  | succ k ih =>
+    intro f hf
+    refine ih f (hsat1 _ ?_)
+    rwa [pow_succ', map_mul, mul_assoc] at hf
+
+/-- If `algebraMap R S` is injective for a localization `S` away from `r` and divisibility by `D`
+is `r`-saturated, then divisibility by `D` after base change to `S` descends back to `R`. -/
+theorem dvd_of_map_isLocalization_away_dvd (S : Type*) [CommRing S] [Algebra R S] {r : R}
+    [IsLocalization.Away r S] (hinj : Function.Injective (algebraMap R S))
+    {D f : MvPolynomial σ R}
+    (hsat : ∀ k : ℕ, ∀ g : MvPolynomial σ R, D ∣ C (r ^ k) * g → D ∣ g)
+    (hdvd : map (algebraMap R S) D ∣ map (algebraMap R S) f) : D ∣ f := by
+  classical
+  obtain ⟨q, hq⟩ := hdvd
+  let deg : (σ →₀ ℕ) → ℕ := fun d ↦ (IsLocalization.Away.sec r (q.coeff d)).2
+  let k : ℕ := q.support.sup deg
+  let q₀ : MvPolynomial σ R :=
+    ∑ d ∈ q.support, monomial d ((IsLocalization.Away.sec r (q.coeff d)).1 * r ^ (k - deg d))
+  have hq₀ : map (algebraMap R S) q₀ = C (algebraMap R S (r ^ k)) * q := by
+    rw [map_sum]
+    conv_rhs => rw [as_sum q, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun d hd ↦ ?_
+    have hle : (IsLocalization.Away.sec r (q.coeff d)).2 ≤ k := Finset.le_sup (f := deg) hd
+    rw [map_monomial, C_mul_monomial, map_mul, map_pow,
+      ← IsLocalization.Away.sec_spec (x := r) (s := q.coeff d),
+      mul_comm (algebraMap R S (r ^ k)), mul_assoc, ← map_pow, ← map_mul, ← pow_add,
+      Nat.add_sub_of_le hle, map_pow]
+  have hmulp : map (algebraMap R S) (C (r ^ k) * f) = map (algebraMap R S) (D * q₀) := by
+    rw [map_mul, map_C, hq, map_mul, hq₀]
+    ring
+  exact hsat k f ⟨q₀, map_injective (algebraMap R S) hinj hmulp⟩
+
+end SaturationLocalization
 
 end MvPolynomial
 
