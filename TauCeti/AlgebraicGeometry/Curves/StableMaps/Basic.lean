@@ -45,6 +45,8 @@ and every section of the target gives a constant prestable map.
   are the base changes of the evaluations.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullback_const`: base change of a constant map is the
   constant map through the base-changed section.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullback_postcomp`: base change of a postcomposed map
+  is the postcomposition of the base change with the base change of the morphism of targets.
 
 ## References
 
@@ -225,6 +227,16 @@ theorem pullback_const (P : PointedPrestableFamily S n) (σ : S ⟶ V) (hσ : σ
   · rw [Limits.pullback.lift_snd]
     exact ((Category.assoc (P.pullback g).toBase _ _).trans
       (by rw [Limits.pullback.lift_snd, Category.comp_id]; exact P.pullback_toBase g)).symm
+
+/-- The base change of a postcomposed map is the postcomposition of the base change with the base
+change `V ×_S T ⟶ W ×_S T` of the morphism of targets. -/
+theorem pullback_postcomp {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (g : T ⟶ S) :
+    (F.postcomp h hh).pullback g =
+      (F.pullback g).postcomp (pullback.map q g r g h (𝟙 T) (𝟙 S) (by simp [hh]) (by simp))
+        (by simp) := by
+  dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
+  congr 1
+  apply pullback.hom_ext <;> simp
 
 end PrestableMap
 

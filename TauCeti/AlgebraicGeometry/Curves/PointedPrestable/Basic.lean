@@ -100,6 +100,11 @@ instance instOverTotal : P.total.Over S :=
 theorem over_eq_toBase : P.total ↘ S = P.toBase :=
   (rfl)
 
+/-- The total space of a pointed prestable family, as a scheme over the base, is a prestable
+family. -/
+instance prestableFamily_over : PrestableFamily (P.total ↘ S) :=
+  P.prestableFamily
+
 /-- The total space of a pointed prestable family over a quasi-compact base is quasi-compact,
 the structure morphism being proper. -/
 instance compactSpace_total [CompactSpace S] : CompactSpace P.total :=

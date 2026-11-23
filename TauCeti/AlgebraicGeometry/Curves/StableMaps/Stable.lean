@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.Node.DualGraph
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
+public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.DualGraph
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Basic
 
 /-!
@@ -37,13 +38,11 @@ algebraically closed, is a stable fibre.
 A constant map contracts every component of a curve over a field, so it is stable exactly when
 the dual graphs of the geometric fibres of its pointed source are stable. Postcomposition with a
 morphism of targets can only contract more components, so it can only make stability harder, and
-it does not change stability when the morphism of targets is an immersion, for instance an
-isomorphism or a closed immersion.
+it does not change stability when the morphism of targets is universally injective, for
+instance an immersion.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraph`: the dual graph of a pointed
-  prestable curve over a separably closed field, with its markings.
 * `TauCeti.AlgebraicGeometry.PrestableMap.IsContractedVertex`: a vertex of the dual graph of the
   source curve whose component is contracted by the map.
 * `TauCeti.AlgebraicGeometry.PrestableMap.IsStableFiber`: over a separably closed field, every
@@ -60,7 +59,7 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   a morphism of targets is stable, so is the map.
 * `isStableFiber_postcomp_iff_of_injective`, `isStableFiber_postcomp_iff` and
   `isStableMap_postcomp_iff`: postcomposition with a morphism of targets that is injective on
-  points, respectively an immersion, does not change stability.
+  points, respectively universally injective, does not change stability.
 
 ## References
 
@@ -82,34 +81,6 @@ namespace TauCeti.AlgebraicGeometry
 
 universe u
 
-namespace PointedPrestableFamily
-
-/-- The total space of a pointed prestable family, as a scheme over the base, is a prestable
-family. -/
-instance prestableFamily_over {S : Scheme.{u}} {n : ℕ} (P : PointedPrestableFamily S n) :
-    PrestableFamily (P.total ↘ S) :=
-  P.prestableFamily
-
-variable {K : Type u} [Field K] {n : ℕ} (P : PointedPrestableFamily (Spec (.of K)) n)
-
-/-- The point of a pointed prestable curve over a field at its `i`th marking, as a point of the
-smooth locus. -/
-def markingPoint (i : Fin n) : (P.total ↘ Spec (.of K)).smoothLocus :=
-  ⟨P.marking i default, P.range_marking_subset_smoothLocus i ⟨default, rfl⟩⟩
-
-/-- The point at the `i`th marking is the value of the `i`th section at the point of `Spec K`. -/
-@[simp]
-theorem coe_markingPoint (i : Fin n) : (P.markingPoint i : P.total) = P.marking i default :=
-  (rfl)
-
-/-- The **dual graph** of a pointed prestable curve over a separably closed field: the dual graph
-`AlgebraicGeometry.Scheme.dualGraph` of its total space, with the `i`th marking at the point of
-the `i`th section. -/
-abbrev dualGraph [IsSepClosed K] : DualGraph.{u} (Fin n) :=
-  P.total.dualGraph P.markingPoint
-
-end PointedPrestableFamily
-
 namespace PrestableMap
 
 variable {V W S : Scheme.{u}} {n : ℕ}
@@ -126,6 +97,13 @@ def IsContractedVertex (v : F.curve.dualGraph.Vertex) : Prop :=
   (((F.curve.total.singularLocus K).blowupToBase ≫ F.map) ''
     (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton
 
+/-- Restatement of the definition of a contracted vertex. -/
+theorem isContractedVertex_iff (v : F.curve.dualGraph.Vertex) :
+    F.IsContractedVertex v ↔
+      (((F.curve.total.singularLocus K).blowupToBase ≫ F.map) ''
+        (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton :=
+  Iff.rfl
+
 /-- A prestable map over a separably closed field is a **stable fibre** when every vertex of the
 dual graph of its source curve that it contracts has positive log-canonical degree. -/
 def IsStableFiber : Prop :=
@@ -138,6 +116,7 @@ theorem isStableFiber_iff :
 
 /-- Over a separably closed field, a constant map contracts every vertex of the dual graph of its
 source curve. -/
+@[simp]
 theorem isContractedVertex_const (P : PointedPrestableFamily (Spec (.of K)) n)
     (σ : Spec (.of K) ⟶ V) (hσ : σ ≫ q = 𝟙 _) (v : P.dualGraph.Vertex) :
     (const P σ hσ).IsContractedVertex v := by
@@ -153,34 +132,35 @@ theorem isStableFiber_const_iff (P : PointedPrestableFamily (Spec (.of K)) n)
   rw [DualGraph.isStable_iff]
   exact forall_congr' fun v ↦ imp_iff_right (isContractedVertex_const P σ hσ v)
 
-omit [IsSepClosed K] in
-/-- The image of a set under a morphism followed by the map of a postcomposed prestable map is
-its image under the morphism followed by the original map, pushed forward along the morphism of
-targets. -/
-private theorem image_comp_postcomp_map {X : Scheme.{u}} {r : W ⟶ Spec (.of K)}
-    (g : X ⟶ F.curve.total) (h : V ⟶ W) (hh : h ≫ r = q) (E : Set X) :
-    (g ≫ (F.postcomp h hh).map) '' E = h '' ((g ≫ F.map) '' E) := by
-  rw [Set.image_image]
-  exact Set.image_congr fun x _ ↦ by
-    rw [postcomp_map, ← Category.assoc]
-    exact Scheme.Hom.comp_apply _ h x
-
 variable {F} in
 /-- Postcomposition with a morphism of targets contracts every vertex the map contracts. -/
 theorem IsContractedVertex.postcomp {r : W ⟶ Spec (.of K)} (h : V ⟶ W) (hh : h ≫ r = q)
     {v : F.curve.dualGraph.Vertex} (hv : F.IsContractedVertex v) :
     (F.postcomp h hh).IsContractedVertex v := by
-  have := hv.image h
-  rw [← image_comp_postcomp_map] at this
-  exact this
+  -- The map of `F.postcomp h hh` is `F.map ≫ h`, on the same source curve.
+  change (((F.curve.total.singularLocus K).blowupToBase ≫ F.map ≫ h) ''
+    (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton
+  rw [← Category.assoc, Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
+  exact hv.image h
 
 /-- Postcomposition with a morphism of targets that is injective on points contracts the same
 vertices. -/
 theorem isContractedVertex_postcomp_iff_of_injective {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
     (hinj : Function.Injective h) (hh : h ≫ r = q) {v : F.curve.dualGraph.Vertex} :
     (F.postcomp h hh).IsContractedVertex v ↔ F.IsContractedVertex v := by
-  exact (congrArg Set.Subsingleton (F.image_comp_postcomp_map _ h hh _)).to_iff.trans
-    hinj.subsingleton_image_iff
+  -- The map of `F.postcomp h hh` is `F.map ≫ h`, on the same source curve.
+  change (((F.curve.total.singularLocus K).blowupToBase ≫ F.map ≫ h) ''
+    (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton ↔ _
+  rw [← Category.assoc, Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
+  exact hinj.subsingleton_image_iff
+
+/-- Postcomposition with a universally injective morphism of targets, for instance an immersion,
+contracts the same vertices. -/
+@[simp]
+theorem isContractedVertex_postcomp_iff {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
+    [UniversallyInjective h] (hh : h ≫ r = q) {v : F.curve.dualGraph.Vertex} :
+    (F.postcomp h hh).IsContractedVertex v ↔ F.IsContractedVertex v :=
+  F.isContractedVertex_postcomp_iff_of_injective h h.injective hh
 
 variable {F} in
 /-- If the postcomposition of a map over a separably closed field with a morphism of targets is
@@ -196,12 +176,12 @@ theorem isStableFiber_postcomp_iff_of_injective {r : W ⟶ Spec (.of K)} (h : V 
     (F.postcomp h hh).IsStableFiber ↔ F.IsStableFiber :=
   forall_congr' fun _ ↦ imp_congr_left (F.isContractedVertex_postcomp_iff_of_injective h hinj hh)
 
-/-- Postcomposition with an immersion of targets, for instance an isomorphism or a closed
-immersion, does not change being a stable fibre. -/
+/-- Postcomposition with a universally injective morphism of targets, for instance an immersion,
+does not change being a stable fibre. -/
 @[simp]
-theorem isStableFiber_postcomp_iff {r : W ⟶ Spec (.of K)} (h : V ⟶ W) [IsPreimmersion h]
+theorem isStableFiber_postcomp_iff {r : W ⟶ Spec (.of K)} (h : V ⟶ W) [UniversallyInjective h]
     (hh : h ≫ r = q) : (F.postcomp h hh).IsStableFiber ↔ F.IsStableFiber :=
-  F.isStableFiber_postcomp_iff_of_injective h h.isEmbedding.injective hh
+  F.isStableFiber_postcomp_iff_of_injective h h.injective hh
 
 end Fiber
 
@@ -229,18 +209,6 @@ theorem isStableMap_const_iff (P : PointedPrestableFamily S n) (σ : S ⟶ V) (h
         (P.pullback x).dualGraph.IsStable := by
   simp only [isStableMap_iff, pullback_const, isStableFiber_const_iff]
 
-/-- The base change of a postcomposed map is the postcomposition of the base change with the base
-change `V ×_S T ⟶ W ×_S T` of the morphism of targets. -/
-theorem pullback_postcomp (F : PrestableMap q n) {T : Scheme.{u}} {r : W ⟶ S} (h : V ⟶ W)
-    (hh : h ≫ r = q) (x : T ⟶ S) :
-    (F.postcomp h hh).pullback x =
-      (F.pullback x).postcomp
-        (Limits.pullback.lift (Limits.pullback.fst q x ≫ h) (Limits.pullback.snd q x)
-          (by simp [hh, Limits.pullback.condition])) (Limits.pullback.lift_snd _ _ _) := by
-  dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
-  congr 1
-  apply Limits.pullback.hom_ext <;> simp
-
 /-- If the postcomposition of a map with a morphism of targets is stable, so is the map. -/
 theorem IsStableMap.of_postcomp {F : PrestableMap q n} {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q)
     (hF : (F.postcomp h hh).IsStableMap) : F.IsStableMap := by
@@ -249,16 +217,17 @@ theorem IsStableMap.of_postcomp {F : PrestableMap q n} {r : W ⟶ S} (h : V ⟶ 
   rw [pullback_postcomp] at this
   exact this.of_postcomp _ _
 
-/-- Postcomposition with an immersion of targets, for instance an isomorphism or a closed
-immersion, does not change stability. -/
+/-- Postcomposition with a universally injective morphism of targets, for instance an immersion,
+does not change stability. -/
 @[simp]
 theorem isStableMap_postcomp_iff (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
-    [IsPreimmersion h] (hh : h ≫ r = q) :
+    [UniversallyInjective h] (hh : h ≫ r = q) :
     (F.postcomp h hh).IsStableMap ↔ F.IsStableMap := by
   refine ⟨IsStableMap.of_postcomp h hh, fun hF Ω _ _ x ↦ ?_⟩
-  have : IsPreimmersion (Limits.pullback.lift (f := r) (g := x) (Limits.pullback.fst q x ≫ h)
-      (Limits.pullback.snd q x) (by simp [hh, Limits.pullback.condition])) :=
-    MorphismProperty.pullbackLift_fst_snd (P := @IsPreimmersion) x hh.symm ‹_›
+  have : UniversallyInjective
+      (Limits.pullback.map q x r x h (𝟙 _) (𝟙 S) (by simp [hh]) (by simp)) :=
+    MorphismProperty.pullbackMap (P := @UniversallyInjective) ‹_› inferInstance hh.symm
+      (Category.id_comp x).symm
   rw [pullback_postcomp, isStableFiber_postcomp_iff]
   exact hF Ω x
 
