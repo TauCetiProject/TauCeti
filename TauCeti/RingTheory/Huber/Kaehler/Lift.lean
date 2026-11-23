@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Kaehler.Basic
-public import TauCeti.RingTheory.Huber.NoetherianType.Basic
-import TauCeti.RingTheory.Huber.NoetherianType.ModuleTopology
 import TauCeti.RingTheory.Huber.TensorProduct.Derivation
 
 /-!
@@ -17,8 +15,7 @@ Let `A → B` be an adic homomorphism into a complete Hausdorff nonarchimedean r
 continuous `A`-derivation `δ : B → M` into a complete Hausdorff nonarchimedean `B`-module lifts
 to a continuous `B`-linear map `Ωᶜ[B⁄A] →L[B] M`
 (`TauCeti.Huber.ContinuousKaehlerDifferential.lift`), without any noetherian or finite-type
-hypotheses; when `B` is of noetherian type, any continuous `A`-derivation into a finite `B`-module
-with its natural topology lifts to `Ωᶜ[B⁄A] →ₗ[B] N` (`liftOfFinite`).
+hypotheses.
 
 ## References
 
@@ -38,7 +35,8 @@ variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [TopologicalSpace
   [IsTopologicalRing A] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
   [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
 
-/-- Descend `CompletedTensor.liftDerivation 0 δ` from `I` modulo `I²` to `Ωᶜ[B⁄A] →ₗ[B] M`. -/
+/-- Descend `CompletedTensor.liftDerivationOfAlgebraMap 0 δ` from `I` modulo `I²` to
+`Ωᶜ[B⁄A] →ₗ[B] M`. -/
 private noncomputable def liftLinearMap
     {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
     [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
@@ -51,8 +49,8 @@ private noncomputable def liftLinearMap
     IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have hsmul (r : CompletedTensor A B B) (m : M) : r • m = mulRingHom A B r • m := rfl
   let d : Derivation A (CompletedTensor A B B) M :=
-    CompletedTensor.liftDerivation (R := B) (0 : Derivation A B M) δ continuous_const hδ
-      (continuous_mulRingHom A B) (RingHom.ext (mulRingHom_inl A B))
+    CompletedTensor.liftDerivationOfAlgebraMap (R := B) (0 : Derivation A B M) δ
+      continuous_const hδ (continuous_mulRingHom A B) (RingHom.ext (mulRingHom_inl A B))
       (RingHom.ext (mulRingHom_inr A B))
   let g : ideal A B →ₗ[CompletedTensor A B B] M :=
     { toFun x := d x.val, map_add' x y := map_add d x.val y.val
@@ -66,8 +64,8 @@ private noncomputable def liftLinearMap
     (Ideal.Cotangent.lift g hg).comp (cotangentEquiv A B).toLinearMap
   refine ⟨{ toFun := q, map_add' := q.map_add, map_smul' b ω := by
     { rw [RingHom.id_apply, ← inl_smul, q.map_smul, hsmul, mulRingHom_inl] } }, fun b ↦ ?_⟩
-  have hd_inr : d (inr A B B b) = δ b := liftDerivation_inr ..
-  have hd_inl : d (inl A B B b) = 0 := liftDerivation_inl ..
+  have hd_inr : d (inr A B B b) = δ b := liftDerivationOfAlgebraMap_inr ..
+  have hd_inl : d (inl A B B b) = 0 := liftDerivationOfAlgebraMap_inl ..
   simp [D_apply, q, g, hd_inr, hd_inl]
 
 /-- **Universal lift for continuous differentials** (Huber 1996, §1.6, Definition 1.6.1 and
@@ -94,36 +92,6 @@ noncomputable def lift {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformA
     [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
     (δ : Derivation A B M) (hδ : Continuous δ) : (lift δ hδ).toLinearMap.compDer (D A B) = δ := by
   ext b; exact lift_D δ hδ b
-
-section FiniteTarget
-
-variable [IsHuberRing B] [IsNoetherianType B]
-  {N : Type*} [AddCommGroup N] [Module A N] [Module B N] [IsScalarTower A B N]
-  [Module.Finite B N] [TopologicalSpace N] [IsModuleTopology B N]
-
-private noncomputable def liftOfFiniteAux (δ : Derivation A B N) (hδ : Continuous δ) :
-    {l : ContinuousKaehlerDifferential A B →ₗ[B] N // ∀ b, l (D A B b) = δ b} := by
-  letI := IsModuleTopology.isTopologicalAddGroup B N
-  letI := IsTopologicalAddGroup.rightUniformSpace N
-  obtain ⟨_, _, _, _⟩ :=
-    IsNoetherianType.complete_t2_nonarchimedean_of_isModuleTopology (A := B) (M := N)
-  exact ⟨(lift δ hδ).toLinearMap, lift_D δ hδ⟩
-
-/-- **Universal lift into a finite `B`-module with its natural topology** (Huber 1996, §1.6,
-Definition 1.6.1 and (1.6.2)(ii)): any continuous `A`-derivation `δ : B → N` lifts to
-`Ωᶜ[B⁄A] →ₗ[B] N`. -/
-noncomputable def liftOfFinite (δ : Derivation A B N) (hδ : Continuous δ) :
-    ContinuousKaehlerDifferential A B →ₗ[B] N := (liftOfFiniteAux δ hδ).val
-
-/-- Evaluating `liftOfFinite δ hδ` on `d b` recovers `δ b`. -/
-@[simp] theorem liftOfFinite_D (δ : Derivation A B N) (hδ : Continuous δ) (b : B) :
-    liftOfFinite δ hδ (D A B b) = δ b := (liftOfFiniteAux δ hδ).property b
-
-/-- Precomposing `liftOfFinite δ hδ` with `D A B` recovers `δ`. -/
-@[simp] theorem compDer_liftOfFinite_D (δ : Derivation A B N) (hδ : Continuous δ) :
-    (liftOfFinite δ hδ).compDer (D A B) = δ := by ext b; exact liftOfFinite_D δ hδ b
-
-end FiniteTarget
 
 end Lift
 

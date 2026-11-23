@@ -43,6 +43,8 @@ fibre product of adic spaces.
 * `TauCeti.Huber.TensorDatum.topology_eq`: the topology does not depend on the datum.
 * `TauCeti.Huber.hasBasis_tensorTopology`: every datum gives a neighbourhood basis of zero for
   the tensor topology.
+* `TauCeti.Huber.TensorDatum.tmul_mem_idealImage_of_left_mem_pow`: a pure tensor whose left
+  factor lies in `(I B₀)ᵏ` and whose right factor lies in `C₀` lies in `image(Jᵏ)`.
 
 ## References
 
@@ -239,6 +241,27 @@ theorem algebraMap_mem_idealImage {n : ℕ} {a : D.base.ringOfDefinition}
   refine D.mem_idealImage.mpr ⟨D.toRingOfDefinition a, ?_, rfl⟩
   rw [idealOfDefinition, ← Ideal.map_pow]
   exact Ideal.mem_map_of_mem _ ha
+
+/-- A pure tensor `b ⊗ₜ c` with `b ∈ (I B₀)ᵏ` and `c ∈ C₀` lies in the image of `Jᵏ`. -/
+theorem tmul_mem_idealImage_of_left_mem_pow {k : ℕ} {b : D.left.ringOfDefinition}
+    (hb : b ∈ D.left.idealOfDefinition ^ k) {c : C} (hc : c ∈ D.right.ringOfDefinition) :
+    (b : B) ⊗ₜ[A] c ∈ D.idealImage k := by
+  rw [← D.map_idealOfDefinition_left, ← Ideal.map_pow] at hb
+  induction hb using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨a, ha, rfl⟩ := hy
+    refine D.mem_idealImage.mpr ⟨D.toRingOfDefinition a *
+      ⟨1 ⊗ₜ[A] c, D.one_tmul_mem_ringOfDefinition hc⟩, ?_, by
+        simp [TensorDatum.coe_toRingOfDefinition, Algebra.TensorProduct.algebraMap_apply]⟩
+    rw [D.idealOfDefinition_def, ← Ideal.map_pow]
+    exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ha)
+  | zero => simp
+  | add x y _ _ hx hy => simpa [add_tmul] using (D.idealImage k).add_mem hx hy
+  | smul r x _ hx =>
+    obtain ⟨y, hy, hyx⟩ := D.mem_idealImage.mp hx
+    refine D.mem_idealImage.mpr
+      ⟨⟨(r : B) ⊗ₜ[A] 1, D.tmul_one_mem_ringOfDefinition r.property⟩ * y,
+        Ideal.mul_mem_left _ _ hy, by simp [hyx, Algebra.TensorProduct.tmul_mul_tmul]⟩
 
 /-- The zeroth neighbourhood is `F` itself. -/
 @[simp]

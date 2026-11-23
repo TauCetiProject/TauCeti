@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.Kaehler.FiniteTarget
 public import TauCeti.RingTheory.Huber.Kaehler.FiniteType
-public import TauCeti.RingTheory.Huber.Kaehler.Lift
 
 /-!
 # Universal property of continuous differentials
 
-For `A → B` topologically of finite type into complete Hausdorff Huber `B` of noetherian type, this
-file combines `ContinuousKaehlerDifferential.lift` and `liftOfFinite` with `continuous_D` and
-`linearMap_ext` to give uniqueness (`hom_ext`, `existsUnique_lift`),
-`continuousLinearMapEquivDerivation`, and uniqueness for `liftOfFinite`.
+When `B ⊗̂_A B` is of noetherian type, combining `ContinuousKaehlerDifferential.lift` and
+`liftOfFinite` with `hom_ext` and `linearMap_ext` yields uniqueness (`existsUnique_lift`,
+`lift_compDer_D`, `liftOfFinite_compDer_D`). When `A → B` is topologically of finite type into
+complete Hausdorff Huber `B` of noetherian type, `continuous_D` gives the `B`-linear equivalence
+`continuousLinearMapEquivDerivation : (Ωᶜ[B⁄A] →L[B] M) ≃ₗ[B] continuousDerivations A B M`.
 
 ## References
 
@@ -26,83 +27,111 @@ public section
 
 namespace TauCeti.Huber.ContinuousKaehlerDifferential
 
-section FiniteType
+open CompletedTensor
 
-variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
-  [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-  [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
-  [CompleteSpace B] [T0Space B] [IsNoetherianType B] [IsAdicHom (algebraMap A B)]
+/-- The `B`-submodule of continuous `A`-derivations `B → M`. -/
+def continuousDerivations (A B M : Type*) [CommRing A] [CommRing B] [Algebra A B]
+    [TopologicalSpace B] [AddCommGroup M] [TopologicalSpace M] [ContinuousAdd M]
+    [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousConstSMul B M] :
+    Submodule B (Derivation A B M) where
+  carrier := {δ | Continuous δ}
+  add_mem' h₁ h₂ := h₁.add h₂
+  zero_mem' := continuous_zero
+  smul_mem' _ _ h := h.const_smul _
 
-/-- **Uniqueness for continuous linear maps out of `Ωᶜ[B⁄A]`** (Huber 1996, §1.6, Definition 1.6.1
-and (1.6.2)(ii)): two continuous `B`-linear maps out of `Ωᶜ[B⁄A]` agreeing on `D A B` are equal. -/
-theorem hom_ext (h : IsTopologicallyFiniteType (algebraMap A B))
-    {M : Type*} [AddCommGroup M] [TopologicalSpace M] [Module B M]
-    {f₁ f₂ : ContinuousKaehlerDifferential A B →L[B] M}
-    (heq : ∀ b, f₁ (D A B b) = f₂ (D A B b)) : f₁ = f₂ :=
-  ContinuousLinearMap.ext fun ω ↦
-    have := CompletedTensor.isNoetherianType_of_isTopologicallyFiniteType (B := B) h
-    DFunLike.congr_fun (linearMap_ext heq) ω
+/-- An `A`-derivation belongs to `continuousDerivations A B M` iff it is continuous. -/
+@[simp] theorem mem_continuousDerivations {A B M : Type*} [CommRing A] [CommRing B] [Algebra A B]
+    [TopologicalSpace B] [AddCommGroup M] [TopologicalSpace M] [ContinuousAdd M]
+    [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousConstSMul B M]
+    {δ : Derivation A B M} : δ ∈ continuousDerivations A B M ↔ Continuous δ :=
+  Iff.rfl
 
-section UniversalEquiv
+section NoetherianDiagonal
+
+variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [TopologicalSpace A]
+  [IsTopologicalRing A] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
+  [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
+  [IsNoetherianType (CompletedTensor A B B)]
+
+section UniversalLift
 
 variable {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
   [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
   [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
 
 /-- **Universal property of `Ωᶜ[B⁄A]`** (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)):
-every continuous `A`-derivation `δ : B → M` factors through a unique `Ωᶜ[B⁄A] →L[B] M`. -/
-theorem existsUnique_lift (h : IsTopologicallyFiniteType (algebraMap A B))
-    (δ : Derivation A B M) (hδ : Continuous δ) :
+when `B ⊗̂_A B` is of noetherian type, every continuous `A`-derivation `δ : B → M` factors
+through a unique `Ωᶜ[B⁄A] →L[B] M`. -/
+theorem existsUnique_lift (δ : Derivation A B M) (hδ : Continuous δ) :
     ∃! f : ContinuousKaehlerDifferential A B →L[B] M, ∀ b, f (D A B b) = δ b :=
-  ⟨lift δ hδ, lift_D δ hδ, fun _ hf ↦ hom_ext h fun b ↦ (hf b).trans (lift_D δ hδ b).symm⟩
+  ⟨lift δ hδ, lift_D δ hδ,
+    fun _ hf ↦ hom_ext fun b ↦ (hf b).trans (lift_D δ hδ b).symm⟩
 
-/-- **Equivalence between continuous `B`-linear maps `Ωᶜ[B⁄A] →L[B] M` and continuous
-`A`-derivations `B → M`** (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)). -/
+/-- Lifting the derivation `f ∘ d` recovers the continuous `B`-linear map `f`. -/
+@[simp] theorem lift_compDer_D (f : ContinuousKaehlerDifferential A B →L[B] M)
+    (hf : Continuous (f.toLinearMap.compDer (D A B))) :
+    lift (f.toLinearMap.compDer (D A B)) hf = f :=
+  hom_ext fun b ↦ lift_D _ _ b
+
+end UniversalLift
+
+/-- Lifting `f ∘ d` into a finite `B`-module carrying its natural topology recovers `f`, when
+`B` and `B ⊗̂_A B` are of noetherian type. -/
+@[simp] theorem liftOfFinite_compDer_D [IsHuberRing B] [IsNoetherianType B]
+    {N : Type*} [AddCommGroup N] [Module A N] [Module B N] [IsScalarTower A B N]
+    [Module.Finite B N] [TopologicalSpace N] [IsModuleTopology B N]
+    (f : ContinuousKaehlerDifferential A B →ₗ[B] N) (hf : Continuous (f.compDer (D A B))) :
+    liftOfFinite (f.compDer (D A B)) hf = f :=
+  linearMap_ext fun b ↦ liftOfFinite_D _ _ b
+
+end NoetherianDiagonal
+
+section UniversalEquiv
+
+variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+  [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
+  [CompleteSpace B] [T0Space B] [IsNoetherianType B] [IsAdicHom (algebraMap A B)]
+  {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
+  [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
+  [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
+
+/-- **`B`-linear equivalence between continuous `B`-linear maps `Ωᶜ[B⁄A] →L[B] M` and
+continuous `A`-derivations `B → M`** (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)). -/
 noncomputable def continuousLinearMapEquivDerivation
     (h : IsTopologicallyFiniteType (algebraMap A B)) :
-    (ContinuousKaehlerDifferential A B →L[B] M) ≃ {δ : Derivation A B M // Continuous δ} where
-  toFun f := ⟨f.toLinearMap.compDer (D A B), f.continuous.comp (continuous_D h)⟩
-  invFun δ := lift δ.val δ.property
-  left_inv _ := hom_ext h fun b ↦ lift_D _ _ b
-  right_inv δ := Subtype.ext (compDer_lift_D δ.val δ.property)
+    (ContinuousKaehlerDifferential A B →L[B] M) ≃ₗ[B] continuousDerivations A B M where
+  toFun f := ⟨f.toLinearMap.compDer (D A B),
+    mem_continuousDerivations.mpr (f.continuous.comp (continuous_D h))⟩
+  map_add' _ _ := Subtype.ext <| by ext b; simp
+  map_smul' _ _ := Subtype.ext <| by ext b; simp
+  invFun δ := lift δ.val (mem_continuousDerivations.mp δ.property)
+  left_inv _ :=
+    have := isNoetherianType_of_isTopologicallyFiniteType (B := B) h
+    hom_ext fun b ↦ lift_D _ _ b
+  right_inv δ := Subtype.ext (compDer_lift_D δ.val (mem_continuousDerivations.mp δ.property))
 
 /-- The underlying derivation of `continuousLinearMapEquivDerivation h f` is `f ∘ d`. -/
 @[simp] theorem continuousLinearMapEquivDerivation_apply_coe
     (h : IsTopologicallyFiniteType (algebraMap A B))
     (f : ContinuousKaehlerDifferential A B →L[B] M) :
-    ((continuousLinearMapEquivDerivation h f : {δ : Derivation A B M // Continuous δ}) :
+    ((continuousLinearMapEquivDerivation h f : continuousDerivations A B M) :
       Derivation A B M) = f.toLinearMap.compDer (D A B) := (rfl)
 
 /-- The inverse of `continuousLinearMapEquivDerivation` is `lift`. -/
 @[simp] theorem continuousLinearMapEquivDerivation_symm_apply
     (h : IsTopologicallyFiniteType (algebraMap A B))
-    (δ : {δ : Derivation A B M // Continuous δ}) :
-    (continuousLinearMapEquivDerivation h).symm δ = lift δ.val δ.property := (rfl)
+    (δ : continuousDerivations A B M) :
+    (continuousLinearMapEquivDerivation h).symm δ =
+      lift δ.val (mem_continuousDerivations.mp δ.property) := (rfl)
 
 /-- `continuousLinearMapEquivDerivation` sends `lift δ hδ` back to `⟨δ, hδ⟩`. -/
 @[simp] theorem continuousLinearMapEquivDerivation_lift
     (h : IsTopologicallyFiniteType (algebraMap A B)) (δ : Derivation A B M) (hδ : Continuous δ) :
-    continuousLinearMapEquivDerivation h (lift δ hδ) = ⟨δ, hδ⟩ :=
+    continuousLinearMapEquivDerivation h (lift δ hδ) =
+      ⟨δ, mem_continuousDerivations.mpr hδ⟩ :=
   Subtype.ext (compDer_lift_D δ hδ)
 
-/-- Lifting the derivation `f ∘ d` recovers the continuous `B`-linear map `f`. -/
-@[simp] theorem lift_compDer_D (h : IsTopologicallyFiniteType (algebraMap A B))
-    (f : ContinuousKaehlerDifferential A B →L[B] M)
-    (hf : Continuous (f.toLinearMap.compDer (D A B))) :
-    lift (f.toLinearMap.compDer (D A B)) hf = f := hom_ext h fun b ↦ lift_D _ _ b
-
 end UniversalEquiv
-
-/-- Lifting `f ∘ d` into a finite `B`-module carrying its natural topology recovers `f`, when
-`A` is a Huber ring and `A → B` is topologically of finite type. -/
-@[simp] theorem liftOfFinite_compDer_D (h : IsTopologicallyFiniteType (algebraMap A B))
-    {N : Type*} [AddCommGroup N] [Module A N] [Module B N] [IsScalarTower A B N]
-    [Module.Finite B N] [TopologicalSpace N] [IsModuleTopology B N]
-    (f : ContinuousKaehlerDifferential A B →ₗ[B] N) (hf : Continuous (f.compDer (D A B))) :
-    liftOfFinite (f.compDer (D A B)) hf = f :=
-  have := CompletedTensor.isNoetherianType_of_isTopologicallyFiniteType (B := B) h
-  linearMap_ext fun b ↦ liftOfFinite_D _ _ b
-
-end FiniteType
 
 end TauCeti.Huber.ContinuousKaehlerDifferential

@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Huber.Kaehler.Basic
 public import TauCeti.RingTheory.Huber.TensorProduct.Map
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 
+import TauCeti.RingTheory.Huber.TensorProduct.Quotient.Basic
+
 /-!
 # Change of rings for continuous differentials
 
@@ -238,65 +240,6 @@ theorem mapTower_eq_mapSemilinear :
 @[simp] theorem mapTower_D (c : C) : mapTower A B C (D A C c) = D B C c :=
   mapSemilinear_D _ _ _ continuous_id c
 
-private theorem tmul_mem_idealImage_of_left_mem_pow {A C : Type*} [CommRing A] [CommRing C]
-    [Algebra A C] [TopologicalSpace A] [TopologicalSpace C] (D : TensorDatum A C C)
-    {k : ℕ} {b : D.left.ringOfDefinition} (hb : b ∈ D.left.idealOfDefinition ^ k)
-    {c : C} (hc : c ∈ D.right.ringOfDefinition) : (b : C) ⊗ₜ[A] c ∈ D.idealImage k := by
-  rw [← D.map_idealOfDefinition_left, ← Ideal.map_pow] at hb
-  induction hb using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨a, ha, rfl⟩ := hy
-    refine D.mem_idealImage.mpr ⟨D.toRingOfDefinition a *
-      ⟨1 ⊗ₜ[A] c, D.one_tmul_mem_ringOfDefinition hc⟩, ?_, by
-        simp [TensorDatum.coe_toRingOfDefinition, Algebra.TensorProduct.algebraMap_apply]⟩
-    rw [D.idealOfDefinition_def, ← Ideal.map_pow]
-    exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ha)
-  | zero => simp
-  | add x y _ _ hx hy => simpa [add_tmul] using (D.idealImage k).add_mem hx hy
-  | smul r x _ hx =>
-    obtain ⟨y, hy, hyx⟩ := D.mem_idealImage.mp hx
-    refine D.mem_idealImage.mpr
-      ⟨⟨(r : C) ⊗ₜ[A] 1, D.tmul_one_mem_ringOfDefinition r.property⟩ * y,
-        Ideal.mul_mem_left _ _ hy, by simp [hyx, Algebra.TensorProduct.tmul_mul_tmul]⟩
-
-omit [IsScalarTower A B C] [IsUniformAddGroup C] [CompleteSpace C] [T0Space C] in
-private theorem isOpenQuotientMap_mapRingHom_mapTower
-    (h : (RingHom.id C).comp (algebraMap A C) = (algebraMap B C).comp (algebraMap A B)) :
-    letI := tensorTopology A C C; letI := tensorTopology B C C
-    IsOpenQuotientMap (Algebra.TensorProduct.mapRingHom (algebraMap A B)
-      (RingHom.id C) (RingHom.id C) h h) := by
-  let := tensorTopology A C C; let := isTopologicalRing_tensorTopology A C C
-  let := tensorTopology B C C; let := isTopologicalRing_tensorTopology B C C
-  have := isHuberRing_tensorTopology B C C
-  set f := Algebra.TensorProduct.mapRingHom (algebraMap A B) (RingHom.id C) (RingHom.id C) h h
-  refine ⟨fun y ↦ ?_, (RingHom.continuous_tensorTopology_iff f).mpr ⟨?_, ?_⟩, ?_⟩
-  · induction y using TensorProduct.inductionOn with
-    | tmul c₁ c₂ => exact ⟨c₁ ⊗ₜ[A] c₂, by simp [f]⟩
-    | add x y hx hy =>
-      obtain ⟨x', rfl⟩ := hx; obtain ⟨y', rfl⟩ := hy; exact ⟨x' + y', map_add f x' y'⟩
-  · convert (isAdicHom_includeLeft_tensorTopology B C C).continuous; ext c; simp [f]
-  · convert (isAdicHom_includeRight_tensorTopology B C C).continuous; ext c; simp [f]
-  · rw [IsTopologicalAddGroup.isOpenMap_iff_nhds_zero]
-    intro s hs
-    obtain ⟨D⟩ := TensorDatum.nonempty A C C; obtain ⟨D'⟩ := TensorDatum.nonempty B C C
-    obtain ⟨k, -, hk⟩ := (hasBasis_tensorTopology A C C D).mem_iff.mp hs
-    obtain ⟨n, -, hn⟩ := D'.left.hasBasis_nhds_zero.mem_iff.mp
-      ((D.left.isOpen_idealImage k).mem_nhds (D.left.idealImage k).zero_mem)
-    obtain ⟨m, -, hm⟩ := D'.right.hasBasis_nhds_zero.mem_iff.mp
-      (D.right.isOpen_ringOfDefinition.mem_nhds (zero_mem _))
-    refine Filter.mem_of_superset
-      ((hasBasis_tensorTopology B C C D').mem_of_mem (i := n + m) trivial) fun x hx ↦ ?_
-    have hle : D'.idealImage (n + m) ≤
-        ((D.idealImage k).map f.toAddMonoidHom).comap (RingHom.id _).toAddMonoidHom := by
-      refine D'.map_idealImage_le (RingHom.id _) _ n m fun c₁ hc₁ c₂ hc₂ ↦ ?_
-      obtain ⟨y₁, hy₁, hy₁c⟩ := (D.left.mem_idealImage k).mp
-        (hn ((D'.left.mem_idealImage n).mpr ⟨c₁, hc₁, rfl⟩))
-      have hy₂ : (c₂ : C) ∈ D.right.ringOfDefinition :=
-        hm ((D'.right.mem_idealImage m).mpr ⟨c₂, hc₂, rfl⟩)
-      exact ⟨(c₁ : C) ⊗ₜ[A] (c₂ : C),
-        by simpa [hy₁c] using tmul_mem_idealImage_of_left_mem_pow D hy₁ hy₂, by simp [f]⟩
-    obtain ⟨y, hy, rfl⟩ := AddSubgroup.mem_map.mp (hle hx); exact hk hy
-
 /-- **Surjectivity in the first fundamental sequence** (Huber 1996, Proposition 1.6.3(i)): in a
 tower `A → B → C` with `A → C` and `B → C` adic into complete Hausdorff nonarchimedean `C`,
 `Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is surjective, with no finite-type, noetherian, or Huber hypotheses. -/
@@ -305,16 +248,14 @@ theorem mapTower_surjective : Function.Surjective (mapTower A B C) := by
     ext a; exact IsScalarTower.algebraMap_apply A B C a
   let F := CompletedTensor.map (algebraMap A B) (RingHom.id C) (RingHom.id C)
     h h continuous_id continuous_id
-  have hF := (CompletedTensor.isOpenQuotientMap_of_comp_toCompletion F
-    (CompletedTensor.continuous_map ..) _ (isOpenQuotientMap_mapRingHom_mapTower A B C h)
-    (CompletedTensor.map_comp_toCompletion ..)).surjective
+  have hF := (CompletedTensor.isOpenQuotientMap_map_base (algebraMap A B) h h).surjective
   intro ω
   obtain ⟨⟨y, hy⟩, rfl⟩ := fromIdeal_surjective B C ω
   obtain ⟨x, hxF⟩ := hF y
   have hx : x ∈ ideal A C := (mem_ideal_iff).mpr <| by
     simpa [F, hxF, mem_ideal_iff.mp hy] using
       (CompletedTensor.mulRingHom_map (algebraMap A B) (RingHom.id C) h continuous_id x).symm
-  exact ⟨fromIdeal A C ⟨x, hx⟩, by simp [F, hxF]⟩
+  exact ⟨fromIdeal A C ⟨x, hx⟩, by simp [hxF]⟩
 
 end MapTower
 

@@ -72,19 +72,21 @@ private noncomputable def baseChangeDerivation
   let dB := (TensorProduct.mk B B' (ContinuousKaehlerDifferential A B) 1).compDer (D A B)
   have hdB : Continuous dB := (IsModuleTopology.continuous_of_linearMap
     (TensorProduct.mk B B' (ContinuousKaehlerDifferential A B) 1)).comp (continuous_D hAB)
-  have hinl : (algebraMap B' B').comp (inl A B A') = algebraMap B B' := by simp [B']
-  have hinr : (algebraMap B' B').comp (inr A B A') = algebraMap A' B' := by simp [B']
-  let dA := CompletedTensor.liftDerivation (R := B') dB 0 hdB continuous_const continuous_id
-    hinl hinr
-  have hdA_inr (a : A') : dA (inr A B A' a) = 0 := liftDerivation_inr (R := B') dB 0 hdB
-    continuous_const continuous_id hinl hinr a
+  haveI : ContinuousSMul B' M := IsModuleTopology.toContinuousSMul B' M
+  have hinl (b : B) (m : M) : inl A B A' b • m = b • m := by
+    rw [← algebraMap_leftAlgebra, algebraMap_smul]
+  have hinr (a' : A') (m : M) : inr A B A' a' • m = a' • m := by
+    rw [← algebraMap_rightAlgebra, algebraMap_smul]
+  haveI : IsScalarTower A B' M := ⟨fun a t m ↦ by
+    rw [Algebra.smul_def, mul_smul, ← inl_algebraMap, hinl, algebraMap_smul]⟩
+  let dA := CompletedTensor.liftDerivation hinl hinr dB 0 hdB continuous_const
+  have hdA_inr (a : A') : dA (inr A B A' a) = 0 := liftDerivation_inr ..
   let δ : Derivation A' B' M := Derivation.mk'
     { toFun := dA, map_add' := dA.map_add, map_smul' a' z := by
         rw [RingHom.id_apply, Algebra.smul_def, dA.leibniz, algebraMap_smul,
           algebraMap_rightAlgebra, hdA_inr, smul_zero, add_zero] }
     dA.leibniz
-  exact ⟨δ, continuous_liftDerivation (R := B') dB 0 hdB continuous_const continuous_id hinl hinr,
-    fun b ↦ liftDerivation_inl (R := B') dB 0 hdB continuous_const continuous_id hinl hinr b⟩
+  exact ⟨δ, continuous_liftDerivation .., fun b ↦ liftDerivation_inl ..⟩
 
 private noncomputable def baseChangeFromTensor :
     CompletedTensor A B A' ⊗[B] ContinuousKaehlerDifferential A B →ₗ[CompletedTensor A B A']
@@ -109,7 +111,8 @@ private noncomputable def baseChangeToTensorAux (hAB : IsTopologicallyFiniteType
 private theorem baseChangeToTensor_comp_fromTensor
     (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
     (baseChangeToTensorAux (A' := A') hAB).val.comp baseChangeFromTensor = LinearMap.id :=
-  linearMap_tensor_ext hAB fun b ↦ by
+  have := CompletedTensor.isNoetherianType_of_isTopologicallyFiniteType (B := B) hAB
+  linearMap_tensor_ext fun b ↦ by
     simp [baseChangeFromTensor, (baseChangeToTensorAux (A' := A') hAB).property b]
 
 private theorem baseChangeFromTensor_comp_toTensor
