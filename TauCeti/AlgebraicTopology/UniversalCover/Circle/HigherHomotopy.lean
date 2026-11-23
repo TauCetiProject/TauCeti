@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Higher homotopy groups of the circle

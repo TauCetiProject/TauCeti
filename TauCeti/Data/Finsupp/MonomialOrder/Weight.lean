@@ -136,8 +136,8 @@ theorem exists_pos_weight_lt_iff_lt {F : Set (σ →₀ ℕ)} (hF : F.Finite) :
       ∀ a ∈ F, ∀ b ∈ F, (a ≺[m] b ↔ weight w a < weight w b) := by
   have := hF.to_subtype
   obtain ⟨w, hw, hlt⟩ := m.exists_pos_weight_lt
-    (a := fun p : {p : F × F // (p.1 : σ →₀ ℕ) ≺[m] p.2} ↦ p.1.1)
-    (b := fun p ↦ p.1.2) fun p ↦ p.2
+    (a := fun p : {p : F × F // (p.1 : σ →₀ ℕ) ≺[m] p.2} ↦ p.val.1)
+    (b := fun p ↦ p.val.2) fun p ↦ p.property
   refine ⟨w, hw, fun a ha b hb ↦ ⟨fun hab ↦ hlt ⟨(⟨a, ha⟩, ⟨b, hb⟩), hab⟩, fun hab ↦ ?_⟩⟩
   rcases lt_trichotomy (m.toSyn a) (m.toSyn b) with h | h | h
   · exact h

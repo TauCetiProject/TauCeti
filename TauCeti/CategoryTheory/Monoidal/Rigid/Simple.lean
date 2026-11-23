@@ -7,7 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
+public import TauCeti.CategoryTheory.Semisimple.Basic
 
 /-!
 # Duals of simple objects
@@ -27,10 +29,15 @@ hence a monomorphism out of the simple unit, and whiskering by `X` keeps it a mo
 simple unit this fails: in a multifusion category two distinct simple summands of the unit have
 zero tensor product.
 
-For a split simple member of an exact pairing, Frobenius reciprocity and Schur's lemma show
+If a member of an exact pairing has scalar endomorphisms over a commutative semiring `R`
+(the structure map `algebraMap R (End _)` is surjective, as for a simple object with
+finite-dimensional endomorphisms over an algebraically closed field), Frobenius reciprocity shows
 that every morphism from the paired tensor product to the unit is a scalar multiple of the
-evaluation. Both choices of the simple member are available; they control the two categorical
-trace pairings.
+evaluation. Both choices of the member are available; they control the two categorical trace
+pairings. In a finite semisimple category, a nonzero morphism `η : 𝟙_ C ⟶ Y ⊗ X` is split on some
+simple summand of the unit, and the retraction there is a scalar multiple of the evaluation, so
+composing `η` with the evaluation gives a nonzero endomorphism of the unit. The unit need not be
+simple; when it is, this endomorphism is invertible by Schur's lemma.
 
 ## References
 
@@ -95,15 +102,15 @@ theorem not_isZero_tensorObj [Preadditive C] [HasKernels C] [MonoidalPreadditive
   rw [IsZero.iff_id_eq_zero, ← cancel_mono (X ◁ η_ Y Yᘁ)]
   exact h'.eq_of_tgt _ _
 
-/-- If the right member of an exact pairing is split simple, every morphism from the
-paired tensor product to the unit is a scalar multiple of the evaluation. -/
-theorem hom_tensorUnit_eq_smul_evaluation_of_simple_right (k : Type*) [Field k] [IsAlgClosed k]
-    [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
-    {X Y : C} [ExactPairing X Y] [Simple Y] [FiniteDimensional k (Y ⟶ Y)]
-    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y := by
-  let e := (tensorRightHomLinearEquiv k Y X Y (𝟙_ C)).trans
-    (Linear.homCongr k (Iso.refl Y) (λ_ Y))
-  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (e f)
+/-- If the right member `Y` of an exact pairing has scalar endomorphisms over `R`, every morphism
+from the paired tensor product to the unit is a scalar multiple of the evaluation. -/
+theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_right {R : Type*} [CommSemiring R]
+    [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+    {X Y : C} [ExactPairing X Y] (hY : Function.Surjective (algebraMap R (End Y)))
+    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : R, f = c • ε_ X Y := by
+  let e := (tensorRightHomLinearEquiv R Y X Y (𝟙_ C)).trans
+    (Linear.homCongr R (Iso.refl Y) (λ_ Y))
+  obtain ⟨c, hc⟩ := End.exists_smul_id_eq_of_surjective hY (e f)
   refine ⟨c, e.injective ?_⟩
   rw [map_smul, ← hc]
   congr 1
@@ -112,15 +119,15 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_simple_right (k : Type*) [Field k] 
     Category.id_comp, tensorRightHomLinearEquiv_apply]
   simp [tensorRightHomEquiv, ExactPairing.coevaluation_evaluation]
 
-/-- If the left member of an exact pairing is split simple, every morphism from the
-paired tensor product to the unit is a scalar multiple of the evaluation. -/
-theorem hom_tensorUnit_eq_smul_evaluation_of_simple_left (k : Type*) [Field k] [IsAlgClosed k]
-    [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
-    {X Y : C} [ExactPairing X Y] [Simple X] [FiniteDimensional k (X ⟶ X)]
-    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y := by
-  let e := (tensorLeftHomLinearEquiv k X X Y (𝟙_ C)).trans
-    (Linear.homCongr k (Iso.refl X) (ρ_ X))
-  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (e f)
+/-- If the left member `X` of an exact pairing has scalar endomorphisms over `R`, every morphism
+from the paired tensor product to the unit is a scalar multiple of the evaluation. -/
+theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_left {R : Type*} [CommSemiring R]
+    [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+    {X Y : C} [ExactPairing X Y] (hX : Function.Surjective (algebraMap R (End X)))
+    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : R, f = c • ε_ X Y := by
+  let e := (tensorLeftHomLinearEquiv R X X Y (𝟙_ C)).trans
+    (Linear.homCongr R (Iso.refl X) (ρ_ X))
+  obtain ⟨c, hc⟩ := End.exists_smul_id_eq_of_surjective hX (e f)
   refine ⟨c, e.injective ?_⟩
   rw [map_smul, ← hc]
   congr 1
@@ -128,5 +135,44 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_simple_left (k : Type*) [Field k] [
   simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
     Category.id_comp, tensorLeftHomLinearEquiv_apply]
   simp [tensorLeftHomEquiv, ExactPairing.evaluation_coevaluation]
+
+section FiniteSemisimple
+
+variable {R : Type*} [CommSemiring R] [Abelian C] [MonoidalPreadditive C] [Linear R C]
+  [MonoidalLinear R C] [IsFiniteSemisimpleCategory C]
+
+omit [MonoidalPreadditive C] [MonoidalLinear R C] in
+/-- In a finite semisimple category, if every morphism `Z ⟶ 𝟙_ C` is a scalar multiple of `g`,
+then `g` closes up every nonzero `η : 𝟙_ C ⟶ Z` to a nonzero endomorphism of the unit. -/
+private theorem comp_ne_zero_of_forall_eq_smul {Z : C} {g : Z ⟶ 𝟙_ C}
+    (hg : ∀ f : Z ⟶ 𝟙_ C, ∃ c : R, f = c • g) {η : 𝟙_ C ⟶ Z} (hη : η ≠ 0) : η ≫ g ≠ 0 := by
+  -- Some nonzero `a : S ⟶ 𝟙_ C` out of a simple object makes `a ≫ η` split.
+  obtain ⟨S, _, a, ha, _⟩ := exists_simple_isSplitMono_comp_of_ne_zero hη
+  -- Its retraction, followed by `a`, is a multiple of `g`; so `η ≫ g = 0` would kill `a`.
+  obtain ⟨c, hc⟩ := hg (retraction (a ≫ η) ≫ a)
+  intro h
+  refine ha ?_
+  rw [← IsSplitMono.id_assoc (a ≫ η) a, hc, Category.assoc, Linear.comp_smul, h, smul_zero,
+    comp_zero]
+
+/-- **Schur's lemma for an exact pairing with right member having scalar endomorphisms**: in a
+finite semisimple category, if `Y` has scalar endomorphisms over `R`, every nonzero
+`η : 𝟙_ C ⟶ Y ⊗ X` closes up with the evaluation of an exact pairing of `X` and `Y` to a nonzero
+endomorphism of the unit. The unit need not be simple. -/
+theorem comp_evaluation_ne_zero_of_surjective_right {X Y : C} [ExactPairing X Y]
+    (hY : Function.Surjective (algebraMap R (End Y))) {η : 𝟙_ C ⟶ Y ⊗ X} (hη : η ≠ 0) :
+    η ≫ ε_ X Y ≠ 0 :=
+  comp_ne_zero_of_forall_eq_smul (hom_tensorUnit_eq_smul_evaluation_of_surjective_right hY) hη
+
+/-- **Schur's lemma for an exact pairing with left member having scalar endomorphisms**: in a
+finite semisimple category, if `X` has scalar endomorphisms over `R`, every nonzero
+`η : 𝟙_ C ⟶ Y ⊗ X` closes up with the evaluation of an exact pairing of `X` and `Y` to a nonzero
+endomorphism of the unit. The unit need not be simple. -/
+theorem comp_evaluation_ne_zero_of_surjective_left {X Y : C} [ExactPairing X Y]
+    (hX : Function.Surjective (algebraMap R (End X))) {η : 𝟙_ C ⟶ Y ⊗ X} (hη : η ≠ 0) :
+    η ≫ ε_ X Y ≠ 0 :=
+  comp_ne_zero_of_forall_eq_smul (hom_tensorUnit_eq_smul_evaluation_of_surjective_left hX) hη
+
+end FiniteSemisimple
 
 end TauCeti

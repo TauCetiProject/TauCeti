@@ -89,7 +89,7 @@ theorem _root_.ContinuousLinearMap.isClosed_range_of_finite_coker [CompleteSpace
     constructor
     · intro hmem
       have hb : (p.2 : F) ∈ R := by simpa using R.sub_mem hmem hTp
-      have hbot : (p.2 : F) ∈ R ⊓ N := ⟨hb, p.2.2⟩
+      have hbot : (p.2 : F) ∈ R ⊓ N := ⟨hb, p.2.property⟩
       rw [hN.inf_eq_bot] at hbot
       exact Submodule.coe_eq_zero.mp (by simpa using hbot)
     · intro h

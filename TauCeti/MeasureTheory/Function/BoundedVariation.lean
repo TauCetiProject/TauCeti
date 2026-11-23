@@ -48,7 +48,7 @@ theorem eVariationOn_Icc [OrderClosedTopology α] {a b : α}
     Measurable (fun ω => _root_.eVariationOn (fun t => X t ω) (Icc a b)) := by
   let : LocallyCompactSpace (Icc a b) := isClosed_Icc.locallyCompactSpace
   have hm := Measurable.eVariationOn (X := fun t : Icc a b => X t)
-    (fun t => hX t t.2) (fun ω => (hc ω).domRestrict) univ
+    (fun t => hX t t.property) (fun ω => (hc ω).domRestrict) univ
   have he (ω : Ω) :
       _root_.eVariationOn (fun t : Icc a b => X t ω) univ =
         _root_.eVariationOn (fun t => X t ω) (Icc a b) := by

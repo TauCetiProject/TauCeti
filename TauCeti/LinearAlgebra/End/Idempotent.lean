@@ -1,0 +1,84 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Module.LinearMap.End
+public import Mathlib.Algebra.Module.Submodule.Range
+public import Mathlib.Algebra.Ring.Idempotent
+public import Mathlib.LinearAlgebra.Projection
+
+/-!
+# Ranges of idempotent endomorphisms
+
+Two idempotent endomorphisms `P` and `Q` of a module with `P * Q = 0` and `Q * P = 0` split the
+range of their sum: the range of `P + Q` is the sum of the ranges of `P` and `Q`, and these ranges
+are independent. This is how ranks of spectral projections add over disjoint parts of the
+spectrum. An idempotent corestricted to its range is the identity on that range.
+
+## Main results
+
+* `IsIdempotentElem.disjoint_range_of_mul_eq_zero`: if `P` is idempotent and `P * Q = 0`, the
+  ranges of `P` and `Q` meet only in `0`.
+* `IsIdempotentElem.range_add_of_mul_eq_zero`: if `P` and `Q` are idempotent with `Q * P = 0` and
+  `P * Q = 0`, the range of `P + Q` is the sum of their ranges.
+* `LinearMap.IsIdempotentElem.rangeRestrict_coe`,
+  `LinearMap.IsIdempotentElem.rangeRestrict_apply_self`: an idempotent corestricted to its range
+  fixes its range and absorbs itself, `p.rangeRestrict (p y) = p.rangeRestrict y`.
+-/
+
+public section
+
+namespace IsIdempotentElem
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {P Q : Module.End R M}
+
+/-- If `P` is idempotent and `P * Q = 0`, the ranges of `P` and `Q` meet only in `0`. -/
+theorem disjoint_range_of_mul_eq_zero (hP : IsIdempotentElem P) (hPQ : P * Q = 0) :
+    Disjoint (LinearMap.range P) (LinearMap.range Q) := by
+  rw [Submodule.disjoint_def]
+  rintro _ ⟨v, rfl⟩ ⟨w, hw⟩
+  have h₁ : P (Q w) = 0 := congr($hPQ w)
+  have h₂ : P (P v) = P v := congr($hP v)
+  rw [← h₂, ← hw, h₁]
+
+/-- If `P` and `Q` are idempotent with `Q * P = 0` and `P * Q = 0`, the range of `P + Q` is the
+sum of the ranges of `P` and `Q`. -/
+theorem range_add_of_mul_eq_zero (hP : IsIdempotentElem P) (hQ : IsIdempotentElem Q)
+    (hQP : Q * P = 0) (hPQ : P * Q = 0) :
+    LinearMap.range (P + Q) = LinearMap.range P ⊔ LinearMap.range Q := by
+  refine le_antisymm ?_ (sup_le ?_ ?_)
+  · rintro _ ⟨v, rfl⟩
+    exact Submodule.add_mem_sup ⟨v, rfl⟩ ⟨v, rfl⟩
+  · rintro _ ⟨v, rfl⟩
+    refine ⟨P v, ?_⟩
+    have h₁ : P (P v) = P v := congr($hP v)
+    have h₂ : Q (P v) = 0 := congr($hQP v)
+    simp [h₁, h₂]
+  · rintro _ ⟨v, rfl⟩
+    refine ⟨Q v, ?_⟩
+    have h₁ : Q (Q v) = Q v := congr($hQ v)
+    have h₂ : P (Q v) = 0 := congr($hPQ v)
+    simp [h₁, h₂]
+
+end IsIdempotentElem
+
+namespace LinearMap.IsIdempotentElem
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {p : M →ₗ[R] M}
+
+/-- An idempotent `p` corestricted to its range fixes the elements of its range. -/
+theorem rangeRestrict_coe (hp : IsIdempotentElem p) (y : LinearMap.range p) :
+    p.rangeRestrict y = y :=
+  -- `IsProj.codRestrict` of `p` onto its range is `p.rangeRestrict` up to proof irrelevance.
+  (isProj_range p hp).codRestrict_apply_cod y
+
+/-- An idempotent `p` corestricted to its range does not change when precomposed with `p`. -/
+theorem rangeRestrict_apply_self (hp : IsIdempotentElem p) (y : M) :
+    p.rangeRestrict (p y) = p.rangeRestrict y := by
+  ext
+  rw [LinearMap.codRestrict_apply, LinearMap.codRestrict_apply, ← mul_apply_eq_comp, hp.eq]
+
+end LinearMap.IsIdempotentElem

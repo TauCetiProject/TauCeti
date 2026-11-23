@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
+public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 public import TauCeti.MeasureTheory.Measure.MvPolynomialZeroLocus
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
@@ -14,17 +14,21 @@ import TauCeti.MeasureTheory.Constructions.Pi
 /-!
 # Almost-sure rank of matrices with a density
 
-A rectangular real matrix sampled from a law absolutely continuous with respect to product
-Lebesgue measure has maximal rank almost surely. More precisely, each fixed square submatrix
-selected by embeddings has nonzero determinant almost surely. The determinant polynomial is
+A rectangular matrix over a measurable integral domain, sampled from a law absolutely continuous
+with respect to product `volume`, has maximal rank almost surely when `volume` on the scalar
+type is sigma-finite and vanishes on singletons (`NullSingletonClass`). More precisely, each
+fixed square submatrix selected by embeddings has nonzero determinant
+almost surely. The determinant polynomial is
 Mathlib's `Matrix.mvPolynomialX`, renamed along the selected coordinates; its zero locus is null
 by `MvPolynomial.volume_setOfPred_eval_eq_zero`.
 
-These results apply to matrices with dependent entries as well as independent ones, provided
-the joint law has a density. Empty row, column, and minor index types are allowed.
+In particular this applies to Lebesgue measure over both `ℝ` and `ℂ`. The results apply to
+dependent entries as well as independent ones, provided the joint law has a density.
+Empty row, column, and minor index types are allowed.
 
-The exact-rank strata are measurable, and the maximal-rank conclusion is available both for
-function-valued arrays and for the bundled `Matrix` type.
+Over a measurable field, rank sublevel sets and exact-rank strata are measurable. The maximal-rank
+conclusion over an integral domain is available both for function-valued arrays and for the
+bundled `Matrix` type.
 -/
 
 public section
@@ -33,21 +37,31 @@ open MeasureTheory
 
 namespace Matrix
 
-/-- The real matrices of rank exactly `k` form a measurable set. -/
-theorem measurableSet_setOfPred_rank_eq {m n : Type*} [Finite m] [Fintype n] (k : ℕ) :
-    MeasurableSet {A : Matrix m n ℝ | A.rank = k} := by
+/-- Matrices over a measurable field of rank at most `k` form a measurable set. -/
+theorem measurableSet_setOfPred_rank_le {m n K : Type*} [Finite m] [Finite n]
+    [Field K] [MeasurableSpace K] [MeasurableSingletonClass K]
+    [MeasurableAdd₂ K] [MeasurableMul₂ K] (k : ℕ) :
+    MeasurableSet {A : Matrix m n K | A.rank ≤ k} := by
   classical
   let _ := Fintype.ofFinite m
+  let _ := Fintype.ofFinite n
+  simp only [Matrix.rank_le_iff_forall_det_submatrix_eq_zero, Set.ofPred_forall]
+  refine MeasurableSet.iInter fun r ↦ MeasurableSet.iInter fun c ↦ ?_
+  have h := (MvPolynomial.measurableSet_setOfPred_eval_eq_zero
+    (Matrix.mvPolynomialX (Fin (k + 1)) (Fin (k + 1)) K).det).preimage
+      (by fun_prop : Measurable (fun A : Matrix m n K ↦ fun q ↦ A (r q.1) (c q.2)))
+  simpa only [Set.preimage_ofPred_eq, Matrix.eval_det_mvPolynomialX, Matrix.submatrix] using h
+
+/-- Matrices over a measurable field of rank exactly `k` form a measurable set. -/
+theorem measurableSet_setOfPred_rank_eq {m n K : Type*} [Finite m] [Finite n]
+    [Field K] [MeasurableSpace K] [MeasurableSingletonClass K]
+    [MeasurableAdd₂ K] [MeasurableMul₂ K] (k : ℕ) :
+    MeasurableSet {A : Matrix m n K | A.rank = k} := by
+  have hle (p : ℕ) := measurableSet_setOfPred_rank_le (m := m) (n := n) (K := K) p
   cases k with
-  | zero =>
-      simpa only [Nat.le_zero] using
-        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := ℝ) 0).measurableSet
+  | zero => simpa only [Nat.le_zero] using hle 0
   | succ k =>
-      have hle :=
-        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := ℝ) (k + 1)).measurableSet
-      have hlt :=
-        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := ℝ) k).measurableSet
-      convert hle.inter hlt.compl using 1
+      convert (hle (k + 1)).inter (hle k).compl using 1
       ext A
       simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_compl_iff]
       omega
@@ -56,24 +70,28 @@ end Matrix
 
 namespace MeasureTheory.Measure
 
-variable {m n l : Type*} [Fintype m] [Fintype n] [Fintype l]
+variable {m n l K : Type*} [Fintype m] [Fintype n] [Fintype l]
+  [CommRing K] [IsDomain K] [MeasureSpace K] [MeasurableSingletonClass K]
+  [MeasurableAdd₂ K] [MeasurableMul₂ K]
+  [SigmaFinite (volume : Measure K)]
+  [NullSingletonClass (volume : Measure K)]
 
-/-- Every fixed square minor of a real matrix with an absolutely continuous law is nonzero
+/-- Every fixed square minor of a matrix with an absolutely continuous law is nonzero
 almost surely. The row and column embeddings need not preserve any ordering. -/
-theorem ae_det_submatrix_ne_zero [DecidableEq l] (μ : Measure (m → n → ℝ))
+theorem ae_det_submatrix_ne_zero [DecidableEq l] (μ : Measure (m → n → K))
     (hμ : μ ≪ volume)
     (r : l ↪ m) (c : l ↪ n) :
     ∀ᵐ A ∂μ, ((Matrix.of A).submatrix r c).det ≠ 0 := by
   classical
   let e : (l × l) ↪ (Σ _ : m, n) :=
     (r.prodMap c).trans (Equiv.sigmaEquivProd m n).symm.toEmbedding
-  let P := MvPolynomial.rename e (Matrix.mvPolynomialX l l ℝ).det
+  let P := MvPolynomial.rename e (Matrix.mvPolynomialX l l K).det
   have hP : P ≠ 0 := by
     intro h
-    apply Matrix.det_mvPolynomialX_ne_zero l ℝ
+    apply Matrix.det_mvPolynomialX_ne_zero l K
     apply MvPolynomial.rename_injective e e.injective
     simpa only [map_zero] using h
-  have hflat : ∀ᵐ x : (Σ _ : m, n) → ℝ ∂volume,
+  have hflat : ∀ᵐ x : (Σ _ : m, n) → K ∂volume,
       ((Matrix.of (Sigma.curry x)).submatrix r c).det ≠ 0 := by
     have hnull := compl_mem_ae_iff.mpr (P.volume_setOfPred_eval_eq_zero hP)
     filter_upwards [hnull] with x hx
@@ -84,13 +102,14 @@ theorem ae_det_submatrix_ne_zero [DecidableEq l] (μ : Measure (m → n → ℝ)
       congr 1
     exact fun hzero => hx (heval.trans hzero)
   have h := (TauCeti.measurePreserving_piCurry (fun _ : m => fun _ : n =>
-    (volume : Measure ℝ))).symm.quasiMeasurePreserving.ae hflat
+    (volume : Measure K))).symm.quasiMeasurePreserving.ae hflat
   filter_upwards [hμ.ae_le h] with A hA
   simpa only [MeasurableEquiv.coe_piCurry_symm, Sigma.curry_uncurry] using hA
 
-/-- A rectangular real matrix whose law is absolutely continuous with respect to product
-Lebesgue measure has maximal rank almost surely, including when one index type is empty. -/
-theorem ae_rank_eq_min (μ : Measure (m → n → ℝ)) (hμ : μ ≪ volume) :
+/-- A rectangular matrix whose law is absolutely continuous with respect to product volume
+has maximal rank almost surely when scalar volume is sigma-finite and null on singletons,
+including when one index type is empty. -/
+theorem ae_rank_eq_min (μ : Measure (m → n → K)) (hμ : μ ≪ volume) :
     ∀ᵐ A ∂μ, (Matrix.of A).rank = min (Fintype.card m) (Fintype.card n) := by
   classical
   let k := min (Fintype.card m) (Fintype.card n)
@@ -103,15 +122,16 @@ theorem ae_rank_eq_min (μ : Measure (m → n → ℝ)) (hμ : μ ≪ volume) :
   simpa only [Matrix.rank_of_det_ne_zero hA, Fintype.card_fin] using
     (Matrix.of A).rank_submatrix_le r c
 
-/-- A real matrix whose law is absolutely continuous with respect to product Lebesgue measure
-has maximal rank almost surely, including when one index type is empty. -/
-theorem ae_rank_eq_min_matrix (μ : Measure (Matrix m n ℝ)) (hμ : μ ≪ volume) :
+/-- A matrix whose law is absolutely continuous with respect to product volume has maximal rank
+almost surely when scalar volume is sigma-finite and null on singletons, including when one
+index type is empty. -/
+theorem ae_rank_eq_min_matrix (μ : Measure (Matrix m n K)) (hμ : μ ≪ volume) :
     ∀ᵐ X ∂μ, X.rank = min (Fintype.card m) (Fintype.card n) := by
   classical
   have hflat := ae_rank_eq_min
-    (volume : Measure (m → n → ℝ)) Measure.AbsolutelyContinuous.rfl
-  have hmatrix := ((Matrix.volume_preserving_ofMeasurableEquiv m n ℝ).symm
-    (Matrix.ofMeasurableEquiv m n ℝ)).quasiMeasurePreserving.ae hflat
+    (volume : Measure (m → n → K)) Measure.AbsolutelyContinuous.rfl
+  have hmatrix := ((Matrix.volume_preserving_ofMeasurableEquiv m n K).symm
+    (Matrix.ofMeasurableEquiv m n K)).quasiMeasurePreserving.ae hflat
   refine hμ.ae_le (hmatrix.mono fun X hX ↦ ?_)
   simpa only [Matrix.ofMeasurableEquiv_symm_apply, Equiv.apply_symm_apply] using hX
 

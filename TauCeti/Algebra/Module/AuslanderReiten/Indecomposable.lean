@@ -22,11 +22,11 @@ finite projective presentations, the corresponding assertion holds in the projec
 category. Minimality excludes the projective retracts that this category forgets, so the
 conclusion then holds for actual modules.
 
-Together with `TauCeti.AuslanderReitenTranslate.isIndecomposableModule_iff`, the transpose
+Together with `TauCeti.MatlisDual.isIndecomposableModule_iff`, the transpose
 characterization gives the corresponding result for the Auslander–Reiten translate when
-the transpose is reflexive over the base. In particular, this applies to finite-dimensional
-modules over finite-dimensional algebras over a field, and supplies the preservation of
-indecomposability needed to classify modules by their translates.
+the transpose has finite length over the base ring. In particular, this applies to finitely
+generated modules over Artin algebras, and supplies the preservation of indecomposability needed
+to classify modules by their translates.
 
 ## References
 

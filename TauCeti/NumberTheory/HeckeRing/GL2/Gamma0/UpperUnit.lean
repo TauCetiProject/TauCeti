@@ -99,7 +99,7 @@ double-coset operator divides by the character rather than multiplying by it. -/
       (by simp [mapGL_coe_matrix, algebraMap_int_eq]),
     MonoidHom.coe_toHomUnits, Gamma0Map]
   simpa only [MonoidHom.coe_mk, OneHom.coe_mk] using
-    intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 (M := N) γ.2
+    intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 (M := N) γ.property
 
 /-- The adjugate of a `Γ₀(N)` matrix again lies in `Δ₀(N)`: it is the image of `γ⁻¹`, which is
 in `Γ₀(N)` because that is a subgroup. -/

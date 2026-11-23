@@ -60,8 +60,8 @@ theorem decompose_mem_span_of_mem_positive_smul_top {x : M}
     · refine Submodule.iSup_induction _ (motive := fun a =>
         (decompose G.piece (a • y) p : M) ∈ S) ha (fun hi a ha => ?_) ?_ ?_
       · let f : M →ₗ[k] M := Algebra.lsmul k k M a
-        have hf : TauCeti.LinearMap.IsHomogeneous f G.piece G.piece i :=
-          TauCeti.LinearMap.isHomogeneous_def.mpr fun q z hz => by
+        have hf : LinearMap.IsHomogeneous f G.piece G.piece i :=
+          LinearMap.isHomogeneous_def.mpr fun q z hz => by
             simpa [f, add_comm] using SetLike.GradedSMul.smul_mem ha hz
         have h := hf.map_decompose (p - i) y
         rw [sub_add_cancel] at h

@@ -43,16 +43,24 @@ analogue of the power-rule integral identity for tails.
   `∑_{m > n} a m * (∑_{j > m} a j) ^ k ≤ (∑_{m > n} a m) ^ (k + 1) / (k + 1)` for a nonnegative
   summable sequence `a`, the discrete counterpart of `∫_x^∞ a Ψ ^ k = Ψ x ^ (k + 1) / (k + 1)` for
   `Ψ x = ∫_x^∞ a`.
+* `TauCeti.summable_mul_pow_of_le`: weighted powers with nonnegative real weights stay summable
+  when the nonnegative radius decreases.
 * `TauCeti.summable_sigma_fin_iff`: repeating each nonnegative term `m i` times is summable
   exactly when `∑ i, m i * a i` is.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
   `b i * C ≤ 1`.
+* `TauCeti.summable_pow_natAbs`, `TauCeti.tsum_pow_natAbs`,
+  `TauCeti.tsum_ite_eq_zero_pow_natAbs`, `TauCeti.tendsto_tsum_ite_eq_zero_pow_natAbs`: summability,
+  sum `(1 + r) * (1 - r)⁻¹`, nonzero-mode sum `2 * (r * (1 - r)⁻¹)`, and limit along `𝓝[≥] 0` of
+  the bilateral geometric series `r ^ k.natAbs` on `ℤ` for `0 ≤ r < 1`.
+* `TauCeti.cauchySeq_of_eventually_dist_le_of_summable`: a sequence whose steps are eventually
+  bounded by a summable sequence is Cauchy.
 -/
 
 public section
 
 open Filter Finset
-open scoped Topology
+open scoped Topology NNReal
 
 /-- The weights `1 + #{k ≤ n | N k ≤ n}` tend to infinity along a strictly increasing sequence
 of cut points `N`. -/
@@ -187,6 +195,15 @@ end Tail
 
 namespace TauCeti
 
+/-- Weighted powers with nonnegative weights that are summable at radius `s` are summable
+at every nonnegative radius `r ≤ s`, for any family of natural-number exponents. -/
+theorem summable_mul_pow_of_le {ι : Type*} {w : ι → ℝ} {degree : ι → ℕ}
+    {r s : ℝ≥0} (hw : ∀ i, 0 ≤ w i) (hrs : r ≤ s)
+    (h : Summable fun i ↦ w i * (s : ℝ) ^ degree i) :
+    Summable fun i ↦ w i * (r : ℝ) ^ degree i :=
+  h.of_nonneg_of_le (fun i ↦ mul_nonneg (hw i) (pow_nonneg r.coe_nonneg _)) fun i ↦
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ r.coe_nonneg (NNReal.coe_le_coe.2 hrs) _) (hw i)
+
 /-- Repeating each nonnegative real term a finite natural number of times preserves
 summability exactly when the multiplicity-weighted family is summable. -/
 theorem summable_sigma_fin_iff {ι : Type*} {a : ι → ℝ} (ha : ∀ i, 0 ≤ a i) (m : ι → ℕ) :
@@ -213,5 +230,48 @@ theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
         rw [inv_mul_le_iff₀ (by positivity)]
         linarith
   nlinarith
+
+private lemma pow_neg_succ_natAbs (r : ℝ) :
+    (fun n : ℕ ↦ r ^ (-(n + 1 : ℤ)).natAbs) = fun n : ℕ ↦ r * r ^ n := by
+  ext n; rw [(by omega : (-(n + 1 : ℤ)).natAbs = n + 1), pow_succ']
+
+/-- For `0 ≤ r < 1`, the bilateral geometric series `k ↦ r ^ k.natAbs` on `ℤ` is summable. -/
+theorem summable_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    Summable fun k : ℤ ↦ r ^ k.natAbs :=
+  Summable.of_nat_of_neg_add_one (summable_geometric_of_lt_one hr₀ hr₁)
+    (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r)
+
+/-- For `0 ≤ r < 1`, `k ↦ r ^ k.natAbs` on `ℤ` sums to `(1 + r) * (1 - r)⁻¹`. -/
+theorem tsum_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, r ^ k.natAbs) = (1 + r) * (1 - r)⁻¹ := by
+  have h1 : (fun n : ℕ ↦ r ^ (n : ℤ).natAbs) = fun n : ℕ ↦ r ^ n := by ext n; simp
+  rw [tsum_of_nat_of_neg_add_one (h1 ▸ summable_geometric_of_lt_one hr₀ hr₁)
+    (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r), h1,
+    pow_neg_succ_natAbs, tsum_mul_left, tsum_geometric_of_lt_one hr₀ hr₁]; ring
+
+/-- For `0 ≤ r < 1`, the nonzero modes of `r ^ k.natAbs` sum to `2 * (r * (1 - r)⁻¹)`. -/
+theorem tsum_ite_eq_zero_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) = 2 * (r * (1 - r)⁻¹) := by
+  have hite := (summable_pow_natAbs hr₀ hr₁).tsum_eq_add_tsum_ite (0 : ℤ)
+  rw [tsum_pow_natAbs hr₀ hr₁, Int.natAbs_zero, pow_zero] at hite
+  have : 1 - r ≠ 0 := sub_ne_zero.2 hr₁.ne'; field_simp at hite ⊢; linarith
+
+/-- Along `𝓝[≥] 0`, the nonzero-mode bilateral geometric sum `∑'_{k ≠ 0} r ^ |k|` tends to `0`. -/
+theorem tendsto_tsum_ite_eq_zero_pow_natAbs :
+    Tendsto (fun r : ℝ ↦ ∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) (𝓝[≥] 0) (𝓝 0) :=
+  ((by simpa using (((tendsto_id (α := ℝ)).mul (((tendsto_const_nhds (x := (1 : ℝ))).sub
+      tendsto_id).inv₀ (by norm_num : (1 : ℝ) - 0 ≠ 0))).const_mul 2) :
+      Tendsto (fun r : ℝ ↦ 2 * (r * (1 - r)⁻¹)) (𝓝 0) (𝓝 0)).mono_left nhdsWithin_le_nhds).congr'
+    (eventually_of_mem (Ico_mem_nhdsGE zero_lt_one) fun _ hr ↦
+      (tsum_ite_eq_zero_pow_natAbs hr.1 hr.2).symm)
+
+/-- A sequence whose steps are eventually bounded by a summable sequence is Cauchy. -/
+theorem cauchySeq_of_eventually_dist_le_of_summable {α : Type*} [PseudoMetricSpace α]
+    {x : ℕ → α} {d : ℕ → ℝ} (hd : Summable d)
+    (h : ∀ᶠ m in atTop, dist (x m) (x (m + 1)) ≤ d m) : CauchySeq x := by
+  obtain ⟨n, hn⟩ := eventually_atTop.mp h
+  exact (cauchySeq_shift n).mp <| cauchySeq_of_dist_le_of_summable (fun k ↦ d (k + n))
+    (fun k ↦ by simpa only [Nat.succ_add] using hn (k + n) (Nat.le_add_left n k))
+    ((summable_nat_add_iff n).mpr hd)
 
 end TauCeti
