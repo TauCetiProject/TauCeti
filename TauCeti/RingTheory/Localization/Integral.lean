@@ -267,6 +267,21 @@ theorem IsLocalization.isIntegrallyClosedIn (M : Submonoid R) [IsLocalization M 
     rw [h1]
     exact e'.symm
 
+open scoped nonZeroDivisors in
+/-- An integrally closed ring `A` is integrally closed in any localization `B` of `A` at a
+submonoid of non-zero-divisors. -/
+theorem IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed {A B : Type*} [CommRing A]
+    [IsIntegrallyClosed A] [CommRing B] [Algebra A B] (M : Submonoid A) [IsLocalization M B]
+    (hM : M ≤ A⁰) : IsIntegrallyClosedIn A B := by
+  let _ : Algebra B (FractionRing A) :=
+    _root_.IsLocalization.localizationAlgebraOfSubmonoidLe B (FractionRing A) M A⁰ hM
+  have : IsScalarTower A B (FractionRing A) :=
+    _root_.IsLocalization.localization_isScalarTower_of_submonoid_le B (FractionRing A) M A⁰ hM
+  have : _root_.IsFractionRing B (FractionRing A) :=
+    _root_.IsFractionRing.isFractionRing_of_isLocalization M B (FractionRing A) hM
+  exact AlgHom.isIntegrallyClosedIn (IsScalarTower.toAlgHom A B (FractionRing A))
+    (_root_.IsFractionRing.injective B (FractionRing A)) inferInstance
+
 end IsIntegrallyClosedIn
 
 section PowSMul
@@ -355,21 +370,6 @@ theorem finite_localizedModule_integralClosure {A B : Type*} [CommRing A] [CommR
       rw [← IsLocalizedModule.mk_eq_mk']
       exact LocalizedModule.mk_cancel_common_left m t c
   exact ⟨hloc ▸ Submodule.localized'_fg _ _ _ (Submodule.fg_span (Set.finite_singleton 1))⟩
-
-open scoped nonZeroDivisors in
-/-- An integrally closed ring `A` is integrally closed in any localization `B` of `A` at a
-submonoid of non-zero-divisors. -/
-theorem IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed {A B : Type*} [CommRing A]
-    [IsIntegrallyClosed A] [CommRing B] [Algebra A B] (M : Submonoid A) [IsLocalization M B]
-    (hM : M ≤ A⁰) : IsIntegrallyClosedIn A B := by
-  let _ : Algebra B (FractionRing A) :=
-    _root_.IsLocalization.localizationAlgebraOfSubmonoidLe B (FractionRing A) M A⁰ hM
-  have : IsScalarTower A B (FractionRing A) :=
-    _root_.IsLocalization.localization_isScalarTower_of_submonoid_le B (FractionRing A) M A⁰ hM
-  have : _root_.IsFractionRing B (FractionRing A) :=
-    _root_.IsFractionRing.isFractionRing_of_isLocalization M B (FractionRing A) hM
-  exact AlgHom.isIntegrallyClosedIn (IsScalarTower.toAlgHom A B (FractionRing A))
-    (_root_.IsFractionRing.injective B (FractionRing A)) inferInstance
 
 end LocalizedModule
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
-import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
 
@@ -66,16 +65,9 @@ dimension at most `d` when `toK` has relative dimension at most `d`. -/
 private lemma relativeDimensionLE_fromSpec_toBase (M : Model R K C toK) {d : ℕ}
     [RelativeDimensionLE d toK] {U : M.total.Opens} (hU : IsAffineOpen U) :
     RelativeDimensionLE d (hU.fromSpec ≫ M.toBase) := by
-  let : M.total.Over (Spec (.of R)) := ⟨M.toBase⟩
-  let : C.Over (Spec (.of K)) := ⟨toK⟩
-  have : LocallyOfFiniteType (M.total ↘ Spec (.of R)) :=
-    inferInstanceAs (LocallyOfFiniteType M.toBase)
   have hV : IsAffineOpen (M.genericι ⁻¹ᵁ U) := hU.preimage M.genericι
-  refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
-    (R := R) (S := K) (Y := C) M.isPullback_genericι hU fun hpush hRX _ hXY ↦ ?_
-  have : Algebra.IsPushout R Γ(M.total, U) K Γ(C, M.genericι ⁻¹ᵁ U) := hpush.symm
-  have : Algebra.FiniteType R Γ(M.total, U) :=
-    hRX ▸ finiteType_sections_of_locallyOfFiniteType R M.total ⟨U, hU⟩
+  refine with_finiteType_algebraIsPushout_of_isPullback M.isPullback_genericι hU
+    fun hcomp _ hXY ↦ ?_
   have : Module.IsTorsionFree R Γ(C, M.genericι ⁻¹ᵁ U) := .trans K
   have hinj : Function.Injective (IsScalarTower.toAlgHom R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U)) :=
     hXY ▸ M.genericι.app_injective U
@@ -84,12 +76,6 @@ private lemma relativeDimensionLE_fromSpec_toBase (M : Model R K C toK) {d : ℕ
     rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
     exact hV.fromSpec.isOpenEmbedding.isInducing.topologicalKrullDim_le.trans
       ((relativeDimensionLE_iff_of_field toK).mp inferInstance)
-  have hcomp : hU.fromSpec ≫ M.toBase =
-      Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U))) := by
-    refine (hU.fromSpec_comp_eq_SpecMap M.toBase).trans ?_
-    congr 1
-    rw [hRX, RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
-    rfl
   rw [hcomp]
   refine (relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mpr fun p _ ↦
     (TauCeti.IsDiscreteValuationRing.ringKrullDim_fiber_le

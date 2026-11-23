@@ -65,17 +65,17 @@ theorem of_quasiFiniteAt_quotient {J : Ideal S} {q : Ideal S} [q.IsPrime]
     (hJ : J ≤ (q.under R).map (algebraMap R S)) (p : Ideal (S ⧸ J)) [p.IsPrime]
     [Algebra.QuasiFiniteAt R p] (hp : p.comap (Ideal.Quotient.mk J) = q) :
     Algebra.QuasiFiniteAt R q := by
-  have : Algebra.WeaklyQuasiFiniteAt R q := by
-    delta Algebra.WeaklyQuasiFiniteAt
-    have : (q.map (Ideal.Quotient.mk ((q.under R).map (algebraMap R S)))).IsPrime :=
-      Ideal.isPrime_map_quotientMk_of_isPrime Ideal.map_comap_le
-    refine .of_surjectiveOnStalks p (Ideal.Quotient.factorₐ R hJ)
-      (RingHom.surjectiveOnStalks_of_surjective (Ideal.Quotient.factor_surjective hJ)) _ ?_
-    apply Ideal.comap_injective_of_surjective _ Ideal.Quotient.mk_surjective
-    have hfac : (Ideal.Quotient.factorₐ R hJ).toRingHom.comp (Ideal.Quotient.mk J) =
-        Ideal.Quotient.mk ((q.under R).map (algebraMap R S)) :=
-      Ideal.Quotient.factor_comp_mk hJ
-    rw [hp, Ideal.comap_comap, hfac, Ideal.comap_map_mk Ideal.map_comap_le]
-  exact .of_weaklyQuasiFiniteAt q
+  have : (q.map (Ideal.Quotient.mk ((q.under R).map (algebraMap R S)))).IsPrime :=
+    Ideal.isPrime_map_quotientMk_of_isPrime Ideal.map_comap_le
+  suffices
+      Algebra.QuasiFiniteAt R (q.map (Ideal.Quotient.mk ((q.under R).map (algebraMap R S)))) from
+    .of_weaklyQuasiFiniteAt q
+  refine .of_surjectiveOnStalks p (Ideal.Quotient.factorₐ R hJ)
+    (RingHom.surjectiveOnStalks_of_surjective (Ideal.Quotient.factor_surjective hJ)) _ ?_
+  apply Ideal.comap_injective_of_surjective _ Ideal.Quotient.mk_surjective
+  have hfac : (Ideal.Quotient.factorₐ R hJ).toRingHom.comp (Ideal.Quotient.mk J) =
+      Ideal.Quotient.mk ((q.under R).map (algebraMap R S)) :=
+    Ideal.Quotient.factor_comp_mk hJ
+  rw [hp, Ideal.comap_comap, hfac, Ideal.comap_map_mk Ideal.map_comap_le]
 
 end Algebra.QuasiFiniteAt

@@ -75,8 +75,7 @@ theorem of_quotient_residueField {R K D E ι : Type*}
     have hg_map : MvPolynomial.map (IsLocalRing.residue R) g = 0 :=
       hy (hres.trans (map_zero _).symm)
     have hm₀_zero : IsLocalRing.residue R (g.coeff m₀) = 0 := by
-      rw [← MvPolynomial.coeff_map, hg_map]
-      rfl
+      rw [← MvPolynomial.coeff_map, hg_map, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
     rw [IsLocalRing.residue_eq_zero_iff, hπ.maximalIdeal_eq, Ideal.mem_span_singleton] at hm₀_zero
     exact hndvd hm₀_zero
   have : Algebra.IsAlgebraic R K := IsLocalization.isAlgebraic K (nonZeroDivisors R)

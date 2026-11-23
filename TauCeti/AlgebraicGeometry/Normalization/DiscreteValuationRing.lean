@@ -60,15 +60,8 @@ theorem isFinite_fromNormalization_of_isPullback
     IsFinite g.fromNormalization := by
   have : IsAffineHom g := MorphismProperty.of_isPullback (P := @IsAffineHom) H.flip inferInstance
   refine g.isFinite_fromNormalization_iff.mpr fun U hU ↦ ?_
-  let : X.Over (Spec (.of R)) := ⟨toBase⟩
-  let : C.Over (Spec (.of K)) := ⟨toK⟩
-  have : LocallyOfFiniteType (X ↘ Spec (.of R)) := inferInstanceAs (LocallyOfFiniteType toBase)
   have hV : IsAffineOpen (g ⁻¹ᵁ U) := hU.preimage g
-  refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
-    (R := R) (S := K) (Y := C) H hU fun hpush hRX hSY hXY ↦ ?_
-  have : Algebra.IsPushout R Γ(X, U) K Γ(C, g ⁻¹ᵁ U) := hpush.symm
-  have : Algebra.FiniteType R Γ(X, U) :=
-    hRX ▸ finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
+  refine with_finiteType_algebraIsPushout_of_isPullback H hU fun _ hS hXY ↦ ?_
   have hsm : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
       (toK.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom :=
     HasRingHomProperty.appLE (P := @SmoothOfRelativeDimension 1)
@@ -76,9 +69,7 @@ theorem isFinite_fromNormalization_of_isPullback
       (f := toK) ‹_› ⟨⊤, isAffineOpen_top _⟩ ⟨g ⁻¹ᵁ U, hV⟩ le_top
   have hloc : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
       (algebraMap K Γ(C, g ⁻¹ᵁ U)) := by
-    rw [hSY]
-    simp only [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE,
-      CommRingCat.hom_comp]
+    rw [hS, CommRingCat.hom_comp]
     exact (RingHom.locally_respectsIso
       (RingHom.isStandardSmoothOfRelativeDimension_respectsIso (n := 1))).right _
       (Scheme.ΓSpecIso (.of K)).symm.commRingCatIsoToRingEquiv hsm

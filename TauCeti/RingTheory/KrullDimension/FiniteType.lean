@@ -536,10 +536,7 @@ theorem exists_finite_aeval_of_krullDimLE_one (k A₀ : Type*) [Field k] [CommRi
     [Algebra k A₀] [Algebra.FiniteType k A₀] [Ring.KrullDimLE 1 A₀] :
     ∃ x₀ : A₀, (Polynomial.aeval (R := k) x₀).toRingHom.Finite := by
   rcases subsingleton_or_nontrivial A₀ with _ | _
-  · refine ⟨0, ?_⟩
-    rw [RingHom.Finite]
-    let : Module k[X] A₀ := RingHom.toModule (Polynomial.aeval (R := k) (0 : A₀)).toRingHom
-    infer_instance
+  · exact ⟨0, RingHom.Finite.of_surjective _ fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
   · obtain ⟨s, g, hinj, hfin⟩ := exists_finite_inj_algHom_of_fg k A₀
     have hdim : ringKrullDim A₀ = s := by
       simpa using

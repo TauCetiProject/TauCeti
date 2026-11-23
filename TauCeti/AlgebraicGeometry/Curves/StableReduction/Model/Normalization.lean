@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 
-import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.AlgebraicGeometry.Normalization.DiscreteValuationRing
 import TauCeti.RingTheory.Localization.Integral
 
@@ -142,11 +142,8 @@ instance isIso_fromNormalization_of_isNormalScheme [AlgebraicGeometry.IsNormalSc
   have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
   have : IsIntegrallyClosed Γ(M.total, U) :=
     AlgebraicGeometry.IsNormalScheme.isIntegrallyClosed_of_isLocallyNoetherian_of_isAffineOpen hU
-  let : M.total.Over (Spec (.of R)) := ⟨M.toBase⟩
-  let : C.Over (Spec (.of K)) := ⟨toK⟩
-  refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
-    (R := R) (S := K) (Y := C) M.isPullback_genericι hU fun hpush _ _ hXY ↦ ?_
-  have : Algebra.IsPushout R Γ(M.total, U) K Γ(C, M.genericι ⁻¹ᵁ U) := hpush.symm
+  refine AlgebraicGeometry.with_finiteType_algebraIsPushout_of_isPullback
+    M.isPullback_genericι hU fun _ _ hXY ↦ ?_
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
   have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) :=
     hπ.isLocalizationAway_of_isPushout (K := K)
