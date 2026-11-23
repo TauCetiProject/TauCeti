@@ -248,7 +248,7 @@ theorem exists_lintegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
       (intervalIntegrable_log_pow (2 * k) (a := 0) (b := 1)).1.hasFiniteIntegral
     rw [← ofReal_norm, Real.norm_eq_abs]
     exact ENNReal.ofReal_le_ofReal (le_abs_self _)
-  obtain ⟨C₂, hC₂, hC₂z⟩ := exists_setLIntegral_norm_log_one_sub_mul_pow_le 2 a 1 R'
+  obtain ⟨C₂, hC₂, hC₂z⟩ := exists_setLIntegral_norm_clog_one_sub_mul_pow_le 2 a 1 R'
   set Ka : ℝ := |Real.log a| ^ k / a
   refine ⟨ENNReal.ofReal ((3 / 2 * R') ^ 2) * I₁ + ENNReal.ofReal (Ka ^ 2) * C₂,
     by finiteness, fun z hz ↦ ?_⟩

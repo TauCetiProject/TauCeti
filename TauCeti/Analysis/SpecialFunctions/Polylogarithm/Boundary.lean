@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Complex.UpperLogContinuity
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Polylogarithm.ClosedDisc
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conj
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -60,17 +62,18 @@ Specifically:
   `TauCeti.Polylog.tendsto_polylog_sub_mul_I_nhdsGT_zero`,
   `TauCeti.Polylog.tendsto_polylog_nhdsWithin_im_pos_of_one_lt`,
   `TauCeti.Polylog.tendsto_polylog_add_mul_I_nhdsGT_zero_of_one_lt`, and
-  `TauCeti.Polylog.tendsto_polylog_add_mul_I_sub_nhdsGT_zero_of_one_lt`: lower and upper boundary
-  limits along `ℝ`, and upper boundary limit and principal jump across `(1, ∞)`.
+  `TauCeti.Polylog.tendsto_polylog_add_mul_I_sub_polylog_sub_mul_I_nhdsGT_zero_of_one_lt`: lower
+  and upper boundary limits along `ℝ`, and upper boundary limit and principal jump across `(1, ∞)`.
 * `TauCeti.Polylog.not_continuousAt_of_eqOn_polylog_of_one_lt`,
   `TauCeti.Polylog.not_continuousAt_polylog_of_one_lt`, and
   `TauCeti.Polylog.not_exists_continuousOn_eqOn_polylog`: cut discontinuity on `(1, ∞)` for
   `1 ≤ n` and non-existence of a continuous extension on `ℂ ∖ {0, 1}`.
 * `TauCeti.Polylog.blochWigner`, `TauCeti.Polylog.blochWigner_zero`,
   `TauCeti.Polylog.blochWigner_one`, `TauCeti.Polylog.blochWigner_eq`,
-  `TauCeti.Polylog.blochWigner_ofReal`, and `TauCeti.Polylog.continuous_blochWigner`:
-  the Bloch–Wigner dilogarithm, its endpoint, formula, and real-axis vanishing identities, and
-  its continuity on `ℂ`.
+  `TauCeti.Polylog.blochWigner_of_norm_eq_one`, `TauCeti.Polylog.blochWigner_exp_eq_im_expZeta`,
+  `TauCeti.Polylog.blochWigner_ofReal`, `TauCeti.Polylog.blochWigner_conj`, and
+  `TauCeti.Polylog.continuous_blochWigner`: the Bloch–Wigner dilogarithm, its endpoint, formula,
+  unit-circle, real-axis vanishing, and conjugation identities, and its continuity on `ℂ`.
 
 ## References
 
@@ -131,7 +134,7 @@ theorem continuousAt_polylog_of_im_ne_zero_or_re_le_one {n : ℤ} {z : ℂ} (hn 
     · exact (analyticAt_polylog_neg_nat 0 (hn.resolve_right (by decide))).continuousAt
     · have hz1 : z ≠ 1 := hn.resolve_right (by decide)
       have hslit : 1 - z ∈ Complex.slitPlane :=
-        z.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz hz1
+        z.one_sub_mem_slitPlane_iff.mpr ⟨hz, hz1⟩
       rw [Int.ofNat_eq_natCast, zero_add, Nat.cast_one,
         (funext polylog_one : polylog 1 = fun w ↦ -Complex.log (1 - w))]
       exact ((continuousAt_clog hslit).comp (by fun_prop)).neg
@@ -302,8 +305,8 @@ theorem tendsto_polylog_add_mul_I_nhdsGT_zero_of_one_lt {n : ℕ} (hn : 1 ≤ n)
 /-- Principal jump formula across `(1, ∞)`: for natural `n ≥ 1` and real `x > 1`,
 `polylog n (x + t * I) - polylog n (x - t * I)` tends to
 `2 π i (log x) ^ (n - 1) / (n - 1)!` as `t → 0+`. -/
-theorem tendsto_polylog_add_mul_I_sub_nhdsGT_zero_of_one_lt {n : ℕ} (hn : 1 ≤ n) {x : ℝ}
-    (hx : 1 < x) :
+theorem tendsto_polylog_add_mul_I_sub_polylog_sub_mul_I_nhdsGT_zero_of_one_lt {n : ℕ} (hn : 1 ≤ n)
+    {x : ℝ} (hx : 1 < x) :
     Tendsto (fun t : ℝ ↦ polylog n (x + t * Complex.I) - polylog n (x - t * Complex.I)) (𝓝[>] 0)
       (𝓝 (2 * Real.pi * Complex.I * (Real.log x : ℂ) ^ (n - 1) / ((n - 1).factorial : ℂ))) := by
   simpa using (tendsto_polylog_add_mul_I_nhdsGT_zero_of_one_lt hn hx).sub
@@ -337,7 +340,7 @@ theorem not_continuousAt_of_eqOn_polylog_of_one_lt {n : ℤ} (hn : 1 ≤ n) {x :
     simp [hg (hmem (w := x + t * Complex.I) (by simp [ht.ne'])),
       hg (hmem (w := x - t * Complex.I) (by simp [ht.ne']))]
   have hzero := tendsto_nhds_unique (hg_diff.congr' heq)
-    (tendsto_polylog_add_mul_I_sub_nhdsGT_zero_of_one_lt hm hx)
+    (tendsto_polylog_add_mul_I_sub_polylog_sub_mul_I_nhdsGT_zero_of_one_lt hm hx)
   have hlogx : (Real.log x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (Real.log_pos hx).ne'
   have hfac : (((m - 1).factorial : ℂ)) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
   have hpi : (Real.pi : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
@@ -394,6 +397,19 @@ theorem blochWigner_eq (z : ℂ) :
   · simpa using (polylog_ofReal_im 2 (le_refl 1)).symm
   simp [blochWigner, hz0, hz1]
 
+/-- On the unit circle `‖z‖ = 1`, the logarithmic correction vanishes and
+`blochWigner z = (polylog 2 z).im`. -/
+theorem blochWigner_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) :
+    blochWigner z = (polylog 2 z).im := by
+  rw [blochWigner_eq, hz, Real.log_one, mul_zero, add_zero]
+
+/-- On the unit circle, `blochWigner (exp (2 * π * i * a))` equals the imaginary part of
+Mathlib's exponential zeta function `HurwitzZeta.expZeta a 2`. -/
+theorem blochWigner_exp_eq_im_expZeta (a : ℝ) :
+    blochWigner (Complex.exp (2 * Real.pi * Complex.I * a)) = (HurwitzZeta.expZeta a 2).im := by
+  simpa using (blochWigner_of_norm_eq_one (by simp [Complex.norm_exp])).trans
+    (congrArg Complex.im (polylog_exp_eq_expZeta (n := 2) le_rfl a))
+
 /-- On the real axis, the Bloch–Wigner dilogarithm vanishes identically. -/
 @[simp]
 theorem blochWigner_ofReal (x : ℝ) : blochWigner x = 0 := by
@@ -411,6 +427,25 @@ theorem blochWigner_ofReal (x : ℝ) : blochWigner x = 0 := by
       rw [Complex.norm_real, Real.norm_of_nonneg (zero_lt_one.trans hx).le]
     rw [him2, hargx, hlogx]
     ring
+
+/-- The Bloch–Wigner dilogarithm is odd under complex conjugation on all of `ℂ`. -/
+@[simp]
+theorem blochWigner_conj (z : ℂ) : blochWigner (conj z) = -blochWigner z := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · simp
+  rcases eq_or_ne z 1 with rfl | hz1
+  · simp
+  by_cases hz : z.im ≠ 0 ∨ z.re ≤ 1
+  · have hslit : 1 - z ∈ Complex.slitPlane := z.one_sub_mem_slitPlane_iff.mpr ⟨hz, hz1⟩
+    have harg : (1 - conj z).arg = -(1 - z).arg := by
+      rw [show 1 - conj z = conj (1 - z) by simp, Complex.arg_conj]
+      simp [Complex.slitPlane_arg_ne_pi hslit]
+    rw [blochWigner_eq, blochWigner_eq, polylog_conj 2 hz, Complex.conj_im, harg,
+      Complex.norm_conj]
+    ring
+  · push Not at hz
+    have hz_eq : z = (z.re : ℂ) := Complex.ext (Complex.ofReal_re _).symm (by simp [hz.1])
+    rw [hz_eq, Complex.conj_ofReal, blochWigner_ofReal, neg_zero]
 
 /-- Cancellation of jumps across `(1, ∞)` in weight two:
 `(polylog 2 w).im + (1 - w).arg * log ‖w‖` is continuous at real `x > 1`. -/
@@ -503,7 +538,7 @@ private lemma continuousAt_im_polylog_two_add_arg_mul_log_norm (z : ℂ) :
         · exact Or.inl him
         · exact Or.inr (le_of_not_gt fun hgt ↦ hcut ⟨him, hgt⟩)
       have hslit : 1 - z ∈ Complex.slitPlane :=
-        z.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz_off hz1
+        z.one_sub_mem_slitPlane_iff.mpr ⟨hz_off, hz1⟩
       have hli : ContinuousAt (fun w : ℂ ↦ (polylog 2 w).im) z :=
         Complex.continuous_im.continuousAt.comp
           (continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr le_rfl) hz_off)

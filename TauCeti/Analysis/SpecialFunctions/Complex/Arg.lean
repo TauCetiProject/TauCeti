@@ -79,8 +79,7 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   eventually, then `arg (f x) → arg Q`.
 * `Complex.arg_one_sub_ofReal_mul_ne_pi`: for `z` off `(1, ∞)` and `t ∈ [0, 1]`,
   `arg (1 - t * z) ≠ π`.
-* `Complex.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one`: for `z ≠ 1` off `(1, ∞)`,
-  `1 - z ∈ slitPlane`.
+* `Complex.one_sub_mem_slitPlane_iff`: `1 - z ∈ slitPlane ↔ (z.im ≠ 0 ∨ z.re ≤ 1) ∧ z ≠ 1`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
@@ -288,13 +287,23 @@ theorem arg_one_sub_ofReal_mul_ne_pi (z : ℂ) (hz : z.im ≠ 0 ∨ z.re ≤ 1) 
     · exact hzim hzim'
   · nlinarith [ht.1, ht.2]
 
-/-- For `z ≠ 1` off the open ray `(1, ∞)` (i.e. `z.im ≠ 0 ∨ z.re ≤ 1`), the point `1 - z` lies in
-the open slit plane `Complex.slitPlane`. -/
-theorem one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one (z : ℂ) (hz : z.im ≠ 0 ∨ z.re ≤ 1)
-    (hz1 : z ≠ 1) : 1 - z ∈ slitPlane :=
-  mem_slitPlane_iff_arg.mpr
-    ⟨by simpa using z.arg_one_sub_ofReal_mul_ne_pi hz (Set.right_mem_Icc.mpr zero_le_one),
-      sub_ne_zero.mpr hz1.symm⟩
+/-- `1 - z` lies in the open slit plane `Complex.slitPlane` if and only if `z` is off the closed
+ray `[1, ∞)`, i.e. `(z.im ≠ 0 ∨ z.re ≤ 1) ∧ z ≠ 1`. -/
+theorem one_sub_mem_slitPlane_iff (z : ℂ) :
+    1 - z ∈ slitPlane ↔ (z.im ≠ 0 ∨ z.re ≤ 1) ∧ z ≠ 1 := by
+  rw [mem_slitPlane_iff]
+  constructor
+  · rintro (hre | him)
+    · rw [sub_re, one_re, sub_pos] at hre
+      exact ⟨Or.inr hre.le, fun h ↦ by simp [h] at hre⟩
+    · rw [sub_im, one_im, zero_sub, neg_ne_zero] at him
+      exact ⟨Or.inl him, fun h ↦ by simp [h] at him⟩
+  · rintro ⟨hz, hz1⟩
+    rcases hz with him | hre
+    · exact Or.inr (by simpa using him)
+    · rcases eq_or_lt_of_le hre with hre1 | hre1
+      · exact Or.inr (by simpa [ne_eq, Complex.ext_iff, hre1] using hz1)
+      · exact Or.inl (by simp [hre1])
 
 /-- Rotating `1 + r * exp (θ * I)` by `exp (-(θ / 2) * I)` projects onto the bisecting direction,
 giving `(1 + r) * cos (θ / 2) ≤ ‖1 + r * exp (θ * I)‖` for all real `θ` and `r`. -/

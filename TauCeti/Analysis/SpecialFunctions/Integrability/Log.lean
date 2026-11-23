@@ -63,8 +63,8 @@ of the profile and the square of its derivative `-(r log (c / r))⁻¹`.
 * `MeromorphicOn.intervalIntegrable_clog`: `t ↦ Log (f t)` is interval integrable for
   real-meromorphic `f : ℝ → ℂ`; `AnalyticOnNhd.intervalIntegrable_clog` is the analytic case.
 * `TauCeti.setLIntegral_abs_log_abs_sub_pow_le`,
-  `TauCeti.setLIntegral_norm_log_one_sub_mul_pow_le`, and
-  `TauCeti.exists_setLIntegral_norm_log_one_sub_mul_pow_le`: uniform `L^k` bounds for translated
+  `TauCeti.setLIntegral_norm_clog_one_sub_mul_pow_le`, and
+  `TauCeti.exists_setLIntegral_norm_clog_one_sub_mul_pow_le`: uniform `L^k` bounds for translated
   real logarithms and for `t ↦ Log (1 - t z)` on `(a, b]` over bounded `z`.
 * `TauCeti.locallyIntegrableOn_log_log`: `t ↦ log (log t)` is locally integrable on `[1, ∞)`.
 * `TauCeti.integrableOn_log_log_const_div_pow`: `(log log (c / r))^k` is integrable on `(0, R)`.
@@ -239,7 +239,7 @@ theorem setLIntegral_abs_log_abs_sub_pow_le (k : ℕ) {a b c d s : ℝ} (hs : s 
 
 /-- On `(a, b]`, when `0 < r ≤ ‖z‖ ≤ R`, shifting by `Re(z⁻¹) ∈ [-r⁻¹, r⁻¹]` bounds the `L^k`
 integral of `t ↦ Complex.log (1 - t * z)` uniformly in `z`. -/
-theorem setLIntegral_norm_log_one_sub_mul_pow_le (k : ℕ) (a b : ℝ) {r R : ℝ} (hr : 0 < r) {z : ℂ}
+theorem setLIntegral_norm_clog_one_sub_mul_pow_le (k : ℕ) (a b : ℝ) {r R : ℝ} (hr : 0 < r) {z : ℂ}
     (hzr : r ≤ ‖z‖) (hzR : ‖z‖ ≤ R) :
     ∫⁻ t in Set.Ioc a b, ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ k) ≤
       ENNReal.ofReal
@@ -291,7 +291,7 @@ theorem setLIntegral_norm_log_one_sub_mul_pow_le (k : ℕ) (a b : ℝ) {r R : �
 open scoped ENNReal in
 /-- Over any bounded ball `‖z‖ ≤ R`, every natural power `‖Complex.log (1 - t * z)‖ ^ k` has a
 uniform finite Lebesgue integral on `(a, b]` independent of `z`. -/
-theorem exists_setLIntegral_norm_log_one_sub_mul_pow_le (k : ℕ) (a b R : ℝ) :
+theorem exists_setLIntegral_norm_clog_one_sub_mul_pow_le (k : ℕ) (a b R : ℝ) :
     ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ z : ℂ, ‖z‖ ≤ R →
       ∫⁻ t in Set.Ioc a b, ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ k) ≤ C := by
   set T : ℝ := max |a| |b|
@@ -333,7 +333,7 @@ theorem exists_setLIntegral_norm_log_one_sub_mul_pow_le (k : ℕ) (a b R : ℝ) 
         le_mul_of_one_le_left (by positivity) (one_le_pow₀ (by norm_num))
     · rw [lintegral_const, Measure.restrict_apply_univ]
       exact le_self_add
-  · exact setLIntegral_norm_log_one_sub_mul_pow_le k a b hr hlarge.le
+  · exact setLIntegral_norm_clog_one_sub_mul_pow_le k a b hr hlarge.le
       (hz.trans (le_max_left R 0))
 
 /-- `t ↦ log (log t)` is locally integrable on `[1, ∞)`: its logarithmic singularity at `t = 1`
