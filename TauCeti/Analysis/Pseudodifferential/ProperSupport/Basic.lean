@@ -62,8 +62,11 @@ spatial support, and they are the pieces that are patched together on manifolds.
   an `Op(a)` does not enlarge the support of its input by more than `R`
   (`TauCeti.Symbol.HasNearDiagonalKernel.tsupport_quantizeSchwartzValue_subset`). The kernel
   cutoff by a `χ` supported in that ball has this property
-  (`TauCeti.Symbol.hasNearDiagonalKernel_kernelCutoff`).
+  (`TauCeti.Symbol.hasNearDiagonalKernel_kernelCutoff`), and so has `L ∘ a ∘ K` for constant
+  maps `L`, `K` of the fibres (`TauCeti.Symbol.HasNearDiagonalKernel.map`).
 * `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, then `c - b` is smoothing.
+* `TauCeti.Symbol.HasNearDiagonalKernel.quantizeSchwartzValue_kernelCutoff_eq`: a cutoff
+  equal to one on the full propagation ball preserves quantization.
 * `TauCeti.Symbol.HasPropagationLE a ε`: `Op(a) u (x) = 0` whenever `u` vanishes on the ball of
   radius `ε` about `x`. Then `Op(a) u (x)` only depends on `u` near `x`
   (`TauCeti.Symbol.HasPropagationLE.quantizeSchwartzValue_congr`) and `Op(a)` preserves compact
@@ -377,6 +380,16 @@ theorem coefficient_kernelCutoff (b : Symbol n V W m) (x ξ : CoordinateSpace n)
     (kernelCutoff χ b).coefficient (x, ξ) = ∫ θ, 𝓕 χ θ • b.coefficient (x, ξ - (2 * π) • θ) :=
   (rfl)
 
+/-- The kernel cutoff of a spatial multiplier depends only on the cutoff value at zero.
+Completeness is needed only for the actual operator-valued integral. -/
+theorem coefficient_kernelCutoff_ofSpatial [CompleteSpace (V →L[ℂ] W)]
+    (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+    (x ξ : CoordinateSpace n) :
+    (kernelCutoff χ (ofSpatial f hf)).coefficient (x, ξ) = χ 0 • f x := by
+  rw [coefficient_kernelCutoff]
+  simp only [coefficient_ofSpatial]
+  rw [integral_smul_const, SchwartzMap.integral_fourier_eq]
+
 private theorem coefficient_kernelCutoff_eq_cutoffCoeff (b : Symbol n V W m) :
     (kernelCutoff χ b).coefficient = cutoffCoeff χ b (2 * π) :=
   (rfl)
@@ -447,6 +460,25 @@ theorem HasNearDiagonalKernel.eq_zero_of_nonpos [CompleteSpace V] [CompleteSpace
       rw [hasNearDiagonalKernel_iff.1 ha u x fun y hy ↦ by
           rw [Metric.ball_eq_empty.2 hR] at hy; exact hy.elim,
         coefficient_zero, quantizeSchwartzValue_zero_left]
+
+/-- Whether the kernel of `Op(a)` is supported near the diagonal only depends on the coefficient
+of `a`. -/
+theorem HasNearDiagonalKernel.of_coefficient_eq {m' : ℝ} {a : Symbol n V W m}
+    {b : Symbol n V W m'} {R : ℝ} (ha : a.HasNearDiagonalKernel R)
+    (h : b.coefficient = a.coefficient) : b.HasNearDiagonalKernel R :=
+  fun u x hu ↦ h ▸ ha u x hu
+
+/-- **Constant maps of the fibres keep the kernel near the diagonal.** If `Φ` acts on the
+coefficients by `T ↦ L ∘ T ∘ K` for continuous linear maps `L` and `K`, then `Op(a.map Φ)` has
+kernel supported within distance `R` of the diagonal whenever `Op(a)` does. -/
+theorem HasNearDiagonalKernel.map [CompleteSpace V] [CompleteSpace W] {V' W' : Type*}
+    [NormedAddCommGroup V'] [NormedSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W']
+    [NormedSpace ℂ W'] [CompleteSpace W'] {a : Symbol n V W m} {R : ℝ}
+    (ha : a.HasNearDiagonalKernel R) {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')} (L : W →L[ℂ] W')
+    (K : V' →L[ℂ] V) (hΦ : ∀ T, Φ T = L ∘L T ∘L K) : (a.map Φ).HasNearDiagonalKernel R :=
+  fun u x hu ↦ by
+    rw [coefficient_map_eq_comp_comp L K hΦ, quantizeSchwartzValue_comp_comp,
+      ha _ x fun y hy ↦ by simp [hu y hy], map_zero]
 
 /-- An operator with kernel supported within distance `R` of the diagonal vanishes outside the
 closed `R`-neighbourhood of the support of its input. -/
@@ -674,6 +706,26 @@ theorem HasPropagationLE.quantizeSchwartzValue_congr (ha : a.HasPropagationLE ε
   rw [add_sub_cancel] at hadd
   rw [hadd, ha (u - v) x fun y hy ↦ by rw [sub_apply, h y hy, sub_self], add_zero]
 
+/-- A kernel cutoff that is one on the full propagation ball preserves the original operator. -/
+theorem HasNearDiagonalKernel.quantizeSchwartzValue_kernelCutoff_eq
+    [CompleteSpace V] [CompleteSpace W] {R : ℝ} {a : Symbol n V W m}
+    (ha : a.HasNearDiagonalKernel R) (χ : 𝓢(CoordinateSpace n, ℂ))
+    (hχ₁ : Set.EqOn (χ : CoordinateSpace n → ℂ) 1 (Metric.ball 0 R))
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (Symbol.kernelCutoff χ a).coefficient u x =
+      quantizeSchwartzValue a.coefficient u x := by
+  rw [Symbol.quantizeSchwartzValue_kernelCutoff]
+  have hp : a.HasPropagationLE R :=
+    Symbol.hasPropagationLE_iff.mpr (Symbol.hasNearDiagonalKernel_iff.mp ha)
+  apply hp.quantizeSchwartzValue_congr
+  intro y hy
+  have hg : (fun z ↦ χ (x - z)).HasTemperateGrowth :=
+    χ.hasTemperateGrowth.comp ((Function.HasTemperateGrowth.const x).sub
+      Function.HasTemperateGrowth.id')
+  have hmem : x - y ∈ Metric.ball (0 : CoordinateSpace n) R := by
+    simpa only [Metric.mem_ball, dist_eq_norm, sub_zero, norm_sub_rev] using hy
+  simp only [SchwartzMap.smulLeftCLM_apply_apply hg, hχ₁ hmem, Pi.one_apply, one_smul]
+
 /-- If `a` has propagation at most `ε`, then `Op(a) u` is supported within distance `ε` of the
 support of `u`. -/
 theorem HasPropagationLE.tsupport_quantizeSchwartzValue_subset (ha : a.HasPropagationLE ε)
@@ -693,6 +745,13 @@ theorem HasPropagationLE.hasCompactSupport_quantizeSchwartzValue (ha : a.HasProp
 
 theorem hasPropagationLE_zero (ε : ℝ) : (0 : Symbol n V W m).HasPropagationLE ε :=
   fun u x _ ↦ by rw [coefficient_zero, quantizeSchwartzValue_zero_left]
+
+/-- The quantization of a constant symbol, multiplication by a fixed continuous linear map `T`, has
+propagation at most every `ε > 0`. -/
+theorem hasPropagationLE_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) (hε : 0 < ε) :
+    (const T : Symbol n V W 0).HasPropagationLE ε := fun u x hu ↦ by
+  rw [funext (coefficient_const (n := n) T), quantizeSchwartzValue_comp_fst (fun _ ↦ T),
+    hu x (Metric.mem_ball_self hε), map_zero]
 
 theorem HasPropagationLE.add (ha : a.HasPropagationLE ε) (hb : b.HasPropagationLE ε) :
     (a + b).HasPropagationLE ε := fun u x hu ↦ by
