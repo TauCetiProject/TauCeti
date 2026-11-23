@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Homology.Embedding.Restriction.Surjective
 public import TauCeti.Algebra.Homology.LinearHomComplex.Single.Comparison
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
-import TauCeti.Algebra.Homology.ModuleCat.Basic
-import TauCeti.Algebra.Ring.NegOnePow
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -22,7 +20,6 @@ complex `Hom(K, Y[0])` (`CochainComplex.linearHomComplex`) with the linear Yoned
 `Hom(K⁻, Y)` of the chain complex `K⁻` with `K⁻ᵢ = K⁻ⁱ` (the restriction of `K` along `n ↦ -n`).
 Through the unsigned cohomology comparison `CochainComplex.linearHomComplexSingleHomologyIso` and
 the universal coefficient sequence of chain complexes (`TauCeti.Algebra.Homology.Kronecker` and
-`TauCeti.Algebra.Homology.UniversalCoefficient.Basic`), this file establishes the universal
 `TauCeti.Algebra.Homology.UniversalCoefficient.Basic`), this file establishes the universal
 coefficient sequence of the dual complex:
 
@@ -117,9 +114,8 @@ private lemma restriction_d_comp_retraction_iCycles_comp_homologyπ
         (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
           (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫
         retraction (K.iCycles (-i)) ≫ K.homologyπ (-i) = 0 := by
-  rw [(ComplexShape.up ℤ).next_eq' (show (ComplexShape.up ℤ).Rel i (i + 1) by simp),
-    K.restriction_d_eq ComplexShape.embeddingDownIntUpInt
-      (ComplexShape.embeddingDownIntUpInt_f (i + 1)) (ComplexShape.embeddingDownIntUpInt_f i),
+  rw [K.restriction_d_eq ComplexShape.embeddingDownIntUpInt rfl
+      (ComplexShape.embeddingDownIntUpInt_f i),
     Category.assoc, Category.assoc, Iso.inv_hom_id_assoc,
     HomologicalComplex.d_comp_retraction_iCycles_comp_homologyπ, comp_zero]
 
@@ -161,30 +157,16 @@ lemma homologyπ_linearHomComplexSingleKronecker (i : ℤ)
         ((linearHomComplex k K ((singleFunctor C 0).obj Y)).homologyπ i φ) =
       K.iCycles (-i) ≫ Cochain.toSingleEquiv (neg_add_cancel i)
         ((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i φ) := by
-  let ψ : (_root_.ChainComplex.linearYonedaObj
-      (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).cycles i :=
-    (i * (i + 1) / 2).negOnePow • cyclesMap (linearHomComplexSingleIso k K Y).hom i φ
-  have hψ : (_root_.ChainComplex.linearYonedaObj
-        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).iCycles i ψ =
-      Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
-        (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) := by
-    dsimp only [ψ]
-    rw [Units.smul_def, map_zsmul, moduleCat_iCycles_cyclesMap_apply, ← Units.smul_def,
-      linearHomComplexSingleIso_hom_f_apply]
-    exact Int.negOnePow_smul_negOnePow_smul _ _
-  have hψ_rest : (_root_.ChainComplex.linearYonedaObj
-        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).iCycles i ψ =
-      Cochain.toSingleEquiv (by simp : ComplexShape.embeddingDownIntUpInt.f i + i = 0)
-        ((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i φ) :=
-    hψ
-  simp only [linearHomComplexSingleKronecker, LinearMap.coe_comp, LinearEquiv.coe_coe,
-    Function.comp_apply, Iso.toLinearEquiv_apply,
-    linearHomComplexSingleHomologyIso_hom_homologyπ K Y i φ ψ hψ,
+  rw [linearHomComplexSingleKronecker, LinearMap.coe_comp, LinearMap.coe_comp,
+    LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    Function.comp_apply, Function.comp_apply, Iso.toLinearEquiv_apply, ← ModuleCat.comp_apply,
+    homologyπ_linearHomComplexSingleHomologyIso_hom, ModuleCat.comp_apply,
     Linear.homCongr_apply, Iso.refl_hom, Category.comp_id,
     homologyπ_restrictionHomologyIsoOfSurjective_inv_assoc,
     TauCeti.ChainComplex.kronecker_homologyπ]
-  rw [hψ_rest, restrictionCyclesIsoOfSurjective_inv_iCycles_assoc,
-    HomComplex.Cochain.restrictionXIso_inv_comp_toSingleEquiv]
+  refine (congrArg (_ ≫ _ ≫ ·)
+    (iCycles_linearHomComplexSingleCyclesIso_hom_apply K Y i φ)).trans ?_
+  rw [restrictionCyclesIsoOfSurjective_inv_iCycles_assoc, Iso.inv_hom_id_assoc]
 
 /-- **The universal coefficient theorem for injective coefficients**: for an injective object
 `Y`, the Kronecker map `Hⁱ(Hom(K, Y[0])) →ₗ[k] (H⁻ⁱ(K) ⟶ Y)` is bijective. -/
@@ -333,16 +315,25 @@ lemma linearHomComplexSingleKroneckerSection_apply (i : ℤ) [IsSplitMono (K.iCy
         (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫
       retraction (K.iCycles (-i)) ≫ K.homologyπ (-i))
     (restriction_d_comp_retraction_iCycles_comp_homologyπ K i) g
-  have hψ : (_root_.ChainComplex.linearYonedaObj
+  have hψ : ψ = (linearHomComplexSingleCyclesIso k K Y i).hom.hom φ := by
+    apply HomologicalComplex.moduleCat_iCycles_injective
+    have h1 : (_root_.ChainComplex.linearYonedaObj
         (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).iCycles i ψ =
-      Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
-        (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) := by
-    rw [TauCeti.ChainComplex.iCycles_cocycleOfComp, Category.assoc, Category.assoc, hφ]
-    exact Category.id_comp _
+        (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
+          (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫
+          retraction (K.iCycles (-i)) ≫ K.homologyπ (-i) ≫ g := by
+      rw [TauCeti.ChainComplex.iCycles_cocycleOfComp, Category.assoc, Category.assoc]
+    have h2 : Cochain.toSingleEquiv (neg_add_cancel i)
+        (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) =
+        retraction (K.iCycles (-i)) ≫ K.homologyπ (-i) ≫ g := hφ
+    have h3 := iCycles_linearHomComplexSingleCyclesIso_hom_apply K Y i φ
+    rw [h2] at h3
+    exact h1.trans h3.symm
   rw [linearHomComplexSingleKroneckerSection, LinearMap.comp_apply,
     TauCeti.ChainComplex.homologyClassOfComp_eq _ _ g ψ
-      (TauCeti.ChainComplex.iCycles_cocycleOfComp _ _ g)]
-  exact linearHomComplexSingleHomologyIso_inv_homologyπ K Y i φ ψ hψ
+      (TauCeti.ChainComplex.iCycles_cocycleOfComp _ _ g),
+    hψ, ← ModuleCat.comp_apply, homologyπ_linearHomComplexSingleHomologyIso_inv,
+    ← ModuleCat.comp_apply, Iso.hom_inv_id_assoc]
 
 /-- `linearHomComplexSingleKroneckerSection` is a right inverse of
 `linearHomComplexSingleKronecker`. -/
@@ -401,6 +392,59 @@ def linearHomComplexSingleExtToHomology (i : ℤ) [Projective (K.cycles (1 - i))
         surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).symm
       (Iso.refl Y) 1).toLinearMap
 
+omit [HasExt.{w} C] in
+private lemma cochainBoundaries_shortExact (j : ℤ) :
+    (ShortComplex.mk (kernel.ι (K.homologyπ j)) (K.homologyπ j) (kernel.condition _)).ShortExact :=
+  TauCeti.kernelSequence_shortExact (K.homologyπ j)
+
+omit [HasExt.{w} C] in
+private lemma restrictionBoundaries_shortExact (j : ℤ) :
+    (ShortComplex.mk
+      (kernel.ι ((K.restriction ComplexShape.embeddingDownIntUpInt).homologyπ j))
+      ((K.restriction ComplexShape.embeddingDownIntUpInt).homologyπ j)
+      (kernel.condition _)).ShortExact :=
+  TauCeti.kernelSequence_shortExact _
+
+/-- Transporting an extension class of the kernel sequence of `K` in degree `1 - i` along
+`restrictionHomologyIsoOfSurjective` gives the corresponding extension class of the kernel sequence
+of `K.restriction embeddingDownIntUpInt` in degree `i - 1`, precomposed with the induced boundary
+isomorphism. -/
+private lemma extLinearEquivOfIso_restrictionHomologyIso_kernelSequence_extClass_comp_mk₀
+    (i : ℤ) (β : kernel (K.homologyπ (1 - i)) ⟶ Y) :
+    TauCeti.extLinearEquivOfIso k
+        (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+          surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).symm (Iso.refl Y) 1
+        ((cochainBoundaries_shortExact K (1 - i)).extClass.comp (Ext.mk₀ β) (add_zero 1)) =
+      (restrictionBoundaries_shortExact K (i - 1)).extClass.comp
+        (Ext.mk₀ (kernel.map _ _
+          (K.restrictionCyclesIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+            surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
+          (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+            surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
+          (K.homologyπ_restrictionHomologyIsoOfSurjective_hom ComplexShape.embeddingDownIntUpInt
+            surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)) ≫ β))
+        (add_zero 1) := by
+  have hn := ShortComplex.ShortExact.extClass_naturality
+    (restrictionBoundaries_shortExact K (i - 1)) (cochainBoundaries_shortExact K (1 - i))
+    { τ₁ := kernel.map _ _
+        (K.restrictionCyclesIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+          surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
+        (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+          surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
+        (K.homologyπ_restrictionHomologyIsoOfSurjective_hom ComplexShape.embeddingDownIntUpInt
+          surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp))
+      τ₂ := (K.restrictionCyclesIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+        surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
+      τ₃ := (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+        surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
+      comm₁₂ := kernel.lift_ι _ _ _
+      comm₂₃ := (K.homologyπ_restrictionHomologyIsoOfSurjective_hom
+        ComplexShape.embeddingDownIntUpInt surjective_embeddingDownIntUpInt_f (i - 1) (1 - i)
+        (by simp)).symm }
+  rw [TauCeti.extLinearEquivOfIso_apply, Iso.symm_inv, Iso.refl_hom, Ext.comp_mk₀_id,
+    ← Ext.comp_assoc_of_third_deg_zero, ← hn, Ext.comp_assoc_of_second_deg_zero,
+    Ext.mk₀_comp_mk₀]
+
 /-- **The characterization of `CochainComplex.linearHomComplexSingleExtToHomology`**: the class in
 `Ext¹(H¹⁻ⁱ(K), Y)` of a morphism `β : B¹⁻ⁱ ⟶ Y` from the coboundaries of `K` goes to the class of
 a cocycle `φ` of `Hom(K, Y[0])` of degree `i` whose underlying morphism `K⁻ⁱ ⟶ Y` is
@@ -423,58 +467,29 @@ lemma linearHomComplexSingleExtToHomology_extClass_comp_mk₀ (i : ℤ)
       surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
     (K.homologyπ_restrictionHomologyIsoOfSurjective_hom ComplexShape.embeddingDownIntUpInt
       surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp))
-  -- state the kernel sequences with explicit terms, so that rewriting sees their objects
-  have hK : (ShortComplex.mk (kernel.ι (K.homologyπ (1 - i))) _ (kernel.condition _)).ShortExact :=
-    TauCeti.kernelSequence_shortExact _
-  have hL : (ShortComplex.mk (kernel.ι ((K.restriction ComplexShape.embeddingDownIntUpInt).homologyπ
-      (i - 1))) _ (kernel.condition _)).ShortExact := TauCeti.kernelSequence_shortExact _
-  -- the extension classes of the kernel sequences of `K⁻` and `K` correspond
-  have hn := ShortComplex.ShortExact.extClass_naturality hL hK
-    { τ₁ := b
-      τ₂ := (K.restrictionCyclesIsoOfSurjective ComplexShape.embeddingDownIntUpInt
-        surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
-      τ₃ := (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
-        surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).hom
-      comm₁₂ := kernel.lift_ι _ _ _
-      comm₂₃ := (K.homologyπ_restrictionHomologyIsoOfSurjective_hom
-        ComplexShape.embeddingDownIntUpInt surjective_embeddingDownIntUpInt_f (i - 1) (1 - i)
-        (by simp)).symm }
-  have he : TauCeti.extLinearEquivOfIso k
-      (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
-        surjective_embeddingDownIntUpInt_f (i - 1) (1 - i) (by simp)).symm (Iso.refl Y) 1
-      (hK.extClass.comp (Ext.mk₀ β) (add_zero 1)) =
-      hL.extClass.comp (Ext.mk₀ (b ≫ β)) (add_zero 1) := by
-    rw [TauCeti.extLinearEquivOfIso_apply, Iso.symm_inv, Iso.refl_hom, Ext.comp_mk₀_id,
-      ← Ext.comp_assoc_of_third_deg_zero, ← hn, Ext.comp_assoc_of_second_deg_zero,
-      Ext.mk₀_comp_mk₀]
-  let ψ : (_root_.ChainComplex.linearYonedaObj
-      (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).cycles i :=
-    (i * (i + 1) / 2).negOnePow • cyclesMap (linearHomComplexSingleIso k K Y).hom i φ
-  have hψ_cocycle : (_root_.ChainComplex.linearYonedaObj
-        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).iCycles i ψ =
-      Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
-        (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) := by
-    dsimp only [ψ]
-    rw [Units.smul_def, map_zsmul, moduleCat_iCycles_cyclesMap_apply, ← Units.smul_def,
-      linearHomComplexSingleIso_hom_f_apply]
-    exact Int.negOnePow_smul_negOnePow_smul _ _
-  have hψ_bound : (_root_.ChainComplex.linearYonedaObj _ k Y).iCycles i ψ =
+  let ψ := (linearHomComplexSingleCyclesIso k K Y i).hom.hom φ
+  have hψ_bound : ((_root_.ChainComplex.linearYonedaObj
+      (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).iCycles i).hom ψ =
       (K.restriction ComplexShape.embeddingDownIntUpInt).toBoundaries i (i - 1) ≫ b ≫ β := by
-    have hψ_rest : (_root_.ChainComplex.linearYonedaObj _ k Y).iCycles i ψ =
-        Cochain.toSingleEquiv (by simp : ComplexShape.embeddingDownIntUpInt.f i + i = 0)
-          ((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i φ) :=
-      hψ_cocycle
-    rw [hψ_rest]
-    exact (cancel_epi (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
-        (ComplexShape.embeddingDownIntUpInt_f i)).inv).1
-      ((HomComplex.Cochain.restrictionXIso_inv_comp_toSingleEquiv _ _ _ _ (neg_add_cancel i) _
-        _).trans (hφ.trans ((K.restrictionXIso_inv_comp_toBoundaries_kernelMap_assoc
-          ComplexShape.embeddingDownIntUpInt surjective_embeddingDownIntUpInt_f i (i - 1) (-i)
-          (1 - i) (ComplexShape.embeddingDownIntUpInt_f i) (by simp) β).symm)))
-  refine Eq.trans (congrArg (linearHomComplexSingleHomologyIso k K Y i).symm.hom.hom
-    ((congrArg (TauCeti.ChainComplex.extToHomology k _ Y i (i - 1)) he).trans
-      (TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀ i (i - 1) (b ≫ β) ψ hψ_bound))) ?_
-  exact linearHomComplexSingleHomologyIso_inv_homologyπ K Y i φ ψ hψ_cocycle
+    apply (cancel_epi (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
+      (ComplexShape.embeddingDownIntUpInt_f i)).inv).mp
+    have h1 := restrictionXIso_inv_comp_iCycles_linearHomComplexSingleCyclesIso_hom_apply K Y i φ
+    have h2 : Cochain.toSingleEquiv (neg_add_cancel i)
+        (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) =
+        K.toBoundaries (-i) (1 - i) ≫ β := hφ
+    exact h1.trans (h2.trans (K.restrictionXIso_inv_comp_toBoundaries_kernelMap_assoc
+      ComplexShape.embeddingDownIntUpInt surjective_embeddingDownIntUpInt_f i (i - 1) (-i)
+      (1 - i) (ComplexShape.embeddingDownIntUpInt_f i) (by simp) β).symm)
+  have h_ext := congrArg (TauCeti.ChainComplex.extToHomology k
+      (K.restriction ComplexShape.embeddingDownIntUpInt) Y i (i - 1))
+    (extLinearEquivOfIso_restrictionHomologyIso_kernelSequence_extClass_comp_mk₀ (k := k) K Y i β)
+  have h_ext2 := TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀ i (i - 1) (b ≫ β) ψ hψ_bound
+  have h_final := congrArg ((linearHomComplexSingleHomologyIso k K Y i).symm.toLinearEquiv)
+    (h_ext.trans h_ext2)
+  simp only [Iso.toLinearEquiv_apply, Iso.symm_hom, ← ModuleCat.comp_apply] at h_final
+  rw [homologyπ_linearHomComplexSingleHomologyIso_inv, ← ModuleCat.comp_apply,
+    Iso.hom_inv_id_assoc] at h_final
+  exact h_final
 
 /-- **Injectivity in the universal coefficient sequence** of the Hom complex into `Y[0]`: the map
 `Ext¹(H¹⁻ⁱ(K), Y) →ₗ[k] Hⁱ(Hom(K, Y[0]))` is injective. -/

@@ -30,8 +30,7 @@ states (`TauCeti.OrientedPDCode.khovanovHomologyMirrorKronecker`).
 
 * Over a self-injective coefficient ring, for instance a field, it is an isomorphism:
   `Khⁱʲ(D.mirror; R)` is the dual of `Kh^{-i,-j}(D; R)`
-  (`TauCeti.OrientedPDCode.khovanovHomologyMirrorEquivDual`,
-  `TauCeti.OrientedPDCode.khovanovHomologyMirrorDualIsoOfInjective`), giving equality of Betti
+  (`TauCeti.OrientedPDCode.khovanovHomologyMirrorEquivDual`), giving equality of Betti
   numbers over any field (`TauCeti.OrientedPDCode.finrank_khovanovHomology_mirror`).
 * Over a hereditary coefficient ring, for instance `ℤ`, it is split surjective with kernel
   `Ext¹(Kh^{1-i,-j}(D; R), R)`: the sequence
@@ -51,8 +50,7 @@ states (`TauCeti.OrientedPDCode.khovanovHomologyMirrorKronecker`).
 * `TauCeti.OrientedPDCode.khovanovHomologyMirrorKronecker`: the Kronecker map of the mirror,
   characterized by `TauCeti.OrientedPDCode.homologyπ_khovanovHomologyMirrorKronecker`.
 * `TauCeti.OrientedPDCode.khovanovHomologyMirrorKronecker_bijective`,
-  `TauCeti.OrientedPDCode.khovanovHomologyMirrorEquivDual`,
-  `TauCeti.OrientedPDCode.khovanovHomologyMirrorDualIsoOfInjective`, and
+  `TauCeti.OrientedPDCode.khovanovHomologyMirrorEquivDual`, and
   `TauCeti.OrientedPDCode.finrank_khovanovHomology_mirror`: duality over a self-injective ring and
   field Betti number symmetry.
 * `TauCeti.OrientedPDCode.khovanovHomologyMirrorExtToHomology`, characterized by
@@ -106,14 +104,6 @@ lemma khovanovHomologyMirrorIso_inv (i j : ℤ) :
     (D.khovanovHomologyMirrorIso hD hD' R i j).inv =
       homologyMap (D.khovanovComplexMirrorIso hD R j hD').inv i := (rfl)
 
-/-- Khovanov homology of the mirror is the cohomology of the dual of the Khovanov complex of `D`,
-through `TauCeti.OrientedPDCode.khovanovComplexMirrorIso`. -/
-private def mirrorHomologyEquiv (i j : ℤ) :
-    D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
-      (linearHomComplex R (D.khovanovComplex hD R (-j))
-        ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))).homology i :=
-  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv
-
 /-- **The Kronecker map of the mirror**: Khovanov homology of the mirror `D.mirror` in bidegree
 `(i, j)` maps to the linear forms on Khovanov homology of `D` in bidegree `(-i, -j)`. A cocycle
 of the mirror complex is identified with a cocycle of the dual complex `Hom(C(D)_{-j}, R)` by
@@ -123,7 +113,8 @@ vanishing on coboundaries; its restriction to cocycles descends to homology
 def khovanovHomologyMirrorKronecker (i j : ℤ) :
     D.mirror.khovanovHomology hD' R i j →ₗ[R]
       (D.khovanovHomology hD R (-i) (-j) ⟶ ModuleCat.of R R) :=
-  linearHomComplexSingleKronecker R _ _ i ∘ₗ (mirrorHomologyEquiv D hD hD' R i j).toLinearMap
+  linearHomComplexSingleKronecker R _ _ i ∘ₗ
+    (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.toLinearMap
 
 /-- **The Kronecker map of the mirror on classes**: the class of a cocycle `z` of the mirror
 complex evaluates on the class of a cocycle of `D` of degree `-i` as the linear form
@@ -140,7 +131,7 @@ lemma homologyπ_khovanovHomologyMirrorKronecker (i j : ℤ)
         HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
           ((D.khovanovComplexMirrorIso hD R j hD').hom.f i
             ((D.mirror.khovanovComplex hD' R j).iCycles i z)) := by
-  simp [khovanovHomologyMirrorKronecker, mirrorHomologyEquiv, moduleCat_homologyMap_homologyπ,
+  simp [khovanovHomologyMirrorKronecker, moduleCat_homologyMap_homologyπ,
     moduleCat_iCycles_cyclesMap_apply, -linearHomComplex_X]
 
 section Injective
@@ -173,26 +164,6 @@ lemma khovanovHomologyMirrorEquivDual_apply (i j : ℤ) (x : D.mirror.khovanovHo
       (D.khovanovHomologyMirrorKronecker hD hD' R i j x).hom :=
   (rfl)
 
-/-- Categorical form of `TauCeti.OrientedPDCode.khovanovHomologyMirrorEquivDual` in
-`ModuleCat R`. -/
-def khovanovHomologyMirrorDualIsoOfInjective (i j : ℤ) :
-    D.mirror.khovanovHomology hD' R i j ≅
-      ModuleCat.of R (Module.Dual R (D.khovanovHomology hD R (-i) (-j))) :=
-  (D.khovanovHomologyMirrorEquivDual hD hD' R i j).toModuleIso
-
-@[simp]
-lemma khovanovHomologyMirrorDualIsoOfInjective_hom (i j : ℤ) :
-    (D.khovanovHomologyMirrorDualIsoOfInjective hD hD' R i j).hom =
-      ModuleCat.ofHom (ModuleCat.homLinearEquiv.toLinearMap.comp
-        (D.khovanovHomologyMirrorKronecker hD hD' R i j)) := by
-  ext x
-  rfl
-
-@[simp]
-lemma khovanovHomologyMirrorDualIsoOfInjective_inv (i j : ℤ) :
-    (D.khovanovHomologyMirrorDualIsoOfInjective hD hD' R i j).inv =
-      ModuleCat.ofHom (D.khovanovHomologyMirrorEquivDual hD hD' R i j).symm.toLinearMap := (rfl)
-
 end Injective
 
 omit R [CommRing R] in
@@ -215,7 +186,7 @@ transported along the mirror isomorphism `TauCeti.OrientedPDCode.khovanovComplex
 def khovanovHomologyMirrorExtToHomology (i j : ℤ) :
     Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 →ₗ[R]
       D.mirror.khovanovHomology hD' R i j :=
-  (mirrorHomologyEquiv D hD hD' R i j).symm.toLinearMap ∘ₗ
+  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.toLinearMap ∘ₗ
     linearHomComplexSingleExtToHomology R _ _ i
 
 /-- **The characterization of `TauCeti.OrientedPDCode.khovanovHomologyMirrorExtToHomology`**: the
@@ -235,7 +206,7 @@ lemma khovanovHomologyMirrorExtToHomology_extClass_comp_mk₀ (i j : ℤ)
           ((D.khovanovComplex hD R (-j)).homologyπ (1 - i))).extClass.comp (Ext.mk₀ β)
           (add_zero 1)) =
       (D.mirror.khovanovComplex hD' R j).homologyπ i z := by
-  refine (LinearEquiv.symm_apply_eq (mirrorHomologyEquiv D hD hD' R i j)).2
+  refine (LinearEquiv.symm_apply_eq (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv).2
     ((linearHomComplexSingleExtToHomology_extClass_comp_mk₀ _ _ i β _ ?_).trans
       (moduleCat_homologyMap_homologyπ _ i z).symm)
   rw [moduleCat_iCycles_cyclesMap_apply, hz]
@@ -269,7 +240,7 @@ hereditary commutative ring. -/
 def khovanovHomologyMirrorKroneckerSection (i j : ℤ) :
     (D.khovanovHomology hD R (-i) (-j) ⟶ ModuleCat.of R R) →ₗ[R]
       D.mirror.khovanovHomology hD' R i j :=
-  (mirrorHomologyEquiv D hD hD' R i j).symm.toLinearMap ∘ₗ
+  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.toLinearMap ∘ₗ
     linearHomComplexSingleKroneckerSection R _ _ i
 
 /-- **Characterization of `TauCeti.OrientedPDCode.khovanovHomologyMirrorKroneckerSection`**: a
@@ -286,7 +257,7 @@ lemma khovanovHomologyMirrorKroneckerSection_eq_homologyπ (i j : ℤ)
         (D.khovanovComplex hD R (-j)).homologyπ (-i) ≫ g) :
     D.khovanovHomologyMirrorKroneckerSection hD hD' R i j g =
       (D.mirror.khovanovComplex hD' R j).homologyπ i z := by
-  refine (LinearEquiv.symm_apply_eq (mirrorHomologyEquiv D hD hD' R i j)).2
+  refine (LinearEquiv.symm_apply_eq (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv).2
     ((linearHomComplexSingleKroneckerSection_apply i g _ ?_).trans
       (moduleCat_homologyMap_homologyπ _ i z).symm)
   rw [moduleCat_iCycles_cyclesMap_apply]
@@ -297,7 +268,9 @@ theorem khovanovHomologyMirrorKronecker_khovanovHomologyMirrorKroneckerSection (
     (g : D.khovanovHomology hD R (-i) (-j) ⟶ ModuleCat.of R R) :
     D.khovanovHomologyMirrorKronecker hD hD' R i j
         (D.khovanovHomologyMirrorKroneckerSection hD hD' R i j g) = g := by
-  simp [khovanovHomologyMirrorKronecker, khovanovHomologyMirrorKroneckerSection]
+  simp only [khovanovHomologyMirrorKronecker, khovanovHomologyMirrorKroneckerSection,
+    LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+    linearHomComplexSingleKronecker_linearHomComplexSingleKroneckerSection]
 
 /-- **The universal coefficient decomposition for mirror Khovanov cohomology** over a hereditary
 commutative ring:
@@ -306,7 +279,7 @@ def khovanovHomologyMirrorUniversalCoefficientEquiv (i j : ℤ) :
     D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
       Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 ×
         (D.khovanovHomology hD R (-i) (-j) ⟶ ModuleCat.of R R) :=
-  (mirrorHomologyEquiv D hD hD' R i j).trans
+  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
     (linearHomComplexSingleUniversalCoefficientEquiv.{u} R _ _ i)
 
 @[simp]
@@ -383,8 +356,13 @@ lemma khovanovHomologyMirrorUniversalCoefficientSplitting_s (i j : ℤ) :
     (D.khovanovHomologyMirrorUniversalCoefficientSplitting hD hD' R i j).s =
       eqToHom (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₃ hD hD' R i j) ≫
         ModuleCat.ofHom (D.khovanovHomologyMirrorKroneckerSection hD hD' R i j) ≫
-        eqToHom (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₂ hD hD' R i j).symm :=
-  (Category.comp_id _).symm.trans (Category.id_comp _).symm
+        eqToHom
+          (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₂ hD hD' R i j).symm := by
+  dsimp only [khovanovHomologyMirrorUniversalCoefficientSplitting,
+    ShortComplex.Splitting.ofExactOfSection]
+  refine (Category.id_comp _).symm.trans ?_
+  exact congrArg₂ (· ≫ ·) (eqToHom_refl _ _).symm
+    ((Category.comp_id _).symm.trans (congrArg (_ ≫ ·) (eqToHom_refl _ _).symm))
 
 /-- `khovanovHomologyMirrorUniversalCoefficientShortComplex` is short exact in `ModuleCat R`. -/
 theorem khovanovHomologyMirrorUniversalCoefficientShortComplex_shortExact (i j : ℤ) :
@@ -397,7 +375,7 @@ def khovanovHomologyMirrorEquivDualOfProjective (i j : ℤ)
     [Module.Projective R (D.khovanovHomology hD R (1 - i) (-j))] :
     D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
       Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
-  (mirrorHomologyEquiv D hD hD' R i j).trans <|
+  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans <|
     (linearHomComplexSingleKroneckerEquivOfProjectiveHomology R _ _ i).trans
       ModuleCat.homLinearEquiv
 

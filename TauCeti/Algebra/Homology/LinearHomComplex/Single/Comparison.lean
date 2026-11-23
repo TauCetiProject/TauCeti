@@ -43,9 +43,15 @@ This file establishes `CochainComplex.linearHomComplexSingleIso`, its naturality
 * `CochainComplex.linearHomComplexPrecomp_linearHomComplexSingleIso_hom` and
   `CochainComplex.linearHomComplexPostcomp_linearHomComplexSingleIso_hom`: naturality of
   `CochainComplex.linearHomComplexSingleIso` in `K` and `Y`.
+* `CochainComplex.linearHomComplexSingleCyclesIso`,
+  `CochainComplex.iCycles_linearHomComplexSingleCyclesIso_hom_apply`,
+  `CochainComplex.restrictionXIso_inv_comp_iCycles_linearHomComplexSingleCyclesIso_hom_apply`:
+  unsigned cocycle comparison isomorphism and its underlying-morphism formulas.
 * `CochainComplex.linearHomComplexSingleHomologyIso`,
   `CochainComplex.homologyMap_precomp_linearHomComplexSingleHomologyIso_hom`,
   `CochainComplex.homologyMap_postcomp_linearHomComplexSingleHomologyIso_hom`,
+  `CochainComplex.homologyπ_linearHomComplexSingleHomologyIso_hom`,
+  `CochainComplex.homologyπ_linearHomComplexSingleHomologyIso_inv`,
   `CochainComplex.linearHomComplexSingleHomologyIso_hom_homologyπ`, and
   `CochainComplex.linearHomComplexSingleHomologyIso_inv_homologyπ`: unsigned cohomology comparison
   isomorphism, naturality, and cocycle formulas.
@@ -128,15 +134,32 @@ private def homSingleXIso (i : ℤ) :
   (homSingleXEquiv k K Y i).toModuleIso
 
 /-- The isomorphisms `CochainComplex.homSingleXIso` commute with the differentials. -/
-private lemma homSingle_comm (i : ℤ) (α : Cochain K ((singleFunctor C 0).obj Y) i) :
+private lemma homSingle_comm {k} [Ring k] [Linear k C] (i : ℤ)
+    (α : Cochain K ((singleFunctor C 0).obj Y) i) :
     (K.restriction ComplexShape.embeddingDownIntUpInt).d (i + 1) i ≫
         (homSingleSign i • Cochain.toSingleEquiv (embeddingDownIntUpInt_f_add_self i) α) =
       homSingleSign (i + 1) •
         Cochain.toSingleEquiv (embeddingDownIntUpInt_f_add_self (i + 1)) (δ i (i + 1) α) := by
-  obtain ⟨f, rfl⟩ := Cochain.toSingleMk_surjective α _ (embeddingDownIntUpInt_f_add_self i)
-  rw [Cochain.δ_toSingleMk f (embeddingDownIntUpInt_f_add_self i) (i + 1)
-    (ComplexShape.embeddingDownIntUpInt.f (i + 1)) (embeddingDownIntUpInt_f_add_self _)]
-  simp [homSingleSign, Int.negOnePow_mul_succ_div_two_succ, smul_smul, mul_right_comm]
+  rw [← cancel_epi (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
+      (ComplexShape.embeddingDownIntUpInt_f (i + 1))).inv,
+    K.restriction_d_eq ComplexShape.embeddingDownIntUpInt
+      (ComplexShape.embeddingDownIntUpInt_f (i + 1)) (ComplexShape.embeddingDownIntUpInt_f i),
+    Category.assoc, Category.assoc, Iso.inv_hom_id_assoc]
+  simp only [Units.smul_def, Preadditive.comp_zsmul]
+  rw [HomComplex.Cochain.restrictionXIso_inv_comp_toSingleEquiv K Y
+      ComplexShape.embeddingDownIntUpInt (ComplexShape.embeddingDownIntUpInt_f i)
+      (neg_add_cancel i) (embeddingDownIntUpInt_f_add_self i),
+    HomComplex.Cochain.restrictionXIso_inv_comp_toSingleEquiv K Y
+      ComplexShape.embeddingDownIntUpInt (ComplexShape.embeddingDownIntUpInt_f (i + 1))
+      (neg_add_cancel (i + 1)) (embeddingDownIntUpInt_f_add_self (i + 1))]
+  have hd := toSingleLinearEquiv_linearHomComplex_d_apply (k := k) K Y i α
+  rw [linearHomComplex_d_hom_apply] at hd
+  simp only [Cochain.toSingleLinearEquiv_apply, AddEquiv.toFun_eq_coe] at hd
+  rw [hd]
+  simp only [homSingleSign, Int.negOnePow_mul_succ_div_two_succ, Units.smul_def, smul_smul,
+    ← Units.val_mul]
+  rw [mul_right_comm]
+  simp
 
 variable (k) in
 /-- **The Hom complex into an object placed in degree zero is its linear Yoneda complex.** The
@@ -152,7 +175,7 @@ def linearHomComplexSingleIso :
   Hom.isoOfComponents (homSingleXIso k K Y) (by
     rintro i _ rfl
     ext α
-    exact homSingle_comm K Y i α)
+    exact homSingle_comm (k := k) K Y i α)
 
 /-- In degree `i`, `CochainComplex.linearHomComplexSingleIso` sends a cochain `α` of degree `i`
 to the morphism `K⁻ⁱ ⟶ Y` it consists of (`HomComplex.Cochain.toSingleEquiv`), multiplied by the
@@ -216,6 +239,70 @@ theorem linearHomComplexPostcomp_linearHomComplexSingleIso_hom
     Units.smul_def, Preadditive.zsmul_comp]
   congr 2
   exact toSingleLinearEquiv_linearHomComplexPostcomp_f_apply K g i z
+
+/-- **Unsigned cocycle comparison** between `linearHomComplex k K ((singleFunctor C 0).obj Y)`
+and `_root_.ChainComplex.linearYonedaObj (K.restriction ComplexShape.embeddingDownIntUpInt) k Y`
+in degree `i`. Multiplying the map on cycles induced by `CochainComplex.linearHomComplexSingleIso`
+by `(-1)^(i(i + 1) / 2)` cancels the degree-`i` sign on cocycles. -/
+def linearHomComplexSingleCyclesIso (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
+    (linearHomComplex k K ((singleFunctor C 0).obj Y)).cycles i ≅
+      (_root_.ChainComplex.linearYonedaObj
+        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).cycles i :=
+  (i * (i + 1) / 2).negOnePow •
+    HomologicalComplex.cyclesMapIso (linearHomComplexSingleIso k K Y) i
+
+@[simp]
+lemma linearHomComplexSingleCyclesIso_hom (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
+    (linearHomComplexSingleCyclesIso k K Y i).hom =
+      (i * (i + 1) / 2).negOnePow • cyclesMap (linearHomComplexSingleIso k K Y).hom i :=
+  (rfl)
+
+@[simp]
+lemma linearHomComplexSingleCyclesIso_inv (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
+    (linearHomComplexSingleCyclesIso k K Y i).inv =
+      (i * (i + 1) / 2).negOnePow • cyclesMap (linearHomComplexSingleIso k K Y).inv i := by
+  simp [linearHomComplexSingleCyclesIso, Int.units_inv_eq_self]
+
+/-- On cocycles, `CochainComplex.linearHomComplexSingleCyclesIso` removes the sign
+`(-1)^(i(i + 1) / 2)` and recovers the underlying morphism `K⁻ⁱ ⟶ Y` via
+`HomComplex.Cochain.toSingleEquiv`, transported along `restrictionXIso`. -/
+lemma iCycles_linearHomComplexSingleCyclesIso_hom_apply {k} [Ring k] [Linear k C]
+    (K : CochainComplex C ℤ) (Y : C) (i : ℤ)
+    (φ : (linearHomComplex k K ((singleFunctor C 0).obj Y)).cycles i) :
+    ((_root_.ChainComplex.linearYonedaObj
+      (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).iCycles i).hom
+        ((linearHomComplexSingleCyclesIso k K Y i).hom.hom φ) =
+      (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
+          (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫
+        Cochain.toSingleEquiv (neg_add_cancel i)
+          (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) := by
+  rw [linearHomComplexSingleCyclesIso_hom, Units.smul_def, ModuleCat.hom_zsmul,
+    LinearMap.smul_apply, map_zsmul, moduleCat_iCycles_cyclesMap_apply, ← Units.smul_def]
+  change (i * (i + 1) / 2).negOnePow • homSingleXEquiv k K Y i
+      (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) = _
+  rw [homSingleXEquiv_apply]
+  dsimp only [homSingleSign]
+  rw [Int.negOnePow_smul_negOnePow_smul,
+    ← cancel_epi (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
+      (ComplexShape.embeddingDownIntUpInt_f i)).inv,
+    Iso.inv_hom_id_assoc]
+  exact HomComplex.Cochain.restrictionXIso_inv_comp_toSingleEquiv K Y
+    ComplexShape.embeddingDownIntUpInt (ComplexShape.embeddingDownIntUpInt_f i)
+    (neg_add_cancel i) (embeddingDownIntUpInt_f_add_self i) _
+
+/-- `restrictionXIso.inv` composed with the underlying morphism of
+`CochainComplex.linearHomComplexSingleCyclesIso` is `HomComplex.Cochain.toSingleEquiv` directly. -/
+lemma restrictionXIso_inv_comp_iCycles_linearHomComplexSingleCyclesIso_hom_apply
+    {k} [Ring k] [Linear k C] (K : CochainComplex C ℤ) (Y : C) (i : ℤ)
+    (φ : (linearHomComplex k K ((singleFunctor C 0).obj Y)).cycles i) :
+    (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
+        (ComplexShape.embeddingDownIntUpInt_f i)).inv ≫
+      ((_root_.ChainComplex.linearYonedaObj
+        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).iCycles i).hom
+          ((linearHomComplexSingleCyclesIso k K Y i).hom.hom φ) =
+      Cochain.toSingleEquiv (neg_add_cancel i)
+        (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) := by
+  rw [iCycles_linearHomComplexSingleCyclesIso_hom_apply, Iso.inv_hom_id_assoc]
 
 /-- **Unsigned cohomology comparison** between `linearHomComplex k K ((singleFunctor C 0).obj Y)`
 and `_root_.ChainComplex.linearYonedaObj (K.restriction ComplexShape.embeddingDownIntUpInt) k Y` in
@@ -285,6 +372,31 @@ theorem homologyMap_postcomp_linearHomComplexSingleHomologyIso_hom
     Linear.comp_units_smul, Linear.units_smul_comp, ← homologyMap_comp, ← homologyMap_comp,
     linearHomComplexPostcomp_linearHomComplexSingleIso_hom]
 
+/-- `CochainComplex.linearHomComplexSingleHomologyIso` intertwines `homologyπ` with
+`CochainComplex.linearHomComplexSingleCyclesIso`. -/
+@[reassoc]
+lemma homologyπ_linearHomComplexSingleHomologyIso_hom (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
+    (linearHomComplex k K ((singleFunctor C 0).obj Y)).homologyπ i ≫
+        (linearHomComplexSingleHomologyIso k K Y i).hom =
+      (linearHomComplexSingleCyclesIso k K Y i).hom ≫
+        (_root_.ChainComplex.linearYonedaObj
+          (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).homologyπ i := by
+  rw [linearHomComplexSingleHomologyIso_hom, linearHomComplexSingleCyclesIso_hom,
+    Linear.comp_units_smul, Linear.units_smul_comp, HomologicalComplex.homologyπ_naturality]
+
+/-- The inverse of `CochainComplex.linearHomComplexSingleHomologyIso` intertwines `homologyπ` with
+the inverse of `CochainComplex.linearHomComplexSingleCyclesIso`. -/
+@[reassoc]
+lemma homologyπ_linearHomComplexSingleHomologyIso_inv (K : CochainComplex C ℤ) (Y : C) (i : ℤ) :
+    (_root_.ChainComplex.linearYonedaObj
+      (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).homologyπ i ≫
+        (linearHomComplexSingleHomologyIso k K Y i).inv =
+      (linearHomComplexSingleCyclesIso k K Y i).inv ≫
+        (linearHomComplex k K ((singleFunctor C 0).obj Y)).homologyπ i := by
+  rw [← cancel_mono (linearHomComplexSingleHomologyIso k K Y i).hom, Category.assoc,
+    Category.assoc, Iso.inv_hom_id, Category.comp_id,
+    homologyπ_linearHomComplexSingleHomologyIso_hom, Iso.inv_hom_id_assoc]
+
 /-- On cocycles, `CochainComplex.linearHomComplexSingleHomologyIso` removes the sign
 `(-1)^(i(i + 1) / 2)` and sends the class of a cocycle `φ` directly to the class of
 `Cochain.toSingleLinearEquiv` applied to its underlying cochain. -/
@@ -301,20 +413,18 @@ lemma linearHomComplexSingleHomologyIso_hom_homologyπ {k} [Ring k] [Linear k C]
         (((linearHomComplex k K ((singleFunctor C 0).obj Y)).homologyπ i).hom φ) =
       (_root_.ChainComplex.linearYonedaObj
         (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).homologyπ i ψ := by
-  have hnat := ConcreteCategory.congr_hom
-    (HomologicalComplex.homologyπ_naturality (linearHomComplexSingleIso k K Y).hom i) φ
-  rw [ModuleCat.comp_apply, ModuleCat.comp_apply] at hnat
-  have hcyc : cyclesMap (linearHomComplexSingleIso k K Y).hom i φ =
-      (i * (i + 1) / 2).negOnePow • ψ := by
+  have hψ' : ψ = (linearHomComplexSingleCyclesIso k K Y i).hom.hom φ := by
     apply HomologicalComplex.moduleCat_iCycles_injective
-    have hi := ConcreteCategory.congr_hom
-      (HomologicalComplex.cyclesMap_i (linearHomComplexSingleIso k K Y).hom i) φ
-    rw [ModuleCat.comp_apply, ModuleCat.comp_apply] at hi
-    rw [hi, linearHomComplexSingleIso_hom_f_apply, map_zsmul_unit, hψ]
-    rfl
-  rw [linearHomComplexSingleHomologyIso_hom, Units.smul_def, ModuleCat.hom_zsmul,
-    LinearMap.smul_apply, ← Units.smul_def, hnat, hcyc, map_zsmul_unit,
-    Int.negOnePow_smul_negOnePow_smul]
+    have h1 := iCycles_linearHomComplexSingleCyclesIso_hom_apply K Y i φ
+    have h2 : ((_root_.ChainComplex.linearYonedaObj
+        (K.restriction ComplexShape.embeddingDownIntUpInt) k Y).iCycles i).hom ψ =
+        Cochain.toSingleEquiv (neg_add_cancel i)
+          (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) :=
+      hψ
+    refine h2.trans (h1.trans ?_).symm
+    exact Category.id_comp _
+  rw [hψ', ← ModuleCat.comp_apply, homologyπ_linearHomComplexSingleHomologyIso_hom,
+    ModuleCat.comp_apply]
 
 /-- Inverse form of `CochainComplex.linearHomComplexSingleHomologyIso_hom_homologyπ`:
 `(CochainComplex.linearHomComplexSingleHomologyIso k K Y i).inv` sends the class of `ψ` to the
