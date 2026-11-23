@@ -401,6 +401,12 @@ theorem sphericalPendulumPeriod_pos (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
     (fun z hz ↦ inv_pos.2 (Real.sqrt_pos.2 (two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV hz)))
     (sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV)
 
+/-- On the domain of distinct nonpolar turning points, the period of the height is positive. -/
+theorem sphericalPendulumPeriod_pos_of_mem
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain) : 0 < sphericalPendulumPeriod h j :=
+  let ⟨hj, _, hz₀, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hc
+  sphericalPendulumPeriod_pos hj hz₀ hV
+
 /-- **The period as a regular integral.** Above the curve of relative equilibria, the substitution
 `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between the turning points `z₋ < z₊` turns the period
 into the integral `T(h, j) = 2 ∫_{-π/2}^{π/2} dθ / √(2 (z₃ - z))`, where `z₃ = h - z₋ - z₊ > 1` is
