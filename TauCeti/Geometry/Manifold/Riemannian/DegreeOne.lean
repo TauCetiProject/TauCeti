@@ -50,7 +50,7 @@ theorem alternatingFormEquiv_rieszDual_degreeOneEquiv (a : SmoothForm I M ℝ 1)
       VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
      alternatingFormEquiv (TangentSpace I x) 1
       (ιMulti ℝ 1 ![Riemannian.Tensor.rieszDual (I := I) x (degreeOneEquiv a x)])) =
-      a.1 x := by
+      a.val x := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
   ext w
