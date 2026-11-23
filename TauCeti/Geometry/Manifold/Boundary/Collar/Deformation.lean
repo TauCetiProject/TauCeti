@@ -90,7 +90,7 @@ lemma exists_notMem_collarPart {x : M} (hx : x ∉ range f) : ∃ t, 0 < t ∧ x
   · obtain ⟨q, rfl⟩ := hxc
     -- The depth of `x = c q` is positive, since the zero slice of the collar is the boundary.
     have hq : 0 < (q.2 : ℝ) := by
-      refine lt_of_le_of_ne q.2.2.1 fun h ↦ hx ?_
+      refine lt_of_le_of_ne q.2.property.1 fun h ↦ hx ?_
       have h₀ : q = (q.1, ⟨0, by norm_num⟩) := Prod.ext rfl (Subtype.ext h.symm)
       rw [h₀, hc.apply_zero]
       exact mem_range_self _
@@ -101,14 +101,14 @@ lemma exists_notMem_collarPart {x : M} (hx : x ∉ range f) : ∃ t, 0 < t ∧ x
 /-- The collar coordinates of a point of the collar of depth less than `t`. -/
 def collarCoord (t : ℝ) : C(collarPart c t, N × Ico (0 : ℝ) 1) :=
   ⟨fun x ↦ hc.isOpenEmbedding.isEmbedding.toHomeomorph.symm
-      ⟨x, image_subset_range _ _ x.2⟩,
+      ⟨x, image_subset_range _ _ x.property⟩,
     hc.isOpenEmbedding.isEmbedding.toHomeomorph.symm.continuous.comp
-      (continuous_subtype_val.subtype_mk _)⟩
+      (continuous_subtypeVal.subtype_mk _)⟩
 
 /-- The collar sends the collar coordinates of a point back to the point. -/
 lemma apply_collarCoord {t : ℝ} (x : collarPart c t) : c (hc.collarCoord t x) = x :=
   congrArg Subtype.val (hc.isOpenEmbedding.isEmbedding.toHomeomorph.apply_symm_apply
-    ⟨x, image_subset_range _ _ x.2⟩)
+    ⟨x, image_subset_range _ _ x.property⟩)
 
 /-- The collar coordinates of `c p` are `p`. -/
 lemma collarCoord_apply {t : ℝ} (x : collarPart c t) (p : N × Ico (0 : ℝ) 1) (hp : c p = x) :
@@ -117,7 +117,7 @@ lemma collarCoord_apply {t : ℝ} (x : collarPart c t) (p : N × Ico (0 : ℝ) 1
 
 /-- A point of the collar of depth less than `t` has depth less than `t`. -/
 lemma collarCoord_lt {t : ℝ} (x : collarPart c t) : ((hc.collarCoord t x).2 : ℝ) < t := by
-  obtain ⟨p, hp, hpx⟩ := x.2
+  obtain ⟨p, hp, hpx⟩ := x.property
   rw [hc.collarCoord_apply x p hpx]
   exact hp
 
@@ -135,21 +135,22 @@ lemma coe_collarRetraction {t : ℝ} (x : collarPart c t) :
 /-- The point at the same base as `x` and at depth `τ` times the depth of `x`. -/
 private def collarScale {t : ℝ} (τ : I) (x : collarPart c t) : M :=
   c ((hc.collarCoord t x).1, ⟨τ * (hc.collarCoord t x).2,
-    mul_nonneg τ.2.1 (hc.collarCoord t x).2.2.1,
-    (mul_le_of_le_one_left (hc.collarCoord t x).2.2.1 τ.2.2).trans_lt
-      (hc.collarCoord t x).2.2.2⟩)
+    mul_nonneg τ.property.1 (hc.collarCoord t x).2.property.1,
+    (mul_le_of_le_one_left (hc.collarCoord t x).2.property.1 τ.property.2).trans_lt
+      (hc.collarCoord t x).2.property.2⟩)
 
 private lemma collarScale_mem {t : ℝ} (τ : I) (x : collarPart c t) :
     hc.collarScale τ x ∈ collarPart c t :=
-  ⟨_, (mul_le_of_le_one_left (hc.collarCoord t x).2.2.1 τ.2.2).trans_lt (hc.collarCoord_lt x),
+  ⟨_, (mul_le_of_le_one_left (hc.collarCoord t x).2.property.1 τ.property.2).trans_lt
+      (hc.collarCoord_lt x),
     rfl⟩
 
 private lemma continuous_collarScale {t : ℝ} :
     Continuous fun q : I × collarPart c t ↦ hc.collarScale q.1 q.2 := by
   have h : Continuous fun q : I × collarPart c t ↦ hc.collarCoord t q.2 :=
     (map_continuous _).comp continuous_snd
-  exact hc.isOpenEmbedding.continuous.comp (h.fst.prodMk (((continuous_subtype_val.comp
-    continuous_fst).mul (continuous_subtype_val.comp h.snd)).subtype_mk _))
+  exact hc.isOpenEmbedding.continuous.comp (h.fst.prodMk (((continuous_subtypeVal.comp
+    continuous_fst).mul (continuous_subtypeVal.comp h.snd)).subtype_mk _))
 
 /-- **The collar deforms onto the boundary.** For `0 < t`, scaling the depth coordinate deforms
 the collar `c(N × [0, t))` of depth less than `t` onto the boundary `f(N)`, relative to `f(N)`. -/

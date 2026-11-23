@@ -156,9 +156,9 @@ triangular, and so are their `w`-conjugates, which are again diagonal. -/
 theorem torusHom_mem_mackeySubgroup_weyl (p : Rˣ × Rˣ) :
     ((torusHom p : GL2Borel R) : GL (Fin 2) R)
       ∈ mackeySubgroup (GL2WeylElement R) (GL2Borel R) (GL2Borel R) := by
-  refine mem_mackeySubgroup_iff.mpr ⟨(torusHom p).2, ?_⟩
+  refine mem_mackeySubgroup_iff.mpr ⟨(torusHom p).property, ?_⟩
   rw [inv_weyl_mul_torusHom_mul_weyl]
-  exact (torusHom (p.2, p.1)).2
+  exact (torusHom (p.2, p.1)).property
 
 /-- The diagonal matrix `diag(a, d)`, read as an element of the Mackey subgroup at the Weyl
 element viewed inside the Borel subgroup. This is the one element the character computation is
@@ -329,7 +329,7 @@ theorem character_GL2PrincipalSeries_mapEquiv (α β : F'ˣ →* ℂˣ) (g : GL 
     simp [φ]
   -- `GL₂(e)` carries the Borel subgroup onto the Borel subgroup, and the diagonal entries of the
   -- image are the images under `e` of the diagonal entries.
-  have hdiag : ∀ y : GL2Borel F, GL2Borel.diag ⟨φ y, (hmem y).2 y.2⟩ =
+  have hdiag : ∀ y : GL2Borel F, GL2Borel.diag ⟨φ y, (hmem y).2 y.property⟩ =
       (Units.map (e : F →* F') (GL2Borel.diag y).1, Units.map (e : F →* F') (GL2Borel.diag y).2) :=
     fun y => by ext <;> simp [φ]
   rw [GL2PrincipalSeries_def, GL2PrincipalSeries_def]

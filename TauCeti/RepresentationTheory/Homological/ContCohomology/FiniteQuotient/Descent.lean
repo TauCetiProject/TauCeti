@@ -54,11 +54,11 @@ theorem exists_openNormalSubgroup_descendContinuous (U : OpenNormalSubgroup G)
   have hright : ∀ (g : G) (n : V), b (g * n) = b g := by
     intro g n
     apply mem_rightTranslationStabilizer.mp
-      (hW ((inf_le_right : U ⊓ W ≤ W) ((inf_le_left : V ≤ U ⊓ W) n.2)))
+      (hW ((inf_le_right : U ⊓ W ≤ W) ((inf_le_left : V ≤ U ⊓ W) n.property)))
   have hfixed : ∀ (n : V) (g : G), n • b g = b g := by
     intro n g
     exact hA n
-      ((inf_le_right : V ≤ A) n.2) (b g) ⟨g, rfl⟩
+      ((inf_le_right : V ≤ A) n.property) (b g) ⟨g, rfl⟩
   let b' : G → FixedPoints.addSubgroup V.toSubgroup M := fun g =>
     ⟨b g, (FixedPoints.mem_addSubgroup V.toSubgroup M _).2 fun n => hfixed n g⟩
   have hb' : Continuous b' :=

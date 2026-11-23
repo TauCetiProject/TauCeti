@@ -31,9 +31,9 @@ coset attached to an element of the normalizer has to be recognised as a single 
   `DoubleCoset.conj_mem_doubleCoset_conj_iff_of_mem_normalizer`: conjugation by `g` in the
   normalizer carries the right cosets `Γa` and the double cosets `HaK` (`g` normalizing `H` and
   `K`) to the right and double cosets of the conjugate `g⁻¹ag`.
-* `DoubleCoset.doubleCoset_eq_iUnion_rightCosets_conj` and
-  `DoubleCoset.injective_rightCoset_conj`: conjugation preserves right-coset decompositions
-  and distinctness of their cosets.
+* `DoubleCoset.doubleCoset_conj_eq_iUnion_rightCosets_conj_iff` and
+  `DoubleCoset.injective_rightCoset_conj_iff`: conjugation by a normalizing element preserves
+  and reflects right-coset decompositions and distinctness of their cosets.
 -/
 
 public section
@@ -59,9 +59,8 @@ theorem doubleCoset_eq_rightCoset_of_mem_normalizer (hg : g ∈ Subgroup.normali
   rw [mem_doubleCoset, mem_rightCoset_iff]
   refine ⟨?_, fun hx ↦ ⟨x * g⁻¹, hx, 1, Γ.one_mem, by simp⟩⟩
   rintro ⟨a, ha, b, hb, rfl⟩
-  have hconj : g * b * g⁻¹ ∈ Γ := (Subgroup.mem_normalizer_iff.mp hg b).mp hb
-  have hrw : a * g * b * g⁻¹ = a * (g * b * g⁻¹) := by group
-  exact hrw ▸ Γ.mul_mem ha hconj
+  have hrw : a * (g * b * g⁻¹) = a * g * b * g⁻¹ := by group
+  exact hrw ▸ Γ.mul_mem ha ((Subgroup.mem_normalizer_iff.mp hg b).mp hb)
 
 /-- **A double coset at a normalizing element consists of normalizing elements.** Every
 `a * g * b` with `a, b ∈ Γ` lies in the normalizer of `Γ`, which contains both `Γ` and `g`.
@@ -86,45 +85,51 @@ cosets**: `g⁻¹xg ∈ H(g⁻¹ag)K` exactly when `x ∈ HaK`. -/
 theorem conj_mem_doubleCoset_conj_iff_of_mem_normalizer {H K : Subgroup G}
     (hH : g ∈ Subgroup.normalizer (H : Set G)) (hK : g ∈ Subgroup.normalizer (K : Set G))
     (a x : G) : g⁻¹ * x * g ∈ doubleCoset (g⁻¹ * a * g) H K ↔ x ∈ doubleCoset a H K := by
-  -- `h ↦ ghg⁻¹` preserves a subgroup normalized by `g`, in both directions
-  have hout : ∀ L : Subgroup G, g ∈ Subgroup.normalizer (L : Set G) → ∀ h ∈ L,
-      g * h * g⁻¹ ∈ L := fun L hL h hh ↦ (Subgroup.mem_normalizer_iff.mp hL h).mp hh
-  have hin : ∀ L : Subgroup G, g ∈ Subgroup.normalizer (L : Set G) → ∀ h ∈ L,
-      g⁻¹ * h * g ∈ L := fun L hL h hh ↦ by
-    simpa using (Subgroup.mem_normalizer_iff.mp (inv_mem hL) h).mp hh
   simp only [mem_doubleCoset, SetLike.mem_coe]
   constructor
   · rintro ⟨h, hh, h', hh', he⟩
-    refine ⟨g * h * g⁻¹, hout H hH h hh, g * h' * g⁻¹, hout K hK h' hh', ?_⟩
+    refine ⟨g * h * g⁻¹, (Subgroup.mem_normalizer_iff.mp hH h).mp hh,
+      g * h' * g⁻¹, (Subgroup.mem_normalizer_iff.mp hK h').mp hh', ?_⟩
     calc x = g * (g⁻¹ * x * g) * g⁻¹ := by group
       _ = g * h * g⁻¹ * a * (g * h' * g⁻¹) := by rw [he]; group
   · rintro ⟨h, hh, h', hh', rfl⟩
-    exact ⟨g⁻¹ * h * g, hin H hH h hh, g⁻¹ * h' * g, hin K hK h' hh', by group⟩
+    exact ⟨g⁻¹ * h * g, (Subgroup.mem_normalizer_iff''.mp hH h).mp hh,
+      g⁻¹ * h' * g, (Subgroup.mem_normalizer_iff''.mp hK h').mp hh', by group⟩
 
-/-- Conjugating a right-coset decomposition by an element normalizing both flanks gives a
-right-coset decomposition of the conjugate double coset. -/
-theorem doubleCoset_eq_iUnion_rightCosets_conj {H K : Subgroup G} {a : G}
+/-- **Conjugation by an element normalizing both flanks preserves right-coset
+decompositions**: `H(g⁻¹ag)K = ⋃ᵢ H(g⁻¹rᵢg)` exactly when `HaK = ⋃ᵢ Hrᵢ`. -/
+theorem doubleCoset_conj_eq_iUnion_rightCosets_conj_iff {H K : Subgroup G} {a : G}
     (hH : g ∈ Subgroup.normalizer (H : Set G))
-    (hK : g ∈ Subgroup.normalizer (K : Set G)) {ι : Sort*} (r : ι → G)
-    (hcover : doubleCoset a H K = ⋃ i, op (r i) • (H : Set G)) :
-    doubleCoset (g⁻¹ * a * g) H K = ⋃ i, op (g⁻¹ * r i * g) • (H : Set G) := by
-  ext x
-  have hconj : g⁻¹ * (g * x * g⁻¹) * g = x := by group
-  simp only [Set.mem_iUnion, mem_rightCoset_conj_iff_of_mem_normalizer hH]
-  rw [← Set.mem_iUnion, ← hcover,
-    ← conj_mem_doubleCoset_conj_iff_of_mem_normalizer hH hK a (g * x * g⁻¹), hconj]
+    (hK : g ∈ Subgroup.normalizer (K : Set G)) {ι : Sort*} (r : ι → G) :
+    doubleCoset (g⁻¹ * a * g) H K = ⋃ i, op (g⁻¹ * r i * g) • (H : Set G) ↔
+      doubleCoset a H K = ⋃ i, op (r i) • (H : Set G) := by
+  -- both conjugated sets are preimages under conjugation `x ↦ gxg⁻¹`, a bijection
+  have hdc : doubleCoset (g⁻¹ * a * g) H K = MulAut.conj g ⁻¹' doubleCoset a H K := by
+    ext x
+    have hx : g⁻¹ * (g * x * g⁻¹) * g = x := by group
+    rw [Set.mem_preimage, MulAut.conj_apply,
+      ← conj_mem_doubleCoset_conj_iff_of_mem_normalizer hH hK a, hx]
+  have hcosets : ⋃ i, op (g⁻¹ * r i * g) • (H : Set G) =
+      MulAut.conj g ⁻¹' ⋃ i, op (r i) • (H : Set G) := by
+    rw [Set.preimage_iUnion]
+    refine Set.iUnion_congr fun i ↦ Set.ext fun x ↦ ?_
+    rw [Set.mem_preimage, MulAut.conj_apply, mem_rightCoset_conj_iff_of_mem_normalizer hH]
+  rw [hdc, hcosets]
+  exact (Set.preimage_injective.mpr (MulAut.conj g).surjective).eq_iff
 
-/-- Conjugating distinct right cosets by a normalizing element preserves distinctness. -/
-theorem injective_rightCoset_conj {ι : Sort*} (r : ι → G)
-    (hg : g ∈ Subgroup.normalizer (Γ : Set G))
-    (hinj : Function.Injective fun i ↦ op (r i) • (Γ : Set G)) :
-    Function.Injective fun i ↦ op (g⁻¹ * r i * g) • (Γ : Set G) := by
-  intro i j h
-  apply hinj
-  ext x
-  have h' := Set.ext_iff.mp h (g⁻¹ * x * g)
-  rw [mem_rightCoset_conj_iff_of_mem_normalizer hg,
-    mem_rightCoset_conj_iff_of_mem_normalizer hg] at h'
-  simpa [mul_assoc] using h'
+/-- **Conjugation by a normalizing element preserves distinctness of right cosets**: the cosets
+`Γ(g⁻¹rᵢg)` are pairwise distinct exactly when the cosets `Γrᵢ` are. -/
+theorem injective_rightCoset_conj_iff {ι : Sort*} (r : ι → G)
+    (hg : g ∈ Subgroup.normalizer (Γ : Set G)) :
+    (Function.Injective fun i ↦ op (g⁻¹ * r i * g) • (Γ : Set G)) ↔
+      Function.Injective fun i ↦ op (r i) • (Γ : Set G) := by
+  -- each conjugated coset is the preimage of `Γrᵢ` under conjugation `x ↦ gxg⁻¹`, a bijection
+  have hcoset : (fun i ↦ op (g⁻¹ * r i * g) • (Γ : Set G)) =
+      Set.preimage (MulAut.conj g) ∘ fun i ↦ op (r i) • (Γ : Set G) := by
+    ext i x
+    rw [Function.comp_apply, Set.mem_preimage, MulAut.conj_apply,
+      mem_rightCoset_conj_iff_of_mem_normalizer hg]
+  rw [hcoset]
+  exact (Set.preimage_injective.mpr (MulAut.conj g).surjective).of_comp_iff _
 
 end DoubleCoset

@@ -160,7 +160,7 @@ theorem concatLetter_of_tprod {l n : ℕ} (w : Fin l → A) (x : A) (v : Fin n �
 private theorem concatLetter_of_tprod_eq {l n N : ℕ} (w : Fin l → A) (x : A) (v : Fin n → A)
     (hN : l + 1 + n = N) (u : Fin N → A)
     (hu : ∀ i : Fin N, u i =
-      if h : i.1 < l then w ⟨i, h⟩ else if _ : i.1 = l then x else v ⟨i - (l + 1), by omega⟩) :
+      if h : i.val < l then w ⟨i, h⟩ else if _ : i.val = l then x else v ⟨i - (l + 1), by omega⟩) :
     concatLetter R A ((of R A l (PiTensorProduct.tprod R w) ⊗ₜ x) ⊗ₜ
         of R A n (PiTensorProduct.tprod R v)) =
       ReducedTensorWords.of R A ⟨N, by omega⟩ (PiTensorProduct.tprod R u) := by

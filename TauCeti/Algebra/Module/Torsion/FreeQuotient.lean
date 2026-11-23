@@ -50,16 +50,9 @@ theorem nonempty_quotient_torsion_linearEquiv_of_injective_of_smul_mem_range
     simp [φ]
   have hφf (y : ι → R) : φ (f y) = r • y := hf (by rw [hφ, map_smul])
   have hr0 : r ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hr
-  have hT : torsion R M ≤ LinearMap.ker φ := by
-    rintro x ⟨⟨s, hs⟩, hsx⟩
-    rw [LinearMap.mem_ker]
-    have : s • φ x = 0 := by
-      apply hf
-      rw [map_smul, hφ, map_zero, smul_comm, ← Submonoid.smul_def ⟨s, hs⟩, hsx, smul_zero]
-    exact (smul_eq_zero.mp this).resolve_left (nonZeroDivisors.ne_zero hs)
   -- `φ` descends to an injection `M ⧸ torsion R M → R^ι`, so that quotient is finite free of
   -- rank at most `#ι`; `f` descends to an injection the other way.
-  let h := (torsion R M).liftQ φ hT
+  let h := (torsion R M).liftQ φ φ.torsion_le_ker
   have hh : Function.Injective h := by
     refine (injective_iff_map_eq_zero h).mpr fun q hq ↦ ?_
     induction q using Submodule.Quotient.induction_on with

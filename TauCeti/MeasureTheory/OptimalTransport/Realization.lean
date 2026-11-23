@@ -136,10 +136,10 @@ theorem exists_measurePreserving_map_graphPlan_eq (hπ : IsCoupling π μ ν)
   -- countable and which generate its measurable sets.
   let κ : Type _ := range (measurableAtom : ι → Set ι)
   have : Countable κ := (countable_range _).to_subtype
-  have hκm (a : κ) : MeasurableSet (q ⁻¹' a.1) := by
-    obtain ⟨i, hi⟩ := a.2
+  have hκm (a : κ) : MeasurableSet (q ⁻¹' a.val) := by
+    obtain ⟨i, hi⟩ := a.property
     exact hq (hi ▸ MeasurableSet.measurableAtom_of_countable i)
-  have hκd : Pairwise (Disjoint on fun a : κ ↦ q ⁻¹' a.1) := by
+  have hκd : Pairwise (Disjoint on fun a : κ ↦ q ⁻¹' a.val) := by
     rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩ hij
     refine (disjoint_measurableAtom_of_notMem fun h ↦ hij ?_).preimage q
     exact Subtype.ext (measurableAtom_eq_of_mem h)

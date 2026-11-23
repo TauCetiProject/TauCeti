@@ -90,12 +90,12 @@ mapped by the inclusion have the corresponding ambient endpoints. -/
 abbrev coreInclusion : (Γ.core v).Hom Γ :=
   Γ.subgraphInclusion _ _ _ _
 
-@[simp] theorem coreBase_val : (Γ.coreBase v).1 = v := (rfl)
+@[simp] theorem coreBase_val : (Γ.coreBase v).val = v := (rfl)
 
 /-- A core with finitely many darts has finitely many vertices, even if the ambient graph has
 infinitely many: every core vertex other than the base is the source of a core dart. -/
 instance [Finite (Γ.core v).E] : Finite (Γ.core v).V :=
-  Set.Finite.to_subtype <| ((Set.finite_range fun e : (Γ.core v).E => Γ.src e.1).insert v).subset
+  Set.Finite.to_subtype <| ((Set.finite_range fun e : (Γ.core v).E => Γ.src e.val).insert v).subset
     fun a ha => by
       rcases ha with rfl | ⟨e, he, rfl⟩
       · exact Set.mem_insert _ _
@@ -145,13 +145,13 @@ theorem IsCore.connected (hΓ : Γ.IsCore v) : Γ.Connected := by
 theorem core_isCore : (Γ.core v).IsCore (Γ.coreBase v) := by
   refine ⟨Γ.core_reachable v, ?_⟩
   intro e
-  obtain ⟨p, hp, he⟩ := e.2
+  obtain ⟨p, hp, he⟩ := e.property
   obtain ⟨q, hq⟩ := Γ.exists_core_loop v p hp
   subst p
   refine ⟨q, ?_, ?_⟩
   · exact (Γ.isReduced_subgraphInclusion_mapPath_iff _ _ _ _ q).mp hp
   · have hd := Hom.darts_mapPath (Γ.core v) (Γ.coreInclusion v) q
-    have hm := Eq.mp (congrArg (fun l => e.1 ∈ l) hd) he
+    have hm := Eq.mp (congrArg (fun l => e.val ∈ l) hd) he
     obtain ⟨f, hf, hfe⟩ := List.mem_map.mp hm
     have : f = e := Subtype.ext hfe
     exact this ▸ hf
@@ -166,8 +166,8 @@ theorem IsCore.exists_outgoing_ne (hΓ : Γ.IsCore v) (e : Γ.E) (he : Γ.src e 
   cases q with
   | nil => exact False.elim (he rfl)
   | cons q f =>
-    refine ⟨Γ.rev f.1, ?_, ?_⟩
-    · simpa only [Γ.src_rev] using f.2.2
+    refine ⟨Γ.rev f.val, ?_, ?_⟩
+    · simpa only [Γ.src_rev] using f.property.2
     · have hn := ((Path.isReduced_cons_cons Γ q f (Γ.dart e)).mp hq).2
       simpa only [Γ.dart_val, ne_eq, eq_comm] using hn
 

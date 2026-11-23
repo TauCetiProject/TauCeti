@@ -44,8 +44,8 @@ inductive Homotopic {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Γ.Path a b →
 theorem Homotopic.weight_eq {G : Type*} [Group G] (wt : Γ.E → G)
     (hwt : ∀ e, wt (Γ.rev e) = (wt e)⁻¹) {a b : Γ.V} {p q : Γ.Path a b}
     (h : Homotopic Γ p q) :
-    p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
-      q.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) := by
+    p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) =
+      q.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) := by
   induction h with
   | refl => rfl
   | symm _ ih => exact ih.symm
@@ -118,7 +118,7 @@ private noncomputable def reduceSnoc {a b c : Γ.V} (p : Γ.Path a b) (e : Quive
   cases p with
   | nil => exact e.toPath
   | @cons d _ q f =>
-    by_cases h : e.1 = Γ.rev f.1
+    by_cases h : e.val = Γ.rev f.val
     · cases Γ.tgt_eq_src_of_val_eq_rev h
       exact q
     · exact (q.cons f).cons e
@@ -135,7 +135,7 @@ private noncomputable def reduceSnoc {a b c : Γ.V} (p : Γ.Path a b) (e : Quive
 
 /-- Appending a dart that does not reverse the last one retains both darts. -/
 private theorem reduceSnoc_cons_of_ne {a b c d : Γ.V} (p : Γ.Path a b)
-    (e : Quiver.Hom b c) (f : Quiver.Hom c d) (h : f.1 ≠ Γ.rev e.1) :
+    (e : Quiver.Hom b c) (f : Quiver.Hom c d) (h : f.val ≠ Γ.rev e.val) :
     reduceSnoc Γ (p.cons e) f = (p.cons e).cons f := by
   simp [reduceSnoc, h]
 
@@ -158,7 +158,7 @@ private theorem isReduced_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
   cases p with
   | nil => simpa only [reduceSnoc_nil] using isReduced_toPath Γ e
   | @cons d _ q f =>
-    by_cases h : e.1 = Γ.rev f.1
+    by_cases h : e.val = Γ.rev f.val
     · cases Γ.tgt_eq_src_of_val_eq_rev h
       simp only [reduceSnoc, dite_eq_left h]
       cases q with
@@ -176,7 +176,7 @@ theorem darts_reduce_sublist {a b : Γ.V} (p : Γ.Path a b) :
     cases q with
     | nil => simp [reduceSnoc]
     | @cons d _ q f =>
-      by_cases h : e.1 = Γ.rev f.1
+      by_cases h : e.val = Γ.rev f.val
       · cases Γ.tgt_eq_src_of_val_eq_rev h
         simp only [reduceSnoc, dite_eq_left h, darts_cons]
         exact (List.sublist_append_left _ _).trans (List.sublist_append_left _ _)
@@ -185,7 +185,7 @@ theorem darts_reduce_sublist {a b : Γ.V} (p : Γ.Path a b) :
   | nil => simp [reduce_nil]
   | cons p e ih =>
     rw [reduce_cons]
-    exact (hs _ _).trans (by simpa only [darts_cons] using ih.append_right [e.1])
+    exact (hs _ _).trans (by simpa only [darts_cons] using ih.append_right [e.val])
 
 /-- Every path reduces to a path with no immediate backtracking. -/
 @[simp] theorem isReduced_reduce {a b : Γ.V} (p : Γ.Path a b) :
@@ -197,17 +197,17 @@ theorem darts_reduce_sublist {a b : Γ.V} (p : Γ.Path a b) :
 /-- Appending a dart to a path and reducing keeps every dart of the reduced path other than the
 reverse of the appended dart. -/
 theorem mem_darts_reduce_cons {a b c : Γ.V} (p : Γ.Path a b) (d : Quiver.Hom b c) {e : Γ.E}
-    (he : e ∈ darts Γ (reduce Γ p)) (hne : e ≠ Γ.rev d.1) :
+    (he : e ∈ darts Γ (reduce Γ p)) (hne : e ≠ Γ.rev d.val) :
     e ∈ darts Γ (reduce Γ (p.cons d)) := by
   rw [reduce_cons]
   generalize reduce Γ p = q at he
   cases q with
   | nil => simp at he
   | @cons x _ q f =>
-    by_cases h : d.1 = Γ.rev f.1
+    by_cases h : d.val = Γ.rev f.val
     · cases Γ.tgt_eq_src_of_val_eq_rev h
       obtain rfl := Γ.eq_reverse_of_val_eq_rev h
-      have hef : e ≠ f.1 := by rintro rfl; simp [Γ.reverse_val] at hne
+      have hef : e ≠ f.val := by rintro rfl; simp [Γ.reverse_val] at hne
       simpa [hef] using he
     · simp only [reduceSnoc_cons_of_ne Γ q f d h, darts_cons, List.mem_append,
         List.mem_singleton] at he ⊢
@@ -252,7 +252,7 @@ theorem length_reduce_le {a b : Γ.V} (p : Γ.Path a b) :
       cases q with
       | nil => exact absurd (isReduced_toPath Γ e) h
       | @cons d _ q f =>
-        have hfe : e.1 = Γ.rev f.1 := by
+        have hfe : e.val = Γ.rev f.val := by
           by_contra hne
           exact h ((isReduced_cons_cons Γ q f e).mpr
             ⟨hq ▸ isReduced_reduce Γ p, hne⟩)
@@ -289,7 +289,7 @@ private theorem homotopic_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
   | nil => simpa only [reduceSnoc_nil, Quiver.Hom.toPath] using
       (Homotopic.refl (Quiver.Path.nil.cons e) : Homotopic Γ _ _)
   | @cons d _ q f =>
-    by_cases h : e.1 = Γ.rev f.1
+    by_cases h : e.val = Γ.rev f.val
     · cases Γ.tgt_eq_src_of_val_eq_rev h
       have hef := Γ.eq_reverse_of_val_eq_rev h
       subst e
@@ -306,7 +306,7 @@ private theorem reduceSnoc_reverse {a b c : Γ.V} (p : Γ.Path a b)
   | nil =>
     simp [reduceSnoc, Quiver.Hom.toPath]
   | @cons d b' q f =>
-    by_cases h : e.1 = Γ.rev f.1
+    by_cases h : e.val = Γ.rev f.val
     · cases Γ.tgt_eq_src_of_val_eq_rev h
       have hef := Γ.eq_reverse_of_val_eq_rev h
       subst e
@@ -438,8 +438,8 @@ theorem rose_not_homotopic_reverse {α : Type*} (a : α) :
     (isReduced_toPath (rose α) _)
   have he : (rose α).dart (a, true) = (rose α).dart (a, false) := by
     injection heq
-  have hv : ((rose α).dart (a, true)).1 = ((rose α).dart (a, false)).1 :=
-    congrArg (fun e => e.1) he
+  have hv : ((rose α).dart (a, true)).val = ((rose α).dart (a, false)).val :=
+    congrArg (fun e => e.val) he
   rw [SerreGraph.dart_val (rose α) (a, true), SerreGraph.dart_val (rose α) (a, false)] at hv
   exact (by decide : true ≠ false) (congrArg Prod.snd hv)
 

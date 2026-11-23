@@ -7,8 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse
 
 import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
+import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
@@ -33,8 +35,10 @@ positively oriented orthonormal basis that is orthogonal for the form.
 Both facts come from the single relation `ι Q a * ι Q b = -(ι Q b * ι Q a)` for orthogonal `a` and
 `b`. Pushing a vector `ι Q m` from one side of a product of `n` mutually orthogonal vectors to the
 other costs a sign `(-1) ^ n` when `m` is orthogonal to every factor
-(`CliffordAlgebra.prod_map_ι_mul_ι_of_forall_isOrtho`). When `m` is instead *one of* the factors,
-one of the `n` transpositions is a vector past itself, which is free, so the cost is
+(`CliffordAlgebra.prod_map_ι_mul_ι_of_forall_isOrtho`, proved together with the reversal sign
+`CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho` in the lower-dependency
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Reverse.lean`). When `m` is instead *one of*
+the factors, one of the `n` transpositions is a vector past itself, which is free, so the cost is
 `(-1) ^ (n - 1)`. That sign does not depend on `m`, and the condition is linear in `m`, so it
 propagates from the factors to their span (`CliffordAlgebra.prod_map_ι_mul_ι_of_mem_span`).
 
@@ -76,8 +80,6 @@ the values `Q vᵢ` is a unit.
 
 ## Main results
 
-* `CliffordAlgebra.prod_map_ι_mul_ι_of_forall_isOrtho`: a vector orthogonal to every factor
-  moves across the product at the cost of `(-1) ^ n`.
 * `CliffordAlgebra.prod_map_ι_mul_ι_of_mem_span`: a vector in the span of a pairwise orthogonal
   list moves across the product at the cost of `(-1) ^ (n - 1)`.
 * `CliffordAlgebra.prod_map_ι_mul_ι_of_odd_length`: the volume element of a pairwise orthogonal
@@ -88,14 +90,17 @@ the values `Q vᵢ` is a unit.
   generator in the span instead.
 * `CliffordAlgebra.prod_map_ι_sq_scalar`: the square of the volume element of a pairwise
   orthogonal list is the scalar `(-1) ^ (n.choose 2) * ∏ᵢ Q vᵢ`.
-* `CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho`: reversal multiplies the volume
-  element of a pairwise orthogonal list by the same sign `(-1) ^ (n.choose 2)`.
 * `CliffordAlgebra.ι_mul_ι_mul_self_of_isOrtho`: the two-factor case, the square of the product
   of two orthogonal generators being the scalar `-(Q a * Q b)`.
 * `CliffordAlgebra.neg_one_pow_choose_two_mul_prod_map_ne_zero`: over a domain, that scalar is
   nonzero when no member of the list is isotropic.
 * `CliffordAlgebra.isUnit_prod_map_ι`: an ordered product of generators — orthogonal or not — is
   a unit as soon as the product of the values `Q vᵢ` is.
+* `CliffordAlgebra.algebraMap_add_smul_mul_algebraMap_sub_smul`: for `ω` squaring to a scalar `s`,
+  such as the volume element, `a + b • ω` times `a - b • ω` is the scalar `a² - b² s`, in either
+  order.
+* `CliffordAlgebra.algebraMap_add_smul_mul_ι_mul_algebraMap_sub_smul`: if `ω` also anticommutes
+  with `ι Q v`, then `(a + b • ω) * ι Q v * (a - b • ω) = (a² + b² s) • ι Q v + 2ab • ω ι Q v`.
 * `CliffordAlgebra.prod_map_ι_mul_ι_notMem_range_ι`: over a field, the volume element of an
   orthogonal anisotropic list of even length at least three moves each member of the list out of
   the vectors.
@@ -116,27 +121,6 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 variable {Q : QuadraticForm R M}
 
 /-! ### Moving a vector across the volume element -/
-
-/-- **A vector orthogonal to every factor crosses the volume element at the cost of `(-1) ^ n`**,
-`n` the number of factors: each transposition with a factor contributes one sign. -/
-theorem prod_map_ι_mul_ι_of_forall_isOrtho {l : List M} {m : M}
-    (h : ∀ x ∈ l, Q.IsOrtho x m) :
-    (l.map (ι Q)).prod * ι Q m = ((-1 : R) ^ l.length) • (ι Q m * (l.map (ι Q)).prod) := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    have ha : Q.IsOrtho a m := h a List.mem_cons_self
-    have hl : ∀ x ∈ l, Q.IsOrtho x m := fun x hx => h x (List.mem_cons_of_mem _ hx)
-    calc ((a :: l).map (ι Q)).prod * ι Q m
-        = ι Q a * ((l.map (ι Q)).prod * ι Q m) := by
-          simp only [List.map_cons, List.prod_cons, mul_assoc]
-      _ = ((-1 : R) ^ l.length) • (ι Q a * ι Q m * (l.map (ι Q)).prod) := by
-          rw [ih hl, mul_smul_comm, mul_assoc]
-      _ = ((-1 : R) ^ l.length) • -(ι Q m * ((a :: l).map (ι Q)).prod) := by
-          simp only [List.map_cons, List.prod_cons]
-          rw [ι_mul_ι_comm_of_isOrtho ha, neg_mul, mul_assoc]
-      _ = ((-1 : R) ^ (a :: l).length) • (ι Q m * ((a :: l).map (ι Q)).prod) := by
-          rw [smul_neg, List.length_cons, pow_succ, mul_neg_one, neg_smul]
 
 /-- **A factor of the volume element crosses it at the cost of `(-1) ^ (n - 1)`**: of the `n`
 transpositions, the one exchanging the vector with the copy of itself inside the product is free.
@@ -289,24 +273,6 @@ theorem prod_map_ι_sq_scalar {l : List M} (hl : l.Pairwise Q.IsOrtho) :
           rw [hchoose, List.map_cons, List.prod_cons, pow_add]
           ring
 
-/-- **Reversal multiplies the volume element of a pairwise orthogonal list by
-`(-1) ^ (n.choose 2)`**, the same sign as in its square `CliffordAlgebra.prod_map_ι_sq_scalar`. In
-particular the volume element is reverse-symmetric for `n ≡ 0, 1 (mod 4)` and reverse-antisymmetric
-for `n ≡ 2, 3 (mod 4)`. -/
-@[simp]
-theorem reverse_prod_map_ι_of_pairwise_isOrtho {l : List M} (hl : l.Pairwise Q.IsOrtho) :
-    reverse (l.map (ι Q)).prod = ((-1 : R) ^ l.length.choose 2) • (l.map (ι Q)).prod := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    rw [List.pairwise_cons] at hl
-    obtain ⟨ha, hl'⟩ := hl
-    have hsym : ∀ x ∈ l, Q.IsOrtho x a := fun x hx => (ha x hx).symm
-    have hchoose : (a :: l).length.choose 2 = l.length + l.length.choose 2 := by
-      rw [List.length_cons, Nat.choose_succ_succ, Nat.choose_one_right]
-    rw [List.map_cons, List.prod_cons, reverse.map_mul, reverse_ι, ih hl', smul_mul_assoc,
-      prod_map_ι_mul_ι_of_forall_isOrtho hsym, smul_smul, hchoose, pow_add, mul_comm]
-
 /-- **The square of the product of two orthogonal generators is the scalar `-(Q a * Q b)`.** This
 is `CliffordAlgebra.prod_map_ι_sq_scalar` at the two-element list `[a, b]`, whose sign
 `(-1) ^ Nat.choose 2 2` is the displayed minus. In particular the square vanishes as soon as one
@@ -341,6 +307,38 @@ theorem neg_one_pow_choose_two_mul_prod_map_ne_zero [IsDomain R] {l : List M}
   intro hmem
   obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
   exact haniso v hv hv0
+
+/-! ### Elements `a + b • ω` for `ω` squaring to a scalar -/
+
+/-- Both products of `a + b • ω` with `a - b • ω`, for `ω` squaring to the scalar `s`: each is the
+scalar `a² - b² s`. So `a + b • ω` is a unit as soon as `a² - b² s` is. -/
+theorem algebraMap_add_smul_mul_algebraMap_sub_smul {ω : CliffordAlgebra Q} {s : R}
+    (hsq : ω * ω = algebraMap R _ s) (a b : R) :
+    (algebraMap R _ a + b • ω) * (algebraMap R _ a - b • ω) =
+        algebraMap R (CliffordAlgebra Q) (a ^ 2 - b ^ 2 * s) ∧
+      (algebraMap R _ a - b • ω) * (algebraMap R _ a + b • ω) =
+        algebraMap R (CliffordAlgebra Q) (a ^ 2 - b ^ 2 * s) := by
+  constructor <;>
+  · simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, sub_mul, mul_sub,
+      smul_mul_smul_comm, one_mul, mul_one, hsq, smul_smul]
+    module
+
+/-- The product `(a + b • ω) * ι Q v * (a - b • ω)`, for `ω` anticommuting with `ι Q v` and
+squaring to the scalar `s`. When `a - b • ω` is the inverse of `a + b • ω`, this is conjugation of
+the vector by `a + b • ω`; it leaves the vectors as soon as `ω * ι Q v` does and `2ab` is a unit
+(over a field, `2ab ≠ 0`). -/
+theorem algebraMap_add_smul_mul_ι_mul_algebraMap_sub_smul {ω : CliffordAlgebra Q} {s : R}
+    (hsq : ω * ω = algebraMap R _ s) {v : M} (hv : ω * ι Q v = -(ι Q v * ω)) (a b : R) :
+    (algebraMap R _ a + b • ω) * ι Q v * (algebraMap R _ a - b • ω) =
+      (a ^ 2 + b ^ 2 * s) • ι Q v + (2 * a * b) • (ω * ι Q v) := by
+  have hvω : ι Q v * ω = -(ω * ι Q v) := by rw [hv, neg_neg]
+  have h1 : ι Q v * (algebraMap R _ a - b • ω) = (algebraMap R _ a + b • ω) * ι Q v := by
+    rw [mul_sub, add_mul, ← Algebra.commutes, mul_smul_comm, smul_mul_assoc, hvω, smul_neg,
+      sub_neg_eq_add]
+  rw [mul_assoc, h1, ← mul_assoc]
+  simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, smul_mul_assoc, mul_smul_comm,
+    one_mul, mul_one, hsq, smul_smul]
+  module
 
 section Field
 

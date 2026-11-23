@@ -57,7 +57,7 @@ private theorem IsFreelyIndependent.apply_mul_prod_erase (h : IsFreelyIndependen
     (ham : a m = 1) :
     φ (p * ((s.erase m).sort.map fun x => a x * p).prod) =
       ∑ τ : NoncrossingPartition (s.erase m),
-        partitionCumulant φ a τ * φ p ^ (#s - #τ.1.parts) := by
+        partitionCumulant φ a τ * φ p ^ (#s - #τ.val.parts) := by
   have hsort : s.sort = m :: (s.erase m).sort := by
     conv_lhs => rw [← insert_erase hm]
     exact sort_insert _ (fun x hx => hmin x (mem_of_mem_erase hx)) (notMem_erase m s)
@@ -67,8 +67,8 @@ private theorem IsFreelyIndependent.apply_mul_prod_erase (h : IsFreelyIndependen
     (b := fun _ => p) fun _ _ => hpB
   rw [hsort, List.map_cons, List.prod_cons, ham, one_mul] at key
   have hK (π : NoncrossingPartition s) :
-      partitionMoment φ (fun _ => p) (NoncrossingPartition.kreweras π).1 =
-        φ p ^ (#s + 1 - #π.1.parts) := by
+      partitionMoment φ (fun _ => p) (NoncrossingPartition.kreweras π).val =
+        φ p ^ (#s + 1 - #π.val.parts) := by
     rw [partitionMoment_const, prod_congr rfl fun C hC => by
         rw [hp.pow_eq (Finpartition.nonempty_of_mem_parts _ hC).card_pos.ne'],
       prod_const, ← π.card_parts_add_card_parts_kreweras ⟨m, hm⟩, Nat.add_sub_cancel_left]
@@ -106,11 +106,11 @@ private theorem IsFreelyIndependent.freeCumulant_cornerFunctional_of_lt
     List.map_map, Function.comp_def, hmom, mul_sum]
   refine sum_congr rfl fun π _ => ?_
   -- `φ p ^ (#X - #π) = ∏_{C ∈ π} φ p ^ (#C - 1)` since the parts of `π` have sizes summing to `#X`.
-  have hsum : ∑ C ∈ π.1.parts, (#C - 1) = #X - #π.1.parts := by
-    rw [sum_tsub_distrib _ fun C hC => (π.1.nonempty_of_mem_parts hC).card_pos,
+  have hsum : ∑ C ∈ π.val.parts, (#C - 1) = #X - #π.val.parts := by
+    rw [sum_tsub_distrib _ fun C hC => (π.val.nonempty_of_mem_parts hC).card_pos,
       Finpartition.sum_card_parts, sum_const, smul_eq_mul, mul_one]
-  have hexp : #X + 1 - #π.1.parts = #X - #π.1.parts + 1 := by
-    have := π.1.card_parts_le_card
+  have hexp : #X + 1 - #π.val.parts = #X - #π.val.parts + 1 := by
+    have := π.val.card_parts_le_card
     omega
   rw [partitionCumulant_eq_prod_freeCumulant, prod_mul_distrib, prod_pow_eq_pow_sum, hsum, hexp,
     pow_succ]
@@ -154,9 +154,9 @@ theorem IsFreelyIndependent.cornerFunctional_prod_eq_sum_prod (h : IsFreelyIndep
     (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) (hp : IsIdempotentElem p) (hpB : p ∈ B j)
     (hφp : φ p ≠ 0) {a : α → A} (ha : ∀ x ∈ s, a x ∈ B i) (hs : s.Nonempty) :
     hp.cornerFunctional φ (s.sort.map (hp.compress ∘ a)).prod =
-      ∑ π : NoncrossingPartition s, ∏ C ∈ π.1.parts, φ p ^ (#C - 1) * freeCumulant φ a C := by
+      ∑ π : NoncrossingPartition s, ∏ C ∈ π.val.parts, φ p ^ (#C - 1) * freeCumulant φ a C := by
   rw [apply_prod_eq_sum_prod_freeCumulant (hp.cornerFunctional φ) (hp.compress ∘ a) hs]
   exact sum_congr rfl fun π _ => prod_congr rfl fun C hC =>
-    h.freeCumulant_cornerFunctional hφ hij hp hpB hφp fun x hx => ha x (π.1.le hC hx)
+    h.freeCumulant_cornerFunctional hφ hij hp hpB hφp fun x hx => ha x (π.val.le hC hx)
 
 end TauCeti

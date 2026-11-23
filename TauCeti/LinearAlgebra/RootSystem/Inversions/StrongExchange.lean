@@ -88,7 +88,7 @@ theorem exists_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
         have hmem : P.weylGroupToPerm (wordProd P b l) k ∈ posRoots P b \ {(j : ι)} :=
           ⟨(mem_posRoots P b _).mpr hpos, by simpa using hne⟩
         exact h ((mem_posRoots P b _).mp
-          ((reflectionPerm_mem_posRoots_diff_singleton_iff P b j.2 _).mpr hmem).1)
+          ((reflectionPerm_mem_posRoots_diff_singleton_iff P b j.property _).mpr hmem).1)
       rw [List.eraseIdx_cons_zero, wordProd_cons, ← hkey,
         RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
         inv_mul_cancel_right, mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, mul_one]
@@ -114,13 +114,13 @@ theorem eq_one_of_inversions_eq_empty {w : P.weylGroup} (h : inversions P b w = 
     -- Split off the final letter: `w = v * sₖ`, where `v` is spelled by the word `l₁`.
     rw [List.concat_eq_append, wordProd_append, wordProd_cons, wordProd_nil, mul_one] at hl
     -- The final simple root is not an inversion of `w`, so it is an inversion of `v`.
-    have hkw : k.1 ∉ inversions P b w := by simp [h]
-    have hkv : k.1 ∈ inversions P b (wordProd P b l₁) := by
+    have hkw : k.val ∉ inversions P b w := by simp [h]
+    have hkv : k.val ∈ inversions P b (wordProd P b l₁) := by
       by_contra hc
       exact hkw (hl ▸ (mem_inversions_mul_ofIdx_iff_not_mem P _ b
-        (b.isPos_of_mem_support k.2)).mpr hc)
+        (b.isPos_of_mem_support k.property)).mpr hc)
     obtain ⟨j, hj, hl'w⟩ :=
-      exists_wordProd_eraseIdx_eq_mul_ofIdx P b (b.isPos_of_mem_support k.2) l₁
+      exists_wordProd_eraseIdx_eq_mul_ofIdx P b (b.isPos_of_mem_support k.property) l₁
         ((mem_inversions P b _ _).mp hkv).2
     -- The resulting word spells `w` and is two letters shorter, contradicting minimality.
     refine Nat.find_min hex (m := (l₁.eraseIdx j).length) ?_ ⟨l₁.eraseIdx j, rfl, hl'w.trans hl⟩
@@ -141,7 +141,7 @@ theorem eq_one_of_mapsTo_posRoots {w : P.weylGroup}
 /-- A Weyl-group element other than the identity sends some positive root to a negative root. -/
 theorem inversions_nonempty_of_ne_one {w : P.weylGroup} (hw : w ≠ 1) :
     (inversions P b w).Nonempty :=
-  Set.nonempty_iff_ne_empty.mpr fun h ↦ hw (eq_one_of_inversions_eq_empty h)
+  Set.ne_empty_iff_nonempty.mp fun h ↦ hw (eq_one_of_inversions_eq_empty h)
 
 /-- A Weyl-group element other than the identity has at least one inversion. -/
 theorem ncard_inversions_pos_of_ne_one {w : P.weylGroup} (hw : w ≠ 1) :
