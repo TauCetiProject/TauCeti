@@ -54,7 +54,7 @@ theorem charCoeff_eq_of_diagonal_intertwining
   rw [charCoeff_def, charCoeff_def]
   congr 1
   exact tsum_congr fun s ↦
-    principalMinor_eq_of_diagonal_intertwining s.1 (fun i ↦ hd i) (fun i j ↦ h i j)
+    principalMinor_eq_of_diagonal_intertwining s.val (fun i ↦ hd i) (fun i j ↦ h i j)
 
 /-- Regular diagonal intertwining preserves the principal-minor power series. When the
 minor sums converge, this identifies their Fredholm determinants without requiring the

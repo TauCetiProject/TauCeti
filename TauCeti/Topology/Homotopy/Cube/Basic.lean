@@ -50,6 +50,8 @@ at `0` while releasing the first.
 * `TauCeti.pathTowardZero`: the straight-line path in `I` from `a` to `0`.
 * `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity; so
   the cube is contractible.
+* `TauCeti.cubeLeftHalf`, `TauCeti.cubeRightHalf`: the affine maps of the cube onto its halves
+  `tᵢ ≤ 1/2` and `tᵢ ≥ 1/2`, along which `GenLoop.transAt i` concatenates.
 * `TauCeti.isPathConnected_cube`: `I^N` is path connected.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
 * `TauCeti.cubeBoundarySetoid`: the equivalence relation identifying all boundary points, whose
@@ -60,6 +62,9 @@ at `0` while releasing the first.
   and `I^(Fin (n + 1))`.
 * `Cube.append_mem_boundary_iff`, `Cube.preimage_appendHomeomorph_boundary`: the boundary of
   `I^(Fin (m + n))` is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`.
+* `Cube.snoc_mem_boundary_iff`: appending a last coordinate lands on the boundary of the cube
+  exactly when the first coordinates or the last one do.
+* `Cube.dense_boundary`: for an infinite index set the boundary of `I^N` is dense.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
   value stays on the boundary.
@@ -161,6 +166,16 @@ theorem Cube.append_mem_boundary_iff {m n : ℕ} {x : I^(Fin m)} {y : I^(Fin n)}
     · exact ⟨Fin.natAdd m i, by simpa using hi⟩
 
 open scoped Topology unitInterval in
+/-- **Appending a last coordinate to a point of the cube.** The point `Fin.snoc y t` of
+`I^(Fin (n + 1))` lies on its boundary exactly when `y` lies on the boundary of `I^(Fin n)` or `t`
+is `0` or `1`. -/
+theorem Cube.snoc_mem_boundary_iff {n : ℕ} {y : I^(Fin n)} {t : I} :
+    (Fin.snoc y t : I^(Fin (n + 1))) ∈ Cube.boundary (Fin (n + 1)) ↔
+      y ∈ Cube.boundary (Fin n) ∨ t = 0 ∨ t = 1 := by
+  simp only [Cube.boundary, Set.mem_ofPred_eq, Fin.exists_fin_succ', Fin.snoc_castSucc,
+    Fin.snoc_last]
+
+open scoped Topology unitInterval in
 /-- **The boundary of a product of cubes**: under the homeomorphism
 `Fin.appendHomeomorph : I^(Fin m) × I^(Fin n) ≃ₜ I^(Fin (m + n))`, the boundary of `I^(Fin (m + n))`
 is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`. -/
@@ -170,6 +185,20 @@ theorem Cube.preimage_appendHomeomorph_boundary (m n : ℕ) :
   ext ⟨x, y⟩
   simp only [Set.mem_preimage, Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and]
   exact Cube.append_mem_boundary_iff
+
+open scoped Topology unitInterval in
+/-- **The boundary of a cube indexed by an infinite set is dense.** -/
+theorem Cube.dense_boundary (N : Type*) [Infinite N] : Dense (Cube.boundary N) := fun y ↦ by
+  -- A basic open set constrains only finitely many coordinates, so it meets the boundary through
+  -- a free coordinate set to `0`.
+  rw [mem_closure_iff]
+  intro U hU hyU
+  obtain ⟨s, u, hu, hsU⟩ := isOpen_pi_iff.1 hU y hyU
+  classical
+  obtain ⟨i, hi⟩ := Infinite.exists_notMem_finset s
+  refine ⟨Function.update y i 0, hsU fun a ha ↦ ?_, i, Or.inl (by simp)⟩
+  rw [Function.update_of_ne (by rintro rfl; exact hi (Finset.mem_coe.1 ha))]
+  exact (hu a ha).2
 
 namespace TauCeti
 
@@ -313,6 +342,61 @@ theorem cubeContraction_apply_zero (N : Type*) (t : I) : cubeContraction N (t, 0
 /-- The cube `I^N` is contractible, by the straight-line contraction onto its corner `0`. -/
 instance (N : Type*) : ContractibleSpace (N → I) :=
   (contractible_iff_id_nullhomotopic _).2 ⟨fun _ ↦ 0, ⟨(cubeContraction N).symm⟩⟩
+
+section Halves
+
+variable [DecidableEq N]
+
+/-- The affine map of the cube onto its half `tᵢ ≤ 1/2`, rescaling the `i`-th coordinate by
+`tᵢ ↦ tᵢ / 2`. -/
+noncomputable def cubeLeftHalf (i : N) : C(I^N, I^N) where
+  toFun y := Function.update y i ⟨(y i : ℝ) / 2, by linarith [nonneg (y i)],
+    by linarith [le_one (y i)]⟩
+  continuous_toFun := by fun_prop
+
+/-- The affine map of the cube onto its half `tᵢ ≥ 1/2`, rescaling the `i`-th coordinate by
+`tᵢ ↦ (tᵢ + 1) / 2`. -/
+noncomputable def cubeRightHalf (i : N) : C(I^N, I^N) where
+  toFun y := Function.update y i ⟨((y i : ℝ) + 1) / 2, by linarith [nonneg (y i)],
+    by linarith [le_one (y i)]⟩
+  continuous_toFun := by fun_prop
+
+@[simp]
+theorem coe_cubeLeftHalf_apply_self (i : N) (y : I^N) : (cubeLeftHalf i y i : ℝ) = y i / 2 := by
+  simp [cubeLeftHalf]
+
+@[simp]
+theorem cubeLeftHalf_apply_of_ne {i j : N} (h : j ≠ i) (y : I^N) : cubeLeftHalf i y j = y j := by
+  simp [cubeLeftHalf, h]
+
+@[simp]
+theorem coe_cubeRightHalf_apply_self (i : N) (y : I^N) :
+    (cubeRightHalf i y i : ℝ) = (y i + 1) / 2 := by
+  simp [cubeRightHalf]
+
+@[simp]
+theorem cubeRightHalf_apply_of_ne {i j : N} (h : j ≠ i) (y : I^N) : cubeRightHalf i y j = y j := by
+  simp [cubeRightHalf, h]
+
+/-- Restoring the `i`-th coordinate undoes `cubeLeftHalf i`. -/
+@[simp]
+theorem update_cubeLeftHalf_self (i : N) (y : I^N) :
+    Function.update (cubeLeftHalf i y) i (y i) = y := by
+  ext j
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [h]
+
+/-- Restoring the `i`-th coordinate undoes `cubeRightHalf i`. -/
+@[simp]
+theorem update_cubeRightHalf_self (i : N) (y : I^N) :
+    Function.update (cubeRightHalf i y) i (y i) = y := by
+  ext j
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [h]
+
+end Halves
 
 /-- The cube `I^N` is path connected: every point is joined to the corner `0` by the pointwise
 product of the coordinate paths `pathTowardZero`. -/

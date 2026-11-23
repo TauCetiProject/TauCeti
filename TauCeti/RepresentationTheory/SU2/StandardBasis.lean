@@ -106,7 +106,7 @@ theorem exists_toMatrix_eq_iff (A : Matrix (Fin 2) (Fin 2) ℂ) :
   refine ⟨?_, fun hA ↦ ⟨⟨_, hA⟩, ?_⟩⟩
   · rintro ⟨X, rfl⟩
     rw [toMatrix_apply, LinearEquiv.symm_apply_apply]
-    exact X.2
+    exact X.property
   · rw [toMatrix_apply, LinearEquiv.apply_symm_apply]
 
 /-- The matrix coordinates of an element of `𝔰𝔲(2)` are skew-Hermitian. -/

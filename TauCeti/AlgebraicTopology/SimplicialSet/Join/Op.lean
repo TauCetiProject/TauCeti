@@ -34,7 +34,8 @@ transfer to the other, such as coslices `C_{p/}` built from the joins `K ⋆ X`.
   `SSet.join.opIso` corresponds to taking opposite join data.
 * `SSet.join.opFunctor_map_inl_comp_opIso_hom`, `SSet.join.opFunctor_map_inr_comp_opIso_hom`: the
   isomorphism exchanges the inclusions of the two factors.
-* `SSet.join.opFunctor_map_map_comp_opIso_hom`: the isomorphism is natural in both factors.
+* `SSet.join.opFunctor_map_map_comp_opIso_hom`: the isomorphism is natural in both factors;
+  `SSet.join.opIso_inv_comp_opFunctor_map_map` states this for its inverse.
 
 ## References
 
@@ -219,6 +220,13 @@ lemma opFunctor_map_map_comp_opIso_hom (f : K ⟶ K') (g : L ⟶ L') :
   apply homEquiv.injective
   rw [homEquiv_opFunctor_map_comp_opIso_hom, homEquiv_comp_map, homEquiv_opIso_hom,
     ← JoinData.op_postcomp, ← Category.id_comp (map f g), homEquiv_comp_map, homEquiv_id]
+
+/-- The naturality of the isomorphism `(K ⋆ L)ᵒᵖ ≅ Lᵒᵖ ⋆ Kᵒᵖ`, stated for its inverse. -/
+@[reassoc]
+lemma opIso_inv_comp_opFunctor_map_map (f : K ⟶ K') (g : L ⟶ L') :
+    (opIso K L).inv ≫ opFunctor.map (map f g) =
+      map (opFunctor.map g) (opFunctor.map f) ≫ (opIso K' L').inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv, opFunctor_map_map_comp_opIso_hom]
 
 end join
 

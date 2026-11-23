@@ -55,7 +55,7 @@ theorem restrict_map_withDensity_normDet_fderiv_eq_euclideanHausdorffMeasure
       (μHE[finrank ℝ U]).restrict (f '' s) := by
   have hcont : ContinuousOn f s := fun x hx ↦ (hd x hx).continuousAt.continuousWithinAt
   have he := hcont.measurableEmbedding hs hf
-  have hc := MeasurableEmbedding.subtype_coe hs
+  have hc := MeasurableEmbedding.subtypeVal hs
   apply Measure.ext
   intro t ht
   have hr : MeasurableSet (((↑) : s → U) '' (s.domRestrict f ⁻¹' t)) :=
@@ -83,7 +83,7 @@ theorem lintegral_image_eq_lintegral_normDet_fderiv_mul
   rw [← restrict_map_withDensity_normDet_fderiv_eq_euclideanHausdorffMeasure hs hd hinj hf,
     (hcont.measurableEmbedding hs hf).lintegral_map]
   simp only [domRestrict_apply, ← Function.comp_apply (f := g)]
-  rw [← (MeasurableEmbedding.subtype_coe hs).lintegral_map, map_comap_subtype_coe hs,
+  rw [← (MeasurableEmbedding.subtypeVal hs).lintegral_map, map_comap_subtypeVal hs,
     setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable₀ _ _ _ hs]
   · rfl
   · exact Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top
@@ -114,7 +114,7 @@ theorem integrableOn_image_iff_integrableOn_normDet_fderiv_smul
     ← restrict_map_withDensity_normDet_fderiv_eq_euclideanHausdorffMeasure hs hd hinj hf,
     (hcont.measurableEmbedding hs hf).integrable_map_iff]
   simp only [domRestrict_eq, ← Function.comp_assoc]
-  rw [← (MeasurableEmbedding.subtype_coe hs).integrable_map_iff, map_comap_subtype_coe hs,
+  rw [← (MeasurableEmbedding.subtypeVal hs).integrable_map_iff, map_comap_subtypeVal hs,
     restrict_withDensity hs, integrable_withDensity_iff_integrable_smul₀']
   · simp only [ENNReal.toReal_ofReal (LinearMap.normDet_nonneg _), Function.comp_apply,
       IntegrableOn]
@@ -133,7 +133,7 @@ theorem integral_image_eq_integral_normDet_fderiv_smul
   rw [← restrict_map_withDensity_normDet_fderiv_eq_euclideanHausdorffMeasure hs hd hinj hf,
     (hcont.measurableEmbedding hs hf).integral_map]
   simp only [domRestrict_apply, ← Function.comp_apply (f := g)]
-  rw [← (MeasurableEmbedding.subtype_coe hs).integral_map, map_comap_subtype_coe hs,
+  rw [← (MeasurableEmbedding.subtypeVal hs).integral_map, map_comap_subtypeVal hs,
     setIntegral_withDensity_eq_setIntegral_toReal_smul₀]
   · simp only [ENNReal.toReal_ofReal (LinearMap.normDet_nonneg _)]
   · exact (ENNReal.measurable_ofReal.comp

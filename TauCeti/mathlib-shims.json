@@ -26,10 +26,7 @@
       "TauCeti/Analysis/Complex/Conformal/ImageSimplyConnected.lean",
       "TauCeti/Analysis/Complex/Conformal/Koebe.lean",
       "TauCeti/Analysis/Complex/Conformal/LocalDegree.lean",
-      "TauCeti/Analysis/Complex/Conformal/Montel/Basic.lean",
-      "TauCeti/Analysis/Complex/Conformal/Montel/Precompact.lean",
       "TauCeti/Analysis/Complex/Conformal/Morera.lean",
-      "TauCeti/Analysis/Complex/Conformal/NormalFamilies.lean",
       "TauCeti/Analysis/Complex/Conformal/Poincare/Betweenness.lean",
       "TauCeti/Analysis/Complex/Conformal/Poincare/Geodesic.lean",
       "TauCeti/Analysis/Complex/Conformal/Poincare/Isometry/Equiv.lean",
@@ -51,7 +48,10 @@
       "TauCeti/Analysis/Complex/Conformal/SchwarzPick/Isometry.lean",
       "TauCeti/Analysis/Complex/Conformal/SchwarzPick/Rigidity.lean",
       "TauCeti/Analysis/Complex/Conformal/UnitDisc/Automorphism/Rotation.lean",
-      "TauCeti/Analysis/Complex/Conformal/Vitali.lean"
+      "TauCeti/Analysis/Complex/Conformal/Vitali.lean",
+      "TauCeti/Analysis/Complex/HolomorphicFunctions/Montel/Basic.lean",
+      "TauCeti/Analysis/Complex/HolomorphicFunctions/Montel/Precompact.lean",
+      "TauCeti/Analysis/Complex/HolomorphicFunctions/NormalFamilies.lean"
     ],
     "declarations": [
       "Complex.exists_bijOn_unitBall_map_eq_zero"

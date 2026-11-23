@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
+public import Mathlib.Topology.Homotopy.Basic
 import Mathlib.Topology.Compactness.Compact
 
 /-!
@@ -22,7 +23,12 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
   and conversely.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
+* `Flow.orbit_eq_iff`: two points have the same orbit exactly when one lies on the orbit of the
+  other.
+* `Flow.orbit_union_orbit_eq`: two points on different orbits inside the union of two orbits
+  have these two orbits.
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
+* `Flow.prod`: the product of two flows with the same time.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
   set all meet an open set, they all meet it before a common time.
 -/
@@ -60,6 +66,27 @@ theorem map_apply_map_neg [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ
 theorem orbit_apply [AddGroup τ] (ϕ : Flow τ α) (s : τ) (x : α) : orbit ϕ (ϕ s x) = orbit ϕ x :=
   @AddAction.orbit_vadd τ α _ ϕ.toAddAction s x
 
+/-- Two points have the same orbit exactly when the first lies on the orbit of the second. This is
+`AddAction.orbit_eq_iff` for the action of the flow. -/
+theorem orbit_eq_iff [AddGroup τ] (ϕ : Flow τ α) {x y : α} :
+    orbit ϕ x = orbit ϕ y ↔ x ∈ orbit ϕ y :=
+  @AddAction.orbit_eq_iff τ α _ ϕ.toAddAction x y
+
+/-- Two points on different orbits, both in the union of the orbits of `u₁` and `u₂`, have these
+two orbits. -/
+theorem orbit_union_orbit_eq [AddGroup τ] (ϕ : Flow τ α) {u₁ u₂ y₁ y₂ : α}
+    (h₁ : y₁ ∈ ϕ.orbit u₁ ∪ ϕ.orbit u₂) (h₂ : y₂ ∈ ϕ.orbit u₁ ∪ ϕ.orbit u₂)
+    (hne : y₂ ∉ ϕ.orbit y₁) : ϕ.orbit y₁ ∪ ϕ.orbit y₂ = ϕ.orbit u₁ ∪ ϕ.orbit u₂ := by
+  have key {y : α} (h : y ∈ ϕ.orbit u₁ ∪ ϕ.orbit u₂) :
+      ϕ.orbit y = ϕ.orbit u₁ ∨ ϕ.orbit y = ϕ.orbit u₂ :=
+    h.imp (ϕ.orbit_eq_iff).2 (ϕ.orbit_eq_iff).2
+  have hne' : ϕ.orbit y₂ ≠ ϕ.orbit y₁ := fun h ↦ hne ((ϕ.orbit_eq_iff).1 h)
+  rcases key h₁ with e₁ | e₁ <;> rcases key h₂ with e₂ | e₂
+  · exact (hne' (e₂.trans e₁.symm)).elim
+  · rw [e₁, e₂]
+  · rw [e₁, e₂, Set.union_comm]
+  · exact (hne' (e₂.trans e₁.symm)).elim
+
 /-- Reversing time does not change the orbits of a flow. -/
 @[simp]
 theorem orbit_reverse [SubtractionCommMonoid τ] [ContinuousNeg τ] (ϕ : Flow τ α) (x : α) :
@@ -67,6 +94,22 @@ theorem orbit_reverse [SubtractionCommMonoid τ] [ContinuousNeg τ] (ϕ : Flow �
   ext y
   simp only [Flow.mem_orbit_iff, Flow.reverse_apply]
   exact ⟨fun ⟨t, ht⟩ ↦ ⟨-t, ht⟩, fun ⟨t, ht⟩ ↦ ⟨-t, by rwa [neg_neg]⟩⟩
+
+/-- The **product of two flows** with the same time: `(ϕ.prod ψ) t (x, y) = (ϕ t x, ψ t y)`. -/
+def prod {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ α) (ψ : Flow τ β) :
+    Flow τ (α × β) where
+  toFun t p := (ϕ t p.1, ψ t p.2)
+  cont' := by fun_prop
+  map_add' t₁ t₂ p := by
+    simp only [ϕ.map_add, ψ.map_add]
+  map_zero' p := by
+    simp only [ϕ.map_zero_apply, ψ.map_zero_apply]
+
+/-- A product of flows acts on each component by the corresponding flow. -/
+@[simp]
+theorem prod_apply {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ α) (ψ : Flow τ β)
+    (t : τ) (p : α × β) : ϕ.prod ψ t p = (ϕ t p.1, ψ t p.2) :=
+  (rfl)
 
 /-- **A uniform time to reach an open set.** If the forward orbit of every point of a compact set
 `C` meets an open set `W` at some positive time, then there is one time `T` such that each of these
@@ -85,5 +128,22 @@ theorem exists_forall_exists_mem_Ioo_apply_mem [AddZero τ] [Preorder τ] [IsDir
   obtain ⟨σ, hσ, hσW⟩ := h x hx
   obtain ⟨T, hT⟩ := exists_gt σ
   exact Set.mem_iUnion.2 ⟨T, σ, ⟨hσ, hT⟩, hσW⟩
+
+/-- **Homotopy along flow lines.** Two maps into a space `Z` embedded in `α` which send each `y` to
+the flow line of `p y` at the times `τ₀ y` and `τ₁ y` are homotopic, provided the flow line stays
+in `Z` at the times in between. -/
+theorem homotopic_of_eq_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (ϕ : Flow ℝ α) {ι : Z → α} (hι : Topology.IsEmbedding ι) {F₀ F₁ : C(Y, Z)} {p : Y → α}
+    (hp : Continuous p) {τ₀ τ₁ : Y → ℝ} (hτ₀ : Continuous τ₀) (hτ₁ : Continuous τ₁)
+    (hF₀ : ∀ y, ι (F₀ y) = ϕ (τ₀ y) (p y)) (hF₁ : ∀ y, ι (F₁ y) = ϕ (τ₁ y) (p y))
+    (hZ : ∀ y, ∀ t ∈ Set.Icc (0 : ℝ) 1, ϕ ((1 - t) * τ₀ y + t * τ₁ y) (p y) ∈ Set.range ι) :
+    F₀.Homotopic F₁ := by
+  choose G hG using fun q : unitInterval × Y ↦ hZ q.2 q.1 q.1.property
+  refine ⟨⟨⟨G, ?_⟩, fun y ↦ ?_, fun y ↦ ?_⟩⟩
+  · rw [hι.continuous_iff, Function.comp_def]
+    simp_rw [hG]
+    exact ϕ.continuous (by fun_prop) (hp.comp continuous_snd)
+  · exact hι.injective ((hG (0, y)).trans (by simp [hF₀]))
+  · exact hι.injective ((hG (1, y)).trans (by simp [hF₁]))
 
 end Flow

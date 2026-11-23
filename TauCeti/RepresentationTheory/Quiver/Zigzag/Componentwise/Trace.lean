@@ -82,15 +82,10 @@ under the canonical presentation equivalence. -/
 theorem zigzagComponentTrace_apply_nontrivial (C : G.ConnectedComponent) [Nontrivial C]
     (x : zigzagComponentAlgebra k G C) :
     zigzagComponentTrace k G C x =
-      zigzagTrace k C.toSimpleGraph (fun i ↦
-        exists_adj_iff_not_isIsolated.mpr
-          (C.connected_toSimpleGraph.preconnected.not_isIsolated i))
+      zigzagTrace k C.toSimpleGraph C.exists_adj_toSimpleGraph
         (zigzagComponentAlgebraEquivNonisolated k G C x) := by
-  let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i ↦
-    exists_adj_iff_not_isIsolated.mpr
-      (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
   have htrace : zigzagComponentTrace k G C =
-      (zigzagTrace k C.toSimpleGraph hns).comp
+      (zigzagTrace k C.toSimpleGraph C.exists_adj_toSimpleGraph).comp
         (zigzagComponentAlgebraEquivNonisolated k G C).toLinearMap := by
     apply (zigzagComponentBasis k G C).ext
     intro b
@@ -98,9 +93,10 @@ theorem zigzagComponentTrace_apply_nontrivial (C : G.ConnectedComponent) [Nontri
     -- The transported basis lemma is stated for the `AlgEquiv` coercion, while composition above
     -- leaves its definitionally equal `toLinearMap` coercion in the goal.
     change Sum.elim (fun _ ↦ 0) (Sum.elim (fun _ ↦ 0) fun _ ↦ 1) b =
-      zigzagTrace k C.toSimpleGraph hns
+      zigzagTrace k C.toSimpleGraph C.exists_adj_toSimpleGraph
         (zigzagComponentAlgebraEquivNonisolated k G C (zigzagComponentBasis k G C b))
-    rw [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns,
+    rw [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C
+        C.exists_adj_toSimpleGraph,
       zigzagBasis_apply, zigzagTrace_zigzagBasisFun]
   exact LinearMap.congr_fun htrace x
 
@@ -141,9 +137,6 @@ theorem zigzagComponentTrace_mul_comm (C : G.ConnectedComponent)
   classical
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
-    let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i ↦
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
     rw [zigzagComponentTrace_apply_nontrivial k G C,
       zigzagComponentTrace_apply_nontrivial k G C]
     let e := zigzagComponentAlgebraEquivNonisolated k G C
@@ -151,7 +144,7 @@ theorem zigzagComponentTrace_mul_comm (C : G.ConnectedComponent)
     -- coercion with the algebra-map applications in the trace.
     rw [show e (x * y) = e x * e y from e.map_mul x y,
       show e (y * x) = e y * e x from e.map_mul y x]
-    exact zigzagTrace_mul_comm k C.toSimpleGraph hns _ _
+    exact zigzagTrace_mul_comm k C.toSimpleGraph C.exists_adj_toSimpleGraph _ _
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     let e := (zigzagComponentAlgebraEquivULiftDualNumber k G C).trans
       (ULift.algEquiv (R := k) (A := DualNumber k))

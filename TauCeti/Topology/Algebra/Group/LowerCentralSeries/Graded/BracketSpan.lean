@@ -155,7 +155,7 @@ theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan {k : ℕ}
   | bracket x y =>
     obtain ⟨x, rfl⟩ := gradedMk_surjective k x
     obtain ⟨y, rfl⟩ := gradedMk_surjective 0 y
-    refine ⟨⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.2 y.2⟩, ?_,
+    refine ⟨⟨⁅(x : G), (y : G)⁆, commutator_mem_pLowerCentralSeries x.property y.property⟩, ?_,
       (gradedBracket_gradedMk x y).symm⟩
     rw [commutator_def]
     exact commutator_mem_commutator (mem_top _) (mem_top _)

@@ -69,7 +69,7 @@ variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] (D : Γ.CuspDatum) (K
 all its coefficients in the subfield `K` of `ℂ`, as an intermediate field of the function field
 over `K`. Its underlying subfield is `Subgroup.CompactifiedQuotient.coeffSubfield D K`. -/
 def coeffIntermediateField : IntermediateField K (MeromorphicFunction Γ.CompactifiedQuotient) :=
-  (coeffSubfield D K).toIntermediateField fun c ↦ (algebraMap_mem_coeffSubfield D).mpr c.2
+  (coeffSubfield D K).toIntermediateField fun c ↦ (algebraMap_mem_coeffSubfield D).mpr c.property
 
 variable {D K}
 
@@ -123,7 +123,7 @@ theorem linearDisjoint_coeffIntermediateField : (coeffIntermediateField D K).Lin
   let a := Module.Basis.ofVectorSpace K (coeffIntermediateField D K)
   refine .of_basis_left a (linearIndependent_iff'.mpr fun s c hc i hi ↦ ?_)
   refine (Module.forall_dual_apply_eq_zero_iff K (c i)).mp fun φ ↦ ?_
-  have h := sum_apply_smul_eq_zero_of_mem_coeffSubfield s (fun j ↦ (a j).2) hc φ
+  have h := sum_apply_smul_eq_zero_of_mem_coeffSubfield s (fun j ↦ (a j).property) hc φ
   exact linearIndependent_iff'.mp a.linearIndependent s (φ ∘ c)
     (Subtype.ext (by simpa using h)) i hi
 

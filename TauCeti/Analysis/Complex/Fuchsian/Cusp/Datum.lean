@@ -72,9 +72,10 @@ private theorem mem_cuspPeriods {σ : PSL(2, ℝ)} {x : ℝ} :
 private theorem discreteTopology_cuspPeriods [DiscreteTopology Γ] (σ : PSL(2, ℝ)) :
     DiscreteTopology (cuspPeriods Γ σ) := by
   refine DiscreteTopology.of_continuous_injective
-    (f := fun x : cuspPeriods Γ σ ↦ (⟨σ⁻¹ * upperRightHom (x : ℝ) * σ, mem_cuspPeriods.mp x.2⟩ : Γ))
+    (f := fun x : cuspPeriods Γ σ ↦ (⟨σ⁻¹ * upperRightHom (x : ℝ) * σ,
+        mem_cuspPeriods.mp x.property⟩ : Γ))
     (continuous_induced_rng.mpr ?_) fun x y h ↦ ?_
-  · exact (continuous_const.mul (continuous_upperRightHom.comp continuous_subtype_val)).mul
+  · exact (continuous_const.mul (continuous_upperRightHom.comp continuous_subtypeVal)).mul
       continuous_const
   · exact Subtype.ext (upperRightHom_injective (by simpa using congrArg Subtype.val h))
 
@@ -116,7 +117,8 @@ private theorem mem_stabilizer_iff_of_zmultiples_eq_cuspPeriods {c : OnePoint �
     -- are `w * ℤ`, this forces `t ^ 2 = 1`, so `σ * g * σ⁻¹` commutes with translations
     have hmul : t ^ 2 * w ∈ cuspPeriods Γ σ := by
       rw [mem_cuspPeriods, ← hconj]
-      convert Γ.mul_mem (Γ.mul_mem g.2 (mem_cuspPeriods.mp hwP)) (Γ.inv_mem g.2) using 1
+      convert Γ.mul_mem (Γ.mul_mem g.property (mem_cuspPeriods.mp hwP))
+          (Γ.inv_mem g.property) using 1
       group
     have hinv : (t ^ 2)⁻¹ * w ∈ cuspPeriods Γ σ := by
       have h := hconj ((t ^ 2)⁻¹ * w)
@@ -126,7 +128,8 @@ private theorem mem_stabilizer_iff_of_zmultiples_eq_cuspPeriods {c : OnePoint �
         rw [← h]
         group
       rw [mem_cuspPeriods, h']
-      convert Γ.mul_mem (Γ.mul_mem (Γ.inv_mem g.2) (mem_cuspPeriods.mp hwP)) g.2 using 1
+      convert Γ.mul_mem (Γ.mul_mem (Γ.inv_mem g.property) (mem_cuspPeriods.mp hwP)) g.property using
+          1
       group
     rw [← hP, AddSubgroup.mem_zmultiples_iff] at hmul hinv
     obtain ⟨m, hm⟩ := hmul
@@ -366,7 +369,7 @@ theorem CuspDatum.cuspOrbit_surjective [DiscreteTopology Γ] :
     Function.Surjective (CuspDatum.cuspOrbit (Γ := Γ)) := by
   intro C
   obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
-  obtain ⟨D, hD⟩ := (mem_cuspPoints.mp c.2).exists_cuspDatum_cusp_eq
+  obtain ⟨D, hD⟩ := (mem_cuspPoints.mp c.property).exists_cuspDatum_cusp_eq
   exact ⟨D, Subtype.ext (by simp [hD])⟩
 
 /-- A chosen normalized cusp datum representing a cusp orbit of a discrete group. -/

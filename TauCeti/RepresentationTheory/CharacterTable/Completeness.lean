@@ -47,6 +47,10 @@ conjugate or not.
   function is determined by those pairings.
 * `TauCeti.ClassFunction.exists_nonempty_equiv`: **such a family is a complete list of the
   irreducibles**, every irreducible representation being equivalent to one of its members.
+* `TauCeti.ClassFunction.exists_equiv_nonempty_equiv`: two such families are relabellings of
+  each other.
+* `TauCeti.sum_finrank_sq_eq_card`: the squares of the dimensions of such a family add up to `|G|`,
+  and `TauCeti.sum_finrank_mul_character`: `∑ᵢ dim(Vᵢ) χᵢ(g)` is `|G|` at `g = 1` and `0` elsewhere.
 * `TauCeti.ClassFunction.card_conjClass_mul_sum_char_mul_char_inv`: **the second orthogonality
   relation**, in a form free of division, and `TauCeti.ClassFunction.sum_char_mul_char_inv` in the
   quotient form `|G| / |C_g|`.
@@ -120,7 +124,11 @@ end Basis
 section Orthogonality
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
-  [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
+  [Invertible (Nat.card G : k)] {ι : Type*}
+
+section FintypeIndex
+
+variable [Fintype ι] {V : ι → Type w}
   [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
   (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
@@ -149,7 +157,21 @@ theorem sum_characterPairing_smul_ofCharacter (f : ClassFunction k G) :
       = ∑ i, b.repr f i • b i := Finset.sum_congr rfl fun i _ => by rw [hrepr i, hbi i]
     _ = f := b.sum_repr f
 
-omit [Fintype ι] in
+/-- The pointwise form of the expansion of a class function in the irreducible characters. -/
+theorem apply_eq_sum_characterPairing_mul_character (f : ClassFunction k G) (y : G) :
+    f.val y = ∑ i, characterPairing (ofCharacter (ρ i)) f * (ρ i).character y := by
+  conv_lhs => rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f]
+  simp
+
+end FintypeIndex
+
+variable {V : ι → Type w} [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
+  (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
+  (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
+  (hcard : Nat.card ι = Nat.card (ConjClasses G))
+
+include hind hcard
+
 /-- **A class function is determined by its pairings with the irreducible characters**: two class
 functions with the same pairing against every character of a complete family of pairwise
 inequivalent irreducible representations are equal. -/
@@ -160,12 +182,6 @@ theorem eq_of_forall_characterPairing_ofCharacter_eq [Finite ι] {f₁ f₂ : Cl
   rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f₁,
     ← sum_characterPairing_smul_ofCharacter ρ hind hcard f₂]
   simp only [h]
-
-/-- The pointwise form of the expansion of a class function in the irreducible characters. -/
-theorem apply_eq_sum_characterPairing_mul_character (f : ClassFunction k G) (y : G) :
-    f.1 y = ∑ i, characterPairing (ofCharacter (ρ i)) f * (ρ i).character y := by
-  conv_lhs => rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f]
-  simp
 
 end Orthogonality
 
@@ -199,7 +215,7 @@ theorem card_conjClass_mul_sum_char_mul_char_inv (g h : G) :
   have hiff : ConjClasses.mk h⁻¹ = ConjClasses.mk g⁻¹ ↔ IsConj g h := by
     rw [ConjClasses.mk_eq_mk_iff_isConj]
     exact ⟨fun hgh => (isConj_inv_iff.mp hgh).symm, fun hgh => isConj_inv_iff.mpr hgh.symm⟩
-  have hlhs : (classIndicator (k := k) g⁻¹).1 h⁻¹ = if IsConj g h then (1 : k) else 0 := by
+  have hlhs : (classIndicator (k := k) g⁻¹).val h⁻¹ = if IsConj g h then (1 : k) else 0 := by
     rw [classIndicator_apply]
     exact if_congr hiff rfl rfl
   rw [hlhs] at hval
@@ -238,7 +254,7 @@ end Columns
 section Classification
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
-  [Invertible (Nat.card G : k)] {ι : Type*} [Finite ι] {V : ι → Type w}
+  [Invertible (Nat.card G : k)] {ι : Type*} {V : ι → Type w}
   [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
   (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
@@ -246,7 +262,6 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k
 
 include hind hcard
 
-omit [Finite ι] in
 /-- **A complete family exhausts the irreducibles**: every irreducible
 representation of `G` is equivalent to a member of the family. Were it equivalent to none of them,
 its character would be orthogonal to a basis of the class functions, hence zero; but an irreducible
@@ -265,6 +280,21 @@ theorem exists_nonempty_equiv {W : Type*} [AddCommGroup W] [Module k W]
   have h1 := characterPairing_ofCharacter_self σ
   rw [h0] at h1
   simp at h1
+
+/-- **Two complete families of irreducibles are relabellings of each other**: there is a bijection
+between their indices matching each member of the first family with an equivalent member of the
+second. -/
+theorem exists_equiv_nonempty_equiv {κ : Type*} {W : κ → Type*} [∀ j, AddCommGroup (W j)]
+    [∀ j, Module k (W j)] (σ : ∀ j, Representation k G (W j)) [∀ j, (σ j).IsIrreducible]
+    (hind' : Pairwise fun i j => IsEmpty ((σ i).Equiv (σ j)))
+    (hcard' : Nat.card κ = Nat.card (ConjClasses G)) :
+    ∃ e : ι ≃ κ, ∀ i, Nonempty ((ρ i).Equiv (σ (e i))) := by
+  have : Finite κ := Nat.finite_of_card_ne_zero (by rw [hcard']; exact Nat.card_pos.ne')
+  choose e he using fun i => exists_nonempty_equiv σ hind' hcard' (ρ i)
+  have hinj : Function.Injective e := fun i j hij => by
+    by_contra hne
+    exact (hind hne).elim ((he i).some.trans (hij ▸ (he j).some).symm)
+  exact ⟨Equiv.ofBijective e (hinj.bijective_of_nat_card_le (by rw [hcard, hcard'])), he⟩
 
 end Classification
 
@@ -321,5 +351,40 @@ theorem le_span_irreducibleCharacters :
 end Existence
 
 end ClassFunction
+
+section Dimensions
+
+variable {k G : Type*} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+  [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type*}
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
+  (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
+  (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
+  (hcard : Nat.card ι = Nat.card (ConjClasses G))
+
+include hind hcard
+
+/-- **The squares of the dimensions of a complete family of irreducibles add up to `|G|`**: the
+family is a relabelling of the blocks of a Wedderburn presentation of `k[G]`, whose squared
+dimensions add up to the dimension `|G|` of `k[G]`. -/
+theorem sum_finrank_sq_eq_card : ∑ i, Module.finrank k (V i) ^ 2 = Nat.card G := by
+  have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  let _ : Fintype (ConjClasses G) := Fintype.ofFinite (ConjClasses G)
+  obtain ⟨d, τ, hirr, hind', hsum⟩ := exists_irreducible_family_conjClasses k G
+  have := hirr
+  obtain ⟨e, he⟩ := ClassFunction.exists_equiv_nonempty_equiv ρ hind hcard τ hind' rfl
+  rw [← hsum, finsum_eq_sum_of_fintype]
+  refine Fintype.sum_equiv e _ _ fun i => ?_
+  rw [(he i).some.toLinearEquiv.finrank_eq, Module.finrank_fin_fun]
+
+open scoped Classical in
+/-- **The degree-weighted sum of the characters of a complete family of irreducibles**:
+`∑ᵢ dim(Vᵢ) χᵢ(g)` is `|G|` at the identity and `0` elsewhere. -/
+theorem sum_finrank_mul_character (g : G) :
+    ∑ i, (Module.finrank k (V i) : k) * (ρ i).character g =
+      if g = 1 then (Nat.card G : k) else 0 := by
+  have := fun i => (ρ i).asModuleEquiv.finiteDimensional
+  simpa using ClassFunction.card_conjClass_mul_sum_char_mul_char_inv ρ hind hcard 1 g⁻¹
+
+end Dimensions
 
 end TauCeti

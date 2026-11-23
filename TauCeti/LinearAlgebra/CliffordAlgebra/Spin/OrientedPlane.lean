@@ -161,7 +161,7 @@ rotation by the angle `2θ`. -/
 theorem spinVectorAction_spinCircle_exp (θ : ℝ) (v : V) :
     spinVectorAction Q (o.spinCircle hQ (Circle.exp θ)) v = o.rotation (2 * θ : ℝ) v := by
   have h : ((Circle.exp θ : ℂ)) ^ 2 = Complex.exp ((2 * θ : ℝ) * Complex.I) := by
-    rw [Circle.coe_exp, ← Complex.exp_nat_mul]
+    rw [Circle.coe_exp, ← Complex.exp_natCast_mul]
     push_cast
     ring_nf
   rw [spinVectorAction_spinCircle, h, o.rotation_apply, Complex.exp_ofReal_mul_I_re,
@@ -258,7 +258,7 @@ private theorem exists_coe_eq_algebraMap_add_smul_volumeElement (x : spinGroup Q
   have hQb : Q (b 0) = -1 := by simp [hQ, b.orthonormal.1 0]
   let _ : Invertible (Q (b 0)) := invertibleOfNonzero (by rw [hQb]; norm_num)
   obtain ⟨w, hw⟩ := (mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two Q Fact.out (b 0)).1
-    (spinGroup.mem_even x.2)
+    (spinGroup.mem_even x.property)
   -- Expand `w` in the basis: `e₀ (α e₀ + β e₁) = -α + β ω`.
   have hxω : (x : CliffordAlgebra Q) =
       algebraMap ℝ _ (-⟪b 0, w⟫_ℝ) + ⟪b 1, w⟫_ℝ • volumeElement Q o := by
@@ -268,7 +268,7 @@ private theorem exists_coe_eq_algebraMap_add_smul_volumeElement (x : spinGroup Q
     simp [Algebra.algebraMap_eq_smul_one]
   refine ⟨-⟪b 0, w⟫_ℝ, ⟪b 1, w⟫_ℝ, ?_, hxω⟩
   -- The spinor norm `x x⋆ = r² + s²` is one.
-  have hn := spinGroup.mul_star_self_of_mem x.2
+  have hn := spinGroup.mul_star_self_of_mem x.property
   rw [hxω, algebraMap_add_smul_volumeElement_mul_star_self o hQ (by decide),
     ← map_one (algebraMap ℝ (CliffordAlgebra Q))] at hn
   exact (algebraMap ℝ (CliffordAlgebra Q)).injective hn

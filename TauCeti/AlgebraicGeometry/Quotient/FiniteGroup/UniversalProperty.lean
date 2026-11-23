@@ -170,17 +170,17 @@ private theorem exists_desc_away {X : Scheme.{u}} (f : Spec (CommRingCat.of A) �
   have hpb := isPullback_away G r
   have hV : Set.range
       (Spec.algebraMap A (Localization (Algebra.algebraMapSubmonoid A (.powers r))) ≫ f) ⊆
-      Set.range V.1.ι := by
+      Set.range V.val.ι := by
     rintro _ ⟨z, rfl⟩
     rw [Scheme.Opens.range_ι, Scheme.Hom.comp_apply, ← hb, ← Scheme.Hom.comp_apply, hpb.w,
       Scheme.Hom.comp_apply]
     exact hrV _ ((range_specAlgebraMap_away G r).le ⟨_, rfl⟩)
-  let f' := IsOpenImmersion.lift V.1.ι _ hV
+  let f' := IsOpenImmersion.lift V.val.ι _ hV
   have hf' (g : G) :
       specComap (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G g ≫ f' = f' := by
-    rw [← cancel_mono V.1.ι]
+    rw [← cancel_mono V.val.ι]
     simp [f', specComap_comp_specAlgebraMap_away_assoc, hf]
-  refine ⟨desc f' hf' ≫ V.1.ι, ?_⟩
+  refine ⟨desc f' hf' ≫ V.val.ι, ?_⟩
   rw [← cancel_epi hpb.isoPullback.hom, IsPullback.isoPullback_hom_fst_assoc,
     IsPullback.isoPullback_hom_snd_assoc, projection_desc_assoc, IsOpenImmersion.lift_fac]
 
@@ -192,7 +192,7 @@ private theorem exists_projection_comp_eq {X : Scheme.{u}} (f : Spec (CommRingCa
   -- Basic opens `D(r)` sent by `b` into affine opens of `X` cover the quotient.
   let I := {p : FixedPoints.subring A G × X.affineOpens //
     ∀ y ∈ PrimeSpectrum.basicOpen p.1, b y ∈ (p.2 : Set X)}
-  have hcov (y : quotient A G) : ∃ i : I, y ∈ PrimeSpectrum.basicOpen i.1.1 := by
+  have hcov (y : quotient A G) : ∃ i : I, y ∈ PrimeSpectrum.basicOpen i.val.1 := by
     obtain ⟨_, ⟨V, hV, rfl⟩, hbV, -⟩ :=
       X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (b y)) isOpen_univ
     obtain ⟨_, ⟨r, rfl⟩, hyr, hrV⟩ :=
@@ -201,16 +201,16 @@ private theorem exists_projection_comp_eq {X : Scheme.{u}} (f : Spec (CommRingCa
     exact ⟨⟨(r, ⟨V, hV⟩), fun z hz ↦ hrV hz⟩, hyr⟩
   let 𝒰 : (quotient A G).OpenCover :=
     { I₀ := I
-      X i := quotient (Localization (Algebra.algebraMapSubmonoid A (.powers i.1.1))) G
+      X i := quotient (Localization (Algebra.algebraMapSubmonoid A (.powers i.val.1))) G
       f i := Spec.algebraMap (FixedPoints.subring A G)
-        (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A (.powers i.1.1))) G)
+        (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A (.powers i.val.1))) G)
       mem₀ := by
         rw [Scheme.presieve₀_mem_precoverage_iff]
         refine ⟨fun y ↦ ?_, inferInstance⟩
         obtain ⟨i, hi⟩ := hcov y
-        obtain ⟨z, hz⟩ := (range_specAlgebraMap_away G i.1.1).ge hi
+        obtain ⟨z, hz⟩ := (range_specAlgebraMap_away G i.val.1).ge hi
         exact ⟨i, z, hz⟩ }
-  choose u hu using fun i : I ↦ exists_desc_away f hf b hb i.1.1 i.1.2 i.2
+  choose u hu using fun i : I ↦ exists_desc_away f hf b hb i.val.1 i.val.2 i.property
   -- The local descents glue, since the projection stays an epimorphism over open subschemes.
   exact Scheme.Hom.exists_comp_eq_of_openCover (projection A G)
     (fun _ g _ ↦ Scheme.Hom.epi_pullback_snd_of_isOpenImmersion _ g

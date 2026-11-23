@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Henselian
+import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.ComputeDegree
 
 /-!
 # Henselian rings
@@ -41,6 +43,10 @@ the unit filtration is carried onto itself by the `n`-th power map.
 Without assuming `2` invertible, every element of `1 + 4J` is a square. This supplies deep
 square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ J`.
 
+Finally, for a monic quadratic whose discriminant is a unit, any root modulo the Henselian ideal is
+simple and lifts to a root in the ring; when it has such a root, all its roots in an algebra without
+zero divisors, commutative or not, already lie in the ring.
+
 ## Main results
 
 * `TauCeti.HenselianRing.henselianLocalRing`: a local ring that is Henselian at its maximal ideal
@@ -55,6 +61,13 @@ square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ 
   maximal ideal lifts each solution of its residue equation to a solution over the ring.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
+* `TauCeti.HenselianRing.isSquare_one_add_four_mul_of_mem`: every element of `1 + 4J` is a square.
+* `TauCeti.HenselianRing.exists_quadratic_root_of_isUnit_discrim`: a root modulo `I` of a monic
+  quadratic `X ^ 2 + b X + c` with unit discriminant lifts to a root in `R` with unit derivative.
+* `TauCeti.HenselianRing.mem_range_algebraMap_of_isUnit_discrim`: when such a quadratic has a root
+  modulo `I`, all its roots in `R`-algebras without zero divisors already lie in `R`.
+* `TauCeti.HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit`: its case `b` a
+  unit and `c ∈ I`, where the root modulo `I` is `0`.
 
 ## Implementation notes
 
@@ -282,18 +295,13 @@ theorem exists_pow_eq_and_sub_one_mem_of_sub_one_mem {I J : Ideal R} [HenselianR
   have hpow : a ^ n = w := by simpa [sub_eq_zero] using ha
   refine ⟨a, hpow, ?_⟩
   -- The geometric sum `1 + a + ⋯ + a ^ (n - 1)` reduces to `n` modulo `J`, hence is a unit.
-  have ha_quot : Ideal.Quotient.mk J a = 1 := by
-    rw [← map_one (Ideal.Quotient.mk J), Ideal.Quotient.eq]
-    exact ha1
+  have ha_quot : Ideal.Quotient.mk J a = 1 := (Ideal.Quotient.eq.2 ha1).trans (map_one _)
   have := _root_.isLocalHom_of_le_jacobson (HenselianRing.jac (R := R) (I := J))
   have hunit : IsUnit (∑ j ∈ Finset.range n, a ^ j) :=
     isUnit_of_map_unit (Ideal.Quotient.mk J) _
       (by simpa [ha_quot] using hn.map (Ideal.Quotient.mk J))
-  obtain ⟨u, hu⟩ := hunit
-  have hsub : a - 1 = ↑u⁻¹ * (w - 1) := by
-    rw [← hpow, ← geom_sum_mul, ← hu, Units.inv_mul_cancel_left]
-  rw [hsub]
-  exact I.mul_mem_left _ hw
+  -- Times `a - 1` it gives `a ^ n - 1 = w - 1 ∈ I`, so `a - 1 ∈ I`.
+  rwa [← I.unit_mul_mem_iff_mem hunit, geom_sum_mul, hpow]
 
 /-- In a ring Henselian at `J`, an element `c ∈ J` has the form `t² + t` for some `t ∈ J`.
 This is the simple-root form of Hensel's lemma that also works in residue characteristic two. -/
@@ -314,6 +322,72 @@ theorem isSquare_one_add_four_mul_of_mem {J : Ideal R} [HenselianRing R J]
   refine ⟨1 + 2 * t, ?_⟩
   rw [← ht]
   ring
+
+/-- A root modulo `I` of a monic quadratic `X ^ 2 + b X + c` over a ring Henselian along `I`
+lifts to a root in `R` when the discriminant `b ^ 2 - 4 c` is a unit: the root is simple, since
+`(2 t + b) ^ 2` is the discriminant modulo `I`. The lift has unit derivative `2 s + b`. -/
+theorem exists_quadratic_root_of_isUnit_discrim {I : Ideal R} [HenselianRing R I] {b c t : R}
+    (hd : IsUnit (b ^ 2 - 4 * c)) (ht : t ^ 2 + b * t + c ∈ I) :
+    ∃ s : R, s ^ 2 + b * s + c = 0 ∧ s - t ∈ I ∧ IsUnit (2 * s + b) := by
+  have hu : IsUnit (Ideal.Quotient.mk I (2 * t + b)) := by
+    have h0 : Ideal.Quotient.mk I (t ^ 2 + b * t + c) = 0 := Ideal.Quotient.eq_zero_iff_mem.2 ht
+    simp only [map_add, map_mul, map_pow] at h0
+    have key := discrim_eq_sq_of_quadratic_eq_zero (a := (1 : R ⧸ I)) (b := Ideal.Quotient.mk I b)
+      (c := Ideal.Quotient.mk I c) (x := Ideal.Quotient.mk I t) (by linear_combination h0)
+    refine (isUnit_pow_iff two_ne_zero).1 ?_
+    rw [map_add, map_mul, map_ofNat, ← mul_one (2 : R ⧸ I), ← key]
+    have := hd.map (Ideal.Quotient.mk I)
+    simp only [map_sub, map_mul, map_pow, map_ofNat] at this
+    simpa [discrim] using this
+  let f : R[X] := X ^ 2 + C b * X + C c
+  have hmon : f.Monic := by
+    dsimp [f]
+    monicity!
+  have hf₀ : f.eval t ∈ I := by simpa [f] using ht
+  have hder : f.derivative.eval t = 2 * t + b := by
+    simp [f, one_add_one_eq_two]
+  obtain ⟨s, hs, hst⟩ := HenselianRing.is_henselian f hmon t hf₀ (by rwa [hder])
+  refine ⟨s, by simpa [f] using hs.eq_zero, hst, ?_⟩
+  have := _root_.isLocalHom_of_le_jacobson (HenselianRing.jac (R := R) (I := I))
+  refine IsUnit.of_map (Ideal.Quotient.mk I) _ ?_
+  simpa [Ideal.Quotient.eq.2 hst] using hu
+
+/-- A root, in an `R`-algebra without zero divisors, of `X ^ 2 + b X + c` already lies in `R`
+when the Henselian ring `R` has a root `t` of the quadratic modulo `I` and the discriminant
+`b ^ 2 - 4 c` is a unit: Hensel's lemma lifts `t` to a root `s ∈ R`, and then
+`(x - s) (x + s + b) = 0`. -/
+theorem mem_range_algebraMap_of_isUnit_discrim {S : Type*} {I : Ideal R} [HenselianRing R I]
+    [Ring S] [NoZeroDivisors S] [Algebra R S] {b c t : R}
+    (hd : IsUnit (b ^ 2 - 4 * c)) (ht : t ^ 2 + b * t + c ∈ I) {x : S}
+    (hx : x ^ 2 + algebraMap R S b * x + algebraMap R S c = 0) :
+    x ∈ Set.range (algebraMap R S) := by
+  obtain ⟨s, hs, -⟩ := exists_quadratic_root_of_isUnit_discrim hd ht
+  have hs' : algebraMap R S s ^ 2 + algebraMap R S b * algebraMap R S s +
+      algebraMap R S c = 0 := by
+    simpa using congrArg (algebraMap R S) hs
+  -- `x` commutes with the image of `R`, so the difference of the two quadratics factors.
+  have hfac : (x - algebraMap R S s) * (x + algebraMap R S s + algebraMap R S b) = 0 := by
+    rw [← sub_eq_zero_of_eq (hx.trans hs'.symm)]
+    simp only [mul_add, sub_mul, sq, ← Algebra.commutes s x, ← Algebra.commutes b x,
+      ← map_mul, mul_comm s b]
+    abel
+  rcases mul_eq_zero.mp hfac with h | h
+  · exact ⟨s, (sub_eq_zero.mp h).symm⟩
+  · rw [add_assoc] at h
+    exact ⟨-s - b, by rw [map_sub, map_neg, ← neg_add', ← eq_neg_of_add_eq_zero_left h]⟩
+
+/-- A root, in an `R`-algebra without zero divisors, of `X ^ 2 + b X + c` with `b` a unit and
+`c ∈ I` already lies in the Henselian ring `R`: the reduction `X (X + b)` has the simple
+root `0`. -/
+theorem mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit {S : Type*} {I : Ideal R}
+    [HenselianRing R I] [Ring S] [NoZeroDivisors S] [Algebra R S] {b c : R}
+    (hb : IsUnit b) (hc : c ∈ I) {x : S}
+    (hx : x ^ 2 + algebraMap R S b * x + algebraMap R S c = 0) :
+    x ∈ Set.range (algebraMap R S) := by
+  have := _root_.isLocalHom_of_le_jacobson (HenselianRing.jac (R := R) (I := I))
+  refine mem_range_algebraMap_of_isUnit_discrim (t := 0) ?_ (by simpa using hc) hx
+  refine IsUnit.of_map (Ideal.Quotient.mk I) _ ?_
+  simpa [Ideal.Quotient.eq_zero_iff_mem.2 hc] using (hb.map (Ideal.Quotient.mk I)).pow 2
 
 end HenselianRing
 

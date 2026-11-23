@@ -20,6 +20,10 @@ formulas for these symbols.
 
 * `TauCeti.splittingSymbolAut σ` is `#Aut(σ)`, the product of the residue degrees `f_i` times the
   number of permutations of the factors preserving `σ`.
+* `TauCeti.splittingSymbolExponent σ` is `∑ f_i (e_i - 1)`, the tame discriminant bound of `σ`,
+  i.e. the exponent in [Bhargava 2007, Prop. 2.1] (for an étale algebra with symbol `σ`, this
+  equals the true discriminant exponent if and only if every `e_i` is prime to the residue
+  characteristic `p`, and is strictly smaller otherwise due to wild ramification).
 * `TauCeti.ramificationPartition σ` repeats each `e_i - 1` exactly `f_i` times and drops zeros. The
   symbol has degree `n = k + #π + n₀`, where `k` is the sum of its ramification partition `π` and
   `n₀` the total residue degree of its unramified factors
@@ -56,7 +60,7 @@ open scoped Nat ENNReal NNReal
 
 namespace TauCeti
 
-/-! ### The automorphism count and the ramification partition -/
+/-! ### The automorphism count, tame discriminant bound, and ramification partition -/
 
 /-- The order `#Aut(σ)` of the automorphism group of a splitting symbol `σ`, a multiset of pairs
 `(f, e)` of residue degrees and ramification indices [Bhargava 2007, §2]: the product of the
@@ -64,6 +68,14 @@ residue degrees, times the number `∏ₓ (count x)!` of permutations of the fac
 `σ`. -/
 def splittingSymbolAut (σ : Multiset (ℕ × ℕ)) : ℕ :=
   (σ.map Prod.fst).prod * ∏ x ∈ σ.toFinset, (σ.count x)!
+
+/-- The tame discriminant bound `∑ f (e - 1)` of a splitting symbol `σ`, i.e. the exponent
+appearing in [Bhargava 2007, Prop. 2.1]. For a Galois set (or étale algebra) with splitting
+symbol `σ`, this equals the true discriminant exponent if and only if every ramification index `e`
+is prime to the residue characteristic `p` (when `p ∣ e` for some factor, wild ramification makes
+the true discriminant exponent strictly larger, so this bound is not attained). -/
+def splittingSymbolExponent (σ : Multiset (ℕ × ℕ)) : ℕ :=
+  (σ.map fun x => x.1 * (x.2 - 1)).sum
 
 /-- The ramification partition of a splitting symbol `σ` [Bhargava 2007, §2]: each `e - 1`
 repeated `f` times, over the factors `(f, e)` of `σ`, with the zeros dropped. For a symbol of degree
@@ -76,6 +88,49 @@ def ramificationPartition (σ : Multiset (ℕ × ℕ)) : Multiset ℕ :=
 theorem splittingSymbolAut_def (σ : Multiset (ℕ × ℕ)) :
     splittingSymbolAut σ = (σ.map Prod.fst).prod * ∏ x ∈ σ.toFinset, (σ.count x)! :=
   (rfl)
+
+/-- The defining formula of `splittingSymbolExponent`. -/
+theorem splittingSymbolExponent_def (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolExponent σ = (σ.map fun x => x.1 * (x.2 - 1)).sum :=
+  (rfl)
+
+/-- The empty splitting symbol has tame discriminant bound zero. -/
+@[simp]
+theorem splittingSymbolExponent_zero : splittingSymbolExponent 0 = 0 := by
+  simp [splittingSymbolExponent]
+
+/-- The tame discriminant bound of a single factor `(f, e)` is `f * (e - 1)`. -/
+@[simp]
+theorem splittingSymbolExponent_singleton (x : ℕ × ℕ) :
+    splittingSymbolExponent {x} = x.1 * (x.2 - 1) := by
+  simp [splittingSymbolExponent]
+
+/-- Adding a factor `(f, e)` increases the tame discriminant bound by `f * (e - 1)`. -/
+@[simp]
+theorem splittingSymbolExponent_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolExponent (x ::ₘ σ) = x.1 * (x.2 - 1) + splittingSymbolExponent σ := by
+  simp [splittingSymbolExponent]
+
+/-- The tame discriminant bound of a sum of splitting symbols is the sum of their bounds. -/
+@[simp]
+theorem splittingSymbolExponent_add (σ τ : Multiset (ℕ × ℕ)) :
+    splittingSymbolExponent (σ + τ) =
+      splittingSymbolExponent σ + splittingSymbolExponent τ := by
+  simp [splittingSymbolExponent]
+
+/-- Repeating a factor `(f, e)` `n` times multiplies its tame discriminant bound `f * (e - 1)`
+by `n`. -/
+@[simp]
+theorem splittingSymbolExponent_replicate (n : ℕ) (x : ℕ × ℕ) :
+    splittingSymbolExponent (Multiset.replicate n x) = n * (x.1 * (x.2 - 1)) := by
+  simp [splittingSymbolExponent]
+
+/-- Erasing a factor `(f, e) ∈ σ` splits off `f * (e - 1)` from the tame discriminant bound. -/
+theorem splittingSymbolExponent_eq_add_erase {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ} (hx : x ∈ σ) :
+    splittingSymbolExponent σ =
+      x.1 * (x.2 - 1) + splittingSymbolExponent (σ.erase x) := by
+  conv_lhs => rw [← Multiset.cons_erase hx]
+  exact splittingSymbolExponent_cons x (σ.erase x)
 
 /-- The defining formula of `ramificationPartition`. -/
 theorem ramificationPartition_def (σ : Multiset (ℕ × ℕ)) :
@@ -111,6 +166,46 @@ theorem splittingSymbolAut_zero : splittingSymbolAut 0 = 1 := by
 theorem splittingSymbolAut_singleton (x : ℕ × ℕ) : splittingSymbolAut {x} = x.1 := by
   simp [splittingSymbolAut]
 
+/-- Adjoining a factor `x = (f, e)` to `σ` multiplies `#Aut(σ)` by `f * (σ.count x + 1)`. -/
+@[simp]
+theorem splittingSymbolAut_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolAut (x ::ₘ σ) = x.1 * (σ.count x + 1) * splittingSymbolAut σ := by
+  classical
+  let s : Finset (ℕ × ℕ) := insert x σ.toFinset
+  rw [splittingSymbolAut_eq_prod_of_subset (x ::ₘ σ) (s := s) (by simp [s]),
+    splittingSymbolAut_eq_prod_of_subset σ (s := s) (Finset.subset_insert x _),
+    ← Finset.mul_prod_erase s _ (Finset.mem_insert_self x _),
+    ← Finset.mul_prod_erase s _ (Finset.mem_insert_self x _),
+    Multiset.count_cons_self, pow_succ', Nat.factorial_succ]
+  have hrest :
+      (∏ y ∈ s.erase x, y.1 ^ (x ::ₘ σ).count y * ((x ::ₘ σ).count y)!) =
+        ∏ y ∈ s.erase x, y.1 ^ σ.count y * (σ.count y)! :=
+    Finset.prod_congr rfl fun y hy => by
+      rw [Multiset.count_cons_of_ne (Finset.ne_of_mem_erase hy)]
+  rw [hrest]
+  ring
+
+/-- A splitting symbol consisting of `n` copies of `x = (f, e)` has `f ^ n * n !` automorphisms. -/
+@[simp]
+theorem splittingSymbolAut_replicate (n : ℕ) (x : ℕ × ℕ) :
+    splittingSymbolAut (Multiset.replicate n x) = x.1 ^ n * n ! := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Multiset.replicate_succ, splittingSymbolAut_cons, Multiset.count_replicate_self, ih,
+      pow_succ', Nat.factorial_succ]
+    ring
+
+/-- Erasing one copy of a factor `x ∈ σ` divides `#Aut(σ)` by `x.1 * σ.count x`. -/
+theorem splittingSymbolAut_eq_mul_erase {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ} (hx : x ∈ σ) :
+    splittingSymbolAut σ = x.1 * σ.count x * splittingSymbolAut (σ.erase x) := by
+  have hc : (σ.erase x).count x + 1 = σ.count x := by
+    have := Multiset.count_pos.2 hx
+    rw [Multiset.count_erase_self]
+    omega
+  conv_lhs => rw [← Multiset.cons_erase hx]
+  rw [splittingSymbolAut_cons, hc]
+
 /-- The empty splitting symbol has the empty ramification partition. -/
 @[simp]
 theorem ramificationPartition_zero : ramificationPartition 0 = 0 := by
@@ -132,6 +227,26 @@ theorem ramificationPartition_singleton (x : ℕ × ℕ) :
   split_ifs with h
   · exact Multiset.filter_eq_nil.2 fun a ha => by rw [Multiset.eq_of_mem_replicate ha]; omega
   · exact Multiset.filter_eq_self.2 fun a ha => by rw [Multiset.eq_of_mem_replicate ha]; omega
+
+/-- Adjoining a factor `(f, e)` prepends `f` copies of `e - 1` when `e > 1` (and nothing when
+`e ≤ 1`) to the ramification partition. -/
+@[simp]
+theorem ramificationPartition_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
+    ramificationPartition (x ::ₘ σ) =
+      (if x.2 ≤ 1 then 0 else Multiset.replicate x.1 (x.2 - 1)) + ramificationPartition σ := by
+  rw [← Multiset.singleton_add, ramificationPartition_add, ramificationPartition_singleton]
+
+/-- Repeating a factor `(f, e)` `n` times gives `n * f` copies of `e - 1` when `e > 1`, and the
+empty ramification partition when `e ≤ 1`. -/
+@[simp]
+theorem ramificationPartition_replicate (n : ℕ) (x : ℕ × ℕ) :
+    ramificationPartition (Multiset.replicate n x) =
+      if x.2 ≤ 1 then 0 else Multiset.replicate (n * x.1) (x.2 - 1) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Multiset.replicate_succ, ramificationPartition_cons, ih]
+    split_ifs <;> simp [Nat.succ_mul, add_comm, ← Multiset.replicate_add]
 
 /-- The parts of the ramification partition are the `e - 1 ≠ 0` for the factors `(f, e)` of `σ`
 with `f ≠ 0`. -/
@@ -156,11 +271,11 @@ theorem count_ramificationPartition (σ : Multiset (ℕ × ℕ)) {t : ℕ} (ht :
   rw [Multiset.count_replicate]
   split_ifs <;> omega
 
-/-- The sum of the ramification partition is `∑ f (e - 1)` over the factors `(f, e)` of `σ`. -/
+/-- The sum of the ramification partition is the tame discriminant bound `∑ f (e - 1)` of `σ`. -/
 @[simp]
 theorem sum_ramificationPartition (σ : Multiset (ℕ × ℕ)) :
-    (ramificationPartition σ).sum = (σ.map fun x => x.1 * (x.2 - 1)).sum := by
-  rw [ramificationPartition, Multiset.filter_bind, Multiset.sum_bind]
+    (ramificationPartition σ).sum = splittingSymbolExponent σ := by
+  rw [ramificationPartition, splittingSymbolExponent_def, Multiset.filter_bind, Multiset.sum_bind]
   refine congrArg _ (Multiset.map_congr rfl fun x _ => ?_)
   by_cases h : x.2 - 1 = 0
   · rw [Multiset.filter_eq_nil.2 fun a ha => by simp [Multiset.eq_of_mem_replicate ha, h], h]
@@ -192,8 +307,8 @@ theorem sum_map_mul_eq_sum_ramificationPartition_add (σ : Multiset (ℕ × ℕ)
     (σ.map fun x => x.1 * x.2).sum =
       (ramificationPartition σ).sum + Multiset.card (ramificationPartition σ) +
         (σ.map fun x => if x.2 = 1 then x.1 else 0).sum := by
-  rw [sum_ramificationPartition, card_ramificationPartition, ← Multiset.sum_map_add,
-    ← Multiset.sum_map_add]
+  rw [sum_ramificationPartition, splittingSymbolExponent_def, card_ramificationPartition,
+    ← Multiset.sum_map_add, ← Multiset.sum_map_add]
   refine congrArg _ (Multiset.map_congr rfl fun x hx => ?_)
   obtain ⟨e, he⟩ : ∃ e, x.2 = e + 1 := ⟨x.2 - 1, by have := hσ x hx; omega⟩
   rw [he]
@@ -217,25 +332,25 @@ private def symbolEquiv (S : Finset ℕ) (m : ℕ → ℕ) :
         ∀ e ∈ S, (σ.map fun x => if x.2 = e then x.1 else 0).sum = m e} ≃
       ((e : S) → (m e).Partition) where
   toFun σ e :=
-    { parts := (σ.1.filter (·.2 = (e : ℕ))).map Prod.fst
+    { parts := (σ.val.filter (·.2 = (e : ℕ))).map Prod.fst
       parts_pos := fun {a} ha => by
         obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.1 ha
-        exact (σ.2.1 x (Multiset.mem_of_mem_filter hx)).1
-      parts_sum := by rw [Multiset.sum_map_filter]; exact σ.2.2 e e.2 }
+        exact (σ.property.1 x (Multiset.mem_of_mem_filter hx)).1
+      parts_sum := by rw [Multiset.sum_map_filter]; exact σ.property.2 e e.property }
   invFun μ := ⟨∑ e : S, (μ e).parts.map fun a => (a, (e : ℕ)), by
     refine ⟨fun x hx => ?_, fun e he => ?_⟩
     · obtain ⟨e, _, hx⟩ := Multiset.mem_sum.1 hx
       obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 hx
-      exact ⟨(μ e).parts_pos ha, e.2⟩
+      exact ⟨(μ e).parts_pos ha, e.property⟩
     · rw [← Multiset.sum_map_filter,
         Multiset.map_fst_filter_sum_map_prodMk (fun e => (μ e).parts) Subtype.val_injective ⟨e, he⟩]
       exact (μ ⟨e, he⟩).parts_sum⟩
   left_inv σ := Subtype.ext <| Multiset.ext.2 fun ⟨f, e⟩ => by
     by_cases he : e ∈ S
     · exact (Multiset.count_sum_map_prodMk_of_injective _ Subtype.val_injective f ⟨e, he⟩).trans
-        (Multiset.count_map_fst_filter_snd_eq σ.1 f e)
+        (Multiset.count_map_fst_filter_snd_eq σ.val f e)
     · rw [Multiset.count_sum_map_prodMk_of_notMem_range _ f (by simpa using he),
-        Multiset.count_eq_zero_of_notMem fun hx => he (σ.2.1 _ hx).2]
+        Multiset.count_eq_zero_of_notMem fun hx => he (σ.property.1 _ hx).2]
   right_inv μ := funext fun e => Nat.Partition.ext
     (Multiset.map_fst_filter_sum_map_prodMk (fun e => (μ e).parts) Subtype.val_injective e)
 
@@ -263,7 +378,7 @@ private theorem splittingSymbolAut_sum_map_prodMk {m : ℕ → ℕ} (μ : (e : S
   · intro x hx
     obtain ⟨e, _, hx⟩ := Multiset.mem_sum.1 (Multiset.mem_toFinset.1 hx)
     obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 hx
-    exact Finset.mem_product.2 ⟨hA e (Multiset.mem_toFinset.2 ha), e.2⟩
+    exact Finset.mem_product.2 ⟨hA e (Multiset.mem_toFinset.2 ha), e.property⟩
 
 end Grouping
 
@@ -382,7 +497,7 @@ theorem tsum_one_div_splittingSymbolAut_ramificationPartition (n k : ℕ) (π : 
     fun σ => ⟨fun ⟨hpos, hdeg, hram⟩ => forall_sum_eq_residueDegreeTotal hpos hdeg hram,
       fun ⟨hpos, hsum⟩ => ⟨fun x hx => ⟨(hpos x hx).1, (Finset.mem_Icc.1 (hpos x hx).2).1⟩,
         ramificationPartition_eq_and_sum_eq hπ hpos hsum⟩⟩
-  have h := (Equiv.subtypeEquivRight key).tsum_eq fun σ => 1 / (splittingSymbolAut σ.1 : ℝ≥0∞)
+  have h := (Equiv.subtypeEquivRight key).tsum_eq fun σ => 1 / (splittingSymbolAut σ.val : ℝ≥0∞)
   rw [tsum_one_div_splittingSymbolAut_eq_one] at h
   exact h
 

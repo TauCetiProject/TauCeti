@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Matrix.FunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.MoorePenrose
 public import TauCeti.Analysis.SpecificLimits.RegularizedInverse
 import TauCeti.Topology.Instances.Matrix
+import TauCeti.Analysis.Matrix.Sqrt
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The pseudoinverse of a covariance matrix
@@ -170,6 +172,26 @@ theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 �
     rw [covariancePseudoInverse_of_not_posSemidef hC, covariancePseudoInverse_of_not_posSemidef hcC,
       smul_zero]
 
+/-- The covariance pseudoinverse of a rank-one covariance `c cᵀ` is `c cᵀ / (c ⬝ c)²`. This
+includes `c = 0`, where both sides vanish. -/
+@[simp]
+theorem covariancePseudoInverse_vecMulVec_self (c : ι → ℝ) :
+    (vecMulVec c c).covariancePseudoInverse = ((c ⬝ᵥ c) ^ 2)⁻¹ • vecMulVec c c := by
+  by_cases h0 : c ⬝ᵥ c = 0
+  · obtain rfl : c = 0 := dotProduct_self_eq_zero.mp h0
+    simp
+  have hsq : vecMulVec c c * vecMulVec c c = (c ⬝ᵥ c) • vecMulVec c c := by
+    rw [vecMulVec_mul_vecMulVec, vecMulVec_smul]
+  have hherm : (vecMulVec c c).IsHermitian := (posSemidef_vecMulVec_self c).isHermitian
+  refine (eq_covariancePseudoInverse_of_penrose
+    (posSemidef_vecMulVec_self c) ?_ ?_ ?_ ?_).symm <;>
+    simp only [Matrix.mul_smul, Matrix.smul_mul, hsq, smul_smul]
+  · rw [show ((c ⬝ᵥ c) ^ 2)⁻¹ * c ⬝ᵥ c * c ⬝ᵥ c = 1 by field_simp, one_smul]
+  · congr 1
+    field_simp
+  · exact hherm.smul (IsSelfAdjoint.all _)
+  · exact hherm.smul (IsSelfAdjoint.all _)
+
 /-- The covariance construction agrees with the existing Moore–Penrose inverse of the
 Euclidean operator. -/
 theorem toEuclideanLin_covariancePseudoInverse {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
@@ -230,6 +252,42 @@ theorem toEuclideanLin_covariancePseudoInverse_mul {C : Matrix ι ι ℝ}
     (C.covariancePseudoInverse * C).toEuclideanLin = C.toEuclideanLin.range.starProjection := by
   rw [← (commute_covariancePseudoInverse C).eq]
   exact toEuclideanLin_mul_covariancePseudoInverse hC
+
+/-- A covariance matrix and its square root have the same orthogonal range projector,
+including the zero projectors returned for invalid covariances. -/
+@[simp]
+theorem sqrt_mul_covariancePseudoInverse_sqrt (C : Matrix ι ι ℝ) :
+    CFC.sqrt C * (CFC.sqrt C).covariancePseudoInverse = C * C.covariancePseudoInverse := by
+  by_cases hC : C.PosSemidef
+  · apply toEuclideanLin.injective
+    rw [toEuclideanLin_mul_covariancePseudoInverse
+      (nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg C)),
+      toEuclideanLin_mul_covariancePseudoInverse hC]
+    simp only [hC.range_toEuclideanLin_sqrt]
+  · have hn : ¬ 0 ≤ C := fun h ↦ hC (nonneg_iff_posSemidef.mp h)
+    simp [hC, CFC.sqrt_of_not_nonneg hn]
+
+/-- A covariance square root's pseudoinverse times that square root equals the covariance's
+pseudoinverse times the covariance, including the zero products for invalid covariances. -/
+@[simp]
+theorem covariancePseudoInverse_sqrt_mul_sqrt (C : Matrix ι ι ℝ) :
+    (CFC.sqrt C).covariancePseudoInverse * CFC.sqrt C = C.covariancePseudoInverse * C := by
+  rw [← (commute_covariancePseudoInverse (CFC.sqrt C)).eq,
+    sqrt_mul_covariancePseudoInverse_sqrt, (commute_covariancePseudoInverse C).eq]
+
+/-- Sandwiching the covariance pseudoinverse between two copies of the covariance square root
+gives the covariance's pseudoinverse times the covariance, the orthogonal projection onto its
+range. Invalid covariances give zero on both sides. -/
+@[simp]
+theorem sqrt_mul_covariancePseudoInverse_mul_sqrt (C : Matrix ι ι ℝ) :
+    CFC.sqrt C * C.covariancePseudoInverse * CFC.sqrt C = C.covariancePseudoInverse * C := by
+  by_cases hC : C.PosSemidef
+  · have hcomm : Commute (CFC.sqrt C) C.covariancePseudoInverse := by
+      rw [covariancePseudoInverse_of_posSemidef hC, CFC.sqrt_eq_real_sqrt C hC.nonneg, cfcₙ_eq_cfc]
+      exact cfc_commute_cfc _ _ C
+    rw [hcomm.eq, mul_assoc, CFC.sqrt_mul_sqrt_self C hC.nonneg]
+  · have hn : ¬ 0 ≤ C := fun h ↦ hC (nonneg_iff_posSemidef.mp h)
+    simp [hC, CFC.sqrt_of_not_nonneg hn]
 
 /-- The covariance pseudoinverse is the limit of `(C² + ε I)⁻¹ C` as positive `ε` tends to zero.
 The limit includes zero covariance and empty coordinate types. -/

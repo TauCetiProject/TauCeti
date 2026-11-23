@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 
@@ -16,12 +17,16 @@ Let `Ω ⊆ ℂ` be open. This file compares the order-one local Sobolev class `
 of real functions with the library's `TauCeti.W1p`: a real function lies in `MemWkpLoc p Ω 1`
 exactly when its restriction to every open `W` with compact closure contained in `Ω` is represented
 by an element of `W1p volume W p`. The weak gradient of that element is dual, through
-`InnerProductSpace.toDual`, to the weak derivative of the function on `Ω`.
+`InnerProductSpace.toDual`, to the weak derivative of the function on `Ω`. A real function of
+finite `W^{1,p}(Ω)` norm `TauCeti.eLpNormWkp p Ω 1` is represented by an element of
+`W1p volume Ω p` whose norm is at most that size.
 
 ## Main declarations
 
 * `TauCeti.MemWkpLoc.exists_w1p`: a real member of `MemWkpLoc p Ω 1` is represented by an element
   of `W1p` on every relatively compact open subset of `Ω`, with the dual weak gradient.
+* `TauCeti.exists_w1p_enorm_le_eLpNormWkp`: a real function of finite `W^{1,p}(Ω)` norm is
+  represented in `W1p volume Ω p` with no larger norm.
 * `TauCeti.memWkpLoc_one_iff_forall_w1p`: the order-one comparison with `W1p`.
 
 ## References
@@ -57,6 +62,21 @@ theorem MemWkpLoc.exists_w1p {u : ℂ → ℝ} (hu : MemWkpLoc p Ω 1 u)
     ((memLpLoc_iff.1 hu.memLpLoc _ hWΩ hWc).mono_measure hmono)
     ((memLpLoc_iff.1 (hu.memLpLoc_of_hasWeakFDerivOn hD) _ hWΩ hWc).mono_measure hmono)
     (hD.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)))
+
+/-- **The `W1p` norm is bounded by the `W^{1,p}` norm.** A real function `u` whose `W^{1,p}(Ω)`
+norm `TauCeti.eLpNormWkp p Ω 1 u` is finite is represented by an element of `W1p volume Ω p` whose
+extended norm is at most `eLpNormWkp p Ω 1 u`. -/
+theorem exists_w1p_enorm_le_eLpNormWkp {u : ℂ → ℝ} (hu : eLpNormWkp p Ω 1 u ≠ ∞) :
+    ∃ v : W1p volume Ω p, W1p.value v =ᵐ[volume.restrict Ω] u ∧ ‖v‖ₑ ≤ eLpNormWkp p Ω 1 u := by
+  obtain ⟨D, hD, hDfin⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hu
+  rw [Opens.interior_coe] at hD
+  rw [eLpNormWkp_zero, ← lt_top_iff_ne_top] at hDfin
+  have hu1 : MemLp u p (volume.restrict Ω) :=
+    memLp_iff.2 (lt_top_iff_ne_top.2 (ne_top_of_le_ne_top hu eLpNorm_le_eLpNormWkp))
+  obtain ⟨v, hv, hg⟩ :=
+    W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn hu1 (memLp_iff.2 hDfin) hD
+  rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD, eLpNormWkp_zero]
+  exact ⟨v, hv, W1p.enorm_le_eLpNorm_add_eLpNorm_of_ae_eq hv hg⟩
 
 /-- **Comparison with `W1p` at order one.** A real function lies in `MemWkpLoc p Ω 1` exactly when
 its restriction to every open `W` with compact closure contained in `Ω` is represented by an element
