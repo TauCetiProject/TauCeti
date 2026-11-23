@@ -125,26 +125,11 @@ theorem exists_swept_direction_normal (hP : IsRationalNormalPolyhedron h P)
   obtain ⟨f, g, hind, hfg⟩ := hP.exists_direction_eq_inf_ker hne hdim
   have hv' := hfg ▸ hv
   refine ⟨f v • g - g v • f, ?_, ?_⟩
-  · have hi : LinearIndependent ℤ ![f.toIntLinearMap, g.toIntLinearMap] := by
-      apply LinearIndependent.of_comp h.isBaseChange.toDual
-      have hfamily : h.isBaseChange.toDual ∘ ![f.toIntLinearMap, g.toIntLinearMap] =
-          ![h.realCharacter f, h.realCharacter g] := by
-        funext j
-        fin_cases j <;> apply h.eq_realCharacter <;> intro n <;>
-          exact h.isBaseChange.toDual_comp_apply _ n
-      rw [hfamily]
-      exact hind.restrict_scalars' ℤ
-    have hvI : v ∉ f.toIntLinearMap.ker ⊓ g.toIntLinearMap.ker := by
-      intro hmem
-      apply hv'
-      obtain ⟨hf, hg⟩ := Submodule.mem_inf.mp hmem
-      have hf' : f v = 0 := LinearMap.mem_ker.mp hf
-      have hg' : g v = 0 := LinearMap.mem_ker.mp hg
-      simp [Submodule.mem_inf, LinearMap.mem_ker, hf', hg']
-    intro he
-    apply LinearMap.apply_smul_sub_apply_smul_ne_zero f.toIntLinearMap g.toIntLinearMap hi hvI
-    simpa only [map_sub, map_smul, map_zero, addMonoidHomLequivInt_apply,
-      AddMonoidHom.coe_toIntLinearMap] using congrArg (addMonoidHomLequivInt ℤ) he
+  · intro he
+    apply LinearMap.apply_smul_sub_apply_smul_ne_zero (h.realCharacter f) (h.realCharacter g)
+      hind hv'
+    simpa only [map_sub, map_zsmul, map_zero, h.realCharacter_apply,
+      ← Int.cast_smul_eq_zsmul ℝ] using congrArg h.realCharacter he
   · rw [h.ker_realCharacter_apply_smul_sub_apply_smul f g v hv', ← hfg]
 
 end TauCeti.IsRationalNormalPolyhedron
