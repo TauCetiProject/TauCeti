@@ -16,6 +16,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Inverse
 This file collects facts used to compare power series to a finite order `m`:
 * the truncation `trunc m φ` vanishes exactly when `φ` has order at least `m`,
 * two power series have equal `m`-truncations if and only if their coefficients agree below `m`,
+  and they are equal once they agree modulo every power of `X`,
 * the `m`-truncations of `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`, integer powers `u ^ k`,
   and products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a finite truncation of the
   input,
@@ -35,6 +36,10 @@ This file collects facts used to compare power series to a finite order `m`:
 * `PowerSeries.trunc_inv_aux_eq_of_trunc_eq`, `PowerSeries.trunc_invOfUnit_eq_of_trunc_eq`,
   `PowerSeries.trunc_inv_eq_of_trunc_eq`, `PowerSeries.trunc_val_inv_eq_of_trunc_eq`: the `m`-th
   truncation of an inverse power series depends only on `trunc m`.
+* `PowerSeries.eq_of_forall_X_pow_dvd_sub`: two power series that agree modulo every `X ^ (n + 1)`
+  are equal.
+* `PowerSeries.constantCoeff_val_zpow`: the constant coefficient of `u ^ k` for a unit
+  `u : R⟦X⟧ˣ` and `k : ℤ` is the `k`-th power of the constant coefficient of `u`.
 * `PowerSeries.trunc_val_zpow_eq_of_trunc_eq` and
   `PowerSeries.trunc_val_zpow_mul_derivative_eq_of_trunc_eq`: the finite jets of `u ^ k` and
   `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depend only on `trunc m u` and `trunc (m + 1) u`.
@@ -149,6 +154,13 @@ theorem coeff_coe_mul_eq_sum (p : Polynomial R) (g : R⟦X⟧) {N : ℕ} (hN : p
     map_sum]
   simp [mul_assoc, coeff_C_mul]
 
+/-- The constant coefficient of an integer power of a unit `u` of `R⟦X⟧` is the same power of
+the constant coefficient of `u`, as a unit of `R`. -/
+theorem constantCoeff_val_zpow (u : R⟦X⟧ˣ) (k : ℤ) :
+    constantCoeff (↑(u ^ k) : R⟦X⟧) =
+      (↑(Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) u ^ k) : R) := by
+  rw [← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
+
 /-- The value at `x` of the truncation below degree `n` is the partial sum of the series. -/
 theorem eval_trunc (n : ℕ) (f : R⟦X⟧) (x : R) :
     (trunc n f).eval x = ∑ i ∈ Finset.range n, coeff i f * x ^ i := by
@@ -209,6 +221,12 @@ theorem trunc_val_zpow_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
   · rw [zpow_negSucc, zpow_negSucc, ← inv_pow, ← inv_pow, Units.val_pow_eq_pow_val,
       Units.val_pow_eq_pow_val]
     exact trunc_pow_eq_of_trunc_eq (trunc_val_inv_eq_of_trunc_eq h) (n + 1)
+
+/-- Two power series that agree modulo every power of `X` are equal. -/
+theorem eq_of_forall_X_pow_dvd_sub {a b : R⟦X⟧} (h : ∀ n : ℕ, X ^ (n + 1) ∣ a - b) : a = b := by
+  ext n
+  rw [← sub_eq_zero, ← map_sub]
+  exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
 
 end Ring
 

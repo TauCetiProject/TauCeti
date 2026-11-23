@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import TauCeti.Analysis.Matrix.Cayley
-import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The real subspace of `ℂⁿ` and its images under matrices
@@ -256,8 +255,9 @@ theorem realImage_map_star_eq_of_realImage_eq {M N : Matrix n n ℂ}
   have hval (P : Matrix n n ℂ) {x : EuclideanSpace ℂ n} (hx : x ∈ realSubspace n) (i : n) :
       toEuclideanCLM (𝕜 := ℂ) (P.map star) x i = star (toEuclideanCLM (𝕜 := ℂ) P x i) := by
     simp only [toEuclideanCLM_apply, ofLp_toLpLin, toLin'_apply]
-    rw [map_star_mulVec_of_star_eq P
-      (funext fun j ↦ Complex.conj_eq_iff_im.2 (mem_realSubspace.1 hx j)), Pi.star_apply]
+    have hxs : star (WithLp.ofLp x) = WithLp.ofLp x :=
+      funext fun j ↦ Complex.conj_eq_iff_im.2 (mem_realSubspace.1 hx j)
+    rw [← conjTranspose_transpose, mulVec_transpose, vecMul_conjTranspose, hxs, Pi.star_apply]
   have key {M N : Matrix n n ℂ} (hMN : M.realImage ≤ N.realImage) :
       (M.map star).realImage ≤ (N.map star).realImage := by
     intro v hv
