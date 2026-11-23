@@ -90,25 +90,21 @@ open MeasureTheory
 summable `Lᵖ` norms, then at almost every point `t` the pointwise series `ψ i t` converges
 absolutely to `v t`. -/
 theorem ae_hasSum_of_hasSum_toLp {X E ι : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] [NormedAddCommGroup E] {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
-    [Countable ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E]
-    [IsBoundedSMul 𝕜 E] {ψ : ι → C_c(X, E)} {v : Lp E p μ}
+    [OpensMeasurableSpace X] [NormedAddCommGroup E] [CompleteSpace E] {μ : Measure X}
+    [IsFiniteMeasureOnCompacts μ] [Countable ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] (𝕜 : Type*)
+    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {ψ : ι → C_c(X, E)} {v : Lp E p μ}
     (hsum : HasSum (fun i => toLp p μ 𝕜 (ψ i)) v)
     (hnorm : Summable fun i => ‖toLp p μ 𝕜 (ψ i)‖) :
     ∀ᵐ t ∂μ, HasSum (fun i => ψ i t) (v t) ∧ Summable fun i => ‖ψ i t‖ := by
   have heNorm : ∑' i, ‖toLp p μ 𝕜 (ψ i)‖ₑ ≠ ∞ :=
     tsum_eNorm_ne_top_iff_summable_norm.2 hnorm
-  obtain ⟨S, hS, hSv⟩ := (tendstoInMeasure_of_tendsto_Lp hsum).exists_seq_tendsto_ae'
-  have hfin : ∀ᵐ t ∂μ, ∀ n, (⇑(∑ i ∈ S n, toLp p μ 𝕜 (ψ i)) : X → E) t =
-      ∑ i ∈ S n, toLp p μ 𝕜 (ψ i) t :=
-    ae_all_iff.2 fun n => Lp.coeFn_fun_finsetSum (S n) _
-  filter_upwards [hSv, hfin,
+  filter_upwards [Lp.hasSum_coeFn_tsum heNorm,
     summable_norm_of_tsum_eLpNorm_ne_top Fact.out (by simpa [Lp.eNorm_def] using heNorm),
     ae_all_iff.2 fun i => (coeFn_toLp (p := p) (μ := μ) 𝕜 (ψ i)).mono fun _ h => h]
-    with t ht hft hnt hcoe
-  simp only [hft, hcoe] at ht
-  have hnt' : Summable fun i => ‖ψ i t‖ := by simpa only [hcoe] using hnt
-  exact ⟨hasSum_of_subseq_of_summable hnt' hS ht, hnt'⟩
+    with t ht hnt hcoe
+  rw [hsum.tsum_eq] at ht
+  simp only [hcoe] at ht hnt
+  exact ⟨ht, hnt⟩
 
 end CompactlySupportedContinuousMap
 

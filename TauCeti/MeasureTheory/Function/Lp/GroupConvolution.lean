@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Order
 import TauCeti.MeasureTheory.Function.Lp.Restriction
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
+import TauCeti.MeasureTheory.Function.Lp.WeightedOrbit
 import TauCeti.MeasureTheory.Group.Convolution.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
@@ -146,52 +146,37 @@ section NontriviallyNormedField
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E]
 
+omit [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] [IsLocallyFiniteMeasure μ]
+  [μ.InnerRegularCompactLTTop] in
+private theorem norm_lsmul_leftTranslation_le (c : 𝕜) (y : G) (f : Lp E p μ) :
+    ‖(ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] Lp E p μ →L[𝕜] Lp E p μ) c
+        ((leftTranslation μ p 𝕜 y).toLinearIsometry.toContinuousLinearMap f)‖ ≤
+      1 * ‖c‖ * ‖f‖ := by
+  rw [ContinuousLinearMap.lsmul_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry, norm_smul, LinearIsometryEquiv.norm_map, one_mul]
+
 omit [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] in
 /-- The integrand `y ↦ h(y) • L_y f` of a convolution is integrable. Together with
 `convolutionL_apply`, this lets continuous linear maps pass through the integral defining
 `h ⋆ f`. -/
 theorem integrable_smul_leftTranslation (hp : p ≠ ∞) {h : G → 𝕜} (hh : Integrable h μ)
-    (f : Lp E p μ) : Integrable (fun y ↦ h y • leftTranslation μ p 𝕜 y f) μ := by
-  refine (hh.norm.mul_const ‖f‖).mono' (hh.aefinStronglyMeasurable.aestronglyMeasurable_smul
-    (continuous_leftTranslation_apply hp f)) (.of_forall fun y ↦ ?_)
-  rw [norm_smul, LinearIsometryEquiv.norm_map]
-
-omit [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] [SMulCommClass ℝ 𝕜 E] in
-/-- The integral defining a convolution is bounded by the product of the norms. -/
-private theorem norm_integral_smul_leftTranslation_le (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
-    ‖∫ y, h y • leftTranslation μ p 𝕜 y f ∂μ‖ ≤ ‖h‖ * ‖f‖ := by
-  rw [L1.norm_eq_integral_norm, ← integral_mul_const]
-  refine norm_integral_le_of_norm_le ((L1.integrable_coeFn h).norm.mul_const _)
-    (.of_forall fun y ↦ ?_)
-  rw [norm_smul, LinearIsometryEquiv.norm_map]
+    (f : Lp E p μ) : Integrable (fun y ↦ h y • leftTranslation μ p 𝕜 y f) μ :=
+  integrable_weightedOrbit
+    (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] Lp E p μ →L[𝕜] Lp E p μ)
+    (fun y => (leftTranslation μ p 𝕜 y).toLinearIsometry.toContinuousLinearMap)
+    (continuous_leftTranslation_apply hp)
+    (fun y c g => norm_lsmul_leftTranslation_le c y g) hh f
 
 variable (μ p) in
 /-- **Convolution** on a group `G` by an integrable kernel, as the bilinear map
 `L¹(G, μ; 𝕜) →L Lᵖ(G, μ; E) →L Lᵖ(G, μ; E)` sending `(h, f)` to the `Lᵖ`-valued Bochner
 integral `h ⋆ f = ∫ y, h(y) • L_y f dμ(y)` of the left translates `(L_y f)(x) = f (y⁻¹ * x)`. -/
 def convolutionL (hp : p ≠ ∞) : Lp 𝕜 1 μ →L[𝕜] Lp E p μ →L[𝕜] Lp E p μ :=
-  LinearMap.mkContinuous₂
-    (LinearMap.mk₂ 𝕜 (fun (h : Lp 𝕜 1 μ) (f : Lp E p μ) ↦
-        ∫ y, h y • leftTranslation μ p 𝕜 y f ∂μ)
-      (fun h₁ h₂ f ↦ by
-        rw [← integral_add (integrable_smul_leftTranslation hp (L1.integrable_coeFn h₁) f)
-          (integrable_smul_leftTranslation hp (L1.integrable_coeFn h₂) f)]
-        refine integral_congr_ae ?_
-        filter_upwards [coeFn_add h₁ h₂] with y hy
-        rw [hy, Pi.add_apply, add_smul])
-      (fun c h f ↦ by
-        rw [← integral_smul]
-        refine integral_congr_ae ?_
-        filter_upwards [coeFn_smul c h] with y hy
-        rw [hy, Pi.smul_apply, smul_eq_mul, mul_smul])
-      (fun h f₁ f₂ ↦ by
-        rw [← integral_add (integrable_smul_leftTranslation hp (L1.integrable_coeFn h) f₁)
-          (integrable_smul_leftTranslation hp (L1.integrable_coeFn h) f₂)]
-        simp_rw [map_add, smul_add])
-      (fun c h f ↦ by
-        rw [← integral_smul]
-        simp_rw [map_smul, smul_comm c]))
-    1 fun h f ↦ by simpa using norm_integral_smul_leftTranslation_le h f
+  weightedOrbitL1 μ
+    (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] Lp E p μ →L[𝕜] Lp E p μ)
+    (fun y => (leftTranslation μ p 𝕜 y).toLinearIsometry.toContinuousLinearMap)
+    (continuous_leftTranslation_apply hp)
+    fun y c g => norm_lsmul_leftTranslation_le c y g
 
 variable {hp : p ≠ ∞}
 
@@ -199,25 +184,23 @@ variable {hp : p ≠ ∞}
 by `h`. -/
 theorem convolutionL_apply (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
     convolutionL μ p hp h f = ∫ y, h y • leftTranslation μ p 𝕜 y f ∂μ :=
-  (rfl)
+  weightedOrbitL1_apply h f
 
 /-- The convolution of the `L¹` class of an integrable function `h` with `f`. -/
 theorem convolutionL_toL1 {h : G → 𝕜} (hh : Integrable h μ) (f : Lp E p μ) :
-    convolutionL μ p hp (hh.toL1 h) f = ∫ y, h y • leftTranslation μ p 𝕜 y f ∂μ := by
-  rw [convolutionL_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [hh.coeFn_toL1] with y hy
-  rw [hy]
+    convolutionL μ p hp (hh.toL1 h) f = ∫ y, h y • leftTranslation μ p 𝕜 y f ∂μ :=
+  weightedOrbitL1_toL1 hh f
 
 /-- **Young's inequality** for an `L¹` kernel: `‖h ⋆ f‖_p ≤ ‖h‖₁ ‖f‖_p`. -/
 theorem norm_convolutionL_apply_le (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
-    ‖convolutionL μ p hp h f‖ ≤ ‖h‖ * ‖f‖ :=
-  norm_integral_smul_leftTranslation_le h f
+    ‖convolutionL μ p hp h f‖ ≤ ‖h‖ * ‖f‖ := by
+  dsimp only [convolutionL]
+  exact (norm_weightedOrbitL1_apply_apply_le (C := 1) h f).trans_eq (by rw [one_mul])
 
 /-- Convolution has operator norm at most one as a bilinear map. -/
-theorem norm_convolutionL_le : ‖convolutionL (𝕜 := 𝕜) (E := E) μ p hp‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound₂ _ zero_le_one fun h f ↦ by
-    simpa using norm_convolutionL_apply_le h f
+theorem norm_convolutionL_le : ‖convolutionL (𝕜 := 𝕜) (E := E) μ p hp‖ ≤ 1 := by
+  dsimp only [convolutionL]
+  exact norm_weightedOrbitL1_le zero_le_one
 
 /-- For compactly supported continuous `h` and `f` and `1 ≤ p < ∞`, the convolution `h ⋆ f` is
 represented almost everywhere by the pointwise convolution `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`. -/

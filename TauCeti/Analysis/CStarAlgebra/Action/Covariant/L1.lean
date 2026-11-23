@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Measure.Regular
 public import TauCeti.Topology.Separation.TypeTags
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
+import TauCeti.MeasureTheory.Function.Lp.WeightedOrbit
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.Topology.Algebra.Module.Span
 
@@ -100,7 +101,8 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableS
 
 omit [R1Space G] [MeasurableSpace G] [BorelSpace G] in
 private theorem norm_coefficient_group_le (a : A) (g : G) (v : H) :
-    ‖P.coefficient a (P.group g v)‖ ≤ ‖a‖ * ‖v‖ := by
+    ‖P.coefficient.toContinuousLinearMap a (P.group g v)‖ ≤ 1 * ‖a‖ * ‖v‖ := by
+  rw [NonUnitalStarAlgHom.coe_toContinuousLinearMap, one_mul]
   refine ((P.coefficient a).le_opNorm _).trans ?_
   rw [P.isUnitary.norm_map]
   exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
@@ -111,73 +113,37 @@ integrable. Neither separability of `H` or `A` nor σ-finiteness of `μ` is assu
 theorem integrable_integrand_of_integrable {μ : Measure G} [μ.InnerRegularCompactLTTop]
     {f : G → A} (hf : Integrable f μ) (v : H) :
     Integrable (fun g => P.coefficient (f g) (P.group g v)) μ := by
-  let L : H →L[ℂ] A →L[ℂ] H :=
-    ({ toLinearMap := (P.coefficient : A →ₗ[ℂ] H →L[ℂ] H)
-       cont := map_continuous P.coefficient } : A →L[ℂ] H →L[ℂ] H).flip
-  have hmeas : AEStronglyMeasurable (fun g => L (P.group g v) (f g)) μ :=
-    hf.aefinStronglyMeasurable.aestronglyMeasurable_clm_apply
-      (L.continuous.comp (P.continuous_orbit v))
-  exact (hf.norm.mul_const ‖v‖).mono' hmeas
-    (.of_forall fun g => norm_coefficient_group_le P _ g v)
-
-omit [R1Space G] [BorelSpace G] in
-private theorem norm_integral_integrand_le {μ : Measure G} {f : G → A} (hf : Integrable f μ)
-    (v : H) :
-    ‖∫ g, P.coefficient (f g) (P.group g v) ∂μ‖ ≤ (∫ g, ‖f g‖ ∂μ) * ‖v‖ := by
-  rw [← integral_mul_const]
-  exact norm_integral_le_of_norm_le (hf.norm.mul_const _)
-    (.of_forall fun g => norm_coefficient_group_le P _ g v)
+  simpa only [NonUnitalStarAlgHom.coe_toContinuousLinearMap] using
+    integrable_weightedOrbit P.coefficient.toContinuousLinearMap P.group P.continuous_orbit
+      (fun g a w => norm_coefficient_group_le P a g w) hf v
 
 /-- **Vector-valued `L¹` integrated form** of a covariant representation on `Lp A 1 μ`, sending
 `f` to the bounded operator `v ↦ ∫ g, P.coefficient (f g) (P.group g v) ∂μ`. -/
 def integratedOperatorBochnerL1 (μ : Measure G) [μ.InnerRegularCompactLTTop] :
     Lp A 1 μ →L[ℂ] (H →L[ℂ] H) :=
-  LinearMap.mkContinuous₂
-    (LinearMap.mk₂ ℂ
-      (fun (f : Lp A 1 μ) (v : H) => ∫ g, P.coefficient (f g) (P.group g v) ∂μ)
-      (fun f₁ f₂ v => by
-        rw [← integral_add (P.integrable_integrand_of_integrable (L1.integrable_coeFn f₁) v)
-          (P.integrable_integrand_of_integrable (L1.integrable_coeFn f₂) v)]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_add f₁ f₂] with g hg
-        rw [hg, Pi.add_apply, map_add, add_apply])
-      (fun c f v => by
-        rw [← integral_smul]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_smul c f] with g hg
-        rw [hg, Pi.smul_apply, map_smul, smul_apply])
-      (fun f v w => by
-        rw [← integral_add (P.integrable_integrand_of_integrable (L1.integrable_coeFn f) v)
-          (P.integrable_integrand_of_integrable (L1.integrable_coeFn f) w)]
-        simp_rw [map_add])
-      (fun c f v => by
-        rw [← integral_smul]
-        simp_rw [map_smul]))
-    1 fun f v => by
-      simpa only [LinearMap.mk₂_apply, one_mul, L1.norm_eq_integral_norm] using
-        P.norm_integral_integrand_le (L1.integrable_coeFn f) v
+  weightedOrbitL1 μ P.coefficient.toContinuousLinearMap P.group P.continuous_orbit
+    fun g a w => norm_coefficient_group_le P a g w
 
 /-- The defining Hilbert-space vector integral for `P.integratedOperatorBochnerL1 μ`. -/
 theorem integratedOperatorBochnerL1_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
     (f : Lp A 1 μ) (v : H) :
-    P.integratedOperatorBochnerL1 μ f v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ :=
-  (rfl)
+    P.integratedOperatorBochnerL1 μ f v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ := by
+  rw [integratedOperatorBochnerL1, weightedOrbitL1_apply]
+  simp only [NonUnitalStarAlgHom.coe_toContinuousLinearMap]
 
 @[simp]
 theorem integratedOperatorBochnerL1_toL1_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
     {f : G → A} (hf : Integrable f μ) (v : H) :
     P.integratedOperatorBochnerL1 μ (hf.toL1 f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ := by
-  rw [integratedOperatorBochnerL1_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [hf.coeFn_toL1] with g hg
-  rw [hg]
+  rw [integratedOperatorBochnerL1, weightedOrbitL1_toL1]
+  simp only [NonUnitalStarAlgHom.coe_toContinuousLinearMap]
 
 /-- The `L¹` integrated form is a contraction on each element: `‖(π ⋊ U)(f)‖ ≤ ‖f‖₁`. -/
 theorem norm_integratedOperatorBochnerL1_apply_le {μ : Measure G} [μ.InnerRegularCompactLTTop]
     (f : Lp A 1 μ) : ‖P.integratedOperatorBochnerL1 μ f‖ ≤ ‖f‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun v => ?_
-  rw [integratedOperatorBochnerL1_apply, L1.norm_eq_integral_norm]
-  exact P.norm_integral_integrand_le (L1.integrable_coeFn f) v
+  dsimp only [integratedOperatorBochnerL1]
+  exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun v =>
+    (norm_weightedOrbitL1_apply_apply_le (C := 1) f v).trans_eq (by rw [one_mul])
 
 /-- For an integrable `f : G → A`, `‖(π ⋊ U)(f)‖ ≤ ∫ g, ‖f g‖ dμ(g)`. -/
 theorem norm_integratedOperatorBochnerL1_toL1_le (μ : Measure G) [μ.InnerRegularCompactLTTop]
@@ -189,9 +155,9 @@ theorem norm_integratedOperatorBochnerL1_toL1_le (μ : Measure G) [μ.InnerRegul
 /-- The operator norm of `P.integratedOperatorBochnerL1 μ` is at most `1`, including zero algebras
 and zero Hilbert spaces. -/
 theorem norm_integratedOperatorBochnerL1_le (μ : Measure G) [μ.InnerRegularCompactLTTop] :
-    ‖P.integratedOperatorBochnerL1 μ‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f => by
-    simpa only [one_mul] using P.norm_integratedOperatorBochnerL1_apply_le f
+    ‖P.integratedOperatorBochnerL1 μ‖ ≤ 1 := by
+  dsimp only [integratedOperatorBochnerL1]
+  exact norm_weightedOrbitL1_le zero_le_one
 
 /-- **Integrated operator of an integrable coefficient function**: for every Bochner-integrable
 `f : G → A`, the vector integrals `ξ ↦ ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ` assemble to a

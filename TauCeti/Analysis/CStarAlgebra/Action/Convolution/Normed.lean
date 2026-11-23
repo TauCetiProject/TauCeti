@@ -122,7 +122,7 @@ theorem norm_toL1 (f : ConvolutionAlgebra α μ) : ‖toL1 f‖ = ‖f‖ := by
 variable (α μ) in
 /-- Linear isometry from `Completion (ConvolutionAlgebra α μ)` into `Lp A 1 μ`, extending
 `ConvolutionAlgebra.toL1LI` without requiring local compactness of `G`. -/
-def toL1FromCompletion : Completion (ConvolutionAlgebra α μ) →ₗᵢ[ℂ] Lp A 1 μ :=
+@[expose] def toL1FromCompletion : Completion (ConvolutionAlgebra α μ) →ₗᵢ[ℂ] Lp A 1 μ :=
   (toL1LI α μ).fromCompletion
 
 /-- On compactly supported elements, `toL1FromCompletion` agrees with `toL1`. -/
@@ -130,13 +130,6 @@ def toL1FromCompletion : Completion (ConvolutionAlgebra α μ) →ₗᵢ[ℂ] Lp
 theorem toL1FromCompletion_coe (f : ConvolutionAlgebra α μ) :
     toL1FromCompletion α μ f = toL1 f :=
   ((toL1LI α μ).fromCompletion_apply_coe f).trans (toL1LI_apply f)
-
-/-- `toL1FromCompletion` as a continuous linear map is the completion extension of `toL1LI`. -/
-@[simp]
-theorem toContinuousLinearMap_toL1FromCompletion :
-    (toL1FromCompletion α μ).toContinuousLinearMap =
-      (toL1LI α μ).toContinuousLinearMap.fromCompletion :=
-  (toL1LI α μ).toContinuousLinearMap_fromCompletion
 
 section Multiplication
 
