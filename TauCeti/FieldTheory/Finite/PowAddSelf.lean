@@ -9,36 +9,39 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
-import TauCeti.FieldTheory.Finite.Card
+import TauCeti.Algebra.GroupWithZero.Units.Finite
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The fibres of `b ↦ b ^ q + b` over a field with `q²` elements
 
-Let `K` be a field with `Nat.card K = q ^ 2`. For `q ≠ 0` it is a finite field with `q²`
-elements, and `q = p ^ n` is a power of its characteristic `p`. The statements take only `q`,
-with no characteristic assumed; the proof of the count recovers `p` and `n`. The map
-`T b = b ^ q + b` is additive, and it is the trace from `K` to its subfield with `q` elements,
-although that subfield plays no role in the statement here. For `q ≠ 0`, every `c` with
-`c ^ q = c` has exactly `q` preimages under `T`.
+Let `K` be a field with `Nat.card K = q ^ 2`. The statements take only `q`, with no
+characteristic assumed. At `q = 0` the field is infinite, since `Nat.card K = 0`; the equations
+below are then solved directly, and `Nat.card` of a solution type is `0`, not a number of
+solutions.
 
-The kernel of `T` consists of roots of `X ^ q + X`, and its image of roots of `X ^ q - X`, since
-`(b ^ q + b) ^ q = b ^ (q²) + b ^ q = b + b ^ q`. So both have at most `q` elements. Their
+For `q ≠ 0`, `K` is a finite field with `q²` elements, and `q = p ^ n` is a power of its
+characteristic `p`, which the proof of the count recovers. The map `T b = b ^ q + b` is then
+additive, and it is the trace from `K` to its subfield with `q` elements, although that subfield
+plays no role in the statement here. Every `c` with `c ^ q = c` has exactly `q` preimages under
+`T`. The kernel of `T` consists of roots of `X ^ q + X`, and its image of roots of `X ^ q - X`,
+since `(b ^ q + b) ^ q = b ^ (q²) + b ^ q = b + b ^ q`. So both have at most `q` elements. Their
 product is `|K| = q²`, so both have exactly `q` elements. The image is then the whole root set
 of `X ^ q - X` in `K`, and each fibre over it is a coset of the kernel.
 
 This is the count behind the order `q³` of the translation group of the Hermitian function
 field: for `a ∈ K`, the element `c = a ^ (q + 1)` satisfies `c ^ q = c`.
 
-For `ε = ±1` the twisted trace `b ↦ b + ε b ^ q` is then onto the elements `c` with
-`c ^ q = ε c`, and has a nonzero kernel element. For `ε = 1` this is the count above; for
-`ε = -1` the element `1` is in the kernel, and `b = c b₁` with `b₁ ^ q + b₁ = 1` is a preimage of
-`c`. These are the two conditions on the form of the finite unitary groups under which their
-action on isotropic points is transitive with central kernel.
+For `ε = ±1`, every `c` with `c ^ q = ε c` is of the form `b + ε b ^ q`, and some nonzero `b`
+solves `b + ε b ^ q = 0`. For `ε = 1` this follows from the count above; for `ε = -1`, `b = 1`
+solves the second equation, and `b = c b₁` with `b₁ ^ q + b₁ = 1` solves the first. For `q ≠ 0`
+these say that the twisted trace `b ↦ b + ε b ^ q` is onto the elements `c` with `c ^ q = ε c`
+and has a nonzero kernel element. These are the two conditions on the form of the finite unitary
+groups under which their action on isotropic points is transitive with central kernel.
 
 ## Main results
 
-* `TauCeti.FiniteField.natCard_pow_add_self_eq`: `#{b | b ^ q + b = c} = q` whenever
+* `TauCeti.FiniteField.natCard_pow_add_self_eq`: for `q ≠ 0`, `#{b | b ^ q + b = c} = q` whenever
   `c ^ q = c`.
 * `TauCeti.FiniteField.exists_pow_add_self_eq`: every `c` with `c ^ q = c` is of the form
   `b ^ q + b`.
@@ -62,9 +65,7 @@ variable {K : Type*} [Field K] {p n : ℕ} [ExpChar K p]
 characteristic `p`, the form in which the Frobenius `iterateFrobenius K p n` computes `b ^ q`. -/
 private theorem natCard_pow_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : Nat.card {b : K // b ^ p ^ n + b = c} = p ^ n := by
-  classical
   have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
-  have := Fintype.ofFinite K
   have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   set q := p ^ n with hqdef
   -- The additive maps `T b = b ^ q + b` and `T' c = c ^ q - c`.
@@ -84,15 +85,15 @@ private theorem natCard_pow_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c :
   have hX1 : (X ^ q + X : K[X]).natDegree = q := by
     rw [natDegree_add_eq_left_of_degree_lt] <;> simp [hq]
   have hker : Nat.card T.ker ≤ q := by
-    rw [← SetLike.coe_sort_coe, Nat.card_eq_card_toFinset]
-    refine (card_le_degree_of_subset_roots fun b hb ↦ ?_).trans hX1.le
-    rw [mem_roots (ne_zero_of_natDegree_gt (hX1 ▸ hq))]
+    rw [← SetLike.coe_sort_coe, Nat.card_coe_set_eq]
+    refine (Set.ncard_le_ncard fun b hb ↦ ?_).trans ((ncard_rootSet_le _ K).trans hX1.le)
+    rw [mem_rootSet_of_ne (ne_zero_of_natDegree_gt (hX1 ▸ hq))]
     simpa [hT] using hb
   have hker' : Nat.card T'.ker ≤ q := by
-    rw [← SetLike.coe_sort_coe, Nat.card_eq_card_toFinset]
-    refine (card_le_degree_of_subset_roots fun c hc ↦ ?_).trans
-      (natDegree_X_pow_sub_X (R := K) hq).le
-    rw [mem_roots (X_pow_sub_X_ne_zero hq)]
+    rw [← SetLike.coe_sort_coe, Nat.card_coe_set_eq]
+    refine (Set.ncard_le_ncard fun c hc ↦ ?_).trans
+      ((ncard_rootSet_le _ K).trans (natDegree_X_pow_sub_X (R := K) hq).le)
+    rw [mem_rootSet_of_ne (X_pow_sub_X_ne_zero hq)]
     simpa [hT'] using hc
   -- `|ker T| · |im T| = q²` and both factors are at most `q`, so both are `q`.
   have hmul : Nat.card T.ker * Nat.card T.range = q ^ 2 := by
@@ -140,8 +141,10 @@ theorem exists_pow_add_self_eq {q : ℕ} (hK : Nat.card K = q ^ 2) {c : K}
   obtain ⟨⟨b, hb⟩⟩ := Nat.card_pos_iff.mp hpos |>.1
   exact ⟨b, hb⟩
 
-/-- **The twisted trace is onto.** In a field `K` with `Nat.card K = q ^ 2`, and for
-`ε = (-1) ^ k`, every `c` with `c ^ q = ε c` is of the form `b + ε b ^ q`. -/
+/-- **Solving the twisted trace equation.** In a field `K` with `Nat.card K = q ^ 2`, and for
+`ε = (-1) ^ k`, every `c` with `c ^ q = ε c` is of the form `b + ε b ^ q`. For `q ≠ 0` this says
+that the twisted trace `b ↦ b + ε b ^ q` is onto the elements `c` with `c ^ q = ε c`. At `q = 0`
+the condition forces `c = ε`, and `b = 0` works. -/
 theorem exists_add_neg_one_pow_mul_pow_eq {q : ℕ} (hK : Nat.card K = q ^ 2) (k : ℕ)
     {c : K} (hc : c ^ q = (-1) ^ k * c) : ∃ b : K, b + (-1) ^ k * b ^ q = c := by
   rcases neg_one_pow_eq_or K k with h | h <;> rw [h] at hc ⊢
@@ -153,9 +156,10 @@ theorem exists_add_neg_one_pow_mul_pow_eq {q : ℕ} (hK : Nat.card K = q ^ 2) (k
     rw [mul_pow, hc]
     linear_combination c * hb
 
-/-- **The twisted trace has a nonzero kernel element.** In a field `K` with `Nat.card K = q ^ 2`,
-and for `ε = (-1) ^ k`, some nonzero `b` satisfies `b + ε b ^ q = 0`. At `q = 0` this is
-`b + ε = 0`, solved by `b = -ε`. -/
+/-- **A nonzero solution of the homogeneous twisted equation.** In a field `K` with
+`Nat.card K = q ^ 2`, and for `ε = (-1) ^ k`, some nonzero `b` satisfies `b + ε b ^ q = 0`. For
+`q ≠ 0` this is a nonzero element of the kernel of the twisted trace `b ↦ b + ε b ^ q`. At `q = 0`
+the equation is `b + ε = 0`, solved by `b = -ε`. -/
 theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero {q : ℕ}
     (hK : Nat.card K = q ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ q = 0 := by
   rcases neg_one_pow_eq_or K k with h | h <;> rw [h]
@@ -178,8 +182,10 @@ theorem exists_add_iterateFrobenius_eq_one (hK : Nat.card K = (p ^ n) ^ 2) :
   obtain ⟨t, ht⟩ := exists_pow_add_self_eq hK (one_pow (p ^ n))
   exact ⟨t, by simpa [iterateFrobenius_def, add_comm] using ht⟩
 
-/-- Over a field of order `q²`, the affine trace equation
-`z + z ^ q = x ^ q * x` has exactly `q³` solutions `(z, x)`. -/
+/-- In a field `K` with `Nat.card K = q ^ 2`, the type of solutions `(z, x)` of the affine trace
+equation `z + z ^ q = x ^ q * x` has `Nat.card` equal to `q ^ 3`. For `q ≠ 0`, `K` is finite of
+order `q²` and the equation has exactly `q³` solutions. At `q = 0` the field is infinite, the
+solutions `(z, z + 1)` are infinitely many, and both sides are `0`. -/
 theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
     Nat.card {c : K × K // c.1 + c.1 ^ q = c.2 ^ q * c.2} = q ^ 3 := by
   classical

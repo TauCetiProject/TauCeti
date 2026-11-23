@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 import TauCeti.Algebra.CharP.Frobenius.Fixed
-import TauCeti.FieldTheory.Finite.Card
+import TauCeti.Algebra.GroupWithZero.Units.Finite
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!

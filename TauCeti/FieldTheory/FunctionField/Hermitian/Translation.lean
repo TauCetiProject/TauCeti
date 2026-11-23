@@ -8,10 +8,9 @@ module
 public import TauCeti.FieldTheory.FunctionField.Hermitian.Basic
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.AdjoinRoot
-import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Group.Pow
-import TauCeti.FieldTheory.Finite.Card
+import TauCeti.Algebra.GroupWithZero.Units.Finite
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.RatFunc.Transcendental
@@ -373,7 +372,7 @@ theorem natCard_hermitianTranslations (hK : Nat.card K = (p ^ n) ^ 2) :
     Nat.card (hermitianTranslations K p n x y) = (p ^ n) ^ 3 := by
   have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
-  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by rw [← hK]; exact FiniteField.pow_natCard a
+  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by rw [← hK]; exact pow_natCard a
   -- The translations are in bijection with the pairs `(a, b)` with `b ^ q + b = a ^ (q + 1)`.
   let f : {ab : K × K // ab.2 ^ p ^ n + ab.2 = ab.1 ^ (p ^ n + 1)} →
       hermitianTranslations K p n x y := fun ab ↦
@@ -388,7 +387,7 @@ theorem natCard_hermitianTranslations (hK : Nat.card K = (p ^ n) ^ 2) :
   -- `b + b ^ q = a ^ q * a`.
   rw [← Nat.card_congr (Equiv.ofBijective f hf), ← FiniteField.natCard_add_pow_eq_pow_mul hK]
   exact Nat.card_congr <| Equiv.subtypeEquiv (Equiv.prodComm K K) fun ab ↦ by
-    rw [Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap, pow_succ, add_comm (ab.2 ^ p ^ n)]
+    simp [pow_succ, add_comm]
 
 end IsHermitianCoordinates
 
