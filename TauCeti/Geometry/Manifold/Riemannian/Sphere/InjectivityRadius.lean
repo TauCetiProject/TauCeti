@@ -220,18 +220,29 @@ theorem conjugateMultiplicity_sphere_of_norm_eq_pi {p : sphere (0 : E) 1}
       (mem_univ 0) (mem_univ 1) one_ne_zero
       (fun _ _ ↦ hasConstantSectionalCurvature_sphere.hasSectionalCurvatureAt _) hS
 
+/-- For any `w : TangentSpace (𝓡 n) p` with `‖w‖ = π`, the radial curve `t ↦ exp_p (t • w)` is a
+geodesic on `[0, 1]` from `p` to `-p` of length `ENNReal.ofReal Real.pi`. -/
+private theorem isGeodesicCurveOn_riemannianExp_smul_sphere_Icc_of_norm_eq_pi
+    {p : sphere (0 : E) 1} {w : TangentSpace (𝓡 n) p} (hw : ‖w‖ = Real.pi) :
+    let γ := fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • w)
+    IsGeodesicCurveOn (𝓡 n) γ (Icc 0 1) ∧ γ 0 = p ∧ γ 1 = -p ∧
+      pathELength (𝓡 n) γ 0 1 = ENNReal.ofReal Real.pi :=
+  ⟨(isGeodesicCurveOn_riemannianExp_smul_sphere_univ p w).mono (uniqueDiffOn_Icc zero_lt_one)
+      (subset_univ _),
+    by simp,
+    by simpa only [one_smul] using riemannianExp_sphere_eq_neg_of_norm_eq_pi hw,
+    by rw [pathELength_riemannianExp_smul_sphere_zero_one, ← ofReal_norm, hw]⟩
+
 /-- **Antipodal Riemannian distance on `Sⁿ` (`1 ≤ n`).** The Riemannian distance between `p : Sⁿ`
 and its antipode `-p` is `ENNReal.ofReal Real.pi` (equal to `injectivityRadiusAt p`). -/
 @[simp] theorem riemannianEDist_sphere_neg_self (hn : 1 ≤ n) (p : sphere (0 : E) 1) :
     riemannianEDist (𝓡 n) p (-p) = ENNReal.ofReal Real.pi := by
   refine le_antisymm ?_ ?_
   · obtain ⟨v, hv, -⟩ := exists_norm_eq_pi_tangentSpace_sphere hn p
-    refine (riemannianEDist_le_pathELength
-      (((isGeodesicCurveOn_riemannianExp_smul_sphere_univ p v).mono (uniqueDiffOn_Icc zero_lt_one)
-        (subset_univ _)).contMDiffOn.of_le one_le_two) (by simp)
-      (by simpa only [one_smul] using riemannianExp_sphere_eq_neg_of_norm_eq_pi hv)
-      zero_le_one).trans_eq ?_
-    rw [pathELength_riemannianExp_smul_sphere_zero_one, ← ofReal_norm, hv]
+    obtain ⟨hgeo, h0, h1, hlen⟩ :=
+      isGeodesicCurveOn_riemannianExp_smul_sphere_Icc_of_norm_eq_pi hv
+    exact (riemannianEDist_le_pathELength (hgeo.contMDiffOn.of_le one_le_two) h0 h1
+      zero_le_one).trans_eq hlen
   · by_contra! hlt; obtain ⟨v, ⟨hv_lt_inj, hv_exp⟩, -⟩ :=
       existsUnique_riemannianExp_eq_of_riemannianEDist_lt_injectivityRadiusAt
         (by rwa [injectivityRadiusAt_sphere_of_one_le hn p])
@@ -255,23 +266,16 @@ theorem exists_two_minimizing_geodesics_sphere_antipode (hn : 1 ≤ n) (p : sphe
       IsGeodesicCurveOn (𝓡 n) γ₂ (Icc 0 1) ∧ γ₂ 0 = p ∧ γ₂ 1 = -p ∧
       pathELength (𝓡 n) γ₂ 0 1 = riemannianEDist (𝓡 n) p (-p) := by
   obtain ⟨v, hv, hne⟩ := exists_norm_eq_pi_tangentSpace_sphere hn p
-  have hseg (w : TangentSpace (𝓡 n) p) (hw : ‖w‖ = Real.pi) :
-      let γ := fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • w)
-      IsGeodesicCurveOn (𝓡 n) γ (Icc 0 1) ∧ γ 0 = p ∧ γ 1 = -p ∧
-        pathELength (𝓡 n) γ 0 1 = riemannianEDist (𝓡 n) p (-p) :=
-    ⟨(isGeodesicCurveOn_riemannianExp_smul_sphere_univ p w).mono (uniqueDiffOn_Icc zero_lt_one)
-        (subset_univ _), by simp,
-      by simpa only [one_smul] using riemannianExp_sphere_eq_neg_of_norm_eq_pi hw,
-      by rw [pathELength_riemannianExp_smul_sphere_zero_one, ← ofReal_norm, hw,
-        riemannianEDist_sphere_neg_self hn p]⟩
+  have hdist := riemannianEDist_sphere_neg_self hn p
+  obtain ⟨h1a, h1b, h1c, h1d⟩ := isGeodesicCurveOn_riemannianExp_smul_sphere_Icc_of_norm_eq_pi hv
+  obtain ⟨h2a, h2b, h2c, h2d⟩ :=
+    isGeodesicCurveOn_riemannianExp_smul_sphere_Icc_of_norm_eq_pi (w := -v) (by rwa [norm_neg])
   have hball {w : TangentSpace (𝓡 n) p} (hw : ‖w‖ = Real.pi) :
       (1 / 2 : ℝ) • w ∈ Metric.ball 0 Real.pi := by
     rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (by norm_num), hw]; linarith [Real.pi_pos]
-  obtain ⟨h1a, h1b, h1c, h1d⟩ := hseg v hv
-  obtain ⟨h2a, h2b, h2c, h2d⟩ := hseg (-v) (by rwa [norm_neg])
   exact ⟨_, _, fun hmid ↦ hne <| smul_right_injective _ (by norm_num : (1 / 2 : ℝ) ≠ 0) <|
     injOn_riemannianExp_sphere_ball_pi p (hball hv) (hball (by rwa [norm_neg])) hmid,
-    h1a, h1b, h1c, h1d, h2a, h2b, h2c, h2d⟩
+    h1a, h1b, h1c, h1d.trans hdist.symm, h2a, h2b, h2c, h2d.trans hdist.symm⟩
 
 end TauCeti
 

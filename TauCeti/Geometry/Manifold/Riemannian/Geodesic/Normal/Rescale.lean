@@ -53,8 +53,11 @@ private theorem tangent_congr {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
     {α : Sort*} (F : ∀ b : M, TangentSpace I b → α)
     {b₁ b₂ : M} (hb : b₁ = b₂) {u₁ : TangentSpace I b₁} {u₂ : TangentSpace I b₂}
-    (hu : HEq u₁ u₂) : F b₁ u₁ = F b₂ u₂ := by
-  cases hb; cases eq_of_heq hu; rfl
+    (hu : tangentSpaceCast I b₁ b₂ u₁ = u₂) : F b₁ u₁ = F b₂ u₂ := by
+  subst hb
+  rw [tangentSpaceCast_self] at hu
+  subst hu
+  rfl
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- `ofWithMetric` sends the differential of `diffeomorphWithMetric` back to
@@ -67,10 +70,13 @@ private theorem mfderiv_ofWithMetric_diffeomorphWithMetric
         (mfderiv I I ofWithMetric (diffeomorphWithMetric g g' ∞ x)
           ((diffeomorphWithMetric g g' ∞).mfderivToContinuousLinearEquiv (by simp) x v)) =
       mfderiv I I ofWithMetric x v := by
-  rw [mfderiv_ofWithMetric_apply, mfderiv_ofWithMetric_apply]
-  exact eq_of_heq ((heq_tangentSpaceCast (by simp) _).trans
-    (heq_of_eq (DFunLike.congr_fun ((Diffeomorph.mfderivToContinuousLinearEquiv_coe _
-      (by simp)).trans (mfderiv_diffeomorphWithMetric g' ∞ x)) v)))
+  set Φ := diffeomorphWithMetric g g' ∞
+  have hcomp : (ofWithMetric : WithMetric g' → M) ∘ Φ = ofWithMetric := funext fun _ ↦ by simp [Φ]
+  have h := DFunLike.congr_fun
+    ((Filter.EventuallyEq.of_eq hcomp.symm).mfderiv_eq (I := I) (I' := I) (x := x)) v
+  rw [Φ.mfderiv_comp_diffeomorph (by simp) ofWithMetric x, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, ← Φ.mfderivToContinuousLinearEquiv_apply (by simp) x v] at h
+  exact h.symm
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- Transporting a basepoint-dependent expression along `mfderiv_ofWithMetric_diffeomorphWithMetric`
@@ -83,9 +89,7 @@ private theorem congr_mfderiv_ofWithMetric_diffeomorphWithMetric {α : Sort*}
         (mfderiv I I ofWithMetric (diffeomorphWithMetric g g' ∞ x)
           ((diffeomorphWithMetric g g' ∞).mfderivToContinuousLinearEquiv (by simp) x v)) =
       F x.ofWithMetric (mfderiv I I ofWithMetric x v) :=
-  tangent_congr F (by simp) <|
-    (heq_tangentSpaceCast (by simp) _).symm.trans
-      (heq_of_eq (mfderiv_ofWithMetric_diffeomorphWithMetric g g' x v))
+  tangent_congr F (by simp) (mfderiv_ofWithMetric_diffeomorphWithMetric g g' x v)
 
 omit [I.Boundaryless] [T2Space M] in
 /-- Tangent norm scaling under `diffeomorphWithMetric` for constant metric rescaling. -/
