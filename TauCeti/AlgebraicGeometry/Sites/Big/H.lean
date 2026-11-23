@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.Sites.BigZariski
+import TauCeti.CategoryTheory.Sites.FiniteRefinement
 
 /-!
 # The big h-topology
@@ -88,6 +89,26 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.singleton_mem_hPrecoverage
     [Surjective f] : Presieve.singleton f ∈ hPrecoverage Y :=
   Or.inr ((Scheme.singleton_mem_precoverage_iff (@IsProper ⊓ @Surjective) f).mpr
     ⟨(inferInstance : Surjective f).surj, ⟨inferInstance, inferInstance⟩⟩)
+
+/-- A singleton is a generating h-cover exactly when its arrow is proper and surjective. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.singleton_mem_hPrecoverage_iff
+    {X Y : Scheme.{u}} (f : X ⟶ Y) :
+    Presieve.singleton f ∈ hPrecoverage Y ↔ IsProper f ∧ Surjective f := by
+  constructor
+  · intro hf
+    rcases hf with hf | hf
+    · obtain ⟨hs, ho⟩ := (Scheme.singleton_mem_precoverage_iff @IsOpenImmersion f).mp hf
+      let : IsOpenImmersion f := ho
+      let : Surjective f := ⟨hs⟩
+      let : IsIso f := (isIso_iff_isOpenImmersion_and_surjective f).mpr
+        ⟨inferInstance, inferInstance⟩
+      exact ⟨inferInstance, inferInstance⟩
+    · exact ((Scheme.singleton_mem_precoverage_iff (@IsProper ⊓ @Surjective) f).mp hf).2
+  · rintro ⟨hp, hs⟩
+    let := hp
+    let := hs
+    exact f.singleton_mem_hPrecoverage
 
 instance : hPrecoverage.{u}.IsStableUnderBaseChange where
   mem_coverings_of_isPullback {ι} S X f hf Y g P p₁ p₂ h := by
@@ -209,27 +230,17 @@ lemma exists_finite_refinement_of_mem_hTopology {X : Scheme.{u}} [CompactSpace X
       (∀ i, CompactSpace (Y i)) ∧ (∀ i, R (f i)) ∧ Sieve.ofArrows Y f ∈ hTopology X by
     obtain ⟨ι, hι, Y, f, hY, hf, hcov⟩ := this
     exact ⟨ι, hι, Y, f, hY, hf, hcov, jointlySurjective_of_mem_hTopology hcov⟩
-  rw [hTopology_eq_toGrothendieck, ← Precoverage.toGrothendieck_toCoverage,
-    Coverage.mem_toGrothendieck] at hR
-  suffices ∀ (_ : CompactSpace X),
+  have refineGen : ∀ {X : Scheme.{u}} {R : Presieve X}, R ∈ hPrecoverage.toCoverage X →
+      CompactSpace X →
       ∃ (ι : Type u) (_ : Finite ι) (Y : ι → Scheme.{u}) (f : ∀ i, Y i ⟶ X),
-        (∀ i, CompactSpace (Y i)) ∧ (∀ i, R (f i)) ∧
-          Sieve.ofArrows Y f ∈ hTopology X from this inferInstance
-  induction hR with
-  | of X R hR => exact fun _ ↦ exists_finite_refinement_of_mem_hPrecoverage hR
-  | top X =>
-    intro hX
-    refine ⟨PUnit, inferInstance, fun _ ↦ X, fun _ ↦ 𝟙 X, fun _ ↦ hX, fun _ ↦ trivial, ?_⟩
-    simpa only [Sieve.ofArrows, Presieve.ofArrows_pUnit,
-      Sieve.generate_of_singleton_isSplitEpi] using hTopology.top_mem X
-  | transitive X R S _ _ ihR ihS =>
-    intro hX
-    obtain ⟨ι, hι, Y, f, hY, hf, hfcov⟩ := ihR hX
-    choose σ hσ Z g hZ hg hgcov using fun i ↦ ihS (hf i) (hY i)
-    let : ∀ i, Finite (σ i) := hσ
-    refine ⟨Σ i, σ i, inferInstance, fun p ↦ Z p.1 p.2,
-      fun p ↦ g p.1 p.2 ≫ f p.1, fun p ↦ hZ p.1 p.2, fun p ↦ hg p.1 p.2, ?_⟩
-    rw [Sieve.ofArrows, ← Presieve.bindOfArrows_ofArrows]
-    exact hTopology.bindOfArrows hfcov hgcov
+        (∀ i, CompactSpace (Y i)) ∧ (∀ i, Sieve.generate R (f i)) ∧
+          Sieve.ofArrows Y f ∈ hPrecoverage.toCoverage.toGrothendieck X := by
+    intro X R hR hX
+    let := hX
+    simpa only [Precoverage.toGrothendieck_toCoverage, ← hTopology_eq_toGrothendieck] using
+      exists_finite_refinement_of_mem_hPrecoverage hR
+  rw [hTopology_eq_toGrothendieck, ← Precoverage.toGrothendieck_toCoverage] at hR ⊢
+  exact hPrecoverage.toCoverage.exists_finite_refinement_of_mem_toGrothendieck
+    (fun X ↦ CompactSpace X) refineGen hR inferInstance
 
 end TauCeti.AlgebraicGeometry.Scheme

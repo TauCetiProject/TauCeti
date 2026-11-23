@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Presentations and iterated slices of a restricted over category
@@ -80,6 +81,19 @@ theorem overEquivFullSubcategory_inverse_comp_forget :
 end FullSubcategory
 
 namespace Over
+
+open CategoryTheory.Limits
+
+/-- Base change of a morphism in a restricted over category is its pullback along the first
+projection from the base change of its target. -/
+theorem isPullback_pullback_map_left {C : Type*} [Category* C]
+    {P Q : MorphismProperty C} {S T : C} (f : T ⟶ S) [HasPullbacksAlong f]
+    [P.IsStableUnderBaseChangeAlong f] [Q.IsMultiplicative] [Q.IsStableUnderBaseChange]
+    {A B : P.Over Q S} (g : A ⟶ B) :
+    IsPullback ((Over.pullback P Q f).map g).left (pullback.fst A.hom f)
+      (pullback.fst B.hom f) g.left := by
+  -- Both pullback functors use the same lift, and forgetting preserves all underlying arrows.
+  exact CategoryTheory.Over.isPullback_pullback_map_left f ((Over.forget P Q S).map g)
 
 section Backward
 
