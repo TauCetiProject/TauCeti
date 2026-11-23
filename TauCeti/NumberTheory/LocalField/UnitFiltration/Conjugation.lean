@@ -93,7 +93,7 @@ theorem ramificationGroupGradedConj_zero
     (τ : RamificationGroupGraded G 𝒪[L] 0) :
     ramificationGroupGradedConj G 𝒪[L] (σ : G) 0 τ = τ := by
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible (R := 𝒪[L])
-  apply tameCharacterGraded_injective hπ
+  apply tameCharacterGraded_injective_of_localField hπ
   induction τ using QuotientGroup.induction_on with
   | _ τ =>
     simp only [ramificationGroupGradedConj_mk, IsDiscreteValuationRing.tameCharacterGraded_mk]

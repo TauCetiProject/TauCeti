@@ -119,11 +119,8 @@ theorem unitFiltrationGradedSuccEquivMaximalIdealGraded_mk
     unitFiltrationGradedSuccEquivMaximalIdealGraded (K := K) n (QuotientGroup.mk x) =
       Multiplicative.ofAdd (Submodule.Quotient.mk (unitFiltrationDifference n x)) := by
   rw [unitFiltrationGradedSuccEquivMaximalIdealGraded, MulEquiv.trans_apply,
-    unitFiltrationGradedEquivPrincipalUnitGraded_mk]
-  change Multiplicative.ofAdd (principalUnitGradedSuccEquivMaximalIdealGraded 𝒪[K] n
-      (Additive.ofMul (QuotientGroup.mk (unitFiltrationEquivPrincipalUnitGroup K (n + 1) x)))) =
-    _
-  rw [principalUnitGradedSuccEquivMaximalIdealGraded_ofMul_mk]
+    unitFiltrationGradedEquivPrincipalUnitGraded_mk, AddEquiv.toMultiplicativeRight_apply_apply,
+    principalUnitGradedSuccEquivMaximalIdealGraded_ofMul_mk]
   exact congrArg (fun z : (𝓂[K] ^ (n + 1) : Ideal 𝒪[K]) ↦
     Multiplicative.ofAdd (Submodule.Quotient.mk z)) (Subtype.ext (Subtype.ext (by simp)))
 

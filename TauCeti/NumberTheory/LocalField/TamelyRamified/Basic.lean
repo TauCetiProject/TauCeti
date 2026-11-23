@@ -126,7 +126,8 @@ theorem lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified [Module.Finite K 
   have : CharP 𝓀[L] (ringChar 𝓀[K]) := Algebra.ringChar_eq 𝓀[K] 𝓀[L] ▸ ringChar.charP 𝓀[L]
   rw [isTamelyRamified_iff, ← natCard_lowerRamificationGroup_zero, lowerRamificationGroup_def,
     lowerRamificationGroup_def]
-  exact ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero _ _
+  exact ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_localField
+    _ _
 
 section Indices
 

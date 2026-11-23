@@ -387,7 +387,7 @@ def unitFiltrationGradedEquivPrincipalUnitGraded (i : ℕ) :
     UnitFiltrationGraded K i ≃* PrincipalUnitGraded 𝒪[K] i :=
   QuotientGroup.congr _ _ (unitFiltrationEquivPrincipalUnitGroup K i) <| by
     ext u
-    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
+    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf, MonoidHom.coe_ofClass]
     refine ⟨?_, fun hu ↦ ?_⟩
     · rintro ⟨x, hx, rfl⟩
       rw [Ideal.mem_principalUnitGroup]
@@ -395,7 +395,6 @@ def unitFiltrationGradedEquivPrincipalUnitGraded (i : ℕ) :
         mem_unitFiltration_iff_exists.mp (hx : (x : Kˣ) ∈ unitFiltration K (i + 1))
       have hv_eq : ((unitFiltrationEquivPrincipalUnitGroup K i x : 𝒪[K]ˣ) : 𝒪[K]) = (v : 𝒪[K]) :=
         Subtype.ext (by rw [coe_unitFiltrationEquivPrincipalUnitGroup, ← hvx])
-      change ((unitFiltrationEquivPrincipalUnitGroup K i x : 𝒪[K]ˣ) : 𝒪[K]) - 1 ∈ 𝓂[K] ^ (i + 1)
       rwa [hv_eq]
     · obtain ⟨x, hxu⟩ := (unitFiltrationEquivPrincipalUnitGroup K i).surjective u
       refine ⟨x, ?_, hxu⟩

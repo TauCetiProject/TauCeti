@@ -19,7 +19,7 @@ Let `L/K` be a finite extension of nonarchimedean local fields, with automorphis
 * `G / G_0` embeds, through the action on the residue field, into the Galois group of the finite
   residue field extension, so it is cyclic;
 * the tame quotient `G_0 / G_1` embeds into `𝓀[L]ˣ` through the tame character, so it is cyclic
-  (`TauCeti.isCyclic_ramificationGroupGraded_zero`);
+  (`TauCeti.isCyclic_ramificationGroupGraded_zero_of_localField`);
 * the wild inertia group `G_1` is a `p`-group for the residue characteristic `p`
   (`TauCeti.IsLocalRing.isPGroup_ramificationGroup`), hence nilpotent.
 
@@ -56,7 +56,7 @@ instance isSolvable_algEquiv : Group.IsSolvable (L ≃ₐ[K] L) := by
   have : Group.IsNilpotent (ramificationGroup (L ≃ₐ[K] L) 𝒪[L] (0 + 1)) :=
     (TauCeti.IsLocalRing.isPGroup_ramificationGroup _ _ (ringChar 𝓀[L]) (by omega)).isNilpotent
   -- The tame quotient `G_0 / G_1` is cyclic, so inertia `G_0` is solvable.
-  have := isCyclic_ramificationGroupGraded_zero L (L ≃ₐ[K] L)
+  have := isCyclic_ramificationGroupGraded_zero_of_localField L (L ≃ₐ[K] L)
   have hG₀ : Group.IsSolvable (ramificationGroup (L ≃ₐ[K] L) 𝒪[L] 0) :=
     Group.isSolvable_of_ker_le_range
       (Subgroup.inclusion

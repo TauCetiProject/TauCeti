@@ -115,9 +115,15 @@ integer indexing that Herbrand theory uses.
   residue characteristic zero, every finite-order element of `G_1` acts trivially, so when `G_i`
   (`0 < i`, resp. `G_1`) is finite and the action is faithful, `G_i` (resp. `G_1`) is trivial.
 
-The separability-free prime-characteristic and characteristic-zero ramification proofs in
-`section SeparableResidue` and `section HigherRamification` adapt the function-field development in
-`TauCeti/FieldTheory/FunctionField/Place/Extension/RamificationGroup.lean`,
+The separable-residue characterization
+`TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem_of_span_eq_maximalIdeal`
+and the prime-characteristic and characteristic-zero higher-ramification results
+(`TauCeti.IsLocalRing.commutator_ramificationGroup_le`,
+`TauCeti.IsLocalRing.pow_mem_ramificationGroup_add_one`,
+`TauCeti.IsLocalRing.isPGroup_ramificationGroup`,
+`TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`, and
+`TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_of_charZero`) adapt the function-field
+development in `TauCeti/FieldTheory/FunctionField/Place/Extension/RamificationGroup.lean`,
 `TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean`, and
 `TauCeti/FieldTheory/FunctionField/Place/Extension/WildInertia.lean` (following Stichtenoth,
 Proposition 3.8.5) to arbitrary local rings.

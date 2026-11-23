@@ -11,8 +11,8 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
-import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.RingTheory.LocalRing.Localization
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
@@ -38,12 +38,10 @@ an element of `G_0` in `G_{i+1}` is decided at `ϖ` alone (supplied by the gener
 discrete-valuation-ring theory in `TauCeti.IsDiscreteValuationRing`).
 
 At depth zero, the canonical DVR tame character `TauCeti.IsDiscreteValuationRing.tameCharacter`
-gives a homomorphism `G_0 → 𝓀[L]ˣ` killing `G_1`; by constructing the separable prime base ring
-internally, this file removes the base-ring hypothesis for `L` and shows that the induced map on
-`G_0 / G_1` is injective, so the tame quotient is cyclic of order dividing `q - 1`, where `q` is
-the cardinality of the residue field. At positive depth,
-`TauCeti.IsLocalRing.isPGroup_ramificationGroup` shows that `G_1` is a `p`-group for the residue
-characteristic `p` when the action is faithful and `G_0` is finite.
+gives a homomorphism `G_0 → 𝓀[L]ˣ` killing `G_1`, and the induced map on `G_0 / G_1` is injective,
+so the tame quotient is cyclic of order dividing `q - 1`, where `q` is the cardinality of the
+residue field. At positive depth, `TauCeti.IsLocalRing.isPGroup_ramificationGroup` shows that `G_1`
+is a `p`-group for the residue characteristic `p` when the action is faithful and `G_0` is finite.
 
 ## Main definitions
 
@@ -72,19 +70,20 @@ characteristic `p` when the action is faithful and `G_0` is finite.
   `TauCeti.ramificationGroupGradedToUnitFiltrationGraded_injective`: the kernel is exactly
   `G_{i+1}`, and `θ_i` is injective.
 * `TauCeti.ramificationGroupGradedToResidueField_ofMul_mk` and
-  `TauCeti.ramificationGroupGradedToResidueField_injective`: uniformizer-coordinate comparison and
-  injectivity for the canonical positive-depth residue coordinate
-  `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField`.
-* `TauCeti.coe_tameCharacter_of_val_eq_smul_div`, `TauCeti.tameCharacterGraded_injective`, and
-  `TauCeti.ker_tameCharacter`: ratio evaluation, injectivity on `G_0 / G_1`, and kernel of the
-  canonical tame character.
-* `TauCeti.isCyclic_ramificationGroupGraded_zero`,
+  `TauCeti.ramificationGroupGradedToResidueField_injective_of_localField`:
+  uniformizer-coordinate comparison and injectivity for the canonical positive-depth residue
+  coordinate `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField`.
+* `TauCeti.coe_tameCharacter_of_val_eq_smul_div`,
+  `TauCeti.tameCharacterGraded_injective_of_localField`, and
+  `TauCeti.ker_tameCharacter_of_localField`: ratio evaluation, injectivity on
+  `G_0 / G_1`, and kernel of the canonical tame character.
+* `TauCeti.isCyclic_ramificationGroupGraded_zero_of_localField`,
   `TauCeti.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`, and
-  `TauCeti.not_dvd_index_ramificationGroup_one`: the tame quotient is cyclic of order dividing
-  `q - 1` and prime to `p`.
-* `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: `G_1` is
-  trivial exactly when `p` does not divide `Nat.card G_0`, that is when `G_0` is finite of order
-  prime to `p` (the tame case), since `Nat.card G_0 = 0` when `G_0` is infinite.
+  `TauCeti.not_dvd_index_ramificationGroup_one_of_localField`: the tame quotient is
+  cyclic of order dividing `q - 1` and prime to `p`.
+* `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_localField`:
+  `G_1` is trivial exactly when `p` does not divide `Nat.card G_0`, that is when `G_0` is finite of
+  order prime to `p` (the tame case), since `Nat.card G_0 = 0` when `G_0` is infinite.
 
 ## Implementation notes
 
@@ -92,6 +91,12 @@ The ramification groups are indexed by `ℤ` and the unit filtration by `ℕ`. E
 below therefore fixes a natural index `i` and reads the ramification group at `(i : ℤ)`, whereas
 the depth-zero declarations fix the index `(0 : ℤ)`, the spelling in which a statement about
 `G_0 / G_1` is met.
+
+The separable-residue hypothesis required by the general DVR theorems in
+`TauCeti.IsDiscreteValuationRing` is discharged automatically over the canonical prime base local
+ring `Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)`
+(`TauCeti.RingTheory.LocalRing.Localization`), because the residue field `𝓀[L]` is finite and hence
+algebraic over its perfect prime subfield.
 
 ## References
 
@@ -109,76 +114,6 @@ variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G 𝒪[L]]
 variable {ϖ : 𝒪[L]} {i : ℕ} {σ : G}
-
-/-! ### Separable base ring -/
-
-private def basePrimeIdeal (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] : Ideal ℤ :=
-  (maximalIdeal 𝒪[L]).under ℤ
-
-private local instance instBasePrimeIdealPrime (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] : (basePrimeIdeal L).IsPrime :=
-  (maximalIdeal.isMaximal 𝒪[L]).isPrime.comap _
-
-private local instance instIsLocalizationMaximalIdealPrimeCompl (L : Type*) [Field L]
-    [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
-    IsLocalization (maximalIdeal 𝒪[L]).primeCompl 𝒪[L] :=
-  IsLocalization.self fun _ hx ↦ IsLocalRing.notMem_maximalIdeal.mp hx
-
-private noncomputable def baseRingHom (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
-    Localization.AtPrime (basePrimeIdeal L) →+* 𝒪[L] :=
-  RingHom.comp
-    (Localization.algEquiv (maximalIdeal 𝒪[L]).primeCompl 𝒪[L] :
-      Localization.AtPrime (maximalIdeal 𝒪[L]) →+* 𝒪[L])
-    (Localization.localRingHom (basePrimeIdeal L) (maximalIdeal 𝒪[L]) (algebraMap ℤ 𝒪[L]) rfl)
-
-private local instance instBaseRingAlgebra (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
-    Algebra (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] :=
-  (baseRingHom L).toAlgebra
-
-private local instance instBaseRingIsLocalHom (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
-    IsLocalHom (algebraMap (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L]) :=
-  have : IsLocalHom (Localization.algEquiv (maximalIdeal 𝒪[L]).primeCompl 𝒪[L]) :=
-    isLocalHom_equiv _
-  @RingHom.isLocalHom_comp _ _ _ _ _ _ _ _
-    (isLocalHom_toRingHom (Localization.algEquiv (maximalIdeal 𝒪[L]).primeCompl 𝒪[L]))
-    (Localization.isLocalHom_localRingHom (basePrimeIdeal L) (maximalIdeal 𝒪[L])
-      (algebraMap ℤ 𝒪[L]) rfl)
-
-private local instance instBaseRingSMulCommClass (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] (G : Type*) [Group G]
-    [MulSemiringAction G L] [IsInvariantSubring G 𝒪[L]] :
-    SMulCommClass G (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] := ⟨fun σ r x ↦ by
-  have hfix : σ • algebraMap (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] r =
-      algebraMap (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] r := by
-    change ((MulSemiringAction.toRingHom G 𝒪[L] σ).comp
-      (algebraMap (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L])) r =
-      algebraMap (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] r
-    congr 1
-    exact IsLocalization.ringHom_ext (basePrimeIdeal L).primeCompl (Subsingleton.elim _ _)
-  rw [Algebra.smul_def, smul_mul', hfix, ← Algebra.smul_def]⟩
-
-private local instance instBaseRingFiniteQuotient (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] : Finite (ℤ ⧸ basePrimeIdeal L) := by
-  let f : ℤ →+* 𝓀[L] := (residue 𝒪[L]).comp (algebraMap ℤ 𝒪[L])
-  have hker : RingHom.ker f = basePrimeIdeal L := by
-    ext z
-    rw [RingHom.mem_ker, RingHom.comp_apply, IsLocalRing.residue_eq_zero_iff]
-    rfl
-  have hinj : Function.Injective
-      ((RingHom.kerLift f).comp (Ideal.quotEquivOfEq hker.symm).toRingHom) :=
-    (RingHom.kerLift_injective f).comp (Ideal.quotEquivOfEq hker.symm).injective
-  exact Finite.of_injective _ hinj
-
-private local instance instBaseRingIsSeparableResidueField (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] :
-    Algebra.IsSeparable (ResidueField (Localization.AtPrime (basePrimeIdeal L))) 𝓀[L] := by
-  have : Finite (ResidueField (Localization.AtPrime (basePrimeIdeal L))) :=
-    (inferInstance : Finite (basePrimeIdeal L).ResidueField)
-  exact Algebra.IsAlgebraic.isSeparable_of_perfectField
 
 /-! ### The valuation form of the ramification filtration -/
 
@@ -296,8 +231,7 @@ theorem ramificationGroupToUnitFiltrationGraded_apply (hϖ : Irreducible ϖ)
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
   rw [ramificationGroupToUnitFiltrationGraded, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     IsDiscreteValuationRing.ramificationGroupToPrincipalUnitGraded_apply,
-    unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk]
-  rfl
+    unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk, uniformizerRatio]
 
 /-- The quotient homomorphism does not depend on the choice of uniformizer: two uniformizers
 differ by a unit of `𝒪[L]`, and `σ` moves that unit inside `U(L,i+1)`. -/
@@ -327,7 +261,7 @@ theorem mem_ramificationGroup_natCast_iff_smul_sub_mem (hϖ : Irreducible ϖ)
     (hσ : σ ∈ ramificationGroup G 𝒪[L] 0) {n : ℕ} :
     σ ∈ ramificationGroup G 𝒪[L] (n : ℤ) ↔ σ • ϖ - ϖ ∈ 𝓂[L] ^ (n + 1) :=
   IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem
-    (Localization.AtPrime (basePrimeIdeal L)) hϖ hσ
+    (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) hϖ hσ
 
 /-- An element of the inertia group `G_0` lies in `G_1` as soon as the ratio `σ ϖ / ϖ` of a
 uniformizer `ϖ` has a `p`-power congruent to `1` modulo the maximal ideal, for `p` the residue
@@ -425,7 +359,7 @@ theorem ker_ramificationGroupToUnitFiltrationGraded (hϖ : Irreducible ϖ) :
     (unitFiltrationGradedEquivPrincipalUnitGraded L i).symm.toMonoidHom
     (unitFiltrationGradedEquivPrincipalUnitGraded L i).symm.injective]
   exact IsDiscreteValuationRing.ker_ramificationGroupToPrincipalUnitGraded
-    G (Localization.AtPrime (basePrimeIdeal L)) i hϖ
+    G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) i hϖ
 
 /-! ### The embedding of the graded pieces -/
 
@@ -445,15 +379,14 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_mk (hϖ : Irreducible ϖ)
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
   rw [ramificationGroupGradedToUnitFiltrationGraded, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGraded_mk,
-    unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk]
-  rfl
+    unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk, uniformizerRatio]
 
 /-- **The quotient embeddings are injective.** -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_injective (hϖ : Irreducible ϖ) :
     Function.Injective (ramificationGroupGradedToUnitFiltrationGraded (G := G) i hϖ) :=
   (unitFiltrationGradedEquivPrincipalUnitGraded L i).symm.injective.comp
     (IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGraded_injective
-      G (Localization.AtPrime (basePrimeIdeal L)) i hϖ)
+      G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) i hϖ)
 
 /-- The descended quotient map does not depend on the choice of uniformizer. -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible {ϖ' : 𝒪[L]}
@@ -492,12 +425,12 @@ theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) (π : 𝒪[L])
   rw [hmul]
 
 /-- The positive-depth ramification quotient embeds in the additive residue field. -/
-theorem ramificationGroupGradedToResidueField_injective (n : ℕ) (π : 𝒪[L])
-    (hπ : Irreducible π) :
+theorem ramificationGroupGradedToResidueField_injective_of_localField
+    (n : ℕ) (π : 𝒪[L]) (hπ : Irreducible π) :
     Function.Injective
       (IsDiscreteValuationRing.ramificationGroupGradedToResidueField G n hπ) :=
   IsDiscreteValuationRing.ramificationGroupGradedToResidueField_injective
-    G (Localization.AtPrime (basePrimeIdeal L)) n hπ
+    G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) n hπ
 
 /-! ### The tame character -/
 
@@ -513,30 +446,31 @@ theorem coe_tameCharacter_of_val_eq_smul_div (hϖ : Irreducible ϖ)
   exact IsDiscreteValuationRing.coe_tameCharacter_of_mul_eq hϖ hmul
 
 /-- **The tame character is injective on `G_0 / G_1`.** -/
-theorem tameCharacterGraded_injective (hϖ : Irreducible ϖ) :
+theorem tameCharacterGraded_injective_of_localField (hϖ : Irreducible ϖ) :
     Function.Injective (IsDiscreteValuationRing.tameCharacterGraded G hϖ) :=
   IsDiscreteValuationRing.tameCharacterGraded_injective
-    G (Localization.AtPrime (basePrimeIdeal L)) hϖ
+    G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) hϖ
 
 /-- **The kernel of the tame character is the wild inertia group `G_1`**, viewed inside `G_0`. -/
 @[simp]
-theorem ker_tameCharacter (hϖ : Irreducible ϖ) :
+theorem ker_tameCharacter_of_localField (hϖ : Irreducible ϖ) :
     (IsDiscreteValuationRing.tameCharacter G hϖ).ker =
       (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) := by
   ext σ
   rw [MonoidHom.mem_ker, ← IsDiscreteValuationRing.tameCharacterGraded_mk hϖ,
-    map_eq_one_iff _ (tameCharacterGraded_injective hϖ), QuotientGroup.eq_one_iff, zero_add]
+    map_eq_one_iff _ (tameCharacterGraded_injective_of_localField hϖ),
+    QuotientGroup.eq_one_iff, zero_add]
 
 variable (G L) in
 /-- **The tame quotient is cyclic**: `G_0 / G_1` embeds into the multiplicative group of the
 residue field, which is cyclic because the residue field is finite. -/
-theorem isCyclic_ramificationGroupGraded_zero :
+theorem isCyclic_ramificationGroupGraded_zero_of_localField :
     IsCyclic (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) := by
   obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   have : Finite (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) :=
-    Finite.of_injective _ (tameCharacterGraded_injective hϖ)
+    Finite.of_injective _ (tameCharacterGraded_injective_of_localField hϖ)
   exact IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero
-    G (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L]
+    G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) 𝒪[L]
 
 variable (G L) in
 /-- The order of the tame quotient `G_0 / G_1` divides `q - 1`, for `q` the cardinality of the
@@ -545,21 +479,23 @@ theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
     Nat.card (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) ∣ Nat.card 𝓀[L] - 1 := by
   obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   rw [← Nat.card_units]
-  exact Subgroup.card_dvd_of_injective _ (tameCharacterGraded_injective hϖ)
+  exact Subgroup.card_dvd_of_injective _
+    (tameCharacterGraded_injective_of_localField hϖ)
 
-/-! ### Wild inertia as the Sylow subgroup of inertia -/
+/-! ### Index and triviality of wild inertia -/
 
 variable (G) in
 /-- The index of `G_1` in `G_0` is prime to the residue characteristic `p`. This is the
 order-theoretic consequence of the tame-character embedding `G_0/G_1 → 𝓀[L]ˣ`. -/
-theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p] :
+theorem not_dvd_index_ramificationGroup_one_of_localField
+    (p : ℕ) [CharP 𝓀[L] p] :
     ¬p ∣ ((ramificationGroup G 𝒪[L] 1).subgroupOf
       (ramificationGroup G 𝒪[L] 0)).index := by
   obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   have : Finite (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) :=
-    Finite.of_injective _ (tameCharacterGraded_injective hϖ)
+    Finite.of_injective _ (tameCharacterGraded_injective_of_localField hϖ)
   exact IsDiscreteValuationRing.not_dvd_index_ramificationGroup_one
-    G (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] p
+    G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) 𝒪[L] p
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
@@ -567,20 +503,20 @@ first ramification group `G_1` is trivial if and only if `p` does not divide `Na
 is, if and only if the inertia group `G_0` is finite of order prime to `p`: when `G_0` is infinite,
 `Nat.card G_0 = 0`, and `G_1` is nontrivial because `G_0 / G_1` embeds in the finite group
 `𝓀[L]ˣ`. When `G_0` is finite, `G_1` is its Sylow `p`-subgroup. -/
-theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
-    [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] :
+theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_localField
+    (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] :
     ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
   by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
   · exact
       IsDiscreteValuationRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero
-        G (Localization.AtPrime (basePrimeIdeal L)) 𝒪[L] p
+        G (Localization.AtPrime ((maximalIdeal 𝒪[L]).under ℤ)) 𝒪[L] p
   · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
     have hinf := not_finite_iff_infinite.mp hfin
     rw [Nat.card_eq_zero_of_infinite]
     simp only [dvd_zero, not_true_eq_false, iff_false]
     intro h
     obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-    have hker := ker_tameCharacter (G := G) hϖ
+    have hker := ker_tameCharacter_of_localField (G := G) hϖ
     rw [h, Subgroup.bot_subgroupOf, MonoidHom.ker_eq_bot_iff] at hker
     exact hfin (Finite.of_injective _ hker)
 
