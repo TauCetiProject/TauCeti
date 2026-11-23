@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Finsupp.Defs
 public import TauCeti.NumberTheory.HeckeRing.Associativity
+public import TauCeti.NumberTheory.HeckeRing.Degree
 public import TauCeti.NumberTheory.HeckeRing.Multiplicity.Equiv
 
 import Mathlib.Tactic.Group
@@ -17,18 +18,19 @@ import TauCeti.NumberTheory.HeckeRing.LinearExtension
 
 Suppose `H, H', P ≤ G` are subgroups with `H = H' ⊓ P`, and `Δ ≤ Δ'` are submonoids of `G` with
 `Δ ≤ P`, such that every `δ' ∈ Δ'` translates into `Δ` on the left by `H'` and for every `g ∈ Δ`,
-every left coset of `H' ∩ g H' g⁻¹` in `H'` meets `H`. Then `HeckeCoset.map` gives a bijection
-`HeckeCoset Δ H H ≃ HeckeCoset Δ' H' H'`, Shimura's multiplicities agree on `Δ`
-(`DoubleCoset.multiplicity_eq_of_inf`), and pushing coefficients forward yields a ring isomorphism
-`𝕋 Δ H R ≃+* 𝕋 Δ' H' R` over any semiring `R` (the abstract core of Proposition 3.16 of
-[Shimura][shimura1971] and §2 of [Rhodes–Shemanske][rhodes1999]).
+every left coset of `H' ∩ g H' g⁻¹` in `H'` meets `H`. Then `HeckeCoset.map` gives a degree-
+preserving bijection `HeckeCoset Δ H H ≃ HeckeCoset Δ' H' H'`, Shimura's multiplicities agree on
+`Δ` (`DoubleCoset.multiplicity_eq_of_inf`), and pushing coefficients forward yields a degree-
+preserving ring isomorphism `𝕋 Δ H R ≃+* 𝕋 Δ' H' R` over any semiring `R` (the abstract core of
+Proposition 3.16 of [Shimura][shimura1971] and §2 of [Rhodes–Shemanske][rhodes1999]).
 
 ## Main definitions and results
 
-* `HeckeCoset.map_bijective_of_inf`, `HeckeCoset.mapEquivOfInf`: the bijection
-  `HeckeCoset Δ H H ≃ HeckeCoset Δ' H' H'`.
+* `HeckeCoset.degree_map_of_inf`, `HeckeCoset.map_bijective_of_inf`, `HeckeCoset.mapEquivOfInf`:
+  degree preservation and the bijection `HeckeCoset Δ H H ≃ HeckeCoset Δ' H' H'`.
 * `HeckeCosetModule.mapSubgroupLinearEquiv`: the `R`-linear equivalence `𝕋 Δ H R ≃ₗ[R] 𝕋 Δ' H' R`.
-* `HeckeCosetModule.mapSubgroupRingEquiv`: the ring isomorphism `𝕋 Δ H R ≃+* 𝕋 Δ' H' R`.
+* `HeckeCosetModule.mapSubgroupRingEquiv`, `HeckeCosetModule.deg_mapSubgroupRingEquiv`: the
+  degree-preserving ring isomorphism `𝕋 Δ H R ≃+* 𝕋 Δ' H' R`.
 
 ## References
 
@@ -50,6 +52,16 @@ variable {G : Type*} [Group G] {Δ Δ' : Submonoid G} {H H' P : Subgroup G}
   (hHP : H = H' ⊓ P) (hΔ : Δ ≤ Δ') (hΔP : Δ ≤ P.toSubmonoid)
   (hsurj : ∀ δ' : Δ', ∃ u ∈ H', u * (δ' : G) ∈ Δ)
   (hstab : ∀ g : Δ, ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct (g : G) • H')
+
+include hΔP hstab in
+/-- Extending both subgroup and submonoid under `H = H' ⊓ P`, `Δ ≤ P`, and the stabilizer-coset
+condition `hstab` preserves the degree of every double coset, without requiring left-coset
+surjectivity. -/
+theorem degree_map_of_inf (D : HeckeCoset Δ H H) :
+    (D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)).degree = D.degree := by
+  induction D using HeckeCoset.induction with | h g =>
+  rw [map_mk, degree_mk, degree_mk, Submonoid.coe_inclusion]
+  exact (Nat.card_congr (decompQuotientEquivOfInf hHP (hΔP g.property) (hstab g))).symm
 
 include hΔP hsurj hstab in
 /-- Under `H = H' ⊓ P`, `Δ ≤ Δ'`, `Δ ≤ P`, left-coset surjectivity of `Δ` in `Δ'` modulo `H'`, and
@@ -190,6 +202,27 @@ theorem mapSubgroupRingEquiv_symm_single_map (D : HeckeCoset Δ H H) (b : R) :
         (single R (D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)) b) =
       single R D b :=
   (mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab).injective (by simp)
+
+/-- `mapSubgroupRingEquiv` preserves the degree homomorphism `LeftCosetModule.deg`. -/
+@[simp]
+theorem deg_mapSubgroupRingEquiv (f : 𝕋 Δ H R) :
+    LeftCosetModule.deg Δ' H' R (mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab f) =
+      LeftCosetModule.deg Δ H R f := by
+  induction f using HeckeCosetModule.induction_linear with
+  | h0 => simp
+  | hadd _ _ ih₁ ih₂ => simp [ih₁, ih₂]
+  | hsingle D b =>
+    rw [mapSubgroupRingEquiv_single, LeftCosetModule.deg_single, LeftCosetModule.deg_single,
+      HeckeCoset.degree_map_of_inf hHP hΔ hΔP hstab]
+
+/-- Precomposing `LeftCosetModule.deg` with `mapSubgroupRingEquiv` recovers
+`LeftCosetModule.deg`. -/
+@[simp]
+theorem deg_comp_mapSubgroupRingEquiv :
+    (LeftCosetModule.deg Δ' H' R).comp
+        ↑(mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab) =
+      LeftCosetModule.deg Δ H R :=
+  RingHom.ext (deg_mapSubgroupRingEquiv R hHP hΔ hΔP hsurj hstab)
 
 end RingEquiv
 
