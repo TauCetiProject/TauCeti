@@ -28,8 +28,11 @@ The main results are:
 * `Module.End.range_ordinaryProjection_eq_iInf`, `Module.End.ker_ordinaryProjection_eq_iSup`,
   `Module.End.ordinaryProjection_eq_projection`: `e_U` is the projection of Mathlib's Fitting
   decomposition `M = (⨅ n, range (U ^ n)) ⊕ (⨆ n, ker (U ^ n))`;
-* `Module.End.bijOn_range_ordinaryProjection`, `Module.End.invOn_range_ordinaryProjection`:
-  `U` is a bijection of the ordinary part, with inverse `U ^ ((Nat.card M)! - 1)`;
+* `Module.End.range_ordinaryProjection_mem_invtSubmodule`,
+  `Module.End.ker_ordinaryProjection_mem_invtSubmodule`: both parts are `U`-stable;
+* `Module.End.ordinaryEquiv`, `Module.End.bijOn_range_ordinaryProjection`,
+  `Module.End.invOn_range_ordinaryProjection`: `U` restricts to a linear automorphism of the
+  ordinary part, with inverse `U ^ ((Nat.card M)! - 1)`;
 * `Module.End.range_ordinaryProjection_eq_of_isCompl`,
   `Module.End.ker_ordinaryProjection_eq_of_isCompl`: uniqueness of the decomposition into a
   summand on which `U` is surjective and a summand on which `U` is locally nilpotent;
@@ -78,6 +81,18 @@ theorem ordinaryProjection_def (U : Module.End R M) :
 /-- An endomorphism commutes with its ordinary projector. -/
 theorem commute_ordinaryProjection (U : Module.End R M) : Commute U U.ordinaryProjection :=
   (Commute.refl U).pow_right _
+
+/-- The ordinary part is `U`-stable. -/
+theorem range_ordinaryProjection_mem_invtSubmodule (U : Module.End R M) :
+    range U.ordinaryProjection ∈ U.invtSubmodule := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨U x, LinearMap.congr_fun (commute_ordinaryProjection U).eq.symm x⟩
+
+/-- The non-ordinary part is `U`-stable. -/
+theorem ker_ordinaryProjection_mem_invtSubmodule (U : Module.End R M) :
+    ker U.ordinaryProjection ∈ U.invtSubmodule := fun x hx ↦ by
+  rw [Submodule.mem_comap, mem_ker, ← mul_apply_eq_comp, ← (commute_ordinaryProjection U).eq,
+    mul_apply_eq_comp, mem_ker.mp hx, map_zero]
 
 @[simp]
 theorem ordinaryProjection_one : (1 : Module.End R M).ordinaryProjection = 1 :=
@@ -196,6 +211,29 @@ theorem invOn_range_ordinaryProjection :
       (range U.ordinaryProjection) := by
   rw [coe_range_ordinaryProjection, FunLike.coe_pow_eq_iterate]
   exact invOn_iterate_factorial_pred le_rfl
+
+/-- `U` restricted to the ordinary part, as a linear automorphism of it. Its inverse is the
+restriction of `U ^ ((Nat.card M)! - 1)` (`coe_ordinaryEquiv_symm_apply`). -/
+@[expose] noncomputable def ordinaryEquiv (U : Module.End R M) :
+    range U.ordinaryProjection ≃ₗ[R] range U.ordinaryProjection where
+  toLinearMap := U.restrict U.range_ordinaryProjection_mem_invtSubmodule
+  invFun x := ⟨(U ^ ((Nat.card M)! - 1)) x, by
+    obtain ⟨y, hy⟩ := x.2
+    rw [← hy]
+    exact ⟨(U ^ ((Nat.card M)! - 1)) y,
+      LinearMap.congr_fun ((commute_ordinaryProjection U).pow_left _).eq.symm y⟩⟩
+  left_inv x := Subtype.ext (invOn_range_ordinaryProjection.1 x.2)
+  right_inv x := Subtype.ext (invOn_range_ordinaryProjection.2 x.2)
+
+@[simp]
+theorem coe_ordinaryEquiv_apply (x : range U.ordinaryProjection) :
+    (U.ordinaryEquiv x : M) = U x :=
+  rfl
+
+@[simp]
+theorem coe_ordinaryEquiv_symm_apply (x : range U.ordinaryProjection) :
+    (U.ordinaryEquiv.symm x : M) = (U ^ ((Nat.card M)! - 1)) x :=
+  rfl
 
 /-- The ordinary projector is the identity exactly when `U` is invertible. -/
 theorem ordinaryProjection_eq_one_iff : U.ordinaryProjection = 1 ↔ IsUnit U := by
