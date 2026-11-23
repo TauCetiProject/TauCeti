@@ -22,8 +22,8 @@ is needed, so the result applies to nodal and to reducible proper curves.
 
 Coefficient and structure-sheaf cohomology dimensions in every degree are preserved by field
 extension, by flat base change of cohomology
-(`TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback`). This makes degree,
-and hence the subgroup of degree-zero line-bundle classes, compatible with extension of the base
+(`TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback`). In particular,
+pullback preserves and reflects having Euler-characteristic degree zero under extension of the base
 field. Pullback along an isomorphism of schemes over the field preserves degree on every scheme,
 with no quasi-compactness or quasi-separation hypothesis
 (`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_pullback_of_isIso`).
