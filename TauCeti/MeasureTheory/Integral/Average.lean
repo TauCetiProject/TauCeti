@@ -80,6 +80,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   the average of the extended norm over the set.
 * `TauCeti.measure_mul_enorm_setAverage_le`: the measure of a set times the extended norm of the
   average over it is at most the integral of the extended norm over it.
+* `TauCeti.average_mono_ae`: the average of integrable real functions is monotone under an almost
+  everywhere inequality.
 * `TauCeti.setLAverage_enorm_eq_ofReal_setAverage_norm`: the mean of the extended norm of an
   integrable function over a set is the `ENNReal.ofReal` of the mean of its norm.
 * `TauCeti.ofReal_setAverage_norm_rpow`: the same for the power `‖h‖ ^ k`, `k ≥ 0`.
@@ -235,6 +237,20 @@ theorem ofReal_setAverage_norm_rpow {μ : Measure α} {s : Set α} {h : α → E
   rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hk, ofReal_norm]
 
 end ENorm
+
+section Mono
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- The average of integrable real functions is monotone: if `f ≤ g` almost everywhere, then
+`⨍ f ≤ ⨍ g`. This is the Bochner companion of `MeasureTheory.laverage_mono_ae`; applied to
+`μ.restrict s` it compares averages over a set `s`. -/
+theorem average_mono_ae {f g : X → ℝ} (hf : Integrable f μ) (hg : Integrable g μ)
+    (h : f ≤ᵐ[μ] g) : ⨍ x, f x ∂μ ≤ ⨍ x, g x ∂μ := by
+  rw [average_eq, average_eq, smul_eq_mul, smul_eq_mul]
+  exact mul_le_mul_of_nonneg_left (integral_mono_ae hf hg h) (inv_nonneg.2 measureReal_nonneg)
+
+end Mono
 
 section Holder
 

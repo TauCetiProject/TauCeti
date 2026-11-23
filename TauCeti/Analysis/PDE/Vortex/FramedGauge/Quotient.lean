@@ -44,8 +44,15 @@ of `G_(k+1)` carries one to the other (`TauCeti.Vortex.SobolevFieldSpace.orbitRe
 every `x ↦ u · x` is a homeomorphism, the quotient map onto the orbit space is open
 (`MulAction.isOpenQuotientMap_quotientMk`). For `k ≥ 3` the orbit relation is moreover closed
 (`TauCeti.Vortex.SobolevFieldSpace.isClosed_setOf_exists_gaugeTransform_eq`), so the quotient is
-Hausdorff (`TauCeti.Vortex.SobolevFieldSpace.t2Space_quotient`). The slice theorem, which would
-give the quotient a manifold structure near the vortices, is not treated here.
+Hausdorff (`TauCeti.Vortex.SobolevFieldSpace.t2Space_quotient`).
+
+**The vortex orbits.** For `k ≥ 3` the gauges of `G_(k+1)` are `C²` and the fields of `A_m^k` are
+`C¹`, so the vortex equation is gauge invariant
+(`TauCeti.Vortex.SobolevFieldSpace.equation_smul_eq_zero_iff`). The orbits of vortices therefore
+form a subset of the quotient, the Sobolev moduli space of framed vortices
+(`TauCeti.Vortex.SobolevFieldSpace.vortexModuli`), which contains the orbit of a field exactly
+when the field is a vortex (`TauCeti.Vortex.SobolevFieldSpace.mk_mem_vortexModuli_iff`). Its
+charts, from the slice theorem, are in `TauCeti.Analysis.PDE.Vortex.FramedGauge.OrbitChart`.
 
 ## Main results
 
@@ -56,6 +63,8 @@ give the quotient a manifold structure near the vortices, is not treated here.
 * `TauCeti.Vortex.SobolevFieldSpace.instContinuousSMul`: the action is jointly continuous.
 * `TauCeti.Vortex.SobolevFieldSpace.t2Space_quotient`: for `k ≥ 3`, `A_m^k / G_(k+1)` is
   Hausdorff.
+* `TauCeti.Vortex.SobolevFieldSpace.vortexModuli`: the vortex orbits in `A_m^k / G_(k+1)`, with
+  `TauCeti.Vortex.SobolevFieldSpace.mk_mem_vortexModuli_iff` for `k ≥ 3`.
 
 ## References
 
@@ -383,6 +392,54 @@ theorem t2Space_quotient (hk : 2 < k) :
   ext p
   simp only [Set.mem_ofPred_eq, Quotient.eq]
   exact orbitRel_iff
+
+/-! ### The vortex orbits -/
+
+/-- **The vortex equation is gauge invariant on `A_m^k`**, for an integer `k ≥ 3`: a field and its
+transform by a gauge of `G_(k+1)` solve the vortex equation at the same points. The gauge is `C²`
+and the field `C¹` by the Sobolev embedding. -/
+theorem equation_smul_eq_zero_iff (hk : 3 ≤ k) (u : SobolevTopologicalGaugeGroup hs)
+    (x : SobolevFieldSpace f m k) (z : ℂ) : equation ⇑(u • x) z = 0 ↔ equation x z = 0 := by
+  have hk' : (3 : ℝ) ≤ k := by exact_mod_cast hk
+  have hx : ContDiff ℝ 1 x :=
+    contDiff_of_mem_framedFieldSpace (by push_cast; linarith) x.continuous x.mem_framedFieldSpace
+  rw [coe_smul, equation_gaugeTransform_eq_zero_iff
+    (contDiff_of_mem_sobolevGaugeGroup (k := 2) (by push_cast; linarith)
+      (toSubgroup hs u).property).contDiffAt
+    fun i ↦ (differentiable_euclidean.1 (hx.differentiable one_ne_zero) i).differentiableAt]
+
+variable (f m hs) in
+/-- **The Sobolev moduli space of framed vortices** in the orbit space `A_m^k / G_(k+1)`: the
+orbits of the continuous fields of `A_m^k` solving the vortex equations (`mem_vortexModuli_iff`).
+For `k ≥ 3` an orbit lies in it exactly when each of its fields is a vortex
+(`mk_mem_vortexModuli_iff`). -/
+def vortexModuli :
+    Set (MulAction.orbitRel.Quotient (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k)) :=
+  Quotient.mk _ '' {x | ∀ z, equation x z = 0}
+
+/-- An orbit lies in the vortex moduli space exactly when it is the orbit of a continuous field of
+`A_m^k` solving the vortex equations. -/
+theorem mem_vortexModuli_iff
+    {q : MulAction.orbitRel.Quotient (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k)} :
+    q ∈ vortexModuli f m hs ↔ ∃ x : SobolevFieldSpace f m k, (∀ z, equation x z = 0) ∧
+      Quotient.mk _ x = q :=
+  Iff.rfl
+
+/-- The orbit of a continuous vortex of `A_m^k` lies in the vortex moduli space. -/
+theorem mk_mem_vortexModuli {x : SobolevFieldSpace f m k} (h : ∀ z, equation x z = 0) :
+    Quotient.mk _ x ∈ vortexModuli f m hs :=
+  mem_vortexModuli_iff.2 ⟨x, h, rfl⟩
+
+/-- For `k ≥ 3`, the orbit of a continuous field of `A_m^k` lies in the vortex moduli space exactly
+when the field solves the vortex equations. -/
+@[simp]
+theorem mk_mem_vortexModuli_iff (hk : 3 ≤ k) {x : SobolevFieldSpace f m k} :
+    Quotient.mk _ x ∈ vortexModuli f m hs ↔ ∀ z, equation x z = 0 := by
+  refine ⟨?_, mk_mem_vortexModuli⟩
+  rintro ⟨y, hy, hyx⟩
+  obtain ⟨u, rfl⟩ :=
+    MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact hyx.symm))
+  exact fun z ↦ (equation_smul_eq_zero_iff hk u y z).2 (hy z)
 
 end SobolevFieldSpace
 
