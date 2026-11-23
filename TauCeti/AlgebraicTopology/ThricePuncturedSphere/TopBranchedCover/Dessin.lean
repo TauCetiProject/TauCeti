@@ -17,7 +17,7 @@ automorphism group of the bipartite ribbon graph of its monodromy triple.
 
 public noncomputable section
 
-open Equiv Equiv.Perm Function
+open Equiv Equiv.Perm
 
 namespace TauCeti.TopBranchedCover
 

@@ -13,11 +13,8 @@ public import TauCeti.Combinatorics.PermutationTriple.Regular
 /-!
 # Invariants of isomorphism classes of permutation triples
 
-Simultaneous relabeling of the sheets preserves the cycle partitions, cycle counts, Euler
-characteristic, combinatorial genus, automorphism-group order, and regularity of a permutation
-triple. This file descends each invariant to `TauCeti.PermutationTriple.IsoClass` and restricts
-them along `TauCeti.ConnectedIsoClass.forget` to `TauCeti.ConnectedIsoClass`, where `χ ≤ 2`,
-`2 - 2 g = χ`, `|Aut| ∣ n`, and regularity is equivalent to `|Aut| = n`.
+Descends cycle partitions, cycle counts, Euler characteristic, genus, automorphism-group order, and
+regularity to `TauCeti.PermutationTriple.IsoClass` and `TauCeti.ConnectedIsoClass`.
 -/
 
 open Equiv
@@ -42,8 +39,8 @@ def unorderedCycleData : IsoClass n → Multiset (Multiset ℕ) :=
   lift PermutationTriple.unorderedCycleData fun _ _ => unorderedCycleData_eq_of_equivalent
 
 /-- Evaluating `unorderedCycleData` on `mk t` recovers `t.unorderedCycleData`. -/
-@[simp] theorem unorderedCycleData_mk : (mk t).unorderedCycleData = t.unorderedCycleData :=
-  lift_mk _ _ t
+@[simp] theorem unorderedCycleData_mk :
+    (mk t).unorderedCycleData = t.unorderedCycleData := lift_mk _ _ t
 
 /-- The unordered cycle data of `c` is the three-element multiset of entries of `c.cycleData`. -/
 theorem unorderedCycleData_def :
@@ -96,7 +93,8 @@ theorem genus_def : c.genus = ((2 - c.eulerChar) / 2).toNat := by
 
 /-- The cardinality of the automorphism group of any representative of an isomorphism class. -/
 noncomputable def natCardAutomorphismGroup : IsoClass n → ℕ :=
-  lift (fun t => Nat.card t.automorphismGroup) fun _ _ => natCard_automorphismGroup_eq_of_equivalent
+  lift (fun t => Nat.card t.automorphismGroup) fun _ _ =>
+    natCard_automorphismGroup_eq_of_equivalent
 
 /-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.automorphismGroup`. -/
 @[simp] theorem natCardAutomorphismGroup_mk :
@@ -136,8 +134,8 @@ def unorderedCycleData : Multiset (Multiset ℕ) := c.forget.unorderedCycleData
   simp [unorderedCycleData]
 
 /-- Forgetting connectedness preserves `unorderedCycleData`. -/
-@[simp] theorem unorderedCycleData_forget : c.forget.unorderedCycleData = c.unorderedCycleData :=
-  (rfl)
+@[simp] theorem unorderedCycleData_forget :
+    c.forget.unorderedCycleData = c.unorderedCycleData := (rfl)
 
 /-- The ordered numbers of cycles `(c₀, c₁, c∞)` of a connected class, fixed points included. -/
 noncomputable def cycleCounts : ℕ × ℕ × ℕ := c.forget.cycleCounts
@@ -154,9 +152,8 @@ theorem cycleCounts_eq_card_cycleData :
   c.forget.cycleCounts_eq_card_cycleData
 
 /-- Each of the three full cycle partitions of a connected isomorphism class sums to `n`. -/
-theorem sum_cycleData :
-    (c.cycleData.1.sum, c.cycleData.2.1.sum, c.cycleData.2.2.sum) = (n, n, n) :=
-  c.forget.sum_cycleData
+theorem sum_cycleData : (c.cycleData.1.sum, c.cycleData.2.1.sum, c.cycleData.2.2.sum) =
+    (n, n, n) := c.forget.sum_cycleData
 
 /-- The combinatorial Euler characteristic `c₀ + c₁ + c∞ - n` of a connected isomorphism class. -/
 noncomputable def eulerChar : ℤ := c.forget.eulerChar
@@ -207,8 +204,9 @@ theorem two_sub_two_mul_genus : 2 - 2 * (c.genus : ℤ) = c.eulerChar := by
 noncomputable def natCardAutomorphismGroup : ℕ := c.forget.natCardAutomorphismGroup
 
 /-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.val.automorphismGroup`. -/
-@[simp] theorem natCardAutomorphismGroup_mk : (mk t).natCardAutomorphismGroup =
-    Nat.card t.val.automorphismGroup := by simp [natCardAutomorphismGroup]
+@[simp] theorem natCardAutomorphismGroup_mk :
+    (mk t).natCardAutomorphismGroup = Nat.card t.val.automorphismGroup := by
+  simp [natCardAutomorphismGroup]
 
 /-- Forgetting connectedness preserves `natCardAutomorphismGroup`. -/
 @[simp] theorem natCardAutomorphismGroup_forget :

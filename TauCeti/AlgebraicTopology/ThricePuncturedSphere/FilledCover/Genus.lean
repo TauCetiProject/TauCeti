@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.AnalyticBelyiPair
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Genus
 public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Genus
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Sphere
 
@@ -13,8 +14,8 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Sphere
 # Genus and Riemann–Hurwitz for three-point covers
 
 Reconciles `eulerChar` and `genus` of `AnalyticBelyiPair.{0}`, `ConnectedCover.toAnalyticBelyiPair`,
-and `TopBranchedCover.{0} n` with their monodromy triples, proves the genus-form Riemann–Hurwitz
-formulas, and derives `TopBranchedCover.instFiniteCWType`.
+and `TopBranchedCover.{0} n` with their monodromy triples, and derives Riemann–Hurwitz and
+`TopBranchedCover.instFiniteCWType`.
 -/
 
 public noncomputable section
@@ -25,11 +26,7 @@ namespace TauCeti
 
 open ThricePuncturedSphere RiemannSurface
 
-universe u
-
 namespace AnalyticBelyiPair
-
-section TypeZero
 
 variable (P : AnalyticBelyiPair.{0}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
 
@@ -57,12 +54,9 @@ theorem two_mul_genus_X_sub_two_eq :
     P.β.eulerChar_eq_two_mul_degree_sub_ramificationDegree
 
 /-- **Riemann–Hurwitz in genus form**, with the target genus `genus (OnePoint ℂ)` written out. -/
-theorem two_mul_genus_X_sub_two_eq_degree_mul_genus_onePoint :
-    2 * (genus P.X : ℤ) - 2 =
-      (degree P.β : ℤ) * (2 * (genus (OnePoint ℂ) : ℤ) - 2) + ramificationDegree P.β := by
+theorem two_mul_genus_X_sub_two_eq_degree_mul_genus_onePoint : 2 * (genus P.X : ℤ) - 2 =
+    (degree P.β : ℤ) * (2 * (genus (OnePoint ℂ) : ℤ) - 2) + ramificationDegree P.β := by
   rw [genus_onePoint_complex]; linear_combination P.two_mul_genus_X_sub_two_eq
-
-end TypeZero
 
 end AnalyticBelyiPair
 
@@ -101,28 +95,21 @@ end ConnectedCover
 
 namespace TopBranchedCover
 
+variable {n : ℕ}
+
 /-- Every topological branched cover `X : TopBranchedCover.{0} n` has finite CW type. -/
-instance instFiniteCWType {n : ℕ} (X : TopBranchedCover.{0} n) : FiniteCWType X.Z :=
+instance instFiniteCWType (X : TopBranchedCover.{0} n) : FiniteCWType X.Z :=
   X.exists_iso_toTopBranchedCover.elim fun P ⟨_, ⟨ι⟩⟩ ↦
     Homeomorph.finiteCWType (ι.toHomeomorph.trans (Homeomorph.refl P.X))
 
-/-- Isomorphic topological branched covers have the same Euler characteristic. -/
-theorem Iso.eulerChar_eq {n : ℕ} {X Y : TopBranchedCover.{u} n} [FiniteCWType X.Z]
-    [FiniteCWType Y.Z] (ι : X.Iso Y) : eulerChar X.Z = eulerChar Y.Z := ι.toHomeomorph.eulerChar_eq
-
-/-- Isomorphic topological branched covers have the same topological genus. -/
-theorem Iso.genus_eq {n : ℕ} {X Y : TopBranchedCover.{u} n} [FiniteCWType X.Z] [FiniteCWType Y.Z]
-    (ι : X.Iso Y) : genus X.Z = genus Y.Z := ι.toHomeomorph.toHomotopyEquiv.genus_eq
-
 /-- **The Euler characteristic of a topological branched cover is that of its monodromy triple.** -/
-theorem eulerChar_Z_eq_eulerChar_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
+theorem eulerChar_Z_eq_eulerChar_monodromyTriple (X : TopBranchedCover.{0} n)
     (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
     eulerChar X.Z = (X.isCoveringMap_restrict.monodromyTriple ν).eulerChar := by
   obtain ⟨P, h, ⟨ι⟩⟩ := X.exists_iso_toTopBranchedCover
   obtain ⟨νP⟩ := P.nonempty_restrict_preimage_singleton_equiv basePt
   obtain ⟨νT⟩ := (P.toTopBranchedCover h).nonempty_restrict_preimage_singleton_equiv basePt
-  rw [(ι.toHomeomorph.trans
-      (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X)).eulerChar_eq,
+  rw [(ι.toHomeomorph.trans (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X)).eulerChar_eq,
     P.eulerChar_X_eq_eulerChar_monodromyTriple (νP.trans (finCongr h))]
   exact PermutationTriple.eulerChar_eq_of_equivalent <| PermutationTriple.IsoClass.mk_eq_mk_iff.1 <|
     (P.isoClass_monodromyTriple_toTopBranchedCover h _ νT).symm.trans <|
@@ -130,43 +117,43 @@ theorem eulerChar_Z_eq_eulerChar_monodromyTriple {n : ℕ} (X : TopBranchedCover
         (P.toTopBranchedCover h).isCoveringMap_restrict νT ι.restrict (funext ι.restrict_restrict)
 
 /-- **The topological genus of a topological branched cover is that of its monodromy triple.** -/
-theorem genus_Z_eq_genus_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
+theorem genus_Z_eq_genus_monodromyTriple (X : TopBranchedCover.{0} n)
     (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
     genus X.Z = (X.isCoveringMap_restrict.monodromyTriple ν).genus := by
   rw [genus_def, PermutationTriple.genus_def, X.eulerChar_Z_eq_eulerChar_monodromyTriple ν]
 
 /-- Every `X : TopBranchedCover.{0} n` satisfies `eulerChar X.Z = 2 - 2 * genus X.Z`. -/
-theorem eulerChar_Z_eq_two_sub_two_mul_genus {n : ℕ} (X : TopBranchedCover.{0} n) :
+theorem eulerChar_Z_eq_two_sub_two_mul_genus (X : TopBranchedCover.{0} n) :
     eulerChar X.Z = 2 - 2 * (genus X.Z : ℤ) := by
   obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
   simp [X.eulerChar_Z_eq_eulerChar_monodromyTriple ν, X.genus_Z_eq_genus_monodromyTriple ν,
     (X.isCoveringMap_restrict.isConnected_monodromyTriple ν).two_sub_two_mul_genus]
 
 /-- The Euler characteristic of an isomorphism class of topological branched covers. -/
-def IsoClass.eulerChar {n : ℕ} : IsoClass.{0} n → ℤ :=
+def IsoClass.eulerChar : IsoClass.{0} n → ℤ :=
   IsoClass.lift (fun X ↦ TauCeti.eulerChar X.Z) fun _ _ ⟨ι⟩ ↦ ι.eulerChar_eq
 
 /-- On the class of `X`, `IsoClass.eulerChar` evaluates to `eulerChar X.Z`. -/
-@[simp] theorem IsoClass.eulerChar_mk {n : ℕ} (X : TopBranchedCover.{0} n) :
+@[simp] theorem IsoClass.eulerChar_mk (X : TopBranchedCover.{0} n) :
     (IsoClass.mk X).eulerChar = TauCeti.eulerChar X.Z := IsoClass.lift_mk _ _ X
 
 /-- The topological genus of an isomorphism class of topological branched covers. -/
-def IsoClass.genus {n : ℕ} : IsoClass.{0} n → ℕ :=
+def IsoClass.genus : IsoClass.{0} n → ℕ :=
   IsoClass.lift (fun X ↦ RiemannSurface.genus X.Z) fun _ _ ⟨ι⟩ ↦ ι.genus_eq
 
 /-- On the class of `X`, `IsoClass.genus` evaluates to `genus X.Z`. -/
-@[simp] theorem IsoClass.genus_mk {n : ℕ} (X : TopBranchedCover.{0} n) :
+@[simp] theorem IsoClass.genus_mk (X : TopBranchedCover.{0} n) :
     (IsoClass.mk X).genus = RiemannSurface.genus X.Z := IsoClass.lift_mk _ _ X
 
 /-- `IsoClass.equivConnectedIsoClass` preserves the Euler characteristic. -/
-@[simp] theorem IsoClass.eulerChar_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
+@[simp] theorem IsoClass.eulerChar_equivConnectedIsoClass (c : IsoClass.{0} n) :
     (equivConnectedIsoClass n c).eulerChar = c.eulerChar := by
   obtain ⟨X, rfl⟩ := IsoClass.mk_surjective c
   exact (X.nonempty_restrict_preimage_singleton_equiv basePt).elim fun ν ↦ by
     simp [equivConnectedIsoClass_mk X ν, X.eulerChar_Z_eq_eulerChar_monodromyTriple ν]
 
 /-- `IsoClass.equivConnectedIsoClass` preserves the genus. -/
-@[simp] theorem IsoClass.genus_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
+@[simp] theorem IsoClass.genus_equivConnectedIsoClass (c : IsoClass.{0} n) :
     (equivConnectedIsoClass n c).genus = c.genus := by
   obtain ⟨X, rfl⟩ := IsoClass.mk_surjective c
   exact (X.nonempty_restrict_preimage_singleton_equiv basePt).elim fun ν ↦ by
@@ -176,35 +163,37 @@ end TopBranchedCover
 
 namespace AnalyticBelyiPair
 
+variable {n : ℕ}
+
 /-- Forgetting the complex structure preserves the Euler characteristic. -/
-@[simp] theorem eulerChar_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
-    (h : degree P.β = n) : eulerChar (P.toTopBranchedCover h).Z = eulerChar P.X :=
+@[simp] theorem eulerChar_toTopBranchedCover (P : AnalyticBelyiPair.{0}) (h : degree P.β = n) :
+    eulerChar (P.toTopBranchedCover h).Z = eulerChar P.X :=
   (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).eulerChar_eq
 
 /-- Forgetting the complex structure preserves the topological genus. -/
-@[simp] theorem genus_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
-    (h : degree P.β = n) : genus (P.toTopBranchedCover h).Z = genus P.X :=
+@[simp] theorem genus_toTopBranchedCover (P : AnalyticBelyiPair.{0}) (h : degree P.β = n) :
+    genus (P.toTopBranchedCover h).Z = genus P.X :=
   (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).toHomotopyEquiv.genus_eq
 
 /-- Passing to the underlying topological branched cover preserves the Euler characteristic. -/
-@[simp] theorem eulerChar_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
-    (toTopBranchedCoverIsoClass n P).eulerChar = isoClassEulerChar n P :=
-  Quotient.inductionOn P fun _ ↦ by simp
+@[simp] theorem eulerChar_toTopBranchedCoverIsoClass (P : Quotient (isoSetoid.{0} n)) :
+    (toTopBranchedCoverIsoClass n P).eulerChar =
+      isoClassEulerChar n P := Quotient.inductionOn P fun _ ↦ by simp
 
 /-- Passing to the underlying topological branched cover preserves the topological genus. -/
-@[simp] theorem genus_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
-    (toTopBranchedCoverIsoClass n P).genus = isoClassGenus n P :=
-  Quotient.inductionOn P fun _ ↦ by simp
+@[simp] theorem genus_toTopBranchedCoverIsoClass (P : Quotient (isoSetoid.{0} n)) :
+    (toTopBranchedCoverIsoClass n P).genus =
+      isoClassGenus n P := Quotient.inductionOn P fun _ ↦ by simp
 
 /-- The equivalence `isoClassEquivConnectedIsoClass` preserves the Euler characteristic. -/
-@[simp] theorem eulerChar_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
-    (isoClassEquivConnectedIsoClass n P).eulerChar = isoClassEulerChar n P := by
-  simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
+@[simp] theorem eulerChar_isoClassEquivConnectedIsoClass (P : Quotient (isoSetoid.{0} n)) :
+    (isoClassEquivConnectedIsoClass n P).eulerChar =
+      isoClassEulerChar n P := by simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
 
 /-- The equivalence `isoClassEquivConnectedIsoClass` preserves the genus. -/
-@[simp] theorem genus_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
-    (isoClassEquivConnectedIsoClass n P).genus = isoClassGenus n P := by
-  simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
+@[simp] theorem genus_isoClassEquivConnectedIsoClass (P : Quotient (isoSetoid.{0} n)) :
+    (isoClassEquivConnectedIsoClass n P).genus =
+      isoClassGenus n P := by simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
 
 end AnalyticBelyiPair
 

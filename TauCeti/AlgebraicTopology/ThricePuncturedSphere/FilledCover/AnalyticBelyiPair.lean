@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Basic
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Invariants
 public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Basic
 
-import TauCeti.Analysis.Complex.RiemannSurface.Branch.FiberCount
+import TauCeti.Analysis.Complex.RiemannSurface.Branch.CycleType
 
 /-!
 # The filled cover as an analytic Belyi pair
@@ -314,11 +314,10 @@ theorem isoClassEquivConnectedCoverClass_symm_apply {n : ℕ}
 
 /-- **Analytic Belyi pairs and topological branched covers have equivalent isomorphism classes.** -/
 def isoClassEquivTopBranchedCoverIsoClass (n : ℕ) :
-    Quotient (isoSetoid.{0} n) ≃ TopBranchedCover.IsoClass.{0} n where
-  toFun := toTopBranchedCoverIsoClass n
-  invFun c := c.restrict.toAnalyticBelyiPair
-  left_inv P := (isoClassEquivConnectedCoverClass n).left_inv P
-  right_inv c := TopBranchedCover.IsoClass.restrict_injective <| by simp
+    Quotient (isoSetoid.{0} n) ≃ TopBranchedCover.IsoClass.{0} n :=
+  ⟨toTopBranchedCoverIsoClass n, (·.restrict.toAnalyticBelyiPair),
+    (isoClassEquivConnectedCoverClass n).left_inv,
+    fun _ ↦ TopBranchedCover.IsoClass.restrict_injective <| by simp⟩
 
 /-- Applying `isoClassEquivTopBranchedCoverIsoClass` forgets the complex structure. -/
 @[simp] theorem isoClassEquivTopBranchedCoverIsoClass_apply {n : ℕ}
@@ -376,13 +375,11 @@ theorem isoClassEquivConnectedIsoClass_mk {n : ℕ}
 `TauCeti.AnalyticBelyiPair.toIsoClass` of a class of pairs. -/
 @[simp]
 theorem forget_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
-    (isoClassEquivConnectedIsoClass n P).forget = toIsoClass n P := by
-  induction P using Quotient.inductionOn with
-  | h P =>
+    (isoClassEquivConnectedIsoClass n P).forget = toIsoClass n P :=
+  Quotient.inductionOn P fun P ↦ by
     obtain ⟨ν⟩ := P.val.nonempty_restrict_preimage_singleton_equiv basePt
     rw [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.property)),
-        ConnectedIsoClass.forget_mk,
-      toIsoClass_mk P (ν.trans (finCongr P.property))]
+      ConnectedIsoClass.forget_mk, toIsoClass_mk P (ν.trans (finCongr P.property))]
 
 /-- **An analytic Belyi pair is determined up to isomorphism by its permutation triple.** -/
 theorem toIsoClass_injective (n : ℕ) : Injective (toIsoClass.{0} n) := fun P Q h ↦
@@ -505,8 +502,7 @@ theorem monodromyTriple_σ0_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
     (P.isCoveringMap_restrict.monodromyTriple ν).σ0 = 1 ↔
       ((0 : ℂ) : OnePoint ℂ) ∉ P.β.branchValues := by
   rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_zero ν,
-    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
-  simp
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]; simp
 
 /-- **A Belyi map is unramified over `1` exactly when `σ1` is the identity**, in the monodromy
 triple of the pair for any numbering of its fibre over `1/2`. -/
@@ -515,8 +511,7 @@ theorem monodromyTriple_σ1_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
     (P.isCoveringMap_restrict.monodromyTriple ν).σ1 = 1 ↔
       ((1 : ℂ) : OnePoint ℂ) ∉ P.β.branchValues := by
   rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_one ν,
-    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
-  simp
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]; simp
 
 /-- **A Belyi map is unramified over `∞` exactly when `σinf` is the identity**, in the monodromy
 triple of the pair for any numbering of its fibre over `1/2`. -/
@@ -525,79 +520,27 @@ theorem monodromyTriple_σinf_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
     (P.isCoveringMap_restrict.monodromyTriple ν).σinf = 1 ↔
       (∞ : OnePoint ℂ) ∉ P.β.branchValues := by
   rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_inf ν,
-    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
-  simp
-
-section MarkedFibers
-
-variable (P : AnalyticBelyiPair.{0}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
-
-/-- The number of points of `P.X` over `0` is `orbitCount σ0` of the monodromy triple. -/
-theorem card_finite_fiber_zero : (P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.card =
-    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 :=
-  P.β.card_finite_fiber_eq_orbitCount (P.map_localMultiplicity_fiber_zero ν)
-
-/-- The number of points of `P.X` over `1` is `orbitCount σ1` of the monodromy triple. -/
-theorem card_finite_fiber_one : (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.card =
-    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 :=
-  P.β.card_finite_fiber_eq_orbitCount (P.map_localMultiplicity_fiber_one ν)
-
-/-- The number of points of `P.X` over `∞` is `orbitCount σinf` of the monodromy triple. -/
-theorem card_finite_fiber_inf : (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.card =
-    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf :=
-  P.β.card_finite_fiber_eq_orbitCount (P.map_localMultiplicity_fiber_inf ν)
-
-/-- The `Set.ncard` of the fibre of `P.β` over `0` is `orbitCount σ0`. -/
-theorem ncard_preimage_singleton_zero : (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}).ncard =
-    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 :=
-  P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_zero ν)
-
-/-- The `Set.ncard` of the fibre of `P.β` over `1` is `orbitCount σ1`. -/
-theorem ncard_preimage_singleton_one : (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}).ncard =
-    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 :=
-  P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_one ν)
-
-/-- The `Set.ncard` of the fibre of `P.β` over `∞` is `orbitCount σinf`. -/
-theorem ncard_preimage_singleton_inf : (P.β ⁻¹' {(∞ : OnePoint ℂ)}).ncard =
-    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf :=
-  P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_inf ν)
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]; simp
 
 /-- `(P.β ⁻¹' marked).ncard` equals `orbitCount σ0 + orbitCount σ1 + orbitCount σinf`. -/
-theorem ncard_preimage_marked_eq_orbitCount : (P.β ⁻¹' marked).ncard =
+theorem ncard_preimage_marked_eq_orbitCount (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) : (P.β ⁻¹' marked).ncard =
     orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 +
       orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 +
       orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf := by
-  rw [P.ncard_preimage_marked, P.ncard_preimage_singleton_zero ν,
-    P.ncard_preimage_singleton_one ν, P.ncard_preimage_singleton_inf ν]
-
-/-- Over `0`, the local ramification indices `e_x - 1` sum to `n - orbitCount σ0`. -/
-theorem sum_localMultiplicity_sub_one_fiber_zero :
-    ∑ x ∈ (P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1) =
-      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 := by
-  simpa using P.β.sum_localMultiplicity_sub_one_fiber_eq (P.map_localMultiplicity_fiber_zero ν)
-
-/-- Over `1`, the local ramification indices `e_x - 1` sum to `n - orbitCount σ1`. -/
-theorem sum_localMultiplicity_sub_one_fiber_one :
-    ∑ x ∈ (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1) =
-      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 := by
-  simpa using P.β.sum_localMultiplicity_sub_one_fiber_eq (P.map_localMultiplicity_fiber_one ν)
-
-/-- Over `∞`, the local ramification indices `e_x - 1` sum to `n - orbitCount σinf`. -/
-theorem sum_localMultiplicity_sub_one_fiber_inf :
-    ∑ x ∈ (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1) =
-      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf := by
-  simpa using P.β.sum_localMultiplicity_sub_one_fiber_eq (P.map_localMultiplicity_fiber_inf ν)
+  rw [P.ncard_preimage_marked,
+    P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_zero ν),
+    P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_one ν),
+    P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_inf ν)]
 
 /-- **Total ramification from monodromy**: `ramificationDegree P.β = 2 * degree P.β - χ(t)`. -/
-theorem natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar :
-    (ramificationDegree P.β : ℤ) =
-      2 * (degree P.β : ℤ) - (P.isCoveringMap_restrict.monodromyTriple ν).eulerChar := by
+theorem natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar (P : AnalyticBelyiPair.{0})
+    {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) : (ramificationDegree P.β : ℤ) =
+    2 * (degree P.β : ℤ) - (P.isCoveringMap_restrict.monodromyTriple ν).eulerChar := by
   have := P.ncard_preimage_marked_add_ramificationDegree_β
   have := P.ncard_preimage_marked_eq_orbitCount ν
   have := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
   rw [PermutationTriple.eulerChar_def]; omega
-
-end MarkedFibers
 
 end AnalyticBelyiPair
 

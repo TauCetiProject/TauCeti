@@ -39,8 +39,8 @@ theorem isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph (n
     (isoClassEquivTopBranchedCoverIsoClass n).trans
         (TopBranchedCover.IsoClass.equivConnectedRibbonGraph.{u} n) =
       isoClassEquivConnectedRibbonGraph.{u} n := by
-  ext P; apply (connectedIsoClassEquiv.{u} n).injective
-  simp [isoClassEquivConnectedRibbonGraph]
+  ext _
+  exact (connectedIsoClassEquiv.{u} n).injective (by simp [isoClassEquivConnectedRibbonGraph])
 
 /-- Pointwise form of `isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph`. -/
 @[simp] theorem equivConnectedRibbonGraph_toTopBranchedCoverIsoClass {n : ℕ}
@@ -50,7 +50,7 @@ theorem isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph (n
   simpa using Equiv.congr_fun
     (isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph.{u} n) P
 
-/-- Composing `isoClassEquivConnectedRibbonGraph` with `connectedIsoClassEquiv` recovers
+/-- `connectedIsoClassEquiv` after `isoClassEquivConnectedRibbonGraph` is
 `isoClassEquivConnectedIsoClass`. -/
 theorem isoClassEquivConnectedRibbonGraph_trans_connectedIsoClassEquiv (n : ℕ) :
     (isoClassEquivConnectedRibbonGraph.{u} n).trans (connectedIsoClassEquiv.{u} n) =
@@ -86,8 +86,8 @@ theorem exists_iso_of_connectedRibbonGraph {n : ℕ} (Γ : BipartiteRibbonGraph.
       ∀ (Q : AnalyticBelyiPair.{0}) (νQ : Q.restrict ⁻¹' {basePt} ≃ Fin n),
         Nonempty ((Q.isCoveringMap_restrict.monodromyTriple νQ).ribbonGraph.Iso Γ) →
           Nonempty (Q.Iso P) := by
-  obtain ⟨⟨P, hdeg⟩, hP⟩ := Quotient.exists_rep ((isoClassEquivConnectedRibbonGraph.{u} n).symm
-    (Quotient.mk (connectedIsoSetoid.{u} n) ⟨⟨Γ, hcard⟩, hconn⟩))
+  obtain ⟨⟨P, hdeg⟩, hP⟩ := Quotient.exists_rep
+    ((isoClassEquivConnectedRibbonGraph.{u} n).symm ⟦⟨⟨Γ, hcard⟩, hconn⟩⟧)
   have hg : isoClassEquivConnectedRibbonGraph.{u} n ⟦⟨P, hdeg⟩⟧ = ⟦⟨⟨Γ, hcard⟩, hconn⟩⟧ :=
     (congrArg (isoClassEquivConnectedRibbonGraph.{u} n) hP).trans (Equiv.apply_symm_apply _ _)
   refine ⟨P, hdeg, fun ν ↦ ?_, fun Q νQ ⟨φ⟩ ↦ ?_⟩
@@ -117,8 +117,7 @@ theorem nonempty_iso_iff_nonempty_ribbonGraph_iso {P Q : AnalyticBelyiPair.{0}} 
 
 variable {n : ℕ} (P : Quotient (isoSetoid.{0} n))
 
-/-- `isoClassEquivConnectedRibbonGraph` matches `isoClassRamificationPartitions` with
-`connectedCycleData`. -/
+/-- `isoClassEquivConnectedRibbonGraph` matches ramification with `connectedCycleData`. -/
 @[simp] theorem connectedCycleData_isoClassEquivConnectedRibbonGraph :
     connectedCycleData n (isoClassEquivConnectedRibbonGraph.{u} n P) =
       isoClassRamificationPartitions n P := by simp [← cycleData_connectedIsoClassEquiv]

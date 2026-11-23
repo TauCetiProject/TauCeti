@@ -204,8 +204,7 @@ theorem whiteDegree_def (w : Γ.W) :
     Γ.whiteDegree w = Fintype.card {e : Γ.E // Γ.whiteEnd e = w} := (rfl)
 
 /-- The degree of a face of `Γ`: the number of edges in that orbit of `facePerm`. -/
-def faceDegree (f : Γ.Face) : ℕ :=
-  Fintype.card {e : Γ.E // (Quotient.mk'' e : Γ.Face) = f}
+def faceDegree (f : Γ.Face) : ℕ := Fintype.card {e : Γ.E // (Quotient.mk'' e : Γ.Face) = f}
 
 /-- The degree of a face is the number of edges belonging to that face orbit. -/
 theorem faceDegree_def (f : Γ.Face) :
@@ -710,12 +709,9 @@ variable {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}} (φ : �
 instance : Finite (Γ.Iso Δ) := Finite.of_injective Iso.edge fun _ _ ↦ Iso.ext
 
 /-- Conjugation by an isomorphism of ribbon graphs identifies their automorphism groups. -/
-def Iso.autMulEquiv : Γ.Aut ≃* Δ.Aut where
-  toFun f := φ.symm.trans (f.trans φ)
-  invFun g := φ.trans (g.trans φ.symm)
-  left_inv f := by ext e; simp
-  right_inv g := by ext e; simp
-  map_mul' f₁ f₂ := by ext e; simp
+def Iso.autMulEquiv : Γ.Aut ≃* Δ.Aut :=
+  ⟨⟨fun f ↦ φ.symm.trans (f.trans φ), fun g ↦ φ.trans (g.trans φ.symm),
+    fun _ ↦ by ext; simp, fun _ ↦ by ext; simp⟩, fun _ _ ↦ by ext; simp⟩
 
 /-- Conjugating an automorphism by an isomorphism conjugates its edge permutation. -/
 @[simp] theorem Iso.autMulEquiv_apply_edge (f : Γ.Aut) :
@@ -739,9 +735,7 @@ instance : SMul Γ.Aut Γ.E := ⟨fun f e ↦ f.edge e⟩
     f • e = f.edge e := (rfl)
 
 /-- The action of `Γ.Aut` on `Γ.E` is a multiplicative group action. -/
-instance : MulAction Γ.Aut Γ.E where
-  one_smul _ := by rw [Aut.smul_def, Aut.one_edge]; rfl
-  mul_smul _ _ _ := by rw [Aut.smul_def, Aut.smul_def, Aut.smul_def, Aut.mul_edge]; rfl
+instance : MulAction Γ.Aut Γ.E := { one_smul _ := by simp, mul_smul _ _ _ := by simp }
 
 /-- A ribbon graph is *regular* when it is connected and `Γ.Aut` acts transitively on `Γ.E`. -/
 def IsRegular : Prop := Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E
@@ -751,8 +745,8 @@ theorem isRegular_iff {Γ : BipartiteRibbonGraph.{u}} :
     Γ.IsRegular ↔ Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E := Iff.rfl
 
 /-- Every regular bipartite ribbon graph is connected. -/
-theorem IsRegular.isConnected {Γ : BipartiteRibbonGraph.{u}} (hΓ : Γ.IsRegular) :
-    Γ.IsConnected := hΓ.1
+theorem IsRegular.isConnected {Γ : BipartiteRibbonGraph.{u}} (hΓ : Γ.IsRegular) : Γ.IsConnected :=
+  hΓ.1
 
 /-- Regularity of bipartite ribbon graphs is invariant under isomorphism. -/
 theorem Iso.isRegular_iff {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}
@@ -760,6 +754,26 @@ theorem Iso.isRegular_iff {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonG
   let ψ : Γ.E →ₑ[φ.autMulEquiv] Δ.E := ⟨φ.edge, fun f e ↦ by simp⟩
   and_congr φ.isConnected_iff
     (MulAction.isPretransitive_congr (f := ψ) φ.autMulEquiv.surjective φ.edge.bijective)
+
+/-- `Γ` is regular iff it is connected and `Nat.card Γ.Aut = Fintype.card Γ.E`. -/
+theorem isRegular_iff_natCard_aut {Γ : BipartiteRibbonGraph.{u}} :
+    Γ.IsRegular ↔ Γ.IsConnected ∧ Nat.card Γ.Aut = Fintype.card Γ.E := by
+  refine and_congr_right fun hΓ ↦ ?_; obtain ⟨e₀⟩ := hΓ.1
+  have hcomm : ∀ g ∈ Γ.rotationGroup, ∀ (f : Γ.Aut) e, f.edge (g e) = g (f.edge e) := by
+    refine fun g hg f ↦ Subgroup.closure_induction ?_ (fun _ ↦ rfl)
+      (fun x y _ _ hx hy e ↦ by simp [hx, hy]) (fun x _ hx e ↦ x.injective (by simp [← hx])) hg
+    rintro g (rfl | rfl) e; exacts [f.map_rotB e, f.map_rotW e]
+  have hinj : Function.Injective (fun f : Γ.Aut ↦ f • e₀) := fun f g h ↦ Iso.ext <| Equiv.ext
+    fun e ↦ by
+      obtain ⟨⟨r, hr⟩, rfl⟩ := hΓ.2.exists_smul_eq e₀ e
+      exact (hcomm r hr f e₀).trans <| (congrArg r h).trans (hcomm r hr g e₀).symm
+  refine ⟨fun hreg ↦ (Nat.card_congr (Equiv.ofBijective _ ⟨hinj, fun e ↦
+      hreg.exists_smul_eq e₀ e⟩)).trans Nat.card_eq_fintype_card, fun hcard ↦ ⟨fun e₁ e₂ ↦ ?_⟩⟩
+  let _ := Fintype.ofFinite Γ.Aut
+  have hsurj := (Fintype.bijective_iff_injective_and_card (fun f : Γ.Aut ↦ f • e₀)).2
+    ⟨hinj, by rw [← Nat.card_eq_fintype_card, hcard]⟩ |>.2
+  obtain ⟨f₁, rfl⟩ := hsurj e₁; obtain ⟨f₂, rfl⟩ := hsurj e₂
+  exact ⟨f₂ * f₁⁻¹, by rw [mul_smul, inv_smul_smul]⟩
 
 /-! ### Universe lifting -/
 

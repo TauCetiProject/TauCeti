@@ -11,9 +11,8 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.B
 /-!
 # Deck groups of topological branched covers of the sphere
 
-For `X : TopBranchedCover.{u} n`, restricting deck transformations to `X.restrict` over `ℂ ∖ {0, 1}`
-and composing with `IsCoveringMap.deckMulEquivAutomorphismGroup` identifies `deck X.π` with the
-automorphism group of the monodromy triple (`deckMulEquivAutomorphismGroup`) and matches regularity.
+Identifies `deck X.π` with the automorphism group of the monodromy triple of `X.restrict` and
+matches regularity.
 -/
 
 public noncomputable section
@@ -41,11 +40,10 @@ def deckMulEquivDeckRestrict : deck X.π ≃* deck X.restrict where
   invFun ψ := ⟨(Iso.ofRestrict ψ.val fun z ↦ by
       simpa using congrArg toOnePoint (deck.proj_smul ψ z)).toHomeomorph,
     deck.mem_iff.2 (funext (Iso.π_apply _))⟩
-  left_inv φ := Subtype.ext <| congrArg Iso.toHomeomorph
-    (Iso.restrict_injective (Iso.restrict_ofRestrict _ _) :
-      Iso.ofRestrict _ _ = (⟨φ.val, congrFun φ.property⟩ : Iso X X))
-  right_inv ψ := Subtype.ext (Iso.restrict_ofRestrict _ _)
-  map_mul' _ _ := Subtype.ext (Homeomorph.ext fun z ↦ Subtype.ext (by simp))
+  left_inv _ := Subtype.ext <| congrArg Iso.toHomeomorph <|
+    Iso.restrict_injective (Iso.restrict_ofRestrict _ _)
+  right_inv _ := Subtype.ext (Iso.restrict_ofRestrict _ _)
+  map_mul' _ _ := Subtype.ext (Homeomorph.ext fun _ ↦ Subtype.ext (by simp))
 
 /-- On the unbranched part, the restriction of a deck transformation is the deck
 transformation. -/
@@ -56,8 +54,7 @@ transformation. -/
 /-- On the unbranched part, the extension of a deck transformation of the unbranched cover is that
 deck transformation. -/
 @[simp] theorem coe_deckMulEquivDeckRestrict_symm_apply (ψ : deck X.restrict)
-    (z : X.π ⁻¹' range toOnePoint) :
-    (X.deckMulEquivDeckRestrict.symm ψ : X.Z ≃ₜ X.Z) z =
+    (z : X.π ⁻¹' range toOnePoint) : (X.deckMulEquivDeckRestrict.symm ψ : X.Z ≃ₜ X.Z) z =
       ((ψ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z : X.Z) :=
   Iso.ofRestrict_toHomeomorph_apply_val _ _ z
 
@@ -70,8 +67,7 @@ instance instMulActionDeckRestrictFiber (b : ThricePuncturedSphere) :
 /-- On underlying points of `X.Z`, the action of `deck X.π` on a fibre of `X.restrict` is
 evaluation of the deck transformation. -/
 @[simp] theorem coe_deck_smul_restrictFiber (b : ThricePuncturedSphere) (φ : deck X.π)
-    (z : X.restrict ⁻¹' {b}) :
-    ((φ • z : X.restrict ⁻¹' {b}) : X.Z) = (φ : X.Z ≃ₜ X.Z) z :=
+    (z : X.restrict ⁻¹' {b}) : ((φ • z : X.restrict ⁻¹' {b}) : X.Z) = (φ : X.Z ≃ₜ X.Z) z :=
   (congrArg Subtype.val (deck.fiber_smul_coe (X.deckMulEquivDeckRestrict φ) z)).trans
     (X.coe_deckMulEquivDeckRestrict_apply φ z)
 
@@ -81,8 +77,8 @@ def Iso.deckMulEquiv {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) : deck X.π �
 
 /-- `ι.deckMulEquiv` acts by conjugating the underlying homeomorphism by `ι.toHomeomorph`. -/
 @[simp] theorem Iso.coe_deckMulEquiv_apply {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y)
-    (φ : deck X.π) (y : Y.Z) : (ι.deckMulEquiv φ : Y.Z ≃ₜ Y.Z) y =
-      ι.toHomeomorph ((φ : X.Z ≃ₜ X.Z) (ι.toHomeomorph.symm y)) :=
+    (φ : deck X.π) (y : Y.Z) :
+    (ι.deckMulEquiv φ : Y.Z ≃ₜ Y.Z) y = ι.toHomeomorph ((φ : X.Z ≃ₜ X.Z) (ι.toHomeomorph.symm y)) :=
   Deck.conjMulEquiv_apply_coe _ _ φ y
 
 /-- The inverse of `Iso.deckMulEquiv` conjugates by `ι.toHomeomorph.symm`. -/
@@ -99,8 +95,8 @@ theorem Iso.natCard_deck_eq {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
 def IsRegular : Prop := Nat.card (deck X.π) = n
 
 /-- Unfold `TopBranchedCover.IsRegular` to `Nat.card (deck X.π) = n`. -/
-theorem isRegular_iff {X : TopBranchedCover.{u} n} :
-    X.IsRegular ↔ Nat.card (deck X.π) = n := Iff.rfl
+theorem isRegular_iff {X : TopBranchedCover.{u} n} : X.IsRegular ↔ Nat.card (deck X.π) = n :=
+  Iff.rfl
 
 /-- Regularity of topological branched covers is invariant under isomorphism. -/
 theorem Iso.isRegular_iff {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
@@ -122,23 +118,19 @@ def IsoClass.IsRegular : IsoClass.{u} n → Prop :=
 @[simp] theorem IsoClass.isRegular_mk (X : TopBranchedCover.{u} n) :
     (IsoClass.mk X).IsRegular ↔ X.IsRegular := of_eq (IsoClass.lift_mk _ _ X)
 
-section Monodromy
-
-variable (ν : X.restrict ⁻¹' {basePt} ≃ Fin n)
-
 /-- **The deck group of `X` is the automorphism group of its monodromy triple.** -/
-def deckMulEquivAutomorphismGroup :
+def deckMulEquivAutomorphismGroup (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
     deck X.π ≃* (X.isCoveringMap_restrict.monodromyTriple ν).automorphismGroup :=
   X.deckMulEquivDeckRestrict.trans (X.isCoveringMap_restrict.deckMulEquivAutomorphismGroup ν)
 
-/-- `deckMulEquivAutomorphismGroup` sends `φ` to the permutation it induces on the numbered fibre
-over `1/2`. -/
-@[simp] theorem coe_deckMulEquivAutomorphismGroup_apply (φ : deck X.π) (i : Fin n) :
+/-- `deckMulEquivAutomorphismGroup` sends `φ` to the permutation on the numbered fibre `1/2`. -/
+@[simp] theorem coe_deckMulEquivAutomorphismGroup_apply (ν : X.restrict ⁻¹' {basePt} ≃ Fin n)
+    (φ : deck X.π) (i : Fin n) :
     (X.deckMulEquivAutomorphismGroup ν φ : Perm (Fin n)) i = ν (φ • ν.symm i) := by
   simp [deckMulEquivAutomorphismGroup]; rfl
 
 /-- The deck transformation attached to `τ` sends the sheet labelled `i` to that labelled `τ i`. -/
-@[simp] theorem deckMulEquivAutomorphismGroup_symm_smul
+@[simp] theorem deckMulEquivAutomorphismGroup_symm_smul (ν : X.restrict ⁻¹' {basePt} ≃ Fin n)
     (τ : (X.isCoveringMap_restrict.monodromyTriple ν).automorphismGroup) (i : Fin n) :
     (X.deckMulEquivAutomorphismGroup ν).symm τ • ν.symm i = ν.symm ((τ : Perm (Fin n)) i) := by
   rw [← ν.symm_apply_apply ((X.deckMulEquivAutomorphismGroup ν).symm τ • ν.symm i),
@@ -151,8 +143,6 @@ theorem isRegular_iff_monodromyTriple {X : TopBranchedCover.{u} n}
   rw [isRegular_iff, PermutationTriple.isRegular_iff_card_automorphismGroup,
     and_iff_right (X.isCoveringMap_restrict.isConnected_monodromyTriple ν),
     Nat.card_congr (X.deckMulEquivAutomorphismGroup ν).toEquiv]
-
-end Monodromy
 
 end TopBranchedCover
 

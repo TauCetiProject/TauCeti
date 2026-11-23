@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.CycleData
-public import TauCeti.Combinatorics.RibbonGraph.Classification
+public import TauCeti.Combinatorics.RibbonGraph.Basic
+public import TauCeti.GroupTheory.Perm.Partition
 
 /-!
 # Cycle data of a bipartite ribbon graph
 
 Using `blackDegree`, `whiteDegree`, and `faceDegree` from `TauCeti.Combinatorics.RibbonGraph.Basic`,
 this file packages the black-vertex, white-vertex, and face degree multisets into
-`BipartiteRibbonGraph.cycleData`. Its entries equal `fullCycleType` of `rotB`, `rotW`, and
-`facePerm`, so edge numberings identify `Γ.cycleData` with `(Γ.toPermutationTriple ν).cycleData`
-and graph isomorphisms preserve it.
+`BipartiteRibbonGraph.cycleData`, identifies them with `fullCycleType` of `rotB`, `rotW`, and
+`facePerm`, and proves isomorphism invariance.
 
 ## References
 
@@ -83,30 +82,14 @@ theorem sum_cycleData : (Γ.cycleData.1.sum, Γ.cycleData.2.1.sum, Γ.cycleData.
 theorem card_cycleData : (Γ.cycleData.1.card, Γ.cycleData.2.1.card, Γ.cycleData.2.2.card) =
     (Fintype.card Γ.B, Fintype.card Γ.W, Γ.faceCount) := by simp [cycleData_def, faceCount_def]
 
-/-- Numbering the edges of `Γ` gives a permutation triple with cycle data `Γ.cycleData`. -/
-@[simp] theorem cycleData_toPermutationTriple {n : ℕ} (ν : Γ.E ≃ Fin n) :
-    (Γ.toPermutationTriple ν).cycleData = Γ.cycleData := by
-  rw [cycleData_eq_fullCycleType]; refine Prod.ext ?_ (Prod.ext ?_ ?_) <;>
-    simp [toPermutationTriple_σ0, toPermutationTriple_σ1, toPermutationTriple_σinf,
-      fullCycleType_def]
-
 /-- Isomorphic bipartite ribbon graphs have the same cycle data. -/
 theorem Iso.cycleData_eq {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}
     (φ : Γ.Iso Δ) : Γ.cycleData = Δ.cycleData := by
-  let ν := Fintype.equivFin Γ.E
-  rw [← Γ.cycleData_toPermutationTriple ν, ← Δ.cycleData_toPermutationTriple (φ.edge.symm.trans ν)]
-  exact PermutationTriple.cycleData_eq_of_equivalent (equivalent_toPermutationTriple_of_iso φ ν _)
+  refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp only [cycleData_def, ← Finset.map_univ_equiv φ.black,
+    ← Finset.map_univ_equiv φ.white, ← Finset.map_univ_equiv φ.faceEquiv, Finset.map_val,
+    Multiset.map_map, Function.comp_apply, Equiv.coe_toEmbedding, φ.blackDegree_eq,
+    φ.whiteDegree_eq, φ.faceDegree_eq]
 
 end BipartiteRibbonGraph
-
-namespace PermutationTriple
-
-/-- Passing from a permutation triple to its bipartite ribbon graph preserves the cycle data. -/
-@[simp] theorem cycleData_ribbonGraph {n : ℕ} (t : PermutationTriple n) :
-    t.ribbonGraph.cycleData = t.cycleData := by
-  rw [← t.ribbonGraph.cycleData_toPermutationTriple (Equiv.refl (Fin n)),
-    t.toPermutationTriple_ribbonGraph]
-
-end PermutationTriple
 
 end TauCeti

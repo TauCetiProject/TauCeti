@@ -9,13 +9,10 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Basic
 public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 
-import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
-
 /-!
 # Euler characteristic and genus of analytic Belyi pairs
 
-Records isomorphism invariance and degree-one/sphere evaluations of `eulerChar P.X` and `genus P.X`,
-and descends both invariants to `isoSetoid`.
+Invariance, degree-one/sphere evaluations, and `isoSetoid` descent for `eulerChar` and `genus`.
 -/
 
 public noncomputable section
@@ -48,8 +45,7 @@ theorem eulerChar_X_eq_two_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : de
 
 /-- **An analytic Belyi pair of degree one has genus `0`.** -/
 theorem genus_X_eq_zero_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : degree P.β = 1) :
-    genus P.X = 0 :=
-  genus_eq_of_eulerChar_eq (eulerChar_X_eq_two_of_degree_eq_one hP)
+    genus P.X = 0 := genus_eq_of_eulerChar_eq (eulerChar_X_eq_two_of_degree_eq_one hP)
 
 /-- The power Belyi pair `z ↦ z ^ n` on the Riemann sphere has Euler characteristic `2`. -/
 @[simp] theorem eulerChar_X_pow {n : ℕ} (hn : n ≠ 0) : eulerChar (pow hn).X = 2 := by

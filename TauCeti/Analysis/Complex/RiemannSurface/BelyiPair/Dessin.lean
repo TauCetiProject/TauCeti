@@ -23,7 +23,11 @@ open ThricePuncturedSphere RiemannSurface BipartiteRibbonGraph
 
 universe u
 
-section RibbonAut
+/-- `P` is regular if and only if the ribbon graph of its monodromy triple is regular. -/
+theorem isRegular_iff_ribbonGraph {P : AnalyticBelyiPair.{u}} {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) : P.IsRegular ↔
+      (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.IsRegular := by
+  rw [isRegular_iff_monodromyTriple ν, PermutationTriple.isRegular_ribbonGraph]
 
 variable (P : AnalyticBelyiPair.{u}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
 
@@ -50,8 +54,7 @@ def deckMulEquivRibbonGraphAut :
     deck P.β ≃* (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Aut :=
   P.isoMulEquivDeck.symm.trans (P.isoMulEquivRibbonGraphAut ν)
 
-/-- On edges (`Fin n`), `deckMulEquivRibbonGraphAut` acts via `isoMulEquivDeck.symm` on the fibre
-over `1/2`. -/
+/-- On edges (`Fin n`), `deckMulEquivRibbonGraphAut` acts via `isoMulEquivDeck.symm` on `1/2`. -/
 @[simp] theorem deckMulEquivRibbonGraphAut_apply_edge (φ : deck P.β) (i : Fin n) :
     (P.deckMulEquivRibbonGraphAut ν φ).edge i = ν (P.isoMulEquivDeck.symm φ • ν.symm i) :=
   P.isoMulEquivRibbonGraphAut_apply_edge ν (P.isoMulEquivDeck.symm φ) i
@@ -60,15 +63,6 @@ over `1/2`. -/
 @[simp] theorem coe_deckMulEquivRibbonGraphAut_symm_apply
     (f : (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Aut) (i : Fin n) :
     ((P.deckMulEquivRibbonGraphAut ν).symm f : P.X ≃ₜ P.X) (ν.symm i) =
-      (ν.symm (f.edge i) : P.X) := by
-  simp [deckMulEquivRibbonGraphAut, ← Iso.coe_smul]
-
-end RibbonAut
-
-/-- `P` is regular if and only if the ribbon graph of its monodromy triple is regular. -/
-theorem isRegular_iff_ribbonGraph {P : AnalyticBelyiPair.{u}} {n : ℕ}
-    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
-    P.IsRegular ↔ (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.IsRegular := by
-  rw [isRegular_iff_monodromyTriple ν, PermutationTriple.isRegular_ribbonGraph]
+      (ν.symm (f.edge i) : P.X) := by simp [deckMulEquivRibbonGraphAut, ← Iso.coe_smul]
 
 end TauCeti.AnalyticBelyiPair

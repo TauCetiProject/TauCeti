@@ -351,24 +351,12 @@ theorem ncard_preimage_marked_add_ramificationDegree_β (P : AnalyticBelyiPair.{
 theorem ncard_preimage_marked (P : AnalyticBelyiPair.{u}) :
     (P.β ⁻¹' marked).ncard = (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}).ncard +
       (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}).ncard + (P.β ⁻¹' {(∞ : OnePoint ℂ)}).ncard := by
-  have hd {a b : OnePoint ℂ} (h : a ≠ b) : Disjoint (P.β ⁻¹' {a}) (P.β ⁻¹' {b}) :=
-    disjoint_left.2 fun _ ha hb ↦ h (ha.symm.trans hb)
+  have hd {a b : OnePoint ℂ} (h : a ≠ b) := Disjoint.preimage P.β (disjoint_singleton.2 h)
   have hf := P.β.finite_fiber
   rw [show P.β ⁻¹' marked = (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)} ∪ P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)})
       ∪ P.β ⁻¹' {(∞ : OnePoint ℂ)} from ext fun _ ↦ by simp [mem_marked, or_assoc],
     ncard_union_eq (disjoint_union_left.2 ⟨hd (by simp), hd (by simp)⟩) ((hf _).union (hf _))
       (hf _), ncard_union_eq (hd (by simp)) (hf _) (hf _)]
-
-/-- **Three-fibre decomposition of the ramification degree** over `0`, `1` and `∞`. -/
-theorem ramificationDegree_β_eq_sum_three_fibers (P : AnalyticBelyiPair.{u}) :
-    ramificationDegree P.β =
-      (∑ x ∈ (P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1)) +
-      (∑ x ∈ (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1)) +
-      (∑ x ∈ (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1)) := by
-  have h (y : OnePoint ℂ) := by simpa only [← ncard_eq_toFinset_card _ (P.β.finite_fiber y)] using
-    card_fiber_add_sum_localMultiplicity_sub_one P.β y
-  have := h ((0 : ℂ) : OnePoint ℂ); have := h ((1 : ℂ) : OnePoint ℂ); have := h ∞
-  have := P.ncard_preimage_marked ▸ P.ncard_preimage_marked_add_ramificationDegree_β; omega
 
 /-! ### Maps over the sphere are holomorphic -/
 
@@ -910,12 +898,10 @@ theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
   exact MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 /-- Conjugation by `e : P.Iso Q` identifies the automorphism groups `P.Iso P` and `Q.Iso Q`. -/
-def autMulEquiv (e : P.Iso Q) : P.Iso P ≃* Q.Iso Q where
-  toFun f := e.symm.trans (f.trans e)
-  invFun g := e.trans (g.trans e.symm)
-  left_inv _ := ext fun _ ↦ by simp
-  right_inv _ := ext fun _ ↦ by simp
-  map_mul' _ _ := ext fun _ ↦ by simp
+def autMulEquiv (e : P.Iso Q) : P.Iso P ≃* Q.Iso Q :=
+  ⟨⟨fun f ↦ e.symm.trans (f.trans e), fun g ↦ e.trans (g.trans e.symm),
+    fun _ ↦ ext fun _ ↦ by simp, fun _ ↦ ext fun _ ↦ by simp⟩,
+    fun _ _ ↦ ext fun _ ↦ by simp⟩
 
 /-- Conjugating an automorphism by `e : P ≅ Q` evaluates as `e ∘ f ∘ e.symm`. -/
 @[simp] theorem autMulEquiv_apply (e : P.Iso Q) (f : P.Iso P) (y : Q.X) :

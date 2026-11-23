@@ -207,24 +207,20 @@ theorem genus_monodromyTriple_superelliptic {n : ℕ}
     cycleData_monodromyTriple_superelliptic]
   norm_num
 
-/-- **The ramification degree of the superelliptic Belyi map is `8`**: `3 + 3 + (1 + 1)` summed
-over the three fibres above `0`, `1` and `∞`. -/
+/-- **The ramification degree of `superelliptic.β` is `8`**: `3 + 3 + (1 + 1)`. -/
 @[simp] theorem ramificationDegree_β_superelliptic : ramificationDegree superelliptic.β = 8 := by
   obtain ⟨ν⟩ := superelliptic.nonempty_restrict_preimage_singleton_equiv basePt
   have h := superelliptic.natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar
     (ν.trans (finCongr degree_β_superelliptic))
   rw [eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData,
-    cycleData_monodromyTriple_superelliptic] at h
-  have := degree_β_superelliptic; norm_num at h; omega
+    cycleData_monodromyTriple_superelliptic, degree_β_superelliptic] at h; norm_num at h; omega
 
-/-- **The compact superelliptic curve `y ^ 4 = t (t - 1)` has Euler characteristic `0`**:
-`2 · 4 - 8 = 0`. -/
+/-- **The compact superelliptic curve `y ^ 4 = t (t - 1)` has Euler characteristic `0`**. -/
 @[simp] theorem eulerChar_X_superelliptic : TauCeti.eulerChar superelliptic.X = 0 := by
   simp [superelliptic.β.eulerChar_eq_two_mul_degree_sub_ramificationDegree]
 
 /-- **The compact superelliptic curve `y ^ 4 = t (t - 1)` has topological genus `1`**, matching
-both the genus of its monodromy triple and the Riemann–Hurwitz formula
-`2 g - 2 = 4 · (-2) + 8 = 0`. -/
+its monodromy triple and Riemann–Hurwitz (`2 g - 2 = 4 · (-2) + 8 = 0`). -/
 @[simp] theorem genus_X_superelliptic : RiemannSurface.genus superelliptic.X = 1 :=
   RiemannSurface.genus_eq_of_eulerChar_eq (by simp)
 
