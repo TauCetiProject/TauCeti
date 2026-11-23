@@ -85,6 +85,7 @@ square-root rate `√(α - α₀)`.
   `TauCeti.CubicNormalForm.deriv_deriv_deriv_eq_two_mul_deriv_pow_three`,
   `TauCeti.CubicNormalForm.hasDerivAt_deriv_neg_mul_deriv`,
   `TauCeti.CubicNormalForm.deriv_deriv_eq_neg_deriv_mul_deriv`,
+  `TauCeti.CubicNormalForm.deriv_deriv_eq_neg_deriv_mul_deriv_of_ne_zero`,
   `TauCeti.CubicNormalForm.deriv_ne_zero_iff_deriv_deriv_ne_zero`: jet identities
   `∂³p/∂t³ = 2 (∂w/∂t) ^ 3` (under `C²` regularity over any normed field of characteristic `≠ 3`)
   and `∂²p/∂α∂t = -ζ'(α₀) ∂w/∂t`, characterizing nondegenerate square-root coalescence
@@ -303,16 +304,12 @@ private theorem exists_analyticAt_ball_closedBall {E : Type*} [NormedAddCommGrou
   obtain ⟨r₂, hr₂, hball₂⟩ := Metric.mem_nhds_iff.1 hF0
   set R : ℝ := min r₁ r₂ / 2
   have hR : 0 < R := half_pos (lt_min hr₁ hr₂)
-  have hF0_an {s : ℂ} (hs : s ∈ closedBall (0 : ℂ) R) : AnalyticAt ℂ F (0, s) :=
-    hball₁ (by simp [Prod.dist_eq, (mem_closedBall_zero_iff.1 hs).trans_lt
-      ((half_lt_self (lt_min hr₁ hr₂)).trans_le (min_le_left _ _))])
-  have hev_an : ∀ᶠ β in 𝓝 (0 : E), ∀ s ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ F (β, s) :=
-    (isCompact_closedBall (0 : ℂ) R).eventually_forall_of_forall_eventually fun _ hs =>
-      (hF0_an hs).eventually_analyticAt
-  obtain ⟨δ, hδ, hFδ⟩ := Metric.mem_nhds_iff.1 hev_an
-  refine ⟨δ, R, hδ, hR, hFδ, fun s hs => hball₂ ?_⟩
-  exact mem_ball.2 ((mem_closedBall.1 hs).trans_lt
-    ((half_lt_self (lt_min hr₁ hr₂)).trans_le (min_le_right _ _)))
+  have hR_lt_r₁ : R < r₁ := (half_lt_self (lt_min hr₁ hr₂)).trans_le (min_le_left _ _)
+  have hR_lt_r₂ : R < r₂ := (half_lt_self (lt_min hr₁ hr₂)).trans_le (min_le_right _ _)
+  refine ⟨R, R, hR, hR, fun β hβ s hs => hball₁ ?_, fun s hs => hball₂ ?_⟩
+  · rw [mem_ball, Prod.dist_eq]
+    exact max_lt ((mem_ball.1 hβ).trans hR_lt_r₁) ((mem_closedBall.1 hs).trans_lt hR_lt_r₁)
+  · exact mem_ball.2 ((mem_closedBall.1 hs).trans_lt hR_lt_r₂)
 
 /-- Normalized cubic normal-form existence when `F(0, s) = s ^ 3 / 3` near `s = 0`. -/
 private theorem exists_cubic_normal_form_of_normalized {E : Type*} [NormedAddCommGroup E]
@@ -872,7 +869,7 @@ private theorem deriv_deriv_eq_neg_deriv_mul_deriv_aux {p w : ℂ × ℂ → ℂ
 
 /-- Mixed-derivative identity when `∂w/∂t (α₀, t₀) ≠ 0`, requiring no continuity hypothesis on
 `ζ`. -/
-private theorem deriv_deriv_eq_neg_deriv_mul_deriv_of_ne_zero {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ}
+theorem deriv_deriv_eq_neg_deriv_mul_deriv_of_ne_zero {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ}
     {α₀ t₀ : ℂ} (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0)
     (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
     (hw : ∀ᶠ q in 𝓝 (α₀, t₀), DifferentiableAt ℂ w q)

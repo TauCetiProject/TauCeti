@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # The analytic order of products, power maps and derivatives
@@ -150,10 +151,8 @@ theorem _root_.AnalyticAt.analyticOrderAt_sub_eq_nat_iff_iteratedDeriv_eq_zero {
     analyticOrderAt (fun z ↦ g z - g z₀) z₀ = n ↔
       (∀ k, 0 < k → k < n → iteratedDeriv k g z₀ = 0) ∧ iteratedDeriv n g z₀ ≠ 0 := by
   have hsub : AnalyticAt 𝕜 (fun z ↦ g z - g z₀) z₀ := hg.sub analyticAt_const
-  have hiter : ∀ k, 0 < k → iteratedDeriv k (fun z ↦ g z - g z₀) z₀ = iteratedDeriv k g z₀ := by
-    rintro (_ | k) hk
-    · exact absurd hk (lt_irrefl 0)
-    · rw [iteratedDeriv_succ', deriv_sub_const_fun, iteratedDeriv_succ']
+  have hiter : ∀ k, 0 < k → iteratedDeriv k (fun z ↦ g z - g z₀) z₀ = iteratedDeriv k g z₀ :=
+    fun k hk ↦ by simpa only [sub_eq_add_neg, add_comm] using iteratedDeriv_const_add hk (-g z₀)
   rw [analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero hsub, hiter n hn]
   refine and_congr_left' ⟨fun h k hk0 hkn => ?_, fun h k hkn => ?_⟩
   · rw [← hiter k hk0]

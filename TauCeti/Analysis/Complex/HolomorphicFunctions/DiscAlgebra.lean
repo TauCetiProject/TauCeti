@@ -144,6 +144,16 @@ theorem extend_apply (f : discAlgebra c R) (z : closedBall c R) :
     extend f z = (f : C(closedBall c R, ℂ)) z :=
   Subtype.val_injective.extend_apply _ _ _
 
+/-- Two elements of `discAlgebra c R` are equal if their zero extensions agree on
+`closedBall c R`. -/
+@[ext]
+theorem ext {f g : discAlgebra c R} (h : ∀ z ∈ closedBall c R, extend f z = extend g z) :
+    f = g := by
+  apply Subtype.ext
+  ext z
+  rw [← extend_apply f z, ← extend_apply g z]
+  exact h z.val z.property
+
 /-- On `closedBall c R`, the zero extension of `of c R g hc hd` agrees with `g`. -/
 @[simp]
 theorem extend_of (g : ℂ → ℂ) (hc : ContinuousOn g (closedBall c R))
@@ -417,6 +427,7 @@ noncomputable def mkD (c : ℂ) (R : ℝ) (g : ℂ → ℂ) (d : discAlgebra c R
 
 /-- When `g` is continuous on `closedBall c R` and holomorphic on `ball c R`, `mkD c R g d` agrees
 with `of c R g`. -/
+@[simp]
 theorem mkD_of_continuousOn_differentiableOn {g : ℂ → ℂ} {d : discAlgebra c R}
     (hc : ContinuousOn g (closedBall c R)) (hd : DifferentiableOn ℂ g (ball c R)) :
     mkD c R g d = of c R g hc hd := by
@@ -425,6 +436,7 @@ theorem mkD_of_continuousOn_differentiableOn {g : ℂ → ℂ} {d : discAlgebra 
 
 /-- When `g` fails to be continuous on `closedBall c R` and holomorphic on `ball c R`,
 `mkD c R g d` returns the default value `d`. -/
+@[simp]
 theorem mkD_of_not {g : ℂ → ℂ} {d : discAlgebra c R}
     (h : ¬(ContinuousOn g (closedBall c R) ∧ DifferentiableOn ℂ g (ball c R))) :
     mkD c R g d = d := by
