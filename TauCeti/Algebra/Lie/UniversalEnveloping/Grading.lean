@@ -55,9 +55,8 @@ def homogeneousSubmodule (n : Γ) : Submodule R U :=
 /-- The word-span description of an enveloping homogeneous piece. -/
 theorem homogeneousSubmodule_def (n : Γ) :
     homogeneousSubmodule ℒ n =
-      Submodule.span R {a | ∃ l : List (Σ i, ℒ i), (l.map Sigma.fst).sum = n ∧
-        (l.map (fun x => ι R (x.2 : L))).prod = a} :=
-  TauCeti.GradedAlgebra.wordSpan_def R _ _ n
+      TauCeti.GradedAlgebra.wordSpan R (fun x : Σ i, ℒ i => ι R (x.2 : L)) Sigma.fst n :=
+  (rfl)
 
 /-- A submodule contains a homogeneous piece exactly when it contains every word of that degree. -/
 theorem homogeneousSubmodule_le_iff (n : Γ) (p : Submodule R U) :
@@ -97,8 +96,8 @@ theorem homogeneousSubmodule_eq_bot_of_degree_neg (d : Γ →+ ℤ)
     (hneg : ∀ n, d n < 0 → ℒ n = ⊥) {n : Γ} (hn : d n < 0) :
     homogeneousSubmodule ℒ n = ⊥ := by
   apply le_antisymm _ bot_le
-  rw [homogeneousSubmodule_def, Submodule.span_le]
-  rintro a ⟨l, hl, rfl⟩
+  rw [homogeneousSubmodule_le_iff]
+  intro l hl
   exact (Submodule.mem_bot R).mpr
     (word_eq_zero_of_degree_neg ℒ d hneg l (by simpa only [hl] using hn))
 

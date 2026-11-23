@@ -275,9 +275,10 @@ theorem quantumDividedPower_def (q : K) (x : A) (n : ℕ) :
     MulOpposite.unop (quantumDividedPower q x n) =
       quantumDividedPower q (MulOpposite.unop x) n := by simp [quantumDividedPower_def]
 
-/-- In any `ι`-graded `K`-algebra, the `n`-th quantum divided power of a homogeneous element of
-degree `c` lies in degree `n • c` for any parameter `u : K`, even when `[n]_u! = 0` (where the
-divided power vanishes). -/
+/-- For any `K`-scalar-closed `SetLike.GradedMonoid` family `𝒜 : ι → S` (`[SMulMemClass S K A]`,
+without requiring an internal direct-sum decomposition), the `n`-th quantum divided power of an
+element in `𝒜 c` lies in `𝒜 (n • c)` for any parameter `u : K`, even when `[n]_u! = 0` (where
+the divided power vanishes). -/
 theorem quantumDividedPower_mem_graded {ι S : Type*} [AddMonoid ι]
     [SetLike S A] [SMulMemClass S K A] {𝒜 : ι → S} [SetLike.GradedMonoid 𝒜]
     (u : K) {c : ι} {x : A} (hx : x ∈ 𝒜 c) (n : ℕ) :

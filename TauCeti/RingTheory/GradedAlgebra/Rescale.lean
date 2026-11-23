@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.AddChar
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 
 /-!
@@ -16,10 +17,16 @@ an additive character `φ : AddChar ι R` induces the degreewise rescaling endom
 `φ i • ·` on each homogeneous piece `𝒜 i`. Because `φ` sends `0` to `1` and sums to products,
 this rescaling is a graded `R`-algebra endomorphism and depends multiplicatively on `φ`.
 
+For a free abelian grading group `ι →₀ ℤ`, any family of unit scalars `s : ι → Rˣ` determines
+an additive character `TauCeti.GradedAlgebra.rescaleChar s : AddChar (ι →₀ ℤ) R` sending `c` to
+`∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R)`, bundled as a monoid homomorphism in `s`.
+
 ## Main definitions
 
 * `TauCeti.GradedAlgebra.rescale`: the monoid homomorphism `AddChar ι R →* (𝒜 →ₐᵍ[R] 𝒜)` sending
   `φ` to the graded `R`-algebra endomorphism acting by `φ i • ·` on `𝒜 i`.
+* `TauCeti.GradedAlgebra.rescaleChar`: the monoid homomorphism `(ι → Rˣ) →* AddChar (ι →₀ ℤ) R`
+  induced by a family of unit scalars.
 
 ## Main results
 
@@ -28,6 +35,9 @@ this rescaling is a graded `R`-algebra endomorphism and depends multiplicatively
 * `TauCeti.GradedAlgebra.decompose_rescale`: rescaling multiplies the degree-`i` homogeneous
   component of any element by `φ i`.
 * `TauCeti.GradedAlgebra.rescale_mul_apply`: rescalings compose multiplicatively.
+* `TauCeti.GradedAlgebra.rescaleChar_apply`, `TauCeti.GradedAlgebra.rescaleChar_single`, and
+  `TauCeti.GradedAlgebra.rescaleChar_neg_single`: evaluation of `rescaleChar` on general weights and
+  signed basis vectors.
 
 ## References
 
@@ -112,5 +122,53 @@ theorem decompose_rescale (φ : AddChar ι R) (a : A) (i : ι) :
 theorem rescale_mul_apply (φ ψ : AddChar ι R) (a : A) :
     rescale 𝒜 (φ * ψ) a = rescale 𝒜 φ (rescale 𝒜 ψ a) := by
   simp
+
+section RescaleChar
+
+variable {ι R : Type*} [CommMonoid R]
+
+/-- The additive character `c ↦ ∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R)` on `ι →₀ ℤ` induced by a
+family of unit scalars `s : ι → Rˣ`, bundled as a monoid homomorphism
+`(ι → Rˣ) →* AddChar (ι →₀ ℤ) R`. -/
+noncomputable def rescaleChar : (ι → Rˣ) →* AddChar (ι →₀ ℤ) R where
+  toFun s :=
+    (Units.coeHom R).compAddChar
+      (AddChar.toAddMonoidHomEquiv.symm
+        (Finsupp.bilinearCombination ℤ ℤ (Additive.ofMul ∘ s)).toAddMonoidHom)
+  map_one' := by
+    have h0 : Additive.ofMul ∘ (1 : ι → Rˣ) = 0 := rfl
+    ext c
+    simp only [h0, map_zero, MonoidHom.compAddChar_apply, Function.comp_apply,
+      AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe, LinearMap.zero_apply,
+      toMul_zero, map_one, one_apply]
+  map_mul' s t := by
+    have hmul : Additive.ofMul ∘ (s * t) = Additive.ofMul ∘ s + Additive.ofMul ∘ t := rfl
+    ext c
+    simp only [hmul, map_add, MonoidHom.compAddChar_apply, Function.comp_apply,
+      AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe, LinearMap.add_apply,
+      toMul_add, map_mul, mul_apply]
+
+/-- Evaluating `rescaleChar s` at `c : ι →₀ ℤ` gives the finite product
+`∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R)`. -/
+theorem rescaleChar_apply (s : ι → Rˣ) (c : ι →₀ ℤ) :
+    rescaleChar s c = ∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R) := by
+  simp only [rescaleChar, MonoidHom.coe_mk, OneHom.coe_mk, MonoidHom.compAddChar_apply,
+    Function.comp_apply, AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe,
+    Finsupp.bilinearCombination_apply, Finsupp.linearCombination_apply, Finsupp.sum, toMul_sum,
+    toMul_zsmul, toMul_ofMul, map_prod, Units.coeHom_apply]
+
+/-- On a basis vector `Finsupp.single i 1`, `rescaleChar s` evaluates to `(s i : R)`. -/
+@[simp]
+theorem rescaleChar_single (s : ι → Rˣ) (i : ι) :
+    rescaleChar s (Finsupp.single i 1) = (s i : R) := by
+  simp [rescaleChar, Finsupp.linearCombination_single]
+
+/-- On `-Finsupp.single i 1`, `rescaleChar s` evaluates to `((s i)⁻¹ : Rˣ)`. -/
+@[simp]
+theorem rescaleChar_neg_single (s : ι → Rˣ) (i : ι) :
+    rescaleChar s (-Finsupp.single i 1) = (((s i)⁻¹ : Rˣ) : R) := by
+  simp [rescaleChar, Finsupp.linearCombination_single]
+
+end RescaleChar
 
 end TauCeti.GradedAlgebra

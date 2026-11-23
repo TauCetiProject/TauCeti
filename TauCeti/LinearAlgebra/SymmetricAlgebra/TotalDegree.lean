@@ -49,9 +49,8 @@ def totalDegreeSubmodule (n : Γ) : Submodule R (SymmetricAlgebra R M) :=
 /-- The word-span description of a total-degree homogeneous piece. -/
 theorem totalDegreeSubmodule_def (n : Γ) :
     totalDegreeSubmodule ℳ n =
-      Submodule.span R {a | ∃ l : List (Σ i, ℳ i), (l.map Sigma.fst).sum = n ∧
-        (l.map (fun x => ι R M (x.2 : M))).prod = a} :=
-  TauCeti.GradedAlgebra.wordSpan_def R _ _ n
+      TauCeti.GradedAlgebra.wordSpan R (fun x : Σ i, ℳ i => ι R M (x.2 : M)) Sigma.fst n :=
+  (rfl)
 
 /-- A homogeneous piece is contained in a submodule precisely when all its generating
 words are contained in that submodule. -/

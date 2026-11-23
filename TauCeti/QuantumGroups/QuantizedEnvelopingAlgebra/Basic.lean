@@ -102,9 +102,10 @@ theorem serreSum_smul {A : Type*} [Semiring A] [Algebra K A]
   rw [mul_comm (c j), ← mul_assoc (c i ^ _), ← pow_add, Nat.sub_add_cancel hrm]
   ring
 
-/-- For any family of submodules `𝒜 : Γ → S` forming a `SetLike.GradedMonoid` over a
-commutative additive monoid `Γ` (without requiring an internal direct-sum decomposition), if
-`x i ∈ 𝒜 cx` and `x j ∈ 𝒜 cy`, then `serreSum D q x i j ∈ 𝒜 (D.serreLength i j • cx + cy)`. -/
+/-- For any `K`-scalar-closed additive submonoid family `𝒜 : Γ → S` (`[AddSubmonoidClass S A]`,
+`[SMulMemClass S K A]`) forming a `SetLike.GradedMonoid` over a commutative additive monoid `Γ`
+(without requiring an internal direct-sum decomposition), if `x i ∈ 𝒜 cx` and `x j ∈ 𝒜 cy`, then
+`serreSum D q x i j ∈ 𝒜 (D.serreLength i j • cx + cy)`. -/
 theorem serreSum_mem_graded {A Γ S : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ]
     [SetLike S A] [AddSubmonoidClass S A] [SMulMemClass S K A] {𝒜 : Γ → S}
     [SetLike.GradedMonoid 𝒜] (D : CartanDatum ι X Y) (q : K) {x : ι → A} {i j : ι} {cx cy : Γ}
