@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Linear
 public import TauCeti.RepresentationTheory.BaseChange
+public import TauCeti.RepresentationTheory.Continuous.Intertwining
 public import TauCeti.RepresentationTheory.Dual
 
 /-!
@@ -48,30 +49,27 @@ abbrev orientationModule :=
   localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({0} : Set E)
     (finrank ℝ E)
 
-/-- A noncanonical identification of the orientation module with `ℤ`, computed using the
-identity chart and the existing local homology comparison. -/
-private def orientationModuleLinearEquiv [FiniteDimensional ℝ E] :
-    orientationModule E ≃ₗ[ℤ] ℤ :=
-  (singularHomologyComplSingletonFinrankIso (ModuleCat.of ℤ (ULift.{w} ℤ))
-    (OpenPartialHomeomorph.refl E) (Set.mem_univ (0 : E))).toLinearEquiv.trans
-    ULift.moduleEquiv
-
 instance orientationModule.instFree [FiniteDimensional ℝ E] :
     Module.Free ℤ (orientationModule E) :=
-  Module.Free.of_equiv (orientationModuleLinearEquiv E).symm
+  Module.Free.of_equiv (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
+    rfl ULift.moduleEquiv (0 : E)).symm
 
 instance orientationModule.instFinite [FiniteDimensional ℝ E] :
     Module.Finite ℤ (orientationModule E) :=
-  Module.Finite.equiv (orientationModuleLinearEquiv E).symm
+  Module.Finite.equiv (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
+    rfl ULift.moduleEquiv (0 : E)).symm
 
 instance orientationModule.instInvertible [FiniteDimensional ℝ E] :
     Module.Invertible ℤ (orientationModule E) :=
-  Module.Invertible.congr (orientationModuleLinearEquiv E).symm
+  Module.Invertible.congr (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
+    rfl ULift.moduleEquiv (0 : E)).symm
 
 /-- The integral orientation module has rank one, also for a zero-dimensional space. -/
-theorem orientationModule_finrank [FiniteDimensional ℝ E] :
+@[simp]
+theorem finrank_orientationModule [FiniteDimensional ℝ E] :
     finrank ℤ (orientationModule E) = 1 := by
-  rw [(orientationModuleLinearEquiv E).finrank_eq]
+  rw [(localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
+    rfl ULift.moduleEquiv (0 : E)).finrank_eq]
   exact Module.finrank_self ℤ
 
 end TauCeti
@@ -83,40 +81,28 @@ open TauCeti
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {G : Type v} [Group G]
 
-private def representationContinuousLinearEquiv (ρ : Representation ℝ G E) (g : G) :
-    E ≃L[ℝ] E :=
-  (LinearMap.GeneralLinearGroup.toLinearEquiv (ρ.asGroupHom g)).toContinuousLinearEquiv
-
-private theorem representationContinuousLinearEquiv_apply (ρ : Representation ℝ G E) (g : G)
-    (x : E) : representationContinuousLinearEquiv ρ g x = ρ g x := rfl
-
-private theorem representationContinuousLinearEquiv_one (ρ : Representation ℝ G E) :
-    representationContinuousLinearEquiv ρ 1 = ContinuousLinearEquiv.refl ℝ E := by
-  ext x
-  simp [representationContinuousLinearEquiv_apply]
-
-private theorem representationContinuousLinearEquiv_mul (ρ : Representation ℝ G E) (g h : G) :
-    representationContinuousLinearEquiv ρ (g * h) =
-      (representationContinuousLinearEquiv ρ h).trans
-        (representationContinuousLinearEquiv ρ g) := by
-  ext x
-  simp [representationContinuousLinearEquiv_apply]
-
 /-- The orientation representation of a real representation, acting on the actual integral local
 homology module by the induced maps of `(E, E ∖ {0})`. -/
 def orientation (ρ : Representation ℝ G E) :
     Representation ℤ G (orientationModule E) where
   toFun g := (TopPair.singularHomologyMap
-    (representationContinuousLinearEquiv ρ g).complZeroPairIso.hom
+    (ρ.toContinuousLinearEquiv g).complZeroPairIso.hom
     (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ E)).hom
   map_one' := by
-    rw [representationContinuousLinearEquiv_one, ContinuousLinearEquiv.complZeroPairIso_refl,
+    rw [toContinuousLinearEquiv_one, ContinuousLinearEquiv.complZeroPairIso_refl,
       Iso.refl_hom, TopPair.singularHomologyMap_id]
-    rfl
+    rw [ModuleCat.hom_id, Module.End.one_eq_id]
   map_mul' g h := by
-    rw [representationContinuousLinearEquiv_mul, ContinuousLinearEquiv.complZeroPairIso_trans,
+    rw [toContinuousLinearEquiv_mul, ContinuousLinearEquiv.complZeroPairIso_trans,
       Iso.trans_hom, TopPair.singularHomologyMap_comp]
-    rfl
+    rw [ModuleCat.hom_comp, Module.End.mul_eq_comp]
+
+/-- The orientation action is the linear map induced on local homology by the original action. -/
+theorem orientation_def (ρ : Representation ℝ G E) (g : G) :
+    orientation ρ g = (TopPair.singularHomologyMap
+      (ρ.toContinuousLinearEquiv g).complZeroPairIso.hom
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ E)).hom := by
+  rfl
 
 /-- Any continuous linear equivalence realizing `ρ g` computes its action on the orientation
 module by the induced map of pairs. -/
@@ -125,32 +111,28 @@ theorem orientation_apply (ρ : Representation ℝ G E) (g : G)
     orientation ρ g x =
       TopPair.singularHomologyMap e.complZeroPairIso.hom
         (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ E) x := by
-  have h : representationContinuousLinearEquiv ρ g = e := by
+  have h : ρ.toContinuousLinearEquiv g = e := by
     ext x
-    exact (representationContinuousLinearEquiv_apply ρ g x).trans
+    exact (toContinuousLinearEquiv_apply ρ g x).trans
       (DFunLike.congr_fun he x).symm
-  -- Unfold the action to evaluate the induced homology map on the native carrier.
-  change TopPair.singularHomologyMap
-    (representationContinuousLinearEquiv ρ g).complZeroPairIso.hom
-      (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ E) x = _
-  rw [h]
+  rw [orientation_def, h]
 
 /-- The action on integral local homology is the sign of the determinant of the original
 representation. -/
 theorem orientation_eq_sign_det_smul (ρ : Representation ℝ G E) (g : G) :
     orientation ρ g = (SignType.sign (LinearMap.det (ρ g)) : ℤ) •
       LinearMap.id := by
+  have hdet : (ρ.toContinuousLinearEquiv g : E →L[ℝ] E).det =
+      LinearMap.det (ρ g) := by
+    rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+      toContinuousLinearEquiv_toLinearMap]
   have h := singularHomologyMap_continuousLinearMap_compl_zero
     (ModuleCat.of ℤ (ULift.{w} ℤ))
-    (representationContinuousLinearEquiv ρ g : E →L[ℝ] E)
-    (representationContinuousLinearEquiv ρ g).mapsTo_compl_zero (finrank ℝ E)
-  rw [← (representationContinuousLinearEquiv ρ g).complZeroPairIso_hom] at h
-  -- The representation stores the linear map underlying the induced ModuleCat morphism.
-  change (TopPair.singularHomologyMap
-    (representationContinuousLinearEquiv ρ g).complZeroPairIso.hom
-      (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ E)).hom = _
-  rw [h]
-  rfl
+    (ρ.toContinuousLinearEquiv g : E →L[ℝ] E)
+    (ρ.toContinuousLinearEquiv g).mapsTo_compl_zero (finrank ℝ E)
+  rw [← (ρ.toContinuousLinearEquiv g).complZeroPairIso_hom] at h
+  rw [orientation_def, h, ModuleCat.hom_zsmul, ModuleCat.hom_id,
+    hdet]
 
 /-- On each local homology class, the orientation action is multiplication by the determinant
 sign. -/
@@ -158,20 +140,58 @@ theorem orientation_apply_eq_sign_det_smul (ρ : Representation ℝ G E) (g : G)
     (x : orientationModule E) :
     orientation ρ g x = (SignType.sign (LinearMap.det (ρ g)) : ℤ) • x := by
   rw [orientation_eq_sign_det_smul]
-  rfl
+  simpa only [LinearMap.applyₗ_apply_apply, LinearMap.id_apply] using
+    (map_zsmul (LinearMap.applyₗ (R := ℤ) (M₂ := orientationModule E) x)
+      (SignType.sign (LinearMap.det (ρ g)) : ℤ)
+      (LinearMap.id : orientationModule E →ₗ[ℤ] orientationModule E))
+
+/-- Restricting a real representation along a group homomorphism restricts its orientation
+representation along the same homomorphism. -/
+@[simp]
+theorem orientation_comp {H : Type*} [Group H]
+    (ρ : Representation ℝ G E) (φ : H →* G) :
+    orientation (ρ.comp φ) = ρ.orientation.comp φ := by
+  ext g x
+  simp only [orientation_apply_eq_sign_det_smul, MonoidHom.comp_apply]
+
+/-- The orientation representation of a trivial representation is trivial. -/
+@[simp]
+theorem orientation_trivial :
+    (Representation.trivial ℝ G E).orientation =
+      Representation.trivial ℤ G (orientationModule E) := by
+  ext g x
+  simp [orientation_apply_eq_sign_det_smul, Representation.trivial]
 
 section BaseChange
 
 variable {R : Type u} [Ring R]
 
+/-- Extending coefficients preserves the scalar formula for the orientation operator. -/
+theorem baseChange_orientation_eq_sign_det_smul (ρ : Representation ℝ G E) (g : G) :
+    (orientation ρ).baseChange R g =
+      (SignType.sign (LinearMap.det (ρ g)) : ℤ) • LinearMap.id := by
+  rw [Representation.baseChange_apply, orientation_eq_sign_det_smul]
+  simpa only [LinearMap.baseChangeHom_apply, LinearMap.baseChange_id] using
+    (map_zsmul (LinearMap.baseChangeHom ℤ R (orientationModule E) (orientationModule E))
+      (SignType.sign (LinearMap.det (ρ g)) : ℤ)
+      (LinearMap.id : orientationModule E →ₗ[ℤ] orientationModule E))
+
+/-- The orientation action on an arbitrary tensor is multiplication by the determinant sign. -/
+theorem baseChange_orientation_apply_eq_sign_det_smul (ρ : Representation ℝ G E) (g : G)
+    (y : R ⊗[ℤ] orientationModule E) :
+    (orientation ρ).baseChange R g y =
+      (SignType.sign (LinearMap.det (ρ g)) : ℤ) • y := by
+  rw [baseChange_orientation_eq_sign_det_smul, LinearMap.smul_apply, LinearMap.id_apply]
+
 /-- Scalar extension of the orientation representation acts on simple tensors by the determinant
 sign of the real representation. -/
-theorem orientation_baseChange_tmul (ρ : Representation ℝ G E) (g : G)
+theorem baseChange_orientation_tmul (ρ : Representation ℝ G E) (g : G)
     (r : R) (x : orientationModule E) :
     (orientation ρ).baseChange R g (r ⊗ₜ[ℤ] x) =
       r ⊗ₜ[ℤ] ((SignType.sign (LinearMap.det (ρ g)) : ℤ) • x) := by
-  rw [Representation.baseChange_apply, LinearMap.baseChange_tmul,
-    orientation_apply_eq_sign_det_smul]
+  rw [baseChange_orientation_apply_eq_sign_det_smul]
+  exact (map_zsmul (TensorProduct.mk ℤ R (orientationModule E) r)
+    (SignType.sign (LinearMap.det (ρ g)) : ℤ) x).symm
 
 end BaseChange
 
@@ -179,19 +199,53 @@ section Dual
 
 variable {R : Type u} [CommRing R]
 
-/-- The dual coefficient acts contragrediently. Since the determinant sign is unchanged under
-inversion, its evaluation on a simple tensor has the same sign as the original action. -/
-theorem orientation_dual_baseChange_apply (ρ : Representation ℝ G E) (g : G)
+/-- The dual of the coefficient extension has the same determinant-sign operator. -/
+theorem dual_baseChange_orientation_eq_sign_det_smul (ρ : Representation ℝ G E) (g : G) :
+    ((orientation ρ).baseChange R).dual g =
+      (SignType.sign (LinearMap.det (ρ g)) : ℤ) • LinearMap.id := by
+  have hsign : SignType.sign (LinearMap.det (ρ g⁻¹)) =
+      SignType.sign (LinearMap.det (ρ g)) := by
+    have h := map_inv
+      ((signHom : ℝ →*₀ SignType).toMonoidHom.comp (LinearMap.det.comp ρ)) g
+    calc
+      SignType.sign (LinearMap.det (ρ g⁻¹)) =
+          (SignType.sign (LinearMap.det (ρ g)))⁻¹ := h
+      _ = _ := by cases SignType.sign (LinearMap.det (ρ g)) <;> rfl
+  apply LinearMap.ext
+  intro f
+  apply LinearMap.ext
+  intro y
+  rw [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
+    baseChange_orientation_apply_eq_sign_det_smul, hsign, map_zsmul,
+    LinearMap.smul_apply, LinearMap.id_apply, LinearMap.smul_apply]
+
+/-- On an arbitrary functional, the dual coefficient action is multiplication by the determinant
+sign. -/
+theorem dual_baseChange_orientation_apply_eq_sign_det_smul
+    (ρ : Representation ℝ G E) (g : G)
+    (f : Module.Dual R (R ⊗[ℤ] orientationModule E)) :
+    ((orientation ρ).baseChange R).dual g f =
+      (SignType.sign (LinearMap.det (ρ g)) : ℤ) • f := by
+  rw [dual_baseChange_orientation_eq_sign_det_smul, LinearMap.smul_apply, LinearMap.id_apply]
+
+/-- Evaluation of the dual coefficient action on an arbitrary tensor uses the same determinant
+sign as the original action. -/
+theorem dual_baseChange_orientation_apply (ρ : Representation ℝ G E) (g : G)
+    (f : Module.Dual R (R ⊗[ℤ] orientationModule E)) (y : R ⊗[ℤ] orientationModule E) :
+    ((orientation ρ).baseChange R).dual g f y =
+      f ((SignType.sign (LinearMap.det (ρ g)) : ℤ) • y) := by
+  rw [dual_baseChange_orientation_apply_eq_sign_det_smul, LinearMap.smul_apply, map_zsmul]
+
+/-- On a simple tensor, the dual coefficient action evaluates the functional after multiplying
+the local homology class by the determinant sign. -/
+theorem dual_baseChange_orientation_apply_tmul (ρ : Representation ℝ G E) (g : G)
     (f : Module.Dual R (R ⊗[ℤ] orientationModule E)) (r : R) (x : orientationModule E) :
     ((orientation ρ).baseChange R).dual g f (r ⊗ₜ[ℤ] x) =
       f (r ⊗ₜ[ℤ] ((SignType.sign (LinearMap.det (ρ g)) : ℤ) • x)) := by
-  -- The dual action precomposes a functional with the inverse action.
-  change f ((orientation ρ).baseChange R g⁻¹ (r ⊗ₜ[ℤ] x)) = _
-  rw [orientation_baseChange_tmul]
-  have hsign : SignType.sign (LinearMap.det (ρ g⁻¹)) =
-      SignType.sign (LinearMap.det (ρ g)) :=
-    map_inv ((signHom : ℝ →*₀ SignType).toMonoidHom.comp (LinearMap.det.comp ρ)) g
-  rw [hsign]
+  rw [dual_baseChange_orientation_apply]
+  congr 1
+  exact (map_zsmul (TensorProduct.mk ℤ R (orientationModule E) r)
+    (SignType.sign (LinearMap.det (ρ g)) : ℤ) x).symm
 
 end Dual
 
