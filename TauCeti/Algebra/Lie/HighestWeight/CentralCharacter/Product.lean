@@ -28,8 +28,8 @@ does not move the `Sym(Z)` factor
 For `ζ ∈ Z^*` and `λ ∈ H^*`, the character `TauCeti.productCentralCharacter b ζ λ` of
 `Z(U(Z × S))` is evaluation at `ζ` on `Sym(Z)` and the central character `χ_λ` of the Verma module
 `M(λ)` on `Z(U(S))`. It is evaluation at `(ζ, λ)` after the Harish-Chandra isomorphism
-(`TauCeti.productCentralCharacter_apply`), and two of these characters agree exactly when the
-`Z`-weights agree and the `H`-weights lie in one dot orbit
+(`TauCeti.productCentralCharacter_eq_lift_productHarishChandraIso`), and two of these characters
+agree exactly when the `Z`-weights agree and the `H`-weights lie in one dot orbit
 (`TauCeti.productCentralCharacter_eq_iff`).
 
 ## Main definitions
@@ -77,8 +77,9 @@ noncomputable def productCentralCharacter (ζ : Module.Dual K Z) (lam : Module.D
 variable {Z b} in
 /-- The central character of weight `(ζ, λ)` on the product of an element of `Sym(Z)` and a
 central element of `U(S)`. -/
-theorem productCentralCharacter_symm_tmul (ζ : Module.Dual K Z) (lam : Module.Dual K H)
-    (a : _root_.SymmetricAlgebra K Z) (c : Subalgebra.center K (U S)) :
+@[simp]
+theorem productCentralCharacter_productCenterEquiv_symm_tmul (ζ : Module.Dual K Z)
+    (lam : Module.Dual K H) (a : _root_.SymmetricAlgebra K Z) (c : Subalgebra.center K (U S)) :
     productCentralCharacter Z b ζ lam ((productCenterEquiv K Z S).symm (a ⊗ₜ[K] c)) =
       _root_.SymmetricAlgebra.lift ζ a * vermaCentralCharacter b lam c := by
   simp [productCentralCharacter]
@@ -146,30 +147,23 @@ theorem productHarishChandraIso_trans_congr_dotInvariantsEquivLinearInvariants :
     (productHarishChandraIso Z b).trans
         (Algebra.TensorProduct.congr AlgEquiv.refl (dotInvariantsEquivLinearInvariants b)) =
       productHarishChandraLinearIso Z b := by
-  refine AlgEquiv.ext fun z ↦ ?_
-  rw [AlgEquiv.trans_apply, productHarishChandraIso_apply, productHarishChandraLinearIso_apply,
-    ← harishChandraIso_trans_dotInvariantsEquivLinearInvariants]
-  induction productCenterEquiv K Z S z using TensorProduct.inductionOn with
-  | tmul a c => rfl
-  | add s t hs ht => simp only [map_add, hs, ht]
+  rw [productHarishChandraLinearIso, ← harishChandraIso_trans_dotInvariantsEquivLinearInvariants]
+  exact congrArg (productCenterEquiv K Z S).trans
+    (Algebra.TensorProduct.congr_trans .refl .refl (harishChandraIso b) _).symm
 
 variable {Z b}
 
 /-- **Central characters through the Harish-Chandra isomorphism.** The central character of weight
 `(ζ, λ)` is evaluation of the Harish-Chandra image at `(ζ, λ)`. -/
-theorem productCentralCharacter_apply (ζ : Module.Dual K Z) (lam : Module.Dual K H)
-    (z : Subalgebra.center K (U (Z × S))) :
+theorem productCentralCharacter_eq_lift_productHarishChandraIso (ζ : Module.Dual K Z)
+    (lam : Module.Dual K H) (z : Subalgebra.center K (U (Z × S))) :
     productCentralCharacter Z b ζ lam z =
       Algebra.TensorProduct.lift (_root_.SymmetricAlgebra.lift ζ)
         ((_root_.SymmetricAlgebra.lift lam).comp (dotInvariants b).val) (fun _ _ ↦ .all _ _)
         (productHarishChandraIso Z b z) := by
   obtain ⟨t, rfl⟩ := (productCenterEquiv K Z S).symm.surjective z
   induction t using TensorProduct.inductionOn with
-  | tmul a c =>
-    rw [productCentralCharacter_symm_tmul, productHarishChandraIso_apply,
-      AlgEquiv.apply_symm_apply, Algebra.TensorProduct.congr_apply, Algebra.TensorProduct.map_tmul,
-      Algebra.TensorProduct.lift_tmul]
-    simp [lift_hcProjection]
+  | tmul a c => simp [productHarishChandraIso_apply, lift_hcProjection]
   | add s t hs ht => simp only [map_add, hs, ht]
 
 /-- **Harish-Chandra's theorem on central characters for `Z × S`.** The central characters of
@@ -179,10 +173,10 @@ theorem productCentralCharacter_eq_iff {ζ ζ' : Module.Dual K Z} {lam mu : Modu
       ζ = ζ' ∧ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu := by
   refine ⟨fun h ↦ ⟨LinearMap.ext fun x ↦ ?_, (vermaCentralCharacter_eq_iff b).mp ?_⟩, ?_⟩
   · have := congr($h ((productCenterEquiv K Z S).symm (_root_.SymmetricAlgebra.ι K Z x ⊗ₜ 1)))
-    simpa [productCentralCharacter_symm_tmul] using this
+    simpa using this
   · refine AlgHom.ext fun c ↦ ?_
     have := congr($h ((productCenterEquiv K Z S).symm (1 ⊗ₜ c)))
-    simpa [productCentralCharacter_symm_tmul] using this
+    simpa using this
   · rintro ⟨rfl, w, rfl⟩
     simp only [productCentralCharacter, vermaCentralCharacter_dotAction]
 
