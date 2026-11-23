@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
 public import TauCeti.RingTheory.MvPowerSeries.Inverse
-import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # The formal inverse of a Weierstrass curve
