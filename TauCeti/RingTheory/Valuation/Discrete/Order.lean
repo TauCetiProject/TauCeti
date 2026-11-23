@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.Discrete.Basic
+public import Mathlib.RingTheory.Valuation.Extension
 
 /-!
 # Additive orders of discrete valuations
@@ -21,7 +22,9 @@ discrete-valuation-ring results are stated on fields.
 As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
 On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
 included where necessary.
-
+Along a field extension, a ramification formula `ord_w = e · ord_v` with `e > 0` makes `w` an
+extension of `v` in the sense of `Valuation.HasExtension`
+(`Valuation.HasExtension.of_ord_algebraMap_eq_mul`).
 -/
 
 public section
@@ -361,6 +364,18 @@ theorem mem_valuationSubring_iff_ord_nonneg (v : _root_.Valuation F ℤᵐ⁰) {
   · rw [_root_.Valuation.mem_valuationSubring_iff,
       valuation_eq_exp_neg_ord v (v.ne_zero_iff.mpr hf), ← WithZero.exp_zero, WithZero.exp_le_exp]
     omega
+
+/-- **A valuation extension from a ramification formula.** Let `L / K` be a field extension and
+`v`, `w` be `ℤᵐ⁰`-valued valuations on `K` and `L` with `ord_w r = e · ord_v r` for every `r ∈ K`
+and some `e > 0`. Then `w` extends `v` in the sense of `Valuation.HasExtension`; this supplies the
+local map between the valuation rings and the induced embedding of residue fields. -/
+theorem HasExtension.of_ord_algebraMap_eq_mul {L : Type*} [Field L] [Algebra F L]
+    {v : _root_.Valuation F ℤᵐ⁰} {w : _root_.Valuation L ℤᵐ⁰} {e : ℤ} (he : 0 < e)
+    (h : ∀ r : F, ord w (algebraMap F L r) = e * ord v r) : v.HasExtension w where
+  val_isEquiv_comap := isEquiv_of_val_le_one fun x => by
+    rw [comap_apply, ← mem_valuationSubring_iff, ← mem_valuationSubring_iff,
+      mem_valuationSubring_iff_ord_nonneg, mem_valuationSubring_iff_ord_nonneg, h,
+      mul_nonneg_iff_of_pos_left he]
 
 /-- The valuation ring of a surjective `ℤᵐ⁰`-valued valuation is a DVR. -/
 theorem valuationSubring_isDiscreteValuationRing_of_surjective
