@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Cerf
 -- Private: used only inside proofs.
 import TauCeti.Analysis.Calculus.ContDiff.Prod
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.Normed.Operator.Splitting.Bordered
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -60,6 +59,9 @@ and its third derivative is `2` (`TauCeti.iteratedDeriv_three_birthDeathPotentia
 
 ## Main results
 
+* `TauCeti.eq_zero_of_fderiv_fderiv_fderiv_apply_eq_zero`: at a transverse point, one kernel
+  vector `v` of the Hessian with `D³(f t)_x (v, v, v) ≠ 0` gives the cubic condition for the whole
+  kernel.
 * `TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`: near a transverse critical
   point at which the third derivative does not vanish along the kernel of the Hessian, every other
   critical point of the family is nondegenerate.
@@ -164,8 +166,7 @@ private theorem eventually_injective_of_birthDeath (hf : ContDiffAt ℝ 3 (uncur
   have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
   have hG : ContDiffAt ℝ 2 G (t, x) := hf.fderiv_slice (m := 2) le_rfl
   have hH : ContDiffAt ℝ 1 H (t, x) := hG.fderiv_slice (m := 1) le_rfl
-  have hsymm : ∀ u w, H (t, x) u w = H (t, x) w u :=
-    (hf2.comp x (contDiffAt_const.prodMk contDiffAt_id)).isSymmSndFDerivAt (by simp)
+  have hsymm : ∀ u w, H (t, x) u w = H (t, x) w u := fderiv_fderiv_apply_comm_of_uncurry hf2
   have hker : ∀ u, H (t, x) u = 0 → ∃ c : ℝ, u = c • v :=
     fun u hu ↦ exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf2 hs hv0 hv hu
   have ha : deriv (fun s ↦ fderiv ℝ (f s) x) t v ≠ 0 :=
@@ -191,6 +192,24 @@ private theorem eventually_injective_of_birthDeath (hf : ContDiffAt ℝ 3 (uncur
   obtain ⟨h₁, h₂⟩ := hzW u hu hu0
   simp only [Prod.mk.injEq]
   exact ⟨⟨hz₀.trans hc.symm, h₁.trans hv.symm⟩, h₂.trans hℓ.symm⟩
+
+/-- **The cubic condition along the kernel line.** At a transverse point, if the Hessian of
+`f t` at `x` has a kernel vector `v` with `D³(f t)_x (v, v, v) ≠ 0`, then no nonzero kernel vector
+`u` has `D³(f t)_x (u, u, u) = 0`, since `u` is a multiple of `v`. So a single such `v` supplies the
+cubic hypothesis of `TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`. -/
+theorem eq_zero_of_fderiv_fderiv_fderiv_apply_eq_zero
+    (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
+    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
+    (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
+    (hκ : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v ≠ 0) {u : E}
+    (hu : fderiv ℝ (fderiv ℝ (f t)) x u = 0)
+    (hu3 : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x u u u = 0) : u = 0 := by
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
+  obtain ⟨k, rfl⟩ := exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf hs hv0 hv hu
+  have hk : k ^ 3 * fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v = 0 := by
+    simpa [pow_succ, mul_assoc] using hu3
+  simp [pow_eq_zero_iff, hκ] at hk
+  simp [hk]
 
 /-- **Birth–death points are isolated degeneracies.** Let `f t` be a family of functions on a
 finite-dimensional real normed space, jointly `C³` at `(t, x)` and transverse there: the derivative

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import Mathlib.RingTheory.Flat.CategoryTheory
