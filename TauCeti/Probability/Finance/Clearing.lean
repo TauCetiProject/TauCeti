@@ -195,7 +195,7 @@ def clearingOrderIso (hδ : 0 < δ) (hH : DifferentiableOn ℝ H (Ioi 0))
   have hbij := bijOn_clearingMap hδ hH hmargin hzero
   StrictMono.orderIsoOfSurjective (hbij.mapsTo.restrict _ _ _)
     (fun a b hab ↦
-      strictMonoOn_clearingMap hH (fun x hx ↦ hδ.trans_le (hmargin x hx)) a.2 b.2 hab)
+      strictMonoOn_clearingMap hH (fun x hx ↦ hδ.trans_le (hmargin x hx)) a.prop b.prop hab)
     (hbij.mapsTo.restrict_surjective_iff.2 hbij.surjOn)
 
 /-- `clearingOrderIso` acts on positive prices by the clearing map. -/
@@ -227,8 +227,8 @@ theorem lipschitzWith_clearingOrderIso_symm (hδ : 0 < δ) (hH : DifferentiableO
   -- The margin bounds the growth of the clearing map from below, in either order.
   rcases le_total ((e.symm y : ℝ)) (e.symm y') with h | h
   · rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h), abs_sub_comm]
-    exact (mul_sub_le_clearingMap_sub hH hmargin (e.symm y).2 h).trans (le_abs_self _)
+    exact (mul_sub_le_clearingMap_sub hH hmargin (e.symm y).prop h).trans (le_abs_self _)
   · rw [abs_of_nonneg (sub_nonneg.2 h)]
-    exact (mul_sub_le_clearingMap_sub hH hmargin (e.symm y').2 h).trans (le_abs_self _)
+    exact (mul_sub_le_clearingMap_sub hH hmargin (e.symm y').prop h).trans (le_abs_self _)
 
 end TauCeti.Finance
