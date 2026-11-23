@@ -88,6 +88,9 @@ series of a profinite group.
   closed.
 * `ContinuousMulEquiv.map_topologicalClosure_normalClosure`: a topological group isomorphism
   carries the closed normal closure of a set onto the closed normal closure of its image.
+* `ContinuousMulEquiv.isCompact_closure_zpowers_iff`: a topological group isomorphism `e` carries
+  the powers of `x` to a relatively compact set exactly when the powers of `x` are relatively
+  compact.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
 * `DenseRange.topologicalClosure_map_commutator`: a homomorphism with dense range maps the
@@ -454,6 +457,16 @@ theorem _root_.ContinuousMulEquiv.map_topologicalClosure_normalClosure (α : G �
     _ = _ := by
       rw [map_normalClosure s α.toMulEquiv.toMonoidHom α.surjective]
       congr 2
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- The powers of `e x` are relatively compact exactly when the powers of `x` are, for a
+topological group isomorphism `e`. -/
+theorem _root_.ContinuousMulEquiv.isCompact_closure_zpowers_iff (e : G ≃ₜ* H) (x : G) :
+    IsCompact (_root_.closure (zpowers (e x) : Set H)) ↔
+      IsCompact (_root_.closure (zpowers x : Set G)) := by
+  have hs : (zpowers (e x) : Set H) = e.toHomeomorph '' zpowers x :=
+    congrArg SetLike.coe (MonoidHom.map_zpowers (e : G →* H) x).symm
+  rw [hs, ← e.toHomeomorph.image_closure, e.toHomeomorph.isCompact_image]
 
 open scoped commutatorElement in
 /-- A closed subgroup containing the commutators `⁅A, B⁆` contains the commutators
