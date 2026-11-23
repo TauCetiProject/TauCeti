@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Copy
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # The Cartan matrix of a graph carrying a positive additive function
@@ -159,16 +160,6 @@ theorem graphCartanMatrix_mulVec_eq_zero [NonAssocRing R] {δ : V → R}
     (hδ : ∀ i, ∑ j ∈ G.neighborFinset i, δ j = 2 * δ i) : graphCartanMatrix G R *ᵥ δ = 0 := by
   funext i
   rw [graphCartanMatrix_mulVec_apply, hδ i, sub_self, Pi.zero_apply]
-
-omit [DecidableEq V] [DecidableRel G.Adj] in
-/-- **A sum over the oriented edges can be read from either endpoint.** Adjacency is symmetric, so
-summing `F i j` over the neighbours `j` of each vertex `i` is summing it over the neighbours `i`
-of each vertex `j`. -/
-theorem sum_neighborFinset_comm [G.LocallyFinite] {M : Type*} [AddCommMonoid M] (F : V → V → M) :
-    ∑ i, ∑ j ∈ G.neighborFinset i, F i j = ∑ j, ∑ i ∈ G.neighborFinset j, F i j :=
-  sum_comm' fun i j ↦ by
-    simp only [mem_univ, true_and, and_true, mem_neighborFinset]
-    exact ⟨Adj.symm, Adj.symm⟩
 
 /-- **The sum-of-squares identity for a graph with an additive function.** After the substitution
 `x = δ * y`, twice the quadratic form of `2I - A` at `x` is the sum, over the oriented edges, of
