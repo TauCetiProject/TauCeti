@@ -17,7 +17,12 @@ public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 Over a locally compact group, the canonical homogeneous continuous cochain functor preserves
 limits of arbitrary small diagrams. In particular, continuous cochains into an inverse limit
 are the inverse limit of continuous cochains, with the comparison commuting with projections
-and differentials. The same statement holds after forgetting the topologies of the cochains.
+and differentials. To obtain the comparison after forgetting the cochain topologies, install
+the module limits using `ModuleCat.hasLimitsOfSize`, then apply
+`HomologicalComplex.preservesLimitsOfShape_of_eval` to the functor on complexes induced by
+`forget₂ (TopModuleCat R) (ModuleCat R)`. Degreewise, evaluation preserves limits and this
+forgetful functor is a right adjoint, so their composite preserves limits. Composing with the
+continuous cochain functor gives the desired preservation statement.
 Use `CategoryTheory.Limits.preservesLimitIso` for the comparison and
 `CategoryTheory.Limits.preservesLimitIso_hom_π` for its projections.
 
