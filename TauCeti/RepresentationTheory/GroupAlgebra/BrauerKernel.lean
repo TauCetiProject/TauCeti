@@ -22,8 +22,8 @@ element `x ∈ R[G]^P` has coefficients constant on the `P`-conjugacy orbits of 
 support, outside `C_G(P)` when `Br_P(x) = 0`, the orbit sum of `g` is the relative trace of `g`
 from its stabilizer `Q = P ⊓ C_G(g) < P` (`TauCeti.coeff_relTrace_single_stabilizer`), so `x`
 is `x_g` times that trace plus an element of `R[G]^P` whose support misses the orbit of `g`, and
-induction on the support writes `x` as a sum of such traces. This direction uses neither the characteristic nor that `P` is
-a `p`-group.
+induction on the support writes `x` as a sum of such traces. This direction uses neither the
+characteristic nor that `P` is a `p`-group.
 
 The Brauer projection of a central element of `R[G]` is invariant under conjugation by the
 normalizer `N_G(P)`, which acts on `C_G(P)`
