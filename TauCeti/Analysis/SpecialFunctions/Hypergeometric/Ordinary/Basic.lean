@@ -55,9 +55,10 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
   series, and `TauCeti.summable_norm_ordinaryHypergeometricCoefficient_smul_pow`: the series
   converges absolutely there.
 * `TauCeti.ordinaryHypergeometricCoefficient_one_nonneg`,
-  `TauCeti.ordinaryHypergeometricCoefficient_self_one_nonneg`, and
-  `TauCeti.norm_ordinaryHypergeometricCoefficient_one_le_one`: nonnegativity and norm-`1` bounds
-  on the denominator-one hypergeometric coefficients `(a)ₙ (b)ₙ / (n!)²`.
+  `TauCeti.ordinaryHypergeometricCoefficient_self_one_nonneg`,
+  `TauCeti.norm_ordinaryHypergeometricCoefficient_one_le`, and
+  `TauCeti.norm_ordinaryHypergeometricCoefficient_one_le_one`: nonnegativity and multichoose /
+  norm-`1` bounds on the denominator-one hypergeometric coefficients `(a)ₙ (b)ₙ / (n!)²`.
 * `TauCeti.hasSum_multichoose_mul_multichoose_mul_pow`: with lower parameter `1`, the coefficients
   are products of generalized multichoose numbers, so `∑ (a)ₙ (b)ₙ / (n!)² xⁿ = ₂F₁(a, b; 1; x)`.
   For `a = b` over `𝕂` this is `TauCeti.hasSum_multichoose_sq_mul_pow`.
@@ -151,15 +152,24 @@ theorem ordinaryHypergeometricCoefficient_self_one_nonneg {K : Type*} [Field K] 
   rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, ← sq]
   exact sq_nonneg _
 
+/-- Over `ℝ` or `ℂ`, if `‖a‖ ≤ R₁` and `‖b‖ ≤ R₂`, then the denominator-one hypergeometric
+coefficient `(a)ₙ (b)ₙ / (n!)²` has norm at most `Ring.multichoose R₁ n * Ring.multichoose R₂ n`. -/
+theorem norm_ordinaryHypergeometricCoefficient_one_le {𝕂 : Type*} [RCLike 𝕂]
+    {a b : 𝕂} {R₁ R₂ : ℝ} (ha : ‖a‖ ≤ R₁) (hb : ‖b‖ ≤ R₂) (n : ℕ) :
+    ‖ordinaryHypergeometricCoefficient a b 1 n‖ ≤
+      Ring.multichoose R₁ n * Ring.multichoose R₂ n := by
+  rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, norm_mul]
+  have h1 := norm_multichoose_le_of_norm_le ha n
+  exact mul_le_mul h1 (norm_multichoose_le_of_norm_le hb n)
+    (norm_nonneg _) ((norm_nonneg _).trans h1)
+
 /-- Over `ℝ` or `ℂ`, if `‖a‖ ≤ 1` and `‖b‖ ≤ 1`, then the denominator-one hypergeometric
 coefficient `(a)ₙ (b)ₙ / (n!)²` has norm at most `1`. -/
 theorem norm_ordinaryHypergeometricCoefficient_one_le_one {𝕂 : Type*} [RCLike 𝕂]
     {a b : 𝕂} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (n : ℕ) :
     ‖ordinaryHypergeometricCoefficient a b 1 n‖ ≤ 1 := by
-  rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, norm_mul]
-  have h1 := (norm_multichoose_le_of_norm_le ha n).trans_eq (Ring.multichoose_one n)
-  have h2 := (norm_multichoose_le_of_norm_le hb n).trans_eq (Ring.multichoose_one n)
-  exact (mul_le_mul h1 h2 (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+  simpa only [Ring.multichoose_one, mul_one] using
+    norm_ordinaryHypergeometricCoefficient_one_le ha hb n
 
 variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]
 

@@ -1,0 +1,58 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+
+/-!
+# Complex analyticity of the Gamma function
+
+`Complex.Gamma` is complex analytic away from the nonpositive integers (`Complex.analyticAt_Gamma`),
+because its reciprocal is entire (`Complex.differentiable_one_div_Gamma`) and `Gamma` does not
+vanish away from `-ℕ`. Consequently the zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic
+wherever `2b` avoids `-ℕ` (`TauCeti.analyticAt_Gamma_two_mul_div_Gamma_sq`,
+`TauCeti.analyticOnNhd_Gamma_two_mul_div_Gamma_sq`).
+
+## Main results
+
+* `Complex.analyticAt_Gamma`: `AnalyticAt ℂ Complex.Gamma s` wherever `∀ n : ℕ, s ≠ -(n : ℂ)`.
+* `TauCeti.analyticAt_Gamma_two_mul_div_Gamma_sq` and
+  `TauCeti.analyticOnNhd_Gamma_two_mul_div_Gamma_sq`: complex analyticity of
+  `b ↦ Γ(2b) / Γ(b)²` away from `2b ∈ -ℕ`.
+-/
+
+public section
+
+namespace Complex
+
+/-- Gamma is analytic away from the nonpositive integers. -/
+@[fun_prop]
+theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
+  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
+  simpa only [Pi.inv_def, inv_inv] using h
+
+end Complex
+
+namespace TauCeti
+
+/-- The zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic wherever `2b` is not a nonpositive
+integer. -/
+theorem analyticAt_Gamma_two_mul_div_Gamma_sq {b : ℂ} (hb : ∀ n : ℕ, 2 * b ≠ -(n : ℂ)) :
+    AnalyticAt ℂ (fun z : ℂ ↦ Complex.Gamma (2 * z) / Complex.Gamma z ^ 2) b := by
+  have hb' : ∀ m : ℕ, b ≠ -(m : ℂ) := fun m hm ↦
+    hb (2 * m) (by push_cast; linear_combination 2 * hm)
+  exact ((Complex.analyticAt_Gamma hb).comp (analyticAt_const.mul analyticAt_id)).div
+    ((Complex.analyticAt_Gamma hb').pow 2) (pow_ne_zero 2 (Complex.Gamma_ne_zero hb'))
+
+/-- The zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic on
+`{b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)}`. -/
+theorem analyticOnNhd_Gamma_two_mul_div_Gamma_sq :
+    AnalyticOnNhd ℂ (fun b : ℂ ↦ Complex.Gamma (2 * b) / Complex.Gamma b ^ 2)
+      {b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)} :=
+  fun _ hb ↦ analyticAt_Gamma_two_mul_div_Gamma_sq hb
+
+end TauCeti

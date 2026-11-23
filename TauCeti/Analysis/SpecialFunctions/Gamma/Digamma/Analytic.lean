@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
-import TauCeti.Analysis.Complex.NegNatTopology
+import TauCeti.Analysis.SpecialFunctions.Gamma.Analytic
 
 /-!
 # Complex analyticity of digamma
@@ -28,10 +27,7 @@ namespace Complex
 /-- Complex digamma is analytic away from the nonpositive integers. -/
 @[fun_prop]
 theorem analyticAt_digamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ digamma s := by
-  have hΓ : AnalyticAt ℂ Gamma s :=
-    DifferentiableOn.analyticAt
-      (fun z hz ↦ (differentiableAt_Gamma z hz).differentiableWithinAt)
-      (isOpen_ne_neg_natCast.mem_nhds hs)
+  have hΓ : AnalyticAt ℂ Gamma s := analyticAt_Gamma hs
   simpa only [digamma_def, logDeriv, Pi.div_def] using hΓ.deriv.div hΓ (Gamma_ne_zero hs)
 
 end Complex

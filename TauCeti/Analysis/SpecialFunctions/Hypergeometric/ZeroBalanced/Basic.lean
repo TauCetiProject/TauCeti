@@ -12,10 +12,10 @@ import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Complex.NegNatTopology
+import TauCeti.Analysis.SpecialFunctions.Gamma.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Bounds
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 
 /-!
@@ -111,22 +111,6 @@ theorem zeroBalancedSeries_zero_right (a : ℂ) :
   rw [tsum_eq_single 0 fun k hk ↦ by simp [zero_pow hk]]
   simp [ordinaryHypergeometricCoefficient]
 
-/-- The zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic wherever `2b` is not a nonpositive
-integer. -/
-theorem analyticAt_Gamma_two_mul_div_Gamma_sq {b : ℂ} (hb : ∀ n : ℕ, 2 * b ≠ -(n : ℂ)) :
-    AnalyticAt ℂ (fun z : ℂ ↦ Complex.Gamma (2 * z) / Complex.Gamma z ^ 2) b := by
-  have hb' : ∀ m : ℕ, b ≠ -(m : ℂ) := fun m hm ↦
-    hb (2 * m) (by push_cast; linear_combination 2 * hm)
-  exact ((Complex.analyticAt_Gamma hb).comp (analyticAt_const.mul analyticAt_id)).div
-    ((Complex.analyticAt_Gamma hb').pow 2) (pow_ne_zero 2 (Complex.Gamma_ne_zero hb'))
-
-/-- The zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic on
-`{b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)}`. -/
-theorem analyticOnNhd_Gamma_two_mul_div_Gamma_sq :
-    AnalyticOnNhd ℂ (fun b : ℂ ↦ Complex.Gamma (2 * b) / Complex.Gamma b ^ 2)
-      {b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)} :=
-  fun _ hb ↦ analyticAt_Gamma_two_mul_div_Gamma_sq hb
-
 private noncomputable def zeroBalancedTerm (a x : ℂ) (k : ℕ) : ℂ :=
   ordinaryHypergeometricCoefficient a a 1 k * x ^ k *
     (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a)))
@@ -134,12 +118,6 @@ private noncomputable def zeroBalancedTerm (a x : ℂ) (k : ℕ) : ℂ :=
 private theorem zeroBalancedSeries_eq_tsum_term (a x : ℂ) :
     zeroBalancedSeries a x =
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 * ∑' k : ℕ, zeroBalancedTerm a x k := (rfl)
-
-private theorem norm_ordinaryHypergeometricCoefficient_self_one_le {a : ℂ} {R : ℝ}
-    (ha : ‖a‖ ≤ R) (k : ℕ) :
-    ‖ordinaryHypergeometricCoefficient a a 1 k‖ ≤ (Ring.multichoose R k) ^ 2 := by
-  rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, ← sq, norm_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (norm_multichoose_le_of_norm_le ha k) 2
 
 /-- On the open unit disc, the digamma-weighted component series in
 `zeroBalancedSeries_eq_log_mul_add` is summable. -/
@@ -161,7 +139,8 @@ theorem summable_zeroBalancedSeries_digamma (a : ℂ) {x : ℂ} (hx : ‖x‖ < 
     rw [norm_mul, Complex.norm_ofNat]
     exact (mul_le_mul_of_nonneg_left hdig zero_le_two).trans_eq (by ring)
   have hc : ‖ordinaryHypergeometricCoefficient a a 1 k‖ ≤ (Ring.multichoose R k) ^ 2 :=
-    norm_ordinaryHypergeometricCoefficient_self_one_le (le_max_left ‖a‖ 1) k
+    (norm_ordinaryHypergeometricCoefficient_one_le (le_max_left ‖a‖ 1) (le_max_left ‖a‖ 1)
+      k).trans_eq (sq _).symm
   rw [norm_mul, norm_mul, norm_pow]
   exact (mul_le_mul_of_nonneg_right
     (mul_le_mul hc hdig2 (norm_nonneg _) (by positivity))
@@ -250,8 +229,7 @@ theorem norm_zeroBalancedTail_le {a x : ℂ} (hre : 0 ≤ a.re) (ha : ‖a‖ �
     dsimp [M]; ring
   have hterm (k : ℕ) : ‖zeroBalancedTerm a x (k + 1)‖ ≤ ‖x‖ ^ (k + 1) * M := by
     have hc : ‖ordinaryHypergeometricCoefficient a a 1 (k + 1)‖ ≤ 1 :=
-      (norm_ordinaryHypergeometricCoefficient_self_one_le ha (k + 1)).trans_eq
-        (by simp [Ring.multichoose_one])
+      norm_ordinaryHypergeometricCoefficient_one_le_one ha ha (k + 1)
     have h1 := Complex.norm_digamma_sub_digamma_le_of_one_le_re
       (s := ((k + 1 : ℕ) : ℂ) + 1) (w := ((k + 1 : ℕ) : ℂ) + a)
       (by simp; linarith [k.cast_nonneg (α := ℝ)]) (by simp; linarith)
@@ -304,7 +282,7 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
         linarith
     rw [zeroBalancedTerm, norm_mul, norm_mul, norm_pow]
     exact (mul_le_mul (mul_le_mul_of_nonneg_right
-      (norm_ordinaryHypergeometricCoefficient_self_one_le hbR (k + 1))
+      ((norm_ordinaryHypergeometricCoefficient_one_le hbR hbR (k + 1)).trans_eq (sq _).symm)
       (pow_nonneg (norm_nonneg x) _)) hlog (norm_nonneg _) (by positivity)).trans_eq (by ring)
   refine ((hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mp hloc).differentiableOn
     (Eventually.of_forall fun _ ↦ DifferentiableOn.fun_sum fun k _ b hb ↦ ?_)
@@ -438,7 +416,9 @@ theorem exists_norm_mul_zeroBalancedTail_and_deriv_le :
 
 /-! ### Analyticity in `x` and `a` and upper-half-plane boundary limit -/
 
-private theorem analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) :
+/-- For every `a : ℂ`, the digamma-weighted power series appearing in
+`zeroBalancedSeries_eq_log_mul_add` is complex analytic on the open unit disc `Metric.ball 0 1`. -/
+theorem analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) :
     AnalyticOnNhd ℂ (fun z : ℂ ↦ ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k *
       (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * z ^ k) (Metric.ball 0 1) := by
   let R := max ‖a‖ 1
@@ -456,7 +436,8 @@ private theorem analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) :
     rw [norm_mul, Complex.norm_ofNat]
     exact (mul_le_mul_of_nonneg_left hdig zero_le_two).trans_eq (by ring)
   have hc : ‖ordinaryHypergeometricCoefficient a a 1 k‖ ≤ (Ring.multichoose R k) ^ 2 :=
-    norm_ordinaryHypergeometricCoefficient_self_one_le (le_max_left ‖a‖ 1) k
+    (norm_ordinaryHypergeometricCoefficient_one_le (le_max_left ‖a‖ 1) (le_max_left ‖a‖ 1)
+      k).trans_eq (sq _).symm
   rw [norm_mul]
   exact (mul_le_mul_of_nonneg_right
     (mul_le_mul hc hdig2 (norm_nonneg _) (by positivity))

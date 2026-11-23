@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.Meromorphic.Complex
-public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Analytic
 
 /-!
 # Exact orders of Gamma and the archimedean factors
@@ -116,12 +116,6 @@ theorem meromorphicTrailingCoeffAt_Gamma_neg_nat (n : ℕ) :
 @[simp]
 theorem meromorphicTrailingCoeffAt_Gamma_zero : meromorphicTrailingCoeffAt Gamma 0 = 1 := by
   simpa using meromorphicTrailingCoeffAt_Gamma_neg_nat 0
-
-/-- Gamma is analytic away from the nonpositive integers. -/
-@[fun_prop]
-theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
-  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
-  simpa only [Pi.inv_def, inv_inv] using h
 
 /-- For any complex base `x` and shift `β`, the shifted Gamma–power kernel
 `s ↦ Γ(s - β) * x ^ (β - s)` is analytic at every `s₀` where `s₀ - β` is not a nonpositive

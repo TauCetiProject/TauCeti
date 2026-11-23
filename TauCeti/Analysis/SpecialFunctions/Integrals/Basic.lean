@@ -74,6 +74,12 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow`: the substitution
   `w = (1 - x) s / (x + (1 - x) s)` relating `(1 - x)^a ∫₀¹ s^(a-1) (x + (1-x) s)^(-a)` to
   `∫₀^(1-x) w^(a-1) / (1 - w)` for `x ∈ (0, 1)`.
+* `TauCeti.integral_finset_mul_rpow` and `TauCeti.integral_finset_rpow_zero_one`: termwise
+  integration of finite sums of real powers `∑ i ∈ s, c i * x ^ p i`.
+* `TauCeti.intervalIntegrable_rpow_mul_add_mul_rpow`,
+  `TauCeti.intervalIntegrable_one_sub_rpow_mul_rpow_mul_add_mul_rpow`, and
+  `TauCeti.intervalIntegrable_one_sub_rpow_sub_one_mul_rpow_mul_add_mul_rpow`: interval
+  integrability on `[0, 1]` of the singular and regularized Euler hypergeometric kernels.
 -/
 
 public section
@@ -548,6 +554,89 @@ theorem one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow {a x : ℝ} (hx : x ∈ 
   rw [Real.div_rpow (mul_nonneg h1x.le hs.1.le) hD.le, Real.mul_rpow h1x.le hs.1.le, h1u,
     h1xa, Real.rpow_neg hD.le, hDa]
   field_simp [hx.1.ne', hD.ne', (Real.rpow_pos_of_pos hD (a - 1)).ne']
+
+/-- Termwise integration of a finite sum of weighted real powers `∑ i ∈ s, c i * x ^ p i`. -/
+theorem integral_finset_mul_rpow {ι : Type*} (s : Finset ι) (c p : ι → ℝ) {a b : ℝ}
+    (hp : ∀ i ∈ s, -1 < p i ∨ p i ≠ -1 ∧ (0 : ℝ) ∉ Set.uIcc a b) :
+    ∫ x in a..b, ∑ i ∈ s, c i * x ^ p i =
+      ∑ i ∈ s, c i * ((b ^ (p i + 1) - a ^ (p i + 1)) / (p i + 1)) := by
+  rw [intervalIntegral.integral_finsetSum fun i hi ↦
+    ((hp i hi).elim intervalIntegral.intervalIntegrable_rpow'
+      fun h ↦ intervalIntegral.intervalIntegrable_rpow (Or.inr h.2)).const_mul (c i)]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [intervalIntegral.integral_const_mul, integral_rpow (hp i hi)]
+
+/-- Termwise integration of a finite sum of real powers `∑ i ∈ s, x ^ p i` on `[0, 1]` when every
+exponent satisfies `-1 < p i`. -/
+theorem integral_finset_rpow_zero_one {ι : Type*} (s : Finset ι) (p : ι → ℝ)
+    (hp : ∀ i ∈ s, -1 < p i) :
+    ∫ x in (0 : ℝ)..1, ∑ i ∈ s, x ^ p i = ∑ i ∈ s, 1 / (p i + 1) := by
+  have h := integral_finset_mul_rpow s (fun _ ↦ 1) p (a := 0) (b := 1) fun i hi ↦ Or.inl (hp i hi)
+  simp only [one_mul, Real.one_rpow] at h
+  rw [h]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [Real.zero_rpow (by linarith [hp i hi]), sub_zero, one_div]
+
+/-- Interval integrability on `[0, 1]` of the half-singular Euler kernel
+`s ^ (a - 1) * (x + (1 - x) * s) ^ c` for `0 < a` and `0 < x`. -/
+theorem intervalIntegrable_rpow_mul_add_mul_rpow {a x : ℝ} (ha : 0 < a) (hx₀ : 0 < x) (c : ℝ) :
+    IntervalIntegrable (fun s : ℝ ↦ s ^ (a - 1) * (x + (1 - x) * s) ^ c)
+      MeasureTheory.volume 0 1 := by
+  have hcont : ContinuousOn (fun s : ℝ ↦ (x + (1 - x) * s) ^ c) (Set.uIcc 0 1) :=
+    ContinuousOn.rpow_const (by fun_prop) fun s hs ↦ Or.inl <| by
+      rw [Set.uIcc_of_le zero_le_one] at hs
+      rcases eq_or_lt_of_le hs.1 with h0 | hs0
+      · simp [← h0, hx₀.ne']
+      · linarith [mul_nonneg hx₀.le (sub_nonneg.mpr hs.2)]
+  exact (intervalIntegral.intervalIntegrable_rpow' (by linarith)).mul_continuousOn hcont
+
+/-- Interval integrability on `[0, 1]` of the beta-weighted Euler kernel
+`(1 - s) ^ (b - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ c` for `0 < a`, `0 < b`, and
+`0 < x`. -/
+theorem intervalIntegrable_one_sub_rpow_mul_rpow_mul_add_mul_rpow {a b x : ℝ}
+    (ha : 0 < a) (hb : 0 < b) (hx₀ : 0 < x) (c : ℝ) :
+    IntervalIntegrable (fun s : ℝ ↦ (1 - s) ^ (b - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ c)
+      MeasureTheory.volume 0 1 := by
+  have hpos {s : ℝ} (hs : s ∈ Set.Icc (0 : ℝ) 1) : x + (1 - x) * s ≠ 0 := by
+    rcases eq_or_lt_of_le hs.1 with h0 | hs0
+    · simp [← h0, hx₀.ne']
+    · linarith [mul_nonneg hx₀.le (sub_nonneg.mpr hs.2)]
+  have h1 : IntervalIntegrable
+      (fun s : ℝ ↦ (1 - s) ^ (b - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ c)
+      MeasureTheory.volume 0 (1 / 2) := by
+    have hcont : ContinuousOn
+        (fun s : ℝ ↦ (1 - s) ^ (b - 1) * (x + (1 - x) * s) ^ c) (Set.uIcc 0 (1 / 2)) := by
+      rw [Set.uIcc_of_le (by norm_num)]
+      exact ((continuousOn_const.sub continuousOn_id).rpow_const fun s hs ↦
+          Or.inl (by linarith [hs.2] : 1 - s ≠ 0)).mul
+        (((continuousOn_const.add (continuousOn_const.mul continuousOn_id))).rpow_const fun s hs ↦
+          Or.inl (hpos ⟨hs.1, le_trans hs.2 (by norm_num)⟩))
+    exact ((intervalIntegral.intervalIntegrable_rpow' (r := a - 1)
+      (by linarith)).mul_continuousOn hcont).congr fun _ _ ↦ by ring
+  have h2 : IntervalIntegrable
+      (fun s : ℝ ↦ (1 - s) ^ (b - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ c)
+      MeasureTheory.volume (1 / 2) 1 := by
+    have hcont : ContinuousOn
+        (fun s : ℝ ↦ s ^ (a - 1) * (x + (1 - x) * s) ^ c) (Set.uIcc (1 / 2) 1) := by
+      rw [Set.uIcc_of_le (by norm_num)]
+      exact (continuousOn_id.rpow_const fun s hs ↦
+          Or.inl (by linarith [hs.1] : s ≠ 0)).mul
+        (((continuousOn_const.add (continuousOn_const.mul continuousOn_id))).rpow_const fun s hs ↦
+          Or.inl (hpos ⟨le_trans (by norm_num) hs.1, hs.2⟩))
+    exact ((intervalIntegrable_sub_rpow (by linarith : -1 < b - 1) (1 / 2) 1).mul_continuousOn
+      hcont).congr fun _ _ ↦ by ring
+  exact h1.trans h2
+
+/-- Interval integrability on `[0, 1]` of the regularized Euler kernel
+`((1 - s) ^ (b - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ c` for `0 < a`, `0 < b`, and
+`0 < x`. -/
+theorem intervalIntegrable_one_sub_rpow_sub_one_mul_rpow_mul_add_mul_rpow {a b x : ℝ}
+    (ha : 0 < a) (hb : 0 < b) (hx₀ : 0 < x) (c : ℝ) :
+    IntervalIntegrable
+      (fun s : ℝ ↦ ((1 - s) ^ (b - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ c)
+      MeasureTheory.volume 0 1 :=
+  ((intervalIntegrable_one_sub_rpow_mul_rpow_mul_add_mul_rpow ha hb hx₀ c).sub
+    (intervalIntegrable_rpow_mul_add_mul_rpow ha hx₀ c)).congr fun _ _ ↦ by ring
 
 end TauCeti
 

@@ -10,11 +10,11 @@ public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import TauCeti.Analysis.Complex.NegNatTopology
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.ODE.Wronskian
-import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.EulerIntegral
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Analytic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Limits
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -256,18 +256,6 @@ private theorem hasDerivAt_sturmLiouville_realU2 {a x : ℝ}
 
 /-! ### Logarithmic asymptotic at `0⁺`, Wronskian uniqueness, and complex continuation -/
 
-private theorem intervalIntegrable_swappedEuler {a x : ℝ}
-    (ha : a ∈ Ioo (0 : ℝ) 1) (hx : x ∈ Ioo (0 : ℝ) 1) :
-    IntervalIntegrable
-      (fun s ↦ (1 - s) ^ (a - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)) volume 0 1 ∧
-    IntervalIntegrable (fun s ↦ s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)) volume 0 1 := by
-  have hcont : ContinuousOn (fun s : ℝ ↦ (x + (1 - x) * s) ^ (-a)) (uIcc 0 1) :=
-    ContinuousOn.rpow_const (by fun_prop) fun s hs ↦ Or.inl <| by
-      rw [uIcc_of_le zero_le_one] at hs; nlinarith [hx.1, hx.2, hs.1, hs.2]
-  exact ⟨((intervalIntegrable_rpow_mul_one_sub_rpow ha.1 ha.1 ⟨le_rfl, zero_le_one⟩
-      ⟨zero_le_one, le_rfl⟩).congr fun s _ ↦ by ring).mul_continuousOn hcont,
-    (intervalIntegral.intervalIntegrable_rpow' (by linarith [ha.1])).mul_continuousOn hcont⟩
-
 private theorem eulerZeroBalanced_eq_split {a x : ℝ}
     (ha : a ∈ Ioo (0 : ℝ) 1) (hx : x ∈ Ioo (0 : ℝ) 1) :
     eulerZeroBalanced a x =
@@ -280,7 +268,8 @@ private theorem eulerZeroBalanced_eq_split {a x : ℝ}
     simp only [sub_self, sub_zero] at h; rw [eulerZeroBalanced, ← h]
     exact intervalIntegral.integral_congr fun s _ ↦ by
       rw [sub_sub_cancel, (by ring : 1 - (1 - x) * (1 - s) = x + (1 - x) * s)]
-  obtain ⟨htot, hsing⟩ := intervalIntegrable_swappedEuler ha hx
+  have htot := intervalIntegrable_one_sub_rpow_mul_rpow_mul_add_mul_rpow ha.1 ha.1 hx.1 (-a)
+  have hsing := intervalIntegrable_rpow_mul_add_mul_rpow ha.1 hx.1 (-a)
   have hdiff : ∫ s in (0 : ℝ)..1,
       ((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a) =
       eulerZeroBalanced a x - ∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a) := by
@@ -291,66 +280,6 @@ private theorem eulerZeroBalanced_eq_split {a x : ℝ}
     rw [← Real.one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow_eq_sub_log ha.1 hx, ← mul_assoc,
       ← Real.rpow_add (sub_pos.mpr hx.2), neg_add_cancel, Real.rpow_zero, one_mul]
   linarith
-
-private theorem smooth_euler_integrand_le {a x s : ℝ}
-    (ha : a ∈ Ioo (0 : ℝ) 1) (hx : x ∈ Ioo (0 : ℝ) (1 / 2)) (hs : s ∈ Ioo (0 : ℝ) 1) :
-    ‖((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)‖ ≤
-      2 ^ a * (1 - s) ^ (a - 1) := by
-  have h1s_pos : 0 < 1 - s := sub_pos.mpr hs.2
-  have h1s_nn : 0 ≤ (1 - s) ^ (a - 1) - 1 := sub_nonneg.mpr <| by
-    simpa using Real.rpow_le_rpow_of_exponent_ge h1s_pos (by linarith [hs.1])
-      (by linarith [ha.2] : a - 1 ≤ 0)
-  have hdiv_le : ((1 - s) ^ (a - 1) - 1) / s ≤ (1 - s) ^ (a - 1) := by
-    simpa only [sub_sub_cancel] using
-      Real.rpow_sub_one_div_one_sub_le ha.1 ha.2.le h1s_pos (by linarith [hs.1])
-  have hD_rpow : (x + (1 - x) * s) ^ (-a) ≤ 2 ^ a * s ^ (-a) :=
-    (Real.rpow_le_rpow_of_nonpos (half_pos hs.1) (by nlinarith [hx.1, hx.2, hs.1])
-      (by linarith [ha.1])).trans_eq <| by
-        rw [div_eq_mul_inv, Real.mul_rpow hs.1.le (by norm_num),
-          Real.inv_rpow zero_le_two, ← Real.rpow_neg zero_le_two, neg_neg, mul_comm]
-  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (mul_nonneg h1s_nn
-    (Real.rpow_nonneg hs.1.le _)) (Real.rpow_nonneg (by nlinarith [hx.1, hx.2, hs.1]) _))]
-  have hs_comb : s ^ (a - 1) * s ^ (-a) = s⁻¹ := by
-    rw [← Real.rpow_add hs.1, (by ring : a - 1 + -a = -1), Real.rpow_neg_one]
-  exact ((mul_le_mul_of_nonneg_left hD_rpow
-      (mul_nonneg h1s_nn (Real.rpow_nonneg hs.1.le _))).trans_eq
-    (by rw [div_eq_mul_inv, ← hs_comb]; ring :
-      _ = 2 ^ a * (((1 - s) ^ (a - 1) - 1) / s))).trans
-    (mul_le_mul_of_nonneg_left hdiv_le (by positivity))
-
-private theorem tendsto_smooth_euler_piece {a : ℝ} (ha : a ∈ Ioo (0 : ℝ) 1) :
-    Tendsto (fun x ↦ ∫ s in (0 : ℝ)..1,
-      ((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a))
-      (𝓝[>] 0) (𝓝 (Real.digamma 1 - Real.digamma a)) := by
-  have hb_int : IntervalIntegrable (fun s : ℝ ↦ 2 ^ a * (1 - s) ^ (a - 1)) volume 0 1 :=
-    ((intervalIntegrable_rpow_mul_one_sub_rpow (a := 1) (b := a) zero_lt_one ha.1
-      ⟨le_rfl, zero_le_one⟩ ⟨zero_le_one, le_rfl⟩).const_mul (2 ^ a)).congr fun _ _ ↦ by simp
-  have hdct := intervalIntegral.tendsto_integral_filter_of_dominated_convergence
-    (l := 𝓝[>] (0 : ℝ))
-    (F := fun x s ↦ ((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a))
-    (f := fun s ↦ ((1 - s) ^ (a - 1) - 1) / s) (fun s ↦ 2 ^ a * (1 - s) ^ (a - 1)) ?_ ?_ hb_int ?_
-  · have h := intervalIntegral.integral_comp_sub_left
-      (fun w ↦ (w ^ (a - 1) - 1) / (1 - w)) 1 (a := 0) (b := 1)
-    simp only [sub_self, sub_zero, sub_sub_cancel] at h
-    rwa [h.trans (Real.integral_rpow_sub_one_div_one_sub ha.1)] at hdct
-  · filter_upwards [Ioo_mem_nhdsGT (by norm_num : (0 : ℝ) < 1 / 2)] with x hx
-    obtain ⟨h1, h2⟩ := intervalIntegrable_swappedEuler ha ⟨hx.1, by linarith [hx.2]⟩
-    exact (intervalIntegrable_iff.mp ((h1.sub h2).congr fun _ _ ↦ by ring)).aestronglyMeasurable
-  · filter_upwards [Ioo_mem_nhdsGT (by norm_num : (0 : ℝ) < 1 / 2)] with x hx
-    filter_upwards [Measure.ae_ne volume (1 : ℝ)] with s hs1 hs
-    rw [uIoc_of_le zero_le_one] at hs
-    exact smooth_euler_integrand_le ha hx ⟨hs.1, lt_of_le_of_ne hs.2 hs1⟩
-  · refine Eventually.of_forall fun s hs ↦ ?_
-    rw [uIoc_of_le zero_le_one] at hs
-    have hlim : Tendsto
-        (fun x : ℝ ↦ ((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a))
-        (𝓝[>] 0) (𝓝 (((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (0 + (1 - 0) * s) ^ (-a))) :=
-      ((continuousAt_const.mul (ContinuousAt.rpow_const (by fun_prop)
-        (Or.inl (by simp [hs.1.ne'])))).continuousWithinAt (s := Ioi (0 : ℝ))).tendsto
-    rwa [(by rw [zero_add, sub_zero, one_mul, mul_assoc, ← Real.rpow_add hs.1,
-        (by ring : a - 1 + -a = -1), Real.rpow_neg_one, div_eq_mul_inv] :
-      ((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (0 + (1 - 0) * s) ^ (-a) =
-        ((1 - s) ^ (a - 1) - 1) / s)] at hlim
 
 private theorem tendsto_eulerZeroBalanced_add_log {a : ℝ} (ha : a ∈ Ioo (0 : ℝ) 1) :
     Tendsto (fun x ↦ eulerZeroBalanced a x + Real.log x) (𝓝[>] 0)
@@ -371,7 +300,8 @@ private theorem tendsto_eulerZeroBalanced_add_log {a : ℝ} (ha : a ∈ Ioo (0 :
         (by filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
             exact ⟨by linarith [hx.2], by linarith [hx.1]⟩)
     rwa [Real.integral_rpow_sub_one_div_one_sub ha.1] at hcomp
-  have hcomb := ((tendsto_smooth_euler_piece ha).add (h1x_lim.mul hprim)).sub <| by
+  have hcomb := ((Real.tendsto_integral_one_sub_rpow_sub_one_mul_rpow_mul_add_mul_rpow
+      ha.1 ha.2.le).add (h1x_lim.mul hprim)).sub <| by
     simpa using Real.tendsto_sub_mul_log_nhdsGT_zero (f := fun x : ℝ ↦ (1 - x) ^ (-a))
       (((Real.hasDerivAt_rpow_const (p := -a) (Or.inl (by norm_num))).comp 0
         ((hasDerivAt_id 0).const_sub 1)).differentiableAt)
