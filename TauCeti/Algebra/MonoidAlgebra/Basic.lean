@@ -318,6 +318,15 @@ theorem addSubgroupClosure_range_of {M : Type*} [MulOneClass M] :
     rw [h]
     exact zsmul_mem (AddSubgroup.subset_closure (Set.mem_range_self m)) c
 
+/-- Viewing `MonoidAlgebra.singleOneAlgHom` as a ring homomorphism recovers
+`MonoidAlgebra.singleOneRingHom`. -/
+@[simp]
+theorem toRingHom_singleOneAlgHom {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [Monoid M] :
+    ((singleOneAlgHom : A →ₐ[R] MonoidAlgebra A M) : A →+* MonoidAlgebra A M) =
+      singleOneRingHom :=
+  rfl
+
 end MonoidAlgebra
 
 /-- For a cancellative additive monoid `M`, every coefficient-one monomial in

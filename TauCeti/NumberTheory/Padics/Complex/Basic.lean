@@ -34,6 +34,7 @@ integral coefficient inclusion and topological nilpotence of `ζ - 1` for `p`-th
 ## Main results
 
 * `PadicComplex.valuation_coe`: the real value of the valuation is the norm.
+* `PadicComplex.mem_padicComplexInt_iff`: membership in `𝓞_ℂ_[p]` is `‖x‖ ≤ 1`.
 * `PadicComplex.residueFieldCharP`: the residue field of `𝓞_ℂ_[p]` has characteristic `p`.
 * `PadicComplex.instIsLinearTopologyInt`, `PadicComplex.instCompleteSpaceInt`: the integers
   of `ℂ_p` are complete and linearly topologized.
@@ -68,6 +69,13 @@ theorem valuation_coe (x : ℂ_[p]) : ((Valued.v x : NNReal) : ℝ) = ‖x‖ :=
   rw [PadicComplex.norm_eq_norm]
   simp [Valuation.norm_def, RankOne.hom_eq_embedding, Valuation.embedding_restrict]
 
+/-- An element of `ℂ_[p]` lies in the valuation ring `𝓞_ℂ_[p]` if and only if its norm is at
+most `1`. -/
+theorem mem_padicComplexInt_iff {p : ℕ} [Fact p.Prime] {x : ℂ_[p]} :
+    x ∈ 𝓞_ℂ_[p] ↔ ‖x‖ ≤ 1 := by
+  rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe, valuation_coe,
+    NNReal.coe_one]
+
 /-- The norm of `p` in `ℂ_[p]` is `p⁻¹`. -/
 @[simp]
 theorem norm_p : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
@@ -98,9 +106,8 @@ instance residueFieldCharP : CharP (IsLocalRing.ResidueField 𝓞_ℂ_[p]) p := 
 
 /-- The coefficient inclusion from the p-adic integers into the integers of `ℂ_p`. -/
 noncomputable def integralCoefficientMap : ℤ_[p] →+* 𝓞_ℂ_[p] :=
-  ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom).codRestrict _ fun x ↦ by
-    rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe, valuation_coe]
-    simpa using x.norm_le_one
+  ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom).codRestrict _ fun x ↦
+    mem_padicComplexInt_iff.mpr <| by simpa using x.norm_le_one
 
 @[simp]
 theorem integralCoefficientMap_coe (x : ℤ_[p]) :

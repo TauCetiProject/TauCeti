@@ -457,11 +457,6 @@ theorem existsUnique_character_of_tendsto_pow (η : (ZMod (p ^ padicUnitsDepth p
   ⟨ofCoord η t ht, ⟨by simp, by simp⟩, fun κ ⟨hη, ht'⟩ ↦
     ext_finiteChar_coord (by rw [hη, finiteChar_ofCoord]) (by rw [ht', coord_ofCoord])⟩
 
-/-- When `‖t‖ < 1`, every finite part `η` and `t ∈ R` determine a unique weight. -/
-theorem existsUnique_character_of_norm_lt_one (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) {t : R}
-    (ht : ‖t‖ < 1) : ∃! κ : WeightSpace p R, κ.finiteChar = η ∧ κ.coord = t :=
-  existsUnique_character_of_tendsto_pow η (tendsto_pow_atTop_nhds_zero_of_norm_lt_one ht)
-
 end Construction
 
 section Adic
@@ -598,14 +593,6 @@ theorem existsUnique_character_of_tendsto_pow_of_normedAlgebra
     ∃! κ : WeightSpace p K, κ.finiteChar = η ∧ κ.coord = t :=
   letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K
   existsUnique_character_of_tendsto_pow η ht
-
-/-- Every `η : Δ →* Kˣ` and `t ∈ K` with `‖t‖ < 1` determine a unique weight in a complete
-ultrametric normed `ℚ_p`-algebra `K`. -/
-theorem existsUnique_character_of_norm_lt_one_of_normedAlgebra
-    (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) {t : K} (ht : ‖t‖ < 1) :
-    ∃! κ : WeightSpace p K, κ.finiteChar = η ∧ κ.coord = t :=
-  existsUnique_character_of_tendsto_pow_of_normedAlgebra η
-    (tendsto_pow_atTop_nhds_zero_of_norm_lt_one ht)
 
 end NormedPadicAlgebra
 

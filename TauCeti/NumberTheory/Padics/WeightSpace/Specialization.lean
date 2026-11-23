@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.WeightSpace.CompletedGroupAlgebra
 public import TauCeti.NumberTheory.Padics.WeightSpace.GeneratorChange
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.RingTheory.PowerSeries.Binomial
 import TauCeti.Topology.Algebra.MonoidAlgebra.PowerSeries
@@ -74,14 +75,11 @@ private theorem liftPS_of (x : ℤ_[p]ˣ) :
     liftPS ε η (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) =
       η (padicIntUnitsEquivZModUnitsProd p x).1 *
         ε (PowerSeries.binomialSeries ℤ_[p] (padicIntUnitsEquivZModUnitsProd p x).2.toAdd) := by
-  have hsingle : (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p])
-      (M := (ZMod (p ^ padicUnitsDepth p))ˣ) :
-      ℤ_[p] →+* MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) =
-      MonoidAlgebra.singleOneRingHom := rfl
   rw [← (padicUnitsCoordinate p).apply_symm_apply (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x),
     padicUnitsCoordinate_symm_of, ← PowerSeries.map_algHom_binomialSeries
       (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p]) (M := _)),
-    hsingle, map_mul, map_mul, liftPS_C_single, liftPS_map_singleOne, map_one, one_mul]
+    MonoidAlgebra.toRingHom_singleOneAlgHom, map_mul, map_mul, liftPS_C_single,
+    liftPS_map_singleOne, map_one, one_mul]
 
 variable {ε}
 

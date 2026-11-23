@@ -629,20 +629,16 @@ theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq
   let κ : Γ →ₜ* Kˣ :=
     ⟨ψ.comp q.toMonoidHom,
       (continuous_of_discreteTopology (f := ⇑ψ)).comp q.continuous⟩
-  have hcharEval (x : MonoidAlgebra K (Γ ⧸ U.toSubgroup)) :
-      ψ.charEval x = ∑ a, ψ' a * x.coeff a := by
-    rw [MonoidHom.charEval, TauCeti.DiagonalizableGroup.point, MonoidAlgebra.lift_def]
-    simpa [ψ', mul_comm] using
-      MonoidAlgebra.liftNC_eq_sum (algebraMap K K : K →+ K) ((Units.coeHom K).comp ψ) x
   have hchar (ρ : D(Γ, K)) :
       ψ.charEval (q.finiteProjectionAlgHom ρ) =
         (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩
           κ).characterIntegralAlgHom ρ := by
-    rw [hcharEval]
-    simpa [q] using (apply_eq_sum_coeff_proj_toCompletedGroupAlgebra (R := K) (U := U) ρ
-      (F := (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩ κ : C(Γ, K)))
-      (g := ψ') (funext fun x ↦ congrArg (fun y ↦ (ψ y : K))
-        (Subgroup.quotientMkContinuousMonoidHom_apply U.toSubgroup x).symm)).symm
+    rw [ψ.charEval_eq_sum]
+    simpa [q, ψ', mul_comm] using
+      (apply_eq_sum_coeff_proj_toCompletedGroupAlgebra (R := K) (U := U) ρ
+        (F := (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩ κ : C(Γ, K)))
+        (g := ψ') (funext fun x ↦ congrArg (fun y ↦ (ψ y : K))
+          (Subgroup.quotientMkContinuousMonoidHom_apply U.toSubgroup x).symm)).symm
   have hfin : IsOfFinOrder κ :=
     isOfFinOrder_iff_pow_eq_one.mpr
       ⟨Monoid.exponent (Γ ⧸ U.toSubgroup), Monoid.ExponentExists.of_finite.exponent_pos, by
