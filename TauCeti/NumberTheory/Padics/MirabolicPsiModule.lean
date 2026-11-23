@@ -149,10 +149,11 @@ theorem boxtimesQp_coe_zero_surjective (hψ : Function.Surjective D.ψ) :
 private def raise (h : AffineGroup ℤ_[p]) : AffineGroup ℤ_[p] :=
   ⟨.ofAdd ((p : ℤ_[p]) * h.left.toAdd), h.right⟩
 
-/-- An element of `P(ℤ_p)` is the pair of its translation and linear parts. -/
-private theorem mk_left_right (h : AffineGroup ℤ_[p]) :
-    (⟨.ofAdd h.left.toAdd, h.right⟩ : AffineGroup ℤ_[p]) = h :=
-  SemidirectProduct.ext (toAdd_ofAdd _) rfl
+/-- Raising the level is conjugation by `φ`. -/
+private theorem map_raise (h : AffineGroup ℤ_[p]) :
+    map PadicInt.Coe.ringHom (raise h) =
+      padicPhi p * map PadicInt.Coe.ringHom h * (padicPhi p)⁻¹ := by
+  ext <;> simp [raise]
 
 private theorem map_raise_iterate (h : AffineGroup ℤ_[p]) (k : ℕ) :
     map PadicInt.Coe.ringHom ((raise^[k]) h) =
@@ -160,7 +161,7 @@ private theorem map_raise_iterate (h : AffineGroup ℤ_[p]) (k : ℕ) :
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [Function.iterate_succ_apply', raise, ← padicPhi_mul_map_mul_inv, mk_left_right, ih]
+    rw [Function.iterate_succ_apply', map_raise, ih]
     group
 
 /-- Raising the level `k` times turns `φ^m g φ^{-l} = h` into

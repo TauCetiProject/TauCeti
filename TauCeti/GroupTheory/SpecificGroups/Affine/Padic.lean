@@ -89,9 +89,9 @@ theorem coe_padicPhi_pow_mul_mul_inv_pow_right (m l : ℕ) (g : AffineGroup ℚ_
 theorem norm_coe_padicPhi_pow_mul_mul_inv_pow_right (m l : ℕ) (g : AffineGroup ℚ_[p]) :
     ‖((padicPhi p ^ m * g * (padicPhi p ^ l)⁻¹).right : ℚ_[p])‖ =
       (p : ℝ) ^ ((l : ℤ) - m) * ‖(g.right : ℚ_[p])‖ := by
-  rw [coe_padicPhi_pow_mul_mul_inv_pow_right, norm_mul, norm_mul, norm_inv, Padic.norm_p_pow,
-    Padic.norm_p_pow, ← zpow_neg, neg_neg, mul_right_comm,
-    ← zpow_add₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero), neg_add_eq_sub]
+  rw [coe_padicPhi_pow_mul_mul_inv_pow_right]
+  simp [zpow_sub₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero : (p : ℝ) ≠ 0)]
+  ring
 
 /-- An element of `P(ℚ_p)` comes from `P(ℤ_p)` exactly when its translation part is integral
 and its linear part is a unit of `ℤ_p`. -/
