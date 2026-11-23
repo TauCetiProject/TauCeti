@@ -386,13 +386,8 @@ private theorem rescaled_stasheff_duplicateAt {𝒜 : AInfinityAlgebra R A} (h�
     h𝒜.taylor_of_two_cohomologicalUnit_left he, hsp_succ] at hst
   have hmul := congrArg (fun x : A ↦ -(negOnePowCast R (prefixSum j.val 𝒟) • x)) hst
   simp only [smul_zero, neg_zero, smul_add, smul_neg, Finset.smul_sum, neg_add_rev, neg_neg,
-    ← Finset.sum_neg_distrib] at hmul
-  have hsq : negOnePowCast R (prefixSum j.val 𝒟) • negOnePowCast R (prefixSum j.val 𝒟) •
-      𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) =
-      𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) := by
-    rw [smul_smul, ← negOnePowCast_add, ← two_mul, negOnePowCast_eq_intCast,
-      Int.negOnePow_even _ ⟨prefixSum j.val 𝒟, two_mul _⟩]; simp
-  rw [hsq, Finset.sum_congr rfl fun s _ ↦ by
+    negOnePowCast_smul_negOnePowCast_smul, ← Finset.sum_neg_distrib] at hmul
+  rw [Finset.sum_congr rfl fun s _ ↦ by
     rw [← Nat.add_assoc, ← Nat.add_assoc, Nat.add_right_comm j.val s 1]] at hmul
   exact Eq.trans (by abel) hmul
 
