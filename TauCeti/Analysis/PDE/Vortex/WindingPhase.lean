@@ -83,8 +83,6 @@ derivatives of every order is
 * `TauCeti.Vortex.sub_referenceField_apply_zero_of_equation_eq_zero`,
   `TauCeti.Vortex.sub_referenceField_apply_one_of_equation_eq_zero`: its connection is
   `a_ref + (i / 2) ⋆ d log |α|²` outside the cutoff disc.
-* `TauCeti.Vortex.sub_referenceField_apply_two_and_three`: outside the cutoff disc, the section
-  of `x - x_ref` is the reference section times `|α| - 1`.
 * `TauCeti.Vortex.exists_eventually_norm_fderiv_gaugeTransform_inv_windingPhase_le_mul_exp`,
   `TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp`: the first
   derivatives of the end trivialization and of `x - x_ref` decay exponentially.
@@ -510,29 +508,6 @@ theorem sub_referenceField_apply_one_of_equation_eq_zero (f : ContDiffBump (0 : 
   rw [sub_referenceField_apply_eq_gaugeTransform_inv_windingPhase_apply f hrOut (.inr rfl)]
   exact gaugeTransform_inv_windingPhase_apply_one_of_equation_eq_zero
     (ne_zero_of_rOut_le_norm_sq f hrOut) hp hq h₁ h₂ hphase hα
-
-/-- **The section of an end-normalized vortex.** At a point `z` outside the cutoff disc at which
-the section of `x` is `|α|` times the winding phase, the section coordinates of `x - x_ref` are
-those of the reference field times `|α| - 1`. -/
-theorem sub_referenceField_apply_two_and_three (f : ContDiffBump (0 : ℝ)) {z : ℂ}
-    (hrOut : f.rOut ≤ ‖z‖ ^ 2)
-    (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
-    (x - referenceField f m) z 2 = referenceField f m z 2 * (‖sectionValue x z‖ - 1) ∧
-      (x - referenceField f m) z 3 = referenceField f m z 3 * (‖sectionValue x z‖ - 1) := by
-  have hsx := congrArg (fun w ↦ (w.re, w.im)) hphase
-  set a := ‖sectionValue x z‖
-  simp only [sectionValue_apply, Prod.mk.injEq, mul_re, mul_im, add_re, add_im, ofReal_re,
-    ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at hsx
-  have hrs : referenceSection f m z = windingPhase m z := by
-    rw [referenceSection_eq_phase f m hrOut,
-      coe_windingPhase m (ne_zero_of_rOut_le_norm_sq f hrOut)]
-  constructor
-  · simp only [Pi.sub_apply, PiLp.sub_apply, referenceField_apply, Fin.isValue, Matrix.cons_val,
-      hrs]
-    linear_combination hsx.1 / 2
-  · simp only [Pi.sub_apply, PiLp.sub_apply, referenceField_apply, Fin.isValue, Matrix.cons_val,
-      hrs]
-    linear_combination hsx.2 / 2
 
 /-! ### Exponential decay of the first derivatives -/
 

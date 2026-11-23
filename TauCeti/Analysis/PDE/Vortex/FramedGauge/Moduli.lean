@@ -161,11 +161,12 @@ theorem gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq
     (∀ s : ℝ, gaugeTransform u x ∈ framedFieldSpace f m s) ∧
       ∀ c < 1 / 2, ∀ n : ℕ, iteratedFDeriv ℝ n (gaugeTransform u x - referenceField f m)
         =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨huc, hu1⟩ := (mem_framedGaugeGroup _).1 hu
-  have hy : ContDiff ℝ ∞ (gaugeTransform u x) := contDiff_gaugeTransform (by simpa using huc) hx
-  have hsol' (z : ℂ) : equation (gaugeTransform u x) z = 0 :=
-    (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
-      fun i ↦ ((contDiff_euclidean.1 hx i).differentiable (by simp)).differentiableAt).2 (hsol z)
+  obtain ⟨-, hu1⟩ := (mem_framedGaugeGroup _).1 hu
+  have hy : ContDiff ℝ ∞ (gaugeTransform u x) := by
+    simpa using contDiff_framedGaugeGroup_smul ⟨u, hu⟩ hx
+  have hsol' (z : ℂ) : equation (gaugeTransform u x) z = 0 := by
+    simpa using (equation_framedGaugeGroup_smul_eq_zero_iff ⟨u, hu⟩
+      fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
   have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
     (tendsto_sectionValue_gaugeTransform hu1 hframe)
   have hdec := fun c (hc : c < 1 / 2) n ↦
