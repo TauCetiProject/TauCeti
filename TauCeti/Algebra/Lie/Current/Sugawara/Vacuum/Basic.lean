@@ -140,11 +140,12 @@ theorem limSmul_sugawaraDegree_vacuum_eq_zero (c : K) :
 /-- **For `Φ = c • κ_L` and `m ≥ -1`, `Sₘ` acts on the vacuum module as `(1 - 2 a c)` times the
 regular Witt vector field `-t^{m+1} d/dt`**, at every level including the critical level. -/
 theorem limSmul_sugawaraMode_eq_smul_vacuumVectorField {c : K}
-    (h : Φ = c • killingForm K L) {m : ℤ} (hm : -1 ≤ m)
-    (hh : 0 ≤ (-HahnSeries.single (m + 1) (1 : K)).orderTop) (v : V) :
+    (h : Φ = c • killingForm K L) {m : ℤ} (hm : -1 ≤ m) (v : V) :
     ModuleTower.limSmul hV (sugawaraMode Φ hΦ hΦs a m) v =
       (1 - 2 * a * c) •
-        vacuumVectorField Φ hΦ hΦs a (-HahnSeries.single (m + 1) (1 : K)) hh v := by
+        vacuumVectorField Φ hΦ hΦs a (-HahnSeries.single (m + 1) (1 : K))
+          (by rw [HahnSeries.orderTop_neg]; exact HahnSeries.zero_le_orderTop_single (by omega) 1)
+          v := by
   obtain ⟨u, rfl⟩ := exists_smul_vacuum_eq v
   have hd := congrArg (fun D : derivationLieAlgebra K Û ↦
       (D : Module.End K Û) (toCompletedEnveloping Φ hΦ hΦs a u))
@@ -162,12 +163,13 @@ theorem limSmul_sugawaraMode_eq_smul_vacuumVectorField {c : K}
 /-- **Away from the critical level, `Lₘ` (`m ≥ -1`) acts on the vacuum module as the regular Witt
 vector field `-t^{m+1} d/dt`.** -/
 theorem limSmul_sugawaraVirasoro_eq_vacuumVectorField {c : K}
-    (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) {m : ℤ} (hm : -1 ≤ m)
-    (hh : 0 ≤ (-HahnSeries.single (m + 1) (1 : K)).orderTop) (v : V) :
+    (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) {m : ℤ} (hm : -1 ≤ m) (v : V) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c m) v =
-      vacuumVectorField Φ hΦ hΦs a (-HahnSeries.single (m + 1) (1 : K)) hh v := by
+      vacuumVectorField Φ hΦ hΦs a (-HahnSeries.single (m + 1) (1 : K))
+        (by rw [HahnSeries.orderTop_neg]; exact HahnSeries.zero_le_orderTop_single (by omega) 1)
+        v := by
   rw [sugawaraVirasoro_def, ModuleTower.smul_limSmul,
-    limSmul_sugawaraMode_eq_smul_vacuumVectorField h hm hh, smul_smul, inv_mul_cancel₀ hc, one_smul]
+    limSmul_sugawaraMode_eq_smul_vacuumVectorField h hm, smul_smul, inv_mul_cancel₀ hc, one_smul]
 
 /-- **Away from the critical level, `L₋₁` acts on the vacuum module as the translation operator
 `T = -d/dt`.** -/
@@ -180,7 +182,7 @@ theorem limSmul_sugawaraVirasoro_neg_one {c : K}
   have hh : 0 ≤ (-1 : K⸨X⸩).orderTop := by
     rw [HahnSeries.orderTop_neg]
     exact HahnSeries.zero_le_orderTop_one
-  rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc le_rfl (h1.symm ▸ hh),
+  rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc le_rfl,
     vacuumVectorField_congr _ hh h1, ← vacuumTranslation_def]
 
 /-- **Away from the critical level, `L₀` acts on the vacuum module as the degree operator
@@ -194,7 +196,7 @@ theorem limSmul_sugawaraVirasoro_zero {c : K}
   have hh : 0 ≤ (-HahnSeries.single 1 1 : K⸨X⸩).orderTop := by
     rw [HahnSeries.orderTop_neg]
     exact HahnSeries.zero_le_orderTop_single zero_le_one 1
-  rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc (by omega) (h1.symm ▸ hh),
+  rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc (by omega),
     vacuumVectorField_congr _ hh h1, ← vacuumDegreeOperator_def]
 
 /-- **Away from the critical level, `D_κ = -L₀` acts on the vacuum module as `-vacuumDegreeOperator`

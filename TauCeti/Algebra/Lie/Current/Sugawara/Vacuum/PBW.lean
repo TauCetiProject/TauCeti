@@ -19,9 +19,10 @@ Under the PBW isomorphism `U(t⁻¹ L[t⁻¹]) ≃ V` (`TauCeti.CurrentAlgebra.v
 quadratic Segal--Sugawara state `S₋₂ |0⟩` (`TauCeti.CurrentAlgebra.sugawaraVacuum`) corresponds to
 `∑ᵢ ι(t⁻¹ ⊗ bᵢ) ι(t⁻¹ ⊗ b'ᵢ)` in PBW filtration degree `2`, whose class in `gr₂ U(t⁻¹ L[t⁻¹])` is
 the image of the quadratic symmetric Casimir `TauCeti.symmetricCasimir K L` along the mode-`(-1)`
-embedding (`TauCeti.CurrentAlgebra.pbwHomogeneousComponentMap_symmetricCasimir_eq`). When `2 ≠ 0`
-in `K` and `L` is nontrivial, injectivity of the PBW map and of `SymmetricAlgebra.map` shows that
-this PBW preimage does not lie in filtration degree `1`
+embedding
+(`TauCeti.CurrentAlgebra.mk_vacuumPBWEquiv_symm_sugawaraVacuum_eq_pbwHomogeneousComponentMap`).
+When `2 ≠ 0` in `K` and `L` is nontrivial, injectivity of the PBW map and of `SymmetricAlgebra.map`
+shows that this PBW preimage does not lie in filtration degree `1`
 (`TauCeti.CurrentAlgebra.vacuumPBWEquiv_symm_sugawaraVacuum_notMem_pbwFiltration_one`). Therefore
 `S₋₂ |0⟩` does not lie in the `K`-span of `|0⟩` at any level, including the critical level and
 `a = 0` (`TauCeti.CurrentAlgebra.sugawaraVacuum_notMem_span_vacuum`). In particular `S₋₂` is never
@@ -31,8 +32,8 @@ level the completed center `Z(Û)` is strictly larger than the scalars
 
 ## Main results
 
-* `TauCeti.CurrentAlgebra.pbwHomogeneousComponentMap_symmetricCasimir_eq`: the degree-two PBW symbol
-  of `S₋₂ |0⟩` is the mode-`(-1)` image of `symmetricCasimir K L`.
+* `TauCeti.CurrentAlgebra.mk_vacuumPBWEquiv_symm_sugawaraVacuum_eq_pbwHomogeneousComponentMap`:
+  the degree-two PBW symbol of `S₋₂ |0⟩` is the mode-`(-1)` image of `symmetricCasimir K L`.
 * `TauCeti.CurrentAlgebra.sugawaraVacuum_notMem_span_vacuum`: `S₋₂ |0⟩` is nonscalar in `V` at
   every level when `2 ≠ 0` and `L` is nontrivial.
 * `TauCeti.CurrentAlgebra.center_completedEnveloping_ne_bot`: at the critical level
@@ -92,16 +93,16 @@ theorem vacuumPBWEquiv_symm_sugawaraVacuum_mem_pbwFiltration_two :
 
 /-- **The degree-two PBW graded class of `S₋₂ |0⟩` is the PBW image of the mode-`(-1)` quadratic
 symmetric Casimir `SymmetricAlgebra.map K (negativeSingle ...) (symmetricCasimir K L)`.** -/
-theorem pbwHomogeneousComponentMap_symmetricCasimir_eq :
-    pbwHomogeneousComponentMap K Nneg 2
-        ⟨SymmetricAlgebra.map K (negativeSingle Φ hΦ hΦs neg_one_lt_zero) (symmetricCasimir K L),
-          TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
-            (symmetricCasimir_mem_homogeneousSubmodule K L)⟩ =
-      (Submodule.Quotient.mk
+theorem mk_vacuumPBWEquiv_symm_sugawaraVacuum_eq_pbwHomogeneousComponentMap :
+    (Submodule.Quotient.mk
         ⟨(vacuumPBWEquiv Φ hΦ hΦs a).symm (sugawaraVacuum Φ hΦ hΦs a), by
           rw [← pbwFiltration_def]
           exact vacuumPBWEquiv_symm_sugawaraVacuum_mem_pbwFiltration_two⟩ :
-        PBWGradedPiece K Nneg 2) := by
+        PBWGradedPiece K Nneg 2) =
+      pbwHomogeneousComponentMap K Nneg 2
+        ⟨SymmetricAlgebra.map K (negativeSingle Φ hΦ hΦs neg_one_lt_zero) (symmetricCasimir K L),
+          TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
+            (symmetricCasimir_mem_homogeneousSubmodule K L)⟩ := by
   -- Expand both sides in `b = Module.finBasis K L`: each basis summand `p i` maps to `mk2 (q i)`
   -- by `pbwHomogeneousComponentMap_prod_map_ι`, and summing recovers the PBW preimage of `S₋₂ |0⟩`.
   set b := Module.finBasis K L
@@ -120,18 +121,18 @@ theorem pbwHomogeneousComponentMap_symmetricCasimir_eq :
     (TauCeti.Algebra.wordFiltration.previousRestricted
       (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2)
   trans ∑ i, mk2 (q i)
-  · trans pbwHomogeneousComponentMap K Nneg 2 (∑ i, p i)
-    · refine congrArg _ (Subtype.ext ?_)
-      simp only [Submodule.coe_sum, p, symmetricCasimir_eq_sum b, map_sum, map_mul,
-        SymmetricAlgebra.map_apply_ι, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
-        mul_one]
-    · rw [map_sum]
-      exact Finset.sum_congr rfl fun i _ ↦
-        pbwHomogeneousComponentMap_prod_map_ι K Nneg [e (b i), e (killingDualBasis b i)]
   · rw [← map_sum mk2 q Finset.univ, Submodule.mkQ_apply]
     refine congrArg (Submodule.Quotient.mk : _ → PBWGradedPiece K Nneg 2) (Subtype.ext ?_)
     simp only [Submodule.coe_sum, q, e, vacuumPBWEquiv_symm_sugawaraVacuum b,
       List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
+  · trans pbwHomogeneousComponentMap K Nneg 2 (∑ i, p i)
+    · rw [map_sum]
+      exact (Finset.sum_congr rfl fun i _ ↦
+        pbwHomogeneousComponentMap_prod_map_ι K Nneg [e (b i), e (killingDualBasis b i)]).symm
+    · refine congrArg _ (Subtype.ext ?_)
+      simp only [Submodule.coe_sum, p, symmetricCasimir_eq_sum b, map_sum, map_mul,
+        SymmetricAlgebra.map_apply_ι, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+        mul_one]
 
 /-- **Away from characteristic two, the PBW preimage of `S₋₂ |0⟩` for a nontrivial Lie algebra does
 not lie in PBW filtration degree `1`** (it has exact PBW degree `2`). -/
@@ -143,8 +144,10 @@ theorem vacuumPBWEquiv_symm_sugawaraVacuum_notMem_pbwFiltration_one
       TauCeti.Algebra.wordFiltrationPrevious
         (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2 := by
     rwa [← pbwFiltrationPrevious_def, pbwFiltrationPrevious_succ]
-  have hmk := (pbwHomogeneousComponentMap_symmetricCasimir_eq (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs)
-    (a := a)).trans ((TauCeti.Algebra.wordFiltration.gradedPiece_mk_eq_zero_iff _ _).2 hprev)
+  have hmk :=
+    (mk_vacuumPBWEquiv_symm_sugawaraVacuum_eq_pbwHomogeneousComponentMap
+      (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)).symm.trans
+      ((TauCeti.Algebra.wordFiltration.gradedPiece_mk_eq_zero_iff _ _).2 hprev)
   have hsym := pbwHomogeneousComponentMap_injective K Nneg 2
     (hmk.trans (map_zero (pbwHomogeneousComponentMap K Nneg 2)).symm)
   have hmap : SymmetricAlgebra.map K (negativeSingle Φ hΦ hΦs neg_one_lt_zero)

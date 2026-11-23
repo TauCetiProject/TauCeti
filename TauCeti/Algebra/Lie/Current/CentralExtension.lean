@@ -245,15 +245,15 @@ def negativeSingle {m : ℤ} (hm : m < 0) : L →ₗ[R] negativeLieSubalgebra Φ
   ((ofProdLinearEquiv c).toLinearMap ∘ₗ LinearMap.inl R C Z ∘ₗ
       TensorProduct.mk R R⸨X⸩ L (HahnSeries.single m (1 : R))).codRestrict
     (negativeLieSubalgebra Φ hΦ hΦs).toSubmodule fun x ↦
-      ⟨HahnSeries.single m (1 : R) ⊗ₜ[R] x, single_tmul_mem_truncSubmodule R L hm 1 x, rfl⟩
+      (LieSubalgebra.mem_toSubmodule (negativeLieSubalgebra Φ hΦ hΦs)).2
+        ⟨HahnSeries.single m (1 : R) ⊗ₜ[R] x, single_tmul_mem_truncSubmodule R L hm 1 x, rfl⟩
 
 /-- Coercion of `negativeSingle Φ hΦ hΦs hm x` to the residue central extension. -/
 @[simp]
 theorem coe_negativeSingle_apply {m : ℤ} (hm : m < 0) (x : L) :
     (negativeSingle Φ hΦ hΦs hm x : ofTwoCocycle c) =
       ofProd c (HahnSeries.single m (1 : R) ⊗ₜ[R] x, 0) := by
-  change ((ofProdLinearEquiv c).toLinearMap ∘ₗ LinearMap.inl R C Z ∘ₗ
-      TensorProduct.mk R R⸨X⸩ L (HahnSeries.single m (1 : R))) x = _
+  rw [negativeSingle, LinearMap.codRestrict_apply]
   simp [coe_ofProdLinearEquiv]
 
 /-- The `m`-th negative mode embedding is injective over every commutative ring. -/
