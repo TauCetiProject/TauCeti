@@ -194,7 +194,8 @@ theorem absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport
   have hg' : g ∈ τ'.fieldRange.fixingSubgroup :=
     IntermediateField.fixingSubgroup_antitone hrange
       ((separableClosureInertiaSubgroup_eq_fixingSubgroup _).le hg)
-  have hle := E.fixingSubgroup_le_comap_absoluteGaloisGroupMap v w τ' τ (fun x ↦ hτ x)
+  have hle := E.fixingSubgroup_le_comap_absoluteGaloisGroupMap τ'.fieldRange τ
+    (fun x hx ↦ ⟨algebraMap E (w.adicCompletion E) ⟨x, hx⟩, (hτ ⟨x, hx⟩).symm⟩)
   exact hle hg'
 
 end IntermediateField

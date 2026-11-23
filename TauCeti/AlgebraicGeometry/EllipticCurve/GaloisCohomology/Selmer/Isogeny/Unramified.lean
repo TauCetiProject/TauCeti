@@ -63,7 +63,7 @@ The statements and organization adapt the `[m]`-torsion and local-Selmer analogu
   Dedekind domain with finite residue fields, whenever `deg φ ≠ 0` in `K`, the local condition of
   `φ.selmerStructure τ` equals `(φ.baseChange K_v).unramifiedKerCohomology` for all but finitely
   many height-one primes `v`.
-* `TauCeti.Isogeny.eventually_kerRes_mem_localCondition`: over a number field, every global
+* `TauCeti.Isogeny.eventually_kerRes_mem_localKummerCondition`: over a number field, every global
   kernel cohomology class satisfies the local Kummer condition at almost every place.
 
 ## References
@@ -231,7 +231,7 @@ private theorem eventually_kerRes_mem_unramifiedKerCohomology
       τf (fun v ↦ φ.kerCoeffBaseChange (τf v))
       (fun v ↦ φ.kerCoeffBaseChange_smul (τf v)) c)
 
-private theorem eventually_kerRes_mem_finiteLocalCondition
+private theorem eventually_kerRes_mem_localKummerCondition_at_finitePlaces
     (τf : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
     (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
@@ -244,7 +244,7 @@ private theorem eventually_kerRes_mem_finiteLocalCondition
 
 /-- Every global kernel cohomology class satisfies the local Kummer condition at almost every
 place of a number field. -/
-theorem eventually_kerRes_mem_localCondition
+theorem eventually_kerRes_mem_localKummerCondition
     (τ : ∀ v : GlobalNumberFields.Place K,
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion)
     (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
@@ -253,7 +253,8 @@ theorem eventually_kerRes_mem_localCondition
   rw [Filter.eventually_cofinite]
   apply Set.finite_preimage_inl_and_inr.mp
   exact ⟨Filter.eventually_cofinite.mp
-    (eventually_kerRes_mem_finiteLocalCondition φ (fun v ↦ τ (Sum.inl v)) c), Set.toFinite _⟩
+    (eventually_kerRes_mem_localKummerCondition_at_finitePlaces φ (fun v ↦ τ (Sum.inl v)) c),
+    Set.toFinite _⟩
 
 end NumberField
 

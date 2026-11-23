@@ -53,7 +53,8 @@ abbrev restrictedKerLocalization :
           ((φ.baseChange v.Completion).localKummerCondition : Set _)] :=
   addRationalDiagonal (φ.selmerStructure τ).localization
     (fun v ↦ (φ.baseChange v.Completion).localKummerCondition)
-    (by simpa only [selmerStructure_localization] using φ.eventually_kerRes_mem_localCondition τ)
+    (by simpa only [selmerStructure_localization] using
+      φ.eventually_kerRes_mem_localKummerCondition τ)
 
 /-- The Selmer group is the pullback, along restricted localization, of the subgroup satisfying
 the local Kummer condition at every place. -/
@@ -66,6 +67,7 @@ theorem selmerGroup_eq_comap_restrictedKerLocalization :
   rw [selmerGroup_def, ← integralAddSubgroupOf_self]
   simpa only [hcond] using
     (φ.selmerStructure τ).selmerGroup_eq_comap_addRationalDiagonal _
-      (by simpa only [selmerStructure_localization] using φ.eventually_kerRes_mem_localCondition τ)
+      (by simpa only [selmerStructure_localization] using
+        φ.eventually_kerRes_mem_localKummerCondition τ)
 
 end TauCeti.Isogeny

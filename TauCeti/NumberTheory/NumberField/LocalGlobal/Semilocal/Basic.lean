@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
@@ -40,8 +39,6 @@ embeddings into `K_v`-domains, and the topological enhancement of the semi-local
 * `TauCeti.denseRange_algebraMap_pi_liesOver`: `L` is dense in `∏_{w ∣ v} L_w`.
 * `TauCeti.exists_algHom_adicCompletion_eq`: a `K`-algebra map from `L` to a `K_v`-algebra that
   is a domain extends to the completion `L_w` at some place `w` above `v`.
-* `IntermediateField.fixingSubgroup_le_comap_absoluteGaloisGroupMap`: a local automorphism fixing
-  a completion's image pulls back to an automorphism fixing the corresponding subextension.
 
 ## Topology
 
@@ -157,25 +154,6 @@ theorem exists_algHom_adicCompletion_eq {M : Type*} [CommRing M] [IsDomain M] [A
     simp [f, v.adicCompletionSemilocalEquiv_symm_algebraMap (K := K) (B := 𝒪 L) (L := L) x]
   rw [this, hf]
   rfl
-
-/-- If a separable-closure embedding factors on a finite subextension through a completion,
-then fixing that completion's image implies fixing the subextension after pullback. -/
-theorem _root_.IntermediateField.fixingSubgroup_le_comap_absoluteGaloisGroupMap
-    (E : IntermediateField K (SeparableClosure K)) [NumberField E]
-    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 E)) [w.asIdeal.LiesOver v.asIdeal]
-    (τ' : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K))
-    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
-    (hτ : ∀ x : E, τ x = τ' (algebraMap E (w.adicCompletion E) x)) :
-    τ'.fieldRange.fixingSubgroup ≤ E.fixingSubgroup.comap
-      (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup (v.adicCompletion K) →*
-        AbsoluteGaloisGroup K) := by
-  intro g hg
-  rw [Subgroup.mem_comap, IntermediateField.mem_fixingSubgroup_iff]
-  intro x hx
-  have h : τ (absoluteGaloisGroupMap τ g x) = τ x := by
-    rw [absoluteGaloisGroupMap_commutes, hτ ⟨x, hx⟩]
-    exact (IntermediateField.mem_fixingSubgroup_iff _ _).1 hg _ ⟨_, rfl⟩
-  exact τ.injective h
 
 variable [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
   [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]

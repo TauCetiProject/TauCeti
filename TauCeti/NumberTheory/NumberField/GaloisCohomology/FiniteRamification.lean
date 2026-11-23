@@ -21,7 +21,7 @@ The local coefficient groups and the embeddings of separable closures may be cho
 
 ## Main results
 
-* `TauCeti.ContCohomology.explicitMap1_mem_unramifiedH1_of_notMem_ramifiedSupport`: a class
+* `IntermediateField.explicitMap1_mem_unramifiedH1_of_notMem_ramifiedSupport`: a class
   restricting to zero over a finite subextension is unramified outside its ramified support.
 * `TauCeti.ContCohomology.eventually_explicitMap1_mem_unramifiedH1`: localization of a class with
   discrete global coefficients is unramified at all but finitely many finite places.
@@ -36,11 +36,11 @@ public section
 open IsDedekindDomain
 open scoped NumberField AdicCompletionExtension
 
-namespace TauCeti
+open TauCeti TauCeti.ContCohomology
 
 variable {K : Type*} [Field K] [NumberField K]
 
-namespace ContCohomology
+namespace IntermediateField
 
 variable {M : Type*} [AddCommGroup M] [TopologicalSpace M]
   [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
@@ -66,7 +66,13 @@ theorem explicitMap1_mem_unramifiedH1_of_notMem_ramifiedSupport [IsTopologicalAd
   rintro _ ⟨g, hg, rfl⟩
   exact E.absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport v hv τ hg
 
-variable [DiscreteTopology M]
+end IntermediateField
+
+namespace TauCeti.ContCohomology
+
+variable {M : Type*} [AddCommGroup M] [TopologicalSpace M]
+  [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
+  [DiscreteTopology M]
   {N : HeightOneSpectrum (𝓞 K) → Type*}
   [∀ v, AddCommGroup (N v)] [∀ v, TopologicalSpace (N v)]
   [∀ v, IsTopologicalAddGroup (N v)]
@@ -88,27 +94,15 @@ theorem eventually_explicitMap1_mem_unramifiedH1
       explicitMap1 (AbsoluteGaloisGroup K) M (AbsoluteGaloisGroup (v.adicCompletion K))
         (N v) (absoluteGaloisGroupMap (τ v)) (f v) continuous_of_discreteTopology (hequiv v) c ∈
           unramifiedH1 (v.adicCompletion K) (N v) := by
-  induction c using QuotientAddGroup.induction_on with
-  | _ z =>
-    obtain ⟨U, hU⟩ := exists_openNormalSubgroup_apply_eq_zero (AbsoluteGaloisGroup K) M z
-    let E := IntermediateField.fixedField U.toSubgroup
-    have : FiniteDimensional K E := finiteDimensional_fixedField_toSubgroup U.toOpenSubgroup
-    have : NumberField E := _root_.NumberField.of_module_finite K E
-    have hfix : U.toSubgroup = E.fixingSubgroup :=
-      toSubgroup_eq_fixingSubgroup_of_fixedField_eq (U := U.toOpenSubgroup) rfl
-    have hres : explicitRes1 (AbsoluteGaloisGroup K) M E.fixingSubgroup
-        (z : H1 (AbsoluteGaloisGroup K) M) = 0 := by
-      rw [explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff]
-      refine ⟨0, fun g ↦ ?_⟩
-      rw [smul_zero, sub_zero, cocyclesMap1_apply, AddMonoidHom.id_apply,
-        ContinuousMonoidHom.subgroupSubtype_apply]
-      have hg : (g : AbsoluteGaloisGroup K) ∈ U.toSubgroup := by
-        rw [hfix]
-        exact g.property
-      exact (hU _ hg).symm
-    filter_upwards [(NumberField.ramifiedSupport K E).finite_toSet.compl_mem_cofinite] with v hv
-    exact explicitMap1_mem_unramifiedH1_of_notMem_ramifiedSupport E v hv (τ v) (f v)
-      continuous_of_discreteTopology (hequiv v) hres
+  obtain ⟨U, hU⟩ := exists_openNormalSubgroup_explicitRes1_eq_zero c
+  let E := IntermediateField.fixedField U.toSubgroup
+  have : FiniteDimensional K E := finiteDimensional_fixedField_toSubgroup U.toOpenSubgroup
+  have : NumberField E := _root_.NumberField.of_module_finite K E
+  have hfix : U.toSubgroup = E.fixingSubgroup :=
+    toSubgroup_eq_fixingSubgroup_of_fixedField_eq (U := U.toOpenSubgroup) rfl
+  rw [hfix] at hU
+  filter_upwards [(NumberField.ramifiedSupport K E).finite_toSet.compl_mem_cofinite] with v hv
+  exact E.explicitMap1_mem_unramifiedH1_of_notMem_ramifiedSupport v hv (τ v) (f v)
+    continuous_of_discreteTopology (hequiv v) hU
 
-end ContCohomology
-end TauCeti
+end TauCeti.ContCohomology

@@ -287,6 +287,15 @@ theorem localKummerCondition_def :
       (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker := by
   simp only [localKummerCondition]
 
+/-- A kernel cohomology class satisfies the local Kummer condition exactly when its image
+under coefficient inclusion vanishes. -/
+@[simp]
+theorem mem_localKummerCondition_iff
+    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
+    c ∈ φ.localKummerCondition ↔
+      explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c = 0 := by
+  simp [localKummerCondition_def]
+
 variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
 
 /-! ### The Kummer sequence of a separable isogeny -/
