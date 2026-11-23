@@ -126,9 +126,9 @@ private theorem exists_invCutoff : ∃ σ : 𝓢(E, ℂ), Set.EqOn σ
     positivity
 
 /-- The Schwartz function `θ₀` of `exists_invCutoff`. Its dyadic dilates `θ(2^{-j} ·)`
-(`ContDiffBump.dyadicDilate`) equal `1 / (2π ‖·‖)` on the annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`
-containing the support of `ψⱼ`, and the dyadic multiplier `Mⱼ` with symbol `θ(2^{-j} ·)` is
-`2^j D⁻¹` at frequencies `‖ξ‖ ≈ 2^j`. -/
+(`ContDiffBump.dyadicDilate`) equal `2^j / (2π ‖·‖)` on the annulus
+`2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut` containing the support of `ψⱼ`, and the dyadic multiplier `Mⱼ`
+with symbol `θ(2^{-j} ·)` is `2^j D⁻¹` at frequencies `‖ξ‖ ≈ 2^j`. -/
 private def invCutoff : 𝓢(E, ℂ) :=
   φ.exists_invCutoff.choose
 

@@ -125,8 +125,9 @@ every bounded operator `A` on `L²` and `1 ≤ r ≤ ∞`
 
 ## Dyadic multipliers and squared blocks
 
-A symbol `a` smooth and nonvanishing away from the origin is inverted on the support of every `ψⱼ`
-by the dyadic dilates `σ (2^{-j} ·)` of one Schwartz function `σ`
+For a symbol `a` smooth and nonvanishing away from the origin, the dyadic dilates
+`σ (2^{-j} ·)` of one Schwartz function `σ` invert `a (2^{-j} ·)` on the support of every `ψⱼ`;
+this is `1 / a` when `a` is invariant under `ξ ↦ 2 ξ`, as for `Ψ`
 (`ContDiffBump.exists_eqOn_inv_of_contDiffOn`, `ContDiffBump.dyadicDilate`,
 `ContDiffBump.dyadicDilate_apply_of_littlewoodPaley_ne_zero`). The kernels of the corresponding
 multipliers are `L¹`-normalised dilates of `𝓕⁻ σ`, so the multipliers are bounded on every `Lᵖ`
