@@ -6,16 +6,14 @@ Authors: Jeromie Beasley
 module
 
 public import Mathlib.Algebra.Lie.Classical
-public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.TracelessAnticommutator
 
 /-!
-# The traceless symmetric product on the adjoint representation of SL₃
+# The traceless symmetric product on the adjoint representation of SLₙ
 
-`Matrix.tracelessAnticommutator` removes the scalar part of the anticommutator of two
-three-by-three matrices. Restricted to trace-zero matrices it is bilinear, and together with
-the Lie bracket it supplies the two products whose trace transposes give the two octet copies
-in the tensor square of `sl₃`.
+`Matrix.tracelessAnticommutator` is bilinear on all square matrices. When the size `n` is
+nonzero in the field, it maps pairs in `slₙ` into `slₙ`, giving the bilinear map
+`symmetricProduct`. In size three, its trace transpose gives the symmetric octet embedding.
 
 ## References
 
@@ -30,52 +28,39 @@ namespace TauCeti.AdjointSquare
 
 open Matrix
 
-variable {K : Type*} [Field K]
+variable {K : Type*} [Field K] {n : ℕ}
 
 /-- The symmetric product as a bilinear map on Mathlib's actual trace-zero Lie algebra. -/
-def symmetricProduct [NeZero (3 : K)] :
-    LieAlgebra.SpecialLinear.sl (Fin 3) K →ₗ[K]
-      LieAlgebra.SpecialLinear.sl (Fin 3) K →ₗ[K]
-        LieAlgebra.SpecialLinear.sl (Fin 3) K where
-  toFun X :=
-    { toFun := fun Y =>
-        ⟨tracelessAnticommutator X.val Y.val, trace_tracelessAnticommutator _ _⟩
-      map_add' := fun Y Z =>
-        Subtype.ext (tracelessAnticommutator_add_right X.val Y.val Z.val)
-      map_smul' := fun a Y =>
-        Subtype.ext (tracelessAnticommutator_smul_right a X.val Y.val) }
-  map_add' X Y := LinearMap.ext fun Z =>
-    Subtype.ext (tracelessAnticommutator_add_left X.val Y.val Z.val)
-  map_smul' a X := LinearMap.ext fun Y =>
-    Subtype.ext (tracelessAnticommutator_smul_left a X.val Y.val)
+def symmetricProduct [NeZero (n : K)] :
+    LieAlgebra.SpecialLinear.sl (Fin n) K →ₗ[K]
+      LieAlgebra.SpecialLinear.sl (Fin n) K →ₗ[K]
+        LieAlgebra.SpecialLinear.sl (Fin n) K := by
+  haveI : NeZero (Fintype.card (Fin n) : K) := by simpa using ‹NeZero (n : K)›
+  refine LinearMap.mk₂ K (fun X Y => ⟨tracelessAnticommutator X.val Y.val,
+    trace_tracelessAnticommutator X.val Y.val⟩) ?_ ?_ ?_ ?_
+  · exact fun X Y Z => Subtype.ext (tracelessAnticommutator_add_left X.val Y.val Z.val)
+  · exact fun a X Y => Subtype.ext (tracelessAnticommutator_smul_left a X.val Y.val)
+  · intro X Y Z
+    apply Subtype.ext
+    exact (tracelessAnticommutator_comm X.val (Y.val + Z.val)).trans <|
+      (tracelessAnticommutator_add_left Y.val Z.val X.val).trans <|
+        congrArg₂ (· + ·) (tracelessAnticommutator_comm Y.val X.val)
+          (tracelessAnticommutator_comm Z.val X.val)
+  · intro a X Y
+    apply Subtype.ext
+    exact (tracelessAnticommutator_comm X.val (a • Y.val)).trans <|
+      (tracelessAnticommutator_smul_left a Y.val X.val).trans <|
+        congrArg (a • ·) (tracelessAnticommutator_comm Y.val X.val)
 
 /-- The bilinear map has the advertised matrix formula. -/
 @[simp]
-theorem coe_symmetricProduct [NeZero (3 : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin 3) K) :
+theorem coe_symmetricProduct [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
     (symmetricProduct X Y).val = tracelessAnticommutator X.val Y.val :=
   (rfl)
 
 /-- Symmetry holds on the native adjoint carrier. -/
-theorem symmetricProduct_comm [NeZero (3 : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin 3) K) :
+theorem symmetricProduct_comm [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
     symmetricProduct X Y = symmetricProduct Y X :=
   Subtype.ext (tracelessAnticommutator_comm _ _)
-
-/-- The symmetric product commutes with conjugation by a determinant-one matrix. -/
-theorem tracelessAnticommutator_sl_conj (g : SpecialLinearGroup (Fin 3) K)
-    (X Y : Matrix (Fin 3) (Fin 3) K) :
-    tracelessAnticommutator ((g : Matrix (Fin 3) (Fin 3) K) * X *
-      ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K))
-      ((g : Matrix (Fin 3) (Fin 3) K) * Y * ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K)) =
-      (g : Matrix (Fin 3) (Fin 3) K) * tracelessAnticommutator X Y *
-        ((g⁻¹ : _) : Matrix (Fin 3) (Fin 3) K) := by
-  -- Conjugation by `g` is conjugation by its image in `GL`.
-  have h (A : Matrix (Fin 3) (Fin 3) K) :
-      ((SpecialLinearGroup.toGL g : (Matrix (Fin 3) (Fin 3) K)ˣ) : Matrix (Fin 3) (Fin 3) K) * A *
-          (((SpecialLinearGroup.toGL g)⁻¹ : _) : Matrix (Fin 3) (Fin 3) K) =
-        (g : Matrix (Fin 3) (Fin 3) K) * A *
-          ((g⁻¹ : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) := by
-    simp [← map_inv, SpecialLinearGroup.coe_GL_coe_matrix]
-  simp only [← h]
-  exact tracelessAnticommutator_conj (SpecialLinearGroup.toGL g) X Y
 
 end TauCeti.AdjointSquare

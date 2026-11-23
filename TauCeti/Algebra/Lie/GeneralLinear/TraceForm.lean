@@ -8,6 +8,11 @@ module
 public import TauCeti.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.Algebra.Lie.Classical
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
+import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # The trace form of `gl n R` and the anticommutation relations it induces
@@ -39,6 +44,10 @@ These are relations in the Clifford algebra of the trace form, and nothing beyon
 them here. Reading them as the relations of a CAR algebra would need a splitting of the generators
 into creation and annihilation operators, an involution, and an identification of this Clifford
 algebra with a CAR algebra; none of that is supplied.
+
+On the special linear Lie algebra, `TauCeti.SLAdjoint.traceForm` restricts this pairing to
+trace-zero matrices. Over a field in which the size is nonzero, the restriction is nondegenerate
+and `TauCeti.SLAdjoint.traceDual` identifies this Lie algebra with its linear dual.
 
 ## Main definitions
 
@@ -352,3 +361,78 @@ theorem carGenerator_mul_comm_of_not_paired (i j k l : n) (h : ¬(j = k ∧ l = 
 end CAR
 
 end TauCeti
+
+namespace TauCeti.SLAdjoint
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+open Matrix
+
+section
+
+variable (K : Type*) [CommRing K] (n : ℕ)
+
+/-- The trace pairing on the special linear Lie algebra, the restriction of
+`TauCeti.traceBilinForm`. -/
+def traceForm : LinearMap.BilinForm K (LieAlgebra.SpecialLinear.sl (Fin n) K) :=
+  (traceBilinForm K (Fin n)).restrict (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule
+
+/-- Evaluation is the trace of the product. -/
+@[simp]
+theorem traceForm_apply (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
+    traceForm K n X Y = trace (X.val * Y.val) := by
+  -- `traceBilinForm` is not exposed, so the restriction is not definitionally the trace.
+  unfold traceForm
+  rw [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, traceBilinForm_apply]
+
+/-- The restricted trace form is symmetric, because `TauCeti.traceBilinForm` is. -/
+theorem traceForm_comm (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
+    traceForm K n X Y = traceForm K n Y X :=
+  ((traceBilinForm_isSymm K (Fin n)).restrict
+    (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule).eq X Y
+
+end
+
+section
+
+variable (K : Type*) [Field K] (n : ℕ)
+
+private theorem eq_zero_of_forall_trace_mul_eq_zero [NeZero (n : K)]
+    (X : LieAlgebra.SpecialLinear.sl (Fin n) K)
+    (h : ∀ Y : LieAlgebra.SpecialLinear.sl (Fin n) K, trace (X.val * Y.val) = 0) : X = 0 := by
+  refine Subtype.ext (Matrix.ext_iff_trace_mul_right.mpr fun Z => ?_)
+  -- The right-hand zero is the zero of `sl`, coerced into the matrices.
+  simp only [Submodule.coe_zero, zero_mul, trace_zero]
+  have hX : trace X.val = 0 := X.property
+  have hZ : trace (Z - (trace Z / (n : K)) • (1 : Matrix (Fin n) (Fin n) K)) = 0 := by
+    simp only [trace_sub, trace_smul, trace_one, Fintype.card_fin, smul_eq_mul]
+    field_simp [NeZero.ne (n : K)]
+    ring
+  have htest := h ⟨Z - (trace Z / (n : K)) • (1 : Matrix (Fin n) (Fin n) K), hZ⟩
+  simpa only [Matrix.mul_sub, Matrix.mul_smul, Matrix.mul_one, trace_sub, trace_smul, hX,
+    smul_zero, sub_zero] using htest
+
+/-- Both radicals of the trace pairing vanish when `n` is nonzero in `K`. -/
+theorem traceForm_nondegenerate [NeZero (n : K)] : (traceForm K n).Nondegenerate := by
+  constructor
+  · intro X h
+    exact eq_zero_of_forall_trace_mul_eq_zero K n X fun Y => by
+      simpa [traceForm_apply] using h Y
+  · intro Y h
+    exact eq_zero_of_forall_trace_mul_eq_zero K n Y fun X => by
+      simpa [traceForm_apply] using (traceForm_comm K n Y X).trans (h X)
+
+/-- The trace pairing identifies the adjoint carrier with its linear dual. -/
+noncomputable def traceDual [NeZero (n : K)] :
+    LieAlgebra.SpecialLinear.sl (Fin n) K ≃ₗ[K]
+      Module.Dual K (LieAlgebra.SpecialLinear.sl (Fin n) K) :=
+  (traceForm K n).toDual (traceForm_nondegenerate K n)
+
+/-- The dual functional associated to `X` evaluates as `tr(XY)`. -/
+@[simp]
+theorem traceDual_apply [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
+    traceDual K n X Y = trace (X.val * Y.val) := by
+  rw [traceDual, LinearMap.BilinForm.toDual_def, traceForm_apply]
+
+end
+
+end TauCeti.SLAdjoint

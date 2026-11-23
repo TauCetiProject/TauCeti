@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
-import Mathlib.Algebra.Ring.Action.ConjAct
 
 /-!
 # Scalar multiples of determinant-one matrices and `SL` versus `GL` conjugacy
@@ -42,8 +41,6 @@ type, including the empty and the one-element ones.
 * `Matrix.ProjectiveSpecialLinearGroup.bijective_toPGL_subgroupComap_of_roots`: when units have
   roots of degree the matrix size, the inclusion `PSL(n, K) → PGL(n, K)` identifies the preimage
   of a subgroup of `PGL(n, K)` with that subgroup.
-* `Matrix.SpecialLinearGroup.conj_commutator`: the commutator of two matrices commutes with
-  conjugation by any special linear matrix.
 -/
 
 public section
@@ -134,24 +131,3 @@ theorem bijective_toPGL_subgroupComap_of_roots
     MonoidHom.subgroupComap_surjective _ _ (toPGL_surj_of_roots hK)⟩
 
 end Matrix.ProjectiveSpecialLinearGroup
-
-namespace Matrix.SpecialLinearGroup
-
-variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
-
-/-- The commutator commutes with conjugation by any special linear matrix. -/
-theorem conj_commutator (g : SpecialLinearGroup ι R) (X Y : Matrix ι ι R) :
-    ((g : Matrix ι ι R) * X * (g⁻¹ : SpecialLinearGroup ι R)) *
-          ((g : Matrix ι ι R) * Y * (g⁻¹ : SpecialLinearGroup ι R)) -
-        ((g : Matrix ι ι R) * Y * (g⁻¹ : SpecialLinearGroup ι R)) *
-          ((g : Matrix ι ι R) * X * (g⁻¹ : SpecialLinearGroup ι R)) =
-      (g : Matrix ι ι R) * (X * Y - Y * X) * (g⁻¹ : SpecialLinearGroup ι R) := by
-  have h (A : Matrix ι ι R) :
-      (g : Matrix ι ι R) * A * (g⁻¹ : SpecialLinearGroup ι R) = ConjAct.toConjAct g • A := by
-    simp [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct]
-  -- Conjugation by `g` is conjugation by its image in the units, which preserves products
-  -- and differences.
-  rw [h X, h Y, h (X * Y - Y * X), ← ConjAct.toConjAct_toGL_smul, ← ConjAct.toConjAct_toGL_smul,
-    ← ConjAct.toConjAct_toGL_smul, ← smul_mul', ← smul_mul', ← smul_sub]
-
-end Matrix.SpecialLinearGroup

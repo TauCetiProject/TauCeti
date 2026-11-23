@@ -33,9 +33,7 @@ theorem disjoint_range_alternatingEmbeddingMap_symmetricEmbeddingMap [NeZero (2 
   obtain ⟨v, hv⟩ := hx.2
   have ha := comm_alternatingEmbeddingMap (K := K) u
   have hs := comm_symmetricEmbeddingMap (K := K) v
-  -- `IntertwiningMap.coe_toLinearMap` is `rfl`, so `rw` sees no coercion to rewrite.
-  change alternatingEmbeddingMap (K := K) u = x at hu
-  change symmetricEmbeddingMap (K := K) v = x at hv
+  rw [Representation.IntertwiningMap.toLinearMap_apply] at hu hv
   rw [hu] at ha
   rw [hv] at hs
   have hneg : -x = x := ha.symm.trans hs

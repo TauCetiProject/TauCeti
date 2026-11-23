@@ -14,10 +14,7 @@ public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Subrepresentation
 import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialLinear
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
@@ -35,7 +32,7 @@ representation with its dual.
 
 public section
 
-namespace TauCeti
+namespace TauCeti.SLAdjoint
 
 open Matrix
 open scoped TensorProduct
@@ -74,10 +71,22 @@ theorem matrixAdjointRep_apply (g : SpecialLinearGroup (Fin n) K)
 def tracelessSubrep : Subrepresentation (matrixAdjointRep K n) where
   toSubmodule := (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule
   apply_mem_toSubmodule g X hX := by
-    rw [LieSubalgebra.mem_toSubmodule, LieAlgebra.SpecialLinear.mem_sl_iff] at hX ⊢
+    rw [LieSubalgebra.mem_toSubmodule,
+    LieAlgebra.SpecialLinear.mem_sl_iff] at hX ⊢
     rw [matrixAdjointRep_apply]
     simpa only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct] using
       (ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct g) X).trans hX
+
+/-- The underlying submodule consists of the trace-zero matrices. -/
+@[simp] theorem tracelessSubrep_toSubmodule :
+    (tracelessSubrep K n).toSubmodule = (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule :=
+  (rfl)
+
+/-- A matrix belongs to the adjoint subrepresentation precisely when its trace vanishes. -/
+theorem mem_tracelessSubrep_iff (X : Matrix (Fin n) (Fin n) K) :
+    X ∈ (tracelessSubrep K n).toSubmodule ↔ X.trace = 0 := by
+  rw [tracelessSubrep_toSubmodule, LieSubalgebra.mem_toSubmodule,
+    LieAlgebra.SpecialLinear.mem_sl_iff]
 
 /-- The adjoint representation on Mathlib's trace-zero Lie algebra. -/
 def adjointRep :
@@ -96,49 +105,13 @@ theorem coe_adjointRep_apply (g : SpecialLinearGroup (Fin n) K)
   change matrixAdjointRep K n g (X : Matrix (Fin n) (Fin n) K) = _
   exact matrixAdjointRep_apply K n g X
 
-/-- The trace pairing on the special linear Lie algebra, the restriction of
-`TauCeti.traceBilinForm`. -/
-def traceForm : LinearMap.BilinForm K (LieAlgebra.SpecialLinear.sl (Fin n) K) :=
-  (traceBilinForm K (Fin n)).restrict (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule
-
-/-- Evaluation is the trace of the product. -/
-@[simp]
-theorem traceForm_apply (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    traceForm K n X Y = trace (X.val * Y.val) := by
-  -- `traceBilinForm` is not exposed, so the restriction is not definitionally the trace.
-  unfold traceForm
-  rw [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, traceBilinForm_apply]
-
-/-- The restricted trace form is symmetric, because `TauCeti.traceBilinForm` is. -/
-theorem traceForm_comm (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    traceForm K n X Y = traceForm K n Y X :=
-  ((traceBilinForm_isSymm K (Fin n)).restrict
-    (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule).eq X Y
-
 /-- Simultaneous conjugation preserves the restricted trace pairing. -/
 @[simp high]
 theorem traceForm_adjointRep (g : SpecialLinearGroup (Fin n) K)
     (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
     traceForm K n (adjointRep K n g X) (adjointRep K n g Y) = traceForm K n X Y := by
   simp only [traceForm_apply, coe_adjointRep_apply]
-  have h := ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct g) (X.val * Y.val)
-  rw [← ConjAct.toConjAct_toGL_smul, smul_mul'] at h
-  simpa only [ConjAct.toConjAct_toGL_smul, ConjAct.specialLinearGroup_smul_def,
-    ConjAct.ofConjAct_toConjAct] using h
-
-/-- Conjugation by a special linear matrix preserves the trace of a product.
-This is the simp-normal form of `traceForm_adjointRep`: `coe_inv` rewrites the inverse to an
-adjugate, so the left-hand side is stated with `adjugate`. -/
-@[simp]
-theorem trace_conj_mul_conj (g : SpecialLinearGroup (Fin n) K)
-    (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    (((g : Matrix (Fin n) (Fin n) K) * X.val * (g : Matrix (Fin n) (Fin n) K).adjugate) *
-        ((g : Matrix (Fin n) (Fin n) K) * Y.val *
-          (g : Matrix (Fin n) (Fin n) K).adjugate)).trace =
-      (X.val * Y.val).trace := by
-  have h := traceForm_adjointRep K n g X Y
-  simp only [traceForm_apply, coe_adjointRep_apply, SpecialLinearGroup.coe_inv] at h
-  exact h
+  simpa only [SpecialLinearGroup.coe_inv] using SpecialLinearGroup.trace_mul_conj g X.val Y.val
 
 /-- The Lie bracket as an equivariant map out of the tensor square. -/
 noncomputable def alternatingProductMap :
@@ -155,7 +128,8 @@ noncomputable def alternatingProductMap :
     change ⁅adjointRep K n g X, adjointRep K n g Y⁆.val =
       (adjointRep K n g ⁅X, Y⁆).val
     simp only [LieAlgebra.SpecialLinear.sl_bracket, coe_adjointRep_apply]
-    exact Matrix.SpecialLinearGroup.conj_commutator g X.val Y.val
+    rw [SpecialLinearGroup.conj_eq_units_smul, SpecialLinearGroup.conj_eq_units_smul,
+      SpecialLinearGroup.conj_eq_units_smul, smul_sub, smul_mul', smul_mul']
 
 /-- On a simple tensor the alternating intertwiner is the commutator. -/
 @[simp]
@@ -164,7 +138,7 @@ theorem alternatingProductMap_tmul (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K)
   (rfl)
 
 /-- Swapping the tensor factors negates the alternating intertwiner. -/
-theorem comm_alternatingProductMap
+theorem alternatingProductMap_comm
     (T : LieAlgebra.SpecialLinear.sl (Fin n) K ⊗[K]
       LieAlgebra.SpecialLinear.sl (Fin n) K) :
     alternatingProductMap K n (TensorProduct.comm K _ _ T) =
@@ -186,55 +160,21 @@ section
 
 variable (K : Type*) [Field K] (n : ℕ)
 
-private theorem eq_zero_of_forall_trace_mul_eq_zero [NeZero (n : K)]
-    (X : LieAlgebra.SpecialLinear.sl (Fin n) K)
-    (h : ∀ Y : LieAlgebra.SpecialLinear.sl (Fin n) K, trace (X.val * Y.val) = 0) : X = 0 := by
-  refine Subtype.ext (Matrix.ext_iff_trace_mul_right.mpr fun Z => ?_)
-  -- The right-hand zero is the zero of `sl`, coerced into the matrices.
-  simp only [Submodule.coe_zero, zero_mul, trace_zero]
-  have hX : trace X.val = 0 := X.property
-  have hZ : trace (Z - (trace Z / (n : K)) • (1 : Matrix (Fin n) (Fin n) K)) = 0 := by
-    simp only [trace_sub, trace_smul, trace_one, Fintype.card_fin, smul_eq_mul]
-    field_simp [NeZero.ne (n : K)]
-    ring
-  have htest := h ⟨Z - (trace Z / (n : K)) • (1 : Matrix (Fin n) (Fin n) K), hZ⟩
-  simpa only [Matrix.mul_sub, Matrix.mul_smul, Matrix.mul_one, trace_sub, trace_smul, hX,
-    smul_zero, sub_zero] using htest
-
-/-- Both radicals of the trace pairing vanish when `n` is nonzero in `K`. -/
-theorem traceForm_nondegenerate [NeZero (n : K)] : (traceForm K n).Nondegenerate := by
-  constructor
-  · intro X h
-    exact eq_zero_of_forall_trace_mul_eq_zero K n X fun Y => by
-      simpa [traceForm_apply] using h Y
-  · intro Y h
-    exact eq_zero_of_forall_trace_mul_eq_zero K n Y fun X => by
-      simpa [traceForm_apply] using (traceForm_comm K n Y X).trans (h X)
-
-/-- The trace pairing identifies the adjoint carrier with its linear dual. -/
-noncomputable def traceDual [NeZero (n : K)] :
-    LieAlgebra.SpecialLinear.sl (Fin n) K ≃ₗ[K]
-      Module.Dual K (LieAlgebra.SpecialLinear.sl (Fin n) K) :=
-  (traceForm K n).toDual (traceForm_nondegenerate K n)
-
-/-- The dual functional associated to `X` evaluates as `tr(XY)`. -/
-@[simp]
-theorem traceDual_apply [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    traceDual K n X Y = trace (X.val * Y.val) := by
-  rw [traceDual, LinearMap.BilinForm.toDual_def, traceForm_apply]
-
 /-- The trace pairing is an equivariant self-duality of the adjoint representation. -/
 noncomputable def traceDualEquiv [NeZero (n : K)] :
     (adjointRep K n).Equiv (adjointRep K n).dual :=
   Representation.Equiv.mk (traceDual K n) fun g => by
     ext X Y
-    -- `traceDual` is `BilinForm.toDual` and the dual representation precomposes with `g⁻¹`.
-    -- Both steps are definitional (`toDual_def` and `dual_apply` are `rfl`), so `rw` does not
-    -- see a `traceDual` application to rewrite.
-    change traceForm K n (adjointRep K n g X) Y = traceForm K n X (adjointRep K n g⁻¹ Y)
+    change traceDual K n (adjointRep K n g X) Y = traceDual K n X (adjointRep K n g⁻¹ Y)
+    rw [traceDual_apply, traceDual_apply, ← traceForm_apply, ← traceForm_apply]
     have h := traceForm_adjointRep K n g X (adjointRep K n g⁻¹ Y)
     simpa only [Representation.self_inv_apply] using h
 
+/-- Evaluation of the equivariant self-duality is the trace of the matrix product. -/
+@[simp] theorem traceDualEquiv_apply [NeZero (n : K)]
+    (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
+    traceDualEquiv K n X Y = trace (X.val * Y.val) := traceDual_apply K n X Y
+
 end
 
-end TauCeti
+end TauCeti.SLAdjoint
