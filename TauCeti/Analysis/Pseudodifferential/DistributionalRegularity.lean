@@ -45,8 +45,8 @@ for instance `singsupp_s(Δ T) = singsupp_(s + 2)(T)` for the Laplacian
 ## The argument
 
 The statement is reduced to interior elliptic regularity on the Bessel-potential spaces `H^{r,p}`
-(`IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace` in the
-namespace `TauCeti.Symbol`), which rests on the parametrix of the pseudodifferential calculus.
+(`IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace` in
+the namespace `TauCeti.Symbol`), which rests on the parametrix of the pseudodifferential calculus.
 
 * **Finite order.** For a cutoff `χ` equal to one near `x`, the tempered distribution `χ T` lies in
   some `H^{r,p}` (`Distribution.exists_memSobolev_cutoffTempered_of_one_lt`).
@@ -54,7 +54,8 @@ namespace `TauCeti.Symbol`), which rests on the parametrix of the pseudodifferen
   `c i g i ψ` sends `χ T` to `ψ P T`: where `ψ ≠ 0` the derivatives of `χ T` are those of `T`
   (`Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`). Its classical symbol has
   compact spatial support, and on `H^{r,p}` its quantization is the differential operator itself
-  (`TauCeti.ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id`).
+  (`toDistr_quantizeUniformBesselPotentialSpace_ofDifferentialSymbol_smul_id` in the namespace
+  `TauCeti.ClassicalSymbol`).
 * **Freezing the coefficients.** Ellipticity is an open condition
   (`TauCeti.eventually_forall_constCoeffPrincipalSymbol_ne_zero`), so `P` is elliptic on a ball
   around `x`. Composing the coefficients with a smooth map `ρ` that is the identity near `x`, maps
@@ -229,14 +230,15 @@ private theorem memSobolev_cutoffTempered_of_isEllipticAbove {p : ℝ≥0∞} [F
     contDiff_const.mul (TestFunction.smulLeftCLM (hg i) ψ).contDiff
   have hβc (i : ι) (_ : i ∈ t) : HasCompactSupport (β i) :=
     (TestFunction.smulLeftCLM (hg i) ψ).hasCompactSupport.mul_left
-  have hu := ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id M t
-    m hk hβ hβc _ hp hp_top hr.toBesselPotentialSpace
+  have hu :=
+    ClassicalSymbol.toDistr_quantizeUniformBesselPotentialSpace_ofDifferentialSymbol_smul_id M t m
+      hk hβ hβc _ hp hp_top hr.toBesselPotentialSpace
   rw [hr.toBesselPotentialSpace_toDistr, sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered hg T
     hχψ] at hu
   set φS : 𝓢(CoordinateSpace n, ℂ) := φ.hasCompactSupport.toSchwartzMap φ.contDiff
   have hφS : (φS : CoordinateSpace n → ℂ) = φ :=
     funext (φ.hasCompactSupport.toSchwartzMap_toFun φ.contDiff)
-  have hreg := hR.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace
+  have hreg := hR.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace
     (hφS ▸ φ.hasCompactSupport)
     (ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m
       (fun i x ↦ β i x • ContinuousLinearMap.id ℂ ℂ) (fun i hi ↦ (hβ i hi).smul contDiff_const)
