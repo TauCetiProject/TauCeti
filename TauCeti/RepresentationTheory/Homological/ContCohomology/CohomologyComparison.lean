@@ -499,6 +499,16 @@ theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply (x 
         (explicitH1AddEquivContinuousCohomology G X.V x) :=
   (rfl)
 
+omit [IsTopologicalGroup G] [DiscreteTopology X.V] [ContinuousSMul G X.V] in
+/-- If the additive map `f` is the underlying map of a morphism `F : res φ X ⟶ Y`, then `f` is
+equivariant along `φ`. -/
+theorem _root_.TopRep.map_smul_of_hom_eq
+    {H : Type u} [Group H] [TopologicalSpace H]
+    (Y : TopRep k H) (φ : H →ₜ* G) (F : TopRep.res (φ : H →* G) X ⟶ Y) (f : X.V →+ Y.V)
+    (hF : ∀ m, F.hom m = f m) (h : H) (m : X.V) : f (φ h • m) = h • f m := by
+  rw [← hF, ← hF]
+  exact F.hom.isIntertwining h m
+
 /-- The degree-one comparison for discrete representations is natural in compatible pairs: it
 carries the explicit pullback along `φ` and the underlying additive map `f` of a morphism
 `F : res φ X ⟶ Y` to Mathlib's `ContinuousCohomology.map φ F`. -/
@@ -506,11 +516,12 @@ theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map
     {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     (Y : TopRep k H) [DiscreteTopology Y.V] [ContinuousSMul H Y.V]
     (φ : H →ₜ* G) (F : TopRep.res (φ : H →* G) X ⟶ Y) (f : X.V →+ Y.V)
-    (hF : ∀ m, F.hom m = f m) (hf : ∀ (h : H) (m : X.V), f (φ h • m) = h • f m)
-    (x : H1 G X.V) :
+    (hF : ∀ m, F.hom m = f m) (x : H1 G X.V) :
     _root_.ContinuousCohomology.map φ F 1 (X.explicitH1AddEquivContinuousCohomologyOfDiscrete x) =
       Y.explicitH1AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap1 G X.V H Y.V φ f continuous_of_discreteTopology hf x) := by
+        (explicitMap1 G X.V H Y.V φ f continuous_of_discreteTopology
+          (X.map_smul_of_hom_eq Y φ F f hF) x) := by
+  have hf := X.map_smul_of_hom_eq Y φ F f hF
   induction x using QuotientAddGroup.induction_on with
   | H c =>
     rw [TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
@@ -564,11 +575,12 @@ theorem _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map
     [LocallyCompactSpace G] {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     [LocallyCompactSpace H] (Y : TopRep k H) [DiscreteTopology Y.V] [ContinuousSMul H Y.V]
     (φ : H →ₜ* G) (F : TopRep.res (φ : H →* G) X ⟶ Y) (f : X.V →+ Y.V)
-    (hF : ∀ m, F.hom m = f m) (hf : ∀ (h : H) (m : X.V), f (φ h • m) = h • f m)
-    (x : H2 G X.V) :
+    (hF : ∀ m, F.hom m = f m) (x : H2 G X.V) :
     _root_.ContinuousCohomology.map φ F 2 (X.explicitH2AddEquivContinuousCohomologyOfDiscrete x) =
       Y.explicitH2AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap2 G X.V H Y.V φ f continuous_of_discreteTopology hf x) := by
+        (explicitMap2 G X.V H Y.V φ f continuous_of_discreteTopology
+          (X.map_smul_of_hom_eq Y φ F f hF) x) := by
+  have hf := X.map_smul_of_hom_eq Y φ F f hF
   induction x using QuotientAddGroup.induction_on with
   | H c =>
     rw [TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply,

@@ -491,9 +491,6 @@ private theorem tensorContraction_class_graph [LocallyCompactSpace G]
       (twoTransversal U hU s hs)).hom.hom
   let : Module ℤ B.obj.V := B.obj.hV2
   let f := F.hom.toContinuousLinearMap.toLinearMap.toAddMonoidHom
-  have hf (g : G) (a : B.obj.V) :
-      f ((ContinuousMonoidHom.id G) g • a) = g • f a :=
-    TopRep.hom_comm_apply F g a
   have hF (g : G) (a : B.obj.V) : f (B.obj.ρ g a) = f a :=
     (TopRep.hom_comm_apply F g a).trans (trivialF2_ρ_apply_apply G g _)
   let c := tensorContraction U hU s hs
@@ -502,7 +499,7 @@ private theorem tensorContraction_class_graph [LocallyCompactSpace G]
   rw [← c.explicitH2AddEquivContinuousCohomologyOfDiscrete_explicitCocycle2]
   rw [ContinuousCohomology.coeffMap_def]
   rw [B.obj.explicitH2AddEquivContinuousCohomologyOfDiscrete_map
-    (trivialF2 G) (ContinuousMonoidHom.id G) F f (fun _ ↦ rfl) hf]
+    (trivialF2 G) (ContinuousMonoidHom.id G) F f (fun _ ↦ rfl)]
   rw [explicitMap2_mk]
   simp only [eqToHom_refl, CategoryTheory.id_apply]
   rw [← evensGraphCocycle_class_eq_graphClass U hU s hs α hα]

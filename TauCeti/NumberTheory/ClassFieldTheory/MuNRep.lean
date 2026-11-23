@@ -579,7 +579,7 @@ theorem muNRepCohomologyEquivTrivialFp_one_apply {ζ : F} (hζ : IsPrimitiveRoot
   obtain ⟨y, rfl⟩ := (muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete.surjective x
   rw [AddEquiv.symm_apply_apply, muNRepCohomologyEquivTrivialFp_apply,
     TauCeti.ContinuousCohomology.coeffMap_def]
-  exact TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map _ _ _ _ _ (fun _ ↦ rfl) _ y
+  exact TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map _ _ _ _ _ (fun _ ↦ rfl) y
 
 /-- In degree two, the coefficient transport is the pullback of explicit cocycles along the
 coefficient identification `muNRepEquivTrivialFp` of the chosen primitive root. -/
@@ -597,7 +597,7 @@ theorem muNRepCohomologyEquivTrivialFp_two_apply {ζ : F} (hζ : IsPrimitiveRoot
   obtain ⟨y, rfl⟩ := (muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete.surjective x
   rw [AddEquiv.symm_apply_apply, muNRepCohomologyEquivTrivialFp_apply,
     TauCeti.ContinuousCohomology.coeffMap_def]
-  exact TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map _ _ _ _ _ (fun _ ↦ rfl) _ y
+  exact TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map _ _ _ _ _ (fun _ ↦ rfl) y
 
 /-- Given a primitive `n`th root of unity in `F`, the Kummer isomorphism identifies the
 `n`th-power classes with `H¹(G_F, ℤ/n)` for the trivial action. The coefficient identification

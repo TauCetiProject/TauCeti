@@ -126,8 +126,7 @@ def explicitH1FunctorIsoContinuousCohomology : explicitH1Functor (R := R) G ≅
         (X.obj.explicitH1AddEquivContinuousCohomologyOfDiscrete x)
     rw [explicitCoeff1_eq_explicitMap1, ContinuousCohomology.coeffMap_def]
     exact (X.obj.explicitH1AddEquivContinuousCohomologyOfDiscrete_map Y.obj
-      (ContinuousMonoidHom.id G) f.hom (coeff G f).toAddMonoidHom (fun _ ↦ rfl)
-      (map_smul (coeff G f)) x).symm)
+      (ContinuousMonoidHom.id G) f.hom (coeff G f).toAddMonoidHom (fun _ ↦ rfl) x).symm)
 
 /-- The degree-two explicit-to-canonical comparison is natural in the coefficient module. -/
 def explicitH2FunctorIsoContinuousCohomology [LocallyCompactSpace G] :
@@ -145,8 +144,7 @@ def explicitH2FunctorIsoContinuousCohomology [LocallyCompactSpace G] :
         (X.obj.explicitH2AddEquivContinuousCohomologyOfDiscrete x)
     rw [explicitCoeff2_eq_explicitMap2, ContinuousCohomology.coeffMap_def]
     exact (X.obj.explicitH2AddEquivContinuousCohomologyOfDiscrete_map Y.obj
-      (ContinuousMonoidHom.id G) f.hom (coeff G f).toAddMonoidHom (fun _ ↦ rfl)
-      (map_smul (coeff G f)) x).symm)
+      (ContinuousMonoidHom.id G) f.hom (coeff G f).toAddMonoidHom (fun _ ↦ rfl) x).symm)
 
 omit [IsTopologicalGroup G] in
 /-- The degree-zero functor takes a coefficient module to its invariant subgroup. -/
