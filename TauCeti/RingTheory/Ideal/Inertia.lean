@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.Algebra.Ring.Action.End
 
 /-!
 # Testing the inertia subgroup of an ideal on algebra generators
@@ -28,7 +29,6 @@ generator.
   on a generating set.
 * `TauCeti.Ideal.smul_sub_mem_mul_of_mem_sq`: an automorphism stabilizing `J` and displacing `J`
   into `I` displaces `J ^ 2` into `I * J`.
-* `TauCeti.smul_mul_sub_mul`: product-displacement identity for a ring action.
 * `TauCeti.smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top`: for a single generator `ξ`, every
   `σ • x - x` is a multiple of `σ • ξ - ξ`.
 
@@ -38,17 +38,6 @@ generator.
 -/
 
 public section
-
-namespace TauCeti
-
-/-- Product-displacement identity for a ring action: `σ • (a * b) - a * b` splits into a left
-displacement `(σ • a - a) * (σ • b)` and a right displacement `a * (σ • b - b)`. -/
-theorem smul_mul_sub_mul {G : Type*} [Monoid G] {S : Type*} [Ring S] [MulSemiringAction G S]
-    (σ : G) (a b : S) :
-    σ • (a * b) - a * b = (σ • a - a) * (σ • b) + a * (σ • b - b) := by
-  rw [smul_mul', sub_mul, mul_sub, sub_add_sub_cancel]
-
-end TauCeti
 
 namespace TauCeti.Ideal
 

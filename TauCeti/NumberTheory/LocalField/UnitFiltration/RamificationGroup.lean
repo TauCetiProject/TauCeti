@@ -502,12 +502,12 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p] :
 variable (G) in
 /-- **Wild inertia is the Sylow `p`-subgroup of inertia.** For the residue characteristic `p`,
 the first ramification group `G_1`, viewed as a subgroup of `G_0`, is a Sylow `p`-subgroup,
-delegated to `TauCeti.IsDiscreteValuationRing.ramificationGroupOneSylow`. -/
+delegated to `TauCeti.IsLocalRing.ramificationGroupOneSylow`. -/
 noncomputable def ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
     Sylow p (ramificationGroup G 𝒪[L] 0) :=
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  IsDiscreteValuationRing.ramificationGroupOneSylow G 𝒪[L] p
+  IsLocalRing.ramificationGroupOneSylow G 𝒪[L] p
     (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
@@ -519,7 +519,7 @@ theorem ramificationGroupOneSylow_coe (p : ℕ) [CharP 𝓀[L] p]
       Subgroup (ramificationGroup G 𝒪[L] 0)) =
       (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) :=
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  IsDiscreteValuationRing.ramificationGroupOneSylow_coe p
+  IsLocalRing.ramificationGroupOneSylow_coe p
     (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
@@ -529,7 +529,7 @@ theorem ramificationGroupOneSylow_normal (p : ℕ) [CharP 𝓀[L] p]
     (ramificationGroupOneSylow (G := G) (L := L) p :
       Subgroup (ramificationGroup G 𝒪[L] 0)).Normal := by
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  exact IsDiscreteValuationRing.ramificationGroupOneSylow_normal p
+  exact IsLocalRing.ramificationGroupOneSylow_normal p
     (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
@@ -539,7 +539,7 @@ theorem eq_ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
     (Q : Sylow p (ramificationGroup G 𝒪[L] 0)) :
     Q = ramificationGroupOneSylow (G := G) (L := L) p := by
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  exact IsDiscreteValuationRing.eq_ramificationGroupOneSylow p
+  exact IsLocalRing.eq_ramificationGroupOneSylow p
     (not_dvd_index_ramificationGroup_one G p) Q
 
 variable (G) in
@@ -550,7 +550,7 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
     Nat.card (ramificationGroup G 𝒪[L] 1) =
       p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  exact IsDiscreteValuationRing.natCard_ramificationGroup_one p
+  exact IsLocalRing.natCard_ramificationGroup_one p
     (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
@@ -566,7 +566,7 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p 
   by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
   · let _ : Fact p.Prime := ⟨hp⟩
     exact
-      IsDiscreteValuationRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero
+      IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero
         p (not_dvd_index_ramificationGroup_one G p)
   · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
     have hinf := not_finite_iff_infinite.mp hfin

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Sylow
 public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
@@ -53,16 +52,15 @@ and wild inertia `G_1` without assuming a finite residue field:
   `TauCeti/RingTheory/LocalRing/RamificationGroup.lean`), and when `G_0 / G_1` is finite the tame
   quotient `G_0 / G_1` is cyclic.
 * When `ResidueField B` has prime characteristic `p` and `ResidueField B / ResidueField R` is
-  separable, the index `[G_0 : G_1]` is prime to `p` whenever `G_0 / G_1` is finite; more
-  generally, whenever `[G_0 : G_1]` is prime to `p` (and `G` acts faithfully with `G_0` finite),
-  combining this with `TauCeti.IsLocalRing.isPGroup_ramificationGroup` shows that `G_1` is the
-  unique normal Sylow `p`-subgroup of `G_0`.
+  separable, the index `[G_0 : G_1]` is prime to `p` whenever `G_0 / G_1` is finite, so
+  `TauCeti.IsLocalRing.ramificationGroupOneSylow` applies to exhibit `G_1` as the unique normal
+  Sylow `p`-subgroup of `G_0` when `G` acts faithfully and `G_0` is finite.
 * When `ResidueField B` has characteristic zero and `G` acts faithfully with `G_0` finite (with no
   base ring `R` or separability assumption), every positive ramification group vanishes
   (`TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`) and `G_0` itself is cyclic.
 
-The API and the positive-characteristic Sylow consequences parallel the local-field formalization
-in `TauCeti/NumberTheory/LocalField/UnitFiltration/RamificationGroup.lean`, with the conjugation
+The API parallels the local-field formalization in
+`TauCeti/NumberTheory/LocalField/UnitFiltration/RamificationGroup.lean`, with the conjugation
 equivariance of `tameCharacter`, `tameCharacterGraded`, and
 `ramificationGroupGradedToResidueField` adapted from
 `TauCeti/NumberTheory/LocalField/UnitFiltration/Conjugation.lean`, replacing fraction-field unit
@@ -84,9 +82,6 @@ are adapted from `TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.
   descent to `G_0 / G_1`.
 * `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField`: the positive-depth
   additive residue coordinate `Additive (G_{n+1} / G_{n+2}) →+ k` attached to a uniformizer.
-* `TauCeti.IsDiscreteValuationRing.ramificationGroupOneSylow`: for a faithful action with finite
-  `G_0` in prime residue characteristic `p` when `[G_0 : G_1]` is prime to `p`, `G_1` as the
-  unique normal Sylow `p`-subgroup of `G_0`.
 
 ## Main results
 
@@ -117,10 +112,6 @@ are adapted from `TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.
   extension over `R`, each `G_i / G_{i+1}` is commutative, `G_0` acts trivially on `G_0 / G_1`, and
   when `G_0 / G_1` is finite it is cyclic and (in prime residue characteristic `p`) of order prime
   to `p`.
-* `TauCeti.IsDiscreteValuationRing.eq_ramificationGroupOneSylow`, `natCard_ramificationGroup_one`,
-  and `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: for a faithful action
-  with finite `G_0` in prime residue characteristic `p` when `[G_0 : G_1]` is prime to `p`,
-  `G_1` is the unique normal Sylow `p`-subgroup of `G_0`.
 
 ## References
 
@@ -737,77 +728,6 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [Fact p.Prime] [CharP (Res
   exact hroot.neZero'.out (CharP.cast_eq_zero _ p)
 
 end Separable
-
-section Sylow
-
-variable {G : Type*} [Group G] {B : Type*} [CommRing B] [IsDomain B]
-  [_root_.IsDiscreteValuationRing B] [MulSemiringAction G B]
-
-variable (G B) in
-/-- **Wild inertia `G_1` as a Sylow `p`-subgroup of inertia `G_0`**, for a faithful action with
-finite `G_0` in prime residue characteristic `p` whenever the index `[G_0 : G_1]` is prime to
-`p`. -/
-def ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField B) p]
-    [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
-    (hp : ¬ p ∣ ((ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0)).index) :
-    Sylow p (ramificationGroup G B 0) :=
-  have : Finite (ramificationGroup G B 1) :=
-    Finite.of_injective
-      (Subgroup.inclusion (ramificationGroup_antitone G B (by omega : (0 : ℤ) ≤ 1)))
-      (Subgroup.inclusion_injective _)
-  ((isPGroup_ramificationGroup G B p (i := 1) (by omega)).comap_subtype).toSylow hp
-
-/-- The subgroup underlying `ramificationGroupOneSylow` is `G_1` viewed inside `G_0`. -/
-@[simp]
-theorem ramificationGroupOneSylow_coe (p : ℕ) [Fact p.Prime] [CharP (ResidueField B) p]
-    [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
-    (hp : ¬ p ∣ ((ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0)).index) :
-    (ramificationGroupOneSylow G B p hp : Subgroup (ramificationGroup G B 0)) =
-      (ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0) :=
-  (rfl)
-
-/-- The wild inertia Sylow subgroup is normal in `G_0`. -/
-theorem ramificationGroupOneSylow_normal (p : ℕ) [Fact p.Prime] [CharP (ResidueField B) p]
-    [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
-    (hp : ¬ p ∣ ((ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0)).index) :
-    (ramificationGroupOneSylow G B p hp : Subgroup (ramificationGroup G B 0)).Normal :=
-  ramificationGroupOneSylow_coe p hp ▸ inferInstance
-
-/-- `ramificationGroupOneSylow` is the unique Sylow `p`-subgroup of `G_0`. -/
-theorem eq_ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField B) p]
-    [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
-    (hp : ¬ p ∣ ((ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0)).index)
-    (Q : Sylow p (ramificationGroup G B 0)) :
-    Q = ramificationGroupOneSylow G B p hp := by
-  let _ : Unique (Sylow p (ramificationGroup G B 0)) :=
-    Sylow.unique_of_normal (ramificationGroupOneSylow G B p hp)
-      (ramificationGroupOneSylow_normal p hp)
-  exact Subsingleton.elim _ _
-
-/-- The order of wild inertia `G_1` is the `p`-part of the order of inertia `G_0`, for a faithful
-action with finite `G_0` in prime residue characteristic `p` when `[G_0 : G_1]` is prime to `p`. -/
-theorem natCard_ramificationGroup_one (p : ℕ) [Fact p.Prime] [CharP (ResidueField B) p]
-    [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
-    (hp : ¬ p ∣ ((ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0)).index) :
-    Nat.card (ramificationGroup G B 1) =
-      p ^ (Nat.card (ramificationGroup G B 0)).factorization p := by
-  rw [← Sylow.card_eq_multiplicity (ramificationGroupOneSylow G B p hp)]
-  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-    (ramificationGroup_antitone G B (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
-
-/-- **Wild inertia is trivial if and only if `p` does not divide `#G_0`**, for a faithful action
-with finite `G_0` in prime residue characteristic `p` when `[G_0 : G_1]` is prime to `p`. -/
-theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
-    [Fact p.Prime] [CharP (ResidueField B) p] [FaithfulSMul G B]
-    [Finite (ramificationGroup G B 0)]
-    (hp : ¬ p ∣ ((ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0)).index) :
-    ramificationGroup G B 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G B 0) := by
-  have hp' : p.Prime := Fact.out
-  rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one p hp,
-    pow_eq_one_iff_right hp'.ne_one, Nat.factorization_eq_zero_iff]
-  simp only [hp', not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
-
-end Sylow
 
 end IsDiscreteValuationRing
 

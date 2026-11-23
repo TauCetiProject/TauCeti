@@ -17,6 +17,7 @@ A group `G` acting on a semiring `S` by ring automorphisms is represented by
 element lies in it exactly when it fixes every element of `S`, so a faithful action has trivial
 kernel. When `S` is moreover generated over a base ring `R` by a single element `ξ` and a monoid
 acts faithfully by `R`-algebra maps, the action is already determined by where it sends `ξ`.
+The file also records the product-displacement identity for a ring action.
 
 ## Main results
 
@@ -24,6 +25,7 @@ acts faithfully by `R`-algebra maps, the action is already determined by where i
   on every element.
 * `TauCeti.MulSemiringAction.ker_toRingAut_eq_bot`: a faithful action is a faithful
   representation.
+* `TauCeti.smul_mul_sub_mul`: product-displacement identity for a ring action.
 * `TauCeti.smul_left_injective_of_adjoin_singleton_eq_top`: for a faithful action of a monoid by
   `R`-algebra maps, distinct elements move a single generator of `S` over `R` to distinct elements.
 * `TauCeti.eq_one_of_smul_eq_of_adjoin_singleton_eq_top`: under the same hypotheses, only the
@@ -51,6 +53,13 @@ theorem ker_toRingAut_eq_bot [FaithfulSMul G S] :
 end TauCeti.MulSemiringAction
 
 namespace TauCeti
+
+/-- Product-displacement identity for a ring action: `σ • (a * b) - a * b` splits into a left
+displacement `(σ • a - a) * (σ • b)` and a right displacement `a * (σ • b - b)`. -/
+theorem smul_mul_sub_mul {G : Type*} [Monoid G] {S : Type*} [Ring S] [MulSemiringAction G S]
+    (σ : G) (a b : S) :
+    σ • (a * b) - a * b = (σ • a - a) * (σ • b) + a * (σ • b - b) := by
+  rw [smul_mul', sub_mul, mul_sub, sub_add_sub_cancel]
 
 variable {G : Type*} [Monoid G] {S : Type*} [Semiring S] [MulSemiringAction G S]
 variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
