@@ -60,9 +60,6 @@ for any `T ∈ GL(L)`).
 
 * `MeasureTheory.Measure.addHaar_submodule_of_isNonarchimedeanLocalField`: proper subspaces of `V`
   are Haar-null.
-* `MeasureTheory.Measure.addHaar_image_mulVec_of_isNonarchimedeanLocalField`,
-  `MeasureTheory.Measure.addHaar_preimage_mulVec_of_isNonarchimedeanLocalField`,
-  `MeasureTheory.Measure.map_mulVec_addHaar`: matrix scaling on `ι → E` by `|det A|_E`.
 * `MeasureTheory.Measure.addHaar_image_linearMap_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.addHaar_image_continuousLinearMap_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.map_linearEquiv_addHaar`,
@@ -94,80 +91,6 @@ open scoped ENNReal NNReal NNRat Pointwise
 namespace MeasureTheory.Measure
 
 open TauCeti
-
-section CoordinateSpace
-
-variable {E ι : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
-  [IsNonarchimedeanLocalField E]
-
-/-- Algebraic identity relating `|det A|_E` to the valuation exponent `k` of a cleared matrix
-`B = ϖ ^ m • A` over `𝒪[E]`. -/
-private theorem normalizedAbsoluteValue_det_mul_inv_pow {ϖ : 𝒪[E]} (hϖ : Irreducible ϖ)
-    {d : E} {b : 𝒪[E]} {m n k : ℕ} (hbd : (b : E) = ((ϖ : E) ^ m) ^ n * d)
-    (hk : Associated b (ϖ ^ k)) :
-    ((normalizedAbsoluteValue E d : ℝ≥0) : ℝ≥0∞) *
-      (1 / (Nat.card 𝓀[E] : ℝ≥0∞) ^ (m * n)) = 1 / (Nat.card 𝓀[E] : ℝ≥0∞) ^ k := by
-  obtain ⟨u, hu⟩ := hk.symm
-  have hval := congrArg (fun x : 𝒪[E] ↦ normalizedAbsoluteValue E (x : E)) hu
-  simp only [Subring.coe_mul, SubmonoidClass.coe_pow, map_mul, map_pow, hbd,
-    ← pow_mul, normalizedAbsoluteValue_irreducible hϖ, normalizedAbsoluteValue_coe_unit,
-    mul_one] at hval
-  have hnnr := congrArg (fun q : ℚ≥0 ↦ ((q : ℝ≥0) : ℝ≥0∞)) hval.symm
-  have hq0 : (Nat.card 𝓀[E] : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
-  simpa [one_div, mul_comm, inv_pow, ENNReal.coe_inv (pow_ne_zero _ hq0)] using hnnr
-
-/-- For an invertible matrix `A : Matrix ι ι E`, `A.mulVec` scales any additive Haar measure on
-`ι → E` by `|det A|_E`. -/
-private theorem addHaar_image_mulVec_of_isUnit_det [Fintype ι] [DecidableEq ι]
-    [MeasurableSpace (ι → E)] [BorelSpace (ι → E)]
-    (μ : Measure (ι → E)) [μ.IsAddHaarMeasure] {A : Matrix ι ι E} (hA : IsUnit A.det)
-    (s : Set (ι → E)) :
-    μ (A.mulVec '' s) = ((normalizedAbsoluteValue E A.det : ℝ≥0) : ℝ≥0∞) * μ s := by
-  -- Clear denominators via `B = ϖ ^ m • A ∈ Matrix ι ι 𝒪[E]` and cancel `ϖ ^ m • 1`.
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[E]
-  have hϖ0 : (ϖ : E) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
-  obtain ⟨m, hm⟩ := exists_mem_scaledIntegerBox hϖ (fun p : ι × ι ↦ A p.1 p.2)
-  rw [mem_scaledIntegerBox] at hm
-  let B : Matrix ι ι 𝒪[E] := Matrix.of fun i j ↦ ⟨(ϖ : E) ^ m * A i j, hm (i, j)⟩
-  have hBmap : B.map (algebraMap 𝒪[E] E) = ((ϖ : E) ^ m) • A := by
-    ext i j
-    simp [B, Algebra.algebraMap_ofSubsemiring_apply]
-  have hBdet_coe : (B.det : E) = ((ϖ : E) ^ m) ^ Fintype.card ι * A.det := by
-    have h := congrArg Matrix.det hBmap
-    rwa [← RingHom.mapMatrix_apply, ← RingHom.map_det, Algebra.algebraMap_ofSubsemiring_apply,
-      Matrix.det_smul] at h
-  have hBdet0 : B.det ≠ 0 := by
-    intro h0
-    have h0' : (B.det : E) = 0 := by simp [h0]
-    rw [hBdet_coe] at h0'
-    exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero m hϖ0)) hA.ne_zero h0'
-  obtain ⟨k, hk⟩ := IsDiscreteValuationRing.associated_pow_irreducible hBdet0 hϖ
-  let C : Matrix ι ι 𝒪[E] := (ϖ ^ m) • 1
-  have hCdet : Associated C.det (ϖ ^ (m * Fintype.card ι)) := by
-    rw [Matrix.det_smul, Matrix.det_one, mul_one, ← pow_mul]
-  have hB_haar := addHaar_image_mulVec μ hϖ hk s
-  have hC_haar := addHaar_image_mulVec μ hϖ hCdet (A.mulVec '' s)
-  have hBC_img : (C.map (algebraMap 𝒪[E] E)).mulVec '' (A.mulVec '' s) =
-      (B.map (algebraMap 𝒪[E] E)).mulVec '' s := by
-    have hCmap : C.map (algebraMap 𝒪[E] E) = ((ϖ : E) ^ m) • (1 : Matrix ι ι E) := by
-      ext i j
-      simp [C, Matrix.one_apply, apply_ite (algebraMap 𝒪[E] E),
-        Algebra.algebraMap_ofSubsemiring_apply]
-    rw [← image_comp, hCmap, hBmap]
-    congr 1
-    ext x
-    rw [Function.comp_apply, Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
-  rw [hBC_img, hB_haar, ← normalizedAbsoluteValue_det_mul_inv_pow hϖ hBdet_coe hk,
-    mul_comm ((normalizedAbsoluteValue E A.det : ℝ≥0) : ℝ≥0∞), mul_assoc] at hC_haar
-  have hq_ne0 : 1 / (Nat.card 𝓀[E] : ℝ≥0∞) ^ (m * Fintype.card ι) ≠ 0 := by
-    simp [ENNReal.pow_eq_top_iff]
-  have hq_lt : 1 / (Nat.card 𝓀[E] : ℝ≥0∞) ^ (m * Fintype.card ι) ≠ ∞ := by
-    have h1 : (Nat.card 𝓀[E] : ℝ≥0∞) ^ (m * Fintype.card ι) ≠ 0 :=
-      pow_ne_zero _ (Nat.cast_ne_zero.2 Nat.card_pos.ne')
-    simp [one_div, h1]
-  exact ((ENNReal.mul_right_inj hq_ne0 hq_lt).1 hC_haar).symm
-
-end CoordinateSpace
 
 section ModuleSpace
 
@@ -224,7 +147,6 @@ theorem addHaar_image_linearMap_of_isNonarchimedeanLocalField (μ : Measure V) [
     have _ : ν.IsAddHaarMeasure := e.isAddHaarMeasure_map μ
     let A : Matrix ι ι E := LinearMap.toMatrix b b f
     have hAdet : A.det = f.det := LinearMap.det_toMatrix b f
-    have hA : IsUnit A.det := isUnit_iff_ne_zero.2 (hAdet.symm ▸ hf)
     have hcomm : e '' (f '' s) = A.mulVec '' (e '' s) := by
       rw [← image_comp, ← image_comp]
       congr 1
@@ -236,7 +158,8 @@ theorem addHaar_image_linearMap_of_isNonarchimedeanLocalField (μ : Measure V) [
       dsimp only [ν]
       rw [← ContinuousLinearEquiv.coe_toHomeomorph, e.toHomeomorph.measurableEmbedding.map_apply,
         preimage_image_eq _ e.toHomeomorph.injective]
-    rw [← hmap (f '' s), hcomm, addHaar_image_mulVec_of_isUnit_det ν hA, hAdet, hmap s]
+    rw [← hmap (f '' s), hcomm, addHaar_image_mulVec_of_isNonarchimedeanLocalField ν A,
+      hAdet, hmap s]
 
 /-- Image of a set under a continuous linear map `f : V →L[E] V` (invertible or singular) scales
 any additive Haar measure on `V` by `|det f|_E`. -/
@@ -419,44 +342,6 @@ example [Subsingleton V] (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃ₗ[E]
   simp
 
 end ModuleSpace
-
-section MatrixSpace
-
-variable {E ι : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
-  [IsNonarchimedeanLocalField E] [Fintype ι] [DecidableEq ι]
-  [MeasurableSpace (ι → E)] [BorelSpace (ι → E)]
-
-/-- **Matrix Haar change of variables** for arbitrary (possibly singular) matrices
-`A : Matrix ι ι E` on `ι → E`: `μ (A.mulVec '' s) = |det A|_E * μ s`. -/
-@[simp, grind =]
-theorem addHaar_image_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι → E))
-    [μ.IsAddHaarMeasure] (A : Matrix ι ι E) (s : Set (ι → E)) :
-    μ (A.mulVec '' s) = ((normalizedAbsoluteValue E A.det : ℝ≥0) : ℝ≥0∞) * μ s := by
-  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
-  have h := addHaar_image_linearMap_of_isNonarchimedeanLocalField μ (Matrix.toLin' A) s
-  rwa [LinearMap.det_toLin', hcoe] at h
-
-/-- Preimage of a set under `A.mulVec` (`A.det ≠ 0`) on `ι → E` scales any additive Haar measure
-by `|det A|_E⁻¹`. -/
-@[simp, grind =]
-theorem addHaar_preimage_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι → E))
-    [μ.IsAddHaarMeasure] {A : Matrix ι ι E} (hA : A.det ≠ 0) (s : Set (ι → E)) :
-    μ (A.mulVec ⁻¹' s) = ((normalizedAbsoluteValue E A.det : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
-  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
-  have h := addHaar_preimage_linearMap_of_isNonarchimedeanLocalField μ (f := Matrix.toLin' A)
-    (by rw [LinearMap.det_toLin']; exact hA) s
-  rwa [LinearMap.det_toLin', hcoe] at h
-
-/-- Pushforward of additive Haar measure on `ι → E` under `A.mulVec` (`A.det ≠ 0`). -/
-theorem map_mulVec_addHaar (μ : Measure (ι → E)) [μ.IsAddHaarMeasure] {A : Matrix ι ι E}
-    (hA : A.det ≠ 0) :
-    map A.mulVec μ = ((normalizedAbsoluteValue E A.det : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
-  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
-  have h := map_linearMap_addHaar μ (f := Matrix.toLin' A)
-    (by rw [LinearMap.det_toLin']; exact hA)
-  rwa [LinearMap.det_toLin', hcoe] at h
-
-end MatrixSpace
 
 section ProdChecks
 
@@ -830,10 +715,9 @@ theorem localAddHaar_singleton {E ι : Type*} [Field E] [ValuativeRel E] [Topolo
   refine (Basis.singleton ι E).eq_localAddHaar_iff _ |>.2 ?_
   have hspan :
       (Submodule.span 𝒪[E] (Set.range (Basis.singleton ι E)) : Set E) = (𝒪[E] : Set E) := by
+    rw [Basis.coe_span_range]
     ext x
-    simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, Basis.singleton_repr,
-      Unique.forall_iff]
-    exact ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+    simp
   rw [hspan, localAddHaar_integer]
 
 /-- On the coordinate space `ι → E`, the standard basis `Pi.basisFun E ι` induces the product of
@@ -845,9 +729,9 @@ theorem localAddHaar_basisFun {E ι : Type*} [Field E] [ValuativeRel E] [Topolog
   refine (Pi.basisFun E ι).eq_localAddHaar_iff _ |>.2 ?_
   have hbox : (Submodule.span 𝒪[E] (Set.range (Pi.basisFun E ι)) : Set (ι → E)) =
       integerBox E ι := by
+    rw [Basis.coe_span_range, integerBox_def]
     ext x
-    simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, Pi.basisFun_repr, mem_integerBox]
-    exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun hx ↦ ⟨⟨x i, hx⟩, rfl⟩⟩
+    simp
   rw [hbox, integerBox_def, Measure.pi_pi]
   simp
 

@@ -140,7 +140,6 @@ theorem distribHaarChar_eq_zpow (x : Kˣ) :
 
 /-- **The Haar character of a local field is the normalized absolute value.** Multiplication
 by `x ∈ Kˣ` scales additive Haar measure on `K` by `|x|_K`. -/
-@[simp]
 theorem distribHaarChar_eq_normalizedAbsoluteValue (x : Kˣ) :
     distribHaarChar K x = normalizedAbsoluteValue K (x : K) := by
   rw [distribHaarChar_eq_zpow, normalizedAbsoluteValue_coe, NNRat.cast_zpow, NNRat.cast_natCast]

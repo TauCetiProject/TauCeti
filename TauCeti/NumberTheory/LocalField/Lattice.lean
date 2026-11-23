@@ -36,7 +36,8 @@ compactness uses that `𝒪[E]` is compact.
 
 ## Main results
 
-* `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite `E`-basis is open.
+* `Module.Basis.coe_span_range`, `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite
+  `E`-basis is the preimage of `univ.pi fun _ => 𝒪[E]` under `b.equivFun`, and is open.
 * `Submodule.IsFullLattice.isOpen`, `Submodule.IsFullLattice.isClosed`,
   `Submodule.IsFullLattice.isCompact`: a lattice is open, closed and compact.
 * `Submodule.IsFullLattice.isModuleTopology`: the subspace topology on a lattice is its
@@ -60,6 +61,22 @@ open scoped Pointwise
 
 namespace Submodule
 
+section Algebraic
+
+variable {E V : Type*} [Field E] [ValuativeRel E]
+  [AddCommGroup V] [Module E V] [Module 𝒪[E] V] [IsScalarTower 𝒪[E] E V]
+
+/-- The `𝒪[E]`-span of a finite `E`-basis `b` of `V` is the set of vectors whose `b`-coordinates
+all lie in the valuation ring `𝒪[E]`. -/
+theorem _root_.Module.Basis.coe_span_range {ι : Type*} [Finite ι] (b : Basis ι E V) :
+    (span 𝒪[E] (range b) : Set V) = b.equivFun ⁻¹' univ.pi fun _ => (𝒪[E] : Set E) := by
+  ext x
+  simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, mem_preimage, mem_univ_pi,
+    Basis.equivFun_apply]
+  exact forall_congr' fun _ => ⟨fun ⟨a, h⟩ => h ▸ a.property, fun h => ⟨⟨_, h⟩, rfl⟩⟩
+
+end Algebraic
+
 section ValuativeTopology
 
 variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsValuativeTopology E]
@@ -70,15 +87,9 @@ variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsValuat
 coordinates all lie in the open subring `𝒪[E]`. -/
 theorem _root_.Module.Basis.isOpen_span_range {ι : Type*} [Finite ι] (b : Basis ι E V) :
     IsOpen (span 𝒪[E] (range b) : Set V) := by
-  have h : (span 𝒪[E] (range b) : Set V) =
-      TauCeti.ModuleTopology.equivFunHomeomorph b ⁻¹' univ.pi fun _ => (𝒪[E] : Set E) := by
-    ext x
-    simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, mem_preimage, mem_univ_pi,
-      TauCeti.ModuleTopology.equivFunHomeomorph_apply, Basis.equivFun_apply]
-    exact forall_congr' fun i => ⟨fun ⟨a, h⟩ => h ▸ a.property, fun h => ⟨⟨_, h⟩, rfl⟩⟩
-  rw [h]
+  rw [b.coe_span_range]
   exact (isOpen_set_pi finite_univ fun _ _ => Valuation.isOpen_integer).preimage
-    (TauCeti.ModuleTopology.equivFunHomeomorph b).continuous
+    (IsModuleTopology.continuous_of_linearMap b.equivFun.toLinearMap)
 
 variable (L : Submodule 𝒪[E] V) [IsFullLattice E L]
 

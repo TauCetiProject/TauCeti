@@ -47,13 +47,12 @@ Concrete specializations live in sibling modules (`TauCeti.NumberTheory.LocalFie
 * `Irreducible.distribHaarChar_unitsMk0`, `Units.distribHaarChar_map_subtype_eq_one`,
   `TauCeti.distribHaarChar_eq_one_of_mem_unitFiltration_zero`: character specializations on
   irreducible elements, valuation-ring units, and `unitFiltration E 0`.
-* `MeasureTheory.Measure.addHaar_image_mul_left`, `MeasureTheory.Measure.addHaar_preimage_mul_left`,
-  `MeasureTheory.Measure.map_mul_left_addHaar`,
+* `MeasureTheory.Measure.addHaar_preimage_mul_left`,
   `MeasureTheory.Measure.map_units_mul_left_addHaar`,
   `MeasureTheory.Measure.map_mul_left_addHaar_of_isUniformizer`,
   `MeasureTheory.Measure.map_integerUnits_mul_left_addHaar`,
   `MeasureTheory.Measure.lintegral_mul_left_addHaar`,
-  `MeasureTheory.Measure.integral_mul_left_addHaar`: image, pushforward, and integral change of
+  `MeasureTheory.Measure.integral_mul_left_addHaar`: preimage, pushforward, and integral change of
   variables under multiplication on `E`.
 
 ## References
@@ -248,7 +247,7 @@ open TauCeti
 
 /-- **Character of a valuation-ring unit.** Every unit `u ∈ 𝒪[E]ˣ` has distributive Haar character
 `1` on `E`. -/
-@[grind =]
+@[simp, grind =]
 theorem distribHaarChar_map_subtype_eq_one (u : 𝒪[E]ˣ) :
     distribHaarChar E (Units.map (Subring.subtype 𝒪[E] : 𝒪[E] →* E) u) = 1 := by
   rw [distribHaarChar_eq_one_iff]
@@ -284,36 +283,18 @@ variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E] [MeasurableSpace E] [BorelSpace E]
   (μ : Measure E) [μ.IsAddHaarMeasure]
 
-/-- Left multiplication by `a : E` multiplies the additive Haar measure of any subset of `E` by
-`|a|_E`. -/
-@[simp, grind =]
-theorem addHaar_image_mul_left (a : E) (s : Set E) :
-    μ ((a * ·) '' s) = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞) * μ s := by
-  simpa only [← smul_eq_mul, ← Set.image_smul] using
-    addHaar_smul_eq_normalizedAbsoluteValue_mul μ a s
-
 /-- Preimage under `x ↦ a * x` (`a ≠ 0`) multiplies any additive Haar measure on `E` by
 `|a|_E⁻¹`. -/
 @[simp, grind =]
 theorem addHaar_preimage_mul_left {a : E} (ha : a ≠ 0) (s : Set E) :
     μ ((a * ·) ⁻¹' s) = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
-  have hpre : (a * ·) ⁻¹' s = (a⁻¹ * ·) '' s := by
+  have hpre : (a * ·) ⁻¹' s = a⁻¹ • s := by
     ext x
-    simp [inv_mul_eq_iff_eq_mul₀ ha]
+    simp [mem_smul_set, inv_mul_eq_iff_eq_mul₀ ha]
   have h0 : (normalizedAbsoluteValue E a : ℝ≥0) ≠ 0 := by
     exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 ha
-  rw [hpre, addHaar_image_mul_left, map_inv₀, NNRat.cast_inv, ENNReal.coe_inv h0]
-
-/-- **Pushforward of additive Haar measure under multiplication.** For `a ≠ 0` in a nonarchimedean
-local field `E`, pushing an additive Haar measure `μ` forward by `x ↦ a * x` rescales `μ` by
-`|a|_E⁻¹`. -/
-theorem map_mul_left_addHaar {a : E} (ha : a ≠ 0) :
-    map (a * ·) μ = ((normalizedAbsoluteValue E a : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
-  have h0 : (normalizedAbsoluteValue E a : ℝ≥0) ≠ 0 := by
-    exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 ha
-  ext s hs
-  rw [map_apply (measurable_const_mul a) hs, addHaar_preimage_mul_left μ ha s, smul_apply,
-    nnreal_smul_coe_apply, ENNReal.coe_inv h0]
+  rw [hpre, addHaar_smul_eq_normalizedAbsoluteValue_mul, map_inv₀, NNRat.cast_inv,
+    ENNReal.coe_inv h0]
 
 /-- **Pushforward of additive Haar measure by a unit (valuation form).** For `a ∈ Eˣ` and any
 additive Haar measure `μ` on `E`, `Measure.map (a * ·) μ = q ^ (v_E(a)) • μ`, where
@@ -321,7 +302,9 @@ additive Haar measure `μ` on `E`, `Measure.map (a * ·) μ = q ^ (v_E(a)) • �
 theorem map_units_mul_left_addHaar (a : Eˣ) :
     map ((a : E) * ·) μ =
       ((Nat.card 𝓀[E] : ℝ≥0) ^ (normalizedValuation E a).toAdd) • μ := by
-  rw [map_mul_left_addHaar μ a.ne_zero, normalizedAbsoluteValue_coe]
+  have hfun : ((a : E) * ·) = ((a : E) • ·) := funext fun x ↦ (smul_eq_mul (a : E) x).symm
+  rw [hfun, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ a.ne_zero,
+    normalizedAbsoluteValue_coe]
   congr 1
   push_cast
   rw [zpow_neg, inv_inv]
@@ -337,7 +320,9 @@ leaves every additive Haar measure on `E` invariant. -/
 @[simp, grind =]
 theorem map_integerUnits_mul_left_addHaar (u : 𝒪[E]ˣ) :
     map (((u : 𝒪[E]) : E) * ·) μ = μ := by
-  rw [map_mul_left_addHaar μ (by simp)]
+  have hfun : (((u : 𝒪[E]) : E) * ·) = (((u : 𝒪[E]) : E) • ·) :=
+    funext fun x ↦ (smul_eq_mul _ x).symm
+  rw [hfun, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ (by simp)]
   simp
 
 /-- Lower Lebesgue change of variables on `E` under `x ↦ a * x` (`a ≠ 0`). -/
@@ -345,9 +330,10 @@ theorem lintegral_mul_left_addHaar {a : E} (ha : a ≠ 0) (f : E → ℝ≥0∞)
     ∫⁻ x, f (a * x) ∂μ = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞)⁻¹ * ∫⁻ x, f x ∂μ := by
   let e : E ≃ᵐ E := MeasurableEquiv.mulLeft₀ a ha
   have h := lintegral_map_equiv f e (μ := μ)
-  have he : ⇑e = (a * ·) := funext fun x ↦ by simp [e]
-  rw [he, map_mul_left_addHaar μ ha, lintegral_smul_measure, ENNReal.smul_def, smul_eq_mul,
-    ENNReal.coe_inv] at h
+  simp only [e, MeasurableEquiv.coe_mulLeft₀] at h
+  have he : (fun x : E ↦ a * x) = (a • ·) := funext fun x ↦ (smul_eq_mul a x).symm
+  rw [he, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, lintegral_smul_measure,
+    ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv] at h
   · exact h.symm
   · exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 ha
 
@@ -357,9 +343,10 @@ theorem integral_mul_left_addHaar {F : Type*} [NormedAddCommGroup F] [NormedSpac
     ∫ x, f (a * x) ∂μ = ((normalizedAbsoluteValue E a : ℝ)⁻¹) • ∫ x, f x ∂μ := by
   let e : E ≃ᵐ E := MeasurableEquiv.mulLeft₀ a ha
   have h := integral_map_equiv e f (μ := μ)
-  have he : ⇑e = (a * ·) := funext fun x ↦ by simp [e]
-  rw [he, map_mul_left_addHaar μ ha, integral_smul_nnreal_measure, NNReal.smul_def,
-    NNReal.coe_inv] at h
+  simp only [e, MeasurableEquiv.coe_mulLeft₀] at h
+  have he : (fun x : E ↦ a * x) = (a • ·) := funext fun x ↦ (smul_eq_mul a x).symm
+  rw [he, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, integral_smul_nnreal_measure,
+    NNReal.smul_def, NNReal.coe_inv] at h
   exact h.symm
 
 end Scaling
