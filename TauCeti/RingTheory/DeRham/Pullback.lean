@@ -153,17 +153,6 @@ theorem pullback_elementary (f : B →ₐ[A] C) (n : ℕ) (c : B) (v : Fin n →
   simp only [elementary_def, pullback_smul, pullback_ιMulti, Function.comp_def,
     KaehlerDifferential.mapSemilinear_D]
 
-private theorem addMonoidHom_eq_of_elementary {F G M : Type*} [AddCommGroup M] {n : ℕ}
-    [FunLike F (Forms A B n) M] [AddMonoidHomClass F (Forms A B n) M]
-    [FunLike G (Forms A B n) M] [AddMonoidHomClass G (Forms A B n) M]
-    (φ : F) (ψ : G)
-    (h : ∀ (c : B) (v : Fin n → B), φ (elementary A c v) = ψ (elementary A c v))
-    (ω : Forms A B n) : φ ω = ψ ω := by
-  induction ω using induction_elementary with
-  | zero => simp only [map_zero]
-  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-  | elem c v => exact h c v
-
 /-- An `f`-semilinear map `Forms A B n →ₛₗ[f.toRingHom] Forms A C n` satisfying the
 elementary-form formula equals `pullback f n`. -/
 theorem pullback_unique (f : B →ₐ[A] C) (n : ℕ) {φ : Forms A B n →ₛₗ[f.toRingHom] Forms A C n}
@@ -187,30 +176,24 @@ theorem pullback_zero_degree (f : B →ₐ[A] C) (b : B) :
 theorem pullback_one_degree (f : B →ₐ[A] C) (ω : Forms A B 1) :
     exteriorPower.oneEquiv C (KaehlerDifferential A C) (pullback f 1 ω) =
       KaehlerDifferential.mapSemilinear f
-        (exteriorPower.oneEquiv B (KaehlerDifferential A B) ω) :=
-  addMonoidHom_eq_of_elementary
-    ((exteriorPower.oneEquiv C (KaehlerDifferential A C)).toAddMonoidHom.comp
-      (pullback f 1).toAddMonoidHom)
-    ((KaehlerDifferential.mapSemilinear f).toAddMonoidHom.comp
-      (exteriorPower.oneEquiv B (KaehlerDifferential A B)).toAddMonoidHom)
-    (fun c v => by
-      simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
-        pullback_elementary, oneEquiv_elementary, KaehlerDifferential.mapSemilinear_smul,
-        KaehlerDifferential.mapSemilinear_D, Function.comp_apply])
-    ω
+        (exteriorPower.oneEquiv B (KaehlerDifferential A B) ω) := by
+  induction ω using induction_elementary with
+  | zero => simp only [map_zero]
+  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | elem c v =>
+    simp only [pullback_elementary, oneEquiv_elementary, KaehlerDifferential.mapSemilinear_smul,
+      KaehlerDifferential.mapSemilinear_D, Function.comp_apply]
 
 /-- Pullback commutes with the ordinary algebraic de Rham differential:
 `pullback f (n + 1) (d ω) = d (pullback f n ω)`. -/
 theorem pullback_d (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
-    pullback f (n + 1) (d A B n ω) = d A C n (pullback f n ω) :=
-  addMonoidHom_eq_of_elementary
-    ((pullback f (n + 1)).toAddMonoidHom.comp (d A B n).toAddMonoidHom)
-    ((d A C n).toAddMonoidHom.comp (pullback f n).toAddMonoidHom)
-    (fun c v => by
-      simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, d_elementary,
-        pullback_ιMulti, pullback_elementary, Fin.comp_cons]
-      simp only [KaehlerDifferential.mapSemilinear_D, Function.comp_def])
-    ω
+    pullback f (n + 1) (d A B n ω) = d A C n (pullback f n ω) := by
+  induction ω using induction_elementary with
+  | zero => simp only [map_zero]
+  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | elem c v =>
+    simp only [d_elementary, pullback_ιMulti, pullback_elementary, Fin.comp_cons]
+    simp only [KaehlerDifferential.mapSemilinear_D, Function.comp_def]
 
 /-- Pullback preserves the exterior wedge product of differential forms. -/
 theorem pullback_wedge (f : B →ₐ[A] C) {m n : ℕ} (α : Forms A B m) (β : Forms A B n) :
@@ -229,11 +212,11 @@ theorem pullback_wedge (f : B →ₐ[A] C) {m n : ℕ} (α : Forms A B m) (β : 
 /-- Pullback along the identity fixes every differential `n`-form. -/
 @[simp]
 theorem pullback_id_apply (n : ℕ) (ω : Forms A B n) :
-    pullback (AlgHom.id A B) n ω = ω :=
-  addMonoidHom_eq_of_elementary (pullback (AlgHom.id A B) n) (AddMonoidHom.id _)
-    (fun c v => by
-      simp only [pullback_elementary, AlgHom.id_apply, Function.comp_def, AddMonoidHom.id_apply])
-    ω
+    pullback (AlgHom.id A B) n ω = ω := by
+  induction ω using induction_elementary with
+  | zero => simp only [map_zero]
+  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | elem c v => simp only [pullback_elementary, AlgHom.id_apply, Function.comp_def]
 
 /-- Pullback along the identity `A`-algebra homomorphism is the identity on `Forms A B n`. -/
 theorem pullback_id (n : ℕ) :
@@ -281,12 +264,15 @@ def complexMap (f : B →ₐ[A] C) : complex A B ⟶ complex A C :=
   CochainComplex.ofHom
     (fun n => ModuleCat.ofHom (pullbackLinearMap f n))
     (fun n => by
-      dsimp only [complex]
-      simp only [CochainComplex.of_d]
-      refine ModuleCat.hom_ext <| LinearMap.ext fun ω => ?_
-      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-        pullbackLinearMap_apply]
-      exact (pullback_d f n ω).symm)
+      have hcomm :
+          ModuleCat.ofHom (pullbackLinearMap f n) ≫ ModuleCat.ofHom (d A C n) =
+            ModuleCat.ofHom (d A B n) ≫ ModuleCat.ofHom (pullbackLinearMap f (n + 1)) := by
+        refine ModuleCat.hom_ext <| LinearMap.ext fun ω => ?_
+        simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+          pullbackLinearMap_apply]
+        exact (pullback_d f n ω).symm
+      exact (congrArg (_ ≫ ·) (complex_d A C n)).trans <|
+        hcomm.trans (congrArg (· ≫ _) (complex_d A B n).symm))
 
 /-- In degree `n`, `complexMap f` is the `ModuleCat` morphism induced by `pullbackLinearMap f n`. -/
 @[simp]
@@ -296,15 +282,15 @@ theorem complexMap_f (f : B →ₐ[A] C) (n : ℕ) :
 
 /-- Pointwise evaluation of `complexMap f` in degree `n` is `pullback f n`. -/
 theorem complexMap_apply (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
-    (complexMap f).f n ω = pullback f n ω :=
-  (rfl)
+    (complexMap f).f n ω = pullback f n ω := by
+  rw [complexMap_f]
+  exact (ModuleCat.ofHom_apply (pullbackLinearMap f n) ω).trans (pullbackLinearMap_apply f n ω)
 
 /-- `complexMap` sends the identity algebra homomorphism to the identity cochain map. -/
 @[simp]
 theorem complexMap_id : complexMap (AlgHom.id A B) = 𝟙 (complex A B) := by
   refine HomologicalComplex.hom_ext _ _ fun n => ?_
-  simp only [HomologicalComplex.id_f, complexMap_f]
-  dsimp only [complex]
+  simp only [HomologicalComplex.id_f, complexMap_f, complex_X]
   refine ModuleCat.hom_ext <| LinearMap.ext fun ω => ?_
   simp only [ModuleCat.hom_id, LinearMap.id_apply, ModuleCat.hom_ofHom, pullbackLinearMap_apply]
   exact pullback_id_apply n ω
@@ -314,8 +300,7 @@ theorem complexMap_id : complexMap (AlgHom.id A B) = 𝟙 (complex A B) := by
 theorem complexMap_comp (g : C →ₐ[A] E) (f : B →ₐ[A] C) :
     complexMap (g.comp f) = complexMap f ≫ complexMap g := by
   refine HomologicalComplex.hom_ext _ _ fun n => ?_
-  simp only [HomologicalComplex.comp_f, complexMap_f]
-  dsimp only [complex]
+  simp only [HomologicalComplex.comp_f, complexMap_f, complex_X]
   refine ModuleCat.hom_ext <| LinearMap.ext fun ω => ?_
   simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply, pullbackLinearMap_apply]
   exact pullback_comp_apply g f n ω

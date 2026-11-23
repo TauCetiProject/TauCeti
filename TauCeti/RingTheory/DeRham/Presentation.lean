@@ -364,6 +364,20 @@ theorem induction_elementary {A B : Type*} [CommRing A] [CommRing B] [Algebra A 
     rw [map_add, symbolMap_single, elementary_base_smul_coeff]
     exact add _ _ (elem (a • p.1) p.2) ih
 
+/-- Two additive homomorphisms out of `Forms A B n` agree once they agree on every elementary
+form `c • dv₀ ∧ ⋯ ∧ dvₙ₋₁`. -/
+theorem addMonoidHom_eq_of_elementary {A B M : Type*} [CommRing A] [CommRing B] [Algebra A B]
+    [AddZeroClass M] {n : ℕ} {F G : Type*}
+    [FunLike F (Forms A B n) M] [AddMonoidHomClass F (Forms A B n) M]
+    [FunLike G (Forms A B n) M] [AddMonoidHomClass G (Forms A B n) M]
+    (φ : F) (ψ : G)
+    (h : ∀ (c : B) (v : Fin n → B), φ (elementary A c v) = ψ (elementary A c v))
+    (ω : Forms A B n) : φ ω = ψ ω := by
+  induction ω using induction_elementary with
+  | zero => simp only [map_zero]
+  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | elem c v => exact h c v
+
 end
 
 /-! ### The inverse of the evaluation of symbols -/
