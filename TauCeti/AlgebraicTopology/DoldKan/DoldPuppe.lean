@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy
 public import TauCeti.AlgebraicTopology.DoldKan.Const
-import TauCeti.AlgebraicTopology.SimplicialObject.ExtraDegeneracy
+import TauCeti.AlgebraicTopology.ExtraDegeneracy
 import TauCeti.CategoryTheory.Functor.Const
 
 /-!
