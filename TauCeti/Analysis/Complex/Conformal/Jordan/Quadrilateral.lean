@@ -11,6 +11,7 @@ public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Conformal.Jordan.Schoenflies
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Data.Set.Function
 import TauCeti.Data.Set.InjOnUnion
 import TauCeti.Topology.Homeomorph.CompactQuotient
 import TauCeti.Topology.Homeomorph.SetCongr
@@ -121,14 +122,6 @@ theorem exists_homeomorph_unitInterval_prod_filledHull {a b c d : ℂ}
     rw [heq]
     exact (h1.union_of_isClosed h2 hc1 hc2).union_of_isClosed
       (h3.union_of_isClosed h4 hc3 hc4) (hc1.union hc2) (hc3.union hc4)
-  -- Coincidences between adjacent edges occur only at the shared corner.
-  have hcorner {a₁ a₂ b₁ b₂ x : ℂ} {α : Path a₁ a₂} {β : Path b₁ b₂}
-      (hα : Injective α) (hβ : Injective β) (hinter : range α ∩ range β = {x})
-      {s₀ t₀ : I} (hs₀ : α s₀ = x) (ht₀ : β t₀ = x) {s t : I} (h : α s = β t) :
-      s = s₀ ∧ t = t₀ := by
-    have hm : α s ∈ ({x} : Set ℂ) := hinter ▸ ⟨mem_range_self s, h ▸ mem_range_self t⟩
-    rw [mem_singleton_iff] at hm
-    exact ⟨hα (hm.trans hs₀.symm), hβ ((h.symm.trans hm).trans ht₀.symm)⟩
   -- `f` maps `squareBoundary` bijectively onto `C`.
   have hbij : BijOn f squareBoundary C := by
     refine ⟨?_, ?_, ?_⟩
@@ -179,16 +172,20 @@ theorem exists_homeomorph_unitInterval_prod_filledHull {a b c d : ℂ}
           exact (hlr.ne_of_mem (mem_range_self t₁) (mem_range_self t₂) heq).elim
         · obtain rfl : s₁ = 0 := hS0.1 hi; obtain rfl : t₂ = 0 := hS2.1 hj
           rw [hf_left, hf_top] at heq
-          exact Or.inl (hS2.2 (hcorner htop hleft htl top.source left.source heq.symm).2)
+          exact Or.inl (hS2.2 (hleft.eq_of_apply_eq_of_range_inter_subset_singleton
+            (inter_comm _ _ ▸ htl.subset) left.source heq))
         · obtain rfl : s₁ = 0 := hS0.1 hi; obtain rfl : t₂ = 1 := hS3.1 hj
           rw [hf_left, hf_bot] at heq
-          exact Or.inl (hS3.2 (hcorner hbot hleft hbl bot.source left.target heq.symm).2)
+          exact Or.inl (hS3.2 (hleft.eq_of_apply_eq_of_range_inter_subset_singleton
+            (inter_comm _ _ ▸ hbl.subset) left.target heq))
         · obtain rfl : s₁ = 1 := hS1.1 hi; obtain rfl : t₂ = 0 := hS2.1 hj
           rw [hf_right, hf_top] at heq
-          exact Or.inl (hS2.2 (hcorner htop hright htr top.target right.source heq.symm).2)
+          exact Or.inl (hS2.2 (hright.eq_of_apply_eq_of_range_inter_subset_singleton
+            (inter_comm _ _ ▸ htr.subset) right.source heq))
         · obtain rfl : s₁ = 1 := hS1.1 hi; obtain rfl : t₂ = 1 := hS3.1 hj
           rw [hf_right, hf_bot] at heq
-          exact Or.inl (hS3.2 (hcorner hbot hright hbr bot.target right.target heq.symm).2)
+          exact Or.inl (hS3.2 (hright.eq_of_apply_eq_of_range_inter_subset_singleton
+            (inter_comm _ _ ▸ hbr.subset) right.target heq))
         · obtain rfl : t₁ = 0 := hS2.1 hi; obtain rfl : t₂ = 1 := hS3.1 hj
           rw [hf_top, hf_bot] at heq
           exact (htb.ne_of_mem (mem_range_self s₁) (mem_range_self s₂) heq).elim

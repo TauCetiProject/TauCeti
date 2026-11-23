@@ -308,6 +308,13 @@ theorem coe_closedBallHomeomorphOfFinrankEq_apply
       (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
   (rfl)
 
+/-- `TauCeti.closedBallHomeomorphOfFinrankEq` preserves the unit sphere. -/
+theorem norm_closedBallHomeomorphOfFinrankEq_eq_one_iff
+    (hEF : Module.finrank ℝ E = Module.finrank ℝ F) (x : closedBall (0 : E) 1) :
+    ‖(closedBallHomeomorphOfFinrankEq hEF x : F)‖ = 1 ↔ ‖(x : E)‖ = 1 := by
+  rw [coe_closedBallHomeomorphOfFinrankEq_apply,
+    ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff]
+
 omit [FiniteDimensional ℝ E] in
 /-- **Convex bodies are balls.** A compact convex set with nonempty interior in a real normed space
 (which is then finite-dimensional, by Riesz's theorem) is homeomorphic to the closed unit ball of
@@ -343,25 +350,12 @@ theorem nonempty_homeomorph_Icc_prod_closedBall {F : Type*} [NormedAddCommGroup 
 
 /-- Identification of the unit square `I × I` with the closed unit ball of any two-dimensional real
 normed space, carrying the boundary of the square onto the unit sphere. -/
-def squareHomeomorphClosedBall {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+@[expose] def squareHomeomorphClosedBall {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (hF : Module.finrank ℝ F = 2) :
     (unitInterval × unitInterval) ≃ₜ closedBall (0 : F) 1 :=
   haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   Homeomorph.finTwoArrow.symm.trans <|
     (cubeHomeomorphClosedBall (Fin 2)).trans <|
       closedBallHomeomorphOfFinrankEq (by simp [hF])
-
-/-- `TauCeti.squareHomeomorphClosedBall` sends `p` to the image of `Homeomorph.finTwoArrow.symm p`
-under `TauCeti.cubeHomeomorphClosedBall` and `ContinuousLinearEquiv.unitBallHomeomorph`. -/
-@[simp]
-theorem coe_squareHomeomorphClosedBall_apply {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2)
-    (p : unitInterval × unitInterval) :
-    (squareHomeomorphClosedBall hF p : F) =
-      (haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega);
-        ContinuousLinearEquiv.ofFinrankEq (E := Fin 2 → ℝ) (F := F)
-          (by simp [hF])).unitBallHomeomorph
-        (cubeHomeomorphClosedBall (Fin 2) (Homeomorph.finTwoArrow.symm p)) :=
-  (rfl)
 
 end TauCeti

@@ -609,52 +609,34 @@ theorem circleParam_lowerSemicirclePath (t : unitInterval) :
     circleParam ⟨lowerSemicirclePath t, lowerSemicirclePath_mem_sphere t⟩ = t :=
   Circle.semicircleCoord.injective (Subtype.ext (by simp [lowerSemicirclePath_apply]))
 
+/-- The lower semicircle path is the complex conjugate of the upper semicircle path. -/
+theorem lowerSemicirclePath_eq_conj (t : unitInterval) :
+    lowerSemicirclePath t = starRingEnd ℂ (upperSemicirclePath t) := by
+  rw [lowerSemicirclePath_apply, upperSemicirclePath_apply, Circle.coe_inv_eq_conj]
+
+/-- Complex conjugation leaves `TauCeti.circleParam` invariant. -/
+theorem circleParam_conj (u : sphere (0 : ℂ) 1) :
+    circleParam ⟨starRingEnd ℂ (u : ℂ), by simp⟩ = circleParam u := by
+  apply Subtype.ext
+  simp [coe_circleParam]
+
 theorem upperSemicirclePath_circleParam {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u : ℂ).im) :
     upperSemicirclePath (circleParam u) = u := by
-  obtain ⟨x, hx | hx⟩ := Circle.exists_upperSemicircle_eq_or_inv_eq (Circle.homeomorphSphere.symm u)
-  · set t := Circle.semicircleCoord.symm x
-    have ht : (upperSemicirclePath t : ℂ) = u := by
-      simpa [upperSemicirclePath_apply, t] using congrArg ((↑) : Circle → ℂ) hx
-    have hp : circleParam u = t := by
-      simpa [ht] using circleParam_upperSemicirclePath t
-    rw [hp, ht]
-  · set t := Circle.semicircleCoord.symm x
-    have hl : (lowerSemicirclePath t : ℂ) = u := by
-      simpa [lowerSemicirclePath_apply, t] using congrArg ((↑) : Circle → ℂ) hx
-    have him0 : (u : ℂ).im = 0 := le_antisymm (hl ▸ lowerSemicirclePath_im_nonpos t) hu
-    have ht : (upperSemicirclePath t : ℂ) = u := by
-      calc
-        upperSemicirclePath t = starRingEnd ℂ (lowerSemicirclePath t) := by
-          rw [upperSemicirclePath_apply, lowerSemicirclePath_apply, Circle.coe_inv_eq_conj,
-            starRingEnd_self_apply]
-        _ = starRingEnd ℂ (u : ℂ) := by rw [hl]
-        _ = u := Complex.conj_eq_iff_im.mpr him0
-    have hp : circleParam u = t := by
-      simpa [ht] using circleParam_upperSemicirclePath t
-    rw [hp, ht]
+  have hnorm : (u : ℂ).re ^ 2 + (u : ℂ).im ^ 2 = 1 := by
+    simpa [Circle.coe_homeomorphSphere_symm_apply] using
+      (Circle.homeomorphSphere.symm u).re_sq_add_im_sq
+  apply Complex.ext
+  · simp [upperSemicirclePath_apply]
+  · simp only [upperSemicirclePath_apply, Circle.im_upperSemicircle,
+      coe_semicircleCoord_circleParam]
+    rw [show (1 - (u : ℂ).re ^ 2 : ℝ) = (u : ℂ).im ^ 2 by linarith, Real.sqrt_sq hu]
 
 theorem lowerSemicirclePath_circleParam {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im ≤ 0) :
     lowerSemicirclePath (circleParam u) = u := by
-  obtain ⟨x, hx | hx⟩ := Circle.exists_upperSemicircle_eq_or_inv_eq (Circle.homeomorphSphere.symm u)
-  · set t := Circle.semicircleCoord.symm x
-    have hu' : (upperSemicirclePath t : ℂ) = u := by
-      simpa [upperSemicirclePath_apply, t] using congrArg ((↑) : Circle → ℂ) hx
-    have him0 : (u : ℂ).im = 0 := le_antisymm hu (hu' ▸ upperSemicirclePath_im_nonneg t)
-    have ht : (lowerSemicirclePath t : ℂ) = u := by
-      calc
-        lowerSemicirclePath t = starRingEnd ℂ (upperSemicirclePath t) := by
-          rw [lowerSemicirclePath_apply, upperSemicirclePath_apply, Circle.coe_inv_eq_conj]
-        _ = starRingEnd ℂ (u : ℂ) := by rw [hu']
-        _ = u := Complex.conj_eq_iff_im.mpr him0
-    have hp : circleParam u = t := by
-      simpa [ht] using circleParam_lowerSemicirclePath t
-    rw [hp, ht]
-  · set t := Circle.semicircleCoord.symm x
-    have ht : (lowerSemicirclePath t : ℂ) = u := by
-      simpa [lowerSemicirclePath_apply, t] using congrArg ((↑) : Circle → ℂ) hx
-    have hp : circleParam u = t := by
-      simpa [ht] using circleParam_lowerSemicirclePath t
-    rw [hp, ht]
+  let u' : sphere (0 : ℂ) 1 := ⟨starRingEnd ℂ (u : ℂ), by simp⟩
+  have hu' : 0 ≤ (u' : ℂ).im := by simp [u', hu]
+  rw [lowerSemicirclePath_eq_conj, ← circleParam_conj u, upperSemicirclePath_circleParam hu']
+  simp [u']
 
 /-- A complex number lies on `TauCeti.upperSemicirclePath` iff it lies on the unit circle with
 nonnegative imaginary part. -/

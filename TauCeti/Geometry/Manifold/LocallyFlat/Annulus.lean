@@ -17,6 +17,7 @@ import TauCeti.Analysis.Complex.Conformal.Jordan.Annulus
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
+import TauCeti.Order.Interval.Set.LinearOrder
 import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
@@ -70,8 +71,10 @@ Jordan curves, which cobound an annulus by the planar annulus theorem
 
 ## Main results
 
-* `TauCeti.coboundAnnulus_iff`, `TauCeti.coboundAnnulus_congr`, `TauCeti.annulusConjecture_iff`:
-  unfolding and congruence lemmas for `TauCeti.CoboundAnnulus` and `TauCeti.AnnulusConjecture`.
+* `TauCeti.coboundAnnulus_iff`, `TauCeti.coboundAnnulus_iff_exists_homeomorph`,
+  `TauCeti.coboundAnnulus_congr`, `TauCeti.annulusConjecture_iff`:
+  unfolding, homeomorphism characterization, and congruence lemmas for `TauCeti.CoboundAnnulus` and
+  `TauCeti.AnnulusConjecture`.
 * `TauCeti.CoboundAnnulus.comp_homeomorph`, `TauCeti.coboundAnnulus_comp_homeomorph_iff`:
   cobounding an annulus is invariant under precomposition by a homeomorphism of the domain.
 * `TauCeti.CoboundAnnulus.homeomorph_comp`, `TauCeti.coboundAnnulus_homeomorph_comp_iff`:
@@ -130,6 +133,21 @@ theorem coboundAnnulus_iff {f g : X → E} :
         h '' (univ ×ˢ {0}) = range f ∧ h '' (univ ×ˢ {1}) = range g :=
   Iff.rfl
 
+/-- `TauCeti.CoboundAnnulus` in terms of a homeomorphism from `X × [0, 1]` onto the annular region
+`filledHull (range f) \ (filledHull (range g) \ range g)` carrying `X × {0}` onto `range f` and
+`X × {1}` onto `range g`. -/
+theorem coboundAnnulus_iff_exists_homeomorph {f g : X → E} :
+    CoboundAnnulus f g ↔
+      ∃ Φ : X × I ≃ₜ ↥(filledHull (range f) \ (filledHull (range g) \ range g)),
+        (fun p => (Φ p : E)) '' (univ ×ˢ {0}) = range f ∧
+        (fun p => (Φ p : E)) '' (univ ×ˢ {1}) = range g := by
+  refine ⟨?_, ?_⟩
+  · rintro ⟨h, hemb, hrange, h0, h1⟩
+    exact ⟨hemb.toHomeomorph.trans (Homeomorph.setCongr hrange), h0, h1⟩
+  · rintro ⟨Φ, h0, h1⟩
+    refine ⟨Subtype.val ∘ Φ, IsEmbedding.subtypeVal.comp Φ.isEmbedding, ?_, h0, h1⟩
+    rw [Φ.surjective.range_comp, Subtype.range_coe]
+
 /-- Cobounding an annulus depends on the two maps only through their ranges. -/
 theorem coboundAnnulus_congr {f f' g g' : X → E} (hf : range f = range f')
     (hg : range g = range g') : CoboundAnnulus f g ↔ CoboundAnnulus f' g' := by
@@ -163,8 +181,8 @@ theorem CoboundAnnulus.homeomorph_comp {F : Type*} [TopologicalSpace F] [Bornolo
     CoboundAnnulus (e ∘ f) (e ∘ g) := by
   obtain ⟨φ, hφ, hrange, h0, h1⟩ := h
   refine ⟨e ∘ φ, e.isEmbedding.comp hφ, ?_, ?_, ?_⟩
-  · rw [range_comp, hrange, Set.image_sdiff e.injective, Set.image_sdiff e.injective,
-      e.image_filledHull he, e.image_filledHull he, range_comp, range_comp]
+  · rw [range_comp, hrange, Set.image_sdiff e.injective, e.image_filledHull he,
+      e.image_filledHull_sdiff he, range_comp, range_comp]
   · rw [image_comp, h0, range_comp]
   · rw [image_comp, h1, range_comp]
 
@@ -360,17 +378,7 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
       · rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
         · exact ⟨(um, t), hh_neg t⟩
         · exact ⟨(up, t), hh_pos t⟩
-    rw [hrange_h, hrange_ac, hrange_bd, hfhf, hg_open]
-    ext x
-    simp only [mem_union, mem_Icc, mem_sdiff, mem_Ioo, not_and, not_lt]
-    constructor
-    · rintro (⟨hax, hxc⟩ | ⟨hdx, hxb⟩)
-      · exact ⟨⟨hax, hxc.trans (hcd.le.trans hdb.le)⟩, fun hc => absurd hc (not_lt.mpr hxc)⟩
-      · exact ⟨⟨hac.le.trans (hcd.le.trans hdx), hxb⟩, fun _ => hdx⟩
-    · rintro ⟨⟨hax, hxb⟩, hnot⟩
-      by_cases hxc : x ≤ c
-      · exact Or.inl ⟨hax, hxc⟩
-      · exact Or.inr ⟨hnot (not_le.mp hxc), hxb⟩
+    rw [hrange_h, hrange_ac, hrange_bd, hfhf, hg_open, Icc_sdiff_Ioo hac.le hcd.le hdb.le]
   · rw [Set.prod_singleton, ← Set.image_comp, Set.image_univ, ← image_univ, huniv, image_pair]
     simp [hh_neg, hh_pos, hrf]
   · rw [Set.prod_singleton, ← Set.image_comp, Set.image_univ, ← image_univ, huniv, image_pair]
@@ -408,9 +416,8 @@ private theorem coboundAnnulus_of_continuous_injective_complex {f g : sphere (0 
     isJordanCurve_range (sphereCircleHomeomorph 0 one_pos) hfc hfi
   have hC₂ : IsJordanCurve (range g) :=
     isJordanCurve_range (sphereCircleHomeomorph 0 one_pos) hgc hgi
-  obtain ⟨Φ, hΦ0, hΦ1⟩ := hC₁.exists_homeomorph_sphere_prod_unitInterval hC₂ hsub
-  refine ⟨Subtype.val ∘ Φ, IsEmbedding.subtypeVal.comp Φ.isEmbedding, ?_, hΦ0, hΦ1⟩
-  rw [Φ.surjective.range_comp, Subtype.range_coe]
+  rw [coboundAnnulus_iff_exists_homeomorph]
+  exact hC₁.exists_homeomorph_sphere_prod_unitInterval hC₂ hsub
 
 /-- **The two-dimensional annulus theorem in any two-dimensional real normed space.** Any two
 continuous injections `f g : sphere (0 : E) 1 → E` with

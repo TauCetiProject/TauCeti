@@ -102,28 +102,29 @@ private theorem sdiff_filledHull_decomposition {α : Type*}
   have hDb'_sub : Db' ⊆ Db := hDb_union ▸ subset_union_right
   have hκDa : κ ⊆ Da := hD_inter ▸ inter_subset_left
   have hγ₂C : γ₂ ⊆ C := hγu ▸ subset_union_right
-  have hγ₂Db' : γ₂ ⊆ Db' := hDb_inter ▸ inter_subset_right
   have hγ₁Da : γ₁ ⊆ Da := (subset_union_right.trans subset_union_left).trans (hκ_eq ▸ hκDa)
   have hJ₁Da : J₁ ⊆ Da := (subset_union_left.trans subset_union_left).trans (hκ_eq ▸ hκDa)
   have hJ₂Da : J₂ ⊆ Da := subset_union_right.trans (hκ_eq ▸ hκDa)
-  refine ⟨Subset.antisymm ?_ ?_, Subset.antisymm ?_ ?_⟩
-  · refine union_subset ?_ ?_
-    · intro z hz
-      refine ⟨hD_union ▸ Or.inl hz, fun hzC => ?_⟩
-      have hzW := hF_inside hzC
-      exact hzW.2 (hD_inter ▸ ⟨hz, hzW.1⟩)
-    · intro z hz
-      refine ⟨hD_union ▸ Or.inr (hDb'_sub hz), fun hzC => ?_⟩
-      exact hzC.2 (hγ₂C (hDb_inter ▸ ⟨hzC.1, hz⟩))
-  · intro z ⟨hzU, hznot⟩
-    rcases hD_union.symm.subset hzU with hzA | hzB
-    · exact Or.inl hzA
-    · rcases hDb_union.symm.subset hzB with hzF | hzB'
-      · have hzCmem : z ∈ C := by_contra fun h => hznot ⟨hzF, h⟩
-        rcases hγu.symm.subset hzCmem with hz1 | hz2
-        · exact Or.inl (hγ₁Da hz1)
-        · exact Or.inr (hγ₂Db' hz2)
-      · exact Or.inr hzB'
+  have hRF_union : (Da ∪ Db') ∪ F = U := by
+    rw [union_assoc, union_comm Db' F, hDb_union, hD_union]
+  have hDaF : Da ∩ F ⊆ C := by
+    intro z ⟨hzA, hzF⟩
+    by_contra hzC
+    have hzW := hF_inside ⟨hzF, hzC⟩
+    exact hzW.2 (hD_inter ▸ ⟨hzA, hzW.1⟩)
+  have hRF_inter : (Da ∪ Db') ∩ F = C := by
+    refine Subset.antisymm ?_ ?_
+    · rw [union_inter_distrib_right, inter_comm Db' F, hDb_inter]
+      exact union_subset hDaF hγ₂C
+    · rw [← hγu]
+      refine union_subset (subset_inter (hγ₁Da.trans subset_union_left) hγ₁F) ?_
+      have hγ₂Db' : γ₂ ⊆ Db' := hDb_inter ▸ inter_subset_right
+      have hγ₂F : γ₂ ⊆ F := hDb_inter ▸ inter_subset_left
+      exact subset_inter (hγ₂Db'.trans subset_union_right) hγ₂F
+  have hCU : C ⊆ U := hRF_inter ▸ inter_subset_left.trans (hRF_union ▸ subset_union_left)
+  refine ⟨?_, Subset.antisymm ?_ ?_⟩
+  · rw [sdiff_sdiff_eq_sdiff_union hCU, ← hRF_union, union_sdiff_right, ← hRF_inter,
+      sdiff_union_inter]
   · intro z ⟨hzA, hzB'⟩
     have hzκ : z ∈ J₁ ∪ γ₁ ∪ J₂ := hκ_eq ▸ hD_inter ▸ ⟨hzA, hDb'_sub hzB'⟩
     rcases hzκ with (hzJ₁ | hzγ₁) | hzJ₂
@@ -137,16 +138,19 @@ private theorem sdiff_filledHull_decomposition {α : Type*}
     · exact ⟨hJ₁Da hz, hJ₁Db' hz⟩
     · exact ⟨hJ₂Da hz, hJ₂Db' hz⟩
 
-/-- Concatenating three injective paths whose adjacent pairs meet only at their shared endpoints
-and whose outer ranges are disjoint yields an injective path. -/
-private theorem injective_trans_trans {X : Type*} [TopologicalSpace X] {a b c d : X}
-    {α : Path a b} {β : Path b c} {γ : Path c d}
-    (hα : Injective α) (hβ : Injective β) (hγ : Injective γ)
-    (hαβ : range α ∩ range β = {b}) (hβγ : range β ∩ range γ = {c})
-    (hαγ : Disjoint (range α) (range γ)) :
-    Injective ((α.trans β).trans γ) := by
-  refine Path.injective_trans (Path.injective_trans hα hβ hαβ) hγ ?_
-  rwa [Path.trans_range, union_inter_distrib_right, hαγ.inter_eq, empty_union]
+/-- Shrink the second side of a singleton intersection `A ∩ S = {x}` to `B ⊆ S` while retaining the
+shared point `x`. -/
+private theorem inter_eq_singleton_of_subset {α : Type*} {A B S : Set α} {x : α}
+    (hAS : A ∩ S = {x}) (hBS : B ⊆ S) (hxA : x ∈ A) (hxB : x ∈ B) :
+    A ∩ B = {x} :=
+  Subset.antisymm ((inter_subset_inter_right A hBS).trans hAS.subset)
+    (singleton_subset_iff.mpr ⟨hxA, hxB⟩)
+
+/-- Swapped-order variant of `inter_eq_singleton_of_subset`. -/
+private theorem inter_eq_singleton_of_subset_left {α : Type*} {A B S : Set α} {x : α}
+    (hAS : A ∩ S = {x}) (hBS : B ⊆ S) (hxB : x ∈ B) (hxA : x ∈ A) :
+    B ∩ A = {x} :=
+  inter_comm A B ▸ inter_eq_singleton_of_subset hAS hBS hxA hxB
 
 /-- On either real ray `{s * r | r ≥ 0}` (`s = ±1`), a Jordan curve `C ⊆ ball 0 1` enclosing `0`
 has a last intersection point at some radius `t ∈ (0, 1)`, giving an injective radial segment from
@@ -290,21 +294,15 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
   have hγ₂_cut : γ₂.IsCrosscut W_b := Path.isCrosscut_def.mpr
     ⟨hγ₂, hW_fr.symm ▸ hp₁Jb, hW_fr.symm ▸ hp₂Jb, fun t ht => hγ₂in (mem_image_of_mem γ₂ ht)⟩
   -- Build the complementary boundary path `β₂ = (J₁.symm.trans σ_b).trans J₂.symm` of `W_b`.
-  have hJ₁_σb : range J₁.symm ∩ range σ_b = {1} := by
-    rw [Path.symm_range]
-    refine Subset.antisymm ((inter_subset_inter_right _ hσ_bS).trans hJ₁S.subset) ?_
-    rintro z rfl
-    exact ⟨J₁.source_mem_range, σ_b.source_mem_range⟩
-  have hσb_J₂ : range σ_b ∩ range J₂.symm = {-1} := by
-    rw [Path.symm_range]
-    refine Subset.antisymm ?_ ?_
-    · rw [inter_comm]
-      exact (inter_subset_inter_right _ hσ_bS).trans hJ₂S.subset
-    · rintro z rfl
-      exact ⟨σ_b.target_mem_range, J₂.target_mem_range⟩
+  have hJ₁_σb : range J₁.symm ∩ range σ_b = {1} :=
+    Path.symm_range J₁ ▸
+      inter_eq_singleton_of_subset hJ₁S hσ_bS J₁.source_mem_range σ_b.source_mem_range
+  have hσb_J₂ : range σ_b ∩ range J₂.symm = {-1} :=
+    Path.symm_range J₂ ▸
+      inter_eq_singleton_of_subset_left hJ₂S hσ_bS σ_b.target_mem_range J₂.target_mem_range
   set β₂ : Path p₁ p₂ := (J₁.symm.trans σ_b).trans J₂.symm
   have hβ₂_inj : Injective β₂ :=
-    injective_trans_trans (Path.injective_symm_iff.mpr hJ₁) hσ_b
+    Path.injective_trans_trans (Path.injective_symm_iff.mpr hJ₁) hσ_b
       (Path.injective_symm_iff.mpr hJ₂) hJ₁_σb hσb_J₂
       (by rw [Path.symm_range, Path.symm_range]; exact hJ₁J₂)
   have hβ₂_range : range β₂ = range J₁ ∪ range σ_b ∪ range J₂ := by
@@ -561,17 +559,13 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
     hC.exists_injective_path_range_union_eq_and_inter_eq_pair hp₁C hp₂C hp₁₂
   have hγ₁C : range γ₁ ⊆ C := hγu ▸ subset_union_left
   have hγ₂C : range γ₂ ⊆ C := hγu ▸ subset_union_right
-  have hJ₁γ₁ : range J₁ ∩ range γ₁ = {p₁} := by
-    refine Subset.antisymm ((inter_subset_inter_right _ hγ₁C).trans hJ₁C.subset) ?_
-    exact singleton_subset_iff.mpr ⟨J₁.target_mem_range, γ₁.source_mem_range⟩
-  have hγ₁J₂ : range γ₁ ∩ range J₂ = {p₂} := by
-    refine Subset.antisymm ?_
-      (singleton_subset_iff.mpr ⟨γ₁.target_mem_range, J₂.source_mem_range⟩)
-    rw [inter_comm]
-    exact (inter_subset_inter_right _ hγ₁C).trans hJ₂C.subset
+  have hJ₁γ₁ : range J₁ ∩ range γ₁ = {p₁} :=
+    inter_eq_singleton_of_subset hJ₁C hγ₁C J₁.target_mem_range γ₁.source_mem_range
+  have hγ₁J₂ : range γ₁ ∩ range J₂ = {p₂} :=
+    inter_eq_singleton_of_subset_left hJ₂C hγ₁C γ₁.target_mem_range J₂.source_mem_range
   set κ₁ : Path (1 : ℂ) (-1 : ℂ) := (J₁.trans γ₁).trans J₂
   have hκ₁_inj : Injective κ₁ :=
-    injective_trans_trans hJ₁_inj hγ₁_inj hJ₂_inj hJ₁γ₁ hγ₁J₂ hJ₁J₂
+    Path.injective_trans_trans hJ₁_inj hγ₁_inj hJ₂_inj hJ₁γ₁ hγ₁J₂ hJ₁J₂
   have hκ₁_range : range κ₁ = range J₁ ∪ range γ₁ ∪ range J₂ := by simp [κ₁, Path.trans_range]
   have hκ₁_cb : range κ₁ ⊆ closedBall 0 1 := by
     rw [hκ₁_range]
@@ -670,22 +664,12 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
       (Path.injective_symm_iff.mpr hJ₂_inj)
       (sphere_disjoint_ball.mono harcS (hαC.trans hCb))
       (by rwa [Path.symm_range]) ?_ ?_ ?_ ?_).2
-    · refine Subset.antisymm ?_
-        (singleton_subset_iff.mpr ⟨arc.source_mem_range, J₁.source_mem_range⟩)
-      rw [inter_comm]
-      exact (inter_subset_inter_right _ harcS).trans hJ₁S.subset
-    · rw [Path.symm_range]
-      refine Subset.antisymm ?_
-        (singleton_subset_iff.mpr ⟨arc.target_mem_range, J₂.target_mem_range⟩)
-      rw [inter_comm]
-      exact (inter_subset_inter_right _ harcS).trans hJ₂S.subset
-    · refine Subset.antisymm ?_ (singleton_subset_iff.mpr ⟨α.source_mem_range, J₁.target_mem_range⟩)
-      rw [inter_comm]
-      exact (inter_subset_inter_right _ hαC).trans hJ₁C.subset
-    · rw [Path.symm_range]
-      refine Subset.antisymm ?_ (singleton_subset_iff.mpr ⟨α.target_mem_range, J₂.source_mem_range⟩)
-      rw [inter_comm]
-      exact (inter_subset_inter_right _ hαC).trans hJ₂C.subset
+    · exact inter_eq_singleton_of_subset_left hJ₁S harcS arc.source_mem_range J₁.source_mem_range
+    · exact Path.symm_range J₂ ▸
+        inter_eq_singleton_of_subset_left hJ₂S harcS arc.target_mem_range J₂.target_mem_range
+    · exact inter_eq_singleton_of_subset_left hJ₁C hαC α.source_mem_range J₁.target_mem_range
+    · exact Path.symm_range J₂ ▸
+        inter_eq_singleton_of_subset_left hJ₂C hαC α.target_mem_range J₂.source_mem_range
   obtain ⟨Φp, hΦp_top, hΦp_bot, hΦp_left, hΦp_right⟩ :=
     hmkSquare upperSemicirclePath_injective hαp_inj hσpS hαpC
   obtain ⟨Φm, hΦm_top, hΦm_bot, hΦm_left, hΦm_right⟩ :=
@@ -721,18 +705,17 @@ theorem exists_homeomorph_sphere_prod_unitInterval_of_homeomorph {C₁ C₂ : Se
     rintro _ ⟨z, hz, rfl⟩
     obtain ⟨w, hw, hwe⟩ := heB.symm.subset (hsub hz)
     rwa [← hwe, e.symm_apply_apply]
-  have hfhC : filledHull C = e.symm '' filledHull C₂ :=
-    (e.symm.image_filledHull (fun _ => e.symm.isBounded_image_iff) C₂).symm
+  have hsdiff : filledHull C \ C = e.symm '' (filledHull C₂ \ C₂) :=
+    (e.symm.image_filledHull_sdiff (fun _ => e.symm.isBounded_image_iff) C₂).symm
   have h0C : (0 : ℂ) ∈ filledHull C \ C := by
     have he0' : e.symm p₀ = 0 := by rw [← he0, e.symm_apply_apply]
-    refine ⟨?_, ?_⟩
-    · rw [hfhC, ← he0']; exact mem_image_of_mem e.symm hp₀.1
-    · rw [← he0', e.symm.injective.mem_set_image]; exact hp₀.2
+    rw [hsdiff, ← he0']
+    exact mem_image_of_mem e.symm hp₀
   obtain ⟨Φ₀, hΦ₀0, hΦ₀1⟩ := exists_homeomorph_sphere_prod_unitInterval_normalized hC hCb h0C
   have himg : e '' (closedBall 0 1 \ (filledHull C \ C)) =
       filledHull C₁ \ (filledHull C₂ \ C₂) := by
-    rw [Set.image_sdiff e.injective, Set.image_sdiff e.injective, heCB, hfhC]
-    simp [C, image_image]
+    rw [Set.image_sdiff e.injective, heCB, hsdiff, Set.image_image]
+    simp
   let Ψ : ↥(closedBall (0 : ℂ) 1 \ (filledHull C \ C)) ≃ₜ
       ↥(filledHull C₁ \ (filledHull C₂ \ C₂)) :=
     (e.image _).trans (Homeomorph.setCongr himg)

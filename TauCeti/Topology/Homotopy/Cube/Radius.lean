@@ -425,11 +425,13 @@ theorem closedBallHomeomorphProd_mem_prodBoundary_iff {n : ℕ}
 
 /-- `TauCeti.squareHomeomorphClosedBall` carries a point of the unit square onto the unit sphere
 exactly when it lies on `TauCeti.squareBoundary`. -/
+@[simp]
 theorem norm_squareHomeomorphClosedBall_eq_one_iff {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) (p : I × I) :
     ‖(squareHomeomorphClosedBall hF p : F)‖ = 1 ↔ p ∈ squareBoundary := by
-  simp only [coe_squareHomeomorphClosedBall_apply,
-    ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff,
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  rw [squareHomeomorphClosedBall, Homeomorph.trans_apply, Homeomorph.trans_apply,
+    norm_closedBallHomeomorphOfFinrankEq_eq_one_iff,
     norm_cubeHomeomorphClosedBall_eq_one_iff, ← Set.mem_preimage,
     ← squareBoundary_eq_preimage_cubeBoundary]
 
@@ -440,16 +442,16 @@ def squareBoundaryHomeomorphSphere {F : Type*} [NormedAddCommGroup F] [NormedSpa
   ((squareHomeomorphClosedBall hF).subtype fun p =>
     (norm_squareHomeomorphClosedBall_eq_one_iff hF p).symm.trans
       mem_sphere_zero_iff_norm.symm).trans
-    { toEquiv := Equiv.subtypeSubtypeEquivSubtype fun hx => Metric.sphere_subset_closedBall hx
-      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
-      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
+    (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange fun _ hx =>
+      ⟨⟨_, Metric.sphere_subset_closedBall hx⟩, rfl⟩)
 
 /-- Coercing the image of a boundary point under `TauCeti.squareBoundaryHomeomorphSphere` to the
 ambient space gives the same point as `TauCeti.squareHomeomorphClosedBall`. -/
 @[simp]
 theorem coe_squareBoundaryHomeomorphSphere_apply {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) (p : squareBoundary) :
-    (squareBoundaryHomeomorphSphere hF p : F) = squareHomeomorphClosedBall hF p :=
-  (rfl)
+    (squareBoundaryHomeomorphSphere hF p : F) = squareHomeomorphClosedBall hF p := by
+  dsimp [squareBoundaryHomeomorphSphere]
+  exact Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe _ _ _
 
 end TauCeti
