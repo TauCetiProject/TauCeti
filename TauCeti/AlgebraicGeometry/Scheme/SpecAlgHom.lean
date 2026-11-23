@@ -16,7 +16,7 @@ commutes with the structure morphisms to `Spec R`.
 
 ## Main declarations
 
-* `AlgHom.Spec_map_comp_Spec_map_algebraMap`: `Spec f` followed by the structure morphism
+* `AlgHom.SpecMap_comp_SpecMap_algebraMap`: `Spec f` followed by the structure morphism
   `Spec A ⟶ Spec R` is the structure morphism `Spec B ⟶ Spec R`.
 -/
 
@@ -33,7 +33,7 @@ variable {R A B : Type u} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [
 /-- The spectrum of an `R`-algebra homomorphism `f : A →ₐ[R] B` commutes with the structure
 morphisms: `Spec f` followed by `Spec A ⟶ Spec R` is `Spec B ⟶ Spec R`. -/
 @[reassoc (attr := simp)]
-theorem Spec_map_comp_Spec_map_algebraMap (f : A →ₐ[R] B) :
+theorem SpecMap_comp_SpecMap_algebraMap (f : A →ₐ[R] B) :
     Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R A)) =
       Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
   rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, f.comp_algebraMap]
