@@ -76,7 +76,7 @@ variable {K : Type*} [Field K] [NumberField K] (L : Type*) [Field L] [NumberFiel
 through the semi-local decomposition `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w`. -/
 def infiniteAdeleSemilocalHom : InfiniteAdeleRing L →+* v.Completion ⊗[K] L :=
   (infiniteSemilocalEquiv L v).symm.toRingHom.comp
-    (RingHom.pi fun w : {w : InfinitePlace L // w.LiesOver v} ↦ Pi.evalRingHom _ w.1)
+    (RingHom.pi fun w : {w : InfinitePlace L // w.LiesOver v} ↦ Pi.evalRingHom _ w.val)
 
 variable {L v}
 
@@ -84,7 +84,7 @@ variable {L v}
 family of components at the places above `v`. -/
 theorem infiniteAdeleSemilocalHom_apply (a : InfiniteAdeleRing L) :
     infiniteAdeleSemilocalHom L v a =
-      (infiniteSemilocalEquiv L v).symm fun w : {w : InfinitePlace L // w.LiesOver v} ↦ a w.1 :=
+      (infiniteSemilocalEquiv L v).symm fun w : {w : InfinitePlace L // w.LiesOver v} ↦ a w.val :=
   (rfl)
 
 /-- Under the semi-local decomposition, the semi-local component of an infinite adele is its
@@ -92,7 +92,7 @@ family of components at the places above `v`. -/
 @[simp]
 theorem infiniteSemilocalEquiv_infiniteAdeleSemilocalHom (a : InfiniteAdeleRing L) :
     infiniteSemilocalEquiv L v (infiniteAdeleSemilocalHom L v a) =
-      fun w : {w : InfinitePlace L // w.LiesOver v} ↦ a w.1 := by
+      fun w : {w : InfinitePlace L // w.LiesOver v} ↦ a w.val := by
   rw [infiniteAdeleSemilocalHom_apply, AlgEquiv.apply_symm_apply]
 
 /-- The semi-local component of a diagonal field element `x` is `1 ⊗ x`. -/
@@ -152,8 +152,8 @@ private theorem continuous_infiniteSemilocalEquiv_linearMap_infiniteAdeleSemiloc
   have : IsModuleTopology v.Completion (v.Completion ⊗[K] M) := ⟨rfl⟩
   have := IsModuleTopology.toContinuousAdd v.Completion (v.Completion ⊗[K] M)
   have hproj : Continuous fun a : InfiniteAdeleRing L ↦
-      fun w : {w : InfinitePlace L // w.LiesOver v} ↦ a w.1 :=
-    continuous_pi fun w ↦ continuous_apply w.1
+      fun w : {w : InfinitePlace L // w.LiesOver v} ↦ a w.val :=
+    continuous_pi fun w ↦ continuous_apply w.val
   refine ((infiniteSemilocalContinuousEquiv M v).continuous.comp
     ((IsModuleTopology.continuous_of_linearMap φ).comp
       ((infiniteSemilocalContinuousEquiv L v).symm.continuous.comp hproj))).congr fun a ↦ ?_
@@ -188,7 +188,7 @@ theorem infiniteAdeleSemilocalHom_infiniteAdeleEquiv (e : L ≃ₐ[K] M) (a : In
     ?_ ?_ fun x ↦ ?_) a
   · simp only [RingHom.comp_apply, RingHom.coe_coe,
       infiniteSemilocalEquiv_infiniteAdeleSemilocalHom]
-    exact continuous_pi fun w ↦ (continuous_apply w.1).comp
+    exact continuous_pi fun w ↦ (continuous_apply w.val).comp
       (continuous_infiniteAdeleEquiv L M e.toRingEquiv)
   · simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       AlgHom.coe_toLinearMap] using
@@ -214,7 +214,8 @@ theorem infiniteAdeleSemilocalHom_infiniteAdeleExtension (a : InfiniteAdeleRing 
         (IsScalarTower.toAlgHom K L M)).toRingHom.comp (infiniteAdeleSemilocalHom L v))
     ?_ ?_ fun x ↦ ?_) a
   · simp only [RingHom.comp_apply, infiniteSemilocalEquiv_infiniteAdeleSemilocalHom]
-    exact continuous_pi fun w ↦ (continuous_apply w.1).comp (continuous_infiniteAdeleExtension L M)
+    exact continuous_pi fun w ↦ (continuous_apply w.val).comp (continuous_infiniteAdeleExtension L
+        M)
   · simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       AlgHom.coe_toLinearMap] using
       continuous_infiniteSemilocalEquiv_linearMap_infiniteAdeleSemilocalHom

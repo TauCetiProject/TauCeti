@@ -102,7 +102,7 @@ theorem mem_conjugateSimpleFields_iff_adjoin_root {x : E} (hx : IsIntegral F x)
   · rintro ⟨y, rfl⟩
     obtain ⟨σ, hσ⟩ := mem_orbit_iff.mp
       ((Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible
-        (minpoly.irreducible hx) ha) y).mp y.2)
+        (minpoly.irreducible hx) ha) y).mp y.property)
     apply mem_conjugateSimpleFields_iff.mpr
     refine ⟨σ, ?_⟩
     rw [hbase, adjoin_map, Set.image_singleton]
@@ -144,9 +144,9 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_apply {x : E}
       (galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (K : conjugateSimpleFields (F := F) x) :
-    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy K).1).map
+    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy K).val).map
       ((galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit) : _ →* _) =
-      K.1.fixingSubgroup := by
+      K.val.fixingSubgroup := by
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple hsep hsplit
   let E₀ := F⟮x⟯.restrict (le_normalClosure F⟮x⟯)
@@ -160,15 +160,15 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_apply {x : E}
       rw [← hy, MulEquiv.toMonoidHom_eq_coe])
   -- Expose the composite's inverse: `h.symm` transports the subgroup, then `f` takes
   -- the fixing subgroup. The remaining calculation uses the two component apply lemmas.
-  change ((h.symm (f K)).1).map (e : _ →* _) = K.1.fixingSubgroup
-  have hh (J) : (h J).1 = J.1.map (e : _ →* _) := by
+  change ((h.symm (f K)).val).map (e : _ →* _) = K.val.fixingSubgroup
+  have hh (J) : (h J).val = J.val.map (e : _ →* _) := by
     -- The subtype transport along `hy` preserves the subgroup value.
-    change (g J).1 = J.1.map (e : _ →* _)
+    change (g J).val = J.val.map (e : _ →* _)
     exact MulEquiv.conjugateSubgroupsEquiv_apply e _ J
   calc
-    ((h.symm (f K)).1).map (e : _ →* _) = (h (h.symm (f K))).1 := (hh _).symm
-    _ = (f K).1 := congrArg Subtype.val (h.apply_symm_apply _)
-    _ = K.1.fixingSubgroup :=
+    ((h.symm (f K)).val).map (e : _ →* _) = (h (h.symm (f K))).val := (hh _).symm
+    _ = (f K).val := congrArg Subtype.val (h.apply_symm_apply _)
+    _ = K.val.fixingSubgroup :=
       IntermediateField.conjugateFieldsEquivConjugateSubgroups_apply E₀ K
 
 /-- The fixing subgroup of the field corresponding to a conjugate point stabilizer is its
@@ -182,8 +182,8 @@ theorem fixingSubgroup_conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply {
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (H : MulAction.orbit (ConjAct (minpoly F x).Gal)
       (stabilizer (minpoly F x).Gal y)) :
-    (((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy).symm H).1).fixingSubgroup =
-      H.1.map ((galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit) : _ →* _) := by
+    (((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy).symm H).val).fixingSubgroup =
+      H.val.map ((galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit) : _ →* _) := by
   rw [← conjugateSimpleFieldsEquivConjugateSubgroups_apply hsep hsplit y hy
     ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy).symm H),
     Equiv.apply_symm_apply]
@@ -200,8 +200,8 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply {x : E}
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (H : MulAction.orbit (ConjAct (minpoly F x).Gal)
       (stabilizer (minpoly F x).Gal y)) :
-    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy).symm H).1 =
-      fixedField (H.1.map
+    ((conjugateSimpleFieldsEquivConjugateSubgroups hsep hsplit y hy).symm H).val =
+      fixedField (H.val.map
         ((galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit) : _ →* _)) := by
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple hsep hsplit
@@ -227,7 +227,7 @@ theorem quotientNormalizerEquivConjugateSimpleFields_mk {x : E}
     (hsep : (minpoly F x).Separable)
     (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
     (σ : Gal(normalClosure F F⟮x⟯ E/F)) :
-    ((quotientNormalizerEquivConjugateSimpleFields hsep hsplit (QuotientGroup.mk σ)).1) =
+    ((quotientNormalizerEquivConjugateSimpleFields hsep hsplit (QuotientGroup.mk σ)).val) =
       σ • (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) := by
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple hsep hsplit
@@ -244,8 +244,8 @@ theorem quotientNormalizerEquivConjugateSimpleFields_smul {x : E}
       Subgroup.normalizer
         ((F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :
           Set Gal(normalClosure F F⟮x⟯ E/F))) :
-    (quotientNormalizerEquivConjugateSimpleFields hsep hsplit (σ • q)).1 =
-      σ • (quotientNormalizerEquivConjugateSimpleFields hsep hsplit q).1 := by
+    (quotientNormalizerEquivConjugateSimpleFields hsep hsplit (σ • q)).val =
+      σ • (quotientNormalizerEquivConjugateSimpleFields hsep hsplit q).val := by
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple hsep hsplit
   exact IntermediateField.quotientNormalizerEquivConjugateFields_smul
@@ -301,7 +301,7 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_mk {x : E}
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (σ : (minpoly F x).Gal) :
     ((quotientGalNormalizerEquivConjugateSimpleFields hsep hsplit y hy
-      (QuotientGroup.mk σ)).1) =
+      (QuotientGroup.mk σ)).val) =
         galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit σ •
           (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) := by
   let e := galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit
@@ -310,7 +310,7 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_mk {x : E}
   -- The composite equivalence is defined with local transports; expose its final
   -- application so the quotient transport rule can rewrite the representative.
   change ((quotientNormalizerEquivConjugateSimpleFields hsep hsplit
-    (QuotientGroup.congrOfMapEq e hn (QuotientGroup.mk σ))).1) = _
+    (QuotientGroup.congrOfMapEq e hn (QuotientGroup.mk σ))).val) = _
   rw [QuotientGroup.congrOfMapEq_mk]
   exact quotientNormalizerEquivConjugateSimpleFields_mk hsep hsplit _
 
@@ -327,7 +327,7 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_fieldRange {x : E}
     (quotientGalStabilizerEquivAlgHomSimpleField (IsSeparable.isIntegral hsep) hsplit
       y q).fieldRange =
       (quotientGalNormalizerEquivConjugateSimpleFields hsep hsplit y hy
-        (Subgroup.quotientMapOfLE Subgroup.le_normalizer q)).1 := by
+        (Subgroup.quotientMapOfLE Subgroup.le_normalizer q)).val := by
   obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective q
   let hx := IsSeparable.isIntegral hsep
   let N := normalClosure F F⟮x⟯ E
@@ -367,14 +367,14 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_smul {x : E}
     (σ : (minpoly F x).Gal)
     (q : (minpoly F x).Gal ⧸
       Subgroup.normalizer (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)) :
-    (quotientGalNormalizerEquivConjugateSimpleFields hsep hsplit y hy (σ • q)).1 =
+    (quotientGalNormalizerEquivConjugateSimpleFields hsep hsplit y hy (σ • q)).val =
       galEquivNormalClosure (IsSeparable.isIntegral hsep) hsplit σ •
-        (quotientGalNormalizerEquivConjugateSimpleFields hsep hsplit y hy q).1 := by
+        (quotientGalNormalizerEquivConjugateSimpleFields hsep hsplit y hy q).val := by
   induction q using Quotient.inductionOn' with
   | _ τ =>
     -- The quotient action on representatives reduces definitionally to multiplication.
     change (quotientGalNormalizerEquivConjugateSimpleFields hsep hsplit y hy
-      (QuotientGroup.mk (σ * τ))).1 = _
+      (QuotientGroup.mk (σ * τ))).val = _
     simp [quotientGalNormalizerEquivConjugateSimpleFields_mk, mul_smul]
 
 /-- For a separable minimal polynomial splitting in `E`, the number of conjugates of `F⟮x⟯` is

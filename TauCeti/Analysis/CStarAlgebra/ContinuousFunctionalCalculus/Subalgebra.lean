@@ -75,7 +75,7 @@ theorem spectrum_eq_of_predicate (S : StarSubalgebra 𝕜 B) [IsClosed (S : Set 
   have hu : (u : B) = algebraMap 𝕜 B r - x := by
     simp only [u, val_cfcUnits]
     rw [cfc_sub (fun _ ↦ r) (fun t ↦ t) (x : B), cfc_const r (x : B) hx, cfc_id' 𝕜 (x : B) hx]
-  have hmem : ((u⁻¹ : Bˣ) : B) ∈ S := cfc_mem (𝕜' := 𝕜) _ x.2
+  have hmem : ((u⁻¹ : Bˣ) : B) ∈ S := cfc_mem (𝕜' := 𝕜) _ x.property
   refine ⟨⟨algebraMap 𝕜 S r - x, ⟨_, hmem⟩, ?_, ?_⟩, rfl⟩ <;> ext
   · simp [hu]
   · simp [hu]
@@ -115,7 +115,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
   predicate_zero := by simpa using ContinuousFunctionalCalculus.predicate_zero (R := 𝕜) (A := B)
   compactSpace_spectrum x := by
     have : CompleteSpace S := hS.completeSpace_coe
-    exact isCompact_iff_compactSpace.1 (spectrum.isCompact x)
+    exact isCompact_iff_compactSpace.1 (spectrum.isCompact 𝕜 x)
   spectrum_nonempty x hx := by
     have : Nontrivial B := Function.Injective.nontrivial (f := ((↑) : S → B)) Subtype.val_injective
     rw [S.spectrum_eq_of_predicate hx]
@@ -128,7 +128,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
       ext ⟨t, ht⟩
       simpa [e] using congr($hfg ⟨t, hsp ▸ ht⟩)
     have hmem (f) : cfcHom hx (e f) ∈ S := by
-      simpa [cfcHom_eq_cfc_extend 0 hx] using cfc_mem (𝕜' := 𝕜) _ x.2
+      simpa [cfcHom_eq_cfc_extend 0 hx] using cfc_mem (𝕜' := 𝕜) _ x.property
     let ψ := ((cfcHom hx).comp e).codRestrict S hmem
     have hψ (f) : (ψ f : B) = cfcHom hx (e f) := StarAlgHom.coe_codRestrict _ S hmem f
     refine ⟨ψ, ?_, ?_, ?_, fun f ↦ ?_, fun f ↦ ?_⟩
@@ -138,7 +138,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
     · have hf : q (ψ f : B) := (hψ f).symm ▸ cfcHom_predicate hx _
       rw [S.spectrum_eq_of_predicate hf, hψ, cfcHom_map_spectrum]
       ext t
-      exact ⟨fun ⟨s, hs⟩ ↦ ⟨_, hs⟩, fun ⟨s, hs⟩ ↦ ⟨⟨s, hsp ▸ s.2⟩, hs⟩⟩
+      exact ⟨fun ⟨s, hs⟩ ↦ ⟨_, hs⟩, fun ⟨s, hs⟩ ↦ ⟨⟨s, hsp ▸ s.property⟩, hs⟩⟩
     · exact (hψ f).symm ▸ cfcHom_predicate hx _
 
 /-- The continuous functional calculus that a closed star subalgebra inherits is computed in the
@@ -150,7 +150,7 @@ theorem coe_cfc (f : 𝕜 → 𝕜) (x : S) :
   let := S.continuousFunctionalCalculus
   by_cases hx : q x
   · by_cases hf : ContinuousOn f (spectrum 𝕜 x)
-    · exact S.subtype.map_cfc f x hf continuous_subtype_val hx hx
+    · exact S.subtype.map_cfc f x hf continuous_subtypeVal hx hx
     · rw [cfc_apply_of_not_continuousOn _ hf,
         cfc_apply_of_not_continuousOn _ (by rwa [← S.spectrum_eq_of_predicate hx]),
         ZeroMemClass.coe_zero]
@@ -170,7 +170,7 @@ theorem StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding (φ : A →
   let e := StarAlgEquiv.ofInjective φ hφ.injective
   have he (y : φ.range) : φ (e.symm y) = y := congr_arg Subtype.val (e.apply_symm_apply y)
   .transfer e.symm (hφ.isInducing.continuous_iff.2 <| by
-      simpa [Function.comp_def, he] using continuous_subtype_val)
+      simpa [Function.comp_def, he] using continuous_subtypeVal)
     fun y ↦ by rw [hpq, he]
 
 end Banach

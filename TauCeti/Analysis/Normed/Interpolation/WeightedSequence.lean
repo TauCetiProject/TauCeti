@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
-public import TauCeti.Analysis.Normed.Interpolation.RealMethod
+public import TauCeti.Analysis.Normed.Interpolation.RealMethod.Basic
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.Count

@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Minimal.Basic
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Transfer
-public import TauCeti.Algebra.Homology.Contraction.Linear.Homology
+public import TauCeti.Algebra.Homology.Contraction.Linear.Homology.Basic
 
 /-!
 # Minimal models of right A-infinity modules

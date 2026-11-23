@@ -70,8 +70,8 @@ private def idealTensorToSpan (he : IsIdempotentElem e) (hf : IsIdempotentElem f
     | tmul x y =>
       simp only [idealTensorInclude, TensorProduct.map_tmul, LinearMap.restrictScalars_apply,
         Submodule.subtype_apply, Algebra.TensorProduct.tmul_mul_tmul,
-        (mem_span_singleton_iff_mul_eq_self he).mp x.2,
-        (mem_span_singleton_iff_mul_eq_self hf).mp y.2]
+        (mem_span_singleton_iff_mul_eq_self he).mp x.property,
+        (mem_span_singleton_iff_mul_eq_self hf).mp y.property]
     | add t t' ht ht' => simp only [map_add, add_mul, ht, ht']
 
 @[simp]
@@ -114,7 +114,7 @@ def spanSingletonTensorProductEquiv (he : IsIdempotentElem e) (hf : IsIdempotent
       simpa only [LinearMap.comp_apply, coe_idealTensorToSpan, spanToIdealTensor_apply,
         LinearMap.id_apply] using
           (LinearMap.congr_fun (idealTensorInclude_projection k) (x : A ⊗[k] B)).trans
-            ((mem_span_singleton_iff_mul_eq_self (he.tmul (k := k) hf)).mp x.2))
+            ((mem_span_singleton_iff_mul_eq_self (he.tmul (k := k) hf)).mp x.property))
     (by
       apply TensorProduct.ext'
       intro x y

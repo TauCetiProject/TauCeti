@@ -179,7 +179,7 @@ theorem cofinalValue_coarsenByUnits_restrict {A : Type*} [Ring A] {v : Valuation
     have hcofg : TauCeti.IsCofinalElement (⊤ : Subgroup (v.ValueGroup₀)ˣ) g :=
       isCofinalElement_def.mpr fun h _ ↦ by
         obtain ⟨n, hn⟩ := cofinalValue_iff.mp hcof (h : v.ValueGroup₀)
-          (zero_lt_iff.mpr h.ne_zero)
+          (pos_iff_ne_zero.mpr h.ne_zero)
         exact ⟨n, by rwa [← Units.val_lt_val, Units.val_pow_eq_pow_val, hgdef, Units.val_mk0]⟩
     have hquot := hcofg.quotientMk hH
     rw [cofinalValue_iff]

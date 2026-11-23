@@ -65,7 +65,7 @@ theorem exists_continuous_rightCosetFactorization_of_section (H : Subgroup G)
     simpa using QuotientGroup.eq.mp (ht_sec (QuotientGroup.mk g⁻¹)).symm
   have hcoset (h : H) (g : G) :
       (QuotientGroup.mk ((h : G) * g)⁻¹ : G ⧸ H) = QuotientGroup.mk g⁻¹ := by
-    rw [mul_inv_rev, QuotientGroup.mk_mul_of_mem _ (H.inv_mem h.2)]
+    rw [mul_inv_rev, QuotientGroup.mk_mul_of_mem _ (H.inv_mem h.property)]
   have hcont : Continuous fun g : G => t (QuotientGroup.mk g⁻¹) :=
     ht_cont.comp (QuotientGroup.continuous_mk.comp continuous_inv)
   refine ⟨fun g => ⟨g * t (QuotientGroup.mk g⁻¹), hmem g⟩, fun g => (t (QuotientGroup.mk g⁻¹))⁻¹,

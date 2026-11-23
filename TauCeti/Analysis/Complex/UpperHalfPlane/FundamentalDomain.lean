@@ -57,13 +57,13 @@ theorem isFundamentalDomain_map_mapGL {Γ : Subgroup SL(2, ℤ)} {μ : Measure �
   refine ⟨hS.nullMeasurableSet, ?_, ?_⟩
   · filter_upwards [hS.ae_covers] with x hx
     obtain ⟨q, hq⟩ := hx
-    obtain ⟨γ, hγΓ, hγq⟩ := q.2
+    obtain ⟨γ, hγΓ, hγq⟩ := q.property
     refine ⟨⟨SpecialLinearGroup.mapGL ℝ γ, ⟨γ, hγΓ, rfl⟩⟩, ?_⟩
     rw [MulAction.subgroup_smul_def] at hq ⊢
     rwa [← hγq, QuotientGroup.mk'_apply, pslMk_smul, sl_moeb] at hq
   · intro g₁ g₂ hne
-    obtain ⟨γ₁, h₁Γ, h₁⟩ := g₁.2
-    obtain ⟨γ₂, h₂Γ, h₂⟩ := g₂.2
+    obtain ⟨γ₁, h₁Γ, h₁⟩ := g₁.property
+    obtain ⟨γ₂, h₂Γ, h₂⟩ := g₂.property
     have hγne : γ₁ ≠ γ₂ := fun h ↦ hne (Subtype.ext (by rw [← h₁, ← h₂, h]))
     have hqne : (⟨QuotientGroup.mk γ₁, ⟨γ₁, h₁Γ, rfl⟩⟩ :
           Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) ≠
