@@ -59,8 +59,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 ## Main statements
 
 * `TauCeti.conjRealPart_add_I_smul_conjImaginaryPart`: the decomposition
-  `v = conjRealPart K v + I • conjImaginaryPart K v`, which makes `TauCeti.realPointsLift`
-  surjective.
+  `v = conjRealPart K v + I • conjImaginaryPart K v`, which holds for every conjugate-linear `K`.
+  When `K` is involutive both parts lie in `TauCeti.realPoints K`, and the decomposition then
+  makes `TauCeti.realPointsLift` surjective.
 * `TauCeti.realPointsLift_injective`, `TauCeti.realPointsLift_surjective` and
   `TauCeti.realPointsEquiv`: **a complex vector space is the complexification of the real points of
   any conjugation on it.**
@@ -555,11 +556,13 @@ theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
 
 variable (W) in
 /-- The conjugation of a complexification fixes exactly the vectors with vanishing imaginary part,
-like complex conjugation on `ℂ` (`Complex.conj_eq_iff_im`).  It is the simp normal form of
-`tmulConj W u = u`, stated on that equation rather than on `u ∈ realPoints (tmulConj W)` because
-`TauCeti.mem_realPoints` is the simp normal form of the latter.  It is a pre-simp lemma (`simp↓`),
-so it fires before `simp` rewrites `u`; otherwise `TauCeti.tmulConj_baseChange` would first move the
-conjugation inside a base change `u`, and this lemma would no longer match. -/
+like complex conjugation on `ℂ` (`Complex.conj_eq_iff_im`).  `simp` rewrites the equation
+`tmulConj W u = u` to `imaginaryPart W u = 0` by this lemma.  Membership
+`u ∈ realPoints (tmulConj W)` simplifies in two steps: `TauCeti.mem_realPoints` first turns it into
+that equation, and this lemma then turns the equation into `imaginaryPart W u = 0`, so the lemma is
+stated on the equation.  It is a pre-simp lemma (`simp↓`), so it fires before `simp` rewrites
+`u`; otherwise `TauCeti.tmulConj_baseChange` would first move the conjugation inside a base change
+`u`, and this lemma would no longer match. -/
 @[simp↓]
 theorem tmulConj_eq_self_iff_imaginaryPart_eq_zero (u : ℂ ⊗[ℝ] W) :
     tmulConj W u = u ↔ imaginaryPart W u = 0 := by
@@ -660,8 +663,12 @@ theorem conjugationOfComplexification_apply_apply (u : ℂ ⊗[ℝ] W) :
     conjugationOfComplexification e (e u) = e (tmulConj W u) := by
   rw [conjugationOfComplexification_apply, e.symm_apply_apply]
 
-/-- Applying the transported tensor conjugation twice gives back the input. -/
-@[simp]
+/-- Applying the transported tensor conjugation twice gives back the input.  It is a pre-simp
+lemma (`simp↓`), so it cancels the two conjugations before `simp` rewrites the inner one;
+otherwise, at `e := TauCeti.realPointsEquiv hK`,
+`TauCeti.conjugationOfComplexification_realPointsEquiv` would first turn both into `K`, and `simp`
+cannot cancel `K (K v)` without `hK`. -/
+@[simp↓]
 theorem conjugationOfComplexification_conjugationOfComplexification (v : V) :
     conjugationOfComplexification e (conjugationOfComplexification e v) = v := by
   simp only [conjugationOfComplexification_apply, e.symm_apply_apply, tmulConj_tmulConj,
@@ -672,8 +679,12 @@ theorem conjugationOfComplexification_involutive :
     Function.Involutive (conjugationOfComplexification e) :=
   conjugationOfComplexification_conjugationOfComplexification e
 
-/-- The exact fixed locus is the image of the real inclusion `w ↦ e (1 ⊗ w)`. -/
-@[simp]
+/-- The exact fixed locus is the image of the real inclusion `w ↦ e (1 ⊗ w)`.  It is a pre-simp
+lemma (`simp↓`), so it applies before `simp` rewrites either side of the equation; otherwise
+`LinearEquiv.conjugationOfComplexification_apply_apply` would first rewrite the left side at
+`v := e u`, and `TauCeti.conjugationOfComplexification_realPointsEquiv` would turn the transported
+conjugation into `K` at `e := TauCeti.realPointsEquiv hK`, and this lemma would no longer match. -/
+@[simp↓]
 theorem conjugationOfComplexification_eq_self_iff (v : V) :
     conjugationOfComplexification e v = v ↔ ∃ w : W, e (1 ⊗ₜ[ℝ] w) = v := by
   rw [conjugationOfComplexification_apply, ← e.eq_symm_apply, tmulConj_eq_self_iff]
