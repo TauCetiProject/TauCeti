@@ -105,7 +105,7 @@ theorem localIndex_complexHomologicalOrientation (f : C(X, Y)) {x : X}
   let U : Opens X :=
     ⟨c.source ∩ f ⁻¹' c'.source, c.open_source.inter (c'.open_source.preimage f.continuous)⟩
   let V : Opens Y := ⟨c'.source, c'.open_source⟩
-  let g : C(U, V) := ⟨fun u ↦ ⟨f u, u.2.2⟩, by fun_prop⟩
+  let g : C(U, V) := ⟨fun u ↦ ⟨f u, u.property.2⟩, by fun_prop⟩
   let x' : U := ⟨x, mem_chart_source ℂ x, mem_chart_source ℂ (f x)⟩
   have hU : (U : Set X) ⊆ c.source := inter_subset_left
   have hj : IsOpenEmbedding (c ∘ Subtype.val : U → ℂ) :=
@@ -125,7 +125,7 @@ theorem localIndex_complexHomologicalOrientation (f : C(X, Y)) {x : X}
     (complexHomologicalOrientation ℂ).localIndex_comap_eq_analyticOrderNatAt_sub hj hk
       (φ := fun z ↦ c' (f (c.symm z))) ?_ ?_] at h
   · simpa [x', c.left_inv (mem_chart_source ℂ x)] using h.symm
-  · exact .of_forall fun z ↦ by simp [g, c.left_inv (hU z.2)]
+  · exact .of_forall fun z ↦ by simp [g, c.left_inv (hU z.property)]
   · simpa [x'] using analyticAt_chartAt_comp_comp_chartAt_symm hf
 
 /-- **Positivity of the local index of a holomorphic map.** If `f : X → Y` is holomorphic near `x`,

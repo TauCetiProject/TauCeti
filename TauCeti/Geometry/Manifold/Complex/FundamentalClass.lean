@@ -201,7 +201,7 @@ theorem comap_complexHomologicalOrientation_of_mem_maximalAtlas {e : OpenPartial
     (complexHomologicalOrientation ℂ).comap hj = complexHomologicalOrientation U :=
   comap_complexHomologicalOrientation (k := 1) hj fun u ↦
     IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ, ℂ)) (P := ℂ) (isLocalDiffeomorph_subtype_val u)
-      (e.isLocalDiffeomorphAt_of_mem_maximalAtlas he (hU u.2))
+      (e.isLocalDiffeomorphAt_of_mem_maximalAtlas he (hU u.property))
 
 /-- The round subdisc maps `z ↦ c + r z`, `r > 0`, of the open unit disc
 (`TauCeti.Complex.UnitDisc.subdisc`), read in `ℂ`, pull the canonical homological orientation of
