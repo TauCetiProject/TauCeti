@@ -73,7 +73,9 @@ condition and the `𝒪_X`-module structure automatic.
   monomorphism;
 * `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_forall_mem_range`: a
   rational function lying in the local ring at every point of a nonempty open subset `U` is
-  regular on `U`.
+  regular on `U`, and
+  `TauCeti.AlgebraicGeometry.Scheme.isSMulRegular_iff_germToFunctionField_ne_zero`: a section on a
+  nonempty open is a nonzerodivisor iff its image in the function field is nonzero.
 
 The sheaf `𝒪_X(D)` attached to a Weil divisor is the submodule of `𝒦_X` cut out by an order
 bound; it is built in `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, and the
@@ -314,8 +316,8 @@ def rationalFunctionsHom : M ⟶ rationalFunctions X := by
   intro U V i
   by_cases hV : Nonempty V.unop
   · let := hV
-    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).1,
-      i.unop.le (Classical.choice hV).2⟩⟩
+    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).val,
+      i.unop.le (Classical.choice hV).property⟩⟩
     let := hU
     simp only [dite_eq_left hU, dite_eq_left hV]
     ext s
@@ -351,7 +353,7 @@ end Hom
 theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctions X).presheaf.map i.op) := by
   have : Nonempty V :=
-    ⟨⟨(Classical.arbitrary U : U).1, leOfHom i (Classical.arbitrary U : U).2⟩⟩
+    ⟨⟨(Classical.arbitrary U : U).val, leOfHom i (Classical.arbitrary U : U).property⟩⟩
   constructor
   · intro a b hab
     refine (rationalFunctionsEquiv V).injective ?_
@@ -673,7 +675,7 @@ one because the germ map to the function field of an integral scheme is injectiv
 empty one because there are no nonzero functions there. -/
 theorem toRationalFunctions_app_injective (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app (toRationalFunctions X) U) := by
-  rcases U.1.eq_empty_or_nonempty with h | h
+  rcases U.carrier.eq_empty_or_nonempty with h | h
   · have hU : U = ⊥ := SetLike.ext' h
     have hsub : Subsingleton Γ(X, U) :=
       CommRingCat.subsingleton_of_isTerminal (X.sheaf.isTerminalOfEqEmpty hU)
@@ -701,9 +703,9 @@ theorem exists_germToFunctionField_eq_of_forall_mem_range {U : X.Opens} [Nonempt
   have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ _ : V ≤ U,
       ∃ s : Γ(X, V), X.presheaf.germ V (genericPoint X) (hgen V ⟨⟨(y : X), ‹_›⟩⟩) s = f := by
     intro y
-    obtain ⟨g, hgf⟩ := hf y y.2
+    obtain ⟨g, hgf⟩ := hf y y.property
     obtain ⟨W, hyW, s, hs⟩ := X.presheaf.exists_germ_eq g
-    have hmem : (y : X) ∈ (W ⊓ U : X.Opens) := ⟨hyW, y.2⟩
+    have hmem : (y : X) ∈ (W ⊓ U : X.Opens) := ⟨hyW, y.property⟩
     have hWU : Nonempty (W ⊓ U : X.Opens) := ⟨⟨(y : X), hmem⟩⟩
     -- Only needed as an instance, so that `algebraMap_germ_eq_germToFunctionField` applies at `W`.
     have : Nonempty W := ⟨⟨(y : X), hyW⟩⟩
@@ -733,6 +735,17 @@ theorem exists_germToFunctionField_eq_of_forall_mem_range {U : X.Opens} [Nonempt
   have hres : X.presheaf.map (homOfLE (hVU y)).op a = s y := ha y
   rw [← hs y, ← hres,
     X.presheaf.germ_res_apply (homOfLE (hVU y)) (genericPoint X) (hgen _ (hne y)) a]
+
+/-- On a nonempty open subset of an integral scheme, a section is a nonzerodivisor if and only if
+its image in the function field is nonzero. -/
+theorem isSMulRegular_iff_germToFunctionField_ne_zero {U : X.Opens} [Nonempty U] {a : Γ(X, U)} :
+    IsSMulRegular Γ(X, U) a ↔ X.germToFunctionField U a ≠ 0 := by
+  refine ⟨fun ha h0 ↦ ?_, fun ha _ _ hrt ↦ X.germToFunctionField_injective U <|
+    mul_left_cancel₀ ha (by
+      simpa only [smul_eq_mul, map_mul] using congrArg (X.germToFunctionField U) hrt)⟩
+  have : Nontrivial Γ(X, U) := (X.germToFunctionField U).hom.domain_nontrivial
+  have ha0 : a = 0 := X.germToFunctionField_injective U (h0.trans (map_zero _).symm)
+  exact one_ne_zero (α := Γ(X, U)) (ha (by simp [ha0]))
 
 /-- The morphism `𝒪_X ⟶ 𝒦_X` of ring sheaves is injective on sections over every open
 subset of an integral scheme. -/

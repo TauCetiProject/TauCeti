@@ -103,12 +103,6 @@ private lemma ofIdx_reflectionPerm_eq (i j : ι) :
       P.reflection_reflectionPerm
   exact hreflection
 
-omit [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
-private lemma ofIdx_reflectionPerm_self_eq (i : ι) :
-    RootPairing.weylGroup.ofIdx P (P.reflectionPerm i i) =
-    RootPairing.weylGroup.ofIdx P i := by
-  rw [ofIdx_reflectionPerm_eq P i i, RootPairing.weylGroup.ofIdx_mul_self, one_mul]
-
 private lemma ofIdx_mem_closure_simple (i : ι) :
     RootPairing.weylGroup.ofIdx P i ∈
       Subgroup.closure (range fun j : b.support =>
@@ -116,7 +110,7 @@ private lemma ofIdx_mem_closure_simple (i : ι) :
   let := P.indexNeg
   apply b.induction_reflect i
   · intro j hj
-    rwa [ofIdx_reflectionPerm_self_eq P j]
+    rwa [RootPairing.weylGroup.ofIdx_reflectionPerm_self P j]
   · intro j hj
     exact Subgroup.subset_closure ⟨⟨j, hj⟩, rfl⟩
   · intro j k hj hk

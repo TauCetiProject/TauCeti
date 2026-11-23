@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Hasse
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford.Basic
 
 /-!
 # The second Stiefel–Whitney class and the Clifford invariant

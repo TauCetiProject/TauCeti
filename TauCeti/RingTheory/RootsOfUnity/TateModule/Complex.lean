@@ -45,10 +45,10 @@ variable (p : ℕ)
 /-- The **standard compatible system of complex roots of unity**: the point of the prime-to-`p`
 Tate module `lim_m μ_m(ℂ)` whose level-`m` component is the primitive root `exp(2πi / m)`. -/
 def complexExp : PrimeToPTateModule p ℂ :=
-  mk (fun m ↦ haveI : NeZero (m : ℕ) := ⟨m.2.1⟩
-      rootsOfUnity.mkOfPowEq (exp (2 * π * I / m)) (isPrimitiveRoot_exp m m.2.1).pow_eq_one)
+  mk (fun m ↦ haveI : NeZero (m : ℕ) := ⟨m.property.1⟩
+      rootsOfUnity.mkOfPowEq (exp (2 * π * I / m)) (isPrimitiveRoot_exp m m.property.1).pow_eq_one)
     (mem_primeToPTateModuleSubgroup_iff.2 fun m n h ↦ Units.ext <| by
-      simpa using exp_two_pi_I_div_pow_div m.2.1 h)
+      simpa using exp_two_pi_I_div_pow_div m.property.1 h)
 
 /-- The level-`m` component of `complexExp p` is `exp(2πi / m)`. -/
 @[simp]
@@ -61,6 +61,6 @@ a primitive `m`-th root of unity. -/
 theorem isPrimitiveRoot_proj_complexExp (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
     IsPrimitiveRoot (proj m (complexExp p) : ℂˣ) m := by
   rw [← IsPrimitiveRoot.coe_units_iff, coe_proj_complexExp]
-  exact isPrimitiveRoot_exp m m.2.1
+  exact isPrimitiveRoot_exp m m.property.1
 
 end TauCeti.PrimeToPTateModule
