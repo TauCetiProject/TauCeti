@@ -46,26 +46,32 @@ variable {A : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A] [Locall
   [IsFiniteMeasure μ]
 
 /-- **Left multiplication by a unit preserves a finite additive Haar measure.** -/
-theorem map_mul_left_eq_self_of_isUnit {u : A} (hu : IsUnit u) : μ.map (u * ·) = μ :=
-  (AddMonoidHom.mulLeft u).map_addHaar_eq_self (continuous_const.mul continuous_id)
+theorem map_mul_left_eq_self_of_isUnit {u : A} (hu : IsUnit u) : μ.map (u * ·) = μ := by
+  rw [← AddMonoidHom.coe_mulLeft]
+  exact (AddMonoidHom.mulLeft u).map_addHaar_eq_self (continuous_const.mul continuous_id)
     fun y => ⟨↑hu.unit⁻¹ * y, by simp [← mul_assoc]⟩
 
 /-- **Right multiplication by a unit preserves a finite additive Haar measure.** -/
-theorem map_mul_right_eq_self_of_isUnit {u : A} (hu : IsUnit u) : μ.map (· * u) = μ :=
-  (AddMonoidHom.mulRight u).map_addHaar_eq_self (continuous_id.mul continuous_const)
+theorem map_mul_right_eq_self_of_isUnit {u : A} (hu : IsUnit u) : μ.map (· * u) = μ := by
+  rw [← AddMonoidHom.coe_mulRight]
+  exact (AddMonoidHom.mulRight u).map_addHaar_eq_self (continuous_id.mul continuous_const)
     fun y => ⟨y * ↑hu.unit⁻¹, by simp [mul_assoc]⟩
 
 /-- Left multiplication by a unit preserves the finite additive Haar measure of every set. -/
 theorem measure_preimage_mul_left_of_isUnit {u : A} (hu : IsUnit u) (s : Set A) :
     μ ((u * ·) ⁻¹' s) = μ s := by
-  conv_rhs => rw [← map_mul_left_eq_self_of_isUnit μ hu]
-  exact ((ContinuousAddEquiv.mulLeft hu.unit).toHomeomorph.measurableEmbedding.map_apply μ s).symm
+  have he : ⇑(ContinuousAddEquiv.mulLeft hu.unit).toHomeomorph = (u * ·) := funext fun x =>
+    (ContinuousAddEquiv.mulLeft_apply hu.unit x).trans (congrArg (· * x) hu.unit_spec)
+  rw [← he, ← (ContinuousAddEquiv.mulLeft hu.unit).toHomeomorph.measurableEmbedding.map_apply,
+    he, map_mul_left_eq_self_of_isUnit μ hu]
 
 /-- Right multiplication by a unit preserves the finite additive Haar measure of every set. -/
 theorem measure_preimage_mul_right_of_isUnit {u : A} (hu : IsUnit u) (s : Set A) :
     μ ((· * u) ⁻¹' s) = μ s := by
-  conv_rhs => rw [← map_mul_right_eq_self_of_isUnit μ hu]
-  exact ((ContinuousAddEquiv.mulRight hu.unit).toHomeomorph.measurableEmbedding.map_apply μ s).symm
+  have he : ⇑(ContinuousAddEquiv.mulRight hu.unit).toHomeomorph = (· * u) := funext fun x =>
+    (ContinuousAddEquiv.mulRight_apply hu.unit x).trans (congrArg (x * ·) hu.unit_spec)
+  rw [← he, ← (ContinuousAddEquiv.mulRight hu.unit).toHomeomorph.measurableEmbedding.map_apply,
+    he, map_mul_right_eq_self_of_isUnit μ hu]
 
 variable [T2Space A] {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
