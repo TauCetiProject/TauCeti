@@ -290,10 +290,10 @@ private theorem homotopic_reparamDisc (P P' : Path γ₀ γ₁)
     (hP' : ∀ s t : unitInterval, P' s t = reparamDisc P (s, t)) : P.Homotopic P' := by
   have hw : Continuous fun q : unitInterval × unitInterval × unitInterval ↦
       ((q.1 : ℝ) * slideWeight q.2.1, (q.2.2 : ℝ)) :=
-    (continuous_subtype_val.comp continuous_fst |>.mul
-      (slideWeight.continuous.comp (continuous_subtype_val.comp
+    (continuous_subtypeVal.comp continuous_fst |>.mul
+      (slideWeight.continuous.comp (continuous_subtypeVal.comp
         (continuous_fst.comp continuous_snd)))).prodMk
-      (continuous_subtype_val.comp (continuous_snd.comp continuous_snd))
+      (continuous_subtypeVal.comp (continuous_snd.comp continuous_snd))
   refine Path.homotopic_of_continuous_cube
     (fun q ↦ P (projIcc 0 1 zero_le_one ((1 - q.1) * q.2.1 + q.1 * (3 * q.2.1 - 1)))
       (projIcc 0 1 zero_le_one (seamCollapse (q.1 * slideWeight q.2.1) q.2.2)))
@@ -302,17 +302,17 @@ private theorem homotopic_reparamDisc (P P' : Path γ₀ γ₁)
   · intro s t
     simp [seamCollapse_zero_left]
   · intro s t
-    rw [hP', reparamDisc_of_mem_Icc P s ⟨t.2.1, t.2.2⟩]
+    rw [hP', reparamDisc_of_mem_Icc P s ⟨t.property.1, t.property.2⟩]
     simp [radial]
   · intro τ t
     have hτ : projIcc (0 : ℝ) 1 zero_le_one ((1 - τ) * 0 + τ * (3 * 0 - 1)) = 0 :=
-      projIcc_of_le_left _ (by nlinarith [τ.2.1])
+      projIcc_of_le_left _ (by nlinarith [τ.property.1])
     dsimp only
     rw [Icc.coe_zero, hτ, slideWeight_of_le (by norm_num), mul_zero, seamCollapse_zero_left,
       projIcc_val, P.source]
   · intro τ t
     have hτ : projIcc (0 : ℝ) 1 zero_le_one ((1 - τ) * 1 + τ * (3 * 1 - 1)) = 1 :=
-      projIcc_of_right_le _ (by nlinarith [τ.2.1])
+      projIcc_of_right_le _ (by nlinarith [τ.property.1])
     dsimp only
     rw [Icc.coe_one, hτ, slideWeight_of_ge (by norm_num), mul_zero, seamCollapse_zero_left,
       projIcc_val, P.target]
@@ -381,8 +381,8 @@ private theorem homotopic_of_homotopicRel {P₀ P₁ : Path γ₀ γ₁} {f₀ f
     (H.continuous.comp (by fun_prop)) (fun s t ↦ (H.apply_zero _).trans (h₀ s t).symm)
     (fun s t ↦ (H.apply_one _).trans (h₁ s t).symm) (fun τ t ↦ ?_) (fun τ t ↦ ?_)
     (fun τ s ↦ ?_) (fun τ s ↦ ?_)
-  · rw [hH (mem_frame_of_fst h0 ⟨t.2.1, t.2.2⟩), P₀.source]
-  · rw [hH (mem_frame_of_fst h1 ⟨t.2.1, t.2.2⟩), P₀.target]
+  · rw [hH (mem_frame_of_fst h0 ⟨t.property.1, t.property.2⟩), P₀.source]
+  · rw [hH (mem_frame_of_fst h1 ⟨t.property.1, t.property.2⟩), P₀.target]
   · rw [hH (mem_frame_of_snd ⟨le_rfl, zero_le_one⟩ h0), (P₀ s).source]
   · rw [hH (mem_frame_of_snd ⟨zero_le_one, le_rfl⟩ h1), (P₀ s).target]
 
@@ -522,8 +522,8 @@ theorem exists_contMDiff_periodic_homotopic (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I 
     · simpa [u] using hseam s
     · simpa [u] using hseam s
   have hu_eq (s t : unitInterval) : u (s, t) = u₀ (s, t) := by
-    rcases t.2.2.lt_or_eq with ht | ht
-    · simp only [u, Int.fract_eq_self.2 ⟨t.2.1, ht⟩]
+    rcases t.property.2.lt_or_eq with ht | ht
+    · simp only [u, Int.fract_eq_self.2 ⟨t.property.1, ht⟩]
     · rw [hu_seam s (Or.inr ht), ht, hframe _ (mem_frame_of_snd ⟨zero_le_one, le_rfl⟩
         (by norm_num)), reparamDisc_seam P s (Or.inr rfl)]
   have hu := contMDiff_comp_fract hg₀ hgp₀ hγ₀ hg₁ hgp₁ hγ₁ P hu₀ hframe
@@ -537,12 +537,12 @@ theorem exists_contMDiff_periodic_homotopic (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I 
     (fun s ↦ reparamDisc_seam P s (Or.inl rfl)) (fun s ↦ reparamDisc_seam P s (Or.inr rfl))
     (fun t ↦ (reparamDisc_zero_left hgp₀ hγ₀ P t).trans (hγ₀ t).symm)
     (fun t ↦ (reparamDisc_one_left hgp₁ hγ₁ P t).trans (hγ₁ t).symm)
-  refine ⟨Pu, fun s t ↦ Path.ofContinuousFamily_apply .. s t, ?_⟩
+  refine ⟨Pu, fun s t ↦ Path.ofContinuousFamily_apply _ _ _ _ _ _ s t, ?_⟩
   have hPG : P.Homotopic PG :=
-    homotopic_reparamDisc P PG fun s t ↦ Path.ofContinuousFamily_apply .. s t
+    homotopic_reparamDisc P PG fun s t ↦ Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
   have hPu : PG.Homotopic Pu :=
-    homotopic_of_homotopicRel hGu₀ (fun s t ↦ Path.ofContinuousFamily_apply .. s t)
-      fun s t ↦ (Path.ofContinuousFamily_apply .. s t).trans (hu_eq s t)
+    homotopic_of_homotopicRel hGu₀ (fun s t ↦ Path.ofContinuousFamily_apply _ _ _ _ _ _ s t)
+      fun s t ↦ (Path.ofContinuousFamily_apply _ _ _ _ _ _ s t).trans (hu_eq s t)
   exact (hPG.trans hPu).symm
 
 end TauCeti
