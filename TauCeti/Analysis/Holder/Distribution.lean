@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.SingularSupport
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Local
 public import TauCeti.Analysis.Holder.Zygmund
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.ComplexPairing
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -300,7 +301,7 @@ theorem IsLocallyMemBesovAt.isLocallyCkHolderAt {φ : ContDiffBump (0 : E)} (hα
     rw [BesovSpace.toLpTop_toCkHolderSpace, hχT.toDistr_toBesovSpace]
   refine ⟨{y | χ y = 1} ∩ Ω, inter_mem hχ (Ω.isOpen.mem_nhds h.mem), inter_subset_right, f,
     fun ψ hψ ↦ T.apply_eq_integral_of_cutoffTempered_apply_eq_integral (fun ψ ↦ ?_)
-      (fun y hy ↦ hy.1) hψ⟩
+      (V := {y | χ y = 1} ∩ Ω) (fun y hy ↦ hy.1) hψ⟩
   rw [← hf, toTemperedDistribution_toLpTop_apply, CkHolderSpace.coe_toBoundedContinuousFunction]
 
 /-- **Local Hölder regularity gives local Hölder–Zygmund regularity.** A complex distribution that
