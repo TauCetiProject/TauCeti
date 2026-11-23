@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
+public import TauCeti.CategoryTheory.Action.EssentiallySmall
 public import TauCeti.CategoryTheory.Semisimple.GrothendieckRing
 public import TauCeti.RepresentationTheory.CharacterTable.Multiplicity
 public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Maschke
 public import TauCeti.RepresentationTheory.Tensor.Power
 import Mathlib.GroupTheory.Perm.Cycle.Type
 import TauCeti.LinearAlgebra.Determinant.FiniteOrder
@@ -27,9 +30,10 @@ by `TauCeti.SimpleFDRepClasses k G` whose `(c₁, c₂)` entry is `dim_k Hom_G(X
 representatives `c₁ = [X]` and `c₂ = [Y]`. This file establishes its loop-freeness on faithful
 two-dimensional representations of determinant `1` over an algebraically closed field of
 characteristic zero, its duality `(mckayMatrix V)ᵀ = mckayMatrix (ᘁV)` and symmetry under
-self-duality, its comparison with `TauCeti.fusionMatrix`, the dimension null-vector equation
-`M δ = (dim V) δ`, the identification `mckayMatrix (V.tensorPower n) = mckayMatrix V ^ n` with its
-entry formulas, and reachability to the trivial class for faithful complex representations.
+self-duality, its comparison with `TauCeti.fusionMatrix` and with left multiplication on
+`TauCeti.SplitK0 (FDRep k G)`, the dimension null-vector equation `M δ = (dim V) δ`, the
+identification `mckayMatrix (V.tensorPower n) = mckayMatrix V ^ n` with its entry formulas, and
+reachability to the trivial class for faithful complex representations.
 
 ## Main definitions and results
 
@@ -41,7 +45,11 @@ entry formulas, and reachability to the trivial class for faithful complex repre
 * `TauCeti.mckayMatrix_transpose`, `TauCeti.isSymm_mckayMatrix_of_equiv_dual`, and
   `TauCeti.isSymm_mckayMatrix_of_finrank_eq_two`: transpose via `ᘁV` and symmetry.
 * `TauCeti.reindex_mckayMatrix_eq_transpose_fusionMatrix`: reindexing `mckayMatrix V` along
-  `SimpleFDRepClasses.equivSimpleClasses` recovers `(fusionMatrix k (SimpleClasses.classOf V))ᵀ`.
+  `SimpleFDRepClasses.equivSimpleClasses` recovers `(fusionMatrix k (SimpleClasses.classOf V))ᵀ`
+  for simple `V`.
+* `TauCeti.reindex_mckayMatrix_eq_leftMulMatrix`: reindexing the integer-cast `mckayMatrix V` along
+  `SimpleFDRepClasses.equivSimpleClasses` recovers `Algebra.leftMulMatrix` by `SplitK0.of V` in
+  `SplitK0.simpleBasis (FDRep k G)` for any `V`.
 * `TauCeti.sum_mckayMatrix_mul_finrank_left` and `TauCeti.sum_mckayMatrix_mul_finrank`:
   column-sum identity and null-vector equation `M δ = (dim V) δ`.
 * `TauCeti.mckayMatrix_tensorPower`, `TauCeti.mckayMatrix_pow_apply`, and
@@ -212,6 +220,21 @@ theorem reindex_mckayMatrix_eq_transpose_fusionMatrix [Group G] [Invertible (Nat
   rw [FDRep.finrank_hom_comm]
   exact (Linear.homCongr k (whiskerRightIso (SimpleClasses.classOfReprIso V).symm T.repr)
     (Iso.refl S.repr)).finrank_eq
+
+/-- **Bridge between the McKay matrix and the representation ring.** Over an algebraically closed
+field `k` in which `|G|` is nonzero, for any `V : FDRep k G` (not necessarily simple), reindexing
+the integer-cast McKay matrix along `SimpleFDRepClasses.equivSimpleClasses` gives the matrix of
+left multiplication by `SplitK0.of V` in `SplitK0.simpleBasis (FDRep k G)`. -/
+theorem reindex_mckayMatrix_eq_leftMulMatrix [IsAlgClosed k] [Group G] [NeZero (Nat.card G : k)]
+    [Fintype (SimpleClasses (FDRep k G))] [DecidableEq (SimpleClasses (FDRep k G))]
+    (V : FDRep k G) :
+    Matrix.reindex (SimpleFDRepClasses.equivSimpleClasses k G)
+        (SimpleFDRepClasses.equivSimpleClasses k G)
+        ((mckayMatrix V).map (Nat.cast : ℕ → ℤ)) =
+      Algebra.leftMulMatrix (SplitK0.simpleBasis (FDRep k G)) (SplitK0.of V) := by
+  ext S T
+  simp [Algebra.leftMulMatrix_eq_repr_mul, SimpleFDRepClasses.equivSimpleClasses_symm_apply,
+    finrank_hom_simple_eq_simpleMultiplicities (k := k), SimpleClasses.classOf_repr]
 
 /-- **Symmetry of the McKay matrix** for a self-dual representation when `|G|` is invertible in
 `k`. -/
