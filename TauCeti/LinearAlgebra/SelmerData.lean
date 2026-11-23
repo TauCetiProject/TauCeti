@@ -60,11 +60,11 @@ localisations, so no restricted product is used.
   `TauCeti.SelmerData.selmerModule_strict_univ`, `TauCeti.SelmerData.selmerModule_of_isEmpty`:
   relaxing everywhere gives `H`, imposing strict conditions everywhere gives `⋂_v ker res_v`, and
   with no places the Selmer module is `H`.
-* `TauCeti.SelmerData.map_selmerModule_le`,
+* `TauCeti.SelmerData.map_selmerModule_le`, `TauCeti.SelmerData.selmerModule_eq_comap`,
   `TauCeti.SelmerData.selmerModule_withLocalConditions_comap`,
   `TauCeti.SelmerData.map_selmerModule_le_withLocalConditions_map`: a change of coefficients
-  commuting with the localisations carries Selmer classes to Selmer classes; pulling the local
-  conditions back gives the preimage of the Selmer module, and pushing them forward gives a Selmer
+  commuting with the localisations carries Selmer classes to Selmer classes; pulled-back local
+  conditions give the preimage of the Selmer module, and pushing them forward gives a Selmer
   module containing the image.
 
 ## References
@@ -278,6 +278,19 @@ theorem map_selmerModule_le
   rw [← LinearMap.comp_apply, hcomm v, LinearMap.comp_apply]
   exact hL v (Submodule.mem_map_of_mem (hc v))
 
+/-- **Pulled-back local conditions cut out the preimage of the Selmer module.** If a global map
+`g` and local maps `gloc v` commute with the localisations and each local condition of `D` is the
+preimage `gloc v⁻¹(L'_v)` of that of `D'`, then the Selmer module of `D` is the preimage under `g`
+of the Selmer module of `D'`. -/
+theorem selmerModule_eq_comap
+    (hcomm : ∀ v, D'.localization v ∘ₗ g = gloc v ∘ₗ D.localization v)
+    (hL : ∀ v, D.localCondition v = (D'.localCondition v).comap (gloc v)) :
+    D.selmerModule = D'.selmerModule.comap g := by
+  ext c
+  simp only [mem_selmerModule_iff, hL, Submodule.mem_comap]
+  refine forall_congr' fun v => ?_
+  rw [← LinearMap.comp_apply, ← hcomm v, LinearMap.comp_apply]
+
 /-- **The pulled-back local conditions cut out the preimage of the Selmer module.** If a global
 map `g` and local maps `gloc v` commute with the localisations, then replacing the local
 conditions of `D` by the preimages `gloc v⁻¹(L'_v)` of those of `D'` gives the preimage under `g`
@@ -286,12 +299,8 @@ coefficients, such as from `V` to a lattice `T`. -/
 theorem selmerModule_withLocalConditions_comap
     (hcomm : ∀ v, D'.localization v ∘ₗ g = gloc v ∘ₗ D.localization v) :
     (D.withLocalConditions fun v => (D'.localCondition v).comap (gloc v)).selmerModule =
-      D'.selmerModule.comap g := by
-  ext c
-  simp only [mem_selmerModule_iff, withLocalConditions_localization,
-    withLocalConditions_localCondition, Submodule.mem_comap]
-  refine forall_congr' fun v => ?_
-  rw [← LinearMap.comp_apply, ← hcomm v, LinearMap.comp_apply]
+      D'.selmerModule.comap g :=
+  (D.withLocalConditions _).selmerModule_eq_comap D' hcomm fun _ => rfl
 
 /-- **Selmer classes map into the pushed-forward local conditions.** If a global map `g` and
 local maps `gloc v` commute with the localisations, then `g` carries the Selmer module of `D` into

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Continuous
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.SelmerData
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Continuous.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Comparison
 
 /-!
 # Selmer structures on discrete representations
@@ -22,9 +22,9 @@ maps of `𝓕` with the explicit pullbacks along the same compatible pairs.
 So `𝓕` is a discrete Selmer structure `TauCeti.ContCohomology.SelmerStructure` on `X.V`, with the
 local conditions transported along the explicit comparison, and the explicit comparison carries
 its Selmer group onto the Selmer module of `𝓕`. Hence the compact and rational Selmer modules of
-`TauCeti/RepresentationTheory/Homological/ContCohomology/SelmerStructure/Continuous.lean`, after
-change of coefficients to `A`, land in the discrete Selmer groups of the existing interface: no
-second discrete carrier is introduced.
+`TauCeti/RepresentationTheory/Homological/ContCohomology/SelmerStructure/Continuous/Basic.lean`,
+after change of coefficients to `A`, land in the discrete Selmer groups of the existing interface:
+no second discrete carrier is introduced.
 
 ## Main definitions
 
@@ -35,6 +35,8 @@ second discrete carrier is introduced.
 
 * `TauCeti.ContinuousCohomology.TopSelmerStructure.explicitH1_localization`: the explicit
   comparison carries the explicit localisation to the localisation of `𝓕`.
+* `TauCeti.ContinuousCohomology.TopSelmerStructure.toSelmerStructure_withLocalConditions`:
+  replacing the local conditions commutes with passing to the discrete Selmer structure.
 * `TauCeti.ContinuousCohomology.TopSelmerStructure.mem_selmerGroup_toSelmerStructure_iff`: a
   class is in the discrete Selmer group exactly when its image is in the Selmer module of `𝓕`.
 * `TauCeti.ContinuousCohomology.TopSelmerStructure.map_selmerGroup_toSelmerStructure`: the
@@ -92,6 +94,35 @@ omit [IsTopologicalGroup G] [ContinuousSMul G X.V] in
 theorem toSelmerStructure_coeffHom_apply (i : ι) (x : X.V) :
     𝓕.toSelmerStructure.coeffHom i x = (𝓕.coeffHom i).hom x :=
   (rfl)
+
+omit [IsTopologicalGroup G] [ContinuousSMul G X.V] [∀ i, IsTopologicalGroup (H i)]
+  [DiscreteTopology X.V] [∀ i, DiscreteTopology (Y i).V] in
+/-- Discrete Selmer structures with the same local groups, coefficient maps and local conditions
+are equal. -/
+private theorem selmerStructure_ext {S T : SelmerStructure G X.V H fun i => (Y i).V}
+    (h₁ : S.groupHom = T.groupHom) (h₂ : S.coeffHom = T.coeffHom)
+    (h₃ : S.localCondition = T.localCondition) : S = T := by
+  cases S; cases T; cases h₁; cases h₂; cases h₃; rfl
+
+omit [IsTopologicalGroup G] [ContinuousSMul G X.V] in
+/-- The local conditions of `𝓕.toSelmerStructure` are those of `𝓕` pulled back along the
+explicit comparison. Membership is unfolded by the simp lemma
+`mem_toSelmerStructure_localCondition_iff`. -/
+theorem toSelmerStructure_localCondition (i : ι) :
+    𝓕.toSelmerStructure.localCondition i = (𝓕.localCondition i).toAddSubgroup.comap
+      (Y i).explicitH1AddEquivContinuousCohomologyOfDiscrete.toAddMonoidHom :=
+  (rfl)
+
+omit [IsTopologicalGroup G] [ContinuousSMul G X.V] in
+/-- Replacing the local conditions of `𝓕` replaces those of `𝓕.toSelmerStructure` by their
+pullbacks along the explicit comparison. -/
+theorem toSelmerStructure_withLocalConditions
+    (L : ∀ i, Submodule R (_root_.continuousCohomology 1 (Y i))) :
+    (𝓕.withLocalConditions L).toSelmerStructure =
+      𝓕.toSelmerStructure.withLocalConditions fun i => (L i).toAddSubgroup.comap
+        (Y i).explicitH1AddEquivContinuousCohomologyOfDiscrete.toAddMonoidHom :=
+  selmerStructure_ext (funext fun i => by simp) (funext fun i => by ext; simp)
+    (funext fun i => by simp [toSelmerStructure_localCondition])
 
 omit [IsTopologicalGroup G] [ContinuousSMul G X.V] in
 /-- A local class satisfies the discrete local condition exactly when its image under the

@@ -30,7 +30,7 @@ So `a` carries Selmer classes into Selmer classes for the pushed-forward local c
 pulled-back local conditions cut out the preimage of the Selmer module. For `T → V → A = V/T`
 this is the propagation of a local condition on `V` to `T` (preimage) and to `A` (image). The
 comparison of the discrete quotient `A` with the discrete interface is
-`TauCeti/RepresentationTheory/Homological/ContCohomology/SelmerStructure/ContinuousDiscrete.lean`.
+`TauCeti/RepresentationTheory/Homological/ContCohomology/SelmerStructure/Continuous/Discrete.lean`.
 
 ## Main definitions
 
@@ -83,6 +83,7 @@ variable (φ : ∀ i, H i →ₜ* G) (X : TopRep.{max v w} R G) (Y : ∀ i, TopR
 `φ i : H i →ₜ* G`: a local coefficient morphism `res (φ i) X ⟶ Y i` along which `H¹(G, X)` is
 localised to `H¹(H i, Y i)`, and a local condition, an `R`-submodule of `H¹(H i, Y i)`, for each
 index `i`. -/
+@[ext]
 structure TopSelmerStructure where
   /-- The local coefficient morphism `res (φ i) X ⟶ Y i`. -/
   coeffHom : ∀ i, TopRep.res (φ i : H i →* G) X ⟶ Y i
@@ -97,6 +98,12 @@ variable {φ X Y} (𝓕 : TopSelmerStructure φ X Y)
 continuous cohomology of the compatible pair `(φ i, 𝓕.coeffHom i)`. -/
 def localization (i : ι) : continuousCohomology 1 X →ₗ[R] continuousCohomology 1 (Y i) :=
   (map (φ i) (𝓕.coeffHom i) 1).hom.toLinearMap
+
+/-- `𝓕.localization i` is the linear map underlying the map of the compatible pair
+`(φ i, 𝓕.coeffHom i)`. -/
+theorem localization_def (i : ι) :
+    𝓕.localization i = (map (φ i) (𝓕.coeffHom i) 1).hom.toLinearMap :=
+  (rfl)
 
 /-- `𝓕.localization i` is the map of the compatible pair `(φ i, 𝓕.coeffHom i)`. -/
 theorem localization_apply (i : ι) (c : continuousCohomology 1 X) :
@@ -144,6 +151,20 @@ omit [IsTopologicalGroup G] in
 theorem withLocalConditions_localCondition
     (L : ∀ i, Submodule R (continuousCohomology 1 (Y i))) :
     (𝓕.withLocalConditions L).localCondition = L :=
+  (rfl)
+
+omit [IsTopologicalGroup G] in
+/-- Replacing the local conditions twice retains only the last ones. -/
+@[simp]
+theorem withLocalConditions_withLocalConditions
+    (L L' : ∀ i, Submodule R (continuousCohomology 1 (Y i))) :
+    (𝓕.withLocalConditions L).withLocalConditions L' = 𝓕.withLocalConditions L' :=
+  (rfl)
+
+omit [IsTopologicalGroup G] in
+/-- Replacing the local conditions by the original ones changes nothing. -/
+@[simp]
+theorem withLocalConditions_self : 𝓕.withLocalConditions 𝓕.localCondition = 𝓕 :=
   (rfl)
 
 /-- Replacing the local conditions keeps the localisation maps. -/
@@ -209,13 +230,8 @@ theorem selmerModule_eq_comap
     (hL : ∀ i, 𝓕.localCondition i =
       (𝓖.localCondition i).comap (coeffMap (b i) 1).hom.toLinearMap) :
     𝓕.toSelmerData.selmerModule =
-      𝓖.toSelmerData.selmerModule.comap (coeffMap a 1).hom.toLinearMap := by
-  have hF : 𝓕.toSelmerData = 𝓕.toSelmerData.withLocalConditions fun i =>
-      (𝓖.localCondition i).comap (coeffMap (b i) 1).hom.toLinearMap :=
-    SelmerData.ext (by simp) (funext fun i => by simp [hL i])
-  rw [hF]
-  exact 𝓕.toSelmerData.selmerModule_withLocalConditions_comap 𝓖.toSelmerData
-    (𝓕.localization_comp_coeffMap 𝓖 h)
+      𝓖.toSelmerData.selmerModule.comap (coeffMap a 1).hom.toLinearMap :=
+  𝓕.toSelmerData.selmerModule_eq_comap 𝓖.toSelmerData (𝓕.localization_comp_coeffMap 𝓖 h) hL
 
 end Map
 
