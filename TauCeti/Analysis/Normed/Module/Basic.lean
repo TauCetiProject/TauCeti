@@ -52,6 +52,8 @@ normed spaces:
   `‖a • X + b • Y‖² + ‖(-b) • X + a • Y‖²` after composing with the conformal map agree up to the
   conformal factor `a² + b²` and a factor `2`. These compare `W^{1,2}` densities under a
   holomorphic change of coordinates.
+* `TauCeti.edist_map_smul`: evaluating two linear maps at `r • a` scales their extended
+  distance by `‖r‖ₑ`.
 * `TauCeti.norm_div_norm_smul_le`: for a bounded real scalar action, rescaling a vector `y` by
   `τ / ‖y‖` gives a vector of norm at most `‖τ‖`, for any real `τ` (exactly `‖τ‖` when `‖y‖ ≠ 0`
   and the action preserves norms; `0` when `‖y‖ = 0`).
@@ -188,6 +190,13 @@ theorem norm_smul_le_mul_norm_of_support_subset {α A E : Type*} [SeminormedAddG
   · simp [hx]
   · exact (norm_smul_le _ _).trans
       (mul_le_mul_of_nonneg_right (hK x (hsupp hx)) (norm_nonneg _))
+
+/-- Evaluating two linear maps at `r • a` scales their extended distance by `‖r‖ₑ`. -/
+theorem edist_map_smul {𝕜 E G H : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [SeminormedAddCommGroup G] [Module 𝕜 G] [NormSMulClass 𝕜 G] [FunLike H E G]
+    [LinearMapClass H 𝕜 E G] (φ ψ : H) (r : 𝕜) (a : E) :
+    edist (φ (r • a)) (ψ (r • a)) = ‖r‖ₑ * edist (φ a) (ψ a) := by
+  rw [map_smul, map_smul, edist_smul₀, ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm]
 
 /-- The elementary inequality behind the comparison of `W^{1,2}` densities under conformal
 changes of coordinates. -/
