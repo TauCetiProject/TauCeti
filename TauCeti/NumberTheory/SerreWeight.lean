@@ -281,8 +281,9 @@ theorem weight_wild_true_eq_add {α β : ℕ} (hp : p ≠ 2) {hα : α ≤ p - 2
   subst h
   simp only [weight_wild, ↓reduceIte, hp, Bool.false_eq_true,
     min_eq_left (Nat.le_add_right α 1), max_eq_right (Nat.le_add_right α 1)]
-  obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_le (show 1 ≤ p by omega)
-  rw [Nat.add_sub_cancel_left, add_comm 1 q, add_one_mul_eq]
+  obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega⟩
+  rw [Nat.add_sub_cancel]
+  exact add_one_mul_eq q α
 
 /-- Serre's weight and Edixhoven's weight agree away from unramified data and dyadic très
 ramifiée data. -/
@@ -343,7 +344,7 @@ theorem edixhovenWeight_modEq_detExponent (d : SerreWeightData p) :
     | niveauOne a b hab hb =>
       obtain rfl : b = 0 := by omega
       obtain rfl : a = 0 := by omega
-      rfl
+      simp [Nat.ModEq]
     | niveauTwo a b hab hb => omega
     | wild α β hα hβ hβp tres htres => omega
   obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega⟩
@@ -445,18 +446,21 @@ def twist : SerreWeightData p → SerreWeightData p
         (by split_ifs <;> omega) (by split_ifs <;> omega) (by split_ifs <;> omega) tres
         (fun h => by have := htres h; split_ifs <;> omega)
 
+@[simp]
 lemma twist_niveauOne {a b : ℕ} {hab : a ≤ b} {hb : b ≤ p - 2} :
     (niveauOne a b hab hb).twist =
       if h : b + 1 ≤ p - 2 then niveauOne (a + 1) (b + 1) (by omega) h
       else if h' : a + 1 ≤ p - 2 then niveauOne 0 (a + 1) (Nat.zero_le _) h'
       else unramified p := (rfl)
 
+@[simp]
 lemma twist_niveauTwo {a b : ℕ} {hab : a < b} {hb : b ≤ p - 1} :
     (niveauTwo a b hab hb).twist =
       if h : b + 1 ≤ p - 1 then niveauTwo (a + 1) (b + 1) (by omega) h
       else if h' : a + 2 ≤ p - 1 then niveauTwo 0 (a + 2) (by omega) h'
       else niveauTwo 0 1 Nat.one_pos (by omega) := (rfl)
 
+@[simp]
 lemma twist_wild {α β : ℕ} {hα : α ≤ p - 2} {hβ : 1 ≤ β} {hβp : β ≤ p - 1} {tres : Bool}
     {htres : tres = true → β = α + 1} :
     (wild α β hα hβ hβp tres htres).twist =
@@ -537,10 +541,6 @@ private def twistCharExponents (p n : ℕ) : CharExponents p → CharExponents p
   Sum.map (Sym2.map (· + n)) (Sum.map (Sym2.map (· + n * (p + 1)))
     (Prod.map (· + n) (Prod.map (· + n) id)))
 
-private lemma natCast_injective_of_lt {n a b : ℕ} (ha : a < n) (hb : b < n)
-    (h : (a : ZMod n) = b) : a = b := by
-  rwa [ZMod.natCast_eq_natCast_iff', Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at h
-
 /-- The base `p` expansion `x + p * y` of a niveau-two exponent stays below `p ^ 2 - 1`. -/
 private lemma add_mul_lt (hp : 2 ≤ p) {x y : ℕ} (hx : x ≤ p - 1) (hy : y ≤ p - 1)
     (hxy : x + y < 2 * (p - 1)) : x + p * y < p ^ 2 - 1 := by
@@ -558,8 +558,10 @@ private lemma charExponents_injective (hp : 2 ≤ p) :
   cases d <;> cases d' <;> simp only [charExponents, Sum.inl.injEq, Sum.inr.injEq,
     reduceCtorEq, Prod.mk.injEq, Sym2.eq_iff, niveauOne.injEq, niveauTwo.injEq, wild.injEq] at h ⊢
   · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;>
-      have h₁ := natCast_injective_of_lt (by omega) (by omega) h₁ <;>
-      have h₂ := natCast_injective_of_lt (by omega) (by omega) h₂ <;> omega
+      have h₁ := CharP.natCast_injOn_Iio (ZMod (p - 1)) (p - 1) (Set.mem_Iio.2 (by omega))
+        (Set.mem_Iio.2 (by omega)) h₁ <;>
+      have h₂ := CharP.natCast_injOn_Iio (ZMod (p - 1)) (p - 1) (Set.mem_Iio.2 (by omega))
+        (Set.mem_Iio.2 (by omega)) h₂ <;> omega
   · rename_i a b hab hb a' b' hab' hb'
     have hp0 : 0 < p := by omega
     have digits {x y x' y' : ℕ} (hx : x < p) (hx' : x' < p) (h : x + p * y = x' + p * y') :
@@ -569,11 +571,14 @@ private lemma charExponents_injective (hp : 2 ≤ p) :
       omega
     rcases h with ⟨h₁, -⟩ | ⟨h₁, -⟩ <;>
       have h₁ := digits (by omega) (by omega) <|
-        natCast_injective_of_lt (add_mul_lt hp (by omega) (by omega) (by omega))
+        CharP.natCast_injOn_Iio (ZMod (p ^ 2 - 1)) (p ^ 2 - 1)
+          (add_mul_lt hp (by omega) (by omega) (by omega))
           (add_mul_lt hp (by omega) (by omega) (by omega)) h₁ <;> omega
   · obtain ⟨h₁, h₂, h₃⟩ := h
-    have h₁ := natCast_injective_of_lt (by omega) (by omega) h₁
-    have h₂ := natCast_injective_of_lt (by omega) (by omega) h₂
+    have h₁ := CharP.natCast_injOn_Iio (ZMod (p - 1)) (p - 1) (Set.mem_Iio.2 (by omega))
+      (Set.mem_Iio.2 (by omega)) h₁
+    have h₂ := CharP.natCast_injOn_Iio (ZMod (p - 1)) (p - 1) (Set.mem_Iio.2 (by omega))
+      (Set.mem_Iio.2 (by omega)) h₂
     exact ⟨h₁, by omega, h₃⟩
 
 private lemma charExponents_twist (hp : 2 ≤ p) (d : SerreWeightData p) :
@@ -636,9 +641,10 @@ private lemma twistCharExponents_sub_one (p : ℕ) (x : CharExponents p) :
       · rw [Nat.add_sub_cancel]
         have : (q + 1) ^ 2 = q * (q + 1 + 1) + 1 := by ring
         omega
-    rw [← ZMod.natCast_self (p ^ 2 - 1), ← this]
-    push_cast
-    rfl
+    have h : (((p - 1) * (p + 1) : ℕ) : ZMod (p ^ 2 - 1)) = 0 := by
+      rw [this]
+      exact ZMod.natCast_self _
+    exact_mod_cast h
   rcases x with x | x | ⟨x, y, t⟩ <;> simp [twistCharExponents, h₂]
 
 /-- Twisting `p - 1` times by `χ` returns the original data, as `χ ^ (p - 1) = 1`. -/
