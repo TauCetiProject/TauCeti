@@ -5,12 +5,10 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import TauCeti.RingTheory.TensorProduct.DirectLimit
 public import TauCeti.Algebra.Category.Ring.DirectLimit
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RingTheory.TensorProduct.Maps
 public import TauCeti.RingTheory.TensorProduct.IsIntegral
-public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
 /-!
 # Finiteness at a finite stage
@@ -24,7 +22,7 @@ to a directed colimit is finite after base change to some finite stage.
 public section
 
 noncomputable section
-universe u v t
+universe w u v t
 
 open CategoryTheory CategoryTheory.Limits
 open scoped TensorProduct
@@ -33,17 +31,17 @@ namespace CategoryTheory.Functor
 
 /-- Generators integral after tensoring with a directed colimit are integral at one stage. -/
 theorem exists_integral_tensor_generators_of_colimit
-    {I : Type u} [Preorder I] [IsDirected I (· ≤ ·)]
-    (F : I ⥤ CommRingCat.{u}) (i₀ : I)
+    {I : Type w} [Preorder I] [IsDirected I (· ≤ ·)]
+    (F : I ⥤ CommRingCat.{max w u}) [HasColimit F] (i₀ : I)
     (B₀ : Type v) (C₀ : Type t) [CommRing B₀] [Ring C₀]
     [Algebra (F.obj i₀) B₀] [Algebra (F.obj i₀) C₀]
     (φ₀ : B₀ →ₐ[F.obj i₀] C₀) (s : Finset C₀) :
-    letI : Algebra (F.obj i₀) (colimit F : CommRingCat.{u}) :=
+    letI : Algebra (F.obj i₀) (colimit F : CommRingCat) :=
       (CommRingCat.Hom.hom (colimit.ι F i₀)).toAlgebra
     (∀ x ∈ s,
       (Algebra.TensorProduct.map
-        (AlgHom.id (F.obj i₀) (colimit F : CommRingCat.{u})) φ₀).toRingHom.IsIntegralElem
-          ((1 : (colimit F : CommRingCat.{u})) ⊗ₜ[F.obj i₀] x)) →
+        (AlgHom.id (F.obj i₀) (colimit F : CommRingCat)) φ₀).toRingHom.IsIntegralElem
+          ((1 : (colimit F : CommRingCat)) ⊗ₜ[F.obj i₀] x)) →
       ∃ (i : I) (h : i₀ ≤ i), ∀ (j : I) (hij : i ≤ j),
         letI : Algebra (F.obj i₀) (F.obj j) :=
           (CommRingCat.Hom.hom (F.map (homOfLE (h.trans hij)))).toAlgebra
@@ -73,7 +71,7 @@ end CategoryTheory.Functor
 end
 
 section
-universe u v t
+universe w u v t
 
 open CategoryTheory CategoryTheory.Limits
 
@@ -81,29 +79,29 @@ namespace CategoryTheory.Functor
 
 /-- A finite type map becoming finite over a directed colimit is finite at a finite stage. -/
 theorem exists_finite_tensorProductMap_of_colimit
-    {I : Type u} [Preorder I] [IsDirected I (· ≤ ·)]
-    (F : I ⥤ CommRingCat.{u}) (i₀ : I)
+    {I : Type w} [Preorder I] [IsDirected I (· ≤ ·)]
+    (F : I ⥤ CommRingCat.{max w u}) [HasColimit F] (i₀ : I)
     (B₀ : Type v) (C₀ : Type t) [CommRing B₀] [CommRing C₀]
     [Algebra (F.obj i₀) B₀] [Algebra (F.obj i₀) C₀]
     (φ₀ : B₀ →ₐ[F.obj i₀] C₀) (hft : φ₀.FiniteType) :
-    letI : Algebra (F.obj i₀) (colimit F : CommRingCat.{u}) :=
+    letI : Algebra (F.obj i₀) (colimit F : CommRingCat) :=
       (CommRingCat.Hom.hom (colimit.ι F i₀)).toAlgebra
     (Algebra.TensorProduct.map
-      (AlgHom.id (F.obj i₀) (colimit F : CommRingCat.{u})) φ₀).Finite →
+      (AlgHom.id (F.obj i₀) (colimit F : CommRingCat)) φ₀).Finite →
       ∃ (i : I) (h : i₀ ≤ i), ∀ (j : I) (hij : i ≤ j),
         letI : Algebra (F.obj i₀) (F.obj j) :=
           (CommRingCat.Hom.hom (F.map (homOfLE (h.trans hij)))).toAlgebra
         (Algebra.TensorProduct.map (AlgHom.id (F.obj i₀) (F.obj j)) φ₀).Finite := by
   classical
-  let : Algebra (F.obj i₀) (colimit F : CommRingCat.{u}) :=
+  let : Algebra (F.obj i₀) (colimit F : CommRingCat) :=
     (CommRingCat.Hom.hom (colimit.ι F i₀)).toAlgebra
   intro hfinite
   let : Algebra B₀ C₀ := φ₀.toRingHom.toAlgebra
   obtain ⟨s, hs⟩ := hft.out
   have hint : ∀ x ∈ s,
       (Algebra.TensorProduct.map
-        (AlgHom.id (F.obj i₀) (colimit F : CommRingCat.{u})) φ₀).toRingHom.IsIntegralElem
-          (TensorProduct.tmul (F.obj i₀) (1 : (colimit F : CommRingCat.{u})) x) := by
+        (AlgHom.id (F.obj i₀) (colimit F : CommRingCat)) φ₀).toRingHom.IsIntegralElem
+          (TensorProduct.tmul (F.obj i₀) (1 : (colimit F : CommRingCat)) x) := by
     intro x _
     exact hfinite.to_isIntegral _
   obtain ⟨i, h, hi⟩ := exists_integral_tensor_generators_of_colimit F i₀ B₀ C₀ φ₀ s hint
