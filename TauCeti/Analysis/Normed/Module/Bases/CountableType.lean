@@ -105,7 +105,8 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField 
   have hT' (n : ℕ) : 0 < T n ∧ t ≤ T n ∧ T n ≤ 1 :=
     ⟨zero_le.trans_lt (hTt n).1, (hTt n).1.le, (hTt n).2.le⟩
   have hF (n : ℕ) : IsClosed (span K ((q ∘ w) '' Iio n) : Set (SeparationQuotient E)) :=
-    Submodule.isClosed_span_of_finite ((finite_Iio n).image (q ∘ w))
+    have := FiniteDimensional.span_of_finite K ((finite_Iio n).image (q ∘ w))
+    (span K ((q ∘ w) '' Iio n)).isClosed_of_finiteDimensional'
   choose z hzF hz using fun n ↦
     riesz_lemma_translate (F := (span K ((q ∘ w) '' Iio n)).toAddSubmonoid)
       (by simpa only [Submodule.coe_toAddSubmonoid] using hF n) (q (w n))

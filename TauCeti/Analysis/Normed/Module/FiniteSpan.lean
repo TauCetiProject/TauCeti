@@ -6,24 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Topology.Semicontinuity.Basic
 
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Distances to and closedness of finite spans
+# Distances to finite spans and closedness of finite-dimensional subspaces
 
 Distance to a span is the infimum of the errors of its finitely supported linear combinations.
 As the family and the point vary, this distance is upper semicontinuous, hence measurable.
 Continuity need not hold when the rank drops. For any finite linear combination, `‖c i‖` times
 the distance of `v i` from the span of the remaining vectors is bounded by `‖∑ j, c j • v j‖`.
 
-Over a trivially normed field (`[DiscreteTopology 𝕜]`), adding a vector `v` to a closed subspace
-`W` of a seminormed space yields a closed subspace
-(`Submodule.isClosed_sup_span_singleton_of_discreteTopology`). Consequently, over any complete
-normed field (trivially normed or not), the span of any finite set in a normed space is closed
-(`Submodule.isClosed_span_of_finite`).
+Over any complete normed field (trivially normed or not), the supremum of a closed subspace and a
+finite-dimensional subspace of a seminormed space is closed
+(`Submodule.isClosed_sup_finiteDimensional'`). In particular, every finite-dimensional subspace of
+a `T0Space` seminormed space (such as a normed space) is closed
+(`Submodule.isClosed_of_finiteDimensional'`).
 -/
 
 public section
@@ -107,7 +108,7 @@ namespace Submodule
 
 /-- Over a trivially normed field (`[DiscreteTopology 𝕜]`), adding a vector `v` to a closed
 subspace `W` of a seminormed space gives a closed subspace. -/
-theorem isClosed_sup_span_singleton_of_discreteTopology {𝕜 E : Type*} [NormedField 𝕜]
+private theorem isClosed_sup_span_singleton_of_discreteTopology {𝕜 E : Type*} [NormedField 𝕜]
     [DiscreteTopology 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] {W : Submodule 𝕜 E}
     (hW : IsClosed (W : Set E)) (v : E) : IsClosed ((W ⊔ 𝕜 ∙ v : Submodule 𝕜 E) : Set E) := by
   by_cases hv : v ∈ W
@@ -147,21 +148,38 @@ theorem isClosed_sup_span_singleton_of_discreteTopology {𝕜 E : Type*} [Normed
     exact sub_mem hw hu
   exact mem_sup.2 ⟨_, hx', _, mem_span_singleton.2 ⟨c, rfl⟩, sub_add_cancel x _⟩
 
-/-- Over a complete normed field (trivially normed or not), the span of a finite set in a normed
-space is closed. -/
-theorem isClosed_span_of_finite {𝕜 E : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {s : Set E} (hs : s.Finite) :
-    IsClosed (span 𝕜 s : Set E) := by
-  -- Over a trivially normed field, induct over `s` using
-  -- `isClosed_sup_span_singleton_of_discreteTopology`; over a nontrivially normed field, use
-  -- finite dimensionality.
+/-- Over any complete normed field (trivially normed or not), the supremum of a closed subspace
+and a finite-dimensional subspace of a seminormed space is closed.
+
+Unlike Mathlib's `Submodule.isClosed_sup_finiteDimensional`, this does not require
+`NontriviallyNormedField 𝕜`; in exchange, it requires a `NormedSpace` structure (over a trivially
+normed field, a general topological vector space does not suffice). -/
+theorem isClosed_sup_finiteDimensional' {𝕜 E : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (s t : Submodule 𝕜 E) (hs : IsClosed (s : Set E)) [FiniteDimensional 𝕜 t] :
+    IsClosed ((s ⊔ t : Submodule 𝕜 E) : Set E) := by
+  -- Over a trivially normed field, induct over a finite generating set using
+  -- `isClosed_sup_span_singleton_of_discreteTopology`; over a nontrivially normed field, apply
+  -- Mathlib's `Submodule.isClosed_sup_finiteDimensional`.
   rcases NormedField.discreteTopology_or_nontriviallyNormedField 𝕜 with _ | ⟨⟨_, rfl⟩⟩
-  · induction s, hs using Set.Finite.induction_on with
-    | empty => simp
-    | insert _ _ ih =>
-      rw [span_insert, sup_comm]
-      exact isClosed_sup_span_singleton_of_discreteTopology ih _
-  · have := FiniteDimensional.span_of_finite 𝕜 hs
-    exact (span 𝕜 s).isClosed_of_finiteDimensional
+  · classical
+    obtain ⟨S, rfl⟩ := t.fg_iff_finiteDimensional.2 ‹FiniteDimensional 𝕜 t›
+    induction S using Finset.induction_on with
+    | empty => simpa using hs
+    | insert v S _ ih =>
+      rw [Finset.coe_insert, span_insert, sup_left_comm, sup_comm (𝕜 ∙ v)]
+      exact isClosed_sup_span_singleton_of_discreteTopology ih v
+  · exact s.isClosed_sup_finiteDimensional t hs
+
+/-- Over any complete normed field (trivially normed or not), every finite-dimensional subspace of
+a `T0Space` seminormed space (in particular, of a normed space) is closed.
+
+Unlike Mathlib's `Submodule.isClosed_of_finiteDimensional`, this does not require
+`NontriviallyNormedField 𝕜`; in exchange, it requires a `NormedSpace` structure. -/
+theorem isClosed_of_finiteDimensional' {𝕜 E : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
+    [SeminormedAddCommGroup E] [T0Space E] [NormedSpace 𝕜 E]
+    (s : Submodule 𝕜 E) [FiniteDimensional 𝕜 s] :
+    IsClosed (s : Set E) := by
+  simpa using (⊥ : Submodule 𝕜 E).isClosed_sup_finiteDimensional' s isClosed_singleton
 
 end Submodule
