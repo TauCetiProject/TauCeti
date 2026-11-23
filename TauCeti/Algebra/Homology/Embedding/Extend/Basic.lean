@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Embedding.Extend
-public import Mathlib.CategoryTheory.ConcreteCategory.Elementwise
 
 /-!
 # Commuting identifications and naturality of extended complexes

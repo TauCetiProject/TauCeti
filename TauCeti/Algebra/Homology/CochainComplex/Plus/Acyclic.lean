@@ -43,6 +43,33 @@ open CategoryTheory CategoryTheory.Limits CategoryTheory.Functor HomologicalComp
 
 universe v₁ v₂ u₁ u₂
 
+namespace CochainComplex.Plus
+
+section Injective
+
+variable {C : Type u₁} [Category.{v₁} C] [Preadditive C]
+
+/-- Lift a bounded-below cochain complex of injective objects in `C` to
+`CochainComplex.Plus (InjectiveObject C)`. -/
+def liftInjective (K : CochainComplex.Plus C) (hK : ∀ n, Injective (K.obj.X n)) :
+    CochainComplex.Plus (InjectiveObject C) :=
+  ⟨HomologicalComplex.liftObjectProperty _ K.obj hK, by
+    obtain ⟨b, _⟩ := K.property
+    refine ⟨b, ?_⟩
+    rwa [← CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C)]⟩
+
+/-- Inclusion of `InjectiveObject C` identifies `liftInjective K hK` with `K` in
+`CochainComplex.Plus C`. -/
+def liftInjectiveIso (K : CochainComplex.Plus C) (hK : ∀ n, Injective (K.obj.X n)) :
+    (InjectiveObject.ι C).mapCochainComplexPlus.obj (liftInjective K hK) ≅ K :=
+  ObjectProperty.isoMk _
+    (HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) (by
+      simp [liftInjective]))
+
+end Injective
+
+end CochainComplex.Plus
+
 namespace CategoryTheory.Functor
 
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [EnoughInjectives C]
@@ -123,12 +150,14 @@ theorem quasiIso_map_of_adapted
   obtain ⟨b, _⟩ := L.property
   obtain ⟨M, j₀, _, hM, _⟩ :=
     CochainComplex.Plus.modelCategoryQuillen.exists_quasiIso_injective L.obj b
-  let I₀ : CochainComplex (InjectiveObject C) ℤ := HomologicalComplex.liftObjectProperty _ M hM
-  have hI₀ : I₀.IsStrictlyGE b := by
-    rwa [← CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C)]
-  let I : CochainComplex.Plus (InjectiveObject C) := ⟨I₀, b, hI₀⟩
-  let j : L ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj I := ObjectProperty.homMk j₀
-  have : QuasiIso j.hom := inferInstanceAs (QuasiIso j₀)
+  let K' : CochainComplex.Plus C := ⟨M, b, inferInstance⟩
+  let I := CochainComplex.Plus.liftInjective K' hM
+  let e := CochainComplex.Plus.liftInjectiveIso K' hM
+  let j : L ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj I :=
+    ObjectProperty.homMk (j₀ ≫ e.inv.hom)
+  have : QuasiIso j.hom := by
+    dsimp [j]
+    infer_instance
   have : QuasiIso (f ≫ j).hom := inferInstanceAs (QuasiIso (f.hom ≫ j.hom))
   have : QuasiIso ((F.mapHomologicalComplex _).map j.hom) :=
     F.quasiIso_map_of_adapted_to_injective P hinj hP hF hL j

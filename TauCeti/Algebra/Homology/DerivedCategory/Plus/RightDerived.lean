@@ -57,6 +57,26 @@ universe w₁ w₂ v₁ v₂ u₁ u₂
 
 namespace CategoryTheory.Functor
 
+section UnitNaturality
+
+variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [HasDerivedCategory.{w₁} C]
+  [EnoughInjectives C]
+  {D : Type u₂} [Category.{v₂} D] [Abelian D] [HasDerivedCategory.{w₂} D]
+  (F : C ⥤ D) [F.Additive]
+
+/-- Component naturality equation for `F.rightDerivedFunctorPlusUnit`. -/
+@[reassoc]
+lemma rightDerivedFunctorPlusUnit_naturality
+    {K L : CochainComplex.Plus C} (f : K ⟶ L) :
+    DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map f) ≫
+        F.rightDerivedFunctorPlusUnit.app L =
+      F.rightDerivedFunctorPlusUnit.app K ≫
+        F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map f) := by
+  simpa only [Functor.comp_obj, Functor.comp_map] using
+    F.rightDerivedFunctorPlusUnit.naturality f
+
+end UnitNaturality
+
 /-! ### Derived-unit invertibility on adapted complexes -/
 
 section Adapted
@@ -81,11 +101,9 @@ theorem isIso_rightDerivedFunctorPlusUnit_app_of_adapted
   have : QuasiIso i.hom := (CochainComplex.Plus.quasiIso_iff C i).1 hi
   have : QuasiIso (F.mapCochainComplexPlus.map i).hom :=
     F.quasiIso_map_of_adapted_to_injective P hinj hP hF hK i
-  have hnat := F.rightDerivedFunctorPlusUnit.naturality i
-  dsimp at hnat
   have : IsIso (F.rightDerivedFunctorPlusUnit.app K ≫
       F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map i)) := by
-    rw [← hnat]
+    rw [← F.rightDerivedFunctorPlusUnit_naturality i]
     infer_instance
   exact IsIso.of_isIso_comp_right _ (F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map i))
 
@@ -105,20 +123,10 @@ cochain complex of injective objects. -/
 instance isIso_rightDerivedFunctorPlusUnit_app_of_injective
     (K : CochainComplex.Plus C) [∀ n, Injective (K.obj.X n)] :
     IsIso (F.rightDerivedFunctorPlusUnit.app K) := by
-  let L₀ : CochainComplex (InjectiveObject C) ℤ :=
-    HomologicalComplex.liftObjectProperty _ K.obj inferInstance
-  obtain ⟨b, _⟩ := K.property
-  have hL₀ : L₀.IsStrictlyGE b := by
-    rwa [← CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C)]
-  let L : CochainComplex.Plus (InjectiveObject C) := ⟨L₀, b, hL₀⟩
-  let e : (InjectiveObject.ι C).mapCochainComplexPlus.obj L ≅ K :=
-    ObjectProperty.isoMk _
-      (HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) (by dsimp [L, L₀]; simp))
-  have hnat := F.rightDerivedFunctorPlusUnit.naturality e.hom
-  dsimp at hnat
+  let e := CochainComplex.Plus.liftInjectiveIso K inferInstance
   have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map e.hom) ≫
       F.rightDerivedFunctorPlusUnit.app K) := by
-    rw [hnat]
+    rw [F.rightDerivedFunctorPlusUnit_naturality e.hom]
     infer_instance
   exact IsIso.of_isIso_comp_left (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map e.hom)) _
 
@@ -146,9 +154,8 @@ lemma rightDerivedFunctorPlusObjIsoOfResolution_hom_comp
         F.rightDerivedFunctorPlusUnit.app M =
       F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map (ι ≫ φ)) := by
   dsimp [rightDerivedFunctorPlusObjIsoOfResolution]
-  have hnat := F.rightDerivedFunctorPlusUnit.naturality φ
-  dsimp at hnat
-  rw [hnat, Category.assoc, IsIso.inv_hom_id_assoc, ← Functor.map_comp, ← Functor.map_comp]
+  rw [Category.assoc, F.rightDerivedFunctorPlusUnit_naturality φ, IsIso.inv_hom_id_assoc,
+    ← Functor.map_comp, ← Functor.map_comp]
 
 /-- Composing `(F.rightDerivedFunctorPlusObjIsoOfResolution ι).hom` with
 `F.rightDerivedFunctorPlusUnit.app L` recovers `RF⁺(Q(ι))`. -/
@@ -162,21 +169,23 @@ lemma rightDerivedFunctorPlusObjIsoOfResolution_hom_comp_unit
   dsimp [rightDerivedFunctorPlusObjIsoOfResolution]
   simp
 
-/-- Naturality of `rightDerivedFunctorPlusObjIsoOfResolution` in morphisms of resolved complexes. -/
+/-- Naturality of `rightDerivedFunctorPlusObjIsoOfResolution` in morphisms of resolved complexes
+whose comparison square commutes in `DerivedCategory.Plus C`. -/
 @[reassoc]
 lemma rightDerivedFunctorPlusObjIsoOfResolution_hom_naturality
     {K K' L L' : CochainComplex.Plus C}
     (ι : K ⟶ L) [QuasiIso ι.hom] [IsIso (F.rightDerivedFunctorPlusUnit.app L)]
     (κ : K' ⟶ L') [QuasiIso κ.hom] [IsIso (F.rightDerivedFunctorPlusUnit.app L')]
-    (f : K ⟶ K') (φ : L ⟶ L') (hφ : ι ≫ φ = f ≫ κ) :
+    (f : K ⟶ K') (φ : L ⟶ L')
+    (hφ : DerivedCategory.Plus.Q.map (ι ≫ φ) = DerivedCategory.Plus.Q.map (f ≫ κ)) :
     F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map f) ≫
         (F.rightDerivedFunctorPlusObjIsoOfResolution κ).hom =
       (F.rightDerivedFunctorPlusObjIsoOfResolution ι).hom ≫
         DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map φ) := by
   rw [← cancel_mono (F.rightDerivedFunctorPlusUnit.app L'), Category.assoc, Category.assoc,
     F.rightDerivedFunctorPlusObjIsoOfResolution_hom_comp ι φ, hφ,
-    F.rightDerivedFunctorPlusObjIsoOfResolution_hom_comp_unit,
-    Functor.map_comp, Functor.map_comp]
+    Functor.map_comp, Functor.map_comp,
+    F.rightDerivedFunctorPlusObjIsoOfResolution_hom_comp_unit]
 
 /-- Cohomology of `RF⁺(Q(K))` computed by a resolution `ι : K ⟶ L` on which the derived unit is
 an isomorphism. -/
@@ -204,13 +213,14 @@ lemma rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom
   (rfl)
 
 /-- Naturality of `rightDerivedFunctorPlusHomologyObjIsoOfResolution` in morphisms of resolved
-complexes. -/
+complexes whose comparison square commutes in `DerivedCategory.Plus C`. -/
 @[reassoc]
 lemma rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom_naturality
     {K K' L L' : CochainComplex.Plus C}
     (ι : K ⟶ L) [QuasiIso ι.hom] [IsIso (F.rightDerivedFunctorPlusUnit.app L)]
     (κ : K' ⟶ L') [QuasiIso κ.hom] [IsIso (F.rightDerivedFunctorPlusUnit.app L')]
-    (f : K ⟶ K') (φ : L ⟶ L') (hφ : ι ≫ φ = f ≫ κ) (m : ℤ) :
+    (f : K ⟶ K') (φ : L ⟶ L')
+    (hφ : DerivedCategory.Plus.Q.map (ι ≫ φ) = DerivedCategory.Plus.Q.map (f ≫ κ)) (m : ℤ) :
     (DerivedCategory.Plus.homologyFunctor D m).map
           (F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map f)) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution κ m).hom =
@@ -237,10 +247,10 @@ lemma rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom_naturality
         Functor.map_comp, Category.assoc]
     _ = (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution ι m).hom ≫
         HomologicalComplex.homologyMap ((F.mapHomologicalComplex _).map φ.hom) m := by
-      rw [TauCeti.DerivedCategory.Plus.homologyFunctorFactors_hom_naturality
+      rw [CochainComplex.Plus.homologyFunctorFactors_hom_naturality
         (F.mapCochainComplexPlus.map φ) m,
-        ← Category.assoc, ← rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom]
-      rfl
+        ← Category.assoc, ← rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom,
+        Functor.mapCochainComplexPlus_map_hom]
 
 /-- A functorial resolution `ι : 𝟭 _ ⟶ R` on `CochainComplex.Plus C` on whose values the derived
 unit is an isomorphism computes `Q ⋙ F.rightDerivedFunctorPlus` naturally. -/
@@ -253,7 +263,7 @@ def rightDerivedFunctorPlusIsoOfResolution
   NatIso.ofComponents
     (fun K ↦ F.rightDerivedFunctorPlusObjIsoOfResolution (ι.app K))
     (fun f ↦ F.rightDerivedFunctorPlusObjIsoOfResolution_hom_naturality
-      (ι.app _) (ι.app _) f (R.map f) (ι.naturality f).symm)
+      (ι.app _) (ι.app _) f (R.map f) (congrArg DerivedCategory.Plus.Q.map (ι.naturality f).symm))
 
 /-- Each component of `rightDerivedFunctorPlusIsoOfResolution` is the objectwise resolution
 isomorphism. -/

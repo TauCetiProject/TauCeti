@@ -71,6 +71,22 @@ lemma cocomplexPlusMap_hom {X Y : C} {IX : InjectiveResolution X} {IY : Injectiv
         eqToHom IY.cocomplexPlus_obj.symm := by
   simp [cocomplexPlusMap]
 
+/-- `cocomplexPlusMap` sends the identity morphism to the identity. -/
+@[simp]
+lemma cocomplexPlusMap_id {X : C} (IX : InjectiveResolution X) :
+    cocomplexPlusMap (𝟙 IX.cocomplex) = 𝟙 IX.cocomplexPlus := by
+  apply (_root_.CochainComplex.Plus.ι C).map_injective
+  simp
+
+/-- `cocomplexPlusMap` preserves composition. -/
+@[reassoc, simp]
+lemma cocomplexPlusMap_comp {X Y Z : C} {IX : InjectiveResolution X}
+    {IY : InjectiveResolution Y} {IZ : InjectiveResolution Z}
+    (φ : IX.cocomplex ⟶ IY.cocomplex) (ψ : IY.cocomplex ⟶ IZ.cocomplex) :
+    cocomplexPlusMap (φ ≫ ψ) = cocomplexPlusMap φ ≫ cocomplexPlusMap ψ := by
+  apply (_root_.CochainComplex.Plus.ι C).map_injective
+  simp
+
 /-- The bounded-below resolution `X[0] ⟶ I.cocomplexPlus` in `CochainComplex.Plus C` induced by
 an injective resolution `I` of `X`. -/
 def ιPlus {X : C} (I : InjectiveResolution X) :
