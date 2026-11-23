@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.Bochner.PeriodicStrip
 import TauCeti.Order.Filter.AtTopBot
@@ -41,11 +41,16 @@ the period `(0, 1)`, so it is determined by its points in the fundamental strip.
 state the threshold `δ / 2`. Off their translates the limit is the pointwise limit, which on each
 disc is the limit given by that disc, and which is again `1`-periodic in `t`.
 
-* `SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodic`:
-  compactness off finitely many bubbling points on the cylinder, for data invariant under integer
-  translations.
-* `SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cylindrical`:
-  the case of Floer trajectories, `K = H_t dt` with `J_t` depending on `t` only.
+The two results, in the namespace `TauCeti.SymplecticForm`, are:
+
+* `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodic`: compactness off
+  finitely many bubbling points on the cylinder, for data invariant under integer translations.
+* `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_translates_cylindrical`: the case
+  of Floer trajectories, `K = H_t dt` with `J_t` depending on `t` only.
+
+For a single compact window of height at most one, the compactness of Floer cylinders, with a
+threshold depending on the window, is
+`TauCeti.SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cylindrical`.
 
 The convergence is locally uniform. Energy may escape along the cylinder as `s → ±∞`, which is
 how broken trajectories arise; that, the bubbles at the points of the bubbling set, and the
@@ -331,7 +336,7 @@ continuous `v`, `1`-periodic in `t` and with values in `K`, off the translates `
 such that along `φ` every disc about a point of `Z` eventually carries Floer energy at least `δ`,
 the differentials are uniformly bounded on every compact set disjoint from the translates of `Z`,
 and `u_{φ n} → v` locally uniformly off the translates of `Z`. -/
-theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cylindrical
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_translates_cylindrical
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {J : ℝ → V → AlmostComplexStructure V} {K : Set V}
     (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1)
     (hJ : ContDiff ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap))
