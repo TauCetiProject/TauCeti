@@ -59,6 +59,8 @@ in `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph`.
 * `TauCeti.ValuationSpectrum.spaComapLoc_mem_rationalSubset` and
   `TauCeti.ValuationSpectrum.range_spaComapLoc_subset` : the rational localisation satisfies that
   criterion, so `Spa (A_U, A_U⁺)` lies over `R(T/s)`.
+* `TauCeti.ValuationSpectrum.completedPlusSubring_eq_completionPlus` : `A_U⁺` is the completion
+  plus ring of `C`.
 * `TauCeti.ValuationSpectrum.comap_mem_spa_completedPlusSubring` : a continuous valuation pulled
   back along a continuous map out of `A⟨T/s⟩` is a point of `Spa (A⟨T/s⟩, A_U⁺)` once its
   pullback to `A` lies in `R(T/s)`.
@@ -244,6 +246,27 @@ private theorem vle_one_of_mem_integralClosure_adjoin_plus {B : Type*} [CommRing
     (fun a ha ↦ (key _).mpr (hψ a ▸ hA a ha))
     (fun t ht ↦ (key _).mpr (hT t ht)) hx)
 
+/-- **`A_U⁺` is the completion plus ring of `C`.** Both are the closure, in `A⟨T/s⟩`, of the image
+of the integral closure `C` of `A⁺[T/s]` in `A(T/s)`, so the plus ring that `completedPlusSubring`
+puts on the completed localization is the one `completionPlus` builds from `C` — the plus ring of
+Wedhorn's Proposition 7.48. -/
+theorem completedPlusSubring_eq_completionPlus (P : PairOfDefinition A) (Aplus : Subring A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    completedPlusSubring P Aplus T s S hden = completionPlus (integralClosure ↥(Algebra.adjoin Aplus
+      (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  -- neither `completedPlusSubring` nor `completionPlus` is exposed outside the module that
+  -- introduces it, so neither side unfolds here and the two are compared on their carriers
+  exact SetLike.coe_injective <| by
+    rw [coe_completedPlusSubring, completionPlus_def,
+      UniformSpace.Completion.coe_topologicalClosure_map_coeRingHom, Subalgebra.coe_toSubring]
+
 /-- **A criterion for a pullback to lie in `Spa (A⟨T/s⟩, A_U⁺)`.** Let `σ : A⟨T/s⟩ → B` be a
 continuous ring homomorphism and `w` a continuous valuation on `B` whose pullback to `A` along
 `σ ∘ ρ`, where `ρ : A → A⟨T/s⟩` is the structure map, lies in `R(T/s)`. Then the pullback of `w`
@@ -276,14 +299,7 @@ theorem comap_mem_spa_completedPlusSubring (P : PairOfDefinition A)
     simpa only [comap_vle, map_one, RingHom.comp_apply] using
       ((mem_spa_iff _ _).mp ((mem_rationalSubset_iff Aplus T s _).mp hfac).1).2 a ha
   have hcont := hw.comap hσ
-  have hsub : completedPlusSubring P Aplus T s S hden =
-      ((integralClosure ↥(Algebra.adjoin Aplus
-        (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring.map
-          UniformSpace.Completion.coeRingHom).topologicalClosure :=
-    SetLike.coe_injective <| by
-      rw [coe_completedPlusSubring, UniformSpace.Completion.coe_topologicalClosure_map_coeRingHom,
-        Subalgebra.coe_toSubring]
-  rw [hsub, spa_topologicalClosure,
+  rw [completedPlusSubring_eq_completionPlus, completionPlus_def, spa_topologicalClosure,
     mem_spa_map_iff UniformSpace.Completion.continuous_coeRingHom _ hcont]
   refine (mem_spa_iff _ _).mpr
     ⟨hcont.comap UniformSpace.Completion.continuous_coeRingHom, fun x hx ↦ ?_⟩

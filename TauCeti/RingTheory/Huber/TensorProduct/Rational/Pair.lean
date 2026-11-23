@@ -8,17 +8,24 @@ module
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Basic
+import TauCeti.RingTheory.Subring.Basic
 
 /-!
 # Completed tensor products of rational localisation Huber pairs
 
 Let `A → B` and `A → C` be adic homomorphisms of Huber rings, `(B, B⁺)` and `(C, C⁺)` Huber pairs,
-and `(D, D⁺) = (B, B⁺) ⊗̂_A (C, C⁺)` their completed tensor product. This file upgrades the
-topological ring equivalence `TauCeti.Huber.CompletedTensor.completionLocEquiv` (from
-`Rational.Basic`) between `B⟨T/s⟩ ⊗̂_A C⟨T'/s'⟩` and `D⟨T''/(inl(s) · inr(s'))⟩` to Huber pairs
-without completeness, Hausdorffness, Tate or sheafiness hypotheses: it identifies the completed
-tensor plus ring with `D_W⁺` and constructs inverse Huber-pair morphisms `toRationalLocalization`
-and `ofRationalLocalization`.
+`(D, D⁺) = (B, B⁺) ⊗̂_A (C, C⁺)` their completed tensor product, and `p_B`, `p_C` the maps on
+`Spa` induced by `inl` and `inr`. For rational subsets `U = R(T/s) ⊆ Spa(B, B⁺)` and
+`V = R(T'/s') ⊆ Spa(C, C⁺)`, write `W = p_B⁻¹(R(T/s)) ∩ p_C⁻¹(R(T'/s'))` and `D_W⁺` for the
+rational-localisation plus ring of `D⟨T''/(inl(s) · inr(s'))⟩`
+(`(rationalLocalizationPair Q (UB.completedTensor A UC) hQ _ _ S'' hden'').plus`).
+
+This file upgrades the topological ring equivalence
+`TauCeti.Huber.CompletedTensor.completionLocEquiv` (from `Rational.Basic`) between
+`B⟨T/s⟩ ⊗̂_A C⟨T'/s'⟩` and `D⟨T''/(inl(s) · inr(s'))⟩` to Huber pairs without completeness,
+Hausdorffness, Tate or sheafiness hypotheses: it identifies the
+completed tensor plus ring with `D_W⁺` and constructs inverse Huber-pair morphisms
+`toRationalLocalization` and `ofRationalLocalization`.
 
 ## Main definitions
 
@@ -29,7 +36,9 @@ and `ofRationalLocalization`.
 ## Main results
 
 * `TauCeti.Huber.Pair.completedTensor.map_plus_completionLocEquiv`: `completionLocEquiv` carries
-  the completed tensor plus ring onto `completedPlusSubring` of `(B, B⁺) ⊗̂_A (C, C⁺)`.
+  the completed tensor plus ring onto
+  `(rationalLocalizationPair Q (UB.completedTensor A UC) hQ _ _ S'' hden'').plus`, the plus ring
+  `D_W⁺` of `D⟨T''/(inl(s) · inr(s'))⟩`.
 
 ## References
 
@@ -75,6 +84,52 @@ section RationalLocalizationPair
 variable (hP : P.ringOfDefinition ≤ UB.plus) (hP' : P'.ringOfDefinition ≤ UC.plus)
   (hQ : Q.ringOfDefinition ≤ (UB.completedTensor A UC).plus)
 
+private theorem factor_rationalLocalizationPair_plus_le_comap
+    {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [IsHuberRing R]
+    (PR : PairOfDefinition R) (UR : Pair R) (hPR : PR.ringOfDefinition ≤ UR.plus)
+    (TR : Finset R) (sR : R) (SR : Type*) [CommRing SR] [Algebra R SR]
+    [IsLocalization.Away sR SR] (hdenR : HasDenominatorPower PR TR sR SR) :
+    withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
+    letI := locUniformSpace PR TR sR SR hdenR
+    letI := isUniformAddGroup_locUniformSpace PR TR sR SR hdenR
+    letI := isTopologicalRing_locUniformSpace PR TR sR SR hdenR
+    letI := isHuberRing_completion_locTopology PR TR sR SR hdenR
+    ∀ (ι : Completion SR →+* CompletedTensor A (Completion S) (Completion S')),
+      Continuous ι → ∀ (ι₀ : R →+* CompletedTensor A B C),
+        (∀ r ∈ UR.plus, ι₀ r ∈ (UB.completedTensor A UC).plus) →
+        (∀ r,
+          completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden''
+              (ι (toCompletionLoc PR TR sR SR hdenR r)) =
+            toCompletionLoc Q _ _ S'' hden'' (ι₀ r)) →
+        (∀ t ∈ TR, ∃ x ∈
+          insert (CompletedTensor.inl A B C s) (T.image (CompletedTensor.inl A B C)) *
+            insert (CompletedTensor.inr A B C s') (T'.image (CompletedTensor.inr A B C)),
+          completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden''
+              (ι ((divBy t sR : SR) : Completion SR)) =
+            ((divBy x (CompletedTensor.inl A B C s * CompletedTensor.inr A B C s') : S'') :
+              Completion S'')) →
+        (rationalLocalizationPair PR UR hPR TR sR SR hdenR).plus ≤
+          (rationalLocalizationPair Q (UB.completedTensor A UC) hQ _ _ S'' hden'').plus.comap
+            ((completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').toRingHom.comp ι) :=
+  withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in by
+    let _ := locUniformSpace PR TR sR SR hdenR
+    have _ := isUniformAddGroup_locUniformSpace PR TR sR SR hdenR
+    have _ := isTopologicalRing_locUniformSpace PR TR sR SR hdenR
+    have _ := isHuberRing_completion_locTopology PR TR sR SR hdenR
+    intro ι hι ι₀ hι₀_plus hloc hdiv
+    let O_W := rationalLocalizationPair Q (UB.completedTensor A UC) hQ _ _ S'' hden''
+    have _ := O_W.isRingOfIntegralElements.isIntegrallyClosedIn
+    have hcl : IsClosed (O_W.plus : Set (Completion S'')) :=
+      O_W.plus.toAddSubgroup.isClosed_of_isOpen O_W.isRingOfIntegralElements.isOpen
+    rw [rationalLocalizationPair_plus]
+    refine completedPlusSubring_le_comap PR UR.plus TR sR SR hdenR hcl
+      ((continuous_completionLocEquiv ..).comp hι) (fun r hr ↦ ?_) (fun t ht ↦ ?_)
+    · rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, hloc r]
+      exact toCompletionLoc_mem_rationalLocalizationPair_plus Q _ hQ _ _ S'' hden'' (hι₀_plus r hr)
+    · obtain ⟨x, hx, hxeq⟩ := hdiv t ht
+      rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, hxeq]
+      exact divBy_mem_rationalLocalizationPair_plus Q _ hQ _ _ S'' hden'' hx
+
 private theorem completionLocEquiv_plus_le :
     withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
     ((rationalLocalizationPair P UB hP T s S hden).completedTensor A
@@ -90,40 +145,57 @@ private theorem completionLocEquiv_plus_le :
     refine (rationalLocalizationPair P UB hP T s S hden).completedTensor_plus_le_comap
       (rationalLocalizationPair P' UC hP' T' s' S' hden')
       hcl (f := e.toRingHom) (continuous_completionLocEquiv ..) ?_ ?_
-    · rw [rationalLocalizationPair_plus]
-      refine completedPlusSubring_le_comap P UB.plus T s S hden hcl
-        (φ := e.toRingHom.comp (CompletedTensor.inl A (Completion S) (Completion S')))
-        ((continuous_completionLocEquiv ..).comp (CompletedTensor.continuous_inl _ _ _))
-        (fun b hb ↦ ?_) (fun t ht ↦ ?_)
-      · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-          toCompletionLoc_apply, e, completionLocEquiv_inl_toCompletionLoc]
-        rw [← toCompletionLoc_apply Q _ _ S'' hden'']
-        exact (rationalLocalizationPair_plus Q (UB.completedTensor A UC) hQ _ _ S'' hden'').symm ▸
-          toCompletionLoc_mem_completedPlusSubring Q _ _ _ S'' hden''
-            (UB.inl_mem_completedTensor_plus UC hb)
-      · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-          e, completionLocEquiv_inl_divBy]
-        exact (rationalLocalizationPair_plus Q (UB.completedTensor A UC) hQ _ _ S'' hden'').symm ▸
-          divBy_mem_completedPlusSubring Q _ _ _ S'' hden''
-            (Finset.mul_mem_mul (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ ht))
-              (Finset.mem_insert_self _ _))
-    · rw [rationalLocalizationPair_plus]
-      refine completedPlusSubring_le_comap P' UC.plus T' s' S' hden' hcl
-        (φ := e.toRingHom.comp (CompletedTensor.inr A (Completion S) (Completion S')))
-        ((continuous_completionLocEquiv ..).comp (CompletedTensor.continuous_inr _ _ _))
-        (fun c hc ↦ ?_) (fun t' ht' ↦ ?_)
-      · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-          toCompletionLoc_apply, e, completionLocEquiv_inr_toCompletionLoc]
-        rw [← toCompletionLoc_apply Q _ _ S'' hden'']
-        exact (rationalLocalizationPair_plus Q (UB.completedTensor A UC) hQ _ _ S'' hden'').symm ▸
-          toCompletionLoc_mem_completedPlusSubring Q _ _ _ S'' hden''
-            (UB.inr_mem_completedTensor_plus UC hc)
-      · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-          e, completionLocEquiv_inr_divBy]
-        exact (rationalLocalizationPair_plus Q (UB.completedTensor A UC) hQ _ _ S'' hden'').symm ▸
-          divBy_mem_completedPlusSubring Q _ _ _ S'' hden''
-            (Finset.mul_mem_mul (Finset.mem_insert_self _ _)
-              (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ ht')))
+    · exact factor_rationalLocalizationPair_plus_le_comap P UB T s S hden P' UC T' s' S' hden'
+        Q S'' hden'' hQ P UB hP T s S hden
+        (CompletedTensor.inl A (Completion S) (Completion S')) (CompletedTensor.continuous_inl ..)
+        (CompletedTensor.inl A B C) (fun _ hb ↦ UB.inl_mem_completedTensor_plus UC hb)
+        (fun b ↦ by simp only [toCompletionLoc_apply, completionLocEquiv_inl_toCompletionLoc])
+        fun t ht ↦ ⟨_, Finset.mul_mem_mul (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ ht))
+          (Finset.mem_insert_self _ _), by simp only [completionLocEquiv_inl_divBy]⟩
+    · exact factor_rationalLocalizationPair_plus_le_comap P UB T s S hden P' UC T' s' S' hden'
+        Q S'' hden'' hQ P' UC hP' T' s' S' hden'
+        (CompletedTensor.inr A (Completion S) (Completion S')) (CompletedTensor.continuous_inr ..)
+        (CompletedTensor.inr A B C) (fun _ hc ↦ UB.inr_mem_completedTensor_plus UC hc)
+        (fun c ↦ by simp only [toCompletionLoc_apply, completionLocEquiv_inr_toCompletionLoc])
+        fun t' ht' ↦ ⟨_, Finset.mul_mem_mul (Finset.mem_insert_self _ _)
+          (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ ht')),
+          by simp only [completionLocEquiv_inr_divBy]⟩
+
+omit [IsHuberRing B] [IsHuberRing C] in
+private theorem exists_mul_toCompletionLoc_of_mem_insert
+    {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [IsHuberRing R]
+    (PR : PairOfDefinition R) (UR : Pair R) (hPR : PR.ringOfDefinition ≤ UR.plus)
+    (TR : Finset R) (sR : R) (SR : Type*) [CommRing SR] [Algebra R SR]
+    [IsLocalization.Away sR SR] (hdenR : HasDenominatorPower PR TR sR SR)
+    (ι₀ : R →+* CompletedTensor A B C) :
+    withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
+    letI := locUniformSpace PR TR sR SR hdenR
+    letI := isUniformAddGroup_locUniformSpace PR TR sR SR hdenR
+    letI := isTopologicalRing_locUniformSpace PR TR sR SR hdenR
+    letI := isHuberRing_completion_locTopology PR TR sR SR hdenR
+    ∀ (ι : Completion SR →+* CompletedTensor A (Completion S) (Completion S')),
+      (∀ r,
+        (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm
+            (toCompletionLoc Q _ _ S'' hden'' (ι₀ r)) =
+          ι (toCompletionLoc PR TR sR SR hdenR r)) →
+      ∀ {x : CompletedTensor A B C}, x ∈ insert (ι₀ sR) (TR.image ι₀) →
+        ∃ y ∈ (rationalLocalizationPair PR UR hPR TR sR SR hdenR).plus,
+          (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm
+              (toCompletionLoc Q _ _ S'' hden'' x) =
+            ι y * (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm
+              (toCompletionLoc Q _ _ S'' hden'' (ι₀ sR)) :=
+  withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in by
+    let _ := locUniformSpace PR TR sR SR hdenR
+    have _ := isUniformAddGroup_locUniformSpace PR TR sR SR hdenR
+    have _ := isTopologicalRing_locUniformSpace PR TR sR SR hdenR
+    have _ := isHuberRing_completion_locTopology PR TR sR SR hdenR
+    intro ι hι_symm x hx
+    rcases Finset.mem_insert.mp hx with rfl | hx
+    · exact ⟨1, (rationalLocalizationPair PR UR hPR TR sR SR hdenR).plus.one_mem, by simp⟩
+    obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hx
+    refine ⟨((divBy t sR : SR) : Completion SR),
+      divBy_mem_rationalLocalizationPair_plus PR UR hPR TR sR SR hdenR ht, ?_⟩
+    rw [hι_symm, hι_symm, map_divBy_mul_toCompletionLoc PR TR sR SR hdenR t ι]
 
 private theorem completionLocEquiv_symm_divBy_mem {x : CompletedTensor A B C}
     (hx : x ∈ insert (CompletedTensor.inl A B C s) (T.image (CompletedTensor.inl A B C)) *
@@ -139,33 +211,14 @@ private theorem completionLocEquiv_symm_divBy_mem {x : CompletedTensor A B C}
     let O_V := rationalLocalizationPair P' UC hP' T' s' S' hden'
     set e := completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden''
     obtain ⟨a, ha, b, hb, rfl⟩ := Finset.mem_mul.mp hx
-    obtain ⟨y, hy, hay⟩ : ∃ y ∈ O_U.plus, e.symm (toCompletionLoc Q _ _ S'' hden'' a) =
-        CompletedTensor.inl A (Completion S) (Completion S') y *
-          e.symm (toCompletionLoc Q _ _ S'' hden'' (CompletedTensor.inl A B C s)) := by
-      rcases Finset.mem_insert.mp ha with rfl | ha
-      · exact ⟨1, O_U.plus.one_mem, by simp⟩
-      obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp ha
-      refine ⟨((divBy t s : S) : Completion S),
-        (rationalLocalizationPair_plus P UB hP T s S hden).symm ▸
-          divBy_mem_completedPlusSubring P UB.plus T s S hden ht, ?_⟩
-      simp only [e, toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inl]
-      rw [← toCompletionLoc_apply P T s S hden t, ← toCompletionLoc_apply P T s S hden s,
-        map_divBy_mul_toCompletionLoc P T s S hden t
-          (CompletedTensor.inl A (Completion S) (Completion S'))]
-    obtain ⟨z, hz, hbz⟩ : ∃ z ∈ O_V.plus, e.symm (toCompletionLoc Q _ _ S'' hden'' b) =
-        CompletedTensor.inr A (Completion S) (Completion S') z *
-          e.symm (toCompletionLoc Q _ _ S'' hden'' (CompletedTensor.inr A B C s')) := by
-      rcases Finset.mem_insert.mp hb with rfl | hb
-      · exact ⟨1, O_V.plus.one_mem, by simp⟩
-      obtain ⟨t', ht', rfl⟩ := Finset.mem_image.mp hb
-      refine ⟨((divBy t' s' : S') : Completion S'),
-        (rationalLocalizationPair_plus P' UC hP' T' s' S' hden').symm ▸
-          divBy_mem_completedPlusSubring P' UC.plus T' s' S' hden' ht', ?_⟩
-      simp only [e, toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inr]
-      rw [← toCompletionLoc_apply P' T' s' S' hden' t',
-        ← toCompletionLoc_apply P' T' s' S' hden' s',
-        map_divBy_mul_toCompletionLoc P' T' s' S' hden' t'
-          (CompletedTensor.inr A (Completion S) (Completion S'))]
+    obtain ⟨y, hy, hay⟩ := exists_mul_toCompletionLoc_of_mem_insert
+      P T s S hden P' T' s' S' hden' Q S'' hden'' P UB hP T s S hden
+      (CompletedTensor.inl A B C) (CompletedTensor.inl A (Completion S) (Completion S'))
+      (fun r ↦ by simp only [toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inl]) ha
+    obtain ⟨z, hz, hbz⟩ := exists_mul_toCompletionLoc_of_mem_insert
+      P T s S hden P' T' s' S' hden' Q S'' hden'' P' UC hP' T' s' S' hden'
+      (CompletedTensor.inr A B C) (CompletedTensor.inr A (Completion S) (Completion S'))
+      (fun r ↦ by simp only [toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inr]) hb
     have heq : e.symm ((divBy (a * b)
         (CompletedTensor.inl A B C s * CompletedTensor.inr A B C s') : S'') : Completion S'') =
         CompletedTensor.inl A (Completion S) (Completion S') y *
@@ -176,6 +229,39 @@ private theorem completionLocEquiv_symm_divBy_mem {x : CompletedTensor A B C}
     rw [heq]
     exact mul_mem (O_U.inl_mem_completedTensor_plus (A := A) O_V hy)
       (O_U.inr_mem_completedTensor_plus (A := A) O_V hz)
+
+private theorem factor_symm_toCompletionLoc_mem_plus
+    {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [IsHuberRing R]
+    (PR : PairOfDefinition R) (UR : Pair R) (hPR : PR.ringOfDefinition ≤ UR.plus)
+    (TR : Finset R) (sR : R) (SR : Type*) [CommRing SR] [Algebra R SR]
+    [IsLocalization.Away sR SR] (hdenR : HasDenominatorPower PR TR sR SR)
+    (ι₀ : R →+* CompletedTensor A B C) :
+    withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
+    letI := locUniformSpace PR TR sR SR hdenR
+    letI := isUniformAddGroup_locUniformSpace PR TR sR SR hdenR
+    letI := isTopologicalRing_locUniformSpace PR TR sR SR hdenR
+    letI := isHuberRing_completion_locTopology PR TR sR SR hdenR
+    ∀ (ι : Completion SR →+* CompletedTensor A (Completion S) (Completion S')),
+      (∀ r,
+        (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm
+            (toCompletionLoc Q _ _ S'' hden'' (ι₀ r)) =
+          ι (toCompletionLoc PR TR sR SR hdenR r)) →
+      (∀ y ∈ (rationalLocalizationPair PR UR hPR TR sR SR hdenR).plus,
+        ι y ∈ ((rationalLocalizationPair P UB hP T s S hden).completedTensor A
+          (rationalLocalizationPair P' UC hP' T' s' S' hden')).plus) →
+      ∀ {r : R}, r ∈ UR.plus →
+        ((completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm.toRingHom.comp
+          (toCompletionLoc Q _ _ S'' hden'')) (ι₀ r) ∈
+          ((rationalLocalizationPair P UB hP T s S hden).completedTensor A
+            (rationalLocalizationPair P' UC hP' T' s' S' hden')).plus :=
+  withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in by
+    let _ := locUniformSpace PR TR sR SR hdenR
+    have _ := isUniformAddGroup_locUniformSpace PR TR sR SR hdenR
+    have _ := isTopologicalRing_locUniformSpace PR TR sR SR hdenR
+    have _ := isHuberRing_completion_locTopology PR TR sR SR hdenR
+    intro ι hι_symm hι_plus r hr
+    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, hι_symm]
+    exact hι_plus _ (toCompletionLoc_mem_rationalLocalizationPair_plus PR UR hPR TR sR SR hdenR hr)
 
 private theorem completionLocEquiv_symm_plus_le :
     withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
@@ -197,19 +283,17 @@ private theorem completionLocEquiv_symm_plus_le :
     refine UB.completedTensor_plus_le_comap UC hcl
       (f := e.symm.toRingHom.comp (toCompletionLoc Q _ _ S'' hden''))
       ((continuous_completionLocEquiv_symm ..).comp (continuous_toCompletionLoc Q _ _ S'' hden''))
-      (fun b hb ↦ ?_) (fun c hc ↦ ?_) hd
-    · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-        toCompletionLoc_apply, e, completionLocEquiv_symm_toCompletionLoc_inl]
-      rw [← toCompletionLoc_apply P T s S hden]
-      exact O_U.inl_mem_completedTensor_plus (A := A) O_V
-        ((rationalLocalizationPair_plus P UB hP T s S hden).symm ▸
-          toCompletionLoc_mem_completedPlusSubring P UB.plus T s S hden hb)
-    · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-        toCompletionLoc_apply, e, completionLocEquiv_symm_toCompletionLoc_inr]
-      rw [← toCompletionLoc_apply P' T' s' S' hden']
-      exact O_U.inr_mem_completedTensor_plus (A := A) O_V
-        ((rationalLocalizationPair_plus P' UC hP' T' s' S' hden').symm ▸
-          toCompletionLoc_mem_completedPlusSubring P' UC.plus T' s' S' hden' hc)
+      (fun b hb ↦ factor_symm_toCompletionLoc_mem_plus P UB T s S hden P' UC T' s' S' hden' Q S''
+        hden'' hP hP' P UB hP T s S hden (CompletedTensor.inl A B C)
+        (CompletedTensor.inl A (Completion S) (Completion S'))
+        (fun _ ↦ by simp only [toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inl])
+        (fun _ hy ↦ O_U.inl_mem_completedTensor_plus (A := A) O_V hy) hb)
+      (fun c hc ↦ factor_symm_toCompletionLoc_mem_plus P UB T s S hden P' UC T' s' S' hden' Q S''
+        hden'' hP hP' P' UC hP' T' s' S' hden' (CompletedTensor.inr A B C)
+        (CompletedTensor.inr A (Completion S) (Completion S'))
+        (fun _ ↦ by simp only [toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inr])
+        (fun _ hy ↦ O_U.inr_mem_completedTensor_plus (A := A) O_V hy) hc)
+      hd
 
 /-- **`completionLocEquiv` maps the plus ring of `(B⟨T/s⟩, B_U⁺) ⊗̂_A (C⟨T'/s'⟩, C_V⁺)` onto the
 plus ring of `D⟨T''/s''⟩`.** -/
@@ -220,10 +304,8 @@ theorem map_plus_completionLocEquiv :
         (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').toRingHom) =
       (rationalLocalizationPair Q (UB.completedTensor A UC) hQ _ _ S'' hden'').plus :=
   withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
-    le_antisymm (Subring.map_le_iff_le_comap.mpr (completionLocEquiv_plus_le ..)) fun y hy ↦
-      ⟨(completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm y,
-        (completionLocEquiv_symm_plus_le ..) hy,
-        (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').apply_symm_apply y⟩
+    Subring.map_equiv_eq_of_le_comap _ (completionLocEquiv_plus_le ..)
+      (completionLocEquiv_symm_plus_le ..)
 
 /-- Membership in the plus ring of `(B⟨T/s⟩, B_U⁺) ⊗̂_A (C⟨T'/s'⟩, C_V⁺)` is tested in the plus
 ring of `D⟨T''/s''⟩` via `completionLocEquiv`. -/
@@ -235,9 +317,8 @@ theorem mem_completedTensor_plus_iff_completionLocEquiv :
         completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'' x ∈
           (rationalLocalizationPair Q (UB.completedTensor A UC) hQ _ _ S'' hden'').plus :=
   withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in fun x ↦ by
-    rw [← map_plus_completionLocEquiv P UB T s S hden P' UC T' s' S' hden' Q S'' hden'' hP hP' hQ]
-    exact (completionLocEquiv P T s S hden P' T' s' S' hden'
-      Q S'' hden'').injective.mem_set_image.symm
+    rw [← map_plus_completionLocEquiv P UB T s S hden P' UC T' s' S' hden' Q S'' hden'' hP hP' hQ,
+      RingEquiv.toRingHom_eq_coe, Subring.mem_map_equiv, RingEquiv.symm_apply_apply]
 
 /-- The forward rational-localisation comparison
 `(B⟨T/s⟩, B_U⁺) ⊗̂_A (C⟨T'/s'⟩, C_V⁺) → (D⟨T''/s''⟩, D_W⁺)` as a morphism of Huber pairs. -/

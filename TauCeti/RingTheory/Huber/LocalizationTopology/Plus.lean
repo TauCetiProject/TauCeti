@@ -209,7 +209,10 @@ theorem completedPlusSubring_le_comap (P : PairOfDefinition A) (Aplus : Subring 
     rintro w (⟨⟨a, ha⟩, rfl⟩ | ⟨⟨t, ht⟩, rfl⟩)
     · rw [SetLike.mem_coe, Subring.mem_comap]
       have hga : g (algebraMap Aplus S ⟨a, ha⟩) = φ (toCompletionLoc P T s S hden a) := by
-        rw [toCompletionLoc_apply]; rfl
+        dsimp only [g]
+        rw [RingHom.comp_apply, UniformSpace.Completion.coe_coeRingHom,
+          IsScalarTower.algebraMap_apply Aplus A S, Algebra.algebraMap_ofSubsemiring_apply,
+          toCompletionLoc_apply]
       rw [hga]
       exact hA a ha
     · exact hT t ht

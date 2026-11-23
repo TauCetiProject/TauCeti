@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.PresentationIndependence
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Integral
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph
+import TauCeti.RingTheory.Subring.Basic
 
 /-!
 # The comparison map of a containment of rational subsets is a map of Huber pairs
@@ -176,16 +177,13 @@ theorem map_completedPlusSubring_presentationRingEquivOfEq (P : PairOfDefinition
       (continuous_presentationRingEquivOfEq_symm P Aplus hAplus T s S hden T' s' S' hden' heq)
       (presentationRingEquivOfEq_symm_coe_comp_toCompletionLoc P Aplus hAplus T s S hden T' s' S'
         hden' heq)
-  refine le_antisymm (Subring.map_le_iff_le_comap.mpr fun x hx ↦ ?_) fun y hy ↦
-    Subring.mem_map.mpr ⟨e.symm y, ?_,
-      by simpa only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] using
-        e.apply_symm_apply y⟩
+  refine Subring.map_equiv_eq_of_le_comap e (fun x hx ↦ ?_) (fun y hy ↦ ?_)
   · rw [Subring.mem_comap, RingEquiv.toRingHom_eq_coe, he_fwd]
     exact ringHomOfRationalSubsetSubset_mem_completedPlusSubring P Aplus hIplus hAplus
       T s S hden T' s' S' hden' heq.ge x hx
-  · simpa only [← DFunLike.congr_fun he_inv y, RingEquiv.coe_toRingHom] using
-      ringHomOfRationalSubsetSubset_mem_completedPlusSubring P Aplus hIplus hAplus
-        T' s' S' hden' T s S hden heq.le y hy
+  · rw [Subring.mem_comap, RingEquiv.toRingHom_eq_coe, he_inv]
+    exact ringHomOfRationalSubsetSubset_mem_completedPlusSubring P Aplus hIplus hAplus
+      T' s' S' hden' T s S hden heq.le y hy
 
 /-- **The comparison map as a morphism of Huber pairs** (Wedhorn's Proposition 8.2(1)): the
 comparison map `σ : A⟨T/s⟩ → A⟨T'/s'⟩` of a containment `R(T'/s') ⊆ R(T/s)`, bundled with its

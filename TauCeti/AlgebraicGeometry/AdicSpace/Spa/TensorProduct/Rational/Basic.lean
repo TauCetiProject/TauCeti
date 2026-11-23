@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.MorphismSpectral
 
 /-!
 # Rational preimages on adic spectra of completed tensor products
@@ -96,9 +97,8 @@ theorem completedTensor.inl_preimage_inter_inr_preimage_rationalSubset
 theorem completedTensor.inl_spaComap_preimage_mem_spaRationalFamily
     {U : Set (spa UB.plus)} (hU : U ∈ spaRationalFamily UB.plus) :
     (completedTensor.inl A UB UC).spaComap ⁻¹' U ∈
-      spaRationalFamily (UB.completedTensor A UC).plus := by
-  rw [Hom.spaComap_def]
-  exact spaComap_preimage_mem_spaRationalFamily _ _ _ _ _
+      spaRationalFamily (UB.completedTensor A UC).plus :=
+  (completedTensor.inl A UB UC).spaComap_preimage_mem_spaRationalFamily
     (fun _ hJ ↦ by
       simpa only [completedTensor.toRingHom_inl] using
         (CompletedTensor.isAdicHom_inl A B C).isOpen_map hJ) hU
@@ -108,9 +108,8 @@ theorem completedTensor.inl_spaComap_preimage_mem_spaRationalFamily
 theorem completedTensor.inr_spaComap_preimage_mem_spaRationalFamily
     {V : Set (spa UC.plus)} (hV : V ∈ spaRationalFamily UC.plus) :
     (completedTensor.inr A UB UC).spaComap ⁻¹' V ∈
-      spaRationalFamily (UB.completedTensor A UC).plus := by
-  rw [Hom.spaComap_def]
-  exact spaComap_preimage_mem_spaRationalFamily _ _ _ _ _
+      spaRationalFamily (UB.completedTensor A UC).plus :=
+  (completedTensor.inr A UB UC).spaComap_preimage_mem_spaRationalFamily
     (fun _ hJ ↦ by
       simpa only [completedTensor.toRingHom_inr] using
         (CompletedTensor.isAdicHom_inr A B C).isOpen_map hJ) hV

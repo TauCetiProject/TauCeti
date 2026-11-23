@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Base.Basic
+import TauCeti.RingTheory.Subring.Basic
 
 /-!
 # Invariance of completed tensor Huber pairs under localising the base ring
@@ -69,8 +70,8 @@ theorem map_plus_completionLocBaseEquiv :
     let W := UB.completedTensor A UC
     have _ := W₀.isRingOfIntegralElements.isIntegrallyClosedIn
     have _ := W.isRingOfIntegralElements.isIntegrallyClosedIn
-    have hf : W₀.plus ≤ W.plus.comap e.toRingHom :=
-      UB.completedTensor_plus_le_comap (A := Completion S₀) UC
+    refine Subring.map_equiv_eq_of_le_comap e ?_ ?_
+    · exact UB.completedTensor_plus_le_comap (A := Completion S₀) UC
         (W.plus.toAddSubgroup.isClosed_of_isOpen W.isRingOfIntegralElements.isOpen)
         (continuous_completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ)
         (fun b hb ↦ by
@@ -79,8 +80,7 @@ theorem map_plus_completionLocBaseEquiv :
         (fun c hc ↦ by
           simpa only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, e,
             completionLocBaseEquiv_inr] using UB.inr_mem_completedTensor_plus (A := A) UC hc)
-    have hg : W.plus ≤ W₀.plus.comap e.symm.toRingHom :=
-      UB.completedTensor_plus_le_comap (A := A) UC
+    · exact UB.completedTensor_plus_le_comap (A := A) UC
         (W₀.plus.toAddSubgroup.isClosed_of_isOpen W₀.isRingOfIntegralElements.isOpen)
         (continuous_completionLocBaseEquiv_symm P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ)
         (fun b hb ↦ by
@@ -91,8 +91,6 @@ theorem map_plus_completionLocBaseEquiv :
           simpa only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, e,
             completionLocBaseEquiv_symm_inr] using
               UB.inr_mem_completedTensor_plus (A := Completion S₀) UC hc)
-    exact le_antisymm (Subring.map_le_iff_le_comap.mpr hf) fun x hx ↦
-      ⟨e.symm x, hg hx, e.apply_symm_apply x⟩
 
 /-- Membership in the completed tensor plus ring is preserved and reflected by
 `completionLocBaseEquiv`. -/
@@ -103,8 +101,8 @@ theorem mem_completedTensor_plus_iff_completionLocBaseEquiv :
         completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ x ∈
           (UB.completedTensor A UC).plus :=
   funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ => fun x ↦ by
-    rw [← map_plus_completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ]
-    exact (completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ).injective.mem_set_image.symm
+    rw [← map_plus_completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ,
+      RingEquiv.toRingHom_eq_coe, Subring.mem_map_equiv, RingEquiv.symm_apply_apply]
 
 /-- The forward Huber-pair morphism `(B, B⁺) ⊗̂_{A⟨T₀/s₀⟩} (C, C⁺) → (B, B⁺) ⊗̂_A (C, C⁺)` out of
 the localised base. -/

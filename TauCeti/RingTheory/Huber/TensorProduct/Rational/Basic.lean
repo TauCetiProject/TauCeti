@@ -37,7 +37,8 @@ power-bounded
 and a map out of the completed tensor ring by compatible continuous maps out of the factors
 (`TauCeti.Huber.CompletedTensor.lift`). The two composites are the identity because continuous maps
 out of either side are determined by their restrictions to `B` and `C`. Only the topological rings
-are compared; rings of integral elements are not.
+are compared here; the Huber-pair upgrade on rings of integral elements is in
+`TauCeti.RingTheory.Huber.TensorProduct.Rational.Pair`.
 
 ## Main definitions
 

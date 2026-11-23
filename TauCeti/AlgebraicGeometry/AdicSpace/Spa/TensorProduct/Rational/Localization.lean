@@ -196,8 +196,10 @@ noncomputable def completedTensor.rationalRingEquiv :
         PB UB hPB b.num b.den _ b.hasDenominatorPower f hf).continuous_toRingHom
       (pairHomOfSpaComapImageSubset PA UA hPA a.num a.den _ a.hasDenominatorPower
         PC UC hPC c.num c.den _ c.hasDenominatorPower g hg).continuous_toRingHom
-      (by rw [toRingHom_pairHomOfSpaComapImageSubset_comp_toCompletionLoc, hf_alg]; rfl)
-      (by rw [toRingHom_pairHomOfSpaComapImageSubset_comp_toCompletionLoc, hg_alg]; rfl)).trans
+      (by rw [toRingHom_pairHomOfSpaComapImageSubset_comp_toCompletionLoc, hf_alg,
+        RingHom.algebraMap_toAlgebra])
+      (by rw [toRingHom_pairHomOfSpaComapImageSubset_comp_toCompletionLoc, hg_alg,
+        RingHom.algebraMap_toAlgebra])).trans
     (completionLocEquiv PB b.num b.den _ b.hasDenominatorPower
       PC c.num c.den _ c.hasDenominatorPower PD _ d₀.hasDenominatorPower)).trans
     (presentationRingEquivOfEq PD (UB.completedTensor A UC).plus

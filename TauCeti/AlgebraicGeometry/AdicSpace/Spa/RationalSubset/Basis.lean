@@ -177,9 +177,8 @@ theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily {B : Type*} [C
     (hplus : Aplus.map (e : A →+* B) = Bplus) :
     Set.BijOn (fun V : Set (spa Bplus) ↦ spaHomeomorphOfRingEquiv e he he' hplus ⁻¹' V)
       (spaRationalFamily Bplus) (spaRationalFamily Aplus) := by
-  have hplus_inv : ∀ b ∈ Bplus, (e.symm : B →+* A) b ∈ Aplus := fun b hb ↦ by
-    obtain ⟨a, ha, rfl⟩ := hplus ▸ hb
-    simpa using ha
+  have hplus_inv : ∀ b ∈ Bplus, (e.symm : B →+* A) b ∈ Aplus := fun _ hb ↦
+    Subring.mem_map_equiv.mp (hplus ▸ hb)
   have hplus_fwd : ∀ a ∈ Aplus, (e : A →+* B) a ∈ Bplus := fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
   have hfwd : (spaHomeomorphOfRingEquiv e he he' hplus : spa Aplus → spa Bplus) =
       spaComap (e.symm : B →+* A) he' Bplus Aplus hplus_inv :=

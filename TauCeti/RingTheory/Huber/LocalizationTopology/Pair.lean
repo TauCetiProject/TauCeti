@@ -101,6 +101,26 @@ theorem rationalLocalizationPair_plus :
     (rationalLocalizationPair P U hP T s S hden).plus =
       completedPlusSubring P U.plus T s S hden := (rfl)
 
+/-- The structure map `A → A⟨T/s⟩` carries `U.plus` into the plus ring of
+`rationalLocalizationPair`. -/
+theorem toCompletionLoc_mem_rationalLocalizationPair_plus {a : A} (ha : a ∈ U.plus) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    toCompletionLoc P T s S hden a ∈ (rationalLocalizationPair P U hP T s S hden).plus :=
+  toCompletionLoc_mem_completedPlusSubring P U.plus T s S hden ha
+
+/-- Each fraction `t/s` with `t ∈ T` lies in the plus ring of `rationalLocalizationPair`. -/
+theorem divBy_mem_rationalLocalizationPair_plus {t : A} (ht : t ∈ T) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    ((Localization.divBy t s : S) : Completion S) ∈
+      (rationalLocalizationPair P U hP T s S hden).plus :=
+  divBy_mem_completedPlusSubring P U.plus T s S hden ht
+
 /-- The ring of definition of `completionLocalization` is contained in the plus ring of
 `rationalLocalizationPair`. -/
 theorem completionLocalization_ringOfDefinition_le_rationalLocalizationPair :
@@ -125,7 +145,8 @@ noncomputable def toCompletionLocHom :
   letI := isHuberRing_completion_locTopology P T s S hden
   { toRingHom := toCompletionLoc P T s S hden
     continuous_toRingHom := continuous_toCompletionLoc P T s S hden
-    map_mem_plus := fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P U.plus T s S hden ha }
+    map_mem_plus := fun _ ha ↦
+      toCompletionLoc_mem_rationalLocalizationPair_plus P U hP T s S hden ha }
 
 /-- The pair structure map has `toCompletionLoc` as its underlying ring homomorphism. -/
 @[simp]

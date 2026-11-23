@@ -148,21 +148,27 @@ variable {Aplus : Subring A} {Bplus : Subring B}
   (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
   (hplus : Aplus.map (e : A →+* B) = Bplus)
 
+include hplus in
+omit [TopologicalSpace A] [TopologicalSpace B] in
+private theorem mem_of_map_equiv_eq {b : B} (hb : b ∈ Bplus) : (e.symm : B →+* A) b ∈ Aplus :=
+  Subring.mem_map_equiv.mp (hplus ▸ hb)
+
+include hplus in
+omit [TopologicalSpace A] [TopologicalSpace B] in
+private theorem map_mem_of_map_equiv_eq {a : A} (ha : a ∈ Aplus) : (e : A →+* B) a ∈ Bplus :=
+  hplus ▸ ⟨a, ha, rfl⟩
+
 /-- **Homeomorphism of adic spectra induced by a topological ring equivalence.** Given a ring
 isomorphism `e : A ≃+* B` continuous in both directions with `A⁺.map e = B⁺`, pulling valuations
 back along `e.symm` identifies `Spa(A, A⁺)` homeomorphically with `Spa(B, B⁺)`. -/
 noncomputable def spaHomeomorphOfRingEquiv : spa Aplus ≃ₜ spa Bplus where
-  toFun := spaComap (e.symm : B →+* A) he' Bplus Aplus fun b hb ↦ by
-    obtain ⟨a, ha, rfl⟩ := hplus ▸ hb
-    simpa using ha
-  invFun := spaComap (e : A →+* B) he Aplus Bplus fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
-  left_inv := spaComap_spaComap (e : A →+* B) he (fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩)
-    (e.symm : B →+* A) he' e.symm_apply_apply fun b hb ↦ by
-      obtain ⟨a, ha, rfl⟩ := hplus ▸ hb
-      simpa using ha
+  toFun := spaComap (e.symm : B →+* A) he' Bplus Aplus fun _ ↦ mem_of_map_equiv_eq e hplus
+  invFun := spaComap (e : A →+* B) he Aplus Bplus fun _ ↦ map_mem_of_map_equiv_eq e hplus
+  left_inv := spaComap_spaComap (e : A →+* B) he (fun _ ↦ map_mem_of_map_equiv_eq e hplus)
+    (e.symm : B →+* A) he' e.symm_apply_apply fun _ ↦ mem_of_map_equiv_eq e hplus
   right_inv := spaComap_spaComap (e.symm : B →+* A) he'
-    (fun b hb ↦ by obtain ⟨a, ha, rfl⟩ := hplus ▸ hb; simpa using ha)
-    (e : A →+* B) he e.apply_symm_apply fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
+    (fun _ ↦ mem_of_map_equiv_eq e hplus)
+    (e : A →+* B) he e.apply_symm_apply fun _ ↦ map_mem_of_map_equiv_eq e hplus
   continuous_toFun := continuous_spaComap _ he' _ _ _
   continuous_invFun := continuous_spaComap _ he _ _ _
 
@@ -221,13 +227,8 @@ theorem comap_mem_rationalSubset {φ : A →+* B} (hφ : Continuous φ) {Aplus :
 /-- **The fractions are sub-unit.** At a point of `Spv B` whose pullback lies in `R(T/s)`, the
 fraction `φ t / φ s` has value at most `1`.
 
-The pullback condition gives `|φ t|_w ≤ |φ s|_w`, and dividing by the unit `φ s` turns that into
-`|φ t / φ s|_w ≤ 1`. Nothing beyond the pullback condition is used, so the unit enters as an
-argument rather than being re-derived.
-
-The pullback condition is taken at the single point `w` where it is spent, not as a hypothesis
-quantified over `spa B⁺`: the proof looks at no other point, and `Bplus` then plays no part in
-the statement at all, so no topology on `B` is needed either. -/
+For Huber pairs, the unit hypothesis on `φ s` is supplied by
+`TauCeti.ValuationSpectrum.isUnit_of_forall_comap_mem_rationalSubset`. -/
 theorem vle_one_of_comap_mem_rationalSubset {B : Type*} [CommRing B] {φ : A →+* B}
     {Aplus : Subring A} {T : Finset A} {s : A} (hs : IsUnit (φ s)) {w : Spv B}
     (hmem : comap φ w ∈ rationalSubset Aplus T s) {t : A} (ht : t ∈ T) :
