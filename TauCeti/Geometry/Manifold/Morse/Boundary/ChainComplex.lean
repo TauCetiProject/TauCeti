@@ -33,7 +33,9 @@ homology is finite-dimensional, bounded by the critical counts, and vanishes abo
 dimensions satisfy the strong Morse inequalities
 (`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_le`). Its
 Euler characteristic is the signed critical count `∑ᵢ (-1)ⁱ cᵢ`, and so the Euler characteristic
-of `M` (`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`).
+of `M` (`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`). The
+dimensions also satisfy the Morse polynomial identity
+(`IsMorseSmale.exists_sum_range_monomial_eq_add_mul`).
 In terms of Mathlib's Euler characteristics of a complex, both `(h.morseComplex hf).eulerChar` and
 `(h.morseComplex hf).homologyEulerChar` are this signed count
 (`IsMorseSmale.eulerChar_morseComplex`, `IsMorseSmale.homologyEulerChar_morseComplex`).
@@ -61,6 +63,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   homology is the signed count of critical points.
 * `sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`: it is the Euler
   characteristic of `M`.
+* `exists_sum_range_monomial_eq_add_mul`: the Morse polynomial identity for the Morse homology.
 * `eulerChar_morseComplex`, `homologyEulerChar_morseComplex`: Mathlib's Euler characteristics of
   the Morse chain complex and of its homology are the signed count of critical points.
 * `eulerChar_morseComplex_eq_eulerChar`, `homologyEulerChar_morseComplex_eq_eulerChar`: they are
@@ -281,6 +284,21 @@ theorem sum_range_neg_one_pow_mul_finrank_homology_morseComplex :
     (fun i _ ↦ h.finite_morseComplex_X hf i)
     ((h.isZero_morseComplex_X_of_finrank_lt hf (Nat.lt_succ_self _)).eq_of_src _ _)]
   simp_rw [h.finrank_morseComplex_X hf]
+
+/-- **The Morse polynomial identity for Morse homology.** Write `bᵢ` for the dimension of the
+`i`-th mod-two Morse homology and `cᵢ` for the number of critical points of index `i`. For every
+`n` at least the dimension of `M`, `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` for a polynomial `Q`
+with natural number coefficients. -/
+theorem exists_sum_range_monomial_eq_add_mul {n : ℕ} (hn : finrank ℝ E ≤ n) :
+    ∃ Q : Polynomial ℕ,
+      ∑ i ∈ Finset.range (n + 1), Polynomial.monomial i (criticalCount 𝓘(ℝ, E) f i).toNat =
+        ∑ i ∈ Finset.range (n + 1),
+            Polynomial.monomial i (finrank (ZMod 2) ((h.morseComplex hf).homology i)) +
+          (1 + Polynomial.X) * Q := by
+  simp_rw [← h.finrank_morseComplex_X hf]
+  exact ⟨_, (h.morseComplex hf).sum_range_monomial_finrank_X_eq
+    (fun i _ ↦ h.finite_morseComplex_X hf i)
+    ((h.isZero_morseComplex_X_of_finrank_lt hf (Nat.lt_succ_of_le hn)).eq_of_src _ _)⟩
 
 /-- **Morse homology has the Euler characteristic of the manifold.** For a compact boundaryless
 manifold `M` of finite CW type, the alternating sum of the dimensions of the mod-two Morse homology
