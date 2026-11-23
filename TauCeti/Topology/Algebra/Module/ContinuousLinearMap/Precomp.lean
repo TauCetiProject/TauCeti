@@ -182,7 +182,7 @@ theorem arrowCongr_refl_apply_of_forall_apply_eq (e : E ≃L[𝕜] (E →L[𝕜]
 underlying linear map of `e.arrowCongr (.refl 𝕜 G)` is canonical evaluation on `E →L[𝕜] G`; for
 `G = 𝕜`, the inverse of the strong transpose of a canonical bidual isomorphism is the canonical
 bidual evaluation map of `StrongDual 𝕜 E`. -/
-theorem toLinearMap_arrowCongr_refl_of_forall_apply_eq [ContinuousSMul 𝕜 G]
+theorem toLinearMap_arrowCongr_refl_of_forall_apply_eq [ContinuousSMul 𝕜 (E →L[𝕜] G)]
     (e : E ≃L[𝕜] (E →L[𝕜] G) →L[𝕜] G) (he : ∀ x (φ : E →L[𝕜] G), e x φ = φ x) :
     (e.arrowCongr (.refl 𝕜 G)).toLinearMap = ContinuousLinearMap.applyₗ G (RingHom.id 𝕜) := by
   ext φ Ψ

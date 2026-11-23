@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 
 /-!
 # Spaces with separating dual
@@ -17,13 +18,30 @@ continuous linear operator on `E` if and only if it is a scalar multiple of the 
 (`ContinuousLinearMap.commute_forall_iff`). In particular this applies to every normed space over
 `ℝ` or `ℂ`.
 
-Furthermore, any evaluation-like map recovering continuous linear functionals is injective
-(`TauCeti.injective_of_forall_apply_eq`).
+Over a normed field `𝕜`, continuous linear functionals separate points of `E` if and only if
+canonical strong-bidual evaluation `ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)` is injective
+(`ContinuousLinearMap.separatingDual_iff_injective_applyₗ`). More generally, any evaluation-like
+map recovering continuous linear functionals is injective (`TauCeti.injective_of_forall_apply_eq`).
 -/
 
 public section
 
 namespace ContinuousLinearMap
+
+/-- Over a normed field `𝕜`, continuous linear functionals separate points of `E` if and only if
+canonical evaluation `ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)` into the strong bidual is
+injective. -/
+theorem separatingDual_iff_injective_applyₗ {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [TopologicalSpace E] [ContinuousSMul 𝕜 E] :
+    SeparatingDual 𝕜 E ↔
+      Function.Injective (applyₗ 𝕜 (RingHom.id 𝕜) :
+        E → StrongDual 𝕜 (StrongDual 𝕜 E)) := by
+  rw [separatingDual_iff_injective, ← coeLM_comp_applyₗ, LinearMap.coe_comp]
+  have hcoe : Function.Injective (coeLM (R := 𝕜) 𝕜 (M := StrongDual 𝕜 E) (N₃ := 𝕜)) :=
+    fun _ _ h ↦ coe_injective h
+  exact hcoe.of_comp_iff _
+
+section
 
 variable {𝕜 E : Type*} [Field 𝕜] [AddCommGroup E] [TopologicalSpace 𝕜] [TopologicalSpace E]
   [IsTopologicalRing 𝕜] [Module 𝕜 E] [SeparatingDual 𝕜 E] [IsTopologicalAddGroup E]
@@ -38,6 +56,8 @@ theorem commute_forall_iff {T : E →L[𝕜] E} :
     exact forall_congr' fun _ => by simp [Commute, SemiconjBy, eq_comm]
   rw [hmem, Algebra.IsCentral.mem_center_iff (K := 𝕜)]
   exact exists_congr fun _ => by simp [Algebra.algebraMap_eq_smul_one]
+
+end
 
 end ContinuousLinearMap
 

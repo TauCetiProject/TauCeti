@@ -6,15 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.Bounded
-import Mathlib.Analysis.Normed.Group.Pointwise
 
 /-!
-# Von Neumann boundedness helpers
+# Products of von Neumann bounded sets
 
 A product `s ×ˢ t` of von Neumann bounded subsets of two topological spaces with a `𝕜`-action is
-von Neumann bounded in the product space (`Bornology.IsVonNBounded.prod`), and if the image of a
-set `s` into a normed space is von Neumann bounded then the norms on `s` are bounded above
-(`Bornology.IsVonNBounded.bddAbove_range_norm`).
+von Neumann bounded in the product space. This is used to check the boundedness condition in
+Mathlib's `Bundle.RiemannianMetric` for the product of two Riemannian metrics.
 -/
 
 public section
@@ -33,14 +31,5 @@ protected theorem IsVonNBounded.prod {s : Set E} {t : Set F} (hs : IsVonNBounded
   obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.mp hW
   filter_upwards [(hs hU).eventually, (ht hV).eventually] with a ha hb
   grw [← hUV, smul_set_prod, ha, hb]
-
-/-- If the image of a set `s` under `f` into a normed space is von Neumann bounded, then the
-norms `‖f x‖` on `s` are bounded above. -/
-theorem IsVonNBounded.bddAbove_range_norm {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {s : Set E}
-    (hs : IsVonNBounded 𝕜 (f '' s)) :
-    BddAbove (Set.range fun x : s ↦ ‖f x‖) := by
-  have h := Bornology.IsBounded.bddAbove_norm ((NormedSpace.isVonNBounded_iff 𝕜).1 hs)
-  rwa [Set.image_image, Set.image_eq_range] at h
 
 end Bornology

@@ -10,7 +10,6 @@ public import Mathlib.Topology.Baire.CompleteMetrizable
 public import TauCeti.Analysis.LocallyConvex.DoubleDual
 public import TauCeti.Analysis.Normed.Operator.Compact.Adjoint
 public import TauCeti.Analysis.Normed.Operator.WeaklyCompact.Bidual
-import TauCeti.Analysis.LocallyConvex.Bounded
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 
 /-!
@@ -43,7 +42,8 @@ represent it (`ContinuousLinearMap.IsWeaklyCompact.exists_norm_le_forall_apply_e
 `ℂ`, the projective limit is barrelled, so when the bonding maps are weakly compact, a pointwise
 bounded family of continuous functionals is bounded by a single coordinate norm, so it consists of
 evaluations at a norm-bounded set of vectors of one space `B j`
-(`TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`), and bounded sets of the
+(`TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`,
+`TauCeti.dualProjectiveLimit.exists_subset_image_closedBall_eval`), and bounded sets of the
 strong dual `StrongDual 𝕜 (dualProjectiveLimit T)` are contained in images of stage balls under
 `eval` (`TauCeti.dualProjectiveLimit.isVonNBounded_strongDual_iff`). Unconditionally, restricting a
 strong-bidual element along the stage evaluations yields a continuous left inverse to canonical
@@ -68,13 +68,16 @@ surjective when moreover the `ι j` are injective and a linear functional on `L`
 soon as its composites with all `ι j` are (`TauCeti.dualProjectiveLimit.precomp_surjective`). In
 the dual direction, when the `ι j` are injective and their ranges cover `L`, the stage evaluations
 glue to a canonical linear evaluation `L →ₗ[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)`
-(`TauCeti.dualProjectiveLimit.evalInductive`), which is injective when continuous functionals
+(`TauCeti.dualProjectiveLimit.evalInductive`, uniquely characterized on stages by
+`TauCeti.dualProjectiveLimit.evalInductive_unique`), which is injective when continuous functionals
 separate points of `L` and surjective when the bonding maps are weakly compact over `ℝ` or `ℂ`.
 
 ## Main declarations
 
 * `TauCeti.dualProjectiveLimit`: the projective limit `lim_j B j′` as a submodule of the product.
-* `TauCeti.dualProjectiveLimit.coord`: its coordinate projections to the spaces `B j′`.
+* `TauCeti.dualProjectiveLimit.coord`, `TauCeti.dualProjectiveLimit.continuousLinearMap_ext`: its
+  coordinate projections to the spaces `B j′`, and coordinate extensionality for continuous linear
+  maps into `lim_j B j′`.
 * `TauCeti.dualProjectiveLimit.withSeminorms`: its topology is given by the coordinate norms.
 * `TauCeti.dualProjectiveLimit.isVonNBounded_iff`: bounded sets of `lim_j B j′` are those uniformly
   bounded in each coordinate.
@@ -82,9 +85,10 @@ separate points of `L` and surjective when the bonding maps are weakly compact o
 * `TauCeti.dualProjectiveLimit.exists_norm_le_forall_apply_eq`: over `ℝ` or `ℂ`, when `T j` is
   weakly compact, a functional bounded by the `j`-th coordinate norm is evaluation at a vector of
   `B (j + 1)`, with a norm bound.
-* `TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`: over `ℝ` or `ℂ`, for weakly
-  compact bonding maps, a pointwise bounded family of continuous functionals consists of evaluations
-  at a bounded set of vectors of a single space `B j`.
+* `TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`,
+  `TauCeti.dualProjectiveLimit.exists_subset_image_closedBall_eval`: over `ℝ` or `ℂ`, for weakly
+  compact bonding maps, a pointwise bounded family or set of continuous functionals lies in the
+  image of a closed ball of a single space `B j` under `eval`.
 * `TauCeti.dualProjectiveLimit.exists_eval_eq`: over `ℝ` or `ℂ`, for weakly compact bonding maps,
   every continuous functional on the projective limit is an evaluation.
 * `TauCeti.dualProjectiveLimit.isVonNBounded_strongDual_iff`: over `ℝ` or `ℂ`, for weakly compact
@@ -102,7 +106,9 @@ separate points of `L` and surjective when the bonding maps are weakly compact o
   bonding maps, `lim_j B j′` is a Montel space.
 * `TauCeti.dualProjectiveLimit.precomp`: precomposition `L′ → lim_j B j′` with compatible maps
   `ι j : B j → L`.
-* `TauCeti.dualProjectiveLimit.evalInductive`: glued evaluation `L →ₗ[𝕜] (lim_j B j′)′_b`.
+* `TauCeti.dualProjectiveLimit.evalInductive`,
+  `TauCeti.dualProjectiveLimit.evalInductive_unique`: glued evaluation `L →ₗ[𝕜] (lim_j B j′)′_b`
+  and its uniqueness from its stage composites.
 
 ## References
 
@@ -192,6 +198,13 @@ theorem coord_apply (j : ℕ) (f : dualProjectiveLimit T) :
     coord T j f = (f : ∀ n, StrongDual 𝕜 (B n)) j :=
   (rfl)
 
+/-- Two continuous linear maps into `dualProjectiveLimit T` are equal if their compositions with
+every coordinate projection `coord T n` are equal. -/
+theorem continuousLinearMap_ext {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    {u v : E →L[𝕜] dualProjectiveLimit T}
+    (h : ∀ n, (coord T n).comp u = (coord T n).comp v) : u = v :=
+  ContinuousLinearMap.ext fun x ↦ Subtype.ext <| funext fun n ↦ congrArg (· x) (h n)
+
 @[simp]
 theorem apply_succ_comp (f : dualProjectiveLimit T) (j : ℕ) :
     ((f : ∀ n, StrongDual 𝕜 (B n)) (j + 1)).comp (T j) = (f : ∀ n, StrongDual 𝕜 (B n)) j :=
@@ -239,7 +252,10 @@ section LocallyConvex
 
 variable (T)
 
-/-- The projective limit of the duals of normed spaces is locally convex over `ℝ`. -/
+/-- When `𝕜` is a real normed space and `dualProjectiveLimit T` carries a compatible real scalar
+action (`[NormedSpace ℝ 𝕜]`, `[Module ℝ (dualProjectiveLimit T)]`,
+`[IsScalarTower ℝ 𝕜 (dualProjectiveLimit T)]`, in particular over `ℝ` or `ℂ`), the projective
+limit of the duals of normed spaces is locally convex over `ℝ`. -/
 instance [NormedSpace ℝ 𝕜] [Module ℝ (dualProjectiveLimit T)]
     [IsScalarTower ℝ 𝕜 (dualProjectiveLimit T)] : LocallyConvexSpace ℝ (dualProjectiveLimit T) :=
   (withSeminorms T).toLocallyConvexSpace
@@ -320,7 +336,8 @@ theorem precomp_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (φ : Strong
 @[simp]
 theorem coord_comp_precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (n : ℕ) :
     (coord T n).comp (precomp ι hι) = ContinuousLinearMap.precomp 𝕜 (ι n) := by
-  rw [coord, precomp, comp_assoc, subtypeL_comp_codRestrict, proj_pi]
+  ext φ z
+  rw [comp_apply, coord_apply, precomp_apply, ContinuousLinearMap.precomp_apply]
 
 /-- A continuous functional on `L` is determined by its composites with the maps `ι j` when the
 ranges of these maps cover `L`. -/
@@ -392,6 +409,18 @@ theorem evalInductive_comp_ι (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) (n : ℕ) :
     (evalInductive hι hinj hcover).comp (ι n).toLinearMap = (eval T n).toLinearMap :=
   LinearMap.ext fun z ↦ evalInductive_ι hι hinj hcover n z
+
+/-- Uniqueness of `evalInductive`: any `𝕜`-linear map from `L` into
+`StrongDual 𝕜 (dualProjectiveLimit T)` whose composite with every stage map `ι n` equals
+`eval T n` is `evalInductive hι hinj hcover`. -/
+theorem evalInductive_unique (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    {g : L →ₗ[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)}
+    (hg : ∀ n, g.comp (ι n).toLinearMap = (eval T n).toLinearMap) :
+    g = evalInductive hι hinj hcover := by
+  refine LinearMap.ext fun x ↦ ?_
+  obtain ⟨n, z, rfl⟩ := hcover x
+  simpa using congrArg (· z) (hg n)
 
 /-- Every compatible family of continuous functionals on the spaces `B j` comes from a continuous
 functional on their inductive limit `L`. -/
@@ -540,6 +569,18 @@ theorem exists_eval_eq (hT : ∀ n, (T n).IsWeaklyCompact)
   obtain ⟨x, -, hx⟩ := h ()
   exact ⟨j, x, hx⟩
 
+/-- A pointwise bounded subset of `StrongDual 𝕜 (dualProjectiveLimit T)` lies in the image of a
+closed ball of a single stage `B j` under `eval T j`, provided the bonding maps are weakly
+compact. -/
+theorem exists_subset_image_closedBall_eval (hT : ∀ n, (T n).IsWeaklyCompact)
+    {S : Set (StrongDual 𝕜 (dualProjectiveLimit T))}
+    (hS : ∀ f, BddAbove (Set.range fun φ : S ↦ ‖(φ : StrongDual 𝕜 (dualProjectiveLimit T)) f‖)) :
+    ∃ j, ∃ R : ℝ, S ⊆ eval T j '' Metric.closedBall 0 R := by
+  obtain ⟨j, R, hrep⟩ := exists_forall_exists_norm_le_eval_eq hT (fun φ : S ↦ φ.val) hS
+  refine ⟨j, R, fun φ hφ ↦ ?_⟩
+  obtain ⟨x, hx, heq⟩ := hrep ⟨φ, hφ⟩
+  exact ⟨x, mem_closedBall_zero_iff.2 hx, heq⟩
+
 /-- For weakly compact bonding maps, a subset of the strong dual
 `StrongDual 𝕜 (dualProjectiveLimit T)` is von Neumann bounded if and only if it lies in the image
 of a closed ball of a single space `B j` under `eval T j`. -/
@@ -547,15 +588,12 @@ theorem isVonNBounded_strongDual_iff (hT : ∀ n, (T n).IsWeaklyCompact)
     {S : Set (StrongDual 𝕜 (dualProjectiveLimit T))} :
     Bornology.IsVonNBounded 𝕜 S ↔
       ∃ j, ∃ R : ℝ, S ⊆ eval T j '' Metric.closedBall 0 R := by
-  refine ⟨fun hS ↦ ?_, fun ⟨j, R, hS⟩ ↦
+  refine ⟨fun hS ↦ exists_subset_image_closedBall_eval hT fun f ↦ ?_, fun ⟨j, R, hS⟩ ↦
     ((NormedSpace.isVonNBounded_closedBall 𝕜 (B j) R).image (eval T j)).subset hS⟩
-  have hbdd (f : dualProjectiveLimit T) :
-      BddAbove (Set.range fun φ : S ↦ ‖(φ : StrongDual 𝕜 (dualProjectiveLimit T)) f‖) := by
-    simpa using (hS.image (strongEval 𝕜 (dualProjectiveLimit T) f)).bddAbove_range_norm
-  obtain ⟨j, R, hrep⟩ := exists_forall_exists_norm_le_eval_eq hT (fun φ : S ↦ φ.val) hbdd
-  refine ⟨j, R, fun φ hφ ↦ ?_⟩
-  obtain ⟨x, hx, heq⟩ := hrep ⟨φ, hφ⟩
-  exact ⟨x, mem_closedBall_zero_iff.2 hx, heq⟩
+  have h := Bornology.IsBounded.bddAbove_norm
+    ((NormedSpace.isVonNBounded_iff 𝕜).mp (hS.image (strongEval 𝕜 (dualProjectiveLimit T) f)))
+  rw [Set.image_image, Set.image_eq_range] at h
+  simpa using h
 
 /-- When the bonding maps are weakly compact, `fromStrongBidual T` is also a right inverse to
 canonical evaluation `ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)`, because every continuous
