@@ -13,6 +13,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.InterBall
