@@ -28,7 +28,7 @@ This file records basic properties of Mathlib's localization functor
 * `TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ`: the single functor
   `DerivedCategory.Plus.singleFunctor C n` factors through
   `TauCeti.CochainComplex.Plus.singleFunctor C n` and `Q`.
-* `TauCeti.DerivedCategory.Plus.mappingCone_triangle_distinguished`: the image under `Q` of a
+* `TauCeti.DerivedCategory.Plus.mappingConeTriangle_distinguished`: the image under `Q` of a
   bounded-below mapping cone triangle is distinguished.
 
 ## References
@@ -153,7 +153,7 @@ lemma isIso_Q_map_iff_quasiIso {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L
 
 /-- The image of a mapping cone triangle in `CochainComplex.Plus C` under `DerivedCategory.Plus.Q`
 is distinguished. -/
-lemma mappingCone_triangle_distinguished {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangle_distinguished {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
     _root_.DerivedCategory.Plus.Q.mapTriangle.obj
         (_root_.CochainComplex.Plus.mappingConeTriangle f) ∈
       distTriang (_root_.DerivedCategory.Plus C) := by
