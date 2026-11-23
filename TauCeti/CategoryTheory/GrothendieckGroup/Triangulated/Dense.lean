@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split.Dense
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.CategoryTheory.Triangulated.Biproduct
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 
