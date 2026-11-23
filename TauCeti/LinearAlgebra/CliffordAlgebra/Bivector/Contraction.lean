@@ -8,50 +8,66 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
-import Mathlib.Data.Fin.Tuple.Reflection
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!
 # The commutator of a Clifford two-vector with a generator
 
-Let `V` be a real inner product space and `Q` the quadratic form `Q v = -‖v‖²`. Write
-`c = CliffordAlgebra.ι Q` and `c₂ = CliffordAlgebra.bivectorExterior Q` for Clifford
-multiplication by vectors and by two-forms. The commutator of `c₂(F)` with a generator is
-the Clifford image of the contraction `v ⌟ F` (`TauCeti.twoVectorContraction`):
-`⁅c₂(F), c(v)⁆ = 2 c(v ⌟ F)`. So `c₂(F)` acts on the generators by the skew endomorphism of `F`.
+Write `c = CliffordAlgebra.ι Q` and `c₂ = CliffordAlgebra.bivectorExterior Q` for Clifford
+multiplication by vectors and by two-forms, over a commutative ring in which `2` is invertible.
+The commutator of `c₂(F)` with a generator is the Clifford image of the contraction of `F` by the
+polar form of `Q`: `⁅c₂(F), c(v)⁆ = -c(Q(v, ·) ⌟ F)`.
+
+For a real inner product space `V` and the quadratic form `Q v = -‖v‖²`, the polar form is
+`-2 ⟪v, ·⟫`, so `⁅c₂(F), c(v)⁆ = 2 c(v ⌟ F)` with `v ⌟ F` the contraction
+`TauCeti.twoVectorContraction F v`. So `c₂(F)` acts on the generators by twice the skew
+endomorphism of `F`.
 
 ## Main results
 
-* `CliffordAlgebra.bivectorExterior_lie_ι`: `⁅c₂(F), c(v)⁆ = 2 c(v ⌟ F)`.
+* `TauCeti.bivectorExterior_lie_ι`: `⁅c₂(F), c(v)⁆ = -c(Q(v, ·) ⌟ F)`.
+* `TauCeti.bivectorExterior_lie_ι_of_eq_neg_norm_sq`: for `Q v = -‖v‖²`,
+  `⁅c₂(F), c(v)⁆ = 2 c(v ⌟ F)`.
 -/
 
 public section
 
-namespace CliffordAlgebra
+namespace TauCeti
 
-open TauCeti exteriorPower
+open CliffordAlgebra exteriorPower
 open scoped RealInnerProductSpace
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
+/-- **The commutator of a Clifford two-vector with a generator**: over a commutative ring in which
+`2` is invertible, `⁅c₂(F), c(v)⁆ = -c(Q(v, ·) ⌟ F)`, the contraction of `F` by the polar form of
+`Q` at `v`, read as a vector with `ExteriorAlgebra.ιInv`. -/
+theorem bivectorExterior_lie_ι {R M : Type*} [CommRing R] [Invertible (2 : R)] [AddCommGroup M]
+    [Module R M] {Q : QuadraticForm R M} (F : ⋀[R]^2 M) (v : M) :
+    ⁅bivectorExterior Q F, ι Q v⁆ = -ι Q (ExteriorAlgebra.ιInv
+      (contractLeft (QuadraticMap.polarBilin Q v) (F : ExteriorAlgebra R M))) := by
+  -- Both sides are linear in `F`; compare them on `a ∧ b`.
+  have key : (LinearMap.mulRight R (ι Q v) - LinearMap.mulLeft R (ι Q v)) ∘ₗ bivectorExterior Q =
+      -(ι Q ∘ₗ ExteriorAlgebra.ιInv ∘ₗ contractLeft (QuadraticMap.polarBilin Q v) ∘ₗ
+        (⋀[R]^2 M).subtype) :=
+    linearMap_ext_ιMulti_two fun a b ↦ by
+      simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.sub_apply,
+        LinearMap.mulRight_apply, LinearMap.mulLeft_apply, LinearMap.neg_apply,
+        Submodule.subtype_apply, ιMulti_apply_coe, ExteriorAlgebra.contractLeft_ιMulti]
+      rw [bivectorExterior_apply_ιMulti, ← Ring.lie_def, bivector_lie_ι]
+      simp [Fin.sum_univ_two, Fin.removeNth, ExteriorAlgebra.ιMulti_apply, sub_eq_add_neg,
+        QuadraticMap.polar_comm Q v, ExteriorAlgebra.ι_leftInverse _]
+  simpa [Ring.lie_def] using LinearMap.congr_fun key F
 
 /-- **The Clifford image of a two-vector generates its contraction**: for `Q v = -‖v‖²`,
 `⁅c₂(F), c(v)⁆ = 2 c(v ⌟ F)`, where `v ⌟ F` is `TauCeti.twoVectorContraction F v`. -/
-theorem bivectorExterior_lie_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (F : ⋀[ℝ]^2 V) (v : V) :
-    ⁅bivectorExterior Q F, ι Q v⁆ = ι Q ((2 : ℝ) • twoVectorContraction F v) := by
-  have hpolar := QuadraticMap.polar_eq_neg_two_inner hQ
-  -- Both sides are linear in `F`; compare them on `a ∧ b`.
-  have key : (LinearMap.mulRight ℝ (ι Q v) - LinearMap.mulLeft ℝ (ι Q v)) ∘ₗ bivectorExterior Q =
-      ((2 : ℝ) • ι Q) ∘ₗ (LinearMap.applyₗ (R := ℝ) v ∘ₗ twoVectorContractionₗ) := by
-    refine exteriorPower.linearMap_ext (AlternatingMap.ext fun w ↦ ?_)
-    have hw : w = ![w 0, w 1] := (FinVec.etaExpand_eq w).symm
-    simp only [LinearMap.compAlternatingMap_apply, LinearMap.coe_comp, Function.comp_apply,
-      LinearMap.sub_apply, LinearMap.mulRight_apply, LinearMap.mulLeft_apply, LinearMap.smul_apply,
-      twoVectorContractionₗ_apply, LinearMap.applyₗ_apply_apply, twoVectorContraction_ιMulti]
-    conv_lhs => rw [hw]
-    rw [bivectorExterior_apply_ιMulti, ← Ring.lie_def, bivector_lie_ι, hpolar, hpolar]
-    simp only [map_sub, map_smul, smul_sub, smul_smul]
-    rw [real_inner_comm (w 1) v, real_inner_comm (w 0) v]
-    module
-  simpa [Ring.lie_def] using LinearMap.congr_fun key F
+theorem bivectorExterior_lie_ι_of_eq_neg_norm_sq {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (F : ⋀[ℝ]^2 V)
+    (v : V) : ⁅bivectorExterior Q F, ι Q v⁆ = ι Q ((2 : ℝ) • twoVectorContraction F v) := by
+  have hpolar : QuadraticMap.polarBilin Q v = (-2 : ℝ) • innerₗ V v :=
+    LinearMap.ext fun w ↦ by simp [QuadraticMap.polar_eq_neg_two_inner hQ]
+  rw [bivectorExterior_lie_ι, hpolar, map_smul, LinearMap.smul_apply, map_smul, map_smul,
+    twoVectorContraction_apply, map_smul]
+  module
 
-end CliffordAlgebra
+end TauCeti

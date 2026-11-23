@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -21,9 +19,10 @@ Clifford multiplication by vectors and by two-forms.
 
 The commutator of the Clifford image of any two-vector `F` with a generator is the Clifford image
 of the contraction `v ⌟ F` (`TauCeti.twoVectorContraction`): `⁅c₂(F), c(v)⁆ = 2 c(v ⌟ F)`
-(`CliffordAlgebra.bivectorExterior_lie_ι`). For the Kähler two-vector `v ⌟ ω = J v`, so the
-commutator of `c₂(ω)` with a generator is the Clifford image of `J`: `⁅c₂(ω), c(v)⁆ = 2 c(J v)`.
-On a Clifford module this is how the eigenspaces of `c₂(ω)` see `J`.
+(`TauCeti.bivectorExterior_lie_ι_of_eq_neg_norm_sq`). For the Kähler two-vector `v ⌟ ω = J v`
+(`TauCeti.AlmostComplexStructure.twoVectorContraction_kahlerForm`), so the commutator of `c₂(ω)`
+with a generator is the Clifford image of `J`: `⁅c₂(ω), c(v)⁆ = 2 c(J v)`. On a Clifford module
+this is how the eigenspaces of `c₂(ω)` see `J`.
 For instance, on Taubes's canonical line, the `-2i`-eigenline of `c₂(ω)` in the positive
 half-spinors of a four-dimensional spin module, `v ↦ c(v) u` turns `J` into multiplication by `i`
 (`TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`).
@@ -35,8 +34,6 @@ Kähler two-vector is `ω = e₀ ∧ e₁ + e₂ ∧ e₃`, and `c₂` sends it 
 
 * `TauCeti.AlmostComplexStructure.bivectorExterior_kahlerForm`:
   `c₂(ω) = c(e₀) c(e₁) + c(e₂) c(e₃)` in a unitary frame.
-* `TauCeti.AlmostComplexStructure.bivectorExterior_kahlerForm_lie_ι`:
-  `⁅c₂(ω), c(v)⁆ = 2 c(J v)`.
 
 ## References
 
@@ -71,12 +68,5 @@ theorem bivectorExterior_kahlerForm :
     bivector_eq_ι_mul_ι_of_isOrtho Q (hortho (by decide))]
 
 end Frame
-
-include hQ in
-/-- **The Kähler form generates `J` in the Clifford algebra**: for an orthogonal `J`,
-`⁅c₂(ω), c(v)⁆ = 2 c(J v)`. -/
-theorem bivectorExterior_kahlerForm_lie_ι (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v : V) :
-    ⁅bivectorExterior Q J.kahlerForm, ι Q v⁆ = ι Q ((2 : ℝ) • J v) := by
-  rw [bivectorExterior_lie_ι hQ, twoVectorContraction_kahlerForm hJ]
 
 end TauCeti.AlmostComplexStructure

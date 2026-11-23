@@ -76,7 +76,7 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
   `CliffordAlgebra.map_star_mul_self_apply_of_mem_even` state both on vectors.
 * `CliffordAlgebra.map_ι_apply_mem_eigenspace_chirality_neg`: `c(v)` maps the `ε`-eigenspace of
   `Γ` into the `-ε`-eigenspace.
-* `CliffordAlgebra.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`:
+* `Orientation.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`:
   `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ` for a positive half-spinor `ψ` and a self-dual `β`, where
   `v ⌟ β` is `TauCeti.twoVectorContraction β v`.
 * `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
@@ -318,9 +318,10 @@ theorem coe_halfSpinCliffordMul_apply_apply (ε : ℂ) (v : V)
 /-- **Clifford multiplication by a vector after a self-dual two-form**: on a positive half-spinor
 `ψ`, `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ` for self-dual `β`. Indeed `c(v) ψ` is a negative half-spinor,
 which the self-dual `β` annihilates, and `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)`
-(`CliffordAlgebra.bivectorExterior_lie_ι`). -/
-theorem ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
-    {β : ⋀[ℝ]^2 V} (hβ : o.hodgeStar hkl β = β) (ψ : positiveHalfSpinors o ρ) (v : V) :
+(`TauCeti.bivectorExterior_lie_ι_of_eq_neg_norm_sq`). -/
+theorem _root_.Orientation.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self
+    (hkl : 2 + 2 = finrank ℝ V) {β : ⋀[ℝ]^2 V} (hβ : o.hodgeStar hkl β = β)
+    (ψ : positiveHalfSpinors o ρ) (v : V) :
     ρ (ι Q v) (ρ (bivectorExterior Q β) ψ) =
       (-2 : ℂ) • ρ (ι Q (TauCeti.twoVectorContraction β v)) ψ := by
   -- `c(v) ψ` is a negative half-spinor.
@@ -331,7 +332,7 @@ theorem ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self (hkl : 2 + 2 = finr
   have hzero : ρ (bivectorExterior Q β) (ρ (ι Q v) ψ) = 0 :=
     letI := Module.compHom W ρ.toRingHom
     bivectorExterior_smul_eq_zero_of_hodgeStar_eq_self o hQ hkl hβ hneg
-  have h := congrArg (fun a ↦ ρ a ψ) (bivectorExterior_lie_ι hQ β v)
+  have h := congrArg (fun a ↦ ρ a ψ) (TauCeti.bivectorExterior_lie_ι_of_eq_neg_norm_sq hQ β v)
   simp only [Ring.lie_def, map_sub, map_mul, LinearMap.sub_apply, mul_apply_eq_comp, hzero,
     map_smul, LinearMap.smul_apply] at h
   linear_combination (norm := module) -h

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HodgeLaplacian
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.RingTheory.KoszulComplex.Basic
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
 /-!
@@ -195,14 +194,13 @@ theorem koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar (u : V) {k l : 
 if `⋆β = β` then `u ⌟ β = ⋆(u ∧ β)`, with `u ⌟ β` the vector `TauCeti.twoVectorContraction β u`
 read in `⋀¹ V`. -/
 theorem ι_twoVectorContraction_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
-    (hkl' : 2 + 1 + 1 = finrank ℝ V) {β : ⋀[ℝ]^2 V} (hβ : o.hodgeStar hkl β = β) (u : V) :
+    {β : ⋀[ℝ]^2 V} (hβ : o.hodgeStar hkl β = β) (u : V) :
     _root_.ExteriorAlgebra.ι ℝ (twoVectorContraction β u) =
-      (o.hodgeStar hkl' (ExteriorAlgebra.wedgeLeft u 2 β) : _root_.ExteriorAlgebra ℝ V) := by
-  have h := o.koszulDifferential_hodgeStar u hkl hkl' β
+      (o.hodgeStar (k := 2 + 1) (l := 1) hkl (ExteriorAlgebra.wedgeLeft u 2 β) :
+        _root_.ExteriorAlgebra ℝ V) := by
+  have h := o.koszulDifferential_hodgeStar u hkl hkl β
   rw [hβ] at h
-  rw [twoVectorContraction_apply, ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-    (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) β.property),
-    ← coe_koszulDifferential_apply, h]
+  rw [ι_twoVectorContraction, ← coe_koszulDifferential_apply, h]
   simp
 
 /-- **A closed self-dual two-form is coclosed, pointwise**: in dimension four, if the two-vectors
@@ -211,10 +209,9 @@ theorem sum_twoVectorContraction_eq_zero_of_hodgeStar_eq_self (hkl : 2 + 2 = fin
     {ι : Type*} {s : Finset ι} {β : ι → ⋀[ℝ]^2 V} (hβ : ∀ k ∈ s, o.hodgeStar hkl (β k) = β k)
     {u : ι → V} (h : ∑ k ∈ s, ExteriorAlgebra.wedgeLeft (u k) 2 (β k) = 0) :
     ∑ k ∈ s, twoVectorContraction (β k) (u k) = 0 := by
-  have hkl' : 2 + 1 + 1 = finrank ℝ V := hkl
   apply (_root_.ExteriorAlgebra.ι_leftInverse (R := ℝ) (M := V)).injective
   rw [map_sum, map_zero, Finset.sum_congr rfl fun k hk ↦
-    o.ι_twoVectorContraction_of_hodgeStar_eq_self hkl hkl' (hβ k hk) (u k), ← Submodule.coe_sum,
+    o.ι_twoVectorContraction_of_hodgeStar_eq_self hkl (hβ k hk) (u k), ← Submodule.coe_sum,
     ← map_sum, h, map_zero, Submodule.coe_zero]
 
 end Orientation

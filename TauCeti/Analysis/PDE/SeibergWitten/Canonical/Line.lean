@@ -29,10 +29,10 @@ On the `-2i`-eigenspace, Clifford multiplication turns `J` into multiplication b
 `c(J v) β = -i c(v) β`.
 Both are the case `β = ω` of an identity for every self-dual two-vector `β` and positive
 half-spinor `ψ`: `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ`
-(`CliffordAlgebra.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`), where `v ⌟ ω = J v`. It
-follows from the commutator `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)` (`CliffordAlgebra.bivectorExterior_lie_ι`)
-and the vanishing of the self-dual form `β` on the negative half-spinors, where `c(v) ψ` lies.
-Consequently
+(`Orientation.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`), where `v ⌟ ω = J v`. It
+follows from the commutator `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)`
+(`TauCeti.bivectorExterior_lie_ι_of_eq_neg_norm_sq`) and the vanishing of the self-dual form `β`
+on the negative half-spinors, where `c(v) ψ` lies. Consequently
 `⟪c(v) ψ, c(w) ψ⟫ = (⟪v, w⟫ - i ⟪v, J w⟫) ‖ψ‖²`, so `v ↦ c(v) ψ` is a complex-linear map from
 `(V, J)` to the negative half-spinors, isometric up to the factor `‖ψ‖`.
 
@@ -126,12 +126,12 @@ omit [FiniteDimensional ℂ W] in
 include hQ hkl he h₀ h₂ in
 /-- On a `μ`-eigenvector `ψ ∈ W⁺` of `c₂(ω)`, Clifford multiplication intertwines `J` with the
 scalar `-μ / 2`: `2 c(J v) ψ = -μ c(v) ψ`. This is
-`CliffordAlgebra.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self` for the self-dual `ω`, whose
+`Orientation.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self` for the self-dual `ω`, whose
 contraction is `v ⌟ ω = J v`. -/
 private theorem two_smul_ι_apply_apply_of_bivectorExterior_apply {ψ : positiveHalfSpinors o ρ}
     {μ : ℂ} (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = μ • (ψ : W)) (v : V) :
     (2 : ℂ) • ρ (ι Q (J v)) ψ = -μ • ρ (ι Q v) ψ := by
-  have h := ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self o hQ hkl
+  have h := o.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self hQ hkl
     (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he) ψ v
   rw [hψ, map_smul, AlmostComplexStructure.twoVectorContraction_kahlerForm
     (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)] at h
