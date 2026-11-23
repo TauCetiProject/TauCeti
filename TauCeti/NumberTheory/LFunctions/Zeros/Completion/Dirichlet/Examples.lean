@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Hadamard
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Classification
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.Analysis.SpecialFunctions.Log.SumLogDivSq
@@ -202,9 +203,17 @@ example :
     refine (Complex.reCLM.summable hsum).tsum_le_of_sum_range_le fun N ↦ ?_
     calc ∑ n ∈ Finset.range N, (term (↗χ * ↗Λ) 2 n).re ≤ ∑ n ∈ Finset.range N, g n :=
           Finset.sum_le_sum fun n _ ↦ hfg n
-      _ ≤ ∑' n, g n := (Real.summable_log_div_sq_of_lt 10).sum_le_tsum _ fun n _ ↦ by
+      _ ≤ ∑' n, g n := by
+          have hg (n : ℕ) : 0 ≤ g n := by
+            have : 0 ≤ Real.log n := Real.log_natCast_nonneg n
+            simp only [g]; split_ifs <;> positivity
+          refine (Real.summable_log_div_sq.of_nonneg_of_le hg fun n ↦ ?_).sum_le_tsum _
+            fun n _ ↦ hg n
           have : 0 ≤ Real.log n := Real.log_natCast_nonneg n
-          simp only [g]; split_ifs <;> positivity
+          simp only [g]
+          split_ifs
+          · exact le_rfl
+          · positivity
       _ ≤ (1 + Real.log 10) / 10 := by
           simpa using Real.tsum_log_div_sq_of_lt_le (N := 10) (by norm_num)
   refine ⟨fun hinv ↦ ?_, hprim, ho, ?_, ?_⟩
@@ -237,12 +246,7 @@ example :
       ∀ β : ℝ, 0 < β → χ.LFunction β = 0 →
         1 / (2 - β) ≤ (logDeriv χ.LFunction 2).re + Real.log 4 / 2 + gammaLogDerivBound := by
   intro χ
-  have h3 : χ (3 : ℤ) = -1 := by
-    simp only [χ, MulChar.ringHomComp_apply]
-    rw [show ((3 : ℤ) : ZMod 4) = 3 by decide, show ZMod.χ₄ 3 = -1 by decide]
-    simp
-  have hprim : χ.IsPrimitive := (isPrimitive_def χ).mpr
-    (conductor_eq_four_of_apply_one_ne_apply_three χ (by rw [h3]; simp; norm_num))
+  have hprim : χ.IsPrimitive := (isPrimitive_def χ).mpr conductor_χ₄_ringHomComp
   have ho : χ.Odd := by
     have hneg : ZMod.χ₄ (-1) = -1 := by
       simpa only [Int.cast_neg, Int.cast_one] using
