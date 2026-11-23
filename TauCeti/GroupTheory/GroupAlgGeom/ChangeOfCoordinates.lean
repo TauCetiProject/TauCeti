@@ -22,8 +22,8 @@ system `S` and those of its image `φ S`; it carries the radical of `S` to that 
 `CoordGroup.imageMulEquiv`. More generally, for any equivalent target system `T` with
 `V_H(φ S) = V_H(T)`, this induces a solution bijection `equivVOfVImageEq`, carries `Rad ι S` to
 `Rad ι T` (`Rad_of_V_image_eq`), and induces a `G`-isomorphism `CoordGroup.mulEquivOfVImageEq`
-of radical coordinate groups. Specializing to conjugation in `G[Y]` (`u * φ w * u⁻¹ = w'`) gives
-`equivVOfConjMulEquiv`, `Rad_singleton_of_conj_mulEquiv`, and `CoordGroup.mulEquivOfConjMulEquiv`.
+of radical coordinate groups; in particular, conjugation `u * φ w * u⁻¹ = w'` preserves the
+algebraic set (`V_image_singleton_eq_of_conj`).
 The change of coordinates `x ↦ x g` of one variable, a transvection, fixes the commutator equation
 `[x, g] = 1`, so it carries its solutions, the centralizer of `ι g`, onto themselves.
 
@@ -34,19 +34,19 @@ The change of coordinates `x ↦ x g` of one variable, a transvection, fixes the
   equivalence of solution sets.
 * `TauCeti.GroupAlgGeom.CoordGroup.equivOfCoordinateChange`: the induced isomorphism of
   coordinate groups.
-* `TauCeti.GroupAlgGeom.imageEquivV`, `TauCeti.GroupAlgGeom.equivVOfVImageEq`,
-  `TauCeti.GroupAlgGeom.equivVOfConjMulEquiv`: the bijections of solution sets induced by a
-  `G`-isomorphism, to any system with the same algebraic set as `φ S`, and by a `G`-isomorphism
-  followed by conjugation.
+* `TauCeti.GroupAlgGeom.imageEquivV`, `TauCeti.GroupAlgGeom.equivVOfVImageEq`: the bijections of
+  solution sets induced by a `G`-isomorphism, and to any system with the same algebraic set as
+  `φ S`.
 * `TauCeti.GroupAlgGeom.CoordGroup.imageMulEquiv`,
-  `TauCeti.GroupAlgGeom.CoordGroup.mulEquivOfVImageEq`,
-  `TauCeti.GroupAlgGeom.CoordGroup.mulEquivOfConjMulEquiv`: the induced isomorphisms of coordinate
+  `TauCeti.GroupAlgGeom.CoordGroup.mulEquivOfVImageEq`: the induced isomorphisms of coordinate
   groups.
 
 ## Main results
 
 * `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V`: a change of coordinates `σ` carries
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
+* `TauCeti.GroupAlgGeom.V_image_singleton_eq_of_conj`: conjugation after a map preserves the
+  algebraic set of a single equation.
 * `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`,
   `TauCeti.GroupAlgGeom.mem_V_iff_of_V_image_eq`,
   `TauCeti.GroupAlgGeom.mem_V_singleton_iff_of_conj_gHom`: membership in the solutions of the
@@ -54,10 +54,8 @@ The change of coordinates `x ↦ x g` of one variable, a transvection, fixes the
   under a `G`-homomorphism, and of a single equation under a `G`-homomorphism followed by
   conjugation.
 * `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`,
-  `TauCeti.GroupAlgGeom.Rad_of_V_image_eq`,
-  `TauCeti.GroupAlgGeom.Rad_singleton_of_conj_mulEquiv`: a `G`-isomorphism carries the radical of
-  a system to the radical of its image, of any system with the same solutions, and of a conjugate
-  of the image of a single equation.
+  `TauCeti.GroupAlgGeom.Rad_of_V_image_eq`: a `G`-isomorphism carries the radical of a system to
+  the radical of its image and of any system with the same solutions.
 * `TauCeti.GroupAlgGeom.image_transvection_V_singleton_commutatorElement`: the transvection
   `x ↦ x g` carries the solutions of `[x, g] = 1` onto themselves.
 
@@ -457,113 +455,16 @@ end CoordGroup
 
 end VImageEq
 
-section ConjMulEquiv
-
-variable {w : GX G X} {u w' : GX G Y}
-
-private theorem V_image_singleton_eq_of_conj (hw' : u * φ w * u⁻¹ = w') :
-    V ι (φ '' {w}) = V ι {w'} := by
-  rw [Set.image_singleton, ← hw', V_singleton_conj]
-
-/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` followed by conjugation `u * φ w * u⁻¹ = w'` in `G[Y]`
-induces a bijection between the solutions of `w = 1` and those of `w' = 1`. -/
-noncomputable def equivVOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w') :
-    V ι {w} ≃ V ι {w'} :=
-  equivVOfVImageEq ι φ hφ (V_image_singleton_eq_of_conj ι φ hw')
-
-/-- On tuples, `equivVOfConjMulEquiv` applies the word map of the words `φ⁻¹ y`. -/
-@[simp]
-theorem equivVOfConjMulEquiv_apply_coe (hw' : u * φ w * u⁻¹ = w') (v : V ι {w}) :
-    (equivVOfConjMulEquiv ι φ hφ hw' v : Y → H) =
-      wordMap ι (fun y => φ.symm (inr (FreeGroup.of y))) v :=
-  equivVOfVImageEq_apply_coe ι φ hφ _ v
-
-/-- On tuples, the inverse of `equivVOfConjMulEquiv` applies the word map of the words `φ x`. -/
-@[simp]
-theorem equivVOfConjMulEquiv_symm_apply_coe (hw' : u * φ w * u⁻¹ = w') (v : V ι {w'}) :
-    ((equivVOfConjMulEquiv ι φ hφ hw').symm v : X → H) =
-      wordMap ι (fun x => φ (inr (FreeGroup.of x))) v :=
-  equivVOfVImageEq_symm_apply_coe ι φ hφ _ v
-
-include hφ in
-/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` carries the radical of `{w}` to the radical of any
-conjugate `w' = u * φ w * u⁻¹` of `φ w`. -/
-theorem Rad_singleton_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') :
-    Rad ι {w'} = (Rad ι {w}).map (φ : GX G X →* GX G Y) :=
-  Rad_of_V_image_eq ι φ hφ (V_image_singleton_eq_of_conj ι φ hw')
-
-namespace CoordGroup
-
-/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` followed by conjugation `u * φ w * u⁻¹ = w'` induces an
-isomorphism from the coordinate group of `{w}` to that of `{w'}`, given by `φ` on
-representatives. -/
-noncomputable def mulEquivOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w') :
-    CoordGroup ι {w} ≃* CoordGroup ι {w'} :=
-  mulEquivOfVImageEq ι φ hφ (V_image_singleton_eq_of_conj ι φ hw')
-
-@[simp]
-theorem mulEquivOfConjMulEquiv_mk (hw' : u * φ w * u⁻¹ = w') (t : GX G X) :
-    mulEquivOfConjMulEquiv ι φ hφ hw' (t : CoordGroup ι {w}) = (φ t : CoordGroup ι {w'}) :=
-  mulEquivOfVImageEq_mk ι φ hφ _ t
-
-@[simp]
-theorem mulEquivOfConjMulEquiv_symm_mk (hw' : u * φ w * u⁻¹ = w') (t : GX G Y) :
-    (mulEquivOfConjMulEquiv ι φ hφ hw').symm (t : CoordGroup ι {w'}) =
-      (φ.symm t : CoordGroup ι {w}) :=
-  mulEquivOfVImageEq_symm_mk ι φ hφ _ t
-
-/-- The coordinate-group isomorphism induced by a `G`-isomorphism and conjugation commutes with
-the coefficient maps. -/
-theorem mulEquivOfConjMulEquiv_coeff (hw' : u * φ w * u⁻¹ = w') (g : G) :
-    mulEquivOfConjMulEquiv ι φ hφ hw' (coeff ι {w} g) = coeff ι {w'} g :=
-  mulEquivOfVImageEq_coeff ι φ hφ _ g
-
-/-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism and conjugation commutes
-with the coefficient maps. -/
-theorem mulEquivOfConjMulEquiv_symm_coeff (hw' : u * φ w * u⁻¹ = w') (g : G) :
-    (mulEquivOfConjMulEquiv ι φ hφ hw').symm (coeff ι {w'} g) = coeff ι {w} g :=
-  mulEquivOfVImageEq_symm_coeff ι φ hφ _ g
-
-/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation sends a
-coordinate `x` of the generic point of `{w}` to the class of the word `φ x`. -/
-@[simp]
-theorem mulEquivOfConjMulEquiv_genericPoint (hw' : u * φ w * u⁻¹ = w') (x : X) :
-    mulEquivOfConjMulEquiv ι φ hφ hw' (genericPoint ι {w} x) =
-      (φ (inr (FreeGroup.of x)) : CoordGroup ι {w'}) :=
-  mulEquivOfVImageEq_genericPoint ι φ hφ _ x
-
-/-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation
-sends a coordinate `y` of the generic point of `{w'}` to the class of the word `φ⁻¹ y`. -/
-@[simp]
-theorem mulEquivOfConjMulEquiv_symm_genericPoint (hw' : u * φ w * u⁻¹ = w') (y : Y) :
-    (mulEquivOfConjMulEquiv ι φ hφ hw').symm (genericPoint ι {w'} y) =
-      (φ.symm (inr (FreeGroup.of y)) : CoordGroup ι {w}) :=
-  mulEquivOfVImageEq_symm_genericPoint ι φ hφ _ y
-
-/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation sends the
-generic point of `{w}` to the image of the generic point of `{w'}` under the word map of `φ`. -/
-@[simp]
-theorem mulEquivOfConjMulEquiv_comp_genericPoint (hw' : u * φ w * u⁻¹ = w') :
-    ⇑(mulEquivOfConjMulEquiv ι φ hφ hw') ∘ genericPoint ι {w} =
-      wordMap (coeff ι {w'}) (fun x => φ (inr (FreeGroup.of x))) (genericPoint ι {w'}) :=
-  mulEquivOfVImageEq_comp_genericPoint ι φ hφ _
-
-/-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation
-sends the generic point of `{w'}` to the image of the generic point of `{w}` under the word map
-of `φ⁻¹`. -/
-@[simp]
-theorem mulEquivOfConjMulEquiv_symm_comp_genericPoint (hw' : u * φ w * u⁻¹ = w') :
-    ⇑(mulEquivOfConjMulEquiv ι φ hφ hw').symm ∘ genericPoint ι {w'} =
-      wordMap (coeff ι {w}) (fun y => φ.symm (inr (FreeGroup.of y))) (genericPoint ι {w}) :=
-  mulEquivOfVImageEq_symm_comp_genericPoint ι φ hφ _
-
-end CoordGroup
-
-end ConjMulEquiv
-
 end MulEquiv
 
 section GHomVImageEq
+
+/-- If `u * φ w * u⁻¹ = w'` for a map `φ : G[X] → G[Y]`, then `φ '' {w}` and `{w'}` have the
+same algebraic set. -/
+theorem V_image_singleton_eq_of_conj (φ : GX G X → GX G Y) {w : GX G X} {u w' : GX G Y}
+    (hw' : u * φ w * u⁻¹ = w') :
+    V ι (φ '' {w}) = V ι {w'} := by
+  rw [Set.image_singleton, ← hw', V_singleton_conj]
 
 /-- When `V ι (σ '' S) = V ι T` for a `G`-homomorphism `σ : G[X] →* G[Y]`, a point solves `T`
 if and only if the tuple of its values at the words `σ x` solves `S`. -/
@@ -578,7 +479,7 @@ if and only if the tuple of its values at the words `σ x` solves `w = 1`. -/
 theorem mem_V_singleton_iff_of_conj_gHom (σ : GHom (inl : G →* GX G X) (inl : G →* GX G Y))
     {w : GX G X} {u w' : GX G Y} (hw' : u * σ w * u⁻¹ = w') (v : Y → H) :
     v ∈ V ι {w'} ↔ wordMap ι (fun x => σ (inr (FreeGroup.of x))) v ∈ V ι {w} :=
-  mem_V_iff_of_V_image_eq ι σ (by rw [Set.image_singleton, ← hw', V_singleton_conj]) v
+  mem_V_iff_of_V_image_eq ι σ (V_image_singleton_eq_of_conj ι σ hw') v
 
 end GHomVImageEq
 

@@ -816,40 +816,90 @@ private theorem prod_wordLetters (S : Standard G X) :
       List.prod_cons, List.prod_nil, GX.letter_inl, mul_one, hprod, toWord_def, constant_orientable,
       constant_orientableCoeff, constant_nonorientable, constant_nonorientableCoeff, map_one]
 
+/-- Flattening the reduced letter blocks of a list of `AtomSpec`s whose adjacent and wraparound
+pairs do not combine across boundaries yields a cyclically reduced word. -/
+private theorem isCyclicallyReduced_flatten_atomSpecs (as : List (AtomSpec G X))
+    (hred : ∀ a ∈ as, GX.IsReduced a.letters)
+    (hadj : as.IsChain fun a₁ a₂ =>
+      ∀ x ∈ a₁.letters.getLast?, ∀ y ∈ a₂.letters.head?, ¬GX.Combines x y)
+    (hwrap : ∀ a₁ ∈ as.getLast?, ∀ a₂ ∈ as.head?,
+      ∀ x ∈ a₁.letters.getLast?, ∀ y ∈ a₂.letters.head?, ¬GX.Combines x y) :
+    GX.IsCyclicallyReduced (as.map AtomSpec.letters).flatten := by
+  refine (GX.isCyclicallyReduced_flatten_iff (fun _ hl => by
+    obtain ⟨_, _, rfl⟩ := List.mem_map.1 hl; exact AtomSpec.letters_ne_nil _)).2 ⟨?_, ?_, ?_⟩
+  · intro l hl
+    obtain ⟨a, ha, rfl⟩ := List.mem_map.1 hl
+    exact hred a ha
+  · rwa [List.isChain_map]
+  · intro _ l₁ hl₁ l₂ hl₂
+    rw [List.getLast?_map, Option.mem_map] at hl₁
+    rw [List.head?_map, Option.mem_map] at hl₂
+    obtain ⟨a₁, ha₁, rfl⟩ := hl₁
+    obtain ⟨a₂, ha₂, rfl⟩ := hl₂
+    exact hwrap a₁ ha₁ a₂ ha₂
+
+/-- Appending a nontrivial constant `.inl d` to the flattened letter blocks of a nodup-indexed
+family of reduced `AtomSpec`s whose distinct indices have `lastVar ≠ headVar` yields a cyclically
+reduced word. -/
+private theorem isCyclicallyReduced_flatten_atomSpecs_append_inl {n m : ℕ}
+    (g : Fin n ⊕ Fin m → AtomSpec G X) {d : G}
+    (hred : ∀ s, GX.IsReduced (g s).letters)
+    (hne : ∀ s₁ s₂, s₁ ≠ s₂ → (g s₁).lastVar ≠ (g s₂).headVar)
+    (hd : d ≠ 1) :
+    GX.IsCyclicallyReduced
+      (((((List.finRange n).map Sum.inl ++ (List.finRange m).map Sum.inr).map g).map
+        AtomSpec.letters).flatten ++ [.inl d]) := by
+  have hnd : ((List.finRange n).map Sum.inl ++ (List.finRange m).map Sum.inr :
+      List (Fin n ⊕ Fin m)).Nodup :=
+    ((List.nodup_finRange n).map Sum.inl_injective).append
+      ((List.nodup_finRange m).map Sum.inr_injective) (by simp [List.Disjoint])
+  refine GX.isCyclicallyReduced_flatten_append_singleton
+    (fun _ hl => by obtain ⟨_, _, rfl⟩ := List.mem_map.1 hl; exact AtomSpec.letters_ne_nil _)
+    (fun l hl => by
+      obtain ⟨_, ha, rfl⟩ := List.mem_map.1 hl
+      obtain ⟨s, _, rfl⟩ := List.mem_map.1 ha
+      exact hred s)
+    ?_ (fun l hl => by
+      obtain ⟨a, _, rfl⟩ := List.mem_map.1 (List.mem_of_head? hl)
+      exact AtomSpec.not_combines_inl_head d a)
+    (fun l hl => by
+      obtain ⟨a, _, rfl⟩ := List.mem_map.1 (List.mem_of_getLast? hl)
+      exact AtomSpec.not_combines_getLast_inl a d)
+    (by simpa using hd)
+  rw [List.map_map, List.isChain_map]
+  exact hnd.isChain.imp fun s₁ s₂ hs => AtomSpec.not_combines_of_ne (hne s₁ s₂ hs)
+
+-- Types (1) and (3) flatten `atomSpecs` via `isCyclicallyReduced_flatten_atomSpecs`;
+-- types (2) and (4) append `.inl d` via `isCyclicallyReduced_flatten_atomSpecs_append_inl`.
 private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
     GX.IsCyclicallyReduced (wordLetters S) := by
   cases S with
   | orientable n hn x y inj =>
     have hxy (i j : Fin n) : y i ≠ x j := ((Sum.elim_injective.1 inj).2.2 j i).symm
-    refine (GX.isCyclicallyReduced_flatten_iff (fun _ hl => by
-      obtain ⟨_, _, rfl⟩ := List.mem_map.1 hl; exact AtomSpec.letters_ne_nil _)).2 ⟨?_, ?_, ?_⟩
-    · intro l hl
-      obtain ⟨a, ha, rfl⟩ := List.mem_map.1 hl
-      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using ha)
-      exact isReduced_commLetters (hxy i i).symm
-    · rw [atomSpecs, List.ofFn_eq_map, List.map_map, List.isChain_map]
-      exact (List.nodup_finRange n).isChain.imp fun _ _ _ => AtomSpec.not_combines_of_ne (hxy _ _)
-    · intro _ l₁ hl₁ l₂ hl₂
-      obtain ⟨a₁, ha₁, rfl⟩ := List.mem_map.1 (List.mem_of_getLast? hl₁)
-      obtain ⟨a₂, ha₂, rfl⟩ := List.mem_map.1 (List.mem_of_head? hl₂)
-      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using ha₁)
-      obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using ha₂)
-      exact AtomSpec.not_combines_of_ne (hxy i j)
+    refine isCyclicallyReduced_flatten_atomSpecs _
+      (fun a ha => by
+        obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using ha)
+        exact isReduced_commLetters (hxy i i).symm)
+      (by
+        rw [atomSpecs, List.ofFn_eq_map, List.isChain_map]
+        exact (List.nodup_finRange n).isChain.imp fun _ _ _ =>
+          AtomSpec.not_combines_of_ne (hxy _ _))
+      (fun _ ha₁ _ ha₂ => by
+        obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using List.mem_of_getLast? ha₁)
+        obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using List.mem_of_head? ha₂)
+        exact AtomSpec.not_combines_of_ne (hxy i j))
   | nonorientable n hn x inj =>
-    refine (GX.isCyclicallyReduced_flatten_iff (fun _ hl => by
-      obtain ⟨_, _, rfl⟩ := List.mem_map.1 hl; exact AtomSpec.letters_ne_nil _)).2 ⟨?_, ?_, ?_⟩
-    · intro l hl
-      obtain ⟨a, ha, rfl⟩ := List.mem_map.1 hl
-      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using ha)
-      exact isReduced_sqLetters _
-    · rw [atomSpecs, List.ofFn_eq_map, List.map_map, List.isChain_map]
-      exact (List.nodup_finRange n).isChain.imp fun _ _ _ => AtomSpec.not_combines_sq _ _
-    · intro _ l₁ hl₁ l₂ hl₂
-      obtain ⟨a₁, ha₁, rfl⟩ := List.mem_map.1 (List.mem_of_getLast? hl₁)
-      obtain ⟨a₂, ha₂, rfl⟩ := List.mem_map.1 (List.mem_of_head? hl₂)
-      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using ha₁)
-      obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using ha₂)
-      exact AtomSpec.not_combines_sq _ _
+    refine isCyclicallyReduced_flatten_atomSpecs _
+      (fun a ha => by
+        obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using ha)
+        exact isReduced_sqLetters _)
+      (by
+        rw [atomSpecs, List.ofFn_eq_map, List.isChain_map]
+        exact (List.nodup_finRange n).isChain.imp fun _ _ _ => AtomSpec.not_combines_sq _ _)
+      (fun _ ha₁ _ ha₂ => by
+        obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using List.mem_of_getLast? ha₁)
+        obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (by simpa [atomSpecs] using List.mem_of_head? ha₂)
+        exact AtomSpec.not_combines_sq _ _)
   | orientableCoeff n m hnm x y z inj c hc d hd =>
     have hinj₁ := (Sum.elim_injective.1 inj).1
     let g : Fin n ⊕ Fin m → AtomSpec G X :=
@@ -857,26 +907,11 @@ private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
     have hatoms : (orientableCoeff n m hnm x y z inj c hc d hd).atomSpecs =
         ((List.finRange n).map Sum.inl ++ (List.finRange m).map Sum.inr).map g := by
       simp [atomSpecs, g, List.map_append, List.map_map, Function.comp_def, List.ofFn_eq_map]
-    have hnd : ((List.finRange n).map Sum.inl ++ (List.finRange m).map Sum.inr :
-        List (Fin n ⊕ Fin m)).Nodup :=
-      ((List.nodup_finRange n).map Sum.inl_injective).append
-        ((List.nodup_finRange m).map Sum.inr_injective) (by simp [List.Disjoint])
-    refine GX.isCyclicallyReduced_flatten_append_singleton
-      (fun _ hl => by obtain ⟨_, _, rfl⟩ := List.mem_map.1 hl; exact AtomSpec.letters_ne_nil _)
-      (fun l hl => by
-        obtain ⟨a, ha, rfl⟩ := List.mem_map.1 hl
-        rcases (by simpa [atomSpecs] using ha) with ⟨i, rfl⟩ | ⟨j, rfl⟩
-        · exact isReduced_commLetters ((Sum.elim_injective.1 hinj₁).2.2 i i)
-        · exact isReduced_conjLetters (hc j))
-      ?_ (fun l hl => by
-        obtain ⟨a, _, rfl⟩ := List.mem_map.1 (List.mem_of_head? hl)
-        exact AtomSpec.not_combines_inl_head d a)
-      (fun l hl => by
-        obtain ⟨a, _, rfl⟩ := List.mem_map.1 (List.mem_of_getLast? hl)
-        exact AtomSpec.not_combines_getLast_inl a d)
-      (by simpa using hd)
-    rw [hatoms, List.map_map, List.isChain_map]
-    refine hnd.isChain.imp fun s₁ s₂ hs => AtomSpec.not_combines_of_ne ?_
+    rw [wordLetters, hatoms]
+    refine isCyclicallyReduced_flatten_atomSpecs_append_inl g (fun s => by
+      rcases s with i | j
+      · exact isReduced_commLetters ((Sum.elim_injective.1 hinj₁).2.2 i i)
+      · exact isReduced_conjLetters (hc j)) (fun s₁ s₂ hs => ?_) hd
     rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂
     · exact ((Sum.elim_injective.1 hinj₁).2.2 i₂ i₁).symm
     · exact (Sum.elim_injective.1 inj).2.2 (.inr i₁) j₂
@@ -888,26 +923,11 @@ private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
     have hatoms : (nonorientableCoeff n m hn x z inj c hc d hd).atomSpecs =
         ((List.finRange n).map Sum.inl ++ (List.finRange m).map Sum.inr).map g := by
       simp [atomSpecs, g, List.map_append, List.map_map, Function.comp_def, List.ofFn_eq_map]
-    have hnd : ((List.finRange n).map Sum.inl ++ (List.finRange m).map Sum.inr :
-        List (Fin n ⊕ Fin m)).Nodup :=
-      ((List.nodup_finRange n).map Sum.inl_injective).append
-        ((List.nodup_finRange m).map Sum.inr_injective) (by simp [List.Disjoint])
-    refine GX.isCyclicallyReduced_flatten_append_singleton
-      (fun _ hl => by obtain ⟨_, _, rfl⟩ := List.mem_map.1 hl; exact AtomSpec.letters_ne_nil _)
-      (fun l hl => by
-        obtain ⟨a, ha, rfl⟩ := List.mem_map.1 hl
-        rcases (by simpa [atomSpecs] using ha) with ⟨i, rfl⟩ | ⟨j, rfl⟩
-        · exact isReduced_sqLetters (x i)
-        · exact isReduced_conjLetters (hc j))
-      ?_ (fun l hl => by
-        obtain ⟨a, _, rfl⟩ := List.mem_map.1 (List.mem_of_head? hl)
-        exact AtomSpec.not_combines_inl_head d a)
-      (fun l hl => by
-        obtain ⟨a, _, rfl⟩ := List.mem_map.1 (List.mem_of_getLast? hl)
-        exact AtomSpec.not_combines_getLast_inl a d)
-      (by simpa using hd)
-    rw [hatoms, List.map_map, List.isChain_map]
-    refine hnd.isChain.imp fun s₁ s₂ hs => AtomSpec.not_combines_of_ne ?_
+    rw [wordLetters, hatoms]
+    refine isCyclicallyReduced_flatten_atomSpecs_append_inl g (fun s => by
+      rcases s with i | j
+      · exact isReduced_sqLetters (x i)
+      · exact isReduced_conjLetters (hc j)) (fun s₁ s₂ hs => ?_) hd
     have hne_v : Sum.elim x z s₁ ≠ Sum.elim x z s₂ := inj.ne hs
     rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂ <;> exact hne_v
 

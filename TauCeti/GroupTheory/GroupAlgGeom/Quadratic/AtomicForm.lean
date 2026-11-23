@@ -162,6 +162,9 @@ def commsProd (P : AtomicForm G X) : GX G X :=
 
 theorem commsProd_def (P : AtomicForm G X) : P.commsProd = (P.comms.map commWord).prod := (rfl)
 
+theorem commsProd_mk (C : List (X × X)) (S : List X) (Z : List (X × G)) (d : G) :
+    (⟨C, S, Z, d⟩ : AtomicForm G X).commsProd = (C.map commWord).prod := (rfl)
+
 @[simp]
 theorem commsProd_nil (S : List X) (Z : List (X × G)) (d : G) :
     (⟨[], S, Z, d⟩ : AtomicForm G X).commsProd = 1 := by
@@ -172,11 +175,22 @@ theorem commsProd_cons (P : AtomicForm G X) (p : X × X) :
     ({ P with comms := p :: P.comms } : AtomicForm G X).commsProd = commWord p * P.commsProd := by
   simp [commsProd_def]
 
+@[simp]
+theorem commsProd_with_squares (P : AtomicForm G X) (S : List X) :
+    ({ P with squares := S } : AtomicForm G X).commsProd = P.commsProd := (rfl)
+
+@[simp]
+theorem commsProd_with_conjs (P : AtomicForm G X) (Z : List (X × G)) :
+    ({ P with conjs := Z } : AtomicForm G X).commsProd = P.commsProd := (rfl)
+
 /-- The product `∏ sₖ²` of the square atoms of `P`. -/
 def squaresProd (P : AtomicForm G X) : GX G X :=
   (P.squares.map sqWord).prod
 
 theorem squaresProd_def (P : AtomicForm G X) : P.squaresProd = (P.squares.map sqWord).prod := (rfl)
+
+theorem squaresProd_mk (C : List (X × X)) (S : List X) (Z : List (X × G)) (d : G) :
+    (⟨C, S, Z, d⟩ : AtomicForm G X).squaresProd = (S.map sqWord).prod := (rfl)
 
 @[simp]
 theorem squaresProd_nil (C : List (X × X)) (Z : List (X × G)) (d : G) :
@@ -189,11 +203,22 @@ theorem squaresProd_cons (P : AtomicForm G X) (s : X) :
       sqWord s * P.squaresProd := by
   simp [squaresProd_def]
 
+@[simp]
+theorem squaresProd_with_comms (P : AtomicForm G X) (C : List (X × X)) :
+    ({ P with comms := C } : AtomicForm G X).squaresProd = P.squaresProd := (rfl)
+
+@[simp]
+theorem squaresProd_with_conjs (P : AtomicForm G X) (Z : List (X × G)) :
+    ({ P with conjs := Z } : AtomicForm G X).squaresProd = P.squaresProd := (rfl)
+
 /-- The product `∏ zⱼ⁻¹ cⱼ zⱼ` of the conjugate atoms of `P`. -/
 def conjsProd (P : AtomicForm G X) : GX G X :=
   (P.conjs.map conjWord).prod
 
 theorem conjsProd_def (P : AtomicForm G X) : P.conjsProd = (P.conjs.map conjWord).prod := (rfl)
+
+theorem conjsProd_mk (C : List (X × X)) (S : List X) (Z : List (X × G)) (d : G) :
+    (⟨C, S, Z, d⟩ : AtomicForm G X).conjsProd = (Z.map conjWord).prod := (rfl)
 
 @[simp]
 theorem conjsProd_nil (C : List (X × X)) (S : List X) (d : G) :
@@ -205,6 +230,14 @@ theorem conjsProd_cons (P : AtomicForm G X) (p : X × G) :
     ({ P with conjs := p :: P.conjs } : AtomicForm G X).conjsProd =
       conjWord p * P.conjsProd := by
   simp [conjsProd_def]
+
+@[simp]
+theorem conjsProd_with_comms (P : AtomicForm G X) (C : List (X × X)) :
+    ({ P with comms := C } : AtomicForm G X).conjsProd = P.conjsProd := (rfl)
+
+@[simp]
+theorem conjsProd_with_squares (P : AtomicForm G X) (S : List X) :
+    ({ P with squares := S } : AtomicForm G X).conjsProd = P.conjsProd := (rfl)
 
 /-- The word `∏ [xᵢ, yᵢ] · ∏ sₖ² · ∏ zⱼ⁻¹ cⱼ zⱼ · d` of `G[X]`, with `[x, y] = x⁻¹ y⁻¹ x y`. -/
 def toWord (P : AtomicForm G X) : GX G X :=
@@ -397,12 +430,6 @@ private theorem vars_append_conj (C : List (X × X)) (S : List X) (Z : List (X �
       (⟨C, S, Z, d₂⟩ : AtomicForm G X).vars ++ [z] := by
   simp [vars_def, List.append_assoc]
 
-private theorem conjsProd_append_conj (C : List (X × X)) (S : List X) (Z : List (X × G))
-    (z : X) (c d₁ d₂ : G) :
-    (⟨C, S, Z ++ [(z, c)], d₁⟩ : AtomicForm G X).conjsProd =
-      (⟨C, S, Z, d₂⟩ : AtomicForm G X).conjsProd * conjWord (z, c) := by
-  simp [conjsProd_def]
-
 /-- A word `W` in atomic form in pairwise distinct variables, without constant, whose last atom is
 the conjugate `z⁻¹ c z`: for some elementary automorphism `f` fixing every word avoiding every
 variable in the input atomic form's `vars` list, the conjugate `z * f W.toWord * z⁻¹` is the word
@@ -429,16 +456,12 @@ theorem exists_mem_elementaryAut_conj_toWord_concat
     (List.disjoint_of_nodup_append h.of_append_left) rfl _ hzy
   have e : (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).toWord =
       (⟨C, S, Z, 1⟩ : AtomicForm G X).toWord * conjWord (z, c) := by
-    rw [toWord_def, toWord_def, conjsProd_append_conj C S Z z c 1 1]
-    simp only [map_one, mul_one, mul_assoc]
-    rfl
+    simp [toWord_def, commsProd_mk, squaresProd_mk, conjsProd_mk, mul_assoc]
   refine ⟨f, hf, ?_, fun a ha =>
     hfw a fun v hv => mem_avoiding_iff_occurrences_eq_zero.2 (ha v (hsub.subset hv))⟩
   rw [e, map_mul, hfP, hfw _ fun y hy => conjWord_mem_avoiding (p := (z, c))
     (fun (hzy' : z = y) => List.disjoint_of_nodup_append h (hzy' ▸ hy) (.head _))]
-  rw [toWord_def, toWord_def, conjWord_def]
-  simp only [map_one, mul_one, mul_assoc, mul_inv_cancel_left, mul_inv_cancel]
-  rfl
+  simp [toWord_def, commsProd_mk, squaresProd_mk, conjsProd_mk, conjWord_def, mul_assoc]
 
 /-! ### Atomic forms that are standard quadratic words -/
 

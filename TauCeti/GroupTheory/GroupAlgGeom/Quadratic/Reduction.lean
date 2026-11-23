@@ -22,8 +22,9 @@ conjugation in `G[X]` (`exists_standardForm`). This is the corrected form of Kha
 [IFT, §2.7, Lemma 1] and [VAR-I, §1, Lemma 6], which omit the coefficient branch: a coefficient
 `g ≠ 1` and its conjugates `z⁻¹ g z` are strictly quadratic (`isStrictlyQuadratic_inl`,
 `isStrictlyQuadratic_inv_mul_inl_mul_self`), and no standard quadratic word is conjugate to a
-coefficient (`Standard.toWord_ne_conj_inl`). Moreover, variables outside `S.vars` are
-unconstrained (`mem_V_congr`, `Standard.occurrences_toWord_eq_zero_iff`).
+coefficient (`Standard.toWord_ne_conj_inl`, `Standard.toWord_ne_conj_map_conj_inl`). Moreover,
+variables outside `S.vars` are unconstrained (`mem_V_congr`,
+`Standard.occurrences_toWord_eq_zero_iff`).
 
 A reduced word with no variable letters is already a coefficient `inl c` (the base case).
 Following Gallier–Xu [GaXu, Lemma 6.1], any reduced word with at least one variable letter in which
@@ -40,12 +41,6 @@ coefficient or a standard quadratic equation.
   occurring in the word) and a conjugation either to a coefficient `inl c` (`c ∈ G`) or to
   `S.toWord` for a standard quadratic equation `S : Standard G X` whose variables `S.vars` all
   occur in the word.
-* `TauCeti.GroupAlgGeom.Quadratic.not_exists_standard_of_isConj_inl`,
-  `TauCeti.GroupAlgGeom.Quadratic.not_exists_standard_of_conj_mulEquiv_eq_inl`: reaching an
-  element mapped to a coefficient `inl d` by conjugacy in any group `A`, or reaching a target in
-  an isomorphic group `B` after `A ≃* B` and conjugating in `B`, rules out reaching a standard
-  quadratic equation over `K` by any homomorphism `A →* K[Z]` sending that element to a
-  coefficient `inl c₂` and conjugating in `K[Z]`.
 
 ## References
 
@@ -342,12 +337,9 @@ private theorem atomic_step_sq {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {x 
     (fun v hv => sqWord_mem_avoiding (by simpa [eq_comm] using hv)) hf₁_fix hf₁_eq hred
     (by simp [AtomicForm.vars_def, List.append_assoc])
     (fun a ha => GX.transvection_apply_of_mem_avoiding _ _ (ha x (List.mem_singleton_self x))) ?_
-  rw [AtomicForm.toWord_def, AtomicForm.toWord_def, AtomicForm.squaresProd_cons]
+  rw [AtomicForm.toWord_def, AtomicForm.toWord_def]
   dsimp only [φ]
-  simp only [map_mul, sqWord_def, pow_two, GX.transvection_inr_of_self,
-    GX.transvection_apply_of_mem_avoiding, hC, hSq, hCj, GX.inl_mem_avoiding, mul_assoc,
-    inv_mul_cancel_left]
-  simp only [AtomicForm.commsProd_def, AtomicForm.conjsProd_def]
+  simp [sqWord_def, pow_two, GX.transvection_inr_of_self, hC, hSq, hCj, mul_assoc]
 
 private theorem atomic_step_comm {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {x y : X}
     {P : AtomicForm G X}
@@ -371,8 +363,7 @@ private theorem atomic_step_comm {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {
       exact commWord_mem_avoiding (Ne.symm hv.1) (Ne.symm hv.2))
     hf₁_fix hf₁_eq hred (by simp [AtomicForm.vars_def, List.append_assoc])
     (fun a _ => rfl) ?_
-  rw [MulAut.one_apply, AtomicForm.toWord_def, AtomicForm.toWord_def, AtomicForm.commsProd_cons]
-  simp only [mul_assoc, AtomicForm.squaresProd_def, AtomicForm.conjsProd_def]
+  simp [AtomicForm.toWord_def, mul_assoc]
 
 private theorem atomic_step_conj {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {z : X} {c : G}
     {P : AtomicForm G X}
@@ -398,12 +389,9 @@ private theorem atomic_step_conj {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {
     (by simpa using hR_sub) (by simpa using hzw) (List.nodup_singleton z)
     (fun v hv => conjWord_mem_avoiding (by simpa [eq_comm] using hv)) hf₁_fix hf₁_eq hred hperm
     (fun a ha => GX.transvection_apply_of_mem_avoiding _ _ (ha z (List.mem_singleton_self z))) ?_
-  rw [AtomicForm.toWord_def, AtomicForm.toWord_def, AtomicForm.conjsProd_cons]
+  rw [AtomicForm.toWord_def, AtomicForm.toWord_def]
   dsimp only [φ]
-  simp only [map_mul, conjWord_def, map_inv, GX.transvection_inr_of_self,
-    GX.transvection_apply_of_mem_avoiding, hC, hSq, hCj, GX.inl_mem_avoiding, one_mul, mul_inv_rev,
-    inv_inv, mul_assoc, inv_mul_cancel_left]
-  simp only [AtomicForm.commsProd_def, AtomicForm.squaresProd_def]
+  simp [conjWord_def, GX.transvection_inr_of_self, hC, hSq, hCj, mul_assoc]
 
 private theorem exists_atomic_aux (n : ℕ) : ∀ w : GX G X, (GX.occVars w).card = n →
     IsStrictlyQuadratic {w} →
@@ -490,44 +478,6 @@ theorem exists_standardForm {w : GX G X} (hw : IsStrictlyQuadratic {w}) :
 
 end Main
 
-/-! ### Exclusivity of the two branches -/
-
-section Exclusivity
-
-variable {A B K Z : Type*} [Group A] [Group B] [Group K]
-
-/-- If `w : A` is conjugate in `A` to `a : A`, then no homomorphism `φ : A →* K[Z]` sending `a`
-to a coefficient `inl d` followed by a conjugation in `K[Z]` can carry `w` to `S.toWord` for any
-`S : Standard K Z`. -/
-theorem not_exists_standard_of_isConj_inl
-    {F : Type*} [FunLike F A (GX K Z)] [MonoidHomClass F A (GX K Z)]
-    {a w : A} {d : K} (hw : IsConj a w)
-    (φ : F) (hφ : φ a = inl d) (u : GX K Z) :
-    ¬∃ S : Standard K Z, u * φ w * u⁻¹ = S.toWord := by
-  rintro ⟨S, hS⟩
-  have h : IsConj (inl d : GX K Z) S.toWord :=
-    (hφ ▸ (MonoidHom.ofClass φ).map_isConj hw).trans (isConj_iff.2 ⟨u, hS⟩)
-  exact S.not_isConj_inl d h
-
-/-- The coefficient and standard-equation branches of `exists_standardForm` are mutually exclusive,
-even across isomorphisms and homomorphisms mapping an element `a : A` to a target or coefficient
-followed by arbitrary conjugation: if `w : A` is carried by an isomorphism `φ₁ : A ≃* B` with
-`φ₁ a = b₁` and a conjugation in `B` to `b₁`, then no homomorphism `φ₂ : A →* K[Z]` with
-`φ₂ a = inl c₂` followed by a conjugation in `K[Z]` can carry `w` to `S.toWord` for any
-`S : Standard K Z`. -/
-theorem not_exists_standard_of_conj_mulEquiv_eq_inl
-    {F : Type*} [FunLike F A (GX K Z)] [MonoidHomClass F A (GX K Z)]
-    {a w : A} {u₁ b₁ : B} {c₂ : K}
-    (φ₁ : A ≃* B) (hφ₁ : φ₁ a = b₁) (hw₁ : u₁ * φ₁ w * u₁⁻¹ = b₁)
-    (φ₂ : F) (hφ₂ : φ₂ a = inl c₂) (u₂ : GX K Z) :
-    ¬∃ S : Standard K Z, u₂ * φ₂ w * u₂⁻¹ = S.toWord := by
-  have hw : IsConj a w := by
-    have h : IsConj (φ₁ w) b₁ := isConj_iff.2 ⟨u₁, hw₁⟩
-    simpa [φ₁.symm_apply_eq.2 hφ₁.symm] using (φ₁.symm.toMonoidHom.map_isConj h).symm
-  exact not_exists_standard_of_isConj_inl hw φ₂ hφ₂ u₂
-
-end Exclusivity
-
 /-! ### Examples -/
 
 section Examples
@@ -562,12 +512,12 @@ example (ι : G →* H) :
         V ι {(inr (.of 0) ^ 2 * inr (.of 1) ^ 2 : GX G (Fin 2))},
       ∀ v, (e v : Fin 2 → H) 0 = (v : Fin 2 → H) 0 * (v : Fin 2 → H) 1 ∧
         (e v : Fin 2 → H) 1 = ((v : Fin 2 → H) 1)⁻¹ :=
-  ⟨equivVOfConjMulEquiv ι
+  ⟨equivVOfVImageEq ι
       (GX.invertVar G 1 * GX.transvection 0 1 (inr (.of 1))⁻¹ (one_mem _) (by simp) :
         MulAut (GX G (Fin 2)))
       (GX.apply_inl_of_mem_elementaryAut
         (mul_mem (GX.invertVar_mem_elementaryAut 1) (GX.transvection_mem_elementaryAut 0 _ _)))
-      (u := 1) (by simp [pow_two, mul_assoc]),
+      (V_image_singleton_eq_of_conj ι _ (u := 1) (by simp [pow_two, mul_assoc])),
     fun v => by
       have h01 : (0 : Fin 2) ≠ 1 := by decide
       simp [MulAut.mul_def, MulEquiv.symm_trans_apply, GX.transvection_symm,
@@ -582,8 +532,9 @@ example {F : Type*} [FunLike F (GX (FreeGroup (Fin 2)) Unit) (GX (FreeGroup (Fin
     (φ : F) (hφ : φ (inl (.of 0)) = inl (.of 0)) (u : GX (FreeGroup (Fin 2)) Y) :
     ¬∃ S : Standard (FreeGroup (Fin 2)) Y,
       u * φ ((inr (.of ()))⁻¹ * inl (.of 0) * inr (.of ())) * u⁻¹ = S.toWord :=
-  not_exists_standard_of_conj_mulEquiv_eq_inl (1 : MulAut _) rfl
-    (u₁ := inr (.of ())) (by simp [mul_assoc]) φ hφ u
+  fun ⟨S, hS⟩ => S.toWord_ne_conj_map_conj_inl
+    (isConj_iff.2 ⟨(inr (.of ()) : GX (FreeGroup (Fin 2)) Unit)⁻¹, by simp [mul_assoc]⟩)
+    hφ u hS.symm
 
 /-- The identity word `1`—whose solution set `V ι {1}` is `Set.univ` even when the variable set is
 nonempty—takes the coefficient branch `c = 1` exclusively: no `1`-preserving map and conjugation can

@@ -18,7 +18,7 @@ file shows that the two alternatives exclude each other: no standard quadratic w
 in `G[X]` to a coefficient, the trivial coefficient included
 (`TauCeti.GroupAlgGeom.Quadratic.Standard.not_isConj_inl`,
 `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`). Consequently a conjugate
-`v⁻¹ a v` in any group `A` is not carried to a standard quadratic word by any homomorphism sending
+`w` of `a` in any group `A` is not carried to a standard quadratic word by any homomorphism sending
 `a` to a coefficient `inl d` followed by a conjugation (`Standard.toWord_ne_conj_map_conj_inl`).
 For `z⁻¹ c z` with `c ≠ 1` this shows that the coefficient alternative cannot be avoided.
 
@@ -73,15 +73,15 @@ theorem toWord_ne_conj_inl (S : Standard G X) (u : GX G X) (g : G) :
   fun h => S.not_isConj_inl g (isConj_iff.2 ⟨u, h.symm⟩)
 
 /-- A homomorphism `A →* G[X]` sending `a : A` to a coefficient `inl d`, followed by a
-conjugation in `G[X]`, does not carry a conjugate `v⁻¹ a v` of `a` to a standard quadratic word.
+conjugation in `G[X]`, does not carry any conjugate `w` of `a` to a standard quadratic word.
 For instance the strictly quadratic word `z⁻¹ c z` is not brought to a standard quadratic word by
 a change of coordinates over `G` and a conjugation. -/
 theorem toWord_ne_conj_map_conj_inl {A F : Type*} [Group A] [FunLike F A (GX G X)]
-    [MonoidHomClass F A (GX G X)] (S : Standard G X) {f : F} {a : A} {d : G}
-    (hf : f a = inl d) (u : GX G X) (v : A) :
-    S.toWord ≠ u * f (v⁻¹ * a * v) * u⁻¹ := by
+    [MonoidHomClass F A (GX G X)] (S : Standard G X) {f : F} {a w : A} {d : G}
+    (hw : IsConj a w) (hf : f a = inl d) (u : GX G X) :
+    S.toWord ≠ u * f w * u⁻¹ := by
   intro h
-  exact S.not_isConj_inl d <| isConj_iff.2 ⟨u * (f v)⁻¹, by
-    simpa [map_mul, map_inv, hf, mul_assoc] using h.symm⟩
+  exact S.not_isConj_inl d <|
+    (hf ▸ (MonoidHom.ofClass f).map_isConj hw).trans (isConj_iff.2 ⟨u, h.symm⟩)
 
 end TauCeti.GroupAlgGeom.Quadratic.Standard
