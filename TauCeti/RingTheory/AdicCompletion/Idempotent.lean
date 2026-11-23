@@ -177,12 +177,14 @@ theorem exists_isIdempotentElem_sub_mem_of_mul_eq [IsAdicComplete I S] {x₀ c d
       simpa only [zero_add, pow_one, hx_zero] using hstep 0
     simpa only [sub_add_sub_cancel] using add_mem h1 h01
   -- The iterates satisfy `c * y = y` and `y * d = y`, and hence so does their limit.
-  · exact IsHausdorff.map_eq_of_forall_sub_mem I (LinearMap.mulLeft R c)
-      (fun n ↦ Set.MapsTo.iterate (s := {y | c * y = y}) (fun _ hy ↦ mul_newtonIdempotent hy) n hc)
-      hLx
-  · exact IsHausdorff.map_eq_of_forall_sub_mem I (LinearMap.mulRight R d)
-      (fun n ↦ Set.MapsTo.iterate (s := {y | y * d = y}) (fun _ hy ↦ newtonIdempotent_mul hy) n hd)
-      hLx
+  · have hcx (n : ℕ) : c * x n = x n := by
+      induction n with | zero => exact hc | succ n ih => rw [hx_succ, mul_newtonIdempotent ih]
+    simpa only [LinearMap.mulLeft_apply] using IsHausdorff.map_eq_of_forall_sub_mem I
+      (LinearMap.mulLeft R c) (fun n ↦ by simpa only [LinearMap.mulLeft_apply] using hcx n) hLx
+  · have hxd (n : ℕ) : x n * d = x n := by
+      induction n with | zero => exact hd | succ n ih => rw [hx_succ, newtonIdempotent_mul ih]
+    simpa only [LinearMap.mulRight_apply] using IsHausdorff.map_eq_of_forall_sub_mem I
+      (LinearMap.mulRight R d) (fun n ↦ by simpa only [LinearMap.mulRight_apply] using hxd n) hLx
 
 /-- An element of an `I`-adically complete, possibly noncommutative `R`-algebra that is
 idempotent modulo `I • S` is congruent modulo `I • S` to an idempotent. -/
