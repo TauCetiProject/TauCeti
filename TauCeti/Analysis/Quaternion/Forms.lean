@@ -296,20 +296,6 @@ theorem le_norm_dq_insertNth_sub (x₀ : Fin 4 → ℝ) {r : ℝ} (hr : 0 ≤ r)
   simp only [Pi.sub_apply, Fin.insertNth_apply_same, Real.norm_eq_abs] at hcoord
   rcases hc with rfl | rfl <;> simpa [abs_of_nonneg hr] using hcoord
 
-/-- Continuous parametrization of the closed box slice `u ↦ dq (i.insertNth c u)` on
-`Set.Icc (a ∘ i.succAbove) (b ∘ i.succAbove)`. -/
-@[expose] noncomputable def boxSliceChart (a b : Fin 4 → ℝ) (i : Fin 4) (c : ℝ) :
-    C(↥(Set.Icc (a ∘ i.succAbove) (b ∘ i.succAbove)), ℍ) :=
-  ⟨fun u ↦ dq (i.insertNth c u.val),
-    dq.continuous.comp (continuous_const.finInsertNth i continuous_subtypeVal)⟩
-
-/-- Evaluation formula for `boxSliceChart`. -/
-@[simp]
-theorem boxSliceChart_apply (a b : Fin 4 → ℝ) (i : Fin 4) (c : ℝ)
-    (u : ↥(Set.Icc (a ∘ i.succAbove) (b ∘ i.succAbove))) :
-    boxSliceChart a b i c u = dq (i.insertNth c u.val) :=
-  rfl
-
 /-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
 with them. -/
 theorem _root_.Quaternion.sum_inner_dq_single_smul (q : ℍ) :
