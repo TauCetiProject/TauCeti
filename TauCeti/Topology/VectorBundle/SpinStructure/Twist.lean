@@ -33,10 +33,12 @@ the equivalence class of `s.twist L` depends only on the equivalence class of `s
 isomorphism class of `L`. Twisting by the trivial bundle changes nothing
 (`TauCeti.SpinCStructure.twistTrivialEquiv`): `[(p, w), a] ↦ p • [1, w] a`.
 
-This is the action of the isomorphism classes of complex line bundles, equivalently of
-`H²(X; ℤ)` on paracompact bases, on the equivalence classes of `Spinᶜ` structures; on such bases
-it is free and transitive whenever a `Spinᶜ` structure exists, and the determinant line of
-`s.twist L` is that of `s` tensored with `L ⊗ L`. Neither statement is proved here.
+This is the action of the isomorphism classes of complex line bundles on the equivalence classes
+of `Spinᶜ` structures. Twisting preserves the orientation induced by `s`; on the classes of
+`Spinᶜ` structures inducing a fixed orientation the action is free and transitive. The
+isomorphism classes of complex line bundles are identified with Čech `H²(X; ℤ)` for paracompact
+Hausdorff bases, and with singular `H²(X; ℤ)` for CW complexes. The determinant line of
+`s.twist L` is that of `s` tensored with `L ⊗ L`. None of these statements is proved here.
 
 ## Main definitions
 
