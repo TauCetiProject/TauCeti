@@ -72,7 +72,8 @@ theorem compactDomain_heat_comparison [I.Boundaryless] [T2Space M]
         (((hus t ht).contMDiffAt
           (hU.mem_nhds (hCU (interior_subset hx)))).of_le (by simp))
         (((hfs t ht).contMDiffAt
-          (hU.mem_nhds (hCU (interior_subset hx)))).of_le (by simp)) hmax'
+          (hU.mem_nhds (hCU (interior_subset hx)))).of_le (by simp))
+        BoundarylessManifold.isInteriorPoint hmax'
       have he := hevol t ht x hx
       linarith)
     (fun x hx ↦ sub_nonpos.mpr (hinit x hx))
