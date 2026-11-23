@@ -28,7 +28,7 @@ rings, the bounds used for elementary reduction of invertible matrices in algebr
 
 ## Main results
 
-* `TauCeti.exists_isUnit_add_mul_of_isCoprime`: in a semilocal ring, coprime `a`, `b` have a unit
+* `IsCoprime.exists_isUnit_add_mul`: in a semilocal ring, coprime `a`, `b` have a unit
   of the form `a + b * c`.
 * `TauCeti.hasStableRangeLE_one_of_finite_maximalSpectrum`: commutative semilocal rings have
   stable range at most `1`.
@@ -58,7 +58,7 @@ variable {R : Type*} [CommRing R] [Finite (MaximalSpectrum R)]
 
 /-- In a commutative semilocal ring, if `a` and `b` are coprime then `a + b * c` is a unit for some
 `c`. -/
-theorem exists_isUnit_add_mul_of_isCoprime {a b : R} (hab : IsCoprime a b) :
+theorem _root_.IsCoprime.exists_isUnit_add_mul {a b : R} (hab : IsCoprime a b) :
     ∃ c, IsUnit (a + b * c) := by
   -- Lift the unit `a` of `R ⧸ (b)` to a unit `w` of `R`; then `w - a` is a multiple of `b`.
   let f := Ideal.Quotient.mk (Ideal.span {b})
@@ -81,7 +81,7 @@ theorem hasStableRangeLE_one_of_finite_maximalSpectrum (R : Type*) [CommRing R]
   refine hasStableRangeLE_iff_exists_sum_eq_one.mpr fun a b hab ↦ ?_
   have hcop : IsCoprime (a 0) (a 1) :=
     ⟨b 0, b 1, by simpa [Fin.sum_univ_two, mul_comm] using hab⟩
-  obtain ⟨c, u, hu⟩ := exists_isUnit_add_mul_of_isCoprime hcop
+  obtain ⟨c, u, hu⟩ := hcop.exists_isUnit_add_mul
   exact ⟨fun _ ↦ c, fun _ ↦ ↑u⁻¹, by simp [Fin.last, ← hu]⟩
 
 end Semilocal
