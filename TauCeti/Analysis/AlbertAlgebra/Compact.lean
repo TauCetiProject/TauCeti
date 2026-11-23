@@ -55,6 +55,12 @@ preserves the trace, it preserves the trace form: the automorphisms of `J` are l
 * `TauCeti.CompactAlbertAlgebra.contDiff_mul` and `TauCeti.CompactAlbertAlgebra.contDiff_trace`: the
   Jordan product and the trace are smooth.
 
+## Implementation notes
+
+The `NormedAddCommGroup` and `InnerProductSpace` instances follow the pattern of the corresponding
+instances on `Quaternion` in Mathlib's `Mathlib/Analysis/Quaternion.lean`: an `Inner` instance is
+promoted to a norm and an inner product space through `InnerProductSpace.Core`.
+
 ## References
 
 * J. Faraut and A. Korányi, *Analysis on Symmetric Cones*, Oxford University Press (1994),
