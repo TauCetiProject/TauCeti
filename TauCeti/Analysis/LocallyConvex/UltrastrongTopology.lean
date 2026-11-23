@@ -427,11 +427,15 @@ private theorem isClosed_image_toPointwiseConvergenceCLM_norm_le (C : ℝ) :
     IsClosed ((fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
         ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM) ''
       {A | ‖A.toCLM‖ ≤ C}) := by
-  convert PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall
-    (0 : E →L[𝕜] F) C using 1
-  ext T
-  simp only [Set.mem_image, Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
-  exact ⟨fun ⟨A, hA, hAT⟩ ↦ ⟨A.toCLM, hA, hAT⟩, fun ⟨B, hB, hBT⟩ ↦ ⟨ofCLM B, hB, hBT⟩⟩
+  have hpre : {A : ContinuousLinearMapUltrastrong 𝕜 E F | ‖A.toCLM‖ ≤ C} =
+      equiv ⁻¹' Metric.closedBall 0 C := by
+    ext A; simp
+  rw [hpre]
+  change IsClosed ((ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F ∘ equiv) ''
+    (equiv ⁻¹' Metric.closedBall 0 C))
+  rw [Set.image_comp, Set.image_preimage_eq _ equiv.surjective]
+  exact PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall
+    (0 : E →L[𝕜] F) C
 
 /-- **Bounded-set closure agreement with the strong operator topology.** For any norm-bounded set
 `t` of operators, an operator lies in the ultrastrong closure of `t` if and only if it lies in the

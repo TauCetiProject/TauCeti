@@ -356,13 +356,6 @@ theorem star_singleEntryCLM [CompleteSpace H] (i j : ι) (s : H →L[𝕜] H) :
     ContinuousLinearMap.piLpEntry_singleEntryCLM]
   by_cases hk : k = j <;> by_cases hl : l = i <;> simp [hk, hl]
 
-/-- An off-diagonal block plus its adjoint is self-adjoint. -/
-theorem isSelfAdjoint_singleEntryCLM_add_singleEntryCLM_star [CompleteSpace H]
-    (i j : ι) (s : H →L[𝕜] H) :
-    IsSelfAdjoint (singleEntryCLM i j s + singleEntryCLM j i (star s)) := by
-  rw [← star_singleEntryCLM]
-  exact IsSelfAdjoint.add_star_self (singleEntryCLM i j s)
-
 /-- For distinct indices `i ≠ j`, the off-diagonal self-adjoint block placing `s` at `(i, j)` and
 `star s` at `(j, i)` has operator norm equal to `‖s‖`. -/
 @[simp]

@@ -87,6 +87,13 @@ def finiteRankOperators : NonUnitalStarSubalgebra ℂ (H →L[ℂ] H) where
   smul_mem' c _ hF := hF.smul c
   star_mem' hF := hF.star
 
+/-- A bounded operator belongs to `finiteRankOperators H` if and only if its underlying linear map
+has finite range. -/
+@[simp]
+theorem mem_finiteRankOperators {T : H →L[ℂ] H} :
+    T ∈ finiteRankOperators H ↔ (T : H →ₗ[ℂ] H).HasFiniteRange :=
+  Iff.rfl
+
 variable (H) in
 /-- The unital star subalgebra of bounded operators of the form `algebraMap ℂ _ c + F` with `F` of
 finite rank. -/

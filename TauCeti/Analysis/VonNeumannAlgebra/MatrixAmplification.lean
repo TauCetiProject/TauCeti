@@ -63,7 +63,6 @@ def piLpMatrix (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
     rw [piLpEntry_star]
     exact star_mem (hT j i)
 
-@[simp]
 theorem mem_piLpMatrix {S : StarSubalgebra 𝕜 (H →L[𝕜] H)}
     {T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)} :
     T ∈ S.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ S :=
@@ -71,10 +70,11 @@ theorem mem_piLpMatrix {S : StarSubalgebra 𝕜 (H →L[𝕜] H)}
 
 /-- Placing an element of `S` in a single `(i, j)` block belongs to `S.piLpMatrix ι`, and
 conversely. -/
+@[simp]
 theorem singleEntryCLM_mem_piLpMatrix {S : StarSubalgebra 𝕜 (H →L[𝕜] H)} {i j : ι}
     {s : H →L[𝕜] H} :
     PiLp.singleEntryCLM i j s ∈ S.piLpMatrix ι ↔ s ∈ S := by
-  refine ⟨fun h => by simpa using h i j, fun hs k l => ?_⟩
+  refine ⟨fun h => by simpa using (mem_piLpMatrix.1 h) i j, fun hs k l => ?_⟩
   rw [piLpEntry_singleEntryCLM]
   split_ifs
   exacts [hs, zero_mem S]

@@ -43,9 +43,11 @@ into it.
 * `TauCeti.subset_closure_range_domRestrict_preimage`: the values of a family that lie in an open
   set contained in the closure of its range are dense in that set.
 * `TauCeti.mem_closure_iff_mem_closure_image_of_isInducing_domRestrict`: closure membership along
-  a continuous map that is inducing on a closed subset containing the set.
+  a continuous map `f` that is inducing on a subset `s` containing the set, assuming `f '' s` is
+  closed and `s` is saturated under `f` (`f ⁻¹' (f '' s) ⊆ s`).
 * `TauCeti.closure_eq_of_isInducing_domRestrict`: transferring a closure computation along an
-  injective continuous map that is inducing on a closed subset containing the set.
+  injective continuous map `f` that is inducing on a subset `s` containing the set, assuming
+  `f '' s` is closed.
 -/
 
 public section
@@ -119,9 +121,7 @@ theorem mem_closure_iff_mem_closure_image_of_isInducing_domRestrict {Y : Type*}
     rw [mem_preimage, ← hfs.closure_eq]
     exact closure_mono (image_mono ht) hx
   have himg : s.domRestrict f '' ((↑) ⁻¹' t : Set s) = f '' t := by
-    ext y
-    simp only [mem_image, mem_preimage, Subtype.exists, domRestrict_apply]
-    exact ⟨fun ⟨a, _, hat, hfa⟩ ↦ ⟨a, hat, hfa⟩, fun ⟨a, hat, hfa⟩ ↦ ⟨a, ht hat, hat, hfa⟩⟩
+    rw [Set.image_domRestrict, Set.inter_eq_left.mpr ht]
   have hx' : (⟨x, hxs⟩ : s) ∈ closure ((↑) ⁻¹' t : Set s) := by
     rw [hind.closure_eq_preimage_closure_image, mem_preimage, domRestrict_apply, himg]
     exact hx

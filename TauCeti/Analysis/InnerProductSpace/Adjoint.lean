@@ -494,20 +494,9 @@ theorem _root_.LinearMap.HasFiniteRange.adjoint {A : E →L[𝕜] F}
     ((ContinuousLinearMap.adjoint A : F →L[𝕜] E) : F →ₗ[𝕜] E).HasFiniteRange := by
   let W : Submodule 𝕜 F := LinearMap.range (A : E →ₗ[𝕜] F)
   have : FiniteDimensional 𝕜 W := .of_fg hA
-  have hWA : W.starProjection ∘L A = A :=
-    ext fun x ↦ W.starProjection_eq_self_iff.mpr (LinearMap.mem_range_self _ x)
-  have hWadj : ContinuousLinearMap.adjoint W.starProjection = W.starProjection :=
-    isSelfAdjoint_iff'.mp (isSelfAdjoint_iff_isSymmetric.mpr W.starProjection_isSymmetric)
-  have hadj : ContinuousLinearMap.adjoint A =
-      (ContinuousLinearMap.adjoint A ∘L W.subtypeL) ∘L W.orthogonalProjectionOnto := by
-    calc ContinuousLinearMap.adjoint A
-        = ContinuousLinearMap.adjoint (W.starProjection ∘L A) := by rw [hWA]
-      _ = ContinuousLinearMap.adjoint A ∘L
-            ContinuousLinearMap.adjoint W.starProjection := adjoint_comp _ _
-      _ = ContinuousLinearMap.adjoint A ∘L W.starProjection := by rw [hWadj]
-      _ = (ContinuousLinearMap.adjoint A ∘L W.subtypeL) ∘L W.orthogonalProjectionOnto := by
-            ext x; simp
-  rw [hadj]
+  have hfac : A = W.subtypeL ∘L A.rangeRestrict :=
+    (ContinuousLinearMap.subtypeL_comp_codRestrict A W (LinearMap.mem_range_self _)).symm
+  rw [hfac, ContinuousLinearMap.adjoint_comp]
   exact LinearMap.HasFiniteRange.of_finite_dom.comp_right _
 
 /-- A bounded operator between Hilbert spaces has finite rank if and only if its adjoint does. -/

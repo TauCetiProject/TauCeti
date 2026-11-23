@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Tactic.Module
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 /-!
 # Closures of star-convex sets intersected with closed balls
@@ -39,31 +39,27 @@ theorem StarConvex.closure_inter_closedBall (hs : StarConvex ℝ x₀ s) (r : �
   refine subset_antisymm
     (closure_inter_subset.trans (inter_subset_inter_right _ isClosed_closedBall.closure_eq.subset))
     fun x ⟨hx, hxr⟩ ↦ ?_
-  rcases lt_trichotomy r 0 with hr | rfl | hr
+  rcases lt_or_ge r 0 with hr | hr
   · exact ((closedBall_eq_empty.2 hr).subset hxr).elim
-  · exact mem_closure_iff.2 fun ε hε ↦
-      ⟨x₀, ⟨hs.mem (closure_nonempty_iff.1 ⟨x, hx⟩), mem_closedBall_self le_rfl⟩, hxr.trans_lt hε⟩
-  · -- Points `(1 - t) • x₀ + t • x` for `t ∈ (0, 1)` lie in `closure s ∩ ball x₀ r` and tend to `x`
-    -- as `t → 1`.
-    have hne : (𝓝[Ioo (0 : ℝ) 1] 1).NeBot := mem_closure_iff_nhdsWithin_neBot.1 <| by
-      rw [closure_Ioo zero_ne_one]
-      exact right_mem_Icc.2 zero_le_one
-    let g : ℝ → E := fun t ↦ (1 - t) • x₀ + t • x
-    have hg1 : g 1 = x := by simp [g]
-    have hlim : Tendsto g (𝓝[Ioo (0 : ℝ) 1] 1) (𝓝 x) :=
-      hg1 ▸ ((Continuous.tendsto (by fun_prop) 1).mono_left nhdsWithin_le_nhds)
-    refine isClosed_closure.mem_of_tendsto hlim (eventually_nhdsWithin_of_forall fun t ht ↦ ?_)
-    have hmem_cl : g t ∈ closure s :=
-      map_mem_closure (f := fun y ↦ (1 - t) • x₀ + t • y) (by fun_prop) hx
-        fun y hy ↦ hs hy (sub_nonneg.2 ht.2.le) ht.1.le (sub_add_cancel 1 t)
-    have hmem_ball : g t ∈ ball x₀ r := by
-      have hsub : g t - x₀ = t • (x - x₀) := by simp only [g]; module
-      rw [mem_ball, dist_eq_norm, hsub, norm_smul, Real.norm_of_nonneg ht.1.le, ← dist_eq_norm]
-      calc t * dist x x₀ ≤ t * r := mul_le_mul_of_nonneg_left hxr ht.1.le
-        _ < 1 * r := mul_lt_mul_of_pos_right ht.2 hr
-        _ = r := one_mul r
-    exact closure_mono (inter_subset_inter_right _ ball_subset_closedBall)
-      (isOpen_ball.closure_inter ⟨hmem_cl, hmem_ball⟩)
+  · by_cases hx0 : dist x x₀ = 0
+    · exact mem_closure_iff.2 fun ε hε ↦
+        ⟨x₀, ⟨hs.mem (closure_nonempty_iff.1 ⟨x, hx⟩), mem_closedBall_self hr⟩,
+          hx0.trans_lt hε⟩
+    · have hmem := map_mem_closure (f := TauCeti.centeredRadialRetraction x₀ r)
+        (TauCeti.lipschitzWith_centeredRadialRetraction hr).continuous hx
+        (t := s ∩ closedBall x₀ r) fun y hy ↦
+          ⟨?_, TauCeti.centeredRadialRetraction_mem_closedBall hr y⟩
+      · rwa [TauCeti.centeredRadialRetraction_of_dist_pos_of_dist_le
+          (lt_of_le_of_ne dist_nonneg (Ne.symm hx0)) hxr] at hmem
+      · by_cases hy0 : dist y x₀ = 0
+        · rw [TauCeti.centeredRadialRetraction_of_dist_eq_zero hy0]
+          exact hs.mem ⟨y, hy⟩
+        · rcases le_or_gt (dist y x₀) r with hyr | hyr
+          · rwa [TauCeti.centeredRadialRetraction_of_dist_pos_of_dist_le
+              (lt_of_le_of_ne dist_nonneg (Ne.symm hy0)) hyr]
+          · rw [TauCeti.centeredRadialRetraction_of_le_dist hyr.le]
+            exact hs.add_smul_sub_mem hy (div_nonneg hr dist_nonneg)
+              ((div_le_one (lt_of_le_of_ne dist_nonneg (Ne.symm hy0))).2 hyr.le)
 
 /-- Intersecting a convex set containing `x₀` with any closed ball centred at `x₀` commutes with
 taking closures. -/
