@@ -155,22 +155,15 @@ private theorem preservesColimit_discrete_preadditiveCoyoneda_iff_sameUniv (G : 
     ⟨⟨⟨_, AddCommGrpCat.coproductCoconeIsColimit _⟩⟩⟩
   let φ : AddCommGrpCat.of (⨁ j, ↑(F.obj (f j))) ⟶ F.obj (∐ f) :=
     (AddCommGrpCat.coprodIsoDirectSum (fun j ↦ F.obj (f j))).inv ≫ sigmaComparison F f
-  let eDS : (⨁ j, ↑(F.obj (f j))) ≃+ (⨁ j, (G ⟶ f j)) :=
-    DFinsupp.mapRange.addEquiv fun _ ↦ AddEquiv.refl _
-  have hφ : φ.hom = (coprodComparisonAddHom G f).comp eDS.toAddMonoidHom := by
+  have hφ : φ.hom = coprodComparisonAddHom G f := by
     refine DirectSum.addHom_ext fun j g ↦ ?_
     have hcomp := congrArg (fun ψ : F.obj (f j) ⟶ F.obj (∐ f) ↦ ψ g)
       (AddCommGrpCat.of_coprodIsoDirectSum_inv_assoc (fun i ↦ F.obj (f i)) j
         (sigmaComparison F f))
     rw [ι_comp_sigmaComparison] at hcomp
-    refine hcomp.trans ?_
-    exact (coprodComparisonAddHom_of G f j g).symm.trans <| congrArg (coprodComparisonAddHom G f)
-      (DFinsupp.mapRange_single (f := fun _ ↦ id) (hf := fun _ ↦ rfl) (i := j)).symm
-  have hbij : Function.Bijective φ ↔ Function.Bijective (coprodComparisonAddHom G f) := by
-    have hfun : ⇑φ = ⇑(coprodComparisonAddHom G f) ∘ ⇑eDS :=
-      funext (DFunLike.congr_fun hφ)
-    rw [hfun]
-    exact Function.Bijective.of_comp_iff _ eDS.bijective
+    exact hcomp.trans (coprodComparisonAddHom_of G f j g).symm
+  have hbij : Function.Bijective φ ↔ Function.Bijective (coprodComparisonAddHom G f) :=
+    iff_of_eq (congrArg Function.Bijective (funext (DFunLike.congr_fun hφ)))
   have hiso : IsIso φ ↔ IsIso (sigmaComparison F f) :=
     ⟨fun _ ↦ by
       rw [← Iso.hom_inv_id_assoc (AddCommGrpCat.coprodIsoDirectSum (fun j ↦ F.obj (f j)))

@@ -49,41 +49,22 @@ section SequenceDifferenceCompact
 
 variable {T : Type u} [Category.{v} T] [Preadditive T]
 
-private def coyonedaToHom (A : T) (X : ℕ ⥤ T) (k : ℕ) :
-    ↑((X ⋙ preadditiveCoyonedaObj A).obj k) ≃+ (A ⟶ X.obj k) :=
-  { toFun := id, invFun := id, left_inv := fun _ ↦ rfl, right_inv := fun _ ↦ rfl,
-    map_add' := fun _ _ ↦ rfl }
-
-private def seqDirectSumEquiv (A : T) (X : ℕ ⥤ T) :
-    (⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) ≃+ (⨁ n, (A ⟶ X.obj n)) :=
-  DFinsupp.mapRange.addEquiv (coyonedaToHom A X)
-
-private theorem seqDirectSumEquiv_of (A : T) (X : ℕ ⥤ T) (n : ℕ)
-    (g : ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) :
-    seqDirectSumEquiv A X
-        (DirectSum.of (fun k ↦ ↑((X ⋙ preadditiveCoyonedaObj A).obj k)) n g) =
-      DirectSum.of (fun k ↦ A ⟶ X.obj k) n (coyonedaToHom A X n g) :=
-  DFinsupp.mapRange_single (f := fun k ↦ coyonedaToHom A X k) (hf := fun _ ↦ rfl) (i := n)
-
 /-- For `A` such that `Hom(A, -)` preserves `∐ X.obj`, the composite additive equivalence
 identifying the telescope domain `⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)` with
 `A ⟶ ∐ X.obj`. -/
 def compactSeqDirectSumEquiv (A : T) (X : ℕ ⥤ T) [HasCoproduct X.obj]
     [PreservesColimit (Discrete.functor X.obj) (preadditiveCoyoneda.obj (op A))] :
     (⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) ≃+ (A ⟶ ∐ X.obj) :=
-  (seqDirectSumEquiv A X).trans <|
-    AddEquiv.ofBijective (coprodComparisonAddHom A X.obj)
-      ((preservesColimit_discrete_preadditiveCoyoneda_iff A X.obj).1 inferInstance)
+  AddEquiv.ofBijective (coprodComparisonAddHom A X.obj)
+    ((preservesColimit_discrete_preadditiveCoyoneda_iff A X.obj).1 inferInstance)
 
 theorem compactSeqDirectSumEquiv_of (A : T) (X : ℕ ⥤ T) [HasCoproduct X.obj]
     [PreservesColimit (Discrete.functor X.obj) (preadditiveCoyoneda.obj (op A))]
     (n : ℕ) (g : ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) :
     compactSeqDirectSumEquiv A X
         (DirectSum.of (fun k ↦ ↑((X ⋙ preadditiveCoyonedaObj A).obj k)) n g) =
-      (g : A ⟶ X.obj n) ≫ Sigma.ι X.obj n := by
-  dsimp only [compactSeqDirectSumEquiv, AddEquiv.trans_apply]
-  rw [AddEquiv.ofBijective_apply, seqDirectSumEquiv_of, coprodComparisonAddHom_of]
-  rfl
+      (g : A ⟶ X.obj n) ≫ Sigma.ι X.obj n :=
+  coprodComparisonAddHom_of A X.obj n g
 
 theorem compactSeqDirectSumEquiv_lof (A : T) (X : ℕ ⥤ T) [HasCoproduct X.obj]
     [PreservesColimit (Discrete.functor X.obj) (preadditiveCoyoneda.obj (op A))]

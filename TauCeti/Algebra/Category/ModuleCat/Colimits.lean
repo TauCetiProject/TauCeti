@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.FreeModule.Filtration
 import Mathlib.CategoryTheory.Limits.ConcreteCategory.Filtered
 import Mathlib.CategoryTheory.Limits.ConcreteCategory.WithAlgebraicStructures
 import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
+import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
 
 /-!
 # Colimits of modules
@@ -181,15 +182,22 @@ variable (F : ℕ ⥤ ModuleCat.{v} R)
 of `⨁ₙ Fₙ` sending `x` in the summand `Fₙ` to `x - φₙ(x)`, where `φₙ(x)` lies in the summand
 `Fₙ₊₁`. -/
 noncomputable def telescopeDiff : (⨁ n, F.obj n) →ₗ[R] ⨁ n, F.obj n :=
-  toModule R ℕ _ fun n ↦ lof R ℕ (fun n ↦ F.obj n) n -
-    lof R ℕ (fun n ↦ F.obj n) (n + 1) ∘ₗ (F.map (homOfLE (n.le_add_right 1))).hom
+  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
+  ((coprodIsoDirectSum F.obj).inv ≫ F.sequenceDifference ≫ (coprodIsoDirectSum F.obj).hom).hom
 
 @[simp]
 theorem telescopeDiff_lof (n : ℕ) (x : F.obj n) :
     telescopeDiff F (lof R ℕ (fun n ↦ F.obj n) n x) =
       lof R ℕ (fun n ↦ F.obj n) n x -
         lof R ℕ (fun n ↦ F.obj n) (n + 1) (F.map (homOfLE (n.le_add_right 1)) x) := by
-  simp [telescopeDiff]
+  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
+  let e := coprodIsoDirectSum F.obj
+  have hcomp : ofHom (lof R ℕ (fun n ↦ F.obj n) n) ≫ e.inv ≫ F.sequenceDifference ≫ e.hom =
+      ofHom (lof R ℕ (fun n ↦ F.obj n) n) -
+        F.map (homOfLE (n.le_add_right 1)) ≫ ofHom (lof R ℕ (fun n ↦ F.obj n) (n + 1)) := by
+    rw [← Category.assoc, lof_coprodIsoDirectSum_inv, Functor.ι_sequenceDifference_assoc,
+      Preadditive.sub_comp, Category.assoc, ι_coprodIsoDirectSum_hom, ι_coprodIsoDirectSum_hom]
+  exact congrArg (fun φ : F.obj n ⟶ of R (⨁ n, F.obj n) ↦ φ x) hcomp
 
 @[simp]
 theorem telescopeDiff_apply_zero (a : ⨁ n, F.obj n) : telescopeDiff F a 0 = a 0 := by
@@ -275,45 +283,28 @@ theorem exists_map_homOfLE_eq_zero_of_telescopeDiff_eq_lof {F : ℕ ⥤ ModuleCa
   obtain ⟨m, f, hm⟩ := Concrete.colimit_rep_eq_zero R F n x hcolim
   exact ⟨m, leOfHom f, by rwa [Subsingleton.elim (homOfLE (leOfHom f)) f]⟩
 
-/-- The cocone over `F` with point the cokernel of `telescopeDiff F`, whose legs are the
-summand inclusions followed by the quotient map. -/
-private noncomputable def telescopeCokernelCocone : Cocone F where
-  pt := of R ((⨁ n, F.obj n) ⧸ LinearMap.range (telescopeDiff F))
-  ι := NatTrans.ofSequence (fun n ↦ ConcreteCategory.ofHom (C := ModuleCat R) (X := F.obj n)
-      (Y := of R ((⨁ n, F.obj n) ⧸ LinearMap.range (telescopeDiff F)))
-      ((LinearMap.range (telescopeDiff F)).mkQ ∘ₗ lof R ℕ (fun n ↦ F.obj n) n)) fun n ↦ by
-    ext x
-    simpa [Submodule.Quotient.eq] using (LinearMap.range (telescopeDiff F)).neg_mem
-      (LinearMap.mem_range_self (telescopeDiff F) (lof R ℕ (fun n ↦ F.obj n) n x))
-
 /-- The telescope sequence of a colimit cocone over a sequence of modules is short exact. -/
 theorem shortExact_telescopeShortComplex {c : Cocone F} (hc : IsColimit c) :
     (telescopeShortComplex F c).ShortExact := by
-  -- The map from the colimit to the cokernel of `telescopeDiff F` restricts to the quotient map,
-  -- so every element of `⨁ₙ Fₙ` sent to zero in the colimit lies in the image of the difference.
-  have key (a : ⨁ n, F.obj n) : (hc.desc (telescopeCokernelCocone F)).hom
-      (toModule R ℕ c.pt (fun n ↦ (c.ι.app n).hom) a) =
-        (LinearMap.range (telescopeDiff F)).mkQ a := by
-    induction a using DirectSum.induction_on with
-    | zero => exact (map_zero _).trans (map_zero _).symm
-    | of n x =>
-      rw [← lof_eq_of R, toModule_lof]
-      exact congr(Hom.hom $(hc.fac (telescopeCokernelCocone F) n) x)
-    | add a b ha hb =>
-      -- The two sides carry the module structures of `of R Q` and `Q`, equal by unfolding.
-      simp only [map_add, ha, hb]
-      rfl
-  have hsurj : Function.Surjective (toModule R ℕ c.pt fun n ↦ (c.ι.app n).hom) := by
-    rw [← LinearMap.range_eq_top, eq_top_iff,
-      ← TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit hc]
-    refine iSup_le fun n ↦ ?_
-    rintro _ ⟨x, rfl⟩
-    exact ⟨lof R ℕ (fun n ↦ F.obj n) n x, by simp⟩
-  refine { exact := (ShortComplex.moduleCat_exact_iff _).2 fun a ha ↦ ?_
-           mono_f := (mono_iff_injective _).2 (telescopeDiff_injective F)
-           epi_g := (epi_iff_surjective _).2 hsurj }
-  exact LinearMap.mem_range.1 <| (Submodule.Quotient.mk_eq_zero _).1 <|
-    (key a).symm.trans ((congrArg _ ha).trans (map_zero _))
+  have : HasCoproduct F.obj := ⟨⟨⟨_, coproductCoconeIsColimit F.obj⟩⟩⟩
+  let S := telescopeShortComplex F c
+  let e := coprodIsoDirectSum F.obj
+  have hg : e.hom ≫ S.g = Sigma.desc (fun n : ℕ ↦ c.ι.app n) := by
+    change e.hom ≫ ConcreteCategory.ofHom (toModule R ℕ c.pt fun n ↦ (c.ι.app n).hom) =
+      Sigma.desc (fun n : ℕ ↦ c.ι.app n)
+    refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
+    rw [← Category.assoc, ι_coprodIsoDirectSum_hom, Sigma.ι_comp_desc]
+    ext x
+    simp
+  have hcok : IsColimit (CokernelCofork.ofπ S.g S.zero) :=
+    IsCokernel.ofIso _ (F.isColimitCokernelCoforkOfIsColimit hc) _ e e (Iso.refl _)
+      (by
+        change e.hom ≫ (e.inv ≫ F.sequenceDifference ≫ e.hom) = F.sequenceDifference ≫ e.hom
+        rw [Iso.hom_inv_id_assoc])
+      (hg.trans (Category.comp_id _).symm)
+  have : Mono S.f := (mono_iff_injective _).2 (telescopeDiff_injective F)
+  have : Epi S.g := epi_of_isColimit_cofork hcok
+  exact ShortComplex.ShortExact.mk' (S.exact_of_g_is_cokernel hcok) inferInstance inferInstance
 
 /-- **The legs of a sequential colimit of injections are injective.** If the transition maps
 `Fₙ → Fₙ₊₁` of a sequence of modules are injective, so are the legs `Fₙ → c.pt` of a colimit
