@@ -11,6 +11,7 @@ import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 
 /-!
 # Strichartz estimates for the wave equation with Besov data
@@ -170,12 +171,7 @@ theorem exists_enorm_integral_inner_halfWavePropagator_neg_le_tsum (hq : 2 < q)
   have hneg := Measure.measurePreserving_neg (volume : Measure ℝ)
   have h := hC m hm f (fun t ↦ G (-t)) (hG.comp_quasiMeasurePreserving hneg.quasiMeasurePreserving)
     (by simpa only [neg_neg] using hWG.comp_neg)
-  have hnorm : eLpNorm (fun t ↦ eLpNorm (G (-t)) r' volume) p volume =
-      eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-    simpa only [Function.comp_def] using eLpNorm_comp_measurePreserving
-      (g := fun t ↦ eLpNorm (G t) r' volume)
-      (hG.aemeasurable_eLpNorm_Lp .rfl r').aestronglyMeasurable hneg
-  rw [← integral_neg_eq_self, hnorm] at h
+  rw [← integral_neg_eq_self, hG.eLpNorm_eLpNorm_comp_neg] at h
   simpa only [neg_neg] using h
 
 /-- Sum frequency-localized mixed-norm estimates with weights `2^{jσ}` for a strongly continuous
