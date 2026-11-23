@@ -200,10 +200,10 @@ def normalTrivialization
   have hU : IsOpen U := (Units.isOpen (R := normalSubspace I f x₀ →L[ℝ]
     normalSubspace I f x₀)).preimage (contMDiff_normalCompression hf himm x₀).continuous
   let ι : TotalSpace (normalSubspace I f x₀) (fun x => normalSubspace I f x) → M × V :=
-    fun p => (p.proj, (p.2 : V))
+    fun p => (p.proj, (p.snd : V))
   have hι : IsEmbedding ι := isEmbedding_totalSpace_normalSubspace f
   refine
-    { toFun := fun p => (p.proj, normalCoordinateMap I f x₀ p.proj p.2)
+    { toFun := fun p => (p.proj, normalCoordinateMap I f x₀ p.proj p.snd)
       invFun := fun p => ⟨p.1, ⟨(normalSubspace I f p.1).starProjection p.2,
         Submodule.starProjection_apply_mem _ _⟩⟩
       source := (π (normalSubspace I f x₀) (fun x => normalSubspace I f x)) ⁻¹' U
@@ -225,7 +225,7 @@ def normalTrivialization
     apply hι.injective
     exact Prod.ext rfl (starProjection_normalCoordinateMap x₀ p.proj
       ((finrank_normalSubspace (himm x₀)).trans (finrank_normalSubspace (himm p.proj)).symm)
-      hp p.2.property)
+      hp p.snd.property)
   · rintro ⟨x, w⟩ hx
     exact Prod.ext rfl (normalCoordinateMap_starProjection x₀ x hx.1 w)
   · intro p hp
@@ -251,7 +251,7 @@ its compression. -/
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ : M)
     (p : TotalSpace (normalSubspace I f x₀) (fun x => normalSubspace I f x)) :
-    normalTrivialization hf himm x₀ p = (p.proj, normalCoordinateMap I f x₀ p.proj p.2) :=
+    normalTrivialization hf himm x₀ p = (p.proj, normalCoordinateMap I f x₀ p.proj p.snd) :=
   (rfl)
 
 /-- The transition operator takes source trivialization coordinates to target coordinates.
@@ -262,11 +262,11 @@ theorem normalCoordinateChange_normalTrivialization
     (p : TotalSpace (normalSubspace I f x₀) (fun x => normalSubspace I f x))
     (hp : p.proj ∈ (normalTrivialization hf himm x₀).baseSet) :
     normalCoordinateChange I f x₀ x₁ p.proj (normalTrivialization hf himm x₀ p).2 =
-      (normalTrivialization hf himm x₁ ⟨p.proj, p.2⟩).2 := by
+      (normalTrivialization hf himm x₁ ⟨p.proj, p.snd⟩).2 := by
   simp only [normalTrivialization_apply, normalCoordinateChange_apply]
   rw [starProjection_normalCoordinateMap x₀ p.proj
     ((finrank_normalSubspace (himm x₀)).trans (finrank_normalSubspace (himm p.proj)).symm)
-    hp p.2.property]
+    hp p.snd.property]
 
 /-- The inverse normal trivialization projects the reference vector into the moving
 normal fibre, retaining its base point. -/
@@ -305,10 +305,10 @@ theorem contMDiff_normalTrivialization_symm_snd
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ : M) :
     ContMDiff (I.prod 𝓘(ℝ, normalSubspace I f x₀)) 𝓘(ℝ, V) n
       (fun p : M × normalSubspace I f x₀ =>
-        ((normalTrivialization hf himm x₀).toOpenPartialHomeomorph.symm p).2.val) := by
+        ((normalTrivialization hf himm x₀).toOpenPartialHomeomorph.symm p).snd.val) := by
   convert ((contMDiff_normalSubspace_starProjection hf himm).comp contMDiff_fst).clm_apply
     ((normalSubspace I f x₀).subtypeL.contMDiff.comp contMDiff_snd) using 1
   funext p
-  exact congrArg (fun q => (q.2 : V)) (normalTrivialization_symm_apply hf himm x₀ p)
+  exact congrArg (fun q => (q.snd : V)) (normalTrivialization_symm_apply hf himm x₀ p)
 
 end TauCeti

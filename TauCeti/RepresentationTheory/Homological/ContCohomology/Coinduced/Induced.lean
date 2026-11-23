@@ -145,7 +145,7 @@ theorem algebraicIndCoindIso_hom_mk_apply (g h : G) (a : A.obj.V) :
       Function.comp_apply, TensorProduct.mk_apply]
       ((algebraicIndCoindIso.{u, v, w} R G U A).hom.hom.hom
       (Representation.IndV.mk U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a)).1 h) =
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a)).val h) =
       Rep.indToCoindAux (Rep.of
         (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) g a h := by
   rw [algebraicIndCoindIso_hom_apply]
@@ -229,12 +229,12 @@ theorem algebraicIndCounit_apply
       (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) :
     (dsimp% only ((algebraicIndCounit.{u, v, w} R G U A).hom x)) =
       ((Rep.indCoindIso.{max u w, v, u}
-        (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))).hom.hom x).1 1 := by
+        (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))).hom.hom x).val 1 := by
   -- Restriction and categorical composition retain their bundled map wrappers. Reduce just
   -- those wrappers before applying the public comparison and evaluation equations.
   change algebraicCoindCounit R G U A ((algebraicIndCoindIso.{u, v, w} R G U A).hom.hom.hom x) = _
   exact (algebraicCoindCounit_apply R G U A _).trans
-    (congrArg (fun f ↦ f.1 1) (algebraicIndCoindIso_hom_apply.{u, v, w} R G U A x))
+    (congrArg (fun f ↦ f.val 1) (algebraicIndCoindIso_hom_apply.{u, v, w} R G U A x))
 
 /-- Evaluation of the induced counit on the generator `⟦1 ⊗ a⟧` returns `a`. This fixes the
 normalization of induced Shapiro even when the coefficient action is nontrivial. -/
@@ -370,7 +370,7 @@ theorem algebraicIndCounit_naturality (f : A ⟶ B) :
   have h := (Rep.indCoindNatIso.{max u w, v, u} R U.toSubgroup).hom.naturality
     (coefficientMap.{u, v, w} R G U f)
   have h' := congrArg (fun m : Rep.ind U.toSubgroup.subtype a ⟶
-      Rep.coind U.toSubgroup.subtype b ↦ (m.hom x).1 1) h
+      Rep.coind U.toSubgroup.subtype b ↦ (m.hom x).val 1) h
   -- Restriction and composition introduce only map wrappers, and the two counit equations
   -- turn their values into the native finite-index naturality square at `1`.
   change algebraicCoindCounit R G U B
@@ -381,18 +381,18 @@ theorem algebraicIndCounit_naturality (f : A ⟶ B) :
   let y := (Rep.indMap U.toSubgroup.subtype (coefficientMap.{u, v, w} R G U f)).hom x
   have heq := (algebraicCoindCounit_apply R G U B
     ((algebraicIndCoindIso.{u, v, w} R G U B).hom.hom.hom y)).trans
-    (congrArg (fun z ↦ z.1 1) (algebraicIndCoindIso_hom_apply.{u, v, w} R G U B y))
+    (congrArg (fun z ↦ z.val 1) (algebraicIndCoindIso_hom_apply.{u, v, w} R G U B y))
   rw [heq]
   have heq' := (algebraicCoindCounit_apply R G U A
     ((algebraicIndCoindIso.{u, v, w} R G U A).hom.hom.hom x)).trans
-    (congrArg (fun z ↦ z.1 1) (algebraicIndCoindIso_hom_apply.{u, v, w} R G U A x))
+    (congrArg (fun z ↦ z.val 1) (algebraicIndCoindIso_hom_apply.{u, v, w} R G U A x))
   rw [heq']
   -- Mathlib's naturality is stated as an equality of bundled representation morphisms;
   -- identify its value at `1` with the pointwise coinduced map before using it.
   change ((Rep.indCoindIso.{max u w, v, u} b).hom.hom
-    ((Rep.indMap U.toSubgroup.subtype (coefficientMap.{u, v, w} R G U f)).hom x)).1 1 =
+    ((Rep.indMap U.toSubgroup.subtype (coefficientMap.{u, v, w} R G U f)).hom x)).val 1 =
       (coefficientMap.{u, v, w} R G U f).hom
-        (((Rep.indCoindIso.{max u w, v, u} a).hom.hom x).1 1) at h'
+        (((Rep.indCoindIso.{max u w, v, u} a).hom.hom x).val 1) at h'
   exact h'
 
 end TauCeti

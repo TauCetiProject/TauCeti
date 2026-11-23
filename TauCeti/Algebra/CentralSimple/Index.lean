@@ -9,6 +9,7 @@ public import TauCeti.Algebra.CentralSimple.MaximalSubfield.Separable
 public import Mathlib.Algebra.Central.Matrix
 public import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Data.Matrix.Composition
+import TauCeti.Algebra.CentralSimple.BaseChange
 import TauCeti.Algebra.CentralSimple.Wedderburn
 import TauCeti.RingTheory.Semisimple.MatrixDivisionRing
 
@@ -31,7 +32,8 @@ The two numerical invariants of a presentation satisfy
 
 The index is `1` exactly when `A` is split. Combining the construction with the maximal-subfield
 theorem gives the index its arithmetic meaning: every central simple algebra has a finite splitting
-field whose degree over `K` is exactly its index.
+field whose degree over `K` is exactly its index. Conversely, the index divides the degree of every
+splitting field, separable or not, so the index is the least degree of a finite splitting field.
 
 ## Main results
 
@@ -43,6 +45,10 @@ field whose degree over `K` is exactly its index.
   its base field exactly when its index is one.
 * `TauCeti.Algebra.exists_isSplittingField_finrank_eq_index`: every central simple algebra has a
   finite splitting field of degree its index.
+* `TauCeti.Algebra.IsSplittingField.index_dvd_finrank`: the index divides the degree of every
+  splitting field.
+* `TauCeti.Algebra.isSplittingField_matrix_iff`: a field splits a positive-size matrix algebra over
+  `A` exactly when it splits `A`.
 
 ## References
 
@@ -55,6 +61,7 @@ public section
 namespace TauCeti
 
 open Module
+open scoped TensorProduct
 
 universe u v
 
@@ -266,6 +273,49 @@ theorem exists_isSplittingField_finrank_eq_index :
   · rw [hLdegree, index_eq_deg_of_algEquiv_matrix W.equiv]
   · exact IsSplittingField.of_algEquiv K _ L W.equiv.symm
       (IsSplittingField.matrix K W.divisionAlgebra L hsplit W.matrixSize)
+
+/-! ### Every splitting field has degree divisible by the index -/
+
+variable {K A}
+
+/-- **A field splitting a full matrix algebra over `A` splits `A`.** The size `n` must be
+positive: every field splits the zero algebra `Matrix (Fin 0) (Fin 0) A`. -/
+theorem IsSplittingField.of_matrix {L : Type*} [Field L] [Algebra K L] {n : ℕ} [NeZero n]
+    (h : IsSplittingField K (Matrix (Fin n) (Fin n) A) L) : IsSplittingField K A L := by
+  -- `L ⊗[K] A` has index one over `L`: `Mₙ(L ⊗[K] A) ≃ L ⊗[K] Mₙ(A)` is split, and passing to a
+  -- matrix algebra does not change the index.
+  have hsplit : index L (L ⊗[K] Matrix (Fin n) (Fin n) A) = 1 :=
+    (isSplittingField_self_iff_index_eq_one L _).1
+      ((isSplittingField_baseChange_self_iff K _ L).2 h)
+  rw [← isSplittingField_baseChange_self_iff, isSplittingField_self_iff_index_eq_one,
+    ← index_matrix (K := L) n, ← index_eq_of_algEquiv (matrixCoeffBaseChangeAlgEquiv K L (Fin n) A),
+    hsplit]
+
+/-- A field splits a positive-size full matrix algebra over `A` exactly when it splits `A`. -/
+@[simp]
+theorem isSplittingField_matrix_iff {L : Type*} [Field L] [Algebra K L] (n : ℕ) [NeZero n] :
+    IsSplittingField K (Matrix (Fin n) (Fin n) A) L ↔ IsSplittingField K A L :=
+  ⟨IsSplittingField.of_matrix, fun h ↦ h.matrix K A L n⟩
+
+/-- **The index divides the degree of every splitting field.** If `L` splits the central simple
+algebra `A`, then `index K A ∣ finrank K L`.
+
+No finiteness or separability of `L / K` is assumed; when `L / K` is infinite, `finrank K L = 0`
+and the statement holds trivially. Together with
+`TauCeti.Algebra.exists_isSplittingField_finrank_eq_index`, this makes the index the least degree
+of a finite splitting field. -/
+theorem IsSplittingField.index_dvd_finrank {L : Type*} [Field L] [Algebra K L]
+    (h : IsSplittingField K A L) : index K A ∣ finrank K L := by
+  -- Write `A ≃ Mₙ(D)`; then `L` splits the division algebra `D`, whose degree is the index.
+  obtain ⟨n, _, D, _, _, _, _, -, ⟨e⟩⟩ :=
+    IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing K A
+  rw [index_eq_deg_of_algEquiv_matrix e]
+  exact (h.of_algEquiv K A L e).of_matrix.deg_dvd_finrank
+
+/-- The index is at most the degree of every finite splitting field. -/
+theorem IsSplittingField.index_le_finrank {L : Type*} [Field L] [Algebra K L]
+    [FiniteDimensional K L] (h : IsSplittingField K A L) : index K A ≤ finrank K L :=
+  Nat.le_of_dvd Module.finrank_pos h.index_dvd_finrank
 
 end Algebra
 

@@ -76,10 +76,11 @@ private theorem shapiroChains :
     inhomogeneousChainsIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
     HomologicalComplex.Hom.isoOfComponents_inv_f, Iso.symm_hom, Iso.symm_inv,
     LinearEquiv.toModuleIso_inv, LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom,
-    LinearEquiv.coe_coe, coinvariantsTensorFreeLEquiv_symm_apply,
-    finsuppToCoinvariantsTensorFree_single, Functor.mapHomologicalComplex_map_f,
+    LinearEquiv.coe_coe, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+    Functor.mapHomologicalComplex_map_f,
     TauCeti.Rep.barComplex.resChainMap_f, NatIso.mapHomologicalComplex_hom_app_f,
     coinvariantsTensorIndNatIso_inv_app]
+  erw [finsuppToCoinvariantsTensorFree_single (A := A) x a]
   simp only [Functor.mapHomologicalComplex_obj_X, Functor.postcompose₂_obj_obj_obj_obj,
     MonoidalCategory.curriedTensor_obj_obj, coinvariantsFunctor_obj_carrier, tensor_V, tensor_ρ,
     Functor.postcompose₂_obj_obj_obj_map, MonoidalCategory.curriedTensor_obj_map,

@@ -33,7 +33,7 @@ variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R 
 
 /-- The product of the positive tensor powers of `M`, completed in tensor length. -/
 abbrev CompletedReducedTensorWords :=
-  ∀ n : {n : ℕ // 0 < n}, TensorPower R n.1 M
+  ∀ n : {n : ℕ // 0 < n}, TensorPower R n.val M
 
 namespace CompletedReducedTensorWords
 
@@ -51,17 +51,17 @@ noncomputable def toCompleted : CompletedReducedTensorWords R M →ₗ[R]
 
 /-- Positive-length components are unchanged by insertion. -/
 @[simp] theorem toCompleted_pos (x : CompletedReducedTensorWords R M)
-    (n : {n : ℕ // 0 < n}) : toCompleted R M x n.1 = x n := by
-  simp [toCompleted, n.2]
+    (n : {n : ℕ // 0 < n}) : toCompleted R M x n.val = x n := by
+  simp [toCompleted, n.property]
 
 /-- Forget the empty-word component of a completed coaugmented word. -/
 noncomputable def ofCompleted : CompletedTensorWords R M →ₗ[R]
     CompletedReducedTensorWords R M :=
-  LinearMap.pi fun n ↦ LinearMap.proj n.1
+  LinearMap.pi fun n ↦ LinearMap.proj n.val
 
 /-- Forgetting the empty word reads each positive-length component unchanged. -/
 @[simp] theorem ofCompleted_apply (x : CompletedTensorWords R M)
-    (n : {n : ℕ // 0 < n}) : ofCompleted R M x n = x n.1 := by
+    (n : {n : ℕ // 0 < n}) : ofCompleted R M x n = x n.val := by
   simp [ofCompleted]
 
 /-- Forgetting the empty component after inserting it is the identity. -/
@@ -129,26 +129,26 @@ theorem toCompleted_ofFinite (x : ReducedTensorWords R M) :
 
 /-- Reduced deconcatenation, with one coordinate for every pair of positive output lengths. -/
 noncomputable def deconcatenation : CompletedReducedTensorWords R M →ₗ[R]
-    ∀ p q : {n : ℕ // 0 < n}, TensorPower R p.1 M ⊗[R] TensorPower R q.1 M :=
+    ∀ p q : {n : ℕ // 0 < n}, TensorPower R p.val M ⊗[R] TensorPower R q.val M :=
   LinearMap.pi fun p ↦ LinearMap.pi fun q ↦
     (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap ∘ₗ
-      LinearMap.proj (⟨p.1 + q.1, by omega⟩ : {n : ℕ // 0 < n})
+      LinearMap.proj (⟨p.val + q.val, by omega⟩ : {n : ℕ // 0 < n})
 
 /-- Each reduced coproduct coordinate cuts the corresponding length component. -/
 @[simp] theorem deconcatenation_apply (x : CompletedReducedTensorWords R M)
     (p q : {n : ℕ // 0 < n}) :
     deconcatenation R M x p q =
       (TensorPower.mulEquiv (R := R) (M := M)).symm
-        (x ⟨p.1 + q.1, by omega⟩) := by
+        (x ⟨p.val + q.val, by omega⟩) := by
   simp [deconcatenation]
 
 /-- Reduced deconcatenation agrees with coaugmented deconcatenation in positive bidegrees. -/
 theorem deconcatenation_eq_completed (x : CompletedReducedTensorWords R M)
     (p q : {n : ℕ // 0 < n}) :
     deconcatenation R M x p q =
-      CompletedTensorWords.deconcatenation R M (toCompleted R M x) p.1 q.1 := by
+      CompletedTensorWords.deconcatenation R M (toCompleted R M x) p.val q.val := by
   rw [deconcatenation_apply, CompletedTensorWords.deconcatenation_apply]
-  exact congrArg _ (toCompleted_pos R M x ⟨p.1 + q.1, by omega⟩).symm
+  exact congrArg _ (toCompleted_pos R M x ⟨p.val + q.val, by omega⟩).symm
 
 /-- On finite reduced words, completed deconcatenation is the ordinary reduced coproduct
 projected to its two output lengths. -/
@@ -159,18 +159,18 @@ projected to its two output lengths. -/
         (ReducedTensorWords.component R M q)
         (ReducedTensorWords.deconcatenation R M x) := by
   calc
-    _ = TensorProduct.map (TensorWords.component R M p.1)
-          (TensorWords.component R M q.1)
+    _ = TensorProduct.map (TensorWords.component R M p.val)
+          (TensorWords.component R M q.val)
           (TensorWords.deconcatenation R M (TensorWords.reducedInclusion R M x)) := by
       rw [deconcatenation_eq_completed, toCompleted_ofFinite]
       exact CompletedTensorWords.deconcatenation_coe R M
-        (TensorWords.reducedInclusion R M x) p.1 q.1
+        (TensorWords.reducedInclusion R M x) p.val q.val
     _ = _ := by
       have hp : ReducedTensorWords.component R M p ∘ₗ
-          TensorWords.reducedProjection R M = TensorWords.component R M p.1 :=
+          TensorWords.reducedProjection R M = TensorWords.component R M p.val :=
         LinearMap.ext (fun w ↦ TensorWords.component_reducedProjection R M p w)
       have hq : ReducedTensorWords.component R M q ∘ₗ
-          TensorWords.reducedProjection R M = TensorWords.component R M q.1 :=
+          TensorWords.reducedProjection R M = TensorWords.component R M q.val :=
         LinearMap.ext (fun w ↦ TensorWords.component_reducedProjection R M q w)
       have h := congrArg
         (TensorProduct.map (ReducedTensorWords.component R M p)
@@ -183,12 +183,12 @@ theorem deconcatenation_coassoc (x : CompletedReducedTensorWords R M)
     (p q r : {n : ℕ // 0 < n}) :
     (TensorProduct.assoc R _ _ _)
       (TensorProduct.map (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap
-        LinearMap.id (deconcatenation R M x ⟨p.1 + q.1, by omega⟩ r)) =
+        LinearMap.id (deconcatenation R M x ⟨p.val + q.val, by omega⟩ r)) =
       TensorProduct.map LinearMap.id
         (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap
-        (deconcatenation R M x p ⟨q.1 + r.1, by omega⟩) := by
+        (deconcatenation R M x p ⟨q.val + r.val, by omega⟩) := by
   simpa only [deconcatenation_eq_completed] using
-    CompletedTensorWords.deconcatenation_coassoc R M (toCompleted R M x) p.1 q.1 r.1
+    CompletedTensorWords.deconcatenation_coassoc R M (toCompleted R M x) p.val q.val r.val
 
 /-- The length filtration consists of completed reduced words with no components below `n`. -/
 noncomputable def filtration (n : ℕ) : Submodule R (CompletedReducedTensorWords R M) :=
@@ -197,11 +197,11 @@ noncomputable def filtration (n : ℕ) : Submodule R (CompletedReducedTensorWord
 /-- Membership in the reduced length filtration is coordinatewise vanishing below its cutoff. -/
 @[simp] theorem mem_filtration (x : CompletedReducedTensorWords R M) (n : ℕ) :
     x ∈ filtration R M n ↔
-      ∀ k : {k : ℕ // 0 < k}, k.1 < n → x k = 0 := by
+      ∀ k : {k : ℕ // 0 < k}, k.val < n → x k = 0 := by
   rw [filtration, Submodule.mem_comap, CompletedTensorWords.mem_filtration]
   constructor
   · intro hx k hk
-    simpa only [toCompleted_pos] using hx k.1 hk
+    simpa only [toCompleted_pos] using hx k.val hk
   · intro hx k hk
     by_cases hpos : 0 < k
     · exact (toCompleted_pos R M x ⟨k, hpos⟩).trans (hx ⟨k, hpos⟩ hk)
@@ -226,10 +226,10 @@ theorem filtration_antitone : Antitone (filtration R M) := by
 /-- Deconcatenation of a word filtered in degree `n` vanishes in total length below `n`. -/
 theorem deconcatenation_eq_zero_of_mem_filtration
     {x : CompletedReducedTensorWords R M} {n : ℕ}
-    {p q : {k : ℕ // 0 < k}} (hx : x ∈ filtration R M n) (hpq : p.1 + q.1 < n) :
+    {p q : {k : ℕ // 0 < k}} (hx : x ∈ filtration R M n) (hpq : p.val + q.val < n) :
     deconcatenation R M x p q = 0 := by
   rw [deconcatenation_apply,
-    (mem_filtration R M x n).mp hx ⟨p.1 + q.1, by omega⟩ hpq]
+    (mem_filtration R M x n).mp hx ⟨p.val + q.val, by omega⟩ hpq]
   exact map_zero _
 
 /-- Keep only the components of positive length below `n`, as a finite reduced word. -/
@@ -242,7 +242,7 @@ noncomputable def truncate (n : ℕ) : CompletedReducedTensorWords R M →ₗ[R]
 @[simp] theorem truncate_component (n : ℕ) (x : CompletedReducedTensorWords R M)
     (k : {k : ℕ // 0 < k}) :
     ReducedTensorWords.component R M k (truncate R M n x) =
-      if k.1 < n then x k else 0 := by
+      if k.val < n then x k else 0 := by
   rw [truncate, LinearMap.comp_apply,
     LinearMap.comp_apply, TensorWords.component_reducedProjection,
     TensorWords.component_apply, CompletedTensorWords.truncate_apply]

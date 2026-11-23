@@ -57,14 +57,14 @@ theorem precompHomeomorph_apply (z : (K ⋙ F).Elements) :
 @[simp]
 theorem precompHomeomorph_symm_apply_obj
     (q : K.obj.Pullback (Functor.Elements.obj (F := F))) :
-    ((precompHomeomorph F K).symm q).obj = q.1.1 :=
+    ((precompHomeomorph F K).symm q).obj = q.val.1 :=
   precompEquiv_symm_apply_obj F K q
 
 /-- Forgetting the new base coordinate recovers the original point. -/
 @[simp]
 theorem precomp_obj_precompHomeomorph_symm
     (q : K.obj.Pullback (Functor.Elements.obj (F := F))) :
-    (precomp K F).obj ((precompHomeomorph F K).symm q) = q.1.2 :=
+    (precomp K F).obj ((precompHomeomorph F K).symm q) = q.val.2 :=
   precomp_obj_precompEquiv_symm F K q
 
 /-- The new anchor and the map to the original total space jointly embed the pulled-back

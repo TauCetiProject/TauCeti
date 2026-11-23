@@ -170,7 +170,7 @@ variable (M F₁ F₂) in
 `strongTrans M F₁ ⟶ strongTrans M F₂`. -/
 def modificationEquiv : {τ : F₁ ⟶ F₂ // NatTrans.IsLeftLinear τ (Discrete M)} ≃
     Pseudofunctor.StrongTrans.Modification (strongTrans M F₁) (strongTrans M F₂) where
-  toFun τ := letI := τ.2; modification M τ.1
+  toFun τ := letI := τ.property; modification M τ.val
   invFun Γ := ⟨natTransOfModification Γ, inferInstance⟩
   left_inv _ := rfl
   right_inv := modification_natTransOfModification
@@ -178,7 +178,7 @@ def modificationEquiv : {τ : F₁ ⟶ F₂ // NatTrans.IsLeftLinear τ (Discret
 /-- `modificationEquiv` sends an equivariant natural transformation to its modification. -/
 @[simp]
 lemma modificationEquiv_apply (τ : {τ : F₁ ⟶ F₂ // NatTrans.IsLeftLinear τ (Discrete M)}) :
-    modificationEquiv M F₁ F₂ τ = letI := τ.2; modification M τ.1 :=
+    modificationEquiv M F₁ F₂ τ = letI := τ.property; modification M τ.val :=
   (rfl)
 
 /-- The inverse of `modificationEquiv` sends a modification to its underlying natural

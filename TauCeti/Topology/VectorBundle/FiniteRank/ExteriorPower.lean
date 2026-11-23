@@ -272,6 +272,18 @@ transitions of the core. -/
   rw [det_def, coordChange_exteriorPower_obj]
   exact ContinuousLinearMap.exteriorPowerCoords_self _
 
+/-- The determinant core of a bundle has transition scalar equal to the determinant of the
+bundle transition in the preferred charts. -/
+theorem coordChange_det_ofBundle (n : ℕ) (E : B → Type*)
+    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+    [∀ x, TopologicalSpace (E x)] [TopologicalSpace (Bundle.TotalSpace (Fin n → 𝕜) E)]
+    [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] (i i' x : B) :
+    (ofBundle 𝕜 n E).det.core.coordChange i i' x =
+      ((trivializationAt (Fin n → 𝕜) E i).coordChangeL 𝕜
+        (trivializationAt (Fin n → 𝕜) E i') x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)).det •
+        ContinuousLinearMap.id 𝕜 _ := by
+  rw [coordChange_det, core_ofBundle, pointIndexedCore_coordChange]
+
 /-- Induced morphism between determinant line bundles of two finite-rank cores of equal rank:
 the top exterior power `(exteriorPower 𝕜 B A.rank).map a` followed by transport along `hr`. -/
 noncomputable def detMap {A D : FiniteRankBundleCore 𝕜 B} (a : A ⟶ D) (hr : A.rank = D.rank) :
@@ -353,23 +365,67 @@ noncomputable def detIso {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D) (hr :
 
 end TopDegree
 
+/-! ### Pullback -/
+
 section Pullback
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+variable {X : Type*} [TopologicalSpace X]
 
-/-- Pulling back commutes strictly with taking the determinant line bundle. -/
-@[simp] theorem pullback_det (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+/-- Pulling back commutes strictly with exterior powers of finite-rank cores. -/
+@[simp] theorem pullback_exteriorPower_obj (j : ℕ) (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
+    ((exteriorPower 𝕜 B j).obj A).pullback f = (exteriorPower 𝕜 X j).obj (A.pullback f) := (rfl)
+
+/-- Pulling back commutes with the action of exterior powers on bundle maps. -/
+@[simp] theorem pullbackMap_exteriorPower_map (j : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
+    (a : A ⟶ D) (f : C(X, B)) :
+    pullbackMap ((exteriorPower 𝕜 B j).map a) f =
+      (exteriorPower 𝕜 X j).map (pullbackMap a f) :=
+  ((CoordinateFunctor.exteriorPower 𝕜 j).mapHom_pullbackMap a f).symm
+
+/-- Exterior powers commute strictly with pullback as functors. -/
+theorem exteriorPower_comp_pullbackFunctor (j : ℕ) (f : C(X, B)) :
+    exteriorPower 𝕜 B j ⋙ pullbackFunctor f = pullbackFunctor f ⋙ exteriorPower 𝕜 X j :=
+  (CoordinateFunctor.exteriorPower 𝕜 j).functor_comp_pullbackFunctor f
+
+@[simp] theorem pullbackMap_exteriorPowerZeroIso_hom (A : FiniteRankBundleCore 𝕜 B)
+    (f : C(X, B)) :
+    pullbackMap (exteriorPowerZeroIso A).hom f = (exteriorPowerZeroIso (A.pullback f)).hom :=
+  hom_ext fun x => by
+    simp only [fiberMap_pullbackMap, fiberMap_exteriorPowerZeroIso_hom]
+    -- `((exteriorPower 𝕜 B 0).obj A).pullback f` and `(trivial 𝕜 B 1).pullback f` coincide with
+    -- `(exteriorPower 𝕜 X 0).obj (A.pullback f)` and `trivial 𝕜 X 1` at default transparency.
+    exact (fiberMap_exteriorPowerZeroIso_hom (A.pullback f) x).symm
+
+@[simp] theorem pullbackMap_exteriorPowerZeroIso_inv (A : FiniteRankBundleCore 𝕜 B)
+    (f : C(X, B)) :
+    pullbackMap (exteriorPowerZeroIso A).inv f = (exteriorPowerZeroIso (A.pullback f)).inv :=
+  hom_ext fun x => by
+    simp only [fiberMap_pullbackMap, fiberMap_exteriorPowerZeroIso_inv]
+    exact (fiberMap_exteriorPowerZeroIso_inv (A.pullback f) x).symm
+
+@[simp] theorem pullbackMap_exteriorPowerOneIso_hom (A : FiniteRankBundleCore 𝕜 B)
+    (f : C(X, B)) :
+    pullbackMap (exteriorPowerOneIso A).hom f = (exteriorPowerOneIso (A.pullback f)).hom :=
+  pullbackMap_constIso_hom _ _ _ f
+
+@[simp] theorem pullbackMap_exteriorPowerOneIso_inv (A : FiniteRankBundleCore 𝕜 B)
+    (f : C(X, B)) :
+    pullbackMap (exteriorPowerOneIso A).inv f = (exteriorPowerOneIso (A.pullback f)).inv :=
+  pullbackMap_constIso_inv _ _ _ f
+
+/-- Pulling back commutes strictly with forming the determinant line of a finite-rank core. -/
+@[simp] theorem pullback_det (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
     A.det.pullback f = (A.pullback f).det := (rfl)
 
 /-- Pulling back commutes with the induced morphism on determinant line bundles. -/
-@[simp] theorem pullbackMap_detMap {A D : FiniteRankBundleCore 𝕜 Y}
-    (a : A ⟶ D) (hr : A.rank = D.rank) (f : C(X, Y)) :
+@[simp] theorem pullbackMap_detMap {A D : FiniteRankBundleCore 𝕜 B}
+    (a : A ⟶ D) (hr : A.rank = D.rank) (f : C(X, B)) :
     pullbackMap (detMap a hr) f = detMap (pullbackMap a f) hr := by
-  have hmap : pullbackMap ((exteriorPower 𝕜 Y A.rank).map a) f =
+  have hmap : pullbackMap ((exteriorPower 𝕜 B A.rank).map a) f =
       (exteriorPower 𝕜 X (A.pullback f).rank).map (pullbackMap a f) :=
     ((CoordinateFunctor.exteriorPower 𝕜 A.rank).mapHom_pullbackMap a f).symm
   have heq : pullbackMap
-      (eqToHom (congrArg (fun r ↦ (exteriorPower 𝕜 Y r).obj D) hr)) f =
+      (eqToHom (congrArg (fun r ↦ (exteriorPower 𝕜 B r).obj D) hr)) f =
       eqToHom (congrArg (fun r ↦ (exteriorPower 𝕜 X r).obj (D.pullback f)) hr) :=
     eqToHom_map (pullbackFunctor f) _
   dsimp only [det, detMap]
@@ -384,7 +440,7 @@ variable (𝕜) in
 private noncomputable def tupleToCLM (j m : ℕ) :
     (Fin j → Fin m → 𝕜) →L[𝕜] ((Fin j → 𝕜) →L[𝕜] (Fin m → 𝕜)) :=
   ∑ k : Fin j,
-    (ContinuousLinearMap.smulRightL 𝕜 (Fin j → 𝕜) (Fin m → 𝕜)
+    (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (Fin j → 𝕜) (Fin m → 𝕜)
       (ContinuousLinearMap.proj k)).comp
       (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin j ↦ Fin m → 𝕜) k)
 
@@ -418,8 +474,6 @@ theorem contDiff_piEquiv_ιMulti (j m : ℕ) {k : WithTop ℕ∞} :
   rw [funext (piEquiv_ιMulti_eq_exteriorPowerCoords j m)]
   exact ((ContinuousLinearMap.contDiff_exteriorPowerCoords j j m).comp
     (tupleToCLM 𝕜 j m).contDiff).clm_apply contDiff_const
-
-variable {B : Type*} [TopologicalSpace B]
 
 /-- The exterior product `s 0 ∧ ⋯ ∧ s (j - 1)` of `j` sections of `A`, as a section of
 `(exteriorPower 𝕜 B j).obj A` in the standard coordinates `exteriorPower.piEquiv`. -/
@@ -515,26 +569,25 @@ theorem wedgeSection_congr {j : ℕ} {A : FiniteRankBundleCore 𝕜 B}
 
 /-- Evaluating `wedgeSection` on `A.pullback f` at `x` depends only on the fibre vectors `s k x`,
 read in the fibre of `A` over `f x`. -/
-theorem wedgeSection_pullback_apply {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (j : ℕ) (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+theorem wedgeSection_pullback_apply {X : Type*} [TopologicalSpace X]
+    (j : ℕ) (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B))
     (s : Fin j → ∀ x, (A.pullback f).core.Fiber x) (x : X) :
     wedgeSection j (A.pullback f) s x = wedgeSection j A (fun k _ ↦ s k x) (f x) := (rfl)
 
 /-- Pulling back sections commutes strictly with forming `wedgeSection`. -/
-@[simp] theorem pullback_wedgeSection {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (j : ℕ) (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+@[simp] theorem pullback_wedgeSection {X : Type*} [TopologicalSpace X]
+    (j : ℕ) (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B))
     (s : Fin j → ∀ y, A.core.Fiber y) :
     wedgeSection j (A.pullback f) (fun k x ↦ s k (f x)) =
       fun x ↦ wedgeSection j A s (f x) := (rfl)
 
 /-- Pulling back sections commutes strictly with forming `detSection`. -/
-@[simp] theorem pullback_detSection {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+@[simp] theorem pullback_detSection {X : Type*} [TopologicalSpace X]
+    (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B))
     (s : Fin A.rank → ∀ y, A.core.Fiber y) :
     detSection (A.pullback f) (fun k x ↦ s k (f x)) =
       fun x ↦ detSection A s (f x) := (rfl)
 
 end Sections
-
 end FiniteRankBundleCore
 end TauCeti
