@@ -29,8 +29,8 @@ On a word `w = j₁ ⋯ jₛ`:
 
 These operators satisfy the five Chevalley relations
 (`TauCeti.KacMoody.satisfiesAuxRelations_wordRep`), providing the shared representation used in
-both Cartan injectivity (`TauCeti.Algebra.Lie.KacMoody.CartanInjective`) and triangular
-directness (`TauCeti.Algebra.Lie.KacMoody.Auxiliary`).
+the triangular directness proof (`TauCeti.Algebra.Lie.KacMoody.Auxiliary`, and hence
+`TauCeti.Algebra.Lie.KacMoody.Triangular`).
 
 ## Main definitions
 
@@ -73,6 +73,7 @@ variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I
 def rootSum (w : FreeMonoid I) : Module.Dual K H := (w.toList.map R.root).sum
 
 /-- The root sum of the empty word is zero. -/
+@[simp]
 theorem rootSum_one : rootSum R (1 : FreeMonoid I) = 0 := by
   simp [rootSum]
 
@@ -100,10 +101,11 @@ noncomputable def weightDerivation : H →ₗ[K] Module.End K K[FreeMonoid I] :=
 theorem weightDerivation_single (x : H) (w : FreeMonoid I) (c : K) :
     weightDerivation R x (single w c) = rootSum R w x • single w c := by
   have hc : single w c = c • MonoidAlgebra.basis (FreeMonoid I) K w := by
-    rw [basis_apply, smul_single', mul_one]
-  rw [hc, map_smul, weightDerivation, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Module.Basis.constr_basis, LinearMap.pi_apply, LinearMap.smulRight_apply, basis_apply,
-    smul_comm]
+    simp [basis_apply]
+  rw [hc, map_smul, weightDerivation]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.constr_basis,
+    LinearMap.pi_apply, LinearMap.smulRight_apply]
+  simp [mul_comm]
 
 /-- The weight derivation is a derivation of the tensor algebra. -/
 theorem weightDerivation_mul (x : H) (y z : K[FreeMonoid I]) :
@@ -193,6 +195,7 @@ theorem raising_single_one (k : I) (w : FreeMonoid I) :
   rw [raising, ← basis_apply, Module.Basis.constr_basis]
 
 /-- `raisingWord` kills the empty word `1`. -/
+@[simp]
 theorem raisingWord_one (k : I) : raisingWord R μ k 1 = 0 := by
   simp [raisingWord]
 
@@ -210,9 +213,7 @@ theorem raising_lowering (k j : I) (y : K[FreeMonoid I]) :
   have key : raising R μ k ∘ₗ lowering j = lowering j ∘ₗ raising R μ k +
       if j = k then cartanAction R μ (R.coroot k) else 0 :=
     b.ext fun w => by
-      rw [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.comp_apply, basis_apply,
-        lowering_single, raising_single_one, raising_single_one, raisingWord_of_mul,
-        lowering_apply]
+      simp [b, raising_single_one, raisingWord_of_mul, lowering_apply]
       split_ifs <;> simp [cartanAction_single, sub_smul]
   have := LinearMap.congr_fun key y
   split_ifs at this ⊢ <;> simpa using this
@@ -222,7 +223,7 @@ theorem weightDerivation_raisingWord (x : H) (k : I) (w : FreeMonoid I) :
     weightDerivation R x (raisingWord R μ k w) =
       (rootSum R w x - R.root k x) • raisingWord R μ k w := by
   induction w using FreeMonoid.inductionOn' with
-  | one => simp [raisingWord_one]
+  | one => simp
   | of_mul j w ih =>
     rw [raisingWord_of_mul, map_add, ← lowering_apply, weightDerivation_lowering, ih,
       rootSum_of_mul]
@@ -240,8 +241,7 @@ theorem lie_cartanAction_raising (x : H) (k : I) :
   refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
   simp only [basis_apply, Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
     LinearMap.smul_apply, cartanAction_single, map_smul, raising_single_one]
-  simp only [cartanAction, LinearMap.sub_apply, LinearMap.smulRight_apply, LinearMap.smul_apply,
-    one_apply_eq_self, weightDerivation_raisingWord]
+  simp only [cartanAction_apply, weightDerivation_raisingWord]
   module
 
 /-- Bracket of matching raising and lowering operators: `⁅eₖ, fₖ⁆ = h(hₖ)`. -/

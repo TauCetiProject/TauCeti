@@ -165,22 +165,32 @@ private theorem aux_hom_ext {g₁ g₂ : AuxLieAlgebra R →ₗ⁅K⁆ L}
     (hH : ∀ x, g₁ (auxCartan R x) = g₂ (auxCartan R x))
     (hE : ∀ i, g₁ (auxPos R i) = g₂ (auxPos R i))
     (hF : ∀ i, g₁ (auxNeg R i) = g₂ (auxNeg R i)) : g₁ = g₂ :=
-  quotient_hom_ext (auxIdeal R) (fun x => by simpa [auxCartan] using hH x) hE hF
+  TauCeti.FreeLieAlgebra.quotient_hom_ext fun
+    | .cartan x => by simpa [auxCartan] using hH x
+    | .positive i => hE i
+    | .negative i => hF i
 
 end AuxUniversal
 
 private theorem lieSpan_auxGenerators_eq_top :
     LieSubalgebra.lieSpan K (AuxLieAlgebra R)
       (Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R)) = ⊤ := by
-  have hc : (auxCartan R : H → AuxLieAlgebra R) =
-      fun x => (auxIdeal R).mkQ (FreeLieAlgebra.of K (.cartan x)) :=
-    funext (quotientCartan_apply R le_rfl)
-  have hp : auxPos R = fun i => (auxIdeal R).mkQ (FreeLieAlgebra.of K (.positive i)) :=
-    funext fun i => by simp [auxPos, auxMk]
-  have hn : auxNeg R = fun i => (auxIdeal R).mkQ (FreeLieAlgebra.of K (.negative i)) :=
-    funext fun i => by simp [auxNeg, auxMk]
-  rw [hc, hp, hn]
-  exact lieSpan_quotient_generators_eq_top (auxIdeal R)
+  have hrange : Set.range (fun g : Generator I H => (auxIdeal R).mkQ (FreeLieAlgebra.of K g)) =
+      Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R) := by
+    ext y
+    simp only [Set.mem_range]
+    constructor
+    · rintro ⟨g, rfl⟩
+      cases g with
+      | cartan x => exact Or.inl (Or.inl ⟨x, (auxMk_of_cartan R x).symm⟩)
+      | positive i => exact Or.inl (Or.inr ⟨i, rfl⟩)
+      | negative i => exact Or.inr ⟨i, rfl⟩
+    · rintro ((⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩)
+      · exact ⟨.cartan x, auxMk_of_cartan R x⟩
+      · exact ⟨.positive i, rfl⟩
+      · exact ⟨.negative i, rfl⟩
+  rw [← hrange]
+  exact TauCeti.FreeLieAlgebra.lieSpan_range_mkQ_of_eq_top (auxIdeal R)
 
 private noncomputable def auxChevalleyHom : AuxLieAlgebra R →ₗ⁅K⁆ AuxLieAlgebra R :=
   auxLift (satisfiesAuxRelations_aux R).neg_swap
@@ -282,33 +292,28 @@ open scoped Classical in
 private theorem auxRep_auxNegHom_injective (lam : Module.Dual K H) :
     Function.Injective fun a : FreeLieAlgebra K I =>
       auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I]) := by
-  let ιFA : FreeLieAlgebra K I →ₗ⁅K⁆ FreeAlgebra K I := FreeLieAlgebra.lift K (FreeAlgebra.ι K)
-  have hιFA_eq : ∀ a, ιFA a = FreeLieAlgebra.universalEnvelopingEquivFreeAlgebra K I
-      (UniversalEnvelopingAlgebra.ι K a) := fun a => by
-    simp [ιFA, FreeLieAlgebra.universalEnvelopingEquivFreeAlgebra]
-  have hιFA_inj : Function.Injective ιFA := fun a b hab =>
-    TauCeti.UniversalEnvelopingAlgebra.ι_injective K (FreeLieAlgebra K I) <|
-      (FreeLieAlgebra.universalEnvelopingEquivFreeAlgebra K I).injective <| by
-        rwa [← hιFA_eq, ← hιFA_eq]
-  have hequiv_ι (i : I) :
-      FreeAlgebra.equivMonoidAlgebraFreeMonoid (FreeAlgebra.ι K i) =
-        MonoidAlgebra.of K (FreeMonoid I) (.of i) := by
-    rw [FreeAlgebra.equivMonoidAlgebraFreeMonoid, AlgEquiv.ofAlgHom_apply, FreeAlgebra.lift_ι_apply]
+  let emb : FreeLieAlgebra K I →ₗ⁅K⁆ K[FreeMonoid I] :=
+    FreeAlgebra.equivMonoidAlgebraFreeMonoid.toAlgHom.toLieHom.comp
+      ((FreeLieAlgebra.universalEnvelopingEquivFreeAlgebra K I).toAlgHom.toLieHom.comp
+        (UniversalEnvelopingAlgebra.ι K))
+  have hemb_of (i : I) :
+      emb (FreeLieAlgebra.of K i) = MonoidAlgebra.of K (FreeMonoid I) (.of i) := by
+    simp [emb, FreeAlgebra.equivMonoidAlgebraFreeMonoid]
+  have hemb_inj : Function.Injective emb :=
+    FreeAlgebra.equivMonoidAlgebraFreeMonoid.injective.comp
+      ((FreeLieAlgebra.universalEnvelopingEquivFreeAlgebra K I).injective.comp
+        (TauCeti.UniversalEnvelopingAlgebra.ι_injective K (FreeLieAlgebra K I)))
   have hcomp : (auxRep R lam).comp (auxNegHom R) =
-      (Algebra.lmul K K[FreeMonoid I]).toLieHom.comp
-        (FreeAlgebra.equivMonoidAlgebraFreeMonoid.toAlgHom.toLieHom.comp ιFA) :=
-    FreeLieAlgebra.hom_ext fun i => by
-      simp [auxRep, auxNegHom, lowering_eq_lmul, ιFA, hequiv_ι]
+      (Algebra.lmul K K[FreeMonoid I]).toLieHom.comp emb :=
+    FreeLieAlgebra.hom_ext fun i => by simp [auxRep, auxNegHom, lowering_eq_lmul, hemb_of]
   have hpt (a : FreeLieAlgebra K I) :
-      auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I]) =
-        FreeAlgebra.equivMonoidAlgebraFreeMonoid (ιFA a) := by
-    have ha := LinearMap.congr_fun (DFunLike.congr_fun hcomp a) (1 : K[FreeMonoid I])
-    simpa [Algebra.coe_lmul_eq_mul] using ha
+      auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I]) = emb a := by
+    simpa [Algebra.coe_lmul_eq_mul] using
+      LinearMap.congr_fun (DFunLike.congr_fun hcomp a) (1 : K[FreeMonoid I])
   have hfn :
-      (fun a : FreeLieAlgebra K I => auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I])) =
-        FreeAlgebra.equivMonoidAlgebraFreeMonoid ∘ ιFA :=
+      (fun a : FreeLieAlgebra K I => auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I])) = emb :=
     funext hpt
-  exact hfn ▸ FreeAlgebra.equivMonoidAlgebraFreeMonoid.injective.comp hιFA_inj
+  exact hfn ▸ hemb_inj
 
 private theorem auxTriangular_eq_zero {a b : FreeLieAlgebra K I} {x : H}
     (h : auxNegHom R a + auxCartan R x + auxPosHom R b = 0) :
@@ -374,9 +379,7 @@ private theorem lie_auxNeg_mem_range_auxPosHom_sup_range_auxCartan (k : I) {y : 
 
 private theorem lie_auxNeg_serreRelator_eq_zero (hA : A.IsGeneralizedCartan) (k i j : I) :
     ⁅auxNeg R k, (ad K _ (auxPos R i) ^ (-A i j).toNat) ⁅auxPos R i, auxPos R j⁆⁆ = 0 :=
-  lie_ad_pow_lie_eq_zero hA.diag hA.offDiag_nonpos (fun a b hab => (hA.zero_comm a b).mp hab)
-    (lie_auxCartan_auxPos R) (lie_auxCartan_auxNeg R) (lie_auxPos_auxNeg_self R)
-    (fun _ _ => lie_auxPos_auxNeg_of_ne R) i j k
+  lie_ad_pow_lie_eq_zero hA (satisfiesAuxRelations_aux R) i j k
 
 private noncomputable def auxSerrePosSubmodule : Submodule K (AuxLieAlgebra R) :=
   (serreIdeal K A).toSubmodule.map (auxPosHom R).toLinearMap
@@ -466,14 +469,14 @@ private theorem mem_auxSerreNegIdeal_iff (hA : A.IsGeneralizedCartan) {y : AuxLi
     y ∈ auxSerreNegIdeal R hA ↔ ∃ a ∈ serreIdeal K A, auxNegHom R a = y := by
   constructor
   · intro hy
-    rcases hy with ⟨b, hb, hEq⟩
-    simp only [LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom] at hEq
+    rw [auxSerreNegIdeal, LieIdeal.mem_comap, LieEquiv.coe_toLieHom] at hy
+    obtain ⟨b, hb, hEq⟩ := hy
+    simp only [LieHom.coe_toLinearMap] at hEq
     refine ⟨TauCeti.FreeLieAlgebra.freeNeg K I b, TauCeti.freeNeg_mem_serreIdeal hb, ?_⟩
     rw [← auxChevalley_auxPosHom, hEq]
     exact auxChevalley_involutive R y
   · rintro ⟨a, ha, rfl⟩
-    change auxChevalley R (auxNegHom R a) ∈ auxSerrePosIdeal R hA
-    rw [auxChevalley_auxNegHom]
+    rw [auxSerreNegIdeal, LieIdeal.mem_comap, LieEquiv.coe_toLieHom, auxChevalley_auxNegHom]
     exact ⟨_, TauCeti.freeNeg_mem_serreIdeal ha, rfl⟩
 
 private theorem satisfiesRelations_auxQuotient (hA : A.IsGeneralizedCartan) :
