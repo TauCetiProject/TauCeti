@@ -248,18 +248,12 @@ canonical symplectic form of `T*M`. -/
 theorem IsHyperregularLagrangian.isFirstIntegral_momentMap (hLh : IsHyperregularLagrangian L)
     (hLG : ∀ (g : G) v, L (g • v) = L v) (ξ : GroupLieAlgebra IG G) :
     (CotangentBundle.symplecticForm I M).IsFirstIntegral hLh.hamiltonian
-      fun p ↦ CotangentBundle.momentMap IG G p ξ := by
-  refine SmoothTwoForm.isFirstIntegral_iff.2 fun p ↦ congrFun
-    ((CotangentBundle.isEquivariantMomentMap_momentMap.toIsMomentMap.poissonBracket_eq_zero_iff
-      CotangentBundle.isSymplectic_symplecticForm.isNondegenerate hLh.hamiltonian ξ).2
-      fun q ↦ ?_) p
-  rw [InfinitesimalAction.fundamental_apply]
-  by_cases hH : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ, ℝ) hLh.hamiltonian q
-  · exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant hH
-      (ContMDiffSMul.mdifferentiableAt_smul_const q 1) (fun g ↦ hLh.hamiltonian_smul (hLG g) q) ξ
-  · -- Where `H` is not differentiable its derivative is zero by convention.
-    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hH]
-    rfl
+      fun p ↦ CotangentBundle.momentMap IG G p ξ :=
+  SmoothTwoForm.isFirstIntegral_iff.2 <| congrFun <|
+    CotangentBundle.isEquivariantMomentMap_momentMap.toIsMomentMap
+      |>.poissonBracket_eq_zero_of_smul_invariant
+        CotangentBundle.isSymplectic_symplecticForm.isNondegenerate
+        (fun g ↦ hLh.hamiltonian_smul (hLG g)) ξ
 
 end Noether
 
