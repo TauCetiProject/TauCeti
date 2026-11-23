@@ -231,7 +231,15 @@ def id : RestrictedLieHom R L L p where
   map_pMap' _ := rfl
 
 @[simp]
+theorem coe_id : ⇑(RestrictedLieHom.id R L p) = _root_.id :=
+  (rfl)
+
+@[simp]
 theorem id_apply (x : L) : RestrictedLieHom.id R L p x = x :=
+  (rfl)
+
+@[simp]
+theorem toLieHom_id : (RestrictedLieHom.id R L p).toLieHom = LieHom.id :=
   (rfl)
 
 /-- The composition of restricted morphisms. -/
@@ -241,8 +249,18 @@ def comp (g : RestrictedLieHom R L' L'' p) (f : RestrictedLieHom R L L' p) :
   map_pMap' x := by simp
 
 @[simp]
+theorem coe_comp (g : RestrictedLieHom R L' L'' p) (f : RestrictedLieHom R L L' p) :
+    ⇑(g.comp f) = g ∘ f :=
+  (rfl)
+
+@[simp]
 theorem comp_apply (g : RestrictedLieHom R L' L'' p) (f : RestrictedLieHom R L L' p) (x : L) :
     g.comp f x = g (f x) :=
+  (rfl)
+
+@[simp]
+theorem toLieHom_comp (g : RestrictedLieHom R L' L'' p) (f : RestrictedLieHom R L L' p) :
+    (g.comp f).toLieHom = g.toLieHom.comp f.toLieHom :=
   (rfl)
 
 @[simp]
@@ -263,8 +281,7 @@ theorem comp_assoc {L''' : Type*} [LieRing L'''] [LieAlgebra R L''']
 restricted ideal. -/
 theorem pMap_mem_ker (f : RestrictedLieHom R L L' p) {x : L} (hx : x ∈ f.toLieHom.ker) :
     pMap R p x ∈ f.toLieHom.ker := by
-  rw [LieHom.mem_ker] at hx ⊢
-  rw [coe_toLieHom, map_pMap, ← coe_toLieHom, hx, pMap_zero]
+  simp_all [LieHom.mem_ker]
 
 end RestrictedLieHom
 
@@ -310,11 +327,9 @@ protected abbrev Function.Injective.restrictedLieAlgebra {f : L' →ₗ⁅R⁆ L
     (hf : Function.Injective f) (q : L' → L') (hq : ∀ x, f (q x) = pMap R p (f x)) :
     RestrictedLieAlgebra R L' p where
   pMap := q
-  pMap_smul c x := hf <| by rw [hq, map_smul, map_smul, hq, pMap_smul]
-  ad_pMap x := LinearMap.ext fun y ↦ hf <| by
-    rw [LieAlgebra.ad_apply, LieHom.map_lie, hq, pMap_lie, LieHom.map_ad_pow]
-  pMap_add x y := hf <| by
-    rw [hq, map_add, pMap_add, map_add, map_add, hq, hq, LieHom.map_jacobson]
+  pMap_smul c x := hf <| by simp [hq, pMap_smul]
+  ad_pMap x := LinearMap.ext fun y ↦ hf <| by simp [hq, pMap_lie, LieHom.map_ad_pow]
+  pMap_add x y := hf <| by simp [hq, pMap_add, LieHom.map_jacobson]
 
 /-- The `p`-map pulled back along `f` is `q`. -/
 @[simp]
