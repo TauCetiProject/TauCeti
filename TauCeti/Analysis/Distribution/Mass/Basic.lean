@@ -32,8 +32,6 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.mass`, `Distribution.localMass`: the extended mass and local mass.
 * `Distribution.enorm_apply_le_localMass_mul`: for linear `T`,
   `‖T φ‖ₑ ≤ localMass T U * ‖φ‖_∞` when `φ` is supported in `U`.
-* `Distribution.enorm_apply_le_mul_mass_of_forall_norm_le`: for linear `T`, `‖T φ‖ₑ ≤ b M(T)`
-  when `‖φ x‖ ≤ b` for all `x`.
 * `Distribution.localMass_comp_le_of_enorm_apply_le`,
   `Distribution.HasLocallyFiniteMass.comp_of_norm_apply_le`: precomposition with a pointwise
   bounded map of test functions (which does not enlarge supports).
@@ -238,14 +236,6 @@ theorem localMass_comp_le_of_enorm_apply_le {G : Type*} [NormedAddCommGroup G] [
 theorem enorm_apply_le_mass_mul (T : 𝓕) (φ : 𝓓^{n}(Ω, F)) :
     ‖T φ‖ₑ ≤ mass T * ‖(φ : E →ᵇ F)‖ₑ := by
   simpa using enorm_apply_le_localMass_mul T (subset_univ (tsupport φ))
-
-/-- The mass bound for a test bounded pointwise by `b`: `‖T φ‖ₑ ≤ b M(T)`. -/
-theorem enorm_apply_le_mul_mass_of_forall_norm_le (T : 𝓕) {b : ℝ≥0} (h : ∀ x, ‖φ x‖ ≤ b) :
-    ‖T φ‖ₑ ≤ b * mass T := by
-  refine (enorm_apply_le_mass_mul T φ).trans_eq (mul_comm _ _) |>.trans ?_
-  gcongr
-  rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
-  exact ENNReal.ofReal_le_ofReal ((BoundedContinuousFunction.norm_le b.coe_nonneg).2 h)
 
 /-- **Mass of a precomposition with a sup-bounded map.** If `P` sends every test of sup norm at most
 one to a test of sup norm at most `c`, then `M(T ∘ P) ≤ c M(T)`. The map `P` need not be linear

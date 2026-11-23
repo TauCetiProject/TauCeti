@@ -659,14 +659,14 @@ theorem mass_comp_homotopyPullbackCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, E
     (hA : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ H p (0, 1)‖ ≤ A)
     (hL : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ‖(fderiv ℝ H p).comp (.inl ℝ E ℝ)‖ ≤ L) :
     mass (T ∘ homotopyPullbackCLM hH hHp) ≤ A * L ^ k * mass T := by
-  refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hpt (x : E) : ‖homotopyPullbackCLM hH hHp ω x‖ ≤ A * L ^ k := by
-    by_cases hx : x ∈ Ω
-    · rw [homotopyPullbackCLM_apply_of_mem ω hx]
-      simpa using norm_cylinderHomotopy_pullback_le (B := 1) (fun t _ ↦ hω _)
-        (fun t ht ↦ hA _ ⟨hx, ht⟩) fun t ht ↦ hL _ ⟨hx, ht⟩
-    · rw [homotopyPullbackCLM_apply_of_notMem ω hx, norm_zero]
-      positivity
-  simpa using enorm_apply_le_mul_mass_of_forall_norm_le T (b := A * L ^ k) (by simpa using hpt)
+  refine (mass_comp_le_of_norm_apply_le T (c := A * L ^ k) (by positivity)
+    fun ω hω x ↦ ?_).trans_eq (by simp [ENNReal.ofReal_mul, ENNReal.ofReal_pow,
+      ENNReal.ofReal_coe_nnreal])
+  by_cases hx : x ∈ Ω
+  · rw [homotopyPullbackCLM_apply_of_mem ω hx]
+    simpa using norm_cylinderHomotopy_pullback_le (B := 1) (fun t _ ↦ hω _)
+      (fun t ht ↦ hA _ ⟨hx, ht⟩) fun t ht ↦ hL _ ⟨hx, ht⟩
+  · rw [homotopyPullbackCLM_apply_of_notMem ω hx, norm_zero]
+    positivity
 
 end Distribution

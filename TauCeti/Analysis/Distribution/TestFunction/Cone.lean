@@ -724,17 +724,16 @@ theorem mass_comp_coneCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]
     (hr : ∀ x ∈ tsupport χ, ‖x - p‖ ≤ r) :
     mass (T ∘ (coneCLM p χ : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ≤
       ((r / (k + 1) : ℝ≥0) : ℝ≥0∞) * mass T := by
-  refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hpt (x : E) : ‖coneCLM p χ ω x‖ ≤ (r / (k + 1) : ℝ≥0) := by
-    by_cases hx : x ∈ tsupport χ
-    · refine (norm_coneCLM_apply_le ω x fun t _ ↦ hω _).trans ?_
-      calc |χ x| * (‖x - p‖ * 1 / (k + 1)) ≤ 1 * (r * 1 / (k + 1)) := by
-            gcongr
-            exacts [hχ x, hr x hx]
-        _ = (r / (k + 1) : ℝ≥0) := by simp
-    · rw [coneCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul, norm_zero]
-      positivity
-  exact enorm_apply_le_mul_mass_of_forall_norm_le T hpt
+  refine (mass_comp_le_of_norm_apply_le T (c := (r / (k + 1) : ℝ≥0)) (by positivity)
+    fun ω hω x ↦ ?_).trans_eq (by rw [ENNReal.ofReal_coe_nnreal])
+  by_cases hx : x ∈ tsupport χ
+  · refine (norm_coneCLM_apply_le ω x fun t _ ↦ hω _).trans ?_
+    calc |χ x| * (‖x - p‖ * 1 / (k + 1)) ≤ 1 * (r * 1 / (k + 1)) := by
+          gcongr
+          exacts [hχ x, hr x hx]
+      _ = (r / (k + 1) : ℝ≥0) := by simp
+  · rw [coneCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul, norm_zero]
+    positivity
 
 /-- **The mass of the cone**: if the support of a `k`-current `T` of finite mass lies in the closed
 ball of radius `r` about `p`, then `M(δ_p × T) ≤ r M(T) / (k + 1)`. -/

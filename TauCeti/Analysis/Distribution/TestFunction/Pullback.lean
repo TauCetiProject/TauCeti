@@ -599,16 +599,15 @@ variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 `k`-current `T` has mass at most `L ^ k` times the mass of `T`. -/
 theorem mass_comp_pullbackCLM_le (T : 𝓕) {L : ℝ≥0} (hL : ∀ x ∈ Ω, ‖fderiv ℝ Φ x‖ ≤ L) :
     mass (T ∘ pullbackCLM Φ hΦ hΦp) ≤ (L : ℝ≥0∞) ^ k * mass T := by
-  refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hpt (x : E) : ‖pullbackCLM Φ hΦ hΦp ω x‖ ≤ L ^ k := by
-    by_cases hx : x ∈ Ω
-    · refine (norm_pullbackCLM_apply_le ω x).trans ?_
-      calc ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k ≤ 1 * (L : ℝ) ^ k := by
-            gcongr
-            exacts [hω _, hL x hx]
-        _ = L ^ k := one_mul _
-    · simp [hx]
-  simpa using enorm_apply_le_mul_mass_of_forall_norm_le T (b := L ^ k) (by simpa using hpt)
+  refine (mass_comp_le_of_norm_apply_le T (c := L ^ k) (by positivity) fun ω hω x ↦ ?_).trans_eq
+    (by simp [ENNReal.ofReal_pow, ENNReal.ofReal_coe_nnreal])
+  by_cases hx : x ∈ Ω
+  · refine (norm_pullbackCLM_apply_le ω x).trans ?_
+    calc ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k ≤ 1 * (L : ℝ) ^ k := by
+          gcongr
+          exacts [hω _, hL x hx]
+      _ = L ^ k := one_mul _
+  · simp [hx]
 
 omit [NormedSpace ℝ V] in
 /-- **Pushforward preserves locally finite mass.** If a map `T` on test `k`-forms on `Ω` has
