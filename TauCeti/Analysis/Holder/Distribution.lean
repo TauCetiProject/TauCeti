@@ -199,12 +199,9 @@ theorem IsLocallyCkHolderAt.of_contDiffOn {s : Set E} {f : E → ℂ} {M H : ℝ
   have hχs : tsupport χ ⊆ s := by
     rw [χ.tsupport_eq]
     exact (Metric.closedBall_subset_ball (show r / 2 < r by linarith)).trans hrs
-  obtain ⟨N, hN⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (𝕜 := ℝ)
-    (f := χ) (N := k + 1) fun i _ ↦
-      (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
-        (χ.hasCompactSupport.iteratedFDeriv i)
-  have hχb (i : ℕ) (hi : i ≤ k + 1) (y : E) : ‖iteratedFDeriv ℝ i χ y‖ ≤ N.toNNReal :=
-    (hN i hi y).trans (Real.le_coe_toNNReal N)
+  obtain ⟨N, hN0, hN⟩ := χ.hasCompactSupport.exists_bound_iteratedFDeriv χ.contDiff (k + 1)
+  have hχb (i : ℕ) (hi : i ≤ k + 1) (y : E) : ‖iteratedFDeriv ℝ i χ y‖ ≤ (⟨N, hN0⟩ : ℝ≥0) :=
+    hN i hi y
   let g := CkHolderSpace.cutoff hf χ.contDiff hs hc hχs hα hfb hχb hfH
   have hg (y : E) : g y = χ y • f y :=
     CkHolderSpace.cutoff_apply hf χ.contDiff hs hc hχs hα hfb hχb hfH y
@@ -228,13 +225,10 @@ theorem IsLocallyCkHolderAt.smulLeftCLM (h : T.IsLocallyCkHolderAt k α x) (hα 
   -- there, and `χ g • f ∈ C_b^{k,α}`.
   let χ : ContDiffBump x := ⟨1, 2, one_pos, one_lt_two⟩
   have hχg : ContDiff ℝ ∞ fun y ↦ χ y * g y := χ.contDiff.mul hg
-  obtain ⟨N, hN⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (𝕜 := ℝ)
-    (f := fun y ↦ χ y * g y) (N := k + 1) fun i _ ↦
-      (hχg.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
-        (χ.hasCompactSupport.mul_right.iteratedFDeriv i)
+  obtain ⟨N, hN0, hN⟩ := χ.hasCompactSupport.mul_right.exists_bound_iteratedFDeriv hχg (k + 1)
   let fg := CkHolderSpace.cutoff f.contDiff.contDiffOn (hχg.of_le (mod_cast le_top)) isOpen_univ
     convex_univ (subset_univ _) hα (M := ‖f‖₊) (fun i hi y _ ↦ f.norm_iteratedFDeriv_apply_le hi y)
-    (fun i hi y ↦ (hN i hi y).trans (Real.le_coe_toNNReal N))
+    (N := ⟨N, hN0⟩) hN
     ((f.holderWith_iteratedFDeriv_of_le hα le_rfl).holderOnWith univ)
   refine ⟨U ∩ Metric.ball x 1, inter_mem hU (Metric.ball_mem_nhds x one_pos),
     inter_subset_left.trans hUΩ, fg, fun ψ hψ ↦ ?_⟩

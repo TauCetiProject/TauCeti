@@ -458,6 +458,7 @@ theorem toTemperedDistribution_toLpTop_injective {μ : Measure E} [μ.HasTempera
   Lp.toTemperedDistribution_injective.comp (toLpTop_injective (𝕜 := ℂ) μ)
 
 /-- The tempered distribution of a bounded continuous function `f` is integration against `f`. -/
+@[simp high]
 theorem toTemperedDistribution_toLpTop_apply {μ : Measure E} [μ.HasTemperateGrowth] (f : E →ᵇ F)
     (g : SchwartzMap E ℂ) : Lp.toTemperedDistribution (toLpTop μ ℂ f) g = ∫ x, g x • f x ∂μ := by
   rw [Lp.toTemperedDistribution_apply]
