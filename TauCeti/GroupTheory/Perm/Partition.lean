@@ -68,9 +68,10 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   its action has exactly one orbit, counting a fixed point as a one-element orbit, and the carrier
   has `n` points.
 * `Equiv.Perm.fullCycleType_eq_map_card_orbit`: the full cycle type is the multiset of the sizes
-  of the orbits of `⟨σ⟩` on the carrier, with `Equiv.Perm.sameCycle_iff_mem_orbit_zpowers`,
+  of the orbits of `⟨σ⟩` on the carrier, the orbit of `x` having
+  `Function.minimalPeriod σ x` points (`Equiv.Perm.natCard_orbit_zpowers`);
   `Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers` and `Equiv.Perm.orbit_zpowers_eq_singleton`
-  identifying those orbits with the cycle supports and the fixed points.
+  identify those orbits with the cycle supports and the fixed points.
 * `Equiv.Perm.mem_fullCycleType_iff`: the parts of the full cycle type are exactly the lengths
   of the cycles, the minimal periods of the points.
 * `Equiv.Perm.count_one_fullCycleType_eq_card_filter`: the parts equal to one in the full cycle
@@ -628,6 +629,12 @@ theorem orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
   · rintro rfl
     exact SameCycle.refl σ y
 
+/-- The `⟨σ⟩`-orbit of `x` has `Function.minimalPeriod σ x` points. If the orbit is infinite, then
+both sides are `0`. -/
+theorem natCard_orbit_zpowers (x : α) :
+    Nat.card (orbit (Subgroup.zpowers σ) x) = Function.minimalPeriod σ x :=
+  (Nat.card_congr (orbitZPowersEquiv σ x)).trans (Nat.card_zmod _)
+
 end
 
 variable [Fintype α] [DecidableEq α] (σ : Equiv.Perm α)
@@ -690,8 +697,8 @@ theorem cycleFactorOrFixedPoint_of_apply_ne {x : α} (hx : σ x ≠ x) :
 
 /-- The orbits of a permutation are its nontrivial cycle factors together with its fixed points.
 This is the set-level decomposition underlying the full cycle partition: a nontrivial orbit is
-sent to the unique member of `cycleFactorsFinset`, while a singleton orbit is sent to its fixed
-point, as a member of `Function.fixedPoints σ`. -/
+sent to the unique cycle factor whose support is that orbit, while a singleton orbit is sent to its
+fixed point, as a member of `Function.fixedPoints σ`. -/
 noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints :
     Quotient (SameCycle.setoid σ) ≃ σ.cycleFactorsFinset ⊕ Function.fixedPoints σ where
   toFun := Quotient.lift σ.cycleFactorOrFixedPoint fun x y hxy => by
@@ -737,11 +744,10 @@ its own: its number of parts is the number of classes of `Equiv.Perm.SameCycle �
 theorem card_fullCycleType :
     Multiset.card σ.fullCycleType = Nat.card (Quotient (SameCycle.setoid σ)) := by
   classical
-  rw [Nat.card_eq_fintype_card,
-    Fintype.card_congr σ.orbitQuotientEquivCycleFactorsSumFixedPoints, Fintype.card_sum,
-    Fintype.card_coe, card_fixedPoints, sum_cycleType, fullCycleType_def, card_parts_partition,
-    cycleType_def]
-  simp
+  -- Label each class by itself; its part is the common minimal period of its points.
+  rw [fullCycleType_eq_map_univ σ (Equiv.refl _)
+      (f := Quotient.lift (Function.minimalPeriod σ) fun _ _ h => h.minimalPeriod_eq) fun _ => rfl,
+    Multiset.card_map, Finset.card_val, Finset.card_univ, Nat.card_eq_fintype_card]
 
 /-- A permutation has full cycle type `{n}` exactly when its action has exactly one orbit,
 counting a fixed point as a one-element orbit, and the carrier has `n` points. -/
@@ -766,67 +772,27 @@ point is an orbit of size one. -/
 theorem fullCycleType_eq_map_card_orbit :
     fullCycleType σ =
       (Finset.univ : Finset (orbitRel.Quotient (Subgroup.zpowers σ) α)).val.map
-        (fun ω => Nat.card ω.orbit) := by
-  -- The `⟨σ⟩`-orbit classes are the cycle classes, hence the cycle factors and the fixed points.
-  -- The relation of `SameCycle.setoid σ` is `σ.SameCycle` by definition, whence the `Iff.rfl`.
-  let e : orbitRel.Quotient (Subgroup.zpowers σ) α ≃
-      σ.cycleFactorsFinset ⊕ Function.fixedPoints σ :=
-    (Quotient.congrRight fun x y => (orbitRel_zpowers_apply σ).trans Iff.rfl).trans
-      σ.orbitQuotientEquivCycleFactorsSumFixedPoints
-  -- `Quotient.congrRight` and `Quotient.lift` both compute on representatives.
-  have he : ∀ x : α, e (Quotient.mk'' x) = σ.cycleFactorOrFixedPoint x := fun _ => rfl
-  -- Through `e`, a class of moved points has the size of its cycle, a fixed point has size one.
-  have hcard : ∀ ω : orbitRel.Quotient (Subgroup.zpowers σ) α, Nat.card ω.orbit =
-      Sum.elim (fun c : σ.cycleFactorsFinset => c.val.support.card) (fun _ => 1) (e ω) := by
-    intro ω
-    refine Quotient.inductionOn' ω fun x => ?_
-    rw [orbitRel.Quotient.orbit_mk, he]
-    by_cases hx : σ x = x
-    · rw [cycleFactorOrFixedPoint_of_apply_eq σ hx, Sum.elim_inr,
-        orbit_zpowers_eq_singleton σ hx, Nat.card_coe_set_eq,
-        Set.ncard_singleton]
-    · rw [cycleFactorOrFixedPoint_of_apply_ne σ hx, Sum.elim_inl,
-        ← coe_support_cycleOf_eq_orbit_zpowers σ (mem_support.mpr hx), Nat.card_coe_set_eq,
-        Set.ncard_coe_finset]
-  -- Split the sum type into cycles and fixed points, then reindex the classes along `e`.
-  calc fullCycleType σ
-      = (Finset.univ : Finset (σ.cycleFactorsFinset ⊕ Function.fixedPoints σ)).val.map
-          (Sum.elim (fun c => c.val.support.card) fun _ => 1) := by
-        rw [← Finset.univ_disjSum_univ, Finset.val_disjSum, Multiset.disjSum, Multiset.map_add,
-          Multiset.map_map, Multiset.map_map, fullCycleType, cycleType_def]
-        congr 1
-        · rw [Finset.univ_eq_attach, Finset.attach_val]
-          exact (Multiset.attach_map_val' _ _).symm
-        · -- `Multiset.map_const'` matches only the literal form `fun _ => 1`; the composite
-          -- `Sum.elim _ (fun _ => 1) ∘ Sum.inr` is that function by `rfl` (`Sum.elim_inr`), so
-          -- reshape it before rewriting.
-          rw [show (Sum.elim (fun c : σ.cycleFactorsFinset => c.val.support.card) (fun _ => 1) ∘
-              Sum.inr) = fun _ => 1 from rfl,
-            Multiset.map_const', Finset.card_val, Finset.card_univ, card_fixedPoints, sum_cycleType]
-    _ = (Finset.univ.map e.toEmbedding).val.map
-          (Sum.elim (fun c => c.val.support.card) fun _ => 1) := by
-        rw [Finset.map_univ_equiv]
-    _ = _ := by
-        rw [Finset.map_val, Multiset.map_map]
-        exact Multiset.map_congr rfl fun ω _ => (hcard ω).symm
+        (fun ω => Nat.card ω.orbit) :=
+  -- The `⟨σ⟩`-orbit classes are the cycle classes: the relation of `SameCycle.setoid σ` is
+  -- `σ.SameCycle` by definition, whence the `Iff.rfl`. The orbit of `x` has
+  -- `Function.minimalPeriod σ x` points.
+  fullCycleType_eq_map_univ σ
+    (Quotient.congrRight fun _ _ => ((orbitRel_zpowers_apply σ).trans Iff.rfl).symm)
+    fun x => natCard_orbit_zpowers σ x
 
 /-- The parts of the full cycle type of `σ` are exactly the lengths of its cycles, the minimal
 periods of the points of `α`. -/
 theorem mem_fullCycleType_iff {σ : Equiv.Perm α} {k : ℕ} :
     k ∈ fullCycleType σ ↔ ∃ x, Function.minimalPeriod σ x = k := by
   classical
-  have h (x : α) : Nat.card (orbitRel.Quotient.orbit
-      (Quotient.mk'' x : orbitRel.Quotient (Subgroup.zpowers σ) α)) =
-      Function.minimalPeriod σ x := by
-    rw [orbitRel.Quotient.orbit_mk, Nat.card_coe_set_eq, ← ncard_setOf_sameCycle]
-    simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq]
+  -- The orbit of the class of `x` is the orbit of `x`, of size `Function.minimalPeriod σ x`.
   rw [fullCycleType_eq_map_card_orbit, Multiset.mem_map]
   constructor
   · rintro ⟨ω, -, rfl⟩
     obtain ⟨x, rfl⟩ := Quotient.mk''_surjective ω
-    exact ⟨x, (h x).symm⟩
+    exact ⟨x, (natCard_orbit_zpowers σ x).symm⟩
   · rintro ⟨x, rfl⟩
-    exact ⟨Quotient.mk'' x, Finset.mem_univ _, h x⟩
+    exact ⟨Quotient.mk'' x, Finset.mem_univ _, natCard_orbit_zpowers σ x⟩
 
 /-- The length of the cycle of `σ` through `x`, its minimal period, is a part of the full cycle
 type of `σ`. -/
