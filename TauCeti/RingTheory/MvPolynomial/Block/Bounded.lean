@@ -134,16 +134,16 @@ most `d` in the variables `σ` to the homogeneous polynomials of degree `d` in t
 Its inverse sets `X₀ = 1`. -/
 noncomputable def homogenizeEquiv (d : ℕ) :
     restrictTotalDegree σ R d ≃ₗ[R] homogeneousSubmodule (Option σ) R d where
-  toFun f := ⟨homogenizeFun d f.1, isHomogeneous_homogenizeFun d f.1⟩
-  invFun F := ⟨aeval (R := R) (Option.elim' 1 X) F.1,
+  toFun f := ⟨homogenizeFun d f.val, isHomogeneous_homogenizeFun d f.val⟩
+  invFun F := ⟨aeval (R := R) (Option.elim' 1 X) F.val,
     aeval_option_elim_one_X_mem_restrictTotalDegree
-      (homogeneousSubmodule_le_restrictTotalDegree _ _ le_rfl F.2)⟩
+      (homogeneousSubmodule_le_restrictTotalDegree _ _ le_rfl F.property)⟩
   map_add' f g := Subtype.ext <| by
     simp only [Submodule.coe_add, homogenizeFun, blockHomogenize_add, map_add]
   map_smul' c f := Subtype.ext <| by
     simp only [SetLike.val_smul, homogenizeFun, blockHomogenize_smul, map_smul, RingHom.id_apply]
-  left_inv f := Subtype.ext (aeval_homogenizeFun (d := d) (f := f.1) f.2)
-  right_inv F := Subtype.ext (homogenizeFun_aeval (d := d) (F := F.1) F.2)
+  left_inv f := Subtype.ext (aeval_homogenizeFun (d := d) (f := f.val) f.property)
+  right_inv F := Subtype.ext (homogenizeFun_aeval (d := d) (F := F.val) F.property)
 
 /-- Homogenization in degree `d` is the one-block block homogenization with block degree `d`,
 with the homogenizing variable renamed to `none` and the affine variable `j` to `some j`. -/
@@ -198,7 +198,7 @@ theorem coeff_homogenizeEquiv {d : ℕ} (f : restrictTotalDegree σ R d) (n : Op
       coeff_blockHomogenizeExponent_blockHomogenize _ _ _ fun _ ↦ by
         rw [mapDomain_unit_apply]
         omega]
-  · exact (homogenizeEquiv σ R d f).2.coeff_eq_zero hn
+  · exact (homogenizeEquiv σ R d f).property.coeff_eq_zero hn
 
 /-- Homogenization in degree `d` sends the monomial `c Xᵅ`, `|α| ≤ d`, to
 `c X₀^(d - |α|) Xᵅ`. -/
@@ -222,12 +222,12 @@ at most `e`, the homogenization of `f g` in degree `d + e` is the product of the
 of `f` in degree `d` and of `g` in degree `e`. -/
 theorem homogenizeEquiv_mul {d e : ℕ} (f : restrictTotalDegree σ R d)
     (g : restrictTotalDegree σ R e) :
-    (homogenizeEquiv σ R (d + e) ⟨f * g, mul_mem_restrictTotalDegree f.2 g.2⟩ :
+    (homogenizeEquiv σ R (d + e) ⟨f * g, mul_mem_restrictTotalDegree f.property g.property⟩ :
         MvPolynomial (Option σ) R) =
       homogenizeEquiv σ R d f * homogenizeEquiv σ R e g := by
   have hFG : ((homogenizeEquiv σ R d f : MvPolynomial (Option σ) R) *
       homogenizeEquiv σ R e g).IsHomogeneous (d + e) :=
-    (homogenizeEquiv σ R d f).2.mul (homogenizeEquiv σ R e g).2
+    (homogenizeEquiv σ R d f).property.mul (homogenizeEquiv σ R e g).property
   rw [← homogenizeEquiv_aeval hFG]
   congr 2
   simp
