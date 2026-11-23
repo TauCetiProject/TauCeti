@@ -9,7 +9,7 @@ public import TauCeti.Statistics.Estimation.Equivariance
 public import TauCeti.Statistics.Experiments.Density
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
-import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Average.WeightedMean
 import TauCeti.Statistics.Experiments.Location
 
 /-!
