@@ -51,17 +51,6 @@ universe v u v' u'
 open CategoryTheory Limits Opposite SimplexCategory AlgebraicTopology AlgebraicTopology.DoldKan
 open scoped Simplicial DoldKan
 
-namespace CategoryTheory.SimplicialObject
-
-/-- Because `SimplexCategory` is skeletal with objects `⦋n⦌`, degreewise projectivity on `⦋n⦌`
-gives projectivity at every `Δ : SimplexCategoryᵒᵖ`. -/
-theorem projective_obj_of_projective {C : Type u} [Category.{v} C] (X : SimplicialObject C)
-    [hX : ∀ n : ℕ, Projective (X _⦋n⦌)] (Δ : SimplexCategoryᵒᵖ) :
-    Projective (X.obj Δ) :=
-  hX Δ.unop.len
-
-end CategoryTheory.SimplicialObject
-
 namespace AlgebraicTopology.DoldKan
 
 instance Γ₀.projective_obj {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]

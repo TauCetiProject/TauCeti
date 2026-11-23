@@ -151,8 +151,10 @@ lemma Functor.doldPuppeFunctorAdditiveHomotopyEquiv_hom (F : C ⥤ D) [F.Additiv
       (alternatingFaceMapComplexCompMapHomologicalComplexIso F).inv.app (Γ.obj K) ≫
         (F.mapHomologicalComplex (.down ℕ)).map (PInftyToN.app (Γ.obj K)) ≫
           (F.mapHomologicalComplex (.down ℕ)).map ((η (C := C)).hom.app K) := by
-  simp [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, HomotopyEquiv.ofIso]
-  rfl
+  dsimp only [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, HomotopyEquiv.trans,
+    HomotopyEquiv.ofIso]
+  rw [Iso.app_hom, Iso.symm_hom, Functor.mapIso_hom, Iso.app_hom, Functor.mapHomotopyEquiv_hom,
+    HomotopyEquiv.symm_hom, homotopyEquivNAlternatingFaceMapComplex_inv]
 
 @[simp]
 lemma Functor.doldPuppeFunctorAdditiveHomotopyEquiv_inv (F : C ⥤ D) [F.Additive]
@@ -161,8 +163,10 @@ lemma Functor.doldPuppeFunctorAdditiveHomotopyEquiv_inv (F : C ⥤ D) [F.Additiv
       (F.mapHomologicalComplex (.down ℕ)).map ((η (C := C)).inv.app K) ≫
         (F.mapHomologicalComplex (.down ℕ)).map (inclusionN.app (Γ.obj K)) ≫
           (alternatingFaceMapComplexCompMapHomologicalComplexIso F).hom.app (Γ.obj K) := by
-  simp [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, HomotopyEquiv.ofIso]
-  rfl
+  dsimp only [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, HomotopyEquiv.trans,
+    HomotopyEquiv.ofIso]
+  rw [Iso.app_inv, Iso.symm_inv, Functor.mapIso_inv, Iso.app_inv, Functor.mapHomotopyEquiv_inv,
+    HomotopyEquiv.symm_inv, homotopyEquivNAlternatingFaceMapComplex_hom, Category.assoc]
 
 /-- Naturality of `(F.doldPuppeFunctorAdditiveHomotopyEquiv K).hom` in `K`. -/
 lemma Functor.doldPuppeFunctorAdditiveHomotopyEquiv_hom_naturality (F : C ⥤ D) [F.Additive]
@@ -278,8 +282,10 @@ lemma Functor.doldPuppeFunctorSingle₀HomotopyEquiv_inv [HasZeroObject C] [HasZ
         (alternatingFaceMapComplex D).map (Functor.constComp _ X F).inv ≫
           (alternatingFaceMapComplex D).map
             (Functor.whiskerRight (Idempotents.DoldKan.Γ.single₀Iso.inv.app X) F) := by
-  simp [Functor.doldPuppeFunctorSingle₀HomotopyEquiv, HomotopyEquiv.trans, HomotopyEquiv.ofIso]
-  rfl
+  dsimp only [Functor.doldPuppeFunctorSingle₀HomotopyEquiv, HomotopyEquiv.trans,
+    HomotopyEquiv.ofIso, Functor.doldPuppeFunctor, doldPuppe, SimplicialObject.whiskering]
+  simp only [Functor.mapIso_inv, Iso.trans_inv, Functor.map_comp, Iso.app_inv,
+    whiskeringRight_obj_map, SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_inv]
 
 /-- Naturality of `(F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom` in `X`. -/
 lemma Functor.doldPuppeFunctorSingle₀HomotopyEquiv_hom_naturality
@@ -400,7 +406,12 @@ lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom [HasZeroObject D]
           ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).hom.app B) ≫
         AlgebraicTopology.AlternatingFaceMapComplex.ε.app
           (SimplicialObject.Augmented.const.obj B) := by
-  simp [Functor.doldPuppeFunctorConstHomotopyEquiv, HomotopyEquiv.trans, HomotopyEquiv.ofIso]
+  dsimp only [Functor.doldPuppeFunctorConstHomotopyEquiv, HomotopyEquiv.trans,
+    HomotopyEquiv.ofIso, Functor.doldPuppeFunctor, doldPuppe, SimplicialObject.whiskering]
+  simp only [Functor.mapIso_hom, Iso.app_hom,
+    SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_hom]
+  -- `Augmented.drop.obj (Augmented.const.obj B)` is definitionally
+  -- `(SimplicialObject.const D).obj B`.
   rfl
 
 @[simp]
@@ -411,8 +422,10 @@ lemma Functor.doldPuppeFunctorConstHomotopyEquiv_inv [HasZeroObject D]
           ((alternatingFaceMapComplex D).obj ((SimplicialObject.const D).obj B)) B).symm (𝟙 B) ≫
         (alternatingFaceMapComplex D).map
           ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).inv.app B) := by
-  simp [Functor.doldPuppeFunctorConstHomotopyEquiv, HomotopyEquiv.trans, HomotopyEquiv.ofIso]
-  rfl
+  dsimp only [Functor.doldPuppeFunctorConstHomotopyEquiv, HomotopyEquiv.trans,
+    HomotopyEquiv.ofIso]
+  rw [Functor.mapIso_inv, Iso.app_inv,
+    SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_inv]
 
 /-- Naturality of `(Functor.doldPuppeFunctorConstHomotopyEquiv B K).hom` in `K`. -/
 lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom_naturality [HasZeroObject D]

@@ -370,6 +370,7 @@ on normalized Moore complexes if and only if it induces a quasi-isomorphism on p
 normalized chains `Idempotents.DoldKan.N`. -/
 theorem quasiIso_normalizedMooreComplex_map_iff_N {X Y : SimplicialObject A} (f : X ⟶ Y) :
     QuasiIso ((normalizedMooreComplex A).map f) ↔ QuasiIso (Idempotents.DoldKan.N.map f) := by
+  -- `Abelian.DoldKan.N` is defined to be `AlgebraicTopology.normalizedMooreComplex A`.
   change QuasiIso (Abelian.DoldKan.N.map f) ↔ _
   rw [← NatIso.naturality_2 Abelian.DoldKan.comparisonN f,
     quasiIso_iff_comp_left (Abelian.DoldKan.comparisonN.hom.app X) _,

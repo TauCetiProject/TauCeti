@@ -29,8 +29,8 @@ morphism with value `1`. -/
 lemma toMk₁_zero (n : ℕ) :
     toMk₁ (0 : Fin (n + 2)) = const ⦋n⦌ ⦋1⦌ 1 := by
   refine ConcreteCategory.hom_ext _ _ fun k ↦ ?_
-  simp [toMk₁_apply]
-  rfl
+  rw [toMk₁_of_le_castSucc 0 k (Fin.zero_le _)]
+  simp [const, ConcreteCategory.hom]
 
 /-- The last morphism in the enumeration `toMk₁ : Fin (n + 2) → (⦋n⦌ ⟶ ⦋1⦌)` is the constant
 morphism with value `0`. -/
@@ -38,8 +38,7 @@ morphism with value `0`. -/
 lemma toMk₁_last (n : ℕ) :
     toMk₁ (Fin.last (n + 1)) = const ⦋n⦌ ⦋1⦌ 0 := by
   refine ConcreteCategory.hom_ext _ _ fun k ↦ ?_
-  have hk : k.castSucc < Fin.last (n + 1) := Fin.castSucc_lt_last k
-  simp [toMk₁_apply, hk]
-  rfl
+  rw [toMk₁_of_castSucc_lt _ k (Fin.castSucc_lt_last k)]
+  simp [const, ConcreteCategory.hom]
 
 end SimplexCategory

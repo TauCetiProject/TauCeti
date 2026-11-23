@@ -223,7 +223,7 @@ def ofCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y}
     have hα : SimplexCategory.δ 0 ≫ SimplexCategory.toMk₁ (0 : Fin (n + 1)).succ.castSucc =
         SimplexCategory.const ⦋n⦌ ⦋1⦌ 1 := by
       rw [SimplexCategory.δ_comp_toMk₁_of_lt _ _ (by simp), ← SimplexCategory.toMk₁_zero n]
-      rfl
+      exact congrArg SimplexCategory.toMk₁ (Fin.ext (by simp))
     rw [hα, ← cylinderι₁_app_app, ← NatTrans.comp_app, h₁]
   h_last_comp_δ_last n := by
     rw [Category.assoc, Category.assoc, ← SimplicialObject.δ_naturality Φ, cylinderι_δ_assoc,
@@ -278,76 +278,102 @@ private def toCylinderHomTerm {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Ho
   Fin.cases (g.app (op ⦋n⦌)) (fun j ↦ H.h j ≫ Y.δ j.succ) k
 
 omit [HasFiniteCoproducts C] in
+private lemma δ_succ_comp_δ_succ {Y : SimplicialObject C} {n : ℕ} {i : Fin (n + 2)}
+    {j : Fin (n + 1)} (h : j.succ ≤ i) :
+    Y.δ i.succ ≫ Y.δ j.succ = Y.δ j.castSucc.succ ≫ Y.δ i := by
+  simpa [Fin.castSucc_succ] using Y.δ_comp_δ h
+
+omit [HasFiniteCoproducts C] in
+/-- Case `k ≤ i.castSucc` of `toCylinderHomTerm_δ`: `k = 0` uses naturality of `g`, and
+`k = j.succ` reduces to the simplicial homotopy relation `h_castSucc_comp_δ_succ_of_lt`. -/
+private lemma toCylinderHomTerm_δ_of_le {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)
+    {n : ℕ} (i : Fin (n + 2)) (k : Fin (n + 3)) (hki : k ≤ i.castSucc) :
+    X.δ i ≫ toCylinderHomTerm H n
+        (SimplexCategory.toMk₁Equiv.symm (SimplexCategory.δ i ≫ SimplexCategory.toMk₁ k)) =
+      toCylinderHomTerm H (n + 1) k ≫ Y.δ i := by
+  rw [SimplexCategory.δ_comp_toMk₁_of_le k i hki, ← SimplexCategory.toMk₁Equiv_apply,
+    Equiv.symm_apply_apply]
+  cases k using Fin.cases with
+  | zero => simp [toCylinderHomTerm]
+  | succ j =>
+    have hj_lt : (j : ℕ) < i := Nat.lt_of_succ_le hki
+    have hj_ne_last : j ≠ Fin.last (n + 1) := by
+      intro h; rw [h, Fin.val_last] at hj_lt; omega
+    let j' : Fin (n + 1) := j.castPred hj_ne_last
+    have hj' : j = j'.castSucc := (Fin.castSucc_castPred j hj_ne_last).symm
+    have hj'_lt_i : j'.castSucc < i := Fin.lt_def.mpr (by simpa [j'] using hj_lt)
+    have hk_pred :
+        (j.succ).castPred (Fin.ne_last_of_lt (lt_of_le_of_lt hki i.castSucc_lt_succ)) =
+          j'.succ :=
+      (Fin.succ_castPred_eq_castPred_succ hj_ne_last _).symm
+    have hij : j'.succ ≤ i := Fin.le_def.mpr (by
+      have h : (j' : ℕ) < i := Fin.lt_def.mp hj'_lt_i
+      simp only [Fin.val_succ]; omega)
+    rw [hk_pred]
+    simp only [toCylinderHomTerm, Fin.cases_succ]
+    rw [← Category.assoc, ← H.h_castSucc_comp_δ_succ_of_lt i j' hj'_lt_i, ← hj',
+      Category.assoc, δ_succ_comp_δ_succ hij, ← Category.assoc, hj']
+
+omit [HasFiniteCoproducts C] in
+/-- Subcase `k = 1` (`j = 0`) of `toCylinderHomTerm_δ` when `i.castSucc < k`, forcing `i = 0`. -/
+private lemma toCylinderHomTerm_δ_one {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)
+    {n : ℕ} (i : Fin (n + 2)) (hki : i.castSucc < (0 : Fin (n + 2)).succ) :
+    X.δ i ≫ toCylinderHomTerm H n 0 =
+      toCylinderHomTerm H (n + 1) (0 : Fin (n + 2)).succ ≫ Y.δ i := by
+  have hi0 : i = 0 := Fin.ext (by rcases i with ⟨_ | _, _⟩ <;> simp_all [Fin.lt_def])
+  subst hi0
+  simp only [toCylinderHomTerm, Fin.cases_zero, Fin.cases_succ]
+  have hδ : Y.δ 1 ≫ Y.δ (0 : Fin (n + 2)) = Y.δ 0 ≫ Y.δ 0 := by
+    simpa [Fin.succ_zero_eq_one, Fin.castSucc_zero] using
+      (Y.δ_comp_δ_self (i := (0 : Fin (n + 2)))).symm
+  rw [Fin.succ_zero_eq_one, Category.assoc, hδ, ← Category.assoc, H.h_zero_comp_δ_zero]
+  simp
+
+omit [HasFiniteCoproducts C] in
+/-- Subcase `k = j'.succ.succ` with `i.castSucc < k` of `toCylinderHomTerm_δ`: splits into
+`i ≤ j'.castSucc` and the boundary case `i = j'.succ`. -/
+private lemma toCylinderHomTerm_δ_succ_succ {X Y : SimplicialObject C} {f g : X ⟶ Y}
+    (H : Homotopy f g) {n : ℕ} (i : Fin (n + 2)) (j' : Fin (n + 1))
+    (hki : i.castSucc < j'.succ.succ) :
+    X.δ i ≫ toCylinderHomTerm H n j'.succ =
+      toCylinderHomTerm H (n + 1) j'.succ.succ ≫ Y.δ i := by
+  simp only [toCylinderHomTerm, Fin.cases_succ]
+  rcases le_or_gt i j'.castSucc with hij | hji
+  · -- Case `i ≤ j'.castSucc`: directly use `h_succ_comp_δ_castSucc_of_lt`.
+    have hij' : i ≤ j'.succ := le_trans hij (Fin.castSucc_le_succ _)
+    rw [← Category.assoc, ← H.h_succ_comp_δ_castSucc_of_lt i j' hij, Category.assoc,
+      (Y.δ_comp_δ hij').symm, ← Category.assoc]
+  · -- Boundary case `i = j'.succ`: bridge through `h_castSucc_comp_δ_succ_of_lt` and
+    -- `h_succ_comp_δ_castSucc_succ`.
+    have hij : i = j'.succ := Fin.ext (by
+      have h1 : (i : ℕ) < j'.val + 2 := by simpa [Fin.lt_def] using hki
+      have h2 : j'.val < (i : ℕ) := by simpa [Fin.lt_def] using hji
+      simp only [Fin.val_succ]; omega)
+    subst hij
+    rw [← Category.assoc, ← H.h_castSucc_comp_δ_succ_of_lt j'.succ j' Fin.castSucc_lt_succ,
+      Category.assoc, δ_succ_comp_δ_succ (i := j'.succ) (j := j') le_rfl,
+      ← Category.assoc, ← H.h_succ_comp_δ_castSucc_succ,
+      Category.assoc, (δ_succ_comp_δ_succ (i := j'.succ) (j := j') le_rfl).symm,
+      ← Category.assoc]
+
+omit [HasFiniteCoproducts C] in
 private lemma toCylinderHomTerm_δ {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)
     {n : ℕ} (i : Fin (n + 2)) (k : Fin (n + 3)) :
     X.δ i ≫ toCylinderHomTerm H n
         (SimplexCategory.toMk₁Equiv.symm (SimplexCategory.δ i ≫ SimplexCategory.toMk₁ k)) =
       toCylinderHomTerm H (n + 1) k ≫ Y.δ i := by
   by_cases hki : k ≤ i.castSucc
-  · rw [SimplexCategory.δ_comp_toMk₁_of_le k i hki, ← SimplexCategory.toMk₁Equiv_apply,
-      Equiv.symm_apply_apply]
-    cases k using Fin.cases with
-    | zero => simp [toCylinderHomTerm]
-    | succ j =>
-      have hj_lt : (j : ℕ) < i := Nat.lt_of_succ_le hki
-      have hj_ne_last : j ≠ Fin.last (n + 1) := by
-        intro h; rw [h, Fin.val_last] at hj_lt; omega
-      let j' : Fin (n + 1) := j.castPred hj_ne_last
-      have hj' : j = j'.castSucc := (Fin.castSucc_castPred j hj_ne_last).symm
-      have hj'_lt_i : j'.castSucc < i := Fin.lt_def.mpr (by simpa [j'] using hj_lt)
-      have hk_pred :
-          (j.succ).castPred (Fin.ne_last_of_lt (lt_of_le_of_lt hki i.castSucc_lt_succ)) =
-            j'.succ :=
-        (Fin.succ_castPred_eq_castPred_succ hj_ne_last _).symm
-      rw [hk_pred]
-      simp only [toCylinderHomTerm, Fin.cases_succ]
-      rw [← Category.assoc, ← H.h_castSucc_comp_δ_succ_of_lt i j' hj'_lt_i, ← hj']
-      have hij : j'.succ ≤ i := Fin.le_def.mpr (by
-        have h : (j' : ℕ) < i := Fin.lt_def.mp hj'_lt_i
-        simp only [Fin.val_succ]; omega)
-      have hδ : Y.δ i.succ ≫ Y.δ j'.succ = Y.δ j'.castSucc.succ ≫ Y.δ i := by
-        simpa [Fin.castSucc_succ] using Y.δ_comp_δ hij
-      rw [Category.assoc, hδ, ← Category.assoc, hj']
+  · exact toCylinderHomTerm_δ_of_le H i k hki
   · simp only [not_le] at hki
     rw [SimplexCategory.δ_comp_toMk₁_of_lt k i hki, ← SimplexCategory.toMk₁Equiv_apply,
       Equiv.symm_apply_apply]
     cases k using Fin.cases with
     | zero => exact absurd hki (Fin.not_lt_zero _)
     | succ j =>
-      simp only [Fin.pred_succ, toCylinderHomTerm, Fin.cases_succ]
+      simp only [Fin.pred_succ]
       cases j using Fin.cases with
-      | zero =>
-        simp only [Fin.cases_zero]
-        have hi0 : i = 0 := Fin.ext (by
-          rcases i with ⟨_ | _, _⟩ <;> simp_all [Fin.lt_def])
-        subst hi0
-        have hδ : Y.δ 1 ≫ Y.δ (0 : Fin (n + 2)) = Y.δ 0 ≫ Y.δ 0 := by
-          simpa using Y.δ_comp_δ (i := (0 : Fin (n + 2))) (j := 0) le_rfl
-        rw [Fin.succ_zero_eq_one, Category.assoc, hδ, ← Category.assoc, H.h_zero_comp_δ_zero]
-        simp
-      | succ j' =>
-        simp only [Fin.cases_succ]
-        rcases le_or_gt i j'.castSucc with hij | hji
-        · rw [← Category.assoc, ← H.h_succ_comp_δ_castSucc_of_lt i j' hij]
-          have hij' : i ≤ j'.succ := le_trans hij (Fin.castSucc_le_succ _)
-          have hδ : Y.δ i.castSucc ≫ Y.δ j'.succ = Y.δ j'.succ.succ ≫ Y.δ i := by
-            simpa using (Y.δ_comp_δ hij').symm
-          rw [Category.assoc, hδ, ← Category.assoc]
-        · have hij : i = j'.succ := Fin.ext (by
-            have h1 : (i : ℕ) < j'.val + 2 := by simpa [Fin.lt_def] using hki
-            have h2 : j'.val < (i : ℕ) := by simpa [Fin.lt_def] using hji
-            simp only [Fin.val_succ]; omega)
-          subst hij
-          rw [← Category.assoc,
-            ← H.h_castSucc_comp_δ_succ_of_lt j'.succ j' Fin.castSucc_lt_succ]
-          have hδ1 : Y.δ j'.succ.succ ≫ Y.δ j'.succ = Y.δ j'.castSucc.succ ≫ Y.δ j'.succ := by
-            simpa [Fin.castSucc_succ] using Y.δ_comp_δ (i := j'.succ) (j := j'.succ) le_rfl
-          rw [Category.assoc, hδ1, ← Category.assoc, ← H.h_succ_comp_δ_castSucc_succ,
-            Category.assoc]
-          have hδ2 : Y.δ j'.castSucc.succ ≫ Y.δ j'.succ = Y.δ j'.succ.succ ≫ Y.δ j'.succ := by
-            simpa [Fin.castSucc_succ] using
-              (Y.δ_comp_δ (i := j'.succ) (j := j'.succ) le_rfl).symm
-          rw [hδ2, ← Category.assoc]
+      | zero => exact toCylinderHomTerm_δ_one H i hki
+      | succ j' => exact toCylinderHomTerm_δ_succ_succ H i j' hki
 
 omit [HasFiniteCoproducts C] in
 private lemma toCylinderHomTerm_σ {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)
@@ -384,42 +410,49 @@ private lemma toCylinderHomTerm_σ {X Y : SimplicialObject C} {f g : X ⟶ Y} (H
         simpa using Y.δ_comp_σ_of_gt (j := i) (i := j.succ) hij'
       rw [Category.assoc, hσ, ← Category.assoc]
 
+private def toCylinderHomApp {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)
+    (Δ : SimplexCategoryᵒᵖ) : ((cylinder C).obj X).obj Δ ⟶ Y.obj Δ :=
+  cylinderDesc fun α ↦ toCylinderHomTerm H Δ.unop.len (SimplexCategory.toMk₁Equiv.symm α)
+
+@[reassoc (attr := simp)]
+private lemma cylinderι_comp_toCylinderHomApp {X Y : SimplicialObject C} {f g : X ⟶ Y}
+    (H : Homotopy f g) {n : ℕ} (α : ⦋n⦌ ⟶ ⦋1⦌) :
+    cylinderι X α ≫ toCylinderHomApp H (op ⦋n⦌) =
+      toCylinderHomTerm H n (SimplexCategory.toMk₁Equiv.symm α) :=
+  cylinderι_desc _ α
+
+private lemma toCylinderHomApp_δ {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)
+    {n : ℕ} (i : Fin (n + 2)) :
+    ((cylinder C).obj X).δ i ≫ toCylinderHomApp H (op ⦋n⦌) =
+      toCylinderHomApp H (op ⦋n + 1⦌) ≫ Y.δ i := by
+  refine cylinder_hom_ext fun α ↦ ?_
+  obtain ⟨k, rfl⟩ := SimplexCategory.toMk₁Equiv.surjective α
+  rw [cylinderι_δ_assoc, cylinderι_comp_toCylinderHomApp, cylinderι_comp_toCylinderHomApp_assoc,
+    Equiv.symm_apply_apply, SimplexCategory.toMk₁Equiv_apply]
+  exact toCylinderHomTerm_δ H i k
+
+private lemma toCylinderHomApp_σ {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)
+    {n : ℕ} (i : Fin (n + 1)) :
+    ((cylinder C).obj X).σ i ≫ toCylinderHomApp H (op ⦋n + 1⦌) =
+      toCylinderHomApp H (op ⦋n⦌) ≫ Y.σ i := by
+  refine cylinder_hom_ext fun α ↦ ?_
+  obtain ⟨k, rfl⟩ := SimplexCategory.toMk₁Equiv.surjective α
+  rw [cylinderι_σ_assoc, cylinderι_comp_toCylinderHomApp, cylinderι_comp_toCylinderHomApp_assoc,
+    Equiv.symm_apply_apply, SimplexCategory.toMk₁Equiv_apply]
+  exact toCylinderHomTerm_σ H i k
+
 /-- Conversely, any combinatorial simplicial homotopy `H : Homotopy f g` assembles into a morphism
 `(cylinder C).obj X ⟶ Y` restricting to `f` at `cylinderι₀` and to `g` at `cylinderι₁`. -/
 def toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g) :
     (cylinder C).obj X ⟶ Y where
-  app Δ := cylinderDesc fun α ↦
-    toCylinderHomTerm H Δ.unop.len (SimplexCategory.toMk₁Equiv.symm α)
+  app := toCylinderHomApp H
   naturality _ _ θ := by
-    let app : ∀ Δ : SimplexCategoryᵒᵖ, ((cylinder C).obj X).obj Δ ⟶ Y.obj Δ :=
-      fun Δ ↦ cylinderDesc fun α ↦
-        toCylinderHomTerm H Δ.unop.len (SimplexCategory.toMk₁Equiv.symm α)
-    let W : MorphismProperty SimplexCategoryᵒᵖ := MorphismProperty.naturalityProperty app
+    let W : MorphismProperty SimplexCategoryᵒᵖ :=
+      MorphismProperty.naturalityProperty (toCylinderHomApp H)
     have hW : W.unop = ⊤ :=
       SimplexCategory.morphismProperty_eq_top W.unop
-        (fun {n} i ↦ cylinder_hom_ext fun α ↦ by
-          obtain ⟨k, rfl⟩ := SimplexCategory.toMk₁Equiv.surjective α
-          change cylinderι X (SimplexCategory.toMk₁Equiv k) ≫
-              ((cylinder C).obj X).δ i ≫
-                cylinderDesc (fun α ↦ toCylinderHomTerm H n (SimplexCategory.toMk₁Equiv.symm α)) =
-            cylinderι X (SimplexCategory.toMk₁Equiv k) ≫
-              cylinderDesc (fun α ↦
-                toCylinderHomTerm H (n + 1) (SimplexCategory.toMk₁Equiv.symm α)) ≫ Y.δ i
-          simp only [cylinderι_δ_assoc, cylinderι_desc, cylinderι_desc_assoc]
-          rw [Equiv.symm_apply_apply, SimplexCategory.toMk₁Equiv_apply]
-          exact toCylinderHomTerm_δ H i k)
-        (fun {n} i ↦ cylinder_hom_ext fun α ↦ by
-          obtain ⟨k, rfl⟩ := SimplexCategory.toMk₁Equiv.surjective α
-          change cylinderι X (SimplexCategory.toMk₁Equiv k) ≫
-              ((cylinder C).obj X).σ i ≫
-                cylinderDesc (fun α ↦
-                  toCylinderHomTerm H (n + 1) (SimplexCategory.toMk₁Equiv.symm α)) =
-            cylinderι X (SimplexCategory.toMk₁Equiv k) ≫
-              cylinderDesc (fun α ↦ toCylinderHomTerm H n (SimplexCategory.toMk₁Equiv.symm α)) ≫
-                Y.σ i
-          simp only [cylinderι_σ_assoc, cylinderι_desc, cylinderι_desc_assoc]
-          rw [Equiv.symm_apply_apply, SimplexCategory.toMk₁Equiv_apply]
-          exact toCylinderHomTerm_σ H i k)
+        (fun {n} i ↦ toCylinderHomApp_δ H i)
+        (fun {n} i ↦ toCylinderHomApp_σ H i)
     exact MorphismProperty.of_eq_top hW θ.unop
 
 /-- Evaluating `H.toCylinderHom` on the summand with nonzero enumeration index `j.succ`, namely
@@ -430,7 +463,7 @@ lemma cylinderι_toMk₁_succ_comp_toCylinderHom_app {X Y : SimplicialObject C} 
     (H : Homotopy f g) {n : ℕ} (j : Fin (n + 1)) :
     cylinderι X (SimplexCategory.toMk₁ j.succ) ≫ H.toCylinderHom.app (op ⦋n⦌) =
       H.h j ≫ Y.δ j.succ := by
-  simp [toCylinderHom, ← SimplexCategory.toMk₁Equiv_apply, toCylinderHomTerm]
+  simp [toCylinderHom, toCylinderHomApp, ← SimplexCategory.toMk₁Equiv_apply, toCylinderHomTerm]
 
 /-- Restricting `H.toCylinderHom` along the `0`-end inclusion recovers `f`. -/
 @[reassoc (attr := simp)]
@@ -439,8 +472,9 @@ lemma cylinderι₀_comp_toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y
   ext Δ
   obtain ⟨Δ⟩ := Δ
   induction Δ using SimplexCategory.rec with | _ n
-  simp only [NatTrans.comp_app, cylinderι₀_app_app, toCylinderHom, cylinderι_desc,
-    ← SimplexCategory.toMk₁_last n, ← SimplexCategory.toMk₁Equiv_apply, Equiv.symm_apply_apply]
+  simp only [NatTrans.comp_app, cylinderι₀_app_app, toCylinderHom, toCylinderHomApp,
+    cylinderι_desc, ← SimplexCategory.toMk₁_last n, ← SimplexCategory.toMk₁Equiv_apply,
+    Equiv.symm_apply_apply]
   rw [← Fin.succ_last, toCylinderHomTerm, Fin.cases_succ, Fin.succ_last, H.h_last_comp_δ_last]
 
 /-- Restricting `H.toCylinderHom` along the `1`-end inclusion recovers `g`. -/
@@ -450,9 +484,9 @@ lemma cylinderι₁_comp_toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y
   ext Δ
   obtain ⟨Δ⟩ := Δ
   induction Δ using SimplexCategory.rec with | _ n
-  simp only [NatTrans.comp_app, cylinderι₁_app_app, toCylinderHom, cylinderι_desc,
-    ← SimplexCategory.toMk₁_zero n, ← SimplexCategory.toMk₁Equiv_apply, Equiv.symm_apply_apply,
-    toCylinderHomTerm, Fin.cases_zero]
+  simp only [NatTrans.comp_app, cylinderι₁_app_app, toCylinderHom, toCylinderHomApp,
+    cylinderι_desc, ← SimplexCategory.toMk₁_zero n, ← SimplexCategory.toMk₁Equiv_apply,
+    Equiv.symm_apply_apply, toCylinderHomTerm, Fin.cases_zero]
 
 /-- Extracting the homotopy of `H.toCylinderHom` recovers `H`. -/
 @[simp]
@@ -460,8 +494,8 @@ lemma ofCylinderHom_toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y} (H 
     ofCylinderHom H.toCylinderHom (cylinderι₀_comp_toCylinderHom H)
       (cylinderι₁_comp_toCylinderHom H) = H := by
   ext n i
-  simp only [ofCylinderHom_h, toCylinderHom, cylinderι_desc, ← SimplexCategory.toMk₁Equiv_apply,
-    Equiv.symm_apply_apply]
+  simp only [ofCylinderHom_h, toCylinderHom, toCylinderHomApp, cylinderι_desc,
+    ← SimplexCategory.toMk₁Equiv_apply, Equiv.symm_apply_apply]
   rw [Fin.castSucc_succ i, toCylinderHomTerm, Fin.cases_succ, ← Category.assoc,
     ← H.h_comp_σ_succ_of_lt i i le_rfl, Category.assoc]
   have hδ : Y.σ i.succ ≫ Y.δ i.castSucc.succ = 𝟙 _ := by
@@ -479,7 +513,7 @@ lemma toCylinderHom_ofCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y}
   induction Δ using SimplexCategory.rec with | _ n
   refine cylinder_hom_ext fun α ↦ ?_
   obtain ⟨k, rfl⟩ := SimplexCategory.toMk₁Equiv.surjective α
-  simp only [toCylinderHom, cylinderι_desc, Equiv.symm_apply_apply]
+  simp only [toCylinderHom, toCylinderHomApp, cylinderι_desc, Equiv.symm_apply_apply]
   cases k using Fin.cases with
   | zero =>
     rw [toCylinderHomTerm, Fin.cases_zero, ← h₁, NatTrans.comp_app, cylinderι₁_app_app,
