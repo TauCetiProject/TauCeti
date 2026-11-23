@@ -47,8 +47,10 @@ theorem sum_eq_sum_fixedPoints_of_nsmul_eq_zero {M : Type*} [AddCommMonoid M] (h
     ← Finset.sum_fiberwise Finset.univ π]
   refine Finset.sum_congr rfl fun ω _ => ?_
   obtain ⟨b, rfl⟩ := Quotient.mk_surjective ω
+  have hmem : ∀ a ∈ Finset.univ.filter (π · = π b), ∃ g : P, g • b = a := fun a ha =>
+    mem_orbit_iff.1 (Quotient.exact (Finset.mem_filter.1 ha).2)
   have hfib : ∀ a ∈ Finset.univ.filter (π · = π b), f a = f b := fun a ha => by
-    obtain ⟨g, rfl⟩ := mem_orbit_iff.1 (Quotient.exact (Finset.mem_filter.1 ha).2)
+    obtain ⟨g, rfl⟩ := hmem a ha
     exact hf g b
   rw [Finset.sum_congr rfl hfib, Finset.sum_const]
   have hcard : (Finset.univ.filter (π · = π b)).card = Nat.card (orbit P b) := by
@@ -61,12 +63,12 @@ theorem sum_eq_sum_fixedPoints_of_nsmul_eq_zero {M : Type*} [AddCommMonoid M] (h
   by_cases hb : b ∈ fixedPoints P α
   · have hfix : ∀ a ∈ Finset.univ.filter (π · = π b),
         (if a ∈ fixedPoints P α then f a else 0) = f b := fun a ha => by
-      obtain ⟨g, rfl⟩ := mem_orbit_iff.1 (Quotient.exact (Finset.mem_filter.1 ha).2)
+      obtain ⟨g, rfl⟩ := hmem a ha
       rw [hb g, ite_eq_left hb]
     rw [Finset.sum_congr rfl hfix, Finset.sum_const, hcard, (hone b).1 hb]
   · have hnfix : ∀ a ∈ Finset.univ.filter (π · = π b),
         (if a ∈ fixedPoints P α then f a else 0) = 0 := fun a ha => by
-      obtain ⟨g, rfl⟩ := mem_orbit_iff.1 (Quotient.exact (Finset.mem_filter.1 ha).2)
+      obtain ⟨g, rfl⟩ := hmem a ha
       split_ifs with hgb
       · rw [hone, orbit_smul, ← hone] at hgb
         exact absurd hgb hb

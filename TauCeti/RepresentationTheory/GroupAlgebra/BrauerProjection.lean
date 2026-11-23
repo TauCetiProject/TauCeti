@@ -27,9 +27,10 @@ transpositions, `Br_P(x²) = 1 + r + r²` but `Br_P(x)² = 0`.
 For `Q ≤ P`, `C_G(P) ≤ C_G(Q)` and `Br_P` factors through `Br_Q`
 (`TauCeti.brauerProjection_eq_comapDomain`).
 
-Its kernel contains the relative trace ideals `R[G]^P_Q` for `Q < P`
-(`TauCeti.relTraceIdeal`), and the defect groups of the blocks of `R[G]` are the maximal
-`p`-subgroups `P` on which the Brauer homomorphism of the block idempotent is nonzero.
+For a `p`-group `P` in characteristic `p`, the kernel of `brauerHom` contains the relative
+trace ideals `R[G]^P_Q` (`TauCeti.relTraceIdeal`) for `Q < P`, and the defect groups of the
+blocks of `R[G]` are the maximal `p`-subgroups `P` on which the Brauer homomorphism of the block
+idempotent is nonzero. Neither statement is formalized here.
 
 ## Main definitions
 
@@ -117,7 +118,9 @@ theorem brauerProjection_mul [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p] {P 
   classical
   have := Fintype.ofFinite G
   let : MulAction P G := MulAction.compHom G (MulAut.conj.comp P.subtype)
-  have hsmul (g : P) (a : G) : g • a = g * a * (g : G)⁻¹ := rfl
+  have hsmul (g : P) (a : G) : g • a = g * a * (g : G)⁻¹ := by
+    rw [MulAction.compHom_smul_def]
+    simp
   ext c
   have hc := Subgroup.mem_centralizer_iff.1 c.property
   rw [coeff_brauerProjection, coeff_mul_apply_left, Finsupp.sum_fintype _ _ (by simp),
@@ -154,7 +157,6 @@ noncomputable def brauerHom [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p] {P :
 theorem brauerHom_apply [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p] {P : Subgroup G}
     (hP : IsPGroup p P) (x : conjInvariants R P) :
     brauerHom hP x = brauerProjection P (x : MonoidAlgebra R G) := by
-  rw [brauerHom, AlgHom.ofLinearMap_apply]
-  rfl
+  simp [brauerHom]
 
 end TauCeti

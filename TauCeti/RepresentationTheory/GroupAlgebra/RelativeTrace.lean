@@ -261,7 +261,8 @@ theorem relTrace_relTrace (hSQ : S ≤ Q) (hQP : Q ≤ P) [(S.subgroupOf Q).Fini
     relTrace R Q P (relTrace R S Q a) = relTrace R S P a := by
   -- Cosets of `S` in `Q`, read inside `P`, enumerate `Q/S` through `Q.subgroupOf P ≃* Q`.
   have hE := Subgroup.mk_mulEquiv_out_bijective (Subgroup.subgroupOfEquivOfLe hQP)
-    (H := (S.subgroupOf P).subgroupOf (Q.subgroupOf P)) (H' := S.subgroupOf Q) fun _ => Iff.rfl
+    (H := (S.subgroupOf P).subgroupOf (Q.subgroupOf P)) (H' := S.subgroupOf Q)
+    fun _ => by simp [Subgroup.mem_subgroupOf]
   have := Finite.of_injective _ hE.1
   have := Fintype.ofFinite (Q.subgroupOf P ⧸ (S.subgroupOf P).subgroupOf (Q.subgroupOf P))
   ext1
@@ -272,7 +273,7 @@ theorem relTrace_relTrace (hSQ : S ≤ Q) (hQP : Q ≤ P) [(S.subgroupOf Q).Fini
   rw [relTrace_apply_eq_sum_of_bijective _ hE, map_sum]
   refine Finset.sum_congr rfl fun v _ => ?_
   rw [Subgroup.coe_mul, map_mul, mul_apply_eq_comp]
-  rfl
+  simp [Subgroup.subgroupOfEquivOfLe_apply_coe]
 
 /-- **Product formula.** For `a ∈ R[G]^Q` and `b ∈ R[G]^P`, `Tr_Q^P(a) b = Tr_Q^P(a b)`. -/
 theorem relTrace_mul (a : conjInvariants R Q) (b : conjInvariants R P) :
