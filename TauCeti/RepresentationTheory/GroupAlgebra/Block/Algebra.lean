@@ -31,7 +31,7 @@ reindexing (`TauCeti.complete_blockIdempotents_unique`).
 
 ## Main results
 
-* `TauCeti.algEquivPiBlockAlgebra_apply_val`: the component of `x` in the block `B` is `e_B x`.
+* `TauCeti.val_algEquivPiBlockAlgebra_apply`: the component of `x` in the block `B` is `e_B x`.
 
 ## References
 
@@ -84,10 +84,10 @@ theorem algEquivPiBlockAlgebra_apply (hb : CompleteOrthogonalIdempotents b)
 
 /-- The component of `x` in the block algebra `e_B R[G]` is `e_B x`. -/
 @[simp]
-theorem algEquivPiBlockAlgebra_apply_val (hb : CompleteOrthogonalIdempotents b)
+theorem val_algEquivPiBlockAlgebra_apply (hb : CompleteOrthogonalIdempotents b)
     (hbp : ∀ i, IsBlockIdempotent (b i)) (x : MonoidAlgebra R G) (i : ι) :
     (algEquivPiBlockAlgebra hb hbp x i).val = b i * x :=
-  hb.val_center.algEquivOfIsMulCentral_apply_val _ x i
+  hb.val_center.val_algEquivOfIsMulCentral_apply _ x i
 
 /-- An element of `∏_B e_B R[G]` corresponds to the sum of its components in `R[G]`. -/
 @[simp]

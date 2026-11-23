@@ -57,7 +57,7 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
   is.
 * `IsIdempotentElem.Corner.nontrivial`: the corner of a nonzero idempotent is nontrivial.
-* `CompleteOrthogonalIdempotents.algEquivOfIsMulCentral_apply_val`: the component of `x` in the
+* `CompleteOrthogonalIdempotents.val_algEquivOfIsMulCentral_apply`: the component of `x` in the
   corner `eᵢ A eᵢ` is `eᵢ x`.
 * `CompleteOrthogonalIdempotents.val_center`: a complete orthogonal family of idempotents of the
   centre of an algebra is one of the algebra.
@@ -481,7 +481,7 @@ theorem ringEquivOfIsMulCentral_symm_apply (he : CompleteOrthogonalIdempotents e
 /-- The component of `x` in the corner `eᵢ A eᵢ` under Mathlib's
 `CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` is `eᵢ x`, since `eᵢ` is central. -/
 @[simp]
-theorem ringEquivOfIsMulCentral_apply_val (he : CompleteOrthogonalIdempotents e)
+theorem val_ringEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
     (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
     (he.ringEquivOfIsMulCentral hc x i).val = e i * x := by
   rw [ringEquivOfIsMulCentral_apply, (he.idem i).val_compress_of_commute ((hc i).comm x)]
@@ -514,7 +514,7 @@ theorem algEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
 
 /-- The component of `x` in the corner `eᵢ A eᵢ` is `eᵢ x`, since `eᵢ` is central. -/
 @[simp]
-theorem algEquivOfIsMulCentral_apply_val (he : CompleteOrthogonalIdempotents e)
+theorem val_algEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
     (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
     (he.algEquivOfIsMulCentral (R := R) hc x i).val = e i * x := by
   rw [algEquivOfIsMulCentral_apply, (he.idem i).val_compress_of_commute ((hc i).comm x)]
