@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
+import TauCeti.Algebra.Ring.Idempotent.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -17,9 +17,8 @@ import Mathlib.Tactic.Module
 For idempotents `p` and `q`, replacing `p` and `q` by `1 - p` and `1 - q` negates the balanced
 defect `(p * q * p - t • p) - (q * p * q - t • q)`. Sending `e i` to `1 - e i` therefore defines an
 involutive `R`-algebra automorphism `TauCeti.BalancedProjectionAlgebra.complementEquiv` at the same
-parameter `τ`. It preserves every finite stage, exchanges scalar characters `c ↔ 1 - c`, and
-intertwines `TauCeti.InfiniteTypeAHeckeAlgebra.complementEquiv` under `heckeEquiv`, mapping
-`1 - e i` to Wenzl's eigenprojection `(q + q⁻¹)⁻¹ • (q - T i)`.
+parameter `τ`. It preserves every finite stage, exchanges scalar characters `c ↔ 1 - c`, and under
+`heckeEquiv` maps `1 - e i` to Wenzl's eigenprojection `(q + q⁻¹)⁻¹ • (q - T i)`.
 
 ## Main definitions and results
 
@@ -27,9 +26,8 @@ intertwines `TauCeti.InfiniteTypeAHeckeAlgebra.complementEquiv` under `heckeEqui
   complement automorphism `e i ↦ 1 - e i` and its restriction to finite stages.
 * `TauCeti.BalancedProjectionAlgebra.character_complementEquiv`: precomposing a scalar character
   with `complementEquiv` sends `c` to `1 - c`.
-* `TauCeti.BalancedProjectionAlgebra.heckeEquiv_complementEquiv`, `heckeEquiv_one_sub_e`,
-  `one_add_sq_smul_heckeEquiv_one_sub_e`: Hecke compatibility of `complementEquiv` and Wenzl's
-  eigenprojection.
+* `TauCeti.BalancedProjectionAlgebra.heckeEquiv_one_sub_e`,
+  `one_add_sq_smul_heckeEquiv_one_sub_e`: `heckeEquiv` on `1 - e i` and Wenzl's eigenprojection.
 
 ## References
 
@@ -39,27 +37,6 @@ intertwines `TauCeti.InfiniteTypeAHeckeAlgebra.complementEquiv` under `heckeEqui
 -/
 
 public section
-
-namespace IsIdempotentElem
-
-variable {S A : Type*} [Ring S] [Ring A] [Module S A] {t : S} {p q : A}
-
-/-- Replacing idempotents `p` and `q` by `1 - p` and `1 - q` negates their balanced defect. -/
-theorem one_sub_mul_mul_sub_smul_sub (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
-    ((1 - p) * (1 - q) * (1 - p) - t • (1 - p)) -
-        ((1 - q) * (1 - p) * (1 - q) - t • (1 - q)) =
-      -((p * q * p - t • p) - (q * p * q - t • q)) := by
-  simp only [sub_mul, mul_sub, one_mul, mul_one, mul_assoc, hp.eq, hq.eq, smul_sub]
-  abel
-
-/-- If idempotents `p` and `q` satisfy the balanced relation with parameter `t`, so do `1 - p` and
-`1 - q`. -/
-theorem one_sub_mul_mul_sub_smul_eq (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
-    (h : p * q * p - t • p = q * p * q - t • q) :
-    (1 - p) * (1 - q) * (1 - p) - t • (1 - p) = (1 - q) * (1 - p) * (1 - q) - t • (1 - q) :=
-  sub_eq_zero.mp <| by rw [hp.one_sub_mul_mul_sub_smul_sub hq, sub_eq_zero.mpr h, neg_zero]
-
-end IsIdempotentElem
 
 namespace TauCeti.BalancedProjectionAlgebra
 
@@ -140,26 +117,11 @@ theorem character_complementEquiv (c : R) (hc : IsIdempotentElem c)
 
 end Complement
 
-section HeckeComparison
+section HeckeEigenprojection
 
 open InfiniteTypeAHeckeAlgebra (T)
 
 variable {τ : R} {q : Rˣ}
-
-/-- Under `heckeEquiv`, the projection complement `e i ↦ 1 - e i` corresponds to the Hecke
-complement automorphism `T i ↦ -T i⁻¹ = (q - q⁻¹) - T i`. -/
-theorem heckeEquiv_complementEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1)
-    (x : BalancedProjectionAlgebra R τ) :
-    heckeEquiv q hτ (complementEquiv τ x) =
-      InfiniteTypeAHeckeAlgebra.complementEquiv q (heckeEquiv q hτ x) :=
-  DFunLike.congr_fun
-    (hom_ext (F := (heckeEquiv q hτ).toAlgHom.comp (complementEquiv τ).toAlgHom)
-      (G := (InfiniteTypeAHeckeAlgebra.complementEquiv q).toAlgHom.comp (heckeEquiv q hτ).toAlgHom)
-      fun i ↦ by
-        simpa only [AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, complementEquiv_e, map_sub,
-          map_one, heckeEquiv_e, ← val_inv_addInvUnit hτ] using
-          (InfiniteTypeAHeckeAlgebra.complementEquiv_eigenprojection q (addInvUnit hτ)
-            (val_addInvUnit hτ) i).symm) x
 
 /-- The complementary projection `1 - e i` maps under `heckeEquiv` to the `-q⁻¹`-eigenprojection
 `(q + q⁻¹)⁻¹ • (q - T i)`. -/
@@ -182,6 +144,6 @@ theorem one_add_sq_smul_heckeEquiv_one_sub_e (hτ : τ * ((q : R) + ↑q⁻¹) ^
   rw [heckeEquiv_one_sub_e hτ, smul_smul, hcoeff, smul_sub, Algebra.algebraMap_eq_smul_one,
     Algebra.algebraMap_eq_smul_one, smul_smul, ← sq]
 
-end HeckeComparison
+end HeckeEigenprojection
 
 end TauCeti.BalancedProjectionAlgebra

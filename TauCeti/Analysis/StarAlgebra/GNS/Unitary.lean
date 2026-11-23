@@ -46,14 +46,7 @@ namespace TauCeti.StarPositiveFunctional
 section Ring
 
 variable {A : Type*} [Ring A] [Module ℂ A] [StarRing A] (φ : StarPositiveFunctional A)
-
-/-- For `u ∈ unitary A`, the quadratic pairing `φ (star b * star u * u * b)` equals
-`φ (star b * b)`. -/
-theorem apply_star_mul_self_of_mem_unitary {u : A} (hu : u ∈ unitary A) (b : A) :
-    φ (star b * star u * u * b) = φ (star b * b) := by
-  rw [mul_assoc (star b) (star u) u, Unitary.star_mul_self_of_mem hu, mul_one]
-
-variable [StarModule ℂ A] [IsScalarTower ℂ A A]
+  [StarModule ℂ A] [IsScalarTower ℂ A A]
 
 /-- Left multiplication by a unitary element preserves norms on the algebraic GNS space. -/
 @[simp]

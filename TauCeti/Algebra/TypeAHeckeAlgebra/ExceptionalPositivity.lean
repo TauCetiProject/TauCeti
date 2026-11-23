@@ -8,10 +8,8 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.GNS
 import TauCeti.Algebra.Ring.Units
 import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.ExceptionalPositivity
-import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.MarkovTrace
-import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Star
+import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison
 import TauCeti.Algebra.TypeAHeckeAlgebra.RepeatedRoot
-import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Exceptional-parameter positivity of the infinite type-A Hecke algebra
@@ -84,8 +82,11 @@ theorem apply_one_eq_one_and_forall_star_mul_self_nonneg_iff_of_add_inv_eq_zero
   constructor
   · rintro ⟨h1, hpos⟩
     let φ : StarPositiveFunctional (InfiniteTypeAHeckeAlgebra ℂ q) := ⟨μ, hpos⟩
+    have hφ (x : InfiniteTypeAHeckeAlgebra ℂ q) : φ x = μ x :=
+      StarPositiveFunctional.mk_apply μ hpos x
     exact LinearMap.ext fun x ↦ by
-      simpa [φ, h1] using apply_eq_indexCharacter_mul_apply_one φ hq0 x
+      rw [← hφ x, apply_eq_indexCharacter_mul_apply_one φ hq0 x, hφ 1, h1, mul_one,
+        AlgHom.toLinearMap_apply]
   · rintro rfl
     exact ⟨map_one (indexCharacter ℂ q), indexCharacter_star_mul_self_nonneg⟩
 
@@ -119,10 +120,21 @@ theorem isMarkovTrace_and_forall_star_mul_self_nonneg_iff_of_add_inv_sq_le_one
       let τ : ℂ := (((q : ℂ) + ↑q⁻¹) ^ 2)⁻¹
       have hτ : τ * ((q : ℂ) + ↑q⁻¹) ^ 2 = 1 := inv_mul_cancel₀ (pow_ne_zero 2 hs0)
       have : Fact (IsSelfAdjoint τ) := ⟨(hs_sa.pow 2).inv₀⟩
-      have hτ_notMem := Complex.notMem_Ico_inv_sq_of_sq_le_one hs_sa hs0 hsq
+      have hτ_notMem : τ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 := by
+        obtain ⟨r, hr⟩ := Complex.conj_eq_iff_real.mp hs_sa
+        have hr0 : r ≠ 0 := fun h ↦ hs0 (by simpa [h] using hr)
+        have hr_sq_le : r ^ 2 ≤ 1 := by
+          have hsq' : ((r ^ 2 : ℝ) : ℂ) ≤ ((1 : ℝ) : ℂ) := by
+            simpa only [Complex.ofReal_pow, Complex.ofReal_one, ← hr] using hsq
+          simpa only [Complex.ofReal_re] using (Complex.le_def.mp hsq').1
+        rintro ⟨t, ht, hteq⟩
+        have ht' : t = (r ^ 2)⁻¹ := Complex.ofReal_injective (by
+          rw [hteq]; dsimp [τ]; rw [hr]; norm_cast)
+        have h1 : (1 : ℝ) ≤ (r ^ 2)⁻¹ := (one_le_inv₀ (sq_pos_of_ne_zero hr0)).mpr hr_sq_le
+        linarith [ht.2]
       let η : ℂ := τ * ((q : ℂ) + ↑q⁻¹) * (z + ↑q⁻¹)
-      have hz : z = (q : ℂ) * η - ↑q⁻¹ * (1 - η) := by
-        dsimp [η]; linear_combination -(z + ↑q⁻¹) * hτ
+      have hz : z = (q : ℂ) * η - ↑q⁻¹ * (1 - η) :=
+        BalancedProjectionAlgebra.heckeParam_eq hτ z
       let E := BalancedProjectionAlgebra.heckeEquiv q hτ
       have hmarkov_bp : BalancedProjectionAlgebra.IsMarkovTrace η (μ.comp E.toLinearMap) :=
         (BalancedProjectionAlgebra.isMarkovTrace_comp_heckeEquiv_iff hτ hz).mpr hμ

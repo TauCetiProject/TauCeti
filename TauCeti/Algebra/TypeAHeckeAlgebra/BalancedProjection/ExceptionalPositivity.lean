@@ -108,17 +108,21 @@ theorem isMarkovTrace_and_forall_star_mul_self_nonneg_iff
   constructor
   · rintro ⟨hμ, hpos⟩
     let φ : StarPositiveFunctional (BalancedProjectionAlgebra ℂ τ) := ⟨μ, hpos⟩
-    have h1 : φ.hilbertPositiveLinearMap 1 = 1 := by simpa [φ] using hμ.map_one
+    have hφ (x : BalancedProjectionAlgebra ℂ τ) : φ x = μ x :=
+      StarPositiveFunctional.mk_apply μ hpos x
+    have h1 : φ.hilbertPositiveLinearMap 1 = 1 := by
+      rw [φ.hilbertPositiveLinearMap_one, hφ 1, hμ.map_one]
     have hmarkov : ∀ n w, w ∈ stage ℂ τ (n + 1) →
         φ.hilbertPositiveLinearMap (gnsRepresentation φ (w * e τ n)) =
           η * φ.hilbertPositiveLinearMap (gnsRepresentation φ w) := fun n w hw ↦ by
-      simpa [hilbertPositiveLinearMap_gnsRepresentation, φ] using hμ.map_mul_e hw
+      rw [hilbertPositiveLinearMap_gnsRepresentation, hilbertPositiveLinearMap_gnsRepresentation,
+        hφ, hφ, hμ.map_mul_e hw]
     have hη := isIdempotentElem_of_markov (gnsRepresentation φ)
       (isStarProjection_gnsRepresentation_e φ) hτ h1 hmarkov
     have hchar : μ = (character η hη).toLinearMap := LinearMap.ext fun x ↦ by
-      simpa [hilbertPositiveLinearMap_gnsRepresentation, φ] using
-        apply_map_eq_character_of_markov (gnsRepresentation φ)
-          (isStarProjection_gnsRepresentation_e φ) hτ h1 hmarkov x
+      rw [← hφ x, ← hilbertPositiveLinearMap_gnsRepresentation φ x]
+      exact apply_map_eq_character_of_markov (gnsRepresentation φ)
+        (isStarProjection_gnsRepresentation_e φ) hτ h1 hmarkov x
     rcases IsIdempotentElem.iff_eq_zero_or_one.mp hη with rfl | rfl
     · exact Or.inl ⟨rfl, hchar⟩
     · exact Or.inr ⟨rfl, hchar⟩

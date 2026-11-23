@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Complement
+public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -148,6 +149,13 @@ theorem IsMarkovTrace.unique_of_hecke {q : Rˣ} (hτ : τ * ((q : R) + ↑q⁻¹
   have heq := InfiniteTypeAHeckeAlgebra.IsMarkovTrace.unique (toH hμ) (toH hμ')
   exact LinearMap.ext fun x ↦ by simpa using LinearMap.congr_fun heq (heckeEquiv q hτ x)
 
+/-- Recovering the Hecke Markov parameter `z` from the transported balanced-projection parameter
+`η = τ * (q + q⁻¹) * (z + q⁻¹)` when `τ * (q + q⁻¹) ^ 2 = 1`. -/
+theorem heckeParam_eq {q : Rˣ} (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (z : R) :
+    z = (q : R) * (τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹)) -
+      ↑q⁻¹ * (1 - τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹)) := by
+  linear_combination -(z + ↑q⁻¹) * hτ
+
 end BalancedProjectionAlgebra
 
 namespace InfiniteTypeAHeckeAlgebra.IsMarkovTrace
@@ -165,11 +173,8 @@ theorem map_heckeEquiv_mul_e (hμ : IsMarkovTrace z μ) (hτ : τ * ((q : R) + �
     {n : ℕ} {w : BalancedProjectionAlgebra R τ}
     (hw : w ∈ BalancedProjectionAlgebra.stage R τ (n + 1)) :
     μ (heckeEquiv q hτ (w * e τ n)) =
-      τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹) * μ (heckeEquiv q hτ w) := by
-  have hz : z = (q : R) * (τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹)) -
-      ↑q⁻¹ * (1 - τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹)) := by
-    linear_combination -(z + ↑q⁻¹) * hτ
-  exact ((isMarkovTrace_comp_heckeEquiv_iff hτ hz).mpr hμ).map_mul_e hw
+      τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹) * μ (heckeEquiv q hτ w) :=
+  ((isMarkovTrace_comp_heckeEquiv_iff hτ (heckeParam_eq hτ z)).mpr hμ).map_mul_e hw
 
 end InfiniteTypeAHeckeAlgebra.IsMarkovTrace
 

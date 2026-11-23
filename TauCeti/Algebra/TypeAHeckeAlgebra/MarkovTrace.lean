@@ -168,8 +168,10 @@ theorem map_mul_eigenprojection (hτ : IsMarkovTrace z τ) (s : Rˣ) (hs : (s : 
     τ (x * (↑s⁻¹ : R) • (T q n + algebraMap R _ (↑q⁻¹ : R))) = η * τ x := by
   have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
   rw [hs] at hs'
-  rw [mul_smul_comm, map_smul, mul_add, map_add, hτ.map_mul_T hx, ← Algebra.commutes,
-    ← Algebra.smul_def, map_smul, smul_eq_mul, smul_eq_mul, hz]
+  have hT : τ (x * T q n) = z * τ x := hτ.map_mul_T hx
+  have hq : τ (x * algebraMap R _ (↑q⁻¹ : R)) = (↑q⁻¹ : R) * τ x := by
+    simp only [← Algebra.commutes, ← Algebra.smul_def, map_smul, smul_eq_mul]
+  simp only [mul_smul_comm, mul_add, map_smul, map_add, hT, hq, smul_eq_mul, hz]
   linear_combination η * τ x * hs'
 
 end IsMarkovTrace

@@ -130,6 +130,39 @@ theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOr
 
 variable (φ : StarPositiveFunctional A)
 
+/-- For a star projection `p`, `φ (star b * p * b)` is nonnegative because it equals the square
+`φ (star (p * b) * (p * b))`. -/
+theorem apply_star_mul_mul_nonneg_of_isStarProjection {p : A} (hp : IsStarProjection p) (b : A) :
+    0 ≤ φ (star b * p * b) := by
+  have heq : star (p * b) * (p * b) = star b * p * b := by
+    rw [star_mul, hp.isSelfAdjoint.star_eq, ← mul_assoc, mul_assoc (star b) p p,
+      hp.isIdempotentElem.eq]
+  simpa only [heq, φ.toLinearMap_apply] using φ.square_nonneg (p * b)
+
+/-- For a star projection `p`, `φ (star b * p * b) ≤ φ (star b * b)`, proved without an identity
+element from the square `star (b - p * b) * (b - p * b)`. -/
+theorem apply_star_mul_mul_le_of_isStarProjection {p : A} (hp : IsStarProjection p) (b : A) :
+    φ (star b * p * b) ≤ φ (star b * b) := by
+  have hp_mul : p * (p * b) = p * b := by
+    rw [← mul_assoc, hp.isIdempotentElem.eq]
+  have hp_sub : p * (b - p * b) = 0 := by
+    rw [mul_sub, hp_mul, sub_self]
+  have heq : star (b - p * b) * (b - p * b) = star b * b - star b * p * b := by
+    suffices star (b - p * b) * (b - p * b) = star b * (b - p * b) by
+      rw [this, mul_sub, mul_assoc]
+    simp [hp.isSelfAdjoint.star_eq, sub_mul, mul_assoc, hp_sub]
+  have h : 0 ≤ φ (star (b - p * b) * (b - p * b)) := by
+    simpa only [φ.toLinearMap_apply] using φ.square_nonneg (b - p * b)
+  rw [heq, map_sub] at h
+  exact sub_nonneg.mp h
+
+/-- Quadratic-form bound `φ (star b * star p * p * b) ≤ φ (star b * b)` for a star projection
+`p`. -/
+theorem apply_star_mul_self_le_of_isStarProjection {p : A} (hp : IsStarProjection p) (b : A) :
+    φ (star b * star p * p * b) ≤ φ (star b * b) := by
+  rw [hp.isSelfAdjoint.star_eq, mul_assoc (star b) p p, hp.isIdempotentElem.eq]
+  exact φ.apply_star_mul_mul_le_of_isStarProjection hp b
+
 variable [StarModule ℂ A] [IsScalarTower ℂ A A]
 
 /-- Positivity implies conjugate symmetry of the associated sesquilinear form. -/
@@ -388,6 +421,18 @@ theorem map_star_mul_mul_self_eq_zero {C F : Type*} [NonUnitalRing C] [PartialOr
 end NonUnital
 
 namespace StarPositiveFunctional
+
+section Ring
+
+variable {A : Type*} [Ring A] [Module ℂ A] [StarRing A] (φ : StarPositiveFunctional A)
+
+/-- For `u ∈ unitary A`, the quadratic pairing `φ (star b * star u * u * b)` equals
+`φ (star b * b)`. -/
+theorem apply_star_mul_self_of_mem_unitary {u : A} (hu : u ∈ unitary A) (b : A) :
+    φ (star b * star u * u * b) = φ (star b * b) := by
+  rw [mul_assoc (star b) (star u) u, Unitary.star_mul_self_of_mem hu, mul_one]
+
+end Ring
 
 variable {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A] [StarModule ℂ A]
   (φ : StarPositiveFunctional A)
