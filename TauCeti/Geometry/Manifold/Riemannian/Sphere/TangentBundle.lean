@@ -8,11 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
+import TauCeti.Geometry.Manifold.ContMDiff.InnerProductSpace
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.OrthogonalComplement
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Projection
 
 /-!
 # Smooth structure of the sphere tangent bundle and radial-normal splitting
@@ -123,33 +123,34 @@ instance instContMDiffVectorBundleOrthogonalSpanSphere :
   (hasLocalContMDiffSubbundleFrames_orthogonalSpanSphere
     (E := E) (n := n) (k := ω)).contMDiffVectorBundle
 
+private theorem contMDiff_sphereTangentSubbundle_symm {k : ℕ∞ω} :
+    ContMDiff ((𝓡 n).prod 𝓘(ℝ, Fin n → ℝ)) (𝓡 n).tangent k
+      (fun q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ) ↦
+        TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) q.proj
+          ((sphereTangentEquiv (n := n) q.proj).symm.toContinuousLinearEquiv q.snd)) :=
+  have hincl := Bundle.Trivial.contMDiff_mk_iff.mp
+    ((hasLocalContMDiffSubbundleFrames_orthogonalSpanSphere (E := E) (n := n)
+      (k := ω)).contMDiff_totalSpace_inclusion.of_le le_top)
+  contMDiff_sphereTangentEquiv_symm hincl.1 hincl.2 fun q ↦ q.snd.property
+
 /-- **Smooth isomorphism between `TSⁿ` and the orthogonal-complement subbundle `x^⊥`.**
 Differentiating the ambient inclusion identifies `TangentBundle (𝓡 n) (sphere (0 : E) 1)` with the
 total space of the subbundle `x ↦ (ℝ ∙ (x : E))ᗮ` by a `C^k` bundle diffeomorphism at every
 regularity `k : ℕ∞ω`, with inverse `(sphereTangentEquiv x).symm`. -/
 def sphereTangentSubbundleDiffeomorph {k : ℕ∞ω} :
     TangentBundle (𝓡 n) (sphere (0 : E) 1) ≃ₘ^k⟮(𝓡 n).tangent, (𝓡 n).prod 𝓘(ℝ, Fin n → ℝ)⟯
-      TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ) := by
-  let hsub := hasLocalContMDiffSubbundleFrames_orthogonalSpanSphere (E := E) (n := n) (k := ω)
-  have hincl : ContMDiff ((𝓡 n).prod 𝓘(ℝ, Fin n → ℝ)) ((𝓡 n).prod 𝓘(ℝ, E)) k
-      (fun q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ) ↦
-        (⟨q.proj, (q.snd : E)⟩ : TotalSpace E (Bundle.Trivial (sphere (0 : E) 1) E))) :=
-    hsub.contMDiff_totalSpace_inclusion.of_le le_top
-  obtain ⟨hb, hw⟩ := Bundle.Trivial.contMDiff_mk_iff.mp hincl
-  have hinv : ContMDiff ((𝓡 n).prod 𝓘(ℝ, Fin n → ℝ)) (𝓡 n).tangent k
-      (fun q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ) ↦
-        TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) q.proj
-          ((sphereTangentEquiv (n := n) q.proj).symm.toContinuousLinearEquiv q.snd)) :=
-    contMDiff_sphereTangentEquiv_symm hb hw fun q ↦ q.snd.property
-  exact (bundleDiffeomorph
-    (fun x ↦ (sphereTangentEquiv (n := n) x).symm.toContinuousLinearEquiv) hinv).symm
+      TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ) :=
+  (bundleDiffeomorph
+    (fun x ↦ (sphereTangentEquiv (n := n) x).symm.toContinuousLinearEquiv)
+    (contMDiff_sphereTangentSubbundle_symm (E := E) (n := n) (k := k))).symm
 
 /-- Forward formula for `TauCeti.sphereTangentSubbundleDiffeomorph`. -/
 @[simp]
 theorem sphereTangentSubbundleDiffeomorph_apply {k : ℕ∞ω}
     (p : TangentBundle (𝓡 n) (sphere (0 : E) 1)) :
     sphereTangentSubbundleDiffeomorph (k := k) p = ⟨p.proj, sphereTangentEquiv p.proj p.snd⟩ := by
-  simp [sphereTangentSubbundleDiffeomorph]
+  rw [sphereTangentSubbundleDiffeomorph, bundleDiffeomorph_symm_apply]
+  simp
 
 /-- Inverse formula for `TauCeti.sphereTangentSubbundleDiffeomorph`. -/
 @[simp]
@@ -157,8 +158,8 @@ theorem sphereTangentSubbundleDiffeomorph_symm_apply {k : ℕ∞ω}
     (q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ)) :
     (sphereTangentSubbundleDiffeomorph (k := k)).symm q =
       ⟨q.proj, (sphereTangentEquiv q.proj).symm q.snd⟩ := by
-  rw [sphereTangentSubbundleDiffeomorph, Diffeomorph.symm_symm]
-  simp [bundleDiffeomorph_apply]
+  rw [sphereTangentSubbundleDiffeomorph, Diffeomorph.symm_symm, bundleDiffeomorph_apply]
+  rfl
 
 /-! ### Radial-normal splitting `TSⁿ ⊕ ε¹ ≅ εⁿ⁺¹` -/
 
@@ -189,8 +190,7 @@ theorem sphereTangentProdRealEquiv_symm_apply (x : sphere (0 : E) 1) (u : E) :
     (sphereTangentProdRealEquiv (n := n) x).symm u =
       (sphereTangentProj (n := n) x u, inner ℝ (x : E) u) := by
   apply (sphereTangentProdRealEquiv (n := n) x).injective
-  rw [ContinuousLinearEquiv.apply_symm_apply, sphereTangentProdRealEquiv_apply,
-    coe_sphereTangentEquiv_apply, mfderiv_subtypeVal_sphereTangentProj, sub_add_cancel]
+  simp
 
 /-- **Whitney-sum form of the radial-normal splitting (`TSⁿ ⊕ ε¹ ≅ εⁿ⁺¹`).** The direct sum of the
 sphere tangent bundle with the trivial real line bundle is `C^k`-diffeomorphic over

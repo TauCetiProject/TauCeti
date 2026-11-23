@@ -184,7 +184,6 @@ theorem sphereTangentProj_apply (x : sphere (0 : E) 1) (u : E) :
 
 /-- Applying `TauCeti.sphereTangentEquiv` after `TauCeti.sphereTangentProj` recovers the
 orthogonal projection onto `(ℝ ∙ (x : E))ᗮ`. -/
-@[simp]
 theorem sphereTangentEquiv_sphereTangentProj (x : sphere (0 : E) 1) (u : E) :
     sphereTangentEquiv (n := n) x (sphereTangentProj (n := n) x u) =
       (ℝ ∙ (x : E))ᗮ.orthogonalProjectionOnto u := by
@@ -197,9 +196,10 @@ radial component `⟪x, u⟫ • x` from `u`. -/
 theorem mfderiv_subtypeVal_sphereTangentProj (x : sphere (0 : E) 1) (u : E) :
     mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x (sphereTangentProj (n := n) x u) =
       u - inner ℝ (x : E) u • (x : E) := by
-  rw [← coe_sphereTangentEquiv_apply, sphereTangentEquiv_sphereTangentProj,
-    Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
-    Submodule.starProjection_unit_singleton ℝ (norm_eq_of_mem_sphere x) u]
+  rw [← coe_sphereTangentEquiv_apply]
+  simp [sphereTangentEquiv_sphereTangentProj,
+    Submodule.starProjection_unit_singleton ℝ (norm_eq_of_mem_sphere x)]
+  rfl
 
 /-- On an ambient vector already orthogonal to the radius vector `x`, `TauCeti.sphereTangentProj`
 agrees with `(TauCeti.sphereTangentEquiv x).symm`. -/
