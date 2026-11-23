@@ -60,6 +60,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
   negation preserve the rank.
 * `Matrix.rank_add_le`: over a field, the rank of a sum is at most the sum of the ranks.
+* `Matrix.rank_fromBlocks_zero₁₂_zero₂₁`: over a field, the rank of a block-diagonal matrix is the
+  sum of the ranks of its diagonal blocks.
 * `Matrix.rank_conjTranspose_of_field` and
   `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a field with a star ring
   structure, the conjugate transpose preserves the rank and `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
@@ -389,6 +391,25 @@ theorem rank_add_le (A B : Matrix m n K) : (A + B).rank ≤ A.rank + B.rank := b
     (Submodule.finrank_add_le_finrank_add_finrank (LinearMap.range A.mulVecLin)
       (LinearMap.range B.mulVecLin))
   exact LinearMap.range_add_le A.mulVecLin B.mulVecLin
+
+/-- Over a field, the rank of the block-diagonal matrix `fromBlocks A 0 0 D` is the sum of the
+ranks of `A` and `D`. -/
+theorem rank_fromBlocks_zero₁₂_zero₂₁ {l l' m' : Type*} [Finite l] [Finite l']
+    (A : Matrix m l K) (D : Matrix m' l' K) :
+    (fromBlocks A 0 0 D).rank = A.rank + D.rank := by
+  classical
+  have := Fintype.ofFinite l
+  have := Fintype.ofFinite l'
+  have h : (fromBlocks A 0 0 D).mulVecLin =
+      (LinearEquiv.sumArrowLequivProdArrow m m' K K).symm.toLinearMap ∘ₗ
+        (A.mulVecLin.prodMap D.mulVecLin) ∘ₗ
+          (LinearEquiv.sumArrowLequivProdArrow l l' K K).toLinearMap := by
+    refine LinearMap.ext fun x => funext fun i => ?_
+    rcases i with i | i <;> simp [fromBlocks_mulVec, Function.comp_def] <;> rfl
+  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin, ← finrank_range_mulVecLin, h,
+    LinearMap.range_comp, LinearMap.range_comp, LinearEquiv.range, Submodule.map_top,
+    LinearMap.range_prodMap, LinearEquiv.finrank_map_eq]
+  exact (Submodule.prodEquiv _ _).finrank_eq.trans Module.finrank_prod
 
 /-- Over a field, if `P + e + Q = 1` then the ranks of `P`, `e` and `Q` add up to at least the
 size of the matrices. -/

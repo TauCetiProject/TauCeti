@@ -14,6 +14,8 @@ public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 import Mathlib.Algebra.Star.StarProjection
 import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.LinearAlgebra.Matrix.Trace
+import TauCeti.Data.Matrix.Block
+import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Trace.Idempotent
 
 /-!
@@ -395,21 +397,10 @@ private theorem exists_nonUnitalStarAlgHom_rank_map_one_eq {μ : ℕ}
   classical
   let r := Fintype.card m - Fintype.card n * μ
   let e : (n × Fin μ) ⊕ Fin r ≃ m := Fintype.equivOfCardEq (by simp [r]; omega)
-  let corner : Matrix (n × Fin μ) (n × Fin μ) K →⋆ₙₐ[K]
-      Matrix ((n × Fin μ) ⊕ Fin r) ((n × Fin μ) ⊕ Fin r) K :=
-    { toFun y := fromBlocks y 0 0 0
-      map_smul' c y := by simp [fromBlocks_smul]
-      map_zero' := by simp
-      map_add' y z := by simp [fromBlocks_add]
-      map_mul' y z := by simp [fromBlocks_multiply]
-      map_star' y := by simp [star_eq_conjTranspose, fromBlocks_conjTranspose] }
-  have hrank : (fromBlocks (1 : Matrix (n × Fin μ) (n × Fin μ) K) 0 0
-      (0 : Matrix (Fin r) (Fin r) K)).rank = Fintype.card n * μ := by
-    rw [← diagonal_one, ← diagonal_zero, fromBlocks_diagonal, rank_diagonal]
-    simp [Fintype.card_subtype, Finset.card_filter, Fintype.sum_sum_type]
   refine ⟨(reindexStarAlgEquiv K K e).toNonUnitalStarAlgHom.comp
-    (corner.comp (kroneckerOneStarAlgHom K (Fin μ)).toNonUnitalStarAlgHom), ?_⟩
-  simpa [corner] using hrank
+    ((fromBlocks₁₁NonUnitalStarAlgHom K K (n × Fin μ) (Fin r)).comp
+      (kroneckerOneStarAlgHom K (Fin μ)).toNonUnitalStarAlgHom), ?_⟩
+  simp [rank_fromBlocks_zero₁₂_zero₂₁]
 
 /-- **Realisation of multiplicities.** For `n ≠ 0`, a `⋆`-homomorphism `Mₙ(K) → Mₘ(K)` of
 multiplicity `μ` exists exactly when `n * μ ≤ m`. -/
