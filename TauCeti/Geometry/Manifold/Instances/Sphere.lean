@@ -113,6 +113,8 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `TauCeti.mvfderiv_coe_mfderiv_circleExp`: read in `ℂ`, the generator of `t ↦ exp (t i)`, the
   velocity of `Circle.exp` at `0`, is `i`.
 * `TauCeti.contMDiffAt_circle_arg`: the argument is smooth on the circle away from `-1`.
+* `TauCeti.isLocalDiffeomorphAt_circleExp`: `Circle.exp : ℝ → S¹` is a `Cⁿ` local diffeomorphism
+  at every point, for every `n`.
 * `TauCeti.toSpanSingleton_deriv_comp_circleExp`,
   `TauCeti.toSpanSingleton_deriv_chart_comp_circleExp`: the chain rule for a map of the circle read
   along `Circle.exp`, into a normed space or, through a chart, into a manifold.
@@ -639,9 +641,10 @@ theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ} :
     have hγ : ¬ DifferentiableAt ℝ (f ∘ Circle.exp) t := fun h ↦ hf
       (((isLocalDiffeomorphAt_circleExp (n := 1) t).mdifferentiableAt_comp_iff one_ne_zero).1
         (mdifferentiableAt_iff_differentiableAt.2 h))
-    rw [deriv_zero_of_not_differentiableAt hγ, mfderiv_zero_of_not_mdifferentiableAt hf]
-    ext
-    simp
+    rw [deriv_zero_of_not_differentiableAt hγ, mfderiv_zero_of_not_mdifferentiableAt hf,
+      ContinuousLinearMap.toSpanSingleton_zero, ContinuousLinearMap.zero_comp]
+    -- The two zero maps differ only by the `TangentSpace` type synonyms of their domain and
+    -- codomain (`TangentSpace 𝓘(ℝ, ℝ) t` is `ℝ` and `TangentSpace 𝓘(ℝ, V) _` is `V`).
     rfl
   have hexp := (contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero (x := t)
   have hγ : DifferentiableAt ℝ (f ∘ Circle.exp) t :=
