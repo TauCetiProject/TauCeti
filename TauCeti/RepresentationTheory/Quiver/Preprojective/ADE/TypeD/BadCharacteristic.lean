@@ -91,15 +91,9 @@ theorem exists_mem_preprojectiveGrade_D_four_notMem_commutatorSubmodule
     [Nontrivial k] (hn : 4 ≤ n) (h2 : (2 : k) = 0) (o : Orientation G) :
     ∃ z : preprojectiveAlgebra k (OrientedQuiver G o),
       z ∈ preprojectiveGrade k (OrientedQuiver G o) 4 ∧
-        z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
-  obtain ⟨z, hz, hz0⟩ :=
-    exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule k hn h2
-  let C := dColoring n
-  let E := C.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, ?_⟩
-  intro h
-  apply hz0
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+        z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) :=
+  (dColoring n).exists_mem_preprojectiveGrade_notMem_commutatorSubmodule k o
+    (exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule k hn h2)
 
 end CommRing
 

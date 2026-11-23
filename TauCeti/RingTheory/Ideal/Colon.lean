@@ -27,6 +27,7 @@ supplies, divided by `f` generate `(I : f)`.
 * `Ideal.inf_span_singleton_eq_span_singleton_mul_colon`: `I ∩ (f) = f · (I : f)`.
 * `Ideal.colon_singleton_eq_of_inf_span_singleton_eq`: for regular `f`, if `I ∩ (f) = f · J`
   then `(I : f) = J`.
+* `Ideal.span_singleton_mul_colon_singleton`: a regular principal factor cancels from colon.
 * `Ideal.exists_eq_span_pow_mul_colon_not_le`: an ideal not contained in every power of `(f)` is
   `(f ^ k) · (I : f ^ k)` with `(I : f ^ k)` not contained in `(f)`.
 
@@ -63,6 +64,15 @@ namespace Ideal
 
 variable {R : Type*} [CommSemiring R] {I J : Ideal R} {f : R}
 
+/-- An ideal is contained in a colon ideal exactly when its product with the denominator
+is contained in the numerator. -/
+theorem le_colon_iff {I J K : Ideal R} : I ≤ J.colon (K : Set R) ↔ I * K ≤ J := by
+  constructor
+  · intro h
+    exact Ideal.mul_le.mpr fun a ha b hb ↦ Submodule.mem_colon.mp (h ha) b hb
+  · intro h a ha
+    exact Submodule.mem_colon.mpr fun b hb ↦ h (Ideal.mul_mem_mul ha hb)
+
 /-- The intersection of an ideal `I` with the principal ideal `(f)` is `f` times the colon ideal
 `(I : f)`. -/
 theorem inf_span_singleton_eq_span_singleton_mul_colon (I : Ideal R) (f : R) :
@@ -87,6 +97,17 @@ theorem colon_singleton_eq_of_inf_span_singleton_eq (hf : IsLeftRegular f)
     exact hf hxy ▸ hy
   · obtain ⟨x, hx, hxy⟩ := h.2 y hy
     exact hf hxy ▸ hx
+
+/-- A regular principal factor cancels from the corresponding colon ideal. -/
+theorem span_singleton_mul_colon_singleton (hf : IsLeftRegular f) (J : Ideal R) :
+    (span {f} * J).colon {f} = J :=
+  colon_singleton_eq_of_inf_span_singleton_eq hf (inf_eq_left.mpr mul_le_left)
+
+/-- Dividing a principal product by its regular first factor leaves the second factor. -/
+theorem span_mul_colon_singleton (hf : IsLeftRegular f) (g : R) :
+    (span {f * g}).colon {f} = span {g} := by
+  rw [← span_singleton_mul_span_singleton]
+  exact span_singleton_mul_colon_singleton hf _
 
 /-- **Extracting a power of a principal ideal.** If an ideal `I` does not lie in every power of
 `(f)`, then `I = (f ^ k) · (I : f ^ k)` for some `k`, where the colon ideal `(I : f ^ k)` does not

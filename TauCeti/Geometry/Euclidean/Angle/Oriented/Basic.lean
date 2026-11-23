@@ -162,7 +162,7 @@ namespace Complex
 theorem oangle_eq_arg_div (w z : ℂ) : Complex.orientation.oangle w z = arg (z / w) := by
   rcases eq_or_ne w 0 with rfl | hw
   · simp
-  · rw [Complex.oangle, ← arg_real_mul (z / w) (normSq_pos.2 hw), normSq_eq_conj_mul_self,
+  · rw [Complex.oangle, ← arg_ofReal_mul (normSq_pos.2 hw) (z / w), normSq_eq_conj_mul_self,
       mul_assoc, mul_div_cancel₀ z hw]
 
 /-- The real representative in `(-π, π]` of the oriented angle from `w` to `z` in `ℂ` is the

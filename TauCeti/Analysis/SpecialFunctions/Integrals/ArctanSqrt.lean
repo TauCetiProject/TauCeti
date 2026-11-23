@@ -33,10 +33,18 @@ tends to `0`: the kernels `k_j / π` concentrate at `a`. Consequently, for every
 `∫_a^b ψ(x) k_j(x) dx → π ψ(a)` as `j → 0⁺`
 (`TauCeti.tendsto_integral_mul_mul_div_mul_sqrt_sub_sq`).
 
+The same holds for a family: if `f_i`, `ψ_i` and `j_i` depend on a parameter `i` running along a
+filter, with `j_i → 0⁺`, `f_i` bounded below at each `x ∈ (a, b]`, the `ψ_i` uniformly bounded and
+`ψ_i(x) → L` as `i` runs along the filter and `x → a⁺` jointly, then `∫_a^b ψ_i k_{j_i} → π L`
+(`TauCeti.tendsto_integral_mul_mul_div_mul_sqrt_sub_sq_of_tendsto`). Without any limit, a weight
+bounded by `η` on `[a, x]` gives `|∫_a^x ψ k_j| ≤ η π`
+(`TauCeti.abs_integral_mul_mul_div_mul_sqrt_sub_sq_le`).
+
 This is the local computation behind quadratures of the form `∫ j dz / (g(z) √(f(z) - j²))` near a
 common simple zero `a` of `f` and `g`: writing `1 / g = ψ f' / f` with `ψ = f / (g f')` continuous
 at `a`, the contribution of a neighbourhood of `a` tends to `π ψ(a)` as `j → 0⁺`. For the
-spherical pendulum this computes the limits of the rotation angle at the poles of the sphere.
+spherical pendulum this computes the limits of the rotation angle at the poles of the sphere,
+jointly in the energy and the angular momentum.
 
 ## Implementation notes
 
@@ -49,6 +57,9 @@ the explicit primitive, so `f'` is only required to be positive on `(a, b)`.
 * `TauCeti.intervalIntegrable_mul_div_mul_sqrt_sub_sq`,
   `TauCeti.integral_mul_div_mul_sqrt_sub_sq`: the integrability of `k_j` on `[a, x]` and its
   integral.
+* `TauCeti.abs_integral_mul_mul_div_mul_sqrt_sub_sq_le`: `|∫_a^x ψ k_j| ≤ η π` for `|ψ| ≤ η`.
+* `TauCeti.tendsto_integral_mul_mul_div_mul_sqrt_sub_sq_of_tendsto`: `∫_a^b ψ_i k_{j_i} → π L` for
+  a family.
 * `TauCeti.tendsto_integral_mul_mul_div_mul_sqrt_sub_sq`: `∫_a^b ψ k_j → π ψ(a)`.
 -/
 
@@ -79,15 +90,23 @@ private theorem hasDerivAt_two_mul_arctan_sqrt_sub_sq_div {j t : ℝ} (hj : 0 < 
   rw [hsq]
   ring
 
-/-- At a point where `f` is positive, `2 arctan (√(f x - j²) / j) → π` as `j → 0⁺`. -/
-private theorem tendsto_two_mul_arctan_sqrt_sub_sq_div {x : ℝ} (hx : 0 < f x) :
-    Tendsto (fun j ↦ 2 * arctan (√(f x - j ^ 2) / j)) (𝓝[>] 0) (𝓝 π) := by
-  have hsqrt : Tendsto (fun j : ℝ ↦ √(f x - j ^ 2)) (𝓝[>] 0) (𝓝 √(f x)) := by
-    have : Continuous fun j : ℝ ↦ √(f x - j ^ 2) := by fun_prop
-    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
-  have hatTop : Tendsto (fun j : ℝ ↦ √(f x - j ^ 2) / j) (𝓝[>] 0) atTop := by
-    simp_rw [div_eq_mul_inv]
-    exact hsqrt.pos_mul_atTop (Real.sqrt_pos.2 hx) tendsto_inv_nhdsGT_zero
+/-- If `g i` is eventually at least `m > 0` and `j i → 0⁺`, then
+`2 arctan (√(g i - (j i)²) / j i) → π`. -/
+private theorem tendsto_two_mul_arctan_sqrt_sub_sq_div {ι : Type*} {l : Filter ι} {g j : ι → ℝ}
+    {m : ℝ} (hm : 0 < m) (hg : ∀ᶠ i in l, m ≤ g i) (hj : Tendsto j l (𝓝[>] 0)) :
+    Tendsto (fun i ↦ 2 * arctan (√(g i - j i ^ 2) / j i)) l (𝓝 π) := by
+  have hsq : ∀ᶠ i in l, j i ^ 2 < m / 2 := by
+    have : Tendsto (fun i ↦ j i ^ 2) l (𝓝 0) := by
+      simpa using (tendsto_nhds_of_tendsto_nhdsWithin hj).pow 2
+    exact this.eventually (gt_mem_nhds (half_pos hm))
+  have hinv : Tendsto (fun i ↦ √(m / 2) * (j i)⁻¹) l atTop :=
+    (tendsto_inv_nhdsGT_zero.comp hj).const_mul_atTop (Real.sqrt_pos.2 (half_pos hm))
+  have hatTop : Tendsto (fun i ↦ √(g i - j i ^ 2) / j i) l atTop := by
+    refine tendsto_atTop_mono' l ?_ hinv
+    filter_upwards [hg, hsq, hj self_mem_nhdsWithin] with i hgi hsqi hji
+    rw [div_eq_mul_inv]
+    exact mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt (by linarith))
+      (inv_nonneg.2 (le_of_lt hji))
   have := ((tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp hatTop).const_mul 2
   rwa [mul_div_cancel₀ π two_ne_zero] at this
 
@@ -205,86 +224,140 @@ private theorem norm_integral_mul_mul_div_mul_sqrt_sub_sq_le {j c d η : ℝ} {g
   rw [norm_mul, Real.norm_of_nonneg hk]
   exact mul_le_mul_of_nonneg_right (hg t (Ioc_subset_Icc_self ht)) hk
 
+/-- Against a weight bounded by `η` on `[a, x]`, the integral of the kernel over `[a, x]` is at most
+`η π` in absolute value: the kernel is nonnegative and its integral over `[a, x]` is
+`2 arctan (√(f x - j²) / j) < π`. -/
+theorem abs_integral_mul_mul_div_mul_sqrt_sub_sq_le {j x η : ℝ} {g : ℝ → ℝ} (hj : 0 < j)
+    (hx : x ∈ Icc a b) (hg : ∀ y ∈ Icc a x, |g y| ≤ η) :
+    |∫ y in a..x, g y * (f' y * j / (f y * √(f y - j ^ 2)))| ≤ η * π := by
+  have hη : 0 ≤ η := (abs_nonneg _).trans (hg a ⟨le_rfl, hx.1⟩)
+  have h := norm_integral_mul_mul_div_mul_sqrt_sub_sq_le hf hfa hderiv hpos hj
+    ⟨le_rfl, hx.1.trans hx.2⟩ hx hx.1 hg
+  have hGa : 2 * arctan (√(f a - j ^ 2) / j) = 0 := by
+    simp [hfa, Real.sqrt_eq_zero', sq_nonneg]
+  rw [hGa, sub_zero, Real.norm_eq_abs] at h
+  exact h.trans (mul_le_mul_of_nonneg_left
+    (by linarith [arctan_lt_pi_div_two (√(f x - j ^ 2) / j)]) hη)
+
+/-- Split at `c ∈ [a, b]`: against a weight within `η` of `L` on `[a, c]` and within `η'` of `L`
+on `[c, b]`, the integral of `(ψ - L) k_j` over `[a, b]` is at most
+`η π + η' (2 arctan (√(f b - j²) / j) - 2 arctan (√(f c - j²) / j))` in absolute value. -/
+private theorem abs_integral_sub_mul_mul_div_mul_sqrt_sub_sq_le {j c η η' L : ℝ} {ψ : ℝ → ℝ}
+    (hj : 0 < j) (hc : c ∈ Icc a b) (hψ : ContinuousOn ψ (Icc a b))
+    (hη : ∀ x ∈ Icc a c, |ψ x - L| ≤ η) (hη' : ∀ x ∈ Icc c b, |ψ x - L| ≤ η') :
+    |∫ x in a..b, (ψ x - L) * (f' x * j / (f x * √(f x - j ^ 2)))| ≤
+      η * π + η' * (2 * arctan (√(f b - j ^ 2) / j) - 2 * arctan (√(f c - j ^ 2) / j)) := by
+  have hbIcc : b ∈ Icc a b := ⟨hc.1.trans hc.2, le_rfl⟩
+  have hψsub : ContinuousOn (fun x ↦ ψ x - L) (Icc a b) := hψ.sub continuousOn_const
+  have hint_ac := intervalIntegrable_mul_div_mul_sqrt_sub_sq hf hfa hderiv hpos hj hc
+  have hint_cb := hint_ac.symm.trans
+    (intervalIntegrable_mul_div_mul_sqrt_sub_sq hf hfa hderiv hpos hj hbIcc)
+  rw [← intervalIntegral.integral_add_adjacent_intervals
+    (hint_ac.continuousOn_mul (by
+      rw [uIcc_of_le hc.1]; exact hψsub.mono (Icc_subset_Icc_right hc.2)))
+    (hint_cb.continuousOn_mul (by
+      rw [uIcc_of_le hc.2]; exact hψsub.mono (Icc_subset_Icc_left hc.1)))]
+  refine (abs_add_le _ _).trans (add_le_add ?_ ?_)
+  · exact abs_integral_mul_mul_div_mul_sqrt_sub_sq_le hf hfa hderiv hpos hj hc hη
+  · simpa only [Real.norm_eq_abs] using
+      norm_integral_mul_mul_div_mul_sqrt_sub_sq_le hf hfa hderiv hpos hj hc hbIcc hc.2 hη'
+
+/-- The integral of `ψ k_j` over `[a, b]` is `L ∫_a^b k_j = L · 2 arctan (√(f b - j²) / j)` plus
+the integral of `(ψ - L) k_j`. -/
+private theorem integral_mul_mul_div_mul_sqrt_sub_sq_eq {j L : ℝ} {ψ : ℝ → ℝ} (hab : a ≤ b)
+    (hj : 0 < j) (hψ : ContinuousOn ψ (Icc a b)) :
+    ∫ x in a..b, ψ x * (f' x * j / (f x * √(f x - j ^ 2))) =
+      L * (2 * arctan (√(f b - j ^ 2) / j)) +
+        ∫ x in a..b, (ψ x - L) * (f' x * j / (f x * √(f x - j ^ 2))) := by
+  have hbIcc : b ∈ Icc a b := ⟨hab, le_rfl⟩
+  have hintb := intervalIntegrable_mul_div_mul_sqrt_sub_sq hf hfa hderiv hpos hj hbIcc
+  rw [← integral_mul_div_mul_sqrt_sub_sq hf hfa hderiv hpos hj hbIcc,
+    ← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_add (hintb.const_mul _)
+      (hintb.continuousOn_mul (by rw [uIcc_of_le hab]; exact hψ.sub continuousOn_const))]
+  exact intervalIntegral.integral_congr fun x _ ↦ by ring
+
+end Kernel
+
+/-- **Concentration of the kernel at `a`, for a family.** For `i` along a filter `l`, let `f i`
+eventually be continuous on `[a, b]`, vanish at `a` and have positive derivative `f' i` on
+`(a, b)`, and let `f i x` be eventually bounded below by a positive constant at each
+`x ∈ (a, b]`. Let `j i → 0⁺`, and let the weights `ψ i` be eventually continuous and uniformly
+bounded on `[a, b]`, and tend to `L` as `i` runs along `l` and `x → a⁺` jointly. Then
+`∫_a^b ψ i x · f' i x j i / (f i x √(f i x - (j i)²)) dx → π L`. -/
+theorem tendsto_integral_mul_mul_div_mul_sqrt_sub_sq_of_tendsto {ι : Type*} {l : Filter ι}
+    {f f' ψ : ι → ℝ → ℝ} {j : ι → ℝ} {L : ℝ} (hab : a < b)
+    (hf : ∀ᶠ i in l, ContinuousOn (f i) (Icc a b)) (hfa : ∀ᶠ i in l, f i a = 0)
+    (hderiv : ∀ᶠ i in l, ∀ x ∈ Ioo a b, HasDerivAt (f i) (f' i x) x)
+    (hpos : ∀ᶠ i in l, ∀ x ∈ Ioo a b, 0 < f' i x)
+    (hfx : ∀ x ∈ Ioc a b, ∃ m > 0, ∀ᶠ i in l, m ≤ f i x) (hj : Tendsto j l (𝓝[>] 0))
+    (hψ : ∀ᶠ i in l, ContinuousOn (ψ i) (Icc a b))
+    (hψM : ∃ M, ∀ᶠ i in l, ∀ x ∈ Icc a b, |ψ i x| ≤ M)
+    (hψa : Tendsto (Function.uncurry ψ) (l ×ˢ 𝓝[≥] a) (𝓝 L)) :
+    Tendsto (fun i ↦ ∫ x in a..b, ψ i x * (f' i x * j i / (f i x * √(f i x - j i ^ 2)))) l
+      (𝓝 (π * L)) := by
+  set k : ι → ℝ → ℝ := fun i x ↦ f' i x * j i / (f i x * √(f i x - j i ^ 2))
+  set G : ι → ℝ → ℝ := fun i x ↦ 2 * arctan (√(f i x - j i ^ 2) / j i) with hG
+  have hlim : ∀ x ∈ Ioc a b, Tendsto (fun i ↦ G i x) l (𝓝 π) := fun x hx ↦ by
+    obtain ⟨m, hm, hmx⟩ := hfx x hx
+    exact tendsto_two_mul_arctan_sqrt_sub_sq_div hm hmx hj
+  have hjpos : ∀ᶠ i in l, 0 < j i := hj self_mem_nhdsWithin
+  obtain ⟨M, hM⟩ := hψM
+  -- The error term `∫ (ψ i - L) k_i` tends to `0`: split `[a, b]` at a point `c` close to `a`.
+  have herr : Tendsto (fun i ↦ ∫ x in a..b, (ψ i x - L) * k i x) l (𝓝 0) := by
+    rw [Metric.tendsto_nhds]
+    intro ε hε
+    obtain ⟨pa, hpa, pb, hpb, hp⟩ :=
+      eventually_prod_iff.1 (Metric.tendsto_nhds.1 hψa (ε / (4 * π)) (by positivity))
+    obtain ⟨u, hu, hus⟩ := mem_nhdsGE_iff_exists_Ico_subset.1 hpb
+    rw [mem_Ioi] at hu
+    set c := min b ((a + u) / 2)
+    have hac : a < c := lt_min hab (by linarith)
+    have hcu : c < u := (min_le_right _ _).trans_lt (by linarith)
+    have hcIcc : c ∈ Icc a b := ⟨hac.le, min_le_left _ _⟩
+    -- Away from `a`, `|ψ i - L| ≤ M + |L|`, and `∫_c^b k_i = G i b - G i c → 0`.
+    have htail : Tendsto (fun i ↦ (M + |L|) * (G i b - G i c)) l (𝓝 0) := by
+      simpa using ((hlim b ⟨hab, le_rfl⟩).sub (hlim c ⟨hac, hcIcc.2⟩)).const_mul (M + |L|)
+    filter_upwards [htail.eventually (gt_mem_nhds (half_pos hε)), hpa, hM, hf, hfa, hderiv, hpos,
+      hψ, hjpos] with i hiM hia hiψ hfi hfai hderivi hposi hψi hji
+    rw [Real.dist_eq, sub_zero]
+    -- Near `a`, `|ψ i - L| ≤ ε / (4π)`.
+    refine (abs_integral_sub_mul_mul_div_mul_sqrt_sub_sq_le hfi hfai hderivi hposi hji hcIcc hψi
+      (η := ε / (4 * π)) (η' := M + |L|) (fun x hx ↦ ?_) fun x hx ↦ ?_).trans_lt ?_
+    · have := hp hia (hus ⟨hx.1, hx.2.trans_lt hcu⟩)
+      rw [Function.uncurry_apply_pair, Real.dist_eq] at this
+      exact this.le
+    · exact (abs_sub _ _).trans (by gcongr; exact hiψ x ⟨hac.le.trans hx.1, hx.2⟩)
+    · have : ε / (4 * π) * π = ε / 4 := by field_simp
+      simp only [hG] at hiM
+      linarith
+  -- The main term is `L ∫_a^b k_i = L G i b → π L`.
+  have hmain : Tendsto (fun i ↦ L * G i b + ∫ x in a..b, (ψ i x - L) * k i x) l
+      (𝓝 (π * L)) := by
+    simpa [mul_comm] using ((hlim b ⟨hab, le_rfl⟩).const_mul L).add herr
+  refine hmain.congr' ?_
+  filter_upwards [hf, hfa, hderiv, hpos, hψ, hjpos] with i hfi hfai hderivi hposi hψi hji
+  exact (integral_mul_mul_div_mul_sqrt_sub_sq_eq hfi hfai hderivi hposi hab.le hji hψi).symm
+
 /-- **Concentration of the kernel at `a`.** If `f` is continuous on `[a, b]`, vanishes at `a` and
 has positive derivative `f'` on `(a, b)`, then for every `ψ` continuous on `[a, b]`,
 `∫_a^b ψ(x) f'(x) j / (f(x) √(f(x) - j²)) dx → π ψ(a)` as `j → 0⁺`. -/
-theorem tendsto_integral_mul_mul_div_mul_sqrt_sub_sq (hab : a < b) {ψ : ℝ → ℝ}
-    (hψ : ContinuousOn ψ (Icc a b)) :
+theorem tendsto_integral_mul_mul_div_mul_sqrt_sub_sq {f f' : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a b)) (hfa : f a = 0)
+    (hderiv : ∀ x ∈ Ioo a b, HasDerivAt f (f' x) x) (hpos : ∀ x ∈ Ioo a b, 0 < f' x)
+    (hab : a < b) {ψ : ℝ → ℝ} (hψ : ContinuousOn ψ (Icc a b)) :
     Tendsto (fun j ↦ ∫ x in a..b, ψ x * (f' x * j / (f x * √(f x - j ^ 2))))
       (𝓝[>] 0) (𝓝 (π * ψ a)) := by
-  set k : ℝ → ℝ → ℝ := fun j x ↦ f' x * j / (f x * √(f x - j ^ 2)) with hk
-  set G : ℝ → ℝ → ℝ := fun j x ↦ 2 * arctan (√(f x - j ^ 2) / j) with hG
   have hmono := strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a b) hf
-      (fun x hx ↦ (hderiv x (by rwa [interior_Icc] at hx)).hasDerivWithinAt)
-      fun x hx ↦ hpos x (by rwa [interior_Icc] at hx)
-  have hlim : ∀ x ∈ Ioc a b, Tendsto (fun j ↦ G j x) (𝓝[>] 0) (𝓝 π) := fun x hx ↦
-    tendsto_two_mul_arctan_sqrt_sub_sq_div (by
-      rw [← hfa]; exact hmono ⟨le_rfl, hab.le⟩ (Ioc_subset_Icc_self hx) hx.1)
-  have haIcc : a ∈ Icc a b := ⟨le_rfl, hab.le⟩
-  have hbIcc : b ∈ Icc a b := ⟨hab.le, le_rfl⟩
-  have hint : ∀ j, 0 < j → ∀ x ∈ Icc a b, IntervalIntegrable (k j) volume a x :=
-    fun j hj x hx ↦ intervalIntegrable_mul_div_mul_sqrt_sub_sq hf hfa hderiv hpos hj hx
-  have hψsub : ContinuousOn (fun x ↦ ψ x - ψ a) (Icc a b) := hψ.sub continuousOn_const
-  -- The error term `∫ (ψ - ψ a) k_j` tends to `0`: split `[a, b]` at a point `c` close to `a`.
-  have herr : Tendsto (fun j ↦ ∫ x in a..b, (ψ x - ψ a) * k j x) (𝓝[>] 0) (𝓝 0) := by
-    rw [Metric.tendsto_nhds]
-    intro ε hε
-    obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hψsub
-    obtain ⟨δ, hδ, hδψ⟩ := Metric.continuousWithinAt_iff.1 (hψ a haIcc) (ε / (4 * π))
-      (by positivity)
-    set c := min b (a + δ / 2)
-    have hac : a < c := lt_min hab (by linarith)
-    have hcIcc : c ∈ Icc a b := ⟨hac.le, min_le_left _ _⟩
-    have htail : Tendsto (fun j ↦ M * (G j b - G j c)) (𝓝[>] 0) (𝓝 0) := by
-      simpa using ((hlim b ⟨hab, le_rfl⟩).sub (hlim c ⟨hac, hcIcc.2⟩)).const_mul M
-    filter_upwards [htail.eventually (gt_mem_nhds (half_pos hε)), self_mem_nhdsWithin]
-      with j hjM hj
-    rw [Set.mem_Ioi] at hj
-    have hint_ac := hint j hj c hcIcc
-    have hcont_ac : ContinuousOn (fun x ↦ ψ x - ψ a) (uIcc a c) := by
-      rw [uIcc_of_le hac.le]; exact hψsub.mono (Icc_subset_Icc_right hcIcc.2)
-    have hcont_cb : ContinuousOn (fun x ↦ ψ x - ψ a) (uIcc c b) := by
-      rw [uIcc_of_le hcIcc.2]; exact hψsub.mono (Icc_subset_Icc_left hac.le)
-    rw [← intervalIntegral.integral_add_adjacent_intervals (hint_ac.continuousOn_mul hcont_ac)
-      ((hint_ac.symm.trans (hint j hj b hbIcc)).continuousOn_mul hcont_cb), Real.dist_eq,
-      sub_zero]
-    -- Near `a`, `|ψ - ψ a| ≤ ε / (4π)`, and `∫_a^c k_j = G j c ≤ π`.
-    have h₁ := norm_integral_mul_mul_div_mul_sqrt_sub_sq_le hf hfa hderiv hpos
-      (g := fun x ↦ ψ x - ψ a) (η := ε / (4 * π)) hj haIcc hcIcc hac.le fun x hx ↦ by
-        rw [← Real.dist_eq]
-        refine (hδψ ⟨hx.1, hx.2.trans hcIcc.2⟩ ?_).le
-        rw [Real.dist_eq, abs_of_nonneg (sub_nonneg.2 hx.1)]
-        linarith [hx.2.trans (min_le_right b (a + δ / 2))]
-    -- Away from `a`, `|ψ - ψ a| ≤ M`, and `∫_c^b k_j = G j b - G j c → 0`.
-    have h₂ := norm_integral_mul_mul_div_mul_sqrt_sub_sq_le hf hfa hderiv hpos
-      (g := fun x ↦ ψ x - ψ a) (η := M) hj hcIcc hbIcc hcIcc.2 fun x hx ↦ by
-        simpa using hM x ⟨hac.le.trans hx.1, hx.2⟩
-    have hGa : 2 * arctan (√(f a - j ^ 2) / j) = 0 := by
-      simp [hfa, Real.sqrt_eq_zero', sq_nonneg]
-    rw [hGa, sub_zero, Real.norm_eq_abs] at h₁
-    rw [Real.norm_eq_abs] at h₂
-    have h₃ : ε / (4 * π) * (2 * arctan (√(f c - j ^ 2) / j)) ≤ ε / 4 := by
-      calc ε / (4 * π) * (2 * arctan (√(f c - j ^ 2) / j)) ≤ ε / (4 * π) * π := by
-            gcongr
-            linarith [arctan_lt_pi_div_two (√(f c - j ^ 2) / j)]
-        _ = ε / 4 := by field_simp
-    simp only [hk, hG] at hjM ⊢
-    exact (abs_add_le _ _).trans_lt (by linarith)
-  -- The main term is `ψ a ∫_a^b k_j = ψ a G j b → π ψ a`.
-  have hmain : Tendsto (fun j ↦ ψ a * G j b + ∫ x in a..b, (ψ x - ψ a) * k j x) (𝓝[>] 0)
-      (𝓝 (π * ψ a)) := by
-    simpa [mul_comm] using ((hlim b ⟨hab, le_rfl⟩).const_mul (ψ a)).add herr
-  refine hmain.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with j hj
-  rw [Set.mem_Ioi] at hj
-  have hintb := hint j hj b hbIcc
-  have hcont : ContinuousOn (fun x ↦ ψ x - ψ a) (uIcc a b) := by rwa [uIcc_of_le hab.le]
-  simp only [hk, hG]
-  rw [← integral_mul_div_mul_sqrt_sub_sq hf hfa hderiv hpos hj hbIcc,
-    ← intervalIntegral.integral_const_mul,
-    ← intervalIntegral.integral_add (hintb.const_mul _) (hintb.continuousOn_mul hcont)]
-  exact intervalIntegral.integral_congr fun x _ ↦ by simp only [hk]; ring
-
-end Kernel
+    (fun x hx ↦ (hderiv x (by rwa [interior_Icc] at hx)).hasDerivWithinAt)
+    fun x hx ↦ hpos x (by rwa [interior_Icc] at hx)
+  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hψ
+  refine tendsto_integral_mul_mul_div_mul_sqrt_sub_sq_of_tendsto (f := fun _ ↦ f)
+    (f' := fun _ ↦ f') (ψ := fun _ ↦ ψ) (j := id) hab (.of_forall fun _ ↦ hf)
+    (.of_forall fun _ ↦ hfa) (.of_forall fun _ ↦ hderiv) (.of_forall fun _ ↦ hpos)
+    (fun x hx ↦ ⟨f x, by rw [← hfa]; exact hmono ⟨le_rfl, hab.le⟩ (Ioc_subset_Icc_self hx) hx.1,
+      .of_forall fun _ ↦ le_rfl⟩) tendsto_id (.of_forall fun _ ↦ hψ)
+    ⟨M, .of_forall fun _ x hx ↦ hM x hx⟩ ?_
+  rw [← nhdsWithin_Icc_eq_nhdsGE hab]
+  exact (hψ a ⟨le_rfl, hab.le⟩).tendsto.comp tendsto_snd
 
 end TauCeti

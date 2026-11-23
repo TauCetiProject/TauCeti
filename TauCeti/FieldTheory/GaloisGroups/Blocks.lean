@@ -65,12 +65,12 @@ noncomputable def rootSetBlockMemOrderIsoOrbit (hp : Irreducible p)
     BlockMem p.Gal x ≃o
       BlockMem p.Gal
         (⟨(x : p.SplittingField), mem_orbit_self _⟩ : orbit p.Gal (x : p.SplittingField)) :=
-  let e := rootSetEquivOrbit hp x.2
+  let e := rootSetEquivOrbit hp x.property
   let he : e x =
       (⟨(x : p.SplittingField), mem_orbit_self _⟩ : orbit p.Gal (x : p.SplittingField)) :=
-    Subtype.ext (coe_rootSetEquivOrbit_apply hp x.2 x)
+    Subtype.ext (coe_rootSetEquivOrbit_apply hp x.property x)
   (blockMemOrderIsoCongr p.Gal e (fun g y ↦ by
-    simpa only [coe_rootSetToOrbit] using (rootSetToOrbit hp x.2).map_smul g y) x).trans
+    simpa only [coe_rootSetToOrbit] using (rootSetToOrbit hp x.property).map_smul g y) x).trans
     (Set.orderIsoOfEq {B | e x ∈ B ∧ IsBlock p.Gal B}
       {B | ⟨(x : p.SplittingField), mem_orbit_self _⟩ ∈ B ∧ IsBlock p.Gal B} (by rw [he]))
 
@@ -79,7 +79,7 @@ noncomputable def rootSetBlockMemOrderIsoOrbit (hp : Irreducible p)
 theorem coe_rootSetBlockMemOrderIsoOrbit_apply (hp : Irreducible p)
     (x : p.rootSet p.SplittingField) (B : BlockMem p.Gal x) :
     (rootSetBlockMemOrderIsoOrbit hp x B : Set (orbit p.Gal (x : p.SplittingField))) =
-      rootSetEquivOrbit hp x.2 '' (B : Set (p.rootSet p.SplittingField)) := by
+      rootSetEquivOrbit hp x.property '' (B : Set (p.rootSet p.SplittingField)) := by
   unfold rootSetBlockMemOrderIsoOrbit
   -- Adjusting the distinguished point preserves the underlying block.
   dsimp only [OrderIso.trans_apply, Set.orderIsoOfEq, Set.equivOfEq]
@@ -92,7 +92,7 @@ theorem coe_rootSetBlockMemOrderIsoOrbit_symm_apply (hp : Irreducible p)
     (B : BlockMem p.Gal
       (⟨(x : p.SplittingField), mem_orbit_self _⟩ : orbit p.Gal (x : p.SplittingField))) :
     ((rootSetBlockMemOrderIsoOrbit hp x).symm B : Set (p.rootSet p.SplittingField)) =
-      rootSetEquivOrbit hp x.2 ⁻¹' (B : Set (orbit p.Gal (x : p.SplittingField))) := by
+      rootSetEquivOrbit hp x.property ⁻¹' (B : Set (orbit p.Gal (x : p.SplittingField))) := by
   unfold rootSetBlockMemOrderIsoOrbit
   rw [OrderIso.symm_trans, OrderIso.trans_apply, coe_blockMemOrderIsoCongr_symm_apply]
   -- Adjusting the distinguished point preserves the underlying block.
@@ -112,11 +112,11 @@ noncomputable def rootBlockIntermediateFieldOrderIso
 theorem rootBlockIntermediateFieldOrderIso_apply
     (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) (B : BlockMem p.Gal x) :
-    ((rootBlockIntermediateFieldOrderIso hp hsep x B).ofDual.1 :
+    ((rootBlockIntermediateFieldOrderIso hp hsep x B).ofDual.val :
       IntermediateField F p.SplittingField) =
       FixedPoints.intermediateField (stabilizer p.Gal (B : Set (p.rootSet p.SplittingField))) := by
   let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
-  let e := rootSetEquivOrbit hp x.2
+  let e := rootSetEquivOrbit hp x.property
   have hstab : stabilizer p.Gal
       (rootSetBlockMemOrderIsoOrbit hp x B : Set (orbit p.Gal (x : p.SplittingField))) =
       stabilizer p.Gal (B : Set (p.rootSet p.SplittingField)) := by
@@ -124,7 +124,7 @@ theorem rootBlockIntermediateFieldOrderIso_apply
     ext g
     have himage : e '' (g • (B : Set (p.rootSet p.SplittingField))) =
         g • e '' (B : Set (p.rootSet p.SplittingField)) := by
-      simpa only [coe_rootSetToOrbit] using image_smul_set (rootSetToOrbit hp x.2) g
+      simpa only [coe_rootSetToOrbit] using image_smul_set (rootSetToOrbit hp x.property) g
         (B : Set (p.rootSet p.SplittingField))
     rw [mem_stabilizer_iff, mem_stabilizer_iff, ← himage]
     exact e.injective.image_injective.eq_iff
@@ -137,10 +137,10 @@ block's setwise stabilizer fixes it. -/
 theorem mem_rootBlockIntermediateFieldOrderIso_apply_iff
     (hp : Irreducible p) (hsep : p.Separable)
     (x : p.rootSet p.SplittingField) (B : BlockMem p.Gal x) (y : p.SplittingField) :
-    y ∈ (rootBlockIntermediateFieldOrderIso hp hsep x B).ofDual.1 ↔
+    y ∈ (rootBlockIntermediateFieldOrderIso hp hsep x B).ofDual.val ↔
       ∀ g ∈ stabilizer p.Gal (B : Set (p.rootSet p.SplittingField)), g • y = y := by
   rw [rootBlockIntermediateFieldOrderIso_apply, FixedPoints.mem_intermediateField_iff]
-  exact ⟨fun h g hg ↦ h ⟨g, hg⟩, fun h g ↦ h g g.2⟩
+  exact ⟨fun h g hg ↦ h ⟨g, hg⟩, fun h g ↦ h g g.property⟩
 
 /-- The block attached to an intermediate field consists of the roots of the chosen root's
 minimal polynomial over that field, viewed inside the polynomial's root set. -/
@@ -150,7 +150,7 @@ theorem coe_rootBlockIntermediateFieldOrderIso_symm_apply_eq_preimage_rootSet_mi
     (x : p.rootSet p.SplittingField) (E : Set.Iic F⟮(x : p.SplittingField)⟯) :
     (((rootBlockIntermediateFieldOrderIso hp hsep x).symm (OrderDual.toDual E)) :
       Set (p.rootSet p.SplittingField)) =
-      Subtype.val ⁻¹' (minpoly E.1 (x : p.SplittingField)).rootSet p.SplittingField := by
+      Subtype.val ⁻¹' (minpoly E.val (x : p.SplittingField)).rootSet p.SplittingField := by
   let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
   unfold rootBlockIntermediateFieldOrderIso
   rw [OrderIso.symm_trans, OrderIso.trans_apply,
@@ -168,11 +168,12 @@ theorem isPreprimitive_iff_isAtom_adjoin_simple
     IsPreprimitive p.Gal (p.rootSet p.SplittingField) ↔
       IsAtom F⟮(x : p.SplittingField)⟯ := by
   let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
-  let e := rootSetEquivOrbit hp x.2
+  let e := rootSetEquivOrbit hp x.property
   have hx : F⟮(x : p.SplittingField)⟯ ≠ ⊥ := by
-    rw [Ne, IntermediateField.adjoin_simple_eq_bot_iff_natDegree_eq_one hp (mem_rootSet.mp x.2).2]
+    rw [Ne, IntermediateField.adjoin_simple_eq_bot_iff_natDegree_eq_one hp
+        (mem_rootSet.mp x.property).2]
     exact hdeg.ne'
-  rw [isPreprimitive_congr (f := rootSetToOrbit hp x.2) Function.surjective_id
+  rw [isPreprimitive_congr (f := rootSetToOrbit hp x.property) Function.surjective_id
     (by simpa only [coe_rootSetToOrbit] using e.bijective)]
   exact isPreprimitive_orbit_iff_isAtom_adjoin_simple (G := p.Gal) _ hx
 
@@ -200,7 +201,7 @@ theorem isAtom_adjoin_simple_iff
     (isPreprimitive_iff_isAtom_adjoin_simple hp hsep hdeg x).mp hprim⟩
   have hdeg : 1 < p.natDegree := lt_of_le_of_ne hp.natDegree_pos fun hdeg ↦
     h.ne_bot ((IntermediateField.adjoin_simple_eq_bot_iff_natDegree_eq_one hp
-      (mem_rootSet.mp x.2).2).mpr hdeg.symm)
+      (mem_rootSet.mp x.property).2).mpr hdeg.symm)
   exact ⟨hdeg, (isPreprimitive_iff_isAtom_adjoin_simple hp hsep hdeg x).mpr h⟩
 
 /-- An irreducible separable polynomial of prime degree has a primitive Galois action on its

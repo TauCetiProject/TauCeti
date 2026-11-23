@@ -44,10 +44,10 @@ unfolded by hand.
 * `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
   alike on `ℍ`.
 * `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
-  `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action of the underlying matrix, the `SL(2, ℝ)`
-  counterpart of Mathlib's `ModularGroup.sl_moeb`.
+  `SL(2, ℝ)`- and `SL(2, R)`-actions on `ℍ` agree with the `GL(2, ℝ)`-action of the underlying
+  matrix, generalizing Mathlib's `ModularGroup.sl_moeb`.
 * `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
-  `SL(2, ℝ)`-action.
+  `SL(2, R)`-action.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
   `SL(2, ℝ)` for which a function satisfies the weight-`k` transformation law on all of `ℍ` form a
   subgroup, so that the law need only be checked on generators.
@@ -104,20 +104,23 @@ theorem _root_.Matrix.SpecialLinearGroup.toGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
     simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
   rw [MulAction.compHom_smul_def, h]
 
-/-- The `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action of its image under
+/-- The `SL(2, R)`-action on `ℍ` is the `GL(2, ℝ)`-action of its image under
 `Matrix.SpecialLinearGroup.mapGL`. -/
-theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
+theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul {R : Type*} [CommRing R] [Algebra R ℝ]
+    (g : SL(2, R)) (τ : ℍ) :
     Matrix.SpecialLinearGroup.mapGL ℝ g • τ = g • τ :=
   (MulAction.compHom_smul_def _ _ _).symm
 
-/-- The automorphy factor is a cocycle for the `SL(2, ℝ)`-action on `ℍ`:
+/-- The automorphy factor is a cocycle for the `SL(2, R)`-action on `ℍ`:
 `denom (a * b) τ = denom a (b • τ) * denom b τ`. -/
-theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_mul (a b : SL(2, ℝ)) (τ : ℍ) :
+theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_mul {R : Type*} [CommRing R] [Algebra R ℝ]
+    (a b : SL(2, R)) (τ : ℍ) :
     denom (Matrix.SpecialLinearGroup.mapGL ℝ (a * b)) τ =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ a) ((b • τ : ℍ) : ℂ) *
         denom (Matrix.SpecialLinearGroup.mapGL ℝ b) τ := by
-  rw [map_mul, denom_cocycle_σ, σ_eq_refl_of_det_pos (by simp), ContinuousAlgEquiv.refl_apply,
-    Matrix.SpecialLinearGroup.mapGL_smul]
+  rw [map_mul, denom_cocycle_σ,
+    σ_eq_refl_of_det_pos (by rw [← Matrix.GeneralLinearGroup.val_det_apply]; simp),
+    ContinuousAlgEquiv.refl_apply, Matrix.SpecialLinearGroup.mapGL_smul]
 
 /-- The orientation-reversing involution `J : z ↦ -conj z` negates the real part. -/
 @[simp]
@@ -341,7 +344,7 @@ theorem denom_mapGL_STS_inv_pow (r : ℕ) (z : ℍ) :
       Matrix.SpecialLinearGroup.coe_neg, coe_S, coe_T_zpow]
     norm_num [Matrix.mul_apply, Fin.sum_univ_two]
   rw [hg, denom, mapGL_coe_matrix, map_apply_coe]
-  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, h10, h11]
+  simp only [Matrix.map_apply, h10, h11]
   simp [algebraMap_int_eq]
 
 open Matrix.SpecialLinearGroup in

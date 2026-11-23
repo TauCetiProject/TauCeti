@@ -217,7 +217,7 @@ variable {M N P}
 has the same underlying map. -/
 @[simp]
 theorem coe_homLinearEquivDGCycles_apply (f : M ⟶ N) (x : M) :
-    (dgHomLinearEquivCochains M N 0 (homLinearEquivDGCycles M N f)).1.1 x = f x := by
+    (dgHomLinearEquivCochains M N 0 (homLinearEquivDGCycles M N f)).val.val x = f x := by
   simp only [homLinearEquivDGCycles, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
     LinearEquiv.ofSubmodule'_symm_apply, LinearEquiv.apply_symm_apply]
   exact dgBimoduleHomLinearEquivZeroCocycles_apply M.isDGBimodule N.isDGBimodule f x
@@ -227,7 +227,7 @@ has the same underlying map. -/
 @[simp]
 theorem homLinearEquivDGCycles_symm_apply (f : dgCycles R M N) (x : M) :
     (homLinearEquivDGCycles M N).symm f x =
-      (dgHomLinearEquivCochains M N 0 f).1.1 x := by
+      (dgHomLinearEquivCochains M N 0 f).val.val x := by
   simpa only [LinearEquiv.apply_symm_apply] using
     (coe_homLinearEquivDGCycles_apply ((homLinearEquivDGCycles M N).symm f) x).symm
 
