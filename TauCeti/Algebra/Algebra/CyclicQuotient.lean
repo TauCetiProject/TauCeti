@@ -36,6 +36,8 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
   scalars.
 * `TauCeti.mul_mem_commutatorSubmodule_comm`: a product is a sum of commutators exactly when its
   rotation is.
+* `TauCeti.commutatorSubmodule_induction`: induction on membership in the commutator submodule,
+  with cases for the additive commutators, sums and scalar multiples.
 * `TauCeti.commutatorSubmodule_le_iff`: the commutator submodule lies in a submodule exactly
   when every additive commutator `x * y - y * x` does.
 * `TauCeti.commutatorSubmodule_le_ker_iff`: a linear map kills the commutator submodule exactly
@@ -77,6 +79,25 @@ theorem mul_sub_mul_mem_commutatorSubmodule (x y : A) :
   Submodule.subset_span ⟨(x, y), rfl⟩
 
 variable {k A} in
+/-- **Induction on the commutator submodule**: a property of elements of the commutator submodule
+holds for all of them if it holds for every additive commutator `x * y - y * x` and is preserved
+by sums and scalar multiples.  No case for `0` is needed, as `0 = 0 * 0 - 0 * 0`. -/
+@[elab_as_elim]
+theorem commutatorSubmodule_induction {p : (x : A) → x ∈ commutatorSubmodule k A → Prop}
+    (mem : ∀ x y : A, p (x * y - y * x) (mul_sub_mul_mem_commutatorSubmodule k A x y))
+    (add : ∀ x y hx hy, p x hx → p y hy → p (x + y) (add_mem hx hy))
+    (smul : ∀ (r : k) (x) (hx), p x hx → p (r • x) (Submodule.smul_mem _ r hx))
+    {x : A} (hx : x ∈ commutatorSubmodule k A) : p x hx := by
+  -- `commutatorSubmodule k A` is by definition the span of the additive commutators
+  induction hx using Submodule.span_induction with
+  | mem z hz =>
+    obtain ⟨⟨a, b⟩, rfl⟩ := hz
+    exact mem a b
+  | zero => simpa using mem 0 0
+  | add y z hy hz py pz => exact add y z hy hz py pz
+  | smul r y hy py => exact smul r y hy py
+
+variable {k A} in
 /-- The commutator submodule lies in a submodule `S` exactly when every additive commutator
 `x * y - y * x` lies in `S`. -/
 theorem commutatorSubmodule_le_iff {S : Submodule k A} :
@@ -92,7 +113,7 @@ theorem neg_mem_commutatorSubmodule {x : A} (hx : x ∈ commutatorSubmodule k A)
   -- negation, as a `k`-linear map, sends each spanning commutator to a commutator
   have hle : commutatorSubmodule k A ≤ (commutatorSubmodule k A).comap (-LinearMap.id) :=
     commutatorSubmodule_le_iff.2 fun x y => by simp
-  simpa using hle hx
+  simpa only [LinearMap.neg_apply, LinearMap.id_apply] using Submodule.mem_comap.1 (hle hx)
 
 variable {k A} in
 /-- The commutator submodule is closed under integer multiples even when `k` is only a
@@ -123,15 +144,23 @@ theorem mul_mem_commutatorSubmodule_comm {x y : A} :
 
 variable {k A} in
 /-- A linear map kills the commutator submodule exactly when it is invariant under exchanging the
-two factors of a product.  The target need only be an additive monoid. -/
+two factors of a product.  The target may be any `k`-module whose additive structure is a
+commutative monoid: additive inverses are not needed. -/
 theorem commutatorSubmodule_le_ker_iff {M : Type*} [AddCommMonoid M] [Module k M]
     (f : A →ₗ[k] M) :
     commutatorSubmodule k A ≤ LinearMap.ker f ↔ ∀ x y : A, f (x * y) = f (y * x) := by
   refine commutatorSubmodule_le_iff.trans (forall₂_congr fun x y => ?_)
   rw [LinearMap.mem_ker]
   constructor <;> intro h
-  · rw [← sub_add_cancel (x * y) (y * x), map_add, h, zero_add]
-  · rw [sub_eq_add_neg, map_add, h, ← map_add, add_neg_cancel, map_zero]
+  · -- add back `f (y * x)` to the vanishing value `f (x * y - y * x)`
+    calc f (x * y) = f (x * y - y * x + y * x) := by rw [sub_add_cancel]
+      _ = f (x * y - y * x) + f (y * x) := map_add f _ _
+      _ = f (y * x) := by rw [h, zero_add]
+  · -- replace `f (x * y)` by `f (y * x)`; the result is `f (y * x - y * x) = f 0`
+    calc f (x * y - y * x) = f (x * y) + f (-(y * x)) := by rw [sub_eq_add_neg, map_add]
+      _ = f (y * x) + f (-(y * x)) := by rw [h]
+      _ = f (y * x - y * x) := by rw [← map_add, ← sub_eq_add_neg]
+      _ = 0 := by simp
 
 variable {k A} in
 /-- A multiplicative linear map, such as an algebra homomorphism, carries the commutator submodule
@@ -141,7 +170,7 @@ theorem map_mem_commutatorSubmodule {B F : Type*} [NonUnitalNonAssocRing B] [Mod
     (hx : x ∈ commutatorSubmodule k A) : f x ∈ commutatorSubmodule k B := by
   have hle : commutatorSubmodule k A ≤ (commutatorSubmodule k B).comap (f : A →ₗ[k] B) :=
     commutatorSubmodule_le_iff.2 fun x y => by simp
-  exact hle hx
+  simpa only [LinearMap.coe_ofClass] using Submodule.mem_comap.1 (hle hx)
 
 variable {k A} in
 /-- A non-unital ring homomorphism carries the commutator submodule over `k` into the commutator
@@ -152,15 +181,13 @@ theorem map_mem_commutatorSubmodule_of_ringHom {l B F : Type*} [Semiring l]
     [FunLike F A B] [NonUnitalRingHomClass F A B] (f : F) {x : A}
     (hx : x ∈ commutatorSubmodule k A) : f x ∈ commutatorSubmodule l B := by
   suffices ∀ r : k, f (r • x) ∈ commutatorSubmodule l B by simpa using this 1
-  induction hx using Submodule.span_induction with
-  | mem z hz =>
-    obtain ⟨⟨a, b⟩, rfl⟩ := hz
+  induction hx using commutatorSubmodule_induction with
+  | mem a b =>
     intro r
     have hr : r • (a * b - b * a) = (r • a) * b - b * (r • a) := by
       rw [smul_sub, smul_mul_assoc, mul_smul_comm]
     rw [hr, map_sub, map_mul, map_mul]
     exact mul_sub_mul_mem_commutatorSubmodule l B (f (r • a)) (f b)
-  | zero => intro _; simp
   | add y z _ _ hy hz => intro r; rw [smul_add, map_add]; exact add_mem (hy r) (hz r)
   | smul s y _ hy => intro r; rw [smul_smul]; exact hy (r * s)
 

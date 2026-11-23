@@ -11,10 +11,11 @@ public import TauCeti.Algebra.Algebra.CyclicQuotient
 /-!
 # Matrix traces vanish on the commutator submodule
 
-The trace of a finite square matrix is invariant under exchanging the two factors of a product.
-Hence the trace of a matrix representation kills the commutator submodule
-`TauCeti.commutatorSubmodule`, and a representation in which an element has nonzero trace shows
-that the element's class in the cyclic quotient `A / [A, A]` is nonzero.
+The trace of a finite square matrix whose entries form an additive commutative monoid with a
+commutative multiplication is invariant under exchanging the two factors of a product.  Hence the
+trace of a multiplicative `k`-linear map `f` to such matrices kills the commutator submodule
+`TauCeti.commutatorSubmodule` over `k`, and an element `x` with `(f x).trace ≠ 0` has nonzero
+class in the cyclic quotient `A / [A, A]`.
 
 ## Main results
 
