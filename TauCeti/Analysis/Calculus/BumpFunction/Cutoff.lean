@@ -460,7 +460,7 @@ private theorem exists_cutoffs_shift [NormedSpace ℝ E] {L V : ℕ → Set E} {
 nonnegative, telescope to `eta' N`, and have support in `V (j + 1)` away from `L (j - 1)`. -/
 private theorem exists_telescoping_cutoff_differences [NormedSpace ℝ E] {L V : ℕ → Set E}
     {eta' : ℕ → E → ℝ}
-    (hL0 : L 0 = ∅) (hVL : ∀ n, V n ⊆ L n) (hVmono : Monotone V)
+    (hL0 : L 0 = ∅) (hVL : ∀ n, V n ⊆ L n)
     (heta'0 : eta' 0 = 0) (heta'_smooth : ∀ n, ContDiff ℝ ∞ (eta' n))
     (heta'_cpt : ∀ n, HasCompactSupport (eta' n)) (heta'_range : ∀ n x, eta' n x ∈ Icc (0 : ℝ) 1)
     (heta'_ts : ∀ n, tsupport (eta' n) ⊆ V n)
@@ -471,9 +471,12 @@ private theorem exists_telescoping_cutoff_differences [NormedSpace ℝ E] {L V :
   have one_of_mem : ∀ {f : E → ℝ} {y : E}, y ∈ interior (f ⁻¹' {1}) → f y = 1 := fun h => by
     simpa only [mem_preimage, mem_singleton_iff] using interior_subset h
   let zeta : ℕ → E → ℝ := fun j x => eta' (j + 1) x - eta' j x
+  -- `eta' (j + 1) = 1` on `V j ⊆ L j`, so `tsupport (eta' j) ⊆ tsupport (eta' (j + 1))`
   have hzeta_ts : ∀ j, tsupport (zeta j) ⊆ V (j + 1) := fun j =>
-    (tsupport_sub _ _).trans
-      (union_subset (heta'_ts (j + 1)) ((heta'_ts j).trans (hVmono j.le_succ)))
+    (tsupport_sub _ _).trans <| union_subset (heta'_ts (j + 1)) fun x hx =>
+      heta'_ts (j + 1) <| subset_tsupport _ <| by
+        rw [mem_support, one_of_mem (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))]
+        exact one_ne_zero
   -- `zeta j` vanishes near `L (j - 1)`, where both cutoffs equal one
   have hzeta_L : ∀ j, ∀ x ∈ L (j - 1), x ∉ tsupport (zeta j) := fun j x hx => by
     cases j with
@@ -531,7 +534,6 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtypeVal _ isOpen_interior
   have hVL : ∀ n, V n ⊆ L n := fun n => image_mono interior_subset
   have hLmono : Monotone L := fun m n hmn => image_mono (K.subset hmn)
-  have hVmono : Monotone V := fun m n hmn => image_mono (interior_mono (K.subset hmn))
   have hVsub : ∀ n, V n ⊆ U := fun n => by
     rintro _ ⟨y, -, rfl⟩
     exact y.property
@@ -546,7 +548,7 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   obtain ⟨eta', heta'0, heta'_smooth, heta'_cpt, heta'_range, heta'_ts, heta'_one⟩ :=
     exists_cutoffs_shift (L := L) (V := V) heta heta_range heta_one heta_cpt heta_ts hLmono
   obtain ⟨zeta, hzeta_smooth, hzeta_cpt, hU, hzeta_nonneg, hsum⟩ :=
-    exists_telescoping_cutoff_differences hL0 hVL hVmono heta'0 heta'_smooth heta'_cpt
+    exists_telescoping_cutoff_differences hL0 hVL heta'0 heta'_smooth heta'_cpt
       heta'_range heta'_ts heta'_one
   -- cutoffs equal to one on `tsupport (zeta j)` and supported away from `L (j - 1)`
   choose chi hchi_smooth _ hchi_one hchi_cpt hchi_ts using fun j =>
@@ -957,19 +959,23 @@ variable {G : Type*} [NormedSpace ℝ E] [NormedAddCommGroup G]
 
 /-- **Cutoff derivative against decaying data.** Let `χ` equal `1` on the closed ball of radius
 `R` about the origin and `0` outside radius `2 R`, with `‖Dχ‖ ≤ A`. If `‖x‖ ‖u x‖ ≤ M` for
-`‖x‖ ≥ R`, then `‖Dχ‖ ‖u‖` is at most `A (M / R)` on the closed ball of radius `2 R` and vanishes
-outside it. -/
-theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M : ℝ} (hR : 0 < R)
+`R ≤ ‖x‖ ≤ 2 R`, then `‖Dχ‖ ‖u‖` is at most `A (M / R)` on the closed ball of radius `2 R` and
+vanishes outside it. -/
+theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M : ℝ}
     (hM : 0 ≤ M) (hχ1 : ∀ x ∈ closedBall (0 : E) R, χ x = 1)
     (hχ0 : ∀ x, 2 * R < dist x 0 → χ x = 0) (hA : ∀ x, ‖fderiv ℝ χ x‖ ≤ A)
-    (hu : ∀ x : E, R ≤ ‖x‖ → ‖x‖ * ‖u x‖ ≤ M) (x : E) :
+    (hu : ∀ x : E, R ≤ ‖x‖ → ‖x‖ ≤ 2 * R → ‖x‖ * ‖u x‖ ≤ M) (x : E) :
     ‖fderiv ℝ χ x‖ * ‖u x‖ ≤ (closedBall (0 : E) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := by
   have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 0)
   -- Off the annulus `R ≤ ‖x‖ ≤ 2 R` the cutoff is locally constant, so `Dχ x = 0`.
   have hzero : fderiv ℝ χ x = 0 → ‖fderiv ℝ χ x‖ * ‖u x‖ ≤
       (closedBall (0 : E) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := fun h ↦ by
     rw [h, norm_zero, zero_mul]
-    exact Set.indicator_nonneg (fun _ _ ↦ by positivity) x
+    by_cases hx : x ∈ closedBall (0 : E) (2 * R)
+    · have : 0 ≤ R := by linarith [mem_closedBall_zero_iff.1 hx, norm_nonneg x]
+      rw [Set.indicator_of_mem hx]
+      positivity
+    · rw [Set.indicator_of_notMem hx]
   rcases lt_or_ge ‖x‖ R with hx | hx
   · refine hzero ?_
     have hev : χ =ᶠ[𝓝 x] fun _ ↦ (1 : ℝ) := by
@@ -985,11 +991,29 @@ theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M 
       exact hχ0 y hy
     rw [hev.fderiv_eq, fderiv_const_apply]
   rw [Set.indicator_of_mem (mem_closedBall_zero_iff.2 hx')]
+  have hR0 : 0 ≤ R := by linarith [norm_nonneg x]
+  rcases hR0.eq_or_lt with rfl | hR
+  · -- `R = 0`: the cutoff is `1` at the origin and `0` elsewhere, so it has no derivative there
+    rw [div_zero, mul_zero]
+    have hx0 : x = 0 := norm_le_zero_iff.1 (by linarith)
+    subst hx0
+    have : fderiv ℝ χ 0 = 0 := by
+      rcases subsingleton_or_nontrivial E with hE | hE
+      · exact ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]
+      · refine fderiv_zero_of_not_differentiableAt fun hd ↦ ?_
+        have h1 : Filter.Tendsto χ (𝓝[≠] (0 : E)) (𝓝 (χ 0)) :=
+          hd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+        have h0 : Filter.Tendsto χ (𝓝[≠] (0 : E)) (𝓝 0) :=
+          tendsto_const_nhds.congr' <| eventually_nhdsWithin_of_forall fun y hy ↦
+            (hχ0 y (by simpa using mem_compl_singleton_iff.1 hy)).symm
+        have := tendsto_nhds_unique h1 h0
+        simp [hχ1 0 (mem_closedBall_self le_rfl)] at this
+    simp [this]
   have hux : ‖u x‖ ≤ M / R := by
     rw [le_div_iff₀ hR]
     calc ‖u x‖ * R ≤ ‖u x‖ * ‖x‖ := by gcongr
       _ = ‖x‖ * ‖u x‖ := mul_comm _ _
-      _ ≤ M := hu x hx
+      _ ≤ M := hu x hx hx'
   exact mul_le_mul (hA x) hux (norm_nonneg _) hA0
 
 end CutoffDecay
@@ -1001,20 +1025,21 @@ namespace ContDiffBump
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The space-time cut-off `(t, x) ↦ χ (s • x) * φ (t, x)` of a function vanishing outside the time
-interval `(a, b)` has compact support, as soon as `χ` vanishes outside `ball 0 (s * R)`. -/
+interval `(a, b)` has compact support, for every nonzero scale `s`. -/
 theorem hasCompactSupport_cutoff_mul [FiniteDimensional ℝ E] {a b : ℝ} {φ : ℝ × E → ℝ}
-    (χ : ContDiffBump (0 : E)) {s R : ℝ} (hs : 0 < s) (hR : χ.rOut ≤ s * R)
+    (χ : ContDiffBump (0 : E)) {s : ℝ} (hs : s ≠ 0)
     (hzero : ∀ q : ℝ × E, q.1 ∉ Ioo a b → φ q = 0) :
     HasCompactSupport fun q : ℝ × E ↦ χ (s • q.2) * φ q := by
+  have hs' : 0 < ‖s‖ := norm_pos_iff.2 hs
   refine HasCompactSupport.intro ((isCompact_Icc (a := a) (b := b)).prod
-    (isCompact_closedBall (0 : E) R)) fun q hq ↦ ?_
+    (isCompact_closedBall (0 : E) (χ.rOut / ‖s‖))) fun q hq ↦ ?_
   by_cases ht : q.1 ∈ Icc a b
-  · have hx : R < ‖q.2‖ := by
+  · have hx : χ.rOut / ‖s‖ < ‖q.2‖ := by
       by_contra hle
       exact hq ⟨ht, by simpa using not_lt.1 hle⟩
     have : χ (s • q.2) = 0 := χ.zero_of_le_dist <| by
-      rw [dist_zero_right, norm_smul, Real.norm_of_nonneg hs.le]
-      exact hR.trans (mul_le_mul_of_nonneg_left hx.le hs.le)
+      rw [dist_zero_right, norm_smul]
+      exact ((div_lt_iff₀ hs').1 hx).le.trans_eq (mul_comm _ _)
     simp [this]
   · simp [hzero q fun h ↦ ht (Ioo_subset_Icc_self h)]
 
