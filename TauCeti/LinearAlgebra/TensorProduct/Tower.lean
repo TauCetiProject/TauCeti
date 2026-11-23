@@ -163,7 +163,9 @@ theorem Submodule.map_cancelBaseChange_baseChange_baseChange {R K M : Type*} [Co
   conv_rhs => rw [← N.span_eq]
   rw [baseChange_span, baseChange_span, baseChange_span, map_span, Set.image_image,
     Set.image_image]
-  simp
+  simp only [mk_apply, LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_tmul, one_smul]
+  -- both sides are spanned by the `1 ⊗ₜ x` for `x ∈ N`; on the right the map `x ↦ 1 ⊗ₜ x` is
+  -- still written `TensorProduct.mk R A M 1`, which is this function by definition
   rfl
 
 /-- Base change preserves left inverses: if `f ∘ₗ g = id`, then `f.baseChange A` is a left

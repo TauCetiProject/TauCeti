@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Weight
-public import TauCeti.Algebra.AlgebraicGroup.Representation.StabilizerBaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.BaseChange
 public import TauCeti.Geometry.Hodge.Decomposition
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 

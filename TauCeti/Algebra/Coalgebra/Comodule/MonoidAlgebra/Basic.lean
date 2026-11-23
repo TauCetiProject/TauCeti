@@ -600,6 +600,8 @@ theorem _root_.Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace (N : Submod
     let _ : Comodule R (MonoidAlgebra R G) N' := Subcomodule.instComodule N'
     have h := congrArg (Submodule.map (SMulMemClass.subtype N')) (iSup_weightSpace_eq_top R G N')
     simp only [weightSpace_subcomodule, Submodule.map_iSup] at h
+    -- the inclusion `SMulMemClass.subtype N'` of the subcomodule `N'` with carrier `N` is
+    -- `N.subtype` by definition
     change ⨆ g, Submodule.map N.subtype ((weightSpace R G V g).comap N.subtype) =
       Submodule.map N.subtype ⊤ at h
     simpa only [Submodule.map_comap_subtype, Submodule.map_subtype_top] using h.symm
@@ -610,6 +612,7 @@ theorem _root_.Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace (N : Submod
       (fun g w hw ↦ ?_) (by simp) fun x y hx hy ↦ by simpa using add_mem hx hy
     refine ⟨⟨w, hw.1⟩ ⊗ₜ MonoidAlgebra.single g 1, ?_⟩
     rw [mem_weightSpace.mp hw.2, TensorProduct.map_tmul]
+    -- `N.subtype ⟨w, hw.1⟩` is `w` by definition (`Submodule.subtype_apply`)
     rfl
 
 variable (R G V)
