@@ -26,16 +26,17 @@ As an `R`-module, `R[ε][ε]` is free of rank four on the basis `{1, inl ε, ε,
 coordinate `z.snd.snd` of `r • (inl ε * ε)` recovers `r` without zero-divisor or characteristic
 hypotheses on `R`.
 
-Evaluating `MvPolynomial (Fin 2) R` at `![inl ε, ε]` has kernel `(X 0 ^ 2, X 1 ^ 2)`
-(`TauCeti.ker_aeval_inl_eps_eps`), yielding over a commutative ring `R` the presentation
-`R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]`
+Over a commutative semiring `R`, evaluating `MvPolynomial (Fin 2) R` at `![inl ε, ε]` has kernel
+`(X 0 ^ 2, X 1 ^ 2)` (`TauCeti.ker_aeval_inl_eps_eps`). Over a commutative ring `R`, this yields
+the presentation `R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]`
 (`TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv`).
 
 ## Main definitions
 
 * `TauCeti.iteratedDualNumberBasis`: the `R`-module basis `{1, inl ε, ε, ε • ε}` of `R[ε][ε]`
-  indexed by `Fin 2 × Fin 2`.
-* `TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv`: the `R`-algebra equivalence
+  indexed by `Fin 2 × Fin 2` (for a semiring `R`).
+* `TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv`: for a commutative ring `R`, the
+  `R`-algebra equivalence
   `MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 ^ 2, X 1 ^ 2} ≃ₐ[R] R[ε][ε]`.
 
 ## Main results
@@ -44,8 +45,8 @@ Evaluating `MvPolynomial (Fin 2) R` at `![inl ε, ε]` has kernel `(X 0 ^ 2, X 1
   `inl ε * ε = ε • ε` in `R[ε][ε]`.
 * `TauCeti.finrank_iteratedDualNumber`: `Module.finrank R R[ε][ε] = 4` under
   `StrongRankCondition R`.
-* `TauCeti.ker_aeval_inl_eps_eps`: the kernel of `MvPolynomial.aeval ![inl ε, ε]` is
-  `Ideal.span {X 0 ^ 2, X 1 ^ 2}`.
+* `TauCeti.ker_aeval_inl_eps_eps`: over a commutative semiring `R`, the kernel of
+  `MvPolynomial.aeval ![inl ε, ε]` is `Ideal.span {X 0 ^ 2, X 1 ^ 2}`.
 -/
 
 public section
@@ -238,15 +239,19 @@ section MvPolynomial
 
 variable {R : Type*} [CommSemiring R]
 
+private theorem aeval_inl_eps_eps_repr (z : R[ε][ε]) :
+    MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])]
+        (MvPolynomial.C z.fst.fst + MvPolynomial.C z.fst.snd * MvPolynomial.X 0 +
+          MvPolynomial.C z.snd.fst * MvPolynomial.X 1 +
+          MvPolynomial.C z.snd.snd * MvPolynomial.X 0 * MvPolynomial.X 1) = z := by
+  ext <;> simp [algebraMap_eq_inl']
+
 /-- Evaluating bivariate polynomials over `R` at `![inl ε, ε]` is surjective onto `R[ε][ε]`. -/
 theorem aeval_inl_eps_eps_surjective :
     Function.Surjective
       (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] :
         MvPolynomial (Fin 2) R →ₐ[R] R[ε][ε]) :=
-  fun z ↦ ⟨MvPolynomial.C z.fst.fst + MvPolynomial.C z.fst.snd * MvPolynomial.X 0 +
-    MvPolynomial.C z.snd.fst * MvPolynomial.X 1 +
-    MvPolynomial.C z.snd.snd * MvPolynomial.X 0 * MvPolynomial.X 1, by
-    ext <;> simp [algebraMap_eq_inl']⟩
+  fun z ↦ ⟨_, aeval_inl_eps_eps_repr z⟩
 
 /-- Evaluating bivariate polynomials over `R` at `![inl ε, ε]` in `R[ε][ε]` has kernel
 `(X 0 ^ 2, X 1 ^ 2)`. -/
@@ -371,8 +376,8 @@ theorem _root_.DualNumber.iteratedDualNumberMvPolynomialQuotientAlgEquiv_symm_ap
         (MvPolynomial.C z.fst.fst + MvPolynomial.C z.fst.snd * MvPolynomial.X 0 +
           MvPolynomial.C z.snd.fst * MvPolynomial.X 1 +
           MvPolynomial.C z.snd.snd * MvPolynomial.X 0 * MvPolynomial.X 1) := by
-  rw [AlgEquiv.symm_apply_eq, MvPolynomial.iteratedDualNumberMvPolynomialQuotientAlgEquiv_mk]
-  ext <;> simp [algebraMap_eq_inl']
+  rw [AlgEquiv.symm_apply_eq, MvPolynomial.iteratedDualNumberMvPolynomialQuotientAlgEquiv_mk,
+    aeval_inl_eps_eps_repr]
 
 end MvPolynomialQuotient
 
