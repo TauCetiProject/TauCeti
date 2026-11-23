@@ -56,14 +56,13 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCommGroup EY]
   [NormedSpace 𝕜 EY] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 EY H}
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y] [T2Space Y] [LocallyCompactSpace Y]
-  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace 𝕜 E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
   (hinj : ∀ y, Function.Injective (P y)) {n : ℕ∞ω} [IsManifold I n Y]
   (hP : ∀ l, ContMDiff I 𝓘(𝕜, E) n fun y ↦ P y l)
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- Fibrewise translation is jointly `C^n` for the quotient manifold structure of a `C^n`
 family of full lattices. For holomorphic periods over `ℂ`, it is jointly holomorphic. -/
 theorem contMDiffVAdd_torusFamilyTranslationAddAction :
@@ -89,7 +88,6 @@ variable {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The affine map of `g` is `C^n` if its linear-part evaluation and its torus-valued translation
 section are `C^n`. No global vector-space lift of the section is needed. -/
 theorem contMDiff_torusFamilyAffineMap {g : Γ}
@@ -115,7 +113,6 @@ variable (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- A `C^n` affine cocycle acts by `C^n` maps on the torus family. For a group, this class
 also supplies `C^n` inverses through `Diffeomorph.constSmul`; over `ℂ` with holomorphic data,
 these are biholomorphisms. Neither a free base action nor global vector lifts are required. -/
@@ -182,7 +179,6 @@ noncomputable def torusFamilyAffineQuotientChartedSpace (hcont : ∀ l, Continuo
   haveI := hfree
   MulAction.instChartedSpaceQuotient (H := ModelProd H E)
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The inverse of a chart of the quotient atlas on `X / Γ` is the inverse of a chart of the
 family `X` followed by the orbit map `X → X / Γ`. -/
 theorem exists_symm_eq_mk_of_mem_atlas_torusFamilyAffineQuotient
@@ -228,7 +224,6 @@ variable (hR : ∀ g : Γ, ContMDiff (I.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun 
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The orbit map `X → X / Γ` of a free `C^n` affine action is a `C^n` local diffeomorphism, and
 `X / Γ` is a `C^n` manifold. -/
 private theorem isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold :
@@ -258,7 +253,6 @@ private theorem isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold :
     hbmul hR hbc
   exact ⟨isLocalDiffeomorph_quotientMk, instIsManifoldQuotient⟩
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The quotient by a free affine action is a manifold.** Let `Γ` act properly discontinuously
 on `Y`, and freely on the family of tori `X = (Y × E)/Λ` of a `C^n` family of full lattices by an
 affine cocycle with `C^n` linear-part evaluations and translation sections. Then the orbit space
@@ -276,7 +270,6 @@ theorem isManifold_torusFamilyAffineQuotient :
   (isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
     hmul hbmul hR hbc hfree).2
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The orbit map of a free affine action is a local diffeomorphism.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyAffineQuotient`, the orbit map `X → X / Γ` is a `C^n` local
 diffeomorphism. Over `ℂ` with holomorphic data and `n = ω`, it is a local biholomorphism. -/

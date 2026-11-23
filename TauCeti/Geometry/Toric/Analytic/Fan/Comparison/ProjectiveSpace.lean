@@ -79,7 +79,7 @@ homogeneous coordinates with `X_k = 1`. -/
 theorem coe_ofAffinePoint_projectiveSpaceMaximalCone_comp_projectiveSpaceToProj
     (k : Option (Fin n))
     (x : AffineSemigroupComplexPoint (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ))) :
-    (ofAffinePoint (projectiveSpaceMaximalCone b hi k) x).1 ≫ projectiveSpaceToProj b hi =
+    (ofAffinePoint (projectiveSpaceMaximalCone b hi k) x).val ≫ projectiveSpaceToProj b hi =
       Spec.map (CommRingCat.ofHom
           (x.comp (projectiveSpaceAwayEquiv b hi k).toAlgHom).toRingHom) ≫
         Proj.awayι 𝒜 (X k) (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos := by
@@ -97,7 +97,7 @@ the complex point of `D₊(X_k)` given by `φ` is the point of the chart of the 
 theorem eq_ofAffinePoint_of_comp_projectiveSpaceToProj_eq
     {p : (projectiveSpace b hi).AlgebraicComplexPoint} {k : Option (Fin n)}
     (φ : Away 𝒜 (X k) →ₐ[ℂ] ℂ)
-    (h : p.1 ≫ projectiveSpaceToProj b hi =
+    (h : p.val ≫ projectiveSpaceToProj b hi =
       Spec.map (CommRingCat.ofHom φ.toRingHom) ≫
         Proj.awayι 𝒜 (X k) (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos) :
     p = ofAffinePoint (projectiveSpaceMaximalCone b hi k)
@@ -111,7 +111,7 @@ maximal cone omitting `k` exactly when its image in `Proj` is a complex point of
 theorem mem_range_ofAffinePoint_projectiveSpaceMaximalCone_iff
     (p : (projectiveSpace b hi).AlgebraicComplexPoint) (k : Option (Fin n)) :
     p ∈ Set.range (ofAffinePoint (projectiveSpaceMaximalCone b hi k)) ↔
-      ∃ φ : Away 𝒜 (X k) →ₐ[ℂ] ℂ, p.1 ≫ projectiveSpaceToProj b hi =
+      ∃ φ : Away 𝒜 (X k) →ₐ[ℂ] ℂ, p.val ≫ projectiveSpaceToProj b hi =
         Spec.map (CommRingCat.ofHom φ.toRingHom) ≫
           Proj.awayι 𝒜 (X k) (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos := by
   constructor
@@ -185,7 +185,7 @@ theorem projectiveSpaceAlgebraicComplexPointHomeomorph_mem_affineOpen_iff
     (p : (projectiveSpace b hi).AlgebraicComplexPoint) (k : Option (Fin n)) :
     projectiveSpaceAlgebraicComplexPointHomeomorph b hi p ∈
         ComplexProjectiveSpace.affineOpen ((finSuccEquiv n).symm k) ↔
-      ∃ φ : Away 𝒜 (X k) →ₐ[ℂ] ℂ, p.1 ≫ projectiveSpaceToProj b hi =
+      ∃ φ : Away 𝒜 (X k) →ₐ[ℂ] ℂ, p.val ≫ projectiveSpaceToProj b hi =
         Spec.map (CommRingCat.ofHom φ.toRingHom) ≫
           Proj.awayι 𝒜 (X k) (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos := by
   rw [← Set.mem_preimage, preimage_projectiveSpaceAlgebraicComplexPointHomeomorph_affineOpen,
@@ -198,7 +198,7 @@ the fraction `X_j / X_k`. -/
 theorem ratio_projectiveSpaceAlgebraicComplexPointHomeomorph_of_comp_eq
     {p : (projectiveSpace b hi).AlgebraicComplexPoint} {k : Option (Fin n)}
     (φ : Away 𝒜 (X k) →ₐ[ℂ] ℂ)
-    (h : p.1 ≫ projectiveSpaceToProj b hi =
+    (h : p.val ≫ projectiveSpaceToProj b hi =
       Spec.map (CommRingCat.ofHom φ.toRingHom) ≫
         Proj.awayι 𝒜 (X k) (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos)
     (j : Fin (n + 1)) :

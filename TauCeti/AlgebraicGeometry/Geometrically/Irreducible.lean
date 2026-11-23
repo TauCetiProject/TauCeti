@@ -195,8 +195,8 @@ theorem bijOn_preimage_irreducibleComponents_of_isSepClosed {K M : Type u} [Fiel
   have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
   let e := g.irreducibleComponentsEquiv g.isOpenMap
   refine ⟨fun Z hZ ↦ ?_, fun Z _ W _ h ↦ Set.preimage_injective.mpr g.surjective h,
-    fun Z' hZ' ↦ ⟨e ⟨Z', hZ'⟩, (e ⟨Z', hZ'⟩).2, ?_⟩⟩
-  · have := (e.symm ⟨Z, hZ⟩).2
+    fun Z' hZ' ↦ ⟨e ⟨Z', hZ'⟩, (e ⟨Z', hZ'⟩).property, ?_⟩⟩
+  · have := (e.symm ⟨Z, hZ⟩).property
     rwa [g.irreducibleComponentsEquiv_symm_apply_coe] at this
   · dsimp only
     rw [← g.irreducibleComponentsEquiv_symm_apply_coe g.isOpenMap, e.symm_apply_apply]

@@ -73,16 +73,16 @@ theorem isIso_morphismRestrict_iSup (f : X ⟶ Y) {ι : Type*} (U : ι → Y.Ope
 
 /-- The *iso locus* of `f : X ⟶ Y`: the largest open of `Y` over which `f` is an isomorphism. -/
 def isoLocus (f : X ⟶ Y) : Y.Opens :=
-  ⨆ U : {U : Y.Opens // IsIso (f ∣_ U)}, U.1
+  ⨆ U : {U : Y.Opens // IsIso (f ∣_ U)}, U.val
 
 /-- The iso locus is the union of the opens over which `f` is an isomorphism. -/
 theorem isoLocus_def (f : X ⟶ Y) :
-    f.isoLocus = ⨆ U : {U : Y.Opens // IsIso (f ∣_ U)}, U.1 := by
+    f.isoLocus = ⨆ U : {U : Y.Opens // IsIso (f ∣_ U)}, U.val := by
   rw [isoLocus]
 
 /-- `f` is an isomorphism over its iso locus. -/
 instance isIso_morphismRestrict_isoLocus (f : X ⟶ Y) : IsIso (f ∣_ f.isoLocus) :=
-  isIso_morphismRestrict_iSup f _ fun U ↦ U.2
+  isIso_morphismRestrict_iSup f _ fun U ↦ U.property
 
 /-- An open lies in the iso locus of `f` exactly when `f` is an isomorphism over it. -/
 theorem le_isoLocus_iff (f : X ⟶ Y) {U : Y.Opens} : U ≤ f.isoLocus ↔ IsIso (f ∣_ U) :=
