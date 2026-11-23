@@ -17,30 +17,32 @@ import Mathlib.GroupTheory.Perm.Cycle.Type
 # A monoid algebra is non-reduced in the presence of `p`-torsion
 
 This file records the failure of the monoid algebra `R[G]` of a monoid `G` to be
-reduced whenever `R` has prime characteristic `p` and `G` has a nontrivial element killed by `p`.
+reduced whenever `R` has prime characteristic `p` and `G` has a nontrivial element killed by a
+power of `p`.
 
-The mechanism is the freshman's dream: if `g ≠ 1` with `g ^ p = 1`, then in characteristic `p`
-the group-like element `single g 1` and the identity `1 = single 1 1` satisfy
-`(single g 1 - 1) ^ p = single (g ^ p) 1 - 1 = single 1 1 - 1 = 0`, while `single g 1 - 1 ≠ 0`
-by `TauCeti.single_sub_one_ne_zero_iff`. So `single g 1 - 1` is a nonzero nilpotent and `R[G]`
-is not reduced. The coefficient ring need not be commutative.
+The mechanism is the freshman's dream: if `p` is prime, `g ≠ 1` and `g ^ p ^ n = 1`, then in
+characteristic `p` the group-like element `single g 1` and the identity `1 = single 1 1` satisfy
+`(single g 1 - 1) ^ p ^ n = single (g ^ p ^ n) 1 - 1 = single 1 1 - 1 = 0`, while
+`single g 1 - 1 ≠ 0` by `TauCeti.single_sub_one_ne_zero_iff`. So `single g 1 - 1` is a nonzero
+nilpotent and `R[G]` is not reduced. The coefficient ring need not be commutative.
 
 ## Main declarations
 
-* `TauCeti.single_sub_one_pow_eq_zero`: `(single g 1 - 1) ^ p = 0` when `g ^ p = 1`, in
-  characteristic `p`.
-* `TauCeti.isNilpotent_single_sub_one`: the element `single g 1 - 1` is nilpotent.
+* `TauCeti.single_sub_one_pow_eq_zero`: `(single g 1 - 1) ^ p ^ n = 0` when `g ^ p ^ n = 1`, in
+  prime characteristic `p`.
+* `TauCeti.isNilpotent_single_sub_one`: the element `single g 1 - 1` is nilpotent when
+  `g ^ p ^ n = 1`, in prime characteristic `p`.
 * `TauCeti.not_isReduced_monoidAlgebra`: `R[G]` is not reduced when `G` has nontrivial
-  `p`-torsion and `R` has characteristic `p`.
+  `p`-power torsion and `R` has prime characteristic `p`.
 * `TauCeti.not_isReduced_monoidAlgebra_of_not_isUnit_card`: over a field, noninvertibility
   of the order of a finite group forces its group algebra to be non-reduced.
 
 ## References
 
-The freshman's-dream identity `(x - y) ^ p = x ^ p - y ^ p` in characteristic `p`, for commuting
-`x` and `y`, is Mathlib's `sub_pow_char_of_commute`; it applies because `single g 1` commutes
-with `1`. The monomial power law `single m r ^ n = single (m ^ n) (r ^ n)` is Mathlib's
-`MonoidAlgebra.single_pow`.
+The freshman's-dream identity `(x - y) ^ p ^ n = x ^ p ^ n - y ^ p ^ n` in prime characteristic
+`p`, for commuting `x` and `y`, is Mathlib's `sub_pow_char_pow_of_commute`; it applies because
+`single g 1` commutes with `1`. The monomial power law `single m r ^ k = single (m ^ k) (r ^ k)` is
+Mathlib's `MonoidAlgebra.single_pow`.
 The characteristic of the monoid algebra is transported from that of `R` along the injective
 ring homomorphism `MonoidAlgebra.singleOneRingHom` (`charP_of_injective_ringHom`).
 -/
@@ -52,26 +54,27 @@ namespace TauCeti
 variable {R : Type*} [Ring R] {G : Type*} [Monoid G]
 variable (p : ℕ) [hp : Fact p.Prime] [CharP R p]
 
-/-- In characteristic `p`, the `p`-th power of `single g 1 - 1` vanishes when `g ^ p = 1`. -/
-theorem single_sub_one_pow_eq_zero {g : G} (hgp : g ^ p = 1) :
-    (MonoidAlgebra.single g (1 : R) - 1) ^ p = 0 := by
+/-- In prime characteristic `p`, the `p ^ n`-th power of `single g 1 - 1` vanishes when
+`g ^ p ^ n = 1`. -/
+theorem single_sub_one_pow_eq_zero {g : G} {n : ℕ} (hgp : g ^ p ^ n = 1) :
+    (MonoidAlgebra.single g (1 : R) - 1) ^ p ^ n = 0 := by
   have : CharP (MonoidAlgebra R G) p :=
     charP_of_injective_ringHom (f := MonoidAlgebra.singleOneRingHom)
       MonoidAlgebra.single_right_injective p
-  rw [sub_pow_char_of_commute p (Commute.one_right _), MonoidAlgebra.single_pow,
+  rw [sub_pow_char_pow_of_commute p n (Commute.one_right _), MonoidAlgebra.single_pow,
     one_pow, hgp, one_pow,
     ← MonoidAlgebra.one_def, sub_self]
 
-/-- The group-like difference `single g 1 - 1` is nilpotent when `g ^ p = 1` in characteristic
-`p`. -/
-theorem isNilpotent_single_sub_one {g : G} (hgp : g ^ p = 1) :
+/-- The group-like difference `single g 1 - 1` is nilpotent when `g ^ p ^ n = 1` in prime
+characteristic `p`. -/
+theorem isNilpotent_single_sub_one {g : G} {n : ℕ} (hgp : g ^ p ^ n = 1) :
     IsNilpotent (MonoidAlgebra.single g (1 : R) - 1) :=
-  ⟨p, single_sub_one_pow_eq_zero p hgp⟩
+  ⟨p ^ n, single_sub_one_pow_eq_zero p hgp⟩
 
-/-- **A monoid algebra with `p`-torsion is non-reduced in characteristic `p`.** If `R` has
-characteristic `p` and `G` has a nontrivial element `g` with `g ^ p = 1`, then `R[G]` is not
-reduced. -/
-theorem not_isReduced_monoidAlgebra {g : G} (hg : g ≠ 1) (hgp : g ^ p = 1) :
+/-- **A monoid algebra with `p`-power torsion is non-reduced in prime characteristic `p`.** If
+`R` has prime characteristic `p` and `G` has a nontrivial element `g` with `g ^ p ^ n = 1`, then
+`R[G]` is not reduced. -/
+theorem not_isReduced_monoidAlgebra {g : G} {n : ℕ} (hg : g ≠ 1) (hgp : g ^ p ^ n = 1) :
     ¬ IsReduced (MonoidAlgebra R G) := by
   intro h
   have := h
@@ -96,7 +99,7 @@ theorem not_isReduced_monoidAlgebra_of_not_isUnit_card
     intro hgone
     simp only [hgone, orderOf_one] at hg
     exact hp.ne_one hg.symm
-  exact not_isReduced_monoidAlgebra (R := k) (ringChar k) hgne
-    (hg ▸ pow_orderOf_eq_one g)
+  exact not_isReduced_monoidAlgebra (R := k) (ringChar k) (n := 1) hgne
+    (by rw [pow_one, ← hg, pow_orderOf_eq_one])
 
 end TauCeti

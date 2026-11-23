@@ -214,6 +214,12 @@ theorem coe_unitsSingle (p : Rˣ × Multiplicative (AddUnits M)) :
     (unitsSingle p : AddMonoidAlgebra R M) = single (p.2.toAdd : M) (p.1 : R) :=
   (rfl)
 
+@[simp]
+theorem coe_inv_unitsSingle (p : Rˣ × Multiplicative (AddUnits M)) :
+    (((unitsSingle p)⁻¹ : (AddMonoidAlgebra R M)ˣ) : AddMonoidAlgebra R M) =
+      single ((-p.2.toAdd : AddUnits M) : M) ((p.1⁻¹ : Rˣ) : R) := by
+  rw [← map_inv, coe_unitsSingle, Prod.snd_inv, Prod.fst_inv, toAdd_inv]
+
 /-- The coefficient unit and the additive unit exponent of a monomial unit are unique. -/
 theorem unitsSingle_injective [Nontrivial R] :
     Function.Injective (unitsSingle (R := R) (M := M)) := by

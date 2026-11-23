@@ -94,8 +94,7 @@ theorem rowSymmetrizer_relabel :
     rowSymmetrizer (R := R) (relabel σ t) =
       MonoidAlgebra.single σ 1 * rowSymmetrizer (R := R) t * MonoidAlgebra.single σ⁻¹ 1 := by
   ext τ
-  have hconj := MonoidAlgebra.coeff_single_mul_mul_single_inv (toUnits σ) τ
-    (rowSymmetrizer (R := R) t)
+  have hconj := (rowSymmetrizer (R := R) t).coeff_single_mul_mul_single_inv (toUnits σ) τ
   rw [Units.val_inv_eq_inv_val, val_toUnits_apply] at hconj
   rw [hconj, rowSymmetrizer_coeff, rowSymmetrizer_coeff]
   by_cases h : σ⁻¹ * τ * σ ∈ rowSubgroup t
@@ -109,8 +108,7 @@ theorem columnAntisymmetrizer_relabel :
     columnAntisymmetrizer (R := R) (relabel σ t) =
       MonoidAlgebra.single σ 1 * columnAntisymmetrizer (R := R) t * MonoidAlgebra.single σ⁻¹ 1 := by
   ext τ
-  have hconj := MonoidAlgebra.coeff_single_mul_mul_single_inv (toUnits σ) τ
-    (columnAntisymmetrizer (R := R) t)
+  have hconj := (columnAntisymmetrizer (R := R) t).coeff_single_mul_mul_single_inv (toUnits σ) τ
   rw [Units.val_inv_eq_inv_val, val_toUnits_apply] at hconj
   rw [hconj, columnAntisymmetrizer_coeff, columnAntisymmetrizer_coeff]
   have hsign : Equiv.Perm.sign (σ⁻¹ * τ * σ) = Equiv.Perm.sign τ := by
@@ -182,17 +180,13 @@ def spechtIdealRelabelEquiv :
 theorem spechtIdealRelabelEquiv_apply_coe (x : spechtIdeal (relabel σ t)) :
     (spechtIdealRelabelEquiv σ t x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) =
       (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) * MonoidAlgebra.single σ 1 := by
-  rw [spechtIdealRelabelEquiv, LinearEquiv.ofSubmodules_apply,
-    Units.mulRightLinearEquiv_apply, MonoidAlgebra.coe_unitsSingle, val_toUnits_apply,
-    Units.val_one]
+  simp [spechtIdealRelabelEquiv]
 
 @[simp]
 theorem spechtIdealRelabelEquiv_symm_apply_coe (y : spechtIdeal t) :
     ((spechtIdealRelabelEquiv σ t).symm y : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) =
       (y : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) * MonoidAlgebra.single σ⁻¹ 1 := by
-  rw [spechtIdealRelabelEquiv, LinearEquiv.ofSubmodules_symm_apply,
-    Units.symm_mulRightLinearEquiv_apply, MonoidAlgebra.coe_inv_unitsSingle, inv_one, Units.val_one,
-    Units.val_inv_eq_inv_val, val_toUnits_apply]
+  simp [spechtIdealRelabelEquiv, LinearEquiv.ofSubmodules_symm_apply]
 
 /-- Right multiplication by `σ` is an isomorphism of representations from `ℚ[Sₙ] c_{σt}` to
 `ℚ[Sₙ] c_t`: being a map of left modules over the group algebra, it commutes with the action. -/

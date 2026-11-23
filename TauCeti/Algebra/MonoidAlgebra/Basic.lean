@@ -41,17 +41,20 @@ none of the further theory built on it.
 * The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
 * `TauCeti.MonoidAlgebra.isIntegral_of_isMulTorsion`: the monoid algebra of a commutative torsion
   monoid is integral over its coefficient ring.
-* `TauCeti.MonoidAlgebra.single_mem_nonZeroDivisors_iff` and
-  `MonoidAlgebra.mrange_of_le_nonZeroDivisors`: for a cancellative monoid `M`, a monomial is a
-  non-zero-divisor in `R[M]` exactly when its coefficient is a non-zero-divisor in `R`; in
-  particular coefficient-one monomials are non-zero-divisors. The forward implication,
-  `TauCeti.MonoidAlgebra.mem_nonZeroDivisors_of_single`, holds for every monoid `M`.
+* `TauCeti.MonoidAlgebra.single_mem_nonZeroDivisors_iff_of_isRegular`: a monomial at a regular
+  index `m` is a non-zero-divisor in `R[M]` exactly when its coefficient is a non-zero-divisor in
+  `R`. `TauCeti.MonoidAlgebra.single_mem_nonZeroDivisors_iff` is its `simp` form for a cancellative
+  monoid, and `MonoidAlgebra.mrange_of_le_nonZeroDivisors` its consequence that coefficient-one
+  monomials are non-zero-divisors. The forward implication,
+  `TauCeti.MonoidAlgebra.mem_nonZeroDivisors_of_single`, holds for every index of every monoid.
 * `MonoidAlgebra.addSubgroupClosure_range_of`: the basis monomials generate `ℤ[M]` as an additive
   group.
 * `TauCeti.MonoidAlgebra.isRegular_single_one_iff` and
   `TauCeti.MonoidAlgebra.isRegular_natCast_iff`: for an arbitrary monoid `M`, an element of `R`
   placed at the identity, for instance a natural number, is regular in `R[M]` exactly when it is
   regular in `R`.
+* `TauCeti.MonoidAlgebra.isSMulRegular_iff`: for nonempty `M`, a scalar acts injectively on `R[M]`
+  exactly when it acts injectively on `R`.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
 
@@ -260,24 +263,41 @@ theorem mem_nonZeroDivisors_of_single {R M : Type*} [Semiring R] [Monoid M] {m :
   · simpa using hL (single 1 s) (by simp [hs])
   · simpa using hR (single 1 s) (by simp [hs])
 
-/-- In the monoid algebra of a cancellative monoid, a monomial is a non-zero-divisor of `R[M]`
-exactly when its coefficient is a non-zero-divisor of `R`. Cancellativity is used only for the
-reverse implication; the forward one is `mem_nonZeroDivisors_of_single`. -/
-@[to_additive (dont_translate := R) (attr := simp)
-  _root_.TauCeti.AddMonoidAlgebra.single_mem_nonZeroDivisors_iff
-/-- In the additive monoid algebra of a cancellative additive monoid, a monomial is a
-non-zero-divisor of `R[M]` exactly when its coefficient is a non-zero-divisor of `R`.
-Cancellativity is used only for the reverse implication. -/]
-theorem single_mem_nonZeroDivisors_iff {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M]
-    {m : M} {r : R} :
+/-- A monomial at a regular index `m` is a non-zero-divisor of `R[M]` exactly when its
+coefficient is a non-zero-divisor of `R`. Regularity of `m` is used only for the reverse
+implication; the forward one is `mem_nonZeroDivisors_of_single`. -/
+@[to_additive (dont_translate := R)
+  _root_.TauCeti.AddMonoidAlgebra.single_mem_nonZeroDivisors_iff_of_isAddRegular
+/-- A monomial at an additively regular index `m` is a non-zero-divisor of the additive monoid
+algebra `R[M]` exactly when its coefficient is a non-zero-divisor of `R`. Regularity of `m` is
+used only for the reverse implication. -/]
+theorem single_mem_nonZeroDivisors_iff_of_isRegular {R M : Type*} [Semiring R] [Monoid M]
+    {m : M} (hm : IsRegular m) {r : R} :
     single m r ∈ nonZeroDivisors (MonoidAlgebra R M) ↔ r ∈ nonZeroDivisors R := by
   refine ⟨mem_nonZeroDivisors_of_single, fun hr ↦ ?_⟩
   obtain ⟨hrL, hrR⟩ := mem_nonZeroDivisors_iff.mp hr
   refine mem_nonZeroDivisors_iff.mpr ⟨fun f hf => ?_, fun f hf => ?_⟩
   · ext t
-    exact hrL (f.coeff t) (by simpa using congr(($hf).coeff (m * t)))
+    refine hrL (f.coeff t) ?_
+    rw [← coeff_single_mul_eq_mul_coeff (m₁ := m * t) t fun _ _ ↦ hm.left.eq_iff, hf, coeff_zero,
+      Finsupp.coe_zero, Pi.zero_apply]
   · ext t
-    exact hrR (f.coeff t) (by simpa using congr(($hf).coeff (t * m)))
+    refine hrR (f.coeff t) ?_
+    rw [← coeff_mul_single_eq_coeff_mul (m₁ := t * m) t fun _ _ ↦ hm.right.eq_iff, hf, coeff_zero,
+      Finsupp.coe_zero, Pi.zero_apply]
+
+/-- In the monoid algebra of a cancellative monoid, a monomial is a non-zero-divisor of `R[M]`
+exactly when its coefficient is a non-zero-divisor of `R`. This is the `simp` form of
+`single_mem_nonZeroDivisors_iff_of_isRegular`, whose regularity hypothesis `simp` cannot
+discharge. -/
+@[to_additive (dont_translate := R) (attr := simp)
+  _root_.TauCeti.AddMonoidAlgebra.single_mem_nonZeroDivisors_iff
+/-- In the additive monoid algebra of a cancellative additive monoid, a monomial is a
+non-zero-divisor of `R[M]` exactly when its coefficient is a non-zero-divisor of `R`. -/]
+theorem single_mem_nonZeroDivisors_iff {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M]
+    {m : M} {r : R} :
+    single m r ∈ nonZeroDivisors (MonoidAlgebra R M) ↔ r ∈ nonZeroDivisors R :=
+  single_mem_nonZeroDivisors_iff_of_isRegular (.all m)
 
 /-- An element `r` of `R`, placed at the identity of `M`, is regular in `R[M]` exactly when it is
 regular in `R`: both products with `single 1 r` multiply every coefficient by `r`. No
@@ -305,12 +325,27 @@ theorem isRegular_single_one_iff {R M : Type*} [Semiring R] [MulOneClass M] {r :
     exact map_injective _ hr.right
 
 /-- A natural number is regular in `R[M]` exactly when it is regular in `R`. Not a `simp` lemma:
-Mathlib's `isRegular_natCast` already rewrites both sides to `IsSMulRegular`. -/
+Mathlib's `isRegular_natCast` already rewrites both sides to `IsSMulRegular`, where
+`isSMulRegular_iff` relates them. -/
 @[to_additive (dont_translate := R) _root_.TauCeti.AddMonoidAlgebra.isRegular_natCast_iff
 /-- A natural number is regular in `R[M]` exactly when it is regular in `R`. -/]
 theorem isRegular_natCast_iff {R M : Type*} [Semiring R] [MulOneClass M] {n : ℕ} :
     IsRegular (n : MonoidAlgebra R M) ↔ IsRegular (n : R) := by
   rw [natCast_def, isRegular_single_one_iff]
+
+/-- For nonempty `M`, a scalar `c` acts injectively on `R[M]` exactly when it acts injectively on
+`R`: it acts coefficientwise. -/
+@[to_additive (dont_translate := R S) (attr := simp)
+  _root_.TauCeti.AddMonoidAlgebra.isSMulRegular_iff
+/-- For nonempty `M`, a scalar `c` acts injectively on the additive monoid algebra `R[M]` exactly
+when it acts injectively on `R`: it acts coefficientwise. -/]
+theorem isSMulRegular_iff {R M S : Type*} [Semiring R] [Nonempty M] [SMulZeroClass S R] {c : S} :
+    IsSMulRegular (MonoidAlgebra R M) c ↔ IsSMulRegular R c := by
+  refine ⟨fun h r s hrs ↦ ?_, fun h x y hxy ↦ coeff_injective (h.finsupp ?_)⟩
+  · obtain ⟨m⟩ := ‹Nonempty M›
+    refine single_right_injective (m := m) (h ?_)
+    simpa only [smul_single] using congrArg (single m) hrs
+  · simpa only [coeff_smul] using congrArg coeff hxy
 
 end TauCeti.MonoidAlgebra
 
@@ -320,15 +355,16 @@ namespace MonoidAlgebra
 is a non-zero-divisor of `R[M]`. -/
 theorem mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M] :
     MonoidHom.mrange (of R M) ≤ nonZeroDivisors (MonoidAlgebra R M) := by
-  rintro _ ⟨m, rfl⟩
+  intro x hx
+  obtain ⟨m, rfl⟩ := MonoidHom.mem_mrange.mp hx
   simpa only [of_apply] using
     (TauCeti.MonoidAlgebra.single_mem_nonZeroDivisors_iff (m := m)).mpr
       (one_mem (nonZeroDivisors R))
 
 /-- Conjugating by the monomial at a unit `u` of `M` conjugates the indices of the coefficients:
 `(u x u⁻¹)_h = x_{u⁻¹ h u}`. For a group element `g`, take `u = toUnits g`. -/
-theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M] (u : Mˣ) (h : M)
-    (x : MonoidAlgebra R M) :
+theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
+    (x : MonoidAlgebra R M) (u : Mˣ) (h : M) :
     (single (u : M) (1 : R) * x * single (↑u⁻¹ : M) 1).coeff h = x.coeff (↑u⁻¹ * h * u) := by
   rw [coeff_mul_single_eq_coeff_mul (h * u) fun _ _ ↦ Units.mul_inv_eq_iff_eq_mul u,
     coeff_single_mul_eq_mul_coeff (↑u⁻¹ * (h * u)) fun _ _ ↦ (Units.eq_inv_mul_iff_mul_eq u).symm,
@@ -354,7 +390,8 @@ end MonoidAlgebra
 theorem AddMonoidAlgebra.mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R] [AddMonoid M]
     [IsCancelAdd M] :
     MonoidHom.mrange (AddMonoidAlgebra.of R M) ≤ nonZeroDivisors (AddMonoidAlgebra R M) := by
-  rintro _ ⟨m, rfl⟩
+  intro x hx
+  obtain ⟨m, rfl⟩ := MonoidHom.mem_mrange.mp hx
   simpa only [AddMonoidAlgebra.of_apply] using
     (TauCeti.AddMonoidAlgebra.single_mem_nonZeroDivisors_iff (m := m.toAdd)).mpr
       (one_mem (nonZeroDivisors R))
