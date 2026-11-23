@@ -245,13 +245,12 @@ theorem IsInjectiveEnvelope.isCoseparator_fgModuleCatMatlisDualRegular
 
 /-- **Finitely generated injective modules are summands of finite sums of `D A`**: an injective
 object of `mod A` lies in `add (D A)`. This is the case of the coseparator `D A` in
-`FGModuleCat.additiveClosure_of_isCoseparator_of_injective`. -/
+`CategoryTheory.IsCoseparator.additiveClosure_of_injective`. -/
 theorem IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective
     (hf : IsInjectiveEnvelope f) (I : FGModuleCat.{v} A) [Injective I] :
     additiveClosure (hf.fgModuleCatMatlisDualRegular (A := A)) I :=
   have := IsArtinianRing.of_finite R A
-  FGModuleCat.additiveClosure_of_isCoseparator_of_injective
-    hf.isCoseparator_fgModuleCatMatlisDualRegular I
+  hf.isCoseparator_fgModuleCatMatlisDualRegular.additiveClosure_of_injective I
 
 end Regular
 

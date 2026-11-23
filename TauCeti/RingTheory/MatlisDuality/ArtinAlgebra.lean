@@ -35,8 +35,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
   `TauCeti.moduleInjective_matlisDual_iff_projective_op` and
   `TauCeti.moduleProjective_op_matlisDual_iff_injective` are the forms for any injective `E` such
   that each `Hom_R(R ⧸ 𝔪, E)` has length one.
-* `TauCeti.IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual`: every Artinian
-  `A`-module embeds into a finite power of the injective module `D_R A`.
+* `TauCeti.exists_injective_linearMap_pi_matlisDual`: every Artinian `A`-module embeds into a
+  finite power of `D_R A`, when evaluation into the double dual is injective.
 * `TauCeti.exists_isInjectiveEnvelope_finite`: every finitely generated `A`-module has a finitely
   generated injective hull.
 
@@ -62,6 +62,28 @@ open MulOpposite MatlisDual
 universe u v w t
 
 attribute [local instance] opOpModule isScalarTower_opOpModule RingHomInvPair.of_ringEquiv
+
+section Cogenerator
+
+variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E] {A : Type t} [Ring A]
+  [Algebra R A] {N : Type w} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+
+/-- **`D_R A` is a cogenerator for Artinian modules.** If evaluation `N → D_R (D_R N)` is injective,
+as it is when `E` is an injective cogenerator of `R`-modules, then an Artinian left `A`-module `N`
+embeds into a finite power of `D_R A`. -/
+theorem exists_injective_linearMap_pi_matlisDual [IsArtinian A N]
+    (hEval : Function.Injective (MatlisDual.evalₗ R E N)) :
+    ∃ (n : ℕ) (g : N →ₗ[A] (Fin n → MatlisDual R E A)), Function.Injective g := by
+  refine IsArtinian.exists_injective_linearMap_pi fun x hx ↦ ?_
+  -- Some functional `φ` on `N` does not kill `x`; its adjoint `N → D_R A` does not kill `x`
+  -- either, evaluating at `1`.
+  obtain ⟨φ, hφ⟩ : ∃ φ : MatlisDual R E N, equivLinearMap R E N φ x ≠ 0 := by
+    by_contra! h
+    exact hx (hEval (MatlisDual.ext fun φ ↦ by simpa using h φ))
+  refine ⟨equivLinearMapDualRegular φ, fun h ↦ hφ ?_⟩
+  simpa using congr(equivLinearMap R E A $h 1)
+
+end Cogenerator
 
 section Artin
 
@@ -143,24 +165,6 @@ theorem IsInjectiveEnvelope.moduleInjective_matlisDual_iff_projective_op [Module
   have := hf.moduleInjective
   TauCeti.moduleInjective_matlisDual_iff_projective_op hf.length_quotient_linearMap_eq_one
 
-omit [Module.Finite R A] in
-/-- **`D_R A` is a cogenerator.** Every Artinian left module over an `R`-algebra `A` embeds into a
-finite power of `D_R A`. -/
-theorem IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual [Module A N]
-    [IsScalarTower R A N] [IsArtinian A N] (hf : IsInjectiveEnvelope f) :
-    ∃ (n : ℕ) (g : N →ₗ[A] (Fin n → MatlisDual R E A)), Function.Injective g := by
-  have := hf.moduleInjective
-  refine IsArtinian.exists_injective_linearMap_pi fun x hx ↦ ?_
-  -- As `E` is a cogenerator, some functional `φ` on `N` does not kill `x`; its adjoint
-  -- `N → D_R A` does not kill `x` either, evaluating at `1`.
-  obtain ⟨φ, hφ⟩ : ∃ φ : MatlisDual R E N, equivLinearMap R E N φ x ≠ 0 := by
-    by_contra! h
-    exact hx (MatlisDual.injective_evalₗ
-      (nontrivial_linearMap_of_isMaximal hf.length_quotient_linearMap_eq_one)
-      (MatlisDual.ext fun φ ↦ by simpa using h φ))
-  refine ⟨equivLinearMapDualRegular φ, fun h ↦ hφ ?_⟩
-  simpa using congr(equivLinearMap R E A $h 1)
-
 variable [Small.{w} A]
 
 /-- The dual of a finitely generated injective right `A`-module is a projective left module. -/
@@ -238,8 +242,10 @@ theorem exists_isInjectiveEnvelope_finite (R : Type u) [CommRing R] [IsArtinianR
       (i : N →ₗ[A] Q), IsInjectiveEnvelope i := by
   obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson.{u, u} R
   have := IsArtinianRing.of_finite R A
-  obtain ⟨n, g, hg⟩ := hf.exists_injective_linearMap_pi_matlisDual (A := A) (N := N)
   have := hf.moduleInjective
+  obtain ⟨n, g, hg⟩ := exists_injective_linearMap_pi_matlisDual (A := A) (N := N)
+    (MatlisDual.injective_evalₗ
+      (nontrivial_linearMap_of_isMaximal hf.length_quotient_linearMap_eq_one))
   have : Small.{max u t} A := small_max A
   have : Module.Injective A (Fin n → MatlisDual R E A) := Module.Injective.pi A _
   obtain ⟨P, _, hP⟩ := g.exists_isInjectiveEnvelope_submodule hg

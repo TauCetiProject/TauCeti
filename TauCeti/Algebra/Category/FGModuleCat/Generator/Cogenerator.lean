@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
-public import TauCeti.Algebra.Category.FGModuleCat.MatlisDuality
+public import TauCeti.Algebra.Category.FGModuleCat.MatlisDuality.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
-public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 
 import TauCeti.Algebra.Subalgebra.Center
@@ -29,20 +28,20 @@ which can always be arranged by replacing `R` with the centre of `A`, a commutat
 over which `A` is again an Artin algebra. The descriptions through indecomposable objects hold for
 modules in any universe in which `A` is small.
 
-The generator half holds over any ring (`FGModuleCat.isSeparator_iff_additiveClosure`). The
-cogenerator half is its dual: the Matlis duality `(mod A)ᵒᵖ ≌ mod Aᵐᵒᵖ`
-(`TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDuality`) turns coseparators of `mod A` into
-separators of `mod Aᵐᵒᵖ`, and the regular right module into `D A`
+The generator half holds over any ring (`FGModuleCat.isSeparator_iff_additiveClosure`). For the
+cogenerator half, the Matlis duality `(mod A)ᵒᵖ ≌ mod Aᵐᵒᵖ`
+(`TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDuality`) turns the regular right module, a
+separator of `mod Aᵐᵒᵖ`, into a coseparator `D A` of `mod A`
 (`TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualRegular`, with its API in
-`TauCeti/Algebra/Category/FGModuleCat/MatlisDuality.lean`); additive closures correspond under
-the duality (`CategoryTheory.Equivalence.additiveClosure_functor_obj_op_iff`). So `M` is a
-coseparator exactly when `D A ∈ add M`
-(`TauCeti.IsInjectiveEnvelope.isCoseparator_iff_additiveClosure`), with no separate injective
-argument. The descriptions through indecomposable objects then follow from the
-Krull-Schmidt property of `mod A`, with `FGModuleCat.indecomposable_obj_iff` and
-`FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a projective object lies in `add M` for
-every separator `M`, and dually an injective object lies in `add M` for every coseparator `M`
-(`FGModuleCat.additiveClosure_of_isCoseparator_of_injective`).
+`TauCeti/Algebra/Category/FGModuleCat/MatlisDuality/Basic.lean`). Conversely `D A` is injective and
+finitely generated, hence Artinian, and an Artinian injective object embeds into a finite sum of
+copies of any coseparator `M`, as a direct summand
+(`CategoryTheory.IsCoseparator.additiveClosure_of_injective`). So `M` is a coseparator exactly when
+`D A ∈ add M` (`TauCeti.IsInjectiveEnvelope.isCoseparator_iff_additiveClosure`). The descriptions
+through indecomposable objects then follow from the Krull-Schmidt property of `mod A`, with
+`FGModuleCat.indecomposable_obj_iff` and `FGModuleCat.additiveClosure_of_isGenerator_of_projective`:
+a projective object lies in `add M` for every separator `M`, and dually an Artinian injective object
+lies in `add M` for every coseparator `M`.
 
 The two halves are not symmetric outside the categorical statements. Over every ring the regular
 module is a finitely generated projective generator, so separators of `mod R` have the elementwise
@@ -127,13 +126,13 @@ variable {R : Type u} [CommRing R] [IsArtinianRing R] {E : Type v} [AddCommGroup
 
 /-- **The coseparators of `mod A`**: `M` is a coseparator of `mod A` exactly when `D A` lies in
 `add M`. The forward direction holds as `D A` is a finitely generated, hence Artinian, injective
-object (`FGModuleCat.additiveClosure_of_isCoseparator_of_injective`), and the converse as `D A` is a
+object (`CategoryTheory.IsCoseparator.additiveClosure_of_injective`), and the converse as `D A` is a
 coseparator. -/
 theorem IsInjectiveEnvelope.isCoseparator_iff_additiveClosure (hf : IsInjectiveEnvelope f)
     (M : FGModuleCat.{v} A) :
     IsCoseparator M ↔ additiveClosure M (hf.fgModuleCatMatlisDualRegular (A := A)) :=
   have := IsArtinianRing.of_finite R A
-  ⟨fun hM ↦ FGModuleCat.additiveClosure_of_isCoseparator_of_injective hM _,
+  ⟨fun hM ↦ hM.additiveClosure_of_injective _,
     hf.isCoseparator_fgModuleCatMatlisDualRegular.of_additiveClosure⟩
 
 /-- **The generator-cogenerators of `mod A`**: `M` is a generator-cogenerator exactly when the
@@ -183,7 +182,7 @@ theorem _root_.FGModuleCat.isCoseparator_iff_forall_indecomposable (R : Type u) 
   refine ⟨fun hM I hI hIi ↦ ?_, fun h ↦ ?_⟩
   · have := FGModuleCat.isLocalRing_end_of_indecomposable hIi
     exact additiveClosure_iff_nonempty_retract.1
-      (FGModuleCat.additiveClosure_of_isCoseparator_of_injective hM I)
+      (hM.additiveClosure_of_injective I)
   · -- The dual `D` of `G` is an injective coseparator of `mod A`, and lies in `add M`.
     have : Projective (Φ.inverse.obj G) := (Φ.symm.map_projective_iff _).2 inferInstance
     have : Injective (Φ.inverse.obj G).unop := inferInstanceAs (Injective (unop _))

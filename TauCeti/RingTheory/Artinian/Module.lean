@@ -13,8 +13,8 @@ import Mathlib.Order.CompactlyGenerated.Basic
 # Finite intersections in Artinian modules and embeddings into finite powers
 
 In an Artinian module every indexed intersection of submodules is already the intersection of a
-finite subfamily (`IsArtinian.exists_finset_iInf_eq`): in the order dual of the lattice of
-submodules every element is compact.
+finite subfamily (`TauCeti.exists_finset_iInf_eq_of_isArtinian`): in the order dual of the lattice
+of submodules every element is compact.
 
 Consequently, if the linear maps from an Artinian module `M` to a module `E` separate the points of
 `M`, then finitely many of them already do: `M` embeds into a finite power `Eⁿ`
@@ -34,8 +34,8 @@ public section
 
 /-- **Intersections in an Artinian module are finite**: an indexed intersection of submodules of an
 Artinian module is the intersection of a finite subfamily. -/
-theorem IsArtinian.exists_finset_iInf_eq {R M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] [IsArtinian R M] {ι : Type*} (p : ι → Submodule R M) :
+theorem TauCeti.exists_finset_iInf_eq_of_isArtinian {R M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [IsArtinian R M] {ι : Type*} (p : ι → Submodule R M) :
     ∃ s : Finset ι, ⨅ i ∈ s, p i = ⨅ i, p i := by
   -- In the order dual of the lattice of submodules, which is Noetherian, `⨅ i, p i` is compact.
   have hk : IsCompactElement (OrderDual.toDual (⨅ i, p i)) := .of_wellFoundedGT _
@@ -52,10 +52,17 @@ theorem IsArtinian.exists_injective_linearMap_pi [IsArtinian R M]
     (h : ∀ m : M, m ≠ 0 → ∃ f : M →ₗ[R] E, f m ≠ 0) :
     ∃ (n : ℕ) (g : M →ₗ[R] Fin n → E), Function.Injective g := by
   -- Finitely many maps `M → E` already cut out the common kernel of all of them, which is zero.
-  obtain ⟨s, hs⟩ := IsArtinian.exists_finset_iInf_eq fun f : M →ₗ[R] E ↦ LinearMap.ker f
-  refine ⟨s.card, LinearMap.pi fun i ↦ (s.equivFin.symm i).val, LinearMap.ker_eq_bot.mp ?_⟩
-  rw [LinearMap.ker_pi, s.equivFin.symm.iInf_comp (g := fun f ↦ LinearMap.ker f.val),
-    ← iInf_subtype' (p := (· ∈ s)) (f := fun f _ ↦ LinearMap.ker f), hs, eq_bot_iff]
-  refine fun m hm ↦ (Submodule.mem_bot R).2 (by_contra fun hm0 ↦ ?_)
+  obtain ⟨s, hs⟩ :=
+    TauCeti.exists_finset_iInf_eq_of_isArtinian fun f : M →ₗ[R] E ↦ LinearMap.ker f
+  refine ⟨s.card, LinearMap.pi fun i ↦ (s.equivFin.symm i).val,
+    (injective_iff_map_eq_zero _).2 fun m hm ↦ ?_⟩
+  -- Each map in `s` is a coordinate of the product map, as `s.equivFin.symm` is surjective.
+  have hmem : m ∈ ⨅ g ∈ s, LinearMap.ker g := by
+    simp only [Submodule.mem_iInf, LinearMap.mem_ker]
+    intro g hg
+    obtain ⟨i, hi⟩ := s.equivFin.symm.surjective ⟨g, hg⟩
+    simpa [hi] using congr_fun hm i
+  rw [hs] at hmem
+  by_contra hm0
   obtain ⟨f, hf⟩ := h m hm0
-  exact hf ((Submodule.mem_iInf _).1 hm f)
+  exact hf ((Submodule.mem_iInf _).1 hmem f)

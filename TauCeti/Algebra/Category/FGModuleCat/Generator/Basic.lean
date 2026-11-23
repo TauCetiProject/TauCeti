@@ -57,7 +57,7 @@ projective object of `mod R`, such as `R`, splits.
   universe.
 * `FGModuleCat.isCoseparator_iff`: `M` is a coseparator of `mod R` exactly when linear maps into
   `M` separate the points of every finitely generated module.
-* `FGModuleCat.additiveClosure_of_isCoseparator_of_injective`: dually, an injective object of
+* `CategoryTheory.IsCoseparator.additiveClosure_of_injective`: dually, an injective object of
   `mod R` that is Artinian as a module lies in `add M` for every coseparator `M`.
 * `FGModuleCat.isSeparator_iff_additiveClosure` and `FGModuleCat.isSeparator_iff_exists_retract`:
   `M` is a separator of `mod R` exactly when `R ∈ add M`.
@@ -141,12 +141,9 @@ theorem _root_.FGModuleCat.isCoseparator_iff (M : FGModuleCat.{v} R) :
   refine ⟨fun hM X x hx0 ↦ ?_, fun h ↦ (Preadditive.isCoseparator_iff M).2 fun {X Y} f hf ↦ ?_⟩
   · -- Test on the inclusion of the cyclic submodule `R ∙ x`, which every map to `M` kills.
     by_contra! hx
-    have hi := (Preadditive.isCoseparator_iff M).1 hM
-      (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X)
-      fun g ↦ (FGModuleCat.span_singleton_subtype_comp_eq_zero_iff x g).2 (hx g.hom.hom)
-    have h0 := (FGModuleCat.span_singleton_subtype_comp_eq_zero_iff x (𝟙 X)).1
-      (by rw [Category.comp_id, hi])
-    exact hx0 (by simpa using h0)
+    exact hx0 <| (X.span_singleton_subtype_eq_zero_iff x).1 <|
+      (Preadditive.isCoseparator_iff M).1 hM _ fun g ↦
+        (X.span_singleton_subtype_comp_eq_zero_iff x g).2 (hx g.hom.hom)
   · refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_))
     by_contra hx
     obtain ⟨g, hg⟩ := h Y (f.hom.hom x) (by simpa using hx)
@@ -157,7 +154,7 @@ theorem _root_.FGModuleCat.isCoseparator_iff (M : FGModuleCat.{v} R) :
 coseparator of `mod R`, then an injective object of `mod R` that is Artinian as a module lies in
 `add M`. This is dual to `FGModuleCat.additiveClosure_of_isGenerator_of_projective`. The modules
 may live in any universe. -/
-theorem _root_.FGModuleCat.additiveClosure_of_isCoseparator_of_injective {M : FGModuleCat.{v} R}
+theorem _root_.CategoryTheory.IsCoseparator.additiveClosure_of_injective {M : FGModuleCat.{v} R}
     (hM : IsCoseparator M) (I : FGModuleCat.{v} R) [Injective I] [IsArtinian R I.obj] :
     additiveClosure M I := by
   -- As `I` is Artinian, it embeds into a finite power `Mⁿ`, and the embedding splits.

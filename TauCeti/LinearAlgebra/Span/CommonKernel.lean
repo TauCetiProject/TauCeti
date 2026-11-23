@@ -79,7 +79,7 @@ theorem iInf_ker_eq_span_inter (hL : ∀ r ∈ R, ∀ v ∈ L, r • v ∈ L)
   classical
   refine le_antisymm ?_ (span_le.mpr Set.inter_subset_right)
   -- A finite subfamily already cuts out the common kernel.
-  obtain ⟨s, hseq⟩ := IsArtinian.exists_finset_iInf_eq fun i ↦ LinearMap.ker (φ i)
+  obtain ⟨s, hseq⟩ := exists_finset_iInf_eq_of_isArtinian fun i ↦ LinearMap.ker (φ i)
   have key (t : Finset ι) : ⨅ i ∈ t, LinearMap.ker (φ i) ≤
       span K ((L : Set V) ∩ ↑(⨅ i ∈ t, LinearMap.ker (φ i))) := by
     induction t using Finset.induction_on with

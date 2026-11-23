@@ -122,14 +122,10 @@ theorem two_le_dominantDimension_end_of_projective_of_injective {A : Type u} [Ri
       Injective (ModuleCat.of (Module.End A M) (Fin k → M)) :=
     ⟨(IsProjective.iff_projective _).1 inferInstance,
       Module.injective_object_of_injective_module _ _⟩
-  -- The first map of `S` is precomposition with `q` followed by `Hom_A(Aⁿ, M) ≅ Mⁿ`; it is
-  -- injective since `q` is surjective.
-  have hf : ⇑S.f = ⇑(e n) ∘ fun g : Module.End A M ↦ g ∘ₗ q := by
-    ext g : 1
-    simp [S, LinearMap.lcomp_apply']
+  -- The first map of `S` is `Hom_A(q, M)` followed by `Hom_A(Aⁿ, M) ≅ Mⁿ`; it is injective
+  -- since `q` is surjective.
   have hmono : Mono S.f := (ModuleCat.mono_iff_injective _).2 <| by
-    rw [hf]
-    exact (e n).injective.comp hq.injective_linearMapComp_right
+    simpa [S] using (e n).injective.comp (LinearMap.lcomp_injective_of_surjective q hq)
   rw [dominantDimension_eq_dominantDimension_of]
   exact CategoryTheory.two_le_dominantDimension_iff.2 ⟨_, _, S.f, S.g, S.zero, hmono,
     ModuleCat.shortComplexOfConj_exact _ _ _ _ _ hex, hM n, hM m⟩

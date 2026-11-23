@@ -235,26 +235,34 @@ variable {R} in
 /-- **Testing on a cyclic submodule**: a morphism out of `X` composes to zero with the inclusion of
 the cyclic submodule `R ∙ x` exactly when it kills `x`. -/
 @[simp]
-theorem _root_.FGModuleCat.span_singleton_subtype_comp_eq_zero_iff {X Y : FGModuleCat.{v} R}
-    (x : X.obj) (f : X ⟶ Y) :
+theorem _root_.FGModuleCat.span_singleton_subtype_comp_eq_zero_iff (X : FGModuleCat.{v} R)
+    {Y : FGModuleCat.{v} R} (x : X.obj) (f : X ⟶ Y) :
     (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) ≫ f =
       0 ↔ f.hom.hom x = 0 := by
-  refine ⟨fun h ↦ by simpa using congr(($h).hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩),
-    fun hx ↦ ?_⟩
-  ext ⟨y, hy⟩
-  obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hy
-  simp [hx]
+  -- The inclusion into `ModuleCat R` is faithful, which reduces this to linear maps.
+  rw [← Functor.map_injective_iff (ObjectProperty.ι _), Functor.map_comp, Functor.map_zero,
+    ModuleCat.hom_ext_iff]
+  simp only [ObjectProperty.ι_map, ObjectProperty.homMk_hom, ModuleCat.hom_comp,
+    ModuleCat.hom_ofHom, ModuleCat.hom_zero]
+  rw [← LinearMap.le_ker_iff_comp_subtype_eq_zero, Submodule.span_singleton_le_iff_mem,
+    LinearMap.mem_ker]
+
+variable {R} in
+/-- The inclusion of the cyclic submodule `R ∙ x` into `X` is zero exactly when `x` is. -/
+theorem _root_.FGModuleCat.span_singleton_subtype_eq_zero_iff (X : FGModuleCat.{v} R)
+    (x : X.obj) :
+    (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) =
+      0 ↔ x = 0 := by
+  simpa using X.span_singleton_subtype_comp_eq_zero_iff x (𝟙 X)
 
 variable {R} in
 /-- **A monomorphism of finitely generated modules is an injective linear map**: an element killed
 by the monomorphism generates a cyclic submodule whose inclusion it kills. -/
 theorem _root_.FGModuleCat.injective_of_mono {X Y : FGModuleCat.{v} R} (f : X ⟶ Y) [Mono f] :
-    Function.Injective f.hom.hom := by
-  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  have hi := (cancel_mono f).1 (((FGModuleCat.span_singleton_subtype_comp_eq_zero_iff x f).2
-    hx).trans zero_comp.symm)
-  simpa using (FGModuleCat.span_singleton_subtype_comp_eq_zero_iff x (𝟙 X)).1
-    (by rw [Category.comp_id, hi])
+    Function.Injective f.hom.hom :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ (X.span_singleton_subtype_eq_zero_iff x).1 <|
+    (cancel_mono f).1 (((X.span_singleton_subtype_comp_eq_zero_iff x f).2 hx).trans
+      zero_comp.symm)
 
 /-- **A monomorphism of finitely generated modules is injective**: the inclusion
 `FGModuleCat R ⥤ ModuleCat R` preserves monomorphisms, over any ring `R`. -/

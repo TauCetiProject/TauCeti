@@ -44,7 +44,7 @@ the dual `D_R A` of the right regular module, then the dual `D_R M` is a finitel
 projective right module over `Γ = Module.End A M`, that is a left module over `Γᵐᵒᵖ`. -/
 theorem _root_.FGModuleCat.finite_projective_end_op_matlisDual_of_additiveClosure {R : Type*}
     [CommRing R] {E : Type*} [AddCommGroup E] [Module R E] {A : Type*} [Ring A] [Algebra R A]
-    {M X : FGModuleCat.{w} A} [Module R M.obj] [IsScalarTower R A M.obj]
+    (M : FGModuleCat.{w} A) [Module R M.obj] [IsScalarTower R A M.obj] {X : FGModuleCat.{w} A}
     (hX : additiveClosure M X) (e : X.obj ≃ₗ[A] MatlisDual R E A) :
     Module.Finite (Module.End A M.obj)ᵐᵒᵖ (MatlisDual R E M.obj) ∧
       Module.Projective (Module.End A M.obj)ᵐᵒᵖ (MatlisDual R E M.obj) := by
