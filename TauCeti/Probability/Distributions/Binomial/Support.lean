@@ -57,7 +57,8 @@ zero trials. -/
 theorem support_binomial (n : ℕ) (p : unitInterval) :
     (binomial n p).support = if p = 0 then {0} else if p = 1 then {n} else Iic n := by
   ext k
-  simp only [Measure.mem_support_iff_measure_singleton_pos, binomial_singleton_pos_iff]
+  simp only [Measure.mem_support_iff_measure_singleton_pos, isOpen_discrete,
+    binomial_singleton_pos_iff]
   split_ifs <;> simp_all
 
 /-- The support of a cast binomial law is the image of its finite native support.

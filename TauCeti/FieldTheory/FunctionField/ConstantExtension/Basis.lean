@@ -10,8 +10,6 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 -- Proof-only: a spanning family with as many elements as the dimension is independent.
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
--- Proof-only: membership in the preimage of an intermediate field.
-import TauCeti.FieldTheory.IntermediateField.Map
 
 /-!
 # Bases of constants in a constant field extension
@@ -44,8 +42,8 @@ subextension.  This is how an inseparable constant field extension is compared w
   `TauCeti.linearDisjoint_fieldRange_of_forall_finrank_constantCompositum_eq` deduces linear
   disjointness for an algebraic `k' / k` from equality for its finite subextensions.
 * `TauCeti.isIntegrallyClosedIn_constantCompositum_of_linearDisjoint`: if `F` and `k'` are
-  linearly disjoint and `k'` is exact in `F'`, then every finite subextension `M` of `k' / k` is
-  exact in `F · M`, with no separability hypothesis.
+  linearly disjoint and `k'` is exact in `F'`, then every subextension `M` of `k' / k` is exact in
+  `F · M`, with no separability or finiteness hypothesis.
 * `TauCeti.constantBasis`: the `F`-basis of `F' = F · k'` given by a `k`-basis of `k'`.
 * `TauCeti.constantBasis_repr_algebraMap`: the coordinates of a constant in a basis of constants
   are the images of its coordinates over `k`.
@@ -101,7 +99,7 @@ theorem span_range_algebraMap_comp_of_constantCompositum_eq_top [Algebra.IsInteg
   let L : Subalgebra k F' := (IsScalarTower.toAlgHom k k' F').range
   let e : k' ≃ₐ[k] L := AlgEquiv.ofInjective _ (algebraMap k' F').injective
   have hspan := Subalgebra.adjoin_eq_span_basis F L (b.map e.toLinearEquiv)
-  have hfun : (fun i ↦ ((b.map e.toLinearEquiv) i).1) = algebraMap k' F' ∘ b := by
+  have hfun : (fun i ↦ ((b.map e.toLinearEquiv) i).val) = algebraMap k' F' ∘ b := by
     ext i
     exact AlgEquiv.ofInjective_apply _ (algebraMap k' F').injective (b i)
   rw [AlgHom.coe_range, IsScalarTower.coe_toAlgHom',
@@ -202,54 +200,29 @@ theorem constantBasisOfFinrankEq_repr_algebraMap {ι : Type*} [Fintype ι] (b : 
 
 end FinrankEq
 
-/-! ### Exact constants over finite subextensions -/
+/-! ### Exact constants over subextensions -/
 
-/-- **Exact constants descend to finite subextensions.** If `F` and `k'` are linearly disjoint
-over `k` inside `F'` and `k'` is the exact constant field of `F'`, then every finite subextension
-`M` of `k' / k` is the exact constant field of the compositum `F · M`. No separability of
-`k' / k` is needed: a constant `c ∈ k'` of `F · M` satisfies `F · M(c) = F · M`, so linear
-disjointness gives `[M(c) : k] = [M : k]`. -/
+/-- **Exact constants descend to subextensions.** If `F` and `k'` are linearly disjoint over `k`
+inside `F'` and `k'` is the exact constant field of `F'`, then every subextension `M` of `k' / k`
+is the exact constant field of the compositum `F · M`. Neither separability of `k' / k` nor
+finiteness of `M / k` is needed: by linear disjointness, a constant `c ∈ k'` lies in `F · M`
+only if it lies in `M`
+(`TauCeti.algebraMap_mem_constantCompositum_iff_of_linearDisjoint`). -/
 theorem isIntegrallyClosedIn_constantCompositum_of_linearDisjoint
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (hex' : IsIntegrallyClosedIn k' F') (M : IntermediateField k k') [FiniteDimensional k M] :
+    (hex' : IsIntegrallyClosedIn k' F') (M : IntermediateField k k') :
     letI := constantCompositumAlgebra F M F'
     IsIntegrallyClosedIn M (constantCompositum F M F') := by
   let FM := constantCompositum F M F'
   let := constantCompositumAlgebra F M F'
   have := isScalarTower_constantCompositum F M F'
-  have := isScalarTower_base_constantCompositum k F M F'
-  have hFM : constantCompositum F M FM = ⊤ := (constantCompositum_eq_top_iff F M F' FM).2 rfl
-  have := finiteDimensional_of_constantCompositum_eq_top (k := k) hFM
   refine isIntegrallyClosedIn_iff_forall_isAlgebraic.2 fun z hz ↦ ?_
-  -- `z` is the image of a constant `c` of `F'`, algebraic over `M` and hence over `k`.
+  -- `z` is the image of a constant `c` of `F'`.
   have hzM : IsIntegral M (z : F') := hz.isIntegral.map (IsScalarTower.toAlgHom M FM F')
   obtain ⟨c, hc⟩ :=
     isIntegrallyClosedIn_iff_forall_isAlgebraic.1 hex' _ hzM.tower_top.isAlgebraic
-  have hcint : IsIntegral M c := by
-    rw [← isIntegral_algHom_iff (IsScalarTower.toAlgHom M k' F') (algebraMap k' F').injective]
-    simpa [hc] using hzM
-  -- Adjoining `c` to `M` does not enlarge the compositum, so by linear disjointness it does not
-  -- enlarge `M` either.
-  let M' : IntermediateField k k' := M ⊔ k⟮c⟯
-  have : FiniteDimensional k k⟮c⟯ :=
-    IntermediateField.adjoin.finiteDimensional (isIntegral_trans (R := k) c hcint)
-  have hle : constantCompositum F M' F' ≤ FM := by
-    -- The constants of `F'` lying in `F · M` form an intermediate field containing `M` and `c`.
-    let N : IntermediateField k k' :=
-      (FM.restrictScalars k).comap (IsScalarTower.toAlgHom k k' F')
-    have hM'N : M' ≤ N := sup_le (fun m hm ↦ IntermediateField.mem_comap.2
-        (algebraMap_mem_constantCompositum F M F' ⟨m, hm⟩))
-      (IntermediateField.adjoin_simple_le_iff.2 (IntermediateField.mem_comap.2 (hc ▸ z.2)))
-    exact (constantCompositum_le_iff F M' F').2 fun m ↦ IntermediateField.mem_comap.1 (hM'N m.2)
-  have h₁ := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M' F'
-    (H.fieldRange_intermediateField M')
-  have h₂ := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M F'
-    (H.fieldRange_intermediateField M)
-  have hMM' : M = M' := IntermediateField.eq_of_le_of_finrank_le le_sup_left (by
-    rw [← h₁, ← h₂]
-    exact IntermediateField.finrank_le_of_le_right hle)
   have hcM : c ∈ M :=
-    hMM' ▸ (le_sup_right : k⟮c⟯ ≤ M') (IntermediateField.mem_adjoin_simple_self k c)
+    (algebraMap_mem_constantCompositum_iff_of_linearDisjoint H).1 (hc ▸ z.property)
   exact ⟨⟨c, hcM⟩, Subtype.ext hc⟩
 
 variable [Algebra.IsSeparable k k']

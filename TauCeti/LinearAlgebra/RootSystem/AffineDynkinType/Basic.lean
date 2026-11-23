@@ -84,6 +84,8 @@ number, which reduces connectedness to a single induction. Explicitly:
 * `TauCeti.AffineDynkinType.graph_connected`: every valid affine simply-laced diagram is
   connected.
 * `TauCeti.AffineDynkinType.exists_adj_graph`: every node of a valid diagram has a neighbour.
+* `TauCeti.AffineDynkinType.nontrivial_of_graph_isContained`: any graph containing a copy of a
+  valid diagram has at least two vertices.
 * `TauCeti.AffineDynkinType.isBipartite_graph_E6`, `.isBipartite_graph_E7`,
   `.isBipartite_graph_E8`: the exceptional diagrams are bipartite.
 * `TauCeti.AffineDynkinType.eq_of_graph_iso`: valid affine diagrams with isomorphic graphs are
@@ -365,6 +367,15 @@ theorem exists_adj_graph {t : AffineDynkinType} (ht : t.Valid) (i : Fin t.nodes)
   have : Nontrivial (Fin t.nodes) := Fin.nontrivial_iff_two_le.mpr (by
     cases t <;> simp only [Valid, nodes] at ht ⊢ <;> omega)
   exact (graph_connected ht).preconnected.exists_adj_of_nontrivial i
+
+/-- Any graph containing a copy of a valid affine simply-laced diagram has at least two
+vertices: a valid diagram has an edge, and a copy is injective on vertices. -/
+theorem nontrivial_of_graph_isContained {t : AffineDynkinType} {V : Type*} {G : SimpleGraph V}
+    (ht : t.Valid) (hG : t.graph ⊑ G) : Nontrivial V := by
+  obtain ⟨f⟩ := hG
+  obtain ⟨_, hj⟩ := t.exists_adj_graph ht ⟨0, t.nodes_pos⟩
+  have : Nontrivial (Fin t.nodes) := hj.nontrivial
+  exact f.injective.nontrivial
 
 /-! ## Bipartiteness of the exceptional diagrams -/
 
