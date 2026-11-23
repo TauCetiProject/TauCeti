@@ -180,12 +180,8 @@ private theorem eq_zero_of_mem_admissible [HasUniqueDiv V] (hT : T vac = 0)
   -- Every mode of `B` kills `vac`: the nonnegative ones by admissibility, the negative ones by
   -- `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac) = 0`.
   have hvac (n : ℤ) : (B[[n]]) vac = 0 := by
-    rcases le_or_gt 0 n with hn | hn
-    · exact hB.2.2 n hn
-    · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
-      refine nsmul_right_injective k.factorial_ne_zero ?_
-      beta_reduce
-      rw [factorial_smul_ncoeff_apply hT hB.2.1 k, ← vacuumCoeff_apply, h₀, map_zero, smul_zero]
+    simpa using ncoeff_apply_eq_of_lie_of_neg_one_eq hT hB.2.1 (B := 0)
+      (fun _ ↦ by simp [Ring.lie_def]) (by simpa [vacuumCoeff_apply] using h₀) n
   -- The vectors killed by every mode of `B` form a generating subspace, hence all of `V`.
   let W : Submodule R V := ⨅ n : ℤ, LinearMap.ker (B[[n]])
   have hW : W = ⊤ := by

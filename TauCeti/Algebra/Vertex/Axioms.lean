@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Vertex.HasseDeriv
+public import TauCeti.Algebra.Vertex.Derivative
+public import Mathlib.Algebra.Lie.OfAssociative
 
 /-!
 # Formal vertex algebras
@@ -50,9 +51,6 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
   `B(z)|0⟩ = Y(b,z)|0⟩` is `Y(b,z)`.
 * `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`: if `V` has unique divisibility, a
   translation covariant field `B` local with every `Y(a,z)` is `Y(B₍₋₁₎|0⟩, z)`.
-* `TauCeti.FormalVertexAxioms.factorial_smul_hasseDeriv_field` and
-  `TauCeti.FormalVertexAxioms.field_ncoeff_neg_succ_apply_vacuum`:
-  `k! • ∂_z^{(k)} Y(a, z) = Y(Tᵏ a, z)` and `Y(a₍₋ₖ₋₁₎|0⟩, z) = ∂_z^{(k)} Y(a, z)`.
 
 ## References
 
@@ -259,31 +257,10 @@ field `B` that is local with every field `Y(a,z)` is the field of the state `B�
 theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]]) :
-    B = A.field ((B[[-1]]) A.vacuum) := by
-  refine A.eq_field_of_ncoeff_apply_vacuum_eq hB fun n ↦ ?_
-  by_cases hn : 0 ≤ n
-  · rw [ncoeff_apply_of_nonneg A.translation_vacuum hT hn,
-      A.ncoeff_field_apply_vacuum_of_nonneg _ n hn]
-  · -- Both creation series satisfy `k! • x₍₋ₖ₋₁₎|0⟩ = Tᵏ x₍₋₁₎|0⟩`.
-    obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
-    rw [← nsmul_right_inj k.factorial_ne_zero,
-      factorial_smul_ncoeff_apply A.translation_vacuum hT k,
-      A.factorial_smul_ncoeff_field_apply_vacuum]
-
-/-- Without division, `k!` times the `k`-th Hasse derivative of `Y(a, z)` is `Y(Tᵏ a, z)`. -/
-theorem factorial_smul_hasseDeriv_field (a : V) (k : ℕ) :
-    k.factorial • hasseDeriv k (A.field a) = A.field ((A.translation ^ k) a) := by
-  rw [← iterate_derivative_eq_factorial_smul_hasseDeriv, A.field_pow_translation]
-
-/-- The field of `a₍₋ₖ₋₁₎|0⟩` is the `k`-th Hasse derivative of `Y(a, z)`. -/
-@[simp]
-theorem field_ncoeff_neg_succ_apply_vacuum [HasUniqueDiv V] (a : V) (k : ℕ) :
-    A.field (((A.field a)[[-(k : ℤ) - 1]]) A.vacuum) = hasseDeriv k (A.field a) := by
-  have h := A.eq_field_of_lie_translation
-    (fun c ↦ let ⟨N, hN⟩ := A.exists_isLocalOfOrder a c; ⟨N + k, hN.hasseDeriv_left k⟩)
-    (lie_ncoeff_hasseDeriv (A.lie_translation_ncoeff a) k)
-  rw [ncoeff_neg_one_hasseDeriv] at h
-  exact h.symm
+    B = A.field ((B[[-1]]) A.vacuum) :=
+  A.eq_field_of_ncoeff_apply_vacuum_eq hB
+    (ncoeff_apply_eq_of_lie_of_neg_one_eq A.translation_vacuum hT
+      (A.lie_translation_ncoeff _) (A.ncoeff_neg_one_field_apply_vacuum _).symm)
 
 end FormalVertexAxioms
 
