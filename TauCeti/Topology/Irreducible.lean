@@ -27,6 +27,23 @@ open Set
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
+/-- The complement of a finite union of irreducible components is open. -/
+theorem Set.Finite.isOpen_compl_sUnion_of_subset_irreducibleComponents {s : Set (Set X)}
+    (hs : s.Finite) (h : s ⊆ irreducibleComponents X) : IsOpen (⋃₀ s)ᶜ :=
+  (hs.isClosed_sUnion fun C hC ↦ isClosed_of_mem_irreducibleComponents C (h hC)).isOpen_compl
+
+/-- Every irreducible component has nonempty interior when there are finitely many components. -/
+theorem Set.Finite.nonempty_interior_of_mem_irreducibleComponents
+    (hfin : (irreducibleComponents X).Finite) {C : Set X}
+    (hC : C ∈ irreducibleComponents X) : (interior C).Nonempty := by
+  let U := (⋃₀ (irreducibleComponents X \ {C}))ᶜ
+  have hU : closure U = C :=
+    closure_sUnion_irreducibleComponents_sdiff_singleton hfin C hC
+  have hU_open : IsOpen U :=
+    hfin.sdiff.isOpen_compl_sUnion_of_subset_irreducibleComponents sdiff_subset
+  have hU_nonempty : U.Nonempty := closure_nonempty_iff.mp (hU ▸ hC.1.nonempty)
+  exact hU_nonempty.mono (interior_maximal (subset_closure.trans_eq hU) hU_open)
+
 /-- If `f` is a continuous surjection and the preimage of every irreducible component of `Y` is
 irreducible, then `Z ↦ f ⁻¹' Z` maps the irreducible components of `Y` bijectively onto those
 of `X`. -/

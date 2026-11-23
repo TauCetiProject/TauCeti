@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.Derivation.Order.Basic
 public import TauCeti.RingTheory.Smooth.Regular
+import TauCeti.RingTheory.RegularLocalRing.Smooth
 
 /-!
 # Zariski closedness of order-threshold loci
