@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Contour.Crossing.Excision
 public import TauCeti.Analysis.Contour.RegularityConditions
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Chord.QuotientAsymptotics
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # The capping angle at a crossing
@@ -125,7 +126,7 @@ theorem circleMap_crossingCapSweep_endpoints (hL_L : L_L ≠ 0) (hL_R : L_R ≠ 
       rw [← hnorm, hw_L, norm_zero]
     simp [circleMap, hw_L, hw_R]
   constructor
-  · rw [circleMap, Complex.norm_mul_exp_arg_mul_I]
+  · exact circleMap_norm_arg s w_L
   · rw [circleMap, Complex.ofReal_add, add_mul, Complex.exp_add,
       exp_crossingCapSweep_mul_I hL_L hL_R hw_L hnorm h_R h_L]
     have hwL_norm : (‖w_L‖ : ℂ) * Complex.exp ((w_L.arg : ℂ) * Complex.I) = w_L :=

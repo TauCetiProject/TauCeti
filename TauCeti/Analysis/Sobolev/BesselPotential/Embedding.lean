@@ -6,16 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.ZeroAtInfty
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
-import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Sobolev embeddings of `H^s(ℝⁿ)` into `C₀(ℝⁿ)` and `C^k(ℝⁿ)`
@@ -31,6 +33,9 @@ representative is `C^k`, its derivatives of order `j ≤ k` vanish at infinity, 
 
 `‖D^j u(x)‖ ≤ C ‖u‖_{H^s}` for all `x` and `j ≤ k`.
 
+In particular, for `2s > n`, convergence in `H^s` implies uniform convergence of the continuous
+representatives.
+
 A tempered distribution lying in `H^s` for every real `s` is therefore a smooth function. These
 whole-space statements hold for every real order and with values in a complex Hilbert space; for
 integer orders on an open set, without bounds, see `TauCeti.Wkp.exists_contDiffOn_ae_eq`. For the
@@ -38,6 +43,9 @@ weak-derivative space `W^{k,2}(ℝⁿ)` with `2k > n` the continuous representat
 and boundedly on the function, so that
 
 `sup_x |u(x)| ≤ C ‖u‖_{W^{k,2}}`.
+
+For a `Cᵏ` function `f` with square-integrable derivatives through order `k` this reads
+`sup_x |f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂`.
 
 ## The Fourier argument
 
@@ -66,6 +74,7 @@ representative in `C₀(ℝⁿ)`. Two continuous functions that agree almost eve
 the representative is unique and depends linearly on `u`. Its graph is closed, since convergence
 in `W^{k,2}` gives almost-everywhere convergence along a subsequence and convergence in `C₀` is
 uniform, so the closed graph theorem makes the map `u ↦ u` bounded from `W^{k,2}(ℝⁿ)` to `C₀(ℝⁿ)`.
+This last step does not depend on `k` or `p`, and is `TauCeti.Wkp.toZeroAtInftyOfExists`.
 
 The statements are for Lebesgue measure `volume`, the measure of Mathlib's Bessel-potential
 spaces.
@@ -83,12 +92,19 @@ spaces.
   `|u(x)| ≤ C ‖u‖_{H^s}`, `2s > n`, almost everywhere.
 * `TemperedDistribution.ae_tendsto_of_tendsto_toBesselPotentialSpace`: convergence in `H^s`,
   `2s > n`, implies convergence almost everywhere.
+* `TemperedDistribution.exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto`: a series of `L²`
+  functions in `H^s`, `2s > n`, converging in `H^s` converges almost everywhere to an `L²`
+  function whose `H^s` element is its sum.
 * `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
   function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`: an `L²` function in `H^s`,
   `2s > n + 2k`, agrees almost everywhere with a `C^k` function.
-* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`: a continuous real function in
-  `H^s`, `2s > n + 2k`, is `C^k`.
+* `TemperedDistribution.exists_contDiff_ae_eq_of_mem_realSobolevFunctions`: the version for real
+  functions; `TemperedDistribution.exists_contDiff_ae_eq_of_forall_mem_realSobolevFunctions` gives
+  a smooth representative of a real function lying in every `H^k`.
+* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`,
+  `TemperedDistribution.exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions`: a continuous
+  real function in `H^s`, `2s > n + 2k`, is `C^k` with bounded derivatives of order at most `k`.
 * `TemperedDistribution.MemSobolev.integrable_norm_pow_mul_norm`,
   `TemperedDistribution.MemSobolev.integral_norm_pow_mul_norm_le`: the moments
   `∫ ‖ξ‖ ^ j ‖v ξ‖ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-(s - j) / 2)‖₂ ‖f‖_{H^s}` of `v = 𝓕 f`, `2 (s - j) > n`.
@@ -98,6 +114,8 @@ spaces.
   of order `j`, `s > j + n / 2`, vanish at infinity.
 * `TemperedDistribution.exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace`: the bound
   `‖D^j u(x)‖ ≤ C ‖u‖_{H^s}` for `j ≤ k`, `s > k + n / 2`.
+* `TemperedDistribution.tendstoUniformly_of_tendsto_toBesselPotentialSpace`: convergence in
+  `H^s`, `2s > n`, implies uniform convergence of the continuous representatives.
 * `TemperedDistribution.contDiff_of_forall_memSobolev_of_ae_eq`,
   `TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev`: functions and tempered
   distributions lying in every `H^s` are smooth.
@@ -106,6 +124,11 @@ spaces.
   a Sobolev function to its unique continuous representative.
 * `TauCeti.Wkp.toZeroAtInfty_injective`: the continuous representative determines the Sobolev
   function.
+* `TauCeti.exists_norm_le_mul_sum_lpNorm_iteratedFDeriv`: the bound
+  `sup_x |f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂` for `Cᵏ` functions `f` with square-integrable derivatives
+  through order `k`, `2k > n`.
+* `TauCeti.not_memSobolev_indicator_Icc`: `1_{[0,1]} ∉ H^{s,2}(ℝ)` for `s > 1 / 2`, in particular
+  `1_{[0,1]} ∉ H^{1,2}(ℝ)`, since it has no continuous representative.
 
 ## References
 
@@ -158,24 +181,12 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
     {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
     eLpNorm (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 volume =
       ‖hf.toBesselPotentialSpace‖ₑ := by
-  set U := hf.toBesselPotentialSpace.toLp
-  have hU : besselPotential E F s f = U := by
-    simpa using hf.toBesselPotentialSpace.bessel_toDistr_eq_toLp
-  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
-    fun_prop
-  have hwc : Continuous fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
-    (by fun_prop : Continuous fun ξ : E => 1 + ‖ξ‖ ^ 2).rpow_const fun ξ =>
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
-  -- The `L²` function `𝓕 U` represents the weight times `v`.
-  have hae : ((𝓕 U : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
-      fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
-    refine Lp.ae_eq_of_toTemperedDistribution_apply_eq (𝓕 U) ?_ fun φ => ?_
-    · refine locallyIntegrable_iff.2 fun K hK => ?_
-      exact (L1.integrable_coeFn v).integrableOn.continuousOn_smul hwc.continuousOn hK
-    · rw [← Lp.fourier_toTemperedDistribution_eq U, ← hU,
-        fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv,
-        Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
-      simp only [Complex.coe_smul]
+  -- The `L²` function `𝓕 (J^s f)` represents the weight times `v`.
+  have hae : ((𝓕 hf.toBesselPotentialSpace.toLp : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
+      fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ :=
+    (BesselPotentialSpace.fourier_toLp_ae_eq hf.toBesselPotentialSpace (v := v)
+      (by rwa [MemSobolev.toBesselPotentialSpace_toDistr])).mono fun ξ h =>
+        h.trans (Complex.coe_smul _ _)
   rw [eLpNorm_congr_ae hae.symm, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm,
     BesselPotentialSpace.norm_fourier_toLp_eq]
 
@@ -226,6 +237,15 @@ theorem exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace {s : ℝ}
   rw [integral_neg_eq_self (fun ξ => ‖(v : E → F) ξ‖)]
   exact hL1
 
+/-- If `u i → v` in `H^s`, then the `H^s` norms of the differences `u i - v` tend to zero. -/
+private theorem tendsto_norm_toBesselPotentialSpace_sub {s : ℝ} {ι : Type*} {l : Filter ι}
+    {u : ι → Lp F 2 (volume : Measure E)} {v : Lp F 2 (volume : Measure E)}
+    (hu : ∀ i, MemSobolev s 2 (u i : 𝓢'(E, F))) (hv : MemSobolev s 2 (v : 𝓢'(E, F)))
+    (h : Tendsto (fun i => (hu i).toBesselPotentialSpace) l (𝓝 hv.toBesselPotentialSpace)) :
+    Tendsto (fun i => ‖((hu i).toTemperedDistribution_sub hv).toBesselPotentialSpace‖) l (𝓝 0) := by
+  refine (tendsto_iff_norm_sub_tendsto_zero.1 h).congr fun i => ?_
+  simp only [Lp.toTemperedDistribution_sub, (hu i).toBesselPotentialSpace_sub hv]
+
 /-- **Convergence in `H^s` implies convergence almost everywhere, `s > n / 2`.** If `L²`
 functions `u n ∈ H^s` converge in `H^s` to an `L²` function `v ∈ H^s`, then `u n x → v x` for
 almost every `x`. -/
@@ -235,19 +255,48 @@ theorem ae_tendsto_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ
     (h : Tendsto (fun n => (hu n).toBesselPotentialSpace) atTop (𝓝 hv.toBesselPotentialSpace)) :
     ∀ᵐ x ∂volume, Tendsto (fun n => u n x) atTop (𝓝 (v x)) := by
   obtain ⟨C, -, hC⟩ := exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (F := F) hs
-  have hD (n : ℕ) : MemSobolev s 2 ((u n - v : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
-    rw [Lp.toTemperedDistribution_sub]
-    exact (hu n).sub hv
+  have hD (n : ℕ) := (hu n).toTemperedDistribution_sub hv
   have hlim : Tendsto (fun n => C * ‖(hD n).toBesselPotentialSpace‖) atTop (𝓝 0) := by
-    have h' := (tendsto_iff_norm_sub_tendsto_zero.1 h).const_mul C
-    rw [mul_zero] at h'
-    refine h'.congr fun n => ?_
-    simp only [Lp.toTemperedDistribution_sub, (hu n).toBesselPotentialSpace_sub hv]
+    simpa only [mul_zero] using (tendsto_norm_toBesselPotentialSpace_sub hu hv h).const_mul C
   filter_upwards [ae_all_iff.2 fun n => hC (hD n), ae_all_iff.2 fun n => Lp.coeFn_sub (u n) v]
     with x hx hsub
   refine tendsto_iff_norm_sub_tendsto_zero.2 <|
     squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
   simpa only [hsub n, Pi.sub_apply] using hx n
+
+/-- **Series in `H^s` converge almost everywhere, `s > n / 2`.** Let `dₙ` be `L²` functions in
+`H^s` and `aₙ` complex coefficients such that `∑ₙ aₙ dₙ` converges in `H^s`. Then its sum is the
+`H^s` element of an `L²` function `g`, and the partial sums `∑_{n < N} aₙ dₙ(x)` converge to `g(x)`
+for almost every `x`. -/
+theorem exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {d : ℕ → Lp F 2 (volume : Measure E)} (hd : ∀ n, MemSobolev s 2 (d n : 𝓢'(E, F)))
+    {a : ℕ → ℂ} (ha : Summable fun n ↦ a n • (hd n).toBesselPotentialSpace) :
+    ∃ g : Lp F 2 (volume : Measure E), ∃ hg : MemSobolev s 2 (g : 𝓢'(E, F)),
+      hg.toBesselPotentialSpace = ∑' n, a n • (hd n).toBesselPotentialSpace ∧
+      ∀ᵐ x ∂volume, Tendsto (fun N ↦ ∑ n ∈ Finset.range N, a n • d n x) atTop (𝓝 (g x)) := by
+  have hs0 : 0 ≤ s := TauCeti.nonneg_of_finrank_lt_two_mul hs
+  set L := ∑' n, a n • (hd n).toBesselPotentialSpace
+  -- The limit `L` is the `H^s` element of an `L²` function `g`.
+  obtain ⟨g, hLg⟩ := memSobolev_zero_iff.1 (L.memSobolev_toDistr.mono hs0)
+  have hg : MemSobolev s 2 (g : 𝓢'(E, F)) := hLg ▸ L.memSobolev_toDistr
+  have hgL : hg.toBesselPotentialSpace = L := BesselPotentialSpace.ext (by simp [hLg])
+  refine ⟨g, hg, hgL, ?_⟩
+  -- The partial sums converge to `L` in `H^s`, hence almost everywhere.
+  set S : ℕ → Lp F 2 (volume : Measure E) := fun N ↦ ∑ n ∈ Finset.range N, a n • d n
+  have hS (N : ℕ) : MemSobolev s 2 (S N : 𝓢'(E, F)) := by
+    simpa only [S, Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul] using
+      MemSobolev.sum fun n (_ : n ∈ Finset.range N) ↦ (hd n).smul (a n)
+  have hlim := ae_tendsto_of_tendsto_toBesselPotentialSpace hs hS hg <| by
+    simpa only [MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul
+      fun n _ ↦ hd n, Finset.sum_attach _ fun n ↦ a n • (hd n).toBesselPotentialSpace, hgL] using
+      ha.hasSum.tendsto_sum_nat
+  have hpart : ∀ᵐ x ∂volume, ∀ N, S N x = ∑ n ∈ Finset.range N, a n • d n x :=
+    ae_all_iff.2 fun N ↦ by
+      filter_upwards [(Lp.coeFn_finsetSum _ _).trans <| eventuallyEq_sum fun n _ ↦
+        Lp.coeFn_smul (a n) (d n)] with x h
+      simpa [S] using h
+  filter_upwards [hlim, hpart] with x hx hSx
+  simpa only [hSx] using hx
 
 /-- **Continuous Sobolev functions vanish at infinity.** A continuous real function in `H^s`,
 `s > dim E / 2`, tends to zero at infinity: it agrees almost everywhere, hence everywhere, with
@@ -292,7 +341,7 @@ private theorem MemSobolev.integrable_norm_pow_mul_norm_and_integral_le {s : ℝ
     have heq : (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ ((s - j) / 2) • w ξ) =
         fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
       funext ξ
-      simp only [w, smul_smul, ← Real.rpow_add (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2)]
+      simp only [w, smul_smul, ← TauCeti.one_add_norm_sq_rpow_add]
       congr 2
       ring
     rwa [heq, hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv] at h
@@ -425,20 +474,42 @@ theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E
   exact ⟨𝓕⁻ (v : E → F), hu.contDiff_fourierInv (by linarith) hv,
     Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
 
+/-- **Real Sobolev functions are `C^k` almost everywhere.** A real function in `H^s`,
+`s > dim E / 2 + k`, agrees almost everywhere with a `C^k` function. -/
+theorem exists_contDiff_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
+    (hs : finrank ℝ E + 2 * k < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) :
+    ∃ g : E → ℝ, ContDiff ℝ k g ∧ f =ᵐ[volume] g := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨g, hg, hug⟩ := hS.exists_contDiff_ae_eq hs
+  refine ⟨fun x ↦ (g x).re, Complex.reCLM.contDiff.comp hg, ?_⟩
+  filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
+  rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply, Complex.ofReal_re]
+
+open scoped ContDiff in
+/-- **Functions in every Sobolev space are smooth almost everywhere.** A real function lying in
+`H^k` for every `k` agrees almost everywhere with a smooth function. The `C^n` representatives
+given by `exists_contDiff_ae_eq_of_mem_realSobolevFunctions` for the various `n` agree almost
+everywhere, hence everywhere, since they are continuous. -/
+theorem exists_contDiff_ae_eq_of_forall_mem_realSobolevFunctions {f : E → ℝ}
+    (hf : ∀ k : ℕ, f ∈ realSobolevFunctions E k 2) :
+    ∃ g : E → ℝ, ContDiff ℝ ∞ g ∧ f =ᵐ[volume] g := by
+  have hs (n : ℕ) : (finrank ℝ E : ℝ) + 2 * n < 2 * ((finrank ℝ E + n + 1 : ℕ) : ℝ) := by
+    push_cast
+    linarith [(finrank ℝ E).cast_nonneg (α := ℝ)]
+  choose g hg hfg using fun n : ℕ ↦
+    exists_contDiff_ae_eq_of_mem_realSobolevFunctions (hs n) (hf (finrank ℝ E + n + 1))
+  refine ⟨g 0, contDiff_infty.2 fun n ↦ ?_, hfg 0⟩
+  rw [← ((hg n).continuous.ae_eq_iff_eq volume (hg 0).continuous).1 ((hfg n).symm.trans (hfg 0))]
+  exact hg n
+
 /-- **Continuous Sobolev functions are `C^k`.** A continuous real function in `H^s`,
 `s > dim E / 2 + k`, is of class `C^k`: it agrees almost everywhere, hence everywhere, with the
-`C^k` representative given by `MemSobolev.exists_contDiff_ae_eq`. -/
+`C^k` representative given by `exists_contDiff_ae_eq_of_mem_realSobolevFunctions`. -/
 theorem contDiff_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
     {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
     ContDiff ℝ k f := by
-  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
-  obtain ⟨g, hg, hug⟩ := hS.exists_contDiff_ae_eq hs
-  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] g := by
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
-    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
-  have heq := ((Complex.continuous_ofReal.comp hcont).ae_eq_iff_eq volume hg.continuous).1 hae
-  have hf : f = fun x ↦ (g x).re := funext fun x ↦ by simp [← congrFun heq x]
-  exact hf ▸ Complex.reCLM.contDiff.comp hg
+  obtain ⟨g, hg, hfg⟩ := exists_contDiff_ae_eq_of_mem_realSobolevFunctions hs hf
+  rwa [(hcont.ae_eq_iff_eq volume hg.continuous).1 hfg]
 
 /-- **Derivatives of Sobolev functions vanish at infinity.** For a continuous representative `g`
 of an `L²` function in `H^s` and `s > j + dim E / 2`, the `j`-th derivative of `g` tends to zero
@@ -473,6 +544,57 @@ theorem exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace {s : ℝ} 
   refine (hu.norm_iteratedFDeriv_fourierInv_le hsj hv x).trans ?_
   gcongr
   exact Finset.single_le_sum (fun i _ => hc i) (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
+
+/-- **Convergence in `H^s` implies uniform convergence of continuous representatives**,
+`s > n / 2`.
+If `L²` functions `u i ∈ H^s` converge in `H^s` to an `L²` function `v ∈ H^s`, then continuous
+functions `g i` and `g₀` agreeing almost everywhere with `u i` and `v` converge uniformly. -/
+theorem tendstoUniformly_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {ι : Type*} {l : Filter ι} {u : ι → Lp F 2 (volume : Measure E)}
+    {v : Lp F 2 (volume : Measure E)} (hu : ∀ i, MemSobolev s 2 (u i : 𝓢'(E, F)))
+    (hv : MemSobolev s 2 (v : 𝓢'(E, F)))
+    (h : Tendsto (fun i => (hu i).toBesselPotentialSpace) l (𝓝 hv.toBesselPotentialSpace))
+    {g : ι → E → F} {g₀ : E → F} (hg : ∀ i, Continuous (g i)) (hg₀ : Continuous g₀)
+    (hug : ∀ i, u i =ᵐ[volume] g i) (hvg : v =ᵐ[volume] g₀) :
+    TendstoUniformly g g₀ l := by
+  obtain ⟨C, -, hC⟩ :=
+    exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (F := F) (k := 0) (by simpa)
+  have hD (i : ι) := (hu i).toTemperedDistribution_sub hv
+  have hlim : Tendsto (fun i => C * ‖(hD i).toBesselPotentialSpace‖) l (𝓝 0) := by
+    simpa only [mul_zero] using (tendsto_norm_toBesselPotentialSpace_sub hu hv h).const_mul C
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  filter_upwards [(tendsto_order.1 hlim).2 ε hε] with i hi x
+  have hae : u i - v =ᵐ[volume] g i - g₀ := by
+    filter_upwards [Lp.coeFn_sub (u i) v, hug i, hvg] with y h₁ h₂ h₃
+    rw [h₁, Pi.sub_apply, Pi.sub_apply, h₂, h₃]
+  have hx := hC (hD i) ((hg i).sub hg₀) hae 0 le_rfl x
+  rw [norm_iteratedFDeriv_zero, Pi.sub_apply] at hx
+  rw [dist_eq_norm']
+  exact hx.trans_lt hi
+
+/-- **Continuous Sobolev functions have bounded derivatives.** The derivatives of order at most
+`k` of a continuous real function `f` in `H^s`, `s > dim E / 2 + k`, are bounded: those of its
+complexification are, by `exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace`. -/
+theorem exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
+    (hs : finrank ℝ E + 2 * k < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2)
+    (hcont : Continuous f) {n : ℕ} (hn : n ≤ k) :
+    ∃ C, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  have hs' : (finrank ℝ E : ℝ) < 2 * (s - k) := by linarith
+  set g : E → ℂ := fun x ↦ (f x : ℂ)
+  have hgc : Continuous g := Complex.continuous_ofReal.comp hcont
+  have hug : Complex.ofRealCLM.compLp u =ᵐ[volume] g := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu] with x h₁ h₂
+    rw [h₁, h₂, Complex.ofRealCLM_apply]
+  have hg : ContDiff ℝ k g := hS.contDiff_of_ae_eq hs' hgc hug
+  obtain ⟨C, -, hC⟩ :=
+    exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (F := ℂ) hs'
+  have hfg : f = fun x ↦ Complex.reCLM (g x) := funext fun x ↦ by simp [g]
+  refine ⟨‖Complex.reCLM‖ * (C * ‖hS.toBesselPotentialSpace‖), fun x ↦ ?_⟩
+  rw [hfg]
+  exact (Complex.reCLM.norm_iteratedFDeriv_comp_left hg.contDiffAt
+    (by exact_mod_cast hn)).trans (by gcongr; exact hC hS hgc hug n hn x)
 
 open scoped ContDiff in
 /-- **Sobolev functions of every order are smooth.** A continuous representative of an `L²`
@@ -529,98 +651,88 @@ private theorem exists_zeroAtInftyContinuousMap_ae_eq (hk : finrank ℝ E < 2 * 
   rw [← hw]
   simp [← hgx, hx]
 
-/-- Two continuous representatives of the same Sobolev function coincide. -/
-private theorem eq_of_value_ae_eq {u : Wkp (volume : Measure E) ⊤ 2 k} {g g' : C₀(E, ℝ)}
-    (hg : value k u =ᵐ[volume] g) (hg' : value k u =ᵐ[volume] g') : g = g' :=
-  ZeroAtInftyContinuousMap.ext <| congrFun <|
-    (Continuous.ae_eq_iff_eq (volume : Measure E) g.continuous g'.continuous).mp
-      (hg.symm.trans hg')
-
-/-- The continuous representative of a Sobolev function, as a linear map. -/
-private def toZeroAtInftyₗ (hk : finrank ℝ E < 2 * k) :
-    Wkp (volume : Measure E) ⊤ 2 k →ₗ[ℝ] C₀(E, ℝ) where
-  toFun u := (exists_zeroAtInftyContinuousMap_ae_eq hk u).choose
-  map_add' u v := by
-    refine eq_of_value_ae_eq (u := u + v)
-      (exists_zeroAtInftyContinuousMap_ae_eq hk (u + v)).choose_spec ?_
-    have hadd : ⇑(value k u + value k v) =ᵐ[volume] ⇑(value k u) + ⇑(value k v) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_add (value k u) (value k v)
-    filter_upwards [(exists_zeroAtInftyContinuousMap_ae_eq hk u).choose_spec,
-      (exists_zeroAtInftyContinuousMap_ae_eq hk v).choose_spec, hadd] with x hu hv hadd
-    rw [value_add, hadd, Pi.add_apply, hu, hv, _root_.add_apply]
-  map_smul' c u := by
-    refine eq_of_value_ae_eq (u := c • u)
-      (exists_zeroAtInftyContinuousMap_ae_eq hk (c • u)).choose_spec ?_
-    have hsmul : ⇑(c • value k u) =ᵐ[volume] c • ⇑(value k u) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_smul c (value k u)
-    filter_upwards [(exists_zeroAtInftyContinuousMap_ae_eq hk u).choose_spec, hsmul]
-      with x hu hsmul
-    rw [value_smul, hsmul, Pi.smul_apply, hu, RingHom.id_apply,
-      _root_.smul_apply]
-
-private theorem value_ae_eq_toZeroAtInftyₗ (hk : finrank ℝ E < 2 * k)
-    (u : Wkp (volume : Measure E) ⊤ 2 k) : value k u =ᵐ[volume] toZeroAtInftyₗ hk u :=
-  (exists_zeroAtInftyContinuousMap_ae_eq hk u).choose_spec
-
-/-- The graph of the continuous representative is sequentially closed: along a sequence
-converging in `W^{k,2}`, the values converge almost everywhere along a subsequence, while the
-representatives converge uniformly. -/
-private theorem toZeroAtInftyₗ_closedGraph (hk : finrank ℝ E < 2 * k)
-    (u : ℕ → Wkp (volume : Measure E) ⊤ 2 k) (w : Wkp (volume : Measure E) ⊤ 2 k)
-    (g : C₀(E, ℝ))
-    (hu : Tendsto u atTop (𝓝 w)) (hg : Tendsto (toZeroAtInftyₗ hk ∘ u) atTop (𝓝 g)) :
-    g = toZeroAtInftyₗ hk w := by
-  refine eq_of_value_ae_eq (u := w) ?_ (value_ae_eq_toZeroAtInftyₗ hk w)
-  have hval : Tendsto (fun n => value k (u n)) atTop (𝓝 (value k w)) := by
-    simpa only [Function.comp_def, valueL_apply] using ((valueL k).continuous.tendsto w).comp hu
-  obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hval).exists_seq_tendsto_ae
-  have hrep : ∀ᵐ x ∂(volume : Measure E), ∀ i,
-      value k (u (ns i)) x = toZeroAtInftyₗ hk (u (ns i)) x :=
-    ae_all_iff.mpr fun i => value_ae_eq_toZeroAtInftyₗ hk (u (ns i))
-  replace hns : ∀ᵐ x ∂(volume : Measure E),
-      Tendsto (fun i => value k (u (ns i)) x) atTop (𝓝 (value k w x)) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using hns
-  filter_upwards [hns, hrep] with x hx hxrep
-  -- Convergence in `C₀` is uniform, so it implies convergence at `x`.
-  have heval : Tendsto (fun i => toZeroAtInftyₗ hk (u (ns i)) x) atTop (𝓝 (g x)) :=
-    (((continuous_apply x).comp (BoundedContinuousFunction.continuous_coe.comp
-      ZeroAtInftyContinuousMap.isometry_toBCF.continuous)).tendsto g).comp
-        (hg.comp hmono.tendsto_atTop)
-  exact tendsto_nhds_unique (hx.congr hxrep) heval
-
 /-- **The Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)`** for `2k > dim E`: the bounded linear map
 sending a function in the whole-space weak-derivative Sobolev space `W^{k,2}` to its unique
 representative that is continuous and vanishes at infinity. Its boundedness is the estimate
 `sup_x |u(x)| ≤ C ‖u‖_{W^{k,2}}`. -/
 def toZeroAtInfty (hk : finrank ℝ E < 2 * k) : Wkp (volume : Measure E) ⊤ 2 k →L[ℝ] C₀(E, ℝ) :=
-  .ofSeqClosedGraph (g := toZeroAtInftyₗ hk) (toZeroAtInftyₗ_closedGraph hk)
+  toZeroAtInftyOfExists (exists_zeroAtInftyContinuousMap_ae_eq hk)
 
 /-- The Sobolev embedding sends a Sobolev function to a representative of its value. -/
 theorem value_ae_eq_toZeroAtInfty (hk : finrank ℝ E < 2 * k)
     (u : Wkp (volume : Measure E) ⊤ 2 k) :
     value k u =ᵐ[volume] toZeroAtInfty hk u :=
-  value_ae_eq_toZeroAtInftyₗ hk u
+  value_ae_eq_toZeroAtInftyOfExists _ u
 
 /-- The Sobolev embedding of `u` is the only function in `C₀` representing the value of `u`. -/
 theorem toZeroAtInfty_eq_iff (hk : finrank ℝ E < 2 * k) (u : Wkp (volume : Measure E) ⊤ 2 k)
     (g : C₀(E, ℝ)) :
     toZeroAtInfty hk u = g ↔ value k u =ᵐ[volume] g :=
-  ⟨fun h => h ▸ value_ae_eq_toZeroAtInfty hk u,
-    fun h => eq_of_value_ae_eq (value_ae_eq_toZeroAtInfty hk u) h⟩
+  toZeroAtInftyOfExists_eq_iff _ u g
 
 /-- The Sobolev embedding is injective: the continuous representative determines the Sobolev
 function. -/
 theorem toZeroAtInfty_injective (hk : finrank ℝ E < 2 * k) :
-    Function.Injective (toZeroAtInfty (E := E) hk) := by
-  intro u v huv
-  apply ext k
-  apply Lp.ext
-  have hae : value k u =ᵐ[volume] value k v := by
-    filter_upwards [value_ae_eq_toZeroAtInfty hk u, value_ae_eq_toZeroAtInfty hk v]
-      with x hu hv
-    rw [hu, hv, huv]
-  simpa only [Opens.coe_top, Measure.restrict_univ] using hae
+    Function.Injective (toZeroAtInfty (E := E) hk) :=
+  toZeroAtInftyOfExists_injective _
 
 end Wkp
+
+/-- **The Sobolev embedding for classical functions.** If `2k > dim E`, there is a constant `C`
+such that every function `f` that is `Cᵏ` on `E` with square-integrable derivatives through
+order `k` satisfies `|f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂` at every point. -/
+theorem exists_norm_le_mul_sum_lpNorm_iteratedFDeriv {k : ℕ} (hk : finrank ℝ E < 2 * k) :
+    ∃ C, ∀ f : E → ℝ, ContDiff ℝ k f → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) →
+      ∀ x, ‖f x‖ ≤ C * ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by
+  set S := Wkp.toZeroAtInfty (E := E) hk
+  refine ⟨‖S‖, fun f hf hmem x ↦ ?_⟩
+  obtain ⟨u, hu, hnorm⟩ := Wkp.exists_value_ae_eq_and_norm_le hf hmem
+  -- The continuous representative of `u` is `f` itself, since both are continuous.
+  have hSf : ⇑(S u) = f :=
+    Continuous.ae_eq_iff_eq volume (S u).continuous hf.continuous |>.1 <|
+      (Wkp.value_ae_eq_toZeroAtInfty hk u).symm.trans hu
+  calc ‖f x‖ = ‖S u x‖ := by rw [hSf]
+    _ ≤ ‖S u‖ := by
+      rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
+      exact (S u).toBCF.norm_coe_le_norm x
+    _ ≤ ‖S‖ * ‖u‖ := S.le_opNorm u
+    _ ≤ ‖S‖ * ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by gcongr
+
+open Set in
+/-- **The indicator function of `[0, 1]` is not in `H^{s,2}(ℝ)` for `s > 1 / 2`**, in particular
+not in `H^{1,2}(ℝ)`. Every function in `H^{s,2}(ℝ)` with `s > 1 / 2` has a continuous
+representative (`TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`), while
+the indicator function jumps at `0`. For `s = 1` this reflects that its distributional derivative
+`δ₀ - δ₁` is not a function. -/
+theorem not_memSobolev_indicator_Icc {s : ℝ} (hs : 1 / 2 < s) :
+    ¬ TemperedDistribution.MemSobolev s 2 (Complex.ofRealCLM.compLp (indicatorConstLp 2
+      (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne (1 : ℝ) :
+        Lp ℝ 2 (volume : Measure ℝ)) : 𝓢'(ℝ, ℂ)) := by
+  set g : Lp ℝ 2 (volume : Measure ℝ) :=
+    indicatorConstLp 2 (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne 1
+  have hg : (g : ℝ → ℝ) =ᵐ[volume] (Icc (0 : ℝ) 1).indicator fun _ ↦ 1 := indicatorConstLp_coeFn
+  intro hu
+  obtain ⟨f, hf⟩ :=
+    hu.exists_zeroAtInftyContinuousMap_ae_eq (by rw [Module.finrank_self, Nat.cast_one]; linarith)
+  have hae : (f : ℝ → ℂ) =ᵐ[volume]
+      fun x ↦ (((Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ)) x : ℂ) := by
+    filter_upwards [hf, Complex.ofRealCLM.coeFn_compLp g, hg] with x h₁ h₂ h₃
+    rw [← h₁, h₂, Complex.ofRealCLM_apply, h₃]
+  -- So the continuous function `f` is `1` on `(0, 1)` and `0` on `(-1, 0)`, and both at `0`.
+  have h₁ : EqOn f (fun _ ↦ 1) (Ioo 0 1) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ isOpen_Ioo f.continuous.continuousOn
+      continuousOn_const
+    filter_upwards [ae_restrict_of_ae hae, ae_restrict_mem measurableSet_Ioo] with x hx hxI
+    rw [hx, indicator_of_mem (Ioo_subset_Icc_self hxI), Complex.ofReal_one]
+  have h₀ : EqOn f (fun _ ↦ 0) (Ioo (-1) 0) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ isOpen_Ioo f.continuous.continuousOn
+      continuousOn_const
+    filter_upwards [ae_restrict_of_ae hae, ae_restrict_mem measurableSet_Ioo] with x hx hxI
+    rw [hx, indicator_of_notMem fun h : x ∈ Icc (0 : ℝ) 1 ↦ (not_le.2 hxI.2) h.1,
+      Complex.ofReal_zero]
+  have h₁0 : f 0 = 1 := h₁.closure f.continuous continuous_const (by simp [closure_Ioo zero_ne_one])
+  have h₀0 : f 0 = 0 :=
+    h₀.closure f.continuous continuous_const (by simp [closure_Ioo (by norm_num : (-1 : ℝ) ≠ 0)])
+  exact one_ne_zero (h₁0.symm.trans h₀0)
 
 end TauCeti

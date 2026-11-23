@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Disk
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CoherentHomotopy
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Deformation
 
 /-!
 # Deforming singular cubes into a subspace
@@ -146,14 +147,14 @@ private lemma exists_extension {m : ℕ} (c : SingularCube X m)
   · dsimp only [ContinuousMap.coe_mk]
     split_ifs with hs
     · exact hG₀B s y
-    · rw [K.eq_fst _ y.2, ContinuousMap.curry_apply, hBa]
+    · rw [K.eq_fst _ y.property, ContinuousMap.curry_apply, hBa]
       exact (hB s (Subtype.coe_le_coe.1 (not_le.1 hs).le) y).symm
   · simp only [ContinuousMap.coe_mk, hb1, ite_false]
-    rw [hψ₁ (by exact_mod_cast b.2.2), K.apply_one]
+    rw [hψ₁ (by exact_mod_cast b.property.2), K.apply_one]
     exact hc' ⟨y, rfl⟩
   · have hs' : ¬ (s : ℝ) ≤ a := not_le.2 (hab.trans_le hs)
     simp only [ContinuousMap.coe_mk, hs', hb1, ite_false]
-    rw [hψ₁ hs, hψ₁ (by exact_mod_cast b.2.2)]
+    rw [hψ₁ hs, hψ₁ (by exact_mod_cast b.property.2)]
 
 /-! ### Deforming all cubes of one dimension -/
 
@@ -173,7 +174,7 @@ variable {m : ℕ}
 private lemma bdry_one_mem (L : Level A n m) (c : SingularCube X (m + 1))
     (hm : ((m + 1 : ℕ) : ℕ∞) < n) (y : Cube.boundary (Fin (m + 1))) :
     L.boundaryHomotopy c (1, y) ∈ A := by
-  obtain ⟨j, hj⟩ := y.2
+  obtain ⟨j, hj⟩ := y.property
   rw [L.boundaryHomotopy_apply c 1 y j hj]
   exact L.apply_one_mem ((Nat.cast_le.2 m.le_succ).trans_lt hm) _ _
 
@@ -181,7 +182,7 @@ private lemma bdry_of_le (L : Level A n m) (c : SingularCube X (m + 1))
     (hm : ((m + 1 : ℕ) : ℕ∞) < n) (s : I) (hs : threshold (m + 1) ≤ s)
     (y : Cube.boundary (Fin (m + 1))) :
     L.boundaryHomotopy c (s, y) = L.boundaryHomotopy c (1, y) := by
-  obtain ⟨j, hj⟩ := y.2
+  obtain ⟨j, hj⟩ := y.property
   rw [L.boundaryHomotopy_apply c s y j hj, L.boundaryHomotopy_apply c 1 y j hj]
   exact L.apply_of_le ((Nat.cast_le.2 m.le_succ).trans_lt hm) _ s hs _
 
@@ -280,7 +281,7 @@ private lemma exists_extension_zero (c : SingularCube X 0) :
     ∃ G : C(I × (Fin 0 → I), X), (∀ y, G (0, y) = c y) ∧ ((0 : ℕ∞) < n → ∀ y, G (1, y) ∈ A) ∧
       ((0 : ℕ∞) < n → ∀ s : I, threshold (0 + 1) ≤ s → ∀ y, G (s, y) = G (1, y)) := by
   -- The boundary of the `0`-cube is empty, so any homotopy of it will do.
-  have hb (y : Cube.boundary (Fin 0)) : False := by simpa using y.2
+  have hb (y : Cube.boundary (Fin 0)) : False := by simpa using y.property
   obtain ⟨G, hG₀, -, hG⟩ := exists_extension hA c
     ⟨fun q ↦ (hb q.2).elim, continuous_of_const fun q ↦ (hb q.2).elim⟩ (fun y ↦ (hb y).elim)
     (fun _ y ↦ (hb y).elim) fun _ _ _ y ↦ (hb y).elim
@@ -341,27 +342,15 @@ every singular cube `c`, with time as the first coordinate, starting at `c`, and
 with values in `A` when the dimension of `c` is less than `n`. The homotopies are compatible with
 faces and degeneracies, and fix the cubes that already have values in `A`. For `n = ⊤` every cube
 deforms into `A`. -/
-structure SubspaceCubeDeformation where
-  /-- The homotopy deforming the singular cube `c`. -/
-  homotopy {m : ℕ} (c : SingularCube X m) : C(I × (Fin m → I), X)
-  /-- The homotopy of `c` starts at `c`. -/
-  homotopy_zero {m : ℕ} (c : SingularCube X m) (y : Fin m → I) : homotopy c (0, y) = c y
+structure SubspaceCubeDeformation extends CubeDeformation X where
   /-- The homotopy of a cube of dimension less than `n` ends at a cube with values in `A`. -/
   homotopy_one_mem {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X m) (y : Fin m → I) :
     homotopy c (1, y) ∈ A
-  /-- The homotopy of a face of `c` is the restriction of the homotopy of `c` to that face. -/
-  homotopy_insertNth {m : ℕ} (c : SingularCube X (m + 1)) (i : Fin (m + 1)) {t : I}
-    (ht : t = 0 ∨ t = 1) (s : I) (z : Fin m → I) :
-    homotopy c (s, i.insertNth t z) = homotopy (SingularCube.face i t c) (s, z)
-  /-- If `c` does not depend on a coordinate, then neither does its homotopy at any time. -/
-  isDegenerateAt_curry {m : ℕ} {c : SingularCube X m} {i : Fin m} (hc : c.IsDegenerateAt i)
-    (s : I) : SingularCube.IsDegenerateAt ((homotopy c).curry s) i
   /-- The homotopy of a cube with values in `A` is constant. -/
   homotopy_of_range_subset {m : ℕ} {c : SingularCube X m} (hc : range c ⊆ A) (s : I)
     (y : Fin m → I) : homotopy c (s, y) = c y
 
-attribute [simp] SubspaceCubeDeformation.homotopy_zero SubspaceCubeDeformation.homotopy_insertNth
-  SubspaceCubeDeformation.homotopy_of_range_subset
+attribute [simp] SubspaceCubeDeformation.homotopy_of_range_subset
 
 /-- **Below dimension `n`, the singular cubes deform into a compressible subspace.** If every
 singular cube of `X` of dimension less than `n` with boundary in `A` is homotopic, relative to the

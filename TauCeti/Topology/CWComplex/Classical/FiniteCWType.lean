@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.CWComplex.Classical.CWType
+import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # Spaces of finite CW type
@@ -45,6 +46,14 @@ variable {X : Type w} [TopologicalSpace X] [DiscreteTopology X]
 instance isEmpty_cell_univ_succ (n : ℕ) :
     IsEmpty (cell (univ : Set X) (n + 1)) :=
   inferInstanceAs (IsEmpty PEmpty)
+
+/-- In the discrete CW structure on a discrete space, every skeleton of positive dimension is the
+whole space. -/
+theorem skeletonLT_univ_eq_univ_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
+    (skeletonLT (univ : Set X) n : Set X) = univ :=
+  skeletonLT_eq_complex_of_isEmpty_cell _ n fun m hm ↦ by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' ((Nat.one_le_iff_ne_zero.2 hn).trans hm)
+    infer_instance
 
 /-- The zero-cells of the discrete CW structure on a discrete space are its points. -/
 theorem nat_card_cell_univ_zero :

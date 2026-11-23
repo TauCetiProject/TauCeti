@@ -46,6 +46,7 @@ the singular chains of an `(n - 1)`-connected space into combinations of general
 
 ## Main definitions
 
+* `GenLoop.cubicalCycle R p`: a generalized loop as a cycle of the normalized cubical chains.
 * `GenLoop.cubicalHurewicz R p`: the class of a generalized loop in normalized cubical homology,
   characterized by `GenLoop.homologyπ_eq_cubicalHurewicz`.
 * `HomotopyGroup.cubicalHurewicz R n`: the induced map on `π_{n+1}(X, x)`.
@@ -111,7 +112,7 @@ theorem boundary_ofCube_eq_zero (p : Ω^ (Fin (n + 1)) X x) :
 /-- The faces outside the time coordinate of the cube swept out by a homotopy of generalized loops
 relative to the boundary are constant. -/
 private lemma face_succ_prism_eq_const {p q : Ω^ (Fin (n + 1)) X x}
-    (H : p.1.HomotopyRel q.1 (Cube.boundary (Fin (n + 1)))) (j : Fin (n + 1)) {t : I}
+    (H : p.val.HomotopyRel q.val (Cube.boundary (Fin (n + 1)))) (j : Fin (n + 1)) {t : I}
     (ht : t = 0 ∨ t = 1) :
     SingularCube.face j.succ t (SingularCube.prism H.toHomotopy (ContinuousMap.id _)) =
       ContinuousMap.const _ x := by
@@ -125,7 +126,7 @@ private lemma face_succ_prism_eq_const {p q : Ω^ (Fin (n + 1)) X x}
 /-- The boundary of the cube swept out by a homotopy relative to the boundary from `p` to `q` is
 `p - q`. -/
 private lemma boundary_ofCube_prism {p q : Ω^ (Fin (n + 1)) X x}
-    (H : p.1.HomotopyRel q.1 (Cube.boundary (Fin (n + 1)))) :
+    (H : p.val.HomotopyRel q.val (Cube.boundary (Fin (n + 1)))) :
     NormalizedCubicalChain.boundary X R (n + 1) (NormalizedCubicalChain.ofCube X R
       (SingularCube.prism H.toHomotopy (ContinuousMap.id _))) =
       NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1)) -
@@ -143,7 +144,8 @@ private lemma boundary_ofCube_prism {p q : Ω^ (Fin (n + 1)) X x}
 `s = 0`, `(1 + t) / 2` for `s = 1`, `s / 2` for `t = 0` and `1` for `t = 1`. -/
 private def addParam (s t : I) : I :=
   ⟨s / 2 + t * (1 - s / 2), by
-    constructor <;> nlinarith [s.2.1, s.2.2, t.2.1, t.2.2, mul_nonneg t.2.1 s.2.1]⟩
+    constructor <;> nlinarith [s.property.1, s.property.2, t.property.1, t.property.2,
+        mul_nonneg t.property.1 s.property.1]⟩
 
 private lemma continuous_addParam : Continuous fun z : I × I ↦ addParam z.1 z.2 := by
   unfold addParam
@@ -183,7 +185,7 @@ private lemma addPoint_insertNth_succ_succ_succ (j : Fin n) (t : I) (w : Fin (n 
 /-- The `(n + 2)`-cube `(s, t, w) ↦ (transAt 0 q p) (s / 2 + t (1 - s / 2), w)`, whose boundary is
 `transAt 0 q p - p - q` in the normalized chains. -/
 private def addCube (p q : Ω^ (Fin (n + 1)) X x) : SingularCube X (n + 2) :=
-  ⟨fun z ↦ transAt 0 q p (addPoint z), (transAt 0 q p).1.continuous.comp continuous_addPoint⟩
+  ⟨fun z ↦ transAt 0 q p (addPoint z), (transAt 0 q p).val.continuous.comp continuous_addPoint⟩
 
 private lemma addCube_apply (p q : Ω^ (Fin (n + 1)) X x) (z : Fin (n + 2) → I) :
     addCube p q z = transAt 0 q p (addPoint z) :=
@@ -204,7 +206,7 @@ private lemma face_zero_one_addCube (p q : Ω^ (Fin (n + 1)) X x) :
     SingularCube.face 0 1 (addCube p q) = p := by
   ext z
   rw [SingularCube.face_apply, addCube_apply, addPoint_insertNth_zero, coe_coe]
-  rcases eq_or_lt_of_le (z 0).2.1 with h | h
+  rcases eq_or_lt_of_le (z 0).property.1 with h | h
   · -- On the face `z₀ = 0`, both sides are the base point.
     have hz : z 0 = 0 := Subtype.ext h.symm
     rw [transAt_apply_of_le 0 q p (a := 1) (by simp [hz]) (by simp [hz]), Fin.update_cons_zero,
@@ -216,7 +218,7 @@ private lemma face_one_zero_addCube (p q : Ω^ (Fin (n + 1)) X x) :
     SingularCube.face 1 0 (addCube p q) = q := by
   ext z
   rw [SingularCube.face_apply, addCube_apply, addPoint_insertNth_one, coe_coe,
-    transAt_apply_of_le 0 q p (a := z 0) (by simp; linarith [(z 0).2.2]) (by simp; ring),
+    transAt_apply_of_le 0 q p (a := z 0) (by simp; linarith [(z 0).property.2]) (by simp; ring),
     Fin.update_cons_zero, Fin.cons_self_tail]
 
 private lemma face_one_one_addCube (p q : Ω^ (Fin (n + 1)) X x) :
@@ -259,13 +261,14 @@ variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y
   (R : Type u) [Ring R]
 
 /-- A generalized loop as a cycle of the normalized cubical chains. -/
-private def cubicalCycle (p : Ω^ (Fin (n + 1)) X x) :
+def cubicalCycle (p : Ω^ (Fin (n + 1)) X x) :
     ((normalizedCubicalChainComplex R).obj (TopCat.of X)).cycles (n + 1) :=
   ((normalizedCubicalChainComplex R).obj (TopCat.of X)).moduleCatCyclesMk
     (NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1))) n (by simp)
     (by rw [normalizedCubicalChainComplex_obj_d_apply]; exact boundary_ofCube_eq_zero R p)
 
-private lemma iCycles_cubicalCycle (p : Ω^ (Fin (n + 1)) X x) :
+/-- The underlying chain of the cycle of a generalized loop is the loop itself. -/
+theorem iCycles_cubicalCycle (p : Ω^ (Fin (n + 1)) X x) :
     ((normalizedCubicalChainComplex R).obj (TopCat.of X)).iCycles (n + 1) (cubicalCycle R p) =
       NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1)) :=
   HomologicalComplex.iCycles_moduleCatCyclesMk ..
@@ -401,5 +404,14 @@ def cubicalHurewiczHom :
 lemma cubicalHurewiczHom_apply (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
     cubicalHurewiczHom R n a = cubicalHurewicz R n a.toMul :=
   (rfl)
+
+/-- The cubical Hurewicz homomorphism sends the class of a generalized loop to the cubical
+Hurewicz class of that loop. -/
+theorem cubicalHurewiczHom_ofMul_mk (p : Ω^ (Fin (n + 1)) X x) :
+    cubicalHurewiczHom R n (Additive.ofMul (α := HomotopyGroup (Fin (n + 1)) X x) ⟦p⟧) =
+      GenLoop.cubicalHurewicz R p :=
+  -- `toMul_ofMul` cannot be used by `rw` here: `⟦p⟧` is elaborated at the quotient type
+  -- underlying `HomotopyGroup`, so the step is the definitional equation `toMul (ofMul a) = a`.
+  (cubicalHurewiczHom_apply R n _).trans (cubicalHurewicz_mk R n p)
 
 end HomotopyGroup
