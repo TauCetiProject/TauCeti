@@ -341,18 +341,23 @@ private theorem tendsto_riemannSum (f : C(K, E)) :
     Tendsto (riemannSum μ f) (fineFilter K) (𝓝 (f.compactIntegral μ)) :=
   tendsto_nhds_limUnder (CompleteSpace.complete (cauchy_map_riemannSum f))
 
-/-- Continuous linear maps into any Hausdorff topological module commute with the integral. -/
+/-- Continuous linear maps into any Hausdorff topological module commute with the integral. The
+maps may be linear over any scalar ring `𝕜` whose action is compatible with the real one, such as
+`ℂ`. -/
 @[simp]
-theorem _root_.ContinuousLinearMap.compactIntegral_comp_comm {F : Type*} [AddCommGroup F]
-    [Module ℝ F] [TopologicalSpace F] [T2Space F] (T : E →L[ℝ] F) (f : C(K, E)) :
+theorem _root_.ContinuousLinearMap.compactIntegral_comp_comm {𝕜 F : Type*} [Semiring 𝕜]
+    [Module 𝕜 E] [AddCommGroup F] [Module ℝ F] [Module 𝕜 F] [LinearMap.CompatibleSMul E F ℝ 𝕜]
+    [TopologicalSpace F] [T2Space F] (T : E →L[𝕜] F) (f : C(K, E)) :
     ((T : C(E, F)).comp f).compactIntegral μ = T (f.compactIntegral μ) :=
   compactIntegral_eq_of_tendsto <| ((T.continuous.tendsto _).comp (tendsto_riemannSum f)).congr
-    fun P ↦ by simpa using map_riemannSum (T : E →ₗ[ℝ] F) μ f P
+    fun P ↦ by simpa using map_riemannSum ((T : E →ₗ[𝕜] F).restrictScalars ℝ) μ f P
 
 /-- A continuous linear map into a Banach space takes the integral to the Bochner integral of the
-composite. -/
-theorem _root_.ContinuousLinearMap.apply_compactIntegral {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [CompleteSpace F] (T : E →L[ℝ] F) (f : C(K, E)) :
+composite. The map may be linear over any scalar ring `𝕜` whose action is compatible with the real
+one, such as `ℂ`. -/
+theorem _root_.ContinuousLinearMap.apply_compactIntegral {𝕜 F : Type*} [Semiring 𝕜] [Module 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [Module 𝕜 F] [LinearMap.CompatibleSMul E F ℝ 𝕜]
+    [CompleteSpace F] (T : E →L[𝕜] F) (f : C(K, E)) :
     T (f.compactIntegral μ) = ∫ x, T (f x) ∂μ := by
   rw [← T.compactIntegral_comp_comm, compactIntegral_eq_integral]
   simp
