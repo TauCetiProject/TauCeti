@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Giada Franz, Otis Chodosh
 -/
 module
 
@@ -43,6 +43,15 @@ finite-dimensional inner-product space, the operator agrees with Mathlib's
 flat Laplacian. The Hessian conventions follow Lee, *Introduction to Riemannian Manifolds*,
 Chapter 3.
 
+The Laplace–Beltrami locality lemmas are adapted from Giada Franz's locality helper.
+The operator depends only on the germ of the function: locally equal functions have equal
+Laplacians when the gradient is differentiable at the point, and the Laplacian vanishes off
+the function's topological support without any regularity assumption.
+
+The pointwise Hessian linearity lemmas are adapted from Otis Chodosh's formalization in
+`riccardobrasca/ColdingMinicozziTheory`,
+`ForTauCeti/Geometry/Manifold/Riemannian/Hessian/Contact.lean`,
+revision `d540eafdb38a37ee49e7298d601131ceaa207ced`.
 -/
 
 noncomputable section
@@ -136,6 +145,17 @@ theorem contMDiff_divergence {n m k : ℕ∞ω}
   refine (ht.congr (fun y hy ↦ (hEq y hy).symm)).contMDiffAt
     (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E (TangentSpace I) x))
 
+/-- The divergence of a smooth vector field on a smooth Riemannian manifold with smooth metric is
+smooth. -/
+theorem _root_.ContMDiffSection.contMDiff_divergence {I : ModelWithCorners ℝ E H} {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
+    ContMDiff I 𝓘(ℝ) ∞ (divergence I fun x ↦ X x) :=
+  TauCeti.Manifold.contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
+    (by simpa using X.contMDiff)
+
 /-- The scalar Hessian of `f`, pairing the covariant derivative of its gradient with a second
 tangent vector. -/
 noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -154,9 +174,40 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian]
 
+section HessianGradient
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (TangentSpace I : M → Type _)]
+  [IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _)] {f : M → ℝ}
+
+/-- Vanishing of the Hessian in one tangent direction makes the covariant derivative of the
+gradient vanish in that direction. -/
+theorem leviCivitaConnection_mgradient_eq_zero_of_hessian_eq_zero
+    (x : M) (v : TangentSpace I x) (hzero : ∀ w, hessian I f x v w = 0) :
+    CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v = 0 := by
+  apply ext_inner_right ℝ
+  intro w
+  simpa only [hessian_def, inner_zero_left] using hzero w
+
+end HessianGradient
+
 section HessianSymmetry
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A pure-trace Hessian identifies the covariant derivative of the gradient pointwise. -/
+theorem leviCivitaConnection_mgradient_of_hessian_eq_mul_inner [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {x : M} {a : ℝ}
+    (h : ∀ u v : TangentSpace I x, hessian I f x u v = a * inner ℝ u v)
+    (u : TangentSpace I x) :
+    CovariantDerivative.leviCivitaConnection I M (mgradient I f) x u = a • u := by
+  apply ext_inner_right ℝ
+  intro v
+  rw [← hessian_def, h, real_inner_smul_left]
 
 /-- The Hessian applied to a vector field and a differentiable vector field is the directional
 derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
@@ -251,10 +302,9 @@ theorem hessian_div_eq_mvfderiv_add [IsManifold I 2 M]
         mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) x (X x) -
         mvfderiv I f x (CovariantDerivative.leviCivitaConnection I M Y x (X x)) / f x =
       hessian I f x (X x) (Y x) / f x := by
-  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := 2) (by simp)
   have hfx : MDiffAt f x := hf.mdifferentiableAt (by simp)
   have hdY : MDiffAt (fun x ↦ mvfderiv I f x (Y x)) x :=
-    mdifferentiableAt_mvfderiv_apply (n := 2) hf (by simp) hY
+    mdifferentiableAt_mvfderiv_apply hf le_rfl hY
   rw [hessian_apply_eq_mvfderiv_sub x hf X Y hY]
   have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) x (X x) =
       -(f x ^ 2)⁻¹ * mvfderiv I f x (X x) := by
@@ -353,6 +403,17 @@ variable (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
 @[simp]
 theorem divergence_zero (x : M) : divergence I 0 x = 0 := by
   simp [divergence]
+
+/-- Locally equal vector fields have equal divergence at a point where one is differentiable. -/
+theorem divergence_congr_of_eventuallyEq {X Y : (x : M) → TangentSpace I x} {x : M}
+    (hX : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) x)
+    (h : ∀ᶠ y in nhds x, X y = Y y) : divergence I X x = divergence I Y x := by
+  have hT : (fun y ↦ (⟨y, Y y⟩ : TangentBundle I M)) =ᶠ[nhds x]
+      fun y ↦ (⟨y, X y⟩ : TangentBundle I M) :=
+    h.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy.symm
+  rw [divergence_def, divergence_def,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.congr_of_eventuallyEq
+      hX (hX.congr_of_eventuallyEq hT) Filter.univ_mem h]
 
 /-- Divergence is additive at a point where both vector fields are differentiable. -/
 theorem divergence_add (X Y : (x : M) → TangentSpace I x) (x : M)
@@ -453,29 +514,56 @@ theorem hessian_zero (x : M) (v w : TangentSpace I x) :
     hessian I (0 : M → ℝ) x v w = 0 :=
   hessian_const I 0 x v w
 
-/-- The Hessian is additive on twice continuously differentiable functions. -/
-theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) (v w : TangentSpace I x) :
+/-- The Hessian is additive at a point where both functions are `C²`. -/
+theorem hessian_add_of_contMDiffAt {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (v w : TangentSpace I x) :
     hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian, mgradient_add (hf.mdifferentiable (by simp))
-    (hg.mdifferentiable (by simp)),
-    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.add
-      (mdifferentiable_mgradient (I := I) hf x)
-      (mdifferentiable_mgradient (I := I) hg x),
-    add_apply, inner_add_left]
+  have hgradf := mdifferentiableAt_mgradient hf
+  have hgradg := mdifferentiableAt_mgradient hg
+  have hev := mgradient_add_eventuallyEq (hf.of_le (by norm_num)) (hg.of_le (by norm_num))
+  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
+  rw [hessian_def, hcov.congr_of_eventuallyEq (mdifferentiableAt_mgradient (hf.add hg))
+    (mdifferentiableAt_add_section hgradf hgradg) Filter.univ_mem hev,
+    hcov.add hgradf hgradg, add_apply, inner_add_left,
+    ← hessian_def, ← hessian_def]
+
+/-- The Hessian commutes with constant scalar multiplication at a point of `C²` regularity. -/
+theorem hessian_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (v w : TangentSpace I x) :
+    hessian I (c • f) x v w = c * hessian I f x v w := by
+  let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  simp only [hessian_def, mgradient_smul,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
+      (mdifferentiableAt_mgradient hf),
+    smul_apply, real_inner_smul_left]
+
+/-- Negating a function negates its Hessian at a point of `C²` regularity. -/
+theorem hessian_neg_of_contMDiffAt {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (v w : TangentSpace I x) :
+    hessian I (-f) x v w = -hessian I f x v w := by
+  simpa only [neg_one_smul, neg_one_mul] using hessian_smul_of_contMDiffAt I (-1) hf v w
+
+/-- The Hessian respects subtraction at a point where both functions are `C²`. -/
+theorem hessian_sub_of_contMDiffAt {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (v w : TangentSpace I x) :
+    hessian I (f - g) x v w = hessian I f x v w - hessian I g x v w := by
+  rw [sub_eq_add_neg, hessian_add_of_contMDiffAt I (g := -g) hf hg.neg,
+    hessian_neg_of_contMDiffAt I hg, sub_eq_add_neg]
+
+/-- The Hessian is additive on twice continuously differentiable functions. -/
+theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) (v w : TangentSpace I x) :
+    hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w :=
+  hessian_add_of_contMDiffAt I (hf x) (hg x) v w
 
 /-- The Hessian commutes with multiplication of a `C²` function by a real constant. -/
 theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (x : M) (v w : TangentSpace I x) :
-    hessian I (c • f) x v w = c * hessian I f x v w := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian, mgradient_smul,
-    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
-      (mdifferentiable_mgradient (I := I) hf x),
-    smul_apply, real_inner_smul_left]
+    hessian I (c • f) x v w = c * hessian I f x v w :=
+  hessian_smul_of_contMDiffAt I c (hf x) v w
 
 /-- The Laplace–Beltrami operator vanishes on constants. -/
 @[simp]
@@ -488,17 +576,55 @@ theorem laplaceBeltrami_const (c : ℝ) (x : M) :
 theorem laplaceBeltrami_zero (x : M) : laplaceBeltrami I (0 : M → ℝ) x = 0 :=
   laplaceBeltrami_const I 0 x
 
-/-- The Laplace–Beltrami operator is additive on `C²` functions. -/
-theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+/-- Locally equal functions have equal Laplace–Beltrami operators at a point where the gradient
+of one function is differentiable. -/
+theorem laplaceBeltrami_congr_of_eventuallyEq_of_mdifferentiableAt_mgradient
+    {f g : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (h : f =ᶠ[nhds x] g) : laplaceBeltrami I f x = laplaceBeltrami I g x := by
+  rw [laplaceBeltrami_def, laplaceBeltrami_def]
+  apply divergence_congr_of_eventuallyEq I hf
+  filter_upwards [h.eventuallyEq_nhds] with y hy
+  apply ext_inner_right ℝ
+  intro v
+  rw [inner_mgradient, inner_mgradient, hy.mvfderiv_eq]
+
+/-- Two functions which agree near a point have the same Laplace–Beltrami operator there if
+one is `C²` at the point. -/
+theorem laplaceBeltrami_congr_of_eventuallyEq {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (h : f =ᶠ[nhds x] g) :
+    laplaceBeltrami I f x = laplaceBeltrami I g x :=
+  laplaceBeltrami_congr_of_eventuallyEq_of_mdifferentiableAt_mgradient I
+    (mdifferentiableAt_mgradient hf) h
+
+/-- The Laplace–Beltrami operator vanishes off the topological support of a function. -/
+theorem laplaceBeltrami_eq_zero_of_notMem_tsupport {f : M → ℝ} {x : M}
+    (hx : x ∉ tsupport f) : laplaceBeltrami I f x = 0 := by
+  rw [← laplaceBeltrami_congr_of_eventuallyEq I contMDiffAt_zero
+    (notMem_tsupport_iff_eventuallyEq.1 hx).symm, laplaceBeltrami_zero]
+
+/-- The Laplace–Beltrami operator is additive at a point where both functions are `C²`. -/
+theorem laplaceBeltrami_add_of_contMDiffAt {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
     laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami,
-    mgradient_add (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp))]
-  exact divergence_add I _ _ x
-    (mdifferentiable_mgradient (I := I) hf x)
-    (mdifferentiable_mgradient (I := I) hg x)
+  have hgradf := mdifferentiableAt_mgradient hf
+  have hgradg := mdifferentiableAt_mgradient hg
+  have hev := mgradient_add_eventuallyEq (hf.of_le (by norm_num)) (hg.of_le (by norm_num))
+  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
+  rw [laplaceBeltrami_def, divergence_def,
+    hcov.congr_of_eventuallyEq (mdifferentiableAt_mgradient (hf.add hg))
+    (mdifferentiableAt_add_section hgradf hgradg) Filter.univ_mem hev,
+    ← divergence_def, divergence_add I _ _ x hgradf hgradg, laplaceBeltrami_def,
+    laplaceBeltrami_def]
+
+/-- The Laplace–Beltrami operator is additive on `C²` functions. -/
+theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x :=
+  laplaceBeltrami_add_of_contMDiffAt I (hf x) (hg x)
 
 /- The product rule below is the manifold counterpart of
 `ContDiffAt.laplacian_fun_mul` for the flat Laplacian. -/
@@ -539,14 +665,18 @@ theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     ← inner_mgradient (I := I) (f := g) (x := x), real_inner_comm]
   ring
 
+/-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
+function is `C²`. -/
+theorem laplaceBeltrami_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
+    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
+  simp only [laplaceBeltrami, mgradient_smul]
+  exact divergence_smul I c _ x (mdifferentiableAt_mgradient hf)
+
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
 theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
-    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami, mgradient_smul]
-  exact divergence_smul I c _ x
-    (mdifferentiable_mgradient (I := I) hf x)
+    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x :=
+  laplaceBeltrami_smul_of_contMDiffAt I c (hf x)
 
 /-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
 theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :

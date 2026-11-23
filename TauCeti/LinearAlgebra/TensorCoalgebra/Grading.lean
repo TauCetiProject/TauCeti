@@ -47,7 +47,7 @@ namespace ReducedTensorWords
 universe uR uM
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
-  (G : InternalGrading R M)
+  (G : InternalGrading R M ℤ)
 
 /-- Distinct total-degree pieces of the reduced tensor words are independent. -/
 theorem iSupIndep_gradedPiece : iSupIndep (gradedPiece G) := by
@@ -66,7 +66,7 @@ theorem isInternal_gradedPiece : DirectSum.IsInternal (gradedPiece G) :=
     (iSupIndep_gradedPiece G) (iSup_gradedPiece_eq_top G)
 
 /-- Reduced tensor words graded by the sum of the cohomological degrees of their letters. -/
-noncomputable def grading : InternalGrading R (ReducedTensorWords R M) where
+noncomputable def grading : InternalGrading R (ReducedTensorWords R M) ℤ where
   piece := gradedPiece G
   isInternal := isInternal_gradedPiece G
 

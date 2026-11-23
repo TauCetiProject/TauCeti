@@ -70,14 +70,14 @@ namespace TauCeti
 
 namespace PDE
 
-variable {μ : ℝ}
+variable {n : ℕ} {μ : ℝ}
 
 /-- **Meyers' solution leaves the origin superlinearly.** For `μ > 1` the difference quotients
 `u(t e₀) / t = t ^ (μ - 1)` of Meyers' solution at the origin in the direction `e₀` tend to `0`
 as `t → 0⁺`. -/
 theorem tendsto_meyersSolution_smul_single_zero_div (hμ : 1 < μ) :
-    Tendsto (fun t : ℝ => meyersSolution μ (t • EuclideanSpace.single 0 1) / t) (𝓝[>] 0)
-      (𝓝 0) := by
+    Tendsto (fun t : ℝ => meyersSolution μ (t • EuclideanSpace.single (0 : Fin (n + 2)) 1) / t)
+      (𝓝[>] 0) (𝓝 0) := by
   have h : Tendsto (fun t : ℝ => t ^ (μ - 1)) (𝓝[>] 0) (𝓝 0) := by
     simpa [Real.zero_rpow (by linarith : μ - 1 ≠ 0)] using
       ((continuous_id.rpow_const fun _ => Or.inr (by linarith : 0 ≤ μ - 1)).tendsto

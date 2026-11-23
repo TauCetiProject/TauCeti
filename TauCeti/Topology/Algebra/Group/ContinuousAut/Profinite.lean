@@ -149,11 +149,11 @@ characteristic open quotients `G ⧸ N` that is compatible with the quotient map
 for `N ≤ M` is induced by a continuous automorphism of `G`. -/
 theorem exists_mapQuotient_eq (hG : IsTopologicallyFinitelyGenerated G)
     (σ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      MulAut (G ⧸ (N.1 : Subgroup G)))
-    (hσ : ∀ ⦃N M : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}⦄ (hle : N.1 ≤ M.1)
-      (q : G ⧸ (N.1 : Subgroup G)),
+      MulAut (G ⧸ (N.val : Subgroup G)))
+    (hσ : ∀ ⦃N M : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}⦄ (hle : N.val ≤ M.val)
+      (q : G ⧸ (N.val : Subgroup G)),
       QuotientGroup.mapOfLE hle (σ N q) = σ M (QuotientGroup.mapOfLE hle q)) :
-    ∃ φ : ContinuousAut G, ∀ N, mapQuotient N.2 φ = σ N :=
+    ∃ φ : ContinuousAut G, ∀ N, mapQuotient N.property φ = σ N :=
   exists_mapQuotient_eq_of_forall_exists_le (N := Subtype.val) Subtype.property
     (fun U ↦
       let ⟨N, hN, hle⟩ := hG.exists_isTopCharacteristic_le U.toOpenSubgroup
@@ -166,14 +166,14 @@ quotient maps between characteristic quotients: the continuous automorphisms of 
 compatible families of automorphisms of its characteristic open quotients. -/
 theorem range_pi_mapQuotient (hG : IsTopologicallyFinitelyGenerated G) :
     Set.range (fun (φ : ContinuousAut G)
-        (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) ↦ mapQuotient N.2 φ) =
-      {σ | ∀ ⦃N M : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}⦄ (hle : N.1 ≤ M.1)
-        (q : G ⧸ (N.1 : Subgroup G)),
+        (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) ↦ mapQuotient N.property φ) =
+      {σ | ∀ ⦃N M : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}⦄ (hle : N.val ≤ M.val)
+        (q : G ⧸ (N.val : Subgroup G)),
         QuotientGroup.mapOfLE hle (σ N q) = σ M (QuotientGroup.mapOfLE hle q)} := by
   ext σ
   constructor
   · rintro ⟨φ, rfl⟩ N M hle q
-    exact mapOfLE_mapQuotient N.2 M.2 hle φ q
+    exact mapOfLE_mapQuotient N.property M.property hle φ q
   · intro hσ
     obtain ⟨φ, hφ⟩ := exists_mapQuotient_eq hG σ hσ
     exact ⟨φ, funext hφ⟩
@@ -182,24 +182,25 @@ theorem range_pi_mapQuotient (hG : IsTopologicallyFinitelyGenerated G) :
 quotient coordinate map is closed in the product of the discrete automorphism groups. -/
 theorem isClosed_range_pi_mapQuotient (hG : IsTopologicallyFinitelyGenerated G) :
     letI : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+      TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
     IsClosed (Set.range fun (φ : ContinuousAut G)
-      (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) ↦ mapQuotient N.2 φ) := by
+      (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) ↦ mapQuotient N.property φ) := by
   let _ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+    TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
   have : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    DiscreteTopology (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ discreteTopology_bot _
+    DiscreteTopology (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ discreteTopology_bot _
   have : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    DiscreteTopology (G ⧸ (N.1 : Subgroup G)) := fun N ↦ QuotientGroup.discreteTopology N.1.isOpen
+    DiscreteTopology (G ⧸ (N.val : Subgroup G)) := fun N ↦ QuotientGroup.discreteTopology
+        N.val.isOpen
   rw [range_pi_mapQuotient hG]
   simp only [Set.ofPred_forall]
   refine isClosed_iInter fun N ↦ isClosed_iInter fun M ↦ isClosed_iInter fun hle ↦
     isClosed_iInter fun q ↦ isClosed_eq ?_ ?_
   · exact (continuous_of_discreteTopology
-      (f := fun α : MulAut (G ⧸ (N.1 : Subgroup G)) ↦ QuotientGroup.mapOfLE hle (α q))).comp
+      (f := fun α : MulAut (G ⧸ (N.val : Subgroup G)) ↦ QuotientGroup.mapOfLE hle (α q))).comp
       (continuous_apply N)
   · exact (continuous_of_discreteTopology
-      (f := fun α : MulAut (G ⧸ (M.1 : Subgroup G)) ↦ α (QuotientGroup.mapOfLE hle q))).comp
+      (f := fun α : MulAut (G ⧸ (M.val : Subgroup G)) ↦ α (QuotientGroup.mapOfLE hle q))).comp
       (continuous_apply M)
 
 /-- For a topologically finitely generated profinite group, the joint characteristic quotient
@@ -207,11 +208,11 @@ coordinate map is a closed embedding of `ContinuousAut G` into the product of th
 automorphism groups of the characteristic open quotients. -/
 theorem isClosedEmbedding_pi_mapQuotient (hG : IsTopologicallyFinitelyGenerated G) :
     letI : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+      TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
     IsClosedEmbedding fun (φ : ContinuousAut G)
-      (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) ↦ mapQuotient N.2 φ := by
+      (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) ↦ mapQuotient N.property φ := by
   let _ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+    TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
   exact ⟨isEmbedding_pi_mapQuotient hG, isClosed_range_pi_mapQuotient hG⟩
 
 /-- For a topologically finitely generated profinite group, the congruence topology on the
@@ -220,7 +221,7 @@ finite automorphism groups of the characteristic open quotients. -/
 theorem compactSpace (hG : IsTopologicallyFinitelyGenerated G) :
     CompactSpace (ContinuousAut G) := by
   let _ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+    TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
   exact (isClosedEmbedding_pi_mapQuotient hG).compactSpace
 
 /-- For a topologically finitely generated profinite group, the inner automorphisms form a closed

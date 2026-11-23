@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Basic
-import TauCeti.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.Card.Embedding
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -87,7 +87,8 @@ theorem mapData_injective (hf : Function.Injective f) (hg : Function.Injective g
 pair colors are mapped as prescribed. -/
 theorem mapData_ofTriple_of_mem (f : S.vertexPart.parts → T.vertexPart.parts) (g : κ → κ')
     (x : {x : Fin 3 → V // Function.Injective x})
-    (hcell : ∀ i, x.1 i ∈ (f ⟨S.vertexPart.part (x.1 i), S.vertexPart.part_mem.2 (mem_univ _)⟩).val)
+    (hcell : ∀ i, x.val i ∈ (f ⟨S.vertexPart.part (x.val i), S.vertexPart.part_mem.2
+        (mem_univ _)⟩).val)
     (h₀₁ : T.pairColors.color (coordPair x 0 1 (by decide)) =
       g (S.pairColors.color (coordPair x 0 1 (by decide))))
     (h₀₂ : T.pairColors.color (coordPair x 0 2 (by decide)) =
@@ -116,7 +117,7 @@ theorem card_filter_ofTriple_ne_mapData_ofTriple_le [DecidableEq κ']
     #{x | ofTriple T x ≠ (ofTriple S x).mapData f g} ≤
       3 * #B * Fintype.card V ^ 2 + 3 * #E * Fintype.card V := by
   classical
-  let A : Finset {x : Fin 3 → V // Function.Injective x} := {x | ∃ i, x.1 i ∈ B}
+  let A : Finset {x : Fin 3 → V // Function.Injective x} := {x | ∃ i, x.val i ∈ B}
   let A₀₁ : Finset {x : Fin 3 → V // Function.Injective x} := {x | coordPair x 0 1 (by decide) ∈ E}
   let A₀₂ : Finset {x : Fin 3 → V // Function.Injective x} := {x | coordPair x 0 2 (by decide) ∈ E}
   let A₁₂ : Finset {x : Fin 3 → V // Function.Injective x} := {x | coordPair x 1 2 (by decide) ∈ E}

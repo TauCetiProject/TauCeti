@@ -48,7 +48,8 @@ theorem memLp_integral_bind (hK : Measurable K)
     (κ := Kernel.const Unit μ) (η := ⟨K, hK⟩) (a := ())
   simp only [Kernel.coe_mk, Kernel.const_apply] at hmean
   apply (memLp_two_iff_integrable_sq hmean).mpr
-  obtain ⟨hae, hsecond⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
+  obtain ⟨hae, hsecond⟩ :=
+    (Measure.memLp_two_bind_iff hK.aemeasurable hX.aestronglyMeasurable).mp hX
   simp only [Real.norm_eq_abs, sq_abs] at hsecond
   refine hsecond.mono' (hmean.pow 2) ?_
   filter_upwards [hprob, hae] with a hpa hXa
@@ -62,13 +63,13 @@ theorem integrable_covariance_bind (hK : Measurable K)
     (hprob : ∀ᵐ a ∂μ, IsProbabilityMeasure (K a))
     (hX : MemLp X 2 (μ.bind K)) (hY : MemLp Y 2 (μ.bind K)) :
     Integrable (fun a ↦ covariance X Y (K a)) μ := by
-  have hprod := Measure.integrable_integral_bind hK (hX.integrable_mul hY)
+  have hprod := Measure.integrable_integral_bind hK.aemeasurable (hX.integrable_mul hY)
   have hmeans := (memLp_integral_bind hK hprob hX).integrable_mul
     (memLp_integral_bind hK hprob hY)
   simp only [Pi.mul_apply] at hprod hmeans
   refine (hprod.sub hmeans).congr ?_
-  obtain ⟨hXae, _⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
-  obtain ⟨hYae, _⟩ := (Measure.memLp_two_bind_iff hK hY.aestronglyMeasurable).mp hY
+  obtain ⟨hXae, _⟩ := (Measure.memLp_two_bind_iff hK.aemeasurable hX.aestronglyMeasurable).mp hX
+  obtain ⟨hYae, _⟩ := (Measure.memLp_two_bind_iff hK.aemeasurable hY.aestronglyMeasurable).mp hY
   filter_upwards [hprob, hXae, hYae] with a hpa hXa hYa
   exact (covariance_eq_sub hXa hYa).symm
 
@@ -85,13 +86,15 @@ theorem covariance_bind (hK : Measurable K)
   have : IsProbabilityMeasure (μ.bind K) := isProbabilityMeasure_bind hK.aemeasurable hprob
   have hmX := memLp_integral_bind hK hprob hX
   have hmY := memLp_integral_bind hK hprob hY
-  have hprod := Measure.integrable_integral_bind hK (hX.integrable_mul hY)
+  have hprod := Measure.integrable_integral_bind hK.aemeasurable (hX.integrable_mul hY)
   have hmeans : Integrable (fun a ↦ (∫ x, X x ∂K a) * ∫ x, Y x ∂K a) μ :=
     hmX.integrable_mul hmY
   have hcov : (fun a ↦ covariance X Y (K a)) =ᵐ[μ]
       (fun a ↦ (∫ x, X x * Y x ∂K a) - (∫ x, X x ∂K a) * ∫ x, Y x ∂K a) := by
-    obtain ⟨hXae, _⟩ := (Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX
-    obtain ⟨hYae, _⟩ := (Measure.memLp_two_bind_iff hK hY.aestronglyMeasurable).mp hY
+    obtain ⟨hXae, _⟩ :=
+      (Measure.memLp_two_bind_iff hK.aemeasurable hX.aestronglyMeasurable).mp hX
+    obtain ⟨hYae, _⟩ :=
+      (Measure.memLp_two_bind_iff hK.aemeasurable hY.aestronglyMeasurable).mp hY
     filter_upwards [hprob, hXae, hYae] with a hpa hXa hYa
     exact covariance_eq_sub hXa hYa
   rw [covariance_eq_sub hX hY, covariance_eq_sub hmX hmY,
@@ -133,7 +136,7 @@ theorem evariance_prod_eq (hL : MemLp F 2 (μ.prod π)) :
   have hX : MemLp F 2 (μ.bind K) := hbind ▸ hL
   have hslice : ∀ᵐ a ∂μ, variance F (K a) = variance (fun w => F (a, w)) π ∧
       ∫ x, F x ∂K a = ∫ w, F (a, w) ∂π ∧ MemLp (fun w => F (a, w)) 2 π := by
-    filter_upwards [(Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX |>.1,
+    filter_upwards [(Measure.memLp_two_bind_iff hK.aemeasurable hX.aestronglyMeasurable).mp hX |>.1,
       hL.ae_memLp_prod_right] with a ha hsl
     have hm : AEMeasurable F (K a) := ha.aestronglyMeasurable.aemeasurable
     have hmp : AEMeasurable (Prod.mk a) π := measurable_prodMk_left.aemeasurable
@@ -142,7 +145,7 @@ theorem evariance_prod_eq (hL : MemLp F 2 (μ.prod π)) :
     (memLp_integral_bind hK hprob hX).ae_eq (hslice.mono fun a ha => ha.2.1)
   have hvarint : Integrable (fun a => variance (fun w => F (a, w)) π) μ := by
     refine (integrable_covariance_bind hK hprob hX hX).congr ?_
-    filter_upwards [(Measure.memLp_two_bind_iff hK hX.aestronglyMeasurable).mp hX |>.1,
+    filter_upwards [(Measure.memLp_two_bind_iff hK.aemeasurable hX.aestronglyMeasurable).mp hX |>.1,
       hslice] with a ha hs
     rw [covariance_self ha.aestronglyMeasurable.aemeasurable, hs.1]
   have hlint : ∫⁻ a, evariance (fun w => F (a, w)) π ∂μ =

@@ -54,6 +54,9 @@ which is the form that the energy estimate takes for class-indexed counts.
   Novikov series determine each other.
 * `TauCeti.NovikovModule.coordinates_novikovMapOfMatrix`: the matrix formula for the map of a
   matrix.
+* `TauCeti.NovikovModule.mapKernelOfMatrix_vadd_single_mul`,
+  `TauCeti.NovikovModule.novikovMapOfMatrix_vadd_single_mul`: moving the reference generators by
+  `g₁` and `g₀` and multiplying the entries by `e^(g₁ - g₀)` gives the same kernel and map.
 * `TauCeti.NovikovModule.novikovMapOfMatrix_eq_toLin`: the map of a matrix is `Matrix.toLin` of
   its transpose for the reference bases.
 * `TauCeti.NovikovModule.novikovMapOfMatrix_add`, `TauCeti.NovikovModule.novikovMapOfMatrix_smul`:
@@ -172,6 +175,21 @@ theorem mapKernelOfMatrix_coordinates [Finite ι₀] {m : (Σ i, P₁ i) → (Σ
     vsub_vadd]
   exact e.symm
 
+/-- **Change of reference generators.** Moving the reference generators to `g₁ i +ᵥ r₁ i` and
+`g₀ k +ᵥ r₀ k`, and multiplying the `(i, k)` entry by the monomial `e^(g₁ i - g₀ k)`, gives the
+same kernel. -/
+theorem mapKernelOfMatrix_vadd_single_mul (M : Matrix ι₁ ι₀ (NovikovSeries R H N))
+    (g₁ : ι₁ → H) (g₀ : ι₀ → H) :
+    mapKernelOfMatrix (fun i => g₁ i +ᵥ r₁ i) (fun k => g₀ k +ᵥ r₀ k)
+        (Matrix.of fun i k => NovikovSeries.single (g₁ i - g₀ k) 1 * M i k) =
+      mapKernelOfMatrix r₁ r₀ M := by
+  funext ⟨i, p₁⟩ ⟨k, p₀⟩
+  rw [mapKernelOfMatrix_apply, mapKernelOfMatrix_apply, Matrix.of_apply,
+    NovikovSeries.coeff_single_mul, one_mul,
+    vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub]
+  congr 1
+  abel
+
 end Semiring
 
 include hF₁ hF₀ in
@@ -223,6 +241,19 @@ theorem novikovMapOfMatrix_eq_kernelMap {C : ℝ}
     novikovMapOfMatrix hF₁ hF₀ r₁ r₀ M a = kernelMap hm (mapKernelOfMatrix_mem hF₀ r₁ r₀ M) a := by
   ext p₀
   rw [novikovMapOfMatrix_apply_val, kernelMap_apply_val]
+
+/-- **The map of a matrix does not depend on the reference generators.** Moving the reference
+generators to `g₁ i +ᵥ r₁ i` and `g₀ k +ᵥ r₀ k`, and multiplying the `(i, k)` entry by the monomial
+`e^(g₁ i - g₀ k)`, gives the same map. -/
+theorem novikovMapOfMatrix_vadd_single_mul (g₁ : ι₁ → H) (g₀ : ι₀ → H) :
+    novikovMapOfMatrix hF₁ hF₀ (fun i => g₁ i +ᵥ r₁ i) (fun k => g₀ k +ᵥ r₀ k)
+        (Matrix.of fun i k => NovikovSeries.single (g₁ i - g₀ k) 1 * M i k) =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀ M := by
+  let := module (R := R) hF₁
+  let := module (R := R) hF₀
+  refine LinearMap.ext fun a => Subtype.ext (funext fun p₀ => ?_)
+  rw [novikovMapOfMatrix_apply_val, novikovMapOfMatrix_apply_val,
+    mapKernelOfMatrix_vadd_single_mul]
 
 /-- **The matrix formula for the map of a matrix.** In the coordinates relative to the reference
 generators, the image of `a` is `cₖ = ∑ᵢ aᵢ Mᵢₖ`. -/

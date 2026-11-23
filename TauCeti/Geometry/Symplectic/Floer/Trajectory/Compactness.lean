@@ -33,7 +33,7 @@ The translate `z ↦ u(z + (m, n))` of a solution solves the same equation
 (`TauCeti.SymplecticForm.perturbedFDeriv_comp_add_right`), and its energy over the unit disc is at
 most the energy over two periods of the strip, so the threshold of the closed unit disc serves for
 each of its integer translates, and the open unit discs about the integer points cover the plane. A
-diagonal extraction (`TauCeti.extraction_forall_of_antitone`) gives one subsequence that converges
+diagonal extraction (`TauCeti.extraction_forall`) gives one subsequence that converges
 on each of these countably many discs off finitely many bubbling points. Floer energy at least `δ`
 concentrates at each bubbling point, and the set of such concentration points is invariant under
 the period `(0, 1)`, so it is determined by its points in the fundamental strip. There are at most
@@ -190,17 +190,17 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       _ ≤ 2 * E := (hWint k).2
   -- On each window, every subsequence has a further subsequence converging off finitely many
   -- bubbling points.
-  obtain ⟨φ, hφ, hP⟩ := extraction_forall_of_antitone
-    (P := fun j l ↦ ∃ (Z' : Finset (ℝ × ℝ)) (v' : ℝ × ℝ → V), ↑Z' ⊆ B ∧
+  let P : ℕ → Filter ℕ → Prop := fun j l ↦ ∃ (Z' : Finset (ℝ × ℝ)) (v' : ℝ × ℝ → V), ↑Z' ⊆ B ∧
       (∀ z ∈ Z', ∀ ε > 0, ∀ᶠ k in l, δ ≤ ∫ y in ball z ε ∩ B, f k (y + c j)) ∧
       (∀ C, IsCompact C → C ⊆ B \ ↑Z' →
         ∃ M, ∀ᶠ k in l, ∀ y ∈ C, ‖fderiv ℝ (u k) (y + c j)‖ ≤ M) ∧
-      TendstoLocallyUniformlyOn (fun k y ↦ u k (y + c j)) v' l (B \ ↑Z'))
-    (fun j l l' hl ⟨Z', v', hZ', hconc, hbd, hlim⟩ ↦ ⟨Z', v', hZ',
+      TendstoLocallyUniformlyOn (fun k y ↦ u k (y + c j)) v' l (B \ ↑Z')
+  have hPmono (j : ℕ) {l l' : Filter ℕ} (hl : l' ≤ l) : P j l → P j l' :=
+    fun ⟨Z', v', hZ', hconc, hbd, hlim⟩ ↦ ⟨Z', v', hZ',
       fun z hz ε hε ↦ (hconc z hz ε hε).filter_mono hl,
       fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hM ↦ hM.filter_mono hl,
-      fun U hU x hx ↦ (hlim U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, h.filter_mono hl⟩⟩)
-    (fun j ψ _ ↦ by
+      fun U hU x hx ↦ (hlim U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, h.filter_mono hl⟩⟩
+  obtain ⟨φ, hφ, hP⟩ := extraction_forall (P := fun j ψ ↦ P j (map ψ atTop)) fun j ψ _ ↦ by
       obtain ⟨ψ', Z', v', hψ', hZ', -, hconc, hbd, -, -, hlim⟩ :=
         hconv (Ω := B) (u := fun k y ↦ u (ψ k) (y + c j)) (E := 2 * E) isOpen_ball
           ball_subset_closedBall
@@ -218,7 +218,14 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
           fun y _ ↦ hfw j (ψ (ψ' n)) y] at hn
       · obtain ⟨M, hM⟩ := hbd C hC hCZ
         refine ⟨M, eventually_map.2 (Eventually.of_forall fun n y hy ↦ ?_)⟩
-        simpa [fderiv_comp_add_right] using hM n y hy)
+        simpa [fderiv_comp_add_right] using hM n y hy
+  -- The diagonal subsequence is eventually a reindexing of the subsequence for each window.
+  replace hP (j : ℕ) : P j (map φ atTop) := by
+    obtain ⟨ψ, hψ, hφψ⟩ := hP j
+    obtain ⟨f, hf, hφf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hφψ
+    refine hPmono j ?_ hψ
+    rw [map_congr hφf, ← map_map]
+    exact map_mono hf
   choose Z v _ hconc hbd hlim using hP
   set l : Filter ℕ := map φ atTop
   -- The bubbling points of all windows, carried back to the plane.

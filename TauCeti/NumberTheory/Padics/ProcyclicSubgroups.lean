@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.GeneratedClosedSubgroups
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Procyclic closed subgroups of the dyadic units
@@ -42,13 +41,13 @@ theorem exists_topologicalClosure_zpowers_eq_iff_of_isClosed
       by_contra hbot
       have hA' : A ≠ ⊥ := by
         intro h
-        exact PadicInt.units_neg_one_ne_one (Subgroup.mem_bot.mp (h ▸ hneg))
+        exact (neg_units_ne_self 1) (Subgroup.mem_bot.mp (h ▸ hneg))
       rcases closedSubgroup_units_two_classification hA hA' with
-        ⟨f, hf, h⟩ | ⟨f, hf, h⟩ | h | ⟨f, v, hf, hv, h⟩
+        ⟨f, hf, h⟩ | ⟨f, -, h⟩ | h | ⟨f, v, hf, hv, h⟩
       · rw [h] at hneg
         have hle := neg_one_mem_unitsPrincipal_two_iff.mp hneg
         omega
-      · exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus hf ⟨u, hu.trans h⟩
+      · exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus ⟨u, hu.trans h⟩
       · exact hbot (by rw [h, inf_comm]; exact
           (disjoint_unitsPrincipal_zpowers_neg_one (by omega : 2 ≤ 2)).eq_bot)
       · rw [h] at hneg

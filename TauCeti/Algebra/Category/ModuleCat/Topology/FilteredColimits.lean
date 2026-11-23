@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Topology.Basic
-public import TauCeti.Algebra.Category.Grp.FilteredColimits
+public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 
 /-!
 # Recognising colimits of topological modules with discrete apex
@@ -28,10 +28,9 @@ continuous cohomology, whose apex is the discrete continuous cohomology of a com
 
 ## Implementation notes
 
-The criterion is `TauCeti.AddCommGrpCat.isColimitOfJointlySurjective` read through the forgetful
-functors to `ModuleCat R` and `AddCommGrpCat`. The descended additive map is `R`-linear because
-every element of the apex comes from some stage of the diagram, and it is continuous because the
-apex is discrete. No filteredness or universe bounds on the index category are needed.
+The criterion is `TauCeti.ModuleCat.isColimitOfJointlySurjective` read through the forgetful
+functor to `ModuleCat R`. The descended linear map is continuous because the apex is discrete. No
+filteredness or universe bounds on the index category are needed.
 -/
 
 public section
@@ -57,30 +56,20 @@ noncomputable def isColimitOfJointlySurjective (t : Cocone F) [DiscreteTopology 
       (t.ι.app i).hom xi = (t.ι.app j).hom xj →
         ∃ (k : J) (f : i ⟶ k) (g : j ⟶ k), (F.map f).hom xi = (F.map g).hom xj) :
     IsColimit t := by
-  let Φ := forget₂ (_root_.TopModuleCat.{v} R) (ModuleCat.{v} R) ⋙
-    forget₂ (ModuleCat.{v} R) _root_.AddCommGrpCat.{v}
+  let Φ := forget₂ (_root_.TopModuleCat.{v} R) (_root_.ModuleCat.{v} R)
   let hc : IsColimit (Φ.mapCocone t) :=
-    AddCommGrpCat.isColimitOfJointlySurjective (Φ.mapCocone t) hsurj hinj
-  -- the descended additive map, which agrees with the legs of `s` on the legs of `t`
-  have hfac (s : Cocone F) (j : J) (y : F.obj j) :
-      (hc.desc (Φ.mapCocone s)).hom ((t.ι.app j).hom y) = (s.ι.app j).hom y :=
-    ConcreteCategory.congr_hom (hc.fac (Φ.mapCocone s) j) y
+    ModuleCat.isColimitOfJointlySurjective (Φ.mapCocone t) hsurj hinj
   exact
     { desc s := _root_.TopModuleCat.ofHom
-        { toFun := (hc.desc (Φ.mapCocone s)).hom
-          map_add' := map_add _
-          map_smul' r x := by
-            obtain ⟨j, y, rfl⟩ := hsurj x
-            rw [← map_smul, hfac, hfac, map_smul]
-            rfl
+        { toLinearMap := (hc.desc (Φ.mapCocone s)).hom
           cont := continuous_of_discreteTopology }
       fac s j := by
         ext y
-        exact hfac s j y
+        exact ConcreteCategory.congr_hom (hc.fac (Φ.mapCocone s) j) y
       uniq s m hm := by
         ext x
-        obtain ⟨j, y, rfl⟩ := hsurj x
-        exact (ConcreteCategory.congr_hom (hm j) y).trans (hfac s j y).symm }
+        refine ConcreteCategory.congr_hom (hc.uniq (Φ.mapCocone s) (Φ.map m) fun j ↦ ?_) x
+        exact (Φ.map_comp _ _).symm.trans (congrArg Φ.map (hm j)) }
 
 end TopModuleCat
 

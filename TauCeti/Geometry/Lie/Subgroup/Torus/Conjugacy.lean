@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Adjoint.InvariantForm
+import TauCeti.Topology.Algebra.Group.Connected
 
 /-!
 # Conjugacy of maximal tori
@@ -37,6 +38,13 @@ cover all of `G` as soon as `lieExp` is known to be surjective, which is a separ
   cover exactly the image of the exponential map.
 * `TauCeti.Lie.IsMaximalTorus.exists_map_conj_le`: a torus is conjugate into any maximal torus.
 * `TauCeti.Lie.IsMaximalTorus.exists_map_conj_eq`: **any two maximal tori are conjugate**.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_map_conj_eq_of_le`: two maximal tori contained in a closed
+  subgroup `K` are conjugate by an element of `K`.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_map_conj_eq_of_le`: they are even
+  conjugate by an element of the identity component of `K`.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le`: if a
+  closed subgroup `K` contains `T` and `g T g⁻¹`, then `c g` normalizes `T` for some `c` in the
+  identity component of `K`.
 * `TauCeti.Lie.IsMaximalTorus.finrank_lieSubalgebraOfSubgroup_eq`: any two maximal tori have the
   same dimension.
 
@@ -131,6 +139,65 @@ theorem IsMaximalTorus.exists_map_conj_eq {S T : Subgroup G} (hS : IsMaximalToru
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   obtain ⟨g, hg⟩ := hT.exists_map_conj_le I hS.isTorus
   exact ⟨g, (hS.map_conj g).eq_of_le hT.isTorus hg⟩
+
+/-- Two maximal tori of a compact Lie group that lie in a closed subgroup `K` are conjugate by an
+element of `K`. -/
+theorem IsMaximalTorus.exists_mem_map_conj_eq_of_le {K S T : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hS : IsMaximalTorus S) (hT : IsMaximalTorus T)
+    (hSK : S ≤ K) (hTK : T ≤ K) : ∃ c ∈ K, S.map (MulAut.conj c).toMonoidHom = T := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  -- Cartan's theorem makes `K` a compact Lie group, whose conjugacy theorem applies; `K` need not
+  -- be connected.
+  let L := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
+  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
+    (I := I) (K := K) hK
+  let _ : ChartedSpace L K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, L) ∞ K := d.lieGroup
+  let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
+  obtain ⟨c, hc⟩ := (hS.subgroupOf hSK).exists_map_conj_eq 𝓘(ℝ, L) (hT.subgroupOf hTK)
+  refine ⟨c, c.property, (hS.map_conj c).eq_of_le hT.isTorus ?_⟩
+  rintro _ ⟨s, hs, rfl⟩
+  have hmem : MulAut.conj c ⟨s, hSK hs⟩ ∈ T.subgroupOf K := hc ▸ ⟨_, hs, rfl⟩
+  exact hmem
+
+/-- Two maximal tori of a compact Lie group that lie in a closed subgroup `K` are conjugate by an
+element of the identity component of `K`. -/
+theorem IsMaximalTorus.exists_mem_connectedComponentIn_map_conj_eq_of_le {K S T : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hS : IsMaximalTorus S) (hT : IsMaximalTorus T)
+    (hSK : S ≤ K) (hTK : T ≤ K) :
+    ∃ c ∈ connectedComponentIn (K : Set G) 1, S.map (MulAut.conj c).toMonoidHom = T := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  -- The identity component of `K`, as a subgroup of `G`; it is closed because `K` is.
+  let K₀ : Subgroup G := (Subgroup.connectedComponentOfOne K).map K.subtype
+  have hK₀ : (K₀ : Set G) = connectedComponentIn (K : Set G) 1 := by
+    rw [Subgroup.coe_map, Subgroup.coe_connectedComponentOfOne, Subgroup.coe_subtype,
+      connectedComponentIn_eq_image K.one_mem]
+    -- The identity `1 : K` is `⟨1, K.one_mem⟩` by definition.
+    rfl
+  have hK₀closed : IsClosed (K₀ : Set G) := hK₀ ▸ hK.connectedComponentIn
+  -- A torus in `K` is connected and contains `1`, so it lies in `K₀`.
+  have hle : ∀ {R : Subgroup G}, IsTorus R → R ≤ K → R ≤ K₀ := fun {R} hR hRK ↦ by
+    rw [← SetLike.coe_subset_coe, hK₀]
+    exact hR.isConnected.isPreconnected.subset_connectedComponentIn R.one_mem hRK
+  obtain ⟨c, hc, hmap⟩ := hS.exists_mem_map_conj_eq_of_le I hK₀closed hT
+    (hle hS.isTorus hSK) (hle hT.isTorus hTK)
+  exact ⟨c, hK₀ ▸ hc, hmap⟩
+
+/-- If a closed subgroup `K` contains a maximal torus `T` of a compact Lie group and its conjugate
+`g T g⁻¹`, then `c g` normalizes `T` for some `c` in the identity component of `K`. -/
+theorem IsMaximalTorus.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le
+    {K T : Subgroup G} (hK : IsClosed (K : Set G)) (hT : IsMaximalTorus T) (hTK : T ≤ K) {g : G}
+    (hgK : T.map (MulAut.conj g).toMonoidHom ≤ K) :
+    ∃ c ∈ connectedComponentIn (K : Set G) 1, c * g ∈ Subgroup.normalizer (T : Set G) := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  obtain ⟨c, hc, hmap⟩ :=
+    (hT.map_conj g).exists_mem_connectedComponentIn_map_conj_eq_of_le I hK hT hgK hTK
+  refine ⟨c, hc, ?_⟩
+  rw [Subgroup.mem_normalizer_iff_map_conj_eq, map_mul]
+  exact (Subgroup.map_map _ _ _).symm.trans hmap
 
 end Conjugacy
 

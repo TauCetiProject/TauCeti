@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.UqSl2.Casimir.Basic
-public import TauCeti.QuantumGroups.UqSl2.HighestWeight
-public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
-import Mathlib.Tactic
+
+import TauCeti.QuantumGroups.UqSl2.HighestWeight
+import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 
 /-!
 # Complete reducibility of finite-dimensional `U_q(sl₂)`-modules
@@ -17,7 +17,8 @@ import Mathlib.Tactic
 At a generic parameter `q` (nonzero and not a root of unity), every finite-dimensional
 `UqSl2 q`-module is semisimple. No diagonalizability of `K` is assumed.
 
-Along the way, taking generalized weight spaces is shown to be exact.
+It uses that taking generalized weight spaces is exact
+(`TauCeti.UqSl2.map_genWeightSpace_eq_of_surjective`).
 
 ## Implementation notes
 
@@ -32,8 +33,9 @@ generalized weight `ε q^m`; being a Casimir block with the same scalar, it is z
 
 ## Main results
 
-* `TauCeti.UqSl2.e_smul_eq_zero_of_casimirBlock_eq_top`: in a module equal to its Casimir block
-  for the Casimir scalar of `ε q^m`, `E` kills the generalized weight space of weight `ε q^m`.
+* `TauCeti.UqSl2.e_smul_eq_zero_of_casimirBlock_eq_top`: at a generic parameter, in a
+  finite-dimensional module equal to its Casimir block for the Casimir scalar of `ε q^m`,
+  `E` kills the generalized weight space of weight `ε q^m`.
 * `TauCeti.UqSl2.isSemisimpleModule_of_finiteDimensional`: at a generic parameter, every
   finite-dimensional `UqSl2 q`-module is semisimple.
 
@@ -70,8 +72,9 @@ variable [FiniteDimensional ℂ V] (hq : IsGenericQuantumParameter q) {m : ℕ} 
   (hc : casimirBlock q V (casimirScalar q (ε * q ^ m)) = ⊤)
 include hq hc
 
-/-- In a module equal to its Casimir block for the Casimir scalar of `ε q^m`, every highest
-weight is `ε q^m`, so `E` kills the generalized weight space of weight `ε q^m`. -/
+/-- At a generic parameter, in a finite-dimensional module equal to its Casimir block for the
+Casimir scalar of `ε q^m`, every highest weight is `ε q^m`, so `E` kills the generalized weight
+space of weight `ε q^m`. -/
 theorem e_smul_eq_zero_of_casimirBlock_eq_top {w : V}
     (hw : w ∈ genWeightSpace q V (ε * q ^ m)) : e q • w = 0 := by
   by_contra h0
@@ -116,10 +119,10 @@ private theorem isSemisimpleModule_of_casimirBlock_casimirScalar_eq_top :
     e_smul_eq_zero_of_casimirBlock_eq_top hq hc hw
   -- Each vector of `W` is the image of `v₀` under a module map from `L_m^ε`.
   have hW (w : genWeightSpace q V (ε * q ^ m)) : (w : V) ∈ weightSpace q V (ε * q ^ m) :=
-    mem_weightSpace_of_e_smul_eq_zero hq w.2 (hE w w.2)
+    mem_weightSpace_of_e_smul_eq_zero hq w.property (hE w w.property)
   let L (w : genWeightSpace q V (ε * q ^ m)) : Submodule (UqSl2 q) V :=
-    LinearMap.range (LadderModule.lift hq (hW w) (hE w w.2)
-      (f_pow_smul_eq_zero_of_e_smul_eq_zero hq w.2 (hE w w.2)))
+    LinearMap.range (LadderModule.lift hq (hW w) (hE w w.property)
+      (f_pow_smul_eq_zero_of_e_smul_eq_zero hq w.property (hE w w.property)))
   have : IsSimpleModule (UqSl2 q) (LadderModule q m ε) := LadderModule.isSimpleModule hq
   refine isSemisimpleModule_of_isSemisimpleModule_submodule'
     (p := L) (fun w => IsSemisimpleModule.range _) ?_
