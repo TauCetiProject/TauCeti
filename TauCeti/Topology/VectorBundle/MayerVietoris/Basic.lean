@@ -192,7 +192,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E :
 open sets `U` and `V` of the base need to be open: the preimages of `U` and `V` are open in the
 total space, hence in any subspace, and their traces on a subspace of nonzero vectors are the traces
 of the preimages themselves. -/
-private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V) :
+theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V) :
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V) → TotalSpace F E) ⁻¹' (π F E ⁻¹' U)) ∧
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V) → TotalSpace F E) ⁻¹' (π F E ⁻¹' V)) ∧
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∩ zeroSectionCompl F E ∪ π F E ⁻¹' V ∩ zeroSectionCompl F E) →

@@ -184,7 +184,8 @@ theorem _root_.Commute.primePowerProd_right (f : ℕ → ℕ → M) {x : M} {n :
   | _ n ih =>
     by_cases hn : 1 < n
     · rw [primePowerProd_of_one_lt f hn]
-      refine (h _ (Nat.minFac_mem_primeFactors hn)).mul_right (ih _ (Nat.ordCompl_minFac_lt hn) ?_)
+      have hmin := minFac_mem_primeFactors_iff.2 hn
+      refine (h _ hmin).mul_right (ih _ (ordCompl_lt_self_iff.2 hmin) ?_)
       intro q hq
       rw [Nat.primeFactors_ordCompl, Finset.mem_erase] at hq
       simpa only [Nat.factorization_ordCompl, Finsupp.erase_ne hq.1] using h q hq.2
@@ -213,7 +214,8 @@ private theorem primePowerProd_mul_of_minFac_dvd_left (f : ℕ → ℕ → M) {m
       (hp ▸ Nat.minFac_le_of_dvd (Nat.minFac_prime hm1.ne').two_le (m.minFac_dvd.mul_right n))
   have hih : primePowerProd f (ordCompl[p] m * n) =
       primePowerProd f (ordCompl[p] m) * primePowerProd f n :=
-    ih (Nat.mul_lt_mul_of_pos_right (hmin ▸ Nat.ordCompl_minFac_lt hm1) (Nat.pos_of_ne_zero hn0))
+    ih (Nat.mul_lt_mul_of_pos_right (ordCompl_lt_self_iff.2 (hrp.mem_primeFactors hpm hm0))
+        (Nat.pos_of_ne_zero hn0))
       (Nat.Coprime.coprime_dvd_left (Nat.ordCompl_dvd m p) hmn) fun q hq r hr hlt ↦ by
         rw [Nat.primeFactors_ordCompl, Finset.mem_erase] at hq
         simpa only [Nat.factorization_ordCompl, Finsupp.erase_ne hq.1] using
@@ -249,9 +251,10 @@ private theorem primePowerProd_mul_of_minFac_dvd_right (f : ℕ → ℕ → M) {
   have hmin : n.minFac = p :=
     le_antisymm (Nat.minFac_le_of_dvd hrp.two_le hpn)
       (hp ▸ Nat.minFac_le_of_dvd (Nat.minFac_prime hn1.ne').two_le (n.minFac_dvd.mul_left m))
+  have hmem : p ∈ n.primeFactors := hrp.mem_primeFactors hpn hn0
   have hih : primePowerProd f (m * ordCompl[p] n) =
       primePowerProd f m * primePowerProd f (ordCompl[p] n) :=
-    ih (Nat.mul_lt_mul_of_pos_left (hmin ▸ Nat.ordCompl_minFac_lt hn1) (Nat.pos_of_ne_zero hm0))
+    ih (Nat.mul_lt_mul_of_pos_left (ordCompl_lt_self_iff.2 hmem) (Nat.pos_of_ne_zero hm0))
       (hmn.coprime_dvd_right (Nat.ordCompl_dvd n p)) fun q hq r hr hlt ↦ by
         rw [Nat.primeFactors_ordCompl, Finset.mem_erase] at hr
         simpa only [Nat.factorization_ordCompl, Finsupp.erase_ne hr.1] using
@@ -263,7 +266,7 @@ private theorem primePowerProd_mul_of_minFac_dvd_right (f : ℕ → ℕ → M) {
       (by rintro rfl; exact hpm hqm)
   have hcomm : Commute (f p (n.factorization p)) (primePowerProd f m) :=
     Commute.primePowerProd_right f fun q hq ↦
-      (hf q hq p (Nat.mem_primeFactors.2 ⟨hrp, hpn, hn0⟩) (hlt q hq)).symm
+      (hf q hq p hmem (hlt q hq)).symm
   calc primePowerProd f (m * n)
       = f p (n.factorization p) * primePowerProd f (m * ordCompl[p] n) := by
         rw [primePowerProd_of_minFac_not_dvd f h1 hp (mul_comm m n) hpm,
@@ -319,13 +322,15 @@ theorem primePowerProd_eq_factorization_prod (f : ℕ → ℕ → M) (n : ℕ) :
   induction n using Nat.strong_induction_on with
   | _ n ih =>
     by_cases h1 : 1 < n
-    · calc primePowerProd f n
+    · have hmin := minFac_mem_primeFactors_iff.2 h1
+      calc primePowerProd f n
           = f n.minFac (n.factorization n.minFac) *
               primePowerProd f (ordCompl[n.minFac] n) := primePowerProd_of_one_lt f h1
         _ = f n.minFac (n.factorization n.minFac) *
               (n.factorization.erase n.minFac).prod f := by
-            rw [ih _ (Nat.ordCompl_minFac_lt h1), Nat.factorization_ordCompl]
-        _ = n.factorization.prod f := Finsupp.mul_prod_erase _ _ _ (Nat.minFac_mem_primeFactors h1)
+            rw [ih _ (ordCompl_lt_self_iff.2 hmin), Nat.factorization_ordCompl]
+        _ = n.factorization.prod f :=
+            Finsupp.mul_prod_erase _ _ _ (by simpa only [Nat.support_factorization] using hmin)
     · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (not_lt.1 h1) with rfl | rfl <;> simp
 
 /-- **Splitting the assembly at a prime-power part**: `primePowerProd f m` is its `p`-block
