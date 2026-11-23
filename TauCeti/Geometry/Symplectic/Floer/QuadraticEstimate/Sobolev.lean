@@ -101,6 +101,46 @@ private theorem mul_add_div_two_mul_add_one_le (a δ₁ : ℝ≥0) :
   rw [← add_div, mul_div_assoc', div_le_iff₀ (by positivity)]
   nlinarith [a.coe_nonneg, δ₁.coe_nonneg]
 
+/-- In real form: if two `W^{1,p}` norms are at most the radius `δ / (2 (a + 1))`, then `a` times
+their sum is at most `δ`. -/
+private theorem toReal_mul_add_le_of_le_div {a : ℝ≥0} {δ : ℝ} (hδ : 0 < δ) {S₁ S₂ : ℝ≥0∞}
+    (hS₁ : S₁ ≤ (δ.toNNReal / (2 * (a + 1)) : ℝ≥0))
+    (hS₂ : S₂ ≤ (δ.toNNReal / (2 * (a + 1)) : ℝ≥0)) :
+    ((a : ℝ≥0∞) * (S₁ + S₂)).toReal ≤ δ := by
+  refine ENNReal.toReal_le_of_le_ofReal hδ.le ?_
+  calc (a : ℝ≥0∞) * (S₁ + S₂) ≤ a * ((δ.toNNReal / (2 * (a + 1)) : ℝ≥0) +
+        (δ.toNNReal / (2 * (a + 1)) : ℝ≥0)) := by gcongr
+    _ = ((a * (δ.toNNReal / (2 * (a + 1)) + δ.toNNReal / (2 * (a + 1))) : ℝ≥0) : ℝ≥0∞) := by
+      norm_cast
+    _ ≤ δ.toNNReal := ENNReal.coe_le_coe.2 (mul_add_div_two_mul_add_one_le a δ.toNNReal)
+
+/-- Morrey's supremum bound in real form on convex open sets `Ω` of `ℝ × ℝ`, for `p > 2`: there is
+`a` such that `‖ξ z‖ ≤ T` for all `z ∈ Ω` whenever `ξ` is `C¹` on `Ω` and
+`a ‖ξ‖_{1,p} ≤ T < ∞`. -/
+private theorem exists_norm_le_toReal_of_convex {p : ℝ≥0} (hp : 2 < p) (r : ℝ) {m : ℝ≥0∞}
+    (hm : m ≠ 0) :
+    ∃ a : ℝ≥0, ∀ (Ω : Set (ℝ × ℝ)) (ξ : ℝ × ℝ → V) (T : ℝ≥0∞), IsOpen Ω → Convex ℝ Ω →
+      (∀ z ∈ Ω, m ≤ volume (Ω ∩ ball z r)) → ContDiffOn ℝ 1 ξ Ω → T ≠ ∞ →
+      a * (eLpNorm ξ p (volume.restrict Ω) + eLpNorm (fderiv ℝ ξ) p (volume.restrict Ω)) ≤ T →
+      ∀ z ∈ Ω, ‖ξ z‖ ≤ T.toReal := by
+  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
+  obtain ⟨a, ha⟩ := exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv (μ := volume)
+    (E := ℝ × ℝ) (F := V) (one_le_two.trans hp.le)
+    (by rw [finrank_prod, finrank_self]; norm_num; exact hp) r hm
+  refine ⟨a, fun Ω ξ T hΩ hΩc hfat hξ hT h z hz => ?_⟩
+  rw [← toReal_eNorm]
+  exact ENNReal.toReal_mono hT ((ha Ω ξ z hΩ (hΩc.starConvex hz) hξ (hfat z hz)).trans h)
+
+/-- The derivative along the unit vector `stdComplexLineImag` of a map that is `C¹` on an open set
+`Ω` is bounded in `Lᵖ(Ω)` by its full derivative. -/
+private theorem eLpNorm_fderiv_apply_stdComplexLineImag_le {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    {ξ : ℝ × ℝ → V} (hξ : ContDiffOn ℝ 1 ξ Ω) (p : ℝ≥0∞) :
+    eLpNorm (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) p (volume.restrict Ω) ≤
+      eLpNorm (fderiv ℝ ξ) p (volume.restrict Ω) :=
+  eLpNorm_mono (((hξ.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
+      continuousOn_const).aestronglyMeasurable hΩ.measurableSet) fun z =>
+    ((fderiv ℝ ξ z).le_opNorm _).trans_eq (by simp [stdComplexLineImag_eq])
+
 /-- **The quadratic estimate for the Floer operator in `W^{1,p}`.** Let `J` be jointly `C²` and
 the Hamiltonians `Ks`, `Kt` jointly `C³` in the parameter and the target point, let `K` be a
 compact set of pairs `(a, y)` of a parameter and a target point, let `p > 2`, and let `r : ℝ` and
@@ -139,10 +179,11 @@ theorem
             (eLpNorm ξ₂ p (volume.restrict Ω) + eLpNorm (fderiv ℝ ξ₂) p (volume.restrict Ω))) *
           (eLpNorm (ξ₁ - ξ₂) p (volume.restrict Ω) +
             eLpNorm (fderiv ℝ (ξ₁ - ξ₂)) p (volume.restrict Ω)) := by
-  have hp1 : 1 ≤ p := one_le_two.trans hp.le
-  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
-  obtain ⟨CM, hCM⟩ := exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv (μ := volume)
-    (E := ℝ × ℝ) (F := V) hp1 (by rw [finrank_prod, finrank_self]; norm_num; exact hp) r hm
+  -- Morrey's supremum bound with constant `CM` turns the `W^{1,p}` norms into the supremum
+  -- norms of main's `Lᵖ` estimate, whose radius `δ₁` fixes `δ`; the three resulting terms are
+  -- then combined by `quadratic_terms_le`.
+  have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast one_le_two.trans hp.le
+  obtain ⟨CM, hsup⟩ := exists_norm_le_toReal_of_convex (V := V) hp r hm
   obtain ⟨δ₁, hδ₁, C₁, h₁⟩ :=
     ω.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le hK hJ
       hKs hKt
@@ -153,57 +194,37 @@ theorem
   set S₂ := eLpNorm ξ₂ p μ + eLpNorm (fderiv ℝ ξ₂) p μ
   set S := eLpNorm (ξ₁ - ξ₂) p μ + eLpNorm (fderiv ℝ (ξ₁ - ξ₂)) p μ
   have hξ : ContDiffOn ℝ 1 (ξ₁ - ξ₂) Ω := hξ₁.sub hξ₂
-  have hd₁ := hξ₁.differentiableOn one_ne_zero
-  have hd₂ := hξ₂.differentiableOn one_ne_zero
-  -- The `W^{1,p}` norm of the difference is finite.
-  have hSle : S ≤ S₁ + S₂ := eLpNorm_sub_add_eLpNorm_fderiv_sub_le (by exact_mod_cast hp1)
-    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => hd₁.differentiableAt (hΩ.mem_nhds hz))
-    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => hd₂.differentiableAt (hΩ.mem_nhds hz))
-  have hS₁₂ : S₁ + S₂ ≠ ∞ := ENNReal.add_ne_top.2
-    ⟨ne_top_of_le_ne_top ENNReal.coe_ne_top hS₁, ne_top_of_le_ne_top ENNReal.coe_ne_top hS₂⟩
-  have hS : S ≠ ∞ := (hSle.trans_lt hS₁₂.lt_top).ne
-  -- The supremum bounds, by Morrey's inequality, in real form.
-  have hsup {ξ : ℝ × ℝ → V} (hξ : ContDiffOn ℝ 1 ξ Ω) {T : ℝ≥0∞} (hT : T ≠ ∞)
-      (h : CM * (eLpNorm ξ p μ + eLpNorm (fderiv ℝ ξ) p μ) ≤ T) (z : ℝ × ℝ) (hz : z ∈ Ω) :
-      ‖ξ z‖ ≤ T.toReal := by
-    rw [← toReal_eNorm]
-    exact ENNReal.toReal_mono hT ((hCM Ω ξ z hΩ (hΩc.starConvex hz) hξ (hfat z hz)).trans h)
-  have ha : ENNReal.ofReal (CM * (S₁ + S₂)).toReal = CM * (S₁ + S₂) :=
-    ENNReal.ofReal_toReal (ENNReal.mul_ne_top ENNReal.coe_ne_top hS₁₂)
-  have hb : ENNReal.ofReal (CM * S).toReal = CM * S :=
-    ENNReal.ofReal_toReal (ENNReal.mul_ne_top ENNReal.coe_ne_top hS)
-  have haδ : (CM * (S₁ + S₂)).toReal ≤ δ₁ := by
-    refine ENNReal.toReal_le_of_le_ofReal hδ₁.le ?_
-    calc (CM : ℝ≥0∞) * (S₁ + S₂) ≤ CM * ((δ₁.toNNReal / (2 * (CM + 1)) : ℝ≥0) +
-          (δ₁.toNNReal / (2 * (CM + 1)) : ℝ≥0)) := by gcongr
-      _ = ((CM * (δ₁.toNNReal / (2 * (CM + 1)) + δ₁.toNNReal / (2 * (CM + 1))) : ℝ≥0) :
-          ℝ≥0∞) := by norm_cast
-      _ ≤ δ₁.toNNReal := ENNReal.coe_le_coe.2 (mul_add_div_two_mul_add_one_le CM δ₁.toNNReal)
-  have h := h₁ volume (p := p) (by exact_mod_cast hp1) (a := (CM * (S₁ + S₂)).toReal) (A := B)
+  have hd₁ : ∀ z ∈ Ω, DifferentiableAt ℝ ξ₁ z := fun z hz =>
+    (hξ₁.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz)
+  have hd₂ : ∀ z ∈ Ω, DifferentiableAt ℝ ξ₂ z := fun z hz =>
+    (hξ₂.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz)
+  have hSle : S ≤ S₁ + S₂ := eLpNorm_sub_add_eLpNorm_fderiv_sub_le hp1
+    (ae_restrict_of_forall_mem hΩ.measurableSet hd₁)
+    (ae_restrict_of_forall_mem hΩ.measurableSet hd₂)
+  have hS₁₂ : (CM : ℝ≥0∞) * (S₁ + S₂) ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top
+    (ENNReal.add_ne_top.2
+      ⟨ne_top_of_le_ne_top ENNReal.coe_ne_top hS₁, ne_top_of_le_ne_top ENNReal.coe_ne_top hS₂⟩)
+  have hS : (CM : ℝ≥0∞) * S ≠ ∞ := ne_top_of_le_ne_top hS₁₂ (mul_le_mul_right hSle _)
+  -- Main's `Lᵖ` estimate, with supremum norms `CM (S₁ + S₂)` and `CM S`.
+  have h := h₁ volume (p := p) hp1 (a := (CM * (S₁ + S₂)).toReal) (A := B)
     (b := (CM * S).toReal) hΩ.measurableSet hφ (fun z hz => hw.differentiableAt (hΩ.mem_nhds hz))
-    (fun z hz => hd₁.differentiableAt (hΩ.mem_nhds hz))
-    (fun z hz => hd₂.differentiableAt (hΩ.mem_nhds hz)) hwK haδ
-    (hsup hξ₁ (ENNReal.mul_ne_top ENNReal.coe_ne_top hS₁₂) (mul_le_mul_right le_self_add _))
-    (hsup hξ₂ (ENNReal.mul_ne_top ENNReal.coe_ne_top hS₁₂) (mul_le_mul_right le_add_self _))
-    (hsup hξ (ENNReal.mul_ne_top ENNReal.coe_ne_top hS) le_rfl)
+    hd₁ hd₂ hwK (toReal_mul_add_le_of_le_div hδ₁ hS₁ hS₂)
+    (hsup Ω ξ₁ _ hΩ hΩc hfat hξ₁ hS₁₂ (mul_le_mul_right le_self_add _))
+    (hsup Ω ξ₂ _ hΩ hΩc hfat hξ₂ hS₁₂ (mul_le_mul_right le_add_self _))
+    (hsup Ω _ _ hΩ hΩc hfat hξ hS le_rfl)
     (fun z hz => by exact_mod_cast eNorm_le_coe.1 (hB z hz))
-  rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ha, hb, ENNReal.ofReal_add zero_le_one B.coe_nonneg,
-    ENNReal.ofReal_one, ENNReal.ofReal_coe_nnreal] at h
-  -- The slice derivative along the unit vector `stdComplexLineImag` is bounded in `Lᵖ` by the
-  -- full derivative.
-  have hslice {ξ : ℝ × ℝ → V} (hξ : ContDiffOn ℝ 1 ξ Ω) :
-      eLpNorm (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) p μ ≤ eLpNorm (fderiv ℝ ξ) p μ :=
-    eLpNorm_mono (((hξ.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
-      continuousOn_const).aestronglyMeasurable hΩ.measurableSet) fun z =>
-      ((fderiv ℝ ξ z).le_opNorm _).trans_eq (by simp [stdComplexLineImag_eq])
+  rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hS₁₂,
+    ENNReal.ofReal_toReal hS, ENNReal.ofReal_add zero_le_one B.coe_nonneg, ENNReal.ofReal_one,
+    ENNReal.ofReal_coe_nnreal] at h
+  -- The slice derivatives are bounded by the `W^{1,p}` norms.
   have hd : eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag) p μ ≤ S₁ + S₂ :=
-    (hslice hξ₁).trans ((le_add_self : _ ≤ S₁).trans le_self_add)
+    (eLpNorm_fderiv_apply_stdComplexLineImag_le hΩ hξ₁ p).trans
+      ((le_add_self : _ ≤ S₁).trans le_self_add)
   have hd' : eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag -
       fderiv ℝ ξ₂ z stdComplexLineImag) p μ ≤ S := by
     refine (eLpNorm_congr_ae (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => ?_)).trans_le
-      ((hslice hξ).trans le_add_self)
-    rw [fderiv_sub (hd₁.differentiableAt (hΩ.mem_nhds hz)) (hd₂.differentiableAt (hΩ.mem_nhds hz))]
-    rfl
+      ((eLpNorm_fderiv_apply_stdComplexLineImag_le hΩ hξ p).trans le_add_self)
+    rw [fderiv_sub (hd₁ z hz) (hd₂ z hz), sub_apply]
   refine (h.trans (mul_le_mul_right (quadratic_terms_le le_self_add hd hd') _)).trans_eq ?_
   push_cast
   ring
