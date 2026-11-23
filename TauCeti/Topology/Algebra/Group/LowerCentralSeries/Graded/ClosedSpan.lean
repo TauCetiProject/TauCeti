@@ -106,7 +106,7 @@ theorem eq_top_of_isClosed_of_gradedBracket_mem (n : ℕ)
   apply eq_top_iff.mpr
   intro z _
   obtain ⟨x, rfl⟩ := gradedMk_surjective (p := 0) (G := G) (0 + n + 1) z
-  obtain ⟨y, hy, hxy⟩ := hseries x.2
+  obtain ⟨y, hy, hxy⟩ := hseries x.property
   have hxy' : y = x := Subtype.ext hxy
   simpa [U, hxy'] using hy
 

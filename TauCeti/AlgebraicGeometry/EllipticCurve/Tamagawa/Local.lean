@@ -54,8 +54,7 @@ elliptic curve over a field `F` that is complete with respect to `v`, or more ge
 with perfect residue field, this is the local Tamagawa number `c_v`. Over other fields it is the
 index over `F` itself, which can be smaller than `c_v`; for a global field, apply it to the
 completion, as `WeierstrassCurve.tamagawaNumberAt` does. -/
-noncomputable def tamagawaNumber (E : WeierstrassCurve F)
-    (v : Valuation F Γ₀) [IsDiscreteValuationRing v.valuationSubring] : ℕ :=
+noncomputable def tamagawaNumber : ℕ :=
   ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index
 
 open scoped Classical in
@@ -63,6 +62,28 @@ open scoped Classical in
 theorem tamagawaNumber_def : E.tamagawaNumber v =
     ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index := by
   rfl
+
+/-- Equivalent valuations have the same valuation ring and hence define the same Tamagawa number. -/
+theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    {v' : Valuation F Γ₀'} [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
+    E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  have hmin : E.minimal v.valuationSubring = E.minimal v'.valuationSubring := by
+    suffices ∀ (A B : ValuationSubring F) [IsDiscreteValuationRing A] [IsDiscreteValuationRing B],
+        A = B → E.minimal A = E.minimal B from
+      this _ _ ((Valuation.isEquiv_iff_valuationSubring v v').1 h)
+    rintro A B instA instB rfl
+    cases Subsingleton.elim instA instB
+    rfl
+  have : IsIntegral v'.valuationSubring (E.minimal v.valuationSubring) := hmin ▸ inferInstance
+  have hidx (W₁ W₂ : WeierstrassCurve F) [IsIntegral v'.valuationSubring W₁]
+      [IsIntegral v'.valuationSubring W₂] (hW : W₁ = W₂) :
+      (W₁.toAffine.nonsingularReduction v').index =
+        (W₂.toAffine.nonsingularReduction v').index := by
+    subst hW
+    rfl
+  rw [tamagawaNumber_def, tamagawaNumber_def, Affine.nonsingularReduction_congr _ h]
+  exact hidx _ _ hmin
 
 variable [E.IsElliptic]
 

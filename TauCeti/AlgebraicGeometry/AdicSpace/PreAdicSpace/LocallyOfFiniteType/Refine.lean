@@ -135,7 +135,8 @@ theorem locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
           U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
   -- every point of `W` lies in a rational subset `R(T/s)` contained in `W`
   refine LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le W fun y ↦ ?_
-  obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U'.plus) y.2
+  obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U'.plus)
+      y.property
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hR
   refine ⟨spaBasicOpen U'.plus T s, hyR, hRW, ?_⟩
   have hden := P'.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT

@@ -7,11 +7,14 @@ module
 
 public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
+public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.PresentedGroup
 public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.Data.Int.Cast.Lemmas
 public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.Coprime.Basic
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Index
 
 /-!
 # One-edge graphs of infinite cyclic groups
@@ -31,7 +34,10 @@ multiplication by a nonzero integer `m` is the monomorphism `c ↦ c ^ m`.
   amalgam `ℤ ∗_ℤ ℤ = ⟨x, y ∣ x ^ m = y ^ n⟩`. For `m = 2` and `n = 3` this is the trefoil knot
   group `⟨x, y ∣ x² = y³⟩`. For coprime `m` and `n` its abelianization is infinite cyclic, the
   generators of the two vertex groups going to `n` and to `m`; for the trefoil knot group the
-  abelianization is `ℤ`.
+  abelianization is `ℤ`. The same holds for the fundamental group of closed `𝔸`-paths at either
+  vertex: for an edge path `q` from the base vertex to a vertex `b`, the class of `q c q⁻¹`
+  corresponds to `x ^ c` or `y ^ c` according to `b`, and the class of `p c p⁻¹` for any
+  `𝔸`-path `p` to `b` goes to `c ^ n` or `c ^ m` in the abelianization.
 
 The generators of the presented groups are indexed by `Bool`: `false` is `a`, respectively `x`,
 and `true` is `t`, respectively `y`.
@@ -50,12 +56,23 @@ and `true` is `t`, respectively `y`.
   abelianization of `⟨x, y ∣ x ^ m = y ^ n⟩` is `ℤ`.
 * `TauCeti.GraphOfGroups.π₁Tree.cyclicAmalgamAbelianizationEquiv`: for coprime `m` and `n`, the
   abelianization of the fundamental group of the segment is `ℤ`.
+* `TauCeti.GraphOfGroups.π₁.cyclicAmalgamEquiv`: the fundamental group of closed `𝔸`-paths at
+  either vertex of the segment is `⟨x, y ∣ x ^ m = y ^ n⟩`.
+* `TauCeti.GraphOfGroups.π₁.cyclicAmalgamAbelianizationEquiv`: for coprime `m` and `n`, its
+  abelianization is `ℤ`.
+
+## Main results
+
+* `TauCeti.GraphOfGroups.index_range_α_baumslagSolitar`,
+  `TauCeti.GraphOfGroups.index_range_ω_baumslagSolitar`: the boundary images of `baumslagSolitar`
+  have indices `|m|` and `|n|`.
 
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §1.1 and §5.1.
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
-  Internat. J. Algebra Comput. 15 (2005), §2, Convention 2.1.
+  Internat. J. Algebra Comput. 15 (2005), §2, Convention 2.1, Definitions 2.2–2.3 and
+  Proposition 2.4(3).
 * G. Baumslag, D. Solitar, *Some two-generator one-relator non-Hopfian groups*,
   Bull. Amer. Math. Soc. 68 (1962).
 * A. Hatcher, *Algebraic Topology*, Example 1.24 (the torus knot groups `⟨a, b ∣ a ^ m = b ^ n⟩`).
@@ -93,6 +110,28 @@ fundamental group is the Baumslag–Solitar group `⟨a, t ∣ t a ^ n t⁻¹ = 
 @[simp] theorem baumslagSolitar_α_false :
     (baumslagSolitar m n hm hn).α ((), false) = zpowGroupHom (α := Multiplicative ℤ) n :=
   loop_α_false ..
+
+/-- The image of `α` on a dart of `baumslagSolitar m n` has index `|m|` on `((), true)` and `|n|`
+on `((), false)`. -/
+@[simp] theorem index_range_α_baumslagSolitar (e : (SerreGraph.rose Unit).E) :
+    ((baumslagSolitar m n hm hn).α e).range.index = cond e.2 m.natAbs n.natAbs := by
+  -- The vertex and edge groups of `baumslagSolitar` reduce definitionally to `Multiplicative ℤ`.
+  obtain ⟨⟨⟩, _ | _⟩ := e
+  · simp only [baumslagSolitar_α_false, Bool.cond_false]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) n
+  · simp only [baumslagSolitar_α_true, Bool.cond_true]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) m
+
+/-- The image of `ω` on a dart of `baumslagSolitar m n` has index `|n|` on `((), true)` and `|m|`
+on `((), false)`. -/
+@[simp] theorem index_range_ω_baumslagSolitar (e : (SerreGraph.rose Unit).E) :
+    ((baumslagSolitar m n hm hn).ω e).range.index = cond e.2 n.natAbs m.natAbs := by
+  -- The vertex and edge groups of `baumslagSolitar` reduce definitionally to `Multiplicative ℤ`.
+  obtain ⟨⟨⟩, _ | _⟩ := e
+  · simp only [baumslagSolitar_ω_false, Bool.cond_false]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) m
+  · simp only [baumslagSolitar_ω_true, Bool.cond_true]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) n
 
 /-- The Baumslag–Solitar relator `t a ^ n t⁻¹ a ^ (-m)` in the free group on `a = false` and
 `t = true`. -/
@@ -520,6 +559,117 @@ noncomputable def cyclicAmalgamAbelianizationEquiv (hmn : IsCoprime m n) (hT : T
   simp [cyclicAmalgamAbelianizationEquiv]
 
 end π₁Tree
+
+/-! ### The segment of infinite cyclic groups at a base vertex -/
+
+namespace π₁
+
+private theorem segment_spanningTree_darts_nonempty :
+    SerreGraph.segment_isTree.spanningTree.darts.Nonempty :=
+  ⟨true, by rw [SerreGraph.IsTree.spanningTree_darts]; exact Set.mem_univ _⟩
+
+variable (v₀ : SerreGraph.segment.V)
+
+/-- The fundamental group at any vertex `v₀` of the segment of infinite cyclic groups with
+boundary maps `(· ^ m)` and `(· ^ n)` is the amalgam `⟨x, y ∣ x ^ m = y ^ n⟩`: for an edge path
+`q` from `v₀` to the vertex `false`, respectively `true`, the class of `q c q⁻¹` corresponds to
+`x ^ c`, respectively `y ^ c`. For `m = 2` and `n = 3` this is the trefoil knot group
+`⟨x, y ∣ x² = y³⟩`. -/
+noncomputable def cyclicAmalgamEquiv :
+    π₁ (cyclicAmalgam m n hm hn) v₀ ≃* PresentedGroup {cyclicAmalgamRelator m n} :=
+  (π₁Equiv _ v₀ SerreGraph.segment_isTree.spanningTree).trans
+    (π₁Tree.cyclicAmalgamEquiv m n hm hn segment_spanningTree_darts_nonempty)
+
+/-- The image of the class of `q c q⁻¹`, for an edge path `q` from `v₀` to `b`, is the image of
+`c` under `A_b → π₁(𝔸, T)`. -/
+private theorem cyclicAmalgamEquiv_vertexHom_mapPath {b : SerreGraph.segment.V}
+    (q : SerreGraph.segment.Path v₀ b) (c : (cyclicAmalgam m n hm hn).vertexGroup b) :
+    cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
+      π₁Tree.cyclicAmalgamEquiv m n hm hn segment_spanningTree_darts_nonempty
+        (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c) := by
+  -- Every dart of the segment lies in its tree, so it reads as `1` in `π₁(𝔸, T)`, and so does
+  -- the edge path `q`.
+  have hq : q.weight (fun {a b : SerreGraph.segment.V} (_ : a ⟶ b) =>
+      (1 : π₁Tree (cyclicAmalgam m n hm hn) SerreGraph.segment_isTree.spanningTree.darts)) = 1 :=
+    SerreGraph.Path.weight_eq_one _ q (f := fun _ => 1) fun _ _ => rfl
+  simp [cyclicAmalgamEquiv, π₁Equiv_apply, hq]
+
+@[simp] theorem cyclicAmalgamEquiv_vertexHom_false (q : SerreGraph.segment.Path v₀ false)
+    (c : Multiplicative ℤ) :
+    cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
+      PresentedGroup.of false ^ c.toAdd :=
+  (cyclicAmalgamEquiv_vertexHom_mapPath m n hm hn v₀ q c).trans
+    (π₁Tree.cyclicAmalgamEquiv_of_false ..)
+
+@[simp] theorem cyclicAmalgamEquiv_vertexHom_true (q : SerreGraph.segment.Path v₀ true)
+    (c : Multiplicative ℤ) :
+    cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
+      PresentedGroup.of true ^ c.toAdd :=
+  (cyclicAmalgamEquiv_vertexHom_mapPath m n hm hn v₀ q c).trans
+    (π₁Tree.cyclicAmalgamEquiv_of_true ..)
+
+/-- The inverse sends `x` to the class of `q a q⁻¹`, for `a = ofAdd 1` the generator of the
+vertex group at `false` and `q` the reduced edge path from `v₀` to `false`: empty if `v₀ = false`
+and the edge otherwise. -/
+@[simp] theorem cyclicAmalgamEquiv_symm_of_false :
+    (cyclicAmalgamEquiv m n hm hn v₀).symm (PresentedGroup.of false) =
+      vertexHom
+        ((dartPrefunctor _).mapPath (SerreGraph.segment_isTree.spanningTree.path v₀ false))
+        -- Typed at `Multiplicative ℤ`, as in `cyclicAmalgamEquiv_vertexHom_false`, so that `simp`
+        -- can apply that lemma to the right-hand side.
+        (ofAdd 1 : Multiplicative ℤ) :=
+  (MulEquiv.symm_apply_eq _).mpr
+    ((cyclicAmalgamEquiv_vertexHom_false m n hm hn v₀ _ (ofAdd 1)).trans (zpow_one _)).symm
+
+/-- The inverse sends `y` to the class of `q a q⁻¹`, for `a = ofAdd 1` the generator of the
+vertex group at `true` and `q` the reduced edge path from `v₀` to `true`: empty if `v₀ = true`
+and the edge otherwise. -/
+@[simp] theorem cyclicAmalgamEquiv_symm_of_true :
+    (cyclicAmalgamEquiv m n hm hn v₀).symm (PresentedGroup.of true) =
+      vertexHom
+        ((dartPrefunctor _).mapPath (SerreGraph.segment_isTree.spanningTree.path v₀ true))
+        -- Typed at `Multiplicative ℤ` for `cyclicAmalgamEquiv_vertexHom_true`, as above.
+        (ofAdd 1 : Multiplicative ℤ) :=
+  (MulEquiv.symm_apply_eq _).mpr
+    ((cyclicAmalgamEquiv_vertexHom_true m n hm hn v₀ _ (ofAdd 1)).trans (zpow_one _)).symm
+
+/-- For coprime `m` and `n`, the fundamental group at any vertex of the segment of infinite cyclic
+groups with boundary maps `(· ^ m)` and `(· ^ n)` has infinite cyclic abelianization: for any
+`𝔸`-path `p` from the base vertex, the class of `p c p⁻¹` maps to `c ^ n` when `p` ends at the
+vertex `false` and to `c ^ m` when it ends at `true`. For `m = 2` and `n = 3` the fundamental group
+is the trefoil knot group, with abelianization `ℤ`. -/
+noncomputable def cyclicAmalgamAbelianizationEquiv (hmn : IsCoprime m n) :
+    Group.Abelianization (π₁ (cyclicAmalgam m n hm hn) v₀) ≃* Multiplicative ℤ :=
+  (cyclicAmalgamEquiv m n hm hn v₀).abelianizationCongr.trans
+    (cyclicAmalgamRelatorAbelianizationEquiv m n hmn)
+
+/-- In the abelianization, the class of `p c p⁻¹`, for an `𝔸`-path `p` from `v₀` to `b`, is
+the class of the image of `c` under `A_b → π₁(𝔸, T)`. -/
+private theorem cyclicAmalgamAbelianizationEquiv_of_vertexHom (hmn : IsCoprime m n)
+    {b : SerreGraph.segment.V} (p : (cyclicAmalgam m n hm hn).Path ⟨v₀⟩ ⟨b⟩)
+    (c : (cyclicAmalgam m n hm hn).vertexGroup b) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn v₀ hmn (Group.Abelianization.of (vertexHom p c)) =
+      π₁Tree.cyclicAmalgamAbelianizationEquiv m n hm hn hmn segment_spanningTree_darts_nonempty
+        (Group.Abelianization.of
+          (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c)) := by
+  simp [cyclicAmalgamAbelianizationEquiv, π₁Tree.cyclicAmalgamAbelianizationEquiv,
+    cyclicAmalgamEquiv, π₁Equiv_apply]
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_of_vertexHom_false (hmn : IsCoprime m n)
+    (p : (cyclicAmalgam m n hm hn).Path ⟨v₀⟩ ⟨false⟩) (c : Multiplicative ℤ) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn v₀ hmn
+      (Group.Abelianization.of (vertexHom p c)) = c ^ n :=
+  (cyclicAmalgamAbelianizationEquiv_of_vertexHom m n hm hn v₀ hmn p c).trans
+    (π₁Tree.cyclicAmalgamAbelianizationEquiv_of_false ..)
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_of_vertexHom_true (hmn : IsCoprime m n)
+    (p : (cyclicAmalgam m n hm hn).Path ⟨v₀⟩ ⟨true⟩) (c : Multiplicative ℤ) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn v₀ hmn
+      (Group.Abelianization.of (vertexHom p c)) = c ^ m :=
+  (cyclicAmalgamAbelianizationEquiv_of_vertexHom m n hm hn v₀ hmn p c).trans
+    (π₁Tree.cyclicAmalgamAbelianizationEquiv_of_true ..)
+
+end π₁
 
 end GraphOfGroups
 

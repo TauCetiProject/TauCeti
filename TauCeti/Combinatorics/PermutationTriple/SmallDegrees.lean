@@ -114,17 +114,17 @@ private theorem toFinset_map_cycleData_degreeFourClassReps :
 
 /-- Every connected degree-four triple is a relabeling of one of the representatives. -/
 private theorem exists_smul_mem_degreeFourClassReps (t : ConnectedTriple 4) :
-    ∃ τ : Perm (Fin 4), τ • t.1 ∈ degreeFourClassReps := by
-  obtain ⟨τ₀, hτ₀⟩ := exists_conj_mem_degreeFourCycleTypeReps t.1.σ0
-  have ht : τ₀ • t.1 = ofTwo (τ₀ * t.1.σ0 * τ₀⁻¹) (τ₀ * t.1.σ1 * τ₀⁻¹) := ext_of_two rfl rfl
+    ∃ τ : Perm (Fin 4), τ • t.val ∈ degreeFourClassReps := by
+  obtain ⟨τ₀, hτ₀⟩ := exists_conj_mem_degreeFourCycleTypeReps t.val.σ0
+  have ht : τ₀ • t.val = ofTwo (τ₀ * t.val.σ0 * τ₀⁻¹) (τ₀ * t.val.σ1 * τ₀⁻¹) := ext_of_two rfl rfl
   obtain ⟨τ₁, hτ₁⟩ := exists_smul_ofTwo_mem_degreeFourClassReps _ hτ₀ _ <| by
     rw [← ht]
-    exact (isConnected_smul_iff τ₀ t.1).2 t.2
+    exact (isConnected_smul_iff τ₀ t.val).2 t.property
   exact ⟨τ₁ * τ₀, by rwa [mul_smul, ht]⟩
 
 /-- The complete table of ordered full cycle data in degree four. -/
 theorem image_cycleData_four :
-    (Finset.univ : Finset (ConnectedTriple 4)).image (fun t => t.1.cycleData) =
+    (Finset.univ : Finset (ConnectedTriple 4)).image (fun t => t.val.cycleData) =
       degreeFourCycleData := by
   rw [← toFinset_map_cycleData_degreeFourClassReps]
   ext d
@@ -132,7 +132,7 @@ theorem image_cycleData_four :
   constructor
   · rintro ⟨t, rfl⟩
     obtain ⟨τ, hτ⟩ := exists_smul_mem_degreeFourClassReps t
-    exact ⟨τ • t.1, hτ, cycleData_smul τ t.1⟩
+    exact ⟨τ • t.val, hτ, cycleData_smul τ t.val⟩
   · rintro ⟨r, hr, rfl⟩
     exact ⟨⟨r, isConnected_of_mem_degreeFourClassReps r hr⟩, rfl⟩
 
@@ -140,7 +140,7 @@ theorem image_cycleData_four :
 `degreeFourCycleData`. -/
 @[simp]
 theorem cycleData_mem_degreeFourCycleData (t : ConnectedTriple 4) :
-    t.1.cycleData ∈ degreeFourCycleData := by
+    t.val.cycleData ∈ degreeFourCycleData := by
   rw [← image_cycleData_four]
   exact Finset.mem_image_of_mem _ (Finset.mem_univ t)
 
@@ -151,18 +151,18 @@ theorem four_four_mem_degreeFourCycleData_iff {m : Multiset ℕ} :
   simp [degreeFourCycleData]
 
 private theorem equivalent_of_cycleData_eq_two :
-    ∀ t t' : ConnectedTriple 2, t.1.cycleData = t'.1.cycleData → Equivalent t.1 t'.1 := by
+    ∀ t t' : ConnectedTriple 2, t.val.cycleData = t'.val.cycleData → Equivalent t.val t'.val := by
   decide +kernel
 
 private theorem equivalent_of_cycleData_eq_three :
-    ∀ t t' : ConnectedTriple 3, t.1.cycleData = t'.1.cycleData → Equivalent t.1 t'.1 := by
+    ∀ t t' : ConnectedTriple 3, t.val.cycleData = t'.val.cycleData → Equivalent t.val t'.val := by
   decide +kernel
 
 private theorem equivalent_of_cycleData_eq_four (t t' : ConnectedTriple 4)
-    (h : t.1.cycleData = t'.1.cycleData) : Equivalent t.1 t'.1 := by
+    (h : t.val.cycleData = t'.val.cycleData) : Equivalent t.val t'.val := by
   obtain ⟨τ, hτ⟩ := exists_smul_mem_degreeFourClassReps t
   obtain ⟨τ', hτ'⟩ := exists_smul_mem_degreeFourClassReps t'
-  have hr : τ • t.1 = τ' • t'.1 :=
+  have hr : τ • t.val = τ' • t'.val :=
     List.inj_on_of_nodup_map nodup_map_cycleData_degreeFourClassReps hτ hτ' <| by
       rw [cycleData_smul, cycleData_smul, h]
   exact equivalent_iff_exists_smul_eq.mpr ⟨τ'⁻¹ * τ, by rw [mul_smul, hr, inv_smul_smul]⟩
@@ -170,12 +170,12 @@ private theorem equivalent_of_cycleData_eq_four (t t' : ConnectedTriple 4)
 /-- Through degree four, the ordered full cycle partitions classify connected triples up to
 simultaneous relabeling. The monodromy group is not needed as an additional invariant. -/
 theorem equivalent_iff_cycleData_eq_of_degree_le_four {n : ℕ} (hn : n ≤ 4)
-    (t t' : ConnectedTriple n) : Equivalent t.1 t'.1 ↔ t.1.cycleData = t'.1.cycleData := by
+    (t t' : ConnectedTriple n) : Equivalent t.val t'.val ↔ t.val.cycleData = t'.val.cycleData := by
   refine ⟨cycleData_eq_of_equivalent, fun h => ?_⟩
-  have hn0 := t.2.ne_zero
+  have hn0 := t.property.ne_zero
   interval_cases n
   · exact (hn0 rfl).elim
-  · have ht : t.1 = t'.1 := Subsingleton.elim _ _
+  · have ht : t.val = t'.val := Subsingleton.elim _ _
     rw [ht]
     exact equivalent_iff_exists_smul_eq.mpr ⟨1, one_smul _ _⟩
   · exact equivalent_of_cycleData_eq_two t t' h
@@ -184,42 +184,42 @@ theorem equivalent_iff_cycleData_eq_of_degree_le_four {n : ℕ} (hn : n ≤ 4)
 
 /-- The unique ordered cycle datum in degree one. -/
 theorem image_cycleData_one :
-    (Finset.univ : Finset (ConnectedTriple 1)).image (fun t => t.1.cycleData) =
+    (Finset.univ : Finset (ConnectedTriple 1)).image (fun t => t.val.cycleData) =
       {({1}, {1}, {1})} := by
   decide +kernel
 
 /-- The complete table of ordered full cycle data in degree two. The three classes differ by
 which branch point is unramified. -/
 theorem image_cycleData_two :
-    (Finset.univ : Finset (ConnectedTriple 2)).image (fun t => t.1.cycleData) =
+    (Finset.univ : Finset (ConnectedTriple 2)).image (fun t => t.val.cycleData) =
       {({1, 1}, {2}, {2}), ({2}, {1, 1}, {2}), ({2}, {2}, {1, 1})} := by
   decide +kernel
 
 /-- The complete table of ordered full cycle data in degree three. There are three cyclic
 spherical classes, three nonabelian spherical classes, and one cyclic Euclidean class. -/
 theorem image_cycleData_three :
-    (Finset.univ : Finset (ConnectedTriple 3)).image (fun t => t.1.cycleData) =
+    (Finset.univ : Finset (ConnectedTriple 3)).image (fun t => t.val.cycleData) =
       {({1, 1, 1}, {3}, {3}), ({3}, {1, 1, 1}, {3}), ({3}, {3}, {1, 1, 1}),
         ({2, 1}, {2, 1}, {3}), ({2, 1}, {3}, {2, 1}), ({3}, {2, 1}, {2, 1}),
         ({3}, {3}, {3})} := by
   decide +kernel
 
 private theorem image_unorderedCycleData {n : ℕ} :
-    (Finset.univ : Finset (ConnectedTriple n)).image (fun t => t.1.unorderedCycleData) =
-      ((Finset.univ : Finset (ConnectedTriple n)).image (fun t => t.1.cycleData)).image
+    (Finset.univ : Finset (ConnectedTriple n)).image (fun t => t.val.unorderedCycleData) =
+      ((Finset.univ : Finset (ConnectedTriple n)).image (fun t => t.val.cycleData)).image
         (fun d => ({d.1, d.2.1, d.2.2} : Multiset (Multiset ℕ))) := by
   simp only [Finset.image_image, Function.comp_def, ← unorderedCycleData_def]
 
 /-- The unique unordered cycle datum in degree one. -/
 theorem image_unorderedCycleData_one :
-    (Finset.univ : Finset (ConnectedTriple 1)).image (fun t => t.1.unorderedCycleData) =
+    (Finset.univ : Finset (ConnectedTriple 1)).image (fun t => t.val.unorderedCycleData) =
       {{({1} : Multiset ℕ), {1}, {1}}} := by
   rw [image_unorderedCycleData, image_cycleData_one]
   rfl
 
 /-- The three ordered degree-two classes form a single branch-point orbit. -/
 theorem image_unorderedCycleData_two :
-    (Finset.univ : Finset (ConnectedTriple 2)).image (fun t => t.1.unorderedCycleData) =
+    (Finset.univ : Finset (ConnectedTriple 2)).image (fun t => t.val.unorderedCycleData) =
       {{({1, 1} : Multiset ℕ), {2}, {2}}} := by
   rw [image_unorderedCycleData, image_cycleData_two]
   decide +kernel
@@ -227,7 +227,7 @@ theorem image_unorderedCycleData_two :
 /-- The complete degree-three branch-point orbit table, expressed by unordered full cycle
 partitions. Repeated partitions remain repeated in each datum. -/
 theorem image_unorderedCycleData_three :
-    (Finset.univ : Finset (ConnectedTriple 3)).image (fun t => t.1.unorderedCycleData) =
+    (Finset.univ : Finset (ConnectedTriple 3)).image (fun t => t.val.unorderedCycleData) =
       {{({1, 1, 1} : Multiset ℕ), {3}, {3}}, {{2, 1}, {2, 1}, {3}}, {{3}, {3}, {3}}} := by
   rw [image_unorderedCycleData, image_cycleData_three]
   decide +kernel
@@ -235,7 +235,7 @@ theorem image_unorderedCycleData_three :
 /-- The complete degree-four branch-point orbit table: eight unordered full cycle data
 arise from the twenty-six ordered classes. -/
 theorem image_unorderedCycleData_four :
-    (Finset.univ : Finset (ConnectedTriple 4)).image (fun t => t.1.unorderedCycleData) =
+    (Finset.univ : Finset (ConnectedTriple 4)).image (fun t => t.val.unorderedCycleData) =
       {{({1, 1, 1, 1} : Multiset ℕ), {4}, {4}}, {{2, 1, 1}, {2, 2}, {4}},
         {{2, 1, 1}, {3, 1}, {4}}, {{2, 2}, {2, 2}, {2, 2}}, {{2, 2}, {3, 1}, {3, 1}},
         {{2, 2}, {4}, {4}}, {{3, 1}, {3, 1}, {3, 1}}, {{3, 1}, {4}, {4}}} := by
@@ -246,7 +246,7 @@ theorem image_unorderedCycleData_four :
 data obtained by placing two full four-cycles beside either two two-cycles or a three-cycle and
 a fixed point; all other degree-four classes have Euler characteristic two. -/
 theorem eulerChar_eq_ite_of_degree_four (t : ConnectedTriple 4) :
-    t.1.eulerChar = if t.1.cycleData ∈
+    t.val.eulerChar = if t.val.cycleData ∈
       ({({2, 2}, {4}, {4}), ({4}, {2, 2}, {4}), ({4}, {4}, {2, 2}),
         ({3, 1}, {4}, {4}), ({4}, {3, 1}, {4}), ({4}, {4}, {3, 1})} :
           Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ))
@@ -262,7 +262,7 @@ theorem eulerChar_eq_ite_of_degree_four (t : ConnectedTriple 4) :
 placing two full four-cycles beside either two two-cycles or a three-cycle and a fixed point;
 all other degree-four classes have genus zero. -/
 theorem genus_eq_ite_of_degree_four (t : ConnectedTriple 4) :
-    t.1.genus = if t.1.cycleData ∈
+    t.val.genus = if t.val.cycleData ∈
       ({({2, 2}, {4}, {4}), ({4}, {2, 2}, {4}), ({4}, {4}, {2, 2}),
         ({3, 1}, {4}, {4}), ({4}, {3, 1}, {4}), ({4}, {4}, {3, 1})} :
           Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ))
@@ -274,12 +274,12 @@ theorem genus_eq_ite_of_degree_four (t : ConnectedTriple 4) :
 data. The three permutations of `([3,1], [4], [4])` are hyperbolic; the three permutations of
 `([2,2], [4], [4])` and `([3,1], [3,1], [3,1])` are Euclidean; all others are spherical. -/
 theorem geometryType_eq_ite_of_degree_four (t : ConnectedTriple 4) :
-    t.1.geometryType =
-      if t.1.cycleData ∈
+    t.val.geometryType =
+      if t.val.cycleData ∈
         ({({3, 1}, {4}, {4}), ({4}, {3, 1}, {4}), ({4}, {4}, {3, 1})} :
           Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ))
       then .hyperbolic
-      else if t.1.cycleData ∈
+      else if t.val.cycleData ∈
         ({({2, 2}, {4}, {4}), ({4}, {2, 2}, {4}), ({4}, {4}, {2, 2}),
           ({3, 1}, {3, 1}, {3, 1})} :
             Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ))
@@ -292,9 +292,9 @@ theorem geometryType_eq_ite_of_degree_four (t : ConnectedTriple 4) :
   all_goals
     simp (disch := decide) only [hd, Finset.mem_insert, Finset.mem_singleton]
     first
-    | apply (geometryType_eq_spherical_iff t.1).mpr
-    | apply (geometryType_eq_euclidean_iff t.1).mpr
-    | apply (geometryType_eq_hyperbolic_iff t.1).mpr
+    | apply (geometryType_eq_spherical_iff t.val).mpr
+    | apply (geometryType_eq_euclidean_iff t.val).mpr
+    | apply (geometryType_eq_hyperbolic_iff t.val).mpr
     simp only [← orderTriple_σ0, ← orderTriple_σ1, ← orderTriple_σinf,
       orderTriple_eq_lcm_cycleData]
     norm_num [hd]
@@ -303,10 +303,10 @@ theorem geometryType_eq_ite_of_degree_four (t : ConnectedTriple 4) :
 three-cycles, and two for every other connected triple. -/
 theorem eulerChar_eq_ite_of_degree_le_three {n : ℕ} (hn : n ≤ 3)
     (t : ConnectedTriple n) :
-    t.1.eulerChar = if t.1.cycleData = ({3}, {3}, {3}) then 0 else 2 := by
-  have hn0 := t.2.ne_zero
-  have hd : t.1.cycleData ∈
-      (Finset.univ : Finset (ConnectedTriple n)).image (fun s => s.1.cycleData) :=
+    t.val.eulerChar = if t.val.cycleData = ({3}, {3}, {3}) then 0 else 2 := by
+  have hn0 := t.property.ne_zero
+  have hd : t.val.cycleData ∈
+      (Finset.univ : Finset (ConnectedTriple n)).image (fun s => s.val.cycleData) :=
     Finset.mem_image_of_mem _ (Finset.mem_univ t)
   rw [eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData]
   interval_cases n
@@ -325,7 +325,7 @@ theorem eulerChar_eq_ite_of_degree_le_three {n : ℕ} (hn : n ≤ 3)
 partition `[3]` at all three branch points, and it has genus one. -/
 theorem genus_eq_ite_of_degree_le_three {n : ℕ} (hn : n ≤ 3)
     (t : ConnectedTriple n) :
-    t.1.genus = if t.1.cycleData = ({3}, {3}, {3}) then 1 else 0 := by
+    t.val.genus = if t.val.cycleData = ({3}, {3}, {3}) then 1 else 0 := by
   rw [genus_def, eulerChar_eq_ite_of_degree_le_three hn t]
   split_ifs <;> norm_num
 
@@ -333,19 +333,19 @@ theorem genus_eq_ite_of_degree_le_three {n : ℕ} (hn : n ≤ 3)
 degree three is spherical. -/
 theorem geometryType_eq_ite_of_degree_le_three {n : ℕ} (hn : n ≤ 3)
     (t : ConnectedTriple n) :
-    t.1.geometryType =
-      if t.1.cycleData = ({3}, {3}, {3}) then .euclidean else .spherical := by
+    t.val.geometryType =
+      if t.val.cycleData = ({3}, {3}, {3}) then .euclidean else .spherical := by
   split_ifs with h
-  · apply (geometryType_eq_euclidean_iff t.1).mpr
+  · apply (geometryType_eq_euclidean_iff t.val).mpr
     simp only [← orderTriple_σ0, ← orderTriple_σ1, ← orderTriple_σinf,
       orderTriple_eq_lcm_cycleData]
     norm_num [h]
-  · apply (geometryType_eq_spherical_iff t.1).mpr
+  · apply (geometryType_eq_spherical_iff t.val).mpr
     simp only [← orderTriple_σ0, ← orderTriple_σ1, ← orderTriple_σinf,
       orderTriple_eq_lcm_cycleData]
-    have hn0 := t.2.ne_zero
-    have hd : t.1.cycleData ∈
-        (Finset.univ : Finset (ConnectedTriple n)).image (fun s => s.1.cycleData) :=
+    have hn0 := t.property.ne_zero
+    have hd : t.val.cycleData ∈
+        (Finset.univ : Finset (ConnectedTriple n)).image (fun s => s.val.cycleData) :=
       Finset.mem_image_of_mem _ (Finset.mem_univ t)
     interval_cases n
     · exact (hn0 rfl).elim
@@ -370,7 +370,7 @@ connected isomorphism classes. This is coarser than the classification of ordere
 theorem mk_mem_orbit_iff_unorderedCycleData_eq_of_degree_le_four {n : ℕ} (hn : n ≤ 4)
     (t t' : ConnectedTriple n) :
     mk t' ∈ MulAction.orbit (Perm (Fin 3))ᵐᵒᵖ (mk t) ↔
-      t.1.unorderedCycleData = t'.1.unorderedCycleData := by
+      t.val.unorderedCycleData = t'.val.unorderedCycleData := by
   rw [MulAction.mem_orbit_iff,
     PermutationTriple.unorderedCycleData_eq_iff_exists_reindexBranchPoints]
   constructor
@@ -392,7 +392,7 @@ theorem mk_mem_orbit_iff_unorderedCycleData_eq_of_degree_le_four {n : ℕ} (hn :
 theorem card_four : Fintype.card (ConnectedIsoClass 4) = 26 := by
   let f : ConnectedIsoClass 4 → {d // d ∈ PermutationTriple.degreeFourCycleData} := fun c =>
     Quotient.liftOn' c
-      (fun t => ⟨t.1.cycleData, PermutationTriple.cycleData_mem_degreeFourCycleData t⟩)
+      (fun t => ⟨t.val.cycleData, PermutationTriple.cycleData_mem_degreeFourCycleData t⟩)
       fun t t' h => Subtype.ext <| PermutationTriple.cycleData_eq_of_equivalent <|
         mk_eq_mk_iff_equivalent.mp (Quotient.sound' h)
   have hf : Function.Bijective f := by
@@ -401,10 +401,10 @@ theorem card_four : Fintype.card (ConnectedIsoClass 4) = 26 := by
       obtain ⟨t', rfl⟩ := mk_surjective c'
       exact mk_eq_mk_iff_equivalent.mpr
         (PermutationTriple.equivalent_of_cycleData_eq_four t t' (congrArg Subtype.val h))
-    · have hd : d.1 ∈ (Finset.univ : Finset (ConnectedTriple 4)).image
-          (fun t => t.1.cycleData) := by
+    · have hd : d.val ∈ (Finset.univ : Finset (ConnectedTriple 4)).image
+          (fun t => t.val.cycleData) := by
         rw [PermutationTriple.image_cycleData_four]
-        exact d.2
+        exact d.property
       obtain ⟨t, -, ht⟩ := Finset.mem_image.mp hd
       exact ⟨mk t, Subtype.ext ht⟩
   rw [Fintype.card_of_bijective hf, Fintype.card_coe]

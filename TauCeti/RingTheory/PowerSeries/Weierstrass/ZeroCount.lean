@@ -176,7 +176,7 @@ theorem order_taylor_mul_eq_rootMultiplicity [CompleteSpace K]
   have h0 : (_root_.PowerSeries.taylor x (e : PowerSeries K)).order = 0 := by
     simpa using (_root_.PowerSeries.order_eq_nat (n := 0)).mpr
       ⟨by simpa using hu, fun i hi ↦ absurd hi i.not_lt_zero⟩
-  rw [_root_.PowerSeries.IsRestricted.taylor_mul e.2 (isRestricted_polynomial P) hx,
+  rw [_root_.PowerSeries.IsRestricted.taylor_mul e.property (isRestricted_polynomial P) hx,
     _root_.PowerSeries.order_mul, h0, zero_add]
   exact _root_.PowerSeries.isGoodZero_iff_order_taylor_eq.mp
     (_root_.PowerSeries.isGoodZero_coe_iff_of_field.mpr ⟨hP, rfl⟩)
@@ -294,7 +294,8 @@ private theorem roots_map_spec [DecidableEq L] (hd : IsDistinguished r d f) (hr 
         (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
           (P.map (algebraMap K L)).roots.count x := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  refine ⟨fun z hz ↦ (hd.map_polynomial hr he hf).norm_le_of_eval_eq_zero hr
+  refine ⟨fun z hz ↦ (hd.map_polynomial hr he hf).norm_le_of_eval_eq_zero
+    (MulHomClass.isPowMul normHom) hr
     (hP.map (algebraMap K L)) (Polynomial.mem_roots'.mp hz).2, fun x hx ↦ ?_⟩
   rw [order_taylor_map_eq_rootMultiplicity he hP.ne_zero hf hx, Polynomial.count_roots]
 

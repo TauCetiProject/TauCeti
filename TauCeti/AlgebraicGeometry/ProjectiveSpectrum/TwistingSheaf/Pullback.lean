@@ -89,13 +89,13 @@ generator `(f a)ⁿ` of `𝒪_{Proj ℬ}(n)` on the preimage. -/
 @[simp]
 theorem twistingSheaf.comap_chartGenerator (n : ℤ) {a : A} (ha : a ∈ 𝒜 1)
     {U : (Proj 𝒜).Opens} (hU : U ≤ basicOpen 𝒜 a) {V : (Proj ℬ).Opens}
-    (hUV : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.1) :
+    (hUV : V.carrier ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.carrier) :
     twistingSheaf.comap f hf hUV (twistingSheaf.chartGenerator n a ha U hU) =
       twistingSheaf.chartGenerator n (f a) (Graded.map_mem f ha) V
         (fun _ hy ↦ hU (hUV hy)) := by
   refine twistingSheaf.ext fun (y : V) ↦ ?_
   rw [twistingSheaf.comap_apply, twistingSheaf.chartGenerator_apply]
-  refine (ProjectiveSpectrum.TwistingSheaf.localizationsMap_mk f hf y.1 _ _).trans
+  refine (ProjectiveSpectrum.TwistingSheaf.localizationsMap_mk f hf y.val _ _).trans
     (Eq.trans ?_ (twistingSheaf.chartGenerator_apply n (f a) _ V _ y).symm)
   congr 1
   · exact map_pow f a _
@@ -107,7 +107,7 @@ functions**: the section `b • aⁿ` of `𝒪_{Proj 𝒜}(n)` on `U ≤ D₊(a)
 @[simp]
 theorem twistingSheaf.comap_chartSectionsLinearEquiv (n : ℤ) {a : A} (ha : a ∈ 𝒜 1)
     {U : (Proj 𝒜).Opens} (hU : U ≤ basicOpen 𝒜 a) {V : (Proj ℬ).Opens}
-    (hUV : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.1) (b : Γ(Proj 𝒜, U)) :
+    (hUV : V.carrier ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.carrier) (b : Γ(Proj 𝒜, U)) :
     twistingSheaf.comap f hf hUV (twistingSheaf.chartSectionsLinearEquiv n a ha U hU b) =
       twistingSheaf.chartSectionsLinearEquiv n (f a) (Graded.map_mem f ha) V
         (fun _ hy ↦ hU (hUV hy)) ((map f hf).appLE U V hUV b) := by

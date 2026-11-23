@@ -298,9 +298,9 @@ theorem exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact (hσ : σ.Is
     hσ.isNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField
       (hF.of_le (by simp)) hcomm hreg hK
   set y : W := ⟨x, hxW⟩
-  set σW : SmoothTwoForm I W := SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ
+  set σW : SmoothTwoForm I W := SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ
   have hσW : σW.IsSymplectic := hσ.mpullback_subtype_val W
-  have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun z : W ↦ F z := hF.comp contMDiff_subtype_val
+  have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun z : W ↦ F z := hF.comp contMDiff_subtypeVal
   obtain ⟨t, ht, hyt, s, hsy, hs, hFs, hL⟩ :=
     hσW.exists_contMDiffOn_section_eval₂_mfderiv_eq_zero hFW hcommW hcW
       (hregW y (mem_connectedComponentIn rfl))
@@ -317,9 +317,9 @@ theorem exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact (hσ : σ.Is
     fun θ a a' b b' ↦ ?_, fun c' hc' θ θ' ↦ ?_⟩
   · exact (hσW.apply_angleMap hFW hcommW hcW (θ, c)).trans (hFs c (hUt hcU))
   · -- the inclusion pulls `σ` back to `σW`, and the chain rule splits the differential
-    rw [mfderiv_comp (θ, c) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+    rw [mfderiv_comp (θ, c) (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
       ((hloc θ).mdifferentiableAt (by simp))]
-    exact (SmoothForm.eval₂_mpullback _ contMDiff_subtype_val σ _ _ _).symm.trans
+    exact (SmoothForm.eval₂_mpullback _ contMDiff_subtypeVal σ _ _ _).symm.trans
       (hpull θ a a' b b')
   · rw [Function.comp_apply, Function.comp_apply, Subtype.val_injective.eq_iff]
     exact hinj c' hc' θ θ'
