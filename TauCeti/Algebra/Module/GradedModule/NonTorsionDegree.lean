@@ -137,7 +137,7 @@ theorem nonTorsionDegrees_nonempty_iff (G : InternalGrading k M ℤ) :
     by_contra hG
     refine hx (DirectSum.sum_support_decompose G.piece x ▸ Submodule.sum_mem _ fun p _ ↦ ?_)
     by_contra hp
-    exact hG ⟨p, _, (DirectSum.decompose G.piece x p).2, hp⟩
+    exact hG ⟨p, _, (DirectSum.decompose G.piece x p).property, hp⟩
 
 end Defs
 

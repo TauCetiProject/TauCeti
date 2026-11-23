@@ -126,7 +126,7 @@ private lemma restrict_imageCokernelSequence_locally_eq_zero (W : Opens X)
     ∃ (V : Opens ((Opens.toTopCat X).obj W)) (hVW : V ≤ W'), x ∈ V ∧
       (W.isOpenEmbedding.isOpenMap.functor.op ⋙ (imageCokernelSequence F).X₃).map
         (homOfLE hVW).op s = 0 := by
-  obtain ⟨V, hVW, hxV, hV⟩ := imageCokernelSequence_locally_eq_zero F _ s x.1 ⟨x, hx, rfl⟩
+  obtain ⟨V, hVW, hxV, hV⟩ := imageCokernelSequence_locally_eq_zero F _ s x.val ⟨x, hx, rfl⟩
   -- the preimage of `V` in `W` lies in `W'`
   have hle : (Opens.map W.inclusion').obj V ≤ W' := fun y hy ↦ by
     obtain ⟨z, hz, hzy⟩ := hVW hy

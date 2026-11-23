@@ -60,8 +60,12 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
   when `p ≥ 1` and `p⋆` is finite (`TauCeti.two_le_of_inv_add_inv_eq_inv`) and `p ≠ ∞`
   (`TauCeti.ne_top_of_inv_add_inv_eq_inv`), and
   multiplying by `n` gives `n/p⋆ + 1 = n/p`
-  (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`). With `γ = p⋆ (1 - 1/n)` and `p'`
-  the conjugate exponent of `p`, `(γ - 1) p' = p⋆` and `1 - 1/n = 1/p⋆ + 1/p'`
+  (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`), so that the conditions
+  `(s - 1) p > -n` and `s p⋆ > -n` agree when `p⋆` is finite
+  (`TauCeti.neg_natCast_lt_sub_one_mul_iff_of_inv_add_inv_eq_inv`); a space of dimension `n`
+  admitting the relation is nontrivial (`TauCeti.nontrivial_of_inv_add_inv_eq_inv`). With
+  `γ = p⋆ (1 - 1/n)` and `p'` the conjugate exponent of `p`, `(γ - 1) p' = p⋆` and
+  `1 - 1/n = 1/p⋆ + 1/p'`
   (`TauCeti.exists_holderConjugate_sub_one_mul_eq`).
 
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
@@ -92,9 +96,11 @@ namespace TauCeti
 open Filter MeasureTheory Module Set TopologicalSpace
 open scoped Distributions ENNReal Gradient InnerProductSpace NNReal Topology
 
+section AnyDimension
+
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+  [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E} {p : ENNReal}
+  [Fact (1 ≤ p)]
 
 /-! ### Sobolev estimates on a set of finite measure -/
 
@@ -108,7 +114,6 @@ theorem one_sub_two_div_toReal_nonneg {q : ℝ≥0∞} (hq : 2 ≤ q) :
     rw [sub_nonneg, div_le_one (by linarith)]
     exact h2q
 
-omit [FiniteDimensional ℝ E] in
 /-- A Sobolev estimate `‖v‖_q ≤ S ‖∇v‖₂`, combined with Hölder's inequality on a set `A` off
 which `v` vanishes, bounds `∫_Ω v²` by `S² ‖∇v‖₂² μ(Ω ∩ A)^{1 - 2/q}`. -/
 theorem W1p.integral_value_sq_le_of_eLpNorm_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0}
@@ -187,7 +192,6 @@ theorem W1p.integral_value_sq_le_of_eLpNorm_le {q : ℝ≥0∞} (hq : 2 ≤ q) {
 
 /-! ### Transferring an estimate from test functions to `W^{1,p}_0(Ω)` -/
 
-omit [FiniteDimensional ℝ E] in
 /-- The jets whose value has `L^q` norm at most `C` times the `Lᵖ` norm of their gradient form a
 **closed** set, for any exponent `q` and constant `C`.
 
@@ -219,6 +223,14 @@ theorem W1p.isClosed_setOf_eLpNorm_value_le (q : ENNReal) (C : ℝ≥0) :
         liminf_le_liminf (.of_forall fun i => hv (ns i))
     _ = (C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ := (hbound.comp hns.tendsto_atTop).liminf_eq
 
+end AnyDimension
+
+section TestFunctionTransfer
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
 /-- **Transfer of a Sobolev estimate to `W^{1,p}_0(Ω)`.** If every test function on `Ω` satisfies
 `‖φ‖_q ≤ C ‖Dφ‖_p`, then so does every `u ∈ W^{1,p}_0(Ω)`.
 
@@ -243,11 +255,11 @@ theorem W1p.eLpNorm_value_le_of_forall_testFunction {q : ENNReal} {C : ℝ≥0}
     rw [W1p.gradient_ofTestFunctionₗ, enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv]
   simpa only [Set.mem_ofPred_eq, hvalue, hgradient] using h phi
 
+end TestFunctionTransfer
+
 /-! ### The Sobolev embedding at the critical exponent -/
 
-variable {pstar : ENNReal}
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+variable {p : ENNReal} [Fact (1 ≤ p)] {pstar : ENNReal} in
 /-- If `1 ≤ p` and `p⋆⁻¹ + r = p⁻¹` for some `r`, then `1 ≤ p⋆`; nothing about the summand `r`
 is used beyond its being an element of `ℝ≥0∞`. Instantiated at `r = (finrank ℝ E : ℝ≥0∞)⁻¹`, it
 discharges the `Fact (1 ≤ p⋆)` instance that `L^{p⋆}` needs in order to be a normed space, and so
@@ -265,7 +277,7 @@ theorem exists_inv_eq_inv_add_of_ne_top {q : ENNReal} (hq : q ≠ ∞) (s : ENNR
     ∃ r : ENNReal, r ≠ ∞ ∧ r⁻¹ = q⁻¹ + s :=
   ⟨(q⁻¹ + s)⁻¹, ENNReal.inv_ne_top.2 (by simp [hq]), inv_inv _⟩
 
-omit [Fact (1 ≤ p)] in
+variable {p pstar : ENNReal} in
 /-- The exponent relation `1/p⋆ + 1/n = 1/p` of the Sobolev embedding of `W^{1,p}` in dimension
 `n`, read in `ℝ`. No finiteness hypothesis on `p⋆` is needed: at `p⋆ = ∞` the relation forces
 `n = p`, and both sides use `ENNReal.toReal ∞ = 0`. -/
@@ -277,14 +289,14 @@ theorem toReal_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0) (hexp : pstar⁻¹ + 
     (ne_top_of_le_ne_top hpinv (hexp ▸ le_add_self)), ENNReal.toReal_inv, ENNReal.toReal_inv,
     ENNReal.toReal_natCast, ENNReal.toReal_inv] at this
 
-omit [Fact (1 ≤ p)] in
+variable {p pstar : ENNReal} in
 /-- A Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` exists only in positive dimension `n`. -/
 theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0)
     (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : n ≠ 0 :=
   Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <|
     ne_top_of_le_ne_top (ENNReal.inv_ne_top.2 hp) (hexp ▸ le_add_self)
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+variable {p : ENNReal} [Fact (1 ≤ p)] {pstar : ENNReal} in
 /-- A finite Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` and `p ≥ 1` exists only in dimension
 `n ≥ 2`. -/
 theorem two_le_of_inv_add_inv_eq_inv {n : ℕ} (hpstar : pstar ≠ ∞)
@@ -299,14 +311,14 @@ theorem two_le_of_inv_add_inv_eq_inv {n : ℕ} (hpstar : pstar ≠ ∞)
   rw [ENNReal.inv_lt_one] at h
   exact_mod_cast h
 
-omit [Fact (1 ≤ p)] in
+variable {p pstar : ENNReal} in
 /-- A Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` exists only for finite `p`. -/
 theorem ne_top_of_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : p ≠ ∞ := by
   rintro rfl
   rw [ENNReal.inv_top, add_eq_zero] at hexp
   exact ENNReal.natCast_ne_top n (ENNReal.inv_eq_zero.1 hexp.2)
 
-omit [Fact (1 ≤ p)] in
+variable {p pstar : ENNReal} in
 /-- Multiplying the exponent relation `1/p⋆ + 1/n = 1/p` by the dimension `n` gives
 `n/p⋆ + 1 = n/p`: the Sobolev-conjugate scaling exponent `n/p⋆` is one less than `n/p`. -/
 theorem natCast_div_toReal_add_one_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0)
@@ -314,6 +326,30 @@ theorem natCast_div_toReal_add_one_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0
     (n : ℝ) / pstar.toReal + 1 = n / p.toReal := by
   rw [div_eq_mul_inv, div_eq_mul_inv, ← toReal_inv_add_inv_eq_inv hp hexp, mul_add,
     mul_inv_cancel₀ (Nat.cast_ne_zero.2 (ne_zero_of_inv_add_inv_eq_inv hp hexp))]
+
+variable {p pstar : ENNReal} in
+/-- Under the exponent relation `1/p⋆ + 1/n = 1/p` with `p⋆` finite, the conditions
+`(s - 1) p > -n` and `s p⋆ > -n` agree. -/
+theorem neg_natCast_lt_sub_one_mul_iff_of_inv_add_inv_eq_inv {n : ℕ} {s : ℝ} (hp : p ≠ 0)
+    (hpstar : pstar ≠ ∞) (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) :
+    -(n : ℝ) < (s - 1) * p.toReal ↔ -(n : ℝ) < s * pstar.toReal := by
+  have hc : 0 < p.toReal := ENNReal.toReal_pos hp (ne_top_of_inv_add_inv_eq_inv hexp)
+  have ha : 0 < pstar.toReal := by
+    refine ENNReal.toReal_pos (fun h => hp ?_) hpstar
+    rw [h, ENNReal.inv_zero, top_add, eq_comm, ENNReal.inv_eq_top] at hexp
+    exact hexp
+  -- Dividing by `p` and `p⋆`, the conditions read `-n / p < s - 1` and `-n / p⋆ < s`, which
+  -- agree since `n / p⋆ + 1 = n / p`.
+  rw [← div_lt_iff₀ hc, ← div_lt_iff₀ ha, neg_div, neg_div,
+    ← natCast_div_toReal_add_one_of_inv_add_inv_eq_inv hp hexp]
+  constructor <;> intro h <;> linarith
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] {p pstar : ENNReal} in
+/-- A space admitting a Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p`, `n` its dimension, is
+nontrivial. -/
+theorem nontrivial_of_inv_add_inv_eq_inv (hp : p ≠ 0)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) : Nontrivial E :=
+  nontrivial_of_finrank_pos (Nat.pos_of_ne_zero (ne_zero_of_inv_add_inv_eq_inv hp hexp))
 
 /-- **The exponents of the power trick.** If `1/q + 1/N = 1/P` with `P > 1` and `q > 0`, then
 `γ = q (1 - 1/N)` and the conjugate exponent `P'` of `P` satisfy `(γ - 1) P' = q` and
@@ -334,6 +370,10 @@ theorem exists_holderConjugate_sub_one_mul_eq {P q N : ℝ} (hP1 : 1 < P) (hq0 :
     rw [hγ, mul_assoc, mul_inv_cancel₀ (sub_pos.2 hPinv).ne', mul_one]
   · rw [inv_inv]
     linarith
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {pstar : ENNReal}
 
 /-- **The Gagliardo--Nirenberg--Sobolev inequality on `W^{1,p}_0(Ω)`.** If `1 ≤ p` and the Sobolev
 conjugate `p⋆` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every `u ∈ W^{1,p}_0(Ω)`
@@ -448,7 +488,7 @@ theorem W1p0.memLp_value (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (u : W1p0 mu Omega p) :
     MemLp (W1p.value (u : W1p mu Omega p) : E → ℝ) pstar (mu.restrict Omega) :=
   W1p.memLp_value_of_mem_w1p0Submodule hpstar hexp
-    ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 u.2)
+    ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 u.property)
 
 /-- The **Sobolev embedding** `W^{1,p}_0(Ω) → L^{p⋆}(Ω)` as a linear map, before recording its
 boundedness.  It sends a Sobolev function to its own `L^{p⋆}` class, so the underlying function is
@@ -488,7 +528,7 @@ private theorem W1p0.norm_sobolevEmbeddingₗ_le (hpstar : pstar ≠ ∞)
   rw [W1p0.sobolevEmbeddingₗ, LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp]
   refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
   refine (W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp
-    ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 u.2)).trans_eq ?_
+    ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 u.property)).trans_eq ?_
   rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, ofReal_norm]
 
 /-- **The Sobolev embedding `W^{1,p}_0(Ω) ↪ L^{p⋆}(Ω)`.** For `1 ≤ p` and `1/p⋆ + 1/n = 1/p`,

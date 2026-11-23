@@ -67,7 +67,7 @@ noncomputable def symmetricAlgebraReynolds :
   map_add' p q := Subtype.ext (map_add _ p q)
   map_smul' a p := Subtype.ext <| by
     -- Every `g` fixes the invariant factor `a`, so `a` passes through the group sum.
-    have ha := (ρ.mem_symmetricAlgebraInvariants a).1 a.2
+    have ha := (ρ.mem_symmetricAlgebraInvariants a).1 a.property
     simp only [symmetricAlgebra_apply] at ha
     simp only [averageMap_apply, symmetricAlgebra_apply, Subalgebra.smul_def,
       map_mul, ha, RingHom.id_apply, smul_eq_mul, Subalgebra.coe_mul, Finset.mul_sum,
@@ -88,7 +88,8 @@ theorem coe_symmetricAlgebraReynolds_eq_sum (p : SymmetricAlgebra R M) :
 @[simp]
 theorem symmetricAlgebraReynolds_coe (a : ρ.symmetricAlgebraInvariants) :
     ρ.symmetricAlgebraReynolds a = a :=
-  Subtype.ext (ρ.symmetricAlgebra.averageMap_id a ((ρ.mem_symmetricAlgebraInvariants _).1 a.2))
+  Subtype.ext (ρ.symmetricAlgebra.averageMap_id a ((ρ.mem_symmetricAlgebraInvariants _).1
+      a.property))
 
 /-- The Reynolds operator maps onto the invariant subalgebra. -/
 theorem symmetricAlgebraReynolds_surjective :

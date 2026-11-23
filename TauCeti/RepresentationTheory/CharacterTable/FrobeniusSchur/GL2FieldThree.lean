@@ -74,8 +74,8 @@ theorem card_squareRoot_one_GL_fin_two_of_card_eq_three (hF : Fintype.card F = 3
   -- squaring to `1` is invertible, being its own inverse.
   let ψ : {g : GL (Fin 2) (ZMod 3) // g * g = 1} ≃
       {M : Matrix (Fin 2) (Fin 2) (ZMod 3) // M * M = 1} :=
-    { toFun := fun g => ⟨g.1, by rw [← Units.val_mul, g.2, Units.val_one]⟩
-      invFun := fun M => ⟨⟨M.1, M.1, M.2, M.2⟩, Units.ext M.2⟩
+    { toFun := fun g => ⟨g.val, by rw [← Units.val_mul, g.property, Units.val_one]⟩
+      invFun := fun M => ⟨⟨M.val, M.val, M.property, M.property⟩, Units.ext M.property⟩
       left_inv := fun g => Subtype.ext (Units.ext rfl)
       right_inv := fun M => rfl }
   rw [← Nat.card_congr ((φ.squareRootMap 1).trans (Equiv.subtypeEquivRight fun _ => by

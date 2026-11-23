@@ -96,14 +96,14 @@ private theorem W1p.isCompact_closure_preciseRepresentative_unitBall
     BoundedContinuousFunction.mkOfCompact
       ⟨fun x => preciseRepresentative mu (W1p.value u) x, by
         have hc := W1p.continuousOn_preciseRepresentative (ENNReal.natCast_lt_top _) u
-        exact hc.comp_continuous continuous_subtype_val (fun x => hKΩ x.2)⟩
+        exact hc.comp_continuous continuous_subtypeVal (fun x => hKΩ x.property)⟩
   refine ⟨f, fun _ _ => rfl, ?_⟩
   obtain ⟨C, hC, hdist⟩ := W1p.exists_dist_preciseRepresentative_le_top (mu := mu)
   obtain ⟨R, hR, hRK⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKΩ
   refine BoundedContinuousFunction.arzela_ascoli (closedBall 0 1)
     (isCompact_closedBall 0 1) _ ?_ ?_
   · rintro _ x ⟨u, hu, rfl⟩
-    exact mem_closedBall_zero_iff.2 ((W1p.norm_preciseRepresentative_le u (hKΩ x.2)).trans
+    exact mem_closedBall_zero_iff.2 ((W1p.norm_preciseRepresentative_le u (hKΩ x.property)).trans
       ((W1p.norm_value_le u).trans (mem_closedBall_zero_iff.1 hu)))
   · intro x
     refine equicontinuousAt_of_continuity_modulus (fun y : K => C * dist y x)
@@ -116,7 +116,7 @@ private theorem W1p.isCompact_closure_preciseRepresentative_unitBall
     rintro ⟨_, u, hu, rfl⟩
     have hb := mem_closedBall_zero_iff.1 hu
     have hxy : closedBall (y : E) (2 * dist (y : E) x) ⊆ (Omega : Set E) :=
-      ((closedBall_subset_cthickening y.2 _).trans
+      ((closedBall_subset_cthickening y.property _).trans
         (cthickening_mono (by
           have hd := mem_ball.1 hy
           rw [Subtype.dist_eq] at hd
@@ -137,8 +137,8 @@ private theorem W1p.isCompactOperator_valueL_restrictL_top
   have hK : IsCompact K := hVc
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let ν : Measure ↥(V : Set E) := mu.comap (Subtype.val : ↥(V : Set E) → E)
-  let σ : C((V : Set E), K) := ⟨fun x => ⟨x, subset_closure x.2⟩,
-    continuous_subtype_val.subtype_mk _⟩
+  let σ : C((V : Set E), K) := ⟨fun x => ⟨x, subset_closure x.property⟩,
+    continuous_subtypeVal.subtype_mk _⟩
   let e := Lp.comapSubtypeEquivₗᵢ (E := ℝ) (p := ∞) ℝ mu V.isOpen.measurableSet
   let S : (K →ᵇ ℝ) → Lp ℝ ∞ (mu.restrict (V : Set E)) := fun g =>
     e.symm (BoundedContinuousFunction.toLpTop ν ℝ (g.compContinuous σ))

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.CutoffPushforward
+public import TauCeti.Analysis.Distribution.Pushforward
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
@@ -15,17 +16,23 @@ import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 # The wave front set of a pushforward along a linear map
 
 Let `T` be a complex distribution on an open set `Ω` of a finite-dimensional real inner product
-space `E`, and let `χ` be a test function equal to one near the support of `T`, which is then
-compact. For a continuous linear map `A : E →L[ℝ] E'` the pushforward `A_* T` is the distribution
-`f ↦ T (χ (f ∘ A))` on an open set `Ω'` of `E'` (`Distribution.cutoffPushforwardCLM`). This file
-proves Hörmander's bound for its wave front set:
+space `E`, and let `χ` be a test function on `Ω`. For a continuous linear map `A : E →L[ℝ] E'` the
+pushforward `A_* (χ T)` is the distribution `f ↦ T (χ (f ∘ A))` on an open set `Ω'` of `E'`
+(`Distribution.cutoffPushforwardCLM`); when `χ` is equal to one near the support of `T`, which is
+then compact, it is the pushforward `A_* T`, and for a projection it is integration over the
+fibres. This file proves Hörmander's bound for its wave front set:
 
-`WF(A_* T) ⊆ {(A x, η) | x ∈ supp T, Aᵀ η = 0 or (x, Aᵀ η) ∈ WF(T)}`.
+`WF(A_* (χ T)) ⊆ {(A x, η) | x ∈ supp χ ∩ supp T, Aᵀ η = 0 or (x, Aᵀ η) ∈ WF(T)}`.
+
+The same bound holds for the pushforward `A_* T` along a linear map proper on the support of `T`
+(`Distribution.pushforward`), with `x` ranging over the support of `T` in `Ω`
+(`Distribution.waveFrontSet_pushforward_subset`).
 
 Its proof rests on the identity `(A_* T)^(η) = T (χ (f ∘ A) e_(Aᵀ η))` for localized Fourier
 transforms (`Distribution.localFourier_cutoffPushforwardCLM`): the characters of `E'` pull back
 along `A` to the characters of `E` at the transposed frequency. Over a point `y`, `T` decays rapidly
-in one cone around `Aᵀ η` for all cutoffs supported near the compact set `supp T ∩ A⁻¹ {y}`
+in one cone around `Aᵀ η` for all cutoffs supported near the compact set
+`supp χ ∩ supp T ∩ A⁻¹ {y}`
 (`Distribution.exists_isOpen_cone_forall_decay_of_isCompact`), and a cutoff around `y` pulls back
 to such a cutoff. Since `Aᵀ η ≠ 0`, the frequencies `η'` near the ray of `η` satisfy
 `‖η'‖ ≤ c ‖Aᵀ η'‖`, so decay in `Aᵀ η'` is decay in `η'`.
@@ -37,18 +44,28 @@ The differential of a constant map has zero transpose; for `c = 0` the constant 
 map `0`, to which the bound above applies through its term `Aᵀ η = 0`. When `A` is surjective,
 `Aᵀ` is injective and these covectors do not occur.
 
+For a fixed set `Γ`, the pushforwards of all distributions with wave front set in `Γ` therefore
+have wave front set in one fixed set `TauCeti.pushforwardCone (supp χ) A Γ`, which depends on `Γ`
+and `supp χ` but not on the distribution.
+
 ## Main results
 
 * `Distribution.localFourier_cutoffPushforwardCLM`: localized Fourier transforms of `A_* T` are
   localized Fourier transforms of `T` at the transposed frequency.
 * `Distribution.IsMicrolocallySmoothAt.cutoffPushforwardCLM`: if `Aᵀ η ≠ 0` and `T` is
-  microlocally smooth at `(x, Aᵀ η)` for every `x ∈ supp T` with `A x = y`, then `A_* T` is
-  microlocally smooth at `(y, η)`.
+  microlocally smooth at `(x, Aᵀ η)` for every `x ∈ supp χ ∩ supp T` with `A x = y`, then
+  `A_* (χ T)` is microlocally smooth at `(y, η)`.
 * `Distribution.waveFrontSet_cutoffPushforwardCLM_subset`: the wave front bound above.
+* `Distribution.waveFrontSet_pushforward_subset`: the same bound for maps proper on the support.
 * `Distribution.waveFrontSet_cutoffPushforwardCLM_subset_of_surjective`: for surjective `A`,
-  `WF(A_* T) ⊆ {(A x, η) | (x, Aᵀ η) ∈ WF(T)}`.
+  `WF(A_* (χ T)) ⊆ {(A x, η) | x ∈ supp χ, (x, Aᵀ η) ∈ WF(T)}`.
 * `Distribution.waveFrontSet_cutoffPushforwardCLM_const`: the pushforward along a constant map
   with value `c` has wave front set `{c} × (E' \ {0})` whenever `T χ ≠ 0`.
+* `TauCeti.pushforwardCone K A Γ`: the set of covectors `(A x, η)`, `x ∈ K`, with
+  `(x, Aᵀ η) ∈ Γ`, or `η ≠ 0` and `Aᵀ η = 0`.
+* `Distribution.waveFrontSet_cutoffPushforwardCLM_subset_pushforwardCone`: the pushforward of a
+  distribution with wave front set in `Γ` has wave front set in the fixed set
+  `pushforwardCone (supp χ) A Γ`, independent of the distribution.
 
 ## References
 
@@ -88,33 +105,35 @@ theorem localFourier_cutoffPushforwardCLM (A : E →L[ℝ] E') (T : 𝓓'(Ω, �
   simp [bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply,
     ContinuousLinearMap.adjoint_inner_right, mul_assoc]
 
-/-- **Microlocal smoothness of a pushforward.** Let `χ` be equal to one near the support of `T`,
-`y ∈ Ω'` and `Aᵀ η ≠ 0`. If `T` is microlocally smooth at `(x, Aᵀ η)` for every `x` in its support
-with `A x = y`, then the pushforward `A_* T` is microlocally smooth at `(y, η)`. -/
+/-- **Microlocal smoothness of a pushforward.** Let `y ∈ Ω'` and `Aᵀ η ≠ 0`. If `T` is
+microlocally smooth at `(x, Aᵀ η)` for every `x ∈ supp χ ∩ supp T` with `A x = y`, then the
+pushforward `A_* (χ T)` is microlocally smooth at `(y, η)`. -/
 theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {A : E →L[ℝ] E'} {T : 𝓓'(Ω, ℂ)} {y η : E'}
-    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (hy : y ∈ Ω') (hη : (A†) η ≠ 0)
-    (h : ∀ x ∈ dsupport T, A x = y → T.IsMicrolocallySmoothAt x ((A†) η)) :
+    (hy : y ∈ Ω') (hη : (A†) η ≠ 0)
+    (h : ∀ x ∈ tsupport χ ∩ dsupport T, A x = y → T.IsMicrolocallySmoothAt x ((A†) η)) :
     (Distribution.cutoffPushforwardCLM χ A A.contDiff.contDiffOn T :
       𝓓'(Ω', ℂ)).IsMicrolocallySmoothAt y η := by
-  set D := dsupport T
+  set D := tsupport χ ∩ dsupport T
   set ξ₀ := (A†) η
-  have hD : IsCompact D := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).1
+  have hD : IsCompact D := χ.hasCompactSupport.inter_right isClosed_dsupport
   -- `T` decays uniformly in a cone `Γ₀ ∋ Aᵀ η` over a neighbourhood `W` of `D ∩ A⁻¹ {y}`.
   obtain ⟨W, hW, hKW, Γ₀, hΓ₀, hξ₀, hcone₀, hdecay₀⟩ :=
     exists_isOpen_cone_forall_decay_of_isCompact
       (hD.inter_right (isClosed_singleton.preimage A.continuous))
       fun x hx => h x hx.1 hx.2
-  -- The compact set `A (D \ W)` misses `y`, so a cutoff `f` around `y` pulls back into `W ∪ Dᶜ`.
+  -- The compact set `A (D \ W)` misses `y`, so a cutoff `f` around `y` pulls back into
+  -- `W ∪ (supp T)ᶜ`.
   have hC : IsCompact (A '' (D \ W)) := (hD.diff hW).image A.continuous
   have hyC : y ∉ A '' (D \ W) := fun ⟨x, ⟨hxD, hxW⟩, hxy⟩ => hxW (hKW ⟨hxD, hxy⟩)
   obtain ⟨f, hf, hfy⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem (hC.isClosed.isOpen_compl.mem_nhds hyC) (Ω'.isOpen.mem_nhds hy))
     inter_subset_right (1 : ℂ)
   set ψ := cutoffCompCLM χ A A.contDiff.contDiffOn f
-  have hψ : tsupport ψ ⊆ W ∪ Dᶜ := fun z hz => by
+  have hψ : tsupport ψ ⊆ W ∪ (dsupport T)ᶜ := fun z hz => by
     by_contra hzW
     simp only [mem_union, mem_compl_iff, not_or, not_not] at hzW
-    exact (hf (tsupport_cutoffCompCLM_subset f hz).2).1 ⟨z, ⟨hzW.2, hzW.1⟩, rfl⟩
+    obtain ⟨hzχ, hzf⟩ := tsupport_cutoffCompCLM_subset f hz
+    exact (hf hzf).1 ⟨z, ⟨⟨hzχ, hzW.2⟩, hzW.1⟩, rfl⟩
   -- The cone `Γ'` of frequencies `η'` with `Aᵀ η' ∈ Γ₀` and `‖η'‖ ≤ c ‖Aᵀ η'‖` carries the decay.
   have hη0 : 0 < ‖η‖ := norm_pos_iff.2 fun h0 => hη (by simp [ξ₀, h0])
   have hξ0 : 0 < ‖ξ₀‖ := norm_pos_iff.2 hη
@@ -146,40 +165,69 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {A : E →L[ℝ] E'} {T : �
           exact hC _ h1
 
 /-- **The wave front set of a pushforward** (Hörmander I, Theorem 8.2.13, along a linear map).
-If `χ` is equal to one near the support of `T`, every covector `(y, η)` in the wave front set of
-the pushforward `A_* T` lies over a point `x` of the support of `T` with `A x = y`, at which either
-`Aᵀ η = 0` or `(x, Aᵀ η)` lies in the wave front set of `T`. -/
-theorem waveFrontSet_cutoffPushforwardCLM_subset (A : E →L[ℝ] E') (T : 𝓓'(Ω, ℂ))
-    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+Every covector `(y, η)` in the wave front set of the pushforward `A_* (χ T)` lies over a point `x`
+of `supp χ ∩ supp T` with `A x = y`, at which either `Aᵀ η = 0` or `(x, Aᵀ η)` lies in the wave
+front set of `T`. When `χ` is equal to one near the support of `T`, this is the bound for the
+pushforward `A_* T`. -/
+theorem waveFrontSet_cutoffPushforwardCLM_subset (A : E →L[ℝ] E') (T : 𝓓'(Ω, ℂ)) :
     (cutoffPushforwardCLM χ A A.contDiff.contDiffOn T : 𝓓'(Ω', ℂ)).waveFrontSet ⊆
-      {p | ∃ x ∈ dsupport T, A x = p.1 ∧ ((A†) p.2 = 0 ∨ (x, (A†) p.2) ∈ T.waveFrontSet)} := by
+      {p | ∃ x ∈ tsupport χ ∩ dsupport T, A x = p.1 ∧
+        ((A†) p.2 = 0 ∨ (x, (A†) p.2) ∈ T.waveFrontSet)} := by
   rintro ⟨y, η⟩ hp
-  obtain ⟨⟨x₀, ⟨-, hx₀⟩, hx₀y⟩, -⟩ :=
+  obtain ⟨⟨x₀, hx₀, hx₀y⟩, -⟩ :=
     prod_mono (dsupport_cutoffPushforwardCLM_subset T) subset_rfl
       (waveFrontSet_subset_dsupport _ hp)
   obtain ⟨hy, -, hS⟩ := mem_waveFrontSet_iff.1 hp
   by_cases hη : (A†) η = 0
   · exact ⟨x₀, hx₀, hx₀y, Or.inl hη⟩
   by_contra hne
-  refine hS (IsMicrolocallySmoothAt.cutoffPushforwardCLM hχ hy hη fun x hx hxy => ?_)
-  have hxΩ : x ∈ Ω := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).2 hx
+  refine hS (IsMicrolocallySmoothAt.cutoffPushforwardCLM hy hη fun x hx hxy => ?_)
+  have hxΩ : x ∈ Ω := χ.tsupport_subset hx.1
   by_contra hT
   exact hne ⟨x, hx, hxy, Or.inr (mem_waveFrontSet_iff.2 ⟨hxΩ, hη, hT⟩)⟩
 
 /-- **Pushforward along a surjective linear map.** If `A` is surjective, its transpose is
-injective, and every covector `(y, η)` in the wave front set of `A_* T` lies over a point `x` of
-the support of `T` with `A x = y` and `(x, Aᵀ η)` in the wave front set of `T`. -/
+injective, and every covector `(y, η)` in the wave front set of `A_* (χ T)` lies over a point `x`
+of `supp χ ∩ supp T` with `A x = y` and `(x, Aᵀ η)` in the wave front set of `T`. -/
 theorem waveFrontSet_cutoffPushforwardCLM_subset_of_surjective {A : E →L[ℝ] E'}
-    (hA : Surjective A) (T : 𝓓'(Ω, ℂ)) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    (hA : Surjective A) (T : 𝓓'(Ω, ℂ)) :
     (cutoffPushforwardCLM χ A A.contDiff.contDiffOn T : 𝓓'(Ω', ℂ)).waveFrontSet ⊆
-      {p | ∃ x ∈ dsupport T, A x = p.1 ∧ (x, (A†) p.2) ∈ T.waveFrontSet} := by
+      {p | ∃ x ∈ tsupport χ ∩ dsupport T, A x = p.1 ∧ (x, (A†) p.2) ∈ T.waveFrontSet} := by
   rintro ⟨y, η⟩ hp
-  obtain ⟨x, hx, hxy, h⟩ := waveFrontSet_cutoffPushforwardCLM_subset A T hχ hp
+  obtain ⟨x, hx, hxy, h⟩ := waveFrontSet_cutoffPushforwardCLM_subset A T hp
   refine ⟨x, hx, hxy, h.resolve_left fun h0 => (mem_waveFrontSet_iff.1 hp).2.1 ?_⟩
   obtain ⟨z, hz⟩ := hA η
   have h := ContinuousLinearMap.adjoint_inner_left A z η
   rw [h0, inner_zero_left, hz] at h
   exact inner_self_eq_zero.1 h.symm
+
+/-- **Hörmander's wave front bound for a pushforward along a linear map proper on the support.**
+If the linear map `A` is proper on the support of `T`, the pushforward `A_* T` satisfies
+`WF(A_* T) ⊆ {(A x, η) | x ∈ Ω ∩ supp T, Aᵀ η = 0 or (x, Aᵀ η) ∈ WF(T)}`. -/
+theorem waveFrontSet_pushforward_subset (A : E →L[ℝ] E') (T : 𝓓'(Ω, ℂ))
+    (hT : IsProperOnSupport T A Ω') :
+    (pushforward T A A.contDiff.contDiffOn hT : 𝓓'(Ω', ℂ)).waveFrontSet ⊆
+      {p | ∃ x ∈ (Ω : Set E) ∩ dsupport T, A x = p.1 ∧
+        ((A†) p.2 = 0 ∨ (x, (A†) p.2) ∈ T.waveFrontSet)} := by
+  -- Over a neighbourhood of each point of `Ω'`, `A_* T` is the pushforward of `T` with a cutoff
+  -- (`Distribution.restrictCLM_pushforward`), to which
+  -- `Distribution.waveFrontSet_cutoffPushforwardCLM_subset` applies.
+  rintro ⟨y, η⟩ hp
+  obtain ⟨K, hK, hyK, hKΩ'⟩ := exists_compact_subset Ω'.isOpen (mem_waveFrontSet_iff.1 hp).1
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) (hT.isCompact hK hKΩ')
+    (inter_subset_left.trans inter_subset_left)
+  -- Over the interior `U` of `K`, `A_* T` is the pushforward of `T` with the cutoff `χ`.
+  let U : Opens E' := ⟨interior K, isOpen_interior⟩
+  have h := waveFrontSet_inter_eq_of_restrictCLM_eq
+    (SetLike.coe_subset_coe.1 (interior_subset.trans hKΩ'))
+    (restrictCLM_pushforward (hΦ := A.contDiff.contDiffOn) (hT := hT) (U := U)
+      interior_subset hχ)
+  have hp' : (y, η) ∈ (cutoffPushforwardCLM χ A A.contDiff.contDiffOn T : 𝓓'(Ω', ℂ)).waveFrontSet ∩
+      (U : Set E') ×ˢ univ := by
+    rw [← h]
+    exact ⟨hp, hyK, mem_univ η⟩
+  obtain ⟨x, hx, hxy, hη⟩ := waveFrontSet_cutoffPushforwardCLM_subset A T hp'.1
+  exact ⟨x, ⟨χ.tsupport_subset hx.1, hx.2⟩, hxy, hη⟩
 
 end Linear
 
@@ -199,11 +247,73 @@ theorem waveFrontSet_cutoffPushforwardCLM_const (T : 𝓓'(Ω, ℂ)) (hT : T χ 
       {c} ×ˢ {0}ᶜ := by
   have h : (cutoffPushforwardCLM χ (fun _ => c) contDiffOn_const T : 𝓓'(Ω', ℂ)) =
       T χ • mapCLM ofRealCLM (delta c : 𝓓'(Ω', ℝ)) := by
+    rw [cutoffPushforwardCLM_const]
     ext f
-    rw [cutoffPushforwardCLM_const_apply]
     simp [mul_comm]
   rw [h, waveFrontSet_smul hT, waveFrontSet_delta hc]
 
 end Const
+
+end Distribution
+
+namespace TauCeti
+
+variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+
+/-! ### A fixed target set for pushforwards -/
+
+/-- The covectors `(A x, η)` with `x ∈ K` such that `(x, Aᵀ η) ∈ Γ`, or `η ≠ 0` and `Aᵀ η = 0`.
+For `K = supp χ` it contains the wave front set of the pushforward `A_* (χ T)` of every
+distribution `T` with wave front set in `Γ`
+(`Distribution.waveFrontSet_cutoffPushforwardCLM_subset_pushforwardCone`). When `Γ` contains no
+zero covectors, it consists of the nonzero covectors `(A x, η)`, `x ∈ K`, with
+`(x, Aᵀ η) ∈ Γ ∪ (K × {0})`. -/
+def pushforwardCone (K : Set E) (A : E →L[ℝ] E') (Γ : Set (E × E)) : Set (E' × E') :=
+  {p | ∃ x ∈ K, A x = p.1 ∧ ((x, (A†) p.2) ∈ Γ ∨ (p.2 ≠ 0 ∧ (A†) p.2 = 0))}
+
+@[simp]
+theorem mem_pushforwardCone {K : Set E} {A : E →L[ℝ] E'} {Γ : Set (E × E)} {p : E' × E'} :
+    p ∈ pushforwardCone K A Γ ↔
+      ∃ x ∈ K, A x = p.1 ∧ ((x, (A†) p.2) ∈ Γ ∨ (p.2 ≠ 0 ∧ (A†) p.2 = 0)) :=
+  Iff.rfl
+
+/-- `pushforwardCone K A Γ` is monotone in `K` and in `Γ`. -/
+theorem pushforwardCone_mono {K K' : Set E} {A : E →L[ℝ] E'} {Γ Γ' : Set (E × E)} (hK : K ⊆ K')
+    (hΓ : Γ ⊆ Γ') : pushforwardCone K A Γ ⊆ pushforwardCone K' A Γ' :=
+  fun _ ⟨x, hx, hxp, h⟩ ↦ ⟨x, hK hx, hxp, h.imp_left fun h ↦ hΓ h⟩
+
+/-- Over a point `A x` with `x ∈ K`, a frequency `η` outside `pushforwardCone K A Γ` has
+`(x, Aᵀ η) ∉ Γ`. -/
+theorem notMem_of_notMem_pushforwardCone {K : Set E} {A : E →L[ℝ] E'} {Γ : Set (E × E)} {x : E}
+    (hx : x ∈ K) {η : E'} (h : (A x, η) ∉ pushforwardCone K A Γ) : (x, (A†) η) ∉ Γ :=
+  fun hΓ ↦ h ⟨x, hx, rfl, .inl hΓ⟩
+
+/-- Over a point `A x` with `x ∈ K`, a frequency `η` outside `pushforwardCone K A Γ` with
+`Aᵀ η = 0` is zero. -/
+theorem eq_zero_of_adjoint_apply_eq_zero_of_notMem_pushforwardCone {K : Set E} {A : E →L[ℝ] E'}
+    {Γ : Set (E × E)} {x : E} (hx : x ∈ K) {η : E'} (h : (A x, η) ∉ pushforwardCone K A Γ)
+    (h0 : (A†) η = 0) : η = 0 :=
+  by_contra fun hη ↦ h ⟨x, hx, rfl, .inr ⟨hη, h0⟩⟩
+
+end TauCeti
+
+namespace Distribution
+
+open TauCeti
+
+variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+  {Ω : Opens E} {Ω' : Opens E'}
+
+/-- **The wave front set of a pushforward lies in a fixed set.** If the wave front set of `T` lies
+in `Γ`, the wave front set of the pushforward `A_* (χ T)` lies in `pushforwardCone (supp χ) A Γ`,
+a set independent of `T`. -/
+theorem waveFrontSet_cutoffPushforwardCLM_subset_pushforwardCone (χ : 𝓓(Ω, ℝ))
+    (A : E →L[ℝ] E') {Γ : Set (E × E)} {T : 𝓓'(Ω, ℂ)} (hT : T.waveFrontSet ⊆ Γ) :
+    (cutoffPushforwardCLM χ A A.contDiff.contDiffOn T : 𝓓'(Ω', ℂ)).waveFrontSet ⊆
+      pushforwardCone (tsupport χ) A Γ := fun p hp ↦ by
+  obtain ⟨x, hx, hxp, h⟩ := waveFrontSet_cutoffPushforwardCLM_subset A T hp
+  exact ⟨x, hx.1, hxp, h.symm.imp (fun h ↦ hT h) fun h ↦ ⟨(mem_waveFrontSet_iff.1 hp).2.1, h⟩⟩
 
 end Distribution

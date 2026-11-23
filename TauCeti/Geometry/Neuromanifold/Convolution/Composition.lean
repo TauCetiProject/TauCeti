@@ -383,13 +383,13 @@ variable [NonUnitalNonAssocSemiring K]
 @[simp]
 theorem realizedFunctions_realize_depth_zero (A : ConvolutionSpec K 0) :
     realizedFunctions A.realize = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, realize_depth_zero]
+  rw [realizedFunctions_unique, realize_depth_zero]
 
 /-- An empty bias-free convolutional network realizes only the identity function. -/
 @[simp]
 theorem realizedFunctions_realizeWeights_depth_zero (A : ConvolutionSpec K 0) :
     realizedFunctions A.realizeWeights = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, realizeWeights_depth_zero]
+  rw [realizedFunctions_unique, realizeWeights_depth_zero]
 
 /-- The affine neuromanifold of `A : ConvolutionSpec K (L + 1)` consists of the composites
 `g ∘ Neuromanifold.activation (A.toMLPSpec.layerActivation 0) () ∘ f` with `f` realized by layer
