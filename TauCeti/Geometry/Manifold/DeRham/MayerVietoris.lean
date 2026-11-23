@@ -74,6 +74,9 @@ the glued form restricting to `dα` and `dβ` is the differential of a function 
 * `TauCeti.deRhamCohomology.mayerVietorisδ_const` and
   `TauCeti.deRhamCohomology.ker_mayerVietorisδ_zero`: the connecting map kills constant classes,
   and in degree zero, for preconnected `U` and `V`, nothing else.
+* `TauCeti.deRhamCohomology.exists_locallyConstant_eq_inclusion_add_const`: if `U ⊔ V` has no
+  first cohomology and `V` is preconnected, every locally constant function on `U ⊓ V` is the
+  restriction of one on `U` plus a constant.
 * `TauCeti.subsingleton_deRhamCohomology_one_sup`: if `U` and `V` have no first cohomology and
   `U ⊓ V` is preconnected, then `U ⊔ V` has no first cohomology.
 
@@ -718,6 +721,38 @@ theorem ker_mayerVietorisδ_zero (U V : Opens M) [PreconnectedSpace U] [Preconne
     mpullback_inclusion_apply]
   -- Both inclusions of `x` into `U ⊔ V` are the same point, so the values of `g` cancel.
   exact sub_sub_sub_cancel_right _ _ _
+
+/-- **Degree-zero Mayer–Vietoris with one preconnected piece.** If `U ⊔ V` has no first de Rham
+cohomology and `V` is preconnected, then every locally constant function on `U ⊓ V` is the
+restriction of a locally constant function on `U` plus a constant. Without the vanishing of
+`H¹(U ⊔ V)` this fails: on the circle covered by two arcs meeting in two intervals, the function
+equal to `1` on one interval and `0` on the other is not of this form. -/
+theorem exists_locallyConstant_eq_inclusion_add_const {U V : Opens M} [PreconnectedSpace V]
+    (h : Subsingleton (deRhamCohomology I (U ⊔ V : Opens M) 1))
+    (φ : LocallyConstant (U ⊓ V : Opens M) ℝ) :
+    ∃ (g : LocallyConstant U ℝ) (a : ℝ), ∀ x, φ x = g (Opens.inclusion inf_le_left x) + a := by
+  set ψ := (closedFormsZeroEquiv I _).symm φ
+  -- Write `ψ = α - β` and let `σ` be the closed `1`-form on `U ⊔ V` restricting to `dα` and `dβ`.
+  obtain ⟨⟨α, β⟩, hαβ⟩ := SmoothForm.surjective_mayerVietoris U V ψ.val
+  rw [LinearMap.coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg] at hαβ
+  obtain ⟨σ, hσU, hσV⟩ := exists_closedForms_mpullback_eq_mextDerivₗ α β (hαβ ▸ ψ.property)
+  -- Since `[σ] = 0`, `σ = dg`; then `β - g` is constant on `V` and `α - g` is closed on `U`.
+  have hσ : mk I 1 σ = 0 := Subsingleton.elim _ _
+  rw [mk_eq_zero_iff, exactForms_succ] at hσ
+  obtain ⟨g, hg⟩ := hσ
+  obtain ⟨b, hb⟩ := exists_forall_sub_eq_of_mextDerivₗ_eq le_sup_right β g (hg ▸ hσV.symm)
+  set γ := α - SmoothForm.mpullback (Opens.inclusion le_sup_left) (contMDiff_inclusion _) g
+  have hγ : γ ∈ closedForms I U 0 := by
+    rw [mem_closedForms_iff_mextDerivₗ_eq_zero, map_sub, SmoothForm.mextDerivₗ_mpullback, hg,
+      hσU, sub_self]
+  refine ⟨closedFormsZeroEquiv I U ⟨γ, hγ⟩, -b, fun x ↦ ?_⟩
+  have hψ : φ x = ψ.val.val x 0 := by simp [ψ]
+  rw [hψ, ← hαβ, closedFormsZeroEquiv_apply, ← hb (Opens.inclusion inf_le_right x),
+    ← sub_eq_add_neg]
+  simp only [γ, Submodule.coe_sub, SmoothForm.coe_mpullback, Pi.sub_apply,
+    mpullback_inclusion_apply]
+  -- Both inclusions of `x` into `U ⊔ V` are the same point, so the values of `g` cancel.
+  exact (sub_sub_sub_cancel_right _ _ _).symm
 
 end deRhamCohomology
 
