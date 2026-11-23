@@ -177,7 +177,7 @@ theorem sum_Ico_int_add_eq_sum_range {α : Type*} [AddCommMonoid α]
     (M : ℤ) (H : ℕ) (g : ℤ → α) :
     ∑ n ∈ Ico M (M + H), g n = ∑ j ∈ range H, g (M + (j : ℤ)) := by
   rw [Int.Ico_eq_finset_map, sum_map, add_sub_cancel_left, Int.toNat_natCast]
-  rfl
+  simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
 
 /-- Reindex a sum over `Ico M (M + H)` by `Fin H`. -/
 theorem sum_Ico_int_add_eq_sum_fin {α : Type*} [AddCommMonoid α]
@@ -188,8 +188,8 @@ theorem sum_Ico_int_add_eq_sum_fin {α : Type*} [AddCommMonoid α]
 /-- Reindex a sum over the symmetric integer interval `[-K, K]` by `Fin (2 * K + 1)`. -/
 theorem sum_Icc_neg_eq_sum_fin {M : Type*} [AddCommMonoid M] (K : ℕ) (g : ℤ → M) :
     ∑ n ∈ Icc (-(K : ℤ)) K, g n = ∑ k : Fin (2 * K + 1), g ((k : ℤ) - K) := by
-  rw [Int.Icc_eq_finset_map, sum_map, show (K + 1 - -(K : ℤ)).toNat = 2 * K + 1 by omega,
-    ← Fin.sum_univ_eq_sum_range]
+  have hcard : (K + 1 - -(K : ℤ)).toNat = 2 * K + 1 := by omega
+  rw [Int.Icc_eq_finset_map, sum_map, hcard, ← Fin.sum_univ_eq_sum_range]
   refine sum_congr rfl fun k _ ↦ ?_
   simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
   rw [sub_eq_add_neg, add_comm]

@@ -13,8 +13,8 @@ import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Fourier.Fejer.Finite
 import TauCeti.Analysis.InnerProductSpace.Gram.Selberg
 import TauCeti.Analysis.Normed.Group.AddCircle.Basic
+import TauCeti.Analysis.Normed.Group.AddCircle.Cosecant
 import TauCeti.Analysis.Normed.Group.AddCircle.Trigonometric
-import TauCeti.Analysis.Fourier.LargeSieve.Cosecant
 import TauCeti.Analysis.SpecialFunctions.Complex.Circle.FourierChar
 
 /-!
@@ -301,22 +301,21 @@ theorem icoCorePadVec_eq_zero_of_lt_abs {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N
     rcases abs_cases ((k : ℤ) - ((N + L : ℕ) : ℤ)) with ⟨_, _⟩ | ⟨_, _⟩ <;> omega
   rw [icoCorePadVec_apply, ite_eq_right hnot]
 
-/-- When `H ≤ 2 * N + 1`, the squared norm of `icoCorePadVec M H N L a` equals the squared
-`ℓ²` norm of `a` on `Finset.Ico M (M + H)`. -/
-theorem norm_icoCorePadVec_sq {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ) (a : ℤ → ℂ) :
+/-- When `L + H ≤ 2 * (N + L) + 1`, the squared norm of `icoCorePadVec M H N L a` equals the
+squared `ℓ²` norm of `a` on `Finset.Ico M (M + H)`. -/
+theorem norm_icoCorePadVec_sq {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1) (a : ℤ → ℂ) :
     ‖icoCorePadVec M H N L a‖ ^ 2 = ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
   rw [EuclideanSpace.norm_sq_eq, Finset.sum_Ico_int_add_eq_sum_range M H (fun n ↦ ‖a n‖ ^ 2),
-    ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) (by omega)
+    ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) hLH
       (fun j ↦ ‖a (M + (j : ℤ))‖ ^ 2)]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [icoCorePadVec_apply]
-  change ‖if L ≤ (k : ℕ) ∧ (k : ℕ) - L < H then a (M + (((k : ℕ) - L : ℕ) : ℤ)) else 0‖ ^ 2 = _
-  split_ifs <;> simp
+  by_cases hk : L ≤ k.val ∧ k.val - L < H <;> simp [hk]
 
-/-- When `H ≤ 2 * N + 1`, shifting the centered Fourier sum of `icoCorePadVec M H N L a` by the
-unimodular phase `Real.fourierChar ((M + N) * t)` recovers the Fourier sum of `a` on
+/-- When `L + H ≤ 2 * (N + L) + 1`, shifting the centered Fourier sum of `icoCorePadVec M H N L a`
+by the unimodular phase `Real.fourierChar ((M + N) * t)` recovers the Fourier sum of `a` on
 `Finset.Ico M (M + H)`. -/
-theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ)
+theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1)
     (a : ℤ → ℂ) (t : ℝ) :
     (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
         ∑ k : Fin (2 * (N + L) + 1),
@@ -325,40 +324,38 @@ theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 *
       ∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ) := by
   rw [Finset.mul_sum, Finset.sum_Ico_int_add_eq_sum_range M H
     (fun n ↦ a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)),
-    ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) (by omega) (fun j ↦
+    ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) hLH (fun j ↦
       a (M + (j : ℤ)) * (Real.fourierChar (((M + (j : ℤ) : ℤ) : ℝ) * t) : ℂ))]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [icoCorePadVec_apply]
-  change (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
-      ((if L ≤ (k : ℕ) ∧ (k : ℕ) - L < H then a (M + (((k : ℕ) - L : ℕ) : ℤ)) else 0) *
-        (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)) = _
-  split_ifs with hk
-  · calc
+  by_cases hk : L ≤ k.val ∧ k.val - L < H
+  · simp only [hk]
+    calc
       (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
-          (a (M + (((k : ℕ) - L : ℕ) : ℤ)) *
+          (a (M + ((k.val - L : ℕ) : ℤ)) *
             (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ))
-          = a (M + (((k : ℕ) - L : ℕ) : ℤ)) *
+          = a (M + ((k.val - L : ℕ) : ℤ)) *
               ((Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
                 (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)) := by
             ring
-      _ = a (M + (((k : ℕ) - L : ℕ) : ℤ)) *
-            (Real.fourierChar (((M + (((k : ℕ) - L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ) := by
+      _ = a (M + ((k.val - L : ℕ) : ℤ)) *
+            (Real.fourierChar (((M + ((k.val - L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ) := by
           rw [Real.fourierChar_mul_fourierChar]
           congr 3
-          have heq : M + (((k : ℕ) - L : ℕ) : ℤ) =
+          have heq : M + ((k.val - L : ℕ) : ℤ) =
               (M + (N : ℤ)) + ((k : ℤ) - ((N + L : ℕ) : ℤ)) := by omega
           rw [heq]; push_cast; ring
-  · simp
+  · simp [hk]
 
-/-- When `H ≤ 2 * N + 1`, the centered Fourier sum of `icoCorePadVec M H N L a` has the same norm
-as the Fourier sum of `a` on `Finset.Ico M (M + H)`. -/
-theorem norm_sum_icoCorePadVec_fourierChar {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ)
+/-- When `L + H ≤ 2 * (N + L) + 1`, the centered Fourier sum of `icoCorePadVec M H N L a` has the
+same norm as the Fourier sum of `a` on `Finset.Ico M (M + H)`. -/
+theorem norm_sum_icoCorePadVec_fourierChar {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1)
     (a : ℤ → ℂ) (t : ℝ) :
     ‖∑ k : Fin (2 * (N + L) + 1),
         icoCorePadVec M H N L a k *
           (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)‖ =
       ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ := by
-  rw [← fourierChar_mul_sum_icoCorePadVec hHN L a t, norm_mul, Circle.norm_coe, one_mul]
+  rw [← fourierChar_mul_sum_icoCorePadVec hLH a t, norm_mul, Circle.norm_coe, one_mul]
 
 end TauCeti
 
@@ -471,9 +468,10 @@ private theorem sum_norm_sum_Ico_fourierChar_sq_le_of_le_half {ι : Type*}
       ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
   let N : ℕ := H / 2
   have hHN : H ≤ 2 * N + 1 := by omega
+  have hLH : ⌊1 / δ⌋₊ + H ≤ 2 * (N + ⌊1 / δ⌋₊) + 1 := by omega
   let f := icoCorePadVec M H N ⌊1 / δ⌋₊ a
   have h2N : 2 * (N : ℝ) ≤ (H : ℝ) := by exact_mod_cast (by omega : 2 * (H / 2) ≤ H)
-  simp_rw [← norm_sum_icoCorePadVec_fourierChar hHN ⌊1 / δ⌋₊ a]
+  simp_rw [← norm_sum_icoCorePadVec_fourierChar hLH a]
   calc
     ∑ i ∈ s,
         ‖∑ k : Fin (2 * (N + ⌊1 / δ⌋₊) + 1),
@@ -483,7 +481,7 @@ private theorem sum_norm_sum_Ico_fourierChar_sq_le_of_le_half {ι : Type*}
       s.sum_norm_sum_fourierChar_sq_le_of_support x hδ hδ' hsep N f
         (fun k hk ↦ icoCorePadVec_eq_zero_of_lt_abs hHN ⌊1 / δ⌋₊ a hk)
     _ = (2 * (N : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
-      rw [norm_icoCorePadVec_sq hHN]
+      rw [norm_icoCorePadVec_sq hLH]
     _ ≤ ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 :=
       mul_le_mul_of_nonneg_right (by linarith) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
 
