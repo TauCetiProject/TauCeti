@@ -14,14 +14,12 @@ import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
 # Order of the pole-cleared continued functions of the Dirichlet and zeta records
 
 * `dirichletData_orderLE_continuedL`: for a primitive character the continued function has
-  order at most one. For a nonprincipal character it is entire; for the character modulo `1` it
-  is zeta, with its pole at `1`.
+  order at most one. For the character modulo `1` it is zeta, with its pole at `1`.
 * `riemannZetaData_orderLE_poleClearedContinuedL`: clearing the pole of zeta at `1` by `X - 1`
-  gives an entire function of order at most one.
-* `riemannZetaData_poleClearedContinuedL_one`: its value at `1` is the residue `1`, whereas the
-  raw product `(1 - 1) · riemannZeta 1` is `0`.
-
-These are the Dirichlet and zeta instances of the finite-order input of ZerosOfLFunctions §3.4.
+  gives a function of order at most one, which is entire by
+  `differentiable_poleClearedContinuedL` and `riemannZetaData_continuedL_cleared_by_X_sub_one`.
+* `riemannZetaData_poleClearedContinuedL_X_sub_one_apply_one`: its value at `1` is the residue
+  `1`, whereas the raw product `(1 - 1) · riemannZeta 1` is `0`.
 -/
 
 public section
@@ -62,7 +60,7 @@ theorem riemannZetaData_orderLE_poleClearedContinuedL :
 
 /-- **The repaired value at the pole of zeta is its residue.** Clearing by `X - 1` gives the
 value `1` at `1`, whereas the raw product `(1 - 1) · riemannZeta 1` is `0`. -/
-theorem riemannZetaData_poleClearedContinuedL_one :
+theorem riemannZetaData_poleClearedContinuedL_X_sub_one_apply_one :
     riemannZetaData.poleClearedContinuedL (X - C 1) 1 = 1 := by
   have ha := AnalyticLFunctionData.analyticAt_poleClearedContinuedL (P := X - C 1)
     ((AnalyticLFunctionData.meromorphicOrderAt_poleClearedContinuedL (X_sub_C_ne_zero 1) 1).symm
@@ -84,7 +82,7 @@ example : riemannZetaData.poleClearedContinuedL (X - C 1) 0 = 1 / 2 := by
 /-- The raw product vanishes at the pole, so it is not the pole-cleared function. -/
 example : (X - C 1 : ℂ[X]).eval 1 * riemannZetaData.continuedL 1 ≠
     riemannZetaData.poleClearedContinuedL (X - C 1) 1 := by
-  rw [riemannZetaData_poleClearedContinuedL_one]
+  rw [riemannZetaData_poleClearedContinuedL_X_sub_one_apply_one]
   simp
 
 end TauCeti.LFunctions

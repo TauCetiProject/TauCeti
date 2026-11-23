@@ -282,6 +282,11 @@ theorem orderLE_cexp_mul_pow (a : ℂ) (n : ℕ) : OrderLE (fun s ↦ cexp (a * 
 theorem orderLE_cexp_mul (a : ℂ) : OrderLE (fun s ↦ cexp (a * s)) 1 := by
   simpa using orderLE_cexp_mul_pow a 1
 
+/-- `b ^ (c * s)` has order at most `1`, for every base `b ≠ 0` and every `c : ℂ`. -/
+theorem orderLE_cpow_mul {b : ℂ} (hb : b ≠ 0) (c : ℂ) : OrderLE (fun s ↦ b ^ (c * s)) 1 := by
+  convert orderLE_cexp_mul (Complex.log b * c) using 2 with s
+  rw [cpow_def_of_ne_zero hb, mul_assoc]
+
 /-- For `n ≠ 0`, `exp (s ^ n)` has order at most `A` exactly when `n ≤ A`: along the positive
 reals `exp (x ^ n)` outgrows `exp (x ^ A')` for every `A' < n`. -/
 @[simp]
