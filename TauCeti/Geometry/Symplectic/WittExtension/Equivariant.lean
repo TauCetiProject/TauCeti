@@ -24,8 +24,8 @@ with its reduced symplectic form `ω_V` and an action `πV` of `G` induced by `�
 `K` on `K*`, preserving the model form
 (`LinearMap.BilinForm.IsAlt.isInvariantForm_coisotropicModel`).
 
-The main theorem is the **equivariant presymplectic Witt extension**
-(`LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel_prod`):
+The main theorem is the **equivariant presymplectic Witt extension**,
+`LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel_prod_reduction`:
 `ι` extends to a `G`-equivariant linear symplectomorphism
 
 `(W × K*) × V ≃ E`, `((w, 0), 0) ↦ ι w`,
@@ -50,8 +50,8 @@ model `W × W*` then carries the trivial action, which is not conjugate to the s
 
 ## Main results
 
-* `LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel_prod`:
-  the equivariant presymplectic Witt extension.
+* `LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel_prod_reduction`
+  is the equivariant presymplectic Witt extension.
 
 ## References
 
@@ -110,24 +110,6 @@ private theorem isCoisotropic_range_coprod [FiniteDimensional ℝ E]
       exact (reduction_mk ω _ _ _).trans (ω.isRefl.eq_zero (hy _ ⟨(0, v), by simp⟩))
   rwa [ReducedSpace.mk_eq_zero_iff, ω.orthogonal_orthogonal] at h0
 
-/-- The dual of the action of `G` on `K = ker B` is semisimple: `K*` is the image of `E` under the
-equivariant map `e ↦ ω(e, ι ·)`. -/
-private theorem isSemisimpleRepresentation_kerRepresentation_dual [FiniteDimensional ℝ E]
-    [ρ.IsSemisimpleRepresentation] (hρ : IsInvariantForm ρ ω.toBilinForm)
-    (hσ : IsInvariantForm σ B) (hι : Function.Injective ι) (hισ : ∀ g w, ι (σ g w) = ρ g (ι w)) :
-    hσ.kerRepresentation.dual.IsSemisimpleRepresentation := by
-  refine (((ι ∘ₗ (LinearMap.ker B).subtype).dualMap ∘ₗ
-    ω.toBilinForm).intertwiningMap_of_isIntertwiningMap ρ hσ.kerRepresentation.dual
-      fun g t ↦ LinearMap.ext fun k ↦ ?_).isSemisimpleRepresentation_of_surjective ?_
-  · simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, Submodule.subtype_apply,
-      _root_.Representation.dual_apply, Module.Dual.transpose_apply,
-      IsInvariantForm.coe_kerRepresentation_apply]
-    rw [← hρ.apply g⁻¹, _root_.Representation.inv_self_apply, hισ]
-  · refine (LinearMap.dualMap_surjective_of_injective
-      fun _ _ h ↦ Subtype.ext (hι h)).comp fun f ↦ ?_
-    obtain ⟨t, rfl⟩ := (ω.toBilinForm.toDual ω.nondegenerate).surjective f
-    exact ⟨t, LinearMap.ext fun t' ↦ (LinearMap.BilinForm.toDual_def _).symm⟩
-
 /-- The action of `G` on the model `(W × K*) × V` preserves the sum of the coisotropic model form
 and the reduced form. -/
 private theorem isInvariantForm_model (hB : B.IsAlt) {P : W →ₗ[ℝ] LinearMap.ker B}
@@ -162,9 +144,10 @@ a vector of `(ι W)^ω` with class `v`, so that it identifies `V` with an invari
 radical. The group acts on the model through `σ` on `W`, the dual of its restriction to `K` on `K*`
 and `πV` on `V`. A continuous finite-dimensional representation of a compact group is semisimple
 (`Representation.isSemisimpleRepresentation_of_continuous`). -/
-theorem exists_equivariant_isSymplectomorphism_coisotropicModel_prod [FiniteDimensional ℝ E]
-    [ρ.IsSemisimpleRepresentation] (hB : B.IsAlt) {P : W →ₗ[ℝ] LinearMap.ker B}
-    (hP : ∀ k : LinearMap.ker B, P k = k) (hρ : IsInvariantForm ρ ω.toBilinForm)
+theorem exists_equivariant_isSymplectomorphism_coisotropicModel_prod_reduction
+    [FiniteDimensional ℝ E] [ρ.IsSemisimpleRepresentation] (hB : B.IsAlt)
+    {P : W →ₗ[ℝ] LinearMap.ker B} (hP : ∀ k : LinearMap.ker B, P k = k)
+    (hρ : IsInvariantForm ρ ω.toBilinForm)
     (hσ : IsInvariantForm σ B) (hι : Function.Injective ι)
     (hω : ∀ w w', ω (ι w) (ι w') = B w w') (hισ : ∀ g w, ι (σ g w) = ρ g (ι w))
     (hPσ : ∀ g w, (P (σ g w) : W) = σ g (P w))
@@ -196,7 +179,9 @@ theorem exists_equivariant_isSymplectomorphism_coisotropicModel_prod [FiniteDime
     (((ω.orthogonal (LinearMap.range ι)).subtype ∘ₗ s).intertwiningMap_of_isIntertwiningMap πV ρ
       hsπ).isSemisimpleRepresentation_of_injective
       ((Submodule.injective_subtype _).comp (Function.LeftInverse.injective hs))
-  have := isSemisimpleRepresentation_kerRepresentation_dual hρ hσ hι hισ
+  have := hρ.isSemisimpleRepresentation_dual_of_injective ω.nondegenerate
+    ((ι ∘ₗ (LinearMap.ker B).subtype).intertwiningMap_of_isIntertwiningMap hσ.kerRepresentation ρ
+      fun g k ↦ by simp [hισ]) fun _ _ h ↦ Subtype.ext (hι h)
   obtain ⟨e, he, heJ, heρ⟩ := exists_equivariant_isSymplectomorphism_extend_of_isCoisotropic
     (isInvariantForm_model hB hP hρ hσ hισ hPσ hπV) hρ (ι₁ := J) (ι₂ := F) (σ := σ.prod πV)
     (fun _ _ h ↦ Prod.ext_iff.2 (by simpa [J] using h)) (injective_coprod hι s hs)

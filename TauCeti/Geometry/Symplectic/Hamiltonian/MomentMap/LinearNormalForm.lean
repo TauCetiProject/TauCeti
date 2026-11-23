@@ -354,17 +354,10 @@ private theorem isSemisimpleRepresentation_model [FiniteDimensional ℝ T]
       hsπ).isSemisimpleRepresentation_of_injective
       ((Submodule.injective_subtype _).comp (Function.LeftInverse.injective hs))
   -- `𝔪*` is the image of `t ↦ ω(t, ρ ·)`, the composite of `ω : T ≃ T*` and restriction to `ρ(𝔪)`.
-  have : 𝔪.toRepresentation.dual.IsSemisimpleRepresentation := by
-    refine (((ρ ∘ₗ 𝔪.toSubmodule.subtype).dualMap ∘ₗ
-      ω.toBilinForm).intertwiningMap_of_isIntertwiningMap πT 𝔪.toRepresentation.dual
-        fun k t ↦ LinearMap.ext fun ξ ↦ ?_).isSemisimpleRepresentation_of_surjective ?_
-    · simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, Submodule.subtype_apply,
-        Representation.dual_apply, Module.Dual.transpose_apply]
-      rw [← hπT.apply k⁻¹, Representation.inv_self_apply, ← hρπ,
-        Subrepresentation.coe_toRepresentation_apply]
-    · refine (LinearMap.dualMap_surjective_of_injective (hinj h𝔪)).comp fun f ↦ ?_
-      obtain ⟨t, rfl⟩ := (ω.toBilinForm.toDual ω.nondegenerate).surjective f
-      exact ⟨t, LinearMap.ext fun t' ↦ (LinearMap.BilinForm.toDual_def _).symm⟩
+  have := hπT.isSemisimpleRepresentation_dual_of_injective ω.nondegenerate
+    ((ρ ∘ₗ 𝔪.toSubmodule.subtype).intertwiningMap_of_isIntertwiningMap 𝔪.toRepresentation πT
+      fun k ξ ↦ hρπ k ξ)
+    (hinj h𝔪)
   infer_instance
 
 end Model

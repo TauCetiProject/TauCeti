@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Semisimple
+public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -21,6 +22,11 @@ a semisimple representation under a surjective intertwining map
 `IsSemisimpleModule.of_injective` and `IsSemisimpleModule.of_surjective` for the modules over the
 group algebra.
 
+A representation `σ` embedding into a semisimple representation `ρ` with a nondegenerate invariant
+form also has a semisimple dual
+(`TauCeti.Representation.IsInvariantForm.isSemisimpleRepresentation_dual_of_injective`): the form
+identifies `ρ` with its dual, and restriction along the embedding maps that dual onto `σ.dual`.
+
 Every subrepresentation `S` of a semisimple representation has an equivariant projection onto it
 (`Subrepresentation.exists_equivariant_projection`): the first component of the splitting
 `Subrepresentation.equivProdOfIsCompl` along a complement of `S`.
@@ -31,6 +37,9 @@ Every subrepresentation `S` of a semisimple representation has an equivariant pr
   an injective intertwining map into a semisimple representation is semisimple.
 * `Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective`: a representation with
   a surjective intertwining map from a semisimple representation is semisimple.
+* `TauCeti.Representation.IsInvariantForm.isSemisimpleRepresentation_dual_of_injective`: the dual
+  of a representation embedding into a semisimple representation with a nondegenerate invariant
+  form is semisimple.
 * `Subrepresentation.exists_equivariant_projection`: a subrepresentation of a semisimple
   representation has an equivariant projection onto it.
 -/
@@ -57,6 +66,23 @@ theorem Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective
   have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
   exact (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule σ).mpr
     (IsSemisimpleModule.of_surjective (equivLinearMapAsModule ρ σ f) hf)
+
+/-- **The dual of a representation embedding into a self-dual semisimple one is semisimple.** Let
+`ρ` be a semisimple representation on a finite-dimensional space preserving a nondegenerate form
+`B`, and `f : σ → ρ` an injective intertwining map. Then `σ.dual` is semisimple: it is the image of
+`ρ` under the surjective intertwining map `v ↦ B v ∘ f`, the identification `V ≃ V*` given by `B`
+followed by restriction along `f`. -/
+theorem TauCeti.Representation.IsInvariantForm.isSemisimpleRepresentation_dual_of_injective
+    {G : Type*} [Group G] [FiniteDimensional k W] {ρ : Representation k G W}
+    {σ : Representation k G V} [ρ.IsSemisimpleRepresentation] {B : LinearMap.BilinForm k W}
+    (hB : IsInvariantForm ρ B) (hB' : B.Nondegenerate) (f : σ.IntertwiningMap ρ)
+    (hf : Function.Injective f) : σ.dual.IsSemisimpleRepresentation := by
+  refine ((f.toLinearMap.dualMap ∘ₗ B).intertwiningMap_of_isIntertwiningMap ρ σ.dual
+    fun g w ↦ LinearMap.ext fun v ↦ ?_).isSemisimpleRepresentation_of_surjective
+      ((LinearMap.dualMap_surjective_of_injective hf).comp (B.toDual hB').surjective)
+  simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, Representation.dual_apply,
+    Module.Dual.transpose_apply, Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.isIntertwining, hB.apply_left]
 
 namespace Subrepresentation
 
