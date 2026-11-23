@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 import TauCeti.FieldTheory.Minpoly.SumAlgHom
+import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 import TauCeti.RingTheory.Polynomial.Vieta
 
@@ -283,13 +284,6 @@ namespace NumberField.RingOfIntegers
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The minimal polynomial over `ℚ` of an algebraic integer `θ` is the image of its minimal
-polynomial over `ℤ`. -/
-theorem minpoly_rat_coe_eq_map (θ : 𝓞 K) :
-    minpoly ℚ (θ : K) = (minpoly ℤ θ).map (Int.castRingHom ℚ) := by
-  rw [← minpoly_coe, minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe,
-    algebraMap_int_eq]
-
 /-- For `θ ∈ 𝓞 K`, the sum of `‖σ θ‖ ^ 2` over the complex embeddings `σ` of `K` is
 `[K : ℚ(θ)]` times the `T₂` norm of the minimal polynomial of `θ` over `ℤ`: every complex root of
 that polynomial is `σ θ` for exactly `[K : ℚ(θ)]` embeddings `σ`. -/
@@ -299,7 +293,7 @@ theorem sum_norm_sq_embeddings_eq_finrank_mul_t2 (θ : 𝓞 K) :
   rw [Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ => ‖σ (θ : K)‖ ^ 2)
       (fun σ => ‖σ (θ : K)‖ ^ 2) (fun _ => by simp [RingHom.equivRatAlgHom_apply]),
     TauCeti.sum_algHom_apply_eq_finrank_nsmul_sum_map_aroots (fun z : ℂ => ‖z‖ ^ 2),
-    nsmul_eq_mul, ← complexT2_map_intCast, complexT2_def, minpoly_rat_coe_eq_map, aroots_def,
+    nsmul_eq_mul, ← complexT2_map_intCast, complexT2_def, minpoly_rat_coe, aroots_def,
     Polynomial.map_map, RingHom.ext_int ((algebraMap ℚ ℂ).comp _) (Int.castRingHom ℂ)]
 
 /-- For `θ ∈ 𝓞 K`, `∑_σ ‖σ θ‖ ^ 2 = ([K : ℚ] / deg (minpoly ℤ θ)) * T₂ (minpoly ℤ θ)`, the sum
@@ -309,7 +303,7 @@ theorem sum_norm_sq_embeddings_eq_finrank_div_mul_t2 (θ : 𝓞 K) :
       (finrank ℚ K / (minpoly ℤ θ).natDegree : ℝ) * t2 (minpoly ℤ θ) := by
   have hdeg : finrank ℚ ℚ⟮(θ : K)⟯ = (minpoly ℤ θ).natDegree := by
     rw [IntermediateField.adjoin.finrank (Algebra.IsIntegral.isIntegral _),
-      minpoly_rat_coe_eq_map, (minpoly.monic θ.isIntegral).natDegree_map]
+      minpoly_rat_coe, (minpoly.monic θ.isIntegral).natDegree_map]
   have hpos : (0 : ℝ) < finrank ℚ ℚ⟮(θ : K)⟯ := mod_cast finrank_pos
   rw [sum_norm_sq_embeddings_eq_finrank_mul_t2, ← hdeg,
     ← finrank_mul_finrank ℚ ℚ⟮(θ : K)⟯ K, Nat.cast_mul, mul_div_cancel_left₀ _ hpos.ne']
