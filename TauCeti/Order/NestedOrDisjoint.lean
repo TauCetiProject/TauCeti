@@ -70,8 +70,20 @@ instance instReflNestedOrDisjoint : Std.Refl (NestedOrDisjoint (α := α)) :=
   ⟨NestedOrDisjoint.refl⟩
 
 /-- Being nested or disjoint is a symmetric relation. -/
-theorem NestedOrDisjoint.symm (h : NestedOrDisjoint a b) : NestedOrDisjoint b a :=
+@[symm] theorem NestedOrDisjoint.symm (h : NestedOrDisjoint a b) : NestedOrDisjoint b a :=
   nestedOrDisjoint_comm.mp h
+
+/-- Being nested or disjoint is a symmetric relation. -/
+instance instSymmNestedOrDisjoint : Std.Symm (NestedOrDisjoint (α := α)) :=
+  ⟨fun _ _ ↦ NestedOrDisjoint.symm⟩
+
+/-- The bottom element is nested with every element. -/
+@[simp] theorem nestedOrDisjoint_bot_left (a : α) : NestedOrDisjoint ⊥ a :=
+  .of_le bot_le
+
+/-- Every element is nested with the bottom element. -/
+@[simp] theorem nestedOrDisjoint_bot_right (a : α) : NestedOrDisjoint a ⊥ :=
+  .of_ge bot_le
 
 end PartialOrder
 
