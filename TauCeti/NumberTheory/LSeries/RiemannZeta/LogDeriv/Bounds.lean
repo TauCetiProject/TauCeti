@@ -70,9 +70,10 @@ theorem exists_neg_re_logDeriv_riemannZeta_add_sum_le :
             (closedBall ((9 / 8 : ℝ) + t * I) ((1 / 2 : ℝ) / 2)) ρ : ℝ) *
             ((((σ : ℂ) + t * I) - ρ)⁻¹).re ≤
         A * Real.log (|t| + 3) := by
-  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_of_re
-    (x₀ := 9 / 8) (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
-    (c := 3) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
+  obtain ⟨A, hA, hLandau⟩ :=
+    TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I
+      (x₀ := 9 / 8) (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
+      (c := 3) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
   refine ⟨A, hA, fun {σ t} hσ1 hσ2 ht S ↦ ?_⟩
   have him_ge {w : ℂ} (hw : w ∈ closedBall ((9 / 8 : ℝ) + t * I) (1 / 2)) : 1 / 2 ≤ |w.im| := by
     have him_diff : |w.im - t| ≤ 1 / 2 := by
@@ -146,7 +147,7 @@ theorem exists_neg_re_logDeriv_riemannZeta_add_sub_inv_le :
       have him : |ρ.im| ≤ (1 / 2 : ℝ) / 2 := by
         simpa using RCLike.abs_im_sub_le_of_mem_closedBall hw
       linarith
-  have hbound := TauCeti.neg_re_logDeriv_add_sub_inv_le_max
+  have hbound := TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul
     (f := riemannZeta) (ρ := ρ) (σ₁ := 1) (σ₀ := 9 / 8) (σ := σ) (r := (1 / 2 : ℝ) / 2)
     (d := 1 / 8) (A₁ := A₁) (A₂ := A₂) (L₀ := Real.log 3) (L := Real.log (|ρ.im| + 3))
     hσ1 (by norm_num) (by norm_num) (by norm_num) hlog3

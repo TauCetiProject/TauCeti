@@ -53,12 +53,12 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
   part at most `z.re`, for general `2 r ≤ R` and at `r = R / 2`, together with the single-zero term
   bound `((z - ρ)⁻¹).re ≤ m_ρ ((z - ρ)⁻¹).re` and its horizontal-line specialization.
 * `TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le` and
-  `TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_of_re`: the uniform disc form and its
-  horizontal-strip specialization converting a centre lower bound `b ≤ ‖f z₀‖` and sphere bound
-  `‖f w‖ ≤ c * K` (`1 < K₀ ≤ K`) into an `O(log K)` bound with constant depending only on
+  `TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I`: the uniform disc form
+  and its horizontal-strip specialization converting a centre lower bound `b ≤ ‖f z₀‖` and sphere
+  bound `‖f w‖ ≤ c * K` (`1 < K₀ ≤ K`) into an `O(log K)` bound with constant depending only on
   `(R, b, c, K₀)`.
-* `TauCeti.neg_re_logDeriv_add_sub_inv_le_max`: local-to-global single-zero extension combining a
-  local retained-zero bound with a half-plane bound.
+* `TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul`: local-to-global single-zero extension
+  combining a local retained-zero bound with a half-plane bound.
 
 ## Implementation notes
 
@@ -544,7 +544,7 @@ theorem exists_neg_re_logDeriv_add_sum_divisor_half_le
 coordinate `x₀`, radius `R > 0`, centre lower bound `b > 0`, growth factor `c`, and base
 `K₀ > 1`, yielding `A > 0` for evaluations at `σ + t * I` (`x₀ - R / 4 ≤ σ ≤ x₀`) and supplying
 the disc bounds `x₀ - R ≤ w.re` and `‖w‖ ≤ |x₀| + |t| + R` on `sphere (x₀ + t * I) R`. -/
-theorem exists_neg_re_logDeriv_add_sum_divisor_half_le_of_re
+theorem exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I
     {x₀ R b c K₀ : ℝ} (hR : 0 < R) (hb : 0 < b) (hK₀ : 1 < K₀) :
     ∃ A : ℝ, 0 < A ∧ ∀ {f : ℂ → ℂ} {σ t K : ℝ},
       AnalyticOnNhd ℂ f (closedBall ((x₀ : ℂ) + t * Complex.I) R) →
@@ -580,7 +580,7 @@ bound `-(logDeriv f (σ + ρ.im * I)).re ≤ A₂ * L` for `σ₁ ≤ σ`, and a
 `0 < L₀ ≤ L` on the growth scale, if `ρ` is a zero of `f` with `ρ.re ≤ σ₁` and `0 < d` satisfies
 `d ≤ σ₀ - σ₁` and `d ≤ σ₁ - (σ₀ - r)`, then
 `-(logDeriv f (σ + ρ.im * I)).re + (σ - ρ.re)⁻¹ ≤ max A₁ (A₂ + d⁻¹ / L₀) * L`. -/
-theorem neg_re_logDeriv_add_sub_inv_le_max
+theorem neg_re_logDeriv_add_sub_inv_le_max_mul
     {f : ℂ → ℂ} {ρ : ℂ} {σ₁ σ₀ σ r d A₁ A₂ L₀ L : ℝ}
     (hσ₁ : σ₁ ≤ σ) (hd : 0 < d) (hd₁ : d ≤ σ₀ - σ₁) (hd₂ : d ≤ σ₁ - (σ₀ - r))
     (hL₀ : 0 < L₀) (hL : L₀ ≤ L)

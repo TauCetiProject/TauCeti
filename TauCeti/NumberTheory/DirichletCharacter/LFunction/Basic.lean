@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.Meromorphic.Order
 
 /-!
@@ -32,10 +33,13 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   `DirichletCharacter.meromorphicOrderAt_LFunction_pos_iff`: `LFunctionTrivChar N` has a simple
   pole (meromorphic order `-1`) at `s = 1`, so positive meromorphic order characterizes the zeros
   of `χ.LFunction` away from that pole.
+* `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
+  simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
 
 ## References
 
 * D. Loeffler, M. Stoll, `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
+* M. Stoll, D. Loeffler, T. Tao, `Mathlib.NumberTheory.LSeries.Nonvanishing`.
 * H. Davenport, *Multiplicative Number Theory*, Ch. 4.
 -/
 
@@ -136,5 +140,10 @@ theorem meromorphicOrderAt_LFunction_pos_iff {s : ℂ} :
     simp
   · have hs' := not_and_or.mp hs
     simp [(χ.analyticAt_LFunction hs').meromorphicOrderAt_pos_iff_eq_zero, hs']
+
+/-- Every zero of `χ.LFunction` away from the simple pole `(s = 1, χ = 1)` lies in `s.re < 1`. -/
+theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h : χ.LFunction s = 0) :
+    s.re < 1 :=
+  not_le.mp fun hs ↦ χ.LFunction_ne_zero_of_one_le_re h1.symm hs h
 
 end DirichletCharacter

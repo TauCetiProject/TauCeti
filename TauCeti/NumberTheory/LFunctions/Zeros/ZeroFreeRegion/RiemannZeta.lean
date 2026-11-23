@@ -84,7 +84,8 @@ private theorem exists_riemannZeta_ne_zero_of_one_le_abs_im :
     have hlog2 : Real.log (|2 * s.im| + 3) ≤ 2 * L := by
       rw [abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)]
       simpa using Real.log_mul_two_mul_add_le (q := 1) le_rfl (abs_nonneg s.im) (by norm_num)
-    rw [him] at h2; nlinarith
+    rw [him] at h2
+    exact h2.trans ((mul_le_mul_of_nonneg_left hlog2 hA₁.le).trans_eq (by ring))
   have h341 : 3 * (logDeriv riemannZeta σ).re + 4 * (logDeriv riemannZeta (σ + s.im * I)).re +
       (logDeriv riemannZeta (σ + 2 * s.im * I)).re ≤ 0 := by
     simpa [one_pow, LFunction_modOne_eq] using

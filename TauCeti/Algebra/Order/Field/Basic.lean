@@ -111,9 +111,8 @@ zero only at `0`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
-* `TauCeti.le_div_mul_of_le`, `TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv`: rescaling bounds
-  across `0 < a ≤ b` and choosing a uniform cutoff constant `c > 0` yielding both `δ ≤ cutoff`
-  and `M * L < weight * δ⁻¹` from `δ ≤ c / L`.
+* `TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv`: choosing a uniform cutoff constant `c > 0`
+  yielding both `δ ≤ cutoff` and `M * L < weight * δ⁻¹` from `δ ≤ c / L`.
 * `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
   nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.Complex.LocalLogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
@@ -67,9 +68,10 @@ theorem exists_neg_re_logDeriv_LFunction_add_sum_le :
               (Metric.closedBall ((9 / 8 : ℝ) + t * Complex.I) ((1 / 2 : ℝ) / 2)) ρ : ℝ) *
               ((((σ : ℂ) + t * Complex.I) - ρ)⁻¹).re ≤
           A * Real.log (q * (|t| + 3)) := by
-  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_of_re
-    (x₀ := 9 / 8) (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
-    (c := 2) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
+  obtain ⟨A, hA, hLandau⟩ :=
+    TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I
+      (x₀ := 9 / 8) (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
+      (c := 2) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
   refine ⟨A, hA, fun {q} _ χ hχ {σ t} hσ1 hσ2 S ↦ ?_⟩
   have hf : AnalyticOnNhd ℂ χ.LFunction
       (Metric.closedBall ((9 / 8 : ℝ) + t * Complex.I) (1 / 2)) :=
@@ -81,8 +83,7 @@ theorem exists_neg_re_logDeriv_LFunction_add_sum_le :
   have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
   refine hLandau hf hb₀ (fun w _ hwre hwn ↦ ?_) (by linarith) hσ2
     (LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simp [hσ1])) S
-    (fun ρ _ _ h0 ↦ (not_le.mp fun h1 ↦ LFunction_ne_zero_of_one_le_re χ (.inl hχ) h1 h0).le.trans
-      (by simp [hσ1]))
+    (fun ρ _ _ h0 ↦ (χ.re_lt_one_of_LFunction_eq_zero (.inr hχ) h0).le.trans (by simp [hσ1]))
     (by nlinarith [abs_nonneg t])
   have hwre' : 5 / 8 ≤ w.re := by linarith
   have hwn' : ‖w‖ ≤ |t| + 3 := by
@@ -128,9 +129,8 @@ theorem exists_neg_re_logDeriv_LFunction_add_sub_inv_le :
   refine ⟨max A₁ (A₂ + 8 / Real.log 3), lt_max_of_lt_left hA₁,
     fun {q} _ χ hχ {σ ρ} hσ1 hL0 ↦ ?_⟩
   have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
-  have hρ_lt1 : ρ.re < 1 :=
-    by_contra fun h ↦ LFunction_ne_zero_of_one_le_re χ (.inl hχ) (not_lt.mp h) hL0
-  have hbound := TauCeti.neg_re_logDeriv_add_sub_inv_le_max
+  have hρ_lt1 : ρ.re < 1 := χ.re_lt_one_of_LFunction_eq_zero (.inr hχ) hL0
+  have hbound := TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul
     (f := χ.LFunction) (ρ := ρ) (σ₁ := 1) (σ₀ := 9 / 8) (σ := σ) (r := (1 / 2 : ℝ) / 2)
     (d := 1 / 8) (A₁ := A₁) (A₂ := A₂) (L₀ := Real.log 3) (L := Real.log (q * (|ρ.im| + 3)))
     hσ1 (by norm_num) (by norm_num) (by norm_num) hlog3
