@@ -14,7 +14,10 @@ import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 A finite place of an extension lies over a finite place of the base when their prime ideals
 lie over one another. Its local degree is the product of the ramification index and the residue
-degree. The local degrees above any fixed place sum to the degree of the extension.
+degree. The local degrees above any fixed place sum to the degree of the extension. Over a finite
+set `S` of places of the base, `NumberField.FinitePlace.placesAbove F S` collects the places above
+it, and a product over them of local-degree powers of values of the base places is the
+`[F : K]`-th power of the product over `S` (`NumberField.FinitePlace.prod_placesAbove`).
 
 Unlike at infinite places, lying over in this sense does not mean equality of the restricted
 absolute values: `w (algebraMap K F x) = v x ^ w.localDegree K`. The two meanings agree exactly
@@ -146,6 +149,45 @@ theorem sum_localDegree (v : FinitePlace K) :
     ← Ideal.sum_ramification_inertia_eq_finrank v.maximalIdeal.asIdeal (𝓞 F)]
   rw [← (placesOverEquivPrimesOver F v).sum_comp]
   simp only [placesOverEquivPrimesOver_apply, ← localDegree_def, Finset.sum_set_coe]
+
+/-- A finite place of `F` lies over at most one finite place of `K`. -/
+theorem eq_of_liesOver {w : FinitePlace F} {v₁ v₂ : FinitePlace K} [w.LiesOver v₁]
+    [w.LiesOver v₂] : v₁ = v₂ := by
+  apply maximalIdeal_injective
+  apply HeightOneSpectrum.ext
+  rw [Ideal.over_def w.maximalIdeal.asIdeal v₁.maximalIdeal.asIdeal,
+    Ideal.over_def w.maximalIdeal.asIdeal v₂.maximalIdeal.asIdeal]
+
+variable (F) in
+/-- The finite places of `F` lying over a finite place in `S`. -/
+noncomputable def placesAbove (S : Finset (FinitePlace K)) : Finset (FinitePlace F) := by
+  classical
+  exact S.biUnion fun v ↦ (finite_placesOver (F := F) v).toFinset
+
+@[simp]
+theorem mem_placesAbove {S : Finset (FinitePlace K)} {w : FinitePlace F} :
+    w ∈ placesAbove F S ↔ ∃ v ∈ S, w.LiesOver v := by
+  classical
+  simp [placesAbove]
+
+/-- Grouping the finite places of `F` above a finite set `S` of finite places of `K` by the place
+below them: if `f w = g v ^ e_w f_w` whenever `w` lies over `v ∈ S`, then
+`∏_{w ∣ S} f w = (∏_{v ∈ S} g v) ^ [F : K]`. -/
+theorem prod_placesAbove {M : Type*} [CommMonoid M] (S : Finset (FinitePlace K))
+    (f : FinitePlace F → M) (g : FinitePlace K → M)
+    (hfg : ∀ v ∈ S, ∀ w : FinitePlace F, w.LiesOver v → f w = g v ^ w.localDegree K) :
+    ∏ w ∈ placesAbove F S, f w = (∏ v ∈ S, g v) ^ Module.finrank K F := by
+  classical
+  rw [placesAbove, Finset.prod_biUnion, ← Finset.prod_pow]
+  · refine Finset.prod_congr rfl fun v hv ↦ ?_
+    rw [← sum_localDegree (F := F) v, ← Finset.prod_pow_eq_pow_sum]
+    refine Finset.prod_congr (by ext; simp) fun w hw ↦ ?_
+    exact hfg v hv w (by simpa using hw)
+  · intro v₁ _ v₂ _ hne
+    refine Finset.disjoint_left.mpr fun w hw₁ hw₂ ↦ hne ?_
+    have : w.LiesOver v₁ := by simpa using hw₁
+    have : w.LiesOver v₂ := by simpa using hw₂
+    exact eq_of_liesOver (w := w)
 
 /-! The trivial extension and the distinction between prime-theoretic and absolute-value
 restriction give normalization checks. -/

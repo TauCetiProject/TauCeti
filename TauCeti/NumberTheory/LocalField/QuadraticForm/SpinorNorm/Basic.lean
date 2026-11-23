@@ -11,7 +11,6 @@ import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Binary
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Isotropic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # Spinor norms of binary forms over a nonarchimedean local field
@@ -63,9 +62,8 @@ theorem index_range_spinorNorm_of_finrank_eq_two_of_anisotropic (Q : QuadraticFo
   rw [weightedSumSquares_units] at hw
   let e : Fin 2 ≃ Fin (Module.finrank K V) := finCongr hV.symm
   have h : Q.Equivalent (weightedSumSquares K ![(w (e 0) : K), (w (e 1) : K)]) :=
-    hw.trans (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq e (by
-      funext i
-      fin_cases i <;> rfl)).symm
+    hw.trans (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq e fun i ↦ by
+      fin_cases i <;> rfl).symm
   -- An anisotropic binary form `⟨a, b⟩` has nonsquare discriminant `-a b`.
   have hsq : ¬IsSquare (-(w (e 0) * w (e 1))) := by
     rw [← Units.isSquare_coe_iff]

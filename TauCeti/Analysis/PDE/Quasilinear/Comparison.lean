@@ -250,11 +250,6 @@ private theorem le_matrixBilinearForm_add_sub {M N : Matrix ι ι ℝ}
     (hMN : |g ⬝ᵥ ((M - N) *ᵥ h)| ≤ L * |d| * ‖g‖ * ‖h‖) (hd : |d| ≤ ε) :
     lam / 2 * ‖g‖ ^ 2 - (L * ε) ^ 2 / (2 * lam) * ‖h‖ ^ 2 ≤
       matrixBilinearForm M g (g + h) - matrixBilinearForm N g h := by
-  have hsplit : matrixBilinearForm M g (g + h) - matrixBilinearForm N g h =
-      M.toQuadraticForm' g + g ⬝ᵥ ((M - N) *ᵥ h) := by
-    rw [map_add, ← matrixBilinearForm_self]
-    simp only [matrixBilinearForm_apply, Matrix.sub_mulVec, dotProduct_sub]
-    ring
   -- `L |d| ‖g‖ ‖h‖ ≤ (λ / 2) ‖g‖² + (L |d| ‖h‖)² / (2 λ) ≤ (λ / 2) ‖g‖² + (L ε)² ‖h‖² / (2 λ)`.
   have hsq : (L * |d|) ^ 2 ≤ (L * ε) ^ 2 := by
     rw [mul_pow, mul_pow]
@@ -271,7 +266,7 @@ private theorem le_matrixBilinearForm_add_sub {M N : Matrix ι ι ℝ}
       ring
     rw [this]
     exact div_nonneg key (by positivity)
-  rw [hsplit]
+  rw [matrixBilinearForm_add_sub_matrixBilinearForm]
   linarith [neg_abs_le (g ⬝ᵥ ((M - N) *ᵥ h))]
 
 variable {A : EuclideanSpace ℝ ι → ℝ → Matrix ι ι ℝ} {lam Lam L : ℝ}
@@ -332,11 +327,8 @@ private theorem norm_gradient_truncation_sq_le
       (hz : AEStronglyMeasurable (fun x ↦ A x (W1p.value z x)) (mu.restrict Omega)) :
       Integrable (fun x ↦ matrixBilinearForm (A x (W1p.value z x))
         (W1p.gradient (truncation hε (u - v)) x) (W1p.gradient z x)) (mu.restrict Omega) := by
-    have hz' : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι))
-        (fun x ↦ A x (W1p.value z x)) lam Lam :=
-      uniformlyEllipticOn_iff.2 ⟨hlam, (hA 0).le, fun x hx ↦
-        ⟨(hA (W1p.value z x)).lower_bound hx, (hA (W1p.value z x)).upper_bound hx⟩⟩
-    exact hz'.integrable_matrixBilinearForm_gradient hz z (truncation hε (u - v))
+    exact (UniformlyEllipticOn.apply_of_forall hA
+      (W1p.value z)).integrable_matrixBilinearForm_gradient hz z (truncation hε (u - v))
   -- Testing both inequalities with `φ_ε`, the difference of the two energy densities has
   -- nonpositive integral, and it dominates `1_S ((λ / 2) ‖∇w‖² - ((L ε)² / (2 λ)) ‖∇v‖²)`.
   rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral] at huv

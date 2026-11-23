@@ -8,10 +8,14 @@ module
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
-# Pulling back continuous bilinear maps, and their quadratic maps
+# Continuous bilinear maps
+
+A family of continuous bilinear maps gives a continuous bilinear map into the product
+(`ContinuousLinearMap.piBilin`), with coordinatewise evaluation.
 
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
 bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and linear in `B`
@@ -26,6 +30,13 @@ The quadratic map `x ↦ B x x` of a continuous bilinear map is Lipschitz on eve
 constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ + ‖y‖) ‖x - y‖`
 (`ContinuousLinearMap.norm_apply_apply_sub_apply_apply_le`). This is the quadratic estimate on the
 nonlinear terms of an equation that is quadratic in its unknown.
+
+For a continuous map of two variables, semilinear in each argument with respect to isometric
+scalar homomorphisms (for instance sesquilinear), the sum `∑ i ∈ s, A (u i) (v i)` is bounded by
+`‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖` (`ContinuousLinearMap.norm_sum_apply_apply_le`); along a finite
+orthonormal basis taken twice, this is the dimension times `‖A‖`. Every value satisfies the
+Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
+(`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
 Pulling back along continuous linear equivalences keeps a bilinear map `B₀ : V →L V' →L G`
 invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and
@@ -42,6 +53,12 @@ reverses products, fixes the identity, and tends to the identity as `B₀` stays
 invertible map and `X` tends to the identity. On Banach spaces the comparison operator
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
 (`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
+
+On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
+`σ₂₃` and `σ₂₃` surjective, the flip of a continuous pairing `μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is
+Mathlib's flip: `μ.toLinearMap.pairingFlip hμ = μ.flip`, where `hμ` is a proof of joint continuity
+of `μ`, that is, continuity of `Function.uncurry fun x y ↦ μ x y`, which callers supply
+explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`).
 -/
 
 public section
@@ -53,6 +70,19 @@ namespace ContinuousLinearMap
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
+def piBilin {ι : Type*} {G : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) : V →L[𝕜] W →L[𝕜] ∀ i, G i :=
+  (ContinuousLinearMap.piEquivL 𝕜 W G).toContinuousLinearMap.comp (ContinuousLinearMap.pi B)
+
+@[simp]
+theorem piBilin_apply {ι : Type*} {G : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) (x : V) (y : W) (i : ι) :
+    piBilin B x y i = B i x y :=
+  (rfl)
 
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/
@@ -227,6 +257,72 @@ theorem IsInvertible.tendsto_pairingAdjoint {B₀ : E →L[𝕜] E →L[𝕜] H}
   simpa only [hB₀.pairingAdjoint_one] using h.tendsto
 
 end Tendsto
+
+section PairingFlip
+
+variable {𝕜₂ 𝕜₃ E F H : Type*} [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+  [RingHomSurjective σ₂₃]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsNormableSpace 𝕜 E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [AddCommGroup H] [Module 𝕜₃ H] [TopologicalSpace H] [IsNormableSpace 𝕜₃ H]
+
+/-- On normable spaces, when both scalar homomorphisms are isometric and the second is
+surjective, the flip of a continuous pairing `μ` is Mathlib's flip:
+`μ.toLinearMap.pairingFlip hμ = μ.flip`, where the caller supplies `hμ`, a proof of joint
+continuity of `μ` (continuity of the uncurried pairing `Function.uncurry fun x y ↦ μ x y`). The
+topological additive group structures of `F` and `H` used by `LinearMap.pairingFlip`, by
+Mathlib's flip and by the topology of `F →SL[σ₂₃] H` come from their normability
+(`PolynormableSpace.isTopologicalAddGroup`). -/
+@[simp]
+theorem pairingFlip_eq_flip
+    (μ : haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H; E →SL[σ₁₃] F →SL[σ₂₃] H)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
+    μ.toLinearMap.pairingFlip hμ = μ.flip := by
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
+  ext
+  rw [LinearMap.pairingFlip_apply, coe_coe, flip_apply]
+
+end PairingFlip
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+section Semilinear₂
+
+variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NontriviallyNormedField 𝕜₃] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] [SeminormedAddCommGroup G] [NormedSpace 𝕜₃ G]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
+
+/-- The sum `∑ i ∈ s, A (u i) (v i)` of a continuous map `A`, semilinear in each argument with
+respect to isometric scalar homomorphisms (for instance sesquilinear), is bounded by
+`‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖`. When `u = v` is a finite orthonormal basis and `s` indexes the
+whole basis, the bound is the dimension times `‖A‖`. -/
+theorem norm_sum_apply_apply_le {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃] {ι : Type*}
+    (s : Finset ι) (A : E →SL[σ₁₃] F →SL[σ₂₃] G) (u : ι → E) (v : ι → F) :
+    ‖∑ i ∈ s, A (u i) (v i)‖ ≤ ‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖ := by
+  rw [Finset.mul_sum]
+  exact norm_sum_le_of_le s fun i _ ↦ (A.le_opNorm₂ (u i) (v i)).trans_eq (mul_assoc _ _ _)
+
+/-- A Young-type bound for a continuous map `B` of two variables, semilinear in each argument with
+respect to isometric scalar homomorphisms: for every `c > 0`,
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
+theorem norm_apply_apply_le_mul_add_sq {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃]
+    (B : E →SL[σ₁₃] F →SL[σ₂₃] G) {c : ℝ} (hc : 0 < c) (u : E) (v : F) :
+    ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
+  refine (B.le_opNorm₂ _ _).trans ?_
+  rw [mul_assoc]
+  gcongr
+  have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
+  rw [inv_inv] at h
+  linarith
+
+end Semilinear₂
 
 end ContinuousLinearMap
 

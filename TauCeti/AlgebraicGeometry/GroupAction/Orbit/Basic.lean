@@ -216,8 +216,8 @@ theorem image_translation_orbitBoundary
 theorem orbit_smul (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
     orbit G (g • x) = orbit G x := by
   have h := congrArg (fun f : G ⟶ X ↦ f.left) (orbitMap_smul g x)
-  have hs : Function.Surjective (rightTranslation g).hom.left :=
-    (Scheme.homeoOfIso ((Over.forget S).mapIso (rightTranslation g))).surjective
+  have hs : Function.Surjective (GrpObj.mulRight g).hom.left :=
+    (Scheme.homeoOfIso ((Over.forget S).mapIso (GrpObj.mulRight g))).surjective
   simpa only [orbit, Over.comp_left, Scheme.Hom.comp_base, TopCat.coe_comp,
     Set.range_comp, hs.range_eq, Set.image_univ] using
       congrArg (fun f : G.left ⟶ X.left ↦ Set.range f) h
