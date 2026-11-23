@@ -791,24 +791,6 @@ theorem isPositiveRecurrent_iff_isPositiveRecurrent {κ : Kernel α α} [IsMarko
     κ.IsPositiveRecurrent x ↔ κ.IsPositiveRecurrent y :=
   Communicates.isPositiveRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
 
-/-- On a counting-measure-irreducible chain with a state that is not positive recurrent, every
-finite `κ`-invariant measure vanishes. -/
-theorem Invariant.eq_zero_of_not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
-    [IsIrreducible Measure.count κ] {μ : Measure α} [IsFiniteMeasure μ] (hμ : κ.Invariant μ)
-    {x : α} (hx : ¬ κ.IsPositiveRecurrent x) :
-    μ = 0 := by
-  have := countable_of_isIrreducible_count (κ := κ)
-  exact hμ.eq_zero_of_forall_not_isPositiveRecurrent fun y =>
-    mt (isPositiveRecurrent_iff_isPositiveRecurrent x y).mpr hx
-
-/-- On a counting-measure-irreducible chain with a state that is not positive recurrent, no
-invariant probability measure exists. -/
-theorem not_invariant_of_not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
-    [IsIrreducible Measure.count κ] {x : α} (hx : ¬ κ.IsPositiveRecurrent x)
-    (π : Measure α) [IsProbabilityMeasure π] :
-    ¬ κ.Invariant π :=
-  fun hπ => IsProbabilityMeasure.ne_zero π (hπ.eq_zero_of_not_isPositiveRecurrent hx)
-
 /-- **Existence and uniqueness of the invariant probability measure** from a positive recurrent
 state of a counting-measure-irreducible chain. -/
 theorem IsPositiveRecurrent.existsUnique_invariant_probability {κ : Kernel α α} [IsMarkovKernel κ]

@@ -30,10 +30,10 @@ classes, giving the global trichotomy of counting-measure-irreducible chains: ei
 transient, all states are positive recurrent, or all states are null recurrent.
 
 At a null recurrent state `x`, the cycle occupation measure `κ.cycleOccupation x` has infinite total
-mass (`IsNullRecurrent.cycleOccupation_univ`) and fails to be finite
-(`IsNullRecurrent.not_isFiniteMeasure_cycleOccupation`), while the invariant-measure vanishing
-theorems for non-positive-recurrent states in `TauCeti.Probability.MarkovChain.Invariant` apply via
-`IsNullRecurrent.not_isPositiveRecurrent`.
+mass (`Kernel.cycleOccupation_univ_eq_top_of_not_isPositiveRecurrent`) and fails to be finite
+(`Kernel.not_isFiniteMeasure_cycleOccupation_of_not_isPositiveRecurrent`), and the invariant-measure
+vanishing theorems for non-positive-recurrent states in `TauCeti.Probability.MarkovChain.Invariant`
+apply via `IsNullRecurrent.not_isPositiveRecurrent`.
 
 On countable state spaces with measurable singletons, the occupation strong law characterizes
 positive and null recurrence via long-run visit frequencies: positive recurrence is equivalent to a
@@ -214,16 +214,6 @@ theorem isNullRecurrent_subtype_iff {s : Set S} (hs : MeasurableSet s)
     [IsMarkovKernel (κ.subtype hs)] (x : s) :
     (κ.subtype hs).IsNullRecurrent x ↔ κ.IsNullRecurrent x.val := by
   simp only [isNullRecurrent_iff, isRecurrent_subtype_iff, meanReturnTime_subtype]
-
-/-- At a null recurrent state `x`, the cycle occupation measure has infinite total mass. -/
-theorem IsNullRecurrent.cycleOccupation_univ (hx : κ.IsNullRecurrent x) :
-    κ.cycleOccupation x Set.univ = ∞ :=
-  cycleOccupation_univ_eq_top_of_not_isPositiveRecurrent hx.not_isPositiveRecurrent
-
-/-- At a null recurrent state `x`, the cycle occupation measure is not finite. -/
-theorem IsNullRecurrent.not_isFiniteMeasure_cycleOccupation (hx : κ.IsNullRecurrent x) :
-    ¬ IsFiniteMeasure (κ.cycleOccupation x) :=
-  not_isFiniteMeasure_cycleOccupation_of_not_isPositiveRecurrent hx.not_isPositiveRecurrent
 
 /-- A deterministic kernel has no null recurrent states on any measurable space. -/
 @[simp]
