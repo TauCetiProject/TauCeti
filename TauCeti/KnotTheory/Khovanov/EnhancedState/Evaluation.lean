@@ -47,11 +47,7 @@ namespace TauCeti.OrientedPDCode
 
 variable {n : ℕ}
 
-/-- **For every planar oriented PD-code `D` with `c` link components, `E(D) = 2 ^ c`.** Every state
-contributes `(-1) ^ (n + c) (-2) ^ k(s)` by the PD-code normalization-sign parity
-(`TauCeti.OrientedPDCode.neg_one_pow_card_false_add_negativeCrossingCount`), and the unoriented
-state sum `∑ₛ (-2) ^ k(s)` is `(-1) ^ (n + c) 2 ^ c`
-(`TauCeti.PDCode.sum_neg_two_pow_stateLoopCount`). -/
+/-- **For every planar oriented PD-code `D` with `c` link components, `E(D) = 2 ^ c`.** -/
 theorem enhancedStateEulerSum_eq_two_pow_componentCount (D : OrientedPDCode n)
     (hD : D.toPDCode.IsPlanar) : D.enhancedStateEulerSum = (2 : ℤ) ^ D.componentCount := by
   rw [enhancedStateEulerSum_def]
@@ -72,7 +68,7 @@ theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.t
 
 /-- **Evaluating the Jones polynomial of a nonempty planar diagram at `t ^ (1/2) = -1` gives
 `2 ^ (c - 1)`** (Jones 1985, Theorems 14–15; Lickorish 1997, Chapter 3). -/
-theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
+@[simp] theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
     (hpos : 0 < D.toPDCode.componentCount) :
     eval₂ (RingHom.id ℤ) (-1 : ℤˣ) D.jonesPolynomial = (2 : ℤ) ^ (D.componentCount - 1) := by
   have hsum := congrArg (eval₂ (RingHom.id ℤ) (1 : ℤˣ))

@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Dimension.Localization
 public import TauCeti.Algebra.Homology.EulerCharacteristic.Shift
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Unlink
-import Mathlib.Algebra.EuclideanDomain.Int
 import TauCeti.KnotTheory.Khovanov.EnhancedState.Evaluation
 
 /-!
@@ -230,7 +229,7 @@ theorem khovanovEulerChar_eq_mul_eval₂_jonesPolynomial (h : 0 < D.toPDCode.com
 
 /-- **At `q = 1`, the graded Euler characteristic `χ_q Kh(D; R)` equals `2 ^ c`**, for every
 planar oriented diagram over any Noetherian commutative ring `R` satisfying rank-nullity. -/
-theorem eval₂_one_khovanovEulerChar :
+@[simp] theorem eval₂_one_khovanovEulerChar :
     eval₂ (RingHom.id ℤ) 1 (D.khovanovEulerChar hD R) = (2 : ℤ) ^ D.componentCount := by
   rw [D.khovanovEulerChar_eq_enhancedStateSum hD R, D.eval₂_one_enhancedStateSum_eq_two_pow hD]
 

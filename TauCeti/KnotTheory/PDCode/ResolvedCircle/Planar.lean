@@ -459,9 +459,9 @@ theorem negativeCrossingCount_mod_two_congr_toPDCode {n : ℕ} {D₁ D₂ : Orie
   omega
 
 /-- For a planar oriented PD-code `D`, the normalization sign `(-1) ^ (|S(s)| + n₋)` equals
-`(-1) ^ (n + D.componentCount + k(s))` over any ring `R`. -/
-theorem neg_one_pow_card_false_add_negativeCrossingCount {n : ℕ} {R : Type*} [Ring R]
-    (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (s : Fin n → Bool) :
+`(-1) ^ (n + D.componentCount + k(s))` over any monoid `R` with distributive negation. -/
+theorem neg_one_pow_card_false_add_negativeCrossingCount {n : ℕ} {R : Type*} [Monoid R]
+    [HasDistribNeg R] (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (s : Fin n → Bool) :
     (-1 : R) ^ (#{i | s i = false} + D.negativeCrossingCount) =
       (-1 : R) ^ (n + D.componentCount + D.toPDCode.stateLoopCount s) := by
   have hmod := D.card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two hD s
