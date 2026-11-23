@@ -150,7 +150,7 @@ private noncomputable def gradedι (G : InternalGrading R M ι) :
   DirectSum.homogeneousExtend G.piece fun p ↦
     (DirectSum.lof R ι (fun q ↦ ↥(tensorAlgebraPiece G q)) p).comp <|
       LinearMap.codRestrict (tensorAlgebraPiece G p)
-        ((TensorAlgebra.ι R).comp (G.piece p).subtype) fun x ↦ ι_mem_tensorAlgebraPiece G x.2
+        ((TensorAlgebra.ι R).comp (G.piece p).subtype) fun x ↦ ι_mem_tensorAlgebraPiece G x.property
 
 private theorem gradedι_of_mem (G : InternalGrading R M ι) {p : ι} {x : M} (hx : x ∈ G.piece p) :
     gradedι G x =

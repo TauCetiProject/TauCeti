@@ -52,6 +52,8 @@ to an action on `E`.
   stabilizer on `G` with right multiplication on the fibre.
 * `TauCeti.orbitMap_mem_serreFibrations`: an orbit map with continuous local sections around
   every point is a Serre fibration, with fibre the stabilizer.
+* `ContinuousMap.comp_mulRight_eq_of_mem_stabilizer`: right translation by an element of the
+  stabilizer does not change the orbit map.
 * `TauCeti.equivariantLocalSectionTrivialization`: the trivialization of a continuous equivariant
   map over an open set, with fibre the preimage of `x₀`, determined by a continuous local section
   of the orbit map of `x₀`.
@@ -224,6 +226,19 @@ theorem orbitMap_mem_serreFibrations (x : X)
 
 end TauCeti
 
+namespace ContinuousMap
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace X]
+  [MulAction G X]
+
+/-- Right translation by an element of the stabilizer of `x₀` does not change the orbit map
+`g ↦ g • x₀`. -/
+theorem comp_mulRight_eq_of_mem_stabilizer {x₀ : X} (f : C(G, X)) (hf : ∀ g, f g = g • x₀)
+    {h : G} (hh : h ∈ stabilizer G x₀) : f.comp (ContinuousMap.mulRight h) = f :=
+  ContinuousMap.ext fun g ↦ by simp [hf, mul_smul, mem_stabilizer_iff.1 hh]
+
+end ContinuousMap
+
 /-! ### Equivariant maps over an orbit map with local sections -/
 
 namespace TauCeti
@@ -271,12 +286,12 @@ noncomputable def equivariantLocalSectionTrivialization (p : E → X) (hpc : Con
   target := U ×ˢ univ
   map_source' _ he := ⟨he, mem_univ _⟩
   map_target' q hq := by
-    rw [mem_preimage, map_smul_eq_of_localSection hp hsec hq.1 q.2.2]
+    rw [mem_preimage, map_smul_eq_of_localSection hp hsec hq.1 q.2.property]
     exact hq.1
   left_inv' e he := by
     simp only [coe_equivariantSectionFiber he, smul_inv_smul]
   right_inv' q hq := by
-    have hq' := map_smul_eq_of_localSection hp hsec hq.1 q.2.2
+    have hq' := map_smul_eq_of_localSection hp hsec hq.1 q.2.property
     refine Prod.ext hq' (Subtype.ext ?_)
     rw [coe_equivariantSectionFiber (hq'.symm ▸ hq.1 : p (s q.1 • (q.2 : E)) ∈ U), hq',
       inv_smul_smul]
@@ -289,7 +304,7 @@ noncomputable def equivariantLocalSectionTrivialization (p : E → X) (hpc : Con
       fun e he ↦ coe_equivariantSectionFiber he
   continuousOn_invFun :=
     (hs.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hq ↦ hq.1).smul
-      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
+      (continuous_subtypeVal.comp_continuousOn continuousOn_snd)
   baseSet := U
   open_baseSet := hU
   source_eq := rfl

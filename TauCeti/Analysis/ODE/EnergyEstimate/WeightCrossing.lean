@@ -52,6 +52,8 @@ of the two slopes `±δ` crosses the simple eigenvalue `a` of the limits.
 
 In the namespace `TauCeti.WeakDerivStep`:
 
+* `isFredholm_trajectoryOperator_sub_smul_id`: `D_{A - c}` is Fredholm for slopes `c` with
+  non-exceptional limits `δ±`.
 * `index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`: the index of
   `D_{A - c}` for slopes `c` with non-exceptional limits `δ±` is `n_{< δ⁻}(A⁻) - n_{< δ⁺}(A⁺)`.
 * `index_trajectoryOperator_eq_add_finrank_pointSpectralSubspace_Ico`: moving the limits of the
@@ -79,11 +81,37 @@ noncomputable section
 
 open MeasureTheory TopologicalSpace Set Filter
 open scoped ENNReal Topology InnerProductSpace
+open ContinuousLinearMap (isSymmetric_sub_smul_id ker_sub_smul_id_eq_bot_of_not_hasEigenvalue)
 
 namespace TauCeti.WeakDerivStep
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {A : ℝ → E →L[ℝ] E} {Aminus Aplus : E →L[ℝ] E}
+
+/-- **The weighted trajectory operator is Fredholm.** Let `A` be a continuous family of operators
+on a finite-dimensional real inner product space with symmetric limits `A±` at `±∞`, and let `c`
+be a continuous slope tending to `δ±` at `±∞`, where `δ±` is not an eigenvalue of `A±`. Then the
+trajectory operator `u ↦ u' + (A - c) u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm. For
+`c = w'` this operator is the conjugate of `D_A` on the spaces weighted by `exp w`. -/
+theorem isFredholm_trajectoryOperator_sub_smul_id
+    (hA : Continuous A) (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
+    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {c : ℝ → ℝ} (hc : Continuous c) {δminus δplus : ℝ}
+    (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (hδminus : ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus)
+    (hδplus : ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus)
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL).IsFredholm := by
+  -- The shifted limits `A± - δ±` are symmetric, and injective since `δ±` is not an eigenvalue.
+  exact (isFredholm_trajectoryOperator_iff (hA.sub (hc.smul continuous_const))
+    (isSymmetric_sub_smul_id hsymminus (conj_trivial δminus))
+    (isSymmetric_sub_smul_id hsymplus (conj_trivial δplus))
+    (hbot.sub (hcbot.smul_const _)) (htop.sub (hctop.smul_const _)) BL hBL).2
+    ⟨LinearMap.ker_eq_bot.1 (ker_sub_smul_id_eq_bot_of_not_hasEigenvalue hδminus),
+      LinearMap.ker_eq_bot.1 (ker_sub_smul_id_eq_bot_of_not_hasEigenvalue hδplus)⟩
 
 /-- **The index on exponentially weighted spaces.** Let `A` be a continuous family of operators on
 a finite-dimensional real inner product space with symmetric limits `A±` at `±∞`, and let `c` be
@@ -108,17 +136,10 @@ theorem index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_su
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio δplus)) := by
   set I := ContinuousLinearMap.id ℝ E
   -- The shifted limits `A± - δ±` are symmetric, and invertible since `δ±` is not an eigenvalue.
-  have hsym {T : E →L[ℝ] E} (hT : (T : E →ₗ[ℝ] E).IsSymmetric) (δ : ℝ) :
-      ((T - δ • I : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
-    simpa [I] using hT.sub (LinearMap.IsSymmetric.id.smul (conj_trivial δ))
   have hbound {T : E →L[ℝ] E} {δ : ℝ} (hT : ¬Module.End.HasEigenvalue (T : E →ₗ[ℝ] E) δ) :
       ∃ α > 0, ∀ v, α * ‖v‖ ≤ ‖(T - δ • I) v‖ := by
-    have hker : LinearMap.ker ((T - δ • I : E →L[ℝ] E) : E →ₗ[ℝ] E) = ⊥ := by
-      rw [Module.End.hasEigenvalue_iff, not_not] at hT
-      rw [← hT]
-      ext x
-      simp [I, sub_eq_zero]
-    obtain ⟨K, -, hKT⟩ := LinearMap.exists_antilipschitzWith _ hker
+    obtain ⟨K, -, hKT⟩ := LinearMap.exists_antilipschitzWith _
+      (ker_sub_smul_id_eq_bot_of_not_hasEigenvalue hT)
     exact antilipschitzWith_iff_exists_mul_le_norm.1 ⟨K, hKT⟩
   obtain ⟨α₁, hα₁, h₁⟩ := hbound hδminus
   obtain ⟨α₂, hα₂, h₂⟩ := hbound hδplus
@@ -128,8 +149,8 @@ theorem index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_su
     simpa [I] using Module.End.pointSpectralSubspace_sub_smul_id (A := (T : E →ₗ[ℝ] E))
       (Ω := Iio 0) δ
   rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-      (hA.sub (hc.smul continuous_const)) (hsym hsymminus δminus) (hsym hsymplus δplus)
-      (lt_min hα₁ hα₂)
+      (hA.sub (hc.smul continuous_const)) (isSymmetric_sub_smul_id hsymminus (conj_trivial δminus))
+      (isSymmetric_sub_smul_id hsymplus (conj_trivial δplus)) (lt_min hα₁ hα₂)
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v))
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v))
       (hbot.sub (hcbot.smul_const I)) (htop.sub (hctop.smul_const I)) BL hBL,

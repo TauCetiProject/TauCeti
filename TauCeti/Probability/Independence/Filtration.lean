@@ -189,7 +189,7 @@ private lemma indep_rightCont_pi_sub_of_lt (hX : Adapted ℱ X)
     (ℱ.rightCont_le_of_lt hsu)
   rw [MeasurableSpace.comap_process_pi]
   exact iSup_le fun t ↦
-    le_iSup₂_of_le (t : ι) (Finset.mem_image_of_mem Subtype.val t.2) le_rfl
+    le_iSup₂_of_le (t : ι) (Finset.mem_image_of_mem Subtype.val t.property) le_rfl
 
 variable [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι] [FirstCountableTopology ι]
   [TopologicalSpace E] [BorelSpace E] [HasOuterApproxClosed E] [ContinuousSub E]
@@ -208,7 +208,7 @@ theorem indep_comap_sub_Ioi_rightCont (hX : Adapted ℱ X)
     (fun _ _ h ↦ iSup_le_iSup_of_subset h)
   · rcases I.eq_empty_or_nonempty with rfl | hne
     · simpa using indep_bot_left (ℱ.rightCont s)
-    · obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' (I.min' hne).2
+    · obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' (I.min' hne).property
       have hu' : Tendsto u atTop (𝓝[>] s) :=
         tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall fun n ↦ (hu n).1⟩
       have hfin := (indep_comap_process_of_ae_tendsto

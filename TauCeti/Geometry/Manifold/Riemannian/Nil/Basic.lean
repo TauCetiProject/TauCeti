@@ -544,16 +544,16 @@ def orthogonalMulAut : Matrix.orthogonalGroup (Fin 2) ℝ →* MulAut Nil where
 
 @[simp]
 theorem x_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
-    (orthogonalMulAut g p).x = g.1 0 0 * p.x + g.1 0 1 * p.y := (rfl)
+    (orthogonalMulAut g p).x = g.val 0 0 * p.x + g.val 0 1 * p.y := (rfl)
 
 @[simp]
 theorem y_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
-    (orthogonalMulAut g p).y = g.1 1 0 * p.x + g.1 1 1 * p.y := (rfl)
+    (orthogonalMulAut g p).y = g.val 1 0 * p.x + g.val 1 1 * p.y := (rfl)
 
 @[simp]
 theorem z_orthogonalMulAut (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
-    (orthogonalMulAut g p).z = g.1.det * (p.z - p.x * p.y / 2) +
-      (g.1 0 0 * p.x + g.1 0 1 * p.y) * (g.1 1 0 * p.x + g.1 1 1 * p.y) / 2 := (rfl)
+    (orthogonalMulAut g p).z = g.val.det * (p.z - p.x * p.y / 2) +
+      (g.val 0 0 * p.x + g.val 0 1 * p.y) * (g.val 1 0 * p.x + g.val 1 1 * p.y) / 2 := (rfl)
 
 /-- Distinct orthogonal matrices act by distinct automorphisms of `Nil`. -/
 theorem orthogonalMulAut_injective : Function.Injective orthogonalMulAut := fun g h hgh ↦ by
@@ -577,7 +577,7 @@ def orthogonalToIsom : Matrix.orthogonalGroup (Fin 2) ℝ →* Isom 𝓘(ℝ, �
     { toEquiv := (orthogonalMulAut g).toEquiv
       contMDiff_toFun := contMDiff_matrixHom _
       contMDiff_invFun := contMDiff_matrixHom _
-      inner_mfderiv' := inner_mfderiv_matrixHom g.2 }
+      inner_mfderiv' := inner_mfderiv_matrixHom g.property }
   map_one' := RiemannianIsometry.ext fun p ↦ by
     rw [RiemannianIsometry.one_apply]
     exact DFunLike.congr_fun (map_one orthogonalMulAut) p
@@ -599,12 +599,12 @@ theorem tangentSpaceCastModel_mfderiv_orthogonalToIsom_one
     let u := tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (1 : Nil) v
     tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (orthogonalToIsom g 1)
       (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (orthogonalToIsom g) 1 v) =
-        (g.1 0 0 * u.1 + g.1 0 1 * u.2.1,
-          g.1 1 0 * u.1 + g.1 1 1 * u.2.1, g.1.det * u.2.2) := by
-  have hfun : (orthogonalToIsom g : Nil → Nil) = matrixHom g.1 := rfl
+        (g.val 0 0 * u.1 + g.val 0 1 * u.2.1,
+          g.val 1 0 * u.1 + g.val 1 1 * u.2.1, g.val.det * u.2.2) := by
+  have hfun : (orthogonalToIsom g : Nil → Nil) = matrixHom g.val := rfl
   rw [hfun]
   simpa [matrixDeriv, firstL, secondL, xL, yL, zL] using
-    tangentSpaceCastModel_mfderiv_matrixHom g.1 1 v
+    tangentSpaceCastModel_mfderiv_matrixHom g.val 1 v
 
 /-- Distinct orthogonal matrices act by distinct isometries of `Nil`. -/
 theorem orthogonalToIsom_injective : Function.Injective orthogonalToIsom := fun _ _ h ↦

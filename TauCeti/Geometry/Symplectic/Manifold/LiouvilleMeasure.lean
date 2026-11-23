@@ -118,11 +118,11 @@ variable (σ n) in
 `2 * n`: the measure `|σⁿ / n!|` of its symplectic volume form. For a symplectic form this is the
 canonical volume of the symplectic manifold. -/
 def liouvilleMeasure : Measure M :=
-  RoughForm.measure (σ.volumeForm n).1
+  RoughForm.measure (σ.volumeForm n).val
 
 variable (σ n) in
 /-- The Liouville measure is the measure of the symplectic volume form. -/
-theorem liouvilleMeasure_def : σ.liouvilleMeasure n = RoughForm.measure (σ.volumeForm n).1 :=
+theorem liouvilleMeasure_def : σ.liouvilleMeasure n = RoughForm.measure (σ.volumeForm n).val :=
   (rfl)
 
 /-- **The Liouville measure in coordinates.** The Liouville measure of a measurable subset of a
@@ -132,7 +132,8 @@ theorem liouvilleMeasure_apply_of_subset {α : M} {s : Set M} (hs : MeasurableSe
     (hsub : s ⊆ (extChartAt I α).source) :
     σ.liouvilleMeasure n s =
       ∫⁻ y in (extChartAt I α) '' s,
-        ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).1 α y (finBasisOfFinrankEq ℝ E hn.out)|
+        ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).val α y
+            (finBasisOfFinrankEq ℝ E hn.out)|
           ∂(finBasisOfFinrankEq ℝ E hn.out).addHaar :=
   RoughForm.measure_apply_of_subset _ hs hsub
 
@@ -174,7 +175,7 @@ variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [T
 homeomorphism `Φ : M → N` with `Φ^* τ = σ` carries the Liouville measure of `σ` to that of `τ`. In
 particular a symplectomorphism preserves the Liouville measure. -/
 theorem measurePreserving_liouvilleMeasure {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N}
-    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ) (h : mpullback I J Φ τ.1 = σ.1) :
+    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ) (h : mpullback I J Φ τ.val = σ.val) :
     MeasurePreserving Φ (σ.liouvilleMeasure n) (τ.liouvilleMeasure n) := by
   rw [SmoothTwoForm.liouvilleMeasure_def, SmoothTwoForm.liouvilleMeasure_def,
     ← SmoothTwoForm.mpullback_volumeForm h]
@@ -195,7 +196,7 @@ differentiable measurable embedding `f : M → N` between manifolds of the same 
 `f^* τ = σ`, such as a symplectic open embedding, carries the Liouville measure of `σ` to the
 restriction of the Liouville measure of `τ` to the range of `f`. -/
 theorem map_liouvilleMeasure (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
-    (h : mpullback I J f τ.1 = σ.1) :
+    (h : mpullback I J f τ.val = σ.val) :
     (σ.liouvilleMeasure n).map f = (τ.liouvilleMeasure n).restrict (range f) := by
   rw [SmoothTwoForm.liouvilleMeasure_def, SmoothTwoForm.liouvilleMeasure_def,
     ← SmoothTwoForm.mpullback_volumeForm h]
@@ -205,7 +206,8 @@ theorem map_liouvilleMeasure (hf : MeasurableEmbedding f) (hfd : MDifferentiable
 pulls `τ` back to `σ`, then the Liouville measure of `σ` gives a set `s` the Liouville measure of
 `τ` of its image `f '' s`. -/
 theorem liouvilleMeasure_eq_comap (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
-    (h : mpullback I J f τ.1 = σ.1) : σ.liouvilleMeasure n = (τ.liouvilleMeasure n).comap f := by
+    (h : mpullback I J f τ.val = σ.val) : σ.liouvilleMeasure n = (τ.liouvilleMeasure n).comap f
+        := by
   rw [SmoothTwoForm.liouvilleMeasure_def, SmoothTwoForm.liouvilleMeasure_def,
     ← SmoothTwoForm.mpullback_volumeForm h]
   exact hf.measure_mpullback hfd _
@@ -221,22 +223,22 @@ variable {σ : SmoothTwoForm I M} (U : Opens M) [LindelofSpace U]
 /-- **The Liouville measure of an open subset.** The Liouville measure of the restriction of `σ` to
 an open subset `U` gives a subset of `U` its Liouville measure in `M`. -/
 theorem liouvilleMeasure_mpullback_subtypeVal :
-    liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) =
+    liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) =
       (σ.liouvilleMeasure n).comap Subtype.val := by
   have hU : MeasurableEmbedding (Subtype.val : U → M) :=
-    MeasurableEmbedding.subtype_coe U.isOpen.measurableSet
-  exact hU.liouvilleMeasure_eq_comap (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    MeasurableEmbedding.subtypeVal U.isOpen.measurableSet
+  exact hU.liouvilleMeasure_eq_comap (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
     (SmoothForm.coe_mpullback _ _ _).symm
 
 /-- **Restriction of the Liouville measure to an open subset.** Pushed forward to `M`, the Liouville
 measure of the restriction of `σ` to an open subset `U` is the restriction to `U` of the Liouville
 measure of `σ`. -/
 theorem map_liouvilleMeasure_mpullback_subtypeVal :
-    (liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)).map
+    (liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)).map
       Subtype.val = (σ.liouvilleMeasure n).restrict U := by
   have hU : MeasurableEmbedding (Subtype.val : U → M) :=
-    MeasurableEmbedding.subtype_coe U.isOpen.measurableSet
-  rw [hU.map_liouvilleMeasure (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    MeasurableEmbedding.subtypeVal U.isOpen.measurableSet
+  rw [hU.map_liouvilleMeasure (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
     (SmoothForm.coe_mpullback _ _ _).symm, Subtype.range_coe]
 
 end TauCeti.SmoothTwoForm
@@ -282,7 +284,7 @@ theorem liouvilleMeasure_constSmooth (σ : SymplecticForm V) {b : Basis (Fin m �
     (hb : σ.IsDarbouxBasis b) : σ.constSmooth.liouvilleMeasure m = b.addHaar := by
   set e := finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2))
   -- The tangent spaces of the model space are `V` itself, and `b` is a basis of each of them.
-  have hval (x : V) : (σ.constSmooth.volumeForm m).1 x (b.reindex e) = 1 :=
+  have hval (x : V) : (σ.constSmooth.volumeForm m).val x (b.reindex e) = 1 :=
     σ.isNondegenerate_constSmooth.volumeForm_apply_reindex (x := x) (b := b)
       (by rwa [isNondegenerate_constSmooth_symplecticFormAt])
   rw [SmoothTwoForm.liouvilleMeasure_def, RoughForm.measure_eq_smul_addHaar (c := 1) _ hval,
@@ -333,7 +335,7 @@ theorem SmoothTwoForm.liouvilleMeasure_const_continuousDet {b : Basis (Fin 2) �
   set b' := b.reindex (finCongr (by norm_num : 2 = 2 * 1))
   set α : SmoothTwoForm 𝓘(ℝ, V) V := SmoothForm.const b.continuousDet
   -- The determinant form is its own volume form, and it takes the value `1` on `b`.
-  have hval (x : V) : (α.volumeForm 1).1 x b' = 1 := by
+  have hval (x : V) : (α.volumeForm 1).val x b' = 1 := by
     have hb : ⇑b' = fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 1) r)).2 := by
       funext r
       rw [Module.Basis.reindex_apply, finProdFinEquiv_symm_apply]
@@ -341,14 +343,14 @@ theorem SmoothTwoForm.liouvilleMeasure_const_continuousDet {b : Basis (Fin 2) �
       -- An equation between two indices in `Fin 2`, checked on both values.
       revert r
       decide
-    have h := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (α.1 x) (m := 1)
+    have h := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (α.val x) (m := 1)
       (fun p ↦ b p.2) (fun _ _ ↦ ?_) (fun i j ↦ ?_)
     · rw [SmoothTwoForm.volumeForm_apply]
       refine (ContinuousAlternatingMap.smul_apply _ _ _).trans ?_
       rw [hb, h, Nat.factorial_one, Nat.cast_one, inv_one, one_smul]
     · -- The goal's vector reduces to `![b 0, b 0]` by beta and `Prod.snd` reduction, and its
       -- entries `0` and `1` both unfold to `b 0`, so they agree by `rfl`.
-      exact (α.1 x).map_eq_zero_of_eq ![b 0, b 0] (i := 0) (j := 1) rfl (by decide)
+      exact (α.val x).map_eq_zero_of_eq ![b 0, b 0] (i := 0) (j := 1) rfl (by decide)
     · fin_cases i
       fin_cases j
       rw [SmoothForm.const_apply, Module.Basis.continuousDet_apply]

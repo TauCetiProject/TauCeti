@@ -388,7 +388,7 @@ coinduced function at the pair `(1, 1)`. This is the adjunction identity
 `TauCeti.Rep.indFunctorCompIso_inv_app_hom_apply_mk_one`. -/
 private lemma Rep.coindFunctorCompIso_hom_app_hom_apply_coe_one (φ : G →* H) (ψ : H →* K)
     (A : Rep.{max u v w x} k G) (F : Rep.coind ψ (Rep.coind φ A)) :
-    (((Rep.coindFunctorCompIso φ ψ).hom.app A).hom F).1 1 = (F.1 1).1 1 := by
+    (((Rep.coindFunctorCompIso φ ψ).hom.app A).hom F).val 1 = (F.val 1).val 1 := by
   have key := conjugateEquiv_counit_symm
     ((Rep.resCoindAdjunction.{max u v w x} k ψ).comp
       (Rep.resCoindAdjunction.{max u v w x} k φ))
@@ -414,7 +414,7 @@ target of the isomorphism component in the left-hand side. -/
 @[simp↓]
 lemma Rep.coindFunctorCompIso_hom_app_hom_apply_coe_apply (φ : G →* H) (ψ : H →* K)
     (A : Rep.{max u v w x} k G) (F : Rep.coind ψ (Rep.coind φ A)) (κ : K) :
-    (((Rep.coindFunctorCompIso φ ψ).hom.app A).hom F).1 κ = (F.1 κ).1 1 := by
+    (((Rep.coindFunctorCompIso φ ψ).hom.app A).hom F).val κ = (F.val κ).val 1 := by
   have hcomm := Rep.hom_comm_apply ((Rep.coindFunctorCompIso φ ψ).hom.app A) κ F
   have h1 := Rep.coindFunctorCompIso_hom_app_hom_apply_coe_one φ ψ A
     (((Rep.coindFunctor.{max u v w x} k φ ⋙
@@ -431,16 +431,18 @@ isomorphism turns a `G`-equivariant function `f : K → A` into `κ ↦ (h ↦ f
 @[simp↓]
 lemma Rep.coindFunctorCompIso_inv_app_hom_apply_coe_apply_coe_apply (φ : G →* H) (ψ : H →* K)
     (A : Rep.{max u v w x} k G) (f : Rep.coind (ψ.comp φ) A) (κ : K) (h : H) :
-    ((((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).1 κ).1 h = f.1 (ψ h * κ) := by
+    ((((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).val κ).val h = f.val (ψ h * κ) := by
   have hfF : ((Rep.coindFunctorCompIso φ ψ).hom.app A).hom
       (((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f) = f := by
     rw [← Rep.comp_apply, (Rep.coindFunctorCompIso φ ψ).inv_hom_id_app, Rep.id_apply]
-  have hhom : ∀ κ' : K, ((((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).1 κ').1 1 = f.1 κ' :=
+  have hhom : ∀ κ' : K, ((((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).val κ').val 1 = f.val κ'
+      :=
     fun κ' => (Rep.coindFunctorCompIso_hom_app_hom_apply_coe_apply φ ψ A _ κ').symm.trans
-      (congrArg (fun y : Rep.coind (ψ.comp φ) A => y.1 κ') hfF)
-  have hmem := (((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).2 h κ
+      (congrArg (fun y : Rep.coind (ψ.comp φ) A => y.val κ') hfF)
+  have hmem := (((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).property h κ
   simp only [Rep.coindFunctor_obj, Rep.of_ρ] at hmem
-  have hx : f.1 (ψ h * κ) = ((((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).1 κ).1 (1 * h) := by
+  have hx : f.val (ψ h * κ) = ((((Rep.coindFunctorCompIso φ ψ).inv.app A).hom f).val κ).val (1 * h)
+      := by
     rw [← hhom (ψ h * κ), hmem, Representation.coind_apply_coe_apply]
   rw [hx, one_mul]
 

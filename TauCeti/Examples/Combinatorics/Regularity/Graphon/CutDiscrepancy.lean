@@ -43,7 +43,7 @@ example {m : ℕ} [NeZero m] (G : SimpleGraph (Fin m)) [DecidableRel G.Adj] :
 -- Over `⊥`, `stepGraphonOfFinpartition` at `G.edgeDensityIcc` recovers `finiteGraphGraphon G`.
 example {m : ℕ} [NeZero m] (G : SimpleGraph (Fin m)) [DecidableRel G.Adj] :
     stepGraphonOfFinpartition (⊥ : Finpartition (univ : Finset (Fin m)))
-      (fun A B => G.edgeDensityIcc A.1 B.1) (fun A B => G.edgeDensityIcc_comm A.1 B.1) =
+      (fun A B => G.edgeDensityIcc A.val B.val) (fun A B => G.edgeDensityIcc_comm A.val B.val) =
       finiteGraphGraphon G :=
   G.stepGraphonOfFinpartition_bot_edgeDensityIcc
 
@@ -90,8 +90,9 @@ example :
         sup_parts := by decide
         bot_notMem := by decide }
     (stepGraphonOfFinpartition P
-      (fun A B => (⊤ : SimpleGraph (Fin 3)).edgeDensityIcc A.1 B.1)
-      (fun A B => (⊤ : SimpleGraph (Fin 3)).edgeDensityIcc_comm A.1 B.1)).toSymmKernel.rectIntegral
+      (fun A B => (⊤ : SimpleGraph (Fin 3)).edgeDensityIcc A.val B.val)
+      (fun A B =>
+        (⊤ : SimpleGraph (Fin 3)).edgeDensityIcc_comm A.val B.val)).toSymmKernel.rectIntegral
         volume (cellFin 3 ⁻¹' ({1} : Finset (Fin 3))) (cellFin 3 ⁻¹' ({2} : Finset (Fin 3))) =
       1 / 18 := by
   intro P

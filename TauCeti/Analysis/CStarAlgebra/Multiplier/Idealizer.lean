@@ -169,7 +169,7 @@ private theorem codRestrictIdealizer_injective {ι : A →⋆ₙₐ[ℂ] D} (hι
 
 private theorem mul_codRestrictIdealizer_mem_range (ι : A →⋆ₙₐ[ℂ] D) (d : ι.range.idealizer)
     (a : A) : d * codRestrictIdealizer ι a ∈ Set.range (codRestrictIdealizer ι) :=
-  let ⟨c, hc⟩ := ι.range.mul_mem_of_mem_idealizer_left d.2 (ι.mem_range_self a)
+  let ⟨c, hc⟩ := ι.range.mul_mem_of_mem_idealizer_left d.property (ι.mem_range_self a)
   ⟨c, Subtype.ext hc⟩
 
 /-- Any injective `⋆`-homomorphism `ι : A →⋆ₙₐ[ℂ] D` into a unital C⋆-algebra `D` induces a

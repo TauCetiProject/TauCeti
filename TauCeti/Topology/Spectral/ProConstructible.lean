@@ -167,7 +167,7 @@ theorem IsProConstructible.biInter {ι : Sort*} {p : ι → Prop} {f : ∀ i, p 
 theorem IsProConstructible.sInter {S : Set (Set X)} (hS : ∀ s ∈ S, IsProConstructible s) :
     IsProConstructible (⋂₀ S) := by
   rw [Set.sInter_eq_iInter]
-  exact IsProConstructible.iInter fun s ↦ hS s.1 s.2
+  exact IsProConstructible.iInter fun s ↦ hS s.val s.property
 
 /-- A quasi-compact open subset is pro-constructible: it is even clopen for the constructible
 topology, since it and its complement both belong to the defining subbasis. -/
@@ -261,7 +261,7 @@ theorem IsProConstructible.compactSpace [CompactSpace X] (hs : IsProConstructibl
 prespectral space is a spectral map. -/
 theorem IsProConstructible.isSpectralMap_subtypeVal (hs : IsProConstructible s) :
     IsSpectralMap ((↑) : s → X) where
-  toContinuous := continuous_subtype_val
+  toContinuous := continuous_subtypeVal
   isCompact_preimage_of_isOpen := fun U hUo hUc ↦ by
     -- Restrict to the compact open `U`, where the constructible topology is compact.
     let : CompactSpace U := isCompact_iff_compactSpace.1 hUc
@@ -285,7 +285,7 @@ is quasi-separated. -/
 theorem IsProConstructible.quasiSeparatedSpace (hs : IsProConstructible s) :
     QuasiSeparatedSpace s := by
   refine QuasiSeparatedSpace.of_isTopologicalBasis
-    (b := fun U : {U : Set X // IsOpen U ∧ IsCompact U} ↦ ((↑) : s → X) ⁻¹' U.1) ?_ ?_
+    (b := fun U : {U : Set X // IsOpen U ∧ IsCompact U} ↦ ((↑) : s → X) ⁻¹' U.val) ?_ ?_
   · have h := Topology.IsInducing.isTopologicalBasis (f := ((↑) : s → X))
       IsEmbedding.subtypeVal.isInducing (PrespectralSpace.isTopologicalBasis (X := X))
     convert h using 1
@@ -310,7 +310,7 @@ theorem IsProConstructible.quasiSober [QuasiSober X] {s : Set X}
     -- An ambient generic point of `closure (Subtype.val '' Z)` lies in the constructible
     -- closure of the image, hence in the pro-constructible ambient subset `s`.
     obtain ⟨η, hη⟩ := QuasiSober.sober
-      (hZirr.image _ continuous_subtype_val.continuousOn).closure isClosed_closure
+      (hZirr.image _ continuous_subtypeVal.continuousOn).closure isClosed_closure
     have hηs : η ∈ s :=
       (@IsClosed.closure_subset X (constructibleTopology X) s
         (isProConstructible_iff_isClosed.1 hs)) <|
@@ -453,12 +453,12 @@ theorem exists_disjoint_isOpen_of_isCompact_of_stableUnderGeneralization
     have hUWc : IsCompact (((↑) : W → X) ⁻¹' U) := by
       rw [Subtype.isCompact_iff, Subtype.image_preimage_coe]
       exact QuasiSeparatedSpace.inter_isCompact W U hWo hWc hUo hUc
-    have hUWo : IsOpen (((↑) : W → X) ⁻¹' U) := hUo.preimage continuous_subtype_val
+    have hUWo : IsOpen (((↑) : W → X) ⁻¹' U) := hUo.preimage continuous_subtypeVal
     have hyWcl : (⟨y, hyW⟩ : W) ∈ closure (((↑) : W → X) ⁻¹' U) :=
-      hWo.isOpenMap_subtype_val.preimage_closure_subset_closure_preimage hycl
+      hWo.isOpenMap_subtypeVal.preimage_closure_subset_closure_preimage hycl
     rw [(hUWc.isProConstructible hUWo).closure_eq_setOfPred_specializes] at hyWcl
     obtain ⟨z, hzU, hzy⟩ := hyWcl
-    exact hUFc hzU (hFg (hzy.map continuous_subtype_val) hyF)
+    exact hUFc hzU (hFg (hzy.map continuous_subtypeVal) hyF)
   exact ⟨U, (closure U)ᶜ, hUo, isClosed_closure.isOpen_compl, hKU,
     subset_compl_iff_disjoint_left.2 hcl,
     disjoint_compl_right.mono_left subset_closure⟩
@@ -478,13 +478,13 @@ theorem isProConstructible_eq [T0Space Y] [PrespectralSpace Y] {f g : X → Y}
     TauCeti.IsProConstructible {x | f x = g x} := by
   let B := {U : Set Y // IsOpen U ∧ IsCompact U}
   have heq : {x | f x = g x} = ⋂ U : B,
-      ((f ⁻¹' U.1) ∩ (g ⁻¹' U.1)) ∪ ((f ⁻¹' U.1)ᶜ ∩ (g ⁻¹' U.1)ᶜ) := by
+      ((f ⁻¹' U.val) ∩ (g ⁻¹' U.val)) ∪ ((f ⁻¹' U.val)ᶜ ∩ (g ⁻¹' U.val)ᶜ) := by
     ext x
     rw [Set.mem_ofPred_eq, PrespectralSpace.isTopologicalBasis.eq_iff]
     simp only [mem_iInter, mem_union, mem_inter_iff, mem_preimage, mem_compl_iff]
     constructor
     · intro h U
-      have := h U.1 U.2
+      have := h U.val U.property
       tauto
     · intro h U hU
       have := h ⟨U, hU⟩
@@ -492,12 +492,14 @@ theorem isProConstructible_eq [T0Space Y] [PrespectralSpace Y] {f g : X → Y}
   rw [heq]
   refine TauCeti.IsProConstructible.iInter fun U ↦ ?_
   apply TauCeti.isProConstructible_iff_isClosed.mpr
-  have hfc : IsClopen[constructibleTopology X] (f ⁻¹' U.1) :=
-    (hf.isCompact_preimage_of_isOpen U.2.1 U.2.2).isClopen_constructibleTopology_of_isOpen
-      (U.2.1.preimage hf.continuous)
-  have hgc : IsClopen[constructibleTopology X] (g ⁻¹' U.1) :=
-    (hg.isCompact_preimage_of_isOpen U.2.1 U.2.2).isClopen_constructibleTopology_of_isOpen
-      (U.2.1.preimage hg.continuous)
+  have hfc : IsClopen[constructibleTopology X] (f ⁻¹' U.val) :=
+    (hf.isCompact_preimage_of_isOpen U.property.1
+        U.property.2).isClopen_constructibleTopology_of_isOpen
+      (U.property.1.preimage hf.continuous)
+  have hgc : IsClopen[constructibleTopology X] (g ⁻¹' U.val) :=
+    (hg.isCompact_preimage_of_isOpen U.property.1
+        U.property.2).isClopen_constructibleTopology_of_isOpen
+      (U.property.1.preimage hg.continuous)
   let : TopologicalSpace X := constructibleTopology X
   exact (hfc.isClosed.inter hgc.isClosed).union (hfc.compl.isClosed.inter hgc.compl.isClosed)
 

@@ -18,6 +18,7 @@ public import TauCeti.Algebra.Lie.SkewAdjoint.Star
 public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.LinearAlgebra.Complex.Module
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Complex.Conjugation
 import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
@@ -109,7 +110,15 @@ theorem mem_unitaryLieAlgebra_iff {X : Matrix ι ι ℂ} : X ∈ unitaryLieAlgeb
 @[simp]
 theorem conjTranspose_coe_unitaryLieAlgebra (X : unitaryLieAlgebra ι) :
     (X : Matrix ι ι ℂ)ᴴ = -X :=
-  mem_unitaryLieAlgebra_iff.mp X.2
+  mem_unitaryLieAlgebra_iff.mp X.property
+
+open ComplexConjugate in
+/-- The entries of a skew-Hermitian matrix satisfy `X_(b a) = -conj X_(a b)`. -/
+theorem coe_unitaryLieAlgebra_apply_swap (X : unitaryLieAlgebra ι) (a b : ι) :
+    (X : Matrix ι ι ℂ) b a = -conj ((X : Matrix ι ι ℂ) a b) := by
+  have h := congr_fun (congr_fun (conjTranspose_coe_unitaryLieAlgebra X) a) b
+  rw [conjTranspose_apply, Matrix.neg_apply] at h
+  rw [← map_neg, ← h, star_def, conj_conj]
 
 variable (ι) in
 /-- **`𝔲(n)` is `-i` times the Hermitian matrices**: `X ↦ -i X` is a real linear equivalence from
@@ -123,7 +132,7 @@ def unitaryLieAlgebraEquivSelfAdjoint :
 theorem coe_unitaryLieAlgebraEquivSelfAdjoint_apply (X : unitaryLieAlgebra ι) :
     (unitaryLieAlgebraEquivSelfAdjoint ι X : Matrix ι ι ℂ) = -I • (X : Matrix ι ι ℂ) :=
   skewAdjoint.coe_negISMulEquiv_apply
-    ⟨(X : Matrix ι ι ℂ), skewAdjoint.mem_lieSubalgebra.mp X.2⟩
+    ⟨(X : Matrix ι ι ℂ), skewAdjoint.mem_lieSubalgebra.mp X.property⟩
 
 @[simp]
 theorem coe_unitaryLieAlgebraEquivSelfAdjoint_symm_apply
@@ -134,6 +143,14 @@ theorem coe_unitaryLieAlgebraEquivSelfAdjoint_symm_apply
 instance : FiniteDimensional ℝ (unitaryLieAlgebra ι) :=
   (unitaryLieAlgebraEquivSelfAdjoint ι).symm.finiteDimensional
 
+variable (ι) in
+/-- **`𝔲(n)` has real dimension `n²`**: it is identified with the Hermitian matrices, whose real
+dimension is the complex dimension `n²` of all `n × n` matrices. -/
+theorem finrank_unitaryLieAlgebra :
+    finrank ℝ (unitaryLieAlgebra ι) = Fintype.card ι * Fintype.card ι := by
+  rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq, finrank_selfAdjoint_submodule,
+    finrank_matrix, finrank_self, mul_one]
+
 /-! ### The adjoint and coadjoint representations -/
 
 variable (ι) in
@@ -142,7 +159,7 @@ def unitaryAdjointRepresentation :
     Representation ℝ (unitaryGroup ι ℂ) (unitaryLieAlgebra ι) where
   toFun U :=
     { toFun X := ⟨U * X * star (U : Matrix ι ι ℂ), skewAdjoint.mem_lieSubalgebra.mpr <|
-        skewAdjoint.conjugate (skewAdjoint.mem_lieSubalgebra.mp X.2) _⟩
+        skewAdjoint.conjugate (skewAdjoint.mem_lieSubalgebra.mp X.property) _⟩
       map_add' X Y := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
       map_smul' c X := Subtype.ext (by simp) }
   map_one' := LinearMap.ext fun X => Subtype.ext (by simp)
@@ -157,7 +174,7 @@ theorem coe_unitaryAdjointRepresentation_apply (U : unitaryGroup ι ℂ) (X : un
 theorem unitaryAdjointRepresentation_lie (U : unitaryGroup ι ℂ) (X Y : unitaryLieAlgebra ι) :
     unitaryAdjointRepresentation ι U ⁅X, Y⁆ =
       ⁅unitaryAdjointRepresentation ι U X, unitaryAdjointRepresentation ι U Y⁆ := by
-  have hU : star (U : Matrix ι ι ℂ) * U = 1 := Unitary.star_mul_self_of_mem U.2
+  have hU : star (U : Matrix ι ι ℂ) * U = 1 := Unitary.star_mul_self_of_mem U.property
   ext1
   simp only [coe_unitaryAdjointRepresentation_apply, LieSubalgebra.coe_bracket, Ring.lie_def]
   calc (U : Matrix ι ι ℂ) * (X * Y - Y * X) * star (U : Matrix ι ι ℂ)
@@ -203,14 +220,16 @@ theorem ofReal_unitaryTracePairing_apply (H : selfAdjoint.submodule ℝ (Matrix 
     (X : unitaryLieAlgebra ι) :
     (unitaryTracePairing ι H X : ℂ) = -I * ((H : Matrix ι ι ℂ) * X).trace := by
   have h := IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg
-    (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian (conjTranspose_coe_unitaryLieAlgebra X)
+    (H.property : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian (conjTranspose_coe_unitaryLieAlgebra
+        X)
   rw [RCLike.re_to_complex] at h
   apply Complex.ext <;> simp [unitaryTracePairing_apply, h]
 
 /-- The trace pairing is nondegenerate: `⟨H, i H⟩ = tr(Hᴴ H)` vanishes only for `H = 0`. -/
 theorem unitaryTracePairing_injective : Function.Injective (unitaryTracePairing ι) := by
   refine (injective_iff_map_eq_zero _).mpr fun H hH => ?_
-  have hHh : (H : Matrix ι ι ℂ)ᴴ = H := (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian.eq
+  have hHh : (H : Matrix ι ι ℂ)ᴴ = H := (H.property : IsSelfAdjoint
+      (H : Matrix ι ι ℂ)).isHermitian.eq
   have h := ofReal_unitaryTracePairing_apply H ((unitaryLieAlgebraEquivSelfAdjoint ι).symm H)
   rw [hH, LinearMap.zero_apply, ofReal_zero, coe_unitaryLieAlgebraEquivSelfAdjoint_symm_apply] at h
   -- `tr(Hᴴ H) = -i tr(H (i H)) = ⟨H, i H⟩ = 0`.
@@ -239,7 +258,7 @@ theorem unitaryCoadjointRepresentation_unitaryTracePairing (U : unitaryGroup ι 
     (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
     unitaryCoadjointRepresentation ι U (unitaryTracePairing ι H) =
       unitaryTracePairing ι ⟨U * H * star (U : Matrix ι ι ℂ),
-        (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).conjugate _⟩ := by
+        (H.property : IsSelfAdjoint (H : Matrix ι ι ℂ)).conjugate _⟩ := by
   ext X
   apply Complex.ofReal_injective
   simp only [unitaryCoadjointRepresentation_apply_apply, ofReal_unitaryTracePairing_apply,
@@ -266,8 +285,9 @@ theorem mem_stabilizer_unitaryCoadjointRepresentation_unitaryTracePairing_iff
     {U : unitaryGroup ι ℂ} {H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)} :
     U ∈ (unitaryCoadjointRepresentation ι).stabilizer (unitaryTracePairing ι H) ↔
       (U : Matrix ι ι ℂ) * H = H * U := by
-  have hU₁ : star (U : Matrix ι ι ℂ) * U = 1 := Unitary.star_mul_self_of_mem U.2
-  have hU₂ : (U : Matrix ι ι ℂ) * star (U : Matrix ι ι ℂ) = 1 := Unitary.mul_star_self_of_mem U.2
+  have hU₁ : star (U : Matrix ι ι ℂ) * U = 1 := Unitary.star_mul_self_of_mem U.property
+  have hU₂ : (U : Matrix ι ι ℂ) * star (U : Matrix ι ι ℂ) = 1 := Unitary.mul_star_self_of_mem
+      U.property
   rw [Representation.mem_stabilizer, unitaryCoadjointRepresentation_unitaryTracePairing,
     unitaryTracePairing_injective.eq_iff, Subtype.ext_iff]
   dsimp only
@@ -285,7 +305,8 @@ theorem lie_unitaryTracePairing (ξ : unitaryLieAlgebra ι)
     (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
     ⁅ξ, unitaryTracePairing ι H⁆ = unitaryTracePairing ι
       ⟨ξ * H - H * ξ,
-        IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint H.2 (mem_unitaryLieAlgebra_iff.mp ξ.2)⟩ := by
+        IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint H.property (mem_unitaryLieAlgebra_iff.mp
+            ξ.property)⟩ := by
   ext X
   apply Complex.ofReal_injective
   rw [Dual.lie_apply, ofReal_neg, ofReal_unitaryTracePairing_apply,

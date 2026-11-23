@@ -422,8 +422,8 @@ ambient endomorphism ring `A →L[𝕜] A` need not be commutative. -/
 noncomputable instance instSeminormedCommRing : SeminormedCommRing (LeftAction 𝕜 A) :=
   { (inferInstance : SeminormedRing (LeftAction 𝕜 A)) with
     mul_comm := fun S T ↦ by
-      obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp S.2
-      obtain ⟨v, hv⟩ := (AlgHom.mem_range _).mp T.2
+      obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp S.property
+      obtain ⟨v, hv⟩ := (AlgHom.mem_range _).mp T.property
       apply Subtype.ext
       rw [Subalgebra.coe_mul, Subalgebra.coe_mul, ← hu, ← hv, ← map_mul, mul_comm u v, map_mul] }
 
@@ -455,7 +455,7 @@ variable [Star 𝕜] [StarModule 𝕜 A]
 /-- On an algebra with faithful right multiplication, `star` on `LeftAction 𝕜 A` is transported
 along the surjection `lift (NonUnitalAlgHom.Lmul 𝕜 A)` (`lift_Lmul_star_eq_of_eq`). -/
 noncomputable instance instStar : Star (LeftAction 𝕜 A) where
-  star T := ⟨lift (NonUnitalAlgHom.Lmul 𝕜 A) (star ((AlgHom.mem_range _).mp T.2).choose),
+  star T := ⟨lift (NonUnitalAlgHom.Lmul 𝕜 A) (star ((AlgHom.mem_range _).mp T.property).choose),
     (lift (NonUnitalAlgHom.Lmul 𝕜 A)).mem_range_self _⟩
 
 /-- For any preimage `u` of `T` under `lift (NonUnitalAlgHom.Lmul 𝕜 A)`, the transported
@@ -464,13 +464,13 @@ theorem coe_star_of_eq {T : LeftAction 𝕜 A} {u : Unitization 𝕜 A}
     (hu : lift (NonUnitalAlgHom.Lmul 𝕜 A) u = (T : A →L[𝕜] A)) :
     ((star T : LeftAction 𝕜 A) : A →L[𝕜] A) = lift (NonUnitalAlgHom.Lmul 𝕜 A) (star u) :=
   -- `instStar` above defines `↑(star T)` as the left action of `star` of the chosen preimage.
-  lift_Lmul_star_eq_of_eq (((AlgHom.mem_range _).mp T.2).choose_spec.trans hu.symm)
+  lift_Lmul_star_eq_of_eq (((AlgHom.mem_range _).mp T.property).choose_spec.trans hu.symm)
 
 /-- Every operator in `LeftAction 𝕜 A` and its involution are mutually adjoint for
 `(x, y) ↦ star x * y`. -/
 theorem star_apply_mul (T : LeftAction 𝕜 A) (x y : A) :
     star ((T : A →L[𝕜] A) x) * y = star x * ((star T : LeftAction 𝕜 A) : A →L[𝕜] A) y := by
-  obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.2
+  obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.property
   rw [coe_star_of_eq hu, ← hu]
   exact star_lift_Lmul_apply_mul u x y
 
@@ -480,15 +480,15 @@ variable [StarRing 𝕜] [StarModule 𝕜 A]
 
 noncomputable instance instStarRing : StarRing (LeftAction 𝕜 A) where
   star_involutive T := by
-    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.2
+    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.property
     apply Subtype.ext
     have hs : lift (NonUnitalAlgHom.Lmul 𝕜 A) (star u) =
         ((star T : LeftAction 𝕜 A) : A →L[𝕜] A) :=
       (coe_star_of_eq hu).symm
     rw [coe_star_of_eq hs, star_star, hu]
   star_mul S T := by
-    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp S.2
-    obtain ⟨v, hv⟩ := (AlgHom.mem_range _).mp T.2
+    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp S.property
+    obtain ⟨v, hv⟩ := (AlgHom.mem_range _).mp T.property
     apply Subtype.ext
     have huv : lift (NonUnitalAlgHom.Lmul 𝕜 A) (u * v) =
         ((S * T : LeftAction 𝕜 A) : A →L[𝕜] A) := by
@@ -496,8 +496,8 @@ noncomputable instance instStarRing : StarRing (LeftAction 𝕜 A) where
     rw [coe_star_of_eq huv, StarMul.star_mul u v, map_mul, Subalgebra.coe_mul,
       coe_star_of_eq hv, coe_star_of_eq hu]
   star_add S T := by
-    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp S.2
-    obtain ⟨v, hv⟩ := (AlgHom.mem_range _).mp T.2
+    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp S.property
+    obtain ⟨v, hv⟩ := (AlgHom.mem_range _).mp T.property
     apply Subtype.ext
     have huv : lift (NonUnitalAlgHom.Lmul 𝕜 A) (u + v) =
         ((S + T : LeftAction 𝕜 A) : A →L[𝕜] A) := by
@@ -507,7 +507,7 @@ noncomputable instance instStarRing : StarRing (LeftAction 𝕜 A) where
 
 instance instStarModule : StarModule 𝕜 (LeftAction 𝕜 A) where
   star_smul c T := by
-    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.2
+    obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.property
     apply Subtype.ext
     have hcu : lift (NonUnitalAlgHom.Lmul 𝕜 A) (c • u) =
         ((c • T : LeftAction 𝕜 A) : A →L[𝕜] A) := by

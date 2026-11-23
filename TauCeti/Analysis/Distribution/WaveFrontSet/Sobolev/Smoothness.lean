@@ -80,7 +80,7 @@ theorem exists_contDiff_cutoffTempered_eq_integral {φ : 𝓓(Ω, ℂ)}
   refine exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦ ?_
   -- Each point of `tsupport φ` has a neighbourhood on which every cutoff gives an `H^s` product.
   choose U hU hUs using fun x : tsupport φ ↦
-    (h s x x.2).exists_nhds_forall_memSobolev_cutoffTempered
+    (h s x x.property).exists_nhds_forall_memSobolev_cutoffTempered
   -- Split `φ` into finitely many test functions supported in these neighbourhoods.
   obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
     (fun _ ↦ isOpen_interior) fun x hx ↦

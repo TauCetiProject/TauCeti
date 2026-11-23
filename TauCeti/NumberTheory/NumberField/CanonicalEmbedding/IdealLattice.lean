@@ -133,7 +133,7 @@ theorem mixedEmbedding_mul_mem_idealLattice_iff (a : Kˣ) (I : (FractionalIdeal 
 theorem norm_coe_idealLattice_eq_zero_iff {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
     {x : idealLattice K I} :
     mixedEmbedding.norm (x : mixedSpace K) = 0 ↔ x = 0 := by
-  obtain ⟨a, _, ha⟩ := (mem_idealLattice K I).mp x.2
+  obtain ⟨a, _, ha⟩ := (mem_idealLattice K I).mp x.property
   rw [← ha, norm_eq_zero_iff' ⟨a, rfl⟩, ha, Submodule.coe_eq_zero]
 
 end NumberField.mixedEmbedding

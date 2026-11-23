@@ -82,7 +82,7 @@ abbrev digons (ι : Type u) : PolygonalComplex.{0, 0, u} where
 /-- The link of the vertex of `digons ι` consists of loops only: every corner has equal germs. -/
 private theorem digons_src_eq_src_rev (ι : Type u) {v : (digons ι).graph.V}
     (d : ((digons ι).vertexLink v).E) :
-    (((digons ι).vertexLink v).src d).1 = (((digons ι).vertexLink v).src (d.1, !d.2)).1 := by
+    (((digons ι).vertexLink v).src d).val = (((digons ι).vertexLink v).src (d.1, !d.2)).val := by
   obtain ⟨⟨⟨f, k⟩, -⟩, b⟩ := d
   fin_cases k <;> cases b <;> simp only [vertexLink_src_true, vertexLink_src_false,
     Bool.not_true, Bool.not_false, outgoing_def, incoming_def] <;> rfl
@@ -105,7 +105,7 @@ theorem not_finite_vertexLink_digons (ι : Type u) [Infinite ι] (v : (digons ι
     ¬Finite ((digons ι).vertexLink v).E := by
   rw [not_finite_iff_infinite]
   exact Infinite.of_injective (fun f : ι => (⟨⟨f, 0⟩, rfl⟩, true))
-    fun f f' h => congrArg (fun d => d.1.1.1) h
+    fun f f' h => congrArg (fun d => d.1.val.1) h
 
 /-- For infinitely many faces, every germ of `digons ι` has infinitely many link darts, so its
 `Nat.card`-degree is zero. -/
@@ -113,14 +113,14 @@ theorem linkDegree_digons (ι : Type u) [Infinite ι] (e : (digons ι).graph.E) 
     (digons ι).linkDegree e = 0 := by
   rw [linkDegree_def]
   have : Infinite {d : ((digons ι).vertexLink ((digons ι).graph.src e)).E //
-      (((digons ι).vertexLink _).src d).1 = e} := by
+      (((digons ι).vertexLink _).src d).val = e} := by
     obtain ⟨⟨⟩, _ | _⟩ := e
     · exact Infinite.of_injective
         (fun f : ι => ⟨(⟨⟨f, 1⟩, rfl⟩, true), (vertexLink_src_true _ _).trans (outgoing_def _ _)⟩)
-        fun f f' h => congrArg (fun d => d.1.1.1.1) h
+        fun f f' h => congrArg (fun d => d.val.1.val.1) h
     · exact Infinite.of_injective
         (fun f : ι => ⟨(⟨⟨f, 0⟩, rfl⟩, true), (vertexLink_src_true _ _).trans (outgoing_def _ _)⟩)
-        fun f f' h => congrArg (fun d => d.1.1.1.1) h
+        fun f f' h => congrArg (fun d => d.val.1.val.1) h
   exact Nat.card_eq_zero_of_infinite
 
 end PolygonalComplex
@@ -174,7 +174,7 @@ instance : Nonempty disc.boundary.V :=
 instance : Subsingleton disc.boundary.V :=
   -- The one-skeleton of the disc is the one-petal rose, whose vertex type is `Unique`; it is
   -- named explicitly because `disc` is a plain definition.
-  ⟨fun x y => Subtype.ext (Subsingleton.elim (α := (SerreGraph.rose Unit).V) x.1 y.1)⟩
+  ⟨fun x y => Subtype.ext (Subsingleton.elim (α := (SerreGraph.rose Unit).V) x.val y.val)⟩
 
 /-- The disc has a single boundary component: its boundary graph is one loop at its vertex. -/
 theorem card_boundaryComponent_disc : Nat.card disc.BoundaryComponent = 1 :=

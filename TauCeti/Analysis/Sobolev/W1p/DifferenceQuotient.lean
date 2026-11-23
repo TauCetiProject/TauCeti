@@ -427,7 +427,7 @@ theorem W1p0.norm_value_differenceQuotient_le (hp : p ≠ ∞) {w : E} {t : ℝ}
       ‖w‖ * ‖W1p.gradient (u : W1p mu Omega p)‖ := by
   have h := W1p.norm_value_differenceQuotient_le hp w t (W1p0.extendByZeroL le_top u : W1p mu ⊤ p)
   rwa [← W1p0.extendByZeroL_eq_differenceQuotient (g := ⟨_,
-      W1p.differenceQuotient_mem_w1p0Submodule hVO hΩ u.2⟩) hVO hΩ rfl,
+      W1p.differenceQuotient_mem_w1p0Submodule hVO hΩ u.property⟩) hVO hΩ rfl,
     W1p0.norm_value_extendByZeroL, W1p0.norm_gradient_extendByZeroL] at h
 
 end TauCeti

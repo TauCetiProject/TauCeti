@@ -101,7 +101,7 @@ theorem exists_onePoint_homeomorph_sphere_preimage_inner_eq_zero (v : sphere (0 
     simp [D]
   have hinner (z : ℂ) : ⟪(K z : E), (v : E)⟫_ℝ = (‖D z‖ ^ 2 - 4) / (‖D z‖ ^ 2 + 4) := by
     have hDv : ⟪(D z : E), (v : E)⟫_ℝ = 0 :=
-      Submodule.mem_orthogonal_singleton_iff_inner_left.1 (D z).2
+      Submodule.mem_orthogonal_singleton_iff_inner_left.1 (D z).property
     simp only [K, Homeomorph.trans_apply, Homeomorph.onePointCongr_apply, map_some]
     rw [coe_onePointHyperplaneHomeoUnitSphere_coe]
     simp [inner_add_left, inner_smul_left, hDv, hv1]

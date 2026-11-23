@@ -57,7 +57,7 @@ lemma doubleCoset_eq_iUnion_leftCosets (H K : Subgroup G) (a : G) :
   refine Set.subset_iUnion_of_subset (QuotientGroup.mk h) (le_of_eq ?_)
   rw [hn, leftCoset_eq_iff]
   simpa [mul_assoc, Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def] using
-    Subgroup.mem_subgroupOf.mp n.2
+    Subgroup.mem_subgroupOf.mp n.property
 
 /-- **Membership in a double coset is invariant under left multiplication by the left
 subgroup.** -/

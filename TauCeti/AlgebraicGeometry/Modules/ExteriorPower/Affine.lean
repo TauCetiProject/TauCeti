@@ -188,7 +188,7 @@ private def exteriorComparison (M : ModuleCat.{u} R) (n : ℕ) :
       apply TopCat.Presheaf.IsSheaf.section_ext (tilde (M.exteriorPower n)).isSheaf
       intro x hxU
       obtain ⟨V, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU⟩ :=
-        PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.unop.2
+        PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.unop.is_open'
       refine ⟨_, hfU, hxf, ?_⟩
       let i : PrimeSpectrum.basicOpen f ⟶ U.unop := homOfLE hfU
       have hn (z : (exteriorPresheaf M n).obj U) :
@@ -255,7 +255,7 @@ private instance exteriorComparison_locallyInjective (M : ModuleCat.{u} R) (n : 
   equalizerSieve_mem {U} a b h := by
     intro x hxU
     obtain ⟨V, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU⟩ :=
-      PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.unop.2
+      PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.unop.is_open'
     refine ⟨_, homOfLE hfU, ?_, hxf⟩
     apply (exteriorComparison_basic_bijective M n f).1
     have hab : (exteriorComparison M n).app U a = (exteriorComparison M n).app U b := h
@@ -271,7 +271,7 @@ private instance exteriorComparison_locallySurjective (M : ModuleCat.{u} R) (n :
   imageSieve_mem {U} a := by
     intro x hxU
     obtain ⟨V, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU⟩ :=
-      PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.2
+      PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hxU U.is_open'
     exact ⟨_, homOfLE hfU,
       (exteriorComparison_basic_bijective M n f).2
         ((tilde (M.exteriorPower n)).val.map (homOfLE hfU).op a), hxf⟩

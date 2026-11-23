@@ -212,7 +212,7 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
   set B := (fun ω (i : Fin (n + 1)) => Z i ω) ⁻¹' A
   have hpre : Measurable[Filtration.piLE n] fun ω (i : Fin (n + 1)) => Z i ω :=
     @Measurable.of_eval _ _ _ (Filtration.piLE n) _ _ fun i =>
-      (adapted_spliceAtMeeting i.1).mono (Filtration.piLE.mono (Nat.lt_succ_iff.1 i.2)) le_rfl
+      (adapted_spliceAtMeeting i.val).mono (Filtration.piLE.mono (Nat.lt_succ_iff.1 i.isLt)) le_rfl
   have hBn : MeasurableSet[Filtration.piLE n] B := hpre hA
   have hMn : MeasurableSet[Filtration.piLE n] M := measurableSet_piLE_exists_le_fst_eq_snd n
   have hB : MeasurableSet B := Filtration.le _ n _ hBn
@@ -226,7 +226,7 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
       (B \ M) ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) :=
     inter_preimage_spliceAtMeeting_succ_sdiff_exists n B C
   rw [prefixLaw_compProd_apply_prod κ hZ n hA hC, Measure.map_apply
-    ((measurable_pi_iff.2 fun i => hZ i.1).prodMk (hZ _)) (hA.prod hC), hfib,
+    ((measurable_pi_iff.2 fun i => hZ i.val).prodMk (hZ _)) (hA.prod hC), hfib,
     ← measure_inter_add_sdiff _ hM, hin, hout,
     markovChainLaw_inter_preimage_eval_succ ρ η n (hBn.inter hMn) (measurable_snd hC),
     markovChainLaw_inter_preimage_eval_succ ρ η n (hBn.diff hMn) (measurable_fst hC),

@@ -182,7 +182,7 @@ theorem span_vectorsOfNorm_two_rootLattice :
       (t.rootLattice ht).carrier := by
   refine le_antisymm (Submodule.span_le.mpr ?_) ?_
   · rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   · refine (t.rootLattice_carrier ht).le.trans (Submodule.span_le.mpr ?_)
     rintro _ ⟨i, rfl⟩
     exact Submodule.subset_span ⟨t.simpleRootBasis ht i,

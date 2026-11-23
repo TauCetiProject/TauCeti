@@ -99,20 +99,22 @@ theorem abelianizedLocalCyclotomicCharacter_artinMap_normUnits_eq_finprod
         (artinMap (v.adicCompletion K)
           (Units.map (algebraMap K (v.adicCompletion K)) (Algebra.normUnits K x))) =
       ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        abelianizedLocalCyclotomicCharacter p (w.1.adicCompletion L)
-          (artinMap (w.1.adicCompletion L)
-            (Units.map (algebraMap L (w.1.adicCompletion L)) x)) := by
+        abelianizedLocalCyclotomicCharacter p (w.val.adicCompletion L)
+          (artinMap (w.val.adicCompletion L)
+            (Units.map (algebraMap L (w.val.adicCompletion L)) x)) := by
   classical
   let _ : Fintype {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
     Fintype.ofFinite _
   -- Each factor is the character of the Artin symbol of the local norm `N_{L_w/K_v} x`.
   have h (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
-      abelianizedLocalCyclotomicCharacter p (w.1.adicCompletion L)
-          (artinMap (w.1.adicCompletion L) (Units.map (algebraMap L (w.1.adicCompletion L)) x)) =
+      abelianizedLocalCyclotomicCharacter p (w.val.adicCompletion L)
+          (artinMap (w.val.adicCompletion L) (Units.map (algebraMap L (w.val.adicCompletion L)) x))
+              =
         abelianizedLocalCyclotomicCharacter p (v.adicCompletion K)
           (artinMap (v.adicCompletion K) (Algebra.normUnits (v.adicCompletion K)
-            (Units.map (algebraMap L (w.1.adicCompletion L) : L →* w.1.adicCompletion L) x))) := by
-    have := w.2
+            (Units.map (algebraMap L (w.val.adicCompletion L) : L →* w.val.adicCompletion L) x)))
+                := by
+    have := w.property
     exact abelianizedLocalCyclotomicCharacter_artinMap_norm (v.adicCompletion K) p _
   rw [finprod_eq_prod_of_fintype]
   simp only [h, ← map_prod]
@@ -130,18 +132,18 @@ theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_normUnits_eq_finprod
     abelianizedLocalCyclotomicCharacter p v.Completion
         (infiniteArtinAt v (Units.map (algebraMap K v.Completion) (Algebra.normUnits K x))) =
       ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v},
-        abelianizedLocalCyclotomicCharacter p w.1.Completion
-          (infiniteArtinAt w.1 (Units.map (algebraMap L w.1.Completion) x)) := by
+        abelianizedLocalCyclotomicCharacter p w.val.Completion
+          (infiniteArtinAt w.val (Units.map (algebraMap L w.val.Completion) x)) := by
   classical
   -- Each factor is the character of the Artin symbol of the local norm `N_{L_w/K_v} x`.
   have h (w : {w : InfinitePlace L // w.LiesOver v}) :
-      abelianizedLocalCyclotomicCharacter p w.1.Completion
-          (infiniteArtinAt w.1 (Units.map (algebraMap L w.1.Completion) x)) =
+      abelianizedLocalCyclotomicCharacter p w.val.Completion
+          (infiniteArtinAt w.val (Units.map (algebraMap L w.val.Completion) x)) =
         abelianizedLocalCyclotomicCharacter p v.Completion
           (infiniteArtinAt v (Algebra.normUnits v.Completion
-            (Units.map (algebraMap L w.1.Completion : L →* w.1.Completion) x))) := by
-    have := w.2
-    exact abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm p v w.1 _
+            (Units.map (algebraMap L w.val.Completion : L →* w.val.Completion) x))) := by
+    have := w.property
+    exact abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm p v w.val _
   rw [finprod_eq_prod_of_fintype]
   simp only [h, ← map_prod]
   congr 2
@@ -165,10 +167,10 @@ theorem abelianizedLocalCyclotomicCharacter_artinMap_mem_unitsPrincipal {n : ℕ
     Fintype.ofFinite _
   rw [finprod_eq_prod_of_fintype, map_prod, map_prod]
   refine Subgroup.prod_mem _ fun w _ ↦ ?_
-  have := w.2
+  have := w.property
   rw [← abelianizedLocalCyclotomicCharacter_artinMap_norm (v.adicCompletion K) p (u w)]
   exact abelianizedLocalCyclotomicCharacter_mem_unitsPrincipal
-    ⟨_, hζ.map_of_injective (algebraMap L (w.1.adicCompletion L)).injective⟩ _
+    ⟨_, hζ.map_of_injective (algebraMap L (w.val.adicCompletion L)).injective⟩ _
 
 /-- **Local norms from an extension containing `μ_{pⁿ}`, at an infinite place.** If `L` contains a
 primitive `pⁿ`-th root of unity, then for every local norm `a` from `K_v ⊗[K] L` at an infinite
@@ -183,10 +185,10 @@ theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_mem_unitsPrincipal {
   obtain ⟨u, rfl⟩ := (mem_range_normUnits_completion_iff K L v a).1 ha
   rw [finprod_eq_prod_of_fintype, map_prod, map_prod]
   refine Subgroup.prod_mem _ fun w _ ↦ ?_
-  have := w.2
-  rw [← abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm p v w.1 (u w)]
+  have := w.property
+  rw [← abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm p v w.val (u w)]
   exact abelianizedLocalCyclotomicCharacter_mem_unitsPrincipal
-    ⟨_, hζ.map_of_injective (algebraMap L w.1.Completion).injective⟩ _
+    ⟨_, hζ.map_of_injective (algebraMap L w.val.Completion).injective⟩ _
 
 /-! ### Over all places -/
 

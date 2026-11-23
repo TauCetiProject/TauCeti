@@ -103,8 +103,8 @@ theorem exists_mapGL_mul_atkinLehnerGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
         atkinLehnerGL hQ h * mapGL ℝ (g' : SL(2, ℤ)) ∧
       (Gamma0Map N).toHomUnits g' =
         (h.isExactDivisor hQ.ne' hQN).unitsInvPart ((Gamma0Map N).toHomUnits g) := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN g.2
-  refine ⟨⟨δ, hδ⟩, Units.ext ?_, h.toHomUnits_gamma0Map_of_mul_eq_mul hQ.ne' hQN g.2 hδ hmul⟩
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN g.property
+  refine ⟨⟨δ, hδ⟩, Units.ext ?_, h.toHomUnits_gamma0Map_of_mul_eq_mul hQ.ne' hQN g.property hδ hmul⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
     Int.coe_castRingHom, ← Matrix.map_mul_intCast, hmul]
@@ -119,12 +119,12 @@ theorem exists_atkinLehnerGL_mul_mapGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
         (h.isExactDivisor hQ.ne' hQN).unitsInvPart ((Gamma0Map N).toHomUnits g) := by
   -- `W g = g' W` is the relation `g' W = W g` of `toHomUnits_gamma0Map_of_mul_eq_mul` read
   -- backwards, which gives the label of `g` from that of `g'`; the shift is an involution.
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN g.2
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN g.property
   refine ⟨⟨δ, hδ⟩, Units.ext ?_, ?_⟩
   · simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
       Matrix.SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
       Int.coe_castRingHom, ← Matrix.map_mul_intCast, hmul]
-  · rw [h.toHomUnits_gamma0Map_of_mul_eq_mul hQ.ne' hQN hδ g.2 hmul.symm,
+  · rw [h.toHomUnits_gamma0Map_of_mul_eq_mul hQ.ne' hQN hδ g.property hmul.symm,
       Nat.IsExactDivisor.unitsInvPart_unitsInvPart]
 
 /-- **`W` normalizes `Γ₁(N)` in `GL (Fin 2) ℝ`.** Moving an element of `Γ₁(N)`, of diamond label
@@ -140,8 +140,8 @@ theorem Gamma1_map_inv_conjAct_atkinLehnerGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
   constructor
   · rintro ⟨τ, hτ, hτy⟩
     obtain ⟨δ, hmul, hδ⟩ :=
-      exists_mapGL_mul_atkinLehnerGL_eq hQ hQN h ⟨τ, Gamma1_in_Gamma0 N hτ⟩
-    rw [(mem_Gamma1_iff_toHomUnits_eq_one ⟨τ, Gamma1_in_Gamma0 N hτ⟩).mp hτ, map_one] at hδ
+      exists_mapGL_mul_atkinLehnerGL_eq hQ hQN h ⟨τ, Gamma1_le_Gamma0 N hτ⟩
+    rw [(mem_Gamma1_iff_toHomUnits_eq_one ⟨τ, Gamma1_le_Gamma0 N hτ⟩).mp hτ, map_one] at hδ
     refine ⟨δ, (mem_Gamma1_iff_toHomUnits_eq_one δ).mpr hδ, ?_⟩
     rw [hτy] at hmul
     refine (mul_left_cancel (a := atkinLehnerGL hQ h) ?_).symm
@@ -149,8 +149,8 @@ theorem Gamma1_map_inv_conjAct_atkinLehnerGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
     group
   · rintro ⟨σ, hσ, rfl⟩
     obtain ⟨δ, hmul, hδ⟩ :=
-      exists_atkinLehnerGL_mul_mapGL_eq hQ hQN h ⟨σ, Gamma1_in_Gamma0 N hσ⟩
-    rw [(mem_Gamma1_iff_toHomUnits_eq_one ⟨σ, Gamma1_in_Gamma0 N hσ⟩).mp hσ, map_one] at hδ
+      exists_atkinLehnerGL_mul_mapGL_eq hQ hQN h ⟨σ, Gamma1_le_Gamma0 N hσ⟩
+    rw [(mem_Gamma1_iff_toHomUnits_eq_one ⟨σ, Gamma1_le_Gamma0 N hσ⟩).mp hσ, map_one] at hδ
     exact ⟨δ, (mem_Gamma1_iff_toHomUnits_eq_one δ).mpr hδ, by rw [hmul]; group⟩
 
 /-- **The Atkin–Lehner slash operator on `M_k(Γ₁(N))`**: `f ↦ f ∣[k] W`, as a `ℂ`-linear

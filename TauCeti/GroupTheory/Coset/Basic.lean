@@ -35,6 +35,8 @@ isomorphism of groups, and under translation:
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`.
+* `QuotientGroup.outCocycle`: the element `(g • q).out⁻¹ * g * q.out` of `H` relating the two, with
+  the cocycle identity `QuotientGroup.outCocycle_mul`.
 * `QuotientGroup.iUnion_out_smul_eq` and `QuotientGroup.pairwise_disjoint_out_smul`: for an
   action on a type `α` and `V : Set α` mapped onto itself by `H`, the translates `q.out • V`
   cover `⋃ g, g • V`, and they are pairwise disjoint when every `g ∉ H` moves `V` off itself.
@@ -200,7 +202,7 @@ theorem sum_out_smul_eq_relIndex_nsmul {G : Type*} [Group G] {H K : Subgroup G} 
       ((p.out * (k.out : G) : G) : G ⧸ K).out • m = p.out • m := by
     intro p k
     obtain ⟨z, hz⟩ := QuotientGroup.mk_out_eq_mul K (p.out * (k.out : G))
-    rw [hz, mul_smul, mul_smul, hm _ (hKH z.2), hm _ k.out.2]
+    rw [hz, mul_smul, mul_smul, hm _ (hKH z.property), hm _ k.out.property]
   simp only [key, Finset.sum_const, Finset.card_univ, Finset.sum_nsmul, relIndex, index_eq_card,
     Nat.card_eq_fintype_card]
 
@@ -320,6 +322,41 @@ theorem mk_mul_out_smul {K : Subgroup G} (a : G) (h : H) (k : H ⧸ K.subgroupOf
   simpa [QuotientGroup.eq, Subgroup.mem_subgroupOf, mul_assoc] using
     QuotientGroup.eq.mp (mk_out_smul h k)
 
+/-- The cocycle of the translation action of `G` on `G ⧸ H` relative to the chosen
+representatives: the element `(g • q).out⁻¹ * g * q.out` of `H`, so that
+`g * q.out = (g • q).out * outCocycle g q`. -/
+@[to_additive /-- The cocycle of the translation action of `G` on `G ⧸ H` relative to the chosen
+representatives: the element `-(g +ᵥ q).out + g + q.out` of `H`, so that
+`g + q.out = (g +ᵥ q).out + outCocycle g q`. -/]
+noncomputable def outCocycle (g : G) (q : G ⧸ H) : H :=
+  ⟨(g • q).out⁻¹ * g * q.out, by simpa [mul_assoc] using QuotientGroup.eq.mp (mk_out_smul g q)⟩
+
+@[to_additive (attr := simp)]
+theorem coe_outCocycle (g : G) (q : G ⧸ H) :
+    (outCocycle g q : G) = (g • q).out⁻¹ * g * q.out :=
+  (rfl)
+
+-- Not `@[simp]`: `coe_outCocycle` already rewrites the left-hand side.
+/-- Translating a chosen representative by `g` gives the chosen representative of the translated
+coset times the cocycle. -/
+@[to_additive /-- Translating a chosen representative by `g` gives the chosen
+representative of the translated coset plus the cocycle. -/]
+theorem out_mul_outCocycle (g : G) (q : G ⧸ H) :
+    (g • q).out * (outCocycle g q : G) = g * q.out := by
+  simp [mul_assoc]
+
+@[to_additive (attr := simp)]
+theorem outCocycle_one (q : G ⧸ H) : outCocycle 1 q = 1 := by
+  ext
+  simp
+
+/-- The cocycle identity. -/
+@[to_additive /-- The cocycle identity. -/]
+theorem outCocycle_mul (g h : G) (q : G ⧸ H) :
+    outCocycle (g * h) q = outCocycle g (h • q) * outCocycle h q := by
+  ext
+  simp [mul_smul, mul_assoc]
+
 section Action
 
 open scoped Pointwise
@@ -338,7 +375,7 @@ theorem iUnion_out_smul_eq (hH : ∀ h ∈ H, h • V = V) :
   obtain ⟨h, hh⟩ := mk_out_eq_mul H g
   -- `g = out * h⁻¹`, and `h⁻¹` maps `V` onto itself.
   have hg : g • V = ((g : G ⧸ H).out : G) • V := by
-    rw [hh, mul_smul, hH _ h.2]
+    rw [hh, mul_smul, hH _ h.property]
   exact hg ▸ Set.subset_iUnion (fun q : G ⧸ H => (q.out : G) • V) _
 
 /-- Translates of `V` by distinct chosen coset representatives are disjoint, when every `g ∉ H`

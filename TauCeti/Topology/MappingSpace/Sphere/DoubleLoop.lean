@@ -73,7 +73,7 @@ theorem loopSpace2Homeomorph_def :
 that corresponds to it under `loopSpace2Homeomorph`. -/
 def loopSpace2ToMapCircle :
     C((X.iteratedLoopSpace 2).carrier, C(Sphere1, Path X.basepoint X.basepoint)) :=
-  (⟨Subtype.val, continuous_subtype_val⟩ :
+  (⟨Subtype.val, continuous_subtypeVal⟩ :
     C(BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint,
       C(Sphere1, Path X.basepoint X.basepoint))).comp (loopSpace2Homeomorph X : C(_, _))
 
@@ -97,7 +97,7 @@ constant loop. -/
 @[simp]
 theorem loopSpace2ToMapCircle_east (γ : (X.iteratedLoopSpace 2).carrier) :
     loopSpace2ToMapCircle X γ Sphere1.east = Path.refl X.basepoint :=
-  (loopSpace2Homeomorph X γ).2
+  (loopSpace2Homeomorph X γ).property
 
 /-- The embedding of the double loop space in the space of maps from the circle to the loop space
 is a topological embedding. -/
@@ -177,7 +177,7 @@ theorem loopSpace2ToMapCircle_map (f : Hom X Y) (γ : (X.iteratedLoopSpace 2).ca
   rw [loopSpace2ToMapCircle, loopSpace2ToMapCircle, ContinuousMap.comp_apply,
     ContinuousMap.comp_apply]
   -- the coercions of the homeomorphisms to bundled maps evaluate as the homeomorphisms
-  change (loopSpace2Homeomorph Y (f.iteratedLoopSpace 2 γ)).1 b = _
+  change (loopSpace2Homeomorph Y (f.iteratedLoopSpace 2 γ)).val b = _
   rw [loopSpace2Homeomorph_map]
   exact BasedMap.map_apply _ _ _ b
 

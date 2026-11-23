@@ -43,7 +43,7 @@ theorem sub_div_sub_mem_unitInterval {a b r : ℝ} (har : a ≤ r) (hrb : r ≤ 
 /-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
 `[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/
 noncomputable def tent (t : I) : I :=
-  ⟨min (2 * t) (2 - 2 * t), le_min (by linarith [t.2.1]) (by linarith [t.2.2]),
+  ⟨min (2 * t) (2 - 2 * t), le_min (by linarith [t.property.1]) (by linarith [t.property.2]),
     min_le_iff.2 <| (le_total (t : ℝ) (1 / 2)).imp (fun h ↦ by linarith) fun h ↦ by linarith⟩
 
 /-- The real value of `TauCeti.tent t` is `min (2 t) (2 - 2 t)`. -/

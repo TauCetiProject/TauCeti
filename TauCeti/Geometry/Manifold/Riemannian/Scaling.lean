@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
@@ -317,6 +317,17 @@ theorem curvatureTensor_leviCivitaConnection_rescale_const (x : M) :
       (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) :=
   CovariantDerivative.curvatureTensor_congr _ (fun _ hσ y ↦
     leviCivitaConnection_rescale_const_apply g (by simp) hc (hσ.mdifferentiable (by simp) y)) x
+
+/-- Multiplying a metric by `c > 0` multiplies its lowered Riemann tensor by `c`. -/
+theorem riemannCurvatureTensor_leviCivitaConnection_rescale_const (x : M)
+    (u v w z : TangentSpace I x) :
+    (letI : RiemannianBundle (TangentSpace I : M → Type _) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).riemannCurvatureTensor x u v w z) =
+    c * (letI : RiemannianBundle (TangentSpace I : M → Type _) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).riemannCurvatureTensor x u v w z) := by
+  simp only [CovariantDerivative.riemannCurvatureTensor_apply, inner_riemannianBundle,
+    rescale_inner, curvatureTensor_leviCivitaConnection_rescale_const g hc x]
 
 /-- Multiplying a smooth metric by a positive constant does not change the Ricci tensor of its
 Levi-Civita connection. -/

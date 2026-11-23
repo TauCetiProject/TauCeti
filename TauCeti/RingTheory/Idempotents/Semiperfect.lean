@@ -106,7 +106,7 @@ theorem IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corne
       conv_rhs => rw [← DirectSum.sum_univ_of x]
       simp [F, map_sum]
     have hfix (i : Fin n) : π (x i : A) = π (x i : A) * ē i := by
-      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp (x i).2
+      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp (x i).property
       rw [← ha, map_mul]
       simp only [π, hπe, mul_assoc, (hē.idem i).eq]
     have h := congrArg (fun y ↦ π y * ē j) hx'
@@ -133,7 +133,7 @@ theorem IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corne
     · have hxJ : x ∈ Ring.jacobson A • (⊤ : Submodule A (⨁ i, L i)) := by
         rw [← DirectSum.sum_univ_of x]
         refine Submodule.sum_mem _ fun i _ ↦ ?_
-        obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp (x i).2
+        obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp (x i).property
         have hxi : DirectSum.of (fun i ↦ L i) i (x i) =
             ((x i : L i) : A) • DirectSum.lof A (Fin n) (fun i ↦ L i) i
               ⟨e i, Ideal.mem_span_singleton_self _⟩ := by
@@ -208,14 +208,14 @@ theorem _root_.IsIdempotentElem.isSimpleModule_span_singleton_mk_jacobson {e : A
   have : RingHomSurjective (Ideal.Quotient.mk J) := ⟨Ideal.Quotient.mk_surjective⟩
   let l : Submodule.map J.mkQ L →ₛₗ[Ideal.Quotient.mk J]
       (Ideal.span {Ideal.Quotient.mk J e} : Ideal (A ⧸ J)) :=
-    { toFun z := ⟨z, (hmem z).1 z.2⟩
+    { toFun z := ⟨z, (hmem z).1 z.property⟩
       map_add' _ _ := rfl
       map_smul' a z := Subtype.ext (hsmul a z) }
   have hl : Function.Bijective l :=
     ⟨fun z z' h ↦ by
       have := congrArg Subtype.val h
       exact Subtype.ext this,
-      fun z ↦ ⟨⟨z, (hmem z).2 z.2⟩, rfl⟩⟩
+      fun z ↦ ⟨⟨z, (hmem z).2 z.property⟩, rfl⟩⟩
   exact (LinearMap.isSimpleModule_iff_of_bijective l hl).1 hM
 
 variable {ι : Type*} [Fintype ι] {e : ι → A}

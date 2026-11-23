@@ -54,14 +54,14 @@ theorem finite_iff_baseChange_and_localized
   refine ⟨fun _ ↦ ⟨inferInstance, fun _ _ ↦ inferInstance⟩, ?_⟩
   rintro ⟨hS, hloc⟩
   obtain ⟨P, hP, hPS⟩ := Submodule.exists_fg_baseChange_eq_top (R := R) (A := S) (M := M)
-  have hfg (g : G) : ∃ Q : Submodule R M, Q.FG ∧ Q.baseChange (Localization.Away g.1) = ⊤ := by
-    have := hloc g.1 g.2
+  have hfg (g : G) : ∃ Q : Submodule R M, Q.FG ∧ Q.baseChange (Localization.Away g.val) = ⊤ := by
+    have := hloc g.val g.property
     exact Submodule.exists_fg_baseChange_eq_top
   choose Q hQ hQg using hfg
   let N := P ⊔ ⨆ g : G, Q g
   have hN : N.FG := hP.sup (Submodule.fg_iSup _ hQ)
   have hNS : N.baseChange S = ⊤ := top_unique <| hPS ▸ Submodule.baseChange_mono S le_sup_left
-  have hNg (g : G) : N.baseChange (Localization.Away g.1) = ⊤ :=
+  have hNg (g : G) : N.baseChange (Localization.Away g.val) = ⊤ :=
     top_unique <| hQg g ▸ Submodule.baseChange_mono _ ((le_iSup Q g).trans le_sup_right)
   have : Subsingleton (S ⊗[R] (M ⧸ N)) :=
     (Submodule.baseChange_eq_top_iff_subsingleton S N).mp hNS

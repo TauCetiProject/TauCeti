@@ -349,10 +349,10 @@ private noncomputable def expZSMulAddEquiv {x : A} (hx : IsNilpotent x)
     (t : Multiplicative ℤ) : M ≃+ M where
   toFun v := ⟨(expSMulHom ℤ hx t : Aˣ) • (v : V), by
     simpa only [Units.smul_def, coe_expSMulHom] using
-      exp_zsmul_smul_mem hM (Multiplicative.toAdd t) v.2⟩
+      exp_zsmul_smul_mem hM (Multiplicative.toAdd t) v.property⟩
   invFun v := ⟨(expSMulHom ℤ hx t)⁻¹ • (v : V), by
     simpa only [← map_inv, Units.smul_def, coe_expSMulHom] using
-      exp_zsmul_smul_mem hM (Multiplicative.toAdd t⁻¹) v.2⟩
+      exp_zsmul_smul_mem hM (Multiplicative.toAdd t⁻¹) v.property⟩
   left_inv v := by
     apply Subtype.ext
     simp

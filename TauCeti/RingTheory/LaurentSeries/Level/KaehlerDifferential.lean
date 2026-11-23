@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Basic
+public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Residue
 public import TauCeti.RingTheory.LaurentSeries.Level.Trace
 
 /-!
@@ -66,7 +66,7 @@ level-parameter derivation `TauCeti.LaurentSeries.Level.parameterDerivation K d`
   `Tr_{L/F} (g ω) = Tr_{L/F} (g) ω` for `ω` a one-form on `F`.
 * `Level.ContinuousKaehlerDifferential.trace_map`: the trace of a pulled
   back one-form is `d` times the form.
-* `Level.ContinuousKaehlerDifferential.coeff_neg_one_equivLaurentSeries_trace`:
+* `Level.ContinuousKaehlerDifferential.residue_trace`:
   `Res_F (Tr_{L/F} ω) = Res_L ω`.
 
 ## References
@@ -374,10 +374,11 @@ theorem equivLaurentSeries_trace (ω : Level.ContinuousKaehlerDifferential K d) 
 /-- **The trace preserves residues.** When `d` is nonzero in `K`, for every one-form `ω = g du`
 on the level `L = K⸨u⸩`, the residue of `Tr_{L/F} ω` at `t` is the residue of `ω` at `u`:
 `Res_F (Tr_{L/F} ω) = Res_L ω`. -/
-theorem coeff_neg_one_equivLaurentSeries_trace (ω : Level.ContinuousKaehlerDifferential K d) :
-    (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K d ω)).coeff (-1) =
+theorem residue_trace (ω : Level.ContinuousKaehlerDifferential K d) :
+    TauCeti.ContinuousKaehlerDifferential.residue K (trace K d ω) =
       (ringEquivLaurentSeries K d (equivLevel K d ω)).coeff (-1) := by
-  rw [equivLaurentSeries_trace, coeff_neg_one_trace, map_div₀, RingEquiv.apply_symm_apply,
+  rw [TauCeti.ContinuousKaehlerDifferential.residue_apply, equivLaurentSeries_trace,
+    coeff_neg_one_trace, map_div₀, RingEquiv.apply_symm_apply,
     div_mul_cancel₀ _ derivative_single_natCast_one_ne_zero]
 
 end Separable
@@ -394,7 +395,7 @@ noncomputable def parameterDerivation :
     Derivation K (Level K d) (Level K d) where
   toFun y := (ringEquivLaurentSeries K d).symm
     (derivative K (ringEquivLaurentSeries K d y))
-  map_add' y z := by simp
+  map_add' y z := by simp only [map_add]
   map_smul' c y := by
     apply (ringEquivLaurentSeries K d).injective
     simp [Algebra.smul_def, laurentSeries_algebraMap_mul_eq_smul]

@@ -53,6 +53,11 @@ under `ExteriorAlgebra.baseChangeEquiv`
   `ExteriorAlgebra.sesqComplexification_gramForm_subtype_baseChange`: comparison of the wedge-basis
   Hermitian form on `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)` with the sesquilinear complexification of the
   Gram metric on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V` and on `ℂ ⊗[ℝ] ⋀[ℝ]^k V`.
+* `ExteriorAlgebra.sesqComplexification_gramForm_baseChangeEquiv_symm_coe_exteriorPower`,
+  `ExteriorAlgebra.sesqComplexification_gramForm_baseChangeEquiv_symm_eq_zero_of_mem_exteriorPower`,
+  and `ExteriorAlgebra.sesqComplexification_gramForm_baseChangeEquiv_symm_ιMulti_ιMulti`: the
+  basis-free degree restriction, degree orthogonality, and Gram-determinant formula for the
+  complexified Gram metric on `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)`.
 
 ## References
 
@@ -183,6 +188,20 @@ theorem gramForm_coe_exteriorPower {k : ℕ} (x y : ⋀[ℝ]^k V) :
     rw [Matrix.transpose_apply, Matrix.of_apply, Matrix.of_apply]
   exact LinearMap.congr_fun₂ key x y
 
+/-- **The restriction of `gramForm V` to `⋀[ℝ]^k V` is Mathlib's inner product
+`innerₗ (⋀[ℝ]^k V)`.** -/
+@[simp]
+theorem gramForm_restrict (k : ℕ) : (gramForm V).restrict (⋀[ℝ]^k V) = innerₗ (⋀[ℝ]^k V) :=
+  LinearMap.ext₂ fun x y ↦ gramForm_coe_exteriorPower x y
+
+/-- **In degree one, `gramForm V` restricts to the inner product on `V`.** -/
+@[simp]
+theorem gramForm_ι_ι (x y : V) : gramForm V (ι ℝ x) (ι ℝ y) = ⟪x, y⟫ := by
+  have hx : ι ℝ x = ιMulti ℝ 1 ![x] := by simp [ιMulti_succ_apply, ιMulti_zero_apply]
+  have hy : ι ℝ y = ιMulti ℝ 1 ![y] := by simp [ιMulti_succ_apply, ιMulti_zero_apply]
+  rw [hx, hy, gramForm_ιMulti_ιMulti, Matrix.det_fin_one]
+  simp
+
 /-- `gramForm V` is symmetric. -/
 theorem isSymm_gramForm : (gramForm V).IsSymm := by
   refine ⟨fun x y ↦ ?_⟩
@@ -232,7 +251,45 @@ theorem sesqComplexification_gramForm_subtype_baseChange_eq_zero {k l : ℕ} (hk
     induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ => simp only [map_add, hy₁, hy₂, add_zero]
     | tmul w v =>
-      simp [gramForm_eq_zero_of_mem_exteriorPower hkl u.2 v.2]
+      simp [gramForm_eq_zero_of_mem_exteriorPower hkl u.property v.property]
+
+/-- `(gramForm V).sesqComplexification` is Hermitian symmetric. -/
+theorem isSymm_sesqComplexification_gramForm :
+    (LinearMap.BilinForm.sesqComplexification (gramForm V)).IsSymm :=
+  isSymm_gramForm.sesqComplexification
+
+/-- `(gramForm V).sesqComplexification` is strictly positive on nonzero complexified forms. -/
+theorem sesqComplexification_gramForm_self_pos {x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V} (hx : x ≠ 0) :
+    0 < LinearMap.BilinForm.sesqComplexification (gramForm V) x x :=
+  LinearMap.BilinForm.sesqComplexification_self_pos isSymm_gramForm posDef_toQuadraticMap_gramForm
+    hx
+
+/-- **On `⋀[ℂ]^k (ℂ ⊗[ℝ] V)`, the pullback of `(gramForm V).sesqComplexification` along
+`(ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm` is `(innerₗ (⋀[ℝ]^k V)).sesqComplexification`**
+along `TauCeti.exteriorPower.equivBaseChange`, with no choice of basis. -/
+theorem sesqComplexification_gramForm_baseChangeEquiv_symm_coe_exteriorPower {k : ℕ}
+    (a b : ⋀[ℂ]^k (ℂ ⊗[ℝ] V)) :
+    LinearMap.BilinForm.sesqComplexification (gramForm V)
+        ((baseChangeEquiv ℝ V ℂ).symm (a : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)))
+        ((baseChangeEquiv ℝ V ℂ).symm (b : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V))) =
+      LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))
+        (TauCeti.exteriorPower.equivBaseChange ℂ k a)
+        (TauCeti.exteriorPower.equivBaseChange ℂ k b) := by
+  rw [← TauCeti.exteriorPower.subtype_baseChange_equivBaseChange,
+    ← TauCeti.exteriorPower.subtype_baseChange_equivBaseChange,
+    sesqComplexification_gramForm_subtype_baseChange]
+
+/-- **Distinct complex exterior degrees are orthogonal** for the pullback of
+`(gramForm V).sesqComplexification` along `(ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm`. -/
+theorem sesqComplexification_gramForm_baseChangeEquiv_symm_eq_zero_of_mem_exteriorPower
+    {k l : ℕ} (hkl : k ≠ l) {a b : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)}
+    (ha : a ∈ ⋀[ℂ]^k (ℂ ⊗[ℝ] V)) (hb : b ∈ ⋀[ℂ]^l (ℂ ⊗[ℝ] V)) :
+    LinearMap.BilinForm.sesqComplexification (gramForm V)
+        ((baseChangeEquiv ℝ V ℂ).symm a) ((baseChangeEquiv ℝ V ℂ).symm b) = 0 := by
+  simpa only [TauCeti.exteriorPower.subtype_baseChange_equivBaseChange] using
+    sesqComplexification_gramForm_subtype_baseChange_eq_zero hkl
+      (TauCeti.exteriorPower.equivBaseChange ℂ k ⟨a, ha⟩)
+      (TauCeti.exteriorPower.equivBaseChange ℂ l ⟨b, hb⟩)
 
 end ExteriorAlgebra
 
@@ -299,4 +356,39 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_coe_exteriorPower {k : �
   rw [h x, h y, e.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv,
     ExteriorAlgebra.sesqComplexification_gramForm_subtype_baseChange]
 
+/-- **The wedge-basis Hermitian form on `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)` is the pullback of
+`(ExteriorAlgebra.gramForm V).sesqComplexification` along
+`(ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm`.** -/
+theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_apply (a b : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)) :
+    Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ)
+        (e.toBasis.baseChange ℂ).ExteriorAlgebra (e.toBasis.baseChange ℂ).ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) ℂ) a b =
+      LinearMap.BilinForm.sesqComplexification (ExteriorAlgebra.gramForm V)
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b) := by
+  simpa only [AlgEquiv.apply_symm_apply] using
+    e.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
+      ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
+      ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b)
+
 end OrthonormalBasis
+
+namespace ExteriorAlgebra
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **The basis-free complexified Gram-determinant formula**: on decomposable `k`-vectors of
+`ℂ ⊗[ℝ] V`, the pullback of `(gramForm V).sesqComplexification` along
+`(ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm` is the `k × k` determinant of
+`(innerₗ V).sesqComplexification`. -/
+theorem sesqComplexification_gramForm_baseChangeEquiv_symm_ιMulti_ιMulti (k : ℕ)
+    (u v : Fin k → ℂ ⊗[ℝ] V) :
+    LinearMap.BilinForm.sesqComplexification (gramForm V)
+        ((baseChangeEquiv ℝ V ℂ).symm (ιMulti ℂ k u))
+        ((baseChangeEquiv ℝ V ℂ).symm (ιMulti ℂ k v)) =
+      (Matrix.of fun i j ↦
+        LinearMap.BilinForm.sesqComplexification (innerₗ V) (u i) (v j)).det := by
+  rw [← (stdOrthonormalBasis ℝ V).toLinearMapₛₗ₂_baseChange_exteriorAlgebra_apply,
+    (stdOrthonormalBasis ℝ V).toLinearMapₛₗ₂_baseChange_exteriorAlgebra_ιMulti_ιMulti]
+
+end ExteriorAlgebra

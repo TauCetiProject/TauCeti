@@ -53,19 +53,19 @@ theorem eq_straight_iff_forall_minHeight_nonneg [P.flip.IsReduced]
   · rintro rfl i
     rw [toPLPath_straight, PLPath.minHeight_straight, hF]
     apply le_min le_rfl
-    exact_mod_cast (mem_dominantChamber P b lam).mp hlam i i.2
+    exact_mod_cast (mem_dominantChamber P b lam).mp hlam i i.property
   · intro h
     apply π.eq_straight_iff_dir_zero_eq_one.mpr
-    have hdom : (π.dir 0).1 • lam ∈ dominantChamber P b := by
+    have hdom : (π.dir 0).val • lam ∈ dominantChamber P b := by
       apply (mem_dominantChamber P b _).mpr
       intro i hi
-      have hprod : 0 ≤ (π.duration 0 : 𝕜) * (P.coroot' i ((π.dir 0).1 • lam) : 𝕜) := by
+      have hprod : 0 ≤ (π.duration 0 : 𝕜) * (P.coroot' i ((π.dir 0).val • lam) : 𝕜) := by
         simpa only [hF] using
           (h ⟨i, hi⟩).trans (π.minHeight_le_duration_mul_dir_zero f (F ⟨i, hi⟩))
       have hd : (0 : 𝕜) < (π.duration 0 : ℚ) := Rat.cast_pos.mpr (π.duration_pos 0)
       exact_mod_cast nonneg_of_mul_nonneg_right hprod hd
-    have hfix := smul_eq_self_of_smul_mem_dominantChamber P b (π.dir 0).1 hlam hdom
-    exact eq_of_isMinimalCosetRep_of_smul_eq hlam (π.dir 0).2
+    have hfix := smul_eq_self_of_smul_mem_dominantChamber P b (π.dir 0).val hlam hdom
+    exact eq_of_isMinimalCosetRep_of_smul_eq hlam (π.dir 0).property
       ((weylCoxeterSystem P b).isMinimalCosetRep_one _) (by simpa using hfix)
 
 /-- **Uniqueness of the highest LS path.** For a dominant shape, all actual simple-root raising

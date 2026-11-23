@@ -198,7 +198,7 @@ theorem exists_linearEquiv_comp_eq_of_surjective [Module.Projective A P] (hP : I
     obtain ⟨l, hl⟩ := Module.projective_lifting_property u LinearMap.id hu
     let e := Function.Exact.splitSurjectiveEquiv (LinearMap.exact_subtype_ker_map u)
       Subtype.val_injective ⟨l, hl⟩
-    exact ⟨e.1, fun x ↦ (LinearMap.congr_fun e.2.2 x).symm⟩
+    exact ⟨e.val, fun x ↦ (LinearMap.congr_fun e.property.2 x).symm⟩
   obtain ⟨es, hes⟩ := split hs
   obtain ⟨et, het⟩ := split ht
   obtain ⟨φ⟩ := nonempty_linearEquiv_of_prod_linearEquiv_of_isFiniteLength hP ⟨es.symm.trans et⟩

@@ -15,6 +15,7 @@ public import Mathlib.Geometry.Manifold.Complex
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.Topology.Sheaves.Functors
+public import TauCeti.Geometry.Manifold.Sheaf.ContMDiff
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.Complex.Chart
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
@@ -27,7 +28,6 @@ import Mathlib.Algebra.Category.Ring.FilteredColimits
 The holomorphic structure sheaf of a complex manifold assigns to an open set `U` the ring
 of complex analytic maps `U → ℂ`. Its sections are Mathlib's `ContMDiffMap` at regularity
 `ω`, so their pointwise ring and complex vector space structures are reused directly.
-The same restriction maps give a sheaf of complex vector spaces, suitable for cohomology.
 On a complex curve, these sections are precisely the manifold-differentiable functions.
 
 On a compact connected complex manifold, the constant-section map is an algebra
@@ -37,7 +37,9 @@ which point is chosen. In particular, the space of global sections has dimension
 The function coercions and algebra instance use the bundled analytic-map representation.
 Pointwise computation is provided by section evaluation lemmas, and restriction along inclusions of
 open sets is bundled as the `ℂ`-algebra homomorphism `restrictAlgHom`.
-The sheaf of modules has exactly the same underlying presheaf of functions.
+The module sheaf uses the original bundled analytic maps on manifolds in arbitrary universes.
+For a manifold in universe zero, forgetting its module structure gives the same underlying
+presheaf of functions as the holomorphic ring sheaf.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
 Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
 and pull back holomorphic germs (`stalkPrecomp`), functorially and preserving their values.
@@ -46,9 +48,11 @@ The same precomposition is a morphism of presheaves of complex vector spaces
 inverse (`holomorphicStructureSheafModules.isIso_homOfContMDiff`); this is how the Čech cohomology
 of the structure sheaf is compared along biholomorphisms.
 
-The sheaf construction follows `smoothSheafCommRing` in
+The ring-sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
 `StructureGroupoid.LocalInvariantProp.sheaf` at analytic rather than smooth regularity.
+The module sheaf uses `TauCeti.contMDiffLocalPredicate` with independent source and target
+universes, on the same original bundled analytic maps.
 The stalk evaluation and precomposition constructions follow `smoothSheafCommRing.evalHom`
 and `ContMDiff.smoothSheafCommRingHom` in the same file.
 The global-sections computation uses Mathlib's
@@ -63,6 +67,8 @@ open CategoryTheory Opposite TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+section RingSheaf
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
@@ -150,7 +156,7 @@ theorem ext {U : (Opens (TopCat.of X))ᵒᵖ}
 
 /-- A section of the structure sheaf is complex analytic on its domain. -/
 theorem contMDiff {U : (Opens (TopCat.of X))ᵒᵖ}
-    (f : (holomorphicStructureSheaf I X).obj.obj U) : ContMDiff I 𝓘(ℂ) ω f := f.2
+    (f : (holomorphicStructureSheaf I X).obj.obj U) : ContMDiff I 𝓘(ℂ) ω f := f.property
 
 @[simp]
 theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
@@ -264,7 +270,7 @@ def evalHom (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x ⟶ CommR
   colimit.desc _
     { pt := CommRingCat.of ℂ
       ι :=
-        { app := fun U ↦ CommRingCat.ofHom (ContMDiffMap.evalRingHom ⟨x, (unop U).2⟩)
+        { app := fun U ↦ CommRingCat.ofHom (ContMDiffMap.evalRingHom ⟨x, (unop U).property⟩)
           naturality := by
             intro U V h
             apply CommRingCat.hom_ext
@@ -272,9 +278,9 @@ def evalHom (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x ⟶ CommR
             intro f
             -- Both categorical composites evaluate the restriction at the base point.
             exact map_apply (I := I) (X := X)
-              (U := op (α := Opens X) (unop U).1)
-              (V := op (α := Opens X) (unop V).1)
-              ((OpenNhds.inclusion (X := TopCat.of X) x).map h.unop).op f ⟨x, (unop V).2⟩ } }
+              (U := op (α := Opens X) (unop U).val)
+              (V := op (α := Opens X) (unop V).val)
+              ((OpenNhds.inclusion (X := TopCat.of X) x).map h.unop).op f ⟨x, (unop V).property⟩ } }
 
 /-- The ring homomorphism evaluating a holomorphic germ at its base point. -/
 def eval (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x →+* ℂ :=
@@ -330,10 +336,10 @@ def precomp (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
     (holomorphicStructureSheaf J Y).obj.obj U →+*
       (holomorphicStructureSheaf I X).obj.obj (op (α := Opens X)
         ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :=
-    { toFun := fun g ↦ ofContMDiff (fun x ↦ g ⟨f x.1, x.2⟩) (by
+    { toFun := fun g ↦ ofContMDiff (fun x ↦ g ⟨f x.val, x.property⟩) (by
         apply (contMDiff g).comp (I' := J)
         exact (TauCeti.ContMDiff.subtypeVal_comp_iff (unop U) _).mp
-          (hf.comp contMDiff_subtype_val))
+          (hf.comp contMDiff_subtypeVal))
       map_one' := rfl
       map_mul' := fun _ _ ↦ rfl
       map_zero' := rfl
@@ -346,7 +352,7 @@ theorem precomp_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒ�
     (x : ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :
     toFun I X (no_index (op (α := Opens X)
       ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))))
-      (no_index (precomp I X f hf U g)) x = toFun J Y U g ⟨f x.1, x.2⟩ := (rfl)
+      (no_index (precomp I X f hf U g)) x = toFun J Y U g ⟨f x.val, x.property⟩ := (rfl)
 
 /-- A complex analytic map induces a morphism `𝒪_Y ⟶ f_*𝒪_X` by precomposition. -/
 def homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
@@ -448,55 +454,51 @@ theorem stalkPrecomp_comp (g : Y → Z) (hg : ContMDiff J K ω g) (f : X → Y)
 
 end holomorphicStructureSheaf
 
-/-- The holomorphic structure sheaf viewed as a sheaf of complex vector spaces. -/
-def holomorphicStructureSheafModules : TopCat.Sheaf (ModuleCat ℂ) (TopCat.of X) where
+end RingSheaf
+
+section ModuleSheaf
+
+universe u
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
+  (X : Type u) [TopologicalSpace X] [ChartedSpace H X]
+
+/-- The sheaf of complex analytic functions `U → ℂ`, bundled as `C^ω` maps.
+For a manifold in universe zero, its underlying presheaf agrees with the ring sheaf
+`holomorphicStructureSheaf` (`holomorphicStructureSheafModules.forget_eq`). -/
+def holomorphicStructureSheafModules : TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X) where
   obj :=
-    { obj := fun U ↦ ModuleCat.of ℂ ((holomorphicStructureSheaf I X).obj.obj U)
+    { obj := fun U ↦ ModuleCat.of ℂ C^ω⟮I, (unop U : Opens X); ℂ⟯
       map := fun h ↦ ModuleCat.ofHom
-        { toFun := (holomorphicStructureSheaf I X).obj.map h
+        { toFun := ContMDiffMap.restrictRingHom I 𝓘(ℂ) ℂ (leOfHom h.unop)
           map_add' := fun f g ↦ map_add _ f g
           map_smul' := fun _ _ ↦ rfl }
       map_id := fun _ ↦ rfl
       map_comp := fun _ _ ↦ rfl }
   property := by
-    rw [Presheaf.isSheaf_iff_isSheaf_forget _ _ (forget (ModuleCat ℂ))]
-    exact ((contDiffWithinAt_localInvariantProp (I := I) (I' := 𝓘(ℂ)) ω).sheaf X ℂ).property
+    rw [Presheaf.isSheaf_iff_isSheaf_forget _ _ (forget (ModuleCat.{u} ℂ))]
+    exact (TopCat.subsheafToTypes (contMDiffLocalPredicate I 𝓘(ℂ) ω X ℂ)).property
 
 namespace holomorphicStructureSheafModules
 
-/-- Sections of the module sheaf are the same complex vector spaces as the ring sections. -/
-theorem obj_eq (U : (Opens (TopCat.of X))ᵒᵖ) :
-    (holomorphicStructureSheafModules I X).obj.obj U =
-      ModuleCat.of ℂ ((holomorphicStructureSheaf I X).obj.obj U) := (rfl)
+/-- The function underlying a section of the holomorphic module sheaf. -/
+def toFun (U : (Opens (TopCat.of X))ᵒᵖ) :
+    (holomorphicStructureSheafModules I X).obj.obj U → ↥(unop U) → ℂ :=
+  (DFunLike.coe : C^ω⟮I, (unop U : Opens X); ℂ⟯ → ↥(unop U) → ℂ)
 
-instance (U : (Opens (TopCat.of X))ᵒᵖ) :
-    CoeFun ((holomorphicStructureSheafModules I X).obj.obj U) (fun _ ↦ ↥(unop U) → ℂ) :=
-  inferInstanceAs (CoeFun ((holomorphicStructureSheaf I X).obj.obj U)
-    (fun _ ↦ ↥(unop U) → ℂ))
-
-/-- Ring sections and module sections have the same complex vector space structure. -/
-def sectionsLinearEquiv (U : (Opens (TopCat.of X))ᵒᵖ) :
-    (holomorphicStructureSheafModules I X).obj.obj U ≃ₗ[ℂ]
-      (holomorphicStructureSheaf I X).obj.obj U :=
-  LinearEquiv.refl ℂ _
-
-@[simp]
-theorem sectionsLinearEquiv_apply (U : (Opens (TopCat.of X))ᵒᵖ)
-    (f : (holomorphicStructureSheafModules I X).obj.obj U) (x : ↥(unop U)) :
-    sectionsLinearEquiv I X U f x = f x := (rfl)
-
-@[simp]
-theorem sectionsLinearEquiv_symm_apply (U : (Opens (TopCat.of X))ᵒᵖ)
-    (f : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
-    (sectionsLinearEquiv I X U).symm f x = f x := (rfl)
+instance holomorphicModuleSectionsCoeFun (U : (Opens (TopCat.of X))ᵒᵖ) :
+    CoeFun ((holomorphicStructureSheafModules I X).obj.obj U) (fun _ ↦ ↥(unop U) → ℂ) where
+  coe := toFun I X U
 
 variable {I X}
 
 /-- A section of the module sheaf is complex analytic on its domain. -/
 theorem contMDiff {U : (Opens (TopCat.of X))ᵒᵖ}
     (f : (holomorphicStructureSheafModules I X).obj.obj U) : ContMDiff I 𝓘(ℂ) ω f :=
-  (holomorphicStructureSheaf.contMDiff (sectionsLinearEquiv I X U f)).congr
-    (fun x ↦ (sectionsLinearEquiv_apply I X U f x).symm)
+  -- The module object is defined with carrier `C^ω⟮I, U; ℂ⟯`. Select that bundled-map type
+  -- to apply its regularity field before elaborating the module-section function coercion.
+  (show C^ω⟮I, (unop U : Opens X); ℂ⟯ from f).contMDiff
 
 /-- A section of the module sheaf is holomorphic on its domain. -/
 theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}
@@ -506,45 +508,54 @@ theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}
 /-- Complex analytic functions give sections of the module sheaf for any complex model. -/
 def ofContMDiff {U : Opens X} (f : U → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) :
     (holomorphicStructureSheafModules I X).obj.obj (op (α := Opens X) U) :=
-  (sectionsLinearEquiv I X (op (α := Opens X) U)).symm
-    (holomorphicStructureSheaf.ofContMDiff f hf)
+  ⟨f, hf⟩
 
 @[simp]
 theorem ofContMDiff_apply {U : Opens X} (f : U → ℂ)
     (hf : ContMDiff I 𝓘(ℂ) ω f) (x : U) :
     ofContMDiff f hf x = f x := by
-  rw [ofContMDiff, sectionsLinearEquiv_symm_apply, holomorphicStructureSheaf.ofContMDiff_apply]
+  unfold ofContMDiff toFun
+  rfl
 
 @[simp]
 theorem zero_apply {U : (Opens (TopCat.of X))ᵒᵖ} (x : ↥(unop U)) :
-    (0 : (holomorphicStructureSheafModules I X).obj.obj U) x = 0 :=
-  holomorphicStructureSheaf.zero_apply (I := I) (X := X) x
+    (0 : (holomorphicStructureSheafModules I X).obj.obj U) x = 0 := by
+  unfold toFun
+  rfl
 
 @[simp]
 theorem add_apply {U : (Opens (TopCat.of X))ᵒᵖ}
     (f g : (holomorphicStructureSheafModules I X).obj.obj U) (x : ↥(unop U)) :
-    (f + g) x = f x + g x := holomorphicStructureSheaf.add_apply f g x
+    (f + g) x = f x + g x := by
+  unfold toFun
+  rfl
 
 @[simp]
 theorem neg_apply {U : (Opens (TopCat.of X))ᵒᵖ}
     (f : (holomorphicStructureSheafModules I X).obj.obj U) (x : ↥(unop U)) :
-    (-f) x = -f x := holomorphicStructureSheaf.neg_apply f x
+    (-f) x = -f x := by
+  unfold toFun
+  rfl
 
 @[simp]
 theorem sub_apply {U : (Opens (TopCat.of X))ᵒᵖ}
     (f g : (holomorphicStructureSheafModules I X).obj.obj U) (x : ↥(unop U)) :
-    (f - g) x = f x - g x := holomorphicStructureSheaf.sub_apply f g x
+    (f - g) x = f x - g x := by
+  unfold toFun
+  rfl
 
 @[simp]
 theorem smul_apply {U : (Opens (TopCat.of X))ᵒᵖ} (c : ℂ)
     (f : (holomorphicStructureSheafModules I X).obj.obj U) (x : ↥(unop U)) :
-    (c • f) x = c • f x := holomorphicStructureSheaf.smul_apply c f x
+    (c • f) x = c • f x := by
+  unfold toFun
+  rfl
 
 /-- Sections of the module sheaf are equal if they agree at every point. -/
 @[ext]
 theorem ext {U : (Opens (TopCat.of X))ᵒᵖ}
     {f g : (holomorphicStructureSheafModules I X).obj.obj U}
-    (h : ∀ x, f x = g x) : f = g := holomorphicStructureSheaf.ext h
+    (h : ∀ x, f x = g x) : f = g := ContMDiffMap.ext h
 
 variable (I X)
 
@@ -554,39 +565,38 @@ theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
     (holomorphicStructureSheafModules I X).obj.map h f x =
       f (Opens.inclusion (leOfHom h.unop) x) := (rfl)
 
-/-- Forgetting the ring or module structure gives the same presheaf of functions. -/
-theorem forget_eq :
-    (holomorphicStructureSheafModules I X).obj ⋙ forget (ModuleCat ℂ) =
-      (holomorphicStructureSheaf I X).obj ⋙ forget CommRingCat := (rfl)
-
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
-  {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
+  {Y : Type u} [TopologicalSpace Y] [ChartedSpace H' Y]
 
 /-- Precomposition by a complex analytic map `f`, on the complex vector spaces of holomorphic
-sections over an open set `U` and over its inverse image: the ring homomorphism
-`holomorphicStructureSheaf.precomp`, read as a linear map. -/
+sections over an open set `U` and over its inverse image, by composition of the original
+analytic maps. -/
 def precompLinearMap (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
     (holomorphicStructureSheafModules J Y).obj.obj U →ₗ[ℂ]
       (holomorphicStructureSheafModules I X).obj.obj
         (op (α := Opens X) ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) where
-  toFun := holomorphicStructureSheaf.precomp I X f hf U
-  map_add' := map_add _
+  toFun := fun g ↦ ofContMDiff (fun x ↦ g ⟨f x.val, x.property⟩) (by
+    apply (contMDiff g).comp (I' := J)
+    exact (TauCeti.ContMDiff.subtypeVal_comp_iff (unop U) _).mp
+      (hf.comp contMDiff_subtypeVal))
+  map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 @[simp]
 theorem precompLinearMap_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ)
     (g : (holomorphicStructureSheafModules J Y).obj.obj U)
     (x : ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :
-    precompLinearMap I X f hf U g x = g ⟨f x.1, x.2⟩ :=
-  holomorphicStructureSheaf.precomp_apply I X f hf U g x
+    precompLinearMap I X f hf U g x = g ⟨f x.val, x.property⟩ := by
+  unfold precompLinearMap toFun ofContMDiff
+  rfl
 
 /-- A complex analytic map `f` induces a morphism `𝒪_Y ⟶ f_*𝒪_X` of presheaves of complex vector
-spaces by precomposition. It is the linear counterpart of
+spaces by precomposition. On a universe-zero manifold it is the linear counterpart of
 `holomorphicStructureSheaf.homOfContMDiff`. -/
 def homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
     (holomorphicStructureSheafModules J Y).obj ⟶
-      (TopCat.Presheaf.pushforward (ModuleCat ℂ) (TopCat.ofHom ⟨f, hf.continuous⟩)).obj
+      (TopCat.Presheaf.pushforward (ModuleCat.{u} ℂ) (TopCat.ofHom ⟨f, hf.continuous⟩)).obj
         (holomorphicStructureSheafModules I X).obj where
   app U := ModuleCat.ofHom (precompLinearMap I X f hf U)
   naturality _ _ _ := rfl
@@ -604,16 +614,17 @@ theorem precompLinearMap_bijective (f : X → Y) (hf : ContMDiff I J ω f) (g : 
     (U : (Opens Y)ᵒᵖ) : Function.Bijective (precompLinearMap I X f hf U) := by
   -- `g` maps `U` into its inverse image under `f`.
   let k : ↥(unop U) → ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U)) :=
-    fun y ↦ ⟨g y.1, ((hfg y.1).symm ▸ y.2 : f (g y.1) ∈ unop U)⟩
+    fun y ↦ ⟨g y.val, ((hfg y.val).symm ▸ y.property : f (g y.val) ∈ unop U)⟩
   have hk : ContMDiff J I ω k := by
     rw [← ContMDiff.subtypeVal_comp_iff]
-    exact hg.comp contMDiff_subtype_val
-  have hfk (y : ↥(unop U)) : (⟨f (k y).1, (k y).2⟩ : ↥(unop U)) = y := Subtype.ext (hfg y.1)
+    exact hg.comp contMDiff_subtypeVal
+  have hfk (y : ↥(unop U)) : (⟨f (k y).val, (k y).property⟩ : ↥(unop U)) = y := Subtype.ext
+      (hfg y.val)
   refine ⟨fun h₁ h₂ h ↦ ext fun y ↦ ?_, fun h ↦ ⟨ofContMDiff (fun y ↦ h (k y))
     ((contMDiff h).comp hk), ext fun x ↦ ?_⟩⟩
   · simpa only [precompLinearMap_apply, hfk] using congr($h (k y))
   · rw [precompLinearMap_apply, ofContMDiff_apply]
-    exact congrArg h (Subtype.ext (hgf x.1))
+    exact congrArg h (Subtype.ext (hgf x.val))
 
 /-- Precomposition by a complex analytic map `f` with a complex analytic inverse `g` identifies
 `𝒪_Y` with `f_*𝒪_X`. -/
@@ -623,6 +634,42 @@ theorem isIso_homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → 
   refine (NatTrans.isIso_iff_isIso_app _).2 fun U ↦ ?_
   rw [homOfContMDiff_app, ConcreteCategory.isIso_iff_bijective]
   exact precompLinearMap_bijective I X f hf g hg hgf hfg U
+
+end holomorphicStructureSheafModules
+
+end ModuleSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
+  (X : Type) [TopologicalSpace X] [ChartedSpace H X]
+
+namespace holomorphicStructureSheafModules
+
+/-- Sections of the module sheaf are the same complex vector spaces as the ring sections. -/
+theorem obj_eq (U : (Opens (TopCat.of X))ᵒᵖ) :
+    (holomorphicStructureSheafModules I X).obj.obj U =
+      ModuleCat.of ℂ ((holomorphicStructureSheaf I X).obj.obj U) := (rfl)
+
+/-- Ring sections and module sections have the same complex vector space structure. -/
+def sectionsLinearEquiv (U : (Opens (TopCat.of X))ᵒᵖ) :
+    (holomorphicStructureSheafModules I X).obj.obj U ≃ₗ[ℂ]
+      (holomorphicStructureSheaf I X).obj.obj U :=
+  LinearEquiv.refl ℂ _
+
+@[simp]
+theorem sectionsLinearEquiv_apply (U : (Opens (TopCat.of X))ᵒᵖ)
+    (f : (holomorphicStructureSheafModules I X).obj.obj U) (x : ↥(unop U)) :
+    sectionsLinearEquiv I X U f x = f x := (rfl)
+
+@[simp]
+theorem sectionsLinearEquiv_symm_apply (U : (Opens (TopCat.of X))ᵒᵖ)
+    (f : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
+    (sectionsLinearEquiv I X U).symm f x = f x := (rfl)
+
+/-- Forgetting the ring or module structure gives the same presheaf of functions. -/
+theorem forget_eq :
+    (holomorphicStructureSheafModules I X).obj ⋙ forget (ModuleCat ℂ) =
+      (holomorphicStructureSheaf I X).obj ⋙ forget CommRingCat := (rfl)
 
 end holomorphicStructureSheafModules
 

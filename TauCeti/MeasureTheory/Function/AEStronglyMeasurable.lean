@@ -251,7 +251,7 @@ variable {𝕜 E : Type*} [NormedField 𝕜] [StarAddMonoid 𝕜] [NormedStarGro
 
 private def starPairMap (q : {r : E × E // ∃ c : 𝕜, r.2 = c • r.1}) : E :=
   letI := Classical.propDecidable
-  if q.1.1 = 0 then 0 else star q.2.choose • q.1.1
+  if q.val.1 = 0 then 0 else star q.property.choose • q.val.1
 
 omit [NormedStarGroup 𝕜] in
 private theorem starPairMap_apply {x : E} {c : 𝕜}

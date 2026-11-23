@@ -84,45 +84,45 @@ theorem transverse_fiberProduct_assoc_iff (hn : 1 ≤ n) (hf : ContMDiff IX IB n
           (mfderiv IZ IC k p.2)).range = ⊤) :
     letI := transverseFiberProductChartedSpace hn hf hg hfg
     letI := transverseFiberProductChartedSpace hn hh hk hhk
-    (∀ p : {p : X × Y // f p.1 = g p.2} × Z, h p.1.1.2 = k p.2 →
-      (mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.1.2) p.1).range ⊔
-        (((tangentSpaceCast IC (k p.2) (h p.1.1.2)).toContinuousLinearMap).comp
+    (∀ p : {p : X × Y // f p.1 = g p.2} × Z, h p.1.val.2 = k p.2 →
+      (mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.val.2) p.1).range ⊔
+        (((tangentSpaceCast IC (k p.2) (h p.1.val.2)).toContinuousLinearMap).comp
           (mfderiv IZ IC k p.2)).range = ⊤) ↔
-    (∀ p : X × {p : Y × Z // h p.1 = k p.2}, f p.1 = g p.2.1.1 →
+    (∀ p : X × {p : Y × Z // h p.1 = k p.2}, f p.1 = g p.2.val.1 →
       (mfderiv IX IB f p.1).range ⊔
-        (((tangentSpaceCast IB (g p.2.1.1) (f p.1)).toContinuousLinearMap).comp
-          (mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.1.1) p.2)).range = ⊤) := by
+        (((tangentSpaceCast IB (g p.2.val.1) (f p.1)).toContinuousLinearMap).comp
+          (mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.val.1) p.2)).range = ⊤) := by
   let := transverseFiberProductChartedSpace hn hf hg hfg
   let := transverseFiberProductChartedSpace hn hh hk hhk
   have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
   -- At a matching triple `(x, y, z)`, both conditions are the two sides of the linear statement
   -- for `a = df`, `b = dg`, `c = dh` and `d = dk`.
   have key (x : X) (y : Y) (z : Z) (hxy : f x = g y) (hyz : h y = k z) :
-      (mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.1.2) ⟨(x, y), hxy⟩).range ⊔
+      (mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.val.2) ⟨(x, y), hxy⟩).range ⊔
           (((tangentSpaceCast IC (k z) (h y)).toContinuousLinearMap).comp
             (mfderiv IZ IC k z)).range = ⊤ ↔
         (mfderiv IX IB f x).range ⊔
           (((tangentSpaceCast IB (g y) (f x)).toContinuousLinearMap).comp
-            (mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.1.1)
+            (mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.val.1)
               ⟨(y, z), hyz⟩)).range = ⊤ := by
     -- The two outer maps factor through the projections of the inner fibre products.
-    have hXY : mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.1.2) ⟨(x, y), hxy⟩ =
+    have hXY : mfderiv KXY IC (fun q : {p : X × Y // f p.1 = g p.2} ↦ h q.val.2) ⟨(x, y), hxy⟩ =
         (mfderiv IY IC h y).comp
-          (mfderiv KXY IY (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.1.2) ⟨(x, y), hxy⟩) :=
+          (mfderiv KXY IY (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) ⟨(x, y), hxy⟩) :=
       mfderiv_comp _ (hh.mdifferentiable hn0 y)
         ((isSmoothEmbedding_coe_transverseFiberProduct hn hf hg hfg).contMDiff.mdifferentiable
           hn0 _).snd
-    have hYZ : mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.1.1) ⟨(y, z), hyz⟩ =
+    have hYZ : mfderiv KYZ IB (fun q : {p : Y × Z // h p.1 = k p.2} ↦ g q.val.1) ⟨(y, z), hyz⟩ =
         (mfderiv IY IB g y).comp
-          (mfderiv KYZ IY (fun q : {p : Y × Z // h p.1 = k p.2} ↦ q.1.1) ⟨(y, z), hyz⟩) :=
+          (mfderiv KYZ IY (fun q : {p : Y × Z // h p.1 = k p.2} ↦ q.val.1) ⟨(y, z), hyz⟩) :=
       mfderiv_comp _ (hg.mdifferentiable hn0 y)
         ((isSmoothEmbedding_coe_transverseFiberProduct hn hh hk hhk).contMDiff.mdifferentiable
           hn0 _).fst
     rw [hXY, ContinuousLinearMap.toLinearMap_comp _
-        (mfderiv KXY IY (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.1.2) ⟨(x, y), hxy⟩),
+        (mfderiv KXY IY (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) ⟨(x, y), hxy⟩),
       LinearMap.range_comp, range_mfderiv_snd_transverseFiberProduct hn hf hg hfg, hYZ,
       ← ContinuousLinearMap.comp_assoc, ContinuousLinearMap.toLinearMap_comp _
-        (mfderiv KYZ IY (fun q : {p : Y × Z // h p.1 = k p.2} ↦ q.1.1) ⟨(y, z), hyz⟩),
+        (mfderiv KYZ IY (fun q : {p : Y × Z // h p.1 = k p.2} ↦ q.val.1) ⟨(y, z), hyz⟩),
       LinearMap.range_comp, range_mfderiv_fst_transverseFiberProduct hn hh hk hhk]
     exact LinearMap.map_comap_range_sup_range_eq_top_iff (hfg (x, y) hxy) (hhk (y, z) hyz)
   constructor

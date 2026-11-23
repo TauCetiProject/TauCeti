@@ -109,7 +109,7 @@ private def preDist (p q : (g : G) × Icc (0 : Λ) (l g)) : Λ :=
   p.2 + q.2 - min (2 • (p.2 : Λ)) (min (2 • (q.2 : Λ)) (l p.1 + l q.1 - l (p.1⁻¹ * q.1)))
 
 private theorem preDist_self (p : (g : G) × Icc (0 : Λ) (l g)) : preDist l p p = 0 := by
-  have := p.2.2.2
+  have := p.2.property.2
   simp only [preDist, inv_mul_cancel, map_one_eq_zero, sub_zero, two_nsmul]
   grind
 
@@ -283,7 +283,7 @@ theorem chiswellMetric_mk_mk_of_coe_eq {g f : G} (a : Icc (0 : Λ) (l g)) (b : I
 @[simp]
 theorem chiswellMetric_root_mk (g : G) (a : Icc (0 : Λ) (l g)) :
     l.chiswellMetric (root l) (ChiswellTree.mk g a) = a := by
-  have := a.2.1
+  have := a.property.1
   simp only [root, chiswellMetric_mk_mk, map_one_eq_zero, inv_one, one_mul, two_nsmul]
   grind
 
@@ -292,7 +292,7 @@ theorem chiswellMetric_root_mk (g : G) (a : Icc (0 : Λ) (l g)) :
 theorem chiswellMetric_mk_mk_self (g : G) (a b : Icc (0 : Λ) (l g)) :
     l.chiswellMetric (ChiswellTree.mk g a) (ChiswellTree.mk g b) = |(a : Λ) - b| := by
   simp only [chiswellMetric_mk_mk, inv_mul_cancel, map_one_eq_zero, sub_zero, two_nsmul]
-  grind [a.2.2, b.2.2]
+  grind [a.property.2, b.property.2]
 
 /-! ### Isometric group action on `l.ChiswellTree` -/
 
@@ -319,13 +319,13 @@ private theorem sub_mem_Icc_of_two_nsmul_le {k g : G} {a : Icc (0 : Λ) (l g)}
     (h : 2 • (a : Λ) ≤ l k + l g - l (k * g)) :
     l k - (a : Λ) ∈ Icc 0 (l k) :=
   ⟨by have := map_le_map_add_map_mul l k g; rw [two_nsmul] at h; grind,
-    sub_le_self (l k) a.2.1⟩
+    sub_le_self (l k) a.property.1⟩
 
 private theorem add_sub_mem_Icc_of_lt {k g : G} {a : Icc (0 : Λ) (l g)}
     (h : l k + l g - l (k * g) < 2 • (a : Λ)) :
     (a : Λ) + l (k * g) - l g ∈ Icc 0 (l (k * g)) :=
   ⟨by have := map_le_map_add_map_mul l k g; rw [two_nsmul] at h; grind,
-    by have := a.2.2; grind⟩
+    by have := a.property.2; grind⟩
 
 /-- The pair `(h, l h)` representing `h • root l`. -/
 private def vertexPair (h : G) : (g : G) × Icc (0 : Λ) (l g) :=
@@ -341,7 +341,7 @@ private theorem preDist_vertexPair_left (h : G) (p : (g : G) × Icc (0 : Λ) (l 
 private theorem preDist_vertexPair_one (p : (g : G) × Icc (0 : Λ) (l g)) :
     preDist l (vertexPair l 1) p = p.2 := by
   rw [preDist_vertexPair_left]
-  simp [nsmul_nonneg p.2.2.1 2]
+  simp [nsmul_nonneg p.2.property.1 2]
 
 /-- Two pairs represent the same point of `l.ChiswellTree` if and only if they have the same
 distance to `vertexPair l h` for every `h : G`. -/
@@ -356,7 +356,7 @@ private theorem preDist_eq_zero_iff_forall_vertexPair {p q : (g : G) × Icc (0 :
     have hq := hall q.1
     have hqq : l q.1 + l q.1 - l (q.1⁻¹ * q.1) = 2 • l q.1 := by simp [two_nsmul]
     rw [preDist_vertexPair_left, preDist_vertexPair_left, hqq, hs,
-      min_eq_left (nsmul_le_nsmul_right q.2.2.2 2), doubleGromov_comm l q.1 p.1] at hq
+      min_eq_left (nsmul_le_nsmul_right q.2.property.2 2), doubleGromov_comm l q.1 p.1] at hq
     grind
 
 /-- Left multiplication by `k : G` on pairs `(g, a)`: along the triangle `1, k, k * g`, the first
@@ -543,8 +543,8 @@ private theorem exists_isSegment_mk (g : G) {s t : Icc (0 : Λ) (l g)} (hst : s 
   refine ⟨_, isSegment_iff_exists_Icc.2 ⟨s, t, chiswellRay l g, hst,
     by simp [chiswellRay], by simp [chiswellRay], ?_, rfl⟩⟩
   refine l.chiswellMetric.isometricOn_iff.2 fun r hr r' hr' =>
-    chiswellMetric_chiswellRay_self l g ⟨s.2.1.trans hr.1, hr.2.trans t.2.2⟩
-      ⟨s.2.1.trans hr'.1, hr'.2.trans t.2.2⟩
+    chiswellMetric_chiswellRay_self l g ⟨s.property.1.trans hr.1, hr.2.trans t.property.2⟩
+      ⟨s.property.1.trans hr'.1, hr'.2.trans t.property.2⟩
 
 private theorem exists_isSegment_mk_self (g : G) (s t : Icc (0 : Λ) (l g)) :
     ∃ σ, l.chiswellMetric.IsSegment σ (ChiswellTree.mk g s) (ChiswellTree.mk g t) := by
@@ -559,7 +559,8 @@ private theorem exists_isSegment_mk_of_lt {g f : G} {s : Icc (0 : Λ) (l g)}
     ∃ σ, l.chiswellMetric.IsSegment σ (ChiswellTree.mk g s) (ChiswellTree.mk f t) := by
   set D := l g + l f - l (g⁻¹ * f)
   have hD₀ : 0 ≤ D := doubleGromov_nonneg l g f
-  have hs₀ := s.2.1; have hs := s.2.2; have ht₀ := t.2.1; have ht := t.2.2
+  have hs₀ := s.property.1; have hs := s.property.2
+  have ht₀ := t.property.1; have ht := t.property.2
   have hdist : l.chiswellMetric (ChiswellTree.mk g s) (ChiswellTree.mk f t) = s + t - D := by
     rw [chiswellMetric_mk_mk, two_nsmul, two_nsmul]
     rw [two_nsmul] at hDs hDt
@@ -568,12 +569,12 @@ private theorem exists_isSegment_mk_of_lt {g f : G} {s : Icc (0 : Λ) (l g)}
     if D ≤ 2 • ((s : Λ) - r) then chiswellRay l g (s - r) else chiswellRay l f (r - s + D)
   refine ⟨_, l.chiswellMetric.isSegment_iff.2 ⟨φ, ?_, ?_, l.chiswellMetric.isometricOn_iff.2 ?_,
     rfl⟩⟩
-  · simp [φ, hDs.le, chiswellRay_of_mem l g s.2]
+  · simp [φ, hDs.le, chiswellRay_of_mem l g s.property]
   · rw [hdist]
     have hbranch : ¬(D ≤ 2 • ((s : Λ) - ((s : Λ) + t - D))) := by
       rw [two_nsmul] at hDt ⊢; grind
     have hend : (s : Λ) + t - D - s + D = t := by grind
-    simp [φ, hbranch, hend, chiswellRay_of_mem l f t.2]
+    simp [φ, hbranch, hend, chiswellRay_of_mem l f t.property]
   · rw [hdist]
     intro a ha b hb
     wlog hab : a ≤ b generalizing a b
@@ -606,7 +607,7 @@ theorem isGeodesic_chiswellMetric : l.chiswellMetric.IsGeodesic := by
   · have hsf : (s : Λ) ≤ l f := by
       have := hsD.trans (doubleGromov_le_two_nsmul_right l g f)
       rw [two_nsmul, two_nsmul] at this; grind
-    have heq : ChiswellTree.mk g s = ChiswellTree.mk f ⟨(s : Λ), s.2.1, hsf⟩ :=
+    have heq : ChiswellTree.mk g s = ChiswellTree.mk f ⟨(s : Λ), s.property.1, hsf⟩ :=
       ChiswellTree.mk_eq_mk_iff.2 ⟨rfl, l.coe_le_gromovProduct_iff.2 hsD⟩
     rw [heq]
     exact l.exists_isSegment_mk_self f _ t
@@ -614,7 +615,7 @@ theorem isGeodesic_chiswellMetric : l.chiswellMetric.IsGeodesic := by
   · have htg : (t : Λ) ≤ l g := by
       have := htD.trans (doubleGromov_le_two_nsmul_left l g f)
       rw [two_nsmul, two_nsmul] at this; grind
-    have heq : ChiswellTree.mk f t = ChiswellTree.mk g ⟨(t : Λ), t.2.1, htg⟩ :=
+    have heq : ChiswellTree.mk f t = ChiswellTree.mk g ⟨(t : Λ), t.property.1, htg⟩ :=
       ChiswellTree.mk_eq_mk_iff.2
         ⟨rfl, l.coe_le_gromovProduct_iff.2 (by rwa [doubleGromov_comm l f g])⟩
     rw [heq]
@@ -666,9 +667,9 @@ include hd hG hlen
 
 private theorem exists_mem_segment_dist_eq (p : (g : G) × Icc (0 : Λ) (l g)) :
     ∃ u ∈ hd.segment x₀ (p.1 • x₀), d x₀ u = p.2 := by
-  have hp : (p.2 : Λ) ≤ d x₀ (p.1 • x₀) := by simpa [← hlen] using p.2.2.2
+  have hp : (p.2 : Λ) ≤ d x₀ (p.1 • x₀) := by simpa [← hlen] using p.2.property.2
   exact (hd.isSegment_segment x₀ (p.1 • x₀)).exists_dist_eq
-    (hd.left_mem_segment x₀ _) (hd.right_mem_segment x₀ _) p.2.2.1 hp
+    (hd.left_mem_segment x₀ _) (hd.right_mem_segment x₀ _) p.2.property.1 hp
 
 private noncomputable def embedPair (p : (g : G) × Icc (0 : Λ) (l g)) : X :=
   (exists_mem_segment_dist_eq hd hG x₀ hlen p).choose
@@ -768,7 +769,7 @@ theorem chiswellEmbed_unique {f : l.ChiswellTree → X}
     rw [← hf_root, hf_dist, chiswellMetric_root_mk]
   have hfg : d (f (ChiswellTree.mk g a)) (g • x₀) = l g - a := by
     rw [← hf_root, ← hf_smul, hf_dist, ChiswellTree.smul_root, chiswellMetric_mk_mk_self,
-      abs_sub_comm, abs_of_nonneg (sub_nonneg.2 a.2.2)]
+      abs_sub_comm, abs_of_nonneg (sub_nonneg.2 a.property.2)]
   have hmem : f (ChiswellTree.mk g a) ∈ hd.segment x₀ (g • x₀) := by
     rw [hd.mem_segment_iff, hfx₀, hfg]
     have hg : d x₀ (g • x₀) = l g := by simp [← hlen]

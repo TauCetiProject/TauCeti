@@ -356,7 +356,7 @@ noncomputable def fullyBlockedStabilizeXCycles :
   let f := G.fullyBlockedStabilizeXMap s
   have hz (z : (G').fullyBlockedCycles) : (DI).prodMap DI (f z) = 0 := by
     have hDz : D z = 0 := by
-      exact LinearMap.mem_ker.mp ((G').fullyBlockedCycles_eq_ker ▸ z.2)
+      exact LinearMap.mem_ker.mp ((G').fullyBlockedCycles_eq_ker ▸ z.property)
     have hh := LinearMap.congr_fun (G.fullyBlockedStabilizeXMap_comp_differential s) z
     simpa only [LinearMap.comp_apply, hDz, map_zero] using hh.symm
   refine (G.fullyBlockedCycles.prodEquiv G.fullyBlockedCycles).toLinearMap.comp

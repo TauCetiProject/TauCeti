@@ -631,7 +631,7 @@ private theorem exists_coe_eq_ofMul_units_map {U : Subgroup (AbsoluteGaloisGroup
     exact congrArg (fun z : UnitsCoeff (v.adicCompletion K) ↦
       ((Additive.toMul z : (SeparableClosure (v.adicCompletion K))ˣ) :
         SeparableClosure (v.adicCompletion K)))
-      ((FixedPoints.mem_addSubgroup _ _ _).1 c.2 ⟨g', hle hg'⟩)
+      ((FixedPoints.mem_addSubgroup _ _ _).1 c.property ⟨g', hle hg'⟩)
   have hb₀0 : b₀ ≠ 0 := by
     rintro rfl
     exact (Additive.toMul (c : UnitsCoeff (v.adicCompletion K))).ne_zero (by rw [← hb₀, map_zero])
@@ -688,7 +688,7 @@ private theorem subgroupInvMap_explicitMap2_characterCarryCocycle_congr
       (explicitMap2 U (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
         ((absoluteGaloisGroupMap τ₁).subgroupComap U) (ideleCoeffComponent τ₁)
         continuous_of_discreteTopology (fun y m ↦
-          ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.1 m)
+          ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.val m)
         (characterCarryCocycle χ hχ a : H2 U (IdeleCoeff K))) =
     subgroupInvMap (v.adicCompletion K)
       (U.comap (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup (v.adicCompletion K) →*
@@ -696,7 +696,7 @@ private theorem subgroupInvMap_explicitMap2_characterCarryCocycle_congr
       (explicitMap2 U (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
         ((absoluteGaloisGroupMap τ).subgroupComap U) (ideleCoeffComponent τ)
         continuous_of_discreteTopology (fun y m ↦
-          ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.1 m)
+          ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.val m)
         (characterCarryCocycle χ hχ a : H2 U (IdeleCoeff K))) := by
   subst h
   rfl
@@ -721,7 +721,7 @@ private theorem invMap_ideleBrLocalization_explicitCor2_characterCarryCocycle
         (explicitMap2 U (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
           ((absoluteGaloisGroupMap τ).subgroupComap U) (ideleCoeffComponent τ)
           continuous_of_discreteTopology (fun y m ↦
-            ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.1 m)
+            ContinuousMonoidHom.subgroupComap_smul _ U y m ▸ ideleCoeffComponent_smul _ y.val m)
           (characterCarryCocycle χ hχ a : H2 U (IdeleCoeff K))) := by
   classical
   -- Representatives of the double cosets, with `1` for the double coset of `1`.
@@ -785,7 +785,7 @@ private theorem ideleSumLocalInv_eq_subgroupInvMap_of_explicitInfl2_eq
         (explicitMap2 L.ground.toSubgroup (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
           ((absoluteGaloisGroupMap τ).subgroupComap L.ground.toSubgroup) (ideleCoeffComponent τ)
           continuous_of_discreteTopology (fun y m ↦
-            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.1 m)
+            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.val m)
           (characterCarryCocycle χ hχ a : H2 L.ground.toSubgroup (IdeleCoeff K))) := by
   have hfin' (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ≠ v) : ideleLocalInvAt K L v' y = 0 := by
     rw [ideleLocalInvAt_apply, ideleLayerCorInfl_apply, hy,
@@ -837,7 +837,7 @@ private theorem ideleSumLocalInv_eq_subgroupInvMap_of_ofAdicCompletion
         (explicitMap2 L.ground.toSubgroup (IdeleCoeff K) _ (UnitsCoeff (v.adicCompletion K))
           ((absoluteGaloisGroupMap τ).subgroupComap L.ground.toSubgroup) (ideleCoeffComponent τ)
           continuous_of_discreteTopology (fun y m ↦
-            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.1 m)
+            ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.val m)
           (characterCarryCocycle χ hχ a : H2 L.ground.toSubgroup (IdeleCoeff K))) := by
   refine ideleSumLocalInv_eq_subgroupInvMap_of_explicitInfl2_eq L χ hχ a τ
     (fun v' hv' τ₁ ↦ ?_) (fun u τ₁ ↦ ?_) (fun s hs ↦ ?_) y hy
@@ -900,7 +900,7 @@ private theorem exists_ideleSumLocalInv_eq_subgroupInvMap
         ideleCoeffOfIntermediateField K F (.ofMul (IdeleGroup.ofAdicCompletion (𝓞 F) F w b)) :=
     smul_ideleCoeffOfIntermediateField_of_mem_fixingSubgroup (by rw [← hF]; exact hu) _
   let a : H0 L.ground.toSubgroup (IdeleCoeff K) :=
-    ⟨_, (FixedPoints.mem_addSubgroup _ _ _).2 fun u ↦ ha₀ u u.2⟩
+    ⟨_, (FixedPoints.mem_addSubgroup _ _ _).2 fun u ↦ ha₀ u u.property⟩
   -- The class `a ∪ δχ'` of the layer, inflated to `U`, is the carry class of `χ` and `a`.
   have hy := L.explicitInfl2_artinCharacterCup (ideleCoeffEquivIdeleFormation K)
     (ideleCoeffEquivIdeleFormation_smul K) ⟨ideleCoeffEquivIdeleFormation K a,
@@ -912,7 +912,8 @@ private theorem exists_ideleSumLocalInv_eq_subgroupInvMap
         L.ground.toSubgroup.comap (absoluteGaloisGroupMap τ :
           AbsoluteGaloisGroup (v.adicCompletion K) →* AbsoluteGaloisGroup K) →*
             L.ground.toSubgroup) (ideleCoeffComponent τ)
-      (fun y m ↦ ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.1 m)
+      (fun y m ↦ ContinuousMonoidHom.subgroupComap_smul _ _ y m ▸ ideleCoeffComponent_smul _ y.val
+          m)
       a = c := by
     refine Subtype.ext ?_
     rw [coe_explicitMap0, hcb]

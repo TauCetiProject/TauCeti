@@ -322,8 +322,8 @@ section Jet
 def jet (f : NormedContDiffMapSupportedIn E F ℓ K) :
     (j : Fin (ℓ + 1)) → C(K, E [×j]→L[ℝ] F) := fun j ↦
   ⟨fun x ↦ iteratedFDeriv ℝ j f x,
-    ((f.contDiff.continuous_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_iff.1 j.2)).comp
-      continuous_subtype_val)⟩
+    ((f.contDiff.continuous_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_iff.1 j.isLt)).comp
+      continuous_subtypeVal)⟩
 
 @[simp]
 theorem jet_apply (f : NormedContDiffMapSupportedIn E F ℓ K) (j : Fin (ℓ + 1)) (x : K) :
@@ -335,7 +335,7 @@ theorem jet_apply (f : NormedContDiffMapSupportedIn E F ℓ K) (j : Fin (ℓ + 1
 theorem jet_add (f g : NormedContDiffMapSupportedIn E F ℓ K) : jet (f + g) = jet f + jet g := by
   funext j
   ext x : 1
-  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.2
+  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.isLt
   simp only [jet_apply, Pi.add_apply, ContinuousMap.add_apply]
   exact iteratedFDeriv_add_apply (f.contDiff.contDiffAt.of_le hj)
     (g.contDiff.contDiffAt.of_le hj)
@@ -353,7 +353,7 @@ theorem jet_smul (c : 𝕜) (f : NormedContDiffMapSupportedIn E F ℓ K) :
     jet (c • f) = c • jet f := by
   funext j
   ext x : 1
-  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.2
+  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.isLt
   simp only [jet_apply, coe_smul, Pi.smul_apply, ContinuousMap.smul_apply]
   exact iteratedFDeriv_const_smul_apply (f.contDiff.contDiffAt.of_le hj)
 
@@ -371,7 +371,7 @@ theorem jet_sub (f g : NormedContDiffMapSupportedIn E F ℓ K) : jet (f - g) = j
 theorem norm_jet (f : NormedContDiffMapSupportedIn E F ℓ K) : ‖jet f‖ = ‖f‖ := by
   refine le_antisymm ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun j ↦ ?_) ?_
   · exact (ContinuousMap.norm_le _ (norm_nonneg _)).2 fun x ↦
-      norm_iteratedFDeriv_le_norm f (Nat.lt_succ_iff.1 j.2) x
+      norm_iteratedFDeriv_le_norm f (Nat.lt_succ_iff.1 j.isLt) x
   · refine (norm_le_iff f (norm_nonneg _)).2 fun j hj x hx ↦ ?_
     calc ‖iteratedFDeriv ℝ j f x‖ = ‖jet f ⟨j, Nat.lt_succ_of_le hj⟩ ⟨x, hx⟩‖ := by
           rw [jet_apply]

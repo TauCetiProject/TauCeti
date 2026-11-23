@@ -183,9 +183,9 @@ theorem sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_adjoin_nth_roots
     (y : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K) Eˣ) 2) :
     sumLocalInv K (brLocalization K (relBrInfl K E E.val y)) = 0 := by
   classical
-  let (q : ↥m.primeFactors) : Fact q.1.Prime := ⟨Nat.prime_of_mem_primeFactors q.2⟩
+  let (q : ↥m.primeFactors) : Fact q.val.Prime := ⟨Nat.prime_of_mem_primeFactors q.property⟩
   exact sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_iSup_adjoin
-    (fun q : ↥m.primeFactors ↦ q.1) E
+    (fun q : ↥m.primeFactors ↦ q.val) E
     (hE.trans (adjoin_nth_roots_le_iSup_adjoin_prime_pow hm)) y
 
 end TauCeti.ClassFieldTheory

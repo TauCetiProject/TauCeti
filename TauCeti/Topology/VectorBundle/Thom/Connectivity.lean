@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.Twisted.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
@@ -41,6 +42,16 @@ open set of the base. The twisted vanishing is the range below the rank of the T
 with local coefficients `Hₘ₊ᵣ(E, E₀; π^*L) ≅ Hₘ(B; o(E) ⊗ L)`, where `o(E)` is the orientation
 system of the bundle, since the right side vanishes in negative degrees.
 
+Dually, for a local system `L` with projective fibres, such as the integral orientation system
+pulled back to the total space, the relative cohomology `Hᵐ(E, E₀; L, M)` vanishes for `m < r`
+(`TauCeti.isZero_twistedCohomology_thomPair`), and in the rank degree the Kronecker map identifies
+it with the morphisms out of homology, `Hʳ(E, E₀; L, M) ≃ Hom(Hᵣ(E, E₀; L), M)`
+(`TauCeti.thomPairTwistedCohomologyFinrankEquiv`), by the universal coefficient theorem with local
+coefficients (`TopPair.twistedKronecker_bijective_of_projective_homology_lt`). So a class of
+`Hʳ(E, E₀; L, M)` is determined by, and can be prescribed through, its evaluations on
+`Hᵣ(E, E₀; L)`. With `L` the orientation system this is the degree in which a Thom class of a bundle
+that need not be orientable lives, with coefficients twisted by its orientation.
+
 The chart, the Serre fibration property and the connectivity of `E₀ → B` follow the sphere bundle
 chart `Bundle.Trivialization.sphereBundle` and `TauCeti.isNConnected_sphereBundleProj` in
 `TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial`, without the normalization to unit
@@ -48,7 +59,6 @@ vectors, so they hold over any nontrivially normed field.
 
 ## Main declarations
 
-* `TauCeti.zeroSectionComplProj`: the projection `E₀ → B`.
 * `Bundle.Trivialization.zeroSectionCompl`: the chart of `E₀ → B` induced by a linear chart of `E`.
 * `TauCeti.TopCat.mem_serreFibrations_zeroSectionComplProj`: `E₀ → B` is a Serre fibration.
 * `TauCeti.isNConnected_zeroSectionComplProj`, `TauCeti.isNConnected_subtypeVal_zeroSectionCompl`:
@@ -56,6 +66,10 @@ vectors, so they hold over any nontrivially normed field.
   `n`-connected.
 * `TauCeti.isZero_twistedHomology_thomPair`: `Hₘ(E, E₀; L) = 0` for `m` below the rank and every
   local coefficient system `L`.
+* `TauCeti.isZero_twistedCohomology_thomPair`: `Hᵐ(E, E₀; L, M) = 0` for `m` below the rank and
+  every local coefficient system `L` with projective fibres.
+* `TauCeti.twistedKronecker_bijective_thomPair`, `TauCeti.thomPairTwistedCohomologyFinrankEquiv`:
+  in the rank degree, the Kronecker map `Hʳ(E, E₀; L, M) ⟶ Hom(Hᵣ(E, E₀; L), M)` is bijective.
 
 ## References
 
@@ -75,27 +89,6 @@ open Bundle CategoryTheory Limits Module Set Topology
 
 universe u w
 
-namespace TauCeti
-
-section Proj
-
-variable {B : Type w} [TopologicalSpace B] (F : Type*) [TopologicalSpace F]
-  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-
-/-- The projection `E₀ → B` of the nonzero vectors of a bundle to the base. -/
-def zeroSectionComplProj : C(zeroSectionCompl F E, B) :=
-  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
-
-@[simp]
-theorem zeroSectionComplProj_apply (v : zeroSectionCompl F E) :
-    zeroSectionComplProj F E v = (v : TotalSpace F E).proj :=
-  (rfl)
-
-end Proj
-
-end TauCeti
-
 namespace Bundle.Trivialization
 
 open TauCeti
@@ -110,7 +103,7 @@ include 𝕜 in
 private theorem nonempty_compl_zero (v : TauCeti.zeroSectionCompl F E) : Nonempty ({0}ᶜ : Set F) :=
   ⟨⟨(trivializationAt F E (v : TotalSpace F E).proj v).2,
     ((trivializationAt F E _).snd_apply_ne_zero_iff 𝕜
-      (FiberBundle.mem_baseSet_trivializationAt' _)).2 (mem_zeroSectionCompl.1 v.2)⟩⟩
+      (FiberBundle.mem_baseSet_trivializationAt' _)).2 (mem_zeroSectionCompl.1 v.property)⟩⟩
 
 include 𝕜 in
 /-- A nonzero vector of the model fibre gives a nonzero vector of the bundle over every point. -/
@@ -118,14 +111,14 @@ private theorem nonempty_zeroSectionCompl (b : B) (w : ({0}ᶜ : Set F)) :
     Nonempty (TauCeti.zeroSectionCompl F E) :=
   ⟨⟨⟨b, (trivializationAt F E b).symm b w⟩, mem_zeroSectionCompl.2
     (((trivializationAt F E b).symm_apply_ne_zero_iff 𝕜
-      (FiberBundle.mem_baseSet_trivializationAt' b)).2 w.2)⟩⟩
+      (FiberBundle.mem_baseSet_trivializationAt' b)).2 w.property)⟩⟩
 
 open scoped Classical in
 /-- The fibre coordinate of the chart of the nonzero vectors: `e` over its base set, and an
 arbitrary nonzero vector elsewhere. -/
 private def zeroSectionComplCoord (v : TauCeti.zeroSectionCompl F E) : ({0}ᶜ : Set F) :=
   if hv : (v : TotalSpace F E).proj ∈ e.baseSet then
-    ⟨(e v).2, (e.snd_apply_ne_zero_iff 𝕜 hv).2 (mem_zeroSectionCompl.1 v.2)⟩
+    ⟨(e v).2, (e.snd_apply_ne_zero_iff 𝕜 hv).2 (mem_zeroSectionCompl.1 v.property)⟩
   else Classical.choice (nonempty_compl_zero 𝕜 v)
 
 private theorem coe_zeroSectionComplCoord {v : TauCeti.zeroSectionCompl F E}
@@ -138,7 +131,7 @@ open scoped Classical in
 arbitrary nonzero vector elsewhere. -/
 private def zeroSectionComplInv (p : B × ({0}ᶜ : Set F)) : TauCeti.zeroSectionCompl F E :=
   if hp : p.1 ∈ e.baseSet then
-    ⟨⟨p.1, e.symm p.1 p.2⟩, mem_zeroSectionCompl.2 ((e.symm_apply_ne_zero_iff 𝕜 hp).2 p.2.2)⟩
+    ⟨⟨p.1, e.symm p.1 p.2⟩, mem_zeroSectionCompl.2 ((e.symm_apply_ne_zero_iff 𝕜 hp).2 p.2.property)⟩
   else Classical.choice (nonempty_zeroSectionCompl 𝕜 p.1 p.2)
 
 private theorem coe_zeroSectionComplInv {p : B × ({0}ᶜ : Set F)} (hp : p.1 ∈ e.baseSet) :
@@ -177,13 +170,13 @@ def zeroSectionCompl :
     rw [(IsInducing.id.prodMap IsInducing.subtypeVal).continuousOn_iff]
     have he : ContinuousOn (fun v : TauCeti.zeroSectionCompl F E ↦ e v)
         (zeroSectionComplProj F E ⁻¹' e.baseSet) :=
-      e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦ e.mem_source.2 hv
+      e.continuousOn.comp continuous_subtypeVal.continuousOn fun v hv ↦ e.mem_source.2 hv
     refine (he.fst.prodMk he.snd).congr fun v hv ↦ ?_
     exact Prod.ext (e.coe_fst (e.mem_source.2 hv)).symm (e.coe_zeroSectionComplCoord 𝕜 hv)
   continuousOn_invFun := by
     -- Read the value in the total space of `E`, where the map is the inverse of `e`.
     rw [IsInducing.subtypeVal.continuousOn_iff]
-    refine (e.continuousOn_symm.comp (continuous_id.prodMap continuous_subtype_val).continuousOn
+    refine (e.continuousOn_symm.comp (continuous_id.prodMap continuous_subtypeVal).continuousOn
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ⟨hp.1, mem_univ _⟩).congr
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ?_
     exact e.coe_zeroSectionComplInv 𝕜 hp.1
@@ -294,5 +287,52 @@ theorem isZero_twistedHomology_thomPair {R : Type u} [Ring R]
   obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero (n := finrank ℝ F) (by lia)
   exact TopPair.isZero_twistedHomology_of_isNConnected
     (isNConnected_subtypeVal_zeroSectionCompl E hn) L (by lia)
+
+
+section Cohomology
+
+variable {R : Type u} [Ring R] (L : LocalCoefficientSystem.{u, w, w} R (thomPair F E).fst)
+  [∀ x, Projective (L.obj x)] (k : Type*) [Ring k] [Linear k (ModuleCat.{w} R)]
+  (M : ModuleCat.{w} R)
+
+variable (F E) in
+/-- **The Thom pair has no cohomology with local coefficients below the rank.** For a real vector
+bundle `E → B` over an arbitrary base and every local coefficient system `L` with projective fibres
+on its total space, the relative cohomology `Hᵐ(E, E₀; L, M)` of the Thom pair vanishes for every
+`m` smaller than the rank `dim F` and every module of values `M`. -/
+theorem isZero_twistedCohomology_thomPair {m : ℕ} (hm : m < finrank ℝ F) :
+    IsZero ((thomPair F E).twistedCohomology L k M m) :=
+  TopPair.isZero_twistedCohomology_of_isZero_twistedHomology (thomPair F E) L M m
+    fun _ hj ↦ isZero_twistedHomology_thomPair F E L (hj.trans_lt hm)
+
+variable (F E) in
+/-- **The Kronecker map of the Thom pair is bijective in the rank degree.** For a real vector bundle
+`E → B` of rank `r` over an arbitrary base and every local coefficient system `L` with projective
+fibres on its total space, evaluation on homology `Hʳ(E, E₀; L, M) ⟶ Hom(Hᵣ(E, E₀; L), M)` is
+bijective, for every module of values `M`: the relative homology vanishes below the rank. -/
+theorem twistedKronecker_bijective_thomPair :
+    Function.Bijective ((thomPair F E).twistedKronecker L k (M := M) (finrank ℝ F)) :=
+  TopPair.twistedKronecker_bijective_of_projective_homology_lt (thomPair F E) L k M _
+    fun _ hj ↦ (isZero_twistedHomology_thomPair F E L hj).projective
+
+variable (F E) in
+/-- **The cohomology of the Thom pair in the rank degree with local coefficients** is the dual of
+its homology: for a local coefficient system `L` with projective fibres on the total space of a
+real vector bundle of rank `r`, the Kronecker map is a `k`-linear equivalence
+`Hʳ(E, E₀; L, M) ≃ₗ[k] (Hᵣ(E, E₀; L) ⟶ M)`. -/
+def thomPairTwistedCohomologyFinrankEquiv :
+    (thomPair F E).twistedCohomology L k M (finrank ℝ F) ≃ₗ[k]
+      ((thomPair F E).twistedHomology L (finrank ℝ F) ⟶ M) :=
+  LinearEquiv.ofBijective _ (twistedKronecker_bijective_thomPair F E L k M)
+
+/-- The equivalence `TauCeti.thomPairTwistedCohomologyFinrankEquiv` is the Kronecker map. -/
+@[simp]
+lemma thomPairTwistedCohomologyFinrankEquiv_apply
+    (α : (thomPair F E).twistedCohomology L k M (finrank ℝ F)) :
+    thomPairTwistedCohomologyFinrankEquiv F E L k M α =
+      (thomPair F E).twistedKronecker L k (finrank ℝ F) α :=
+  (rfl)
+
+end Cohomology
 
 end TauCeti

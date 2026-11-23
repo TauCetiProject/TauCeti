@@ -72,8 +72,8 @@ theorem finite_setOf_nonempty_inter_openCell_of_isCompact {K : Set X} (hK : IsCo
     {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}.Finite := by
   let A := {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}
   -- Pick a point `x a` of `K` in each open cell `a` that `K` meets.
-  choose x hxK hxO using fun a : A ↦ a.2
-  have hx {a : A} {m : ℕ} {j : cell C m} (h : x a ∈ openCell m j) : a.1 = ⟨m, j⟩ :=
+  choose x hxK hxO using fun a : A ↦ a.property
+  have hx {a : A} {m : ℕ} {j : cell C m} (h : x a ∈ openCell m j) : a.val = ⟨m, j⟩ :=
     eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨x a, hxO a, h⟩)
   have hxinj : Function.Injective x := fun a b hab ↦ Subtype.ext (hx (hab ▸ hxO b))
   have hSC : range x ⊆ C := range_subset_iff.2 fun a ↦ openCell_subset_complex _ _ (hxO a)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.Oscillation
+import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.PDE.Ellipticity.Extension
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -308,7 +309,7 @@ private theorem energyFormH1_posPart_restrictL_extendByZeroL_sub_nonpos
     filter_upwards [hmval, hεv] with x h1 h2 using h1 ▸ le_min (le_max_right _ _) h2
   have hmD : m ∈ w1p0Submodule mu D 2 :=
     W1p.mem_w1p0Submodule_of_nonneg_of_le (u := ε • (v : W1p mu D 2)) (by norm_num)
-      ((w1p0Submodule mu D 2).toSubmodule.smul_mem ε v.2) hm0
+      ((w1p0Submodule mu D 2).toSubmodule.smul_mem ε v.property) hm0
       (by
         filter_upwards [hmval, W1p.value_smul_ae ε (v : W1p mu D 2)] with x h1 h2
         rw [h1, h2, Pi.smul_apply, smul_eq_mul]
@@ -695,8 +696,7 @@ theorem exists_ae_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ba
   have hA : 0 ≤ A := by positivity
   have hτj : τ ^ j ≤ 4 ^ α * (ρ / R) ^ α :=
     hτα ▸ inv_rpow_pow_le_rpow_mul_div_rpow hα.le hρ hR hj2
-  have hMA : M + c * A ≤ max 1 c * (M + A) := by
-    nlinarith [le_max_left 1 c, le_max_right 1 c]
+  have hMA : M + c * A ≤ max 1 c * (M + A) := add_mul_le_max_one_mul_add hM hA
   calc _ = τ ^ j * (M + c * A) := by simp only [A]; ring
     _ ≤ (4 ^ α * (ρ / R) ^ α) * (max 1 c * (M + A)) :=
         mul_le_mul hτj hMA (by positivity) (by positivity)

@@ -30,7 +30,7 @@ that they agree where `s = 1/2`. -/
 noncomputable def glueHalves {Z X : Type*} [TopologicalSpace Z] [TopologicalSpace X] (s : C(Z, I))
     (a a' : C(Z, X)) (h : ∀ z, (s z : ℝ) = 2⁻¹ → a z = a' z) : C(Z, X) :=
   ⟨fun z ↦ if (s z : ℝ) ≤ 2⁻¹ then a z else a' z,
-    Continuous.if_le a.continuous a'.continuous (continuous_subtype_val.comp s.continuous)
+    Continuous.if_le a.continuous a'.continuous (continuous_subtypeVal.comp s.continuous)
       continuous_const h⟩
 
 variable {Z X : Type*} [TopologicalSpace Z] [TopologicalSpace X] (s : C(Z, I))

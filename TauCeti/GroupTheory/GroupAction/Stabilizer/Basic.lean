@@ -130,14 +130,14 @@ variable {G X : Type*} [Group G] [MulAction G X]
 
 /-- Inclusion of groups restricts to an inclusion of their stabilizers at the same point. -/
 def stabilizerInclusion : MulAction.stabilizer Δ x →* MulAction.stabilizer Γ x where
-  toFun g := ⟨⟨g.1.1, h g.1.2⟩, g.2⟩
+  toFun g := ⟨⟨g.val.val, h g.val.property⟩, g.property⟩
   map_one' := rfl
   map_mul' _ _ := rfl
 
 /-- The inclusion of point stabilizers is injective. -/
 theorem stabilizerInclusion_injective : Function.Injective (stabilizerInclusion h x) := by
   intro a b hab
-  exact Subtype.ext (Subtype.ext (congrArg (fun g : MulAction.stabilizer Γ x => g.1.1) hab))
+  exact Subtype.ext (Subtype.ext (congrArg (fun g : MulAction.stabilizer Γ x => g.val.val) hab))
 
 /-- The stabilizer order for a subgroup divides that for a larger group. -/
 theorem card_stabilizer_dvd_card_stabilizer (h : Δ ≤ Γ) (x : X) :
@@ -152,13 +152,13 @@ theorem finite_stabilizer_of_le {G X : Type*} [Group G] [MulAction G X]
     {Δ Γ : Subgroup G} (h : Δ ≤ Γ) (x : X)
     [Finite (stabilizer Γ x)] : Finite (stabilizer Δ x) := by
   let f : stabilizer Δ x → stabilizer Γ x := fun g =>
-    ⟨⟨g.1.1, h g.1.2⟩, by
-      simpa only [mem_stabilizer_iff, Subgroup.smul_def] using g.2⟩
+    ⟨⟨g.val.val, h g.val.property⟩, by
+      simpa only [mem_stabilizer_iff, Subgroup.smul_def] using g.property⟩
   exact Finite.of_injective f (by
     intro a b hab
     apply Subtype.ext
     apply Subtype.ext
-    exact congrArg (fun y : stabilizer Γ x => (y.1 : Γ).1) hab)
+    exact congrArg (fun y : stabilizer Γ x => (y.val : Γ).val) hab)
 
 end Subgroup
 
@@ -174,7 +174,7 @@ def stabilizerMap (f : G →* H) (a : α)
     MulAction.stabilizer G a →* MulAction.stabilizer H a :=
   (f.comp (MulAction.stabilizer G a).subtype).codRestrict _ fun g ↦ by
     simpa only [MonoidHom.comp_apply, Subgroup.subtype_apply,
-      MulAction.mem_stabilizer_iff, hcompat] using g.2
+      MulAction.mem_stabilizer_iff, hcompat] using g.property
 
 /-- The restricted homomorphism has the same underlying value as the original map. -/
 @[simp]
@@ -498,17 +498,17 @@ theorem card_stabilizer_coset_eq_card_stabilizer_inv_smul (H : Subgroup G) (p : 
   refine Nat.card_congr ⟨fun x => ⟨⟨g⁻¹ * (x : G) * g, ?_⟩, ?_⟩,
     fun h => ⟨⟨g * (h : G) * g⁻¹, ?_⟩, ?_⟩, fun x => ?_, fun h => ?_⟩
   · -- the stabiliser of a coset is the conjugate subgroup, by `stabilizer_quotientGroup_mk`
-    have hx := x.2
+    have hx := x.property
     rw [mem_stabilizer_iff, Subgroup.smul_def, ← mem_stabilizer_iff,
       stabilizer_quotientGroup_mk, mem_conj_smul] at hx
     exact hx
   · -- `g⁻¹ * x * g` sends `g⁻¹ • p` to `g⁻¹ • (x • p)`, and `x` fixes `p`
-    have hp := (x : ↥(stabilizer G p)).2
+    have hp := (x : ↥(stabilizer G p)).property
     rw [mem_stabilizer_iff] at hp
     rw [mem_stabilizer_iff, Subgroup.smul_def, mul_smul, mul_smul, smul_inv_smul, hp]
   · -- `hh` is stated for the `↥H`-action; `Subgroup.smul_def` puts it in the `G`-action the
     -- conjugated element acts by
-    have hh := h.2
+    have hh := h.property
     rw [mem_stabilizer_iff, Subgroup.smul_def] at hh
     rw [mem_stabilizer_iff, mul_smul, mul_smul, hh, smul_inv_smul]
   · -- same route back: membership in the conjugate subgroup is `h ∈ H` after cancellation
@@ -592,7 +592,7 @@ theorem normal_comap_stabilizer_iff_isCancelSMul (ρ : G →* Perm α)
     have hK : ∀ (g : G) (j : α), ρ g j = j ↔ g ∈ K := by
       intro g j
       obtain ⟨h, hh⟩ := hρ.exists_smul_eq i j
-      obtain ⟨k, hk⟩ : (h : Perm α) ∈ ρ.range := h.2
+      obtain ⟨k, hk⟩ : (h : Perm α) ∈ ρ.range := h.property
       have hki : ρ k i = j := hk ▸ hh
       have hconj : k⁻¹ * g * k ∈ K ↔ ρ g j = j := by
         rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff]
@@ -606,7 +606,7 @@ theorem normal_comap_stabilizer_iff_isCancelSMul (ρ : G →* Perm α)
         fun hg => by simpa using hN.conj_mem _ hg k⁻¹⟩
     refine isCancelSMul_iff_stabilizer_eq_bot.mpr fun j => ?_
     refine (Subgroup.eq_bot_iff_forall _).mpr fun h hh => ?_
-    obtain ⟨g, hg⟩ : (h : Perm α) ∈ ρ.range := h.2
+    obtain ⟨g, hg⟩ : (h : Perm α) ∈ ρ.range := h.property
     have hgj : ρ g j = j := hg ▸ hh
     refine Subtype.ext <| hg ▸ Equiv.ext fun k => ?_
     exact (hK g k).mpr ((hK g j).mp hgj)

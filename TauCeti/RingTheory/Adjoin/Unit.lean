@@ -41,6 +41,6 @@ theorem inv_mem_adjoin (u : Aˣ) (hu : IsIntegral K (u : A)) :
     (comap_nonZeroDivisors_le_of_injective (f := B.val) Subtype.val_injective
       u.isUnit.mem_nonZeroDivisors)).exists_right_inv
   rw [u.inv_eq_of_mul_eq_one_right (congrArg Subtype.val hy)]
-  exact y.2
+  exact y.property
 
 end Units

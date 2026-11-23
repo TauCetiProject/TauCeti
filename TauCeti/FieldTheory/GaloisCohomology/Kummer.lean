@@ -451,7 +451,7 @@ def kummerCoeffPow {m : ℕ} (h : m ∣ n) :
     KummerCoeff K n →+[AbsoluteGaloisGroup K] KummerCoeff K m where
   toFun x := Additive.ofMul ⟨(x.toMul : (SeparableClosure K)ˣ) ^ (n / m), by
     rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h]
-    exact (mem_rootsOfUnity _ _).1 x.toMul.2⟩
+    exact (mem_rootsOfUnity _ _).1 x.toMul.property⟩
   map_zero' := Additive.toMul.injective (Subtype.ext (by simp))
   map_add' x y := Additive.toMul.injective (Subtype.ext (by simp [mul_pow]))
   map_smul' g x := Additive.toMul.injective (Subtype.ext (by simp [smul_pow']))
@@ -533,7 +533,7 @@ theorem toAdd_kummerMapCanonical (hn : IsUnit (n : K)) (a : Kˣ) :
 
 /-- An equivariant equivalence from the Kummer coefficients to a discrete additive module
 transports continuity of the Galois action to that module. -/
-theorem kummerIsoTransportContinuousSMul
+theorem continuousSMul_of_kummerCoeff_equiv
     (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ]
     [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
     (e : KummerCoeff K n ≃+ μ)
@@ -553,9 +553,9 @@ def kummerIsoTransport (hn : IsUnit (n : K))
     (e : KummerCoeff K n ≃+ μ)
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
     by
-      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
       exact powerClassQuotient Kˣ n ≃* Multiplicative (H1 (AbsoluteGaloisGroup K) μ) := by
-  letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+  letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
   exact (kummerIso K n hn).trans <| AddEquiv.toMultiplicative <|
     explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
       continuous_of_discreteTopology continuous_of_discreteTopology hequiv
@@ -570,13 +570,13 @@ theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x)
     (x : powerClassQuotient Kˣ n) :
     by
-      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
       exact kummerIsoTransport K n hn μ e hequiv x =
         Multiplicative.ofAdd
           (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
             continuous_of_discreteTopology continuous_of_discreteTopology hequiv
             (Multiplicative.toAdd (kummerIso K n hn x))) := by
-  let _ := kummerIsoTransportContinuousSMul K n μ e hequiv
+  let _ := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
   rw [kummerIsoTransport, MulEquiv.trans_apply, AddEquiv.toMultiplicative_apply_apply]
 
 /-! ### Restriction along a field extension -/

@@ -167,7 +167,7 @@ theorem mapDomainRingHom_moduleFinite_of_exists_finset_mul {M N : Type*} [CommMo
   obtain ⟨F, hF_mul⟩ := hF
   let := (mapDomainRingHom R p).toAlgebra
   apply Module.Finite.of_fg_top
-  refine Submodule.fg_def.mpr ⟨Set.range fun z : F => single z.1 (1 : R), Set.finite_range _, ?_⟩
+  refine Submodule.fg_def.mpr ⟨Set.range fun z : F => single z.val (1 : R), Set.finite_range _, ?_⟩
   exact span_range_single_eq_top_of_forall_exists_mul R p Subtype.val fun x =>
     let ⟨z, hz, s, hx⟩ := hF_mul x
     ⟨⟨z, hz⟩, s, hx⟩

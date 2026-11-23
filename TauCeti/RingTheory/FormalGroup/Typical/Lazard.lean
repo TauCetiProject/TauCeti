@@ -216,16 +216,17 @@ bijectively to ring homomorphisms `(typicalIdempotent p S).range →+* R`. -/
 def typicalLocalizedLift :
     {F : FormalGroup R // ∃ (_ : F.IsComm), F.IsPTypical p} ≃
       ((typicalIdempotent p S).range →+* R) where
-  toFun F := (localizedLift p S hunit ⟨F.1, F.2.1⟩).comp (typicalIdempotent p S).range.subtype
+  toFun F := (localizedLift p S hunit ⟨F.val, F.property.1⟩).comp
+      (typicalIdempotent p S).range.subtype
   invFun g :=
     ⟨(typicalFormalGroup p S).map g, ⟨inferInstance, (isPTypical_typicalFormalGroup p S).map g⟩⟩
   left_inv F := Subtype.ext <| by
-    have : F.1.IsComm := F.2.1
+    have : F.val.IsComm := F.property.1
     dsimp only
     rw [← FormalGroup.map_comp, map_subtype_typicalFormalGroup,
       (formalGroup.map (algebraMap LazardRing S)).map_pTypicalFormalGroup _ p _,
-      FormalGroup.pTypicalFormalGroup_congr (map_localizedLift p S hunit ⟨F.1, F.2.1⟩) p _,
-      F.1.pTypicalFormalGroup_eq_self_of_isPTypical p _ F.2.2]
+      FormalGroup.pTypicalFormalGroup_congr (map_localizedLift p S hunit ⟨F.val, F.property.1⟩) p _,
+      F.val.pTypicalFormalGroup_eq_self_of_isPTypical p _ F.property.2]
   right_inv g := typicalLocalizedHom_ext p <| by
     dsimp only
     rw [← FormalGroup.map_comp, map_subtype_typicalFormalGroup,
@@ -238,19 +239,19 @@ def typicalLocalizedLift :
 /-- Base-changing `typicalFormalGroup p S` along `typicalLocalizedLift p S hunit F` recovers `F`. -/
 @[simp]
 theorem map_typicalLocalizedLift (F : {F : FormalGroup R // ∃ (_ : F.IsComm), F.IsPTypical p}) :
-    (typicalFormalGroup p S).map (typicalLocalizedLift p S hunit F) = F.1 :=
+    (typicalFormalGroup p S).map (typicalLocalizedLift p S hunit F) = F.val :=
   Subtype.ext_iff.mp ((typicalLocalizedLift p S hunit).left_inv F)
 
 /-- The `p`-typical law classified by `g` is `(typicalFormalGroup p S).map g`. -/
 @[simp]
 theorem coe_typicalLocalizedLift_symm (g : (typicalIdempotent p S).range →+* R) :
-    ((typicalLocalizedLift p S hunit).symm g).1 = (typicalFormalGroup p S).map g := (rfl)
+    ((typicalLocalizedLift p S hunit).symm g).val = (typicalFormalGroup p S).map g := (rfl)
 
 /-- On elements of `(typicalIdempotent p S).range`, `typicalLocalizedLift` agrees with
 `localizedLift`. -/
 theorem typicalLocalizedLift_apply (F : {F : FormalGroup R // ∃ (_ : F.IsComm), F.IsPTypical p})
     (x : (typicalIdempotent p S).range) :
-    typicalLocalizedLift p S hunit F x = localizedLift p S hunit ⟨F.1, F.2.1⟩ x := (rfl)
+    typicalLocalizedLift p S hunit F x = localizedLift p S hunit ⟨F.val, F.property.1⟩ x := (rfl)
 
 /-- Extending `typicalLocalizedLift p S hunit F` along `(typicalIdempotent p S).rangeRestrict`
 recovers `localizedLift p S hunit ⟨F.1, F.2.1⟩`. -/
@@ -258,12 +259,13 @@ recovers `localizedLift p S hunit ⟨F.1, F.2.1⟩`. -/
 theorem typicalLocalizedLift_comp_rangeRestrict
     (F : {F : FormalGroup R // ∃ (_ : F.IsComm), F.IsPTypical p}) :
     (typicalLocalizedLift p S hunit F).comp (typicalIdempotent p S).rangeRestrict =
-      localizedLift p S hunit ⟨F.1, F.2.1⟩ := by
-  have : F.1.IsComm := F.2.1
+      localizedLift p S hunit ⟨F.val, F.property.1⟩ := by
+  have : F.val.IsComm := F.property.1
   rw [typicalLocalizedLift, Equiv.coe_fn_mk, RingHom.comp_assoc,
     typicalIdempotent_subtype_comp_rangeRestrict]
   exact (comp_typicalIdempotent_eq_self_iff p S _).mpr <|
-    (FormalGroup.isPTypical_congr (map_localizedLift p S hunit ⟨F.1, F.2.1⟩) p).mpr F.2.2
+    (FormalGroup.isPTypical_congr (map_localizedLift p S hunit ⟨F.val,
+        F.property.1⟩) p).mpr F.property.2
 
 /-- On images of `(typicalIdempotent p S).rangeRestrict`, `typicalLocalizedLift` agrees with
 `localizedLift`. -/
@@ -271,7 +273,7 @@ theorem typicalLocalizedLift_comp_rangeRestrict
 theorem typicalLocalizedLift_rangeRestrict
     (F : {F : FormalGroup R // ∃ (_ : F.IsComm), F.IsPTypical p}) (x : S) :
     typicalLocalizedLift p S hunit F ((typicalIdempotent p S).rangeRestrict x) =
-      localizedLift p S hunit ⟨F.1, F.2.1⟩ x :=
+      localizedLift p S hunit ⟨F.val, F.property.1⟩ x :=
   RingHom.congr_fun (typicalLocalizedLift_comp_rangeRestrict p S hunit F) x
 
 end TypicalLift
@@ -344,7 +346,7 @@ theorem typicalIdempotent_mem_graded {k : ℕ} {b : S} (hb : b ∈ ℬ k) :
   obtain ⟨a, ha, m, hbm⟩ := f.exists_mem_mul_eq_of_isLocalization hloc
     (fun _ hm ↦ coprimeSubmonoid_subset_grading_zero p hm) hb
   have hm_fix : typicalIdempotent p S (algebraMap LazardRing S m) = algebraMap LazardRing S m := by
-    obtain ⟨n, _, _, hn⟩ := mem_coprimeSubmonoid_iff.mp m.2
+    obtain ⟨n, _, _, hn⟩ := mem_coprimeSubmonoid_iff.mp m.property
     rw [← hn, map_natCast, map_natCast]
   have hlift_alg : lift ⟨formalGroup.map (algebraMap LazardRing S), inferInstance⟩ =
       algebraMap LazardRing S := hom_ext (map_lift _)
@@ -361,7 +363,7 @@ theorem typicalIdempotent_mem_graded {k : ℕ} {b : S} (hb : b ∈ ℬ k) :
     rw [← hm_fix, ← map_mul]
     exact hbm ▸ ha'
   exact GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular ℬ
-    (halg (coprimeSubmonoid_subset_grading_zero p m.2))
+    (halg (coprimeSubmonoid_subset_grading_zero p m.property))
     (IsLocalization.map_units S m).isRegular.left (by rw [zero_add, mul_comm]; exact hmul)
 
 /-- `typicalIdempotent p S` bundled as a graded ring endomorphism `ℬ →+*ᵍ ℬ`. -/

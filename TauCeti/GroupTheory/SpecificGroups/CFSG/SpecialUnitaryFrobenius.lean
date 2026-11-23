@@ -253,7 +253,7 @@ theorem transpose_map_mul_mul_self_of_mem
       (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
         Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
   rw [coe_iterateFrobenius_galoisField, ← mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff]
-  exact g.2
+  exact g.property
 
 /-- **The special unitary group preserves its form**: `B(g x, g y) = B(x, y)` for every `g` in
 `SU_{r+1}(q)`. -/

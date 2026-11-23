@@ -24,6 +24,9 @@ coface and codegeneracy maps `Fin.succAbove` and `Fin.predAbove` gives the Čech
   alternating pullback differential `∑ᵢ (-1)ⁱ (face i)*` on `Y^[2]` is `pr₂* - pr₁*`;
 * `TauCeti.IteratedFiberProduct.degeneracy i : Y^[m + 1] → Y^[m + 2]`, repeating the `i`-th factor
   along the corresponding partial diagonal;
+* `TauCeti.IteratedFiberProduct.cons z y h : Y^[m + 2]`, prepending a point `z` over `baseProj y`
+  to `y : Y^[m + 1]`; omitting the prepended point recovers `y` (`face_zero_cons`), and omitting a
+  later coordinate commutes with prepending (`face_succ_cons`);
 * all five simplicial identities (`face_comp_face`,
   `face_castSucc_comp_degeneracy_succ_of_le`, `face_castSucc_comp_degeneracy` and
   `face_succ_comp_degeneracy`, `face_succ_comp_degeneracy_castSucc_of_gt`, and
@@ -41,7 +44,9 @@ each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChar
   `TauCeti.IteratedFiberProduct.surjective_face`);
 * every degeneracy map `degeneracy i` is a `C^n` smooth embedding (`TauCeti.contMDiff_degeneracy`,
   `TauCeti.isSmoothEmbedding_degeneracy`), and a closed topological embedding when `Y` is
-  Hausdorff (`TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`).
+  Hausdorff (`TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`);
+* for a section `s` of `π`, prepending `s (baseProj y)` to `y` is `C^{m'}` at every `y` where `s`
+  is `C^{m'}` at `baseProj y` (`TauCeti.contMDiffAt_cons_section`).
 
 ## References
 
@@ -67,12 +72,12 @@ variable {Y M : Type*} {π : Y → M}
 `y` to `y ∘ α`. -/
 def reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) (y : IteratedFiberProduct π k₂) :
     IteratedFiberProduct π k₁ :=
-  ⟨y.1 ∘ α, fun i j ↦ y.2 (α i) (α j)⟩
+  ⟨y.val ∘ α, fun i j ↦ y.property (α i) (α j)⟩
 
 /-- The underlying tuple of `reindex α y` is `y.1 ∘ α`. -/
 @[simp]
 theorem coe_reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) (y : IteratedFiberProduct π k₂) :
-    (reindex α y : Fin k₁ → Y) = y.1 ∘ α := (rfl)
+    (reindex α y : Fin k₁ → Y) = y.val ∘ α := (rfl)
 
 /-- Evaluating `reindex α y` at `i` evaluates `y` at `α i`. -/
 theorem eval_reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) (y : IteratedFiberProduct π k₂)
@@ -114,7 +119,7 @@ theorem baseProj_reindex {m₁ m₂ : ℕ} (α : Fin (m₁ + 1) → Fin (m₂ + 
     (y : IteratedFiberProduct π (m₂ + 1)) :
     baseProj (reindex α y) = baseProj y := by
   rw [baseProj_eq_apply _ 0, baseProj_eq_apply _ 0]
-  exact (y.2 0 (α 0)).symm
+  exact (y.property 0 (α 0)).symm
 
 /-- Reindexing along an injective map between nonempty index sets is surjective: unassigned
 coordinates can be filled with coordinate `0` of the given tuple, which lies in the same fibre. -/
@@ -122,7 +127,7 @@ theorem surjective_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1) �
     (hα : Injective α) :
     Surjective (reindex (π := π) α) := by
   intro x
-  let g : Fin (m₂ + 1) → Y := extend α x.1 (fun _ ↦ x.1 0)
+  let g : Fin (m₂ + 1) → Y := extend α x.val (fun _ ↦ x.val 0)
   have hg_base : ∀ j : Fin (m₂ + 1), π (g j) = baseProj x := by
     intro j
     by_cases hj : ∃ i, α i = j
@@ -133,7 +138,7 @@ theorem surjective_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1) �
       rw [extend_apply' _ _ _ hj, baseProj_eq_apply x 0]
   refine ⟨⟨g, fun j₁ j₂ ↦ (hg_base j₁).trans (hg_base j₂).symm⟩, ext fun i ↦ ?_⟩
   rw [eval_apply, eval_apply]
-  exact hα.extend_apply x.1 (fun _ ↦ x.1 0) i
+  exact hα.extend_apply x.val (fun _ ↦ x.val 0) i
 
 /-- Reindexing along a surjective map is injective. -/
 theorem injective_reindex_of_surjective {k₁ k₂ : ℕ} {α : Fin k₁ → Fin k₂}
@@ -157,7 +162,7 @@ theorem face_eq_reindex {m : ℕ} (i : Fin (m + 2)) :
 /-- The underlying tuple of `face i y` is `y.1 ∘ i.succAbove`. -/
 @[simp]
 theorem coe_face {m : ℕ} (i : Fin (m + 2)) (y : IteratedFiberProduct π (m + 2)) :
-    (face i y : Fin (m + 1) → Y) = y.1 ∘ i.succAbove := (rfl)
+    (face i y : Fin (m + 1) → Y) = y.val ∘ i.succAbove := (rfl)
 
 /-- Evaluating `face i y` at `j` evaluates `y` at `i.succAbove j`. -/
 theorem eval_face {m : ℕ} (i : Fin (m + 2)) (j : Fin (m + 1))
@@ -206,7 +211,7 @@ theorem degeneracy_eq_reindex {m : ℕ} (i : Fin (m + 1)) :
 /-- The underlying tuple of `degeneracy i y` is `y.1 ∘ i.predAbove`. -/
 @[simp]
 theorem coe_degeneracy {m : ℕ} (i : Fin (m + 1)) (y : IteratedFiberProduct π (m + 1)) :
-    (degeneracy i y : Fin (m + 2) → Y) = y.1 ∘ i.predAbove := (rfl)
+    (degeneracy i y : Fin (m + 2) → Y) = y.val ∘ i.predAbove := (rfl)
 
 /-- Evaluating `degeneracy i y` at `j` evaluates `y` at `i.predAbove j`. -/
 theorem eval_degeneracy {m : ℕ} (i : Fin (m + 1)) (j : Fin (m + 2))
@@ -349,6 +354,67 @@ theorem degeneracy_castSucc_degeneracy {m : ℕ} {i j : Fin (m + 1)} (hij : i �
     degeneracy i.castSucc (degeneracy j y) = degeneracy j.succ (degeneracy i y) :=
   congrFun (degeneracy_castSucc_comp_degeneracy hij) y
 
+/-! ### Prepending a point -/
+
+/-- Prepend a point `z` of the fibre over `baseProj y` to the tuple `y`, giving the tuple
+`(z, y₀, …, y_m)` of `Y^[m + 2]`. -/
+def cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
+    IteratedFiberProduct π (m + 2) :=
+  ⟨Fin.cons z y.val, by
+    have key : ∀ i : Fin (m + 2), π (Fin.cons (α := fun _ ↦ Y) z y.val i) = baseProj y :=
+      Fin.cases h fun j ↦ by rw [Fin.cons_succ, ← eval_apply]; exact map_eval_eq_baseProj y j
+    exact fun i j ↦ (key i).trans (key j).symm⟩
+
+/-- The underlying tuple of `cons z y h` is `Fin.cons z y`. -/
+@[simp]
+theorem coe_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
+    (cons z y h : Fin (m + 2) → Y) = Fin.cons z y.val := (rfl)
+
+/-- Coordinate `0` of `cons z y h` is the prepended point `z`. -/
+theorem eval_zero_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
+    (h : π z = baseProj y) :
+    eval 0 (cons z y h) = z := by
+  simp [eval_apply]
+
+/-- Coordinate `j + 1` of `cons z y h` is coordinate `j` of `y`. -/
+theorem eval_succ_cons {m : ℕ} (j : Fin (m + 1)) (z : Y) (y : IteratedFiberProduct π (m + 1))
+    (h : π z = baseProj y) :
+    eval j.succ (cons z y h) = eval j y := by
+  simp [eval_apply]
+
+/-- Prepending a point does not change the base point. -/
+@[simp]
+theorem baseProj_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
+    (h : π z = baseProj y) :
+    baseProj (cons z y h) = baseProj y := by
+  rw [baseProj_eq_apply _ 0]
+  exact h
+
+/-- Omitting the prepended point recovers the original tuple. -/
+@[simp]
+theorem face_zero_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
+    (h : π z = baseProj y) :
+    face 0 (cons z y h) = y :=
+  ext fun j ↦ by simp [eval_apply]
+
+/-- Omitting coordinate `i + 1` after prepending `z` is prepending `z` after omitting
+coordinate `i`. -/
+@[simp]
+theorem face_succ_cons {m : ℕ} (i : Fin (m + 2)) (z : Y) (y : IteratedFiberProduct π (m + 2))
+    (h : π z = baseProj y) :
+    face i.succ (cons z y h) = cons z (face i y) (h.trans (baseProj_face i y).symm) := by
+  refine ext fun j ↦ ?_
+  cases j using Fin.cases with
+  | zero => simp [eval_apply]
+  | succ j => simp [eval_apply, Fin.succ_succAbove_succ]
+
+/-- On `Y^[1]`, omitting the original coordinate after prepending `z` leaves the one-point tuple
+`z`. -/
+@[simp]
+theorem face_one_cons (z : Y) (y : IteratedFiberProduct π 1) (h : π z = baseProj y) :
+    face 1 (cons z y h) = const 1 z :=
+  ext fun j ↦ by simp [eval_apply, Fin.fin_one_eq_zero j]
+
 end Set
 
 section Topology
@@ -481,16 +547,17 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
   let x : IteratedFiberProduct π (m₁ + 1) := IteratedFiberProduct.reindex α y
   let u := mfderiv K₁ PI₁ Subtype.val x η
   have hu : ∀ i₁ i₂ : Fin (m₁ + 1),
-      mfderiv IY IM π (y.1 (α i₁)) (u i₁) =
-        tangentSpaceCast IM (π (y.1 (α i₂))) (π (y.1 (α i₁)))
-          (mfderiv IY IM π (y.1 (α i₂)) (u i₂)) :=
+      mfderiv IY IM π (y.val (α i₁)) (u i₁) =
+        tangentSpaceCast IM (π (y.val (α i₂))) (π (y.val (α i₁)))
+          (mfderiv IY IM π (y.val (α i₂)) (u i₂)) :=
     (mem_range_mfderiv_coe_iteratedFiberProduct_iff hn hπ m₁ x u).1 ⟨η, rfl⟩
-  let w₀ : TangentSpace IM (π (y.1 (α 0))) := mfderiv IY IM π (y.1 (α 0)) (u 0)
+  let w₀ : TangentSpace IM (π (y.val (α 0))) := mfderiv IY IM π (y.val (α 0)) (u 0)
   have hsurj : ∀ j : Fin (m₂ + 1),
-      ∃ v_j : TangentSpace IY (y.1 j),
+      ∃ v_j : TangentSpace IY (y.val j),
         (∀ i : Fin (m₁ + 1), α i = j →
-          tangentSpaceCast IY (y.1 j) (y.1 (α i)) v_j = u i) ∧
-        tangentSpaceCast IM (π (y.1 j)) (π (y.1 (α 0))) (mfderiv IY IM π (y.1 j) v_j) = w₀ := by
+          tangentSpaceCast IY (y.val j) (y.val (α i)) v_j = u i) ∧
+        tangentSpaceCast IM (π (y.val j)) (π (y.val (α 0))) (mfderiv IY IM π (y.val j) v_j) = w₀
+            := by
     intro j
     by_cases hj : ∃ i, α i = j
     · obtain ⟨i₀, rfl⟩ := hj
@@ -498,15 +565,15 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
       cases hα hi
       rfl
     · obtain ⟨v_j, hv_j⟩ :=
-        ((tangentSpaceCast IM (π (y.1 j)) (π (y.1 (α 0)))).surjective.comp
-          (hπ.surjective_mfderiv hn0 (y.1 j))) w₀
+        ((tangentSpaceCast IM (π (y.val j)) (π (y.val (α 0)))).surjective.comp
+          (hπ.surjective_mfderiv hn0 (y.val j))) w₀
       exact ⟨v_j, fun i hi ↦ (hj ⟨i, hi⟩).elim, hv_j⟩
   choose v hv_hit hv_map using hsurj
   have hcompat : ∀ j₁ j₂ : Fin (m₂ + 1),
-      mfderiv IY IM π (y.1 j₁) (v j₁) =
-        tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 j₁)) (mfderiv IY IM π (y.1 j₂) (v j₂)) :=
+      mfderiv IY IM π (y.val j₁) (v j₁) =
+        tangentSpaceCast IM (π (y.val j₂)) (π (y.val j₁)) (mfderiv IY IM π (y.val j₂) (v j₂)) :=
     fun j₁ j₂ ↦
-      (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.2 j₁ (α 0)) (y.2 j₂ (α 0))).2
+      (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.property j₁ (α 0)) (y.property j₂ (α 0))).2
         ((hv_map j₁).trans (hv_map j₂).symm)
   have hemb₁ := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m₁
   have hemb₂ := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m₂
@@ -516,14 +583,14 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
     (((contMDiff_reindex hn hπ le_rfl α) y).mdifferentiableAt hn0)
   rw [← ContinuousLinearMap.comp_apply, ← hc_lhs]
   funext i
-  have hc₁ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply i x.1).mdifferentiableAt
+  have hc₁ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply i x.val).mdifferentiableAt
     (((hemb₁.contMDiff.comp (contMDiff_reindex hn hπ le_rfl α)) y).mdifferentiableAt hn0)
   rw [TauCeti.mfderiv_apply] at hc₁
   have hfn : ((fun f : Fin (m₁ + 1) → Y ↦ f i) ∘
       (Subtype.val ∘ IteratedFiberProduct.reindex α :
         IteratedFiberProduct π (m₂ + 1) → (Fin (m₁ + 1) → Y))) =
       (fun g : Fin (m₂ + 1) → Y ↦ g (α i)) ∘ Subtype.val := rfl
-  have hc₂ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply (α i) y.1).mdifferentiableAt
+  have hc₂ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply (α i) y.val).mdifferentiableAt
     ((hemb₂.contMDiff y).mdifferentiableAt hn0)
   rw [TauCeti.mfderiv_apply] at hc₂
   have hlhs := (DFunLike.congr_fun hc₁ ξ).symm
@@ -570,6 +637,27 @@ theorem contMDiff_degeneracy {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin
   let := iteratedFiberProductChartedSpace hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
   exact contMDiff_reindex hn hπ hm' i.predAbove
+
+/-- For a section `s` of `π`, prepending `s (baseProj y)` to `y`, a map `Y^[m + 1] → Y^[m + 2]`,
+is `C^{m'}` at `y` whenever `s` is `C^{m'}` at `baseProj y`. -/
+theorem contMDiffAt_cons_section {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) {s : M → Y}
+    (hs : ∀ x, π (s x) = x) {y : IteratedFiberProduct π (m + 1)}
+    (hsy : ContMDiffAt IM IY m' s (IteratedFiberProduct.baseProj y)) :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
+    ContMDiffAt 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)
+      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ) m'
+      (fun y ↦ IteratedFiberProduct.cons (s (IteratedFiberProduct.baseProj y)) y (hs _)) y := by
+  let := iteratedFiberProductChartedSpace hn hπ m
+  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
+  refine (contMDiffAt_iteratedFiberProduct_iff hn hπ hm').2 fun i ↦ ?_
+  cases i using Fin.cases with
+  | zero =>
+    simp only [IteratedFiberProduct.eval_zero_cons]
+    exact hsy.comp y (contMDiff_baseProj hn hπ hm' y)
+  | succ j =>
+    simp only [IteratedFiberProduct.eval_succ_cons]
+    exact contMDiff_eval hn hπ hm' j y
 
 /-- Every diagonal degeneracy map `degeneracy i : Y^[m + 1] → Y^[m + 2]` is a `C^n` immersion,
 split on the left by `face i.castSucc`. -/

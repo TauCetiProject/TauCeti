@@ -186,7 +186,7 @@ theorem coneBase_mem_degenerate (H : (ContinuousMap.const X v).Homotopy (Continu
 /-- The cone in degree zero: the boundary of the cone on a point is the point `v` minus the
 point. -/
 theorem boundary_cone_zero (H : (ContinuousMap.const X v).Homotopy (ContinuousMap.id X))
-    (f : CubicalChain X R 0) : boundary X R 0 (cone R H 0 f) = coneBase R H 0 f - f := by
+    (f : CubicalChain X R 0) : boundary X R R 0 (cone R H 0 f) = coneBase R H 0 f - f := by
   induction f using Finsupp.induction_linear with
   | zero => simp
   | add f g hf hg => simp only [map_add, hf, hg]; abel
@@ -197,7 +197,7 @@ constant cubes at `v` with the coefficients of `f`. -/
 theorem boundary_cone_add_cone_boundary
     (H : (ContinuousMap.const X v).Homotopy (ContinuousMap.id X)) {n : ℕ}
     (f : CubicalChain X R (n + 1)) :
-    boundary X R (n + 1) (cone R H (n + 1) f) + cone R H n (boundary X R n f) =
+    boundary X R R (n + 1) (cone R H (n + 1) f) + cone R H n (boundary X R R n f) =
       coneBase R H (n + 1) f - f := by
   induction f using Finsupp.induction_linear with
   | zero => simp

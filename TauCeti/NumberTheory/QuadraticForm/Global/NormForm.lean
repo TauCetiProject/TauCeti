@@ -100,11 +100,12 @@ omit [NumberField K] in
 only if `a = x² - d y²` is solvable in `ℝ` along the real embedding of `w`. -/
 theorem represents_atRealPlace_weightedSumSquares_one_neg_iff
     (w : {w : InfinitePlace K // w.IsReal}) (d a : K) :
-    Represents (atRealPlace (weightedSumSquares K ![1, -d]) w) (embedding_of_isReal w.2 a) ↔
-      ∃ x y : ℝ, embedding_of_isReal w.2 a = x ^ 2 - embedding_of_isReal w.2 d * y ^ 2 := by
+    Represents (atRealPlace (weightedSumSquares K ![1, -d]) w) (embedding_of_isReal w.property a) ↔
+      ∃ x y : ℝ, embedding_of_isReal w.property a = x ^ 2 - embedding_of_isReal w.property d * y ^ 2
+          := by
   rw [(atRealPlaceWeightedSumSquares w ![1, -d]).represents_iff]
-  have hcoeff : (fun i : Fin 2 => embedding_of_isReal w.2 (![1, -d] i)) =
-      ![1, -embedding_of_isReal w.2 d] := by
+  have hcoeff : (fun i : Fin 2 => embedding_of_isReal w.property (![1, -d] i)) =
+      ![1, -embedding_of_isReal w.property d] := by
     funext i
     fin_cases i <;> simp
   rw [hcoeff, TauCeti.represents_binary_one_neg_iff]
@@ -125,7 +126,7 @@ real Hilbert symbol `(d_w, a_w)_w` is `1`. -/
 theorem represents_atRealPlace_weightedSumSquares_one_neg_iff_hilbertSymbol_eq_one
     (w : {w : InfinitePlace K // w.IsReal}) (d a : Kˣ) :
     Represents (atRealPlace (weightedSumSquares K ![1, -(d : K)]) w)
-        (embedding_of_isReal w.2 (a : K)) ↔
+        (embedding_of_isReal w.property (a : K)) ↔
       TauCeti.hilbertSymbol (TauCeti.unitAtRealPlace w d) (TauCeti.unitAtRealPlace w a) = 1 := by
   rw [represents_atRealPlace_weightedSumSquares_one_neg_iff, TauCeti.hilbertSymbol_eq_one_iff]
   simp [TauCeti.unitAtRealPlace_apply]
@@ -271,7 +272,8 @@ example : ¬ LocallyRepresentsScalar (weightedSumSquares ℚ ![(1 : ℚ), 1]) 3 
       hilbertSymbol_unitAtFinitePlace_rat ℓ (-1) u3] at hv
     have hp : Fact (3 : ℕ).Prime := ⟨Nat.prime_three⟩
     have hpadic : hilbertSymbol (-1 : ℚ_[3]ˣ) (Units.mk0 (3 : ℚ_[3]) (by norm_num)) = -1 :=
-      Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three 3 rfl
+      by simpa [TauCeti.padicPrimeUnit_eq_mk0] using
+        Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three 3 rfl
     have heq : Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom (-1 : ℚˣ) = (-1 : ℚ_[3]ˣ) ∧
         Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom u3 =
           Units.mk0 (3 : ℚ_[3]) (by norm_num) := by

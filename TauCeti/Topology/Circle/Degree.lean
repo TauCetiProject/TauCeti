@@ -85,6 +85,8 @@ continuous part of the Maslov index of a path of Lagrangian frames.
   same map through `Circle.exp` differ by a constant.
 * `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
   the same map through `Circle.exp` differ by a constant integer multiple of `2π`.
+* `IsPreconnected.exists_forall_sub_eq_of_coe_eq`: two real functions continuous on a preconnected
+  set and equal there in `Real.Angle` differ by a constant on it.
 -/
 
 public section
@@ -119,6 +121,20 @@ theorem exists_int_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A]
     rwa [hc a₀, exp_add, mul_eq_left] at this
   obtain ⟨m, hm⟩ := exp_eq_one.1 hexp
   exact ⟨m, fun a ↦ by rw [hc a, hm]⟩
+
+/-- **Continuous lifts of an angle differ by a constant.** Two real functions that are continuous
+on a preconnected set and agree there modulo `2π` differ by a constant on it: this is
+`Circle.exists_forall_eq_add_of_exp_eq` on the subtype, through `Real.Angle.toCircle`. -/
+theorem _root_.IsPreconnected.exists_forall_sub_eq_of_coe_eq {α : Type*} [TopologicalSpace α]
+    {s : Set α} (hs : IsPreconnected s) {f g : α → ℝ} (hf : ContinuousOn f s)
+    (hg : ContinuousOn g s) (h : ∀ x ∈ s, (f x : Real.Angle) = g x) :
+    ∃ C, ∀ x ∈ s, f x - g x = C := by
+  have := isPreconnected_iff_preconnectedSpace.1 hs
+  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq (G := fun x : s ↦ f x)
+    (G' := fun x : s ↦ g x) hf.domRestrict hg.domRestrict
+    fun x ↦ by
+      simpa only [Real.Angle.toCircle_coe] using congrArg Real.Angle.toCircle (h x x.property)
+  exact ⟨c, fun x hx ↦ by linarith [hc ⟨x, hx⟩]⟩
 
 /-- Every path in the circle has a continuous lift through `Circle.exp`. -/
 theorem exists_lift {x y : Circle} (γ : Path x y) :
@@ -450,9 +466,9 @@ theorem degree_eq_of_forall_eq_pow {x : Circle} (γ : Path x x) {a b : ℝ} (hab
   have hb : 0 < b := (pos_iff_pos_of_mul_pos hab).1 ha
   -- Deform `a` and `b` linearly to `1`, through the positive numbers `(1 - s) c + s`.
   have hc {c : ℝ} (hc : 0 < c) (s : I) : 0 < (1 - (s : ℝ)) * c + s := by
-    rcases s.2.1.eq_or_lt with h | h
+    rcases s.property.1.eq_or_lt with h | h
     · simpa [← h] using hc
-    · nlinarith [mul_nonneg (sub_nonneg.2 s.2.2) hc.le]
+    · nlinarith [mul_nonneg (sub_nonneg.2 s.property.2) hc.le]
   let z : I × I → ℂ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * cos (2 * π * p.2) : ℝ) +
     (((1 - (p.1 : ℝ)) * b + p.1) * sin (2 * π * p.2) : ℝ) * Complex.I
   have hz (p : I × I) : 0 < ‖z p‖ := by

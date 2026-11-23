@@ -57,11 +57,8 @@ commutative rings. Finally, scalar extension of a free full lattice recovers its
   restricts to an endomorphism of a free full lattice has the determinant of that restriction.
 * `Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
   of a free full lattice submodule to its ambient module.
-* `Submodule.IsLattice.isLocalizedModule_subtype`: the inclusion of a submodule spanning the
-  ambient space over the fraction field, such as a full lattice, is a localization at the nonzero
-  divisors.
 * `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient vector
-  lies in such a submodule.
+  lies in a submodule spanning the ambient space over the fraction field, such as a full lattice.
 * `Submodule.exists_ne_zero_smul_mem_baseChange`: the same holds for every element of a scalar
   extension and the base change of such a submodule.
 * `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
@@ -231,13 +228,13 @@ theorem _root_.LinearEquiv.extendOfIsFullLattice_map {S : Submodule R V} {T : Su
     S.map ((LinearEquiv.extendOfIsFullLattice (K := K) e).restrictScalars R).toLinearMap = T := by
   apply le_antisymm
   · rintro _ ⟨x, hx, rfl⟩
-    have hmem : (e (⟨x, hx⟩ : S) : W) ∈ T := (e ⟨x, hx⟩).2
+    have hmem : (e (⟨x, hx⟩ : S) : W) ∈ T := (e ⟨x, hx⟩).property
     rw [← LinearEquiv.extendOfIsFullLattice_apply (K := K)] at hmem
     simpa only [LinearEquiv.restrictScalars_apply, LinearEquiv.coe_toLinearMap] using hmem
   · intro y hy
     let yT : T := ⟨y, hy⟩
     let xS : S := e.symm yT
-    refine ⟨(xS : V), xS.2, ?_⟩
+    refine ⟨(xS : V), xS.property, ?_⟩
     simpa only [LinearEquiv.restrictScalars_apply, LinearEquiv.coe_toLinearMap,
       LinearEquiv.extendOfIsFullLattice_apply] using congr_arg Subtype.val (e.apply_symm_apply yT)
 
@@ -552,28 +549,13 @@ theorem _root_.Submodule.exists_ne_zero_smul_mem_baseChange {T : Type*} [CommSem
 
 variable (K) in
 omit [IsDomain R] in
-/-- The inclusion of a submodule spanning the ambient space over the fraction field `K`, in
-particular of a full lattice submodule, localizes it at the nonzero divisors of `R`. -/
-theorem isLocalizedModule_subtype (S : Submodule R V') (hS : Submodule.span K (S : Set V') = ⊤) :
-    IsLocalizedModule (nonZeroDivisors R) S.subtype := by
-  have := IsDomain.of_faithfulSMul R K
-  have := isLocalizedModule_id (nonZeroDivisors R) V' K
-  refine ⟨IsLocalizedModule.map_units (LinearMap.id : V' →ₗ[R] V'), ?_, ?_⟩
-  · intro v
-    obtain ⟨r, hr, hv⟩ := exists_ne_zero_smul_mem K S hS v
-    exact ⟨⟨⟨r • v, hv⟩, ⟨r, mem_nonZeroDivisors_of_ne_zero hr⟩⟩, rfl⟩
-  · intro x y h
-    exact ⟨1, by simpa using Subtype.ext h⟩
-
-variable (K) in
-omit [IsDomain R] in
 /-- The `R`-finrank of a submodule spanning the ambient space over the fraction field `K`, in
 particular of a full lattice, equals the `K`-finrank of the ambient space. -/
 theorem _root_.Submodule.finrank_eq_finrank (N : Submodule R V')
     (hN : Submodule.span K (N : Set V') = ⊤) :
     Module.finrank R N = Module.finrank K V' := by
   have := IsDomain.of_faithfulSMul R K
-  have := isLocalizedModule_subtype K N hN
+  have := N.isLocalizedModule_subtype_of_span_eq_top (nonZeroDivisors R) hN
   rw [IsFractionRing.finrank_right_eq (R := R) (S := K) (N := V'),
     IsLocalizedModule.finrank_eq (nonZeroDivisors R) N.subtype le_rfl]
 
