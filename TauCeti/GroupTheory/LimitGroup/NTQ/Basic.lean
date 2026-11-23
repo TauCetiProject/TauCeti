@@ -406,7 +406,7 @@ theorem isAdmissibleCentralizerLevel_singleton_iff {u : H} {n : ℕ} :
 /-- In a free group, `u` with `U = {u}` is admissible centralizer data exactly when `u` is not a
 proper power and `n > 0`: the centralizer of a nontrivial element of a free group is cyclic. -/
 theorem isAdmissibleCentralizerLevel_singleton_iff_of_isFreeGroup [IsFreeGroup H] {u : H}
-    {n : ℕ} : IsAdmissibleCentralizerLevel u {u} n ↔ ¬Group.IsProperPower u ∧ 0 < n := by
+    {n : ℕ} : IsAdmissibleCentralizerLevel u {u} n ↔ ¬IsProperPower u ∧ 0 < n := by
   rw [isAdmissibleCentralizerLevel_singleton_iff, ← isAdmissibleCentralizerStep_iff]
   exact and_iff_left_of_imp fun h ↦ IsFreeGroup.isCyclic_centralizer h.ne_one
 
