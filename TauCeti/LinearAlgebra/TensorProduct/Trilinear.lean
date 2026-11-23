@@ -19,7 +19,7 @@ public noncomputable section
 
 open scoped TensorProduct
 
-namespace LinearMap
+namespace TensorProduct
 
 variable {R E₁ E₂ E₃ F : Type*} [CommSemiring R]
   [AddCommMonoid E₁] [Module R E₁] [AddCommMonoid E₂] [Module R E₂]
@@ -28,25 +28,25 @@ variable {R E₁ E₂ E₃ F : Type*} [CommSemiring R]
 variable (R E₁ E₂ E₃ F) in
 /-- Linearize trilinear maps on the tensor product of their three input modules.
 The linear map structure gives compatibility with zero, addition, and scalar multiplication. -/
-def trilinearTensorLinearMap :
+def uncurryThreefold :
     (E₁ →ₗ[R] E₂ →ₗ[R] E₃ →ₗ[R] F) →ₗ[R] (E₁ ⊗[R] E₂) ⊗[R] E₃ →ₗ[R] F :=
   (TensorProduct.uncurry (RingHom.id R) (E₁ ⊗[R] E₂) E₃ F).comp
     (TensorProduct.uncurry (RingHom.id R) E₁ E₂ (E₃ →ₗ[R] F))
 
 /-- The tensor linearization evaluates a pure tensor by evaluating the trilinear map. -/
 @[simp]
-theorem trilinearTensorLinearMap_tmul (T : E₁ →ₗ[R] E₂ →ₗ[R] E₃ →ₗ[R] F)
+theorem uncurryThreefold_tmul (T : E₁ →ₗ[R] E₂ →ₗ[R] E₃ →ₗ[R] F)
     (x : E₁) (y : E₂) (z : E₃) :
-    trilinearTensorLinearMap R E₁ E₂ E₃ F T ((x ⊗ₜ[R] y) ⊗ₜ[R] z) = T x y z := by
-  simp [trilinearTensorLinearMap]
+    uncurryThreefold R E₁ E₂ E₃ F T ((x ⊗ₜ[R] y) ⊗ₜ[R] z) = T x y z := by
+  simp [uncurryThreefold]
 
 /-- Agreement on triple pure tensors uniquely characterizes the tensor linearization. -/
-theorem trilinearTensorLinearMap_unique (T : E₁ →ₗ[R] E₂ →ₗ[R] E₃ →ₗ[R] F)
+theorem uncurryThreefold_unique (T : E₁ →ₗ[R] E₂ →ₗ[R] E₃ →ₗ[R] F)
     {L : (E₁ ⊗[R] E₂) ⊗[R] E₃ →ₗ[R] F}
     (h : ∀ x y z, L ((x ⊗ₜ[R] y) ⊗ₜ[R] z) = T x y z) :
-    L = trilinearTensorLinearMap R E₁ E₂ E₃ F T := by
+    L = uncurryThreefold R E₁ E₂ E₃ F T := by
   apply TensorProduct.ext_threefold
   intro x y z
-  simpa only [trilinearTensorLinearMap_tmul] using h x y z
+  simpa only [uncurryThreefold_tmul] using h x y z
 
-end LinearMap
+end TensorProduct
