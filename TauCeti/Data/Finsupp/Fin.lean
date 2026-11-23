@@ -89,8 +89,8 @@ theorem snoc_zero_zero : snoc (0 : Fin n →₀ M) 0 = 0 := by
   cases i using Fin.lastCases <;> simp
 
 theorem snoc_injective2 : Function.Injective2 (snoc (n := n) (M := M)) := fun _ _ _ _ h ↦
-  (Fin.snoc_injective2 (α := fun _ ↦ M) (congrArg DFunLike.coe h)).imp_left
-    (DFunLike.coe_injective ·)
+  (Fin.snoc_injective2 (α := fun _ ↦ M)
+    (by simpa only [coe_snoc] using congrArg DFunLike.coe h)).imp_left (DFunLike.coe_injective ·)
 
 @[simp]
 theorem snoc_inj {s s' : Fin n →₀ M} {y y' : M} : snoc s y = snoc s' y' ↔ s = s' ∧ y = y' :=
