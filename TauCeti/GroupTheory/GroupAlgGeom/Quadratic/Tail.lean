@@ -168,18 +168,18 @@ private theorem headAtom_notMem_range_inl (S : Standard G X) :
         List (G ⊕ Q × Bool)) := by
       simp [hpq, hpq.symm]
     have := hl.occurrences_prod p
-    rw [mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
+    rw [GX.mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
     exact ⟨p, by simp_all [commutatorElement_def, mul_assoc, Ne.symm hpq]⟩
   have hsq {Q : Set X} (p : Q) :
       (inr (FreeGroup.of p) : GX G Q) ^ 2 ∉ Set.range (inl : G →* GX G Q) := by
     have hl : GX.IsReduced ([.inr (p, true), .inr (p, true)] : List (G ⊕ Q × Bool)) := by simp
     have := hl.occurrences_prod p
-    rw [mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
+    rw [GX.mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
     exact ⟨p, by simp_all [pow_two]⟩
   have hconj {Q : Set X} {c : G} (hc : c ≠ 1) (p : Q) :
       (inr (FreeGroup.of p) : GX G Q)⁻¹ * inl c * inr (FreeGroup.of p) ∉
         Set.range (inl : G →* GX G Q) := by
-    rw [mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
+    rw [GX.mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
     exact ⟨p, by simp [occurrences_inv_mul_inl_mul_self hc]⟩
   match S with
   | orientable (n + 1) hn x y inj =>

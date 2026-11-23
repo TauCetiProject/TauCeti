@@ -11,7 +11,7 @@ public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
-public import TauCeti.GroupTheory.GroupAlgGeom.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.VarSubgroup
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Algebra.Group.TypeTags.Finite
 import TauCeti.GroupTheory.FreeGroup.Centralizer
@@ -72,6 +72,9 @@ system `{a, b, x}` has no solutions; its radical and its normal closure are both
 * `TauCeti.GroupAlgGeom.V_I_V`: `V(I(V(S))) = V(S)`.
 * `TauCeti.GroupAlgGeom.preimage_wordMap_V`: inverse images of algebraic sets under word maps
   are algebraic.
+* `TauCeti.GroupAlgGeom.mem_V_congr`,
+  `TauCeti.GroupAlgGeom.update_mem_V_iff_of_occurrences_eq_zero`: solution-set membership depends
+  only on the coordinates of variables that occur in the equations.
 * `TauCeti.GroupAlgGeom.exists_finite_V_eq_of_finite`,
   `TauCeti.GroupAlgGeom.exists_subsingleton_V_eq`: with finitely many points, every system has a
   finite subsystem with the same solutions; with at most one point, for instance with no
@@ -188,8 +191,7 @@ instance (Y : Set (X → H)) : (I ι Y).Normal where
 
 /-- The ideal of `Y` is the intersection of the kernels of evaluation at the points of `Y`. -/
 theorem I_eq_iInf_ker (Y : Set (X → H)) : I ι Y = ⨅ v ∈ Y, (eval ι v).ker := by
-  ext w
-  simp
+  ext w; simp
 
 /-- A system vanishes on a set of points if and only if the points solve the system. -/
 theorem subset_I_iff : S ⊆ I ι Y ↔ Y ⊆ V ι S :=
@@ -409,8 +411,7 @@ theorem I_iUnion {κ : Sort*} (Y : κ → Set (X → H)) : I ι (⋃ k, Y k) = �
 /-- Conjugating an equation does not change its solutions. -/
 @[simp]
 theorem V_singleton_conj (u w : GX G X) : V ι {u * w * u⁻¹} = V ι {w} := by
-  ext v
-  simp
+  ext v; simp
 
 /-- A system and its normal closure have the same solutions. -/
 @[simp]
@@ -423,6 +424,19 @@ theorem V_normalClosure (S : Set (GX G X)) : V ι (normalClosure S : Set (GX G X
 theorem GHom.comp_mem_V {K : Type*} [Group K] {κ : G →* K} (φ : GHom ι κ) (hv : v ∈ V ι S) :
     φ ∘ v ∈ V κ S :=
   mem_V.2 fun s hs => by rw [← map_eval, mem_V.1 hv s hs, map_one]
+
+/-- Membership in `V ι T` depends only on the coordinates of the variables that occur in the
+equations of `T`. -/
+theorem mem_V_congr (ι : G →* H) {T : Set (GX G X)} {v v' : X → H}
+    (h : ∀ w ∈ T, ∀ x, GX.occurrences x w ≠ 0 → v x = v' x) : v ∈ V ι T ↔ v' ∈ V ι T := by
+  simp only [mem_V]; exact forall₂_congr fun w hw => by rw [GX.eval_congr ι (h w hw)]
+
+/-- Updating a coordinate that occurs in no equation of `T` leaves membership in `V ι T`
+unchanged. -/
+theorem update_mem_V_iff_of_occurrences_eq_zero [DecidableEq X] (ι : G →* H) {T : Set (GX G X)}
+    {x : X} (hx : ∀ w ∈ T, GX.occurrences x w = 0) (v : X → H) (c : H) :
+    Function.update v x c ∈ V ι T ↔ v ∈ V ι T :=
+  mem_V_congr ι fun w hw _ hy => Function.update_of_ne (by rintro rfl; exact hy (hx w hw)) c v
 
 /-! ### Finite subsystems -/
 
@@ -697,8 +711,7 @@ theorem quotientCoeff_injective (hι : Function.Injective ι)
   obtain ⟨v, hv⟩ := hN
   refine Function.Injective.of_comp (f := quotientEvalGHom v hv) ?_
   convert hι using 1
-  ext g
-  simp
+  ext g; simp
 
 /-- A surjective `G`-homomorphism `π : G[X] →* K` induces a `G`-isomorphism `G[X] ⧸ N → K` from
 the quotient by its kernel `N`. -/
@@ -1146,8 +1159,7 @@ end SystemGroup
 @[simp]
 theorem CoordGroup.evalGHom_comp_toCoordGroup (hv : v ∈ V ι S) :
     (evalGHom v hv).comp (SystemGroup.toCoordGroup ι S) = SystemGroup.evalGHom v hv := by
-  ext
-  simp
+  ext; simp
 
 /-! ### Systems in the same variables with nested solution sets -/
 
@@ -1182,30 +1194,26 @@ theorem homOfVSubset_injective (h : V ι S ⊆ V ι T) (h' : V ι T ⊆ V ι S) 
 /-- A system compared with itself gives the identity homomorphism. -/
 @[simp]
 theorem homOfVSubset_refl : homOfVSubset (subset_refl (V ι S)) = GHom.id (coeff ι S) := by
-  ext
-  simp
+  ext; simp
 
 /-- The homomorphisms induced by the identity on the variables compose, in the opposite order. -/
 @[simp]
 theorem homOfVSubset_comp {U : Set (GX G X)} (h : V ι S ⊆ V ι T) (h' : V ι T ⊆ V ι U) :
     (homOfVSubset h).comp (homOfVSubset h') = homOfVSubset (h.trans h') := by
-  ext
-  simp
+  ext; simp
 
 /-- A solution of `S` given by a `G`-homomorphism `G_{R(S)} → H` is the same solution of `T`. -/
 @[simp]
 theorem homEquiv_comp_homOfVSubset (h : V ι S ⊆ V ι T) (φ : GHom (coeff ι S) ι) :
     (homEquiv ι T (φ.comp (homOfVSubset h)) : X → H) = homEquiv ι S φ := by
-  ext
-  simp
+  ext; simp
 
 /-- Evaluation at a solution of `S` factors through the homomorphism `G_{R(T)} → G_{R(S)}`
 induced by the identity on the variables. -/
 @[simp]
 theorem evalGHom_comp_homOfVSubset (h : V ι S ⊆ V ι T) (hv : v ∈ V ι S) :
     (evalGHom v hv).comp (homOfVSubset h) = evalGHom v (h hv) := by
-  ext
-  simp
+  ext; simp
 
 end CoordGroup
 
@@ -1234,8 +1242,7 @@ theorem Rad_pow_eq_normalClosure (hι : Function.Injective ι) {n : ℕ}
 and `w` has the same solutions as `u * w = 1`: the only `n`-th root of `(w ^ n)⁻¹` is `w⁻¹`. -/
 theorem V_pow_mul_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (u w : GX G X) :
     V ι {u ^ n * w ^ n} = V ι {u * w} := by
-  ext v
-  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+  ext v; simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
 
 /-- In a group `H` with unique roots, the equation `x ^ n * b ^ n = 1` (`n ≠ 0`) has the same
 solutions as `x * b = 1`: the only `n`-th root of `(b ^ n)⁻¹` is `b⁻¹`. -/
@@ -1303,8 +1310,7 @@ open FreeGroup
 `x`-coordinate has `n`-th power `1`. -/
 theorem V_singleton_inr_of_pow (x : X) (n : ℕ) :
     V ι {(inr (of x) : GX G X) ^ n} = {v | v x ^ n = 1} := by
-  ext
-  simp
+  ext; simp
 
 /-- Every point solves `x ^ n = 1` exactly when every element of `H` has `n`-th power `1`. -/
 theorem V_singleton_inr_of_pow_eq_univ_iff (x : X) {n : ℕ} :
@@ -1398,15 +1404,13 @@ def gHomEquivCentralizer (g : G) :
 @[simp]
 theorem gHomEquivCentralizer_apply_coe (g : G)
     (φ : GHom (coeff ι {⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆}) ι) :
-    (gHomEquivCentralizer ι g φ : H) = φ (inr (of ()) : GX G Unit) :=
-  (rfl)
+    (gHomEquivCentralizer ι g φ : H) = φ (inr (of ()) : GX G Unit) := (rfl)
 
 @[simp]
 theorem gHomEquivCentralizer_symm_apply_mk (g : G) (h : centralizer {ι g}) (w : GX G Unit) :
     (gHomEquivCentralizer ι g).symm h
         (w : CoordGroup ι {⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆}) =
-      eval ι (fun _ => (h : H)) w :=
-  (rfl)
+      eval ι (fun _ => (h : H)) w := (rfl)
 
 /-- Over a free group `F`, coefficient-preserving homomorphisms to `F` from the coordinate group
 of the commutator equation `[x, a] = 1`, for a free generator `a`, correspond to the powers of
@@ -1421,16 +1425,14 @@ def gHomEquivZPowers {α : Type*} (a : α) : GHom (coeff (.id (FreeGroup α))
 theorem gHomEquivZPowers_apply_coe {α : Type*} (a : α) (φ : GHom (coeff (.id (FreeGroup α))
       {⁅(inr (of ()) : GX (FreeGroup α) Unit), (inl (of a) : GX (FreeGroup α) Unit)⁆})
       (.id (FreeGroup α))) :
-    (gHomEquivZPowers a φ : FreeGroup α) = φ (inr (of ()) : GX (FreeGroup α) Unit) :=
-  (rfl)
+    (gHomEquivZPowers a φ : FreeGroup α) = φ (inr (of ()) : GX (FreeGroup α) Unit) := (rfl)
 
 @[simp]
 theorem gHomEquivZPowers_symm_apply_mk {α : Type*} (a : α) (h : zpowers (of a))
     (w : GX (FreeGroup α) Unit) :
     (gHomEquivZPowers a).symm h (w : CoordGroup (.id (FreeGroup α))
         {⁅(inr (of ()) : GX (FreeGroup α) Unit), (inl (of a) : GX (FreeGroup α) Unit)⁆}) =
-      eval (.id (FreeGroup α)) (fun _ => (h : FreeGroup α)) w :=
-  (rfl)
+      eval (.id (FreeGroup α)) (fun _ => (h : FreeGroup α)) w := (rfl)
 
 end CoordGroup
 
