@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.ProperSupport
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Evaluation
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.OperatorParametrix
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.TruncatedParametrix
+import TauCeti.Algebra.BigOperators.NatAntidiagonal
 
 /-!
 # Composition of parameter-dependent symbols at a spectral parameter
@@ -122,8 +123,7 @@ private theorem sum_sum_eq_add_sum_sum {X : Type*} [AddCommGroup X] (T : ℕ →
         refine sum_congr rfl fun k _ ↦ ?_
         split_ifs <;> first | omega | simp
     _ = e + ∑ j ∈ range (J + 1), ∑ k ∈ range N, if J < j + k then T j k else 0 := by
-        rw [sum_congr rfl hlow, ← sum_range_diag_flip, sum_congr rfl fun M _ ↦ hA M]
-        simp
+        rw [sum_congr rfl hlow, Nat.sum_range_sum_range_sub_eq hA J.succ_ne_zero]
 
 variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
 
