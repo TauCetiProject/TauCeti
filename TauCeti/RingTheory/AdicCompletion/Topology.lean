@@ -119,12 +119,6 @@ theorem topologicalNilradical_le_jacobson [IsLinearTopology R R] (hI : IsAdic I)
   rw [Ideal.jacobson_bot]
   exact IsAdicComplete.le_jacobson I
 
-/-- In an `I`-adic ring, the submodules `I ^ n • ⊤` form a neighbourhood basis of zero. -/
-theorem hasBasis_nhds_zero_smul_top (hI : IsAdic I) :
-    (𝓝 (0 : R)).HasBasis (fun _ : ℕ ↦ True)
-      fun n ↦ (↑(I ^ n • (⊤ : Submodule R R)) : Set R) := by
-  simpa only [smul_eq_mul, Ideal.mul_top] using hI.hasBasis_nhds_zero
-
 section TowerLift
 
 variable [TopologicalSpace M] [IsTopologicalAddGroup M]

@@ -101,6 +101,13 @@ theorem isOpen_pow (hI : IsAdic I) (n : ℕ) : IsOpen ((I ^ n : Ideal R) : Set R
   letI := I.adicTopology
   hI ▸ (I.openAddSubgroup n).isOpen
 
+open Filter Topology in
+/-- In an `I`-adic ring, the submodules `I ^ n • ⊤` form a neighbourhood basis of zero. -/
+theorem hasBasis_nhds_zero_smul_top (hI : IsAdic I) :
+    (𝓝 (0 : R)).HasBasis (fun _ : ℕ ↦ True)
+      fun n ↦ (↑(I ^ n • (⊤ : Submodule R R)) : Set R) := by
+  simpa only [smul_eq_mul, Ideal.mul_top] using hI.hasBasis_nhds_zero
+
 /-- The quotient by an ideal of definition has the discrete quotient topology. -/
 theorem discreteTopology_quotient (hI : IsAdic I) : DiscreteTopology (R ⧸ I) := by
   have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing

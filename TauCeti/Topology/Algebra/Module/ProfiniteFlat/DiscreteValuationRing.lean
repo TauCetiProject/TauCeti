@@ -7,12 +7,11 @@ module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
-public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.Basic
+public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.PrincipalIdealRing
 public import TauCeti.Topology.Algebra.Ring.Compact
-import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 import TauCeti.RingTheory.AdicCompletion.Topology
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Pi
-import TauCeti.RingTheory.Ideal.Quotient.PowTransition
 import TauCeti.Topology.Algebra.Module.Compact.LocalRing
 import TauCeti.Topology.Algebra.Module.LinearTopology.CompactVectorSpace
 import TauCeti.Topology.Algebra.Module.Nakayama
@@ -60,87 +59,6 @@ section Pseudobasis
 
 variable {M : Type v} [AddCommGroup M] [Module O M] [TopologicalSpace M] (hM : IsProfiniteFlat O M)
 include hM
-
-omit [IsDiscreteValuationRing O] [IsTopologicalRing O] [T2Space O] in
-/-- Given `φ : M →ₗ[O] O ⧸ (ϖ ^ (n + 1))` with open kernel on a profinite flat `O`-module `M`,
-there is an open submodule `V ≤ ker φ` containing `(ϖ ^ (n + 2)) • ⊤` such that `ϖ • m ∈ V` forces
-`m ∈ ker φ`. -/
-private theorem exists_open_submodule_ker_of_mul {ϖ : O} (hϖ : ϖ ≠ 0) (n : ℕ)
-    (φ : M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 1)}) (hker : IsOpen (LinearMap.ker φ : Set M)) :
-    ∃ V : Submodule O M, IsOpen (V : Set M) ∧ Ideal.span {ϖ ^ (n + 2)} • (⊤ : Submodule O M) ≤ V ∧
-      V ≤ LinearMap.ker φ ∧ ∀ ⦃m : M⦄, ϖ • m ∈ V → m ∈ LinearMap.ker φ := by
-  have := hM.isTorsionFree; have ⟨⟨_, _, _, _⟩, _⟩ := hM
-  have := hM.t2Space; have := hM.isLinearTopology
-  let J₁ : Ideal O := Ideal.span {ϖ ^ (n + 1)}; let J₂ : Ideal O := Ideal.span {ϖ ^ (n + 2)}
-  have hC_closed : IsClosed ((fun m : M ↦ ϖ • m) '' (LinearMap.ker φ : Set M)ᶜ) :=
-    (hker.isClosed_compl.isCompact.image (continuous_const.smul continuous_id)).isClosed
-  have h0C : (0 : M) ∉ (fun m : M ↦ ϖ • m) '' (LinearMap.ker φ : Set M)ᶜ := by
-    rintro ⟨m, hm, hm0⟩
-    exact hm (smul_right_injective M hϖ (hm0.trans (smul_zero ϖ).symm) ▸ (LinearMap.ker φ).zero_mem)
-  obtain ⟨V₀, hV₀_open, hV₀C⟩ :=
-    (IsLinearTopology.hasBasis_open_submodule O).mem_iff.mp (hC_closed.compl_mem_nhds h0C)
-  have hJ₁_ker : J₁ • (⊤ : Submodule O M) ≤ LinearMap.ker φ := Submodule.smul_le.mpr fun r hr m _ ↦
-    by rw [LinearMap.mem_ker, map_smul, Algebra.smul_def, Ideal.Quotient.algebraMap_eq,
-      Ideal.Quotient.eq_zero_iff_mem.mpr hr, zero_mul]
-  refine ⟨(V₀ ⊓ LinearMap.ker φ) ⊔ (J₂ • (⊤ : Submodule O M)), AddSubgroup.isOpen_mono
-    (H₁ := (V₀ ⊓ LinearMap.ker φ).toAddSubgroup)
-    (H₂ := ((V₀ ⊓ LinearMap.ker φ) ⊔ (J₂ • (⊤ : Submodule O M))).toAddSubgroup)
-    (fun _ hx ↦ Submodule.mem_sup_left hx) (hV₀_open.inter hker), le_sup_right, sup_le inf_le_right
-    ((Submodule.smul_mono_left (Ideal.span_singleton_le_span_singleton.mpr
-      (pow_dvd_pow ϖ (Nat.le_succ (n + 1))))).trans hJ₁_ker), fun {m} hm ↦ ?_⟩
-  obtain ⟨v₁, hv₁, y, hy, heq⟩ := Submodule.mem_sup.mp hm
-  have hy' : y ∈ Ideal.span ({ϖ} : Set O) • (J₁ • (⊤ : Submodule O M)) := by
-    have hJ₂ : J₂ = Ideal.span ({ϖ} : Set O) * J₁ := by
-      simp [J₁, J₂, Ideal.span_singleton_mul_span_singleton, pow_succ']
-    simpa [hJ₂, mul_smul] using hy
-  rw [Submodule.ideal_span_singleton_smul] at hy'
-  obtain ⟨z, hz, rfl⟩ := hy'
-  have hmz : m - z ∈ LinearMap.ker φ := by
-    by_contra hm_ker
-    exact hV₀C hv₁.1 ⟨m - z, hm_ker, by simp [smul_sub, ← heq]⟩
-  simpa using add_mem hmz (hJ₁_ker hz)
-
-omit [IsDiscreteValuationRing O] [IsTopologicalRing O] [T2Space O] in
-/-- One-step lifting of continuous `O`-linear functionals along `(ϖ ^ (n + 2)) → (ϖ ^ (n + 1))`. -/
-private theorem exists_lift_span_pow_succ [IsPrincipalIdealRing O] {ϖ : O} (hϖ : ϖ ≠ 0) (n : ℕ)
-    (φ : M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 1)}) (hker : IsOpen (LinearMap.ker φ : Set M)) :
-    ∃ φ' : M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 2)}, IsOpen (LinearMap.ker φ' : Set M) ∧
-      ∀ m : M, Ideal.Quotient.factor
-        (Ideal.span_singleton_le_span_singleton.mpr (pow_dvd_pow ϖ (Nat.le_succ (n + 1))))
-        (φ' m) = φ m := by
-  have := hM.isTopologicalAddGroup; let J₂ : Ideal O := Ideal.span {ϖ ^ (n + 2)}
-  obtain ⟨V, hV_open, hJ₂_le, hV_le_ker, hV_ker⟩ :=
-    hM.exists_open_submodule_ker_of_mul hϖ n φ hker
-  have htor : Module.IsTorsionBySet O (M ⧸ V) J₂ := (Module.isTorsionBySet_quotient_iff V J₂).mpr
-    fun _ _ hr ↦ hJ₂_le (Submodule.smul_mem_smul hr Submodule.mem_top)
-  let := htor.module; have : IsScalarTower O (O ⧸ J₂) (M ⧸ V) := htor.isScalarTower
-  let β : M →ₗ[O] (O ⧸ J₂) := (Ideal.Quotient.mulSpanPowSucc ϖ (n + 1)).comp φ
-  let βbar : (M ⧸ V) →ₗ[O ⧸ J₂] (O ⧸ J₂) :=
-    (V.liftQ β (hV_le_ker.trans (LinearMap.ker_le_ker_comp φ _))).extendScalarsOfSurjective
-      Ideal.Quotient.mk_surjective
-  let μ : (M ⧸ V) →ₗ[O ⧸ J₂] (M ⧸ V) := LinearMap.lsmul (O ⧸ J₂) (M ⧸ V) (Ideal.Quotient.mk J₂ ϖ)
-  have hker_μ : LinearMap.ker μ.rangeRestrict ≤ LinearMap.ker βbar := fun x hx ↦ by
-    obtain ⟨m, rfl⟩ := V.mkQ_surjective x
-    have hμ0 : V.mkQ (ϖ • m) = 0 := by
-      simpa [μ, ← Ideal.Quotient.algebraMap_eq, algebraMap_smul] using
-        congr_arg Subtype.val (LinearMap.mem_ker.mp hx)
-    simp [LinearMap.mem_ker, βbar, β,
-      LinearMap.mem_ker.mp (hV_ker ((Submodule.Quotient.mk_eq_zero V).mp hμ0))]
-  let ψ₀ : LinearMap.range μ →ₗ[O ⧸ J₂] (O ⧸ J₂) :=
-    (μ.rangeRestrict.liftOfSurjective μ.surjective_rangeRestrict) ⟨βbar, hker_μ⟩
-  obtain ⟨ψ, hψ⟩ := (Module.Baer.quotient_self
-    (mt Ideal.span_singleton_eq_bot.mp (pow_ne_zero (n + 2) hϖ))).extension_property _
-    (LinearMap.range μ).injective_subtype ψ₀
-  let φ' : M →ₗ[O] (O ⧸ J₂) := (ψ.restrictScalars O).comp V.mkQ
-  refine ⟨φ', AddSubgroup.isOpen_mono (H₁ := V.toAddSubgroup)
-    (H₂ := (LinearMap.ker φ').toAddSubgroup)
-    (fun m hm ↦ by simp [φ', (Submodule.Quotient.mk_eq_zero V).mpr hm]) hV_open, fun m ↦ ?_⟩
-  apply Ideal.Quotient.mulSpanPowSucc_injective (mul_right_injective₀ hϖ) (n + 1)
-  rw [Ideal.Quotient.mulSpanPowSucc_factor, ← map_smul]
-  calc φ' (ϖ • m) = (ψ.comp (LinearMap.range μ).subtype) (μ.rangeRestrict (V.mkQ m)) := by
-        simp [φ', μ, ← Ideal.Quotient.algebraMap_eq, algebraMap_smul]
-    _ = ψ₀ (μ.rangeRestrict (V.mkQ m)) := by rw [hψ]
-    _ = Ideal.Quotient.mulSpanPowSucc ϖ (n + 1) (φ m) := by simp [ψ₀, βbar, β]
 
 /-- **Continuous linear functionals lift modulo the maximal ideal.** Over a compact Hausdorff
 discrete valuation ring `O`, every continuous `O`-linear map `φ₀ : M →L[O] (O ⧸ maximalIdeal O)`

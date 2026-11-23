@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import TauCeti.Topology.Algebra.Module.Compact.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
-import Mathlib.RingTheory.Filtration
 
 /-!
 # Adic properties of compact modules
