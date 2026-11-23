@@ -34,8 +34,12 @@ is positive semidefinite.
 * `Matrix.condNegSemidef_def`: the defining characterization by finitely supported vectors.
 * `Matrix.condNegSemidef_iff_finite_sum`: the characterization by finite families with
   repetitions.
-* `Matrix.PosSemidef.neg_condNegSemidef`, `Matrix.CondNegSemidef.add`,
-  `Matrix.CondNegSemidef.smul` and `Matrix.CondNegSemidef.submatrix`: closure properties.
+* `Matrix.PosSemidef.neg_condNegSemidef`, `Matrix.condNegSemidef_const`,
+  `Matrix.CondNegSemidef.add`, `Matrix.CondNegSemidef.sub_posSemidef`,
+  `Matrix.PosSemidef.const_sub_condNegSemidef`, `Matrix.CondNegSemidef.smul`,
+  `Matrix.CondNegSemidef.submatrix`, `Matrix.isClosed_setOfPred_condNegSemidef`,
+  `Matrix.CondNegSemidef.of_hasSum`, `Matrix.CondNegSemidef.tsum`, and
+  `Matrix.CondNegSemidef.tsum_of_summable`: closure properties.
 * `Matrix.IsHermitian.condNegSemidef_iff_posSemidef_centered`: the centring criterion.
 
 ## References
@@ -121,6 +125,21 @@ theorem condNegSemidef_iff_finite_sum {K : Matrix n n R} :
       exact Finset.sum_congr rfl fun i _ ↦ by rw [Finsupp.sum, ← hsupp]
     exact hform ▸ hneg (fun i ↦ (e i : n)) (fun i ↦ x (e i)) (by rw [hsupp x]; exact hx)
 
+/-- Every constant Hermitian matrix is conditionally negative semidefinite. -/
+theorem condNegSemidef_const {c : R} (hc : IsSelfAdjoint c) :
+    (of fun _ _ : n ↦ c).CondNegSemidef := by
+  refine ⟨IsHermitian.ext fun _ _ ↦ hc, fun x hx ↦ ?_⟩
+  have hsum : (x.sum fun _ xi ↦ x.sum fun _ xj ↦ star xi * c * xj) = 0 := by
+    have hinner (xi : R) : (x.sum fun _ xj ↦ star xi * c * xj) = 0 := by
+      simp_rw [mul_assoc, ← Finsupp.mul_sum, hx, mul_zero]
+    simp [hinner]
+  simp [hsum]
+
+/-- The zero matrix is conditionally negative semidefinite. -/
+@[simp]
+theorem condNegSemidef_zero : (0 : Matrix n n R).CondNegSemidef :=
+  condNegSemidef_const (star_zero R)
+
 /-- The negative of a positive-semidefinite matrix is conditionally negative semidefinite. -/
 theorem PosSemidef.neg_condNegSemidef [IsOrderedAddMonoid R] {M : Matrix n n R}
     (hM : M.PosSemidef) : (-M).CondNegSemidef :=
@@ -132,6 +151,20 @@ theorem CondNegSemidef.add [IsOrderedAddMonoid R] {M N : Matrix n n R}
     (hM : M.CondNegSemidef) (hN : N.CondNegSemidef) : (M + N).CondNegSemidef :=
   ⟨hM.isHermitian.add hN.isHermitian, fun x hx ↦ by
     simpa [mul_add, add_mul] using add_nonpos (hM.2 x hx) (hN.2 x hx)⟩
+
+/-- Subtracting a positive-semidefinite matrix from a conditionally negative semidefinite matrix
+gives a conditionally negative semidefinite matrix. -/
+theorem CondNegSemidef.sub_posSemidef [IsOrderedAddMonoid R] {M N : Matrix n n R}
+    (hM : M.CondNegSemidef) (hN : N.PosSemidef) : (M - N).CondNegSemidef := by
+  rw [sub_eq_add_neg]
+  exact hM.add hN.neg_condNegSemidef
+
+/-- Subtracting a positive-semidefinite kernel from a Hermitian constant kernel gives a
+conditionally negative semidefinite kernel. -/
+theorem PosSemidef.const_sub_condNegSemidef [IsOrderedAddMonoid R] {M : Matrix n n R}
+    (hM : M.PosSemidef) {c : R} (hc : IsSelfAdjoint c) :
+    (of fun a b ↦ c - M a b).CondNegSemidef :=
+  (condNegSemidef_const hc).sub_posSemidef hM
 
 /-- A nonnegative multiple of a conditionally negative semidefinite matrix is conditionally
 negative semidefinite. -/
@@ -148,6 +181,55 @@ theorem CondNegSemidef.submatrix {m : Type*} {M : Matrix n n R} (hM : M.CondNegS
     (f : m → n) : (M.submatrix f f).CondNegSemidef :=
   condNegSemidef_iff_finite_sum.mpr ⟨fun a b ↦ hM.isHermitian.apply (f b) (f a),
     fun {_ : Type} _ v x hx ↦ (condNegSemidef_iff_finite_sum.mp hM).2 (f ∘ v) x hx⟩
+
+section Topology
+
+open Filter
+
+/-- The set of conditionally negative semidefinite matrices is closed. -/
+theorem isClosed_setOfPred_condNegSemidef [TopologicalSpace R] [IsTopologicalRing R]
+    [ContinuousStar R] [OrderClosedTopology R] :
+    IsClosed {M : Matrix n n R | M.CondNegSemidef} := by
+  simp only [CondNegSemidef, Set.ofPred_and, Set.ofPred_forall]
+  refine isClosed_setOfPred_isHermitian.inter
+    (isClosed_iInter fun x ↦ isClosed_iInter fun _ ↦ isClosed_le ?_ continuous_const)
+  fun_prop [Finsupp.sum]
+
+/-- A `HasSum` limit of conditionally negative semidefinite matrices is conditionally negative
+semidefinite. -/
+theorem CondNegSemidef.of_hasSum [TopologicalSpace R] [IsTopologicalRing R]
+    [ContinuousStar R] [OrderClosedTopology R] [IsOrderedAddMonoid R]
+    {α : Type*} {f : α → Matrix n n R} {M : Matrix n n R} {L : SummationFilter α}
+    [L.NeBot] (h : HasSum f M L) (hf : ∀ i, (f i).CondNegSemidef) :
+    M.CondNegSemidef :=
+  isClosed_setOfPred_condNegSemidef.mem_of_tendsto h <| Eventually.of_forall fun _ ↦
+    Finset.sum_induction f CondNegSemidef (fun _ _ ha hb ↦ ha.add hb) condNegSemidef_zero
+      fun i _ ↦ hf i
+
+/-- A `tsum` of conditionally negative semidefinite matrices is conditionally negative
+semidefinite. -/
+theorem CondNegSemidef.tsum [TopologicalSpace R] [IsTopologicalRing R]
+    [ContinuousStar R] [OrderClosedTopology R] [IsOrderedAddMonoid R]
+    {α : Type*} {f : α → Matrix n n R} {L : SummationFilter α}
+    (hf : ∀ i, (f i).CondNegSemidef) :
+    (∑'[L] i, f i).CondNegSemidef := by
+  let S : AddSubmonoid (Matrix n n R) :=
+    { carrier := {M | M.CondNegSemidef}
+      zero_mem' := condNegSemidef_zero
+      add_mem' := fun ha hb ↦ ha.add hb }
+  exact tsum_mem (s := S) isClosed_setOfPred_condNegSemidef hf L
+
+/-- An entrywise summable `tsum` of conditionally negative semidefinite kernels is conditionally
+negative semidefinite. -/
+theorem CondNegSemidef.tsum_of_summable [TopologicalSpace R] [IsTopologicalRing R]
+    [ContinuousStar R] [OrderClosedTopology R] [IsOrderedAddMonoid R]
+    {α : Type*} {f : α → n → n → R} {L : SummationFilter α} [L.NeBot]
+    (hs : ∀ a b, Summable (fun i ↦ f i a b) L)
+    (hf : ∀ i, (of (f i)).CondNegSemidef) :
+    (of fun a b ↦ ∑'[L] i, f i a b).CondNegSemidef :=
+  CondNegSemidef.of_hasSum (Pi.hasSum.mpr fun a ↦ Pi.hasSum.mpr fun b ↦ (hs a b).hasSum) hf
+
+end Topology
 
 omit [PartialOrder R] in
 /-- The quadratic form of the centring of `ψ` at `a₀` is the negative of the quadratic form of `ψ`

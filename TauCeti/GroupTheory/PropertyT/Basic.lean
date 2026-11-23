@@ -71,9 +71,8 @@ theorem relativePropertyT_map_mulEquiv_iff {K : Type w} [Group K] {Λ : Subgroup
     (Λ.map e.toMonoidHom).RelativePropertyT.{u} ↔ Λ.RelativePropertyT.{u} := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.map e.toMonoidHom⟩
   have h' := h.map e.symm.toMonoidHom
-  have hΛ : (Λ.map e.toMonoidHom).map e.symm.toMonoidHom = Λ := by
-    rw [Subgroup.map_map]
-    simp
+  have hΛ : (Λ.map e.toMonoidHom).map e.symm.toMonoidHom = Λ :=
+    (Subgroup.map_symm_eq_iff_map_eq (e := e) Λ).mpr rfl
   rwa [hΛ] at h'
 
 /-- Every finite subgroup has relative property (T), regardless of the ambient group. -/

@@ -141,9 +141,8 @@ theorem isKazhdanPair_map_mulEquiv_iff {G' : Type w} [Group G'] {Λ : Subgroup �
   classical
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have h' := h.map e.symm.toMonoidHom
-    have hΛ : (Λ.map e.toMonoidHom).map e.symm.toMonoidHom = Λ := by
-      rw [Subgroup.map_map]
-      simp
+    have hΛ : (Λ.map e.toMonoidHom).map e.symm.toMonoidHom = Λ :=
+      (Subgroup.map_symm_eq_iff_map_eq (e := e) Λ).mpr rfl
     have hF : (F.map e.toEquiv.toEmbedding).image e.symm.toMonoidHom = F := by
       change (F.map e.toEquiv.toEmbedding).image e.symm.toEquiv.toEmbedding = F
       rw [← Finset.map_eq_image, Finset.map_map]

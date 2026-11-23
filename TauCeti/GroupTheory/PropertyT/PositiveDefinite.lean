@@ -99,9 +99,7 @@ private theorem approx_invariant_of_posSemidef_approx {Λ : Subgroup Γ}
   let φ : Γ → ℂ := fun g ↦ ⟪ξ, ρ g ξ⟫_ℂ
   have hφ : (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef :=
     hρ.posSemidef_inner_map_inv_mul ξ
-  have hξ_inner : ⟪ξ, ξ⟫_ℂ = 1 := by
-    rw [inner_self_eq_norm_sq_to_K, hξ]
-    norm_num
+  have hξ_inner : ⟪ξ, ξ⟫_ℂ = 1 := inner_self_eq_one_of_norm_eq_one (𝕜 := ℂ) hξ
   have hφ1 : φ 1 = 1 := by
     dsimp only [φ]
     rw [map_one, one_apply_eq_self, hξ_inner]
@@ -149,8 +147,8 @@ private theorem posSemidef_approx_of_approx_invariant {Λ : Subgroup Γ}
     ξ hξ hξF
   have hvh : hφ.gnsRepresentation h v = v := hv ⟨h, hh⟩
   have hsub : φ h - 1 = ⟪ξ, hφ.gnsRepresentation h ξ - ξ⟫_ℂ := by
-    rw [inner_sub_right, hφ.inner_gnsVector_one_gnsRepresentation, inner_self_eq_norm_sq_to_K, hξ]
-    norm_num
+    rw [inner_sub_right, hφ.inner_gnsVector_one_gnsRepresentation,
+      inner_self_eq_one_of_norm_eq_one (𝕜 := ℂ) hξ]
   have hdiff : hφ.gnsRepresentation h ξ - ξ =
       hφ.gnsRepresentation h (ξ - v) - (ξ - v) := by
     rw [map_sub, hvh]
@@ -308,13 +306,8 @@ private theorem tendsto_cexp_neg_tsum_mul_zero [DecidableEq Γ] {e : ℕ → Γ}
     have hre_ge : ε₀ ^ 2 / 8 ≤ 1 - (φ n ((e ka)⁻¹ * s n * e kb)).re := by
       let u : ℝ := Real.sqrt (ε₀ ^ 2 / 32)
       have hu2 : u ^ 2 = ε₀ ^ 2 / 32 := Real.sq_sqrt (by positivity)
-      have htri₁ := (hpd n).sqrt_re_one_sub_re_mul_le (e ka * ((e ka)⁻¹ * s n * e kb)) (e kb)⁻¹
-      have htri₂ := (hpd n).sqrt_re_one_sub_re_mul_le (e ka) ((e ka)⁻¹ * s n * e kb)
-      have hinv : (φ n (e kb)⁻¹).re = (φ n (e kb)).re := by
-        rw [(hpd n).isHermitian.apply_inv_eq_star (e kb), Complex.star_def, Complex.conj_re]
-      have hprod : e ka * ((e ka)⁻¹ * s n * e kb) * (e kb)⁻¹ = s n := by group
-      simp only [RCLike.re_to_complex, hprod, h1 n, Complex.one_re, hinv] at htri₁
-      simp only [RCLike.re_to_complex, h1 n, Complex.one_re] at htri₂
+      have htri := (hpd n).le_sqrt_re_one_sub_re_inv_mul_mul (e ka) (s n) (e kb)
+      simp only [RCLike.re_to_complex, h1 n, Complex.one_re] at htri
       have hre_a : 1 - (φ n (e ka)).re ≤ ε₀ ^ 2 / 32 :=
         le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ n (e ka)))
           (hF n _ ha_mem).le
@@ -394,56 +387,13 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
   have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef := by
     let Ψ : Matrix Γ Γ ℂ := Matrix.of fun a b : Γ ↦ ψ (a⁻¹ * b)
     have hΨ : Ψ.CondNegSemidef := by
-      refine Matrix.condNegSemidef_iff_finite_sum.{0, v, 0}.mpr
-        ⟨fun a b ↦ ?_, fun {ι} _ v x hx ↦ ?_⟩
-      · have hconj (k : ℕ) :
-            star (((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b))) =
-              ((k + 1 : ℝ) : ℂ) * (1 - φ k (b⁻¹ * a)) := by
-          have hinv : star (φ k (a⁻¹ * b)) = φ k (b⁻¹ * a) := by
-            simpa [mul_inv_rev] using ((hpd k).isHermitian.apply_inv_eq_star (a⁻¹ * b)).symm
-          simp [hinv]
-        dsimp only [Ψ, Matrix.of_apply, ψ]
-        rw [Complex.star_def, ← Complex.conjCLE_apply, ContinuousLinearEquiv.map_tsum]
-        exact tsum_congr fun k ↦ by rw [Complex.conjCLE_apply, ← Complex.star_def, hconj k]
-      · have hzero : ∑ i, ∑ j, star (x i) * x j = 0 := by
-          rw [← Finset.sum_mul_sum, hx, mul_zero]
-        have hterm_nonpos (k : ℕ) :
-            ∑ i, ∑ j, star (x i) * (((k + 1 : ℝ) : ℂ) * (1 - φ k ((v i)⁻¹ * v j))) * x j ≤ 0 := by
-          have hrw :
-              ∑ i, ∑ j, star (x i) * (((k + 1 : ℝ) : ℂ) * (1 - φ k ((v i)⁻¹ * v j))) * x j =
-                -((k + 1 : ℝ) : ℂ) * ∑ i, ∑ j, star (x i) * φ k ((v i)⁻¹ * v j) * x j := by
-            have h1 :
-                ∑ i, ∑ j, star (x i) * (((k + 1 : ℝ) : ℂ) * (1 - φ k ((v i)⁻¹ * v j))) * x j =
-                  ((k + 1 : ℝ) : ℂ) * (∑ i, ∑ j, star (x i) * x j -
-                    ∑ i, ∑ j, star (x i) * φ k ((v i)⁻¹ * v j) * x j) := by
-              simp only [Finset.mul_sum, ← Finset.sum_sub_distrib]
-              refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-            rw [h1, hzero, zero_sub, mul_neg, neg_mul]
-          rw [hrw, neg_mul]
-          exact neg_nonpos.mpr (mul_nonneg (by exact_mod_cast (by positivity : (0 : ℝ) ≤ k + 1))
-            ((TauCeti.posSemidef_iff_finite_sum.mp (hpd k)).2 v x))
-        have hhasSum : HasSum (fun k : ℕ ↦
-              ∑ i, ∑ j, star (x i) * (((k + 1 : ℝ) : ℂ) * (1 - φ k ((v i)⁻¹ * v j))) * x j)
-            (∑ i, ∑ j, star (x i) * Ψ (v i) (v j) * x j) := by
-          refine hasSum_sum fun i _ ↦ hasSum_sum fun j _ ↦ ?_
-          simpa [Ψ, ψ, mul_assoc] using
-            ((hsumm ((v i)⁻¹ * v j)).hasSum.mul_left (star (x i))).mul_right (x j)
-        have hre : (∑ i, ∑ j, star (x i) * Ψ (v i) (v j) * x j).re ≤ 0 :=
-          le_of_tendsto (Complex.reCLM.continuous.tendsto _ |>.comp hhasSum)
-            (Eventually.of_forall fun s ↦ by
-              dsimp only [Function.comp_apply]
-              rw [map_sum]
-              exact Finset.sum_nonpos fun k _ ↦
-                neg_nonneg.mp (Complex.nonneg_iff.mp (neg_nonneg.mpr (hterm_nonpos k))).1)
-        have him : (∑ i, ∑ j, star (x i) * Ψ (v i) (v j) * x j).im = 0 :=
-          tendsto_nhds_unique (Complex.imCLM.continuous.tendsto _ |>.comp hhasSum)
-            (tendsto_const_nhds.congr fun s ↦ by
-              dsimp only [Function.comp_apply]
-              rw [map_sum]
-              exact (Finset.sum_eq_zero fun k _ ↦ by
-                simpa using (Complex.nonneg_iff.mp (neg_nonneg.mpr (hterm_nonpos k))).2).symm)
-        exact neg_nonneg.mp (Complex.nonneg_iff.mpr ⟨neg_nonneg.mpr hre, by
-          rw [Complex.neg_im, him, neg_zero]⟩)
+      refine Matrix.CondNegSemidef.tsum_of_summable
+        (f := fun (k : ℕ) (a b : Γ) ↦ ((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b)))
+        (fun a b ↦ hsumm (a⁻¹ * b)) fun k ↦ ?_
+      convert ((hpd k).const_sub_condNegSemidef (star_one ℂ)).smul
+        (a := ((k + 1 : ℝ) : ℂ)) (by exact_mod_cast (by positivity : (0 : ℝ) ≤ k + 1)) using 1
+      ext a b
+      simp
     simpa [Φ, Ψ] using hΨ.posSemidef_cexp_neg_mul ht.le
   have hΦ1 : Φ 1 = 1 := by simp [Φ, ψ, h1]
   obtain ⟨v, hv0, hvΛ⟩ := (isKazhdanPair_def Λ F₀ δ₀).mp hK
