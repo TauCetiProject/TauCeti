@@ -60,9 +60,10 @@ variable [MeasurableSpace E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
+  [InnerProductSpace ℝ F] in
 /-- The normal-line estimate on a finite strip, before integrating the transverse variable. -/
-private theorem norm_sq_boundary_le_integral_line_energy
+private theorem norm_sq_boundary_le_integral_line_energy [NormedSpace ℝ E] [NormedSpace ℝ F]
     {u : WithLp 2 (ℝ × E) → F} {a b : ℝ}
     (hu : ∀ x, (WithLp.ofLp x).1 ∈ Icc a b → ContDiffAt ℝ 1 u x) (hab : a < b)
     (y : E) : ‖u (WithLp.toLp 2 (a, y))‖ ^ 2 +
