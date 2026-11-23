@@ -68,11 +68,13 @@ has the regularity of `J`, `S₂` is in `W^{k,p}_loc` as soon as `S ∈ W^{k,p}_
   `W^{k,q}_loc`.
 * `TauCeti.ae_differentiated_cauchyRiemann_const`: for a constant coefficient `J` and `S = 0`,
   the system is the original operator applied to each component of `Ξ`.
+* `TauCeti.HasWeakFDerivOn.withLpDiag` and `TauCeti.MemWkpLoc.withLpDiag`: weak derivatives and
+  local Sobolev regularity for diagonal `L^q` block sums `diag(A, A)`.
 
 The coefficient `S₂` is `TauCeti.differentiatedCRCoefficient`, and
 `TauCeti.differentiatedCRCoefficient_ne_prodMap` shows `S₂ ≠ diag(S, S)` as soon as `∂_s J ≠ 0`.
-The regularity of `J₂` is `TauCeti.MemWkpLoc.prodMap`, and `J₂² = -1` whenever `J² = -1` is
-`TauCeti.prodMap_mul_self_eq_neg_one`.
+The regularity of `J₂` is `TauCeti.MemWkpLoc.withLpDiag` (and `TauCeti.MemWkpLoc.prodMap`), and
+`J₂² = -1` whenever `J² = -1` is `TauCeti.prodMap_mul_self_eq_neg_one`.
 
 ## References
 
@@ -554,6 +556,30 @@ private theorem integral_inner_crFormalAdjoint_differentiated_aux [FiniteDimensi
   · exact (iA 1 φ₁).add (iB 1 φ₁)
   · exact (iA I φ₂).add (iB I φ₂)
 
+/-- **Weak derivative of a diagonal `L^q` block-sum operator field.** If `A` has weak derivative
+`DA` on `Ω`, then `x ↦ (A x).withLpProdMap q (A x)` has weak derivative
+`x ↦ (ContinuousLinearMap.withLpDiagL q ℝ F G).comp (DA x)`. -/
+theorem HasWeakFDerivOn.withLpDiag {E F G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {μ : Measure E} {Ω : Opens E} (q : ℝ≥0∞) [Fact (1 ≤ q)]
+    {A : E → F →L[ℝ] G} {DA : E → E →L[ℝ] F →L[ℝ] G}
+    (hDA : HasWeakFDerivOn μ Ω A DA) :
+    HasWeakFDerivOn μ Ω (fun x => (A x).withLpProdMap q (A x))
+      (fun x => (ContinuousLinearMap.withLpDiagL q ℝ F G).comp (DA x)) := by
+  simpa using hDA.clm_comp (ContinuousLinearMap.withLpDiagL q ℝ F G)
+
+/-- **Local Sobolev regularity of a diagonal `L^q` block-sum operator field.** If `A ∈ W^{k,p}_loc`
+on `U`, then `z ↦ (A z).withLpProdMap q (A z)` lies in `W^{k,p}_loc(U)`. -/
+theorem MemWkpLoc.withLpDiag {F G : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    (q : ℝ≥0∞) [Fact (1 ≤ q)] {p : ℝ≥0∞} {U : Set ℂ} {k : ℕ} {A : ℂ → F →L[ℝ] G}
+    (hA : MemWkpLoc p U k A) :
+    MemWkpLoc p U k (fun z => (A z).withLpProdMap q (A z)) := by
+  simpa using hA.clm_comp (ContinuousLinearMap.withLpDiagL q ℝ F G)
+
 /-- **The weak differentiated Cauchy–Riemann system.** Let `1 < p, q ≤ ∞` satisfy `p⁻¹ + q⁻¹ ≤ 1`.
 If `J, S ∈ W^{1,p}_loc(Ω)` with weak derivatives `DJ, DS`, `ξ ∈ W^{1,q}_loc(Ω)` with weak
 derivative `Dξ`, and `η` has weak derivative `Dη` on `Ω` such that `∂_s ξ + J ∂_t ξ + S ξ = η`
@@ -579,13 +605,10 @@ theorem isWeakCRSolution_differentiated [FiniteDimensional ℝ V] {p q : ℝ≥0
       (fun z => WithLp.toLp 2 (Dξ z 1, Dξ z I))
       (fun z => WithLp.toLp 2 (Dη z 1 - DS z 1 (ξ z), Dη z I - DS z I (ξ z))) := by
   let e := (WithLp.prodContinuousLinearEquiv 2 ℝ V V).symm
-  let diagL := ContinuousLinearMap.withLpDiagL 2 ℝ V V
-  have hDJ₂ : HasWeakFDerivOn volume Ω (fun z => (J z).withLpProdMap 2 (J z))
-      (fun z => diagL.comp (DJ z)) := by simpa [diagL] using hDJ.clm_comp diagL
-  have hJ₂ : MemWkpLoc p Ω 1 (fun z => (J z).withLpProdMap 2 (J z)) := by
-    simpa [diagL] using hJ.clm_comp diagL
+  have hDJ₂ := hDJ.withLpDiag 2
+  have hJ₂ := hJ.withLpDiag 2
   have hc₂ : IsSobolevCRCoefficients p Ω (fun z => (J z).withLpProdMap 2 (J z))
-      (fun z => diagL.comp (DJ z))
+      (fun z => (ContinuousLinearMap.withLpDiagL 2 ℝ V V).comp (DJ z))
       (fun z => e.arrowCongr e (differentiatedCRCoefficient (S z) (DJ z))) :=
     ⟨hDJ₂, hJ₂.memLpLoc, memWkpLoc_zero_iff.1 (hJ₂.memWkpLoc_of_hasWeakFDerivOn hDJ₂),
       (memWkpLoc_zero_iff.1 ((memWkpLoc_zero_iff.2 hS.memLpLoc).differentiatedCRCoefficient

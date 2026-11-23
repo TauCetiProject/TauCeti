@@ -8,16 +8,12 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import Mathlib.Analysis.Normed.Operator.NormedSpace
-import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Differentiated
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
-import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.Data.ENNReal.Inv
 
 /-!
@@ -73,8 +69,8 @@ higher-order interior regularity (McDuff–Salamon, Proposition B.4.9):
 
 public noncomputable section
 
-open Complex Filter MeasureTheory Metric Set TopologicalSpace
-open scoped ContDiff Convolution Distributions ENNReal InnerProductSpace LineDeriv NNReal Topology
+open Complex MeasureTheory Set TopologicalSpace
+open scoped ContDiff ENNReal InnerProductSpace NNReal
 
 namespace TauCeti
 
@@ -140,17 +136,13 @@ private theorem memWkpLoc_succ_of_memWkpLoc_step {p r : ℝ≥0} {q : ℝ≥0∞
       (memWkpLoc_zero_iff.1 (hξ_2.memWkpLoc_of_hasWeakFDerivOn hDξ))
       hsol.locallyIntegrableOn).1 (hsol.of_memLpLoc hξ_2.memLpLoc)
   let e := (WithLp.prodContinuousLinearEquiv 2 ℝ V V).symm
-  let diagL := ContinuousLinearMap.withLpDiagL 2 ℝ V V
-  have hDJ₂ : HasWeakFDerivOn volume Ω (fun z => (J z).withLpProdMap 2 (J z))
-      (fun z => diagL.comp (DJ z)) := by simpa [diagL] using hDJ.clm_comp diagL
-  have hJ₂ : MemWkpLoc p Ω (max 1 m) (fun z => (J z).withLpProdMap 2 (J z)) := by
-    simpa [diagL] using (hJm1.of_le hmax).clm_comp diagL
+  have hDJ₂ := hDJ.withLpDiag 2
+  have hJ₂ := (hJm1.of_le hmax).withLpDiag 2
   have hJ₂sq : ∀ᵐ z ∂volume.restrict Ω,
       (J z).withLpProdMap 2 (J z) * (J z).withLpProdMap 2 (J z) = -1 := by
     filter_upwards [hJsq] with z hz
-    refine ContinuousLinearMap.ext fun w => ?_
-    simpa [ContinuousLinearMap.mul_def, WithLp.ext_iff, Prod.ext_iff] using
-      congr($(prodMap_mul_self_eq_neg_one hz) (w.fst, w.snd))
+    rw [← ContinuousLinearMap.withLpProdMap_mul, hz, ContinuousLinearMap.withLpProdMap_neg,
+      ContinuousLinearMap.withLpProdMap_one]
   have hH_m : MemWkpLoc r Ω m
       (fun z => WithLp.toLp 2 (Dη z 1 - DS z 1 (ξ z), Dη z I - DS z I (ξ z))) := by
     simpa only [e, ContinuousLinearEquiv.coe_coe, WithLp.prodContinuousLinearEquiv_symm_apply] using
@@ -281,75 +273,26 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae {Ω : Opens ℂ} {p : ℝ
     isWeakCRSolution_iff.2 ⟨hξ2, hη, fun φ =>
       ⟨hc'.integrable_inner_crFormalAdjoint hp2.le hξ2 φ, ?_⟩⟩
   rw [hc'.integral_inner_crFormalAdjoint_eq_terms hp2.le hξ2 φ]
-  -- Integrate `J' ξ` by parts in direction `I` by mollifying `J'` on a precompact `W ⊆ Ω`.
+  -- Integrate `J' ξ` by parts in direction `I` via the endpoint weak Leibniz rule.
+  have iDJξ : Integrable (fun z => ⟪(φ : ℂ → E) z, DJ z I (ξ z)⟫_ℝ) volume := by
+    simpa only [ContinuousLinearMap.apply_apply] using φ.integrable_inner
+      ((hc'.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I)
+        ).locallyIntegrableOn_clm_apply hξ2 hp2.le hloc)
+  have iJD := φ.integrable_inner
+    ((hDξ.hasWeakLineDerivOn I).locallyIntegrableOn_deriv.continuousOn_clm_apply hloc hJ'cont)
   have hibpI : (∫ z, ⟪fderiv ℝ (φ : ℂ → E) z I, J' z (ξ z)⟫_ℝ) +
       (∫ z, ⟪(φ : ℂ → E) z, DJ z I (ξ z)⟫_ℝ) = -∫ z, ⟪(φ : ℂ → E) z, J' z (Dξ z I)⟫_ℝ := by
-    obtain ⟨W, hφW, hWΩ, hWc⟩ :=
-      Opens.exists_between_and_isCompact_closure φ.hasCompactSupport φ.tsupport_subset
-    obtain ⟨ρ, hρ0, hball⟩ :=
-      ContDiffBump.exists_seq_tendsto_rOut_closedBall_subset W.isOpen φ.hasCompactSupport hφW
-    have hWm : NullMeasurableSet (W : Set ℂ) volume := W.isOpen.measurableSet.nullMeasurableSet
-    have hJW : MemLp J' p (volume.restrict W) :=
-      hc'.memLpLoc_coeff.memLp_restrict_of_isCompact_closure hWc hWΩ
-    have hDJW : MemLp DJ p (volume.restrict W) :=
-      hc'.memLpLoc_deriv.memLp_restrict_of_isCompact_closure hWc hWΩ
-    have hξW : MemLp ξ 2 (volume.restrict W) := hξ2.memLp_restrict_of_isCompact_closure hWc hWΩ
-    let J_n (n : ℕ) :=
-      (ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator J'
-    let DJ_n (n : ℕ) :=
-      (ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator DJ
-    have hJn_smooth (n : ℕ) : ContDiff ℝ ∞ (J_n n) :=
-      (ρ n).hasCompactSupport_normed.contDiff_convolution_left _ (ρ n).contDiff_normed
-        (((memLp_indicator_iff_restrict hWm).2 hJW).locallyIntegrable hp1)
-    have hJn_cont {s : Set ℂ} : ∀ᶠ n in atTop, ContinuousOn (J_n n) s :=
-      .of_forall fun n => (hJn_smooth n).continuous.continuousOn
-    have hunif : TendstoUniformlyOn J_n J' atTop (tsupport (φ : ℂ → E)) :=
-      ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator (μ := volume) hρ0 W.isOpen
-        φ.hasCompactSupport hφW (hJ'cont.mono (subset_closure.trans hWΩ))
-    let B := (ContinuousLinearMap.adjointRealCLM (𝕜 := ℝ) (V := E) (W := E)).flip
-    have hid (n : ℕ) : (∫ z, ⟪(∂_{I} φ : 𝓓(Ω, E)) z, J_n n z (ξ z)⟫_ℝ) +
-        (∫ z, ⟪(φ : ℂ → E) z, DJ_n n z I (ξ z)⟫_ℝ) =
-        -∫ z, ⟪(φ : ℂ → E) z, J_n n z (Dξ z I)⟫_ℝ := by
-      let Ψ : 𝓓(Ω, E) := TestFunction.bilinLeftCLM B (hJn_smooth n) φ
-      have hweak := (hDξ.hasWeakLineDerivOn I).integral_inner_lineDeriv_eq_neg Ψ
-      have hpt (z : ℂ) : ⟪lineDeriv ℝ (Ψ : ℂ → E) z I, ξ z⟫_ℝ =
-          ⟪(∂_{I} φ : 𝓓(Ω, E)) z, J_n n z (ξ z)⟫_ℝ +
-            ⟪(φ : ℂ → E) z, fderiv ℝ (J_n n) z I (ξ z)⟫_ℝ := by
-        rw [TestFunction.lineDeriv_eq_fderiv, TestFunction.bilinLeftCLM_apply,
-          B.fderiv_of_bilinear (φ.contDiff.differentiable (by simp) z)
-            ((hJn_smooth n).differentiable (by simp) z)]
-        simp only [B, add_apply, ContinuousLinearMap.compL_apply, ContinuousLinearMap.coe_comp,
-          Function.comp_apply, ContinuousLinearMap.precompR_apply,
-          ContinuousLinearMap.precompL_apply, ContinuousLinearMap.flip_apply,
-          ContinuousLinearMap.adjointRealCLM_apply, TestFunction.lineDerivOp_apply_eq_fderiv,
-          inner_add_left, ContinuousLinearMap.adjoint_inner_left, add_comm]
-      have hi1 := (∂_{I} φ).integrable_inner (hDξ.locallyIntegrableOn.continuousOn_clm_apply hloc
-        (hJn_smooth n).continuous.continuousOn)
-      have hi2 := φ.integrable_inner (hDξ.locallyIntegrableOn.continuousOn_clm_apply hloc
-        (((hJn_smooth n).continuous_fderiv (by simp)).clm_apply
-          (continuous_const (y := I))).continuousOn)
-      simp_rw [hpt] at hweak
-      rw [integral_add hi1 hi2,
-        hc'.hasWeakFDerivOn.integral_inner_mollified_fderiv_eq hp1
-          hWΩ hJW hDJW (ρ n) φ (hball n) (fun z M => M I (ξ z))] at hweak
-      simpa only [Ψ, TestFunction.bilinLeftCLM_apply, B, ContinuousLinearMap.flip_apply,
-        ContinuousLinearMap.adjointRealCLM_apply, ContinuousLinearMap.adjoint_inner_left]
-        using hweak
-    have ht1 := (∂_{I} φ).tendsto_integral_inner_clm_of_tendstoUniformlyOn
-      hDξ.locallyIntegrableOn hJn_cont (hunif.mono (φ.tsupport_lineDerivOp_subset I))
-    have ht2 : Tendsto (fun n => ∫ z, ⟪(φ : ℂ → E) z, DJ_n n z I (ξ z)⟫_ℝ)
-        atTop (𝓝 (∫ z, ⟪(φ : ℂ → E) z, DJ z I (ξ z)⟫_ℝ)) := by
-      simpa [DJ_n] using φ.tendsto_integral_inner_bilin_normed_convolution
-        (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I) hp2.le hWm hφW hDJW hξW hρ0
-    have ht3 := (φ.tendsto_integral_inner_clm_of_tendstoUniformlyOn
-      (hDξ.hasWeakLineDerivOn I).locallyIntegrableOn_deriv hJn_cont hunif).neg
-    simpa only [TestFunction.lineDerivOp_apply_eq_fderiv] using
-      tendsto_nhds_unique (ht1.add ht2) (ht3.congr fun n => (hid n).symm)
+    have hweak := (hc'.hasWeakFDerivOn.hasWeakLineDerivOn I).bilin_of_continuousOn
+      (ContinuousLinearMap.id ℝ (E →L[ℝ] E)) hp2.le hJ'cont
+      (hc'.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I))
+      (hDξ.hasWeakLineDerivOn I) hξ2
+    have h := hweak.integral_inner_lineDeriv_eq_neg φ
+    simp only [ContinuousLinearMap.id_apply, TestFunction.lineDeriv_eq_fderiv, inner_add_right] at h
+    rw [integral_add iDJξ iJD] at h
+    linarith
   have ibp1 := (hDξ.hasWeakLineDerivOn 1).integral_inner_lineDeriv_eq_neg φ
   simp only [TestFunction.lineDeriv_eq_fderiv] at ibp1
   have iD1 := φ.integrable_inner (hDξ.hasWeakLineDerivOn 1).locallyIntegrableOn_deriv
-  have iJD := φ.integrable_inner
-    ((hDξ.hasWeakLineDerivOn I).locallyIntegrableOn_deriv.continuousOn_clm_apply hloc hJ'cont)
   have iSξ := φ.integrable_inner (hc'.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξ2 hp2.le hloc)
   have hpde : (∫ z, ⟪(φ : ℂ → E) z, Dξ z 1⟫_ℝ) + (∫ z, ⟪(φ : ℂ → E) z, J' z (Dξ z I)⟫_ℝ) +
       (∫ z, ⟪(φ : ℂ → E) z, S z (ξ z)⟫_ℝ) = ∫ z, ⟪(φ : ℂ → E) z, η z⟫_ℝ := by
