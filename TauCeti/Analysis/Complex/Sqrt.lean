@@ -153,4 +153,12 @@ theorem sqrt_ratCast_of_nonpos {r : ℚ} (hr : r ≤ 0) :
   rw [← neg_neg (r : ℂ), sqrt_neg_of_nonneg hc, sqrt_of_nonneg hc,
     neg_re, ratCast_re, mul_comm]
 
+/-- The principal square root of a nonzero rational cast `(r : ℂ)` is nonzero. -/
+theorem sqrt_ratCast_ne_zero {r : ℚ} (hr : r ≠ 0) : sqrt (r : ℂ) ≠ 0 :=
+  sqrt_eq_zero_iff.not.mpr (Rat.cast_ne_zero.mpr hr)
+
+/-- The principal square root of a nonzero integer cast `(d : ℂ)` is nonzero. -/
+theorem sqrt_intCast_ne_zero {d : ℤ} (hd : d ≠ 0) : sqrt (d : ℂ) ≠ 0 :=
+  sqrt_eq_zero_iff.not.mpr (Int.cast_ne_zero.mpr hd)
+
 end Complex

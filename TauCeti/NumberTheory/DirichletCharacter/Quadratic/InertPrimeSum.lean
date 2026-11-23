@@ -94,6 +94,9 @@ private theorem grid_deg_lt_cube {q C : ℕ} (hq3 : 3 ≤ q) (hC6 : 6 ≤ C) (hC
   rw [hN3_eq]
   nlinarith [Nat.sub_le X 1, Nat.sub_le S 1]
 
+private theorem log_two_le_one : Real.log 2 ≤ 1 :=
+  (Real.log_le_sub_one_of_pos (by positivity)).trans (by norm_num)
+
 private theorem log_grid_error_le {q C : ℕ} (hq3 : 3 ≤ q) (hC3 : 3 ∣ C) :
     let X := q ^ C
     let N := q ^ (2 * (C / 3))
@@ -106,8 +109,7 @@ private theorem log_grid_error_le {q C : ℕ} (hq3 : 3 ≤ q) (hC3 : 3 ∣ C) :
   have hN_u : (N : ℝ) = (u : ℝ) ^ 2 := by exact_mod_cast hN_eq
   have hlogu : Real.log u ≤ u :=
     (Real.log_le_sub_one_of_pos (by positivity)).trans (by linarith)
-  have hlog2 : Real.log 2 ≤ 1 :=
-    (Real.log_le_sub_one_of_pos (by positivity)).trans (by norm_num)
+  have hlog2 : Real.log 2 ≤ 1 := log_two_le_one
   rw [hN_u, hX_u, Real.log_mul (by positivity) (by positivity),
     Real.log_pow, Real.log_pow, Real.log_pow]
   push_cast
@@ -146,8 +148,7 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
         Real.log ((q : ℝ) ^ C) + 15) := by
   intro X S N
   obtain ⟨-, -, hN_pos, -⟩ := grid_deg_lt_cube hq3 hC6 hC3
-  have hlog2 : Real.log 2 ≤ 1 :=
-    (Real.log_le_sub_one_of_pos (by positivity)).trans (by norm_num)
+  have hlog2 : Real.log 2 ≤ 1 := log_two_le_one
   have herr1 := log_grid_error_le hq3 hC3
   have h2Nq_log := log_two_mul_grid_mul_sqrt_eq (by omega : 0 < q) (by omega : 0 < C) hC3
   have hlog_dq : Real.log (2 * N * Real.sqrt d.natAbs) ≤ Real.log (2 * N * Real.sqrt q) := by
@@ -161,9 +162,8 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
     have hdiv : (X : ℝ) / C = 1 / (C : ℝ) * X := by ring
     linarith
   have hlog2Nq_nn : 0 ≤ Real.log (2 * N * Real.sqrt q) := by
-    have hsq1 : (1 : ℝ) ≤ Real.sqrt q := by
-      rw [← Real.sqrt_one]
-      exact Real.sqrt_le_sqrt (by exact_mod_cast (by omega : 1 ≤ q))
+    have hsq1 : (1 : ℝ) ≤ Real.sqrt q :=
+      Real.one_le_sqrt.mpr (by exact_mod_cast (by omega : 1 ≤ q))
     have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hN_pos
     exact Real.log_nonneg (by nlinarith)
   calc (X : ℝ) * S * (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log X) +
@@ -270,13 +270,14 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
       ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
           Real.log p ≤
         Real.log (D : ℝ) := by
-    simpa [Nat.cast_mul, Nat.cast_sum] using
-      Nat.sum_mul_log_le_log_of_prime
-        (fun p ↦ 2 * ∑ i : Fin X × Fin S, min (i.1.val / p) (S - 1 - i.2.val)) hD_pos
-        (fun p hp ↦ (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2)
-        (fun p hp ↦ by
-          obtain ⟨hpX, _, hjac⟩ := Finset.mem_filter.mp hp
-          exact hD_dvd p (Nat.mem_primesLE.mp hpX).2 hjac)
+    have h := Nat.sum_mul_log_le_log_of_prime (P := P)
+      (fun p ↦ 2 * ∑ i : Fin X × Fin S, min (i.1.val / p) (S - 1 - i.2.val)) hD_pos
+      (fun p hp ↦ (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2)
+      (fun p hp ↦ by
+        obtain ⟨hpX, _, hjac⟩ := Finset.mem_filter.mp hp
+        exact hD_dvd p (Nat.mem_primesLE.mp hpX).2 hjac)
+    simp only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_sum] at h
+    exact h
   have hSX : S ≤ X := Nat.div_le_self X C
   have hlhs_ge :
       (X : ℝ) ^ 2 * S * (∑ p ∈ P, Real.log p / p) -
@@ -338,15 +339,13 @@ theorem DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le {R : Ty
     obtain ⟨hpX, hχp⟩ := Finset.mem_filter.mp hpS
     have hp_pr := (Nat.mem_primesLE.mp hpX).2
     have hgt : 2 * C < p := Nat.lt_of_not_ge hp2C
-    have hjac_cast : (jacobiSym d p : R) = -1 :=
-      (hval p (hp_pr.odd_of_ne_two (by omega))).symm.trans hχp
-    rcases jacobiSym.trichotomy d p with h0 | h1' | hm1
-    · rw [h0, Int.cast_zero, eq_comm, neg_eq_zero] at hjac_cast
-      exact absurd hjac_cast one_ne_zero
-    · rw [h1', Int.cast_one] at hjac_cast
-      exact absurd (calc (2 : R) = 1 - (-1) := by ring
-        _ = 0 := by rw [← hjac_cast, sub_self]) (NeZero.ne (2 : R))
-    · exact Finset.mem_filter.mpr ⟨hpX, hgt, hm1⟩
+    have hR : ringChar R ≠ 2 := fun h ↦
+      NeZero.ne (2 : R) (Nat.cast_two (R := R) ▸ (ringChar.spec R 2).mpr h.dvd)
+    have hjac_cast : (jacobiSym d p : R) = ((-1 : ℤ) : R) := by
+      rw [← hval p (hp_pr.odd_of_ne_two (by omega)), hχp, Int.cast_neg, Int.cast_one]
+    exact Finset.mem_filter.mpr ⟨hpX, hgt,
+      Int.cast_injOn_of_ringChar_ne_two hR (jacobiSym.trichotomy d p) (Or.inr (Or.inr rfl))
+        hjac_cast⟩
   have hlarge := (Finset.sum_le_sum_of_subset_of_nonneg hlarge_sub fun _ _ _ ↦ by positivity).trans
     (TauCeti.sum_primesLE_jacobiSym_eq_neg_one_le hd hd1 hq3 hdq hC6 hC3)
   linarith

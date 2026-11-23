@@ -178,15 +178,8 @@ theorem le_two_mul_sum_range_min {R : Type*} [Ring R] [PartialOrder R] [IsOrdere
         mul_comm 2 (∑ s ∈ range S, (s : ℤ)), sum_range_natCast_mul_two]
     have hSkZ : (S : ℤ) ≤ k := by exact_mod_cast hSk.le
     nlinarith [sq_nonneg ((k : ℤ) - S), hSkZ]
-  set d : ℕ := (2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) -
-    (2 * (S : ℤ) * k - (k : ℤ) ^ 2 - k)).toNat
-  have hd : 2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) =
-      (2 * (S : ℤ) * k - (k : ℤ) ^ 2 - k) + (d : ℤ) := by omega
-  have hR := congrArg (Int.cast (R := R)) hd
-  simp only [Int.cast_add, Int.cast_sub, Int.cast_mul, Int.cast_pow, Int.cast_sum,
-    Int.cast_natCast, Int.cast_ofNat] at hR
-  rw [hR]
-  exact le_add_of_nonneg_right (Nat.cast_nonneg d)
+  simpa only [Int.cast_sub, Int.cast_mul, Int.cast_pow, Int.cast_sum, Int.cast_natCast,
+    Int.cast_ofNat] using Int.cast_mono (R := R) hZ
 
 /-- Lower bound on the double truncated sum `2 * ∑ r ∈ range R, ∑ s ∈ range S, min (r / p) s`
 in any strictly ordered field `K`. -/

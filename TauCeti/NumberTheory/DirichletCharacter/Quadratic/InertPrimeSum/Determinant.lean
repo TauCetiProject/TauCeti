@@ -207,8 +207,7 @@ private theorem totalDegree_gridL₂_le (d : ℤ) : (gridL₂ d).totalDegree ≤
 private theorem aevalAeval_grid_injective {d : ℤ} (hd0 : d ≠ 0) :
     Function.Injective
       (aevalAeval (gridL₂ d) (gridL₁ d) : ℂ[X][X] →ₐ[ℂ] MvPolynomial (Fin 2) ℂ) := by
-  have hsqrt : Complex.sqrt (d : ℂ) ≠ 0 :=
-    Complex.sqrt_eq_zero_iff.not.mpr (Int.cast_ne_zero.mpr hd0)
+  have hsqrt : Complex.sqrt (d : ℂ) ≠ 0 := Complex.sqrt_intCast_ne_zero hd0
   simpa [gridL₁, gridL₂, sub_eq_add_neg] using aevalAeval_linear_injective
     (IsUnit.mk0 ((1 : ℂ) * Complex.sqrt d - (-Complex.sqrt d) * 1)
       (by ring_nf; exact mul_ne_zero hsqrt two_ne_zero))
@@ -275,11 +274,13 @@ private theorem one_le_det_intGram {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
 
 /-! ### Archimedean upper bound on `log G.det` -/
 
+private theorem one_le_sqrt_natAbs {d : ℤ} (hd0 : d ≠ 0) : (1 : ℝ) ≤ Real.sqrt d.natAbs :=
+  Real.one_le_sqrt.mpr (by exact_mod_cast Int.natAbs_pos.mpr hd0)
+
 private theorem one_le_two_mul_mul_sqrt_natAbs {d : ℤ} (hd0 : d ≠ 0) {N : ℕ} (hN : 0 < N) :
     (1 : ℝ) ≤ 2 * N * Real.sqrt d.natAbs := by
   have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hN
-  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs :=
-    Real.sqrt_one.symm.trans_le (Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0))
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs := one_le_sqrt_natAbs hd0
   nlinarith
 
 private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
@@ -289,8 +290,7 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
       ‖Zsqrtd.embNeg d (baseFam d N R S i k)‖ ≤
         (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) := by
   have h2Nd_ge : (1 : ℝ) ≤ 2 * N * Real.sqrt d.natAbs := one_le_two_mul_mul_sqrt_natAbs hd0 hN
-  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs :=
-    Real.sqrt_one.symm.trans_le (Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0))
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs := one_le_sqrt_natAbs hd0
   have hpt (a b : ℤ) (ha : |a| ≤ N) (hb : |b| ≤ N) :
       |(a : ℝ)| + |(b : ℝ)| * Real.sqrt d.natAbs ≤ 2 * N * Real.sqrt d.natAbs := by
     have haR : |(a : ℝ)| ≤ N := by exact_mod_cast ha
@@ -505,8 +505,7 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
       simp only [shiftFam, shiftPoly_eq_sum_basePoly d hp i, U, baseFam, jetEval_sum,
         Finset.sum_apply, Pi.smul_apply]
     rw [hfam]
-    simp only [map_sum, map_zsmul, Int.cast_smul_eq_zsmul]
-    rfl
+    simp only [map_sum, map_zsmul, Int.cast_smul_eq_zsmul, baseVec]
   have hdetU : (U.map (Int.castRingHom ℝ)).det = 1 := by
     rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_shiftMatrix_eq_one hp, map_one]
   exact_mod_cast (by
@@ -545,12 +544,13 @@ private theorem pow_dvd_det_intGram {d : ℤ} {p : ℕ} (hp : p.Prime)
     ((p : ℤ) ^ (2 * ∑ i : Fin R × Fin S, shiftExp p S i)) ∣
       (Zsqrtd.intGram d (baseFam d N R S)).det := by
   rw [← det_intGram_shiftFam_eq d hp.pos]
-  simpa [Finset.prod_pow_eq_pow_sum, ← pow_add, ← two_mul] using
-    Matrix.prod_mul_prod_dvd_det_of_dvd (Zsqrtd.intGram d (shiftFam d p N R S))
-      (fun i ↦ (p : ℤ) ^ shiftExp p S i) (fun j ↦ (p : ℤ) ^ shiftExp p S j)
-      fun i j ↦ Zsqrtd.mul_dvd_intGram d
-        (fun k ↦ by simpa using pow_dvd_shiftFam hp hjac N R S i k)
-        (fun k ↦ by simpa using pow_dvd_shiftFam hp hjac N R S j k)
+  have hdvd := Matrix.prod_mul_prod_dvd_det_of_dvd (Zsqrtd.intGram d (shiftFam d p N R S))
+    (fun i ↦ (p : ℤ) ^ shiftExp p S i) (fun j ↦ (p : ℤ) ^ shiftExp p S j)
+    fun i j ↦ Zsqrtd.mul_dvd_intGram d
+      (fun k ↦ by exact_mod_cast pow_dvd_shiftFam hp hjac N R S i k)
+      (fun k ↦ by exact_mod_cast pow_dvd_shiftFam hp hjac N R S j k)
+  rw [Finset.prod_pow_eq_pow_sum, ← pow_add, ← two_mul] at hdvd
+  exact hdvd
 
 end InertPrimeSum
 
