@@ -471,41 +471,6 @@ private theorem eq_of_weight_ne_zero (ht : n < t)
   ext i j
   fin_cases i <;> fin_cases j <;> simp [ha, hc, hd]
 
-/-- The weight of `(1 b; 0 n)` is its weight in `T₁`. -/
-private theorem weight_upperTriangular (b : ℤ) :
-    weight !![1, b; 0, n] = chainWeight₃ (1 - n) (-b) 0 := by
-  simp only [weight, weight₁, weight₂, weight₃, weight₄, of_apply, cons_val', cons_val_zero,
-    cons_val_one, cons_val_fin_one, le_refl, zero_lt_one, and_self, ite_true]
-  have h₂ : (if b < n ∧ n ≤ 0 then chainWeight₃ (-b) (1 - n) 0 else 0) = 0 := by
-    split_ifs with h
-    · unfold chainWeight₃; split_ifs <;> omega
-    · rfl
-  have h₄ : (if n ≤ 0 ∧ 0 < -b then chainWeight₄ 0 (1 - n) (-b) 0 else 0) = 0 := by
-    split_ifs with h
-    · unfold chainWeight₄; split_ifs <;> omega
-    · rfl
-  rw [h₂, h₄]
-  simp
-
-/-- The weights of the matrices `(1 b; 0 m + 1)`, `0 ≤ b ≤ m`, in `T₁`: `2` if `m = 0`, and
-`6, 12, …, 12, 6` (summing to `12 m`) if `m > 0`. -/
-private theorem sum_chainWeight₃_Icc {m : ℤ} (hm : 0 ≤ m) :
-    ∑ b ∈ Finset.Icc 0 m, chainWeight₃ (-m) (-b) 0 = if m = 0 then 2 else 12 * m := by
-  rcases eq_or_lt_of_le hm with rfl | hm
-  · simp [chainWeight₃]
-  · rw [ite_eq_right hm.ne']
-    have key : ∀ b ∈ Finset.Icc 0 m, chainWeight₃ (-m) (-b) 0 =
-        12 - (if b = 0 then 6 else 0) - (if b = m then 6 else 0) := by
-      intro b hb
-      rw [Finset.mem_Icc] at hb
-      unfold chainWeight₃
-      split_ifs <;> omega
-    rw [Finset.sum_congr rfl key, Finset.sum_sub_distrib, Finset.sum_sub_distrib,
-      Finset.sum_ite_eq', Finset.sum_ite_eq', Finset.sum_const, Int.card_Icc]
-    simp only [Finset.mem_Icc, le_refl, hm.le, and_self, ite_true, nsmul_eq_mul]
-    rw [Int.toNat_of_nonneg (by omega)]
-    ring
-
 /-- **Fibres with `0 < n < t`.** For `0 < n < t`, the weights of the matrices of trace `t` and
 determinant `n` sum to `2` if `(t, n) = (2, 1)`, to `12 (n - 1)` if `t = n + 1` with `n > 1`, and
 to `0` otherwise. -/
@@ -521,22 +486,17 @@ theorem finsum_weight_traceDetFiber_of_det_lt_trace (hn : 0 < n) (ht : n < t) :
     have hφ : Function.Injective φ := fun b b' hb ↦ by
       simpa [φ] using congrFun (congrFun (congrArg Subtype.val hb) 0) 1
     have hsub : (Function.support fun M : traceDetFiber (Fin 2) (n + 1) n ↦ weight M.val) ⊆
-        (Finset.Icc 0 (n - 1)).image φ := by
+        (Finset.Ico 0 n).image φ := by
       intro M hM
       obtain ⟨-, hM'⟩ := eq_of_weight_ne_zero ht M.property hM
-      have hw : chainWeight₃ (1 - n) (-M.val 0 1) 0 ≠ 0 := by
-        rw [← weight_upperTriangular, ← hM']
-        exact hM
-      obtain ⟨h₁, h₂⟩ := le_of_chainWeight₃_ne_zero hw
-      refine Finset.mem_image.mpr ⟨M.val 0 1, Finset.mem_Icc.mpr ⟨by omega, by omega⟩, ?_⟩
-      exact Subtype.ext hM'.symm
+      have hw : weight !![1, M.val 0 1; 0, n] ≠ 0 := hM' ▸ hM
+      rw [weight_upperTriangular 1 (M.val 0 1) n one_pos] at hw
+      have hb : 0 ≤ M.val 0 1 ∧ M.val 0 1 < n := by split_ifs at hw <;> omega
+      exact Finset.mem_image.mpr ⟨M.val 0 1, Finset.mem_Ico.mpr hb, Subtype.ext hM'.symm⟩
     rw [finsum_eq_sum_of_support_subset _ hsub, Finset.sum_image fun b _ b' _ hb ↦ hφ hb]
-    have hsum : ∑ b ∈ Finset.Icc 0 (n - 1), weight (φ b).val =
-        ∑ b ∈ Finset.Icc 0 (n - 1), chainWeight₃ (-(n - 1)) (-b) 0 :=
-      Finset.sum_congr rfl fun b _ ↦ by
-        rw [weight_upperTriangular, show 1 - n = -(n - 1) by ring]
-    rw [hsum, sum_chainWeight₃_Icc (by omega)]
-    simp [sub_eq_zero]
+    change ∑ b ∈ Finset.Ico 0 n, weight !![1, b; 0, n] = _
+    rw [sum_Ico_weight_upperTriangular 1 n one_pos]
+    split_ifs <;> omega
   · rw [ite_eq_right htn]
     refine finsum_eq_zero_of_forall_eq_zero fun M ↦ ?_
     by_contra hw
