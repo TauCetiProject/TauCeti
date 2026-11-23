@@ -17,6 +17,7 @@ public import TauCeti.RingTheory.Kaehler.DualDerivation
 -- Non-public: `Module.End.instExpChar` and `Derivation.toLinearMapLieHom` carry `ad_pPow` into
 -- the associative algebra `Module.End R A`.
 import TauCeti.Algebra.CharP.LinearMaps
+import TauCeti.RingTheory.Derivation.FirstOrder
 import TauCeti.RingTheory.Derivation.Lie
 
 /-!
@@ -38,7 +39,11 @@ The `p`-th power is the `p`-map making `Derivation R A A` a restricted Lie algeb
 Jacobson, and it is the correction term in the `p`-curvature `(∇_D)^p - ∇_{D^[p]}` of a connection
 (Katz). This file proves its homogeneity for scalars of `R`, the identity `ad (D^[p]) = (ad D)^p`
 in the Lie algebra of derivations, its compatibility with scalar extension and with localization,
-and its vanishing on the derivations dual to a basis of exact Kähler differentials. The behaviour
+its vanishing on the derivations dual to a basis of exact Kähler differentials, and its
+compatibility with conjugation by a unit `u`: the `p`-th power of the operator `D - u⁻¹ D(u)` is
+the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way from `D^[p]`. In the language of
+connections, the rank-one connection `d - du/u` on `A`, whose horizontal section is `u`, has
+vanishing `p`-curvature. The behaviour
 of `pPow` on sums (Jacobson's formula) and on multiples `a • D` by elements `a : A` (Hochschild's
 formula) is not treated here.
 
@@ -53,6 +58,8 @@ formula) is not treated here.
 * `Derivation.pPow_extendOfIsLocalization`: `pPow` commutes with extension to a localization.
 * `Derivation.pPow_dualDerivation_eq_zero`: the `p`-th powers of the derivations dual to a basis
   `ds_i` of `Ω[A⁄R]` vanish.
+* `Derivation.sub_mulLeft_inv_mul_pow_expChar`: `(D - u⁻¹ D(u)) ^ p = D^[p] - u⁻¹ D^[p](u)` in
+  `Module.End R A`, for a unit `u`.
 
 ## References
 
@@ -183,6 +190,23 @@ theorem pPow_extendOfIsLocalization {T : Type*} [CommRing T] [Algebra R T] [Alge
   simp [extendOfIsLocalization_algebraMap, (h.iterate_right p a).symm, pow_apply_eq_iterate]
 
 end CommRing
+
+/-! ### Conjugation by a unit -/
+
+section Conjugation
+
+variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A] (p : ℕ) [ExpChar A p]
+
+/-- **The `p`-th power of `D - u⁻¹ D(u)`.** For a unit `u`, the `p`-th power of the operator
+`D - u⁻¹ D(u)` on `A` is the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way from the
+derivation `D^[p]`. Equivalently, the rank-one connection `d - du/u`, whose horizontal section is
+`u`, has vanishing `p`-curvature `(∇_D)^p - ∇_{D^[p]}`. -/
+theorem sub_mulLeft_inv_mul_pow_expChar (D : Derivation R A A) (u : Aˣ) :
+    (D.toLinearMap - LinearMap.mulLeft R (↑u⁻¹ * D u)) ^ p =
+      (D.pPow p).toLinearMap - LinearMap.mulLeft R (↑u⁻¹ * D.pPow p u) := by
+  rw [sub_mulLeft_inv_mul_pow, ← toLinearMap_pPow, mulLeft_mul_mul_mulLeft_inv]
+
+end Conjugation
 
 /-! ### Derivations dual to a basis of exact differentials -/
 

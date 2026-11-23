@@ -62,6 +62,9 @@ differential of `HF̂` is a finite count.
   `α`- and `β`-parts of the boundary of a domain.
 * `TauCeti.HeegaardRegionSystem.alphaArcBoundary`, `TauCeti.HeegaardRegionSystem.betaArcBoundary`:
   the boundary of a `1`-chain on the `α`- or `β`-arcs.
+* `TauCeti.HeegaardRegionSystem.withBasepoints`: the same curves and regions with other
+  basepoints; its generators and domains are those of the original diagram
+  (`TauCeti.HeegaardRegionSystem.isDomainBetween_withBasepoints`).
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween`: `D` is a domain connecting `x` to `y`.
 * `TauCeti.HeegaardRegionSystem.periodicDomains`: the subgroup of periodic domains.
 * `TauCeti.HeegaardRegionSystem.WeaklyAdmissible`: every nonzero periodic domain has both
@@ -271,6 +274,62 @@ theorem beta_betaNext (p : Point) : H.beta (H.betaNext p) = H.beta p :=
 theorem beta_betaNext_symm (p : Point) : H.beta (H.betaNext.symm p) = H.beta p := by
   simpa using (H.beta_betaNext (H.betaNext.symm p)).symm
 
+section WithBasepoints
+
+/-- The same curves and regions with the basepoints replaced by basepoints indexed by `B` in the
+regions `b`. Generators and domains do not involve the basepoints, so the generators of
+`H.withBasepoints b` are those of `H`. Forgetting some of the basepoints is the case
+`b = H.basepoint ∘ ι`; for a doubly pointed knot diagram this passes from the knot diagram to the
+diagram of the ambient three-manifold pointed at `w` only. -/
+abbrev withBasepoints {B : Type*} (b : B → Region) : HeegaardRegionSystem n Point Region B :=
+  { H with basepoint := b }
+
+variable {B : Type*} (b : B → Region)
+
+@[simp]
+theorem withBasepoints_basepoint : (H.withBasepoints b).basepoint = b :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_toHeegaardIntersectionSystem :
+    (H.withBasepoints b).toHeegaardIntersectionSystem = H.toHeegaardIntersectionSystem :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_alphaLeft : (H.withBasepoints b).alphaLeft = H.alphaLeft :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_alphaRight : (H.withBasepoints b).alphaRight = H.alphaRight :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_betaLeft : (H.withBasepoints b).betaLeft = H.betaLeft :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_betaRight : (H.withBasepoints b).betaRight = H.betaRight :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_alphaNext : (H.withBasepoints b).alphaNext = H.alphaNext :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_betaNext : (H.withBasepoints b).betaNext = H.betaNext :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_basepoint_self : H.withBasepoints H.basepoint = H :=
+  (rfl)
+
+@[simp]
+theorem withBasepoints_withBasepoints {B' : Type*} (b' : B' → Region) :
+    (H.withBasepoints b).withBasepoints b' = H.withBasepoints b' :=
+  (rfl)
+
+end WithBasepoints
+
 section Boundary
 
 /-- The `α`-part `∂D ∩ α` of the boundary of a domain, as a `1`-chain on the `α`-arcs: its
@@ -376,6 +435,11 @@ theorem isDomainBetween_iff {x y : H.Generator} {D : Region → ℤ} :
     H.IsDomainBetween x y D ↔
       H.alphaArcBoundary (H.alphaBoundary D) = H.generatorChain y - H.generatorChain x ∧
         H.betaArcBoundary (H.betaBoundary D) = H.generatorChain x - H.generatorChain y :=
+  Iff.rfl
+
+/-- Being a domain between two generators does not involve the basepoints. -/
+theorem isDomainBetween_withBasepoints {B : Type*} (b : B → Region) {x y : H.Generator}
+    {D : Region → ℤ} : (H.withBasepoints b).IsDomainBetween x y D ↔ H.IsDomainBetween x y D :=
   Iff.rfl
 
 /-- The zero domain connects every generator to itself. -/

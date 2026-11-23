@@ -44,6 +44,7 @@ Weyl-invariant.
 ## Main results
 
 * `RootPairing.isRegularWeight_smul`: regularity is invariant under the Weyl group.
+* `RootPairing.IsRegularWeight.ne_zero`: if there is a root, a regular weight is nonzero.
 * `RootPairing.smul_dominantChamber` and `RootPairing.smul_openDominantChamber`: an automorphism
   of the root pairing carries both chambers of a base to those of the transported base.
 * `RootPairing.mem_openDominantChamber_of_isRegularWeight` and

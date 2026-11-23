@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.Instances.Real.IcoScale
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import Mathlib.Tactic.NormNum
 import Mathlib.Topology.LocalAtTarget
 
@@ -141,6 +142,13 @@ theorem comp_homeomorph (e : P ≃ₜ N) :
 theorem isOpenEmbedding_comp {g : M → P} (hg : IsOpenEmbedding g) :
     IsCollar (g ∘ f) (g ∘ c) :=
   ⟨hg.comp h.isOpenEmbedding, fun x => congrArg g (h.apply_zero x)⟩
+
+/-- An open partial homeomorphism `e` carries a collar inside its source to a collar: `e ∘ c` is a
+collar of `e ∘ f`. Applied to `e.symm`, this moves a collar inside the target of a chart of a
+manifold into the manifold. -/
+theorem openPartialHomeomorph_comp (e : OpenPartialHomeomorph M P) (hc : range c ⊆ e.source) :
+    IsCollar (e ∘ f) (e ∘ c) :=
+  ⟨e.isOpenEmbedding_comp h.isOpenEmbedding hc, fun x ↦ congrArg e (h.apply_zero x)⟩
 
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :

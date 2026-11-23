@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Symplectic.Complex.Line
 public import TauCeti.Geometry.Symplectic.Prod.Basic
 public import TauCeti.Geometry.Toric.WeightedCircle.Basic
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Slice charts of the weighted ellipsoid quotient
@@ -39,7 +40,12 @@ slice charts, over `z₁ ≠ 0` and over `z₂ ≠ 0`, retaining the finite stab
   slice at `exp(-i a arg(w) / b) √((2 ε - b |w|²) / a)` (`TauCeti.Toric.weightedSliceTransition`),
   and the second slice meets that orbit exactly in the `ℤ / b`-orbit of this point
   (`TauCeti.Toric.exists_weightedRotation_weightedSliceFst_eq_weightedSliceSnd_iff`). So the change
-  of slices is defined up to the residual group of the target.
+  of slices is defined up to the residual group of the target. Replacing `arg(w)` by the argument
+  `arg(w / w₀) + arg(w₀)` of `w` gives the branch near a nonzero `w₀`
+  (`TauCeti.Toric.weightedSliceTransitionBranch`), which is again a change of slices
+  (`weightedRotation_weightedSliceFst_eq_weightedSliceSnd_weightedSliceTransitionBranch`) and
+  differs from `weightedSliceTransition` by the residual group
+  (`TauCeti.Toric.exists_weightedSliceTransitionBranch_eq`).
 * **Charts of the orbit space.** The maps sending a point of either disc to the orbit of its slice
   point (`TauCeti.Toric.weightedSliceChartFst`, `TauCeti.Toric.weightedSliceChartSnd`) are
   continuous and open, have as images the open sets of orbits with `z₁ ≠ 0`, respectively
@@ -282,12 +288,87 @@ slice over `z₂ ≠ 0`
 def weightedSliceTransition (w : ℂ) : ℂ :=
   (Circle.exp (-(a * Complex.arg w / b)) : ℂ) * ((√((2 * ε - b * ‖w‖ ^ 2) / a) : ℝ) : ℂ)
 
+/-- The defining formula of the change of slices. -/
+theorem weightedSliceTransition_apply (w : ℂ) :
+    weightedSliceTransition a b ε w =
+      (Circle.exp (-(a * Complex.arg w / b)) : ℂ) * ((√((2 * ε - b * ‖w‖ ^ 2) / a) : ℝ) : ℂ) :=
+  (rfl)
+
+variable (a b ε) in
+/-- The **branch near `w₀` of the change of slices**,
+`w ↦ exp(-i a (arg(w / w₀) + arg(w₀)) / b) √((2 ε - b |w|²) / a)`. It replaces `arg(w)` by
+`arg(w / w₀) + arg(w₀)`, an argument of `w` which is smooth near a nonzero `w₀`
+(`TauCeti.Toric.contDiffAt_weightedSliceTransitionBranch`), where the principal argument jumps
+across the negative real axis. -/
+def weightedSliceTransitionBranch (w₀ w : ℂ) : ℂ :=
+  (Circle.exp (-(a * (Complex.arg (w / w₀) + Complex.arg w₀) / b)) : ℂ) *
+    ((√((2 * ε - b * ‖w‖ ^ 2) / a) : ℝ) : ℂ)
+
+/-- The defining formula of the branch near `w₀` of the change of slices. -/
+theorem weightedSliceTransitionBranch_apply (w₀ w : ℂ) :
+    weightedSliceTransitionBranch a b ε w₀ w =
+      (Circle.exp (-(a * (Complex.arg (w / w₀) + Complex.arg w₀) / b)) : ℂ) *
+        ((√((2 * ε - b * ‖w‖ ^ 2) / a) : ℝ) : ℂ) :=
+  (rfl)
+
+/-- The branch at `1` is the change of slices `TauCeti.Toric.weightedSliceTransition`. -/
+@[simp]
+theorem weightedSliceTransitionBranch_one :
+    weightedSliceTransitionBranch a b ε 1 = weightedSliceTransition a b ε := by
+  funext w
+  rw [weightedSliceTransitionBranch_apply, weightedSliceTransition_apply, div_one,
+    Complex.arg_one, add_zero]
+
+/-- Every branch agrees with the change of slices at its base point. -/
+@[simp]
+theorem weightedSliceTransitionBranch_self (w₀ : ℂ) :
+    weightedSliceTransitionBranch a b ε w₀ w₀ = weightedSliceTransition a b ε w₀ := by
+  rw [weightedSliceTransitionBranch_apply, weightedSliceTransition_apply]
+  rcases eq_or_ne w₀ 0 with rfl | hw₀
+  · rw [div_zero, Complex.arg_zero, add_zero]
+  · rw [div_self hw₀, Complex.arg_one, zero_add]
+
+/-- The branches of the change of slices have the norm `√((2 ε - b |w|²) / a)` of the first
+coordinate of the slice point over `w`. -/
+theorem norm_weightedSliceTransitionBranch (w₀ w : ℂ) :
+    ‖weightedSliceTransitionBranch a b ε w₀ w‖ = √((2 * ε - b * ‖w‖ ^ 2) / a) := by
+  rw [weightedSliceTransitionBranch_apply, norm_mul, Circle.norm_coe, one_mul, Complex.norm_real,
+    Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+
 /-- The change of slices has the norm `√((2 ε - b |w|²) / a)` of the first coordinate of the slice
 point over `w`. -/
 theorem norm_weightedSliceTransition (w : ℂ) :
     ‖weightedSliceTransition a b ε w‖ = √((2 * ε - b * ‖w‖ ^ 2) / a) := by
-  rw [weightedSliceTransition, norm_mul, Circle.norm_coe, one_mul, Complex.norm_real,
-    Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+  rw [← weightedSliceTransitionBranch_one, norm_weightedSliceTransitionBranch]
+
+/-- **Every branch is a change of slices.** For `w` in the closed disc `b |w|² ≤ 2 ε`, the circle
+element `exp(-i (arg(w / w₀) + arg(w₀)) / b)` rotates the slice point over `w` onto the slice over
+`z₂ ≠ 0`, at the point over the value at `w` of the branch near `w₀` of the change of slices. -/
+theorem weightedRotation_weightedSliceFst_eq_weightedSliceSnd_weightedSliceTransitionBranch
+    (ha : 0 < a) (hb : 0 < b) {w₀ w : ℂ} (hw₀ : w₀ ≠ 0) (hwε : b * ‖w‖ ^ 2 ≤ 2 * ε) :
+    weightedRotation a b (Circle.exp (-((Complex.arg (w / w₀) + Complex.arg w₀) / b)))
+        (weightedSliceFst a b ε w) =
+      weightedSliceSnd a b ε (weightedSliceTransitionBranch a b ε w₀ w) := by
+  have ha' : (0 : ℝ) < a := by exact_mod_cast ha
+  have hb' : (b : ℝ) ≠ 0 := by exact_mod_cast hb.ne'
+  refine Prod.ext ?_ ?_
+  · rw [weightedRotation_fst, weightedSliceSnd_fst, weightedSliceTransitionBranch_apply,
+      ← Circle.coe_pow, ← Circle.exp_natCast_mul, weightedSliceFst_fst]
+    congr 3
+    ring
+  · have hs : (2 * ε - a * ‖weightedSliceTransitionBranch a b ε w₀ w‖ ^ 2) / b = ‖w‖ ^ 2 := by
+      rw [norm_weightedSliceTransitionBranch, Real.sq_sqrt (div_nonneg (by linarith) ha'.le)]
+      field_simp
+      ring
+    rw [weightedRotation_snd, weightedSliceSnd_snd, hs, Real.sqrt_sq (norm_nonneg _),
+      weightedSliceFst_snd, ← Circle.coe_pow, ← Circle.exp_natCast_mul]
+    rcases eq_or_ne w 0 with rfl | hw
+    · rw [mul_zero, norm_zero, Complex.ofReal_zero]
+    obtain ⟨m, hm⟩ := Complex.exists_arg_div_add_arg_eq hw hw₀
+    have hv : Circle.exp (b * -((Complex.arg (w / w₀) + Complex.arg w₀) / b)) =
+        Circle.exp (-Complex.arg w) :=
+      Circle.exp_eq_exp.2 ⟨-m, by rw [hm]; field_simp; push_cast; ring⟩
+    rw [hv, Circle.exp_neg_arg_mul_self]
 
 /-- **The change of slices.** For `w` in the closed disc `b |w|² ≤ 2 ε`, the circle element
 `exp(-i arg(w) / b)` rotates the slice point over `w` onto the slice over `z₂ ≠ 0`, at the point
@@ -296,21 +377,29 @@ theorem weightedRotation_weightedSliceFst_eq_weightedSliceSnd (ha : 0 < a) (hb :
     (hw : b * ‖w‖ ^ 2 ≤ 2 * ε) :
     weightedRotation a b (Circle.exp (-(Complex.arg w / b))) (weightedSliceFst a b ε w) =
       weightedSliceSnd a b ε (weightedSliceTransition a b ε w) := by
-  have ha' : (0 : ℝ) < a := by exact_mod_cast ha
-  have hb' : (b : ℝ) ≠ 0 := by exact_mod_cast hb.ne'
-  refine Prod.ext ?_ ?_
-  · rw [weightedRotation_fst, weightedSliceSnd_fst, weightedSliceTransition, ← Circle.coe_pow,
-      ← Circle.exp_natCast_mul, weightedSliceFst_fst]
-    congr 3
-    ring
-  · have hs : (2 * ε - a * ‖weightedSliceTransition a b ε w‖ ^ 2) / b = ‖w‖ ^ 2 := by
-      rw [norm_weightedSliceTransition, Real.sq_sqrt (div_nonneg (by linarith) ha'.le)]
-      field_simp
-      ring
-    have hv : b * -(Complex.arg w / b) = -Complex.arg w := by field_simp
-    rw [weightedRotation_snd, weightedSliceSnd_snd, hs, Real.sqrt_sq (norm_nonneg _),
-      weightedSliceFst_snd, ← Circle.coe_pow, ← Circle.exp_natCast_mul, hv,
-      Circle.exp_neg_arg_mul_self]
+  simpa only [div_one, Complex.arg_one, add_zero, weightedSliceTransitionBranch_one] using
+    weightedRotation_weightedSliceFst_eq_weightedSliceSnd_weightedSliceTransitionBranch ha hb
+      one_ne_zero hw
+
+/-- The branches of the change of slices differ from it by the residual group `ℤ / b`: off the
+origin, the value of the branch near `w₀` is `exp(-2π i a k / b)` times that of the change of slices
+for some `k ∈ ℤ / b`. -/
+theorem exists_weightedSliceTransitionBranch_eq [NeZero b] {w₀ w : ℂ} (hw₀ : w₀ ≠ 0)
+    (hw : w ≠ 0) :
+    ∃ k : ZMod b, weightedSliceTransitionBranch a b ε w₀ w =
+      ((ZMod.toCircle (-k) ^ a : Circle) : ℂ) * weightedSliceTransition a b ε w := by
+  obtain ⟨m, hm⟩ := Complex.exists_arg_div_add_arg_eq hw hw₀
+  have hm' : (Complex.arg (w / w₀) : ℂ) + Complex.arg w₀ = Complex.arg w + 2 * π * m := by
+    exact_mod_cast hm
+  refine ⟨m, ?_⟩
+  rw [weightedSliceTransitionBranch_apply, weightedSliceTransition_apply, ← mul_assoc]
+  congr 1
+  rw [Circle.coe_pow, ← Int.cast_neg, ZMod.toCircle_intCast, Circle.coe_exp, Circle.coe_exp,
+    ← Complex.exp_natCast_mul, ← Complex.exp_add]
+  congr 1
+  push_cast
+  rw [hm']
+  ring
 
 /-- **The change of slices retains the residual group `ℤ / b`.** For a nonzero `w` in the closed
 disc `b |w|² ≤ 2 ε`, the slice point over `w` and the slice point over `u` of the slice over

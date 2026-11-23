@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.Injective.Hom
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.RingTheory.Finiteness.Projective
+public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 
 /-!
 # Self-injective algebras
@@ -37,6 +38,7 @@ ring.
 
 * `Function.Bijective.moduleBaer_self` and `Function.Bijective.moduleInjective_self`: an algebra
   over a field carrying an associative bilinear form whose flip is bijective is self-injective.
+* `TauCeti.moduleInjective_self_of_isSemisimpleRing`: a semisimple ring is self-injective.
 * `Module.Baer.of_leftInverse`: a retract of a Baer module is Baer.
 * `Module.Baer.of_isIdempotentElem`: over a self-injective ring, a left ideal consisting of the
   elements fixed by right multiplication by an idempotent is Baer.
@@ -91,6 +93,18 @@ theorem _root_.Module.Baer.of_isIdempotentElem (hA : Module.Baer A A) {e : A}
     fun m => Subtype.ext ((hp m).1 m.property)
 
 end Idempotent
+
+/-! ### Semisimple rings -/
+
+section Semisimple
+
+/-- **A semisimple ring is self-injective**, for instance a field: every module over it is
+injective. -/
+instance moduleInjective_self_of_isSemisimpleRing (R : Type u) [Ring R] [IsSemisimpleRing R] :
+    Module.Injective R R :=
+  Module.injective_of_isSemisimpleRing R R
+
+end Semisimple
 
 /-! ### Finite projective modules over a self-injective ring -/
 
