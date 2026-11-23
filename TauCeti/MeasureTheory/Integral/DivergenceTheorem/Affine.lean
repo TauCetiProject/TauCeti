@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Add
-public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Box
 public import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -33,10 +33,10 @@ Unlike the absolute value in the change of variables formula, the determinant he
 
 Applying Mathlib's divergence theorem on the unit cube,
 `MeasureTheory.integral_divergence_of_hasFDerivAt_off_countable'`, to `H` gives the divergence
-theorem on the parallelepiped `A '' [0, 1]^ι`, with the boundary integrals of `H` over the faces
-of the unit cube on one side. As in Mathlib, only continuity on the closed parallelepiped,
-differentiability at the interior points off a countable set and integrability of the divergence
-are assumed; no continuity of the derivative is needed.
+theorem on the parallelepiped `A '' [0, 1]^ι`, with the boundary flux
+`L.affineFluxBoundary p F = TauCeti.boxBoundarySum 0 1 H` over the faces of the unit cube on one
+side. When `L` is the positive diagonal scaling `diag(b - a)` from `a` to `b` (`a < b`
+coordinatewise), `L.affineFluxBoundary a F` recovers `TauCeti.boxBoundarySum a b F` unconditionally.
 
 ## Main declarations
 
@@ -44,8 +44,11 @@ are assumed; no continuity of the derivative is needed.
 * `ContinuousLinearEquiv.hasFDerivAt_affineFluxPullback`: the derivative of `H j` at `u`.
 * `ContinuousLinearEquiv.sum_fderiv_affineFluxPullback`: the divergence of `H` at `u` is
   `det L` times the divergence of `F` at `A u`.
-* `ContinuousLinearEquiv.integral_divergence_affineFluxPullback`: **the divergence theorem on an
-  affine parallelepiped**, in cofactor form on the unit cube.
+* `ContinuousLinearEquiv.affineFluxBoundary`: the signed cofactor boundary flux on `[0, 1]ⁿ⁺¹`.
+* `ContinuousLinearEquiv.integral_divergence_eq_affineFluxBoundary`: **the divergence theorem on
+  an affine parallelepiped**, in cofactor form on the unit cube.
+* `ContinuousLinearEquiv.affineFluxBoundary_piCongrRight_smulLeft`: positive diagonal scaling from
+  `a` by `b - a` identifies `affineFluxBoundary` with `TauCeti.boxBoundarySum a b F`.
 
 ## References
 
@@ -81,9 +84,70 @@ theorem affineFluxPullback_apply (j : ι) (u : ι → ℝ) :
 @[simp]
 theorem affineFluxPullback_refl (j : ι) (u : ι → ℝ) :
     (ContinuousLinearEquiv.refl ℝ (ι → ℝ)).affineFluxPullback p F j u = F j (p + u) := by
-  have h : LinearMap.det
-      (ContinuousLinearEquiv.refl ℝ (ι → ℝ) : (ι → ℝ) →ₗ[ℝ] ι → ℝ) = 1 := LinearMap.det_id
-  simp [affineFluxPullback_apply, Pi.single_apply, h]
+  have hid : (ContinuousLinearEquiv.refl ℝ (ι → ℝ) : (ι → ℝ) →ₗ[ℝ] ι → ℝ) = LinearMap.id := by
+    ext; simp
+  simp [affineFluxPullback_apply, Pi.single_apply, hid]
+
+/-- The cofactor pullback of the zero field family vanishes. -/
+@[simp]
+theorem affineFluxPullback_zero :
+    L.affineFluxPullback p (0 : ι → (ι → ℝ) → E) = 0 := by
+  ext j u
+  simp [affineFluxPullback_apply]
+
+/-- Pointwise-lambda form of `affineFluxPullback_zero`, retained as a separate `@[simp]` rule so
+`simp` rewrites `fun _ _ ↦ 0` as well as `0` (as in `MeasureTheory.integral_zero'` and
+`Matrix.dotProduct_zero'`). -/
+@[simp]
+theorem affineFluxPullback_zero' :
+    L.affineFluxPullback p (fun _ _ ↦ (0 : E)) = 0 :=
+  L.affineFluxPullback_zero p
+
+theorem affineFluxPullback_smul (r : ℝ) :
+    L.affineFluxPullback p (fun i x ↦ r • F i x) = fun j u ↦ r • L.affineFluxPullback p F j u := by
+  ext j u
+  simp only [affineFluxPullback_apply, smul_comm _ r, Finset.smul_sum]
+
+theorem affineFluxPullback_neg :
+    L.affineFluxPullback p (fun i x ↦ -F i x) = fun j u ↦ -L.affineFluxPullback p F j u := by
+  ext j u
+  simpa using congr_fun₂ (L.affineFluxPullback_smul p F (-1 : ℝ)) j u
+
+theorem affineFluxPullback_add (G : ι → (ι → ℝ) → E) :
+    L.affineFluxPullback p (fun i x ↦ F i x + G i x) =
+      fun j u ↦ L.affineFluxPullback p F j u + L.affineFluxPullback p G j u := by
+  ext j u
+  simp [affineFluxPullback_apply, smul_add, Finset.sum_add_distrib]
+
+/-- For an invertible diagonal scaling `L = diag d` (`d : ι → ℝˣ`) from base point `p`, the `j`-th
+component of `L.affineFluxPullback p F` scales `F j` by the signed cofactor product
+`∏ i ∈ Finset.univ.erase j, (d i : ℝ)`. -/
+theorem affineFluxPullback_piCongrRight_smulLeft (d : ι → ℝˣ) (p : ι → ℝ)
+    (F : ι → (ι → ℝ) → E) (j : ι) (u : ι → ℝ) :
+    affineFluxPullback (piCongrRight fun i ↦ (smulLeft (d i) : ℝ ≃L[ℝ] ℝ)) p F j u =
+      (∏ i ∈ Finset.univ.erase j, (d i : ℝ)) • F j (fun i ↦ p i + d i * u i) := by
+  set e : ι → ℝ ≃L[ℝ] ℝ := fun i ↦ smulLeft (d i)
+  have hdet : LinearMap.det (piCongrRight e : (ι → ℝ) →ₗ[ℝ] ι → ℝ) = ∏ i, (d i : ℝ) := by
+    simp [e, det_piCongrRight, Units.smul_def]
+  have hsymm : (e j).symm 1 = ((d j : ℝ))⁻¹ := by
+    apply mul_left_cancel₀ (d j).ne_zero
+    have happ : e j ((e j).symm 1) = 1 := apply_symm_apply (e j) 1
+    simp only [e, smulLeft_apply_apply, Units.smul_def, smul_eq_mul] at happ
+    rw [happ, mul_inv_cancel₀ (d j).ne_zero]
+  have hsum : ∑ i, (piCongrRight e).symm (Pi.single i 1) j • F i (p + piCongrRight e u) =
+      ((d j : ℝ))⁻¹ • F j (fun i ↦ p i + d i * u i) := by
+    rw [Finset.sum_eq_single j]
+    · have hfun : p + piCongrRight e u = fun i ↦ p i + d i * u i := by
+        ext i
+        simp [e, Units.smul_def]
+      simp [hsymm, hfun]
+    · intro _ _ hij
+      simp [Pi.single_eq_of_ne hij.symm]
+    · intro hj
+      exact absurd (Finset.mem_univ j) hj
+  rw [affineFluxPullback_apply, hdet, hsum, smul_smul,
+    ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ j),
+    mul_right_comm, mul_inv_cancel₀ (d j).ne_zero, one_mul]
 
 /-- The cofactor pullback of a field continuous on the parallelepiped `A '' s` is continuous on
 `s`, where `A u = p + L u`. -/
@@ -120,16 +184,80 @@ theorem sum_fderiv_affineFluxPullback {u : ι → ℝ}
   simp_rw [h]
   exact L.sum_cofactor_comp_apply_single _
 
+section Boundary
+
+variable {n : ℕ} (L : (Fin (n + 1) → ℝ) ≃L[ℝ] (Fin (n + 1) → ℝ)) (p : Fin (n + 1) → ℝ)
+  (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E)
+
+/-- The signed cofactor boundary flux of `F` on the affine parallelepiped `u ↦ p + L u`: the unit-
+cube `TauCeti.boxBoundarySum` of the cofactor pullback `L.affineFluxPullback p F`. -/
+noncomputable def affineFluxBoundary : E :=
+  TauCeti.boxBoundarySum 0 1 (L.affineFluxPullback p F)
+
+theorem affineFluxBoundary_def :
+    L.affineFluxBoundary p F = TauCeti.boxBoundarySum 0 1 (L.affineFluxPullback p F) :=
+  (rfl)
+
+theorem affineFluxBoundary_eq_sum :
+    L.affineFluxBoundary p F =
+      ∑ j, ((∫ x in Icc (0 : Fin n → ℝ) 1, L.affineFluxPullback p F j (j.insertNth 1 x)) -
+        ∫ x in Icc (0 : Fin n → ℝ) 1, L.affineFluxPullback p F j (j.insertNth 0 x)) :=
+  TauCeti.boxBoundarySum_zero_one _
+
+/-- The cofactor boundary flux of the zero field family vanishes. For the pointwise lambda form
+`fun _ _ ↦ 0`, see `affineFluxBoundary_const`. -/
+@[simp]
+theorem affineFluxBoundary_zero :
+    L.affineFluxBoundary p (0 : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) = 0 := by
+  simp [affineFluxBoundary_def]
+
+/-- Constant field families have zero cofactor boundary flux, for either sign of `det L`. -/
+@[simp]
+theorem affineFluxBoundary_const (c : Fin (n + 1) → E) :
+    L.affineFluxBoundary p (fun i _ ↦ c i) = 0 := by
+  have h : L.affineFluxPullback p (fun i _ ↦ c i) = fun j _ ↦
+      LinearMap.det (L : (Fin (n + 1) → ℝ) →ₗ[ℝ] Fin (n + 1) → ℝ) •
+        ∑ i, L.symm (Pi.single i 1) j • c i := by
+    ext j u
+    rw [affineFluxPullback_apply]
+  rw [affineFluxBoundary_def, h]
+  exact TauCeti.boxBoundarySum_const 0 1 _
+
+/-- On the identity chart at the origin, `affineFluxBoundary` is `TauCeti.boxBoundarySum 0 1`. -/
+@[simp]
+theorem affineFluxBoundary_refl_zero :
+    (ContinuousLinearEquiv.refl ℝ (Fin (n + 1) → ℝ)).affineFluxBoundary 0 F =
+      TauCeti.boxBoundarySum 0 1 F := by
+  have h : (ContinuousLinearEquiv.refl ℝ (Fin (n + 1) → ℝ)).affineFluxPullback 0 F = F := by
+    ext j u
+    simp
+  rw [affineFluxBoundary_def, h]
+
+theorem affineFluxBoundary_smul (r : ℝ) :
+    L.affineFluxBoundary p (fun i x ↦ r • F i x) = r • L.affineFluxBoundary p F := by
+  rw [affineFluxBoundary_def, affineFluxPullback_smul, TauCeti.boxBoundarySum_smul,
+    ← affineFluxBoundary_def]
+
+theorem affineFluxBoundary_neg :
+    L.affineFluxBoundary p (fun i x ↦ -F i x) = -L.affineFluxBoundary p F := by
+  simpa using L.affineFluxBoundary_smul p F (-1 : ℝ)
+
+/-- Additivity of `affineFluxBoundary` for fields continuous on the closed parallelepiped. -/
+theorem affineFluxBoundary_add_of_continuousOn {G : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
+    (hF : ∀ i, ContinuousOn (F i) ((fun u ↦ p + L u) '' Icc 0 1))
+    (hG : ∀ i, ContinuousOn (G i) ((fun u ↦ p + L u) '' Icc 0 1)) :
+    L.affineFluxBoundary p (fun i x ↦ F i x + G i x) =
+      L.affineFluxBoundary p F + L.affineFluxBoundary p G := by
+  rw [affineFluxBoundary_def, affineFluxPullback_add]
+  exact TauCeti.boxBoundarySum_add_of_continuousOn zero_le_one
+    (L.continuousOn_affineFluxPullback p F hF) (L.continuousOn_affineFluxPullback p G hG)
+
 /-- **The divergence theorem on an affine parallelepiped.** Let `A u = p + L u` and let `F` be a
 flux field continuous on the parallelepiped `A '' [0, 1]ⁿ⁺¹`, differentiable with derivatives
 `F' i` at `A u` for every interior point `u` of the unit cube off a countable set, and with
 `u ↦ div F (A u)` integrable on the unit cube. Then `det L` times the integral of `div F ∘ A` over
-the unit cube is the boundary sum of the cofactor pullback `H = L.affineFluxPullback p F`: the sum
-over `j` of the integral of `H j` over the front face `u j = 1` minus that over the back face
-`u j = 0`. The determinant is signed. -/
-theorem integral_divergence_affineFluxPullback {n : ℕ}
-    (L : (Fin (n + 1) → ℝ) ≃L[ℝ] (Fin (n + 1) → ℝ)) (p : Fin (n + 1) → ℝ)
-    (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E)
+the unit cube equals the signed cofactor boundary flux `L.affineFluxBoundary p F`. -/
+theorem integral_divergence_eq_affineFluxBoundary
     (F' : Fin (n + 1) → (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) →L[ℝ] E)
     (s : Set (Fin (n + 1) → ℝ)) (hs : s.Countable)
     (Hc : ∀ i, ContinuousOn (F i) ((fun u ↦ p + L u) '' Icc 0 1))
@@ -138,8 +266,7 @@ theorem integral_divergence_affineFluxPullback {n : ℕ}
     (Hi : IntegrableOn (fun u ↦ ∑ i, F' i (p + L u) (Pi.single i 1)) (Icc 0 1)) :
     LinearMap.det (L : (Fin (n + 1) → ℝ) →ₗ[ℝ] Fin (n + 1) → ℝ) •
         ∫ u in Icc 0 1, ∑ i, F' i (p + L u) (Pi.single i 1) =
-      ∑ j, ((∫ x in Icc (0 : Fin n → ℝ) 1, L.affineFluxPullback p F j (j.insertNth 1 x)) -
-        ∫ x in Icc (0 : Fin n → ℝ) 1, L.affineFluxPullback p F j (j.insertNth 0 x)) := by
+      L.affineFluxBoundary p F := by
   -- The explicit derivative of the cofactor pullback, defined at every point of the cube.
   let H' : Fin (n + 1) → (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) →L[ℝ] E := fun j u ↦
     LinearMap.det (L : (Fin (n + 1) → ℝ) →ₗ[ℝ] Fin (n + 1) → ℝ) •
@@ -153,7 +280,52 @@ theorem integral_divergence_affineFluxPullback {n : ℕ}
     (L.affineFluxPullback p F) H' s hs (L.continuousOn_affineFluxPullback p F Hc)
     (fun u hu j ↦ L.hasFDerivAt_affineFluxPullback p F (Hd u hu) j)
     (by simp only [hdiv]; exact Hi.smul _)
+  rw [affineFluxBoundary_eq_sum]
   simpa only [hdiv, integral_smul, Pi.zero_comp, Pi.one_comp, Pi.zero_apply, Pi.one_apply]
     using h
+
+/-- A continuous field on the closed parallelepiped with pointwise interior derivatives of zero
+divergence has vanishing signed cofactor boundary flux, for either orientation of `L`. -/
+theorem affineFluxBoundary_eq_zero_of_hasFDerivAt
+    {F' : Fin (n + 1) → (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) →L[ℝ] E}
+    (Hc : ∀ i, ContinuousOn (F i) ((fun u ↦ p + L u) '' Icc 0 1))
+    (Hd : ∀ u ∈ univ.pi fun _ ↦ Ioo 0 1, ∀ i,
+      HasFDerivAt (F i) (F' i (p + L u)) (p + L u))
+    (Hzero : ∀ u ∈ univ.pi fun _ ↦ Ioo 0 1, ∑ i, F' i (p + L u) (Pi.single i 1) = 0) :
+    L.affineFluxBoundary p F = 0 := by
+  rw [affineFluxBoundary_def]
+  exact TauCeti.boxBoundarySum_eq_zero_of_hasFDerivAt zero_le_one
+    (L.continuousOn_affineFluxPullback p F Hc)
+    (fun u hu j ↦ L.hasFDerivAt_affineFluxPullback p F (Hd u (by simpa using hu)) j) fun u hu ↦ by
+      rw [L.sum_cofactor_comp_apply_single, Hzero u (by simpa using hu), smul_zero]
+
+end Boundary
+
+section Diagonal
+
+variable {n : ℕ}
+
+/-- Positive diagonal scaling `L = diag(b - a)` from `a` (`a < b` coordinatewise) identifies the
+cofactor boundary flux `L.affineFluxBoundary a F` with `TauCeti.boxBoundarySum a b F`, without
+continuity, measurability or completeness hypotheses. -/
+theorem affineFluxBoundary_piCongrRight_smulLeft {a b : Fin (n + 1) → ℝ} (hab : ∀ i, a i < b i)
+    (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) :
+    affineFluxBoundary (piCongrRight fun i ↦
+        (smulLeft (Units.mk0 (b i - a i) (sub_ne_zero.mpr (hab i).ne')) : ℝ ≃L[ℝ] ℝ))
+      a F = TauCeti.boxBoundarySum a b F := by
+  rw [affineFluxBoundary_def,
+    TauCeti.boxBoundarySum_eq_boxBoundarySum_zero_one fun i ↦ (hab i).le]
+  congr 1
+  ext j u
+  have hprod : ∏ i ∈ Finset.univ.erase j, (b i - a i) =
+      ∏ r : Fin n, (b (j.succAbove r) - a (j.succAbove r)) := by
+    apply mul_left_cancel₀ (sub_ne_zero.mpr (hab j).ne')
+    rw [Finset.mul_prod_erase Finset.univ (fun i ↦ b i - a i) (Finset.mem_univ j),
+      Fin.prod_univ_succAbove (fun i ↦ b i - a i) j]
+  simpa [Units.val_mk0, hprod] using
+    affineFluxPullback_piCongrRight_smulLeft
+      (fun i ↦ Units.mk0 (b i - a i) (sub_ne_zero.mpr (hab i).ne')) a F j u
+
+end Diagonal
 
 end ContinuousLinearEquiv

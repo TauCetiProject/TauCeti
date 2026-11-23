@@ -42,12 +42,12 @@ retraction `v ↦ 0_(π v)` onto the zero section to the identity. This is the w
 contraction `TauCeti.IsTubularNeighborhood.radialContraction`, with the time last as in the
 cylinder `V × [0, 1]` of `TauCeti.homotopyOperator`. -/
 def vectorBundleFiberScaling (p : TotalSpace FV V × Icc (0 : ℝ) 1) : TotalSpace FV V :=
-  ⟨p.1.proj, (p.2 : ℝ) • p.1.2⟩
+  ⟨p.1.proj, (p.2 : ℝ) • p.1.snd⟩
 
 /-- Fibre scaling multiplies the vector by the time and keeps its base point. -/
 @[simp]
 theorem vectorBundleFiberScaling_apply (v : TotalSpace FV V) (t : Icc (0 : ℝ) 1) :
-    vectorBundleFiberScaling FV V (v, t) = ⟨v.proj, (t : ℝ) • v.2⟩ :=
+    vectorBundleFiberScaling FV V (v, t) = ⟨v.proj, (t : ℝ) • v.snd⟩ :=
   (rfl)
 
 /-- At time one, fibre scaling is the identity. -/

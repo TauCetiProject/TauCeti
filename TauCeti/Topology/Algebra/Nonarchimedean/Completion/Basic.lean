@@ -256,7 +256,7 @@ theorem isUniformEmbedding_mapRingHom_subtype (G : Subring A) :
     IsUniformEmbedding (Completion.mapRingHom G.subtype (by fun_prop)) := by
   exact (Completion.isUniformInducing_extension
     ((Completion.isUniformInducing_coe A).comp
-      isUniformEmbedding_subtype_val.isUniformInducing)).isUniformEmbedding
+      isUniformEmbedding_subtypeVal.isUniformInducing)).isUniformEmbedding
 
 /-- The image of the completion of a subring is the closure of its image in the ambient
 completion. No openness or separation assumption on the original ring is needed. -/
@@ -289,7 +289,7 @@ noncomputable def completionEquivClosure (G : Subring A) :
         have hx : (x : Completion A) ∈ Set.range
             (Completion.mapRingHom G.subtype (by fun_prop)) := by
           rw [G.range_mapRingHom_subtype]
-          exact x.2
+          exact x.property
         obtain ⟨y, hy⟩ := hx
         exact ⟨y, Subtype.ext hy⟩⟩
 

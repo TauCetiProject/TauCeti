@@ -289,33 +289,33 @@ theorem linearIsometryEquivOfUnitary_symm_apply (f : X ⟶ Y) (hf : IsUnitary f)
 /-- Unitary arrows between Hilbert spaces are exactly linear isometric equivalences. -/
 def unitaryEquivLinearIsometryEquiv :
     { f : X ⟶ Y // IsUnitary f } ≃ (X ≃ₗᵢ[𝕜] Y) where
-  toFun f := linearIsometryEquivOfUnitary f.1 f.2
+  toFun f := linearIsometryEquivOfUnitary f.val f.property
   invFun e := ⟨(e : X →L[𝕜] Y), isUnitary_linearIsometryEquiv e⟩
   left_inv f := by apply Subtype.ext; ext x; rfl
   right_inv e := by ext x; rfl
 
 /-- The unitary-to-isometry correspondence uses the recovered isometric equivalence. -/
 theorem unitaryEquivLinearIsometryEquiv_apply (f : { f : X ⟶ Y // IsUnitary f }) :
-    unitaryEquivLinearIsometryEquiv f = linearIsometryEquivOfUnitary f.1 f.2 := (rfl)
+    unitaryEquivLinearIsometryEquiv f = linearIsometryEquivOfUnitary f.val f.property := (rfl)
 
 /-- The unitary-to-isometry correspondence preserves the underlying continuous linear map. -/
 @[simp] theorem unitaryEquivLinearIsometryEquiv_toContinuousLinearMap
     (f : { f : X ⟶ Y // IsUnitary f }) :
-    (unitaryEquivLinearIsometryEquiv f : X →L[𝕜] Y) = f.1 := (rfl)
+    (unitaryEquivLinearIsometryEquiv f : X →L[𝕜] Y) = f.val := (rfl)
 
 /-- The inverse correspondence has the isometry's underlying continuous linear map. -/
 @[simp] theorem unitaryEquivLinearIsometryEquiv_symm_val (e : X ≃ₗᵢ[𝕜] Y) :
-    (unitaryEquivLinearIsometryEquiv.symm e).1 = ofHom (e : X →L[𝕜] Y) := (rfl)
+    (unitaryEquivLinearIsometryEquiv.symm e).val = ofHom (e : X →L[𝕜] Y) := (rfl)
 
 /-- The unitary-to-isometry correspondence preserves evaluation. -/
 theorem unitaryEquivLinearIsometryEquiv_apply_apply
     (f : { f : X ⟶ Y // IsUnitary f }) (x : X) :
-    unitaryEquivLinearIsometryEquiv f x = f.1 x := (rfl)
+    unitaryEquivLinearIsometryEquiv f x = f.val x := (rfl)
 
 /-- The inverse correspondence regards an isometry as its continuous linear map. -/
 theorem unitaryEquivLinearIsometryEquiv_symm_val_apply
     (e : X ≃ₗᵢ[𝕜] Y) (x : X) :
-    (unitaryEquivLinearIsometryEquiv.symm e).1 x = e x := (rfl)
+    (unitaryEquivLinearIsometryEquiv.symm e).val x = e x := (rfl)
 
 /-- The operator norms of a Hom space satisfy the normed space axioms. -/
 theorem normedSpaceCore (X Y : HilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (X ⟶ Y) where

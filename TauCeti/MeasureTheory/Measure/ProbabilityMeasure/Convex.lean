@@ -19,6 +19,8 @@ probability measures to be stated without rebuilding the probability-measure str
 
 * `TauCeti.MeasureTheory.isProbabilityMeasure_smul_add_smul` proves that the underlying measure
   has total mass one.
+* `TauCeti.MeasureTheory.exists_mem_eq_smul_sum`: a set of probability measures closed under
+  binary mixtures contains the uniform mixture of any finitely many of its members.
 * `MeasureTheory.ProbabilityMeasure.toMeasure_convexComb` identifies the underlying measure.
 * `MeasureTheory.ProbabilityMeasure.convexComb_apply` evaluates the combination on any set.
 * `MeasureTheory.ProbabilityMeasure.convexComb_zero_left`,
@@ -33,7 +35,7 @@ noncomputable section
 
 open MeasureTheory
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -47,6 +49,33 @@ arbitrary elements of `ℝ≥0∞` summing to `1`; no separate nonnegativity con
 theorem isProbabilityMeasure_smul_add_smul {a b : ℝ≥0∞} (hab : a + b = 1) (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] : IsProbabilityMeasure (a • μ + b • ν) :=
   ⟨by simp [hab]⟩
+
+/-- **Uniform finite mixtures.** In a set `C` of probability measures closed under binary
+mixtures `a • P + (1 - a) • Q`, `0 ≤ a ≤ 1`, the uniform mixture `(#s)⁻¹ • ∑ i ∈ s, Q i` of finitely
+many members `Q i`, `i ∈ s`, is (the underlying measure of) a member. -/
+theorem exists_mem_eq_smul_sum {C : Set (ProbabilityMeasure α)}
+    (hconv : ∀ P ∈ C, ∀ Q ∈ C, ∀ a : ℝ≥0, a ≤ 1 →
+      ∃ R ∈ C, (R : Measure α) = (a : ℝ≥0∞) • (P : Measure α) +
+        ((1 - a : ℝ≥0) : ℝ≥0∞) • (Q : Measure α))
+    {ι : Type*} {Q : ι → ProbabilityMeasure α} {s : Finset ι} (hQ : ∀ i ∈ s, Q i ∈ C)
+    (hs : s.Nonempty) :
+    ∃ R ∈ C, (R : Measure α) = (s.card : ℝ≥0)⁻¹ • ∑ i ∈ s, (Q i : Measure α) := by
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton a => exact ⟨Q a, hQ a (Finset.mem_singleton_self a), by simp⟩
+  | cons a s ha hs ih =>
+    obtain ⟨R, hR, hReq⟩ := ih fun i hi ↦ hQ i (Finset.mem_cons_of_mem hi)
+    have hk : (s.card : ℝ≥0) ≠ 0 := by simpa using hs.ne_empty
+    have hw : ((s.card : ℝ≥0) + 1)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ le_add_self
+    obtain ⟨R', hR', hR'eq⟩ := hconv (Q a) (hQ a (Finset.mem_cons_self a s)) R hR _ hw
+    refine ⟨R', hR', ?_⟩
+    have hcoef : (1 - ((s.card : ℝ≥0) + 1)⁻¹) * (s.card : ℝ≥0)⁻¹ = ((s.card : ℝ≥0) + 1)⁻¹ := by
+      have hk' : (s.card : ℝ) ≠ 0 := by exact_mod_cast hk
+      rw [← NNReal.coe_inj]
+      push_cast [NNReal.coe_sub hw]
+      field_simp
+      ring
+    rw [hR'eq, hReq, Finset.card_cons, Nat.cast_succ, Finset.sum_cons, ← ENNReal.smul_def,
+      ← ENNReal.smul_def, smul_smul, hcoef, smul_add]
 
 end MeasureTheory
 

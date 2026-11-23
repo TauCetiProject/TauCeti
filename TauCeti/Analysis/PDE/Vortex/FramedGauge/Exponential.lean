@@ -144,7 +144,7 @@ theorem exists_continuous_mem_realSobolevFunctions_eq_exp {s : ℝ} (hs : 1 < s)
   have hC₂R : C₂ * R < 1 := by nlinarith
   obtain ⟨v, hv, hvs⟩ := hlog hh hCR
   have hu_cont : Continuous fun z ↦ (u z : ℂ) :=
-    continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs u).1 hu).1
+    continuous_subtypeVal.comp ((mem_sobolevGaugeGroup hs u).1 hu).1
   -- Pointwise, `‖u - 1‖ < 1` everywhere: almost everywhere by the Sobolev embedding, then
   -- everywhere by continuity.
   have hsmall : ∀ z, ‖(u z : ℂ) - 1‖ ≤ C₂ * R :=

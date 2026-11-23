@@ -239,7 +239,7 @@ variable {R}
 @[simp]
 theorem val_one_one_eq_neg_val_zero_zero (A : SpecialLinear.sl (Fin 2) R) :
     A.val 1 1 = -A.val 0 0 := by
-  have h : A.val.trace = 0 := A.2
+  have h : A.val.trace = 0 := A.property
   rw [Matrix.trace_fin_two] at h
   linear_combination h
 
@@ -474,7 +474,7 @@ subalgebra. -/
 theorem restrict_toLieSubalgebra_eq_top (t : IsSl2Triple h e f) :
     (t.isSl2Triple_restrict (K := K)).toLieSubalgebra K = ⊤ := by
   refine eq_top_iff.2 fun x _ ↦ ?_
-  obtain ⟨c₁, c₂, c₃, hx⟩ := IsSl2Triple.mem_toLieSubalgebra_iff.1 x.2
+  obtain ⟨c₁, c₂, c₃, hx⟩ := IsSl2Triple.mem_toLieSubalgebra_iff.1 x.property
   exact IsSl2Triple.mem_toLieSubalgebra_iff.2
     ⟨c₁, c₂, c₃, Subtype.ext (by simpa using hx)⟩
 

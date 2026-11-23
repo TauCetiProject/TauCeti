@@ -69,7 +69,7 @@ def sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) : C(sphere (0 : W) 1, 
   toFun s := ⟨⟨(e s : V), by
       rw [mem_sphere_zero_iff_norm, Submodule.norm_coe, LinearIsometryEquiv.norm_map,
         norm_eq_of_mem_sphere]⟩,
-    mem_sphereEquator.2 (Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e s).2)⟩
+    mem_sphereEquator.2 (Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e s).property)⟩
   continuous_toFun := by fun_prop
 
 @[simp]
@@ -86,8 +86,8 @@ theorem injective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
 /-- The map `LinearIsometryEquiv.sphereToEquator e` onto the equator is surjective. -/
 theorem surjective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
     Function.Surjective e.sphereToEquator := fun q =>
-  ⟨⟨e.symm ⟨q.1.1, Submodule.mem_orthogonal_singleton_iff_inner_left.2
-      (mem_sphereEquator.1 q.2)⟩, by simp [norm_eq_of_mem_sphere]⟩,
+  ⟨⟨e.symm ⟨q.val.val, Submodule.mem_orthogonal_singleton_iff_inner_left.2
+      (mem_sphereEquator.1 q.property)⟩, by simp [norm_eq_of_mem_sphere]⟩,
     Subtype.ext (Subtype.ext (by simp))⟩
 
 end LinearIsometryEquiv
@@ -113,6 +113,30 @@ theorem injective_orthogonalSphereToEquator (u : V) :
 theorem surjective_orthogonalSphereToEquator (u : V) :
     Function.Surjective (orthogonalSphereToEquator u) :=
   (LinearIsometryEquiv.refl ℝ (ℝ ∙ u)ᗮ).surjective_sphereToEquator
+
+variable (u : V) in
+/-- The unit sphere of the orthogonal complement `u⊥` is homeomorphic to the equator of the unit
+sphere orthogonal to `u`, through `TauCeti.orthogonalSphereToEquator`; the inverse sends a point of
+the equator, a unit vector orthogonal to `u`, to itself. -/
+def orthogonalSphereHomeomorphEquator : sphere (0 : (ℝ ∙ u)ᗮ) 1 ≃ₜ sphereEquator u where
+  toFun := orthogonalSphereToEquator u
+  invFun q := ⟨⟨q.val.val, Submodule.mem_orthogonal_singleton_iff_inner_left.2
+      (mem_sphereEquator.1 q.property)⟩, by simp [norm_eq_of_mem_sphere]⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (orthogonalSphereToEquator u).continuous
+  continuous_invFun := by fun_prop
+
+@[simp]
+theorem orthogonalSphereHomeomorphEquator_apply (u : V) (s : sphere (0 : (ℝ ∙ u)ᗮ) 1) :
+    orthogonalSphereHomeomorphEquator u s = orthogonalSphereToEquator u s :=
+  (rfl)
+
+@[simp]
+theorem coe_orthogonalSphereHomeomorphEquator_symm_apply (u : V) (q : sphereEquator u) :
+    ((((orthogonalSphereHomeomorphEquator u).symm q : sphere (0 : (ℝ ∙ u)ᗮ) 1) : (ℝ ∙ u)ᗮ) :
+      V) = q :=
+  (rfl)
 
 /-- **The unit sphere has points other than `±p`** in dimension at least two, for instance any unit
 vector orthogonal to `p`. -/

@@ -97,7 +97,8 @@ theorem index_centralizer_swap :
       ((table.word j).map generators).prod ∈ Subgroup.zpowers (swap 0 1 : Perm (Fin 3)) := by
     apply QuotientGroup.eq.mp
     simpa [CosetTable.point_def, MulAction.Quotient.smul_mk] using hij
-  rw [zpowers_swap_eq_centralizer, Subgroup.mem_centralizer_singleton_iff] at hmem
+  rw [zpowers_swap_eq_centralizer, Subgroup.mem_centralizer_singleton_iff,
+    commute_iff_eq] at hmem
   fin_cases i <;> fin_cases j <;> first | rfl | exact False.elim (by revert hmem; decide)
 
 /-- The three-row cover detects a conjugator between two different transpositions. -/

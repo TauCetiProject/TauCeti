@@ -200,27 +200,27 @@ private theorem wassersteinEDist_one_map_le_iSup [IsProbabilityMeasure μ]
   let U : X → (t : Set X) := fun x ↦ ⟨T x, Finset.mem_coe.2 (hTt x)⟩
   let U' : X → (t : Set X) := fun x ↦ ⟨T' x, Finset.mem_coe.2 (hT't x)⟩
   have hμU : (μ.map U).map (↑) = μ.map T :=
-    Measure.map_map measurable_subtype_coe hT.subtype_mk
+    Measure.map_map measurable_subtypeVal hT.subtype_mk
   have hνU : (ν.map U').map (↑) = ν.map T' :=
-    Measure.map_map measurable_subtype_coe hT'.subtype_mk
+    Measure.map_map measurable_subtypeVal hT'.subtype_mk
   have hpush : wassersteinEDist 1 (μ.map T) (ν.map T') ≤
       wassersteinEDist 1 (μ.map U) (ν.map U') := by
     rw [← hμU, ← hνU]
-    simpa using wassersteinEDist_map_le_mul measurable_edist measurable_subtype_coe
-      isometry_subtype_coe.lipschitzWith (μ.map U) (ν.map U') (p := 1)
+    simpa using wassersteinEDist_map_le_mul measurable_edist measurable_subtypeVal
+      isometry_subtypeVal.lipschitzWith (μ.map U) (ν.map U') (p := 1)
   refine hpush.trans ?_
   rw [wassersteinEDist_one_eq_iSup_of_compactSpace]
   refine iSup₂_le fun g hg ↦ ?_
   -- extend the test function from `t` to `X`
   have hrestrict : (t : Set X).domRestrict (fun x ↦ if h : x ∈ (t : Set X) then g ⟨x, h⟩ else 0)
       = g :=
-    funext fun y ↦ dite_eq_left y.2
+    funext fun y ↦ dite_eq_left y.property
   obtain ⟨G, hG, hGg⟩ := LipschitzOnWith.extend_real
     (lipschitzOnWith_iff_restrict.2 (hrestrict ▸ hg))
   have hGt : ∀ y : (t : Set X), G y = g y := fun y ↦ by
-    simpa [y.2] using (hGg y.2).symm
+    simpa [y.property] using (hGg y.property).symm
   have hint (ρ : Measure (t : Set X)) : ∫ y, g y ∂ρ = ∫ x, G x ∂(ρ.map (↑)) := by
-    rw [integral_map measurable_subtype_coe.aemeasurable hG.continuous.aestronglyMeasurable]
+    rw [integral_map measurable_subtypeVal.aemeasurable hG.continuous.aestronglyMeasurable]
     simp only [hGt]
   refine le_iSup₂_of_le G hG (le_of_eq ?_)
   rw [hint, hint, hμU, hνU]

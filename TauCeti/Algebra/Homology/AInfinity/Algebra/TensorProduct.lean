@@ -537,15 +537,15 @@ private theorem shuffle_comp_gradedCoderiv (hB : IsDGAlgebra ℬ dB) :
         (InternalGrading.ofDecomposition ℬ)
       rwa [InternalGrading.ofDecomposition_piece] at h)
     fun z ↦ ?_
-  let a : ℕ → A := fun i ↦ if h : i < n.1 then ((z ⟨i, h⟩).2.1 : A) else 0
-  let b : ℕ → B := fun i ↦ if h : i < n.1 then ((z ⟨i, h⟩).2.2 : B) else 0
-  let dA : ℕ → ℤ := fun i ↦ if h : i < n.1 then (z ⟨i, h⟩).1.1 else 0
-  let dB' : ℕ → ℤ := fun i ↦ if h : i < n.1 then (z ⟨i, h⟩).1.2 else 0
-  have hz : (fun i ↦ ((z i).2.1 : A) ⊗ₜ[R] ((z i).2.2 : B)) = fun j : Fin n.1 ↦ a j ⊗ₜ b j := by
+  let a : ℕ → A := fun i ↦ if h : i < n.val then ((z ⟨i, h⟩).2.1 : A) else 0
+  let b : ℕ → B := fun i ↦ if h : i < n.val then ((z ⟨i, h⟩).2.2 : B) else 0
+  let dA : ℕ → ℤ := fun i ↦ if h : i < n.val then (z ⟨i, h⟩).1.1 else 0
+  let dB' : ℕ → ℤ := fun i ↦ if h : i < n.val then (z ⟨i, h⟩).1.2 else 0
+  have hz : (fun i ↦ ((z i).2.1 : A) ⊗ₜ[R] ((z i).2.2 : B)) = fun j : Fin n.val ↦ a j ⊗ₜ b j := by
     funext j
     simp [a, b, j.isLt]
-  have h := shuffle_gradedCoderiv_of_tprod 𝒜 ℬ dB hB n.2 a b dA dB'
-    (fun i hi ↦ by simpa [a, dA, hi] using (z ⟨i, hi⟩).2.1.2)
+  have h := shuffle_gradedCoderiv_of_tprod 𝒜 ℬ dB hB n.property a b dA dB'
+    (fun i hi ↦ by simpa [a, dA, hi] using (z ⟨i, hi⟩).2.1.property)
     fun i hi ↦ by simp [b, dB', hi]
   simp only [LinearMap.comp_apply, hz]
   rwa [ReducedTensorWords.of_def] at h
@@ -748,7 +748,7 @@ theorem tensorDGAlgebra_m_one_apply (hB : IsDGAlgebra ℬ dB) {p : ℤ} {a : A}
   | zero => simp only [TensorProduct.tmul_zero, map_zero, smul_zero, add_zero]
   | homogeneous b =>
     rw [differential_apply, differential_apply]
-    exact tensorDGAlgebra_m_one_apply_of_mem 𝒜 hB ha b.2
+    exact tensorDGAlgebra_m_one_apply_of_mem 𝒜 hB ha b.property
   | add b b' hb hb' =>
     simp only [TensorProduct.tmul_add, map_add, smul_add] at hb hb' ⊢
     rw [hb, hb']

@@ -164,18 +164,18 @@ noncomputable def circleHomEquiv (X : PointedSSet.{0}) :
   toFun f := ⟨circleQuotient ≫ f, by
     simpa only [Under.comp_right, circleQuotient_right, ← Category.assoc,
       SSet.S1.δ_quotient, Under.mk_hom] using Under.w f⟩
-  invFun f := circleDesc f.1 f.2
+  invFun f := circleDesc f.val f.property
   left_inv f := circleHom_ext (circleQuotient_circleDesc _ _)
   right_inv f := Subtype.ext (circleQuotient_circleDesc _ _)
 
 @[simp]
 lemma circleHomEquiv_apply (X : PointedSSet.{0}) (f : circle ⟶ X) :
-    (circleHomEquiv X f).1 = circleQuotient ≫ f := (rfl)
+    (circleHomEquiv X f).val = circleQuotient ≫ f := (rfl)
 
 @[simp]
 lemma circleHomEquiv_symm_apply (X : PointedSSet.{0})
     (f : {f : interval ⟶ X // SSet.stdSimplex.δ 1 ≫ f.right = X.hom}) :
-    (circleHomEquiv X).symm f = circleDesc f.1 f.2 := (rfl)
+    (circleHomEquiv X).symm f = circleDesc f.val f.property := (rfl)
 
 end PointedSSet
 

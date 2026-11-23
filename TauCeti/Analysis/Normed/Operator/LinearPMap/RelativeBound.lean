@@ -62,7 +62,7 @@ structure IsRelativelyBounded (V : E →ₛₗ.[σ] G) (A : E →ₛₗ.[τ] F) 
   /-- The domain of `A` lies in the domain of `V`. -/
   domain_le : A.domain ≤ V.domain
   /-- The relative bound `‖V x‖ ≤ a * ‖x‖ + b * ‖A x‖` on the domain of `A`. -/
-  norm_apply_le : ∀ x : A.domain, ‖V ⟨x, domain_le x.2⟩‖ ≤ a * ‖(x : E)‖ + b * ‖A x‖
+  norm_apply_le : ∀ x : A.domain, ‖V ⟨x, domain_le x.property⟩‖ ≤ a * ‖(x : E)‖ + b * ‖A x‖
 
 namespace IsRelativelyBounded
 
@@ -106,7 +106,7 @@ theorem smul {M : Type*} [SeminormedRing M] [DistribMulAction M G] [IsBoundedSMu
   domain_le := h.domain_le
   norm_apply_le x := by
     rw [smul_apply]
-    calc ‖c • V ⟨x, h.domain_le x.2⟩‖ ≤ ‖c‖ * (a * ‖(x : E)‖ + b * ‖A x‖) :=
+    calc ‖c • V ⟨x, h.domain_le x.property⟩‖ ≤ ‖c‖ * (a * ‖(x : E)‖ + b * ‖A x‖) :=
           (norm_smul_le _ _).trans (by gcongr; exact h.norm_apply_le x)
       _ = _ := by ring
 

@@ -80,10 +80,10 @@ private theorem represents_atRealPlace_neg_apply
     (w : {w : InfinitePlace K // w.IsReal}) (x : X)
     (h : (W.atRealPlace w).Anisotropic →
       ∃ x₀ y, U.atRealPlace w x₀ ≠ 0 ∧ U.atRealPlace w x₀ = -W.atRealPlace w y ∧
-        letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+        letI : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
         IsSquare (U.atRealPlace w ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w) / U.atRealPlace w x₀)) :
-    Represents (W.atRealPlace w) (embedding_of_isReal w.2 (-U x)) := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    Represents (W.atRealPlace w) (embedding_of_isReal w.property (-U x)) := by
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   simpa using QuadraticForm.represents_neg_of_forall_anisotropic _
     (QuadraticForm.Nondegenerate.atRealPlace hW w).radical_eq_bot
     (U.atRealPlace w ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w)) fun han => by
@@ -117,18 +117,18 @@ theorem exists_apply_ne_zero_locallyRepresentsScalar_neg
   have hrealfin := Set.toFinite
     {w : {w : InfinitePlace K // w.IsReal} | (W.atRealPlace w).Anisotropic}
   let T := hrealfin.toFinset
-  choose xS yS hxS hxyS using fun v : S => hfinite v.1 (hfin.mem_toFinset.mp v.2)
-  choose xT yT hxT hxyT using fun w : T => hreal w.1 (hrealfin.mem_toFinset.mp w.2)
+  choose xS yS hxS hxyS using fun v : S => hfinite v.val (hfin.mem_toFinset.mp v.property)
+  choose xT yT hxT hxyT using fun w : T => hreal w.val (hrealfin.mem_toFinset.mp w.property)
   choose N hNo hxN hN using fun v : S =>
-    U.exists_isOpen_isSquare_div_atFinitePlace v.1 (hxS v)
+    U.exists_isOpen_isSquare_div_atFinitePlace v.val (hxS v)
   choose M hMo hxM hM using fun w : T =>
-    U.exists_isOpen_isSquare_div_atRealPlace w.1 (hxT w)
+    U.exists_isOpen_isSquare_div_atRealPlace w.val (hxT w)
   -- Every global vector whose localizations lie in these neighbourhoods has the required value.
   have hgood (x : X)
-      (hxS' : ∀ v : S, ((1 : v.1.adicCompletion K) ⊗ₜ[K] x : v.1.FiniteScalarExtension) ∈ N v)
+      (hxS' : ∀ v : S, ((1 : v.val.adicCompletion K) ⊗ₜ[K] x : v.val.FiniteScalarExtension) ∈ N v)
       (hxT' : ∀ w : T,
-        letI : Algebra K ℝ := (embedding_of_isReal w.1.2).toAlgebra
-        ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.1) ∈ M w) :
+        letI : Algebra K ℝ := (embedding_of_isReal w.val.property).toAlgebra
+        ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.val) ∈ M w) :
       W.LocallyRepresentsScalar (-U x) := by
     refine (QuadraticForm.locallyRepresentsScalar_iff _ _).mpr ⟨fun v => ?_, fun w => ?_⟩
     · refine QuadraticForm.represents_atFinitePlace_neg_apply U W hW v x fun han => ?_
@@ -152,8 +152,8 @@ theorem exists_apply_ne_zero_locallyRepresentsScalar_neg
     rw [not_or, Finset.not_nonempty_iff_eq_empty, Finset.not_nonempty_iff_eq_empty] at hST
     obtain ⟨x, hx⟩ : ∃ x, U x ≠ 0 := by
       by_contra! h; exact hU (QuadraticMap.ext h)
-    exact ⟨x, hx, hgood x (fun v => absurd v.2 (by simp [hST.1]))
-      (fun w => absurd w.2 (by simp [hST.2]))⟩
+    exact ⟨x, hx, hgood x (fun v => absurd v.property (by simp [hST.1]))
+      (fun w => absurd w.property (by simp [hST.2]))⟩
 
 /-- Let `W` be a regular quadratic form over a number field that is anisotropic at only finitely
 many finite places, and suppose that at every finite or real place where `W` is anisotropic some

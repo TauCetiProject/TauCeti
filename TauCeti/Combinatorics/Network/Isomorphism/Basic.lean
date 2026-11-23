@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Quiver.Prefunctor
+public import TauCeti.Combinatorics.Network.AugmentingPath
 public import TauCeti.Combinatorics.Network.Flow
 public import TauCeti.Combinatorics.Network.Shift
 public import TauCeti.Combinatorics.Network.Walk
@@ -15,13 +16,13 @@ public import TauCeti.Combinatorics.Network.Walk
 
 An isomorphism of bounded networks consists of an equivalence of vertices and equivalences of
 the corresponding arrow types that preserve both bounds.  This file supplies identity, inverse,
-and composition, together with transport of assignments, feasibility, excess, circulations,
-arrow sums, cut bounds, bounded terminal assignments, ordinary flows, prescribed- and
-interval-excess assignments, and directed paths.
+and composition, together with transport of assignments, feasibility, arrow sums, excess,
+circulations, bounded terminal assignments, ordinary flows (including equivalences and maximality),
+prescribed- and interval-excess assignments, and directed paths.
 
 Arrow identities are retained by transport, so the constructions apply unchanged to networks
-with parallel arrows, antiparallel arrows, and loops.  Finiteness is needed only where finite sums
-appear: for arrow sums, cut bounds, excess, and flow transport.
+with parallel arrows, antiparallel arrows, and loops.  Finiteness is needed only for excess and
+flow transport, where excess is defined by finite sums.
 -/
 
 public section
@@ -304,22 +305,6 @@ theorem assignmentEquiv_zero {R : Type w'} [Zero R] (e : N ≃ₙ N') :
   ext x y a
   simp
 
-/-- Assignment transport is additive. -/
-@[simp]
-theorem assignmentEquiv_add {R : Type w'} [Add R] (e : N ≃ₙ N') (f g : N.Assignment R) :
-    e.assignmentEquiv R (f + g) = e.assignmentEquiv R f + e.assignmentEquiv R g := by
-  apply (e.assignmentEquiv R).symm.injective
-  ext x y a
-  simp
-
-/-- Assignment transport commutes with sums of lists of assignments. -/
-theorem assignmentEquiv_list_sum {R : Type w'} [Zero R] [Add R] (e : N ≃ₙ N')
-    (l : List (N.Assignment R)) :
-    e.assignmentEquiv R l.sum = (l.map (e.assignmentEquiv R)).sum := by
-  induction l with
-  | nil => simp
-  | cons f l ih => simp [ih]
-
 /-- Transport along the identity network isomorphism is the identity on assignments. -/
 @[simp]
 theorem assignmentEquiv_refl (N : Network K V) (R : Type w') :
@@ -372,6 +357,26 @@ theorem assignmentEquiv_le_assignmentEquiv_iff {R : Type w'} [LE R] (e : N ≃�
     obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
     simpa using h x y a
 
+/-- Assignment transport preserves arbitrary pointwise order intervals. -/
+theorem assignmentEquiv_mem_Icc_map_iff {R : Type w'} [Preorder R] (e : N ≃ₙ N')
+    (lo hi f : N.Assignment R) :
+    e.assignmentEquiv R f ∈
+        Set.Icc (e.assignmentEquiv R lo) (e.assignmentEquiv R hi) ↔ f ∈ Set.Icc lo hi :=
+  and_congr (e.assignmentEquiv_le_assignmentEquiv_iff lo f)
+    (e.assignmentEquiv_le_assignmentEquiv_iff f hi)
+
+/-- Assignment transport preserves and reflects membership of all arrow values. -/
+theorem forall_assignmentEquiv_mem_iff {R : Type w'} {M : Type*} [Membership R M] (e : N ≃ₙ N')
+    (A : M) (f : N.Assignment R) :
+    (∀ ⦃x y : W⦄ (a : N'.Hom x y), e.assignmentEquiv R f a ∈ A) ↔
+      ∀ ⦃x y : V⦄ (a : N.Hom x y), f a ∈ A := by
+  refine ⟨fun h x y a ↦ ?_, fun h x y a ↦ ?_⟩
+  · simpa using h (e.homEquiv x y a)
+  · obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
+    obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
+    obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
+    simpa using h a
+
 end Iso
 
 end LE
@@ -383,13 +388,6 @@ variable [Preorder K]
 variable {N : Network K V} {N' : Network K W}
 
 namespace Iso
-
-/-- Assignment transport preserves arbitrary pointwise order intervals. -/
-theorem assignmentEquiv_mem_Icc_map_iff (e : N ≃ₙ N') (lo hi f : N.Assignment K) :
-    e.assignmentEquiv K f ∈
-        Set.Icc (e.assignmentEquiv K lo) (e.assignmentEquiv K hi) ↔ f ∈ Set.Icc lo hi :=
-  and_congr (e.assignmentEquiv_le_assignmentEquiv_iff lo f)
-    (e.assignmentEquiv_le_assignmentEquiv_iff f hi)
 
 /-- Assignment transport preserves pointwise order intervals when the endpoints are transported. -/
 theorem assignmentEquiv_mem_Icc_iff (e : N ≃ₙ N') (f : N.Assignment K) :
@@ -408,6 +406,18 @@ variable [LE K]
 variable {N : Network K V} {N' : Network K W}
 
 namespace Iso
+
+/-- Transporting an assignment and both endpoint sets preserves `arrowSum`. -/
+@[simp]
+theorem arrowSum_assignmentEquiv [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (N'.Hom x y)]
+    {R : Type w'} [AddCommMonoid R] (e : N ≃ₙ N') (f : N.Assignment R) (S T : Finset V) :
+    TauCeti.arrowSum (e.assignmentEquiv R f)
+      (S.map e.vertexEquiv.toEmbedding) (T.map e.vertexEquiv.toEmbedding) =
+      TauCeti.arrowSum f S T := by
+  simp only [arrowSum_def, Finset.sum_map, Equiv.coe_toEmbedding]
+  refine Finset.sum_congr rfl fun x _ ↦ Finset.sum_congr rfl fun y _ ↦ ?_
+  rw [← Equiv.sum_comp (e.homEquiv x y)]
+  exact Finset.sum_congr rfl fun a _ ↦ e.assignmentEquiv_apply R f a
 
 /-- Excess is preserved by assignment transport. -/
 @[simp]
@@ -444,29 +454,6 @@ theorem isCirculation_assignmentEquiv_iff [Fintype V] [Fintype W]
   · intro hf y
     obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective y
     rw [e.excessAt_assignmentEquiv f x, hf x]
-
-/-- Arrow sums are preserved by assignment transport when both vertex sets are transported. -/
-@[simp]
-theorem arrowSum_assignmentEquiv [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (N'.Hom x y)]
-    {R : Type w'} [AddCommMonoid R] (e : N ≃ₙ N') (f : N.Assignment R) (S T : Finset V) :
-    TauCeti.arrowSum (e.assignmentEquiv R f) (S.map e.vertexEquiv.toEmbedding)
-      (T.map e.vertexEquiv.toEmbedding) = TauCeti.arrowSum f S T := by
-  simp only [arrowSum_def, Finset.sum_map, Equiv.coe_toEmbedding]
-  refine Finset.sum_congr rfl fun x _ ↦ Finset.sum_congr rfl fun y _ ↦ ?_
-  rw [← Equiv.sum_comp (e.homEquiv x y)]
-  simp
-
-/-- Cut bounds are preserved by transporting both bound assignments and the vertex set. -/
-@[simp]
-theorem cutBound_assignmentEquiv [Fintype V] [Fintype W] [DecidableEq V] [DecidableEq W]
-    [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (N'.Hom x y)]
-    {R : Type w'} [AddCommGroup R] (e : N ≃ₙ N') (lo hi : N.Assignment R) (S : Finset V) :
-    TauCeti.cutBound (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
-      (S.map e.vertexEquiv.toEmbedding) = TauCeti.cutBound lo hi S := by
-  have hcompl : (S.map e.vertexEquiv.toEmbedding)ᶜ = Sᶜ.map e.vertexEquiv.toEmbedding := by
-    ext y
-    simp [Finset.mem_map_equiv]
-  rw [cutBound_def, cutBound_def, hcompl, arrowSum_assignmentEquiv, arrowSum_assignmentEquiv]
 
 /-- A network isomorphism as a prefunctor between its explicit arrow families. -/
 def toPrefunctor (e : N ≃ₙ N') :
@@ -566,6 +553,34 @@ theorem mapPath_comp (e : N ≃ₙ N') {x y z : V} (p : ArrowWalk N.Hom x y)
   @Prefunctor.mapPath_comp V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor
     x y p z q
 
+/-- Assignment transport is additive. -/
+@[simp]
+theorem assignmentEquiv_add {R : Type w'} [Add R] (e : N ≃ₙ N') (f g : N.Assignment R) :
+    e.assignmentEquiv R (f + g) = e.assignmentEquiv R f + e.assignmentEquiv R g := by
+  apply (e.assignmentEquiv R).symm.injective
+  ext x y a
+  simp
+
+/-- Assignment transport commutes with sums of lists of assignments. -/
+theorem assignmentEquiv_list_sum {R : Type w'} [Zero R] [Add R] (e : N ≃ₙ N')
+    (l : List (N.Assignment R)) :
+    e.assignmentEquiv R l.sum = (l.map (e.assignmentEquiv R)).sum := by
+  induction l with
+  | nil => simp
+  | cons f l ih => simp [ih]
+
+/-- Cut bounds are preserved by transporting both bound assignments and the vertex set. -/
+@[simp]
+theorem cutBound_assignmentEquiv [Fintype V] [Fintype W] [DecidableEq V] [DecidableEq W]
+    [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (N'.Hom x y)]
+    {R : Type w'} [AddCommGroup R] (e : N ≃ₙ N') (lo hi : N.Assignment R) (S : Finset V) :
+    TauCeti.cutBound (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
+      (S.map e.vertexEquiv.toEmbedding) = TauCeti.cutBound lo hi S := by
+  have hcompl : (S.map e.vertexEquiv.toEmbedding)ᶜ = Sᶜ.map e.vertexEquiv.toEmbedding := by
+    ext y
+    simp [Finset.mem_map_equiv]
+  rw [cutBound_def, cutBound_def, hcompl, arrowSum_assignmentEquiv, arrowSum_assignmentEquiv]
+
 end Iso
 
 end LE
@@ -573,158 +588,221 @@ end LE
 
 section Flow
 
-variable [AddCommGroup K] [Preorder K]
+variable [LE K]
 variable {N : Network K V} {N' : Network K W}
 variable [Fintype V] [Fintype W]
 variable [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (N'.Hom x y)]
+variable {R : Type w'} [AddCommGroup R] [Preorder R]
 
 namespace Iso
 
-/-- Transport identifies the bounded `s`–`t` assignments for `lo` and `hi` with the bounded
-assignments for the transported bounds between the transported terminals. -/
-def boundedFlowEquiv (e : N ≃ₙ N') (lo hi : N.Assignment K) (s t : V) :
-    TauCeti.BoundedFlow lo hi s t ≃
-      TauCeti.BoundedFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
-        (e.vertexEquiv s) (e.vertexEquiv t) where
-  toFun f :=
-    { toFun := e.assignmentEquiv K f.toFun
-      mem_Icc := (e.assignmentEquiv_mem_Icc_map_iff lo hi f.toFun).2 f.mem_Icc
-      conserve y hys hyt := by
-        obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective y
-        rw [e.excessAt_assignmentEquiv]
-        exact f.conserve x (fun h ↦ hys (congrArg e.vertexEquiv h))
-          (fun h ↦ hyt (congrArg e.vertexEquiv h)) }
-  invFun g :=
-    { toFun := (e.assignmentEquiv K).symm g.toFun
-      mem_Icc := by
-        rw [← e.assignmentEquiv_mem_Icc_map_iff, Equiv.apply_symm_apply]
-        exact g.mem_Icc
-      conserve x hxs hxt := by
-        rw [← e.excessAt_assignmentEquiv, Equiv.apply_symm_apply]
-        exact g.conserve _ (e.vertexEquiv.injective.ne hxs) (e.vertexEquiv.injective.ne hxt) }
-  left_inv f := by
-    ext1
-    exact (e.assignmentEquiv K).symm_apply_apply f.toFun
-  right_inv g := by
-    ext1
-    exact (e.assignmentEquiv K).apply_symm_apply g.toFun
-
-@[simp]
-theorem boundedFlowEquiv_apply_toFun (e : N ≃ₙ N') {lo hi : N.Assignment K} {s t : V}
+/-- Transport a bounded terminal assignment, transporting its two bound assignments with it. -/
+def mapBoundedFlow (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
     (f : TauCeti.BoundedFlow lo hi s t) :
-    (e.boundedFlowEquiv lo hi s t f).toFun = e.assignmentEquiv K f.toFun :=
+    TauCeti.BoundedFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
+      (e.vertexEquiv s) (e.vertexEquiv t) where
+  toFun := e.assignmentEquiv R f.toFun
+  mem_Icc := (e.assignmentEquiv_mem_Icc_map_iff lo hi f.toFun).2 f.mem_Icc
+  conserve y hys hyt := by
+    obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective y
+    rw [e.excessAt_assignmentEquiv]
+    exact f.conserve x (fun h ↦ hys (congrArg e.vertexEquiv h))
+      (fun h ↦ hyt (congrArg e.vertexEquiv h))
+
+/-- The underlying assignment of a transported bounded flow is assignment transport. -/
+@[simp]
+theorem mapBoundedFlow_toFun (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
+    (f : TauCeti.BoundedFlow lo hi s t) :
+    (e.mapBoundedFlow f).toFun = e.assignmentEquiv R f.toFun :=
   (rfl)
 
+/-- Transport preserves the value of a bounded terminal assignment. -/
 @[simp]
-theorem boundedFlowEquiv_symm_apply_toFun (e : N ≃ₙ N') {lo hi : N.Assignment K} {s t : V}
-    (g : TauCeti.BoundedFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
-      (e.vertexEquiv s) (e.vertexEquiv t)) :
-    ((e.boundedFlowEquiv lo hi s t).symm g).toFun = (e.assignmentEquiv K).symm g.toFun :=
-  (rfl)
-
-/-- Transport preserves the value of a bounded `s`–`t` assignment. -/
-@[simp]
-theorem val_boundedFlowEquiv (e : N ≃ₙ N') {lo hi : N.Assignment K} {s t : V}
-    (f : TauCeti.BoundedFlow lo hi s t) : (e.boundedFlowEquiv lo hi s t f).val = f.val := by
+theorem val_mapBoundedFlow (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
+    (f : TauCeti.BoundedFlow lo hi s t) : (e.mapBoundedFlow f).val = f.val := by
   simp [TauCeti.BoundedFlow.val_def]
 
-/-- Transport identifies the ordinary `s`–`t` flows for `cap` with the ordinary flows for the
-transported capacities between the transported terminals. -/
-def flowEquiv (e : N ≃ₙ N') (cap : N.Assignment K) (s t : V) :
-    TauCeti.Flow cap s t ≃
-      TauCeti.Flow (e.assignmentEquiv K cap) (e.vertexEquiv s) (e.vertexEquiv t) where
-  toFun f :=
-    { toFun := e.assignmentEquiv K f.toFun
+/-- Transport identifies bounded `s`–`t` assignments for `lo` and `hi` with bounded assignments
+between the transported terminals for the transported bounds. -/
+def boundedFlowEquiv (e : N ≃ₙ N') (lo hi : N.Assignment R) (s t : V) :
+    TauCeti.BoundedFlow lo hi s t ≃
+      TauCeti.BoundedFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
+        (e.vertexEquiv s) (e.vertexEquiv t) where
+  toFun := e.mapBoundedFlow
+  invFun f :=
+    { toFun := (e.assignmentEquiv R).symm f.toFun
       mem_Icc := by
-        rw [← assignmentEquiv_zero e, e.assignmentEquiv_mem_Icc_map_iff]
-        exact f.mem_Icc
-      conserve := (e.boundedFlowEquiv 0 cap s t f.toBoundedFlow).conserve
-      excessAt_sink_nonneg := by
-        rw [e.excessAt_assignmentEquiv]
-        exact f.excessAt_sink_nonneg }
-  invFun g :=
-    { toFun := (e.assignmentEquiv K).symm g.toFun
-      mem_Icc := by
-        rw [← e.assignmentEquiv_mem_Icc_map_iff, Equiv.apply_symm_apply, assignmentEquiv_zero]
-        exact g.mem_Icc
+        simpa only [mapBoundedFlow_toFun, ← e.assignmentEquiv_symm R, Equiv.symm_apply_apply] using
+          (e.symm.mapBoundedFlow f).mem_Icc
       conserve x hxs hxt := by
-        rw [← e.excessAt_assignmentEquiv, Equiv.apply_symm_apply]
-        exact g.conserve _ (e.vertexEquiv.injective.ne hxs) (e.vertexEquiv.injective.ne hxt)
-      excessAt_sink_nonneg := by
-        rw [← e.excessAt_assignmentEquiv, Equiv.apply_symm_apply]
-        exact g.excessAt_sink_nonneg }
-  left_inv f := by
-    ext1
-    exact (e.assignmentEquiv K).symm_apply_apply f.toFun
-  right_inv g := by
-    ext1
-    exact (e.assignmentEquiv K).apply_symm_apply g.toFun
+        simpa only [mapBoundedFlow_toFun, ← e.assignmentEquiv_symm R] using
+          (e.symm.mapBoundedFlow f).conserve x
+            (fun h ↦ hxs (by simpa using h)) (fun h ↦ hxt (by simpa using h)) }
+  left_inv f := TauCeti.BoundedFlow.ext ((e.assignmentEquiv R).symm_apply_apply f.toFun)
+  right_inv f := TauCeti.BoundedFlow.ext ((e.assignmentEquiv R).apply_symm_apply f.toFun)
 
 @[simp]
-theorem flowEquiv_apply_toFun (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
-    (f : TauCeti.Flow cap s t) : (e.flowEquiv cap s t f).toFun = e.assignmentEquiv K f.toFun :=
+theorem boundedFlowEquiv_apply (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
+    (f : TauCeti.BoundedFlow lo hi s t) :
+    e.boundedFlowEquiv lo hi s t f = e.mapBoundedFlow f :=
   (rfl)
 
 @[simp]
-theorem flowEquiv_symm_apply_toFun (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
-    (g : TauCeti.Flow (e.assignmentEquiv K cap) (e.vertexEquiv s) (e.vertexEquiv t)) :
-    ((e.flowEquiv cap s t).symm g).toFun = (e.assignmentEquiv K).symm g.toFun :=
+theorem boundedFlowEquiv_symm_apply_toFun (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
+    (f : TauCeti.BoundedFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
+      (e.vertexEquiv s) (e.vertexEquiv t)) :
+    ((e.boundedFlowEquiv lo hi s t).symm f).toFun = (e.assignmentEquiv R).symm f.toFun :=
+  (rfl)
+
+@[simp]
+theorem val_boundedFlowEquiv_symm (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
+    (f : TauCeti.BoundedFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
+      (e.vertexEquiv s) (e.vertexEquiv t)) :
+    ((e.boundedFlowEquiv lo hi s t).symm f).val = f.val := by
+  simpa only [← boundedFlowEquiv_apply, Equiv.apply_symm_apply] using
+    (e.val_mapBoundedFlow ((e.boundedFlowEquiv lo hi s t).symm f)).symm
+
+/-- Transport preserves and reflects maximality of bounded terminal assignments. -/
+@[simp]
+theorem isMaximum_mapBoundedFlow_iff (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
+    (f : TauCeti.BoundedFlow lo hi s t) :
+    (e.mapBoundedFlow f).IsMaximum ↔ f.IsMaximum := by
+  rw [TauCeti.BoundedFlow.isMaximum_iff, TauCeti.BoundedFlow.isMaximum_iff,
+    ← (e.boundedFlowEquiv lo hi s t).forall_congr_right]
+  simp
+
+@[simp]
+theorem isMaximum_boundedFlowEquiv_symm_iff (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
+    (f : TauCeti.BoundedFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
+      (e.vertexEquiv s) (e.vertexEquiv t)) :
+    ((e.boundedFlowEquiv lo hi s t).symm f).IsMaximum ↔ f.IsMaximum := by
+  simpa only [← boundedFlowEquiv_apply, Equiv.apply_symm_apply] using
+    (e.isMaximum_mapBoundedFlow_iff ((e.boundedFlowEquiv lo hi s t).symm f)).symm
+
+/-- Transport an ordinary flow, transporting its capacity assignment with it. -/
+def mapFlow (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+    (f : TauCeti.Flow cap s t) :
+    TauCeti.Flow (e.assignmentEquiv R cap) (e.vertexEquiv s) (e.vertexEquiv t) where
+  toFun := e.assignmentEquiv R f.toFun
+  mem_Icc := by
+    simpa only [assignmentEquiv_zero] using
+      (e.assignmentEquiv_mem_Icc_map_iff 0 cap f.toFun).2 f.mem_Icc
+  conserve := (e.mapBoundedFlow f.toBoundedFlow).conserve
+  excessAt_sink_nonneg := by
+    rw [e.excessAt_assignmentEquiv]
+    exact f.excessAt_sink_nonneg
+
+/-- The underlying assignment of a transported flow is assignment transport. -/
+@[simp]
+theorem mapFlow_toFun (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+    (f : TauCeti.Flow cap s t) : (e.mapFlow f).toFun = e.assignmentEquiv R f.toFun :=
   (rfl)
 
 /-- Transport preserves the value of an ordinary flow. -/
 @[simp]
-theorem val_flowEquiv (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
-    (f : TauCeti.Flow cap s t) : (e.flowEquiv cap s t f).val = f.val := by
+theorem val_mapFlow (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+    (f : TauCeti.Flow cap s t) : (e.mapFlow f).val = f.val := by
   simp [TauCeti.BoundedFlow.val_def]
+
+/-- Transport identifies ordinary `s`–`t` flows for `cap` with ordinary flows between the
+transported terminals for the transported capacities. -/
+def flowEquiv (e : N ≃ₙ N') (cap : N.Assignment R) (s t : V) :
+    TauCeti.Flow cap s t ≃
+      TauCeti.Flow (e.assignmentEquiv R cap) (e.vertexEquiv s) (e.vertexEquiv t) where
+  toFun := e.mapFlow
+  invFun f :=
+    { toBoundedFlow := (e.boundedFlowEquiv 0 cap s t).symm
+        (f.toBoundedFlow.congr e.assignmentEquiv_zero.symm rfl rfl rfl)
+      excessAt_sink_nonneg := by
+        simpa only [boundedFlowEquiv_symm_apply_toFun, TauCeti.BoundedFlow.congr_apply_toFun,
+          mapFlow_toFun, ← e.assignmentEquiv_symm R, symm_vertexEquiv_apply,
+          Equiv.symm_apply_apply] using (e.symm.mapFlow f).excessAt_sink_nonneg }
+  left_inv f := TauCeti.Flow.ext (by simp)
+  right_inv f := TauCeti.Flow.ext (by simp)
+
+@[simp]
+theorem flowEquiv_apply (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+    (f : TauCeti.Flow cap s t) :
+    e.flowEquiv cap s t f = e.mapFlow f :=
+  (rfl)
+
+@[simp]
+theorem flowEquiv_symm_apply_toFun (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+    (f : TauCeti.Flow (e.assignmentEquiv R cap) (e.vertexEquiv s) (e.vertexEquiv t)) :
+    ((e.flowEquiv cap s t).symm f).toFun = (e.assignmentEquiv R).symm f.toFun := by
+  simp [flowEquiv]
+
+@[simp]
+theorem val_flowEquiv_symm (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+    (f : TauCeti.Flow (e.assignmentEquiv R cap) (e.vertexEquiv s) (e.vertexEquiv t)) :
+    ((e.flowEquiv cap s t).symm f).val = f.val := by
+  simpa only [← flowEquiv_apply, Equiv.apply_symm_apply] using
+    (e.val_mapFlow ((e.flowEquiv cap s t).symm f)).symm
+
+/-- Transport preserves and reflects maximality of ordinary flows. -/
+@[simp]
+theorem isMaximum_mapFlow_iff (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+    (f : TauCeti.Flow cap s t) :
+    (e.mapFlow f).IsMaximum ↔ f.IsMaximum := by
+  rw [TauCeti.Flow.isMaximum_iff, TauCeti.Flow.isMaximum_iff,
+    ← (e.flowEquiv cap s t).forall_congr_right]
+  simp
+
+@[simp]
+theorem isMaximum_flowEquiv_symm_iff (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+    (f : TauCeti.Flow (e.assignmentEquiv R cap) (e.vertexEquiv s) (e.vertexEquiv t)) :
+    ((e.flowEquiv cap s t).symm f).IsMaximum ↔ f.IsMaximum := by
+  simpa only [← flowEquiv_apply, Equiv.apply_symm_apply] using
+    (e.isMaximum_mapFlow_iff ((e.flowEquiv cap s t).symm f)).symm
 
 /-- Transport identifies the assignments with prescribed excess `b` and those for the transported
 bounds with prescribed excess `b ∘ e.vertexEquiv.symm`. -/
-def excessFlowEquiv (e : N ≃ₙ N') (lo hi : N.Assignment K) (b : V → K) :
+def excessFlowEquiv (e : N ≃ₙ N') (lo hi : N.Assignment R) (b : V → R) :
     TauCeti.ExcessFlow lo hi b ≃
-      TauCeti.ExcessFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
+      TauCeti.ExcessFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
         (b ∘ e.vertexEquiv.symm) :=
-  (e.assignmentEquiv K).subtypeEquiv fun f ↦ by
+  (e.assignmentEquiv R).subtypeEquiv fun f ↦ by
     rw [e.assignmentEquiv_mem_Icc_map_iff, e.excessAt_assignmentEquiv_eq_comp,
       e.vertexEquiv.symm.surjective.injective_comp_right.eq_iff]
 
 @[simp]
-theorem excessFlowEquiv_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment K} {b : V → K}
+theorem excessFlowEquiv_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment R} {b : V → R}
     (f : TauCeti.ExcessFlow lo hi b) :
-    (e.excessFlowEquiv lo hi b f).val = e.assignmentEquiv K f.val :=
+    (e.excessFlowEquiv lo hi b f).val = e.assignmentEquiv R f.val :=
   (rfl)
 
 @[simp]
-theorem excessFlowEquiv_symm_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment K} {b : V → K}
-    (g : TauCeti.ExcessFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
+theorem excessFlowEquiv_symm_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment R} {b : V → R}
+    (g : TauCeti.ExcessFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
       (b ∘ e.vertexEquiv.symm)) :
-    ((e.excessFlowEquiv lo hi b).symm g).val = (e.assignmentEquiv K).symm g.val :=
+    ((e.excessFlowEquiv lo hi b).symm g).val = (e.assignmentEquiv R).symm g.val :=
   (rfl)
 
 /-- Transport identifies the assignments with excess between `a` and `b` and those for the
 transported arrow bounds with excess between `a ∘ e.vertexEquiv.symm` and
 `b ∘ e.vertexEquiv.symm`. -/
-def excessIntervalFlowEquiv (e : N ≃ₙ N') (lo hi : N.Assignment K) (a b : V → K) :
+def excessIntervalFlowEquiv (e : N ≃ₙ N') (lo hi : N.Assignment R) (a b : V → R) :
     TauCeti.ExcessIntervalFlow lo hi a b ≃
-      TauCeti.ExcessIntervalFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
+      TauCeti.ExcessIntervalFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
         (a ∘ e.vertexEquiv.symm) (b ∘ e.vertexEquiv.symm) :=
-  (e.assignmentEquiv K).subtypeEquiv fun f ↦ by
+  (e.assignmentEquiv R).subtypeEquiv fun f ↦ by
     rw [e.assignmentEquiv_mem_Icc_map_iff, e.excessAt_assignmentEquiv_eq_comp]
     refine and_congr_right fun _ ↦ ⟨fun h ↦ ⟨fun y ↦ h.1 _, fun y ↦ h.2 _⟩, fun h ↦ ?_⟩
     exact ⟨fun x ↦ by simpa using h.1 (e.vertexEquiv x),
       fun x ↦ by simpa using h.2 (e.vertexEquiv x)⟩
 
 @[simp]
-theorem excessIntervalFlowEquiv_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment K} {a b : V → K}
+theorem excessIntervalFlowEquiv_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment R} {a b : V → R}
     (f : TauCeti.ExcessIntervalFlow lo hi a b) :
-    (e.excessIntervalFlowEquiv lo hi a b f).val = e.assignmentEquiv K f.val :=
+    (e.excessIntervalFlowEquiv lo hi a b f).val = e.assignmentEquiv R f.val :=
   (rfl)
 
 @[simp]
-theorem excessIntervalFlowEquiv_symm_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment K}
-    {a b : V → K}
-    (g : TauCeti.ExcessIntervalFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
+theorem excessIntervalFlowEquiv_symm_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment R}
+    {a b : V → R}
+    (g : TauCeti.ExcessIntervalFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
       (a ∘ e.vertexEquiv.symm) (b ∘ e.vertexEquiv.symm)) :
-    ((e.excessIntervalFlowEquiv lo hi a b).symm g).val = (e.assignmentEquiv K).symm g.val :=
+    ((e.excessIntervalFlowEquiv lo hi a b).symm g).val = (e.assignmentEquiv R).symm g.val :=
   (rfl)
 
 end Iso

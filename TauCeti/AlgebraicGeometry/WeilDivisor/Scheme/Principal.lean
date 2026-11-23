@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 
@@ -24,7 +25,10 @@ The main results are:
 * `WeilDivisor.OrderSystem.ofScheme`: the resulting order system, whose generic
   `OrderSystem.principalDivisor` is the scheme-theoretic principal divisor;
 * `SchemeWeilDivisor.add_principalDivisor_nonneg_iff`: the coefficientwise criterion for a
-  divisor plus a principal divisor to be effective.
+  divisor plus a principal divisor to be effective;
+* `AlgebraicGeometry.Scheme.Hom.pullback_principalDivisor_of_isOpenImmersion`: pulling back a
+  principal Weil divisor along a dominant open immersion corresponds to pulling back the defining
+  rational function along `functionFieldMap`.
 
 This file completes the global step left open by
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`. The proof reuses Mathlib's
@@ -33,7 +37,7 @@ This file completes the global step left open by
 
 public section
 
-open AlgebraicGeometry Order TopologicalSpace
+open CategoryTheory _root_.AlgebraicGeometry Order TopologicalSpace
 
 namespace TauCeti
 
@@ -106,8 +110,51 @@ lemma add_principalDivisor_nonneg_iff
     WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
   omega
 
+/-- Restricting a principal Weil divisor on `X` along a nonempty open immersion `j : U ⟶ X` gives
+the principal Weil divisor of the pulled-back rational function. -/
+theorem pullback_principalDivisor_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] [Nonempty U] (f : Additive X.functionFieldˣ) :
+    letI : IsIntegral U := isIntegral_of_isOpenImmersion j
+    letI : IsNoetherian U := isNoetherian_of_isOpenImmersion j
+    WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j)
+        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f) =
+      (WeilDivisor.OrderSystem.ofScheme U).principalDivisor
+        (Additive.ofMul (Units.map j.functionFieldMap.hom.toMonoidHom f.toMul)) := by
+  have : IsIntegral U := isIntegral_of_isOpenImmersion j
+  have : IsNoetherian U := isNoetherian_of_isOpenImmersion j
+  ext u
+  rw [WeilDivisor.coeff_pullback, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply, orderAt_apply,
+    CodimensionOnePoint.coe_mapOfIsOpenImmersion]
+  exact (Scheme.ord_functionFieldMap j _ u.val).symm
+
 end SchemeWeilDivisor
 
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open CategoryTheory TauCeti.AlgebraicGeometry
+
+/-- Pulling back a principal Weil divisor along a dominant open immersion `j : U ⟶ X`
+corresponds to pulling back the defining rational function along `j.functionFieldMap`. -/
+theorem pullback_principalDivisor_of_isOpenImmersion {U X : Scheme.{u}}
+    [IsIntegral U] [IsNoetherian U] [IsIntegral X] [IsNoetherian X]
+    (j : U ⟶ X) [IsOpenImmersion j] [IsDominant j] (g : Additive X.functionFieldˣ) :
+    WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j)
+        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) =
+      (WeilDivisor.OrderSystem.ofScheme U).principalDivisor
+        (Additive.ofMul (Units.map j.functionFieldMap.hom.toMonoidHom g.toMul)) := by
+  refine WeilDivisor.ext fun y ↦ ?_
+  rw [WeilDivisor.coeff_pullback, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
+    WeilDivisor.OrderSystem.ofScheme_ord, SchemeWeilDivisor.orderAt_apply,
+    SchemeWeilDivisor.orderAt_apply, toMul_ofMul, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    CodimensionOnePoint.coe_mapOfIsOpenImmersion]
+  exact (TauCeti.AlgebraicGeometry.Scheme.ord_functionFieldMap j _ ↑y).symm
+
+end AlgebraicGeometry.Scheme.Hom

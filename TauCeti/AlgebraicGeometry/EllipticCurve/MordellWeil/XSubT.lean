@@ -390,19 +390,6 @@ section NontrivialCurve
 
 variable {K : Type*} [CommRing K] [Nontrivial K] (W : Affine K)
 
-omit [Nontrivial K] in
-lemma ringChar_ne_two [W.IsElliptic] [W.IsCharNeTwoNF] : ringChar K ≠ 2 := by
-  nontriviality K
-  have h := W.isUnit_Δ.ne_zero
-  contrapose h
-  have h2 : (2 : K) = 0 := by
-    have := ringChar.Nat.cast_ringChar (R := K)
-    rw [h] at this
-    exact_mod_cast this
-  rw [Δ_of_isCharNeTwoNF W]
-  linear_combination (-32 * W.a₂ ^ 3 * W.a₆ + 8 * W.a₂ ^ 2 * W.a₄ ^ 2 - 32 * W.a₄ ^ 3
-    - 216 * W.a₆ ^ 2 + 144 * W.a₂ * W.a₄ * W.a₆) * h2
-
 lemma natDegree_f : W.f.natDegree = 3 := by
   simp only [f]
   compute_degree!
@@ -412,49 +399,6 @@ lemma f_ne_zero : W.f ≠ 0 := W.monic_f.ne_zero
 lemma degree_f : W.f.degree = 3 := by
   rw [degree_eq_natDegree W.f_ne_zero, natDegree_f]
   rfl
-
-omit [Nontrivial K] in
-/-- The discriminant of the cubic `f`, in terms of the coefficients of `W`. -/
-lemma discr_f : W.f.discr = W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆
-    - 27 * W.a₆ ^ 2 + 18 * W.a₂ * W.a₄ * W.a₆ := by
-  nontriviality K
-  rw [discr_of_degree_eq_three W.degree_f]
-  simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_C, coeff_X]
-  norm_num
-
-omit [Nontrivial K] in
-/-- At a root `x` of `f`, the discriminant of `f` is the discriminant
-`(x + a₂)² - 4 (x² + a₂x + a₄)` of the cofactor `fCofactor x` times the square of the derivative
-`f' x = 3x² + 2a₂x + a₄`. -/
-lemma discr_f_eq_mul_sq_of_eval_eq_zero {x : K} (hx : W.f.eval x = 0) :
-    W.f.discr = ((x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄)) *
-      (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) ^ 2 := by
-  nontriviality K
-  rw [W.discr_f]
-  rw [eval_f] at hx
-  linear_combination (18 * W.a₂ * W.a₄ - 4 * W.a₂ ^ 3
-    - 27 * (W.a₆ - (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x))) * hx
-
-omit [Nontrivial K] in
-/-- The norm of `f'(T)` in `K[X] ⧸ (f)` is `-disc f`. This holds in every characteristic: the norm
-is the resultant of `f` and `f'`, and since `f` is monic that resultant does not depend on the
-degree at which `f'` is read. -/
-lemma norm_mk_derivative_f :
-    Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
-  nontriviality K
-  rw [AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le W.monic_f (n := W.f.natDegree - 1)
-    (by rw [natDegree_f, derivative_f]; compute_degree),
-    resultant_deriv (by rw [degree_f]; norm_num), W.monic_f.leadingCoeff, natDegree_f]
-  norm_num
-
-omit [Nontrivial K] in
-/-- In characteristic `≠ 2` normal form the discriminant of `W` is `16` times that of the cubic
-`f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`: there, if
-`a₂`, `a₄` and `a₆` are integral, `Δ` is never a unit while `disc f` can be. -/
-lemma Δ_eq_sixteen_mul_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
-  nontriviality K
-  rw [Δ_of_isCharNeTwoNF W, W.discr_f]
-  ring
 
 /-- A polynomial of degree at most `2` has degree less than that of `f`, which has degree `3`.
 Supplies the degree side conditions of `AdjoinRoot.mk_eq_mk_iff_of_degree_lt` for the relator
@@ -488,7 +432,63 @@ lemma nonsingular_of_eval_f_eq_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : K} (hx
   (equation_iff_nonsingular_of_Δ_ne_zero W.isUnit_Δ.ne_zero).mp
     (by rw [equation_iff_eval_f_eq_sq, hx]; ring)
 
-omit [Nontrivial K] in
+end NontrivialCurve
+
+section
+
+variable {K : Type*} [CommRing K] (W : Affine K)
+
+lemma ringChar_ne_two [W.IsElliptic] [W.IsCharNeTwoNF] : ringChar K ≠ 2 := by
+  nontriviality K
+  have h := W.isUnit_Δ.ne_zero
+  contrapose h
+  have h2 : (2 : K) = 0 := by
+    have := ringChar.Nat.cast_ringChar (R := K)
+    rw [h] at this
+    exact_mod_cast this
+  rw [Δ_of_isCharNeTwoNF W]
+  linear_combination (-32 * W.a₂ ^ 3 * W.a₆ + 8 * W.a₂ ^ 2 * W.a₄ ^ 2 - 32 * W.a₄ ^ 3
+    - 216 * W.a₆ ^ 2 + 144 * W.a₂ * W.a₄ * W.a₆) * h2
+
+/-- The discriminant of the cubic `f`, in terms of the coefficients of `W`. -/
+lemma discr_f : W.f.discr = W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆
+    - 27 * W.a₆ ^ 2 + 18 * W.a₂ * W.a₄ * W.a₆ := by
+  nontriviality K
+  rw [discr_of_degree_eq_three W.degree_f]
+  simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_C, coeff_X]
+  norm_num
+
+/-- At a root `x` of `f`, the discriminant of `f` is the discriminant
+`(x + a₂)² - 4 (x² + a₂x + a₄)` of the cofactor `fCofactor x` times the square of the derivative
+`f' x = 3x² + 2a₂x + a₄`. -/
+lemma discr_f_eq_mul_sq_of_eval_eq_zero {x : K} (hx : W.f.eval x = 0) :
+    W.f.discr = ((x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄)) *
+      (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) ^ 2 := by
+  nontriviality K
+  rw [W.discr_f]
+  rw [eval_f] at hx
+  linear_combination (18 * W.a₂ * W.a₄ - 4 * W.a₂ ^ 3
+    - 27 * (W.a₆ - (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x))) * hx
+
+/-- The norm of `f'(T)` in `K[X] ⧸ (f)` is `-disc f`. This holds in every characteristic: the norm
+is the resultant of `f` and `f'`, and since `f` is monic that resultant does not depend on the
+degree at which `f'` is read. -/
+lemma norm_mk_derivative_f :
+    Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
+  nontriviality K
+  rw [AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le W.monic_f (n := W.f.natDegree - 1)
+    (by rw [natDegree_f, derivative_f]; compute_degree),
+    resultant_deriv (by rw [degree_f]; norm_num), W.monic_f.leadingCoeff, natDegree_f]
+  norm_num
+
+/-- In characteristic `≠ 2` normal form the discriminant of `W` is `16` times that of the cubic
+`f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`: there, if
+`a₂`, `a₄` and `a₆` are integral, `Δ` is never a unit while `disc f` can be. -/
+lemma Δ_eq_sixteen_mul_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
+  nontriviality K
+  rw [Δ_of_isCharNeTwoNF W, W.discr_f]
+  ring
+
 /-- **Every class in `W.A` is represented by a polynomial of degree at most `2`.** Over a
 nontrivial ring the bound is `natDegree f - 1 = 2`; over the trivial ring every class is `0`. This
 is the normal form the kernel computation reduces to before multiplying by a linear class. -/
@@ -503,7 +503,6 @@ lemma exists_mk_quadratic_eq (a : W.A) :
   exact ⟨_, _, _, congrArg (AdjoinRoot.mk W.f) <|
     eq_quadratic_of_degree_le_two <| Order.lt_succ_iff.mp hp⟩
 
-omit [Nontrivial K] in
 /-- **Every class in `W.A' x` is represented by a polynomial of degree at most `1`.** This is
 `exists_mk_quadratic_eq` for the cofactor, where over a nontrivial ring the bound is
 `natDegree (fCofactor x) - 1 = 1`. -/
@@ -518,7 +517,7 @@ lemma exists_mk_linear_eq {x : K} (a : W.A' x) :
   exact ⟨_, _, congrArg (AdjoinRoot.mk (W.fCofactor x)) <|
     eq_X_add_C_of_natDegree_le_one <| natDegree_le_of_degree_le <| Order.lt_succ_iff.mp hp⟩
 
-end NontrivialCurve
+end
 
 variable {K : Type*} [Field K] (W : Affine K)
 
@@ -632,6 +631,8 @@ end
 ### The `x - T` map on coordinates and points
 -/
 
+section Descent
+
 variable [W.IsCharNeTwoNF]
 
 section μX
@@ -669,12 +670,6 @@ lemma μX_of_eval_f_ne_zero {x : K} (hx : W.f.eval x ≠ 0) :
 
 end μX
 
-/- `DecidableEq K` enters here and not before: it is what Mathlib's `AddCommGroup W.Point`
-instance requires, so every declaration below that mentions `W.Point` needs it. The
-coordinate-level `μX` above does not mention `W.Point` and does not take it. Declared at the
-outer level so that it stays in scope past the section below. -/
-variable [DecidableEq K]
-
 section μ₀
 
 variable [W.IsElliptic]
@@ -685,16 +680,26 @@ noncomputable def μ₀ : W.Point → W.M
   | 0 => 1
   | .some x _ _ => W.μX x
 
-omit [DecidableEq K] in
 /-- The descent map sends the point at infinity to the trivial square class. -/
 @[simp] lemma μ₀_zero : W.μ₀ 0 = 1 := (rfl)
 
-omit [DecidableEq K] in
 /-- On an affine point the descent map is the coordinate-level map `μX` applied to the
 `x`-coordinate: it does not see `y`. -/
 @[simp] lemma μ₀_some {x y : K} (h : W.Nonsingular x y) : W.μ₀ (.some x y h) = W.μX x := (rfl)
 
+/-- **The descent map takes negation to inversion.** Since `μ₀ P` and `μ₀ (-P)` are computed from
+the same `x`-coordinate, this is the statement that each square class is its own inverse. -/
+lemma μ₀_mul_eq_one (P : W.Point) : W.μ₀ P * W.μ₀ (-P) = 1 := by
+  match P with
+  | 0 => simp
+  | .some x y h => rw [Point.neg_some h, μ₀_some, μ₀_some, M.mul_self]
+
 end μ₀
+
+/- `DecidableEq K` enters here and not before: it is what Mathlib's `AddCommGroup W.Point`
+instance requires, so every declaration below that adds points in `W.Point` needs it. Neither
+`μX` nor the plain point map `μ₀` and its negation identity uses point addition. -/
+variable [DecidableEq K]
 
 /-!
 ### Step 3: `μ` is a homomorphism
@@ -773,14 +778,6 @@ variable [W.IsElliptic]
 section μ₀_helper_lemmas
 
 open Point
-
-omit [DecidableEq K] in
-/-- **The descent map takes negation to inversion.** Since `μ₀ P` and `μ₀ (-P)` are computed from
-the same `x`-coordinate, this is the statement that each square class is its own inverse. -/
-lemma μ₀_mul_eq_one (P : W.Point) : W.μ₀ P * W.μ₀ (-P) = 1 := by
-  match P with
-  | 0 => simp
-  | .some x y h => rw [Point.neg_some h, μ₀_some, μ₀_some, M.mul_self]
 
 variable {xP yP xQ yQ xR yR : K} (hP : W.Nonsingular xP yP) (hQ : W.Nonsingular xQ yQ)
   (hR : W.Nonsingular xR yR) (hPQR : some xP yP hP + some xQ yQ hQ + some xR yR hR = 0)
@@ -1064,6 +1061,8 @@ lemma ker_μ_eq : (μ (W := W)).ker = (nsmulAddMonoidHom 2).range.toSubgroup := 
   · rintro ⟨Q, rfl⟩
     exact μ₀_two_nsmul Q
 
+end Descent
+
 /-!
 ### The norm map on square classes
 
@@ -1087,7 +1086,6 @@ noncomputable def normM : W.M →* Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range
     simp only [powMonoidHom_apply]
     exact (map_pow _ _ _).symm
 
-omit [W.IsCharNeTwoNF] [DecidableEq K] [W.IsElliptic] in
 /-- The value of `normM` on the class of a unit is the class of its norm. This is the
 characteristic lemma for `normM`, and the `simp` normal form. -/
 @[simp]
@@ -1096,7 +1094,6 @@ lemma normM_mk (u : W.Aˣ) :
       (Units.map (Algebra.norm K : W.A →* K) u : Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) := by
   simp [normM]
 
-omit [W.IsCharNeTwoNF] [DecidableEq K] [W.IsElliptic] in
 /-- The norm class of the class of `-1` is the class of `-1`: the étale algebra `W.A` has odd
 degree `3` over `K`. -/
 lemma normM_neg_one : W.normM (QuotientGroup.mk (-1 : W.Aˣ)) = QuotientGroup.mk (-1 : Kˣ) := by
@@ -1108,7 +1105,10 @@ lemma normM_neg_one : W.normM (QuotientGroup.mk (-1 : W.Aˣ)) = QuotientGroup.mk
     (AdjoinRoot.powerBasis W.f_ne_zero).finrank, AdjoinRoot.powerBasis_dim, natDegree_f]
   norm_num
 
-omit [DecidableEq K] in
+section
+
+variable [W.IsCharNeTwoNF] [W.IsElliptic]
+
 /-- **Every value of `μX` has trivial norm class.** On the branch where `f x ≠ 0` the norm of
 `x - T` is `f x`, a square by the curve equation; at a root of `f` the norm of the corrected
 representative is `(f' x) ^ 2`. -/
@@ -1122,12 +1122,17 @@ lemma normM_μX_eq_one {x y : K} (h : W.Equation x y) : W.normM (W.μX x) = 1 :=
     simpa using ((equation_iff_eval_f_eq_sq W x y).mp h).symm.trans
       (AdjoinRoot.norm_algebraMap_sub_root W.monic_f x).symm
 
-omit [DecidableEq K] in
 @[simp]
 lemma normM_μ₀_eq_one (P : W.Point) : W.normM (W.μ₀ P) = 1 := by
   match P with
   | 0 => simp
   | .some x y h => exact normM_μX_eq_one h.1
+
+end
+
+section
+
+variable [W.IsCharNeTwoNF] [DecidableEq K] [W.IsElliptic]
 
 /-- **The image of `μ` lies in the kernel of the norm map on square classes.** This is the norm
 condition on `im μ`: every square class in the image of the descent map has square norm. -/
@@ -1136,6 +1141,8 @@ lemma range_μ_le_ker_normM : (μ (W := W)).range ≤ (normM (W := W)).ker := by
   obtain ⟨P, rfl⟩ := Multiplicative.ofAdd.surjective P
   rw [MonoidHom.mem_ker, μ_apply]
   exact normM_μ₀_eq_one P
+
+end
 
 end normM
 

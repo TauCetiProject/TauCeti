@@ -464,8 +464,8 @@ def singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (f₁ :
       (TopPair.ofSubset A₂).singularCohomology S k N q →ₗ[k]
         (TopPair.ofSubset Z).singularCohomology T k L n :=
   ((singularRelativeCup k u μ (f₁ ⁻¹' A₁) (f₂ ⁻¹' A₂)
-    ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-    ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) p q n h).compl₁₂
+    ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+    ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) p q n h).compl₁₂
     (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _)) p).hom
     (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _)) q).hom
     ).compr₂
@@ -483,8 +483,8 @@ lemma singularRelativeCupPullback_apply (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
       TopPair.singularCohomologyMap
           (TopPair.ofSubsetMap (𝟙 X) (Set.mapsTo_iff_subset_preimage.2 hZ)) n
         (singularRelativeCup k u μ (f₁ ⁻¹' A₁) (f₂ ⁻¹' A₂)
-          ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-          ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) p q n h
+          ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+          ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) p q n h
           (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _)) p a)
           (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _)) q
             b)) :=
@@ -525,10 +525,10 @@ lemma singularCohomologyMap_singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ 
   rw [singularRelativeCupPullback_apply, singularRelativeCupPullback_apply, hf₁, hf₂,
     TopPair.singularCohomologyMap_comp_apply, TopPair.singularCohomologyMap_comp_apply,
     singularRelativeCup_naturality k u μ
-      ((hA₁.preimage (φ ≫ f₁).hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage (φ ≫ f₂).hom.continuous).preimage continuous_subtype_val)
-      ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) φ hφ₁ hφ₂,
+      ((hA₁.preimage (φ ≫ f₁).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage (φ ≫ f₂).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) φ hφ₁ hφ₂,
     ← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply]
   congr 3
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _
@@ -561,10 +561,10 @@ lemma singularRelativeCupPullback_singularCohomologyMap (u : T ⟶ R ⊗ S) (μ 
     ← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply, hf₁,
     hf₂, TopPair.singularCohomologyMap_comp_apply, TopPair.singularCohomologyMap_comp_apply,
     singularRelativeCup_naturality k u μ
-      ((hA₁'.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-      ((hA₂'.preimage f₂.hom.continuous).preimage continuous_subtype_val)
-      ((hA₁.preimage (f₁ ≫ g₁).hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage (f₂ ≫ g₂).hom.continuous).preimage continuous_subtype_val) (𝟙 X) hU hV,
+      ((hA₁'.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂'.preimage f₂.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₁.preimage (f₁ ≫ g₁).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage (f₂ ≫ g₂).hom.continuous).preimage continuous_subtypeVal) (𝟙 X) hU hV,
     ← TopPair.singularCohomologyMap_comp_apply]
   congr 3
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
