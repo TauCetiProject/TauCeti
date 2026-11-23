@@ -28,8 +28,8 @@ on `H` with domain `D`, such as the asymptotic operator of a Hamiltonian orbit, 
 * **The inverse bound.** For invertible `A`, `‖(∂s ∘ ι + A)⁻¹‖ ≤ max ‖A⁻¹‖ 1`
   (`TauCeti.WeakDerivStep.norm_inverse_domainTrajectoryOperator_le_max`), which improves the bound
   `√(1 + ‖A⁻¹‖²)` of `TauCeti.WeakDerivStep.norm_inverse_domainTrajectoryOperator_le`.
-* **Openness and small weights.** For complete `D`, invertibility of the trajectory operator is
-  an open condition on `A`, over any open `Ω ⊆ ℝ` and exponent `p`
+* **Openness and small weights.** Invertibility of the trajectory operator is an open condition
+  on `A`, over any open `Ω ⊆ ℝ` and exponent `p`
   (`TauCeti.WeakDerivStep.eventually_isInvertible_domainTrajectoryOperator`). Hence for symmetric
   invertible `A` and every `C : D →L[ℝ] H`, the operators `∂s ∘ ι + (A - δ C)` are invertible for
   small `δ` (`TauCeti.WeakDerivStep.eventually_isInvertible_domainTrajectoryOperator_sub_smul`).
@@ -56,17 +56,22 @@ open scoped ENNReal InnerProductSpace Topology
 
 section Banach
 
-variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [CompleteSpace D]
+variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
   [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
   {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu] {Omega : Opens ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {ι A : D →L[ℝ] H}
 
 /-- **Invertibility is open in the coefficient.** If `∂s ∘ ι + A` is invertible, so is
-`∂s ∘ ι + B` for every `B` close to `A` in operator norm. -/
+`∂s ∘ ι + B` for every `B` close to `A` in operator norm. The domain need not be complete: an
+invertible `∂s ∘ ι + A` makes it isomorphic to `Lᵖ(Ω, H)`. -/
 theorem eventually_isInvertible_domainTrajectoryOperator
     (hA : (domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι A).IsInvertible) :
-    ∀ᶠ B in 𝓝 A, (domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι B).IsInvertible :=
-  ((continuous_domainTrajectoryOperator ι).tendsto A).eventually hA.eventually_nhds
+    ∀ᶠ B in 𝓝 A,
+      (domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι B).IsInvertible := by
+  obtain ⟨e, -⟩ := id hA
+  have : CompleteSpace (WeakDerivStep mu Omega p (ι.compLpL p (mu.restrict Omega))) :=
+    (completeSpace_congr (e := e.toEquiv) e.isUniformEmbedding).2 inferInstance
+  exact ((continuous_domainTrajectoryOperator ι).tendsto A).eventually hA.eventually_nhds
 
 end Banach
 
@@ -103,10 +108,10 @@ theorem norm_le_max_mul_norm_domainTrajectoryOperator
 `L²(ℝ)`. -/
 theorem isClosed_range_domainTrajectoryOperator
     (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) {C : ℝ} (hC : ∀ x, ‖x‖ ≤ C * ‖A x‖) :
-    IsClosed (Set.range (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A)) :=
-  ((domainTrajectoryOperator ι A).antilipschitz_of_bound (K := ⟨max C 1, by positivity⟩)
-    (norm_le_max_mul_norm_domainTrajectoryOperator hSymm hC)).isClosed_range
-    (domainTrajectoryOperator ι A).uniformContinuous
+    IsClosed (Set.range (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A)) := by
+  set T := domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A
+  exact (T.antilipschitz_of_bound (K := ⟨max C 1, by positivity⟩)
+    (norm_le_max_mul_norm_domainTrajectoryOperator hSymm hC)).isClosed_range T.uniformContinuous
 
 /-- If `A` is `ι`-symmetric and `ι` and `A` have no common kernel, then `∂s ∘ ι + A` is injective
 on `L²(ℝ)`: a solution of the homogeneous equation has `(ι ∘ u)' = 0` and `A ∘ u = 0` by the
@@ -149,11 +154,12 @@ theorem norm_inverse_domainTrajectoryOperator_le_max
 operator `d/ds + A - δ` into which the exponential weight `e^{δ s}` turns `d/ds + A`. -/
 theorem eventually_isInvertible_domainTrajectoryOperator_sub_smul
     (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (hA : A.IsInvertible) (C : D →L[ℝ] H) :
-    ∀ᶠ δ in 𝓝 (0 : ℝ),
-      (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι (A - δ • C)).IsInvertible := by
+    ∀ᶠ δ in 𝓝 (0 : ℝ), (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι
+      (A - δ • C)).IsInvertible := by
   have hcont : Continuous fun δ : ℝ ↦ A - δ • C := by fun_prop
-  exact (hcont.tendsto' 0 A (by simp)).eventually <|
-    eventually_isInvertible_domainTrajectoryOperator (isInvertible_domainTrajectoryOperator hSymm hA)
+  exact (hcont.tendsto' 0 A (by simp)).eventually
+    (eventually_isInvertible_domainTrajectoryOperator
+      (isInvertible_domainTrajectoryOperator hSymm hA))
 
 end Symmetric
 
