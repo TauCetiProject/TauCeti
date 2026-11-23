@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.KnotEulerCharacteristic
+public import TauCeti.LowDimTopology.Heegaard.Knot.EulerCharacteristic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Qify

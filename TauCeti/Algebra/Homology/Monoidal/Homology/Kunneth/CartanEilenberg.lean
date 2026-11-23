@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.RingTheory.Flat.CategoryTheory
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.CartanEilenbergResolution
@@ -36,9 +37,9 @@ rows make the augmentation of the total complex a quasi-isomorphism
 This bicomplex is the source of the Künneth spectral sequence. When every term of `K` is flat, the
 spectral sequence of its column filtration therefore converges to the homology of `K ⊗ L`. Since
 the complexes `Q.X p` have projective terms and projective homology, the Künneth formula for the
-columns `K ⊗ Q.X p` is expected to identify the page after the first (E² in Weibel's numbering,
-`page 3` in the numbering of `HomologicalComplex₂.columnFiltrationSpectralSequence`) with `Tor`;
-this file does not prove that identification.
+columns `K ⊗ Q.X p` identifies the page after the first (E² in Weibel's numbering, `page 3` in the
+numbering of `HomologicalComplex₂.columnFiltrationSpectralSequence`) with `Tor`; see
+`TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.SpectralSequence`.
 
 ## References
 

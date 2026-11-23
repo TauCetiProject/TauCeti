@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
+import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Holder
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -27,6 +28,10 @@ Normalized-bump convolution also preserves a uniform bound on a function
 differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
 For `K`-Lipschitz data, the pointwise approximation error is at most `K * ρ.rOut`
 (`LipschitzWith.dist_normed_convolution_le`).
+The convolution at a point only reads the function on the ball of radius `ρ.rOut` around it
+(`ContDiffBump.normed_convolution_eq_of_eqOn`), so it commutes with every available derivative
+of a `C^N` function, with no support or growth condition
+(`ContDiffBump.iteratedFDeriv_normed_convolution`).
 
 Integrals against the mollifications of a uniformly continuous function converge, along any filter
 of bump indices with radii tending to zero, to the integral against the function
@@ -120,17 +125,12 @@ theorem shrinking_apply_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
     [HasContDiffBump E] (hR : 0 < R) (n : ℕ) (x : E) :
     (shrinking hR n : ContDiffBump (0 : E)) x =
       (shrinking hR 0 : ContDiffBump (0 : E)) (((n : ℝ) + 1) • x) := by
-  have hratio : (R / ((n : ℝ) + 1)) / (R / (2 * ((n : ℝ) + 1))) =
-      (R / ((0 : ℕ) + 1 : ℝ)) / (R / (2 * ((0 : ℕ) + 1 : ℝ))) := by
-    field_simp
-  have hscale : (R / (2 * ((n : ℝ) + 1)))⁻¹ • x =
-      (R / (2 * ((0 : ℕ) + 1 : ℝ)))⁻¹ • (((n : ℝ) + 1) • x) := by
-    rw [smul_smul]
-    congr 1
-    field_simp
-    norm_num
-  simp only [ContDiffBump.apply, sub_zero, rIn_shrinking, rOut_shrinking]
-  rw [hratio, hscale]
+  rw [apply_eq_apply_smul_of_rOut_div_rIn_eq _ (shrinking hR 0)
+    (by simp only [rOut_shrinking, rIn_shrinking]; field_simp)]
+  congr 2
+  simp only [rIn_shrinking]
+  field_simp
+  norm_num
 
 end Shrinking
 
@@ -159,23 +159,21 @@ theorem integral_shrinking_normed_mul {R : ℝ} (hR : 0 < R) (n : ℕ) (f : G �
   set S : ℝ := (n : ℝ) + 1
   have hS : 0 < S := by positivity
   set d := Module.finrank ℝ G
-  have hI : ∫ t, (shrinking (c := (0 : G)) hR n) t ∂μ =
-      (S ^ d)⁻¹ * ∫ s, (shrinking (c := (0 : G)) hR 0) s ∂μ := by
-    simp_rw [shrinking_apply_eq hR n]
-    rw [Measure.integral_comp_smul_of_nonneg μ _ S (hR := hS.le), smul_eq_mul]
-  have hI0 : ∫ s, (shrinking (c := (0 : G)) hR 0) s ∂μ ≠ 0 := (integral_pos _).ne'
-  have hSd : S ^ d ≠ 0 := pow_ne_zero _ hS.ne'
-  set g : G → ℝ := fun s => (shrinking (c := (0 : G)) hR 0).normed μ s * f (S⁻¹ • s) * S ^ d
-  have hg (t : G) : (shrinking (c := (0 : G)) hR n).normed μ t * f t = g (S • t) := by
-    simp only [g, normed_def]
-    rw [hI, shrinking_apply_eq hR n, inv_smul_smul₀ hS.ne']
+  have hc : (shrinking (c := (0 : G)) hR 0).rIn / (shrinking (c := (0 : G)) hR n).rIn = S := by
+    simp only [rIn_shrinking, S]
     field_simp
-    exact mul_comm _ _
+    norm_num
+  set g : G → ℝ := fun s => S ^ d * ((shrinking (c := (0 : G)) hR 0).normed μ s * f (S⁻¹ • s))
+  have hg (t : G) : (shrinking (c := (0 : G)) hR n).normed μ t * f t = g (S • t) := by
+    rw [normed_eq_mul_normed_smul_of_rOut_div_rIn_eq _ (shrinking hR 0)
+      (by simp only [rOut_shrinking, rIn_shrinking]; field_simp), hc]
+    simp only [g, inv_smul_smul₀ hS.ne']
+    ring
   calc ∫ t, (shrinking (c := (0 : G)) hR n).normed μ t * f t ∂μ = ∫ t, g (S • t) ∂μ :=
         integral_congr_ae (.of_forall hg)
     _ = (S ^ d)⁻¹ • ∫ s, g s ∂μ := Measure.integral_comp_smul_of_nonneg μ g S (hR := hS.le)
     _ = _ := by
-        simp only [g, smul_eq_mul, integral_mul_const]
+        simp only [g, smul_eq_mul, integral_const_mul]
         field_simp
 
 /-- Normalized bumps of shrinking radius approximate a function uniformly on a set `s` when the
@@ -305,6 +303,51 @@ theorem HasCompactSupport.iteratedFDeriv_normed_convolution
   rw [← hL]
   exact hfc.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
     ρ.continuous_normed.locallyIntegrable hf hk
+
+/-- The normalized-bump convolution of `g` at `x` only depends on the values of `g` on the ball
+of radius `ρ.rOut` around `x`. -/
+theorem ContDiffBump.normed_convolution_eq_of_eqOn {G F : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [HasContDiffBump G] [MeasurableSpace G] {μ : Measure G}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (ρ : ContDiffBump (0 : G)) {g₁ g₂ : G → F} {x : G}
+    (h : Set.EqOn g₁ g₂ (ball x ρ.rOut)) :
+    (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g₁) x = (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g₂) x := by
+  simp only [convolution_def]
+  congr 1 with t
+  by_cases ht : ρ.normed μ t = 0
+  · simp [ht]
+  · have hρt : ρ t ≠ 0 := fun h0 ↦ ht (by simp [ContDiffBump.normed_def, h0])
+    have htr : t ∈ ball (0 : G) ρ.rOut := ρ.support_eq ▸ Function.mem_support.2 hρt
+    rw [h (by simpa [dist_eq_norm] using htr)]
+
+/-- Every available Fréchet derivative of a `C^N` function commutes with normalized-bump
+convolution: `Dᵏ (ρ ⋆ f) = ρ ⋆ Dᵏ f` for `k ≤ N`. Unlike
+`HasCompactSupport.iteratedFDeriv_normed_convolution`, no support or growth condition on `f` is
+needed, since near each point the convolution only reads `f` on a bounded set. -/
+theorem ContDiffBump.iteratedFDeriv_normed_convolution
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {f : E → F} {N : ℕ∞} {k : ℕ}
+    (hf : ContDiff ℝ N f) (ρ : ContDiffBump (0 : E)) (hk : k ≤ N) :
+    iteratedFDeriv ℝ k (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f) =
+      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ k f := by
+  funext x₀
+  -- Near `x₀` the convolution only reads `f` on `ball x₀ (ρ.rOut + 1)`, where `f` agrees with
+  -- the compactly supported cutoff `f₁ = χ f`.
+  let χ : ContDiffBump x₀ := ⟨ρ.rOut + 1, ρ.rOut + 2, by linarith [ρ.rOut_pos], by linarith⟩
+  set f₁ : E → F := fun x ↦ χ x • f x
+  have hf₁ : ContDiff ℝ N f₁ := χ.contDiff.smul hf
+  have hc₁ : HasCompactSupport f₁ := χ.hasCompactSupport.smul_right
+  have heq : Set.EqOn f₁ f (ball x₀ (ρ.rOut + 1)) := fun y hy ↦ by
+    simp [f₁, χ.one_of_mem_closedBall (ball_subset_closedBall hy)]
+  have hsub (x : E) (hx : x ∈ ball x₀ 1) : ball x ρ.rOut ⊆ ball x₀ (ρ.rOut + 1) :=
+    (ball_subset_ball' (by rw [mem_ball] at hx; linarith))
+  have hnear : ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁ =ᶠ[𝓝 x₀] ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f :=
+    eventually_of_mem (ball_mem_nhds x₀ one_pos) fun x hx ↦
+      ρ.normed_convolution_eq_of_eqOn ((heq.mono (hsub x hx)))
+  have hD : Set.EqOn (iteratedFDeriv ℝ k f₁) (iteratedFDeriv ℝ k f) (ball x₀ (ρ.rOut + 1)) :=
+    fun y hy ↦ ((eventuallyEq_of_mem (isOpen_ball.mem_nhds hy) heq).iteratedFDeriv ℝ k).eq_of_nhds
+  rw [← (hnear.iteratedFDeriv ℝ k).eq_of_nhds, hc₁.iteratedFDeriv_normed_convolution hf₁ ρ hk]
+  exact ρ.normed_convolution_eq_of_eqOn (hD.mono (hsub x₀ (mem_ball_self one_pos)))
 
 /-- Convolution with a nonnegative normalized bump averages the differences of translates: if
 `dist (g (x - t)) (g (y - t)) ≤ B` for every `t`, then the convolutions at `x` and `y` are within

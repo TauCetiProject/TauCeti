@@ -1375,8 +1375,7 @@ theorem integralTopForm_inner_selfDualPart_eq_zero (hk : Even k) {β : SmoothFor
       (coe_mem_selfDualForms_iff.2 hγ'), hd, cast_apply, coe_wedge]
     simp only [Function.comp_def, Fin.cast_eq_self]
   rw [h, ← coe_wedge]
-  exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
-    (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ hγ)
+  exact integralTopForm_wedge_eq_zero_of_mem_exactForms o hβ hγ
 
 /-- **The anti-self-dual part of an exact form is orthogonal to the closed anti-self-dual forms**:
 on an oriented boundaryless Riemannian manifold of dimension `k + k` with `k` even, for an exact
@@ -1400,8 +1399,7 @@ theorem integralTopForm_inner_antiSelfDualPart_eq_zero (hk : Even k) {β : Smoot
         (coe_mem_antiSelfDualForms_iff.2 hγ'), hd, cast_apply, coe_wedge]
     simp only [Function.comp_def, Fin.cast_eq_self]
   rw [h, ← coe_wedge]
-  exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
-    (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ (neg_mem hγ))
+  exact integralTopForm_wedge_eq_zero_of_mem_exactForms o hβ (neg_mem hγ)
 
 /-- **Pairings with a closed self-dual form are cohomological**: on an oriented boundaryless
 Riemannian manifold of dimension `k + k`, for a closed `k`-form `φ` and a compactly supported

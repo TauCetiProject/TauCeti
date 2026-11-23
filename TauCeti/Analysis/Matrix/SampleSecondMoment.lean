@@ -109,6 +109,18 @@ theorem sampleCovariance_apply (X : Matrix p n 𝕜) (i j : p) :
     sampleCovariance X i j = (1 / (Fintype.card n : ℝ)) • ∑ k, X i k * star (X j k) := by
   simp [sampleCovariance_def, Matrix.mul_apply]
 
+/-- A real star-algebra homomorphism commutes with sample covariance. -/
+@[simp]
+theorem sampleCovariance_map {𝕜' : Type*} [RCLike 𝕜'] (X : Matrix p n 𝕜)
+    (f : 𝕜 →⋆ₐ[ℝ] 𝕜') :
+    sampleCovariance (X.map f) = (sampleCovariance X).map f := by
+  ext i j
+  simp only [sampleCovariance_apply, Matrix.map_apply, RCLike.real_smul_eq_coe_mul,
+    map_mul, map_sum, map_star]
+  congr 1
+  simpa only [RCLike.algebraMap_eq_ofReal, StarAlgHom.coe_toAlgHom] using
+    (f.toAlgHom.commutes (1 / (Fintype.card n : ℝ))).symm
+
 /-- The real trace of a sample covariance matrix is the column-normalized sum of squared entry
 norms. This holds for empty index types, with the usual zero conventions. -/
 theorem re_trace_sampleCovariance [Fintype p] (X : Matrix p n 𝕜) :

@@ -10,6 +10,7 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
@@ -55,6 +56,8 @@ No measurability of `t ↦ A(t)` is assumed: the equation and the integrability 
   value have the same continuous representative.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`: two weak solutions with the same initial
   value agree almost everywhere.
+* `TauCeti.HasWeakLineDerivOn.sq_mul_integral_norm_sub_sq_le_of_gelfandDual`: the energy
+  estimate bounds the `L²` distance of a weak solution from an approximate solution.
 
 ## References
 
@@ -226,6 +229,74 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
     (ae_restrict_of_forall_mem measurableSet_Icc hbound) (right_mem_Icc.2 ht.1)
     (hbound t (right_mem_Icc.2 ht.1))
   simpa only [hχ_def, mul_comm (exp _)] using this
+
+/-- **Comparison of a weak solution with an approximate solution.** Let `u` be a weak solution
+of `u' + A(t) u = ι* g`, `u(a) = v₀`, with `g ∈ L²(a, b; H)` and coercive `A(t)`,
+`α ‖v‖² ≤ A(t) v v`. Let `uh`, continuous on `[a, b]` with `uh(a) = v₀` and weak derivative
+`D ∈ L²(a, b; V)`, solve `ι* ι D + Ah(t) ub = ι* gh` for some `ub ∈ L²(a, b; V)`,
+`gh ∈ L²(a, b; H)` and operators `Ah(t)` with `‖A(t)‖ ≤ Λ` and `‖A(t) - Ah(t)‖ ≤ ε₁`. Then the
+energy estimate for `uh - u` gives
+`α² ∫ ‖uh - u‖² ≤ 3 (‖ι‖² ∫ ‖gh - g‖² + Λ² ∫ ‖uh - ub‖² + ε₁² ∫ ‖ub‖²)`. -/
+theorem HasWeakLineDerivOn.sq_mul_integral_norm_sub_sq_le_of_gelfandDual
+    {Ah : ℝ → V →L[ℝ] StrongDual ℝ V} {Λ ε₁ : ℝ} (hα : 0 < α) (hab : a ≤ b)
+    (hA : ∀ t ∈ Ioo a b, ∀ v, α * ‖v‖ ^ 2 ≤ A t v v)
+    (hAm : AEStronglyMeasurable A (volume.restrict (Ioo a b)))
+    (hAhm : AEStronglyMeasurable Ah (volume.restrict (Ioo a b)))
+    (hΛ : ∀ t ∈ Ioo a b, ‖A t‖ ≤ Λ) (hε : ∀ t ∈ Ioo a b, ‖A t - Ah t‖ ≤ ε₁)
+    {g gh : ℝ → H} (hg : MemLp g 2 (volume.restrict (Ioo a b)))
+    (hgh : MemLp gh 2 (volume.restrict (Ioo a b)))
+    {v₀ : V}
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι.gelfandDual (ι (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo a b))) (hu' : MemLp u' 2 (volume.restrict (Ioo a b)))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t + A t (u t) = ι.gelfandDual (g t))
+    (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
+    (h₀ : w a = ι v₀)
+    {uh ub D : ℝ → V} (hD : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ uh D 1)
+    (huh : MemLp uh 2 (volume.restrict (Ioo a b))) (hDm : MemLp D 2 (volume.restrict (Ioo a b)))
+    (hub : MemLp ub 2 (volume.restrict (Ioo a b))) (huhc : ContinuousOn uh (Icc a b))
+    (huh₀ : uh a = v₀)
+    (hscheme : ∀ t ∈ Ioo a b, ι.gelfandDual (ι (D t)) + Ah t (ub t) = ι.gelfandDual (gh t)) :
+    α ^ 2 * ∫ t in Ioo a b, ‖uh t - u t‖ ^ 2 ≤
+      3 * ((‖ι‖ ^ 2 * ∫ t in Ioo a b, ‖gh t - g t‖ ^ 2) +
+        (Λ ^ 2 * ∫ t in Ioo a b, ‖uh t - ub t‖ ^ 2) + ε₁ ^ 2 * ∫ t in Ioo a b, ‖ub t‖ ^ 2) := by
+  set μ := volume.restrict (Ioo a b)
+  have hF₁ : MemLp (fun t ↦ ι.gelfandDual (gh t - g t)) 2 μ :=
+    ι.gelfandDual.comp_memLp' (hgh.sub hg)
+  obtain ⟨hF₂, h₂⟩ := memLp_clm_apply_and_integral_norm_sq_le hAm
+    ((ae_restrict_mem measurableSet_Ioo).mono hΛ) (huh.sub hub)
+  obtain ⟨hF₃, h₃⟩ := memLp_clm_apply_and_integral_norm_sq_le (hAm.sub hAhm)
+    ((ae_restrict_mem measurableSet_Ioo).mono hε) hub
+  simp only [Pi.sub_apply] at hF₂ h₂ hF₃ h₃
+  -- The error `uh - u` solves `e' + A(t) e = F₁ + F₂ + F₃`.
+  have he : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (fun t ↦ ι.gelfandDual (ι (uh t - u t))) (fun t ↦ ι.gelfandDual (ι (D t)) - u' t) 1 := by
+    convert (hD.clm_comp (ι.gelfandDual ∘L ι)).sub h using 1 <;> ext t : 1 <;> simp
+  have heq' : ∀ᵐ t ∂μ, (ι.gelfandDual (ι (D t)) - u' t) + A t (uh t - u t) =
+      ι.gelfandDual (gh t - g t) + A t (uh t - ub t) + (A t - Ah t) (ub t) := by
+    filter_upwards [heq, ae_restrict_mem measurableSet_Ioo] with t ht ht'
+    rw [eq_sub_of_add_eq (hscheme t ht'), eq_sub_of_add_eq ht]
+    simp only [map_sub, sub_apply]
+    abel
+  have hest := he.norm_sq_add_mul_integral_le_of_gelfandDual (A := A) (β := 0) (huh.sub hu)
+    ((ι.gelfandDual.comp_memLp' (ι.comp_memLp' hDm)).sub hu') ((hF₁.add hF₂).add hF₃) hα le_rfl
+    (by filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht v; simpa using hA t ht v)
+    heq' (w := fun t ↦ ι (uh t) - w t) ((ι.continuous.comp_continuousOn huhc).sub hw)
+    (by filter_upwards [hae] with t ht; simp [← ht]) (right_mem_Icc.2 hab)
+  simp only [huh₀, h₀, sub_self, norm_zero, mul_zero, zero_mul, Real.exp_zero, one_mul,
+    ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_add] at hest
+  rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+    intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo] at hest
+  have hF := integral_norm_sq_le_three_mul (μ := μ) hF₁ hF₂ hF₃ (Eventually.of_forall fun _ ↦ rfl)
+  have h₁ := integral_norm_sq_le_sq_mul_of_norm_le hF₁ (hgh.sub hg)
+    (Eventually.of_forall fun t ↦ by
+      simpa using ι.gelfandDual.le_opNorm (gh t - g t))
+  simp only [Pi.add_apply] at hest
+  simp only [Pi.sub_apply] at h₁
+  have hnn : 0 ≤ ‖ι (uh b) - w b‖ ^ 2 := sq_nonneg _
+  have key : α * ∫ t in Ioo a b, ‖uh t - u t‖ ^ 2 ≤
+      α⁻¹ * ∫ t in Ioo a b, ‖ι.gelfandDual (gh t - g t) + A t (uh t - ub t) +
+        (A t - Ah t) (ub t)‖ ^ 2 := by linarith
+  linarith [(le_inv_mul_iff₀ hα).1 key]
 
 /-- The energy estimate for the difference of two weak solutions with the same initial value and
 right-hand side: `‖w₁ t - w₂ t‖² + α ∫ₐᵗ ‖u₁ - u₂‖² ≤ 0` on `[a, b]`. -/
