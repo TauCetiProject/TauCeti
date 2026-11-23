@@ -11,8 +11,10 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 public import TauCeti.Geometry.Manifold.MFDeriv.Inner
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Form
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AddOneForm
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Trivial
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -180,18 +182,9 @@ theorem exactPrequantumConnection_neg_conj_apply (θ : SmoothForm I M ℝ 1) (�
     (s : M → ℂ) (x : M) (v : TangentSpace I x) :
     exactPrequantumConnection (-θ) ℏ (starRingEnd ℂ ∘ s) x v =
       starRingEnd ℂ (exactPrequantumConnection θ ℏ s x v) := by
-  let C : ℂ →L[ℝ] ℂ := Complex.conjCLE
-  have hc : (C : ℂ → ℂ) = starRingEnd ℂ := funext Complex.conjCLE_apply
-  have hd : mvfderiv I (C ∘ s) x v = C (mvfderiv I s x v) := by
-    by_cases hs : MDifferentiableAt I 𝓘(ℝ, ℂ) s x
-    · exact C.mvfderiv_comp_apply hs v
-    -- Conjugation is involutive, so both totalized derivatives vanish in this case.
-    have hcs : ¬ MDifferentiableAt I 𝓘(ℝ, ℂ) (C ∘ s) x := fun hcs ↦
-      hs (by simpa only [hc, Function.comp_def, starRingEnd_apply, star_star] using
-        C.mdifferentiableAt.comp x hcs)
-    simp only [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hcs,
-      mfderiv_zero_of_not_mdifferentiableAt hs, ContinuousLinearMap.comp_zero, zero_apply, map_zero]
-  rw [exactPrequantumConnection_apply, exactPrequantumConnection_apply, ← hc, hd, hc]
+  have hc : (Complex.conjCLE : ℂ → ℂ) = starRingEnd ℂ := funext Complex.conjCLE_apply
+  rw [exactPrequantumConnection_apply, exactPrequantumConnection_apply, ← hc,
+    Complex.conjCLE.mvfderiv_comp_apply, hc]
   simp only [NegMemClass.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, neg_div,
     neg_smul, Function.comp_apply, Complex.real_smul, map_add, map_mul, Complex.conj_ofReal,
     Complex.conj_I, neg_mul, mul_neg]
@@ -204,34 +197,27 @@ variable [IsManifold I 1 M]
 
 /-- The exact-line connection is `C^n` for every finite order and for `n = ∞`. -/
 instance {n : ℕ∞ω} [ENat.LEInfty n] (θ : SmoothForm I M ℝ 1) (ℏ : ℝ) :
-    CovariantDerivative.ContMDiffCovariantDerivative (exactPrequantumConnection θ ℏ) n where
-  contMDiff.contMDiff {s} hs := by
-    rw [contMDiffOn_univ] at hs ⊢
-    have hs' : ContMDiff I 𝓘(ℝ, ℂ) (n + 1) s := fun x ↦ by
-      simpa only [contMDiffAt_section_iff, Trivial.fiberBundle_trivializationAt',
-        Trivial.trivialization_apply] using hs x
-    have hC : ContMDiff I (I.prod 𝓘(ℝ, ℝ →L[ℝ] ℂ)) n
-        (fun x ↦ TotalSpace.mk' (ℝ →L[ℝ] ℂ)
-          (E := fun _ : M ↦ ℝ →L[ℝ] ℂ) x
-          (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℝ ℂ 1 (ℏ⁻¹ • (Complex.I • s x)))) := by
-      intro x
-      rw [contMDiffAt_hom_bundle]
-      refine ⟨contMDiffAt_id, ?_⟩
-      -- Both trivializations are the identity, so the coordinates are the coefficient map.
-      simpa only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-        Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
-        ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id, Function.comp_def,
-        ContinuousLinearMap.lsmul_apply, smul_assoc] using
-        ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℝ ℂ 1).contMDiff.comp
-          ((ContinuousLinearMap.lsmul ℝ ℂ (ℏ⁻¹ • Complex.I)).contMDiff.comp
-            (hs'.of_le le_self_add))).contMDiffAt
-    have hA := hC.clm_bundle_comp ((SmoothForm.degreeOneEquiv θ).contMDiff.of_le ENat.LEInfty.out)
-    have hd := hs'.contMDiff_totalSpaceMk_mvfderiv
-    convert hd.add_section hA using 1
-    funext x
-    congr 1
-    ext v
-    simp [exactPrequantumConnection_apply, div_eq_mul_inv, mul_comm, mul_assoc]
+    CovariantDerivative.ContMDiffCovariantDerivative (exactPrequantumConnection θ ℏ) n := by
+  refine CovariantDerivative.ContMDiffCovariantDerivative.addOneForm
+    (cov := CovariantDerivative.trivial (I := I) ℂ) inferInstance ?_
+  let C : ℝ →L[ℝ] ℂ →L[ℝ] ℂ :=
+    ContinuousLinearMap.toSpanSingleton ℝ (ℏ⁻¹ • ContinuousLinearMap.lsmul ℝ ℂ Complex.I)
+  have hC : ContMDiff I (I.prod 𝓘(ℝ, ℝ →L[ℝ] ℂ →L[ℝ] ℂ)) n
+      (fun x : M ↦ TotalSpace.mk' (ℝ →L[ℝ] ℂ →L[ℝ] ℂ)
+        (E := fun y : M ↦ Trivial M ℝ y →L[ℝ] Trivial M (ℂ →L[ℝ] ℂ) y) x C) := by
+    refine contMDiff_hom_bundle_of_inCoordinates_eq_const (c := fun _ ↦ C) ?_
+    intro x y _ _
+    refine ContinuousLinearMap.ext fun r ↦ ContinuousLinearMap.ext fun z ↦ ?_
+    rw [inCoordinates_apply_eq₂ (E₂ := Trivial M ℂ) (E₃ := Trivial M ℂ)
+      (by simp) (by simp) (by simp)]
+    simp
+  have h := hC.clm_bundle_comp ((SmoothForm.degreeOneEquiv θ).contMDiff.of_le ENat.LEInfty.out)
+  -- `addOneForm` takes the section value before the tangent vector.
+  let _ : ∀ x : M, IsNormableSpace ℝ (TangentSpace I x) :=
+    fun x ↦ instIsNormableSpaceTangentSpace I x
+  intro x
+  exact contMDiffWithinAt_univ.mp ((h x).contMDiffWithinAt.clm_bundle_flip
+    (s := Set.univ) (V₂ := Trivial M ℂ) (V₃ := Trivial M ℂ))
 
 end Smooth
 
