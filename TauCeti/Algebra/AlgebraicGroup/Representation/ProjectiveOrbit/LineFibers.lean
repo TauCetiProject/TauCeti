@@ -129,7 +129,7 @@ theorem exists_finite_subcomodule_exteriorPower_unimodular_line_stabilizer
     apply eq_of_forall_quotientPointsSubgroup_eq
     intro A
     ext g
-    rw [Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_baseChange, hstab]
+    rw [Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint, hstab]
   refine ⟨V, n, hV, m, ?_, hspan ▸ hLI⟩
   exact Module.isUnimodular_iff.mpr
     (Module.Projective.exists_dual_eq_one k (Subtype.coe_injective.ne hm))
@@ -157,6 +157,6 @@ theorem exists_finite_subcomodule_exteriorPower_coset_matrixCoefficient
   refine ⟨V, n, hV, m, huni, fun A g h ↦ ?_⟩
   exact I.coset_eq_iff_exists_units_matrixCoefficient (m : ⋀[k]^n V) huni A
     (fun a ↦ by
-      rw [← hstab, Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_baseChange]) g h
+      rw [← hstab, Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint]) g h
 
 end TauCeti.HopfIdeal

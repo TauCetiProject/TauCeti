@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
 /-!
 # Faithful direct-sum representations
 
-A direct sum of finite free comodules over a nontrivial commutative ring is faithful if either
+A direct sum of finite free comodules over a commutative ring is faithful if either
 summand is faithful. The matrix coefficients and their antipode images for a faithful summand
 already generate the coordinate Hopf algebra, and remain coefficients of the direct sum.
 
@@ -25,7 +25,7 @@ universe u
 
 namespace TauCeti.Comodule
 
-variable {k H M V : Type u} [CommRing k] [Nontrivial k] [CommRing H] [HopfAlgebra k H]
+variable {k H M V : Type u} [CommRing k] [CommRing H] [HopfAlgebra k H]
   [AddCommMonoid M] [Module k M] [Comodule k H M]
   [AddCommMonoid V] [Module k V] [Comodule k H V]
 
@@ -39,7 +39,7 @@ theorem IsFaithful.prod_left [Module.Free k V] [Module.Finite k V]
   let : Module.Free k M := Module.Free.of_basis b
   let : Module.Finite k M := Module.Finite.of_basis b
   apply (isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top
-    (Module.finBasis k (M × V))).mpr
+    ((Module.Free.chooseBasis k (M × V)).reindex (Fintype.equivFin _))).mpr
   apply top_unique
   rw [← (isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top b).mp hM,
     matrixCoefficientSubalgebra_prod]
@@ -53,7 +53,7 @@ theorem IsFaithful.prod_right [Module.Free k M] [Module.Finite k M]
   let : Module.Free k V := Module.Free.of_basis b
   let : Module.Finite k V := Module.Finite.of_basis b
   apply (isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top
-    (Module.finBasis k (M × V))).mpr
+    ((Module.Free.chooseBasis k (M × V)).reindex (Fintype.equivFin _))).mpr
   apply top_unique
   rw [← (isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top b).mp hV,
     matrixCoefficientSubalgebra_prod]

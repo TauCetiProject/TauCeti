@@ -47,7 +47,7 @@ to nonreduced subgroup schemes over any field.
 * `Submodule.stabilizerHopfIdeal`: the Hopf ideal of the stabilizer of `W`.
 * `Submodule.stabilizerHopfIdeal_le_ker_iff`: its points are the points carrying `A ⊗ W` onto
   itself.
-* `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_baseChange`: its points over
+* `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint`: its points over
   any commutative value algebra preserve the scalar extension of `W`.
 * `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff`: its rational points are the
   rational points carrying `W` onto itself.
@@ -320,10 +320,10 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
     · rw [SetLike.mem_coe, RingHom.mem_ker, ← hinv]
       exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.property
 
-/-- A point over any commutative value algebra lies in the stabilizer of `W` exactly when its
-action carries the scalar extension of `W` onto itself. -/
-theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_baseChange (W : Submodule k M)
-    {A : Type x} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
+/-- An algebra-valued point lies in the stabilizer of `W` as a subgroup of `H(A)` exactly when its
+action carries `A ⊗ W` onto itself. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint (W : Submodule k M)
+    {A : Type*} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
         (W.stabilizerHopfIdeal H) (CommAlgCat.of k A) ↔
       (W.baseChange A).map (Comodule.endOfPoint M g.ofConv) = W.baseChange A := by
@@ -352,7 +352,7 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
     simp only [e, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.lid_symm_apply]
     rw [Comodule.endOfPoint_tmul, one_smul,
       Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-  rw [W.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_baseChange g,
+  rw [W.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint g,
     hbc, ← map_comp, hcomp, map_comp]
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
 
