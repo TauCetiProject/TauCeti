@@ -13,7 +13,9 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 A continuous semilinear map between uniform additive groups extends to completions (`completion`
 and `fromCompletion`), preserving equivariance for any auxiliary uniformly continuous scalar
-actions (`ContinuousLinearMap.completion_smul` and `ContinuousLinearMap.fromCompletion_smul`).
+actions (`ContinuousLinearMap.completion_smul` and `ContinuousLinearMap.fromCompletion_smul`),
+and reflecting it (`completion_smul_iff`, `fromCompletion_smul_iff`). `fromCompletion` is
+characterized by `ContinuousLinearMap.comp_toComplL_eq_iff`.
 Subtraction of continuous semilinear maps between uniform modules commutes with extension to the
 separated completions (`ContinuousLinearMap.completion_sub`).
 
@@ -78,6 +80,35 @@ theorem fromCompletion_smul [T0Space β] [CompleteSpace β]
     (isClosed_eq (f.fromCompletion.continuous.comp (continuous_const_smul a))
       ((continuous_const_smul b).comp f.fromCompletion.continuous))
     fun x ↦ by rw [← Completion.coe_smul, fromCompletion_apply_coe, hf, fromCompletion_apply_coe]
+
+/-- For a separated codomain `β`, `f.completion` intertwines an `A`-action with a `B`-action along
+`ψ : A → B` if and only if `f` does. -/
+theorem completion_smul_iff [T0Space β] [SMul A α] [UniformContinuousConstSMul A α]
+    [SMul B β] [UniformContinuousConstSMul B β] (ψ : A → B) (f : α →SL[σ] β) :
+    (∀ (a : A) (z : Completion α), f.completion (a • z) = ψ a • f.completion z) ↔
+      ∀ (a : A) (x : α), f (a • x) = ψ a • f x :=
+  ⟨fun h a x ↦ Completion.coe_injective β <| by
+      rw [Completion.coe_smul, ← completion_apply_coe, ← completion_apply_coe, ← h,
+        Completion.coe_smul],
+    fun h a ↦ f.completion_smul (h a)⟩
+
+/-- `f.fromCompletion` intertwines an `A`-action with a `B`-action along `ψ : A → B` if and only if
+`f` does. -/
+theorem fromCompletion_smul_iff [T0Space β] [CompleteSpace β]
+    [SMul A α] [UniformContinuousConstSMul A α] [SMul B β] [ContinuousConstSMul B β]
+    (ψ : A → B) (f : α →SL[σ] β) :
+    (∀ (a : A) (z : Completion α), f.fromCompletion (a • z) = ψ a • f.fromCompletion z) ↔
+      ∀ (a : A) (x : α), f (a • x) = ψ a • f x :=
+  ⟨fun h a x ↦ by simpa only [← Completion.coe_smul, fromCompletion_apply_coe] using h a x,
+    fun h a ↦ f.fromCompletion_smul (h a)⟩
+
+/-- Universal property of `Completion α` for continuous semilinear maps into a complete separated
+module `β`: `g ∘ toComplL = f` if and only if `g = f.fromCompletion`. -/
+theorem comp_toComplL_eq_iff [T0Space β] [CompleteSpace β]
+    (f : α →SL[σ] β) (g : Completion α →SL[σ] β) :
+    g.comp (Completion.toComplL (S := S)) = f ↔ g = f.fromCompletion :=
+  ⟨fun h ↦ (f.fromCompletion_unique g fun x ↦ (DFunLike.congr_fun h x).symm).symm,
+    fun h ↦ by ext x; simp [h]⟩
 
 end SMul
 

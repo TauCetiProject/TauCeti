@@ -87,12 +87,6 @@ section Construction
 variable (hρ : IsInvariantForm ρ ω.toBilinForm) (hισ : ∀ g w, ι (σ g w) = ρ g (ι w))
 include hρ hισ
 
-/-- The symplectic orthogonal of the image of an equivariant map is invariant. -/
-private theorem apply_mem_orthogonal_range (g : G) {v : V}
-    (hv : v ∈ ω.orthogonal (LinearMap.range ι)) : ρ g v ∈ ω.orthogonal (LinearMap.range ι) :=
-  SymplecticForm.apply_mem_orthogonal (fun g u v ↦ hρ.apply g u v)
-    (by rintro g _ ⟨w, rfl⟩; exact ⟨σ g w, hισ g w⟩) g hv
-
 /-- The symplectic orthogonal of `ι(ker P)`, for an equivariant `P`, is invariant. -/
 private theorem apply_mem_orthogonal_map_ker (hPσ : ∀ g w, (P (σ g w) : W) = σ g (P w)) (g : G)
     {v : V} (hv : v ∈ ω.orthogonal ((LinearMap.ker P).map ι)) :
@@ -108,7 +102,9 @@ complement. -/
 private theorem exists_isCompl_orthogonal_range [ρ.IsSemisimpleRepresentation] :
     ∃ Y : Subrepresentation ρ, IsCompl (ω.orthogonal (LinearMap.range ι)) Y.toSubmodule := by
   obtain ⟨Y, hY⟩ := exists_isCompl
-    (⟨_, fun g _ hv ↦ apply_mem_orthogonal_range hρ hισ g hv⟩ : Subrepresentation ρ)
+    (⟨_, fun g _ hv ↦
+      SymplecticForm.apply_mem_orthogonal_range (fun g u v ↦ hρ.apply g u v) hισ g hv⟩ :
+      Subrepresentation ρ)
   exact ⟨Y, Subrepresentation.isCompl_toSubmodule.2 hY⟩
 
 end Construction

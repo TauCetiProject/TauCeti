@@ -28,6 +28,26 @@ left complex and its two single-row endpoints need totalizations. Row comparison
 short-complex constructions require a preadditive target; degreewise splittings also
 require binary biproducts. Abelian hypotheses enter only the short-exactness theorem.
 
+## Main definitions
+
+* `TauCeti.TwoTermSupport`: a cochain complex supported in two distinct degrees, with the high
+  term as a subcomplex and the low term as its quotient.
+* `TauCeti.TwoTermSupport.shortComplex`: the high inclusion and low projection as a short complex.
+* `CategoryTheory.Functor.mapBifunctorSingleRowNatIso`: totalization against a single supported
+  row is a shifted row functor.
+* `CategoryTheory.Functor.mapTwoTermSupport`: the totalized support short complex.
+* `CategoryTheory.Functor.mapTwoTermSupportDegreewiseSplitting`: its canonical degreewise
+  splitting, given binary biproducts.
+* `CategoryTheory.Functor.mapTwoTermSupportReframed`: the same short complex with its two
+  endpoint functors replaced along specified isomorphisms.
+
+## Main results
+
+* `CategoryTheory.Functor.mapTwoTermSupport_shortExact`: the totalized support short complex is
+  short exact in the functor category.
+* `CategoryTheory.Functor.mapTwoTermSupportReframed_shortExact`: the same for the reframed
+  short complex.
+
 ## Attribution
 
 The single-row component comparison, inverse, differential calculation and
@@ -51,13 +71,17 @@ namespace TauCeti
 variable (C₁ : Type*) [Category* C₁] [HasZeroMorphisms C₁]
 
 /-- A cochain complex with two distinct supported rows, its chosen endpoint identifications,
-and vanishing differentials required for the high inclusion and low projection. -/
+and vanishing differentials required for the high inclusion and low projection.
+
+The names low and high refer to the roles of the two terms, not to their degrees: the high term
+is the subcomplex and the low term is the quotient. Only `a ≠ b` is required, so `b < a` is
+allowed. -/
 structure TwoTermSupport where
   /-- The supported cochain complex. -/
   K : CochainComplex C₁ ℤ
-  /-- The degree of the low term. -/
+  /-- The degree of the low term, the quotient end. It need not be smaller than `b`. -/
   a : ℤ
-  /-- The degree of the high term. -/
+  /-- The degree of the high term, the subcomplex end. It need not be larger than `a`. -/
   b : ℤ
   /-- The chosen low-term object. -/
   A : C₁

@@ -16,7 +16,7 @@ import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Algebra.MvPolynomial.Monad
+import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.Analysis.Complex.Conformal.Continuation.Log
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.GroupTheory.GroupAction.Closure

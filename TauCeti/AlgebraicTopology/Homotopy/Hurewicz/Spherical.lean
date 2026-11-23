@@ -30,7 +30,9 @@ different path components. This file defines the subgroup of spherical classes.
   classes (`TauCeti.sphericalClassesMap`).
 * By the Hurewicz theorem, every class in `Hₙ₊₂(X; ℤ)` of an `(n + 1)`-connected space is
   spherical (`TauCeti.sphericalClasses_eq_top`). Every class in `Hₙ₊₁(Sⁿ⁺¹; ℤ)` is spherical,
-  including on the circle (`TauCeti.sphericalClasses_sphere_eq_top`).
+  including on the circle (`TauCeti.sphericalClasses_sphere_eq_top`), and so is every class in
+  `H₂(X; ℤ)` of a simply connected space
+  (`TauCeti.sphericalClasses_eq_top_of_simplyConnectedSpace`).
 
 In degree two these are the spherical classes over which the periods of capped Hamiltonian Floer
 theory are taken: two caps of a contractible loop differ by a sphere.
@@ -161,5 +163,15 @@ theorem sphericalClasses_sphere_eq_top (n : ℕ) :
   rw [eq_top_iff, ← zmultiples_hurewicz_sphereGenLoop, AddSubgroup.zmultiples_le]
   simpa using hurewiczIntHom_mem_sphericalClasses (sphereNorthPole (n + 1))
     (Additive.ofMul (⟦sphereGenLoop (n + 1)⟧ : HomotopyGroup (Fin (n + 1)) _ _))
+
+variable (X) in
+/-- **Every class in `H₂(X; ℤ)` of a simply connected space is spherical**, by the Hurewicz
+theorem in degree two (`HomotopyGroup.bijective_hurewiczIntHom_of_simplyConnectedSpace`). -/
+@[simp]
+theorem sphericalClasses_eq_top_of_simplyConnectedSpace [SimplyConnectedSpace X] :
+    sphericalClasses X 1 = ⊤ := by
+  obtain ⟨x⟩ := (inferInstance : Nonempty X)
+  rw [sphericalClasses_eq_range x, AddMonoidHom.range_eq_top]
+  exact (bijective_hurewiczIntHom_of_simplyConnectedSpace x).2
 
 end TauCeti

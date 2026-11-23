@@ -390,7 +390,8 @@ theorem IsIntegral.not_isUnimodular_sqrt_smul [Nontrivial E] (h : IsIntegral L) 
 
 omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In positive dimension, scaling a unimodular lattice by `c` with `|c| ≠ 1` never gives a
-unimodular lattice. -/
+unimodular lattice. In the zero space every lattice is unimodular
+(`ZLattice.isUnimodular_of_subsingleton`). -/
 theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {c : ℝ}
     (hc : |c| ≠ 1) : ¬ IsUnimodular (c • L) := by
   borelize E
@@ -398,11 +399,9 @@ theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {
   have : IsZLattice ℝ L := ⟨h.span_eq_top⟩
   intro hu
   rcases eq_or_ne c 0 with rfl | hc0
-  · -- The lattice `0 • L` is zero, and the dual of the zero lattice is the whole space.
-    obtain ⟨x, hx⟩ := exists_ne (0 : E)
-    have hxd : x ∈ dual ((0 : ℝ) • L) := mem_dual.mpr fun y hy ↦ ⟨0, by simp_all⟩
-    rw [← isUnimodular_iff_eq_dual.mp hu, zero_smul, zero_eq_bot, mem_bot] at hxd
-    exact hx hxd
+  · -- The lattice `0 • L` is zero, which is unimodular only in the zero space.
+    rw [zero_smul, zero_eq_bot, isUnimodular_bot_iff] at hu
+    exact not_subsingleton E hu
   · have : NeZero c := ⟨hc0⟩
     have hdet := hu.det_eq_one
     rw [det_smul L, h.det_eq_one, mul_one, pow_mul, ← sq_abs, ← pow_mul,

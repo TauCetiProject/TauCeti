@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Variables
 public import Mathlib.RingTheory.Ideal.Defs
 
+import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Tactic.Ring
 
@@ -31,6 +32,8 @@ Over an ordered field, evaluating a polynomial at a coordinatewise rational map
 be cleared to a single polynomial `A` up to multiplication by a polynomial `B` that is strictly
 positive on the domain (`MvPolynomial.exists_pos_eval_eq_mul_eval_div`).
 
+Evaluation at a family `x` is surjective exactly when `x` generates the algebra.
+
 ## Main results
 
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
@@ -39,8 +42,12 @@ positive on the domain (`MvPolynomial.exists_pos_eval_eq_mul_eval_div`).
   whose coordinates everywhere (or on the variables of `p`) are congruent modulo an ideal `I` are
   congruent modulo `I`.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
+* `MvPolynomial.aeval_surjective_iff_adjoin_range_eq_top`: `aeval x` is surjective exactly when
+  the `x i` generate the algebra.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
+* `MvPolynomial.eval_aeval`, `MvPolynomial.exists_eval_comp`: evaluating an `aeval`-substituted
+  polynomial and closure of polynomial-witnessed maps under composition.
 -/
 
 public section
@@ -95,6 +102,12 @@ theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : 
   rw [← Ideal.mem_span_singleton]
   exact eval_sub_eval_mem p fun i ↦ Ideal.mem_span_singleton.mpr (h i)
 
+/-- Evaluation at a family `x` is surjective exactly when the `x i` generate the algebra. -/
+theorem aeval_surjective_iff_adjoin_range_eq_top {R A : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] {x : σ → A} :
+    Function.Surjective (aeval (R := R) x) ↔ Algebra.adjoin R (Set.range x) = ⊤ := by
+  rw [← AlgHom.range_eq_top, Algebra.adjoin_range_eq_range_aeval]
+
 private theorem exists_pos_eval_eq_mul_eval_div_of_forall {α β K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] {u : Set (β → K)} {N D : α → MvPolynomial β K}
     (hD : ∀ x ∈ u, ∀ a, eval x (D a) ≠ 0) (p : MvPolynomial α K) :
@@ -141,5 +154,26 @@ theorem exists_pos_eval_eq_mul_eval_div {α β K : Type*} [Field K] [LinearOrder
       eval (fun a ↦ eval x (N a) / eval x (D a)) p :=
     eval₂Hom_congr' rfl (fun a ha _ ↦ by simp [N', D', ha]) rfl
   obtain ⟨hB, hEq⟩ := hAB x hx; exact ⟨hB, heval ▸ hEq⟩
+
+/-- Evaluating an `aeval`-substituted polynomial at `w` evaluates the outer polynomial at the
+evaluations of the substituted polynomials at `w`. -/
+theorem eval_aeval {σ τ R : Type*} [CommSemiring R] (w : σ → R) (Q : τ → MvPolynomial σ R)
+    (P : MvPolynomial τ R) :
+    eval w (aeval Q P) = eval (fun k ↦ eval w (Q k)) P := by
+  simpa [aeval_eq_eval] using comp_aeval_apply Q (aeval w) P
+
+/-- **Composition of polynomial-witnessed maps.** If `Φ : (τ → R) → R` is given by a multivariate
+polynomial and every coordinate of `Ψ : (σ → R) → τ → R` is given by a multivariate polynomial,
+then `fun w ↦ Φ (Ψ w)` is given by a multivariate polynomial. -/
+theorem exists_eval_comp {σ τ R : Type*} [CommSemiring R] {Φ : (τ → R) → R}
+    {Ψ : (σ → R) → τ → R}
+    (hΦ : ∃ P : MvPolynomial τ R, ∀ y, Φ y = eval y P)
+    (hΨ : ∀ k, ∃ Q : MvPolynomial σ R, ∀ w, Ψ w k = eval w Q) :
+    ∃ P : MvPolynomial σ R, ∀ w, Φ (Ψ w) = eval w P := by
+  choose Q hQ using hΨ
+  obtain ⟨P, hP⟩ := hΦ
+  refine ⟨aeval Q P, fun w ↦ ?_⟩
+  rw [hP (Ψ w), eval_aeval]
+  exact congrArg (fun x ↦ eval x P) (funext fun k ↦ hQ k w)
 
 end MvPolynomial

@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.LocalCohomology.LongExactSequence
+import TauCeti.Algebra.Homology.Ext.Basic
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.Topology.Sheaves.SupportedCohomology.Composition
 
 /-!
 # Support truncation and the edge comparison for module coefficients
@@ -33,6 +36,14 @@ flasque as a quotient of the flasque sheaf `Γ_S(I)` by `Γ_S(F)`, and the conne
 flasque, the degree-zero connecting maps identify `H_S¹(-, F)` with the cokernel sheaf of
 `Γ_S(I) ⟶ Γ_S(I / F)`, whose sections are computed objectwise.
 
+When `𝓗_S^q(F) = 0` for every `q ≠ n`, the *degenerate edge comparison* extends this to all
+degrees: for closed `Z ≤ S`, `H_Z^{n+j}(W, F) ≅ H_Zʲ(W, 𝓗_Sⁿ(F))` as presheaves of `R`-modules in
+`W`. This is the degeneration of the spectral sequence `H_Z^p(W, 𝓗_S^q(F)) ⟹ H_Z^{p+q}(W, F)`
+of the composite `Γ_Z = Γ_Z ∘ Γ_S`, proved without the spectral sequence by the same dimension
+shifting: for `n = 0` the inclusion `Γ_S(F) ⟶ F` is an isomorphism on `H_Zʲ`, by the five lemma
+along `Γ_S(F) ⟶ Γ_S(I)`, and in degree one the cokernel description above has a flasque kernel
+`Γ_S(I) / Γ_S(F)`, which `H_Z^{j+1}` does not see.
+
 ## Main declarations
 
 * `CategoryTheory.Sheaf.subsingleton_supportedModuleH_of_isZero_supportedModuleHSheaf`: support
@@ -42,7 +53,11 @@ flasque, the degree-zero connecting maps identify `H_S¹(-, F)` with the cokerne
 * `CategoryTheory.Sheaf.supportedModuleHSectionsEquiv`: under the same hypothesis,
   `H_Sⁿ(W, F) ≃ₗ[R] 𝓗_Sⁿ(F)(W)`, given by the sheafification map;
 * `CategoryTheory.Sheaf.supportedModuleHEdgeEquiv`: the degenerate edge comparison
-  `H_Zⁿ(W, F) ≃ₗ[R] Γ_Z(W, 𝓗_Sⁿ(F))` for closed `Z ≤ S`.
+  `H_Zⁿ(W, F) ≃ₗ[R] Γ_Z(W, 𝓗_Sⁿ(F))` for closed `Z ≤ S`;
+* `CategoryTheory.Sheaf.bijective_postcomp_mk₀_supportedSubmoduleι`: if `𝓗_S^q(F) = 0` for
+  `q > 0`, the inclusion `Γ_S(F) ⟶ F` induces bijections `H_Zʲ(W, Γ_S(F)) ⟶ H_Zʲ(W, F)`;
+* `CategoryTheory.Sheaf.supportedModuleHPresheafEdgeIso`: if `𝓗_S^q(F) = 0` for `q ≠ n`, the
+  degenerate edge comparison `H_Z^{n+j}(-, F) ≅ H_Zʲ(-, 𝓗_Sⁿ(F))` in every degree `j`.
 
 ## References
 
@@ -213,6 +228,15 @@ private theorem isSheaf_supportedModuleHPresheaf_one_of_shortExact (hT : T.Short
   (Presheaf.isSheaf_of_iso_iff (supportedModuleHPresheafOneIsoCokernel S hT)).2
     (cokernel (T.map (supportedSubmoduleFunctor S)).g).property
 
+/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact with `F₂` and `Γ_S(F₁)` flasque, the local
+cohomology sheaf `𝓗_S¹(F₁)` is the cokernel of `Γ_S(F₂) ⟶ Γ_S(F₃)`. -/
+private def supportedModuleHSheafOneIsoCokernel (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₂.obj]
+    [TopCat.Presheaf.IsFlasque (T.X₁.supportedSubmoduleSheaf S).obj] :
+    T.X₁.supportedModuleHSheaf S 1 ≅ cokernel (T.map (supportedSubmoduleFunctor S)).g :=
+  (presheafToSheaf _ _).mapIso (supportedModuleHPresheafOneIsoCokernel S hT) ≪≫
+    (sheafificationIso _).symm
+
 /-- The dimension-shifting form of the edge comparison: if `Γ_S(F)` is flasque and the local
 cohomology sheaves `𝓗_S^{q+1}(F)` vanish for `q < n`, then the presheaf `W ↦ H_Sⁿ⁺¹(W, F)` is a
 sheaf. -/
@@ -357,6 +381,194 @@ lemma coe_supportedModuleHEdgeEquiv_map (h : ∀ q < n, IsZero (F.supportedModul
         (F.supportedModuleHSectionsEquiv_map S h hW _)
 
 end edge
+
+section higherEdge
+
+variable {S} {Z : Closeds X}
+
+/-- For closed `Z ≤ S`, the inclusion `Γ_S(F) ⟶ F` induces bijections
+`H_Z⁰(W, Γ_S(F)) ⟶ H_Z⁰(W, F)`: a section supported in `Z` is supported in `S`. -/
+private lemma bijective_postcomp_mk₀_supportedSubmoduleι_zero (hZS : Z ≤ S) (W : Opens X) :
+    Function.Bijective ((Ext.mk₀ (F.supportedSubmoduleι S)).postcomp _ (add_zero 0) :
+      (F.supportedSubmoduleSheaf S).supportedModuleH Z W 0 →+ F.supportedModuleH Z W 0) := by
+  have := F.isIso_supportedSubmoduleFunctor_map_ι hZS
+  have h : ⇑((Ext.mk₀ (F.supportedSubmoduleι S)).postcomp _ (add_zero 0) :
+      (F.supportedSubmoduleSheaf S).supportedModuleH Z W 0 →+ F.supportedModuleH Z W 0) =
+      (F.supportedModuleHZeroEquiv Z W).symm ∘
+        ((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom.app (op W) ∘
+          (F.supportedSubmoduleSheaf S).supportedModuleHZeroEquiv Z W := by
+    funext x
+    exact (LinearEquiv.eq_symm_apply _).2 (Subtype.ext
+      ((coe_supportedModuleHZeroEquiv_naturality_right Z W (F.supportedSubmoduleι S) x).trans
+        (coe_supportedSubmoduleFunctor_map_hom_app_apply Z _ (op W) _).symm))
+  rw [h]
+  exact (F.supportedModuleHZeroEquiv Z W).symm.bijective.comp
+    ((ConcreteCategory.bijective_of_isIso _).comp
+      ((F.supportedSubmoduleSheaf S).supportedModuleHZeroEquiv Z W).bijective)
+
+/-- **Degenerate edge comparison for `n = 0`.** If the local cohomology sheaves `𝓗_S^q(F)`
+vanish for all `q > 0`, then for every closed `Z ≤ S` the inclusion `Γ_S(F) ⟶ F` induces
+bijections `H_Zʲ(W, Γ_S(F)) ⟶ H_Zʲ(W, F)` in every degree `j`. -/
+theorem bijective_postcomp_mk₀_supportedSubmoduleι
+    (h : ∀ q, IsZero (F.supportedModuleHSheaf S (q + 1))) (hZS : Z ≤ S) (W : Opens X) (j : ℕ) :
+    Function.Bijective ((Ext.mk₀ (F.supportedSubmoduleι S)).postcomp _ (add_zero j) :
+      (F.supportedSubmoduleSheaf S).supportedModuleH Z W j →+ F.supportedModuleH Z W j) := by
+  induction j generalizing F with
+  | zero => exact bijective_postcomp_mk₀_supportedSubmoduleι_zero F hZS W
+  | succ j ih =>
+    -- embed `F` into an injective sheaf `F₂ = I(F)` with quotient `F₃`; as
+    -- `𝓗_S¹(F) = 0`, applying `Γ_S` gives a short exact sequence `Γ_S(T)`
+    let T := TauCeti.injectiveCokernelSequence F
+    have hT : T.ShortExact := TauCeti.injectiveCokernelSequence_shortExact F
+    have : TopCat.Presheaf.IsFlasque T.X₂.obj := isFlasque_of_injective_moduleCat _
+    have : TopCat.Presheaf.IsFlasque (T.map (supportedSubmoduleFunctor S)).X₂.obj :=
+      isFlasque_supportedSubmoduleSheaf T.X₂ S
+    have hT' := shortExact_map_supportedSubmoduleFunctor S hT (h 0)
+    -- the inclusions `Γ_S(Fᵢ) ⟶ Fᵢ` form a morphism of short exact sequences `Γ_S(T) ⟶ T`
+    let φ : T.map (supportedSubmoduleFunctor S) ⟶ T :=
+      { τ₁ := T.X₁.supportedSubmoduleι S
+        τ₂ := T.X₂.supportedSubmoduleι S
+        τ₃ := T.X₃.supportedSubmoduleι S
+        comm₁₂ := (supportedSubmoduleFunctor_map_ι S T.f).symm
+        comm₂₃ := (supportedSubmoduleFunctor_map_ι S T.g).symm }
+    -- the statement holds in degree `j` for the flasque sheaf `F₂` and for `F₃`
+    have ih₂ := ih T.X₂ fun q ↦ isZero_supportedModuleHSheaf_succ_of_isFlasque S T.X₂ q
+    have ih₃ := ih T.X₃ fun q ↦ isZero_supportedModuleHSheaf_X₃_of_shortExact S hT (h (q + 1))
+    exact hT'.postcomp_mk₀_τ₁_bijective hT φ _ j ih₂.2 ih₃
+
+/-- The base case `n = 1` of the degenerate edge comparison in positive degrees, for `Γ_S(F)`
+flasque and `𝓗_S^q(F) = 0` for `q ≥ 2`: `H_Z^{j+2}(-, F) ≅ H_Z^{j+1}(-, 𝓗_S¹(F))`. -/
+private def supportedModuleHPresheafEdgeIsoOne
+    [TopCat.Presheaf.IsFlasque (F.supportedSubmoduleSheaf S).obj]
+    (h : ∀ q, IsZero (F.supportedModuleHSheaf S (q + 2))) (hZS : Z ≤ S) (j : ℕ) :
+    F.supportedModuleHPresheaf Z (j + 1 + 1) ≅
+      (F.supportedModuleHSheaf S 1).supportedModuleHPresheaf Z (j + 1) :=
+  -- embed `F` into an injective sheaf `F₂` with quotient `F₃`
+  let T := TauCeti.injectiveCokernelSequence F
+  have hT : T.ShortExact := TauCeti.injectiveCokernelSequence_shortExact F
+  have : TopCat.Presheaf.IsFlasque T.X₂.obj := isFlasque_of_injective_moduleCat _
+  -- `H_Z^{j+1}(-, F₃) ≅ H_Z^{j+2}(-, F)` by the connecting morphism
+  have := isIso_supportedModuleHPresheafδ_succ Z hT j
+  -- `H_Z^{j+1}(-, Γ_S(F₃)) ≅ H_Z^{j+1}(-, F₃)`, since `𝓗_S^q(F₃) = 0` for `q > 0`
+  have := isIso_supportedModuleHPresheafFunctor_map Z (j + 1) (T.X₃.supportedSubmoduleι S)
+    (bijective_postcomp_mk₀_supportedSubmoduleι T.X₃
+      (fun q ↦ isZero_supportedModuleHSheaf_X₃_of_shortExact S hT (h q)) hZS · (j + 1))
+  -- `Γ_S(F₃) ⟶ coker(Γ_S(F₂) ⟶ Γ_S(F₃))` has flasque kernel, the image of `Γ_S(F₂)`
+  let E := T.map (supportedSubmoduleFunctor S)
+  have hE : E.Exact := exact_map_supportedSubmoduleFunctor S hT.exact
+  have := hT.mono_f
+  have : Mono E.f := mono_supportedSubmoduleFunctor_map S T.f
+  have : TopCat.Presheaf.IsFlasque E.X₁.obj := ‹_›
+  have : TopCat.Presheaf.IsFlasque E.X₂.obj := isFlasque_supportedSubmoduleSheaf T.X₂ S
+  have : TopCat.Presheaf.IsFlasque (Limits.image E.g).obj :=
+    hE.shortExact_factorThruImage.isFlasque_X₃_of_isFlasque
+  have : IsIso ((supportedModuleHPresheafFunctor Z (j + 1)).map (cokernel.π E.g)) :=
+    isIso_supportedModuleHPresheafFunctor_map_g Z
+      (ShortComplex.shortExact_image_ι_cokernel_π E.g) j
+  (asIso (supportedModuleHPresheafδ Z hT (j + 1))).symm ≪≫
+    (asIso ((supportedModuleHPresheafFunctor Z (j + 1)).map (T.X₃.supportedSubmoduleι S))).symm ≪≫
+    asIso ((supportedModuleHPresheafFunctor Z (j + 1)).map (cokernel.π E.g)) ≪≫
+    (supportedModuleHPresheafFunctor Z (j + 1)).mapIso
+      (supportedModuleHSheafOneIsoCokernel S hT).symm
+
+/-- The dimension-shifting form of the degenerate edge comparison in positive degrees: if
+`Γ_S(F)` is flasque and `𝓗_S^{q+1}(F) = 0` for `q ≠ m`, then
+`H_Z^{m+1+(j+1)}(-, F) ≅ H_Z^{j+1}(-, 𝓗_S^{m+1}(F))`. -/
+private def supportedModuleHPresheafEdgeIsoSucc (hZS : Z ≤ S) :
+    ∀ (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (m : ℕ)
+      [TopCat.Presheaf.IsFlasque (F.supportedSubmoduleSheaf S).obj]
+      (_ : ∀ q ≠ m, IsZero (F.supportedModuleHSheaf S (q + 1))) (j : ℕ),
+      F.supportedModuleHPresheaf Z (m + 1 + (j + 1)) ≅
+        (F.supportedModuleHSheaf S (m + 1)).supportedModuleHPresheaf Z (j + 1)
+  | F, 0, _, h, j => eqToIso (congrArg (F.supportedModuleHPresheaf Z) (by omega)) ≪≫
+      supportedModuleHPresheafEdgeIsoOne F (fun q ↦ h (q + 1) (by omega)) hZS j
+  | F, m + 1, _, h, j =>
+    -- embed `F` into an injective sheaf `F₂` with quotient `F₃`
+    let T := TauCeti.injectiveCokernelSequence F
+    have hT : T.ShortExact := TauCeti.injectiveCokernelSequence_shortExact F
+    have : TopCat.Presheaf.IsFlasque T.X₂.obj := isFlasque_of_injective_moduleCat _
+    -- `Γ_S(F₃)` is flasque, as the quotient of the flasque sheaf `Γ_S(F₂)` by `Γ_S(F)`
+    have hΓ := shortExact_map_supportedSubmoduleFunctor S hT (h 0 (by omega))
+    have : TopCat.Presheaf.IsFlasque (T.map (supportedSubmoduleFunctor S)).X₁.obj := ‹_›
+    have : TopCat.Presheaf.IsFlasque (T.map (supportedSubmoduleFunctor S)).X₂.obj :=
+      isFlasque_supportedSubmoduleSheaf T.X₂ S
+    have : TopCat.Presheaf.IsFlasque (T.X₃.supportedSubmoduleSheaf S).obj :=
+      hΓ.isFlasque_X₃_of_isFlasque
+    -- `H_Z^{m+1+(j+1)}(-, F₃) ≅ H_Z^{m+2+(j+1)}(-, F)` and `𝓗_S^{m+1}(F₃) ≅ 𝓗_S^{m+2}(F)` by the
+    -- connecting morphisms
+    have := isIso_supportedModuleHPresheafδ_succ Z hT (m + 1 + j)
+    eqToIso (congrArg (F.supportedModuleHPresheaf Z) (by omega)) ≪≫
+      (asIso (supportedModuleHPresheafδ Z hT (m + 1 + j + 1))).symm ≪≫
+      supportedModuleHPresheafEdgeIsoSucc hZS T.X₃ m
+        (fun q hq ↦ isZero_supportedModuleHSheaf_X₃_of_shortExact S hT (h (q + 1) (by omega)))
+        j ≪≫
+      (supportedModuleHPresheafFunctor Z (j + 1)).mapIso
+        (asIso (supportedModuleHSheafδ S hT (m + 1)))
+
+/-- The degenerate edge comparison for `n = 0` in positive degrees: if `𝓗_S^q(F) = 0` for
+`q > 0`, then `H_Z^{j+1}(-, F) ≅ H_Z^{j+1}(-, 𝓗_S⁰(F))`, through `H_Z^{j+1}(-, Γ_S(F))` and
+`𝓗_S⁰(F) ≅ Γ_S(F)`. -/
+private def supportedModuleHPresheafEdgeIsoOfIsZeroSucc
+    (h : ∀ q, IsZero (F.supportedModuleHSheaf S (q + 1))) (hZS : Z ≤ S) (j : ℕ) :
+    F.supportedModuleHPresheaf Z (j + 1) ≅
+      (F.supportedModuleHSheaf S 0).supportedModuleHPresheaf Z (j + 1) :=
+  have := isIso_supportedModuleHPresheafFunctor_map Z (j + 1) (F.supportedSubmoduleι S)
+    (bijective_postcomp_mk₀_supportedSubmoduleι F h hZS · (j + 1))
+  (asIso ((supportedModuleHPresheafFunctor Z (j + 1)).map (F.supportedSubmoduleι S))).symm ≪≫
+    (supportedModuleHPresheafFunctor Z (j + 1)).mapIso (F.supportedModuleHSheafZeroIso S).symm
+
+variable {n : ℕ}
+
+/-- The degenerate edge comparison in degree zero, `H_Zⁿ(-, F) ≅ H_Z⁰(-, 𝓗_Sⁿ(F))`, as an
+isomorphism of presheaves: `CategoryTheory.Sheaf.supportedModuleHEdgeEquiv` followed by the
+inverse of `H_Z⁰(W, 𝓗_Sⁿ(F)) ≃ₗ[R] Γ_Z(W, 𝓗_Sⁿ(F))`. -/
+private def supportedModuleHPresheafEdgeIsoZero
+    (h : ∀ q < n, IsZero (F.supportedModuleHSheaf S q)) (hZS : Z ≤ S) :
+    F.supportedModuleHPresheaf Z n ≅ (F.supportedModuleHSheaf S n).supportedModuleHPresheaf Z 0 :=
+  NatIso.ofComponents (F := F.supportedModuleHPresheaf Z n)
+    (G := ((F.supportedModuleHSheaf S n).supportedSubmoduleSheaf Z).obj)
+    (fun W ↦ (F.supportedModuleHEdgeEquiv h hZS W.unop).toModuleIso)
+    (fun f ↦ by
+      ext x
+      exact Subtype.ext (F.coe_supportedModuleHEdgeEquiv_map h hZS (leOfHom f.unop) x)) ≪≫
+    ((F.supportedModuleHSheaf S n).supportedModuleHPresheafZeroIso Z).symm
+
+/-- **Degenerate edge comparison.** If the local cohomology sheaves `𝓗_S^q(F)` vanish for all
+`q ≠ n`, then for every closed `Z ≤ S` and every `j` the cohomology `H_Z^{n+j}(W, F)` with supports
+in `Z` is `R`-linearly the cohomology `H_Zʲ(W, 𝓗_Sⁿ(F))` of the local cohomology sheaf with
+supports in `Z`, compatibly with restriction to smaller opens `W`. The degree is written `k` with
+`n + j = k`.
+
+In degree `j = 0` this is `CategoryTheory.Sheaf.supportedModuleHEdgeEquiv`
+(`CategoryTheory.Sheaf.supportedModuleHZeroEquiv_supportedModuleHPresheafEdgeIso_hom_app`). -/
+def supportedModuleHPresheafEdgeIso (h : ∀ q ≠ n, IsZero (F.supportedModuleHSheaf S q))
+    (hZS : Z ≤ S) {j k : ℕ} (hk : n + j = k) :
+    F.supportedModuleHPresheaf Z k ≅ (F.supportedModuleHSheaf S n).supportedModuleHPresheaf Z j :=
+  match n, j, h, hk with
+  | n, 0, h, hk => eqToIso (congrArg (F.supportedModuleHPresheaf Z) hk.symm) ≪≫
+      supportedModuleHPresheafEdgeIsoZero F (fun q hq ↦ h q (by omega)) hZS
+  | 0, j + 1, h, hk => eqToIso (congrArg (F.supportedModuleHPresheaf Z) (by omega)) ≪≫
+      supportedModuleHPresheafEdgeIsoOfIsZeroSucc F (fun q ↦ h (q + 1) (by omega)) hZS j
+  | m + 1, j + 1, h, hk =>
+    have := F.isFlasque_supportedSubmoduleSheaf_obj_of_isZero S (h 0 (by omega))
+    eqToIso (congrArg (F.supportedModuleHPresheaf Z) (by omega)) ≪≫
+      supportedModuleHPresheafEdgeIsoSucc hZS F m (fun q hq ↦ h (q + 1) (by omega)) j
+
+/-- In degree zero, the degenerate edge comparison `H_Zⁿ(W, F) ≅ H_Z⁰(W, 𝓗_Sⁿ(F))` is
+`CategoryTheory.Sheaf.supportedModuleHEdgeEquiv`, through
+`H_Z⁰(W, 𝓗_Sⁿ(F)) ≃ₗ[R] Γ_Z(W, 𝓗_Sⁿ(F))`. -/
+@[simp]
+lemma supportedModuleHZeroEquiv_supportedModuleHPresheafEdgeIso_hom_app
+    (h : ∀ q ≠ n, IsZero (F.supportedModuleHSheaf S q)) (hZS : Z ≤ S) (W : Opens X)
+    (x : F.supportedModuleH Z W n) :
+    (F.supportedModuleHSheaf S n).supportedModuleHZeroEquiv Z W
+        ((F.supportedModuleHPresheafEdgeIso h hZS (add_zero n)).hom.app (op W) x) =
+      F.supportedModuleHEdgeEquiv (fun q hq ↦ h q hq.ne) hZS W x := by
+  simp only [supportedModuleHPresheafEdgeIso, supportedModuleHPresheafEdgeIsoZero, eqToIso_refl,
+    Iso.refl_trans, Iso.trans_hom, Iso.symm_hom, TopCat.Presheaf.comp_app]
+  exact supportedModuleHZeroEquiv_supportedModuleHPresheafZeroIso_inv_app_apply Z _ (op W) _
+
+end higherEdge
 
 end
 

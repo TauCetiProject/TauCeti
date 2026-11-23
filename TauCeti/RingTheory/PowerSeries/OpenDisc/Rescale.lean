@@ -57,7 +57,10 @@ series on open discs:
   continuity of rescaling.
 * `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_affineEquiv`: affine automorphisms identify
   smaller closed-disc Gauss norms.
+* `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_C_add_C_mul_X`: the smaller closed-disc Gauss norm
+  of the affine polynomial `a + u X` over any ultrametric normed ring.
 * `TauCeti.PowerSeries.OnOpenDisc.evalAt_affineAlgHom`,
+  `TauCeti.PowerSeries.OnOpenDisc.evalAtHom_comp_affineAlgHom`,
   `TauCeti.PowerSeries.OnOpenDisc.affineAlgHom_comp_affineAlgHom`, and
   `TauCeti.PowerSeries.OnOpenDisc.affineEquiv_symm_apply`: point evaluation, composition, and
   inversion of affine coordinate changes.
@@ -321,6 +324,30 @@ end UltrametricRescale
 
 end Rescale
 
+section PolynomialBounds
+
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {S₀ : ℝ}
+
+attribute [local instance] radius_pos
+
+/-- Over any ultrametric normed ring, the affine polynomial `a + u * X` has smaller-disc Gauss
+norm `max ‖a‖ (‖u‖ * s)`. -/
+theorem norm_restrict_C_add_C_mul_X (a u : R) (s : Set.Ioo (0 : ℝ) S₀) :
+    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))‖ =
+      max ‖a‖ (‖u‖ * (s : ℝ)) := by
+  refine le_antisymm (TauCeti.PowerSeries.norm_le_iff.mpr fun n ↦ ?_) (max_le ?_ ?_)
+  · rcases n with _ | _ | n <;> simp
+  · convert TauCeti.PowerSeries.norm_coeff_mul_pow_le
+      (restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))) 0
+      using 1
+    simp
+  · convert TauCeti.PowerSeries.norm_coeff_mul_pow_le
+      (restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))) 1
+      using 1
+    simp
+
+end PolynomialBounds
+
 section Affine
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
@@ -433,6 +460,23 @@ theorem continuous_affineAlgHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * 
     Continuous (affineAlgHom ha hu) := by
   have : Fact (0 < R₀) := ⟨(norm_nonneg a).trans_lt ha⟩
   exact (continuous_rescaleAlgHom hu).comp (continuous_taylorHom ha)
+
+/-- Evaluating affine pullbacks `f(a + u X)` at an algebra point `b` with `‖b‖ < S₀` is evaluation
+of `f` at `u • b + algebraMap R A a`, as ring homomorphisms. Unlike `evalAt_affineAlgHom`, this
+needs neither `IsUltrametricDist A` nor `NormOneClass A`, taking the bound on the evaluation point
+as a hypothesis instead. -/
+theorem evalAtHom_comp_affineAlgHom {A : Type*} [NormedRing A] [Algebra R A]
+    [IsBoundedSMul R A] [CompleteSpace A] {a u : R} {b : A} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
+    (hb : ‖b‖ < S₀) (hab : ‖u • b + algebraMap R A a‖ < R₀) :
+    (OnOpenDisc.evalAtHom R hb).comp
+        (affineAlgHom ha hu : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀) =
+      OnOpenDisc.evalAtHom R hab := by
+  refine ringHom_ext ((continuous_evalAtHom hb).comp (continuous_affineAlgHom ha hu))
+    (continuous_evalAtHom hab) (fun c ↦ ?_) ?_ <;>
+  simp only [RingHom.comp_apply, RingHom.coe_coe, affineAlgHom_polynomialHom,
+    OnOpenDisc.evalAtHom_apply, OnOpenDisc.coe_polynomialHom, evalAt_coe]
+  · simp
+  · simp [Algebra.smul_def, add_comm]
 
 /-- **Composition of affine pullbacks on open discs**: pulling back along `X ↦ a + u Y` and then
 along `Y ↦ b + v Z` pulls back along `X ↦ (a + u b) + (u v) Z`. -/

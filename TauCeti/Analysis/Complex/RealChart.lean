@@ -12,6 +12,8 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # Maps of the complex plane in real coordinates
@@ -21,8 +23,13 @@ A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ �
 `f'`, the real derivative of its real chart is multiplication by `f'`
 (`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), whose real
 determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonnegative
-(`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and a map
-that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
+(`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`). By the
+chain rule, the partial derivatives of `ξ ∘ realChart f` are those of `ξ` composed with the
+conformal matrix of `f'` (`TauCeti.Complex.fderiv_comp_realChart_apply_one_zero`,
+`TauCeti.Complex.fderiv_comp_realChart_apply_zero_one`), so the Jacobian times a weighted density
+`r ‖ξ‖² + ‖∂₁ξ‖² + ‖∂₂ξ‖²` at the image point is controlled by the `W^{1,2}` density of
+`ξ ∘ realChart f` (`TauCeti.Complex.det_fderiv_realChart_mul_le`). A map that is `C^n` over `ℂ`
+is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and so is
 the real chart of a map injective on a set, on the corresponding set
 (`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
@@ -85,6 +92,59 @@ theorem det_fderiv_realChart_nonneg {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ
     0 ≤ (fderiv ℝ (realChart f) w).det := by
   rw [det_fderiv_realChart hf]
   exact Complex.normSq_nonneg f'
+
+/-- **The chain rule along a real chart, along `(1, 0)`.** If `f` has complex derivative
+`f' = a + i b`, the derivative of `ξ ∘ realChart f` along `(1, 0)` is `a ∂₁ξ + b ∂₂ξ`, the partial
+derivatives of `ξ` taken at the image point. -/
+theorem fderiv_comp_realChart_apply_one_zero {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ} {ξ : ℝ × ℝ → V}
+    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w))
+    (hξ : DifferentiableAt ℝ ξ (realChart f w)) :
+    fderiv ℝ (ξ ∘ realChart f) w (1, 0) =
+      f'.re • fderiv ℝ ξ (realChart f w) (1, 0) + f'.im • fderiv ℝ ξ (realChart f w) (0, 1) := by
+  rw [fderiv_comp w hξ (hasFDerivAt_realChart hf).differentiableAt,
+    ContinuousLinearMap.comp_apply, fderiv_realChart_apply hf,
+    ← ContinuousLinearMap.apply_mk_eq_smul_add_smul]
+  congr 1
+  simp [Complex.equivRealProdCLM_symm_apply]
+
+/-- **The chain rule along a real chart, along `(0, 1)`.** If `f` has complex derivative
+`f' = a + i b`, the derivative of `ξ ∘ realChart f` along `(0, 1)` is `-b ∂₁ξ + a ∂₂ξ`, the partial
+derivatives of `ξ` taken at the image point. -/
+theorem fderiv_comp_realChart_apply_zero_one {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ} {ξ : ℝ × ℝ → V}
+    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w))
+    (hξ : DifferentiableAt ℝ ξ (realChart f w)) :
+    fderiv ℝ (ξ ∘ realChart f) w (0, 1) =
+      (-f'.im) • fderiv ℝ ξ (realChart f w) (1, 0) + f'.re • fderiv ℝ ξ (realChart f w) (0, 1) := by
+  rw [fderiv_comp w hξ (hasFDerivAt_realChart hf).differentiableAt,
+    ContinuousLinearMap.comp_apply, fderiv_realChart_apply hf,
+    ← ContinuousLinearMap.apply_mk_eq_smul_add_smul]
+  congr 1
+  simp [Complex.equivRealProdCLM_symm_apply]
+
+/-- **The weighted density along a real chart.** Let `f` have a complex derivative at `w`, and
+let the weight `r` times the Jacobian of `realChart f` at `w` be at most `M`, with `2 ≤ M`. Then
+the Jacobian times the weighted density `r ‖ξ‖² + ‖∂₁ξ‖² + ‖∂₂ξ‖²` at `realChart f w` is at most
+`M` times the `W^{1,2}` density of `ξ ∘ realChart f` at `w`. -/
+theorem det_fderiv_realChart_mul_le {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ} {ξ : ℝ × ℝ → V} {r M : ℝ}
+    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w))
+    (hξ : DifferentiableAt ℝ ξ (realChart f w)) (hr : r * (fderiv ℝ (realChart f) w).det ≤ M)
+    (hM : 2 ≤ M) :
+    (fderiv ℝ (realChart f) w).det *
+        (r * ‖ξ (realChart f w)‖ ^ 2 + ‖fderiv ℝ ξ (realChart f w) (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ ξ (realChart f w) (0, 1)‖ ^ 2) ≤
+      M * (‖fderiv ℝ (ξ ∘ realChart f) w (1, 0)‖ ^ 2 +
+        ‖fderiv ℝ (ξ ∘ realChart f) w (0, 1)‖ ^ 2 + ‖ξ (realChart f w)‖ ^ 2) := by
+  set X := fderiv ℝ ξ (realChart f w) (1, 0)
+  set Y := fderiv ℝ ξ (realChart f w) (0, 1)
+  -- The conformal matrix of `f'` scales the squared partial derivatives by at most twice `|f'|²`.
+  have hconf := le_two_mul_norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq f'.re f'.im X Y
+  rw [fderiv_comp_realChart_apply_one_zero hf hξ, fderiv_comp_realChart_apply_zero_one hf hξ]
+  rw [det_fderiv_realChart hf, Complex.normSq_apply] at hr ⊢
+  nlinarith [sq_nonneg ‖ξ (realChart f w)‖, sq_nonneg ‖f'.re • X + f'.im • Y‖,
+    sq_nonneg ‖(-f'.im) • X + f'.re • Y‖]
 
 /-- A map that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates. -/
 theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff ℂ n f) :

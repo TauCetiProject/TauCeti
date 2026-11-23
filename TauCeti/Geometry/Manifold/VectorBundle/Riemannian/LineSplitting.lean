@@ -7,14 +7,15 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.OrthogonalComplement
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Generic
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Geometry.Manifold.ContMDiff.Sqrt
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 
 /-!
 # Splitting a complex bundle into a trivial bundle and a line bundle
 
-Over a compact boundaryless manifold of real dimension less than four, a smooth complex bundle `V`
-of complex rank `n + 1` with a smooth Hermitian metric has `n` pointwise orthonormal smooth sections
+Over a compact Hausdorff boundaryless manifold of real dimension less than four, a smooth
+complex bundle `V` of finite complex rank `n + 1` with a smooth Hermitian metric has `n` pointwise
+orthonormal smooth sections
 (`Bundle.ContMDiffRiemannianMetric.exists_orthonormal_contMDiffSection_of_finrank_lt`): the
 complement of the sections chosen so far is a smooth complex bundle of real rank at least four, so
 it has a nowhere-zero smooth section
@@ -25,6 +26,10 @@ Their orthogonal complement `L`
 `Bundle.ContMDiffRiemannianMetric.trivialProdOrthogonalSpanFamilyDiffeomorph` of
 `Riemannian/OrthogonalComplement.lean`. This is the splitting step of the proof of the Riemann–Roch
 theorem for Cauchy–Riemann operators over a closed surface.
+
+The model space `X` of the base is not assumed finite-dimensional: a nonempty compact Hausdorff
+manifold is locally compact, which forces this, and over the empty base the statements are vacuous.
+The dimension bounds are stated with `finrank ℝ X`.
 
 ## References
 
@@ -38,11 +43,10 @@ public noncomputable section
 open Bundle Module Set TauCeti
 open scoped Manifold ContDiff InnerProductSpace Topology
 
-variable {X B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X]
+variable {X B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [TopologicalSpace B] [ChartedSpace X B] [T2Space B] [CompactSpace B]
   [IsManifold 𝓘(ℝ, X) ∞ B]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
-  [FiniteDimensional ℂ F]
   {V : B → Type*}
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
   [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, TopologicalSpace (V x)]
@@ -56,8 +60,9 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, X)]
 
 namespace Bundle.ContMDiffRiemannianMetric
 
-/-- **Orthonormal smooth sections.** Let `V` be a smooth Hermitian bundle of complex rank `k + r`
-over a compact boundaryless manifold of real dimension less than `2 (r + 1)`. Then `V` has `k`
+/-- **Orthonormal smooth sections.** Let `V` be a smooth Hermitian bundle with
+`finrank ℂ F = k + r` (hence of finite complex rank `k + r` whenever `k > 0`) over a compact
+Hausdorff boundaryless manifold of real dimension less than `2 (r + 1)`. Then `V` has `k`
 smooth sections that are orthonormal at every point. -/
 theorem exists_orthonormal_contMDiffSection_of_finrank_lt
     (g : ContMDiffRiemannianMetric 𝓘(ℝ, X) ∞ F V)
@@ -74,6 +79,7 @@ theorem exists_orthonormal_contMDiffSection_of_finrank_lt
   induction k generalizing r with
   | zero => exact ⟨Fin.elim0, fun i ↦ i.elim0, fun _ ↦ ⟨fun i ↦ i.elim0, fun i ↦ i.elim0⟩⟩
   | succ k ih =>
+    have : FiniteDimensional ℂ F := Module.finite_of_finrank_pos (by omega)
     obtain ⟨s, hs, hon⟩ := ih (r := r + 1) (by rw [hk]; ring) (by omega)
     have hW := g.hasLocalContMDiffSubbundleFrames_orthogonalSpanFamily hI s hs hon (r := r + 1)
       (by rw [hk, Fintype.card_fin]; ring)
@@ -87,7 +93,7 @@ theorem exists_orthonormal_contMDiffSection_of_finrank_lt
       simp [Module.finrank_pi_fintype, Complex.finrank_real_complex]
       omega
     obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_ne_zero_of_finrank_lt
-      (V := fun x ↦ W x) (F := Fin (r + 1) → ℂ) hr
+      (n := ∞) (V := fun x ↦ W x) (F := Fin (r + 1) → ℂ) hr
     let u : ∀ x, V x := fun x ↦ (t x : V x)
     have hu : ContMDiff 𝓘(ℝ, X) (𝓘(ℝ, X).prod 𝓘(ℝ, F)) ∞
         (fun x ↦ (⟨x, u x⟩ : TotalSpace F V)) :=
@@ -96,15 +102,11 @@ theorem exists_orthonormal_contMDiffSection_of_finrank_lt
     -- Normalize it.
     let c : B → ℂ := fun x ↦ ((‖u x‖⁻¹ : ℝ) : ℂ)
     have hc : ContMDiff 𝓘(ℝ, X) 𝓘(ℝ, ℂ) ∞ c := by
-      refine Complex.ofRealCLM.contMDiff.comp (f := fun x ↦ ‖u x‖⁻¹) fun x ↦ ?_
-      have hd := hu.inner_bundle hu x
-      have hne : Inner.inner ℝ (u x) (u x) ≠ 0 := inner_self_ne_zero.mpr (hu₀ x)
-      refine (ContDiffAt.comp_contMDiffAt (f := fun y ↦ Inner.inner ℝ (u y) (u y))
-        ((Real.contDiffAt_sqrt hne).inv (Real.sqrt_ne_zero'.mpr
-        (lt_of_le_of_ne real_inner_self_nonneg hne.symm))) hd).congr_of_eventuallyEq
-        (Filter.Eventually.of_forall fun y ↦ ?_)
-      simp only [Function.comp_apply, Pi.inv_apply, real_inner_self_eq_norm_sq,
-        Real.sqrt_sq (norm_nonneg _)]
+      have hn : ContMDiff 𝓘(ℝ, X) 𝓘(ℝ, ℝ) ∞ (fun x ↦ ‖u x‖) := by
+        simpa only [real_inner_self_eq_norm_sq, Real.sqrt_sq_eq_abs, abs_norm] using
+          (hu.inner_bundle hu).sqrt (fun x ↦ inner_self_ne_zero.mpr (hu₀ x))
+      exact Complex.ofRealCLM.contMDiff.comp
+        (hn.inv₀ (fun x ↦ norm_ne_zero_iff.mpr (hu₀ x)))
     let s' : Fin (k + 1) → ∀ x, V x := Matrix.vecCons (fun x ↦ c x • u x) s
     refine ⟨s', fun i ↦ ?_, fun x ↦ ?_⟩
     · induction i using Fin.cases with
@@ -126,10 +128,10 @@ end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti
 
-/-- **Splitting off a trivial bundle.** A smooth complex vector bundle `V` of complex rank `n + 1`
-over a compact boundaryless manifold of real dimension less than four, in particular over a closed
-surface, has a smooth Hermitian metric `g` and `n` pointwise orthonormal smooth sections `s` whose
-orthogonal complement `L = s^⊥` is a smooth complex line subbundle, and
+/-- **Splitting off a trivial bundle.** A smooth complex vector bundle `V` of finite complex rank
+`n + 1` over a compact Hausdorff boundaryless manifold of real dimension less than four, in
+particular over a closed surface, has a smooth Hermitian metric `g` and `n` pointwise orthonormal
+smooth sections `s` whose orthogonal complement `L = s^⊥` is a smooth complex line subbundle, and
 `V ≅ (B × ℂⁿ) ⊕ L` as smooth bundles, by `(x, c, w) ↦ ∑ i, c i • s i x + w`
 (`Bundle.ContMDiffRiemannianMetric.trivialProdOrthogonalSpanFamilyDiffeomorph`). -/
 theorem exists_trivialProdLineSubbundle_diffeomorph [∀ x, ContinuousConstSMul ℂ (V x)] {n : ℕ}
@@ -149,8 +151,16 @@ theorem exists_trivialProdLineSubbundle_diffeomorph [∀ x, ContinuousConstSMul 
           (TotalSpace ((Fin n → ℂ) × (Fin 1 → ℂ))
             (Bundle.Trivial B (Fin n → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x))
           (TotalSpace F V) ∞) := by
-  obtain ⟨g, hI⟩ := exists_contMDiffRiemannianMetric_inner_smul_I (IB := 𝓘(ℝ, X)) (n := ⊤)
-    (F := F) (V := V)
+  have : FiniteDimensional ℂ F := Module.finite_of_finrank_pos (by omega)
+  -- Over the empty base every fiberwise datum is vacuous; a nonempty compact base forces `X` to be
+  -- finite-dimensional, so that a Hermitian metric exists by a partition of unity.
+  obtain ⟨g, hI⟩ : ∃ g : ContMDiffRiemannianMetric 𝓘(ℝ, X) ∞ F V,
+      ∀ x (v w : V x), g.inner x (Complex.I • v) (Complex.I • w) = g.inner x v w := by
+    rcases isEmpty_or_nonempty B with _ | _
+    · exact ⟨⟨fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x,
+        fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x⟩, fun x ↦ isEmptyElim x⟩
+    · have : FiniteDimensional ℝ X := .of_locallyCompact_manifold B 𝓘(ℝ, X)
+      exact exists_contMDiffRiemannianMetric_inner_smul_I
   obtain ⟨s, hs, hon⟩ := g.exists_orthonormal_contMDiffSection_of_finrank_lt hI hn (r := 1)
     (by omega)
   have hL := g.hasLocalContMDiffSubbundleFrames_orthogonalSpanFamily hI s hs hon (r := 1)
