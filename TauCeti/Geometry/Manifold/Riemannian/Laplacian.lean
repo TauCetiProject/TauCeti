@@ -42,9 +42,10 @@ and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  Th
 trace formula makes the relationship between the Laplacian and the Hessian explicit, and
 `ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm` identifies the Laplacian with the
 metric trace of the Hessian as a continuous bilinear form `ModelWithCorners.hessianForm`, which is
-symmetric at points of `C²` regularity and linear in the function where the gradients are
-differentiable. The linearity laws of the Laplacian are the metric traces of those of the Hessian
-form, under the same hypotheses. The operator laws include the Leibniz rule and the chain rule
+symmetric at points of `C²` regularity, homogeneous where the gradient is differentiable at the
+point, and additive when in addition both functions are differentiable near the point. The
+linearity laws of the Laplacian are the metric traces of those of the Hessian form, under the same
+hypotheses. The operator laws include the Leibniz rule and the chain rule
 `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a real function `h`, with its special case
 `Δ (log f) = Δ f / f - |grad f|² / f²`. On a finite-dimensional normed space whose metric is a
 field of bilinear forms `g`, the Hessian in linear coordinates is `D²f(u, v) - Df(Γ(u, v))` with
@@ -196,6 +197,7 @@ noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [Topologica
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) : ℝ :=
   I.hessianForm f x v w
 
+/-- The scalar Hessian of `f` is `⟪∇_v grad f, w⟫` for the Levi–Civita connection. -/
 theorem hessian_eq_inner_leviCivitaConnection_mgradient (I : ModelWithCorners ℝ E H) {M : Type*}
     [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -206,6 +208,7 @@ theorem hessian_eq_inner_leviCivitaConnection_mgradient (I : ModelWithCorners �
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian, I.hessianForm_def, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
 
+/-- Evaluating the Hessian form at two tangent vectors gives `TauCeti.Manifold.hessian`. -/
 @[simp]
 theorem _root_.ModelWithCorners.hessianForm_apply (I : ModelWithCorners ℝ E H) {M : Type*}
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
