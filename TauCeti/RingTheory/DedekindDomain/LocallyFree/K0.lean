@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.IdealClass
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Dimension.Prod
 
 /-!
 # Projective `K₀` of a Dedekind domain
@@ -22,25 +23,27 @@ K₀(A) ≃+ ℤ × Additive (ClassGroup A),   [P] ↦ (rank P, st(P)).
 
 The inverse sends `(n, c)` to `n[A] + ([I] - [A])` for any nonzero ideal `I` of class `c`, that
 is, to `n[A]` plus the value at `c` of the ideal-class homomorphism
-`TauCeti.FiniteProjectiveModules.idealClassHom`. In particular that homomorphism is injective, and
-its image is the kernel of the rank. For a Dedekind domain that is not a field, this identifies the
-ideal class group with the locally free class group of `A` over itself.
+`TauCeti.FiniteProjectiveModules.idealClassHom`. Its image is the kernel of the rank, which is
+therefore the locally free class group of `A` over itself
+(`TauCeti.LocallyFree.mem_classGroup_iff_rankSteinitz_fst_eq_zero`); the injectivity of the
+ideal-class homomorphism and its identification with the locally free class group
+(`TauCeti.LocallyFree.ofIdealClassEquiv`) are in
+`TauCeti.RingTheory.DedekindDomain.LocallyFree.IdealClass`.
 
 ## Main definitions
 
 * `TauCeti.FiniteProjectiveModules.rankSteinitz`: the homomorphism `[P] ↦ (rank P, st(P))`.
 * `TauCeti.FiniteProjectiveModules.rankSteinitzEquiv`: the isomorphism
   `K₀(A) ≃+ ℤ × Additive (ClassGroup A)`.
-* `TauCeti.LocallyFree.ofIdealClassEquiv`: for a nonfield Dedekind domain, the isomorphism from
-  the ideal class group onto the locally free class group.
 
 ## Main results
 
 * `TauCeti.FiniteProjectiveModules.rankSteinitz_of`, `rankSteinitz_idealClassHom` and
   `rankSteinitzEquiv_symm_apply`: the values on projective classes and on ideal classes, and the
   inverse.
-* `TauCeti.FiniteProjectiveModules.idealClassHom_injective`: `[I] ↦ [I] - [A]` is injective.
 * `TauCeti.FiniteProjectiveModules.mem_range_idealClassHom_iff`: the reduced ideal classes are
+  exactly the classes of rank zero.
+* `TauCeti.LocallyFree.mem_classGroup_iff_rankSteinitz_fst_eq_zero`: the locally free classes are
   exactly the classes of rank zero.
 
 ## References
@@ -69,9 +72,20 @@ private noncomputable def rankSteinitzInvariant :
     rw [e'.finrank_eq, Module.steinitzClass_congr e']
   map_biprod X Y := by
     let e := biprodLinearEquiv X Y
-    rw [e.finrank_eq, Module.steinitzClass_congr e, finrank_prod_of_isDomain,
-      Module.steinitzClass_prod]
+    rw [e.finrank_eq, Module.steinitzClass_congr e,
+      Module.finrank_prod_of_hasRankNullity (Module.rank_lt_aleph0 A X.obj)
+        (Module.rank_lt_aleph0 A Y.obj), Module.steinitzClass_prod]
     simp
+
+/-- The regular module `A`, as an object of the category of finite projective modules. -/
+private noncomputable abbrev regular : (finiteProjectiveModules A).FullSubcategory :=
+  ⟨ModuleCat.of A A, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+
+/-- The inverse of the rank–Steinitz isomorphism, `(n, c) ↦ n[A] + idealClassHom c`. -/
+private noncomputable def rankSteinitzInv :
+    ℤ × Additive (ClassGroup A) →+ SplitK0.{u} (finiteProjectiveModules A).FullSubcategory :=
+  (zmultiplesHom (SplitK0.{u} (finiteProjectiveModules A).FullSubcategory)
+    (SplitK0.of (regular A))).coprod (idealClassHom A)
 
 /-- The homomorphism from projective `K₀` of a Dedekind domain sending the class of a finite
 projective module to its rank and its Steinitz class. -/
@@ -102,7 +116,7 @@ theorem rankSteinitz_idealClassHom (c : Additive (ClassGroup A)) :
   have : Module.Projective A (I : Ideal A) := Module.Flat.projective_of_finitePresentation
   have hrank : Module.finrank A (I : Ideal A) = 1 :=
     Module.finrank_eq_card_of_linearEquiv_pi (J := fun _ : Unit ↦ (I : Ideal A))
-      (fun _ ↦ mem_nonZeroDivisors_iff_ne_zero.mp I.2)
+      (fun _ ↦ mem_nonZeroDivisors_iff_ne_zero.mp I.property)
       (LinearEquiv.piUnique A fun _ : Unit ↦ (I : Ideal A)).symm
   rw [← ofMul_toMul c, ← hI, idealClassHom_mk0, classOf_def, map_sub, rankSteinitz_of,
     one_smul, rankSteinitz_regular, hrank, Module.steinitzClass_ideal]
@@ -113,22 +127,16 @@ with `ℤ × Additive (ClassGroup A)`. -/
 noncomputable def rankSteinitzEquiv :
     SplitK0.{u} (finiteProjectiveModules A).FullSubcategory ≃+ ℤ × Additive (ClassGroup A) where
   toFun := rankSteinitz A
-  invFun := (zmultiplesHom _ (SplitK0.of
-    ⟨ModuleCat.of A A, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩)).coprod
-      (idealClassHom A)
-  left_inv x := by
-    have h : ((zmultiplesHom _ (SplitK0.of
-        ⟨ModuleCat.of A A, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩)).coprod
-          (idealClassHom A)).comp (rankSteinitz A) = AddMonoidHom.id _ :=
-      SplitK0.hom_ext fun P ↦ by
-        simp only [AddMonoidHom.coe_comp, Function.comp_apply, rankSteinitz_of,
-          AddMonoidHom.coprod_apply, zmultiplesHom_apply, natCast_zsmul,
-          idealClassHom_steinitzClass, classOf_def, AddMonoidHom.id_apply]
-        exact add_sub_cancel _ _
-    exact DFunLike.congr_fun h x
+  invFun := rankSteinitzInv A
+  left_inv := DFunLike.congr_fun (show (rankSteinitzInv A).comp (rankSteinitz A) =
+      AddMonoidHom.id _ from SplitK0.hom_ext fun P ↦ by
+    simp only [rankSteinitzInv, AddMonoidHom.coe_comp, Function.comp_apply, rankSteinitz_of,
+      AddMonoidHom.coprod_apply, zmultiplesHom_apply, natCast_zsmul, idealClassHom_steinitzClass,
+      classOf_def, AddMonoidHom.id_apply]
+    exact add_sub_cancel _ _)
   right_inv p := by
-    simp only [AddMonoidHom.coprod_apply, zmultiplesHom_apply, map_add, map_zsmul,
-      rankSteinitz_regular, rankSteinitz_idealClassHom]
+    simp only [rankSteinitzInv, AddMonoidHom.coprod_apply, zmultiplesHom_apply, map_add,
+      map_zsmul, rankSteinitz_regular, rankSteinitz_idealClassHom]
     ext <;> simp
   map_add' := map_add _
 
@@ -145,10 +153,6 @@ theorem rankSteinitzEquiv_symm_apply (p : ℤ × Additive (ClassGroup A)) :
         ⟨ModuleCat.of A A, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ +
       idealClassHom A p.2 :=
   (rfl)
-
-/-- The homomorphism `[I] ↦ [I] - [A]` from ideal classes to projective `K₀` is injective. -/
-theorem idealClassHom_injective : Function.Injective (idealClassHom A) := fun c d h ↦ by
-  simpa using congrArg (rankSteinitz A) h
 
 /-- The reduced ideal classes are exactly the classes of rank zero in projective `K₀`. -/
 theorem mem_range_idealClassHom_iff
@@ -168,35 +172,17 @@ variable {A} {K : Type u} [Field K] [Algebra A K] [IsFractionRing A K]
 
 open FiniteProjectiveModules
 
-/-- The map from ideal classes to the locally free class group is injective. -/
-theorem ofIdealClass_injective (hA : ¬IsField A) : Function.Injective (ofIdealClass A K hA) :=
-  fun _ _ h ↦ idealClassHom_injective A (by simpa using congrArg Subtype.val h)
-
-variable (A K) in
-/-- For a Dedekind domain that is not a field, `[I] ↦ [I] - [A]` identifies the ideal class
-group with the locally free class group of `A` over itself. -/
-noncomputable def ofIdealClassEquiv (hA : ¬IsField A) :
-    Additive (ClassGroup A) ≃+ classGroup A K A :=
-  AddEquiv.ofBijective (ofIdealClass A K hA)
-    ⟨ofIdealClass_injective hA, ofIdealClass_surjective hA⟩
-
-@[simp]
-theorem coe_ofIdealClassEquiv (hA : ¬IsField A) (c : Additive (ClassGroup A)) :
-    (ofIdealClassEquiv A K hA c : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) =
-      idealClassHom A c :=
-  coe_ofIdealClass hA c
-
-/-- For a Dedekind domain that is not a field, the locally free class group of `A` over itself is
-the kernel of the rank on projective `K₀`. -/
-theorem mem_classGroup_iff_rankSteinitz_fst_eq_zero (hA : ¬IsField A)
+/-- The locally free class group of a Dedekind domain `A` over itself is the kernel of the rank on
+projective `K₀`. -/
+theorem mem_classGroup_iff_rankSteinitz_fst_eq_zero
     {x : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory} :
     x ∈ classGroup A K A ↔ (rankSteinitz A x).1 = 0 := by
   rw [← mem_range_idealClassHom_iff]
   refine ⟨fun hx ↦ ?_, ?_⟩
-  · obtain ⟨c, hc⟩ := ofIdealClass_surjective (K := K) hA ⟨x, hx⟩
+  · obtain ⟨c, hc⟩ := ofIdealClass_surjective (K := K) ⟨x, hx⟩
     exact ⟨c, by simpa using congrArg Subtype.val hc⟩
   · rintro ⟨c, rfl⟩
-    exact idealClassHom_mem_classGroup hA c
+    exact idealClassHom_mem_classGroup c
 
 end LocallyFree
 

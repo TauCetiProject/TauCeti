@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Torsion.Prod
 public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.RingTheory.DedekindDomain.ModuleDecomposition
+import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 
 /-!
@@ -26,7 +27,8 @@ isomorphism `∏ᵢ Iᵢ ≃ ∏ⱼ Jⱼ` multiplies all such determinants by on
 elements, so `∏ Iᵢ` and `∏ Jⱼ` differ by principal ideals
 (`ClassGroup.mk0_prod_eq_of_linearEquiv`). The Steinitz class is multiplicative on products,
 trivial on free modules, and the class of a nonzero ideal is its ideal class. The same
-decomposition computes the rank: `M ≃ J₁ × ⋯ × Jₙ` has `finrank R M = n`.
+decomposition computes the rank: `M ≃ J₁ × ⋯ × Jₙ` has `finrank R M = n`
+(`Module.finrank_eq_card_of_linearEquiv_pi`).
 
 ## Main definitions
 
@@ -38,11 +40,9 @@ decomposition computes the rank: `M ≃ J₁ × ⋯ × Jₙ` has `finrank R M = 
   products in the same ideal class.
 * `Module.steinitzClass_eq_of_linearEquiv_pi`: the Steinitz class is the class of the product of
   the ideals in any decomposition `M ≃ ∏ᵢ Jᵢ`.
-* `Module.steinitzClass_congr`, `Module.steinitzClass_prod`, `Module.steinitzClass_free` and
-  `Module.steinitzClass_ideal`: invariance under isomorphism, multiplicativity, and the values on
-  free modules and on nonzero ideals.
-* `Module.rank_pi_ideal` and `Module.finrank_eq_card_of_linearEquiv_pi`: a product of nonzero
-  ideals of a domain, and any module isomorphic to it, has rank the number of factors.
+* `Module.steinitzClass_congr`, `Module.steinitzClass_prod`, `Module.steinitzClass_eq_one_of_free`
+  and `Module.steinitzClass_ideal`: invariance under isomorphism, multiplicativity, and the values
+  on free modules and on nonzero ideals.
 
 ## References
 
@@ -56,41 +56,6 @@ public section
 
 open Module Matrix
 open scoped nonZeroDivisors Pointwise
-
-section Rank
-
-variable {R ι : Type*} [CommRing R] [IsDomain R] [Fintype ι]
-
-/-- A finite product of nonzero ideals of a domain has rank equal to the number of factors. -/
-theorem Module.rank_pi_ideal {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥) :
-    Module.rank R ((i : ι) → J i) = Fintype.card ι := by
-  choose a ha ha0 using fun i ↦ Submodule.exists_mem_ne_zero_of_ne_bot (hJ i)
-  -- the inclusion into `Rⁿ`, and the scaling `v ↦ (vᵢ aᵢ)ᵢ` from `Rⁿ`
-  let incl : ((i : ι) → J i) →ₗ[R] ι → R := LinearMap.pi fun i ↦ (J i).subtype ∘ₗ .proj i
-  let scale : (ι → R) →ₗ[R] (i : ι) → J i :=
-    LinearMap.pi fun i ↦ LinearMap.toSpanSingleton R (J i) ⟨a i, ha i⟩ ∘ₗ .proj i
-  have hincl : Function.Injective incl := fun v w h ↦ funext fun i ↦
-    Subtype.ext (congrFun h i)
-  have hscale : Function.Injective scale := by
-    refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ funext fun i ↦ ?_
-    have := congrArg Subtype.val (congrFun hv i)
-    simp only [scale, LinearMap.pi_apply, LinearMap.coe_comp, Function.comp_apply,
-      LinearMap.coe_proj, Function.eval, LinearMap.toSpanSingleton_apply, SetLike.mk_smul_mk,
-      smul_eq_mul, Pi.zero_apply, ZeroMemClass.coe_zero] at this
-    exact (mul_eq_zero.mp this).resolve_right (ha0 i)
-  apply le_antisymm
-  · simpa [rank_fun'] using incl.lift_rank_le_of_injective hincl
-  · simpa [rank_fun'] using scale.lift_rank_le_of_injective hscale
-
-/-- A module isomorphic to a finite product of nonzero ideals of a domain has rank the number of
-factors. -/
-theorem Module.finrank_eq_card_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module R M]
-    {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥) (e : M ≃ₗ[R] (i : ι) → J i) :
-    finrank R M = Fintype.card ι := by
-  rw [e.finrank_eq]
-  exact finrank_eq_of_rank_eq (Module.rank_pi_ideal hJ)
-
-end Rank
 
 section Invariance
 
@@ -165,13 +130,13 @@ private theorem exists_span_singleton_mul_prod_eq (hI : ∀ i, I i ≠ ⊥)
   constructor
   · rintro ⟨_, ⟨M, hM, rfl⟩, rfl⟩
     let V : ι → (i : ι) → I i := fun l ↦ e.symm fun j ↦ ⟨M j l, hM j l⟩
-    refine ⟨_, ⟨of fun i l ↦ (V l i : R), fun i l ↦ (V l i).2, rfl⟩, ?_⟩
+    refine ⟨_, ⟨of fun i l ↦ (V l i : R), fun i l ↦ (V l i).property, rfl⟩, ?_⟩
     have h := prod_mul_det e.toLinearMap a' ha0 V
     simp only [V, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at h
     exact h.symm
   · rintro ⟨_, ⟨M, hM, rfl⟩, rfl⟩
     let V : ι → (i : ι) → I i := fun l i ↦ ⟨M i l, hM i l⟩
-    refine ⟨_, ⟨of fun j l ↦ (e (V l) j : R), fun j l ↦ (e (V l) j).2, rfl⟩, ?_⟩
+    refine ⟨_, ⟨of fun j l ↦ (e (V l) j : R), fun j l ↦ (e (V l) j).property, rfl⟩, ?_⟩
     exact prod_mul_det e.toLinearMap a' ha0 V
 
 end Invariance
@@ -183,8 +148,8 @@ theorem ClassGroup.mk0_prod_eq_of_linearEquiv {R ι κ : Type*} [CommRing R] [Is
     (e : ((i : ι) → (I i : Ideal R)) ≃ₗ[R] (k : κ) → (J k : Ideal R)) :
     ClassGroup.mk0 (∏ i, I i) = ClassGroup.mk0 (∏ k, J k) := by
   classical
-  have hI (i : ι) : (I i : Ideal R) ≠ ⊥ := mem_nonZeroDivisors_iff_ne_zero.mp (I i).2
-  have hJ (k : κ) : (J k : Ideal R) ≠ ⊥ := mem_nonZeroDivisors_iff_ne_zero.mp (J k).2
+  have hI (i : ι) : (I i : Ideal R) ≠ ⊥ := mem_nonZeroDivisors_iff_ne_zero.mp (I i).property
+  have hJ (k : κ) : (J k : Ideal R) ≠ ⊥ := mem_nonZeroDivisors_iff_ne_zero.mp (J k).property
   have hcard : Fintype.card ι = Fintype.card κ := by
     have := e.lift_rank_eq
     rw [Module.rank_pi_ideal hI, Module.rank_pi_ideal hJ, Cardinal.lift_natCast,
@@ -196,7 +161,7 @@ theorem ClassGroup.mk0_prod_eq_of_linearEquiv {R ι κ : Type*} [CommRing R] [Is
   rw [← Equiv.prod_comp σ (fun k ↦ J k)]
   have hJ : ∏ i, (J (σ i) : Ideal R) ≠ ⊥ := by
     simpa [Submonoid.coe_finsetProd] using
-      mem_nonZeroDivisors_iff_ne_zero.mp (∏ i, J (σ i)).2
+      mem_nonZeroDivisors_iff_ne_zero.mp (∏ i, J (σ i)).property
   have hb : b ≠ 0 := by
     rintro rfl
     rw [Ideal.span_singleton_eq_bot.mpr rfl, Ideal.bot_mul, Ideal.mul_eq_bot,

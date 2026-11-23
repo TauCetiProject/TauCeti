@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.DedekindDomain.LocallyFree.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.SteinitzClass
 public import TauCeti.RingTheory.FractionalIdeal.Projective
 import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Invertible
+import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.RingTheory.DedekindDomain.ModuleDecomposition
 import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
@@ -28,8 +29,9 @@ the assignment `[I] ↦ [I] - [A]`. The map is surjective: a pseudo-basis expres
 finite projective module as a product of nonzero ideals, so its reduced class `[M] - n[A]` is the
 image of the product of their ideal classes, which is the Steinitz class of `M`
 (`TauCeti.FiniteProjectiveModules.idealClassHom_steinitzClass`). This includes the zero module,
-represented by the empty product. The map is injective: an invertible fractional ideal `I` with `[I] - [A] = 0` is stably
-free and invertible, hence free (`Module.free_of_isStablyFree_of_invertible`), hence principal.
+represented by the empty product. The map is injective: an invertible fractional ideal `I` with
+`[I] - [A] = 0` is stably free and invertible, hence free
+(`Module.free_of_isStablyFree_of_invertible`), hence principal.
 Together these give `TauCeti.LocallyFree.ofIdealClassEquiv`, identifying the locally free class
 group of `A` as an order over itself with the ideal class group of `A`. Over a field both
 groups are trivial, and the comparison remains an equivalence. The identification of projective
