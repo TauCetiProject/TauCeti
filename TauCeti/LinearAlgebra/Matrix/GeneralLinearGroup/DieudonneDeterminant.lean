@@ -5,8 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Abelianization.WithZero
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability
+
+-- Non-public: invertible upper triangular matrices and the factorization through the rotation are
+-- used only inside the proof that the `2 × 2` determinant vanishes exactly on singular matrices.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
+import TauCeti.LinearAlgebra.Matrix.RotationFinTwo
 
 /-!
 # The Dieudonné determinant and `K₁` of a division ring
@@ -35,8 +41,6 @@ trivial, while the determinant of `(u)` is the class of `u`, trivial for every c
 
 ## Main definitions
 
-* `TauCeti.abelianizationClass`: the class of an element of a group with zero in the
-  abelianization of its unit group, with a zero adjoined.
 * `TauCeti.dieudonneDetFinTwo`: the Dieudonné determinant of `2 × 2` matrices, a monoid with zero
   homomorphism to `WithZero (Group.Abelianization Dˣ)`.
 * `TauCeti.AlgebraicK1.divisionRingEquiv`: the isomorphism `K₁(D) ≃* Dˣ/[Dˣ, Dˣ]`.
@@ -76,30 +80,6 @@ noncomputable section
 open Matrix
 
 namespace TauCeti
-
-/-! ## Classes of elements of a group with zero -/
-
-section GroupWithZero
-
-variable (G₀ : Type*) [GroupWithZero G₀]
-
-open Classical in
-/-- The class of an element of a group with zero `G₀` in the abelianization of its unit group,
-with a zero adjoined: `0` goes to `0`, and a unit `u` to its abelianization class. This is the
-Dieudonné determinant of a `1 × 1` matrix. -/
-def abelianizationClass : G₀ →*₀ WithZero (Group.Abelianization G₀ˣ) :=
-  (WithZero.map' Group.Abelianization.of).comp (WithZero.withZeroUnitsEquiv (G := G₀)).symm
-
-variable {G₀}
-
-/-- `abelianizationClass` sends a unit to its abelianization class. -/
-@[simp]
-theorem abelianizationClass_units (u : G₀ˣ) :
-    abelianizationClass G₀ u = Group.Abelianization.of u := by
-  classical
-  simp [abelianizationClass]
-
-end GroupWithZero
 
 /-! ## The Dieudonné determinant of `2 × 2` matrices -/
 
@@ -179,14 +159,6 @@ private theorem detTwo_w_mul (M : Matrix (Fin 2) (Fin 2) D) :
   simp only [map_mul, map_inv₀]
   field_simp
 
-/-- A `2 × 2` matrix with nonzero lower left entry is an upper triangular matrix times the rotation
-`!![0, -1; 1, 0]` times a unipotent upper triangular matrix. -/
-private theorem eq_upper_mul_w_mul_upper (M : Matrix (Fin 2) (Fin 2) D) (hc : M 1 0 ≠ 0) :
-    M = !![M 0 0 * (M 1 0)⁻¹ * M 1 1 - M 0 1, M 0 0; 0, M 1 0] * !![0, -1; 1, 0] *
-      !![1, (M 1 0)⁻¹ * M 1 1; 0, 1] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, mul_assoc, mul_inv_cancel_left₀ hc]
-
 private theorem detTwo_mul (N M : Matrix (Fin 2) (Fin 2) D) :
     detTwo (N * M) = detTwo N * detTwo M := by
   by_cases hc : N 1 0 = 0
@@ -195,7 +167,7 @@ private theorem detTwo_mul (N M : Matrix (Fin 2) (Fin 2) D) :
   have h : ∀ M, detTwo (N * M) = detTwo !![N 0 0 * (N 1 0)⁻¹ * N 1 1 - N 0 1, N 0 0; 0, N 1 0] *
       detTwo !![1, (N 1 0)⁻¹ * N 1 1; 0, 1] * detTwo M := by
     intro M
-    conv_lhs => rw [eq_upper_mul_w_mul_upper N hc]
+    conv_lhs => rw [eq_upper_mul_rotation_mul_upper_fin_two N hc]
     rw [Matrix.mul_assoc, Matrix.mul_assoc, detTwo_upper_mul, detTwo_w_mul, detTwo_upper_mul]
     exact (mul_assoc ..).symm
   have h1 := h 1
@@ -245,16 +217,6 @@ theorem dieudonneDetFinTwo_one_add_single {i j : Fin 2} (hij : i ≠ j) (a : D) 
     simp [ha]
   · exact absurd rfl hij
 
-private theorem isUnit_upperTriangular {a d : D} (b : D) (ha : a ≠ 0) (hd : d ≠ 0) :
-    IsUnit !![a, b; 0, d] := by
-  refine ⟨⟨!![a, b; 0, d], !![a⁻¹, -(a⁻¹ * b * d⁻¹); 0, d⁻¹], ?_, ?_⟩, rfl⟩ <;>
-    ext i j <;> fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, ha, hd, mul_assoc]
-
-private theorem isUnit_rotation : IsUnit (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) D) := by
-  refine ⟨⟨!![0, -1; 1, 0], !![0, 1; -1, 0], ?_, ?_⟩, rfl⟩ <;>
-    ext i j <;> fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply]
-
 /-- The Dieudonné determinant of a `2 × 2` matrix vanishes exactly when the matrix is not
 invertible. -/
 theorem dieudonneDetFinTwo_eq_zero_iff {M : Matrix (Fin 2) (Fin 2) D} :
@@ -263,14 +225,16 @@ theorem dieudonneDetFinTwo_eq_zero_iff {M : Matrix (Fin 2) (Fin 2) D} :
   · have := congrArg (dieudonneDetFinTwo D) u.mul_inv
     rw [map_mul, hu, h, zero_mul, map_one] at this
     exact zero_ne_one this
+  have hB (a d : Dˣ) (b : D) : IsUnit !![(a : D), b; 0, d] :=
+    GL2Borel.coe_mk a d b ▸ (GL2Borel.mk a d b).isUnit
   by_cases hc : M 1 0 = 0
   · rw [dieudonneDetFinTwo_apply_of_eq_zero hc, map_eq_zero] at h0
     rw [Matrix.eta_fin_two M, hc]
-    exact isUnit_upperTriangular _ (left_ne_zero_of_mul h0) (right_ne_zero_of_mul h0)
+    exact hB (.mk0 _ (left_ne_zero_of_mul h0)) (.mk0 _ (right_ne_zero_of_mul h0)) _
   rw [dieudonneDetFinTwo_apply_of_ne_zero hc, map_eq_zero] at h0
-  rw [eq_upper_mul_w_mul_upper M hc]
-  exact ((isUnit_upperTriangular _ (right_ne_zero_of_mul h0) hc).mul isUnit_rotation).mul
-    (isUnit_upperTriangular _ one_ne_zero one_ne_zero)
+  rw [eq_upper_mul_rotation_mul_upper_fin_two M hc]
+  exact ((hB (.mk0 _ (right_ne_zero_of_mul h0)) (.mk0 _ hc) _).mul
+    (isUnit_rotation_fin_two D)).mul (hB 1 1 _)
 
 end FinTwo
 
