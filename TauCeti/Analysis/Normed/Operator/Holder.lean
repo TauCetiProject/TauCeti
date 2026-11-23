@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -35,9 +36,9 @@ continuous linear maps at a vector of norm at most one keeps the Hölder constan
 Composing a family of bilinear maps with two families of linear maps, `(f x).bilinearComp (g x)
 (h x)`, preserves Hölder continuity when the three families are bounded
 (`ContinuousLinearMap.holderOnWith_bilinearComp`); this is how a second derivative transforms
-under a change of variables. Likewise the bilinear maps `(h, k) ↦ B x h k • c x` have norm at most
-`‖c x‖ ‖B x‖` (`ContinuousLinearMap.norm_smulRightL_flip_comp_le`) and form a Hölder family when
-`B` and `c` are Hölder and bounded (`ContinuousLinearMap.holderOnWith_smulRightL_flip_comp`).
+under a change of variables. Likewise the bilinear maps `(h, k) ↦ B x h k • c x` form a Hölder
+family when `B` and `c` are Hölder and bounded
+(`ContinuousLinearMap.holderOnWith_smulRightL_flip_comp`).
 
 For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
 most `‖L‖` times the Hölder bound on the increment of `g` (`HolderWith.norm_smulRight_sub_le`).
@@ -168,18 +169,6 @@ variable {𝕜 X E E' E'' F F' G H : Type*} [NontriviallyNormedField 𝕜] [Pseu
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
   [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- The operator norm of a bilinear map composed with two linear maps is at most the product of
-the three operator norms. -/
-theorem norm_bilinearComp_le (f : E →L[𝕜] F →L[𝕜] G) (g : E' →L[𝕜] E) (h : F' →L[𝕜] F) :
-    ‖f.bilinearComp g h‖ ≤ ‖f‖ * ‖g‖ * ‖h‖ :=
-  (f.bilinearComp g h).opNorm_le_bound₂ (by positivity) fun x y => by
-    rw [bilinearComp_apply]
-    calc ‖f (g x) (h y)‖ ≤ ‖f‖ * ‖g x‖ * ‖h y‖ := f.le_opNorm₂ _ _
-      _ ≤ ‖f‖ * (‖g‖ * ‖x‖) * (‖h‖ * ‖y‖) := by
-        gcongr
-        exacts [g.le_opNorm x, h.le_opNorm y]
-      _ = ‖f‖ * ‖g‖ * ‖h‖ * ‖x‖ * ‖y‖ := by ring
-
 /-- Composing a family of bilinear maps with two families of linear maps preserves Hölder
 continuity on a set when all three families are bounded there. The constant is
 `Kf Mg Mh + Mf Kg Mh + Mf Mg Kh`. -/
@@ -221,14 +210,6 @@ theorem holderOnWith_bilinearComp {α Kf Kg Kh Mf Mg Mh : ℝ≥0} {f : X → E 
 section SMulRight
 
 variable [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
-
-/-- The bilinear map `(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`. -/
-theorem norm_smulRightL_flip_comp_le (c : H) (B : E →L[𝕜] StrongDual 𝕜 E'') :
-    ‖((StrongDual.smulRightL 𝕜 E'' H).flip c).comp B‖ ≤ ‖c‖ * ‖B‖ := by
-  refine (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
-  refine (le_opNorm _ c).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
-  rw [opNorm_flip]
-  exact norm_smulRightL_le
 
 /-- The bilinear maps `(h, k) ↦ B x h k • c x` form a Hölder family on `s` when `c` and `B` are
 Hölder and bounded there. The constant is `Mc KB + MB Kc`. -/
