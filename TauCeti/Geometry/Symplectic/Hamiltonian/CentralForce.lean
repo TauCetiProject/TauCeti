@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Central forces and the Kepler problem
@@ -516,10 +516,7 @@ theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ �
       ← SymplecticForm.poissonBracket_eq_fderiv,
       stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian] at h
   -- A function with zero derivative on a preconnected set of times is constant there.
-  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) (f' := fun _ ↦ 0)
-    (C := 0) (fun x hx ↦ (hderiv x hx).hasDerivWithinAt) (fun x _ ↦ by simp) ht₀ ht
-  exact sub_eq_zero.1 (norm_le_zero_iff.1 (by simpa using h))
+  exact hs.eq_of_hasDerivWithinAt_zero (fun u hu ↦ (hderiv u hu).hasDerivWithinAt) ht ht₀
 
 /-- **Conservation of energy along the motion.** Let `γ` be an integral curve of the Hamiltonian
 vector field of a central-force Hamiltonian `H` on a preconnected set `s` of times, avoiding the
@@ -619,9 +616,7 @@ theorem sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler {m κ : ℝ} {s : S
         rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian
           (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq u hu))) (hq u hu)] at h
         simpa using h.hasDerivWithinAt
-      have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-        (f' := fun _ ↦ 0) (C := 0) hderiv (fun _ _ ↦ by simp) hτ ht
-      rw [show (γ t).1 = (γ τ).1 from sub_eq_zero.1 (norm_le_zero_iff.1 (by simpa using h))]
+      rw [show (γ t).1 = (γ τ).1 from hs.eq_of_hasDerivWithinAt_zero hderiv ht hτ]
       exact sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz 0 κ (γ τ)
     · rw [← sq_sub_inner_sq_eq_of_hasDerivAt hs hγ hτ ht,
         ← norm_rungeLenz_eq_of_hasDerivAt_kepler hm hs hγ hq hτ ht]

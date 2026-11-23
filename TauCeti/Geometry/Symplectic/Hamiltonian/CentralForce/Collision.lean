@@ -251,7 +251,8 @@ theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [No
   -- With zero angular momentum the global motion would have zero radial momentum.
   have h := (radialMomentum_eq_zero_and_deriv_eq_of_forall_hasDerivAt hm (fun t ↦ (hγ t).2) hq
     (fun t ↦ (hU.differentiableOn (by norm_num) _ (hr t)).differentiableAt (Ioi_mem_nhds (hr t)))
-    (ℓ := 0) (t₀ := 0) (by simp only [hγ₀]; simp; ring)
+    (ℓ := 0) (t₀ := 0)
+    (by rw [hγ₀]; simp only [inner_neg_right, norm_neg, real_inner_self_eq_norm_sq]; ring)
     (fun t ↦ by simpa using hU' _ (hr t)) 0).1
   -- But the particle thrown at the centre has radial momentum `-‖u‖ ≠ 0`.
   rw [radialMomentum_eq_zero_iff, hγ₀] at h
