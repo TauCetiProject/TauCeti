@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Character
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Abelian
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Antipode
 public import TauCeti.Algebra.Lie.UniversalEnveloping.CenterEigenspace
@@ -30,18 +31,21 @@ uniform condition (`TauCeti.UniversalEnvelopingAlgebra.isGeneralizedCharacterFin
 Generalized `χ`-finiteness passes to Lie submodules and quotients, and more generally along
 injective and surjective homomorphisms of Lie modules.
 
-On the dual module the centre acts through the antipode, the principal anti-automorphism
-`x ↦ -x` of `U(L)`, which maps `Z` to itself and is an algebra automorphism there. So the dual
-of a module with infinitesimal character `χ` has infinitesimal character
+On the dual module the centre acts through the antipode, the principal anti-automorphism of
+`U(L)` extending `x ↦ -x` on `L`, which maps `Z` to itself and is an algebra automorphism there
+(`UniversalEnvelopingAlgebra.centerAntipode`). So the dual of a module with infinitesimal
+character `χ` has infinitesimal character
 `TauCeti.UniversalEnvelopingAlgebra.dualCharacter χ = χ ∘ antipode`, and the uniform annihilation
 by a power of `ker χ` dualizes in the same way. On a central element of degree one the dual
 character is the negative: on the central one-dimensional Lie algebra a scalar action `2`
 dualizes to `-2`.
 
-For an abelian Lie algebra every element of `U(L)` is central, and every linear functional
-`λ : L → R` is the restriction to `L` of an infinitesimal character
-(`TauCeti.UniversalEnvelopingAlgebra.abelianCharacter`); for `gl₁` this says that every scalar is
-the value of an infinitesimal character on the generator.
+Every Lie algebra homomorphism `f : L → R` extends to `U(L)`, and restricting to the centre gives
+the character `TauCeti.UniversalEnvelopingAlgebra.liftCharacter f`, which takes the value `f y` on
+a central generator `ι y`. For an abelian Lie algebra every element of `U(L)` is central and every
+linear functional is a Lie algebra homomorphism, so every linear functional is the restriction to
+`L` of an infinitesimal character; for `gl₁` this says that every scalar is the value of an
+infinitesimal character on the generator.
 
 ## Main definitions
 
@@ -50,20 +54,19 @@ the value of an infinitesimal character on the generator.
   annihilated by some power of `ker χ`.
 * `TauCeti.UniversalEnvelopingAlgebra.IsGeneralizedCharacterFinite`: every vector is annihilated
   by some power of `ker χ`.
-* `TauCeti.UniversalEnvelopingAlgebra.centerAntipode`: the antipode restricted to the centre, an
-  algebra automorphism.
 * `TauCeti.UniversalEnvelopingAlgebra.dualCharacter`: the character `χ ∘ antipode` of the dual
   module.
-* `TauCeti.UniversalEnvelopingAlgebra.abelianCharacter`: the character of `U(L)` extending a
-  linear functional on an abelian Lie algebra.
+* `TauCeti.UniversalEnvelopingAlgebra.liftCharacter`: the character of the centre of `U(L)`
+  extending a Lie algebra homomorphism `L → R`.
 
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.centerEigenspace_le_generalizedCharacter`: an infinitesimal
   character is a generalized one.
 * `TauCeti.UniversalEnvelopingAlgebra.IsGeneralizedCharacterFinite.of_injective`,
-  `TauCeti.UniversalEnvelopingAlgebra.IsGeneralizedCharacterFinite.of_surjective`, and the
-  submodule and quotient instances: closure under subquotients.
+  `TauCeti.UniversalEnvelopingAlgebra.IsGeneralizedCharacterFinite.of_surjective`,
+  `TauCeti.UniversalEnvelopingAlgebra.IsGeneralizedCharacterFinite.lieSubmodule`, `.quotient` and
+  `.subquotient`: closure under subquotients.
 * `TauCeti.UniversalEnvelopingAlgebra.centerEigenspace_dual_eq_top`: the dual of a module with
   infinitesimal character `χ` has infinitesimal character `dualCharacter χ`.
 * `TauCeti.UniversalEnvelopingAlgebra.centralAction_dual_eq_zero_of_mem_pow`: uniform
@@ -139,6 +142,7 @@ noncomputable def generalizedCharacter (χ : Subalgebra.center R U →ₐ[R] R) 
 
 /-- A vector lies in the generalized `χ`-eigenspace exactly when some power of `ker χ`
 annihilates it. -/
+@[simp]
 theorem mem_generalizedCharacter {χ : Subalgebra.center R U →ₐ[R] R} {m : M} :
     m ∈ generalizedCharacter R L M χ ↔
       ∃ n : ℕ, ∀ z ∈ RingHom.ker χ ^ n, centralAction R L M z m = 0 :=
@@ -237,54 +241,15 @@ end IsGeneralizedCharacterFinite
 
 /-! ### The dual character -/
 
-variable (R L) in
-/-- The antipode of `U(L)` maps the centre into itself. -/
-theorem antipode_mem_center {z : U} (hz : z ∈ Subalgebra.center R U) :
-    _root_.UniversalEnvelopingAlgebra.antipode R z ∈ Subalgebra.center R U := by
-  rw [Subalgebra.mem_center_iff]
-  intro a
-  obtain ⟨b, rfl⟩ := (_root_.UniversalEnvelopingAlgebra.antipode_bijective (L := L) R).2 a
-  rw [← _root_.UniversalEnvelopingAlgebra.antipode_mul_antidistrib,
-    ← _root_.UniversalEnvelopingAlgebra.antipode_mul_antidistrib,
-    Subalgebra.mem_center_iff.mp hz b]
-
-variable (R L) in
-/-- The antipode restricted to the centre of `U(L)`. On the commutative centre the
-anti-automorphism `x ↦ -x` is an algebra homomorphism. -/
-noncomputable def centerAntipode : Subalgebra.center R U →ₐ[R] Subalgebra.center R U where
-  toFun z :=
-    ⟨_root_.UniversalEnvelopingAlgebra.antipode R (z : U), antipode_mem_center R L z.property⟩
-  map_one' := Subtype.ext (_root_.UniversalEnvelopingAlgebra.antipode_one R)
-  map_mul' z w := Subtype.ext <| by
-    change _root_.UniversalEnvelopingAlgebra.antipode R ((z : U) * (w : U)) =
-      _root_.UniversalEnvelopingAlgebra.antipode R (z : U) *
-        _root_.UniversalEnvelopingAlgebra.antipode R (w : U)
-    rw [_root_.UniversalEnvelopingAlgebra.antipode_mul_antidistrib]
-    exact Subalgebra.mem_center_iff.mp (antipode_mem_center R L z.property) _
-  map_zero' := Subtype.ext (map_zero _)
-  map_add' z w := Subtype.ext (map_add _ _ _)
-  commutes' r := Subtype.ext (_root_.UniversalEnvelopingAlgebra.antipode_algebraMap R r)
-
-@[simp]
-theorem coe_centerAntipode (z : Subalgebra.center R U) :
-    (centerAntipode R L z : U) = _root_.UniversalEnvelopingAlgebra.antipode R (z : U) :=
-  (rfl)
-
-/-- The antipode of the centre is an involution. -/
-@[simp]
-theorem centerAntipode_centerAntipode (z : Subalgebra.center R U) :
-    centerAntipode R L (centerAntipode R L z) = z :=
-  Subtype.ext (_root_.UniversalEnvelopingAlgebra.antipode_antipode R (z : U))
-
 /-- The **dual character** `χ ∘ antipode` of a character of the centre of `U(L)`: the centre acts
 on the dual of a module with infinitesimal character `χ` through it. -/
 noncomputable def dualCharacter (χ : Subalgebra.center R U →ₐ[R] R) :
     Subalgebra.center R U →ₐ[R] R :=
-  χ.comp (centerAntipode R L)
+  χ.comp (_root_.UniversalEnvelopingAlgebra.centerAntipode R).toAlgHom
 
 @[simp]
 theorem dualCharacter_apply (χ : Subalgebra.center R U →ₐ[R] R) (z : Subalgebra.center R U) :
-    dualCharacter χ z = χ (centerAntipode R L z) :=
+    dualCharacter χ z = χ (_root_.UniversalEnvelopingAlgebra.centerAntipode R z) :=
   (rfl)
 
 /-- Taking the dual character twice gives back the character. -/
@@ -300,14 +265,16 @@ theorem dualCharacter_ι (χ : Subalgebra.center R U →ₐ[R] R) {y : L}
     dualCharacter χ ⟨_, hy⟩ = -χ ⟨_, hy⟩ := by
   rw [dualCharacter_apply, ← map_neg]
   congr 1
-  exact Subtype.ext (_root_.UniversalEnvelopingAlgebra.antipode_ι R y)
+  exact Subtype.ext ((_root_.UniversalEnvelopingAlgebra.coe_centerAntipode R _).trans
+    (_root_.UniversalEnvelopingAlgebra.antipode_ι R y))
 
 /-- The centre acts on the dual module through the antipode. -/
 theorem centralAction_dual_apply (z : Subalgebra.center R U) (φ : Dual R M) (m : M) :
-    centralAction R L (Dual R M) z φ m = φ (centralAction R L M (centerAntipode R L z) m) := by
+    centralAction R L (Dual R M) z φ m =
+      φ (centralAction R L M (_root_.UniversalEnvelopingAlgebra.centerAntipode R z) m) := by
   rw [centralAction_apply, _root_.UniversalEnvelopingAlgebra.representation_dual_apply,
-    hopfAlgebraStructAntipode_eq_antipode]
-  rfl
+    hopfAlgebraStructAntipode_eq_antipode, centralAction_apply,
+    _root_.UniversalEnvelopingAlgebra.coe_centerAntipode]
 
 /-- **The dual of a module with infinitesimal character `χ` has infinitesimal character
 `dualCharacter χ`.** -/
@@ -327,11 +294,12 @@ theorem centralAction_dual_eq_zero_of_mem_pow {χ : Subalgebra.center R U →ₐ
     (h : ∀ z ∈ RingHom.ker χ ^ n, centralAction R L M z = 0) {z : Subalgebra.center R U}
     (hz : z ∈ RingHom.ker (dualCharacter χ) ^ n) :
     centralAction R L (Dual R M) z = 0 := by
-  have hle : Ideal.map (centerAntipode R L) (RingHom.ker (dualCharacter χ)) ≤ RingHom.ker χ := by
+  have hle : Ideal.map (_root_.UniversalEnvelopingAlgebra.centerAntipode R)
+      (RingHom.ker (dualCharacter χ)) ≤ RingHom.ker χ := by
     rw [Ideal.map_le_iff_le_comap]
     intro w hw
     rwa [Ideal.mem_comap, RingHom.mem_ker, ← dualCharacter_apply, ← RingHom.mem_ker]
-  have hmem : centerAntipode R L z ∈ RingHom.ker χ ^ n := by
+  have hmem : _root_.UniversalEnvelopingAlgebra.centerAntipode R z ∈ RingHom.ker χ ^ n := by
     refine Ideal.pow_right_mono hle n ?_
     rw [← Ideal.map_pow]
     exact Ideal.mem_map_of_mem _ hz
@@ -339,47 +307,38 @@ theorem centralAction_dual_eq_zero_of_mem_pow {χ : Subalgebra.center R U →ₐ
   rw [centralAction_dual_apply, h _ hmem, LinearMap.zero_apply, map_zero, LinearMap.zero_apply,
     LinearMap.zero_apply]
 
-/-! ### Abelian Lie algebras -/
+/-! ### Characters from Lie algebra homomorphisms -/
 
-section Abelian
-
-variable [IsLieAbelian L]
+section LiftCharacter
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (R L) in
-/-- A linear functional on an abelian Lie algebra, viewed as a Lie algebra homomorphism to the
-abelian Lie algebra `R`. -/
-private def linearToLieHom (f : L →ₗ[R] R) : L →ₗ⁅R⁆ R :=
-  { f with
-    map_lie' := by
-      intro y y'
-      change f ⁅y, y'⁆ = ⁅f y, f y'⁆
-      rw [trivial_lie_zero, map_zero, Ring.lie_def, mul_comm, sub_self] }
+/-- The **infinitesimal character extending a Lie algebra homomorphism** `f : L → R`: the algebra
+homomorphism `U(L) → R` extending `f`, restricted to the centre. -/
+noncomputable def liftCharacter (f : LieAlgebra.LieCharacter R L) :
+    Subalgebra.center R U →ₐ[R] R :=
+  (_root_.UniversalEnvelopingAlgebra.lift R f).comp (Subalgebra.center R U).val
 
-variable (R L) in
-/-- The **infinitesimal character of an abelian Lie algebra extending a linear functional**
-`f : L → R`: every element of `U(L)` is central, and `U(L) → R` is the algebra homomorphism
-extending `f`. For `gl₁` it shows that every scalar is the value of an infinitesimal character
-on the generator. -/
-noncomputable def abelianCharacter (f : L →ₗ[R] R) : Subalgebra.center R U →ₐ[R] R :=
-  (_root_.UniversalEnvelopingAlgebra.lift R (linearToLieHom R L f)).comp
-    (Subalgebra.center R U).val
-
-/-- In `U(L)` for an abelian Lie algebra `L`, the canonical generators are central. -/
-theorem ι_mem_center (y : L) :
-    _root_.UniversalEnvelopingAlgebra.ι R y ∈ Subalgebra.center R U := by
-  rw [Subalgebra.center_eq_top]
-  trivial
-
-/-- The character extending a linear functional takes the value of the functional on a
-generator. -/
-theorem abelianCharacter_ι (f : L →ₗ[R] R) (y : L) :
-    abelianCharacter R L f ⟨_, ι_mem_center y⟩ = f y := by
-  simp only [abelianCharacter, AlgHom.comp_apply, Subalgebra.coe_val,
+/-- The character extending a Lie algebra homomorphism `f` takes the value `f y` on a central
+generator `ι y`. -/
+theorem liftCharacter_ι (f : LieAlgebra.LieCharacter R L) {y : L}
+    (hy : _root_.UniversalEnvelopingAlgebra.ι R y ∈ Subalgebra.center R U) :
+    liftCharacter R L f ⟨_, hy⟩ = f y := by
+  rw [liftCharacter, AlgHom.comp_apply, Subalgebra.coe_val,
     _root_.UniversalEnvelopingAlgebra.lift_ι_apply]
-  rfl
 
-end Abelian
+/-- **Every linear functional on an abelian Lie algebra is the restriction of an infinitesimal
+character**: the character extending `f`, read as a Lie algebra homomorphism, takes the value
+`f y` on every generator. For `gl₁` it shows that every scalar is the value of an infinitesimal
+character on the generator. -/
+theorem liftCharacter_lieCharacterEquivLinearDual_symm_ι [IsLieAbelian L] (f : Dual R L)
+    (y : L) :
+    liftCharacter R L (LieAlgebra.lieCharacterEquivLinearDual.symm f)
+        ⟨_, ι_mem_center R L y⟩ = f y := by
+  rw [liftCharacter_ι, ← LieHom.coe_toLinearMap, ← LieAlgebra.lieCharacterEquivLinearDual_apply,
+    Equiv.apply_symm_apply]
+
+end LiftCharacter
 
 end TauCeti.UniversalEnvelopingAlgebra
