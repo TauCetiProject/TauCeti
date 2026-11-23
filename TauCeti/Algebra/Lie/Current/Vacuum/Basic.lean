@@ -191,7 +191,7 @@ def vacuumHomEquiv : (VacuumModule Φ hΦ hΦs a →ₗ[UK] M) ≃
     {m : M // ∀ u ∈ orderSubmodule R L 0, envelopingι c a u • m = 0} where
   toFun f := ⟨f (vacuum Φ hΦ hΦs a), fun u hu ↦ by
     rw [← map_smul, envelopingι_smul_vacuum hu, map_zero]⟩
-  invFun m := vacuumLift m.1 m.2
+  invFun m := vacuumLift m.val m.property
   left_inv f := vacuumModule_hom_ext (vacuumLift_vacuum _ _)
   right_inv m := Subtype.ext (vacuumLift_vacuum _ _)
 
@@ -205,7 +205,7 @@ theorem vacuumHomEquiv_apply_coe (f : VacuumModule Φ hΦ hΦs a →ₗ[UK] M) :
 @[simp]
 theorem vacuumHomEquiv_symm_apply
     (m : {m : M // ∀ u ∈ orderSubmodule R L 0, envelopingι c a u • m = 0}) :
-    vacuumHomEquiv.symm m = vacuumLift m.1 m.2 :=
+    vacuumHomEquiv.symm m = vacuumLift m.val m.property :=
   (rfl)
 
 end Lift

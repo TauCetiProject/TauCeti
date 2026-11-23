@@ -152,7 +152,7 @@ theorem natCard_isQuadratic_prime_pow [Nontrivial R] (hR : ringChar R ≠ 2) (hp
   split_ifs with hk
   · subst hk
     exact Nat.card_eq_one_iff_exists.mpr
-      ⟨⟨1, MulChar.isQuadratic_one⟩, fun χ ↦ Subtype.ext (level_one' χ.1 (pow_zero p))⟩
+      ⟨⟨1, MulChar.isQuadratic_one⟩, fun χ ↦ Subtype.ext (level_one' χ.val (pow_zero p))⟩
   · have h : p ∣ p ^ k := dvd_pow_self p hk
     have hset : {χ : DirichletCharacter R (p ^ k) | χ.IsQuadratic} =
         {1, changeLevel h ((quadraticChar (ZMod p)).ringHomComp (Int.castRingHom R))} := by

@@ -135,19 +135,17 @@ theorem hasFDerivAt_oscillatorEnergies_apply [DecidableEq ι] (m ν : ι → ℝ
     HasFDerivAt (oscillatorEnergies m ν · i)
       ((innerSL ℝ (EuclideanSpace.single i (m i * ν i ^ 2 * x.1 i))).coprod
         (innerSL ℝ (EuclideanSpace.single i (x.2 i / m i)))) x := by
-  have hq := (coordFst (ι := ι) i).hasFDerivAt (x := x)
-  have hp := (coordSnd (ι := ι) i).hasFDerivAt (x := x)
-  simp only [funext (coordFst_apply i), funext (coordSnd_apply i)] at hq hp
-  have h := ((hp.pow 2).mul_const (2 * m i)⁻¹).add
-    (((hq.pow 2).const_mul (m i * ν i ^ 2)).mul_const 2⁻¹)
+  -- `Eᵢ` is the oscillator energy composed with the projection to the `i`-th phase plane.
   have hE : (oscillatorEnergies m ν · i) =
-      fun y : 𝕍 × 𝕍 ↦ y.2 i ^ 2 * (2 * m i)⁻¹ + m i * ν i ^ 2 * y.1 i ^ 2 * 2⁻¹ := by
+      oscillatorHamiltonian (m i) (ν i) ∘ ((coordFst i).prod (coordSnd i)) := by
     ext y
-    simp [oscillatorEnergies_apply, oscillatorHamiltonian_apply, div_eq_mul_inv]
+    rw [oscillatorEnergies_apply, Function.comp_apply, ContinuousLinearMap.prod_apply,
+      coordFst_apply, coordSnd_apply]
   rw [hE]
-  refine h.congr_fderiv (ContinuousLinearMap.ext fun w ↦ ?_)
+  refine ((hasFDerivAt_oscillatorHamiltonian (m i) (ν i) (x.1 i, x.2 i)).comp x
+    ((coordFst i).prod (coordSnd i)).hasFDerivAt).congr_fderiv
+      (ContinuousLinearMap.ext fun w ↦ ?_)
   simp [EuclideanSpace.inner_single_left, coordFst_apply, coordSnd_apply]
-  ring
 
 /-- **Hamilton's equations of uncoupled oscillators.** The Hamiltonian vector field of `Eᵢ` is
 `qᵢ' = pᵢ / mᵢ`, `pᵢ' = -mᵢ νᵢ² qᵢ` in the `i`-th phase plane, and zero in the others. -/
@@ -369,9 +367,10 @@ phase space. -/
 private def oscillatorRotationHom (hm : ∀ i, m i ≠ 0) (hν : ∀ i, ν i ≠ 0) :
     (ι → ℝ) →+ Additive ((𝕍 × 𝕍) ≃ₘ^∞⟮𝓘(ℝ, 𝕍 × 𝕍), 𝓘(ℝ, 𝕍 × 𝕍)⟯ (𝕍 × 𝕍)) where
   toFun v := Additive.ofMul
-    (ContinuousLinearEquiv.equivOfInverse (oscillatorRotation m ν v) (oscillatorRotation m ν (-v))
-      (oscillatorRotation_neg_apply hm hν v)
-      fun x ↦ by simpa using oscillatorRotation_neg_apply hm hν (-v) x).toDiffeomorph
+    (ContinuousLinearEquiv.ofContinuousLinearMap (oscillatorRotation m ν v)
+      (oscillatorRotation m ν (-v))
+      (ContinuousLinearMap.ext fun x ↦ by simpa using oscillatorRotation_neg_apply hm hν (-v) x)
+      (ContinuousLinearMap.ext (oscillatorRotation_neg_apply hm hν v))).toDiffeomorph
   map_zero' := Additive.toMul.injective <| Diffeomorph.ext fun x ↦ by simp
   map_add' v w := Additive.toMul.injective <| Diffeomorph.ext fun x ↦ by
     simp [oscillatorRotation_add hm hν]
@@ -394,7 +393,7 @@ theorem hamiltonianFlowAction_oscillatorEnergies_apply (hm : ∀ i, m i ≠ 0) (
   · simp [oscillatorRotationHom]
   · refine Additive.toMul.injective <| Diffeomorph.ext fun y ↦ ?_
     simp only [oscillatorRotationHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk, toMul_ofMul,
-      ContinuousLinearEquiv.coe_toDiffeomorph, ContinuousLinearEquiv.equivOfInverse_apply,
+      ContinuousLinearEquiv.coe_toDiffeomorph, ContinuousLinearEquiv.coe_ofContinuousLinearMap,
       toMul_globalFlowDiffeomorphHom, globalFlowDiffeomorph_apply]
     have h := globalFlow_eq_of_isMIntegralCurve (hv i |>.of_le (by simp))
       (isCompleteVectorField_hamiltonianVectorField_oscillatorEnergies (hm i) (hν i))

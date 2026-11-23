@@ -143,7 +143,9 @@ theorem windingNumber_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b)
 
 /-- A curve `γ` on `[a, b]` is **null-homologous** in `Ω` when its generalized winding number
 about every point outside `Ω` vanishes — the hypothesis of the homology form of Cauchy's theorem
-and of the Hungerbühler–Wasem residue theorem (HW Thm 3.3). -/
+and of the Hungerbühler–Wasem residue theorem (HW Thm 3.3). The predicate imposes only the
+vanishing of the winding numbers: it does not require `γ` to be closed or piecewise `C¹`, so
+consumers assume those separately. -/
 def IsNullHomologous (γ : ℝ → ℂ) (a b : ℝ) (Ω : Set ℂ) : Prop :=
   ∀ w ∉ Ω, windingNumber γ a b w = 0
 

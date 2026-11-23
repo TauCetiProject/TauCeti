@@ -123,8 +123,8 @@ theorem multiplicity_relDiscr_fixedField_eq_sum
   rw [multiplicity_relDiscr _ _,
     finsum_eq_sum_of_fintype]
   let e := w.asIdeal.doubleCosetQuotientEquivPrimesOverOfIsInvariant v.asIdeal H (𝓞 ↥(fixedField H))
-  have hsum := e.sum_comp (fun P ↦ P.1.inertiaDeg (𝓞 K) *
-    multiplicity P.1 (differentIdeal (𝓞 K) (𝓞 ↥(fixedField H))))
+  have hsum := e.sum_comp (fun P ↦ P.val.inertiaDeg (𝓞 K) *
+    multiplicity P.val (differentIdeal (𝓞 K) (𝓞 ↥(fixedField H))))
   rw [Finset.sum_subtype _ (fun _ ↦ Set.mem_toFinset) _]
   rw [← hsum]
   apply Finset.sum_congr rfl

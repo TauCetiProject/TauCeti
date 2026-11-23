@@ -321,10 +321,11 @@ theorem _root_.SimpleGraph.injHomCount_toUniformHypergraph :
   rw [← SimpleGraph.card_injective_hom_eq_labelledCopyCount, injHomCount_def,
     ← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
   exact Nat.card_congr
-    { toFun := fun f ↦ ⟨⟨f.1, fun {a b} hab ↦ SimpleGraph.isHom_toUniformHypergraph_iff.1 f.2 a b
-        hab⟩, f.1.injective⟩
-      invFun := fun φ ↦ ⟨⟨φ.1, φ.2⟩, SimpleGraph.isHom_toUniformHypergraph_iff.2
-        fun _ _ hab ↦ φ.1.map_rel hab⟩
+    { toFun := fun f ↦ ⟨⟨f.val, fun {a b} hab ↦ SimpleGraph.isHom_toUniformHypergraph_iff.1
+        f.property a b
+        hab⟩, f.val.injective⟩
+      invFun := fun φ ↦ ⟨⟨φ.val, φ.property⟩, SimpleGraph.isHom_toUniformHypergraph_iff.2
+        fun _ _ hab ↦ φ.val.map_rel hab⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl }
 

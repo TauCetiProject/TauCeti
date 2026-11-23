@@ -12,6 +12,8 @@ public import Mathlib.Analysis.AbsoluteValue.Equivalence
 import Mathlib.Algebra.Order.Hom.Lattice
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.NumberTheory.Padics.HeightOneSpectrum
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # Finite places of number fields
@@ -30,13 +32,13 @@ These comparisons follow Ralf Stephan's `ArithmeticHeights/SUnit.lean` in
 and `FinitePlace.exists_apply_eq_one_forall_mul_mem_range` clears denominators of a finite
 `v`-integral tuple by a single algebraic integer of `v`-adic absolute value `1`.
 
-The file also records that a number field always *has* a finite place: the finite places are the
-height one primes of its ring of integers, and that ring is a Dedekind domain which is not a
-field, so it has a maximal ideal. Recording this as a `Nonempty` instance lets local-global
-arguments pick a finite place with `Classical.arbitrary` whenever a hypothesis quantified over
-all finite places has to be used at some place — for instance to read off an invariant, such as
-the dimension of the underlying space, that is the same at every place. Without the instance
-each such argument has to rebuild the existence proof inline.
+The file also records that a number field has infinitely many finite places: contraction
+`HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ` is surjective and `HeightOneSpectrum ℤ` corresponds
+to the rational primes. Recording `Infinite` instances for `HeightOneSpectrum (𝓞 K)` (for any
+characteristic-zero field `K`) and `FinitePlace K`—and hence `Nonempty`—lets local-global arguments
+pick a finite place with `Classical.arbitrary` (or `Finset.exists_notMem` outside a finite
+exceptional set) whenever an invariant that is the same at every place must be read off at one
+place.
 
 Two finite places are equal exactly when their absolute values are equivalent,
 `NumberField.FinitePlace.eq_iff_isEquiv`, as Mathlib has for infinite places. For a prime `w` of a
@@ -48,7 +50,8 @@ the `e * f`-th power of that of `v`.
 as minus the `v`-adic order times `log N(v)`, the form in which valuations enter height estimates.
 
 `NumberField.FinitePlace.finprod_comp_mk` reindexes a product over the finite places by the
-height one primes of the ring of integers.
+height one primes of the ring of integers, and `NumberField.FinitePlace.mk_injective` records that
+distinct primes give distinct places, so that a finite product over primes is one over places.
 
 Finally, `NumberField.FinitePlace.hasFiniteMulSupport_iSup` records that the maximum of the
 finite-place absolute values of the coordinates of a nonzero finite tuple is `1` at all but
@@ -64,7 +67,9 @@ those places: `v d * R v ≤ 1`. When a finite place `u` lies outside that finit
 `NumberField.FinitePlace.exists_apply_eq_one_forall_apply_le` and
 `NumberField.FinitePlace.exists_apply_eq_one_forall_mul_apply_le` choose `d` to have `u d = 1` as
 well. These follow Ralf Stephan's `DiophantineApproximation/FinitePlaceValues.lean` in
-`rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
+`rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0). Globally,
+`NumberField.FinitePlace.exists_ne_zero_smul_apply_le_one` scales any finite tuple over `K` by a
+nonzero scalar so that its coordinates are at most `1` at every finite place simultaneously.
 -/
 
 public section
@@ -76,10 +81,15 @@ namespace TauCeti
 
 variable {K : Type*} [Field K]
 
-/-- A number field has a finite place: its ring of integers is not a field. -/
-instance [NumberField K] : Nonempty (HeightOneSpectrum (𝓞 K)) :=
-  ⟨(HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
-    (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))⟩
+/-- The ring of integers of a field of characteristic zero has infinitely many height-one primes:
+every rational prime lies under one. -/
+instance [CharZero K] : Infinite (HeightOneSpectrum (𝓞 K)) :=
+  Infinite.of_surjective (HeightOneSpectrum.under ℤ) (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
+
+/-- A number field has infinitely many finite places. -/
+instance [NumberField K] : Infinite (FinitePlace K) :=
+  Infinite.of_surjective (FinitePlace.equivHeightOneSpectrum (K := K))
+    (FinitePlace.equivHeightOneSpectrum (K := K)).surjective
 
 end TauCeti
 
@@ -153,7 +163,7 @@ theorem exists_apply_eq_one_forall_mul_mem_range {ι : Type*} [Finite ι] (v : F
   let D : 𝔭.asIdeal.primeCompl := ∏ j : ι, d j
   refine ⟨D, ?_, fun j ↦ ?_⟩
   · rw [← v.norm_embedding_eq, norm_eq_one_iff_notMem]
-    exact D.2
+    exact D.property
   · let q : 𝓞 K := ∏ j' ∈ Finset.univ.erase j, (d j' : 𝓞 K)
     have hD_split : ((D : 𝓞 K) : K) = (q : K) * ((d j : 𝓞 K) : K) := by
       have hD_coe : (D : 𝓞 K) = ∏ j' : ι, (d j' : 𝓞 K) :=
@@ -169,13 +179,17 @@ theorem exists_apply_eq_one_forall_mul_mem_range {ι : Type*} [Finite ι] (v : F
 
 /-- Two finite places of a number field are equal if and only if their absolute values are
 equivalent. This is the finite counterpart of Mathlib's `InfinitePlace.eq_iff_isEquiv`. -/
-theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.1.IsEquiv v.1 := by
+theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.val.IsEquiv v.val := by
   refine ⟨fun h ↦ h ▸ .rfl, fun h ↦ ?_⟩
   rw [← maximalIdeal_inj]
   refine HeightOneSpectrum.ext (Ideal.ext fun y ↦ ?_)
   rw [← norm_lt_one_iff_mem K, ← norm_lt_one_iff_mem K, ← mk_apply, ← mk_apply,
     mk_maximalIdeal, mk_maximalIdeal]
   exact h.lt_one_iff
+
+/-- Distinct height one primes of the ring of integers give distinct finite places. -/
+theorem mk_injective : Function.Injective (mk : HeightOneSpectrum (𝓞 K) → FinitePlace K) :=
+  equivHeightOneSpectrum.symm.injective
 
 /-- A product over the finite places of a number field, reindexed by the height one primes of its
 ring of integers. -/
@@ -214,7 +228,7 @@ theorem apply_le_one (v : FinitePlace K) (x : 𝓞 K) : v (x : K) ≤ 1 :=
 /-- Given `p w ∈ 𝔭_w` for each `w ∈ T`, some power of `∏ w ∈ T.attach, p w` has absolute value at
 most `ε v` at every `v ∈ T`. -/
 private theorem exists_pow_prod_forall_apply_le {T : Finset (FinitePlace K)}
-    (p : {w // w ∈ T} → 𝓞 K) (hp : ∀ w, p w ∈ w.1.maximalIdeal.asIdeal)
+    (p : {w // w ∈ T} → 𝓞 K) (hp : ∀ w, p w ∈ w.val.maximalIdeal.asIdeal)
     {ε : FinitePlace K → ℝ} (hε : ∀ v ∈ T, 0 < ε v) :
     ∃ m : ℕ, ∀ v ∈ T, v (((∏ w ∈ T.attach, p w) ^ m : 𝓞 K) : K) ≤ ε v := by
   set t : 𝓞 K := ∏ w ∈ T.attach, p w
@@ -235,7 +249,7 @@ finite places. -/
 theorem exists_ne_zero_forall_apply_le (T : Finset (FinitePlace K)) {ε : FinitePlace K → ℝ}
     (hε : ∀ v ∈ T, 0 < ε v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) ≤ ε v := by
   choose p hp hp0 using fun w : {w : FinitePlace K // w ∈ T} ↦
-    Submodule.exists_mem_ne_zero_of_ne_bot w.1.maximalIdeal.ne_bot
+    Submodule.exists_mem_ne_zero_of_ne_bot w.val.maximalIdeal.ne_bot
   obtain ⟨m, hm⟩ := exists_pow_prod_forall_apply_le p hp hε
   exact ⟨(∏ w ∈ T.attach, p w) ^ m,
     pow_ne_zero m (Finset.prod_ne_zero_iff.2 fun w _ ↦ hp0 w), hm⟩
@@ -256,12 +270,12 @@ theorem exists_apply_eq_one_forall_apply_le (u : FinitePlace K) {T : Finset (Fin
   -- For each `w ∈ T`, its prime is maximal and distinct from that of `u`, so it contains an
   -- element outside the prime of `u`.
   have hp (w : {w // w ∈ T}) :
-      ∃ x : 𝓞 K, x ∈ w.1.maximalIdeal.asIdeal ∧ x ∉ u.maximalIdeal.asIdeal := by
-    have hne : w.1.maximalIdeal ≠ u.maximalIdeal :=
-      (maximalIdeal_inj w.1 u).not.mpr (ne_of_mem_of_not_mem w.2 hu)
+      ∃ x : 𝓞 K, x ∈ w.val.maximalIdeal.asIdeal ∧ x ∉ u.maximalIdeal.asIdeal := by
+    have hne : w.val.maximalIdeal ≠ u.maximalIdeal :=
+      (maximalIdeal_inj w.val u).not.mpr (ne_of_mem_of_not_mem w.property hu)
     by_contra! H
     exact hne <| HeightOneSpectrum.ext_iff.mpr <|
-      Ideal.IsMaximal.eq_of_le w.1.maximalIdeal.isMaximal Ideal.IsPrime.ne_top' H
+      Ideal.IsMaximal.eq_of_le w.val.maximalIdeal.isMaximal Ideal.IsPrime.ne_top' H
   choose p hp_mem hp_notMem using hp
   obtain ⟨m, hm⟩ := exists_pow_prod_forall_apply_le p hp_mem hε
   have hut : u (((∏ w ∈ T.attach, p w) ^ m : 𝓞 K) : K) = 1 := by
@@ -281,6 +295,18 @@ theorem exists_apply_eq_one_forall_mul_apply_le (u : FinitePlace K) {T : Finset 
   obtain ⟨d, hdu, hd⟩ := u.exists_apply_eq_one_forall_apply_le hu (ε := fun v ↦ (1 + R v)⁻¹)
     fun v hv ↦ by have := hR v hv; positivity
   exact ⟨d, hdu, fun v hv ↦ TauCeti.mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
+
+/-- Every finite tuple over a number field has a nonzero scalar multiple whose coordinates have
+absolute value at most `1` at every finite place. -/
+theorem exists_ne_zero_smul_apply_le_one {ι : Type*} [Finite ι] (x : ι → K) :
+    ∃ d : K, d ≠ 0 ∧ ∀ (v : FinitePlace K) (i : ι), v ((d • x) i) ≤ 1 := by
+  obtain ⟨⟨b, hb⟩, hbx⟩ :=
+    IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors (𝓞 K)) x
+  choose y hy using hbx
+  refine ⟨(b : K), by simpa using nonZeroDivisors.ne_zero hb, fun v i ↦ ?_⟩
+  have hbi : (b : K) * x i = (y i : K) := by simpa [Algebra.smul_def] using (hy i).symm
+  rw [Pi.smul_apply, smul_eq_mul, hbi]
+  exact v.apply_le_one (y i)
 
 end NumberField.FinitePlace
 
