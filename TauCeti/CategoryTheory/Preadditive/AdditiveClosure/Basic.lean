@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.Retract
 public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.CategoryTheory.ObjectProperty.Retract
 
 /-!

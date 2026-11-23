@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Algebra.Category.FGModuleCat.Zero
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
