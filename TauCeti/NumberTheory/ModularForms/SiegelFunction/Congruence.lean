@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Transform
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
+import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.Data.ZMod.Two
@@ -50,8 +51,9 @@ For modular units one additionally excludes integral parameters.
   is invariant under `Γ(N)`.
 * `TauCeti.ModularForm.siegelFunction_div_pow_twelve_mul_congr`,
   `siegelFunction_div_pow_twelve_mul_eq_zmod`, `siegelFunction_div_pow_twelve_mul_smul_eq_zmod`,
-  `siegelFunction_zmod_pow_twelve_mul_smul`: congruence modulo `N` and `SL₂(ℤ)`-action on
-  `g_{a/N}^{12 k}` and `g_{v/N}^{12 k}` for `N ∣ 6 * k`.
+  `siegelFunction_zmod_pow_twelve_mul_smul`,
+  `prod_comp_siegelFunction_zmod_pow_twelve_mul_smul`: congruence modulo `N` and `SL₂(ℤ)`-action
+  on `g_{a/N}^{12 k}`, `g_{v/N}^{12 k}`, and products over `(ℤ/Nℤ)² \ {0}` for `N ∣ 6 * k`.
 * `TauCeti.ModularForm.siegelFunction_div_eq_zero_iff`: for `0 < N`, `g_{a/N}(τ) = 0 ↔ a ∈ N ℤ²`.
 * `TauCeti.ModularForm.prod_siegelFunction_div_zpow_smul_eq_zpow_mul`: under the quadratic
   relations, `∏ g_{aᵢ/N}^{mᵢ}` is multiplied by `ε ^ ∑ mᵢ` under `γ ∈ Γ(N)`.
@@ -206,6 +208,20 @@ theorem siegelFunction_zmod_pow_twelve_mul_smul {N k : ℕ} [NeZero N] (hk : N �
   ext j
   simpa [Function.comp_apply] using
     congrArg (fun x : ZMod N ↦ (x.val : ℝ) / N) (congrFun hvec j).symm
+
+/-- For `[NeZero N]` and `N ∣ 6 * k`, any product over `(ℤ/Nℤ)² \ {0}` of a function `H` applied
+to `g_{v/N}(γ • τ)^{12 * k}` is invariant under `γ ∈ SL₂(ℤ)`. -/
+theorem prod_comp_siegelFunction_zmod_pow_twelve_mul_smul {M : Type*} [CommMonoid M]
+    {N k : ℕ} [NeZero N] (hk : N ∣ 6 * k) (H : ℂ → M) (γ : SL(2, ℤ)) (τ : ℍ) :
+    ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
+        H (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • τ) ^ (12 * k)) =
+      ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
+        H (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * k)) := by
+  set e := (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv
+  exact Finset.prod_univ_erase_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
+    (fun v ↦ H (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • τ) ^ (12 * k)))
+    (fun w ↦ H (siegelFunction (fun i ↦ ((w i).val : ℝ) / N) τ ^ (12 * k)))
+    fun v _ ↦ by rw [siegelFunction_zmod_pow_twelve_mul_smul hk]
 
 /-- For `[NeZero N]` and `τ` in the upper half-plane, `g_{a/N}(τ) = 0` if and only if
 `a ≡ 0 (mod N)`. -/

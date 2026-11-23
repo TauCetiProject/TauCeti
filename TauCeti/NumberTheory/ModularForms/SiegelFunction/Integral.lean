@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.QExpansion
 import Mathlib.Algebra.Polynomial.Lifts
-import Mathlib.Data.Fin.Tuple.Reflection
 import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Data.Rat.ZMultiples
@@ -60,10 +59,9 @@ namespace TauCeti.ModularForm
 /-- `g_{v/N}^{12 N}` packaged as an element of `UpperHalfPlane.meromorphicAtCuspSubring N`. -/
 private noncomputable def siegelPowerMem (N : ℕ) (v : Fin 2 → ZMod N) :
     meromorphicAtCuspSubring N :=
-  ⟨fun τ : ℍ ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N), by
-    simpa only [mem_meromorphicAtCuspSubring, one_smul, Int.cast_natCast] using
-      meromorphicAt_cuspFunction_siegelFunction_div_pow_twelve_mul N
-        (fun i ↦ ((v i).val : ℤ)) 1⟩
+  ⟨fun τ : ℍ ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N),
+    mem_meromorphicAtCuspSubring.mpr <|
+      meromorphicAt_cuspFunction_siegelFunction_zmod_pow_twelve_mul N v⟩
 
 @[simp]
 private theorem siegelPowerMem_coe (N : ℕ) (v : Fin 2 → ZMod N) :
@@ -117,11 +115,12 @@ private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [N
       mapRingHom_aeval_exp_pow_siegelPowerLaurentSeries]
   have hmap1 : Ω.map (HahnSeries.mapRingHom (Polynomial.aeval ζ).toRingHom) =
       (siegelPowerPoly N).map (laurentQExpansionRingHom N) := by
-    simp only [Ω, siegelPowerPoly, Polynomial.map_prod, Polynomial.map_sub, Polynomial.map_X,
-      Polynomial.map_C]
-    refine Finset.prod_congr rfl fun v _ ↦ ?_
-    rw [laurentQExpansionRingHom_apply, siegelPowerMem_coe,
-      mapRingHom_aeval_exp_siegelPowerLaurentSeries]
+    have h := hmap 1
+    simp only [pow_one, Nat.cast_one, one_mul] at h
+    rw [h, siegelPowerPoly, Polynomial.map_prod]
+    exact Finset.prod_congr rfl fun v _ ↦ by
+      have hv : ![v 0, v 1] = v := FinVec.etaExpand_eq v
+      simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C, hv]
   have heq : (laurentQExpansion N (((siegelPowerPoly N).coeff k).val)).coeff m =
       Polynomial.aeval ζ ((Ω.coeff k).coeff m) := by
     rw [← laurentQExpansionRingHom_apply, ← Polynomial.coeff_map, ← hmap1,
@@ -161,13 +160,8 @@ private theorem exists_aeval_j_siegelPolyCoeff {N : ℕ} [NeZero N] (k : ℕ) :
           (siegelPowerPoly N).map
             ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype) := by
       rw [siegelPowerPoly_map_eval, siegelPowerPoly_map_eval]
-      set e := (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv
-      exact Finset.prod_univ_erase_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
-        (fun v ↦ Polynomial.X - Polynomial.C
-          (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • τ) ^ (12 * N)))
-        (fun w ↦ Polynomial.X - Polynomial.C
-          (siegelFunction (fun i ↦ ((w i).val : ℝ) / N) τ ^ (12 * N)))
-        fun v _ ↦ by rw [siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6)]
+      exact prod_comp_siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6)
+        (fun c ↦ Polynomial.X - Polynomial.C c) γ τ
     simpa only [Polynomial.coeff_map, RingHom.comp_apply, Subring.coe_subtype,
       Pi.evalRingHom_apply] using congrArg (fun Q : ℂ[X] ↦ Q.coeff k) hpoly
   have hper : Function.Periodic (((siegelPowerPoly N).coeff k).val ∘ ofComplex) 1 :=

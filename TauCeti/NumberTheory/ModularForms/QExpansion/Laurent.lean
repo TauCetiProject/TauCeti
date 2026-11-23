@@ -93,20 +93,6 @@ local notation "𝕢" => Function.Periodic.qParam
 
 /-! ### The Laurent `q`-expansion -/
 
-/-- The pole order of `f` at `i∞`, as a natural number: the order of the pole at `0` of the cusp
-function of `f`, and `0` if there is no pole. -/
-private def cuspPoleOrder (h : ℝ) (f : ℍ → ℂ) : ℕ :=
-  (-(meromorphicOrderAt (cuspFunction h f) 0).untop₀).toNat
-
-/-- The pole order bounds the order of the cusp function from below. -/
-private theorem neg_cuspPoleOrder_le (h : ℝ) (f : ℍ → ℂ) :
-    ((-(cuspPoleOrder h f : ℤ) : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 := by
-  cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
-  | top => exact le_top
-  | coe n =>
-    simp only [cuspPoleOrder, hn, WithTop.untop₀_coe]
-    exact WithTop.coe_le_coe.mpr (by omega)
-
 /-- The **Laurent `q`-expansion** of a function `f` on the upper half-plane at `i∞`, in the
 `q`-parameter `q = exp (2 π i τ / h)`. When the cusp function of `f` is meromorphic at `q = 0`
 with a pole of order `k`, then `𝕢 ^ k * f` has an analytic cusp function, and the Laurent

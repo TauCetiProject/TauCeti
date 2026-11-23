@@ -185,8 +185,7 @@ theorem mdifferentiableOn_automorphyExtension (hU : IsOpen U)
     filter_upwards [hnhds] with σ hσ
     exact automorphyExtension_eq hf hg hσ
   have hcomp : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (fun σ : ℍ ↦ f (g • σ)) τ :=
-    ((hfd _ hgτ).mdifferentiableAt (hU.mem_nhds hgτ)).comp τ
-      (TauCeti.UpperHalfPlane.mdifferentiable_sl_smul g τ)
+    ((hfd _ hgτ).mdifferentiableAt (hU.mem_nhds hgτ)).comp τ (g.mdifferentiable_smul τ)
   exact (((mdifferentiable_denom_zpow _ _ τ).mul hcomp).congr_of_eventuallyEq
     heq).mdifferentiableWithinAt
 

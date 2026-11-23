@@ -66,6 +66,7 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 * `TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq`,
+  `TauCeti.UpperHalfPlane.cuspFunction_prod_eventuallyEq`,
   `TauCeti.UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq` and
   `TauCeti.UpperHalfPlane.qExpansion_congr`: cusp functions off `q = 0`.
 * `TauCeti.UpperHalfPlane.analyticAt_cuspFunction_mul`,
@@ -75,9 +76,12 @@ expanded through: one multiplies by `q` and divides the expansion of the product
   `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul_isBigO`, and their
   companions: analyticity and meromorphy at `0` of cusp functions under algebraic operations and
   untwisting by `𝕢 ^ k`.
-* `TauCeti.UpperHalfPlane.meromorphicAtCuspSubring` and
-  `TauCeti.UpperHalfPlane.mem_meromorphicAtCuspSubring`: the subring of functions `f : ℍ → ℂ`
-  whose cusp function is meromorphic at `0`.
+* `TauCeti.UpperHalfPlane.analyticAtCuspSubring`,
+  `TauCeti.UpperHalfPlane.mem_analyticAtCuspSubring`,
+  `TauCeti.UpperHalfPlane.qExpansionRingHom`,
+  `TauCeti.UpperHalfPlane.meromorphicAtCuspSubring`, and
+  `TauCeti.UpperHalfPlane.mem_meromorphicAtCuspSubring`: the subrings of functions `f : ℍ → ℂ`
+  whose cusp function is analytic or meromorphic at `0`, and the `q`-expansion ring homomorphism.
 * `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
   functions with analytic cusp functions.
 * `TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex`,
@@ -198,6 +202,13 @@ theorem UpperHalfPlane.cuspFunction_map_eventuallyEq (op : ℂ → ℂ) (f : ℍ
     cuspFunction h (fun τ ↦ op (f τ)) =ᶠ[𝓝[≠] 0] fun q ↦ op (cuspFunction h f q) :=
   eventually_nhdsWithin_of_forall fun q hq ↦ by
     simp only [cuspFunction_of_ne_zero (Set.mem_compl_singleton_iff.mp hq)]
+
+/-- Off `q = 0`, the cusp function of a finite product is the product of the cusp functions. -/
+theorem UpperHalfPlane.cuspFunction_prod_eventuallyEq {ι : Type*} (s : Finset ι)
+    (f : ι → ℍ → ℂ) :
+    cuspFunction h (∏ i ∈ s, f i) =ᶠ[𝓝[≠] 0] fun q ↦ ∏ i ∈ s, cuspFunction h (f i) q :=
+  eventually_nhdsWithin_of_forall fun q hq ↦ by
+    simp [cuspFunction_of_ne_zero (Set.mem_compl_singleton_iff.mp hq)]
 
 /-- Off `q = 0` and inside the unit disc, the cusp function of `𝕢 ^ k * f` is `q ^ k` times the
 cusp function of `f`. -/
@@ -428,6 +439,39 @@ def UpperHalfPlane.meromorphicAtCuspSubring (h : ℝ) : Subring (ℍ → ℂ) wh
 @[simp]
 theorem UpperHalfPlane.mem_meromorphicAtCuspSubring {h : ℝ} {f : ℍ → ℂ} :
     f ∈ UpperHalfPlane.meromorphicAtCuspSubring h ↔ MeromorphicAt (cuspFunction h f) 0 := (Iff.rfl)
+
+/-- The subring of functions `f : ℍ → ℂ` whose period-`h` cusp function is analytic at `0`. -/
+def UpperHalfPlane.analyticAtCuspSubring (h : ℝ) : Subring (ℍ → ℂ) where
+  carrier := {f | AnalyticAt ℂ (cuspFunction h f) 0}
+  mul_mem' hf hg := UpperHalfPlane.analyticAt_cuspFunction_mul hf hg
+  one_mem' := by rw [Pi.one_def]; exact UpperHalfPlane.analyticAt_cuspFunction_const h 1
+  add_mem' hf hg := UpperHalfPlane.analyticAt_cuspFunction_add hf hg
+  zero_mem' := by rw [Pi.zero_def]; exact UpperHalfPlane.analyticAt_cuspFunction_const h 0
+  neg_mem' hf := by
+    simpa using UpperHalfPlane.analyticAt_cuspFunction_smul hf (-1)
+
+/-- Membership in `UpperHalfPlane.analyticAtCuspSubring h` is cusp analyticity at `0`. -/
+@[simp]
+theorem UpperHalfPlane.mem_analyticAtCuspSubring {h : ℝ} {f : ℍ → ℂ} :
+    f ∈ UpperHalfPlane.analyticAtCuspSubring h ↔ AnalyticAt ℂ (cuspFunction h f) 0 := (Iff.rfl)
+
+/-- The period-`h` `q`-expansion bundled as a ring homomorphism on `analyticAtCuspSubring h`. -/
+def UpperHalfPlane.qExpansionRingHom (h : ℝ) :
+    UpperHalfPlane.analyticAtCuspSubring h →+* PowerSeries ℂ where
+  toFun f := qExpansion h f.val
+  map_one' := _root_.UpperHalfPlane.qExpansion_one h
+  map_mul' f g := _root_.UpperHalfPlane.qExpansion_mul
+    (mem_analyticAtCuspSubring.mp f.property) (mem_analyticAtCuspSubring.mp g.property)
+  map_zero' := _root_.UpperHalfPlane.qExpansion_zero h
+  map_add' f g := _root_.UpperHalfPlane.qExpansion_add
+    (mem_analyticAtCuspSubring.mp f.property) (mem_analyticAtCuspSubring.mp g.property)
+
+/-- Evaluation of `UpperHalfPlane.qExpansionRingHom h` on an element of
+`UpperHalfPlane.analyticAtCuspSubring h`. -/
+@[simp]
+theorem UpperHalfPlane.qExpansionRingHom_apply (h : ℝ)
+    (f : UpperHalfPlane.analyticAtCuspSubring h) :
+    UpperHalfPlane.qExpansionRingHom h f = qExpansion h f.val := (rfl)
 
 end CuspFunction
 

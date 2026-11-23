@@ -55,7 +55,8 @@ The sum of the lower bounds bounds the support of the product
 (`HahnSeries.add_le_of_mem_support_mul`), and for powers `HahnSeries.nsmul_le_of_mem_support_pow`
 and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
 `HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
-of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
+of nonnegative exponent, and in particular the constant `1`, have nonnegative order, and
+`HahnSeries.order_eq_of_orderTop_eq` extracts the finite `order` from a finite `orderTop`.
 `HahnSeries.orderTop_prod` and `HahnSeries.leadingCoeff_prod` extend the order and leading
 coefficient formulas from binary products to `Finset.prod`.
 -/
@@ -183,6 +184,12 @@ theorem zero_le_orderTop_single {a : Γ} (ha : 0 ≤ a) (r : R) : 0 ≤ (single 
 /-- The constant `1` has nonnegative order. -/
 theorem zero_le_orderTop_one [One R] : 0 ≤ (1 : HahnSeries Γ R).orderTop :=
   zero_le_orderTop_single le_rfl 1
+
+/-- If the `orderTop` of a Hahn series is a finite element `k`, then its `order` equals `k`. -/
+theorem order_eq_of_orderTop_eq {x : HahnSeries Γ R} {k : Γ} (h : x.orderTop = k) :
+    x.order = k :=
+  WithTop.coe_injective ((order_eq_orderTop_of_ne_zero
+    (orderTop_ne_top.mp (by rw [h]; exact WithTop.coe_ne_top))).trans h)
 
 end OrderTop
 

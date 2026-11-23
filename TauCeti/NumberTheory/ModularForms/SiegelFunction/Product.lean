@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.QExpansion
 import Mathlib.RingTheory.RootsOfUnity.Lemmas
-import TauCeti.Algebra.BigOperators.Finset.Erase
-import TauCeti.Data.ZMod.FinEquiv
+import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.ModularForms.LevelOne.Invariant
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 import TauCeti.RingTheory.HahnSeries.Multiplication
@@ -26,6 +26,8 @@ equals the complementary product `∏_{w ∈ ((ℤ/Nℤ)² \ {0}) \ {a mod N}} g
 
 ## Main results
 
+* `TauCeti.ModularForm.sum_siegelPowerCuspExponent_erase_zero`:
+  `∑_{v ∈ (ℤ/Nℤ)² \ {0}} siegelPowerCuspExponent N v = 0`.
 * `TauCeti.ModularForm.prod_siegelFunction_zmod_pow_twelve_mul_eq`:
   `∏_{v ∈ (ℤ/Nℤ)² \ {0}} g_{v/N}(τ)^{12 N} = N^{12 N}`.
 * `TauCeti.ModularForm.natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase`:
@@ -45,6 +47,24 @@ open TauCeti.UpperHalfPlane
 open scoped Real Matrix MatrixGroups Manifold
 
 namespace TauCeti.ModularForm
+
+/-- The sum of `siegelPowerCuspExponent N v` over all nonzero `v ∈ (ℤ/Nℤ)²` vanishes. -/
+theorem sum_siegelPowerCuspExponent_erase_zero (N : ℕ) [NeZero N] :
+    ∑ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, siegelPowerCuspExponent N v = 0 := by
+  set f : ℕ → ℤ := fun k ↦ 6 * (k : ℤ) ^ 2 - 6 * (N : ℤ) * k + (N : ℤ) ^ 2
+  rw [Finset.sum_erase_eq_sub (Finset.mem_univ (0 : Fin 2 → ZMod N)),
+    siegelPowerCuspExponent_zero, sub_eq_zero,
+    Fintype.sum_equiv (piFinTwoEquiv fun _ ↦ ZMod N) (siegelPowerCuspExponent N)
+      (fun p ↦ f p.1.val) (fun v ↦ siegelPowerCuspExponent_def N v),
+    Fintype.sum_prod_type]
+  simp only [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul, ← Finset.mul_sum,
+    ZMod.sum_val_eq_sum_range f]
+  have hterm (k : ℕ) : f k = (k : ℤ) ^ 2 * 6 - 3 * (N : ℤ) * ((k : ℤ) * 2) + (N : ℤ) ^ 2 := by
+    dsimp [f]; ring
+  simp only [hterm, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.sum_mul,
+    ← Finset.mul_sum, Finset.sum_range_natCast_sq_mul_six, Finset.sum_range_natCast_mul_two,
+    Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  ring
 
 private theorem prod_leadingCoeff_zero_first {N : ℕ} [NeZero N] :
     ∏ v ∈ ((Finset.univ : Finset (Fin 2 → ZMod N)).erase 0).filter (fun v ↦ v 0 = 0),
@@ -102,9 +122,7 @@ private theorem prod_leadingCoeff_ne_zero_first {N : ℕ} [NeZero N] :
     rw [Finset.prod_pow_eq_pow_sum]
     have hexp : (∑ y : ZMod N, 6 * x.val * y.val) = N * (3 * x.val * (N - 1)) := by
       have hsum : (∑ y : ZMod N, 6 * x.val * y.val) = 6 * x.val * ∑ k ∈ Finset.range N, k := by
-        rw [← Fintype.sum_equiv (ZMod.finEquiv N).toEquiv (fun k : Fin N ↦ 6 * x.val * k) _
-            (fun k ↦ by simp [ZMod.val_natCast_of_lt k.isLt]),
-          Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ 6 * x.val * k) N, ← Finset.mul_sum]
+        rw [ZMod.sum_val_eq_sum_range (fun k : ℕ ↦ 6 * x.val * k), ← Finset.mul_sum]
       have hdouble : 6 * x.val * ∑ k ∈ Finset.range N, k =
           3 * x.val * ((∑ k ∈ Finset.range N, k) * 2) := by ring
       rw [hsum, hdouble, Finset.sum_range_id_mul_two]
@@ -122,41 +140,30 @@ private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] 
   set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
   set f : (Fin 2 → ZMod N) → ℍ → ℂ :=
     fun v τ ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N)
-  have hf_mer (v : Fin 2 → ZMod N) : MeromorphicAt (cuspFunction N (f v)) 0 := by
-    simpa only [f, one_smul, Int.cast_natCast] using
-      meromorphicAt_cuspFunction_siegelFunction_div_pow_twelve_mul N
-        (fun i ↦ ((v i).val : ℤ)) 1
+  have hf_mer (v : Fin 2 → ZMod N) : MeromorphicAt (cuspFunction N (f v)) 0 :=
+    meromorphicAt_cuspFunction_siegelFunction_zmod_pow_twelve_mul N v
   have hF_mer : MeromorphicAt (cuspFunction N (∏ v ∈ S, f v)) 0 :=
     meromorphicAt_cuspFunction_prod S fun v _ ↦ hf_mer v
   have hfactor_ord (v : Fin 2 → ZMod N) (hv : v ∈ S) :
-      meromorphicOrderAt (cuspFunction N (f v)) 0 = siegelPowerCuspExponent N v := by
-    have hv0 : (fun i ↦ (((v i).val : ℤ) : ZMod N)) ≠ 0 := by
-      simpa [ZMod.natCast_zmod_val] using (Finset.mem_erase.mp hv).1
-    have hm := meromorphicOrderAt_cuspFunction_siegelFunction_div_pow_twelve_mul hv0 1
-    simpa only [f, one_smul, Matrix.SpecialLinearGroup.coe_one, Matrix.vecMul_one,
-      ZMod.natCast_zmod_val, Int.cast_natCast] using hm
+      meromorphicOrderAt (cuspFunction N (f v)) 0 = siegelPowerCuspExponent N v :=
+    meromorphicOrderAt_cuspFunction_siegelFunction_zmod_pow_twelve_mul (Finset.mem_erase.mp hv).1
   have hord : meromorphicOrderAt (cuspFunction N (∏ v ∈ S, f v)) 0 = 0 := by
     rw [meromorphicOrderAt_cuspFunction_prod S fun v _ ↦ hf_mer v,
       Finset.sum_congr rfl hfactor_ord, ← WithTop.coe_sum,
       sum_siegelPowerCuspExponent_erase_zero N, WithTop.coe_zero]
-  have han : AnalyticAt ℂ (cuspFunction N (∏ v ∈ S, f v)) 0 := by
-    convert analyticAt_cuspFunction_qParam_pow_mul hF_mer (k := 0) (by simp [hord]) using 2
-    ext τ
-    simp
+  have han : AnalyticAt ℂ (cuspFunction N (∏ v ∈ S, f v)) 0 :=
+    (meromorphicOrderAt_cuspFunction_nonneg_iff_analyticAt hF_mer).mp (by simp [hord])
   refine ⟨han, ?_⟩
   have hL : laurentQExpansion N (∏ v ∈ S, f v) = ∏ v ∈ S, laurentQExpansion N (f v) :=
     laurentQExpansion_prod S fun v _ ↦ hf_mer v
-  have hord_eq {x : LaurentSeries ℂ} {k : ℤ} (h : x.orderTop = k) : x.order = k :=
-    WithTop.coe_injective ((HahnSeries.order_eq_orderTop_of_ne_zero
-      (HahnSeries.orderTop_ne_top.mp (by rw [h]; exact WithTop.coe_ne_top))).trans h)
-  rw [← hord_eq ((orderTop_laurentQExpansion hF_mer).trans hord), ← HahnSeries.leadingCoeff_eq,
-    hL, HahnSeries.leadingCoeff_prod]
+  rw [← HahnSeries.order_eq_of_orderTop_eq ((orderTop_laurentQExpansion hF_mer).trans hord),
+    ← HahnSeries.leadingCoeff_eq, hL, HahnSeries.leadingCoeff_prod]
   have hfac (v : Fin 2 → ZMod N) (hv : v ∈ S) :
       (laurentQExpansion N (f v)).leadingCoeff =
         cexp (2 * π * I / N) ^ (6 * (v 0).val * (v 1).val) *
           (if v 0 = 0 then (1 - cexp (2 * π * I / N) ^ (v 1).val) ^ (12 * N) else 1) := by
-    rw [HahnSeries.leadingCoeff_eq,
-      hord_eq ((orderTop_laurentQExpansion (hf_mer v)).trans (hfactor_ord v hv))]
+    rw [HahnSeries.leadingCoeff_eq, HahnSeries.order_eq_of_orderTop_eq
+      ((orderTop_laurentQExpansion (hf_mer v)).trans (hfactor_ord v hv))]
     exact laurentQExpansion_siegelFunction_zmod_pow_twelve_mul_coeff_siegelPowerCuspExponent v
   rw [Finset.prod_congr rfl hfac, ← Finset.prod_filter_mul_prod_filter_not S (fun v ↦ v 0 = 0),
     prod_leadingCoeff_zero_first, prod_leadingCoeff_ne_zero_first, mul_one]
@@ -177,11 +184,7 @@ theorem prod_siegelFunction_zmod_pow_twelve_mul_eq (N : ℕ) [NeZero N] (τ : �
     MDifferentiable.prod fun v _ ↦ (mdifferentiable_siegelFunction _).pow (12 * N)
   have hinv (γ : SL(2, ℤ)) (z : ℍ) : F (γ • z) = F z := by
     rw [hF_val, hF_val]
-    set e := (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv
-    exact Finset.prod_univ_erase_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
-      (fun v ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • z) ^ (12 * N))
-      (fun w ↦ siegelFunction (fun i ↦ ((w i).val : ℝ) / N) z ^ (12 * N))
-      fun v _ ↦ siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6) v γ z
+    exact prod_comp_siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6) id γ z
   obtain ⟨han, hlead⟩ := analyticAt_and_coeff_zero_prod_siegelPower (N := N)
   have hper1 : Function.Periodic (F ∘ ofComplex) 1 :=
     UpperHalfPlane.periodic_comp_ofComplex fun z ↦ by rw [← modular_T_smul]; exact hinv _ z
