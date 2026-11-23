@@ -52,6 +52,7 @@ theorem standardTameCover_isTamelyRamifiedInCodimOne [IsNoetherianRing A]
   let q := (p ∣_ U) ≫ U.ι
   let g := (p ⁻¹ᵁ U).ι
   have hq : g ≫ p = q := (morphismRestrict_ι p U).symm
+  -- The reduced divisor makes its codimension-one local ring a DVR.
   let R := S.presheaf.stalk ξ
   let : Algebra A R := StructureSheaf.stalkAlgebra A ξ.val
   have : (ξ : Spec (.of A)).asIdeal.IsPrime := ξ.val.isPrime
@@ -62,6 +63,7 @@ theorem standardTameCover_isTamelyRamifiedInCodimOne [IsNoetherianRing A]
           exact Ideal.one_le_height_span_singleton_of_mem_nonZeroDivisors hf)
   have : IsRegularLocalRing R := isRegularLocalRing_of_mem_minimalPrimes R hf hmin
   have : IsDiscreteValuationRing R := CodimensionOnePoint.isDiscreteValuationRing_stalk ξ
+  -- Specialization gives the fraction field `K` of `R` and its extension to `L`.
   let K := S.residueField (q y)
   let L := (p ⁻¹ᵁ U : Scheme).residueField y
   let : Algebra R K := (S.presheaf.stalkSpecializes sp ≫ S.residue _).hom.toAlgebra
@@ -73,21 +75,18 @@ theorem standardTameCover_isTamelyRamifiedInCodimOne [IsNoetherianRing A]
   have hne : q y ≠ ξ := fun eq ↦ hξ (eq ▸ ((p ∣_ U) y).property)
   have : IsFractionRing R K := Scheme.isFractionRing_residueField_of_specializes sp hne
   let φ := ((Scheme.ΓSpecIso _).inv ≫ (Spec _).Γevaluation (g y) ≫ g.residueFieldMap y).hom
-  have hcoordinate (a : A) : ((Scheme.ΓSpecIso (.of A)).inv ≫ S.Γevaluation (q y)) a =
-      (S.presheaf.stalkSpecializes sp ≫ S.residue _) (StructureSheaf.toStalk A ξ.val a) := by
-    -- Affine coordinates give the canonical germs used by specialization.
-    change (StructureSheaf.toStalk A (q y) ≫ S.residue _).hom a =
-      (StructureSheaf.toStalk A ξ.val ≫ S.presheaf.stalkSpecializes sp ≫ S.residue _).hom a
-    exact (congr($(StructureSheaf.toStalk_stalkSpecializes_assoc sp (S.residue _)).hom a)).symm
+  -- The root generates `L` over `K`, with its power equal to the local parameter.
   have hα : φ (AdjoinRoot.root (X ^ e - C f)) ^ e = algebraMap R L (algebraMap A R f) := by
     rw [← map_pow, AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq]
+    have hnat : φ (algebraMap A _ f) = q.residueFieldMap y
+        (((Scheme.ΓSpecIso (.of A)).inv ≫ S.Γevaluation (q y)) f) :=
+      congr($(g.Γevaluation_naturality_of_Spec _ hq y).hom f)
+    rw [Scheme.Spec.Γevaluation_eq_toStalk_stalkSpecializes (.of A) sp] at hnat
     have hstalk : algebraMap A R f = StructureSheaf.toStalk A ξ.val f :=
       StructureSheaf.stalkAlgebra_map A ξ.val f
-    -- The chosen scalar map specializes the stalk, then applies the induced residue-field map.
-    change φ (algebraMap A _ f) = q.residueFieldMap y
-      ((S.presheaf.stalkSpecializes sp ≫ S.residue _) (algebraMap A R f))
-    rw [hstalk, ← hcoordinate]
-    exact congr($(g.Γevaluation_naturality_of_Spec _ hq y).hom f)
+    -- The stalk maps use both scheme and structure-sheaf carriers, matched by using!.
+    simpa only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp, RingHom.comp_apply,
+      CommRingCat.comp_apply, hstalk] using! hnat
   have hgen : K⟮φ (AdjoinRoot.root (X ^ e - C f))⟯ = ⊤ := by
     simpa only [Set.image_singleton] using
       g.adjoin_residueField_eq_top_of_isIso_residueFieldMap hq y

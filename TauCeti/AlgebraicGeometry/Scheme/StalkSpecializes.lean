@@ -51,6 +51,8 @@ off.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes`: if every
   nonzero prime of `𝒪_{X,y}` is maximal and `x ≠ y`, then `κ(x)` is a fraction field of
   `𝒪_{X,y}`.
+* `TauCeti.AlgebraicGeometry.Scheme.Spec.Γevaluation_eq_toStalk_stalkSpecializes`: affine
+  coordinate evaluation at a generization factors through specialization from the stalk.
 * `AlgebraicGeometry.Scheme.Hom.stalkSpecializes_residue_residueFieldCongr_residueFieldMap`: for
   a morphism `g`, the stalk map and the residue field map are compatible with the specializations
   `x ⤳ g ξ'` and `x' ⤳ ξ'`, after identifying the residue fields at `x = g x'`.
@@ -78,6 +80,29 @@ namespace Scheme
 universe u
 
 variable {X : Scheme.{u}} {x y : X}
+
+/-- Affine coordinates evaluated at a generization `x` of `y` are obtained by taking their
+germs at `y`, specializing to the stalk at `x`, and passing to its residue field. -/
+theorem Spec.Γevaluation_eq_toStalk_stalkSpecializes (R : CommRingCat.{u})
+    {x y : Spec R} (h : x ⤳ y) :
+    (Scheme.ΓSpecIso R).inv ≫ (Spec R).Γevaluation x =
+      StructureSheaf.toStalk R y ≫ (Spec R).presheaf.stalkSpecializes h ≫
+        (Spec R).residue x := by
+  have hgerm : (Scheme.ΓSpecIso R).inv ≫
+      (Spec R).presheaf.germ ⊤ x trivial = StructureSheaf.toStalk R x :=
+    (congrArg (· ≫ (Spec R).presheaf.germ ⊤ x trivial)
+      (Scheme.ΓSpecIso_inv R)).trans (StructureSheaf.algebraMap_germ ⊤ x trivial)
+  calc
+    _ = (Scheme.ΓSpecIso R).inv ≫ (Spec R).presheaf.germ ⊤ x trivial ≫
+        (Spec R).residue x :=
+      congrArg ((Scheme.ΓSpecIso R).inv ≫ ·)
+        ((Spec R).germ_residue x trivial).symm
+    _ = ((Scheme.ΓSpecIso R).inv ≫ (Spec R).presheaf.germ ⊤ x trivial) ≫
+        (Spec R).residue x := (Category.assoc _ _ _).symm
+    _ = StructureSheaf.toStalk R x ≫ (Spec R).residue x :=
+      congrArg (· ≫ (Spec R).residue x) hgerm
+    _ = _ := (congrArg (· ≫ (Spec R).residue x)
+      (StructureSheaf.toStalk_stalkSpecializes h).symm).trans (Category.assoc _ _ _)
 
 /-- For a specialization `x ⤳ y`, the stalk `𝒪_{X,x}` is the localization of `𝒪_{X,y}` at the
 prime lying under the maximal ideal of `𝒪_{X,x}`, via the specialization map. -/
