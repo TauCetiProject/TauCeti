@@ -481,6 +481,22 @@ private theorem integral_inner_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
     (integrable_inner_setIntegral_Iio_phasePropagator_sub _ hZ hG)]
   simp_rw [inner_setIntegral_Iio_phasePropagator_sub _ hZ, halfWavePropagator_neg]
 
+/-- For integrable `F : ℝ → L²(E)` and every time `t`, the frequency-localized Duhamel integrand
+`s ↦ D⁻¹ sin((t - s)D) Pⱼ Pⱼ F(s)` of the wave equation is integrable: at frequencies
+`‖ξ‖ ≈ 2^j` the operators `D⁻¹ sin(τD)` are bounded uniformly in `τ`. -/
+theorem integrable_waveSinPropagator_sub_littlewoodPaley {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure E)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : Integrable F) (t : ℝ) :
+    Integrable fun s ↦ waveSinPropagator ℂ (t - s)
+      (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))) := by
+  have hZ := (Lp.fourierMultiplierCLM ℂ m).integrable_comp
+    ((Lp.fourierMultiplierCLM ℂ m).integrable_comp ((φ.invMultiplier j).integrable_comp hF))
+  simp_rw [φ.waveSinPropagator_littlewoodPaley_littlewoodPaley_eq hm, halfWavePropagator_neg]
+  exact Integrable.smul (((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹ : ℂ)
+    ((integrable_phasePropagator_apply sqrtNegLaplacianSymbol
+      (continuous_sub_left t).aestronglyMeasurable hZ).sub (integrable_phasePropagator_apply
+        (-sqrtNegLaplacianSymbol) (continuous_sub_left t).aestronglyMeasurable hZ))
+
 /-! ### Two admissible pairs for the half-wave propagators
 
 With the forcing measured along a second wave-admissible pair, the retarded estimates for the
@@ -995,16 +1011,11 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
   obtain ⟨C, hC⟩ := φ.exists_enorm_integral_inner_setIntegral_Iio_waveSinPropagator_sub_le
     (p := (1 - q⁻¹)⁻¹) (r' := (1 - r⁻¹)⁻¹) (p₁ := p₁) (r₁' := r₁') hq hr2 hqr hq₁ hr₁ hqr₁
   refine ⟨C, fun j m hm F hF ↦ ?_⟩
-  have hZ := (Lp.fourierMultiplierCLM ℂ m).integrable_comp
-    ((Lp.fourierMultiplierCLM ℂ m).integrable_comp ((φ.invMultiplier j).integrable_comp hF))
-  have hΦ : AEStronglyMeasurable fun t ↦ ∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
-      (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))) := by
-    simp_rw [φ.setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_eq hm hF]
-    exact ((aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub sqrtNegLaplacianSymbol
-      hZ.aestronglyMeasurable).fun_sub (aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub
-        (-sqrtNegLaplacianSymbol) hZ.aestronglyMeasurable)).fun_const_smul _
-  exact hΦ.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := (1 - q⁻¹)⁻¹)
-    (r' := (1 - r⁻¹)⁻¹) hq_top hr2 fun G hG _ ↦ hC j m hm F G hF hG
+  have hPPF := (Lp.fourierMultiplierCLM ℂ m).integrable_comp
+    ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hF)
+  exact (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+    hPPF.aestronglyMeasurable).eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
+    (q' := (1 - q⁻¹)⁻¹) (r' := (1 - r⁻¹)⁻¹) hq_top hr2 fun G hG _ ↦ hC j m hm F G hF hG
 
 end ContDiffBump
 
