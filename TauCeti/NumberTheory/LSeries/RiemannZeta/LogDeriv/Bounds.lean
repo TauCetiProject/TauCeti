@@ -10,8 +10,7 @@ public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Hadamard
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.LogDeriv
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Basic
 
@@ -78,31 +77,7 @@ private theorem neg_re_logDeriv_riemannZeta_one_add_of_le_re_logDeriv {C₀ : �
   have h1s : (1 / s).re ≤ 1 := by simpa only [one_div] using Complex.inv_re_le_one hs1.le
   linarith [Real.one_le_log_abs_add_three u]
 
-private theorem zetaEntireCompletion_zero_hypotheses {s : ℂ} (hs1 : 1 < s.re) :
-    riemannZetaData.entireCompletion 0 ≠ 0 ∧
-      riemannZetaData.entireCompletion s ≠ 0 ∧
-      ∀ ρ : ℂ, riemannZetaData.entireCompletion ρ = 0 → ρ.re ≤ s.re := by
-  refine ⟨by simp, ?_, fun ρ hρ ↦ ?_⟩
-  · simpa only [riemannZetaData_entireCompletion] using
-      zetaEntireCompletion_ne_zero_of_one_le_re hs1.le
-  · rw [riemannZetaData_entireCompletion] at hρ
-    exact (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le.trans hs1.le
-
-private theorem re_logDeriv_zetaEntireCompletion_nonneg {s : ℂ} (hs1 : 1 < s.re) :
-    0 ≤ (logDeriv zetaEntireCompletion s).re := by
-  obtain ⟨hξ0, hξ_ne, hξ_le⟩ := zetaEntireCompletion_zero_hypotheses hs1
-  simpa only [riemannZetaData_entireCompletion] using
-    riemannZetaData_hasFunctionalEquation.re_logDeriv_entireCompletion_nonneg_of_zero_ne_zero
-      riemannZetaData_hasMeromorphicContinuation
-      (by simpa only [riemannZetaData_entireCompletion] using orderLE_zetaEntireCompletion)
-      hξ0 hξ_ne hξ_le
-
-private theorem neg_one_le_neg_one_div_one_add_sub {η β : ℝ} (hβη : β ≤ η) :
-    -1 ≤ -1 / (1 + η - β) := by
-  rw [neg_div, neg_le_neg_iff]
-  exact div_le_one_of_le₀ (by linarith) (by linarith)
-
-private theorem neg_re_logDeriv_riemannZeta_one_add_zero_le {C₀ : ℝ}
+private theorem neg_re_logDeriv_riemannZeta_one_add_mul_I_le_of_riemannZeta_eq_zero {C₀ : ℝ}
     (hΓ : ∀ s : ℂ, s.re ∈ Icc (1 : ℝ) 2 → ‖logDeriv Gammaℝ s‖ ≤ C₀ * Real.log (|s.im| + 3))
     {η : ℝ} (hη : 0 < η) (hη1 : η ≤ 1) (u β : ℝ) (hβ : riemannZeta (β + u * I) = 0) :
     -(logDeriv riemannZeta (1 + η + u * I)).re ≤
@@ -112,13 +87,14 @@ private theorem neg_re_logDeriv_riemannZeta_one_add_zero_le {C₀ : ℝ}
   have hlog3 := Real.one_le_log_abs_add_three u
   by_cases hβ0 : β ≤ 0
   · have hbase := neg_re_logDeriv_riemannZeta_one_add_of_le_re_logDeriv hΓ hη hη1 u 0
-      (re_logDeriv_zetaEntireCompletion_nonneg hs1)
-    have hinv := neg_one_le_neg_one_div_one_add_sub (hβ0.trans hη.le)
-    linarith
+      (re_logDeriv_zetaEntireCompletion_nonneg hs1.le)
+    have hinv : (1 + η - β)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith)
+    rw [← one_div] at hinv
+    rw [neg_div]
+    linarith [hinv]
   · push Not at hβ0
-    have hβ1 : β < 1 := by
-      by_contra h
-      exact riemannZeta_ne_zero_of_one_le_re (by simpa using not_lt.mp h) hβ
+    have hβ1 : β < 1 :=
+      not_le.mp fun h ↦ riemannZeta_ne_zero_of_one_le_re (by simpa using h) hβ
     set ρ : ℂ := β + u * I
     have hρ0 : ρ ≠ 0 := fun h ↦ by
       have := congrArg Complex.re h; simp [ρ] at this; linarith
@@ -127,17 +103,11 @@ private theorem neg_re_logDeriv_riemannZeta_one_add_zero_le {C₀ : ℝ}
     have hΛρ : completedRiemannZeta ρ = 0 := by
       rw [riemannZeta_def_of_ne_zero hρ0, div_eq_zero_iff] at hβ
       exact hβ.resolve_right (Gammaℝ_ne_zero_of_re_pos (by simpa [ρ] using hβ0))
-    have hξρ : riemannZetaData.entireCompletion ρ = 0 := by
-      rw [riemannZetaData_entireCompletion, zetaEntireCompletion_eq_mul hρ0 hρ1, hΛρ, mul_zero]
-    obtain ⟨hξ0, hξ_ne, hξ_le⟩ := zetaEntireCompletion_zero_hypotheses hs1
-    have hsingle :=
-      riemannZetaData_hasFunctionalEquation.re_one_div_sub_le_re_logDeriv_entireCompletion
-        riemannZetaData_hasMeromorphicContinuation
-        (by simpa only [riemannZetaData_entireCompletion] using orderLE_zetaEntireCompletion)
-        hξ0 hξ_ne hξ_le hξρ
+    have hξρ : zetaEntireCompletion ρ = 0 := by
+      rw [zetaEntireCompletion_eq_mul hρ0 hρ1, hΛρ, mul_zero]
+    have hsingle := re_one_div_sub_le_re_logDeriv_zetaEntireCompletion hξρ hs1.le
     have hsρ : s - ρ = ((1 + η - β : ℝ) : ℂ) := by apply Complex.ext <;> simp [s, ρ]
-    rw [riemannZetaData_entireCompletion, hsρ, one_div, ← ofReal_inv, ofReal_re,
-      ← one_div] at hsingle
+    rw [hsρ, one_div, ← ofReal_inv, ofReal_re, ← one_div] at hsingle
     have hbound := neg_re_logDeriv_riemannZeta_one_add_of_le_re_logDeriv hΓ hη hη1 u
       (1 / (1 + η - β)) hsingle
     rw [neg_div]
@@ -157,23 +127,18 @@ theorem exists_neg_re_logDeriv_riemannZeta_one_add_mul_I_le :
   refine ⟨C₀ + 2, by positivity, fun η hη hη1 u ↦ ?_⟩
   have hs1 : 1 < ((1 : ℂ) + η + u * I).re := by simp [hη]
   have hbase := neg_re_logDeriv_riemannZeta_one_add_of_le_re_logDeriv hΓ hη hη1 u 0
-    (re_logDeriv_zetaEntireCompletion_nonneg hs1)
+    (re_logDeriv_zetaEntireCompletion_nonneg hs1.le)
   have hlog0 : 0 ≤ Real.log (|u| + 3) := Real.log_nonneg (by linarith [abs_nonneg u])
   refine ⟨by linarith [mul_le_mul_of_nonneg_right (by linarith : C₀ + 1 ≤ C₀ + 2) hlog0],
-    fun β hβ ↦ neg_re_logDeriv_riemannZeta_one_add_zero_le hΓ hη hη1 u β hβ⟩
-
-private theorem one_le_one_div_log_mul_log {t₀ u : ℝ} (ht₀ : 1 < t₀) (hu : t₀ ≤ u) :
-    1 ≤ (1 / Real.log t₀) * Real.log u := by
-  have hlogt₀ : 0 < Real.log t₀ := Real.log_pos ht₀
-  have hmul := mul_le_mul_of_nonneg_left (Real.log_le_log (by positivity) hu)
-    (one_div_nonneg.mpr hlogt₀.le)
-  rwa [one_div_mul_cancel hlogt₀.ne'] at hmul
+    fun β hβ ↦
+      neg_re_logDeriv_riemannZeta_one_add_mul_I_le_of_riemannZeta_eq_zero hΓ hη hη1 u β hβ⟩
 
 private theorem pole_add_mul_log_le {t₀ C₁ η u t : ℝ} (ht₀ : 1 < t₀) (hC₁ : 0 < C₁)
     (hη1 : η ≤ 1) (ht : t₀ ≤ |t|) (hu1 : 1 ≤ |u|) (hu2 : |u| ≤ 2 * |t|) :
     η / (η ^ 2 + u ^ 2) + C₁ * Real.log (|u| + 3) ≤
       (1 / Real.log t₀ + C₁ * (Real.log 5 / Real.log t₀ + 1)) * Real.log |t| := by
-  have h1_le := one_le_one_div_log_mul_log ht₀ ht
+  have h1_le : 1 ≤ Real.log |t| / Real.log t₀ :=
+    (one_le_div (Real.log_pos ht₀)).mpr (Real.log_le_log (by positivity) ht)
   have hpole : η / (η ^ 2 + u ^ 2) ≤ 1 := by
     have hu2' : 1 ≤ u ^ 2 := by
       simpa only [one_pow, sq_abs] using (sq_le_sq₀ zero_le_one (abs_nonneg u)).mpr hu1
@@ -187,7 +152,7 @@ private theorem pole_add_mul_log_le {t₀ C₁ η u t : ℝ} (ht₀ : 1 < t₀) 
     have hterm5 : Real.log 5 ≤ (Real.log 5 / Real.log t₀) * Real.log |t| := by
       calc
         Real.log 5 = Real.log 5 * 1 := (mul_one _).symm
-        _ ≤ Real.log 5 * ((1 / Real.log t₀) * Real.log |t|) :=
+        _ ≤ Real.log 5 * (Real.log |t| / Real.log t₀) :=
             mul_le_mul_of_nonneg_left h1_le (Real.log_nonneg (by norm_num))
         _ = (Real.log 5 / Real.log t₀) * Real.log |t| := by ring
     calc
@@ -199,7 +164,8 @@ private theorem pole_add_mul_log_le {t₀ C₁ η u t : ℝ} (ht₀ : 1 < t₀) 
     η / (η ^ 2 + u ^ 2) + C₁ * Real.log (|u| + 3)
         ≤ (1 / Real.log t₀) * Real.log |t| +
             C₁ * ((Real.log 5 / Real.log t₀ + 1) * Real.log |t|) := by
-          linarith [hpole]
+          have hlog_eq : Real.log |t| / Real.log t₀ = (1 / Real.log t₀) * Real.log |t| := by ring
+          linarith [hpole.trans (h1_le.trans_eq hlog_eq)]
     _ = (1 / Real.log t₀ + C₁ * (Real.log 5 / Real.log t₀ + 1)) * Real.log |t| := by ring
 
 private theorem neg_re_logDeriv_riemannZeta_le_of_le_one {t₀ C₁ : ℝ} (ht₀ : 1 < t₀) (hC₁ : 0 < C₁)
@@ -249,11 +215,12 @@ private theorem neg_re_logDeriv_riemannZeta_le_of_one_lt {η : ℝ} (hη : 1 < �
   · have hz : -(logDeriv riemannZeta (1 + η + 2 * t * I)).re ≤ -(logDeriv riemannZeta 2).re := by
       simpa [mul_assoc] using hnorm (2 * t)
     linarith
-  · have hβ1 : β < 1 := by
-      by_contra h
-      exact riemannZeta_ne_zero_of_one_le_re (by simpa using not_lt.mp h) hβ
-    have hinv := neg_one_le_neg_one_div_one_add_sub (hβ1.le.trans hη.le)
-    linarith [hnorm t]
+  · have hβ1 : β < 1 :=
+      not_le.mp fun h ↦ riemannZeta_ne_zero_of_one_le_re (by simpa using h) hβ
+    have hinv : (1 + η - β)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith)
+    rw [← one_div] at hinv
+    rw [neg_div]
+    linarith [hnorm t, hinv]
 
 /-- For every `t₀ > 1` there is `C` such that, for `η > 0` and `|t| ≥ t₀`,
 `-Re (ζ'/ζ)(1 + η + 2it) ≤ C log |t|`, and `-Re (ζ'/ζ)(1 + η + it) ≤ -1/(1 + η - β) + C log |t|`
@@ -275,11 +242,12 @@ theorem neg_re_logDeriv_riemannZeta_le (t₀ : ℝ) (ht₀ : 1 < t₀) :
       (le_max_right (Z2 / Real.log t₀) (1 / Real.log t₀ + C₁ * L5)) hlogt_pos.le
     exact ⟨h2t.trans hC, fun β hβ ↦ (htβ β hβ).trans (by linarith)⟩
   · obtain ⟨h2t, htβ⟩ := neg_re_logDeriv_riemannZeta_le_of_one_lt (not_le.mp hη1) t
-    have h1_le := one_le_one_div_log_mul_log ht₀ ht
+    have h1_le : 1 ≤ Real.log |t| / Real.log t₀ :=
+      (one_le_div (Real.log_pos ht₀)).mpr (Real.log_le_log (by positivity) ht)
     have hZ2_le : Z2 ≤ C * Real.log |t| := by
       calc
         Z2 = Z2 * 1 := (mul_one Z2).symm
-        _ ≤ Z2 * ((1 / Real.log t₀) * Real.log |t|) :=
+        _ ≤ Z2 * (Real.log |t| / Real.log t₀) :=
             mul_le_mul_of_nonneg_left h1_le (by positivity)
         _ = (Z2 / Real.log t₀) * Real.log |t| := by ring
         _ ≤ C * Real.log |t| := mul_le_mul_of_nonneg_right

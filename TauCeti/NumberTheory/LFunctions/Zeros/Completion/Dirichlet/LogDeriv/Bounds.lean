@@ -25,8 +25,8 @@ characters:
 * `DirichletCharacter.exists_neg_re_logDeriv_LFunction_one_add_le_of_ne_one`: for every
   nonprincipal character `ψ ≠ 1` modulo `q` (primitive or imprimitive),
   `-Re (L'/L)(1 + η + i u, ψ) ≤ (3 / 2) * log q + C * log (|u| + 3)`.
-* `DirichletCharacter.exists_neg_re_logDeriv_LFunction_one_add_zero_le`: for a nonprincipal
-  primitive character `χ` with a zero `χ.LFunction (β + i u) = 0` (`0 < β`),
+* `DirichletCharacter.exists_neg_re_logDeriv_LFunction_one_add_mul_I_le_of_LFunction_eq_zero`:
+  for a nonprincipal primitive character `χ` with a zero `χ.LFunction (β + i u) = 0` (`0 < β`),
   `-Re (L'/L)(1 + η + i u, χ) ≤ -1 / (1 + η - β) + log q / 2 + C * log (|u| + 3)`.
 * `DirichletCharacter.exists_sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le`: along the
   real axis `s = 1 + η`, any finite retained-zero sum over zeros in `0 < Re ρ` satisfies
@@ -81,7 +81,7 @@ theorem exists_neg_re_logDeriv_LFunction_one_add_le_of_ne_one :
 `χ.LFunction (β + i u) = 0` with `0 < β`, then
 `-Re (L'/L)(1 + η + i u, χ) ≤ -1 / (1 + η - β) + log q / 2 + C * log (|u| + 3)` for one
 absolute constant `C > 0`. -/
-theorem exists_neg_re_logDeriv_LFunction_one_add_zero_le :
+theorem exists_neg_re_logDeriv_LFunction_one_add_mul_I_le_of_LFunction_eq_zero :
     ∃ C : ℝ, 0 < C ∧ ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q),
       χ.IsPrimitive → χ ≠ 1 → ∀ {β u : ℝ}, 0 < β → χ.LFunction (β + u * I) = 0 →
       ∀ {η : ℝ}, 0 < η → η ≤ 1 →

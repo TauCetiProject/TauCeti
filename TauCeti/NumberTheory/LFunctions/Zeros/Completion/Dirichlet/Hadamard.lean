@@ -10,12 +10,12 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard
 public import TauCeti.Analysis.Complex.Hadamard.RealPart
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
-public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 
 /-!

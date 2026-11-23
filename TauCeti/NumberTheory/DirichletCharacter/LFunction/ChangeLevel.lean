@@ -122,6 +122,7 @@ private theorem analyticAt_prod_one_sub_mul_prime_cpow {M N : ℕ} (χ : Dirichl
 /-- Raising the level preserves the meromorphic order of the continued L-function in the open right
 half-plane. No nonprincipality hypothesis is needed, since `LFunction_changeLevel` holds on a
 punctured neighborhood of `1`. -/
+@[simp]
 theorem meromorphicOrderAt_LFunction_changeLevel {M N : ℕ} [NeZero M] [NeZero N]
     (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re) :
     meromorphicOrderAt (changeLevel hMN χ).LFunction s = meromorphicOrderAt χ.LFunction s := by

@@ -123,9 +123,7 @@ private theorem exists_c_riemannZeta_ne_zero_of_two_le_abs_im :
   let A : ℝ := max 1 (3 * max C₀ 0 + 5 * max C₁ 0)
   have hA1 : 1 ≤ A := le_max_left _ _
   refine ⟨1 / (40 * A), by positivity, fun s him hsre hζ ↦ ?_⟩
-  have hre_lt : s.re < 1 := by
-    by_contra h
-    exact riemannZeta_ne_zero_of_one_le_re (not_lt.mp h) hζ
+  have hre_lt : s.re < 1 := not_le.mp fun h ↦ riemannZeta_ne_zero_of_one_le_re h hζ
   set β : ℝ := s.re
   set t : ℝ := s.im
   have hs_eq : s = (β : ℂ) + t * I := (Complex.re_add_im s).symm

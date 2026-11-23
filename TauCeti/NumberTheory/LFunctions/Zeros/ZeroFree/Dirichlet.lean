@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
@@ -15,7 +16,7 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Principal
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.ThreeFourOne
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Order
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDerivBounds
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv.Bounds
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFree.RiemannZeta
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
 
@@ -26,9 +27,9 @@ We prove `TauCeti.dirichletLFunction_zeroFreeRegion`, giving one absolute consta
 `0 < c ≤ Real.log 3 / 2` such that for every modulus `q ≥ 1` and every Dirichlet character `χ`
 modulo `q`, any zero `ρ` of `χ.LFunction` (read through `0 < meromorphicOrderAt χ.LFunction ρ`,
 which excludes the pole of principal characters at `s = 1`) in `Re ρ ≥ 1 - c / log (q (|Im ρ| + 3))`
-is real and simple, forces `χ ^ 2 = 1`, and is unique in that region (the classical de la Vallée
-Poussin zero-free region with at most one exceptional zero per character, distinct from the
-family-wide Landau–Page theorem).
+is real and simple, forces `χ ≠ 1` and `χ ^ 2 = 1`, and is unique in that region (the classical de
+la Vallée Poussin zero-free region with at most one exceptional zero per character, distinct from
+the family-wide Landau–Page theorem).
 
 The proof reduces principal characters to `TauCeti.riemannZeta_zeroFreeRegion` and nonprincipal
 characters to their primitive character `χ.primitiveCharacter` via
@@ -100,7 +101,8 @@ private theorem neg_re_logDeriv_sq_add_two_mul_le {C_ne C_ζ : ℝ} (hCne : 0 < 
       linarith
     have hmL : (3 / 2 + 2 * C_ne) * L ≤ max (3 / 2 + 2 * C_ne) (1 + 2 * C_ζ) * L :=
       mul_le_mul_of_nonneg_right (le_max_left _ _) (by linarith)
-    linarith [show (0 : ℝ) ≤ 1 / (2 * η) from by positivity]
+    have hpole_nonneg : 0 ≤ 1 / (2 * η) := by positivity
+    linarith
   · have h2t_re : 1 ≤ ((1 : ℂ) + η + 2 * t * I).re := by simp; linarith
     have h2t_ne1 : (1 : ℂ) + η + 2 * t * I ≠ 1 := fun h ↦ by
       have hre := congrArg Complex.re h
@@ -226,29 +228,14 @@ private theorem re_one_div_sub_ge_of_zero {q : ℕ} [NeZero q] {χ : DirichletCh
     (hne : χ ≠ 1) {η₀ : ℝ} (hη₀_pos : 0 < η₀) {ρ : ℂ} (hzero : χ.LFunction ρ = 0)
     (hgap : 1 - ρ.re ≤ η₀ / 10) (him : |ρ.im| ≤ η₀ / 2) :
     100 / (146 * η₀) ≤ (1 / ((1 + η₀ : ℂ) - ρ)).re := by
-  have hβ_lt : ρ.re < 1 := by
-    by_contra h
-    exact χ.LFunction_ne_zero_of_one_le_re (.inl hne) (not_lt.mp h) hzero
-  have hnum_pos : 0 < 1 + η₀ - ρ.re := by linarith
-  have hre : (1 / ((1 + η₀ : ℂ) - ρ)).re =
-      (1 + η₀ - ρ.re) / ((1 + η₀ - ρ.re) ^ 2 + ρ.im ^ 2) := by
-    rw [one_div, Complex.inv_re, Complex.normSq_apply]
-    simp only [Complex.sub_re, Complex.add_re, Complex.one_re, Complex.ofReal_re,
-      Complex.sub_im, Complex.add_im, Complex.one_im, Complex.ofReal_im, add_zero, zero_sub,
-      ← sq, neg_sq]
-  have hden_pos : 0 < (1 + η₀ - ρ.re) ^ 2 + ρ.im ^ 2 := by positivity
-  have hden_hi : (1 + η₀ - ρ.re) ^ 2 + ρ.im ^ 2 ≤ (146 / 100) * η₀ ^ 2 := by
-    have h1 : (1 + η₀ - ρ.re) ^ 2 ≤ (11 / 10 * η₀) ^ 2 := by nlinarith
-    have h2 : ρ.im ^ 2 ≤ (η₀ / 2) ^ 2 := by
-      simpa only [sq_abs] using (sq_le_sq₀ (abs_nonneg ρ.im) (by positivity)).mpr him
-    nlinarith
-  rw [hre]
-  calc
-    100 / (146 * η₀) = η₀ / ((146 / 100) * η₀ ^ 2) := by field_simp
-    _ ≤ (1 + η₀ - ρ.re) / ((146 / 100) * η₀ ^ 2) :=
-        div_le_div_of_nonneg_right (by linarith) (by positivity)
-    _ ≤ (1 + η₀ - ρ.re) / ((1 + η₀ - ρ.re) ^ 2 + ρ.im ^ 2) :=
-        div_le_div_of_nonneg_left hnum_pos.le hden_pos hden_hi
+  have hβ_lt : ρ.re < 1 :=
+    not_le.mp fun h ↦ χ.LFunction_ne_zero_of_one_le_re (.inl hne) h hzero
+  have hbox := Complex.le_inv_re (z := (1 + η₀ : ℂ) - ρ) (a := η₀) (b := 11 / 10 * η₀)
+    (c := η₀ / 2) hη₀_pos.le (by simp; linarith) (by simp; linarith) (by simpa using him)
+  have heq : η₀ / ((11 / 10 * η₀) ^ 2 + (η₀ / 2) ^ 2) = 100 / (146 * η₀) := by
+    field_simp; ring
+  rw [one_div]
+  exact heq.symm.trans_le hbox
 
 private theorem contradiction_of_retained_sum_ge {C_sum K : ℝ} (hK1 : 1 ≤ K) (hKC : C_sum ≤ K)
     (hsum : RetainedZeroSumBound C_sum)
@@ -322,9 +309,8 @@ private theorem sq_eq_one_and_abs_im_lt_of_primitive_ne_one {K c₁ : ℝ}
     χ ^ 2 = 1 ∧ |ρ.im| < (1 / (16 * K * Real.log (q * (|ρ.im| + 3)))) / 2 := by
   have hzero : χ.LFunction ρ = 0 := (χ.meromorphicOrderAt_LFunction_pos_iff hne ρ).mp hord
   have hρpos : 0 < ρ.re := re_pos_of_le_one_sub_div_log hc₁_log ρ hre
-  have hβ_lt : ρ.re < 1 := by
-    by_contra h
-    exact χ.LFunction_ne_zero_of_one_le_re (.inl hne) (not_lt.mp h) hzero
+  have hβ_lt : ρ.re < 1 :=
+    not_le.mp fun h ↦ χ.LFunction_ne_zero_of_one_le_re (.inl hne) h hzero
   have hlog_pos : 0 < Real.log (q * (|ρ.im| + 3)) :=
     zero_lt_one.trans (Real.one_lt_log_mul_abs_add_three (Nat.one_le_cast.mpr NeZero.one_le) ρ.im)
   have hre' : 1 - 1 / (160 * K) / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re := by
@@ -439,7 +425,8 @@ private theorem primitive_nonprincipal_zeroFreeRegion :
           0 < meromorphicOrderAt χ.LFunction ρ₁ →
           0 < meromorphicOrderAt χ.LFunction ρ₂ → ρ₁ = ρ₂ := by
   obtain ⟨C_prin, hCp, hprin⟩ := exists_neg_re_logDeriv_LFunctionTrivChar_one_add_le
-  obtain ⟨C_zero, hCz, hsingle⟩ := exists_neg_re_logDeriv_LFunction_one_add_zero_le
+  obtain ⟨C_zero, hCz, hsingle⟩ :=
+    exists_neg_re_logDeriv_LFunction_one_add_mul_I_le_of_LFunction_eq_zero
   obtain ⟨C_ne, hCne, hnonprin⟩ := exists_neg_re_logDeriv_LFunction_one_add_le_of_ne_one
   obtain ⟨C_ζ, hCζ, hζ_raw⟩ := exists_neg_re_logDeriv_riemannZeta_one_add_mul_I_le
   obtain ⟨C_sum, _, hsum⟩ := exists_sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le
@@ -512,14 +499,15 @@ private theorem transfer_to_primitiveCharacter {c c₁ : ℝ} (hc₁ : 0 < c₁)
 /-- **The de la Vallée Poussin zero-free region for Dirichlet L-functions.** There is one absolute
 constant `c`, with `0 < c ≤ log 3 / 2`, such that for every modulus `q ≥ 1` and every Dirichlet
 character `χ` modulo `q`, primitive or not, a zero `ρ` of `L(·, χ)` with
-`Re ρ ≥ 1 − c / log (q (|Im ρ| + 3))` is real, simple, and occurs only for a real character
-(`χ² = 1`), and there is at most one such zero (Davenport §14). -/
+`Re ρ ≥ 1 − c / log (q (|Im ρ| + 3))` is real, simple, and occurs only for a nonprincipal real
+character (`χ ≠ 1` and `χ² = 1`), and there is at most one such zero (Davenport §14). -/
 theorem dirichletLFunction_zeroFreeRegion :
     ∃ c : ℝ, 0 < c ∧ c ≤ Real.log 3 / 2 ∧
       ∀ (q : ℕ) [NeZero q] (χ : DirichletCharacter ℂ q),
         (∀ ρ : ℂ, 1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re →
           0 < meromorphicOrderAt (DirichletCharacter.LFunction χ) ρ →
-          ρ.im = 0 ∧ χ ^ 2 = 1 ∧ meromorphicOrderAt (DirichletCharacter.LFunction χ) ρ = 1) ∧
+          ρ.im = 0 ∧ χ ≠ 1 ∧ χ ^ 2 = 1 ∧
+            meromorphicOrderAt (DirichletCharacter.LFunction χ) ρ = 1) ∧
         ∀ ρ₁ ρ₂ : ℂ, 1 - c / Real.log (q * (|ρ₁.im| + 3)) ≤ ρ₁.re →
           1 - c / Real.log (q * (|ρ₂.im| + 3)) ≤ ρ₂.re →
           0 < meromorphicOrderAt (DirichletCharacter.LFunction χ) ρ₁ →
@@ -543,7 +531,7 @@ theorem dirichletLFunction_zeroFreeRegion :
     · obtain ⟨hre', hord_eq⟩ := htr ρ hre
       rw [hord_eq] at hord ⊢
       obtain ⟨him, hsq, h1⟩ := hsingle ρ hre' hord
-      exact ⟨him, by rw [← χ.changeLevel_primitiveCharacter, ← map_pow, hsq, map_one], h1⟩
+      exact ⟨him, hχ1, by rw [← χ.changeLevel_primitiveCharacter, ← map_pow, hsq, map_one], h1⟩
     · obtain ⟨hre₁', hord_eq₁⟩ := htr ρ₁ hre₁
       obtain ⟨hre₂', hord_eq₂⟩ := htr ρ₂ hre₂
       rw [hord_eq₁] at hord₁

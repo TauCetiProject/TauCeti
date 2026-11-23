@@ -37,7 +37,9 @@ the counterpart of Mathlib's `Complex.conjLIE_symm`).
 
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
-`Complex.inv_re_nonneg`), and maps `1 ≤ z.re` into `z⁻¹.re ≤ 1` (`Complex.inv_re_le_one`).
+`Complex.inv_re_nonneg`), maps `1 ≤ z.re` into `z⁻¹.re ≤ 1` (`Complex.inv_re_le_one`), and
+satisfies `a / (b ^ 2 + c ^ 2) ≤ z⁻¹.re` on the box `0 ≤ a ≤ z.re ≤ b`, `|z.im| ≤ c`
+(`Complex.le_inv_re`).
 Under a reflection symmetry `f (a - z) = c * conj (f (conj z))`, a
 one-sided upper bound `Re ρ ≤ B` on all zeros of `f` confines every zero to the bounded vertical
 strip `|Re ρ| ≤ max B |Re a - B|` (`TauCeti.abs_re_le_max_of_re_le_of_sub_conj`).
@@ -100,6 +102,30 @@ theorem Complex.inv_re_le_one {z : ℂ} (hz : 1 ≤ z.re) : z⁻¹.re ≤ 1 := b
       div_le_div_of_nonneg_left hz0.le (sq_pos_of_pos hz0) hsq
     _ = 1 / z.re := by field_simp
     _ ≤ 1 := div_le_one_of_le₀ hz hz0.le
+
+/-- A complex number in the box `0 ≤ a ≤ z.re ≤ b` and `|z.im| ≤ c` has inverse with real part
+at least `a / (b ^ 2 + c ^ 2)`. -/
+theorem Complex.le_inv_re {z : ℂ} {a b c : ℝ} (ha : 0 ≤ a) (hza : a ≤ z.re)
+    (hzb : z.re ≤ b) (hc : |z.im| ≤ c) : a / (b ^ 2 + c ^ 2) ≤ z⁻¹.re := by
+  rcases ha.eq_or_lt with rfl | ha_pos
+  · rw [zero_div]
+    exact Complex.inv_re_nonneg.mpr hza
+  · have hz_pos : 0 < z.re := ha_pos.trans_le hza
+    have hden_pos : 0 < normSq z := normSq_pos.mpr fun h ↦ by simp [h] at hz_pos
+    have hden_hi : normSq z ≤ b ^ 2 + c ^ 2 := by
+      rw [normSq_apply, ← sq, ← sq]
+      have hre_sq : z.re ^ 2 ≤ b ^ 2 :=
+        (sq_le_sq₀ hz_pos.le (hz_pos.le.trans hzb)).mpr hzb
+      have him_sq : z.im ^ 2 ≤ c ^ 2 := by
+        simpa only [sq_abs] using
+          (sq_le_sq₀ (abs_nonneg z.im) ((abs_nonneg z.im).trans hc)).mpr hc
+      exact add_le_add hre_sq him_sq
+    rw [inv_re]
+    calc
+      a / (b ^ 2 + c ^ 2) ≤ z.re / (b ^ 2 + c ^ 2) :=
+        div_le_div_of_nonneg_right hza (by positivity)
+      _ ≤ z.re / normSq z :=
+        div_le_div_of_nonneg_left hz_pos.le hden_pos hden_hi
 
 /-- The scalar Cayley expression has unit norm at real `r`, including when `z = r`
 under the totalized inverse convention. -/

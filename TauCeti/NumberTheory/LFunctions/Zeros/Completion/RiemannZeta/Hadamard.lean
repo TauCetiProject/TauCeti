@@ -25,6 +25,11 @@ and constant-free real-part expansion to twice Riemann's ξ-function `zetaEntire
   `re_logDeriv_zetaEntireCompletion_eq_tsum`): `(logDeriv zetaEntireCompletion 0).re =`
   `-∑' ρ, m_ρ * Re (1 / ρ)`, so off the zeros `Re (logDeriv zetaEntireCompletion s)` equals
   `∑' ρ, m_ρ * Re (1 / (s - ρ))` with no additive constant.
+* **Positivity and single-zero lower bound on `1 ≤ Re s`**
+  (`re_logDeriv_zetaEntireCompletion_nonneg`, `re_one_div_sub_le_re_logDeriv_zetaEntireCompletion`):
+  `0 ≤ Re (logDeriv zetaEntireCompletion s)` and
+  `Re (1 / (s - ρ)) ≤ Re (logDeriv zetaEntireCompletion s)` for any zero `ρ` of
+  `zetaEntireCompletion`.
 
 ## References
 
@@ -81,5 +86,39 @@ theorem re_logDeriv_zetaEntireCompletion_eq_tsum {s : ℂ} (hs : zetaEntireCompl
     (fun z hz ↦ by
       rw [riemannZetaData_entireCompletion]
       exact zetaEntireCompletion_ne_zero_of_one_le_re hz) hs
+
+private theorem zetaEntireCompletion_zero_hypotheses {s : ℂ} (hs : 1 ≤ s.re) :
+    riemannZetaData.entireCompletion 0 ≠ 0 ∧
+      riemannZetaData.entireCompletion s ≠ 0 ∧
+      ∀ ρ : ℂ, riemannZetaData.entireCompletion ρ = 0 → ρ.re ≤ s.re := by
+  refine ⟨by simp, ?_, fun ρ hρ ↦ ?_⟩
+  · simpa only [riemannZetaData_entireCompletion] using
+      zetaEntireCompletion_ne_zero_of_one_le_re hs
+  · rw [riemannZetaData_entireCompletion] at hρ
+    exact (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le.trans hs
+
+/-- On `1 ≤ Re s`, the real part of `logDeriv zetaEntireCompletion s` is nonnegative. -/
+theorem re_logDeriv_zetaEntireCompletion_nonneg {s : ℂ} (hs : 1 ≤ s.re) :
+    0 ≤ (logDeriv zetaEntireCompletion s).re := by
+  obtain ⟨hξ0, hξ_ne, hξ_le⟩ := zetaEntireCompletion_zero_hypotheses hs
+  simpa only [riemannZetaData_entireCompletion] using
+    riemannZetaData_hasFunctionalEquation.re_logDeriv_entireCompletion_nonneg_of_zero_ne_zero
+      riemannZetaData_hasMeromorphicContinuation
+      (by simpa only [riemannZetaData_entireCompletion] using orderLE_zetaEntireCompletion)
+      hξ0 hξ_ne hξ_le
+
+/-- On `1 ≤ Re s`, every zero `ρ` of `zetaEntireCompletion` satisfies
+`Re (1 / (s - ρ)) ≤ Re (logDeriv zetaEntireCompletion s)`. -/
+theorem re_one_div_sub_le_re_logDeriv_zetaEntireCompletion {ρ : ℂ}
+    (hρ : zetaEntireCompletion ρ = 0) {s : ℂ} (hs : 1 ≤ s.re) :
+    (1 / (s - ρ)).re ≤ (logDeriv zetaEntireCompletion s).re := by
+  obtain ⟨hξ0, hξ_ne, hξ_le⟩ := zetaEntireCompletion_zero_hypotheses hs
+  have hξρ : riemannZetaData.entireCompletion ρ = 0 := by
+    simpa only [riemannZetaData_entireCompletion] using hρ
+  simpa only [riemannZetaData_entireCompletion] using
+    riemannZetaData_hasFunctionalEquation.re_one_div_sub_le_re_logDeriv_entireCompletion
+      riemannZetaData_hasMeromorphicContinuation
+      (by simpa only [riemannZetaData_entireCompletion] using orderLE_zetaEntireCompletion)
+      hξ0 hξ_ne hξ_le hξρ
 
 end TauCeti.LFunctions
