@@ -10,11 +10,9 @@ public import TauCeti.Topology.Category.TopCat.MappingSpace
 public import Mathlib.Topology.Category.TopCat.ULift
 
 /-!
-# Limits of coinduced representations and invariants
+# Limits of coinduced representations
 
-The invariants functor is right adjoint to the trivial-action functor, and hence preserves
-limits. This is the topological counterpart of Mathlib's `Rep.invariantsAdjunction`.
-For a locally compact group, `coind₁Functor` also preserves limits because its underlying
+For a locally compact group, `coind₁Functor` preserves limits because its underlying
 topological space is the compact-open mapping space, a right adjoint on `TopCat`.
 -/
 
@@ -30,62 +28,7 @@ namespace TopRep
 
 variable (R : Type u) [Ring R] [TopologicalSpace R]
 
-/-- Equip a topological module with the trivial representation. -/
-@[expose, simps obj]
-def trivialFunctor (G : Type v) [Monoid G] : TopModuleCat.{w} R ⥤ TopRep.{w} R G where
-  obj X := of (ContRepresentation.trivial R G X)
-  map f := ofHom ⟨f.hom, fun _ ↦ rfl⟩
-
-/-- The trivial-action functor equips a continuous linear map with trivial equivariance. -/
-@[simp]
-theorem trivialFunctor_map_hom (G : Type v) [Monoid G]
-    {X Y : TopModuleCat.{w} R} (f : X ⟶ Y) :
-    ((trivialFunctor R G).map f).hom = ⟨f.hom, fun _ ↦ rfl⟩ := (rfl)
-
-/-- The trivial-action functor acts on maps by their original continuous linear map. -/
-@[simp↓]
-theorem trivialFunctor_map_hom_apply (G : Type v) [Monoid G]
-    {X Y : TopModuleCat.{w} R} (f : X ⟶ Y) (x : X) :
-    ((trivialFunctor R G).map f).hom x = f.hom x := (rfl)
-
 variable (G : Type v) [Group G]
-
-/-- Taking invariant vectors is right adjoint to equipping a module with the trivial action. -/
-def invariantsAdjunction : trivialFunctor.{u, v, w} R G ⊣ invariantsFunctor R G where
-  unit := { app X := TopModuleCat.ofHom <|
-      (ContinuousLinearMap.id R X).codRestrict _ fun _ _ ↦ rfl }
-  counit := { app X := ofHom ⟨X.ρ.invariants.subtypeL,
-    fun g ↦ by ext x; exact (x.property g).symm⟩ }
-
-/-- The unit includes each vector as an invariant vector for the trivial action. -/
-@[simp↓]
-theorem coe_invariantsAdjunction_unit_app_hom_apply (X : TopModuleCat.{w} R) (x : X) :
-    (((invariantsAdjunction R G).unit.app X).hom x).val = x := (rfl)
-
-/-- The counit includes invariant vectors into their ambient representation. -/
-@[simp↓]
-theorem invariantsAdjunction_counit_app_hom_apply (X : TopRep.{w} R G)
-    (x : X.ρ.invariants) :
-    ((invariantsAdjunction R G).counit.app X).hom x = (x : X) := (rfl)
-
-/-- The invariants adjunction restricts the codomain of an equivariant map to invariant vectors. -/
-@[simp↓]
-theorem coe_invariantsAdjunction_homEquiv_apply_hom_apply
-    {X : TopModuleCat.{w} R} {Y : TopRep.{w} R G}
-    (f : (trivialFunctor R G).obj X ⟶ Y) (x : X) :
-    (((invariantsAdjunction R G).homEquiv X Y f).hom x : Y) = f.hom x := (rfl)
-
-/-- The inverse invariants adjunction includes the invariant vectors into the representation. -/
-@[simp↓]
-theorem invariantsAdjunction_homEquiv_symm_apply_hom_apply
-    {X : TopModuleCat.{w} R} {Y : TopRep.{w} R G}
-    (f : X ⟶ (invariantsFunctor R G).obj Y) (x : X) :
-    (((invariantsAdjunction R G).homEquiv X Y).symm f).hom x = (f.hom x : Y) := (rfl)
-
-/-- The invariants functor preserves limits as a right adjoint. -/
-instance : (invariantsFunctor (k := R) (G := G) :
-    TopRep.{w} R G ⥤ TopModuleCat.{w} R).IsRightAdjoint :=
-  (invariantsAdjunction R G).isRightAdjoint
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 

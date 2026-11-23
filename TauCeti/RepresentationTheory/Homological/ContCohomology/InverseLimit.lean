@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Limits
+public import TauCeti.RepresentationTheory.Continuous.Invariants
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 
 /-!
@@ -38,20 +40,6 @@ namespace TopRep
 
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- The functor taking a representation to a fixed degree of its coinduced resolution. -/
-@[expose, simps -isSimp obj map]
-def resolutionFunctor (n : ℕ) :
-    TopRep.{max v w} R G ⥤ TopRep.{max v w} R G where
-  obj X := resolutionX X n
-  map f := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n
-  map_id X := _root_.ContinuousCohomology.resolutionMap_id X n
-  map_comp f g := _root_.ContinuousCohomology.resolutionMap_comp
-    (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g n
-
-attribute [simp] resolutionFunctor_obj
--- Let the generic functor laws simplify identities and composites first.
-attribute [simp low] resolutionFunctor_map
 
 variable [LocallyCompactSpace G]
 
