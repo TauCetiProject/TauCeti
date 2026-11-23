@@ -84,7 +84,8 @@ namespace IsMcKayLabelling
 variable {G : Type u} [Group G] {V : FDRep ℂ G} {t : AffineDynkinType}
   {e : SimpleFDRepClasses ℂ G ≃ Fin t.nodes}
 
-/-- Object-level multiplicity identity under a McKay labelling. -/
+/-- Object-level Hom-dimension identity under a McKay labelling (the multiplicity identity when `G`
+is finite). -/
 theorem finrank_hom_tensor (h : IsMcKayLabelling V t e) (X Y : FDRep ℂ G) [Simple X] [Simple Y] :
     (Module.finrank ℂ (X ⟶ V ⊗ Y) : ℤ) =
       2 * (if e (SimpleFDRepClasses.mk X) = e (SimpleFDRepClasses.mk Y) then 1 else 0) -

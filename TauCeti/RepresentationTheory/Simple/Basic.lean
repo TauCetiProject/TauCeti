@@ -59,8 +59,8 @@ universe, the objects of `FDRep k G` already form a type, and Mathlib already qu
 of a category by isomorphism. `TauCeti.SimpleFDRepClasses` is that quotient, namely
 `CategoryTheory.Skeleton` of the full subcategory of simple objects, together with the constructor,
 eliminator and lift a consumer needs, as well as the dimension `SimpleFDRepClasses.finrank`, the
-trivial class `SimpleFDRepClasses.trivial`, and the Hom-dimension multiplicity
-`SimpleFDRepClasses.multiplicity` over a field. It lives here rather than beside its comparison with
+trivial class `SimpleFDRepClasses.trivial`, and the Hom-dimension
+`SimpleFDRepClasses.finrankHom` over a field. It lives here rather than beside its comparison with
 the module-level quotient (`TauCeti.SimpleFDRepClasses.toSimpleSubmoduleClasses`, in
 `TauCeti.RepresentationTheory.Simple.FDRepClasses`) so that naming the isomorphism classes does not
 drag in the semisimple isotypic-component theory that only the comparison needs.
@@ -88,8 +88,8 @@ drag in the semisimple isotypic-component theory that only the comparison needs.
 * `TauCeti.SimpleFDRepClasses.equivSimpleClasses`: canonical identification of
   `SimpleFDRepClasses k G` with `SimpleClasses (FDRep k G)`.
 * `TauCeti.SimpleFDRepClasses.finrank`, `TauCeti.SimpleFDRepClasses.trivial` (with
-  `mk_tensorUnit` and `mk_eq_trivial_iff`), and `TauCeti.SimpleFDRepClasses.multiplicity` (with
-  `multiplicity_zero`, `multiplicity_biprod`, and `multiplicity_simple`).
+  `mk_tensorUnit` and `mk_eq_trivial_iff`), and `TauCeti.SimpleFDRepClasses.finrankHom` (with
+  `finrankHom_zero`, `finrankHom_biprod`, and `finrankHom_simple`).
 -/
 
 public section
@@ -411,37 +411,39 @@ theorem mk_eq_trivial_iff (X : FDRep k G) [Simple X] :
   exact ⟨(f.ofBijective ((_root_.Representation.IsIrreducible.bijective_or_eq_zero f).resolve_right
     hf)).symm⟩
 
-/-- The multiplicity `dim_k Hom_G(X, W)` of a simple class `c = [X]` in `W : FDRep k G`. -/
-noncomputable def multiplicity (c : SimpleFDRepClasses k G) (W : FDRep k G) : ℕ :=
+/-- The dimension `dim_k Hom_G(X, W)` of morphisms from a simple class `c = [X]` to
+`W : FDRep k G`. Under split semisimplicity (for instance over an algebraically closed field in
+which `|G|` is invertible), this is the multiplicity of `c` in `W`. -/
+noncomputable def finrankHom (c : SimpleFDRepClasses k G) (W : FDRep k G) : ℕ :=
   c.lift (fun X ↦ Module.finrank k (X ⟶ W)) fun _ _ _ _ ⟨iso⟩ ↦
     (Linear.homCongr k iso (Iso.refl W)).finrank_eq
 
 @[simp]
-theorem multiplicity_mk (X : FDRep k G) [Simple X] (W : FDRep k G) :
-    (mk X).multiplicity W = Module.finrank k (X ⟶ W) := lift_mk X
+theorem finrankHom_mk (X : FDRep k G) [Simple X] (W : FDRep k G) :
+    (mk X).finrankHom W = Module.finrank k (X ⟶ W) := lift_mk X
 
-/-- `SimpleFDRepClasses.multiplicity` is invariant under isomorphism in the target object. -/
-theorem multiplicity_congr (c : SimpleFDRepClasses k G) {W₁ W₂ : FDRep k G} (iso : W₁ ≅ W₂) :
-    c.multiplicity W₁ = c.multiplicity W₂ := by
+/-- `SimpleFDRepClasses.finrankHom` is invariant under isomorphism in the target object. -/
+theorem finrankHom_congr (c : SimpleFDRepClasses k G) {W₁ W₂ : FDRep k G} (iso : W₁ ≅ W₂) :
+    c.finrankHom W₁ = c.finrankHom W₂ := by
   induction c using ind with
-  | h X hX => simp only [multiplicity_mk]; exact (Linear.homCongr k (Iso.refl X) iso).finrank_eq
+  | h X hX => simp only [finrankHom_mk]; exact (Linear.homCongr k (Iso.refl X) iso).finrank_eq
 
 open scoped ZeroObject in
 @[simp]
-theorem multiplicity_zero (c : SimpleFDRepClasses k G) : c.multiplicity (0 : FDRep k G) = 0 := by
+theorem finrankHom_zero (c : SimpleFDRepClasses k G) : c.finrankHom (0 : FDRep k G) = 0 := by
   induction c using ind with
   | h X hX =>
     have : Subsingleton (X ⟶ (0 : FDRep k G)) :=
       ⟨fun f g ↦ (Limits.isZero_zero (FDRep k G)).eq_of_tgt f g⟩
-    rw [multiplicity_mk]; exact Module.finrank_zero_of_subsingleton
+    rw [finrankHom_mk]; exact Module.finrank_zero_of_subsingleton
 
 open Limits in
 @[simp]
-theorem multiplicity_biprod (c : SimpleFDRepClasses k G) (W₁ W₂ : FDRep k G) :
-    c.multiplicity (W₁ ⊞ W₂) = c.multiplicity W₁ + c.multiplicity W₂ := by
+theorem finrankHom_biprod (c : SimpleFDRepClasses k G) (W₁ W₂ : FDRep k G) :
+    c.finrankHom (W₁ ⊞ W₂) = c.finrankHom W₁ + c.finrankHom W₂ := by
   induction c using ind with
   | h X hX =>
-    rw [multiplicity_mk, multiplicity_mk, multiplicity_mk, ← Module.finrank_prod]
+    rw [finrankHom_mk, finrankHom_mk, finrankHom_mk, ← Module.finrank_prod]
     exact ({ toFun := fun f ↦ (f ≫ biprod.fst, f ≫ biprod.snd)
              invFun := fun p ↦ biprod.lift p.1 p.2
              left_inv := fun f ↦ biprod.hom_ext _ _ (by simp) (by simp)
@@ -450,15 +452,15 @@ theorem multiplicity_biprod (c : SimpleFDRepClasses k G) (W₁ W₂ : FDRep k G)
              map_smul' := fun r f ↦ Prod.ext (by simp) (by simp) } :
       (X ⟶ W₁ ⊞ W₂) ≃ₗ[k] (X ⟶ W₁) × (X ⟶ W₂)).finrank_eq
 
-/-- Over an algebraically closed field, the multiplicity of a simple class `c` in a simple `Y` is
-`1` at `mk Y` and `0` elsewhere (Schur's lemma). -/
-theorem multiplicity_simple [IsAlgClosed k] [DecidableEq (SimpleFDRepClasses k G)]
+/-- Over an algebraically closed field, `c.finrankHom Y` at a simple object `Y` is `1` at `mk Y`
+and `0` elsewhere (Schur's lemma). -/
+theorem finrankHom_simple [IsAlgClosed k] [DecidableEq (SimpleFDRepClasses k G)]
     (c : SimpleFDRepClasses k G) (Y : FDRep k G) [Simple Y] :
-    c.multiplicity Y = if c = mk Y then 1 else 0 := by
+    c.finrankHom Y = if c = mk Y then 1 else 0 := by
   induction c using ind with
   | h X hX =>
     have : Simple X := hX
-    rw [multiplicity_mk, FDRep.finrank_hom_simple_simple X Y]
+    rw [finrankHom_mk, FDRep.finrank_hom_simple_simple X Y]
     exact ite_congr (propext (mk_eq_mk_iff X Y).symm) (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 end Field

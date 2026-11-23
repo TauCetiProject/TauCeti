@@ -270,27 +270,27 @@ theorem detBilinForm_eq_repr (x y : V) :
 /-- The determinant bilinear form of a `Fin 2`-basis is alternating. -/
 theorem isAlt_detBilinForm : b.detBilinForm.IsAlt := b.det.isAlt_toBilinMap
 
-/-- Evaluating `b.detBilinForm` on `(b 0, b 1)` yields `1`. -/
-theorem detBilinForm_basis_zero_one : b.detBilinForm (b 0) (b 1) = 1 := by
-  rw [detBilinForm_eq_repr]; simp
-
-/-- Evaluating `b.detBilinForm` on `(b 1, b 0)` yields `-1`. -/
-theorem detBilinForm_basis_one_zero : b.detBilinForm (b 1) (b 0) = -1 := by
-  rw [detBilinForm_eq_repr]; simp
-
 /-- Pairing against `b 1` on the right reads off the `0`-th coordinate in `b`. -/
+@[simp high]
 theorem detBilinForm_apply_basis_one (x : V) : b.detBilinForm x (b 1) = b.repr x 0 := by
   rw [detBilinForm_eq_repr]; simp
 
 /-- Pairing against `b 0` on the right reads off minus the `1`-st coordinate in `b`. -/
+@[simp high]
 theorem detBilinForm_apply_basis_zero (x : V) : b.detBilinForm x (b 0) = -b.repr x 1 := by
   rw [detBilinForm_eq_repr]; simp
 
+/-- Evaluating `b.detBilinForm` on `(b 0, b 1)` yields `1`. -/
+theorem detBilinForm_basis_zero_one : b.detBilinForm (b 0) (b 1) = 1 := by
+  simp
+
+/-- Evaluating `b.detBilinForm` on `(b 1, b 0)` yields `-1`. -/
+theorem detBilinForm_basis_one_zero : b.detBilinForm (b 1) (b 0) = -1 := by
+  simp
+
 private theorem detBilinForm_sub_smul (φ : Module.Dual R V) :
     b.detBilinForm (φ (b 1) • b 0 - φ (b 0) • b 1) = φ := by
-  refine b.ext <| Fin.forall_fin_two.2 ⟨?_, ?_⟩
-  · rw [detBilinForm_apply_basis_zero]; simp
-  · rw [detBilinForm_apply_basis_one]; simp
+  refine b.ext <| Fin.forall_fin_two.2 ⟨by simp, by simp⟩
 
 /-- **Unimodularity of the `Fin 2` determinant form.** Over every commutative ring `R`,
 `x ↦ b.detBilinForm x` is a bijection `V → Module.Dual R V`, with inverse
