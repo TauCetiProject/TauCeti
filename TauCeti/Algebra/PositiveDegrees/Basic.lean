@@ -130,6 +130,17 @@ theorem degree_le_of_add_eq {a b n : N} (hb : b ∈ d.monoid) (h : a + b = n) :
   have := d.degree_nonneg hb
   omega
 
+/-- Every increment in an allowed word has degree at most the total degree.
+Adapted from `Mei/Algebra/PositiveDegrees/Word.lean` at commit
+`bf3986029ff4d3eb4025d4067489511b0724374e`. -/
+theorem degree_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
+    {n : N} (hn : n ∈ l) : d.degree n ≤ d.degree l.sum := by
+  have h := List.single_le_sum (l := l.map d.degree) (by
+    intro a ha
+    obtain ⟨n, hn, rfl⟩ := List.mem_map.mp ha
+    exact d.degree_nonneg (hP n hn)) (d.degree n) (List.mem_map.mpr ⟨n, hn, rfl⟩)
+  simpa only [← map_list_sum] using h
+
 /-- There are finitely many ordered decompositions of any ambient element into
 two allowed degrees. This also applies when the element lies outside the monoid. -/
 theorem finite_decompositions (n : N) :
