@@ -280,6 +280,8 @@ theorem derivSignRight_eq_signRight (p : R[X]) (a : R) :
   rw [signRight_mul, signRight_X_sub_C_pow, one_mul,
     signRight_of_eval_ne_zero (eval_divByMonic_pow_rootMultiplicity_ne_zero a hp)]
 
+attribute [simp] signRight_mul
+
 /-- The left-hand sign vanishes exactly when the polynomial is zero. -/
 @[simp]
 theorem derivSignLeft_eq_zero_iff (p : R[X]) (a : R) : p.derivSignLeft a = 0 ↔ p = 0 := by
@@ -310,24 +312,26 @@ theorem derivSignLeft_eq_neg_derivSignRight_of_odd (p : R[X]) (a : R)
     (h : Odd (p.rootMultiplicity a)) : p.derivSignLeft a = -p.derivSignRight a := by
   rw [derivSignLeft_def, h.neg_one_pow, neg_one_mul]
 
-/-- The one-sided signs agree exactly when the root multiplicity is even. This includes the zero
-polynomial, whose one-sided signs are both zero. -/
-theorem derivSignLeft_eq_derivSignRight_iff (p : R[X]) (a : R) :
-    p.derivSignLeft a = p.derivSignRight a ↔ Even (p.rootMultiplicity a) := by
+/-- The left-hand sign agrees with the right-hand sign exactly when the root multiplicity is
+even. This includes the zero polynomial, whose one-sided signs are both zero. -/
+@[simp]
+theorem derivSignLeft_eq_signRight_iff (p : R[X]) (a : R) :
+    p.derivSignLeft a = signRight a p ↔ Even (p.rootMultiplicity a) := by
   rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
   · simp [derivSignLeft_eq_derivSignRight_of_even p a h, h]
   by_cases hp : p = 0
   · simp [hp] at h
   rw [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, iff_false_intro (Nat.not_even_iff_odd.2 h),
-    iff_false, eq_comm, SignType.self_eq_neg_iff]
+    iff_false, derivSignRight_eq_signRight, eq_comm, SignType.self_eq_neg_iff]
   simpa using hp
 
-/-- For a nonzero polynomial, the one-sided signs are opposite exactly when the root multiplicity
-is odd. -/
-theorem derivSignLeft_eq_neg_derivSignRight_iff {p : R[X]} (hp : p ≠ 0) (a : R) :
-    p.derivSignLeft a = -p.derivSignRight a ↔ Odd (p.rootMultiplicity a) := by
+/-- For a nonzero polynomial, the left-hand sign is the negative of the right-hand sign exactly
+when the root multiplicity is odd. -/
+@[simp]
+theorem derivSignLeft_eq_neg_signRight_iff {p : R[X]} (hp : p ≠ 0) (a : R) :
+    p.derivSignLeft a = -signRight a p ↔ Odd (p.rootMultiplicity a) := by
   rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
-  · rw [derivSignLeft_eq_derivSignRight_of_even p a h,
+  · rw [derivSignLeft_eq_derivSignRight_of_even p a h, derivSignRight_eq_signRight,
       iff_false_intro (Nat.not_odd_iff_even.2 h), iff_false, SignType.self_eq_neg_iff]
     simpa using hp
   · simp [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, h]
@@ -345,12 +349,12 @@ theorem derivSignLeft_mul (p q : R[X]) (a : R) :
   ac_rfl
 
 /-- Powers raise the right-hand sign to the same power, with the convention `0^0 = 1`. -/
-theorem derivSignRight_pow (p : R[X]) (a : R) (n : ℕ) :
-    (p ^ n).derivSignRight a = p.derivSignRight a ^ n := by
+@[simp]
+theorem signRight_pow (a : R) (p : R[X]) (n : ℕ) :
+    signRight a (p ^ n) = signRight a p ^ n := by
   induction n with
-  | zero => rw [pow_zero, pow_zero, derivSignRight_one]
-  | succ n ih =>
-    simpa [pow_succ, signRight_mul] using congrArg (· * p.derivSignRight a) ih
+  | zero => rw [pow_zero, pow_zero, ← C_1, signRight_C, sign_one]
+  | succ n ih => simp [pow_succ, ih]
 
 /-- Powers raise the left-hand sign to the same power, with the convention `0^0 = 1`. -/
 @[simp]
@@ -405,14 +409,15 @@ theorem odd_rootMultiplicity_iff_exists_sign_eval_eq_neg {p : R[X]} (hp : p ≠ 
     Odd (p.rootMultiplicity a) ↔ ∃ l u, l < a ∧ a < u ∧
       ∀ x ∈ Ioo l a, ∀ y ∈ Ioo a u, sign (p.eval x) = -sign (p.eval y) := by
   obtain ⟨l, u, hl, hu, hL, hR⟩ := p.exists_derivSignLeft_derivSignRight a
-  rw [← derivSignLeft_eq_neg_derivSignRight_iff hp]
+  rw [← derivSignLeft_eq_neg_signRight_iff hp]
   constructor
   · intro h
-    exact ⟨l, u, hl, hu, fun x hx y hy => by rw [hL x hx, hR y hy, h]⟩
+    exact ⟨l, u, hl, hu, fun x hx y hy => by rw [hL x hx, hR y hy, derivSignRight_eq_signRight, h]⟩
   · rintro ⟨l', u', hl', hu', h⟩
     obtain ⟨x, hx, hxa⟩ := exists_between (max_lt hl hl')
     obtain ⟨y, hay, hy⟩ := exists_between (lt_min hu hu')
-    rw [← hL x ⟨(le_max_left _ _).trans_lt hx, hxa⟩, ← hR y ⟨hay, hy.trans_le (min_le_left _ _)⟩]
+    rw [← derivSignRight_eq_signRight, ← hL x ⟨(le_max_left _ _).trans_lt hx, hxa⟩,
+      ← hR y ⟨hay, hy.trans_le (min_le_left _ _)⟩]
     exact h x ⟨(le_max_right _ _).trans_lt hx, hxa⟩ y ⟨hay, hy.trans_le (min_le_right _ _)⟩
 
 /-- Immediately to the right of a point `a`, the derivative has the sign of `p(x) - p(a)`, and
