@@ -142,14 +142,14 @@ theorem degree_eq_zero_of_mem_robbianoSweedlerSubalgebra {f : MvPolynomial (Fin 
     (fun _ _ hab hb ↦ by
       rw [hrange] at hb ⊢
       exact coe_support_subset_of_lex_le (IsUpperSet.Ici 1) hab hb) hsupp
-  have heq := aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra hf
-  rw [aeval_rename, aeval_rename] at heq
-  have hleft : (![X 0, (0 : MvPolynomial (Fin 2) R)] ∘ fun _ : Unit ↦ (1 : Fin 2)) =
-      fun _ ↦ 0 := funext fun _ ↦ by simp
-  have hright : (![(0 : MvPolynomial (Fin 2) R), X 0] ∘ fun _ : Unit ↦ (1 : Fin 2)) =
-      X ∘ fun _ : Unit ↦ (0 : Fin 2) := funext fun _ ↦ by simp
-  rw [hleft, hright, aeval_zero', algebraMap_eq, ← rename_eq_aeval,
-    ← rename_C (fun _ : Unit ↦ (0 : Fin 2))] at heq
+  -- Reduce `f` to a polynomial `p` in `X 1`, then equate its `(X 0, 0)` and `(0, X 0)`
+  -- specializations: the former collapses `p` to its constant term, while the latter renames `p`
+  -- injectively into `X 0`.
+  have heq : rename (fun _ : Unit ↦ (0 : Fin 2)) (C (constantCoeff p)) =
+      rename (fun _ : Unit ↦ (0 : Fin 2)) p := by
+    have hspec := aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra hf
+    rw [aeval_rename, aeval_rename] at hspec
+    simpa [Function.comp_def, aeval_zero', algebraMap_eq, rename_eq_aeval] using hspec
   have hp : p = C (constantCoeff p) := (rename_injective _ (fun _ _ _ ↦ rfl) heq).symm
   rw [hp, rename_C, degree_C]
 
@@ -232,6 +232,11 @@ private theorem mem_slopeSubmonoid_iff {M : ℕ} {x : Fin 2 →₀ ℕ} :
     x ∈ slopeSubmonoid M ↔ x 1 ≤ M * x 0 :=
   Iff.rfl
 
+private theorem single_add_single_mem_slopeSubmonoid_iff {M j : ℕ} :
+    Finsupp.single (0 : Fin 2) 1 + Finsupp.single 1 j ∈ slopeSubmonoid M ↔ j ≤ M := by
+  rw [mem_slopeSubmonoid_iff]
+  simp [Fin.zero_ne_one.symm]
+
 /-- The monoid of `lex`-leading exponents of `robbianoSweedlerSubalgebra R` is not finitely
 generated, even though `robbianoSweedlerSubalgebra R` is generated as an `R`-algebra by three
 polynomials. -/
@@ -256,10 +261,7 @@ theorem not_fg_leadingExponents_robbianoSweedler :
       AddSubmonoid.closure (S : Set (Fin 2 →₀ ℕ)) := by
     rw [hS]
     exact single_add_single_mem_leadingExponents_robbianoSweedler M
-  have hle := mem_slopeSubmonoid_iff.1 (hbound hmem)
-  simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne Fin.zero_ne_one, Finsupp.single_eq_of_ne Fin.zero_ne_one.symm,
-    add_zero, zero_add, mul_one] at hle
+  have hle := single_add_single_mem_slopeSubmonoid_iff.1 (hbound hmem)
   omega
 
 end NoZeroDivisors
@@ -394,7 +396,10 @@ theorem robbianoSweedlerBinomial_mem_toricIdeal {R : Type*} [CommRing R] [Nontri
   refine TauCeti.monomial_sub_monomial_mem_toricIdeal ?_
   simp only [map_add, Finsupp.linearCombination_single, one_smul, degree_robbianoSweedlerStage]
   ext d
-  fin_cases d <;> simp; omega
+  fin_cases d
+  · simp
+  · simp
+    omega
 
 /-- Evaluating `robbianoSweedlerBinomial R n` at `robbianoSweedlerStage R n` yields the next
 monomial `X 0 * X 1 ^ (n + 3)`. -/
@@ -421,20 +426,15 @@ theorem isSubduction_robbianoSweedlerStage {R : Type*} [CommRing R] [Nontrivial 
       (Set.range (lex.degree ∘ robbianoSweedlerStage R n)) ≤ slopeSubmonoid (n + 2) := by
     refine AddSubmonoid.closure_le.2 ?_
     rintro _ ⟨i, rfl⟩
-    simp only [Function.comp_apply, degree_robbianoSweedlerStage, SetLike.mem_coe,
-      mem_slopeSubmonoid_iff, Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
-      Finsupp.single_eq_of_ne Fin.zero_ne_one, Finsupp.single_eq_of_ne Fin.zero_ne_one.symm,
-      add_zero, zero_add, mul_one]
-    omega
+    rw [Function.comp_apply, degree_robbianoSweedlerStage, SetLike.mem_coe,
+      single_add_single_mem_slopeSubmonoid_iff]
+    exact Nat.le_of_lt_succ i.isLt
   refine ⟨by simp [aeval_robbianoSweedlerStage_binomial], by simp, fun a ha hmem ↦ ?_,
     by simp [aeval_robbianoSweedlerStage_binomial]⟩
   rw [X_zero_mul_X_one_pow] at ha
   have ha' := Finset.mem_singleton.1 (support_monomial_subset ha)
-  have hle := mem_slopeSubmonoid_iff.1 (hbound hmem)
-  rw [ha'] at hle
-  simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne Fin.zero_ne_one, Finsupp.single_eq_of_ne Fin.zero_ne_one.symm,
-    add_zero, zero_add, mul_one] at hle
+  rw [ha'] at hmem
+  have hle := single_add_single_mem_slopeSubmonoid_iff.1 (hbound hmem)
   omega
 
 section Field

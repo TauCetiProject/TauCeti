@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Subalgebra.Directed
 public import Mathlib.RingTheory.Adjoin.FG
 public import TauCeti.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Finite
 import Mathlib.Basic.Finite.Sum
+import TauCeti.Algebra.MvPolynomial.Eval
+import TauCeti.Algebra.MvPolynomial.Rename
 
 /-!
 # Certified SAGBI completion and termination
@@ -162,13 +163,16 @@ theorem exists_subductionStep {G : Set (MvPolynomial σ k)} (hG : ∀ g ∈ G, g
   · exact ⟨G, .of_remainder_eq_zero (hr ▸ h)⟩
   · exact ⟨_, .of_remainder_ne_zero h hr⟩
 
-private theorem linearCombination_rename_eq_of_comp {α β R M : Type*}
-    [CommSemiring R] [AddCommMonoid M]
-    {τ : α → β} {a : α → M} {b : β → M} (hcomp : b ∘ τ = a)
-    {P : MvPolynomial α R} {w : β →₀ ℕ} (hw : w ∈ (rename τ P).support) :
-    ∃ u ∈ P.support, Finsupp.linearCombination ℕ b w = Finsupp.linearCombination ℕ a u := by
-  obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hw)
-  exact ⟨u, mem_support_iff.2 hu, by rw [Finsupp.linearCombination_mapDomain, hcomp]⟩
+private theorem linearCombination_degree_rename_eq_of_comp {σ ι μ R : Type*} [CommSemiring R]
+    {m : MonomialOrder σ} {b : ι → MvPolynomial σ R} {c : μ → MvPolynomial σ R}
+    {τ : ι → μ} (hτ : c ∘ τ = b) {P : MvPolynomial ι R} {w : μ →₀ ℕ}
+    (hw : w ∈ (rename τ P).support) :
+    ∃ u ∈ P.support,
+      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w =
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (b i)) u := by
+  have hcomp : (fun i ↦ m.degree (c i)) ∘ τ = fun i ↦ m.degree (b i) :=
+    funext fun i ↦ congrArg m.degree (congrFun hτ i)
+  exact linearCombination_rename_eq_of_comp hcomp hw
 
 private theorem aeval_rename_add_C_mul_X {σ ι μ k : Type*} [Field k] {m : MonomialOrder σ}
     {b : ι → MvPolynomial σ k} {c : μ → MvPolynomial σ k}
@@ -187,10 +191,8 @@ private theorem linearCombination_rename_add_C_mul_X_le {σ ι μ k : Type*} [Fi
     {w : μ →₀ ℕ} (hw : w ∈ (rename τ Q + C (m.leadingCoeff r) * X i_r).support) :
     Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] m.degree f := by
   classical
-  have hdegτ : (fun i ↦ m.degree (c i)) ∘ τ = fun i ↦ m.degree (b i) :=
-    funext fun i ↦ congrArg m.degree (congrFun hτ i)
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · obtain ⟨u, hu, heq⟩ := linearCombination_rename_eq_of_comp hdegτ hw
+  · obtain ⟨u, hu, heq⟩ := linearCombination_degree_rename_eq_of_comp hτ hw
     rw [heq]
     exact hs.support_le u hu
   · rw [X, C_mul_monomial, mul_one] at hw
@@ -337,14 +339,6 @@ theorem aeval_comp_subductionRetract
       Function.comp_apply]
     exact ((hs l).monicNormalize_eq_aeval rfl).symm
 
-private theorem adjoin_range_eq_of_aeval_comp_eq {R A B C : Type*} [CommSemiring R]
-    [CommSemiring C] [Algebra R C] {b : A → C} {c : B → C}
-    {φ : MvPolynomial B R →ₐ[R] MvPolynomial A R}
-    (hcomp : (aeval b).comp φ = aeval c) (hφ : Function.Surjective φ) :
-    Algebra.adjoin R (Set.range c) = Algebra.adjoin R (Set.range b) := by
-  rw [Algebra.adjoin_range_eq_range_aeval, Algebra.adjoin_range_eq_range_aeval, ← hcomp,
-    AlgHom.range_comp, (AlgHom.range_eq_top φ).2 hφ, Algebra.map_top]
-
 /-- Adjoining a family of normalized subduction remainders of elements of `k[b]` leaves the
 generated subalgebra unchanged. -/
 theorem adjoin_range_sumElim_monicNormalize
@@ -409,8 +403,8 @@ theorem ker_aeval_sumElim_monicNormalize
     exact Ideal.map_id _
   rw [← m.aeval_comp_subductionRetract hs, ← AlgHom.comap_ker]
   conv_lhs => rw [← hmap]
-  rw [Ideal.comap_map_of_surjective (m.subductionRetract P Q r) m.subductionRetract_surjective]
-  rfl
+  rw [Ideal.comap_map_of_surjective (m.subductionRetract P Q r) m.subductionRetract_surjective,
+    ← RingHom.ker_eq_comap_bot]
 
 end SubductionRetract
 
@@ -483,19 +477,50 @@ private theorem exists_aeval_eq_support_lt_of_isSubduction (h : m.IsFairSAGBISeq
       (by simpa [Function.comp_def] using huv) with hf0 | hflt
   · exact ⟨0, by simp [f, hf0], by simp⟩
   obtain ⟨τ, hτ⟩ := Set.range_subset_range_iff_exists_comp.mp (h.range_subset_of_le hNM)
-  have hdegτ : (fun i ↦ m.degree (c M i)) ∘ τ = fun i ↦ m.degree (c N i) := by
-    funext i
-    exact congrArg m.degree (congrFun hτ.symm i)
   rcases eq_or_ne r 0 with rfl | hr0
   · refine ⟨rename τ Q, ?_, fun w hw ↦ ?_⟩
     · rw [aeval_rename, ← hτ, hs.eq_aeval_add, add_zero]
-    · obtain ⟨u₀, hu₀, heq⟩ := linearCombination_rename_eq_of_comp hdegτ hw
+    · obtain ⟨u₀, hu₀, heq⟩ := linearCombination_degree_rename_eq_of_comp hτ.symm hw
       rw [heq]
       exact (hs.support_le u₀ hu₀).trans_lt hflt
   · obtain ⟨i_r, hir⟩ := hr hr0
     exact ⟨rename τ Q + C (m.leadingCoeff r) * X i_r,
       aeval_rename_add_C_mul_X hτ.symm hs hir,
       fun w hw ↦ (linearCombination_rename_add_C_mul_X_le hτ.symm hs hir hw).trans_lt hflt⟩
+
+/-- Transport a finite family of stage-wise representations of stage-`n` polynomials to a common
+later stage `M ≥ n`, together with the variable inclusion `τ₀ : ι n → ι M`. -/
+private theorem exists_common_stage_family (h : m.IsFairSAGBISequence c) {n : ℕ}
+    {S : Type*} (s : Finset S) (u v : S → ι n →₀ ℕ)
+    (hsub : ∀ p : S, ∃ (M : ℕ) (Q' : MvPolynomial (ι M) k),
+      aeval (c M) Q' = aeval (c n) (monomial (u p) (1 : k) - monomial (v p) 1) ∧
+      ∀ w ∈ Q'.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c M i)) w ≺[m]
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) (u p)) :
+    ∃ (M : ℕ) (_ : n ≤ M) (τ₀ : ι n → ι M) (Q'M : S → MvPolynomial (ι M) k),
+      c n = c M ∘ τ₀ ∧
+      (∀ p ∈ s, aeval (c M) (Q'M p) =
+        aeval (c n) (monomial (u p) (1 : k) - monomial (v p) 1)) ∧
+      (∀ p ∈ s, ∀ y ∈ (Q'M p).support,
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c M i)) y ≺[m]
+          Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) (u p)) := by
+  classical
+  choose Mfn Qfn hQfnc hQfnlt using hsub
+  set M := n ⊔ s.sup Mfn
+  have hnM : n ≤ M := le_sup_left
+  obtain ⟨τ₀, hτ₀⟩ := Set.range_subset_range_iff_exists_comp.mp (h.range_subset_of_le hnM)
+  have hτp (p : S) (hp : p ∈ s) : ∃ τ : ι (Mfn p) → ι M, c (Mfn p) = c M ∘ τ :=
+    Set.range_subset_range_iff_exists_comp.mp
+      (h.range_subset_of_le ((Finset.le_sup hp).trans le_sup_right))
+  let Q'M (p : S) : MvPolynomial (ι M) k :=
+    if hp : p ∈ s then rename (Classical.choose (hτp p hp)) (Qfn p) else 0
+  refine ⟨M, hnM, τ₀, Q'M, hτ₀, fun p hp ↦ ?_, fun p hp y hy ↦ ?_⟩
+  · have hτeq := Classical.choose_spec (hτp p hp)
+    simp only [Q'M, hp, ↓reduceDIte, aeval_rename, ← hτeq, hQfnc p]
+  · simp only [Q'M, hp, ↓reduceDIte] at hy
+    obtain ⟨y₀, hy₀, heq⟩ :=
+      linearCombination_degree_rename_eq_of_comp (Classical.choose_spec (hτp p hp)).symm hy
+    rw [heq]
+    exact hQfnlt p y₀ hy₀
 
 /-- **Top-weight reduction across completion stages.** If `P` at stage `n` has all `c n`-weights
 at most `δ` and `(aeval (c n) P).coeff δ = 0`, fairness produces a later stage `M ≥ n` and a
@@ -509,70 +534,55 @@ private theorem exists_stage_aeval_eq_support_lt (h : m.IsFairSAGBISequence c)
       ∀ w ∈ P'.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c M i)) w ≺[m] δ := by
   classical
   set a := fun i ↦ m.degree (c n i)
+  -- Phase 1: decompose the weight-`δ` component of `P` in the toric ideal of stage `n`.
   obtain ⟨S, hS, hfair⟩ := h.fair n
   have hS' : TauCeti.toricIdeal k a =
       Ideal.span (Set.range fun p : S ↦ monomial p.val.1 (1 : k) - monomial p.val.2 1) := by
     rw [hS, Set.image_eq_range]
   obtain ⟨g, hgP₀, hgA⟩ :=
     exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent (h.monic n) hS' hPδ hδ
-  have hsub (p : S) : ∃ (M : ℕ) (Q' : MvPolynomial (ι M) k),
-      aeval (c M) Q' = aeval (c n) (monomial p.val.1 (1 : k) - monomial p.val.2 1) ∧
-      ∀ w ∈ Q'.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c M i)) w ≺[m]
-        Finsupp.linearCombination ℕ a p.val.1 := by
-    obtain ⟨N, M, hNM, Q, r, hs, hr⟩ := hfair p.val p.property
-    have huv : Finsupp.linearCombination ℕ a p.val.1 = Finsupp.linearCombination ℕ a p.val.2 :=
-      TauCeti.linearCombination_eq_of_toricIdeal_eq_span hS' p
-    obtain ⟨Q', hQ'c, hQ'lt⟩ := h.exists_aeval_eq_support_lt_of_isSubduction hNM huv hs hr
-    exact ⟨M, Q', hQ'c, hQ'lt⟩
-  choose Mfn Qfn hQfnc hQfnlt using hsub
-  set M := n ⊔ g.support.sup Mfn
-  have hnM : n ≤ M := le_sup_left
-  obtain ⟨τ₀, hτ₀⟩ := Set.range_subset_range_iff_exists_comp.mp (h.range_subset_of_le hnM)
-  have hτp (p : S) (hp : p ∈ g.support) : ∃ τ : ι (Mfn p) → ι M, c (Mfn p) = c M ∘ τ :=
-    Set.range_subset_range_iff_exists_comp.mp
-      (h.range_subset_of_le ((Finset.le_sup hp).trans le_sup_right))
-  let Q'M (p : S) : MvPolynomial (ι M) k :=
-    if hp : p ∈ g.support then rename (Classical.choose (hτp p hp)) (Qfn p) else 0
+  -- Phase 2: obtain bounded stage representations for the binomials in `S` from fairness, then
+  -- transport the finite support `g.support` to a common stage `M ≥ n`.
+  obtain ⟨M, hnM, τ₀, Q'M, hτ₀, hQ'c, hQ'lt⟩ :=
+    h.exists_common_stage_family g.support (fun p : S ↦ p.val.1) (fun p : S ↦ p.val.2) fun p ↦ by
+      obtain ⟨N, M, hNM, Q, r, hs, hr⟩ := hfair p.val p.property
+      have huv : Finsupp.linearCombination ℕ a p.val.1 = Finsupp.linearCombination ℕ a p.val.2 :=
+        TauCeti.linearCombination_eq_of_toricIdeal_eq_span hS' p
+      obtain ⟨Q', hQ'c, hQ'lt⟩ := h.exists_aeval_eq_support_lt_of_isSubduction hNM huv hs hr
+      exact ⟨M, Q', hQ'c, hQ'lt⟩
   let aM := fun i ↦ m.degree (c M i)
   let g' := g.mapRange (rename τ₀) (map_zero _)
-  have hcomp : aM ∘ τ₀ = a := funext fun i ↦ congrArg m.degree (congrFun hτ₀.symm i)
   refine ⟨M, hnM, rename τ₀ (P - weightedHomogeneousComponent a δ P) +
       g.sum (fun p q ↦ rename τ₀ q * Q'M p), ?_, fun w hw ↦ ?_⟩
-  · have hsum : (aeval (c M)) (g.sum fun p q ↦ rename τ₀ q * Q'M p) =
+  · -- Phase 3: verify that replacing the weight-`δ` component by `∑ q * Q'M p` preserves `aeval`.
+    have hsum : aeval (c M) (g.sum fun p q ↦ rename τ₀ q * Q'M p) =
         aeval (c n) (weightedHomogeneousComponent a δ P) := by
       rw [← hgP₀, map_finsuppSum, map_finsuppSum, Finsupp.sum, Finsupp.sum]
       refine Finset.sum_congr rfl fun p hp ↦ ?_
-      have hτeq := Classical.choose_spec (hτp p hp)
-      simp only [Q'M, hp, ↓reduceDIte, map_mul, aeval_rename]
-      rw [← hτ₀, ← hτeq, hQfnc p]
+      rw [map_mul, map_mul, aeval_rename, ← hτ₀, hQ'c p hp]
     rw [map_add, aeval_rename, ← hτ₀, hsum, ← map_add, sub_add_cancel]
-  · have hsub_eq : rename τ₀ (P - weightedHomogeneousComponent a δ P) =
+  · -- Phase 4: bound all remaining support weights strictly below `δ`.
+    have hsub_eq : rename τ₀ (P - weightedHomogeneousComponent a δ P) =
         rename τ₀ P - weightedHomogeneousComponent aM δ (rename τ₀ P) := by
       rw [map_sub, rename_eq_aeval, weightedHomogeneousComponent_aeval (fun i ↦ ?_),
         ← rename_eq_aeval]
-      simpa [aM, ← congrFun hcomp i] using isWeightedHomogeneous_X k aM (τ₀ i)
+      simpa [a, aM, congrFun hτ₀ i] using isWeightedHomogeneous_X k aM (τ₀ i)
     have hsum_eq : (g.sum fun p q ↦ rename τ₀ q * Q'M p) = g'.sum fun p q ↦ q * Q'M p := by
       rw [Finsupp.sum_mapRange_index (fun _ ↦ zero_mul _)]
     rw [hsub_eq, hsum_eq] at hw
     refine linearCombination_sub_weightedHomogeneousComponent_add_sum_lt aM
       (fun p ↦ Finsupp.linearCombination ℕ a p.val.1) ?_ ?_ ?_ hw
     · intro _ hwP
-      obtain ⟨u, hu, heq⟩ := linearCombination_rename_eq_of_comp hcomp hwP
+      obtain ⟨u, hu, heq⟩ := linearCombination_degree_rename_eq_of_comp hτ₀.symm hwP
       rw [heq]
       exact hPδ u hu
     · intro p _ x hx
       rw [Finsupp.mapRange_apply] at hx
-      obtain ⟨u, hu, heq⟩ := linearCombination_rename_eq_of_comp hcomp hx
+      obtain ⟨u, hu, heq⟩ := linearCombination_degree_rename_eq_of_comp hτ₀.symm hx
       rw [heq]
       exact hgA p u hu
     · intro p hp y hy
-      have hp' := Finsupp.support_mapRange hp
-      simp only [Q'M, hp', ↓reduceDIte] at hy
-      have hcomp_p : aM ∘ Classical.choose (hτp p hp') = fun i ↦ m.degree (c (Mfn p) i) :=
-        funext fun i ↦ congrArg m.degree (congrFun (Classical.choose_spec (hτp p hp')).symm i)
-      obtain ⟨y₀, hy₀, heq⟩ := linearCombination_rename_eq_of_comp hcomp_p hy
-      rw [heq]
-      exact hQfnlt p y₀ hy₀
+      exact hQ'lt p (Finsupp.support_mapRange hp) y hy
 
 /-- **Exhaustion of leading exponents.** In any fair SAGBI completion sequence, the leading
 exponent of every nonzero element of the generated subalgebra eventually lies in the additive
@@ -1063,9 +1073,9 @@ theorem exists_finite_monic_isSAGBIBasis_of_fg {b : ι₀ → MvPolynomial σ k}
     have hD : (D : MvPolynomial ι₀ k →ₐ[k] MvPolynomial ι₀ k) =
         rescale fun i ↦ m.leadingCoeff (b i) := by
       simp [D]
+    dsimp only [c₀]
     rw [← m.aeval_monicNormalize_comp_rescale b, ← hD, AlgHom.comp_assoc,
-      AlgEquiv.comp_symm, AlgHom.comp_id]
-    rfl
+      AlgEquiv.comp_symm, AlgHom.comp_id, Function.comp_def]
   let φ := (D.symm : MvPolynomial ι₀ k →ₐ[k] MvPolynomial ι₀ k).comp
     (m.sagbiCompletionRetract c₀ N)
   refine ⟨m.sagbiCompletionIndex c₀ N, inferInstance, m.sagbiCompletionFamily c₀ N, φ,
