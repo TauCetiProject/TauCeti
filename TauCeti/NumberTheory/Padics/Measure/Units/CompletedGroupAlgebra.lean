@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.Complex.Basic
 public import TauCeti.NumberTheory.Padics.Measure.Topology.Amice
 public import TauCeti.NumberTheory.Padics.Measure.Units.WeightIntegral
+public import TauCeti.NumberTheory.Padics.WeightSpace.PadicComplex
 public import TauCeti.NumberTheory.Padics.WeightSpace.Specialization
 import TauCeti.Analysis.Normed.Field.Basic
 
@@ -135,32 +136,6 @@ theorem completedMeasureFun_injective :
 end MeasureFunComparison
 
 section AdicPadicComplex
-
-/-- Every `ℂ_p`-valued weight takes values in `𝓞_ℂ_p`. -/
-theorem WeightSpace.coe_mem_padicComplexInt (κ : WeightSpace p ℂ_[p]) (x : ℤ_[p]ˣ) :
-    (κ x : ℂ_[p]) ∈ 𝓞_ℂ_[p] := by
-  rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe,
-    PadicComplex.valuation_coe]
-  exact (norm_apply_eq_one_of_compactSpace κ x).le
-
-/-- Restriction of a `ℂ_p`-valued weight `κ : ℤ_pˣ →ₜ* ℂ_pˣ` to the unit group `(𝓞_ℂ_p)ˣ`. -/
-noncomputable def WeightSpace.toPadicComplexInt (κ : WeightSpace p ℂ_[p]) :
-    WeightSpace p 𝓞_ℂ_[p] where
-  toMonoidHom :=
-    { toFun x :=
-        ⟨⟨(κ x : ℂ_[p]), κ.coe_mem_padicComplexInt x⟩,
-         ⟨(κ x⁻¹ : ℂ_[p]), κ.coe_mem_padicComplexInt x⁻¹⟩,
-         Subtype.ext (by simp), Subtype.ext (by simp)⟩
-      map_one' := Units.ext <| Subtype.ext <| by simp
-      map_mul' x y := Units.ext <| Subtype.ext <| by simp }
-  continuous_toFun := Units.continuous_iff.mpr
-    ⟨(Units.continuous_val.comp κ.continuous).subtype_mk _,
-     ((Units.continuous_val.comp κ.continuous).comp continuous_inv).subtype_mk _⟩
-
-@[simp]
-theorem WeightSpace.coe_toPadicComplexInt_apply (κ : WeightSpace p ℂ_[p]) (x : ℤ_[p]ˣ) :
-    ((κ.toPadicComplexInt x : 𝓞_ℂ_[p]) : ℂ_[p]) = κ x :=
-  (rfl)
 
 /-- Every `ℂ_p`-valued weight specialisation takes values in `𝓞_ℂ_p`. -/
 theorem WeightSpace.specializeRingHom_mem_padicComplexInt (κ : WeightSpace p ℂ_[p])

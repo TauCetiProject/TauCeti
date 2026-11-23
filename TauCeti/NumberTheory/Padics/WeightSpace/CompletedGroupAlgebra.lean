@@ -56,29 +56,47 @@ section Coordinate
 
 variable (p : ℕ) [Fact p.Prime]
 
+/-- **The weight power-series coordinate at a changed generator `γ ^ u = exp(q u)`.** For
+`u ∈ ℤ_pˣ`, this sends `X` to `[exp(q u)] - 1` while keeping `[δ] ↦ [ω(δ)]` on `Δ`. -/
+noncomputable def padicUnitsCoordinateAt (u : ℤ_[p]ˣ) :
+    PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) ≃ₐ[ℤ_[p]]
+      completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ :=
+  (completedGroupAlgebra.prodPowerSeriesCoordinate (ZMod (p ^ padicUnitsDepth p))ˣ
+    (isProP_multiplicative_padicInt p) (topologicallyGenerates_ofAdd_unit_padicInt p u)).trans
+    (completedGroupAlgebra.domCongr ℤ_[p] (padicIntUnitsEquivZModUnitsProd p).symm)
+
+@[simp] theorem padicUnitsCoordinateAt_X (u : ℤ_[p]ˣ) :
+    padicUnitsCoordinateAt p u PowerSeries.X = completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ
+      ((unitsPrincipalLogEquiv p).symm (.ofAdd (u : ℤ_[p]))) - 1 := by
+  rw [padicUnitsCoordinateAt, AlgEquiv.trans_apply,
+    completedGroupAlgebra.prodPowerSeriesCoordinate_X, map_sub,
+    map_one (completedGroupAlgebra.domCongr ℤ_[p] _), completedGroupAlgebra.domCongr_of,
+    padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, one_mul]
+@[simp] theorem padicUnitsCoordinateAt_C_single (u : ℤ_[p]ˣ) (δ : (ZMod (p ^ padicUnitsDepth p))ˣ)
+    (a : ℤ_[p]) :
+    padicUnitsCoordinateAt p u (PowerSeries.C (MonoidAlgebra.single δ a)) =
+      algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) a *
+        completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ) := by
+  rw [padicUnitsCoordinateAt, AlgEquiv.trans_apply,
+    completedGroupAlgebra.prodPowerSeriesCoordinate_C_single, map_mul, AlgEquiv.commutes,
+    completedGroupAlgebra.domCongr_of, padicIntUnitsEquivZModUnitsProd_symm_apply, map_one,
+    OneMemClass.coe_one, mul_one]
+
 /-- **The weight power-series coordinate of `ℤ_p[[ℤ_pˣ]]`.** Writing `q = p ^ padicUnitsDepth p`
 and `Δ = (ℤ/qℤ)ˣ`, `ℤ_pˣ ≃ₜ* Δ × ℤ_p` identifies `ℤ_p[[ℤ_pˣ]]` with `(ℤ_p[Δ])⟦X⟧`, sending `X` to
 `[γ] - 1` (`γ = exp q`) and `[δ]` to `[ω(δ)]`. -/
 noncomputable def padicUnitsCoordinate :
     PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) ≃ₐ[ℤ_[p]]
       completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ :=
-  (completedGroupAlgebra.prodPowerSeriesCoordinate (ZMod (p ^ padicUnitsDepth p))ˣ
-    (isProP_multiplicative_padicInt p) (topologicallyGenerates_ofAdd_one_padicInt p)).trans
-    (completedGroupAlgebra.domCongr ℤ_[p] (padicIntUnitsEquivZModUnitsProd p).symm)
+  padicUnitsCoordinateAt p 1
 
-theorem padicUnitsCoordinate_def :
-    padicUnitsCoordinate p = (completedGroupAlgebra.prodPowerSeriesCoordinate
-      (ZMod (p ^ padicUnitsDepth p))ˣ (isProP_multiplicative_padicInt p)
-      (topologicallyGenerates_ofAdd_one_padicInt p)).trans
-      (completedGroupAlgebra.domCongr ℤ_[p] (padicIntUnitsEquivZModUnitsProd p).symm) := (rfl)
+@[simp] theorem padicUnitsCoordinateAt_one :
+    padicUnitsCoordinateAt p 1 = padicUnitsCoordinate p := (rfl)
 @[simp] theorem padicUnitsCoordinate_X :
     padicUnitsCoordinate p PowerSeries.X =
       completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1 := by
-  have hγ := (padicIntUnitsEquivZModUnitsProd p).symm_apply_eq.mpr
-    padicIntUnitsEquivZModUnitsProd_padicUnitsGenerator.symm
-  rw [padicUnitsCoordinate, AlgEquiv.trans_apply, completedGroupAlgebra.prodPowerSeriesCoordinate_X,
-    map_sub, map_one (completedGroupAlgebra.domCongr ℤ_[p] _), completedGroupAlgebra.domCongr_of,
-    hγ]
+  rw [← padicUnitsCoordinateAt_one, padicUnitsCoordinateAt_X, Units.val_one,
+    ← unitsPrincipalLogEquiv_padicUnitsGenerator, ContinuousMulEquiv.symm_apply_apply]
 @[simp] theorem padicUnitsCoordinate_one_add_X :
     padicUnitsCoordinate p (1 + PowerSeries.X) =
       completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) := by
@@ -86,11 +104,8 @@ theorem padicUnitsCoordinate_def :
 @[simp] theorem padicUnitsCoordinate_C_single (δ : (ZMod (p ^ padicUnitsDepth p))ˣ) (a : ℤ_[p]) :
     padicUnitsCoordinate p (PowerSeries.C (MonoidAlgebra.single δ a)) =
       algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) a *
-        completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ) := by
-  rw [padicUnitsCoordinate, AlgEquiv.trans_apply,
-    completedGroupAlgebra.prodPowerSeriesCoordinate_C_single, map_mul, AlgEquiv.commutes,
-    completedGroupAlgebra.domCongr_of, padicIntUnitsEquivZModUnitsProd_symm_apply, map_one,
-    OneMemClass.coe_one, mul_one]
+        completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ) :=
+  padicUnitsCoordinateAt_C_single p 1 δ a
 theorem padicUnitsCoordinate_C_single_one (δ : (ZMod (p ^ padicUnitsDepth p))ˣ) :
     padicUnitsCoordinate p (PowerSeries.C (MonoidAlgebra.single δ 1)) =
       completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ) := by
@@ -101,8 +116,8 @@ theorem padicUnitsCoordinate_C_single_one (δ : (ZMod (p ^ padicUnitsDepth p))ˣ
     padicUnitsCoordinate p
         (PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) s) =
       completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ ((unitsPrincipalLogEquiv p).symm (.ofAdd s)) := by
-  rw [padicUnitsCoordinate, AlgEquiv.trans_apply,
-    completedGroupAlgebra.prodPowerSeriesCoordinate_binomialSeries,
+  rw [← padicUnitsCoordinateAt_one, padicUnitsCoordinateAt, AlgEquiv.trans_apply,
+    completedGroupAlgebra.prodPowerSeriesCoordinate_binomialSeries, Units.val_one,
     IsProP.padicPow_ofAdd_one_padicInt, completedGroupAlgebra.domCongr_of,
     padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, one_mul]
 
@@ -128,37 +143,6 @@ theorem padicUnitsCoordinate_symm_of (x : ℤ_[p]ˣ) :
   (padicUnitsCoordinate p).symm_apply_eq.mpr (padicUnitsCoordinate_one_add_X p).symm
 
 section GeneratorChange
-
-/-- **The weight power-series coordinate at a changed generator `γ ^ u = exp(q u)`.** For
-`u ∈ ℤ_pˣ`, this sends `X` to `[exp(q u)] - 1` while keeping `[δ] ↦ [ω(δ)]` on `Δ`. -/
-noncomputable def padicUnitsCoordinateAt (u : ℤ_[p]ˣ) :
-    PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) ≃ₐ[ℤ_[p]]
-      completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ :=
-  (completedGroupAlgebra.prodPowerSeriesCoordinate (ZMod (p ^ padicUnitsDepth p))ˣ
-    (isProP_multiplicative_padicInt p) (topologicallyGenerates_ofAdd_unit_padicInt p u)).trans
-    (completedGroupAlgebra.domCongr ℤ_[p] (padicIntUnitsEquivZModUnitsProd p).symm)
-
-theorem padicUnitsCoordinateAt_def (u : ℤ_[p]ˣ) :
-    padicUnitsCoordinateAt p u = (completedGroupAlgebra.prodPowerSeriesCoordinate
-      (ZMod (p ^ padicUnitsDepth p))ˣ (isProP_multiplicative_padicInt p)
-      (topologicallyGenerates_ofAdd_unit_padicInt p u)).trans
-      (completedGroupAlgebra.domCongr ℤ_[p] (padicIntUnitsEquivZModUnitsProd p).symm) := (rfl)
-@[simp] theorem padicUnitsCoordinateAt_X (u : ℤ_[p]ˣ) :
-    padicUnitsCoordinateAt p u PowerSeries.X = completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ
-      ((unitsPrincipalLogEquiv p).symm (.ofAdd (u : ℤ_[p]))) - 1 := by
-  rw [padicUnitsCoordinateAt, AlgEquiv.trans_apply,
-    completedGroupAlgebra.prodPowerSeriesCoordinate_X, map_sub,
-    map_one (completedGroupAlgebra.domCongr ℤ_[p] _), completedGroupAlgebra.domCongr_of,
-    padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, one_mul]
-@[simp] theorem padicUnitsCoordinateAt_C_single (u : ℤ_[p]ˣ) (δ : (ZMod (p ^ padicUnitsDepth p))ˣ)
-    (a : ℤ_[p]) :
-    padicUnitsCoordinateAt p u (PowerSeries.C (MonoidAlgebra.single δ a)) =
-      algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) a *
-        completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ) := by
-  rw [padicUnitsCoordinateAt, AlgEquiv.trans_apply,
-    completedGroupAlgebra.prodPowerSeriesCoordinate_C_single, map_mul, AlgEquiv.commutes,
-    completedGroupAlgebra.domCongr_of, padicIntUnitsEquivZModUnitsProd_symm_apply, map_one,
-    OneMemClass.coe_one, mul_one]
 
 /-- **Change of principal generator in `ℤ_p[[ℤ_pˣ]]`.** Replacing `γ` by `γ ^ u = exp(q u)` changes
 the power-series coordinate by the substitution `X ↦ (1 + X) ^ u - 1`. -/
@@ -187,14 +171,6 @@ theorem padicUnitsCoordinateAt_apply (u : ℤ_[p]ˣ)
   rw [PowerSeries.coe_substAlgHom, hσX] at hsub
   exact (padicUnitsCoordinate p).symm_apply_eq.mp hsub
 
-@[simp] theorem padicUnitsCoordinateAt_one :
-    padicUnitsCoordinateAt p 1 = padicUnitsCoordinate p := by
-  refine AlgEquiv.ext fun ψ ↦ ?_
-  have hb : PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)
-      (1 : ℤ_[p]) = 1 + PowerSeries.X := by
-    simpa using PowerSeries.binomialSeries_nat (R := ℤ_[p]) 1
-  rw [padicUnitsCoordinateAt_apply, Units.val_one, hb, add_sub_cancel_left, PowerSeries.X_subst]
-
 end GeneratorChange
 
 section Topology
@@ -221,9 +197,9 @@ theorem continuous_padicUnitsCoordinateAt_symm (u : ℤ_[p]ˣ) :
     simp [padicUnitsCoordinateAt, completedGroupAlgebra.domCongr_symm,
       completedGroupAlgebra.coe_domCongr]
 theorem continuous_padicUnitsCoordinate : Continuous (padicUnitsCoordinate p) :=
-  padicUnitsCoordinateAt_one p ▸ continuous_padicUnitsCoordinateAt p 1
+  continuous_padicUnitsCoordinateAt p 1
 theorem continuous_padicUnitsCoordinate_symm : Continuous (padicUnitsCoordinate p).symm :=
-  padicUnitsCoordinateAt_one p ▸ continuous_padicUnitsCoordinateAt_symm p 1
+  continuous_padicUnitsCoordinateAt_symm p 1
 
 end Topology
 

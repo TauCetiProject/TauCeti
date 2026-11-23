@@ -9,7 +9,6 @@ public import Mathlib.GroupTheory.PGroup
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.FiniteType
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 import Mathlib.Algebra.CharP.Lemmas

@@ -166,12 +166,8 @@ element `(1, γ ^ u)` in `ℤ_p[[C × Γ]]`. -/
 theorem prodPowerSeriesCoordinate_binomialSeries (u : ℤ_[p]) :
     prodPowerSeriesCoordinate C hΓ hγ (PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] C) u) =
       of ℤ_[p] (C × Γ) (1, hΓ.padicPow γ u) := by
-  have hmap : PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] C) u =
-      PowerSeries.map (MonoidAlgebra.singleOneRingHom : ℤ_[p] →+* MonoidAlgebra ℤ_[p] C)
-        (PowerSeries.binomialSeries ℤ_[p] u) := by
-    ext n
-    simp [PowerSeries.binomialSeries_coeff, MonoidAlgebra.one_def]
-  rw [hmap, prodPowerSeriesCoordinate_map_singleOneRingHom, powerSeriesCoordinate_binomialSeries,
+  rw [MonoidAlgebra.binomialSeries_eq_map_singleOneRingHom,
+    prodPowerSeriesCoordinate_map_singleOneRingHom, powerSeriesCoordinate_binomialSeries,
     map_of, MonoidHom.inr_apply]
 
 /-- The inverse coordinate sends the group element `(c, 1)` to the group element `c` of the

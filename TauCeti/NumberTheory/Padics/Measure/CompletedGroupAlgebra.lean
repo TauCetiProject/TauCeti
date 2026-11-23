@@ -19,6 +19,7 @@ import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.UniformSpace.UniformApproximation
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Basic
+import TauCeti.Algebra.MonoidAlgebra.PowerSeries
 import TauCeti.NumberTheory.Padics.Measure.Norm
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.ContinuousMap.LocallyConstant
@@ -162,7 +163,7 @@ theorem toCompletedGroupAlgebra_mapAlgHom {Δ : Type*} [Group Δ] [TopologicalSp
   refine MonoidAlgebra.coeff_injective ?_
   simp only [MonoidAlgebra.coeff_mapDomain, ContinuousMonoidHom.finiteProjectionAlgHom_apply,
     MonoidAlgebra.coeff_ofCoeff, ContinuousMonoidHom.mapAlgHom_apply, finiteProjection_map, hq,
-    finiteProjection_comp]; rfl
+    finiteProjection_comp, ContinuousMap.coe_mk, q, U]
 
 /-- Pushing a measure forward along a topological group isomorphism corresponds to `domCongr`. -/
 theorem toCompletedGroupAlgebra_continuousMulEquiv {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
@@ -630,12 +631,9 @@ theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq
       (continuous_of_discreteTopology (f := ⇑ψ)).comp q.continuous⟩
   have hcharEval (x : MonoidAlgebra K (Γ ⧸ U.toSubgroup)) :
       ψ.charEval x = ∑ a, ψ' a * x.coeff a := by
-    induction x using MonoidAlgebra.induction_linear with
-    | zero => simp
-    | add x y hx hy => simp [map_add, hx, hy, mul_add, Finset.sum_add_distrib]
-    | single a r =>
-      classical
-      simp [ψ', Finsupp.single_apply, ite_mul, mul_comm]
+    change MonoidAlgebra.liftNC (algebraMap K K : K →+ K) ((Units.coeHom K).comp ψ) x = _
+    simpa [ψ', mul_comm] using
+      MonoidAlgebra.liftNC_eq_sum (algebraMap K K : K →+ K) ((Units.coeHom K).comp ψ) x
   have hchar (ρ : D(Γ, K)) :
       ψ.charEval (q.finiteProjectionAlgHom ρ) =
         (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩
@@ -643,7 +641,8 @@ theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq
     rw [hcharEval]
     simpa [q] using (apply_eq_sum_coeff_proj_toCompletedGroupAlgebra (R := K) (U := U) ρ
       (F := (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩ κ : C(Γ, K)))
-      (g := ψ') (funext fun x ↦ by simp [ψ', κ, q]; rfl)).symm
+      (g := ψ') (funext fun x ↦ congrArg (fun y ↦ (ψ y : K))
+        (Subgroup.quotientMkContinuousMonoidHom_apply U.toSubgroup x).symm)).symm
   have hfin : IsOfFinOrder κ :=
     isOfFinOrder_iff_pow_eq_one.mpr
       ⟨Monoid.exponent (Γ ⧸ U.toSubgroup), Monoid.ExponentExists.of_finite.exponent_pos, by

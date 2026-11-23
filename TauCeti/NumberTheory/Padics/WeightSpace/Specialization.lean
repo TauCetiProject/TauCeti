@@ -262,7 +262,7 @@ theorem existsUnique_continuous_algHom_of_hasEval (η : (ZMod (p ^ padicUnitsDep
     by rw [adicSpecialize_coord, coord_ofHasEval]⟩, fun φ ⟨hφ, hη, hz'⟩ ↦ ?_⟩
   have hκ : ofContinuousRingHom φ.toRingHom hφ = ofHasEval η hz :=
     ext_finiteChar_coord (by ext δ; simpa using hη δ) (by simpa using hz')
-  exact eq_adicSpecialize_of_continuous hφ (ofHasEval η hz) fun x ↦ by rw [← hκ]; rfl
+  exact eq_adicSpecialize_of_continuous hφ (ofHasEval η hz) fun x ↦ by simp [← hκ]
 
 @[simp] theorem adicSpecialize_universal :
     (universal p).adicSpecialize = AlgHom.id ℤ_[p] (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) :=
@@ -297,7 +297,7 @@ theorem continuous_normedSpecialize (κ : WeightSpace p R) : Continuous κ.norme
       padicPowerSeriesEval p κ.tendsto_coord_pow φ := liftPS_map_singleOne _ _ φ
 
 /-- `κ.normedSpecialize` sends `[γ⁻¹]` to a multiplicative inverse of `1 + κ.coord` in `R`. -/
-theorem normedSpecialize_of_padicUnitsGenerator_inv (κ : WeightSpace p R) :
+theorem normedSpecialize_of_padicUnitsGenerator_inv_mul_one_add_coord (κ : WeightSpace p R) :
     κ.normedSpecialize (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p)⁻¹) *
         (1 + κ.coord) = 1 := by
   rw [normedSpecialize_of, coord_def, add_sub_cancel, ← Units.val_mul, ← map_mul,
@@ -362,7 +362,7 @@ theorem existsUnique_continuous_algHom_of_tendsto_pow
     by rw [normedSpecialize_coord, coord_ofCoord]⟩, fun φ ⟨hφ, hη, ht'⟩ ↦ ?_⟩
   have hκ : ofContinuousRingHom φ.toRingHom hφ = ofCoord η t ht :=
     ext_finiteChar_coord (by ext δ; simpa using hη δ) (by simpa using ht')
-  exact eq_normedSpecialize_of_continuous hφ (ofCoord η t ht) fun x ↦ by rw [← hκ]; rfl
+  exact eq_normedSpecialize_of_continuous hφ (ofCoord η t ht) fun x ↦ by simp [← hκ]
 
 /-- When `‖t‖ < 1`, `η` and `t` determine a unique continuous `ℤ_p`-algebra homomorphism out of
 `ℤ_p[[ℤ_pˣ]]`. -/
@@ -536,7 +536,7 @@ theorem existsUnique_continuous_ringHom_of_tendsto_pow
   have hκ : ofContinuousRingHom φ hφ = ofCoordOfNormedAlgebra η t ht :=
     ext_finiteChar_coord (by ext δ; simpa [coe_finiteChar_ofContinuousRingHom_apply] using hη δ)
       (by simpa using ht')
-  exact eq_specializeRingHom_of_continuous hφ _ fun x ↦ by rw [← hκ]; rfl
+  exact eq_specializeRingHom_of_continuous hφ _ fun x ↦ by simp [← hκ]
 
 /-- When `‖t‖ < 1`, `η` and `t` determine a unique continuous ring homomorphism out of
 `ℤ_p[[ℤ_pˣ]]` into a complete ultrametric normed `ℚ_p`-algebra `K`. -/

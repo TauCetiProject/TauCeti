@@ -97,16 +97,11 @@ theorem hasSum_liftNC_powerSeriesAlgEquiv_symm {R A M B : Type*} [CommSemiring R
       (MonoidAlgebra.liftNC ε η ((MonoidAlgebra.powerSeriesAlgEquiv R A M).symm F)) L := by
   classical
   have := Fintype.ofFinite M
-  have hsum_lift {S : Type _} [Semiring S] (g : S →+ B) (x : MonoidAlgebra S M) :
-      MonoidAlgebra.liftNC g η x = ∑ m : M, g (x.coeff m) * η m := by
-    conv_lhs => rw [← MonoidAlgebra.sum_coeff_single x,
-      Finsupp.sum_fintype _ _ (fun m ↦ MonoidAlgebra.single_zero m), map_sum]
-    exact Finset.sum_congr rfl fun m _ ↦ MonoidAlgebra.liftNC_single g η m (x.coeff m)
-  rw [hsum_lift ε]
+  rw [MonoidAlgebra.liftNC_eq_sum]
   refine (hasSum_sum fun m _ ↦
     (hε (((MonoidAlgebra.powerSeriesAlgEquiv R A M).symm F).coeff m)).map
       (AddMonoidHom.mulRight (η m)) (continuous_id.mul continuous_const)).congr_fun fun n ↦ ?_
-  rw [hsum_lift f, Finset.sum_mul]
+  rw [MonoidAlgebra.liftNC_eq_sum, Finset.sum_mul]
   exact Finset.sum_congr rfl fun m _ ↦ by
     simp only [Function.comp_apply, AddMonoidHom.coe_mulRight,
       MonoidAlgebra.coeff_coeff_powerSeriesAlgEquiv_symm, mul_assoc, ((ht m).pow_left n).eq]

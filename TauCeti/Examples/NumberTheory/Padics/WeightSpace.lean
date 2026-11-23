@@ -70,7 +70,7 @@ example {p : ℕ} [Fact p.Prime] (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) :
       (by ext δ; simp [φ, coe_finiteChar_ofContinuousRingHom_apply, ← finiteChar_apply])
       (by simp [φ])
   exact AlgHom.congr_fun (eq_normedSpecialize_of_continuous hφ _ fun _ ↦ by
-    rw [← hκ, coe_ofContinuousRingHom_apply]; rfl) x
+    simp [← hκ]) x
 
 -- For `p = 2`, the two dyadic sign weights separate `[ω(-1)]`.
 example :
