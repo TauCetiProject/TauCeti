@@ -439,15 +439,6 @@ theorem CaccioppoliAbove.caccioppoliAboveLinear {u : W1p mu Omega 2} {k A B : �
     rw [zero_mul, zero_mul, add_zero]
     exact h.setIntegral_sq_mul_norm_gradient_sq_le hkl hl hψ hcpt hts
 
-/-- De Giorgi's class above `k` with a vanishing linear term is De Giorgi's class above `k`. -/
-@[simp]
-theorem caccioppoliAboveLinear_zero_iff {u : W1p mu Omega 2} {k A B : ℝ} :
-    CaccioppoliAboveLinear u k A B 0 ↔ CaccioppoliAbove u k A B :=
-  ⟨fun h => .intro fun l hkl hl _ hψ hcpt hts => by
-    simpa only [zero_mul, add_zero] using
-      h.setIntegral_sq_mul_norm_gradient_sq_le hkl hl hψ hcpt hts,
-    CaccioppoliAbove.caccioppoliAboveLinear⟩
-
 /-- The radii `r₀ = R/2 + R/2^{j+1}`, `r₁ = R/2 + R/2^{j+2}` and `ρ = (r₀ + r₁)/2` of one step of
 De Giorgi's iteration on balls are ordered `0 < r₁ < ρ < r₀ ≤ R`, with gap `ρ - r₁ = R/2^{j+3}`. -/
 private theorem sub_eq_div_two_pow_and_pos_and_lt_and_lt_and_le {R r₀ r₁ ρ : ℝ} (hR : 0 < R) {j : ℕ}
