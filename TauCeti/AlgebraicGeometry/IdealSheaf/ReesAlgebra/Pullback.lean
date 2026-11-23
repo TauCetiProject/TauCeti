@@ -79,7 +79,7 @@ theorem reesPullbackComponent_def (n : ℕ) :
 
 /-- The degree-`n` comparison, followed by the inclusion `(I.comap f)ⁿ ⟶ 𝒪_X`, is the pullback of
 the inclusion `Iⁿ ⟶ 𝒪_Y`, followed by `f^* 𝒪_Y ≅ 𝒪_X`. -/
-@[reassoc]
+@[reassoc, simp]
 theorem reesPullbackComponent_sheafι (n : ℕ) :
     I.reesPullbackComponent f n ≫ (I.comap f ^ n).sheafι =
       (Scheme.Modules.pullback f).map (I ^ n).sheafι ≫
@@ -184,6 +184,7 @@ def reesAlgebraPullbackHom :
 /-- In degree `n`, the morphism `reesAlgebraPullbackHom` is the comparison
 `reesPullbackComponent`, up to the identifications of the components with `f^* Iⁿ` and
 `(I.comap f)ⁿ`. -/
+@[simp]
 theorem reesAlgebraPullbackHom_hom_hom_hom (n : ℕ) :
     (I.reesAlgebraPullbackHom f).hom.hom.hom n =
       eqToHom (congrFun (pullback_obj_reesAlgebra_obj_X I f) n) ≫
