@@ -24,6 +24,9 @@ Forgetting continuity and restricting to `K` produce exactly the orbit `{π k v 
 ambient space (`ContRepresentation.isKFinite_iff`), so the `K`-finite submodule is a subset of `E`
 itself, and no continuity or compactness hypothesis enters. A `K`-finite vector is also
 `K'`-finite for every subgroup `K' ≤ K`; for `K = ⊤` it is `G`-finite for `π.toRepresentation`.
+Every vector of a finite-dimensional space is `K`-finite by
+`Representation.IsGFinite.of_finiteDimensional`, and membership in `kFiniteSubmodule` is
+`Representation.mem_gFiniteSubmodule`, both of which apply through the abbreviations.
 
 ## Main definitions
 
@@ -34,11 +37,10 @@ itself, and no continuity or compactness hypothesis enters. A `K`-finite vector 
 
 * `ContRepresentation.isKFinite_iff`: `K`-finiteness is finite dimensionality of the span of the
   orbit `π k v`, `k ∈ K`.
-* `ContRepresentation.mem_kFiniteSubmodule`: membership in the `K`-finite submodule.
-* `ContRepresentation.kFinite_of_finiteDimensional`: every vector of a finite-dimensional space is
-  `K`-finite.
 * `ContRepresentation.IsKFinite.mono`: `K`-finiteness passes to smaller subgroups.
 * `ContRepresentation.isKFinite_top_iff`: `⊤`-finiteness is `G`-finiteness.
+* `ContRepresentation.kFiniteSubmodule_antitone`: the `K`-finite submodule grows as `K` shrinks.
+* `ContRepresentation.kFiniteSubmodule_top`: the `⊤`-finite submodule is the `G`-finite submodule.
 
 ## References
 
@@ -70,26 +72,24 @@ ambient space. -/
 theorem isKFinite_iff (v : E) :
     π.IsKFinite K v ↔
       FiniteDimensional k (Submodule.span k (Set.range fun x : K => π (x : G) v)) :=
+  -- This is the one place where the restriction is unfolded: the restricted representation
+  -- acts by `π (x : G)` by definition (`restrict_apply_apply`, `Subgroup.coe_subtype`), and
+  -- `toRepresentation` applies the same continuous linear map through
+  -- `ContinuousLinearMap.toLinearMapRingHom`. Inside the span the two sides reach `Semiring k`
+  -- through different paths (`Ring` and `CommSemiring`), so `simp` does not rewrite this
+  -- coercion there and the identification is definitional.
   Representation.isGFinite_iff _ v
-
-/-- Membership in the `K`-finite submodule is `K`-finiteness. -/
-theorem mem_kFiniteSubmodule {v : E} : v ∈ π.kFiniteSubmodule K ↔ π.IsKFinite K v :=
-  Representation.mem_gFiniteSubmodule _
-
-/-- Every vector of a finite-dimensional continuous representation is `K`-finite. -/
-theorem kFinite_of_finiteDimensional [FiniteDimensional k E] (v : E) : π.IsKFinite K v :=
-  Representation.IsGFinite.of_finiteDimensional v
 
 variable {π K} in
 /-- A `K`-finite vector is `K'`-finite for every subgroup `K' ≤ K`: the smaller orbit spans a
 subspace of the larger span. -/
 theorem IsKFinite.mono {K' : Subgroup G} (hK : K' ≤ K) {v : E} (hv : π.IsKFinite K v) :
     π.IsKFinite K' v := by
-  have : FiniteDimensional k (Submodule.span k (Set.range fun x : K => π (x : G) v)) :=
-    (π.isKFinite_iff K v).mp hv
-  exact Representation.IsGFinite.of_forall_apply_mem
-    (W := Submodule.span k (Set.range fun x : K => π (x : G) v)) fun x : K' =>
-      Submodule.subset_span ⟨⟨x, hK x.property⟩, rfl⟩
+  rw [isKFinite_iff] at hv ⊢
+  refine Submodule.finiteDimensional_of_le
+    (Submodule.span_mono (t := Set.range fun x : K => π (x : G) v) ?_)
+  rintro _ ⟨x, rfl⟩
+  exact ⟨Subgroup.inclusion hK x, by simp only [Subgroup.coe_inclusion]⟩
 
 /-- `K`-finiteness for the whole group `⊤` is `G`-finiteness of the underlying representation. -/
 theorem isKFinite_top_iff (v : E) : π.IsKFinite ⊤ v ↔ π.toRepresentation.IsGFinite v := by
@@ -97,6 +97,19 @@ theorem isKFinite_top_iff (v : E) : π.IsKFinite ⊤ v ↔ π.toRepresentation.I
   have : Set.range (fun x : (⊤ : Subgroup G) => π (x : G) v) = Set.range fun g : G => π g v :=
     Set.ext fun w => ⟨fun ⟨x, hx⟩ => ⟨x, hx⟩, fun ⟨g, hg⟩ => ⟨⟨g, Subgroup.mem_top g⟩, hg⟩⟩
   rw [this]
+  -- `π.toRepresentation g` is `π g` viewed as a linear map, by definition of `toRepresentation`
+  -- (see `isKFinite_iff` for why `simp` does not rewrite this coercion).
   rfl
+
+/-- The `K`-finite submodule is antitone in `K`: shrinking the subgroup can only add `K`-finite
+vectors. -/
+theorem kFiniteSubmodule_antitone : Antitone π.kFiniteSubmodule := fun _ _ hK _ hv =>
+  (Representation.mem_gFiniteSubmodule _).2 <|
+    IsKFinite.mono hK ((Representation.mem_gFiniteSubmodule _).1 hv)
+
+/-- The `⊤`-finite submodule is the `G`-finite submodule of the underlying representation. -/
+theorem kFiniteSubmodule_top : π.kFiniteSubmodule ⊤ = π.toRepresentation.gFiniteSubmodule :=
+  Submodule.ext fun v => (Representation.mem_gFiniteSubmodule _).trans <|
+    (π.isKFinite_top_iff v).trans (Representation.mem_gFiniteSubmodule _).symm
 
 end ContRepresentation

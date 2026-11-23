@@ -18,10 +18,10 @@ Checks for `ContRepresentation.IsKFinite`.
   is.
 * In the trivial representation every orbit is a point, so every vector is `K`-finite, even in an
   infinite-dimensional space; the trivial subgroup likewise makes every vector `K`-finite.
-* The predicate needs no compactness, and fails without it: in the left regular representation of
-  the infinite cyclic group on all functions `ℤ → ℂ`, the translates of the point mass at the
-  identity are the point masses, which are linearly independent, so the point mass is not
-  `K`-finite for `K = ⊤`.
+* The predicate needs no compactness to state, but without compactness it can fail: in the left
+  regular representation of the infinite cyclic group on all functions `ℤ → ℂ`, the translates of
+  the point mass at the identity are the point masses, which are linearly independent, so the
+  point mass is not `K`-finite for `K = ⊤`.
 
 ## Main declarations
 
@@ -47,7 +47,7 @@ open ContRepresentation
 /-- Every vector of a finite-dimensional continuous representation is `K`-finite. -/
 example (π : ContRepresentation ℂ (Multiplicative ℤ) (Fin 2 → ℂ)) (K : Subgroup (Multiplicative ℤ))
     (v : Fin 2 → ℂ) : π.IsKFinite K v :=
-  π.kFinite_of_finiteDimensional K v
+  Representation.IsGFinite.of_finiteDimensional v
 
 /-- The zero vector is `K`-finite. -/
 example {G E : Type*} [Group G] [AddCommGroup E] [Module ℂ E] [TopologicalSpace E]
@@ -60,7 +60,8 @@ example {G E : Type*} [Group G] [AddCommGroup E] [Module ℂ E] [TopologicalSpac
 example {G : Type*} [Group G] (K : Subgroup G) (v : ℕ → ℂ) :
     (trivial ℂ G (ℕ → ℂ)).IsKFinite K v :=
   Representation.IsGFinite.of_mem (W := Submodule.span ℂ {v})
-    (fun _ _ hw => hw) (Submodule.mem_span_singleton_self v)
+    (fun _ _ hw => by simpa [toMonoidHom_apply, restrict_apply, trivial_apply] using hw)
+    (Submodule.mem_span_singleton_self v)
 
 /-- For the trivial subgroup every vector is `K`-finite: its orbit is the single point `v`. -/
 example {G E : Type*} [Group G] [AddCommGroup E] [Module ℂ E] [TopologicalSpace E]
@@ -97,20 +98,18 @@ theorem funLeftRegular_single_one [DecidableEq G] (g : G) :
   · rw [Pi.single_eq_of_ne (by rwa [ne_eq, inv_mul_eq_one, eq_comm]),
       Pi.single_eq_of_ne hx]
 
-/-- **Without compactness, `K`-finiteness fails.** In the left regular representation of the
+/-- **Without compactness, `K`-finiteness can fail.** In the left regular representation of the
 infinite cyclic group on `ℤ → ℂ`, the translates of the point mass at the identity are linearly
 independent, so the point mass is not `K`-finite for `K = ⊤`. -/
 theorem not_isKFinite_single_one :
     ¬ (funLeftRegular (Multiplicative ℤ) ℂ).IsKFinite ⊤ (Pi.single 1 1) := by
   intro h
-  rw [isKFinite_top_iff, Representation.isGFinite_iff] at h
-  have hli : LinearIndependent ℂ fun g : Multiplicative ℤ =>
-      funLeftRegular (Multiplicative ℤ) ℂ g (Pi.single 1 1) := by
-    simpa only [funLeftRegular_single_one] using
-      Pi.linearIndependent_single_one (Multiplicative ℤ) ℂ
-  have : FiniteDimensional ℂ (Submodule.span ℂ (Set.range fun g : Multiplicative ℤ =>
-      funLeftRegular (Multiplicative ℤ) ℂ g (Pi.single 1 1))) := h
+  rw [isKFinite_iff] at h
+  have hli : LinearIndependent ℂ fun x : (⊤ : Subgroup (Multiplicative ℤ)) =>
+      funLeftRegular (Multiplicative ℤ) ℂ x (Pi.single 1 1) := by
+    simpa only [funLeftRegular_single_one, Function.comp_def] using
+      (Pi.linearIndependent_single_one (Multiplicative ℤ) ℂ).comp _ Subtype.val_injective
   have := (linearIndependent_span hli).finite
-  exact not_finite (Multiplicative ℤ)
+  exact not_finite (⊤ : Subgroup (Multiplicative ℤ))
 
 end TauCeti.KFiniteChecks
