@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.QuotientRing
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle
-public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology
+public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.Basic
 import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Topology.Order.Compact
 
