@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
-public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.PrincipalIdealRing
 public import TauCeti.Topology.Algebra.Ring.Compact
-import TauCeti.RingTheory.AdicCompletion.Topology
 import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Pi
 import TauCeti.Topology.Algebra.Module.Compact.LocalRing

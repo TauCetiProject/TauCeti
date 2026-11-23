@@ -11,12 +11,10 @@ public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Noetherian.Defs
 public import Mathlib.Topology.Algebra.LinearTopology
-public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
-import Mathlib.Topology.Algebra.Group.Pointwise
 import Mathlib.Topology.Separation.Connected
 
 /-!

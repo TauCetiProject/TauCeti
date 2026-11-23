@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.Topology.Algebra.Ring.Compact
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
+public import TauCeti.RingTheory.AdicCompletion.Topology
 import Mathlib.RingTheory.Filtration
 import Mathlib.Topology.Algebra.Module.Compact
-import Mathlib.Topology.UniformSpace.Cauchy
 
 /-!
 # The topology of a compact Hausdorff noetherian local ring is adic
@@ -24,13 +22,8 @@ contains one of them. Hence the topology of `R` is its `m`-adic topology, with n
 or discreteness hypothesis. This identifies the neighbourhoods of the identity in the groups of
 points over `R` of an affine group of finite type with its congruence subgroups.
 
-More generally, any compact Hausdorff commutative ring with the `I`-adic topology (`IsAdic I`)
-is `I`-adically complete and separated (`IsAdic.isAdicComplete_of_compactSpace`).
-
 ## Main results
 
-* `IsAdic.isAdicComplete_of_compactSpace`: a compact Hausdorff `I`-adic ring is `I`-adically
-  complete and separated.
 * `IsLocalRing.isAdic_maximalIdeal`: the topology of a compact Hausdorff noetherian local ring is
   its `m`-adic topology.
 * `IsLocalRing.nonarchimedeanRing_of_compactSpace`,
@@ -42,19 +35,6 @@ is `I`-adically complete and separated (`IsAdic.isAdicComplete_of_compactSpace`)
 public section
 
 open Topology
-
-namespace IsAdic
-
-/-- **A compact Hausdorff commutative ring whose topology is `I`-adic is `I`-adically complete and
-separated.** -/
-theorem isAdicComplete_of_compactSpace {R : Type*} [CommRing R] [TopologicalSpace R]
-    [CompactSpace R] [T2Space R] {I : Ideal R} (hI : IsAdic I) : IsAdicComplete I R := by
-  have := hI.nonarchimedeanRing
-  let _ : UniformSpace R := IsTopologicalAddGroup.rightUniformSpace R
-  have : IsUniformAddGroup R := isUniformAddGroup_of_addCommGroup
-  exact hI.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
-
-end IsAdic
 
 namespace IsLocalRing
 

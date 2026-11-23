@@ -8,7 +8,6 @@ module
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
-public import Mathlib.Topology.Order
 public import TauCeti.Topology.PiCurry
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Order.Interval.Set.Pi

@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Pi
-public import Mathlib.RingTheory.Ideal.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
-public import Mathlib.Topology.Order
 public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.Basic
 import TauCeti.Topology.Algebra.Module.Nakayama
 import TauCeti.Topology.Algebra.Ring.Compact

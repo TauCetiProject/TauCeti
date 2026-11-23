@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.RingTheory.AdicCompletion.Pow
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
+import Mathlib.RingTheory.AdicCompletion.Topology
 import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.RingTheory.Ideal.Quotient.Operations
 
@@ -16,8 +17,10 @@ import TauCeti.RingTheory.Ideal.Quotient.Operations
 # Adic topology and adic completeness
 
 Two ideals defining the same topology on a ring give the same notion of separated completeness,
-for the ring itself and for every module (`IsAdic.isAdicComplete_iff_of_isAdic`), and in an
-`I`-adically complete `I`-adic ring the topological nilradical lies in the Jacobson radical
+for the ring itself and for every module (`IsAdic.isAdicComplete_iff_of_isAdic`); any compact
+Hausdorff `I`-adic ring is `I`-adically complete and separated
+(`IsAdic.isAdicComplete_of_compactSpace`); and in an `I`-adically complete `I`-adic ring the
+topological nilradical lies in the Jacobson radical
 (`IsAdic.topologicalNilradical_le_jacobson`). When `N` is `I`-adically complete with zero
 neighbourhood basis `I ^ n • ⊤`, the lift `IsAdicComplete.StrictMono.lift` of a compatible tower
 `M →ₗ[R] N ⧸ (I ^ a n • ⊤)` with open kernels is continuous
@@ -118,6 +121,15 @@ theorem topologicalNilradical_le_jacobson [IsLinearTopology R R] (hI : IsAdic I)
   refine topologicalNilradical_le_jacobson_bot (by simpa using hI.isOpen_pow 1) ?_
   rw [Ideal.jacobson_bot]
   exact IsAdicComplete.le_jacobson I
+
+/-- **A compact Hausdorff commutative ring whose topology is `I`-adic is `I`-adically complete and
+separated.** -/
+theorem isAdicComplete_of_compactSpace [CompactSpace R] [T2Space R] (hI : IsAdic I) :
+    IsAdicComplete I R := by
+  have := hI.nonarchimedeanRing
+  let _ : UniformSpace R := IsTopologicalAddGroup.rightUniformSpace R
+  have : IsUniformAddGroup R := isUniformAddGroup_of_addCommGroup
+  exact hI.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
 
 section TowerLift
 

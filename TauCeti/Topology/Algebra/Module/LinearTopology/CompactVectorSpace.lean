@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Defs
-public import Mathlib.Topology.Algebra.LinearTopology
-public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.Topology.Algebra.Module.Compact.Basic
 import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.Topology.Algebra.GroupWithZero
 import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Topology.Algebra.Module.Dual
