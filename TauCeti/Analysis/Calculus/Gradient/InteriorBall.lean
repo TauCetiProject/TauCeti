@@ -32,7 +32,8 @@ private theorem eventually_taylor_bound (hf : ContDiffAt ℝ 2 f x) :
   obtain ⟨K, V, hV, hLip⟩ := (hf.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
   have hd : ∀ᶠ z in 𝓝 x, DifferentiableAt ℝ f z :=
     (hf.eventually (by norm_num)).mono fun _ h ↦ h.differentiableAt (by norm_num)
-  obtain ⟨ε, hε, hnear⟩ := Metric.eventually_nhds_iff_ball.mp ((show ∀ᶠ z in 𝓝 x, z ∈ V from hV).and hd)
+  obtain ⟨ε, hε, hnear⟩ := Metric.eventually_nhds_iff_ball.mp
+    ((show ∀ᶠ z in 𝓝 x, z ∈ V from hV).and hd)
   refine ⟨K, Metric.eventually_nhds_iff_ball.mpr ⟨ε, hε, fun z hzx ↦ ?_⟩⟩
   let d := z - x
   have hsub : closedBall x ‖d‖ ⊆ ball x ε := by
