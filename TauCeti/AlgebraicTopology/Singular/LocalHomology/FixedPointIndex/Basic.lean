@@ -430,26 +430,29 @@ theorem fixedPointIndex_eq_add {V W : Opens E} (hVU : V ≤ U) (hWU : W ≤ U) (
       (f.comp (inclusion hVU)).fixedPointIndex + (f.comp (inclusion hWU)).fixedPointIndex := by
   have hV : IsOpenEmbedding (inclusion hVU : C(V, U)) := Opens.isOpenEmbedding_of_le hVU
   have hW : IsOpenEmbedding (inclusion hWU : C(W, U)) := Opens.isOpenEmbedding_of_le hWU
-  -- The zeros of the displacement are the fixed points of `f`, and the inclusions of `V` and `W`
-  -- hit exactly the points of `U` lying in `V` and in `W`.
+  -- The inclusion of an open subset `X ≤ U` hits the points of `U` lying in `X`, and pulling the
+  -- orientation of `U` back along it restricts the orientation of `E` to `X`.
+  have hrange {X : Opens E} (hXU : X ≤ U) : range (inclusion hXU) = {z : U | (z : E) ∈ X} :=
+    (congrArg range (funext fun x ↦ Subtype.ext ((inclusion_apply_coe hXU x).trans
+      (Set.coe_inclusion hXU x).symm))).trans (Set.range_inclusion hXU)
+  have horient {X : Opens E} (hXU : X ≤ U) (hX : IsOpenEmbedding (inclusion hXU : C(X, U))) :
+      (fixedPointOrientation.comap U.isOpenEmbedding').comap (M := X) hX =
+        fixedPointOrientation.comap X.isOpenEmbedding' :=
+    HomologicalOrientation.comap_comap_of_comp_eq (M := X) (N := U) _ _ hX X.isOpenEmbedding'
+      (funext (inclusion_apply_coe hXU))
+  -- The zeros of the displacement are the fixed points of `f`.
   have hy : f.displacement ⁻¹' {0} ⊆ range (inclusion hVU) ∪ range (inclusion hWU) := by
-    rw [preimage_displacement_zero]
-    exact fun z hz ↦ (hfix z hz).imp (fun h ↦ ⟨⟨z, h⟩, rfl⟩) fun h ↦ ⟨⟨z, h⟩, rfl⟩
+    rw [preimage_displacement_zero, hrange, hrange]
+    exact fun z hz ↦ hfix z hz
   have hdisj : Disjoint (f.displacement ⁻¹' {0} ∩ range (inclusion hVU))
       (f.displacement ⁻¹' {0} ∩ range (inclusion hWU)) := by
-    rw [preimage_displacement_zero]
-    refine disjoint_left.2 ?_
-    rintro _ ⟨hz, a, rfl⟩ ⟨-, b, hb⟩
-    exact hVW _ hz a.property (congrArg Subtype.val hb ▸ b.property)
+    rw [preimage_displacement_zero, hrange, hrange]
+    exact disjoint_left.2 fun z hzV hzW ↦ hVW z hzV.1 hzV.2 hzW.2
   have h := HomologicalOrientation.localDegree_eq_add (M := U) (M₁ := V) (M₂ := W)
     (fixedPointOrientation.comap U.isOpenEmbedding') fixedPointOrientation rfl rfl hV hW
-    f.displacement
-    (by rwa [preimage_displacement_zero]) hy hdisj
-  rwa [HomologicalOrientation.comap_comap_of_comp_eq (M := V) (N := U) _ _ hV
-      V.isOpenEmbedding' rfl,
-    HomologicalOrientation.comap_comap_of_comp_eq (M := W) (N := U) _ _ hW
-      W.isOpenEmbedding' rfl,
-    ← displacement_comp_inclusion, ← displacement_comp_inclusion] at h
+    f.displacement (by rwa [preimage_displacement_zero]) hy hdisj
+  rwa [horient hVU hV, horient hWU hW, ← displacement_comp_inclusion,
+    ← displacement_comp_inclusion] at h
 
 /-- **A compact set of nondegenerate fixed points is finite**: if `f : U → E` agrees on `U` with a
 map `φ : E → E`, its fixed set is compact, and at each fixed point `x` the map `φ` has a derivative
@@ -463,8 +466,9 @@ theorem finite_setOf_apply_eq (f : C(U, E)) (hK : IsCompact {z | f z = z}) {φ :
   have hfix (x : U) (hx : x ∈ f.displacement ⁻¹' {0}) : f x = x := by
     rwa [preimage_displacement_zero] at hx
   rw [← preimage_displacement_zero] at hK ⊢
-  exact hK.finite_of_hasFDerivAt_subtype (f := fun z ↦ z - φ z) (f' := fun x ↦ 1 - f' x)
-    (fun z ↦ by simp [hφ]) (fun x hx ↦ (hasFDerivAt_id (x : E)).sub (hd x (hfix x hx))) fun x hx ↦
+  exact hK.finite_of_hasFDerivWithinAt_subtype (f := fun z ↦ z - φ z) (f' := fun x ↦ 1 - f' x)
+    (fun z ↦ by simp [hφ])
+    (fun x hx ↦ ((hasFDerivAt_id (x : E)).sub (hd x (hfix x hx))).hasFDerivWithinAt) fun x hx ↦
       ⟨_, ((1 - f' x).toContinuousLinearEquivOfDetNeZero (hdet x (hfix x hx))).antilipschitzWith⟩
 
 /-- **The fixed-point index counts nondegenerate fixed points with signs**: if `f : U → E` agrees
@@ -568,6 +572,7 @@ theorem fixedPointIndex_const_of_notMem {c : E} (hc : c ∉ U) : (const U c).fix
   fixedPointIndex_eq_zero_of_forall_ne _ fun z (hz : c = z) ↦ hc (hz ▸ z.property)
 
 /-- A map on the empty open set has fixed-point index zero. -/
+@[simp]
 theorem fixedPointIndex_of_isEmpty [IsEmpty U] (f : C(U, E)) : f.fixedPointIndex = 0 :=
   f.fixedPointIndex_eq_zero_of_forall_ne fun z ↦ isEmptyElim z
 

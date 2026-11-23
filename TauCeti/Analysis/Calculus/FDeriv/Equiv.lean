@@ -94,9 +94,10 @@ A point where a map has an antilipschitz derivative, such as an invertible deriv
 finite-dimensional spaces, is isolated in its fibre (`HasFDerivAt.eventually_ne`). Hence a compact
 fibre consisting of such points is finite (`IsCompact.finite_of_hasFDerivAt`); this is the
 finiteness of the preimage of a regular value under a proper map. The same holds for a compact
-part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), and so for a
-compact fibre of a map `g : s → F` agreeing on `s` with `f`
-(`IsCompact.finite_of_hasFDerivAt_subtype`), as for a map defined on an open subset `s`. In
+part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), even when the
+derivatives are only taken within `s` (`IsCompact.finite_inter_preimage_of_hasFDerivWithinAt`),
+and so for a compact fibre of a map `g : s → F` agreeing on `s` with `f`
+(`IsCompact.finite_of_hasFDerivWithinAt_subtype`), as for a map defined on an open subset `s`. In
 particular, if `f` is continuous on a compact set `K` and its derivative is invertible at every
 point of `K ∩ f⁻¹(y)`, then `K ∩ f⁻¹(y)` is finite
 (`IsCompact.finite_inter_preimage_of_isInvertible_fderiv`): an invertible `fderiv` is a genuine
@@ -426,6 +427,20 @@ theorem ContinuousLinearEquiv.image_vanishingFDeriv_comp {𝕜 : Type*}
     have := congrArg (fun L : E →L[𝕜] G ↦ L (e.symm v)) hzero
     simpa using this
 
+/-- **A compact part of a fibre of regular points is finite.** If at every point of `s ∩ f⁻¹(y)`
+the map `f` has, within `s`, an antilipschitz derivative, for instance an invertible derivative
+between spaces of the same finite dimension, then each of these points is isolated in
+`s ∩ f⁻¹(y)`, so this set is finite as soon as it is compact. -/
+theorem IsCompact.finite_inter_preimage_of_hasFDerivWithinAt {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {f' : E → E →L[𝕜] F} {s : Set E} {y : F}
+    (hK : IsCompact (s ∩ f ⁻¹' {y})) (hf : ∀ x ∈ s ∩ f ⁻¹' {y}, HasFDerivWithinAt f (f' x) s x)
+    (hf' : ∀ x ∈ s ∩ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (s ∩ f ⁻¹' {y}).Finite := by
+  refine hK.finite (isDiscrete_iff_nhdsNE.2 fun x hx ↦ inf_principal_eq_bot.2 ?_)
+  have h := (hf x hx).eventually_ne (c := y) (hf' x hx)
+  rw [sdiff_eq, inter_comm, nhdsWithin_inter', eventually_inf_principal] at h
+  exact h.mono fun _ hz hzK ↦ hz hzK.1 hzK.2
+
 /-- **A compact part of a fibre of regular points is finite.** If every point of `s ∩ f⁻¹(y)` is a
 point where `f` has an antilipschitz derivative, for instance an invertible derivative between
 spaces of the same finite dimension, then each of these points is isolated in the fibre, so
@@ -435,8 +450,7 @@ theorem IsCompact.finite_inter_preimage_of_hasFDerivAt {𝕜 : Type*} [Nontrivia
     [NormedSpace 𝕜 F] {f : E → F} {f' : E → E →L[𝕜] F} {s : Set E} {y : F}
     (hK : IsCompact (s ∩ f ⁻¹' {y})) (hf : ∀ x ∈ s ∩ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
     (hf' : ∀ x ∈ s ∩ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (s ∩ f ⁻¹' {y}).Finite :=
-  hK.finite (isDiscrete_iff_nhdsNE.2 fun x hx ↦ inf_principal_eq_bot.2
-    (((hf x hx).eventually_ne (hf' x hx)).mono fun _ hz hzK ↦ hz (hzK.2.trans hx.2.symm)))
+  hK.finite_inter_preimage_of_hasFDerivWithinAt (fun x hx ↦ (hf x hx).hasFDerivWithinAt) hf'
 
 /-- **The nondegenerate points of a fibre in a compact set are finite.** If `f` is continuous on
 a compact set `K` and its derivative is invertible at every point of `K ∩ f⁻¹(y)`, then
@@ -468,26 +482,21 @@ theorem IsCompact.finite_of_hasFDerivAt {𝕜 : Type*} [NontriviallyNormedField 
     (by simpa using hf) (by simpa using hf')
 
 /-- **A compact fibre of regular points of a map on a subset is finite.** Let `g : s → F` agree on
-`s` with `f : E → F`. If the fibre of `g` over `y` is compact and `f` has an antilipschitz
-derivative at each of its points, for instance an invertible derivative between spaces of the same
-finite dimension, then this fibre is finite. -/
-theorem IsCompact.finite_of_hasFDerivAt_subtype {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+`s` with `f : E → F`. If the fibre of `g` over `y` is compact and `f` has, within `s`, an
+antilipschitz derivative at each of its points, for instance an invertible derivative between
+spaces of the same finite dimension, then this fibre is finite. -/
+theorem IsCompact.finite_of_hasFDerivWithinAt_subtype {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
     [NormedSpace 𝕜 F] {s : Set E} {g : s → F} {f : E → F} {f' : E → E →L[𝕜] F} {y : F}
     (hK : IsCompact (g ⁻¹' {y})) (hfg : ∀ z : s, f z = g z)
-    (hf : ∀ x ∈ g ⁻¹' {y}, HasFDerivAt f (f' x) x)
+    (hf : ∀ x ∈ g ⁻¹' {y}, HasFDerivWithinAt f (f' x) s x)
     (hf' : ∀ x ∈ g ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (g ⁻¹' {y}).Finite := by
-  -- Read in `E`, the fibre of `g` is the part `s ∩ f⁻¹(y)` of the fibre of `f`.
-  have himage : Subtype.val '' (g ⁻¹' {y}) = s ∩ f ⁻¹' {y} := by
-    ext w
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.property, (hfg z).trans hz⟩
-    · rintro ⟨hws, hw⟩
-      exact ⟨⟨w, hws⟩, (hfg ⟨w, hws⟩).symm.trans hw, rfl⟩
-  have hmem : ∀ w (hw : w ∈ s ∩ f ⁻¹' {y}), (⟨w, hw.1⟩ : s) ∈ g ⁻¹' {y} :=
-    fun w hw ↦ (hfg ⟨w, hw.1⟩).symm.trans hw.2
+  -- The fibre of `g` is the preimage under `Subtype.val` of the fibre of `f`, which `Subtype.val`
+  -- maps onto the part `s ∩ f⁻¹(y)` of the fibre of `f`.
+  rw [preimage_congr (g := f ∘ Subtype.val) fun z ↦ (hfg z).symm, preimage_comp] at hK hf hf' ⊢
   refine Finite.of_finite_image ?_ Subtype.val_injective.injOn
-  rw [himage]
-  exact (himage ▸ hK.image continuous_subtypeVal).finite_inter_preimage_of_hasFDerivAt
-    (fun w hw ↦ hf _ (hmem w hw)) fun w hw ↦ hf' _ (hmem w hw)
+  rw [Subtype.image_preimage_coe]
+  have hc : IsCompact (s ∩ f ⁻¹' {y}) :=
+    Subtype.image_preimage_coe s _ ▸ hK.image continuous_subtypeVal
+  exact hc.finite_inter_preimage_of_hasFDerivWithinAt (fun x hx ↦ hf ⟨x, hx.1⟩ hx.2) fun x hx ↦
+    hf' ⟨x, hx.1⟩ hx.2

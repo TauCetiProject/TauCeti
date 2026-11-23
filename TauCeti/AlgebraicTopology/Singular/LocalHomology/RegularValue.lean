@@ -184,8 +184,8 @@ theorem degree_comap_eq_ncard_sub_ncard {U V : TopologicalSpace.Opens E} [Precon
     exact Subtype.ext_iff
   have hfin : (f ⁻¹' {y}).Finite := by
     rw [hpre] at hderiv hdet ⊢
-    exact (hpre ▸ hf.isCompact_preimage isCompact_singleton).finite_of_hasFDerivAt_subtype hφ
-      hderiv fun x hx ↦
+    exact (hpre ▸ hf.isCompact_preimage isCompact_singleton).finite_of_hasFDerivWithinAt_subtype
+      hφ (fun x hx ↦ (hderiv x hx).hasFDerivWithinAt) fun x hx ↦
         ⟨_, ((f' x).toContinuousLinearEquivOfDetNeZero (hdet x hx)).antilipschitzWith⟩
   rw [o.degree_comap_eq_sum_sign_det hE hf hφ hfin hderiv hdet]
   -- Split the signs, and read the two counts in `E` through the injective inclusion of `U`.
