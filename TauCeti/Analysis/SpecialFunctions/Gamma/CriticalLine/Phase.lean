@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
-public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Conjugation
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
 
