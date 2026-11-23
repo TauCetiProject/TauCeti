@@ -8,9 +8,9 @@ module
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Topology.ContinuousMap.CocompactMap
-import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Topology.Order.LiminfLimsup
 import Mathlib.Topology.Metrizable.Urysohn
+import TauCeti.MeasureTheory.Integral.CompactlySupported
 import TauCeti.MeasureTheory.Measure.Prokhorov
 import TauCeti.MeasureTheory.Measure.Vague
 
@@ -38,9 +38,11 @@ this file proves the basic properties of the convergence for them:
 * convergence is preserved by push-forward along continuous maps under which preimages of
   compact sets are compact (`TauCeti.VarifoldTendsto.map`); this is how the weights
   `‖V n‖ = π_* V n` of convergent varifolds converge to the weight of the limit;
-* **compactness**: on a second countable space, every sequence whose masses are bounded on each
-  compact set uniformly in `n` has a subsequence converging to a measure that is finite on
-  compact sets (`TauCeti.exists_subseq_varifoldTendsto`; L. Simon, Theorem 4.4).
+* **compactness**: on a locally compact, second countable Hausdorff space carrying its Borel
+  σ-algebra, every sequence that frequently lies in a set of measures with uniformly bounded masses
+  on each compact set, for instance a sequence whose masses are bounded on each compact set
+  uniformly in `n`, has a subsequence in that set converging to a measure that is finite on compact
+  sets (`TauCeti.exists_subseq_varifoldTendsto`; L. Simon, Theorem 4.4).
 
 The compactness theorem is vague compactness of measures with locally bounded masses
 (`TauCeti.exists_subseq_tendsto_integral_of_iSup_measure_ne_top`), which applies because a
@@ -160,16 +162,18 @@ theorem VarifoldTendsto.map {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
     integral_map hπ.aemeasurable f.continuous.aestronglyMeasurable
   simpa only [hf] using h (f.comp π)
 
-/-- **Compactness of varifolds.** On a locally compact, second countable Hausdorff space, every
-sequence of measures whose masses on each compact set are bounded uniformly in `n` has a
-subsequence converging to a measure that is finite on compact sets. -/
+/-- **Compactness of varifolds.** On a locally compact, second countable Hausdorff space carrying
+its Borel σ-algebra, every sequence of measures that frequently lies in a set `S` of measures whose
+masses on each compact set are bounded uniformly over `S` has a subsequence in `S` converging to a
+measure that is finite on compact sets. For `S` the range of the sequence, this is a sequence whose
+masses on each compact set are bounded uniformly in `n`. -/
 theorem exists_subseq_varifoldTendsto [T2Space Y] [LocallyCompactSpace Y]
-    [SecondCountableTopology Y] [BorelSpace Y] (μ : ℕ → Measure Y)
-    (hμ : ∀ K, IsCompact K → ⨆ n, μ n K ≠ ∞) :
+    [SecondCountableTopology Y] [BorelSpace Y] (μ : ℕ → Measure Y) {S : Set (Measure Y)}
+    (hS : ∀ K, IsCompact K → ⨆ ρ ∈ S, ρ K ≠ ∞) (hμ : ∃ᶠ n in atTop, μ n ∈ S) :
     ∃ (ν : Measure Y) (φ : ℕ → ℕ), IsFiniteMeasureOnCompacts ν ∧ StrictMono φ ∧
-      VarifoldTendsto (μ ∘ φ) ν := by
-  obtain ⟨ν, φ, hν, hφ, hlim⟩ := exists_subseq_tendsto_integral_of_iSup_measure_ne_top μ hμ
-  exact ⟨ν, φ, inferInstance, hφ, hlim⟩
+      (∀ k, μ (φ k) ∈ S) ∧ VarifoldTendsto (μ ∘ φ) ν := by
+  obtain ⟨ν, φ, hν, hφ, hφS, hlim⟩ := exists_subseq_tendsto_integral_of_iSup_measure_ne_top μ hS hμ
+  exact ⟨ν, φ, inferInstance, hφ, hφS, hlim⟩
 
 /-- Dirac masses at a convergent sequence of points converge to the Dirac mass at the limit. -/
 theorem varifoldTendsto_dirac [OpensMeasurableSpace Y] {x : ℕ → Y} {y : Y}
