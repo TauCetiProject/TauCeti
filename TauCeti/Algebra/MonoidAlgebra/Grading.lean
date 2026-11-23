@@ -85,14 +85,9 @@ elements of degrees `m₁` and `m₂` is the product of their respective coeffic
 theorem coeff_mul_of_mem_grade {R : Type*} [CommSemiring R] [Add M] {m₁ m₂ : M}
     {a₁ a₂ : R[M]} (ha₁ : a₁ ∈ grade R m₁) (ha₂ : a₂ ∈ grade R m₂) :
     (a₁ * a₂).coeff (m₁ + m₂) = a₁.coeff m₁ * a₂.coeff m₂ := by
-  have h₁ : single m₁ (a₁.coeff m₁) = a₁ := coeff_injective <|
-    (coeff_single m₁ (a₁.coeff m₁)).trans
-      (Finsupp.support_subset_singleton.mp ((mem_grade_iff R m₁ a₁).mp ha₁)).symm
-  have h₂ : single m₂ (a₂.coeff m₂) = a₂ := coeff_injective <|
-    (coeff_single m₂ (a₂.coeff m₂)).trans
-      (Finsupp.support_subset_singleton.mp ((mem_grade_iff R m₂ a₂).mp ha₂)).symm
-  conv_lhs => rw [← h₁, ← h₂]
-  rw [single_mul_single, coeff_single, Finsupp.single_eq_same]
+  obtain ⟨r₁, hr₁⟩ := (mem_grade_iff' R m₁ a₁).mp ha₁
+  obtain ⟨r₂, hr₂⟩ := (mem_grade_iff' R m₂ a₂).mp ha₂
+  simp [← hr₁, ← hr₂]
 
 /-- Mapping coefficients along an additive monoid homomorphism preserves every graded piece of
 `gradeBy`. -/

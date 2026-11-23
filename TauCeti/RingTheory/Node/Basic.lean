@@ -160,6 +160,65 @@ lemma ringHom_ext {A : Type*} [Semiring A] {q : R} {f g : NodeAlgebra R q →+* 
         mk_X] using by fin_cases i <;> [exact h₀; exact h₁]
   exact Ideal.Quotient.ringHom_ext hmk
 
+/-- Universal property of `NodeAlgebra R q` for ring homomorphisms: a ring map `φ : R →+* C` and
+elements `x, y : C` satisfying `x * y = φ q` determine a unique ring homomorphism
+`NodeAlgebra R q →+* C`. -/
+def liftRingHom {C : Type*} [CommSemiring C] {q : R} (φ : R →+* C) (x y : C) (hxy : x * y = φ q) :
+    NodeAlgebra R q →+* C :=
+  letI : Algebra R C := φ.toAlgebra
+  (lift q x y hxy).toRingHom
+
+/-- `liftRingHom` restricts on scalars to the given coefficient ring homomorphism. -/
+@[simp]
+lemma liftRingHom_algebraMap {C : Type*} [CommSemiring C] {q : R} (φ : R →+* C) (x y : C)
+    (hxy : x * y = φ q) (r : R) :
+    liftRingHom φ x y hxy (algebraMap R (NodeAlgebra R q) r) = φ r := by
+  let _ : Algebra R C := φ.toAlgebra
+  exact (lift q x y hxy).commutes r
+
+/-- `liftRingHom` sends each coordinate to the corresponding chosen element. -/
+@[simp]
+lemma liftRingHom_coord {C : Type*} [CommSemiring C] {q : R} (φ : R →+* C) (x y : C)
+    (hxy : x * y = φ q) (i : Fin 2) :
+    liftRingHom φ x y hxy (coord q i) = ![x, y] i := by
+  let _ : Algebra R C := φ.toAlgebra
+  exact lift_coord q x y hxy i
+
+/-- Functorial ring homomorphism `NodeAlgebra R q →+* NodeAlgebra S q'` along a ring homomorphism
+`φ : R →+* S` sending `q` to `q'`. -/
+def mapRingHom {S : Type*} [CommRing S] (φ : R →+* S) {q : R} {q' : S} (hq : φ q = q') :
+    NodeAlgebra R q →+* NodeAlgebra S q' :=
+  liftRingHom ((algebraMap S (NodeAlgebra S q')).comp φ) (coord q' 0) (coord q' 1)
+    (by simp [hq])
+
+/-- `mapRingHom` acts on constants via the underlying coefficient ring homomorphism. -/
+@[simp]
+lemma mapRingHom_algebraMap {S : Type*} [CommRing S] (φ : R →+* S) {q : R} {q' : S}
+    (hq : φ q = q') (r : R) :
+    mapRingHom φ hq (algebraMap R (NodeAlgebra R q) r) =
+      algebraMap S (NodeAlgebra S q') (φ r) :=
+  liftRingHom_algebraMap _ _ _ _ r
+
+/-- `mapRingHom` preserves each nodal coordinate. -/
+@[simp]
+lemma mapRingHom_coord {S : Type*} [CommRing S] (φ : R →+* S) {q : R} {q' : S}
+    (hq : φ q = q') (i : Fin 2) :
+    mapRingHom φ hq (coord q i) = coord q' i := by
+  fin_cases i <;> simp [mapRingHom]
+
+/-- `mapRingHom` along the identity ring homomorphism is the identity. -/
+@[simp]
+lemma mapRingHom_id (q : R) :
+    mapRingHom (RingHom.id R) (rfl : RingHom.id R q = q) = RingHom.id _ :=
+  ringHom_ext (fun _ ↦ by simp) (by simp) (by simp)
+
+/-- Composition of `mapRingHom` along composable coefficient ring homomorphisms. -/
+lemma mapRingHom_comp {S T : Type*} [CommRing S] [CommRing T] (ψ : S →+* T) (φ : R →+* S)
+    {q : R} {q' : S} {q'' : T} (hq : φ q = q') (hq' : ψ q' = q'') :
+    (mapRingHom ψ hq').comp (mapRingHom φ hq) =
+      mapRingHom (ψ.comp φ) (by rw [RingHom.comp_apply, hq, hq']) :=
+  ringHom_ext (fun _ ↦ by simp) (by simp) (by simp)
+
 /-- The two coordinates generate the nodal algebra as an `R`-algebra. -/
 lemma adjoin_range_coord : Algebra.adjoin R (Set.range (coord a)) = ⊤ := by
   have h : Set.range (coord a) = mk a '' Set.range X := by

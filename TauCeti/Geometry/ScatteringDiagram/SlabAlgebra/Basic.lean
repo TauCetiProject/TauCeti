@@ -34,14 +34,12 @@ yields:
   `r = (|n| + |m| - |n + m|) / 2`;
 * the normal-weight `ℤ`-grading `NodeAlgebra.weightSubmodule q` in which `coord q 0` has weight
   `-1`, `coord q 1` has weight `1`, `B` has weight `0`, and the weight-`n` piece is `B ∙ Z q n`;
-* general ring and algebra homomorphisms `NodeAlgebra.liftRingHom`, `NodeAlgebra.mapRingHom`,
-  `NodeAlgebra.mapAlgHom`, and `NodeAlgebra.mapAlgEquiv` extending `NodeAlgebra.lift` and
-  `NodeAlgebra.map` to arbitrary coefficient ring maps sending `q` to `q'`.
+* algebra homomorphisms `NodeAlgebra.mapAlgHom` and `NodeAlgebra.mapAlgEquiv` lifting
+  `NodeAlgebra.mapRingHom` to `R`-algebra maps sending `q` to `q'`.
 
 ## Main definitions and results
 
-* `TauCeti.NodeAlgebra.ringHom_ext`, `TauCeti.NodeAlgebra.algHom_ext_of_algebra`,
-  `TauCeti.NodeAlgebra.liftRingHom`, `TauCeti.NodeAlgebra.liftEquiv`: ring-homomorphism and
+* `TauCeti.NodeAlgebra.algHom_ext_of_algebra`, `TauCeti.NodeAlgebra.liftEquiv`:
   tower-algebra universal properties for `NodeAlgebra B q`.
 * `TauCeti.NodeAlgebra.Z`, `TauCeti.NodeAlgebra.Z_mul`: the integer-indexed normal-form elements
   and their product formula.
@@ -49,8 +47,9 @@ yields:
   `TauCeti.NodeAlgebra.algebraMap_injective`: the `B`-basis `n ↦ Z q n`, linear induction along
   it, and injectivity of the structure map.
 * `TauCeti.NodeAlgebra.weightSubmodule`: the normal-weight `ℤ`-graded `B`-algebra decomposition.
-* `TauCeti.NodeAlgebra.mapRingHom`, `TauCeti.NodeAlgebra.mapAlgHom`,
-  `TauCeti.NodeAlgebra.mapAlgEquiv`: functoriality in `(B, q)` along general coefficient maps.
+* `TauCeti.NodeAlgebra.mapRingHom_Z`, `TauCeti.NodeAlgebra.slabBasis_repr_mapRingHom`,
+  `TauCeti.NodeAlgebra.mapAlgHom`, `TauCeti.NodeAlgebra.mapAlgEquiv`: normal-form compatibility
+  and `R`-algebra functoriality in `(B, q)`.
 
 ## References
 
@@ -67,7 +66,7 @@ namespace TauCeti
 
 namespace NodeAlgebra
 
-variable {B B' B'' C R : Type*} [CommRing B] [CommRing B'] [CommRing B'']
+variable {B B' C R : Type*} [CommRing B] [CommRing B']
 
 /-- Two `R`-algebra homomorphisms out of `NodeAlgebra B q` agree when they agree on `B`,
 `coord q 0`, and `coord q 1`. -/
@@ -76,26 +75,6 @@ theorem algHom_ext_of_algebra [CommSemiring R] [CommSemiring C] [Algebra R B] [A
     (hB : ∀ b : B, f (algebraMap B (NodeAlgebra B q) b) = g (algebraMap B (NodeAlgebra B q) b))
     (h0 : f (coord q 0) = g (coord q 0)) (h1 : f (coord q 1) = g (coord q 1)) : f = g :=
   AlgHom.toRingHom_injective (ringHom_ext hB h0 h1)
-
-/-- Universal property of `NodeAlgebra B q` for ring homomorphisms: a ring map `φ : B →+* C` and
-elements `x, y : C` satisfying `x * y = φ q` determine a unique ring homomorphism
-`NodeAlgebra B q →+* C`. -/
-def liftRingHom [CommSemiring C] {q : B} (φ : B →+* C) (x y : C) (hxy : x * y = φ q) :
-    NodeAlgebra B q →+* C :=
-  letI : Algebra B C := φ.toAlgebra
-  (lift q x y hxy).toRingHom
-
-@[simp] theorem liftRingHom_algebraMap [CommSemiring C] {q : B} (φ : B →+* C) (x y : C)
-    (hxy : x * y = φ q) (b : B) :
-    liftRingHom φ x y hxy (algebraMap B (NodeAlgebra B q) b) = φ b := by
-  let _ : Algebra B C := φ.toAlgebra
-  exact (lift q x y hxy).commutes b
-
-@[simp] theorem liftRingHom_coord [CommSemiring C] {q : B} (φ : B →+* C) (x y : C)
-    (hxy : x * y = φ q) (i : Fin 2) :
-    liftRingHom φ x y hxy (coord q i) = ![x, y] i := by
-  let _ : Algebra B C := φ.toAlgebra
-  exact lift_coord q x y hxy i
 
 /-- Equivalence between `B`-algebra homomorphisms `NodeAlgebra B q →ₐ[B] C` and pairs `(x, y)`
 in `C` with `x * y = algebraMap B C q`. -/
@@ -388,25 +367,9 @@ instance instGradedAlgebraWeightSubmodule (q : B) : GradedAlgebra (weightSubmodu
 
 /-! ### Functoriality in `(B, q)` along general coefficient maps -/
 
-/-- Functorial ring homomorphism `NodeAlgebra B q →+* NodeAlgebra B' q'` along a ring homomorphism
-`φ : B →+* B'` sending `q` to `q'`, extending `NodeAlgebra.map` beyond algebra structure maps. -/
-def mapRingHom (φ : B →+* B') {q : B} {q' : B'} (hq : φ q = q') :
-    NodeAlgebra B q →+* NodeAlgebra B' q' :=
-  liftRingHom ((algebraMap B' (NodeAlgebra B' q')).comp φ) (coord q' 0) (coord q' 1)
-    (by simp [hq])
-
-@[simp] theorem mapRingHom_algebraMap (φ : B →+* B') {q : B} {q' : B'} (hq : φ q = q') (b : B) :
-    mapRingHom φ hq (algebraMap B (NodeAlgebra B q) b) =
-      algebraMap B' (NodeAlgebra B' q') (φ b) :=
-  liftRingHom_algebraMap _ _ _ _ b
-
-@[simp] theorem mapRingHom_coord (φ : B →+* B') {q : B} {q' : B'} (hq : φ q = q') (i : Fin 2) :
-    mapRingHom φ hq (coord q i) = coord q' i := by
-  fin_cases i <;> simp [mapRingHom]
-
 @[simp] theorem mapRingHom_Z (φ : B →+* B') {q : B} {q' : B'} (hq : φ q = q') (n : ℤ) :
     mapRingHom φ hq (Z q n) = Z q' n := by
-  rw [mapRingHom, liftRingHom_Z, Z_def]
+  rw [Z_def, Z_def]; split_ifs <;> simp
 
 @[simp] theorem slabBasis_repr_mapRingHom (φ : B →+* B') {q : B} {q' : B'} (hq : φ q = q')
     (u : NodeAlgebra B q) (n : ℤ) :
@@ -419,16 +382,6 @@ def mapRingHom (φ : B →+* B') {q : B} {q' : B'} (hq : φ q = q') :
       ← Algebra.smul_def (φ b) (Z q' m), ← Algebra.smul_def b (Z q m),
       map_smul, map_smul, slabBasis_repr_Z, slabBasis_repr_Z]
     rcases eq_or_ne m n with rfl | h <;> simp [Finsupp.single_eq_of_ne, Ne.symm, *]
-
-@[simp] theorem mapRingHom_id (q : B) :
-    mapRingHom (RingHom.id B) (rfl : RingHom.id B q = q) = RingHom.id _ :=
-  ringHom_ext (fun _ => by simp) (by simp) (by simp)
-
-theorem mapRingHom_comp (ψ : B' →+* B'') (φ : B →+* B') {q : B} {q' : B'} {q'' : B''}
-    (hq : φ q = q') (hq' : ψ q' = q'') :
-    (mapRingHom ψ hq').comp (mapRingHom φ hq) =
-      mapRingHom (ψ.comp φ) (by rw [RingHom.comp_apply, hq, hq']) :=
-  ringHom_ext (fun _ => by simp) (by simp) (by simp)
 
 /-- Functorial `R`-algebra homomorphism `NodeAlgebra B q →ₐ[R] NodeAlgebra B' q'` along an
 `R`-algebra homomorphism `φ : B →ₐ[R] B'` sending `q` to `q'`. -/

@@ -245,23 +245,13 @@ def slabCorrespondence (q : B) {I J : Set ℤ}
   liftLeft i := coeffLiftLinearMap q (i : ℤ) (Z q (-(i : ℤ)))
   liftRight j := coeffLiftLinearMap q (j : ℤ) (Z q (j : ℤ))
   left_liftLeft i := LinearMap.ext fun a => by
-    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, coeffLiftLinearMap_apply,
-      Submodule.subtype_apply]
-    rw [map_smul, leftChamberMap_Z, neg_neg,
-      Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.property)), pow_zero, map_one, one_mul,
+    obtain ⟨b, hb⟩ := (AddMonoidAlgebra.mem_grade_iff' B (i : ℤ) a).mp a.property
+    simp [← hb, leftChamberMap_Z, Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.property)),
       Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T]
-    exact AddMonoidAlgebra.coeff_injective <| (AddMonoidAlgebra.coeff_single _ _).trans
-      (Finsupp.support_subset_singleton.mp
-        ((AddMonoidAlgebra.mem_grade_iff _ _ _).mp a.property)).symm
   right_liftRight j := LinearMap.ext fun a => by
-    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, coeffLiftLinearMap_apply,
-      Submodule.subtype_apply]
-    rw [map_smul, rightChamberMap_Z,
-      Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.property)), pow_zero, map_one, one_mul,
+    obtain ⟨b, hb⟩ := (AddMonoidAlgebra.mem_grade_iff' B (j : ℤ) a).mp a.property
+    simp [← hb, rightChamberMap_Z, Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.property)),
       Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T]
-    exact AddMonoidAlgebra.coeff_injective <| (AddMonoidAlgebra.coeff_single _ _).trans
-      (Finsupp.support_subset_singleton.mp
-        ((AddMonoidAlgebra.mem_grade_iff _ _ _).mp a.property)).symm
 
 @[simp] theorem slabCorrespondence_left (q : B) {I J : Set ℤ}
     (hI : I ⊆ Set.Ici 0) (hJ : J ⊆ Set.Ici 0) :
@@ -587,21 +577,21 @@ def tangentialSlabCorrespondence (q : AddMonoidAlgebra S Λ)
   liftLeft i := tangentialLiftLinearMap q (i : ℤ × Λ) (Z q (-(i : ℤ × Λ).1))
   liftRight j := tangentialLiftLinearMap q (j : ℤ × Λ) (Z q (j : ℤ × Λ).1)
   left_liftLeft i := LinearMap.ext fun a => by
+    obtain ⟨s, hs⟩ := (AddMonoidAlgebra.mem_grade_iff' S (i : ℤ × Λ) a).mp a.property
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
-      tangentialLiftLinearMap_apply, leftTangentialMap_algebraMap_single_mul_Z,
-      neg_neg, Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.val i.property)), pow_zero, mul_one,
+      tangentialLiftLinearMap_apply, ← hs, AddMonoidAlgebra.lsingle_apply,
+      AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same,
+      leftTangentialMap_algebraMap_single_mul_Z, neg_neg,
+      Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.val i.property)), pow_zero, mul_one,
       AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta]
-    exact AddMonoidAlgebra.coeff_injective <| (AddMonoidAlgebra.coeff_single _ _).trans
-      (Finsupp.support_subset_singleton.mp
-        ((AddMonoidAlgebra.mem_grade_iff _ _ _).mp a.property)).symm
   right_liftRight j := LinearMap.ext fun a => by
+    obtain ⟨s, hs⟩ := (AddMonoidAlgebra.mem_grade_iff' S (j : ℤ × Λ) a).mp a.property
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
-      tangentialLiftLinearMap_apply, rightTangentialMap_algebraMap_single_mul_Z,
+      tangentialLiftLinearMap_apply, ← hs, AddMonoidAlgebra.lsingle_apply,
+      AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same,
+      rightTangentialMap_algebraMap_single_mul_Z,
       Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.val j.property)), pow_zero, mul_one,
       AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta]
-    exact AddMonoidAlgebra.coeff_injective <| (AddMonoidAlgebra.coeff_single _ _).trans
-      (Finsupp.support_subset_singleton.mp
-        ((AddMonoidAlgebra.mem_grade_iff _ _ _).mp a.property)).symm
 
 @[simp] theorem tangentialSlabCorrespondence_left (q : AddMonoidAlgebra S Λ)
     {I J : Set (ℤ × Λ)} (hI : ∀ p ∈ I, 0 ≤ p.1) (hJ : ∀ p ∈ J, 0 ≤ p.1) :
