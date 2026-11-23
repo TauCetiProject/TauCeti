@@ -630,7 +630,7 @@ theorem titsSimpleReflection_injective : Function.Injective (D.titsSimpleReflect
     (t.simplyConnectedBase ht)
     ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
     ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
-    (fun h => hne (Fin.ext (by simpa using congrArg Fin.val h)))
+    (fun h => hne (Fin.ext (by simpa only [val_simpleIndex] using congrArg Fin.val h)))
     hidx
 
 /-- Over every field, the kernel of `D.weylProjection K` is precisely the actual torus inside

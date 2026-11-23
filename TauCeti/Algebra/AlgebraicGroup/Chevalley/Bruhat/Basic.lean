@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem.Basic
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
 
