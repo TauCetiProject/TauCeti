@@ -34,9 +34,11 @@ weighted-homogeneous element `f` (`IsLeftRegular f`):
   every compatible `ℤ`-grading of the free rank-one module over `MvPolynomial σ R` is classified
   up to graded isomorphism by a unique integer shift
   (`TauCeti.GradedAlgebra.existsUnique_shift_linearEquiv_weighted`), and whenever
-  `PrimeSpectrum (MvPolynomial σ R)` is preirreducible, every compatible `ℤ`-grading over
-  `Localization.Away f` is classified by a unique element of `TauCeti.ShiftClassGroup`
-  (`TauCeti.GradedAlgebra.existsUnique_shiftClass_weighted_away`).
+  `PrimeSpectrum.basicOpen f` is preconnected (in particular when `PrimeSpectrum (MvPolynomial σ R)`
+  is preirreducible), every compatible `ℤ`-grading over `Localization.Away f` is classified by a
+  unique element of `TauCeti.ShiftClassGroup`
+  (`TauCeti.GradedAlgebra.existsUnique_shiftClass_weighted_away`,
+  `TauCeti.GradedAlgebra.existsUnique_shiftClass_weighted_away_of_preirreducible`).
 
 ## Main definitions
 
@@ -54,9 +56,10 @@ weighted-homogeneous element `f` (`IsLeftRegular f`):
   a regular element associated to a finite product of weighted-homogeneous primes.
 * `TauCeti.homogeneousUnitDegrees_away_prime` and
   `TauCeti.homogeneousUnitDegrees_away_prime_pow`: the single-prime and prime-power cases.
-* `TauCeti.GradedAlgebra.existsUnique_shift_linearEquiv_weighted` and
-  `TauCeti.GradedAlgebra.existsUnique_shiftClass_weighted_away`: classification of all compatible
-  rank-one `ℤ`-gradings on `MvPolynomial σ R` and `Localization.Away f`.
+* `TauCeti.GradedAlgebra.existsUnique_shift_linearEquiv_weighted`,
+  `TauCeti.GradedAlgebra.existsUnique_shiftClass_weighted_away`, and
+  `TauCeti.GradedAlgebra.existsUnique_shiftClass_weighted_away_of_preirreducible`: classification of
+  compatible rank-one `ℤ`-gradings on `MvPolynomial σ R` and `Localization.Away f`.
 -/
 
 public section
@@ -149,12 +152,8 @@ theorem homogeneousUnitDegrees_away_prime_pow (w : σ → ι)
     homogeneousUnitDegrees
         (awayGrading (weightedHomogeneousSubmodule R w) (SetLike.pow_mem_graded k hf)) =
       AddSubgroup.zmultiples e := by
-  classical
-  let := MvPolynomial.weightedGradedAlgebra R w
-  have : Nontrivial R := not_subsingleton_iff_nontrivial.mp fun _ ↦
-    hprime.ne_zero (Subsingleton.elim f 0)
-  rw [homogeneousUnitDegrees_awayGrading_prime_pow (weightedHomogeneousSubmodule R w) hf hprime
-    hreg hk, homogeneousUnitDegrees_weighted, bot_sup_eq]
+  rw [homogeneousUnitDegrees_awayGrading_pow (weightedHomogeneousSubmodule R w) hf hk]
+  exact homogeneousUnitDegrees_away_prime w hf hprime hreg
 
 /-- For a regular weighted-homogeneous prime polynomial `f` of integer weight `e`, the shift class
 group of `Localization.Away f` is `ZMod e.natAbs`. -/
@@ -206,12 +205,32 @@ theorem existsUnique_shift_linearEquiv_weighted [CommRing R] [Nontrivial R]
   exact existsUnique_shift_linearEquiv_of_connected (weightedHomogeneousSubmodule R w) ℳ
     (homogeneousUnitDegrees_weighted w)
 
+/-- Whenever `PrimeSpectrum.basicOpen f` is preconnected for a weighted-homogeneous polynomial
+`f`, every compatible `ℤ`-grading of the free rank-one module over `Localization.Away f` is
+graded-isomorphic to a shift by `d` if and only if `d` represents a unique class in
+`TauCeti.ShiftClassGroup (awayGrading (weightedHomogeneousSubmodule R w) hf)`. -/
+theorem existsUnique_shiftClass_weighted_away [CommRing R] (w : σ → ℤ)
+    {f : MvPolynomial σ R} {e : ℤ} (hf : f ∈ weightedHomogeneousSubmodule R w e)
+    [SetLike τ (Localization.Away f)] [AddSubmonoidClass τ (Localization.Away f)]
+    (ℳ : ℤ → τ) [DirectSum.Decomposition ℳ]
+    [SetLike.GradedSMul (awayGrading (weightedHomogeneousSubmodule R w) hf) ℳ]
+    (hconn : IsPreconnected (PrimeSpectrum.basicOpen f : Set (PrimeSpectrum (MvPolynomial σ R)))) :
+    ∃! c : ShiftClassGroup (awayGrading (weightedHomogeneousSubmodule R w) hf),
+      ∀ d : ℤ,
+        (∃ φ : Localization.Away f ≃ₗ[Localization.Away f] Localization.Away f,
+          ∀ n x,
+            φ x ∈ ℳ n ↔ x ∈ awayGrading (weightedHomogeneousSubmodule R w) hf (n + d)) ↔
+        (d : ShiftClassGroup (awayGrading (weightedHomogeneousSubmodule R w) hf)) = c := by
+  let := MvPolynomial.weightedGradedAlgebra R w
+  exact existsUnique_shiftClass_awayGrading_of_isPreconnected
+    (weightedHomogeneousSubmodule R w) hf ℳ hconn
+
 /-- Whenever `PrimeSpectrum (MvPolynomial σ R)` is preirreducible (in particular over any domain
 `R`), every compatible `ℤ`-grading of the free rank-one module over `Localization.Away f` at a
 weighted-homogeneous polynomial `f` is graded-isomorphic to a shift by `d` if and only if `d`
 represents a unique class in
 `TauCeti.ShiftClassGroup (awayGrading (weightedHomogeneousSubmodule R w) hf)`. -/
-theorem existsUnique_shiftClass_weighted_away [CommRing R]
+theorem existsUnique_shiftClass_weighted_away_of_preirreducible [CommRing R]
     [PreirreducibleSpace (PrimeSpectrum (MvPolynomial σ R))] (w : σ → ℤ)
     {f : MvPolynomial σ R} {e : ℤ} (hf : f ∈ weightedHomogeneousSubmodule R w e)
     [SetLike τ (Localization.Away f)] [AddSubmonoidClass τ (Localization.Away f)]

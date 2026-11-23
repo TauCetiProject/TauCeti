@@ -103,27 +103,17 @@ graded-isomorphic to the shift `A(d)` if and only if `d` represents a unique cla
 theorem existsUnique_shiftClass_of_connected :
     ∃! c : ShiftClassGroup 𝒜,
       ∀ d : ℤ, (∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) ↔
-        (d : ShiftClassGroup 𝒜) = c := by
-  obtain ⟨d₀, φ₀, hφ₀⟩ := exists_shift_linearEquiv_of_connected 𝒜 ℳ
-  refine ⟨d₀, fun d ↦ ⟨fun ⟨φ, hφ⟩ ↦ ?_, fun hd ↦ ?_⟩,
-    fun c hc ↦ ((hc d₀).mp ⟨φ₀, hφ₀⟩).symm⟩
-  · exact (ShiftClassGroup.mk_eq_mk_iff 𝒜).mpr
-      ⟨φ.trans φ₀.symm, fun n x ↦ by
-        rw [LinearEquiv.trans_apply, ← hφ n x]
-        simpa using (hφ₀ n (φ₀.symm (φ x))).symm⟩
-  · obtain ⟨ψ, hψ⟩ := (ShiftClassGroup.mk_eq_mk_iff 𝒜).mp hd
-    exact ⟨ψ.trans φ₀, fun n x ↦ by simp [hφ₀, hψ]⟩
+        (d : ShiftClassGroup 𝒜) = c :=
+  existsUnique_shiftClass_of_exists_linearEquiv 𝒜 ℳ
+    (exists_shift_linearEquiv_of_connected 𝒜 ℳ)
 
 /-- Over a `ℤ`-graded commutative ring with preconnected prime spectrum whose homogeneous units
 all have degree zero, every compatible `ℤ`-grading of the free rank-one module is
 graded-isomorphic to a shift `A(d)` for a unique integer `d`. -/
 theorem existsUnique_shift_linearEquiv_of_connected (hbot : homogeneousUnitDegrees 𝒜 = ⊥) :
-    ∃! d : ℤ, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
-  obtain ⟨c, hc, -⟩ := existsUnique_shiftClass_of_connected 𝒜 ℳ
-  obtain ⟨d₀, rfl⟩ := QuotientAddGroup.mk_surjective c
-  refine ⟨d₀, (hc d₀).mpr rfl, fun d hd ↦ ?_⟩
-  have hmk : (d : ShiftClassGroup 𝒜) = d₀ := (hc d).mp hd
-  rwa [QuotientAddGroup.eq, hbot, AddSubgroup.mem_bot, neg_add_eq_zero] at hmk
+    ∃! d : ℤ, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) :=
+  existsUnique_shift_linearEquiv_of_exists_linearEquiv 𝒜 ℳ
+    (exists_shift_linearEquiv_of_connected 𝒜 ℳ) hbot
 
 end ShiftClassification
 
