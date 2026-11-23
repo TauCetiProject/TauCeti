@@ -47,7 +47,8 @@ theorem map_inner_log_multivariateLogNormalMeasure (m q : EuclideanSpace ℝ ι)
 
 /-- A linear combination of coordinate logarithms of a multivariate log-normal random vector
 has the corresponding scalar Gaussian law. -/
-theorem HasLaw.inner_log_multivariateLogNormalMeasure {S : Matrix ι ι ℝ}
+theorem _root_.ProbabilityTheory.HasLaw.inner_log_multivariateLogNormalMeasure
+    {S : Matrix ι ι ℝ}
     (hX : HasLaw X (multivariateLogNormalMeasure m S) P) (hS : S.PosSemidef)
     (q : EuclideanSpace ℝ ι) :
     HasLaw (fun ω ↦ ⟪q, WithLp.toLp 2 (fun i ↦ Real.log (X ω i))⟫)
@@ -79,7 +80,8 @@ theorem map_prod_rpow_multivariateLogNormalMeasure (m q : EuclideanSpace ℝ ι)
 
 /-- A product of real powers of the coordinates of a multivariate log-normal random vector has
 the corresponding scalar log-normal law. -/
-theorem HasLaw.prod_rpow_multivariateLogNormalMeasure {S : Matrix ι ι ℝ}
+theorem _root_.ProbabilityTheory.HasLaw.prod_rpow_multivariateLogNormalMeasure
+    {S : Matrix ι ι ℝ}
     (hX : HasLaw X (multivariateLogNormalMeasure m S) P) (hS : S.PosSemidef)
     (q : EuclideanSpace ℝ ι) :
     HasLaw (fun ω ↦ ∏ i, (X ω i) ^ (q i))

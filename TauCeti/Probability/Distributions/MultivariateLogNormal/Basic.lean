@@ -94,7 +94,7 @@ theorem map_eval_multivariateLogNormalMeasure (m : EuclideanSpace ℝ ι)
 
 /-- A coordinate of a random vector with a multivariate log-normal law has the corresponding
 scalar log-normal law. -/
-theorem HasLaw.eval_multivariateLogNormalMeasure {S : Matrix ι ι ℝ}
+theorem _root_.ProbabilityTheory.HasLaw.eval_multivariateLogNormalMeasure {S : Matrix ι ι ℝ}
     (hX : HasLaw X (multivariateLogNormalMeasure m S) P) (hS : S.PosSemidef) (i : ι) :
     HasLaw (fun ω ↦ X ω i) (logNormalMeasure (m i) (S i i).toNNReal) P :=
   HasLaw.comp ⟨by fun_prop, map_eval_multivariateLogNormalMeasure m hS i⟩ hX
