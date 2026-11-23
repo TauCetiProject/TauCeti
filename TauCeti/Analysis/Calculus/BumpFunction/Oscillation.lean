@@ -212,7 +212,8 @@ theorem enorm_normed_convolution_sub_setAverage_ball_le (φ : ContDiffBump (0 : 
         ⨍⁻ z in ball x φ.rOut, ‖f z - ⨍ w in ball x φ.rOut, f w ∂μ‖ₑ ∂μ :=
   TauCeti.enorm_convolution_sub_setAverage_ball_le φ.nonneg_normed φ.integral_normed
     φ.support_normed_eq.subset
-    (φ.normed_le_div_measureReal_ball μ (φ.rOut / φ.rIn) (div_mul_cancel₀ _ φ.rIn_pos.ne').ge) hf
+    (φ.normed_le_div_measureReal_ball_rOut μ (φ.rOut / φ.rIn)
+      (div_mul_cancel₀ _ φ.rIn_pos.ne').ge) hf
 
 /-- **Mean deviation from a normalized-bump mollification.** -/
 theorem setLAverage_enorm_sub_normed_convolution_le (φ : ContDiffBump (0 : E)) {f : E → F}
@@ -222,7 +223,8 @@ theorem setLAverage_enorm_sub_normed_convolution_le (φ : ContDiffBump (0 : E)) 
         ⨍⁻ z in ball x φ.rOut, ‖f z - ⨍ w in ball x φ.rOut, f w ∂μ‖ₑ ∂μ :=
   TauCeti.setLAverage_enorm_sub_convolution_le φ.nonneg_normed φ.integral_normed
     φ.support_normed_eq.subset
-    (φ.normed_le_div_measureReal_ball μ (φ.rOut / φ.rIn) (div_mul_cancel₀ _ φ.rIn_pos.ne').ge) hf
+    (φ.normed_le_div_measureReal_ball_rOut μ (φ.rOut / φ.rIn)
+      (div_mul_cancel₀ _ φ.rIn_pos.ne').ge) hf
 
 end ContDiffBump
 

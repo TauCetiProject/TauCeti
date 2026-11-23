@@ -15,10 +15,11 @@ import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Sobolev.Mollification.Local
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
-import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
+import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
+import TauCeti.MeasureTheory.Function.MemLpLoc
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -34,7 +35,7 @@ differentiable functions by local mollification and convex exhaustion, with no i
 assumption on `E`, no measurability assumption on the averaging subset `S`, and no a priori `Lᵖ`
 hypothesis on `u`.
 
-On a bounded convex open set `Ω`, if `Du ∈ Lᵖ(Ω)` for `1 ≤ p < ∞`, then `u ∈ Lᵖ(Ω)` automatically
+On a bounded convex open set `Ω`, if `Du ∈ Lᵖ(Ω)` for `1 ≤ p ≤ ∞`, then `u ∈ Lᵖ(Ω)` automatically
 (`TauCeti.HasWeakFDerivOn.memLp_of_convex`), and for every subset `S ⊆ Ω` of positive measure,
 
 `‖u - ⨍_S u‖_{Lᵖ(Ω)} ≤ μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S) * ‖Du‖_{Lᵖ(Ω)}`.
@@ -58,7 +59,7 @@ yielding a scale-invariant mean-oscillation bound. Two classical consequences fo
 ## Main declarations
 
 * `TauCeti.HasWeakFDerivOn.memLp_of_convex`: on a bounded convex open set, `Du ∈ Lᵖ` implies
-  `u ∈ Lᵖ` (`1 ≤ p < ∞`).
+  `u ∈ Lᵖ` (`1 ≤ p ≤ ∞`).
 * `TauCeti.HasWeakFDerivOn.eLpNorm_sub_setAverage_le_of_convex` and
   `TauCeti.HasWeakFDerivOn.lintegral_enorm_sub_setAverage_rpow_le_of_convex`: the
   Poincaré–Wirtinger inequality on a bounded convex open set.
@@ -90,7 +91,7 @@ noncomputable section
 
 namespace TauCeti
 
-open ContinuousLinearMap Filter MeasureTheory Metric Module Set TopologicalSpace
+open ContinuousLinearMap Filter _root_.MeasureTheory Metric Module Set TopologicalSpace
 open scoped Convolution ENNReal NNReal Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -111,21 +112,19 @@ private theorem eLpNorm_sub_setAverage_le_of_isCompact_closure (hu : HasWeakFDer
         eLpNorm Du p (μ.restrict Ω) := by
   have : CompleteSpace F := hu.completeSpace
   have hUb : Bornology.IsBounded (U : Set E) := hUcomp.isBounded.subset subset_closure
-  obtain ⟨-, -, V, hUV, hVΩ, -, huV, -, -, -, -⟩ := hu.exists_open_memLp_indicator hUcomp hUΩ
-  have hDuV : MemLp Du p (μ.restrict V) := hDu.mono_measure (Measure.restrict_mono hVΩ le_rfl)
   obtain ⟨v, hv_cd, hv_deriv, hv_L1, -⟩ :=
-    hu.exists_contDiff_tendsto_eLpNorm hUcomp hUV hVΩ le_rfl ENNReal.one_ne_top huV hp1 hp hDuV
+    hu.exists_contDiff_tendsto_eLpNorm hUcomp hUΩ le_rfl le_rfl ENNReal.one_ne_top
+      ((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 hu.locallyIntegrableOn)
+      hp1 hp hDu.memLpLoc
   have hv_S : Tendsto (fun n => eLpNorm (v n - u) 1 (μ.restrict S)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hv_L1 (fun _ => zero_le)
       fun n => eLpNorm_mono_measure _ (Measure.restrict_mono hSU le_rfl)
-  have hint : Tendsto (fun n => ∫ y in S, v n y ∂μ) atTop (𝓝 (∫ y in S, u y ∂μ)) :=
-    tendsto_integral_of_L1' u
+  have havg : Tendsto (fun n => ⨍ y in S, v n y ∂μ) atTop (𝓝 (⨍ y in S, u y ∂μ)) :=
+    tendsto_setAverage_of_L1' u
       (.of_forall fun n =>
         ((hv_cd n).continuous.continuousOn.integrableOn_compact hUcomp).mono_set
           (hSU.trans subset_closure))
       hv_S
-  have havg : Tendsto (fun n => ⨍ y in S, v n y ∂μ) atTop (𝓝 (⨍ y in S, u y ∂μ)) := by
-    simpa only [setAverage_eq] using hint.const_smul (μ.real S)⁻¹
   have hum : AEStronglyMeasurable u (μ.restrict U) :=
     hu.locallyIntegrableOn.aestronglyMeasurable.mono_measure
       (Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl)
@@ -144,8 +143,7 @@ private theorem eLpNorm_sub_setAverage_le_of_isCompact_closure (hu : HasWeakFDer
         liminf_le_liminf (.of_forall fun k =>
           (eLpNorm_sub_setAverage_le_of_convex hUc hUb
             ((hv_cd (ns k)).of_le (by simp)).contDiffOn hSU hS0 hp1 hp).trans
-            (mul_le_mul_right ((hv_deriv (ns k)).trans
-              (eLpNorm_mono_measure _ (Measure.restrict_mono hVΩ le_rfl))) _))
+            (mul_le_mul_right (hv_deriv (ns k)) _))
     _ = _ := liminf_const _
 
 /-- The Poincaré–Wirtinger inequality on a bounded convex open set `Ω`, assuming `u` is integrable
@@ -218,10 +216,7 @@ private theorem eLpNorm_sub_setAverage_le_of_convex_of_integrableOn
 
 /-! ### Global `Lᵖ` membership and Poincaré–Wirtinger on bounded convex open sets -/
 
-/-- **Weakly differentiable functions with `Lᵖ` derivative on a bounded convex open set lie in
-`Lᵖ`.** No a priori integrability of `u` near the boundary is needed: `u` is integrable on an
-interior ball, and the Poincaré–Wirtinger inequality controls `u - ⨍_B u` on the whole domain. -/
-theorem HasWeakFDerivOn.memLp_of_convex (hu : HasWeakFDerivOn μ Ω u Du)
+private theorem memLp_of_convex_of_ne_top (hu : HasWeakFDerivOn μ Ω u Du)
     (hΩc : Convex ℝ (Ω : Set E)) (hΩb : Bornology.IsBounded (Ω : Set E))
     {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hDu : MemLp Du p (μ.restrict Ω)) :
     MemLp u p (μ.restrict Ω) := by
@@ -246,14 +241,7 @@ theorem HasWeakFDerivOn.memLp_of_convex (hu : HasWeakFDerivOn μ Ω u Du)
   have hadd : MemLp (fun x => (u x - m) + m) p (μ.restrict Ω) := hsub.add (memLp_const m)
   simpa only [sub_add_cancel] using hadd
 
-/-- **The Poincaré–Wirtinger inequality for weakly differentiable functions on a bounded convex
-open set.** Let `Ω` be a bounded convex open subset of a finite-dimensional real normed space `E`
-of dimension `n`, let `u : E → F` have weak Fréchet derivative `Du` on `Ω`, and let `S ⊆ Ω` have
-positive measure (no measurability assumption on `S` and no a priori `Lᵖ` assumption on `u` or
-`Du`). For `1 ≤ p < ∞`,
-
-`‖u - ⨍_S u‖_{Lᵖ(Ω)} ≤ μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S) * ‖Du‖_{Lᵖ(Ω)}`. -/
-theorem HasWeakFDerivOn.eLpNorm_sub_setAverage_le_of_convex (hu : HasWeakFDerivOn μ Ω u Du)
+private theorem eLpNorm_sub_setAverage_le_of_convex_of_ne_top (hu : HasWeakFDerivOn μ Ω u Du)
     (hΩc : Convex ℝ (Ω : Set E)) (hΩb : Bornology.IsBounded (Ω : Set E))
     {S : Set E} (hS : S ⊆ Ω) (hS0 : μ S ≠ 0) {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞) :
     eLpNorm (fun x => u x - ⨍ y in S, u y ∂μ) p (μ.restrict Ω) ≤
@@ -277,12 +265,63 @@ theorem HasWeakFDerivOn.eLpNorm_sub_setAverage_le_of_convex (hu : HasWeakFDerivO
     rw [hDu_top, ENNReal.mul_top (ENNReal.ofReal_pos.2 hC_pos).ne']
     exact le_top
   · have hDu : MemLp Du p (μ.restrict Ω) := lt_top_iff_ne_top.2 hDu_top
-    have huLp : MemLp u p (μ.restrict Ω) := hu.memLp_of_convex hΩc hΩb hp1 hp hDu
+    have huLp : MemLp u p (μ.restrict Ω) := memLp_of_convex_of_ne_top hu hΩc hΩb hp1 hp hDu
     have : IsFiniteMeasure (μ.restrict S) :=
       ⟨by rw [Measure.restrict_apply_univ]; exact hSfin.lt_top⟩
     have huS : IntegrableOn u S μ :=
       (huLp.mono_measure (Measure.restrict_mono hS le_rfl)).integrable hp1
     exact eLpNorm_sub_setAverage_le_of_convex_of_integrableOn hu hΩc hΩb hS hS0 hp1 hp huS hDu
+
+/-- **The Poincaré–Wirtinger inequality for weakly differentiable functions on a bounded convex
+open set.** Let `Ω` be a bounded convex open subset of a finite-dimensional real normed space `E`
+of dimension `n`, let `u : E → F` have weak Fréchet derivative `Du` on `Ω`, and let `S ⊆ Ω` have
+positive measure (no measurability assumption on `S` and no a priori `Lᵖ` assumption on `u` or
+`Du`). For `1 ≤ p ≤ ∞`,
+
+`‖u - ⨍_S u‖_{Lᵖ(Ω)} ≤ μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S) * ‖Du‖_{Lᵖ(Ω)}`. -/
+theorem HasWeakFDerivOn.eLpNorm_sub_setAverage_le_of_convex (hu : HasWeakFDerivOn μ Ω u Du)
+    (hΩc : Convex ℝ (Ω : Set E)) (hΩb : Bornology.IsBounded (Ω : Set E))
+    {S : Set E} (hS : S ⊆ Ω) (hS0 : μ S ≠ 0) {p : ℝ≥0∞} (hp1 : 1 ≤ p) :
+    eLpNorm (fun x => u x - ⨍ y in S, u y ∂μ) p (μ.restrict Ω) ≤
+      ENNReal.ofReal (μ.real (ball 0 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S) *
+        eLpNorm Du p (μ.restrict Ω) := by
+  rcases ne_or_eq p ∞ with hp | rfl
+  · exact eLpNorm_sub_setAverage_le_of_convex_of_ne_top hu hΩc hΩb hS hS0 hp1 hp
+  have : IsFiniteMeasure (μ.restrict (Ω : Set E)) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hΩb.measure_lt_top⟩
+  have hle : ∀ᶠ q : ℝ≥0 in atTop,
+      eLpNorm (fun x => u x - ⨍ y in S, u y ∂μ) q (μ.restrict Ω) ≤
+        ENNReal.ofReal (μ.real (ball 0 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S) *
+          eLpNorm Du q (μ.restrict Ω) := by
+    filter_upwards [eventually_ge_atTop (1 : ℝ≥0)] with q hq
+    exact eLpNorm_sub_setAverage_le_of_convex_of_ne_top hu hΩc hΩb hS hS0
+      (by exact_mod_cast hq) ENNReal.coe_ne_top
+  exact le_of_tendsto_of_tendsto tendsto_eLpNorm_atTop
+    (ENNReal.Tendsto.const_mul tendsto_eLpNorm_atTop (Or.inr ENNReal.ofReal_ne_top)) hle
+
+/-- **Weakly differentiable functions with `Lᵖ` derivative on a bounded convex open set lie in
+`Lᵖ` for `1 ≤ p ≤ ∞`.** No a priori integrability of `u` near the boundary is needed: `u` is
+integrable on an interior ball, and the Poincaré–Wirtinger inequality controls `u - ⨍_B u` on the
+whole domain. -/
+theorem HasWeakFDerivOn.memLp_of_convex (hu : HasWeakFDerivOn μ Ω u Du)
+    (hΩc : Convex ℝ (Ω : Set E)) (hΩb : Bornology.IsBounded (Ω : Set E))
+    {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hDu : MemLp Du p (μ.restrict Ω)) :
+    MemLp u p (μ.restrict Ω) := by
+  rcases (Ω : Set E).eq_empty_or_nonempty with hΩ | ⟨x₀, hx₀⟩
+  · simp [hΩ]
+  obtain ⟨R, hR, hRΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x₀ hx₀
+  set r := R / 2
+  have hr : 0 < r := half_pos hR
+  have hSΩ : ball x₀ r ⊆ Ω := (ball_subset_ball (half_lt_self hR).le).trans hRΩ
+  have hS0 : μ (ball x₀ r) ≠ 0 := (measure_ball_pos μ x₀ hr).ne'
+  set m : F := ⨍ y in ball x₀ r, u y ∂μ
+  have hsub_le := hu.eLpNorm_sub_setAverage_le_of_convex hΩc hΩb hSΩ hS0 hp1
+  have hsub : MemLp (fun x => u x - m) p (μ.restrict Ω) :=
+    hsub_le.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hDu.eLpNorm_lt_top)
+  have : IsFiniteMeasure (μ.restrict (Ω : Set E)) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hΩb.measure_lt_top⟩
+  have hadd : MemLp (fun x => (u x - m) + m) p (μ.restrict Ω) := hsub.add (memLp_const m)
+  simpa only [sub_add_cancel] using hadd
 
 /-- **The Poincaré–Wirtinger inequality on a bounded convex open set**, in `∫⁻` form for any
 real exponent `1 ≤ p`. -/
@@ -297,9 +336,9 @@ theorem HasWeakFDerivOn.lintegral_enorm_sub_setAverage_rpow_le_of_convex
   let q : ℝ≥0 := ⟨p, hp0.le⟩
   have hq0 : q ≠ 0 := NNReal.coe_ne_zero.1 hp0.ne'
   have hq1 : (1 : ℝ≥0∞) ≤ q := by exact_mod_cast hp
-  have hbase := hu.eLpNorm_sub_setAverage_le_of_convex hΩc hΩb hS hS0 hq1 ENNReal.coe_ne_top
+  have hbase := hu.eLpNorm_sub_setAverage_le_of_convex hΩc hΩb hS hS0 hq1
   have hpow := ENNReal.rpow_le_rpow hbase q.coe_nonneg
-  have hC0 : 0 ≤ μ.real (ball (0 : E) 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S :=
+  have hC0 : 0 ≤ μ.real (ball 0 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S :=
     div_nonneg (mul_nonneg measureReal_nonneg (pow_nonneg diam_nonneg _)) measureReal_nonneg
   have hum : AEStronglyMeasurable (fun x => u x - ⨍ y in S, u y ∂μ) (μ.restrict Ω) :=
     hu.locallyIntegrableOn.aestronglyMeasurable.sub aestronglyMeasurable_const
@@ -310,11 +349,11 @@ theorem HasWeakFDerivOn.lintegral_enorm_sub_setAverage_rpow_le_of_convex
 
 /-! ### Inequalities on balls and mean oscillation bounds -/
 
-/-- **The Poincaré–Wirtinger inequality on a ball.** If `ball x r ⊆ Ω` and `1 ≤ p < ∞`, then
+/-- **The Poincaré–Wirtinger inequality on a ball.** If `ball x r ⊆ Ω` and `1 ≤ p ≤ ∞`, then
 
 `‖u - u_{B(x, r)}‖_{Lᵖ(B(x, r))} ≤ 2 ^ (n + 1) * r * ‖Du‖_{Lᵖ(B(x, r))}`. -/
 theorem HasWeakFDerivOn.eLpNorm_sub_setAverage_ball_le (hu : HasWeakFDerivOn μ Ω u Du)
-    {x : E} {r : ℝ} (hball : ball x r ⊆ Ω) {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞) :
+    {x : E} {r : ℝ} (hball : ball x r ⊆ Ω) {p : ℝ≥0∞} (hp1 : 1 ≤ p) :
     eLpNorm (fun y => u y - ⨍ z in ball x r, u z ∂μ) p (μ.restrict (ball x r)) ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * r) * eLpNorm Du p (μ.restrict (ball x r)) := by
   rcases le_or_gt r 0 with hr | hr
@@ -322,7 +361,7 @@ theorem HasWeakFDerivOn.eLpNorm_sub_setAverage_ball_le (hu : HasWeakFDerivOn μ 
   let B : Opens E := ⟨ball x r, isOpen_ball⟩
   have hB : HasWeakFDerivOn μ B u Du := hu.mono hball
   refine (hB.eLpNorm_sub_setAverage_le_of_convex (convex_ball x r) isBounded_ball
-    subset_rfl (measure_ball_pos μ x hr).ne' hp1 hp).trans ?_
+    subset_rfl (measure_ball_pos μ x hr).ne' hp1).trans ?_
   exact mul_le_mul_left (ENNReal.ofReal_le_ofReal
     (μ.addHaar_real_ball_mul_diam_ball_pow_div_le x hr)) _
 
@@ -333,7 +372,7 @@ theorem HasWeakFDerivOn.setLIntegral_enorm_sub_setAverage_ball_le (hu : HasWeakF
     {x : E} {r : ℝ} (hball : ball x r ⊆ Ω) :
     ∫⁻ y in ball x r, ‖u y - ⨍ z in ball x r, u z ∂μ‖ₑ ∂μ ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * r) * ∫⁻ y in ball x r, ‖Du y‖ₑ ∂μ := by
-  have h := hu.eLpNorm_sub_setAverage_ball_le hball le_rfl ENNReal.one_ne_top
+  have h := hu.eLpNorm_sub_setAverage_ball_le hball le_rfl
   have hum : AEStronglyMeasurable (fun y => u y - ⨍ z in ball x r, u z ∂μ)
       (μ.restrict (ball x r)) :=
     (hu.locallyIntegrableOn.aestronglyMeasurable.mono_measure

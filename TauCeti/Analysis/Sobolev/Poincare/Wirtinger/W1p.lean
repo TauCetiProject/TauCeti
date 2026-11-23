@@ -11,7 +11,6 @@ import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.WeakDeriv
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
-import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -31,10 +30,8 @@ with no measurability assumption on `S`.
 
 Every `u ∈ W^{1,p}(Ω)` has weak Fréchet derivative `x ↦ innerSL ℝ (W1p.gradient u x)`
 (`TauCeti.W1p.hasWeakFDerivOn`), and `innerSL ℝ` is a linear isometry so `‖∇u‖_{Lᵖ(Ω)}` coincides
-with the `Lᵖ` seminorm of the weak Fréchet derivative.  For finite `p`, the convex and ball
-inequalities follow directly from the `HasWeakFDerivOn` bounds; since the constant does not depend
-on `p`, the case `p = ∞` follows by applying the finite case at exponents `q < ∞` and letting
-`q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
+with the `Lᵖ` seminorm of the weak Fréchet derivative.  For every `1 ≤ p ≤ ∞`, the convex and ball
+inequalities therefore follow directly from the `HasWeakFDerivOn` bounds.
 
 ## Main declarations
 
@@ -80,44 +77,16 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 /-- **The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`.**  Let `Ω` be a bounded convex open set
 in a finite-dimensional real inner product space of dimension `n`, and let `S ⊆ Ω` have positive
 measure.  For `1 ≤ p ≤ ∞`, every `u ∈ W^{1,p}(Ω)` deviates from its mean over `S` by at most
-`μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times the `Lᵖ` norm of its weak gradient.  The constant
-does not depend on `p`, so the case `p = ∞` is the limit of the finite exponents. -/
+`μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times the `Lᵖ` norm of its weak gradient. -/
 theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex
     (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
     (hS : S ⊆ (Omega : Set E)) (hS0 : mu S ≠ 0) (u : W1p mu Omega p) :
     eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) p (mu.restrict Omega) ≤
       ENNReal.ofReal (mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) / mu.real S) *
         ‖W1p.gradient u‖ₑ := by
-  set C := ENNReal.ofReal
-    (mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) / mu.real S)
-  -- The inequality at every finite exponent follows from the `HasWeakFDerivOn` bound.
-  have hfin (q : ℝ≥0∞) [Fact (1 ≤ q)] (hq : q ≠ ∞) (v : W1p mu Omega q) :
-      eLpNorm (fun x ↦ W1p.value v x - ⨍ y in S, W1p.value v y ∂mu) q (mu.restrict Omega) ≤
-        C * ‖W1p.gradient v‖ₑ := by
-    have h := (W1p.hasWeakFDerivOn v).eLpNorm_sub_setAverage_le_of_convex
-      hconv hb hS hS0 Fact.out hq
-    rwa [W1p.eLpNorm_innerSL_gradient v] at h
-  rcases ne_or_eq p ∞ with hp | rfl
-  · exact hfin p hp u
-  -- At `p = ∞`, lower `u` to the finite exponents `q ≥ 1` and let `q → ∞`.
-  have : IsFiniteMeasure (mu.restrict (Omega : Set E)) :=
-    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
-  have hle : ∀ᶠ q : ℝ≥0 in atTop,
-      eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) q (mu.restrict Omega) ≤
-        C * eLpNorm (W1p.gradient u) q (mu.restrict Omega) := by
-    filter_upwards [eventually_ge_atTop 1] with q hq
-    have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq⟩
-    have hval : W1p.value (W1p.ofExponentLE le_top u) =ᵐ[mu.restrict Omega] W1p.value u :=
-      (W1p.coeFn_value_ofExponentLE (le_top : (q : ℝ≥0∞) ≤ ∞) u).eventuallyEq
-    have havg : ⨍ y in S, W1p.value (W1p.ofExponentLE le_top u) y ∂mu =
-        ⨍ y in S, W1p.value u y ∂mu := average_congr (ae_restrict_of_ae_restrict_of_subset hS hval)
-    have h := hfin q ENNReal.coe_ne_top (W1p.ofExponentLE le_top u)
-    rw [havg, Lp.eNorm_def,
-      eLpNorm_congr_ae (W1p.coeFn_gradient_ofExponentLE _ u).eventuallyEq] at h
-    exact (eLpNorm_congr_ae (hval.mono fun x hx ↦ by simp only [hx])).symm.trans_le h
-  rw [Lp.eNorm_def]
-  exact le_of_tendsto_of_tendsto tendsto_eLpNorm_atTop
-    (ENNReal.Tendsto.const_mul tendsto_eLpNorm_atTop (Or.inr ENNReal.ofReal_ne_top)) hle
+  have h := (W1p.hasWeakFDerivOn u).eLpNorm_sub_setAverage_le_of_convex
+    hconv hb hS hS0 (Fact.out : 1 ≤ p)
+  rwa [W1p.eLpNorm_innerSL_gradient u] at h
 
 /-- **The mean oscillation of a `W^{1,p}` function on a bounded convex domain.**  Let `Ω` be a
 bounded convex open set of positive measure in a finite-dimensional real inner product space of

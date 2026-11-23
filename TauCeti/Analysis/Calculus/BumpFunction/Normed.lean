@@ -27,8 +27,8 @@ it may be taken over that compact ball, with the pullback of `μ`, which is a fi
   radius `f.rOut` are integrals over the whole space.
 * `ContDiffBump.integral_closedBall_normed_smul_const`: over that closed ball, the normalized bump
   averages a constant to itself.
-* `ContDiffBump.normed_le_div_measureReal_ball`: pointwise upper bound on a normalized bump in
-  terms of the open-ball measure.
+* `ContDiffBump.normed_le_div_measureReal_ball_rOut`: pointwise upper bound on a normalized bump
+  in terms of the open-ball measure.
 -/
 
 public section
@@ -83,7 +83,7 @@ omit [HasContDiffBump E] [NormedAddCommGroup G] [NormedSpace ℝ G] [IsLocallyFi
   [μ.IsOpenPosMeasure]
 
 /-- Pointwise upper bound on a normalized bump in terms of the open-ball measure. -/
-theorem normed_le_div_measureReal_ball [HasContDiffBump E] [μ.IsAddHaarMeasure]
+theorem normed_le_div_measureReal_ball_rOut [HasContDiffBump E] [μ.IsAddHaarMeasure]
     (K : ℝ) (h : f.rOut ≤ K * f.rIn) (x : E) :
     f.normed μ x ≤ K ^ Module.finrank ℝ E / μ.real (ball c f.rOut) := by
   rw [← measureReal_congr (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero c _ f.rOut_pos.ne')]

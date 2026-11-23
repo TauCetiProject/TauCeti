@@ -10,6 +10,7 @@ import TauCeti.Analysis.Sobolev.Mollification.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Function.MemLpLoc
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
@@ -33,8 +34,7 @@ also matters for the `W^{1,p}` form: for `p = 4/3` the function `u = |z|^{-2/5}`
 ## Proof
 
 On an open set `V` with compact closure in `Ω`, local mollification
-(`TauCeti.HasWeakFDerivOn.exists_contDiff_tendstoUniformlyOn`, after cutting off to a relatively
-compact neighbourhood via `TauCeti.HasWeakFDerivOn.exists_open_memLp_indicator`) produces smooth
+(`TauCeti.HasWeakFDerivOn.exists_contDiff_tendstoUniformlyOn`) produces smooth
 approximations converging uniformly to `u` on `closure V` whose derivatives converge to `Du` in
 `L¹(V)`. The classical chain rule applies to each mollification.
 Since `u '' closure V` is compact, uniform convergence carries `g` and `Dg` along
@@ -99,10 +99,9 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
     HasWeakFDerivOn μ V (fun x => g (u x)) fun x => (fderiv ℝ g (u x)).comp (Du x) := by
   set S := closure (V : Set E)
   have hVS : (V : Set E) ⊆ S := subset_closure
-  obtain ⟨-, -, O, hSO, hOΩ, -, -, hDuO, -, -, -⟩ :=
-    hu.exists_open_memLp_indicator hVc hVΩ
-  obtain ⟨un, hcd, huu, -, -, hDD_Lp⟩ :=
-    hu.exists_contDiff_tendstoUniformlyOn huc hVc hSO hOΩ le_rfl ENNReal.one_ne_top hDuO
+  obtain ⟨un, hcd, huu, -, -, hDD_Lp⟩ := hu.exists_contDiff_tendstoUniformlyOn huc hVc hVΩ
+    le_rfl le_rfl ENNReal.one_ne_top
+    ((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 hu.locallyIntegrableOn_deriv)
   let Dn : ℕ → E → E →L[ℝ] F := fun n => fderiv ℝ (un n)
   have hun : ∀ n, Continuous (un n) := fun n => (hcd n).continuous
   have hDn : ∀ n, Continuous (Dn n) := fun n => (hcd n).continuous_fderiv (by simp)

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc
 
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Interior
@@ -30,8 +31,9 @@ ball lies in `V`, and whose `Lᵖ` seminorm on any measurable subset of such poi
 
 As the outer radii of the bumps shrink to zero, these mollifications converge to `u` in `L^q(U)`
 and their derivatives converge to `Du` in `Lᵖ(U)` for finite exponents `1 ≤ q, p < ∞` and every
-open `U` with compact closure inside `V ≤ Ω` (provided `u ∈ L^q(V)` and `Du ∈ Lᵖ(V)`). If `u` is
-continuous on `Ω`, the mollifications also converge uniformly to `u` on `closure U`.
+open `U` with compact closure inside `V ≤ Ω` (provided `u` is locally `L^q` on `V` and `Du` is
+locally `Lᵖ` on `V`). If `u` is continuous on `Ω`, the mollifications also converge uniformly to
+`u` on `closure U`.
 
 ## Main declarations
 
@@ -172,7 +174,7 @@ private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
     (hVΩ : V ≤ Ω) {q p : ℝ≥0∞} (hq1 : 1 ≤ q) (hq : q ≠ (∞ : ℝ≥0∞))
     (huW : ∀ W : Opens E, IsCompact (closure (W : Set E)) → closure (W : Set E) ⊆ V →
       MemLp u q (μ.restrict W))
-    (hp1 : 1 ≤ p) (hp : p ≠ (∞ : ℝ≥0∞)) (hDup : MemLp Du p (μ.restrict V)) :
+    (hp1 : 1 ≤ p) (hp : p ≠ (∞ : ℝ≥0∞)) (hDup : MemLpLoc p V Du μ) :
     ∃ un : ℕ → E → F, (∀ n, ContDiff ℝ ∞ (un n)) ∧
       (∀ n, eLpNorm (fderiv ℝ (un n)) p (μ.restrict U) ≤ eLpNorm Du p (μ.restrict V)) ∧
       (ContinuousOn u Ω → TendstoUniformlyOn un u atTop (closure (U : Set E))) ∧
@@ -191,8 +193,7 @@ private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
   let φ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hδ2
   have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) :=
     ContDiffBump.tendsto_rOut_shrinking hδ2
-  have hDuW : MemLp Du p (μ.restrict W) :=
-    hDup.mono_measure (Measure.restrict_mono (subset_closure.trans hclW) le_rfl)
+  have hDuW : MemLp Du p (μ.restrict W) := hDup.memLp_restrict_of_isCompact_closure hWc hclW
   have hball (n : ℕ) : ∀ x ∈ (U : Set E), closedBall x (φ n).rOut ⊆ W := fun x hx y hy =>
     mem_thickening_iff.2 ⟨x, subset_closure hx, (mem_closedBall.1 hy).trans_lt <| by
       simp only [φ, ContDiffBump.rOut_shrinking]
@@ -212,22 +213,21 @@ private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
 
 /-- **Local smooth approximation in `W^{1,p}` (with separate value and derivative exponents).**
 Let `u` have weak Fréchet derivative `Du` on `Ω`, let `U` be an open set with compact closure
-inside an open `V ≤ Ω`, and let `u ∈ L^q(V)` and `Du ∈ Lᵖ(V)` for `1 ≤ q, p < ∞`. Then there is
-a sequence of globally smooth functions `uₙ` converging to `u` in `L^q(U)` whose derivatives
-converge to `Du` in `Lᵖ(U)` and satisfy `‖Duₙ‖_{Lᵖ(U)} ≤ ‖Du‖_{Lᵖ(V)}`. -/
+inside an open `V ≤ Ω`, and let `u` be locally `L^q` on `V` and `Du` be locally `Lᵖ` on `V` for
+`1 ≤ q, p < ∞`. Then there is a sequence of globally smooth functions `uₙ` converging to `u` in
+`L^q(U)` whose derivatives converge to `Du` in `Lᵖ(U)` and satisfy
+`‖Duₙ‖_{Lᵖ(U)} ≤ ‖Du‖_{Lᵖ(V)}`. -/
 theorem HasWeakFDerivOn.exists_contDiff_tendsto_eLpNorm (hu : HasWeakFDerivOn μ Ω u Du)
     {U V : Opens E} (hUc : IsCompact (closure (U : Set E))) (hUV : closure (U : Set E) ⊆ V)
     (hVΩ : V ≤ Ω) {q p : ℝ≥0∞} (hq1 : 1 ≤ q) (hq : q ≠ (∞ : ℝ≥0∞))
-    (huq : MemLp u q (μ.restrict V)) (hp1 : 1 ≤ p) (hp : p ≠ (∞ : ℝ≥0∞))
-    (hDup : MemLp Du p (μ.restrict V)) :
+    (huq : MemLpLoc q V u μ) (hp1 : 1 ≤ p) (hp : p ≠ (∞ : ℝ≥0∞))
+    (hDup : MemLpLoc p V Du μ) :
     ∃ un : ℕ → E → F, (∀ n, ContDiff ℝ ∞ (un n)) ∧
       (∀ n, eLpNorm (fderiv ℝ (un n)) p (μ.restrict U) ≤ eLpNorm Du p (μ.restrict V)) ∧
       Tendsto (fun n => eLpNorm (un n - u) q (μ.restrict U)) atTop (𝓝 0) ∧
       Tendsto (fun n => eLpNorm (fderiv ℝ (un n) - Du) p (μ.restrict U)) atTop (𝓝 0) := by
   obtain ⟨un, hcd, hbound, -, hu_conv, hDu_conv⟩ := exists_interior_mollification hu hUc hUV hVΩ
-    hq1 hq
-    (fun _ _ hWV => huq.mono_measure (Measure.restrict_mono (subset_closure.trans hWV) le_rfl))
-    hp1 hp hDup
+    hq1 hq (fun _ hWc hWV => huq.memLp_restrict_of_isCompact_closure hWc hWV) hp1 hp hDup
   exact ⟨un, hcd, hbound, hu_conv, hDu_conv⟩
 
 /-- **Local smooth approximation in `W^{1,p}` and uniformly on `closure U` for continuous `u`.**
@@ -235,7 +235,7 @@ theorem HasWeakFDerivOn.exists_contDiff_tendsto_eLpNorm (hu : HasWeakFDerivOn μ
 theorem HasWeakFDerivOn.exists_contDiff_tendstoUniformlyOn (hu : HasWeakFDerivOn μ Ω u Du)
     (huc : ContinuousOn u Ω) {U V : Opens E} (hUc : IsCompact (closure (U : Set E)))
     (hUV : closure (U : Set E) ⊆ V) (hVΩ : V ≤ Ω) {p : ℝ≥0∞} (hp1 : 1 ≤ p)
-    (hp : p ≠ (∞ : ℝ≥0∞)) (hDup : MemLp Du p (μ.restrict V)) :
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hDup : MemLpLoc p V Du μ) :
     ∃ un : ℕ → E → F, (∀ n, ContDiff ℝ ∞ (un n)) ∧
       TendstoUniformlyOn un u atTop (closure (U : Set E)) ∧
       (∀ n, eLpNorm (fderiv ℝ (un n)) p (μ.restrict U) ≤ eLpNorm Du p (μ.restrict V)) ∧

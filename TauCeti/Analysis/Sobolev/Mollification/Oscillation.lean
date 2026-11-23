@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Convolution
 public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc
 
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Oscillation
@@ -62,7 +63,7 @@ noncomputable section
 
 namespace TauCeti
 
-open ContinuousLinearMap Filter MeasureTheory Metric Module Set TopologicalSpace
+open ContinuousLinearMap Filter _root_.MeasureTheory Metric Module Set TopologicalSpace
 open scoped Convolution ENNReal Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -108,7 +109,7 @@ theorem HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le_mul_rpow
     have hB : HasWeakFDerivOn μ B u Du := hu.mono hball
     have hu1 : IntegrableOn u (ball x φ.rOut) μ :=
       memLp_one_iff_integrable.1 <|
-        hB.memLp_of_convex (convex_ball x φ.rOut) isBounded_ball le_rfl ENNReal.one_ne_top hDu1
+        hB.memLp_of_convex (convex_ball x φ.rOut) isBounded_ball le_rfl hDu1
     calc ⨍⁻ z in ball x φ.rOut, ‖u z - (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ₑ ∂μ
         ≤ ENNReal.ofReal (1 + (φ.rOut / φ.rIn) ^ finrank ℝ E) *
             ⨍⁻ z in ball x φ.rOut, ‖u z - ⨍ w in ball x φ.rOut, u w ∂μ‖ₑ ∂μ :=
@@ -167,40 +168,44 @@ private theorem le_oscillationConst (φ : ContDiffBump (0 : E)) {κ : ℝ}
 
 /-- **Uniform vanishing of the mollification oscillation on compact subsets at `p = n`.** Let
 `u : E → F` have weak Fréchet derivative `Du` on `Ω` in positive dimension `n`, let `K ⊆ V` be a
-compact subset of an open set `V ≤ Ω` with `eLpNorm Du n (μ.restrict V) ≠ ∞`, and let `φ i` be
-bumps with `(φ i).rOut → 0` and uniformly bounded aspect ratio `(φ i).rOut ≤ κ * (φ i).rIn`. Then
-the mean deviation of `u` from its interior mollification `φ i ⋆ V.indicator u` over
-`B(x, (φ i).rOut)` tends to `0` uniformly over `x ∈ K`. -/
+compact subset of an open set `V ≤ Ω` with `Du` locally `Lⁿ` on `V`, and let `φ i` be bumps with
+`(φ i).rOut → 0` and uniformly bounded aspect ratio `(φ i).rOut ≤ κ * (φ i).rIn`. Then the mean
+deviation of `u` from its interior mollification `φ i ⋆ V.indicator u` over `B(x, (φ i).rOut)`
+tends to `0` uniformly over `x ∈ K`. -/
 theorem HasWeakFDerivOn.tendsto_iSup_setLAverage_enorm_sub_normed_convolution_indicator
     [Nontrivial E] (hu : HasWeakFDerivOn μ Ω u Du) {V : Opens E} (hVΩ : V ≤ Ω)
     {K : Set E} (hK : IsCompact K) (hKV : K ⊆ V)
-    (hDu : eLpNorm Du (finrank ℝ E) (μ.restrict V) ≠ ∞)
+    (hDu : MemLpLoc (finrank ℝ E) V Du μ)
     {ι : Type*} {l : Filter ι} {φ : ι → ContDiffBump (0 : E)}
     (hφ : Tendsto (fun i => (φ i).rOut) l (𝓝 0))
     {κ : ℝ} (hκ : ∀ᶠ i in l, (φ i).rOut ≤ κ * (φ i).rIn) :
     Tendsto (fun i => ⨆ x ∈ K, ⨍⁻ z in ball x (φ i).rOut,
         ‖u z - ((φ i).normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) x‖ₑ ∂μ)
       l (𝓝 0) := by
-  have hDext : eLpNorm ((V : Set E).indicator Du) (finrank ℝ E) μ ≠ ∞ := by
-    rwa [eLpNorm_indicator_eq_eLpNorm_restrict (f := Du) V.isOpen.measurableSet.nullMeasurableSet]
   obtain ⟨δ, hδ, hδV⟩ := hK.exists_cthickening_subset_open V.isOpen hKV
+  let W : Set E := cthickening δ K
+  have hDuW : MemLp Du (finrank ℝ E) (μ.restrict W) := memLpLoc_iff.1 hDu W hδV hK.cthickening
+  have hWm : MeasurableSet W := isClosed_cthickening.measurableSet
+  have hDext : eLpNorm (W.indicator Du) (finrank ℝ E) μ ≠ ∞ :=
+    (eLpNorm_indicator_eq_eLpNorm_restrict hWm.nullMeasurableSet).trans_ne hDuW.eLpNorm_ne_top
   refine tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball
     (Nat.cast_ne_zero.2 finrank_pos.ne') (ENNReal.natCast_ne_top _) hDext hφ
     (C := ENNReal.ofReal (oscillationConst E μ κ)) ?_ ENNReal.ofReal_ne_top
   filter_upwards [hφ.eventually (gt_mem_nhds hδ), hκ] with i hi hκi
   refine iSup₂_le fun x hx => ?_
-  have hball : ball x (φ i).rOut ⊆ V := fun y hy =>
-    hδV (mem_cthickening_of_dist_le y x δ K hx ((mem_ball.1 hy).trans hi).le)
+  have hballW : ball x (φ i).rOut ⊆ W := fun y hy =>
+    mem_cthickening_of_dist_le y x δ K hx ((mem_ball.1 hy).trans hi).le
+  have hball : ball x (φ i).rOut ⊆ V := hballW.trans hδV
   have hDu_eq : eLpNorm Du (finrank ℝ E) (μ.restrict (ball x (φ i).rOut)) =
-      eLpNorm ((V : Set E).indicator Du) (finrank ℝ E) (μ.restrict (ball x (φ i).rOut)) :=
+      eLpNorm (W.indicator Du) (finrank ℝ E) (μ.restrict (ball x (φ i).rOut)) :=
     eLpNorm_congr_ae <| ae_restrict_of_forall_mem isOpen_ball.measurableSet fun y hy =>
-      (Set.indicator_of_mem (hball hy) Du).symm
+      (Set.indicator_of_mem (hballW hy) Du).symm
   rw [(φ i).normed_convolution_indicator_eq_of_ball_subset hball]
   refine (hu.setLAverage_enorm_sub_normed_convolution_le (φ i)
     (hball.trans (SetLike.coe_subset_coe.2 hVΩ))).trans ?_
   rw [hDu_eq]
   exact mul_le_mul' (ENNReal.ofReal_le_ofReal (le_oscillationConst (φ i) hκi))
-    (le_iSup (fun c => eLpNorm ((V : Set E).indicator Du) (finrank ℝ E)
+    (le_iSup (fun c => eLpNorm (W.indicator Du) (finrank ℝ E)
       (μ.restrict (ball c (φ i).rOut))) x)
 
 /-- **Global uniform vanishing of the mollification oscillation at `p = n`.** For a globally weakly

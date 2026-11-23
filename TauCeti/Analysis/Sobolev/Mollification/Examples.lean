@@ -35,10 +35,11 @@ stays at `L^∞(B(0, r))` distance at least `1` from `sign`.
 * `TauCeti.normed_convolution_abs_eq_of_le_abs`: `(φ.normed volume ⋆ |·|) x = |x|`
   for `|x| ≥ φ.rOut`.
 * `ContDiffBump.fderiv_normed_convolution_abs_apply`: derivative of `φ.normed volume ⋆ |·|`.
-* `TauCeti.tendsto_eLpNorm_fderiv_normed_convolution_abs_sub`: `Lᵖ(K)` convergence to `sign`
-  for `1 ≤ p < ∞`.
+* `TauCeti.tendsto_eLpNorm_fderiv_normed_convolution_abs_sub_sign`: `Lᵖ(K)` convergence to
+  `sign` for `1 ≤ p < ∞`.
 * `TauCeti.one_le_eLpNorm_top_sub_sign_of_continuousAt` and
-  `TauCeti.one_le_eLpNorm_top_fderiv_normed_convolution_abs_sub`: `L^∞` convergence fails near `0`.
+  `TauCeti.one_le_eLpNorm_top_fderiv_normed_convolution_abs_sub_sign`: `L^∞` convergence fails near
+  `0`.
 
 ## References
 
@@ -129,7 +130,7 @@ theorem _root_.ContDiffBump.fderiv_normed_convolution_abs_apply (φ : ContDiffBu
 
 /-- On every compact set `K ⊆ ℝ` and for every `1 ≤ p < ∞`, the derivatives of the mollifications
 of `|·|` converge to `sign` in `Lᵖ(K)`. -/
-theorem tendsto_eLpNorm_fderiv_normed_convolution_abs_sub {K : Set ℝ} (hK : IsCompact K)
+theorem tendsto_eLpNorm_fderiv_normed_convolution_abs_sub_sign {K : Set ℝ} (hK : IsCompact K)
     {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ (∞ : ℝ≥0∞)) {ι : Type*} {l : Filter ι}
     {φ : ι → ContDiffBump (0 : ℝ)} (hφ : Tendsto (fun i => (φ i).rOut) l (𝓝 0)) :
     Tendsto (fun i => eLpNorm
@@ -200,7 +201,7 @@ theorem one_le_eLpNorm_top_sub_sign_of_continuousAt {g : ℝ → ℝ} (hg : Cont
 
 /-- The derivatives of the mollifications of `|·|` do not converge to `sign` in `L^∞` near `0`:
 they stay at `L^∞(B(0, r))` distance at least `1` from `sign` for every `r > 0`. -/
-theorem one_le_eLpNorm_top_fderiv_normed_convolution_abs_sub {r : ℝ} (hr : 0 < r)
+theorem one_le_eLpNorm_top_fderiv_normed_convolution_abs_sub_sign {r : ℝ} (hr : 0 < r)
     (φ : ContDiffBump (0 : ℝ)) :
     1 ≤ eLpNorm (fun x : ℝ => fderiv ℝ (φ.normed volume ⋆[lsmul ℝ ℝ, volume] (abs : ℝ → ℝ)) x 1 -
       (SignType.sign x : ℝ)) ∞ (volume.restrict (ball 0 r)) := by
