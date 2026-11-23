@@ -72,7 +72,7 @@ theorem zpow_smul_circleLaurentCoeff_eq_fourierCoeffOn (f : ℂ → E) (c : ℂ)
     push_cast [sub_zero]
     field_simp
   congr 1
-  rw [zpow_sub_one₀ (mul_ne_zero hRc he), mul_zpow, zpow_neg, zpow_neg, ← exp_int_mul, hθ,
+  rw [zpow_sub_one₀ (mul_ne_zero hRc he), mul_zpow, zpow_neg, zpow_neg, ← exp_intCast_mul, hθ,
     exp_neg]
   push_cast [sub_zero]
   field_simp
