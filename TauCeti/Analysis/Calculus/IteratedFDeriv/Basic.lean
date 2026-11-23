@@ -34,7 +34,9 @@ second derivative (`TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two`).
 for the second iterated derivative of the `k`-th iterated derivative and the `(k + 2)`-th iterated
 derivative (`TauCeti.holderOnWith_iteratedFDeriv_two_iteratedFDeriv_iff`).
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
-`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`), and at a point of
+`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`), so Hölder bounds for
+the iterated derivatives of `ζ * u` pass to `u` where `ζ` is one nearby
+(`TauCeti.holderOnWith_iteratedFDeriv_inter_of_mul_of_subset_interior`), and at a point of
 which `s` is a neighbourhood every iterated derivative of `s.indicator g` is that of `g`
 (`TauCeti.iteratedFDeriv_indicator_of_mem_nhds`). Bounded derivatives up
 to a finite order have a common bound
@@ -348,6 +350,21 @@ theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [Non
     filter_upwards [hζ] with y hy
     simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
   exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
+
+/-- Where a function `ζ` equals one on a neighbourhood of every point of `K`, Hölder continuity of
+an iterated derivative of `ζ * u` on `t` gives that of `u` on `K ∩ t`, with the same constant. -/
+theorem holderOnWith_iteratedFDeriv_inter_of_mul_of_subset_interior {𝕜 F A : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedRing A]
+    [NormedSpace 𝕜 A] {k : ℕ} {ζ u : F → A} {K t : Set F} {C r : ℝ≥0}
+    (h : HolderOnWith C r (iteratedFDeriv 𝕜 k (ζ * u)) t) (hK : K ⊆ interior (ζ ⁻¹' {1})) :
+    HolderOnWith C r (iteratedFDeriv 𝕜 k u) (K ∩ t) := by
+  have heq {x : F} (hx : x ∈ K) : iteratedFDeriv 𝕜 k (ζ * u) x = iteratedFDeriv 𝕜 k u x :=
+    Filter.EventuallyEq.iteratedFDeriv_mul_eq (by
+      filter_upwards [mem_interior_iff_mem_nhds.1 (hK hx)] with y hy
+      simpa using hy)
+  intro x hx y hy
+  rw [← heq hx.1, ← heq hy.1]
+  exact h x hx.2 y hy.2
 
 /-- For a function of class `C^n` and `m < n`, the derivative of `D^m f` at `x` is
 `D^(m + 1) f x`, curried on the left. -/
