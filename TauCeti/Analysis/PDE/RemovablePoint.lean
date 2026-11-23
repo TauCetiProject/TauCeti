@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -30,6 +30,8 @@ The proof cuts off near `p`. For a smooth `η_ε` equal to `1` on `B_ε(p)`, sup
 * `TauCeti.setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport`: the removability.
 
 ## References
+
+Adapted from Giada Franz's formalization in the `ForTauCeti` module.
 
 * O. Chodosh, *Introduction to minimal surfaces*, proof of Theorem 32.5.
 -/
@@ -69,6 +71,7 @@ theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
     (φ.hasCompactSupport.fderiv (𝕜 := ℝ))
   obtain ⟨B, hB⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
   set I := ∫ x in Ω, ⟪V x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ
+  -- Cut off φ near p and bound the error using the uniform bounds on V, φ and its derivative.
   have hbound (ε : ℝ) (hε : 0 < ε) :
       ‖I‖ ≤ μ.real (closedBall p (2 * ε)) * (C' * A + B * (K / ε) * C') := by
     obtain ⟨η, η', hηs', hη01, hη1', hη0, hηderiv, hηbound, -⟩ := hcut p ε hε
@@ -119,6 +122,7 @@ theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
     have hI : I = ∫ x in Ω, (η x * fderiv ℝ φ x (V x) + φ x * fderiv ℝ η x (V x)) ∂μ := by
       rw [← sub_zero I, ← h ψ hψp, ← integral_sub hφi hψi]
       simp only [hdiff]
+    -- The error vanishes outside the cutoff support, so only the ball of radius 2ε contributes.
     rw [hI, setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Ω.isOpen.measurableSet
       (s := (Ω : Set E) ∩ closedBall p (2 * ε)) inter_subset_left]
     · have hM : 0 ≤ C' * A + B * (K / ε) * C' := by
@@ -135,6 +139,7 @@ theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
       have hxs : x ∉ tsupport η := fun hs ↦ hx.2 ⟨hx.1, htsupp hs⟩
       rw [image_eq_zero_of_notMem_tsupport hxs, fderiv_of_notMem_tsupport ℝ hxs]
       simp
+  -- Ball volume scales as ε^(m + 2); the cutoff derivative costs 1/ε, so the error tends to zero.
   obtain ⟨m, hm⟩ : ∃ m, Module.finrank ℝ E = m + 2 := ⟨_, (Nat.sub_add_cancel hE).symm⟩
   set c := μ.real (ball (0 : E) 1)
   set g : ℝ → ℝ := fun ε ↦ c * 2 ^ (m + 2) * ε ^ (m + 1) * (C' * A * ε + B * K * C')
