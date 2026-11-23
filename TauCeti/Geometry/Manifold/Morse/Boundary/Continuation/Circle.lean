@@ -58,9 +58,10 @@ satisfy `2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`.
 
 * For the half-turn `r = r₀ + π ρ`, from `f_{r₀}` to the same function `f_{r₀ + π}`
   (`TauCeti.circleCosTwo_add_pi`), the continuation map is the identity in the fixed spatial basis
-  of critical points (`TauCeti.morseContinuationMap_circleCylinderField_add_pi_eq_id`), while
-  tracking the critical points along the path relabels `p_j(r₀)` as `p_{j + 1}(r₀ + π)`: in the
-  tracked labels it is the exchange `S` of the two generators, in both degrees
+  of critical points (`TauCeti.morseContinuationMap_circleCylinderField_add_pi_eq_id`). It sends
+  `p_j(r₀)` to the critical point `p_{j + 1}(r₀ + π)` at the same angle, while tracking along the
+  path gives `p_j(r₀ + π)`: in the tracked labels it is the exchange `S` of the two generators, in
+  both degrees
   (`TauCeti.morseContinuationMap_single_circleCosTwoMaxCrit_add_pi`,
   `TauCeti.morseContinuationMap_single_circleCosTwoMinCrit_add_pi`).
 * For the third-turns `Γ₁ = r₀ + (π / 3) ρ`, and `Γ₂` the same from `r₀ + π / 3`, the continuation
@@ -420,10 +421,10 @@ theorem morseContinuationMap_circleCylinderField_add_pi_eq_id :
   rw [circleCosTwo_add_pi] at h
   exact Finsupp.lhom_ext' fun p ↦ LinearMap.ext_ring (h _ p p rfl)
 
-/-- **The half-turn exchanges the tracked maxima.** For the path `r = r₀ + π ρ`, tracking the
-maxima along the path labels `p_j(r₀)` as `p_{j + 1}(r₀ + π)` (`TauCeti.circleCosTwoMax_add_pi`),
-and the mod-two continuation map sends `p_j(r₀)` to it: in the tracked labels it is the exchange
-of the two generators. -/
+/-- **The half-turn exchanges the tracked maxima.** For the path `r = r₀ + π ρ`, the mod-two
+continuation map sends the maximum `p_j(r₀)` to the maximum `p_{j + 1}(r₀ + π)` at the same angle
+(`TauCeti.circleCosTwoMax_add_pi`), not to the maximum `p_j(r₀ + π)` tracked from it along the
+path: in the tracked labels it is the exchange of the two generators. -/
 theorem morseContinuationMap_single_circleCosTwoMaxCrit_add_pi (j : Fin 2) :
     morseContinuationMap (circleCosTwo δ r₀) (isMorse_circleCosTwo hδ.ne' (r₀ + π))
       (circleCylinderField δ fun t ↦ r₀ + π * ρ t) (Finsupp.single (circleCosTwoMaxCrit δ r₀ j) 1) =
@@ -432,8 +433,9 @@ theorem morseContinuationMap_single_circleCosTwoMaxCrit_add_pi (j : Fin 2) :
     (by simp [coe_circleCosTwoMaxCrit, circleCosTwoMax_add_pi, add_assoc])
 
 /-- **The half-turn exchanges the tracked minima.** For the path `r = r₀ + π ρ`, the mod-two
-continuation map sends the minimum `q_j(r₀)` to the minimum `q_{j + 1}(r₀ + π)` tracked from
-`q_j(r₀)` along the path: in the tracked labels it is the exchange of the two generators. -/
+continuation map sends the minimum `q_j(r₀)` to the minimum `q_{j + 1}(r₀ + π)` at the same angle
+(`TauCeti.circleCosTwoMin_add_pi`), not to the minimum `q_j(r₀ + π)` tracked from it along the
+path: in the tracked labels it is the exchange of the two generators. -/
 theorem morseContinuationMap_single_circleCosTwoMinCrit_add_pi (j : Fin 2) :
     morseContinuationMap (circleCosTwo δ r₀) (isMorse_circleCosTwo hδ.ne' (r₀ + π))
       (circleCylinderField δ fun t ↦ r₀ + π * ρ t) (Finsupp.single (circleCosTwoMinCrit δ r₀ j) 1) =
