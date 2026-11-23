@@ -159,10 +159,13 @@ theorem polarDiscr_baseChange (A : Type*) [CommRing A] [Algebra R A] {q : Quadra
     (b : Basis ι R M) {B : BilinForm R M} (hB : B.toQuadraticMap = q) :
     polarDiscr (B.baseChange A).toQuadraticMap (b.baseChange A) =
       algebraMap R A (polarDiscr q b) := by
+  -- `polarBilin_toQuadraticMap` produces `LinearMap.flip`, not the `LinearMap.BilinForm.flip`
+  -- of `LinearMap.BilinForm.baseChange_flip`, so this form is proved extensionally.
+  have hflip : LinearMap.flip (B.baseChange A) = BilinForm.baseChange A (LinearMap.flip B) := by
+    ext x y
+    simp
   rw [polarDiscr, polarDiscr, ← hB, LinearMap.BilinMap.polarBilin_toQuadraticMap,
-    LinearMap.BilinMap.polarBilin_toQuadraticMap, map_add, map_add,
-    show LinearMap.flip (B.baseChange A) = BilinForm.baseChange A (LinearMap.flip B) from
-      (LinearMap.BilinForm.baseChange_flip B).symm,
+    LinearMap.BilinMap.polarBilin_toQuadraticMap, map_add, map_add, hflip,
     LinearMap.BilinForm.toMatrix_baseChange, LinearMap.BilinForm.toMatrix_baseChange,
     ← RingHom.mapMatrix_apply, ← RingHom.mapMatrix_apply, ← map_add, RingHom.map_det]
 
