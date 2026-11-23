@@ -61,6 +61,9 @@ at `f x`.
 * `PartialDiffeomorph.mfderiv_symm_trans_apply_mfderiv_apply`: for partial diffeomorphisms `Φ₁`,
   `Φ₂` out of the same manifold, the differential of `Φ₂ ∘ Φ₁⁻¹` carries that of `Φ₁` to that of
   `Φ₂`.
+* `PartialDiffeomorph.mfderiv_trans`: the chain rule for composites of partial diffeomorphisms.
+* `PartialDiffeomorph.mfderiv_trans_symm_apply`: if `Φ₁` and `Φ₂` have the same value and
+  differential at `x`, the comparison `Φ₂⁻¹ ∘ Φ₁` has the identity as differential there.
 * `PartialDiffeomorph.bijective_mvfderiv`: for a partial diffeomorphism into a normed space, the
   differential read in that space is bijective at a point of the source.
 * `PartialDiffeomorph.hasDerivAt_comp_symm_of_mfderiv_eq_zero`: at a critical point of a map into a
@@ -265,6 +268,30 @@ theorem mfderiv_symm_trans_apply_mfderiv_apply {G : Type*} [NormedAddCommGroup G
   rw [coe_trans, mfderiv_comp_apply_of_eq (Φ₁ x) (Φ₂.mdifferentiableAt hn h₂)
     (Φ₁.symm.mdifferentiableAt hn (Φ₁.map_source h₁)) (Φ₁.left_inv h₁),
     Φ₁.mfderiv_symm_apply_mfderiv_apply hn h₁]
+
+/-- **The chain rule for partial diffeomorphisms.** At a point of the source of `Ψ ∘ Φ`, its
+differential is the differential of `Ψ` at `Φ x` composed with that of `Φ` at `x`. -/
+theorem mfderiv_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] {H'' : Type*}
+    [TopologicalSpace H''] {K : ModelWithCorners 𝕜 G H''} {P : Type*} [TopologicalSpace P]
+    [ChartedSpace H'' P] (Φ : PartialDiffeomorph I J M N n) (Ψ : PartialDiffeomorph J K N P n)
+    (hn : n ≠ 0) {x : M} (hx : x ∈ (Φ.trans Ψ).source) :
+    mfderiv I K (Φ.trans Ψ) x = (mfderiv J K Ψ (Φ x)).comp (mfderiv I J Φ x) := by
+  rw [trans_source] at hx
+  rw [coe_trans]
+  exact mfderiv_comp x (Ψ.mdifferentiableAt hn hx.2) (Φ.mdifferentiableAt hn hx.1)
+
+/-- **Comparing two partial diffeomorphisms with the same first-order data.** If `Φ₁` and `Φ₂`
+take the same value and have the same differential at a point `x` of both sources, then the
+comparison `Φ₂⁻¹ ∘ Φ₁` has the identity as differential at `x`. -/
+theorem mfderiv_trans_symm_apply (Φ₁ Φ₂ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {x : M}
+    (h₁ : x ∈ Φ₁.source) (h₂ : x ∈ Φ₂.source) (h : Φ₁ x = Φ₂ x)
+    (hd : mfderiv I J Φ₁ x = mfderiv I J Φ₂ x) (v : TangentSpace I x) :
+    mfderiv I I (Φ₁.trans Φ₂.symm) x v = v := by
+  rw [coe_trans, mfderiv_comp_apply_of_eq x
+    (Φ₂.symm.mdifferentiableAt hn (Φ₂.map_source h₂)) (Φ₁.mdifferentiableAt hn h₁) h, hd]
+  -- The rewrite by `hd` leaves the tangent space at `Φ₁ x` as the codomain of `dΦ₂`; both are the
+  -- model space, so the inverse law at `Φ₂ x` applies.
+  exact Φ₂.mfderiv_symm_apply_mfderiv_apply hn h₂ v
 
 /-- The differential of a partial diffeomorphism into a normed space, read in that space, is
 bijective at a point of the source. -/

@@ -52,6 +52,8 @@ is at most `2 b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
+* `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
+  `L^(p * c)` is `p`, for `c` finite and nonzero.
 * `ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one`: truncates `a < p ≤ ∞` above a
   finite `r ≤ p` while preserving `p₀⁻¹ + q⁻¹ < 1`.
 * `ENNReal.exists_one_lt_ne_top_le_and_inv_add_inv_le_one`: replaces `p, q > 1` with
@@ -273,6 +275,13 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   field_simp
+
+/-- **Equal Hölder exponents.** For `c` finite and nonzero, `c` reciprocal exponents
+`(p * c)⁻¹` add up to the reciprocal exponent `p⁻¹`. -/
+theorem inv_mul_inv_mul_cancel {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ∞) (p : ℝ≥0∞) :
+    (c * (p * c)⁻¹)⁻¹ = p := by
+  rw [ENNReal.mul_inv (.inr hc) (.inr hc₀), mul_left_comm, ENNReal.mul_inv_cancel hc₀ hc, mul_one,
+    inv_inv]
 
 /-- Given `a < p` (with `a : ℝ≥0`), a finite `r ≤ p`, and `p⁻¹ + q⁻¹ < 1` in `ℝ≥0∞` (allowing
 `p = ∞` and `q = ∞`), there exists a finite exponent `p₀ : ℝ≥0` with `a < p₀`, `r ≤ p₀`,

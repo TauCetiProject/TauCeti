@@ -33,6 +33,13 @@ continuous bilinear map satisfies `‖B a b‖ₑ ≤ ENNReal.ofReal (‖B‖ * 
 (`ContinuousLinearMap.enorm_apply_apply_le_of_norm_le`). This is the quadratic estimate on the
 nonlinear terms of an equation that is quadratic in its unknown.
 
+For a continuous map of two variables, semilinear in each argument with respect to isometric
+scalar homomorphisms (for instance sesquilinear), the sum `∑ i ∈ s, A (u i) (v i)` is bounded by
+`‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖` (`ContinuousLinearMap.norm_sum_apply_apply_le`); along a finite
+orthonormal basis taken twice, this is the dimension times `‖A‖`. Every value satisfies the
+Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
+(`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
+
 Pulling back along continuous linear equivalences keeps a bilinear map `B₀ : V →L V' →L G`
 invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and
 conversely (`ContinuousLinearMap.isInvertible_bilinearComp_iff`). It conjugates the comparison
@@ -297,6 +304,42 @@ theorem pairingFlip_eq_flip
   rw [LinearMap.pairingFlip_apply, coe_coe, flip_apply]
 
 end PairingFlip
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+section Semilinear₂
+
+variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NontriviallyNormedField 𝕜₃] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] [SeminormedAddCommGroup G] [NormedSpace 𝕜₃ G]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
+
+/-- The sum `∑ i ∈ s, A (u i) (v i)` of a continuous map `A`, semilinear in each argument with
+respect to isometric scalar homomorphisms (for instance sesquilinear), is bounded by
+`‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖`. When `u = v` is a finite orthonormal basis and `s` indexes the
+whole basis, the bound is the dimension times `‖A‖`. -/
+theorem norm_sum_apply_apply_le {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃] {ι : Type*}
+    (s : Finset ι) (A : E →SL[σ₁₃] F →SL[σ₂₃] G) (u : ι → E) (v : ι → F) :
+    ‖∑ i ∈ s, A (u i) (v i)‖ ≤ ‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖ := by
+  rw [Finset.mul_sum]
+  exact norm_sum_le_of_le s fun i _ ↦ (A.le_opNorm₂ (u i) (v i)).trans_eq (mul_assoc _ _ _)
+
+/-- A Young-type bound for a continuous map `B` of two variables, semilinear in each argument with
+respect to isometric scalar homomorphisms: for every `c > 0`,
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
+theorem norm_apply_apply_le_mul_add_sq {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃]
+    (B : E →SL[σ₁₃] F →SL[σ₂₃] G) {c : ℝ} (hc : 0 < c) (u : E) (v : F) :
+    ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
+  refine (B.le_opNorm₂ _ _).trans ?_
+  rw [mul_assoc]
+  gcongr
+  have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
+  rw [inv_inv] at h
+  linarith
+
+end Semilinear₂
 
 end ContinuousLinearMap
 
