@@ -59,7 +59,7 @@ theorem filter_aroots_eq_map_aroots (L : IntermediateField K E) (p : K[X])
     (p.map (algebraMap K L))
   rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq, ← aroots_def, ← aroots_def] at h
   convert h using 1
-  · exact Multiset.filter_congr fun x _ ↦ ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.2⟩
+  · exact Multiset.filter_congr fun x _ ↦ ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.property⟩
   · exact Multiset.map_congr rfl fun x _ ↦ (algebraMap_apply L x).symm
 
 /-- The root count of a coefficient vector `a : Fin n → K` in a subextension `L`: the number of

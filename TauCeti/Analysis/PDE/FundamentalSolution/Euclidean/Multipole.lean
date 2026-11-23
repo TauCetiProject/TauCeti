@@ -11,8 +11,6 @@ public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
-import TauCeti.Analysis.InnerProductSpace.Harmonic.IteratedFDeriv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Taylor
 
 /-!
@@ -26,7 +24,7 @@ the dimension: `Gₙ` is invariant under orthogonal maps and homogeneous under d
 point `a ≠ 0` is carried to a fixed unit vector by a dilation composed with a reflection, which
 rescales the radius of convergence by `‖a‖`. The statements hold in every dimension; in dimension
 two the totalized kernel `TauCeti.newtonianKernel 2` is zero, and the logarithmic kernel of the
-plane is not treated here.
+plane is treated in `TauCeti.Analysis.PDE.FundamentalSolution.Planar.Multipole`.
 
 Expanding `y ↦ Gₙ(x - y)` about the origin gives the **exterior multipole expansion**: for
 `‖y‖` below a fixed multiple of `‖x‖`,
@@ -41,11 +39,11 @@ because they are the Taylor terms of a harmonic function
 functions of degree at most `N` harmonic everywhere, uniformly together with all derivatives
 (`exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub`).
 The convergence of the derivatives comes from the interior derivative estimates for harmonic
-functions (`TendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd`). Hence a functional on
-functions on the closed ball of the approximation theorem, continuous for uniform convergence of the
-derivatives up to some finite order, which annihilates the polynomial functions harmonic
-everywhere, also annihilates `y ↦ Gₙ(x - y)`; this is the step at infinity in the duality proof of
-harmonic Runge approximation.
+functions via `HasFPowerSeriesOnBall.tendstoUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt`.
+Hence a functional on functions on the closed ball of the approximation theorem, continuous for
+uniform convergence of the derivatives up to some finite order, which annihilates the polynomial
+functions harmonic everywhere, also annihilates `y ↦ Gₙ(x - y)`; this is the step at infinity in
+the duality proof of harmonic Runge approximation.
 
 ## Main declarations
 
@@ -160,36 +158,18 @@ theorem
   obtain ⟨c, hc, hc1, hser⟩ := exists_forall_hasFPowerSeriesOnBall_newtonianKernel_sub n
   have hc1' : (c : ℝ) < 1 := mod_cast hc1
   refine ⟨c / 2, by positivity, by linarith, fun x hx ↦ ?_⟩
-  obtain ⟨p, hp, hharm⟩ := hser x hx
-  have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
-  have hP (N : ℕ) : HarmonicOnNhd (p.partialSum N) univ :=
-    fun z _ ↦ HarmonicAt.sum fun k _ ↦ hharm k z
-  -- The kernel is harmonic on the ball of convergence, which excludes the pole since `c < 1`.
-  have hG : HarmonicOnNhd (fun y ↦ newtonianKernel n (x - y)) (ball 0 (c * ‖x‖)) := by
-    intro y hy
-    have hyx : y ≠ x := by
-      rintro rfl
-      rw [mem_ball_zero_iff] at hy
-      nlinarith
-    have hfun : (fun z ↦ newtonianKernel n (z - x)) = fun z ↦ newtonianKernel n (x - z) := by
-      funext z
-      exact newtonianKernel_sub_comm n z x
-    simpa [hfun] using harmonicAt_newtonianKernel_sub n hyx
-  refine ⟨p.partialSum, fun N z ↦ hP N z (mem_univ z), fun N ↦ ?_, fun k ↦ ?_⟩
-  · have hsum : p.partialSum N = ∑ k ∈ Finset.range N, fun y ↦ p k fun _ ↦ y := by
-      ext y
-      simp [FormalMultilinearSeries.partialSum]
-    rw [hsum]
-    refine Submodule.sum_mem _ fun k hk ↦
-      polynomialsDegLE_mono (Fin n) (Finset.mem_range.1 hk).le ?_
-    simpa using (p k).toMultilinearMap.apply_const_mem_polynomialsDegLE
-  · have hlim := hp.tendstoLocallyUniformlyOn
-    rw [← ENNReal.coe_mul, Metric.eball_coe, NNReal.coe_mul, coe_nnNorm] at hlim
-    simp only [zero_add] at hlim
-    refine (tendstoLocallyUniformlyOn_iff_forall_isCompact isOpen_ball).1
-      (hlim.iteratedFDeriv_of_harmonicOnNhd (.of_forall fun N ↦ (hP N).mono (subset_univ _))
-        hG isOpen_ball k) _ (closedBall_subset_ball ?_) (isCompact_closedBall 0 _)
-    have : (0 : ℝ) < c * ‖x‖ := mul_pos (mod_cast hc) hx'
-    linarith
+  obtain ⟨p, hp, -⟩ := hser x hx
+  have h0 : HarmonicAt (fun y ↦ newtonianKernel n (x - y)) 0 := by
+    have hfun : (fun y ↦ newtonianKernel n (y - x)) = fun y ↦ newtonianKernel n (x - y) :=
+      funext fun y ↦ newtonianKernel_sub_comm n y x
+    simpa [hfun] using harmonicAt_newtonianKernel_sub n (Ne.symm hx : (0 : _) ≠ x)
+  refine ⟨p.partialSum, fun N z ↦ hp.hasFPowerSeriesAt.harmonicAt_partialSum h0 N z,
+    fun N ↦ polynomialsDegLE_mono _ (Nat.sub_le N 1) (p.partialSum_mem_polynomialsDegLE N),
+    fun k ↦ ?_⟩
+  have hlt : ENNReal.ofReal (c / 2 * ‖x‖) < c * ‖x‖₊ := by
+    have hcx : (0 : ℝ) < c * ‖x‖ := mul_pos (mod_cast hc) (norm_pos_iff.2 hx)
+    rw [← ENNReal.coe_mul, ← ENNReal.ofReal_coe_nnreal]
+    exact (ENNReal.ofReal_lt_ofReal_iff (by exact_mod_cast hcx)).2 (by push_cast; linarith)
+  simpa using hp.tendstoUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt h0 hlt k
 
 end TauCeti

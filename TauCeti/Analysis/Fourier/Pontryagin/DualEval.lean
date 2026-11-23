@@ -31,7 +31,7 @@ variable {G : Type*} [Monoid G] [TopologicalSpace G]
 @[fun_prop]
 theorem continuous_coe_eval_const (g : G) :
     Continuous (fun χ : _root_.PontryaginDual G => (χ g : ℂ)) :=
-  continuous_subtype_val.comp (continuous_eval_const (F := G →ₜ* Circle) g)
+  continuous_subtypeVal.comp (continuous_eval_const (F := G →ₜ* Circle) g)
 
 /-- Characters in a compact set `K` are uniformly close at `x` and at `g`, once `x` is near `g`:
 for every `δ > 0`, eventually in `x` near `g`, `‖χ x - χ g‖ ≤ δ` for all `χ ∈ K`. This is joint
@@ -41,7 +41,7 @@ theorem eventually_forall_norm_coe_eval_sub_le [WeaklyLocallyCompactSpace G] (g 
     ∀ᶠ x in 𝓝 g, ∀ χ ∈ K, ‖(χ x : ℂ) - (χ g : ℂ)‖ ≤ δ := by
   -- Joint evaluation and compactness give a common bound for all characters in K.
   have heval : Continuous (fun p : G × _root_.PontryaginDual G => (p.2 p.1 : ℂ)) :=
-    continuous_subtype_val.comp
+    continuous_subtypeVal.comp
       ((continuous_eval (F := G →ₜ* Circle)).comp continuous_swap)
   apply hK.eventually_forall_of_forall_eventually
   intro χ _

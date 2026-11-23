@@ -74,20 +74,20 @@ def tangentCircleLoop (hu : ‖u‖ = 1) (p₀ : sphereEquator u) :
   toFun q :=
     { toFun t := ⟨tangentCircle ((p₀ : sphere (0 : V) 1) : V) u ((q : sphere (0 : V) 1) : V)
           (2 * π * t),
-        mem_sphere_zero_iff_norm.2 (norm_tangentCircle (mem_sphere_zero_iff_norm.1 p₀.1.2) hu
-          (mem_sphereEquator.1 p₀.2) (mem_sphere_zero_iff_norm.1 q.1.2) (mem_sphereEquator.1 q.2)
+        mem_sphere_zero_iff_norm.2 (norm_tangentCircle (mem_sphere_zero_iff_norm.1 p₀.val.property)
+            hu
+          (mem_sphereEquator.1 p₀.property) (mem_sphere_zero_iff_norm.1 q.val.property)
+              (mem_sphereEquator.1 q.property)
           _)⟩
       continuous_toFun := ((continuous_tangentCircle _ u).comp
-        (continuous_const.prodMk (continuous_const.mul continuous_subtype_val))).subtype_mk _
+        (continuous_const.prodMk (continuous_const.mul continuous_subtypeVal))).subtype_mk _
       source' := Subtype.ext (by simp)
-      target' := Subtype.ext (by
-        simpa using tangentCircle_add_two_pi ((p₀ : sphere (0 : V) 1) : V) u
-          ((q : sphere (0 : V) 1) : V) 0) }
+      target' := Subtype.ext (by simp) }
   continuous_toFun := by
     refine Path.continuous_uncurry_iff.1 (Continuous.subtype_mk ?_ _)
     exact (continuous_tangentCircle _ u).comp
-      ((continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst)).prodMk
-        (continuous_const.mul (continuous_subtype_val.comp continuous_snd)))
+      ((continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_fst)).prodMk
+        (continuous_const.mul (continuous_subtypeVal.comp continuous_snd)))
 
 @[simp]
 theorem coe_tangentCircleLoop_apply (hu : ‖u‖ = 1) (p₀ q : sphereEquator u) (t : I) :
@@ -148,7 +148,7 @@ private lemma mem_boundary_of_eq (c : Ω^ (Fin k) (sphereEquator u) p₀)
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · -- The cube is a point; it must reach the antipode of `p₀`, which differs from `p₀`.
     let q : sphereEquator u := ⟨-(p₀ : sphere (0 : V) 1), by
-      simp [coe_neg_sphere, inner_neg_left, mem_sphereEquator.1 p₀.2]⟩
+      simp [coe_neg_sphere, inner_neg_left, mem_sphereEquator.1 p₀.property]⟩
     have hq : q ≠ p₀ := fun h ↦ ne_neg_of_mem_unit_sphere ℝ (p₀ : sphere (0 : V) 1)
       (congrArg Subtype.val h).symm
     obtain ⟨z, hz⟩ := hsurj q hq
@@ -165,8 +165,8 @@ private lemma mem_boundary_of_tangentCircleGenLoop_eq (hu : ‖u‖ = 1)
     {y : I^(Fin (k + 1))} (hy : tangentCircleGenLoop hu c y = p₀) :
     y ∈ Cube.boundary (Fin (k + 1)) := by
   have hy' := congrArg Subtype.val hy
-  rw [coe_tangentCircleGenLoop_apply, tangentCircle_eq_self_iff hu (mem_sphereEquator.1 p₀.2)
-    (mem_sphereEquator.1 (c (Fin.tail y)).2)] at hy'
+  rw [coe_tangentCircleGenLoop_apply, tangentCircle_eq_self_iff hu (mem_sphereEquator.1 p₀.property)
+    (mem_sphereEquator.1 (c (Fin.tail y)).property)] at hy'
   rcases hy' with h | h
   · exact Cube.boundary_fin_succ_iff.2 (Or.inr (mem_boundary_of_eq c hsurj hinj
       (Subtype.ext (Subtype.ext h))))
@@ -183,15 +183,15 @@ theorem eq_or_of_tangentCircleGenLoop_eq (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sp
   · exact Or.inr ⟨mem_boundary_of_tangentCircleGenLoop_eq hu c hsurj hinj hy,
       mem_boundary_of_tangentCircleGenLoop_eq hu c hsurj hinj (h ▸ hy)⟩
   left
-  have hp := mem_sphere_zero_iff_norm.1 (p₀ : sphere (0 : V) 1).2
-  have hpu := mem_sphereEquator.1 p₀.2
-  have hcu (y : I^(Fin k)) := mem_sphereEquator.1 (c y).2
+  have hp := mem_sphere_zero_iff_norm.1 (p₀ : sphere (0 : V) 1).property
+  have hpu := mem_sphereEquator.1 p₀.property
+  have hcu (y : I^(Fin k)) := mem_sphereEquator.1 (c y).property
   have hne : tangentCircle ((p₀ : sphere (0 : V) 1) : V) u
       ((c (Fin.tail y) : sphere (0 : V) 1) : V) (2 * π * y 0) ≠ p₀ :=
     fun h' ↦ hy (Subtype.ext h')
   obtain ⟨hq, hc, hs⟩ := eq_of_tangentCircle_eq hp hu hpu
-    (mem_sphere_zero_iff_norm.1 (c (Fin.tail y)).1.2) (hcu _)
-    (mem_sphere_zero_iff_norm.1 (c (Fin.tail z)).1.2) (hcu _)
+    (mem_sphere_zero_iff_norm.1 (c (Fin.tail y)).val.property) (hcu _)
+    (mem_sphere_zero_iff_norm.1 (c (Fin.tail z)).val.property) (hcu _)
     (congrArg Subtype.val h) hne
   have h1 : cos (2 * π * y 0) ≠ 1 := fun h1 ↦
     hne ((tangentCircle_eq_self_iff hu hpu (hcu _) _).2 (Or.inr h1))
@@ -211,9 +211,9 @@ theorem eq_or_of_tangentCircleGenLoop_eq (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sp
 theorem surjective_tangentCircleGenLoop (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sphereEquator u) p₀)
     (hsurj : ∀ q, q ≠ p₀ → ∃ y, c y = q) : Function.Surjective (tangentCircleGenLoop hu c) := by
   intro w
-  have hp := mem_sphere_zero_iff_norm.1 (p₀ : sphere (0 : V) 1).2
-  obtain ⟨q, hq, hqu, θ, hθ⟩ := exists_tangentCircle_eq hp hu (mem_sphereEquator.1 p₀.2)
-    (mem_sphere_zero_iff_norm.1 w.2)
+  have hp := mem_sphere_zero_iff_norm.1 (p₀ : sphere (0 : V) 1).property
+  obtain ⟨q, hq, hqu, θ, hθ⟩ := exists_tangentCircle_eq hp hu (mem_sphereEquator.1 p₀.property)
+    (mem_sphere_zero_iff_norm.1 w.property)
   by_cases hqp : q = p₀
   · refine ⟨0, Subtype.ext ?_⟩
     rw [← hθ, hqp, tangentCircle_self, coe_tangentCircleGenLoop_apply]

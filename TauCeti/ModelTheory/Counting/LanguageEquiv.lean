@@ -65,7 +65,8 @@ noncomputable def quotientIsoSetoidOnEquiv (V : Type w) (φ : L.SentenceInf ι) 
 @[simp]
 theorem quotientIsoSetoidOnEquiv_mk {V : Type w} {φ : L.SentenceInf ι} (c : modelsOf (V := V) φ) :
     e.quotientIsoSetoidOnEquiv V φ ⟦c⟧ =
-      ⟦⟨e.onConfiguration c, by rw [← image_onConfiguration_modelsOf]; exact ⟨c, c.2, rfl⟩⟩⟧ :=
+      ⟦⟨e.onConfiguration c, by rw [← image_onConfiguration_modelsOf]; exact ⟨c, c.property, rfl⟩⟩⟧
+          :=
   (rfl)
 
 /-- Transport along `e` identifies the isomorphism classes of the countable models of `φ`, tier by

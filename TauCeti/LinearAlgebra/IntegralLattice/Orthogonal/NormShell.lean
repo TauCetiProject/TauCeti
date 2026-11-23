@@ -66,14 +66,14 @@ theorem span_image_vectorsOfNorm_pi_eq {n : ℚ}
   classical
   refine le_antisymm (Submodule.span_le.mpr ?_) ?_
   · rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   · conv_lhs => rw [pi_carrier, ← Submodule.iSup_map_single]
     refine iSup_le fun i ↦ ?_
     rw [← hspan i, Submodule.map_span]
     refine Submodule.span_le.mpr ?_
     rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
     exact Submodule.subset_span
-      ⟨⟨Pi.single i (x : V i), single_mem_pi_carrier L i x.2⟩,
+      ⟨⟨Pi.single i (x : V i), single_mem_pi_carrier L i x.property⟩,
         mem_vectorsOfNorm.mpr ((norm_pi_single L i x).trans (mem_vectorsOfNorm.mp hx)), rfl⟩
 
 /-! ### Minimal shells of orthogonal sums -/
@@ -84,12 +84,12 @@ norm-`m` vector of that summand. -/
 theorem mem_vectorsOfNorm_pi_iff [DecidableEq ι] {m : ℚ} (hm : 0 < m)
     (hmin : ∀ i (v : L i), v ≠ 0 → m ≤ (L i).norm v) (x : pi L) :
     x ∈ (pi L).vectorsOfNorm m ↔
-      ∃ (i : ι) (v : (L i).vectorsOfNorm m), (x : ∀ j, V j) = Pi.single i (v.1 : V i) := by
+      ∃ (i : ι) (v : (L i).vectorsOfNorm m), (x : ∀ j, V j) = Pi.single i (v.val : V i) := by
   constructor
   · intro hx
     have hsum : ∑ j, (L j).norm ((x : ∀ j, V j) j) = m := by
       simpa only [mem_vectorsOfNorm, norm_pi_apply] using hx
-    let xc : ∀ j, L j := fun j ↦ ⟨(x : ∀ j, V j) j, (mem_pi_carrier_iff L _).mp x.2 j⟩
+    let xc : ∀ j, L j := fun j ↦ ⟨(x : ∀ j, V j) j, (mem_pi_carrier_iff L _).mp x.property j⟩
     have hnn (j : ι) : 0 ≤ (L j).norm ((x : ∀ k, V k) j) := by
       rcases eq_or_ne (xc j) 0 with hj | hj
       · have hj0 : (x : ∀ k, V k) j = 0 := congrArg Subtype.val hj
@@ -124,7 +124,7 @@ theorem mem_vectorsOfNorm_pi_iff [DecidableEq ι] {m : ℚ} (hm : 0 < m)
     exact ⟨i, ⟨xc i, mem_vectorsOfNorm.mpr hnormi⟩, hxsingle⟩
   · rintro ⟨i, v, hx⟩
     rw [mem_vectorsOfNorm, hx, norm_pi_single]
-    exact mem_vectorsOfNorm.mp v.2
+    exact mem_vectorsOfNorm.mp v.property
 
 /-- **Decomposition of a minimal shell of an orthogonal sum**: when every nonzero vector in every
 summand has norm at least `m > 0`, the norm-`m` shell of `pi L` is equivalent to the disjoint union
@@ -133,15 +133,16 @@ noncomputable def piVectorsOfNormEquiv [DecidableEq ι] {m : ℚ} (hm : 0 < m)
     (hmin : ∀ i (v : L i), v ≠ 0 → m ≤ (L i).norm v) :
     (Σ i, (L i).vectorsOfNorm m) ≃ (pi L).vectorsOfNorm m :=
   Equiv.ofBijective
-    (fun s ↦ ⟨⟨Pi.single s.1 (s.2.1 : V s.1), single_mem_pi_carrier L s.1 s.2.1.2⟩,
-      mem_vectorsOfNorm.mpr ((norm_pi_single L s.1 s.2.1).trans (mem_vectorsOfNorm.mp s.2.2))⟩)
+    (fun s ↦ ⟨⟨Pi.single s.1 (s.2.val : V s.1), single_mem_pi_carrier L s.1 s.2.val.property⟩,
+      mem_vectorsOfNorm.mpr ((norm_pi_single L s.1 s.2.val).trans
+          (mem_vectorsOfNorm.mp s.2.property))⟩)
     ⟨by
       rintro ⟨i, v⟩ ⟨j, w⟩ h
-      have hval : (Pi.single i (v.1 : V i) : ∀ k, V k) = Pi.single j (w.1 : V j) :=
+      have hval : (Pi.single i (v.val : V i) : ∀ k, V k) = Pi.single j (w.val : V j) :=
         congrArg (fun z : (pi L).vectorsOfNorm m ↦ ((z : pi L) : ∀ k, V k)) h
-      have hv0 : (v.1 : V i) ≠ 0 := by
+      have hv0 : (v.val : V i) ≠ 0 := by
         intro hv0
-        have hnorm := mem_vectorsOfNorm.mp v.2
+        have hnorm := mem_vectorsOfNorm.mp v.property
         rw [hv0, norm_zero] at hnorm
         linarith
       have hij : i = j := by
@@ -153,14 +154,14 @@ noncomputable def piVectorsOfNormEquiv [DecidableEq ι] {m : ℚ} (hm : 0 < m)
       refine Sigma.ext rfl (heq_of_eq (Subtype.ext (Subtype.ext ?_)))
       simpa using congrFun hval i,
     fun x ↦ by
-      obtain ⟨i, v, hx⟩ := (mem_vectorsOfNorm_pi_iff L hm hmin x.1).mp x.2
+      obtain ⟨i, v, hx⟩ := (mem_vectorsOfNorm_pi_iff L hm hmin x.val).mp x.property
       exact ⟨⟨i, v⟩, Subtype.ext (Subtype.ext hx.symm)⟩⟩
 
 /-- Evaluating `piVectorsOfNormEquiv` embeds a summand shell vector in its coordinate. -/
 @[simp]
 theorem coe_piVectorsOfNormEquiv_apply [DecidableEq ι] {m : ℚ} (hm : 0 < m)
     (hmin : ∀ i (v : L i), v ≠ 0 → m ≤ (L i).norm v) (s : Σ i, (L i).vectorsOfNorm m) :
-    ((piVectorsOfNormEquiv L hm hmin s : pi L) : ∀ j, V j) = Pi.single s.1 (s.2.1 : V s.1) :=
+    ((piVectorsOfNormEquiv L hm hmin s : pi L) : ∀ j, V j) = Pi.single s.1 (s.2.val : V s.1) :=
   (rfl)
 
 /-- The inverse of `piVectorsOfNormEquiv` recovers the index and vector of a single-coordinate
@@ -169,8 +170,9 @@ shell element. -/
 theorem piVectorsOfNormEquiv_symm_single [DecidableEq ι] {m : ℚ} (hm : 0 < m)
     (hmin : ∀ i (v : L i), v ≠ 0 → m ≤ (L i).norm v) (i : ι) (v : (L i).vectorsOfNorm m) :
     (piVectorsOfNormEquiv L hm hmin).symm
-      ⟨⟨Pi.single i (v.1 : V i), single_mem_pi_carrier L i v.1.2⟩,
-        mem_vectorsOfNorm.mpr ((norm_pi_single L i v.1).trans (mem_vectorsOfNorm.mp v.2))⟩ =
+      ⟨⟨Pi.single i (v.val : V i), single_mem_pi_carrier L i v.val.property⟩,
+        mem_vectorsOfNorm.mpr ((norm_pi_single L i v.val).trans (mem_vectorsOfNorm.mp v.property))⟩
+            =
       ⟨i, v⟩ :=
   (piVectorsOfNormEquiv L hm hmin).injective (by ext; simp)
 
@@ -207,7 +209,7 @@ noncomputable def piVectorsOfNormTwoEquiv [DecidableEq ι] (hp : ∀ i, (L i).Is
 @[simp]
 theorem coe_piVectorsOfNormTwoEquiv_apply [DecidableEq ι] (hp : ∀ i, (L i).IsPosDef)
     (he : ∀ i, (L i).IsEven) (s : Σ i, (L i).vectorsOfNorm 2) :
-    ((piVectorsOfNormTwoEquiv L hp he s : pi L) : ∀ j, V j) = Pi.single s.1 (s.2.1 : V s.1) :=
+    ((piVectorsOfNormTwoEquiv L hp he s : pi L) : ∀ j, V j) = Pi.single s.1 (s.2.val : V s.1) :=
   (rfl)
 
 /-- The inverse of `piVectorsOfNormTwoEquiv` recovers the index and root of a single-coordinate
@@ -216,8 +218,9 @@ root. -/
 theorem piVectorsOfNormTwoEquiv_symm_single [DecidableEq ι] (hp : ∀ i, (L i).IsPosDef)
     (he : ∀ i, (L i).IsEven) (i : ι) (v : (L i).vectorsOfNorm 2) :
     (piVectorsOfNormTwoEquiv L hp he).symm
-      ⟨⟨Pi.single i (v.1 : V i), single_mem_pi_carrier L i v.1.2⟩,
-        mem_vectorsOfNorm.mpr ((norm_pi_single L i v.1).trans (mem_vectorsOfNorm.mp v.2))⟩ =
+      ⟨⟨Pi.single i (v.val : V i), single_mem_pi_carrier L i v.val.property⟩,
+        mem_vectorsOfNorm.mpr ((norm_pi_single L i v.val).trans (mem_vectorsOfNorm.mp v.property))⟩
+            =
       ⟨i, v⟩ :=
   piVectorsOfNormEquiv_symm_single L two_pos (fun i _ ↦ (hp i).two_le_norm (he i)) i v
 

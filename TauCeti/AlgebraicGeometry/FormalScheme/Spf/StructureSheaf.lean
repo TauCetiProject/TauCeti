@@ -185,9 +185,9 @@ theorem quotientSheaf_obj_map (hJ : IsAdic J) {U V : (Opens (carrier A))ᵒᵖ} 
 over its preimage in `Spec (A ⧸ J)` under the closed immersion `Spec (A ⧸ K) → Spec (A ⧸ J)`. -/
 theorem map_quotientInclusion_subset (hJ : IsAdic J) (hK : IsAdic K) (hJK : J ≤ K)
     (U : Opens (carrier A)) :
-    ((Opens.map (quotientInclusion hK)).obj U).1 ⊆
+    ((Opens.map (quotientInclusion hK)).obj U).carrier ⊆
       PrimeSpectrum.comap (Ideal.Quotient.factor hJK) ⁻¹'
-        ((Opens.map (quotientInclusion hJ)).obj U).1 := by
+        ((Opens.map (quotientInclusion hJ)).obj U).carrier := by
   intro q hq
   simpa [quotientInclusion, homeomorphSpecQuotient_symm_comap_factor hJ hK hJK] using hq
 

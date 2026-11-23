@@ -46,12 +46,12 @@ variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommMonoid M] [TopologicalSpac
 /-- The coefficient map has precisely the cofinite-null functions as its range. -/
 theorem range_restrictedMvPowerSeriesSubmodule_coefficients :
     Set.range (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
-      UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) =
+      UniformFun.ofFun (f.val : (Fin k →₀ ℕ) → M)) =
       {f : UniformFun (Fin k →₀ ℕ) M | Tendsto (UniformFun.toFun f) cofinite (𝓝 0)} := by
   ext f
   constructor
   · rintro ⟨g, rfl⟩
-    exact isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp g.2)
+    exact isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp g.property)
   · intro hf
     exact ⟨⟨UniformFun.toFun f, mem_restrictedMvPowerSeriesSubmodule.mpr
       (isRestricted_iff.mpr hf)⟩, UniformFun.ofFun_toFun f⟩
@@ -68,7 +68,7 @@ distinguish it from the product subtype uniformity. -/
 def restrictedMvPowerSeriesSubmoduleUniformSpace (k : ℕ) (A M : Type*) [Semiring A]
     [AddCommMonoid M] [UniformSpace M] [ContinuousAdd M] [Module A M]
     [ContinuousConstSMul A M] : UniformSpace (restrictedMvPowerSeriesSubmodule k A M) :=
-  UniformSpace.comap (fun f ↦ UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) inferInstance
+  UniformSpace.comap (fun f ↦ UniformFun.ofFun (f.val : (Fin k →₀ ℕ) → M)) inferInstance
 
 namespace RestrictedUniform
 
@@ -85,13 +85,13 @@ restricted-module uniformity. -/
 theorem isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
     IsUniformInducing (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
-      UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) := ⟨rfl⟩
+      UniformFun.ofFun (f.val : (Fin k →₀ ℕ) → M)) := ⟨rfl⟩
 
 /-- Every coefficient is uniformly continuous for the uniform coefficient structure. -/
 theorem uniformContinuous_restrictedMvPowerSeriesSubmodule_coeff (s : Fin k →₀ ℕ) :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
     UniformContinuous (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
-      (f.1 : (Fin k →₀ ℕ) → M) s) :=
+      (f.val : (Fin k →₀ ℕ) → M) s) :=
   (UniformFun.uniformContinuous_eval M s).comp
     isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients.uniformContinuous
 
@@ -99,7 +99,7 @@ theorem uniformContinuous_restrictedMvPowerSeriesSubmodule_coeff (s : Fin k →�
 theorem isUniformEmbedding_restrictedMvPowerSeriesSubmodule_coefficients :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
     IsUniformEmbedding (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
-      UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) :=
+      UniformFun.ofFun (f.val : (Fin k →₀ ℕ) → M)) :=
   ⟨isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients,
     fun _ _ h ↦ Subtype.ext (UniformFun.ofFun.injective h)⟩
 
@@ -107,14 +107,14 @@ theorem isUniformEmbedding_restrictedMvPowerSeriesSubmodule_coefficients :
 theorem isEmbedding_restrictedMvPowerSeriesSubmodule_coefficients :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
     IsEmbedding (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
-      UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) :=
+      UniformFun.ofFun (f.val : (Fin k →₀ ℕ) → M)) :=
   isUniformEmbedding_restrictedMvPowerSeriesSubmodule_coefficients.isEmbedding
 
 /-- The coefficient map is a closed embedding, without separation or completeness assumptions. -/
 theorem isClosedEmbedding_restrictedMvPowerSeriesSubmodule_coefficients :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
     IsClosedEmbedding (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
-      UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) := by
+      UniformFun.ofFun (f.val : (Fin k →₀ ℕ) → M)) := by
   refine ⟨isEmbedding_restrictedMvPowerSeriesSubmodule_coefficients, ?_⟩
   rw [range_restrictedMvPowerSeriesSubmodule_coefficients]
   exact UniformFun.isClosed_setOfPred_tendsto continuous_const
@@ -137,20 +137,20 @@ theorem completeSpace_restrictedMvPowerSeriesSubmodule [CompleteSpace M] :
 theorem dense_finite_support_restrictedMvPowerSeriesSubmodule :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
     Dense {f : restrictedMvPowerSeriesSubmodule k A M |
-      (Function.support (f.1 : (Fin k →₀ ℕ) → M)).Finite} := by
+      (Function.support (f.val : (Fin k →₀ ℕ) → M)).Finite} := by
   classical
   refine dense_iff_inter_open.mpr fun U hU ⟨f, hf⟩ ↦ ?_
   let c := fun g : restrictedMvPowerSeriesSubmodule k A M ↦
-    UniformFun.ofFun (g.1 : (Fin k →₀ ℕ) → M)
+    UniformFun.ofFun (g.val : (Fin k →₀ ℕ) → M)
   have hb := (UniformFun.hasBasis_nhds (Fin k →₀ ℕ) M (c f)).comap c
   rw [← isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients.isInducing.nhds_eq_comap]
     at hb
   obtain ⟨V, hV, hVU⟩ := hb.mem_iff.mp (hU.mem_nhds hf)
   -- Keep the coefficient function at its function type while rewriting indicators.
-  let a : (Fin k →₀ ℕ) → M := f.1
+  let a : (Fin k →₀ ℕ) → M := f.val
   have hfinite : {s | (a s, 0) ∉ V}.Finite :=
     eventually_cofinite.mp (Uniform.tendsto_nhds_left.mp
-      (isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.2)) hV)
+      (isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.property)) hV)
   let S := hfinite.toFinset
   let g := (S : Set (Fin k →₀ ℕ)).indicator a
   have hg : (Function.support g).Finite :=
@@ -173,7 +173,7 @@ theorem hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
     (𝓝 (0 : restrictedMvPowerSeriesSubmodule k A M)).HasBasis
       (fun U : Set M ↦ U ∈ 𝓝 (0 : M))
-      (fun U ↦ {f | ∀ s, (f.1 : (Fin k →₀ ℕ) → M) s ∈ U}) := by
+      (fun U ↦ {f | ∀ s, (f.val : (Fin k →₀ ℕ) → M) s ∈ U}) := by
   rw [isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients.isInducing.nhds_eq_comap]
   refine ((UniformFun.hasBasis_nhds (Fin k →₀ ℕ) M
     (UniformFun.ofFun (0 : (Fin k →₀ ℕ) → M))).comap _).to_hasBasis ?_ ?_
@@ -196,7 +196,7 @@ theorem isUniformAddGroup_restrictedMvPowerSeriesSubmodule :
     letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
     IsUniformAddGroup (restrictedMvPowerSeriesSubmodule k A M) := by
   let c : restrictedMvPowerSeriesSubmodule k A M →+ UniformFun (Fin k →₀ ℕ) M :=
-    { toFun := fun f ↦ UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)
+    { toFun := fun f ↦ UniformFun.ofFun (f.val : (Fin k →₀ ℕ) → M)
       map_zero' := rfl
       map_add' := fun _ _ ↦ rfl }
   exact IsUniformInducing.isUniformAddGroup c

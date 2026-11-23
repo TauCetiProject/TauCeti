@@ -9,6 +9,7 @@ public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.FullyFaith
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Resolution
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Triangulated
 public import TauCeti.Algebra.Homology.GorensteinProjective.Hypersurface
+import TauCeti.CategoryTheory.Triangulated.Equivalence
 
 /-!
 # Matrix factorizations and stable Gorenstein-projective modules over a hypersurface
@@ -53,8 +54,9 @@ In the namespace `TauCeti.MatrixFactorization.HomotopyCategory`:
 
 * `quotientGorensteinProjectiveStableCokernel_isEquivalence`: in finite global dimension, the
   cokernel functor `HMF(S,w) ⥤ stable(Gproj-S/(w))` is an equivalence;
-  `quotientGorensteinProjectiveStableCokernel_isEquivalence_of_isRegularLocalRing` is the case of
-  a regular local ring.
+  `quotientGorensteinProjectiveStableCokernel_isEquivalence_of_isRegularLocalRing` and
+  `quotientGorensteinProjectiveStableCokernel_isEquivalence_of_isRegularRing` are the cases of a
+  regular local ring and of a regular ring of finite Krull dimension.
 * `quotientGorensteinProjectiveStableCokernelEquivalence`: the equivalence
   `HMF(S,w) ≌ stable(Gproj-S/(w))`, and
   `quotientGorensteinProjectiveStableCokernelEquivalence_isTriangulated`: it is a triangulated
@@ -158,10 +160,17 @@ cokernel of its reduction modulo `w` is an equivalence of categories. -/
 theorem quotientGorensteinProjectiveStableCokernel_isEquivalence_of_isRegularLocalRing
     [IsRegularLocalRing S] (hw : w ∈ nonZeroDivisors S) :
     (quotientGorensteinProjectiveStableCokernel hw).IsEquivalence :=
-  quotientGorensteinProjectiveStableCokernel_isEquivalence hw
-    (IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+  quotientGorensteinProjectiveStableCokernel_isEquivalence hw _
+    IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal
+
+/-- For a non-zero-divisor `w` of a regular ring `S` of finite Krull dimension, the functor
+`HMF(S,w) ⥤ stable(Gproj-S/(w))` sending a finite-projective matrix factorization to the cokernel
+of its reduction modulo `w` is an equivalence of categories. -/
+theorem quotientGorensteinProjectiveStableCokernel_isEquivalence_of_isRegularRing
+    [IsRegularRing S] (hdim : ringKrullDim S < ⊤) (hw : w ∈ nonZeroDivisors S) :
+    (quotientGorensteinProjectiveStableCokernel hw).IsEquivalence :=
+  let ⟨d, hd⟩ := IsRegularRing.exists_hasProjectiveDimensionLE.{u} hdim
+  quotientGorensteinProjectiveStableCokernel_isEquivalence hw d hd
 
 /-- The equivalence `HMF(S,w) ≌ stable(Gproj-S/(w))` given by the cokernel of the reduction
 modulo `w`, for a non-zero-divisor `w` of a ring `S` of finite global dimension.
@@ -212,14 +221,9 @@ theorem quotientGorensteinProjectiveStableCokernelEquivalence_isTriangulated
   let := hE'.stableShiftFunctor_additive
   let := hE'.stablePretriangulated
   let := quotientGorensteinProjectiveStableCokernelCommShift hw
-  let e := eqToIso (quotientGorensteinProjectiveStableCokernelEquivalence_functor hw d hd).symm
-  let : (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).functor.CommShift ℤ :=
-    Functor.CommShift.ofIso e ℤ
-  let := (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).commShiftInverse ℤ
-  let := (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).commShift_of_functor ℤ
-  have := Functor.CommShift.ofIso_compatibility e ℤ
   have := quotientGorensteinProjectiveStableCokernel_isTriangulated hw
-  exact Equivalence.IsTriangulated.mk' _ (Functor.isTriangulated_of_iso e)
+  exact (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).isTriangulated_of_functor_eq
+    (quotientGorensteinProjectiveStableCokernelEquivalence_functor hw d hd)
 
 end HomotopyCategory
 

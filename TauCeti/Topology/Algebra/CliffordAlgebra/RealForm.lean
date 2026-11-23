@@ -59,7 +59,7 @@ theorem realCliffordForm_zero_euclideanSpaceEquiv_eq_one {n : ℕ}
     realCliffordForm n 0 (EuclideanSpace.equiv (Fin n) ℝ u) = 1 := by
   rw [realCliffordForm_zero_euclideanSpaceEquiv_eq_norm_sq]
   have hu : ‖(u : EuclideanSpace ℝ (Fin n))‖ = 1 := by
-    simpa only [mem_sphere, dist_zero_right] using u.2
+    simpa only [mem_sphere, dist_zero_right] using u.property
   rw [hu, one_pow]
 
 end TauCeti
