@@ -52,7 +52,7 @@ theorem eq_one_of_forall_mem_support_of_not_isSimplyLaced (b : P.Base) {σ : P.A
   have : Nonempty ι := by
     by_contra h
     have := not_nonempty_iff.mp h
-    exact hsl fun j ↦ isEmptyElim j.1
+    exact hsl fun j ↦ isEmptyElim j.val
   obtain ⟨t, ⟨ht, hb⟩, -⟩ := existsUnique_dynkinType b
   have hrigid := DynkinType.diagramSymmetry_eq_bot_of_not_isSimplyLaced
     (fun hc ↦ hsl ((hb.isSimplyLaced_iff_of_valid ht).mpr hc))

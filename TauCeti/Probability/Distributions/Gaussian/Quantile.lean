@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
+public import TauCeti.Probability.Distributions.Gaussian.Smooth
 public import TauCeti.Probability.Distributions.Gaussian.Transforms
 public import Mathlib.Topology.Instances.EReal.Lemmas
 
@@ -26,6 +27,10 @@ For a multivariate Gaussian, every real linear projection is a scalar Gaussian. 
 therefore the directional mean plus the square root of the directional variance times `z(u)`.
 This includes singular covariance matrices and directions with zero variance.
 
+For nonzero variance the quantile is a two-sided inverse of the distribution function on
+`(0, 1)`, and for every variance it is smooth on `(0, 1)` with derivative `1 / φ_{m,v}(q(u))`,
+where `φ_{m,v}` is the density and `q` the quantile.
+
 The one-sided endpoint limits are stated in `EReal`: a positive-variance Gaussian quantile tends
 to `⊥` at level zero and to `⊤` at level one, while the zero-variance law has constant quantile
 `m` at both endpoints.
@@ -35,6 +40,11 @@ to `⊥` at level zero and to `⊤` at level one, while the zero-variance law ha
 * `TauCeti.Probability.quantile_gaussianReal` — the quantile of `gaussianReal m v`;
 * `TauCeti.Probability.quantile_gaussianReal_zero_one` — the standard Gaussian quantile;
 * `TauCeti.Probability.quantile_gaussianReal_eq_add_mul` — the affine form `m + √v * z(u)`;
+* `TauCeti.Probability.cdf_quantile_gaussianReal`,
+  `TauCeti.Probability.quantile_cdf_gaussianReal` — the two inverse laws;
+* `TauCeti.Probability.hasDerivAt_quantile_gaussianReal`,
+  `TauCeti.Probability.contDiffOn_quantile_gaussianReal` — the derivative and smoothness of the
+  quantile on `(0, 1)`;
 * `EuclideanSpace.quantile_map_inner_multivariateGaussian` — the quantile of a real linear
   projection of a multivariate Gaussian;
 * `TauCeti.Probability.tendsto_quantile_gaussianReal_nhdsGT_zero` and
@@ -119,6 +129,67 @@ theorem tendsto_quantile_gaussianReal_nhdsLT_one (m : ℝ) (v : ℝ≥0) :
     filter_upwards [Ioo_mem_nhdsLT hb] with u hu
     exact ((Measure.lt_quantile_iff _
       ((cdf_nonneg (gaussianReal m v) b).trans_lt hu.1) hu.2).2 hu.1).le
+
+section Inverse
+
+variable (m : ℝ) {v : ℝ≥0}
+
+/-- For a Gaussian law with nonzero variance, the distribution function at the quantile of a
+level `0 < u < 1` is `u`. -/
+theorem cdf_quantile_gaussianReal (hv : v ≠ 0) (hu : u ∈ Ioo 0 1) :
+    cdf (gaussianReal m v) ((gaussianReal m v).quantile u) = u :=
+  have := nullSingletonClass_gaussianReal (μ := m) hv
+  Measure.cdf_quantile_of_noAtoms _ hu.1 hu.2
+
+/-- For a Gaussian law with nonzero variance, the quantile at the value of the distribution
+function at `x` is `x`. -/
+theorem quantile_cdf_gaussianReal (hv : v ≠ 0) (x : ℝ) :
+    (gaussianReal m v).quantile (cdf (gaussianReal m v) x) = x :=
+  Measure.quantile_cdf _ ((strictMono_cdf_gaussianReal m hv).strictMonoOn _)
+    ⟨cdf_gaussianReal_pos m hv x, cdf_gaussianReal_lt_one m hv x⟩
+
+/-- At zero variance the quantile is the constant `m` on `(0, 1)`. -/
+private theorem eqOn_quantile_gaussianReal_zero :
+    EqOn (gaussianReal m 0).quantile (fun _ => m) (Ioo 0 1) := fun w hw => by
+  rw [quantile_gaussianReal m 0 hw]
+  simp
+
+/-- The quantile of a Gaussian law has derivative `1 / φ_{m,v}(q(u))` at every level
+`0 < u < 1`, where `φ_{m,v}` is the density and `q` the quantile. At zero variance both sides
+vanish, the quantile being constant and the density zero. -/
+theorem hasDerivAt_quantile_gaussianReal (v : ℝ≥0) (hu : u ∈ Ioo 0 1) :
+    HasDerivAt (gaussianReal m v).quantile
+      (gaussianPDFReal m v ((gaussianReal m v).quantile u))⁻¹ u := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · rw [gaussianPDFReal_zero_var, Pi.zero_apply, inv_zero]
+    exact (hasDerivAt_const u m).congr_of_eventuallyEq <|
+      eventually_of_mem (Ioo_mem_nhds hu.1 hu.2) (eqOn_quantile_gaussianReal_zero m)
+  have hc : ContinuousAt (gaussianReal m v).quantile u :=
+    (Measure.continuousOn_quantile _ ((strictMono_cdf_gaussianReal m hv).strictMonoOn _))
+      |>.continuousAt (Ioo_mem_nhds hu.1 hu.2)
+  refine (hasDerivAt_cdf_gaussianReal m hv _).of_local_left_inverse hc
+    (gaussianPDFReal_pos _ _ _ hv).ne' ?_
+  filter_upwards [Ioo_mem_nhds hu.1 hu.2] with w hw using cdf_quantile_gaussianReal m hv hw
+
+/-- The quantile of a Gaussian law is smooth on `(0, 1)`. -/
+theorem contDiffOn_quantile_gaussianReal (v : ℝ≥0) {n : ℕ∞} :
+    ContDiffOn ℝ n (gaussianReal m v).quantile (Ioo 0 1) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · exact contDiffOn_const.congr (eqOn_quantile_gaussianReal_zero m)
+  refine (contDiffOn_infty.2 fun k => ?_).of_le (mod_cast le_top)
+  induction k with
+  | zero =>
+    exact contDiffOn_zero.2
+      (Measure.continuousOn_quantile _ ((strictMono_cdf_gaussianReal m hv).strictMonoOn _))
+  | succ k ih =>
+    rw [Nat.cast_succ, contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioo]
+    refine ⟨fun w hw => (hasDerivAt_quantile_gaussianReal m v hw).differentiableAt
+      |>.differentiableWithinAt, by simp, ?_⟩
+    refine ContDiffOn.congr ?_ fun w hw => (hasDerivAt_quantile_gaussianReal m v hw).deriv
+    exact ((contDiff_gaussianPDFReal m v).comp_contDiffOn ih).inv fun w _ =>
+      (gaussianPDFReal_pos _ _ _ hv).ne'
+
+end Inverse
 
 end TauCeti.Probability
 

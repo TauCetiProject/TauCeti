@@ -74,10 +74,10 @@ variable {R A ι α : Type*} [CommRing R] [Semiring A] [Algebra R A] [LinearOrde
 partition `π ≠ 1` of `s` with a mixed part contributes zero to the moment–cumulant formula. -/
 private theorem prod_freeCumulant_eq_zero_of_mixed {b : α → A}
     (hsub : ∀ t ⊂ s, ∀ x ∈ t, ∀ y ∈ t, ℓ x ≠ ℓ y → freeCumulant φ b t = 0)
-    {π : NoncrossingPartition s} (hπ : π ≠ ⊤) {X : Finset α} (hX : X ∈ π.1.parts) {u v : α}
+    {π : NoncrossingPartition s} (hπ : π ≠ ⊤) {X : Finset α} (hX : X ∈ π.val.parts) {u v : α}
     (hu : u ∈ X) (hv : v ∈ X) (huv : ℓ u ≠ ℓ v) :
-    ∏ X ∈ π.1.parts, freeCumulant φ b X = 0 := by
-  refine prod_eq_zero hX (hsub X (ssubset_of_subset_of_ne (π.1.le hX) fun hXs => hπ ?_) u hu v hv
+    ∏ X ∈ π.val.parts, freeCumulant φ b X = 0 := by
+  refine prod_eq_zero hX (hsub X (ssubset_of_subset_of_ne (π.val.le hX) fun hXs => hπ ?_) u hu v hv
     huv)
   exact Subtype.ext <| (Finpartition.eq_top_of_mem_parts (hXs ▸ hX)).trans
     NoncrossingPartition.coe_top.symm
@@ -103,10 +103,10 @@ private theorem freeCumulant_fiberProd_collapse_eq {a : α → A}
     exact hxy ((h x hx).trans (h y hy).symm)
   rcases mem_union.1 (NoncrossingPartition.mem_part_union_part_of_sup_comap_bot_eq_top hf hi hj
     hij.le hadj (fun _ _ => hfeq) (mem_filter.1 hπ).2 hz) with hz' | hz'
-  · exact prod_freeCumulant_eq_zero_of_mixed hsub hπtop (π.1.part_mem.2 hi) hz'
-      (π.1.mem_part_self.2 hi) hzi
-  · exact prod_freeCumulant_eq_zero_of_mixed hsub hπtop (π.1.part_mem.2 hj) hz'
-      (π.1.mem_part_self.2 hj) (hℓ ▸ hzi)
+  · exact prod_freeCumulant_eq_zero_of_mixed hsub hπtop (π.val.part_mem.2 hi) hz'
+      (π.val.mem_part_self.2 hi) hzi
+  · exact prod_freeCumulant_eq_zero_of_mixed hsub hπtop (π.val.part_mem.2 hj) hz'
+      (π.val.mem_part_self.2 hj) (hℓ ▸ hzi)
 
 /-- The inductive step when two adjacent letters `a i`, `a j` of a mixed word have equal labels:
 grouping them into the letter `a i * a j` gives a shorter mixed word with the same cumulant, which
@@ -144,9 +144,9 @@ private theorem freeCumulant_eq_zero_of_isChain (h : IsFreelyIndependent φ B) (
   rw [← freeCumulant_add_algebraMap φ a hφ (fun z => -φ (a z)) hs,
     freeCumulant_eq_sum_mu_mul_partitionMoment]
   refine sum_eq_zero fun π _ => ?_
-  obtain ⟨X, hX, hint⟩ := π.2.exists_interval_mem_parts (card_pos.1 (by omega))
-  have hXs := π.1.le hX
-  obtain ⟨x, hx⟩ := π.1.nonempty_of_mem_parts hX
+  obtain ⟨X, hX, hint⟩ := π.property.exists_interval_mem_parts (card_pos.1 (by omega))
+  have hXs := π.val.le hX
+  obtain ⟨x, hx⟩ := π.val.nonempty_of_mem_parts hX
   have hne : X.sort.map (fun z => (ℓ z, b z)) ≠ [] :=
     List.ne_nil_of_mem (List.mem_map_of_mem ((mem_sort _).2 hx))
   have hzero := isFreelyIndependent_iff.1 h _ hne (by
@@ -203,7 +203,7 @@ theorem isFreelyIndependent_of_freeCumulant_eq_zero
   rw [← List.ofFn_getElem_eq_map, apply_prod_ofFn_eq_sum_prod_freeCumulant φ hlen]
   refine sum_eq_zero fun π _ => ?_
   obtain ⟨X, hX, hX1 | ⟨u, hu, v, hv, huv, hadj⟩⟩ :=
-    π.2.exists_mem_parts_card_eq_one_or_adjacent (univ_nonempty_iff.2 ⟨⟨0, by omega⟩⟩)
+    π.property.exists_mem_parts_card_eq_one_or_adjacent (univ_nonempty_iff.2 ⟨⟨0, by omega⟩⟩)
   · obtain ⟨k, rfl⟩ := card_eq_one.1 hX1
     exact prod_eq_zero hX (by rw [freeCumulant_singleton]; exact hc _ (List.getElem_mem _))
   -- Relabel the part `X`, which has two adjacent positions with distinct labels, by `Fin #X`.
@@ -536,11 +536,11 @@ theorem IsFreelyIndependentElements.apply_sum_pow_eq_sum_prod_sum_freeCumulant {
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) (T : Finset ι) (n : ℕ) :
     φ ((∑ k ∈ T, c k) ^ n) =
       ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        ∏ B ∈ π.1.parts, ∑ k ∈ T, freeCumulant φ (fun _ => c k) B := by
+        ∏ B ∈ π.val.parts, ∑ k ∈ T, freeCumulant φ (fun _ => c k) B := by
   rcases eq_or_ne n 0 with rfl | hn
   · rw [pow_zero, hφ, Fintype.sum_unique, Finpartition.parts_eq_empty_iff.2 (by simp), prod_empty]
   rw [← List.prod_replicate, ← List.ofFn_const, apply_prod_ofFn_eq_sum_prod_freeCumulant φ hn]
   exact sum_congr rfl fun π _ => prod_congr rfl fun B hB =>
-    h.freeCumulant_sum hφ T (π.1.nonempty_of_mem_parts hB)
+    h.freeCumulant_sum hφ T (π.val.nonempty_of_mem_parts hB)
 
 end TauCeti

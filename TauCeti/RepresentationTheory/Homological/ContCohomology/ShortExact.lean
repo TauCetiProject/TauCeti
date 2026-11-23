@@ -600,7 +600,7 @@ variable (S) in
 private theorem proj_surjInv_mem_H0 (c : H0 G C) :
     S.proj (Function.surjInv S.proj_surjective (c : C)) ∈ H0 G C := by
   rw [Function.surjInv_eq S.proj_surjective]
-  exact c.2
+  exact c.property
 
 end Delta0Cochain
 
@@ -678,7 +678,7 @@ theorem explicitDelta0_apply (c : H0 G C) {b : B} (hb : S.proj b = (c : C)) {a :
       H1pi G A ⟨a, mem_Z1_of_injective_comp_eq_d0 S.incl_injective S.incl_equivariant hab⟩ := by
   have hbinv : S.proj b ∈ H0 G C := by
     rw [hb]
-    exact c.2
+    exact c.property
   have hcochain : a = S.delta0Cochain b :=
     funext fun g => S.incl_injective (by rw [hab, incl_delta0Cochain hbinv])
   rw [explicitDelta0, AddMonoidHom.mk'_apply,
@@ -747,14 +747,14 @@ variable {G : Type u} [Monoid G] [TopologicalSpace G]
 /-- The canonical lift of a continuous `1`-cocycle on `C` is continuous. -/
 private theorem continuous_liftCochain_coe (f : Z1 G C) :
     Continuous (liftCochain S.proj_surjective (f : G → C)) :=
-  continuous_liftCochain S.proj_surjective (mem_Z1_iff.1 f.2).1
+  continuous_liftCochain S.proj_surjective (mem_Z1_iff.1 f.property).1
 
 /-- The projection of the canonical lift of a continuous `1`-cocycle on `C` is a `1`-cocycle: by
 `apply_liftCochain` it is the cocycle itself. -/
 private theorem isCocycle₁_proj_liftCochain (f : Z1 G C) :
     groupCohomology.IsCocycle₁ fun g =>
       S.proj (liftCochain S.proj_surjective (f : G → C) g) := by
-  simpa only [apply_liftCochain S.proj_surjective] using (mem_Z1_iff.1 f.2).2
+  simpa only [apply_liftCochain S.proj_surjective] using (mem_Z1_iff.1 f.property).2
 
 end Delta1Lift
 
@@ -855,9 +855,9 @@ private theorem delta1Hom_apply (f : Z1 G C) :
 private theorem delta1Hom_eq_of_lift (f : Z1 G C) {e : G → B} (hc : Continuous e)
     (he : ∀ g, S.proj (e g) = (f : G → C) g) :
     S.delta1Hom f =
-      H2pi G A ⟨S.delta1Cochain e, delta1Cochain_mem_Z2 hc he (mem_Z1_iff.1 f.2).2⟩ := by
+      H2pi G A ⟨S.delta1Cochain e, delta1Cochain_mem_Z2 hc he (mem_Z1_iff.1 f.property).2⟩ := by
   have he' : groupCohomology.IsCocycle₁ fun g => S.proj (e g) := by
-    simpa only [he] using (mem_Z1_iff.1 f.2).2
+    simpa only [he] using (mem_Z1_iff.1 f.property).2
   have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
       fun g => S.proj (e g) := funext fun g => by
     rw [apply_liftCochain S.proj_surjective, he]
@@ -905,7 +905,7 @@ theorem explicitDelta1_apply (f : Z1 G C) {e : G → B} (hc : Continuous e)
   have hcochain : a = S.delta1Cochain e := funext fun p => by
     obtain ⟨g, h⟩ := p
     exact S.incl_injective (((hae g h).trans (d1_apply e g h).symm).trans
-      (incl_delta1Cochain he (mem_Z1_iff.1 f.2).2 (g, h)).symm)
+      (incl_delta1Cochain he (mem_Z1_iff.1 f.property).2 (g, h)).symm)
   rw [explicitDelta1_H1pi, delta1Hom_eq_of_lift f hc he]
   exact congrArg (H2pi G A) (Subtype.ext hcochain.symm)
 
