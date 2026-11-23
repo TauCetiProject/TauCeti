@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
-public import TauCeti.MeasureTheory.Function.LpSeminorm.Count
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.MeasureTheory.Function.LpSeminorm.Count
 
 /-!
 # Hölder inequalities for finite `Lᵖ` spaces
 
-This file bridges the finite `Lᵖ` norms `‖WithLp.toLp s f‖` (`s ≠ 0`) to `MeasureTheory.eLpNorm`
-for the counting measure (`TauCeti.ofReal_norm_toLp_eq_eLpNorm_count`) and deduces the log-convex
-interpolation Hölder inequality (`TauCeti.norm_toLp_rpow_mul_rpow_le`) from
+Using the bridge `TauCeti.ofReal_norm_toLp_eq_eLpNorm_count` between finite `Lᵖ` norms and
+`MeasureTheory.eLpNorm` for the counting measure, this file deduces the log-convex interpolation
+Hölder inequality (`TauCeti.norm_toLp_rpow_mul_rpow_le`) from
 `MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow_of_ae_le`.
 -/
 
@@ -26,33 +26,6 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
-
-/-- For `s ≠ 0`, `ENNReal.ofReal ‖WithLp.toLp s f‖` equals the `Lˢ` seminorm of `f` for the
-counting measure. -/
-theorem ofReal_norm_toLp_eq_eLpNorm_count {s : ℝ≥0∞} (hs : s ≠ 0) (f : ι → ℝ) :
-    letI : MeasurableSpace ι := ⊤
-    ENNReal.ofReal ‖WithLp.toLp s f‖ = MeasureTheory.eLpNorm f s MeasureTheory.Measure.count := by
-  let _ : MeasurableSpace ι := ⊤
-  have _ : MeasurableSingletonClass ι := ⟨fun _ ↦ trivial⟩
-  rcases eq_or_ne s ∞ with rfl | hs_top
-  · rw [PiLp.norm_eq_ciSup, MeasureTheory.eLpNorm_count_top]
-    cases isEmpty_or_nonempty ι
-    · simp
-    · obtain ⟨i₀, hi₀⟩ := Finite.exists_max fun i ↦ |f i|
-      have hL : (⨆ i, ‖WithLp.toLp ∞ f i‖) = |f i₀| :=
-        le_antisymm (ciSup_le fun i ↦ by simpa [PiLp.toLp_apply] using hi₀ i)
-          ((le_ciSup (Set.Finite.bddAbove (Set.finite_range _)) i₀).trans_eq' (by simp))
-      have hR : (⨆ i, ‖f i‖ₑ) = ENNReal.ofReal |f i₀| := le_antisymm
-        (iSup_le fun i ↦ by rw [Real.eNorm_eq_ofReal_abs]; exact ENNReal.ofReal_le_ofReal (hi₀ i))
-        ((Real.eNorm_eq_ofReal_abs _).symm.trans_le (le_iSup (fun i ↦ ‖f i‖ₑ) i₀))
-      rw [hL, hR]
-  · have hs' : 0 < s.toReal := ENNReal.toReal_pos hs hs_top
-    rw [PiLp.norm_eq_sum hs', MeasureTheory.eLpNorm_count_eq_tsum hs hs_top, tsum_fintype,
-      ← ENNReal.ofReal_rpow_of_nonneg (Finset.sum_nonneg fun _ _ ↦ by positivity) (by positivity),
-      ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ by positivity]
-    exact congrArg (· ^ (1 / s.toReal)) (Finset.sum_congr rfl fun i _ ↦ by
-      rw [PiLp.toLp_apply, Real.norm_eq_abs, ← ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) hs'.le,
-        Real.eNorm_eq_ofReal_abs])
 
 /-- Log-convex Hölder inequality for finite `Lᵖ` norms under the complex interpolation relation
 `q⁻¹ = (1 - θ) / q₀ + θ / q₁` with `0 ≤ θ ≤ 1` and nonzero exponents `q₀, q₁`. -/

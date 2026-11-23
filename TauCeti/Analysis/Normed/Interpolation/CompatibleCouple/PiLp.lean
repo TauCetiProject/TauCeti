@@ -124,10 +124,11 @@ def piLpSumEquiv : (piLp C q₀ q₁).SumSpace ≃L[𝕜] ∀ i, (C i).SumSpace 
     (ContinuousLinearMap.ext fun v => by
       classical
       ext j; apply (C j).sumSpace_ext
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, show
-          (C j).sumSpaceEmbed (piLpSumFwd C q₀ q₁ (piLpSumInv C q₀ q₁ v) j) =
-            ∑ i : ι, (C j).sumSpaceEmbed (piLpSumFwd C q₀ q₁
-              (piLpSumInvSingle C q₀ q₁ i (v i)) j) by simp [piLpSumInv, Finset.sum_apply, map_sum],
+      have hexp : (C j).sumSpaceEmbed (piLpSumFwd C q₀ q₁ (piLpSumInv C q₀ q₁ v) j) =
+          ∑ i : ι, (C j).sumSpaceEmbed (piLpSumFwd C q₀ q₁
+            (piLpSumInvSingle C q₀ q₁ i (v i)) j) := by
+        simp [piLpSumInv, Finset.sum_apply, map_sum]
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, hexp,
         Fintype.sum_eq_single j]
       · obtain ⟨y₀, y₁, hy⟩ := (C j).exists_fstToSum_add_sndToSum_eq (v j)
         rw [← hy]; simp [piLpSumInvSingle, sumLift_fstToSum, sumLift_sndToSum,

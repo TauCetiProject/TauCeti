@@ -16,9 +16,12 @@ import TauCeti.MeasureTheory.Integral.ZeroAtInfty.Log
 # Log-convexity of the complex interpolation norm via strip Poisson kernels
 
 On the open vertical strip `0 < re z < 1`, the holomorphic strip Poisson kernels
-`TauCeti.holoPoisson₀` and `TauCeti.holoPoisson₁` realize `TauCeti.stripPoisson₀` and
-`TauCeti.stripPoisson₁` as real parts, and satisfy uniform one-sided approximate-identity lower
-bounds for nonnegative bounded uniformly continuous data along contracted boundary centers
+`TauCeti.holoPoisson₀` and `TauCeti.holoPoisson₁` realize the real Poisson kernels
+`TauCeti.stripPoisson₀` and `TauCeti.stripPoisson₁` as real parts, so convolving real boundary
+data against `holoPoisson₀` and `holoPoisson₁` yields holomorphic functions whose real parts are
+the corresponding `stripPoisson₀` and `stripPoisson₁` integrals. The real kernels `stripPoisson₀`
+and `stripPoisson₁` satisfy uniform one-sided approximate-identity lower bounds for nonnegative
+bounded uniformly continuous data along contracted boundary centers
 (`TauCeti.exists_forall_sub_le_integral_mul_contracted_stripPoisson₀`,
 `TauCeti.exists_forall_sub_le_integral_mul_contracted_stripPoisson₁`). Applying these to the
 clipped logarithmic envelopes `ZeroAtInftyContinuousMap.logMaxDiv` yields Bergh–Löfström's
@@ -58,9 +61,11 @@ private theorem differentiableOn_holoPotential (g : C.stripTraces) {δ : ℝ} (h
     DifferentiableOn ℂ (holoPotential g δ) (verticalStrip 0 1) :=
   (differentiableOn_const _).add
     ((differentiableOn_integral_holoPoisson₀
-        (ZeroAtInftyContinuousMap.integrable_logMaxDiv g.val.1 hδ)).add
+        (Complex.ofRealCLM.integrable_comp
+          (ZeroAtInftyContinuousMap.integrable_logMaxDiv g.val.1 hδ))).add
       (differentiableOn_integral_holoPoisson₁
-        (ZeroAtInftyContinuousMap.integrable_logMaxDiv g.val.2 hδ)))
+        (Complex.ofRealCLM.integrable_comp
+          (ZeroAtInftyContinuousMap.integrable_logMaxDiv g.val.2 hδ))))
 
 private theorem re_holoPotential (g : C.stripTraces) {δ : ℝ} (hδ : 0 < δ) {ζ : ℂ}
     (hζ : ζ ∈ verticalStrip 0 1) :
@@ -91,24 +96,17 @@ private theorem norm_exp_neg_holoPotential_le (g : C.stripTraces) {δ : ℝ} (h�
   linarith [integral_logMaxDiv_mul_stripPoisson₀_nonneg g.val.1 hδ (y := ζ.im) hζ,
     integral_logMaxDiv_mul_stripPoisson₁_nonneg g.val.2 hδ (y := ζ.im) hζ]
 
-private theorem norm_exp_neg_mul_le_of_re_ge {E : Type*} [NormedAddCommGroup E] {δ κ : ℝ}
-    (hδ : 0 < δ) {x : E} {w : ℂ} (hre : Real.log (max ‖x‖ δ) - κ ≤ w.re) :
-    ‖Complex.exp (-w)‖ * ‖x‖ ≤ Real.exp κ := by
-  rw [Complex.norm_exp, neg_re]
-  exact exp_neg_mul_le_exp_of_log_sub_le (norm_nonneg x) (le_max_left _ _)
-    (hδ.trans_le (le_max_right _ _)) hre
-
 private noncomputable def contractedExpNegHoloPotential (g : C.stripTraces) (δ ε : ℝ)
     (z : ℂ) : ℂ :=
   Complex.exp (-holoPotential g δ ((1 - 2 * (ε : ℂ)) * z + ε))
 
-private theorem contracted_mem_verticalStrip {ε : ℝ} (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) {z : ℂ}
-    (hz : z.re ∈ Ioo (-(ε / 2)) (1 + ε / 2)) :
-    (1 - 2 * (ε : ℂ)) * z + ε ∈ verticalStrip 0 1 := by
-  have hre : (1 - 2 * (ε : ℂ)) = ((1 - 2 * ε : ℝ) : ℂ) := by norm_cast
-  rw [mem_verticalStrip_iff, show ((1 - 2 * (ε : ℂ)) * z + ε).re = (1 - 2 * ε) * z.re + ε by
-    rw [hre, add_re, re_ofReal_mul, ofReal_re]]
-  exact ⟨by nlinarith [hε.1, hε.2, hz.1], by nlinarith [hε.1, hε.2, hz.2]⟩
+private theorem contracted_mul_I (ε t : ℝ) :
+    (1 - 2 * (ε : ℂ)) * (t * I) + ε = (ε : ℂ) + ((1 - 2 * ε) * t : ℝ) * I := by
+  push_cast; ring
+
+private theorem contracted_one_add_mul_I (ε t : ℝ) :
+    (1 - 2 * (ε : ℂ)) * (1 + t * I) + ε = ((1 - ε : ℝ) : ℂ) + ((1 - 2 * ε) * t : ℝ) * I := by
+  push_cast; ring
 
 private theorem diffContOnCl_contractedExpNegHoloPotential (g : C.stripTraces) {δ ε : ℝ}
     (hδ : 0 < δ) (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) :
@@ -117,7 +115,7 @@ private theorem diffContOnCl_contractedExpNegHoloPotential (g : C.stripTraces) {
       (verticalStrip (-(ε / 2)) (1 + ε / 2)) :=
     (((differentiableOn_holoPotential g hδ).comp
       (by fun_prop : Differentiable ℂ fun z : ℂ => (1 - 2 * (ε : ℂ)) * z + ε).differentiableOn
-      fun _ hz => contracted_mem_verticalStrip hε hz).neg).cexp
+      (mapsTo_contracted_verticalStrip hε)).neg).cexp
   have hsub : verticalClosedStrip 0 1 ⊆ verticalStrip (-(ε / 2)) (1 + ε / 2) := fun _ hz =>
     ⟨by linarith [hε.1, hz.1], by linarith [hε.1, hz.2]⟩
   exact ⟨hdiff.mono ((verticalStrip_subset_verticalClosedStrip 0 1).trans hsub),
@@ -127,7 +125,7 @@ private theorem norm_contractedExpNegHoloPotential_le (g : C.stripTraces) {δ ε
     (hδ : 0 < δ) (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
     ‖contractedExpNegHoloPotential g δ ε z‖ ≤ δ⁻¹ :=
   norm_exp_neg_holoPotential_le g hδ
-    (contracted_mem_verticalStrip hε ⟨by linarith [hε.1, hz.1], by linarith [hε.1, hz.2]⟩)
+    (mapsTo_contracted_verticalStrip hε ⟨by linarith [hε.1, hz.1], by linarith [hε.1, hz.2]⟩)
 
 private theorem norm_contracted_smul_le_of_tail_and_core {δ T κ ε : ℝ} (hδ : 0 < δ)
     (hκ : 0 < κ) (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) (g : C.stripTraces) {E : Type*}
@@ -141,7 +139,9 @@ private theorem norm_contracted_smul_le_of_tail_and_core {δ T κ ε : ℝ} (hδ
   · exact (mul_le_mul (norm_contractedExpNegHoloPotential_le g hδ hε hz) (htail_le ht)
       (norm_nonneg x) (inv_pos.2 hδ).le).trans
       ((inv_mul_cancel₀ hδ.ne').trans_le (Real.one_le_exp hκ.le))
-  · exact norm_exp_neg_mul_le_of_re_ge hδ (hcore ht)
+  · rw [contractedExpNegHoloPotential, Complex.norm_exp, neg_re]
+    exact exp_neg_mul_le_exp_of_log_sub_le (norm_nonneg x) (le_max_left _ _)
+      (hδ.trans_le (le_max_right _ _)) (hcore ht)
 
 private theorem norm_contracted_smul_fst_le {δ T κ ε : ℝ} (hδ : 0 < δ) (hκ : 0 < κ)
     (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) (g : C.stripTraces) (hg₀ : ∀ s, T ≤ |s| → ‖g.val.1 s‖ ≤ δ)
@@ -152,8 +152,9 @@ private theorem norm_contracted_smul_fst_le {δ T κ ε : ℝ} (hδ : 0 < δ) (h
   refine norm_contracted_smul_le_of_tail_and_core hδ hκ hε g (t * I)
     (by simp [verticalClosedStrip]) t _ (hg₀ t) fun ht => ?_
   rw [re_holoPotential g hδ
-      (contracted_mem_verticalStrip hε (by simp; constructor <;> linarith [hε.1])),
-    show (1 - 2 * (ε : ℂ)) * (t * I) + ε = (ε : ℂ) + ((1 - 2 * ε) * t : ℝ) * I by push_cast; ring]
+      (mapsTo_contracted_verticalStrip hε (by simp; constructor <;> linarith [hε.1]))]
+  dsimp only
+  rw [contracted_mul_I]
   simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im, zero_add]
   linarith [happrox₀ t (abs_le.1 (not_le.1 ht).le),
     ZeroAtInftyContinuousMap.log_add_logMaxDiv g.val.1 hδ t,
@@ -169,9 +170,9 @@ private theorem norm_contracted_smul_snd_le {δ T κ ε : ℝ} (hδ : 0 < δ) (h
   refine norm_contracted_smul_le_of_tail_and_core hδ hκ hε g (1 + t * I)
     (by simp [verticalClosedStrip]) t _ (hg₁ t) fun ht => ?_
   rw [re_holoPotential g hδ
-      (contracted_mem_verticalStrip hε (by simp; constructor <;> linarith [hε.1])),
-    show (1 - 2 * (ε : ℂ)) * (1 + t * I) + ε = ((1 - ε : ℝ) : ℂ) + ((1 - 2 * ε) * t : ℝ) * I by
-      push_cast; ring]
+      (mapsTo_contracted_verticalStrip hε (by simp; constructor <;> linarith [hε.1]))]
+  dsimp only
+  rw [contracted_one_add_mul_I]
   simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im, zero_add]
   linarith [happrox₁ t (abs_le.1 (not_le.1 ht).le),
     ZeroAtInftyContinuousMap.log_add_logMaxDiv g.val.2 hδ t,
@@ -195,9 +196,10 @@ private theorem norm_mk_le_exp_mul_exp_re_contracted_holoPotential {θ δ T κ �
       (fun _ hz => norm_contractedExpNegHoloPotential_le g hδ hε hz) (Real.exp_pos κ).le
       (norm_contracted_smul_fst_le hδ hκ hε g hg₀ happrox₀)
       (norm_contracted_smul_snd_le hδ hκ hε g hg₁ happrox₁)
-    rw [norm_smul, show ‖contractedExpNegHoloPotential g δ ε θ‖ =
-        (Real.exp ((holoPotential g δ (((1 - 2 * ε) * θ + ε : ℝ) : ℂ)).re))⁻¹ by
-      simp [contractedExpNegHoloPotential, Complex.norm_exp, Real.exp_neg]] at hb
+    have hnorm : ‖contractedExpNegHoloPotential g δ ε θ‖ =
+        (Real.exp ((holoPotential g δ (((1 - 2 * ε) * θ + ε : ℝ) : ℂ)).re))⁻¹ := by
+      simp [contractedExpNegHoloPotential, Complex.norm_exp, Real.exp_neg]
+    rw [norm_smul, hnorm] at hb
     exact ((inv_mul_le_iff₀ (Real.exp_pos _)).1 hb).trans_eq (mul_comm _ _)
   · rw [eq_zero_of_notMem hθ (mk θ g), norm_zero]; positivity
 

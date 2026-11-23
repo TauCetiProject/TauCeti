@@ -17,7 +17,8 @@ import TauCeti.MeasureTheory.Integral.ZeroAtInfty.PiLp
 # Complex interpolation of finite vector-valued sequence spaces
 
 Given a finite index type `ι`, exponents `1 ≤ q₀, q₁, q ≤ ∞`, a family of compatible couples
-`C : ∀ i : ι, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)`, and `θ : ℝ` satisfying
+`C : ∀ i : ι, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)` whose ambient spaces `V i` are `T₁`
+topological spaces with continuous addition, and `θ : ℝ` satisfying
 `q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹`, we prove the finite-index case of
 **Bergh–Löfström, Theorem 5.1.2** (including `∞` endpoints), with no completeness, duality, or
 density assumptions on `C i`:
@@ -361,8 +362,8 @@ private theorem norm_piLpCLE_symm_le_of_mk {q : ℝ≥0∞} {θ : ℝ}
     (g : ∀ i, (C i).stripTraces) (hg_mk : ∀ i, mk θ (g i) = v i)
     (hG : ‖((piLpStripTracesEquiv C q₀ q₁).symm g).val‖ ≤ B) :
     ‖(piLpContinuousLinearEquiv C q₀ q₁ q θ).symm v‖ ≤ B := by
-  rw [show v = WithLp.toLp q fun i => mk θ (g i) from PiLp.ext fun i => (hg_mk i).symm,
-    piLpContinuousLinearEquiv_symm_mk]
+  have hv : v = WithLp.toLp q fun i => mk θ (g i) := PiLp.ext fun i => (hg_mk i).symm
+  rw [hv, piLpContinuousLinearEquiv_symm_mk]
   exact (norm_mk_le _).trans ((Submodule.norm_coe _).symm.trans_le hG)
 
 private theorem norm_symm_le_of_eq_top {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
@@ -437,8 +438,9 @@ variable (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) {q₀ q₁ q 
   (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹)
 
 /-- **Bergh–Löfström, Theorem 5.1.2 (finite index sets, including `∞` endpoints).**
-For a finite family of compatible couples `C i` (`i : ι`), exponents `1 ≤ q₀, q₁, q ≤ ∞`, and
-`θ : ℝ` satisfying `q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹`, complex
+For a finite family of compatible couples `C i` (`i : ι`) whose ambient spaces `V i` are `T₁`
+topological spaces with continuous addition, exponents `1 ≤ q₀, q₁, q ≤ ∞`, and `θ : ℝ`
+satisfying `q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹`, complex
 interpolation commutes isometrically with `PiLp`:
 `[PiLp q₀ X₀, PiLp q₁ X₁]_θ ≃ₗᵢ[ℂ] PiLp q (fun i => [X₀ i, X₁ i]_θ)`.
 

@@ -178,9 +178,11 @@ theorem const_smul (hF : C.IsStripFunction F g) (c : ℂ) : C.IsStripFunction (c
   isBoundedStripFunction_iff.2 (by convert hF.isBoundedStripFunction.const_smul c <;> ext <;> simp)
 
 /-- Multiplying an admissible function by a scalar function `c`, holomorphic on the open strip,
-continuous up to its boundary and bounded on the closed strip, gives an admissible function. Its
-boundary traces are any `g'` with `g'₀ t = c (t * I) • g₀ t` and `g'₁ t = c (1 + t * I) • g₁ t`;
-they are supplied by the caller, since they vanish at infinity only as products. -/
+continuous up to its boundary and bounded on the closed strip, gives an admissible function: the
+original boundary traces `g₀` and `g₁` vanish at infinity, and multiplication by the bounded scalar
+function `c` on the boundary lines preserves vanishing at infinity. This lemma takes the resulting
+`C₀` boundary traces `g'` together with their pointwise formulas `g'₀ t = c (t * I) • g₀ t` and
+`g'₁ t = c (1 + t * I) • g₁ t` as inputs. -/
 theorem smul (hF : C.IsStripFunction F g) {c : ℂ → ℂ} (hc : DiffContOnCl ℂ c (verticalStrip 0 1))
     {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) {g' : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
     (hg'₀ : ∀ t, g'.1 t = c (t * I) • g.1 t) (hg'₁ : ∀ t, g'.2 t = c (1 + t * I) • g.2 t) :

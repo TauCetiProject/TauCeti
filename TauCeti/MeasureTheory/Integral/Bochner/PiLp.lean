@@ -16,7 +16,9 @@ import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 For finite `Lᵖ` spaces `PiLp p E` (`1 ≤ p ≤ ∞`) with real normed fibers `E i` and integrable
 coordinate functions `f i : Ω → E i`, Bochner–Minkowski gives
 `‖WithLp.toLp p (fun i ↦ ∫ t, f i t ∂μ)‖ ≤ ∫ t, ‖WithLp.toLp p (fun i ↦ f i t)‖ ∂μ`
-(`TauCeti.norm_toLp_integral_le`).
+(`TauCeti.norm_toLp_integral_le`). We also record the weighted norm bound
+`TauCeti.norm_toLp_integral_weighted_le` for maps `f : Ω → PiLp p β` with seminormed fibers and
+a.e.-measurable coordinate norms bounded a.e. by `M ≥ 0`.
 -/
 
 public section
@@ -47,5 +49,46 @@ theorem norm_toLp_integral_le {Ω ι : Type*} [Fintype ι] [MeasurableSpace Ω] 
     _ ≤ ∫ t, ‖F t‖ ∂μ := norm_integral_le_integral_norm F
     _ = ∫ t, ‖WithLp.toLp p (fun i ↦ f i t)‖ ∂μ := integral_congr_ae (ae_of_all _ fun t ↦ by
         simpa only [F, PiLp.toLp_apply] using PiLp.norm_norm (WithLp.toLp p (fun i ↦ f i t)))
+
+/-- Weighted integral norm bound in `PiLp`: for `1 ≤ p ≤ ∞`, seminormed fibers `β i`, a map
+`f : Ω → PiLp p β` with a.e.-measurable coordinate norms satisfying `‖f t‖ ≤ M` almost everywhere,
+and an a.e.-nonnegative integrable weight `w` of total mass `∫ t, w t ∂μ = α > 0`,
+`‖WithLp.toLp p (fun i ↦ α⁻¹ * ∫ t, ‖f t i‖ * w t ∂μ)‖ ≤ M`. -/
+theorem norm_toLp_integral_weighted_le {Ω ι : Type*} [Fintype ι] [MeasurableSpace Ω]
+    {μ : Measure Ω} {p : ℝ≥0∞} [Fact (1 ≤ p)] {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)]
+    (f : Ω → PiLp p β) (hf : ∀ i, AEMeasurable (fun t ↦ ‖f t i‖) μ) {M : ℝ}
+    (hfM : ∀ᵐ t ∂μ, ‖f t‖ ≤ M) {w : Ω → ℝ} {α : ℝ} (hα : 0 < α) (hw_int : Integrable w μ)
+    (hw_nonneg : 0 ≤ᵐ[μ] w) (hw_sum : ∫ t, w t ∂μ = α) :
+    ‖WithLp.toLp p (fun i ↦ α⁻¹ * ∫ t, ‖f t i‖ * w t ∂μ)‖ ≤ M := by
+  let w' : Ω → ℝ := fun t ↦ max (w t) 0
+  have hw' : w =ᵐ[μ] w' := hw_nonneg.mono fun _ ht ↦ (max_eq_left ht).symm
+  have hw'_int : Integrable w' μ := hw_int.congr hw'
+  have hw'_sum : ∫ t, w' t ∂μ = α := (integral_congr_ae hw'.symm).trans hw_sum
+  have hint_eq (i : ι) : ∫ t, ‖f t i‖ * w t ∂μ = ∫ t, ‖f t i‖ * w' t ∂μ :=
+    integral_congr_ae (hw'.mono fun _ ht ↦ by dsimp only; rw [ht])
+  simp_rw [hint_eq]
+  have hint (i : ι) : Integrable (fun t ↦ ‖f t i‖ * w' t) μ :=
+    hw'_int.bdd_mul (hf i).aestronglyMeasurable
+      (hfM.mono fun t ht ↦ by
+        rw [Real.norm_of_nonneg (norm_nonneg _)]
+        exact (PiLp.norm_apply_le (f t) i).trans ht)
+  have hpull : WithLp.toLp p (fun i ↦ α⁻¹ * ∫ t, ‖f t i‖ * w' t ∂μ) =
+      α⁻¹ • WithLp.toLp p (fun i ↦ ∫ t, ‖f t i‖ * w' t ∂μ) :=
+    PiLp.ext fun _ ↦ by simp
+  have hpt (t : Ω) : WithLp.toLp p (fun i ↦ ‖f t i‖ * w' t) =
+      w' t • WithLp.toLp p (fun i ↦ ‖f t i‖) :=
+    PiLp.ext fun _ ↦ by simp [mul_comm]
+  rw [hpull, norm_smul, Real.norm_of_nonneg (inv_pos.2 hα).le]
+  calc α⁻¹ * ‖WithLp.toLp p (fun i ↦ ∫ t, ‖f t i‖ * w' t ∂μ)‖
+      ≤ α⁻¹ * ∫ t, ‖WithLp.toLp p (fun i ↦ ‖f t i‖ * w' t)‖ ∂μ :=
+        mul_le_mul_of_nonneg_left (norm_toLp_integral_le _ hint) (inv_pos.2 hα).le
+    _ ≤ α⁻¹ * ∫ t, M * w' t ∂μ := mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
+        (ae_of_all _ fun _ ↦ norm_nonneg _) (hw'_int.const_mul M) (hfM.mono fun t ht ↦ by
+          dsimp only
+          rw [hpt t, norm_smul, Real.norm_of_nonneg (le_max_right _ _), PiLp.norm_norm (f t),
+            mul_comm]
+          exact mul_le_mul_of_nonneg_right ht (le_max_right _ _)))
+        (inv_pos.2 hα).le
+    _ = M := by rw [integral_const_mul, hw'_sum, mul_comm M, inv_mul_cancel_left₀ hα.ne']
 
 end TauCeti

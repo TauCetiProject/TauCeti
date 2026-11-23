@@ -9,18 +9,16 @@ public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.HasPrimitives.Basic
-import TauCeti.Analysis.SpecialFunctions.Complex.Exp.NormSq
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Vertical strips
 
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
-This file records their membership criteria, behavior under reflection, convexity, closure, the
-exponential gauge multiplier `scaleFactor` normalizing strip boundary bounds, and holomorphic
-primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip
-(specializing `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
+This file records their membership criteria, behavior under reflection and affine contraction,
+convexity, closure, the exponential gauge multiplier `scaleFactor` normalizing strip boundary
+bounds, and holomorphic primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl`
+on a vertical strip (specializing `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
 `verticalClosedStrip a b = Icc a b ×ℂ univ`), and the Cauchy rectangle contour-shift identity
 `DiffContOnCl.intervalIntegral_add_mul_I_eq` equating vertical line integrals of vertically
 periodic holomorphic strip functions.
@@ -63,6 +61,18 @@ theorem one_sub_mem_verticalClosedStrip_iff :
   simpa only [one_re, sub_self, sub_zero] using
     sub_mem_verticalClosedStrip_iff (a := 0) (b := 1) (1 : ℂ) z
 
+/-- For `0 < ε < 1 / 4`, the affine contraction `z ↦ (1 - 2 ε) z + ε` maps the enlarged open
+vertical strip `verticalStrip (-(ε / 2)) (1 + ε / 2)` into `verticalStrip 0 1`. -/
+theorem mapsTo_contracted_verticalStrip {ε : ℝ} (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) :
+    MapsTo (fun z : ℂ => (1 - 2 * (ε : ℂ)) * z + ε)
+      (verticalStrip (-(ε / 2)) (1 + ε / 2)) (verticalStrip 0 1) := by
+  intro z hz
+  have hcoeff : (1 - 2 * (ε : ℂ)) = ((1 - 2 * ε : ℝ) : ℂ) := by norm_cast
+  have hre : ((1 - 2 * (ε : ℂ)) * z + ε).re = (1 - 2 * ε) * z.re + ε := by
+    rw [hcoeff, add_re, re_ofReal_mul, ofReal_re]
+  rw [mem_verticalStrip_iff, hre]
+  exact ⟨by nlinarith [hε.1, hε.2, hz.1], by nlinarith [hε.1, hε.2, hz.2]⟩
+
 theorem isOpen_verticalStrip (a b : ℝ) : IsOpen (verticalStrip a b) :=
   isOpen_Ioo.preimage continuous_re
 
@@ -86,16 +96,6 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
 theorem closure_verticalStrip (hab : a < b) :
     closure (verticalStrip a b) = verticalClosedStrip a b := by
   rw [verticalStrip, closure_preimage_re, closure_Ioo hab.ne, verticalClosedStrip]
-
-/-- On the open unit vertical strip `0 < re ζ < 1`, `1 + exp (I * π * ζ)` is nonzero. -/
-theorem one_add_exp_I_pi_mul_ne_zero {ζ : ℂ} (hζ : ζ ∈ verticalStrip 0 1) :
-    1 + exp (I * Real.pi * ζ) ≠ 0 := by
-  have hsin : 0 < Real.sin (Real.pi * ζ.re) := sin_pi_mul_pos_of_pos_of_lt_one hζ.1 hζ.2
-  refine normSq_pos.1 ?_
-  rw [normSq_one_add_exp]
-  have him : (I * (Real.pi : ℂ) * ζ).im = Real.pi * ζ.re := by simp
-  rw [him]
-  positivity
 
 section ScaleFactor
 

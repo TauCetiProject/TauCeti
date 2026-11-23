@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Log
 import Mathlib.Analysis.Convex.Integral
+import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Weighted logarithmic integrals of functions vanishing at infinity
@@ -32,7 +34,7 @@ public section
 namespace ZeroAtInftyContinuousMap
 
 open MeasureTheory
-open scoped ENNReal ZeroAtInfty
+open scoped ENNReal NNReal ZeroAtInfty
 
 /-- For `δ > 0` and `[R1Space Ω]`, the clipped logarithmic envelope `logMaxDiv f δ` is integrable
 with respect to any measure `μ` finite on compact sets. -/
@@ -70,46 +72,6 @@ theorem integral_log_max_mul_eq {Ω E : Type*} [TopologicalSpace Ω] [Measurable
   rw [log_max_mul_eq_add f hδ w,
     integral_add (hw_int.const_mul _) (integrable_logMaxDiv_mul f hδ hw_int)]
 
-section
-variable {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) (w : Ω → ℝ) (α : ℝ)
-
-private noncomputable def weightedProbMeasure : Measure Ω :=
-  (ENNReal.ofReal α)⁻¹ • μ.withDensity (fun s ↦ ENNReal.ofReal (w s))
-
-variable {μ w α}
-
-private theorem isProbabilityMeasure_weightedProbMeasure (hα : 0 < α) (hw_int : Integrable w μ)
-    (hw_nonneg : 0 ≤ᵐ[μ] w) (hw_sum : ∫ s, w s ∂μ = α) :
-    IsProbabilityMeasure (weightedProbMeasure μ w α) :=
-  ⟨by
-    simp only [weightedProbMeasure, _root_.smul_apply, smul_eq_mul,
-      withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
-    rw [← ofReal_integral_eq_lintegral_ofReal hw_int hw_nonneg, hw_sum,
-      ENNReal.inv_mul_cancel (ENNReal.ofReal_pos.2 hα).ne' ENNReal.ofReal_ne_top]⟩
-
-private theorem integrable_weightedProbMeasure (hα : 0 < α) (hw_int : Integrable w μ)
-    (hw_nonneg : 0 ≤ᵐ[μ] w) {u : Ω → ℝ} (hu : Integrable (fun s ↦ u s * w s) μ) :
-    Integrable u (weightedProbMeasure μ w α) :=
-  ((integrable_withDensity_iff_integrable_smul₀'
-    (ENNReal.measurable_ofReal.comp_aemeasurable hw_int.aemeasurable)
-    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)).2
-    (hu.congr (hw_nonneg.mono fun _ hs ↦ by
-      simp [ENNReal.toReal_ofReal hs, mul_comm]))).smul_measure
-    (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hα).ne')
-
-private theorem integral_weightedProbMeasure (hα : 0 < α) (hw_int : Integrable w μ)
-    (hw_nonneg : 0 ≤ᵐ[μ] w) (u : Ω → ℝ) :
-    ∫ s, u s ∂(weightedProbMeasure μ w α) = α⁻¹ * ∫ s, u s * w s ∂μ := by
-  simp only [weightedProbMeasure, integral_smul_measure, smul_eq_mul, ENNReal.toReal_inv,
-    ENNReal.toReal_ofReal hα.le]
-  rw [integral_withDensity_eq_integral_toReal_smul₀ (f := fun s ↦ ENNReal.ofReal (w s))
-    (ENNReal.measurable_ofReal.comp_aemeasurable hw_int.aemeasurable)
-    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
-  exact congrArg (α⁻¹ * ·) (integral_congr_ae
-    (hw_nonneg.mono fun _ hs ↦ by simp [ENNReal.toReal_ofReal hs, mul_comm]))
-
-end
-
 /-- Weighted logarithmic mean bound for a clipped `C₀(Ω, E)` function: for a threshold `δ > 0`
 and an almost everywhere nonnegative integrable weight `w` of total mass `∫ w ∂μ = α > 0`,
 `exp (∫ Real.log (max ‖f s‖ δ) * w s ∂μ) ≤ (α⁻¹ * ∫ ‖f s‖ * w s ∂μ + δ) ^ α`. -/
@@ -118,7 +80,36 @@ theorem exp_integral_log_max_le_rpow {Ω E : Type*} [TopologicalSpace Ω] [Measu
     {w : Ω → ℝ} {α δ : ℝ} (hα : 0 < α) (hδ : 0 < δ) (hw_int : Integrable w μ)
     (hw_nonneg : 0 ≤ᵐ[μ] w) (hw_sum : ∫ s, w s ∂μ = α) :
     Real.exp (∫ s, Real.log (max ‖f s‖ δ) * w s ∂μ) ≤ (α⁻¹ * (∫ s, ‖f s‖ * w s ∂μ) + δ) ^ α := by
-  have _ := isProbabilityMeasure_weightedProbMeasure hα hw_int hw_nonneg hw_sum
+  have _ : Nonempty Ω := by_contra fun h ↦ by
+    have _ := not_nonempty_iff.1 h
+    exact hα.ne' (hw_sum.symm.trans integral_of_isEmpty)
+  let ν0 : Measure Ω := μ.withDensity (fun s ↦ ENNReal.ofReal (w s))
+  have hν0_univ : ν0 Set.univ = ENNReal.ofReal α := by
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+      ← ofReal_integral_eq_lintegral_ofReal hw_int hw_nonneg, hw_sum]
+  let ν : FiniteMeasure Ω := ⟨ν0, ⟨hν0_univ ▸ ENNReal.ofReal_lt_top⟩⟩
+  let α_nn : ℝ≥0 := ⟨α, hα.le⟩
+  have hν_mass : ν.mass = α_nn := ENNReal.coe_injective <| by
+    rw [FiniteMeasure.ennreal_mass]
+    exact hν0_univ.trans (ENNReal.ofReal_eq_coe_nnreal hα.le)
+  have hν_ne : ν ≠ 0 :=
+    (ν.mass_ne_zero_iff).1 (by rw [hν_mass]; exact NNReal.coe_ne_zero.1 hα.ne')
+  have hnorm_meas : (ν.normalize : Measure Ω) = ν.mass⁻¹ • ν0 := by
+    rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+      ν.normalize_eq_inv_mass_smul_of_ne_zero hν_ne, FiniteMeasure.toMeasure_smul]
+    rfl
+  have hint_norm {u : Ω → ℝ} (hu : Integrable (fun s ↦ u s * w s) μ) :
+      Integrable u (ν.normalize : Measure Ω) := by
+    rw [hnorm_meas]
+    exact ((TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
+      hw_int.aemeasurable hw_nonneg).2
+      (hu.congr (ae_of_all _ fun _ ↦ mul_comm _ _))).smul_measure ENNReal.coe_ne_top
+  have hintegral_norm (u : Ω → ℝ) :
+      ∫ s, u s ∂(ν.normalize : Measure Ω) = α⁻¹ * ∫ s, u s * w s ∂μ := by
+    rw [hnorm_meas, integral_smul_nnreal_measure, hν_mass,
+      TauCeti.MeasureTheory.integral_withDensity_ofReal hw_int.aemeasurable hw_nonneg]
+    simp only [α_nn, NNReal.smul_def, smul_eq_mul]
+    exact congrArg (α⁻¹ * ·) (integral_congr_ae (ae_of_all _ fun _ ↦ mul_comm _ _))
   have hmax_int : Integrable (fun s ↦ max ‖f s‖ δ * w s) μ :=
     hw_int.bdd_mul ((map_continuous f).norm.max continuous_const).aestronglyMeasurable
       (ae_of_all _ fun s ↦ by
@@ -127,15 +118,13 @@ theorem exp_integral_log_max_le_rpow {Ω E : Type*} [TopologicalSpace Ω] [Measu
   have hlog_int : Integrable (fun s ↦ Real.log (max ‖f s‖ δ) * w s) μ :=
     (log_max_mul_eq_add f hδ w).symm ▸
       (hw_int.const_mul _).add (integrable_logMaxDiv_mul f hδ hw_int)
-  have hjensen : (∫ s, Real.log (max ‖f s‖ δ) ∂weightedProbMeasure μ w α) ≤
-      Real.log (∫ s, max ‖f s‖ δ ∂weightedProbMeasure μ w α) :=
+  have hjensen : (∫ s, Real.log (max ‖f s‖ δ) ∂(ν.normalize : Measure Ω)) ≤
+      Real.log (∫ s, max ‖f s‖ δ ∂(ν.normalize : Measure Ω)) :=
     (strictConcaveOn_log_Ioi.concaveOn.subset (Set.Ici_subset_Ioi.2 hδ)
       (convex_Ici δ)).le_map_integral (Real.continuousOn_log.mono fun _ hx ↦ (hδ.trans_le hx).ne')
       isClosed_Ici (ae_of_all _ fun _ ↦ le_max_right _ _)
-      (integrable_weightedProbMeasure hα hw_int hw_nonneg hmax_int)
-      (integrable_weightedProbMeasure hα hw_int hw_nonneg hlog_int)
-  rw [integral_weightedProbMeasure hα hw_int hw_nonneg,
-    integral_weightedProbMeasure hα hw_int hw_nonneg] at hjensen
+      (hint_norm hmax_int) (hint_norm hlog_int)
+  rw [hintegral_norm, hintegral_norm] at hjensen
   have hmax_pos : 0 < α⁻¹ * ∫ s, max ‖f s‖ δ * w s ∂μ := hδ.trans_le <| by
     rw [le_inv_mul_iff₀ hα, mul_comm α δ, ← hw_sum, ← integral_const_mul]
     exact integral_mono_ae (hw_int.const_mul δ) hmax_int

@@ -25,7 +25,10 @@ admissible trace pair `g = (g₀, g₁)` reduces to the endpoint norm of the tra
 
 These identities hold for any compatible couple of normed spaces without completeness or density
 assumptions, by multiplying with Gaussian-type holomorphic cutoff factors `exp (A (z² - 2 z))` and
-using symmetry (`ComplexMethodSpace.swap`).
+using symmetry (`ComplexMethodSpace.swap`). Consequently, boundary evaluation at `0` (`toFst`,
+`toSnd`) is an isometric embedding on `[X₀, X₁]_0` and `[X₀, X₁]_1` into the endpoint spaces
+`X₀` and `X₁`, and these endpoint identifications supply the `θ = 0` and `θ = 1` boundary cases of
+Bergh–Löfström's sequence-space theorem `ComplexMethodSpace.piLpEquiv`.
 -/
 
 public noncomputable section
@@ -40,13 +43,6 @@ variable {X₀ X₁ V : Type*}
   [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [ContinuousAdd V] [T1Space V]
   {C : CompatibleCouple ℂ X₀ X₁ V}
 
-private theorem exp_neg_mul_norm_le {E : Type*} [NormedAddCommGroup E] {x y : ℝ} {f : C₀(ℝ, E)}
-    {ε : ℝ} (hx : 0 < x) (hy : x ≤ y) (hε : 0 < ε) (hA : 2 * ‖f‖ / ε < x) (t : ℝ) :
-    Real.exp (-y) * ‖f t‖ ≤ ε / 2 := by
-  have h2 : ‖f‖ / x ≤ ε / 2 := (div_le_iff₀ hx).2 (by nlinarith [(div_lt_iff₀ hε).1 hA])
-  exact (mul_le_mul (exp_neg_le_inv hx hy) (ZeroAtInftyContinuousMap.norm_coe_le_norm f t)
-    (norm_nonneg _) (inv_pos.2 hx).le).trans ((inv_mul_eq_div _ _).trans_le h2)
-
 private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.1 0‖ := by
   refine le_of_forall_pos_lt_add fun ε hε => ?_
   obtain ⟨δ, hδ, hclose⟩ := Metric.continuousAt_iff.1
@@ -56,6 +52,11 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
   let c : ℂ → ℂ := fun z => Complex.exp (-(A : ℂ)) * stripGaussian A 1 z
   have hc_norm (z : ℂ) : ‖c z‖ = Real.exp (-A + A * ((z.re - 1) ^ 2 - z.im ^ 2)) := by
     simp only [c, norm_mul, Complex.norm_exp, neg_re, ofReal_re, norm_stripGaussian, ← Real.exp_add]
+  have hc_zero : ‖c ((0 : ℝ) : ℂ)‖ = 1 := by rw [hc_norm]; simp
+  have hc_fst (t : ℝ) : ‖c (t * I)‖ = Real.exp (-(A * t ^ 2)) := by
+    rw [hc_norm]; congr 1; simp; ring
+  have hc_snd (t : ℝ) : ‖c (1 + t * I)‖ = Real.exp (-(A * (1 + t ^ 2))) := by
+    rw [hc_norm]; congr 1; simp; ring
   have hc_le (z : ℂ) (hz : z ∈ verticalClosedStrip 0 1) : ‖c z‖ ≤ 1 := by
     rw [hc_norm]
     exact Real.exp_le_one_iff.2 <| by
@@ -74,16 +75,19 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
         have hA1' : 2 * ‖g.val.1‖ / ε < A * δ ^ 2 := (div_lt_iff₀ hε).2 <| by
           nlinarith [(div_lt_iff₀ (by positivity)).1
             (((le_max_left _ _).trans (le_max_right _ _)).trans_lt hAgt)]
-        rw [show ‖c (t * I)‖ = Real.exp (-(A * t ^ 2)) by rw [hc_norm]; congr 1; simp; ring]
-        exact (exp_neg_mul_norm_le (by positivity) (by nlinarith) hε hA1' t).trans
+        rw [hc_fst]
+        exact (exp_neg_mul_le_half_of_le (norm_nonneg _)
+          (ZeroAtInftyContinuousMap.norm_coe_le_norm g.val.1 t)
+          (by positivity) (by nlinarith) hε hA1').trans
           (le_add_of_nonneg_left (norm_nonneg _)))
     (fun t => by
-      rw [norm_smul, show ‖c (1 + t * I)‖ = Real.exp (-(A * (1 + t ^ 2))) by
-        rw [hc_norm]; congr 1; simp; ring]
-      exact (exp_neg_mul_norm_le hA (by nlinarith [sq_nonneg t]) hε
-        (((le_max_right _ _).trans (le_max_right _ _)).trans_lt hAgt) t).trans
+      rw [norm_smul, hc_snd]
+      exact (exp_neg_mul_le_half_of_le (norm_nonneg _)
+        (ZeroAtInftyContinuousMap.norm_coe_le_norm g.val.2 t)
+        hA (by nlinarith [sq_nonneg t]) hε
+        (((le_max_right _ _).trans (le_max_right _ _)).trans_lt hAgt)).trans
         (le_add_of_nonneg_left (norm_nonneg _)))
-  rw [norm_smul, show ‖c ((0 : ℝ) : ℂ)‖ = 1 by rw [hc_norm]; simp, one_mul] at hbound
+  rw [norm_smul, hc_zero, one_mul] at hbound
   linarith [half_lt_self hε]
 
 /-- At `θ = 0`, the quotient norm of an admissible trace pair is the norm in `X₀` of its left

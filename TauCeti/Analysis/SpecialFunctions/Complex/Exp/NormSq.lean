@@ -10,26 +10,27 @@ public import Mathlib.Analysis.Complex.Trigonometric
 /-!
 # Squared norm formulas for `1 + exp z`
 
-This file records the real-imaginary decomposition of `1 + exp z` (`Complex.one_add_exp_eq`) and
-its squared modulus in trigonometric and hyperbolic-trigonometric forms
-(`Complex.normSq_one_add_exp`, `Complex.normSq_one_add_exp_eq_two_mul_cosh_add_cos`).
+This file records the squared modulus of `1 + exp z` in trigonometric and
+hyperbolic-trigonometric forms (`Complex.normSq_one_add_exp`,
+`Complex.normSq_one_add_exp_eq_two_mul_cosh_add_cos`).
 -/
 
 public section
 
 namespace Complex
 
-/-- Real and imaginary parts of `1 + exp z`. -/
-theorem one_add_exp_eq (z : ℂ) :
-    1 + exp z = ((1 + Real.exp z.re * Real.cos z.im : ℝ) : ℂ) +
-      ((Real.exp z.re * Real.sin z.im : ℝ) : ℂ) * I := by
-  conv_lhs => rw [← re_add_im z, exp_add_mul_I, ← ofReal_exp, ← ofReal_cos, ← ofReal_sin]
-  push_cast; ring
-
 /-- Squared modulus of `1 + exp z` in terms of `exp z.re`, `cos z.im`, and `sin z.im`. -/
 theorem normSq_one_add_exp (z : ℂ) :
     normSq (1 + exp z) = (Real.exp z.re + Real.cos z.im) ^ 2 + Real.sin z.im ^ 2 := by
-  rw [one_add_exp_eq, normSq_add_mul_I, mul_pow, Real.sin_sq]; ring
+  rw [normSq_apply, add_re, add_im, one_re, one_im, zero_add, exp_re, exp_im]
+  have hcs := Real.cos_sq_add_sin_sq z.im
+  calc (1 + Real.exp z.re * Real.cos z.im) * (1 + Real.exp z.re * Real.cos z.im) +
+        Real.exp z.re * Real.sin z.im * (Real.exp z.re * Real.sin z.im)
+      = 1 + 2 * Real.exp z.re * Real.cos z.im +
+          Real.exp z.re ^ 2 * (Real.cos z.im ^ 2 + Real.sin z.im ^ 2) := by ring
+    _ = Real.exp z.re ^ 2 + 2 * Real.exp z.re * Real.cos z.im +
+          (Real.cos z.im ^ 2 + Real.sin z.im ^ 2) := by rw [hcs]; ring
+    _ = (Real.exp z.re + Real.cos z.im) ^ 2 + Real.sin z.im ^ 2 := by ring
 
 /-- Hyperbolic-trigonometric formula `‖1 + exp z‖² = 2 exp (re z) (cosh (re z) + cos (im z))`. -/
 theorem normSq_one_add_exp_eq_two_mul_cosh_add_cos (z : ℂ) :
