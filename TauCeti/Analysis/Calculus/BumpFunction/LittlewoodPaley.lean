@@ -86,7 +86,12 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   and `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: explicit overlap width and
   finite overlap of the pieces, also between the partitions of two bump functions.
 * `ContDiffBump.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero`: a piece `ψⱼ` translated
-  by `θ` meets only pieces `ψₖ` with `2^j ≤ c (1 + ‖θ‖) 2^k`.
+  by `θ` meets only pieces `ψₖ` with `2^j ≤ c (1 + ‖θ‖) 2^k`, so that
+  `ContDiffBump.inhomogeneousLittlewoodPaley_add_mul_eq_zero`: the product `ψⱼ (ζ + θ) ψₖ ζ`
+  vanishes unless `2^|j - k| ≤ c (1 + ‖θ‖)`.
+* `ContDiffBump.hasCompactSupport_inhomogeneousLittlewoodPaley_comp_add_right` and
+  `ContDiffBump.contDiff_inhomogeneousLittlewoodPaley_comp_add_right`: the translates
+  `ψⱼ (· + θ)` are compactly supported and smooth.
 * `TauCeti.card_filter_two_pow_le_mul_two_pow_le`: for `Q ≥ 1`, at most `2Q + 1` indices `k` have
   `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, and for these `2^{σ (j - k)} ≤ Q ^ |σ|`
   (`TauCeti.two_rpow_mul_sub_le_rpow_abs`). With `Q = c (1 + ‖θ‖)`, these count and weigh the
@@ -532,6 +537,11 @@ theorem contDiff_inhomogeneousLittlewoodPaley {n : ℕ∞} (j : ℕ) :
   · rw [inhomogeneousLittlewoodPaley_succ]
     exact φ.contDiff_littlewoodPaley _
 
+/-- The translates `ζ ↦ ψⱼ (ζ + θ)` of the pieces of the inhomogeneous partition are smooth. -/
+theorem contDiff_inhomogeneousLittlewoodPaley_comp_add_right {n : ℕ∞} (j : ℕ) (θ : E) :
+    ContDiff ℝ n fun ζ ↦ φ.inhomogeneousLittlewoodPaley j (ζ + θ) :=
+  (φ.contDiff_inhomogeneousLittlewoodPaley j).comp (contDiff_id.add contDiff_const)
+
 /-- Every piece `ψⱼ` vanishes outside the open ball of radius `2^j φ.rOut`. -/
 theorem inhomogeneousLittlewoodPaley_eq_zero_of_le_norm {j : ℕ} {ξ : E}
     (hξ : 2 ^ j * φ.rOut ≤ ‖ξ‖) : φ.inhomogeneousLittlewoodPaley j ξ = 0 := by
@@ -739,6 +749,18 @@ theorem two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero {j k : ℕ} {ζ �
             nlinarith [norm_nonneg θ, φ.rOut_pos, mul_le_mul_of_nonneg_right h2k (norm_nonneg θ)]
     rw [pow_succ, div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ hrIn]
     nlinarith
+
+/-- **Distant translated pieces are disjoint.** The product `ψⱼ (ζ + θ) ψₖ ζ` vanishes unless
+`2^j ≤ c (1 + ‖θ‖) 2^k` and `2^k ≤ c (1 + ‖θ‖) 2^j`, with `c = 2 (φ.rOut + 1) / φ.rIn`. -/
+theorem inhomogeneousLittlewoodPaley_add_mul_eq_zero {j k : ℕ} {θ : E}
+    (h : ¬((2 : ℝ) ^ j ≤ 2 * (φ.rOut + 1) / φ.rIn * (1 + ‖θ‖) * 2 ^ k ∧
+      (2 : ℝ) ^ k ≤ 2 * (φ.rOut + 1) / φ.rIn * (1 + ‖θ‖) * 2 ^ j)) (ζ : E) :
+    φ.inhomogeneousLittlewoodPaley j (ζ + θ) * φ.inhomogeneousLittlewoodPaley k ζ = 0 := by
+  by_contra h0
+  obtain ⟨hj, hk⟩ := mul_ne_zero_iff.1 h0
+  refine h ⟨φ.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero hj hk, ?_⟩
+  have hk' : φ.inhomogeneousLittlewoodPaley k (ζ + θ + -θ) ≠ 0 := by rwa [add_neg_cancel_right]
+  simpa using φ.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero hk' hj
 
 /-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
 pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the
@@ -1054,6 +1076,12 @@ theorem hasCompactSupport_inhomogeneousLittlewoodPaley (j : ℕ) :
   HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 ^ j * φ.rOut)) fun ξ hξ ↦
     φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm
       (not_le.1 (by simpa [mem_closedBall_zero_iff] using hξ)).le
+
+/-- The translates `ζ ↦ ψⱼ (ζ + θ)` of the pieces of the inhomogeneous partition are compactly
+supported. -/
+theorem hasCompactSupport_inhomogeneousLittlewoodPaley_comp_add_right (j : ℕ) (θ : E) :
+    HasCompactSupport fun ζ ↦ φ.inhomogeneousLittlewoodPaley j (ζ + θ) :=
+  (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_homeomorph (Homeomorph.addRight θ)
 
 /-- Each piece of the inhomogeneous partition has temperate growth, so it is a Fourier multiplier
 on Schwartz functions and on tempered distributions. -/

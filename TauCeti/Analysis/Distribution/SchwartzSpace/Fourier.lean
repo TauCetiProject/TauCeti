@@ -205,6 +205,7 @@ variable [CompleteSpace F]
 omit [CompleteSpace F] in
 /-- On the Fourier side, the Fourier multiplier with a symbol `g` of temperate growth is
 multiplication by `g`: `𝓕 (𝓕⁻ (g • 𝓕 f)) ξ = g ξ • 𝓕 f ξ`. -/
+@[simp]
 theorem fourier_fourierMultiplierCLM_apply {g : E → ℂ} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F))
     (ξ : E) : 𝓕 (fourierMultiplierCLM F g f) ξ = g ξ • 𝓕 f ξ := by
   by_cases hF : CompleteSpace F

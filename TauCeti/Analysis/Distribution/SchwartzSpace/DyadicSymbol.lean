@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
@@ -48,21 +49,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 namespace TauCeti
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A function supported where `1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` is supported in the closed ball of radius
-`(√b + 1) R`. -/
-private theorem tsupport_subset_closedBall_of_one_add_norm_sq_le {χ : E → ℝ} {b R : ℝ}
-    (hR : 0 < R) (hsupp : ∀ ξ ∈ tsupport χ, 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) :
-    tsupport χ ⊆ closedBall 0 ((√b + 1) * R) := fun ξ hξ ↦ by
-  have h := hsupp ξ hξ
-  have hb : 0 ≤ b := nonneg_of_mul_nonneg_left ((by positivity : (0 : ℝ) ≤ 1 + ‖ξ‖ ^ 2).trans
-    h) (by positivity)
-  have hξR : ‖ξ‖ ≤ √b * R := by
-    rw [← Real.sqrt_sq (norm_nonneg ξ), ← Real.sqrt_sq hR.le, ← Real.sqrt_mul hb]
-    exact Real.sqrt_le_sqrt (by linarith)
-  rw [mem_closedBall_zero_iff]
-  nlinarith
-
 /-- **Kernels of dyadic pieces of symbols.** Let `2N > n = dim E`, `m` real, `a > 0`, `b` and
 `B : ℕ → ℝ`. There is a constant `C` with the following property. Let `g` be a smooth function,
 valued in a complex inner product space, with the symbol estimates
@@ -96,7 +82,8 @@ theorem exists_integral_norm_fourierInv_cutoff_smul_le (m : ℝ) {N : ℕ}
   set t : ℝ := (√b + 1) * R
   have ht : 0 < t := by positivity
   have hball : tsupport χ ⊆ closedBall 0 t :=
-    tsupport_subset_closedBall_of_one_add_norm_sq_le hR fun ξ hξ ↦ (hsupp ξ hξ).2
+    (subset_closedBall_of_one_add_norm_sq_le hR.le fun ξ hξ ↦ (hsupp ξ hξ).2).trans
+      (closedBall_subset_closedBall (mul_le_mul_of_nonneg_right (by linarith) hR.le))
   have hcs : HasCompactSupport χ :=
     (isCompact_closedBall (0 : E) t).of_isClosed_subset (isClosed_tsupport χ) hball
   set σ : 𝓢(E, H) := (hcs.smul_right (f' := g)).toSchwartzMap (hχ.smul hg)
@@ -148,7 +135,7 @@ theorem exists_integral_norm_fourierInv_cutoff_smul_le_of_finiteDimensional {G :
   refine ⟨C * ∑ i, ‖e i‖ * ‖ℓ i‖, fun g W hg hgm R χ hR hχ hsupp hB ↦ ?_⟩
   have hcs : HasCompactSupport χ :=
     (isCompact_closedBall (0 : E) _).of_isClosed_subset (isClosed_tsupport χ)
-      (tsupport_subset_closedBall_of_one_add_norm_sq_le hR fun ξ hξ ↦ (hsupp ξ hξ).2)
+      (subset_closedBall_of_one_add_norm_sq_le hR.le fun ξ hξ ↦ (hsupp ξ hξ).2)
   set σ : 𝓢(E, G) := (hcs.smul_right (f' := g)).toSchwartzMap (hχ.smul hg)
   have hσ : ⇑σ = fun ξ ↦ χ ξ • g ξ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   -- The coordinates of the dyadic piece are the dyadic pieces of the coordinates of `g`.
