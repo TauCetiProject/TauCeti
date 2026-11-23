@@ -90,10 +90,19 @@ private theorem natExt_self_eq_natExt_zero {n : ℕ} (w : Fin (n + 2) → G.Dart
     natExt w (w 0) (n + 2) = natExt w (w 0) 0 := by
   rw [natExt_self, natExt_of_lt _ _ (by omega), Fin.mk_zero]
 
-/-- A word of darts closes up: each dart starts where the next one, in product order, ends. -/
-private theorem isClosed_iff_natExt {N : ℕ} [NeZero N] (w : Fin N → G.Dart) :
-    (∀ i, (w i).fst = (w (i + 1)).snd) ↔
-      ∀ i < N, (natExt w (w 0) i).fst = (natExt w (w 0) (i + 1)).snd := by
+/-- A word of darts is closed: each dart starts where the next one, in product order, ends. -/
+private def IsClosedWord {N : ℕ} [NeZero N] (w : Fin N → G.Dart) : Prop :=
+  ∀ i, (w i).fst = (w (i + 1)).snd
+
+/-- The word `u` with the backtrack `d, d.symm` inserted at the positions `p` and `p + 1`. -/
+private def backtrackWord {n : ℕ} (p : Fin (n + 1)) (d : G.Dart) (u : Fin n → G.Dart) :
+    Fin (n + 2) → G.Dart :=
+  Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u)
+
+/-- A word of darts closes up exactly when its extension to the natural numbers does. -/
+private theorem isClosedWord_iff_natExt {N : ℕ} [NeZero N] (w : Fin N → G.Dart) :
+    IsClosedWord w ↔ ∀ i < N, (natExt w (w 0) i).fst = (natExt w (w 0) (i + 1)).snd := by
+  unfold IsClosedWord
   have hsucc (i : ℕ) (hi : i < N) (hi' : i + 1 < N) : (⟨i, hi⟩ + 1 : Fin N) = ⟨i + 1, hi'⟩ :=
     Fin.ext (by simp [Fin.val_add, Nat.mod_eq_of_lt hi'])
   have hlast (i : ℕ) (hi : i < N) (hi' : i + 1 = N) : (⟨i, hi⟩ + 1 : Fin N) = 0 :=
@@ -115,8 +124,9 @@ private theorem isClosed_iff_natExt {N : ℕ} [NeZero N] (w : Fin N → G.Dart) 
         ← hlast i i.isLt hi']
 
 /-- Closedness is invariant under rotation. -/
-private theorem isClosed_comp_add_iff {N : ℕ} [NeZero N] (w : Fin N → G.Dart) (c : Fin N) :
-    (∀ i, (w (i + c)).fst = (w (i + 1 + c)).snd) ↔ ∀ i, (w i).fst = (w (i + 1)).snd := by
+private theorem isClosedWord_comp_add_iff {N : ℕ} [NeZero N] (w : Fin N → G.Dart) (c : Fin N) :
+    IsClosedWord (fun i ↦ w (i + c)) ↔ IsClosedWord w := by
+  simp only [IsClosedWord]
   rw [← (Equiv.subRight c).forall_congr_right]
   simp [add_right_comm]
 
@@ -143,32 +153,30 @@ private theorem natExt_cons {m : ℕ} (u : Fin m → G.Dart) (e d₀ : G.Dart) {
     exact Fin.cons_succ (α := fun _ ↦ G.Dart) (i := ⟨i, by omega⟩) ..
 
 /-- A word closes up exactly when its rotation by one step does. -/
-private theorem isClosed_snoc_iff {n : ℕ} (u : Fin (n + 1) → G.Dart) (e : G.Dart) :
-    (∀ i, ((Fin.snoc u e : Fin (n + 2) → G.Dart) i).fst =
-        ((Fin.snoc u e : Fin (n + 2) → G.Dart) (i + 1)).snd) ↔
-      ∀ i, ((Fin.cons e u : Fin (n + 2) → G.Dart) i).fst =
-        ((Fin.cons e u : Fin (n + 2) → G.Dart) (i + 1)).snd := by
-  have h (i : Fin (n + 2)) :
-      (Fin.snoc u e : Fin (n + 2) → G.Dart) i = (Fin.cons e u : Fin (n + 2) → G.Dart) (i + 1) := by
+private theorem isClosedWord_snoc_iff {n : ℕ} (u : Fin (n + 1) → G.Dart) (e : G.Dart) :
+    IsClosedWord (Fin.snoc u e : Fin (n + 2) → G.Dart) ↔
+      IsClosedWord (Fin.cons e u : Fin (n + 2) → G.Dart) := by
+  have h : (Fin.snoc u e : Fin (n + 2) → G.Dart) =
+      fun i ↦ (Fin.cons e u : Fin (n + 2) → G.Dart) (i + 1) := funext fun i ↦ by
     rw [Fin.snoc_eq_cons_rotate]
     simp only [finRotate_apply]
-  simp only [h]
-  exact isClosed_comp_add_iff (Fin.cons e u : Fin (n + 2) → G.Dart) 1
+  rw [h]
+  exact isClosedWord_comp_add_iff (Fin.cons e u : Fin (n + 2) → G.Dart) 1
 
 /-- The word with the backtrack `d, d.symm` inserted at the positions `p` and `p + 1`. -/
-private theorem natExt_insertNth_insertNth {n : ℕ} (p : Fin (n + 1)) (d : G.Dart)
+private theorem natExt_backtrackWord {n : ℕ} (p : Fin (n + 1)) (d : G.Dart)
     (u : Fin n → G.Dart) (d₀ : G.Dart) {i : ℕ} (hi : i < n + 2) :
-    natExt (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart) d₀ i =
+    natExt (backtrackWord p d u) d₀ i =
       if i < p then natExt u d i else if i = p then d else if i = p + 1 then d.symm
         else natExt u d (i - 2) := by
-  rw [natExt_of_lt _ _ hi]
+  rw [natExt_of_lt _ _ hi, backtrackWord]
   rcases lt_trichotomy i p with h | rfl | h
   · rw [Fin.insertNth_apply_below (show (⟨i, hi⟩ : Fin (n + 2)) < p.castSucc from h)]
     simp only [eq_rec_constant, h, ↓reduceIte]
     rw [Fin.insertNth_apply_below (show Fin.castPred ⟨i, hi⟩ _ < p from h), eq_rec_constant,
       natExt_of_lt _ _ (by omega)]
-    rfl
-  · rw [show (⟨p, hi⟩ : Fin (n + 2)) = p.castSucc from rfl, Fin.insertNth_apply_same]
+    exact congrArg u (Fin.ext (by simp))
+  · rw [show (⟨p, hi⟩ : Fin (n + 2)) = p.castSucc from Fin.ext (by simp), Fin.insertNth_apply_same]
     simp
   · rw [Fin.insertNth_apply_above (show p.castSucc < (⟨i, hi⟩ : Fin (n + 2)) from h)]
     simp only [eq_rec_constant, show ¬ i < p by omega, show i ≠ p by omega, ↓reduceIte]
@@ -181,24 +189,19 @@ private theorem natExt_insertNth_insertNth {n : ℕ} (p : Fin (n + 1)) (d : G.Da
       congr 1
 
 /-- **Closedness of a backtrack insertion only depends on the head of the backtrack.** -/
-private theorem isClosed_insertNth_insertNth {n : ℕ} (p : Fin (n + 1)) (u : Fin n → G.Dart)
-    {d₀ d : G.Dart} (hd : d.snd = d₀.snd)
-    (h : ∀ i, ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) : Fin (n + 2) → G.Dart)
-      i).fst = ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) : Fin (n + 2) → G.Dart)
-        (i + 1)).snd) :
-    ∀ i, ((Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart) i).fst =
-      ((Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart)
-        (i + 1)).snd := by
-  set w₀ : Fin (n + 2) → G.Dart := Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u)
-  set w : Fin (n + 2) → G.Dart := Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u)
-  have hW₀ := (isClosed_iff_natExt w₀).1 h
-  rw [isClosed_iff_natExt]
+private theorem isClosedWord_backtrackWord {n : ℕ} (p : Fin (n + 1)) (u : Fin n → G.Dart)
+    {d₀ d : G.Dart} (hd : d.snd = d₀.snd) (h : IsClosedWord (backtrackWord p d₀ u)) :
+    IsClosedWord (backtrackWord p d u) := by
+  set w₀ := backtrackWord p d₀ u
+  set w := backtrackWord p d u
+  have hW₀ := (isClosedWord_iff_natExt w₀).1 h
+  rw [isClosedWord_iff_natExt]
   have hp := p.isLt
   -- The two words agree off the backtrack, up to its head.
   have hsnd : ∀ j ≤ n + 2, j ≠ p + 1 → (natExt w (w 0) j).snd = (natExt w₀ (w₀ 0) j).snd := by
     have key : ∀ j < n + 2, j ≠ p + 1 → (natExt w (w 0) j).snd = (natExt w₀ (w₀ 0) j).snd :=
       fun j hj hjp ↦ by
-        rw [natExt_insertNth_insertNth p d u _ hj, natExt_insertNth_insertNth p d₀ u _ hj]
+        rw [natExt_backtrackWord p d u _ hj, natExt_backtrackWord p d₀ u _ hj]
         split_ifs with h₁ h₂
         · rw [natExt_eq_natExt u d d₀ (by omega)]
         · exact hd
@@ -210,20 +213,20 @@ private theorem isClosed_insertNth_insertNth {n : ℕ} (p : Fin (n + 1)) (u : Fi
       exact key 0 (by omega) (by omega)
   have hfst : ∀ j < n + 2, j ≠ p → j ≠ p + 1 →
       (natExt w (w 0) j).fst = (natExt w₀ (w₀ 0) j).fst := fun j hj hjp hjp' ↦ by
-    rw [natExt_insertNth_insertNth p d u _ hj, natExt_insertNth_insertNth p d₀ u _ hj]
+    rw [natExt_backtrackWord p d u _ hj, natExt_backtrackWord p d₀ u _ hj]
     split_ifs with h₁
     · rw [natExt_eq_natExt u d d₀ (by omega)]
     · rw [natExt_eq_natExt u d d₀ (by omega)]
   intro i hi
   by_cases hip : i = p
   · subst hip
-    rw [natExt_insertNth_insertNth p d u _ hi, natExt_insertNth_insertNth p d u _ (by omega)]
+    rw [natExt_backtrackWord p d u _ hi, natExt_backtrackWord p d u _ (by omega)]
     simp
   by_cases hip' : i = p + 1
   · subst hip'
     have h₁ := hW₀ (p + 1) hi
-    rw [natExt_insertNth_insertNth p d₀ u _ hi] at h₁
-    rw [natExt_insertNth_insertNth p d u _ hi, hsnd (p + 2) (by omega) (by omega)]
+    rw [natExt_backtrackWord p d₀ u _ hi] at h₁
+    rw [natExt_backtrackWord p d u _ hi, hsnd (p + 2) (by omega) (by omega)]
     simp only [show ¬ (p : ℕ) + 1 < p by omega, show (p : ℕ) + 1 ≠ p by omega, ↓reduceIte] at h₁ ⊢
     rw [← h₁]
     simp [hd]
@@ -268,8 +271,7 @@ private theorem isSlot_relatorWord {n p : ℕ} {W : ℕ → G.Dart} {d₀ : G.Da
     · simp only [relatorWord, relatorVertex, lt_irrefl, ↓reduceIte, le_refl,
         show ¬ i + 1 ≤ i by omega]
       refine ⟨by rw [hWp], ?_⟩
-      rw [← hW (i + 1) (by omega), hWp']
-      rfl
+      rw [← hW (i + 1) (by omega), hWp', SimpleGraph.Dart.fst_symm]
     · simp only [relatorWord, relatorVertex, show ¬ i < p by omega, show i ≠ p by omega,
         ↓reduceIte, show ¬ i ≤ p by omega, show ¬ i + 1 ≤ p by omega]
       exact ⟨rfl, hW (i + 1) (by omega)⟩
@@ -278,17 +280,14 @@ private theorem isSlot_relatorWord {n p : ℕ} {W : ℕ → G.Dart} {d₀ : G.Da
 the same head gives back the word of that insertion. -/
 private theorem insertBacktrack_relatorWord {n : ℕ} (p : Fin (n + 1)) (u : Fin n → G.Dart)
     (d₀ d : G.Dart) {i : ℕ} (hi : i < n + 2) :
-    insertBacktrack (relatorWord (natExt (Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) :
-        Fin (n + 2) → G.Dart) ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) :
-          Fin (n + 2) → G.Dart) 0)) p d₀.snd) p d i =
-      .inr (.inl (natExt (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) :
-        Fin (n + 2) → G.Dart) ((Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) :
-          Fin (n + 2) → G.Dart) 0) i)) := by
-  rw [natExt_insertNth_insertNth p d u _ hi]
+    insertBacktrack (relatorWord (natExt (backtrackWord p d₀ u) (backtrackWord p d₀ u 0)) p d₀.snd)
+        p d i =
+      .inr (.inl (natExt (backtrackWord p d u) (backtrackWord p d u 0) i)) := by
+  rw [natExt_backtrackWord p d u _ hi]
   simp only [insertBacktrack, relatorWord]
   rcases lt_trichotomy i p with h₁ | rfl | h₁
   · simp only [h₁, ↓reduceIte]
-    rw [natExt_insertNth_insertNth p d₀ u _ hi]
+    rw [natExt_backtrackWord p d₀ u _ hi]
     simp only [h₁, ↓reduceIte]
     rw [natExt_eq_natExt u d₀ d (by omega)]
   · simp
@@ -298,7 +297,7 @@ private theorem insertBacktrack_relatorWord {n : ℕ} (p : Fin (n + 1)) (u : Fin
     · simp only [show ¬ i < p by omega, show i ≠ p by omega, show i ≠ p + 1 by omega,
         show ¬ i - 1 < p by omega, show i - 1 ≠ p by omega, ↓reduceIte,
         Nat.sub_add_cancel (show 1 ≤ i by omega)]
-      rw [natExt_insertNth_insertNth p d₀ u _ hi]
+      rw [natExt_backtrackWord p d₀ u _ hi]
       simp only [show ¬ i < p by omega, show i ≠ p by omega, show i ≠ p + 1 by omega,
         ↓reduceIte]
       rw [natExt_eq_natExt u d₀ d (by omega)]
@@ -307,17 +306,13 @@ private theorem insertBacktrack_relatorWord {n : ℕ} (p : Fin (n + 1)) (u : Fin
 insertion with the same head. -/
 private theorem relatorVertex_zero {n : ℕ} (p : Fin (n + 1)) (u : Fin n → G.Dart) {d₀ d : G.Dart}
     (hd : d.snd = d₀.snd) :
-    relatorVertex (natExt (Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) :
-        Fin (n + 2) → G.Dart) ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) :
-          Fin (n + 2) → G.Dart) 0)) p 0 =
-      ((Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart) 0).snd := by
+    relatorVertex (natExt (backtrackWord p d₀ u) (backtrackWord p d₀ u 0)) p 0 =
+      (backtrackWord p d u 0).snd := by
   simp only [relatorVertex, Nat.zero_le, ↓reduceIte]
-  have hw0 : ((Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart) 0) =
-      natExt (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart)
-        ((Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart) 0) 0 := by
+  have hw0 : backtrackWord p d u 0 = natExt (backtrackWord p d u) (backtrackWord p d u 0) 0 := by
     rw [natExt_of_lt _ _ (show 0 < n + 2 by omega), Fin.mk_zero]
-  rw [hw0, natExt_insertNth_insertNth p d₀ u _ (by omega),
-    natExt_insertNth_insertNth p d u _ (by omega)]
+  rw [hw0, natExt_backtrackWord p d₀ u _ (by omega),
+    natExt_backtrackWord p d u _ (by omega)]
   split_ifs with h₁ h₂
   · rw [natExt_eq_natExt u d₀ d (by omega)]
   · exact hd.symm
@@ -626,7 +621,7 @@ private theorem obstruction_zigzagLoopAInfinityAlgebra_eq {n : ℕ} (hn : 1 ≤ 
     simp only [smul_smul]
     congr 1
     simp only [zigzagBasis_coord_koszulTwist zigzagStrictAInfinityAlgebra_grading_piece,
-      zigzagBasisDegree, mul_one, Finset.prod_mul_distrib, Units.coe_prod, Int.cast_prod]
+      zigzagBasisDegree_inr_inl, mul_one, Finset.prod_mul_distrib, Units.coe_prod, Int.cast_prod]
     have hsign : ∏ i : Fin (n + 2), negOnePowCast k
         (((⟨n + 2, hm₀⟩ : {m : ℕ // 0 < m}) : ℕ) - 1 - ((i : ℕ) : ℤ)) =
         ∏ i : Fin (n + 2), ((((n + 1 - i : ℕ) : ℤ).negOnePow : ℤ) : k) :=
@@ -667,11 +662,11 @@ private theorem coord_koszulTwist_mul_of_isSlot {s t : V} {b : ZigzagBasisIndex 
   · obtain ⟨rfl, rfl⟩ := hb
     rw [zigzagBasis_coord_dart_mul]
     simp only [zigzagBasis_coord_koszulTwist zigzagStrictAInfinityAlgebra_grading_piece]
-    simp [zigzagBasisDegree, backtrackTerm]
+    simp [backtrackTerm]
   · obtain ⟨rfl, rfl⟩ := hb
     rw [zigzagBasis_coord_volume_mul]
     simp only [zigzagBasis_coord_koszulTwist zigzagStrictAInfinityAlgebra_grading_piece,
-      zigzagBasisDegree, backtrackTerm]
+      zigzagBasisDegree_inl, zigzagBasisDegree_inr_inl, zigzagBasisDegree_inr_inr, backtrackTerm]
     simp [Finset.sum_neg_distrib]
     ring
 
@@ -791,10 +786,11 @@ private theorem hochschildDifferential_coordCochain_arrow {n : ℕ} (u : ℕ →
   rw [hR₁, hR₂, koszulTwist_one_zigzagMk_ofArrow zigzagStrictAInfinityAlgebra_grading_piece b,
     neg_mul, zigzagMk_ofArrow_mul hns, mul_zigzagMk_ofArrow hns]
   simp only [zigzagBasis_coord_koszulTwist zigzagStrictAInfinityAlgebra_grading_piece]
-  simp only [telescopeTerm, prefixSign, backtrackTerm, zigzagBasisDegree, sub_self,
-    Finset.sum_const_zero, negOnePowCast_zero, mul_zero, Finset.range_eq_Ico,
-    Finset.Ico_self, Finset.prod_empty, mul_one, one_mul, zigzagBasis_apply, zigzagBasisFun_inr_inl,
-    zigzagBasisFun_inr_inr, ← hb₀, ← hb₁, zero_mul, sub_zero, negOnePowCast_one]
+  simp only [telescopeTerm, prefixSign, backtrackTerm, zigzagBasisDegree_inl,
+    zigzagBasisDegree_inr_inl, sub_self, Finset.sum_const_zero, negOnePowCast_zero, mul_zero,
+    Finset.range_eq_Ico, Finset.Ico_self, Finset.prod_empty, mul_one, one_mul, zigzagBasis_apply,
+    zigzagBasisFun_inr_inl, zigzagBasisFun_inr_inr, ← hb₀, ← hb₁, zero_mul, sub_zero,
+    negOnePowCast_one]
   module
 
 /-- **Relator coboundaries.** For a closed word `β` of arrows with a single volume class `x_v` in
@@ -826,7 +822,7 @@ private theorem hochschildDifferential_coordCochain_volume {n p : ℕ} (hp : p �
   have harrow : ∀ i ≤ n, i ≠ p → ∀ y y' : nonisolatedZigzagQuotient k G,
       backtrackTerm hns y y' (β i) = 0 := fun i hi hip y y' ↦ by
     have := hβa i hi hip
-    rcases h : β i with j | e | j <;> rw [h] at this <;> simp_all [zigzagBasisDegree, backtrackTerm]
+    rcases h : β i with j | e | j <;> rw [h] at this <;> simp_all [backtrackTerm]
   have hBT := Finset.sum_eq_single (f := fun q ↦ prefixSign k β q *
       ((∏ i ∈ Finset.range q, κ (β i) (x i)) * backtrackTerm hns (x q) (x (q + 1)) (β q) *
         ∏ i ∈ Finset.Ico (q + 1) (n + 1), κ (β i) (x (i + 1)))) (s := Finset.range (n + 1)) p
@@ -838,27 +834,25 @@ private theorem hochschildDifferential_coordCochain_volume {n p : ℕ} (hp : p �
   have hsign₁ : prefixSign k β (n + 1) = -1 := by
     rw [prefixSign, Finset.sum_eq_single p (fun j hj hjp ↦ by
       rw [hβa j (by simp at hj; omega) hjp, sub_self]) (fun h ↦ absurd (by simp; omega) h), hβp]
-    simp [zigzagBasisDegree, negOnePowCast_one]
+    simp [negOnePowCast_one]
   rw [hochschildDifferential_coordCochain_apply β vtx hβ _ x d hx, hR, hBT, hsign₀, hsign₁,
     koszulTwist_one_zigzagVolume zigzagStrictAInfinityAlgebra_grading_piece, zigzagVolume_mul hns,
     mul_zigzagVolume hns, zigzagBasis_coord_koszulTwist zigzagStrictAInfinityAlgebra_grading_piece]
   simp only [telescopeTerm, Finset.range_eq_Ico, Finset.Ico_self, Finset.prod_empty, mul_one,
-    hvtx, zigzagBasisDegree, mul_zero, negOnePowCast_zero, one_mul]
+    hvtx, zigzagBasisDegree_inl, mul_zero, negOnePowCast_zero, one_mul]
   module
 
 omit [Fintype G.Dart] [DecidableEq V] in
 /-- **The rotation coboundaries.** For a closed word `(u, e)`, the sum of the loop cochains of the
 word and of its rotation `(e, u)` is a coboundary. -/
 private theorem isZigzagCoboundary_loopCochain_snoc_add_cons {n : ℕ} (u : Fin (n + 1) → G.Dart)
-    (e : G.Dart)
-    (h : ∀ i, ((Fin.snoc u e : Fin (n + 2) → G.Dart) i).fst =
-      ((Fin.snoc u e : Fin (n + 2) → G.Dart) (i + 1)).snd) :
+    (e : G.Dart) (h : IsClosedWord (Fin.snoc u e : Fin (n + 2) → G.Dart)) :
     IsZigzagCoboundary k hns n (loopCochain hns (Fin.snoc u e : Fin (n + 2) → G.Dart) +
       loopCochain hns (Fin.cons e u : Fin (n + 2) → G.Dart)) := by
   classical
   let := Fintype.ofFinite G.Dart
   set U := natExt u e
-  have hW := (isClosed_iff_natExt _).1 h
+  have hW := (isClosedWord_iff_natExt _).1 h
   have hWi (i : ℕ) (hi : i < n + 2) :
       natExt (Fin.snoc u e : Fin (n + 2) → G.Dart) ((Fin.snoc u e : Fin (n + 2) → G.Dart) 0) i =
         if i < n + 1 then U i else e := natExt_snoc u e _ hi
@@ -887,7 +881,7 @@ private theorem isZigzagCoboundary_loopCochain_snoc_add_cons {n : ℕ} (u : Fin 
   have hC := (show IsZigzagCoboundary k hns n _ from
     ⟨coordCochain hns (n + 1) n.succ_pos (fun i ↦ .inr (.inl (U i))) (𝔞 e.symm),
       isHomogeneous_coordCochain _ _ (zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) 0
-        (by simp [zigzagBasisDegree]), coordCochain_comp_lengthProj _ _ _, hδ⟩).neg
+        (by simp), coordCochain_comp_lengthProj _ _ _, hδ⟩).neg
   rw [neg_neg] at hC
   convert hC using 2
   · rw [loopCochain, show e.symm.snd = ((Fin.snoc u e : Fin (n + 2) → G.Dart) 0).snd by
@@ -901,26 +895,22 @@ private theorem isZigzagCoboundary_loopCochain_snoc_add_cons {n : ℕ} (u : Fin 
 `p + 1` of `u` gives a closed word, then the sum of the loop cochains of all the backtrack
 insertions with the same head is a coboundary. -/
 private theorem isZigzagCoboundary_sum_loopCochain_insertNth {n : ℕ} (p : Fin (n + 1))
-    (u : Fin n → G.Dart) (d₀ : G.Dart)
-    (h : ∀ i, ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) : Fin (n + 2) → G.Dart)
-      i).fst = ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) : Fin (n + 2) → G.Dart)
-        (i + 1)).snd) :
-    IsZigzagCoboundary k hns n (∑ d : G.Dart with d.snd = d₀.snd,
-      loopCochain hns (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) :
-        Fin (n + 2) → G.Dart)) := by
-  set w₀ : Fin (n + 2) → G.Dart := Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u)
+    (u : Fin n → G.Dart) (d₀ : G.Dart) (h : IsClosedWord (backtrackWord p d₀ u)) :
+    IsZigzagCoboundary k hns n
+      (∑ d : G.Dart with d.snd = d₀.snd, loopCochain hns (backtrackWord p d u)) := by
+  set w₀ := backtrackWord p d₀ u
   set W₀ := natExt w₀ (w₀ 0)
   have hp := p.isLt
   have hW₀i : ∀ i < n + 2, W₀ i = if i < p then natExt u d₀ i else if i = p then d₀
       else if i = p + 1 then d₀.symm else natExt u d₀ (i - 2) :=
-    fun i hi ↦ natExt_insertNth_insertNth p d₀ u _ hi
-  have hβ := isSlot_relatorWord (W := W₀) (d₀ := d₀) ((isClosed_iff_natExt w₀).1 h)
+    fun i hi ↦ natExt_backtrackWord p d₀ u _ hi
+  have hβ := isSlot_relatorWord (W := W₀) (d₀ := d₀) ((isClosedWord_iff_natExt w₀).1 h)
     (by rw [hW₀i p (by omega)]; simp) (by rw [hW₀i (p + 1) (by omega)]; simp)
     (show (p : ℕ) ≤ n by omega)
   have hδ := hochschildDifferential_coordCochain_volume (k := k) (hns := hns)
     (show (p : ℕ) ≤ n by omega) _ _ hβ d₀.snd (by simp [relatorWord]) (fun i _ hip ↦ by
       simp only [relatorWord, hip, ↓reduceIte]
-      split_ifs <;> rfl)
+      split_ifs <;> exact zigzagBasisDegree_inr_inl G _)
     (by simp only [relatorVertex, show ¬ n + 1 ≤ p by omega, Nat.zero_le, ↓reduceIte]
         exact congrArg (·.snd) (natExt_self_eq_natExt_zero w₀))
   refine ⟨coordCochain hns (n + 1) n.succ_pos (relatorWord W₀ p d₀.snd)
@@ -929,8 +919,8 @@ private theorem isZigzagCoboundary_sum_loopCochain_insertNth {n : ℕ} (p : Fin 
     coordCochain_comp_lengthProj _ _ _, ?_⟩
   · rw [Finset.sum_eq_single (p : ℕ) (fun j _ hjp ↦ by
       simp only [relatorWord, hjp, ↓reduceIte]
-      split_ifs <;> simp [zigzagBasisDegree]) (fun h ↦ absurd (by simp; omega) h)]
-    simp [relatorWord, zigzagBasisDegree]
+      split_ifs <;> simp) (fun h ↦ absurd (by simp; omega) h)]
+    simp [relatorWord]
   rw [hδ]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   rw [loopCochain, relatorVertex_zero p u (Finset.mem_filter.1 hd).2]
@@ -942,17 +932,12 @@ variable (k G) in
 private noncomputable def loopRelations (n : ℕ) : Submodule k ((Fin (n + 2) → G.Dart) →₀ k) :=
   Submodule.span k
     ({c | ∃ (u : Fin (n + 1) → G.Dart) (e : G.Dart),
-        (∀ i, ((Fin.snoc u e : Fin (n + 2) → G.Dart) i).fst =
-          ((Fin.snoc u e : Fin (n + 2) → G.Dart) (i + 1)).snd) ∧
+        IsClosedWord (Fin.snoc u e : Fin (n + 2) → G.Dart) ∧
         c = Finsupp.single (Fin.snoc u e : Fin (n + 2) → G.Dart) 1 +
           Finsupp.single (Fin.cons e u : Fin (n + 2) → G.Dart) 1} ∪
       {c | ∃ (p : Fin (n + 1)) (u : Fin n → G.Dart) (d₀ : G.Dart),
-        (∀ i, ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) :
-          Fin (n + 2) → G.Dart) i).fst = ((Fin.insertNth p.castSucc d₀
-            (Fin.insertNth p d₀.symm u) : Fin (n + 2) → G.Dart) (i + 1)).snd) ∧
-        c = ∑ d : G.Dart with d.snd = d₀.snd,
-          Finsupp.single (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) :
-            Fin (n + 2) → G.Dart) 1})
+        IsClosedWord (backtrackWord p d₀ u) ∧
+        c = ∑ d : G.Dart with d.snd = d₀.snd, Finsupp.single (backtrackWord p d u) 1})
 
 /-- Every relation among closed words gives a coboundary. -/
 private theorem isZigzagCoboundary_linearCombination_of_mem_loopRelations {n : ℕ}
@@ -985,22 +970,21 @@ open scoped Classical in
 the closed words, and zero on the other words. -/
 private noncomputable def closedWeights {n : ℕ} (f : Module.Dual k ((Fin (n + 2) → G.Dart) →₀ k))
     (w : Fin (n + 2) → G.Dart) : k :=
-  if ∀ i, (w i).fst = (w (i + 1)).snd then f (Finsupp.single w 1) else 0
+  if IsClosedWord w then f (Finsupp.single w 1) else 0
 
 omit [Finite V] in
 /-- The weights of a functional vanishing on the rotation relations are anticyclic. -/
 private theorem closedWeights_snoc {n : ℕ} {f : Module.Dual k ((Fin (n + 2) → G.Dart) →₀ k)}
     (hf : ∀ x ∈ loopRelations k G n, f x = 0) (u : Fin (n + 1) → G.Dart) (e : G.Dart) :
     closedWeights f (Fin.snoc u e) = -closedWeights f (Fin.cons e u) := by
-  by_cases hcl : ∀ i, ((Fin.snoc u e : Fin (n + 2) → G.Dart) i).fst =
-      ((Fin.snoc u e : Fin (n + 2) → G.Dart) (i + 1)).snd
-  · have hcl' := (isClosed_snoc_iff u e).1 hcl
+  by_cases hcl : IsClosedWord (Fin.snoc u e : Fin (n + 2) → G.Dart)
+  · have hcl' := (isClosedWord_snoc_iff u e).1 hcl
     have := hf _ (Submodule.subset_span (Or.inl ⟨u, e, hcl, rfl⟩))
     rw [map_add] at this
     rw [closedWeights, closedWeights, ite_eq_left hcl, ite_eq_left hcl']
     exact eq_neg_of_add_eq_zero_left this
   · rw [closedWeights, closedWeights, ite_eq_right hcl,
-      ite_eq_right (mt (isClosed_snoc_iff u e).2 hcl), neg_zero]
+      ite_eq_right (mt (isClosedWord_snoc_iff u e).2 hcl), neg_zero]
 
 omit [Finite V] in
 /-- The weights of a functional vanishing on the relator relations satisfy the signless relation
@@ -1008,19 +992,15 @@ in every pair of consecutive positions. -/
 private theorem sum_closedWeights_insertNth {n : ℕ}
     {f : Module.Dual k ((Fin (n + 2) → G.Dart) →₀ k)} (hf : ∀ x ∈ loopRelations k G n, f x = 0)
     (p : Fin (n + 1)) (u : Fin n → G.Dart) (v : V) :
-    ∑ d : G.Dart with d.snd = v,
-      closedWeights f (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u)) = 0 := by
-  by_cases hex : ∃ d₀ : G.Dart, d₀.snd = v ∧ ∀ i,
-      ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) : Fin (n + 2) → G.Dart)
-        i).fst = ((Fin.insertNth p.castSucc d₀ (Fin.insertNth p d₀.symm u) :
-          Fin (n + 2) → G.Dart) (i + 1)).snd
+    ∑ d : G.Dart with d.snd = v, closedWeights f (backtrackWord p d u) = 0 := by
+  by_cases hex : ∃ d₀ : G.Dart, d₀.snd = v ∧ IsClosedWord (backtrackWord p d₀ u)
   · obtain ⟨d₀, rfl, hcl⟩ := hex
     have := hf _ (Submodule.subset_span (Or.inr ⟨p, u, d₀, hcl, rfl⟩))
     rw [map_sum] at this
     rw [← this]
     refine Finset.sum_congr rfl fun d hd ↦ ?_
     rw [closedWeights,
-      ite_eq_left (isClosed_insertNth_insertNth p u (Finset.mem_filter.1 hd).2 hcl)]
+      ite_eq_left (isClosedWord_backtrackWord p u (Finset.mem_filter.1 hd).2 hcl)]
   · refine Finset.sum_eq_zero fun d hd ↦ ?_
     rw [closedWeights, ite_eq_right fun hcl ↦ hex ⟨d, (Finset.mem_filter.1 hd).2, hcl⟩]
 
@@ -1029,12 +1009,11 @@ omit [Finite V] in
 all anticyclic weights `a` satisfying the signless relations, then `c`, supported on closed words,
 lies in the span of the rotation and relator relations. -/
 private theorem mem_loopRelations_of_forall {n : ℕ} {c : (Fin (n + 2) → G.Dart) →₀ k}
-    (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (hc : ∀ w ∈ c.support, IsClosedWord w)
     (h : ∀ a : (Fin (n + 2) → G.Dart) → k,
       (∀ (u : Fin (n + 1) → G.Dart) (e : G.Dart), a (Fin.snoc u e) = -a (Fin.cons e u)) →
       (∀ (p : Fin (n + 1)) (u : Fin n → G.Dart) (v : V),
-        ∑ d : G.Dart with d.snd = v,
-          a (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u)) = 0) →
+        ∑ d : G.Dart with d.snd = v, a (backtrackWord p d u) = 0) →
       ∑ w, a w * c w = 0) :
     c ∈ loopRelations k G n := by
   rw [← Subspace.forall_mem_dualAnnihilator_apply_eq_zero_iff]

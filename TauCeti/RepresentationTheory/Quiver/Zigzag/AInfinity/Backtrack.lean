@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Formal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Component
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop.Basic
 
 /-!
 # Gauge-trivial quartic loop deformations of a zigzag algebra

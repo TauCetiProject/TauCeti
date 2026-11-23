@@ -320,7 +320,7 @@ section BasisDegree
 omit [Finite V]
 
 /-- The path-length degree of a member of the vertex-arrow-volume basis. -/
-@[expose] def zigzagBasisDegree : ZigzagBasisIndex G → ℤ
+def zigzagBasisDegree : ZigzagBasisIndex G → ℤ
   | .inl _ => 0
   | .inr (.inl _) => 1
   | .inr (.inr _) => 2
@@ -372,38 +372,35 @@ theorem zigzagBasis_coord_eq_zero_of_mem_zigzagIntegerGrade (hns : ∀ i : V, �
   classical
   suffices hle : zigzagIntegerGrade k G e ≤ LinearMap.ker ((zigzagBasis k G hns).coord b) from
     hle hx
+  -- The pieces of degree at most two are spanned by basis members, of the degree of the piece.
+  have hbasis (c : ZigzagBasisIndex G) (hc : e = zigzagBasisDegree G c) :
+      zigzagBasis k G hns c ∈ LinearMap.ker ((zigzagBasis k G hns).coord b) := by
+    rw [LinearMap.mem_ker, zigzagBasis_coord_apply, ite_eq_right_iff]
+    rintro rfl
+    exact absurd hc he
   rcases lt_or_ge e 0 with h | h
   · simp [zigzagIntegerGrade_eq_bot_of_neg k G h]
   obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le h
   rw [zigzagIntegerGrade_ofNat]
-  match n, he with
-  | 0, he =>
+  match n, hbasis with
+  | 0, hbasis =>
     rw [zigzagGrade_zero_eq_span_range_vertexIdempotent, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_ker]
-    rw [← zigzagBasisFun_inl, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
-    split_ifs with hb
-    · subst hb
-      simp at he
-    · rfl
-  | 1, he =>
+    simp only [SetLike.mem_coe]
+    rw [← zigzagBasisFun_inl, ← zigzagBasis_apply k G hns]
+    exact hbasis _ (by simp)
+  | 1, hbasis =>
     rw [zigzagGrade_one_eq_span_range_ofArrow, Submodule.span_le]
     rintro _ ⟨d, rfl⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_ker]
-    rw [← zigzagBasisFun_inr_inl, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
-    split_ifs with hb
-    · subst hb
-      simp at he
-    · rfl
-  | 2, he =>
+    simp only [SetLike.mem_coe]
+    rw [← zigzagBasisFun_inr_inl, ← zigzagBasis_apply k G hns]
+    exact hbasis _ (by simp)
+  | 2, hbasis =>
     rw [zigzagGrade_two_eq_span_range_zigzagVolume, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_ker]
-    rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
-    split_ifs with hb
-    · subst hb
-      simp at he
-    · rfl
+    simp only [SetLike.mem_coe]
+    rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns]
+    exact hbasis _ (by simp)
   | n + 3, _ =>
     rw [zigzagGrade_eq_bot_of_three_le k G (by omega)]
     exact bot_le
