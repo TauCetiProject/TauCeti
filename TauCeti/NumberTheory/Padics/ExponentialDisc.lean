@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.Distribution.Amice.Norm
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.NumberTheory.Padics.Exp.Basic
+import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.UltrametricSubst
@@ -54,8 +55,8 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 
 ## Main results
 
-* `TauCeti.norm_pow_div_factorial_le`: `‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)` for `n ≠ 0`.
-* `TauCeti.norm_pow_div_natCast_le`: the corresponding bound for the logarithm series.
+* `TauCeti.norm_pow_div_natCast_le`: `‖zⁿ / n‖ ≤ ‖z‖ (‖z‖ / r₀) ^ (n - 1)` for `n ≠ 0`, the bound
+  for the logarithm series.
 * `TauCeti.hasSum_log_of_norm_sub_one_lt`: for `‖y - 1‖ < r₀`,
   `log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`.
 * `TauCeti.norm_log_of_norm_sub_one_lt`: `‖log y‖ = ‖y - 1‖`.
@@ -76,24 +77,6 @@ namespace TauCeti
 
 variable {p : ℕ} [hp : Fact p.Prime]
 variable {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L]
-
-omit [NormedAlgebra ℚ_[p] L] in
-/-- If `r₀ ^ (n - 1) ≤ ‖c‖`, then `‖xⁿ / c‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)` for `n ≠ 0`. -/
-private theorem norm_pow_div_le_of_le_norm (x : L) {c : L} {n : ℕ} (hn : n ≠ 0)
-    (hc : amiceRadius p 0 ^ (n - 1) ≤ ‖c‖) :
-    ‖x ^ n / c‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) := by
-  have hr := amiceRadius_pos (p := p) 0
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Nat.add_sub_cancel] at hc ⊢
-  rw [norm_div, norm_pow, div_pow, _root_.pow_succ', ← mul_div_assoc]
-  exact div_le_div_of_nonneg_left (by positivity) (pow_pos hr _) hc
-
-/-- **The terms of the exponential series on its disc.** For `n ≠ 0`,
-`‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)`. When `‖x‖ < r₀` the terms decay geometrically, and every
-term of degree at least two is strictly smaller than a nonzero `x`. -/
-theorem norm_pow_div_factorial_le (x : L) {n : ℕ} (hn : n ≠ 0) :
-    ‖x ^ n / (n ! : L)‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) :=
-  norm_pow_div_le_of_le_norm x hn (amiceRadius_zero_pow_sub_one_le_norm_factorial hn)
 
 /-- **The terms of the logarithm series on the disc of radius `r₀`.** For `n ≠ 0`,
 `‖zⁿ / n‖ ≤ ‖z‖ (‖z‖ / r₀) ^ (n - 1)`. -/

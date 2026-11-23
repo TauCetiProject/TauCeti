@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.NumberTheory.Padics.AmiceRadius
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Factorial.Basic
-import TauCeti.NumberTheory.Padics.AmiceRadius
 import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -44,7 +44,8 @@ factorial and inverse-factorial norm bounds in any normed algebra or normed divi
 * `TauCeti.norm_inv_factorial_le`, `TauCeti.norm_inv_factorial_le_rpow_sub_one_div`,
   `TauCeti.norm_inv_factorial_pow_prime`, `TauCeti.norm_inv_factorial_pow_prime_mul_rpow`,
   `TauCeti.le_norm_inv_factorial_pow_prime_mul_pow`,
-  `TauCeti.norm_inv_factorial_mul_pow_le`, `TauCeti.norm_pow_mul_inv_factorial_le_sq`:
+  `TauCeti.norm_inv_factorial_mul_pow_le`, `TauCeti.norm_pow_div_le_of_le_norm`,
+  `TauCeti.norm_pow_div_factorial_le`, `TauCeti.norm_pow_mul_inv_factorial_le_sq`:
   inverse-factorial and critical-radius estimates in any normed division algebra over `ℚ_[p]`.
 -/
 
@@ -258,41 +259,41 @@ theorem norm_inv_factorial_mul_pow_le {r : ℝ} (hr0 : 0 ≤ r)
           have hexp : (n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ) = 0 := by ring
           rw [hexp, Real.rpow_zero]
 
+omit [NormedAlgebra ℚ_[p] D] in
+/-- If `r₀ ^ (n - 1) ≤ ‖c‖`, then `‖xⁿ / c‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)` for `n ≠ 0`. -/
+theorem norm_pow_div_le_of_le_norm (x : D) {c : D} {n : ℕ} (hn : n ≠ 0)
+    (hc : amiceRadius p 0 ^ (n - 1) ≤ ‖c‖) :
+    ‖x ^ n / c‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) := by
+  have hr := amiceRadius_pos (p := p) 0
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  rw [Nat.add_sub_cancel] at hc ⊢
+  rw [norm_div, norm_pow, div_pow, _root_.pow_succ', ← mul_div_assoc]
+  exact div_le_div_of_nonneg_left (by positivity) (pow_pos hr _) hc
+
+/-- **The terms of the exponential series on its disc.** For `n ≠ 0`,
+`‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)`. When `‖x‖ < r₀` the terms decay geometrically, and every
+term of degree at least two is strictly smaller than a nonzero `x`. -/
+theorem norm_pow_div_factorial_le (x : D) {n : ℕ} (hn : n ≠ 0) :
+    ‖x ^ n / (n ! : D)‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) :=
+  norm_pow_div_le_of_le_norm x hn (amiceRadius_zero_pow_sub_one_le_norm_factorial hn)
+
 /-- For `n ≥ 2` and any `x : D` with `‖x‖ ≤ p ^ (-1 / (p - 1))`,
 `‖x ^ n * (n!)⁻¹‖ ≤ ‖x‖ ^ 2 * p ^ (1 / (p - 1))`. -/
 theorem norm_pow_mul_inv_factorial_le_sq {x : D}
     (hx : ‖x‖ ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) {n : ℕ} (hn : 2 ≤ n) :
     ‖x ^ n * (n ! : D)⁻¹‖ ≤ ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := Nat.exists_eq_add_of_le' hn
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
-  have hpow_k : ‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1)) ≤ 1 := by
-    calc
-      ‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1))
-          ≤ ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1)) :=
-            mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg x) hx k)
-              (Real.rpow_nonneg hp0.le _)
-      _ = (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹ * (k : ℝ) + (k : ℝ) / ((p : ℝ) - 1)) := by
-            rw [← Real.rpow_natCast, ← Real.rpow_mul hp0.le, ← Real.rpow_add hp0]
-      _ = 1 := by
-            have hexp : -((p : ℝ) - 1)⁻¹ * (k : ℝ) + (k : ℝ) / ((p : ℝ) - 1) = 0 := by ring
-            rw [hexp, Real.rpow_zero]
-  have hsplit : (((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) =
-      (k : ℝ) / ((p : ℝ) - 1) + ((p : ℝ) - 1)⁻¹ := by
-    push_cast
-    ring
-  rw [norm_mul, norm_pow]
+  have hr0 := amiceRadius_pos (p := p) 0
+  have hq : ‖x‖ / amiceRadius p 0 ≤ 1 :=
+    (div_le_one hr0).mpr (hx.trans_eq (amiceRadius_zero p).symm)
   calc
-    ‖x‖ ^ (k + 2) * ‖((k + 2)! : D)⁻¹‖
-        ≤ ‖x‖ ^ (k + 2) * (p : ℝ) ^ ((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) :=
-          mul_le_mul_of_nonneg_left
-            (norm_inv_factorial_le_rpow_sub_one_div (p := p) (Nat.succ_ne_zero _)) (by positivity)
-    _ = (‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1))) *
-          (‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) := by
-          rw [pow_add, hsplit, Real.rpow_add hp0]
-          ring
-    _ ≤ 1 * (‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) :=
-          mul_le_mul_of_nonneg_right hpow_k (by positivity)
-    _ = ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := one_mul _
+    ‖x ^ n * (n ! : D)⁻¹‖ = ‖x ^ n / (n ! : D)‖ := by rw [div_eq_mul_inv]
+    _ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) :=
+      norm_pow_div_factorial_le x (by omega)
+    _ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) :=
+      mul_le_mul_of_nonneg_left (pow_le_of_le_one (by positivity) hq (by omega)) (norm_nonneg x)
+    _ = ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := by
+      rw [amiceRadius_zero, Real.rpow_neg (Nat.cast_nonneg p), div_inv_eq_mul]
+      ring
 
 end NormedDivisionRing
 

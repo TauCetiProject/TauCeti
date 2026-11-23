@@ -46,13 +46,9 @@ theorem norm_coeff_exp_le (n : ℕ) :
     ‖PowerSeries.coeff n (F.map f).exp‖ ≤
       ((p : ℝ) ^ ((p - 1 : ℝ)⁻¹)) ^ n := by
   refine (F.norm_coeff_exp_le_inv_norm_factorial f hf n).trans ?_
-  have hnorm : ‖(n.factorial : K)‖ = ‖(n.factorial : ℚ_[p])‖ := by
-    simpa only [map_natCast] using norm_algebraMap' K (n.factorial : ℚ_[p])
-  rw [hnorm]
-  have h := inv_anti₀ (Real.rpow_pos_of_pos (by exact_mod_cast hp.out.pos : (0 : ℝ) < p) _)
-    (Padic.rpow_neg_div_le_norm_factorial (p := p) n)
-  simpa only [Real.rpow_neg (by positivity : (0 : ℝ) ≤ p), inv_inv, div_eq_mul_inv,
-    ← Real.rpow_natCast, ← Real.rpow_mul (by positivity : (0 : ℝ) ≤ p), mul_comm] using h
+  rw [← norm_inv]
+  refine (TauCeti.norm_inv_factorial_le (p := p) (D := K) n).trans_eq ?_
+  rw [div_eq_mul_inv, mul_comm, Real.rpow_mul (Nat.cast_nonneg p), Real.rpow_natCast]
 
 /-- The formal exponential of an integral formal group converges absolutely over any normed
 field over `ℚ_p` on the standard p-adic exponential disc, including for `p = 2`. -/

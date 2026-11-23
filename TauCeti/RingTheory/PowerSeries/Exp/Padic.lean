@@ -61,12 +61,11 @@ The norm on the coefficient algebra restricts to the usual norm on `ℚ_[p]`. -/
 theorem norm_coeff_rescale_exp_mul_pow_le (x : A) {c : ℝ} (hc : 0 ≤ c) (n : ℕ) :
     ‖coeff n (rescale x (exp A))‖ * c ^ n ≤
       ((p : ℝ) ^ ((p - 1 : ℝ)⁻¹) * ‖x‖ * c) ^ n := by
-  have hfac := inv_anti₀
-    (Real.rpow_pos_of_pos (by exact_mod_cast hp.out.pos : (0 : ℝ) < p) _)
-    (Padic.rpow_neg_div_le_norm_factorial (p := p) n)
+  have hp0 : (0 : ℝ) ≤ p := Nat.cast_nonneg p
   have hbound : ‖(n.factorial : ℚ_[p])‖⁻¹ ≤ ((p : ℝ) ^ ((p - 1 : ℝ)⁻¹)) ^ n := by
-    simpa only [Real.rpow_neg (by positivity : (0 : ℝ) ≤ p), inv_inv, div_eq_mul_inv,
-      ← Real.rpow_natCast, ← Real.rpow_mul (by positivity : (0 : ℝ) ≤ p), mul_comm] using hfac
+    rw [← norm_inv]
+    refine (TauCeti.norm_inv_factorial_le (p := p) (D := ℚ_[p]) n).trans_eq ?_
+    rw [div_eq_mul_inv, mul_comm, Real.rpow_mul hp0, Real.rpow_natCast]
   have hnorm : ‖algebraMap ℚ_[p] A (algebraMap ℚ ℚ_[p] (1 / (n.factorial : ℚ)))‖ =
       ‖(n.factorial : ℚ_[p])‖⁻¹ := by
     rw [norm_algebraMap']

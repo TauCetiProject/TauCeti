@@ -156,14 +156,10 @@ theorem norm_factorial_le_mul_amiceRadius_succ_pow (h n : ℕ) :
 tend to zero, and no bound `ρⁿ ≤ ‖⌊n / pʰ⌋!‖` holds for all `n` with `ρ > r_h`. -/
 theorem norm_factorial_pow_eq_mul_amiceRadius_pow (h k : ℕ) :
     ‖((p ^ k)! : ℚ_[p])‖ = (p : ℝ) ^ (1 / ((p : ℝ) - 1)) * amiceRadius p h ^ p ^ (h + k) := by
-  have hsub := sub_one_pos (p := p)
   have hp0 := natCast_pos (p := p)
-  have hv : (padicValNat p (p ^ k)! : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) := by
-    have hc := congrArg (Nat.cast : ℕ → ℝ) (sub_one_mul_padicValNat_factorial_pow p k)
-    rw [Nat.cast_mul, Nat.cast_sub hp.out.one_le, Nat.cast_sub (Nat.one_le_pow _ _ hp.out.pos),
-      Nat.cast_pow, Nat.cast_one] at hc
-    rw [eq_div_iff hsub.ne', mul_comm, hc]
-  rw [norm_natCast_eq_rpow (factorial_ne_zero _), hv, amiceRadius_pow, ← Real.rpow_add hp0]
+  have hinv := norm_inv_factorial_pow_prime (p := p) (D := ℚ_[p]) k
+  rw [norm_inv, inv_eq_iff_eq_inv, ← Real.rpow_neg hp0.le] at hinv
+  rw [hinv, amiceRadius_pow, ← Real.rpow_add hp0]
   congr 1
   push_cast
   rw [pow_add]
