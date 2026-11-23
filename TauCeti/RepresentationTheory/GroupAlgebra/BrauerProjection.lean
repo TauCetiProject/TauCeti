@@ -138,13 +138,14 @@ theorem brauerProjection_sSup_ne_zero_of_directedOn {c : Set (Subgroup G)} (hne 
 theorem brauerProjection_conj_eq_zero_iff (g : G) {P : Subgroup G} {x : MonoidAlgebra R G} :
     brauerProjection (MulAut.conj g • P) (conjRepresentation R G g x) = 0 ↔
       brauerProjection P x = 0 := by
-  rw [brauerProjection_eq_zero_iff, brauerProjection_eq_zero_iff]
+  rw [brauerProjection_eq_zero_iff, brauerProjection_eq_zero_iff, Subgroup.coe_pointwise_smul,
+    Subgroup.centralizer_pointwise_smul]
   constructor
   · intro h c hc
-    simpa [mul_assoc] using h _ ((conj_mem_centralizer_conj_smul_iff g).2 hc)
+    simpa [mul_assoc] using h _ (Subgroup.smul_mem_pointwise_smul c (MulAut.conj g) _ hc)
   · intro h c hc
     rw [coeff_conjRepresentation]
-    refine h _ ((conj_mem_centralizer_conj_smul_iff g).1 ?_)
+    refine h _ ((Subgroup.smul_mem_pointwise_smul_iff (a := MulAut.conj g)).1 ?_)
     simpa [mul_assoc] using hc
 
 /-- `Br_P` keeps a basis element `single c r` with `c ∈ C_G(P)`. -/
