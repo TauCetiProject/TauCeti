@@ -72,20 +72,15 @@ private noncomputable def laurentDerivation {k F C : Type*} [CommRing k] [CommRi
     Derivation k F C⸨X⸩ :=
   let _ : Algebra F C⸨X⸩ := e.toRingHom.toAlgebra
   have _ := isScalarTower_toAlgebra e
-  { toFun := fun z ↦ _root_.LaurentSeries.derivative C (e z)
-    map_add' := fun x y ↦ by rw [map_add, map_add]
-    map_smul' := fun c x ↦ by
-      rw [Algebra.smul_def, map_mul, AlgHom.commutes,
-        TauCeti.laurentSeries_algebraMap_mul_eq_smul, ← algebraMap_smul C c, map_smul,
-        algebraMap_smul, RingHom.id_apply]
-    map_one_eq_zero' := by
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, map_one, ← TauCeti.laurentSeriesDerivation_apply]
-      exact (TauCeti.laurentSeriesDerivation C).map_one_eq_zero
-    leibniz' := fun x y ↦ by
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, map_mul, _root_.LaurentSeries.derivative_mul,
-        Algebra.smul_def (A := C⸨X⸩), RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-        AlgHom.coe_toRingHom]
-      ring }
+  have _ : @IsScalarTower k C C⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
+    .of_algebraMap_eq fun a ↦ by
+      simp only [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply,
+        IsScalarTower.algebraMap_apply k C C⟦X⟧]
+  have _ : IsScalarTower k C C⸨X⸩ := ⟨fun a b f ↦ by
+    ext n
+    simp only [HahnSeries.coeff_smul, Algebra.smul_def, Algebra.algebraMap_self,
+      RingHom.id_apply, mul_assoc]⟩
+  ((TauCeti.laurentSeriesDerivation C).restrictScalars k).compAlgebraMap F
 
 /-- **Laurent expansion of Kähler differentials along an algebra map `e : F →ₐ[k] C⸨X⸩`**:
 lifting the `k`-derivation `f ↦ (e f)'` through `Ω[F⁄k]` sends `a db` to `e a * (e b)'` in
@@ -103,7 +98,10 @@ theorem differentialLaurentExpansion_D {k F C : Type*} [CommRing k] [CommRing F]
     e.differentialLaurentExpansion (D k F a) = _root_.LaurentSeries.derivative C (e a) := by
   let _ : Algebra F C⸨X⸩ := e.toRingHom.toAlgebra
   have _ := isScalarTower_toAlgebra e
-  exact Derivation.liftKaehlerDifferential_comp_D (laurentDerivation e) a
+  rw [differentialLaurentExpansion, LinearMap.restrictScalars_apply,
+    Derivation.liftKaehlerDifferential_comp_D, laurentDerivation, Derivation.compAlgebraMap_apply,
+    Derivation.restrictScalars_apply, TauCeti.laurentSeriesDerivation_apply,
+    RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
 
 /-- **Scalar multiplication by `a` becomes multiplication by `e a`.** -/
 @[simp]

@@ -16,26 +16,15 @@ import TauCeti.FieldTheory.Separable.SimpleRoot
 # Laurent expansions of Kähler differentials on Weierstrass curves
 
 Expanding Kähler differentials of `K(W)` at the point at infinity in the local parameter
-`z = -x / y` sends `f dg` to `f(z) g'(z) dz`, recorded as the `K`-linear map
-`WeierstrassCurve.differentialLaurentExpansion : Ω[K(W)/K] →ₗ[K] K⸨X⸩`, specializing
-`AlgHom.differentialLaurentExpansion` to `W.functionFieldLaurentExpansion`. This map is injective
-over any field `K` (`WeierstrassCurve.differentialLaurentExpansion_injective`), because `z = -x / y`
-is a separating element of `K(W) / K`. Whenever the denominator `2y + a₁x + a₃` is nonzero (in
-particular on any elliptic curve), the invariant differential `ω = dx / (2y + a₁x + a₃)` expands to
-the normalised invariant differential of `formalGroup W`.
-
-## Main definitions
-
-* `WeierstrassCurve.differentialLaurentExpansion`: the `K`-linear coefficient expansion
-  `Ω[K(W)/K] →ₗ[K] K⸨X⸩` in `dz` at infinity.
+`z = -x / y` sends `f dg` to `f(z) g'(z) dz`, recorded by the `K`-linear map
+`W.functionFieldLaurentExpansion.differentialLaurentExpansion : Ω[K(W)/K] →ₗ[K] K⸨X⸩`. This map
+is injective over any field `K` (`WeierstrassCurve.differentialLaurentExpansion_injective`), because
+`z = -x / y` is a separating element of `K(W) / K`. Whenever the denominator `2y + a₁x + a₃` is
+nonzero (in particular on any elliptic curve), the invariant differential
+`ω = dx / (2y + a₁x + a₃)` expands to the normalised invariant differential of `formalGroup W`.
 
 ## Main results
 
-* `WeierstrassCurve.differentialLaurentExpansion_def`: identification with
-  `W.functionFieldLaurentExpansion.differentialLaurentExpansion`.
-* `WeierstrassCurve.differentialLaurentExpansion_D` and
-  `WeierstrassCurve.differentialLaurentExpansion_smul`: compatibility with exterior differentiation
-  and scalar multiplication by rational functions.
 * `WeierstrassCurve.differentialLaurentExpansion_injective`,
   `WeierstrassCurve.differentialLaurentExpansion_eq_zero_iff`, and
   `WeierstrassCurve.differentialLaurentExpansion_inj`: injectivity of Laurent expansion on Kähler
@@ -57,41 +46,6 @@ namespace WeierstrassCurve
 
 variable {K : Type*} [Field K] (W : WeierstrassCurve K)
 
-/-- **The Laurent expansion of Kähler differentials at infinity**: pushing `Ω[K(W)/K]` forward
-along `W.functionFieldLaurentExpansion` and contracting with `laurentSeriesDerivation K` sends
-`f dg` to `f(z) g'(z)` in `K⸨X⸩`, where `z = -x / y` expands to `X`. -/
-noncomputable def differentialLaurentExpansion :
-    KaehlerDifferential K W.toAffine.FunctionField →ₗ[K] K⸨X⸩ :=
-  W.functionFieldLaurentExpansion.differentialLaurentExpansion
-
-/-- Defining identification of `WeierstrassCurve.differentialLaurentExpansion` with
-`AlgHom.differentialLaurentExpansion`. -/
-theorem differentialLaurentExpansion_def :
-    W.differentialLaurentExpansion = W.functionFieldLaurentExpansion.differentialLaurentExpansion :=
-  (rfl)
-
-/-- `differentialLaurentExpansion` lifts `laurentSeriesDerivation` along the Laurent expansion. -/
-theorem differentialLaurentExpansion_apply (η : KaehlerDifferential K W.toAffine.FunctionField) :
-    W.differentialLaurentExpansion η =
-      (TauCeti.laurentSeriesDerivation K).liftKaehlerDifferential
-        (KaehlerDifferential.mapSemilinear W.functionFieldLaurentExpansion η) :=
-  W.functionFieldLaurentExpansion.differentialLaurentExpansion_apply η
-
-/-- **The differential `d f` expands to the formal derivative of the expansion of `f`.** -/
-@[simp]
-theorem differentialLaurentExpansion_D (f : W.toAffine.FunctionField) :
-    W.differentialLaurentExpansion (KaehlerDifferential.D K W.toAffine.FunctionField f) =
-      _root_.LaurentSeries.derivative K (W.functionFieldLaurentExpansion f) :=
-  W.functionFieldLaurentExpansion.differentialLaurentExpansion_D f
-
-/-- **Scalar multiplication by a rational function becomes multiplication by its expansion.** -/
-@[simp]
-theorem differentialLaurentExpansion_smul (f : W.toAffine.FunctionField)
-    (η : KaehlerDifferential K W.toAffine.FunctionField) :
-    W.differentialLaurentExpansion (f • η) =
-      W.functionFieldLaurentExpansion f * W.differentialLaurentExpansion η :=
-  W.functionFieldLaurentExpansion.differentialLaurentExpansion_smul f η
-
 /-- The local parameter `z = -x / y` at infinity is separating for `K(W) / K`, over any field
 `K` and for any Weierstrass curve `W` (even singular in characteristic `2`): `w = -1 / y` is a
 simple root of the `w`-equation polynomial over `K(z)`. -/
@@ -105,21 +59,15 @@ private theorem isSeparating_neg_genericX_div_genericY :
   have hzX : W.functionFieldLaurentExpansion z = (PowerSeries.X : K⟦X⟧) :=
     W.functionFieldLaurentExpansion_neg_genericX_div_genericY
   have htr : Transcendental K z := by
-    intro ⟨p, hp0, hp⟩
-    apply hp0
-    have h := congrArg W.functionFieldLaurentExpansion hp
-    rw [map_zero, ← Polynomial.aeval_algHom_apply, hzX] at h
-    have h' : Polynomial.aeval (PowerSeries.X : K⟦X⟧) p = 0 :=
-      ofPowerSeries_injective (Γ := ℤ) (R := K) <| by
-        rw [map_zero, ← _root_.LaurentSeries.coe_algebraMap,
-          ← IsScalarTower.toAlgHom_apply K K⟦X⟧ K⸨X⸩, ← Polynomial.aeval_algHom_apply,
-          IsScalarTower.toAlgHom_apply, _root_.LaurentSeries.coe_algebraMap]
-        exact h
-    ext n
-    by_cases hn : n ≤ p.natDegree
-    · simpa [hn, PowerSeries.coeff_X_pow, Polynomial.aeval_eq_sum_range] using
-        congrArg (PowerSeries.coeff n) h'
-    · exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+    have hX : Transcendental K ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) := by
+      rw [← _root_.LaurentSeries.coe_algebraMap, ← IsScalarTower.toAlgHom_apply K K⟦X⟧ K⸨X⸩]
+      exact (isAlgebraic_algHom_iff (IsScalarTower.toAlgHom K K⟦X⟧ K⸨X⸩) (by
+        simpa [_root_.LaurentSeries.coe_algebraMap] using
+          ofPowerSeries_injective (Γ := ℤ) (R := K))).not.mpr
+        (PowerSeries.transcendental_of_constantCoeff_eq_zero
+          PowerSeries.constantCoeff_X PowerSeries.X_ne_zero)
+    exact (isAlgebraic_algHom_iff W.functionFieldLaurentExpansion
+      W.functionFieldLaurentExpansion.injective).not.mp (hzX ▸ hX)
   have hgen : K⟮z⟯⟮w⟯ = ⊤ := by
     have hz_mem : z ∈ (K⟮z⟯⟮w⟯).restrictScalars K :=
       (K⟮z⟯⟮w⟯).algebraMap_mem ⟨z, IntermediateField.mem_adjoin_simple_self K z⟩
@@ -197,7 +145,7 @@ private theorem isSeparating_neg_genericX_div_genericY :
 /-- **Laurent expansion of Kähler differentials at infinity is injective**, over any field `K` and
 for any Weierstrass curve `W`. -/
 theorem differentialLaurentExpansion_injective :
-    Function.Injective W.differentialLaurentExpansion := by
+    Function.Injective W.functionFieldLaurentExpansion.differentialLaurentExpansion := by
   rw [injective_iff_map_eq_zero]
   intro η hη
   have ⟨htr, hsep⟩ := W.isSeparating_neg_genericX_div_genericY
@@ -209,7 +157,8 @@ theorem differentialLaurentExpansion_injective :
   subst hc
   have hderiv : _root_.LaurentSeries.derivative K (W.functionFieldLaurentExpansion z) = 1 := by
     simp [z]
-  rw [differentialLaurentExpansion_smul, differentialLaurentExpansion_D, hderiv, mul_one] at hη
+  rw [AlgHom.differentialLaurentExpansion_smul, AlgHom.differentialLaurentExpansion_D, hderiv,
+    mul_one] at hη
   have hc0 : c = 0 := W.functionFieldLaurentExpansion.injective (by simpa using hη)
   rw [hc0, zero_smul]
 
@@ -217,7 +166,7 @@ theorem differentialLaurentExpansion_injective :
 @[simp]
 theorem differentialLaurentExpansion_eq_zero_iff
     {η : KaehlerDifferential K W.toAffine.FunctionField} :
-    W.differentialLaurentExpansion η = 0 ↔ η = 0 :=
+    W.functionFieldLaurentExpansion.differentialLaurentExpansion η = 0 ↔ η = 0 :=
   map_eq_zero_iff _ W.differentialLaurentExpansion_injective
 
 /-- **Two Kähler differentials on `K(W)` are equal if and only if their Laurent expansions
@@ -225,7 +174,8 @@ agree.** -/
 @[simp]
 theorem differentialLaurentExpansion_inj
     {η₁ η₂ : KaehlerDifferential K W.toAffine.FunctionField} :
-    W.differentialLaurentExpansion η₁ = W.differentialLaurentExpansion η₂ ↔ η₁ = η₂ :=
+    W.functionFieldLaurentExpansion.differentialLaurentExpansion η₁ =
+      W.functionFieldLaurentExpansion.differentialLaurentExpansion η₂ ↔ η₁ = η₂ :=
   W.differentialLaurentExpansion_injective.eq_iff
 
 /-- **The invariant differential expands at infinity to the normalised invariant differential of
@@ -233,7 +183,8 @@ the formal group**, whenever its denominator `2y + a₁x + a₃` is nonzero. -/
 @[simp]
 theorem differentialLaurentExpansion_invariantDifferential
     (hd : Affine.invariantDifferentialDenom W.toAffine ≠ 0) :
-    W.differentialLaurentExpansion (Affine.invariantDifferential W.toAffine) =
+    W.functionFieldLaurentExpansion.differentialLaurentExpansion
+        (Affine.invariantDifferential W.toAffine) =
       ((formalGroup W).invariantDifferential : K⸨X⸩) := by
   let z : K⸨X⸩ := ((PowerSeries.X : K⟦X⟧) : K⸨X⸩)
   let w : K⸨X⸩ := (formalW W : K⸨X⸩)
@@ -265,8 +216,8 @@ theorem differentialLaurentExpansion_invariantDifferential
   have hx : W.functionFieldLaurentExpansion W.toAffine.genericX = z / w :=
     W.functionFieldLaurentExpansion_genericX_eq_div_formalW
   have hz' : _root_.LaurentSeries.derivative K z = 1 := by simp [z]
-  rw [Affine.invariantDifferential_def, differentialLaurentExpansion_smul,
-    differentialLaurentExpansion_D, map_inv₀, hdenom, hx]
+  rw [Affine.invariantDifferential_def, AlgHom.differentialLaurentExpansion_smul,
+    AlgHom.differentialLaurentExpansion_D, map_inv₀, hdenom, hx]
   simpa only [z, w, hz', mul_one] using hkey
 
 end WeierstrassCurve

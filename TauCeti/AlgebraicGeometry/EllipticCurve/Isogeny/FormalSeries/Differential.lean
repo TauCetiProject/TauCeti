@@ -17,9 +17,10 @@ Let `φ : W₁ → W₂` be an isogeny of Weierstrass curves over a field `K`. E
 infinity in the local parameter `z₁ = -x₁ / y₁` obeys the Laurent chain rule
 (`TauCeti.Isogeny.differentialLaurentExpansion_pullbackDifferential`), specializing
 `TauCeti.differentialLaurentExpansion_mapSemilinear`. When the invariant-differential denominators
-`2y + a₁x + a₃` of `W₁` and `W₂` are nonzero, applying `W₁.differentialLaurentExpansion` to an
-equation `φ^* ω₂ = c • ω₁` and comparing with the formal-group invariant differential identifies
-`c` with the linear coefficient of `φ.formalSeries` (Silverman III.5, IV.4).
+`2y + a₁x + a₃` of `W₁` and `W₂` are nonzero, applying
+`W₁.functionFieldLaurentExpansion.differentialLaurentExpansion` to an equation `φ^* ω₂ = c • ω₁`
+and comparing with the formal-group invariant differential identifies `c` with the linear
+coefficient of `φ.formalSeries` (Silverman III.5, IV.4).
 
 When `W₂` (hence `W₁`) is an elliptic curve,
 `TauCeti.Isogeny.existsUnique_pullbackDifferential_invariantDifferential_eq_smul` supplies such a
@@ -70,12 +71,11 @@ substitutes `φ.formalSeries` into the expansion of `η` and multiplies by `(φ.
 theorem differentialLaurentExpansion_pullbackDifferential
     (φ : Isogeny W₁.toAffine W₂.toAffine)
     (η : KaehlerDifferential K W₂.toAffine.FunctionField) :
-    W₁.differentialLaurentExpansion (φ.pullbackDifferential η) =
+    W₁.functionFieldLaurentExpansion.differentialLaurentExpansion (φ.pullbackDifferential η) =
       LaurentSeries.substAlgHom φ.constantCoeff_formalSeries φ.formalSeries_ne_zero
-        (W₂.differentialLaurentExpansion η) *
+        (W₂.functionFieldLaurentExpansion.differentialLaurentExpansion η) *
         _root_.LaurentSeries.derivative K (φ.formalSeries : K⸨X⸩) := by
-  rw [φ.pullbackDifferential_apply, W₁.differentialLaurentExpansion_def,
-    W₂.differentialLaurentExpansion_def]
+  rw [φ.pullbackDifferential_apply]
   exact TauCeti.differentialLaurentExpansion_mapSemilinear
     φ.constantCoeff_formalSeries φ.formalSeries_ne_zero
     φ.functionFieldLaurentExpansion_fieldPullback η
@@ -93,7 +93,7 @@ theorem subst_formalSeries_invariantDifferential_mul_derivative_of_pullbackDiffe
       PowerSeries.derivative φ.formalSeries =
       c • (formalGroup W₁).invariantDifferential := by
   apply ofPowerSeries_injective (R := K) (Γ := ℤ)
-  have h := congrArg W₁.differentialLaurentExpansion hc
+  have h := congrArg W₁.functionFieldLaurentExpansion.differentialLaurentExpansion hc
   rw [φ.differentialLaurentExpansion_pullbackDifferential,
     W₂.differentialLaurentExpansion_invariantDifferential hd₂, map_smul,
     W₁.differentialLaurentExpansion_invariantDifferential hd₁,
