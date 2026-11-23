@@ -182,6 +182,14 @@ def thinClassifyingSpaceHomotopy (Φ : unitInterval → C ⥤ D)
     fun _ ↦ (ComposableArrows.continuous_uncurry_mapComposableArrows_obj hΦ).congr fun _ ↦
       (topologicalNerveMap_app_apply _ _ _ _).symm
 
+/-- At time `s`, `thinClassifyingSpaceHomotopy Φ hΦ` acts as `thinClassifyingSpaceMap (Φ s)`. -/
+theorem thinClassifyingSpaceHomotopy_apply (Φ : unitInterval → C ⥤ D)
+    (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2)
+    (s : unitInterval) (p : thinClassifyingSpace C) :
+    thinClassifyingSpaceHomotopy Φ hΦ (s, p) =
+      thinClassifyingSpaceMap (Φ s) (hΦ.comp (.prodMk_right s)) p :=
+  functorTensor.homotopy_apply toTop _ _ s p
+
 @[simp] theorem thinClassifyingSpaceHomotopy_apply_ι (Φ : unitInterval → C ⥤ D)
     (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2)
     (s : unitInterval) (n : ℕ) (F : ComposableArrows C n) (t : toTop.{max u v}.obj ⦋n⦌) :

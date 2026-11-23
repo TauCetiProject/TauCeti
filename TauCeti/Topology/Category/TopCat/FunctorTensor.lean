@@ -440,6 +440,14 @@ def homotopy (φ : unitInterval → (X ⟶ Y))
   map_zero_left _ := rfl
   map_one_left _ := rfl
 
+/-- At time `s`, `homotopy K φ hφ` acts as `map K (φ s)`. -/
+theorem homotopy_apply (φ : unitInterval → (X ⟶ Y))
+    (hφ : ∀ d : D,
+      Continuous fun p : unitInterval × X.obj (op d) ↦ (φ p.fst).app (op d) p.snd)
+    [Small.{u} D] (s : unitInterval) (p : functorTensor K X) :
+    homotopy K φ hφ (s, p) = map K (φ s) p :=
+  (rfl)
+
 @[simp]
 theorem homotopy_apply_ι (φ : unitInterval → (X ⟶ Y))
     (hφ : ∀ d : D,

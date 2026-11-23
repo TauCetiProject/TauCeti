@@ -22,9 +22,8 @@ realization `‖X‖` (`TauCeti.fatRealization X`) is the functor tensor product
 Universal property, functoriality, quotient topology, augmentations, homotopies, and open/closed
 restrictions for saturated subfunctors are provided directly by `TauCeti.functorTensor` in
 `TauCeti.Topology.Category.TopCat.FunctorTensor` specialized to `SemiSimplexCategory.toTop`;
-barycentric coordinates, boundaries, and carrier faces of `SemiSimplexCategory.toTop` live in
-`TauCeti.AlgebraicTopology.TopologicalSimplex`; and skeletal filtrations and paracompactness live
-in `TauCeti.AlgebraicTopology.FatRealization.Skeleton`.
+boundaries and carrier faces live in `TauCeti.AlgebraicTopology.TopologicalSimplex`; and skeletal
+filtrations and paracompactness live in `TauCeti.AlgebraicTopology.FatRealization.Skeleton`.
 
 ## References
 

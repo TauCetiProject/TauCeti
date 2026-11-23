@@ -202,6 +202,7 @@ theorem thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_fatToThinClassify
 
 /-- Conjugating the induced map on coarse preimages by the embedding restriction homeomorphisms
 recovers `fatToThinClassifyingSpace P.FullSubcategory`. -/
+@[simp]
 theorem
     thinClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_symm_fatToThinClassifyingSpacePreimage
     (hfat : IsEmbedding (fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι))
@@ -255,6 +256,7 @@ theorem thinClassifyingSpaceRestrictionHomeomorph_fatToThinClassifyingSpace
 
 /-- Conjugating the induced map on coarse preimages by the open restriction homeomorphisms recovers
 `fatToThinClassifyingSpace P.FullSubcategory`. -/
+@[simp]
 theorem thinClassifyingSpaceRestrictionHomeomorph_symm_fatToThinClassifyingSpacePreimage
     (hP : IsOpen {x | P x}) (z : fatClassifyingSpace P.FullSubcategory) :
     (P.thinClassifyingSpaceRestrictionHomeomorph hs hP).symm
@@ -305,6 +307,7 @@ theorem thinClassifyingSpaceClosedRestrictionHomeomorph_fatToThinClassifyingSpac
 
 /-- Conjugating the induced map on coarse preimages by the closed restriction homeomorphisms
 recovers `fatToThinClassifyingSpace P.FullSubcategory`. -/
+@[simp]
 theorem thinClassifyingSpaceClosedRestrictionHomeomorph_symm_fatToThinClassifyingSpacePreimage
     (hP : IsClosed {x | P x}) (z : fatClassifyingSpace P.FullSubcategory) :
     (P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP).symm

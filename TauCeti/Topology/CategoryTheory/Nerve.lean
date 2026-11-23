@@ -400,6 +400,14 @@ def fatClassifyingSpaceHomotopy (Φ : unitInterval → C ⥤ D)
       (topologicalNerveMap (Φ s) (hΦ.comp (.prodMk_right s))))
     fun _ ↦ ComposableArrows.continuous_uncurry_mapComposableArrows_obj hΦ
 
+/-- At time `s`, `fatClassifyingSpaceHomotopy Φ hΦ` acts as `fatClassifyingSpaceMap (Φ s)`. -/
+theorem fatClassifyingSpaceHomotopy_apply (Φ : unitInterval → C ⥤ D)
+    (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2)
+    (s : unitInterval) (p : fatClassifyingSpace C) :
+    fatClassifyingSpaceHomotopy Φ hΦ (s, p) =
+      fatClassifyingSpaceMap (Φ s) (hΦ.comp (.prodMk_right s)) p :=
+  functorTensor.homotopy_apply SemiSimplexCategory.toTop _ _ s p
+
 theorem fatClassifyingSpaceHomotopy_apply_ι (Φ : unitInterval → C ⥤ D)
     (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2)
     (s : unitInterval) (n : SemiSimplexCategory)
