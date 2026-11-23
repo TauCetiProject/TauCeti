@@ -43,27 +43,27 @@ attribute [local instance] Classical.decEq
 
 /-- A set with at most one point in each open simplex is closed in the weak realization. -/
 theorem isClosed_of_injOn_support {s : Set (Realization K)}
-    (hs : InjOn (fun x : Realization K => x.1.support) s) : IsClosed s := by
+    (hs : InjOn (fun x : Realization K => x.val.support) s) : IsClosed s := by
   apply isClosed_iff_faceInclusion.mpr
   intro σ
-  have hinj : InjOn (fun x : StandardSimplex σ.1 => x.1.support)
+  have hinj : InjOn (fun x : StandardSimplex σ.val => x.val.support)
       (faceInclusion K σ ⁻¹' s) := by
     intro x hx y hy hxy
     have he := hs hx hy (by simpa only [faceInclusion_val] using hxy)
     apply Subtype.ext
     simpa only [faceInclusion_val] using congrArg Subtype.val he
-  have hfin := σ.1.powerset.finite_toSet.of_injOn
+  have hfin := σ.val.powerset.finite_toSet.of_injOn
     (fun x _ => Finset.mem_powerset.mpr (StandardSimplex.support_subset x)) hinj
   exact hfin.isClosed
 
 /-- Only finitely many barycentric supports occur in a compact subset of a weak realization.
 Equivalently, it meets only finitely many open simplices. -/
 theorem finite_image_support_of_isCompact {s : Set (Realization K)} (hs : IsCompact s) :
-    ((fun x : Realization K => x.1.support) '' s).Finite := by
-  let S := (fun x : Realization K => x.1.support) '' s
-  have hex (σ : S) : ∃ x ∈ s, x.1.support = σ.1 := σ.2
+    ((fun x : Realization K => x.val.support) '' s).Finite := by
+  let S := (fun x : Realization K => x.val.support) '' s
+  have hex (σ : S) : ∃ x ∈ s, x.val.support = σ.val := σ.property
   choose r hr hsupport using hex
-  have hinj : InjOn (fun x : Realization K => x.1.support) (range r) := by
+  have hinj : InjOn (fun x : Realization K => x.val.support) (range r) := by
     rintro _ ⟨σ, rfl⟩ _ ⟨τ, rfl⟩ h
     have he : σ = τ := Subtype.ext (by simpa only [hsupport] using h)
     exact congrArg r he
@@ -79,18 +79,18 @@ theorem finite_image_support_of_isCompact {s : Set (Realization K)} (hs : IsComp
   have hf : (range r).Finite := by
     let : CompactSpace (range r) := isCompact_iff_compactSpace.mp hc
     exact finite_coe_iff.mp finite_of_compact_of_discrete
-  exact (hf.image (fun x : Realization K => x.1.support)).subset (by
+  exact (hf.image (fun x : Realization K => x.val.support)).subset (by
     intro σ hσ
     exact ⟨r ⟨σ, hσ⟩, mem_range_self _, hsupport ⟨σ, hσ⟩⟩)
 
 /-- Every compact subset of a weak realization uses only finitely many vertices. -/
 theorem exists_finset_support_subset_of_isCompact {s : Set (Realization K)} (hs : IsCompact s) :
-    ∃ V : Finset ι, ∀ x ∈ s, x.1.support ⊆ V := by
-  let S := (fun x : Realization K => x.1.support) '' s
+    ∃ V : Finset ι, ∀ x ∈ s, x.val.support ⊆ V := by
+  let S := (fun x : Realization K => x.val.support) '' s
   have hS : S.Finite := finite_image_support_of_isCompact hs
   refine ⟨hS.toFinset.biUnion id, ?_⟩
   intro x hx v hv
-  exact Finset.mem_biUnion.mpr ⟨x.1.support, hS.mem_toFinset.mpr ⟨x, hx, rfl⟩, hv⟩
+  exact Finset.mem_biUnion.mpr ⟨x.val.support, hS.mem_toFinset.mpr ⟨x, hx, rfl⟩, hv⟩
 
 /-- A weak simplicial realization is compact exactly when its vertex type is finite.
 No local finiteness or dimension bound is required. -/

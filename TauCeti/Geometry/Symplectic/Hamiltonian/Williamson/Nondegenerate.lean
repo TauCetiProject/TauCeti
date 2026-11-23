@@ -39,11 +39,12 @@ squarefree polynomial `(∏ₜ (X² - t)) X` over the nonzero values `t` of the 
 (`IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_ellipticHyperbolic`). If the `cₖ` are
 nonzero and the squares of the coefficients of blocks of the same type are distinct, then the `μₖ`
 are pairwise distinct, and every quadratic form Poisson-commuting with `P` is a combination of the
-blocks (`IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero`). Indeed,
-if `R` Poisson-commutes with `P` then `polar R (A_P u) v = -polar R u (A_P v)`. Applied twice this
-shows that the polar form of `R` pairs distinct planes trivially. On an elliptic plane it then is a
-multiple of `xₖ² + yₖ²`, and on a hyperbolic plane a multiple of `xₖ yₖ`. Moreover, a form
-whose Hamiltonian endomorphism acts on each plane as that of `cₖ Bₖ` is `P` itself
+blocks (`IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero`; for the
+hyperbolic blocks alone, `IsDarbouxBasis.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero`).
+Indeed, if `R` Poisson-commutes with `P` then `polar R (A_P u) v = -polar R u (A_P v)`. Applied
+twice this shows that the polar form of `R` pairs distinct planes trivially. On an elliptic plane it
+then is a multiple of `xₖ² + yₖ²`, and on a hyperbolic plane a multiple of `xₖ yₖ`. Moreover, a
+form whose Hamiltonian endomorphism acts on each plane as that of `cₖ Bₖ` is `P` itself
 (`IsDarbouxBasis.eq_sum_smul_ellipticHyperbolic_of_hamiltonianEnd_apply`).
 
 ## References
@@ -163,6 +164,20 @@ theorem IsDarbouxBasis.eq_sum_smul_ellipticHyperbolic_of_hamiltonianEnd_apply
   obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
   · rw [(hR k).1, hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst]
   · rw [(hR k).2, hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd]
+
+/-- In a Darboux basis, the Hamiltonian endomorphism of `∑ₖ cₖ Hₖ`, `Hₖ` the hyperbolic blocks,
+sends `qⱼ` to `cⱼ qⱼ`. -/
+theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_hyperbolic_apply_fst (hb : ω.IsDarbouxBasis b)
+    (c : Fin n → ℝ) (j : Fin n) :
+    ω.hamiltonianEnd (∑ k, c k • hyperbolic b k) (b (j, 0)) = c j • b (j, 0) := by
+  simpa using hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst ∅ c j
+
+/-- In a Darboux basis, the Hamiltonian endomorphism of `∑ₖ cₖ Hₖ`, `Hₖ` the hyperbolic blocks,
+sends `pⱼ` to `-cⱼ pⱼ`. -/
+theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_hyperbolic_apply_snd (hb : ω.IsDarbouxBasis b)
+    (c : Fin n → ℝ) (j : Fin n) :
+    ω.hamiltonianEnd (∑ k, c k • hyperbolic b k) (b (j, 1)) = -c j • b (j, 1) := by
+  simpa using hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd ∅ c j
 
 /-- The square of the Hamiltonian endomorphism of `∑ₖ cₖ Bₖ` is `-cₖ²` on an elliptic plane
 `span(qₖ, pₖ)` and `cₖ²` on a hyperbolic one. -/
@@ -345,6 +360,16 @@ theorem IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq
   rw [ω.hamiltonianEnd_injective hB]
   exact Submodule.sum_mem _ fun k _ ↦
     Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self k))
+
+/-- **The commutant of a regular hyperbolic element.** If the coefficients `cₖ` are nonzero with
+distinct squares, every quadratic form Poisson-commuting with `∑ₖ cₖ Hₖ`, `Hₖ` the hyperbolic
+blocks, is a linear combination of the `Hₖ`. -/
+theorem IsDarbouxBasis.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero
+    (hb : ω.IsDarbouxBasis b) (hc : Pairwise fun k l ↦ c k ^ 2 ≠ c l ^ 2) (hc0 : ∀ k, c k ≠ 0)
+    {R : QuadraticForm ℝ V} (hR : ω.quadraticPoissonBracket R (∑ k, c k • hyperbolic b k) = 0) :
+    R ∈ Submodule.span ℝ (Set.range (hyperbolic b)) := by
+  simpa using hb.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero ∅
+    (fun _ _ hkl _ ↦ hc hkl) hc0 (by simpa using hR)
 
 end Regular
 

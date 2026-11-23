@@ -70,8 +70,8 @@ def normalBundleTrivialization (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
   -- Changing the phantom model-fibre parameter preserves the induced topology from `M × V`.
   let h : TotalSpace F (fun x => normalSubspace I f x) ≃ₜ
       TotalSpace (normalSubspace I f x₀) (fun x => normalSubspace I f x) :=
-    { toFun := fun p => ⟨p.proj, p.2⟩
-      invFun := fun p => ⟨p.proj, p.2⟩
+    { toFun := fun p => ⟨p.proj, p.snd⟩
+      invFun := fun p => ⟨p.proj, p.snd⟩
       left_inv := fun _ => rfl
       right_inv := fun _ => rfl
       continuous_toFun := (isEmbedding_totalSpace_normalSubspace f).isInducing.continuous_iff.mpr
@@ -101,11 +101,11 @@ fibre identification. -/
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (x₀ : M)
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     normalBundleTrivialization hf himm hdim x₀ p =
-      (p.proj, normalFiberEquiv hdim x₀ (himm x₀) (normalCoordinateMap I f x₀ p.proj p.2)) := by
+      (p.proj, normalFiberEquiv hdim x₀ (himm x₀) (normalCoordinateMap I f x₀ p.proj p.snd)) := by
   have : IsManifold I ((0 : WithTop ℕ∞) + 1) M := by
     simpa using (inferInstance : IsManifold I 1 M)
   exact congrArg (Prod.map id (normalFiberEquiv hdim x₀ (himm x₀)))
-    (normalTrivialization_apply (n := 0) hf himm x₀ ⟨p.proj, p.2⟩)
+    (normalTrivialization_apply (n := 0) hf himm x₀ ⟨p.proj, p.snd⟩)
 
 /-- Inverse fixed-model coordinates project the reference normal vector to the moving fibre. -/
 @[simp] theorem normalBundleTrivialization_symm_apply
@@ -120,7 +120,7 @@ fibre identification. -/
   have : IsManifold I ((0 : WithTop ℕ∞) + 1) M := by
     simpa using (inferInstance : IsManifold I 1 M)
   exact congrArg (fun q : TotalSpace (normalSubspace I f x₀) (fun x => normalSubspace I f x) =>
-    (⟨q.proj, q.2⟩ : TotalSpace F (fun x => normalSubspace I f x)))
+    (⟨q.proj, q.snd⟩ : TotalSpace F (fun x => normalSubspace I f x)))
     (normalTrivialization_symm_apply (n := 0) hf himm x₀
       (p.1, (normalFiberEquiv hdim x₀ (himm x₀)).symm p.2))
 

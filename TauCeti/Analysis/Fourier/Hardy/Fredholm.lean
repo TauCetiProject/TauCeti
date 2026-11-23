@@ -12,6 +12,8 @@ public import TauCeti.Analysis.Fredholm.CompactPerturbation
 
 import Mathlib.Topology.CompactOpen
 import Mathlib.Topology.ContinuousMap.Units
+import TauCeti.Analysis.Fourier.Hardy.Coburn
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The Gohberg–Krein Fredholm index theorem for continuous Toeplitz operators
@@ -41,7 +43,12 @@ This file develops the Fredholm theory of Toeplitz operators `T_a` with continuo
    of distinct Fredholm indices arbitrarily close in operator norm to `T_a`. Since the Fredholm
    locus is open and the index is locally constant on it, `T_a` cannot be Fredholm.
 
-4. **Compact perturbations.** Adding or subtracting a compact operator `K` preserves both the
+4. **Invertibility.** An invertible operator is Fredholm of index `0`. Conversely, by Coburn's
+   alternative (`TauCeti/Analysis/Fourier/Hardy/Coburn.lean`) a Fredholm Toeplitz operator of
+   index `0` is invertible. With the criterion and index formula above, `T_a` is invertible exactly
+   when `a` is nowhere zero with winding number `0`.
+
+5. **Compact perturbations.** Adding or subtracting a compact operator `K` preserves both the
    Fredholm characterization `∀ x, a x ≠ 0` and the index `-a.windingNumber ha`. As an explicit
    witness that Fredholm of index zero is strictly weaker than invertibility on `T_C + K(H²)`, the
    rank-one perturbation `T_1 - (ℂ ∙ hardyBasis 0).starProjection` (= `S ∘L S†`) is Fredholm of
@@ -53,6 +60,8 @@ This file develops the Fredholm theory of Toeplitz operators `T_a` with continuo
   `a`, `T_a` is Fredholm if and only if `∀ x, a x ≠ 0`.
 * `TauCeti.index_toeplitz_toLp`: **Gohberg–Krein index theorem** —
   `ContinuousLinearMap.index T_a = -a.windingNumber ha`.
+* `TauCeti.isUnit_toeplitz_toLp_iff`: for continuous `a`, `T_a` is invertible if and only if `a`
+  is nowhere zero with winding number `0`.
 * `TauCeti.isFredholm_toeplitz_toLp_add_iff`, `TauCeti.index_toeplitz_toLp_add`,
   `TauCeti.isFredholm_toeplitz_toLp_sub_iff`, `TauCeti.index_toeplitz_toLp_sub`: Fredholm
   characterization and index formula for compact perturbations `T_a ± K`.
@@ -164,6 +173,24 @@ theorem isFredholm_toeplitz_toLp_iff (a : C(UnitAddCircle, ℂ)) :
     rw [← index_toeplitz_toLp g₁ hg₁, ← index_toeplitz_toLp g₂ hg₂]
     exact hind₁.trans hind₂.symm
   exact hwind_ne (neg_inj.mp heq)
+
+/-- **Invertibility of continuous-symbol Toeplitz operators.** For a continuous symbol
+`a : C(UnitAddCircle, ℂ)`, the Toeplitz operator `T_a` is invertible on `HardySpace` if and only if
+`a` vanishes nowhere on the unit circle and has winding number `0` about the origin. -/
+theorem isUnit_toeplitz_toLp_iff (a : C(UnitAddCircle, ℂ)) :
+    IsUnit (toeplitz (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ a)) ↔
+      ∃ ha : ∀ x, a x ≠ 0, a.windingNumber ha = 0 := by
+  -- An invertible operator is Fredholm of index zero; conversely, by Coburn's alternative a
+  -- Fredholm Toeplitz operator of index zero is invertible.
+  rw [← ContinuousLinearMap.isInvertible_iff_isUnit]
+  refine ⟨fun hT => ?_, fun ⟨ha, hw⟩ => ?_⟩
+  · have ha := (isFredholm_toeplitz_toLp_iff a).mp hT.isFredholm
+    refine ⟨ha, neg_eq_zero.mp ?_⟩
+    rw [← index_toeplitz_toLp a ha]
+    exact ContinuousLinearMap.index_eq_zero_of_bijective _ hT.bijective
+  · refine isInvertible_toeplitz_of_isFredholm_of_index_eq_zero
+      (isFredholm_toeplitz_toLp_of_forall_ne_zero ha) ?_
+    rw [index_toeplitz_toLp a ha, hw, neg_zero]
 
 end GohbergKrein
 

@@ -10,8 +10,8 @@ public import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 public import TauCeti.Probability.Process.ElementaryDensity
 public import TauCeti.Probability.Process.Predictable.Measure
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
+import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 
 /-!
@@ -214,13 +214,9 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_eNorm_sub_sq
     ((hpred m).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2
   have hE (m : ℕ) : Measurable (E m) := (hmeas m).lintegral_prod_left'
   have hmean (m : ℕ) : ∫⁻ ω, E m ω ∂P ≤ (((1 / 2 : ℝ≥0) ^ 2) ^ m : ℝ≥0∞) := by
-    rw [← lintegral_lintegral_swap (hmeas m).aemeasurable]
-    rw [← lintegral_prod _ (hmeas m).aemeasurable]
-    have hpow := eLpNorm_nnreal_pow_eq_lintegral (p := (2 : ℝ≥0)) (by norm_num)
-      ((hpred m).mono ℱ.predictable_le_prod).aestronglyMeasurable (μ := ν.prod P)
-    simp only [NNReal.coe_ofNat, ENNReal.rpow_two, Function.uncurry_def,
-      ENNReal.coe_ofNat] at hpow
-    rw [← hpow]
+    refine (TauCeti.lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq
+      (f := fun p ↦ L m p.1 p.2 - K m p.1 p.2)
+      ((hpred m).mono ℱ.predictable_le_prod).aestronglyMeasurable).trans_le ?_
     simpa only [← ENNReal.coe_pow, ← pow_mul, Nat.mul_comm] using
       pow_le_pow_left' (herr m).le 2
   have hsum : (∑' m, (((1 / 2 : ℝ≥0) ^ 2) ^ m : ℝ≥0∞)) ≠ ∞ :=
@@ -240,23 +236,10 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_eNorm_sub_sq
   filter_upwards [hELim, htrunc] with ω hEω hKω
   have hbound (m : ℕ) : (∫⁻ t, ‖L m t ω - H t ω‖ₑ ^ 2 ∂ν) ≤
       2 * E m ω + 2 * ∫⁻ t, ‖K m t ω - H t ω‖ₑ ^ 2 ∂ν := by
-    calc
-      _ ≤ ∫⁻ t, 2 * ‖L m t ω - K m t ω‖ₑ ^ 2 +
-          2 * ‖K m t ω - H t ω‖ₑ ^ 2 ∂ν := by
-        apply lintegral_mono
-        intro t
-        -- Transport the existing squared triangle inequality to the nonnegative energy.
-        have h := ENNReal.ofReal_le_ofReal
-          (norm_sub_sq_le_two_mul (L m t ω) (H t ω) (K m t ω))
-        simp only [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2),
-          ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _),
-          ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm, ENNReal.ofReal_ofNat] at h
-        simpa only [eNorm_sub_rev, mul_add] using h
-      _ = _ := by
-        have hmω : Measurable (fun t ↦ ‖L m t ω - K m t ω‖ₑ ^ 2) :=
-          (hmeas m).comp (measurable_id.prodMk (measurable_const (a := ω)))
-        rw [lintegral_add_left (hmω.const_mul 2),
-          lintegral_const_mul' _ _ (by norm_num), lintegral_const_mul' _ _ (by norm_num)]
+    have hmω : Measurable (fun t ↦ ‖L m t ω - K m t ω‖ₑ ^ 2) :=
+      (hmeas m).comp (measurable_id.prodMk (measurable_const (a := ω)))
+    simpa only [eNorm_sub_rev (H _ ω), mul_add] using
+      TauCeti.lintegral_enorm_sub_sq_le_two_mul (g := fun t ↦ H t ω) hmω.aemeasurable
   have hlim := (ENNReal.Tendsto.const_mul (a := 2) hEω (Or.inr (by norm_num))).add
     (ENNReal.Tendsto.const_mul (a := 2) hKω (Or.inr (by norm_num)))
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
@@ -283,8 +266,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm
           ((Probability.timeMeasure T).prod P)) atTop (𝓝 0) := by
   have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P m
     hH.isStronglyPredictable
-    (by simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def]
-        using hH.memLp m)
+    (hH.memLp_timeMeasure m)
     (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top m))
   choose n τ a C hτ₀ hτ ha hb herr using hex
   refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, fun T ↦ ?_⟩

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Dynamics.PeriodicPts.Chain
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Correspondence
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
 
@@ -27,7 +28,11 @@ source and target points are `TauCeti.CotangentBundle.generatingSource` and
 vertex the outgoing covector of edge `i - 1` equals the incoming covector of edge `i`,
 `-d₂S_(i-1)(q_(i-1), q_i) = d₁S_i(q_i, q_(i+1))`; equivalently, the target point of the relation
 of `S_(i-1)` over `(q_(i-1), q_i)` is the source point of the relation of `S_i` over
-`(q_i, q_(i+1))` (`TauCeti.CotangentBundle.mvfderiv_cyclicAction_eq_zero_iff`).
+`(q_i, q_(i+1))` (`TauCeti.CotangentBundle.mvfderiv_cyclicAction_eq_zero_iff`). On
+configurations in a normed space, `A` has the Fréchet derivative
+`v ↦ Σ_i dS_i(q_i, q_(i+1)) (v_i, v_(i+1))` (`TauCeti.hasFDerivAt_cyclicAction`). If each `S_i`
+is invariant under a diagonal translation `(x, X) ↦ (x + c, X + c)`, then `A` is invariant under
+`q ↦ q + c` (`TauCeti.periodic_cyclicAction`).
 
 Suppose now that, over a set `W_i ⊆ Q × Q`, the relation of `S_i` is the graph of a map `φ_i`
 defined on a set `D_i` of covectors: every `z ∈ D_i` has its base pair `(π z, π (φ_i z))` in `W_i`
@@ -38,9 +43,19 @@ is, the phase points fixed by `φ_(N-1) ∘ ⋯ ∘ φ_0` together with their in
 the critical points of `A` on the configuration domain `{q | ∀ i, (q_i, q_(i+1)) ∈ W_i}`. The
 bijection sends a sequence to its base points, and a critical configuration to the source points
 `(q_i, d₁S_i(q_i, q_(i+1)))`. It uses neither finite dimension, nor a boundaryless model, nor the
-symplecticity or smoothness of the maps `φ_i`. With equal summands `S_i = S` it identifies the
-marked `N`-periodic points of a generated map, with all intermediate iterates defined, with the
-critical points of `Σ_i S(q_i, q_(i+1))`.
+symplecticity or smoothness of the maps `φ_i`.
+
+Shifting a configuration and the functions together, `q ↦ (i ↦ q (i + k))` and
+`S ↦ (i ↦ S (i + k))`, preserves the action (`TauCeti.cyclicAction_comp_add_right`) and its
+critical points (`TauCeti.mvfderiv_cyclicAction_comp_add_right_eq_zero_iff`). Iterates are the
+case of equal summands `S_i = S`. A periodic chain of a single map `φ` is the orbit of its first
+state, so the chain dictionary identifies the points `z` with `φ^[N] z = z` whose iterates
+`z, φ z, …, φ^[N-1] z` all lie in `D` with the critical points of `A_N(q) = Σ_i S(q_i, q_(i+1))`,
+by `z ↦ (i ↦ π (φ^[i] z))` (`TauCeti.CotangentBundle.exists_equiv_iterate_of_generating`). The
+least period of `z` need only divide `N`. Under this bijection the cyclic shift `i ↦ q (i + 1)` of a
+critical configuration is the same periodic orbit marked at `φ z`, so the critical configurations
+up to cyclic shifts correspond to the periodic orbits without a marked point
+(`TauCeti.CotangentBundle.exists_equiv_quot_iterate_of_generating`).
 
 With a single vertex, the differential of `ψ(q) = S(q, q)` is `d₁S(q, q) + d₂S(q, q)`
 (`TauCeti.mvfderiv_diag_eq_add`), and the dictionary identifies the fixed points of a map
@@ -76,6 +91,49 @@ omit [TopologicalSpace Q] in
 theorem cyclicAction_apply (S : ZMod N → Q × Q → ℝ) (q : ZMod N → Q) :
     cyclicAction S q = ∑ i, S i (q i, q (i + 1)) :=
   (rfl)
+
+/-- If each `S_i` is invariant under the diagonal translation `(x, X) ↦ (x + c, X + c)`, then the
+cyclic discrete action is invariant under the diagonal translation `q ↦ q + c` of
+configurations. -/
+theorem periodic_cyclicAction {G : Type*} [Add G] {c : G} {S : ZMod N → G × G → ℝ}
+    (hS : ∀ i, Function.Periodic (S i) (c, c)) :
+    Function.Periodic (cyclicAction S) fun _ ↦ c := fun q ↦ by
+  simp only [cyclicAction_apply, Pi.add_apply]
+  exact Finset.sum_congr rfl fun i _ ↦ by simpa using hS i (q i, q (i + 1))
+
+/-- **The derivative of the cyclic discrete action** on configurations in a normed space. If each
+`S_i` is differentiable at the edge `(q_i, q_(i+1))`, then `A(q) = Σ_i S_i(q_i, q_(i+1))` has
+derivative `v ↦ Σ_i dS_i(q_i, q_(i+1)) (v_i, v_(i+1))` at `q`. -/
+theorem hasFDerivAt_cyclicAction {S : ZMod N → E × E → ℝ} {q : ZMod N → E}
+    (hS : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
+    HasFDerivAt (cyclicAction S)
+      (∑ i, (fderiv ℝ (S i) (q i, q (i + 1))).comp
+        ((ContinuousLinearMap.proj i).prod (ContinuousLinearMap.proj (i + 1)))) q := by
+  have h : cyclicAction S = fun q' ↦ ∑ i, S i (q' i, q' (i + 1)) := by
+    funext q'
+    simp [cyclicAction_apply]
+  rw [h]
+  exact HasFDerivAt.fun_sum fun i _ ↦ (hS i).hasFDerivAt.comp q
+    ((hasFDerivAt_apply i q).prodMk (hasFDerivAt_apply (i + 1) q))
+
+/-- If each `S_i` is differentiable at the edge `(q_i, q_(i+1))`, then the cyclic discrete action
+`A(q) = Σ_i S_i(q_i, q_(i+1))` on configurations in a normed space is differentiable at `q`. -/
+theorem differentiableAt_cyclicAction {S : ZMod N → E × E → ℝ} {q : ZMod N → E}
+    (hS : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
+    DifferentiableAt ℝ (cyclicAction S) q :=
+  (hasFDerivAt_cyclicAction hS).differentiableAt
+
+/-- If each `S_i` is `C^n` at the edge `(q_i, q_(i+1))`, then the cyclic discrete action
+`A(q) = Σ_i S_i(q_i, q_(i+1))` on configurations in a normed space is `C^n` at `q`. -/
+theorem contDiffAt_cyclicAction {n : ℕ∞ω} {S : ZMod N → E × E → ℝ} {q : ZMod N → E}
+    (hS : ∀ i, ContDiffAt ℝ n (S i) (q i, q (i + 1))) :
+    ContDiffAt ℝ n (cyclicAction S) q := by
+  have h : cyclicAction S = fun q' ↦ ∑ i, S i (q' i, q' (i + 1)) := by
+    funext q'
+    simp [cyclicAction_apply]
+  rw [h]
+  exact ContDiffAt.sum fun i _ ↦ (hS i).comp q
+    ((contDiffAt_apply ℝ (fun _ ↦ E) i q).prodMk (contDiffAt_apply ℝ (fun _ ↦ E) (i + 1) q))
 
 /-- The edge `(q_i, q_(i+1))` of a configuration has derivative `v ↦ (v_i, v_(i+1))`. -/
 private theorem hasMFDerivAt_edge (i : ZMod N) (q : ZMod N → Q) :
@@ -125,6 +183,67 @@ theorem mvfderiv_cyclicAction_apply {S : ZMod N → Q × Q → ℝ} {q : ZMod N 
         refine Fintype.sum_equiv (Equiv.addRight 1) _ _ fun i ↦ ?_
         dsimp only [Equiv.coe_addRight]
         simp only [add_sub_cancel_right]
+
+omit [TopologicalSpace Q] in
+/-- **The cyclic discrete action is invariant under cyclic shifts.** Shifting the configuration
+and the functions by the same `k` does not change the action:
+`Σ_i S_(i+k)(q_(i+k), q_(i+k+1)) = Σ_i S_i(q_i, q_(i+1))`. -/
+theorem cyclicAction_comp_add_right (S : ZMod N → Q × Q → ℝ) (q : ZMod N → Q) (k : ZMod N) :
+    cyclicAction (fun i ↦ S (i + k)) (fun i ↦ q (i + k)) = cyclicAction S q := by
+  simp only [cyclicAction_apply]
+  exact Fintype.sum_equiv (Equiv.addRight k) _ _ fun i ↦ by simp [add_right_comm]
+
+/-- **Cyclic shifts preserve critical configurations.** A configuration `q` is a critical point of
+the cyclic action `Σ_i S_i(q_i, q_(i+1))` exactly when its shift `i ↦ q (i + k)` is a critical
+point of the cyclic action of the shifted functions `i ↦ S (i + k)`. With equal summands
+`S_i = S`, the cyclic shifts act on the critical configurations of `Σ_i S(q_i, q_(i+1))`. -/
+theorem mvfderiv_cyclicAction_comp_add_right_eq_zero_iff (S : ZMod N → Q × Q → ℝ)
+    (q : ZMod N → Q) (k : ZMod N) :
+    mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun i ↦ S (i + k))
+        (fun i ↦ q (i + k)) = 0 ↔
+      mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction S) q = 0 := by
+  have hcomp : (cyclicAction fun i ↦ S (i + k)) ∘ (fun q : ZMod N → Q ↦ fun i ↦ q (i + k)) =
+      cyclicAction S :=
+    funext fun q ↦ cyclicAction_comp_add_right S q k
+  by_cases hd : MDifferentiableAt (ModelWithCorners.pi fun _ : ZMod N ↦ I) 𝓘(ℝ)
+      (cyclicAction fun i ↦ S (i + k)) (fun i ↦ q (i + k))
+  · -- The differential of the action at `q` is the differential of the shifted action composed
+    -- with the shift of tangent vectors, which is surjective.
+    have key (v : ZMod N → E) :
+        mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction S) q v =
+          mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun i ↦ S (i + k))
+            (fun i ↦ q (i + k)) fun i ↦ v (i + k) := by
+      rw [← hcomp, mvfderiv_comp_apply q hd
+        (hasMFDerivAt_precomp (M := fun _ : ZMod N ↦ Q) (· + k) q).mdifferentiableAt v,
+        mfderiv_precomp]
+      -- `Pi.compRightL` sends `v` to `i ↦ v (i + k)`; `simp` cannot rewrite it across the
+      -- tangent-space type synonyms.
+      rfl
+    -- In both directions the remaining step evaluates the zero map, which `simp` cannot do across
+    -- the tangent-space type synonyms.
+    constructor
+    · intro h
+      exact ContinuousLinearMap.ext fun v ↦ (key v).trans (by rw [h]; rfl)
+    · intro h
+      refine ContinuousLinearMap.ext fun v ↦ ?_
+      have hv := key fun i ↦ v (i - k)
+      simp only [add_sub_cancel_right] at hv
+      exact hv.symm.trans (by rw [h]; rfl)
+  · -- Otherwise neither action is differentiable, since each is the other composed with a shift.
+    have hd' : ¬MDifferentiableAt (ModelWithCorners.pi fun _ : ZMod N ↦ I) 𝓘(ℝ)
+        (cyclicAction S) q := by
+      intro h
+      have hinv : (cyclicAction fun i ↦ S (i + k)) =
+          cyclicAction S ∘ fun q : ZMod N → Q ↦ fun i ↦ q (i + -k) := by
+        funext q'
+        rw [Function.comp_apply, ← cyclicAction_comp_add_right S _ k]
+        simp only [add_neg_cancel_right]
+      rw [hinv] at hd
+      exact hd (h.comp_of_eq _
+        (hasMFDerivAt_precomp (M := fun _ : ZMod N ↦ Q) (· + -k) _).mdifferentiableAt
+        (by simp))
+    simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hd,
+      mfderiv_zero_of_not_mdifferentiableAt hd']
 
 namespace CotangentBundle
 
@@ -187,9 +306,9 @@ theorem exists_equiv_periodic_of_generating {S : ZMod N → Q × Q → ℝ} {W :
     ∃ e : {z : ZMod N → CotangentBundle I Q // ∀ i, z i ∈ D i ∧ φ i (z i) = z (i + 1)} ≃
         {q : ZMod N → Q // (∀ i, (q i, q (i + 1)) ∈ W i) ∧
           mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction S) q = 0},
-      (∀ z i, (e z : ZMod N → Q) i = (z.1 i).proj) ∧
+      (∀ z i, (e z : ZMod N → Q) i = (z.val i).proj) ∧
         ∀ q i, (e.symm q : ZMod N → CotangentBundle I Q) i =
-          generatingSource I (S i) (q.1 i, q.1 (i + 1)) := by
+          generatingSource I (S i) (q.val i, q.val (i + 1)) := by
   -- Along a periodic chain, each state is the source point and the next state the target point
   -- of the relation over the base pair of consecutive states.
   have hchain (z : ZMod N → CotangentBundle I Q) (hz : ∀ i, z i ∈ D i ∧ φ i (z i) = z (i + 1))
@@ -210,16 +329,18 @@ theorem exists_equiv_periodic_of_generating {S : ZMod N → Q × Q → ℝ} {W :
     rw [h.1, h.2]
     exact ⟨hz, rfl⟩
   refine ⟨
-    { toFun := fun z ↦ ⟨fun i ↦ (z.1 i).proj, fun i ↦ (hchain z.1 z.2 i).1,
-        (mvfderiv_cyclicAction_eq_zero_iff fun i ↦ hS i _ (hchain z.1 z.2 i).1).2 fun i ↦ by
-          have h := (hchain z.1 z.2 (i - 1)).2.2
+    { toFun := fun z ↦ ⟨fun i ↦ (z.val i).proj, fun i ↦ (hchain z.val z.property i).1,
+        (mvfderiv_cyclicAction_eq_zero_iff fun i ↦ hS i _ (hchain z.val z.property i).1).2 fun i ↦
+            by
+          have h := (hchain z.val z.property (i - 1)).2.2
           rw [sub_add_cancel] at h
-          rw [h, (hchain z.1 z.2 i).2.1]⟩
-      invFun := fun q ↦ ⟨fun i ↦ generatingSource I (S i) (q.1 i, q.1 (i + 1)), fun i ↦ by
-        refine ⟨(hedge i _ (q.2.1 i)).1, (hedge i _ (q.2.1 i)).2.trans ?_⟩
-        have h := (mvfderiv_cyclicAction_eq_zero_iff fun i ↦ hS i _ (q.2.1 i)).1 q.2.2 (i + 1)
+          rw [h, (hchain z.val z.property i).2.1]⟩
+      invFun := fun q ↦ ⟨fun i ↦ generatingSource I (S i) (q.val i, q.val (i + 1)), fun i ↦ by
+        refine ⟨(hedge i _ (q.property.1 i)).1, (hedge i _ (q.property.1 i)).2.trans ?_⟩
+        have h := (mvfderiv_cyclicAction_eq_zero_iff fun i ↦ hS i _ (q.property.1 i)).1 q.property.2
+            (i + 1)
         rwa [add_sub_cancel_right] at h⟩
-      left_inv := fun z ↦ Subtype.ext <| funext fun i ↦ (hchain z.1 z.2 i).2.1
+      left_inv := fun z ↦ Subtype.ext <| funext fun i ↦ (hchain z.val z.property i).2.1
       right_inv := fun q ↦ Subtype.ext <| funext fun i ↦ proj_generatingSource _ },
     fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
 
@@ -237,8 +358,8 @@ theorem exists_equiv_fixedPoints_of_generating {S : Q × Q → ℝ} {W : Set (Q 
     (hW : ∀ x ∈ W, ∃ z ∈ D, (z.proj, (φ z).proj) = x) :
     ∃ e : {z : CotangentBundle I Q // z ∈ D ∧ φ z = z} ≃
         {q : Q // (q, q) ∈ W ∧ mvfderiv I (fun x ↦ S (x, x)) q = 0},
-      (∀ z, (e z : Q) = z.1.proj) ∧
-        ∀ q, (e.symm q : CotangentBundle I Q) = generatingSource I S (q.1, q.1) := by
+      (∀ z, (e z : Q) = z.val.proj) ∧
+        ∀ q, (e.symm q : CotangentBundle I Q) = generatingSource I S (q.val, q.val) := by
   obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_generating (N := 1) (S := fun _ ↦ S)
     (W := fun _ ↦ W) (D := fun _ ↦ D) (φ := fun _ ↦ φ) (fun _ ↦ hS) (fun _ ↦ hD) (fun _ ↦ hW)
   -- A constant configuration is critical for the cyclic action exactly when its value is
@@ -266,6 +387,76 @@ theorem exists_equiv_fixedPoints_of_generating {S : Q × Q → ℝ} {W : Set (Q 
       simp only [Equiv.funUnique_apply, forall_const]
       exact and_congr_right (hcrit x)
   exact ⟨e₁.symm.trans (e.trans e₂), fun z ↦ he _ 0, fun q ↦ he' _ 0⟩
+
+/-- **Iterates and critical points.** Suppose that over a set `W ⊆ Q × Q`, on which `S` is
+differentiable, the cotangent relation generated by `S` is the graph of a map `φ` defined on a set
+`D` of covectors, as in `exists_equiv_periodic_of_generating`. Then taking base points along the
+orbit is a bijection `e` from the points `z` of period `N` of `φ` whose iterates
+`z, φ z, …, φ^[N-1] z` lie in `D` onto the critical points of
+`A_N(q) = Σ_i S(q_i, q_(i+1))` on the configurations with every edge `(q_i, q_(i+1))` in `W`: it
+sends `z` to `i ↦ π (φ^[i] z)`, and its inverse sends `q` to the source point
+`(q_0, d₁S(q_0, q_1))`. The least period of `z` need only divide `N`.
+
+A cyclic shift of a critical configuration is the same periodic orbit with another marked point:
+`e z'` is the shift `i ↦ e z (i + 1)` of `e z` exactly when `z' = φ z`. -/
+theorem exists_equiv_iterate_of_generating {S : Q × Q → ℝ} {W : Set (Q × Q)}
+    {D : Set (CotangentBundle I Q)} {φ : CotangentBundle I Q → CotangentBundle I Q}
+    (hS : ∀ x ∈ W, MDifferentiableAt (I.prod I) 𝓘(ℝ) S x)
+    (hD : ∀ z ∈ D, (z.proj, (φ z).proj) ∈ W ∧
+      generatingCorrespondence I I S (z.proj, (φ z).proj) = (z, φ z))
+    (hW : ∀ x ∈ W, ∃ z ∈ D, (z.proj, (φ z).proj) = x) :
+    ∃ e : {z : CotangentBundle I Q // (∀ k < N, φ^[k] z ∈ D) ∧ Function.IsPeriodicPt φ N z} ≃
+        {q : ZMod N → Q // (∀ i, (q i, q (i + 1)) ∈ W) ∧
+          mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun _ ↦ S) q = 0},
+      (∀ z i, (e z : ZMod N → Q) i = (φ^[i.val] z.val).proj) ∧
+      (∀ q, (e.symm q : CotangentBundle I Q) = generatingSource I S (q.val 0, q.val 1)) ∧
+      ∀ z z', ((e z' : ZMod N → Q) = fun i ↦ (e z : ZMod N → Q) (i + 1)) ↔ z'.val = φ z.val := by
+  obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_generating (N := N) (S := fun _ ↦ S)
+    (W := fun _ ↦ W) (D := fun _ ↦ D) (φ := fun _ ↦ φ) (fun _ ↦ hS) (fun _ ↦ hD) (fun _ ↦ hW)
+  refine ⟨(Function.periodicChainEquiv φ D N).symm.trans e, fun z i ↦ ?_, fun q ↦ ?_,
+    fun z z' ↦ ?_⟩
+  · simp [he]
+  · simp [he']
+  -- Pass to the periodic chains `w = c⁻¹ z`, `w' = c⁻¹ z'`, on which the shift of base points is
+  -- the shift of the chains, since a chain is recovered from its base points.
+  obtain ⟨w, rfl⟩ := (Function.periodicChainEquiv φ D N).surjective z
+  obtain ⟨w', rfl⟩ := (Function.periodicChainEquiv φ D N).surjective z'
+  rw [Function.coe_periodicChainEquiv_eq_iff]
+  simp only [Equiv.trans_apply, Equiv.symm_apply_apply]
+  constructor
+  · intro h
+    funext i
+    have hw' := congrFun (congrArg Subtype.val (e.symm_apply_apply w')) i
+    have hw := congrFun (congrArg Subtype.val (e.symm_apply_apply w)) (i + 1)
+    simp only [he'] at hw' hw
+    rw [← hw', ← hw, h]
+  · intro h
+    funext i
+    simp [he, h]
+
+/-- **Unmarked periodic orbits and critical configurations up to cyclic shifts.** Under the
+hypotheses of `exists_equiv_iterate_of_generating`, the periodic orbits of `φ` through points of
+period `N` whose iterates lie in `D`, without a marked point, correspond to the critical points of
+`A_N(q) = Σ_i S(q_i, q_(i+1))` on its configuration domain up to cyclic shifts: the quotients by
+`z ↦ φ z` and by `q ↦ (i ↦ q (i + 1))` are in bijection, sending the class of `z` to the class of
+its configuration of base points `i ↦ π (φ^[i] z)`. -/
+theorem exists_equiv_quot_iterate_of_generating {S : Q × Q → ℝ} {W : Set (Q × Q)}
+    {D : Set (CotangentBundle I Q)} {φ : CotangentBundle I Q → CotangentBundle I Q}
+    (hS : ∀ x ∈ W, MDifferentiableAt (I.prod I) 𝓘(ℝ) S x)
+    (hD : ∀ z ∈ D, (z.proj, (φ z).proj) ∈ W ∧
+      generatingCorrespondence I I S (z.proj, (φ z).proj) = (z, φ z))
+    (hW : ∀ x ∈ W, ∃ z ∈ D, (z.proj, (φ z).proj) = x) :
+    ∃ e : Quot (fun z z' : {z : CotangentBundle I Q //
+          (∀ k < N, φ^[k] z ∈ D) ∧ Function.IsPeriodicPt φ N z} ↦ z'.val = φ z.val) ≃
+        Quot (fun q q' : {q : ZMod N → Q // (∀ i, (q i, q (i + 1)) ∈ W) ∧
+          mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun _ ↦ S) q = 0} ↦
+            q'.val = fun i ↦ q.val (i + 1)),
+      ∀ z q, (∀ i, q.val i = (φ^[i.val] z.val).proj) → e (Quot.mk _ z) = Quot.mk _ q := by
+  obtain ⟨e, he, -, hshift⟩ := exists_equiv_iterate_of_generating (N := N) hS hD hW
+  refine ⟨Quot.congr e fun z z' ↦ (hshift z z').symm, fun z q hq ↦ ?_⟩
+  rw [Quot.congr_mk]
+  congr
+  exact Subtype.ext <| funext fun i ↦ (he z i).trans (hq i).symm
 
 end CotangentBundle
 

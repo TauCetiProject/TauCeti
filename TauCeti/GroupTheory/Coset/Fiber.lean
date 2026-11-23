@@ -84,8 +84,8 @@ fiber over `b` is `a` plus the kernel. Mathlib's `AddMonoidHom.fiberEquivKer` is
 def MonoidHom.subtypeFiberEquivKer {G H : Type*} [Group G] [MulOneClass H] (f : G →* H) {b : H}
     {a : G} (ha : f a = b) : {x : G // f x = b} ≃ f.ker where
   toFun x := ⟨a⁻¹ * x, by
-    rw [MonoidHom.mem_ker, map_mul, x.2, ← ha, ← map_mul, inv_mul_cancel, map_one]⟩
-  invFun t := ⟨a * t, by rw [map_mul, MonoidHom.mem_ker.mp t.2, mul_one, ha]⟩
+    rw [MonoidHom.mem_ker, map_mul, x.property, ← ha, ← map_mul, inv_mul_cancel, map_one]⟩
+  invFun t := ⟨a * t, by rw [map_mul, MonoidHom.mem_ker.mp t.property, mul_one, ha]⟩
   left_inv _ := Subtype.ext (mul_inv_cancel_left a _)
   right_inv _ := Subtype.ext (inv_mul_cancel_left a _)
 
@@ -164,7 +164,7 @@ theorem MonoidHom.prod_comp_of_surjective {G H M : Type*} [Group G] [MulOneClass
   obtain ⟨a, ha⟩ := hf y
   rw [← f.card_fiber_eq_card_ker ha, Nat.card_eq_fintype_card, ← Finset.card_univ,
     ← Finset.prod_const]
-  exact Finset.prod_congr rfl fun x _ ↦ by rw [x.2]
+  exact Finset.prod_congr rfl fun x _ ↦ by rw [x.property]
 
 /-- **The preimage of a set under a surjective homomorphism** is as large as the set times the
 kernel: over each point of `t` the fiber is a copy of the kernel. As an identity of `Nat.card`s

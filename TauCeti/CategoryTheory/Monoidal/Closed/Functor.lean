@@ -163,19 +163,13 @@ theorem ihomComparison_whiskerLeft {A A' : C} [Closed A] [Closed A']
     (ihomComparison F A).whiskerBottom (pre (F.map f)) =
       (ihomComparison F A').whiskerTop (pre f) := by
   unfold ihomComparison pre
-  have vcomp₁ := mateEquiv_conjugateEquiv_vcomp
-    (ihom.adjunction A) (ihom.adjunction (F.obj A)) (ihom.adjunction (F.obj A'))
-    (laxCommTensorLeft F A) ((curriedTensor D).map (F.map f))
-  have vcomp₂ := conjugateEquiv_mateEquiv_vcomp
-    (ihom.adjunction A) (ihom.adjunction A') (ihom.adjunction (F.obj A'))
-    ((curriedTensor C).map f) (laxCommTensorLeft F A')
-  rw [← vcomp₁, ← vcomp₂]
-  unfold TwoSquare.whiskerLeft TwoSquare.whiskerRight
-  congr 1
+  -- Across the mate bijection, the claim is that the tensorator square of `A'` whiskered on its
+  -- left side by `f` agrees with that of `A` whiskered on its right side by `F.map f`.
+  refine (((ihom.adjunction A).whiskerLeft_eq_whiskerRight_iff_mateEquiv
+    (ihom.adjunction A') (ihom.adjunction (F.obj A')) (ihom.adjunction (F.obj A))).1 ?_).symm
   ext B
-  simp only [Functor.comp_obj, curriedTensor_obj_obj, NatTrans.comp_app,
-    Functor.whiskerLeft_app, curriedTensor_map_app, Functor.whiskerRight_app,
-    laxCommTensorLeft_app]
+  simp only [Functor.comp_obj, curriedTensor_obj_obj, TwoSquare.whiskerLeft_app,
+    TwoSquare.whiskerRight_app, curriedTensor_map_app, laxCommTensorLeft_app]
   rw [Functor.LaxMonoidal.μ_natural_left]
 
 

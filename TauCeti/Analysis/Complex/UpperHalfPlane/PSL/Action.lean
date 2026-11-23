@@ -100,7 +100,7 @@ theorem smul_eq_self_of_mem_center (c : SL(2, R)) (hc : c ∈ Subgroup.center SL
     refine smul_eq_smul_of_coe_eq_smul (c := algebraMap R ℝ r) ?_ τ
     rw [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
     ext i j
-    simp [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+    simp [Matrix.SpecialLinearGroup.map_apply_coe, Matrix.map_apply,
       ← hrc, Matrix.scalar, Matrix.diagonal_apply, Matrix.one_apply,
       apply_ite (algebraMap R ℝ)]
   -- rewrite the action through its `compHom` definition
