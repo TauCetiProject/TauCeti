@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
@@ -95,12 +96,9 @@ theorem bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm
       (hξ.trans (TauCeti.Bundle.mfderiv_comp_mk_trivializationAt_symm_zero_apply hΦ w)))
     exact (congrArg Prod.snd h').symm
   have : FiniteDimensional 𝕜 P := Module.Finite.of_injective L hinj
-  have hfin : Module.finrank 𝕜 P = Module.finrank 𝕜 (i.NormalSpace s hn) := by
-    have hsum := i.finrank_normalSpace_add_finrank s hn
-    -- The tangent spaces of `S` and `M` are by definition the model spaces `E'` and `E`.
-    have hE : Module.finrank 𝕜 (TangentSpace I (i s)) = Module.finrank 𝕜 E := rfl
-    have hE' : Module.finrank 𝕜 (TangentSpace J s) = Module.finrank 𝕜 E' := rfl
-    omega
+  -- The tangent spaces of `S` and `M` are by definition the model spaces `E'` and `E`.
+  have hfin : Module.finrank 𝕜 P = Module.finrank 𝕜 (i.NormalSpace s hn) :=
+    hdim.trans (i.finrank_normalSpace s hn).symm
   exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mp hinj⟩
 
 /-- **The fibres of a local diffeomorphism out of a vector bundle are transverse to the image of
@@ -115,8 +113,7 @@ theorem bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm_of_isInverti
   refine bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm hn ?_ hΦi hΦ'.injective
   -- The tangent space `E' × P` of the total space is isomorphic to the tangent space `E` of `M`.
   have hdim := finrank_eq_of_isInvertible_mfderiv hΦ'
-  obtain ⟨e, -⟩ := hΦ'
-  have : FiniteDimensional 𝕜 (E' × P) := (e.toLinearEquiv : (E' × P) ≃ₗ[𝕜] E).symm.finiteDimensional
+  have : FiniteDimensional 𝕜 (E' × P) := finiteDimensional_of_injective_mfderiv hΦ'.injective
   have : FiniteDimensional 𝕜 E' :=
     Module.Finite.of_injective (LinearMap.inl 𝕜 E' P) LinearMap.inl_injective
   have : FiniteDimensional 𝕜 P :=

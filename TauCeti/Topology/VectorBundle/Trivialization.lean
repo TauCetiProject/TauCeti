@@ -85,7 +85,10 @@ including its zero extension off the base set
 vector bundle with finite-dimensional model fibre are closed (`VectorBundle.isClosed_submodule`).
 
 Reconstruction at equal base points agrees with the equality cast between fibres
-(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`).
+(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`). Over the base set of a linear
+trivialization, the restriction of a function on the total space to a fibre is its reading in the
+trivialization composed with the fibre equivalence
+(`Bundle.Trivialization.comp_mk_eq_comp_continuousLinearEquivAt`).
 
 A vector bundle with model fibre `𝕜` is a line bundle. In a fibre `E b` a nonzero vector `v` is a
 basis, and `TauCeti.VectorBundle.lineCoord 𝕜 hv : E b ≃L[𝕜] 𝕜` is the coordinate along it, so that
@@ -281,6 +284,16 @@ theorem homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt (he : e.baseSet 
       ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.snd) := by
   rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
   exact congrArg (TotalSpace.mk' F w.proj) (ContinuousLinearEquiv.apply_symm_apply _ _).symm
+
+/-- **Fibre restrictions read in a linear trivialization.** Over a point `b` of the base set of
+`e`, the restriction `v ↦ g ⟨b, v⟩` of a function on the total space to the fibre over `b` is its
+reading `w ↦ g ⟨b, e.symm b w⟩` in `e`, composed with the fibre equivalence
+`e.continuousLinearEquivAt 𝕜 b`. -/
+theorem comp_mk_eq_comp_continuousLinearEquivAt {X : Type*} (g : TotalSpace F E → X) {b : B}
+    (hb : b ∈ e.baseSet) :
+    (fun v : E b ↦ g ⟨b, v⟩) =
+      (fun w : F ↦ g ⟨b, e.symm b w⟩) ∘ e.continuousLinearEquivAt 𝕜 b hb :=
+  funext fun v ↦ by simp [e.symm_apply_apply_mk hb]
 
 /-- **Convergence in a vector bundle, read in a linear trivialization.** Vectors `ξ i` over points
 `x i` converge in the total space to a vector `ξ₀` over a point `x₀` of the base set of `e`

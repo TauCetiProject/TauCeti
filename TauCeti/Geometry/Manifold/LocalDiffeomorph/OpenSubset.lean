@@ -54,6 +54,8 @@ subset of the target manifold.
   diffeomorphism.
 * `TauCeti.bijective_mfderiv_subtype_val`, `TauCeti.bijective_mfderiv_inclusion`: the inclusions
   of an open subset in `M` and in a larger open subset have bijective differentials.
+* `Diffeomorph.isLocalDiffeomorph_subtypeVal_comp`: a diffeomorphism onto an open subset of `M`,
+  read as a map into `M`, is a local diffeomorphism.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
   agrees near a point of its source with a partial diffeomorphism out of the ambient manifold.
 * `PartialDiffeomorph.subtypeVal`: the inclusion of a nonempty open subset as a partial
@@ -402,6 +404,23 @@ theorem bijective_mfderiv_inclusion {U V : TopologicalSpace.Opens M} (h : V ≤ 
     (hcomp ▸ bijective_mfderiv_subtype_val y)
 
 end TauCeti
+
+namespace Diffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {G : Type*} [TopologicalSpace G]
+  {J : ModelWithCorners 𝕜 F G} {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+
+/-- A `C^n` diffeomorphism `Ψ` of `N` onto an open subset `U` of `M`, read as a map into `M`, is a
+`C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_subtypeVal_comp {U : TopologicalSpace.Opens M}
+    (Ψ : N ≃ₘ^n⟮J, I⟯ U) : IsLocalDiffeomorph J I n (fun x ↦ (Ψ x : M)) := fun x ↦
+  (Ψ.isLocalDiffeomorph x).comp (K := I) (P := M) (TauCeti.isLocalDiffeomorph_subtype_val _)
+
+end Diffeomorph
 
 namespace PartialDiffeomorph
 

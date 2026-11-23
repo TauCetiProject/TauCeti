@@ -8,7 +8,10 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Morse.Bott.Slice
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.ZeroSection
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # A Morse–Bott function along the fibres of a tubular neighbourhood
@@ -58,10 +61,14 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsNondegenerateCriticalSubmanifold.isNondegenerateCriticalPoint_comp_diffeomorph_mk` and
   `IsCriticalSubmanifold.morseIndex_comp_diffeomorph_mk`: the same for the intrinsic fibre
   restrictions of `f` read through a tubular neighbourhood, when the fibres are normed.
+* `IsCriticalSubmanifold.fderiv_fderiv_comp_mk_apply`: the Hessian of the intrinsic fibre
+  restriction `v ↦ f (Φ ⟨s, v⟩)` is the normal Hessian on vertical vectors, when the fibres are
+  normed.
 
-In the namespace `TauCeti.Bundle`, `isNondegenerateCriticalPoint_comp_mk_iff` and
-`morseIndex_comp_mk` compare the intrinsic fibre restriction `v ↦ g ⟨s, v⟩` of any function `g`
-on the total space with its reading in the trivialization at `s`.
+In the namespace `TauCeti.Bundle`, `isNondegenerateCriticalPoint_comp_mk_iff`,
+`morseIndex_comp_mk` and `fderiv_fderiv_comp_mk_apply` compare the intrinsic fibre restriction
+`v ↦ g ⟨s, v⟩` of any function `g` on the total space with its reading in the trivialization at
+`s`.
 
 ## References
 
@@ -87,15 +94,6 @@ variable [∀ s, NormedAddCommGroup (V s)] [∀ s, NormedSpace ℝ (V s)]
 
 namespace Bundle
 
-/-- The intrinsic fibre restriction of `g` over `s` is its reading in the trivialization at `s`,
-composed with that trivialization on the fibre. -/
-private theorem comp_mk_eq_comp_continuousLinearEquivAt (g : TotalSpace P V → ℝ) (s : S) :
-    (fun v : V s ↦ g ⟨s, v⟩) =
-      (fun w : P ↦ g ⟨s, (trivializationAt P V s).symm s w⟩) ∘
-        (trivializationAt P V s).continuousLinearEquivAt ℝ s (mem_baseSet_trivializationAt P V s) :=
-  funext fun v ↦ by
-    simp [(trivializationAt P V s).symm_apply_apply_mk (mem_baseSet_trivializationAt P V s)]
-
 /-- A function on the total space of a vector bundle with normed fibres has a nondegenerate
 critical point at `0` along the fibre over `s` exactly when it has one along the fibre read in the
 trivialization at `s`. -/
@@ -104,7 +102,8 @@ theorem isNondegenerateCriticalPoint_comp_mk_iff (g : TotalSpace P V → ℝ) (s
       IsNondegenerateCriticalPoint (fun w : P ↦ g ⟨s, (trivializationAt P V s).symm s w⟩) 0 := by
   set e := (trivializationAt P V s).continuousLinearEquivAt ℝ s
     (mem_baseSet_trivializationAt P V s)
-  have hcomp := comp_mk_eq_comp_continuousLinearEquivAt g s
+  have hcomp := (trivializationAt P V s).comp_mk_eq_comp_continuousLinearEquivAt ℝ g
+    (mem_baseSet_trivializationAt P V s)
   -- The reading in the trivialization is the intrinsic fibre restriction composed with `e⁻¹`.
   have hcomp' : (fun w : P ↦ g ⟨s, (trivializationAt P V s).symm s w⟩) =
       (fun v : V s ↦ g ⟨s, v⟩) ∘ e.symm := by
@@ -133,8 +132,26 @@ theorem morseIndex_comp_mk {g : TotalSpace P V → ℝ} {s : S}
       morseIndex (fun w : P ↦ g ⟨s, (trivializationAt P V s).symm s w⟩) 0 := by
   set e := (trivializationAt P V s).continuousLinearEquivAt ℝ s
     (mem_baseSet_trivializationAt P V s)
-  rw [comp_mk_eq_comp_continuousLinearEquivAt g s, morseIndex_comp ((map_zero e).symm ▸ hg)
-    e.contDiff.contDiffAt ((map_zero e).symm ▸ hcrit) (e.fderiv ▸ ⟨e, rfl⟩), map_zero]
+  rw [(trivializationAt P V s).comp_mk_eq_comp_continuousLinearEquivAt ℝ g
+      (mem_baseSet_trivializationAt P V s),
+    morseIndex_comp ((map_zero e).symm ▸ hg) e.contDiff.contDiffAt ((map_zero e).symm ▸ hcrit)
+      (e.fderiv ▸ ⟨e, rfl⟩), map_zero]
+
+/-- The second derivative at `0` of the intrinsic fibre restriction over `s` of a function on the
+total space of a vector bundle with normed fibres is that of its reading in the trivialization at
+`s`, evaluated on the images of the vectors under that trivialization. No differentiability is
+needed. -/
+theorem fderiv_fderiv_comp_mk_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (g : TotalSpace P V → G) (s : S) (u v : V s) :
+    fderiv ℝ (fderiv ℝ (fun v : V s ↦ g ⟨s, v⟩)) 0 u v =
+      fderiv ℝ (fderiv ℝ (fun w : P ↦ g ⟨s, (trivializationAt P V s).symm s w⟩)) 0
+        ((trivializationAt P V s).continuousLinearEquivAt ℝ s
+          (mem_baseSet_trivializationAt P V s) u)
+        ((trivializationAt P V s).continuousLinearEquivAt ℝ s
+          (mem_baseSet_trivializationAt P V s) v) := by
+  rw [(trivializationAt P V s).comp_mk_eq_comp_continuousLinearEquivAt ℝ g
+      (mem_baseSet_trivializationAt P V s),
+    ContinuousLinearEquiv.fderiv_fderiv_comp_right_apply_apply, map_zero]
 
 end Bundle
 
@@ -161,25 +178,6 @@ private theorem comp_mk_trivializationAt_symm_zero
     (hΦi : ∀ᶠ s' in 𝓝 s, Φ (zeroSection P V s') = i s') :
     Φ ⟨s, (trivializationAt P V s).symm s 0⟩ = i s :=
   (congrArg Φ (mk_trivializationAt_symm_zero (F := P) (E := V) ℝ s)).trans hΦi.self_of_nhds
-
-omit [I.Boundaryless] [IsManifold I 2 M] [∀ s, Module ℝ (V s)] [VectorBundle ℝ P V] in
-/-- If `Φ` has injective derivative at `0_s`, the model fibre is finite-dimensional. -/
-private theorem finiteDimensional_of_injective_mfderiv
-    (hΦ' : Injective (mfderiv (J.prod 𝓘(ℝ, P)) I Φ (zeroSection P V s))) :
-    FiniteDimensional ℝ P :=
-  -- The tangent spaces of the total space and of `M` are by definition `E' × P` and `E`.
-  let L : P →ₗ[ℝ] E :=
-    (mfderiv (J.prod 𝓘(ℝ, P)) I Φ (zeroSection P V s)).toLinearMap ∘ₗ LinearMap.inr ℝ E' P
-  Module.Finite.of_injective L (hΦ'.comp LinearMap.inr_injective)
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] [∀ s, AddCommMonoid (V s)]
-  [∀ s, Module ℝ (V s)] [VectorBundle ℝ P V] in
-/-- A diffeomorphism of the total space onto an open subset of `M` is a local diffeomorphism into
-`M` at every point. -/
-private theorem isLocalDiffeomorphAt_coe_diffeomorph
-    (Ψ : TotalSpace P V ≃ₘ^m⟮J.prod 𝓘(ℝ, P), I⟯ W) (x : TotalSpace P V) :
-    IsLocalDiffeomorphAt (J.prod 𝓘(ℝ, P)) I m (fun x ↦ (Ψ x : M)) x :=
-  (Ψ.isLocalDiffeomorph x).comp (K := I) (P := M) (isLocalDiffeomorph_subtype_val _)
 
 namespace IsCriticalSubmanifold
 
@@ -265,7 +263,7 @@ theorem morseIndex_comp_diffeomorph_mk_trivializationAt_symm (hm : 2 ≤ m)
       manifoldMorseIndex I f (i s) :=
   h.morseIndex_comp_mk_trivializationAt_symm_of_isLocalDiffeomorphAt hn hm
     (Filter.Eventually.of_forall hΨi)
-    (isLocalDiffeomorphAt_coe_diffeomorph Ψ _)
+    (Ψ.isLocalDiffeomorph_subtypeVal_comp _)
 
 end IsCriticalSubmanifold
 
@@ -287,7 +285,9 @@ theorem isNondegenerateCriticalPoint_comp_mk_trivializationAt_symm
     (hΦ' : Injective (mfderiv (J.prod 𝓘(ℝ, P)) I Φ (zeroSection P V s))) :
     IsNondegenerateCriticalPoint
       (fun w : P ↦ f (Φ ⟨s, (trivializationAt P V s).symm s w⟩)) 0 :=
-  have := finiteDimensional_of_injective_mfderiv hΦ'
+  have : FiniteDimensional ℝ (E' × P) := TauCeti.finiteDimensional_of_injective_mfderiv hΦ'
+  have : FiniteDimensional ℝ P :=
+    Module.Finite.of_injective (LinearMap.inr ℝ E' P) LinearMap.inr_injective
   h.isNondegenerateCriticalPoint_comp hn (comp_mk_trivializationAt_symm_zero hΦi)
     hΦ.comp_mk_trivializationAt_symm
     (bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm hn hdim hΦi hΦ')
@@ -304,7 +304,10 @@ theorem isNondegenerateCriticalPoint_comp_mk_trivializationAt_symm_of_isLocalDif
     IsNondegenerateCriticalPoint
       (fun w : P ↦ f (Φ ⟨s, (trivializationAt P V s).symm s w⟩)) 0 :=
   have hΦ' := hΦ.isInvertible_mfderiv (lt_of_lt_of_le (by norm_num) hm).ne'
-  have := finiteDimensional_of_injective_mfderiv hΦ'.injective
+  have : FiniteDimensional ℝ (E' × P) :=
+    TauCeti.finiteDimensional_of_injective_mfderiv hΦ'.injective
+  have : FiniteDimensional ℝ P :=
+    Module.Finite.of_injective (LinearMap.inr ℝ E' P) LinearMap.inr_injective
   h.isNondegenerateCriticalPoint_comp hn (comp_mk_trivializationAt_symm_zero hΦi)
     (hΦ.contMDiffAt.of_le hm).comp_mk_trivializationAt_symm
     (bijective_normalClass_mfderiv_comp_mk_trivializationAt_symm_of_isInvertible hn hΦi hΦ')
@@ -324,7 +327,7 @@ theorem isNondegenerateCriticalPoint_comp_diffeomorph_mk_trivializationAt_symm (
       (fun w : P ↦ f (Ψ ⟨s, (trivializationAt P V s).symm s w⟩)) 0 :=
   h.isNondegenerateCriticalPoint_comp_mk_trivializationAt_symm_of_isLocalDiffeomorphAt hn hm
     (Filter.Eventually.of_forall hΨi)
-    (isLocalDiffeomorphAt_coe_diffeomorph Ψ _)
+    (Ψ.isLocalDiffeomorph_subtypeVal_comp _)
 
 end IsNondegenerateCriticalSubmanifold
 
@@ -334,6 +337,27 @@ section NormedFibre
 
 variable [∀ s, NormedAddCommGroup (V s)] [∀ s, NormedSpace ℝ (V s)]
   [FiberBundle P V] [VectorBundle ℝ P V]
+
+omit [FiniteDimensional ℝ E] in
+/-- **The Hessian of an intrinsic fibre restriction is the normal Hessian.** Let `i` be a critical
+submanifold of `f`, and let `Φ` be a map out of a vector bundle `V → S` with normed fibres, with
+`Φ (0_s') = i s'` for `s'` near `s`, `C²` at `0_s`. Then the Hessian at `0` of the fibre
+restriction `v ↦ f (Φ ⟨s, v⟩)` of `f ∘ Φ` over `s` is the normal Hessian at `s` evaluated on the
+normal classes of the images under the derivative of `Φ` at `0_s` of the vertical vectors given by
+`u` and `v`, read in the trivialization `e` at `s`. -/
+theorem IsCriticalSubmanifold.fderiv_fderiv_comp_mk_apply (h : i.IsCriticalSubmanifold f)
+    (hΦi : ∀ᶠ s' in 𝓝 s, Φ (zeroSection P V s') = i s')
+    (hΦ : ContMDiffAt (J.prod 𝓘(ℝ, P)) I 2 Φ (zeroSection P V s)) (u v : V s) :
+    fderiv ℝ (fderiv ℝ (fun v : V s ↦ f (Φ ⟨s, v⟩))) 0 u v =
+      h.normalHessian hn s
+        (i.normalClass s hn (mfderiv (J.prod 𝓘(ℝ, P)) I Φ (zeroSection P V s)
+          (0, (trivializationAt P V s).continuousLinearEquivAt ℝ s
+            (mem_baseSet_trivializationAt P V s) u)))
+        (i.normalClass s hn (mfderiv (J.prod 𝓘(ℝ, P)) I Φ (zeroSection P V s)
+          (0, (trivializationAt P V s).continuousLinearEquivAt ℝ s
+            (mem_baseSet_trivializationAt P V s) v))) := by
+  rw [TauCeti.Bundle.fderiv_fderiv_comp_mk_apply (fun x ↦ f (Φ x)) s u v]
+  exact h.fderiv_fderiv_comp_mk_trivializationAt_symm_apply hn hΦi hΦ _ _
 
 include hn in
 /-- **A Morse–Bott function along the fibres of a tubular neighbourhood, intrinsically.** Let `i`
@@ -359,7 +383,7 @@ theorem IsCriticalSubmanifold.morseIndex_comp_diffeomorph_mk (h : i.IsCriticalSu
     (hm : 2 ≤ m) (Ψ : TotalSpace P V ≃ₘ^m⟮J.prod 𝓘(ℝ, P), I⟯ W)
     (hΨi : ∀ s, (Ψ (zeroSection P V s) : M) = i s) (s : S) :
     morseIndex (fun v : V s ↦ f (Ψ ⟨s, v⟩)) 0 = manifoldMorseIndex I f (i s) := by
-  have hΨ := isLocalDiffeomorphAt_coe_diffeomorph Ψ (zeroSection P V s)
+  have hΨ := Ψ.isLocalDiffeomorph_subtypeVal_comp (zeroSection P V s)
   have hΨi' : ∀ᶠ s' in 𝓝 s, (Ψ (zeroSection P V s') : M) = i s' := Filter.Eventually.of_forall hΨi
   have hΨ2 := hΨ.contMDiffAt.of_le hm
   -- The fibre slice read in the trivialization at `s` is `C²` and critical at `0`.

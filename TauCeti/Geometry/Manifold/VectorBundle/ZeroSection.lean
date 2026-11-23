@@ -205,10 +205,11 @@ theorem mfderiv_comp_mk_trivializationAt_symm_zero_apply {E' H' M : Type*}
     (hΦ : MDifferentiableAt (I.prod 𝓘(𝕜, F)) I' Φ (zeroSection F V b)) (w : F) :
     mfderiv 𝓘(𝕜, F) I' (fun w : F ↦ Φ ⟨b, (trivializationAt F V b).symm b w⟩) 0 w =
       mfderiv (I.prod 𝓘(𝕜, F)) I' Φ (zeroSection F V b) (0, w) := by
-  have h0 := mk_trivializationAt_symm_zero (F := F) (E := V) 𝕜 b
   have hd := hasMFDerivAt_mk_trivializationAt_symm (I := I) (F := F) (V := V) b 0
-  rw [← h0] at hΦ ⊢
-  exact congrArg (· w) ((hΦ.hasMFDerivAt.comp 0 hd).mfderiv)
+  have h := mfderiv_comp_apply_of_eq 0 hΦ hd.mdifferentiableAt
+    (mk_trivializationAt_symm_zero (F := F) (E := V) 𝕜 b) w
+  rw [hd.mfderiv] at h
+  exact h
 
 /-- The differential of the zero section is the horizontal summand of the canonical
 splitting. -/
