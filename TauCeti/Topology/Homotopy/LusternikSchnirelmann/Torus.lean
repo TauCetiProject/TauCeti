@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.Homotopy.AddCircle
 public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Sphere
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional

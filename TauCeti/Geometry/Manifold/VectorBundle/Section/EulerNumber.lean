@@ -243,7 +243,7 @@ theorem exists_contMDiffSection_eulerClass_eq_sum_sign [CompactSpace M] [IsManif
               (oM.orientationAt z).map _ D.toLinearEquiv = o z
           then 1 else -1 := by
   obtain ⟨s, hreg, hZ⟩ := exists_contMDiffSection_regular_finite_zero_of_finrank_eq
-    (X := X) (F := F) (V := E) (hX.trans hF.symm)
+    (n := ∞) (X := X) (F := F) (V := E) (hX.trans hF.symm)
   refine ⟨s, hZ, hreg, ?_⟩
   exact evalFundamentalClass_eulerClass_eq_sum_sign hX o hF oM s.contMDiff.continuous
     (fun z _ ↦ (s.contMDiff z).mdifferentiableAt (by simp)) hreg hZ
