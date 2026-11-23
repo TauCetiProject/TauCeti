@@ -236,6 +236,15 @@ theorem schreierInvHom_of (y : β) :
     schreierInvHom a e W (PresentedGroup.of y) = (PresentedGroup.of y)⁻¹ :=
   PresentedGroup.toGroup.of _
 
+/-- **Inverting every generator on a rewritten word** flips the representative it is read from:
+the image of the rewrite of `L` from representative `b` is the rewrite of `L` from `!b`. -/
+private theorem schreierInvHom_mk_mk_schreierWord (b : Bool) (L : PresentationWord α) :
+    schreierInvHom a e W (PresentedGroup.mk _ (FreeGroup.mk (schreierWord a e b L))) =
+      PresentedGroup.mk _ (FreeGroup.mk (schreierWord a e (!b) L)) := by
+  change FreeGroup.lift (fun y => (PresentedGroup.of y : PresentedGroup (schreierRelators a e W))⁻¹)
+    (FreeGroup.mk (schreierWord a e b L)) = _
+  rw [FreeGroup.lift_inv_mk, FreeGroup.lift_mk, ← PresentedGroup.mk_mk, ← schreierWord_not]
+
 /-- Inverting every generator is an involution. -/
 @[simp]
 theorem schreierInvHom_apply_apply (g : PresentedGroup (schreierRelators a e W)) :
@@ -524,13 +533,7 @@ private theorem lift_semidirectLetter_mk (L : PresentationWord α) :
       rw [schreierWord_cons_eq_append, ← FreeGroup.mul_mk, map_mul, mk_mk_schreierWord_singleton,
         Bool.not_false]
       congr 1
-      calc
-        _ = FreeGroup.lift
-            (fun y => (PresentedGroup.of y : PresentedGroup (schreierRelators a e W))⁻¹)
-            (FreeGroup.mk (schreierWord a e false L)) := rfl
-        _ = _ := by
-          rw [FreeGroup.lift_inv_mk, FreeGroup.lift_mk, ← PresentedGroup.mk_mk, ← schreierWord_not,
-            Bool.not_false]
+      rw [schreierInvHom_mk_mk_schreierWord, Bool.not_false]
     · simp only [semidirectLetter, SemidirectProduct.mul_right, List.length_cons, Nat.cast_succ,
         ofAdd_add]
       exact mul_comm _ _
