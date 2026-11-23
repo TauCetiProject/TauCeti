@@ -171,7 +171,7 @@ instance instSMulCommClassLocalizationAtPrimeUnderInt {G : Type*} [Monoid G]
 
 /-- For any prime ideal `p` of `ℤ`, the residue field of `Localization.AtPrime p` is perfect:
 it is isomorphic to `ℚ` when `p = ⊥` and to `ZMod q` when `p = (q)` is nonzero. -/
-instance instPerfectFieldResidueFieldLocalizationAtPrimeInt (p : Ideal ℤ) [hpprime : p.IsPrime] :
+instance instPerfectFieldResidueFieldLocalizationAtPrimeInt (p : Ideal ℤ) [p.IsPrime] :
     PerfectField (ResidueField (Localization.AtPrime p)) := by
   by_cases hp : p = ⊥
   · subst hp
