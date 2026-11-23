@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
@@ -61,11 +60,6 @@ The second part of the file describes the operators on these functions when `u` 
 
 * `BesselPotentialSpace.lineDerivCLM`: the directional derivative
   `H^{s+1,p}(E, F) →L[ℂ] H^{s,p}(E, F)` for `1 < p < ∞`.
-* `BesselPotentialSpace.lineDerivCLM_add`, `BesselPotentialSpace.lineDerivCLM_smul`, and
-  relatives: it is linear in the direction `v`.
-* `BesselPotentialSpace.inclusion_lineDerivCLM`: it commutes with the inclusions
-  `H^{s,p} ⊆ H^{r,p}`.
-* `BesselPotentialSpace.lineDerivCLM_comm`: directional derivatives commute.
 * `BesselPotentialSpace.laplacianCLM`: the Laplacian `H^{s+2}(E, F) →L[ℂ] H^s(E, F)`.
 * `BesselPotentialSpace.ofRealSobolevFunction`: the element of `H^{s,p}(E)` of a real function in
   `realSobolevFunctions E s p`.
@@ -106,60 +100,6 @@ def lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) :
 theorem toDistr_lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) (u : H^{s + 1, p}(E, F)) :
     (lineDerivCLM hp hp_top v u).toDistr = ∂_{v} u.toDistr := by
   simp [lineDerivCLM]
-
-/-- On Schwartz functions `lineDerivCLM hp hp_top v` is the derivative of Schwartz functions. -/
-@[simp]
-theorem lineDerivCLM_toBesselPotentialSpaceCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E)
-    (f : 𝓢(E, F)) :
-    lineDerivCLM hp hp_top v (SchwartzMap.toBesselPotentialSpaceCLM (s + 1) p f) =
-      SchwartzMap.toBesselPotentialSpaceCLM s p (∂_{v} f) :=
-  ext (by simp [lineDerivOp_toTemperedDistributionCLM_eq])
-
-/-- The derivative in the direction `0` vanishes. -/
-@[simp]
-theorem lineDerivCLM_zero (hp : 1 < p) (hp_top : p ≠ ∞) :
-    (lineDerivCLM hp hp_top 0 : H^{s + 1, p}(E, F) →L[ℂ] H^{s, p}(E, F)) = 0 :=
-  ContinuousLinearMap.ext fun u ↦ ext (by simp)
-
-/-- `∂_{v + w} = ∂_v + ∂_w`. -/
-theorem lineDerivCLM_add (hp : 1 < p) (hp_top : p ≠ ∞) (v w : E) :
-    (lineDerivCLM hp hp_top (v + w) : H^{s + 1, p}(E, F) →L[ℂ] H^{s, p}(E, F)) =
-      lineDerivCLM hp hp_top v + lineDerivCLM hp hp_top w :=
-  ContinuousLinearMap.ext fun u ↦ ext (by simp [LineDerivAdd.lineDerivOp_left_add])
-
-/-- `∂_{-v} = -∂_v`. -/
-@[simp]
-theorem lineDerivCLM_neg (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) :
-    (lineDerivCLM hp hp_top (-v) : H^{s + 1, p}(E, F) →L[ℂ] H^{s, p}(E, F)) =
-      -lineDerivCLM hp hp_top v :=
-  ContinuousLinearMap.ext fun u ↦ ext (by simp)
-
-/-- `∂_{v - w} = ∂_v - ∂_w`. -/
-theorem lineDerivCLM_sub (hp : 1 < p) (hp_top : p ≠ ∞) (v w : E) :
-    (lineDerivCLM hp hp_top (v - w) : H^{s + 1, p}(E, F) →L[ℂ] H^{s, p}(E, F)) =
-      lineDerivCLM hp hp_top v - lineDerivCLM hp hp_top w := by
-  rw [sub_eq_add_neg, lineDerivCLM_add, lineDerivCLM_neg, ← sub_eq_add_neg]
-
-/-- `∂_{c • v} = c • ∂_v` for real `c`. -/
-theorem lineDerivCLM_smul (hp : 1 < p) (hp_top : p ≠ ∞) (c : ℝ) (v : E) :
-    (lineDerivCLM hp hp_top (c • v) : H^{s + 1, p}(E, F) →L[ℂ] H^{s, p}(E, F)) =
-      (c : ℂ) • lineDerivCLM hp hp_top v :=
-  ContinuousLinearMap.ext fun u ↦ ext (by
-    rw [_root_.smul_apply, toDistr_smul, toDistr_lineDerivCLM, toDistr_lineDerivCLM,
-      LineDerivLeftSMul.lineDerivOp_left_smul, Complex.coe_smul])
-
-/-- The directional derivative commutes with the inclusions `H^{s,p} ⊆ H^{r,p}`. -/
-theorem inclusion_lineDerivCLM {r : ℝ} (hp : 1 < p) (hp_top : p ≠ ∞) (h : r ≤ s) (v : E)
-    (u : H^{s + 1, p}(E, F)) :
-    inclusion h (lineDerivCLM hp hp_top v u) =
-      lineDerivCLM hp hp_top v (inclusion (by linarith : r + 1 ≤ s + 1) u) :=
-  ext (by simp)
-
-/-- Directional derivatives commute: `∂_v ∂_w u = ∂_w ∂_v u`. -/
-theorem lineDerivCLM_comm (hp : 1 < p) (hp_top : p ≠ ∞) (v w : E) (u : H^{s + 1 + 1, p}(E, F)) :
-    lineDerivCLM hp hp_top v (lineDerivCLM hp hp_top w u) =
-      lineDerivCLM hp hp_top w (lineDerivCLM hp hp_top v u) :=
-  ext (by simp [lineDerivOp_comm _ v w])
 
 end lineDerivCLM
 

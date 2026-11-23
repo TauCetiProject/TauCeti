@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+public import TauCeti.Analysis.Sobolev.BesselPotential.FourierWeight
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Directional derivatives on `H^s` and the Plancherel identity for the norms
@@ -34,12 +34,14 @@ normalization of the Fourier transform: the Bessel potential is the multiplier
 
 ## The argument
 
-The `H^{r+1}` norm of `u` is the `L²` norm of `W = 𝓕 u.toLp = ⟨ξ⟩^{r+1} 𝓕 u`, where
-`⟨ξ⟩ = (1 + ‖ξ‖²)^{1/2}` (`BesselPotentialSpace.toTemperedDistribution_fourier_toLp`). The
-corresponding `L²` Fourier transforms of `u` and `∂_m u` at order `r` are `⟨ξ⟩⁻¹ W` and
-`2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹ W`, so their squared norms are `∫ ⟨ξ⟩⁻² ‖W‖²` and
-`∫ 4π² ⟪ξ, m⟫² ⟨ξ⟩⁻² ‖W‖²` (`BesselPotentialSpace.norm_inclusion_sq_eq_integral`). Parseval's
-identity `∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` in `E` makes the weights add up to `⟨ξ⟩⁻² (1 + ‖ξ‖²) = 1`.
+On the Fourier side, with `𝓕 u` the function `BesselPotentialSpace.fourierFun u` and
+`⟨ξ⟩ = (1 + ‖ξ‖²)^{1/2}`, Plancherel's formula
+`BesselPotentialSpace.norm_sq_eq_integral_one_add_norm_sq_rpow_mul_norm_fourierFun_sq` gives
+`‖u‖²_{H^{r+1}} = ∫ ⟨ξ⟩^{2r+2} ‖𝓕 u‖²`. The Fourier transforms of `u` and `∂_m u` regarded in `H^r`
+are `𝓕 u` and `2πi ⟪ξ, m⟫ 𝓕 u` (`BesselPotentialSpace.fourierFun_inclusion`,
+`BesselPotentialSpace.fourierFun_lineDerivCLM`), so their squared `H^r` norms are
+`∫ ⟨ξ⟩^{2r} ‖𝓕 u‖²` and `∫ 4π² ⟪ξ, m⟫² ⟨ξ⟩^{2r} ‖𝓕 u‖²`. Parseval's identity
+`∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` in `E` makes the weights add up to `⟨ξ⟩^{2r} (1 + ‖ξ‖²) = ⟨ξ⟩^{2r+2}`.
 
 ## Main declarations
 
@@ -47,7 +49,9 @@ identity `∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` in `E` makes the weights add up 
   `∂_m : H^{r+1} → H^r`, bounded by `2π ‖m‖` (`BesselPotentialSpace.norm_lineDerivSymbol_le`).
 * `BesselPotentialSpace.coeFn_fourier_toLp_lineDerivCLM`: at `p = 2`, on the Fourier side
   `∂_m : H^{r+1} → H^r` is multiplication by `lineDerivSymbol m`; on tempered distributions this
-  is `BesselPotentialSpace.smulLeftCLM_fourier_lineDerivOp_eq`.
+  is `BesselPotentialSpace.smulLeftCLM_fourier_lineDerivOp_eq`, and on the Fourier transforms
+  `BesselPotentialSpace.fourierFun` it is multiplication by `2πi ⟪ξ, m⟫`
+  (`BesselPotentialSpace.fourierFun_lineDerivCLM`).
 * `BesselPotentialSpace.norm_lineDerivCLM_le`, `BesselPotentialSpace.norm_lineDerivCLM_apply_le`:
   `‖∂_m u‖_{H^r} ≤ 2π ‖m‖ ‖u‖_{H^{r+1}}`.
 * `BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`: the Plancherel
@@ -104,10 +108,7 @@ theorem norm_lineDerivSymbol_sq (m x : E) :
   have hw : ((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2)) ^ 2 = (1 + ‖x‖ ^ 2)⁻¹ := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
     norm_num [Real.rpow_neg_one]
-  rw [lineDerivSymbol_apply, norm_mul, norm_mul, Complex.norm_real, Complex.norm_real,
-    Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2)), mul_pow,
-    mul_pow, hw, Real.norm_eq_abs, sq_abs]
-  simp [Complex.norm_I, abs_of_pos Real.pi_pos]
+  simp [lineDerivSymbol_apply, mul_pow, hw, abs_of_pos Real.pi_pos]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The symbol of `∂_m : H^{r+1} → H^r` is bounded by `2π ‖m‖`. -/
@@ -171,6 +172,17 @@ theorem norm_lineDerivCLM_le (m : E) :
       H^{r + 1}(E, F) →L[ℂ] H^{r}(E, F))‖ ≤ 2 * π * ‖m‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) (norm_lineDerivCLM_apply_le m)
 
+/-- On the Fourier side, `∂_m` is multiplication by its symbol `2πi ⟪ξ, m⟫`: for
+`u ∈ H^{r+1}(E, F)`, the Fourier transform of `∂_m u ∈ H^r` is `2πi ⟪ξ, m⟫` times that of `u`. -/
+theorem fourierFun_lineDerivCLM (m : E) (u : H^{r + 1}(E, F)) :
+    (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u).fourierFun =ᵐ[volume] fun x ↦
+      ((2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ)) • u.fourierFun x := by
+  filter_upwards [coeFn_fourier_toLp_lineDerivCLM m u] with x hx
+  simp only [fourierFun_apply, hx, smul_smul, lineDerivSymbol_apply, neg_add,
+    TauCeti.one_add_norm_sq_rpow_add]
+  push_cast
+  ring_nf
+
 /-- **The Plancherel identity for Bessel-potential norms.** For `u ∈ H^{r+1}(E, F)` and every
 orthonormal basis `(eᵢ)` of `E`,
 
@@ -183,40 +195,21 @@ theorem norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq {ι : Type*} [
     (b : OrthonormalBasis ι ℝ E) (u : H^{r + 1}(E, F)) :
     ‖u‖ ^ 2 = ‖inclusion (r := r) (by linarith) u‖ ^ 2 +
       (2 * π)⁻¹ ^ 2 * ∑ i, ‖lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top (b i) u‖ ^ 2 := by
-  set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
-  have hG₀ : Integrable (fun x ↦ ‖G₀ x‖ ^ 2) := (Lp.memLp G₀).integrable_norm_pow two_ne_zero
-  -- The `H^r` norm of `u` on the Fourier side: the weight `⟨ξ⟩⁻²` times `‖𝓕 u.toLp‖²`.
-  have hincl : ‖inclusion (le_add_of_nonneg_right zero_le_one) u‖ ^ 2 =
-      ∫ x, (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by
-    simp only [norm_inclusion_sq_eq_integral, sub_add_cancel_left, Real.rpow_neg_one, G₀]
-  have hderiv (i : ι) : ‖lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top (b i) u‖ ^ 2 =
-      ∫ x, (2 * π) ^ 2 * inner ℝ x (b i) ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by
-    rw [← norm_fourier_toLp_eq, ← Lp.integral_norm_sq_eq_norm_sq]
-    refine integral_congr_ae ((coeFn_fourier_toLp_lineDerivCLM (b i) u).mono fun x hx ↦ ?_)
-    dsimp only
-    rw [hx, norm_smul, mul_pow, norm_lineDerivSymbol_sq]
-  have hint (i : ι) : Integrable fun x ↦
-      (2 * π) ^ 2 * inner ℝ x (b i) ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by
-    refine (hG₀.const_mul ((2 * π * ‖b i‖) ^ 2)).mono' ?_ (.of_forall fun x ↦ ?_)
-    · exact (Measurable.aestronglyMeasurable (by fun_prop)).mul hG₀.1
-    · rw [← norm_lineDerivSymbol_sq, Real.norm_of_nonneg (by positivity)]
-      gcongr
-      exact norm_lineDerivSymbol_le (b i) x
-  have hint₀ : Integrable fun x ↦ (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by
-    refine hG₀.mono' ((Measurable.aestronglyMeasurable (by fun_prop)).mul hG₀.1)
-      (.of_forall fun x ↦ ?_)
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact mul_le_of_le_one_left (by positivity) (inv_le_one_of_one_le₀ (by simp))
-  rw [← norm_fourier_toLp_eq, ← Lp.integral_norm_sq_eq_norm_sq, hincl,
-    Finset.sum_congr rfl fun i _ ↦ hderiv i,
-    ← integral_finsetSum _ fun i _ ↦ hint i, ← integral_const_mul,
-    ← integral_add hint₀ ((integrable_finsetSum _ fun i _ ↦ hint i).const_mul _)]
-  refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  -- Parseval's identity `∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` makes the weights add up to `1`.
-  have hsum : ∑ i, (2 * π) ^ 2 * inner ℝ x (b i) ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 =
-      (2 * π) ^ 2 * ‖x‖ ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by
-    rw [← b.sum_sq_inner_left x, Finset.mul_sum, Finset.sum_mul, Finset.sum_mul]
-  simp only [hsum, G₀]
+  have hint (v : H^{r}(E, F)) := integrable_one_add_norm_sq_rpow_mul_norm_fourierFun_sq v
+  simp only [norm_sq_eq_integral_one_add_norm_sq_rpow_mul_norm_fourierFun_sq]
+  rw [← integral_finsetSum _ fun i _ ↦ hint _, ← integral_const_mul,
+    ← integral_add (hint _) ((integrable_finsetSum _ fun i _ ↦ hint _).const_mul _)]
+  refine integral_congr_ae ?_
+  filter_upwards [fourierFun_inclusion (r := r) (by linarith) u,
+    Filter.eventually_all.2 fun i ↦ fourierFun_lineDerivCLM (b i) u] with x hincl hderiv
+  have hterm (i : ι) :
+      ‖((2 * π * Complex.I) * ((inner ℝ x (b i) : ℝ) : ℂ)) • u.fourierFun x‖ ^ 2 =
+        (2 * π) ^ 2 * ‖u.fourierFun x‖ ^ 2 * inner ℝ x (b i) ^ 2 := by
+    simp [norm_smul, mul_pow, abs_of_pos Real.pi_pos]
+    ring
+  -- Parseval's identity `∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` makes the weights add up to `(1 + ‖ξ‖²)^{r+1}`.
+  simp only [hincl, hderiv, hterm, ← Finset.mul_sum, b.sum_sq_inner_left,
+    Real.rpow_add_one (by positivity : 1 + ‖x‖ ^ 2 ≠ 0)]
   field_simp
 
 end BesselPotentialSpace

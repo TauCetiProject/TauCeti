@@ -11,7 +11,6 @@ import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The inclusion `H^{s,p} ⊆ H^{r,p}` of Bessel-potential spaces
@@ -80,8 +79,7 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `Lᵖ` function of
   the element of `H^{s,p}(E, G)` defined by an `Lᵖ` function `g` is `g`.
 * `BesselPotentialSpace.coeFn_fourier_toLp_inclusion`: for `p = 2`, on the Fourier side the
-  inclusion `H^s ⊆ H^r` is multiplication by `⟨ξ⟩ ^ (r - s)`, and
-  `BesselPotentialSpace.norm_inclusion_sq_eq_integral` is the resulting formula for its norm.
+  inclusion `H^s ⊆ H^r` is multiplication by `⟨ξ⟩ ^ (r - s)`.
 * `BesselPotentialSpace.norm_inclusion_le`, `BesselPotentialSpace.norm_inclusionLp_le`: for `p = 2`
   the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
@@ -412,19 +410,6 @@ theorem norm_inclusion_apply_le (h : r ≤ s) (u : H^{s}(E, F)) : ‖inclusion h
   rw [← norm_fourier_toLp_eq, ← norm_fourier_toLp_eq u]
   exact Lp.norm_le_norm_of_ae_le ((coeFn_fourier_toLp_inclusion h u).mono fun x hx ↦
     hx ▸ norm_inclusion_weight_smul_le h x _)
-
-/-- The `H^r` norm of `u ∈ H^s`, `r ≤ s`, on the Fourier side:
-`‖u‖²_{H^r} = ∫ ⟨ξ⟩ ^ (2 (r - s)) ‖𝓕 u.toLp ξ‖² dξ`, where `u.toLp = J^s u` has
-`L²` norm `‖u‖_{H^s}`. -/
-theorem norm_inclusion_sq_eq_integral (h : r ≤ s) (u : H^{s}(E, F)) :
-    ‖inclusion h u‖ ^ 2 =
-      ∫ x, (1 + ‖x‖ ^ 2) ^ (r - s) * ‖(𝓕 u.toLp : Lp F 2 (volume : Measure E)) x‖ ^ 2 := by
-  rw [← norm_fourier_toLp_eq, ← Lp.integral_norm_sq_eq_norm_sq]
-  refine integral_congr_ae ((coeFn_fourier_toLp_inclusion h u).mono fun x hx ↦ ?_)
-  dsimp only
-  rw [hx, norm_smul, mul_pow, Complex.norm_real, Real.norm_of_nonneg (by positivity),
-    ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
-  norm_num
 
 /-- For `p = 2` and a Hilbert space, the inclusion `H^s ⊆ H^r` has operator norm at most `1`. -/
 theorem norm_inclusion_le (h : r ≤ s) : ‖(inclusion h : H^{s}(E, F) →L[ℂ] H^{r}(E, F))‖ ≤ 1 :=
