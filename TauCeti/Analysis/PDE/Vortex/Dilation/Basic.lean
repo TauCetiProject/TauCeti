@@ -26,7 +26,8 @@ multiplies the curvature defect by `t²`, and multiplies the complex defect by `
 In particular, the physical coefficient `r/4` becomes `1/8` in the coordinate
 `w = √(2r) z`. The curvature coefficient `∂₁ b₂ - ∂₂ b₁` is multiplied by `t²` and the covariant
 derivative `d_a α` by `t`, so for `t = √(2r)` the plane integral of the integrand of Taubes's
-scaled energy does not depend on `r`.
+scaled energy does not depend on `r`. Pullback by a fixed dilation is real linear in the field
+(`dilateFieldLinearMap`).
 
 The same laws hold for the linearization and the infinitesimal and finite gauge
 actions. For positive coupling the gauge row uses the coefficient metric `|b|² + c |δα|²/4`; its
@@ -88,16 +89,30 @@ theorem dilateField_dilateField (s t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin
   ext z i
   fin_cases i <;> simp [dilateField, mul_comm s t, mul_assoc] <;> ring
 
+/-- Pullback by `z ↦ t • z`, as a real linear endomorphism of the fields. -/
+def dilateFieldLinearMap (t : ℝ) :
+    (ℂ → EuclideanSpace ℝ (Fin 4)) →ₗ[ℝ] (ℂ → EuclideanSpace ℝ (Fin 4)) where
+  toFun := dilateField t
+  map_add' x y := by
+    ext z i
+    fin_cases i <;> simp [dilateField] <;> ring
+  map_smul' c x := by
+    ext z i
+    fin_cases i <;> simp [dilateField] <;> ring
+
 @[simp]
-theorem dilateField_zero (t : ℝ) : dilateField t 0 = 0 := by
-  ext z i
-  fin_cases i <;> simp [dilateField]
+theorem dilateFieldLinearMap_apply (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    dilateFieldLinearMap t x = dilateField t x :=
+  (rfl)
+
+@[simp]
+theorem dilateField_zero (t : ℝ) : dilateField t 0 = 0 :=
+  map_zero (dilateFieldLinearMap t)
 
 @[simp]
 theorem dilateField_neg (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    dilateField t (-x) = -dilateField t x := by
-  ext z i
-  fin_cases i <;> simp [dilateField]
+    dilateField t (-x) = -dilateField t x :=
+  map_neg (dilateFieldLinearMap t) x
 
 /-- The section of a pulled-back field is the section composed with the dilation. -/
 @[simp]
@@ -107,21 +122,18 @@ theorem sectionValue_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 
 
 @[simp]
 theorem dilateField_add (t : ℝ) (x y : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    dilateField t (x + y) = dilateField t x + dilateField t y := by
-  ext z i
-  fin_cases i <;> simp [dilateField] <;> ring
+    dilateField t (x + y) = dilateField t x + dilateField t y :=
+  map_add (dilateFieldLinearMap t) x y
 
 @[simp]
 theorem dilateField_sub (t : ℝ) (x y : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    dilateField t (x - y) = dilateField t x - dilateField t y := by
-  ext z i
-  fin_cases i <;> simp [dilateField] <;> ring
+    dilateField t (x - y) = dilateField t x - dilateField t y :=
+  map_sub (dilateFieldLinearMap t) x y
 
 @[simp]
 theorem dilateField_smul (t c : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    dilateField t (c • x) = c • dilateField t x := by
-  ext z i
-  fin_cases i <;> simp [dilateField] <;> ring
+    dilateField t (c • x) = c • dilateField t x :=
+  map_smul (dilateFieldLinearMap t) c x
 
 /-- The vacuum is invariant under dilation. -/
 @[simp]
@@ -317,7 +329,7 @@ theorem coupledEquation_dilateField (c t : ℝ) (x : ℂ → EuclideanSpace ℝ 
 
 /-- A nonzero dilation preserves and reflects the vortex equation at the
 correspondingly rescaled coupling and point. -/
-theorem coupledEquation_dilateField_eq_zero_iff (c t : ℝ) (ht : t ≠ 0)
+theorem coupledEquation_dilateField_apply_eq_zero_iff (c t : ℝ) (ht : t ≠ 0)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     coupledEquation (t ^ 2 * c) (dilateField t x) z = 0 ↔
       coupledEquation c x (t • z) = 0 := by
@@ -364,10 +376,11 @@ theorem energyDensity_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin
 
 /-- A nonzero dilation carries the solutions of the equation with coupling `c` exactly onto
 those of the equation with coupling `t² c`. -/
-theorem coupledEquation_dilateField_eq_zero_iff' (c : ℝ) {t : ℝ} (ht : t ≠ 0)
+@[simp]
+theorem coupledEquation_dilateField_eq_zero_iff (c : ℝ) {t : ℝ} (ht : t ≠ 0)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     coupledEquation (t ^ 2 * c) (dilateField t x) = 0 ↔ coupledEquation c x = 0 := by
-  simp only [funext_iff, Pi.zero_apply, coupledEquation_dilateField_eq_zero_iff c t ht]
+  simp only [funext_iff, Pi.zero_apply, coupledEquation_dilateField_apply_eq_zero_iff c t ht]
   refine ⟨fun h z ↦ ?_, fun h z ↦ h _⟩
   simpa [smul_smul, ht] using h (t⁻¹ • z)
 
@@ -381,7 +394,7 @@ theorem equation_dilateField_inv_sqrt_eq_zero_iff {r : ℝ} (hr : 0 < r)
     rw [inv_pow, Real.sq_sqrt (by positivity)]
     field_simp
   simpa only [hc, coupledEquation_one] using
-    coupledEquation_dilateField_eq_zero_iff' (2 * r) (t := (√(2 * r))⁻¹)
+    coupledEquation_dilateField_eq_zero_iff (2 * r) (t := (√(2 * r))⁻¹)
       (inv_ne_zero (by positivity)) x
 
 /-- The linearization of `coupledEquation c` with gauge row
