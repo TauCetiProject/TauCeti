@@ -15,12 +15,12 @@ public import TauCeti.Topology.Algebra.PointTopology.Separation
 
 Let `G = Spec H` be an affine group scheme over the fraction field `K` of a Dedekind domain `R`.
 Unlike the rational points in the full adelic points, the rational points `G(K)` need not be
-discrete in the finite adelic points `G(𝔸_{K,f})`: the additive group `K` is not discrete in
-`𝔸_{K,f}`, because it meets the compact open integral adeles in the infinite ring `R`. This file
-proves the criterion: `G(K)` is discrete in `G(𝔸_{K,f})` exactly when it meets one compact
-neighbourhood `U` of the identity, for instance a compact open subgroup, in a finite set. Since
-the condition does not depend on `U`, it holds for one compact neighbourhood exactly when it holds
-for every one.
+discrete in the finite adelic points `G(𝔸_{K,f})`: for a number field `K`, the additive group `K`
+is not discrete in `𝔸_{K,f}`, because it meets the compact open integral adeles in the infinite
+ring of integers `𝒪_K`. This file proves the criterion: `G(K)` is discrete in `G(𝔸_{K,f})`
+exactly when it meets one compact neighbourhood `U` of the identity, for instance a compact open
+subgroup, in a finite set. Since the condition does not depend on `U`, it holds for one compact
+neighbourhood exactly when it holds for every one.
 
 The criterion is `Subgroup.discreteTopology_iff_finite_inter_of_isCompact` applied to the range of
 the rational diagonal `TauCeti.AdelicPoints.finiteDiagonal`; the points `G(𝔸_{K,f})` form a

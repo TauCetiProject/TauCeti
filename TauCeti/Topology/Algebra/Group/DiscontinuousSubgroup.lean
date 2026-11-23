@@ -10,6 +10,8 @@ public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+import TauCeti.Topology.Algebra.Group.Cocompact
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Discrete subgroups act properly discontinuously and have infinite index
@@ -26,7 +28,7 @@ vector space.
 
 Conversely, in a Hausdorff group, a subgroup meeting some compact neighbourhood of the identity
 in a finite set is discrete (`Subgroup.discreteTopology_iff_finite_inter_of_isCompact`). For a group
-with a compact open subgroup `U`, such as the points of an affine group scheme over the finite
+with a compact open subgroup `U`, such as the finite adele ring of a number field with its integral
 adeles, a subgroup `Γ` is therefore discrete exactly when `Γ ∩ U` is finite.
 
 A discrete subgroup of finite index in a Hausdorff topological group makes the whole group
@@ -74,8 +76,9 @@ instance Submodule.properlyDiscontinuousVAdd_of_discreteTopology {R M : Type*} [
 open scoped Topology in
 /-- **Discreteness by a compact neighbourhood of the identity.** A subgroup `Γ` of a Hausdorff
 topological group is discrete exactly when it meets a compact neighbourhood `U` of the identity in
-a finite set. A discrete `Γ` meets every compact set in a finite set; conversely, a finite
-`Γ ∩ U` makes `{1}` open in `Γ`, since `Γ` is `T1`. -/
+a finite set. A discrete `Γ` meets every compact set in a finite set
+(`Subgroup.finite_preimage_coe_of_isCompact`); conversely, a finite `Γ ∩ U` makes `Γ`, the range
+of its inclusion, discrete (`MonoidHom.discreteTopology_range_of_finite_preimage`). -/
 @[to_additive /-- **Discreteness by a compact neighbourhood of zero.** An additive subgroup `Γ` of a
 Hausdorff additive topological group is discrete exactly when it meets a compact neighbourhood `U`
 of zero in a finite set. -/]
@@ -87,10 +90,8 @@ theorem Subgroup.discreteTopology_iff_finite_inter_of_isCompact {G : Type*} [Gro
     rw [← Subtype.image_preimage_coe]
     exact ⟨fun h ↦ h.of_finite_image Subtype.val_injective.injOn, fun h ↦ h.image _⟩
   rw [hfin]
-  refine ⟨fun _ ↦ tendsto_cofinite_cocompact_iff.mp (Γ.tendsto_coe_cofinite_of_isDiscrete
-    (isDiscrete_iff_discreteTopology.mpr ‹_›)) U hU, fun h ↦ ?_⟩
-  exact discreteTopology_iff_isOpen_singleton_one.mpr <| isOpen_singleton_of_finite_mem_nhds 1
-    (continuous_subtypeVal.continuousAt.preimage_mem_nhds hU1) h
+  refine ⟨fun _ ↦ Γ.finite_preimage_coe_of_isCompact hU, fun h ↦ ?_⟩
+  exact Γ.range_subtype ▸ Γ.subtype.discreteTopology_range_of_finite_preimage hU1 h
 
 open scoped Topology in
 /-- **A discrete subgroup of a group without isolated points has infinite index.** A discrete
