@@ -101,12 +101,37 @@ theorem innerIntegral_eq_iSup (μ : Measure α) (f : α → ℝ) :
     exact ⟨⟨-g.val, g.property.1.neg, g.property.2.1.neg, neg_le_neg g.property.2.2⟩,
       by simp [integral_neg, hg]⟩
 
-private theorem outerIntegral_eq_zero_of_not_exists {μ : Measure α} {f : α → ℝ}
+/-- If `f` admits no measurable integrable majorant, then `outerIntegral μ f = 0`. -/
+theorem outerIntegral_eq_zero_of_not_exists {μ : Measure α} {f : α → ℝ}
     (hu : ¬ ∃ u, Measurable u ∧ Integrable u μ ∧ f ≤ u) :
     outerIntegral μ f = 0 := by
   have : IsEmpty {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f ≤ g} :=
     (isEmpty_subtype _).2 fun g ⟨hg_meas, hg_int, hfg⟩ ↦ hu ⟨g, hg_meas, hg_int, hfg⟩
   rw [outerIntegral_def, Real.iInf_of_isEmpty]
+
+/-- If the integrals of measurable integrable majorants of `f` are not bounded below, then
+`outerIntegral μ f = 0`. -/
+theorem outerIntegral_eq_zero_of_not_bddBelow {μ : Measure α} {f : α → ℝ}
+    (h : ¬ BddBelow (Set.range fun g :
+      {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f ≤ g} ↦ ∫ ω, g.val ω ∂μ)) :
+    outerIntegral μ f = 0 := by
+  rw [outerIntegral_def, Real.iInf_of_not_bddBelow h]
+
+/-- If `f` admits no measurable integrable minorant, then `innerIntegral μ f = 0`. -/
+theorem innerIntegral_eq_zero_of_not_exists {μ : Measure α} {f : α → ℝ}
+    (hl : ¬ ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f) :
+    innerIntegral μ f = 0 := by
+  rw [innerIntegral_def, outerIntegral_eq_zero_of_not_exists, neg_zero]
+  rintro ⟨u, hu_meas, hu_int, hfu⟩
+  exact hl ⟨-u, hu_meas.neg, hu_int.neg, neg_le.mp hfu⟩
+
+/-- If the integrals of measurable integrable minorants of `f` are not bounded above, then
+`innerIntegral μ f = 0`. -/
+theorem innerIntegral_eq_zero_of_not_bddAbove {μ : Measure α} {f : α → ℝ}
+    (h : ¬ BddAbove (Set.range fun g :
+      {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ g ≤ f} ↦ ∫ ω, g.val ω ∂μ)) :
+    innerIntegral μ f = 0 := by
+  rw [innerIntegral_eq_iSup, Real.iSup_of_not_bddAbove h]
 
 /-! ### Real-valued outer integral -/
 
@@ -243,15 +268,6 @@ theorem exists_measurable_ge_outerIntegral_eq {μ : Measure α} {f : α → ℝ}
     ae_le_of_integral_eq_outerIntegral hg_int (ae_of_all _ hfg) ⟨g, hg_meas, hfg⟩
       ⟨l₀, hl₀_int, hl₀f⟩ hg_eq hk hfk⟩
 
-/-- Bounded finite-measure measurable cover for `outerIntegral`. -/
-theorem exists_measurable_ge_outerIntegral_eq_of_bdd {μ : Measure α} [IsFiniteMeasure μ]
-    {f : α → ℝ} {a b : ℝ} (ha : ∀ ω, a ≤ f ω) (hb : ∀ ω, f ω ≤ b) :
-    ∃ g : α → ℝ, Measurable g ∧ Integrable g μ ∧ f ≤ g ∧ ∫ ω, g ω ∂μ = outerIntegral μ f ∧
-      ∀ h : α → ℝ, AEMeasurable h μ → f ≤ᵐ[μ] h → g ≤ᵐ[μ] h :=
-  exists_measurable_ge_outerIntegral_eq
-    ⟨fun _ ↦ b, measurable_const, integrable_const b, hb⟩
-    ⟨fun _ ↦ a, integrable_const a, ae_of_all _ ha⟩
-
 /-- For an integrable function admitting a measurable majorant, `outerIntegral` agrees with the
 Bochner integral. -/
 theorem outerIntegral_eq_integral {μ : Measure α} {f : α → ℝ}
@@ -342,23 +358,14 @@ theorem outerIntegral_eq_integral_of_aemeasurable {μ : Measure α} [IsFiniteMea
             (fun g ↦ hM ⟨g, rfl⟩) n)
           ENNReal.ofReal_lt_top
       have hneg_int : Integrable (fun ω ↦ max (-f₀ ω) 0) μ :=
-        ⟨(hf₀_meas.neg.max measurable_const).aestronglyMeasurable, by
-          rw [HasFiniteIntegral]
-          refine (lintegral_congr fun ω ↦ ?_).trans_lt hneg_fin
-          rw [Real.eNorm_eq_ofReal_abs, abs_of_nonneg (le_max_right _ _)]⟩
+        ⟨(hf₀_meas.neg.max measurable_const).aestronglyMeasurable,
+          (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun _ ↦ le_max_right _ _)).mpr hneg_fin⟩
       have heq : f₀ = (fun ω ↦ max (f₀ ω) 0) - fun ω ↦ max (-f₀ ω) 0 :=
         funext fun ω ↦ (max_zero_sub_eq_self (f₀ ω)).symm
       exact hf_int ((hp_int.sub hneg_int).congr
         ((EventuallyEq.of_eq heq.symm).trans hf.ae_eq_mk.symm))
-    rw [outerIntegral_def, Real.iInf_of_not_bddBelow hnbdd]
+    exact outerIntegral_eq_zero_of_not_bddBelow hnbdd
   · exact outerIntegral_eq_zero_of_not_exists hu'
-
-/-- Under a finite measure, `outerIntegral` agrees with the Bochner integral for any
-a.e.-measurable function bounded above by a constant. -/
-theorem outerIntegral_eq_integral_of_aemeasurable_of_le_const {μ : Measure α} [IsFiniteMeasure μ]
-    {f : α → ℝ} (hf : AEMeasurable f μ) {C : ℝ} (hC : ∀ ω, f ω ≤ C) :
-    outerIntegral μ f = ∫ ω, f ω ∂μ :=
-  outerIntegral_eq_integral_of_aemeasurable hf ⟨fun _ ↦ C, measurable_const, hC⟩
 
 /-- If `0 ≤ᵐ[μ] f`, then `0 ≤ outerIntegral μ f` (including when the majorant set is empty). -/
 theorem outerIntegral_nonneg {μ : Measure α} {f : α → ℝ} (hf : 0 ≤ᵐ[μ] f) :
@@ -411,13 +418,6 @@ theorem outerLIntegral_ofReal_eq {μ : Measure α} {f : α → ℝ}
           ofReal_integral_eq_lintegral_ofReal hg_int (ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg)
       _ = ∫⁻ ω, h' ω ∂μ := lintegral_congr fun ω ↦ ENNReal.ofReal_toReal (hh'_lt_top ω).ne
       _ ≤ ∫⁻ ω, h ω ∂μ := lintegral_mono fun _ ↦ min_le_left _ _
-
-/-- Under a finite measure, `outerLIntegral μ (ofReal ∘ f) = ofReal (outerIntegral μ f)` for any
-a.e.-nonnegative function bounded above by a constant. -/
-theorem outerLIntegral_ofReal_eq_of_le_const {μ : Measure α} [IsFiniteMeasure μ]
-    {f : α → ℝ} (hf : 0 ≤ᵐ[μ] f) {C : ℝ} (hC : ∀ ω, f ω ≤ C) :
-    outerLIntegral μ (fun ω ↦ ENNReal.ofReal (f ω)) = ENNReal.ofReal (outerIntegral μ f) :=
-  outerLIntegral_ofReal_eq hf ⟨fun _ ↦ C, measurable_const, integrable_const C, hC⟩
 
 /-- `outerIntegral` of the constant zero function is `0`. -/
 @[simp]
@@ -887,13 +887,6 @@ theorem innerIntegral_eq_integral_of_aemeasurable {μ : Measure α} [IsFiniteMea
     outerIntegral_eq_integral_of_aemeasurable hf.neg ⟨-l, hl_meas.neg, neg_le_neg hlf⟩]
   simp [Pi.neg_apply, integral_neg]
 
-/-- Under a finite measure, `innerIntegral` agrees with the Bochner integral for any
-a.e.-measurable function bounded below by a constant. -/
-theorem innerIntegral_eq_integral_of_aemeasurable_of_const_le {μ : Measure α} [IsFiniteMeasure μ]
-    {f : α → ℝ} (hf : AEMeasurable f μ) {C : ℝ} (hC : ∀ ω, C ≤ f ω) :
-    innerIntegral μ f = ∫ ω, f ω ∂μ :=
-  innerIntegral_eq_integral_of_aemeasurable hf ⟨fun _ ↦ C, measurable_const, hC⟩
-
 /-- If `0 ≤ᵐ[μ] f`, then `0 ≤ innerIntegral μ f` (with no majorant or finiteness hypotheses). -/
 theorem innerIntegral_nonneg {μ : Measure α} {f : α → ℝ} (hf : 0 ≤ᵐ[μ] f) :
     0 ≤ innerIntegral μ f := by
@@ -909,7 +902,7 @@ theorem innerIntegral_nonneg {μ : Measure α} {f : α → ℝ} (hf : 0 ≤ᵐ[�
             ciInf_le hbdd ⟨g', hg'_meas, (integrable_zero α ℝ μ).congr hg'_ae, hfg'⟩
         _ = ∫ _ : α, (0 : ℝ) ∂μ := integral_congr_ae hg'_ae.symm
         _ = 0 := integral_zero α ℝ
-    · rw [outerIntegral_def, Real.iInf_of_not_bddBelow hbdd]
+    · rw [outerIntegral_eq_zero_of_not_bddBelow hbdd]
   · rw [outerIntegral_eq_zero_of_not_exists hu]
 
 /-- Under a finite measure, `innerIntegral μ (s.indicator 1)` is the inner measure
@@ -946,15 +939,6 @@ theorem exists_measurable_le_innerIntegral_eq {μ : Measure α} {f : α → ℝ}
     simp [Pi.neg_apply, integral_neg]
   · exact (hg'_min (-h) hh.neg (hhf.mono fun _ hω ↦ neg_le_neg hω)).mono fun ω hω ↦
       le_neg.mp hω
-
-/-- Bounded finite-measure measurable minorant for `innerIntegral`. -/
-theorem exists_measurable_le_innerIntegral_eq_of_bdd {μ : Measure α} [IsFiniteMeasure μ]
-    {f : α → ℝ} {a b : ℝ} (ha : ∀ ω, a ≤ f ω) (hb : ∀ ω, f ω ≤ b) :
-    ∃ g : α → ℝ, Measurable g ∧ Integrable g μ ∧ g ≤ f ∧ ∫ ω, g ω ∂μ = innerIntegral μ f ∧
-      ∀ h : α → ℝ, AEMeasurable h μ → h ≤ᵐ[μ] f → h ≤ᵐ[μ] g :=
-  exists_measurable_le_innerIntegral_eq
-    ⟨fun _ ↦ a, measurable_const, integrable_const a, ha⟩
-    ⟨fun _ ↦ b, integrable_const b, ae_of_all _ hb⟩
 
 end InnerIntegral
 
