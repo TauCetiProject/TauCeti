@@ -25,8 +25,13 @@ whenever `(M ⧸ P) ⊗[R] Q → (M ⧸ P) ⊗[R] N` is injective. This is the s
 submodule of a coalgebra whose comultiplication lands in both one-sided tensor products to a
 subcoalgebra.
 
-For linear maps `f : M → M'` and `g : N → N'` over flat modules, applying this to the kernels
-identifies the tensors killed by both `f ⊗ 1` and `1 ⊗ g` with the image of `ker f ⊗[R] ker g`.
+For linear maps `f : M → M'` and `g : N → N'` the same identity computes a common kernel: when the
+modules involved are flat, the kernel of `f ⊗ 1` is the image of `ker f ⊗ N` and the kernel of
+`1 ⊗ g` is the image of `M ⊗ ker g`, so
+
+```text
+ker (f ⊗ 1) ∩ ker (1 ⊗ g) = ker f ⊗ ker g.
+```
 
 ## Main results
 
@@ -34,7 +39,7 @@ identifies the tensors killed by both `f ⊗ 1` and `1 ⊗ g` with the image of 
   intersection of the images of `M ⊗[R] Q` and `P ⊗[R] N`, when `(M ⧸ P) ⊗[R] Q → (M ⧸ P) ⊗[R] N`
   is injective, for instance when `M ⧸ P` is flat.
 * `LinearMap.ker_rTensor_inf_ker_lTensor`: the common kernel of `f ⊗ 1` and `1 ⊗ g` is the image
-  of `ker f ⊗[R] ker g`, when `M`, `N` and `M ⧸ ker f` are flat, for instance over a field.
+  of `ker f ⊗[R] ker g`, when `M`, `N` and `M ⧸ ker f` are flat.
 
 ## References
 
@@ -80,19 +85,18 @@ end Submodule
 
 namespace LinearMap
 
-variable {R : Type*} {M N M' N' : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
-  (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+variable {R : Type*} {M M' N N' : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup M'] [Module R M'] [AddCommGroup N] [Module R N] [AddCommGroup N'] [Module R N']
 
-/-- If `M`, `N` and `M ⧸ ker f` are flat, a tensor in `M ⊗[R] N` is killed by both `f ⊗ 1` and
-`1 ⊗ g` exactly when it lies in the image of `ker f ⊗[R] ker g`. Over a field the flatness
-hypotheses hold for all modules. -/
-theorem ker_rTensor_inf_ker_lTensor [Module.Flat R M] [Module.Flat R N]
-    [Module.Flat R (M ⧸ ker f)] :
-    ker (f.rTensor N) ⊓ ker (g.lTensor M) = range (mapIncl (ker f) (ker g)) := by
-  rw [(Module.Flat.rTensor_exact N f.exact_subtype_ker_map).linearMap_ker_eq,
-    (Module.Flat.lTensor_exact M g.exact_subtype_ker_map).linearMap_ker_eq, inf_comm, mapIncl,
-    Submodule.range_map_subtype_subtype _ _
-      (Module.Flat.lTensor_preserves_injective_linearMap _ (ker g).injective_subtype)]
+/-- The common kernel of `f ⊗ 1` and `1 ⊗ g` is the image of `ker f ⊗[R] ker g`, when `M`, `N`
+and `M ⧸ ker f` are flat; over a field every module is flat. -/
+theorem ker_rTensor_inf_ker_lTensor (f : M →ₗ[R] M') (g : N →ₗ[R] N') [Module.Flat R M]
+    [Module.Flat R N] [Module.Flat R (M ⧸ ker f)] :
+    ker (f.rTensor N) ⊓ ker (g.lTensor M) =
+      range (TensorProduct.map (ker f).subtype (ker g).subtype) := by
+  rw [Submodule.range_map_subtype_subtype _ _
+      (Module.Flat.lTensor_preserves_injective_linearMap _ (ker g).injective_subtype),
+    (Module.Flat.rTensor_exact N f.exact_subtype_ker_map).linearMap_ker_eq,
+    (Module.Flat.lTensor_exact M g.exact_subtype_ker_map).linearMap_ker_eq, inf_comm]
 
 end LinearMap

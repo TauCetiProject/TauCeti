@@ -31,6 +31,8 @@ public section
 
 namespace IsLocalization
 
+section Intermediate
+
 variable {A B S : Type*} [CommSemiring A] [CommSemiring B] [CommSemiring S] [Algebra A B]
   [Algebra B S] [Algebra A S] [IsScalarTower A B S]
 
@@ -66,5 +68,7 @@ theorem Away.bijective_awayMap_of_injective (a : A) [IsLocalization.Away a S]
     (RingHom.ext fun r ↦ by
       simp [Localization.awayMap, Away.map, map_eq, IsScalarTower.algebraMap_apply A B S])
   exact (Function.Bijective.of_comp_iff' e₂.bijective _).mp hbij
+
+end Intermediate
 
 end IsLocalization
