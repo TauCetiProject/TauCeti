@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Complex.UpperLogContinuity
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conj
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Holomorphy
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
@@ -218,17 +219,17 @@ private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 
       Complex.log_im, harg]
     ring
   have h_log_int : ∫ t in x⁻¹..1, (-Real.log t) ^ k / t = Real.log x ^ (k + 1) / (k + 1 : ℝ) := by
-    have hne (t : ℝ) (ht : t ∈ uIcc x⁻¹ 1) : t ≠ 0 := fun ht0 ↦ h0_notMem (ht0 ▸ ht)
-    have hsub := intervalIntegral.integral_comp_mul_deriv (a := x⁻¹) (b := 1)
-      (f := fun t ↦ -Real.log t) (f' := fun t ↦ -t⁻¹) (g := fun u ↦ u ^ k)
-      (fun t ht ↦ (Real.hasDerivAt_log (hne t ht)).neg)
-      (continuousOn_inv₀.mono fun t ht ↦ hne t ht).neg (continuous_pow k)
-    simp only [Function.comp_def, mul_neg, intervalIntegral.integral_neg, neg_neg, Real.log_inv,
-      Real.log_one, neg_zero] at hsub
-    rw [intervalIntegral.integral_symm 0 (Real.log x), integral_pow, zero_pow (Nat.succ_ne_zero k),
-      sub_zero] at hsub
-    simpa [div_eq_mul_inv] using (by linarith :
-      ∫ t in x⁻¹..1, (-Real.log t) ^ k * t⁻¹ = Real.log x ^ (k + 1) / (k + 1 : ℝ))
+    have hpow : (fun t : ℝ ↦ (-Real.log t) ^ k / t) =
+        fun t ↦ (-1 : ℝ) ^ k * (Real.log t ^ k / t) := by
+      ext t
+      rw [neg_eq_neg_one_mul, mul_pow, mul_div_assoc]
+    rw [hpow, intervalIntegral.integral_const_mul, TauCeti.integral_log_pow_div_self k h0_notMem,
+      Real.log_one, zero_pow (Nat.succ_ne_zero k), zero_sub, Real.log_inv,
+      neg_pow (Real.log x) (k + 1)]
+    calc (-1 : ℝ) ^ k * (-((-1) ^ (k + 1) * Real.log x ^ (k + 1)) / (k + 1 : ℝ))
+        = ((-1 : ℝ) * (-1)) ^ k * Real.log x ^ (k + 1) / (k + 1 : ℝ) := by
+          rw [pow_succ', mul_pow]; ring
+      _ = Real.log x ^ (k + 1) / (k + 1 : ℝ) := by norm_num
   rw [← intervalIntegral.integral_add_adjacent_intervals hint₁ hint₂, Complex.add_im,
     him_int _ _ hint₁, him_int _ _ hint₂, h1, h2, h_log_int, zero_add]
 

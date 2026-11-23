@@ -25,6 +25,7 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.InvLog
+import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # Integrability of logarithms
@@ -227,15 +228,15 @@ by the integral of `|log ‖u‖| ^ k` over `[a - d, b - c]`. -/
 theorem setLIntegral_abs_log_abs_sub_pow_le (k : ℕ) {a b c d s : ℝ} (hs : s ∈ Set.Icc c d) :
     ∫⁻ t in Set.Ioc a b, ENNReal.ofReal (|Real.log (|t - s|)| ^ k) ≤
       ∫⁻ u in Set.Icc (a - d) (b - c), ENNReal.ofReal (|Real.log ‖u‖| ^ k) := by
-  rw [← lintegral_indicator measurableSet_Ioc, ← lintegral_indicator measurableSet_Icc,
-    ← lintegral_add_right_eq_self
-      ((Set.Icc (a - d) (b - c)).indicator fun u ↦ ENNReal.ofReal (|Real.log ‖u‖| ^ k)) (-s)]
-  refine lintegral_mono fun t ↦ ?_
-  by_cases ht : t ∈ Set.Ioc a b
-  · have hmem : t - s ∈ Set.Icc (a - d) (b - c) :=
-      ⟨by linarith [ht.1, hs.2], by linarith [ht.2, hs.1]⟩
-    rw [Set.indicator_of_mem ht, ← sub_eq_add_neg, Set.indicator_of_mem hmem, Real.norm_eq_abs]
-  · simp [ht]
+  have hsub : Set.Ioc a b ⊆ (fun t : ℝ ↦ -s + (1 : ℝ) • t) ⁻¹' Set.Icc (a - d) (b - c) := by
+    intro t ht
+    rw [Set.mem_preimage, smul_eq_mul, one_mul, neg_add_eq_sub]
+    exact ⟨by linarith [ht.1, hs.2], by linarith [ht.2, hs.1]⟩
+  refine (lintegral_mono_set hsub).trans_eq ?_
+  simpa [neg_add_eq_sub, Real.norm_eq_abs] using
+    Measure.setLIntegral_comp_add_smul volume
+      (fun u : ℝ ↦ ENNReal.ofReal (|Real.log ‖u‖| ^ k)) (-s) one_ne_zero
+      (Set.Icc (a - d) (b - c))
 
 /-- On `(a, b]`, when `0 < r ≤ ‖z‖ ≤ R`, shifting by `Re(z⁻¹) ∈ [-r⁻¹, r⁻¹]` bounds the `L^k`
 integral of `t ↦ Complex.log (1 - t * z)` uniformly in `z`. -/
