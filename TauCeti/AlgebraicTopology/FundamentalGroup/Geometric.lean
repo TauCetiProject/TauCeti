@@ -22,7 +22,9 @@ Inversion `(MulEquiv.inv' (FundamentalGroup X x₀)).symm`, `op g ↦ g⁻¹`, i
 `TauCeti.OuterAut.congr_symm_inv'_mk_op`).
 
 The deck dictionary for the universal cover, in this convention, is in
-`TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Geometric`.
+`TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.UniversalCover` (the endpoint
+formula and path lifting) and `TauCeti.AlgebraicTopology.UniversalCover.Classification.DeckGroup`
+(quotients by normal subgroups).
 
 ## Main definitions
 
@@ -63,23 +65,33 @@ variable {X : Type*} [TopologicalSpace X] {x₀ : X}
 abbrev mk (p : Path x₀ x₀) : GeometricFundamentalGroup X x₀ :=
   op (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p))
 
+/-- The class of a loop, read in Mathlib's fundamental group. -/
+@[simp]
+theorem unop_mk (p : Path x₀ x₀) :
+    (mk p).unop = FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p) :=
+  (rfl)
+
+/-- The class of a loop, read as a homotopy class of paths, is the class of the loop. This is the
+round trip `FundamentalGroup.toPath ∘ FundamentalGroup.fromPath`, which is the identity because
+`FundamentalGroup.fromPath` builds the structure whose field `FundamentalGroup.toPath` reads. -/
+theorem toPath_unop_mk (p : Path x₀ x₀) :
+    (mk p).unop.toPath = Path.Homotopic.Quotient.mk p :=
+  (rfl)
+
 /-- Multiplication in the geometric fundamental group is first-traverse concatenation. -/
 @[simp]
-theorem mk_trans (p q : Path x₀ x₀) : mk (p.trans q) = mk p * mk q := by
-  unfold mk
-  rw [← op_mul, FundamentalGroup.mul_def, Path.Homotopic.Quotient.mk_trans]
+theorem mk_trans (p q : Path x₀ x₀) : mk (p.trans q) = mk p * mk q :=
+  unop_injective <| by simp [FundamentalGroup.mul_def, Path.Homotopic.Quotient.mk_trans]
 
 /-- The constant loop represents the identity. -/
 @[simp]
-theorem mk_refl : mk (Path.refl x₀) = 1 := by
-  unfold mk
-  rw [← op_one, FundamentalGroup.one_def, Path.Homotopic.Quotient.mk_refl]
+theorem mk_refl : mk (Path.refl x₀) = 1 :=
+  unop_injective <| by simp [FundamentalGroup.one_def, Path.Homotopic.Quotient.mk_refl]
 
 /-- The reverse loop represents the inverse. -/
 @[simp]
-theorem mk_symm (p : Path x₀ x₀) : mk p.symm = (mk p)⁻¹ := by
-  unfold mk
-  rw [← op_inv, FundamentalGroup.inv_def, Path.Homotopic.Quotient.mk_symm]
+theorem mk_symm (p : Path x₀ x₀) : mk p.symm = (mk p)⁻¹ :=
+  unop_injective <| by simp [FundamentalGroup.inv_def, Path.Homotopic.Quotient.mk_symm]
 
 /-- Two loops have the same class iff they are homotopic. -/
 theorem mk_eq_mk_iff {p q : Path x₀ x₀} : mk p = mk q ↔ p.Homotopic q :=
