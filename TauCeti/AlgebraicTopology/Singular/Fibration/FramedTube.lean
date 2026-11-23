@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Fibration.FiberInclusion
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 public import TauCeti.Geometry.Manifold.PontryaginThom.NormalCoordinate
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Local homology of a Serre fibration along the preimage of a framed submanifold
@@ -28,6 +29,9 @@ It is natural for a map `s : B' → B` carrying a second framed tube `τ'` to `�
 `s (τ' (x, v)) = τ (φ x, v)`, and pulling the core of `τ` back into the core of `τ'`
 (`TauCeti.TopCat.singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq`): for instance
 the Thom collapse onto the Thom space of the trivial bundle.
+For the identity of `B` this is the Thom isomorphism `Hₙ₊ᵣ(B, B ∖ f(S)) ≅ Hₙ(S)` of the framed
+submanifold (`TauCeti.TopCat.singularHomologyComplRangeIso`), the trivial-bundle case of the
+identification of a shriek map with the Thom isomorphism of a tube.
 
 Let `s : B' → B` meet the core in a single point `b'`, `s⁻¹(f(S)) = {b'}`, and suppose that near
 `b'` the normal coordinate of `s` is a chart `e` of `B'`: `s` maps the ball of radius `ε` about
@@ -65,8 +69,13 @@ The trivialization over the tube is read as a product with the ball through
 
 ## Main definitions and results
 
+* `TauCeti.IsFramedTube.coreHom`, `TauCeti.IsFramedTube.coreHomeomorph`: the core `S → f(S)` as a
+  morphism of topological spaces and as a homeomorphism.
 * `TauCeti.TopCat.singularHomologyComplPreimageCoreIso`: the local homology along the core of a
   framed tube.
+* `TauCeti.TopCat.isZero_singularHomology_complRange`,
+  `TauCeti.TopCat.singularHomologyComplRangeIso`: the Thom isomorphism of a framed submanifold,
+  and the vanishing below the codimension.
 * `TauCeti.TopCat.singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq`: naturality
   of the shriek map of the core for maps of framed tubes.
 * `TauCeti.TopCat.singularHomologyComplPreimageCoreIso_hom_naturality`,
@@ -86,6 +95,8 @@ The trivialization over the tube is read as a product with the ball through
   Applications to cotangent bundles*, arXiv:2404.07953, §2.4 (Remark 2.10) and §7, Lemma 7.7.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   Chapter II.
+* J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
+  Princeton University Press, 1974, §11 (the Thom isomorphism of a tubular neighbourhood).
 -/
 
 public section
@@ -97,6 +108,45 @@ open CategoryTheory Limits Module Metric Set Topology
 universe u
 
 namespace TauCeti
+
+/-! ### The core of a framed tube as a morphism -/
+
+namespace IsFramedTube
+
+variable {S V : Type u} [TopologicalSpace S] [TopologicalSpace V] [Zero V] {B : _root_.TopCat.{u}}
+  {f : S → B} {τ : S × V → B} (hτ : IsFramedTube f τ)
+
+/-- The core `f : S → f(S)` of a framed tube, as a morphism to the preimage of `f(S)` under the
+identity of `B`, the form in which the local homology along the core is stated. -/
+def coreHom : _root_.TopCat.of S ⟶ _root_.TopCat.of ↥((𝟙 B) ⁻¹' range f) :=
+  _root_.TopCat.ofHom ⟨fun x ↦ ⟨f x, mem_range_self x⟩, hτ.continuous.subtype_mk _⟩
+
+-- Not `@[simp]`: `simp` rewrites the preimage under the identity in the type of the codomain, so
+-- the left-hand side is not in simp normal form.
+lemma coe_coreHom_apply (x : S) : (hτ.coreHom x : B) = f x :=
+  (rfl)
+
+/-- The core of a framed tube is a homeomorphism of `S` onto the preimage of `f(S)` under the
+identity of `B`. -/
+def coreHomeomorph : S ≃ₜ ↥((𝟙 B) ⁻¹' range f) :=
+  hτ.isEmbedding.toHomeomorph.trans
+    (.setCongr (by ext; rw [mem_preimage, ConcreteCategory.id_apply]))
+
+-- Not `@[simp]`, for the same reason as `TauCeti.IsFramedTube.coe_coreHom_apply`.
+lemma coe_coreHomeomorph_apply (x : S) : (hτ.coreHomeomorph x : B) = f x := by
+  rw [coreHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply,
+    IsEmbedding.toHomeomorph_apply_coe]
+
+/-- The homeomorphism of `S` with the core is the core `TauCeti.IsFramedTube.coreHom`. -/
+lemma isoOfHomeo_coreHomeomorph_hom :
+    (_root_.TopCat.isoOfHomeo hτ.coreHomeomorph).hom = hτ.coreHom := by
+  -- `ext` also applies `Subtype.ext`, so the goal is about the points of `B`.
+  ext x
+  rw [coe_coreHom_apply]
+  -- The morphism `(TopCat.isoOfHomeo h).hom` applies `h` itself.
+  exact hτ.coe_coreHomeomorph_apply x
+
+end IsFramedTube
 
 namespace TopCat
 
@@ -237,6 +287,56 @@ theorem singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq {ε : �
   exact (g.coe_preimageMapOver_apply hg _ x).symm
 
 end TubeMap
+
+/-! ### The Thom isomorphism of a framed submanifold -/
+
+section Thom
+
+variable {V S : Type u} [NormedAddCommGroup V] {B : _root_.TopCat.{u}} [TopologicalSpace S]
+  {f : S → B} {τ : S × V → B} (hτ : IsFramedTube f τ)
+
+variable {R : Type*} [Ring R] (M : ModuleCat.{u} R) (hfc : IsClosed (range f))
+  [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+include hτ hfc in
+/-- **The local homology of a space along a framed submanifold vanishes below the codimension.**
+Let `τ : S × V → B` be a framed tube around `f : S → B` with closed core `f(S)`, where `V` is a
+real normed space of finite dimension `r`. Then `Hₘ(B, B ∖ f(S); M) = 0` for every `m < r`. -/
+theorem isZero_singularHomology_complRange {m : ℕ} (hm : m < finrank ℝ V) :
+    IsZero ((TopPair.ofSubset (range f)ᶜ).singularHomology M m) :=
+  isZero_singularHomology_complPreimage_range hτ M hfc (serreFibrations.id_mem B) hm
+
+/-- **The Thom isomorphism of a framed submanifold.** Let `τ : S × V → B` be a framed tube around
+`f : S → B` with closed core `f(S)`, where `V` is a real normed space of finite dimension `r`.
+Then `Hₘ(B, B ∖ f(S); M) ≅ Hₙ(S; M)` for `m = n + r`. This is
+`TauCeti.TopCat.singularHomologyComplPreimageCoreIso` for the identity of `B`, followed by the
+inverse of the homeomorphism `S ≃ₜ f(S)` of the core
+(`TauCeti.TopCat.singularHomologyComplRangeIso_hom_comp_map_coreHom`). -/
+def singularHomologyComplRangeIso {ε : ℝ} (hε₀ : 0 < ε) (n m : ℕ) (h : n + finrank ℝ V = m) :
+    (TopPair.ofSubset (range f)ᶜ).singularHomology M m ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj
+        (_root_.TopCat.of S) :=
+  singularHomologyComplPreimageCoreIso hτ M hfc hε₀ (serreFibrations.id_mem B) n m h ≪≫
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).mapIso
+      (_root_.TopCat.isoOfHomeo hτ.coreHomeomorph).symm
+
+/-- The Thom isomorphism of a framed submanifold, followed by the map induced by the core
+`S → f(S)`, is the local homology along the core for the identity of `B`. -/
+@[reassoc]
+lemma singularHomologyComplRangeIso_hom_comp_map_coreHom {ε : ℝ} (hε₀ : 0 < ε) (n m : ℕ)
+    (h : n + finrank ℝ V = m) :
+    (singularHomologyComplRangeIso hτ M hfc hε₀ n m h).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map hτ.coreHom =
+      (singularHomologyComplPreimageCoreIso hτ M hfc hε₀ (serreFibrations.id_mem B) n m h).hom := by
+  -- The source of the Thom isomorphism is that of the local homology along the core only up to
+  -- unfolding the preimage under the identity, which `rw` does not see through, so the
+  -- composite is reassociated as a term.
+  refine (Category.assoc _ _ _).trans ?_
+  rw [Functor.mapIso_hom, Iso.symm_hom, ← Functor.map_comp, ← hτ.isoOfHomeo_coreHomeomorph_hom,
+    Iso.inv_hom_id, CategoryTheory.Functor.map_id]
+  exact Category.comp_id _
+
+end Thom
 
 /-! ### Maps meeting the core of a framed tube once -/
 
