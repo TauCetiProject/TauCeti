@@ -23,18 +23,20 @@ theorem shows that the series `∑ Y s` converges almost everywhere.
 
 ## Main results
 
-* `MeasureTheory.martingale_sum_range`: the partial sums of martingale differences form a
-  martingale.
-* `MeasureTheory.integral_sq_sum_range_of_condExp_eq_zero`: the second moment of a partial sum
-  of square-integrable martingale differences is the sum of their second moments.
-* `MeasureTheory.exists_ae_tendsto_sum_range_of_summable_integral_sq`: if the second moments are
-  summable, the series converges almost everywhere.
+* `TauCeti.MeasureTheory.martingale_sum_range`: the partial sums of martingale differences form
+  a martingale.
+* `TauCeti.MeasureTheory.integral_sq_sum_range_of_condExp_eq_zero`: the second moment of a
+  partial sum of square-integrable martingale differences is the sum of their second moments.
+* `TauCeti.MeasureTheory.exists_ae_tendsto_sum_range_of_summable_integral_sq`: if the second
+  moments are summable, the series converges almost everywhere.
 -/
 
 public section
 
-open Filter Finset Topology
+open MeasureTheory Filter Finset Topology
 open scoped ENNReal
+
+namespace TauCeti
 
 namespace MeasureTheory
 
@@ -112,3 +114,5 @@ theorem exists_ae_tendsto_sum_range_of_summable_integral_sq [IsFiniteMeasure μ]
         exact hsum.sum_le_tsum _ fun s _ ↦ integral_nonneg fun ω ↦ sq_nonneg _
 
 end MeasureTheory
+
+end TauCeti

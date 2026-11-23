@@ -173,7 +173,7 @@ private lemma exists_ae_tendsto_sum_range_truncStep_mul [IsFiniteMeasure P] (hα
     (hw_condExp : ∀ t, P[w t | ℱ t] =ᵐ[P] 0) (k : ℕ) :
     ∀ᵐ ω ∂P, ∃ L, Tendsto (fun t ↦ ∑ s ∈ range t, truncStep P ℱ α w k s ω * w s ω) atTop
       (𝓝 L) := by
-  refine exists_ae_tendsto_sum_range_of_summable_integral_sq
+  refine MeasureTheory.exists_ae_tendsto_sum_range_of_summable_integral_sq
     (stronglyMeasurable_truncStep_mul hα hw k) (memLp_truncStep_mul hα hw hw₂ k)
     (condExp_truncStep_mul hα hw hw₂ hw_condExp k)
     (summable_of_sum_range_le (c := k * (k * P.real Set.univ))
