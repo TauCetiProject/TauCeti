@@ -193,14 +193,11 @@ theorem dual_baseChange_orientation_eq_sign_det_smul (ρ : Representation ℝ G 
       (SignType.sign (LinearMap.det (ρ g)) : ℤ) • LinearMap.id := by
   have hsign : SignType.sign (LinearMap.det (ρ g⁻¹)) =
       SignType.sign (LinearMap.det (ρ g)) := by
-    have h := map_inv
-      ((signHom : ℝ →*₀ SignType).toMonoidHom.comp (LinearMap.det.comp ρ)) g
-    have hinv : (SignType.sign (LinearMap.det (ρ g)))⁻¹ =
-        SignType.sign (LinearMap.det (ρ g)) := rfl
-    calc
-      SignType.sign (LinearMap.det (ρ g⁻¹)) =
-          (SignType.sign (LinearMap.det (ρ g)))⁻¹ := h
-      _ = _ := hinv
+    let χ := (signHom : ℝ →*₀ SignType).toMonoidHom.comp (LinearMap.det.comp ρ)
+    have hmul : χ g⁻¹ * χ g = 1 := by
+      rw [← map_mul, inv_mul_cancel, map_one]
+    have hn := right_ne_zero_of_mul_eq_one hmul
+    exact mul_right_cancel₀ hn (hmul.trans (SignType.mul_self_eq_one_iff.mpr hn).symm)
   apply LinearMap.ext
   intro f
   apply LinearMap.ext
