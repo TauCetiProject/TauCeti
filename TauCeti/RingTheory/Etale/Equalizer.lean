@@ -47,11 +47,12 @@ require of finite étale covers.
 
 The proof reduces to split algebras in three steps.
 
-* Over a split base, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` has idempotent matrix entries
-  `φ (Pi.single i 1) j`. Over the component of each of their choice products
-  (`TauCeti.completeOrthogonalIdempotents_prod_ite`), every entry is `0` or `1`. If the component
-  is nonzero, `φ` is induced by a map `κ → ι`, and the equalizer of two such maps is the algebra of
-  functions on a quotient of `ι`. Over a zero component, the equalizer is the zero algebra.
+* Over a split base, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` with `ι` and `κ` finite has
+  idempotent matrix entries `φ (Pi.single i 1) j`. Over the component of each of their choice
+  products (`TauCeti.completeOrthogonalIdempotents_prod_ite`), every entry is `0` or `1`. If the
+  component is nonzero, `φ` is induced by a map `κ → ι`, and the equalizer of two such maps is the
+  algebra of functions on a quotient of `ι`. Over a zero component, the equalizer is the zero
+  algebra.
 * If `A` and `B` have constant ranks, they both split after a faithfully flat finite étale base
   change (`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale`). Flat base change commutes with
   equalizers (`AlgHom.tensorEqualizerEquiv`), and finite étaleness descends along faithfully flat
@@ -115,10 +116,11 @@ section Split
 
 variable {T : Type*} [CommRing T]
 
-/-- The equalizer of two algebra maps between split algebras whose matrix entries are all `0` or
-`1` is finite étale. If `T` is nontrivial, the maps are induced by maps `u v : κ → ι`, and the
-equalizer is the algebra of functions on the quotient of `ι` by the relation identifying `u j`
-with `v j`. If `T` is the zero ring, so is the equalizer. -/
+/-- The equalizer of two algebra maps `(ι → T) →ₐ[T] (κ → T)` between split algebras, with `ι`
+finite, whose matrix entries are all `0` or `1` is finite étale. If `T` is nontrivial, the maps
+are induced by maps `u v : κ → ι`, and the equalizer is the algebra of functions on the quotient
+of `ι` by the relation identifying `u j` with `v j`. If `T` is the zero ring, so is the
+equalizer. -/
 private theorem etale_and_finite_equalizer_of_entries {ι κ : Type*} [_root_.Finite ι]
     [DecidableEq ι] (φ ψ : (ι → T) →ₐ[T] (κ → T))
     (hφ : ∀ i j, φ (Pi.single i 1) j = 0 ∨ φ (Pi.single i 1) j = 1)
@@ -144,9 +146,10 @@ private theorem etale_and_finite_equalizer_of_entries {ι κ : Type*} [_root_.Fi
       simpa [hu, hv] using congrFun hs j
   exact ⟨.of_equiv e, .equiv e.toLinearEquiv⟩
 
-/-- The equalizer of two algebra maps between split algebras is finite étale. Over the component
-of each choice product of the matrix entries, all entries become `0` or `1`, and the equalizer is
-computed by `etale_and_finite_equalizer_of_entries`. -/
+/-- The equalizer of two algebra maps `(ι → T) →ₐ[T] (κ → T)` between split algebras, with `ι` and
+`κ` finite, is finite étale. Over the component of each choice product of the matrix entries, all
+entries become `0` or `1`, and the equalizer is computed by
+`etale_and_finite_equalizer_of_entries`. -/
 private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι] [_root_.Finite κ]
     (φ ψ : (ι → T) →ₐ[T] (κ → T)) :
     Algebra.Etale T (equalizer φ ψ) ∧ Module.Finite T (equalizer φ ψ) := by
@@ -164,7 +167,7 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
   have hT' (x : Bool × ι × κ) : algebraMap T T' (a x) = 0 ∨ algebraMap T T' (a x) = 1 := by
     have hfactor :=
       congrArg (Ideal.Quotient.mk (Ideal.span {1 - ∏ y, if σ y then a y else 1 - a y}))
-        (TauCeti.ite_mul_prod_ite σ (ha x))
+        (TauCeti.ite_mul_prod_ite σ (Finset.mem_univ x) (ha x))
     rw [map_mul, TauCeti.Ideal.Quotient.mk_span_singleton_one_sub_self, mul_one] at hfactor
     rw [Ideal.Quotient.algebraMap_eq]
     split at hfactor
@@ -172,18 +175,17 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
     · exact .inl (by simpa [sub_eq_self] using hfactor)
   let eι := Algebra.TensorProduct.piScalarRight T T' T' ι
   let eκ := Algebra.TensorProduct.piScalarRight T T' T' κ
-  let e := eι.equalizerCongr eκ (Algebra.TensorProduct.map (AlgHom.id T' T') φ)
-    (Algebra.TensorProduct.map (AlgHom.id T' T') ψ)
-  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_of_entries
-    ((eκ : (T' ⊗[T] (κ → T)) →ₐ[T'] (κ → T')).comp
-      ((Algebra.TensorProduct.map (AlgHom.id T' T') φ).comp (eι.symm : (ι → T') →ₐ[T'] _)))
-    ((eκ : (T' ⊗[T] (κ → T)) →ₐ[T'] (κ → T')).comp
-      ((Algebra.TensorProduct.map (AlgHom.id T' T') ψ).comp (eι.symm : (ι → T') →ₐ[T'] _)))
+  let φ' := Algebra.TensorProduct.map (AlgHom.id T' T') φ
+  let ψ' := Algebra.TensorProduct.map (AlgHom.id T' T') ψ
+  let e : equalizer φ' ψ' ≃ₐ[T'] equalizer (eι.arrowCongr eκ φ') (eι.arrowCongr eκ ψ') :=
+    eι.equalizerCongr eκ φ' ψ'
+  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_of_entries (eι.arrowCongr eκ φ')
+    (eι.arrowCongr eκ ψ')
     (fun i j ↦ by
-      simpa [a, eι, eκ, Algebra.algebraMap_eq_smul_one] using
+      simpa [a, eι, eκ, φ', Algebra.algebraMap_eq_smul_one] using
         hT' (true, i, j))
     (fun i j ↦ by
-      simpa [a, eι, eκ, Algebra.algebraMap_eq_smul_one] using
+      simpa [a, eι, eκ, ψ', Algebra.algebraMap_eq_smul_one] using
         hT' (false, i, j))
   exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
 
@@ -194,10 +196,9 @@ private theorem etale_and_finite_equalizer_of_isFiniteSplit {A B : Type*} [CommR
     Algebra.Etale T (equalizer f g) ∧ Module.Finite T (equalizer f g) := by
   obtain ⟨m, ⟨eA⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T A
   obtain ⟨n, ⟨eB⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T B
-  let e := eA.equalizerCongr eB f g
-  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_pi
-    ((eB : B →ₐ[T] (Fin n → T)).comp (f.comp (eA.symm : (Fin m → T) →ₐ[T] A)))
-    ((eB : B →ₐ[T] (Fin n → T)).comp (g.comp (eA.symm : (Fin m → T) →ₐ[T] A)))
+  let e : equalizer f g ≃ₐ[T] equalizer (eA.arrowCongr eB f) (eA.arrowCongr eB g) :=
+    eA.equalizerCongr eB f g
+  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_pi (eA.arrowCongr eB f) (eA.arrowCongr eB g)
   exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
 
 end Split
@@ -269,7 +270,7 @@ private theorem etale_and_finite_equalizer_aux {R A B : Type u} [CommRing R] [Co
     have h0 : algebraMap R T' (1 - ∏ x, if σ x then a x else 1 - a x) = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self _)
     exact fun x ↦ TauCeti.notMem_iff_of_one_sub_prod_ite_mem σ Ideal.IsPrime.ne_top'
-      (Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)) (by simp [(ha x).eq])
+      (Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)) (Finset.mem_univ x) (by simp [(ha x).eq])
   -- A rank bounded by `N` whose fibres are the basic open sets of elements `ε k` that every prime
   -- of `T'` sees uniformly is the same at all primes under primes of `T'`.
   have hconst (r : PrimeSpectrum R → ℕ) (ε : Fin (N + 1) → R) (hN : ∀ p, r p ≤ N)
@@ -299,13 +300,10 @@ private theorem etale_and_finite_equalizer {R : Type u} {A : Type v} {B : Type w
   let eA := (Shrink.algEquiv R A).symm
   let eB := (Shrink.algEquiv R B).symm
   have : Algebra.Etale R (Shrink.{u} A) := .of_equiv eA
-  have : Module.Finite R (Shrink.{u} A) := .equiv eA.toLinearEquiv
   have : Algebra.Etale R (Shrink.{u} B) := .of_equiv eB
-  have : Module.Finite R (Shrink.{u} B) := .equiv eB.toLinearEquiv
-  let e := AlgEquiv.equalizerCongr eA eB f g
-  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_aux
-    ((eB : B →ₐ[R] Shrink.{u} B).comp (f.comp (eA.symm : Shrink.{u} A →ₐ[R] A)))
-    ((eB : B →ₐ[R] Shrink.{u} B).comp (g.comp (eA.symm : Shrink.{u} A →ₐ[R] A)))
+  let e : equalizer f g ≃ₐ[R] equalizer (eA.arrowCongr eB f) (eA.arrowCongr eB g) :=
+    eA.equalizerCongr eB f g
+  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_aux (eA.arrowCongr eB f) (eA.arrowCongr eB g)
   exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
 
 section
