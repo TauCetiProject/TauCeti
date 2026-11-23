@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Sl2.CasimirSymbol
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.PoissonBracket.LieModule
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Sl2Casimir.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Sl2Casimir.Symbol
 
 /-!
 # Zero-fibre Casimir symbol and Poisson-centrality for `sl₂`

@@ -17,16 +17,15 @@ triple of `LieAlgebra.SpecialLinear.sl (Fin 2) R`.
 
 ## Main definitions
 
-* `TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol`: `ι(h)² + 4 * ι(e) * ι(f)` in
-  `SymmetricAlgebra R L`.
-* `TauCeti.UniversalEnvelopingAlgebra.slFinTwoCasimirSymbol`: specialization to `sl (Fin 2) R`.
+* `TauCeti.sl2CasimirSymbol`: `ι(h)² + 4 * ι(e) * ι(f)` in `SymmetricAlgebra R L`.
+* `TauCeti.slFinTwoCasimirSymbol`: specialization to `sl (Fin 2) R`.
 -/
 
 public section
 
 open LieAlgebra
 
-namespace TauCeti.UniversalEnvelopingAlgebra
+namespace TauCeti
 
 universe u v
 
@@ -54,8 +53,8 @@ variable (R : Type u) [CommRing R]
 noncomputable abbrev slFinTwoCasimirSymbol :
     SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R) :=
   sl2CasimirSymbol R (SpecialLinear.sl (Fin 2) R)
-    (TauCeti.slFinTwoBasis R 2) (TauCeti.slFinTwoBasis R 0) (TauCeti.slFinTwoBasis R 1)
+    (slFinTwoBasis R 2) (slFinTwoBasis R 0) (slFinTwoBasis R 1)
 
 end SlFinTwo
 
-end TauCeti.UniversalEnvelopingAlgebra
+end TauCeti

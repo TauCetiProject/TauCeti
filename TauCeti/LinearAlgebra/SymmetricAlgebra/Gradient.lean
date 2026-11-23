@@ -191,6 +191,7 @@ theorem symmetricGradient_ι (b : Module.Basis ι R M) (x : M) (ξ : Module.Dual
   b.ext_elem fun i ↦ by simp
 
 /-- **Product rule for `symmetricGradient`.** -/
+@[simp]
 theorem symmetricGradient_mul (b : Module.Basis ι R M) (p q : SymmetricAlgebra R M)
     (ξ : Module.Dual R M) :
     b.symmetricGradient (p * q) ξ =
@@ -199,6 +200,7 @@ theorem symmetricGradient_mul (b : Module.Basis ι R M) (p q : SymmetricAlgebra 
   b.ext_elem fun i ↦ by simp [Derivation.leibniz]
 
 /-- **Power rule for `symmetricGradient`.** -/
+@[simp]
 theorem symmetricGradient_pow (b : Module.Basis ι R M) (p : SymmetricAlgebra R M) (n : ℕ)
     (ξ : Module.Dual R M) :
     b.symmetricGradient (p ^ n) ξ =

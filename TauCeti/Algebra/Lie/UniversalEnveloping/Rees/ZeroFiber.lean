@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
 public import TauCeti.Algebra.WordFiltration.Rees
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The symmetric-algebra fibre of the PBW Rees algebra
@@ -68,17 +69,15 @@ no freeness hypothesis on `L` or `M`. -/
 noncomputable def reesZeroFiberMap (f : L →ₗ⁅R⁆ M) :
     (reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) →ₐ[R]
       (reesAlgebra R M ⧸ Ideal.span {reesParameter R M}) :=
-  (Ideal.quotientEquivAlgOfEq R (by rw [coeffSubalgebra.algebraMap_X])).toAlgHom.comp <|
-    (reesQuotientMap R f Polynomial.X).comp
-      (Ideal.quotientEquivAlgOfEq R
-        (by rw [coeffSubalgebra.algebraMap_X] :
-          Ideal.span {reesParameter R L} =
-            Ideal.span {algebraMap (Polynomial R) (reesAlgebra R L) Polynomial.X})).toAlgHom
+  Ideal.quotientMapₐ (Ideal.span {reesParameter R M}) ((reesMap R f).restrictScalars R) <|
+    Ideal.span_le.mpr <| by
+      rintro p (rfl : p = reesParameter R L)
+      simp
 
 @[simp]
 theorem reesZeroFiberMap_mk (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
-    reesZeroFiberMap R f (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (reesMap R f p) := by
-  simp [reesZeroFiberMap]
+    reesZeroFiberMap R f (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (reesMap R f p) :=
+  (rfl)
 
 @[simp]
 theorem reesZeroFiberMap_id :
