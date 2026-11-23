@@ -325,6 +325,16 @@ theorem mem_idealSubmodule_iff_mem_closure {J : TwoSidedIdeal A} {x : E} :
     rw [← SetLike.mem_coe, coe_idealSubmodule]
     exact closure_mono (by rintro _ ⟨a, ha, rfl⟩; exact Submodule.subset_span ⟨a, ha, x, rfl⟩) hx⟩
 
+/-- Taking the topological closure of `J` does not change `idealSubmodule J E`. -/
+@[simp]
+theorem idealSubmodule_topologicalClosure (J : TwoSidedIdeal A) :
+    idealSubmodule J.topologicalClosure E = idealSubmodule J E := by
+  refine le_antisymm ?_ (idealSubmodule_mono J.le_topologicalClosure)
+  refine (idealSubmodule_le_iff (isClosed_idealSubmodule J E)).mpr fun a ha x => ?_
+  rw [← SetLike.mem_coe, coe_idealSubmodule]
+  exact closure_mono (by rintro _ ⟨b, hb, rfl⟩; exact Submodule.subset_span ⟨b, hb, x, rfl⟩)
+    (closure_smul_topologicalClosure_subset J x (subset_closure ⟨a, ha, rfl⟩))
+
 /-- For closed ideals `J₁` and `J₂`,
 `idealSubmodule (J₁ ⊓ J₂) E = idealSubmodule J₁ E ⊓ idealSubmodule J₂ E`. -/
 theorem idealSubmodule_inf (J₁ J₂ : TwoSidedIdeal A) [IsClosed (J₁ : Set A)]
@@ -689,6 +699,12 @@ theorem quotientMapCLM_mk (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
     quotientMapCLM J T hT (Submodule.Quotient.mk x) = Submodule.Quotient.mk (T x) := (rfl)
 
 @[simp]
+theorem quotientMapCLM_comp_mkQL (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) :
+    (quotientMapCLM J T hT).comp (idealSubmodule J E).mkQL = (idealSubmodule J F).mkQL.comp T := by
+  ext x; rfl
+
+@[simp]
 theorem quotientMapCLM_id (J : TwoSidedIdeal A) :
     quotientMapCLM J (ContinuousLinearMap.id ℂ E) (fun _ _ => rfl) =
       ContinuousLinearMap.id ℂ (E ⧸ idealSubmodule J E) := by
@@ -714,6 +730,12 @@ def quotientFactorCLM {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
 theorem quotientFactorCLM_mk {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) (x : E) :
     quotientFactorCLM h (Submodule.Quotient.mk x : E ⧸ idealSubmodule J₁ E) =
       Submodule.Quotient.mk x := (rfl)
+
+@[simp]
+theorem quotientFactorCLM_comp_mkQL {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
+    (quotientFactorCLM (E := E) h).comp (idealSubmodule J₁ E).mkQL =
+      (idealSubmodule J₂ E).mkQL := by
+  ext x; rfl
 
 theorem quotientFactorCLM_surjective {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
     Function.Surjective (quotientFactorCLM (E := E) h) := fun u =>
@@ -936,6 +958,7 @@ variable {E F : Type*}
   [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
 
 /-- `quotientMapCLM J T hT` is `(A ⧸ J)`-linear. -/
+@[simp]
 theorem quotientMapCLM_smul (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
     (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (q : A ⧸ J) (v : E ⧸ idealSubmodule J E) :
     quotientMapCLM J T hT (q • v) = q • quotientMapCLM J T hT v := by
@@ -995,6 +1018,7 @@ theorem isAdjointPair_quotientMapCLM (J : TwoSidedIdeal A) [IsClosed (J : Set A)
 
 /-- `quotientFactorCLM h` intertwines the quotient actions along `TwoSidedIdeal.Quotient.factor h`.
 -/
+@[simp]
 theorem quotientFactorCLM_smul {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) (q : A ⧸ J₁)
     (u : E ⧸ idealSubmodule J₁ E) :
     quotientFactorCLM h (q • u) =
@@ -1024,6 +1048,7 @@ variable {E F : Type*}
   [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
 
 /-- Right-module `(A ⧸ J)ᵐᵒᵖ`-linearity of `quotientMapCLM J.op T hT`. -/
+@[simp]
 theorem quotientMapCLM_op_smul (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
     (hT : ∀ (u : Aᵐᵒᵖ) (x : E), T (u • x) = u • T x) (q : (A ⧸ J)ᵐᵒᵖ)
     (v : E ⧸ idealSubmodule J.op E) :
@@ -1085,6 +1110,7 @@ theorem isAdjointPair_quotientMapCLM_op (J : TwoSidedIdeal A) [IsClosed (J : Set
 
 /-- `quotientFactorCLM` at `J₁.op ≤ J₂.op` intertwines the right quotient actions along
 `TwoSidedIdeal.Quotient.factor`. -/
+@[simp]
 theorem quotientFactorCLM_op_smul {J₁ J₂ : TwoSidedIdeal A} (h : J₁.op ≤ J₂.op)
     (q : (A ⧸ J₁)ᵐᵒᵖ) (u : E ⧸ idealSubmodule J₁.op E) :
     quotientFactorCLM h (q • u) =
