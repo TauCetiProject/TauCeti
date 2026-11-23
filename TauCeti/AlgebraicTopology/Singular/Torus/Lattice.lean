@@ -72,7 +72,7 @@ choice of base point does not matter
 def orbitRelQuotientFirstHomologyEquiv :
     ((singularChains ℤ).obj (TopCat.of (AddAction.orbitRel.Quotient L E))).homology 1 ≃ₗ[ℤ] L :=
   ((hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E))
-      (_root_.Quotient.mk _ 0)).symm.trans
+      (_root_.Quotient.mk _ 0) (.refl ℤ)).symm.trans
     (MulEquiv.toAdditiveLeft ((L.orbitRelQuotientFundamentalGroupEquiv _).abelianizationCongr.trans
       Group.Abelianization.equivOfComm.symm))).toIntLinearEquiv
 
@@ -83,14 +83,14 @@ theorem orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv
     (x : AddAction.orbitRel.Quotient L E)
     (γ : FundamentalGroup (AddAction.orbitRel.Quotient L E) x) :
     L.orbitRelQuotientFirstHomologyEquiv
-        (hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E)) x
+        (hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E)) x (.refl ℤ)
           (Additive.ofMul (Group.Abelianization.of γ))) =
       (L.orbitRelQuotientFundamentalGroupEquiv x γ).toAdd := by
   -- Move the loop class to the base point of the definition, which changes neither its Hurewicz
   -- class nor its image in `L`.
   let p := PathConnectedSpace.somePath x (_root_.Quotient.mk (AddAction.orbitRel L E) 0)
   rw [← hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath
-      (X := TopCat.of (AddAction.orbitRel.Quotient L E)) p γ,
+      (X := TopCat.of (AddAction.orbitRel.Quotient L E)) p (.refl ℤ) γ,
     ← L.orbitRelQuotientFundamentalGroupEquiv_fundamentalGroupMulEquivOfPath p γ,
     orbitRelQuotientFirstHomologyEquiv, AddEquiv.coe_toIntLinearEquiv, AddEquiv.trans_apply,
     AddEquiv.symm_apply_apply]
@@ -101,7 +101,7 @@ of the loop class at any point `x` of `E / L` that corresponds to `l`. -/
 theorem orbitRelQuotientFirstHomologyEquiv_symm_apply (x : AddAction.orbitRel.Quotient L E)
     (l : L) :
     L.orbitRelQuotientFirstHomologyEquiv.symm l =
-      hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E)) x
+      hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E)) x (.refl ℤ)
         (Additive.ofMul (Group.Abelianization.of
           ((L.orbitRelQuotientFundamentalGroupEquiv x).symm (Multiplicative.ofAdd l)))) := by
   rw [LinearEquiv.symm_apply_eq, orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv,
@@ -112,7 +112,8 @@ theorem orbitRelQuotientFirstHomologyEquiv_symm_apply (x : AddAction.orbitRel.Qu
 theorem orbitRelQuotientFirstHomologyEquiv_loopClass {x : AddAction.orbitRel.Quotient L E}
     (γ : Path x x) (Γ : C(I, E)) (hΓ : _root_.Quotient.mk (AddAction.orbitRel L E) ∘ Γ = γ) :
     (L.orbitRelQuotientFirstHomologyEquiv
-        (H₁AddEquivHomology _ (loopClass (X := TopCat.of (AddAction.orbitRel.Quotient L E)) γ)) :
+        (H₁AddEquivHomology ℤ _
+          (loopClass ℤ (X := TopCat.of (AddAction.orbitRel.Quotient L E)) γ)) :
           E) = Γ 1 - Γ 0 := by
   rw [← hurewiczHomologyAddEquiv_ofMul_of_mk,
     orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv,
@@ -131,7 +132,7 @@ theorem orbitRelQuotientFirstHomologyEquiv_singularHomologyMap {E' : Type} [AddC
       f (L.orbitRelQuotientFirstHomologyEquiv c) := by
   let x := _root_.Quotient.mk (AddAction.orbitRel L E) 0
   obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E))
-    x).surjective c
+    x (.refl ℤ)).surjective c
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
   -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and
   -- `Group.Abelianization.of`

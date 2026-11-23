@@ -90,6 +90,7 @@ private def HasLocalMetric (X : (x : M) → TangentSpace 𝓘(ℝ, E) x) (f : M 
     ∀ y ∈ U, ((∀ v w, s y v w = s y w v) ∧ ∀ v, v ≠ 0 → 0 < s y v v) ∧
       s y ∈ metricCondition X f y
 
+omit [FiniteDimensional ℝ E] in
 /-- Near a critical point, the Euclidean metric of a Morse chart in which `X` is linear is a local
 metric satisfying the condition. -/
 private theorem exists_nhds_of_mfderiv_eq_zero (hX : IsAdaptedPseudoGradient f X)

@@ -113,7 +113,7 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
   for every `v < τ (b - a)`.
 * `TauCeti.exists_contDiff_odd_truncation`: a smooth odd function equal to the identity on
   `[-r, r]`, to `±1` on `±[R, ∞)`, with the sign of its argument.
-* `TauCeti.exists_cutoffs_add_add_eq_one`: three `C²` cutoffs summing to one, vanishing for
+* `TauCeti.exists_cutoffs_add_add_eq_one`: three smooth cutoffs summing to one, vanishing for
   `s ≤ R`, for `s ≥ -R` and outside `(-(R + 1), R + 1)`, with derivatives bounded by a common
   constant and supported in `[-(R + 1), R + 1]`.
 -/
@@ -139,6 +139,19 @@ both sides vanish. -/
 theorem hasDerivAt (x : ℝ) : HasDerivAt expNegInvGlue (x⁻¹ ^ 2 * expNegInvGlue x) x := by
   simpa using hasDerivAt_polynomial_eval_inv_mul 1 x
 
+/-- The second derivative of the glued exponential profile, including the joining point. -/
+theorem deriv_deriv (s : ℝ) :
+    deriv (deriv expNegInvGlue) s =
+      (s⁻¹ ^ 4 - 2 * s⁻¹ ^ 3) * expNegInvGlue s := by
+  -- Function extensionality packages the existing pointwise first-derivative formula.
+  rw [show deriv expNegInvGlue = (fun x ↦ x⁻¹ ^ 2 * expNegInvGlue x) by
+    funext x; exact (hasDerivAt x).deriv]
+  have h := (expNegInvGlue.hasDerivAt_polynomial_eval_inv_mul
+    (Polynomial.X ^ 2 : Polynomial ℝ) s).deriv
+  simp only [Polynomial.eval_X_pow, Polynomial.eval_mul, Polynomial.eval_sub,
+    Polynomial.derivative_X_pow, Polynomial.eval_C] at h
+  convert h using 1; ring
+
 /-- On a real inner product space, the derivative of `x ↦ expNegInvGlue (‖x‖ ^ 2)` at `x` is
 `‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`, also at `x = 0`, where it vanishes. -/
 theorem hasFDerivAt_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (x : E) :
@@ -147,6 +160,49 @@ theorem hasFDerivAt_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpac
   (hasDerivAt _).comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt
 
 end expNegInvGlue
+
+namespace TauCeti
+
+/-- The time derivative of an exponentially damped translating glued exponential profile. -/
+public theorem hasDerivAt_exp_mul_expNegInvGlue (c A b epsilon t : ℝ) :
+    HasDerivAt
+      (fun s : ℝ ↦ epsilon * Real.exp (-A * s) * expNegInvGlue (c + b * s))
+      (epsilon * Real.exp (-A * t) *
+        (-A * expNegInvGlue (c + b * t) + b * deriv expNegInvGlue (c + b * t))) t := by
+  have harg : HasDerivAt (fun s : ℝ ↦ c + b * s) b t := by
+    have hlin : HasDerivAt (fun s : ℝ ↦ b * s) b t := by
+      simpa only [id_eq, mul_one] using (hasDerivAt_id t).const_mul b
+    simpa only [Pi.add_apply, zero_add] using! (hasDerivAt_const t (c)).add hlin
+  have hψ : HasDerivAt (fun s : ℝ ↦ expNegInvGlue (c + b * s))
+      (deriv expNegInvGlue (c + b * t) * b) t := by
+    have hbase : HasDerivAt expNegInvGlue
+        (deriv expNegInvGlue (c + b * t)) (c + b * t) := by
+      exact ((contDiff_infty_iff_deriv.mp expNegInvGlue.contDiff).1
+        (c + b * t)).hasDerivAt
+    exact hbase.comp t harg
+  have he : HasDerivAt (fun s : ℝ ↦ Real.exp (-A * s))
+      (-A * Real.exp (-A * t)) t := by
+    simpa only [id_eq, mul_one, mul_comm] using ((hasDerivAt_id t).const_mul (-A)).exp
+  have hc : HasDerivAt (fun s : ℝ ↦ epsilon * Real.exp (-A * s))
+      (epsilon * (-A * Real.exp (-A * t))) t := by
+    have hfun : (fun s : ℝ ↦ epsilon * Real.exp (-A * s)) =
+        (fun _ : ℝ ↦ epsilon) * (fun s : ℝ ↦ Real.exp (-A * s)) := by
+      funext s
+      rfl
+    rw [hfun]
+    simpa only [zero_mul, zero_add] using (hasDerivAt_const t epsilon).mul he
+  have hfun : (fun s : ℝ ↦ epsilon * Real.exp (-A * s) *
+      expNegInvGlue (c + b * s)) =
+      (fun s : ℝ ↦ epsilon * Real.exp (-A * s)) *
+        (fun s : ℝ ↦ expNegInvGlue (c + b * s)) := by
+    funext s
+    rfl
+  rw [hfun]
+  convert! hc.mul hψ using 1
+  ring
+
+
+end TauCeti
 
 namespace Real.smoothTransition
 
@@ -548,7 +604,7 @@ theorem LocallyLipschitzOn.smoothTransition_mul_sub {α : Type*} [PseudoEMetricS
     LocallyLipschitzOn s fun x => Real.smoothTransition (c * (u x - t)) :=
   ((Real.smoothTransition.contDiff (n := 1)).comp
     (contDiff_const.mul (contDiff_id.sub contDiff_const))).locallyLipschitz
-    |>.comp_locallyLipschitzOn hu
+    |>.locallyLipschitzOn.comp hu (mapsTo_univ _ _)
 
 namespace TauCeti
 
@@ -752,7 +808,17 @@ theorem exists_contDiff_antitone_cutoff_abs_deriv_le {a b v τ : ℝ} (hab : a <
     exact (mul_le_of_le_one_right hc0 (hψle r)).trans hcτ
   · simp only [hderiv, hψ0 r hr, mul_zero, neg_zero]
 
-/-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are `C²` cutoffs `βp`, `βm`, `β₀`
+/-- A smooth **step** from `0` to `1`: for `a < b` there is a smooth function equal to `0` on
+`(-∞, a]` and to `1` on `[b, ∞)`, whose derivative vanishes outside `(a, b)`. -/
+theorem exists_contDiff_step {a b : ℝ} (hab : a < b) :
+    ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ (∀ r ≤ a, μ r = 0) ∧ (∀ r, b ≤ r → μ r = 1) ∧
+      ∀ r ∉ Ioo a b, deriv μ r = 0 := by
+  obtain ⟨ν, hν, -, -, hνb, hν1, -, hν'⟩ := exists_contDiff_antitone_cutoff_abs_deriv_le hab
+    zero_le_one (τ := 2 / (b - a)) (by rw [div_mul_cancel₀ _ (sub_pos.2 hab).ne']; norm_num)
+  exact ⟨fun r ↦ 1 - ν r, contDiff_const.sub hν, fun r hr ↦ by simp [hν1 r hr],
+    fun r hr ↦ by simp [hνb r hr], fun r hr ↦ by rw [deriv_const_sub, hν' r hr, neg_zero]⟩
+
+/-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are smooth cutoffs `βp`, `βm`, `β₀`
 summing to one, with `βp` vanishing for `s ≤ R`, `βm` vanishing for `s ≥ -R` and `β₀` vanishing
 outside `(-(R + 1), R + 1)`. Each satisfies `|β| ≤ 1`, and their derivatives are bounded by a common
 constant `M` and vanish outside `[-(R + 1), R + 1]`. They are `ψ(s - R)`, `ψ(-s - R)` and
@@ -760,13 +826,13 @@ constant `M` and vanish outside `[-(R + 1), R + 1]`. They are `ψ(s - R)`, `ψ(-
 theorem exists_cutoffs_add_add_eq_one {R : ℝ} (hR : 0 ≤ R) :
     ∃ M, ∃ βp βm β₀ : ℝ → ℝ, (∀ s, βp s + βm s + β₀ s = 1) ∧ (∀ s, s ≤ R → βp s = 0) ∧
       (∀ s, -R ≤ s → βm s = 0) ∧ (∀ s, s ∉ Ioo (-(R + 1)) (R + 1) → β₀ s = 0) ∧
-      ∀ β ∈ ({βp, βm, β₀} : Set (ℝ → ℝ)), ContDiff ℝ 2 β ∧ (∀ s, |β s| ≤ 1) ∧
+      ∀ β ∈ ({βp, βm, β₀} : Set (ℝ → ℝ)), ContDiff ℝ ∞ β ∧ (∀ s, |β s| ≤ 1) ∧
         (∀ s, |deriv β s| ≤ M) ∧ ∀ s, s < -(R + 1) ∨ R + 1 < s → deriv β s = 0 := by
   obtain ⟨M, hM⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
   set ψ := Real.smoothTransition
-  have hψc : ContDiff ℝ 2 ψ := Real.smoothTransition.contDiff
+  have hψc : ContDiff ℝ ∞ ψ := Real.smoothTransition.contDiff
   have hψd (x : ℝ) : HasDerivAt ψ (deriv ψ x) x :=
-    (hψc.differentiable two_ne_zero x).hasDerivAt
+    (hψc.differentiable (by simp) x).hasDerivAt
   have hψ0 (x : ℝ) (hx : x ≤ 0) : ψ x = 0 := Real.smoothTransition.zero_of_nonpos hx
   have hψ1 (x : ℝ) (hx : 1 ≤ x) : ψ x = 1 := Real.smoothTransition.one_of_one_le hx
   have hψ'M (x : ℝ) : |deriv ψ x| ≤ M := by simpa using hM x

@@ -38,7 +38,7 @@ So for coefficients that are bounded, measurable and uniformly elliptic but disc
 any `p > p₀` with `p > n / 2`, not even for `p = n`: the interior `W^{2,p}` regularity of
 strong solutions needs a regularity hypothesis on the coefficients, such as continuity, under
 which the interior estimate of
-`TauCeti/Analysis/PDE/Regularity/Hessian/ContinuousCoefficient.lean` holds, or vanishing mean
+`TauCeti/Analysis/PDE/Regularity/Hessian/ContinuousCoefficient/Basic.lean` holds, or vanishing mean
 oscillation. The ellipticity ratio `1 + b` of the counterexample tends to infinity as
 `n / (2 - γ)` approaches `n`.
 

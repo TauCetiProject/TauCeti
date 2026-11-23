@@ -86,7 +86,7 @@ private lemma σ_comp_alexanderWhitney_f_comp_tensorHom_PInfty_f (n : ℕ) (i : 
     Monoidal.tensorObj_map]
   simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
   refine Finset.sum_eq_zero fun p _ ↦ ?_
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom]
+  rw [ι_tensorHom_f]
   simp only [tensorHom_comp_tensorHom_assoc, ← Functor.map_comp_assoc, ← op_comp]
   by_cases hip : (i : ℕ) < p
   · rw [degeneracy_comp_PInfty A _ _
