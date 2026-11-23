@@ -65,12 +65,12 @@ theorem toWord_ne_conj_inl (S : Standard G X) (u : GX G X) (g : G) :
   rw [occurrences_eq_countVar_reducedWord, hc] at ho
   exact absurd ho (by decide)
 
-/-- A homomorphism `G[Y] → G[X]` sending the coefficient `inl c` to a coefficient `inl d`,
+/-- A homomorphism `A[Y] → G[X]` sending the coefficient `inl c` to a coefficient `inl d`,
 followed by a conjugation, does not carry a conjugate `v⁻¹ c v` of `c` to a standard quadratic
 word. For instance the strictly quadratic word `z⁻¹ c z` is not brought to a standard quadratic
 word by a change of coordinates over `G` and a conjugation. -/
-theorem toWord_ne_conj_map_conj_inl {Y : Type*} (S : Standard G X) {f : GX G Y →* GX G X}
-    {c d : G} (hf : f (inl c) = inl d) (u : GX G X) (v : GX G Y) :
+theorem toWord_ne_conj_map_conj_inl {A Y : Type*} [Group A] (S : Standard G X)
+    {f : GX A Y →* GX G X} {c : A} {d : G} (hf : f (inl c) = inl d) (u : GX G X) (v : GX A Y) :
     S.toWord ≠ u * f (v⁻¹ * inl c * v) * u⁻¹ := by
   simpa [hf, mul_assoc] using S.toWord_ne_conj_inl (u * (f v)⁻¹) d
 
