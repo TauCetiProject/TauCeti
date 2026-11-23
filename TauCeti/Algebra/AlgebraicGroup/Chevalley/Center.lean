@@ -41,11 +41,11 @@ and gives trivial centre when the coordinate roots span `Fin t.rank → ℤ`.
 * `ChevalleyDatum.borelSubgroup_inf_normalizer_range_torusPoints`: over an infinite field, `T_D(K)`
   is self-normalizing in `D.borelSubgroup K`.
 * `ChevalleyDatum.extendedElementarySubgroup_inf_normalizer_range_torusPoints` and
-  `ChevalleyDatum.normalizer_torusPoints_subgroupOf_extendedElementarySubgroup`: over an infinite
-  field, the normalizer of `T_D(K)` in `E_D(K)` is `D.weylSubgroup K`.
+  `ChevalleyDatum.normalizer_range_torusPoints_subgroupOf_extendedElementarySubgroup`: over an
+  infinite field, the normalizer of `T_D(K)` in `E_D(K)` is `D.weylSubgroup K`.
 * `ChevalleyDatum.extendedElementarySubgroup_inf_centralizer_range_torusPoints` and
-  `ChevalleyDatum.centralizer_torusPoints_subgroupOf_extendedElementarySubgroup`: over an infinite
-  field, `T_D(K)` is self-centralizing in `E_D(K)`.
+  `ChevalleyDatum.centralizer_range_torusPoints_subgroupOf_extendedElementarySubgroup`: over an
+  infinite field, `T_D(K)` is self-centralizing in `E_D(K)`.
 * `ChevalleyDatum.normalizerTorusQuotientMulEquiv`: `N_{E_D(K)}(T_D(K)) / C_{E_D(K)}(T_D(K)) ≃* W`.
 * `ChevalleyDatum.extendedElementarySubgroup_inf_centralizer_elementarySubgroup`:
   over any field, the centralizer of `D.elementarySubgroup k` inside
@@ -184,7 +184,7 @@ theorem extendedElementarySubgroup_inf_normalizer_range_torusPoints :
 /-- Over an infinite field, the normalizer of the actual torus inside the extended elementary
 group `D.extendedElementarySubgroup K` is `D.weylSubgroup K`. -/
 @[simp]
-theorem normalizer_torusPoints_subgroupOf_extendedElementarySubgroup :
+theorem normalizer_range_torusPoints_subgroupOf_extendedElementarySubgroup :
     Subgroup.normalizer
         ((((D.torusPoints K).range).subgroupOf (D.extendedElementarySubgroup K) :
           Subgroup (D.extendedElementarySubgroup K)) : Set (D.extendedElementarySubgroup K)) =
@@ -232,7 +232,7 @@ theorem extendedElementarySubgroup_inf_centralizer_range_torusPoints :
 /-- Over an infinite field, the actual torus is self-centralizing inside
 `D.extendedElementarySubgroup K`. -/
 @[simp]
-theorem centralizer_torusPoints_subgroupOf_extendedElementarySubgroup :
+theorem centralizer_range_torusPoints_subgroupOf_extendedElementarySubgroup :
     Subgroup.centralizer
         ((((D.torusPoints K).range).subgroupOf (D.extendedElementarySubgroup K) :
           Subgroup (D.extendedElementarySubgroup K)) : Set (D.extendedElementarySubgroup K)) =
@@ -264,6 +264,21 @@ theorem elementarySubgroup_inf_centralizer_range_torusPoints :
   nth_rw 1 [← inf_eq_left.mpr (D.elementarySubgroup_le_extendedElementarySubgroup K)]
   rw [inf_assoc, D.extendedElementarySubgroup_inf_centralizer_range_torusPoints K]
 
+private theorem map_range_torusPoints_subgroupOf_normalizerEquiv :
+    ((((D.torusPoints K).range).subgroupOf (D.extendedElementarySubgroup K)).subgroupOf
+        (Subgroup.normalizer
+          ((((D.torusPoints K).range).subgroupOf (D.extendedElementarySubgroup K) :
+            Subgroup (D.extendedElementarySubgroup K)) :
+              Set (D.extendedElementarySubgroup K)))).map
+        (((MulEquiv.subgroupCongr
+          (D.normalizer_range_torusPoints_subgroupOf_extendedElementarySubgroup K)).trans
+          (Subgroup.subgroupOfEquivOfLe
+            (D.weylSubgroup_le_extendedElementarySubgroup K)) : _ ≃* _) : _ →* _) =
+      ((D.torusPoints K).range).subgroupOf (D.weylSubgroup K) := by
+  ext n
+  rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv]
+  rfl
+
 /-- Over an infinite field, the normalizer of `T_D(K)` inside `E_D(K)` modulo its centralizer is
 canonically isomorphic to the root datum's Weyl group. -/
 noncomputable def normalizerTorusQuotientMulEquiv :
@@ -281,35 +296,14 @@ noncomputable def normalizerTorusQuotientMulEquiv :
               Set (D.extendedElementarySubgroup K)))) ≃*
       (t.simplyConnectedRootDatum ht).weylGroup :=
   (QuotientGroup.quotientMulEquivOfEq (by
-    rw [D.centralizer_torusPoints_subgroupOf_extendedElementarySubgroup K])).trans
+    rw [D.centralizer_range_torusPoints_subgroupOf_extendedElementarySubgroup K])).trans
     ((QuotientGroup.congr
         ((((D.torusPoints K).range).subgroupOf (D.extendedElementarySubgroup K)).subgroupOf _)
         (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K))
         ((MulEquiv.subgroupCongr
-          (D.normalizer_torusPoints_subgroupOf_extendedElementarySubgroup K)).trans
+          (D.normalizer_range_torusPoints_subgroupOf_extendedElementarySubgroup K)).trans
           (Subgroup.subgroupOfEquivOfLe (D.weylSubgroup_le_extendedElementarySubgroup K)))
-        (by
-          ext n
-          rw [Subgroup.mem_map, Subgroup.mem_subgroupOf]
-          constructor
-          · rintro ⟨m, hm, hmn⟩
-            rw [Subgroup.mem_subgroupOf] at hm
-            rw [← hmn]
-            exact hm
-          · rintro hn
-            have hnE : (n : D.points K) ∈ D.extendedElementarySubgroup K :=
-              D.weylSubgroup_le_extendedElementarySubgroup K n.property
-            have hnN : (⟨(n : D.points K), hnE⟩ : D.extendedElementarySubgroup K) ∈
-                Subgroup.normalizer
-                  ((((D.torusPoints K).range).subgroupOf (D.extendedElementarySubgroup K) :
-                    Subgroup (D.extendedElementarySubgroup K)) :
-                      Set (D.extendedElementarySubgroup K)) := by
-              rw [D.normalizer_torusPoints_subgroupOf_extendedElementarySubgroup K,
-                Subgroup.mem_subgroupOf]
-              exact n.property
-            refine ⟨⟨⟨(n : D.points K), hnE⟩, hnN⟩, ?_, Subtype.ext rfl⟩
-            rw [Subgroup.mem_subgroupOf]
-            exact hn)).trans
+        (D.map_range_torusPoints_subgroupOf_normalizerEquiv K)).trans
       (D.weylSubgroupQuotientMulEquiv K))
 
 /-- Evaluating `normalizerTorusQuotientMulEquiv` on the class of a normalizer element returns its
@@ -322,7 +316,7 @@ theorem normalizerTorusQuotientMulEquiv_mk
     D.normalizerTorusQuotientMulEquiv K (QuotientGroup.mk n) =
       D.weylProjection K
         ⟨(n : D.extendedElementarySubgroup K),
-          ((D.normalizer_torusPoints_subgroupOf_extendedElementarySubgroup K ▸ n.property) :
+          ((D.normalizer_range_torusPoints_subgroupOf_extendedElementarySubgroup K ▸ n.property) :
             (n : D.extendedElementarySubgroup K) ∈
               (D.weylSubgroup K).subgroupOf (D.extendedElementarySubgroup K))⟩ := by
   rw [normalizerTorusQuotientMulEquiv, MulEquiv.trans_apply,
@@ -466,17 +460,8 @@ private theorem mem_centralizer_rootTorusSubgroup_of_mem_range_torusPoints_of_me
     (D.range_torusPoints_le_normalizer_elementarySubgroup k)] at hclosure
   obtain ⟨e, he, _, ⟨s, rfl⟩, rfl⟩ := hclosure
   obtain ⟨r, rfl⟩ := hgT
-  have hcomm_e : e * D.torusPoints k r = D.torusPoints k r * e :=
-    Subgroup.mem_centralizer_iff.mp hgc e he
-  have hcomm_s : D.torusPoints k s * D.torusPoints k r = D.torusPoints k r * D.torusPoints k s :=
-    ((Commute.all s r).map (D.torusPoints k)).eq
-  calc
-    (e * D.torusPoints k s) * D.torusPoints k r =
-        e * (D.torusPoints k s * D.torusPoints k r) := by rw [mul_assoc]
-    _ = e * (D.torusPoints k r * D.torusPoints k s) := by rw [hcomm_s]
-    _ = (e * D.torusPoints k r) * D.torusPoints k s := by rw [← mul_assoc]
-    _ = (D.torusPoints k r * e) * D.torusPoints k s := by rw [hcomm_e]
-    _ = D.torusPoints k r * (e * D.torusPoints k s) := by rw [mul_assoc]
+  exact (Commute.mul_left (Subgroup.mem_centralizer_iff.mp hgc e he)
+    ((Commute.all s r).map (D.torusPoints k))).eq
 
 /-- Over any field, the centralizer of `D.elementarySubgroup k` inside
 `D.extendedElementarySubgroup k` equals the toral centralizer of `D.rootTorusSubgroup k`. -/
@@ -618,6 +603,7 @@ theorem mem_center_iff_of_le {H : Subgroup (D.points k)}
 
 /-- Over any field, a torus point belongs to the centre of `D.extendedElementarySubgroup k` if
 and only if every root character evaluates to `1` on it. -/
+@[simp]
 theorem torusPoints_mem_center_extendedElementarySubgroup_iff (s : Fin t.rank → kˣ) :
     (⟨D.torusPoints k s, D.torusPoints_mem_extendedElementarySubgroup k s⟩ :
         D.extendedElementarySubgroup k) ∈
@@ -642,6 +628,17 @@ theorem mem_center_elementarySubgroup_iff (g : D.elementarySubgroup k) :
       ∃ s : Fin t.rank → kˣ, (g : D.points k) = D.torusPoints k s ∧
         ∀ γ, torusCharacter s (D.coordinateRoot γ) = 1 :=
   D.mem_center_iff_of_le k le_rfl (D.elementarySubgroup_le_extendedElementarySubgroup k) g
+
+private theorem equiv_symm_apply_mk_of_coe_eq
+    {N : Submodule ℤ (Fin t.rank → ℤ)} {Z : Type*} [Group Z]
+    (e : AddChar ((Fin t.rank → ℤ) ⧸ N) kˣ ≃* Z) (val : Z → D.points k)
+    (hcoe : ∀ χ, val (e χ) = D.torusPoints k (quotientCharTorusPoint N χ))
+    {z : Z} {s : Fin t.rank → kˣ} (hz : val z = D.torusPoints k s) (μ : Fin t.rank → ℤ) :
+    e.symm z (Submodule.Quotient.mk μ) = torusCharacter s μ := by
+  have hcoord : quotientCharTorusPoint N (e.symm z) = s := by
+    apply D.torusPoints_injective k
+    rw [← hcoe, MulEquiv.apply_symm_apply, hz]
+  rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
 
 /-- Over any field, for any intermediate subgroup `D.elementarySubgroup k ≤ H ≤ E_D(k)`
 containing the toral centralizer of `D.rootTorusSubgroup k`, `AddChar (Λ(D) / Q) kˣ` identifies
@@ -678,12 +675,9 @@ theorem centerEquivOfLe_symm_apply_mk {H : Subgroup (D.points k)}
     (hg : (⟨D.torusPoints k s, hsH⟩ : H) ∈ Subgroup.center H) (μ : Fin t.rank → ℤ) :
     (D.centerEquivOfLe k hEH hHE hZ).symm ⟨⟨D.torusPoints k s, hsH⟩, hg⟩
         (Submodule.Quotient.mk μ) =
-      torusCharacter s μ := by
-  have hcoord : quotientCharTorusPoint _
-      ((D.centerEquivOfLe k hEH hHE hZ).symm ⟨⟨D.torusPoints k s, hsH⟩, hg⟩) = s := by
-    apply D.torusPoints_injective k
-    rw [← D.coe_centerEquivOfLe k hEH hHE hZ, MulEquiv.apply_symm_apply]
-  rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
+      torusCharacter s μ :=
+  D.equiv_symm_apply_mk_of_coe_eq k (D.centerEquivOfLe k hEH hHE hZ)
+    (fun z => ((z : H) : D.points k)) (D.coe_centerEquivOfLe k hEH hHE hZ) rfl μ
 
 /-- Over any field, the centre of `D.extendedElementarySubgroup k` is canonically isomorphic to
 `AddChar (Λ(D) / Q) kˣ`, with the lattices written in the chosen basis of `Λ(D)`. -/
@@ -869,45 +863,17 @@ theorem mem_center_scChevalleyDatum_elementarySubgroup_iff
   simpa only [scChevalleyDatum_coordinateRoot] using
     (t.scChevalleyDatum ht).mem_center_elementarySubgroup_iff k g
 
-private def addCharQuotEquiv {t : DynkinType} {M : Type*} [CommMonoid M]
-    {N₁ N₂ : Submodule ℤ (Fin t.rank → ℤ)} (hN : N₁ = N₂) :
-    AddChar ((Fin t.rank → ℤ) ⧸ N₁) M ≃* AddChar ((Fin t.rank → ℤ) ⧸ N₂) M where
-  toFun χ := χ.compAddMonoidHom (Submodule.quotEquivOfEq N₁ N₂ hN).symm.toAddMonoidHom
-  invFun χ := χ.compAddMonoidHom (Submodule.quotEquivOfEq N₁ N₂ hN).toAddMonoidHom
-  left_inv χ := by
-    ext x
-    simp
-  right_inv χ := by
-    ext x
-    simp
-  map_mul' χ₁ χ₂ := by
-    ext x
-    simp only [mul_apply, AddChar.compAddMonoidHom_apply]
-
-private theorem quotientCharTorusPoint_addCharQuotEquiv {t : DynkinType} {R : Type*} [CommRing R]
-    {N₁ N₂ : Submodule ℤ (Fin t.rank → ℤ)} (hN : N₁ = N₂)
-    (χ : AddChar ((Fin t.rank → ℤ) ⧸ N₁) Rˣ) :
-    quotientCharTorusPoint N₂ (addCharQuotEquiv hN χ) = quotientCharTorusPoint N₁ χ := by
-  funext i
-  simp only [quotientCharTorusPoint_apply, addCharQuotEquiv, MulEquiv.coe_mk,
-    Equiv.coe_fn_mk, AddChar.compAddMonoidHom_apply, Submodule.mkQ_apply]
-  exact congrArg χ ((LinearEquiv.symm_apply_eq (N₁.quotEquivOfEq N₂ hN)).mpr
-    (Submodule.quotEquivOfEq_mk N₁ N₂ hN (Pi.single i 1)).symm)
-
 /-- Over any field, unit-valued characters of `P / Q` identify with the full centre of the simply
 connected elementary Chevalley group. -/
 noncomputable def scChevalleyDatumCenterEquiv :
     AddChar ((Fin t.rank → ℤ) ⧸ (t.simplyConnectedRootDatum ht).rootSpan ℤ) kˣ ≃*
       Subgroup.center ((t.scChevalleyDatum ht).elementarySubgroup k) :=
-  (addCharQuotEquiv (show (t.simplyConnectedRootDatum ht).rootSpan ℤ =
-      Submodule.span ℤ (Set.range (t.scChevalleyDatum ht).coordinateRoot) from
-        congrArg (Submodule.span ℤ)
-          (congrArg Set.range (funext (t.scChevalleyDatum_coordinateRoot ht))).symm)).trans
-    ((t.scChevalleyDatum ht).centerEquivOfLe k le_rfl
-      ((t.scChevalleyDatum ht).elementarySubgroup_le_extendedElementarySubgroup k)
-      (inf_le_left.trans (by
-        rw [← t.scChevalleyDatum_extendedElementarySubgroup ht k]
-        exact (t.scChevalleyDatum ht).range_torusPoints_le_extendedElementarySubgroup k)))
+  (t.scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv ht k).trans
+    ((Subgroup.subgroupOfEquivOfLe (inf_le_left.trans
+        ((t.scChevalleyDatum ht).range_torusPoints_le_elementarySubgroup_of_weightLattice_eq_top k
+          (t.scChevalleyDatum_weightLattice ht)))).symm.trans
+      (MulEquiv.subgroupCongr
+        ((t.scChevalleyDatum ht).center_elementarySubgroup_eq_subgroupOf k).symm))
 
 /-- The simply connected centre equivalence sends a character of `P / Q` to the corresponding
 torus point in `(t.scChevalleyDatum ht).elementarySubgroup k`. -/
@@ -917,8 +883,7 @@ theorem coe_scChevalleyDatumCenterEquiv
     ((t.scChevalleyDatumCenterEquiv ht k χ : (t.scChevalleyDatum ht).elementarySubgroup k) :
         (t.scChevalleyDatum ht).points k) =
       (t.scChevalleyDatum ht).torusPoints k (quotientCharTorusPoint _ χ) := by
-  rw [scChevalleyDatumCenterEquiv, MulEquiv.trans_apply,
-    ChevalleyDatum.coe_centerEquivOfLe, quotientCharTorusPoint_addCharQuotEquiv]
+  simp [scChevalleyDatumCenterEquiv]
 
 /-- The inverse simply connected centre equivalence evaluates a weight class on the torus
 parameter of the given central element. -/
@@ -935,18 +900,15 @@ theorem scChevalleyDatumCenterEquiv_symm_apply_mk (s : Fin t.rank → kˣ)
           (t.scChevalleyDatum ht).range_torusPoints_le_elementarySubgroup_of_weightLattice_eq_top k
             (t.scChevalleyDatum_weightLattice ht) ⟨s, rfl⟩⟩, hg⟩
         (Submodule.Quotient.mk μ) =
-      torusCharacter s μ := by
-  have hcoord : quotientCharTorusPoint _
-      ((t.scChevalleyDatumCenterEquiv ht k).symm
-        ⟨⟨(t.scChevalleyDatum ht).torusPoints k s,
-          (t.scChevalleyDatum ht).range_torusPoints_le_elementarySubgroup_of_weightLattice_eq_top k
-            (t.scChevalleyDatum_weightLattice ht) ⟨s, rfl⟩⟩, hg⟩) = s := by
-    apply (t.scChevalleyDatum ht).torusPoints_injective k
-    rw [← coe_scChevalleyDatumCenterEquiv, MulEquiv.apply_symm_apply]
-  rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
+      torusCharacter s μ :=
+  (t.scChevalleyDatum ht).equiv_symm_apply_mk_of_coe_eq k (t.scChevalleyDatumCenterEquiv ht k)
+    (fun z => ((z : (t.scChevalleyDatum ht).elementarySubgroup k) :
+      (t.scChevalleyDatum ht).points k))
+    (t.coe_scChevalleyDatumCenterEquiv ht k) rfl μ
 
 end Field
 
 end SimplyConnected
 
 end TauCeti.DynkinType
+
