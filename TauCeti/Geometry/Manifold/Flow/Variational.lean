@@ -156,7 +156,7 @@ private theorem hasDerivAt_fderiv_extChartAt_flowOf_zero [IsManifold I 2 M]
     rw [(isOpen_extChartAt_target y).interior_eq]
     exact extChartAt_target_mem_nhds' ((extChartAt I y).map_source hp)
   obtain ⟨u, hu, hvu⟩ := hvc.contDiffOn le_rfl (by simp)
-  have hvu' : ContDiffOn ℝ ((0 : ℕ∞) + 1) _ u := hvu
+  have hvu' : ContDiffOn ℝ ((0 : ℕ∞) + 1) _ u := hvu.of_le (by simp)
   obtain ⟨w, K, hwC', hwK, hwv⟩ :=
     hvu'.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimensional hu
   have hev := eventually_extChartAt_flowOf_eq_flowOfLipschitz hv hp hwK hwv
@@ -211,6 +211,7 @@ theorem hasDerivAt_mfderiv_extChartAt_comp_flowOf
         ((mem_flowDomain_flowOf_iff hv hx'dom).2 (by rwa [add_sub_cancel]))
       simp only [comp_apply, (extChartAt I y).left_inv hx'src, hadd.2, add_sub_cancel]
     rw [hloc.mfderiv_eq, mfderiv_comp x (htd.mdifferentiableAt) heΦ, mfderiv_eq_fderiv]
+    -- Between vector spaces the tangent-space casts in `mfderiv` are the identity by definition.
     rfl
   rw [← sub_self t₀] at hderiv
   refine ((hderiv.comp_sub_const t₀ t₀).clm_comp (hasDerivAt_const t₀ L)
@@ -252,6 +253,6 @@ theorem hasDerivAt_mfderiv_extChartAt_mfderiv_flowOf_apply
     (hasDerivAt_mfderiv_extChartAt_comp_flowOf hv ht₀ hy)
   refine (h.congr_of_eventuallyEq hchain).congr_deriv ?_
   rw [hchain.self_of_nhds]
-  rfl
+  exact ContinuousLinearMap.comp_apply ..
 
 end TauCeti
