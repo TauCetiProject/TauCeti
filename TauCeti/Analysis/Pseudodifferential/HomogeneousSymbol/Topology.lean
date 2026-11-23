@@ -77,7 +77,7 @@ private def mixedDerivLinearMap (α β : List (Fin n)) (x : CoordinateSpace n)
     (ξ : {ξ : CoordinateSpace n // ξ ≠ 0}) :
     HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m →ₗ[ℂ] V →L[ℂ] W where
   toFun a := mixedDeriv α β a.coefficient x ξ
-  map_add' a b := mixedDeriv_coefficient_add a b α β x ξ.2
+  map_add' a b := mixedDeriv_coefficient_add a b α β x ξ.property
   map_smul' c a := by
     rw [coefficient_smul, mixedDeriv_const_smul, RingHom.id_apply]
 
@@ -90,7 +90,7 @@ protected def seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
   Seminorm.weightedSup
     (fun i : K × {ξ : CoordinateSpace n // ξ ≠ 0} => mixedDerivLinearMap α β i.1 i.2)
     (fun i => ‖(i.2 : CoordinateSpace n)‖ ^ (m - β.length))
-    (fun i => Real.rpow_pos_of_pos (norm_pos_iff.2 i.2.2) _)
+    (fun i => Real.rpow_pos_of_pos (norm_pos_iff.2 i.2.property) _)
 
 /-- Every homogeneous symbol satisfies the weighted estimates defining
 `HomogeneousSymbol.seminorm K α β`. -/
@@ -99,7 +99,7 @@ private theorem exists_bound_mixedDerivLinearMap (K : Compacts (CoordinateSpace 
     ∃ C, ∀ i : K × {ξ : CoordinateSpace n // ξ ≠ 0},
       ‖mixedDerivLinearMap α β i.1 i.2 a‖ ≤ C * ‖(i.2 : CoordinateSpace n)‖ ^ (m - β.length) :=
   let ⟨C, _, h⟩ := a.exists_norm_mixedDeriv_le K.isCompact α β
-  ⟨C, fun i => h i.1 i.1.2 i.2 i.2.2⟩
+  ⟨C, fun i => h i.1 i.1.property i.2 i.2.property⟩
 
 /-- The seminorm `p_{K,α,β}(a)` bounds `‖∂_x^α ∂_ξ^β a(x, ξ)‖ / ‖ξ‖ ^ (m - |β|)` for `x ∈ K`
 and `ξ ≠ 0`. -/
@@ -118,7 +118,7 @@ theorem seminorm_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin 
     (h : ∀ x ∈ K, ∀ ξ, ξ ≠ 0 →
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * ‖ξ‖ ^ (m - β.length)) :
     HomogeneousSymbol.seminorm K α β a ≤ C :=
-  Seminorm.weightedSup_le _ _ _ hC fun i => h i.1 i.1.2 i.2 i.2.2
+  Seminorm.weightedSup_le _ _ _ hC fun i => h i.1 i.1.property i.2 i.2.property
 
 /-- The seminorm `p_{K,α,β}(a)` is at most `C ≥ 0` exactly when `C` is a constant in the estimate
 of `∂_x^α ∂_ξ^β a` on `K`. -/

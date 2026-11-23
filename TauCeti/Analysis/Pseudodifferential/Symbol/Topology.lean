@@ -105,7 +105,7 @@ private theorem exists_bound_mixedDerivLinearMap (K : Compacts (CoordinateSpace 
     (α β : List (Fin n)) (a : Symbol n V W m) :
     ∃ C, ∀ i : K × CoordinateSpace n,
       ‖mixedDerivLinearMap α β i.1 i.2 a‖ ≤ C * (1 + ‖i.2‖ ^ 2) ^ ((m - β.length) / 2) :=
-  let ⟨C, _, h⟩ := a.exists_bound K K.isCompact α β; ⟨C, fun i => h i.1 i.1.2 i.2⟩
+  let ⟨C, _, h⟩ := a.exists_bound K K.isCompact α β; ⟨C, fun i => h i.1 i.1.property i.2⟩
 
 /-- The seminorm `p_{K,α,β}(a)` bounds `‖∂_x^α ∂_ξ^β a(x, ξ)‖ / ⟨ξ⟩^(m - |β|)` for `x ∈ K`. -/
 theorem le_seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
@@ -121,7 +121,7 @@ theorem seminorm_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin 
     (h : ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
     Symbol.seminorm K α β a ≤ C :=
-  Seminorm.weightedSup_le _ _ _ hC fun i => h i.1 i.1.2 i.2
+  Seminorm.weightedSup_le _ _ _ hC fun i => h i.1 i.1.property i.2
 
 /-- The seminorm `p_{K,α,β}(a)` is at most `C ≥ 0` exactly when `C` is a constant in the estimate
 of `∂_x^α ∂_ξ^β a` on `K`. -/
