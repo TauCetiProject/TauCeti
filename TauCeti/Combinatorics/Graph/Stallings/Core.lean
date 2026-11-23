@@ -34,14 +34,14 @@ the Serre core so paths and finite-type instances can be used directly. -/
 @[expose] def core : StallingsGraph α where
   graph := S.graph.core S.base
   base := S.graph.coreBase S.base
-  label := fun e => S.label e.1
-  label_rev := fun e => S.label_rev e.1
+  label := fun e => S.label e.val
+  label_rev := fun e => S.label_rev e.val
 
 @[simp] theorem core_graph : S.core.graph = S.graph.core S.base := (rfl)
 
 @[simp] theorem core_base : S.core.base = S.graph.coreBase S.base := (rfl)
 
-@[simp] theorem core_label (e : S.core.graph.E) : S.core.label e = S.label e.1 := (rfl)
+@[simp] theorem core_label (e : S.core.graph.E) : S.core.label e = S.label e.val := (rfl)
 
 instance [Finite S.graph.V] : Finite S.core.graph.V :=
   inferInstanceAs (Finite (S.graph.core S.base).V)
@@ -69,7 +69,7 @@ theorem IsFolded.core (hS : S.IsFolded) : S.core.IsFolded := by
   apply S.core.isFolded_def.mpr
   intro e f hs hl
   apply Subtype.ext
-  exact (S.isFolded_def.mp hS) e.1 f.1 (congrArg Subtype.val hs) hl
+  exact (S.isFolded_def.mp hS) e.val f.val (congrArg Subtype.val hs) hl
 
 /-- The based core accepts exactly the same subgroup as the original labelled graph. -/
 @[simp] theorem core_subgroup :
@@ -126,19 +126,19 @@ theorem Hom.map_mem_coreVertices (f : S.Hom T) (hS : S.IsFolded)
 cancellation of the reduced loops that witness core membership. -/
 def Hom.core (f : S.Hom T) (hS : S.IsFolded) : S.core.Hom T.core where
   graphHom := {
-    mapV := fun a => ⟨f.graphHom.mapV a.1, f.map_mem_coreVertices hS a.2⟩
-    mapE := fun e => ⟨f.graphHom.mapE e.1, f.map_mem_coreDarts hS e.2⟩
-    map_src := fun e => Subtype.ext (f.graphHom.map_src e.1)
-    map_rev := fun e => Subtype.ext (f.graphHom.map_rev e.1) }
+    mapV := fun a => ⟨f.graphHom.mapV a.val, f.map_mem_coreVertices hS a.property⟩
+    mapE := fun e => ⟨f.graphHom.mapE e.val, f.map_mem_coreDarts hS e.property⟩
+    map_src := fun e => Subtype.ext (f.graphHom.map_src e.val)
+    map_rev := fun e => Subtype.ext (f.graphHom.map_rev e.val) }
   map_base := Subtype.ext f.map_base
-  map_label := fun e => f.map_label e.1
+  map_label := fun e => f.map_label e.val
 
 @[simp] theorem Hom.core_mapV_val (f : S.Hom T) (hS : S.IsFolded)
     (a : S.core.graph.V) :
-    ((f.core hS).graphHom.mapV a).1 = f.graphHom.mapV a.1 := (rfl)
+    ((f.core hS).graphHom.mapV a).val = f.graphHom.mapV a.val := (rfl)
 
 @[simp] theorem Hom.core_mapE_val (f : S.Hom T) (hS : S.IsFolded)
     (e : S.core.graph.E) :
-    ((f.core hS).graphHom.mapE e).1 = f.graphHom.mapE e.1 := (rfl)
+    ((f.core hS).graphHom.mapE e).val = f.graphHom.mapE e.val := (rfl)
 
 end TauCeti.StallingsGraph

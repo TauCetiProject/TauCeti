@@ -71,15 +71,15 @@ theorem eval_binaryNormForm (x y : ℤ) :
 
 /-- The same polynomial computes the rational norm in the extended basis. -/
 theorem norm_eq_binaryNormForm (z : V) :
-    L.norm z = ((L.binaryNormForm b).a : ℚ) * ((b.extendOfIsLattice ℚ).repr z 0) ^ 2 +
-      ((L.binaryNormForm b).b : ℚ) * (b.extendOfIsLattice ℚ).repr z 0 *
-        (b.extendOfIsLattice ℚ).repr z 1 +
-      ((L.binaryNormForm b).c : ℚ) * ((b.extendOfIsLattice ℚ).repr z 1) ^ 2 := by
-  let e := b.extendOfIsLattice ℚ
+    L.norm z = ((L.binaryNormForm b).a : ℚ) * ((b.extendOfIsFullLattice ℚ).repr z 0) ^ 2 +
+      ((L.binaryNormForm b).b : ℚ) * (b.extendOfIsFullLattice ℚ).repr z 0 *
+        (b.extendOfIsFullLattice ℚ).repr z 1 +
+      ((L.binaryNormForm b).c : ℚ) * ((b.extendOfIsFullLattice ℚ).repr z 1) ^ 2 := by
+  let e := b.extendOfIsFullLattice ℚ
   have hz : e.repr z 0 • e 0 + e.repr z 1 • e 1 = z := by
     simpa only [Fin.sum_univ_two] using e.sum_repr z
   conv_lhs => rw [← hz, norm_add, norm_smul, norm_smul]
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, e, Basis.extendOfIsLattice_apply,
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, e, Basis.extendOfIsFullLattice_apply,
     binaryNormForm_a, binaryNormForm_b, binaryNormForm_c, intCast_gramMatrix_apply,
     norm_apply, Int.cast_mul, Int.cast_ofNat]
   ring
@@ -281,7 +281,7 @@ theorem binaryDiscriminant_neg_of_isPosDef (hV : Module.finrank ℚ V = 2)
   let b := Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)
   have hdet : 0 < L.determinant := by
     have hm := (LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix
-      (b.extendOfIsLattice ℚ) L.form L.isSymm).mp hL
+      (b.extendOfIsFullLattice ℚ) L.form L.isSymm).mp hL
     rw [L.determinant_eq_gramDet b]
     exact_mod_cast (L.intCast_gramDet b).symm ▸ hm.det_pos
   have he := L.binaryContent_sq_mul_binaryDiscriminant hV
@@ -339,17 +339,18 @@ theorem not_isSquare_binaryDiscriminant_of_anisotropic (hV : Module.finrank ℚ 
       discrim] at h
     rw [discrim]
     exact_mod_cast h.trans (by ring)
-  have hnorm (x y : ℚ) : L.norm (x • b.extendOfIsLattice ℚ 0 + y • b.extendOfIsLattice ℚ 1) =
+  have hnorm (x y : ℚ) :
+      L.norm (x • b.extendOfIsFullLattice ℚ 0 + y • b.extendOfIsFullLattice ℚ 1) =
       f.a * x ^ 2 + f.b * x * y + f.c * y ^ 2 := by
     rw [norm_eq_binaryNormForm L b]
     simp only [map_add, map_smul, Basis.repr_self]
     simp [f]
   by_cases ha : (f.a : ℚ) = 0
-  · exact (b.extendOfIsLattice ℚ).ne_zero 0 (hL _ (by simpa [ha] using hnorm 1 0))
+  · exact (b.extendOfIsFullLattice ℚ).ne_zero 0 (hL _ (by simpa [ha] using hnorm 1 0))
   · obtain ⟨x, hx⟩ : ∃ x : ℚ, f.a * (x * x) + f.b * x + f.c = 0 :=
       ⟨_, (quadratic_eq_zero_iff ha hdisc _).mpr (Or.inl rfl)⟩
     have h0 := hL _ ((hnorm x 1).trans (by linear_combination hx))
-    have h1 := congrArg (fun z ↦ (b.extendOfIsLattice ℚ).repr z 1) h0
+    have h1 := congrArg (fun z ↦ (b.extendOfIsFullLattice ℚ).repr z 1) h0
     simp only [map_add, map_smul, Basis.repr_self, map_zero] at h1
     simp at h1
 

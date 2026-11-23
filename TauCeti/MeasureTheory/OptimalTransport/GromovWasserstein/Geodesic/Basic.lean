@@ -175,9 +175,9 @@ theorem isGeodesicSpace_of_ae_isGeodesicSegment
       { Carrier := K.Carrier × L.Carrier
         measure := π
         kernel := fun q ↦ g q t
-        aestronglyMeasurable_kernel := hgm t t.2
+        aestronglyMeasurable_kernel := hgm t t.property
         finite_moment := K.finite_moment.imp fun _ hz ↦
-          memLp_edist_of_ae_isGeodesicSegment Fact.out hπ hg hgm t.2 hz hdis }
+          memLp_edist_of_ae_isGeodesicSegment Fact.out hπ hg hgm t.property hz hdis }
     refine ⟨fun t ↦ mk (M (projIcc 0 1 zero_le_one t)), isGeodesicSegment_of_dist_le ?_ ?_ ?_⟩
     · rw [projIcc_left, ← edist_eq_zero, edist_mk]
       exact gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_fst hπ

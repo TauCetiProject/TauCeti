@@ -66,7 +66,7 @@ subcomodule. -/
 @[simp]
 theorem globalFunctional_apply
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
-    (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) (n : N.1) :
+    (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) (n : N.val) :
     globalFunctional k H A η n = localFunctional k H A η N n :=
   Subcomodule.finiteSubcomoduleLift_apply
     (fun Q ↦ localFunctional k H A η Q)
@@ -78,7 +78,7 @@ functional. -/
 theorem globalFunctional_comp_subtype
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) :
-    (globalFunctional k H A η).comp N.1.toSubmodule.subtype =
+    (globalFunctional k H A η).comp N.val.toSubmodule.subtype =
       localFunctional k H A η N :=
   Subcomodule.finiteSubcomoduleLift_comp_subtype
     (fun Q ↦ localFunctional k H A η Q)
@@ -89,7 +89,7 @@ theorem globalFunctional_unique
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
     (g : H →ₗ[k] A)
     (hg : ∀ (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-      (n : N.1), g n = localFunctional k H A η N n) :
+      (n : N.val), g n = localFunctional k H A η N n) :
     g = globalFunctional k H A η :=
   Subcomodule.finiteSubcomoduleLift_unique
     (fun N ↦ localFunctional k H A η N)
@@ -107,7 +107,7 @@ theorem globalFunctional_one
     ⟨N, Subcomodule.mem_finiteSubcomodules.mpr hNfinite⟩
   calc
     globalFunctional k H A η 1 =
-        globalFunctional k H A η (⟨1, hOne⟩ : N'.1) :=
+        globalFunctional k H A η (⟨1, hOne⟩ : N'.val) :=
       congrArg (globalFunctional k H A η) (Subtype.coe_mk 1 hOne).symm
     _ = localFunctional k H A η N' ⟨1, hOne⟩ :=
       globalFunctional_apply k H A η N' ⟨1, hOne⟩

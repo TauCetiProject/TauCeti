@@ -7,13 +7,11 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Topology.Algebra.Field
-import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
-import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.RCLike.AtInfinity
 import TauCeti.LinearAlgebra.Complex.Module
-import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Translations and rotations of plane vortex fields
@@ -42,11 +40,17 @@ preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant
 the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
 frame of the line at infinity rather than an element of the framed gauge group.
 
-Both actions on fields, and `rotateTarget`, are pointwise isometries over the corresponding
-motion of the plane, and they preserve `C^n` regularity, compact support and `L^p` integrability
-against translation-invariant, respectively additive Haar, measures. These are identities of
-smooth differential expressions; their Sobolev completions, and the induced action on the
-divisor of a vortex, are not treated here.
+Both actions preserve `Cⁿ` fields (`TauCeti.Vortex.contDiff_translateField`,
+`TauCeti.Vortex.contDiff_rotateField`).
+
+At a point, `rotateField u` and `rotateTarget u` act on values by the linear isometries
+`fieldRotation u` and `targetRotation u` of `ℝ⁴`, and the zeroth-order and first-order parts of
+`L_x` intertwine them (`gaugeFixedZerothOrder_fieldRotation` and
+`gaugeFixedFirstOrder_fieldRotation`).
+
+These are identities of smooth differential expressions. Their counterparts for the `H¹`
+realization of `L_x` are in `TauCeti.Analysis.PDE.Vortex.RigidMotion`; the induced action on the
+divisor of a vortex is not treated here.
 
 ## Main results
 
@@ -58,6 +62,8 @@ divisor of a vortex, are not treated here.
   `TauCeti.Vortex.gaugeFixedOperator_translateField` and
   `TauCeti.Vortex.gaugeFixedAdjoint_translateField`.
 * `TauCeti.Vortex.rotateField_translateField`: the semidirect product law of the two actions.
+* `TauCeti.Vortex.rotateField_apply_eq_fieldRotation`,
+  `TauCeti.Vortex.rotateTarget_apply_eq_targetRotation`: the actions on values.
 * `TauCeti.Vortex.tendsto_sectionValue_translateField`,
   `TauCeti.Vortex.tendsto_sectionValue_rotateField` and
   `TauCeti.Vortex.tendsto_sectionValue_gaugeTransform_rotateField`: the end framing laws.
@@ -75,7 +81,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex Filter Topology
-open scoped ENNReal
+open scoped ComplexConjugate
 
 /-! ### Translations -/
 
@@ -100,28 +106,10 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
   funext z
   simp [add_assoc]
 
-/-- A translated field is the field composed with the translation `z ↦ z + a`. -/
-theorem translateField_eq_comp (a : ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    translateField a x = x ∘ (· + a) :=
-  funext fun z ↦ translateField_apply a x z
-
-/-- Translation preserves `C^n` regularity. -/
+/-- Translations preserve `Cⁿ` fields. -/
 theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) := by
-  rw [translateField_eq_comp]
-  exact hx.comp (contDiff_id.add contDiff_const)
-
-/-- Translation preserves compact support. -/
-theorem hasCompactSupport_translateField (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : HasCompactSupport x) : HasCompactSupport (translateField a x) := by
-  simpa [translateField_eq_comp] using hx.comp_homeomorph (Homeomorph.addRight a)
-
-open MeasureTheory in
-/-- Translation preserves `L^p` for every translation-invariant measure on the plane. -/
-theorem memLp_translateField {μ : Measure ℂ} [μ.IsAddRightInvariant] {p : ℝ≥0∞} (a : ℂ)
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : MemLp x p μ) : MemLp (translateField a x) p μ := by
-  rw [translateField_eq_comp]
-  exact hx.comp_measurePreserving (measurePreserving_add_right μ a)
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) :=
+  hx.comp (contDiff_id.add contDiff_const)
 
 /-- A spatial derivative of a translated component is the translated derivative. No
 differentiability is needed. -/
@@ -129,6 +117,13 @@ theorem fderiv_translateField_apply (a : ℂ) (x : ℂ → EuclideanSpace ℝ (F
     (i : Fin 4) :
     fderiv ℝ (fun w ↦ translateField a x w i) z = fderiv ℝ (fun w ↦ x w i) (z + a) :=
   fderiv_comp_add_right (f := fun w ↦ x w i) a
+
+/-- Translations preserve the limit at infinity of any pointwise expression in the field. -/
+theorem tendsto_comp_translateField {α : Type*} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {f : EuclideanSpace ℝ (Fin 4) → α} {l : Filter α}
+    (hx : Tendsto (fun z ↦ f (x z)) (cocompact ℂ) l) (a : ℂ) :
+    Tendsto (fun z ↦ f (translateField a x z)) (cocompact ℂ) l :=
+  hx.comp (Homeomorph.addRight a).map_cocompact.le
 
 @[simp]
 theorem sectionValue_translateField (a : ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -237,8 +232,8 @@ theorem tendsto_sectionValue_translateField {x : ℂ → EuclideanSpace ℝ (Fin
       (cocompact ℂ) (𝓝 c) := by
   have hshift : Tendsto (fun z : ℂ ↦ z + a) (cocompact ℂ) (cocompact ℂ) :=
     (Homeomorph.addRight a).map_cocompact.le
-  have hphase := Metric.cobounded_eq_cocompact (α := ℂ) ▸
-    tendsto_add_div_norm_add_div_div_norm a
+  have hphase := Metric.cobounded_eq_cocompact (α := ℂ) ▸ RCLike.ofReal_eq_complex_ofReal ▸
+    RCLike.tendsto_add_div_norm_add_div_div_norm a
   have h := (hx.comp hshift).mul (hphase.pow m)
   simp only [mul_one, one_pow, Function.comp_def] at h
   refine h.congr' ?_
@@ -254,13 +249,113 @@ theorem tendsto_sectionValue_translateField {x : ℂ → EuclideanSpace ℝ (Fin
 
 /-! ### Rotations -/
 
+/-- The rotation of values by which `rotateField u` acts at the rotated point: the connection
+coefficient `b₁ + i b₂` is multiplied by `u⁻¹` and the section is fixed
+(`rotateField_apply_eq_fieldRotation`). It is a linear isometry of `ℝ⁴`. -/
+def fieldRotation (u : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) where
+  toFun v := !₂[(u : ℂ).re * v 0 + (u : ℂ).im * v 1, (u : ℂ).re * v 1 - (u : ℂ).im * v 0, v 2, v 3]
+  invFun v := !₂[(u : ℂ).re * v 0 - (u : ℂ).im * v 1, (u : ℂ).re * v 1 + (u : ℂ).im * v 0, v 2, v 3]
+  map_add' v w := by ext i; fin_cases i <;> simp <;> ring
+  map_smul' c v := by ext i; fin_cases i <;> simp <;> ring
+  left_inv v := by
+    have hn := Circle.re_sq_add_im_sq u
+    ext i
+    fin_cases i <;> simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
+    · linear_combination v 0 * hn
+    · linear_combination v 1 * hn
+  right_inv v := by
+    have hn := Circle.re_sq_add_im_sq u
+    ext i
+    fin_cases i <;> simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
+    · linear_combination v 0 * hn
+    · linear_combination v 1 * hn
+  norm_map' v := by
+    have hn := Circle.re_sq_add_im_sq u
+    simp only [EuclideanSpace.norm_eq, Real.norm_eq_abs, sq_abs, Fin.sum_univ_four]
+    congr 1
+    simp only [Fin.isValue, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, add_left_inj]
+    linear_combination (v 0 ^ 2 + v 1 ^ 2) * hn
+
+@[simp]
+theorem fieldRotation_apply (u : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    fieldRotation u v = !₂[(u : ℂ).re * v 0 + (u : ℂ).im * v 1,
+      (u : ℂ).re * v 1 - (u : ℂ).im * v 0, v 2, v 3] := (rfl)
+
+private theorem fieldRotation_symm_apply (u : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    (fieldRotation u).symm v = !₂[(u : ℂ).re * v 0 - (u : ℂ).im * v 1,
+      (u : ℂ).re * v 1 + (u : ℂ).im * v 0, v 2, v 3] := (rfl)
+
+/-- The inverse of the rotation of field values by `u` is the rotation by `u⁻¹`. -/
+@[simp]
+theorem fieldRotation_symm (u : Circle) : (fieldRotation u).symm = fieldRotation u⁻¹ := by
+  ext v i
+  fin_cases i <;> simp [fieldRotation_symm_apply, sub_eq_add_neg]
+
+@[simp]
+theorem fieldRotation_one : fieldRotation 1 = LinearIsometryEquiv.refl ℝ _ := by
+  ext v i
+  fin_cases i <;> simp
+
+/-- Successive rotations of field values multiply. -/
+theorem fieldRotation_fieldRotation (u v : Circle) (w : EuclideanSpace ℝ (Fin 4)) :
+    fieldRotation u (fieldRotation v w) = fieldRotation (u * v) w := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- Successive rotations of field values multiply, as linear isometry equivalences. -/
+@[simp]
+theorem fieldRotation_trans_fieldRotation (u v : Circle) :
+    (fieldRotation v).trans (fieldRotation u) = fieldRotation (u * v) :=
+  LinearIsometryEquiv.ext (fieldRotation_fieldRotation u v)
+
+/-- The rotation of values by which `rotateTarget u` acts at the rotated point: the complex
+`∂bar` row is multiplied by `u⁻¹` and the two real rows are fixed
+(`rotateTarget_apply_eq_targetRotation`). It is the gauge frame `gaugeFrame u⁻¹`, so a linear
+isometry of `ℝ⁴`. -/
+def targetRotation (u : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  gaugeFrame u⁻¹
+
+@[simp]
+theorem targetRotation_apply (u : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    targetRotation u v = !₂[v 0, v 1, (u : ℂ).re * v 2 + (u : ℂ).im * v 3,
+      (u : ℂ).re * v 3 - (u : ℂ).im * v 2] := by
+  ext i
+  fin_cases i <;> simp [targetRotation, gaugeFrame_apply]
+  ring
+
+/-- The inverse of the rotation of target values by `u` is the rotation by `u⁻¹`. -/
+@[simp]
+theorem targetRotation_symm (u : Circle) : (targetRotation u).symm = targetRotation u⁻¹ := by
+  rw [targetRotation, targetRotation, gaugeFrame_symm]
+
+@[simp]
+theorem targetRotation_one : targetRotation 1 = LinearIsometryEquiv.refl ℝ _ := by
+  rw [targetRotation, inv_one, gaugeFrame_one]
+
+/-- Successive rotations of target values multiply, as linear isometry equivalences. -/
+@[simp]
+theorem targetRotation_trans_targetRotation (u v : Circle) :
+    (targetRotation v).trans (targetRotation u) = targetRotation (u * v) := by
+  rw [targetRotation, targetRotation, targetRotation, ← gaugeFrame_mul, mul_inv]
+
+/-- Successive rotations of target values multiply. -/
+theorem targetRotation_targetRotation (u v : Circle) (w : EuclideanSpace ℝ (Fin 4)) :
+    targetRotation u (targetRotation v w) = targetRotation (u * v) w := by
+  rw [← targetRotation_trans_targetRotation, LinearIsometryEquiv.trans_apply]
+
 /-- Pullback of a vortex field by the rotation `z ↦ u z`. The section is composed with the
 rotation; the connection coefficient `b₁ + i b₂` is composed with the rotation and multiplied
 by `u⁻¹`, which is the pullback of the one-form `b₁ ds + b₂ dt`. -/
 def rotateField (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     EuclideanSpace ℝ (Fin 4) :=
-  !₂[(u : ℂ).re * x (u * z) 0 + (u : ℂ).im * x (u * z) 1,
-    (u : ℂ).re * x (u * z) 1 - (u : ℂ).im * x (u * z) 0, x (u * z) 2, x (u * z) 3]
+  fieldRotation u (x (u * z))
+
+/-- A rotated field is the rotation of the values of the field at the rotated point. -/
+theorem rotateField_apply_eq_fieldRotation (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : rotateField u x z = fieldRotation u (x (u * z)) := (rfl)
 
 @[simp]
 theorem rotateField_apply_zero (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -291,8 +386,10 @@ theorem rotateField_one (x : ℂ → EuclideanSpace ℝ (Fin 4)) : rotateField 1
 @[simp]
 theorem rotateField_rotateField (u v : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     rotateField u (rotateField v x) = rotateField (u * v) x := by
-  ext z i
-  fin_cases i <;> simp [mul_comm (v : ℂ), mul_assoc] <;> ring
+  funext z
+  rw [rotateField_apply_eq_fieldRotation, rotateField_apply_eq_fieldRotation,
+    rotateField_apply_eq_fieldRotation, fieldRotation_fieldRotation, Circle.coe_mul, mul_assoc,
+    mul_left_comm]
 
 /-- The semidirect product law of the orientation-preserving isometries of the plane: rotating
 by `u` a field translated by `a` is translating the rotated field by `u⁻¹ a`. -/
@@ -303,13 +400,28 @@ theorem rotateField_translateField (u : Circle) (a : ℂ) (x : ℂ → Euclidean
   ext z i
   fin_cases i <;> simp [h]
 
+/-- Rotations preserve `Cⁿ` fields. -/
+theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n fun z ↦ x ((u : ℂ) * z) i :=
+    (contDiff_euclidean.1 hx i).comp (contDiff_const.mul contDiff_id)
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
+  · simpa using (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
+  · simpa using hc 2
+  · simpa using hc 3
+
 /-- The action of a rotation on the target `ℝ ⊕ ℝ ⊕ ℂ` of the gauge-fixed operator: the
 gauge-fixing and curvature rows are transported, and the complex `∂bar` row is transported
 and multiplied by `u⁻¹`. -/
 def rotateTarget (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     EuclideanSpace ℝ (Fin 4) :=
-  !₂[η (u * z) 0, η (u * z) 1, (u : ℂ).re * η (u * z) 2 + (u : ℂ).im * η (u * z) 3,
-    (u : ℂ).re * η (u * z) 3 - (u : ℂ).im * η (u * z) 2]
+  targetRotation u (η (u * z))
+
+/-- A rotated target field is the rotation of the values of the target at the rotated point. -/
+theorem rotateTarget_apply_eq_targetRotation (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : rotateTarget u η z = targetRotation u (η (u * z)) := (rfl)
 
 @[simp]
 theorem rotateTarget_apply_zero (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -340,94 +452,38 @@ theorem rotateTarget_one (η : ℂ → EuclideanSpace ℝ (Fin 4)) : rotateTarge
 @[simp]
 theorem rotateTarget_rotateTarget (u v : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) :
     rotateTarget u (rotateTarget v η) = rotateTarget (u * v) η := by
-  ext z i
-  fin_cases i <;> simp [mul_comm (v : ℂ), mul_assoc] <;> ring
+  funext z
+  rw [rotateTarget_apply_eq_targetRotation, rotateTarget_apply_eq_targetRotation,
+    rotateTarget_apply_eq_targetRotation, targetRotation_targetRotation, Circle.coe_mul, mul_assoc,
+    mul_left_comm]
 
-/-- Rotations of fields are pointwise isometries for the coefficient metric: the inner product
-of two rotated fields at `z` is the inner product of the fields at `u z`. -/
-@[simp]
-theorem inner_rotateField (u : Circle) (y v : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    inner ℝ (rotateField u y z) (rotateField u v z) = inner ℝ (y (u * z)) (v (u * z)) := by
+/-- The zeroth-order part of `L_x` intertwines the rotation of the values of the field and of the
+variation with the rotation of target values. -/
+theorem gaugeFixedZerothOrder_fieldRotation (u : Circle) (w v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedZerothOrder (fieldRotation u w) (fieldRotation u v) =
+      targetRotation u (gaugeFixedZerothOrder w v) := by
+  ext i
+  fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring
+
+/-- The first-order part of `L_x` intertwines the rotation of the gradients of the coordinates
+with `targetRotation u`: the gradient of a coordinate composed with `z ↦ u z` (or with any rigid
+motion `z ↦ u z + a`) is `u⁻¹` times the gradient at the image point, and the coordinates are
+mixed by `fieldRotation u`. -/
+theorem gaugeFixedFirstOrder_fieldRotation (u : Circle) (G : Fin 4 → ℂ) :
+    gaugeFixedFirstOrder (fun i ↦ ∑ k, fieldRotation u (EuclideanSpace.single k 1) i •
+      (conj (u : ℂ) * G k)) = targetRotation u (gaugeFixedFirstOrder G) := by
   have hn := Circle.re_sq_add_im_sq u
-  simp only [PiLp.inner_apply, Fin.sum_univ_four, rotateField_apply_zero, rotateField_apply_one,
-    rotateField_apply_two, rotateField_apply_three, RCLike.inner_apply, conj_trivial]
-  linear_combination (v (u * z) 0 * y (u * z) 0 + v (u * z) 1 * y (u * z) 1) * hn
-
-/-- Rotations of fields preserve the pointwise norm of the coefficient metric. -/
-@[simp]
-theorem norm_rotateField (u : Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ‖rotateField u y z‖ = ‖y (u * z)‖ := by
-  rw [norm_eq_sqrt_real_inner, inner_rotateField, ← norm_eq_sqrt_real_inner]
-
-/-- Rotations of the target are pointwise isometries: the inner product of two rotated target
-fields at `z` is the inner product of the fields at `u z`. -/
-@[simp]
-theorem inner_rotateTarget (u : Circle) (f η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    inner ℝ (rotateTarget u f z) (rotateTarget u η z) = inner ℝ (f (u * z)) (η (u * z)) := by
-  have hn := Circle.re_sq_add_im_sq u
-  simp only [PiLp.inner_apply, Fin.sum_univ_four, rotateTarget_apply_zero, rotateTarget_apply_one,
-    rotateTarget_apply_two, rotateTarget_apply_three, RCLike.inner_apply, conj_trivial]
-  linear_combination (η (u * z) 2 * f (u * z) 2 + η (u * z) 3 * f (u * z) 3) * hn
-
-/-- Rotations of the target preserve the pointwise norm. -/
-@[simp]
-theorem norm_rotateTarget (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ‖rotateTarget u η z‖ = ‖η (u * z)‖ := by
-  rw [norm_eq_sqrt_real_inner, inner_rotateTarget, ← norm_eq_sqrt_real_inner]
-
-/-- A rotated target field vanishes at `z` exactly when the field vanishes at `u z`. -/
-@[simp]
-theorem rotateTarget_eq_zero_iff (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    rotateTarget u η z = 0 ↔ η (u * z) = 0 := by
-  rw [← norm_eq_zero, norm_rotateTarget, norm_eq_zero]
-
-/-- Rotation of fields preserves `C^n` regularity. -/
-theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
-  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x ((u : ℂ) * z) i) :=
-    ((contDiff_piLp _).mp hx i).comp (contDiff_const.mul contDiff_id)
-  refine (contDiff_piLp _).mpr fun i ↦ ?_
-  fin_cases i
-  · simpa using (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
-  · simpa using (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
-  · simpa using hc 2
-  · simpa using hc 3
-
-/-- Rotation of the target preserves `C^n` regularity. -/
-theorem contDiff_rotateTarget {n : WithTop ℕ∞} (u : Circle) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hη : ContDiff ℝ n η) : ContDiff ℝ n (rotateTarget u η) := by
-  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ η ((u : ℂ) * z) i) :=
-    ((contDiff_piLp _).mp hη i).comp (contDiff_const.mul contDiff_id)
-  refine (contDiff_piLp _).mpr fun i ↦ ?_
-  fin_cases i
-  · simpa using hc 0
-  · simpa using hc 1
-  · simpa using (contDiff_const.mul (hc 2)).add (contDiff_const.mul (hc 3))
-  · simpa using (contDiff_const.mul (hc 3)).sub (contDiff_const.mul (hc 2))
-
-/-- Rotation of the target preserves compact support. -/
-theorem hasCompactSupport_rotateTarget (u : Circle) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hη : HasCompactSupport η) : HasCompactSupport (rotateTarget u η) :=
-  (hη.comp_homeomorph (Homeomorph.mulLeft₀ (u : ℂ) (Circle.coe_ne_zero u))).mono fun _ hz h ↦
-    hz ((rotateTarget_eq_zero_iff u η _).2 h)
-
-open MeasureTheory in
-/-- Rotation of fields preserves `L^p` for every additive Haar measure on the plane. -/
-theorem memLp_rotateField {μ : Measure ℂ} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} (u : Circle)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y p μ) : MemLp (rotateField u y) p μ := by
-  have hψ := Circle.measurePreserving_coe_mul μ u
-  have hc (i : Fin 4) : AEMeasurable (fun z ↦ y ((u : ℂ) * z) i) μ :=
-    (EuclideanSpace.proj i).continuous.measurable.comp_aemeasurable
-      (hy.aestronglyMeasurable.aemeasurable.comp_quasiMeasurePreserving hψ.quasiMeasurePreserving)
-  refine (hy.comp_measurePreserving hψ).congr_norm
-    ((PiLp.continuous_toLp 2 _).comp_aestronglyMeasurable
-      (aemeasurable_pi_iff.2 fun i ↦ ?_).aestronglyMeasurable)
-    (ae_of_all _ fun z ↦ (norm_rotateField u y z).symm)
-  fin_cases i
-  · simpa using ((hc 0).const_mul (u : ℂ).re).fun_add ((hc 1).const_mul (u : ℂ).im)
-  · simpa using ((hc 1).const_mul (u : ℂ).re).fun_sub ((hc 0).const_mul (u : ℂ).im)
-  · simpa using hc 2
-  · simpa using hc 3
+  ext i
+  fin_cases i <;>
+    simp only [gaugeFixedFirstOrder_apply, targetRotation_apply, fieldRotation_apply,
+      Fin.sum_univ_four, PiLp.single_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, Fin.reduceEq, ↓reduceIte,
+      Complex.inner, real_smul, add_re, add_im, mul_re, mul_im, conj_re, conj_im, ofReal_re,
+      ofReal_im, one_re, one_im, I_re, I_im]
+  · linear_combination ((G 0).re + (G 1).im) * hn
+  · linear_combination ((G 0).im - (G 1).re) * hn
+  · ring
+  · ring
 
 /-- Evaluation of a real-linear functional at `u`, in the basis `(1, I)`. -/
 private theorem clm_apply_coe (L : ℂ →L[ℝ] ℝ) (u : Circle) :

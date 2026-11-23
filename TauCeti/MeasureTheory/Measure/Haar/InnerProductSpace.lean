@@ -35,11 +35,13 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
 * `TauCeti.volume_eq_one_of_subsingleton`: in a zero-dimensional space every nonempty set has
   volume one.
+* `TauCeti.volume_ball_eq_of_finrank_eq`: in finite-dimensional real inner product spaces of the
+  same dimension, open balls of the same radius have equal volume.
+* `Module.Basis.ofReal_sqrt_det_gram_mul_addHaar_preimage_ball`: the Gram density times the
+  measure of a linear preimage of a ball is its Euclidean volume.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
-* `LinearIsometryEquiv.measurePreserving_addHaar`: a linear isometry of a space onto itself
-  preserves every additive Haar measure.
 * `Submodule.ae_of_ae_orthogonalProjectionOnto_prod`: a property of almost every point of a
   space linearly isomorphic to `K × Kᗮ` holds, for almost every `a`, at the image of the
   components of `a` along `K` and `Kᗮ`.
@@ -72,6 +74,18 @@ theorem volume_eq_one_of_subsingleton [Subsingleton E] {s : Set E} (hs : s.Nonem
   rwa [Subsingleton.eq_univ_of_nonempty ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, by simp, by simp⟩⟩,
     ← Subsingleton.eq_univ_of_nonempty hs] at hpar
 
+/-- In finite-dimensional real inner product spaces of the same dimension, open balls of the same
+radius have equal volume. -/
+theorem volume_ball_eq_of_finrank_eq {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+    (h : finrank ℝ E = finrank ℝ F) (x : E) (y : F) (r : ℝ) :
+    volume (Metric.ball x r) = volume (Metric.ball y r) := by
+  let e : E ≃ₗᵢ[ℝ] F :=
+    (stdOrthonormalBasis ℝ E).equiv (stdOrthonormalBasis ℝ F) (finCongr h)
+  rw [Measure.addHaar_ball_center volume x r, Measure.addHaar_ball_center volume y r,
+    ← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
+    e.preimage_ball, map_zero]
+
 /-- In a finite-dimensional real inner product space, the parallelepiped spanned by a family of
 as many vectors as the dimension has volume the square root of the Gram determinant of the
 family. -/
@@ -100,6 +114,37 @@ theorem volume_eq_smul_addHaar (b : Basis ι ℝ E) :
   rw [← TauCeti.volume_parallelepiped b (finrank_eq_card_basis b).symm, addHaar_def]
   exact Measure.addHaarMeasure_unique volume b.parallelepiped
 
+/-- **The ellipsoid of an injective linear map.** For an injective linear map `A : D → F` and a
+basis `b` of `D`, `√ det ⟪A (b i), A (b j)⟫ · λ_b(A⁻¹(B_r(0))) = vol(B_r(0) ⊆ ℝⁿ)`. -/
+theorem ofReal_sqrt_det_gram_mul_addHaar_preimage_ball {D F : Type*}
+    [NormedAddCommGroup D] [NormedSpace ℝ D]
+    [MeasurableSpace D] [BorelSpace D] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (b : Basis ι ℝ D) {A : D →ₗ[ℝ] F}
+    (hA : Function.Injective A) (r : ℝ) :
+    ENNReal.ofReal √(Matrix.gram ℝ fun i ↦ A (b i)).det * b.addHaar (A ⁻¹' Metric.ball 0 r) =
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ D))) r) := by
+  have : FiniteDimensional ℝ D := b.finiteDimensional_of_finite
+  let V := LinearMap.range A
+  let : MeasurableSpace V := borel V
+  have : BorelSpace V := ⟨rfl⟩
+  let e : D ≃L[ℝ] V := (LinearEquiv.ofInjective A hA).toContinuousLinearEquiv
+  have he (x : D) : (e x : F) = A x := by
+    simp [e, LinearEquiv.ofInjective_apply]
+  have hpre : A ⁻¹' Metric.ball (0 : F) r = e ⁻¹' Metric.ball (0 : V) r := by
+    ext x
+    simp [← Submodule.norm_coe, he]
+  have hgram : Matrix.gram ℝ (b.map e.toLinearEquiv) = Matrix.gram ℝ fun i ↦ A (b i) := by
+    ext i j
+    simp [Matrix.gram_apply, Submodule.coe_inner, he]
+  have hball := TauCeti.volume_ball_eq_of_finrank_eq
+    (e.toLinearEquiv.finrank_eq.symm.trans finrank_euclideanSpace_fin.symm) (0 : V)
+    (0 : EuclideanSpace ℝ (Fin (finrank ℝ D))) r
+  have hV := congrArg (fun μ : Measure V ↦ μ (Metric.ball 0 r))
+    (b.map e.toLinearEquiv).volume_eq_smul_addHaar
+  simp only [smul_apply, smul_eq_mul] at hV
+  rw [hpre, ← Measure.map_apply e.continuous.measurable measurableSet_ball, b.map_addHaar e,
+    ← hgram, ← hV, hball]
+
 end Module.Basis
 
 namespace AffineIsometryEquiv
@@ -116,19 +161,6 @@ theorem measurePreserving (f : E ≃ᵃⁱ[ℝ] F) : MeasurePreserving f := by
   exact (measurePreserving_add_right volume (f 0)).comp f.linearIsometryEquiv.measurePreserving
 
 end AffineIsometryEquiv
-
-namespace LinearIsometryEquiv
-
-/-- Every linear isometry of a finite-dimensional real inner product space onto itself preserves
-every additive Haar measure, not only the volume measure: such a measure is a constant multiple of
-the volume measure. -/
-theorem measurePreserving_addHaar (f : E ≃ₗᵢ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
-    MeasurePreserving f μ μ := by
-  refine ⟨f.continuous.measurable, ?_⟩
-  rw [μ.isAddLeftInvariant_eq_smul volume, Measure.map_smul _ f.continuous.aemeasurable,
-    f.measurePreserving.map_eq]
-
-end LinearIsometryEquiv
 
 namespace Submodule
 
