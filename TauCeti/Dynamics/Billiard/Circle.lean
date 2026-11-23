@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Dynamics.Billiard.Inverse
 public import TauCeti.Dynamics.Billiard.PeriodicPolygon
@@ -12,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Circle.Metric
@@ -153,6 +155,12 @@ theorem circle_apply (s : ℝ) : circle hR s = circleMap 0 R (s / R) :=
 @[simp]
 theorem period_circle : (circle hR).period = 2 * π * R :=
   (rfl)
+
+/-- The parametrization `s ↦ R e^{i s / R}` of the circular table is smooth. -/
+theorem contDiff_circle {n : WithTop ℕ∞} : ContDiff ℝ n (circle hR) := by
+  convert (contDiff_circleMap 0 R).comp (contDiff_id.div_const R) using 1
+  funext s
+  exact circle_apply s
 
 /-- The unit tangent of the circle table at `χ(s)` is `i e^{i s / R}`. -/
 @[simp]

@@ -8,7 +8,6 @@ module
 public import TauCeti.Dynamics.Billiard.Circle
 public import TauCeti.Dynamics.Billiard.Smooth
 public import TauCeti.Dynamics.Circle.RotationNumber.Displacement
-import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 /-!
 # Rotation numbers of invariant graphs of the billiard map
@@ -43,7 +42,7 @@ higher invariant graph has a smaller rotation number
 radius `R` the constant graphs `v = cos α` are invariant with rotation number `α / π`
 (`TauCeti.StrictConvexBilliardTable.rotationNumber_circle`).
 
-In the angle coordinate `δ` with `v = cos δ` of the roadmap, the graph `{v = ψ}` is the graph
+In the angle coordinate `δ` with `v = cos δ`, the graph `{v = ψ}` is the graph
 `{δ = arccos ψ}`, the time reversal is `δ ↦ π - δ`, and rotation numbers increase with `δ`.
 
 ## Main definitions
@@ -141,15 +140,7 @@ theorem continuous_graphLift (hχ : ContDiff ℝ 2 χ) : Continuous (χ.graphLif
     (χ.contDiffAt_nextParam one_ne_zero hχ (h.mem_Ioo s)).continuousAt.comp
       (f := fun s ↦ (s, ψ s)) (continuous_id.prodMk h.continuous).continuousAt
 
-/-- For a `C²` table the graph lift of an invariant graph is strictly increasing. -/
-theorem strictMono_graphLift (hχ : ContDiff ℝ 2 χ) : StrictMono (χ.graphLift ψ) := by
-  refine ((h.continuous_graphLift hχ).strictMono_of_inj h.injective_graphLift).resolve_right
-    fun hanti ↦ ?_
-  have := hanti (lt_add_of_pos_right 0 χ.period_pos)
-  rw [h.graphLift_add_period] at this
-  linarith [χ.period_pos]
-
-/-- The graph lift rescaled by the period, `x ↦ g(L x) / L`. -/
+/-- The rescaled graph lift `x ↦ g(L x) / L` is continuous for a `C²` table. -/
 private theorem continuous_rescale (hχ : ContDiff ℝ 2 χ) :
     Continuous fun x ↦ χ.graphLift ψ (χ.period * x) / χ.period :=
   ((h.continuous_graphLift hχ).comp (continuous_const.mul continuous_id)).div_const _
@@ -165,11 +156,20 @@ private theorem rescale_add_one (x : ℝ) :
       χ.graphLift ψ (χ.period * x) / χ.period + 1 := by
   rw [mul_add_one, h.graphLift_add_period, add_div, div_self χ.period_pos.ne']
 
+/-- For a `C²` table the graph lift of an invariant graph is strictly increasing. -/
+theorem strictMono_graphLift (hχ : ContDiff ℝ 2 χ) : StrictMono (χ.graphLift ψ) := by
+  have hL := χ.period_pos
+  intro x y hxy
+  have := (h.continuous_rescale hχ).strictMono_of_injective_of_map_add_one h.injective_rescale
+    h.rescale_add_one (div_lt_div_of_pos_right hxy hL)
+  simpa only [mul_div_cancel₀ _ hL.ne', div_lt_div_iff_of_pos_right hL] using this
+
 /-- The **circle lift** of an invariant graph of a `C²` table: the graph lift rescaled by the
 period, `x ↦ g(L x) / L`, a lift of a homeomorphism of the circle `ℝ / ℤ`. -/
 def circleLift (hχ : ContDiff ℝ 2 χ) : CircleDeg1Lift :=
   CircleDeg1Lift.ofInjective _ (h.continuous_rescale hχ) h.injective_rescale h.rescale_add_one
 
+@[simp]
 theorem circleLift_apply (hχ : ContDiff ℝ 2 χ) (x : ℝ) :
     h.circleLift hχ x = χ.graphLift ψ (χ.period * x) / χ.period := by
   rw [circleLift, CircleDeg1Lift.coe_ofInjective]
@@ -202,7 +202,8 @@ theorem tendsto_rotationNumber (hχ : ContDiff ℝ 2 χ) (s : ℝ) :
       (𝓝 (h.rotationNumber hχ)) := by
   refine ((h.circleLift hχ).tendsto_translationNumber (s / χ.period)).congr fun n ↦ ?_
   rw [CircleDeg1Lift.coe_pow, h.iterate_circleLift, h.iterate_nextCollision,
-    mul_div_cancel₀ _ χ.period_pos.ne', ← sub_div, div_div, mul_comm]
+    mul_div_cancel₀ _ χ.period_pos.ne']
+  field_simp
 
 /-- **The rotation number lies strictly between `0` and `1`**: every collision advances the
 parameter by more than `0` and less than one period. -/
@@ -233,8 +234,9 @@ invariant graph under the time reversal `ι(s, v) = (s, -v)` is an invariant gra
 theorem neg (hχ : ContDiff ℝ 2 χ) : χ.IsInvariantGraph (-ψ) where
   continuous := h.continuous.neg
   periodic s := by simp [h.periodic s]
-  mem_Ioo s :=
-    show -ψ s ∈ Ioo (-1) 1 from ⟨by linarith [(h.mem_Ioo s).2], by linarith [(h.mem_Ioo s).1]⟩
+  mem_Ioo s := by
+    rw [Pi.neg_apply]
+    exact ⟨neg_lt_neg (h.mem_Ioo s).2, neg_lt.1 (h.mem_Ioo s).1⟩
   nextTangential_eq t := by
     obtain ⟨s, rfl⟩ := h.surjective_graphLift hχ t
     have hs := h.mem_Ioo s
@@ -255,8 +257,8 @@ theorem rotationNumber_neg (hχ : ContDiff ℝ 2 χ) :
   set f := (h.neg hχ).circleLift hχ
   set g := h.circleLift hχ
   have hfg : ∀ x, f (g x) = x + 1 := fun x ↦ by
-    rw [circleLift_apply, circleLift_apply, mul_div_cancel₀ _ hL, h.graphLift_neg_graphLift,
-      add_div, mul_div_cancel_left₀ _ hL, div_self hL]
+    rw [circleLift_apply, circleLift_apply, mul_div_cancel₀ _ hL, h.graphLift_neg_graphLift]
+    field_simp
   have hgf : ∀ x, g (f x) = x + 1 := fun x ↦ by
     obtain ⟨y, hy⟩ := (g.continuous_iff_surjective).1 (h.continuous_circleLift hχ) x
     rw [← hy, hfg, g.map_add_one]
@@ -289,12 +291,6 @@ attribute [local instance] Complex.finrank_real_complex_fact
 
 variable {R : ℝ} (hR : 0 < R)
 
-/-- The parametrization `s ↦ R e^{i s / R}` of the circular table is smooth. -/
-theorem contDiff_circle {n : WithTop ℕ∞} : ContDiff ℝ n (circle hR) := by
-  convert (contDiff_circleMap 0 R).comp (contDiff_id.div_const R) using 1
-  funext s
-  exact circle_apply s
-
 /-- On the circular table every constant graph `v = c`, `c ∈ (-1, 1)`, is invariant. -/
 theorem isInvariantGraph_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
     (circle hR).IsInvariantGraph fun _ ↦ c where
@@ -305,16 +301,16 @@ theorem isInvariantGraph_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
 
 /-- **The rotation numbers of the circular table.** The constant graph `v = cos α`, `α ∈ (0, π)`,
 of the circular table has rotation number `α / π`. -/
+@[simp]
 theorem rotationNumber_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
-    (isInvariantGraph_circle hR hc).rotationNumber (contDiff_circle hR) =
+    (isInvariantGraph_circle hR hc).rotationNumber contDiff_circle =
       Real.arccos c / Real.pi := by
-  have hL : (circle hR).period ≠ 0 := (circle hR).period_pos.ne'
-  have : (isInvariantGraph_circle hR hc).circleLift (contDiff_circle hR) =
+  have : (isInvariantGraph_circle hR hc).circleLift contDiff_circle =
       (CircleDeg1Lift.translate (Multiplicative.ofAdd (Real.arccos c / Real.pi)) :
         CircleDeg1Lift) :=
     CircleDeg1Lift.ext fun x ↦ by
       rw [IsInvariantGraph.circleLift_apply, graphLift_def, nextParam_circle hc,
-        CircleDeg1Lift.translate_apply, add_div, mul_div_cancel_left₀ _ hL, period_circle]
+        CircleDeg1Lift.translate_apply, period_circle]
       field_simp
       ring
   rw [IsInvariantGraph.rotationNumber_def, this, CircleDeg1Lift.translationNumber_translate]
