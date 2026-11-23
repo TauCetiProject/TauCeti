@@ -39,7 +39,8 @@ near the support.
 
 ## Main declarations
 
-* `Distribution.IsVanishingOn.add`, `Distribution.IsVanishingOn.sub`,
+* `Distribution.IsVanishingOn.zero`, `Distribution.IsVanishingOn.neg`,
+  `Distribution.IsVanishingOn.add`, `Distribution.IsVanishingOn.sub`,
   `Distribution.IsVanishingOn.smul`: maps vanishing on a set form a subspace.
 * `Distribution.dsupport_zero`, `Distribution.dsupport_neg`, `Distribution.dsupport_smul_subset`,
   `Distribution.dsupport_smul_of_ne_zero`: support under zero, negation, and scalar multiplication.
@@ -98,6 +99,14 @@ namespace Distribution
 section Basic
 
 variable {α β 𝓕 R V : Type*} [FunLike 𝓕 α β] [TopologicalSpace α] [Zero β]
+
+/-- The zero map vanishes on every set. -/
+theorem IsVanishingOn.zero [Zero V] {s : Set α} : IsVanishingOn (0 : 𝓕 → V) s := fun _ _ ↦ rfl
+
+/-- The negation of a map vanishing on a set vanishes on it. -/
+theorem IsVanishingOn.neg [NegZeroClass V] {f : 𝓕 → V} {s : Set α} (hf : IsVanishingOn f s) :
+    IsVanishingOn (-f) s := fun φ hφ ↦ by
+  simp [hf φ hφ]
 
 /-- The sum of two maps vanishing on a set vanishes on it. -/
 theorem IsVanishingOn.add [AddZeroClass V] {f g : 𝓕 → V} {s : Set α} (hf : IsVanishingOn f s)

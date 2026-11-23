@@ -21,7 +21,7 @@ distributions vanishing at low frequencies
 (`TemperedDistribution.MemHomogeneousBesov.existsUnique_mem_vanishingAtLowFrequencies`). On the
 bundled space this gives the **realisation**
 `TauCeti.HomogeneousBesovSpace.realization : \dot B^s_{p,q} →ₗ[ℂ] 𝓢'(E, F)`, a linear map that
-vanishes exactly on the null space of the seminorm and takes values in `𝓢'_h`.
+takes values in `𝓢'_h` and, for `1 ≤ q`, vanishes exactly on the null space of the seminorm.
 
 ## Main declarations
 

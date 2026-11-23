@@ -449,8 +449,7 @@ is an `Lᵖ` function `f`, the heat flow `e^{tΔ} Pⱼ u` is an `Lᵖ` function 
 
 `‖g‖_p ≤ C exp(-π² φ.rIn² 4^j t / 16) ‖f‖_p`.
 
-The constant does not depend on `j`, also for the low frequencies `j ≤ 0`: the frequency scale
-`ν = 2^j` enters only through the cutoff `χ (ν⁻¹ ·)`. -/
+The constant does not depend on `j`, also for the low frequencies `j ≤ 0`. -/
 theorem exists_heatSemigroup_homogeneousLittlewoodPaleyBlock_eq_and_norm_le
     (φ : ContDiffBump (0 : E)) :
     ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℤ) (t : ℝ≥0) (u : 𝓢'(E, F))
