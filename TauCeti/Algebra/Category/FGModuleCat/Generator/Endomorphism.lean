@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.FGModuleCat.Injective
-import TauCeti.Algebra.Category.FGModuleCat.MatlisDuality.Projectivization
+import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Projectivization
 import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.RingTheory.Artinian.FiniteLength
 import TauCeti.RingTheory.Artinian.Subalgebra
@@ -58,7 +58,7 @@ theorem _root_.CategoryTheory.IsCoseparator.injective_end {A : Type v} [Ring A] 
   -- universe of `C`; the dual of the regular module is then shrunk to the universe of `M`.
   let C := Subalgebra.center R A
   have : Module.Finite C A := Subalgebra.finite_centerAlgebra_of_finite
-  obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson.{v, v} C
+  obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson C
   have := hf.moduleInjective
   -- The dual `D_C A`, shrunk to the universe `w`, is a finitely generated injective module.
   have : Module.Finite Aᵐᵒᵖ A := .equiv (MulOpposite.opLinearEquiv Aᵐᵒᵖ).symm
@@ -72,8 +72,9 @@ theorem _root_.CategoryTheory.IsCoseparator.injective_end {A : Type v} [Ring A] 
   have : Injective X := FGModuleCat.injective_of_moduleInjective X
   -- As a finitely generated injective object, `X` lies in `add M`; so `D_C M` is projective as a
   -- right module over `End M` (a left module over its opposite).
-  have := (FGModuleCat.finite_projective_end_op_matlisDual_of_additiveClosure (R := C) M
-    (hM.additiveClosure_of_injective X) e).2
+  have := (ModuleCat.finite_projective_end_op_matlisDual_of_additiveClosure (R := C) M.obj
+    ((ModuleCat.isFG.{w} A).ι.additiveClosure_le_inverseImage M _
+      (hM.additiveClosure_of_injective X)) e).2
   exact moduleInjective_of_projective_op_matlisDual (MatlisDual.bijective_evalₗ
     hf.length_quotient_linearMap_eq_one (isFiniteLength_of_finite_trans C A M.obj))
 

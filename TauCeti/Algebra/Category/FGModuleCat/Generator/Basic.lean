@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 -- Private: the comparison of separators with generators in `ModuleCat R`, and the regular module
--- as a projective object of `FGModuleCat R`, and finite intersections in Artinian modules.
+-- as a projective object of `FGModuleCat R`, and embeddings of Artinian modules into finite powers.
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.Generator
 import TauCeti.RingTheory.Artinian.Module
@@ -131,6 +131,29 @@ theorem _root_.FGModuleCat.additiveClosure_of_isGenerator_of_projective (M P : F
     simpa [p, LinearMap.comp_assoc] using congr((biproduct.ι _ i ≫ $hg).hom.hom)
   exact (additiveClosure M).prop_of_retract ⟨Projective.factorThru (𝟙 P) p, p, by simp⟩
     ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
+
+/-- **Testing on a cyclic submodule**: a morphism out of `X` composes to zero with the inclusion of
+the cyclic submodule `R ∙ x` exactly when it kills `x`. -/
+@[simp]
+theorem _root_.FGModuleCat.span_singleton_subtype_comp_eq_zero_iff (X : FGModuleCat.{v} R)
+    {Y : FGModuleCat.{v} R} (x : X.obj) (f : X ⟶ Y) :
+    (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) ≫ f =
+      0 ↔ f.hom.hom x = 0 := by
+  -- The inclusion into `ModuleCat R` is faithful, which reduces this to linear maps.
+  rw [← Functor.map_injective_iff (ObjectProperty.ι _), Functor.map_comp, Functor.map_zero,
+    ModuleCat.hom_ext_iff]
+  simp only [ObjectProperty.ι_map, ObjectProperty.homMk_hom, ModuleCat.hom_comp,
+    ModuleCat.hom_ofHom, ModuleCat.hom_zero]
+  rw [← LinearMap.le_ker_iff_comp_subtype_eq_zero, Submodule.span_singleton_le_iff_mem,
+    LinearMap.mem_ker]
+
+/-- The inclusion of the cyclic submodule `R ∙ x` into `X` is zero exactly when `x` is. -/
+@[simp]
+theorem _root_.FGModuleCat.span_singleton_subtype_eq_zero_iff (X : FGModuleCat.{v} R)
+    (x : X.obj) :
+    (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) =
+      0 ↔ x = 0 := by
+  simpa using X.span_singleton_subtype_comp_eq_zero_iff x (𝟙 X)
 
 /-- **The coseparators of `mod R`, elementwise**: `M` is a coseparator of `mod R` exactly when
 every nonzero element of every finitely generated module `X` is sent to a nonzero element by some

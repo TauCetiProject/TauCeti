@@ -47,9 +47,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
 * `TauCeti.subsingleton_matlisDual_iff`: `D_R N` is zero exactly when `N` is, for every `N`.
 * `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: for modules of
   finite length over `R`, dualizing is a bijection on morphisms.
-* `TauCeti.moduleInjective_of_projective_op_matlisDual` and
-  `TauCeti.moduleInjective_op_of_projective_matlisDual`: for an injective `E`, a left or right
-  module with bijective evaluation into its double dual and projective dual is injective.
+* `TauCeti.moduleInjective_of_projective_op_matlisDual`: for an injective `E`, a module with
+  bijective evaluation into its double dual and projective dual is injective.
 * `TauCeti.MatlisDual.exists_retract_of_retract`: a retract of `D_R N` dualizes to a retract of
   `N`, for `N` of finite length over `R`.
 
@@ -334,14 +333,6 @@ theorem equivLinearMapDualRegular_map {N' : Type*} [AddCommGroup N'] [Module R N
   ext x a
   simp
 
-/-- **Naturality of the inverse of the Hom-tensor adjunction**: precomposition with `g : N → N'`
-corresponds to dualizing `g`. -/
-@[simp]
-theorem equivLinearMapDualRegular_symm_comp {N' : Type*} [AddCommGroup N'] [Module R N']
-    [Module A N'] [IsScalarTower R A N'] (h : N' →ₗ[A] MatlisDual R E A) (g : N →ₗ[A] N') :
-    equivLinearMapDualRegular.symm (h ∘ₗ g) = map g (equivLinearMapDualRegular.symm h) := by
-  rw [LinearEquiv.symm_apply_eq, equivLinearMapDualRegular_map, LinearEquiv.apply_symm_apply]
-
 end Regular
 
 end MatlisDual
@@ -542,22 +533,6 @@ theorem moduleInjective_of_projective_op_matlisDual [Module A N] [IsScalarTower 
   -- Through evaluation, `N` is the dual of the projective right module `D_R N`.
   ((LinearEquiv.ofBijective (evalₗ R E N) hN).trans
     (equivLinearMap R E _)).moduleInjective_of_dual_projective fun a x φ ↦ by simp
-
-attribute [local instance] RingHomInvPair.of_ringEquiv in
-/-- **A right module with projective dual is injective.** If `E` is injective and `R` is small in
-its universe, then a right `A`-module `N` for which evaluation `N → D_R (D_R N)` is bijective, and
-whose dual `D_R N` is a projective left `A`-module, is an injective right `A`-module. -/
-theorem moduleInjective_op_of_projective_matlisDual [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
-    (hN : Function.Bijective (evalₗ R E N)) [Module.Projective A (MatlisDual R E N)] :
-    Module.Injective Aᵐᵒᵖ N :=
-  -- This is the left-module case over `Aᵐᵒᵖ`: the action of `Aᵐᵒᵖᵐᵒᵖ` on `D_R N` is that of `A`
-  -- through `RingEquiv.opOp A`.
-  let e : MatlisDual R E N ≃ₛₗ[RingHomClass.toRingHom (RingEquiv.opOp A)] MatlisDual R E N :=
-    { Equiv.refl _ with
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ MatlisDual.ext fun _ ↦ by simp }
-  have : Module.Projective Aᵐᵒᵖᵐᵒᵖ (MatlisDual R E N) := .of_equiv e
-  moduleInjective_of_projective_op_matlisDual (A := Aᵐᵒᵖ) hN
 
 end Biduality
 
