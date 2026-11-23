@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Constructions.Over.Products
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
+import TauCeti.CategoryTheory.Limits.Shapes.BinaryProducts
 
 /-!
 # Base changes of base changes
@@ -16,7 +17,8 @@ Let `P` be a property of morphisms stable under base change. If the base change
 morphism factoring through `k`: this file records the forms of this used when reducing a property
 of morphisms of schemes to an affine base. Mathlib's `MorphismProperty.pullback_snd` is the case
 where `f` itself has `P`. If `P` is moreover stable under composition, then the product of two
-morphisms of `Over S` has `P` on underlying morphisms whenever both factors do.
+morphisms of `Over S` has `P` on underlying morphisms whenever both factors do and the source,
+target, and intermediate binary products exist.
 
 ## Main results
 
@@ -30,7 +32,8 @@ morphisms of `Over S` has `P` on underlying morphisms whenever both factors do.
 * `CategoryTheory.MorphismProperty.pullback_snd_comp_left`: if `P` is moreover stable under
   composition, `P e` and `P (pullback.snd f k)` imply `P (pullback.snd (e ≫ f) k)`.
 * `CategoryTheory.MorphismProperty.prod_map_left`: if `P` is moreover stable under composition,
-  `P f.left` and `P g.left` imply `P (prod.map f g).left` for morphisms `f` and `g` of `Over S`.
+  `P f.left` and `P g.left` imply `P (prod.map f g).left` for morphisms `f` and `g` of `Over S`,
+  assuming the source, target, and intermediate binary products exist.
 -/
 
 public section
@@ -85,28 +88,18 @@ theorem pullback_snd_comp_left [P.IsStableUnderComposition] {X' : C} (f : X ⟶ 
   simpa using P.comp_mem _ _ (P.of_isPullback
     ((IsPullback.of_hasPullback (e ≫ f) k).of_bot' (.of_hasPullback f k)) he) h
 
-/-- For a property stable under base change and composition, a product of morphisms in `Over S`
-has the property on underlying morphisms when both factors do. This parallels Mathlib's
-`MorphismProperty.pullbackMap`, which treats `pullback.map`. -/
+/-- For a property stable under base change and composition, a product `prod.map f g` of morphisms
+`f : X ⟶ X'` and `g : Y ⟶ Y'` in `Over S` has the property on underlying morphisms when both
+factors do and the source product `X ⨯ Y`, target product `X' ⨯ Y'`, and intermediate product
+`X' ⨯ Y` exist. This parallels Mathlib's `MorphismProperty.pullbackMap`, which treats
+`pullback.map`. -/
 theorem prod_map_left [P.IsStableUnderComposition] {S : C} {X Y X' Y' : Over S}
     [HasBinaryProduct X Y] [HasBinaryProduct X' Y] [HasBinaryProduct X' Y'] (f : X ⟶ X')
     (g : Y ⟶ Y') (hf : P f.left) (hg : P g.left) : P (prod.map f g).left := by
-  -- A binary product in `Over S` is a pullback over `S` of the underlying objects.
-  have hpb (A B : Over S) [HasBinaryProduct A B] :
-      IsPullback (prod.fst : A ⨯ B ⟶ A).left (prod.snd : A ⨯ B ⟶ B).left A.hom B.hom :=
-    Over.isPullback_of_binaryFan_isLimit (BinaryFan.mk _ _) (prodIsProd A B)
-  -- `prod.map f (𝟙 Y)` is the base change of `f.left` along the first projection of `X' ⨯ Y`.
-  have h₁ : P (prod.map f (𝟙 Y)).left := by
-    refine P.of_isPullback (IsPullback.of_bot (h₁₁ := (prod.fst : X ⨯ Y ⟶ X).left) ?_ ?_
-      (hpb X' Y)) hf
-    · simpa [← Over.comp_left] using hpb X Y
-    · simp [← Over.comp_left]
-  -- `prod.map (𝟙 X') g` is the base change of `g.left` along the second projection of `X' ⨯ Y'`.
-  have h₂ : P (prod.map (𝟙 X') g).left := by
-    refine P.of_isPullback (IsPullback.of_bot (h₁₁ := (prod.snd : X' ⨯ Y ⟶ Y).left) ?_ ?_
-      (hpb X' Y').flip) hg
-    · simpa [← Over.comp_left] using (hpb X' Y).flip
-    · simp [← Over.comp_left]
+  have h₁ : P (prod.map f (𝟙 Y)).left :=
+    P.of_isPullback ((IsPullback.of_prod_fst_with_id f Y).map (Over.forget S)) hf
+  have h₂ : P (prod.map (𝟙 X') g).left :=
+    P.of_isPullback ((IsPullback.of_prod_snd_with_id X' g).map (Over.forget S)) hg
   simpa [← Over.comp_left] using P.comp_mem _ _ h₁ h₂
 
 end CategoryTheory.MorphismProperty
