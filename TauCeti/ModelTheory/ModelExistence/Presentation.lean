@@ -127,7 +127,7 @@ theorem morleyAxioms_iSup {n : ℕ} (φs : ℕ → L.BoundedFormulaω Empty n)
 
 /-- The first-order Morley theory of a component-closed infinitary fragment. -/
 def morleyTheory : (morleyize L A).Theory :=
-  ⋃ p : A, morleyAxioms A p.1.2 p.2
+  ⋃ p : A, morleyAxioms A p.val.2 p.property
 
 /-- A sentence belongs to the Morley theory iff it is an axiom of a fragment member. -/
 theorem mem_morleyTheory_iff {σ : (morleyize L A).Sentence} :
@@ -295,7 +295,7 @@ private def morleyObstruction : ∀ {n : ℕ} (φ : L.BoundedFormulaω Empty n) 
 
 /-- The family of first-order partial types whose omission completes the Morley theory. -/
 def morleyTypes : Set (Σ n, Set ((morleyize L A).BoundedFormula Empty n)) :=
-  Option.some ⁻¹' Set.range fun p : A => morleyObstruction A p.1.2 p.2
+  Option.some ⁻¹' Set.range fun p : A => morleyObstruction A p.val.2 p.property
 
 /-- The omitted types are precisely the conjunction and disjunction obstruction types. -/
 theorem mem_morleyTypes_iff {p : Σ n, Set ((morleyize L A).BoundedFormula Empty n)} :

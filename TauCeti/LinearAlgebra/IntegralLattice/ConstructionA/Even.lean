@@ -76,7 +76,7 @@ theorem isEven_integralLattice_iff_intCast (C : AddSubgroup (ι → ZMod m))
     exact_mod_cast this
   · intro h x
     obtain ⟨z, hz, hzx⟩ :=
-      (mem_lattice m).mp (by rw [← integralLattice_carrier m C hC]; exact x.2)
+      (mem_lattice m).mp (by rw [← integralLattice_carrier m C hC]; exact x.property)
     obtain ⟨k, hk⟩ := h z hz
     refine ⟨k, ?_⟩
     rw [← hzx, integralLattice_norm_intCast, hk]

@@ -327,7 +327,7 @@ private theorem encard_classes_le_of_isTupleBFSystem {S : Set (Σ n, (Fin n → 
   obtain ⟨t, ht, htm⟩ := Set.exists_subset_encard_eq hm
   obtain ⟨t, rfl⟩ := (Set.finite_of_encard_eq_coe htm).exists_finset_coe
   -- Pick one element of each class in `t`, and match the tuple of these elements.
-  choose x hx using fun c : t => (ht c.2).1
+  choose x hx using fun c : t => (ht c.property).1
   let a : Fin t.card → V := fun i => x (t.equivFin.symm i)
   obtain ⟨b, hab⟩ := hS.exists_snd_mem a
   obtain ⟨-, hrel⟩ := (sameAtomicType_fromRel_iff r s a b).mp (hS.sameAtomicType hab)
@@ -342,7 +342,7 @@ private theorem encard_classes_le_of_isTupleBFSystem {S : Set (Σ n, (Fin n → 
   rintro _ ⟨i, -, rfl⟩
   refine ⟨s.mem_classes (b i), ?_⟩
   rw [← encard_ofPred_rel_eq_of_isTupleBFSystem hS hab i, ha]
-  exact (ht (t.equivFin.symm i).2).2
+  exact (ht (t.equivFin.symm i).property).2
 
 /-- Potentially isomorphic equivalence relations have equally many classes in `ℕ∞`, whatever
 their cardinalities. -/

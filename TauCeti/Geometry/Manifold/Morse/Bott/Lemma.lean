@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Bott
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
+import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -59,6 +60,14 @@ connected component of the critical set. These are the facts that make the criti
 a Morse–Bott function isolated, so that a compact critical component has a neighbourhood free of
 other critical points.
 
+The slice coordinates also carry the **Morse–Bott form of Łojasiewicz's gradient inequality**
+(`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`) to the manifold: near `i s`,
+`lam * |f y - f (i s)|` is at most the squared norm of the differential of `f` read in the
+preferred chart at `i s`
+(`IsNondegenerateCriticalSubmanifold.exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq`).
+The change of coordinates from the slice chart to the preferred chart is `C¹`, so it distorts the
+differential by a bounded factor.
+
 ## Main declarations
 
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_morseBott_chart`: the
@@ -71,6 +80,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
 
 * `IsNondegenerateCriticalSubmanifold.eventually_mem_range_of_mem_criticalPoints`: critical points
   near a Morse–Bott critical submanifold lie on it.
+* `IsNondegenerateCriticalSubmanifold.exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq`:
+  the Morse–Bott form of Łojasiewicz's gradient inequality, in the preferred chart at a point of
+  the submanifold.
 * `IsNondegenerateCriticalSubmanifold.exists_isOpen_criticalPoints_inter_eq_range`: its image is
   open in the critical set.
 * `IsNondegenerateCriticalSubmanifold.range_eq_connectedComponentIn`: a closed image of a
@@ -412,6 +424,51 @@ theorem eventually_mem_range_of_mem_criticalPoints (hi : i.IsNondegenerateCritic
   refine ⟨φ.symm (L.symm (ξ x)).1, ξ.injOn (by simpa [hφ, hξ] using hy)
     (by simpa [hξ] using hxe) ?_⟩
   rw [hw, ← hz, L.apply_symm_apply]
+
+/-- **The Morse–Bott form of Łojasiewicz's gradient inequality, in a chart.** If `i : S → M` is a
+nondegenerate critical submanifold of `f`, with `i` of class `C²`, then near each point `i s` the
+absolute energy difference `|f y - f (i s)|` is bounded by a multiple of the squared norm of the
+differential of `f`, read in the preferred extended chart at `i s`: the Łojasiewicz inequality
+with exponent `1 / 2`, although the critical points near `i s` need not be isolated. -/
+theorem exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq
+    (hi : i.IsNondegenerateCriticalSubmanifold f) (hn : 2 ≤ n) (s : S) :
+    ∃ lam > 0, ∀ᶠ y in 𝓝 (i s), lam * |f y - f (i s)| ≤
+      ‖fderiv ℝ (f ∘ (extChartAt I (i s)).symm) (extChartAt I (i s) y)‖ ^ 2 := by
+  -- Slice charts of `i` at `s`, with complement `F`, in which the Łojasiewicz inequality holds.
+  let F := i.isImmersion.complement
+  have h : IsImmersionAtOfComplement F J I n i s :=
+    i.isImmersion.isImmersionOfComplement_complement s
+  obtain ⟨hxe, hxL, hga, hcrit, hker⟩ := hi.sliceChart_criticalZeroSection h hn
+  set ξ := h.codChart.extend I
+  set L := h.equiv
+  have : FiniteDimensional ℝ (E' × F) := L.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ F :=
+    Module.Finite.of_surjective (LinearMap.snd ℝ E' F) LinearMap.snd_surjective
+  obtain ⟨lam, hlam, hloj⟩ := exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le hga hcrit hker
+  -- The slice chart distorts the differential, relative to the preferred chart, by at most `K`,
+  -- and the linear coordinates `L` by at most `‖L‖ + 1`.
+  obtain ⟨K, -, hKb⟩ := exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm
+    (IsManifold.maximalAtlas_subset_of_le (by norm_num)
+      (IsManifold.maximalAtlas_subset_of_le hn h.codChart_mem_maximalAtlas)) hxe
+    ((hi.contMDiffAt s).of_le one_le_two)
+  -- Read the inequality at `z = L⁻¹ (ξ y)`, which tends to `(a, 0)` as `y` tends to `i s`.
+  have hκ : Tendsto (fun y ↦ L.symm (ξ y)) (𝓝 (i s)) (𝓝 (h.domChart.extend J s, 0)) := by
+    have hc := L.symm.continuous.continuousAt.comp (h.codChart.continuousAt_extend (I := I) hxe)
+    rwa [ContinuousAt, Function.comp_apply, hxL, L.symm_apply_apply] at hc
+  refine exists_mul_le_sq_of_eventually_le_mul
+    (g := fun y ↦ ‖fderiv ℝ (f ∘ ξ.symm) (ξ y) ∘L (L : E' × F →L[ℝ] E)‖)
+    (K := (‖(L : E' × F →L[ℝ] E)‖ + 1) * K) ⟨lam, hlam, ?_⟩ (.of_forall fun _ ↦ norm_nonneg _) ?_
+  · filter_upwards [hκ.eventually hloj, h.codChart.open_source.mem_nhds hxe] with y hy hys
+    have hξy : ξ.symm (ξ y) = y := h.codChart.extend_left_inv (I := I) hys
+    have hξs : ξ.symm (ξ (i s)) = i s := h.codChart.extend_left_inv (I := I) hxe
+    rw [← Function.comp_assoc, L.comp_right_fderiv, L.apply_symm_apply] at hy
+    simpa only [Function.comp_apply, L.apply_symm_apply, hξy, ← hxL, hξs] using hy
+  -- The slice chart distorts the differential, relative to the preferred chart, by at most `K`,
+  -- and the linear coordinates `L` by at most `‖L‖ + 1`.
+  · filter_upwards [hKb] with y hyK
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    rw [mul_comm, mul_assoc]
+    exact mul_le_mul (le_add_of_nonneg_right zero_le_one) hyK (norm_nonneg _) (by positivity)
 
 /-- **The image of a Morse–Bott critical submanifold is open in the critical set**: it is cut out
 of the critical set by an open subset of `M`. -/

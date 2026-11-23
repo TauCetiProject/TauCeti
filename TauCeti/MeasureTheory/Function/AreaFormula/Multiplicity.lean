@@ -103,7 +103,7 @@ theorem measurable_tsum_fiber_of_injective_fderiv
       exact (hpd hij).mono inter_subset_left inter_subset_left
   simp_rw [hfiber]
   exact Measurable.tsum fun n ↦
-    (he n).measurable_extend (hg.comp measurable_subtype_coe) measurable_const
+    (he n).measurable_extend (hg.comp measurable_subtypeVal) measurable_const
 
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -307,7 +307,7 @@ theorem map_withDensity_abs_det_fderiv_eq_withDensity_encard (hs : MeasurableSet
     _ = _ := by
       refine lintegral_congr fun y ↦ ?_
       have e : ∀ x : ↥(s ∩ f ⁻¹' {y}), (B.indicator (1 : E → ℝ≥0∞) ∘ f) x = B.indicator 1 y :=
-        fun x ↦ by rw [comp_apply, x.2.2]
+        fun x ↦ by rw [comp_apply, x.property.2]
       simp_rw [e, ENNReal.tsum_set_const]
       by_cases hy : y ∈ B <;> simp [hy]
 

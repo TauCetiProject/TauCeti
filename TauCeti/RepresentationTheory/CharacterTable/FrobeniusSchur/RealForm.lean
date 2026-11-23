@@ -23,12 +23,13 @@ form to the indicator: **an irreducible representation with a real form is ortho
 none of the Frobenius-Schur layer.
 
 The route is the one the trichotomy already asks for, an invariant symmetric form.  A
-representation of a finite group on a nontrivial finite-dimensional real space carries a nonzero
-invariant symmetric form, obtained by summing the coordinate dot product of a basis over the
+representation of a finite group on a nontrivial real space carries a nonzero invariant
+symmetric form, obtained by summing the coordinate dot product of a basis over the
 conjugates (`Representation.exists_isInvariantForm_isSymm_ne_zero`, in
-`TauCeti.RepresentationTheory.InvariantForm.SumOfConjugates`); both hypotheses are free here,
-because irreducibility over a finite group makes `V` nontrivial and finite-dimensional and the
-real form passes each of them to `W`.  A real form then transports the form to a nonzero
+`TauCeti.RepresentationTheory.InvariantForm.SumOfConjugates`); the only hypothesis on `W` is
+`[Nontrivial W]`, which is free here, because irreducibility over a finite group makes `V`
+nontrivial and the real form passes this to `W` (via `IsRealForm.finrank_eq`, using that `V`
+is finite-dimensional).  A real form then transports the form to a nonzero
 invariant symmetric form on `V`
 (`Representation.IsRealForm.exists_isInvariantForm_isSymm_ne_zero`), and
 `TauCeti.Representation.frobeniusSchurIndicator_eq_one_of_isSymm` reads off the indicator.
@@ -81,16 +82,11 @@ basis over the conjugates produces a nonzero invariant symmetric form on the rea
 transporting it along the real form makes the complex representation carry one too, which is
 exactly the orthogonal case of the Frobenius-Schur trichotomy.
 
-No finiteness is assumed of the real form: irreducibility over a finite group already makes `V`
-finite-dimensional (Mathlib's instance on `ρ.asModule`, read back on `V` along `ρ.asModuleEquiv`),
-which `W` inherits (`Representation.IsRealForm.finiteDimensional_iff`), and a real form has the
-same dimension as the representation it is a form of (`Representation.IsRealForm.finrank_eq`), so
-`W` is nontrivial too. -/
+Neither finite-dimensionality nor nontriviality is assumed of the real form `W`. -/
 theorem IsRealForm.frobeniusSchurIndicator_eq_one [ρ.IsIrreducible] (h : IsRealForm ρ σ) :
     frobeniusSchurIndicator ρ = 1 := by
   have : FiniteDimensional ℂ V := ρ.asModuleEquiv.finiteDimensional
   have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
-  have : FiniteDimensional ℝ W := h.finiteDimensional_iff.mpr inferInstance
   have hrank : finrank ℝ W = finrank ℂ V := h.finrank_eq
   have : Nontrivial W :=
     Module.nontrivial_of_finrank_pos (R := ℝ) (hrank ▸ Module.finrank_pos)
