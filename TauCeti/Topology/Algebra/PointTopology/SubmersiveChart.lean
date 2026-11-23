@@ -11,8 +11,9 @@ public import TauCeti.Analysis.MvPolynomial.Jacobian
 public import TauCeti.RingTheory.Extension.Presentation.Submersive
 public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Localization
+public import TauCeti.Topology.Algebra.PointTopology.Presentation
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
-import TauCeti.Analysis.Calculus.ImplicitFunctionData
+import TauCeti.Analysis.Calculus.ImplicitFunction.Data
 import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 
 /-!
@@ -70,33 +71,6 @@ section Algebra
 variable {K S ι σ : Type*} [CommRing K] [CommRing S] [Algebra K S] [Finite σ]
   (P : SubmersivePresentation K S ι σ)
 
-/-- Over the base ring itself, the coefficient restriction of a point is the identity, so the
-tower evaluation at a point is plain evaluation of polynomials. -/
-private theorem aevalTower_comp_eq_eval (x : S →ₐ[K] K) (p : MvPolynomial ι K) :
-    aevalTower (x.comp (IsScalarTower.toAlgHom K K S)) (fun i ↦ x (P.val i)) p =
-      eval (fun i ↦ x (P.val i)) p := by
-  rw [Subsingleton.elim (x.comp (IsScalarTower.toAlgHom K K S)) (Algebra.ofId K K),
-    MvPolynomial.aevalTower_ofId, MvPolynomial.aeval_eq_eval]
-
-/-- The coordinate vector of a point lies on the zero set of the relations. -/
-private theorem eval_relation_eq_zero (x : S →ₐ[K] K) (j : σ) :
-    eval (fun i ↦ x (P.val i)) (P.relation j) = 0 := by
-  rw [← P.aevalTower_comp_eq_eval, P.toPresentation.aevalTower_comp_toAlgHom_val,
-    P.aeval_val_relation, map_zero]
-
-/-- At every point of a submersive presentation over the base ring, the minor of the Jacobian
-matrix of the relations on the columns `P.map` is invertible. -/
-private theorem isUnit_det_jacobiMatrixAt_submatrix [Fintype σ] [DecidableEq σ]
-    (x : S →ₐ[K] K) :
-    IsUnit ((jacobiMatrixAt P.relation fun i ↦ x (P.val i)).submatrix _root_.id P.map).det := by
-  have h := P.jacobian_isUnit.map x
-  rw [← P.det_jacobiMatrix_points_coordinates x] at h
-  convert h using 1
-  rw [← Matrix.det_transpose]
-  congr 1
-  ext i j
-  simp [PreSubmersivePresentation.jacobiMatrix_apply, P.aevalTower_comp_eq_eval]
-
 /-- The coordinates of a point of a submersive presentation at the variables outside the range
 of `P.map`. These are the smooth local parameters, and they are local coordinates on the points
 (`Algebra.SubmersivePresentation.isLocalHomeomorph_pointCoords`). -/
@@ -107,33 +81,12 @@ def pointCoords (x : S →ₐ[K] K) : ↥(Set.range P.map)ᶜ → K :=
 theorem pointCoords_apply (x : S →ₐ[K] K) (i : ↥(Set.range P.map)ᶜ) :
     P.pointCoords x i = x (P.val i) := (rfl)
 
-variable [TopologicalSpace K] [IsTopologicalRing K]
+variable [TopologicalSpace K]
 
-omit [IsTopologicalRing K] in
 @[continuity, fun_prop]
 theorem continuous_pointCoords : Continuous P.pointCoords :=
   continuous_pi fun i ↦ by
     simpa only [pointCoords_apply] using PointTopology.continuous_eval (P.val i)
-
-/-- The coordinate vectors of points identify the points, with their evaluation topology, with
-the zero set of the relations in `ι → K`. -/
-private noncomputable def zeroSetHomeomorph :
-    (S →ₐ[K] K) ≃ₜ {y : ι → K | (fun j ↦ eval y (P.relation j)) = 0} :=
-  have hg : IsEmbedding fun (x : S →ₐ[K] K) (i : ι) ↦ x (P.val i) :=
-    isEmbedding_eval_generators <| by
-      rw [Algebra.adjoin_range_eq_range_aeval, AlgHom.range_eq_top]
-      exact P.aeval_val_surjective
-  hg.toHomeomorph.trans <| Homeomorph.setCongr <| by
-    ext y
-    have h := Set.ext_iff.mp (P.toPresentation.range_points_coordinates (k := K) (E := K))
-      (Algebra.ofId K K, y)
-    simp only [Set.mem_range, Prod.ext_iff, Subsingleton.elim _ (Algebra.ofId K K), true_and,
-      Set.mem_ofPred_eq, MvPolynomial.aevalTower_ofId] at h
-    simp only [Set.mem_ofPred_eq, funext_iff, Pi.zero_apply]
-    exact h
-
-private theorem coe_zeroSetHomeomorph_apply (x : S →ₐ[K] K) :
-    (P.zeroSetHomeomorph x : ι → K) = fun i ↦ x (P.val i) := (rfl)
 
 end Algebra
 
@@ -200,14 +153,15 @@ private theorem exists_openPartialHomeomorph_pointCoords (x : S →ₐ[K] K) :
         ∀ y, e y = P.coordProj y.val :=
     ImplicitFunctionData.exists_openPartialHomeomorph_levelSet (P.implicitData x) (c := 0)
       (funext (P.eval_relation_eq_zero x))
-  refine ⟨P.zeroSetHomeomorph.toOpenPartialHomeomorph.trans e, ?_, fun y ↦ ?_⟩
+  refine ⟨P.pointsHomeomorphZeroSet.toOpenPartialHomeomorph.trans e, ?_, fun y ↦ ?_⟩
   · rw [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
-      Set.univ_inter, Set.mem_preimage]
-    exact he
+      Set.univ_inter, Set.mem_preimage, Homeomorph.toOpenPartialHomeomorph_apply]
+    convert he using 1
+    exact Subtype.ext (P.toPresentation.coe_pointsHomeomorphZeroSet_apply x)
   · rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
       Homeomorph.toOpenPartialHomeomorph_apply, hee]
     ext i
-    simp [coordProj_apply, coe_zeroSetHomeomorph_apply]
+    simp [coordProj_apply]
 
 /-- **Local charts on the points of a submersive presentation.** The values of a point at the
 variables outside the range of `P.map` form a local homeomorphism from the points, with their

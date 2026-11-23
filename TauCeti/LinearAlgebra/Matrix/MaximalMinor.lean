@@ -60,7 +60,7 @@ its positivity, a consequence of the Cauchy–Binet formula, is in
   and the `mul_right` forms treat column changes.
 * `Matrix.mulVec_surjective_of_isUnit_det_submatrix` and
   `Matrix.isCompl_ker_mulVecLin_ker_funLeft`: an invertible maximal minor makes the matrix
-  surjective, with kernel complementary to the vectors vanishing at the minor's columns.
+  surjective, with kernel complementary to the vectors vanishing off the minor's columns.
 * `Matrix.minorGcd_ne_zero_iff`: the minor gcd is nonzero exactly when the rows are linearly
   independent.
 * `Matrix.minorGcd_mul_left` and `Matrix.minorGcd_unit_mul`: left multiplication by `B`
@@ -154,15 +154,6 @@ section InvertibleMinor
 
 variable {K σ ι : Type*} [CommRing K] [Fintype σ] [Fintype ι]
 
-/-- A matrix applied to a vector vanishing off the range of an injective `s` is its minor on the
-columns `s` applied to the restriction of the vector along `s`. -/
-theorem mulVec_eq_submatrix_mulVec_comp (A : Matrix σ ι K) {s : σ → ι}
-    (hs : Function.Injective s) {v : ι → K} (hv : ∀ i ∉ Set.range s, v i = 0) :
-    A *ᵥ v = A.submatrix id s *ᵥ (v ∘ s) := by
-  ext j
-  simp only [Matrix.mulVec, dotProduct, Matrix.submatrix_apply, id_eq, Function.comp_apply]
-  exact (Fintype.sum_of_injective s hs _ _ (fun i hi ↦ by simp [hv i hi]) fun _ ↦ rfl).symm
-
 variable [DecidableEq σ]
 
 /-- Extending by zero along `s` the image of `u` under the inverse of an invertible minor on the
@@ -189,7 +180,14 @@ theorem isCompl_ker_mulVecLin_ker_funLeft (A : Matrix σ ι K) {s : σ → ι}
   · rw [Submodule.disjoint_def]
     intro v hv hv'
     rw [hmem] at hv'
-    rw [LinearMap.mem_ker, Matrix.mulVecLin_apply, mulVec_eq_submatrix_mulVec_comp A hs hv'] at hv
+    have hext : v = Function.extend s (v ∘ s) 0 := by
+      ext i
+      by_cases hi : i ∈ Set.range s
+      · obtain ⟨j, rfl⟩ := hi
+        rw [hs.extend_apply, Function.comp_apply]
+      · rw [Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi ⟨j, hj⟩]
+        exact hv' i hi
+    rw [LinearMap.mem_ker, Matrix.mulVecLin_apply, hext, Matrix.mulVec_extend_zero hs] at hv
     have h0 : v ∘ s = 0 := by
       simpa [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hA] using
         congrArg ((A.submatrix _root_.id s)⁻¹ *ᵥ ·) hv
