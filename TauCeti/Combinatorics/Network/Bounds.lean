@@ -52,7 +52,7 @@ variable [LE K] (N : Network K V)
 
 This definition is exposed because its arrow family must reduce when assignments on the resulting
 network are elaborated. -/
-@[expose]
+@[expose, reducible]
 def replaceBounds (lower upper : N.Assignment K)
     (lower_le_upper : ∀ {x y} (e : N.Hom x y), lower e ≤ upper e) : Network K V where
   Hom := N.Hom
@@ -81,18 +81,12 @@ theorem replaceBounds_upper (lower upper : N.Assignment K)
   (rfl)
 
 /-- Two replacements of a fixed network agree exactly when both of their bound functions agree. -/
-@[simp]
 theorem replaceBounds_inj {lower₁ upper₁ lower₂ upper₂ : N.Assignment K}
     {h₁ : ∀ {x y} (e : N.Hom x y), lower₁ e ≤ upper₁ e}
     {h₂ : ∀ {x y} (e : N.Hom x y), lower₂ e ≤ upper₂ e} :
     N.replaceBounds lower₁ upper₁ h₁ = N.replaceBounds lower₂ upper₂ h₂ ↔
       lower₁ = lower₂ ∧ upper₁ = upper₂ := by
-  constructor
-  · intro h
-    cases h
-    exact ⟨rfl, rfl⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
+  simp only [replaceBounds, mk.injEq, heq_eq_eq, true_and]
 
 /-- Replacing a network's bounds by its original bounds does nothing. -/
 @[simp]
@@ -129,22 +123,31 @@ theorem shift_Hom (N : Network K V) (h : N.Assignment K) :
 
 /-- The lower bound of a shifted network is the original lower bound minus the reference. -/
 @[simp]
-theorem shift_lower (N : Network K V) (h : N.Assignment K) {x y : V}
-    (e : (N.shift h).Hom x y) :
-    (N.shift h).lower e = N.lower e - h e :=
+theorem shift_lower (N : Network K V) (h : N.Assignment K) :
+    (N.shift h).lower = N.lower - h :=
   (rfl)
 
 /-- The upper bound of a shifted network is the original upper bound minus the reference. -/
 @[simp]
-theorem shift_upper (N : Network K V) (h : N.Assignment K) {x y : V}
-    (e : (N.shift h).Hom x y) :
-    (N.shift h).upper e = N.upper e - h e :=
+theorem shift_upper (N : Network K V) (h : N.Assignment K) :
+    (N.shift h).upper = N.upper - h :=
   (rfl)
 
 /-- Shifting a network by the zero assignment leaves it unchanged. -/
 @[simp]
 theorem shift_zero (N : Network K V) : N.shift 0 = N := by
-  simpa only [shift, Pi.zero_apply, sub_zero] using N.replaceBounds_self
+  simp only [shift, sub_zero]
+
+/-- Subtracting a network's lower bound produces its associated zero-lower-bound network. -/
+theorem shift_lower_eq_ofCapacity (N : Network K V) :
+    N.shift N.lower =
+      ofCapacity N.Hom (N.upper - N.lower) fun e ↦ sub_nonneg.mpr (N.lower_le_upper e) := by
+  cases N
+  simp only [shift, replaceBounds, ofCapacity, mk.injEq, heq_eq_eq, true_and]
+  constructor
+  · funext x y e
+    exact sub_self _
+  · trivial
 
 end Shift
 
