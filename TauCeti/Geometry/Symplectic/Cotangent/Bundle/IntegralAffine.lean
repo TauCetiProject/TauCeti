@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Integer
 public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
 
 /-!
@@ -28,7 +29,7 @@ changes of coordinates are symplectomorphisms of `T*Tⁿ`. Let `A ∈ GL(ι, ℤ
   `TauCeti.CotangentBundle.mpullback_smul_symplecticForm`). The lifted action sends a covector
   `ξ` to `ξ ∘ A⁻¹` (`TauCeti.CotangentBundle.generalLinearGroup_smul_snd_apply`), so it changes
   the actions by the inverse transpose, `I' = A⁻ᵀ I`
-  (`TauCeti.CotangentBundle.generalLinearGroup_smul_snd_apply_single`). As `A` ranges over
+  (`TauCeti.CotangentBundle.torusActions_generalLinearGroup_smul`). As `A` ranges over
   `GL(ι, ℤ)`, so does `A⁻ᵀ`.
 * The **integral affine change** `Φ_(A, b)` (`TauCeti.CotangentBundle.integralAffineDiffeomorph`)
   is this cotangent lift followed by the fibre translation by the closed one-form
@@ -37,7 +38,7 @@ changes of coordinates are symplectomorphisms of `T*Tⁿ`. Let `A ∈ GL(ι, ℤ
   `Φ_(A, b)(θ, I) = (A θ, A⁻ᵀ I + b)`
 
   (`TauCeti.CotangentBundle.proj_integralAffineDiffeomorph`,
-  `TauCeti.CotangentBundle.integralAffineDiffeomorph_snd_apply_single`).
+  `TauCeti.CotangentBundle.torusActions_integralAffineDiffeomorph`).
 
 The integral affine changes preserve `ω`
 (`TauCeti.CotangentBundle.mpullback_integralAffineDiffeomorph_symplecticForm`) and change `λ` by
@@ -66,9 +67,9 @@ fibre translation
 
 ## Main results
 
-* `TauCeti.CotangentBundle.generalLinearGroup_smul_snd_apply_single`: the cotangent lift of
+* `TauCeti.CotangentBundle.torusActions_generalLinearGroup_smul`: the cotangent lift of
   `θ ↦ A θ` changes the actions by `A⁻ᵀ`.
-* `TauCeti.CotangentBundle.integralAffineDiffeomorph_snd_apply_single`: the actions transform as
+* `TauCeti.CotangentBundle.torusActions_integralAffineDiffeomorph`: the actions transform as
   `I' = A⁻ᵀ I + b`.
 * `TauCeti.CotangentBundle.mpullback_integralAffineDiffeomorph_symplecticForm`: the change is a
   symplectomorphism of `(T*Tⁿ, ω)`.
@@ -113,10 +114,11 @@ theorem generalLinearGroup_smul_snd_apply (A : GL ι ℤ)
 
 /-- **The cotangent lift of an integral linear automorphism changes the actions by the inverse
 transpose.** The action `I_i = ξ(e_i)` of `A • ξ` is `∑ j, A⁻¹ j i * I_j`. -/
-theorem generalLinearGroup_smul_snd_apply_single (A : GL ι ℤ)
+theorem torusActions_generalLinearGroup_smul (A : GL ι ℤ)
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) (i : ι) :
-    (A • z).snd (Pi.single i 1) =
-      ∑ j, (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ) j i : ℝ) * z.snd (Pi.single j 1) := by
+    torusActions p (A • z) i =
+      ∑ j, (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ) j i : ℝ) * torusActions p z j := by
+  simp only [torusActions_apply]
   refine (generalLinearGroup_smul_snd_apply p A z _).trans ?_
   rw [Matrix.mulVec_single_one]
   -- The `i`-th column of `A⁻¹` has coordinates `A⁻¹ j i`.
@@ -178,13 +180,14 @@ theorem integralAffineDiffeomorph_snd_apply (A : GL ι ℤ) (b : ι → ℝ)
 /-- **The actions transform by an integral affine map.** The action `I_i = ξ(e_i)` of the image of
 `ξ` under the integral affine change is `∑ j, A⁻¹ j i * I_j + b i`: in action–angle coordinates the
 change is `(θ, I) ↦ (A θ, A⁻ᵀ I + b)`. -/
-theorem integralAffineDiffeomorph_snd_apply_single (A : GL ι ℤ) (b : ι → ℝ)
+theorem torusActions_integralAffineDiffeomorph (A : GL ι ℤ) (b : ι → ℝ)
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) (i : ι) :
-    (integralAffineDiffeomorph p A b z).snd (Pi.single i 1) =
-      ∑ j, (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ) j i : ℝ) * z.snd (Pi.single j 1) + b i := by
-  rw [integralAffineDiffeomorph_apply, vectorBundleTranslateDiffeomorph_apply]
+    torusActions p (integralAffineDiffeomorph p A b z) i =
+      ∑ j, (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ) j i : ℝ) * torusActions p z j + b i := by
+  rw [torusActions_apply, integralAffineDiffeomorph_apply, vectorBundleTranslateDiffeomorph_apply]
   -- The lifted covector gives `A⁻ᵀ I`; the translating form contributes `b i`.
-  exact congrArg₂ (· + ·) (generalLinearGroup_smul_snd_apply_single p A z i)
+  exact congrArg₂ (· + ·) ((torusActions_apply p _ i).symm.trans
+      (torusActions_generalLinearGroup_smul p A z i))
     ((SmoothForm.degreeOneEquiv_apply_apply _ _ _).trans
       ((sum_smul_torusTimeForm_apply (fun _ ↦ p) b (A • z).proj _).trans
         (by simp [Pi.single_apply])))

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Analysis.Convex.Combination
+public import Mathlib.Topology.Algebra.Module.Basic
 import Mathlib.Tactic.Field
 import Mathlib.Tactic.Module
 
@@ -56,6 +57,13 @@ theorem finiteMean_def (z : ι → E) : finiteMean R z = univ.centerMass (fun _ 
 theorem finiteMean_eq_inv_smul_sum (z : ι → E) :
     finiteMean R z = (Fintype.card ι : R)⁻¹ • ∑ i, z i := by
   simp [finiteMean_def, centerMass]
+
+/-- The finite mean is continuous in the input family. -/
+@[fun_prop]
+theorem continuous_finiteMean [TopologicalSpace E] [ContinuousAdd E] [ContinuousConstSMul R E] :
+    Continuous (finiteMean R : (ι → E) → E) := by
+  have h : Continuous (fun z : ι → E ↦ (Fintype.card ι : R)⁻¹ • ∑ i, z i) := by fun_prop
+  simpa only [← finiteMean_eq_inv_smul_sum] using h
 
 /-- The mean of the empty family is `0`. -/
 @[simp]

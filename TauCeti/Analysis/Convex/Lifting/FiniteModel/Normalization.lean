@@ -232,6 +232,19 @@ theorem mem_normalizedLift_feasibleWith_iff (d : FiniteModel n m l r) (D : Set (
     refine ⟨hzD, fun i => ?_, ⟨hA, heq⟩, hP⟩
     simpa only [heq, ← hg i (project z)] using hgd i
 
+/-- Mixed-integer feasibility in `normalizedLift` is equivalent to mixed-integer feasibility of
+`project z` in `d` together with the argument equalities. -/
+theorem mem_normalizedLift_feasibleOn_iff (d : FiniteModel n m l r) (D : Set (Point n m))
+    (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
+    (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ)
+    (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x))
+    (z : Point (n + q) m) :
+    z ∈ (d.normalizedLift a b offset phi weight).feasibleOn (project ⁻¹' D) ↔
+      project z ∈ d.feasibleOn D ∧
+        ∀ j, height z j = affineArgument (a j) (b j) (offset j) (project z) := by
+  simp only [feasibleOn_eq_feasibleWith, normalizedLift_lo, normalizedLift_hi]
+  exact mem_normalizedLift_feasibleWith_iff d D _ a b offset phi weight hg z
+
 /-- Inserting the evaluated affine arguments lifts any `feasibleWith D P` point of `d` into
 `normalizedLift`. -/
 theorem insertHeight_affineArgument_mem_normalizedLift_feasibleWith (d : FiniteModel n m l r)

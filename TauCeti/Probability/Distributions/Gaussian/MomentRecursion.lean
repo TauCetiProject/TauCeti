@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.MixedMoments
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 import Mathlib.Probability.Distributions.Gaussian.Fernique
-import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts
+import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Basic
 import TauCeti.MeasureTheory.Integral.Pi
 
 /-!

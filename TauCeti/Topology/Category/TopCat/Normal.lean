@@ -147,7 +147,8 @@ theorem t1Space_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J] {F : 
     (hF : ∀ ⦃i j : J⦄ (hij : i ≤ j), Function.Injective (F.map (homOfLE hij)))
     {c : Cocone F} (hc : IsColimit c) [∀ j, T1Space (F.obj j)] : T1Space c.pt := by
   refine ⟨fun p ↦ (TopCat.isClosed_iff_of_isColimit _ hc _).2 fun j ↦ ?_⟩
-  exact (subsingleton_singleton.preimage (injective_ι_of_isColimit hF hc j)).isClosed
+  exact (subsingleton_singleton.preimage
+    (injective_ι_of_isColimit (fun _ _ f ↦ hF (leOfHom f)) hc j)).isClosed
 
 variable {F : ℕ ⥤ TopCat.{u}} {c : Cocone F}
 

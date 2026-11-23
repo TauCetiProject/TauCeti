@@ -36,7 +36,7 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
   on `s`.
 * `MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`: precomposition with a
   quasi-measure-preserving map preserves `L^∞`.
-* `MeasureTheory.eLpNorm_clm_comp_le`: postcomposition with a continuous linear map scales
+* `ContinuousLinearMap.eLpNorm_comp_le`: postcomposition with a continuous semilinear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
 * `Isometry.eLpNorm_comp_of_map_zero`, `LinearIsometry.eLpNorm_comp`,
   `LinearIsometryEquiv.eLpNorm_comp`: postcomposition with an isometry fixing zero, such as a
@@ -60,17 +60,14 @@ needed: its `eLpNorm` is infinite when it is not almost everywhere strongly meas
 theorem eLpNorm_comp_le_of_map_le_smul {C : ℝ≥0∞} (hf : AEMeasurable f μ) (hmap : μ.map f ≤ C • ν)
     (p : ℝ≥0∞) :
     eLpNorm (g ∘ f) p μ ≤ C ^ (1 / p).toReal * eLpNorm g p ν := by
-  by_cases hC : C = 0
-  · have hμ : μ = 0 := (Measure.map_eq_zero_iff hf).1
-      (le_antisymm (by simpa [hC] using hmap) bot_le)
-    simp [hμ]
   by_cases hg : AEStronglyMeasurable g ν
   · rw [← eLpNorm_map_measure (hg.mono_ac (Measure.absolutelyContinuous_of_le_smul hmap)) hf]
     exact eLpNorm_le_of_measure_le_smul hmap
-  rw [eLpNorm_of_not_aestronglyMeasurable hg,
-    ENNReal.mul_top (ENNReal.rpow_pos_of_nonneg (pos_iff_ne_zero.mpr hC)
-      ENNReal.toReal_nonneg).ne']
-  exact le_top
+  rcases eq_or_ne C 0 with rfl | hC
+  · -- `μ.map f ≤ 0` forces `μ = 0`.
+    have hμ : μ = 0 := (Measure.map_eq_zero_iff hf).1 (le_antisymm (by simpa using hmap) bot_le)
+    simp [hμ]
+  simp [eLpNorm_of_not_aestronglyMeasurable hg, hC]
 
 /-- **Measure-preserving change of variables on a preimage.** If `f` is a measurable embedding
 carrying `μ` to `ν`, then the `Lᵖ` seminorm of `g ∘ f` on `f ⁻¹' s` is that of `g` on `s`. Neither
@@ -97,22 +94,28 @@ theorem MemLp.comp_quasiMeasurePreserving_top (hg : MemLp g ∞ ν)
   rw [memLp_iff, eLpNorm_exponent_top (hgm.comp_quasiMeasurePreserving hf)]
   exact (eLpNormEssSup_le_of_ae_eNorm_bound (hf.ae ae_le_eLpNormEssSup)).trans_lt hg
 
-/-- **`eLpNorm` bound for postcomposition.** A continuous linear map of the codomain scales
+/-- **`eLpNorm` bound for postcomposition.** A continuous semilinear map of the codomain scales
 `eLpNorm` by at most its operator norm. No measurability assumption is needed: a function that
 is not almost everywhere strongly measurable has infinite `eLpNorm`. -/
-theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {u : α → F} {p : ℝ≥0∞} (A : F →L[ℝ] G) :
+theorem _root_.ContinuousLinearMap.eLpNorm_comp_le {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜₂] [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 E] [NormedSpace 𝕜₂ F] {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂] {u : α → E}
+    {p : ℝ≥0∞} (A : E →SL[σ₁₂] F) :
     eLpNorm (fun x => A (u x)) p μ ≤ ‖A‖ₑ * eLpNorm u p μ := by
   by_cases hu : AEStronglyMeasurable u μ
-  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (A.continuous.comp_aestronglyMeasurable hu)
-      (Filter.Eventually.of_forall fun x => by
-        simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
-          A.le_opNNNorm (u x)) p
-  · by_cases hA : A = 0
-    · simp [hA]
-    · rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top (by
-        rw [eNorm_eq_nnNorm]; exact ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hA))]
-      exact le_top
+  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p (A.continuous.comp_aestronglyMeasurable hu)
+      (.of_forall fun x => A.le_opENorm (u x))
+  by_cases hA : ‖A‖ₑ = 0
+  · -- Each `A (u x)` has norm zero, so is inseparable from `0`: the constant function `0`
+    -- approximates `A ∘ u`, which is thus strongly measurable with `eLpNorm` zero.
+    have h0 (x : α) : ‖A (u x)‖ₑ = 0 := by simpa [hA] using A.le_opENorm (u x)
+    have hm : StronglyMeasurable fun x => A (u x) := ⟨fun _ => 0, fun x => by
+      have : ‖A (u x)‖ = 0 := by simpa [eNorm_eq_nnNorm, ← NNReal.coe_eq_zero] using h0 x
+      rw [(inseparable_zero_iff_norm.2 this).nhds_eq]
+      exact tendsto_const_nhds⟩
+    simp [eLpNorm_zero_of_ae_eNorm_zero' hm.aestronglyMeasurable (.of_forall h0)]
+  rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top hA]
+  exact le_top
 
 end MeasureTheory
 

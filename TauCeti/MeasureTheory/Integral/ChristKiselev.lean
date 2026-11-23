@@ -63,6 +63,8 @@ for the `2ⁿ` disjoint pieces `J_k` gives `∑_k ‖1_{J_k} g‖_r ≤ 2^{n (1 
 * `TauCeti.eNorm_setIntegral_fst_lt_snd_le`: the Christ–Kiselev lemma, in bilinear form.
 * `TauCeti.inv_one_sub_two_rpow_neg_ne_top`: the constant `(1 - 2^{-δ})⁻¹` of the lemma is
   finite.
+* `TauCeti.inv_one_sub_two_rpow_neg_toReal_inv_ne_top`: its case `r = 1`, the constant
+  `(1 - 2^{-1/p})⁻¹`.
 
 ## References
 
@@ -337,6 +339,16 @@ theorem inv_one_sub_two_rpow_neg_ne_top {p r : ℝ≥0∞} (hp : p ≠ 0) (hr : 
   obtain ⟨-, hδ, hδ0⟩ := ne_top_and_toReal_inv_add_inv_sub_one hp hr hpr
   exact ENNReal.inv_ne_top.2 (tsub_pos_of_lt
     (ENNReal.rpow_lt_one_of_one_lt_of_neg (by norm_num) (hδ ▸ hδ0))).ne'
+
+/-- The constant `(1 - 2^{-1/p})⁻¹` of the Christ–Kiselev lemma for the time exponents `p` and
+`r = 1` is finite for `0 < p < ∞`. -/
+theorem inv_one_sub_two_rpow_neg_toReal_inv_ne_top {p : ℝ≥0∞} (hp : p ≠ 0) (hp_top : p ≠ ∞) :
+    (1 - 2 ^ (-p⁻¹.toReal))⁻¹ ≠ ∞ := by
+  have hp1 : 1 < p⁻¹ + 1⁻¹ := by
+    rw [inv_one, add_comm]
+    exact ENNReal.lt_add_right ENNReal.one_ne_top (ENNReal.inv_ne_zero.2 hp_top)
+  simpa only [inv_one, ENNReal.add_sub_cancel_right ENNReal.one_ne_top] using
+    inv_one_sub_two_rpow_neg_ne_top hp le_rfl hp1
 
 /-- If the bound of the Christ–Kiselev lemma vanishes, so does the integral over `{s < t}`: the
 integral over every Whitney rectangle vanishes. -/

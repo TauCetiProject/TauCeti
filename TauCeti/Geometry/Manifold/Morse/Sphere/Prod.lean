@@ -28,6 +28,8 @@ index `0`.
   pairs of poles.
 * `TauCeti.manifoldMorseIndex_sphereHeight_comp_fst_add_comp_snd`: its Morse index is the sum of
   the indices of the two height functions.
+* `TauCeti.criticalCount_sphereHeight_comp_fst_add_comp_snd`: its critical counts, one for each of
+  the four pairs of poles.
 
 ## References
 
@@ -77,6 +79,35 @@ theorem manifoldMorseIndex_sphereHeight_comp_fst_add_comp_snd (v x : sphere (0 :
   manifoldMorseIndex_comp_fst_add_comp_snd
     (contMDiff_sphereHeight (m := 2) v x).contDiffAt_comp_extChartAt_symm
     (contMDiff_sphereHeight (m := 2) w y).contDiffAt_comp_extChartAt_symm
+
+/-- **The critical counts of the sum of two height functions on a product of spheres.** Each of the
+four pairs of poles, of indices `n + m`, `n`, `m` and `0`, counts once in its index. On the torus
+`S¹ × S¹` the critical counts in indices `0`, `1` and `2` are `1`, `2` and `1`. -/
+theorem criticalCount_sphereHeight_comp_fst_add_comp_snd (v : sphere (0 : E) 1)
+    (w : sphere (0 : E') 1) (j : ℕ) :
+    criticalCount ((𝓡 n).prod (𝓡 m)) (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) j =
+      (if n + m = j then 1 else 0) + (if n = j then 1 else 0) + (if m = j then 1 else 0) +
+        (if 0 = j then 1 else 0) := by
+  classical
+  have hv := ne_neg_of_mem_unit_sphere ℝ v
+  have hw := ne_neg_of_mem_unit_sphere ℝ w
+  -- The critical points of index `j` are the pairs of poles whose indices add up to `j`.
+  have hset : {z ∈ criticalPoints ((𝓡 n).prod (𝓡 m))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) | manifoldMorseIndex
+        ((𝓡 n).prod (𝓡 m)) (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) z = j} =
+      ↑(({(v, w), (v, -w), (-v, w), (-v, -w)} : Finset _).filter fun z ↦
+        manifoldMorseIndex (𝓡 n) (sphereHeight v) z.1 +
+          manifoldMorseIndex (𝓡 m) (sphereHeight w) z.2 = j) := by
+    ext ⟨x, y⟩
+    simp only [Set.mem_ofPred_eq, mem_criticalPoints,
+      mvfderiv_sphereHeight_comp_fst_add_comp_snd_eq_zero_iff,
+      manifoldMorseIndex_sphereHeight_comp_fst_add_comp_snd, Finset.coe_filter,
+      Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
+    tauto
+  rw [criticalCount_def, hset, Set.encard_coe_eq_coe_finsetCard, Finset.card_filter,
+    Finset.sum_insert (by simp [hv, hw]), Finset.sum_insert (by simp [hv]),
+    Finset.sum_insert (by simp [hw]), Finset.sum_singleton]
+  simp [add_assoc]
 
 end TauCeti
 
