@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Multiset.Fintype
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.Polynomial.Vieta
 
@@ -57,6 +58,8 @@ including annihilating base change in degree zero.
   degree of the image of `f` in `L` makes `f` split in `L`.
 * `Polynomial.exists_isRootEnumeration_iff_splits`: a polynomial has an enumeration indexed by a
   type whose size is the degree of its image in `L` if and only if it splits in `L`.
+* `Polynomial.Monic.exists_isRootEnumeration`: in particular a monic polynomial has a
+  degree-sized enumeration in every algebraically closed field.
 * `Polynomial.IsRootEnumeration.injective_iff_separable_map`: an enumeration in a field `E` with
   as many entries as the degree of the nonzero image of `f` in `E` is injective if and only if
   that image is separable.
@@ -259,6 +262,13 @@ end IsRootEnumeration
 section Field
 
 variable {K E : Type*} [Field K] [Field E] [Algebra R E] [Algebra K E] {y : ι → E}
+
+/-- **Root enumerations in an algebraically closed field.** A monic polynomial `f` has a root
+enumeration in any algebraically closed field `E`, indexed by any finite type with `f.natDegree`
+elements. -/
+theorem Monic.exists_isRootEnumeration [IsAlgClosed E] (hf : f.Monic)
+    (hdeg : f.natDegree = Fintype.card ι) : ∃ y : ι → E, IsRootEnumeration f y :=
+  (exists_isRootEnumeration_iff_splits (by rw [hf.natDegree_map, hdeg])).2 (IsAlgClosed.splits _)
 
 namespace IsRootEnumeration
 

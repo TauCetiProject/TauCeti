@@ -61,6 +61,9 @@ to manifolds, including manifolds with boundary or corners.
   particular the outer map is then regular (`TauCeti.IsRegularPoint.of_comp`).
 * `IsLocalDiffeomorphAt.isRegularPoint`: a local diffeomorphism at a point is regular there.
 * `TauCeti.isRegularPoint_snd`: the second projection of a product is regular everywhere.
+* `ContinuousLinearEquiv.comp_isRegularPoint_iff`, `ContinuousLinearEquiv.comp_isRegularValue_iff`:
+  postcomposing a map into a normed space with a continuous linear equivalence preserves regular
+  points and regular values.
 * `IsLocalDiffeomorphAt.isRegularPoint_comp_iff`, `IsLocalDiffeomorph.isRegularValue_comp_iff`,
   `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: precomposing
   with a `C^n` local diffeomorphism (surjective, for regular values) or diffeomorphism (`n ≠ 0`)
@@ -328,6 +331,25 @@ theorem IsRegularValue.comp (hf : IsRegularValue I J f y)
     (hg : ∀ p, f (g p) = y → IsRegularPoint K I g p) :
     IsRegularValue K J (f ∘ g) y :=
   fun p hp ↦ (hf (g p) hp).comp (hg p hp)
+
+/-- A continuous linear equivalence between normed spaces is regular at every point. -/
+theorem _root_.ContinuousLinearEquiv.isRegularPoint (e : E' ≃L[𝕜] E'') (z : E') :
+    IsRegularPoint 𝓘(𝕜, E') 𝓘(𝕜, E'') e z := by
+  rw [isRegularPoint_iff, mfderiv_eq_fderiv, e.fderiv]
+  exact e.surjective
+
+/-- Postcomposing a map into a normed space with a continuous linear equivalence preserves regular
+points. -/
+theorem _root_.ContinuousLinearEquiv.comp_isRegularPoint_iff (e : E' ≃L[𝕜] E'') {g : M → E'} :
+    IsRegularPoint I 𝓘(𝕜, E'') (e ∘ g) x ↔ IsRegularPoint I 𝓘(𝕜, E') g x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (e.isRegularPoint _).comp h⟩
+  simpa [← comp_assoc] using (e.symm.isRegularPoint _).comp h
+
+/-- Postcomposing a map into a normed space with a continuous linear equivalence `e` preserves
+regular values: `e z` is a regular value of `e ∘ g` exactly when `z` is one of `g`. -/
+theorem _root_.ContinuousLinearEquiv.comp_isRegularValue_iff (e : E' ≃L[𝕜] E'') {g : M → E'}
+    {z : E'} : IsRegularValue I 𝓘(𝕜, E'') (e ∘ g) (e z) ↔ IsRegularValue I 𝓘(𝕜, E') g z := by
+  simp only [isRegularValue_iff, comp_apply, e.injective.eq_iff, e.comp_isRegularPoint_iff]
 
 end Composition
 

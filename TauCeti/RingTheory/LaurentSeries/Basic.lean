@@ -285,10 +285,10 @@ theorem orderTop_eval₂_C_and_leadingCoeff (hx : x.orderTop < 0) {Q : R[X]} (hQ
   have hc : Q.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hQ
   have hTo : T.orderTop = m • x.orderTop := by
     rw [HahnSeries.orderTop_mul, HahnSeries.C_apply, HahnSeries.orderTop_single hc,
-      hahnSeries_orderTop_pow, WithTop.coe_zero, zero_add]
+      HahnSeries.orderTop_pow, WithTop.coe_zero, zero_add]
   have hTl : T.leadingCoeff = Q.leadingCoeff * x.leadingCoeff ^ m := by
     rw [HahnSeries.leadingCoeff_mul, HahnSeries.C_apply, HahnSeries.leadingCoeff_of_single,
-      hahnSeries_leadingCoeff_pow]
+      HahnSeries.leadingCoeff_pow]
   have hQe : Q.eval₂ HahnSeries.C x = Q.eraseLead.eval₂ HahnSeries.C x + T := by
     conv_lhs => rw [← Q.eraseLead_add_C_mul_X_pow]
     simp [eval₂_add, hm, T]

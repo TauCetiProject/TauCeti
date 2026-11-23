@@ -376,7 +376,7 @@ theorem isUnit_leadingCoeff_of_aeval_j_eq_eval_cyclicIsogenyPolynomial (hn : ¬ 
       algebraMap _ ℂ ((∏ A ∈ (primitiveReps (n : ℤ)).attach, w A.val A.property :
         (integralClosure ℤ ℂ)ˣ) : integralClosure ℤ ℂ) := by
     rw [eval_cyclicIsogenyPolynomial_j_eq_prod, laurentQExpansion_prod fun A hA ↦
-      meromorphicAt_cuspFunction_sub_j_toGLReal_smul (hreps hA), hahnSeries_leadingCoeff_prod,
+      meromorphicAt_cuspFunction_sub_j_toGLReal_smul (hreps hA), HahnSeries.leadingCoeff_prod,
       ← Finset.prod_attach, Units.coe_prod, map_prod]
     refine Finset.prod_congr rfl fun A _ ↦ ?_
     rw [laurentQExpansion_sub_j_toGLReal_smul (hreps A.property), ← hw]

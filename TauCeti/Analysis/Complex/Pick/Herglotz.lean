@@ -33,6 +33,8 @@ not proved here.
 ## Main declarations
 
 * `TauCeti.subtractedResolventKernel`: the kernel `(t - z)⁻¹ - t / (1 + t ^ 2)`.
+* `TauCeti.norm_subtractedResolventKernel_le`: on the upper half-plane the kernel is bounded by a
+  multiple of `(1 + t ^ 2)⁻¹`.
 * `MeasureTheory.Measure.integral_subtractedResolventKernel_withDensity`: under the density change
   `dν = (1 + t ^ 2) dρ` the subtracted resolvent kernel integrates to the Nevanlinna kernel.
 * `MeasureTheory.Measure.lintegral_inv_one_add_sq_withDensity`: the weighted-mass identity
@@ -86,6 +88,20 @@ theorem nevanlinnaKernel_eq_one_add_sq_mul_subtractedResolventKernel {z : ℂ} {
   rw [nevanlinnaKernel_def, subtractedResolventKernel_def]
   field_simp [one_add_ofReal_sq_ne_zero t]
   ring
+
+/-- At a point of the upper half-plane, the subtracted resolvent kernel is bounded by a multiple of
+`(1 + t ^ 2)⁻¹`, with the constant of `TauCeti.norm_nevanlinnaKernel_le`. -/
+theorem norm_subtractedResolventKernel_le {z : ℂ} (hz : 0 < z.im) (t : ℝ) :
+    ‖subtractedResolventKernel z t‖ ≤
+      (‖z + I‖ + ‖z - I‖) / (‖z + I‖ - ‖z - I‖) * (1 + t ^ 2)⁻¹ := by
+  have h := nevanlinnaKernel_eq_one_add_sq_mul_subtractedResolventKernel
+    (ofReal_sub_ne_zero_of_im_ne_zero hz.ne' t)
+  have hcast : 1 + (t : ℂ) ^ 2 = ((1 + t ^ 2 : ℝ) : ℂ) := by push_cast; ring
+  have hnorm : ‖nevanlinnaKernel z t‖ = (1 + t ^ 2) * ‖subtractedResolventKernel z t‖ := by
+    rw [h, hcast, norm_mul, norm_real, Real.norm_of_nonneg (by positivity)]
+  calc ‖subtractedResolventKernel z t‖ = ‖nevanlinnaKernel z t‖ * (1 + t ^ 2)⁻¹ := by
+        rw [hnorm, mul_comm, inv_mul_cancel_left₀ (by positivity)]
+    _ ≤ _ := mul_le_mul_of_nonneg_right (norm_nevanlinnaKernel_le hz t) (by positivity)
 
 /-- At `z = i` the subtracted resolvent kernel is `i / (1 + t ^ 2)`. -/
 @[simp]
@@ -196,11 +212,11 @@ theorem integrable_subtractedResolventKernel {nu : Measure ℝ}
     simpa [subtractedResolventKernel_conj] using h
   · exact hH hz
 
-/-- At a nonreal point, the subtracted resolvent kernel dominates the weight `(1 + t ^ 2)⁻¹` up to
-a constant. -/
-private theorem inv_one_add_sq_le_mul_norm_subtractedResolventKernel {z : ℂ} (hz : z.im ≠ 0)
+/-- At a nonreal point, the absolute imaginary part `|Im z| / |t - z| ^ 2` of the subtracted
+resolvent kernel dominates the weight `(1 + t ^ 2)⁻¹` up to a constant. -/
+theorem inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel {z : ℂ} (hz : z.im ≠ 0)
     (t : ℝ) :
-    (1 + t ^ 2)⁻¹ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * ‖subtractedResolventKernel z t‖ := by
+    (1 + t ^ 2)⁻¹ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * |(subtractedResolventKernel z t).im| := by
   have : 0 < |z.im| := abs_pos.2 hz
   have hns : normSq ((t : ℂ) - z) ≤ 2 * (1 + ‖z‖ ^ 2) * (1 + t ^ 2) := by
     have hre := (normSq_eq_norm_sq z).symm
@@ -210,13 +226,9 @@ private theorem inv_one_add_sq_le_mul_norm_subtractedResolventKernel {z : ℂ} (
       sq_nonneg (t * z.re), sq_nonneg (t * z.im)]
   have hpos : 0 < normSq ((t : ℂ) - z) :=
     normSq_pos.2 (ofReal_sub_ne_zero_of_im_ne_zero hz t)
-  have him : |z.im| / normSq ((t : ℂ) - z) ≤ ‖subtractedResolventKernel z t‖ := by
-    rw [← abs_of_pos hpos, ← abs_div, ← subtractedResolventKernel_im]
-    exact abs_im_le_norm _
+  rw [subtractedResolventKernel_im, abs_div, abs_of_pos hpos]
   calc (1 + t ^ 2)⁻¹ = 2 * (1 + ‖z‖ ^ 2) / |z.im| *
         (|z.im| / (2 * (1 + ‖z‖ ^ 2) * (1 + t ^ 2))) := by field_simp
-    _ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * (|z.im| / normSq ((t : ℂ) - z)) := by
-      gcongr
     _ ≤ _ := by gcongr
 
 /-- At a nonreal point, the subtracted resolvent kernel is `ν`-integrable exactly when `ν` has
@@ -227,7 +239,8 @@ theorem integrable_subtractedResolventKernel_iff {nu : Measure ℝ} {z : ℂ} (h
   refine ⟨fun h ↦ Integrable.lintegral_lt_top ?_, fun h ↦ integrable_subtractedResolventKernel h hz⟩
   refine (h.norm.const_mul (2 * (1 + ‖z‖ ^ 2) / |z.im|)).mono' (by fun_prop) (.of_forall fun t ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
-  exact inv_one_add_sq_le_mul_norm_subtractedResolventKernel hz t
+  exact (inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel hz t).trans
+    (by gcongr; exact abs_im_le_norm _)
 
 /-- **Herglotz representation of a Pick function.** A function holomorphic on the upper
 half-plane with nonnegative imaginary part is `F z = Re F(i) + b z + ∫ ((t - z)⁻¹ -

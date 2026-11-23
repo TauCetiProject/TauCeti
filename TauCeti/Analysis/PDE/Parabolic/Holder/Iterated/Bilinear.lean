@@ -60,6 +60,8 @@ time slices of `B u v` at the top two orders.
   `ContinuousLinearMap.mixedDerivL_compParabolicCkHolder₂`: its values and its fields.
 * `ContinuousLinearMap.norm_compParabolicCkHolder₂_le`: the operator-norm bound
   `21 (k + 1)² 2ᵏ ‖B‖`.
+* `ContinuousLinearMap.norm_compParabolicCkHolder₂_le_card`: the sharper bound `21 N 2ᵏ ‖B‖`, where
+  `N ≤ (k + 1)²` is the number of fields `(r, m)` with `2 r + m ≤ k`.
 
 ## References
 
@@ -378,9 +380,9 @@ private theorem norm_mixedDerivHolderL_compAux_le (hα : α ≤ 1)
   · rw [mixedDerivHolderL_of_ne h0, zero_apply, norm_zero]
     positivity
 
-private theorem norm_compAux_le (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
+private theorem norm_compAux_le_card (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
     (v : ParabolicCkHolderSpace k α E G hab) :
-    ‖compAux B hα u v‖ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * ‖B‖ * ‖u‖ * ‖v‖ := by
+    ‖compAux B hα u v‖ ≤ 21 * (parabolicDerivPairs k).card * 2 ^ k * ‖B‖ * ‖u‖ * ‖v‖ := by
   set M := 2 ^ k * ‖B‖ * ‖u‖ * ‖v‖ with hM
   -- Each pair `(r, m)` contributes at most `M + 7 M + 13 M`.
   have hterm : ∀ q ∈ parabolicDerivPairs k, ‖mixedDerivL q.1 q.2 (compAux B hα u v)‖ +
@@ -393,11 +395,15 @@ private theorem norm_compAux_le (hα : α ≤ 1) (u : ParabolicCkHolderSpace k �
     linarith [norm_timeSliceL_compAux_le B hα u v hq, norm_mixedDerivHolderL_compAux_le B hα u v hq]
   rw [norm_eq]
   refine (Finset.sum_le_sum hterm).trans ?_
-  rw [Finset.sum_const, nsmul_eq_mul]
-  calc ((parabolicDerivPairs k).card : ℝ) * (21 * M) ≤ (k + 1) ^ 2 * (21 * M) := by
-        gcongr
-        exact_mod_cast card_parabolicDerivPairs_le k
-    _ = 21 * (k + 1) ^ 2 * 2 ^ k * ‖B‖ * ‖u‖ * ‖v‖ := by rw [hM]; ring
+  rw [Finset.sum_const, nsmul_eq_mul, hM]
+  exact le_of_eq (by ring)
+
+private theorem norm_compAux_le (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
+    (v : ParabolicCkHolderSpace k α E G hab) :
+    ‖compAux B hα u v‖ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * ‖B‖ * ‖u‖ * ‖v‖ := by
+  refine (norm_compAux_le_card B hα u v).trans ?_
+  gcongr
+  exact_mod_cast card_parabolicDerivPairs_le k
 
 end ParabolicCkHolderSpace
 
@@ -460,6 +466,17 @@ theorem norm_compParabolicCkHolder₂_le :
   opNorm_le_bound₂ _ (by positivity) fun u v ↦ by
     rw [compParabolicCkHolder₂_eq]
     exact norm_compAux_le B hα u v
+
+/-- **The product estimate, counting the fields.** Pointwise application of `B` to parabolic
+Hölder maps of order `k` has operator norm at most `21 N 2ᵏ ‖B‖`, where `N` is the number of pairs
+`(r, m)` with `2 r + m ≤ k`; since `N ≤ (k + 1)²`, this sharpens
+`ContinuousLinearMap.norm_compParabolicCkHolder₂_le`. -/
+theorem norm_compParabolicCkHolder₂_le_card :
+    ‖B.compParabolicCkHolder₂ (k := k) (E := E) (hab := hab) hα‖ ≤
+      21 * (parabolicDerivPairs k).card * 2 ^ k * ‖B‖ :=
+  opNorm_le_bound₂ _ (by positivity) fun u v ↦ by
+    rw [compParabolicCkHolder₂_eq]
+    exact norm_compAux_le_card B hα u v
 
 /-- The norm of `B u v` is at most `21 (k + 1)² 2ᵏ ‖B‖ ‖u‖ ‖v‖`. -/
 theorem norm_compParabolicCkHolder₂_apply_le (u : ParabolicCkHolderSpace k α E F hab)
