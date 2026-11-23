@@ -21,7 +21,7 @@ gauge-fixed operator `L_x = d₀* ⊕ d₁` by `rotateTarget u ∘ translateFiel
 test fields (`TauCeti.Vortex.gaugeFixedAdjoint_translateField`,
 `TauCeti.Vortex.gaugeFixedAdjoint_rotateField`), both act on values by linear isometries, and the
 motion preserves every additive Haar measure on `ℂ`
-(`LinearIsometryEquiv.measurePreserving_addHaar`). This file carries the action to the weak
+(`AffineIsometryEquiv.measurePreserving_addHaar`). This file carries the action to the weak
 `L²` theory of `L_x` of `TauCeti.Analysis.PDE.Vortex.RightInverse`, against any additive Haar
 measure `μ`.
 
@@ -34,7 +34,8 @@ fields agreeing almost everywhere with `rotateTarget u (translateField a f)` and
   (`TauCeti.Vortex.isGaugeFixedWeakSolution_rotateField_translateField_iff`), in the sense of
   `TauCeti.Vortex.IsGaugeFixedWeakSolution`; the test field `η` at `x` is traded for its moved
   target `rotateTarget u (translateField a η)` at `x'`. With `f = 0`, the motion carries the weak
-  kernel of `L_x` onto that of `L_{x'}`.
+  kernel of `L_x` onto that of `L_{x'}`
+  (`TauCeti.Vortex.isGaugeFixedWeakSolution_zero_rotateField_translateField_iff`).
 * **Minimal weak solutions.** Likewise `y'` is a minimal weak solution at `x'` exactly when `y` is
   one at `x`
   (`TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_rotateField_translateField_iff`), in the sense
@@ -110,24 +111,16 @@ private theorem hasCompactSupport_motion
     HasCompactSupport (motion R g v) :=
   (hv.comp_homeomorph g.toHomeomorph).comp_left (g := R) (map_zero R)
 
-/-- An affine isometry of the plane preserves every additive Haar measure. -/
-private theorem measurePreserving_addHaar (g : ℂ ≃ᵃⁱ[ℝ] ℂ) : MeasurePreserving g μ μ := by
-  have hg : ⇑g = fun z ↦ g.linearIsometryEquiv z + g 0 := funext fun z ↦ by
-    simpa using g.map_vadd 0 z
-  rw [hg]
-  exact (measurePreserving_add_right μ (g 0)).comp
-    (g.linearIsometryEquiv.measurePreserving_addHaar μ)
-
 private theorem memLp_motion (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4))
     (g : ℂ ≃ᵃⁱ[ℝ] ℂ) {v : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : MemLp v 2 μ) :
     MemLp (motion R g v) 2 μ :=
   R.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp'
-    (hv.comp_measurePreserving (measurePreserving_addHaar g))
+    (hv.comp_measurePreserving (g.measurePreserving_addHaar μ))
 
 private theorem motion_ae_eq (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4))
     (g : ℂ ≃ᵃⁱ[ℝ] ℂ) {v w : ℂ → EuclideanSpace ℝ (Fin 4)} (h : v =ᵐ[μ] w) :
     motion R g v =ᵐ[μ] motion R g w :=
-  ((measurePreserving_addHaar g).quasiMeasurePreserving.ae_eq_comp h).mono fun z hz ↦ by
+  ((g.measurePreserving_addHaar μ).quasiMeasurePreserving.ae_eq_comp h).mono fun z hz ↦ by
     rw [motion_apply, motion_apply]
     exact congrArg R hz
 
@@ -137,7 +130,7 @@ private theorem integral_inner_motion
     {v w v' w' : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : v' =ᵐ[μ] motion R g v)
     (hw : w' =ᵐ[μ] motion R g w) :
     ∫ z, ⟪v' z, w' z⟫ ∂μ = ∫ z, ⟪v z, w z⟫ ∂μ := by
-  refine (integral_congr_ae ?_).trans ((measurePreserving_addHaar g).integral_comp
+  refine (integral_congr_ae ?_).trans ((g.measurePreserving_addHaar μ).integral_comp
     g.toHomeomorph.measurableEmbedding fun z ↦ ⟪v z, w z⟫)
   filter_upwards [hv, hw] with z h₁ h₂
   rw [h₁, h₂, motion_apply, motion_apply, LinearIsometryEquiv.inner_map_map]
@@ -204,9 +197,11 @@ theorem IsGaugeFixedWeakSolution.rotateField_translateField
 
 /-! ### Minimal weak solutions -/
 
-/-- With zero data: the motion carries the weak solutions of `L_x w = 0` onto those of
-`L_{x'} w' = 0`. -/
-private theorem isGaugeFixedWeakSolution_zero_rotateField_translateField_iff (u : Circle) (a : ℂ)
+/-- **Rigid motions of the weak kernel.** If `w'` agrees almost everywhere with
+`rotateField u (translateField a w)`, then `w'` is a weak solution of `L_{x'} w' = 0` at the moved
+field `x' = rotateField u (translateField a x)` exactly when `w` is a weak solution of
+`L_x w = 0`. -/
+theorem isGaugeFixedWeakSolution_zero_rotateField_translateField_iff (u : Circle) (a : ℂ)
     {w w' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
     (hw : ⇑w' =ᵐ[μ] rotateField u (translateField a w)) :
     IsGaugeFixedWeakSolution μ (rotateField u (translateField a x)) 0 w' ↔
