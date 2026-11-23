@@ -546,7 +546,10 @@ theorem mfderiv_comp_snd_apply_one_zero {x : 𝕜 → M} {p : 𝕜 × 𝕜} :
   -- Read the plane as the product of two lines, where `TauCeti.mfderiv_comp_snd` applies.
   have h := TauCeti.mfderiv_comp_snd (I := 𝓘(𝕜, 𝕜)) (J := 𝓘(𝕜, 𝕜)) (I'' := I) x p
   rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
-  rw [show (fun z : 𝕜 × 𝕜 ↦ x z.2) = x ∘ Prod.snd from rfl, h]
+  rw [← Function.comp_def x Prod.snd, h]
+  -- The composite acts on `TangentSpace 𝓘(𝕜, 𝕜) p.1 × TangentSpace 𝓘(𝕜, 𝕜) p.2`, the vector is in
+  -- `TangentSpace 𝓘(𝕜, 𝕜 × 𝕜) p`: the same type only up to the `TangentSpace` synonym, so
+  -- `ContinuousLinearMap.comp_apply` does not rewrite and the evaluation is closed by unfolding.
   exact map_zero (mfderiv 𝓘(𝕜, 𝕜) I x p.2)
 
 /-- The differential of a map `(a, b) ↦ x b` of the plane in the direction of the second
@@ -557,28 +560,37 @@ theorem mfderiv_comp_snd_apply_zero_one {x : 𝕜 → M} {p : 𝕜 × 𝕜} :
   -- Read the plane as the product of two lines, where `TauCeti.mfderiv_comp_snd` applies.
   have h := TauCeti.mfderiv_comp_snd (I := 𝓘(𝕜, 𝕜)) (J := 𝓘(𝕜, 𝕜)) (I'' := I) x p
   rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
-  rw [show (fun z : 𝕜 × 𝕜 ↦ x z.2) = x ∘ Prod.snd from rfl, h, curveVelocity_apply]
+  rw [← Function.comp_def x Prod.snd, h, curveVelocity_apply]
+  -- The composite acts on `TangentSpace 𝓘(𝕜, 𝕜) p.1 × TangentSpace 𝓘(𝕜, 𝕜) p.2`, the vector is in
+  -- `TangentSpace 𝓘(𝕜, 𝕜 × 𝕜) p`: the same type only up to the `TangentSpace` synonym, so
+  -- `ContinuousLinearMap.comp_apply` does not rewrite and the evaluation is closed by unfolding.
   rfl
 
 /-- The differential of a map `(a, b) ↦ x a` of the plane in the direction of the first
 coordinate is the velocity of `x`. -/
 @[simp]
-theorem mfderiv_comp_fst_apply_one_zero {x : 𝕜 → M} {p : 𝕜 × 𝕜}
-    (hx : MDifferentiableAt 𝓘(𝕜, 𝕜) I x p.1) :
-    mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.1) p (1, 0) = curveVelocity I x p.1 :=
-  (curveVelocity_eq_mfderiv_fst (I := I) (f := fun a _ ↦ x a) (u := p.1) (t := p.2)
-    (hx.comp p differentiableAt_fst.mdifferentiableAt)).symm
+theorem mfderiv_comp_fst_apply_one_zero {x : 𝕜 → M} {p : 𝕜 × 𝕜} :
+    mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.1) p (1, 0) = curveVelocity I x p.1 := by
+  -- Read the plane as the product of two lines, where `TauCeti.mfderiv_comp_fst` applies.
+  have h := TauCeti.mfderiv_comp_fst (I := 𝓘(𝕜, 𝕜)) (J := 𝓘(𝕜, 𝕜)) (I'' := I) x p
+  rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
+  rw [← Function.comp_def x Prod.fst, h, curveVelocity_apply]
+  -- As in `mfderiv_comp_snd_apply_one_zero`, the evaluation is closed up to the `TangentSpace`
+  -- synonym.
+  rfl
 
 /-- A map `(a, b) ↦ x a` of the plane, which depends only on the first coordinate, has zero
 differential in the direction of the second coordinate. -/
 @[simp]
-theorem mfderiv_comp_fst_apply_zero_one {x : 𝕜 → M} {p : 𝕜 × 𝕜}
-    (hx : MDifferentiableAt 𝓘(𝕜, 𝕜) I x p.1) :
+theorem mfderiv_comp_fst_apply_zero_one {x : 𝕜 → M} {p : 𝕜 × 𝕜} :
     mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.1) p (0, 1) = 0 := by
-  have h := curveVelocity_eq_mfderiv_snd (I := I) (f := fun a _ ↦ x a) (u := p.1) (t := p.2)
-    (hx.comp p differentiableAt_fst.mdifferentiableAt)
-  rw [curveVelocity_const] at h
-  exact h.symm
+  -- Read the plane as the product of two lines, where `TauCeti.mfderiv_comp_fst` applies.
+  have h := TauCeti.mfderiv_comp_fst (I := 𝓘(𝕜, 𝕜)) (J := 𝓘(𝕜, 𝕜)) (I'' := I) x p
+  rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
+  rw [← Function.comp_def x Prod.fst, h]
+  -- As in `mfderiv_comp_snd_apply_one_zero`, the evaluation is closed up to the `TangentSpace`
+  -- synonym.
+  exact map_zero (mfderiv 𝓘(𝕜, 𝕜) I x p.1)
 
 /-- A map `w` of the plane that is constant along the line at height `t` has zero differential
 at `(u, t)` in the direction of the first coordinate. -/
@@ -919,13 +931,17 @@ the velocity itself: the derivative of that chart at its own centre is the ident
 theorem hasDerivWithinAt_extChartAt_comp_curve
     (hγ : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w)) :
     HasDerivWithinAt (extChartAt I (γ t) ∘ γ) w s t := by
+  -- The second field of `HasMFDerivWithinAt` is the derivative of the chart reading
+  -- `writtenInExtChartAt 𝓘(𝕜, 𝕜) I t γ`; on the source `𝓘(𝕜, 𝕜)` the chart is the identity, so the
+  -- reading is `extChartAt I (γ t) ∘ γ` itself, within `s`.
   have h := hγ.2
   refine hasDerivWithinAt_iff_hasFDerivWithinAt.2 ?_
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, Function.comp_id, Set.preimage_id_eq, id_eq, modelWithCornersSelf_coe,
     Set.range_id, Set.inter_univ] at h
+  -- `convert` bridges the target `TangentSpace I (γ t)`, a type synonym for `E`.
   convert h using 1
-  exact ContinuousLinearMap.ext fun _ ↦ rfl
+  exact (ContinuousLinearMap.smulRight_one_eq_toSpanSingleton (R₁ := 𝕜) (x := w)).symm
 
 /-- The unrestricted case of `TauCeti.Manifold.hasDerivWithinAt_extChartAt_comp_curve`. -/
 theorem hasDerivAt_extChartAt_comp_curve
