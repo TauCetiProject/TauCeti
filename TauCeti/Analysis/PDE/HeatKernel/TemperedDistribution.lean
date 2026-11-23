@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
+import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 
@@ -39,6 +40,9 @@ Working on `𝓢'` lets the heat semigroup act on spaces of distributions, such 
 
 * `TemperedDistribution.hasTemperateGrowth_heatSymbol`: the heat symbol `exp(-4π² t ‖ξ‖²)` has
   temperate growth.
+* `SchwartzMap.fourierMultiplierCLM_exp_neg_mul_norm_sq_apply_eq_integral`: for `t > 0`, the
+  Fourier multiplier with symbol `exp(-4π² t ‖ξ‖²)` is convolution with the heat kernel on
+  Schwartz functions.
 * `TemperedDistribution.heatSemigroup`: the heat semigroup `e^{tΔ}` on `𝓢'(E, F)`.
 * `TemperedDistribution.heatSemigroup_zero`,
   `TemperedDistribution.heatSemigroup_heatSemigroup_apply`:
@@ -67,6 +71,28 @@ open scoped Convolution ENNReal NNReal SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
+
+namespace SchwartzMap
+
+open TauCeti
+
+variable [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **The heat multiplier on Schwartz functions is convolution with the heat kernel.** For
+`t > 0`, the Fourier multiplier with symbol `exp(-4π² t ‖ξ‖²)` sends a Schwartz function `u` to
+`K_t ⋆ u`. -/
+theorem fourierMultiplierCLM_exp_neg_mul_norm_sq_apply_eq_integral {t : ℝ} (ht : 0 < t)
+    (u : 𝓢(E, F)) (x : E) :
+    fourierMultiplierCLM F (fun ξ : E ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) u x =
+      ∫ y, heatKernel t (x - y) • u y := by
+  have hb : 0 < ((4 * π ^ 2 * t : ℝ) : ℂ).re := by
+    rw [Complex.ofReal_re]
+    positivity
+  rw [← coe_gaussian_ofReal hb, fourierMultiplierCLM_apply_eq_integral, fourierInv_coe,
+    coe_gaussian_ofReal hb, fourierInv_exp_neg_mul_norm_sq ht]
+  simp only [Complex.coe_smul]
+
+end SchwartzMap
 
 namespace TemperedDistribution
 

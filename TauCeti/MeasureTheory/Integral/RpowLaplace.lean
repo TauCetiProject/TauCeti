@@ -37,6 +37,8 @@ normalization of the inverse-gamma density; averaging Gaussians `exp (-π ‖z�
 
 * `TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi`: the integrand of Euler's integral
   `∫ t in Ioi 0, t ^ (a - 1) * exp (-(r * t))` is integrable.
+* `TauCeti.one_add_rpow_neg_eq_integral`: subordination, `(1 + b) ^ (-a)` as a Gamma average of
+  the exponentials `exp (-r t b)`.
 * `TauCeti.integral_rpow_mul_exp_neg_div_Ioi`, `TauCeti.integrableOn_rpow_mul_exp_neg_div_Ioi`:
   Euler's integral in the inverted variable.
 * `TauCeti.integrable_rpow_mul_exp_neg_mul_smul_prod`: the joint integrand of the Gamma-mixture
@@ -76,6 +78,22 @@ theorem integrableOn_rpow_mul_exp_neg_mul_Ioi {a r : ℝ} (ha : 0 < a) (hr : 0 <
   refine (integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a - 1) (by linarith)
     one_pos hr).congr_fun (fun t _ ↦ ?_) measurableSet_Ioi
   simp [neg_mul]
+
+/-- **Subordination.** For `0 < a`, `0 < r` and `0 ≤ b`, the power `(1 + b) ^ (-a)` is the average
+of the exponentials `exp (-r t b)` against the Gamma density `r ^ a Γ(a)⁻¹ t ^ (a - 1) exp (-r t)`:
+`(1 + b) ^ (-a) = r ^ a / Γ(a) * ∫₀^∞ t ^ (a - 1) exp (-r t) exp (-r t b) dt`. -/
+theorem one_add_rpow_neg_eq_integral {a r b : ℝ} (ha : 0 < a) (hr : 0 < r) (hb : 0 ≤ b) :
+    (1 + b) ^ (-a) = r ^ a / Gamma a *
+      ∫ t in Ioi (0 : ℝ), t ^ (a - 1) * exp (-(r * t)) * exp (-(r * t * b)) := by
+  have hrb : 0 < r * (1 + b) := by positivity
+  rw [setIntegral_congr_fun measurableSet_Ioi
+      (g := fun t ↦ t ^ (a - 1) * exp (-((r * (1 + b)) * t)))
+      fun t _ ↦ by rw [mul_assoc, ← exp_add]; ring_nf,
+    integral_rpow_mul_exp_neg_mul_Ioi ha hrb, one_div, inv_rpow hrb.le,
+    mul_rpow hr.le (by positivity), rpow_neg (by positivity)]
+  have hΓ : Gamma a ≠ 0 := (Gamma_pos_of_pos ha).ne'
+  have hr' : r ^ a ≠ 0 := (rpow_pos_of_pos hr _).ne'
+  field_simp
 
 /-- The substitution `t ↦ t⁻¹` turns the integrand `t ^ (a - 1) exp (-r t)` of Euler's integral,
 multiplied by the Jacobian `t⁻²`, into `t ^ (-(a + 1)) exp (-r / t)`. -/

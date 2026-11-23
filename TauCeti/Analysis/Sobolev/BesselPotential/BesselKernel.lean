@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.ComplexOrder
-import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
-import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
+import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 
 /-!
@@ -28,10 +29,11 @@ Sobolev embedding of the Bessel-potential spaces `H^{s,p} = H^{s,p}(E; F)`:
 ## The Bessel kernel
 
 Euler's Gamma integral gives the subordination formula
-`(1 + ‖ξ‖²)^(-δ/2) = (4π²)^(δ/2) Γ(δ/2)⁻¹ ∫₀^∞ t^(δ/2 - 1) e^(-4π² t) e^(-4π² t ‖ξ‖²) dt`.
-The heat symbol `e^(-4π² t ‖ξ‖²)` is the
-Fourier transform of the heat kernel `K_t` (`TauCeti.heatKernel`), so `J^(-δ)` is convolution with
-the same average of heat kernels,
+`(1 + ‖ξ‖²)^(-δ/2) = (4π²)^(δ/2) Γ(δ/2)⁻¹ ∫₀^∞ t^(δ/2 - 1) e^(-4π² t) e^(-4π² t ‖ξ‖²) dt`
+(`TauCeti.one_add_rpow_neg_eq_integral`). The heat symbol `e^(-4π² t ‖ξ‖²)` is the
+Fourier transform of the heat kernel `K_t` (`TauCeti.heatKernel`), so its multiplier is convolution
+with `K_t` (`SchwartzMap.fourierMultiplierCLM_exp_neg_mul_norm_sq_apply_eq_integral`), and `J^(-δ)`
+is convolution with the same average of heat kernels,
 
 `G_δ(x) = (4π²)^(δ/2) Γ(δ/2)⁻¹ ∫₀^∞ t^(δ/2 - 1) e^(-4π² t) K_t(x) dt`,
 
@@ -203,24 +205,6 @@ theorem exists_enorm_besselKernel_le {δ : ℝ} (hδ : 0 < δ) (hδn : δ < finr
 
 /-! ### The Bessel kernel as the kernel of `J^(-δ)` -/
 
-omit [InnerProductSpace ℝ E] in
-/-- **Subordination.** The Bessel symbol `(1 + ‖ξ‖²)^(-δ/2)` is the average of the heat symbols
-`exp(-4π² t ‖ξ‖²)` against the Gamma density defining the Bessel kernel. -/
-private theorem one_add_norm_sq_rpow_neg_eq_integral {δ : ℝ} (hδ : 0 < δ) (ξ : E) :
-    (1 + ‖ξ‖ ^ 2) ^ (-δ / 2) = (4 * π ^ 2) ^ (δ / 2) / Gamma (δ / 2) *
-      ∫ t in Ioi (0 : ℝ), t ^ (δ / 2 - 1) * exp (-(4 * π ^ 2 * t)) *
-        exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) := by
-  have hr : 0 < 4 * π ^ 2 * (1 + ‖ξ‖ ^ 2) := by positivity
-  rw [setIntegral_congr_fun measurableSet_Ioi
-      (g := fun t ↦ t ^ (δ / 2 - 1) * exp (-((4 * π ^ 2 * (1 + ‖ξ‖ ^ 2)) * t)))
-      fun t _ ↦ by rw [mul_assoc, ← exp_add]; ring_nf,
-    integral_rpow_mul_exp_neg_mul_Ioi (half_pos hδ) hr, one_div, inv_rpow hr.le,
-    mul_rpow (x := 4 * π ^ 2) (y := 1 + ‖ξ‖ ^ 2) (by positivity) (by positivity), neg_div,
-    rpow_neg (by positivity)]
-  have hΓ : Gamma (δ / 2) ≠ 0 := (Gamma_pos_of_pos (half_pos hδ)).ne'
-  have h4 : (4 * π ^ 2) ^ (δ / 2) ≠ 0 := (rpow_pos_of_pos (by positivity) _).ne'
-  field_simp
-
 /-- The Gamma density `t^(δ/2 - 1) e^(-4π² t)` of the Bessel kernel is integrable. -/
 private theorem integrableOn_besselWeight {δ : ℝ} (hδ : 0 < δ) :
     IntegrableOn (fun t : ℝ ↦ t ^ (δ / 2 - 1) * exp (-(4 * π ^ 2 * t))) (Ioi 0) :=
@@ -234,23 +218,6 @@ open TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-- The heat multiplier with symbol `exp(-4π² t ‖ξ‖²)`, written as an inverse Fourier integral, is
-convolution with the heat kernel `K_t`. -/
-private theorem integral_fourierChar_smul_exp_smul_fourier_eq {t : ℝ} (ht : 0 < t)
-    (u : 𝓢(E, F)) (x : E) :
-    ∫ ξ, 𝐞 ⟪ξ, x⟫ • ((exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℂ) • 𝓕 u ξ) =
-      ∫ y, heatKernel t (x - y) • u y := by
-  have hb : 0 < ((4 * π ^ 2 * t : ℝ) : ℂ).re := by
-    rw [Complex.ofReal_re]
-    positivity
-  have hK : 𝓕⁻ (gaussian (V := E) hb : E → ℂ) = fun x ↦ (heatKernel t x : ℂ) := by
-    rw [coe_gaussian_ofReal, fourierInv_exp_neg_mul_norm_sq ht]
-  have h := fourierMultiplierCLM_apply_eq_integral (gaussian (V := E) hb) u x
-  simp only [fourierInv_coe] at h
-  rw [hK, fourierMultiplierCLM_apply, fourierInv_coe, Real.fourierInv_eq] at h
-  simp only [smulLeftCLM_apply_apply (gaussian hb).hasTemperateGrowth] at h
-  simpa only [coe_gaussian_ofReal, Complex.coe_smul] using h
 
 /-- The integrand of the Bessel multiplier on the Fourier side, split along the Gamma density
 `w(t) = t^(δ/2 - 1) e^(-4π² t)`: `(t, ξ) ↦ w(t) e^(2πi⟪ξ, x⟫) exp(-4π² t ‖ξ‖²) 𝓕 u(ξ)`. Its norm
@@ -341,9 +308,11 @@ theorem besselPotentialCLM_neg_apply_eq_integral {δ : ℝ} (hδ : 0 < δ) (u : 
       simp only [Circle.smul_def, ← Complex.coe_smul, smul_smul]
       push_cast
       ring_nf
+    have hsub := one_add_rpow_neg_eq_integral (half_pos hδ) (r := 4 * π ^ 2) (by positivity)
+      (sq_nonneg ‖ξ‖)
+    rw [← neg_div] at hsub
     dsimp only
-    rw [hI, smul_smul, ← one_add_norm_sq_rpow_neg_eq_integral hδ ξ,
-      smulLeftCLM_apply_apply (by fun_prop)]
+    rw [hI, smul_smul, ← hsub, smulLeftCLM_apply_apply (by fun_prop)]
     simp only [Circle.smul_def, ← Complex.coe_smul, smul_smul, mul_comm]
   -- In space, the Bessel kernel is the Gamma average of the heat kernels.
   have hB : ∫ y, besselKernel δ (x - y) • u y = c • ∫ t in Ioi (0 : ℝ), ∫ y,
@@ -355,7 +324,14 @@ theorem besselPotentialCLM_neg_apply_eq_integral {δ : ℝ} (hδ : 0 < δ) (u : 
   rw [hA, hB]
   congr 1
   refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
-  rw [integral_smul, integral_fourierChar_smul_exp_smul_fourier_eq ht, ← integral_smul]
+  -- At each time, the heat multiplier is convolution with the heat kernel.
+  have hK := fourierMultiplierCLM_exp_neg_mul_norm_sq_apply_eq_integral ht u x
+  rw [fourierMultiplierCLM_apply, fourierInv_coe, Real.fourierInv_eq] at hK
+  have hg : (fun ξ : E ↦ ((exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)).HasTemperateGrowth :=
+    Complex.hasTemperateGrowth_ofReal.comp
+      (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))
+  simp only [smulLeftCLM_apply_apply hg] at hK
+  rw [integral_smul, hK, ← integral_smul]
   simp_rw [smul_smul]
 
 end SchwartzMap
@@ -538,40 +514,34 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   {s δ : ℝ} {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))]
 
-/-- The Bessel potential of order `s` of an element of `H^{s + δ, p}` is an `L^q` function, with a
-bound uniform in the element. -/
-private theorem exists_besselPotential_toDistr_eq_and_norm_le [Nontrivial E] (hδ : 0 < δ)
-    (hp : 1 < p) (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / finrank ℝ E) :
-    ∃ C : ℝ, ∀ u : H^{s + δ, p}(E, F), ∃ g : Lp F q (volume : Measure E),
-      besselPotential E F s u.toDistr = g ∧ ‖g‖ ≤ C * ‖u‖ := by
-  obtain ⟨C, hC⟩ := exists_besselPotential_neg_eq_and_norm_le (F := F) hδ hp hpq
-  refine ⟨C, fun u ↦ ?_⟩
-  obtain ⟨g, hg, -, hgn⟩ := hC u.toLp
-  refine ⟨g, ?_, by rwa [norm_toLp_eq] at hgn⟩
-  rw [← hg, ← u.bessel_toDistr_eq_toLp, besselPotential_besselPotential_apply,
-    add_neg_cancel_right]
-
 /-- **The Sobolev embedding** `H^{s + δ, p}(E, F) → H^{s, q}(E, F)` on a space of positive
 dimension `n`, for `0 < δ`, `1 < p` and `1 / q = 1 / p - δ / n`, as a continuous linear map. It
 keeps the underlying tempered distribution (`BesselPotentialSpace.toDistr_sobolevInclusion`). -/
 def sobolevInclusion [Nontrivial E] (hδ : 0 < δ) (hp : 1 < p)
     (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / finrank ℝ E) :
     H^{s + δ, p}(E, F) →L[ℂ] H^{s, q}(E, F) :=
-  let hC := exists_besselPotential_toDistr_eq_and_norm_le (s := s) (F := F) hδ hp hpq
+  let hC := exists_besselPotential_neg_eq_and_norm_le (F := F) hδ hp hpq
   LinearMap.mkContinuous
-    { toFun := fun u ↦
-        { toDistr := u.toDistr
-          toLp := (hC.choose_spec u).choose
-          bessel_toDistr_eq_toLp := (hC.choose_spec u).choose_spec.1 }
-      map_add' := fun u v ↦ ext (toDistr_add u v)
-      map_smul' := fun c u ↦ ext (toDistr_smul c u) }
-    hC.choose fun u ↦ (norm_toLp_eq _).symm.trans_le (hC.choose_spec u).choose_spec.2
+    { toFun u := (u.memSobolev_toDistr.of_add_of_inv_eq hδ hp hpq).toBesselPotentialSpace
+      map_add' u v := ext (by simp)
+      map_smul' c u := ext (by simp) }
+    hC.choose fun u ↦ by
+      obtain ⟨g, hg, -, hgn⟩ := hC.choose_spec u.toLp
+      set v := (u.memSobolev_toDistr.of_add_of_inv_eq hδ hp hpq).toBesselPotentialSpace
+      -- The `L^q` function of the image is the convolution `g = J^(-δ) u.toLp`.
+      have hvg : v.toLp = g := Lp.toTemperedDistribution_injective <| by
+        dsimp only
+        rw [← v.bessel_toDistr_eq_toLp, MemSobolev.toBesselPotentialSpace_toDistr, ← hg,
+          ← u.bessel_toDistr_eq_toLp, besselPotential_besselPotential_apply,
+          add_neg_cancel_right]
+      simp only [LinearMap.coe_mk, AddHom.coe_mk]
+      rwa [← norm_toLp_eq, hvg, ← norm_toLp_eq u]
 
 /-- The Sobolev embedding keeps the underlying tempered distribution. -/
 @[simp]
 theorem toDistr_sobolevInclusion [Nontrivial E] (hδ : 0 < δ) (hp : 1 < p)
     (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / finrank ℝ E) (u : H^{s + δ, p}(E, F)) :
     (sobolevInclusion hδ hp hpq u).toDistr = u.toDistr :=
-  (rfl)
+  MemSobolev.toBesselPotentialSpace_toDistr _
 
 end BesselPotentialSpace
