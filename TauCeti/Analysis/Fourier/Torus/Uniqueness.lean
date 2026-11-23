@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 import TauCeti.Analysis.Fourier.Monomial
-import TauCeti.Analysis.Fourier.Torus.Decay
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.MeasureTheory.Function.AEEqOfIntegralContinuous
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
@@ -33,10 +33,6 @@ almost everywhere the trigonometric polynomial `∑ n ∈ s, mFourier n • mFou
   coefficients for integrable functions.
 * `MeasureTheory.Integrable.ae_eq_of_forall_mFourierCoeff_eq`: integrable functions with the same
   Fourier coefficients agree almost everywhere.
-* `TauCeti.UnitAddTorus.mFourierCoeff_sum_mFourier_smul`: the Fourier coefficients of a
-  trigonometric polynomial, with the scalar forms
-  `TauCeti.UnitAddTorus.mFourierCoeff_sum_mFourier_mul` and
-  `TauCeti.UnitAddTorus.mFourierCoeff_sum_mul_mFourier`.
 * `MeasureTheory.Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff`: an integrable function with
   finitely many nonzero Fourier coefficients is a trigonometric polynomial.
 -/
@@ -47,50 +43,6 @@ open MeasureTheory Set UnitAddTorus
 
 variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [CompleteSpace E] {f g : UnitAddTorus d → E}
-
-namespace TauCeti.UnitAddTorus
-
-/-- The Fourier coefficients of a trigonometric polynomial `∑ n ∈ s, mFourier n • c n` are its
-coefficients `c` on `s` and zero elsewhere. -/
-@[simp]
-theorem mFourierCoeff_sum_mFourier_smul (s : Finset (d → ℤ)) (c : (d → ℤ) → E) (m : d → ℤ) :
-    mFourierCoeff (fun x ↦ ∑ n ∈ s, mFourier n x • c n) m = if m ∈ s then c m else 0 := by
-  have hmono (n : d → ℤ) : Integrable fun z : UnitAddTorus d ↦ mFourier (-m) z •
-      (mFourier n z • c n) :=
-    (by fun_prop : Continuous fun z : UnitAddTorus d ↦ mFourier (-m) z •
-      (mFourier n z • c n)).integrable_of_hasCompactSupport (.of_compactSpace _)
-  have hcoeff (n : d → ℤ) : ∫ z, mFourier (-m) z • (mFourier n z • c n) =
-      (Pi.single n 1 : (d → ℤ) → ℂ) m • c n := by
-    rw [← mFourierCoeff_mFourier, mFourierCoeff_eq_integral_volume (mFourier n),
-      ← integral_smul_const]
-    simp_rw [smul_smul, smul_eq_mul]
-  rw [mFourierCoeff_eq_integral_volume]
-  simp only [Finset.smul_sum]
-  rw [integral_finsetSum _ fun n _ ↦ hmono n]
-  simp only [hcoeff]
-  split_ifs with hm
-  · rw [Finset.sum_eq_single m (fun n _ hn ↦ by simp [Ne.symm hn]) (fun h ↦ absurd hm h)]
-    simp
-  · refine Finset.sum_eq_zero fun n hn ↦ ?_
-    have hnm : m ≠ n := fun h ↦ hm (h ▸ hn)
-    simp [hnm]
-
-/-- The Fourier coefficients of a scalar trigonometric polynomial `∑ n ∈ s, mFourier n * c n`, the
-`simp` normal form of `mFourierCoeff_sum_mFourier_smul` for `E = ℂ`. -/
-@[simp]
-theorem mFourierCoeff_sum_mFourier_mul (s : Finset (d → ℤ)) (c : (d → ℤ) → ℂ) (m : d → ℤ) :
-    mFourierCoeff (fun x ↦ ∑ n ∈ s, mFourier n x * c n) m = if m ∈ s then c m else 0 := by
-  simpa only [smul_eq_mul] using mFourierCoeff_sum_mFourier_smul s c m
-
-/-- The Fourier coefficients of a scalar trigonometric polynomial `∑ n ∈ s, c n * mFourier n` are
-its coefficients `c` on `s` and zero elsewhere. -/
-@[simp]
-theorem mFourierCoeff_sum_mul_mFourier (s : Finset (d → ℤ)) (c : (d → ℤ) → ℂ) (m : d → ℤ) :
-    mFourierCoeff (fun x ↦ ∑ n ∈ s, c n * mFourier n x) m = if m ∈ s then c m else 0 := by
-  simp_rw [mul_comm (c _)]
-  exact mFourierCoeff_sum_mFourier_mul s c m
-
-end TauCeti.UnitAddTorus
 
 namespace MeasureTheory
 

@@ -20,14 +20,14 @@ polynomial `t ↦ ∑ n, η (n / R) e_n(t)` on a circle `AddCircle T` has only t
 circle `UnitAddCircle = ℝ / ℤ`, by Poisson summation (`SchwartzMap.tsum_eq_tsum_fourier`) it is
 the periodization `x ↦ ∑ ℓ, G (x + ℓ)` of the kernel `G = 𝓕⁻ (η (· / R))` on `ℝ`, a dilate of
 `𝓕⁻ η`. Hence its `L¹` norm on the circle is at most `∫ ‖G‖ = ∫ ‖𝓕⁻ η‖`, whatever the scale `R`
-(`TauCeti.integral_norm_tsum_mul_fourier_le`). This is the bound that makes kernels of de la Vallée
+(`ContDiff.integral_norm_tsum_mul_fourier_le`). This is the bound that makes kernels of de la Vallée
 Poussin type uniformly integrable.
 
 ## Main declarations
 
 * `TauCeti.tsum_mul_fourier_eq_sum`: the periodized kernel is a trigonometric polynomial.
-* `TauCeti.continuous_tsum_mul_fourier`: the periodized kernel is continuous.
-* `TauCeti.integral_norm_tsum_mul_fourier_le`: the `L¹` norm on the circle of the periodized
+* `HasCompactSupport.continuous_tsum_mul_fourier`: the periodized kernel is continuous.
+* `ContDiff.integral_norm_tsum_mul_fourier_le`: the `L¹` norm on the circle of the periodized
   kernel `t ↦ ∑ n, η (n / R) e_n(t)` is at most `∫ ‖𝓕⁻ η‖`, uniformly in `R`.
 -/
 
@@ -37,15 +37,6 @@ open MeasureTheory Set FourierTransform
 open scoped ContDiff
 
 namespace TauCeti
-
-/-- A compactly supported function vanishes outside some interval `[-M, M]`. -/
-private theorem exists_forall_lt_abs_eq_zero {η : ℝ → ℂ}
-    (hc : HasCompactSupport η) : ∃ M : ℝ, ∀ ξ, M < |ξ| → η ξ = 0 := by
-  obtain ⟨M, hM⟩ := hc.isCompact.isBounded.subset_closedBall 0
-  refine ⟨M, fun ξ hξ ↦ image_eq_zero_of_notMem_tsupport fun h ↦ ?_⟩
-  have := hM h
-  rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs] at this
-  linarith
 
 /-- If `η` vanishes outside `[-M, M]` and `R > 0`, the periodized kernel
 `t ↦ ∑ n, η (n / R) e_n(t)` is the trigonometric polynomial with frequencies `|n| ≤ ⌈M R⌉`. -/
@@ -59,18 +50,21 @@ theorem tsum_mul_fourier_eq_sum {η : ℝ → ℂ} {M R : ℝ} (hR : 0 < R)
     (Int.le_ceil _).trans_lt (by exact_mod_cast hn)
   rw [hη _ (by rwa [abs_div, abs_of_pos hR, lt_div_iff₀ hR]), zero_mul]
 
+end TauCeti
+
 /-- For compactly supported `η` and `R > 0`, the periodized kernel `t ↦ ∑ n, η (n / R) e_n(t)` is
 continuous. -/
-theorem continuous_tsum_mul_fourier {η : ℝ → ℂ} (hc : HasCompactSupport η) {R : ℝ}
-    (hR : 0 < R) {T : ℝ} : Continuous fun t : AddCircle T ↦ ∑' n : ℤ, η (n / R) * fourier n t := by
-  obtain ⟨M, hM⟩ := exists_forall_lt_abs_eq_zero hc
-  simp only [tsum_mul_fourier_eq_sum hR hM]
+theorem HasCompactSupport.continuous_tsum_mul_fourier {η : ℝ → ℂ} (hc : HasCompactSupport η)
+    {R : ℝ} (hR : 0 < R) {T : ℝ} :
+    Continuous fun t : AddCircle T ↦ ∑' n : ℤ, η (n / R) * fourier n t := by
+  obtain ⟨M, -, hM⟩ := hc.exists_pos_le_norm
+  simp only [TauCeti.tsum_mul_fourier_eq_sum hR fun ξ hξ ↦ hM ξ hξ.le]
   fun_prop
 
 /-- **The `L¹` norm of a periodized kernel.** For a smooth compactly supported `η : ℝ → ℂ` and
 `R > 0`, the trigonometric polynomial `t ↦ ∑ n, η (n / R) e_n(t)` on the circle, the periodization
 of the kernel `𝓕⁻ (η (· / R))` on `ℝ`, has `L¹` norm at most `∫ ‖𝓕⁻ η‖`, independently of `R`. -/
-theorem integral_norm_tsum_mul_fourier_le {η : ℝ → ℂ} (hη : ContDiff ℝ ∞ η)
+theorem ContDiff.integral_norm_tsum_mul_fourier_le {η : ℝ → ℂ} (hη : ContDiff ℝ ∞ η)
     (hc : HasCompactSupport η) {R : ℝ} (hR : 0 < R) :
     ∫ t : UnitAddCircle, ‖∑' n : ℤ, η (n / R) * fourier n t‖ ≤ ∫ y, ‖𝓕⁻ η y‖ := by
   -- The symbol `η (· / R)` as a Schwartz function, and its kernel `G`.
@@ -113,10 +107,8 @@ theorem integral_norm_tsum_mul_fourier_le {η : ℝ → ℂ} (hη : ContDiff ℝ
   calc ∫ t : UnitAddCircle, ‖∑' n : ℤ, η (n / R) * fourier n t‖
       ≤ ∫ y, ‖G y‖ := by
         rw [integral_norm_eq_lintegral_eNorm
-          (continuous_tsum_mul_fourier hc hR (T := 1)).aestronglyMeasurable]
+          (hc.continuous_tsum_mul_fourier hR (T := 1)).aestronglyMeasurable]
         exact ENNReal.toReal_le_of_le_ofReal (integral_nonneg fun _ ↦ norm_nonneg _) hlint
     _ = ∫ y, ‖𝓕⁻ η y‖ := by
         rw [hG]
-        exact integral_norm_fourierInv_comp_smul η (inv_ne_zero hR.ne')
-
-end TauCeti
+        exact TauCeti.integral_norm_fourierInv_comp_smul η (inv_ne_zero hR.ne')

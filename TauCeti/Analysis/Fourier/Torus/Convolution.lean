@@ -23,19 +23,19 @@ coefficient,
 
 because `mFourier n (x - t) = mFourier n x * mFourier (-n) t` and the volume is invariant under
 `t ↦ x - t`. So convolution with a trigonometric polynomial `∑ n ∈ s, c n * mFourier n` is the
-Fourier multiplier with the finitely supported symbol `c`. By uniqueness of Fourier coefficients,
-an integrable `g` with `ĝ = c • f̂` on `s` and `ĝ = 0` off `s` is almost everywhere this
-convolution of `f`. This is how kernels of de la Vallée Poussin type reproduce functions whose
+Fourier multiplier whose symbol equals `c` on `s` and zero off `s`. By uniqueness of Fourier
+coefficients, an integrable `g` with `ĝ = c • f̂` on `s` and `ĝ = 0` off `s` is almost everywhere
+this convolution of `f`. This is how kernels of de la Vallée Poussin type reproduce functions whose
 spectrum lies where their symbol equals one.
 
 ## Main declarations
 
 * `UnitAddTorus.convolution_mFourier_apply`: convolution with a monomial.
-* `UnitAddTorus.convolution_sum_mul_mFourier_apply`: convolution with a trigonometric
+* `MeasureTheory.Integrable.convolution_sum_mul_mFourier_apply`: convolution with a trigonometric
   polynomial.
 * `MeasureTheory.Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul`: a function whose Fourier
-  coefficients are those of `f` multiplied by a finitely supported symbol is the convolution of `f`
-  with the trigonometric polynomial of that symbol.
+  coefficients are those of `f` multiplied by `c` on a finite set `s` and vanish off `s` is the
+  convolution of `f` with the trigonometric polynomial `∑ n ∈ s, c n * mFourier n`.
 -/
 
 public section
@@ -48,7 +48,6 @@ namespace UnitAddTorus
 open TauCeti.UnitAddTorus
 
 variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  {f : UnitAddTorus d → E}
 
 /-- **Convolution with a Fourier monomial** picks out one Fourier coefficient:
 `(mFourier n ⋆ f) x = mFourier n x • mFourierCoeff f n`. -/
@@ -60,10 +59,19 @@ theorem convolution_mFourier_apply (n : d → ℤ) (f : UnitAddTorus d → E) (x
   congr 1 with t
   rw [ContinuousLinearMap.lsmul_apply, sub_sub_cancel, smul_smul, mFourier_apply_sub]
 
-/-- **Convolution with a trigonometric polynomial** is the Fourier multiplier with its finitely
-supported coefficients: for integrable `f`,
+end UnitAddTorus
+
+namespace MeasureTheory
+
+open UnitAddTorus TauCeti.UnitAddTorus
+
+variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {f g : UnitAddTorus d → E}
+
+/-- **Convolution with a trigonometric polynomial** is the Fourier multiplier whose symbol is its
+coefficient `c n` at each `n ∈ s` and zero off `s`: for integrable `f`,
 `((∑ n ∈ s, c n * mFourier n) ⋆ f) x = ∑ n ∈ s, c n • mFourier n x • mFourierCoeff f n`. -/
-theorem convolution_sum_mul_mFourier_apply (hf : Integrable f) (s : Finset (d → ℤ))
+theorem Integrable.convolution_sum_mul_mFourier_apply (hf : Integrable f) (s : Finset (d → ℤ))
     (c : (d → ℤ) → ℂ) (x : UnitAddTorus d) :
     ((fun t ↦ ∑ n ∈ s, c n * mFourier n t) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f) x =
       ∑ n ∈ s, c n • mFourier n x • mFourierCoeff f n := by
@@ -74,17 +82,10 @@ theorem convolution_sum_mul_mFourier_apply (hf : Integrable f) (s : Finset (d �
   rw [integral_finsetSum _ fun n _ ↦ hint n]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
   simp_rw [mul_smul]
-  rw [integral_smul, ← convolution_mFourier_apply, convolution_def]
+  rw [MeasureTheory.integral_smul, ← convolution_mFourier_apply, convolution_def]
   simp
 
-end UnitAddTorus
-
-namespace MeasureTheory
-
-open UnitAddTorus TauCeti.UnitAddTorus
-
-variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [CompleteSpace E] {f g : UnitAddTorus d → E}
+variable [CompleteSpace E]
 
 /-- **Fourier multipliers with finitely supported symbols are convolutions.** If `f` and `g` are
 integrable on the torus, the Fourier coefficients of `g` vanish outside a finite set `s` and
@@ -97,7 +98,7 @@ theorem Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul (hg : Integrable g
     g =ᵐ[volume]
       (fun t ↦ ∑ n ∈ s, c n * mFourier n t) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f := by
   filter_upwards [hg.ae_eq_sum_mFourier_smul_mFourierCoeff hgs] with x hx
-  rw [hx, convolution_sum_mul_mFourier_apply hf]
+  rw [hx, hf.convolution_sum_mul_mFourier_apply]
   exact Finset.sum_congr rfl fun n hn ↦ by rw [hfg n hn, smul_comm]
 
 end MeasureTheory

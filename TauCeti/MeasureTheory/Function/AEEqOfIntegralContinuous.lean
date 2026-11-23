@@ -181,15 +181,15 @@ variable {X 𝕜 E : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpa
 /-- **Integrals against a dense family of test functions.** On a compact space, if `f` is
 integrable and `∫ x, φ x • f x ∂μ = 0` for every `φ` in a set `S` of continuous `𝕜`-valued
 functions whose span is uniformly dense, then the same holds for every continuous `φ`: integration
-against `f` is a continuous linear functional on `C(X, 𝕜)` of norm at most `‖f‖₁`, so its kernel is
-a closed subspace containing `S`. -/
+against `f` is an `E`-valued continuous linear map on `C(X, 𝕜)` of norm at most `‖f‖₁`, so its
+kernel is a closed subspace containing `S`. -/
 theorem Integrable.integral_smul_eq_zero_of_span_closure_eq_top (hf : Integrable f μ)
     {S : Set C(X, 𝕜)} (hS : (Submodule.span 𝕜 S).topologicalClosure = ⊤)
     (h : ∀ φ ∈ S, ∫ x, φ x • f x ∂μ = 0) (φ : C(X, 𝕜)) : ∫ x, φ x • f x ∂μ = 0 := by
   have hint (φ : C(X, 𝕜)) : Integrable (fun x ↦ φ x • f x) μ :=
     hf.bdd_smul ‖φ‖ φ.continuous.aestronglyMeasurable_of_compactSpace
       (ae_of_all _ φ.norm_coe_le_norm)
-  -- Integration against `f`, as a continuous linear functional on `C(X, 𝕜)`.
+  -- Integration against `f`, as an `E`-valued continuous linear map on `C(X, 𝕜)`.
   let L : C(X, 𝕜) →ₗ[𝕜] E :=
     { toFun := fun φ ↦ ∫ x, φ x • f x ∂μ
       map_add' := fun φ ψ ↦ by

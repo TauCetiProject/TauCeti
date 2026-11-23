@@ -13,6 +13,7 @@ import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.AddCircle.Periodization
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Convolution
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
@@ -23,13 +24,15 @@ On the torus `𝕋ᵈ = (ℝ / ℤ)^d` with its volume, the product of the Haar 
 the circle factors, let `f` be an integrable function whose Fourier coefficients vanish outside the
 ball `‖n‖ ≤ R`, `R ≥ 1`, for the supremum norm on `d → ℤ`: almost everywhere, a trigonometric
 polynomial of degree at most `R` in each variable. **Bernstein's inequalities** say that there is
-`C`, depending only on `d`, such that for `1 ≤ p ≤ q ≤ ∞`
+`C`, depending only on `d` (the same for every complex Banach space of values), such that for
+`1 ≤ p ≤ q ≤ ∞`
 
 `‖∂_{v 0} ⋯ ∂_{v (k - 1)} f‖_q ≤ C ^ (k + 1) R ^ (k + d (1/p - 1/q)) ∏ l, ‖v l‖ ‖f‖_p`
 
 (`TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul`). The derivative is
-described on the Fourier side: `g` is the derivative of `f` along `v 0, …, v (k - 1)` when
-`ĝ(n) = (∏ l, 2πi ⟪n, v l⟫) f̂(n)`, which
+described on the Fourier side: when `ĝ(n) = (∏ l, 2πi ⟪n, v l⟫) f̂(n)`, the function `g` agrees
+almost everywhere with the derivative along `v 0, …, v (k - 1)` of the trigonometric polynomial
+that represents `f` almost everywhere. This hypothesis is what
 `TauCeti.UnitAddTorus.mFourierCoeff_eq_prod_smul_of_iteratedFDeriv` provides for the derivatives of
 the lift of a smooth function. The case `k = 0` is **Nikol'skii's inequality**
 `‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`, the gain of integrability of a trigonometric polynomial
@@ -52,7 +55,7 @@ on the ball `‖n‖ ≤ R`, so `V_R ⋆ f = f` almost everywhere
 product of the one-dimensional kernels `t ↦ ∑ n, χ (n / R) e_n(t)`. By Poisson summation
 (`SchwartzMap.tsum_eq_tsum_fourier`) each of these is the periodization of the kernel
 `𝓕⁻ (χ (· / R))` on `ℝ`, a dilate of `𝓕⁻ χ`, so its `L¹` norm on the circle is at most
-`∫ ‖𝓕⁻ χ‖`, whatever `R` (`TauCeti.integral_norm_tsum_mul_fourier_le`). Hence `V_R` is
+`∫ ‖𝓕⁻ χ‖`, whatever `R` (`ContDiff.integral_norm_tsum_mul_fourier_le`). Hence `V_R` is
 bounded in `L¹` uniformly in `R`, while `‖V_R‖_∞ ≤ (7 R) ^ d` by counting its frequencies, and the
 logarithmic convexity of `Lʳ` norms (`MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow`)
 gives `‖V_R‖_r ≤ C R ^ (d (1 - 1/r))`. Young's inequality with `1/r + 1/p = 1 + 1/q`
@@ -116,7 +119,7 @@ private theorem tensorKernel_eq_sum [DecidableEq d] {η : d → ℝ → ℂ} {M 
 
 private theorem continuous_tensorKernel {η : d → ℝ → ℂ} (hc : ∀ i, HasCompactSupport (η i))
     {R : ℝ} (hR : 0 < R) : Continuous (tensorKernel η R) :=
-  continuous_finsetProd _ fun i _ ↦ (continuous_tsum_mul_fourier (hc i) hR).comp
+  continuous_finsetProd _ fun i _ ↦ ((hc i).continuous_tsum_mul_fourier hR).comp
     (continuous_apply i)
 
 /-- The `L¹` norm of a tensor-product kernel is at most the product of the `L¹` norms of the
@@ -127,7 +130,7 @@ private theorem integral_norm_tensorKernel_le {η : d → ℝ → ℂ} (hη : �
   simp only [tensorKernel, norm_prod]
   rw [integral_fintype_prod_volume_eq_prod (fun i t ↦ ‖∑' n : ℤ, η i (n / R) * fourier n t‖)]
   exact Finset.prod_le_prod₀ (fun i _ ↦ integral_nonneg fun _ ↦ norm_nonneg _)
-    fun i _ ↦ integral_norm_tsum_mul_fourier_le (hη i) (hc i) hR
+    fun i _ ↦ (hη i).integral_norm_tsum_mul_fourier_le (hc i) hR
 
 end Tensor
 
@@ -394,6 +397,8 @@ open _root_.UnitAddTorus
 
 section Bernstein
 
+universe u
+
 variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [CompleteSpace E]
 
@@ -414,17 +419,19 @@ private theorem ae_eq_convolution_of_mFourierCoeff_eq_smul [DecidableEq d] {R : 
   · rw [hfg, hspec n (not_le.1 hn), smul_zero, smul_zero]
 
 /-- **Nikol'skii's inequality on the torus**, Bernstein's inequality without derivatives: there is
-`C`, depending only on `d`, such that for `1 ≤ p ≤ q ≤ ∞` every integrable `f` on `(ℝ / ℤ)^d` whose
-Fourier coefficients vanish outside the ball `‖n‖ ≤ R`, `R ≥ 1`, satisfies
-`‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`. Here `‖n‖` is the supremum norm of `n : d → ℤ`. -/
+`C`, depending only on `d`, such that for every complex Banach space `E` and `1 ≤ p ≤ q ≤ ∞`, every
+integrable `f : (ℝ / ℤ)^d → E` whose Fourier coefficients vanish outside the ball `‖n‖ ≤ R`,
+`R ≥ 1`, satisfies `‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`. Here `‖n‖` is the supremum norm of
+`n : d → ℤ`. -/
 theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞}, 1 ≤ p → p ≤ q → ∀ {R : ℝ}, 1 ≤ R →
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+      {p q : ℝ≥0∞}, 1 ≤ p → p ≤ q → ∀ {R : ℝ}, 1 ≤ R →
       ∀ {f : UnitAddTorus d → E}, Integrable f → (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
       eLpNorm f q volume ≤ ENNReal.ofReal (C * R ^ ((Fintype.card d : ℝ) *
         (p.toReal⁻¹ - q.toReal⁻¹))) * eLpNorm f p volume := by
   classical
-  refine ⟨max 1 (∫ y, ‖𝓕⁻ cutoff y‖) ^ Fintype.card d * 7 ^ Fintype.card d, by positivity,
-    fun {p q} hp hpq {R} hR {f} hf hspec ↦ ?_⟩
+  refine ⟨max 1 (∫ y, ‖𝓕⁻ cutoff y‖) ^ Fintype.card d * 7 ^ Fintype.card d, by positivity, ?_⟩
+  intro E _ _ _ p q hp hpq R hR f hf hspec
   -- The exponent `r` of Young's inequality, with `1/r + 1/p = 1 + 1/q`.
   set r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
   have hqp : q⁻¹ ≤ p⁻¹ := ENNReal.inv_le_inv.2 hpq
@@ -461,10 +468,12 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero :
 
 /-- **Bernstein's inequality for one derivative at a fixed exponent.** If the Fourier
 coefficients of `f` vanish outside the ball `‖n‖ ≤ R` and those of `g` are
-`2πi ⟪n, v⟫ f̂(n)`, so that `g` is the derivative of `f` along `v`, then
-`‖g‖_p ≤ C R ‖v‖ ‖f‖_p`, with `C` depending only on `d`. -/
+`2πi ⟪n, v⟫ f̂(n)`, so that `g` agrees almost everywhere with the derivative along `v` of the
+trigonometric polynomial representing `f`, then `‖g‖_p ≤ C R ‖v‖ ‖f‖_p`, with `C` depending only
+on `d` and not on the complex Banach space `E` of values. -/
 private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞}, 1 ≤ p → ∀ (v : d → ℝ) {R : ℝ}, 0 < R →
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+      {p : ℝ≥0∞}, 1 ≤ p → ∀ (v : d → ℝ) {R : ℝ}, 0 < R →
       ∀ {f g : UnitAddTorus d → E},
       Integrable f → Integrable g → (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
       (∀ n, mFourierCoeff g n = derivSymbol v n • mFourierCoeff f n) →
@@ -472,7 +481,8 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
   classical
   refine ⟨2 * Real.pi * Fintype.card d *
       max (∫ y, ‖𝓕⁻ cutoff y‖) (∫ y, ‖𝓕⁻ derivCutoff y‖) ^ Fintype.card d,
-    by positivity, fun {p} hp v {R} hR {f g} hf hg hspec hfg ↦ ?_⟩
+    by positivity, ?_⟩
+  intro E _ _ _ p hp v R hR f g hf hg hspec hfg
   have hK : Continuous (derivKernel v R) := by
     unfold derivKernel
     fun_prop
@@ -493,17 +503,19 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
     _ = _ := by rw [one_mul]
 
 /-- **Bernstein's inequality for `k` derivatives at a fixed exponent**, by iterating the case of
-one derivative through the intermediate trigonometric polynomials. -/
+one derivative through the intermediate trigonometric polynomials. The constant `C` depends only on
+`d` and not on the complex Banach space `E` of values. -/
 private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞}, 1 ≤ p → ∀ (k : ℕ) (v : Fin k → d → ℝ) {R : ℝ}, 0 < R →
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+      {p : ℝ≥0∞}, 1 ≤ p → ∀ (k : ℕ) (v : Fin k → d → ℝ) {R : ℝ}, 0 < R →
       ∀ {f g : UnitAddTorus d → E}, Integrable f → Integrable g →
       (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
       (∀ n, mFourierCoeff g n = (∏ l, derivSymbol (v l) n) • mFourierCoeff f n) →
       eLpNorm g p volume ≤ ENNReal.ofReal ((C * R) ^ k * ∏ l, ‖v l‖) * eLpNorm f p volume := by
   classical
-  obtain ⟨C, hC, hderiv⟩ :=
-    exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul (d := d) (E := E)
-  refine ⟨C, hC, fun {p} hp k ↦ ?_⟩
+  obtain ⟨C, hC, hderiv⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul.{u} (d := d)
+  refine ⟨C, hC, ?_⟩
+  intro E _ _ _ p hp k
   induction k with
   | zero =>
     intro v R _ f g hf hg _ hfg
@@ -543,10 +555,11 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul :
           ring
 
 /-- **Bernstein's inequalities on the torus.** There is `C`, depending only on `d`, with the
-following property for all `1 ≤ p ≤ q ≤ ∞`. Let `f` be integrable on `(ℝ / ℤ)^d` with Fourier
-coefficients vanishing outside the ball `‖n‖ ≤ R`, `R ≥ 1`, and let `g` be integrable with Fourier
-coefficients `(∏ l, 2πi ⟪n, v l⟫) f̂(n)`, so that `g` is the derivative of `f` along
-`v 0, …, v (k - 1)`. Then
+following property for every complex Banach space `E` and all `1 ≤ p ≤ q ≤ ∞`. Let
+`f : (ℝ / ℤ)^d → E` be integrable with Fourier coefficients vanishing outside the ball `‖n‖ ≤ R`,
+`R ≥ 1`, and let `g` be integrable with Fourier coefficients `(∏ l, 2πi ⟪n, v l⟫) f̂(n)`, so
+that `g` agrees almost everywhere with the derivative along `v 0, …, v (k - 1)` of the
+trigonometric polynomial representing `f`. Then
 
 `‖g‖_q ≤ C ^ (k + 1) R ^ (k + d (1/p - 1/q)) ∏ l, ‖v l‖ ‖f‖_p`.
 
@@ -554,7 +567,8 @@ Here `‖n‖` and `‖v l‖` are supremum norms. When the lift of `f` to `d �
 on `g` holds for its `k`-th derivative along `v`, by
 `TauCeti.UnitAddTorus.mFourierCoeff_eq_prod_smul_of_iteratedFDeriv`. -/
 theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞}, 1 ≤ p → p ≤ q →
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+      {p q : ℝ≥0∞}, 1 ≤ p → p ≤ q →
       ∀ (k : ℕ) (v : Fin k → d → ℝ) {R : ℝ}, 1 ≤ R →
       ∀ {f g : UnitAddTorus d → E}, Integrable f → Integrable g →
       (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
@@ -563,11 +577,11 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul :
       eLpNorm g q volume ≤ ENNReal.ofReal (C ^ (k + 1) *
         R ^ ((k : ℝ) + Fintype.card d * (p.toReal⁻¹ - q.toReal⁻¹)) * ∏ l, ‖v l‖) *
           eLpNorm f p volume := by
-  obtain ⟨C₀, hC₀, hnik⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_zero (d := d) (E := E)
+  obtain ⟨C₀, hC₀, hnik⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_zero.{u} (d := d)
   obtain ⟨C₁, hC₁, hder⟩ :=
-    exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul (d := d) (E := E)
-  refine ⟨max C₀ C₁, le_max_of_le_left hC₀,
-    fun {p q} hp hpq k v {R} hR {f g} hf hg hspec hfg ↦ ?_⟩
+    exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul.{u} (d := d)
+  refine ⟨max C₀ C₁, le_max_of_le_left hC₀, ?_⟩
+  intro E _ _ _ p q hp hpq k v R hR f g hf hg hspec hfg
   have hR0 : 0 < R := one_pos.trans_le hR
   have hgspec (n : d → ℤ) (hn : R < ‖n‖) : mFourierCoeff g n = 0 := by
     rw [hfg, hspec n hn, smul_zero]
