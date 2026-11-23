@@ -262,13 +262,13 @@ at distance at least `δ` from `f x` on the sphere of radius `r`, the map `f` an
 whose degree is the local index of `f` at `x`, equal to `f + c • (· - x)` on the closed ball, and
 at distance at least `δ - ‖c‖ r` from `f x` outside the open ball. -/
 private theorem exists_isProperMap_localIndex_eq_degree {f : C(E, E)} {x : E} {r δ : ℝ}
-    (hr : 0 < r) (hδ : 0 < δ) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
+    (hr : 0 < r) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
     (hiso : ∀ z ∈ ball x r, f z = f x → z = x) {c : ℂ} (hc : ‖c‖ * r < δ) :
     ∃ G : C(E, E), IsProperMap G ∧ o.localIndex o f x = o.degree o hE G ∧
       EqOn G (fun z ↦ f z + c • (z - x)) (closedBall x r) ∧
       ∀ z, r ≤ dist z x → δ - ‖c‖ * r ≤ ‖G z - f x‖ := by
-  obtain ⟨g, hgp, hgf, hgout, -, hidx⟩ :=
-    o.exists_isProperMap_eqOn_localIndex_eq_degree hE hr hδ hfδ hiso
+  obtain ⟨g, hgp, hgf, hgout, -, hidx⟩ := o.exists_isProperMap_eqOn_localIndex_eq_degree hE hr
+    ((mul_nonneg (norm_nonneg c) hr.le).trans_lt hc) hfδ hiso
   -- The perturbation `t • c • ρ`, with `ρ z = radialRetraction r (z - x)` equal to `z - x` on the
   -- closed ball and of norm at most `r`.
   set ρ : E → E := fun z ↦ radialRetraction r (z - x) with hρ_def
@@ -346,7 +346,7 @@ theorem localIndex_pos_of_analyticAt {f : C(E, E)} {x : E} (hf : AnalyticAt ℂ 
     exact (lt_div_iff₀ hr).1 hεδ
   -- The local index of `f` is the degree of a proper map `G`, equal to `f + ε (· - x)` near `x`,
   -- complex differentiable there with derivative `Df + ε`, which is invertible at `x`.
-  obtain ⟨G, hGp, hidx, hGf, hGout⟩ := o.exists_isProperMap_localIndex_eq_degree hE hr hδ hfδ
+  obtain ⟨G, hGp, hidx, hGf, hGout⟩ := o.exists_isProperMap_localIndex_eq_degree hE hr hfδ
     (fun z hz ↦ hiso' z (ball_subset_closedBall hz)) hεr
   have hGeq {z : E} (hz : z ∈ ball x (R / 2)) :
       (G : E → E) =ᶠ[𝓝 z] fun w ↦ f w + (ε : ℂ) • (w - x) :=
