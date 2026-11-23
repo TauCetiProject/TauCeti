@@ -104,16 +104,6 @@ theorem mgradient_sq_scaledLineMetric (hc : 0 < c) (x : ℝ) :
   -- The tangent space of `ℝ` at `x` is `ℝ`, so the scalar multiplication is multiplication.
   exact (by rw [smul_eq_mul]; push_cast; ring : c⁻¹ • ((2 : ℕ) * x ^ (2 - 1) : ℝ) = 2 / c * x)
 
-/-- For the metric `scaledLineMetric`, the negative gradient of `f(x) = x²` is `-2 x / c`. -/
-private theorem neg_mgradient_sq_scaledLineMetric_apply (hc : 0 < c) (x : ℝ) :
-    let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
-      ⟨(scaledLineMetric hc).toRiemannianMetric⟩
-    (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x = (-(2 / c * x) : ℝ) := by
-  intro _
-  rw [Pi.neg_apply, mgradient_sq_scaledLineMetric]
-  -- Both sides are the real number `-(2 / c * x)`, read in `ℝ` and in its tangent space.
-  rfl
-
 /-- For the metric `scaledLineMetric`, the curve `t ↦ x₀ exp (-2 t / c)` is a trajectory of
 `-grad f`, for `f(x) = x²`, defined for all time: it solves `x' = -2 x / c`. -/
 theorem isMIntegralCurve_neg_mgradient_sq_scaledLineMetric (hc : 0 < c) (x₀ : ℝ) :
@@ -130,7 +120,7 @@ theorem isMIntegralCurve_neg_mgradient_sq_scaledLineMetric (hc : 0 < c) (x₀ : 
   have e : x₀ * (Real.exp (-(2 / c * t)) * -(2 / c)) =
       -(2 / c * (x₀ * Real.exp (-(2 / c * t)))) := by ring
   exact hd.hasDerivWithinAt.congr_deriv
-    (e.trans (neg_mgradient_sq_scaledLineMetric_apply hc _).symm)
+    (e.trans (by rw [Pi.neg_apply, mgradient_sq_scaledLineMetric]).symm)
 
 /-- **The trajectories of `-grad x²` for the metric `c dx²`.** The trajectory of `-grad f`, for
 `f(x) = x²` and the metric `scaledLineMetric`, through `x₀` is `t ↦ x₀ exp (-2 t / c)`. -/

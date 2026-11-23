@@ -263,8 +263,23 @@ section Length
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousConstSMul ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞ω}
+
+omit [FiniteDimensional ℝ E] in
+/-- Multiplying a bundle metric by a positive function `f` multiplies the length of every vector
+at `x` by `√(f x)`. -/
+theorem eNorm_rescale (g : ContMDiffRiemannianMetric I n F V) (f : M → ℝ)
+    (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x) {x : M} (v : V x) :
+    (letI : RiemannianBundle V := ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩; ‖v‖ₑ) =
+    ENNReal.ofReal √(f x) * (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) := by
+  have hg : (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) =
+      ENNReal.ofReal √(g.inner x v v) := by
+    let _ : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
+    rw [← ofReal_norm, norm_eq_sqrt_real_inner, inner_riemannianBundle]
+  let _ : RiemannianBundle V := ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  rw [hg, ← ofReal_norm, ← ENNReal.ofReal_mul (Real.sqrt_nonneg _),
+    ← Real.sqrt_mul (hf_pos x).le, norm_eq_sqrt_real_inner, inner_riemannianBundle, rescale_inner]
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying a bundle metric by a positive constant `c` multiplies the length of every vector
@@ -273,17 +288,8 @@ theorem eNorm_rescale_const (g : ContMDiffRiemannianMetric I n F V) {c : ℝ} (h
     {x : M} (v : V x) :
     (letI : RiemannianBundle V :=
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩; ‖v‖ₑ) =
-    ENNReal.ofReal √c * (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) := by
-  have hg : (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) =
-      ENNReal.ofReal √(g.inner x v v) := by
-    let _ : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
-    rw [← ofReal_norm, norm_eq_sqrt_real_inner, inner_riemannianBundle]
-  let _ : RiemannianBundle V :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-  rw [hg, ← ofReal_norm, ← ENNReal.ofReal_mul (Real.sqrt_nonneg _), ← Real.sqrt_mul hc.le,
-    norm_eq_sqrt_real_inner, inner_riemannianBundle, rescale_inner]
-
-variable [IsManifold I 1 M]
+    ENNReal.ofReal √c * (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) :=
+  eNorm_rescale g _ _ _ v
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying a metric by a positive constant `c` multiplies the length of every path by
