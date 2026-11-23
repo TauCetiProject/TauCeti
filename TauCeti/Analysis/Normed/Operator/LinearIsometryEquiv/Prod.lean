@@ -22,7 +22,7 @@ norms by Mathlib's `ContinuousLinearMap.opNorm_comp_linearIsometryEquiv`.
 * `LinearIsometryEquiv.negFst`: the reflection `(x, y) ↦ (-x, y)` of `E × F`.
 -/
 
-@[expose] public section
+public section
 
 namespace LinearIsometryEquiv
 
@@ -39,5 +39,10 @@ def negFst : E × F ≃ₗᵢ[R] E × F where
 theorem negFst_apply (z : E × F) : negFst R E F z = (-z.1, z.2) := (rfl)
 
 theorem coe_negFst : ⇑(negFst R E F) = Prod.map Neg.neg id := (rfl)
+
+/-- The reflection `negFst` is an involution. -/
+@[simp]
+theorem symm_negFst : (negFst R E F).symm = negFst R E F := by
+  ext z <;> rfl
 
 end LinearIsometryEquiv

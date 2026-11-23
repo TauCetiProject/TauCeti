@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import Mathlib.Topology.Order.MonotoneConvergence
-import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
@@ -425,10 +424,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_atBot_of_floer
   refine ⟨x, hxper, hx, ⟨φ, hφa, hφ, hux⟩, ?_⟩
   -- The loops of `u` at `s_n` are those of the reflected map `(s, t) ↦ u(-s, t)` at `-s_n > -a`,
   -- with the same defects.
-  have hur : ContDiffOn ℝ 1 (fun w ↦ u (-w.1, w.2)) (Ioi (-a) ×ˢ univ) :=
-    (hu.of_le one_le_two).comp (LinearIsometryEquiv.negFst ℝ ℝ ℝ).contDiff.contDiffOn
-      fun w hw ↦ ⟨neg_lt.1 hw.1, mem_univ _⟩
-  have hseq := tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect hH hur hK
+  have hseq := tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect hH
+    (contDiffOn_comp_neg_fst (hu.of_le one_le_two)) hK
     (fun s hs ↦ huK (-s) (neg_lt.1 hs)) (φ := fun n ↦ -φ n) (fun n ↦ neg_lt_neg (hφa n))
     (by simpa using hdef) hx (by simpa using hux.tendsto_at)
   -- The actions increase along the end, so their limit along `s_n` is their limit as `s → -∞`.

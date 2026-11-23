@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
+public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 import Mathlib.Analysis.Asymptotics.Completion
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.MeanValue
@@ -21,7 +22,6 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Strip
-import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -245,14 +245,31 @@ section Reflection
 
 open LinearIsometryEquiv (negFst)
 
+/-- The derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is the derivative of `u` at
+`(-z.1, z.2)` precomposed with the reflection. -/
+theorem fderiv_comp_neg_fst {z : ℝ × ℝ} :
+    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z =
+      (fderiv ℝ u (-z.1, z.2)).comp
+        ((negFst ℝ ℝ ℝ).toContinuousLinearEquiv : ℝ × ℝ →L[ℝ] ℝ × ℝ) := by
+  have h : (fun w ↦ u (-w.1, w.2)) = u ∘ (negFst ℝ ℝ ℝ).toContinuousLinearEquiv := by
+    funext w
+    simp
+  rw [h, ContinuousLinearEquiv.comp_right_fderiv]
+  simp
+
+/-- A map `C^n` on the half-cylinder `(-∞, a) × T` reflects to a map `C^n` on
+`(-a, ∞) × T`. -/
+theorem contDiffOn_comp_neg_fst {n : WithTop ℕ∞} {T : Set ℝ} (hu : ContDiffOn ℝ n u (Iio a ×ˢ T)) :
+    ContDiffOn ℝ n (fun w ↦ u (-w.1, w.2)) (Ioi (-a) ×ˢ T) :=
+  hu.comp ((negFst ℝ ℝ ℝ).contDiff.contDiffOn.congr fun w _ ↦
+    (LinearIsometryEquiv.negFst_apply ℝ ℝ ℝ w).symm) fun _ hw ↦ ⟨neg_lt.1 hw.1, hw.2⟩
+
 /-- Reflecting the `s`-coordinate does not change the `t`-slices: the defect of
 `(s, t) ↦ u(-s, t)` at `z` is the defect of `u` at `(-z.1, z.2)`. -/
 @[simp]
 theorem sliceDefect_comp_neg_fst {z : ℝ × ℝ} :
     sliceDefect X (fun w ↦ u (-w.1, w.2)) z = sliceDefect X u (-z.1, z.2) := by
-  change sliceDefect X (u ∘ (negFst ℝ ℝ ℝ).toContinuousLinearEquiv) z = _
-  rw [sliceDefect_def, ContinuousLinearEquiv.comp_right_fderiv]
-  simp [sliceDefect_def]
+  simp [sliceDefect_def, fderiv_comp_neg_fst]
 
 /-- **The defect at the negative end.** Reflecting the `s`-coordinate turns the half-cylinder
 `(-∞, a) × [0, 1]` into `(-a, ∞) × [0, 1]` and preserves the squared defect integral, so the
@@ -927,10 +944,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_Iio_ne_top
       ∃ φ : ℕ → ℝ, (∀ n, φ n < a) ∧ Tendsto φ atTop atBot ∧
         TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop ∧
         Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ ^ 2) atTop (𝓝 0) := by
-  have hur : ContDiffOn ℝ 1 (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) :=
-    hu.comp (negFst ℝ ℝ ℝ).contDiff.contDiffOn fun z hz ↦ ⟨neg_lt.1 hz.1, trivial⟩
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, hdef⟩ :=
-    exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top hur
+    exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top (contDiffOn_comp_neg_fst hu)
       (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
       (by rwa [setLIntegral_norm_sq_sliceDefect_comp_neg_fst])
   refine ⟨x, hxper, hx, fun n ↦ -φ n, fun n ↦ neg_lt.2 (hφa n),
@@ -958,14 +973,11 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atBot {K : Set V} {C : ℝ}
   -- The reflection is an isometry of `ℝ × ℝ`, so it preserves the bound on the derivative.
   have hC' : ∀ z ∈ Ioi (-a) ×ˢ univ, ‖fderiv ℝ (fun z ↦ u (-z.1, z.2)) z‖ ≤ C := by
     intro z hz
-    change ‖fderiv ℝ (u ∘ (negFst ℝ ℝ ℝ).toContinuousLinearEquiv) z‖ ≤ C
-    rw [ContinuousLinearEquiv.comp_right_fderiv]
+    rw [fderiv_comp_neg_fst]
     exact (ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ (negFst ℝ ℝ ℝ)).trans_le
       (hC _ ⟨neg_lt.1 hz.1, trivial⟩)
-  have hur : ContDiffOn ℝ 1 (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) :=
-    hu.comp (negFst ℝ ℝ ℝ).contDiff.contDiffOn fun z hz ↦ ⟨neg_lt.1 hz.1, trivial⟩
   obtain ⟨x, hxper, hx, hux⟩ :=
-    exists_periodic_hasDerivAt_tendstoUniformly_atTop hur
+    exists_periodic_hasDerivAt_tendstoUniformly_atTop (contDiffOn_comp_neg_fst hu)
       (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
       (by rwa [setLIntegral_norm_sq_sliceDefect_comp_neg_fst]) hC' hiso
   refine ⟨x, hxper, hx, Metric.tendstoUniformly_iff.2 fun ε hε ↦ ?_⟩
