@@ -18,6 +18,8 @@ finite covers.
 
 ## Main results
 
+* `Metric.externalCoveringNumber_ne_top_iff`: finiteness of the external covering number
+  is equivalent to existence of a finite cover.
 * `TauCeti.packingNumber_le_of_forall_finset_card_le`: a finite bound on the sizes of the finite
   `ε`-separated subsets of a set bounds its packing number.
 * `Metric.IsSeparated.pairwiseDisjoint_closedBall`: the closed balls of radius `ε / 2` around
@@ -85,6 +87,18 @@ theorem externalCoveringNumber_le_natCast_iff {X : Type*} [PseudoEMetricSpace X]
     rwa [← Nat.cast_le (α := ℕ∞), ← hfin.encard_eq_coe_toFinset_card]
   · rintro ⟨N, hcard, hcov⟩
     exact hcov.externalCoveringNumber_le_encard.trans (by simpa using hcard)
+
+/-- The external covering number is finite exactly when a finite cover exists. -/
+theorem externalCoveringNumber_ne_top_iff {X : Type*} [PseudoEMetricSpace X]
+    {s : Set X} {r : ℝ≥0} :
+    externalCoveringNumber r s ≠ ⊤ ↔ ∃ N : Set X, N.Finite ∧ IsCover r s N := by
+  constructor
+  · intro h
+    obtain ⟨k, hk⟩ := ENat.ne_top_iff_exists.mp h
+    obtain ⟨N, _, hN⟩ := externalCoveringNumber_le_natCast_iff.mp hk.ge
+    exact ⟨N, N.finite_toSet, hN⟩
+  · rintro ⟨N, hN, hc⟩
+    exact ne_top_of_le_ne_top (encard_ne_top_iff.mpr hN) hc.externalCoveringNumber_le_encard
 
 /-- If `A` contains a finite subset `s` of points at mutual distance at least `δ` and the external
 covering number of `A` at radius `ε` is strictly less than `s.card`, then `δ / 2 ≤ ε`. -/
