@@ -74,7 +74,8 @@ private theorem exists_conj_mem_torus_of_isDiag_star_left_conjugate (g : SU2)
         * (u : Matrix (Fin 2) (Fin 2) ℂ) := by
     rw [inv_inv, Submonoid.coe_mul, Submonoid.coe_mul, ← Matrix.star_eq_inv,
       Matrix.specialUnitaryGroup.coe_star]
-  have hcmul : (c : ℂ) * star (c : ℂ) = 1 := Circle.coe_mul_conj c
+  have hcmul : (c : ℂ) * star (c : ℂ) = 1 := by
+    rw [Complex.star_def]; exact Circle.coe_mul_conj c
   rw [hcoe, hu]
   simp only [star_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul, hcmul, one_smul]
   exact hdiagG
