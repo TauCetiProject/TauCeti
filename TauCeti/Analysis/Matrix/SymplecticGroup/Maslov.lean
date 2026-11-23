@@ -53,7 +53,8 @@ factors, on which `ρ` is the multiplicative determinant, without changing the d
 
 The Maslov index of loops of symplectic matrices measures the change of symplectic
 trivialization along a loop. It enters the loop law of the Conley--Zehnder index of symplectic
-paths, `CZ(Φ Ψ) = CZ(Ψ) + 2 μ(Φ)` for a loop `Φ`, and the definition of the relative first Chern
+paths, `CZ(Φ Ψ) = CZ(Ψ) - 2 μ(Φ)` for a loop `Φ` based at the identity
+(`TauCeti.GLSymplectic.conleyZehnderIndex_mul`), and the definition of the relative first Chern
 number of a symplectic bundle over a surface by clutching.
 
 ## Main definitions
@@ -261,7 +262,7 @@ theorem maslovIndex_scalarRotationLoop :
     (by fun_prop) (fun t ↦ ?_) (by simp only [Set.Icc.coe_one, Set.Icc.coe_zero]; push_cast; ring)
   apply Circle.ext
   simp only [Path.map_coe, Function.comp_apply, coe_detCircle, coe_scalarRotationLoop_apply,
-    det_smul, det_one, mul_one, Circle.coe_exp, ← Complex.exp_nat_mul]
+    det_smul, det_one, mul_one, Circle.coe_exp, ← Complex.exp_natCast_mul]
   push_cast
   ring_nf
 

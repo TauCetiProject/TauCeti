@@ -69,11 +69,11 @@ theorem mem_addCircleCoe {φ : 𝕜 ≃ₜ 𝕜} :
 `(↑) : 𝕜 → AddCircle p`. -/
 @[expose] def addRightZMultiples (a : zmultiples p) : deck ((↑) : 𝕜 → AddCircle p) :=
   ⟨Homeomorph.addRight (a : 𝕜), mem_addCircleCoe.2 fun e => by
-    simpa only [Homeomorph.coe_addRight, add_sub_cancel_left] using a.2⟩
+    simpa only [Homeomorph.coe_addRight, add_sub_cancel_left] using a.property⟩
 
 @[simp]
 theorem addRightZMultiples_apply (a : zmultiples p) (e : 𝕜) :
-    (addRightZMultiples a).1 e = e + (a : 𝕜) :=
+    (addRightZMultiples a).val e = e + (a : 𝕜) :=
   rfl
 
 @[simp]
@@ -94,7 +94,7 @@ theorem addRightZMultiples_add (a b : zmultiples p) :
 theorem addRightZMultiples_injective :
     Function.Injective (addRightZMultiples : zmultiples p → deck ((↑) : 𝕜 → AddCircle p)) := by
   intro _ _ h
-  have := congrArg (fun φ : deck ((↑) : 𝕜 → AddCircle p) => φ.1 0) h
+  have := congrArg (fun φ : deck ((↑) : 𝕜 → AddCircle p) => φ.val 0) h
   simpa using this
 
 /-- The projection `(↑) : 𝕜 → AddCircle p` has regular deck action: it is surjective and its
@@ -112,13 +112,13 @@ theorem isRegular_addCircleCoe : IsRegular ((↑) : 𝕜 → AddCircle p) := by
 `(↑) : 𝕜 → AddCircle p` is right translation by `φ 0`. -/
 theorem _root_.deck.addCircleCoe_eq_add_apply_zero [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] (φ : deck ((↑) : 𝕜 → AddCircle p)) (e : 𝕜) :
-    φ.1 e = e + φ.1 0 := by
-  have hmem : ∀ x, φ.1 x - x ∈ zmultiples p := mem_addCircleCoe.1 φ.2
-  have hcont : Continuous fun x => φ.1 x - x := φ.1.continuous.sub continuous_id
+    φ.val e = e + φ.val 0 := by
+  have hmem : ∀ x, φ.val x - x ∈ zmultiples p := mem_addCircleCoe.1 φ.property
+  have hcont : Continuous fun x => φ.val x - x := φ.val.continuous.sub continuous_id
   have key :
-      (⟨φ.1 e - e, hmem e⟩ : zmultiples p) = ⟨φ.1 0 - 0, hmem 0⟩ :=
+      (⟨φ.val e - e, hmem e⟩ : zmultiples p) = ⟨φ.val 0 - 0, hmem 0⟩ :=
     TotallyDisconnectedSpace.eq_of_continuous _ (hcont.subtype_mk hmem) e 0
-  have h : φ.1 e - e = φ.1 0 - 0 := congrArg Subtype.val key
+  have h : φ.val e - e = φ.val 0 - 0 := congrArg Subtype.val key
   rw [sub_zero, sub_eq_iff_eq_add] at h
   rw [h, add_comm]
 
@@ -143,7 +143,7 @@ totally disconnected period subgroup is the group of translations by the period 
   MulEquiv.ofBijective addRightZMultiplesHom <| by
     refine ⟨fun a b h => ?_, fun φ => ?_⟩
     · exact Multiplicative.toAdd.injective (addRightZMultiples_injective h)
-    · refine ⟨Multiplicative.ofAdd ⟨φ.1 0, by simpa using mem_addCircleCoe.1 φ.2 0⟩, ?_⟩
+    · refine ⟨Multiplicative.ofAdd ⟨φ.val 0, by simpa using mem_addCircleCoe.1 φ.property 0⟩, ?_⟩
       apply Subtype.ext
       ext e
       rw [addRightZMultiplesHom_apply]
@@ -158,13 +158,13 @@ theorem addCircleMulEquiv_apply [PreconnectedSpace 𝕜] [TotallyDisconnectedSpa
 @[simp]
 theorem _root_.deck.addCircleMulEquiv_symm_apply_coe [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] (φ : deck ((↑) : 𝕜 → AddCircle p)) :
-    ((addCircleMulEquiv.symm φ).toAdd : 𝕜) = φ.1 0 := by
+    ((addCircleMulEquiv.symm φ).toAdd : 𝕜) = φ.val 0 := by
   calc
     ((addCircleMulEquiv.symm φ).toAdd : 𝕜) =
-        (addRightZMultiples (addCircleMulEquiv.symm φ).toAdd).1 0 := by simp
-    _ = (addCircleMulEquiv (addCircleMulEquiv.symm φ)).1 0 := by
+        (addRightZMultiples (addCircleMulEquiv.symm φ).toAdd).val 0 := by simp
+    _ = (addCircleMulEquiv (addCircleMulEquiv.symm φ)).val 0 := by
         rw [addCircleMulEquiv_apply]
-    _ = φ.1 0 := by rw [MulEquiv.apply_symm_apply]
+    _ = φ.val 0 := by rw [MulEquiv.apply_symm_apply]
 
 /-- For a non-torsion period, the deck transformation group of the quotient map
 `(↑) : 𝕜 → AddCircle p` on a preconnected domain with totally disconnected period subgroup is
@@ -178,15 +178,16 @@ noncomputable def addCircleMulEquivInt [PreconnectedSpace 𝕜]
 @[simp]
 theorem addCircleMulEquivInt_apply [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] (hp : ¬ IsOfFinAddOrder p) (a : Multiplicative ℤ)
-    (e : 𝕜) : (addCircleMulEquivInt hp a).1 e = e + a.toAdd • p := by
+    (e : 𝕜) : (addCircleMulEquivInt hp a).val e = e + a.toAdd • p := by
   simp [addCircleMulEquivInt]
 
 theorem addCircleMulEquivInt_symm_zsmul_apply_zero [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] (hp : ¬ IsOfFinAddOrder p)
-    (φ : deck ((↑) : 𝕜 → AddCircle p)) : ((addCircleMulEquivInt hp).symm φ).toAdd • p = φ.1 0 := by
+    (φ : deck ((↑) : 𝕜 → AddCircle p)) : ((addCircleMulEquivInt hp).symm φ).toAdd • p = φ.val 0
+        := by
   have happly :=
     addCircleMulEquivInt_apply hp ((addCircleMulEquivInt hp).symm φ) (0 : 𝕜)
-  have hzero := congrArg (fun ψ : deck ((↑) : 𝕜 → AddCircle p) => ψ.1 0)
+  have hzero := congrArg (fun ψ : deck ((↑) : 𝕜 → AddCircle p) => ψ.val 0)
     (MulEquiv.apply_symm_apply (addCircleMulEquivInt hp) φ)
   exact (by simpa using happly.symm.trans hzero)
 

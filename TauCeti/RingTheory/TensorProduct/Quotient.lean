@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.TensorProduct.Quotient
+public import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Tensor products of quotient algebras
@@ -24,6 +25,10 @@ tensor products involving quotient algebras:
   `A = R ⧸ I` and `J ≤ I.map (algebraMap R T)`), its extended ideal in `A ⊗[R] T` is `⊥`, so
   `Algebra.TensorProduct.tensorQuotientEquiv` collapses to an equivalence `A ⊗[R] (T ⧸ J) ≃ₐ[S]
   A ⊗[R] T`.
+* **Quotients of multivariate polynomials** (`MvPolynomial.quotientTensorQuotientEquivSum`):
+  transporting the double-quotient comparison along `MvPolynomial.tensorEquivSum`, the tensor
+  product of quotients of `R[X_σ]` and `R[X_ι]` is the quotient of `R[X_(σ ⊕ ι)]` by the images of
+  the two ideals under `rename Sum.inl` and `rename Sum.inr`.
 -/
 
 public section
@@ -150,3 +155,72 @@ theorem tensorQuotientEquivOfLeMap_symm_tmul (I : Ideal R) {J : Ideal T}
 end Map
 
 end Algebra.TensorProduct
+
+namespace MvPolynomial
+
+section QuotientSum
+
+variable {R σ ι : Type*} [CommRing R]
+
+/-- The tensor product of quotients of `R[X_σ]` and `R[X_ι]` is the quotient of `R[X_(σ ⊕ ι)]` by
+the images of the two ideals under `rename Sum.inl` and `rename Sum.inr`. The equivalence sends
+`[p] ⊗ [q]` to the class of `rename Sum.inl p * rename Sum.inr q`. -/
+noncomputable def quotientTensorQuotientEquivSum (I : Ideal (MvPolynomial σ R))
+    (J : Ideal (MvPolynomial ι R)) :
+    (MvPolynomial σ R ⧸ I) ⊗[R] (MvPolynomial ι R ⧸ J) ≃ₐ[R]
+      MvPolynomial (σ ⊕ ι) R ⧸ (I.map (rename Sum.inl) ⊔ J.map (rename Sum.inr)) :=
+  (Algebra.TensorProduct.quotientTensorQuotientEquiv I J).trans
+    (Ideal.quotientEquivAlg _ _ (tensorEquivSum R σ ι R) (by
+      rw [Ideal.map_sup, ← AlgEquiv.toAlgHom_toRingHom, Ideal.map_coe, Ideal.map_coe,
+        Ideal.map_mapₐ, Ideal.map_mapₐ]
+      congr 2 <;> ext p <;> simp))
+
+/-- `quotientTensorQuotientEquivSum` sends `[p] ⊗ [q]` to the class of
+`rename Sum.inl p * rename Sum.inr q`. -/
+@[simp]
+theorem quotientTensorQuotientEquivSum_tmul (I : Ideal (MvPolynomial σ R))
+    (J : Ideal (MvPolynomial ι R)) (p : MvPolynomial σ R) (q : MvPolynomial ι R) :
+    quotientTensorQuotientEquivSum I J (Ideal.Quotient.mk I p ⊗ₜ Ideal.Quotient.mk J q) =
+      Ideal.Quotient.mk _ (rename Sum.inl p * rename Sum.inr q) := by
+  rw [quotientTensorQuotientEquivSum, AlgEquiv.trans_apply,
+    Algebra.TensorProduct.quotientTensorQuotientEquiv_tmul, Ideal.quotientEquivAlg_mk,
+    ← mul_one p, ← one_mul q, ← Algebra.TensorProduct.tmul_mul_tmul, map_mul, mul_one, one_mul,
+    tensorEquivSum_tmul_one, tensorEquivSum_one_tmul, Algebra.algebraMap_self, map_id]
+
+/-- `quotientTensorQuotientEquivSum` sends `[p] ⊗ 1` to the class of `rename Sum.inl p`. -/
+@[simp]
+theorem quotientTensorQuotientEquivSum_tmul_one (I : Ideal (MvPolynomial σ R))
+    (J : Ideal (MvPolynomial ι R)) (p : MvPolynomial σ R) :
+    quotientTensorQuotientEquivSum I J (Ideal.Quotient.mk I p ⊗ₜ 1) =
+      Ideal.Quotient.mk _ (rename Sum.inl p) := by
+  simpa only [map_one, mul_one] using quotientTensorQuotientEquivSum_tmul I J p 1
+
+/-- `quotientTensorQuotientEquivSum` sends `1 ⊗ [q]` to the class of `rename Sum.inr q`. -/
+@[simp]
+theorem quotientTensorQuotientEquivSum_one_tmul (I : Ideal (MvPolynomial σ R))
+    (J : Ideal (MvPolynomial ι R)) (q : MvPolynomial ι R) :
+    quotientTensorQuotientEquivSum I J (1 ⊗ₜ Ideal.Quotient.mk J q) =
+      Ideal.Quotient.mk _ (rename Sum.inr q) := by
+  simpa only [map_one, one_mul] using quotientTensorQuotientEquivSum_tmul I J 1 q
+
+/-- The inverse of `quotientTensorQuotientEquivSum` sends the class of `rename Sum.inl p` to
+`[p] ⊗ 1`. -/
+@[simp]
+theorem quotientTensorQuotientEquivSum_symm_mk_rename_inl (I : Ideal (MvPolynomial σ R))
+    (J : Ideal (MvPolynomial ι R)) (p : MvPolynomial σ R) :
+    (quotientTensorQuotientEquivSum I J).symm (Ideal.Quotient.mk _ (rename Sum.inl p)) =
+      Ideal.Quotient.mk I p ⊗ₜ 1 := by
+  rw [AlgEquiv.symm_apply_eq, quotientTensorQuotientEquivSum_tmul_one]
+
+/-- The inverse of `quotientTensorQuotientEquivSum` sends the class of `rename Sum.inr q` to
+`1 ⊗ [q]`. -/
+@[simp]
+theorem quotientTensorQuotientEquivSum_symm_mk_rename_inr (I : Ideal (MvPolynomial σ R))
+    (J : Ideal (MvPolynomial ι R)) (q : MvPolynomial ι R) :
+    (quotientTensorQuotientEquivSum I J).symm (Ideal.Quotient.mk _ (rename Sum.inr q)) =
+      1 ⊗ₜ Ideal.Quotient.mk J q := by
+  rw [AlgEquiv.symm_apply_eq, quotientTensorQuotientEquivSum_one_tmul]
+
+end QuotientSum
+
+end MvPolynomial

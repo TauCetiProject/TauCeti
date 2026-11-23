@@ -254,7 +254,7 @@ theorem constantTermsOnEisensteinSubspace_injective (hk : 3 ≤ (k : ℤ)) :
     exact hfg
   rw [← range_cuspToModFormCharSpace_eq_ker_constantTerms] at hker
   have hfE : (f : modFormCharSpace (k : ℤ) χ) - g ∈ eisensteinSubspace χ hk :=
-    Submodule.sub_mem _ f.2 g.2
+    Submodule.sub_mem _ f.property g.property
   exact sub_eq_zero.mp ((Submodule.disjoint_def.mp
     (disjoint_eisensteinSubspace_range_cuspToModFormCharSpace χ hk)) _ hfE hker)
 
