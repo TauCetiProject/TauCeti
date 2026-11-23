@@ -194,7 +194,7 @@ over it. -/
 theorem finrank_rat_maximalRealSubfield (hn : 2 < n) :
     Module.finrank ℚ (maximalRealSubfield K) = n.totient / 2 := by
   have h := Module.finrank_mul_finrank ℚ (maximalRealSubfield K) K
-  rw [finrank_maximalRealSubfield n K, if_pos hn,
+  rw [finrank_maximalRealSubfield n K, ite_eq_left hn,
     _root_.IsCyclotomicExtension.finrank K (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))]
     at h
   omega
