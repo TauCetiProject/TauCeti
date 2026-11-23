@@ -134,8 +134,9 @@ theorem sliceAverageL_sliceAverageL (x : H1 V) :
   Subtype.ext (by simp)
 
 /-- The slice average on `H1` does not increase the norm. -/
-theorem norm_sliceAverageL_le (x : H1 V) : ‖sliceAverageL x‖ ≤ ‖x‖ :=
-  norm_sliceAverageLp_le (x : Lp (V × V × V) 2 stripMeasure)
+theorem norm_sliceAverageL_le (x : H1 V) : ‖sliceAverageL x‖ ≤ ‖x‖ := by
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe x, coe_sliceAverageL]
+  exact norm_sliceAverageLp_le _
 
 /-- The slice average on `H1` maps the jet of a test section to the jet of its slice average. -/
 theorem sliceAverageL_jetLp (ξ : testSection V) :

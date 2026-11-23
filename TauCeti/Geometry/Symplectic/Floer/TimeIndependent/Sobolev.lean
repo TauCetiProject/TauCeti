@@ -79,20 +79,6 @@ section Coefficients
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ} {γ : ℝ → V}
 
-/-- **The coefficients of the linearized operator for a constant almost complex structure.** For a
-constant `J`, the perturbation `K = H dt` of an autonomous Hamiltonian and any map `u`, the
-coefficient field of the linearized Floer operator on jets is that of `∂s + J ∂t - J dX_H(u)`. -/
-theorem floerJetCoeff_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (H : V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H) u z =
-      firstOrderJetCoeff J.toLinearMap.toContinuousLinearMap
-        (-(J.toLinearMap.toContinuousLinearMap.comp
-          (fderiv ℝ (ω.hamiltonianVectorField H) (u z)))) := by
-  rw [floerJetCoeff_def]
-  congr 1
-  ext v
-  simp [floerLinearizationCoeff_apply, hamiltonianVectorField_const]
-
 /-- Along a time-independent cylinder `(s, t) ↦ γ(s)` the coefficient field of the linearized
 operator does not depend on `t`. -/
 theorem floerJetCoeff_const_comp_fst_mk (ω : SymplecticForm V) (J : AlmostComplexStructure V)
@@ -236,11 +222,8 @@ theorem mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator
     have hint : IntervalIntegrable (fun t ↦ (ξ : ℝ × ℝ → V) (s, t)) volume 0 1 :=
       ((mem_testSection_iff.1 ξ.property).1.continuous.comp (.prodMk_right s)).intervalIntegrable
         0 1
-    have hfun : (fun t ↦ (η : ℝ × ℝ → V) (s, t)) =
-        fun t ↦ (ξ : ℝ × ℝ → V) (s, t) - sliceAverage ξ (s, 0) :=
-      funext fun t ↦ by simp [η, sliceAverage_mk _ s t]
-    rw [hfun, intervalIntegral.integral_sub hint intervalIntegrable_const,
-      intervalIntegral.integral_const, sub_zero, one_smul, sliceAverage_apply, sub_self]
+    rw [← sliceAverage_sub_sliceAverage (z := (s, 0)) hint, sliceAverage_apply]
+    simp [η]
   simp only [hx]
   rw [← Submodule.norm_coe]
   exact mul_sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero hg hH hγ ha haγ η hmean

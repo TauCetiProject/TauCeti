@@ -82,6 +82,16 @@ theorem sliceAverage_sliceAverage [CompleteSpace E] (f : ℝ × ℝ → E) :
   simp only [sliceAverage_apply]
   rw [intervalIntegral.integral_const, sub_zero, one_smul]
 
+/-- Removing the slice average leaves a section with mean zero on each slice whose restriction of
+`f` is interval integrable: the nonzero-mode part `f - sliceAverage f` has vanishing slice
+average. -/
+theorem sliceAverage_sub_sliceAverage [CompleteSpace E] {z : ℝ × ℝ}
+    (hf : IntervalIntegrable (fun t ↦ f (z.1, t)) volume 0 1) :
+    sliceAverage (f - sliceAverage f) z = 0 := by
+  simp only [sliceAverage_apply, Pi.sub_apply]
+  rw [intervalIntegral.integral_sub hf intervalIntegrable_const, intervalIntegral.integral_const,
+    sub_zero, one_smul, sub_self]
+
 /-- **Jensen's inequality on a slice.** The squared norm of the slice average is at most the
 integral of the squared norm over the slice. -/
 private theorem enorm_sliceAverage_rpow_le {s : ℝ}
