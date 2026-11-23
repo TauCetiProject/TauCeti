@@ -1057,6 +1057,21 @@ theorem criticalCount_projectiveMomentFunction_complex {w : Fin (n + 1) → ℝ}
     rw [Complex.finrank_real_complex] at hjm
     exact ⟨⟨j, by lia⟩, by lia⟩
 
+/-- **The Morse indices on `ℂℙⁿ` are lacunary.** For pairwise distinct weights, no two critical
+points of the moment function on complex projective space have Morse indices differing by one:
+the indices are all even. -/
+theorem manifoldMorseIndex_projectiveMomentFunction_complex_ne_add_one {w : Fin (n + 1) → ℝ}
+    (hw : Injective w) :
+    ∀ x ∈ criticalPoints 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w),
+      ∀ y ∈ criticalPoints 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w),
+        manifoldMorseIndex 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w) x ≠
+          manifoldMorseIndex 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w) y + 1 := by
+  rw [criticalPoints_projectiveMomentFunction hw]
+  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
+  rw [manifoldMorseIndex_projectiveMomentFunction, manifoldMorseIndex_projectiveMomentFunction,
+    Complex.finrank_real_complex]
+  omega
+
 /-- For pairwise distinct weights, at most one critical point of the moment function on `ℝℙⁿ` has
 a given index. -/
 theorem subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real

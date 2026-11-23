@@ -27,7 +27,8 @@ this cell count is compared with the standard CW structure in
 `TauCeti.exists_cwComplex_homotopyEquiv_projectivization_complex`.
 
 On `ℂℙⁿ` the critical points have the even indices `0, 2, …, 2n`, so no two of them have indices
-differing by one, and the lacunary principle for Morse functions
+differing by one (`TauCeti.manifoldMorseIndex_projectiveMomentFunction_complex_ne_add_one`), and
+the lacunary principle for Morse functions
 (`TauCeti.IsMorse.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one`) makes the singular
 homology free on the critical points: with coefficients `R` in any abelian category with
 coproducts, for instance `R = ℤ`, `Hₘ(ℂℙⁿ; R)` is the coproduct of one copy of `R` for each `k ≤ n`
@@ -106,19 +107,10 @@ theorem nonempty_singularHomology_projectivization_complex_iso_sigma (m : ℕ) :
     Nonempty (((AlgebraicTopology.singularHomologyFunctor A m).obj R).obj
         (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) ≅
       ∐ fun _ : {k : Fin (n + 1) // 2 * k = m} ↦ R) := by
-  -- All critical points have even index, so no two indices differ by one.
-  have heven : ∀ x ∈ criticalPoints 𝓘(ℝ, Fin n → ℂ)
-      (projectiveMomentFunction ℂ fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)),
-      Even (manifoldMorseIndex 𝓘(ℝ, Fin n → ℂ)
-        (projectiveMomentFunction ℂ fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) x) := fun x hx ↦ by
-    obtain ⟨k, hk⟩ := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n _).symm ⟨x, hx, rfl⟩
-    rw [Complex.finrank_real_complex] at hk
-    exact ⟨k, by omega⟩
   obtain ⟨e⟩ := (isMorse_projectiveMomentFunction_natCast (𝕜 := ℂ) (n := n))
-    |>.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one (fun x hx y hy ↦ by
-      obtain ⟨k, hk⟩ := heven x hx
-      obtain ⟨l, hl⟩ := heven y hy
-      omega) R m
+    |>.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one
+      (manifoldMorseIndex_projectiveMomentFunction_complex_ne_add_one
+        (Nat.cast_injective.comp Fin.val_injective)) R m
   let c := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n m).symm.trans
     (Equiv.subtypeEquivRight fun k ↦ by rw [Complex.finrank_real_complex])
   exact ⟨e ≪≫ Sigma.whiskerEquiv c fun _ ↦ Iso.refl R⟩
