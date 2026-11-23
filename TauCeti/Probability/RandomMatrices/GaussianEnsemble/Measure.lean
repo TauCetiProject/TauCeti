@@ -546,7 +546,7 @@ theorem identDistrib_conj_gaussianEnsemble_one {Ω : Type*} [MeasurableSpace Ω]
   have hlaw : HasLaw (fun ω ↦ gaussianEnsemble 1 n (fun ij ↦ g ij ω))
       ((gaussianEnsembleLaw 1 n).map (Real.sqrt v • ·)) P := by
     have hsmul : castSym n ∘ (Real.sqrt v • ·) = (Real.sqrt v • ·) ∘ castSym n :=
-      funext fun A ↦ Matrix.ext fun i j ↦ by simp [castSym, Complex.real_smul]
+      funext fun A ↦ Matrix.map_smul Complex.ofReal _ (Complex.ofRealCLM.map_smul _) A.val
     have h := (hasLaw_map (measurable_castSym n).aemeasurable).fun_comp
       (hasLaw_goeMatrix_of_upperTriangle_smul g hindep hg)
     simp_rw [map_ofReal_coe_goeMatrix] at h
@@ -574,9 +574,10 @@ theorem identDistrib_conj_gaussianEnsemble_of_ne_one {Ω : Type*} [MeasurableSpa
       (fun ω ↦ gaussianEnsemble β n (fun ij ↦ g ij ω)) P P := by
   have hlaw : HasLaw (fun ω ↦ gaussianEnsemble β n (fun ij ↦ g ij ω))
       ((gaussianEnsembleLaw 2 n).map (Real.sqrt v • ·)) P := by
-    convert hasLaw_gaussianEnsemble β hg hindep using 2
-    rw [gaussianEnsembleLaw_def, Measure.map_map (by fun_prop) (by fun_prop)]
-    congr 1; funext x; simp [gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one hβ]
+    rw [gaussianEnsembleLaw_def,
+      Measure.map_map (measurable_const_smul _) measurable_gaussianEnsemble]
+    simp_rw [gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one hβ]
+    exact hasLaw_gaussianEnsemble 2 hg hindep
   exact identDistrib_mul_mul_of_map_eq _ _
     (map_mul_mul_conjTranspose_gaussianEnsembleLaw_two U) hlaw
 
