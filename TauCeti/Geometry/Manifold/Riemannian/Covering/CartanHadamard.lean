@@ -21,6 +21,7 @@ import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
 import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 import TauCeti.AlgebraicTopology.UniversalCover.Covering
 import TauCeti.Geometry.Manifold.Topology
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Extension
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
 import TauCeti.Geometry.Manifold.Riemannian.Covering.Criterion
@@ -48,7 +49,8 @@ When `M` is moreover simply connected, a covering map from the connected space `
 injective, so `exp_p` is a diffeomorphism `T_p M ≃ M`, and `M` is contractible. Any two points
 `p, q` are then joined by a unique geodesic on `[0, 1]`: a geodesic `γ` from `p` is the radial
 geodesic `t ↦ exp_p (t • v)` for its initial velocity `v`, and `exp_p v = q` determines `v`. Since
-some geodesic from `p` to `q` is minimizing, this unique one is, as are all its subsegments.
+some geodesic from `p` to `q` is minimizing, this unique one is. Every segment of any geodesic is
+then minimizing, after an affine reparametrization to `[0, 1]`.
 
 Without simple connectivity, the covering `exp_p : T_p M → M` has simply connected, indeed
 contractible, total space. So it is the universal covering: the universal cover of `M` based at `p`
@@ -74,7 +76,7 @@ aspherical.
   points are joined by a geodesic on `[0, 1]`, unique on `[0, 1]`.
 * `TauCeti.Manifold.cartanHadamard_pathELength_eq_edist`,
   `TauCeti.Manifold.cartanHadamard_pathELength_eq_edist_of_le`: for simply connected `M`, that
-  geodesic is minimizing, and so is each of its subsegments.
+  geodesic is minimizing, and so is every segment of any geodesic on a preconnected set.
 * `TauCeti.Manifold.cartanHadamard_exists_homeomorph_universalCover`: the universal cover based
   at `p` is homeomorphic to `T_p M`, by a homeomorphism under which the projection becomes
   `exp_p`.
@@ -228,15 +230,18 @@ theorem cartanHadamard_exists_geodesic_unique [SimplyConnectedSpace M]
 /-- **The geodesic of a Cartan–Hadamard manifold is minimizing.** On a simply connected complete
 Riemannian manifold of nonpositive sectional curvature, every geodesic on `[0, 1]` from `p` to `q`
 has length the distance from `p` to `q`. -/
-theorem cartanHadamard_pathELength_eq_edist {M : Type*} [MetricSpace M] [ChartedSpace H M]
-    [IsManifold I ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    [IsRiemannianManifold I M] [CompleteSpace M] [SimplyConnectedSpace M]
+theorem cartanHadamard_pathELength_eq_edist [SimplyConnectedSpace M]
     (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
       (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
         x u w ≤ 0) {γ : ℝ → M} {p q : M} (hγ : IsGeodesicCurveOn I γ (Icc 0 1)) (h0 : γ 0 = p)
     (h1 : γ 1 = q) :
     pathELength I γ 0 1 = edist p q := by
+  -- Simple connectivity makes the Riemannian distance finite, so `M` is a metric space with the
+  -- same extended distance and uniformity, where minimizing geodesics exist.
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
+    (V := fun x : M ↦ TangentSpace I x)
+  let : MetricSpace M := EMetricSpace.toMetricSpace fun x y ↦
+    (IsRiemannianManifold.out (I := I) x y).symm ▸ riemannianEDist_ne_top I x y
   obtain ⟨γ₀, hγ₀, h00, h01, hlen, -⟩ :=
     exists_isGeodesicCurveOn_Icc_pathELength_eq_edist (I := I)
       (expDomain_eq_univ_of_completeSpace p) q
@@ -244,22 +249,35 @@ theorem cartanHadamard_pathELength_eq_edist {M : Type*} [MetricSpace M] [Charted
     (cartanHadamard_eqOn_riemannianExp_smul hK hγ₀ h00 h01).symm), hlen]
 
 /-- On a simply connected complete Riemannian manifold of nonpositive sectional curvature, every
-subsegment of a geodesic on `[0, 1]` realizes the distance between its endpoints. -/
-theorem cartanHadamard_pathELength_eq_edist_of_le {M : Type*} [MetricSpace M]
-    [ChartedSpace H M] [IsManifold I ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    [IsRiemannianManifold I M] [CompleteSpace M] [SimplyConnectedSpace M]
+segment of a geodesic on a preconnected parameter set realizes the distance between its
+endpoints. -/
+theorem cartanHadamard_pathELength_eq_edist_of_le [SimplyConnectedSpace M]
     (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
       (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
-        x u w ≤ 0) {γ : ℝ → M} (hγ : IsGeodesicCurveOn I γ (Icc 0 1)) {s t : ℝ}
-    (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) (hst : s ≤ t) :
+        x u w ≤ 0) {γ : ℝ → M} {u : Set ℝ} (hγ : IsGeodesicCurveOn I γ u) (hu : IsPreconnected u)
+    {s t : ℝ} (hs : s ∈ u) (ht : t ∈ u) (hst : s ≤ t) :
     pathELength I γ s t = edist (γ s) (γ t) := by
-  obtain ⟨γ₀, hγ₀, h00, h01, -, hsub⟩ :=
-    exists_isGeodesicCurveOn_Icc_pathELength_eq_edist (I := I)
-      (expDomain_eq_univ_of_completeSpace (γ 0)) (γ 1)
-  have heq : EqOn γ γ₀ (Icc 0 1) := (cartanHadamard_eqOn_riemannianExp_smul hK hγ rfl rfl).trans
-    (cartanHadamard_eqOn_riemannianExp_smul hK hγ₀ h00 h01).symm
-  rw [pathELength_congr (heq.mono (Icc_subset_Icc hs.1 ht.2)), hsub s hs t ht hst, heq hs, heq ht]
+  rcases hst.eq_or_lt with rfl | hlt
+  · simp
+  -- Reparametrize the segment `[s, t]` affinely to `[0, 1]`.
+  set φ : ℝ → ℝ := fun r ↦ (t - s) * r + s
+  have hφ0 : φ 0 = s := by simp [φ]
+  have hφ1 : φ 1 = t := by simp [φ]
+  have hmaps : MapsTo φ (Icc 0 1) (Icc s t) := fun r hr ↦ by
+    simp only [φ, mem_Icc]
+    constructor <;> nlinarith [hr.1, hr.2]
+  have hsub : Icc s t ⊆ u := hu.Icc_subset hs ht
+  have hγ' : IsGeodesicCurveOn I (γ ∘ φ) (Icc 0 1) :=
+    hγ.comp_affine _ _ (uniqueDiffOn_Icc zero_lt_one) (hmaps.mono_right hsub)
+  have hmono : MonotoneOn φ (Icc 0 1) := fun a _ b _ hab ↦ by
+    simp only [φ]; nlinarith
+  have hdiff : DifferentiableOn ℝ φ (Icc 0 1) := by fun_prop
+  have hmd : MDiff[Icc (φ 0) (φ 1)] γ := by
+    rw [hφ0, hφ1]
+    exact (hγ.mono (uniqueDiffOn_Icc hlt) hsub).mdifferentiableOn
+  have h := cartanHadamard_pathELength_eq_edist hK hγ' rfl rfl
+  rwa [pathELength_comp_of_monotoneOn zero_le_one hmono hdiff hmd, comp_apply, comp_apply, hφ0,
+    hφ1] at h
 
 /-! ### The universal cover and asphericity -/
 
