@@ -560,6 +560,14 @@ theorem isAsymptoticSum_zero {m : ℕ → ℝ} :
       fun j => (0 : ParameterSymbol n Λ V W (m j)) :=
   fun _ => ⟨0, by simp⟩
 
+/-- A parameter-dependent symbol is an asymptotic sum of zero symbols whose orders tend to `-∞`
+exactly when it is smoothing. -/
+@[simp]
+theorem isAsymptoticSum_zero_iff_isSmoothing {m : ℕ → ℝ} (hm' : Tendsto m atTop atBot)
+    {b : ParameterSymbol n Λ V W (m 0)} :
+    b.IsAsymptoticSum (fun j => (0 : ParameterSymbol n Λ V W (m j))) ↔ b.IsSmoothing := by
+  simpa only [sub_zero] using isAsymptoticSum_zero.isAsymptoticSum_iff_isSmoothing_sub hm' (b' := b)
+
 /-- Asymptotic sums add: if `b ∼ ∑ⱼ aⱼ` and `b' ∼ ∑ⱼ a'ⱼ`, then `b + b' ∼ ∑ⱼ (aⱼ + a'ⱼ)`. -/
 theorem IsAsymptoticSum.add {m : ℕ → ℝ} {a a' : ∀ j, ParameterSymbol n Λ V W (m j)}
     {b b' : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a)
@@ -585,6 +593,12 @@ theorem IsAsymptoticSum.neg {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ V
     {b : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a) :
     (-b).IsAsymptoticSum (-a) := by
   simpa using hb.smul (-1)
+
+/-- Negating both an asymptotic sum and its terms preserves the asymptotic expansion. -/
+@[simp]
+theorem isAsymptoticSum_neg_iff {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ V W (m j)}
+    {b : ParameterSymbol n Λ V W (m 0)} : (-b).IsAsymptoticSum (-a) ↔ b.IsAsymptoticSum a :=
+  ⟨fun hb => by simpa only [neg_neg] using hb.neg, IsAsymptoticSum.neg⟩
 
 /-- Asymptotic sums subtract: if `b ∼ ∑ⱼ aⱼ` and `b' ∼ ∑ⱼ a'ⱼ`, then
 `b - b' ∼ ∑ⱼ (aⱼ - a'ⱼ)`. -/
