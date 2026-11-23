@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
-import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Smooth polynomial evaluations of a symmetric algebra on the continuous dual
@@ -36,8 +35,9 @@ When `E` is finite-dimensional over a complete nontrivially normed field `𝕜`,
 
 ## Main results
 
-* `SymmetricAlgebra.contMDiffEval_apply`, `SymmetricAlgebra.coe_contMDiffEval_ι`,
-  `SymmetricAlgebra.evalAlgHom_comp_contMDiffEval`: pointwise and generator evaluation formulas.
+* `SymmetricAlgebra.contMDiffEval_apply`, `SymmetricAlgebra.coe_contMDiffEval`,
+  `SymmetricAlgebra.coe_contMDiffEval_ι`, `SymmetricAlgebra.evalAlgHom_comp_contMDiffEval`:
+  pointwise, function-level, and generator evaluation formulas.
 * `SymmetricAlgebra.compRightAlgHom_precomp_comp_contMDiffEval`,
   `SymmetricAlgebra.contMDiffEval_map`: contravariant naturality along a continuous linear map
   `u : E →L[𝕜] F` and its transpose `u.precomp 𝕜 : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E`.
@@ -110,6 +110,12 @@ theorem contMDiffEval_apply (p : SymmetricAlgebra 𝕜 E) (ξ : StrongDual 𝕜 
     contMDiffEval 𝕜 E n p ξ = lift ξ.toLinearMap p := by
   have h := AlgHom.congr_fun (evalAlgHom_comp_contMDiffEval n ξ) p
   rwa [AlgHom.comp_apply, ContMDiffMap.evalAlgHom_apply] at h
+
+/-- Coercing `contMDiffEval 𝕜 E n p` to a function recovers
+`fun ξ : StrongDual 𝕜 E ↦ lift ξ.toLinearMap p`. -/
+theorem coe_contMDiffEval (p : SymmetricAlgebra 𝕜 E) :
+    ⇑(contMDiffEval 𝕜 E n p) = fun ξ : StrongDual 𝕜 E ↦ lift ξ.toLinearMap p :=
+  funext (contMDiffEval_apply p)
 
 /-- **Pointwise contravariant naturality of `contMDiffEval`.** Mapping symmetric tensors along a
 continuous linear map `u : E →L[𝕜] F` corresponds to pulling smooth functions back along

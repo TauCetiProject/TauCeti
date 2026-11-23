@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Sl2Casimir.ZeroFiber
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Sl2Casimir.Symbol
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Gradient
 
 /-!

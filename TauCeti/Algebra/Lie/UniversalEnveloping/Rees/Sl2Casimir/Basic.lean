@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Sl2.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator.Basic
 import Mathlib.Tactic.NoncommRing
 
 /-!

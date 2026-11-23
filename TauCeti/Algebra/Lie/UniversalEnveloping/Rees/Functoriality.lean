@@ -42,7 +42,8 @@ induced equivalence `reesMapEquiv` for a Lie isomorphism, and compatibility with
   `TauCeti.UniversalEnvelopingAlgebra.reesMap_id`,
   `TauCeti.UniversalEnvelopingAlgebra.reesMap_comp`.
 * `TauCeti.UniversalEnvelopingAlgebra.eval_comp_reesMap`,
-  `TauCeti.UniversalEnvelopingAlgebra.eval_reesMap`: naturality of scalar evaluations.
+  `TauCeti.UniversalEnvelopingAlgebra.eval_reesMap`,
+  `TauCeti.UniversalEnvelopingAlgebra.evalOne_reesMap`: naturality of scalar evaluations.
 
 ## References
 
@@ -161,6 +162,12 @@ theorem eval_reesMap (f : L →ₗ⁅R⁆ M) (r : R) (p : reesAlgebra R L) :
     coeffSubalgebra.eval (pbwFiltration R M) r (reesMap R f p) =
       map R f (coeffSubalgebra.eval (pbwFiltration R L) r p) :=
   AlgHom.congr_fun (eval_comp_reesMap R f r) p
+
+@[simp]
+theorem evalOne_reesMap (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
+    coeffSubalgebra.evalOne (pbwFiltration R M) (reesMap R f p) =
+      map R f (coeffSubalgebra.evalOne (pbwFiltration R L) p) := by
+  simp only [coeffSubalgebra.evalOne_eq_eval, eval_reesMap]
 
 end Functoriality
 

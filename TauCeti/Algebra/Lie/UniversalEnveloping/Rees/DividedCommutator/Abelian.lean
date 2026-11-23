@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Abelian
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator.Basic
 
 /-!
 # Divided commutator on the PBW Rees algebra of an abelian Lie algebra

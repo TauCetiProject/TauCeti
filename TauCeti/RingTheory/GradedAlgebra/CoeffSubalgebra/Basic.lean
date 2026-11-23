@@ -171,6 +171,15 @@ theorem X_mul_divX (p : coeffSubalgebra M) (h0 : (p : B[X]).coeff 0 = 0)
   apply Subtype.ext
   simpa [h0] using Polynomial.X_mul_divX_add (p : B[X])
 
+/-- An element of `coeffSubalgebra M` is divisible on the left by `X M h1` if and only if its
+constant coefficient vanishes and its shifted coefficients lie in `M`. -/
+theorem exists_X_mul_eq_iff (p : coeffSubalgebra M) :
+    (∃ q : coeffSubalgebra M, X M h1 * q = p) ↔
+      (p : B[X]).coeff 0 = 0 ∧ ∀ n, (p : B[X]).coeff (n + 1) ∈ M n := by
+  refine ⟨?_, fun ⟨h0, hshift⟩ ↦ ⟨divX M p hshift, X_mul_divX M h1 p h0 hshift⟩⟩
+  rintro ⟨q, rfl⟩
+  exact ⟨by simp, fun n ↦ by simpa using q.property n⟩
+
 /-- The parameter-ring algebra structure, available when the polynomial parameter belongs to
 the coefficient subalgebra. Install it with `letI := coeffSubalgebra.algebra M h1`. -/
 @[instance_reducible]

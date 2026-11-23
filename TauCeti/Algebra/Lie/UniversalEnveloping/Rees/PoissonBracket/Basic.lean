@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Isomorphisms
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.ZeroFiber
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Basic
 import Mathlib.LinearAlgebra.Quotient.Bilinear
 
 /-!
@@ -22,8 +23,9 @@ canonical **zero-fibre Poisson bracket** `reesZeroFiberBracket R L` on `Symmetri
 establishing `exists_reesZeroFiberBracket` and uniqueness of any bilinear map with the same
 divided-commutator property.
 
-All biderivation, alternation, Jacobi, degree `-1` homogeneity, Lie invariance, and naturality
-properties specialize immediately from `reesDividedCommutator`.
+All biderivation, alternation, Jacobi, and naturality properties specialize immediately from
+`reesDividedCommutator`. Comparisons with the adjoint Lie-module action, Lie invariants, and degree
+`-1` homogeneity live in `TauCeti.Algebra.Lie.UniversalEnveloping.Rees.PoissonBracket.LieModule`.
 
 ## Main definitions
 
@@ -43,10 +45,7 @@ properties specialize immediately from `reesDividedCommutator`.
   `TauCeti.UniversalEnvelopingAlgebra.eq_reesZeroFiberBracket_of_leibniz`,
   `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_jacobi`: alternation, Leibniz rules,
   biderivation uniqueness, and Jacobi identity on `SymmetricAlgebra R L`.
-* `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_mem_homogeneousSubmodule`,
-  `TauCeti.UniversalEnvelopingAlgebra.forall_reesZeroFiberBracket_eq_zero_iff_mem_lieInvariants`,
-  `TauCeti.UniversalEnvelopingAlgebra.map_reesZeroFiberBracket`: degree `-1` homogeneity, equality
-  of the Poisson centre with `lieInvariants R L L`, and naturality under Lie homomorphisms.
+* `TauCeti.UniversalEnvelopingAlgebra.map_reesZeroFiberBracket`: naturality under Lie homomorphisms.
 
 ## References
 
@@ -301,82 +300,12 @@ theorem reesZeroFiberBracket_reesZeroFiberBracket (p q r : SymmetricAlgebra R L)
     _ = reesZeroFiberBracket R L p (reesZeroFiberBracket R L q r) -
         reesZeroFiberBracket R L q (reesZeroFiberBracket R L p r) := by rw [hj, zero_add]
 
-/-- Bracketing on the left with a generator `ι x` agrees with the adjoint Lie-module derivation
-`⁅x, q⁆` of `TauCeti.SymmetricAlgebra.lieModuleDerivation`. -/
-theorem reesZeroFiberBracket_ι_left (x : L) (q : SymmetricAlgebra R L) :
-    reesZeroFiberBracket R L (SymmetricAlgebra.ι R L x) q = ⁅x, q⁆ := by
-  rw [← reesZeroFiberDerivation_apply, TauCeti.SymmetricAlgebra.lie_eq_lieModuleDerivation]
-  exact Derivation.congr_fun (SymmetricAlgebra.derivation_ext fun y ↦ by simp) q
-
-/-- Bracketing on the right with a generator `ι y` is `-⁅y, p⁆`. -/
-theorem reesZeroFiberBracket_ι_right (p : SymmetricAlgebra R L) (y : L) :
-    reesZeroFiberBracket R L p (SymmetricAlgebra.ι R L y) = -⁅y, p⁆ := by
-  rw [reesZeroFiberBracket_swap, reesZeroFiberBracket_ι_left]
-
-/-- **Poisson centre equals Lie invariants.** An element of `SymmetricAlgebra R L` Poisson-commutes
-with all of `SymmetricAlgebra R L` if and only if it belongs to
-`TauCeti.SymmetricAlgebra.lieInvariants R L L`. -/
-theorem forall_reesZeroFiberBracket_eq_zero_iff_mem_lieInvariants {p : SymmetricAlgebra R L} :
-    (∀ q : SymmetricAlgebra R L, reesZeroFiberBracket R L p q = 0) ↔
-      p ∈ TauCeti.SymmetricAlgebra.lieInvariants R L L := by
-  rw [TauCeti.SymmetricAlgebra.mem_lieInvariants]
-  refine ⟨fun h x ↦ ?_, fun hp q ↦ ?_⟩
-  · have hx := h (SymmetricAlgebra.ι R L x)
-    rw [reesZeroFiberBracket_ι_right, neg_eq_zero,
-      TauCeti.SymmetricAlgebra.lie_eq_lieModuleDerivation] at hx
-    exact hx
-  · exact Derivation.congr_fun (SymmetricAlgebra.derivation_ext
-      (D₁ := reesZeroFiberDerivation R L p) (D₂ := 0) fun x ↦ by
-        simp [reesZeroFiberBracket_ι_right, hp x]) q
-
 /-- Commuting elements of `reesAlgebra R L` specialize to Poisson-commuting elements of
 `SymmetricAlgebra R L`. -/
 theorem reesZeroFiberBracket_reesSpecializationZero_of_commute {a b : reesAlgebra R L}
     (h : Commute a b) :
     reesZeroFiberBracket R L (reesSpecializationZero R L a) (reesSpecializationZero R L b) = 0 := by
   rw [reesZeroFiberBracket_reesSpecializationZero, reesDividedCommutator_of_commute R L h, map_zero]
-
-/-- Every central element of `reesAlgebra R L` specializes to a Lie-invariant (Poisson-central)
-element of `SymmetricAlgebra R L`. -/
-theorem reesSpecializationZero_mem_lieInvariants_of_mem_center {z : reesAlgebra R L}
-    (hz : z ∈ Subalgebra.center R (reesAlgebra R L)) :
-    reesSpecializationZero R L z ∈ TauCeti.SymmetricAlgebra.lieInvariants R L L := by
-  rw [← forall_reesZeroFiberBracket_eq_zero_iff_mem_lieInvariants]
-  intro q
-  obtain ⟨b, rfl⟩ := reesSpecializationZero_surjective R L q
-  exact reesZeroFiberBracket_reesSpecializationZero_of_commute R L
-    (Subalgebra.mem_center_iff.mp hz b).symm
-
-/-- **Degree `-1` homogeneity.** The zero-fibre Poisson bracket carries degrees `(m, n)` into degree
-`m + n - 1` (with `0 - 1 = 0`, where the bracket with a scalar vanishes). -/
-theorem reesZeroFiberBracket_mem_homogeneousSubmodule {m n : ℕ}
-    {p q : SymmetricAlgebra R L}
-    (hp : p ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R L m)
-    (hq : q ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R L n) :
-    reesZeroFiberBracket R L p q ∈
-      TauCeti.SymmetricAlgebra.homogeneousSubmodule R L (m + n - 1) := by
-  induction hp using Submodule.pow_induction_on_left' with
-  | algebraMap r => simp
-  | add p₁ p₂ k _ _ ih₁ ih₂ =>
-    rw [LinearMap.map_add₂]
-    exact Submodule.add_mem _ ih₁ ih₂
-  | mem_mul a ha k p' hp' ih =>
-    obtain ⟨x, rfl⟩ := ha
-    rw [Nat.succ_add, Nat.succ_sub_one, reesZeroFiberBracket_mul_left,
-      reesZeroFiberBracket_ι_left]
-    refine Submodule.add_mem _ ?_ ?_
-    · rcases Nat.eq_zero_or_pos (k + n) with hkn | hkn
-      · obtain ⟨-, rfl⟩ := Nat.add_eq_zero_iff.mp hkn
-        obtain ⟨r, rfl⟩ : q ∈ (1 : Submodule R (SymmetricAlgebra R L)) := by
-          simpa [pow_zero] using hq
-        simp
-      · have hdeg : 1 + (k + n - 1) = k + n := by omega
-        rw [← hdeg]
-        exact SetLike.mul_mem_graded
-          (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule R L x) ih
-    · rw [add_comm k n]
-      exact SetLike.mul_mem_graded
-        (TauCeti.SymmetricAlgebra.lieModuleDerivation_mem_homogeneousSubmodule R L L x hq) hp'
 
 /-- **Naturality of `reesZeroFiberBracket`.** Any Lie algebra homomorphism between free `R`-modules
 induces a Poisson algebra homomorphism on symmetric algebras. -/

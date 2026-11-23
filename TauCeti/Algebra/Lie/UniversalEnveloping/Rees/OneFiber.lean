@@ -113,17 +113,22 @@ theorem quotientReesParameterSubOneMap_mk (f : L →ₗ⁅R⁆ M) (p : reesAlgeb
 theorem quotientReesParameterSubOneMap_id :
     quotientReesParameterSubOneMap R (LieHom.id : L →ₗ⁅R⁆ L) =
       AlgHom.id R (reesAlgebra R L ⧸ Ideal.span {reesParameter R L - 1}) := by
-  ext q
-  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp
+  refine Ideal.Quotient.algHom_ext R ?_
+  rw [quotientReesParameterSubOneMap, Ideal.quotient_map_comp_mkₐ, AlgHom.id_comp]
+  simp [reesMap_id]
+  rfl
 
 @[simp]
 theorem quotientReesParameterSubOneMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
     quotientReesParameterSubOneMap R (g.comp f) =
       (quotientReesParameterSubOneMap R g).comp (quotientReesParameterSubOneMap R f) := by
-  ext q
-  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp
+  refine Ideal.Quotient.algHom_ext R ?_
+  simp only [quotientReesParameterSubOneMap]
+  rw [Ideal.quotient_map_comp_mkₐ, AlgHom.comp_assoc, Ideal.quotient_map_comp_mkₐ,
+    ← AlgHom.comp_assoc, Ideal.quotient_map_comp_mkₐ, AlgHom.comp_assoc]
+  congr 1
+  ext p
+  simp [reesMap_comp]
 
 @[simp]
 theorem quotientReesParameterSubOneEquiv_map (f : L →ₗ⁅R⁆ M)

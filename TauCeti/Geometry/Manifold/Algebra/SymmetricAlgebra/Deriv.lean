@@ -54,10 +54,7 @@ theorem hasFDerivAt_contMDiffEval (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p
     (ξ : StrongDual 𝕜 E) :
     HasFDerivAt (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p))
       (ContinuousLinearMap.apply 𝕜 𝕜 (b.symmetricGradient p ξ.toLinearMap)) ξ := by
-  have hfun : ⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p) =
-      fun η : StrongDual 𝕜 E ↦ SymmetricAlgebra.lift η.toLinearMap p :=
-    funext (SymmetricAlgebra.contMDiffEval_apply p)
-  rw [hfun]
+  rw [SymmetricAlgebra.coe_contMDiffEval]
   exact b.hasFDerivAt_lift p ξ
 
 theorem fderiv_contMDiffEval (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)

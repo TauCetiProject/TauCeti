@@ -5,28 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.PoissonBracket.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.PoissonBracket.LieModule
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Sl2Casimir.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Sl2Casimir.Symbol
 
 /-!
 # Zero-fibre Casimir symbol and Poisson-centrality for `sl₂`
 
 Under `reesSpecializationZero`, the subleading `2 * t * j(h)` term of `reesSl2Casimir R L h e f`
 vanishes while `j(f) * j(e)` specializes to `ι(e) * ι(f)`, yielding the classical quadratic
-Casimir symbol
-
-`sl2CasimirSymbol R L h e f = ι(h)² + 4 * ι(e) * ι(f)`
-
-in `SymmetricAlgebra R L`. For `L = SpecialLinear.sl (Fin 2) R`, centrality of `reesSlFinTwoCasimir`
-implies that `slFinTwoCasimirSymbol R` belongs to `lieInvariants` and Poisson-commutes with every
-element under `reesZeroFiberBracket`. By contrast, when `(2 : R) ≠ 0`,
-`{ι(h), ι(e)} = (2 : R) • ι(e) ≠ 0`, so `ι(e)` is not Poisson-central.
-
-## Main definitions
-
-* `TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol`: `ι(h)² + 4 * ι(e) * ι(f)` in
-  `SymmetricAlgebra R L`.
-* `TauCeti.UniversalEnvelopingAlgebra.slFinTwoCasimirSymbol`: specialization to `sl (Fin 2) R`.
+Casimir symbol `sl2CasimirSymbol R L h e f = ι(h)² + 4 * ι(e) * ι(f)` in `SymmetricAlgebra R L`.
+For `L = SpecialLinear.sl (Fin 2) R`, centrality of `reesSlFinTwoCasimir` implies that
+`slFinTwoCasimirSymbol R` belongs to `lieInvariants` and Poisson-commutes with every element under
+`reesZeroFiberBracket`. By contrast, when `(2 : R) ≠ 0`, `{ι(h), ι(e)} = (2 : R) • ι(e) ≠ 0`, so
+`ι(e)` is not Poisson-central.
 
 ## Main results
 
@@ -56,16 +48,6 @@ section Symbol
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- The classical quadratic Casimir symbol `ι(h)² + 4 * ι(e) * ι(f)` in `SymmetricAlgebra R L`. -/
-noncomputable def sl2CasimirSymbol (h e f : L) : SymmetricAlgebra R L :=
-  SymmetricAlgebra.ι R L h ^ 2 + 4 * SymmetricAlgebra.ι R L e * SymmetricAlgebra.ι R L f
-
-/-- Defining polynomial expression for `sl2CasimirSymbol`. -/
-theorem sl2CasimirSymbol_def (h e f : L) :
-    sl2CasimirSymbol R L h e f =
-      SymmetricAlgebra.ι R L h ^ 2 + 4 * SymmetricAlgebra.ι R L e * SymmetricAlgebra.ι R L f :=
-  (rfl)
-
 @[simp]
 theorem reesSpecializationZero_reesSl2Casimir [Module.Free R L] (h e f : L) :
     reesSpecializationZero R L (reesSl2Casimir R L h e f) = sl2CasimirSymbol R L h e f := by
@@ -79,12 +61,6 @@ end Symbol
 section SlFinTwo
 
 variable (R : Type u) [CommRing R]
-
-/-- The quadratic Casimir symbol `h² + 4ef` in `SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)`. -/
-noncomputable abbrev slFinTwoCasimirSymbol :
-    SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R) :=
-  sl2CasimirSymbol R (SpecialLinear.sl (Fin 2) R)
-    (TauCeti.slFinTwoBasis R 2) (TauCeti.slFinTwoBasis R 0) (TauCeti.slFinTwoBasis R 1)
 
 /-- **Poisson-centrality of `h² + 4ef`** in `SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)`: its
 zero-fibre symbol belongs to the Lie invariants. -/
