@@ -171,6 +171,14 @@ instance isIso_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ :
     (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) : IsIso (pullbackFiberTransport hp M n g h₀ h₁) :=
   ⟨pullbackFiberTransport hp M n g h₁ h₀, by simp, by simp⟩
 
+/-- The inverse of transport over a contractible parameter space is transport in the opposite
+direction. -/
+@[simp]
+theorem inv_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B}
+    (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) :
+    inv (pullbackFiberTransport hp M n g h₀ h₁) = pullbackFiberTransport hp M n g h₁ h₀ :=
+  IsIso.inv_eq_of_hom_inv_id (by simp)
+
 /-- **Transport along a path on which the map to `B` is constant is the identity.** If `γ` is a path
 from `k₀` to `k₁` in `K` which `g` maps to the point `b`, then transport from `k₀` to `k₁` is the
 identity of the homology of the fibre over `b`: the fibre inclusions at `k₀` and `k₁` are homotopic
@@ -359,6 +367,15 @@ theorem fiberHomologyTransport_trans (γ : Path b₀ b₁)
       TopCat.I.secondHalf_zero TopCat.I.secondHalf_one (TopCat.pathEquiv.symm δ).hom₀
       (TopCat.pathEquiv.symm δ).hom₁
       (TopCat.pathEquiv_symm_trans_hom_midpoint γ δ) (TopCat.pathEquiv.symm (γ.trans δ)).hom₁]
+
+/-- The inverse of transport along a path is transport along the reversed path. -/
+@[simp]
+theorem inv_fiberHomologyTransport (γ : Path b₀ b₁) :
+    inv (fiberHomologyTransport hp M n γ) = fiberHomologyTransport hp M n γ.symm := by
+  refine IsIso.inv_eq_of_hom_inv_id ?_
+  rw [← fiberHomologyTransport_trans,
+    fiberHomologyTransport_congr hp M n (Path.Homotopic.trans_symm γ),
+    fiberHomologyTransport_refl]
 
 /-- **Transport along a path is natural in maps of Serre fibrations.** For a commutative square
 from `p` to `p'` over `g : B ⟶ B'`, transport along `γ` followed by the map of fibres over `b₁` is
