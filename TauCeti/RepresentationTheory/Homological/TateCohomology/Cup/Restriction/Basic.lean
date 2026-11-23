@@ -41,14 +41,14 @@ private theorem restrict_invariant_pure_tensor (M N : Rep k G) (H : Subgroup G)
     ((Submodule.inclusion
       ((M ⊗ N).ρ.invariants_le_invariants_comp H.subtype))
       (⟨(x : M.V) ⊗ₜ[k] (y : N.V), fun g ↦ by
-        simp [Representation.tprod_apply, x.2 g, y.2 g]⟩ : (M ⊗ N).ρ.invariants) :
-        (Rep.res H.subtype (M ⊗ N)).ρ.invariants).1 =
+        simp [Representation.tprod_apply, x.property g, y.property g]⟩ : (M ⊗ N).ρ.invariants) :
+        (Rep.res H.subtype (M ⊗ N)).ρ.invariants).val =
       (((Submodule.inclusion
         (M.ρ.invariants_le_invariants_comp H.subtype)) x :
-          (Rep.res H.subtype M).ρ.invariants).1 ⊗ₜ[k]
+          (Rep.res H.subtype M).ρ.invariants).val ⊗ₜ[k]
         ((Submodule.inclusion
           (N.ρ.invariants_le_invariants_comp H.subtype)) y :
-            (Rep.res H.subtype N).ρ.invariants).1) := by
+            (Rep.res H.subtype N).ρ.invariants).val) := by
   rfl
 
 /-- Restriction commutes with the degree-zero cup product in its `cupH0` normal form.

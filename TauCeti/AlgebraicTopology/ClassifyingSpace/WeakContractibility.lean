@@ -49,7 +49,7 @@ theorem subsingleton_homotopyGroup_universalGSpace (G : Type u)
     by_contra hG
     let : IsEmpty G := not_nonempty_iff.mp hG
     have hsum := AbstractSimplicialComplex.Realization.sum_eq_one _ x
-    simp [Subsingleton.elim x.1 0] at hsum
+    simp [Subsingleton.elim x.val 0] at hsum
   exact
     subsingleton_homotopyGroup_realization_indexedJoin
       (Set.infinite_univ.mono fun _ _ => ‹Nonempty G›) (Fin (n + 1)) x

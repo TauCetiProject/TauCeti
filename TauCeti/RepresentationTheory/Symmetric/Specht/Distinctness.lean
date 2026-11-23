@@ -102,12 +102,6 @@ private theorem transportedColumnAntisymmetrizer_single_eq_zero
     (nsmul_right_injective two_ne_zero) _ hfix'
     (transportedColumnAntisymmetrizer_mul_single_swap e t hxy hcol)
 
-private theorem coe_toRepresentation_apply {G V : Type*} [Group G]
-    [AddCommGroup V] [Module ℚ V] {ρ : Representation ℚ G V}
-    (S : Subrepresentation ρ) (g : G) (x : S.toSubmodule) :
-    ((S.toRepresentation g x : S.toSubmodule) : V) = ρ g (x : V) :=
-  rfl
-
 private theorem sum_take_rowLens_le_of_transportedColumnAntisymmetrizer_ne_zero
     (e : Fin lam.card ≃ Fin m.card) (t : YoungTableau lam)
     {v : (permutationModule (R := ℚ) (shapePartition m)).V}
@@ -224,7 +218,7 @@ private noncomputable def spechtToPermutationIntertwiningMapOfIso {n : ℕ}
       let f := spechtIntertwiningMapOfIso i
       have h := congrArg Subtype.val (DFunLike.congr_fun (f.isIntertwining' g) v)
       simp only [LinearMap.comp_apply, MonoidHom.comp_apply] at h
-      rw [coe_toRepresentation_apply] at h
+      rw [Subrepresentation.coe_toRepresentation_apply] at h
       simpa only [f, LinearMap.comp_apply, Submodule.coe_subtype, MonoidHom.comp_apply] using h }
 
 private theorem spechtToPermutationIntertwiningMapOfIso_apply {n : ℕ}

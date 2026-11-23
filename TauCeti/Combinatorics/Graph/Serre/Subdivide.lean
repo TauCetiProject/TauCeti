@@ -251,8 +251,8 @@ theorem nonempty_subdivide_path {x y : Γ.V} (p : Γ.Path x y) :
   | nil => exact ⟨.nil⟩
   | cons _ e ih =>
     obtain ⟨q⟩ := ih
-    obtain ⟨r⟩ := nonempty_subdivide_path_dart a e.1
-    rw [e.2.1, e.2.2] at r
+    obtain ⟨r⟩ := nonempty_subdivide_path_dart a e.val
+    rw [e.property.1, e.property.2] at r
     exact ⟨q.comp r⟩
 
 /-- Subdividing an edge of a connected graph gives a connected graph. -/
@@ -293,8 +293,8 @@ private theorem nonempty_path_getD {x y : (Γ.subdivide a).V} (p : (Γ.subdivide
   | nil => exact ⟨.nil⟩
   | cons _ e ih =>
     obtain ⟨q⟩ := ih
-    obtain ⟨r⟩ := nonempty_path_getD_dart a e.1
-    rw [e.2.1, e.2.2] at r
+    obtain ⟨r⟩ := nonempty_path_getD_dart a e.val
+    rw [e.property.1, e.property.2] at r
     exact ⟨q.comp r⟩
 
 /-- A graph is connected exactly when the graph obtained by subdividing one of its edges is. -/

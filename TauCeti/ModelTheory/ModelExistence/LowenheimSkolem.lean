@@ -162,7 +162,7 @@ theorem aElementary_witnessHull (X : Set M) : AElementary A (A.witnessHull X).su
   -- existence proofs, so no element of `M` is needed in advance.
   refine aElementary_of_tarskiVaught _ fun φ hφ a hex => ?_
   -- the tuple lies in the closure of one stage
-  choose ks hks using fun i => (A.mem_witnessHull).1 (a i).2
+  choose ks hks using fun i => (A.mem_witnessHull).1 (a i).property
   obtain ⟨K, hK⟩ := (A.monotone_closure_hullStage X).directed_le.finite_le ks
   obtain ⟨m, hm⟩ := exists_witness_all hex
   -- its chosen counterexample is added at the next stage
@@ -194,10 +194,10 @@ theorem lift_mk_witnessSet_le (hκ : ℵ₀ ≤ κ) (hA : lift.{w} #A ≤ κ) {Y
   classical
   -- each counterexample is recovered from a member of `A` and a list of elements of `Y`
   let g : A × List Y → Option M := fun q =>
-    if h : q.2.length = q.1.1.1 then witness q.1.1 fun i => (q.2.get (Fin.cast h.symm i) : M)
+    if h : q.2.length = q.1.val.1 then witness q.1.val fun i => (q.2.get (Fin.cast h.symm i) : M)
     else none
   have key (m : A.witnessSet Y) : ∃ q, g q = some m := by
-    obtain ⟨p, hp, a, ha, hm⟩ := m.2
+    obtain ⟨p, hp, a, ha, hm⟩ := m.property
     refine ⟨(⟨p, hp⟩, List.ofFn fun i => ⟨a i, ha i⟩), ?_⟩
     simpa [g] using hm
   choose f hf using key

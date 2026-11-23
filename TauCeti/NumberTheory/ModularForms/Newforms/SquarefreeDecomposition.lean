@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.CoprimeFilter.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.CharacterSpace
 import Mathlib.Data.Nat.Squarefree
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.Algebra.BigOperators.Group.Finset.Attach
 
 /-!
 # The squarefree decomposition of a form with vanishing coprime coefficients
@@ -71,7 +72,7 @@ private def SquarefreeDecomposition (χ : (ZMod N)ˣ →* ℂˣ) (l : ℕ)
           N))) =
         χ.comp (ZMod.unitsMap (Nat.dvd_mul_right N (l ^ 2)))) ∧
     ∀ n, (qExpansion 1 f).coeff n = ∑ q ∈ l.primeFactors.attach,
-      if q.1 ∣ n then (qExpansion 1 (F q.1 q.2)).coeff (n / q.1) else 0
+      if q.val ∣ n then (qExpansion 1 (F q.val q.property)).coeff (n / q.val) else 0
 
 omit [NeZero N] in
 /-- Assembling the decomposition at `l = q * l'` from the data at the prime `q` and the families
@@ -95,7 +96,7 @@ private theorem squarefreeDecomposition_of_insert {χ : (ZMod N)ˣ →* ℂˣ} {
     (hcoeff : ∀ n, (qExpansion 1 f).coeff n =
       (if q ∣ n then (qExpansion 1 F).coeff (n / q) else 0) +
         ∑ q' ∈ l'.primeFactors.attach,
-          if q'.1 ∣ n then (qExpansion 1 (F' q'.1 q'.2)).coeff (n / q'.1) else 0) :
+          if q'.val ∣ n then (qExpansion 1 (F' q'.val q'.property)).coeff (n / q'.val) else 0) :
     SquarefreeDecomposition χ l f := by
   have hpf : l.primeFactors = insert q l'.primeFactors := by
     rw [hl, Nat.primeFactors_mul hq.ne_zero hl', hq.primeFactors, Finset.singleton_union]
@@ -119,22 +120,11 @@ private theorem squarefreeDecomposition_of_insert {χ : (ZMod N)ˣ →* ℂˣ} {
   · intro n
     rw [hcoeff n]
     symm
-    -- both sums over `attach` become sums over the sets, the summand guarded by membership
-    rw [← Finset.univ_eq_attach, ← Finset.sum_dite_of_true (fun _ hi ↦ hi) (fun q' hq' ↦
-        if q' ∣ n then (qExpansion 1
-          ((fun q' hq' ↦ if h : q' = q then h ▸ F else F' q' (hmem hq' h)) q' hq')).coeff (n / q')
-        else 0) fun _ _ ↦ 0,
-      Finset.sum_congr hpf fun _ _ ↦ rfl, Finset.sum_insert hql', ← Finset.univ_eq_attach,
-      ← Finset.sum_dite_of_true (fun _ hi ↦ hi) (fun q' hq' ↦ if q' ∣ n then
-        (qExpansion 1 (F' q' hq')).coeff (n / q') else 0) fun _ _ ↦ 0]
-    have hqpf : q ∈ l.primeFactors := hpf ▸ Finset.mem_insert_self q _
+    rw [Finset.sum_attach_eq_of_eq_insert hql' hpf]
     congr 1
-    · rw [dite_eq_left hqpf]
-      simp
-    · refine Finset.sum_congr rfl fun q' hq' ↦ ?_
-      have hne : q' ≠ q := fun h ↦ hql' (h ▸ hq')
-      have hq'pf : q' ∈ l.primeFactors := hpf ▸ Finset.mem_insert_of_mem hq'
-      rw [dite_eq_left hq'pf, dite_eq_left hq']
+    · simp
+    · refine Finset.sum_congr rfl fun q' _ ↦ ?_
+      have hne : q'.val ≠ q := fun h ↦ hql' (h ▸ q'.property)
       simp [hne]
 
 /-- **Peeling a prime off `f`.** The multiples-of-`q` part `h` of `f`, read at level `N q²`
@@ -230,7 +220,7 @@ private theorem squarefreeDecomposition_prime {χ : (ZMod N)ˣ →* ℂˣ}
   refine squarefreeDecomposition_of_insert hqp rfl (fun h ↦ hempty q h) one_ne_zero
     (fun q' hq' ↦ (hempty q' hq').elim) (fun q' hq' ↦ (hempty q' hq').elim)
     (fun q' hq' ↦ (hempty q' hq').elim) (fun q' hq' ↦ (hempty q' hq').elim) F χ₁ hF hχ₁ fun n ↦ ?_
-  rw [hcoeff n, Finset.sum_eq_zero fun x _ ↦ (hempty x.1 x.2).elim, add_zero]
+  rw [hcoeff n, Finset.sum_eq_zero fun x _ ↦ (hempty x.val x.property).elim, add_zero]
 
 /-- The inductive step of Lemma 4.6.7 at `l = q * l'`: peel `q`, apply the induction hypothesis
 to the rest at level `N q²` and modulus `l'` (or, when `l' = 1`, nothing remains), and assemble. -/
@@ -298,7 +288,7 @@ theorem exists_qExpansion_coeff_eq_sum_primeFactors_of_squarefree (χ : (ZMod N)
             ((Nat.dvd_of_mem_primeFactors hq).trans (dvd_pow_self l two_ne_zero)) N))) =
           χ.comp (ZMod.unitsMap (Nat.dvd_mul_right N (l ^ 2)))) ∧
       ∀ n, (qExpansion 1 f).coeff n = ∑ q ∈ l.primeFactors.attach,
-        if q.1 ∣ n then (qExpansion 1 (F q.1 q.2)).coeff (n / q.1) else 0 := by
+        if q.val ∣ n then (qExpansion 1 (F q.val q.property)).coeff (n / q.val) else 0 := by
   suffices key : ∀ (m l : ℕ), l.primeFactors.card = m → ∀ (N : ℕ) [NeZero N]
       (χ : (ZMod N)ˣ →* ℂˣ) (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k),
       f ∈ cuspFormCharSpace k χ → Squarefree l →
@@ -313,7 +303,7 @@ theorem exists_qExpansion_coeff_eq_sum_primeFactors_of_squarefree (χ : (ZMod N)
     · exact absurd rfl hsq.ne_zero
     · exact ⟨fun q hq ↦ absurd hq (by simp), fun q hq ↦ absurd hq (by simp),
         fun q hq ↦ absurd hq (by simp), fun q hq ↦ absurd hq (by simp), fun n ↦ by
-          rw [Finset.sum_eq_zero fun x _ ↦ absurd x.2 (by simp)]
+          rw [Finset.sum_eq_zero fun x _ ↦ absurd x.property (by simp)]
           exact hvan n (Nat.coprime_one_right n)⟩
   | succ m ih =>
     intro l hcard N _ χ f hf hsq hvan
@@ -345,23 +335,23 @@ over the primes `q ∣ l` dividing `n`. -/
 private theorem qExpansion_coeff_sum_levelRaise {l : ℕ}
     (F : ∀ q ∈ l.primeFactors, CuspForm ((Gamma1 (M * l ^ 2 / q)).map (mapGL ℝ)) k) (n : ℕ) :
     (qExpansion 1 ⇑(∑ q ∈ l.primeFactors.attach,
-        haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-        CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.2)
-          (F q.1 q.2) : CuspForm ((Gamma1 (M * l ^ 2)).map (mapGL ℝ)) k)).coeff n =
+        haveI : NeZero q.val := ⟨(Nat.prime_of_mem_primeFactors q.property).ne_zero⟩
+        CuspForm.levelRaise q.val (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.property)
+          (F q.val q.property) : CuspForm ((Gamma1 (M * l ^ 2)).map (mapGL ℝ)) k)).coeff n =
       ∑ q ∈ l.primeFactors.attach,
-        if q.1 ∣ n then (qExpansion 1 (F q.1 q.2)).coeff (n / q.1) else 0 := by
+        if q.val ∣ n then (qExpansion 1 (F q.val q.property)).coeff (n / q.val) else 0 := by
   have hsum := map_sum ((PowerSeries.coeff n).comp
     ((ModularForm.qExpansionLinearMap (h := 1) one_pos (one_mem_strictPeriods_Gamma1_map _)
       k).comp CuspForm.toModularFormₗ))
     (fun q : {x // x ∈ l.primeFactors} ↦
-      haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-      CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.2)
-        (F q.1 q.2)) l.primeFactors.attach
+      haveI : NeZero q.val := ⟨(Nat.prime_of_mem_primeFactors q.property).ne_zero⟩
+      CuspForm.levelRaise q.val (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.property)
+        (F q.val q.property)) l.primeFactors.attach
   simp only [LinearMap.comp_apply, ModularForm.qExpansionLinearMap_apply,
     CuspForm.toModularFormₗ_eq_coe, ModularFormClass.coe_modularForm] at hsum
   rw [hsum]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
-  have : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
+  have : NeZero q.val := ⟨(Nat.prime_of_mem_primeFactors q.property).ne_zero⟩
   exact CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _) _ _ n
 
 /-- **The squarefree decomposition, as an identity of functions.** For `Δ ∈ S_k(Γ₁(M), χ)` with
@@ -380,9 +370,9 @@ theorem exists_coe_eq_sum_coe_levelRaise_of_squarefree [NeZero M] {l : ℕ}
           ((Nat.dvd_of_mem_primeFactors hq).trans (dvd_pow_self l two_ne_zero)) M))) =
           χ.comp (ZMod.unitsMap (Nat.dvd_mul_right M (l ^ 2)))) ∧
       ⇑Δ = ∑ q ∈ l.primeFactors.attach,
-        haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-        ⇑(CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.2)
-          (F q.1 q.2)) := by
+        haveI : NeZero q.val := ⟨(Nat.prime_of_mem_primeFactors q.property).ne_zero⟩
+        ⇑(CuspForm.levelRaise q.val (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.property)
+          (F q.val q.property)) := by
   obtain ⟨F, χ', hF, hχ', hcoeff⟩ :=
     exists_qExpansion_coeff_eq_sum_primeFactors_of_squarefree χ hΔ hsq hvan
   refine ⟨F, χ', hF, hχ', ?_⟩
@@ -391,9 +381,9 @@ theorem exists_coe_eq_sum_coe_levelRaise_of_squarefree [NeZero M] {l : ℕ}
   set D : CuspForm ((Gamma1 (M * l ^ 2)).map (mapGL ℝ)) k :=
     _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hM) Δ -
       ∑ q ∈ l.primeFactors.attach,
-        haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-        CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.2)
-          (F q.1 q.2) with hDdef
+        haveI : NeZero q.val := ⟨(Nat.prime_of_mem_primeFactors q.property).ne_zero⟩
+        CuspForm.levelRaise q.val (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.property)
+          (F q.val q.property) with hDdef
   -- its `q`-expansion vanishes: the coefficient identity of the decomposition
   have hD : qExpansion 1 D = 0 := by
     ext n

@@ -151,7 +151,7 @@ theorem IsOfExactOrder.pow_left_apply_ne_zero (h : E.IsOfExactOrder P N) {s : S}
   refine left_apply_ne_zero_of_forall_isAlgClosed (P ^ k) hN fun K _ _ t hNK ↦ ?_
   simpa only [map_pow] using
     (h.pointsPullback (E.isPullback_baseChange t) (by simp)).pow_ne_one_of_isSepClosed
-      (Spec.natCast_residueField_ne_zero hNK) hk hkN
+      (fun p ↦ (Spec.natCast_residueField_ne_zero_iff p).mpr hNK) hk hkN
 
 /-- **A point of exact order `N` gives a naive `[Γ₁(N)]`-structure where `N` is invertible.** If
 `N` is invertible in every residue field of `S` and `φ : ℤ/Nℤ →* E(S)` sends `1` to a point of
@@ -175,7 +175,7 @@ theorem IsOfExactOrder.orderOf_eq (h : E.IsOfExactOrder P N) (hN : (N : K) ≠ 0
   obtain ⟨p⟩ : Nonempty (Spec (.of K)) := inferInstance
   refine (orderOf_eq_iff (Nat.pos_of_ne_zero fun h0 ↦ hN (by simp [h0]))).mpr
     ⟨h.pow_eq_one, fun k hkN hk hPk ↦
-      h.pow_left_apply_ne_zero (Spec.natCast_residueField_ne_zero hN p) hk hkN ?_⟩
+      h.pow_left_apply_ne_zero ((Spec.natCast_residueField_ne_zero_iff p).mpr hN) hk hkN ?_⟩
   rw [← E.eq_one_iff_left_apply_eq_zero _ p]
   exact hPk
 

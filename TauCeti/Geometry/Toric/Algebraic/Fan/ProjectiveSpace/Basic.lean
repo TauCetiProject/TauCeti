@@ -316,7 +316,7 @@ noncomputable def projectiveSpace (hi : IsIntegralLattice i) : Fan i where
     have hli := linearIndepOn_projectiveSpaceGenerator b hb hS
     have h := PointedCone.isFaceOf_hull_image hli
       (C := PointedCone.hull ℝ ((fun k ↦ i (projectiveSpaceGenerator b k)) '' S))
-      (by rw [image_eq_range]) {k : S | k.1 ∈ T}
+      (by rw [image_eq_range]) {k : S | k.val ∈ T}
     convert h using 2
     ext x
     simp only [mem_image, mem_inter_iff, mem_ofPred_eq, Subtype.exists, exists_and_right,
