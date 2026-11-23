@@ -25,7 +25,7 @@ def twoStripDomain : Set PolarPoint :=
   {p | radius p ∈ Set.Ioo 1 2 ∧
     (angle p ∈ Set.Ioo 0 (π / 4) ∨ angle p ∈ Set.Ioo (4 * π) (4 * π + π / 4))}
 
-theorem mem_twoStripDomain_iff {p : PolarPoint} :
+@[simp, grind =] theorem mem_twoStripDomain_iff {p : PolarPoint} :
     p ∈ twoStripDomain ↔ radius p ∈ Set.Ioo 1 2 ∧
       (angle p ∈ Set.Ioo 0 (π / 4) ∨ angle p ∈ Set.Ioo (4 * π) (4 * π + π / 4)) :=
   Iff.rfl
@@ -59,7 +59,8 @@ theorem overlap_twoStripDomain_two_nonempty : (overlap twoStripDomain 2).Nonempt
   simp only [Set.mem_ofPred_eq, radius_mk, angle_mk, Set.mem_Ioo]
   exact ⟨⟨by norm_num, by norm_num⟩, by positivity, by linarith [pi_pos]⟩
 
-/-- Positive separation on the empty adjacent overlap does not guarantee injectivity. -/
+/-- A constant height is not injective on the two strips, although their one-turn overlap
+is empty. -/
 theorem not_injOn_graph_const_twoStripDomain (c : ℝ) :
     ¬ Set.InjOn (graph (fun _ ↦ c)) twoStripDomain := by
   obtain ⟨p, hp⟩ := overlap_twoStripDomain_two_nonempty
@@ -68,42 +69,49 @@ theorem not_injOn_graph_const_twoStripDomain (c : ℝ) :
 /-- Height zero on the first strip and one on the second strip. -/
 def twoStripHeight (p : PolarPoint) : ℝ := if angle p < 2 * π then 0 else 1
 
+theorem twoStripHeight_def (p : PolarPoint) :
+    twoStripHeight p = if angle p < 2 * π then 0 else 1 := (rfl)
+
+@[simp] theorem twoStripHeight_of_lt {p : PolarPoint} (h : angle p < 2 * π) :
+    twoStripHeight p = 0 := by
+  rw [twoStripHeight_def, ite_eq_left h]
+
+@[simp] theorem twoStripHeight_of_le {p : PolarPoint} (h : 2 * π ≤ angle p) :
+    twoStripHeight p = 1 := by
+  rw [twoStripHeight_def, ite_eq_right h.not_gt]
+
 /-- The step height is continuous on the two-strip domain. -/
 theorem continuousOn_twoStripHeight : ContinuousOn twoStripHeight twoStripDomain := by
-  have ha : Continuous angle := by
-    change Continuous (fun p : PolarPoint ↦ angle p)
-    simp_rw [angle_def]
-    exact continuous_snd.comp continuous_subtypeVal
   intro p hp
   rcases (mem_twoStripDomain_iff.mp hp).2 with h | h
-  · have he := ha.continuousAt.eventually_lt (continuousAt_const (y := 2 * π))
+  · have he := continuous_angle.continuousAt.eventually_lt (continuousAt_const (y := 2 * π))
       (by linarith [h.2, pi_pos])
     exact (Filter.EventuallyEq.continuousAt (f := twoStripHeight) (y := 0)
-      (he.mono fun _ hq ↦ ite_eq_left hq)).continuousWithinAt
-  · have he := (continuousAt_const (y := 2 * π)).eventually_lt (ha.continuousAt (x := p))
+      (he.mono fun _ hq ↦ twoStripHeight_of_lt hq)).continuousWithinAt
+  · have he := (continuousAt_const (y := 2 * π)).eventually_lt
+      (continuous_angle.continuousAt (x := p))
       (by linarith [h.1, pi_pos])
     exact (Filter.EventuallyEq.continuousAt (f := twoStripHeight) (y := 1)
-      (he.mono fun _ hq ↦ ite_eq_right hq.not_gt)).continuousWithinAt
+      (he.mono fun _ hq ↦ twoStripHeight_of_le hq.le)).continuousWithinAt
 
 /-- Each two-turn comparison sees the full unit jump between the strips. -/
 theorem separation_twoStripHeight_two {p : PolarPoint} (hp : p ∈ overlap twoStripDomain 2) :
     separation twoStripHeight 2 p = 1 := by
   rw [overlap_twoStripDomain_two] at hp
   obtain ⟨_, ha, hb⟩ := hp
-  rw [separation_def]
-  simp only [twoStripHeight, angle_deckShift, Int.cast_ofNat]
-  rw [ite_eq_right (by linarith [pi_pos]), ite_eq_left (by linarith [pi_pos]), sub_zero]
+  rw [separation_def, twoStripHeight_of_le, twoStripHeight_of_lt, sub_zero]
+  · linarith [pi_pos]
+  · simp only [angle_deckShift, Int.cast_ofNat]
+    linarith [pi_pos]
 
-/-- Agreement on all adjacent comparisons does not suffice for descent on the two strips. -/
+/-- The step height does not descend, although the one-turn overlap is empty, so the one-turn
+test holds vacuously. -/
 theorem not_exists_height_twoStripHeight :
     ¬ ∃ v : projection '' twoStripDomain → ℝ, (fun p : twoStripDomain ↦ twoStripHeight p) =
       v ∘ Set.imageFactorization projection twoStripDomain := by
   rintro ⟨v, hv⟩
   obtain ⟨p, hp⟩ := overlap_twoStripDomain_two_nonempty
-  have hu : ∃! v : projection '' twoStripDomain → ℝ, (fun p : twoStripDomain ↦ twoStripHeight p) =
-      v ∘ Set.imageFactorization projection twoStripDomain :=
-    ⟨v, hv, fun w hw ↦ Set.imageFactorization_surjective.injective_comp_right (hw.symm.trans hv)⟩
-  have h := (existsUnique_height_iff_separation_eq_zero _ _).mp hu 2 p hp
+  have h := (exists_height_iff_separation_eq_zero _ _).mp ⟨v, hv⟩ 2 p hp
   simp [separation_twoStripHeight_two hp] at h
 
 end TauCeti.PolarGraph
