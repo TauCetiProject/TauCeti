@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Hartogs
 public import Mathlib.AlgebraicGeometry.Noetherian
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.FiniteEtale.MorphismProperty
 import TauCeti.AlgebraicGeometry.FiniteEtale.ZariskiLocal
 import TauCeti.AlgebraicGeometry.Scheme.Depth

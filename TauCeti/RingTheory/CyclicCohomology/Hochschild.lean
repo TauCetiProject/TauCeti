@@ -159,7 +159,7 @@ private def connesBCocycles (n : ℕ) :
   LinearMap.codRestrict _
     (LinearMap.codRestrict _ (TauCeti.connesB R A M n) connesB_mem_cyclicCochains ∘ₗ
       (hochschildCocycles R A M (n + 1)).subtype)
-    fun φ ↦ connesB_mem_cyclicCocycles φ.2
+    fun φ ↦ connesB_mem_cyclicCocycles φ.property
 
 /-- The map `B : HHⁿ⁺¹(A, Hom_R(A, M)) → HCⁿ(A; M)` induced by Connes' operator `B`; when `R`
 contains `ℚ` it is the map `B` of the SBI sequence. -/
@@ -174,7 +174,7 @@ theorem connesB_mk {n : ℕ} (φ : hochschildCocycles R A M (n + 1)) :
     connesB R A M n (mk R A M (n + 1) φ) =
       cyclicCohomology.mk R A M n
         ⟨⟨TauCeti.connesB R A M n φ, connesB_mem_cyclicCochains _⟩,
-          connesB_mem_cyclicCocycles φ.2⟩ :=
+          connesB_mem_cyclicCocycles φ.property⟩ :=
   desc_mk _ _ _ φ
 
 end hochschildCohomology
@@ -199,8 +199,8 @@ cochain. -/
 theorem toHochschild_mk {n : ℕ} (φ : cyclicCocycles R A M n) :
     toHochschild R A M n (mk R A M n φ) =
       hochschildCohomology.mk R A M n
-        ⟨φ, mem_hochschildCocycles_of_mem_cyclicCocycles φ.2⟩ := by
-  have hφ := (mem_cyclicCocycles_iff_complex R A M n φ.1).1 φ.2
+        ⟨φ, mem_hochschildCocycles_of_mem_cyclicCocycles φ.property⟩ := by
+  have hφ := (mem_cyclicCocycles_iff_complex R A M n φ.val).1 φ.property
   rw [toHochschild, mk_eq_homologyπ R A M φ
     ((cyclicCochainComplex R A M).moduleCatCyclesMk _ (n + 1) (CochainComplex.next ℕ n) hφ)
     (by rw [HomologicalComplex.iCycles_moduleCatCyclesMk, Iso.inv_hom_id_apply])]
@@ -220,7 +220,7 @@ theorem toHochschild_comp_connesB (n : ℕ) :
     ModuleCat.hom_zero, LinearMap.zero_apply, mk_eq_zero_iff]
   convert Submodule.zero_mem _
   ext1
-  exact connesB_eq_zero_of_mem_cyclicCochains φ.1.2
+  exact connesB_eq_zero_of_mem_cyclicCochains φ.val.property
 
 /-- In degree zero the map `I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism: every
 `0`-cochain is cyclic and there are no coboundaries in degree zero. -/
@@ -234,9 +234,9 @@ instance isIso_toHochschild_zero : IsIso (toHochschild R A M 0) := by
     rw [mk_eq_mk_iff, cyclicCoboundaries_zero, Submodule.mem_bot, sub_eq_zero]
     exact Subtype.ext hxy
   · obtain ⟨φ, rfl⟩ := hochschildCohomology.mk_surjective R A M 0 x
-    have hφ : φ.1 ∈ cyclicCochains R A M 0 := by simp
+    have hφ : φ.val ∈ cyclicCochains R A M 0 := by simp
     refine ⟨mk R A M 0
-      ⟨⟨φ, hφ⟩, (mem_cyclicCocycles_iff R A M).2 (mem_hochschildCocycles_iff.1 φ.2)⟩, ?_⟩
+      ⟨⟨φ, hφ⟩, (mem_cyclicCocycles_iff R A M).2 (mem_hochschildCocycles_iff.1 φ.property)⟩, ?_⟩
     rw [toHochschild_mk]
 
 /-- The map `I : HC¹(A; M) → HH¹(A, Hom_R(A, M))` is injective: a cyclic `1`-cocycle which is the

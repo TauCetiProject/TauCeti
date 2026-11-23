@@ -51,14 +51,14 @@ theorem exists_mem_forall_eventually_isGeneric
       (∀ i S, S ∈ E.exceptions → (S : Set P).Nonempty → v i + r ∉ S.direction) ∧
       ∀ x : P, ∀ᶠ t : ℝ in 𝓝[>] 0, ∀ i, E.IsGeneric (t • (v i + r) +ᵥ x) := by
   classical
-  let K := {S : E.exceptions // (S.1 : Set P).Nonempty}
+  let K := {S : E.exceptions // (S.val : Set P).Nonempty}
   let A : ι × K → AffineSubspace ℝ V := fun a =>
-    AffineSubspace.mk' (-v a.1) a.2.1.1.direction
+    AffineSubspace.mk' (-v a.1) a.2.val.val.direction
   have hA : ∀ a, (A a).direction ≠ ⊤ := by
     intro a hd
     simp only [A, AffineSubspace.direction_mk'] at hd
-    exact E.proper _ a.2.1.2
-      ((AffineSubspace.direction_eq_top_iff_of_nonempty a.2.2).mp hd)
+    exact E.proper _ a.2.val.property
+      ((AffineSubspace.direction_eq_top_iff_of_nonempty a.2.property).mp hd)
   have hex : ∃ r ∈ U, ∀ a, r ∉ A a := by
     by_contra! hcover
     obtain ⟨a, ha⟩ := AffineSubspace.exists_direction_le_of_forall_mem
@@ -89,13 +89,13 @@ theorem exists_norm_lt_forall_eventually_isGeneric
   classical
   let J := {a : ι × κ // m a.2 (v a.1) ≠ 0}
   let U : Set V := Metric.ball 0 ε ∩
-    ⋂ a : J, {r | 0 < m a.1.2 (v a.1.1 + r) * m a.1.2 (v a.1.1)}
+    ⋂ a : J, {r | 0 < m a.val.2 (v a.val.1 + r) * m a.val.2 (v a.val.1)}
   have hU : IsOpen U := by
     refine Metric.isOpen_ball.inter (isOpen_iInter_of_finite fun a => ?_)
     exact isOpen_lt continuous_const (by fun_prop)
   have hzero : (0 : V) ∈ U := by
     refine ⟨by simpa using hε, mem_iInter.mpr fun a => ?_⟩
-    simpa using mul_self_pos.mpr a.2
+    simpa using mul_self_pos.mpr a.property
   obtain ⟨r, hrU, htrans, hgerm⟩ := E.exists_mem_forall_eventually_isGeneric v (hU.mem_nhds hzero)
   refine ⟨r, by simpa using hrU.1, ?_, htrans, hgerm⟩
   intro i j hne
