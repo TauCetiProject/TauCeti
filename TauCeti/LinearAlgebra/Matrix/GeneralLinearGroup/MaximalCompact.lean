@@ -209,8 +209,8 @@ theorem _root_.Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_diag
   exact hdiag i
 
 /-- **A compact subgroup of `GL n ℂ` meets the positive upper-triangular group `A N` only in the
-identity.** Every element of a compact subgroup is unitary for some invariant Hermitian form, so its
-eigenvalues have modulus one, while the eigenvalues of an element of `A N` are positive reals. -/
+identity.** Here `A N` is the group of upper-triangular matrices with positive real diagonal
+entries. -/
 theorem inf_posUpperTriangularGroup_eq_bot_of_isCompact {n : Type*} [Fintype n] [LinearOrder n]
     {K : Subgroup (GL n ℂ)} (hK : IsCompact (K : Set (GL n ℂ))) :
     K ⊓ TauCeti.posUpperTriangularGroup n ℂ = ⊥ := by
