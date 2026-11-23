@@ -57,10 +57,7 @@ condition does need completeness.
 * `TauCeti.Semigroups.isMDissipative_iff_forall_mem_resolventSet_and_norm_resolvent_le`:
   conversely, these resolvent conditions characterize m-dissipativity.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.norm_le_norm_smul_sub_generator`: the
-  resolvent-range inequality at a general growth bound `(ω, M)`, and its form through
-  `‖R(lambda)‖`, `StronglyContinuousSemigroup.norm_le_norm_resolvent_mul_norm_smul_sub_generator`.
-* `TauCeti.Semigroups.StronglyContinuousSemigroup.inv_abs_sub_le_norm_resolvent_of_tendsto`:
-  approximate eigenvectors of the generator for `mu` force `|lambda - mu|⁻¹ ≤ ‖R(lambda)‖`.
+  resolvent-range inequality at a general growth bound `(ω, M)`.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.smul_sub_generator_bijective`:
   `lambda • I - A` is bijective from `D(A)` onto `X` for `lambda > ω`.
 * `TauCeti.Semigroups.ContractionSemigroup.isDissipative_generator` and
@@ -356,23 +353,6 @@ namespace StronglyContinuousSemigroup
 
 variable [CompleteSpace X]
 
-/-- For a C₀-semigroup with growth bound `(ω, M)` and `lambda > ω`, every `x ∈ D(A)` satisfies
-`‖x‖ ≤ ‖R(lambda)‖ * ‖lambda x - A x‖`: apply the resolvent to `lambda x - A x` and use the
-left-inverse identity `R(lambda) (lambda x - A x) = x`. -/
-theorem norm_le_norm_resolvent_mul_norm_smul_sub_generator (S : StronglyContinuousSemigroup X)
-    {ω M : ℝ} (hb : S.HasGrowthBound ω M) {lambda : ℝ} (hlambda : ω < lambda)
-    (x : S.generator.domain) :
-    ‖(x : X)‖ ≤ ‖S.resolvent hb lambda hlambda‖ * ‖lambda • (x : X) - S.generator x‖ := by
-  have hx : (x : X) ∈ S.domain := by
-    rw [← S.generator_domain]
-    exact x.property
-  have key : S.resolvent hb lambda hlambda (lambda • (x : X) - S.generator x) = (x : X) :=
-    S.resolventLeftInv hb lambda hlambda ⟨(x : X), hx⟩
-  calc ‖(x : X)‖ = ‖S.resolvent hb lambda hlambda (lambda • (x : X) - S.generator x)‖ := by
-        rw [key]
-    _ ≤ ‖S.resolvent hb lambda hlambda‖ * ‖lambda • (x : X) - S.generator x‖ :=
-        ContinuousLinearMap.le_opNorm _ _
-
 /-- **Resolvent-range inequality.** For a C₀-semigroup with growth bound `(ω, M)` and
 `lambda > ω`, every `x ∈ D(A)` satisfies `‖x‖ ≤ M / (lambda - ω) * ‖lambda x - A x‖`.
 
@@ -383,42 +363,6 @@ theorem norm_le_norm_smul_sub_generator (S : StronglyContinuousSemigroup X) {ω 
     ‖(x : X)‖ ≤ M / (lambda - ω) * ‖lambda • (x : X) - S.generator x‖ :=
   (S.norm_le_norm_resolvent_mul_norm_smul_sub_generator hb hlambda x).trans
     (by gcongr; exact S.resolvent_norm_le hb lambda hlambda)
-
-open Filter Topology in
-/-- **Resolvent norm from approximate eigenvectors.** If nonzero `x i ∈ D(A)` are approximate
-eigenvectors of the generator for `mu`, in the sense that `‖A (x i) - mu x i‖ / ‖x i‖ → 0` along
-a nontrivial filter, then for `lambda > ω` the resolvent satisfies
-`|lambda - mu|⁻¹ ≤ ‖R(lambda)‖`. -/
-theorem inv_abs_sub_le_norm_resolvent_of_tendsto (S : StronglyContinuousSemigroup X) {ω M : ℝ}
-    (hb : S.HasGrowthBound ω M) {lambda : ℝ} (hlambda : ω < lambda) {mu : ℝ} {ι : Type*}
-    {l : Filter ι} [l.NeBot] (x : ι → S.generator.domain) (hx : ∀ᶠ i in l, (x i : X) ≠ 0)
-    (h : Tendsto (fun i ↦ ‖S.generator (x i) - mu • (x i : X)‖ / ‖(x i : X)‖) l (𝓝 0)) :
-    |lambda - mu|⁻¹ ≤ ‖S.resolvent hb lambda hlambda‖ := by
-  set R := S.resolvent hb lambda hlambda
-  -- Each `x i` gives `1 ≤ ‖R‖ * (|lambda - mu| + ‖A (x i) - mu x i‖ / ‖x i‖)`.
-  have key : ∀ i, (x i : X) ≠ 0 →
-      1 ≤ ‖R‖ * (|lambda - mu| + ‖S.generator (x i) - mu • (x i : X)‖ / ‖(x i : X)‖) := by
-    intro i hxi
-    have hn : 0 < ‖(x i : X)‖ := norm_pos_iff.2 hxi
-    have hle := S.norm_le_norm_resolvent_mul_norm_smul_sub_generator hb hlambda (x i)
-    rw [show lambda • (x i : X) - S.generator (x i) =
-        (lambda - mu) • (x i : X) - (S.generator (x i) - mu • (x i : X)) by
-      rw [sub_smul]; abel] at hle
-    replace hle := hle.trans (mul_le_mul_of_nonneg_left (norm_sub_le _ _) (norm_nonneg R))
-    rw [norm_smul, Real.norm_eq_abs] at hle
-    calc 1 = ‖(x i : X)‖ / ‖(x i : X)‖ := (div_self hn.ne').symm
-      _ ≤ ‖R‖ * (|lambda - mu| * ‖(x i : X)‖ + ‖S.generator (x i) - mu • (x i : X)‖) /
-          ‖(x i : X)‖ := by gcongr
-      _ = _ := by rw [mul_div_assoc, add_div, mul_div_cancel_right₀ _ hn.ne']
-  -- Let the approximation error tend to zero.
-  have hlim : Tendsto (fun i ↦ ‖R‖ *
-      (|lambda - mu| + ‖S.generator (x i) - mu • (x i : X)‖ / ‖(x i : X)‖)) l
-      (𝓝 (‖R‖ * |lambda - mu|)) := by
-    simpa using (tendsto_const_nhds.add h).const_mul ‖R‖
-  have h1 : 1 ≤ ‖R‖ * |lambda - mu| := ge_of_tendsto hlim (hx.mono key)
-  have hpos : 0 < |lambda - mu| :=
-    (abs_nonneg _).lt_of_ne fun h0 ↦ by rw [← h0, mul_zero] at h1; norm_num at h1
-  rwa [inv_le_iff_one_le_mul₀ hpos]
 
 /-- For `lambda` beyond the growth exponent, `lambda • I - A` is injective on `D(A)`: the
 resolvent is a left inverse of it. -/

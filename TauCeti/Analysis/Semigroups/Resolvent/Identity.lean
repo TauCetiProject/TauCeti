@@ -27,8 +27,11 @@ abstract `LinearPMap.resolvent_sub_resolvent` and `LinearPMap.resolvent_comm` tr
 it, rather than separate arguments; the identity is recorded both for `resolvent` and for
 `resolventFun`, the resolvent seen as a function of the spectral parameter alone. The bridge
 also transports the Laplace-transform norm estimate to the abstract resolvent:
-`‖R(lambda, A)‖ ≤ M / (lambda - omega)`. The sharp power estimate is proved from the integral
-power formula in `TauCeti/Analysis/Semigroups/Resolvent/PowerBounds.lean`.
+`‖R(lambda, A)‖ ≤ M / (lambda - omega)`. Conversely, the left-inverse identity bounds the
+resolvent norm from below: `‖x‖ ≤ ‖R(lambda)‖ * ‖lambda x - A x‖` on `D(A)`, so approximate
+eigenvectors of `A` for `mu` force `|lambda - mu|⁻¹ ≤ ‖R(lambda)‖`
+(`StronglyContinuousSemigroup.inv_abs_sub_le_norm_resolvent_of_tendsto`). The sharp power
+estimate is proved from the integral power formula in `TauCeti/Analysis/Semigroups/Resolvent/PowerBounds.lean`.
 
 ## References
 
@@ -188,6 +191,65 @@ theorem norm_generator_resolvent_le (S : StronglyContinuousSemigroup X) [Complet
     ‖LinearPMap.resolvent S.generator lambda‖ ≤ M / (lambda - omega) := by
   rw [S.generator_resolvent_eq hb hlambda]
   exact S.resolvent_norm_le hb lambda hlambda
+
+/-- For a C₀-semigroup with growth bound `(omega, M)` and `lambda > omega`, every `x ∈ D(A)`
+satisfies `‖x‖ ≤ ‖R(lambda)‖ * ‖lambda x - A x‖`: apply the resolvent to `lambda x - A x` and
+use the left-inverse identity `R(lambda) (lambda x - A x) = x`. -/
+theorem norm_le_norm_resolvent_mul_norm_smul_sub_generator (S : StronglyContinuousSemigroup X)
+    [CompleteSpace X] {omega M : ℝ} (hb : S.HasGrowthBound omega M) {lambda : ℝ}
+    (hlambda : omega < lambda) (x : S.generator.domain) :
+    ‖(x : X)‖ ≤ ‖S.resolvent hb lambda hlambda‖ * ‖lambda • (x : X) - S.generator x‖ := by
+  have hx : (x : X) ∈ S.domain := by
+    rw [← S.generator_domain]
+    exact x.property
+  have key : S.resolvent hb lambda hlambda (lambda • (x : X) - S.generator x) = (x : X) :=
+    S.resolventLeftInv hb lambda hlambda ⟨(x : X), hx⟩
+  calc ‖(x : X)‖ = ‖S.resolvent hb lambda hlambda (lambda • (x : X) - S.generator x)‖ := by
+        rw [key]
+    _ ≤ ‖S.resolvent hb lambda hlambda‖ * ‖lambda • (x : X) - S.generator x‖ :=
+        ContinuousLinearMap.le_opNorm _ _
+
+open Filter Topology in
+/-- **Resolvent norm from approximate eigenvectors.** If nonzero `x i ∈ D(A)` are approximate
+eigenvectors of the generator for `mu`, in the sense that `‖A (x i) - mu x i‖ / ‖x i‖ → 0` along
+a nontrivial filter, then for `lambda > omega` the resolvent satisfies
+`|lambda - mu|⁻¹ ≤ ‖R(lambda)‖`. -/
+theorem inv_abs_sub_le_norm_resolvent_of_tendsto (S : StronglyContinuousSemigroup X)
+    [CompleteSpace X] {omega M : ℝ} (hb : S.HasGrowthBound omega M) {lambda : ℝ}
+    (hlambda : omega < lambda) {mu : ℝ} {ι : Type*} {l : Filter ι} [l.NeBot]
+    (x : ι → S.generator.domain) (hx : ∀ᶠ i in l, (x i : X) ≠ 0)
+    (h : Tendsto (fun i ↦ ‖S.generator (x i) - mu • (x i : X)‖ / ‖(x i : X)‖) l (𝓝 0)) :
+    |lambda - mu|⁻¹ ≤ ‖S.resolvent hb lambda hlambda‖ := by
+  set R := S.resolvent hb lambda hlambda
+  -- Each `x i` gives `1 ≤ ‖R‖ * (|lambda - mu| + ‖A (x i) - mu x i‖ / ‖x i‖)`.
+  have key : ∀ i, (x i : X) ≠ 0 →
+      1 ≤ ‖R‖ * (|lambda - mu| + ‖S.generator (x i) - mu • (x i : X)‖ / ‖(x i : X)‖) := by
+    intro i hxi
+    have hn : 0 < ‖(x i : X)‖ := norm_pos_iff.2 hxi
+    -- Split `lambda x - A x = (lambda - mu) x - (A x - mu x)` and use the triangle inequality.
+    have hle : ‖(x i : X)‖ ≤
+        ‖R‖ * (|lambda - mu| * ‖(x i : X)‖ + ‖S.generator (x i) - mu • (x i : X)‖) :=
+      calc ‖(x i : X)‖ ≤ ‖R‖ * ‖lambda • (x i : X) - S.generator (x i)‖ :=
+            S.norm_le_norm_resolvent_mul_norm_smul_sub_generator hb hlambda (x i)
+        _ = ‖R‖ * ‖(lambda - mu) • (x i : X) - (S.generator (x i) - mu • (x i : X))‖ := by
+            rw [sub_smul, sub_sub_sub_cancel_right]
+        _ ≤ ‖R‖ * (‖(lambda - mu) • (x i : X)‖ + ‖S.generator (x i) - mu • (x i : X)‖) := by
+            gcongr
+            exact norm_sub_le _ _
+        _ = _ := by rw [norm_smul, Real.norm_eq_abs]
+    calc 1 = ‖(x i : X)‖ / ‖(x i : X)‖ := (div_self hn.ne').symm
+      _ ≤ ‖R‖ * (|lambda - mu| * ‖(x i : X)‖ + ‖S.generator (x i) - mu • (x i : X)‖) /
+          ‖(x i : X)‖ := by gcongr
+      _ = _ := by rw [mul_div_assoc, add_div, mul_div_cancel_right₀ _ hn.ne']
+  -- Let the approximation error tend to zero.
+  have hlim : Tendsto (fun i ↦ ‖R‖ *
+      (|lambda - mu| + ‖S.generator (x i) - mu • (x i : X)‖ / ‖(x i : X)‖)) l
+      (𝓝 (‖R‖ * |lambda - mu|)) := by
+    simpa using (tendsto_const_nhds.add h).const_mul ‖R‖
+  have h1 : 1 ≤ ‖R‖ * |lambda - mu| := ge_of_tendsto hlim (hx.mono key)
+  have hpos : 0 < |lambda - mu| :=
+    (abs_nonneg _).lt_of_ne fun h0 ↦ by rw [← h0, mul_zero] at h1; norm_num at h1
+  rwa [inv_le_iff_one_le_mul₀ hpos]
 
 /-! ## The resolvent identity -/
 

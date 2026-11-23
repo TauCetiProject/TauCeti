@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Generator
-import TauCeti.Analysis.Semigroups.Dissipative.Basic
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.Lp.Norm
