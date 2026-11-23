@@ -63,6 +63,8 @@ The image of a base change map spans its target over the extended scalars, and f
 * `IsBaseChange.span_range_eq_top`: the image of a base change map spans its target over `R'`.
 * `IsBaseChange.cancelBaseChange`: for a base change `f : M → M'` along `R → R'` and an
   `R'`-algebra `A`, the isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`.
+* `IsBaseChange.cancelBaseChange_trans_cancelBaseChange`: cancelling two successive base changes
+  is cancelling the composite base change.
 * `IsBaseChange.tensorProduct_induction`: induction on `A ⊗[R'] M'` over the tensors `a ⊗ f m`.
 -/
 
@@ -228,8 +230,8 @@ variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [
 
 /-- For a base change `f : M → M'` along `R → R'` and an `R'`-algebra `A`, the `A`-linear
 isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`
-(`IsBaseChange.cancelBaseChange_tmul`). For `M' = R' ⊗[R] M` it is Mathlib's
-`TensorProduct.AlgebraTensorModule.cancelBaseChange`. -/
+(`IsBaseChange.cancelBaseChange_tmul`). For `M' = R' ⊗[R] M` with the canonical base change map
+`f m = 1 ⊗ₜ m` it is Mathlib's `TensorProduct.AlgebraTensorModule.cancelBaseChange`. -/
 noncomputable def cancelBaseChange : A ⊗[R'] M' ≃ₗ[A] A ⊗[R] M :=
   (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl A A) hf.equiv.symm).trans
     (TensorProduct.AlgebraTensorModule.cancelBaseChange R R' A A M)
@@ -238,7 +240,36 @@ noncomputable def cancelBaseChange : A ⊗[R'] M' ≃ₗ[A] A ⊗[R] M :=
 theorem cancelBaseChange_tmul (a : A) (m : M) : hf.cancelBaseChange A (a ⊗ₜ f m) = a ⊗ₜ m := by
   simp [cancelBaseChange]
 
+@[simp]
+theorem cancelBaseChange_symm_tmul (a : A) (m : M) :
+    (hf.cancelBaseChange A).symm (a ⊗ₜ m) = a ⊗ₜ f m :=
+  (LinearEquiv.symm_apply_eq _).2 (hf.cancelBaseChange_tmul A a m).symm
+
 end CancelBaseChange
+
+section CancelBaseChangeTrans
+
+variable {R R' R'' M M' M'' : Type*} [CommSemiring R] [CommSemiring R'] [CommSemiring R'']
+  [Algebra R R'] [Algebra R' R''] [Algebra R R''] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  [AddCommMonoid M''] [Module R'' M''] [Module R' M''] [Module R M''] [IsScalarTower R' R'' M'']
+  [IsScalarTower R R'' M''] [IsScalarTower R R' M''] {f : M →ₗ[R] M'} {g : M' →ₗ[R'] M''}
+  (hf : IsBaseChange R' f) (hg : IsBaseChange R'' g)
+  (hgf : IsBaseChange R'' (g.restrictScalars R ∘ₗ f))
+  (A : Type*) [CommSemiring A] [Algebra R A] [Algebra R' A] [Algebra R'' A]
+  [IsScalarTower R R' A] [IsScalarTower R' R'' A] [IsScalarTower R R'' A]
+
+/-- **`cancelBaseChange` is transitive.** For base changes `f : M → M'` along `R → R'` and
+`g : M' → M''` along `R' → R''`, cancelling `g` and then `f` is cancelling `g ∘ f`: both send
+`a ⊗ g (f m)` to `a ⊗ m`. -/
+theorem cancelBaseChange_trans_cancelBaseChange :
+    (hg.cancelBaseChange A).trans (hf.cancelBaseChange A) = hgf.cancelBaseChange A := by
+  refine LinearEquiv.symm_bijective.injective (LinearEquiv.ext fun x ↦ ?_)
+  induction x using TensorProduct.inductionOn with
+  | tmul a m => simp [LinearEquiv.trans_symm]
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+
+end CancelBaseChangeTrans
 
 section Induction
 

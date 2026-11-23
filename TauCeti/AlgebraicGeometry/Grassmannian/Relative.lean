@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.RelativeGluing
 public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
-public import TauCeti.AlgebraicGeometry.Grassmannian.IsBaseChange
+public import TauCeti.AlgebraicGeometry.Grassmannian.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
 
 /-!
@@ -24,7 +24,7 @@ enters the construction. For affine opens `V ≤ U`, restriction of sections exh
 the base change of `Γ(E, U)` along `Γ(X, U) → Γ(X, V)`
 (`AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestrictionLinearMap`), so the
 Grassmannian of `Γ(E, V)` is the fibre product `Spec Γ(X, V) ×_{Spec Γ(X, U)} G(k, Γ(E, U))`
-(`Module.Grassmannian.isPullback_isBaseChangeHom`). These comparison morphisms
+(`IsBaseChange.isPullback_grassmannianSchemeHom`). These comparison morphisms
 `AlgebraicGeometry.Scheme.Modules.grassmannianChartMap` compose, so they form a relative gluing
 datum over the directed cover of `X` by its affine opens
 (`AlgebraicGeometry.Scheme.Cover.RelativeGluingData`), whose glued scheme is the relative
@@ -43,6 +43,9 @@ over arbitrary `X`-schemes are not treated here.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianToBase E k`: its structure morphism to `X`.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianι E k U`: the inclusion of `G(k, Γ(E, U))` as the
   part over the affine open `U`.
+* `AlgebraicGeometry.Scheme.Modules.grassmannianCocone E k` and
+  `AlgebraicGeometry.Scheme.Modules.isColimitGrassmannianCocone E k`: the relative Grassmannian as
+  the colimit of the `G(k, Γ(E, U))`.
 
 ## Main results
 
@@ -67,7 +70,43 @@ open CategoryTheory Limits Opposite TopologicalSpace
 
 namespace AlgebraicGeometry.Scheme.Modules
 
-variable {X : Scheme.{u}} (E : X.Modules) [E.IsQuasicoherent] (k : ℕ)
+variable {X : Scheme.{u}} (E : X.Modules)
+
+section Restriction
+
+variable {U V : X.Opens} (h : V ≤ U)
+
+/-- `Γ(X, V)` as a `Γ(X, U)`-algebra through restriction of functions, for opens `V ≤ U`. -/
+private noncomputable abbrev restrictionAlgebra : Algebra Γ(X, U) Γ(X, V) :=
+  (X.presheaf.map (homOfLE h).op).hom.toAlgebra
+
+/-- `Γ(E, V)` as a `Γ(X, U)`-module through restriction of functions, for opens `V ≤ U`. -/
+private noncomputable abbrev restrictionModule : Module Γ(X, U) Γ(E, V) :=
+  Module.compHom _ (X.presheaf.map (homOfLE h).op).hom
+
+-- The algebra map of `restrictionAlgebra` is restriction of functions.
+private lemma algebraMap_restrictionAlgebra :
+    letI := restrictionAlgebra h
+    algebraMap Γ(X, U) Γ(X, V) = (X.presheaf.map (homOfLE h).op).hom :=
+  RingHom.algebraMap_toAlgebra _
+
+-- The scalar action of `restrictionModule` is through restriction of functions.
+private lemma smul_restrictionModule (r : Γ(X, U)) (m : Γ(E, V)) :
+    letI := restrictionModule E h
+    r • m = X.presheaf.map (homOfLE h).op r • m :=
+  rfl
+
+private lemma isScalarTower_restriction :
+    letI := restrictionAlgebra h
+    letI := restrictionModule E h
+    IsScalarTower Γ(X, U) Γ(X, V) Γ(E, V) :=
+  letI := restrictionAlgebra h
+  letI := restrictionModule E h
+  .of_algebraMap_smul fun r m ↦ by rw [smul_restrictionModule, algebraMap_restrictionAlgebra]
+
+end Restriction
+
+variable [E.IsQuasicoherent] (k : ℕ)
 
 /-- The Grassmannian `G(k, Γ(E, U))` of the sections of `E` over an affine open `U`, a scheme over
 `Spec Γ(X, U)`. -/
@@ -76,27 +115,38 @@ noncomputable abbrev grassmannianChart (U : X.affineOpens) : Scheme.{u} :=
 
 /-- For affine opens `V ≤ U`, the morphism `G(k, Γ(E, V)) ⟶ G(k, Γ(E, U))` over the restriction
 `Spec Γ(X, V) ⟶ Spec Γ(X, U)`: `Γ(E, V)` is the base change of `Γ(E, U)` along restriction of
-functions, and this is `Module.Grassmannian.isBaseChangeHom` for that base change. It identifies
+functions, and this is `IsBaseChange.grassmannianSchemeHom` for that base change. It identifies
 `G(k, Γ(E, V))` with the part of `G(k, Γ(E, U))` over `V`
 (`AlgebraicGeometry.Scheme.Modules.isPullback_grassmannianChartMap`). -/
 noncomputable def grassmannianChartMap {U V : X.affineOpens} (h : V.val ≤ U.val) :
     grassmannianChart E k V ⟶ grassmannianChart E k U :=
-  letI := (X.presheaf.map (homOfLE h).op).hom.toAlgebra
-  letI : Module Γ(X, U.val) Γ(E, V.val) := Module.compHom _ (algebraMap Γ(X, U.val) Γ(X, V.val))
-  haveI : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(E, V.val) := .of_algebraMap_smul fun _ _ ↦ rfl
-  Module.Grassmannian.isBaseChangeHom
-    (E.isBaseChange_sectionsRestrictionLinearMap U.property V.property h fun _ ↦ rfl) k
+  letI := restrictionAlgebra h
+  letI := restrictionModule E h
+  haveI := isScalarTower_restriction E h
+  (E.isBaseChange_sectionsRestrictionLinearMap U.property V.property h
+    fun r ↦ DFunLike.congr_fun (algebraMap_restrictionAlgebra h) r).grassmannianSchemeHom k
+
+-- `grassmannianChartMap` is the morphism of Grassmannians of the restriction base change.
+private lemma grassmannianChartMap_eq {U V : X.affineOpens} (h : V.val ≤ U.val) :
+    letI := restrictionAlgebra h
+    letI := restrictionModule E h
+    haveI := isScalarTower_restriction E h
+    grassmannianChartMap E k h =
+      (E.isBaseChange_sectionsRestrictionLinearMap U.property V.property h
+        fun r ↦ DFunLike.congr_fun (algebraMap_restrictionAlgebra h) r).grassmannianSchemeHom k :=
+  rfl
 
 /-- `grassmannianChartMap` lies over the restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)`. -/
 @[reassoc (attr := simp)]
 theorem grassmannianChartMap_toSpec {U V : X.affineOpens} (h : V.val ≤ U.val) :
     grassmannianChartMap E k h ≫ Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k =
       Module.Grassmannian.toSpec Γ(X, V.val) Γ(E, V.val) k ≫
-        Spec.map (X.presheaf.map (homOfLE h).op) :=
-  letI := (X.presheaf.map (homOfLE h).op).hom.toAlgebra
-  letI : Module Γ(X, U.val) Γ(E, V.val) := Module.compHom _ (algebraMap Γ(X, U.val) Γ(X, V.val))
-  haveI : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(E, V.val) := .of_algebraMap_smul fun _ _ ↦ rfl
-  Module.Grassmannian.isBaseChangeHom_toSpec _ k
+        Spec.map (X.presheaf.map (homOfLE h).op) := by
+  let _ := restrictionAlgebra h
+  let _ := restrictionModule E h
+  have _ := isScalarTower_restriction E h
+  rw [grassmannianChartMap_eq, IsBaseChange.grassmannianSchemeHom_toSpec,
+    algebraMap_restrictionAlgebra, CommRingCat.ofHom_hom]
 
 /-- **The Grassmannian over a smaller affine open.** For affine opens `V ≤ U`, the Grassmannian
 `G(k, Γ(E, V))` is the fibre product `Spec Γ(X, V) ×_{Spec Γ(X, U)} G(k, Γ(E, U))`, with
@@ -104,11 +154,15 @@ projections `grassmannianChartMap` and the structure morphism. -/
 theorem isPullback_grassmannianChartMap {U V : X.affineOpens} (h : V.val ≤ U.val) :
     IsPullback (grassmannianChartMap E k h) (Module.Grassmannian.toSpec Γ(X, V.val) Γ(E, V.val) k)
       (Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k)
-      (Spec.map (X.presheaf.map (homOfLE h).op)) :=
-  letI := (X.presheaf.map (homOfLE h).op).hom.toAlgebra
-  letI : Module Γ(X, U.val) Γ(E, V.val) := Module.compHom _ (algebraMap Γ(X, U.val) Γ(X, V.val))
-  haveI : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(E, V.val) := .of_algebraMap_smul fun _ _ ↦ rfl
-  Module.Grassmannian.isPullback_isBaseChangeHom _ k
+      (Spec.map (X.presheaf.map (homOfLE h).op)) := by
+  let _ := restrictionAlgebra h
+  let _ := restrictionModule E h
+  have _ := isScalarTower_restriction E h
+  have hres : Spec.map (CommRingCat.ofHom (algebraMap Γ(X, U.val) Γ(X, V.val))) =
+      Spec.map (X.presheaf.map (homOfLE h).op) := by
+    rw [algebraMap_restrictionAlgebra, CommRingCat.ofHom_hom]
+  rw [grassmannianChartMap_eq, ← hres]
+  exact IsBaseChange.isPullback_grassmannianSchemeHom _ k
 
 /-- **The comparison morphisms compose.** For affine opens `W ≤ V ≤ U`, the morphisms
 `G(k, Γ(E, W)) ⟶ G(k, Γ(E, V)) ⟶ G(k, Γ(E, U))` compose to the morphism for `W ≤ U`. -/
@@ -117,44 +171,36 @@ theorem grassmannianChartMap_comp {U V W : X.affineOpens} (hWV : W.val ≤ V.val
     (hVU : V.val ≤ U.val) :
     grassmannianChartMap E k hWV ≫ grassmannianChartMap E k hVU =
       grassmannianChartMap E k (hWV.trans hVU) := by
-  let _ : Algebra Γ(X, U.val) Γ(X, V.val) := (X.presheaf.map (homOfLE hVU).op).hom.toAlgebra
-  let _ : Algebra Γ(X, V.val) Γ(X, W.val) := (X.presheaf.map (homOfLE hWV).op).hom.toAlgebra
-  let _ : Algebra Γ(X, U.val) Γ(X, W.val) :=
-    (X.presheaf.map (homOfLE (hWV.trans hVU)).op).hom.toAlgebra
-  let _ : Module Γ(X, U.val) Γ(E, V.val) := Module.compHom _ (algebraMap Γ(X, U.val) Γ(X, V.val))
-  let _ : Module Γ(X, V.val) Γ(E, W.val) := Module.compHom _ (algebraMap Γ(X, V.val) Γ(X, W.val))
-  let _ : Module Γ(X, U.val) Γ(E, W.val) := Module.compHom _ (algebraMap Γ(X, U.val) Γ(X, W.val))
-  have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(E, V.val) := .of_algebraMap_smul fun _ _ ↦ rfl
-  have _ : IsScalarTower Γ(X, V.val) Γ(X, W.val) Γ(E, W.val) := .of_algebraMap_smul fun _ _ ↦ rfl
-  have _ : IsScalarTower Γ(X, U.val) Γ(X, W.val) Γ(E, W.val) := .of_algebraMap_smul fun _ _ ↦ rfl
+  let _ := restrictionAlgebra hVU
+  let _ := restrictionAlgebra hWV
+  let _ := restrictionAlgebra (hWV.trans hVU)
+  let _ := restrictionModule E hVU
+  let _ := restrictionModule E hWV
+  let _ := restrictionModule E (hWV.trans hVU)
+  have _ := isScalarTower_restriction E hVU
+  have _ := isScalarTower_restriction E hWV
+  have _ := isScalarTower_restriction E (hWV.trans hVU)
   -- restriction of functions from `U` to `W` factors through `V`
   have hres (r : Γ(X, U.val)) :
-      algebraMap Γ(X, V.val) Γ(X, W.val) (algebraMap Γ(X, U.val) Γ(X, V.val) r) =
-        algebraMap Γ(X, U.val) Γ(X, W.val) r := by
-    -- the algebra maps are the restriction maps `X.presheaf.map _` by the `toAlgebra` above
-    change (X.presheaf.map (homOfLE hVU).op ≫ X.presheaf.map (homOfLE hWV).op) r = _
-    rw [← Functor.map_comp]
-    rfl
-  have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(X, W.val) :=
-    .of_algebraMap_eq fun r ↦ (hres r).symm
-  have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(E, W.val) := ⟨fun r s m ↦ by
-    -- the scalar actions on `Γ(E, W)` are `Module.compHom` along the algebra maps above
-    change algebraMap Γ(X, V.val) Γ(X, W.val) (r • s) • m =
-      algebraMap Γ(X, U.val) Γ(X, W.val) r • algebraMap Γ(X, V.val) Γ(X, W.val) s • m
-    rw [Algebra.smul_def, map_mul, mul_smul, hres]⟩
-  have hf := E.isBaseChange_sectionsRestrictionLinearMap U.property V.property hVU fun _ ↦ rfl
-  have hg := E.isBaseChange_sectionsRestrictionLinearMap V.property W.property hWV fun _ ↦ rfl
-  -- `grassmannianChartMap` is `isBaseChangeHom` of the restriction base change, by definition
-  change Module.Grassmannian.isBaseChangeHom hg k ≫ Module.Grassmannian.isBaseChangeHom hf k =
-    Module.Grassmannian.isBaseChangeHom
-      (E.isBaseChange_sectionsRestrictionLinearMap U.property W.property (hWV.trans hVU)
-        fun _ ↦ rfl) k
-  rw [Module.Grassmannian.isBaseChangeHom_comp hf hg (hf.comp hg)]
-  refine Module.Grassmannian.isBaseChangeHom_congr _ k _ (LinearMap.ext fun s ↦ ?_)
+      X.presheaf.map (homOfLE hWV).op (X.presheaf.map (homOfLE hVU).op r) =
+        X.presheaf.map (homOfLE (hWV.trans hVU)).op r := by
+    rw [← CommRingCat.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
+  have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(X, W.val) := .of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_restrictionAlgebra hVU, algebraMap_restrictionAlgebra hWV,
+      algebraMap_restrictionAlgebra (hWV.trans hVU), hres]
+  have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(E, W.val) := .of_algebraMap_smul fun r m ↦ by
+    rw [smul_restrictionModule E hWV, smul_restrictionModule E (hWV.trans hVU),
+      algebraMap_restrictionAlgebra hVU, hres]
+  have hf := E.isBaseChange_sectionsRestrictionLinearMap U.property V.property hVU
+    fun r ↦ DFunLike.congr_fun (algebraMap_restrictionAlgebra hVU) r
+  have hg := E.isBaseChange_sectionsRestrictionLinearMap V.property W.property hWV
+    fun r ↦ DFunLike.congr_fun (algebraMap_restrictionAlgebra hWV) r
+  rw [grassmannianChartMap_eq, grassmannianChartMap_eq, grassmannianChartMap_eq,
+    IsBaseChange.grassmannianSchemeHom_comp hf hg (hf.comp hg)]
+  refine IsBaseChange.grassmannianSchemeHom_congr _ k _ (LinearMap.ext fun s ↦ ?_)
   simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply,
     sectionsRestrictionLinearMap_apply]
-  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-  rfl
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
 
 /-- For an affine open `U`, the comparison morphism of `G(k, Γ(E, U))` with itself is the
 identity. -/
@@ -163,9 +209,7 @@ theorem grassmannianChartMap_self (U : X.affineOpens) :
     grassmannianChartMap E k (le_refl U.val) = 𝟙 _ := by
   -- the morphism is an idempotent isomorphism, as the base change of the identity
   have : IsIso (Spec.map (X.presheaf.map (homOfLE (le_refl U.val)).op)) := by
-    -- morphisms in the preorder category of opens are proofs, so `homOfLE` of `le_refl` is `𝟙`
-    rw [show homOfLE (le_refl U.val) = 𝟙 _ from rfl]
-    simp only [op_id, CategoryTheory.Functor.map_id]
+    simp only [homOfLE_refl, op_id, CategoryTheory.Functor.map_id]
     infer_instance
   have := (isPullback_grassmannianChartMap E k (le_refl U.val)).isIso_fst_of_isIso
   rw [← cancel_mono (grassmannianChartMap E k (le_refl U.val)), grassmannianChartMap_comp,
@@ -173,12 +217,26 @@ theorem grassmannianChartMap_self (U : X.affineOpens) :
 
 /-- The Grassmannians `G(k, Γ(E, U))` of the sections of `E` over the affine opens `U` of `X`, as
 a functor on the directed cover of `X` by its affine opens. -/
-@[expose, simps]
 noncomputable def grassmannianFunctor : X.directedAffineCover.I₀ ⥤ Scheme.{u} where
   obj U := grassmannianChart E k U
   map h := grassmannianChartMap E k (leOfHom h)
   map_id U := grassmannianChartMap_self E k U
   map_comp h h' := (grassmannianChartMap_comp E k (leOfHom h) (leOfHom h')).symm
+
+/-- The value of `grassmannianFunctor` at an affine open `U` is `G(k, Γ(E, U))`. -/
+theorem grassmannianFunctor_obj (U : X.directedAffineCover.I₀) :
+    (grassmannianFunctor E k).obj U = grassmannianChart E k U :=
+  (rfl)
+
+/-- The value of `grassmannianFunctor` on `V ≤ U` is `grassmannianChartMap`, up to the
+identification `grassmannianFunctor_obj` of its values. -/
+theorem grassmannianFunctor_map {U V : X.directedAffineCover.I₀} (h : U ⟶ V) :
+    (grassmannianFunctor E k).map h = eqToHom (grassmannianFunctor_obj E k U) ≫
+      grassmannianChartMap E k (leOfHom h) ≫ eqToHom (grassmannianFunctor_obj E k V).symm := by
+  -- by definition `grassmannianFunctor` sends `h` to `grassmannianChartMap`, and the two
+  -- `eqToHom` are identities because `grassmannianFunctor_obj` holds by definition
+  change grassmannianChartMap E k (leOfHom h) = 𝟙 _ ≫ grassmannianChartMap E k (leOfHom h) ≫ 𝟙 _
+  rw [Category.id_comp, Category.comp_id]
 
 -- The naturality square of the structure morphisms `G(k, Γ(E, U)) ⟶ U`.
 private lemma grassmannianChartMap_toSpec_isoSpec_inv {U V : X.affineOpens} (h : V.val ≤ U.val) :
@@ -234,6 +292,32 @@ theorem grassmannianChartMap_grassmannianι {U V : X.affineOpens} (h : V.val ≤
     grassmannianChartMap E k h ≫ grassmannianι E k U = grassmannianι E k V :=
   colimit.w (grassmannianGluingData E k).functor (homOfLE h)
 
+/-- The relative Grassmannian as the colimit of the Grassmannians `G(k, Γ(E, U))` over the affine
+opens `U` of `X`: the colimit cocone of `grassmannianFunctor`, with vertex `grassmannian E k`
+(`AlgebraicGeometry.Scheme.Modules.grassmannianCocone_pt`) and legs `grassmannianι E k U`
+(`AlgebraicGeometry.Scheme.Modules.grassmannianCocone_ι_app`). -/
+noncomputable def grassmannianCocone : Cocone (grassmannianFunctor E k) :=
+  colimit.cocone (grassmannianGluingData E k).functor
+
+/-- `grassmannianCocone` is a colimit cocone: morphisms out of the relative Grassmannian are
+determined by, and can be assembled from, compatible morphisms out of the `G(k, Γ(E, U))`. -/
+noncomputable def isColimitGrassmannianCocone : IsColimit (grassmannianCocone E k) :=
+  colimit.isColimit (grassmannianGluingData E k).functor
+
+/-- The vertex of `grassmannianCocone` is the relative Grassmannian. -/
+theorem grassmannianCocone_pt : (grassmannianCocone E k).pt = grassmannian E k :=
+  (rfl)
+
+/-- The legs of `grassmannianCocone` are the inclusions `grassmannianι`, up to the
+identifications `grassmannianFunctor_obj` and `grassmannianCocone_pt`. -/
+theorem grassmannianCocone_ι_app (U : X.directedAffineCover.I₀) :
+    (grassmannianCocone E k).ι.app U = eqToHom (grassmannianFunctor_obj E k U) ≫
+      grassmannianι E k U ≫ eqToHom (grassmannianCocone_pt E k).symm := by
+  -- by definition the legs of the colimit cocone are the inclusions `grassmannianι`, and the two
+  -- `eqToHom` are identities because both identifications hold by definition
+  change grassmannianι E k U = 𝟙 _ ≫ grassmannianι E k U ≫ 𝟙 _
+  rw [Category.id_comp, Category.comp_id]
+
 /-- **The relative Grassmannian over an affine open.** For an affine open `U` of `X`, the part of
 the relative Grassmannian over `U` is `G(k, Γ(E, U))`: the square formed by the inclusion of
 `U ≅ Spec Γ(X, U)` and the structure morphisms is a pullback square. -/
@@ -242,6 +326,8 @@ theorem isPullback_grassmannianι (U : X.affineOpens) :
       (grassmannianι E k U) U.val.ι (grassmannianToBase E k) :=
   (grassmannianGluingData E k).isPullback_natTrans_ι_toBase U
 
+/-- The inclusion `grassmannianι E k U` of the part of the relative Grassmannian over an affine
+open `U` is an open immersion, as the base change of the open immersion `U ⟶ X`. -/
 instance (U : X.affineOpens) : IsOpenImmersion (grassmannianι E k U) :=
   MorphismProperty.of_isPullback (P := @IsOpenImmersion) (isPullback_grassmannianι E k U)
     inferInstance

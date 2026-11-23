@@ -218,7 +218,8 @@ theorem IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map {X : Scheme.{u}} {U V 
 theorem IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv {X : Scheme.{u}} {U V : X.Opens}
     (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
     Spec.map (X.presheaf.map (homOfLE h).op) ≫ hU.isoSpec.inv = hV.isoSpec.inv ≫ X.homOfLE h := by
-  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι]
+  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι,
+    IsAffineOpen.isoSpec_inv_ι, IsAffineOpen.isoSpec_inv_ι]
   exact IsAffineOpen.map_fromSpec hU hV (homOfLE h).op
 
 /-- On affine opens `V ≤ U` of a scheme, the square relating the restriction
