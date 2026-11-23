@@ -105,7 +105,7 @@ private def inclZeroSquareFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x
         (continuous_const.add (continuous_subtypeVal.comp _root_.continuous_snd)))
       continuous_const fun p hp => ?_
     rw [scaleClamp_of_ge_one hp.ge, shiftClamp_of_le_one hp.le, CStarCone.toPath_apply_one,
-      ← x.eq_evalOne, Φ.eval_zero]
+      ← x.eq_evalOne, Φ.toHom_apply_zero]
 
 /-- Two-parameter continuous family `(s, t) ↦ f(s(1 + t))` for `s(1 + t) ≤ 1` and
 `Φ_a(s(1 + t) - 1)` for `s(1 + t) ≥ 1`, defining the homotopy inverse to `evalZeroMap`. -/
@@ -130,14 +130,13 @@ private theorem inclZeroSquare_one_left (Φ : NonUnitalStarAlgHom.Homotopy φ₀
     (x : MappingCone φ₀) : (inclZeroSquare Φ x).curry 1 = Φ.toHom x.fst := by
   ext t
   rw [ContinuousMap.curry_apply]
-  have h1 : ((1 : I) : ℝ) = 1 := rfl
   simp only [inclZeroSquare, ContinuousMap.nonUnitalStarAlgHomOfPointwise_apply,
-    inclZeroSquareFun, ContinuousMap.coe_mk, h1, one_mul]
+    inclZeroSquareFun, ContinuousMap.coe_mk, Set.Icc.coe_one, one_mul]
   split_ifs with ht
   · have ht_le : (t : ℝ) ≤ 0 := by linarith
     have ht0 : t = 0 := Subtype.ext (le_antisymm ht_le t.property.1)
     subst ht0
-    rw [scaleClamp_one_left, CStarCone.toPath_apply_one, ← x.eq_evalOne, Φ.eval_zero]
+    rw [scaleClamp_one_left, CStarCone.toPath_apply_one, ← x.eq_evalOne, Φ.toHom_apply_zero]
   · rw [shiftClamp_one_left]
 
 /-- Rescaling-and-concatenation `⋆`-homomorphism `MappingCone φ₀ →⋆ₙₐ[ℂ] MappingCone Φ.toHom`
@@ -153,8 +152,7 @@ def inclZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
       map_star' x := by ext s t; simp [map_star] }
     (by
       ext x t
-      have h1 : Set.inclusion Ioc_subset_Icc_self iocOne = (1 : I) := Subtype.ext (by simp)
-      simpa [h1] using DFunLike.congr_fun (inclZeroSquare_one_left Φ x).symm t)
+      simpa using DFunLike.congr_fun (inclZeroSquare_one_left Φ x).symm t)
 
 @[simp]
 theorem fst_inclZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone φ₀) :
@@ -183,14 +181,13 @@ theorem evalZeroMap_comp_inclZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ
   ext x : 1
   refine ext (by simp) ?_
   ext s
-  have h0 : ((0 : I) : ℝ) = 0 := rfl
   simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq,
     snd_evalZeroMap_apply, inclZeroMap, snd_lift_apply, NonUnitalStarAlgHom.coe_mk',
     NonUnitalAlgHom.coe_mk, CStarCone.ofPathEqZero_apply, ContinuousMap.curry_apply,
     inclZeroSquare, ContinuousMap.nonUnitalStarAlgHomOfPointwise_apply, inclZeroSquareFun,
-    ContinuousMap.coe_mk, h0, add_zero, mul_one]
+    ContinuousMap.coe_mk, Set.Icc.coe_zero, add_zero, mul_one]
   split_ifs with hs
-  · rw [scaleClamp_zero_right, CStarCone.toPath_apply_ioc]
+  · rw [scaleClamp_zero_right, CStarCone.toPath_apply_inclusion]
   · exact False.elim (hs s.property.2)
 
 /-- Continuous path `r ↦ G_r` in `CStarCone C(I, B)` deforming `(s, t) ↦ F(scaleClamp, shiftClamp)`
@@ -212,20 +209,18 @@ private def warpConePath (G : CStarCone C(I, B)) : C(I, CStarCone C(I, B)) where
 private theorem evalOne_warpConePath (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁)
     (y : MappingCone Φ.toHom) (r : I) :
     CStarCone.evalOne (warpConePath y.snd r) = Φ.toHom y.fst := by
-  have h1 : Set.inclusion Ioc_subset_Icc_self iocOne = (1 : I) := Subtype.ext (by simp)
   ext t
-  simp [warpConePath, Function.uncurry, h1, warpHomotopy_one_mid, ← y.eq_evalOne]
+  simp [warpConePath, Function.uncurry, warpHomotopy_one_mid, ← y.eq_evalOne]
 
 private theorem inclZeroSquare_evalZeroMap_eq (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁)
     (y : MappingCone Φ.toHom) (p : I × I) :
     inclZeroSquare Φ (evalZeroMap Φ y) p =
       (CStarCone.toPath y.snd).uncurry (scaleClamp p, shiftClamp p) := by
-  have hpath0 (u : I) : CStarCone.toPath (evalZeroMap Φ y).snd u = CStarCone.toPath y.snd u 0 := by
-    by_cases hu0 : u = 0
-    · subst hu0; simp
-    · obtain ⟨w, rfl⟩ := notMem_compl_iff.mp fun hw =>
-        hu0 ((notMem_range_inclusion_Ioc_Icc_iff u).mp hw)
-      simp
+  have hpath0 := congrFun
+    (eq_of_zero_of_inclusion_Ioc_Icc
+      (g₁ := fun u => CStarCone.toPath (evalZeroMap Φ y).snd u)
+      (g₂ := fun u => CStarCone.toPath y.snd u 0)
+      (by simp) (by simp))
   simp only [inclZeroSquare, ContinuousMap.nonUnitalStarAlgHomOfPointwise_apply,
     inclZeroSquareFun, ContinuousMap.coe_mk, ContinuousMap.uncurry_apply,
     Function.uncurry_apply_pair]
@@ -258,12 +253,12 @@ private def inclZeroCompEvalZeroHomotopy (Φ : NonUnitalStarAlgHom.Homotopy φ�
       map_star' y := by
         ext r : 1; refine ext (by simp) ?_; ext s t
         simp [warpConePath, Function.uncurry, map_star] }
-  eval_zero y := by
+  toHom_apply_zero y := by
     refine ext (by simp) ?_; ext s t
     have heq := inclZeroSquare_evalZeroMap_eq Φ y (Set.inclusion Ioc_subset_Icc_self s, t)
     simp only [ContinuousMap.uncurry_apply, Function.uncurry_apply_pair] at heq
     simp [warpConePath, Function.uncurry, warpHomotopy_zero_left, inclZeroMap, heq]
-  eval_one y := by
+  toHom_apply_one y := by
     refine ext (by simp) ?_; ext s t
     simp [warpConePath, Function.uncurry, warpHomotopy_one_left]
 

@@ -314,12 +314,7 @@ theorem map_comp_inr {φ : A →⋆ₙₐ[ℂ] B} {ψ : C →⋆ₙₐ[ℂ] D} {
     (map φ ψ α β hsq).comp (inr φ) = (inr ψ).comp (CStarSuspension.map β) := by
   ext g : 1
   refine ext (by simp) ?_
-  ext t
-  by_cases ht1 : t = iocOne
-  · subst ht1; simp
-  · obtain ⟨x, rfl⟩ := notMem_compl_iff.mp fun hx =>
-      ht1 ((notMem_range_inclusion_Ioo_Ioc_iff t).mp hx)
-    simp
+  exact DFunLike.coe_injective <| eq_of_iocOne_of_inclusion_Ioo_Ioc (by simp) (by simp)
 
 theorem inr_injective (φ : A →⋆ₙₐ[ℂ] B) : Function.Injective (inr φ) := fun _ _ h =>
   CStarSuspension.toCone_injective (congrArg snd h)

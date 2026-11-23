@@ -96,13 +96,20 @@ theorem coe_kerContinuousMapEvalEquiv_apply {A : Type*} [NonUnitalCStarAlgebra A
       TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) : C₀(Y, A)) =
       ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A g := (rfl)
 
+private theorem coe_kerContinuousMapEvalEquiv_symm_apply_def {A : Type*}
+    [NonUnitalCStarAlgebra A] (y₀ : Y)
+    (g : TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) :
+    (((kerContinuousMapEvalEquiv A y₀).symm g :
+      TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) : C(Y, A)) =
+      (ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A).symm g := (rfl)
+
 @[simp]
 theorem coe_kerContinuousMapEvalEquiv_symm_apply {A : Type*} [NonUnitalCStarAlgebra A] (y₀ : Y)
     (g : TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) :
     (((kerContinuousMapEvalEquiv A y₀).symm g :
       TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) : C(Y, A)) =
       (g : C₀(Y, A)).toContinuousMap := by
-  change ((ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A).symm (g : C₀(Y, A))) = _
+  rw [coe_kerContinuousMapEvalEquiv_symm_apply_def]
   simp
 
 end CompactKerEval

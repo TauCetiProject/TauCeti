@@ -60,9 +60,9 @@ structure Homotopy (φ₀ φ₁ : A →⋆ₙₐ[𝕜] B) where
   /-- The underlying path-algebra `⋆`-homomorphism `A →⋆ₙₐ[𝕜] C(unitInterval, B)`. -/
   toHom : A →⋆ₙₐ[𝕜] C(I, B)
   /-- At `t = 0`, `toHom` agrees with `φ₀`. -/
-  eval_zero : ∀ a, toHom a 0 = φ₀ a
+  toHom_apply_zero : ∀ a, toHom a 0 = φ₀ a
   /-- At `t = 1`, `toHom` agrees with `φ₁`. -/
-  eval_one : ∀ a, toHom a 1 = φ₁ a
+  toHom_apply_one : ∀ a, toHom a 1 = φ₁ a
 
 /-- Two non-unital `⋆`-algebra homomorphisms are homotopic if there is a `Homotopy` between them. -/
 abbrev Homotopic (φ₀ φ₁ : A →⋆ₙₐ[𝕜] B) : Prop :=
@@ -72,7 +72,7 @@ namespace Homotopy
 
 variable {φ₀ φ₁ φ₂ : A →⋆ₙₐ[𝕜] B}
 
-attribute [simp] eval_zero eval_one
+attribute [simp] toHom_apply_zero toHom_apply_one
 
 /-- Evaluate a homotopy of `⋆`-homomorphisms at time `t : unitInterval`. -/
 def eval (H : Homotopy φ₀ φ₁) (t : I) : A →⋆ₙₐ[𝕜] B :=
@@ -83,16 +83,16 @@ theorem eval_apply (H : Homotopy φ₀ φ₁) (t : I) (a : A) : H.eval t a = H.t
   simp [eval]
 
 @[simp]
-theorem eval_at_zero (H : Homotopy φ₀ φ₁) : H.eval 0 = φ₀ := by ext a; simp
+theorem eval_zero (H : Homotopy φ₀ φ₁) : H.eval 0 = φ₀ := by ext a; simp
 
 @[simp]
-theorem eval_at_one (H : Homotopy φ₀ φ₁) : H.eval 1 = φ₁ := by ext a; simp
+theorem eval_one (H : Homotopy φ₀ φ₁) : H.eval 1 = φ₁ := by ext a; simp
 
 /-- Constant homotopy from `φ` to itself. -/
 def refl (φ : A →⋆ₙₐ[𝕜] B) : Homotopy φ φ where
   toHom := (ContinuousMap.constNonUnitalStarAlgHom 𝕜 I B).comp φ
-  eval_zero _ := by simp
-  eval_one _ := by simp
+  toHom_apply_zero _ := by simp
+  toHom_apply_one _ := by simp
 
 @[simp]
 theorem refl_toHom_apply (φ : A →⋆ₙₐ[𝕜] B) (a : A) (t : I) : (refl φ).toHom a t = φ a := by
@@ -101,8 +101,8 @@ theorem refl_toHom_apply (φ : A →⋆ₙₐ[𝕜] B) (a : A) (t : I) : (refl �
 /-- Reverse a homotopy using `unitInterval.symmHomeomorph` (`t ↦ 1 - t`). -/
 def symm (H : Homotopy φ₀ φ₁) : Homotopy φ₁ φ₀ where
   toHom := (ContinuousMap.compNonUnitalStarAlgHom' 𝕜 B unitInterval.symmHomeomorph).comp H.toHom
-  eval_zero a := by simp
-  eval_one a := by simp
+  toHom_apply_zero a := by simp
+  toHom_apply_one a := by simp
 
 @[simp]
 theorem symm_toHom_apply (H : Homotopy φ₀ φ₁) (a : A) (t : I) :
@@ -112,8 +112,8 @@ theorem symm_toHom_apply (H : Homotopy φ₀ φ₁) (a : A) (t : I) :
 /-- Pointwise concatenated path used to define `Homotopy.trans`. -/
 private noncomputable def transPath (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) :
     C(I, B) :=
-  ((Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a)).trans
-    (Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a))).toContinuousMap
+  ((Path.mk (H₀.toHom a) (H₀.toHom_apply_zero a) (H₀.toHom_apply_one a)).trans
+    (Path.mk (H₁.toHom a) (H₁.toHom_apply_zero a) (H₁.toHom_apply_one a))).toContinuousMap
 
 /-- Concatenate two homotopies `H₀ : Homotopy φ₀ φ₁` and `H₁ : Homotopy φ₁ φ₂`. -/
 noncomputable def trans (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) : Homotopy φ₀ φ₂ where
@@ -129,8 +129,8 @@ noncomputable def trans (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ�
           ⟨2 * t - 1, two_mul_sub_one_mem_iff.2 (mem_Icc.mpr ⟨(not_le.1 ht).le, le_one t⟩)⟩).comp
           H₁.toHom, fun a => ?_⟩
       simp [transPath, Path.trans_apply, ht']
-  eval_zero a := by simp [transPath]
-  eval_one a := by simp [transPath]
+  toHom_apply_zero a := by simp [transPath]
+  toHom_apply_one a := by simp [transPath]
 
 /-- Pointwise evaluation of a concatenated homotopy across the unit interval. -/
 theorem trans_toHom_apply (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) (t : I) :
@@ -141,8 +141,8 @@ theorem trans_toHom_apply (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ �
         H₁.toHom a ⟨2 * t - 1,
           two_mul_sub_one_mem_iff.2 (mem_Icc.mpr ⟨(not_le.1 h).le, le_one t⟩)⟩ := by
   simpa [trans, transPath] using
-    Path.trans_apply (Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a))
-      (Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a)) t
+    Path.trans_apply (Path.mk (H₀.toHom a) (H₀.toHom_apply_zero a) (H₀.toHom_apply_one a))
+      (Path.mk (H₁.toHom a) (H₁.toHom_apply_zero a) (H₁.toHom_apply_one a)) t
 
 /-- On the first half `t ≤ 2⁻¹`, `H₀.trans H₁` evaluates `H₀` at `2 * t` (stated with `2⁻¹` for
 `simp` normal form). -/
@@ -162,8 +162,8 @@ theorem trans_toHom_apply_of_half_le (H₀ : Homotopy φ₀ φ₁) (H₁ : Homot
     (H₀.trans H₁).toHom a t =
       H₁.toHom a ⟨2 * t - 1, two_mul_sub_one_mem_iff.2
         (mem_Icc.mpr ⟨(one_div (2 : ℝ)).symm ▸ ht, le_one t⟩)⟩ := by
-  let γ₀ := Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a)
-  let γ₁ := Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a)
+  let γ₀ := Path.mk (H₀.toHom a) (H₀.toHom_apply_zero a) (H₀.toHom_apply_one a)
+  let γ₁ := Path.mk (H₁.toHom a) (H₁.toHom_apply_zero a) (H₁.toHom_apply_one a)
   have hdef : (H₀.trans H₁).toHom a = (γ₀.trans γ₁).toContinuousMap := by
     simp [trans, transPath, γ₀, γ₁]
   calc
@@ -178,8 +178,8 @@ theorem trans_toHom_apply_of_half_le (H₀ : Homotopy φ₀ φ₁) (H₁ : Homot
 def compRight {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction 𝕜 C] [Star C]
     (H : Homotopy φ₀ φ₁) (ψ : C →⋆ₙₐ[𝕜] A) : Homotopy (φ₀.comp ψ) (φ₁.comp ψ) where
   toHom := H.toHom.comp ψ
-  eval_zero c := H.eval_zero (ψ c)
-  eval_one c := H.eval_one (ψ c)
+  toHom_apply_zero c := H.toHom_apply_zero (ψ c)
+  toHom_apply_one c := H.toHom_apply_one (ψ c)
 
 @[simp]
 theorem compRight_toHom_apply {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction 𝕜 C]
@@ -198,8 +198,8 @@ def compLeft {C : Type*} [TopologicalSpace C] [NonUnitalNonAssocSemiring C]
     (H : Homotopy φ₀ φ₁) (ψ : B →⋆ₙₐ[𝕜] C) (hψ : Continuous ψ) :
     Homotopy (ψ.comp φ₀) (ψ.comp φ₁) where
   toHom := (ContinuousMap.compNonUnitalStarAlgHom I ψ hψ).comp H.toHom
-  eval_zero _ := by simp
-  eval_one _ := by simp
+  toHom_apply_zero _ := by simp
+  toHom_apply_one _ := by simp
 
 @[simp]
 theorem compLeft_toHom_apply {C : Type*} [TopologicalSpace C] [NonUnitalNonAssocSemiring C]
