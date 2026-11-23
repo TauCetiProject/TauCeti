@@ -18,8 +18,8 @@ records the corresponding open immersion
 
 the chart of Mathlib's cover `I.subschemeCover` of the closed subscheme `V(I)`, transported to `X`
 along the isomorphism `j.toImage : X ≅ V(I)`. Composed with `j`, it is the closed immersion
-`Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U) ⟶ Z` (`affineChart_comp`), and its image is `j⁻¹ U`
-(`mem_range_affineChart_iff`).
+`Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U)` followed by the open immersion `U.fromSpec` into `Z`
+(`affineChart_comp`), and its image is `j⁻¹ U` (`mem_range_affineChart_iff`).
 
 ## Main declarations
 
@@ -27,7 +27,8 @@ along the isomorphism `j.toImage : X ≅ V(I)`. Composed with `j`, it is the clo
   `Spec (Γ(Z, U) ⧸ (ker j)(U)) ⟶ X`.
 * `AlgebraicGeometry.Scheme.Hom.affineChart_comp`: composed with `j`, it is the quotient map
   followed by `U.fromSpec`.
-* `AlgebraicGeometry.Scheme.Hom.mem_range_affineChart_iff`: its image is the preimage of `U`.
+* `AlgebraicGeometry.Scheme.Hom.mem_range_affineChart_iff`, `opensRange_affineChart`: its image is
+  the preimage of `U`.
 -/
 
 public section
@@ -57,7 +58,7 @@ instance isOpenImmersion_affineChart : IsOpenImmersion (j.affineChart U) :=
   IsOpenImmersion.comp (j.ker.subschemeCover.f U) _
 
 /-- Composed with `j`, the affine chart over `U` is the closed immersion
-`Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U) ⟶ Z`. -/
+`Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U)` followed by the open immersion `U.fromSpec` into `Z`. -/
 @[reassoc]
 theorem affineChart_comp :
     j.affineChart U ≫ j =
@@ -76,13 +77,18 @@ theorem mem_range_affineChart_iff {x : X} : x ∈ Set.range (j.affineChart U) �
     exact U.property.range_fromSpec.le ⟨_, rfl⟩
   · intro hx
     have := j.ker.subschemeCover.map_prop U
-    have ht : j.toImage x ∈ (j.ker.subschemeCover.f U).opensRange := by
-      rw [IdealSheafData.opensRange_subschemeCover_map]
-      change (j.toImage ≫ j.imageι) x ∈ U.val
-      rwa [j.toImage_imageι]
-    obtain ⟨y, hy⟩ := ht
+    have hx' : j.imageι (j.toImage x) ∈ U.val := by
+      rwa [← Scheme.Hom.comp_apply, j.toImage_imageι]
+    -- `j.imageι` is the closed immersion `(ker j).subschemeι`
+    obtain ⟨y, hy⟩ : j.toImage x ∈ (j.ker.subschemeCover.f U).opensRange := by
+      rwa [IdealSheafData.opensRange_subschemeCover_map, Scheme.Hom.mem_preimage]
     refine ⟨y, (Scheme.Hom.comp_apply (j.ker.subschemeCover.f U) (inv j.toImage) y).trans ?_⟩
     rw [hy, ← Scheme.Hom.comp_apply, IsIso.hom_inv_id]
     rfl
+
+/-- The open image of the affine chart over `U` is the preimage of `U`. -/
+@[simp]
+theorem opensRange_affineChart : (j.affineChart U).opensRange = j ⁻¹ᵁ U.val :=
+  TopologicalSpace.Opens.ext (Set.ext fun _ ↦ j.mem_range_affineChart_iff U)
 
 end AlgebraicGeometry.Scheme.Hom
