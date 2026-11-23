@@ -33,9 +33,9 @@ compact `K` with `⁅y, z⁆ = x` in its Lie algebra, the pulled-back form takes
 `B(dφ x, dφ x)` on `(x, y, z)`, since `dφ` preserves brackets. So `φ` is not null-homotopic as
 soon as `B(dφ x, dφ x) ≠ 0`
 (`ContMDiffMonoidMorphism.not_nullhomotopic_of_lie_eq_of_apply_ne_zero`). This is how a
-homomorphism `SU(2) → K` attached to a root of a compact semisimple group `K` is shown to be a
+homomorphism `SU(2) → G` attached to a root of a compact semisimple group `G` is shown to be a
 map out of the three-sphere `SU(2)` that is not null-homotopic: on the basis `e₁, e₂, e₃` of
-`𝔰𝔲(2)` with `⁅e₂, e₃⁆ = e₁`, the negative-definite Killing form of `K` takes a negative value at
+`𝔰𝔲(2)` with `⁅e₂, e₃⁆ = e₁`, the negative-definite Killing form of `G` takes a negative value at
 `dφ e₁`.
 
 ## Main results
