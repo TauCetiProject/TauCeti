@@ -281,6 +281,17 @@ instance isOpenImmersion_homMk (m : X.obj ⟶ Y.obj) [PreAdicSpace.IsOpenImmersi
     PreAdicSpace.IsOpenImmersion (ObjectProperty.homMk m : X ⟶ Y).hom :=
   inferInstanceAs (PreAdicSpace.IsOpenImmersion m)
 
+/-- Composition in `AdicSpace` preserves open immersions of underlying pre-adic spaces. -/
+instance isOpenImmersion_comp (f : X ⟶ Y) (g : Y ⟶ Z)
+    [PreAdicSpace.IsOpenImmersion f.hom] [PreAdicSpace.IsOpenImmersion g.hom] :
+    PreAdicSpace.IsOpenImmersion (f ≫ g).hom := by
+  rw [ObjectProperty.FullSubcategory.comp_hom]
+  infer_instance
+
+/-- An isomorphism in `AdicSpace` has an isomorphic underlying morphism of pre-adic spaces. -/
+instance isIso_hom (f : X ⟶ Y) [IsIso f] : IsIso f.hom :=
+  (ObjectProperty.ι PreAdicSpace.isAdic).map_isIso f
+
 /-- Every morphism in `AdicSpace` out of an empty adic space is an open immersion. -/
 instance (priority := 100) isOpenImmersion_of_isEmpty (f : Y ⟶ X) [IsEmpty Y.obj] :
     PreAdicSpace.IsOpenImmersion f.hom :=
@@ -397,6 +408,22 @@ theorem restrictPreimage_base_apply (f : X ⟶ Y) (V : Opens Y.obj)
     (x : (X.restrict ((Opens.map f.hom.base).obj V)).obj) :
     (restrictPreimage f V).hom.base x = ⟨f.hom.base x.val, Opens.mem_map.mp x.property⟩ := by
   rw [restrictPreimage_hom, PreAdicSpace.Hom.restrictPreimage_base_apply]
+
+/-- Compatibility of `restrictPreimage` with a commutative square `k ≫ v = u ≫ ι` in `AdicSpace`:
+factorizations `vO` and `uO` of `v.hom` and `u.hom` through `Z.obj.ofRestrict O` and
+`Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj O)` satisfy
+`k.hom ≫ vO = uO ≫ ι.hom.restrictPreimage O`. -/
+theorem comm_restrictPreimage_of_square {W W₀ Z Z₀ : AdicSpace.{u}}
+    {k : W₀ ⟶ W} {v : W ⟶ Z} {u : W₀ ⟶ Z₀} {ι : Z₀ ⟶ Z} (hsq : k ≫ v = u ≫ ι)
+    (O : Opens Z.obj) {vO : W.obj ⟶ Z.obj.restrict O.isOpenEmbedding}
+    (hvO : vO ≫ Z.obj.ofRestrict O.isOpenEmbedding = v.hom)
+    {uO : W₀.obj ⟶ Z₀.obj.restrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding}
+    (huO : uO ≫ Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding = u.hom) :
+    k.hom ≫ vO = uO ≫ ι.hom.restrictPreimage O := by
+  refine (cancel_mono (Z.obj.ofRestrict O.isOpenEmbedding)).mp ?_
+  simpa only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc, hvO,
+    PreAdicSpace.Hom.restrictPreimage_ofRestrict, reassoc_of% huO] using
+    congrArg InducedCategory.Hom.hom hsq
 
 /-- Lifting a morphism `f : X ⟶ Y` restricted to `O ≤ f⁻¹(U)` across `Y.ofRestrict U` in
 `AdicSpace`. -/

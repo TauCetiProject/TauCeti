@@ -154,13 +154,12 @@ theorem IsEtaleLocalDescription.isOpenImmersion_comp {f : Y ⟶ X}
   let l : U' ⟶ U := ObjectProperty.homMk (pullback.fst u.hom v.hom)
   have hz : z ∈ Set.range u'.hom.base := by
     rw [ObjectProperty.homMk_hom, IsOpenImmersion.range_pullback_snd_of_left]; exact ⟨u₀, hu₀⟩
-  refine ⟨U', V, W, u', i, l ≫ j, g, inferInstance, hz, hi, ?_, hg, ?_⟩
-  · rw [ObjectProperty.FullSubcategory.comp_hom]; infer_instance
-  · have huv : u' ≫ v = l ≫ u := by
-      ext1
-      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, u', l]
-      exact pullback.condition.symm
-    simp only [reassoc_of% huv, hfac, Category.assoc]
+  refine ⟨U', V, W, u', i, l ≫ j, g, inferInstance, hz, hi, inferInstance, hg, ?_⟩
+  have huv : u' ≫ v = l ≫ u := by
+    ext1
+    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, u', l]
+    exact pullback.condition.symm
+  simp only [reassoc_of% huv, hfac, Category.assoc]
 
 /-- **Postcomposing an étale morphism with an open immersion into an analytic target gives an étale
 morphism.** -/
@@ -169,17 +168,14 @@ theorem IsEtaleLocalDescription.comp_isOpenImmersion {f : Y ⟶ X} (hf : IsEtale
     IsEtaleLocalDescription (f ≫ v) := by
   refine ⟨hZ, hf.isAnalytic_source, fun y ↦ ?_⟩
   obtain ⟨U, V, W, u, i, j, g, hu, hy, hi, hj, hg, hfac⟩ := hf.2.2 y
-  refine ⟨U, V, W, u, i ≫ v, j, g, hu, hy, ?_, hj, hg, ?_⟩
-  · rw [ObjectProperty.FullSubcategory.comp_hom]; infer_instance
-  · simp only [reassoc_of% hfac]
+  exact ⟨U, V, W, u, i ≫ v, j, g, hu, hy, inferInstance, hj, hg, by simp only [reassoc_of% hfac]⟩
 
 /-- Being étale (`IsEtaleLocalDescription`) is invariant under isomorphisms of source and target. -/
 instance IsEtaleLocalDescription.respectsIso :
     MorphismProperty.RespectsIso (@IsEtaleLocalDescription.{u}) :=
   MorphismProperty.RespectsIso.mk _
-    (fun e _ hf ↦ have := (ObjectProperty.ι isAdic).map_isIso e.hom; hf.isOpenImmersion_comp e.hom)
-    (fun e _ hf ↦ have := (ObjectProperty.ι isAdic).map_isIso e.hom
-      hf.comp_isOpenImmersion e.hom (hf.isAnalytic_target.of_iso e.symm))
+    (fun e _ hf ↦ hf.isOpenImmersion_comp e.hom)
+    (fun e _ hf ↦ hf.comp_isOpenImmersion e.hom (hf.isAnalytic_target.of_iso e.symm))
 
 /-- **Source locality of étale morphisms.** Let `f : Y ⟶ X` be a morphism into an analytic adic
 space `X`. If open immersions `u k : U k ⟶ Y` jointly cover `Y` and every composite `u k ≫ f`
@@ -191,9 +187,8 @@ theorem IsEtaleLocalDescription.of_jointly_surjective {f : Y ⟶ X} (hX : X.IsAn
   refine ⟨hX, .of_jointly_surjective u (fun k ↦ (hf k).isAnalytic_source) hcov, fun y ↦ ?_⟩
   obtain ⟨k, z, rfl⟩ := hcov y
   obtain ⟨U', V', W', u', i, j, g, hu', ⟨q, hq⟩, hi, hj, hg, hfac⟩ := (hf k).2.2 z
-  refine ⟨U', V', W', u' ≫ u k, i, j, g, ?_, ⟨q, by simp [hq]⟩, hi, hj, hg, ?_⟩
-  · rw [ObjectProperty.FullSubcategory.comp_hom]; infer_instance
-  · rw [Category.assoc, hfac]
+  refine ⟨U', V', W', u' ≫ u k, i, j, g, inferInstance, ⟨q, by simp [hq]⟩, hi, hj, hg, ?_⟩
+  rw [Category.assoc, hfac]
 
 /-- Being étale (`IsEtaleLocalDescription`) can be tested on any jointly surjective family of open
 immersions into the source, provided the target `X` is analytic. -/
@@ -289,8 +284,6 @@ theorem IsEtaleLocalDescription.exists_affinoid_factorization {f : Y ⟶ X}
   obtain ⟨q₀, hq₀⟩ : p₀ ∈ Set.range r.hom.base := by
     rw [ObjectProperty.homMk_hom, IsOpenImmersion.range_pullback_snd_of_left]
     exact ⟨⟨j₀.hom.base p₀, Opens.mem_map.mpr c.mem⟩, rfl⟩
-  have _ : PreAdicSpace.IsOpenImmersion (r ≫ u₀).hom := by
-    rw [ObjectProperty.FullSubcategory.comp_hom]; infer_instance
   refine ⟨{
     data := c.data
     U := U
@@ -488,82 +481,6 @@ variable {f : Y ⟶ X} (R : Pair C) (hR : IsSheafyForEveryPresentation R.plus) (
 private noncomputable abbrev sqZeroQuotHom : ofPair (R.quotient I) hRI ⟶ ofPair R hR :=
   comapOfPair hR hRI (Pair.quotientHom R I)
 
-private theorem comm_restrictPreimage_of_square {W W₀ Z Z₀ : AdicSpace.{u}}
-    {k : W₀ ⟶ W} {v : W ⟶ Z} {u : W₀ ⟶ Z₀} {ι : Z₀ ⟶ Z} (hsq : k ≫ v = u ≫ ι)
-    (O : Opens Z.obj) {vO : W.obj ⟶ Z.obj.restrict O.isOpenEmbedding}
-    (hvO : vO ≫ Z.obj.ofRestrict O.isOpenEmbedding = v.hom)
-    {uO : W₀.obj ⟶ Z₀.obj.restrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding}
-    (huO : uO ≫ Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding = u.hom) :
-    k.hom ≫ vO = uO ≫ ι.hom.restrictPreimage O := by
-  refine (cancel_mono (Z.obj.ofRestrict O.isOpenEmbedding)).mp ?_
-  simpa only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc, hvO,
-    Hom.restrictPreimage_ofRestrict, reassoc_of% huO] using
-    congrArg InducedCategory.Hom.hom hsq
-
-section SquareComparison
-
-variable {R hR I hRI} {W : Opens (ofPair R hR).obj} {z : (ofPair R hR).obj}
-
-private theorem sqRestrictPreimage (sq : OfPairQuotientRationalSquare R hR I hRI W z) :
-    (sqZeroQuotHom R hR I hRI).hom.restrictPreimage sq.openSet =
-      (IsOpenImmersion.isoRestrictOfRangeEq sq.square.quotientMap.hom
-          sq.square.range_quotientMap).inv ≫
-        (comapOfPair sq.square.isSheafy sq.square.isSheafyQuotient
-          (Pair.quotientHom sq.square.pair sq.square.ideal)).hom ≫
-        (IsOpenImmersion.isoRestrictOfRangeEq sq.square.targetMap.hom
-          sq.square.range_targetMap).hom :=
-  (Iso.eq_inv_comp (IsOpenImmersion.isoRestrictOfRangeEq sq.square.quotientMap.hom
-    sq.square.range_quotientMap)).mpr
-    (comm_restrictPreimage_of_square sq.square.comm sq.openSet
-      (IsOpenImmersion.isoRestrictOfRangeEq_hom_ofRestrict sq.square.targetMap.hom
-        sq.square.range_targetMap)
-      (IsOpenImmersion.isoRestrictOfRangeEq_hom_ofRestrict sq.square.quotientMap.hom
-        sq.square.range_quotientMap)).symm
-
-private theorem sqIncl_restrictPreimage (sq : OfPairQuotientRationalSquare R hR I hRI W z)
-    {O : Opens (ofPair R hR).obj}
-    (hmT : Set.range sq.square.targetMap.hom.base ⊆ (O : Set (ofPair R hR).obj))
-    (hmQ : Set.range sq.square.quotientMap.hom.base ⊆
-      (((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O :
-        Opens (ofPair (R.quotient I) hRI).obj) : Set (ofPair (R.quotient I) hRI).obj)) :
-    (comapOfPair sq.square.isSheafy sq.square.isSheafyQuotient
-        (Pair.quotientHom sq.square.pair sq.square.ideal)).hom ≫
-        sq.square.targetMap.hom.liftToRestrict hmT =
-      sq.square.quotientMap.hom.liftToRestrict hmQ ≫
-        (sqZeroQuotHom R hR I hRI).hom.restrictPreimage O :=
-  comm_restrictPreimage_of_square sq.square.comm O
-    (Hom.liftToRestrict_ofRestrict _ _) (Hom.liftToRestrict_ofRestrict _ _)
-
-private theorem mem_range_liftToRestrict_targetMap
-    (sq : OfPairQuotientRationalSquare R hR I hRI W z)
-    {p : (ofPair R hR).obj.restrict W.isOpenEmbedding} (hp : p.val = z)
-    (ht : Set.range sq.square.targetMap.hom.base ⊆ (W : Set (ofPair R hR).obj)) :
-    p ∈ Set.range (sq.square.targetMap.hom.liftToRestrict ht).base := by
-  obtain ⟨q, hq⟩ : z ∈ Set.range sq.square.targetMap.hom.base :=
-    sq.square.range_targetMap.symm ▸ sq.mem
-  exact ⟨q, Subtype.ext (by simp [hq, hp])⟩
-
-private theorem quotientHom_comp_liftToRestrict
-    (sq : OfPairQuotientRationalSquare R hR I hRI W z) (g₀ : ofPair (R.quotient I) hRI ⟶ Y)
-    {O : Opens (ofPair R hR).obj} (hWO : sq.openSet ≤ O)
-    (hmT : Set.range sq.square.targetMap.hom.base ⊆ (O : Set (ofPair R hR).obj))
-    {gO : (ofPair R hR).obj.restrict O.isOpenEmbedding ⟶ Y.obj}
-    (hgO_ι : (sqZeroQuotHom R hR I hRI).hom.restrictPreimage O ≫ gO =
-      (ofPair (R.quotient I) hRI).obj.ofRestrict
-        ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O).isOpenEmbedding ≫ g₀.hom) :
-    (comapOfPair sq.square.isSheafy sq.square.isSheafyQuotient
-        (Pair.quotientHom sq.square.pair sq.square.ideal)).hom ≫
-        sq.square.targetMap.hom.liftToRestrict hmT ≫ gO =
-      sq.square.quotientMap.hom ≫ g₀.hom := by
-  have hmQ : Set.range sq.square.quotientMap.hom.base ⊆
-      (((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O :
-        Opens (ofPair (R.quotient I) hRI).obj) : Set (ofPair (R.quotient I) hRI).obj) :=
-    sq.square.range_quotientMap.le.trans (Set.preimage_mono (SetLike.coe_subset_coe.mpr hWO))
-  rw [reassoc_of% (sqIncl_restrictPreimage sq hmT hmQ), hgO_ι,
-    Hom.liftToRestrict_ofRestrict_assoc]
-
-end SquareComparison
-
 private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescription f)
     (hI : I ^ 2 = ⊥) (hsq : g₀ ≫ f = sqZeroQuotHom R hR I hRI ≫ h) (z : (ofPair R hR).obj) :
     ∃ (O : Opens (ofPair R hR).obj), z ∈ O ∧
@@ -609,7 +526,7 @@ private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescripti
   · simp only [Category.assoc, hgloc_f_hom,
       reassoc_of% (IsOpenImmersion.isoRestrictOfRangeEq_inv_comp sq.square.targetMap.hom
         sq.square.range_targetMap)]
-  · rw [sqRestrictPreimage sq]
+  · rw [sq.square.restrictPreimage_quotientHom]
     simp only [Category.assoc, Iso.hom_inv_id_assoc, hgloc_K_hom,
       reassoc_of% (IsOpenImmersion.isoRestrictOfRangeEq_inv_comp sq.square.quotientMap.hom
         (O := (Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj sq.openSet)
@@ -656,12 +573,14 @@ private theorem pullback_fst_comp_eq_of_sqZero_quotient (hf : IsEtaleLocalDescri
           Category.assoc, hg₁_f, hg₂_f, Hom.liftToRestrict_ofRestrict_assoc]))
       (InducedCategory.Hom.ext (by
         simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom]
-        exact (quotientHom_comp_liftToRestrict sq g₀ (sq.le.trans inf_le_left) ht₁ hg₁_ι).trans
-          (quotientHom_comp_liftToRestrict sq g₀ (sq.le.trans inf_le_right) ht₂ hg₂_ι).symm))
+        exact (sq.square.quotientHom_comp_liftToRestrict_comp g₀.hom (sq.le.trans inf_le_left)
+          ht₁ hg₁_ι).trans
+          (sq.square.quotientHom_comp_liftToRestrict_comp g₀.hom (sq.le.trans inf_le_right)
+            ht₂ hg₂_ι).symm))
   -- Transport that agreement to the open immersion `liftToRestrict ht` into `Z|_{O₁ ⊓ O₂}`
   refine ⟨(ofPair sq.square.pair sq.square.isSheafy).obj,
     sq.square.targetMap.hom.liftToRestrict ht, inferInstance,
-    mem_range_liftToRestrict_targetMap sq rfl ht, ?_⟩
+    sq.square.mem_range_liftToRestrict_targetMap sq.mem ht, ?_⟩
   rw [← Category.assoc, ← Category.assoc,
     Hom.liftToRestrict_comp_liftRestrict _ (inf_le_left : O₁₂ ≤ O₁) ht ht₁,
     Hom.liftToRestrict_comp_liftRestrict _ (inf_le_right : O₁₂ ≤ O₂) ht ht₂]

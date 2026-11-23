@@ -42,6 +42,9 @@ Huber's global-sections correspondence identifies morphisms `Spa(B, B⁺) ⟶ Sp
 
 * `TauCeti.AdicSpace.isAnalytic_ofPair_iff` and `TauCeti.AdicSpace.IsAnalytic.ofPair`: analyticity
   criterion for `ofPair` and automatic analyticity over Tate rings.
+* `TauCeti.AdicSpace.isOpenImmersion_comapOfPair_toCompletionLocHom` and
+  `TauCeti.AdicSpace.range_comapOfPair_toCompletionLocHom`: rational localization induces an open
+  immersion on `ofPair` with image the corresponding rational subset.
 * `TauCeti.AdicSpace.isHomeomorph_comapOfPair_quotientHom_base` and
   `TauCeti.AdicSpace.isHomeomorph_comapOfPair_quotientHom_base_of_isNilpotent`: quotienting a sheafy
   Huber pair by a locally nilpotent or nilpotent ideal induces a homeomorphism on underlying adic
@@ -534,6 +537,72 @@ theorem isHomeomorph_comapOfPair_quotientHom_base_of_isNilpotent (S : Pair A)
   isHomeomorph_comapOfPair_quotientHom_base S hS J hSJ fun _ ha ↦
     let ⟨n, hn⟩ := hJ
     ⟨n, by have h := Ideal.pow_mem_pow ha n; rwa [hn, Ideal.zero_eq_bot, Ideal.mem_bot] at h⟩
+
+/-- **The structure morphism of a rational localization induces an open immersion on `ofPair`**:
+the morphism `comapOfPair hS hSloc (P.toCompletionLocHom S hP F s L hden)` is an open immersion
+when `F` spans an open ideal. -/
+theorem isOpenImmersion_comapOfPair_toCompletionLocHom (P : PairOfDefinition A) (S : Pair A)
+    (hP : P.ringOfDefinition ≤ S.plus) (F : Finset A) (s : A) (L : Type u) [CommRing L]
+    [Algebra A L] [IsLocalization.Away s L] (hden : P.HasDenominatorPower F s L)
+    (hF : IsOpen (Ideal.span (F : Set A) : Set A)) (hS : IsSheafyForEveryPresentation S.plus) :
+    letI := P.locUniformSpace F s L hden
+    haveI := P.isUniformAddGroup_locUniformSpace F s L hden
+    haveI := P.isTopologicalRing_locUniformSpace F s L hden
+    haveI := P.isHuberRing_completion_locTopology F s L hden
+    ∀ (hSloc : IsSheafyForEveryPresentation (P.rationalLocalizationPair S hP F s L hden).plus),
+      PreAdicSpace.IsOpenImmersion
+        (comapOfPair hS hSloc (P.toCompletionLocHom S hP F s L hden)).hom := by
+  let _ := P.locUniformSpace F s L hden
+  have _ := P.isUniformAddGroup_locUniformSpace F s L hden
+  have _ := P.isTopologicalRing_locUniformSpace F s L hden
+  have _ := P.isHuberRing_completion_locTopology F s L hden
+  intro hSloc
+  let Sloc := P.rationalLocalizationPair S hP F s L hden
+  let Ploc := P.completionLocalization F s L hden
+  have hPloc := P.completionLocalization_ringOfDefinition_le_rationalLocalizationPair S hP F s L
+    hden
+  let φ := P.toCompletionLocHom S hP F s L hden
+  have _ : PreAdicSpace.IsOpenImmersion
+      (comapOfPresentation S P hP (hS.isSheaf P hP) Sloc Ploc hPloc (hSloc.isSheaf Ploc hPloc)
+        φ).hom := by
+    rw [comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
+    exact isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom P hP F s L hden
+      hF (hSloc.isSheaf Ploc hPloc)
+  rw [comapOfPair_eq_ofPairIsoOfPresentation hS hSloc P hP Ploc hPloc φ]
+  infer_instance
+
+/-- **The image of `comapOfPair` along a rational localization is the rational subset
+`spaBasicOpen S.plus F s`**, transported along `ofPairHomeomorph S hS`. -/
+theorem range_comapOfPair_toCompletionLocHom (P : PairOfDefinition A) (S : Pair A)
+    (hP : P.ringOfDefinition ≤ S.plus) (F : Finset A) (s : A) (L : Type u) [CommRing L]
+    [Algebra A L] [IsLocalization.Away s L] (hden : P.HasDenominatorPower F s L)
+    (hS : IsSheafyForEveryPresentation S.plus) :
+    letI := P.locUniformSpace F s L hden
+    haveI := P.isUniformAddGroup_locUniformSpace F s L hden
+    haveI := P.isTopologicalRing_locUniformSpace F s L hden
+    haveI := P.isHuberRing_completion_locTopology F s L hden
+    ∀ (hSloc : IsSheafyForEveryPresentation (P.rationalLocalizationPair S hP F s L hden).plus),
+      Set.range (comapOfPair hS hSloc (P.toCompletionLocHom S hP F s L hden)).hom.base =
+        ofPairHomeomorph S hS ⁻¹' (spaBasicOpen S.plus F s : Set (spa S.plus)) := by
+  let _ := P.locUniformSpace F s L hden
+  have _ := P.isUniformAddGroup_locUniformSpace F s L hden
+  have _ := P.isTopologicalRing_locUniformSpace F s L hden
+  have _ := P.isHuberRing_completion_locTopology F s L hden
+  intro hSloc
+  let Ploc := P.completionLocalization F s L hden
+  have hPloc := P.completionLocalization_ringOfDefinition_le_rationalLocalizationPair S hP F s L
+    hden
+  let φ := P.toCompletionLocHom S hP F s L hden
+  have hspa_range : Set.range φ.spaComap = (spaBasicOpen S.plus F s : Set (spa S.plus)) := by
+    rw [← range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base P hP F s L hden
+      (hSloc.isSheaf Ploc hPloc), ← presentationLimitPreAdicSpacePairComap_def P Ploc hP hPloc
+      (hSloc.isSheaf Ploc hPloc) φ]
+    exact (congrArg Set.range (funext (presentationLimitPreAdicSpacePairComap_base_apply
+      P Ploc hP hPloc (hSloc.isSheaf Ploc hPloc) φ))).symm
+  ext x; rw [Set.mem_preimage, ← hspa_range]
+  exact ⟨fun ⟨y, hy⟩ ↦ ⟨ofPairHomeomorph _ hSloc y, by simp [← hy, φ]⟩,
+    fun ⟨y, hy⟩ ↦ ⟨(ofPairHomeomorph _ hSloc).symm y,
+      (ofPairHomeomorph S hS).injective (by simp [hy, φ])⟩⟩
 
 end OfPair
 

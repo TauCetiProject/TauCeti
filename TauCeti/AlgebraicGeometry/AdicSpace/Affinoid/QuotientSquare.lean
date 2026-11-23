@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid
+public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid.Basic
 
 import TauCeti.RingTheory.Huber.LocalizationTopology.IdealQuotient
 import TauCeti.Topology.Algebra.Ring.Ideal
@@ -20,7 +20,7 @@ is also sheafy, this file constructs local pullback squares over rational opens 
 pair.
 
 Keeping these `Type`-valued square structures in a downstream module allows `AdicSpace.ofPair` to
-remain unexposed (`@[expose]`-free) in `TauCeti.AlgebraicGeometry.AdicSpace.Affinoid`.
+remain unexposed (`@[expose]`-free) in `TauCeti.AlgebraicGeometry.AdicSpace.Affinoid.Basic`.
 
 ## Main definitions
 
@@ -35,7 +35,8 @@ remain unexposed (`@[expose]`-free) in `TauCeti.AlgebraicGeometry.AdicSpace.Affi
 * `TauCeti.AdicSpace.exists_ofPair_quotient_open_square`: constructs an `OfPairQuotientOpenSquare`
   for fixed rational data `(F, s, hF)`.
 * `TauCeti.AdicSpace.exists_ofPair_quotient_rational_square`: around any point `z` in an open
-  `W` of `ofPair S hS`, produces an `OfPairQuotientRationalSquare` over a rational open around `z`.
+  `W` of `ofPair S hS`, produces an open neighbourhood `openSet ≤ W` of `z` carrying an
+  `OfPairQuotientOpenSquare`.
 -/
 
 public section
@@ -49,54 +50,6 @@ open Huber PreAdicSpace ValuationSpectrum
 universe u
 
 variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-
-private theorem comapOfPair_toCompletionLocHom_spec (P : PairOfDefinition A) (S : Pair A)
-    (hP : P.ringOfDefinition ≤ S.plus) (F : Finset A) (s : A) (L : Type u) [CommRing L]
-    [Algebra A L] [IsLocalization.Away s L] (hden : P.HasDenominatorPower F s L)
-    (hF : IsOpen (Ideal.span (F : Set A) : Set A)) (hS : IsSheafyForEveryPresentation S.plus) :
-    letI := P.locUniformSpace F s L hden
-    haveI := P.isUniformAddGroup_locUniformSpace F s L hden
-    haveI := P.isTopologicalRing_locUniformSpace F s L hden
-    haveI := P.isHuberRing_completion_locTopology F s L hden
-    ∀ (hSloc : IsSheafyForEveryPresentation (P.rationalLocalizationPair S hP F s L hden).plus),
-      PreAdicSpace.IsOpenImmersion
-        (comapOfPair hS hSloc (P.toCompletionLocHom S hP F s L hden)).hom ∧
-      Set.range (comapOfPair hS hSloc (P.toCompletionLocHom S hP F s L hden)).hom.base =
-        ofPairHomeomorph S hS ⁻¹' (spaBasicOpen S.plus F s : Set (spa S.plus)) := by
-  let _ := P.locUniformSpace F s L hden
-  have _ := P.isUniformAddGroup_locUniformSpace F s L hden
-  have _ := P.isTopologicalRing_locUniformSpace F s L hden
-  have _ := P.isHuberRing_completion_locTopology F s L hden
-  intro hSloc
-  let Sloc := P.rationalLocalizationPair S hP F s L hden
-  let Ploc := P.completionLocalization F s L hden
-  have hPloc := P.completionLocalization_ringOfDefinition_le_rationalLocalizationPair S hP F s L
-    hden
-  let φ := P.toCompletionLocHom S hP F s L hden
-  refine ⟨?_, ?_⟩
-  · have hpres : PreAdicSpace.IsOpenImmersion
-        (comapOfPresentation S P hP (hS.isSheaf P hP) Sloc Ploc hPloc (hSloc.isSheaf Ploc hPloc)
-          φ).hom := by
-      rw [comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
-      exact isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom P hP F s L hden
-        hF (hSloc.isSheaf Ploc hPloc)
-    rw [comapOfPair_eq_ofPairIsoOfPresentation hS hSloc P hP Ploc hPloc φ,
-      ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom]
-    have : IsIso (ofPairIsoOfPresentation Sloc hSloc Ploc hPloc).hom.hom :=
-      ((ObjectProperty.ι isAdic).mapIso (ofPairIsoOfPresentation Sloc hSloc Ploc hPloc)).isIso_hom
-    have : IsIso (ofPairIsoOfPresentation S hS P hP).inv.hom :=
-      ((ObjectProperty.ι isAdic).mapIso (ofPairIsoOfPresentation S hS P hP)).isIso_inv
-    infer_instance
-  · have hspa_range : Set.range φ.spaComap = (spaBasicOpen S.plus F s : Set (spa S.plus)) := by
-      rw [← range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base P hP F s L hden
-        (hSloc.isSheaf Ploc hPloc), ← presentationLimitPreAdicSpacePairComap_def P Ploc hP hPloc
-        (hSloc.isSheaf Ploc hPloc) φ]
-      exact (congrArg Set.range (funext (presentationLimitPreAdicSpacePairComap_base_apply
-        P Ploc hP hPloc (hSloc.isSheaf Ploc hPloc) φ))).symm
-    ext x; rw [Set.mem_preimage, ← hspa_range]
-    exact ⟨fun ⟨y, hy⟩ ↦ ⟨ofPairHomeomorph _ hSloc y, by simp [← hy, φ]⟩,
-      fun ⟨y, hy⟩ ↦ ⟨(ofPairHomeomorph _ hSloc).symm y,
-        (ofPairHomeomorph S hS).injective (by simp [hy, φ])⟩⟩
 
 private theorem quotientKer_of_isQuotientMapping
     {A₁ : Type u} [CommRing A₁] [TopologicalSpace A₁] [IsTopologicalRing A₁] [IsHuberRing A₁]
@@ -191,10 +144,10 @@ attribute [instance] OfPairQuotientOpenSquare.commRing
   OfPairQuotientOpenSquare.isOpenImmersion_targetMap
   OfPairQuotientOpenSquare.isOpenImmersion_quotientMap
 
-/-- **Construction of a rational-localization square for fixed rational data `(F, s, hF)`** of a
-sheafy Huber pair `(A, S)` and an ideal `J : Ideal A`: takes `Ring` to be the completed rational
-localization of `A` at `(F, s)` and `ideal` to be the kernel of the quotient mapping to the
-corresponding completed rational localization of `A ⧸ J` (the closure of the extension of `J`). -/
+/-- **Existence of an `OfPairQuotientOpenSquare` over a rational open.** For rational data
+`(F, s, hF)` of a sheafy Huber pair `(A, S)` and an ideal `J : Ideal A` with sheafy quotient
+`S.quotient J`, there exists an `OfPairQuotientOpenSquare` over the rational open
+`ofPairHomeomorph S hS ⁻¹' spaBasicOpen S.plus F s`. -/
 theorem exists_ofPair_quotient_open_square (S : Pair A)
     (hS : IsSheafyForEveryPresentation S.plus) (J : Ideal A)
     (hSJ : IsSheafyForEveryPresentation (S.quotient J).plus)
@@ -203,6 +156,9 @@ theorem exists_ofPair_quotient_open_square (S : Pair A)
       ⟨ofPairHomeomorph S hS ⁻¹' (spaBasicOpen S.plus F s : Set (spa S.plus)),
         (spaBasicOpen S.plus F s).isOpen.preimage (ofPairHomeomorph S hS).continuous⟩) := by
   classical
+  -- Take `Ring` to be the completed rational localization of `A` at `(F, s)` and `ideal` to be
+  -- the kernel of the quotient mapping to the corresponding completed rational localization of
+  -- `A ⧸ J` (the closure of the extension of `J`).
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   let O : Opens (ofPair S hS).obj :=
     ⟨ofPairHomeomorph S hS ⁻¹' (spaBasicOpen S.plus F s : Set (spa S.plus)),
@@ -240,13 +196,13 @@ theorem exists_ofPair_quotient_open_square (S : Pair A)
       P.ker_completionLocQuotientHom J F s L hF' L' hden]
     exact Ideal.closure_pow_eq_bot (by rw [← Ideal.map_pow, hJn, Ideal.map_bot])
   -- Compare the open immersions and verify the commutative pullback square
-  obtain ⟨hv_open, hv_range⟩ := comapOfPair_toCompletionLocHom_spec P S hP F s L hden hF hS hS₁
-  obtain ⟨hu₀_open, hu₀_range⟩ := comapOfPair_toCompletionLocHom_spec (P.quotient J)
-    (S.quotient J) hPq F' _ L' hden' hFq hSJ hS₂
+  have hv_open := isOpenImmersion_comapOfPair_toCompletionLocHom P S hP F s L hden hF hS hS₁
+  have hv_range := range_comapOfPair_toCompletionLocHom P S hP F s L hden hS hS₁
+  have hu₀_open := isOpenImmersion_comapOfPair_toCompletionLocHom (P.quotient J) (S.quotient J)
+    hPq F' _ L' hden' hFq hSJ hS₂
+  have hu₀_range := range_comapOfPair_toCompletionLocHom (P.quotient J) (S.quotient J)
+    hPq F' _ L' hden' hSJ hS₂
   let u₀ := comapOfPair hSJ hS₂ ((P.quotient J).toCompletionLocHom (S.quotient J) hPq F' _ L' hden')
-  have _ : IsIso eSK.hom.hom := ((ObjectProperty.ι isAdic).mapIso eSK).isIso_hom
-  have hu_open : PreAdicSpace.IsOpenImmersion (eSK.hom ≫ u₀).hom := by
-    rw [ObjectProperty.FullSubcategory.comp_hom]; infer_instance
   have hu_range : Set.range (eSK.hom ≫ u₀).hom.base =
       (comapOfPair hS hSJ (Pair.quotientHom S J)).hom.base ⁻¹' (O : Set (ofPair S hS).obj) := by
     have hsurj : Function.Surjective eSK.hom.hom.base :=
@@ -301,10 +257,10 @@ structure OfPairQuotientRationalSquare {A : Type u} [CommRing A] [TopologicalSpa
   /-- The pullback square over `openSet`. -/
   square : OfPairQuotientOpenSquare S hS J hSJ openSet
 
-/-- **Existence of a rational-localization square for an ideal quotient of a sheafy Huber pair.**
-Around any point `z` in an open `W` of `ofPair S hS`, chooses a rational open neighbourhood
-`O ≤ W` of `z` and produces an `OfPairQuotientRationalSquare S hS J hSJ W z` over `O` via
-`exists_ofPair_quotient_open_square`. -/
+/-- **Existence of a pullback square over a neighbourhood for an ideal quotient of a sheafy Huber
+pair.** Around any point `z` in an open `W` of `ofPair S hS`, there is an open neighbourhood
+`openSet ≤ W` of `z` carrying an `OfPairQuotientOpenSquare`, packaged as
+`OfPairQuotientRationalSquare S hS J hSJ W z`. -/
 theorem exists_ofPair_quotient_rational_square (S : Pair A)
     (hS : IsSheafyForEveryPresentation S.plus) (J : Ideal A)
     (hSJ : IsSheafyForEveryPresentation (S.quotient J).plus)
@@ -324,5 +280,75 @@ theorem exists_ofPair_quotient_rational_square (S : Pair A)
     rwa [(ofPairHomeomorph S hS).symm_apply_apply] at hy'
   obtain ⟨sq⟩ := exists_ofPair_quotient_open_square S hS J hSJ F s hF
   exact ⟨{ openSet := O, mem := hzR₀, le := hOW, square := sq }⟩
+
+namespace OfPairQuotientOpenSquare
+
+variable {S : Pair A} {hS : IsSheafyForEveryPresentation S.plus} {J : Ideal A}
+  {hSJ : IsSheafyForEveryPresentation (S.quotient J).plus} {O₀ : Opens (ofPair S hS).obj}
+
+/-- **Restriction of the quotient closed immersion over `O₀`** agrees with the local quotient
+closed immersion of an `OfPairQuotientOpenSquare` over `O₀`, conjugated by the range-identification
+isomorphisms. -/
+theorem restrictPreimage_quotientHom (sq : OfPairQuotientOpenSquare S hS J hSJ O₀) :
+    (comapOfPair hS hSJ (Pair.quotientHom S J)).hom.restrictPreimage O₀ =
+      (IsOpenImmersion.isoRestrictOfRangeEq sq.quotientMap.hom sq.range_quotientMap).inv ≫
+        (comapOfPair sq.isSheafy sq.isSheafyQuotient
+          (Pair.quotientHom sq.pair sq.ideal)).hom ≫
+        (IsOpenImmersion.isoRestrictOfRangeEq sq.targetMap.hom sq.range_targetMap).hom :=
+  (Iso.eq_inv_comp (IsOpenImmersion.isoRestrictOfRangeEq sq.quotientMap.hom
+    sq.range_quotientMap)).mpr
+    (comm_restrictPreimage_of_square sq.comm O₀
+      (IsOpenImmersion.isoRestrictOfRangeEq_hom_ofRestrict sq.targetMap.hom sq.range_targetMap)
+      (IsOpenImmersion.isoRestrictOfRangeEq_hom_ofRestrict sq.quotientMap.hom
+        sq.range_quotientMap)).symm
+
+/-- **Compatibility of `liftToRestrict` with `restrictPreimage`** on an `OfPairQuotientOpenSquare`
+whose `targetMap` and `quotientMap` land in `O` and its preimage. -/
+theorem quotientHom_comp_liftToRestrict (sq : OfPairQuotientOpenSquare S hS J hSJ O₀)
+    {O : Opens (ofPair S hS).obj}
+    (hmT : Set.range sq.targetMap.hom.base ⊆ (O : Set (ofPair S hS).obj))
+    (hmQ : Set.range sq.quotientMap.hom.base ⊆
+      (((Opens.map (comapOfPair hS hSJ (Pair.quotientHom S J)).hom.base).obj O :
+        Opens (ofPair (S.quotient J) hSJ).obj) : Set (ofPair (S.quotient J) hSJ).obj)) :
+    (comapOfPair sq.isSheafy sq.isSheafyQuotient (Pair.quotientHom sq.pair sq.ideal)).hom ≫
+        sq.targetMap.hom.liftToRestrict hmT =
+      sq.quotientMap.hom.liftToRestrict hmQ ≫
+        (comapOfPair hS hSJ (Pair.quotientHom S J)).hom.restrictPreimage O :=
+  comm_restrictPreimage_of_square sq.comm O
+    (Hom.liftToRestrict_ofRestrict _ _) (Hom.liftToRestrict_ofRestrict _ _)
+
+/-- **Any point of an open `O` lying in `O₀` lies in the image of
+`sq.targetMap.hom.liftToRestrict`** for an `OfPairQuotientOpenSquare` over `O₀`. -/
+theorem mem_range_liftToRestrict_targetMap (sq : OfPairQuotientOpenSquare S hS J hSJ O₀)
+    {O : Opens (ofPair S hS).obj} {p : (ofPair S hS).obj.restrict O.isOpenEmbedding}
+    (hp : p.val ∈ O₀) (ht : Set.range sq.targetMap.hom.base ⊆ (O : Set (ofPair S hS).obj)) :
+    p ∈ Set.range (sq.targetMap.hom.liftToRestrict ht).base := by
+  obtain ⟨q, hq⟩ : p.val ∈ Set.range sq.targetMap.hom.base := sq.range_targetMap.symm ▸ hp
+  exact ⟨q, Subtype.ext (by simp [hq])⟩
+
+/-- **Compatibility of a morphism `gO` on `O ≥ O₀` with `g₀` along
+`sq.targetMap.hom.liftToRestrict`**: if `gO` restricts to `g₀` along the quotient closed immersion,
+then pulling `gO` back along `sq.targetMap` and the local quotient immersion agrees with pulling
+`g₀` back along `sq.quotientMap`. -/
+theorem quotientHom_comp_liftToRestrict_comp (sq : OfPairQuotientOpenSquare S hS J hSJ O₀)
+    {Y : PreAdicSpace.{u}} (g₀ : (ofPair (S.quotient J) hSJ).obj ⟶ Y)
+    {O : Opens (ofPair S hS).obj} (hO₀O : O₀ ≤ O)
+    (hmT : Set.range sq.targetMap.hom.base ⊆ (O : Set (ofPair S hS).obj))
+    {gO : (ofPair S hS).obj.restrict O.isOpenEmbedding ⟶ Y}
+    (hgO_ι : (comapOfPair hS hSJ (Pair.quotientHom S J)).hom.restrictPreimage O ≫ gO =
+      (ofPair (S.quotient J) hSJ).obj.ofRestrict
+        ((Opens.map (comapOfPair hS hSJ (Pair.quotientHom S J)).hom.base).obj O).isOpenEmbedding ≫
+        g₀) :
+    (comapOfPair sq.isSheafy sq.isSheafyQuotient (Pair.quotientHom sq.pair sq.ideal)).hom ≫
+        sq.targetMap.hom.liftToRestrict hmT ≫ gO =
+      sq.quotientMap.hom ≫ g₀ := by
+  have hmQ : Set.range sq.quotientMap.hom.base ⊆
+      (((Opens.map (comapOfPair hS hSJ (Pair.quotientHom S J)).hom.base).obj O :
+        Opens (ofPair (S.quotient J) hSJ).obj) : Set (ofPair (S.quotient J) hSJ).obj) :=
+    sq.range_quotientMap.le.trans (Set.preimage_mono (SetLike.coe_subset_coe.mpr hO₀O))
+  rw [reassoc_of% (sq.quotientHom_comp_liftToRestrict hmT hmQ), hgO_ι,
+    Hom.liftToRestrict_ofRestrict_assoc]
+
+end OfPairQuotientOpenSquare
 
 end TauCeti.AdicSpace
