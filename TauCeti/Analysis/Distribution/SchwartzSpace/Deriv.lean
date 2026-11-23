@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Directional differentiation and linear maps on Schwartz space
@@ -36,13 +37,19 @@ Multiplication by a function `g` of temperate growth satisfies the Leibniz rule
 Fourier side, multiplying a symbol by `⟪h, ξ⟫` differentiates its kernel along `h`, so these
 identities control the derivatives of the symbol of a differentiated kernel.
 
+The real or complex inner pairing satisfies directional integration by parts
+(`SchwartzMap.integral_inner_lineDerivOp_right_eq_neg_left`), with sign `(-1)^k` after
+transferring `k` derivatives (`SchwartzMap.integral_inner_iterate_lineDerivOp_right_eq`).
 Integrating by parts along an orthonormal basis gives Green's identity
 `∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)` for a continuous bilinear map `B`
 (`SchwartzMap.integral_bilinear_laplacian_right_eq_neg_sum`). For the inner product this reads
 `∫ ⟪f, Δf⟫ = -∑ᵢ ‖∂_{bᵢ} f‖₂²` (`SchwartzMap.integral_inner_laplacian_right_self_eq_neg_sum`),
 and for the shifted Laplacian `-Δ + c` it is the energy identity
 `∫ ⟪f, (-Δ + c) f⟫ = ∑ᵢ ‖∂_{bᵢ} f‖₂² + c ‖f‖₂²`
-(`SchwartzMap.integral_inner_neg_laplacian_add_smul_self`).
+(`SchwartzMap.integral_inner_neg_laplacian_add_smul_self`). Integrating by parts `k` times along
+directions `m : Fin k → E` moves the derivatives to the other side in reverse order, with the sign
+`(-1) ^ k`: `∫ L (∂^{m} f) g = (-1) ^ k ∫ L f (∂^{m ∘ rev} g)`
+(`SchwartzMap.integral_bilinear_iteratedLineDerivOp_left_eq_neg_one_pow_smul_right`).
 -/
 
 public section
@@ -184,6 +191,38 @@ theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall
   gcongr
   exact L.le_opNorm v
 
+open MeasureTheory LineDeriv in
+/-- Directional integration by parts for the real or complex Hilbert pairing of Schwartz maps. -/
+theorem integral_inner_lineDerivOp_right_eq_neg_left {𝕜 E H : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [InnerProductSpace 𝕜 H] (f g : 𝓢(E, H)) (v : E) :
+    (∫ x, inner 𝕜 (f x) (∂_{v} g x) ∂μ) =
+      -∫ x, inner 𝕜 (∂_{v} f x) (g x) ∂μ := by
+  let B : H →L[ℝ] H →L[ℝ] 𝕜 :=
+    (ContinuousLinearMap.restrictScalarsL 𝕜 H 𝕜 ℝ ℝ).comp
+      ((innerSL 𝕜).toAddMonoidHom.toRealLinearMap (innerSL 𝕜).continuous)
+  -- Restricting scalars and the native additive realification both preserve evaluation.
+  have hB (x y : H) : B x y = inner 𝕜 x y := by rfl
+  simpa only [hB] using integral_bilinear_lineDerivOp_right_eq_neg_left f g B v
+
+open MeasureTheory LineDeriv in
+/-- Transferring every directional derivative across a Schwartz inner pairing contributes
+one factor of minus one per derivative. -/
+theorem integral_inner_iterate_lineDerivOp_right_eq {𝕜 E H : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [InnerProductSpace 𝕜 H]
+    (f g : 𝓢(E, H)) (v : E) (k : ℕ) :
+    (∫ x, inner 𝕜 (f x) (((∂_{v})^[k] g) x) ∂μ) =
+      (-1 : 𝕜) ^ k * ∫ x, inner 𝕜 (((∂_{v})^[k] f) x) (g x) ∂μ := by
+  induction k generalizing f with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', integral_inner_lineDerivOp_right_eq_neg_left, ih,
+      Function.iterate_succ_apply, pow_succ]
+    ring
+
 open MeasureTheory LineDeriv Laplacian in
 /-- **Green's identity on Schwartz space**: for a continuous bilinear map `B` and an orthonormal
 basis `b`, `∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)`. -/
@@ -200,6 +239,27 @@ theorem integral_bilinear_laplacian_right_eq_neg_sum {E F₁ F₂ F₃ ι : Type
   rw [integral_finsetSum _ hint, ← Finset.sum_neg_distrib]
   exact Finset.sum_congr rfl fun i _ =>
     integral_bilinear_lineDerivOp_right_eq_neg_left f (∂_{b i} g) B (b i)
+
+open MeasureTheory LineDeriv in
+/-- **Iterated integration by parts on Schwartz space.** For a continuous bilinear map `L`,
+`∫ L (∂^{m} f) g = (-1) ^ k ∫ L f (∂^{m ∘ rev} g)`: the `k` derivatives move to `g` in reverse
+order, each with a minus sign. -/
+theorem integral_bilinear_iteratedLineDerivOp_left_eq_neg_one_pow_smul_right {E F₁ F₂ F₃ : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F₁]
+    [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃]
+    [NormedSpace ℝ F₃] (L : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {k : ℕ} (m : Fin k → E) (f : 𝓢(E, F₁))
+    (g : 𝓢(E, F₂)) :
+    ∫ x, L ((∂^{m} f) x) (g x) ∂μ = (-1 : ℝ) ^ k • ∫ x, L (f x) ((∂^{m ∘ Fin.rev} g) x) ∂μ := by
+  induction k generalizing g with
+  | zero => simp
+  | succ k ih =>
+    -- One integration by parts in the direction `m 0`.
+    have hstep : ∫ x, L ((∂_{m 0} (∂^{Fin.tail m} f)) x) (g x) ∂μ =
+        -∫ x, L ((∂^{Fin.tail m} f) x) ((∂_{m 0} g) x) ∂μ := by
+      rw [integral_bilinear_lineDerivOp_right_eq_neg_left (∂^{Fin.tail m} f) g L (m 0), neg_neg]
+    rw [iteratedLineDerivOp_succ_left m f, hstep, ih, iteratedLineDerivOp_succ_right (m ∘ Fin.rev),
+      Fin.init_comp_rev, Function.comp_apply, Fin.rev_last, pow_succ, mul_neg_one, neg_smul]
 
 open MeasureTheory LineDeriv Laplacian RealInnerProductSpace in
 /-- Green's identity for the `L²` pairing of a Schwartz function with its Laplacian: for an

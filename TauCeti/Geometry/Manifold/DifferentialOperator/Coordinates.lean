@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Support
-public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.Coordinates
 import TauCeti.Algebra.BigOperators.Pi
@@ -48,7 +48,7 @@ algebraic operators with the classical differential operators of analysis.
 * `Module.Basis.coordinateOperator_eq_zero_iff`: the coefficients of a coordinate expression of
   order `m` are unique.
 * `TauCeti.tsupport_coordinateOperator_apply_subset`: coordinate expressions do not enlarge
-  supports. For general differential operators on a boundaryless manifold this is
+  supports. For general differential operators on a manifold this is
   `TauCeti.tsupport_differentialOperators_apply_subset`.
 * `TauCeti.multiIndexDeriv_apply_eq_iteratedFDeriv`: `∂^α f (x)` is the Fréchet derivative
   `D^{|α|} f (x)` evaluated on a word of directions in which each `vᵢ` occurs `αᵢ` times; for
