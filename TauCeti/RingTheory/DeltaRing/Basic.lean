@@ -493,12 +493,13 @@ variable [hp : Fact p.Prime] [DeltaRing p A]
 
 /-- The unital ring homomorphism `ℤ →+* A` into a `δ`-ring is a `δ`-map (Bhatt and Scholze,
 *Prisms and prismatic cohomology*, Example 2.6). No hypothesis on `p`-torsion in `A` is
-needed: both sides satisfy the same recursion `δ (n + 1) = δ n + addCorrection p n 1`. -/
+needed. -/
 @[simp]
 theorem isDeltaMap_intCastRingHom : IsDeltaMap p (Int.castRingHom A) := by
   have hc (m : ℤ) : ((addCorrection p m 1 : ℤ) : A) = addCorrection p (m : A) 1 := by
     simpa only [eq_intCast, Int.cast_one] using map_addCorrection (p := p) (Int.castRingHom A) m 1
-  -- The defect `(δ m : A) - δ (m : A)` is the same at `m + 1` as at `m`.
+  -- Both `δ` of the integer and `δ` in `A` satisfy `δ (m + 1) = δ m + addCorrection p m 1`, so
+  -- the defect `(δ m : A) - δ (m : A)` is the same at `m + 1` as at `m`.
   have step (m : ℤ) : ((delta p (m + 1) : ℤ) : A) - delta p ((m + 1 : ℤ) : A) =
       ((delta p m : ℤ) : A) - delta p (m : A) := by
     simp only [delta_add, delta_one, Int.cast_add, Int.cast_one, hc]

@@ -13,7 +13,9 @@ public import TauCeti.RingTheory.DeltaRing.Basic
 # δ-structures on square-zero extensions by `ZMod p`
 
 Let `B` be a `δ`-ring with a ring homomorphism `B →+* ZMod p` (the `algebraMap` of an
-`Algebra B (ZMod p)` instance), so that `ZMod p` is a `B`-module with central action. For each
+`Algebra B (ZMod p)` instance), which makes `ZMod p` a `B`-module. The square-zero extension also
+needs the opposite action `Module Bᵐᵒᵖ (ZMod p)`; it is assumed separately, with
+`IsCentralScalar B (ZMod p)` making it agree with the `B`-module structure. For each
 `c : ZMod p`, the square-zero extension `B ⊕ ZMod p ε` carries the `δ`-structure
 
 `δ (a, b) = (δ a, (c - ā ^ (p - 1)) * b)`,
