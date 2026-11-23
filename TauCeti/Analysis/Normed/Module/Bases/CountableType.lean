@@ -13,7 +13,9 @@ public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
 public import TauCeti.Analysis.Normed.Group.RieszLemma
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Analysis.Normed.Module.FiniteSpan
 import TauCeti.LinearAlgebra.Span.Basic
+import TauCeti.Topology.MetricSpace.Ultra.SeparationQuotient
 
 /-!
 # `t`-orthogonal bases and subspaces of normed spaces of countable type
@@ -87,64 +89,6 @@ open scoped NNReal
 
 namespace TauCeti
 
-/-- Over a trivially normed field, adding a vector `v` to a closed subspace `W` of a seminormed
-space gives a closed subspace. -/
-private theorem isClosed_sup_span_singleton_of_discreteTopology {K E : Type*} [NormedField K]
-    [DiscreteTopology K] [SeminormedAddCommGroup E] [NormedSpace K E] {W : Submodule K E}
-    (hW : IsClosed (W : Set E)) (v : E) : IsClosed ((W ⊔ K ∙ v : Submodule K E) : Set E) := by
-  by_cases hv : v ∈ W
-  · rwa [sup_eq_left.2 ((span_singleton_le_iff_mem v W).2 hv)]
-  have hδ : 0 < infDist v W := (hW.notMem_iff_infDist_pos ⟨0, W.zero_mem⟩).1 hv
-  -- A vector of `W ⊔ K ∙ v` of norm less than `infDist v W` lies in `W`, because a nonzero
-  -- coefficient `d` of `v` has norm `1`, so `‖w + d • v‖ = ‖v + d⁻¹ • w‖`. Hence near each of its
-  -- points `W ⊔ K ∙ v` agrees with a translate of `W`.
-  have hsmall {u : E} (hu : u ∈ W ⊔ K ∙ v) (hlt : ‖u‖ < infDist v W) : u ∈ W := by
-    obtain ⟨w, hw, _, hd, rfl⟩ := mem_sup.1 hu
-    obtain ⟨d, rfl⟩ := mem_span_singleton.1 hd
-    rcases eq_or_ne d 0 with rfl | hd
-    · simpa using hw
-    refine absurd hlt (not_lt.2 ?_)
-    calc infDist v W ≤ dist v (-(d⁻¹ • w)) :=
-          infDist_le_dist_of_mem (W.neg_mem (W.smul_mem _ hw))
-      _ = ‖d‖ * ‖v + d⁻¹ • w‖ := by
-          rw [NormedDivisionRing.norm_eq_one_iff_ne_zero_of_discrete.2 hd, one_mul, dist_eq_norm,
-            sub_neg_eq_add]
-      _ = ‖w + d • v‖ := by rw [← norm_smul, smul_add, smul_inv_smul₀ hd, add_comm]
-  refine closure_subset_iff_isClosed.1 fun x hx ↦ ?_
-  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 hx _ (half_pos hδ)
-  obtain ⟨w, hw, _, hc, rfl⟩ := mem_sup.1 hy
-  obtain ⟨c, rfl⟩ := mem_span_singleton.1 hc
-  -- Points of `W ⊔ K ∙ v` close to `x` lie in the translate `W + c • v`, so `x` lies in it too.
-  have hx' : x - c • v ∈ W := by
-    refine hW.closure_subset (Metric.mem_closure_iff.2 fun ε hε ↦ ?_)
-    obtain ⟨z, hz, hxz⟩ := Metric.mem_closure_iff.1 hx _ (lt_min hε (half_pos hδ))
-    have hu : w + c • v - z ∈ W := by
-      refine hsmall (sub_mem hy hz) ?_
-      rw [← dist_eq_norm]
-      linarith [dist_triangle (w + c • v) x z, dist_comm x (w + c • v),
-        min_le_right ε (infDist v W / 2)]
-    refine ⟨z - c • v, ?_, (dist_sub_right _ _ _).trans_lt (hxz.trans_le (min_le_left _ _))⟩
-    have hzc : z - c • v = w - (w + c • v - z) := by abel
-    rw [SetLike.mem_coe, hzc]
-    exact sub_mem hw hu
-  exact mem_sup.2 ⟨_, hx', _, mem_span_singleton.2 ⟨c, rfl⟩, sub_add_cancel x _⟩
-
-/-- Over a complete normed field, the span of a finite set in a normed space is closed. -/
-private theorem isClosed_span_of_finite {K E : Type*} [NormedField K] [CompleteSpace K]
-    [NormedAddCommGroup E] [NormedSpace K E] {s : Set E} (hs : s.Finite) :
-    IsClosed (span K s : Set E) := by
-  -- Over a trivially normed field, induct over `s` using
-  -- `isClosed_sup_span_singleton_of_discreteTopology`; over a nontrivially normed field, use
-  -- finite dimensionality.
-  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨⟨_, rfl⟩⟩
-  · induction s, hs using Set.Finite.induction_on with
-    | empty => simp
-    | insert _ _ ih =>
-      rw [span_insert, sup_comm]
-      exact isClosed_sup_span_singleton_of_discreteTopology ih _
-  · have := FiniteDimensional.span_of_finite K hs
-    exact (span K s).isClosed_of_finiteDimensional
-
 /-- **Approximate Gram–Schmidt process**: over a complete normed field, every sequence `w` in an
 ultrametric seminormed space can be replaced, for each `t < 1`, by a `t`-orthogonal sequence `e`
 with the same initial spans: `span K (e '' Iio n) = span K (w '' Iio n)` for every `n`. -/
@@ -157,16 +101,11 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField 
   -- quotient map preserves norms, then lift each approximant back to the original initial span.
   let q : E →ₗ[K] SeparationQuotient E := (SeparationQuotient.mkCLM K E).toLinearMap
   have hq_nnnorm (x : E) : ‖q x‖₊ = ‖x‖₊ := by simp [q]
-  have : IsUltrametricDist (SeparationQuotient E) :=
-    IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm <|
-      SeparationQuotient.surjective_mk.forall₂.2 fun a b ↦ by
-        simpa only [← SeparationQuotient.mk_add, SeparationQuotient.norm_mk] using
-          IsUltrametricDist.norm_add_le_max a b
   obtain ⟨T, hT, hTt, -⟩ := exists_seq_strictAnti_tendsto' ht
   have hT' (n : ℕ) : 0 < T n ∧ t ≤ T n ∧ T n ≤ 1 :=
     ⟨zero_le.trans_lt (hTt n).1, (hTt n).1.le, (hTt n).2.le⟩
   have hF (n : ℕ) : IsClosed (span K ((q ∘ w) '' Iio n) : Set (SeparationQuotient E)) :=
-    isClosed_span_of_finite ((finite_Iio n).image (q ∘ w))
+    Submodule.isClosed_span_of_finite ((finite_Iio n).image (q ∘ w))
   choose z hzF hz using fun n ↦
     riesz_lemma_translate (F := (span K ((q ∘ w) '' Iio n)).toAddSubmonoid)
       (by simpa only [Submodule.coe_toAddSubmonoid] using hF n) (q (w n))

@@ -9,13 +9,21 @@ public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Topology.Semicontinuity.Basic
 
+import Mathlib.Topology.Algebra.Module.FiniteDimension
+
 /-!
-# Distances to finite spans
+# Distances to and closedness of finite spans
 
 Distance to a span is the infimum of the errors of its finitely supported linear combinations.
 As the family and the point vary, this distance is upper semicontinuous, hence measurable.
 Continuity need not hold when the rank drops. For any finite linear combination, `‖c i‖` times
 the distance of `v i` from the span of the remaining vectors is bounded by `‖∑ j, c j • v j‖`.
+
+Over a trivially normed field (`[DiscreteTopology 𝕜]`), adding a vector `v` to a closed subspace
+`W` of a seminormed space yields a closed subspace
+(`Submodule.isClosed_sup_span_singleton_of_discreteTopology`). Consequently, over any complete
+normed field (trivially normed or not), the span of any finite set in a normed space is closed
+(`Submodule.isClosed_span_of_finite`).
 -/
 
 public section
@@ -94,3 +102,66 @@ theorem norm_mul_infDist_span_range_ne_le [Fintype ι] (v : ι → E) (c : ι �
     norm_mul_infDist_span_range_ne_le_finsupp v (Finsupp.equivFunOnFinite.symm c) i
 
 end TauCeti
+
+namespace Submodule
+
+/-- Over a trivially normed field (`[DiscreteTopology 𝕜]`), adding a vector `v` to a closed
+subspace `W` of a seminormed space gives a closed subspace. -/
+theorem isClosed_sup_span_singleton_of_discreteTopology {𝕜 E : Type*} [NormedField 𝕜]
+    [DiscreteTopology 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] {W : Submodule 𝕜 E}
+    (hW : IsClosed (W : Set E)) (v : E) : IsClosed ((W ⊔ 𝕜 ∙ v : Submodule 𝕜 E) : Set E) := by
+  by_cases hv : v ∈ W
+  · rwa [sup_eq_left.2 ((span_singleton_le_iff_mem v W).2 hv)]
+  have hδ : 0 < infDist v W := (hW.notMem_iff_infDist_pos ⟨0, W.zero_mem⟩).1 hv
+  -- A vector of `W ⊔ 𝕜 ∙ v` of norm less than `infDist v W` lies in `W`, because a nonzero
+  -- coefficient `d` of `v` has norm `1`, so `‖w + d • v‖ = ‖v + d⁻¹ • w‖`. Hence near each of its
+  -- points `W ⊔ 𝕜 ∙ v` agrees with a translate of `W`.
+  have hsmall {u : E} (hu : u ∈ W ⊔ 𝕜 ∙ v) (hlt : ‖u‖ < infDist v W) : u ∈ W := by
+    obtain ⟨w, hw, _, hd, rfl⟩ := mem_sup.1 hu
+    obtain ⟨d, rfl⟩ := mem_span_singleton.1 hd
+    rcases eq_or_ne d 0 with rfl | hd
+    · simpa using hw
+    refine absurd hlt (not_lt.2 ?_)
+    calc infDist v W ≤ dist v (-(d⁻¹ • w)) :=
+          infDist_le_dist_of_mem (W.neg_mem (W.smul_mem _ hw))
+      _ = ‖d‖ * ‖v + d⁻¹ • w‖ := by
+          rw [NormedDivisionRing.norm_eq_one_iff_ne_zero_of_discrete.2 hd, one_mul, dist_eq_norm,
+            sub_neg_eq_add]
+      _ = ‖w + d • v‖ := by rw [← norm_smul, smul_add, smul_inv_smul₀ hd, add_comm]
+  refine closure_subset_iff_isClosed.1 fun x hx ↦ ?_
+  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 hx _ (half_pos hδ)
+  obtain ⟨w, hw, _, hc, rfl⟩ := mem_sup.1 hy
+  obtain ⟨c, rfl⟩ := mem_span_singleton.1 hc
+  -- Points of `W ⊔ 𝕜 ∙ v` close to `x` lie in the translate `W + c • v`, so `x` lies in it too.
+  have hx' : x - c • v ∈ W := by
+    refine hW.closure_subset (Metric.mem_closure_iff.2 fun ε hε ↦ ?_)
+    obtain ⟨z, hz, hxz⟩ := Metric.mem_closure_iff.1 hx _ (lt_min hε (half_pos hδ))
+    have hu : w + c • v - z ∈ W := by
+      refine hsmall (sub_mem hy hz) ?_
+      rw [← dist_eq_norm]
+      linarith [dist_triangle (w + c • v) x z, dist_comm x (w + c • v),
+        min_le_right ε (infDist v W / 2)]
+    refine ⟨z - c • v, ?_, (dist_sub_right _ _ _).trans_lt (hxz.trans_le (min_le_left _ _))⟩
+    have hzc : z - c • v = w - (w + c • v - z) := by abel
+    rw [SetLike.mem_coe, hzc]
+    exact sub_mem hw hu
+  exact mem_sup.2 ⟨_, hx', _, mem_span_singleton.2 ⟨c, rfl⟩, sub_add_cancel x _⟩
+
+/-- Over a complete normed field (trivially normed or not), the span of a finite set in a normed
+space is closed. -/
+theorem isClosed_span_of_finite {𝕜 E : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {s : Set E} (hs : s.Finite) :
+    IsClosed (span 𝕜 s : Set E) := by
+  -- Over a trivially normed field, induct over `s` using
+  -- `isClosed_sup_span_singleton_of_discreteTopology`; over a nontrivially normed field, use
+  -- finite dimensionality.
+  rcases NormedField.discreteTopology_or_nontriviallyNormedField 𝕜 with _ | ⟨⟨_, rfl⟩⟩
+  · induction s, hs using Set.Finite.induction_on with
+    | empty => simp
+    | insert _ _ ih =>
+      rw [span_insert, sup_comm]
+      exact isClosed_sup_span_singleton_of_discreteTopology ih _
+  · have := FiniteDimensional.span_of_finite 𝕜 hs
+    exact (span 𝕜 s).isClosed_of_finiteDimensional
+
+end Submodule

@@ -124,8 +124,8 @@ theorem countable_eigenvalues (hK : IsCompactOperator K) :
 
 /-- A nonzero spectral value of a compact operator on a normed space over a nontrivially normed
 field is an eigenvalue, where the spectrum is taken in the algebra of continuous endomorphisms.
-Unlike Mathlib's `IsCompactOperator.hasEigenvalue_iff_mem_spectrum`, neither the ambient normed
-space nor the scalar field needs to be complete. -/
+Unlike Mathlib's `IsCompactOperator.hasEigenvalue_iff_mem_spectrum`, the ambient normed space need
+not be complete. The scalar field also need not be complete. -/
 theorem hasEigenvalue_of_mem_spectrum (hK : IsCompactOperator K) {μ : 𝕜} (hμ : μ ≠ 0)
     (h : μ ∈ spectrum 𝕜 K) : Module.End.HasEigenvalue (K : Module.End 𝕜 E) μ := by
   by_contra hne
