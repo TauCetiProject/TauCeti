@@ -77,6 +77,8 @@ differentiable fields; this determines the curvature tensor.
 * `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`
   and `Δ_{c g} = c⁻¹ Δ_g`.
+* `Bundle.ContMDiffRiemannianMetric.eNorm_rescale`: rescaling a bundle metric by a positive
+  function `f` multiplies the length of every vector at `x` by `√(f x)`.
 * `Bundle.ContMDiffRiemannianMetric.pathELength_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.riemannianEDist_rescale_const`: the lengths of paths and the
   Riemannian distance of `c g` are `√c` times those of `g`.
@@ -338,6 +340,8 @@ theorem eNorm_rescale_const (g : ContMDiffRiemannianMetric I n F V) {c : ℝ} (h
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩; ‖v‖ₑ) =
     ENNReal.ofReal √c * (letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩; ‖v‖ₑ) :=
   eNorm_rescale g _ _ _ v
+
+variable [IsManifold I 1 M]
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying a metric by a positive constant `c` multiplies the length of every path by

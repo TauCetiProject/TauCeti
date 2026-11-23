@@ -119,8 +119,12 @@ theorem isMIntegralCurve_neg_mgradient_sq_scaledLineMetric (hc : 0 < c) (x₀ : 
     simpa using (((hasDerivAt_id t).const_mul (2 / c)).neg.exp).const_mul x₀
   have e : x₀ * (Real.exp (-(2 / c * t)) * -(2 / c)) =
       -(2 / c * (x₀ * Real.exp (-(2 / c * t)))) := by ring
-  exact hd.hasDerivWithinAt.congr_deriv
-    (e.trans (by rw [Pi.neg_apply, mgradient_sq_scaledLineMetric]).symm)
+  have hg : (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) (x₀ * Real.exp (-(2 / c * t))) =
+      (-(2 / c * (x₀ * Real.exp (-(2 / c * t)))) : ℝ) := by
+    rw [Pi.neg_apply, mgradient_sq_scaledLineMetric]
+    -- Both sides are the same real number, read in `ℝ` and in its tangent space.
+    rfl
+  exact hd.hasDerivWithinAt.congr_deriv (e.trans hg.symm)
 
 /-- **The trajectories of `-grad x²` for the metric `c dx²`.** The trajectory of `-grad f`, for
 `f(x) = x²` and the metric `scaledLineMetric`, through `x₀` is `t ↦ x₀ exp (-2 t / c)`. -/
