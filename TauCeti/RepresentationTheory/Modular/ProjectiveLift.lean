@@ -42,7 +42,8 @@ with its `B`-module structure.
 This file proves that finitely generated projective `A`-modules and their reductions correspond:
 
 * the reduction of a finitely generated projective `A`-module is a finitely generated projective
-  `B`-module (`TauCeti.projective_of_reduction`, `TauCeti.finite_of_reduction`);
+  `B`-module (`TauCeti.projective_of_reduction`; finiteness is Mathlib's
+  `Module.Finite.of_surjective`);
 * every finitely generated projective `B`-module is the reduction of a finitely generated
   projective `A`-module (`TauCeti.exists_projective_reduction_of_projective`);
 * two finitely generated projective `A`-modules with the same reduction are isomorphic
@@ -61,9 +62,8 @@ The radical statement behind these is that `ϖ A` lies in the Jacobson radical o
 `O`-module `A` is onto by Nakayama's lemma, hence bijective. Indecomposability is transported by
 idempotent endomorphisms: an idempotent endomorphism of `P` descends to the reduction, and with the
 kernel of reduction in the radical it vanishes exactly when its reduction does; conversely an
-idempotent endomorphism of the reduction lifts to an endomorphism of `P` by projectivity, and that
-lift is congruent to an idempotent because `End_A(P)` is `ϖ`-adically complete
-(`TauCeti.exists_isIdempotentElem_endMapQ_eq`).
+idempotent endomorphism of the reduction `Y ≃ P ⧸ ϖ P` lifts to an idempotent endomorphism of `P`
+because `End_A(P)` is `ϖ`-adically complete (`TauCeti.exists_isIdempotentElem_endMapQ_eq`).
 
 For `O = ℤ₂` and `G = C₂`, the regular module `ℤ₂[C₂]` is projective indecomposable, with
 reduction `𝔽₂[C₂]`, the projective cover of the trivial module.
@@ -169,19 +169,6 @@ theorem projective_of_reduction [Module.Projective A P] : Module.Projective B Y 
   obtain ⟨x, rfl⟩ := hf y
   simpa [descend_apply, u', sA, fA] using LinearMap.congr_fun hu x
 
-include hf in
-/-- **The reduction of a finitely generated module is finitely generated.** -/
-theorem finite_of_reduction [Module.Finite A P] : Module.Finite B Y := by
-  classical
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := P)
-  refine ⟨⟨s.image f, eq_top_iff.mpr fun y _ ↦ ?_⟩⟩
-  obtain ⟨x, rfl⟩ := hf y
-  have hx : x ∈ Submodule.span A (s : Set P) := hs ▸ Submodule.mem_top
-  refine Submodule.span_induction (fun x hx ↦ Submodule.subset_span ?_) (by simp)
-    (fun _ _ _ _ h h' ↦ by rw [map_add]; exact add_mem h h')
-    (fun a x _ h ↦ by rw [f.map_smulₛₗ]; exact Submodule.smul_mem _ _ h) hx
-  simpa using ⟨x, hx, rfl⟩
-
 include hfker in
 /-- An idempotent endomorphism of `P` whose image lies in `ker π • P` is zero, when `ker π` lies in
 the Jacobson radical and `P` is finitely generated. -/
@@ -225,25 +212,16 @@ private theorem exists_isIdempotentElem_map_eq [Module.Finite A P] [Module.Proje
   let _ : Module A Y := Module.compHom Y π
   let fA : P →ₗ[A] Y := { toFun := f, map_add' := f.map_add, map_smul' := f.map_smulₛₗ }
   let qA : Y →ₗ[A] Y := { toFun := q, map_add' := q.map_add, map_smul' a y := q.map_smul (π a) y }
-  -- Lift `q ∘ f` along `f` by projectivity; the lift is idempotent modulo `ϖ P`.
-  obtain ⟨u, hu⟩ := Module.projective_lifting_property fA (qA ∘ₗ fA) hf
-  have hu' (x : P) : f (u x) = q (f x) := LinearMap.congr_fun hu x
-  have hmk {x x' : P} (h : f x = f x') :
-      (Submodule.Quotient.mk x : P ⧸ Ideal.span {algebraMap O A ϖ} • (⊤ : Submodule A P)) =
-        Submodule.Quotient.mk x' := by
-    rw [Submodule.Quotient.eq, ← hker, ← hfker, map_sub, h, sub_self]
-  have hidem : IsIdempotentElem (Ideal.endMapQ (Ideal.span {algebraMap O A ϖ}) P u) := by
-    rw [IsIdempotentElem, ← map_mul]
-    refine Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_)
-    simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply, Ideal.endMapQ_mk,
-      mul_apply_eq_comp]
-    exact hmk (by rw [hu', hu', ← mul_apply_eq_comp, hq.eq])
-  obtain ⟨e, he, hee⟩ := exists_isIdempotentElem_endMapQ_eq ϖ hidem
+  have hqA : IsIdempotentElem qA := LinearMap.ext fun y ↦ LinearMap.congr_fun hq y
+  -- Transport `q` along `P ⧸ ϖ P ≃ Y` and lift it to an idempotent of `P`.
+  have hk : Ideal.span {algebraMap O A ϖ} • (⊤ : Submodule A P) = LinearMap.ker fA := by
+    ext x
+    rw [← hker]
+    exact (hfker x).symm
+  let E := (Submodule.quotEquivOfEq _ _ hk).trans (fA.quotKerEquivOfSurjective hf)
+  obtain ⟨e, he, hee⟩ := exists_isIdempotentElem_endMapQ_eq ϖ (hqA.map E.symm.conjRingEquiv)
   refine ⟨e, he, fun x ↦ ?_⟩
-  have hx := congrArg (fun g ↦ g (Submodule.Quotient.mk x)) hee
-  simp only [Ideal.endMapQ_mk, Submodule.Quotient.eq] at hx
-  rw [← hker, ← hfker, map_sub, sub_eq_zero] at hx
-  rw [hx, hu']
+  simpa [E, fA, qA] using congrArg (fun g ↦ E (g (Submodule.Quotient.mk x))) hee
 
 include hπ hf hfker in
 /-- **Indecomposability is detected by reduction.** A finitely generated projective `A`-module `P`
@@ -400,16 +378,6 @@ end Reduction
 
 section GroupAlgebra
 
-/-- The kernel of the coefficient map `O[G] → k[G]` along `φ : O →+* k` with kernel `(ϖ)` is the
-ideal of `O[G]` generated by `ϖ`. -/
-theorem ker_mapRingHom_eq_span_algebraMap {O k G : Type*} [CommRing O] [CommRing k] [Monoid G]
-    {φ : O →+* k} {ϖ : O} (hφ : RingHom.ker φ = Ideal.span {ϖ}) :
-    RingHom.ker (MonoidAlgebra.mapRingHom G φ) =
-      Ideal.span {algebraMap O (MonoidAlgebra O G) ϖ} := by
-  ext x
-  rw [RingHom.mem_ker, TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff, hφ,
-    ← Ideal.mem_map_algebraMap_iff, Ideal.map_span, Set.image_singleton]
-
 variable {O G : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   [IsAdicComplete (IsLocalRing.maximalIdeal O) O] [Monoid G] [Finite G]
 
@@ -426,7 +394,7 @@ private theorem exists_uniformizer : ∃ ϖ : O, IsAdicComplete (Ideal.span {ϖ}
     RingHom.ker (MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)) =
       Ideal.span {algebraMap O (MonoidAlgebra O G) ϖ} := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-  refine ⟨ϖ, hϖ.maximalIdeal_eq ▸ inferInstance, ker_mapRingHom_eq_span_algebraMap ?_⟩
+  refine ⟨ϖ, hϖ.maximalIdeal_eq ▸ inferInstance, MonoidAlgebra.ker_mapRingHom_eq_span_algebraMap ?_⟩
   rw [IsLocalRing.ker_residue, hϖ.maximalIdeal_eq]
 
 variable {P : Type*} [AddCommGroup P] [Module (MonoidAlgebra O G) P]
