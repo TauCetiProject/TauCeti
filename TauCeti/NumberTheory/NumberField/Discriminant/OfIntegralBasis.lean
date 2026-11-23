@@ -140,7 +140,8 @@ theorem sq_det_mapRingHom_basis_eq_discr [DecidableEq (K →+* F)]
   let g : (K →+* F) → (K →ₐ[ℚ] Ω) :=
     fun σ ↦ RingHom.equivRatAlgHom K Ω ((algebraMap F Ω).comp σ)
   have hg : Function.Injective g := fun σ τ h ↦ RingHom.ext fun x ↦
-    (algebraMap F Ω).injective (DFunLike.congr_fun h x)
+    (algebraMap F Ω).injective <| by
+      simpa [g, RingHom.equivRatAlgHom_apply] using DFunLike.congr_fun h x
   let f : (K →+* F) ≃ (K →ₐ[ℚ] Ω) := Equiv.ofBijective g
     ((Fintype.bijective_iff_injective_and_card g).mpr ⟨hg, by rw [hF, AlgHom.card]⟩)
   let c' : Basis ι ℚ K := c.localizationLocalization ℚ (nonZeroDivisors ℤ) K
@@ -152,6 +153,8 @@ theorem sq_det_mapRingHom_basis_eq_discr [DecidableEq (K →+* F)]
         RingOfIntegers.mapRingHom σ (c (e τ)))).transpose := by
     ext i j
     simp [Algebra.embeddingsMatrixReindex, Algebra.embeddingsMatrix, c', f, g, ψ]
+  -- `h` now reads `ψ (det ^ 2) = algebraMap ℚ Ω (discr K)`; both sides are the image of the
+  -- integer `d_K` in `Ω`, and `simpa` reduces the goal under `ψ` to this cast identity.
   rw [hM, Matrix.det_transpose, ← RingHom.map_det, Basis.coe_reindex, Algebra.discr_reindex, hc',
     discr_eq_of_integralBasis] at h
   apply hψ

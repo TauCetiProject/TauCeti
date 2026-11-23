@@ -73,8 +73,13 @@ variable (L K : Type*) [Field L] [Field K] (R : Type*) [CommRing R] [Algebra (�
 section Splitting
 
 /-- The ring map `𝓞 L →+* R` induced by an embedding `σ : L →+* K`, through `𝓞 K`. -/
-noncomputable abbrev embeddingRingHom (σ : L →+* K) : 𝓞 L →+* R :=
+noncomputable def embeddingRingHom (σ : L →+* K) : 𝓞 L →+* R :=
   (algebraMap (𝓞 K) R).comp (RingOfIntegers.mapRingHom σ)
+
+@[simp]
+theorem embeddingRingHom_apply (σ : L →+* K) (ℓ : 𝓞 L) :
+    embeddingRingHom L K R σ ℓ = algebraMap (𝓞 K) R (RingOfIntegers.mapRingHom σ ℓ) :=
+  (rfl)
 
 /-- Evaluation at an embedding `σ : L →+* K`: the `R`-algebra map `R ⊗[ℤ] 𝓞 L →ₐ[R] R` sending
 `r ⊗ ℓ` to `r σ(ℓ)`. -/
@@ -112,6 +117,7 @@ def embeddingEigenspace (σ : L →+* K) : Submodule R M where
 
 variable {L K R M}
 
+@[simp]
 theorem mem_embeddingEigenspace {σ : L →+* K} {m : M} :
     m ∈ embeddingEigenspace L K R M σ ↔ ∀ ℓ : 𝓞 L, ℓ • m = embeddingRingHom L K R σ ℓ • m :=
   Iff.rfl
@@ -151,6 +157,18 @@ theorem embeddingAction_apply_of_mem {σ : L →+* K} {m : M}
   | tmul r ℓ => rw [embeddingAction_tmul, hm ℓ, embeddingEval_tmul, smul_smul]
   | add s t hs ht => rw [map_add, LinearMap.add_apply, hs, ht, map_add, add_smul]
 
+/-- **Compatibility with base change**: on `M ⊗[R] N`, with `𝓞 L` acting on the first factor,
+`R ⊗[ℤ] 𝓞 L` acts through its action on `M`. -/
+theorem embeddingAction_tensorProduct [SMulCommClass R (𝓞 L) M] (N : Type*) [AddCommMonoid N]
+    [Module R N] (t : R ⊗[ℤ] 𝓞 L) :
+    embeddingAction L R (M ⊗[R] N) t = (embeddingAction L R M t).rTensor N := by
+  induction t using TensorProduct.inductionOn with
+  | tmul r ℓ =>
+    apply TensorProduct.ext'
+    intro m n
+    simp [TensorProduct.smul_tmul']
+  | add s t hs ht => rw [map_add, map_add, hs, ht, LinearMap.rTensor_add]
+
 end Action
 
 section Bijective
@@ -179,8 +197,12 @@ theorem bijective_embeddingSplitting : Function.Bijective (embeddingSplitting L 
       have h := congrArg (algebraMap (𝓞 K) R)
         (sq_det_mapRingHom_basis_eq_discr hK (RingOfIntegers.basis L) e)
       rw [map_pow, RingHom.map_det, map_intCast] at h
-      rw [← h]
-      congr 2
+      have hMeq : M = (algebraMap (𝓞 K) R).mapMatrix
+          (Matrix.of fun σ τ ↦ RingOfIntegers.mapRingHom σ (RingOfIntegers.basis L (e τ))) := by
+        ext σ τ
+        simp [M]
+      rw [hMeq]
+      exact h
     exact (isUnit_pow_iff two_ne_zero).mp (hsq ▸ hd)
   let φ := bR.equivFun.trans (Matrix.toLinearEquiv (Pi.basisFun R (L →+* K)) M hM)
   have hφ (x : R ⊗[ℤ] 𝓞 L) : φ x = embeddingSplitting L K R x := by
@@ -207,6 +229,7 @@ idempotent at `σ` under the embedding splitting. -/
 noncomputable def embeddingIdempotent (σ : L →+* K) : R ⊗[ℤ] 𝓞 L :=
   open scoped Classical in (embeddingSplittingEquiv hK hd).symm (Pi.single σ 1)
 
+@[simp]
 theorem embeddingSplitting_embeddingIdempotent [DecidableEq (L →+* K)] (σ : L →+* K) :
     embeddingSplitting L K R (embeddingIdempotent hK hd σ) = Pi.single σ 1 := by
   rw [← embeddingSplittingEquiv_apply hK hd, embeddingIdempotent, AlgEquiv.apply_symm_apply]
@@ -260,7 +283,7 @@ theorem one_tmul_mul_embeddingIdempotent (σ : L →+* K) (ℓ : 𝓞 L) :
   simp only [map_mul, embeddingSplitting_apply, AlgHom.commutes,
     Algebra.algebraMap_self, RingHom.id_apply, embeddingEval_tmul, one_mul]
   rcases eq_or_ne τ σ with rfl | h
-  · rfl
+  · simp [embeddingEval_embeddingIdempotent_self]
   · simp [embeddingEval_embeddingIdempotent_of_ne hK hd h]
 
 variable {M : Type*} [AddCommMonoid M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
@@ -300,17 +323,9 @@ theorem embeddingEigenspace_tensorProduct [SMulCommClass R (𝓞 L) M]
       LinearMap.range ((embeddingEigenspace L K R M σ).subtype.rTensor N) := by
   apply le_antisymm
   · intro v hv
-    have haction (t : R ⊗[ℤ] 𝓞 L) :
-        embeddingAction L R (M ⊗[R] N) t = (embeddingAction L R M t).rTensor N := by
-      induction t using TensorProduct.inductionOn with
-      | tmul r ℓ =>
-        apply TensorProduct.ext'
-        intro m n
-        simp [TensorProduct.smul_tmul']
-      | add s t hs ht => rw [map_add, map_add, hs, ht, LinearMap.rTensor_add]
     have hv' : v = (embeddingAction L R M (embeddingIdempotent hK hd σ)).rTensor N v := by
-      rw [← haction, embeddingAction_apply_of_mem hv, embeddingEval_embeddingIdempotent_self,
-        one_smul]
+      rw [← embeddingAction_tensorProduct, embeddingAction_apply_of_mem hv,
+        embeddingEval_embeddingIdempotent_self, one_smul]
     have hrange : LinearMap.range (embeddingAction L R M (embeddingIdempotent hK hd σ)) ≤
         embeddingEigenspace L K R M σ := by
       rw [← Module.End.smul_top_eq_range, embeddingIdempotent_smul_top hK hd]
