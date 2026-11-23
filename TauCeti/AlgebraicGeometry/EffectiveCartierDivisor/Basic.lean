@@ -346,7 +346,7 @@ theorem IsEffectiveCartier.of_mul_left {I J : X.IdealSheafData}
     simpa only [Opens.mem_iSup, exists_prop] using hx
   let V : X.affineOpens := ⟨X.basicOpen u, U.property.basicOpen u⟩
   have hVU : V.val ≤ U.val := X.basicOpen_le u
-  set ρ := X.presheaf.map (homOfLE hVU).op
+  let ρ := (X.presheaf.map (homOfLE hVU).op).hom
   have hu : IsUnit (ρ u) := X.toRingedSpace.isUnit_res_basicOpen u
   have hab : ρ a * ρ b = ρ u * ρ c := by rw [← map_mul, ← map_mul, huc]
   have hreg : IsSMulRegular Γ(X, V) (ρ a * ρ b) :=
@@ -361,7 +361,10 @@ theorem IsEffectiveCartier.of_mul_left {I J : X.IdealSheafData}
       _ = (I * J).ideal V := by rw [mul_comm, ideal_mul, Pi.mul_apply]
       _ = Ideal.span {ρ c} := by
         rw [← (I * J).map_ideal hVU, hUc, Ideal.map_span, Set.image_singleton]
-        rfl
+        -- `Ideal.map_span` uses the `CommRingCat`-derived `Semiring` instance on `Γ(X, V)`,
+        -- which is definitionally equal to the target `Semiring` instance after unfolding `ρ`.
+        change Ideal.span {(X.presheaf.map (homOfLE hVU).op).hom c} = Ideal.span {ρ c}
+        simp only [ρ]
       _ ≤ Ideal.span {ρ u * ρ c} :=
         Ideal.span_singleton_le_span_singleton.mpr (hu.mul_left_dvd.mpr dvd_rfl)
       _ = Ideal.span {ρ b} * Ideal.span {ρ a} := by

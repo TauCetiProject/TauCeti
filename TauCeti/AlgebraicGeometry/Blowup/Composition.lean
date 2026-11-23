@@ -284,7 +284,7 @@ theorem coe_support_mul_of_comap_blowupToBase_eq
     · exact Or.inl (Or.inl hxI)
     · by_cases hxI : x ∈ (I.support : Set X)
       · exact Or.inl (Or.inl hxI)
-      · have hxU : x ∈ I.support.compl := hxI
+      · have hxU : x ∈ I.support.compl := by simpa [Closeds.compl] using hxI
         obtain ⟨z, hz⟩ := (I.blowupToBase ∣_ I.support.compl).surjective ⟨x, hxU⟩
         have hz' : I.blowupToBase z.val = x :=
           (morphismRestrict_base_coe _ _ z).symm.trans (congrArg Subtype.val hz)
@@ -500,7 +500,9 @@ private theorem exists_pow_mul_mem_chartIdeal_other {a b : R} (ha : a ∈ I) (hb
         (congrArg (ιb ⁻¹ᵁ ·) (opensRange_affineBlowupι (Localization.Away a) ha).symm)
     rintro _ ⟨y, rfl⟩
     have hy : y.val ∈ ιb ⁻¹ᵁ ιa.opensRange := hbasic ▸ y.property
-    exact hy
+    have hι : U.ι y = y.val := Scheme.Opens.ι_apply U ⟨y.val, y.property⟩
+    rw [Scheme.Hom.comp_apply, hι, ← Scheme.Hom.coe_opensRange]
+    exact (Scheme.Hom.mem_preimage _).mp hy
   have hle_b : (Lc.comap ιb).comap U.ι ≤ (M.comap ιb).comap U.ι := by
     let u := IsOpenImmersion.lift ιa (U.ι ≫ ιb) hrange
     have hfac : u ≫ ιa = U.ι ≫ ιb := IsOpenImmersion.lift_fac _ _ hrange
@@ -739,7 +741,7 @@ theorem exists_blowup_comp_of_isAffine [IsAffine X] (I : X.IdealSheafData)
         equivOfIsAffine.apply_symm_apply K₀
     rw [htop]
   have hK₁_eq : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ N * J :=
-    eq_of_comap_eq_of_isIso (I.blowupChart (isAffineOpen_top X)) (hLHS.trans hK₀)
+    comap_injective_of_isIso (I.blowupChart (isAffineOpen_top X)) (hLHS.trans hK₀)
   have hE : (I.comap I.blowupToBase ^ N).IsEffectiveCartier :=
     TauCeti.isEffectiveCartier_pow I.isEffectiveCartier_comap_blowupToBase N
   have hKfg (V : X.affineOpens) : ((I * K₁).ideal V).FG := by
@@ -765,13 +767,6 @@ theorem exists_blowup_comp_of_isAffine_of_disjoint_support [IsAffine X] (I : X.I
   obtain ⟨hdisj, hiso⟩ := disjoint_support_and_isIso_blowupToBase_restrict hsupp hIU hJU
   exact ⟨K, e, hKfg, hproper, hdisj, hiso, he⟩
 
-/-- On a locally Noetherian scheme, every ideal sheaf has finitely generated section ideals on all
-affine opens. -/
-private theorem fg_ideal_of_isLocallyNoetherian {Y : Scheme.{u}} [IsLocallyNoetherian Y]
-    (M : Y.IdealSheafData) (V : Y.affineOpens) : (M.ideal V).FG :=
-  have := IsLocallyNoetherian.component_noetherian V
-  IsNoetherian.noetherian _
-
 /-- **Composition of blowups on a quasi-compact locally Noetherian scheme.** Let `X` be a
 quasi-compact locally Noetherian scheme, `I` an ideal sheaf on `X`, and `J` an ideal sheaf on
 `Bl_I X`. Then the composite `J.blowupToBase ≫ I.blowupToBase` is isomorphic over `X` to a single
@@ -784,8 +779,7 @@ theorem exists_blowup_comp [CompactSpace X] [IsLocallyNoetherian X] (I : X.Ideal
           (I.support : Set X) ∪ I.blowupToBase '' (J.support : Set I.blowup) ∧
         e.hom ≫ K.blowupToBase = J.blowupToBase ≫ I.blowupToBase := by
   have : IsLocallyNoetherian I.blowup := LocallyOfFiniteType.isLocallyNoetherian I.blowupToBase
-  exact I.exists_blowup_comp_of_compactSpace (fg_ideal_of_isLocallyNoetherian I) J
-    (fg_ideal_of_isLocallyNoetherian J)
+  exact I.exists_blowup_comp_of_compactSpace I.fg_ideal J J.fg_ideal
 
 /-- **Composition of admissible blowups on a quasi-compact locally Noetherian scheme.** Corollary of
 `exists_blowup_comp_of_compactSpace_of_disjoint_support` when `V(I)` avoids an open `U ⊆ X` and
@@ -800,6 +794,6 @@ theorem exists_blowup_comp_of_disjoint_support [CompactSpace X] [IsLocallyNoethe
         e.hom ≫ K.blowupToBase = J.blowupToBase ≫ I.blowupToBase := by
   have : IsLocallyNoetherian I.blowup := LocallyOfFiniteType.isLocallyNoetherian I.blowupToBase
   exact I.exists_blowup_comp_of_compactSpace_of_disjoint_support
-    (fg_ideal_of_isLocallyNoetherian I) J (fg_ideal_of_isLocallyNoetherian J) U hIU hJU
+    I.fg_ideal J J.fg_ideal U hIU hJU
 
 end AlgebraicGeometry.Scheme.IdealSheafData
