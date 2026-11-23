@@ -31,9 +31,9 @@ eigenvalues (`TauCeti.spectralCount_eq_finrank_pointSpectralSubspace`).
 For a scalar path `t ↦ f t • 1` with `f` continuous on `[a, b]`, the one eigenvalue `f t` has full
 multiplicity, so the spectral flow is the dimension of `H` times the change of the indicator of
 `0 ≤ f` between the endpoints (`TauCeti.spectralFlow_algebraMap_comp`): its net number of upward
-crossings of `0` is `1`, `0` or `-1`. For `f a < 0 ≤ f b` every eigenvalue crosses upwards once and
-the spectral flow is the dimension; this is the sign convention in which positive crossings count
-positively.
+crossings of `0` is `1`, `0` or `-1`. For `f a < 0 ≤ f b` the eigenvalue's net crossing of `0` is
+upward and the spectral flow is the dimension; this is the sign convention in which positive
+crossings count positively.
 
 Every operator on a finite-dimensional space is Fredholm, so the regular-crossing formula of
 `TauCeti.Analysis.Fredholm.Spectral.RegularCrossings`
