@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Projection
+public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace
 public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 public import TauCeti.Algebra.TemperleyLieb.Trace.Star
 public import Mathlib.Analysis.Complex.Order
@@ -16,25 +17,29 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 /-!
 # The Jones quotient at `δ = √3` is the inversion-fixed cubic quantum torus
 
-Extending `(ZMod 3)^N` by `0` induces injective tower inclusions `cubicIncl N` and
-`cubicFixedIncl N` compatible with `strandIncl`, `cubicAdjoint`, `cubicInversion`, and
-`cubicScalarCoefficient`. Right-multiplying by `cubicProjection (N + 1) (Fin.last N)` scales
-`cubicScalarCoefficient` by `3⁻¹`, so
-`(√3 : ℂ) ^ m * cubicScalarCoefficient (m - 1) (cubicFixedHom m x)` defines a Markov trace
-`cubicTrace` on `TemperleyLieb ℂ (√3 : ℂ)`. By `IsMarkovTrace.unique`, every Markov trace at
-`δ = √3` is positive (`map_star_mul_self_nonneg_sqrt_three`), has trace radical
-`RingHom.ker (cubicFixedHom m)`, gives `(TL_m(√3) ⧸ traceRadical) ≃ₐ[ℂ] cubicFixed (m - 1)` of
-dimension `(3 ^ (m - 1) + 1) / 2`, and satisfies `cubicFixedHom 5 (jonesWenzl (√3 : ℂ) 5) = 0`.
+Building on `tr m x = (√3) ^ m * cubicScalarCoefficient (m - 1) (cubicHom m x)`
+(`TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace`) and the surjectivity, star-compatibility, and
+dimension results (`TauCeti.Algebra.TemperleyLieb.CubicTorus.Projection`), this file establishes:
+
+* Restriction of `cubicIncl N` to an injective tower inclusion
+  `cubicFixedIncl N : cubicFixed N →ₐ[ℂ] cubicFixed (N + 1)` compatible with `cubicFixedAdjoint`
+  and `strandIncl`.
+* Positivity of every Markov trace at `δ = √3` (`IsMarkovTrace.map_star_mul_self_nonneg_sqrt_three`)
+  and identification of its trace radical with `RingHom.ker (cubicHom m)`
+  (`IsMarkovTrace.traceRadical_eq_ker_cubicHom`).
+* The Jones quotient algebra equivalence
+  `IsMarkovTrace.quotientCubicFixedEquiv : (TL_m(√3) ⧸ traceRadical) ≃ₐ[ℂ] cubicFixed (m - 1)` of
+  complex dimension `(3 ^ (m - 1) + 1) / 2` (`finrank_quotient_traceRadical_sqrt_three`),
+  packaged as `exists_cubicFixedModel`, and vanishing of `cubicHom 5 (jonesWenzl (√3 : ℂ) 5)`.
 
 ## Main definitions and results
 
-* `cubicExtendHom`, `cubicIncl`, `cubicFixedIncl`, `cubicTrace`,
-  `IsMarkovTrace.quotientCubicFixedEquiv`.
-* `isMarkovTrace_cubicTrace`, `IsMarkovTrace.apply_eq_mul_cubicScalarCoefficient_cubicFixedHom`,
-  `IsMarkovTrace.map_star_mul_self_nonneg_sqrt_three`,
-  `IsMarkovTrace.traceRadical_eq_ker_cubicFixedHom`,
-  `IsMarkovTrace.finrank_quotient_traceRadical_sqrt_three`.
-* `exists_cubicFixedModel`, `cubicFixedHom_jonesWenzl_five`.
+* `TauCeti.TemperleyLieb.cubicFixedIncl`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.quotientCubicFixedEquiv`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_sqrt_three`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.traceRadical_eq_ker_cubicHom`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.finrank_quotient_traceRadical_sqrt_three`.
+* `TauCeti.TemperleyLieb.exists_cubicFixedModel`, `TauCeti.TemperleyLieb.cubicHom_jonesWenzl_five`.
 
 ## References
 
@@ -52,86 +57,45 @@ open scoped ComplexOrder
 
 namespace TauCeti.TemperleyLieb
 
-/-! ### Coordinate extension and tower inclusions -/
+/-! ### Adjoint compatibility and restricted tower inclusions -/
 
-/-- Group homomorphism extending `a : Multiplicative (Fin N → ZMod 3)` by `0` at the end. -/
-def cubicExtendHom (N : ℕ) :
+private def cubicExtendHom (N : ℕ) :
     Multiplicative (Fin N → ZMod 3) →* Multiplicative (Fin (N + 1) → ZMod 3) where
   toFun a := ofAdd (Fin.snoc a.toAdd 0)
   map_one' := toAdd.injective (funext fun i ↦ Fin.lastCases (by simp) (fun _ ↦ by simp) i)
   map_mul' _ _ := toAdd.injective (funext fun i ↦ Fin.lastCases (by simp) (fun _ ↦ by simp) i)
 
-@[simp] theorem toAdd_cubicExtendHom (N : ℕ) (a : Multiplicative (Fin N → ZMod 3)) :
-    (cubicExtendHom N a).toAdd = Fin.snoc (α := fun _ ↦ ZMod 3) a.toAdd 0 := (rfl)
+private theorem cubicExtendHom_injective (N : ℕ) : Function.Injective (cubicExtendHom N) :=
+  fun _ _ h ↦ toAdd.injective (funext fun i ↦ by
+    simpa [cubicExtendHom] using congrFun (congrArg toAdd h) i.castSucc)
 
-theorem cubicExtendHom_injective (N : ℕ) : Function.Injective (cubicExtendHom N) := fun _ _ h ↦
-  toAdd.injective (funext fun i ↦ by simpa using congrFun (congrArg toAdd h) i.castSucc)
-
-@[simp] theorem cubicExtendHom_ofAdd_single (N : ℕ) (j : Fin N) (c : ZMod 3) :
-    cubicExtendHom N (ofAdd (Pi.single j c)) = ofAdd (Pi.single j.castSucc c) :=
-  toAdd.injective <| funext fun i ↦ Fin.lastCases
-    (by simp [(Fin.castSucc_lt_last j).ne.symm])
-    (fun _ ↦ by simp [Pi.single_apply, Fin.castSucc_inj]) i
-
-@[simp] theorem cubicFactor_cubicExtendHom (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
+private theorem cubicFactor_cubicExtendHom (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
     cubicFactor (N + 1) (cubicExtendHom N a) (cubicExtendHom N b) = cubicFactor N a b := by
-  rw [cubicFactor_def, cubicFactor_def, toAdd_cubicExtendHom, toAdd_cubicExtendHom,
-    chainForm_snoc_zero]
+  rw [cubicFactor_apply, cubicFactor_apply]
+  exact congrArg (fun z ↦ cubeRootPow (2 * z)) (chainForm_snoc_zero a.toAdd b.toAdd)
 
-private theorem ofAdd_single_last_notMem_range_cubicExtendHom (N : ℕ) {r : ZMod 3} (hr : r ≠ 0) :
-    ofAdd (Pi.single (Fin.last N) r) ∉ Set.range (cubicExtendHom N) := by
-  rintro ⟨a, ha⟩
-  have h := congrFun (congrArg toAdd ha) (Fin.last N)
-  simp at h; exact hr h.symm
-
-/-- **The tower inclusion** `I_N : CubicTorus N →ₐ[ℂ] CubicTorus (N + 1)` sending `W(a)` to
-`W(a, 0)`. -/
-noncomputable def cubicIncl (N : ℕ) : CubicTorus N →ₐ[ℂ] CubicTorus (N + 1) :=
-  TwistedMonoidAlgebra.mapDomain (cubicExtendHom N) (cubicFactor_cubicExtendHom N)
-
-theorem cubicIncl_def (N : ℕ) :
+private theorem cubicIncl_eq_mapDomain (N : ℕ) :
     cubicIncl N =
-      TwistedMonoidAlgebra.mapDomain (cubicExtendHom N) (cubicFactor_cubicExtendHom N) := (rfl)
+      TwistedMonoidAlgebra.mapDomain (cubicExtendHom N) (cubicFactor_cubicExtendHom N) :=
+  TwistedMonoidAlgebra.algHom_ext fun a ↦ by
+    rw [of_eq_weyl, cubicIncl_weyl, ← of_eq_weyl (N := N) a, TwistedMonoidAlgebra.mapDomain_of,
+      of_eq_weyl]
+    rfl
 
-theorem cubicIncl_injective (N : ℕ) : Function.Injective (cubicIncl N) :=
-  TwistedMonoidAlgebra.mapDomain_injective (cubicFactor_cubicExtendHom N)
+theorem cubicIncl_injective (N : ℕ) : Function.Injective (cubicIncl N) := by
+  rw [cubicIncl_eq_mapDomain]
+  exact TwistedMonoidAlgebra.mapDomain_injective (cubicFactor_cubicExtendHom N)
     (cubicExtendHom_injective N)
 
-@[simp] theorem cubicIncl_weyl (N : ℕ) (a : Multiplicative (Fin N → ZMod 3)) :
-    cubicIncl N (weyl N a) = weyl (N + 1) (cubicExtendHom N a) := by
-  rw [weyl_def, weyl_def, cubicIncl_def, TwistedMonoidAlgebra.mapDomain_of]
-
-@[simp] theorem cubicIncl_cubicSite (N : ℕ) (j : Fin N) :
-    cubicIncl N (cubicSite N j) = cubicSite (N + 1) j.castSucc := by
-  rw [cubicSite_def, cubicIncl_weyl, cubicExtendHom_ofAdd_single, ← cubicSite_def]
-
-@[simp] theorem cubicIncl_cubicProjection (N : ℕ) (j : Fin N) :
-    cubicIncl N (cubicProjection N j) = cubicProjection (N + 1) j.castSucc := by
-  have hadd (a b) : cubicIncl N (a + b) = cubicIncl N a + cubicIncl N b :=
-    (cubicIncl N).map_add' a b
-  rw [cubicProjection_def, cubicProjection_def, AlgHom.map_smul_of_tower, hadd, hadd,
-    map_one, map_pow, cubicIncl_cubicSite]
-
 @[simp] theorem cubicAdjoint_cubicIncl (N : ℕ) (x : CubicTorus N) :
-    cubicAdjoint (N + 1) (cubicIncl N x) = cubicIncl N (cubicAdjoint N x) :=
-  TwistedMonoidAlgebra.conjReverse_mapDomain (cubicExtendHom N) (cubicFactor_cubicExtendHom N) x
-
-@[simp] theorem cubicScalarCoefficient_cubicIncl (N : ℕ) (x : CubicTorus N) :
-    cubicScalarCoefficient (N + 1) (cubicIncl N x) = cubicScalarCoefficient N x :=
-  TwistedMonoidAlgebra.scalarTrace_mapDomain_of_injective (cubicFactor_cubicExtendHom N)
-    (cubicExtendHom_injective N) x
-
-@[simp] theorem cubicInversion_cubicIncl (N : ℕ) (x : CubicTorus N) :
-    cubicInversion (N + 1) (cubicIncl N x) = cubicIncl N (cubicInversion N x) :=
-  AlgHom.congr_fun
-    (TwistedMonoidAlgebra.algHom_ext (f := (cubicInversion (N + 1)).comp (cubicIncl N))
-      (g := (cubicIncl N).comp (cubicInversion N)) fun a ↦ by
-        rw [AlgHom.comp_apply, AlgHom.comp_apply, ← weyl_def, cubicIncl_weyl, cubicInversion_weyl,
-          cubicInversion_weyl, cubicIncl_weyl, map_inv]) x
+    cubicAdjoint (N + 1) (cubicIncl N x) = cubicIncl N (cubicAdjoint N x) := by
+  rw [cubicIncl_eq_mapDomain]
+  exact TwistedMonoidAlgebra.conjReverse_mapDomain (cubicExtendHom N)
+    (cubicFactor_cubicExtendHom N) x
 
 theorem cubicIncl_mem_cubicFixed {N : ℕ} {x : CubicTorus N} (hx : x ∈ cubicFixed N) :
     cubicIncl N x ∈ cubicFixed (N + 1) := by
-  rw [mem_cubicFixed_iff, cubicInversion_cubicIncl, mem_cubicFixed_iff.mp hx]
+  rw [mem_cubicFixed, cubicInversion_cubicIncl, mem_cubicFixed.mp hx]
 
 /-- **The restricted tower inclusion** `cubicFixed N →ₐ[ℂ] cubicFixed (N + 1)`. -/
 noncomputable def cubicFixedIncl (N : ℕ) : cubicFixed N →ₐ[ℂ] cubicFixed (N + 1) :=
@@ -150,104 +114,27 @@ theorem cubicFixedIncl_injective (N : ℕ) : Function.Injective (cubicFixedIncl 
     rw [coe_cubicFixedAdjoint, coe_cubicFixedIncl, coe_cubicFixedIncl, coe_cubicFixedAdjoint,
       cubicAdjoint_cubicIncl])
 
-/-- `cubicFixedHom` intertwines `TemperleyLieb.strandIncl` with `cubicFixedIncl`. -/
-theorem cubicFixedHom_strandIncl (n : ℕ) (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) (n + 1)) :
-    cubicFixedHom (n + 2) (strandIncl x) = cubicFixedIncl n (cubicFixedHom (n + 1) x) :=
-  AlgHom.congr_fun
-    (TemperleyLieb.hom_ext (F := (cubicFixedHom (n + 2)).comp strandIncl)
-      (G := (cubicFixedIncl n).comp (cubicFixedHom (n + 1))) fun i ↦ Subtype.ext <| by
-        rw [AlgHom.comp_apply, AlgHom.comp_apply, strandIncl_e, coe_cubicFixedHom_e,
-          coe_cubicFixedIncl, coe_cubicFixedHom_e, AlgHom.map_smul_of_tower]
-        exact congrArg ((Real.sqrt 3 : ℂ) • ·) (cubicIncl_cubicProjection n i).symm) x
+/-- `cubicHom` intertwines `TemperleyLieb.strandIncl` with `cubicFixedIncl`. -/
+theorem cubicHom_strandIncl_eq_cubicFixedIncl (n : ℕ)
+    (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) (n + 1)) :
+    cubicHom (n + 2) (strandIncl x) = cubicFixedIncl n (cubicHom (n + 1) x) :=
+  Subtype.ext (cubicHom_strandIncl n x)
 
-/-! ### Markov partial-trace identity and uniqueness of the cubic Markov trace -/
-
-/-- Multiplying `cubicIncl N x` on the right by `cubicProjection (N + 1) (Fin.last N)` scales
-`cubicScalarCoefficient` by `3⁻¹`. -/
-theorem cubicScalarCoefficient_cubicIncl_mul_cubicProjection_last (N : ℕ) (x : CubicTorus N) :
-    cubicScalarCoefficient (N + 1) (cubicIncl N x * cubicProjection (N + 1) (Fin.last N)) =
-      (3 : ℂ)⁻¹ * cubicScalarCoefficient N x := by
-  have hzero : ∀ {r : ZMod 3}, r ≠ 0 →
-      cubicScalarCoefficient (N + 1)
-        (cubicIncl N x * weyl (N + 1) (ofAdd (Pi.single (Fin.last N) r))) = 0 := fun {r} hr ↦ by
-    have hnotMem : (ofAdd (Pi.single (Fin.last N) r))⁻¹ ∉ Set.range (cubicExtendHom N) := by
-      rw [← ofAdd_neg, ← Pi.single_neg]
-      exact ofAdd_single_last_notMem_range_cubicExtendHom N (neg_ne_zero.mpr hr)
-    rw [weyl_def, TwistedMonoidAlgebra.scalarTrace_mul_of, cubicIncl_def,
-      TwistedMonoidAlgebra.basis_repr_mapDomain_of_notMem_range (cubicExtendHom N)
-        (cubicFactor_cubicExtendHom N) x hnotMem, zero_mul]
-  rw [cubicProjection_def, cubicSite_sq, cubicSite_def, mul_smul_comm, map_smul, smul_eq_mul,
-    mul_add, mul_add, mul_one, map_add, map_add, cubicScalarCoefficient_cubicIncl,
-    hzero (by decide), hzero (by decide), add_zero, add_zero]
-
-/-- The unnormalized Markov trace on `TemperleyLieb ℂ (√3 : ℂ)` obtained by pulling back
-`(√3 : ℂ) ^ m` times `cubicScalarCoefficient (m - 1)` along `cubicFixedHom m`. -/
-noncomputable def cubicTrace (m : ℕ) : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m →ₗ[ℂ] ℂ :=
-  ((Real.sqrt 3 : ℂ) ^ m) •
-    (cubicScalarCoefficient (m - 1) ∘ₗ
-      (cubicFixed (m - 1)).val.toLinearMap ∘ₗ (cubicFixedHom m).toLinearMap)
-
-theorem cubicTrace_apply (m : ℕ) (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
-    cubicTrace m x =
-      (Real.sqrt 3 : ℂ) ^ m * cubicScalarCoefficient (m - 1) (cubicFixedHom m x) := by
-  simp [cubicTrace]
-
-/-- **The cubic scalar trace defines an unnormalized Markov trace at `δ = √3`.** -/
-theorem isMarkovTrace_cubicTrace : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) cubicTrace where
-  map_one m := by
-    rw [cubicTrace_apply, map_one, Subalgebra.coe_one,
-      TwistedMonoidAlgebra.scalarTrace_one, mul_one]
-  map_mul_comm m x y := by
-    rw [cubicTrace_apply, cubicTrace_apply, map_mul, map_mul,
-      Subalgebra.coe_mul, Subalgebra.coe_mul, TwistedMonoidAlgebra.scalarTrace_mul_comm]
-  map_strandIncl n x := by
-    rw [cubicTrace_apply, cubicTrace_apply, cubicFixedHom_strandIncl, coe_cubicFixedIncl]
-    -- `n + 2 - 1` and `n + 1 - 1` appear inside dependent types (`CubicTorus`, `cubicFixed`),
-    -- so `rw`/`simp` cannot normalize them without ill-typed intermediate terms.
-    change (Real.sqrt 3 : ℂ) ^ (n + 2) *
-        cubicScalarCoefficient (n + 1)
-          (cubicIncl n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1))) =
-      (Real.sqrt 3 : ℂ) *
-        ((Real.sqrt 3 : ℂ) ^ (n + 1) *
-          cubicScalarCoefficient n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1)))
-    rw [cubicScalarCoefficient_cubicIncl, pow_succ']; ring
-  map_strandIncl_mul_e_last n x := by
-    have hsqrt : (Real.sqrt 3 : ℂ) * (Real.sqrt 3 : ℂ) = 3 := by
-      exact_mod_cast Real.mul_self_sqrt (by positivity)
-    rw [cubicTrace_apply, cubicTrace_apply, map_mul, Subalgebra.coe_mul,
-      cubicFixedHom_strandIncl, coe_cubicFixedIncl, coe_cubicFixedHom_e, mul_smul_comm, map_smul,
-      smul_eq_mul]
-    -- `n + 2 - 1` and `n + 1 - 1` appear inside dependent types (`CubicTorus`, `Fin`,
-    -- `cubicFixed`), so `rw`/`simp` cannot normalize them without ill-typed intermediate terms.
-    change (Real.sqrt 3 : ℂ) ^ (n + 2) *
-        ((Real.sqrt 3 : ℂ) *
-          cubicScalarCoefficient (n + 1)
-            (cubicIncl n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1)) *
-              cubicProjection (n + 1) (Fin.last n))) =
-      (Real.sqrt 3 : ℂ) ^ (n + 1) *
-        cubicScalarCoefficient n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1))
-    rw [cubicScalarCoefficient_cubicIncl_mul_cubicProjection_last, pow_succ]
-    have hfac : ((Real.sqrt 3 : ℂ) * (Real.sqrt 3 : ℂ)) * (3 : ℂ)⁻¹ = 1 := by
-      rw [hsqrt]; norm_num
-    linear_combination ((Real.sqrt 3 : ℂ) ^ (n + 1) *
-      cubicScalarCoefficient n (cubicFixedHom (n + 1) x : CubicTorus (n + 1 - 1))) * hfac
+/-! ### Positivity, kernel = trace radical, and the Jones quotient equivalence -/
 
 namespace IsMarkovTrace
 
 variable {tr : ∀ n : ℕ, TemperleyLieb ℂ (Real.sqrt 3 : ℂ) n →ₗ[ℂ] ℂ}
 
-/-- Every Markov trace on `TemperleyLieb ℂ (√3 : ℂ)` coincides with `cubicTrace`. -/
-theorem eq_cubicTrace (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) : tr = cubicTrace :=
-  htr.unique isMarkovTrace_cubicTrace
-
-/-- **The Markov trace at `δ = √3` as the cubic quantum torus trace**:
-`tr m x = (√3 : ℂ) ^ m * cubicScalarCoefficient (m - 1) (cubicFixedHom m x)`. -/
-theorem apply_eq_mul_cubicScalarCoefficient_cubicFixedHom
-    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ)
-    (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
-    tr m x =
-      (Real.sqrt 3 : ℂ) ^ m * cubicScalarCoefficient (m - 1) (cubicFixedHom m x) := by
-  rw [htr.eq_cubicTrace, cubicTrace_apply]
+private theorem cubicScalarCoefficient_eq_scalarTrace (N : ℕ) :
+    cubicScalarCoefficient N =
+      TwistedMonoidAlgebra.scalarTrace ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N) :=
+  (TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).ext fun g ↦ by
+    classical
+    rw [TwistedMonoidAlgebra.basis_apply, of_eq_weyl, cubicScalarCoefficient_weyl, ← of_eq_weyl,
+      TwistedMonoidAlgebra.scalarTrace_of]
+    have hg : g.toAdd = 0 ↔ g = 1 := ⟨fun h ↦ toAdd.injective (by simp [h]), fun h ↦ by simp [h]⟩
+    simp [hg]
 
 /-- **Positivity of the Markov trace at `δ = √3`**: `0 ≤ tr m (star x * x)` on every `m`. -/
 theorem map_star_mul_self_nonneg_sqrt_three
@@ -255,40 +142,39 @@ theorem map_star_mul_self_nonneg_sqrt_three
     (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
     0 ≤ tr m (star x * x) := by
   have hz := TwistedMonoidAlgebra.scalarTrace_conjReverse_mul_self_nonneg
-    (cubicFactor_inv_self (m - 1)) (cubicFixedHom m x)
+    (cubicFactor_inv_self (m - 1)) (cubicHom m x)
+  rw [← cubicScalarCoefficient_eq_scalarTrace] at hz
   have hz0 : ((0 : ℝ) : ℂ) ≤
-      cubicScalarCoefficient (m - 1)
-        (cubicAdjoint (m - 1) (cubicFixedHom m x) * cubicFixedHom m x) := by
+      cubicScalarCoefficient (m - 1) (cubicAdjoint (m - 1) (cubicHom m x) * cubicHom m x) := by
     simpa using hz
-  rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicFixedHom, map_mul,
-    Subalgebra.coe_mul, coe_cubicFixedHom_star, Complex.eq_re_of_ofReal_le hz0,
+  rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, map_mul,
+    Subalgebra.coe_mul, coe_cubicHom_star, Complex.eq_re_of_ofReal_le hz0,
     ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.zero_le_real]
   exact mul_nonneg (by positivity) (Complex.nonneg_iff.mp hz).left
 
-/-- At `δ = √3`, `tr m (star x * x) = 0` if and only if `cubicFixedHom m x = 0`. -/
-theorem map_star_mul_self_eq_zero_iff_cubicFixedHom_eq_zero
+/-- At `δ = √3`, `tr m (star x * x) = 0` if and only if `cubicHom m x = 0`. -/
+theorem map_star_mul_self_eq_zero_iff_cubicHom_eq_zero
     (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) {m : ℕ}
     {x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m} :
-    tr m (star x * x) = 0 ↔ cubicFixedHom m x = 0 := by
+    tr m (star x * x) = 0 ↔ cubicHom m x = 0 := by
   have hne : (Real.sqrt 3 : ℂ) ≠ 0 :=
     Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by positivity)).ne'
-  rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicFixedHom, map_mul,
-    Subalgebra.coe_mul, coe_cubicFixedHom_star, mul_eq_zero, or_iff_right (pow_ne_zero m hne),
+  rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, map_mul,
+    Subalgebra.coe_mul, coe_cubicHom_star, mul_eq_zero, or_iff_right (pow_ne_zero m hne),
+    cubicScalarCoefficient_eq_scalarTrace,
     TwistedMonoidAlgebra.scalarTrace_conjReverse_mul_self_eq_zero_iff
       (cubicFactor_inv_self (m - 1)), ZeroMemClass.coe_eq_zero]
 
-/-! ### Kernel = trace radical and the Jones quotient equivalence -/
-
-/-- **The trace radical at `δ = √3` is the kernel of `cubicFixedHom`.** -/
-theorem traceRadical_eq_ker_cubicFixedHom
+/-- **The trace radical at `δ = √3` is the kernel of `cubicHom`.** -/
+theorem traceRadical_eq_ker_cubicHom
     (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ) :
-    (tr m).traceRadical (htr.map_mul_comm m) = RingHom.ker (cubicFixedHom m) := by
+    (tr m).traceRadical (htr.map_mul_comm m) = RingHom.ker (cubicHom m) := by
   ext x
   rw [LinearMap.mem_traceRadical, RingHom.mem_ker]
   refine ⟨fun hx ↦ ?_, fun hx y ↦ ?_⟩
-  · rw [← htr.map_star_mul_self_eq_zero_iff_cubicFixedHom_eq_zero, htr.map_mul_comm]
+  · rw [← htr.map_star_mul_self_eq_zero_iff_cubicHom_eq_zero, htr.map_mul_comm]
     exact hx (star x)
-  · rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicFixedHom, map_mul, hx, zero_mul,
+  · rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, map_mul, hx, zero_mul,
       Subalgebra.coe_zero, map_zero, mul_zero]
 
 /-- At `δ = √3`, the null vectors of `x ↦ tr m (star x * x)` are precisely the trace radical. -/
@@ -296,23 +182,23 @@ theorem map_star_mul_self_eq_zero_iff_mem_traceRadical_sqrt_three
     (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) {m : ℕ}
     {x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m} :
     tr m (star x * x) = 0 ↔ x ∈ (tr m).traceRadical (htr.map_mul_comm m) := by
-  rw [htr.map_star_mul_self_eq_zero_iff_cubicFixedHom_eq_zero,
-    htr.traceRadical_eq_ker_cubicFixedHom, RingHom.mem_ker]
+  rw [htr.map_star_mul_self_eq_zero_iff_cubicHom_eq_zero,
+    htr.traceRadical_eq_ker_cubicHom, RingHom.mem_ker]
 
 /-- **The Jones quotient at `δ = √3` is isomorphic to `cubicFixed (m - 1)`.** -/
 noncomputable def quotientCubicFixedEquiv
     (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ) :
     (TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m ⧸ (tr m).traceRadical (htr.map_mul_comm m)) ≃ₐ[ℂ]
       cubicFixed (m - 1) :=
-  (Ideal.quotientEquivAlgOfEq ℂ (htr.traceRadical_eq_ker_cubicFixedHom m)).trans
-    (Ideal.quotientKerAlgEquivOfSurjective (cubicFixedHom_surjective m))
+  (Ideal.quotientEquivAlgOfEq ℂ (htr.traceRadical_eq_ker_cubicHom m)).trans
+    (Ideal.quotientKerAlgEquivOfSurjective (cubicHom_surjective m))
 
 @[simp] theorem quotientCubicFixedEquiv_mk
     (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ)
     (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
     htr.quotientCubicFixedEquiv m
         (Ideal.Quotient.mk ((tr m).traceRadical (htr.map_mul_comm m)) x) =
-      cubicFixedHom m x := by
+      cubicHom m x := by
   simp [quotientCubicFixedEquiv, Ideal.quotientEquivAlgOfEq_mk]
 
 /-- `quotientCubicFixedEquiv` intertwines `quotientStrandIncl` with `cubicFixedIncl`. -/
@@ -324,12 +210,12 @@ theorem quotientCubicFixedEquiv_quotientStrandIncl
       cubicFixedIncl n (htr.quotientCubicFixedEquiv (n + 1) q) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
   rw [htr.quotientStrandIncl_mk, htr.quotientCubicFixedEquiv_mk, htr.quotientCubicFixedEquiv_mk,
-    cubicFixedHom_strandIncl]
+    cubicHom_strandIncl_eq_cubicFixedIncl]
 
-@[simp] theorem quotientCubicFixedEquiv_symm_cubicFixedHom
+@[simp] theorem quotientCubicFixedEquiv_symm_cubicHom
     (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ)
     (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
-    (htr.quotientCubicFixedEquiv m).symm (cubicFixedHom m x) =
+    (htr.quotientCubicFixedEquiv m).symm (cubicHom m x) =
       Ideal.Quotient.mk ((tr m).traceRadical (htr.map_mul_comm m)) x :=
   (htr.quotientCubicFixedEquiv m).injective (by simp)
 
@@ -352,7 +238,7 @@ theorem quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicFixedEquiv
       (Real.sqrt 3 : ℂ) ^ m *
         cubicScalarCoefficient (m - 1) (htr.quotientCubicFixedEquiv m q) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp [htr.apply_eq_mul_cubicScalarCoefficient_cubicFixedHom]
+  simp [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom]
 
 @[simp] theorem quotientTrace_quotientCubicFixedEquiv_symm
     (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ) (x : cubicFixed (m - 1)) :
@@ -369,14 +255,6 @@ theorem quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicFixedEquiv
   rw [(htr.quotientCubicFixedEquiv m).toLinearEquiv.finrank_eq, finrank_cubicFixed]
 
 end IsMarkovTrace
-
-/-- Specialization to the spin-model `markovTrace` at any `q : ℂˣ` with `(√3 : ℂ) = -(q + q⁻¹)`. -/
-theorem markovTrace_eq_mul_cubicScalarCoefficient_cubicFixedHom (q : ℂˣ)
-    (hq : (Real.sqrt 3 : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) {m : ℕ}
-    (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
-    markovTrace q hq x =
-      (Real.sqrt 3 : ℂ) ^ m * cubicScalarCoefficient (m - 1) (cubicFixedHom m x) :=
-  (isMarkovTrace_markovTrace q hq).apply_eq_mul_cubicScalarCoefficient_cubicFixedHom m x
 
 /-! ### Packaged cubic fixed-point model and vanishing of the five-strand Jones–Wenzl projection -/
 
@@ -398,13 +276,13 @@ theorem exists_cubicFixedModel
       (∀ x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m,
         tr m x = (Real.sqrt 3 : ℂ) ^ m * cubicScalarCoefficient (m - 1) (F x)) ∧
       RingHom.ker F = (tr m).traceRadical (htr.map_mul_comm m) :=
-  ⟨cubicFixedHom m, cubicFixedHom_surjective m, coe_cubicFixedHom_e m, coe_cubicFixedHom_star,
-    htr.apply_eq_mul_cubicScalarCoefficient_cubicFixedHom m,
-    (htr.traceRadical_eq_ker_cubicFixedHom m).symm⟩
+  ⟨cubicHom m, cubicHom_surjective m, coe_cubicHom_e m, coe_cubicHom_star,
+    htr.apply_eq_mul_cubicScalarCoefficient_cubicHom m,
+    (htr.traceRadical_eq_ker_cubicHom m).symm⟩
 
-/-- At `δ = √3`, `cubicFixedHom 5` maps the five-strand Jones–Wenzl projection to `0`. -/
-@[simp] theorem cubicFixedHom_jonesWenzl_five :
-    cubicFixedHom 5 (jonesWenzl (Real.sqrt 3 : ℂ) 5) = 0 := by
+/-- At `δ = √3`, `cubicHom 5` maps the five-strand Jones–Wenzl projection to `0`. -/
+@[simp] theorem cubicHom_jonesWenzl_five :
+    cubicHom 5 (jonesWenzl (Real.sqrt 3 : ℂ) 5) = 0 := by
   have hsqrt : (Real.sqrt 3 : ℝ) = 2 * Real.cos (Real.pi / (6 : ℕ)) := by
     rw [Nat.cast_ofNat, Real.cos_pi_div_six]; ring
   have hcoe : (Real.sqrt 3 : ℂ) = Complex.ofRealHom (2 * Real.cos (Real.pi / (6 : ℕ))) := by
@@ -414,7 +292,7 @@ theorem exists_cubicFixedModel
     obtain ⟨hk1, hk5⟩ := Finset.mem_Icc.mp hk
     rw [hcoe, ← Complex.ofRealHom.map_qInt, isUnit_iff_ne_zero]
     exact Complex.ofReal_ne_zero.mpr (qInt_two_mul_cos_pi_div_pos (by omega) (by omega)).ne'
-  rw [← RingHom.mem_ker, ← isMarkovTrace_cubicTrace.traceRadical_eq_ker_cubicFixedHom 5,
+  rw [← RingHom.mem_ker, ← isMarkovTrace_cubicTrace.traceRadical_eq_ker_cubicHom 5,
     isMarkovTrace_cubicTrace.jonesWenzl_mem_traceRadical_iff hunits, hcoe,
     ← Complex.ofRealHom.map_qInt, qInt_two_mul_cos_pi_div_eq_zero (by decide), map_zero]
 

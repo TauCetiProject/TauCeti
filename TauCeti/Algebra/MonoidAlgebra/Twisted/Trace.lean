@@ -122,15 +122,8 @@ variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFact
 
 /-- **Traciality of `scalarTrace`** on a twisted group algebra: `s(x * y) = s(y * x)`. -/
 theorem scalarTrace_mul_comm (x y : twistedMonoidAlgebra k G α) :
-    scalarTrace k G α (x * y) = scalarTrace k G α (y * x) := by
-  induction (basis k G α).mem_span y using Submodule.span_induction with
-  | mem _ hy₀ =>
-    obtain ⟨g, rfl⟩ := hy₀
-    rw [basis_apply, scalarTrace_mul_of, scalarTrace_of_mul,
-      IsFactorSet.apply_inv_eq_inv_apply α g, mul_comm]
-  | zero => simp
-  | add _ _ _ _ hy₁ hy₂ => simp [mul_add, add_mul, hy₁, hy₂]
-  | smul _ _ _ hy₁ => simp [hy₁]
+    scalarTrace k G α (x * y) = scalarTrace k G α (y * x) :=
+  repr_mul_apply_one_comm x y
 
 /-- **Nondegeneracy of `scalarTrace`**: an element annihilated by every right factor is `0`. -/
 theorem eq_zero_of_forall_scalarTrace_mul_eq_zero {x : twistedMonoidAlgebra k G α}

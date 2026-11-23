@@ -65,6 +65,9 @@ exceptional mass instead.
 * `TauCeti.TriadicComplex3.IsPolyadDecomposition.sum_card_support`: the selected supports have
   `|V|.descFactorial 3` triples in total.
 * `TauCeti.TriadicComplex3.sum_card_support_le`: in general they have at most that many.
+* `TauCeti.Colored3Graph.card_filter_color_eq_sum_card_support_mul_relativeDensity`: over a
+  polyad decomposition, the number of injective triples of a color is the support-weighted sum
+  of its relative densities.
 * `TauCeti.TriadicComplex3.VertexCellsControlled.card_le`: controlled cells are small.
 * `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_le`: the support of
   the irregular polyads is at most an `ε`-proportion of the selected support.
@@ -292,6 +295,37 @@ theorem VertexCellsControlled.card_le (h : C.VertexCellsControlled t₀) (ht₀ 
   exact hle.trans (Nat.add_le_add_right (Nat.div_le_div_left h.2 ht₀) 1)
 
 end TriadicComplex3
+
+/-! ### Colors over a polyad decomposition -/
+
+namespace Colored3Graph
+
+variable {κ : Type*} [DecidableEq κ] {C : TriadicComplex3 V}
+
+/-- **Counting triples of a color over a polyad decomposition.** When the selected polyads of `C`
+decompose the injective triples, the number of injective triples whose underlying triple has
+color `c` is the sum over the selected polyads of the support size times the relative density
+of `c`. -/
+theorem card_filter_color_eq_sum_card_support_mul_relativeDensity
+    (hC : C.IsPolyadDecomposition) (H : Colored3Graph κ V) (c : κ) :
+    (#{x : {x : Fin 3 → V // Function.Injective x} |
+        H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) =
+      ∑ P ∈ C.polyads, (#P.support : ℝ) * (H.relativeDensity c P : ℝ) := by
+  have hcover : ({x : {x : Fin 3 → V // Function.Injective x} |
+      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : Finset _) =
+      C.polyads.biUnion fun P ↦
+        {x ∈ P.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} := by
+    ext x
+    obtain ⟨P, hP, hx⟩ := (C.isPolyadDecomposition_iff.1 hC) x
+    simp only [mem_filter, mem_univ, true_and, mem_biUnion]
+    exact ⟨fun h ↦ ⟨P, hP, hx, h⟩, fun ⟨_, _, _, h⟩ ↦ h⟩
+  rw [hcover, card_biUnion fun P _ Q _ hPQ ↦ disjoint_filter_filter
+    (Polyad3.pairwise_disjoint_support hPQ), Nat.cast_sum]
+  refine sum_congr rfl fun P _ ↦ ?_
+  rw [mul_comm, relativeDensity_def]
+  exact_mod_cast (H.relDensityOn_mul_card c P.support).symm
+
+end Colored3Graph
 
 /-! ### Exceptional polyads -/
 

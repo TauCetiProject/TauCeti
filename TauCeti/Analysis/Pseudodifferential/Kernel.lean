@@ -68,7 +68,7 @@ the diagonal.
   **smoothness**, the kernel of a coefficient of order `m` is `C^k` when `m + k < -n`; each
   derivative of the integrand in `(x, y)` costs one power of the frequency.
 * `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: the kernel of a smoothing symbol is
-  `C^∞`.
+  `C^∞`; `TauCeti.Symbol.IsSmoothing.integrable_coefficient`: its frequency slices are integrable.
 * `TauCeti.Symbol.quantizationKernel_frequencyLaplacian` and
   `TauCeti.Symbol.quantizationKernel_frequencyLaplacianPow_add`: for `m < -n` the kernel of the
   frequency Laplacian `Δ_ξ a` is `-‖x - y‖² K_a(x, y)`, and iterating, the kernel of
@@ -609,6 +609,13 @@ theorem IsSmoothing.contDiff_quantizationKernel {a : Symbol n V W m} (ha : a.IsS
     rw [← hb]
     exact b.contDiff_quantizationKernel k (by linarith)
 
+/-- The frequency slices `ξ ↦ a(x, ξ)` of a smoothing symbol are integrable. -/
+theorem IsSmoothing.integrable_coefficient {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (x : CoordinateSpace n) : Integrable fun ξ ↦ a.coefficient (x, ξ) := by
+  obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - 1)
+  rw [← hb]
+  exact b.integrable_coefficient (by linarith) x
+
 /-! ### The frequency Laplacian and multiplication by `‖x - y‖²` -/
 
 /-- **Kernel of the frequency Laplacian.** For a symbol of order `m < -n`,
@@ -783,7 +790,7 @@ theorem integral_quantizationKernel_comp_adjoint {a : E × E → V →L[ℂ] W}
     simpa only [sub_zero] using integrable_quantizationKernel_integrand ha 0
   have hGc : Continuous G := by
     have : Continuous fun ζ : E ↦ adjoint (b (z, (2 * π) • ζ)) :=
-      (adjoint (𝕜 := ℂ) (E := V) (F := U)).continuous.comp (hbc.comp (continuous_const_smul _))
+      (hbc.comp (continuous_const_smul _)).clm_adjoint
     exact (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul this
   have hG : Integrable G := by
     refine (hb.comp_smul two_pi_pos.ne').norm.mono' hGc.aestronglyMeasurable

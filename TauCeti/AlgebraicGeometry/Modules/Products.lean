@@ -18,6 +18,7 @@ families of sections of the factors. This file records the consequence used to c
 assembled as products of modules supported on disjoint open sets: if every factor other than
 `Fᵢ` has no nonzero section over `U`, then the projection `Γ(∏ⱼ Fⱼ, U) → Γ(Fᵢ, U)` is bijective
 (`AlgebraicGeometry.Scheme.Modules.bijective_app_π_of_subsingleton`).
+
 -/
 
 public section

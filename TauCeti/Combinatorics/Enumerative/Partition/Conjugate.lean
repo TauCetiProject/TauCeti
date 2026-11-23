@@ -15,8 +15,10 @@ Mathlib defines the conjugate `Nat.Partition.conjugate` of a natural-number part
 transposing its Young diagram, and proves that conjugation is an involution
 (`Nat.Partition.conjugate_conjugate`).  This file records the parts and the Young diagram of the
 conjugate, and proves that conjugation reverses the dominance order. The parts of the conjugate
-are the column lengths of the original partition: `Nat.Partition.sum_map_conjugate_parts` turns a
-sum over them into a sum over columns, where column `k` counts the parts larger than `k`.
+are the column lengths of the original partition, so conjugation exchanges the number of parts with
+the largest part (`Nat.Partition.card_conjugate_parts`, `Nat.Partition.sup_conjugate_parts`), and
+`Nat.Partition.sum_map_conjugate_parts` turns a sum over them into a sum over columns, where
+column `k` counts the parts larger than `k`.
 Consequently dominance can be read off column by column: `μ` dominates `ν` exactly when, for every
 `k`, the first `k` columns of the Young diagram of `μ` hold at most as many boxes as those of `ν`
 (`Nat.Partition.dominates_iff_forall_sum_map_min_le`). Counting columns also identifies the
@@ -188,6 +190,22 @@ theorem conjugate_parts_sort {n : ℕ} (μ : n.Partition) :
     μ.conjugate.parts.sort (· ≥ ·) = (YoungDiagram.ofPartition μ).transpose.rowLens := by
   rw [← YoungDiagram.rowLens_ofPartition_eq_sort_parts μ.conjugate,
     YoungDiagram.ofPartition_conjugate]
+
+-- Not `@[simp]`, here and in `sup_conjugate_parts`: `conjugate_parts` rewrites the left-hand side
+-- first.
+/-- **The conjugate partition has as many parts as the largest part of the original**: its parts
+are the columns of the Young diagram, and there are as many columns as cells in the first row. -/
+theorem card_conjugate_parts {n : ℕ} (μ : n.Partition) :
+    Multiset.card μ.conjugate.parts = μ.parts.sup := by
+  rw [← YoungDiagram.colLen_zero_ofPartition, YoungDiagram.ofPartition_conjugate,
+    YoungDiagram.colLen_transpose, YoungDiagram.rowLen_zero_ofPartition]
+
+/-- **The largest part of the conjugate partition is the number of parts of the original**: it is
+the length of the first column of the Young diagram. -/
+theorem sup_conjugate_parts {n : ℕ} (μ : n.Partition) :
+    μ.conjugate.parts.sup = Multiset.card μ.parts := by
+  rw [← YoungDiagram.rowLen_zero_ofPartition, YoungDiagram.ofPartition_conjugate,
+    YoungDiagram.rowLen_transpose, YoungDiagram.colLen_zero_ofPartition]
 
 /-- **The parts of the conjugate partition are the column lengths.** A sum over the parts of the
 conjugate of `μ` is the sum over columns `k`, where column `k` has one cell for each part of `μ`
