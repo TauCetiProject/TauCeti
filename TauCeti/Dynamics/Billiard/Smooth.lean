@@ -14,7 +14,6 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import Mathlib.Topology.Algebra.Group.Quotient
 import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!

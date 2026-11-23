@@ -119,6 +119,7 @@ theorem closedNextTangential_neg_one (s : ℝ) : χ.closedNextTangential s (-1) 
   simp [closedNextTangential]
 
 /-- The extended next-collision map commutes with the deck translation `τ(s, v) = (s + L, v)`. -/
+@[simp]
 theorem closedNextParam_add_period (s v : ℝ) :
     χ.closedNextParam (s + χ.period) v = χ.closedNextParam s v + χ.period := by
   unfold closedNextParam
@@ -440,7 +441,7 @@ theorem periodic_closedNextCollisionEquiv (v : Icc (-1 : ℝ) 1) :
     Periodic (fun s : ℝ ↦ Prod.map ((↑) : ℝ → AddCircle χ.period) id
       (χ.closedNextCollisionEquiv (s, v))) χ.period := by
   intro s
-  simp [χ.closedNextParam_add_period]
+  simp
 
 /-- The class in `AddCircle L × [-1, 1]` of the image of `(s, v)` under the inverse of the extended
 next-collision map depends only on the class of `s`. -/
@@ -449,7 +450,7 @@ theorem periodic_closedNextCollisionEquiv_symm (v : Icc (-1 : ℝ) 1) :
       (χ.closedNextCollisionEquiv.symm (s, v))) χ.period := by
   intro s
   ext
-  · simp [χ.closedNextParam_add_period, AddCircle.coe_period]
+  · simp [AddCircle.coe_period]
   · simp
 
 /-- The billiard map extended to the closed cylinder `AddCircle L × [-1, 1]`, induced by the
