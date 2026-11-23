@@ -49,40 +49,38 @@ public section
 
 open Function MeasureTheory MeasureTheory.Measure Module Set TauCeti
 
-variable {E F : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [MeasurableSpace F] [BorelSpace F]
-  {s : Set E} {f : E → F}
-  (ν : Measure F) [IsAddHaarMeasure ν]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-namespace DifferentiableOn
+section
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+variable [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+
 /-- A differentiable map on a set of Hausdorff dimension strictly smaller than the dimension of
 the codomain sends that set to an additive-Haar-null set.
 
-The source may be any real normed space, the codomain may carry an arbitrary finite-dimensional
-norm, and `ν` may be any normalization of additive Haar measure. -/
-theorem addHaar_image_eq_zero_of_dimH_lt_finrank
+The source may be any real normed space, the codomain may carry an arbitrary norm, and `ν` may be
+any normalization of additive Haar measure. -/
+theorem DifferentiableOn.addHaar_image_eq_zero_of_dimH_lt_finrank {s : Set E} {f : E → F}
+    (ν : Measure F) [IsAddHaarMeasure ν]
     (hf : DifferentiableOn ℝ f s) (hsF : dimH s < finrank ℝ F) : ν (f '' s) = 0 :=
   addHaar_eq_zero_of_dimH_lt_finrank ν (hf.dimH_image_le.trans_lt hsF)
 
-omit [FiniteDimensional ℝ F] in
+end
+
+variable [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [MeasurableSpace F] [BorelSpace F] {s : Set E} {f : E → F} (ν : Measure F) [IsAddHaarMeasure ν]
+
 /-- A map differentiable on a subset of a finite-dimensional real normed space sends that set
 to an additive-Haar-null set when the codomain has strictly larger dimension. -/
-theorem addHaar_image_eq_zero_of_finrank_lt_finrank
+theorem DifferentiableOn.addHaar_image_eq_zero_of_finrank_lt_finrank
     (hf : DifferentiableOn ℝ f s) (hEF : finrank ℝ E < finrank ℝ F) :
     ν (f '' s) = 0 := by
   apply hf.addHaar_image_eq_zero_of_dimH_lt_finrank ν
   exact (dimH_mono (subset_univ s)).trans_lt <| by
     simpa only [Real.dimH_univ_eq_finrank, Nat.cast_lt] using hEF
 
-end DifferentiableOn
-
 namespace Differentiable
 
-omit [FiniteDimensional ℝ F] in
 /-- A differentiable map from a finite-dimensional real normed space to a strictly
 higher-dimensional one has additive-Haar-null range. This is the lower-dimensional-source case of
 Sard's theorem: every point of the source is critical because no derivative can be surjective. -/
@@ -92,7 +90,6 @@ theorem addHaar_range_eq_zero_of_finrank_lt_finrank
   rw [← image_univ]
   exact hf.differentiableOn.addHaar_image_eq_zero_of_finrank_lt_finrank ν hEF
 
-omit [FiniteDimensional ℝ F] in
 /-- The critical values of a differentiable map from a finite-dimensional real normed space to a
 strictly higher-dimensional one have additive Haar measure zero. In this dimension range every
 point is critical, but stating the result for the critical locus gives the Sard form consumed by
@@ -104,5 +101,3 @@ theorem addHaar_image_not_surjective_fderiv_eq_zero_of_finrank_lt_finrank
   exact Differentiable.addHaar_range_eq_zero_of_finrank_lt_finrank ν hf hEF
 
 end Differentiable
-
-end

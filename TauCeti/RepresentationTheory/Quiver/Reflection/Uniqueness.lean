@@ -130,9 +130,9 @@ private theorem nonempty_iso_of_dimVector_eq_of_reflectionFunctorList :
             (@instFintypeReflectHom V q hq i) hl' (reflectRep M hi) (reflectRep N hi)
             (indecomposable_reflectRep hi hM hsM) (indecomposable_reflectRep hi hN hsN)
             ((@isFinDim_iff.{u, v, w, max v w x} k V fld (Quiver.reflectAt q i) _).mpr
-              (finiteDimensional_reflectRep_obj M hi hfdM'))
+              (finiteDimensional_reflectRep_obj M hi fun a _ ↦ hfdM' a))
             ((@isFinDim_iff.{u, v, w, max v w x} k V fld (Quiver.reflectAt q i) _).mpr
-              (finiteDimensional_reflectRep_obj N hi hfdN')) hdR hyp
+              (finiteDimensional_reflectRep_obj N hi fun a _ ↦ hfdN' a)) hdR hyp
         · -- `N` is concentrated at the sink, hence so is `M`
           exact (nonempty_iso_of_dimVector_eq_of_forall_subsingleton hi hsubN (hfdN' i) hfdM
             hd.symm).map Iso.symm

@@ -98,11 +98,11 @@ private def squareStripsOfContext
     ((insert i (insert j (Set.range e)) ×ˢ insert i (insert j (Set.range e)) \ {(i, j), (j, i)} :
       Set (ℕ × ℕ))) → α :=
   fun q =>
-    if q.1.1 = i then (if q.1.2 = i then z.2.1 else z.1.1.1.2 (Function.invFun e q.1.2))
-    else if q.1.1 = j then (if q.1.2 = j then z.2.2 else z.1.2.1.2 (Function.invFun e q.1.2))
-    else if q.1.2 = i then z.1.2.2 (Function.invFun e q.1.1)
-    else if q.1.2 = j then z.1.1.2 (Function.invFun e q.1.1)
-    else z.1.1.1.1 (Function.invFun e q.1.1, Function.invFun e q.1.2)
+    if q.val.1 = i then (if q.val.2 = i then z.2.1 else z.1.1.1.2 (Function.invFun e q.val.2))
+    else if q.val.1 = j then (if q.val.2 = j then z.2.2 else z.1.2.1.2 (Function.invFun e q.val.2))
+    else if q.val.2 = i then z.1.2.2 (Function.invFun e q.val.1)
+    else if q.val.2 = j then z.1.1.2 (Function.invFun e q.val.1)
+    else z.1.1.1.1 (Function.invFun e q.val.1, Function.invFun e q.val.2)
 
 private theorem measurable_squareStripsOfContext :
     Measurable (squareStripsOfContext (α := α) e i j) := by
@@ -150,17 +150,17 @@ theorem measurable_restrict_pairCoding (H V₂ : Set (ℕ × ℕ)) (e : ℕ → 
       (α × α) → I → α × α} (hG : Measurable (Function.uncurry G)) :
     Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
       (H.domRestrict q.1,
-        fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p)) :=
+        fun p : V₂ => G (offDiagonalPairSquareContext e p.val.1 p.val.2 q.1) (q.2 p)) :=
   ((Set.measurable_restrict H).comp measurable_fst).prodMk (Measurable.of_eval fun p =>
-    hG.comp (((measurable_offDiagonalPairSquareContext e p.1.1 p.1.2).comp
+    hG.comp (((measurable_offDiagonalPairSquareContext e p.val.1 p.val.2).comp
       measurable_fst).prodMk ((measurable_pi_apply p).comp measurable_snd)))
 
 /-- The hidden entries of the array, together with the entries of the pairs in `V₂`, depend
 measurably on the array. -/
 theorem measurable_restrict_pairs (H V₂ : Set (ℕ × ℕ)) :
-    Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) :=
+    Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : V₂ => (x p.val, x p.val.swap)) :=
   (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p =>
-    (measurable_pi_apply p.1).prodMk (measurable_pi_apply p.1.swap))
+    (measurable_pi_apply p.val).prodMk (measurable_pi_apply p.val.swap))
 
 /-! ## Conditional independence -/
 
@@ -290,18 +290,19 @@ theorem JointlyExchangeable.iCondIndepFun_offDiagonalPairs
     let V₂ : Set (ℕ × ℕ) := {p | p.1 ∉ S ∧ p.2 ∉ S ∧ p.1 < p.2}
     iCondIndepFun (MeasurableSpace.comap H.domRestrict inferInstance)
       (Set.measurable_restrict H).comap_le
-      (fun p : V₂ => fun x : ℕ × ℕ → α => (x p.1, x p.1.swap)) ρ := by
+      (fun p : V₂ => fun x : ℕ × ℕ → α => (x p.val, x p.val.swap)) ρ := by
   dsimp only
   let H : Set (ℕ × ℕ) := (Set.univ ×ˢ S) ∪ (S ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2}
   let V₂ : Set (ℕ × ℕ) := {p | p.1 ∉ S ∧ p.2 ∉ S ∧ p.1 < p.2}
   let m' : MeasurableSpace (ℕ × ℕ → α) :=
     MeasurableSpace.comap H.domRestrict (inferInstanceAs (MeasurableSpace (H → α)))
   let m : V₂ → MeasurableSpace (ℕ × ℕ → α) := fun p =>
-    MeasurableSpace.comap (fun x => (x p.1, x p.1.swap)) (inferInstanceAs (MeasurableSpace (α × α)))
+    MeasurableSpace.comap (fun x => (x p.val, x p.val.swap)) (inferInstanceAs (MeasurableSpace
+        (α × α)))
   have hm' : m' ≤ (MeasurableSpace.pi : MeasurableSpace (ℕ × ℕ → α)) :=
     (Set.measurable_restrict (X := fun _ : ℕ × ℕ => α) H).comap_le
   apply (iCondIndepFun_iff_iCondIndep (mΩ := MeasurableSpace.pi) m' hm'
-    (fun _ : V₂ => inferInstance) (fun p : V₂ => fun x : ℕ × ℕ → α => (x p.1, x p.1.swap)) ρ).2
+    (fun _ : V₂ => inferInstance) (fun p : V₂ => fun x : ℕ × ℕ → α => (x p.val, x p.val.swap)) ρ).2
   apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm'
   intro p
   obtain ⟨⟨i, j⟩, hp⟩ := p
@@ -316,12 +317,12 @@ theorem JointlyExchangeable.iCondIndepFun_offDiagonalPairs
   have hleft : m ⟨(i, j), hp⟩ ≤ MeasurableSpace.comap C.domRestrict inferInstance :=
     TauCeti.MeasureTheory.comap_pair_le_comap_domRestrict C (Set.mem_insert _ _) (by simp [C])
   -- Every other increasing representative, and its swap, avoids both entries of the pair.
-  have hright : (⨆ q : {q : V₂ // q ≠ ⟨(i, j), hp⟩}, m q.1) ≤
+  have hright : (⨆ q : {q : V₂ // q ≠ ⟨(i, j), hp⟩}, m q.val) ≤
       MeasurableSpace.comap Cᶜ.domRestrict inferInstance := by
     refine iSup_le fun q => ?_
-    obtain ⟨-, -, hqlt⟩ := q.1.2
-    have hne : q.1.1 ≠ (i, j) := fun h => q.2 (Subtype.ext h)
-    have hne' : q.1.1 ≠ (j, i) := fun h => by
+    obtain ⟨-, -, hqlt⟩ := q.val.property
+    have hne : q.val.val ≠ (i, j) := fun h => q.property (Subtype.ext h)
+    have hne' : q.val.val ≠ (j, i) := fun h => by
       obtain ⟨h₁, h₂⟩ := Prod.ext_iff.1 h
       omega
     refine TauCeti.MeasureTheory.comap_pair_le_comap_domRestrict Cᶜ ?_ ?_
@@ -524,8 +525,9 @@ private theorem map_prod_codedFamily_eq
     ∀ F : Finset V₂,
         (ρ.prod (Measure.pi fun _ : F => (volume : Measure I))).map
             (fun q => (H.domRestrict q.1,
-              fun p : F => g (offDiagonalPairSquareContext e p.1.1.1 p.1.1.2 q.1) (q.2 p))) =
-          ρ.map fun x => (H.domRestrict x, fun p : F => (x p.1.1, x p.1.1.swap)) := by
+              fun p : F => g (offDiagonalPairSquareContext e p.val.val.1 p.val.val.2 q.1)
+                  (q.2 p))) =
+          ρ.map fun x => (H.domRestrict x, fun p : F => (x p.val.val, x p.val.val.swap)) := by
   intro H V₂ F
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
   -- Distinct visible off-diagonal pairs are conditionally independent given the crossing strips
@@ -533,23 +535,24 @@ private theorem map_prod_codedFamily_eq
   have hall := hρ.iCondIndepFun_offDiagonalPairs he
   have hF : iCondIndepFun (MeasurableSpace.comap H.domRestrict inferInstance)
       (Set.measurable_restrict H).comap_le
-      (fun p : F => fun x : ℕ × ℕ → α => (x p.1.1, x p.1.1.swap)) ρ :=
+      (fun p : F => fun x : ℕ × ℕ → α => (x p.val.val, x p.val.val.swap)) ρ :=
     Kernel.iIndepFun.precomp Subtype.val_injective hall
   -- Each of them is coded from its own square context by the common coding function.
   have hglue := hF.map_prod_pi_eq_of_map_prod_eq hZ
-    (fun p : F => (measurable_pi_apply p.1.1).prodMk (measurable_pi_apply p.1.1.swap))
+    (fun p : F => (measurable_pi_apply p.val.val).prodMk (measurable_pi_apply p.val.val.swap))
     (ρ := fun _ : F => (volume : Measure I))
     (f := fun p : F => fun y u =>
-      g (offDiagonalPairSquareContextOfStripsAndDiagonal e p.1.1.1 p.1.1.2 y) u)
+      g (offDiagonalPairSquareContextOfStripsAndDiagonal e p.val.val.1 p.val.val.2 y) u)
     (fun p => hg.comp
-      ((measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e p.1.1.1 p.1.1.2).comp
+      ((measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e p.val.val.1 p.val.val.2).comp
         measurable_fst |>.prodMk measurable_snd))
-    fun p => hpair p.1.2.2.2.ne p.1.2.1 p.1.2.2.1
+    fun p => hpair p.val.property.2.2.ne p.val.property.1 p.val.property.2.1
   have hcoded : Measurable fun p : (H → α) × (F → I) =>
       (p.1, fun r : F =>
-        g (offDiagonalPairSquareContextOfStripsAndDiagonal e r.1.1.1 r.1.1.2 p.1) (p.2 r)) :=
+        g (offDiagonalPairSquareContextOfStripsAndDiagonal e r.val.val.1 r.val.val.2 p.1) (p.2 r))
+            :=
     measurable_fst.prodMk (Measurable.of_eval fun r => hg.comp
-      (((measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e r.1.1.1 r.1.1.2).comp
+      (((measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e r.val.val.1 r.val.val.2).comp
         measurable_fst).prodMk ((measurable_pi_apply r).comp measurable_snd)))
   -- The strips are read off `ρ` itself, so the law of the strips paired with the uniform family
   -- is the image of `ρ` paired with that family: the restriction only acts on the first factor.
@@ -563,7 +566,8 @@ private theorem map_prod_codedFamily_eq
   refine Prod.ext rfl (funext fun p => ?_)
   exact congrArg (g · (q.2 p))
     (congrFun
-      (offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict (α := α) e p.1.1.1 p.1.1.2)
+      (offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict (α
+          := α) e p.val.val.1 p.val.val.2)
       q.1).symm
 
 /-- **Every finite family of visible off-diagonal pairs of a jointly exchangeable array is generated
@@ -596,8 +600,9 @@ theorem JointlyExchangeable.exists_common_offDiagonalPairs_coding
       ∀ F : Finset V₂,
         (ρ.prod (Measure.pi fun _ : F => (volume : Measure I))).map
             (fun q => (H.domRestrict q.1,
-              fun p : F => g (offDiagonalPairSquareContext e p.1.1.1 p.1.1.2 q.1) (q.2 p))) =
-          ρ.map fun x => (H.domRestrict x, fun p : F => (x p.1.1, x p.1.1.swap)) := by
+              fun p : F => g (offDiagonalPairSquareContext e p.val.val.1 p.val.val.2 q.1)
+                  (q.2 p))) =
+          ρ.map fun x => (H.domRestrict x, fun p : F => (x p.val.val, x p.val.val.swap)) := by
   intro H V₂
   rcases Set.eq_empty_or_nonempty V₂ with hV | ⟨⟨i₀, j₀⟩, hi₀, hj₀, hij₀⟩
   · -- If the hidden vertices leave at most one visible vertex, there is no visible off-diagonal
@@ -606,14 +611,14 @@ theorem JointlyExchangeable.exists_common_offDiagonalPairs_coding
     have : IsEmpty V₂ := Set.isEmpty_coe_sort.2 hV
     refine ⟨fun _ _ => (Classical.arbitrary α, Classical.arbitrary α), measurable_const,
       fun _ _ _ => rfl, fun F => ?_⟩
-    have : IsEmpty F := ⟨fun p => isEmptyElim p.1⟩
+    have : IsEmpty F := ⟨fun p => isEmptyElim p.val⟩
     have hstrips : Measurable fun x : ℕ × ℕ → α =>
-        (H.domRestrict x, fun p : F => (x p.1.1, x p.1.1.swap)) :=
+        (H.domRestrict x, fun p : F => (x p.val.val, x p.val.val.swap)) :=
       (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p =>
-        (measurable_pi_apply p.1.1).prodMk (measurable_pi_apply p.1.1.swap))
+        (measurable_pi_apply p.val.val).prodMk (measurable_pi_apply p.val.val.swap))
     have hfactor : (fun q : (ℕ × ℕ → α) × (F → I) =>
           (H.domRestrict q.1, fun _ : F => (Classical.arbitrary α, Classical.arbitrary α))) =
-        (fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : F => (x p.1.1, x p.1.1.swap))) ∘
+        (fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : F => (x p.val.val, x p.val.val.swap))) ∘
           Prod.fst :=
       funext fun q => Prod.ext rfl (Subsingleton.elim _ _)
     rw [hfactor, ← Measure.map_map hstrips measurable_fst, Measure.map_fst_prod]
@@ -677,8 +682,8 @@ theorem JointlyExchangeable.exists_common_offDiagonalArray_coding
         g (Prod.map Prod.swap Prod.swap c) u = (g c u).swap) ∧
       (ρ.prod (Measure.infinitePi fun _ : V₂ => (volume : Measure I))).map
           (fun q => (H.domRestrict q.1,
-            fun p : V₂ => g (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p))) =
-        ρ.map fun x => (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) := by
+            fun p : V₂ => g (offDiagonalPairSquareContext e p.val.1 p.val.2 q.1) (q.2 p))) =
+        ρ.map fun x => (H.domRestrict x, fun p : V₂ => (x p.val, x p.val.swap)) := by
   intro H V₂
   obtain ⟨g, hg, hswap, hF⟩ := hρ.exists_common_offDiagonalPairs_coding he hO
   refine ⟨g, hg, hswap, ?_⟩
@@ -695,18 +700,19 @@ theorem JointlyExchangeable.exists_common_offDiagonalArray_coding
     measurable_id.prodMap (Finset.measurable_restrict F)
   have hcodeF : Measurable fun q : (ℕ × ℕ → α) × (F → I) =>
       (H.domRestrict q.1,
-        fun p : F => g (offDiagonalPairSquareContext e p.1.1.1 p.1.1.2 q.1) (q.2 p)) :=
+        fun p : F => g (offDiagonalPairSquareContext e p.val.val.1 p.val.val.2 q.1) (q.2 p)) :=
     (hZ.comp measurable_fst).prodMk (Measurable.of_eval fun p => hg.comp
-      (((measurable_offDiagonalPairSquareContext e p.1.1.1 p.1.1.2).comp measurable_fst).prodMk
+      (((measurable_offDiagonalPairSquareContext e p.val.val.1 p.val.val.2).comp
+          measurable_fst).prodMk
         ((measurable_pi_apply p).comp measurable_snd)))
   rw [Measure.map_map hFr hcode, Measure.map_map hFr hread]
   -- Restricting the coded pairs to `F` only reads the uniform variables indexed by `F`.
   have hcomm : Prod.map id F.restrict ∘ (fun q : (ℕ × ℕ → α) × (V₂ → I) =>
         (H.domRestrict q.1,
-          fun p : V₂ => g (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p))) =
+          fun p : V₂ => g (offDiagonalPairSquareContext e p.val.1 p.val.2 q.1) (q.2 p))) =
       (fun q : (ℕ × ℕ → α) × (F → I) =>
         (H.domRestrict q.1,
-          fun p : F => g (offDiagonalPairSquareContext e p.1.1.1 p.1.1.2 q.1) (q.2 p))) ∘
+          fun p : F => g (offDiagonalPairSquareContext e p.val.val.1 p.val.val.2 q.1) (q.2 p))) ∘
         Prod.map id F.restrict :=
     rfl
   rw [hcomm, ← Measure.map_map hcodeF hIr, ← Measure.map_prod_map _ _ measurable_id

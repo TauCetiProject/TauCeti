@@ -53,7 +53,7 @@ the computations on sections use `erw` and explicit term chains rather than `sim
 ## References
 
 * [The Stacks Project, Lemma 27.11.5 (01N1)](https://stacks.math.columbia.edu/tag/01N1)
-* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NS)
+* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NM)
 -/
 
 public section
@@ -86,9 +86,10 @@ def relativeProjTwistingSheafMapChart (U : X.AffineZariskiSite) :
         ((Scheme.Modules.pushforward (colimit.ι A.relativeProjGluingData.functor U)).obj
           ((A.relativeProjTwistingSheafGlueData n).obj U)) :=
   (Scheme.Modules.pushforward (colimit.ι B.relativeProjGluingData.functor U)).map
-      (Proj.twistingSheafMap (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2) n) ≫
+      (Proj.twistingSheafMap (CommMon.gradedSectionsGradedHom φ U.toOpens)
+          (hφ U.toOpens U.property) n) ≫
     (Scheme.Modules.pushforwardComp
-      (Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2))
+      (Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.property))
       (colimit.ι B.relativeProjGluingData.functor U)).hom.app
         (Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n) ≫
     (Scheme.Modules.pushforwardCongr (CommMon.ι_relativeProjMap φ hφ U).symm).hom.app
@@ -108,11 +109,12 @@ theorem relativeProjTwistingSheafMapChart_app_apply
       (Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n).presheaf.map
         (eqToHom (show colimit.ι A.relativeProjGluingData.functor U ⁻¹ᵁ
             CommMon.relativeProjMap φ hφ ⁻¹ᵁ W =
-            Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2) ⁻¹ᵁ
+            Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.property) ⁻¹ᵁ
               colimit.ι B.relativeProjGluingData.functor U ⁻¹ᵁ W from
           congrArg (· ⁻¹ᵁ W) (CommMon.ι_relativeProjMap φ hφ U))).op
         ((Proj.twistingSheafMap (CommMon.gradedSectionsGradedHom φ U.toOpens)
-          (hφ U.toOpens U.2) n).app (colimit.ι B.relativeProjGluingData.functor U ⁻¹ᵁ W) t) :=
+          (hφ U.toOpens U.property) n).app (colimit.ι B.relativeProjGluingData.functor U ⁻¹ᵁ W) t)
+              :=
   (rfl)
 
 /-- The chart components of the morphism of twisting sheaves are compatible with the transition
@@ -136,9 +138,9 @@ theorem relativeProjTwistingSheafMapChart_transition
   -- by `relativeProjTwistingSheafMapChart_app_apply` and `relativeProjTwistingSheafGlueData_map`
   -- (both by definition), both sides are restrictions of morphisms of twisting sheaves of the
   -- charts along the two equal composites `res ∘ φ_V = φ_U ∘ res`
-  exact Proj.res_twistingSheafMap_app_res_of_comp_eq _ (hφ V.toOpens V.2) _
-    (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _
-    (B.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _ (hφ U.toOpens U.2)
+  exact Proj.res_twistingSheafMap_app_res_of_comp_eq _ (hφ V.toOpens V.property) _
+    (A.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _
+    (B.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _ (hφ U.toOpens U.property)
     (CommMon.gradedSectionsGradedHom_comp_restrictGradedSectionsGradedHom φ
       ((Scheme.AffineZariskiSite.toOpensFunctor X).map i)).symm n _ _ _ _ t
 

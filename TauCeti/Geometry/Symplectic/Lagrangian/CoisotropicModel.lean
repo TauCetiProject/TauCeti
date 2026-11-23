@@ -98,7 +98,7 @@ private theorem coisotropicModelBilinForm_nondegenerate (hB : B.IsAlt)
     simpa using h (0, a')
   -- Pairing with `K × 0` forces `a = 0`, since `B w k = 0` and `P k = k` there.
   have ha : a = 0 := LinearMap.ext fun k ↦ by
-    simpa [hP, hB.isRefl.apply_eq_zero_of_mem_ker _ k.2] using h ((k : W), 0)
+    simpa [hP, hB.isRefl.apply_eq_zero_of_mem_ker _ k.property] using h ((k : W), 0)
   -- Pairing with `W × 0` then puts `w` in `K`, where `P` is the identity.
   have hw : w ∈ LinearMap.ker B := LinearMap.mem_ker.2 <| LinearMap.ext fun w' ↦ by
     simpa [hPw, ha] using h (w', 0)
@@ -139,7 +139,7 @@ theorem orthogonal_range_inl_coisotropicModel :
   · intro h
     -- Testing against `K × 0` kills `a`; then `B w' w = 0` for all `w'` puts `w` in `K`.
     have ha : a = 0 := LinearMap.ext fun k ↦ by
-      simpa [hP, LinearMap.mem_ker.1 k.2] using h k
+      simpa [hP, LinearMap.mem_ker.1 k.property] using h k
     refine ⟨w, LinearMap.mem_ker.2 <| LinearMap.ext fun w' ↦ ?_, rfl, ha.symm⟩
     rw [LinearMap.zero_apply, ← hB.neg_eq, neg_eq_zero]
     simpa [ha] using h w'
@@ -167,7 +167,7 @@ theorem exists_isSymplectomorphism_coisotropicModel {V : Type*} [AddCommGroup V]
   have hdim := ω.finrank_ker_add_finrank_of_isCoisotropic hι hω hC
   let S := LinearMap.range (LinearMap.inl ℝ W (Module.Dual ℝ (LinearMap.ker B)))
   have hS (x : S) : (x : W × Module.Dual ℝ (LinearMap.ker B)).2 = 0 := by
-    obtain ⟨w, hw⟩ := x.2
+    obtain ⟨w, hw⟩ := x.property
     rw [← hw, LinearMap.inl_apply]
   obtain ⟨e, he, hext⟩ := SymplecticForm.exists_isSymplectomorphism_extend
     (hB.coisotropicModel P hP) ω

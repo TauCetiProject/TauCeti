@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
 # Characteristic vectors of symmetric bilinear forms
@@ -69,6 +70,27 @@ def IsCharacteristic (B : BilinForm R M) (w : M) : Prop :=
 /-- The defining parity test for a characteristic vector. -/
 theorem isCharacteristic_iff : B.IsCharacteristic w ↔ ∀ x, (2 : R) ∣ B w x - B x x :=
   Iff.rfl
+
+/-- A vector is characteristic for a product form exactly when its components are characteristic. -/
+@[simp]
+theorem isCharacteristic_prod_iff {C : BilinForm R M'} {p : M × M'} :
+    (B.prod C).IsCharacteristic p ↔ B.IsCharacteristic p.1 ∧ C.IsCharacteristic p.2 := by
+  refine ⟨fun h ↦ ⟨fun x ↦ ?_, fun y ↦ ?_⟩, fun ⟨hB, hC⟩ x ↦ ?_⟩
+  · simpa using h (x, 0)
+  · simpa using h (0, y)
+  · simpa only [prod_apply, add_sub_add_comm] using dvd_add (hB x.1) (hC x.2)
+
+/-- The vector `1` is characteristic for multiplication when every scalar is idempotent modulo `2`.
+-/
+theorem isCharacteristic_mul_one (h : ∀ x : R, (2 : R) ∣ x ^ 2 - x) :
+    IsCharacteristic (LinearMap.mul R R) 1 := by
+  intro x
+  simpa [LinearMap.mul_apply', sq] using (h x).neg_right
+
+/-- A pair of characteristic vectors is characteristic for the product form. -/
+theorem IsCharacteristic.prod {C : BilinForm R M'} {v : M'} (hw : B.IsCharacteristic w)
+    (hv : C.IsCharacteristic v) : (B.prod C).IsCharacteristic (w, v) :=
+  isCharacteristic_prod_iff.mpr ⟨hw, hv⟩
 
 /-- Zero is characteristic exactly when every self-pairing is even. -/
 @[simp]

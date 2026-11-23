@@ -57,7 +57,8 @@ noncomputable def closedHomotopyBoundary
 theorem closedHom_closedHomotopyBoundary_apply
     (k : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) (-1))
     (x : M) :
-    closedHom (closedHomotopyBoundary k) x = N.differential (k.1 x) + k.1 (M.differential x) := by
+    closedHom (closedHomotopyBoundary k) x = N.differential (k.val x) + k.val (M.differential x)
+        := by
   rw [closedHom_eq]
   simp only [closedHomotopyBoundary, dgClosedHom_dgClosedHomEquivZeroCocycles_symm_apply,
     LinearEquiv.apply_symm_apply]
@@ -87,7 +88,7 @@ theorem quotient_map_eq_iff_exists_homotopy
     (dgClosedToHomotopy R).map f = (dgClosedToHomotopy R).map g ↔
       ∃ k : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) (-1),
         ∀ x : M, closedHom f x - closedHom g x =
-          N.differential (k.1 x) + k.1 (M.differential x) := by
+          N.differential (k.val x) + k.val (M.differential x) := by
   rw [dgClosedToHomotopy_map_eq_iff, mem_dgBoundaries_iff]
   simp only [map_sub, ForgetEnrichment.to_of]
   -- The cochains are subtypes of right-linear maps, with subtraction inherited pointwise.
@@ -95,16 +96,16 @@ theorem quotient_map_eq_iff_exists_homotopy
   -- the closed-map computation lemmas then identify the two underlying maps.
   change (∃ k : dgRightModuleCochains (R := R) (A := A)
       (ℳ := M.grading) (ℳN := N.grading) (-1), ∀ x : M,
-      ((dgHomLinearEquivCochains M N 0 (dgClosedHom R f)).1 -
-        (dgHomLinearEquivCochains M N 0 (dgClosedHom R g)).1) x =
-          N.differential (k.1 x) + k.1 (M.differential x)) ↔ _
+      ((dgHomLinearEquivCochains M N 0 (dgClosedHom R f)).val -
+        (dgHomLinearEquivCochains M N 0 (dgClosedHom R g)).val) x =
+          N.differential (k.val x) + k.val (M.differential x)) ↔ _
   simp only [LinearMap.sub_apply, ← closedHom_eq]
 
 /-- A curved module is zero in the homotopy category exactly when it admits a contraction. -/
 theorem isZero_homotopy_iff_exists_contraction (P : CurvedDGRightModuleCat.{u, u, u} h) :
     IsZero (DGHomotopyCategory.of R P) ↔
       ∃ k : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := P.grading) (-1),
-        ∀ x : P, P.differential (k.1 x) + k.1 (P.differential x) = x := by
+        ∀ x : P, P.differential (k.val x) + k.val (P.differential x) = x := by
   constructor
   · intro hP
     have hz : (dgClosedToHomotopy R).map

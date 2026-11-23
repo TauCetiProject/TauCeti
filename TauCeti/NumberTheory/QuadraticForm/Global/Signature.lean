@@ -129,9 +129,9 @@ theorem realPositiveIndex_add_realNegativeIndex_eq_finrank
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) :
     Q.realPositiveIndex w + Q.realNegativeIndex w = Module.finrank K V := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   by_cases hV : FiniteDimensional K V
   swap
   · -- infinite rank: both indices are bounded by the rank `0` of the localized form
@@ -158,7 +158,7 @@ variable {ι : Type*} [Fintype ι]
 coefficients that are positive under the real embedding of `w`. -/
 theorem realPositiveIndex_weightedSumSquares (a : ι → K) (w : {w : InfinitePlace K // w.IsReal}) :
     realPositiveIndex (QuadraticMap.weightedSumSquares K a) w =
-      {i | 0 < embedding_of_isReal w.2 (a i)}.ncard := by
+      {i | 0 < embedding_of_isReal w.property (a i)}.ncard := by
   rw [realPositiveIndex_eq_sigPos, (QuadraticMap.Equivalent.sigPos_eq
     ⟨atRealPlaceWeightedSumSquares w a⟩), sigPos_weightedSumSquares]
 
@@ -166,7 +166,7 @@ theorem realPositiveIndex_weightedSumSquares (a : ι → K) (w : {w : InfinitePl
 coefficients that are negative under the real embedding of `w`. -/
 theorem realNegativeIndex_weightedSumSquares (a : ι → K) (w : {w : InfinitePlace K // w.IsReal}) :
     realNegativeIndex (QuadraticMap.weightedSumSquares K a) w =
-      {i | embedding_of_isReal w.2 (a i) < 0}.ncard := by
+      {i | embedding_of_isReal w.property (a i) < 0}.ncard := by
   rw [realNegativeIndex_eq_sigNeg, (QuadraticMap.Equivalent.sigNeg_eq
     ⟨atRealPlaceWeightedSumSquares w a⟩), sigNeg_weightedSumSquares]
 
@@ -205,9 +205,9 @@ theorem realPositiveIndex_prod (Q : _root_.QuadraticForm K V)
     [FiniteDimensional ℝ (TauCeti.RealScalarExtension (V := V) w)]
     [FiniteDimensional ℝ (TauCeti.RealScalarExtension (V := W) w)] :
     realPositiveIndex (Q.prod R) w = Q.realPositiveIndex w + R.realPositiveIndex w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   have hlocal : (atRealPlace (Q.prod R) w).Equivalent
       ((Q.atRealPlace w).prod (R.atRealPlace w)) := by
     simpa only [atRealPlace_def] using
@@ -222,9 +222,9 @@ theorem realNegativeIndex_prod (Q : _root_.QuadraticForm K V)
     [FiniteDimensional ℝ (TauCeti.RealScalarExtension (V := V) w)]
     [FiniteDimensional ℝ (TauCeti.RealScalarExtension (V := W) w)] :
     realNegativeIndex (Q.prod R) w = Q.realNegativeIndex w + R.realNegativeIndex w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   have hlocal : (atRealPlace (Q.prod R) w).Equivalent
       ((Q.atRealPlace w).prod (R.atRealPlace w)) := by
     simpa only [atRealPlace_def] using
@@ -252,9 +252,9 @@ end Prod
 theorem realPositiveIndex_neg (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (-Q).realPositiveIndex w = Q.realNegativeIndex w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg, atRealPlace_def,
     atRealPlace_def, baseChange_neg, sigPos_neg]
 
@@ -263,9 +263,9 @@ theorem realPositiveIndex_neg (Q : _root_.QuadraticForm K V)
 theorem realNegativeIndex_neg (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (-Q).realNegativeIndex w = Q.realPositiveIndex w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [realNegativeIndex_eq_sigNeg, realPositiveIndex_eq_sigPos, atRealPlace_def,
     atRealPlace_def, baseChange_neg, sigNeg_neg]
 
@@ -284,29 +284,29 @@ variable (Q : _root_.QuadraticForm K V) (w : {w : InfinitePlace K // w.IsReal}) 
 
 /-- Scaling by a scalar positive at a real place preserves its positive index. -/
 @[simp]
-theorem realPositiveIndex_smul_of_pos (ha : 0 < embedding_of_isReal w.2 a) :
+theorem realPositiveIndex_smul_of_pos (ha : 0 < embedding_of_isReal w.property a) :
     (a • Q).realPositiveIndex w = Q.realPositiveIndex w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [realPositiveIndex_eq_sigPos, realPositiveIndex_eq_sigPos, atRealPlace_def,
     atRealPlace_def, baseChange_smul, RingHom.algebraMap_toAlgebra,
     sigPos_smul_of_pos _ ha]
 
 /-- Scaling by a scalar positive at a real place preserves its negative index. -/
 @[simp]
-theorem realNegativeIndex_smul_of_pos (ha : 0 < embedding_of_isReal w.2 a) :
+theorem realNegativeIndex_smul_of_pos (ha : 0 < embedding_of_isReal w.property a) :
     (a • Q).realNegativeIndex w = Q.realNegativeIndex w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [realNegativeIndex_eq_sigNeg, realNegativeIndex_eq_sigNeg, atRealPlace_def,
     atRealPlace_def, baseChange_smul, RingHom.algebraMap_toAlgebra,
     sigNeg_smul_of_pos _ ha]
 
 /-- Scaling by a scalar positive at a real place preserves its signature. -/
 @[simp]
-theorem realSignature_smul_of_pos (ha : 0 < embedding_of_isReal w.2 a) :
+theorem realSignature_smul_of_pos (ha : 0 < embedding_of_isReal w.property a) :
     (a • Q).realSignature w = Q.realSignature w := by
   apply Prod.ext
   · simpa only [realSignature_fst] using realPositiveIndex_smul_of_pos Q w a ha
@@ -314,29 +314,29 @@ theorem realSignature_smul_of_pos (ha : 0 < embedding_of_isReal w.2 a) :
 
 /-- Scaling by a scalar negative at a real place exchanges the positive and negative indices. -/
 @[simp]
-theorem realPositiveIndex_smul_of_neg (ha : embedding_of_isReal w.2 a < 0) :
+theorem realPositiveIndex_smul_of_neg (ha : embedding_of_isReal w.property a < 0) :
     (a • Q).realPositiveIndex w = Q.realNegativeIndex w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg, atRealPlace_def,
     atRealPlace_def, baseChange_smul, RingHom.algebraMap_toAlgebra,
     sigPos_smul_of_neg _ ha]
 
 /-- Scaling by a scalar negative at a real place exchanges the negative and positive indices. -/
 @[simp]
-theorem realNegativeIndex_smul_of_neg (ha : embedding_of_isReal w.2 a < 0) :
+theorem realNegativeIndex_smul_of_neg (ha : embedding_of_isReal w.property a < 0) :
     (a • Q).realNegativeIndex w = Q.realPositiveIndex w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [realNegativeIndex_eq_sigNeg, realPositiveIndex_eq_sigPos, atRealPlace_def,
     atRealPlace_def, baseChange_smul, RingHom.algebraMap_toAlgebra,
     sigNeg_smul_of_neg _ ha]
 
 /-- Scaling by a scalar negative at a real place exchanges the signature components. -/
 @[simp]
-theorem realSignature_smul_of_neg (ha : embedding_of_isReal w.2 a < 0) :
+theorem realSignature_smul_of_neg (ha : embedding_of_isReal w.property a < 0) :
     (a • Q).realSignature w = (Q.realNegativeIndex w, Q.realPositiveIndex w) := by
   apply Prod.ext
   · simpa only [realSignature_fst] using realPositiveIndex_smul_of_neg Q w a ha
@@ -404,7 +404,8 @@ there are all positive or all negative. -/
 theorem anisotropic_atRealPlace_weightedSumSquares_iff {ι : Type*} [Fintype ι] (a : ι → K)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (atRealPlace (QuadraticMap.weightedSumSquares K a) w).Anisotropic ↔
-      (∀ i, 0 < embedding_of_isReal w.2 (a i)) ∨ ∀ i, embedding_of_isReal w.2 (a i) < 0 := by
+      (∀ i, 0 < embedding_of_isReal w.property (a i)) ∨ ∀ i, embedding_of_isReal w.property
+          (a i) < 0 := by
   rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceWeightedSumSquares w a⟩,
     QuadraticMap.anisotropic_weightedSumSquares_iff]
 
