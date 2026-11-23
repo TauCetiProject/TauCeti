@@ -675,6 +675,17 @@ theorem mapPolynomialAlgHom_comp {D : Type*} [Semiring D] [Algebra R D]
   let := algebra P h1P
   exact AlgHom.ext fun g ↦ by simp
 
+/-- Equal filtered `R`-algebra homomorphisms induce the same map on `R[t]`-coefficient
+subalgebras. -/
+theorem mapPolynomialAlgHom_congr {φ ψ : B →ₐ[R] C} (h : φ = ψ)
+    (hφ : ∀ n, ∀ b ∈ M n, φ b ∈ N n) (hψ : ∀ n, ∀ b ∈ M n, ψ b ∈ N n)
+    (h1M : (1 : B) ∈ M 1) (h1N : (1 : C) ∈ N 1) :
+    letI := algebra M h1M
+    letI := algebra N h1N
+    mapPolynomialAlgHom M N φ hφ h1M h1N = mapPolynomialAlgHom M N ψ hψ h1M h1N := by
+  subst h
+  rfl
+
 end map
 
 end coeffSubalgebra

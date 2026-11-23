@@ -168,6 +168,26 @@ theorem weightInitialForm_add_of_eq {p q : MvPolynomial σ R}
     exact hne (hc.symm.trans (weightedHomogeneousComponent_eq_zero _ _ hlt))
   rw [weightInitialForm_def, hdeg, hc]
 
+/-- Over an arbitrary commutative semiring, the product of two initial forms is either zero or the
+initial form of their product. -/
+theorem weightInitialForm_mul_eq_zero_or_eq (p q : MvPolynomial σ R) :
+    weightInitialForm w p * weightInitialForm w q = 0 ∨
+      weightInitialForm w p * weightInitialForm w q = weightInitialForm w (p * q) := by
+  by_cases h0 : weightInitialForm w p * weightInitialForm w q = 0
+  · exact Or.inl h0
+  · right
+    have hcomp : weightedHomogeneousComponent w
+        (p.weightedTotalDegree w + q.weightedTotalDegree w) (p * q) =
+        weightInitialForm w p * weightInitialForm w q := by
+      rw [weightedHomogeneousComponent_weightedTotalDegree_add,
+        weightInitialForm_def, weightInitialForm_def]
+    have hdeg : (p * q).weightedTotalDegree w =
+        p.weightedTotalDegree w + q.weightedTotalDegree w := by
+      apply le_antisymm (weightedTotalDegree_mul_le w p q)
+      by_contra! hlt
+      exact h0 (hcomp.symm.trans (weightedHomogeneousComponent_eq_zero _ _ hlt))
+    rw [← hcomp, weightInitialForm_def, hdeg]
+
 /-- Over a semiring without zero divisors, initial forms preserve multiplication. -/
 @[simp]
 theorem weightInitialForm_mul [NoZeroDivisors R] (p q : MvPolynomial σ R) :

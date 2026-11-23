@@ -222,8 +222,11 @@ for any family `c` and generator weights `d`, the kernel of `weightReesAeval c d
 Rees ideal of the presentation kernel `RingHom.ker (aeval c)` for the weights `d`. -/
 theorem ker_weightReesAeval_eq_weightReesIdeal (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
     RingHom.ker (weightReesAeval c d) = (RingHom.ker (aeval (R := R) c)).weightReesIdeal d := by
-  rw [weightReesAeval_eq_comp, ← AlgHom.comap_ker, AlgHom.ker_coe,
-    Polynomial.toRingHom_mapAlgHom, Polynomial.ker_mapRingHom, ← AlgHom.ker_coe,
-    ← Ideal.weightReesIdeal_def]
+  ext f
+  rw [RingHom.mem_ker, Ideal.mem_weightReesIdeal_iff, weightReesAeval_eq_comp, AlgHom.comp_apply]
+  refine ⟨fun h n ↦ ?_, fun h ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun n ↦ ?_⟩
+  · simpa [RingHom.mem_ker, Polynomial.coeff_mapAlgHom_apply] using
+      congrArg (fun p : (MvPolynomial σ R)[X] ↦ p.coeff n) h
+  · simpa [RingHom.mem_ker, Polynomial.coeff_mapAlgHom_apply] using h n
 
 end TauCeti.MvPolynomial

@@ -112,7 +112,8 @@ spanned by its pointwise image. -/
 theorem map_span_range_eq {R S ι : Type*} [Semiring R] [Semiring S] (f : R →+* S)
     {g : ι → R} {g' : ι → S} (h : ∀ i, f (g i) = g' i) :
     (span (Set.range g)).map f = span (Set.range g') := by
-  rw [map_span, ← Set.range_comp, show ⇑f ∘ g = g' from funext h]
+  have hcomp : ⇑f ∘ g = g' := funext h
+  rw [map_span, ← Set.range_comp, hcomp]
 
 end Ideal
 

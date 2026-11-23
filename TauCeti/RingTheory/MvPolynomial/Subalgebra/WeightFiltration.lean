@@ -203,13 +203,19 @@ theorem coe_weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B)
     (weightReesMap h w g : B[X]) = (g : A[X]).map (Subalgebra.inclusion h) := by
   simp [weightReesMap]
 
+/-- Composing `weightReesMap` with `weightReesInclusion` recovers `weightReesInclusion`. -/
+theorem weightReesInclusion_comp_weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B)
+    (w : σ → ℕ) :
+    (B.weightReesInclusion w).comp (weightReesMap h w) = A.weightReesInclusion w := by
+  rw [weightReesInclusion, weightReesMap, weightReesInclusion,
+    coeffSubalgebra.mapPolynomialAlgHom_comp]
+  exact coeffSubalgebra.mapPolynomialAlgHom_congr (Subalgebra.val_comp_inclusion h) _ _ _ _
+
 @[simp]
 theorem weightReesInclusion_weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B)
     (w : σ → ℕ) (g : A.weightReesAlgebra w) :
-    B.weightReesInclusion w (weightReesMap h w g) = A.weightReesInclusion w g := by
-  apply Subtype.ext
-  ext n
-  simp [weightReesInclusion, weightReesMap]
+    B.weightReesInclusion w (weightReesMap h w g) = A.weightReesInclusion w g :=
+  AlgHom.congr_fun (weightReesInclusion_comp_weightReesMap h w) g
 
 theorem weightReesMap_injective {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ) :
     Function.Injective (weightReesMap h w) :=
@@ -234,18 +240,18 @@ theorem weightReesMap_refl (A : Subalgebra R (MvPolynomial σ R)) (w : σ → �
     weightReesMap (le_refl A) w = AlgHom.id R[X] (A.weightReesAlgebra w) := by
   simp [weightReesMap]
 
+theorem weightReesMap_comp {A B C : Subalgebra R (MvPolynomial σ R)}
+    (hAB : A ≤ B) (hBC : B ≤ C) (w : σ → ℕ) :
+    (weightReesMap hBC w).comp (weightReesMap hAB w) = weightReesMap (hAB.trans hBC) w := by
+  rw [weightReesMap, weightReesMap, weightReesMap, coeffSubalgebra.mapPolynomialAlgHom_comp]
+  exact coeffSubalgebra.mapPolynomialAlgHom_congr
+    (AlgHom.ext (Subalgebra.inclusion_inclusion hAB hBC)) _ _ _ _
+
 @[simp]
 theorem weightReesMap_weightReesMap {A B C : Subalgebra R (MvPolynomial σ R)}
     (hAB : A ≤ B) (hBC : B ≤ C) (w : σ → ℕ) (g : A.weightReesAlgebra w) :
-    weightReesMap hBC w (weightReesMap hAB w g) = weightReesMap (hAB.trans hBC) w g := by
-  apply Subtype.ext
-  ext n
-  simp [weightReesMap]
-
-theorem weightReesMap_comp {A B C : Subalgebra R (MvPolynomial σ R)}
-    (hAB : A ≤ B) (hBC : B ≤ C) (w : σ → ℕ) :
-    (weightReesMap hBC w).comp (weightReesMap hAB w) = weightReesMap (hAB.trans hBC) w :=
-  AlgHom.ext (weightReesMap_weightReesMap hAB hBC w)
+    weightReesMap hBC w (weightReesMap hAB w g) = weightReesMap (hAB.trans hBC) w g :=
+  AlgHom.congr_fun (weightReesMap_comp hAB hBC w) g
 
 @[simp]
 theorem eval_weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ)
@@ -351,6 +357,22 @@ theorem coe_evalOne_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
       MvPolynomial σ R) = aeval c (f.eval 1) := by
   rw [coeffSubalgebra.evalOne_eq_eval, coe_eval_weightReesAevalLift, map_one,
     eval_one_weightReesAeval]
+
+/-- Composing `weightReesMap` with `weightReesAevalLift` gives the lift for the larger
+subalgebra. -/
+theorem weightReesMap_comp_weightReesAevalLift {B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) :
+    (Subalgebra.weightReesMap h w).comp (weightReesAevalLift hcA hc) =
+      weightReesAevalLift (fun i ↦ h (hcA i)) hc :=
+  AlgHom.ext fun f ↦ B.weightReesInclusion_injective w <| by
+    rw [AlgHom.comp_apply, Subalgebra.weightReesInclusion_weightReesMap]
+    exact Subtype.ext (by simp)
+
+@[simp]
+theorem weightReesMap_weightReesAevalLift {B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B)
+    (f : (MvPolynomial ι R)[X]) :
+    Subalgebra.weightReesMap h w (weightReesAevalLift hcA hc f) =
+      weightReesAevalLift (fun i ↦ h (hcA i)) hc f :=
+  AlgHom.congr_fun (weightReesMap_comp_weightReesAevalLift hcA hc h) f
 
 /-- The kernel of `weightReesAevalLift hcA hc` equals the kernel of `weightReesAeval c d`. -/
 theorem ker_weightReesAevalLift :
