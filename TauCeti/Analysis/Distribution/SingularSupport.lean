@@ -205,7 +205,8 @@ theorem singularSupport_sub_subset (S T : 𝓓'(Ω, F)) :
   simpa [sub_eq_add_neg] using singularSupport_add_subset S (-T)
 
 /-- A continuous linear map of the values does not enlarge the singular support: where `T` is a
-smooth function `f`, the distribution `A ∘ T` is the smooth function `A ∘ f`. -/
+smooth function `f` and `F` is complete, the distribution `A ∘ T` is the smooth function `A ∘ f`;
+if `F` is not complete, `T` and hence `A ∘ T` vanish there. -/
 theorem singularSupport_mapCLM_subset {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
     [CompleteSpace F'] (A : F →L[ℝ] F') (T : 𝓓'(Ω, F)) :
     (mapCLM A T).singularSupport ⊆ T.singularSupport := by

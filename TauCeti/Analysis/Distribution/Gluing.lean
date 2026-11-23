@@ -271,7 +271,7 @@ omit [BorelSpace E] in
 /-- **Integral representations glue.** If `f` is locally integrable on a set `W` and every point
 of `W` has an open neighbourhood on whose supported real test functions `T` is integration against
 `f` with respect to `μ`, then `T φ = ∫ φ • f ∂μ` for every real test function `φ` supported in
-`W`. The set `W` need not be open: the pieces of `φ` stay inside its support. -/
+`W`. The set `W` need not be open. -/
 theorem apply_eq_integral_of_locally [OpensMeasurableSpace E] {n : ℕ∞} {T : 𝓓'^{n}(Ω, F)}
     {W : Set E} {f : E → F} (hf : LocallyIntegrableOn f W μ)
     (h : ∀ x ∈ W, ∃ U : Set E, IsOpen U ∧ x ∈ U ∧
