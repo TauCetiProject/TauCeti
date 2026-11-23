@@ -116,12 +116,12 @@ variable (𝕜 X) in
     (uliftFunctor.{u, v, w, w'} 𝕜 X).obj V =
       (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X) := by rfl
 variable {V W : FiniteRankVectorBundle.{u, v, w} 𝕜 X}
-@[simp] theorem fiberMap_uliftFunctor_map (f : V ⟶ W) (x : X)
+@[simp] theorem fiberMap_uliftFunctor_map_apply (f : V ⟶ W) (x : X)
     (v : ((uliftFunctor.{u, v, w, w'} 𝕜 X).obj V).Fiber x) :
     ((uliftFunctor.{u, v, w, w'} 𝕜 X).map f).fiberMap x v = ULift.up (f.fiberMap x v.down) := by rfl
 instance : (uliftFunctor.{u, v, w, w'} 𝕜 X).Additive where
   map_add {_ _ _ _} := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by
-    simp only [fiberMap_add, LinearMap.add_apply, fiberMap_uliftFunctor_map]
+    simp only [fiberMap_add, LinearMap.add_apply, fiberMap_uliftFunctor_map_apply]
     exact (ULift.ext ULift.add_down).symm
 
 private noncomputable def uliftPreimage

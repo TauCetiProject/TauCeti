@@ -64,6 +64,7 @@ noncomputable def toAtlasTotalSpaceHomeomorph :
   simp only [toAtlasTotalSpaceHomeomorph, Homeomorph.symm_symm, Homeomorph.trans_apply,
     FiniteRankAtlas.reconstructionHomeomorph_apply,
     FiniteRankVectorBundle.totalSpaceHomeomorph_apply, pointIndexedCoreFiberEquiv_stratumFiber]
+  -- Unify `V.toAtlas.rank q.proj` with `V.rank q.proj` in the dependent fibre type.
   rfl
 end ToAtlas
 
@@ -79,14 +80,13 @@ reading fibres and morphisms in preferred stratum charts. -/
         ((f.fiberMap x).comp (V.preferredChartEquiv x).symm.toLinearMap)
       continuous_totalSpaceMap := (W.toAtlasTotalSpaceHomeomorph.continuous.comp
         (f.totalSpaceMap.continuous.comp V.toAtlasTotalSpaceHomeomorph.symm.continuous)).congr
-        fun _ ↦ by simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply] }
+        fun _ ↦ by simp }
   map_id V := hom_ext fun x ↦ LinearMap.ext (V.preferredChartEquiv x).apply_symm_apply
-  map_comp _ _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by
-    simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply]
+  map_comp _ _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
 @[simp] theorem toAtlasFunctor_obj (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X) :
     (toAtlasFunctor.{u, v, w} 𝕜 X).obj V = V.toAtlas := by rfl
 variable {V W : FiniteRankVectorBundle.{u, v, w} 𝕜 X}
-@[simp] theorem fiberMap_toAtlasFunctor_map (f : V ⟶ W) (x : X) (u : V.toAtlas.Fiber x) :
+@[simp] theorem fiberMap_toAtlasFunctor_map_apply (f : V ⟶ W) (x : X) (u : V.toAtlas.Fiber x) :
     ((toAtlasFunctor.{u, v, w} 𝕜 X).map f).fiberMap x u =
       W.preferredChartEquiv x (f.fiberMap x ((V.preferredChartEquiv x).symm u)) := by rfl
 /-- On the fibre over `x`, `(toAtlasFunctor 𝕜 X).map f` conjugates `f.fiberMap x` by
@@ -94,10 +94,9 @@ variable {V W : FiniteRankVectorBundle.{u, v, w} 𝕜 X}
 theorem coe_fiberMap_toAtlasFunctor_map (f : V ⟶ W) (x : X) :
     ⇑(((toAtlasFunctor.{u, v, w} 𝕜 X).map f).fiberMap x) =
       ⇑(W.preferredChartEquiv x) ∘ ⇑(f.fiberMap x) ∘ ⇑(V.preferredChartEquiv x).symm :=
-  funext (fiberMap_toAtlasFunctor_map f x)
+  funext (fiberMap_toAtlasFunctor_map_apply f x)
 instance : (toAtlasFunctor.{u, v, w} 𝕜 X).Additive where
-  map_add {_ _ _ _} := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by
-    simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply]
+  map_add {_ _ _ _} := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
 
 private noncomputable def toAtlasPreimage
     (g : (toAtlasFunctor.{u, v, w} 𝕜 X).obj V ⟶ (toAtlasFunctor.{u, v, w} 𝕜 X).obj W) : V ⟶ W where
@@ -105,7 +104,7 @@ private noncomputable def toAtlasPreimage
     ((g.fiberMap x).comp (V.preferredChartEquiv x).toLinearMap)
   continuous_totalSpaceMap := (W.toAtlasTotalSpaceHomeomorph.symm.continuous.comp
     (g.totalSpaceMap.continuous.comp V.toAtlasTotalSpaceHomeomorph.continuous)).congr
-    fun _ ↦ by simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply]
+    fun _ ↦ by simp
 @[simp] private theorem fiberMap_toAtlasPreimage_apply
     (g : (toAtlasFunctor.{u, v, w} 𝕜 X).obj V ⟶ (toAtlasFunctor.{u, v, w} 𝕜 X).obj W) (x : X)
     (v : V.Fiber x) : (toAtlasPreimage g).fiberMap x v =
@@ -115,10 +114,8 @@ variable (𝕜 X) in
 /-- `toAtlasFunctor 𝕜 X` is unconditionally fully faithful in every fibre universe `w`. -/
 noncomputable def fullyFaithfulToAtlasFunctor : (toAtlasFunctor.{u, v, w} 𝕜 X).FullyFaithful where
   preimage := toAtlasPreimage
-  map_preimage _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by
-    simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply]
-  preimage_map _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by
-    simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply]
+  map_preimage _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
+  preimage_map _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
 instance : (toAtlasFunctor.{u, v, w} 𝕜 X).Full := (fullyFaithfulToAtlasFunctor.{u, v, w} 𝕜 X).full
 instance : (toAtlasFunctor.{u, v, w} 𝕜 X).Faithful := (fullyFaithfulToAtlasFunctor 𝕜 X).faithful
 

@@ -61,10 +61,10 @@ preferred stratum trivialization at `x`. -/
 noncomputable def preferredChartEquiv (x : X) : V.Fiber x ≃L[𝕜] (Fin (V.rank x) → 𝕜) :=
   (trivializationAt (Fin (V.rank x) → 𝕜) (V.StratumFiber (V.rank x))
     ⟨x, rfl⟩).continuousLinearEquivAt 𝕜 ⟨x, rfl⟩ (mem_baseSet_trivializationAt _ _ _)
-@[simp] theorem preferredChartEquiv_apply (x : X) (v : V.Fiber x) : V.preferredChartEquiv x v =
+theorem preferredChartEquiv_apply (x : X) (v : V.Fiber x) : V.preferredChartEquiv x v =
     (trivializationAt (Fin (V.rank x) → 𝕜) (V.StratumFiber (V.rank x))
       ⟨x, rfl⟩ ⟨⟨x, rfl⟩, v⟩).2 := by rfl
-@[simp] theorem preferredChartEquiv_symm_apply (x : X) (w : Fin (V.rank x) → 𝕜) :
+theorem preferredChartEquiv_symm_apply (x : X) (w : Fin (V.rank x) → 𝕜) :
     (V.preferredChartEquiv x).symm w =
       (trivializationAt (Fin (V.rank x) → 𝕜) (V.StratumFiber (V.rank x))
         ⟨x, rfl⟩).symm ⟨x, rfl⟩ w := by rfl

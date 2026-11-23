@@ -69,8 +69,8 @@ variable {B : Type b} {𝕜 : Type v} {X : Type u} {Fiber : B → X → Type w}
 
 section Glued
 variable (V : B)
-/-- Linear equivalence from `Fiber V x` to `Fin (rank V x) → 𝕜` via the preferred stratum chart. -/
-noncomputable def preferredStratumLinearEquiv (x : X) : Fiber V x ≃ₗ[𝕜] (Fin (rank V x) → 𝕜) :=
+private noncomputable def preferredStratumLinearEquiv (x : X) :
+    Fiber V x ≃ₗ[𝕜] (Fin (rank V x) → 𝕜) :=
   (stratumFiberEquiv V ⟨x, rfl⟩).symm.trans
     ((trivializationAt (Fin (rank V x) → 𝕜) (StratumFiber V (rank V x))
       ⟨x, rfl⟩).linearEquivAt 𝕜 ⟨x, rfl⟩ (mem_baseSet_trivializationAt _ _ _))
@@ -187,6 +187,18 @@ theorem continuous_smul {Y : Type*} [TopologicalSpace Y] {b : Y → X} {s : ∀ 
 end Glued
 attribute [local instance] instTopologicalSpaceTotalSpace
 
+/-- Construct rank-dependent data on the `m`-stratum of a constant-rank `n` bundle by
+transporting the `n`-stratum data when `n = m` and supplying empty-stratum data otherwise. -/
+def constStratumRec {X : Type*} [TopologicalSpace X] (n m : ℕ) (P : ℕ → Sort*)
+    (hSame : P n) (hEmpty : IsEmpty {x : X // LocallyConstant.const X n x = m} → P m) : P m :=
+  if h : n = m then h.rec (motive := fun k _ ↦ P k) hSame
+  else hEmpty ⟨fun y ↦ h y.property⟩
+
+@[simp] theorem constStratumRec_self {X : Type*} [TopologicalSpace X] (n : ℕ) (P : ℕ → Sort*)
+    (hSame : P n) (hEmpty : IsEmpty {x : X // LocallyConstant.const X n x = n} → P n) :
+    constStratumRec n n P hSame hEmpty = hSame :=
+  dite_eq_left rfl
+
 /-- Continuous section `X → {x : X // rank V x = n}` witnessing that `V` has constant rank `n`. -/
 -- Expose the subtype constructor so pullback fibres over `constRankInclusion hn` reduce cleanly.
 @[expose] def constRankInclusion {V : B} {n : ℕ} (hn : ∀ x, rank V x = n) :
@@ -219,6 +231,7 @@ def constRankTotalSpaceHomeomorph : TotalSpace Unit (Fiber V) ≃ₜ
     (constRankTotalSpaceHomeomorph V hn).symm q =
       ⟨q.proj, stratumFiberEquiv V ⟨q.proj, hn q.proj⟩ q.snd⟩ := by rfl
 
+section
 variable {F : Type*} {E : X → Type*} [TopologicalSpace (TotalSpace F E)]
   (e : TotalSpace (Fin n → 𝕜) (StratumFiber V n) ≃ₜ TotalSpace F E) (φ : ∀ x, Fiber V x ≃ E x)
   (he : ∀ x u, e ⟨⟨x, hn x⟩, (stratumFiberEquiv V ⟨x, hn x⟩).symm u⟩ = ⟨x, φ x u⟩)
@@ -244,6 +257,7 @@ def totalSpaceHomeomorphOfConstStratum : TotalSpace Unit (Fiber V) ≃ₜ TotalS
 @[simp] theorem totalSpaceHomeomorphOfConstStratum_symm_apply (r : TotalSpace F E) :
     (totalSpaceHomeomorphOfConstStratum V hn e φ he hesymm).symm r =
       ⟨r.proj, (φ r.proj).symm r.snd⟩ := by rfl
+end
 end ConstRank
 end VariableRankBundle
 end TauCeti

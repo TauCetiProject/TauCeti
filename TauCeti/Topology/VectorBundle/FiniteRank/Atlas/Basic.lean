@@ -100,7 +100,9 @@ instance : TopologicalSpace (TotalSpace Unit A.Fiber) :=
 theorem totalSpaceHomeomorph_apply (p : VariableRankBundle.GluedTotalSpace A) :
     VariableRankBundle.totalSpaceHomeomorph A p =
       ⟨p.snd.proj.val, fun i => p.snd.snd (Fin.cast p.snd.proj.property i)⟩ := by
-  rw [VariableRankBundle.totalSpaceHomeomorph_apply]; rfl
+  rw [VariableRankBundle.totalSpaceHomeomorph_apply]
+  exact congrArg (TotalSpace.mk p.snd.proj.val)
+    (funext (stratumFiberEquiv_apply A p.snd.proj p.snd.snd))
 
 @[simp high] theorem totalSpaceHomeomorph_rfl_apply (x : X)
     (v : (A.charts (A.rank x)).Fiber ⟨x, rfl⟩) :

@@ -13,7 +13,7 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
 
 Between `A, D : FiniteRankAtlas 𝕜 X`, the base decomposes into clopen pairwise-rank strata
 `RankPairStratum A D m n = {x : X // A.rank x = m ∧ D.rank x = n}` carrying pulled-back
-constant-rank cores `sourcePairCore` and `targetPairCore`. Compatible chart-operator families
+constant-rank cores `sourcePairCore` and `targetPairCore`. Arbitrary chart-operator families
 assemble into morphisms `A ⟶ D` (`ofCoordinateHom`) without completeness on `𝕜`. Over a complete
 field, `toCoordinateHom` provides a two-sided inverse (`ofCoordinateHom_toCoordinateHom`,
 `toCoordinateHom_ofCoordinateHom`, packaged as `coordinateHomAddEquiv`), `toCoordinateHom_id`
@@ -76,8 +76,8 @@ end Pairwise
 
 section Assemble
 variable {A D : FiniteRankAtlas 𝕜 X}
-/-- Glue compatible chart-operator morphisms on all pairwise rank strata into a morphism of
-variable-rank bundle atlases. -/
+/-- Glue an arbitrary family of chart-operator morphisms on all pairwise rank strata into a morphism
+of variable-rank bundle atlases. -/
 def ofCoordinateHom (c : ∀ m n : ℕ, sourcePairCore A D m n ⟶ targetPairCore A D m n) : A ⟶ D where
   fiberMap x := ((c (A.rank x) (D.rank x)).fiberMap ⟨x, rfl, rfl⟩).toLinearMap
   continuous_totalSpaceMap := by
@@ -101,10 +101,10 @@ def ofCoordinateHom (c : ∀ m n : ℕ, sourcePairCore A D m n ⟶ targetPairCor
     rintro ⟨⟨⟨x, hm⟩, v⟩, hn⟩
     dsimp only [Set.domRestrict_apply, Function.comp_apply, srcMap, tgtMap] at hm hn ⊢
     subst hm; subst hn
-    have hA : totalSpaceHomeomorph A ⟨A.rank x, ⟨⟨x, rfl⟩, v⟩⟩ = ⟨x, v⟩ := by
-      rw [totalSpaceHomeomorph_apply]; rfl
-    rw [hA, (c (A.rank x) (D.rank x)).totalSpaceMap_mk ⟨x, rfl, rfl⟩ v,
-      pullbackCoreToTotalSpace_apply]; rfl
+    rw [totalSpaceHomeomorph_rfl_apply A x v,
+      (c (A.rank x) (D.rank x)).totalSpaceMap_mk ⟨x, rfl, rfl⟩ v,
+      pullbackCoreToTotalSpace_apply]
+    exact congrArg (TotalSpace.mk x) (funext fun i ↦ congrArg _ (congrFun (Fin.cast_refl _ rfl) i))
 @[simp] theorem fiberMap_ofCoordinateHom
     (c : ∀ m n : ℕ, sourcePairCore A D m n ⟶ targetPairCore A D m n) (x : X) :
     (ofCoordinateHom c).fiberMap x =

@@ -52,7 +52,7 @@ noncomputable def uliftToAtlasNatIso :
           exact congrArg (TotalSpace.mk x) (LinearEquiv.refl_apply (R := 𝕜) (v : _)).symm)
     fun {_ _} _ ↦ hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by
       dsimp only [Functor.comp_obj, uliftFunctor]
-      simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply]
+      simp
 
 variable {𝕜 X}
 
@@ -65,8 +65,8 @@ variable {𝕜 X}
 /-- On every coordinate fibre, the inverse component of `uliftToAtlasNatIso` is the identity. -/
 @[simp] theorem fiberMap_uliftToAtlasNatIso_inv_app (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X)
     (x : X) : ((uliftToAtlasNatIso.{u, v, w, w'} 𝕜 X).inv.app V).fiberMap x = LinearMap.id := by
-  simpa only [fiberMap_comp, fiberMap_uliftToAtlasNatIso_hom_app, LinearMap.id_comp, fiberMap_id]
-    using congrArg (fun k : (toAtlasFunctor.{u, v, w} 𝕜 X).obj V ⟶ _ ↦ k.fiberMap x)
-      ((uliftToAtlasNatIso.{u, v, w, w'} 𝕜 X).inv_hom_id_app V)
+  rw [uliftToAtlasNatIso, NatIso.ofComponents_inv_app (naturality := _),
+    fiberMap_isoOfTotalSpaceHomeomorph_inv]
+  rfl
 
 end TauCeti.FiniteRankVectorBundle
