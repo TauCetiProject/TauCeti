@@ -122,6 +122,22 @@ section Unitization
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+/-- A state of `Unitization ℂ A` is determined by its restriction to `A`: it takes the value
+`λ + ψ a` at `λ + a`. The restriction need not be a state (it may have norm less than one), so
+this is not a case of `PositiveContinuousLinearMap.eq_unitization_of_mem_stateSpace`. Private
+under this name pending the public `injOn_pullbackFunctional_inr_stateSpace` of an open PR. -/
+private theorem injOn_pullbackFunctional_inr_stateSpace_aux :
+    InjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
+      (stateSpace (Unitization ℂ A)) := by
+  have key {ψ : WeakDual ℂ (Unitization ℂ A)} (hψ : ψ ∈ stateSpace (Unitization ℂ A))
+      (x : Unitization ℂ A) :
+      ψ x = x.fst + pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ x.snd := by
+    have hinl : (Unitization.inl x.fst : Unitization ℂ A) = x.fst • 1 := by ext <;> simp
+    conv_lhs => rw [← Unitization.inl_fst_add_inr_snd_eq x, hinl]
+    simp [map_one_of_mem_stateSpace hψ]
+  intro ψ₁ hψ₁ ψ₂ hψ₂ h
+  exact DFunLike.ext _ _ fun x => by rw [key hψ₁, key hψ₂, h]
+
 /-- A state of `Unitization ℂ A` restricting to a pure state of `A` is pure. -/
 theorem mem_extremePoints_stateSpace_of_pullbackFunctional_inr {φ : WeakDual ℂ A}
     (hφ : φ ∈ extremePoints ℝ (stateSpace A)) {ψ : WeakDual ℂ (Unitization ℂ A)}
@@ -134,7 +150,7 @@ theorem mem_extremePoints_stateSpace_of_pullbackFunctional_inr {φ : WeakDual �
   have hE : stateSpace (Unitization ℂ A) ∩
       pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ⁻¹' {φ} = {ψ} :=
     Subset.antisymm (fun χ ⟨hχ, hχφ⟩ =>
-      injOn_pullbackFunctional_inr_stateSpace hχ hψ (hχφ.trans h.symm))
+      injOn_pullbackFunctional_inr_stateSpace_aux hχ hψ (hχφ.trans h.symm))
       (singleton_subset_iff.2 ⟨hψ, h⟩)
   rw [hE] at hface
   exact hface.mem_extremePoints
@@ -152,7 +168,7 @@ theorem pullbackFunctional_inr_mem_extremePoints_stateSpace {ψ : WeakDual ℂ (
   obtain ⟨a, b, ha, hb, hab, hcomb⟩ := hseg
   -- the combination `a χ₁' + b χ₂'` is a state of the unitization restricting as `ψ` does
   have hψ' : a • χ₁' + b • χ₂' = ψ := by
-    refine injOn_pullbackFunctional_inr_stateSpace
+    refine injOn_pullbackFunctional_inr_stateSpace_aux
       (convex_stateSpace hχ₁' hχ₂' ha.le hb.le hab) hψ.1 ?_
     rw [← hcomb]
     exact DFunLike.ext _ _ fun x => by simp

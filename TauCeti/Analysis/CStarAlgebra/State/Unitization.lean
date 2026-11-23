@@ -40,9 +40,8 @@ extension of a tracial state is again a tracial state is
 * `PositiveContinuousLinearMap.eq_zero_of_unitization_map_star_mul_self_eq_zero`: if `τ` is
   faithful, `τ (star a * a) = 0 → a = 0`, and `A` has no two-sided unit, then `τ⁺¹` is faithful
   too.
-* `TauCeti.injOn_pullbackFunctional_inr_stateSpace`,
-  `TauCeti.surjOn_pullbackFunctional_inr_stateSpace`: a state of `A⁺¹` is determined by its
-  restriction to `A`, and every state of `A` is such a restriction.
+* `TauCeti.surjOn_pullbackFunctional_inr_stateSpace`: every state of `A` is the restriction of a
+  state of `A⁺¹`.
 
 ## Implementation notes
 
@@ -235,21 +234,6 @@ open Set WeakDual
 section Unitization
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- A state of `Unitization ℂ A` is determined by its restriction to `A`: it takes the value
-`λ + ψ a` at `λ + a`. The restriction need not be a state (it may have norm less than one), so
-this is not a case of `PositiveContinuousLinearMap.eq_unitization_of_mem_stateSpace`. -/
-theorem injOn_pullbackFunctional_inr_stateSpace :
-    InjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
-      (stateSpace (Unitization ℂ A)) := by
-  have key {ψ : WeakDual ℂ (Unitization ℂ A)} (hψ : ψ ∈ stateSpace (Unitization ℂ A))
-      (x : Unitization ℂ A) :
-      ψ x = x.fst + pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ x.snd := by
-    have hinl : (Unitization.inl x.fst : Unitization ℂ A) = x.fst • 1 := by ext <;> simp
-    conv_lhs => rw [← Unitization.inl_fst_add_inr_snd_eq x, hinl]
-    simp [map_one_of_mem_stateSpace hψ]
-  intro ψ₁ hψ₁ ψ₂ hψ₂ h
-  exact DFunLike.ext _ _ fun x => by rw [key hψ₁, key hψ₂, h]
 
 /-- Every state `φ` of `A` is the restriction of a state of `Unitization ℂ A`, namely
 `λ + a ↦ λ + φ a`. -/
