@@ -133,9 +133,9 @@ theorem isSelfAdjoint_closedFormOperator_add (j : V →L[𝕜] H) (hj : Function
 
 end Representation
 
-/-- **The KLMN theorem** (Reed–Simon, Theorem X.17; Kato, Chapter VI, Theorem 1.33). Let `q` be a bounded
-Hermitian form on a complete inner-product space `V`, with a continuous injective dense inclusion
-`j : V →L[𝕜] H` into a Hilbert space and a shifted coercivity bound
+/-- **The KLMN theorem** (Reed–Simon, Theorem X.17; Kato, Chapter VI, Theorem 1.33). Let `q` be
+a bounded Hermitian form on a complete inner-product space `V`, with a continuous injective dense
+inclusion `j : V →L[𝕜] H` into a Hilbert space and a shifted coercivity bound
 `c * ‖u‖ ^ 2 ≤ re (q u u) + ω * ‖j u‖ ^ 2` (`0 < c`). Let `b` be a bounded Hermitian form on `V`
 with `‖b u u‖ ≤ a * re (q_α u u) + C * ‖j u‖ ^ 2` for some `a < 1`. Then `q + b` represents a
 unique self-adjoint partial operator on `H`, bounded below by `-((1 - a) * ω + a * α + C)`. -/
