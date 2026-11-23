@@ -58,6 +58,8 @@ dilation to itself or to its inverse either is a dilation or exchanges `0` and `
   ideal points are the endpoints of a geodesic line.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq_and_smul_infty_eq`: a geodesic line from any
   point of `ℍ` to any ideal point.
+* `TauCeti.UpperHalfPlane.dilation_smul_eq_self_iff`: a nontrivial dilation fixes exactly the
+  ideal points `0` and `∞`.
 * `TauCeti.UpperHalfPlane.exists_eq_conj_dilation_of_two_lt_abs_trace`: the hyperbolic normal form,
   every hyperbolic element of `PSL(2, ℝ)` is conjugate to a nontrivial dilation.
 * `TauCeti.UpperHalfPlane.exists_eq_dilation_or_antidiag_of_conj_dilation`: an element normalizing
@@ -111,6 +113,24 @@ theorem dilation_smul_coe (s x : ℝ) :
   have h : Real.exp (s / 2) * x / Real.exp (-(s / 2)) = Real.exp s * x := by
     rw [div_eq_mul_inv, ← Real.exp_neg, neg_neg, mul_right_comm, ← Real.exp_add, add_halves]
   simp [OnePoint.smul_some_eq_ite, Real.exp_ne_zero, h]
+
+/-- A nontrivial dilation fixes exactly the ideal points `0` and `∞`. -/
+theorem dilation_smul_eq_self_iff {s : ℝ} (hs : s ≠ 0) {η : OnePoint ℝ} :
+    ((dilation s : SL(2, ℝ)) : PSL(2, ℝ)) • η = η ↔ η = ((0 : ℝ) : OnePoint ℝ) ∨ η = ∞ := by
+  induction η using OnePoint.rec with
+  | infty =>
+    rw [dilation_smul_infty]
+    simp
+  | coe x =>
+    have hs1 : Real.exp s - 1 ≠ 0 := sub_ne_zero.2 fun h ↦ hs (Real.exp_eq_one_iff s |>.1 h)
+    rw [dilation_smul_coe, OnePoint.coe_eq_coe]
+    simp only [OnePoint.coe_eq_coe, OnePoint.coe_ne_infty, or_false]
+    constructor
+    · intro h
+      have : (Real.exp s - 1) * x = 0 := by linarith
+      exact (mul_eq_zero.1 this).resolve_left hs1
+    · rintro rfl
+      simp
 
 private theorem pslS_eq_mk :
     pslS = ((Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) ModularGroup.S : SL(2, ℝ)) :

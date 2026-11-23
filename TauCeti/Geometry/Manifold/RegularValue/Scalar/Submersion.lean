@@ -426,27 +426,28 @@ chart at `x` to the kernel vector `K⁻¹ (regularLevelChartAt x w)` of the deri
 identification used by the level atlas. -/
 theorem scalarSubmersionChartAt_extend_coe (x : {x : M // f x = c}) {w : {x : M // f x = c}}
     (hw : (w : M) ∈ (chartAt H (x : M)).source) :
-    (scalarSubmersionChartAt (hf x x.2) (hreg.isRegularPoint x.2)).extend I w =
+    (scalarSubmersionChartAt (hf x x.property) (hreg.isRegularPoint x.property)).extend I w =
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       ((D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
-        (hreg.isRegularPoint x.2).finrank_ker_fderiv_comp_extChartAt_symm).symm
+        (hreg.isRegularPoint x.property).finrank_ker_fderiv_comp_extChartAt_symm).symm
           (regularLevelChartAt (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self]) x w) : E) := by
   rw [scalarSubmersionChartAt_extend_apply _ _ hw, regularLevelChartAt_apply]
   dsimp only
-  rw [ContinuousLinearEquiv.symm_apply_apply, w.2, x.2, sub_self,
+  rw [ContinuousLinearEquiv.symm_apply_apply, w.property, x.property, sub_self,
     ContinuousLinearMap.implicitCoordEquiv_symm_apply_zero_mk]
 
 /-- **On a regular level, the submersion chart and the level chart have the same domain.** A point
 of a regular level `f⁻¹(c)` lies in the source of the submersion chart at a point `x` of the level
 exactly when it lies in the source of the preferred level chart at `x`. -/
 theorem preimage_coe_scalarSubmersionChartAt_source (x : {x : M // f x = c}) :
-    Subtype.val ⁻¹' (scalarSubmersionChartAt (hf x x.2) (hreg.isRegularPoint x.2)).source =
+    Subtype.val ⁻¹' (scalarSubmersionChartAt (hf x x.property)
+        (hreg.isRegularPoint x.property)).source =
       (regularLevelChartAt (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self]) x).source := by
   have hfun : (fun y ↦ f ((extChartAt I (x : M)).symm y) - f x) =
       fun y ↦ f ((extChartAt I (x : M)).symm y) - c := by
-    rw [x.2]
-  have hD := hasStrictFDerivAt_coord (hf x x.2)
-  have hD' := range_eq_top (hreg.isRegularPoint x.2)
+    rw [x.property]
+  have hD := hasStrictFDerivAt_coord (hf x x.property)
+  have hD' := range_eq_top (hreg.isRegularPoint x.property)
   have hker := closedComplemented_ker (f := f) (I := I) (x : M)
   rw [scalarSubmersionChartAt_source, regularLevelChartAt_source]
   dsimp only

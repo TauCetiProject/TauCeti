@@ -95,7 +95,7 @@ private lemma isIntegral_mapOfDvd {p : W.f.Factors} {q : 𝕎[v].f.Factors}
     (hq : (q : F_[v][X]) ∣ (p : F[X]).map (algebraMap F F_[v]))
     (x : W.ringOfIntegersFactor (𝓞 F) p) :
     _root_.IsIntegral 𝒪_[v] (AdjoinRoot.map (algebraMap F F_[v]) _ _ hq (x : 𝕃 p)) := by
-  obtain ⟨P, hPm, hPe⟩ := x.2
+  obtain ⟨P, hPm, hPe⟩ := x.property
   refine ⟨P.map (algebraMap (𝓞 F) 𝒪_[v]), hPm.map _, ?_⟩
   have h2 := congrArg (AdjoinRoot.map (algebraMap F F_[v]) _ _ hq) hPe
   rw [map_zero, Polynomial.hom_eval₂] at h2
@@ -211,7 +211,7 @@ private lemma localFactorEmb_mem_adicCompletionIntegers (p : W.f.Factors)
     (x : 𝕎[v].ringOfIntegersFactor 𝒪_[v] (W.localFactor v p w)) :
     W.localFactorEmb v p w (x : AdjoinRoot (W.localFactor v p w : F_[v][X])) ∈
       w.adicCompletionIntegers (𝕃 p) := by
-  obtain ⟨P, hPm, hPe⟩ := x.2
+  obtain ⟨P, hPm, hPe⟩ := x.property
   have h2 := congrArg (W.localFactorEmb v p w) hPe
   rw [map_zero, Polynomial.hom_eval₂, W.localFactorEmb_comp_algebraMap v p w] at h2
   have hint2 : _root_.IsIntegral (w.adicCompletionIntegers (𝕃 p))
@@ -221,7 +221,7 @@ private lemma localFactorEmb_mem_adicCompletionIntegers (p : W.f.Factors)
     exact h2
   obtain ⟨y, hy⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint2
   rw [← hy]
-  exact y.2
+  exact y.property
 
 /- The restriction of `localFactorEmb` to the rings of integers. -/
 private noncomputable def localFactorIntegerEmb (p : W.f.Factors)

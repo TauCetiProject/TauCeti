@@ -54,7 +54,7 @@ variable (Q)
 
 /-- The Pin group includes into the Lipschitz group. -/
 def pinToLipschitz : pinGroup Q →* lipschitzGroup Q where
-  toFun x := ⟨pinGroup.toUnits x, pinGroup.units_mem_lipschitzGroup x.2⟩
+  toFun x := ⟨pinGroup.toUnits x, pinGroup.units_mem_lipschitzGroup x.property⟩
   map_one' := Subtype.ext (map_one (pinGroup.toUnits (Q := Q)))
   map_mul' x y := Subtype.ext (map_mul (pinGroup.toUnits (Q := Q)) x y)
 
@@ -73,7 +73,7 @@ theorem _root_.TauCeti.CliffordAlgebra.coe_inv_pinToLipschitz (x : pinGroup Q) :
         CliffordAlgebra Q) = star (x : CliffordAlgebra Q) :=
   Units.inv_eq_of_mul_eq_one_right (by
     rw [coe_pinToLipschitz_apply]
-    exact pinGroup.mul_star_self_of_mem x.2)
+    exact pinGroup.mul_star_self_of_mem x.property)
 
 /-- The spin group sits inside the Pin group. -/
 def spinToPin : spinGroup Q →* pinGroup Q :=

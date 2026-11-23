@@ -19,7 +19,7 @@ Each equation has a solution over the coordinate group of the equations below it
 [VAR-II, Definition 8]. In the encoding `TauCeti.LimitGroup.NTQ.System`, the system with lower
 level `[u, v] = 1` of type (3) and upper level `x⁻¹ u x u⁻¹ = 1` has the same solutions as `S`,
 up to renaming the variables, and it is nondegenerate by
-`TauCeti.LimitGroup.NTQ.isNondegenerate_conj_over_commute`. Nevertheless, over a nonabelian
+`TauCeti.LimitGroup.NTQ.System.isNondegenerate_conjOverCommute`. Nevertheless, over a nonabelian
 group the coordinate group of `S` is not fully residually free.
 
 The reason is commutation transitivity. A solution of `S` in a commutative transitive group either

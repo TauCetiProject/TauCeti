@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Flow
+public import TauCeti.Combinatorics.Graph.Connectivity.Flow.Basic
 
 /-!
 # Undirected flows on simple graphs
@@ -100,14 +100,12 @@ theorem exists_flow_val_eq_pairCutCapacity_mem [Fintype V]
   have hst' : G.toOfSimpleGraphVertex s ≠ G.toOfSimpleGraphVertex t := by
     intro h
     exact hst (by simpa using congrArg Subtype.val h)
-  have hcap : 0 ≤ G.ofSimpleGraphCapacity c := fun e ↦ by
-    rw [G.ofSimpleGraphCapacity_apply]
-    exact hc e.1 (by simpa using e.2)
   have hcapA : ∀ e, G.ofSimpleGraphCapacity c e ∈ A := fun e ↦ by
     rw [G.ofSimpleGraphCapacity_apply]
-    exact hcA e.1 (by simpa using e.2)
+    exact hcA e.val (by simpa using e.property)
   obtain ⟨f, hfacyc, hfA, T, hsT, htT, hval⟩ :=
-    (Graph.ofSimpleGraph G).exists_flow_val_eq_edgeCutCapacity_mem hst' hcap A hcapA
+    (Graph.ofSimpleGraph G).exists_flow_val_eq_edgeCutCapacity_mem hst'
+      (G.ofSimpleGraphCapacity_nonneg hc) A hcapA
   let S : Finset V := T.map ⟨Subtype.val, Subtype.val_injective⟩
   refine ⟨f, hfacyc, hfA, S, ?_, ?_, ?_⟩
   · simpa [S] using
