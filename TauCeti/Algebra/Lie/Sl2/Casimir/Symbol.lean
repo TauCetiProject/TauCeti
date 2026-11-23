@@ -50,10 +50,17 @@ section SlFinTwo
 variable (R : Type u) [CommRing R]
 
 /-- The quadratic Casimir symbol `h² + 4ef` in `SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)`. -/
-noncomputable abbrev slFinTwoCasimirSymbol :
+noncomputable def slFinTwoCasimirSymbol :
     SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R) :=
   sl2CasimirSymbol R (SpecialLinear.sl (Fin 2) R)
     (slFinTwoBasis R 2) (slFinTwoBasis R 0) (slFinTwoBasis R 1)
+
+/-- Defining expression for `slFinTwoCasimirSymbol`. -/
+theorem slFinTwoCasimirSymbol_def :
+    slFinTwoCasimirSymbol R =
+      sl2CasimirSymbol R (SpecialLinear.sl (Fin 2) R)
+        (slFinTwoBasis R 2) (slFinTwoBasis R 0) (slFinTwoBasis R 1) :=
+  (rfl)
 
 end SlFinTwo
 

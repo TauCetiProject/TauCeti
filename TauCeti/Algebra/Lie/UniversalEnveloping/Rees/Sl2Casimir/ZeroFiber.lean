@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.CasimirSymbol
+public import TauCeti.Algebra.Lie.Sl2.Casimir.Symbol
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.PoissonBracket.LieModule
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Sl2Casimir.Basic
 
@@ -23,6 +23,7 @@ For `L = SpecialLinear.sl (Fin 2) R`, centrality of `reesSlFinTwoCasimir` implie
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.reesSpecializationZero_reesSl2Casimir`,
+  `TauCeti.UniversalEnvelopingAlgebra.reesSpecializationZero_reesSlFinTwoCasimir`,
   `TauCeti.UniversalEnvelopingAlgebra.slFinTwoCasimirSymbol_mem_lieInvariants`,
   `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_slFinTwoCasimirSymbol_left`,
   `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_slFinTwoCasimirSymbol_right`:
@@ -62,13 +63,20 @@ section SlFinTwo
 
 variable (R : Type u) [CommRing R]
 
+/-- Specializing `reesSlFinTwoCasimir R` at the zero fibre yields `slFinTwoCasimirSymbol R`. -/
+@[simp]
+theorem reesSpecializationZero_reesSlFinTwoCasimir :
+    reesSpecializationZero R (SpecialLinear.sl (Fin 2) R) (reesSlFinTwoCasimir R) =
+      slFinTwoCasimirSymbol R := by
+  rw [reesSlFinTwoCasimir_def, slFinTwoCasimirSymbol_def, reesSpecializationZero_reesSl2Casimir]
+
 /-- **Poisson-centrality of `h² + 4ef`** in `SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)`: its
 zero-fibre symbol belongs to the Lie invariants. -/
 theorem slFinTwoCasimirSymbol_mem_lieInvariants :
     slFinTwoCasimirSymbol R ∈
       TauCeti.SymmetricAlgebra.lieInvariants R
         (SpecialLinear.sl (Fin 2) R) (SpecialLinear.sl (Fin 2) R) := by
-  rw [slFinTwoCasimirSymbol, ← reesSpecializationZero_reesSl2Casimir]
+  rw [← reesSpecializationZero_reesSlFinTwoCasimir]
   exact reesSpecializationZero_mem_lieInvariants_of_mem_center _ _
     (reesSlFinTwoCasimir_mem_center R)
 

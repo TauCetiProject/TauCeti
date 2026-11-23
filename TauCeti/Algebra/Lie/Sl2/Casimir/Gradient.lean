@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.CasimirSymbol
+public import TauCeti.Algebra.Lie.Sl2.Casimir.Symbol
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Gradient
 
 /-!

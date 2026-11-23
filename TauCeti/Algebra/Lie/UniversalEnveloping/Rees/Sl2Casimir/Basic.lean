@@ -170,16 +170,25 @@ section SlFinTwo
 variable (R : Type u) [CommRing R]
 
 /-- The deformed Casimir element of the standard triple `(h, e, f)` of `sl (Fin 2) R`. -/
-noncomputable abbrev reesSlFinTwoCasimir :
+noncomputable def reesSlFinTwoCasimir :
     reesAlgebra R (SpecialLinear.sl (Fin 2) R) :=
   reesSl2Casimir R (SpecialLinear.sl (Fin 2) R)
     (TauCeti.slFinTwoBasis R 2) (TauCeti.slFinTwoBasis R 0) (TauCeti.slFinTwoBasis R 1)
 
+/-- Defining expression for `reesSlFinTwoCasimir`. -/
+theorem reesSlFinTwoCasimir_def :
+    reesSlFinTwoCasimir R =
+      reesSl2Casimir R (SpecialLinear.sl (Fin 2) R)
+        (TauCeti.slFinTwoBasis R 2) (TauCeti.slFinTwoBasis R 0) (TauCeti.slFinTwoBasis R 1) :=
+  (rfl)
+
 /-- Specializing `reesSlFinTwoCasimir R` at `t = 1` recovers `TauCeti.slTwoOmega R`. -/
+@[simp]
 theorem evalOne_reesSlFinTwoCasimir :
     coeffSubalgebra.evalOne (pbwFiltration R (SpecialLinear.sl (Fin 2) R))
         (reesSlFinTwoCasimir R) =
       TauCeti.slTwoOmega R := by
+  rw [reesSlFinTwoCasimir_def]
   simp [TauCeti.slTwoOmega_def, sq, Algebra.smul_def, map_ofNat, mul_assoc]
 
 /-- **Centrality of the deformed `sl₂` Casimir element** in
@@ -187,7 +196,7 @@ theorem evalOne_reesSlFinTwoCasimir :
 theorem reesSlFinTwoCasimir_mem_center :
     reesSlFinTwoCasimir R ∈
       Subalgebra.center R (reesAlgebra R (SpecialLinear.sl (Fin 2) R)) := by
-  rw [mem_center_reesAlgebra_iff]
+  rw [reesSlFinTwoCasimir_def, mem_center_reesAlgebra_iff]
   have hce := commute_reesSl2Casimir_reesGenerator_e
     (TauCeti.lie_slFinTwoBasis_zero_one R) (TauCeti.lie_slFinTwoBasis_two_zero R)
   have hcf := commute_reesSl2Casimir_reesGenerator_f
