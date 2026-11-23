@@ -176,18 +176,20 @@ to the upper end `x` of its chord and to its height `⟪y, p⟫ / ⟪x, p⟫`. -
 def hemisphereChord :
     {x : sphere (0 : E) 1 // 0 < ⟪(x : E), (p : E)⟫} × Icc (-1 : ℝ) 1 ≃ₜ
       {y : closedBall (0 : E) 1 // ‖(y : E)‖ ^ 2 - ⟪(y : E), (p : E)⟫ ^ 2 < 1} where
-  toFun q := ⟨⟨chordPoint p q.1.1 q.2, mem_closedBall_zero_iff.2 <|
-      norm_chordPoint_le_one p (norm_eq_of_mem_sphere _) (by nlinarith [q.2.2.1, q.2.2.2])⟩, by
+  toFun q := ⟨⟨chordPoint p q.1.val q.2, mem_closedBall_zero_iff.2 <|
+      norm_chordPoint_le_one p (norm_eq_of_mem_sphere _) (by nlinarith [q.2.property.1,
+          q.2.property.2])⟩, by
     simp only
     rw [norm_chordPoint_sq p (norm_eq_of_mem_sphere _), inner_chordPoint]
-    nlinarith [mul_pos q.1.2 q.1.2]⟩
+    nlinarith [mul_pos q.1.property q.1.property]⟩
   invFun y :=
-    (⟨⟨chordTop p y, mem_sphere_zero_iff_norm.2 (norm_chordTop p y.2)⟩, by
-        simpa only [inner_chordTop] using chordRadius_pos p y.2⟩,
+    (⟨⟨chordTop p y, mem_sphere_zero_iff_norm.2 (norm_chordTop p y.property)⟩, by
+        simpa only [inner_chordTop] using chordRadius_pos p y.property⟩,
       ⟨⟪(y : E), (p : E)⟫ / chordRadius p y, by
-        have hr := chordRadius_pos p y.2
+        have hr := chordRadius_pos p y.property
         have hle : |⟪(y : E), (p : E)⟫| ≤ chordRadius p y := Real.abs_le_sqrt <| by
-          nlinarith [pow_le_one₀ (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2) (n := 2)]
+          nlinarith [pow_le_one₀ (norm_nonneg _) (mem_closedBall_zero_iff.1 y.val.property) (n
+              := 2)]
         refine ⟨(le_div_iff₀ hr).2 ?_, (div_le_one hr).2 ?_⟩ <;>
           linarith [abs_le.1 hle]⟩)
   left_inv q := by
@@ -229,14 +231,14 @@ def hemisphereChord :
     refine .prodMk (.subtype_mk (.subtype_mk ?_ _) _) (.subtype_mk ?_ _)
     · unfold chordTop
       fun_prop
-    · exact .div (by fun_prop) hr fun y ↦ (chordRadius_pos p y.2).ne'
+    · exact .div (by fun_prop) hr fun y ↦ (chordRadius_pos p y.property).ne'
 
 /-- `TauCeti.hemisphereChord p` sends `(x, t)` to the point at height `t` on the chord through
 `x`. -/
 @[simp]
 theorem coe_hemisphereChord_apply
     (q : {x : sphere (0 : E) 1 // 0 < ⟪(x : E), (p : E)⟫} × Icc (-1 : ℝ) 1) :
-    ((hemisphereChord p q : closedBall (0 : E) 1) : E) = chordPoint p q.1.1 q.2 :=
+    ((hemisphereChord p q : closedBall (0 : E) 1) : E) = chordPoint p q.1.val q.2 :=
   (rfl)
 
 /-- The inverse of `TauCeti.hemisphereChord p` sends `y` to the upper end

@@ -162,7 +162,7 @@ private abbrev sideRestrict (f : N → M) (A : Set M) : N → ↥(A ∪ range f)
 private theorem coe_mem_of_isCollar {c : N × Ico (0 : ℝ) 1 → ↥(A ∪ range f)}
     (hc : IsCollar (sideRestrict f A) c) {p : N × Ico (0 : ℝ) 1} (hp : (p.2 : ℝ) ≠ 0) :
     (c p : M) ∈ A := by
-  rcases (c p).2 with h | ⟨y, hy⟩
+  rcases (c p).property with h | ⟨y, hy⟩
   · exact h
   · refine absurd ?_ hp
     have hp' : p ∈ c ⁻¹' range (sideRestrict f A) := ⟨y, Subtype.ext hy⟩
@@ -188,7 +188,7 @@ private theorem IsLocallyBicollaredWithSides.isLocallyCollared_sideRestrict
     simp only [mem_range, Subtype.ext_iff, val_codRestrict_apply, mem_preimage, mem_image]
     constructor
     · rintro ⟨⟨u, t⟩, rfl⟩
-      exact ⟨(u, t), ⟨mem_univ _, by linarith [t.2.1], t.2.2⟩, rfl⟩
+      exact ⟨(u, t), ⟨mem_univ _, by linarith [t.property.1], t.property.2⟩, rfl⟩
     · rintro ⟨⟨u, t⟩, ⟨-, -, ht1⟩, rfl⟩
       have ht0 : 0 ≤ t := by
         by_contra! ht
@@ -201,24 +201,24 @@ private theorem IsLocallyBicollaredWithSides.isLocallyCollared_sideRestrict
       (IsEmbedding.id.prodMap IsEmbedding.subtypeVal)).codRestrict _ hmem
   · rw [hrange]
     exact (hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Ioo)).preimage
-      continuous_subtype_val
+      continuous_subtypeVal
   · by_contra ht
     exact disjoint_left.1 (h.disjoint_range_left hA hAB) ⟨y, congrArg Subtype.val hy⟩
-      (hbA ⟨mem_univ _, lt_of_le_of_ne t.2.1 (Ne.symm ht)⟩)
+      (hbA ⟨mem_univ _, lt_of_le_of_ne t.property.1 (Ne.symm ht)⟩)
 
 /-- The depth `|s| ∈ [0, 1)` of a point `s` of the open interval `(-1, 1)`. -/
 private def depth (s : ball (0 : ℝ) 1) : Ico (0 : ℝ) 1 :=
   ⟨|(s : ℝ)|, abs_nonneg _, by
-    have hs := mem_ball_zero_iff.1 s.2
+    have hs := mem_ball_zero_iff.1 s.property
     rwa [Real.norm_eq_abs] at hs⟩
 
 /-- The point of `(-1, 1)` at depth `t` on the positive side. -/
 private def posBall (t : Ico (0 : ℝ) 1) : ball (0 : ℝ) 1 :=
-  ⟨t, by simpa [abs_of_nonneg t.2.1] using t.2.2⟩
+  ⟨t, by simpa [abs_of_nonneg t.property.1] using t.property.2⟩
 
 /-- The point of `(-1, 1)` at depth `t` on the negative side. -/
 private def negBall (t : Ico (0 : ℝ) 1) : ball (0 : ℝ) 1 :=
-  ⟨-t, by simpa [abs_of_nonneg t.2.1] using t.2.2⟩
+  ⟨-t, by simpa [abs_of_nonneg t.property.1] using t.property.2⟩
 
 @[simp] private theorem coe_posBall (t : Ico (0 : ℝ) 1) : (posBall t : ℝ) = t := rfl
 
@@ -229,19 +229,19 @@ private theorem depth_of_coe_eq_zero {s : ball (0 : ℝ) 1} (hs : (s : ℝ) = 0)
   Subtype.ext (by simp [depth, hs])
 
 private theorem continuous_depth : Continuous depth :=
-  (continuous_abs.comp continuous_subtype_val).subtype_mk _
+  (continuous_abs.comp continuous_subtypeVal).subtype_mk _
 
 private theorem continuous_posBall : Continuous posBall :=
-  continuous_subtype_val.subtype_mk _
+  continuous_subtypeVal.subtype_mk _
 
 private theorem continuous_negBall : Continuous negBall :=
-  continuous_subtype_val.neg.subtype_mk _
+  continuous_subtypeVal.neg.subtype_mk _
 
 private theorem depth_posBall (t : Ico (0 : ℝ) 1) : depth (posBall t) = t :=
-  Subtype.ext (abs_of_nonneg t.2.1)
+  Subtype.ext (abs_of_nonneg t.property.1)
 
 private theorem depth_negBall (t : Ico (0 : ℝ) 1) : depth (negBall t) = t :=
-  Subtype.ext ((abs_neg _).trans (abs_of_nonneg t.2.1))
+  Subtype.ext ((abs_neg _).trans (abs_of_nonneg t.property.1))
 
 private theorem posBall_depth {s : ball (0 : ℝ) 1} (hs : 0 ≤ (s : ℝ)) : posBall (depth s) = s :=
   Subtype.ext (abs_of_nonneg hs)
@@ -280,13 +280,13 @@ private theorem glue_mem_right (hcB : IsCollar (sideRestrict f B) cB) (x : N)
 omit [TopologicalSpace M] [TopologicalSpace N] in
 private theorem glue_posBall (p : N × Ico (0 : ℝ) 1) :
     glue cA cB (p.1, posBall p.2) = cA p := by
-  simp only [glue, coe_posBall, p.2.2.1, ↓reduceIte, depth_posBall]
+  simp only [glue, coe_posBall, p.2.property.1, ↓reduceIte, depth_posBall]
 
 private theorem glue_negBall (hcA : IsCollar (sideRestrict f A) cA)
     (hcB : IsCollar (sideRestrict f B) cB) (p : N × Ico (0 : ℝ) 1) :
     glue cA cB (p.1, negBall p.2) = cB p := by
   obtain ⟨x, t⟩ := p
-  rcases t.2.1.eq_or_lt with ht | ht
+  rcases t.property.1.eq_or_lt with ht | ht
   · have ht' : t = ⟨0, by norm_num⟩ := Subtype.ext ht.symm
     subst ht'
     rw [glue_of_coe_eq_zero hcA x (by simp), coe_apply_zero_of_isCollar hcB]
@@ -295,10 +295,10 @@ private theorem glue_negBall (hcA : IsCollar (sideRestrict f A) cA)
 
 private theorem continuous_glue (hcA : IsCollar (sideRestrict f A) cA)
     (hcB : IsCollar (sideRestrict f B) cB) : Continuous (glue cA cB) := by
-  refine Continuous.if_le ?_ ?_ continuous_const (continuous_subtype_val.comp continuous_snd) ?_
-  · exact continuous_subtype_val.comp (hcA.isOpenEmbedding.continuous.comp
+  refine Continuous.if_le ?_ ?_ continuous_const (continuous_subtypeVal.comp continuous_snd) ?_
+  · exact continuous_subtypeVal.comp (hcA.isOpenEmbedding.continuous.comp
       (continuous_fst.prodMk (continuous_depth.comp continuous_snd)))
-  · exact continuous_subtype_val.comp (hcB.isOpenEmbedding.continuous.comp
+  · exact continuous_subtypeVal.comp (hcB.isOpenEmbedding.continuous.comp
       (continuous_fst.prodMk (continuous_depth.comp continuous_snd)))
   · rintro ⟨x, s⟩ hs
     simp only [depth_of_coe_eq_zero hs.symm, coe_apply_zero_of_isCollar hcA,
@@ -313,7 +313,7 @@ private theorem glue_ne (hcB : IsCollar (sideRestrict f B) cB) (hAB : Disjoint A
   have hB' := glue_mem_right (cA := cA) hcB y ht
   rw [← he] at hB'
   simp only [glue, hs, ↓reduceIte] at hB'
-  exact (cA (x, depth s)).2.elim (disjoint_left.1 hAB · hB') (disjoint_left.1 hfB · hB')
+  exact (cA (x, depth s)).property.elim (disjoint_left.1 hAB · hB') (disjoint_left.1 hfB · hB')
 
 private theorem injective_glue (hcA : IsCollar (sideRestrict f A) cA)
     (hcB : IsCollar (sideRestrict f B) cB) (hAB : Disjoint A B) (hfB : Disjoint (range f) B) :
@@ -329,6 +329,32 @@ private theorem injective_glue (hcA : IsCollar (sideRestrict f A) cA)
     obtain ⟨rfl, hd⟩ := Prod.mk.inj (hcB.isOpenEmbedding.injective (Subtype.ext hxy))
     rw [← negBall_depth hs.le, ← negBall_depth ht.le, hd]
 
+/-- The image of a set `S` under the glued map is `O ∩ A ∪ O' ∩ B ∪ O ∩ O' ∩ (A ∪ B ∪ range f)`
+for any sets `O` and `O'` of `M` such that `O` contains the images of the points of `S` at
+nonnegative depth and `O ∩ (A ∪ range f)` lies in the image of `S`, and `O'` contains the images of
+the points of `S` at nonpositive depth and `O' ∩ B` lies in the image of `S`. It is used to prove
+that the glued map is open (`isOpenMap_glue`). -/
+private theorem image_glue_eq (hcA : IsCollar (sideRestrict f A) cA)
+    (hcB : IsCollar (sideRestrict f B) cB) {S : Set (N × ball (0 : ℝ) 1)} {O O' : Set M}
+    (hmemA : ∀ p, p ∈ A ∪ range f → p ∈ O → p ∈ glue cA cB '' S)
+    (hmemB : ∀ p, p ∈ B → p ∈ O' → p ∈ glue cA cB '' S)
+    (hO_of : ∀ x s, (x, s) ∈ S → 0 ≤ (s : ℝ) → glue cA cB (x, s) ∈ O)
+    (hO'_of : ∀ x s, (x, s) ∈ S → (s : ℝ) ≤ 0 → glue cA cB (x, s) ∈ O') :
+    glue cA cB '' S = O ∩ A ∪ O' ∩ B ∪ O ∩ O' ∩ (A ∪ B ∪ range f) := by
+  refine Subset.antisymm ?_ ?_
+  · rintro _ ⟨⟨x, s⟩, hxs, rfl⟩
+    rcases lt_trichotomy (s : ℝ) 0 with hs | hs | hs
+    · exact Or.inl (Or.inr ⟨hO'_of x s hxs hs.le, glue_mem_right hcB x hs⟩)
+    · exact Or.inr ⟨⟨hO_of x s hxs hs.ge, hO'_of x s hxs hs.le⟩,
+        Or.inr ⟨x, (glue_of_coe_eq_zero hcA x hs).symm⟩⟩
+    · exact Or.inl (Or.inl ⟨hO_of x s hxs hs.le, glue_mem_left hcA x hs⟩)
+  · rintro p ((⟨hpO, hpA⟩ | ⟨hpO', hpB⟩) | ⟨⟨hpO, hpO'⟩, (hpA | hpB) | hpR⟩)
+    · exact hmemA p (Or.inl hpA) hpO
+    · exact hmemB p hpB hpO'
+    · exact hmemA p (Or.inl hpA) hpO
+    · exact hmemB p hpB hpO'
+    · exact hmemA p (Or.inr hpR) hpO
+
 /-- The glued map is open. The image of an open set `S` is relatively open in `A ∪ f(N)` and in
 `B ∪ f(N)`, cut out by open sets `O` and `O'` of `M` that contain the same points of `f(N)`. It
 is therefore the union of `O ∩ A`, `O' ∩ B` and `O ∩ O' ∩ (A ∪ B ∪ f(N))`. -/
@@ -340,14 +366,14 @@ private theorem isOpenMap_glue (hcA : IsCollar (sideRestrict f A) cA)
     (hS.preimage (continuous_fst.prodMk (continuous_posBall.comp continuous_snd))))
   obtain ⟨O', hO', hOS'⟩ := isOpen_induced_iff.1 (hcB.isOpenEmbedding.isOpenMap _
     (hS.preimage (continuous_fst.prodMk (continuous_negBall.comp continuous_snd))))
-  -- A point of `A ∪ f(N)` in `O`, or of `B ∪ f(N)` in `O'`, is in the image of `S`.
+  -- A point of `A ∪ f(N)` in `O`, or of `B` in `O'`, is in the image of `S`.
   have hmemA : ∀ p, p ∈ A ∪ range f → p ∈ O → p ∈ glue cA cB '' S := fun p hp hpO => by
     have hp' : (⟨p, hp⟩ : ↥(A ∪ range f)) ∈ ((↑) : ↥(A ∪ range f) → M) ⁻¹' O := hpO
     rw [hOS] at hp'
     obtain ⟨q, hq, hqp⟩ := hp'
     exact ⟨(q.1, posBall q.2), hq, by rw [glue_posBall, hqp]⟩
-  have hmemB : ∀ p, p ∈ B ∪ range f → p ∈ O' → p ∈ glue cA cB '' S := fun p hp hpO => by
-    have hp' : (⟨p, hp⟩ : ↥(B ∪ range f)) ∈ ((↑) : ↥(B ∪ range f) → M) ⁻¹' O' := hpO
+  have hmemB : ∀ p, p ∈ B → p ∈ O' → p ∈ glue cA cB '' S := fun p hp hpO => by
+    have hp' : (⟨p, Or.inl hp⟩ : ↥(B ∪ range f)) ∈ ((↑) : ↥(B ∪ range f) → M) ⁻¹' O' := hpO
     rw [hOS'] at hp'
     obtain ⟨q, hq, hqp⟩ := hp'
     exact ⟨(q.1, negBall q.2), hq, by rw [glue_negBall hcA hcB, hqp]⟩
@@ -362,21 +388,7 @@ private theorem isOpenMap_glue (hcA : IsCollar (sideRestrict f A) cA)
     have hglue : glue cA cB (x, s) = cB (x, depth s) := by
       simpa only [negBall_depth hs] using glue_negBall hcA hcB (x, depth s)
     rwa [mem_preimage, ← hglue] at hmem
-  have himage : glue cA cB '' S = O ∩ A ∪ O' ∩ B ∪ O ∩ O' ∩ (A ∪ B ∪ range f) := by
-    refine Subset.antisymm ?_ ?_
-    · rintro _ ⟨⟨x, s⟩, hxs, rfl⟩
-      rcases lt_trichotomy (s : ℝ) 0 with hs | hs | hs
-      · exact Or.inl (Or.inr ⟨hO'_of x s hxs hs.le, glue_mem_right hcB x hs⟩)
-      · exact Or.inr ⟨⟨hO_of x s hxs hs.ge, hO'_of x s hxs hs.le⟩,
-          Or.inr ⟨x, (glue_of_coe_eq_zero hcA x hs).symm⟩⟩
-      · exact Or.inl (Or.inl ⟨hO_of x s hxs hs.le, glue_mem_left hcA x hs⟩)
-    · rintro p ((⟨hpO, hpA⟩ | ⟨hpO', hpB⟩) | ⟨⟨hpO, hpO'⟩, (hpA | hpB) | hpR⟩)
-      · exact hmemA p (Or.inl hpA) hpO
-      · exact hmemB p (Or.inl hpB) hpO'
-      · exact hmemA p (Or.inl hpA) hpO
-      · exact hmemB p (Or.inl hpB) hpO'
-      · exact hmemA p (Or.inr hpR) hpO
-  rw [himage]
+  rw [image_glue_eq hcA hcB hmemA hmemB hO_of hO'_of]
   exact ((hO.inter hA).union (hO'.inter hB)).union ((hO.inter hO').inter hW)
 
 /-- Collars of `f` on the sides `A` and `B` glue to a bicollar of `f` with these two sides. -/

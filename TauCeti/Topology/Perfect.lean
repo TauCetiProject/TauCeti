@@ -61,10 +61,10 @@ variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
 
 private theorem perfect_image_of_perfect (h : X ≃ₜ Y) {C : Set X} (hC : Perfect C) :
     Perfect (h '' C) :=
-  ⟨h.isClosed_image.2 hC.closed, by
+  ⟨h.isClosed_image.2 hC.isClosed, by
     rintro _ ⟨x, hx, rfl⟩
     simpa [Filter.map_principal] using
-      AccPt.map (hC.acc x hx) h.continuous.continuousAt h.injective⟩
+      AccPt.map (hC.preperfect x hx) h.continuous.continuousAt h.injective⟩
 
 /-- The image of a set under a homeomorphism is perfect exactly when the set is perfect. -/
 @[simp]
@@ -77,7 +77,7 @@ protected theorem perfectSpace [PerfectSpace X] (h : X ≃ₜ Y) : PerfectSpace 
   have hU : Perfect (h '' (univ : Set X)) :=
     h.perfect_image.2 (PerfectSpace.univ_perfect (α := X))
   rw [Set.image_univ, h.surjective.range_eq] at hU
-  exact ⟨hU.acc⟩
+  exact ⟨hU.preperfect⟩
 
 end Homeomorph
 

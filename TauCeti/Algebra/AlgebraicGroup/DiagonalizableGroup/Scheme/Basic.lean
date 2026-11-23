@@ -121,35 +121,6 @@ theorem groupSchemeMap_def {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
   unfold groupSchemeMap
   rfl
 
-/-- The group-scheme morphism induced by the identity homomorphism is the identity. -/
-@[simp]
-theorem groupSchemeMap_id (G : FGCommGrpCat.{u}) :
-    groupSchemeMap R (𝟙 G) = 𝟙 (groupScheme R G) := by
-  have h := congrArg
-    (fun k : coordinateRing R G ⟶ coordinateRing R G ↦ k.hom.op)
-    ((coordinateRingFunctor R).map_id G)
-  simp only [coordinateRingFunctor_obj, coordinateRingFunctor_map,
-    ObjectProperty.FullSubcategory.id_hom, op_id] at h
-  unfold groupSchemeMap
-  rw [h]
-  simpa only [groupScheme] using
-    (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_id
-      (Opposite.op (coordinateRing R G).obj)
-
-/-- Composition of group homomorphisms becomes composition in the reverse order on their
-diagonalizable group schemes. -/
-@[simp]
-theorem groupSchemeMap_comp {G H K : FGCommGrpCat.{u}} (f : G ⟶ H) (g : H ⟶ K) :
-    groupSchemeMap R (f ≫ g) = groupSchemeMap R g ≫ groupSchemeMap R f := by
-  have h := congrArg
-    (fun k : coordinateRing R G ⟶ coordinateRing R K ↦ k.hom.op)
-    ((coordinateRingFunctor R).map_comp f g)
-  simp only [coordinateRingFunctor_obj, coordinateRingFunctor_map,
-    ObjectProperty.FullSubcategory.comp_hom, op_comp] at h
-  unfold groupSchemeMap
-  rw [h, Functor.map_comp]
-  rfl
-
 /-- The diagonalizable group-scheme functor. It is contravariant in finitely generated
 commutative groups and covariant on their opposite category. -/
 noncomputable def schemeFunctor :
@@ -193,6 +164,24 @@ theorem schemeFunctor_map {G H : (FGCommGrpCat.{u})ᵒᵖ} (f : G ⟶ H) :
     coordinateRingFunctor_obj, coordinateRingFunctor_map]
   rw [Quiver.Hom.unop_op, FiniteTypeCommHopfAlgCat.forget₂_commHopfAlgCat_map]
   rfl
+
+/-- The group-scheme morphism induced by the identity homomorphism is the identity. -/
+@[simp]
+theorem groupSchemeMap_id (G : FGCommGrpCat.{u}) :
+    groupSchemeMap R (𝟙 G) = 𝟙 (groupScheme R G) := by
+  have h := (schemeFunctor R).map_id (Opposite.op G)
+  rw [schemeFunctor_map, unop_id_op, eqToHom_comp_iff, comp_eqToHom_iff] at h
+  simpa using h
+
+/-- Composition of group homomorphisms becomes composition in the reverse order on their
+diagonalizable group schemes. -/
+@[simp]
+theorem groupSchemeMap_comp {G H K : FGCommGrpCat.{u}} (f : G ⟶ H) (g : H ⟶ K) :
+    groupSchemeMap R (f ≫ g) = groupSchemeMap R g ≫ groupSchemeMap R f := by
+  have h := (schemeFunctor R).map_comp g.op f.op
+  rw [schemeFunctor_map, schemeFunctor_map, schemeFunctor_map, unop_comp, Quiver.Hom.unop_op,
+    Quiver.Hom.unop_op, eqToHom_comp_iff, comp_eqToHom_iff] at h
+  simpa using h
 
 /-- Every diagonalizable group scheme `D(G)` constructed here is affine. -/
 instance isAffine_groupScheme (G : FGCommGrpCat.{u}) :
@@ -270,6 +259,22 @@ instance schemeFunctor_faithful [Nontrivial R] :
     (AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)).faithful
   unfold schemeFunctor
   infer_instance
+
+/-- Over a nontrivial base ring, distinct homomorphisms of character groups induce distinct
+morphisms of diagonalizable group schemes. -/
+@[grind inj]
+theorem groupSchemeMap_injective [Nontrivial R] {G H : FGCommGrpCat.{u}} :
+    Function.Injective (groupSchemeMap R (G := G) (H := H)) := by
+  intro f g h
+  apply Quiver.Hom.op_inj
+  apply (schemeFunctor R).map_injective
+  rw [schemeFunctor_map, schemeFunctor_map, Quiver.Hom.unop_op, Quiver.Hom.unop_op, h]
+
+/-- Over a nontrivial base ring, `groupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem groupSchemeMap_inj [Nontrivial R] {G H : FGCommGrpCat.{u}} {f g : G ⟶ H} :
+    groupSchemeMap R f = groupSchemeMap R g ↔ f = g :=
+  (groupSchemeMap_injective R).eq_iff
 
 /-- The diagonalizable group-scheme functor is full when the prime spectrum of the base is
 connected. -/

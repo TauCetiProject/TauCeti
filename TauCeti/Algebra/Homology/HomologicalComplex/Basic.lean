@@ -62,7 +62,9 @@ Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
 Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`; it carries the class map of the mapped
 complex to the image of the class map
-(`CategoryTheory.Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app`).
+(`CategoryTheory.Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app`), and
+exactness of a mapped complex in degree `i` reduces to exactness of the mapped short complex
+`(K.sc i).map F` (`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
 -/
@@ -94,7 +96,7 @@ lemma pow_f_succ (m : ℕ) (i : ι) :
 /-- Homological complexes have the coproducts that the underlying category has. They are
 computed degreewise. -/
 instance hasCoproducts [HasCoproducts.{w} C] : HasCoproducts.{w} (HomologicalComplex C c) :=
-  fun _ ↦ inferInstance
+  .mk fun _ ↦ inferInstance
 
 /-! ### The maps onto the cycles -/
 
@@ -483,6 +485,14 @@ lemma quasiIso_of_acyclic {K L : HomologicalComplex C c} (f : K ⟶ L) [∀ i, K
 end HomologicalComplex
 
 namespace CategoryTheory.Functor
+
+/-- An additive functor `F` maps a homological complex `K` to one exact in degree `i` if and only
+if the mapped short complex `(K.sc i).map F` is exact. -/
+theorem mapHomologicalComplex_obj_exactAt_iff {C D ι : Type*} [Category* C] [Category* D]
+    [Preadditive C] [Preadditive D] {c : ComplexShape ι} (F : C ⥤ D) [F.Additive]
+    (K : HomologicalComplex C c) (i : ι) :
+    ((F.mapHomologicalComplex c).obj K).ExactAt i ↔ ((K.sc i).map F).Exact :=
+  Iff.rfl
 
 variable {C : Type*} [Category* C] {D : Type*} [Category* D]
   [Preadditive C] [Preadditive D] [CategoryWithHomology C] [CategoryWithHomology D]

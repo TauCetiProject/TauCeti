@@ -131,11 +131,11 @@ variable {ι : Type*} [Fintype ι]
 /-- On a finite vertex type, a coordinate vector is the coordinate vector of a point of the
 realization exactly when it is nonnegative, sums to one, and its support is a face. -/
 theorem mem_range_realization_coe_iff {K : AbstractSimplicialComplex ι} {z : ι → ℝ} :
-    z ∈ range (fun x : Realization K => (x.1 : ι → ℝ)) ↔
+    z ∈ range (fun x : Realization K => (x.val : ι → ℝ)) ↔
       (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1 ∧ (Finsupp.equivFunOnFinite.symm z).support ∈ K := by
   constructor
   · rintro ⟨x, rfl⟩
-    obtain ⟨hnn, hsum, hsupp⟩ := TauCeti.mem_standardGeometricComplex_space_iff.mp x.2
+    obtain ⟨hnn, hsum, hsupp⟩ := TauCeti.mem_standardGeometricComplex_space_iff.mp x.property
     refine ⟨hnn, ?_, by simpa using hsupp⟩
     rwa [Finsupp.sum_fintype _ _ (fun _ => rfl)] at hsum
   · rintro ⟨hnn, hsum, hsupp⟩
@@ -146,7 +146,7 @@ theorem mem_range_realization_coe_iff {K : AbstractSimplicialComplex ι} {z : ι
 /-- On a finite vertex type, a coordinate vector is the coordinate vector of a point of the closed
 simplex on `σ` exactly when it is nonnegative, vanishes off `σ`, and sums to one. -/
 theorem mem_range_standardSimplex_coe_iff {σ : Finset ι} {z : ι → ℝ} :
-    z ∈ range (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ↔
+    z ∈ range (fun x : StandardSimplex σ => (x.val : ι → ℝ)) ↔
       (∀ i, 0 ≤ z i) ∧ (∀ i ∉ σ, z i = 0) ∧ ∑ i, z i = 1 := by
   constructor
   · rintro ⟨x, rfl⟩
@@ -164,13 +164,13 @@ theorem mem_range_standardSimplex_coe_iff {σ : Finset ι} {z : ι → ℝ} :
 omit [Fintype ι] in
 /-- The coordinate vectors of the closed simplex on `σ` form a convex set. -/
 theorem convex_range_standardSimplex_coe (σ : Finset ι) :
-    Convex ℝ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) := by
+    Convex ℝ (range fun x : StandardSimplex σ => (x.val : ι → ℝ)) := by
   simpa [image_eq_range] using (convex_convexHull ℝ _).linear_image (Finsupp.lcoeFun (R := ℝ))
 
 /-- A coordinate of `y` at a vertex outside `σ ∩ τ` is at most the distance from `x` to `y`. -/
 private theorem coord_le_norm_sub {σ τ : Finset ι} {x y : ι → ℝ}
-    (hx : x ∈ range fun x : StandardSimplex σ => (x.1 : ι → ℝ))
-    (hy : y ∈ range fun x : StandardSimplex τ => (x.1 : ι → ℝ)) {i : ι} (hi : i ∈ σ → i ∉ τ) :
+    (hx : x ∈ range fun x : StandardSimplex σ => (x.val : ι → ℝ))
+    (hy : y ∈ range fun x : StandardSimplex τ => (x.val : ι → ℝ)) {i : ι} (hi : i ∈ σ → i ∉ τ) :
     y i ≤ ‖x - y‖ := by
   rw [mem_range_standardSimplex_coe_iff] at hx hy
   by_cases hτ : i ∈ τ
@@ -184,8 +184,8 @@ private theorem coord_le_norm_sub {σ τ : Finset ι} {x y : ι → ℝ}
 /-- The mass of `y` off `σ ∩ τ` is at most the number of vertices times the distance of `x`
 and `y`, for `x` in the closed simplex on `σ` and `y` in that on `τ`. -/
 private theorem sum_ite_mem_inter_le [DecidableEq ι] {σ τ : Finset ι} {x y : ι → ℝ}
-    (hx : x ∈ range fun x : StandardSimplex σ => (x.1 : ι → ℝ))
-    (hy : y ∈ range fun x : StandardSimplex τ => (x.1 : ι → ℝ)) :
+    (hx : x ∈ range fun x : StandardSimplex σ => (x.val : ι → ℝ))
+    (hy : y ∈ range fun x : StandardSimplex τ => (x.val : ι → ℝ)) :
     (∑ i, if i ∈ σ ∩ τ then 0 else y i) ≤ Fintype.card ι * ‖x - y‖ := by
   have hpt : ∀ i ∈ (Finset.univ : Finset ι), (if i ∈ σ ∩ τ then 0 else y i) ≤ ‖x - y‖ := by
     intro i _
@@ -199,8 +199,8 @@ simplices. -/
 private theorem mem_inter_of_forall_notMem_eq_zero [DecidableEq ι] {σ τ : Finset ι}
     {w : ι → ℝ}
     (hw : ∀ i ∉ σ ∩ τ, w i = 0) (h0 : ∀ i, 0 ≤ w i) (h1 : ∑ i, w i = 1) :
-    w ∈ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ∩
-      range fun x : StandardSimplex τ => (x.1 : ι → ℝ) :=
+    w ∈ (range fun x : StandardSimplex σ => (x.val : ι → ℝ)) ∩
+      range fun x : StandardSimplex τ => (x.val : ι → ℝ) :=
   ⟨mem_range_standardSimplex_coe_iff.2
       ⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').1, h1⟩,
     mem_range_standardSimplex_coe_iff.2
@@ -210,8 +210,8 @@ private theorem mem_inter_of_forall_notMem_eq_zero [DecidableEq ι] {σ τ : Fin
 is the number of vertices, force the two simplices to meet: otherwise one of the two coordinates
 vanishes at every vertex. -/
 private theorem nonempty_inter {σ τ : Finset ι} [DecidableEq ι] {x y : ι → ℝ}
-    (hx : x ∈ range fun x : StandardSimplex σ => (x.1 : ι → ℝ))
-    (hy : y ∈ range fun x : StandardSimplex τ => (x.1 : ι → ℝ))
+    (hx : x ∈ range fun x : StandardSimplex σ => (x.val : ι → ℝ))
+    (hy : y ∈ range fun x : StandardSimplex τ => (x.val : ι → ℝ))
     (hxy : (Fintype.card ι : ℝ) * ‖x - y‖ < 1) : (σ ∩ τ).Nonempty := by
   by_contra hρ
   rw [Finset.not_nonempty_iff_eq_empty] at hρ
@@ -238,13 +238,13 @@ simplices, with `‖y - z‖ ≤ N * ‖x - y‖`: move the coordinates of `y` o
 `β` of `σ ∩ τ`. The barycenter `β` is also a common point, with coordinates at least `1 / N` on
 `σ ∩ τ`. -/
 theorem exists_mem_inter_range_standardSimplex_coe {σ τ : Finset ι} {x y : ι → ℝ}
-    (hx : x ∈ range fun x : StandardSimplex σ => (x.1 : ι → ℝ))
-    (hy : y ∈ range fun x : StandardSimplex τ => (x.1 : ι → ℝ))
+    (hx : x ∈ range fun x : StandardSimplex σ => (x.val : ι → ℝ))
+    (hy : y ∈ range fun x : StandardSimplex τ => (x.val : ι → ℝ))
     (hxy : (Fintype.card ι : ℝ) * ‖x - y‖ < 1) :
-    ∃ z ∈ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ∩
-        range fun x : StandardSimplex τ => (x.1 : ι → ℝ),
-      ∃ β ∈ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ∩
-          range fun x : StandardSimplex τ => (x.1 : ι → ℝ),
+    ∃ z ∈ (range fun x : StandardSimplex σ => (x.val : ι → ℝ)) ∩
+        range fun x : StandardSimplex τ => (x.val : ι → ℝ),
+      ∃ β ∈ (range fun x : StandardSimplex σ => (x.val : ι → ℝ)) ∩
+          range fun x : StandardSimplex τ => (x.val : ι → ℝ),
         ‖y - z‖ ≤ Fintype.card ι * ‖x - y‖ ∧
         ∀ i ∈ σ, i ∈ τ → (Fintype.card ι : ℝ)⁻¹ ≤ β i := by
   classical
@@ -270,8 +270,8 @@ theorem exists_mem_inter_range_standardSimplex_coe {σ τ : Finset ι} {x y : ι
     rw [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, nsmul_eq_mul]
     exact mul_inv_cancel₀ hcard.ne'
   have hzero {w : ι → ℝ} (hw : ∀ i ∉ ρ, w i = 0) (h0 : ∀ i, 0 ≤ w i) (h1 : ∑ i, w i = 1) :
-      w ∈ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ∩
-        range fun x : StandardSimplex τ => (x.1 : ι → ℝ) :=
+      w ∈ (range fun x : StandardSimplex σ => (x.val : ι → ℝ)) ∩
+        range fun x : StandardSimplex τ => (x.val : ι → ℝ) :=
     mem_inter_of_forall_notMem_eq_zero hw h0 h1
   refine ⟨fun i => if i ∈ ρ then y i + m * c else 0, hzero (fun i hi => by simp [hi])
     (fun i => ?_) ?_, fun i => if i ∈ ρ then c else 0, hzero (fun i hi => by simp [hi])

@@ -155,16 +155,16 @@ variable {n : ℤ} (X : PolarizableHodgeStructureCat.{u'} n)
 the ambient Hodge structure. -/
 noncomputable def substructureBiproductDesc
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs)) :
-    (⨁ fun U : s ↦ ofSubstructure X U.1) ⟶ X :=
-  biproduct.desc fun U ↦ substructureInclusion X U.1
+    (⨁ fun U : s ↦ ofSubstructure X U.val) ⟶ X :=
+  biproduct.desc fun U ↦ substructureInclusion X U.val
 
 /-- The canonical map out of the biproduct restricts on each summand to the inclusion of the
 corresponding rational Hodge substructure. -/
 @[reassoc (attr := simp)]
 theorem biproduct_ι_comp_substructureBiproductDesc
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs)) (U : s) :
-    biproduct.ι (fun U : s ↦ ofSubstructure X U.1) U ≫
-      substructureBiproductDesc X s = substructureInclusion X U.1 := by
+    biproduct.ι (fun U : s ↦ ofSubstructure X U.val) U ≫
+      substructureBiproductDesc X s = substructureInclusion X U.val := by
   rw [substructureBiproductDesc, biproduct.ι_desc]
 
 /-- A nonzero morphism into the object induced by an atomic rational Hodge substructure is
@@ -243,10 +243,10 @@ noncomputable def substructureBiproductLift
     [DecidableEq (RationalHodgeSubstructure X.isBaseChangeRat X.hs)]
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) :
-    X ⟶ (⨁ fun U : s ↦ ofSubstructure X U.1) :=
+    X ⟶ (⨁ fun U : s ↦ ofSubstructure X U.val) :=
   biproduct.lift fun U ↦
-    substructureRetractionOfIsCompl X U.1 ((s.erase U.1).sup id)
-      (hind.isCompl_sup_erase htop U.2)
+    substructureRetractionOfIsCompl X U.val ((s.erase U.val).sup id)
+      (hind.isCompl_sup_erase htop U.property)
 
 /-- Each component of the lift from an independent spanning family is projection along the
 supremum of the other substructures. -/
@@ -256,9 +256,9 @@ theorem substructureBiproductLift_π
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
     substructureBiproductLift X s hind htop ≫
-        biproduct.π (fun U : s ↦ ofSubstructure X U.1) U =
-      substructureRetractionOfIsCompl X U.1 ((s.erase U.1).sup id)
-        (hind.isCompl_sup_erase htop U.2) := by
+        biproduct.π (fun U : s ↦ ofSubstructure X U.val) U =
+      substructureRetractionOfIsCompl X U.val ((s.erase U.val).sup id)
+        (hind.isCompl_sup_erase htop U.property) := by
   apply biproduct.lift_π
 
 /-- The canonical map out of an independent spanning biproduct followed by its projection map is
@@ -279,11 +279,11 @@ theorem substructureBiproductDesc_comp_substructureBiproductLift
   · subst T
     rw [substructureInclusion_comp_substructureRetractionOfIsCompl]
     simp
-  · rw [substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero X T.1
-      ((s.erase T.1).sup id) (U := U.1) (hind.isCompl_sup_erase htop T.2)]
+  · rw [substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero X T.val
+      ((s.erase T.val).sup id) (U := U.val) (hind.isCompl_sup_erase htop T.property)]
     · simp [hUT]
     · exact Finset.le_sup (f := id)
-        (Finset.mem_erase.2 ⟨fun h ↦ hUT (Subtype.ext h), U.2⟩)
+        (Finset.mem_erase.2 ⟨fun h ↦ hUT (Subtype.ext h), U.property⟩)
 
 /-- The canonical map from an independent spanning biproduct is surjective on rational
 carriers. -/
@@ -298,8 +298,8 @@ theorem surjective_substructureBiproductDesc_toRatLinearMap
   apply Finset.sup_le
   rintro U hU x hx
   let i : (ofSubstructure X U).ratCarrier →ₗ[ℚ]
-      (⨁ fun T : s ↦ ofSubstructure X T.1).ratCarrier :=
-    (biproduct.ι (fun T : s ↦ ofSubstructure X T.1) ⟨U, hU⟩).hom.toRatLinearMap
+      (⨁ fun T : s ↦ ofSubstructure X T.val).ratCarrier :=
+    (biproduct.ι (fun T : s ↦ ofSubstructure X T.val) ⟨U, hU⟩).hom.toRatLinearMap
   refine ⟨i ⟨x, hx⟩, ?_⟩
   have hmap := congrArg (fun f ↦ f.hom.toRatLinearMap)
     (biproduct_ι_comp_substructureBiproductDesc X s ⟨U, hU⟩)
@@ -325,7 +325,7 @@ gives an isomorphism from their biproduct to the ambient object. -/
 noncomputable def substructureBiproductIso
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) :
-    (⨁ fun U : s ↦ ofSubstructure X U.1) ≅ X := by
+    (⨁ fun U : s ↦ ofSubstructure X U.val) ≅ X := by
   let _ := isIso_substructureBiproductDesc X s hind htop
   exact asIso (substructureBiproductDesc X s)
 
@@ -357,8 +357,8 @@ substructure inclusion. -/
 theorem biproduct_ι_comp_substructureBiproductIso_hom
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
-    biproduct.ι (fun U : s ↦ ofSubstructure X U.1) U ≫
-      (substructureBiproductIso X s hind htop).hom = substructureInclusion X U.1 := by
+    biproduct.ι (fun U : s ↦ ofSubstructure X U.val) U ≫
+      (substructureBiproductIso X s hind htop).hom = substructureInclusion X U.val := by
   rw [substructureBiproductIso_hom,
     biproduct_ι_comp_substructureBiproductDesc]
 
@@ -370,9 +370,9 @@ theorem substructureBiproductIso_inv_comp_biproduct_π
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
     (substructureBiproductIso X s hind htop).inv ≫
-        biproduct.π (fun U : s ↦ ofSubstructure X U.1) U =
-      substructureRetractionOfIsCompl X U.1 ((s.erase U.1).sup id)
-        (hind.isCompl_sup_erase htop U.2) := by
+        biproduct.π (fun U : s ↦ ofSubstructure X U.val) U =
+      substructureRetractionOfIsCompl X U.val ((s.erase U.val).sup id)
+        (hind.isCompl_sup_erase htop U.property) := by
   rw [substructureBiproductIso_inv, substructureBiproductLift_π]
 
 /-- **Categorical semisimplicity of polarizable rational Hodge structures.** Every object is
@@ -380,7 +380,7 @@ isomorphic to a finite biproduct of simple objects induced by rational Hodge sub
 theorem exists_iso_biproduct_simple :
     ∃ s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs),
       (∀ U ∈ s, Simple (ofSubstructure X U)) ∧
-        Nonempty ((⨁ fun U : s ↦ ofSubstructure X U.1) ≅ X) := by
+        Nonempty ((⨁ fun U : s ↦ ofSubstructure X U.val) ≅ X) := by
   obtain ⟨s, hatom, hind, htop⟩ :=
     exists_finset_isAtom_sup_eq_top X.isBaseChangeRat X.isPolarizable
   exact ⟨s, fun U hU ↦ simple_of_isAtom X (hatom U hU),
