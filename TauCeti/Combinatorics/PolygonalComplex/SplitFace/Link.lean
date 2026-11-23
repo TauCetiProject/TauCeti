@@ -59,7 +59,7 @@ variable (C : PolygonalComplex.{u, v, w}) (f : C.Face) (p : Fin (C.sides f))
 private theorem incoming_splitFace_false_zero :
     (C.splitFace f p).incoming ⟨.inr false, ⟨0, Nat.succ_pos _⟩⟩ =
       .inl (C.incoming ⟨f, ⟨0, C.sides_pos f⟩⟩) := by
-  have hp := p.2
+  have hp := p.isLt
   rw [(C.splitFace f p).incoming_mk_of_eq_zero (f := .inr false)
       (i := (⟨C.sides f - p, Nat.lt_succ_self _⟩ : Fin (C.sides f - p + 1))) rfl
       (Nat.add_sub_cancel _ _).symm,
@@ -68,13 +68,13 @@ private theorem incoming_splitFace_false_zero :
       (by dsimp only; omega)]
 
 private theorem outgoing_splitFace_false_one :
-    (C.splitFace f p).outgoing ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.2)⟩⟩ =
+    (C.splitFace f p).outgoing ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.isLt)⟩⟩ =
       .inl (C.outgoing ⟨f, p⟩) := by
   rw [outgoing_splitFace, splitFaceCornerOrigin_inr_false_of_ne_zero (by simp), Sum.map_inl]
   rfl
 
 private theorem incoming_splitFace_false_one :
-    (C.splitFace f p).incoming ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.2)⟩⟩ =
+    (C.splitFace f p).incoming ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.isLt)⟩⟩ =
       .inr false := by
   rw [(C.splitFace f p).incoming_mk_of_ne_zero (f := .inr false)
     (i := (⟨0, Nat.succ_pos _⟩ : Fin (C.sides f - p + 1))) one_ne_zero rfl]
@@ -82,7 +82,7 @@ private theorem incoming_splitFace_false_one :
 
 private theorem incoming_splitFace_true_last_of_ne_zero (hp : (p : ℕ) ≠ 0) :
     (C.splitFace f p).incoming ⟨.inr true, ⟨p, Nat.lt_succ_self _⟩⟩ = .inl (C.incoming ⟨f, p⟩) := by
-  have hp' := p.2
+  have hp' := p.isLt
   rw [(C.splitFace f p).incoming_mk_of_ne_zero (f := .inr true)
       (i := (⟨p - 1, by omega⟩ : Fin (p + 1))) hp rfl,
     outgoing_splitFace, splitFaceCornerOrigin_inr_true_of_lt (by dsimp only; omega),
@@ -100,7 +100,7 @@ private theorem exists_corner_splitFace_self (k : Fin (C.sides f)) (hk0 : (k : �
     (hkp : (k : ℕ) ≠ p) :
     ∃ c : (C.splitFace f p).Corner, (C.splitFace f p).outgoing c = .inl (C.outgoing ⟨f, k⟩) ∧
       (C.splitFace f p).incoming c = .inl (C.incoming ⟨f, k⟩) := by
-  have hk := k.2
+  have hk := k.isLt
   rw [C.incoming_mk_of_ne_zero (i := ⟨k - 1, by omega⟩) hk0 rfl]
   by_cases hlt : (k : ℕ) < p
   · refine ⟨⟨.inr true, ⟨k, Nat.lt_succ_of_lt hlt⟩⟩, ?_, ?_⟩
@@ -145,12 +145,12 @@ variable {C f p}
 through the new germs. -/
 private theorem nonempty_vertexLink_path_splitFace_zero {v : C.graph.V}
     {a b : ((C.splitFace f p).vertexLink v).V}
-    (ha : a.1 = .inl (C.outgoing ⟨f, ⟨0, C.sides_pos f⟩⟩))
-    (hb : b.1 = .inl (C.graph.rev (C.incoming ⟨f, ⟨0, C.sides_pos f⟩⟩))) :
+    (ha : a.val = .inl (C.outgoing ⟨f, ⟨0, C.sides_pos f⟩⟩))
+    (hb : b.val = .inl (C.graph.rev (C.incoming ⟨f, ⟨0, C.sides_pos f⟩⟩))) :
     Nonempty (((C.splitFace f p).vertexLink v).Path a b) := by
   have hv : C.graph.src (C.side f ⟨0, C.sides_pos f⟩) = v :=
     (congrArg (C.splitFace f p).graph.src
-      (ha.trans (congrArg Sum.inl (C.outgoing_def _)))).symm.trans a.2
+      (ha.trans (congrArg Sum.inl (C.outgoing_def _)))).symm.trans a.property
   let m : ((C.splitFace f p).vertexLink v).V := ⟨.inr false, hv⟩
   obtain ⟨Q⟩ := (C.splitFace f p).nonempty_vertexLink_path_of_corner
     ⟨.inr false, ⟨0, Nat.succ_pos _⟩⟩ (a := m) (b := b)
@@ -179,15 +179,15 @@ private theorem nonempty_vertexLink_path_splitFace_zero {v : C.graph.V}
 /-- In the link of `C.splitFace f p`, the two germs of the corner `p` of the split face are joined
 through the new germ, when `p` is not the corner `0`. -/
 private theorem nonempty_vertexLink_path_splitFace_cut (hp : (p : ℕ) ≠ 0) {v : C.graph.V}
-    {a b : ((C.splitFace f p).vertexLink v).V} (ha : a.1 = .inl (C.outgoing ⟨f, p⟩))
-    (hb : b.1 = .inl (C.graph.rev (C.incoming ⟨f, p⟩))) :
+    {a b : ((C.splitFace f p).vertexLink v).V} (ha : a.val = .inl (C.outgoing ⟨f, p⟩))
+    (hb : b.val = .inl (C.graph.rev (C.incoming ⟨f, p⟩))) :
     Nonempty (((C.splitFace f p).vertexLink v).Path a b) := by
   have hv : C.graph.src (C.side f p) = v :=
     (congrArg (C.splitFace f p).graph.src
-      (ha.trans (congrArg Sum.inl (C.outgoing_def _)))).symm.trans a.2
+      (ha.trans (congrArg Sum.inl (C.outgoing_def _)))).symm.trans a.property
   let m : ((C.splitFace f p).vertexLink v).V := ⟨.inr true, hv⟩
   obtain ⟨P⟩ := (C.splitFace f p).nonempty_vertexLink_path_of_corner
-    ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.2)⟩⟩ (a := a) (b := m)
+    ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.isLt)⟩⟩ (a := a) (b := m)
     (ha.trans (outgoing_splitFace_false_one C f p).symm)
     (congrArg (C.splitFace f p).graph.rev (incoming_splitFace_false_one C f p).symm)
   obtain ⟨Q⟩ := (C.splitFace f p).nonempty_vertexLink_path_of_corner
@@ -200,8 +200,8 @@ private theorem nonempty_vertexLink_path_splitFace_cut (hp : (p : ℕ) ≠ 0) {v
 /-- In the link of `C.splitFace f p`, the two germs of a corner of `C` are joined by a path: the
 corner itself if it is not cut, and otherwise the path through the new germs subdividing it. -/
 private theorem nonempty_vertexLink_path_splitFace {v : C.graph.V} (c₀ : C.Corner)
-    {a b : ((C.splitFace f p).vertexLink v).V} (ha : a.1 = .inl (C.outgoing c₀))
-    (hb : b.1 = .inl (C.graph.rev (C.incoming c₀))) :
+    {a b : ((C.splitFace f p).vertexLink v).V} (ha : a.val = .inl (C.outgoing c₀))
+    (hb : b.val = .inl (C.graph.rev (C.incoming c₀))) :
     Nonempty (((C.splitFace f p).vertexLink v).Path a b) := by
   obtain ⟨g, k⟩ := c₀
   by_cases h0 : g = f ∧ (k : ℕ) = 0
@@ -221,30 +221,17 @@ private theorem nonempty_vertexLink_path_splitFace {v : C.graph.V} (c₀ : C.Cor
 `C.splitFace f p`. -/
 private theorem nonempty_vertexLink_path_splitFace_of_path {v : C.graph.V}
     {a b : (C.vertexLink v).V} (P : (C.vertexLink v).Path a b) :
-    Nonempty (((C.splitFace f p).vertexLink v).Path ⟨.inl a.1, a.2⟩ ⟨.inl b.1, b.2⟩) := by
-  induction P with
-  | nil => exact ⟨.nil⟩
-  | cons _ e ih =>
-    rename_i b' c' _
-    obtain ⟨Q⟩ := ih
-    obtain ⟨⟨c, _ | _⟩, hs, ht⟩ := e
-    · obtain ⟨R⟩ := nonempty_vertexLink_path_splitFace (f := f) (p := p) c.1
-        (a := ⟨.inl c'.1, c'.2⟩) (b := ⟨.inl b'.1, b'.2⟩)
-        (congrArg Sum.inl ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_true c)))
-        (congrArg Sum.inl ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_false c)))
-      exact ⟨Q.comp R.reverse⟩
-    · obtain ⟨R⟩ := nonempty_vertexLink_path_splitFace (f := f) (p := p) c.1
-        (a := ⟨.inl b'.1, b'.2⟩) (b := ⟨.inl c'.1, c'.2⟩)
-        (congrArg Sum.inl ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_true c)))
-        (congrArg Sum.inl ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_false c)))
-      exact ⟨Q.comp R⟩
+    Nonempty (((C.splitFace f p).vertexLink v).Path ⟨.inl a.val, a.property⟩
+        ⟨.inl b.val, b.property⟩) :=
+  nonempty_vertexLink_path_of_path Sum.inl (fun _ he => he)
+    (fun c _ => nonempty_vertexLink_path_splitFace c) P rfl rfl
 
 /-- If the link of a vertex of `C` is preconnected, every germ of `C.splitFace f p` at that vertex
 is joined to any old germ: the new germs are joined to the germs of the corners they subdivide. -/
 private theorem nonempty_vertexLink_path_splitFace_of_preconnected {v : C.graph.V}
     (h : (C.vertexLink v).Preconnected) (a : (C.vertexLink v).V)
     (b : ((C.splitFace f p).vertexLink v).V) :
-    Nonempty (((C.splitFace f p).vertexLink v).Path ⟨.inl a.1, a.2⟩ b) := by
+    Nonempty (((C.splitFace f p).vertexLink v).Path ⟨.inl a.val, a.property⟩ b) := by
   obtain ⟨e | _ | _, he⟩ := b
   · obtain ⟨P⟩ := (C.vertexLink v).preconnected_iff.1 h a ⟨e, he⟩
     exact nonempty_vertexLink_path_splitFace_of_path P
@@ -264,7 +251,7 @@ private theorem nonempty_vertexLink_path_splitFace_of_preconnected {v : C.graph.
     obtain ⟨P⟩ := (C.vertexLink v).preconnected_iff.1 h a ⟨_, hv⟩
     obtain ⟨Q⟩ := nonempty_vertexLink_path_splitFace_of_path (f := f) (p := p) P
     obtain ⟨R⟩ := (C.splitFace f p).nonempty_vertexLink_path_of_corner
-      ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.2)⟩⟩
+      ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.isLt)⟩⟩
       (a := ⟨.inl _, hv⟩) (b := ⟨.inr true, he⟩) (outgoing_splitFace_false_one C f p).symm
       (congrArg (C.splitFace f p).graph.rev (incoming_splitFace_false_one C f p).symm)
     exact ⟨Q.comp R⟩
@@ -297,8 +284,8 @@ theorem HasSurfaceLink.splitFace {v : C.graph.V} (h : C.HasSurfaceLink v) :
   obtain ⟨hfin, hconn, hdeg⟩ := (C.hasSurfaceLink_iff v).1 h
   obtain ⟨⟨a⟩, hpre⟩ := (C.vertexLink v).connected_iff.1 hconn
   refine ((C.splitFace f p).hasSurfaceLink_iff v).2 ⟨inferInstance,
-    ((C.splitFace f p).vertexLink v).connected_iff.2 ⟨⟨⟨.inl a.1, a.2⟩⟩,
-      SerreGraph.preconnected_of_forall_nonempty_path _ ⟨.inl a.1, a.2⟩
+    ((C.splitFace f p).vertexLink v).connected_iff.2 ⟨⟨⟨.inl a.val, a.property⟩⟩,
+      SerreGraph.preconnected_of_forall_nonempty_path _ ⟨.inl a.val, a.property⟩
         (nonempty_vertexLink_path_splitFace_of_preconnected hpre a)⟩, ?_⟩
   rcases hdeg with hcirc | ⟨e₁, e₂, hne, h₁, h₂, hd₁, hd₂, hrest⟩
   · refine .inl ?_

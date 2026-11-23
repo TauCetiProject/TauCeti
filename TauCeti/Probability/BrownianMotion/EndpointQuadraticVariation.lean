@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.QuadraticVariation
+public import TauCeti.Probability.BrownianMotion.QuadraticVariation.Basic
 public import TauCeti.Probability.Process.EndpointQuadraticVariation
 
 /-!

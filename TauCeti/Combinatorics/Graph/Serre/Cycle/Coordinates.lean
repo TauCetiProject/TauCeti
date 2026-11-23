@@ -64,7 +64,7 @@ noncomputable def cycleSpace : Submodule (ZMod 2) (O → ZMod 2) :=
 vertex, hence contributes zero. -/
 @[simp] theorem cycleBoundary_single [DecidableEq Γ.V] [DecidableEq O] (e : O) :
     Γ.cycleBoundary O (Pi.single e 1) =
-      Pi.single (Γ.tgt e.1) 1 + Pi.single (Γ.src e.1) 1 := by
+      Pi.single (Γ.tgt e.val) 1 + Pi.single (Γ.src e.val) 1 := by
   classical
   rw [← Finsupp.linearEquivFunOnFinite_single (ZMod 2) (ZMod 2) O e 1,
     cycleBoundary_finsupp, incidenceBoundary_single, one_smul]
@@ -83,7 +83,7 @@ theorem mem_cycleSpace_iff (c : O → ZMod 2) :
 /-- A single binary edge is a cycle exactly when it is a loop. -/
 theorem single_mem_cycleSpace_iff [DecidableEq O] (e : O) :
     Pi.single e (1 : ZMod 2) ∈ Γ.cycleSpace O ↔
-      Γ.src e.1 = Γ.tgt e.1 := by
+      Γ.src e.val = Γ.tgt e.val := by
   classical
   rw [mem_cycleSpace_iff, Finsupp.linearEquivFunOnFinite_symm_single]
   exact Γ.single_mem_modTwoCycleSpace_iff e
@@ -104,13 +104,13 @@ noncomputable def cycleSpaceFinsuppEquiv :
     (Γ.map_modTwoCycleSpace O)
 
 @[simp] theorem cycleSpaceFinsuppEquiv_apply (c : Γ.modTwoCycleSpace O) :
-    (Γ.cycleSpaceFinsuppEquiv O c).1 =
-      Finsupp.linearEquivFunOnFinite (ZMod 2) (ZMod 2) O c.1 := by
+    (Γ.cycleSpaceFinsuppEquiv O c).val =
+      Finsupp.linearEquivFunOnFinite (ZMod 2) (ZMod 2) O c.val := by
   simp only [cycleSpaceFinsuppEquiv, LinearEquiv.ofSubmodules_apply]
 
 @[simp] theorem cycleSpaceFinsuppEquiv_symm_apply (c : Γ.cycleSpace O) :
-    ((Γ.cycleSpaceFinsuppEquiv O).symm c).1 =
-      (Finsupp.linearEquivFunOnFinite (ZMod 2) (ZMod 2) O).symm c.1 := by
+    ((Γ.cycleSpaceFinsuppEquiv O).symm c).val =
+      (Finsupp.linearEquivFunOnFinite (ZMod 2) (ZMod 2) O).symm c.val := by
   simp only [cycleSpaceFinsuppEquiv, LinearEquiv.ofSubmodules_symm_apply]
 
 end TauCeti.SerreGraph
