@@ -45,18 +45,16 @@ public section
 namespace TauCeti
 
 /-- The spanning subgraph of `SimpleGraph.induce R hexGraph` whose edges are the pairs of faces of
-`R` sharing an edge of `M`. -/
+`R` sharing an edge of `M`: the edges `TriEdge.dualEdge e` of `hexGraph` crossing the edges `e`
+of `M`, restricted to `R`. -/
 def tilingSubgraph (R : Set TriFace) (M : Set TriEdge) :
     (SimpleGraph.induce R hexGraph).Subgraph :=
-  SimpleGraph.toSubgraph
-    (SimpleGraph.fromRel fun f g : R => ∃ e ∈ M, e ∈ f.val.edges ∧ e ∈ g.val.edges) (by
-      intro f g h
-      rw [SimpleGraph.fromRel_adj] at h
-      obtain ⟨hne, h⟩ := h
-      rw [SimpleGraph.induce_adj, hexGraph_adj]
-      refine ⟨fun hfg => hne (Subtype.ext hfg), ?_⟩
-      rcases h with ⟨e, -, h₁, h₂⟩ | ⟨e, -, h₁, h₂⟩
-      exacts [⟨e, h₁, h₂⟩, ⟨e, h₂, h₁⟩])
+  SimpleGraph.toSubgraph ((SimpleGraph.fromEdgeSet (TriEdge.dualEdge '' M)).induce R)
+    fun f g h => by
+    rw [SimpleGraph.induce_adj, SimpleGraph.fromEdgeSet_adj] at h
+    obtain ⟨⟨e, -, he⟩, -⟩ := h
+    rw [SimpleGraph.induce_adj, ← SimpleGraph.mem_edgeSet, hexGraph_edgeSet]
+    exact ⟨e, he⟩
 
 variable {R : Set TriFace} {M M' : Set TriEdge} {f g : R}
 
@@ -64,10 +62,15 @@ variable {R : Set TriFace} {M M' : Set TriEdge} {f g : R}
 edge of `M` lies in both. -/
 theorem tilingSubgraph_adj :
     (tilingSubgraph R M).Adj f g ↔ f ≠ g ∧ ∃ e ∈ M, e ∈ f.val.edges ∧ e ∈ g.val.edges := by
-  rw [tilingSubgraph, SimpleGraph.toSubgraph_adj, SimpleGraph.fromRel_adj]
-  refine and_congr_right fun _ => ⟨?_, Or.inl⟩
-  rintro (h | ⟨e, he, h₁, h₂⟩)
-  exacts [h, ⟨e, he, h₂, h₁⟩]
+  rw [tilingSubgraph, SimpleGraph.toSubgraph_adj, SimpleGraph.induce_adj,
+    SimpleGraph.fromEdgeSet_adj, Set.mem_image]
+  constructor
+  · rintro ⟨⟨e, he, hfg⟩, hne⟩
+    obtain ⟨-, h₁, h₂⟩ := TriEdge.dualEdge_eq_iff.1 hfg
+    exact ⟨fun h => hne (congrArg Subtype.val h), e, he, h₁, h₂⟩
+  · rintro ⟨hne, e, he, h₁, h₂⟩
+    have hne' : f.val ≠ g.val := fun h => hne (Subtype.ext h)
+    exact ⟨⟨e, he, TriEdge.dualEdge_eq_iff.2 ⟨hne', h₁, h₂⟩⟩, hne'⟩
 
 /-- Every face of `R` is a vertex of `tilingSubgraph R M`. -/
 @[simp] theorem tilingSubgraph_verts : (tilingSubgraph R M).verts = Set.univ := (rfl)
@@ -125,16 +128,31 @@ theorem IsTiling.isPerfectMatching_tilingSubgraph (hM : IsTiling R M) :
   exact (TriFace.eq_or_eq_of_mem_edges hgf.symm hfe hge h₂).resolve_left
     fun h => hne (Subtype.ext h.symm)
 
-/-- The set of edges of a perfect matching `P` of `SimpleGraph.induce R hexGraph`: the edges lying
-in both faces of an edge of `P`. -/
+/-- The set of edges of a perfect matching `P` of `SimpleGraph.induce R hexGraph`: the edges of the
+triangular lattice crossed by the edges of `P`. -/
 private def matchingEdges (P : (SimpleGraph.induce R hexGraph).Subgraph) : Set TriEdge :=
-  {e | ∃ f g : R, P.Adj f g ∧ e ∈ f.val.edges ∧ e ∈ g.val.edges}
+  TriEdge.dualEdge ⁻¹' (Sym2.map Subtype.val '' P.edgeSet)
+
+private theorem mem_matchingEdges {P : (SimpleGraph.induce R hexGraph).Subgraph} {e : TriEdge} :
+    e ∈ matchingEdges P ↔ ∃ f g : R, P.Adj f g ∧ e ∈ f.val.edges ∧ e ∈ g.val.edges := by
+  rw [matchingEdges, Set.mem_preimage, Set.mem_image]
+  constructor
+  · rintro ⟨z, hz, hze⟩
+    induction z using Sym2.ind with
+    | _ f g =>
+      rw [Sym2.map_mk] at hze
+      obtain ⟨-, h₁, h₂⟩ := TriEdge.dualEdge_eq_iff.1 hze.symm
+      exact ⟨f, g, hz, h₁, h₂⟩
+  · rintro ⟨f, g, h, h₁, h₂⟩
+    refine ⟨s(f, g), h, ?_⟩
+    rw [Sym2.map_mk]
+    exact (TriEdge.dualEdge_eq_iff.2 ⟨fun hfg => h.ne (Subtype.ext hfg), h₁, h₂⟩).symm
 
 private theorem faces_eq_of_adj {P : (SimpleGraph.induce R hexGraph).Subgraph} {e : TriEdge}
     {f g f' g' : R} (hfg : f ≠ g) (hf : e ∈ f.val.edges) (hg : e ∈ g.val.edges)
-    (hfg' : f' ≠ g') (hf' : e ∈ f'.val.edges) (hg' : e ∈ g'.val.edges) (hP : P.Adj f' g') :
+    (hf' : e ∈ f'.val.edges) (hg' : e ∈ g'.val.edges) (hP : P.Adj f' g') :
     P.Adj f g := by
-  have hne : f'.val ≠ g'.val := fun h => hfg' (Subtype.ext h)
+  have hne : f'.val ≠ g'.val := fun h => hP.ne (Subtype.ext h)
   rcases TriFace.eq_or_eq_of_mem_edges hne hf' hg' hf with h₁ | h₁ <;>
     rcases TriFace.eq_or_eq_of_mem_edges hne hf' hg' hg with h₂ | h₂
   · exact absurd (Subtype.ext (h₁.trans h₂.symm)) hfg
@@ -145,12 +163,14 @@ private theorem faces_eq_of_adj {P : (SimpleGraph.induce R hexGraph).Subgraph} {
 
 private theorem isTiling_matchingEdges {P : (SimpleGraph.induce R hexGraph).Subgraph}
     (hP : P.IsPerfectMatching) : IsTiling R (matchingEdges P) := by
-  refine isTiling_def.2 ⟨fun e ⟨f, g, hfg, hf, hg⟩ k hk => ?_, fun f hf => ?_⟩
-  · rcases TriFace.eq_or_eq_of_mem_edges (fun h => hfg.ne (Subtype.ext h)) hf hg hk with rfl | rfl
+  refine isTiling_def.2 ⟨fun e he k hk => ?_, fun f hf => ?_⟩
+  · obtain ⟨f, g, hfg, hf, hg⟩ := mem_matchingEdges.1 he
+    rcases TriFace.eq_or_eq_of_mem_edges (fun h => hfg.ne (Subtype.ext h)) hf hg hk with rfl | rfl
     exacts [f.property, g.property]
   · obtain ⟨g, hfg, huniq⟩ := SimpleGraph.Subgraph.isPerfectMatching_iff.1 hP ⟨f, hf⟩
     obtain ⟨e, ⟨hfe, hge⟩, -⟩ := existsUnique_mem_edges_of_hexGraph_adj (P.adj_sub hfg)
-    refine ⟨e, ⟨⟨_, g, hfg, hfe, hge⟩, hfe⟩, fun e' ⟨⟨f', g', hfg', hf', hg'⟩, he'⟩ => ?_⟩
+    refine ⟨e, ⟨mem_matchingEdges.2 ⟨_, g, hfg, hfe, hge⟩, hfe⟩, fun e' ⟨hm, he'⟩ => ?_⟩
+    obtain ⟨f', g', hfg', hf', hg'⟩ := mem_matchingEdges.1 hm
     have hadj : P.Adj ⟨f, hf⟩ (if f = f'.val then g' else f') := by
       split_ifs with h
       · rwa [show (⟨f, hf⟩ : R) = f' from Subtype.ext h]
@@ -173,11 +193,12 @@ private theorem tilingSubgraph_matchingEdges {P : (SimpleGraph.induce R hexGraph
   · ext f g
     rw [tilingSubgraph_adj]
     constructor
-    · rintro ⟨hfg, e, ⟨f', g', hP', hf', hg'⟩, hf, hg⟩
-      exact faces_eq_of_adj hfg hf hg hP'.ne hf' hg' hP'
+    · rintro ⟨hfg, e, hm, hf, hg⟩
+      obtain ⟨f', g', hP', hf', hg'⟩ := mem_matchingEdges.1 hm
+      exact faces_eq_of_adj hfg hf hg hf' hg' hP'
     · intro h
       obtain ⟨e, ⟨hf, hg⟩, -⟩ := existsUnique_mem_edges_of_hexGraph_adj (P.adj_sub h)
-      exact ⟨h.ne, e, ⟨f, g, h, hf, hg⟩, hf, hg⟩
+      exact ⟨h.ne, e, mem_matchingEdges.2 ⟨f, g, h, hf, hg⟩, hf, hg⟩
 
 /-- **Tilings are perfect matchings.** For every region `R`, finite or infinite,
 `M ↦ tilingSubgraph R M` is a bijection from the tilings of `R` onto the perfect matchings of

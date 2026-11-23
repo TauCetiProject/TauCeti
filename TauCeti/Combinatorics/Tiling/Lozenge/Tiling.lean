@@ -166,20 +166,6 @@ variable {R : Finset TriFace}
 theorem finite (h : IsTiling (R : Set TriFace) M) : M.Finite :=
   h.isFreeTiling.finite
 
-/-- A finite tileable region has twice as many faces as its tilings have lozenges. -/
-theorem card_eq_two_mul_ncard (h : IsTiling (R : Set TriFace) M) : R.card = 2 * M.ncard := by
-  classical
-  have hR : R = h.finite.toFinset.biUnion TriEdge.faces := by
-    ext f
-    simp only [Finset.mem_biUnion, Set.Finite.mem_toFinset, TriEdge.mem_faces]
-    refine ⟨fun hf => ?_, fun ⟨e, he, hfe⟩ => h.1 e he f hfe⟩
-    obtain ⟨e, ⟨he, hfe⟩, -⟩ := h.2 f hf
-    exact ⟨e, he, hfe⟩
-  have hdisj := (isTiling_iff_lozenges.1 h).2.1
-  rw [hR, Finset.card_biUnion fun e he e' he' hne => Finset.disjoint_coe.1
-    (hdisj (h.finite.mem_toFinset.1 he) (h.finite.mem_toFinset.1 he') hne),
-    Finset.sum_const_nat fun e _ => e.card_faces, Set.ncard_eq_toFinset_card M h.finite, mul_comm]
-
 /-- In a finite tileable region, each tiling has one lozenge per white face and one per black
 face: the faces of colour `c` are in bijection with the edges of the tiling. -/
 theorem card_filter_isWhite_eq_ncard (h : IsTiling (R : Set TriFace) M) (c : Bool) :
@@ -204,6 +190,13 @@ theorem card_filter_isWhite_eq_ncard (h : IsTiling (R : Set TriFace) M) (c : Boo
   intro e he e' he' hee
   exact h.eq_of_mem_edges (h.finite.mem_toFinset.1 he) (h.finite.mem_toFinset.1 he') (hF e)
     (by simp only at hee; exact hee ▸ hF e')
+
+/-- A finite tileable region has twice as many faces as its tilings have lozenges. -/
+theorem card_eq_two_mul_ncard (h : IsTiling (R : Set TriFace) M) : R.card = 2 * M.ncard := by
+  rw [← Finset.card_filter_add_card_filter_not (s := R) (fun f => f.isWhite = true),
+    h.card_filter_isWhite_eq_ncard true]
+  simp only [Bool.not_eq_true]
+  rw [h.card_filter_isWhite_eq_ncard false, two_mul]
 
 /-- A finite tileable region has as many white as black faces. -/
 theorem card_filter_isWhite_eq_card_filter_isWhite_eq_false (h : IsTiling (R : Set TriFace) M) :
@@ -326,14 +319,16 @@ theorem toPlacedTile_def (e : TriEdge) :
 
 @[simp] theorem toPlacedTile_vadd (w : ℤ × ℤ) (e : TriEdge) :
     (w +ᵥ e).toPlacedTile = Multiplicative.ofAdd w • e.toPlacedTile := by
-  rw [toPlacedTile_def, toPlacedTile_def, DiscreteTiling.PlacedTile.smul_mk_coe]
+  rw [toPlacedTile_def, toPlacedTile_def, DiscreteTiling.PlacedTile.smul_mk_coe, TriEdge.vadd_v,
+    ofAdd_add]
+  -- the two sides differ only in the coercions of the group elements into the acting group
   rfl
 
 theorem toPlacedTile_bijective : Function.Bijective toPlacedTile := by
   refine ⟨fun e e' h => faces_injective (Finset.coe_injective ?_), fun pt => ?_⟩
   · rw [← coe_toPlacedTile, h, coe_toPlacedTile]
   · induction pt using DiscreteTiling.PlacedTile.induction_on with
-    | h k g => exact ⟨⟨Multiplicative.toAdd g, k⟩, rfl⟩
+    | h k g => exact ⟨⟨Multiplicative.toAdd g, k⟩, by simp [toPlacedTile_def]⟩
 
 /-- **Lozenges are placed tiles.** The bijection from edges onto the placed tiles of
 `lozengeProtoset`, sending `(v, k)` to the placed tile of index `k` at `v`. -/
