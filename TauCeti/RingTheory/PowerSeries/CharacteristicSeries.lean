@@ -366,8 +366,7 @@ theorem coeff_two_logOf_aHatSeries :
 @[simp]
 theorem coeff_four_logOf_aHatSeries :
     coeff 4 (logOf (aHatSeries A)) = algebraMap ℚ A (1 / 2880) := by
-  rw [coeff_logOf_aHatSeries A (by decide), bernoulli_eq_bernoulli'_of_ne_one (by decide),
-    bernoulli'_four]
+  rw [coeff_logOf_aHatSeries A (by decide), bernoulli_four]
   norm_num [Nat.factorial]
 
 /-! ### The L series -/

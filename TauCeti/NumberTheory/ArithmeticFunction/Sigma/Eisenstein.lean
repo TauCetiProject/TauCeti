@@ -70,8 +70,7 @@ theorem constantCoeff_eisensteinGSeries_two :
 @[simp high]
 theorem constantCoeff_eisensteinGSeries_four :
     constantCoeff (eisensteinGSeries A 4) = algebraMap ℚ A (1 / 240) := by
-  rw [constantCoeff_eisensteinGSeries, bernoulli_eq_bernoulli'_of_ne_one (by decide),
-    bernoulli'_four]
+  rw [constantCoeff_eisensteinGSeries, bernoulli_four]
   norm_num
 
 end TauCeti
