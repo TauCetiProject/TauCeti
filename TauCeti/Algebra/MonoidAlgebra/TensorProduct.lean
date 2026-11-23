@@ -33,6 +33,10 @@ commutes with base change. For a commutative ring `R`, a commutative additive mo
 * `TauCeti.MonoidAlgebra.tensorEquivFinsupp_single_tmul` and
   `TauCeti.MonoidAlgebra.tensorEquivFinsupp_symm_single`: the equivalence and its inverse on
   generators.
+* `MonoidAlgebra.scalarTensorEquiv_one_tmul` and
+  `MonoidAlgebra.scalarTensorEquiv_comp_includeRight`, with their additive versions: Mathlib's
+  base change `S ⊗[R] R[M] ≃ₐ[S] S[M]`, restricted to `1 ⊗ R[M]`, is the coefficient change
+  `R → S`.
 * `AddMonoidAlgebra.quotientSpanOf'ImageTensorEquiv_tmul` and
   `AddMonoidAlgebra.quotientSpanOf'ImageTensorEquiv_symm_mk_single`: the base-change equivalence
   of monomial quotients on pure tensors, and its inverse on classes of monomials.
@@ -74,27 +78,41 @@ theorem tensorEquivFinsupp_symm_single (g : G) (w : W) :
 
 end TauCeti.MonoidAlgebra
 
-namespace AddMonoidAlgebra
+namespace MonoidAlgebra
 
 open TensorProduct
 
-variable {R M : Type*} [CommRing R] [AddCommMonoid M] (S : Type*) [CommRing S] [Algebra R S]
-  (D : Set M)
+variable {R M : Type*} [CommSemiring R] [CommMonoid M] (S : Type*) [CommSemiring S] [Algebra R S]
 
 /-- Base change of `R[M]` to `S` sends `1 ⊗ p` to the image of `p` under the coefficient change
 `R → S`. -/
-private theorem scalarTensorEquiv_one_tmul (p : AddMonoidAlgebra R M) :
+@[to_additive (dont_translate := R S) scalarTensorEquiv_one_tmul
+/-- Base change of `R[M]` to `S` sends `1 ⊗ p` to the image of `p` under the coefficient change
+`R → S`. -/]
+theorem scalarTensorEquiv_one_tmul (p : MonoidAlgebra R M) :
     scalarTensorEquiv R S (1 ⊗ₜ p) = mapRingHom M (algebraMap R S) p := by
   ext m
   simp
 
 /-- Including `R[M]` into `S ⊗[R] R[M]` and then identifying the result with `S[M]` is the
 coefficient change `R → S`. -/
-private theorem scalarTensorEquiv_comp_includeRight :
-    (scalarTensorEquiv R S (M := M) : S ⊗[R] AddMonoidAlgebra R M →+* AddMonoidAlgebra S M).comp
-        (Algebra.TensorProduct.includeRight (R := R) (A := S) : AddMonoidAlgebra R M →ₐ[R] _) =
+@[to_additive (dont_translate := R S)
+/-- Including `R[M]` into `S ⊗[R] R[M]` and then identifying the result with `S[M]` is the
+coefficient change `R → S`. -/]
+theorem scalarTensorEquiv_comp_includeRight :
+    (scalarTensorEquiv R S (M := M) : S ⊗[R] MonoidAlgebra R M →+* MonoidAlgebra S M).comp
+        (Algebra.TensorProduct.includeRight (R := R) (A := S) : MonoidAlgebra R M →ₐ[R] _) =
       mapRingHom M (algebraMap R S) :=
   RingHom.ext (scalarTensorEquiv_one_tmul S)
+
+end MonoidAlgebra
+
+namespace AddMonoidAlgebra
+
+open TensorProduct
+
+variable {R M : Type*} [CommRing R] [AddCommMonoid M] (S : Type*) [CommRing S] [Algebra R S]
+  (D : Set M)
 
 /-- The formation of the quotient by a monomial ideal commutes with base change: for every
 `R`-algebra `S`, the scalar extension `S ⊗[R] (R[M] ⧸ (D))` is the quotient `S[M] ⧸ (D)` by the

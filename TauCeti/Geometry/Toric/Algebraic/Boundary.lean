@@ -341,8 +341,8 @@ theorem boundaryQuotientTensorEquiv_symm_mk_single (S : Type*) [CommRing S] [Alg
     (p : (ι →₀ ℕ) × Q) (s : S) :
     (boundaryQuotientTensorEquiv (R := R) S).symm (Ideal.Quotient.mk _ (single p s)) =
       s ⊗ₜ Ideal.Quotient.mk (Ideal.span {boundaryMonomial R ι Q}) (single p 1) := by
-  rw [AlgEquiv.symm_apply_eq, boundaryQuotientTensorEquiv_tmul]
-  simp
+  simp [boundaryQuotientTensorEquiv, AlgEquiv.symm_trans_apply,
+    Algebra.TensorProduct.congr_symm_apply]
 
 end Quotient
 
