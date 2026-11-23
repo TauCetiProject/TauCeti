@@ -6,38 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
-public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Dominant
 import Mathlib.Data.Set.Card
 import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
-import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.OrbitSeparation
 import TauCeti.Algebra.Lie.HighestWeight.ChevalleyRestriction
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
-import TauCeti.LinearAlgebra.RootSystem.IntegralCoweight
 
 /-!
 # Uniqueness of dominant neutral elements and weighted Dynkin diagrams
 
-Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over a field `K` of
-characteristic zero, let `H` be a splitting Cartan subalgebra, and let `b` be a base of the root
-system `LieAlgebra.IsKilling.rootSystem H`.
+Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over an algebraically
+closed field `K` of characteristic zero, let `H` be a Cartan subalgebra, and let `b` be a base of
+the root system `LieAlgebra.IsKilling.rootSystem H`.
 
 Every `sl₂` triple over an algebraically closed field can be conjugated by `Int(L)` so that its
 neutral element lies in `RootPairing.Base.dominantNeutralElements b`
 (`IsSl2Triple.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed`). This file
 proves the complementary uniqueness statements:
 
-1. **Uniqueness in a Weyl orbit and under Weyl invariants.** Over any field of characteristic zero
-   splitting `H`, at most one dominant neutral element lies in a given Weyl orbit or realizes a
-   given character on `S(H)^W`
-   (`RootPairing.Base.eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq`,
-   `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_forall_mem_linearInvariants_lift_eq`).
-2. **Separation by `S(L*)^L`.** Over an algebraically closed field, Chevalley's restriction theorem
-   and Weyl-chamber uniqueness
+1. **Separation by `S(L*)^L`.** Chevalley's restriction theorem and Weyl-chamber uniqueness
    (`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant`)
    show that at most one element of `H` where every simple root of `b` takes a natural value
    realizes a given invariant character on `S(L*)^L`.
-3. **Passage from the nilpositive element to the neutral element.** For `sl₂` triples
+2. **Passage from the nilpositive element to the neutral element.** For `sl₂` triples
    `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)` whose neutral elements lie in
    `RootPairing.Base.dominantNeutralElements b`, any Lie algebra automorphism `φ : L ≃ₗ⁅K⁆ L`
    carrying `e₁` to `e₂` and preserving `S(L*)^L` forces `h₁ = h₂`
@@ -51,9 +42,6 @@ proves the complementary uniqueness statements:
 
 ## Main results
 
-* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq` and
-  `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_forall_mem_linearInvariants_lift_eq`:
-  dominant neutral elements in the same Weyl orbit, or agreeing on `S(H)^W`, coincide.
 * `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq`,
   `RootPairing.Base.injOn_orbit_dominantNeutralElements`,
   `IsSl2Triple.existsUnique_mem_dominantNeutralElements_mem_orbit_intLieAlgebra`, and
@@ -85,36 +73,6 @@ open TauCeti.SymmetricAlgebra
 namespace RootPairing.Base
 
 open TauCeti
-
-section Split
-
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
-  [IsTriangularizable K H L]
-
-/-- **At most one dominant neutral element lies in each Weyl orbit.** -/
-theorem eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq (b : (rootSystem H).Base)
-    {h₁ h₂ : H} (hh₁ : h₁ ∈ b.dominantNeutralElements) (hh₂ : h₂ ∈ b.dominantNeutralElements)
-    (hw : ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv h₁ = h₂) :
-    h₁ = h₂ := by
-  obtain ⟨w, rfl⟩ := hw
-  exact (b.coweightEquiv_eq_self_of_forall_exists_nat_root'_apply
-    ((b.mem_dominantNeutralElements_iff _).mp hh₁).2
-    ((b.mem_dominantNeutralElements_iff _).mp hh₂).2).symm
-
-/-- **Weyl invariants separate dominant neutral elements** when read through
-`LieAlgebra.IsKilling.cartanEquivDual`. -/
-theorem eq_of_mem_dominantNeutralElements_of_forall_mem_linearInvariants_lift_eq
-    (b : (rootSystem H).Base) {h₁ h₂ : H} (hh₁ : h₁ ∈ b.dominantNeutralElements)
-    (hh₂ : h₂ ∈ b.dominantNeutralElements)
-    (heq : ∀ p ∈ linearInvariants H,
-      _root_.SymmetricAlgebra.lift (cartanEquivDual H h₁) p =
-        _root_.SymmetricAlgebra.lift (cartanEquivDual H h₂) p) :
-    h₁ = h₂ :=
-  b.eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq hh₁ hh₂
-    (forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff.mp heq)
-
-end Split
 
 section IntOrbits
 

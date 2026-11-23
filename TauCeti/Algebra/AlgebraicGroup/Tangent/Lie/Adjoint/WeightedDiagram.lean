@@ -729,25 +729,6 @@ end RootPairing.Base
 
 namespace TauCeti
 
-/-- **Uniqueness of the dominant neutral element attached to a nonzero nilpotent element under
-`G(k)`-conjugacy.** -/
-theorem existsUnique_mem_dominantNeutralElements_exists_basePointsRepresentation_isSl2Triple
-    (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
-    {e : Module.Dual k (Bialgebra.CotangentSpace k H)}
-    (he : IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e))
-    (he0 : e ≠ 0) :
-    ∃! h : 𝔥, h ∈ b.dominantNeutralElements ∧
-      ∃ g : WithConv (H →ₐ[k] k), ∃ f : Module.Dual k (Bialgebra.CotangentSpace k H),
-        IsSl2Triple (h : Module.Dual k (Bialgebra.CotangentSpace k H))
-          (Comodule.basePointsRepresentation
-            (Module.Dual k (Bialgebra.CotangentSpace k H)) g e) f := by
-  obtain ⟨h, hh, hunique⟩ :=
-    b.existsUnique_dominantVectorOrbit_eq_of_isNilpotent_ad (H := H) he he0
-  refine ⟨h, ⟨h.property, (b.dominantVectorOrbit_eq_mk_iff (H := H)).mp hh⟩, ?_⟩
-  rintro h' ⟨hh', h'ex⟩
-  exact congrArg Subtype.val
-    (hunique ⟨h', hh'⟩ ((b.dominantVectorOrbit_eq_mk_iff (H := H)).mpr h'ex))
-
 /-- **Exact count of nonzero nilpotent `G`-orbits for a connected Killing group.** -/
 theorem ncard_image_vectorOrbit_mk_setOf_exists_isSl2Triple_eq
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
