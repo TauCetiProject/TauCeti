@@ -89,7 +89,7 @@ example (μ : D(X, O)) :
     extendCoefficients j hj (restrictClopen (⊥ : Clopens X) μ) = 0 := by
   rw [extendCoefficients_restrictClopen]
   ext f
-  have hf : f = 0 := ContinuousMap.ext fun x ↦ (Set.notMem_empty (x : X) x.2).elim
+  have hf : f = 0 := ContinuousMap.ext fun x ↦ (Set.notMem_empty (x : X) x.property).elim
   simp [hf]
 
 end Examples

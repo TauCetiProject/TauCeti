@@ -45,17 +45,17 @@ variable {n : ℕ} (G : OddComponentGridDiagram n)
 
 /-- A fully blocked empty rectangle lowers the bidegree by `(1, 0)`. -/
 theorem bidegree_eq_sub_of_mem_fullyBlockedRectangles {x y : GridState n}
-    {r : GridRectangleBetween x y} (hr : r ∈ G.1.fullyBlockedRectangles x y) :
+    {r : GridRectangleBetween x y} (hr : r ∈ G.val.fullyBlockedRectangles x y) :
     G.bidegree y = G.bidegree x - (1, 0) := by
-  obtain ⟨he, ha⟩ := (G.1.mem_fullyBlockedRectangles x y r).mp hr
+  obtain ⟨he, ha⟩ := (G.val.mem_fullyBlockedRectangles x y r).mp hr
   have hO := r.disjoint_coveredSquares_OSet_of_avoidsMarkings ha
   have hX := r.disjoint_coveredSquares_XSet_of_avoidsMarkings ha
-  have hM := G.1.maslovO_sub_maslovO_eq_one_of_disjoint_coveredSquares r he hO
-  have hA := G.1.alexander_eq_alexander_of_disjoint_coveredSquares r
+  have hM := G.val.maslovO_sub_maslovO_eq_one_of_disjoint_coveredSquares r he hO
+  have hA := G.val.alexander_eq_alexander_of_disjoint_coveredSquares r
     (Finset.disjoint_union_right.mpr ⟨hO, hX⟩)
-  rw [G.1.maslovO_eq_intCast, G.1.maslovO_eq_intCast] at hM
+  rw [G.val.maslovO_eq_intCast, G.val.maslovO_eq_intCast] at hM
   rw [G.alexander_eq_intCast, G.alexander_eq_intCast] at hA
-  have hM' : G.1.maslovOℤ x - G.1.maslovOℤ y = 1 := by exact_mod_cast hM
+  have hM' : G.val.maslovOℤ x - G.val.maslovOℤ y = 1 := by exact_mod_cast hM
   have hA' : G.alexanderℤ x = G.alexanderℤ y := by exact_mod_cast hA
   apply Prod.ext
   · simp only [bidegree_fst, Prod.fst_sub]
@@ -66,9 +66,9 @@ theorem bidegree_eq_sub_of_mem_fullyBlockedRectangles {x y : GridState n}
 /-- A nonzero fully blocked rectangle count from `x` to `y` implies
 `G.bidegree y = G.bidegree x - (1, 0)`. -/
 theorem bidegree_eq_sub_of_fullyBlockedRectangleCount_ne_zero {x y : GridState n}
-    (h : G.1.fullyBlockedRectangleCount x y ≠ 0) :
+    (h : G.val.fullyBlockedRectangleCount x y ≠ 0) :
     G.bidegree y = G.bidegree x - (1, 0) := by
-  have hc : (G.1.fullyBlockedRectangles x y).card ≠ 0 := by
+  have hc : (G.val.fullyBlockedRectangles x y).card ≠ 0 := by
     intro hc
     simp [GridDiagram.fullyBlockedRectangleCount_def, hc] at h
   obtain ⟨r, hr⟩ := Finset.card_ne_zero.mp hc
@@ -79,13 +79,13 @@ and unchanged in Alexander. -/
 theorem fullyBlockedDifferential_bigradedChainInclusion_apply_eq_zero_of_ne (g : ℤ × ℤ)
     (c : G.BigradedChainPiece (ZMod 2) g) {y : GridState n}
     (hy : G.bidegree y ≠ g - (1, 0)) :
-    G.1.fullyBlockedDifferential (G.bigradedChainInclusion (ZMod 2) g c) y = 0 := by
+    G.val.fullyBlockedDifferential (G.bigradedChainInclusion (ZMod 2) g c) y = 0 := by
   classical
   rw [GridDiagram.fullyBlockedDifferential_apply_apply, Finsupp.sum]
   apply Finset.sum_eq_zero
   intro x _
   by_cases hx : G.bidegree x = g
-  · have hz : G.1.fullyBlockedRectangleCount x y = 0 := by
+  · have hz : G.val.fullyBlockedRectangleCount x y = 0 := by
       by_contra hz
       exact hy (hx ▸ G.bidegree_eq_sub_of_fullyBlockedRectangleCount_ne_zero hz)
     rw [hz, mul_zero]
@@ -95,10 +95,10 @@ theorem fullyBlockedDifferential_bigradedChainInclusion_apply_eq_zero_of_ne (g :
 part of bidegree `g - (1, 0)` of its differential. -/
 theorem fullyBlockedDifferential_bigradedChainInclusion_bigradedChainProjection (g : ℤ × ℤ)
     (c : GridChain (ZMod 2) n) :
-    G.1.fullyBlockedDifferential
+    G.val.fullyBlockedDifferential
         (G.bigradedChainInclusion (ZMod 2) g (G.bigradedChainProjection (ZMod 2) g c)) =
       G.bigradedChainInclusion (ZMod 2) (g - (1, 0))
-        (G.bigradedChainProjection (ZMod 2) (g - (1, 0)) (G.1.fullyBlockedDifferential c)) := by
+        (G.bigradedChainProjection (ZMod 2) (g - (1, 0)) (G.val.fullyBlockedDifferential c)) := by
   rw [sub_eq_add_neg]
   refine G.map_bigradedChainInclusion_bigradedChainProjection G _ _ (fun x y hy => ?_) g c
   by_contra h
@@ -110,7 +110,7 @@ noncomputable def gradedFullyBlockedDifferential (a m : ℤ) :
     G.BigradedChainPiece (ZMod 2) (m + 1, a) →ₗ[ZMod 2]
       G.BigradedChainPiece (ZMod 2) (m, a) :=
   (G.bigradedChainProjection (ZMod 2) (m, a)).comp
-    (G.1.fullyBlockedDifferential.comp (G.bigradedChainInclusion (ZMod 2) (m + 1, a)))
+    (G.val.fullyBlockedDifferential.comp (G.bigradedChainInclusion (ZMod 2) (m + 1, a)))
 
 /-- The coefficient of the graded differential is the coefficient of the total differential. -/
 @[simp]
@@ -118,7 +118,7 @@ theorem gradedFullyBlockedDifferential_apply (a m : ℤ)
     (c : G.BigradedChainPiece (ZMod 2) (m + 1, a))
     (y : {y : GridState n // G.bidegree y = (m, a)}) :
     G.gradedFullyBlockedDifferential a m c y =
-      G.1.fullyBlockedDifferential (G.bigradedChainInclusion (ZMod 2) (m + 1, a) c) y := by
+      G.val.fullyBlockedDifferential (G.bigradedChainInclusion (ZMod 2) (m + 1, a) c) y := by
   simp [gradedFullyBlockedDifferential]
 
 /-- Inclusion of the homogeneous pieces intertwines the graded and total differentials. -/
@@ -126,7 +126,7 @@ theorem gradedFullyBlockedDifferential_apply (a m : ℤ)
 theorem bigradedChainInclusion_gradedFullyBlockedDifferential (a m : ℤ)
     (c : G.BigradedChainPiece (ZMod 2) (m + 1, a)) :
     G.bigradedChainInclusion (ZMod 2) (m, a) (G.gradedFullyBlockedDifferential a m c) =
-      G.1.fullyBlockedDifferential (G.bigradedChainInclusion (ZMod 2) (m + 1, a) c) := by
+      G.val.fullyBlockedDifferential (G.bigradedChainInclusion (ZMod 2) (m + 1, a) c) := by
   ext y
   rw [G.bigradedChainInclusion_apply]
   split_ifs with hy
@@ -143,7 +143,7 @@ theorem gradedFullyBlockedDifferential_comp_eq_zero (a m : ℤ) :
   apply G.bigradedChainInclusion_injective (ZMod 2) (m, a)
   simp only [LinearMap.comp_apply, LinearMap.zero_apply, map_zero,
     bigradedChainInclusion_gradedFullyBlockedDifferential]
-  exact LinearMap.congr_fun G.1.fullyBlockedDifferential_comp_self_eq_zero _
+  exact LinearMap.congr_fun G.val.fullyBlockedDifferential_comp_self_eq_zero _
 
 /-- The Maslov-graded fully blocked grid complex in Alexander degree `a`. -/
 noncomputable def gradedFullyBlockedComplex (a : ℤ) : ChainComplex (ModuleCat (ZMod 2)) ℤ :=

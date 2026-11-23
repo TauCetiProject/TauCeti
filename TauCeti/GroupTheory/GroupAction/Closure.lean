@@ -48,6 +48,6 @@ theorem apply_eq_apply_of_isPretransitive_closure {G α : Type*} {β : Sort*} [G
     [MulAction G α] {S : Set G} {f : α → β} (hS : ∀ g ∈ S, ∀ a, f (g • a) = f a)
     (hconn : MulAction.IsPretransitive (Subgroup.closure S) α) (a b : α) : f a = f b := by
   obtain ⟨g, rfl⟩ := hconn.exists_smul_eq a b
-  exact (apply_eq_of_mem_closure hS g.2 a).symm
+  exact (apply_eq_of_mem_closure hS g.property a).symm
 
 end TauCeti

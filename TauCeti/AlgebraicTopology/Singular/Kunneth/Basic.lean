@@ -378,13 +378,13 @@ variable {k : Type w} [CommRing k]
 the direct sum of the `Hₚ(X; M) ⊗ H_q(Y; N)` with `p + q = n`. -/
 private def singularHomologyKunnethDirectSumIso (n : ℕ) :
     ModuleCat.of k (DirectSum ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) fun i ↦
-      TensorProduct k (((singularHomologyFunctor (ModuleCat.{w} k) i.1.1).obj M).obj X)
-        (((singularHomologyFunctor (ModuleCat.{w} k) i.1.2).obj N).obj Y)) ≅
+      TensorProduct k (((singularHomologyFunctor (ModuleCat.{w} k) i.val.1).obj M).obj X)
+        (((singularHomologyFunctor (ModuleCat.{w} k) i.val.2).obj N).obj Y)) ≅
       ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y) :=
   -- The source of the Künneth map is by definition the coproduct of the summands.
   (ModuleCat.coprodIsoDirectSum fun i : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ↦
-    ((singularHomologyFunctor (ModuleCat.{w} k) i.1.1).obj M).obj X ⊗
-      ((singularHomologyFunctor (ModuleCat.{w} k) i.1.2).obj N).obj Y).symm ≪≫
+    ((singularHomologyFunctor (ModuleCat.{w} k) i.val.1).obj M).obj X ⊗
+      ((singularHomologyFunctor (ModuleCat.{w} k) i.val.2).obj N).obj Y).symm ≪≫
     -- `TopCat.isIso_singularHomologyKunneth_of_projective_homology` is a theorem rather than an
     -- instance, so it is supplied to `asIso` explicitly.
     @asIso _ _ _ _ (singularHomologyKunneth X Y M N n)
@@ -414,13 +414,10 @@ theorem finrank_singularHomology_tensor [Nontrivial k] (n : ℕ) :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y)) =
       ∑ x ∈ Finset.antidiagonal n,
         Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.1).obj M).obj X) *
-          Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.2).obj N).obj Y) := by
-  let e : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ≃ Finset.antidiagonal n :=
-    Equiv.subtypeEquivRight fun x ↦ by simp
-  have := Fintype.ofEquiv _ e.symm
-  rw [← (singularHomologyKunnethDirectSumIso X Y M N n).toLinearEquiv.finrank_eq,
-    Module.finrank_directSum, ← Finset.sum_coe_sort (Finset.antidiagonal n)]
-  exact Fintype.sum_equiv e _ _ fun x ↦ Module.finrank_tensorProduct
+          Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.2).obj N).obj Y) :=
+  have := isIso_singularHomologyKunneth_of_projective_homology X Y M N n
+  (asIso (singularHomologyKunneth X Y M N n)).toLinearEquiv.finrank_eq.symm.trans
+    (GradedObject.Monoidal.finrank_tensorObj _ _ n)
 
 end Free
 

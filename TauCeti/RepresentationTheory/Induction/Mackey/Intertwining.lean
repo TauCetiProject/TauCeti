@@ -157,12 +157,12 @@ theorem characterPairing_mackeyClassFunction_of_mem [Fintype H] {s : G} (hs : s 
     Nat.card_congr (mackeySubgroupSelfEquiv hs).toEquiv
   -- Conjugating by `s`, an element of `H`, leaves a class function on `H` unchanged.
   have hterm (y : (mackeySubgroup s H H).subgroupOf H) :
-      f.1 (mackeyToH s H H y) = f.1 (mackeySubgroupSelfEquiv hs y) := by
+      f.val (mackeyToH s H H y) = f.val (mackeySubgroupSelfEquiv hs y) := by
     have hconj : (⟨s, hs⟩ : H)⁻¹ * (mackeySubgroupSelfEquiv hs y) * (⟨s, hs⟩ : H)⁻¹⁻¹
         = mackeyToH s H H y :=
       Subtype.ext (by simp [coe_mackeyToH_apply])
     rw [← hconj]
-    exact ClassFunction.mem_iff.mp f.2 _ _
+    exact ClassFunction.mem_iff.mp f.property _ _
   rw [ClassFunction.characterPairing_apply, ClassFunction.characterPairing_apply, hcard]
   congr 1
   refine Fintype.sum_equiv (mackeySubgroupSelfEquiv hs).toEquiv _ _ fun y => ?_

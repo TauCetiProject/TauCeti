@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Vertex.VertexOperator
 public import TauCeti.RingTheory.LaurentSeries.HahnModuleDerivative
+public import Mathlib.Algebra.Lie.OfAssociative
 import TauCeti.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
 
@@ -16,7 +17,13 @@ import Mathlib.Tactic.Module
 The formal derivative of a field is again a field: differentiating a Laurent series lowers
 its lower bound by at most one. In normalized mode indexing its coefficients are
 `(∂A)[[n]] = -n • A[[n - 1]]`. This construction is linear over the coefficient ring and
-requires no characteristic-zero assumption.
+requires no characteristic-zero assumption. When an endomorphism `T` kills a vector `vac` and acts
+as `∂` by commutation on a field `B`, this mode formula gives the recursion
+`T (B₍ₘ₎ vac) = -m • B₍ₘ₋₁₎ vac` (`VertexOperator.apply_ncoeff_apply_of_lie`), and iterating it
+yields the division-free creation identity `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac)`
+(`VertexOperator.factorial_smul_ncoeff_apply`).
+Descending from the truncation of `B(z) vac`, the same recursion shows that the nonnegative modes
+of `B` kill `vac` when `V` has unique divisibility (`VertexOperator.ncoeff_apply_of_nonneg`).
 
 Differentiation preserves mutual locality, increasing a locality bound by one. More generally,
 iterated derivatives in the two variables increase the bound by the sum of their orders.
@@ -67,6 +74,58 @@ theorem ncoeff_derivative (A : VertexOperator R V) (n : ℤ) :
   have h₁ : -n - 1 + 1 = -n := by omega
   have h₂ : -(n - 1) - 1 = -n := by omega
   rw [h₁, h₂]
+
+/-- The identity field is constant: `∂ id = 0`. -/
+@[simp]
+theorem derivative_idField : derivative (idField : VertexOperator R V) = 0 :=
+  ext_ncoeff fun n ↦ by
+    rw [ncoeff_derivative, ncoeff_idField]
+    split_ifs <;> simp_all
+
+/-- **Creation recursion.** If an endomorphism `T` kills `vac` and acts as `∂` on a field `B` by
+commutation, then `T (B₍ₘ₎ vac) = -m • B₍ₘ₋₁₎ vac` for every `m : ℤ`. -/
+theorem apply_ncoeff_apply_of_lie {T : Module.End R V} {vac : V} (hvac : T vac = 0)
+    {B : VertexOperator R V} (hT : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]]) (m : ℤ) :
+    T ((B[[m]]) vac) = (-m) • (B[[m - 1]]) vac := by
+  have h := LinearMap.congr_fun (hT m) vac
+  rwa [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hvac, map_zero,
+    sub_zero, ncoeff_derivative, LinearMap.smul_apply] at h
+
+/-- **Division-free creation recursion.** If an endomorphism `T` kills `vac` and acts as `∂` on a
+field `B` by commutation, then `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac)` for every `k : ℕ`. -/
+theorem factorial_smul_ncoeff_apply {T : Module.End R V} {vac : V} (hvac : T vac = 0)
+    {B : VertexOperator R V} (hT : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]]) (k : ℕ) :
+    k.factorial • (B[[-k - 1]]) vac = (T ^ k) ((B[[-1]]) vac) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have h := apply_ncoeff_apply_of_lie hvac hT (-(k : ℤ) - 1)
+    have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
+    have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
+    rw [h₁, h₂, natCast_zsmul] at h
+    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
+      smul_comm]
+
+/-- **Creation from translation covariance.** If `V` has unique divisibility, an endomorphism `T`
+kills `vac` and acts as `∂` on a field `B` by commutation, then every nonnegative mode of `B` kills
+`vac`: `B(z) vac` has no negative powers of `z`. -/
+theorem ncoeff_apply_of_nonneg [HasUniqueDiv V] {T : Module.End R V} {vac : V}
+    (hvac : T vac = 0) {B : VertexOperator R V}
+    (hT : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]]) {n : ℤ} (hn : 0 ≤ n) :
+    (B[[n]]) vac = 0 := by
+  -- Descend from the truncation of `B(z) vac`: `T (B₍ₖ₊₁₎ vac) = -(k + 1) • B₍ₖ₎ vac`.
+  obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_apply_eq_zero vac
+  suffices hd : ∀ d k : ℕ, P ≤ k + d → (B[[k]]) vac = 0 by
+    simpa [hn] using hd P n.toNat (by omega)
+  intro d
+  induction d with
+  | zero => exact fun k hk ↦ hP k (by omega)
+  | succ d ih =>
+    intro k hk
+    have h := apply_ncoeff_apply_of_lie hvac hT ((k + 1 : ℕ) : ℤ)
+    have hk' : ((k + 1 : ℕ) : ℤ) - 1 = k := by push_cast; ring
+    rw [hk', ih (k + 1) (by omega), map_zero, eq_comm, neg_smul, neg_eq_zero, natCast_zsmul] at h
+    exact nsmul_right_injective k.succ_ne_zero (h.trans (smul_zero _).symm)
 
 namespace IsLocalOfOrder
 

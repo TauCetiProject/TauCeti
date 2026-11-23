@@ -13,6 +13,8 @@ public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.RingTheory.Localization.Annihilator
 public import TauCeti.RingTheory.Flat.Annihilator
 public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.RingTheory.Conductor
+public import TauCeti.RingTheory.Localization.Away.CommonIdeal
 
 /-!
 # The conductor of an algebra
@@ -33,12 +35,39 @@ of `A`, the conductor of `S⁻¹B` over `S⁻¹A` is the extension of the conduc
 This compatibility lets the conductors of a finite morphism over affine opens of its target
 glue to an ideal sheaf. Without finiteness only one inclusion holds.
 
+For a subring `A` of a commutative ring `B` there is also the **ambient conductor**
+
+`c(A, B) = {b ∈ B | b B ⊆ A}`,
+
+an ideal of `B` rather than of `A`. It is the largest ideal of `B` contained in `A`, and for
+`A = R<x>` it is Mathlib's `conductor R x`. Its contraction to `A` is the conductor of `B` over
+`A` above. More generally, for any `A`-algebra `B` the conductor of `B` over `A` is the
+contraction of the ambient conductor of the image of `A`, whether or not `A → B` is injective.
+No finiteness, reducedness or birationality is assumed. The ambient conductor is a common ideal
+of `A` and `B`, so `A` and `B` agree after inverting any element of `A` lying in it. This is the
+affine form of Ferrand's pinching along the conductor.
+
 ## Main definitions
 
+* `Subring.conductor A`: the ambient conductor of a subring `A` of `B`, the largest ideal of
+  `B` contained in `A`.
 * `TauCeti.Algebra.conductor A B`: the conductor of `B` over `A`, the annihilator of `B / A`.
 
 ## Main results
 
+* `Subring.mem_conductor_iff`: `b ∈ c(A, B)` exactly when `b * x ∈ A` for every `x : B`.
+* `Subring.le_conductor_iff`: an ideal of `B` lies in `c(A, B)` exactly when it is contained
+  in `A`.
+* `Subring.conductor_toSubring_adjoin_singleton`: for `A = R<x>` the ambient conductor is
+  Mathlib's `conductor R x`.
+* `Subring.image_comap_subtype_conductor`: the image of the contracted conductor is the
+  ambient conductor, so the ambient conductor is a common ideal of `A` and `B`.
+* `Subring.awayMap_subtype_bijective_of_mem_conductor`: for `t ∈ A` lying in `c(A, B)`, the map
+  `A_t → B_t` is bijective.
+* `TauCeti.Algebra.comap_conductor_range`: the conductor of `B` over `A` is the contraction of
+  the ambient conductor of the image of `A`.
+* `Subring.comap_subtype_conductor`: for a subring `A`, the conductor of `B` over `A` is the
+  contraction of `c(A, B)`.
 * `TauCeti.Algebra.conductor_eq_annihilator`: the conductor is the annihilator of `B / A`.
 * `TauCeti.Algebra.mem_conductor_iff`: `a` lies in the conductor exactly when `a • b` lies in the
   image of `A` for every `b : B`.
@@ -57,11 +86,101 @@ glue to an ideal sheaf. Without finiteness only one inclusion holds.
 
 * J.-P. Serre, *Algebraic Groups and Class Fields*, Chapter IV, §1, for the conductor of the
   normalization of a singular curve.
+* D. Ferrand, *Conducteur, descente et pincement*, Bull. Soc. Math. France 131 (2003),
+  Introduction and Théorème 5.1, for the ambient conductor of an arbitrary subring.
+* [Stacks Project, Section 0ET0](https://stacks.math.columbia.edu/tag/0ET0), Lemma 37.14.1.
 -/
 
 public section
 
 noncomputable section
+
+namespace Subring
+
+variable {B : Type*} [CommRing B] (A : Subring B)
+
+/-- The **ambient conductor** `c(A, B)` of a subring `A` of a commutative ring `B`: the ideal of
+`B` of the elements `b` with `b * x ∈ A` for every `x : B`. It is the largest ideal of `B`
+contained in `A` (`Subring.le_conductor_iff`). -/
+def conductor : Ideal B where
+  carrier := {b | ∀ x, b * x ∈ A}
+  zero_mem' x := by simp
+  add_mem' ha hb x := by simpa only [add_mul] using A.add_mem (ha x) (hb x)
+  smul_mem' c b hb x := by simpa only [smul_eq_mul, mul_left_comm, mul_assoc] using hb (c * x)
+
+variable {A}
+
+@[simp]
+theorem mem_conductor_iff {b : B} : b ∈ A.conductor ↔ ∀ x, b * x ∈ A :=
+  Iff.rfl
+
+/-- The ambient conductor is contained in the subring. -/
+theorem conductor_subset : (A.conductor : Set B) ⊆ A := fun b hb ↦ by
+  simpa using mem_conductor_iff.mp hb 1
+
+/-- **The conductor is the largest ideal contained in the subring.** -/
+theorem le_conductor_iff {I : Ideal B} : I ≤ A.conductor ↔ (I : Set B) ⊆ A :=
+  ⟨fun h ↦ (SetLike.coe_subset_coe.mpr h).trans conductor_subset,
+    fun h _ hb ↦ mem_conductor_iff.mpr fun x ↦ h (I.mul_mem_right x hb)⟩
+
+@[gcongr]
+theorem conductor_mono {A' : Subring B} (h : A ≤ A') : A.conductor ≤ A'.conductor :=
+  le_conductor_iff.mpr (conductor_subset.trans h)
+
+/-- The ambient conductor is the unit ideal exactly when the subring is everything. -/
+@[simp]
+theorem conductor_eq_top_iff : A.conductor = ⊤ ↔ A = ⊤ := by
+  refine ⟨fun h ↦ eq_top_iff.mpr fun b _ ↦ conductor_subset (h ▸ Submodule.mem_top), ?_⟩
+  rintro rfl
+  exact eq_top_iff.mpr fun b _ ↦ mem_conductor_iff.mpr fun _ ↦ Subring.mem_top _
+
+@[simp]
+theorem conductor_top : (⊤ : Subring B).conductor = ⊤ :=
+  conductor_eq_top_iff.mpr rfl
+
+/-- The ambient conductor of a subring of a field is zero exactly when the subring is proper. In
+particular a proper subring has zero conductor, even when the field is finite over it. -/
+@[simp]
+theorem conductor_eq_bot_iff {K : Type*} [Field K] {A : Subring K} :
+    A.conductor = ⊥ ↔ A ≠ ⊤ := by
+  rw [Ne, ← conductor_eq_top_iff]
+  exact ⟨fun h ↦ h ▸ bot_ne_top, (Ideal.eq_bot_or_top _).resolve_right⟩
+
+/-- For the subalgebra `R<x>` generated by one element, the ambient conductor is Mathlib's
+`conductor R x`. -/
+theorem conductor_toSubring_adjoin_singleton (R : Type*) [CommRing R] [Algebra R B] (x : B) :
+    (Algebra.adjoin R {x}).toSubring.conductor = _root_.conductor R x := by
+  ext b
+  simp [_root_.mem_conductor_iff]
+
+/-- The image in `B` of the contracted conductor is the ambient conductor itself, not just the
+ideal it generates. -/
+theorem image_comap_subtype_conductor :
+    A.subtype '' (A.conductor.comap A.subtype) = A.conductor :=
+  Set.image_preimage_eq_of_subset fun b hb ↦ ⟨⟨b, conductor_subset hb⟩, rfl⟩
+
+/-- Extending the contracted conductor back to `B` recovers the ambient conductor. -/
+@[simp]
+theorem map_comap_subtype_conductor :
+    (A.conductor.comap A.subtype).map A.subtype = A.conductor := by
+  refine le_antisymm Ideal.map_comap_le fun b hb ↦ ?_
+  obtain ⟨a, ha, rfl⟩ := image_comap_subtype_conductor.symm.subset hb
+  exact Ideal.mem_map_of_mem _ ha
+
+variable (S Q : Type*) [CommRing S] [CommRing Q] [Algebra A S] [Algebra B Q] {t : A}
+  [IsLocalization.Away t S] [IsLocalization.Away (A.subtype t) Q]
+
+/-- **A subring and its ring agree away from the conductor.** If `t ∈ A` lies in the ambient
+conductor `c(A, B)`, then the map `A_t → B_t` induced by the inclusion is bijective. -/
+theorem awayMap_subtype_bijective_of_mem_conductor (ht : (t : B) ∈ A.conductor) :
+    Function.Bijective (IsLocalization.Away.map S Q A.subtype t) := by
+  have hker : RingHom.ker A.subtype ⊓ A.conductor.comap A.subtype = ⊥ := by
+    rw [(RingHom.injective_iff_ker_eq_bot _).mp A.subtype_injective, bot_inf_eq]
+  have hrange : ((A.conductor.comap A.subtype).map A.subtype : Set B) ⊆ Set.range A.subtype :=
+    fun b hb ↦ ⟨⟨b, conductor_subset (Ideal.map_comap_le hb)⟩, rfl⟩
+  exact IsLocalization.Away.map_bijective_of_mem_ideal S Q hker hrange ht
+
+end Subring
 
 namespace TauCeti.Algebra
 
@@ -160,4 +279,30 @@ theorem conductor_eq_map [Module.Finite A (B ⧸ (1 : Submodule A B))] :
 
 end Localization
 
+section Subring
+
+variable {B : Type*} [CommRing B] [Algebra A B]
+
+/-- **The conductor as a contracted ambient conductor.** The conductor of `B` over `A`, the
+annihilator of `B / A`, is the contraction along `A → B` of the ambient conductor of the image
+of `A`. This holds even when `A → B` is not injective. -/
+theorem comap_conductor_range :
+    (algebraMap A B).range.conductor.comap (algebraMap A B) = conductor A B := by
+  ext a
+  simp
+
+end Subring
+
 end TauCeti.Algebra
+
+namespace Subring
+
+variable {B : Type*} [CommRing B]
+
+/-- For a subring `A` of `B`, the conductor of `B` over `A` is the contraction of the ambient
+conductor `c(A, B)` to `A`. -/
+theorem comap_subtype_conductor (A : Subring B) :
+    A.conductor.comap A.subtype = TauCeti.Algebra.conductor A B := by
+  rw [← TauCeti.Algebra.comap_conductor_range, Algebra.algebraMap_ofSubring, range_subtype]
+
+end Subring

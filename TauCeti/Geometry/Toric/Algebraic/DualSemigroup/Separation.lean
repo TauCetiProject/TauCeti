@@ -78,7 +78,7 @@ private theorem hull_inf_ker_eq_of_sum_nsmul_mem (hi : IsIntegralLattice i) {s :
     refine ⟨fun h0 ↦ ?_, hmF _⟩
     rw [hi.realCharacter_apply, Int.cast_eq_zero] at h0
     refine hF.mem_of_sum_smul_mem
-      (fun a : s ↦ PointedCone.subset_hull (Set.mem_image_of_mem i a.2))
+      (fun a : s ↦ PointedCone.subset_hull (Set.mem_image_of_mem i a.property))
       (fun _ ↦ Nat.cast_nonneg _) ?_ ⟨a, ha⟩ (Nat.cast_pos.2 (hpos ⟨a, ha⟩ h0))
     simpa only [Nat.cast_smul_eq_nsmul] using hc
 
@@ -116,7 +116,7 @@ theorem exists_mem_dualSemigroup_neg_mem_dualSemigroup_inf_ker_eq (hi : IsIntegr
       PointedCone.hull ℝ (i '' s) ⊓ PointedCone.hull ℝ (i '' t) := by
     refine ⟨?_, heq ▸ ?_⟩ <;>
       exact Submodule.sum_mem _ fun a _ ↦
-        nsmul_mem (PointedCone.subset_hull (Set.mem_image_of_mem i a.2)) _
+        nsmul_mem (PointedCone.subset_hull (Set.mem_image_of_mem i a.property)) _
   refine ⟨m, (mem_dualSemigroup_hull_image hi _ m).2 hms,
     (mem_dualSemigroup_hull_image hi _ _).2 hmt,
     hull_inf_ker_eq_of_sum_nsmul_mem hi hστ hms hF _ hw fun a ha ↦ by
@@ -167,8 +167,8 @@ theorem Fan.dualSemigroup_inf_eq_sup (Φ : Fan i) (hσ : σ ∈ Φ.cones) (hτ :
 fan has the zero cone as its only cone. -/
 theorem Fan.mem_dualSemigroup_ofCone_bot (hi : IsIntegralLattice i) (m : N →+ ℤ)
     (σ : (Fan.ofCone hi (isToricCone_bot i)).cones) :
-    m ∈ dualSemigroup (Fan.ofCone hi (isToricCone_bot i)).lattice σ.1 := by
-  rw [le_bot_iff.mp ((Fan.mem_ofCone_cones hi (isToricCone_bot i)).mp σ.2).le]
+    m ∈ dualSemigroup (Fan.ofCone hi (isToricCone_bot i)).lattice σ.val := by
+  rw [le_bot_iff.mp ((Fan.mem_ofCone_cones hi (isToricCone_bot i)).mp σ.property).le]
   simp
 
 end TauCeti.Toric

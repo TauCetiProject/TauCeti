@@ -29,28 +29,25 @@ The degree formula along `v` computes every integral over `C` of a two-form pull
 `∫_C u^* β = m ∫_{(ℝ / ℤ) × (ℝ / dℤ)} τ^* β`
 
 (`integralTopForm_mpullback_eq_degree_mul_of_orbitTorus_comp_eq`), so `u` represents `m` times the
-orbit torus for de Rham pairings. Since `τ^* Ω = ds ∧ dt_d` has integral `d` over the torus, the
-`Ω`-area of `u` is `m d` (`integralTopForm_mpullback_suspensionForm_eq_degree_mul`). For a
-nonconstant pseudoholomorphic horizontal curve the multiplicity is positive
-(`degree_pos_of_orbitTorus_comp_eq`), because the area of the pseudoholomorphic map `v` is.
+orbit torus for de Rham pairings. For `β = Ω` this is the `Ω`-area `m d`
+(`integralTopForm_mpullback_suspensionForm_eq_degree_mul`), and for a nonconstant
+pseudoholomorphic horizontal curve the multiplicity is positive
+(`exists_degree_pos_orbitTorus_comp_eq_of_isPseudoholomorphicAt`).
 
 When `u` is moreover immersed, `v` is a local diffeomorphism that preserves orientation at every
 point, so all orientation signs in the degree are `+1`. Then every point of the orbit torus has
-exactly `m` preimages under `v` (`ncard_preimage_eq_degree_of_orbitTorus_comp_eq`): the
-multiplicity is the number of sheets of `C` over the embedded torus `(ℝ / ℤ) × γ`. Since `τ` is
-injective, `u` is injective exactly when `m = 1`
-(`injective_iff_degree_eq_one_of_orbitTorus_comp_eq`), the embedded case, whose `Ω`-area is the
-least period `d` (`integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero`).
+exactly `m` preimages under `v` (`degree_eq_ncard_of_orbitTorus_comp_eq`): the multiplicity is the
+number of sheets of `C` over the embedded torus `(ℝ / ℤ) × γ`. Since `τ` is injective, `u` is
+injective exactly when `m = 1` (`injective_iff_degree_eq_one_of_orbitTorus_comp_eq`), the embedded
+case, whose `Ω`-area is the least period `d`
+(`integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero`).
 
 ## Main results
 
 * `integralTopForm_mpullback_eq_degree_mul_of_orbitTorus_comp_eq`: integrals of pulled back
   two-forms over a curve `u = τ ∘ v` are `deg v` times the integrals over the orbit torus.
-* `integralTopForm_mpullback_suspensionForm_eq_degree_mul`: such a curve has `Ω`-area `deg v · d`.
-* `degree_pos_of_orbitTorus_comp_eq`: a nonconstant compact connected pseudoholomorphic horizontal
-  curve covers its orbit torus with positive multiplicity.
-* `ncard_preimage_eq_degree_of_orbitTorus_comp_eq`: if the curve is immersed, every point of the
-  orbit torus has `deg v` preimages.
+* `degree_eq_ncard_of_orbitTorus_comp_eq`: if a nonconstant compact connected pseudoholomorphic
+  horizontal curve is immersed, every point of its orbit torus has `deg v` preimages.
 * `injective_iff_degree_eq_one_of_orbitTorus_comp_eq`: an immersed such curve is injective exactly
   when its covering multiplicity is one.
 
@@ -92,27 +89,15 @@ theorem integralTopForm_mpullback_eq_degree_mul_of_orbitTorus_comp_eq
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hv : ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
     (hτv : orbitTorus φ h ∘ v = u)
     (β : SmoothForm (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (UnitAddCircle × SmoothMappingTorus φ) ℝ 2) :
-    integralTopForm o (SmoothForm.mpullback u hu β).1 =
+    integralTopForm o (SmoothForm.mpullback u hu β).val =
       degree o ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v *
         integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
-          (SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) β).1 := by
+          (SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) β).val := by
   subst hτv
   rw [← SmoothForm.mpullback_mpullback _ _ hv (contMDiff_orbitTorus h), SmoothForm.coe_mpullback]
-  exact integralTopForm_mpullback_eq_degree_mul _ _ hv (SmoothForm.isSmoothForm _)
+  exact integralTopForm_mpullback_eq_degree_mul _ _ hv hv.continuous.isProperMap
+    (SmoothForm.isSmoothForm _)
     (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _))
-
-variable {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
-
-/-- **The `Ω`-area of a curve through an orbit torus.** Let `u = τ ∘ v` for the orbit torus `τ` of
-a point of period `d` and a smooth map `v` from a compact boundaryless surface modelled on
-`ℝ × ℝ`. Then the suspension form `Ω = ds ∧ dt + σ_v` integrates to `deg v · d` over `C`. -/
-theorem integralTopForm_mpullback_suspensionForm_eq_degree_mul
-    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hv : ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
-    (hτv : orbitTorus φ h ∘ v = u) :
-    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
-      degree o ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v * d := by
-  rw [integralTopForm_mpullback_eq_degree_mul_of_orbitTorus_comp_eq h hu hv hτv,
-    mpullback_orbitTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [PreconnectedSpace C]
   {J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
@@ -140,35 +125,6 @@ private theorem contMDiff_and_isPseudoholomorphicAt_of_orbitTorus_comp_eq
     exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt hu ho hhol hS hH hne hc h hd
   have hv' : v' = v := ((injective_orbitTorus_iff h).2 hd).comp_left (hτv'.trans hτv.symm)
   exact hv' ▸ ⟨hv'd, hv'hol⟩
-
-/-- **A nonconstant pseudoholomorphic horizontal curve covers its orbit torus with positive
-multiplicity.** Let `u` be a smooth pseudoholomorphic map from a compact connected boundaryless
-surface `C` modelled on `ℝ × ℝ`, oriented so that the frames `(e, j e)` are positive, into `X_φ`
-with an almost complex structure of block form `J ∂_s = T` along the image of `u`, with horizontal
-tangent images and nonzero differential somewhere. Let `(s, [t, x])` be a value of `u`, where `x`
-has least period `d`, and let `u = τ ∘ v` for the orbit torus `τ` of `x` and a map `v`. Then
-`deg v > 0`, for the product of the positive orientations of the two circles. -/
-theorem degree_pos_of_orbitTorus_comp_eq
-    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
-    (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
-      b.orientation = o.orientationAt c)
-    (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
-    (hS : ∀ c, J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
-      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
-    (hH : ∀ c (e : TangentSpace I' c),
-      mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c))
-    {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
-    {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d)
-    (hτv : orbitTorus φ h ∘ v = u) :
-    0 < degree o ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v := by
-  obtain ⟨hv, hvhol⟩ :=
-    contMDiff_and_isPseudoholomorphicAt_of_orbitTorus_comp_eq h hu ho hhol hS hH hne hc hd hτv
-  refine degree_pos_of_isPseudoholomorphicAt_addCircleProd ho hv hvhol (c₀ := c₀) ?_
-  -- `du = dτ ∘ dv`, so `dv` vanishes nowhere where `du` does not.
-  intro hv₀
-  apply hne
-  rw [← hτv, mfderiv_comp c₀ ((contMDiff_orbitTorus h).mdifferentiableAt (by simp))
-    (hv.mdifferentiableAt (by simp)), hv₀, ContinuousLinearMap.comp_zero]
 
 omit [I'.Boundaryless] [IsManifold I' ∞ C] [T2Space C] [CompactSpace C] [I.Boundaryless]
   [FiniteDimensional ℝ E] [PreconnectedSpace C] in
@@ -200,7 +156,7 @@ complex structure of block form `J ∂_s = T` along the image of `u`, with horiz
 Let `(s, [t, x])` be a value of `u`, where `x` has least period `d`, and let `u = τ ∘ v` for the
 orbit torus `τ` of `x` and a map `v`. Then every point of the torus `(ℝ / ℤ) × (ℝ / dℤ)` has
 exactly `deg v` preimages under `v`. -/
-theorem ncard_preimage_eq_degree_of_orbitTorus_comp_eq
+theorem degree_eq_ncard_of_orbitTorus_comp_eq
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
@@ -212,11 +168,11 @@ theorem ncard_preimage_eq_degree_of_orbitTorus_comp_eq
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d)
     (hτv : orbitTorus φ h ∘ v = u) (y : UnitAddCircle × AddCircle (d : ℝ)) :
-    ((v ⁻¹' {y}).ncard : ℤ) =
-      degree o ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v :=
+    degree o ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v =
+      (v ⁻¹' {y}).ncard :=
   have hv := contMDiff_and_isPseudoholomorphicAt_of_orbitTorus_comp_eq h hu ho hhol hS hH
     (mfderiv_ne_zero_of_injective hinj c) hc hd hτv
-  ncard_preimage_eq_degree_of_injective_mfderiv ho hv.1 hv.2
+  degree_eq_ncard_of_injective_mfderiv ho hv.1 hv.2
     (injective_mfderiv_of_orbitTorus_comp_eq h hv.1 hτv hinj) y
 
 /-- **An immersed pseudoholomorphic horizontal curve is embedded exactly when its covering
