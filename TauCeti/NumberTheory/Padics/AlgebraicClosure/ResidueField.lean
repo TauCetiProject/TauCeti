@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.ZMod
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.NumberTheory.Padics.RingHoms
-import Mathlib.RingTheory.Valuation.Integral
+public import TauCeti.Topology.Algebra.Valued.ResidueField
 import Mathlib.Topology.Algebra.Valued.LocallyCompact
 import TauCeti.Topology.Algebra.Valued.Integer
 
@@ -21,9 +21,8 @@ Let `O = 𝒪[PadicAlgCl p] = {x | ‖x‖ ≤ 1}` be the valuation ring of the 
 file proves that `κ` is an algebraic closure of `𝔽_p = ZMod p`, hence non-canonically isomorphic to
 `AlgebraicClosure (ZMod p)`.
 
-* `κ` is algebraically closed: a monic polynomial over `κ` lifts to a monic polynomial over `O`,
-  whose roots in `PadicAlgCl p` are integral over `O` and so lie in `O`; their residues are roots
-  of the given polynomial.
+* `κ` is algebraically closed, as is the residue field of every algebraically closed valued
+  field (`Valued.instIsAlgClosedResidueField`).
 * `κ` is algebraic over `𝔽_p`: an element `x` of `O` has minimal polynomial over `ℚ_p` with
   coefficients of norm at most `1` (its spectral value is `‖x‖ ≤ 1`), so in `ℤ_p`, and the
   reduction of that polynomial to `𝔽_p` is a monic polynomial killing the residue of `x`.
@@ -39,7 +38,7 @@ file proves that `κ` is an algebraic closure of `𝔽_p = ZMod p`, hence non-ca
 
 * `PadicAlgCl.norm_coeff_minpoly_le_one`: an element of norm at most `1` has minimal polynomial
   over `ℚ_p` with coefficients of norm at most `1`.
-* `PadicAlgCl.instIsAlgClosedResidueField`: `𝓀[PadicAlgCl p]` is algebraically closed.
+* `PadicAlgCl.instIsAlgebraicZModResidueField`: `𝓀[PadicAlgCl p]` is algebraic over `ZMod p`.
 * `PadicAlgCl.instIsAlgClosureZModResidueField`: `𝓀[PadicAlgCl p]` is an algebraic closure of
   `ZMod p`.
 
@@ -90,6 +89,7 @@ noncomputable instance instAlgebraZModResidueField : Algebra (ZMod p) 𝓀[Padic
   ZMod.algebra _ p
 
 /-- Reduction from `ℤ_p` to the residue field of `PadicAlgCl p` factors through `ZMod p`. -/
+@[simp]
 theorem residue_padicIntToInteger (x : ℤ_[p]) :
     residue 𝒪[PadicAlgCl p] (padicIntToInteger p x) =
       algebraMap (ZMod p) 𝓀[PadicAlgCl p] (PadicInt.toZMod x) := by
@@ -101,28 +101,7 @@ theorem residue_padicIntToInteger (x : ℤ_[p]) :
   conv_rhs => rw [← ZMod.natCast_zmod_val z, map_natCast]
   simp only [hy, map_add, map_mul, map_natCast, CharP.cast_eq_zero, zero_mul, zero_add]
 
-/-- **The residue field of `PadicAlgCl p` is algebraically closed.** -/
-instance instIsAlgClosedResidueField : IsAlgClosed 𝓀[PadicAlgCl p] := by
-  refine IsAlgClosed.of_exists_root _ fun g hg hirr ↦ ?_
-  have hlifts : g ∈ lifts (residue 𝒪[PadicAlgCl p]) :=
-    lifts_iff_coeff_lifts _ |>.2 fun n ↦ residue_surjective _
-  obtain ⟨f, hf, hfdeg, hfm⟩ := lifts_and_natDegree_eq_and_monic hlifts hg
-  have hdeg : (f.map (algebraMap 𝒪[PadicAlgCl p] (PadicAlgCl p))).degree ≠ 0 := by
-    rw [degree_map_eq_of_injective Subtype.val_injective,
-      degree_eq_natDegree hfm.ne_zero, hfdeg]
-    exact_mod_cast (natDegree_pos_iff_degree_pos.2 (degree_pos_of_irreducible hirr)).ne'
-  obtain ⟨α, hα⟩ := IsAlgClosed.exists_root _ hdeg
-  rw [IsRoot.def, eval_map] at hα
-  have hint : IsIntegral 𝒪[PadicAlgCl p] α := ⟨f, hfm, hα⟩
-  set a : 𝒪[PadicAlgCl p] := ⟨α, (Valuation.integer.integers _).mem_of_integral hint⟩
-  refine ⟨residue _ a, ?_⟩
-  have ha : f.eval a = 0 :=
-    Subtype.ext ((eval₂_at_apply (algebraMap 𝒪[PadicAlgCl p] (PadicAlgCl p)) a).symm.trans hα)
-  rw [← hf, eval_map, eval₂_hom, ha, map_zero]
-
-/-- **The residue field of `PadicAlgCl p` is algebraic over `𝔽_p`.** An element of norm at most
-`1` has minimal polynomial over `ℚ_p` with coefficients in `ℤ_p`, whose reduction to `𝔽_p` kills
-its residue. -/
+/-- **The residue field of `PadicAlgCl p` is algebraic over `𝔽_p`.** -/
 instance instIsAlgebraicZModResidueField : Algebra.IsAlgebraic (ZMod p) 𝓀[PadicAlgCl p] := by
   refine ⟨fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := residue_surjective y
@@ -132,12 +111,13 @@ instance instIsAlgebraicZModResidueField : Algebra.IsAlgebraic (ZMod p) 𝓀[Pad
   obtain ⟨Q, hQ, -, hQm⟩ := lifts_and_natDegree_eq_and_monic hlifts
     (minpoly.monic (Algebra.IsIntegral.isIntegral _))
   have hQx : Q.eval₂ (padicIntToInteger p) x = 0 := by
-    apply Subtype.ext
-    change (𝒪[PadicAlgCl p]).subtype (Q.eval₂ (padicIntToInteger p) x) = 0
+    have hι : (𝒪[PadicAlgCl p]).subtype.comp (padicIntToInteger p) =
+        (algebraMap ℚ_[p] (PadicAlgCl p)).comp PadicInt.Coe.ringHom :=
+      RingHom.ext coe_padicIntToInteger
+    apply Subring.subtype_injective
     have := minpoly.aeval ℚ_[p] (x : PadicAlgCl p)
     rw [← hQ, aeval_def, eval₂_map] at this
-    rw [hom_eval₂]
-    exact this
+    rw [map_zero, hom_eval₂, hι, Subring.subtype_apply, this]
   have hcomp : (algebraMap (ZMod p) 𝓀[PadicAlgCl p]).comp PadicInt.toZMod =
       (residue 𝒪[PadicAlgCl p]).comp (padicIntToInteger p) :=
     RingHom.ext fun z ↦ (residue_padicIntToInteger z).symm

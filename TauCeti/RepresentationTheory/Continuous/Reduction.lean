@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
 
@@ -21,8 +20,9 @@ free module the characteristic polynomial and the determinant of `g` on the redu
 reductions modulo `𝔪_A` of those of `ρ g`, and over a finite residue field the reduction has
 finite image.
 
-No semisimplification is applied: for `(1 a; 0 1)` acting on `ℚ_ℓ²`, the lattices `ℤ_ℓ²` and
-`ℤ_ℓ e₁ ⊕ ℓℤ_ℓ e₂` have non-isomorphic raw reductions (non-split and trivial).
+No semisimplification is applied: for `(1 a; 0 1)` with `a ∈ ℤ_ℓ^×` acting on `ℚ_ℓ²`, the
+lattices `ℤ_ℓ²` and `ℤ_ℓ e₁ ⊕ ℓℤ_ℓ e₂` have non-isomorphic raw reductions (non-split and
+trivial).
 
 The continuity hypothesis on the residue map is needed. With the indiscrete topologies on `ℤ_3`
 and `ℚ_3`, a discontinuous sign character of `∏_ℕ C₂` acts continuously on a stable rank-one
@@ -39,10 +39,12 @@ lattice, while its reduction to the discrete field `𝔽_3` is discontinuous.
   the reduction is the reduction of `charpoly (ρ g)`.
 * `TauCeti.ContinuousRep.det_reduction_apply`: the determinant of `g` on the reduction is
   the residue of `det (ρ g)`.
-* `TauCeti.ContinuousRep.reductionTrivialIso`: the trivial representation reduces to the trivial
-  representation.
 * `TauCeti.ContinuousRep.finite_range_reduction`: over a finite residue field the reduction has
   finite image.
+
+Since `reduction` is the base change to `k_A`, the base-change API of `ContinuousRep` applies to
+it directly; for instance `TauCeti.ContinuousRep.baseChangeTrivialIso` shows that the trivial
+representation reduces to the trivial representation.
 
 ## References
 
@@ -70,27 +72,16 @@ noncomputable abbrev reduction (ρ : ContinuousRep Γ A M) :
     ContinuousRep Γ (ResidueField A) (ResidueField A ⊗[A] M) :=
   ρ.baseChange (ResidueField A)
 
-/-- The reduction acts on pure tensors through the original action. -/
-theorem reduction_tmul (ρ : ContinuousRep Γ A M) (g : Γ) (c : ResidueField A) (x : M) :
-    ρ.reduction g (c ⊗ₜ x) = c ⊗ₜ ρ g x := by
-  simp
-
 /-- **The characteristic polynomial of the reduction** at `g` is the reduction modulo `𝔪_A` of
 the characteristic polynomial of `ρ g`. -/
 theorem charpoly_reduction_apply [Module.Free A M] (ρ : ContinuousRep Γ A M) (g : Γ) :
     (ρ.reduction g).charpoly = (ρ g).charpoly.map (residue A) := by
-  rw [baseChange_apply, LinearMap.charpoly_baseChange, ResidueField.algebraMap_eq]
+  rw [charpoly_baseChange_apply, ResidueField.algebraMap_eq]
 
 /-- **The determinant of the reduction** at `g` is the residue of the determinant of `ρ g`. -/
 theorem det_reduction_apply [Module.Free A M] (ρ : ContinuousRep Γ A M) (g : Γ) :
     LinearMap.det (ρ.reduction g) = residue A (LinearMap.det (ρ g)) := by
-  rw [baseChange_apply, LinearMap.det_baseChange, ResidueField.algebraMap_eq]
-
-variable (Γ A M) in
-/-- **The trivial representation reduces to the trivial representation.** -/
-noncomputable def reductionTrivialIso :
-    Iso (trivial Γ A M).reduction (trivial Γ (ResidueField A) (ResidueField A ⊗[A] M)) :=
-  .ofEquiv (.mk (.refl _ _) fun g ↦ by ext; simp)
+  rw [det_baseChange_apply, ResidueField.algebraMap_eq]
 
 /-- **Finite image.** Over a finite residue field, the reduction of a continuous representation
 takes only finitely many values. -/
