@@ -429,6 +429,13 @@ theorem rightTranslation_apply_algebraMap (a : A) (c : ℝ) :
     rightTranslation a (algebraMap ℝ (AddUCB A) c) = algebraMap ℝ (AddUCB A) c := by
   simp [Algebra.algebraMap_eq_smul_one]
 
+/-- Right translation preserves pointwise products. -/
+@[simp]
+theorem rightTranslation_apply_mul (a : A) (f g : AddUCB A) :
+    rightTranslation a (f * g) = rightTranslation a f * rightTranslation a g := by
+  ext
+  simp
+
 /-- Left and right translations of `AddUCB A` commute. -/
 theorem commute_leftTranslation_rightTranslation (a b : A) :
     Commute (leftTranslation a) (rightTranslation b) := by
