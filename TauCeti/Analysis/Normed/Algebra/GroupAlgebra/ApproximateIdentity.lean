@@ -328,7 +328,7 @@ theorem norm_character_toStrongDual {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜]
 theorem toStrongDual_integralNonUnitalAlgHom :
     (integralNonUnitalAlgHom 𝕜 μ).toStrongDual = integralCLM 𝕜 μ := by
   ext f
-  rw [NonUnitalAlgHom.toStrongDual_apply, integralNonUnitalAlgHom_apply,
+  rw [NonUnitalAlgHom.coe_toStrongDual, integralNonUnitalAlgHom_apply,
     integralCLM_apply]
 
 /-- Haar integration is a nonzero character on `L1GroupAlgebra 𝕜 μ`. -/

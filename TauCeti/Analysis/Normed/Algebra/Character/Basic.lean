@@ -101,11 +101,6 @@ theorem tendsto_one_of_isApproximateUnit {l : Filter A} (hl : l.IsApproximateUni
   obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := by simpa [DFunLike.ext_iff] using hφ
   exact tendsto_one_of_tendsto_mul_right ha (hl.tendsto_mul_right a)
 
-@[simp]
-theorem toStrongDual_apply (φ : A →ₙₐ[𝕜] 𝕜) (a : A) :
-    φ.toStrongDual a = φ a :=
-  (rfl)
-
 theorem toStrongDual_injective :
     Function.Injective (toStrongDual (𝕜 := 𝕜) (A := A)) := fun _ _ h =>
   DFunLike.ext _ _ fun a => congrArg (fun f : StrongDual 𝕜 A => f a) h
@@ -141,7 +136,6 @@ theorem norm_toStrongDual_eq_one_of_tendsto_one {l : Filter A} [l.NeBot]
   have h1 : Tendsto (fun e ↦ ‖φ e‖) l (𝓝 1) := by simpa only [norm_one] using ht.norm
   refine le_of_tendsto h1 ?_
   filter_upwards [hb] with e he
-  rw [← toStrongDual_apply]
   exact (φ.toStrongDual.le_opNorm e).trans <|
     (mul_le_mul_of_nonneg_left he (norm_nonneg _)).trans_eq (mul_one _)
 

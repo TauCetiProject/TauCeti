@@ -94,13 +94,6 @@ theorem norm_convolutionL_sub_le_of_integral_eq_one {hp : p ≠ ∞} {k : Lp �
     (integrable_smul_leftTranslation hp (L1.integrable_coeFn k) u).aestronglyMeasurable
     (ae_of_all _ hu)
 
-omit [NormedSpace ℝ E] [CompleteSpace E] [SMulCommClass ℝ 𝕜 E] in
-private theorem tendsto_leftTranslation_nhds_one (𝕜 : Type*) [RCLike 𝕜] [NormedSpace 𝕜 E]
-    {hp : p ≠ ∞} (u : Lp E p μ) :
-    Tendsto (fun y : G => leftTranslation μ p 𝕜 y u) (𝓝 1) (𝓝 u) := by
-  have h := (continuous_leftTranslation_apply (𝕜 := 𝕜) hp u).tendsto 1
-  rwa [map_one, LinearIsometryEquiv.coe_one, id_eq] at h
-
 /-- **Left approximate identity**, quantitatively. Over an `RCLike` scalar field, for
 `u ∈ Lᵖ(G, μ; E)` (`1 ≤ p < ∞`), `C : ℝ`, and `ε > 0`, there is a neighbourhood `U` of `1` such
 that `‖k ⋆ u - u‖_p ≤ ε` for every `k ∈ L¹(G, μ; 𝕜)` with `‖k‖₁ ≤ C` and `∫ k = 1` vanishing
@@ -110,7 +103,7 @@ theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le_left (hp : p ≠ ∞
     ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp 𝕜 1 μ, ‖k‖ ≤ C → ∫ y, k y ∂μ = 1 →
       (∀ᵐ y ∂μ, y ∉ U → k y = 0) → ‖convolutionL μ p hp k u - u‖ ≤ ε := by
   obtain ⟨U, hU, hbound⟩ := exists_mem_nhds_forall_norm_integral_smul_sub_lt (μ := μ) (𝕜 := 𝕜)
-    (tendsto_leftTranslation_nhds_one 𝕜 (hp := hp) u) C hε
+    (tendsto_leftTranslation_apply_nhds_one (𝕜 := 𝕜) hp u) C hε
   refine ⟨U, hU, fun k hkC hk₁ hkU => ?_⟩
   rw [convolutionL_apply]
   exact (hbound k hkC hk₁ hkU
@@ -128,7 +121,7 @@ theorem tendsto_convolutionL_left_of_norm_le {hp : p ≠ ∞} {ι : Type*} {l : 
   exact tendsto_integral_smul_of_tendsto hk1 hkC hkl
     (.of_forall fun i =>
       (integrable_smul_leftTranslation hp (L1.integrable_coeFn (k i)) u).aestronglyMeasurable)
-    (tendsto_leftTranslation_nhds_one 𝕜 (hp := hp) u)
+    (tendsto_leftTranslation_apply_nhds_one (𝕜 := 𝕜) hp u)
 
 end RCLike
 
