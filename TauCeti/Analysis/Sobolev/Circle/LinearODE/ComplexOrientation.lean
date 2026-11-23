@@ -113,15 +113,9 @@ theorem isComplexPositiveDetLine_detLineLoopOperatorEquiv_symm
 real cokernel of the Fredholm operator `L_S` is. -/
 instance finiteDimensional_coker_complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
     FiniteDimensional ℂ (CircleSobolev 0 E ⧸
-      range (complexLoopOperator T hS : CircleSobolev 1 E →ₗ[ℂ] CircleSobolev 0 E)) := by
-  have : FiniteDimensional ℝ (CircleSobolev 0 E ⧸ range
-      ((complexLoopOperator T hS : CircleSobolev 1 E →ₗ[ℂ] CircleSobolev 0 E).restrictScalars ℝ)) :=
-    (isFredholm_loopOperator T S).finite_coker
-  have : FiniteDimensional ℝ (CircleSobolev 0 E ⧸
       range (complexLoopOperator T hS : CircleSobolev 1 E →ₗ[ℂ] CircleSobolev 0 E)) :=
-    Module.Finite.equiv ((complexLoopOperator T hS : CircleSobolev 1 E →ₗ[ℂ]
-      CircleSobolev 0 E).cokerRestrictScalarsEquiv ℝ)
-  exact Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  (isFredholm_loopOperator T S).finiteDimensional_quotient_range_of_restrictScalars_eq <| by
+    rw [← restrictScalars_complexLoopOperator T hS, ContinuousLinearMap.coe_restrictScalars]
 
 /-! ### Transport from a complex-linear reference -/
 
