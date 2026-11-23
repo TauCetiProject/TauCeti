@@ -95,7 +95,7 @@ variable (D) in
 of adjacent vertices. -/
 def sigmaAdjHomEquiv : (Σ v w, D.AdjHom v w) ≃ {p : V × V // D.Adj p.1 p.2} where
   toFun a := ⟨(a.1, a.2.1), a.2.2.down⟩
-  invFun p := ⟨p.1.1, p.1.2, ⟨p.2⟩⟩
+  invFun p := ⟨p.val.1, p.val.2, ⟨p.property⟩⟩
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 
@@ -106,7 +106,7 @@ theorem sigmaAdjHomEquiv_apply_coe (a : Σ v w, D.AdjHom v w) :
 
 @[simp]
 theorem sigmaAdjHomEquiv_symm_apply (p : {p : V × V // D.Adj p.1 p.2}) :
-    (sigmaAdjHomEquiv D).symm p = ⟨p.1.1, p.1.2, ⟨p.2⟩⟩ :=
+    (sigmaAdjHomEquiv D).symm p = ⟨p.val.1, p.val.2, ⟨p.property⟩⟩ :=
   (rfl)
 
 /-- Consecutive vertices of a walk along the adjacency arrow family are adjacent. -/
@@ -123,7 +123,8 @@ noncomputable def arrowWalkEquiv (s t : V) :
   Equiv.ofBijective (fun p ↦ ⟨p.vertices, isChain_vertices p,
       @Quiver.Path.vertices_head? V ⟨D.AdjHom⟩ s t p, p.vertices_getLast?⟩)
     ⟨fun _ _ h ↦ ArrowWalk.vertices_injective (congrArg Subtype.val h), fun l ↦
-      (ArrowWalk.exists_vertices_eq_of_isChain (by simpa using l.2.1) l.2.2.1 l.2.2.2).imp
+      (ArrowWalk.exists_vertices_eq_of_isChain (by simpa using l.property.1) l.property.2.1
+          l.property.2.2).imp
         fun _ hp ↦ Subtype.ext hp⟩
 
 @[simp]
@@ -173,7 +174,7 @@ theorem reflTransGen_induce_iff {S : Set V} {s t : S} :
   · rintro ⟨p, hp⟩
     -- Generalize the target, a vertex of `S`, to an arbitrary vertex lying in `S`.
     suffices h : ∀ {x : V} (hx : x ∈ S) (p : ArrowWalk D.AdjHom s x),
-        (∀ v ∈ p.vertices, v ∈ S) → ReflTransGen (D.induce S).Adj s ⟨x, hx⟩ from h t.2 p hp
+        (∀ v ∈ p.vertices, v ∈ S) → ReflTransGen (D.induce S).Adj s ⟨x, hx⟩ from h t.property p hp
     intro x hx p hp
     induction p with
     | nil => rfl

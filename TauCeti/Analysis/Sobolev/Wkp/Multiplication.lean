@@ -170,12 +170,8 @@ theorem Wkp.norm_ofTestFunctionₗ_le_of_eqOn_mul (k : ℕ) {psi : E → ℝ}
       have h := derivative_mul_le (mu := mu) (p := p) 0 0 le_rfl hpsi hM hbound u hf hu Phi hPhi
       have he : ‖ofTestFunctionₗ (mu := mu) (p := p) 0 Phi‖ =
           lpNorm (iteratedFDeriv ℝ 0 (Phi : E → ℝ)) p (mu.restrict Omega) := by
-        rw [← value_zero (ofTestFunctionₗ (mu := mu) (p := p) 0 Phi), Lp.norm_def, lpNorm]
-        congr 1
-        refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-          ((Phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable) ?_
-        filter_upwards [hPhi_ae 0] with x hx
-        rw [hx, norm_iteratedFDeriv_zero]
+        rw [← value_zero (ofTestFunctionₗ (mu := mu) (p := p) 0 Phi)]
+        exact norm_value_eq_lpNorm_iteratedFDeriv_zero 0 _ (hPhi_ae 0)
       rw [he]
       simp only [pow_zero, one_mul] at h
       simp only [zero_add, pow_one]

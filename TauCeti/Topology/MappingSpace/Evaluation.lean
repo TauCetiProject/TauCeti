@@ -26,8 +26,12 @@ either space. That the constant maps embed `X` in `Map(B, X)` for nonempty `B` i
 * `TauCeti.mappingSpaceEval`: evaluation `Map(B, X) → X` at a chosen point of `B`.
 * `TauCeti.mappingSpaceEval_comp_const'`: constant maps form a continuous section.
 * `TauCeti.isQuotientMap_mappingSpaceEval`: evaluation is a quotient map.
+* `Path.evalHomotopy`: for maps with jointly continuous evaluation, evaluations at the two
+  ends of a path are homotopic.
 * `TauCeti.mappingSpaceEval_comp_subtypeVal`: evaluation is constant on the based mapping space,
   the fibre over `x`; its universal lift is `TauCeti.BasedMap.lift`.
+* `TauCeti.basedMapHomeomorphPreimage`: the based mapping space is homeomorphic to the fibre of
+  evaluation over `x`, as a subspace of the mapping space.
 
 ## References
 
@@ -65,6 +69,12 @@ theorem mappingSpaceEval_comp_const' (b : B) :
     (mappingSpaceEval (X := X) b).comp ContinuousMap.const' = ContinuousMap.id X :=
   ContinuousMap.ext (leftInverse_mappingSpaceEval_const b)
 
+/-- The constant maps send `X ∖ {x}` into the complement of the fibre of evaluation over `x`:
+the only constant map with value `x` at `b` is the constant map at `x`. -/
+theorem const'_preimage_mappingSpaceEval_preimage_subset (b : B) (x : X) :
+    (ContinuousMap.const' : C(X, C(B, X))) ⁻¹' (mappingSpaceEval b ⁻¹' {x}) ⊆ {x} :=
+  fun _ h ↦ by simpa using h
+
 /-- Evaluation at a point is a quotient map. Its continuous section by constant maps detects
 openness in the target. -/
 theorem isQuotientMap_mappingSpaceEval (b : B) :
@@ -81,6 +91,54 @@ theorem mappingSpaceEval_comp_subtypeVal (b : B) (x : X) :
   ext f
   simp only [ContinuousMap.comp_apply, mappingSpaceEval_apply, ContinuousMap.subtypeVal_apply,
     ContinuousMap.const_apply]
-  exact f.2
+  exact f.property
+
+/-- The based mapping space `Map_*(B, X)` is the fibre of evaluation at `b` over `x`: the two
+subspaces of `C(B, X)` have the same points. -/
+def basedMapHomeomorphPreimage (b : B) (x : X) :
+    BasedMap B X b x ≃ₜ (mappingSpaceEval b ⁻¹' {x} : Set C(B, X)) where
+  toFun f := ⟨f.val, f.property⟩
+  invFun f := ⟨f.val, f.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The homeomorphism `TauCeti.basedMapHomeomorphPreimage` keeps the underlying map. -/
+@[simp]
+theorem coe_basedMapHomeomorphPreimage_apply (b : B) (x : X) (f : BasedMap B X b x) :
+    (basedMapHomeomorphPreimage b x f : C(B, X)) = f.val :=
+  (rfl)
+
+/-- The inverse of `TauCeti.basedMapHomeomorphPreimage` keeps the underlying map. -/
+@[simp]
+theorem coe_basedMapHomeomorphPreimage_symm_apply (b : B) (x : X)
+    (f : (mappingSpaceEval b ⁻¹' {x} : Set C(B, X))) :
+    ((basedMapHomeomorphPreimage b x).symm f).val = f :=
+  (rfl)
 
 end TauCeti
+
+namespace Path
+
+variable {B : Type*} {X : Type*} [TopologicalSpace B] [TopologicalSpace X]
+  {F : Type*} [TopologicalSpace F] [FunLike F B X] [ContinuousEval F B X]
+
+/-- **Evaluations at the ends of a path are homotopic**, through evaluation along the path, on any
+type `F` of maps `B → X` with jointly continuous evaluation `F × B → X`: any continuous maps
+`e₀ e₁ : F → X` evaluating at `b₀` and at `b₁` are homotopic. For `F = C(B, X)` evaluation is
+jointly continuous when `(B, X)` is a locally compact pair, for instance when `B` is locally
+compact, and the maps `e₀`, `e₁` can be `TauCeti.mappingSpaceEval`. -/
+def evalHomotopy {b₀ b₁ : B} (γ : Path b₀ b₁) {e₀ e₁ : C(F, X)} (h₀ : ∀ f, e₀ f = f b₀)
+    (h₁ : ∀ f, e₁ f = f b₁) : e₀.Homotopy e₁ where
+  toFun q := q.2 (γ q.1)
+  continuous_toFun := by fun_prop
+  map_zero_left f := by simp [h₀]
+  map_one_left f := by simp [h₁]
+
+/-- At time `t`, the homotopy `γ.evalHomotopy h₀ h₁` evaluates at `γ t`. -/
+@[simp]
+theorem evalHomotopy_apply {b₀ b₁ : B} (γ : Path b₀ b₁) {e₀ e₁ : C(F, X)}
+    (h₀ : ∀ f, e₀ f = f b₀) (h₁ : ∀ f, e₁ f = f b₁) (t : unitInterval) (f : F) :
+    γ.evalHomotopy h₀ h₁ (t, f) = f (γ t) :=
+  (rfl)
+
+end Path

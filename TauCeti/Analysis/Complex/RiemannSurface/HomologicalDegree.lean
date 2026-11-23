@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.LocalIndex
-public import TauCeti.Analysis.Complex.RiemannSurface.Degree
-public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
+public import TauCeti.Analysis.Complex.RiemannSurface.FundamentalClass
 import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -36,13 +35,14 @@ computes the image `f_*[X]` of the fundamental class. This file shows that they 
   (`TauCeti.RiemannSurface.degree_complexHomologicalOrientation`). That fibre is compact, hence
   finite (`TauCeti.RiemannSurface.finite_preimage_singleton_of_isCompact`). The source need not be
   compact, as for a proper projection of an open curve onto a disc.
-* For compact `X` the homological degree is the degree of `f`
-  (`TauCeti.RiemannSurface.degree_complexHomologicalOrientation_eq_degree`), so
-  `f_*[X] = deg f • [Y]` in `H₂(Y; ℤ)` when `Y` is compact too
-  (`TauCeti.RiemannSurface.mapFundamentalClass_complexHomologicalOrientation`). Since the degree is
-  a natural number, `f_* : H₂(X; ℤ) → H₂(Y; ℤ)` is bijective exactly when `deg f = 1`
-  (`TauCeti.RiemannSurface.bijective_singularHomologyMap_iff_degree_eq_one`); a finite holomorphic
-  map of degree one is a biholomorphism (`TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`).
+* For compact `X` this recovers the comparison of the homological degree with the degree of a
+  finite holomorphic map
+  (`TauCeti.RiemannSurface.FiniteHolomorphicMap.degree_complexHomologicalOrientation`), and hence
+  `f_*[X] = deg f • [Y]`. Since the degree is a natural number,
+  `f_* : H₂(X; ℤ) → H₂(Y; ℤ)` is bijective exactly when `deg f = 1`
+  (`TauCeti.RiemannSurface.FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one`);
+  a finite holomorphic map of degree one is a biholomorphism
+  (`TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`).
 
 The local statement reduces to the plane. In the charts at `x` and `f x`, restricted to open
 subsets on which `f` maps the first into the second, the canonical orientations are pulled back
@@ -68,12 +68,8 @@ fibre.
   finite fibre is the fibre sum of local multiplicities.
 * `TauCeti.RiemannSurface.degree_complexHomologicalOrientation`: the degree of a proper map is
   the fibre sum over a point near whose preimages it is holomorphic and not constant.
-* `TauCeti.RiemannSurface.degree_complexHomologicalOrientation_eq_degree`: for a compact source
-  the homological degree is the degree.
-* `TauCeti.RiemannSurface.mapFundamentalClass_complexHomologicalOrientation`:
-  `f_*[X] = deg f • [Y]` for compact Riemann surfaces.
-* `TauCeti.RiemannSurface.bijective_singularHomologyMap_iff_degree_eq_one`: `f_*` is bijective on
-  `H₂(-; ℤ)` exactly when `deg f = 1`.
+* `TauCeti.RiemannSurface.FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one`:
+  `f_*` is bijective on `H₂(-; ℤ)` exactly when `deg f = 1`.
 
 ## References
 
@@ -169,41 +165,16 @@ theorem degree_complexHomologicalOrientation [PreconnectedSpace Y] {f : C(X, Y)}
   exact localDegree_complexHomologicalOrientation f
     (finite_preimage_singleton_of_isCompact (hp.isCompact_preimage isCompact_singleton) hf hne) hf
 
-/-- **The homological degree of a holomorphic map is its degree.** For a holomorphic map `f` from
-a compact Riemann surface onto a connected one which is constant near no point, the degree of `f`
-for the canonical homological orientations is `TauCeti.RiemannSurface.degree f`. -/
-theorem degree_complexHomologicalOrientation_eq_degree [CompactSpace X] [PreconnectedSpace Y]
-    {f : C(X, Y)} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) :
-    (complexHomologicalOrientation X).degree (complexHomologicalOrientation Y)
-      Complex.finrank_real_complex f = degree f := by
-  rcases isEmpty_or_nonempty Y with hY | ⟨⟨y⟩⟩
-  · have : IsEmpty X := f.toFun.isEmpty
-    rw [HomologicalOrientation.degree_of_isEmpty, degree_eq_zero_of_isEmpty, Nat.cast_zero]
-  · rw [degree_complexHomologicalOrientation f.continuous.isProperMap (y := y)
-      (fun _ _ ↦ .of_forall hf) fun x _ ↦ hne x, fiberMultiplicitySum_eq_degree hf hne y]
-
-/-- **A holomorphic map multiplies the fundamental class by its degree.** For a holomorphic map
-`f : X → Y` between compact Riemann surfaces, with `Y` connected, which is constant near no point,
-`f_*[X] = deg f • [Y]` in `H₂(Y; ℤ)`. -/
-theorem mapFundamentalClass_complexHomologicalOrientation [CompactSpace X] [CompactSpace Y]
-    [PreconnectedSpace Y] {f : C(X, Y)} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
-    (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) :
-    (complexHomologicalOrientation X).mapFundamentalClass Complex.finrank_real_complex f =
-      (degree f : ℤ) • complexFundamentalClass Y := by
-  rw [HomologicalOrientation.mapFundamentalClass_eq_degree_smul _ (complexHomologicalOrientation Y)
-    _ Complex.finrank_real_complex, degree_complexHomologicalOrientation_eq_degree hf hne,
-    complexFundamentalClass_def]
-
-/-- **A holomorphic map is an isomorphism on top homology exactly in degree one.** For a
-holomorphic map `f : X → Y` between compact connected Riemann surfaces which is constant near no
-point, `f_* : H₂(X; ℤ) → H₂(Y; ℤ)` is bijective exactly when `deg f = 1`. -/
-theorem bijective_singularHomologyMap_iff_degree_eq_one [CompactSpace X] [CompactSpace Y]
-    [ConnectedSpace X] [ConnectedSpace Y] {f : C(X, Y)} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
-    (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) :
-    Bijective (ContinuousMap.singularHomologyMap ℤ 2 f) ↔ degree f = 1 := by
+/-- **A finite holomorphic map is an isomorphism on top homology exactly in degree one.** For a
+finite holomorphic map `f : X → Y` between compact connected Riemann surfaces,
+`f_* : H₂(X; ℤ) → H₂(Y; ℤ)` is bijective exactly when `deg f = 1`. -/
+theorem FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one [CompactSpace X]
+    [CompactSpace Y] [ConnectedSpace X] [ConnectedSpace Y] (f : FiniteHolomorphicMap X Y) :
+    Bijective (ContinuousMap.singularHomologyMap ℤ 2 ⟨f, f.holomorphic.continuous⟩) ↔
+      degree f = 1 := by
   rw [HomologicalOrientation.bijective_singularHomologyMap_iff _ (complexHomologicalOrientation Y)
     Complex.finrank_real_complex Complex.finrank_real_complex,
-    degree_complexHomologicalOrientation_eq_degree hf hne]
+    FiniteHolomorphicMap.degree_complexHomologicalOrientation]
   omega
 
 end TauCeti.RiemannSurface

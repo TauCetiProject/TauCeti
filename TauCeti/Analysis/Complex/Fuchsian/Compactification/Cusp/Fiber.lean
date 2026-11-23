@@ -30,9 +30,9 @@ def cuspOrbitFiberEquivCompactifiedFiber (C : Γ.CuspOrbit) :
     {D : Δ.CuspOrbit // cuspOrbitMap h D = C} ≃
       {y : Δ.CompactifiedQuotient //
         compactifiedQuotientMap h y = .ofCusp C} where
-  toFun D := ⟨.ofCusp D.1, by
+  toFun D := ⟨.ofCusp D.val, by
     simpa only [compactifiedQuotientMap_ofCusp] using
-      (congrArg (CompactifiedQuotient.ofCusp (Γ := Γ)) D.2)⟩
+      (congrArg (CompactifiedQuotient.ofCusp (Γ := Γ)) D.property)⟩
   invFun y := by
     obtain ⟨y, hy⟩ := y
     cases y with
@@ -55,7 +55,7 @@ def cuspOrbitFiberEquivCompactifiedFiber (C : Γ.CuspOrbit) :
 @[simp]
 theorem cuspOrbitFiberEquivCompactifiedFiber_apply (C : Γ.CuspOrbit)
     (D : {D : Δ.CuspOrbit // cuspOrbitMap h D = C}) :
-    (cuspOrbitFiberEquivCompactifiedFiber h C D).1 = .ofCusp D.1 :=
+    (cuspOrbitFiberEquivCompactifiedFiber h C D).val = .ofCusp D.val :=
   (rfl)
 
 end Subgroup

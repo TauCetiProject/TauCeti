@@ -71,25 +71,25 @@ variable {B : Type w} [TopologicalSpace B]
 /-- The projection of the total space of the direct sum `E₁ ⊕ E₂` onto the total space of `E₁`. -/
 def totalSpaceProdFst :
     TopCat.of (TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)) ⟶ TopCat.of (TotalSpace F₁ E₁) :=
-  TopCat.ofHom ⟨fun v ↦ ⟨v.proj, v.2.1⟩,
+  TopCat.ofHom ⟨fun v ↦ ⟨v.proj, v.snd.1⟩,
     continuous_fst.comp (FiberBundle.Prod.isInducing_diag F₁ E₁ F₂ E₂).continuous⟩
 
 /-- The projection of the total space of the direct sum `E₁ ⊕ E₂` onto the total space of `E₂`. -/
 def totalSpaceProdSnd :
     TopCat.of (TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)) ⟶ TopCat.of (TotalSpace F₂ E₂) :=
-  TopCat.ofHom ⟨fun v ↦ ⟨v.proj, v.2.2⟩,
+  TopCat.ofHom ⟨fun v ↦ ⟨v.proj, v.snd.2⟩,
     continuous_snd.comp (FiberBundle.Prod.isInducing_diag F₁ E₁ F₂ E₂).continuous⟩
 
 omit [TopologicalSpace B] [TopologicalSpace F₁] [TopologicalSpace F₂] in
 @[simp]
 theorem totalSpaceProdFst_apply (v : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)) :
-    totalSpaceProdFst F₁ E₁ F₂ E₂ v = ⟨v.proj, v.2.1⟩ :=
+    totalSpaceProdFst F₁ E₁ F₂ E₂ v = ⟨v.proj, v.snd.1⟩ :=
   (rfl)
 
 omit [TopologicalSpace B] [TopologicalSpace F₁] [TopologicalSpace F₂] in
 @[simp]
 theorem totalSpaceProdSnd_apply (v : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)) :
-    totalSpaceProdSnd F₁ E₁ F₂ E₂ v = ⟨v.proj, v.2.2⟩ :=
+    totalSpaceProdSnd F₁ E₁ F₂ E₂ v = ⟨v.proj, v.snd.2⟩ :=
   (rfl)
 
 variable [∀ b, Zero (E₁ b)] [∀ b, Zero (E₂ b)]

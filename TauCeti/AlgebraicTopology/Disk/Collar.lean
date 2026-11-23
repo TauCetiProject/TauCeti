@@ -56,63 +56,63 @@ private theorem continuous_collarRadial (hd : 0 < d) :
   (diskRadialPush k _).continuous.comp (continuous_const.prodMk continuous_id)
 
 private theorem coe_collarRadial_of_norm_le (hd : 0 < d) {w : _root_.TopCat.disk.{u} k}
-    (hw : ‖w.down.1‖ ≤ d) : (collarRadial hd w).down.1 = d⁻¹ • w.down.1 :=
+    (hw : ‖w.down.val‖ ≤ d) : (collarRadial hd w).down.val = d⁻¹ • w.down.val :=
   coe_diskRadialPush_one_of_norm_le hd.le hw
 
 /-- The point `x / ‖x‖` of the boundary sphere, for a point `x` of the collar `d ≤ ‖x‖`. -/
-private def collarSphere (hd : 0 < d) (w : {w : _root_.TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
+private def collarSphere (hd : 0 < d) (w : {w : _root_.TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
     _root_.TopCat.diskBoundary.{u} k :=
-  ULift.up ⟨(collarRadial hd w.1).down.1,
-    mem_sphere_zero_iff_norm.2 (norm_diskRadialPush_one hd w.2)⟩
+  ULift.up ⟨(collarRadial hd w.val).down.val,
+    mem_sphere_zero_iff_norm.2 (norm_diskRadialPush_one hd w.property)⟩
 
 private theorem continuous_collarSphere (hd : 0 < d) :
     Continuous (collarSphere.{u} (k := k) hd) :=
-  continuous_uliftUp.comp ((continuous_subtype_val.comp (continuous_uliftDown.comp
-    ((continuous_collarRadial hd).comp continuous_subtype_val))).subtype_mk _)
+  continuous_uliftUp.comp ((continuous_subtypeVal.comp (continuous_uliftDown.comp
+    ((continuous_collarRadial hd).comp continuous_subtypeVal))).subtype_mk _)
 
 private theorem diskBoundaryInclusion_collarSphere (hd : 0 < d)
-    (w : {w : _root_.TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
-    _root_.TopCat.diskBoundaryInclusion k (collarSphere hd w) = collarRadial hd w.1 :=
+    (w : {w : _root_.TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
+    _root_.TopCat.diskBoundaryInclusion k (collarSphere hd w) = collarRadial hd w.val :=
   ULift.ext (Subtype.ext (coe_diskBoundaryInclusion_apply_down k _))
 
 /-- The radial coordinate `(‖x‖ - d) / (1 - d)` of the collar, clamped to `[0, 1]`. -/
 private def collarTime (d : ℝ) (w : _root_.TopCat.disk.{u} k) : I :=
-  projIcc 0 1 zero_le_one ((‖w.down.1‖ - d) / (1 - d))
+  projIcc 0 1 zero_le_one ((‖w.down.val‖ - d) / (1 - d))
 
 private theorem continuous_collarTime : Continuous (collarTime.{u} (k := k) d) :=
-  continuous_projIcc.comp (((continuous_norm.comp (continuous_subtype_val.comp
+  continuous_projIcc.comp (((continuous_norm.comp (continuous_subtypeVal.comp
     continuous_uliftDown)).sub continuous_const).div_const _)
 
-private theorem collarTime_of_norm_eq {w : _root_.TopCat.disk.{u} k} (hw : ‖w.down.1‖ = d) :
+private theorem collarTime_of_norm_eq {w : _root_.TopCat.disk.{u} k} (hw : ‖w.down.val‖ = d) :
     collarTime d w = 0 :=
   projIcc_of_le_left _ (by rw [hw, sub_self, zero_div])
 
 private theorem coe_collarTime_of_le_norm (hd1 : d < 1) {w : _root_.TopCat.disk.{u} k}
-    (hw : d ≤ ‖w.down.1‖) : (collarTime d w : ℝ) = (‖w.down.1‖ - d) / (1 - d) := by
-  have hw₁ : ‖w.down.1‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.2
+    (hw : d ≤ ‖w.down.val‖) : (collarTime d w : ℝ) = (‖w.down.val‖ - d) / (1 - d) := by
+  have hw₁ : ‖w.down.val‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.property
   rw [collarTime, coe_projIcc, min_eq_right ?_, max_eq_right ?_]
   · exact div_nonneg (by linarith) (by linarith)
   · rw [div_le_one (by linarith)]
     linarith
 
 private theorem coe_collarSphere (hd : 0 < d)
-    (w : {w : _root_.TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
-    (collarSphere hd w).down.1 = ‖w.1.down.1‖⁻¹ • w.1.down.1 :=
-  coe_diskRadialPush_one_of_le_norm hd w.2
+    (w : {w : _root_.TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
+    (collarSphere hd w).down.val = ‖w.val.down.val‖⁻¹ • w.val.down.val :=
+  coe_diskRadialPush_one_of_le_norm hd w.property
 
 /-- The glued map: `inner (t, x / d)` on the ball of radius `d` and
 `outer (t, (‖x‖ - d) / (1 - d), x / ‖x‖)` on the collar `d ≤ ‖x‖`. -/
 private def diskCollarFun (hd : 0 < d) (inner : C(I × _root_.TopCat.disk.{u} k, X))
     (outer : C(I × (I × _root_.TopCat.diskBoundary.{u} k), X))
     (p : I × _root_.TopCat.disk.{u} k) : X :=
-  if hw : d ≤ ‖p.2.down.1‖ then outer (p.1, collarTime d p.2, collarSphere hd ⟨p.2, hw⟩)
+  if hw : d ≤ ‖p.2.down.val‖ then outer (p.1, collarTime d p.2, collarSphere hd ⟨p.2, hw⟩)
   else inner (p.1, collarRadial hd p.2)
 
 private theorem diskCollarFun_of_norm_le (hd : 0 < d)
     {inner : C(I × _root_.TopCat.disk.{u} k, X)}
     {outer : C(I × (I × _root_.TopCat.diskBoundary.{u} k), X)}
     (hseam : ∀ t θ, outer (t, 0, θ) = inner (t, _root_.TopCat.diskBoundaryInclusion k θ))
-    {p : I × _root_.TopCat.disk.{u} k} (hp : ‖p.2.down.1‖ ≤ d) :
+    {p : I × _root_.TopCat.disk.{u} k} (hp : ‖p.2.down.val‖ ≤ d) :
     diskCollarFun hd inner outer p = inner (p.1, collarRadial hd p.2) := by
   rw [diskCollarFun]
   split_ifs with hw
@@ -129,23 +129,23 @@ private theorem continuous_diskCollarFun (hd : 0 < d)
       inner (p.1, collarRadial hd p.2) :=
     inner.continuous.comp (continuous_fst.prodMk ((continuous_collarRadial hd).comp
       continuous_snd))
-  have houter : ContinuousOn F {p | d ≤ ‖p.2.down.1‖} := by
+  have houter : ContinuousOn F {p | d ≤ ‖p.2.down.val‖} := by
     rw [continuousOn_iff_continuous_domRestrict]
-    have hF : domRestrict {p : I × _root_.TopCat.disk.{u} k | d ≤ ‖p.2.down.1‖} F = fun p ↦
-        outer (p.1.1, collarTime d p.1.2, collarSphere hd ⟨p.1.2, p.2⟩) :=
-      funext fun p ↦ dite_eq_left p.2
+    have hF : domRestrict {p : I × _root_.TopCat.disk.{u} k | d ≤ ‖p.2.down.val‖} F = fun p ↦
+        outer (p.val.1, collarTime d p.val.2, collarSphere hd ⟨p.val.2, p.property⟩) :=
+      funext fun p ↦ dite_eq_left p.property
     rw [hF]
-    exact outer.continuous.comp ((continuous_fst.comp continuous_subtype_val).prodMk
-      ((continuous_collarTime.comp (continuous_snd.comp continuous_subtype_val)).prodMk
+    exact outer.continuous.comp ((continuous_fst.comp continuous_subtypeVal).prodMk
+      ((continuous_collarTime.comp (continuous_snd.comp continuous_subtypeVal)).prodMk
         ((continuous_collarSphere hd).comp
-          ((continuous_snd.comp continuous_subtype_val).subtype_mk _))))
-  have hF : F = fun p ↦ if d ≤ ‖p.2.down.1‖ then F p else inner (p.1, collarRadial hd p.2) := by
+          ((continuous_snd.comp continuous_subtypeVal).subtype_mk _))))
+  have hF : F = fun p ↦ if d ≤ ‖p.2.down.val‖ then F p else inner (p.1, collarRadial hd p.2) := by
     funext p
     split_ifs with hw
     · rfl
     · exact dite_eq_right hw
   rw [hF]
-  exact continuous_if_le continuous_const (continuous_norm.comp (continuous_subtype_val.comp
+  exact continuous_if_le continuous_const (continuous_norm.comp (continuous_subtypeVal.comp
     (continuous_uliftDown.comp continuous_snd))) houter hinner.continuousOn
     fun p hp ↦ diskCollarFun_of_norm_le hd hseam hp.symm.le
 
@@ -171,9 +171,9 @@ variable (hd : 0 < d) (inner : C(I × _root_.TopCat.disk.{u} k, X))
 
 /-- On the inner disk, the glued homotopy at the point `d • y` is `inner (t, y)`. -/
 theorem diskCollar_apply_of_eq_smul {t : I} {w y : _root_.TopCat.disk.{u} k}
-    (h : w.down.1 = d • y.down.1) : diskCollar hd inner outer hseam (t, w) = inner (t, y) := by
-  have hy : ‖y.down.1‖ ≤ 1 := mem_closedBall_zero_iff.1 y.down.2
-  have hw : ‖w.down.1‖ ≤ d := by
+    (h : w.down.val = d • y.down.val) : diskCollar hd inner outer hseam (t, w) = inner (t, y) := by
+  have hy : ‖y.down.val‖ ≤ 1 := mem_closedBall_zero_iff.1 y.down.property
+  have hw : ‖w.down.val‖ ≤ d := by
     rw [h, norm_smul, Real.norm_of_nonneg hd.le]
     exact mul_le_of_le_one_right hd.le hy
   rw [diskCollar_apply, diskCollarFun_of_norm_le hd hseam (p := (t, w)) hw]
@@ -183,13 +183,13 @@ theorem diskCollar_apply_of_eq_smul {t : I} {w y : _root_.TopCat.disk.{u} k}
 /-- On the collar, the glued homotopy at the point `(d + (1 - d) s) • θ` is `outer (t, s, θ)`. -/
 theorem diskCollar_apply_of_eq_smul_sphere (hd1 : d < 1) {t s : I}
     {w : _root_.TopCat.disk.{u} k} {θ : _root_.TopCat.diskBoundary.{u} k}
-    (h : w.down.1 = (d + (1 - d) * s) • θ.down.1) :
+    (h : w.down.val = (d + (1 - d) * s) • θ.down.val) :
     diskCollar hd inner outer hseam (t, w) = outer (t, s, θ) := by
-  have hθ : ‖θ.down.1‖ = 1 := mem_sphere_zero_iff_norm.1 θ.down.2
-  have hr : 0 < d + (1 - d) * s := by nlinarith [s.2.1]
-  have hw : ‖w.down.1‖ = d + (1 - d) * s := by
+  have hθ : ‖θ.down.val‖ = 1 := mem_sphere_zero_iff_norm.1 θ.down.property
+  have hr : 0 < d + (1 - d) * s := by nlinarith [s.property.1]
+  have hw : ‖w.down.val‖ = d + (1 - d) * s := by
     rw [h, norm_smul, hθ, mul_one, Real.norm_of_nonneg hr.le]
-  have hdw : d ≤ ‖w.down.1‖ := by rw [hw]; nlinarith [s.2.1]
+  have hdw : d ≤ ‖w.down.val‖ := by rw [hw]; nlinarith [s.property.1]
   have htime : collarTime d w = s := Subtype.ext <| by
     rw [coe_collarTime_of_le_norm hd1 hdw, hw, add_sub_cancel_left,
       mul_div_cancel_left₀ _ (by linarith)]
@@ -210,17 +210,18 @@ theorem diskCollar_diskBoundaryInclusion (hd1 : d < 1) (t : I)
 piece reads as `y ↦ Φ (d • y)` and its outer piece as `(s, θ) ↦ Φ ((d + (1 - d) s) • θ)`. -/
 theorem apply_diskCollar_eq_of_radial (hd1 : d < 1) {Z : Type*} (v : X → Z)
     {Φ : EuclideanSpace ℝ (Fin k) → Z} {t : I}
-    (hi : ∀ y : _root_.TopCat.disk.{u} k, v (inner (t, y)) = Φ (d • y.down.1))
+    (hi : ∀ y : _root_.TopCat.disk.{u} k, v (inner (t, y)) = Φ (d • y.down.val))
     (ho : ∀ s (θ : _root_.TopCat.diskBoundary.{u} k),
-      v (outer (t, s, θ)) = Φ ((d + (1 - d) * s) • θ.down.1))
-    (w : _root_.TopCat.disk.{u} k) : v (diskCollar hd inner outer hseam (t, w)) = Φ w.down.1 := by
-  by_cases hw : ‖w.down.1‖ ≤ d
+      v (outer (t, s, θ)) = Φ ((d + (1 - d) * s) • θ.down.val))
+    (w : _root_.TopCat.disk.{u} k) : v (diskCollar hd inner outer hseam (t, w)) = Φ w.down.val := by
+  by_cases hw : ‖w.down.val‖ ≤ d
   · let y : _root_.TopCat.disk.{u} k := collarRadial hd w
-    have hwy : w.down.1 = d • y.down.1 := by
+    have hwy : w.down.val = d • y.down.val := by
       rw [coe_collarRadial_of_norm_le hd hw, smul_smul, mul_inv_cancel₀ hd.ne', one_smul]
     rw [diskCollar_apply_of_eq_smul hd inner outer hseam hwy, hi, ← hwy]
-  · have hdw : d ≤ ‖w.down.1‖ := (not_le.1 hw).le
-    have hwθ : w.down.1 = (d + (1 - d) * collarTime d w) • (collarSphere hd ⟨w, hdw⟩).down.1 := by
+  · have hdw : d ≤ ‖w.down.val‖ := (not_le.1 hw).le
+    have hwθ : w.down.val = (d + (1 - d) * collarTime d w) • (collarSphere hd ⟨w, hdw⟩).down.val
+        := by
       rw [coe_collarTime_of_le_norm hd1 hdw, coe_collarSphere, mul_div_cancel₀ _ (by linarith),
         add_sub_cancel, smul_smul, mul_inv_cancel₀ (by linarith), one_smul]
     rw [diskCollar_apply_of_eq_smul_sphere hd inner outer hseam hd1 hwθ, ho, ← hwθ]

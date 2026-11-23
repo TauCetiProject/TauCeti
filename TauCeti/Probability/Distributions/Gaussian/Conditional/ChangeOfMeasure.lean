@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.Independence.CondExp
 public import TauCeti.Probability.Distributions.Tilted
 
+import TauCeti.Probability.Distributions.Gaussian.Basic
+
 /-!
 # Gaussian change of measure with a known random drift
 
@@ -80,13 +82,11 @@ theorem withDensity_exp_inter_preimage_of_indep_gaussian (hm : m ≤ mΩ)
         ((measurable_const.indicator hB).comp (by fun_prop))
   -- For each fixed coefficient, tilt the Gaussian and translate its mean back to zero.
   have hfreeze (c : ℝ) : ∫⁻ y, F (c, y) ∂gaussianReal 0 v = gaussianReal 0 v B := by
-    have hZ : ∫ y, exp (c * y) ∂gaussianReal 0 v = exp ((v : ℝ) * c ^ 2 / 2) := by
-      simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := 0) (v := v)) c
     have htilt : (gaussianReal 0 v).withDensity
         (fun y ↦ ENNReal.ofReal (exp (c * y - v * c ^ 2 / 2))) =
         gaussianReal (v * c) v := by
       have ht := gaussianReal_tilted_mul 0 v c
-      simp only [zero_add, Measure.tilted, hZ, exp_sub] at ht ⊢
+      simp only [zero_add, zero_mul, Measure.tilted, integral_exp_mul_gaussianReal, exp_sub] at ht ⊢
       exact ht
     have hmap : (gaussianReal (v * c) v).map (fun y ↦ y - v * c) =
         gaussianReal 0 v := by

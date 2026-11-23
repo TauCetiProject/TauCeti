@@ -132,12 +132,16 @@ variable {C : Type u} [Category.{v} C] [HasZeroObject C] [HasZeroMorphisms C]
 /-- The augmentation `Z ⟶ I⁰` of an injective resolution, with source `Z` itself rather than the
 degree `0` object of the single complex on `Z`, as for `I.ι.f 0`. -/
 def ι₀ : Z ⟶ I.cocomplex.X 0 :=
-  (fromSingle₀Equiv _ _ I.ι).1
+  (fromSingle₀Equiv _ _ I.ι).val
 
 /-- The augmentation `Z ⟶ I⁰` composed with the differential `I⁰ ⟶ I¹` vanishes. -/
 @[reassoc (attr := simp)]
 lemma ι₀_comp_d : I.ι₀ ≫ I.cocomplex.d 0 1 = 0 :=
-  (fromSingle₀Equiv _ _ I.ι).2
+  (fromSingle₀Equiv _ _ I.ι).property
+
+/-- The degree `0` component of the augmentation `I.ι` is `I.ι₀`. -/
+lemma ι_f_zero : I.ι.f 0 = I.ι₀ :=
+  (rfl)
 
 /-- `I.ι₀` is the morphism `Z ⟶ I⁰` corresponding to the augmentation `I.ι` of `I`. -/
 @[simp]

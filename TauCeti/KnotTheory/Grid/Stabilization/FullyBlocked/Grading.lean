@@ -40,24 +40,24 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
 local notation "F" => ZMod 2
 
 private theorem bidegree_eq_of_reducedHomotopy_ne_zero
-    (y : G.1.StabilizeXOffCenterState s) (x : GridState n)
-    (h : (G.1.stabilizeXOffCenterToCenter s F).constantCoeffReduction
+    (y : G.val.StabilizeXOffCenterState s) (x : GridState n)
+    (h : (G.val.stabilizeXOffCenterToCenter s F).constantCoeffReduction
       (Finsupp.single y 1) x ≠ 0) :
     G.bidegree x = (G.stabilizeX s).bidegree y := by
   classical
   rw [GridDiagram.constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply] at h
-  have hcard : ((((G.stabilizeX s).1.XHomotopyRectangles s.succ y.1
-      (x.insertPoint s.succ (G.1.X s).succ)).filter fun r =>
-        (G.stabilizeX s).1.OColumns r.toGridRectangle = ∅)).card ≠ 0 := by
+  have hcard : ((((G.stabilizeX s).val.XHomotopyRectangles s.succ y.val
+      (x.insertPoint s.succ (G.val.X s).succ)).filter fun r =>
+        (G.stabilizeX s).val.OColumns r.toGridRectangle = ∅)).card ≠ 0 := by
     intro hz
     simp only [val_stabilizeX] at hz
     simp [hz] at h
   obtain ⟨r, hr⟩ := Finset.card_ne_zero.mp hcard
   obtain ⟨hr, hO⟩ := Finset.mem_filter.mp hr
   rw [val_stabilizeX] at hr hO
-  have hM := G.1.maslovOℤ_stabilizeX_eq_of_isEmpty s x
+  have hM := G.val.maslovOℤ_stabilizeX_eq_of_isEmpty s x
     ((GridDiagram.mem_XHomotopyRectangles _ _ r).mp hr).1
-  have hA := G.1.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
+  have hA := G.val.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
   rw [hO, Finset.card_empty] at hM hA
   rw [← val_stabilizeX, alexander_eq_intCast, G.alexander_eq_intCast] at hA
   simp only [Nat.cast_zero, sub_zero] at hA
@@ -71,11 +71,12 @@ private theorem bidegree_eq_of_reducedHomotopy_ne_zero
 theorem fullyBlockedStabilizeXMap_fst_bigradedChainInclusion_eq_zero_of_ne (g : ℤ × ℤ)
     (c : (G.stabilizeX s).BigradedChainPiece F g) {x : GridState n}
     (hx : G.bidegree x ≠ g + (1, 1)) :
-    (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g c)).1 x = 0 := by
+    (G.val.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g c)).1 x = 0
+        := by
   rw [GridDiagram.fullyBlockedStabilizeXMap_fst,
     GridDiagram.constantCoeffReduction_stabilizeXCenterProjection_apply,
     bigradedChainInclusion_apply]
-  have hne : (G.stabilizeX s).bidegree (x.insertPoint s.succ (G.1.X s).succ) ≠ g := by
+  have hne : (G.stabilizeX s).bidegree (x.insertPoint s.succ (G.val.X s).succ) ≠ g := by
     rw [bidegree_stabilizeX_insertPoint]
     exact fun h => hx (sub_eq_iff_eq_add.mp h)
   exact dite_eq_right hne
@@ -84,7 +85,8 @@ theorem fullyBlockedStabilizeXMap_fst_bigradedChainInclusion_eq_zero_of_ne (g : 
 same bidegree. Only rectangles carrying no `O`-marking survive coefficient reduction. -/
 theorem fullyBlockedStabilizeXMap_snd_bigradedChainInclusion_eq_zero_of_ne (g : ℤ × ℤ)
     (c : (G.stabilizeX s).BigradedChainPiece F g) {x : GridState n} (hx : G.bidegree x ≠ g) :
-    (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g c)).2 x = 0 := by
+    (G.val.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g c)).2 x = 0
+        := by
   classical
   rw [GridDiagram.fullyBlockedStabilizeXMap_snd,
     LinearMap.apply_apply_eq_finsuppSum_mul, Finsupp.sum]
@@ -92,8 +94,8 @@ theorem fullyBlockedStabilizeXMap_snd_bigradedChainInclusion_eq_zero_of_ne (g : 
   intro y _
   rw [GridDiagram.constantCoeffReduction_stabilizeXOffCenterProjection_apply,
     bigradedChainInclusion_apply]
-  by_cases hy : (G.stabilizeX s).bidegree y.1 = g
-  · have hz : (G.1.stabilizeXOffCenterToCenter s F).constantCoeffReduction
+  by_cases hy : (G.stabilizeX s).bidegree y.val = g
+  · have hz : (G.val.stabilizeXOffCenterToCenter s F).constantCoeffReduction
         (Finsupp.single y 1) x = 0 := by
       by_contra hz
       exact hx ((G.bidegree_eq_of_reducedHomotopy_ne_zero s y x hz).trans hy)
@@ -106,7 +108,7 @@ noncomputable def gradedFullyBlockedStabilizeXCenter (g : ℤ × ℤ) :
     (G.stabilizeX s).BigradedChainPiece F g →ₗ[F] G.BigradedChainPiece F (g + (1, 1)) :=
   (G.bigradedChainProjection F (g + (1, 1))).comp
     ((LinearMap.fst F _ _).comp
-      ((G.1.fullyBlockedStabilizeXMap s).comp ((G.stabilizeX s).bigradedChainInclusion F g)))
+      ((G.val.fullyBlockedStabilizeXMap s).comp ((G.stabilizeX s).bigradedChainInclusion F g)))
 
 /-- The off-center homotopy component of fully blocked stabilization on homogeneous chains,
 with no grading shift. -/
@@ -114,7 +116,7 @@ noncomputable def gradedFullyBlockedStabilizeXOffCenter (g : ℤ × ℤ) :
     (G.stabilizeX s).BigradedChainPiece F g →ₗ[F] G.BigradedChainPiece F g :=
   (G.bigradedChainProjection F g).comp
     ((LinearMap.snd F _ _).comp
-      ((G.1.fullyBlockedStabilizeXMap s).comp ((G.stabilizeX s).bigradedChainInclusion F g)))
+      ((G.val.fullyBlockedStabilizeXMap s).comp ((G.stabilizeX s).bigradedChainInclusion F g)))
 
 /-- At a state of the target degree, the graded center map reads the center coefficient. -/
 @[simp]
@@ -123,7 +125,7 @@ theorem gradedFullyBlockedStabilizeXCenter_apply (g : ℤ × ℤ)
     (x : {x : GridState n // G.bidegree x = g + (1, 1)}) :
     G.gradedFullyBlockedStabilizeXCenter s g c x =
       (G.stabilizeX s).bigradedChainInclusion F g c
-        (x.1.insertPoint s.succ (G.1.X s).succ) := by
+        (x.val.insertPoint s.succ (G.val.X s).succ) := by
   simp only [gradedFullyBlockedStabilizeXCenter, LinearMap.comp_apply,
     bigradedChainProjection_apply, LinearMap.fst_apply,
     GridDiagram.fullyBlockedStabilizeXMap_fst,
@@ -136,7 +138,7 @@ theorem gradedFullyBlockedStabilizeXOffCenter_apply (g : ℤ × ℤ)
     (c : (G.stabilizeX s).BigradedChainPiece F g)
     (x : {x : GridState n // G.bidegree x = g}) :
     G.gradedFullyBlockedStabilizeXOffCenter s g c x =
-      (G.1.fullyBlockedStabilizeXMap s
+      (G.val.fullyBlockedStabilizeXMap s
         ((G.stabilizeX s).bigradedChainInclusion F g c)).2 x := by
   simp [gradedFullyBlockedStabilizeXOffCenter]
 
@@ -145,7 +147,7 @@ theorem gradedFullyBlockedStabilizeXOffCenter_apply (g : ℤ × ℤ)
 theorem bigradedChainInclusion_gradedFullyBlockedStabilizeXCenter (g : ℤ × ℤ)
     (c : (G.stabilizeX s).BigradedChainPiece F g) :
     G.bigradedChainInclusion F (g + (1, 1)) (G.gradedFullyBlockedStabilizeXCenter s g c) =
-      (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g c)).1 := by
+      (G.val.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g c)).1 := by
   ext x
   rw [bigradedChainInclusion_apply]
   split_ifs with hx
@@ -157,7 +159,7 @@ theorem bigradedChainInclusion_gradedFullyBlockedStabilizeXCenter (g : ℤ × �
 theorem bigradedChainInclusion_gradedFullyBlockedStabilizeXOffCenter (g : ℤ × ℤ)
     (c : (G.stabilizeX s).BigradedChainPiece F g) :
     G.bigradedChainInclusion F g (G.gradedFullyBlockedStabilizeXOffCenter s g c) =
-      (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g c)).2 := by
+      (G.val.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g c)).2 := by
   ext x
   rw [bigradedChainInclusion_apply]
   split_ifs with hx
@@ -176,13 +178,13 @@ theorem gradedFullyBlockedStabilizeXCenter_differential (a m : ℤ)
   have hc (k : ℤ) (u : (G.stabilizeX s).BigradedChainPiece F (k, a)) :
       G.bigradedChainInclusion F (k + 1, a + 1)
           (G.gradedFullyBlockedStabilizeXCenter s (k, a) u) =
-        (G.1.fullyBlockedStabilizeXMap s
+        (G.val.fullyBlockedStabilizeXMap s
           ((G.stabilizeX s).bigradedChainInclusion F (k, a) u)).1 := by
     simpa only [Prod.mk_add_mk] using
       G.bigradedChainInclusion_gradedFullyBlockedStabilizeXCenter s (k, a) u
   rw [hc, bigradedChainInclusion_gradedFullyBlockedDifferential,
     bigradedChainInclusion_gradedFullyBlockedDifferential, hc]
-  have h := LinearMap.congr_fun (G.1.fullyBlockedStabilizeXMap_comp_differential s)
+  have h := LinearMap.congr_fun (G.val.fullyBlockedStabilizeXMap_comp_differential s)
     ((G.stabilizeX s).bigradedChainInclusion F (m + 1, a) c)
   simpa only [LinearMap.comp_apply, LinearMap.prodMap_apply, val_stabilizeX] using
     congrArg Prod.fst h
@@ -197,7 +199,7 @@ theorem gradedFullyBlockedStabilizeXOffCenter_differential (a m : ℤ)
   apply G.bigradedChainInclusion_injective F (m, a)
   simp only [bigradedChainInclusion_gradedFullyBlockedStabilizeXOffCenter,
     bigradedChainInclusion_gradedFullyBlockedDifferential]
-  have h := LinearMap.congr_fun (G.1.fullyBlockedStabilizeXMap_comp_differential s)
+  have h := LinearMap.congr_fun (G.val.fullyBlockedStabilizeXMap_comp_differential s)
     ((G.stabilizeX s).bigradedChainInclusion F (m + 1, a) c)
   simpa only [LinearMap.comp_apply, LinearMap.prodMap_apply, val_stabilizeX] using
     congrArg Prod.snd h
@@ -206,12 +208,12 @@ theorem gradedFullyBlockedStabilizeXOffCenter_differential (a m : ℤ)
 chain to the part of bidegree `g + (1, 1)` of its image. -/
 theorem fst_fullyBlockedStabilizeXMap_bigradedChainInclusion (g : ℤ × ℤ)
     (c : GridChain F (n + 1)) :
-    (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g
+    (G.val.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g
         ((G.stabilizeX s).bigradedChainProjection F g c))).1 =
       G.bigradedChainInclusion F (g + (1, 1))
-        (G.bigradedChainProjection F (g + (1, 1)) (G.1.fullyBlockedStabilizeXMap s c).1) := by
+        (G.bigradedChainProjection F (g + (1, 1)) (G.val.fullyBlockedStabilizeXMap s c).1) := by
   refine (G.stabilizeX s).map_bigradedChainInclusion_bigradedChainProjection G
-    (LinearMap.fst F _ _ ∘ₗ G.1.fullyBlockedStabilizeXMap s) (1, 1) (fun x y hy => ?_) g c
+    (LinearMap.fst F _ _ ∘ₗ G.val.fullyBlockedStabilizeXMap s) (1, 1) (fun x y hy => ?_) g c
   have h := G.fullyBlockedStabilizeXMap_fst_bigradedChainInclusion_eq_zero_of_ne s
     ((G.stabilizeX s).bidegree x)
     ((G.stabilizeX s).bigradedChainProjection F ((G.stabilizeX s).bidegree x) (Finsupp.single x 1))
@@ -222,12 +224,12 @@ theorem fst_fullyBlockedStabilizeXMap_bigradedChainInclusion (g : ℤ × ℤ)
 /-- The off-center component of the chain comparison preserves homogeneous parts. -/
 theorem snd_fullyBlockedStabilizeXMap_bigradedChainInclusion (g : ℤ × ℤ)
     (c : GridChain F (n + 1)) :
-    (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g
+    (G.val.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g
         ((G.stabilizeX s).bigradedChainProjection F g c))).2 =
       G.bigradedChainInclusion F g
-        (G.bigradedChainProjection F g (G.1.fullyBlockedStabilizeXMap s c).2) := by
+        (G.bigradedChainProjection F g (G.val.fullyBlockedStabilizeXMap s c).2) := by
   have h := (G.stabilizeX s).map_bigradedChainInclusion_bigradedChainProjection G
-    (LinearMap.snd F _ _ ∘ₗ G.1.fullyBlockedStabilizeXMap s) 0 (fun x y hy => ?_) g c
+    (LinearMap.snd F _ _ ∘ₗ G.val.fullyBlockedStabilizeXMap s) 0 (fun x y hy => ?_) g c
   · rw [add_zero] at h
     simpa only [LinearMap.comp_apply, LinearMap.snd_apply] using h
   have h := G.fullyBlockedStabilizeXMap_snd_bigradedChainInclusion_eq_zero_of_ne s
