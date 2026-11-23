@@ -69,6 +69,13 @@ theorem IsOrderUnitNorm.norm_map_le {M : Type*} [FunLike M E F] [LinearMapClass 
     ‖T a‖ ≤ ‖‖a‖ • T e‖ := hf.norm_le_norm_of_neg_le_of_le hlo hhi
     _ = ‖T e‖ * ‖a‖ := by rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg a), mul_comm]
 
+/-- Every unital positive linear map between order-unit spaces is contractive. -/
+theorem IsOrderUnitNorm.norm_apply_le_of_monotone_of_map_unit {M : Type*} [FunLike M E F]
+    [LinearMapClass M ℝ E F] [OrderHomClass M E F] (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (T : M) (hTe : T e = f) (a : E) :
+    ‖T a‖ ≤ ‖a‖ := by
+  simpa [hTe, hf.norm_eq_one] using he.norm_map_le hf T a
+
 /-- A positive linear map between order-unit spaces is `‖T e‖`-Lipschitz. -/
 theorem IsOrderUnitNorm.lipschitzWith_of_positive {M : Type*} [FunLike M E F]
     [LinearMapClass M ℝ E F] [OrderHomClass M E F] (he : IsOrderUnitNorm e)
@@ -117,12 +124,6 @@ theorem IsOrderUnitNorm.opNorm_eq_norm_apply_unit (he : IsOrderUnitNorm e)
 theorem IsOrderUnitNorm.opNorm_eq_one_of_monotone_of_map_unit (he : IsOrderUnitNorm e)
     (hf : IsOrderUnitNorm f) (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) : ‖T‖ = 1 := by
   rw [he.opNorm_eq_norm_apply_unit hf T hT, hTe, hf.norm_eq_one]
-
-/-- Every unital positive continuous linear map between order-unit spaces is contractive. -/
-theorem IsOrderUnitNorm.norm_apply_le_of_monotone_of_map_unit (he : IsOrderUnitNorm e)
-    (hf : IsOrderUnitNorm f) (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) (a : E) :
-    ‖T a‖ ≤ ‖a‖ := by
-  simpa [he.opNorm_eq_one_of_monotone_of_map_unit hf T hT hTe] using T.le_opNorm a
 
 end OpNorm
 

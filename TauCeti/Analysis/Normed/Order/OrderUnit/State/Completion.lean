@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Order.OrderUnit.Completion
 public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
+import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
 # Extension of order-unit states to the norm completion
@@ -21,7 +22,8 @@ Every state on an order-unit space `(E, e)` extends uniquely to a state on the n
   uniquely to a state on `UniformSpace.Completion E`.
 * `TauCeti.IsOrderUnitNorm.completionStateSpaceHomeomorph`: weak-star homeomorphism between
   the state space of `UniformSpace.Completion E` and `TauCeti.OrderUnit.stateSpace e`.
-* `TauCeti.IsOrderUnitNorm.completionStateSpaceHomeomorph_apply`,
+* `TauCeti.IsOrderUnitNorm.completionStateSpaceHomeomorph_val`,
+  `completionStateSpaceHomeomorph_apply`,
   `completionStateSpaceHomeomorph_symm_apply`, `completionStateSpaceHomeomorph_symm_val`,
   `completionStateSpaceHomeomorph_convexCombo`,
   `completionStateSpaceHomeomorph_symm_convexCombo`: evaluation, inverse characterization, and
@@ -58,17 +60,25 @@ theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual �
       (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ = φ := by
   let : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
   have : IsOrderedAddMonoid (UniformSpace.Completion E) := he.completionIsOrderedAddMonoid
-  obtain ⟨ψ, hψmem, hψeq⟩ := he.surjOn_pullbackFunctional_stateSpace he.isOrderUnitNorm_completion
-    (UniformSpace.Completion.toComplₗᵢ (𝕜 := ℝ) (E := E)) rfl hφ
-  refine ⟨ψ, ⟨hψmem, hψeq⟩, fun ψ' ⟨_, hψ'eq⟩ => DFunLike.ext _ _ ?_⟩
-  have hagree : ∀ a : E, ψ' (a : UniformSpace.Completion E) = ψ (a : UniformSpace.Completion E) :=
-    fun a => by
-      have h1 := DFunLike.congr_fun hψ'eq a
-      have h2 := DFunLike.congr_fun hψeq a
+  let ψ : WeakDual ℝ (UniformSpace.Completion E) :=
+    StrongDual.toWeakDual ((toStrongDual φ).fromCompletion)
+  have hψmem : ψ ∈ stateSpace (e : UniformSpace.Completion E) := by
+    refine he.isOrderUnitNorm_completion.mem_stateSpace_iff_norm_eq_one_and_map_unit.mpr ⟨?_, ?_⟩
+    · simpa [ψ] using
+        ((toStrongDual φ).norm_fromCompletion).trans (he.norm_toStrongDual_of_mem_stateSpace hφ)
+    · simpa [ψ] using ((toStrongDual φ).fromCompletion_apply_coe e).trans
+        (map_unit_of_mem_stateSpace hφ)
+  have hψeq : (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ = φ := by
+    refine DFunLike.ext _ _ fun a => ?_
+    simp [ψ, ContinuousLinearMap.pullbackFunctional_apply, UniformSpace.Completion.coe_toComplL]
+  refine ⟨ψ, ⟨hψmem, hψeq⟩, fun ψ' ⟨_, hψ'eq⟩ => ?_⟩
+  have huniq : (toStrongDual φ).fromCompletion = toStrongDual ψ' :=
+    (toStrongDual φ).fromCompletion_unique (toStrongDual ψ') fun a => by
+      have h := DFunLike.congr_fun hψ'eq a
       simpa [ContinuousLinearMap.pullbackFunctional_apply, UniformSpace.Completion.coe_toComplL]
-        using h1.trans h2.symm
-  exact congrFun (UniformSpace.Completion.denseRange_coe.equalizer
-    (toStrongDual ψ').continuous (toStrongDual ψ).continuous (funext hagree))
+        using h.symm
+  exact DFunLike.ext _ _ fun x => by
+    simpa [ψ] using (DFunLike.congr_fun huniq x).symm
 
 /-- Restriction along `E → UniformSpace.Completion E` induces a weak-star homeomorphism between the
 state space of the completion and `stateSpace e`. -/
@@ -107,6 +117,17 @@ theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_apply
   change (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ.val a = _
   simp
 
+/-- The underlying functional of `completionStateSpaceHomeomorph ψ` is the pullback along
+`UniformSpace.Completion.toComplL`. -/
+theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_val
+    (ψ : @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
+      (e : UniformSpace.Completion E)) :
+    (he.completionStateSpaceHomeomorph ψ).val =
+      (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ.val := by
+  refine DFunLike.ext _ _ fun a => ?_
+  rw [he.completionStateSpaceHomeomorph_apply, ContinuousLinearMap.pullbackFunctional_apply,
+    UniformSpace.Completion.coe_toComplL]
+
 /-- Evaluating the inverse of `completionStateSpaceHomeomorph` on a coerced element recovers the
 original state. -/
 @[simp]
@@ -120,12 +141,12 @@ theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_symm_apply
 `StrongDual.toWeakDual ((toStrongDual φ.val).fromCompletion)`. -/
 theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_symm_val (φ : stateSpace e) :
     (he.completionStateSpaceHomeomorph.symm φ).val =
-      StrongDual.toWeakDual ((toStrongDual φ.val).fromCompletion) :=
-  DFunLike.ext _ _ fun x => congrFun (UniformSpace.Completion.denseRange_coe.equalizer
-    (toStrongDual (he.completionStateSpaceHomeomorph.symm φ).val).continuous
-    (toStrongDual φ.val).fromCompletion.continuous
-    (funext fun a => (he.completionStateSpaceHomeomorph_symm_apply φ a).trans
-      ((toStrongDual φ.val).fromCompletion_apply_coe a).symm)) x
+      StrongDual.toWeakDual ((toStrongDual φ.val).fromCompletion) := by
+  have huniq : (toStrongDual φ.val).fromCompletion =
+      toStrongDual (he.completionStateSpaceHomeomorph.symm φ).val :=
+    (toStrongDual φ.val).fromCompletion_unique _ fun a =>
+      (he.completionStateSpaceHomeomorph_symm_apply φ a).symm
+  exact DFunLike.ext _ _ fun x => (DFunLike.congr_fun huniq x).symm
 
 /-- `completionStateSpaceHomeomorph` preserves convex combinations of states. -/
 theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_convexCombo

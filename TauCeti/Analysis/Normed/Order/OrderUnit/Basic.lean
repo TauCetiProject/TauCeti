@@ -57,7 +57,7 @@ and the norm completion of an order-unit space in
   `TauCeti.IsArchimedeanOrderUnit.normedSpace`: the normed space structure of the order-unit
   norm.
 * `TauCeti.IsOrderUnitNorm e`: a given norm is the order-unit norm of `e`.
-* `TauCeti.IsOrderUnitNorm.linearIsometryEquivOfMapNonnegIff`: unital linear order isomorphisms
+* `TauCeti.IsOrderUnitNorm.linearIsometryEquivOfLEIff`: unital linear order isomorphisms
   as linear isometry equivalences.
 
 ## Main results
@@ -463,14 +463,6 @@ namespace IsOrderUnitNorm
 
 variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [PartialOrder E] {e : E}
 
-/-- An order-unit norm restricts to an order-unit norm on every subspace containing the unit. -/
-theorem submodule (h : IsOrderUnitNorm e) (p : Submodule ℝ E) (hp : e ∈ p) :
-    IsOrderUnitNorm (⟨e, hp⟩ : p) where
-  norm_eq_one := h.norm_eq_one
-  norm_le_iff {a} _ hr := by
-    rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe]
-    exact h.norm_le_iff hr
-
 /-- A linear order embedding between spaces with order-unit norms which maps unit to unit is
 isometric. -/
 theorem norm_map {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F] [PartialOrder F] {f : F}
@@ -486,40 +478,40 @@ variable {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F] [PartialOrder F]
 
 /-- A unital linear order isomorphism between order-unit spaces is automatically a linear
 isometry equivalence. -/
-def linearIsometryEquivOfMapNonnegIff [IsOrderedAddMonoid E] [IsOrderedAddMonoid F]
-    {e : E} {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F)
-    (hTe : T e = f) (hpos : ∀ a : E, 0 ≤ T a ↔ 0 ≤ a) : E ≃ₗᵢ[ℝ] F where
+def linearIsometryEquivOfLEIff {e : E} {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
+    (T : E ≃ₗ[ℝ] F) (hTe : T e = f) (hT : ∀ a b : E, T a ≤ T b ↔ a ≤ b) : E ≃ₗᵢ[ℝ] F where
   toLinearEquiv := T
-  norm_map' := he.norm_map hf T.toLinearMap hTe fun a b => by
-    rw [← sub_nonneg, ← map_sub, LinearEquiv.coe_coe, hpos, sub_nonneg]
+  norm_map' := he.norm_map hf T.toLinearMap hTe hT
 
-/-- Evaluating `linearIsometryEquivOfMapNonnegIff` agrees with the underlying linear equivalence. -/
+/-- Evaluating `linearIsometryEquivOfLEIff` agrees with the underlying linear equivalence. -/
 @[simp]
-theorem linearIsometryEquivOfMapNonnegIff_apply [IsOrderedAddMonoid E] [IsOrderedAddMonoid F]
-    {e : E} {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F)
-    (hTe : T e = f) (hpos : ∀ a : E, 0 ≤ T a ↔ 0 ≤ a) (a : E) :
-    he.linearIsometryEquivOfMapNonnegIff hf T hTe hpos a = T a :=
+theorem linearIsometryEquivOfLEIff_apply {e : E} {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F) (hTe : T e = f)
+    (hT : ∀ a b : E, T a ≤ T b ↔ a ≤ b) (a : E) :
+    he.linearIsometryEquivOfLEIff hf T hTe hT a = T a :=
   (rfl)
 
-/-- Evaluating the inverse of `linearIsometryEquivOfMapNonnegIff` agrees with `T.symm`. -/
+/-- Evaluating the inverse of `linearIsometryEquivOfLEIff` agrees with `T.symm`. -/
 @[simp]
-theorem linearIsometryEquivOfMapNonnegIff_symm_apply [IsOrderedAddMonoid E] [IsOrderedAddMonoid F]
-    {e : E} {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F)
-    (hTe : T e = f) (hpos : ∀ a : E, 0 ≤ T a ↔ 0 ≤ a) (b : F) :
-    (he.linearIsometryEquivOfMapNonnegIff hf T hTe hpos).symm b = T.symm b :=
+theorem linearIsometryEquivOfLEIff_symm_apply {e : E} {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F) (hTe : T e = f)
+    (hT : ∀ a b : E, T a ≤ T b ↔ a ≤ b) (b : F) :
+    (he.linearIsometryEquivOfLEIff hf T hTe hT).symm b = T.symm b :=
   (rfl)
 
 /-- Transport of `IsOrderUnitNorm` back along a linear isometric order embedding. -/
-theorem of_linearIsometry [IsOrderedAddMonoid E] [IsOrderedAddMonoid F]
-    {e : E} {f : F} (hf : IsOrderUnitNorm f) (T : E →ₗᵢ[ℝ] F) (hTe : T e = f)
-    (hpos : ∀ a : E, 0 ≤ T a ↔ 0 ≤ a) : IsOrderUnitNorm e where
+theorem of_linearIsometry {e : E} {f : F} (hf : IsOrderUnitNorm f) (T : E →ₗᵢ[ℝ] F)
+    (hTe : T e = f) (hT : ∀ a b : E, T a ≤ T b ↔ a ≤ b) : IsOrderUnitNorm e where
   norm_eq_one := by rw [← T.norm_map e, hTe, hf.norm_eq_one]
   norm_le_iff {a r} hr := by
-    have hle_iff (x y : E) : T x ≤ T y ↔ x ≤ y := by
-      rw [← sub_nonneg, ← map_sub, hpos, sub_nonneg]
-    rw [← T.norm_map a, hf.norm_le_iff hr, ← hTe, ← map_smul, ← map_neg, hle_iff, hle_iff]
+    rw [← T.norm_map a, hf.norm_le_iff hr, ← hTe, ← map_smul, ← map_neg, hT, hT]
 
 end Maps
+
+/-- An order-unit norm restricts to an order-unit norm on every subspace containing the unit. -/
+theorem submodule (h : IsOrderUnitNorm e) (p : Submodule ℝ E) (hp : e ∈ p) :
+    IsOrderUnitNorm (⟨e, hp⟩ : p) :=
+  h.of_linearIsometry p.subtypeₗᵢ rfl fun _ _ => Subtype.coe_le_coe
 
 /-- The product of two order-unit norms, with the coordinatewise order and the maximum norm, is
 the order-unit norm of the pair of units. -/

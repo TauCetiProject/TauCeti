@@ -77,6 +77,7 @@ theorem coe_completionPosCone :
   rw [himg]
 
 /-- An element of `E` lies in `he.completionPosCone` iff it is nonnegative in `E`. -/
+@[simp]
 theorem coe_mem_completionPosCone_iff {a : E} :
     (a : UniformSpace.Completion E) ∈ he.completionPosCone ↔ 0 ≤ a := by
   have h := (UniformSpace.Completion.isUniformInducing_coe E).isInducing
@@ -150,6 +151,7 @@ theorem completionIsOrderedAddMonoid :
     he.completionPosCone.pointed_toConvexCone he.salient_completionPosCone
 
 /-- The canonical embedding `E → UniformSpace.Completion E` preserves and reflects the order. -/
+@[simp]
 theorem completion_coe_le_coe_iff {a b : E} :
     @LE.le _ he.completionPartialOrder.toLE
       (a : UniformSpace.Completion E) (b : UniformSpace.Completion E) ↔ a ≤ b := by

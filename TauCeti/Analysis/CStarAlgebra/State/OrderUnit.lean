@@ -25,6 +25,8 @@ order-unit state space `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
 * `TauCeti.OrderUnit.extendFromSelfAdjoint_restrictToSelfAdjoint_of_mem_stateSpace`: every
   C⋆-algebra state is recovered by extending its restriction to `selfAdjoint A`.
 * `TauCeti.OrderUnit.cstarStateSpaceHomeomorph`,
+  `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_val`,
+  `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_symm_val`,
   `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_convexCombo`,
   `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_symm_convexCombo`: weak-star homeomorphism between
   `TauCeti.stateSpace A` and `TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`, preserving convex
@@ -104,11 +106,22 @@ noncomputable def cstarStateSpaceHomeomorph :
   continuous_invFun :=
     (extendFromSelfAdjoint.continuous.comp continuous_subtypeVal).subtype_mk _
 
+/-- The underlying functional of `cstarStateSpaceHomeomorph φ` is `restrictToSelfAdjoint φ.val`. -/
+theorem cstarStateSpaceHomeomorph_val (φ : TauCeti.stateSpace A) :
+    (cstarStateSpaceHomeomorph φ).val = restrictToSelfAdjoint φ.val := by
+  rfl
+
 /-- Evaluating `cstarStateSpaceHomeomorph` takes the real part on self-adjoint elements. -/
 @[simp]
 theorem cstarStateSpaceHomeomorph_apply (φ : TauCeti.stateSpace A) (a : selfAdjoint A) :
     (cstarStateSpaceHomeomorph φ).val a = (φ.val (a : A)).re := by
   simp [cstarStateSpaceHomeomorph]
+
+/-- The underlying functional of `cstarStateSpaceHomeomorph.symm ψ` is
+`extendFromSelfAdjoint ψ.val`. -/
+theorem cstarStateSpaceHomeomorph_symm_val (ψ : stateSpace (1 : selfAdjoint A)) :
+    (cstarStateSpaceHomeomorph.symm ψ).val = extendFromSelfAdjoint ψ.val := by
+  rfl
 
 /-- Evaluating the inverse of `cstarStateSpaceHomeomorph` recovers the complex-linear extension. -/
 @[simp]
