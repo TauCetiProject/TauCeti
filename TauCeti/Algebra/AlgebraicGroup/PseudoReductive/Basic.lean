@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.AffineQuotient
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
@@ -17,7 +18,6 @@ import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Characteristic
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
 /-!
 # Pseudo-reductive affine groups
@@ -32,13 +32,12 @@ of groups studied by Conrad, Gabber and Prasad.
 This file defines the predicate and establishes its basic theory:
 
 * reductive groups are pseudo-reductive, over every field;
-* over an algebraically closed field, pseudo-reductive and reductive groups coincide;
+* over a perfect field, pseudo-reductive and reductive groups coincide, since `AlgebraicClosure k`
+  is separable over `k` and the `k`-unipotent radical base-changes to the geometric unipotent
+  radical;
 * the affine quotient `G ⧸ R_{u,k}(G)` of a smooth connected group by its `k`-unipotent radical is
-  pseudo-reductive, and over an algebraically closed field it is therefore reductive;
+  pseudo-reductive, and over a perfect field it is therefore reductive;
 * the additive group is not pseudo-reductive.
-
-Equality of the two notions over perfect fields, which requires Galois descent of the geometric
-unipotent radical, is not proved here.
 
 ## Main declarations
 
@@ -47,20 +46,20 @@ unipotent radical, is not proved here.
 * `TauCeti.pseudoReductiveCommHopfAlgProperty.unipotentRadicalDefiningIdeal_eq_augmentation`:
   the defining property, with the companion accessors `smooth` and `geometricallyConnected`.
 * `TauCeti.reductiveCommHopfAlgProperty.pseudoReductive`: reductive groups are pseudo-reductive.
-* `TauCeti.pseudoReductiveCommHopfAlgProperty_iff_reductive`: over an algebraically closed field
-  the two notions agree.
+* `TauCeti.pseudoReductiveCommHopfAlgProperty_iff_reductive`: over a perfect field the two notions
+  agree.
 * `TauCeti.pseudoReductiveCommHopfAlgProperty_of_kernel_eq_unipotentRadical` and
   `TauCeti.FiniteTypeCommHopfAlgCat.pseudoReductive_coinvariants_unipotentRadical`: the quotient
   by the `k`-unipotent radical is pseudo-reductive.
-* `TauCeti.FiniteTypeCommHopfAlgCat.reductive_coinvariants_unipotentRadical`: over an
-  algebraically closed field, the quotient by the unipotent radical is reductive.
+* `TauCeti.FiniteTypeCommHopfAlgCat.reductive_coinvariants_unipotentRadical`: over a perfect field,
+  the quotient by the unipotent radical is reductive.
 * `TauCeti.AdditiveGroup.not_pseudoReductiveCommHopfAlgProperty_coordinateHopfAlgebra`: `𝔾ₐ` is
   not pseudo-reductive.
 
 ## References
 
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, 2nd ed. (2015), §1.1.
-* J. S. Milne, *Algebraic Groups* (2017), §§6.45–6.46 and Chapter 19.
+* J. S. Milne, *Algebraic Groups* (2017), §§6.45–6.46, Proposition 19.11, and Chapter 19.
 -/
 
 public section
@@ -134,12 +133,13 @@ theorem reductiveCommHopfAlgProperty.pseudoReductive {H : FiniteTypeCommHopfAlgC
     (hH : reductiveCommHopfAlgProperty k H) : pseudoReductiveCommHopfAlgProperty k H :=
   ⟨hH.smooth, hH.geometricallyConnected, hH.unipotentRadicalDefiningIdeal_eq_augmentation⟩
 
-/-- Over an algebraically closed field, a finite-type affine group is pseudo-reductive exactly
-when it is reductive. -/
-theorem pseudoReductiveCommHopfAlgProperty_iff_reductive [IsAlgClosed k]
+/-- Over a perfect field, a finite-type affine group is pseudo-reductive exactly when it is
+reductive. -/
+theorem pseudoReductiveCommHopfAlgProperty_iff_reductive [PerfectField k]
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
-    pseudoReductiveCommHopfAlgProperty k H ↔ reductiveCommHopfAlgProperty k H :=
-  (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation k H).symm
+    pseudoReductiveCommHopfAlgProperty k H ↔ reductiveCommHopfAlgProperty k H := by
+  rw [pseudoReductiveCommHopfAlgProperty_iff,
+    reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation]
 
 open FiniteTypeCommHopfAlgCat in
 /-- A faithfully flat quotient of a smooth geometrically connected affine group whose kernel is the
@@ -161,9 +161,9 @@ theorem pseudoReductiveCommHopfAlgProperty_of_kernel_eq_unipotentRadical
     geometricallyConnectedCommHopfAlgProperty.of_injective p.hom.toAlgHom hp.injective hconnected,
     unipotentRadicalDefiningIdeal_eq_augmentation_of_kernel_eq_unipotentRadical p hp hker⟩
 
-/-- Over an algebraically closed field, a faithfully flat quotient of a smooth geometrically
-connected affine group whose kernel is the unipotent radical is reductive. -/
-theorem reductiveCommHopfAlgProperty_of_kernel_eq_unipotentRadical [IsAlgClosed k]
+/-- Over a perfect field, a faithfully flat quotient of a smooth geometrically connected affine
+group whose kernel is the unipotent radical is reductive. -/
+theorem reductiveCommHopfAlgProperty_of_kernel_eq_unipotentRadical [PerfectField k]
     {Q G : FiniteTypeCommHopfAlgCat.{u, u} k}
     (p : Q.obj ⟶ G.obj) (hp : p.hom.toAlgHom.toRingHom.FaithfullyFlat)
     (hsmooth : Algebra.Smooth k G)
@@ -192,10 +192,10 @@ theorem pseudoReductive_coinvariants_unipotentRadical
     (CommHopfAlgCat.coinvariantsι hR) (CommHopfAlgCat.faithfullyFlat_coinvariantsι hR)
     inferInstance hconnected (CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hR)
 
-/-- **The quotient by the unipotent radical is reductive.** Over an algebraically closed field,
-the affine quotient of a smooth geometrically connected group by its unipotent radical is
-reductive, in every characteristic. -/
-theorem reductive_coinvariants_unipotentRadical [IsAlgClosed k]
+/-- **The quotient by the unipotent radical is reductive.** Over a perfect field, the affine
+quotient of a smooth geometrically connected group by its unipotent radical is reductive, in every
+characteristic. -/
+theorem reductive_coinvariants_unipotentRadical [PerfectField k]
     (G : FiniteTypeCommHopfAlgCat.{u, u} k) [Algebra.Smooth k G]
     (hconnected : geometricallyConnectedCommHopfAlgProperty k G.obj) :
     let hR := isNormal_unipotentRadicalDefiningIdeal G

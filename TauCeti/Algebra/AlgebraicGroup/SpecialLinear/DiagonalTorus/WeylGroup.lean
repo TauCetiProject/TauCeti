@@ -60,7 +60,7 @@ def diagonalPermMulEquivWeylGroup (r : ℕ) :
 @[simp]
 theorem diagonalPermMulEquivWeylGroup_indexEquiv_apply
     (e : Equiv.Perm (Fin (r + 1))) (p : CoordinateRootIndex (Fin (r + 1))) :
-    (diagonalPermMulEquivWeylGroup.{u} r e).1.indexEquiv p =
+    (diagonalPermMulEquivWeylGroup.{u} r e).val.indexEquiv p =
       coordinatePermRootIndex e p := by
   have h := congrArg (fun f : Equiv.Perm (CoordinateRootIndex (Fin (r + 1))) ↦ f p)
     ((diagonalRootDatumEquiv.{u} r).weylGroupToPerm_weylGroupEquiv
@@ -89,9 +89,9 @@ theorem diagonalPermMulEquivWeylGroup_symm_ofIdx
     (p : CoordinateRootIndex (Fin (r + 1))) :
     (diagonalPermMulEquivWeylGroup.{u} r).symm
         (RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} r) p) =
-      Equiv.swap p.1.1 p.1.2 := by
+      Equiv.swap p.val.1 p.val.2 := by
   apply (diagonalPermMulEquivWeylGroup r).injective
-  rw [MulEquiv.apply_symm_apply, diagonalPermMulEquivWeylGroup_swap _ _ p.2]
+  rw [MulEquiv.apply_symm_apply, diagonalPermMulEquivWeylGroup_swap _ _ p.property]
 
 /-- In fundamental-weight coordinates, the action of a permutation on a character is computed
 by pairing with the inverse images of the simple coroots. -/
@@ -105,11 +105,11 @@ theorem diagonalPermMulEquivWeylGroup_smul_apply
           (if e.symm i.down.succ ≤ j.down.castSucc then 1 else 0))) := by
   let p : CoordinateRootIndex (Fin (r + 1)) :=
     ⟨(i.down.castSucc, i.down.succ), Fin.castSucc_lt_succ.ne⟩
-  have he : (diagonalPermMulEquivWeylGroup.{u} r e).1.indexEquiv =
+  have he : (diagonalPermMulEquivWeylGroup.{u} r e).val.indexEquiv =
       coordinatePermRootIndex e :=
     Equiv.ext (diagonalPermMulEquivWeylGroup_indexEquiv_apply e)
   have h := RootPairing.coroot'_smul (diagonalRootDatum.{u} r)
-    (diagonalPermMulEquivWeylGroup r e).1 p x
+    (diagonalPermMulEquivWeylGroup r e).val p x
   rw [he, coordinatePermRootIndex_symm] at h
   simp only [RootPairing.coroot', LinearMap.flip_apply, diagonalRootDatum_toLinearMap,
     p, diagonalRootDatum_coroot_castSucc_succ, dotPairing_apply] at h
@@ -184,7 +184,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_mk
 theorem diagonalNormalizerQuotientMulEquivWeylGroup_indexEquiv_apply
     (q : Subgroup.normalizerQuotient (Matrix.SpecialLinearGroup.diagonalTorus k (r + 1)))
     (p : CoordinateRootIndex (Fin (r + 1))) :
-    (diagonalNormalizerQuotientMulEquivWeylGroup.{u} hsep q).1.indexEquiv p =
+    (diagonalNormalizerQuotientMulEquivWeylGroup.{u} hsep q).val.indexEquiv p =
       coordinatePermRootIndex
         (Matrix.SpecialLinearGroup.diagonalNormalizerQuotientMulEquivPerm hsep q) p := by
   simp [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
@@ -210,9 +210,9 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_eq_ofIdx_iff
     diagonalNormalizerQuotientMulEquivWeylGroup.{u} hsep q =
         RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} r) p ↔
       Matrix.SpecialLinearGroup.diagonalNormalizerQuotientMulEquivPerm hsep q =
-        Equiv.swap p.1.1 p.1.2 := by
+        Equiv.swap p.val.1 p.val.2 := by
   rw [diagonalNormalizerQuotientMulEquivWeylGroup_eq,
-    ← diagonalPermMulEquivWeylGroup_swap p.1.1 p.1.2 p.2]
+    ← diagonalPermMulEquivWeylGroup_swap p.val.1 p.val.2 p.property]
   exact (diagonalPermMulEquivWeylGroup r).injective.eq_iff
 
 end IsCancelMulZero

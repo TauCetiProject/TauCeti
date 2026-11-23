@@ -100,8 +100,8 @@ theorem exists_siegelFunction_smul_eq_mul (γ : SL(2, ℤ)) :
       rw [vecMul_map_modularGroup_S, ← siegelFunction_apply_neg_one_div r τ.im_pos,
         modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
     · refine ⟨cexp (π * I / 6), ?_, fun r τ ↦ ?_⟩
-      · rw [← Complex.exp_nat_mul, show ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I by push_cast; ring,
-          exp_two_pi_mul_I]
+      · rw [← Complex.exp_natCast_mul,
+          show ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I by push_cast; ring, exp_two_pi_mul_I]
       · rw [vecMul_map_modularGroup_T, ← siegelFunction_apply_add_one, modular_T_smul, coe_vadd,
           add_comm, ofReal_one]
   | mul g h _ _ hg hh =>

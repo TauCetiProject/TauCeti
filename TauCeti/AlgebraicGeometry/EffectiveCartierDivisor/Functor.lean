@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.BaseChangeSection
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Functor
 public import Mathlib.CategoryTheory.Subfunctor.Basic
 

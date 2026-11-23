@@ -95,17 +95,12 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime 
     rw [heckeTCompositeGamma0_of_one_lt N hlt, map_mul, mul_apply_eq_comp]
     have hp : (n.minFac).Prime := Nat.minFac_prime h1
     have hpn : n.minFac ∣ n := Nat.minFac_dvd n
-    have hv : n.factorization n.minFac ≠ 0 :=
-      (hp.factorization_pos_of_dvd hn hpn).ne'
     have hnn' : n.minFac ^ n.factorization n.minFac *
         (n / n.minFac ^ n.factorization n.minFac) = n :=
       Nat.ordProj_mul_ordCompl_eq_self n n.minFac
-    have hn'0 : n / n.minFac ^ n.factorization n.minFac ≠ 0 := by
-      intro h
-      rw [h, mul_zero] at hnn'
-      exact hn hnn'.symm
+    have hn'0 : n / n.minFac ^ n.factorization n.minFac ≠ 0 := (Nat.ordCompl_pos n.minFac hn).ne'
     have hn'lt : n / n.minFac ^ n.factorization n.minFac < n :=
-      Nat.div_lt_self (Nat.pos_of_ne_zero hn) (Nat.one_lt_pow hv hp.one_lt)
+      ordCompl_lt_self_iff.2 (minFac_mem_primeFactors_iff.2 hlt)
     have hpm : ¬ n.minFac ∣ m :=
       (hp.coprime_iff_not_dvd).mp (Nat.Coprime.coprime_dvd_right hpn hmn).symm
     have hcop : Nat.Coprime (n.minFac ^ n.factorization n.minFac * m)

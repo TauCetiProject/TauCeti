@@ -106,7 +106,7 @@ private noncomputable def tetrahedronStandardLinearEquiv :
     simp [Finsupp.single_apply, ← sum_dotProduct, sum_tetrahedronCenteredVertex]⟩
   left_inv v := by
     ext j
-    simp [MonoidAlgebra.coeff_sum, dotProduct_sum_coeff_smul_tetrahedronCenteredVertex v.2]
+    simp [MonoidAlgebra.coeff_sum, dotProduct_sum_coeff_smul_tetrahedronCenteredVertex v.property]
   right_inv x := by
     have h := congrArg (· *ᵥ x) sum_vecMulVec_tetrahedronCenteredVertex
     simp only [Matrix.sum_mulVec, vecMulVec_mulVec, op_smul_eq_smul, one_mulVec] at h
@@ -159,7 +159,7 @@ theorem dotProduct_tetrahedronStandardEquiv
     (v : (augmentationSubrepresentation ℝ (Perm (Fin 4)) (Fin 4)).toSubmodule) (j : Fin 4) :
     tetrahedronCenteredVertex j ⬝ᵥ tetrahedronStandardEquiv v =
       (v : MonoidAlgebra ℝ (Fin 4)).coeff j :=
-  dotProduct_sum_coeff_smul_tetrahedronCenteredVertex v.2 j
+  dotProduct_sum_coeff_smul_tetrahedronCenteredVertex v.property j
 
 /-- **The frame map is an isometry**: the standard inner product of the frame images of two
 sum-zero vectors is the standard inner product `∑ᵢ f(i) g(i)` of their coefficients. -/

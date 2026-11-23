@@ -255,7 +255,7 @@ theorem barMap_def (f : AInfinityStrictHom AA BB) :
 /-- On a pure tensor word, the induced map applies the strict morphism to every letter. -/
 @[simp]
 theorem barMap_of_tprod (f : AInfinityStrictHom AA BB) (n : {n : ℕ // 0 < n})
-    (x : Fin n.1 → A) :
+    (x : Fin n.val → A) :
     f.barMap (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) =
       ReducedTensorWords.of R B n (PiTensorProduct.tprod R fun i ↦ f (x i)) := by
   rw [barMap_def, ReducedTensorWords.map_of_tprod]
@@ -281,24 +281,24 @@ theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
         (f.toLinearMap ∘ₗ AA.taylor) ∘ₗ ReducedTensorWords.of R A n := by
     apply InternalGrading.piTensorProduct_ext (fun _ ↦ AA.grading)
     intro q
-    let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
-    let y : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0
-    have hy : ∀ i < n.1, y i ∈ AA.grading.piece (d i) := by
+    let d : ℕ → ℤ := fun i ↦ if h : i < n.val then (q ⟨i, h⟩).1 else 0
+    let y : ℕ → A := fun i ↦ if h : i < n.val then (q ⟨i, h⟩).2 else 0
+    have hy : ∀ i < n.val, y i ∈ AA.grading.piece (d i) := by
       intro i hi
       simp only [y, d, hi, dite_true]
       exact (q ⟨i, hi⟩).2.property
-    have hfy : ∀ i < n.1, f (y i) ∈ BB.grading.piece (d i) :=
+    have hfy : ∀ i < n.val, f (y i) ∈ BB.grading.piece (d i) :=
       fun i hi ↦ f.map_mem (hy i hi)
-    have hBB := (AInfinity.isSuspension_def _ _ _).1 BB.taylor_isSuspension n.1 n.2 d
+    have hBB := (AInfinity.isSuspension_def _ _ _).1 BB.taylor_isSuspension n.val n.property d
       (fun i ↦ f (y i)) hfy
-    have hAA := (AInfinity.isSuspension_def _ _ _).1 AA.taylor_isSuspension n.1 n.2 d y hy
+    have hAA := (AInfinity.isSuspension_def _ _ _).1 AA.taylor_isSuspension n.val n.property d y hy
     simp only [y, Fin.isLt, dite_true] at hBB hAA
     simp only [LinearMap.comp_apply, barMap_of_tprod]
     rw [hBB, hAA]
     rw [MultilinearMap.evalNat_suspend, MultilinearMap.evalNat_suspend, map_smul]
     simp only [MultilinearMap.evalNat_def]
     congr 1
-    exact (f.map_m n.1 fun i ↦ y i).symm
+    exact (f.map_m n.val fun i ↦ y i).symm
   exact LinearMap.congr_fun hmaps (PiTensorProduct.tprod R x)
 
 /-- The induced map of reduced bar constructions intertwines their bar differentials. -/
@@ -323,7 +323,7 @@ theorem barDifferential_comp_barMap (f : AInfinityStrictHom AA BB) :
   simpa only [← coe_toLinearMap] using congrArg
     (ReducedTensorWords.splice R
       (InternalGrading.twistedTuple (BB.grading.shift 1) 1 (fun i ↦ f (x i)) 0 p)
-      0 n.1 p d) htaylor
+      0 n.val p d) htaylor
 
 /-- The reduced-bar map preserves deconcatenation. -/
 theorem deconcatenation_comp_barMap (f : AInfinityStrictHom AA BB) :
