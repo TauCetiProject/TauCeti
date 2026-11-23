@@ -263,7 +263,8 @@ theorem spinCGroupHalfSpinRep_chargeConj_apply_eq_self_of_mem_canonicalLineFixin
     simpa [map_ofNat] using hψ
   refine Subtype.ext ?_
   rw [← map_coe_spinCGroupHalfSpinRep_apply o ρ 1 hQ₀ (j := j.toLinearMap) hj x (ψ := ψ) (ψ' := β)
-    (by simp [hψj]), hx ψ hψ', LinearEquiv.coe_coe, hψj, j.apply_symm_apply]
+    (by simp [hψj]), hx ψ hψ']
+  simp [hψj]
 
 end ChargeConjugation
 
@@ -631,8 +632,8 @@ theorem spinCGroupHalfSpinRep_chargeConj_apply_eq_inv_det_smul_of_mem_canonicalL
   rw [← map_coe_spinCGroupHalfSpinRep_apply o ρ 1 hQ₀ (j := j.toLinearMap) hj x (ψ := ψ) (ψ' := u)
     (by simp [hψj]),
     spinCGroupHalfSpinRep_apply_eq_det_smul_of_mem_canonicalLineFixingSubgroup_of_bivectorExterior
-      hQ he h₀ h₂ hQ₀ hW hx hψ', Submodule.coe_smul, map_smulₛₗ, LinearEquiv.coe_coe, hψj,
-    j.apply_symm_apply, Submodule.coe_smul, Circle.coe_inv_eq_conj]
+      hQ he h₀ h₂ hQ₀ hW hx hψ']
+  simp [hψj, ← Circle.coe_inv_eq_conj]
 
 end ChargeConjugation
 
