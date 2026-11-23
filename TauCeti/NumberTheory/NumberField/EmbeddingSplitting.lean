@@ -27,7 +27,7 @@ On a `ℤ`-basis of `𝓞 L` its determinant squares to `d_L`. The idempotents o
 every `R`-module `M` with a commuting action of `𝓞 L` as an internal direct sum
 `M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts through `σ`; they act
 on `M` through `TauCeti.Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The splitting is
-functorial in `𝓞 L`-linear maps and commutes with base change:
+functorial in `R`-linear maps commuting with the `𝓞 L`-actions and commutes with base change:
 `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
 
 ## Main definitions
@@ -49,8 +49,8 @@ functorial in `𝓞 L`-linear maps and commutes with base change:
 * `TauCeti.NumberField.completeOrthogonalIdempotents_embeddingIdempotent`: the preimages of the
   coordinate idempotents form a complete orthogonal family.
 * `TauCeti.NumberField.isInternal_embeddingEigenspace`: `M = ⨁_σ M(σ)`.
-* `TauCeti.NumberField.embeddingEigenspace_le_comap`: an `𝓞 L`-linear map sends `M(σ)` into
-  `N(σ)`.
+* `TauCeti.NumberField.embeddingEigenspace_le_comap`: an `R`-linear map commuting with the
+  `𝓞 L`-actions sends `M(σ)` into `N(σ)`.
 * `TauCeti.NumberField.embeddingEigenspace_tensorProduct`: `(M ⊗[R] N)(σ)` is the image of
   `M(σ) ⊗[R] N`.
 
