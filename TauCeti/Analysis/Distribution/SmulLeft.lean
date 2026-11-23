@@ -47,6 +47,7 @@ compactly supported distribution `g T` from `Ω` to the whole space.
 * `Distribution.smulLeftCLMOfContDiffOn`: the product `g T` for a function `g` that is `C^n` on `Ω`
   only, with `Distribution.smulLeftCLMOfContDiffOn_eq_smulLeftCLM`,
   `Distribution.smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn`,
+  `Distribution.mapCLM_smulLeftCLMOfContDiffOn`,
   `Distribution.dsupport_smulLeftCLMOfContDiffOn_subset_inter` and
   `Distribution.complexPairing_smulLeftCLMOfContDiffOn`.
 * `Distribution.cutoffCLM`: the distribution `φ ↦ T (g φ)` on `Ω'`, with
@@ -177,6 +178,15 @@ theorem smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g
   congr 1
   ext x
   simp [mul_comm]
+
+/-- Multiplication by a function `C^n` on `Ω` commutes with applying a continuous linear map to
+the values. -/
+theorem mapCLM_smulLeftCLMOfContDiffOn {F' : Type*} [AddCommGroup F'] [Module ℝ F']
+    [TopologicalSpace F'] [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F'] (A : F →L[ℝ] F')
+    (hg : ContDiffOn ℝ n g Ω) (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM A (smulLeftCLMOfContDiffOn hg T) = smulLeftCLMOfContDiffOn hg (mapCLM A T) := by
+  ext φ
+  simp
 
 /-- The support of `g T` lies both in the support of `g` and in the support of `T`. -/
 theorem dsupport_smulLeftCLMOfContDiffOn_subset_inter (hg : ContDiffOn ℝ n g Ω)
