@@ -696,7 +696,7 @@ private theorem exists_enorm_integral_inner_setIntegral_Iio_waveSinPropagator_su
         gcongr ?_ * (_ * _ * ?_ * _)
         · exact le_mul_of_one_le_right' one_le_two
         · exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invCutoff j hF.aestronglyMeasurable
-            (ENNReal.HolderConjugate.pos p₁ q₁) (ENNReal.HolderConjugate.one_le r₁' r₁)
+            (ENNReal.HolderConjugate.one_le r₁' r₁)
     _ = _ := by
         rw [enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two, ENNReal.coe_mul, ENNReal.coe_add, hK,
           Real.rpow_sub_one (zpow_pos two_pos j).ne', div_eq_inv_mul,
@@ -890,13 +890,12 @@ theorem exists_lintegral_lintegral_enorm_inner_waveSinPropagator_sub_littlewoodP
     (Lp.fourierMultiplierCLM ℂ m) c (fun F G hF hG ↦ hC j m hm F G hF hG) hY hG
   simp_rw [φ.waveSinPropagator_littlewoodPaley_littlewoodPaley_eq hm]
   -- `Pⱼ` and `Mⱼ` cost constant factors in the mixed norm.
-  have hp : (0 : ℝ≥0∞) < p := by exact_mod_cast hpq.pos
   have hr : 1 ≤ r' := ENNReal.HolderConjugate.one_le r' r
   have hYF : eLpNorm (fun s ↦ eLpNorm (Y s) r' volume) p volume ≤
       KP * (K * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume) :=
     (eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM ℂ m).continuous
       (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le hm f hr) hMF).trans
-      (by gcongr; exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invCutoff j hF hp hr)
+      (by gcongr; exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invCutoff j hF hr)
   have hK : (K.toNNReal : ℝ≥0∞) = K := ENNReal.coe_toNNReal
     (φ.memLp_fourierInv_dyadicDilate φ.invCutoff 0 1).eLpNorm_ne_top
   have hKP : (KP.toNNReal : ℝ≥0∞) = KP :=
