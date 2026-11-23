@@ -31,6 +31,8 @@ together with its exact domain of summability and truncated power-series remaind
   `1 ≤ s`, it is at most `y⁻²` (in particular `-log (1 - x⁻¹) - x⁻¹ ≤ (x ^ 2)⁻¹` for `2 ≤ x`).
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
+* `Real.neg_log_one_sub_le_div_mul`: by convexity, for `0 ≤ v ≤ c < 1`,
+  `-log (1 - v) ≤ (-log (1 - c) / c) * v`.
 * `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
 * `Real.neg_log_one_sub_nonneg`: `0 ≤ -log (1 - x)` for `0 ≤ x ≤ 1`.
 * `Real.neg_log_one_sub_le_iff`: for `x < 1`, `-log (1 - x) ≤ c ↔ x ≤ 1 - exp (-c)`.
@@ -148,6 +150,47 @@ theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx : x ≤ 1 / 2) :
   refine h.trans ?_
   rw [div_le_iff₀ h1]
   nlinarith [mul_nonneg (sq_nonneg x) (by linarith : 0 ≤ 1 - 2 * x)]
+
+/-- Secant bound by convexity of `-log (1 - v)`: for `0 ≤ v ≤ c < 1`,
+`-log (1 - v) ≤ (-log (1 - c) / c) * v`. -/
+theorem neg_log_one_sub_le_div_mul {c v : ℝ} (hc1 : c < 1) (hv0 : 0 ≤ v)
+    (hvc : v ≤ c) : -log (1 - v) ≤ (-log (1 - c) / c) * v := by
+  let φ (t : ℝ) : ℝ := (-log (1 - c) / c) * t + log (1 - t)
+  by_contra hneg
+  push Not at hneg
+  have hv_pos : 0 < v := hv0.lt_of_ne' (by rintro rfl; norm_num at hneg)
+  have hc0 : 0 < c := hv_pos.trans_le hvc
+  have hv_ltc : v < c := hvc.lt_of_ne (fun hveq ↦ by
+    have : (-log (1 - c) / c) * c = -log (1 - c) := div_mul_cancel₀ _ hc0.ne'
+    rw [hveq] at hneg
+    linarith)
+  have hφ_lt : φ v < 0 := by simp only [φ]; linarith
+  have hφ0 : φ 0 = 0 := by simp [φ]
+  have hφc : φ c = 0 := by simp [φ, div_mul_cancel₀ _ hc0.ne']
+  have hderiv : ∀ t ∈ Set.Icc (0 : ℝ) c, HasDerivAt φ (-log (1 - c) / c - (1 - t)⁻¹) t := by
+    intro t ht
+    have hlog : HasDerivAt (fun s : ℝ ↦ log (1 - s)) (-(1 - t)⁻¹) t := by
+      have hlin : HasDerivAt (fun s : ℝ ↦ (1 : ℝ) - s) (-1) t := (hasDerivAt_id t).const_sub 1
+      exact ((hasDerivAt_log (by linarith [ht.2] : (1 : ℝ) - t ≠ 0)).comp t hlin).congr_deriv
+        (by ring)
+    exact (((hasDerivAt_id t).const_mul _).add hlog).congr_deriv (by ring)
+  have hcont : ContinuousOn φ (Set.Icc 0 c) :=
+    fun t ht ↦ (hderiv t ht).continuousAt.continuousWithinAt
+  obtain ⟨a, ha, ha_eq⟩ := exists_hasDerivAt_eq_slope φ (fun t ↦ -log (1 - c) / c - (1 - t)⁻¹)
+    hv_pos (hcont.mono (Set.Icc_subset_Icc_right hvc)) fun t ht ↦
+      hderiv t ⟨ht.1.le, ht.2.le.trans hvc⟩
+  obtain ⟨b, hb, hb_eq⟩ := exists_hasDerivAt_eq_slope φ (fun t ↦ -log (1 - c) / c - (1 - t)⁻¹)
+    hv_ltc (hcont.mono (Set.Icc_subset_Icc_left hv0)) fun t ht ↦
+      hderiv t ⟨hv0.trans ht.1.le, ht.2.le⟩
+  have ha_neg : -log (1 - c) / c - (1 - a)⁻¹ < 0 := by
+    rw [ha_eq, hφ0, sub_zero]
+    exact div_neg_of_neg_of_pos hφ_lt (sub_pos.mpr hv_pos)
+  have hb_pos : 0 < -log (1 - c) / c - (1 - b)⁻¹ := by
+    rw [hb_eq, hφc, zero_sub]
+    exact div_pos (neg_pos.mpr hφ_lt) (sub_pos.mpr hv_ltc)
+  have hinv_lt : (1 - a)⁻¹ < (1 - b)⁻¹ :=
+    inv_strictAnti₀ (by linarith [hb.2] : 0 < 1 - b) (by linarith [ha.2.trans hb.1])
+  linarith
 
 /-- For `0 < x < 1`, the logarithm `log (1 - x)` is negative. -/
 theorem log_one_sub_neg {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) : log (1 - x) < 0 :=

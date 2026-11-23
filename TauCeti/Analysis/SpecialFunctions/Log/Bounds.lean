@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Elementary bounds for the real logarithm
@@ -43,6 +44,11 @@ in explicit prime-counting estimates.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
+* `Real.sub_sq_div_two_le_log_one_add`: `u - u ^ 2 / 2 ≤ log (1 + u)` for `0 ≤ u`.
+* `Real.artanhPartial`, `Real.two_mul_artanhPartial_le_log`,
+  `Real.log_le_two_mul_artanhPartial_add`, `Real.neg_two_mul_artanhPartial_add_le_log`,
+  `Real.log_le_neg_two_mul_artanhPartial`: two-sided rational enclosures for `Real.log` via
+  `artanh` partial sums.
 -/
 
 public section
@@ -131,5 +137,90 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
   · exact (mul_nonpos_of_nonneg_of_nonpos ha
       (log_nonpos (div_nonneg (Nat.cast_nonneg p) (Nat.cast_nonneg q)) (le_of_not_ge h))).trans
       (log_natCast_nonneg N)
+
+/-- Quadratic lower bound `u - u ^ 2 / 2 ≤ log (1 + u)` for all `u ≥ 0`. -/
+theorem sub_sq_div_two_le_log_one_add {u : ℝ} (hu : 0 ≤ u) :
+    u - u ^ 2 / 2 ≤ log (1 + u) := by
+  let ψ (t : ℝ) : ℝ := log (1 + t) - (t - t ^ 2 / 2)
+  have hderiv : ∀ t ∈ Set.Icc (0 : ℝ) u, HasDerivAt ψ ((1 + t)⁻¹ - (1 - t)) t := by
+    intro t ht
+    have h1 : HasDerivAt (fun s : ℝ ↦ log (1 + s)) (1 + t)⁻¹ t := by
+      simpa using ((hasDerivAt_id t).const_add 1).log (by linarith [ht.1] : (1 : ℝ) + t ≠ 0)
+    have h2 : HasDerivAt (fun s : ℝ ↦ s - s ^ 2 / 2) (1 - t) t := by
+      simpa using (hasDerivAt_id t).fun_sub ((hasDerivAt_pow 2 t).div_const 2)
+    exact h1.fun_sub h2
+  have hψ_mono : MonotoneOn ψ (Set.Icc 0 u) := by
+    refine monotoneOn_of_deriv_nonneg (convex_Icc 0 u)
+      (fun t ht ↦ (hderiv t ht).continuousAt.continuousWithinAt)
+      (fun t ht ↦ (hderiv t (interior_subset ht)).differentiableAt.differentiableWithinAt)
+      fun t ht ↦ ?_
+    rw [interior_Icc] at ht
+    rw [(hderiv t ⟨ht.1.le, ht.2.le⟩).deriv, sub_nonneg, inv_eq_one_div,
+      le_div_iff₀ (by linarith [ht.1] : 0 < 1 + t)]
+    nlinarith [ht.1]
+  have hψ0 := hψ_mono (Set.left_mem_Icc.mpr hu) (Set.right_mem_Icc.mpr hu) hu
+  simp only [ψ, add_zero, log_one, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+    zero_div, sub_self, sub_nonneg] at hψ0
+  exact hψ0
+
+/-- Partial sum `∑ i < n, x ^ (2 * i + 1) / (2 * i + 1)` of `artanh x`, used in rational
+enclosures of `Real.log` via `log a = 2 * artanh ((a - 1) / (a + 1))`. -/
+noncomputable def artanhPartial (n : ℕ) (x : ℝ) : ℝ :=
+  ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1)
+
+/-- Defining equation of `Real.artanhPartial`. -/
+theorem artanhPartial_def (n : ℕ) (x : ℝ) :
+    artanhPartial n x = ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1) :=
+  (rfl)
+
+private theorem artanh_arg_spec {a : ℝ} (ha : 1 ≤ a) :
+    0 ≤ (a - 1) / (a + 1) ∧ (a - 1) / (a + 1) < 1 ∧
+      (1 + (a - 1) / (a + 1)) / (1 - (a - 1) / (a + 1)) = a := by
+  have ha1 : 0 < a + 1 := by linarith
+  refine ⟨div_nonneg (by linarith) ha1.le, (div_lt_one ha1).mpr (by linarith), ?_⟩
+  field_simp [ha1.ne']
+  ring
+
+/-- Lower rational enclosure `2 * artanhPartial n ((a - 1) / (a + 1)) ≤ log a` for `1 ≤ a`. -/
+theorem two_mul_artanhPartial_le_log {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
+    2 * artanhPartial n ((a - 1) / (a + 1)) ≤ log a := by
+  obtain ⟨hx0, hx1, hdiv⟩ := artanh_arg_spec ha
+  have hle := sum_range_le_log_div hx0 hx1 n
+  rw [hdiv] at hle
+  rw [artanhPartial_def]
+  linarith
+
+/-- Upper rational enclosure of `log a` for `1 ≤ a` via `artanhPartial` and a geometric tail. -/
+theorem log_le_two_mul_artanhPartial_add {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
+    log a ≤ 2 * (artanhPartial n ((a - 1) / (a + 1)) +
+      ((a - 1) / (a + 1)) ^ (2 * n + 1) / (1 - ((a - 1) / (a + 1)) ^ 2)) := by
+  obtain ⟨hx0, hx1, hdiv⟩ := artanh_arg_spec ha
+  have hle := log_div_le_sum_range_add hx0 hx1 n
+  rw [hdiv] at hle
+  rw [artanhPartial_def]
+  linarith
+
+/-- Lower rational enclosure of `log a` for `0 < a ≤ 1` via `artanhPartial` and a geometric
+tail. -/
+theorem neg_two_mul_artanhPartial_add_le_log {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
+    -2 * (artanhPartial n ((1 - a) / (1 + a)) +
+      ((1 - a) / (1 + a)) ^ (2 * n + 1) / (1 - ((1 - a) / (1 + a)) ^ 2)) ≤ log a := by
+  have hinv : 1 ≤ a⁻¹ := one_le_inv₀ ha0 |>.mpr ha1
+  have harg : (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) := by
+    field_simp [ha0.ne']
+  have hle := log_le_two_mul_artanhPartial_add hinv n
+  rw [log_inv, harg] at hle
+  linarith
+
+/-- Upper rational enclosure `log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a))` for `0 < a ≤ 1`.
+-/
+theorem log_le_neg_two_mul_artanhPartial {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
+    log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a)) := by
+  have hinv : 1 ≤ a⁻¹ := one_le_inv₀ ha0 |>.mpr ha1
+  have harg : (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) := by
+    field_simp [ha0.ne']
+  have hle := two_mul_artanhPartial_le_log hinv n
+  rw [log_inv, harg] at hle
+  linarith
 
 end Real

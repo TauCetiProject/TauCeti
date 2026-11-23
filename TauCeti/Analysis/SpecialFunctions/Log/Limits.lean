@@ -16,6 +16,7 @@ tends to infinity. This supplies the diverging scale in logarithmic cutoff estim
 ## Main results
 
 * `Real.tendsto_log_div_nhdsNE_zero`: for `δ ≠ 0`, `log (δ / ε) → ∞` as `ε → 0`, `ε ≠ 0`.
+* `Real.tendsto_log_nhdsNE_one_nhdsNE_zero`: `log x → 0` through nonzero values as `x → 1`, `x ≠ 1`.
 
 Adapted from Giada Franz’s formalization in
 [ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory),
@@ -39,5 +40,13 @@ theorem tendsto_log_div_nhdsNE_zero {δ : ℝ} (hδ : δ ≠ 0) :
   simp only [Function.comp_apply, Real.log_div hδ hε]
   ring
 
+/-- As `x → 1` with `x ≠ 1`, `log x → 0` through nonzero values. -/
+theorem tendsto_log_nhdsNE_one_nhdsNE_zero :
+    Tendsto Real.log (𝓝[≠] 1) (𝓝[≠] 0) := by
+  refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+  · simpa using (Real.continuousAt_log one_ne_zero).tendsto.mono_left nhdsWithin_le_nhds
+  · filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
+      (eventually_gt_nhds zero_lt_one)] with x hx hx0
+    exact Real.log_ne_zero_of_pos_of_ne_one hx0 hx
 
 end Real

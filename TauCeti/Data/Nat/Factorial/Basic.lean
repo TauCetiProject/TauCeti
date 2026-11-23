@@ -24,7 +24,9 @@ termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`; a
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
 termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`, and
 `Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
-number of triples of `n` elements with the number of injective ones.
+number of triples of `n` elements with the number of injective ones; and
+`Nat.factorial_mul_pow_le_factorial_add`, `n ! * (n + 1) ^ m ≤ (n + m)!`, bounding a
+factorial-power product by a shifted factorial.
 -/
 
 public section
@@ -100,5 +102,15 @@ theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
   simp only [descFactorial_succ, descFactorial_zero]
   grind
+
+/-- `n ! * (n + 1) ^ m ≤ (n + m)!`, bounding a factorial-power product by a shifted factorial. -/
+theorem factorial_mul_pow_le_factorial_add (n m : ℕ) :
+    n ! * (n + 1) ^ m ≤ (n + m)! := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+      rw [← Nat.add_assoc, factorial_succ (n + m), Nat.pow_succ, Nat.mul_comm (n + m + 1),
+        ← Nat.mul_assoc]
+      exact Nat.mul_le_mul ih (by omega)
 
 end Nat

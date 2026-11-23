@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
 # Explicit bounds for the logarithmic integral
@@ -17,8 +18,8 @@ This file establishes explicit numerical enclosures and analytical inequalities 
 unoffset logarithmic integral `TauCeti.Real.unoffsetLogIntegral` (`li`) and the offset logarithmic
 integral `TauCeti.Real.logIntegral` (`Li`):
 
-* `TauCeti.Real.sum_pow_div_mul_factorial_log_two_ge`,
-  `TauCeti.Real.sum_pow_div_mul_factorial_log_two_le`,
+* `TauCeti.Real.tsum_pow_div_mul_factorial_log_two_ge`,
+  `TauCeti.Real.tsum_pow_div_mul_factorial_log_two_le`,
   `TauCeti.Real.log_log_two_ge`, `TauCeti.Real.log_log_two_le`: unconditional rational
   enclosures `0.834438 ≤ ∑_{n ≥ 1} (log 2)^n / (n · n!) ≤ 0.834462` and
   `-0.366513 ≤ log (log 2) ≤ -0.366512`.
@@ -29,11 +30,9 @@ integral `TauCeti.Real.logIntegral` (`Li`):
 * `TauCeti.Real.unoffsetLogIntegral_three_div_two_gt`,
   `TauCeti.Real.unoffsetLogIntegral_pos_of_le`: `0.04 < li (3 / 2)` and `0 < li x` for every
   `3 / 2 ≤ x`.
-* `TauCeti.Real.integral_inv_log_rpow_eq_sub_add`, `TauCeti.Real.le_integral_inv_log_rpow`,
-  `TauCeti.Real.integral_inv_log_rpow_le`, `TauCeti.Real.integral_inv_log_rpow_lt`,
-  `TauCeti.Real.integral_inv_log_pow_seven_lt`: integration by parts and explicit upper and lower
-  bounds for `∫ t in 2..x, (log t ^ k)⁻¹` for real exponents `k ≥ 0`, together with the `k = 7`
-  specialization.
+* `TauCeti.Real.integral_inv_log_rpow_lt`, `TauCeti.Real.integral_inv_log_pow_seven_lt`:
+  strict explicit upper bounds for `∫ t in 2..x, (log t ^ k)⁻¹` for real exponents `k ≥ 0`,
+  together with the `k = 7` specialization.
 * `TauCeti.Real.strictMonoOn_logIntegral_sub_div_log`,
   `TauCeti.Real.le_logIntegral_sub_div_log`, `TauCeti.Real.lt_logIntegral_sub_div_log`,
   `TauCeti.Real.logIntegral_sub_div_log_eq_iff`, `TauCeti.Real.logIntegral_sub_div_log_lt`,
@@ -51,7 +50,7 @@ namespace TauCeti.Real
 open Filter MeasureTheory Set
 open scoped Nat Topology
 
-/-! ### Series tail and logarithm series helpers -/
+/-! ### Series tail helpers -/
 
 private noncomputable def liSeries (y : ℝ) : ℝ :=
   ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))
@@ -71,15 +70,6 @@ private theorem liSeriesPartial_le_liSeries (N : ℕ) {y : ℝ} (hy : 0 ≤ y) :
   refine le_add_of_nonneg_right (tsum_nonneg fun m ↦ ?_)
   positivity
 
-private theorem factorial_add_ge_mul_pow (N m : ℕ) :
-    (N + 1)! * (N + 2) ^ m ≤ (N + 1 + m)! := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-      rw [← add_assoc, Nat.factorial_succ (N + 1 + m), pow_succ, mul_comm (N + 1 + m + 1),
-        ← mul_assoc]
-      exact Nat.mul_le_mul ih (by omega)
-
 private theorem liSeries_le_partial_add (N : ℕ) {y : ℝ} (hy0 : 0 ≤ y) (hyN : y < (N : ℝ) + 2) :
     liSeries y ≤ liSeriesPartial N y +
       (y ^ (N + 1) / (((N : ℝ) + 1) * ((N + 1)! : ℝ))) * (((N : ℝ) + 2) / ((N : ℝ) + 2 - y)) := by
@@ -95,7 +85,7 @@ private theorem liSeries_le_partial_add (N : ℕ) {y : ℝ} (hy0 : 0 ≤ y) (hyN
         (y ^ (N + 1) / (((N : ℝ) + 1) * ((N + 1)! : ℝ))) * r ^ m := by
     intro m
     have hfac : ((N + 1)! : ℝ) * ((N : ℝ) + 2) ^ m ≤ ((m + N + 1)! : ℝ) := by
-      have h := factorial_add_ge_mul_pow N m
+      have h := Nat.factorial_mul_pow_le_factorial_add (N + 1) m
       rw [show N + 1 + m = m + N + 1 by omega] at h
       exact_mod_cast h
     have hmul : (((N : ℝ) + 1) * ((N + 1)! : ℝ)) * ((N : ℝ) + 2) ^ m ≤
@@ -105,9 +95,7 @@ private theorem liSeries_le_partial_add (N : ℕ) {y : ℝ} (hy0 : 0 ≤ y) (hyN
         _ ≤ ((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ) :=
             mul_le_mul (by linarith) hfac (by positivity) (by positivity)
     have hpow : y ^ (m + N + 1) = y ^ (N + 1) * y ^ m := by
-      rw [← pow_add]
-      congr 1
-      omega
+      rw [← pow_add]; congr 1; omega
     calc y ^ (m + N + 1) / (((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ))
         = (y ^ (N + 1) * y ^ m) / (((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ)) := by rw [hpow]
       _ ≤ (y ^ (N + 1) * y ^ m) / ((((N : ℝ) + 1) * ((N + 1)! : ℝ)) * ((N : ℝ) + 2) ^ m) :=
@@ -121,66 +109,11 @@ private theorem liSeries_le_partial_add (N : ℕ) {y : ℝ} (hy0 : 0 ≤ y) (hyN
       y ^ (m + N + 1) / (((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ)) := by
     simpa only [Nat.cast_add] using
       (summable_nat_add_iff N).mpr (summable_pow_div_mul_factorial y)
-  have hle := htsum_tail.tsum_le_tsum hterm hgeom
-  refine hle.trans_eq ?_
+  refine (htsum_tail.tsum_le_tsum hterm hgeom).trans_eq ?_
   rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
   have hsub : (1 : ℝ) - r = ((N : ℝ) + 2 - y) / ((N : ℝ) + 2) := by
-    simp only [r]
-    field_simp [hN2.ne']
+    simp only [r]; field_simp [hN2.ne']
   rw [hsub, inv_div]
-
-private noncomputable def artanhPartial (n : ℕ) (x : ℝ) : ℝ :=
-  ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1)
-
-private theorem two_mul_artanhPartial_le_log {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
-    2 * artanhPartial n ((a - 1) / (a + 1)) ≤ Real.log a := by
-  set x : ℝ := (a - 1) / (a + 1)
-  have ha1 : 0 < a + 1 := by linarith
-  have hx0 : 0 ≤ x := div_nonneg (by linarith) ha1.le
-  have hx1 : x < 1 := (div_lt_one ha1).mpr (by linarith)
-  have hdiv : (1 + x) / (1 - x) = a := by
-    simp only [x]
-    field_simp [ha1.ne']
-    ring
-  have hle := Real.sum_range_le_log_div hx0 hx1 n
-  rw [hdiv] at hle
-  linarith [show artanhPartial n x = ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1)
-    from rfl]
-
-private theorem log_le_two_mul_artanhPartial_add {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
-    Real.log a ≤ 2 * (artanhPartial n ((a - 1) / (a + 1)) +
-      ((a - 1) / (a + 1)) ^ (2 * n + 1) / (1 - ((a - 1) / (a + 1)) ^ 2)) := by
-  set x : ℝ := (a - 1) / (a + 1)
-  have ha1 : 0 < a + 1 := by linarith
-  have hx0 : 0 ≤ x := div_nonneg (by linarith) ha1.le
-  have hx1 : x < 1 := (div_lt_one ha1).mpr (by linarith)
-  have hdiv : (1 + x) / (1 - x) = a := by
-    simp only [x]
-    field_simp [ha1.ne']
-    ring
-  have hle := Real.log_div_le_sum_range_add hx0 hx1 n
-  rw [hdiv] at hle
-  linarith [show artanhPartial n x = ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1)
-    from rfl]
-
-private theorem neg_two_mul_artanhPartial_add_le_log {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
-    -2 * (artanhPartial n ((1 - a) / (1 + a)) +
-      ((1 - a) / (1 + a)) ^ (2 * n + 1) / (1 - ((1 - a) / (1 + a)) ^ 2)) ≤ Real.log a := by
-  have hinv : 1 ≤ a⁻¹ := one_le_inv₀ ha0 |>.mpr ha1
-  have harg : (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) := by
-    field_simp [ha0.ne']
-  have hle := log_le_two_mul_artanhPartial_add hinv n
-  rw [Real.log_inv, harg] at hle
-  linarith
-
-private theorem log_le_neg_two_mul_artanhPartial {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
-    Real.log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a)) := by
-  have hinv : 1 ≤ a⁻¹ := one_le_inv₀ ha0 |>.mpr ha1
-  have harg : (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) := by
-    field_simp [ha0.ne']
-  have hle := two_mul_artanhPartial_le_log hinv n
-  rw [Real.log_inv, harg] at hle
-  linarith
 
 /-! ### Enclosures of `li 2` and `li (3 / 2)` -/
 
@@ -218,13 +151,13 @@ private theorem liSeries_log_two_upper :
   exact hmono.trans (htail.trans hnum)
 
 /-- Lower bound `0.834438 ≤ ∑' n, (log 2) ^ (n + 1) / ((n + 1) * (n + 1)!)`. -/
-theorem sum_pow_div_mul_factorial_log_two_ge :
+theorem tsum_pow_div_mul_factorial_log_two_ge :
     (0.834438 : ℝ) ≤
       ∑' n : ℕ, Real.log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) :=
   (by norm_num : (0.834438 : ℝ) ≤ 0.834461034).trans liSeries_log_two_lower
 
 /-- Upper bound `∑' n, (log 2) ^ (n + 1) / ((n + 1) * (n + 1)!) ≤ 0.834462`. -/
-theorem sum_pow_div_mul_factorial_log_two_le :
+theorem tsum_pow_div_mul_factorial_log_two_le :
     ∑' n : ℕ, Real.log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) ≤
       (0.834462 : ℝ) :=
   liSeries_log_two_upper.trans (by norm_num)
@@ -233,13 +166,13 @@ private theorem log_log_two_lower_tight : (-0.36651295 : ℝ) ≤ Real.log (Real
   have hq : (0.69314718 : ℝ) ≤ Real.log 2 := by linarith [Real.log_two_gt_d9]
   have hmono : Real.log (0.69314718 : ℝ) ≤ Real.log (Real.log 2) :=
     Real.log_le_log (by norm_num) hq
-  have hlow := neg_two_mul_artanhPartial_add_le_log (a := (0.69314718 : ℝ))
+  have hlow := Real.neg_two_mul_artanhPartial_add_le_log (a := (0.69314718 : ℝ))
     (by norm_num) (by norm_num) 5
   have hnum : (-0.36651295 : ℝ) ≤
-      -2 * (artanhPartial 5 ((1 - (0.69314718 : ℝ)) / (1 + (0.69314718 : ℝ))) +
+      -2 * (Real.artanhPartial 5 ((1 - (0.69314718 : ℝ)) / (1 + (0.69314718 : ℝ))) +
         ((1 - (0.69314718 : ℝ)) / (1 + (0.69314718 : ℝ))) ^ (2 * 5 + 1) /
           (1 - ((1 - (0.69314718 : ℝ)) / (1 + (0.69314718 : ℝ))) ^ 2)) := by
-    simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]
+    simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]
     norm_num
   exact hnum.trans (hlow.trans hmono)
 
@@ -247,11 +180,11 @@ private theorem log_log_two_upper_tight : Real.log (Real.log 2) ≤ (-0.36651290
   have hq : Real.log 2 ≤ (0.693147181 : ℝ) := by linarith [Real.log_two_lt_d9]
   have hmono : Real.log (Real.log 2) ≤ Real.log (0.693147181 : ℝ) :=
     Real.log_le_log (Real.log_pos one_lt_two) hq
-  have hup := log_le_neg_two_mul_artanhPartial (a := (0.693147181 : ℝ))
+  have hup := Real.log_le_neg_two_mul_artanhPartial (a := (0.693147181 : ℝ))
     (by norm_num) (by norm_num) 5
-  have hnum : -2 * artanhPartial 5 ((1 - (0.693147181 : ℝ)) / (1 + (0.693147181 : ℝ))) ≤
+  have hnum : -2 * Real.artanhPartial 5 ((1 - (0.693147181 : ℝ)) / (1 + (0.693147181 : ℝ))) ≤
       (-0.36651290 : ℝ) := by
-    simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]
+    simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]
     norm_num
   exact hmono.trans (hup.trans hnum)
 
@@ -272,13 +205,13 @@ private theorem unoffsetLogIntegral_two_eq :
 theorem unoffsetLogIntegral_two_gt : (0.96 : ℝ) < unoffsetLogIntegral 2 := by
   rw [unoffsetLogIntegral_two_eq]
   linarith [Real.one_half_lt_eulerMascheroniConstant, log_log_two_ge,
-    sum_pow_div_mul_factorial_log_two_ge]
+    tsum_pow_div_mul_factorial_log_two_ge]
 
 /-- Unconditional upper bound `li 2 < 1.14`. -/
 theorem unoffsetLogIntegral_two_lt : unoffsetLogIntegral 2 < (1.14 : ℝ) := by
   rw [unoffsetLogIntegral_two_eq]
   linarith [Real.eulerMascheroniConstant_lt_two_thirds, log_log_two_le,
-    sum_pow_div_mul_factorial_log_two_le]
+    tsum_pow_div_mul_factorial_log_two_le]
 
 /-- Conditional sharp enclosure of `li 2` from `|γ - 0.5772156649| < 1e-9`:
 `1.0451 ≤ li 2 ≤ 1.0452`. -/
@@ -289,7 +222,7 @@ theorem unoffsetLogIntegral_two_mem_Icc
   have hγ_bounds := abs_lt.mp hγ
   refine ⟨?_, ?_⟩ <;>
     linarith [hγ_bounds.1, hγ_bounds.2, log_log_two_ge, log_log_two_le,
-      sum_pow_div_mul_factorial_log_two_ge, sum_pow_div_mul_factorial_log_two_le]
+      tsum_pow_div_mul_factorial_log_two_ge, tsum_pow_div_mul_factorial_log_two_le]
 
 /-- Coarse conditional enclosure `1.039 ≤ li 2 ≤ 1.06` from `|γ - 0.5772156649| < 1e-9`. -/
 theorem unoffsetLogIntegral_two_mem_Icc_coarse
@@ -299,10 +232,10 @@ theorem unoffsetLogIntegral_two_mem_Icc_coarse
   exact ⟨by linarith [h.1], by linarith [h.2]⟩
 
 private theorem log_three_div_two_lower : (0.40546 : ℝ) ≤ Real.log (3 / 2) := by
-  have hle := two_mul_artanhPartial_le_log (a := (3 / 2 : ℝ)) (by norm_num) 4
+  have hle := Real.two_mul_artanhPartial_le_log (a := (3 / 2 : ℝ)) (by norm_num) 4
   have hnum : (0.40546 : ℝ) ≤
-      2 * artanhPartial 4 (((3 / 2 : ℝ) - 1) / ((3 / 2 : ℝ) + 1)) := by
-    simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]
+      2 * Real.artanhPartial 4 (((3 / 2 : ℝ) - 1) / ((3 / 2 : ℝ) + 1)) := by
+    simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]
     norm_num
   exact hnum.trans hle
 
@@ -314,21 +247,20 @@ private theorem log_log_three_div_two_gt : (-0.903 : ℝ) < Real.log (Real.log (
     ring
   have hmono : Real.log (0.81092 : ℝ) ≤ Real.log (2 * Real.log (3 / 2)) :=
     Real.log_le_log (by norm_num) h2_lo
-  have hlow := neg_two_mul_artanhPartial_add_le_log (a := (0.81092 : ℝ))
+  have hlow := Real.neg_two_mul_artanhPartial_add_le_log (a := (0.81092 : ℝ))
     (by norm_num) (by norm_num) 3
   have hnum : (-0.20985 : ℝ) <
-      -2 * (artanhPartial 3 ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) +
+      -2 * (Real.artanhPartial 3 ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) +
         ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) ^ (2 * 3 + 1) /
           (1 - ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) ^ 2)) := by
-    simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]
+    simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]
     norm_num
   linarith
 
 /-- Unconditional lower bound `0.04 < li (3 / 2)`. -/
 theorem unoffsetLogIntegral_three_div_two_gt : (0.04 : ℝ) < unoffsetLogIntegral (3 / 2) := by
   have hlog32 : 0 < Real.log (3 / 2) := Real.log_pos (by norm_num)
-  have hser_lo : (0.446 : ℝ) <
-      ∑' n : ℕ, Real.log (3 / 2) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
+  have hser_lo : (0.446 : ℝ) < liSeries (Real.log (3 / 2)) := by
     have hge := liSeriesPartial_le_liSeries 2 hlog32.le
     rw [liSeriesPartial, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_zero]
       at hge
@@ -338,9 +270,9 @@ theorem unoffsetLogIntegral_three_div_two_gt : (0.04 : ℝ) < unoffsetLogIntegra
         Real.log (3 / 2) + Real.log (3 / 2) ^ 2 / 4 := by
       gcongr
     have hnum : (0.446 : ℝ) < (0.40546 : ℝ) + (0.40546 : ℝ) ^ 2 / 4 := by norm_num
-    change (0.446 : ℝ) < liSeries (Real.log (3 / 2))
     linarith [hge, h2, hnum]
   rw [unoffsetLogIntegral_def]
+  simp only [liSeries] at hser_lo
   linarith [Real.one_half_lt_eulerMascheroniConstant, log_log_three_div_two_gt]
 
 /-- For every `x ≥ 3 / 2`, `li x > 0`. -/
@@ -353,132 +285,7 @@ theorem unoffsetLogIntegral_pos_of_le {x : ℝ} (hx : (3 / 2 : ℝ) ≤ x) :
   · exact hpos.trans (strictMonoOn_unoffsetLogIntegral_Ioi (mem_Ioi.mpr (by norm_num))
       (mem_Ioi.mpr (by linarith)) hlt)
 
-/-! ### Explicit integrals of `(log t ^ k)⁻¹` for real exponents `k` -/
-
-/-- Continuity of `t ↦ (log t ^ k)⁻¹` on `(1, ∞)` for every real exponent `k`. -/
-theorem continuousOn_inv_log_rpow (k : ℝ) :
-    ContinuousOn (fun t : ℝ ↦ (Real.log t ^ k)⁻¹) (Ioi 1) := by
-  have hlog : ContinuousOn Real.log (Ioi 1) :=
-    Real.continuousOn_log.mono fun t ht ↦ ne_of_gt (zero_lt_one.trans ht)
-  refine (ContinuousOn.rpow_const hlog fun t ht ↦ Or.inl (Real.log_pos ht).ne').inv₀ ?_
-  intro t ht
-  exact (Real.rpow_pos_of_pos (Real.log_pos ht) k).ne'
-
-/-- `t ↦ (log t ^ k)⁻¹` is interval integrable on `[a, b]` whenever `a, b > 1`. -/
-theorem intervalIntegrable_inv_log_rpow (k : ℝ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
-    IntervalIntegrable (fun t : ℝ ↦ (Real.log t ^ k)⁻¹) volume a b :=
-  ((continuousOn_inv_log_rpow k).mono (ordConnected_Ioi.uIcc_subset ha hb)).intervalIntegrable
-
-private theorem hasDerivAt_div_log_rpow (k : ℝ) {t : ℝ} (ht : 1 < t) :
-    HasDerivAt (fun u : ℝ ↦ u / Real.log u ^ k)
-      ((Real.log t ^ k)⁻¹ - k * (Real.log t ^ (k + 1))⁻¹) t := by
-  have ht₀ : t ≠ 0 := (zero_lt_one.trans ht).ne'
-  have hlog : 0 < Real.log t := Real.log_pos ht
-  have hp : HasDerivAt (fun u : ℝ ↦ Real.log u ^ k) (t⁻¹ * k * Real.log t ^ (k - 1)) t :=
-    HasDerivAt.rpow_const (Real.hasDerivAt_log ht₀) (Or.inl hlog.ne')
-  have hd := (hasDerivAt_id t).div hp (Real.rpow_pos_of_pos hlog k).ne'
-  refine hd.congr_deriv ?_
-  have hk : Real.log t ^ k = Real.log t ^ (k - 1) * Real.log t := by
-    calc Real.log t ^ k = Real.log t ^ ((k - 1) + 1) := by ring_nf
-      _ = Real.log t ^ (k - 1) * Real.log t ^ (1 : ℝ) := Real.rpow_add hlog (k - 1) 1
-      _ = Real.log t ^ (k - 1) * Real.log t := by rw [Real.rpow_one]
-  have hk1 : Real.log t ^ (k + 1) = Real.log t ^ (k - 1) * Real.log t * Real.log t := by
-    calc Real.log t ^ (k + 1) = Real.log t ^ k * Real.log t ^ (1 : ℝ) := Real.rpow_add hlog k 1
-      _ = Real.log t ^ k * Real.log t := by rw [Real.rpow_one]
-      _ = Real.log t ^ (k - 1) * Real.log t * Real.log t := by rw [hk]
-  have h1 : Real.log t ^ (k - 1) ≠ 0 := (Real.rpow_pos_of_pos hlog (k - 1)).ne'
-  rw [hk, hk1]
-  simp only [id_eq]
-  field_simp [ht₀, hlog.ne', h1]
-
-/-- **Integration by parts for real reciprocal logarithm powers**: for every `k : ℝ` and
-`a, b > 1`,
-`∫ t in a..b, (log t ^ k)⁻¹ = b / log b ^ k - a / log a ^ k + k * ∫ t in a..b, (log t ^ (k + 1))⁻¹`.
--/
-theorem integral_inv_log_rpow_eq_sub_add (k : ℝ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
-    (∫ t in a..b, (Real.log t ^ k)⁻¹) = b / Real.log b ^ k - a / Real.log a ^ k +
-      k * ∫ t in a..b, (Real.log t ^ (k + 1))⁻¹ := by
-  have hi := intervalIntegrable_inv_log_rpow k ha hb
-  have hi1 := intervalIntegrable_inv_log_rpow (k + 1) ha hb
-  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun t ht ↦ hasDerivAt_div_log_rpow k (ordConnected_Ioi.uIcc_subset ha hb ht))
-    (hi.sub (hi1.const_mul k))
-  rw [intervalIntegral.integral_sub hi (hi1.const_mul k), intervalIntegral.integral_const_mul]
-    at hFTC
-  exact sub_eq_iff_eq_add.mp hFTC
-
-/-- Lower bound `(b - a) / log b ^ k ≤ ∫ t in a..b, (log t ^ k)⁻¹` for `0 ≤ k` and
-`1 < a ≤ b`. -/
-theorem le_integral_inv_log_rpow {k a b : ℝ} (hk : 0 ≤ k) (ha : 1 < a) (hab : a ≤ b) :
-    (b - a) / Real.log b ^ k ≤ ∫ t in a..b, (Real.log t ^ k)⁻¹ := by
-  have hb : 1 < b := ha.trans_le hab
-  have hmono := intervalIntegral.integral_mono_on hab
-    (f := fun _ ↦ (Real.log b ^ k)⁻¹) intervalIntegrable_const
-    (intervalIntegrable_inv_log_rpow k ha hb) fun t ht ↦ ?_
-  · simpa [smul_eq_mul, div_eq_mul_inv] using hmono
-  · have hlt : 0 < Real.log t := Real.log_pos (ha.trans_le ht.1)
-    exact inv_anti₀ (Real.rpow_pos_of_pos hlt k)
-      (Real.rpow_le_rpow hlt.le (Real.log_le_log (by linarith [ht.1]) ht.2) hk)
-
-/-- Explicit upper bound `∫ t in 2..x, (log t ^ k)⁻¹ ≤ √x / log 2 ^ k + 2 ^ k * x / log x ^ k`
-for every `k ≥ 0` and `x ≥ 2`. -/
-theorem integral_inv_log_rpow_le {k x : ℝ} (hk : 0 ≤ k) (hx : 2 ≤ x) :
-    (∫ t in (2 : ℝ)..x, (Real.log t ^ k)⁻¹) ≤
-      √x / Real.log 2 ^ k + (2 : ℝ) ^ k * x / Real.log x ^ k := by
-  have hlogx : 0 < Real.log x := Real.log_pos (one_lt_two.trans_le hx)
-  have hmono_int : ∀ a b : ℝ, 1 < a → a ≤ b →
-      ∫ t in a..b, (Real.log t ^ k)⁻¹ ≤ (b - a) / Real.log a ^ k := by
-    intro a b ha hab
-    have hla : 0 < Real.log a := Real.log_pos ha
-    have hb : 1 < b := ha.trans_le hab
-    have hmono := intervalIntegral.integral_mono_on hab (intervalIntegrable_inv_log_rpow k ha hb)
-      (g := fun _ ↦ (Real.log a ^ k)⁻¹) intervalIntegrable_const fun t ht ↦ ?_
-    · simpa [smul_eq_mul, div_eq_mul_inv] using hmono
-    · exact inv_anti₀ (Real.rpow_pos_of_pos hla k)
-        (Real.rpow_le_rpow hla.le (Real.log_le_log (by linarith) ht.1) hk)
-  rcases le_or_gt 4 x with hx4 | hx4
-  · have hsq2 : 2 ≤ √x := by
-      have h4 : √(4 : ℝ) ≤ √x := Real.sqrt_le_sqrt hx4
-      rwa [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)] at h4
-    have hsqx : √x ≤ x := (Real.sqrt_le_self_iff).2 (Or.inr (by linarith))
-    have hsplit : (∫ t in (2 : ℝ)..x, (Real.log t ^ k)⁻¹) =
-        (∫ t in (2 : ℝ)..√x, (Real.log t ^ k)⁻¹) +
-          ∫ t in √x..x, (Real.log t ^ k)⁻¹ :=
-      (intervalIntegral.integral_add_adjacent_intervals
-        (intervalIntegrable_inv_log_rpow k one_lt_two (by linarith))
-        (intervalIntegrable_inv_log_rpow k (by linarith) (by linarith))).symm
-    have hb1 : (∫ t in (2 : ℝ)..√x, (Real.log t ^ k)⁻¹) ≤ √x / Real.log 2 ^ k := by
-      refine (hmono_int 2 √x one_lt_two hsq2).trans ?_
-      gcongr
-      linarith
-    have hb2 : (∫ t in √x..x, (Real.log t ^ k)⁻¹) ≤ (2 : ℝ) ^ k * x / Real.log x ^ k := by
-      refine (hmono_int √x x (by linarith) hsqx).trans ?_
-      have hlogsq : Real.log √x = Real.log x / 2 := Real.log_sqrt (by linarith)
-      rw [hlogsq, Real.div_rpow hlogx.le zero_le_two, div_div_eq_mul_div, mul_comm (x - √x)]
-      gcongr
-      linarith [Real.sqrt_nonneg x]
-    rw [hsplit]
-    exact add_le_add hb1 hb2
-  · have hhalf : Real.log x / 2 < Real.log 2 := by
-      have hlog4 : Real.log x < Real.log 4 := Real.log_lt_log (by linarith) hx4
-      have h4 : Real.log (4 : ℝ) = 2 * Real.log 2 := by
-        rw [show (4 : ℝ) = (2 : ℝ) ^ 2 by norm_num, Real.log_pow]
-        ring
-      linarith
-    have hb : (∫ t in (2 : ℝ)..x, (Real.log t ^ k)⁻¹) ≤ (2 : ℝ) ^ k * x / Real.log x ^ k := by
-      refine (hmono_int 2 x one_lt_two hx).trans ?_
-      have hrpow : (Real.log x / 2) ^ k ≤ Real.log 2 ^ k :=
-        Real.rpow_le_rpow (div_nonneg hlogx.le zero_le_two) hhalf.le hk
-      calc (x - 2) / Real.log 2 ^ k
-          ≤ (x - 2) / (Real.log x / 2) ^ k := by gcongr
-        _ = (x - 2) * (2 : ℝ) ^ k / Real.log x ^ k := by
-              rw [Real.div_rpow hlogx.le zero_le_two, div_div_eq_mul_div]
-        _ ≤ (2 : ℝ) ^ k * x / Real.log x ^ k := by
-              rw [mul_comm (x - 2)]
-              gcongr
-              linarith
-    have hsqrt_nn : 0 ≤ √x / Real.log 2 ^ k := by positivity
-    linarith
+/-! ### Strict explicit upper bounds for integrals of `(log t ^ k)⁻¹` -/
 
 /-- Strict explicit upper bound for `k ≥ 0` and `x ≥ 2`:
 `∫ t in 2..x, (log t ^ k)⁻¹ <`
@@ -530,17 +337,19 @@ theorem strictMonoOn_logIntegral_sub_div_log :
     rw [heq]
     positivity
 
+private theorem logIntegral_sub_div_log_eq_integral {x : ℝ} (hx : 2 ≤ x) :
+    logIntegral x - x / Real.log x =
+      (∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹) - 2 / Real.log 2 := by
+  rw [logIntegral_eq_div_log_sub_add hx]
+  ring
+
 /-- Lower bound for `Li x - x / log x` on `[2, ∞)`:
 `x / log x ^ 2 - 2 / log 2 - 2 / log 2 ^ 2 ≤ Li x - x / log x`. -/
 theorem le_logIntegral_sub_div_log {x : ℝ} (hx : 2 ≤ x) :
     x / Real.log x ^ 2 - 2 / Real.log 2 - 2 / Real.log 2 ^ 2 ≤ logIntegral x - x / Real.log x := by
-  have hid : logIntegral x - x / Real.log x =
-      (∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹) - 2 / Real.log 2 := by
-    rw [logIntegral_eq_div_log_sub_add hx]
-    ring
   have hint := le_integral_inv_log_pow 2 one_lt_two hx
   have h2_le : 2 / Real.log x ^ 2 ≤ 2 / Real.log 2 ^ 2 := by gcongr
-  rw [hid]
+  rw [logIntegral_sub_div_log_eq_integral hx]
   have hdiv : (x - 2) / Real.log x ^ 2 = x / Real.log x ^ 2 - 2 / Real.log x ^ 2 := by ring
   linarith
 
@@ -548,14 +357,10 @@ theorem le_logIntegral_sub_div_log {x : ℝ} (hx : 2 ≤ x) :
 `TauCeti.Real.le_logIntegral_sub_div_log` holds only at `x = 2`. -/
 theorem lt_logIntegral_sub_div_log {x : ℝ} (hx : 2 < x) :
     x / Real.log x ^ 2 - 2 / Real.log 2 - 2 / Real.log 2 ^ 2 < logIntegral x - x / Real.log x := by
-  have hid : logIntegral x - x / Real.log x =
-      (∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹) - 2 / Real.log 2 := by
-    rw [logIntegral_eq_div_log_sub_add hx.le]
-    ring
   have hmid : (x - 2) / Real.log x ^ 2 ≤ ∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹ :=
     le_integral_inv_log_pow 2 one_lt_two hx.le
   have h2_lt : 2 / Real.log x ^ 2 < 2 / Real.log 2 ^ 2 := by gcongr
-  rw [hid]
+  rw [logIntegral_sub_div_log_eq_integral hx.le]
   have hdiv : (x - 2) / Real.log x ^ 2 = x / Real.log x ^ 2 - 2 / Real.log x ^ 2 := by ring
   linarith
 
@@ -575,16 +380,12 @@ theorem logIntegral_sub_div_log_eq_iff {x : ℝ} (hx : 2 ≤ x) :
 theorem logIntegral_sub_div_log_lt {x : ℝ} (hx : 2 ≤ x) :
     logIntegral x - x / Real.log x <
       x / Real.log x ^ 2 + 2 * √x / Real.log 2 ^ 3 + 16 * x / Real.log x ^ 3 - 2 / Real.log 2 := by
-  have hid : logIntegral x - x / Real.log x =
-      (∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹) - 2 / Real.log 2 := by
-    rw [logIntegral_eq_div_log_sub_add hx]
-    ring
   have hlt := integral_inv_log_rpow_lt (k := 2) zero_le_two hx
   have h21 : (2 : ℝ) + 1 = ((3 : ℕ) : ℝ) := by norm_num
   have h2n : (2 : ℝ) = ((2 : ℕ) : ℝ) := by norm_num
   rw [h21, h2n] at hlt
   simp only [Real.rpow_natCast] at hlt
-  rw [hid]
+  rw [logIntegral_sub_div_log_eq_integral hx]
   have hrhs : x / Real.log x ^ 2 + 2 * (√x / Real.log 2 ^ 3 + (2 : ℝ) ^ 3 * x / Real.log x ^ 3) =
       x / Real.log x ^ 2 + 2 * √x / Real.log 2 ^ 3 + 16 * x / Real.log x ^ 3 := by
     ring
@@ -600,8 +401,8 @@ private theorem logIntegral_sub_div_log_eq_series_diff {x : ℝ} (hx : 1 < x) :
   ring
 
 private theorem log_x_enclosure {x d_lo d_hi : ℝ} (hx : 4 ≤ x)
-    (hd_lo : d_lo ≤ 2 * artanhPartial 6 ((x / 4 - 1) / (x / 4 + 1)))
-    (hd_hi : 2 * (artanhPartial 6 ((x / 4 - 1) / (x / 4 + 1)) +
+    (hd_lo : d_lo ≤ 2 * Real.artanhPartial 6 ((x / 4 - 1) / (x / 4 + 1)))
+    (hd_hi : 2 * (Real.artanhPartial 6 ((x / 4 - 1) / (x / 4 + 1)) +
       ((x / 4 - 1) / (x / 4 + 1)) ^ (2 * 6 + 1) / (1 - ((x / 4 - 1) / (x / 4 + 1)) ^ 2)) ≤ d_hi) :
     2 * (6931471803 / 10000000000 : ℝ) + d_lo ≤ Real.log x ∧
       Real.log x ≤ 2 * (6931471808 / 10000000000 : ℝ) + d_hi := by
@@ -609,18 +410,18 @@ private theorem log_x_enclosure {x d_lo d_hi : ℝ} (hx : 4 ≤ x)
     rw [Real.log_div (by linarith) (by norm_num), show (4 : ℝ) = 2 ^ 2 by norm_num, Real.log_pow]
     ring
   have hx4 : 1 ≤ x / 4 := by linarith
-  have hlo := hd_lo.trans (two_mul_artanhPartial_le_log hx4 6)
-  have hhi := (log_le_two_mul_artanhPartial_add hx4 6).trans hd_hi
+  have hlo := hd_lo.trans (Real.two_mul_artanhPartial_le_log hx4 6)
+  have hhi := (Real.log_le_two_mul_artanhPartial_add hx4 6).trans hd_hi
   rw [hsplit]
   exact ⟨by linarith [log_two_lower_q], by linarith [log_two_upper_q]⟩
 
 private theorem log_log_x_enclosure {lx lx_lo lx_hi dlx_lo dlx_hi : ℝ}
     (hlx_lo : lx_lo ≤ lx) (hlx_hi : lx ≤ lx_hi)
     (hlx_lo0 : 0 < lx_lo) (hlx_hi2 : lx_hi ≤ 2)
-    (hdlx_lo : dlx_lo ≤ -2 * (artanhPartial 3 ((1 - lx_lo / 2) / (1 + lx_lo / 2)) +
+    (hdlx_lo : dlx_lo ≤ -2 * (Real.artanhPartial 3 ((1 - lx_lo / 2) / (1 + lx_lo / 2)) +
       ((1 - lx_lo / 2) / (1 + lx_lo / 2)) ^ (2 * 3 + 1) /
         (1 - ((1 - lx_lo / 2) / (1 + lx_lo / 2)) ^ 2)))
-    (hdlx_hi : -2 * artanhPartial 3 ((1 - lx_hi / 2) / (1 + lx_hi / 2)) ≤ dlx_hi) :
+    (hdlx_hi : -2 * Real.artanhPartial 3 ((1 - lx_hi / 2) / (1 + lx_hi / 2)) ≤ dlx_hi) :
     (6931471803 / 10000000000 : ℝ) + dlx_lo ≤ Real.log lx ∧
       Real.log lx ≤ (6931471808 / 10000000000 : ℝ) + dlx_hi := by
   have hlx_pos : 0 < lx := hlx_lo0.trans_le hlx_lo
@@ -631,9 +432,9 @@ private theorem log_log_x_enclosure {lx lx_lo lx_hi dlx_lo dlx_hi : ℝ}
     Real.log_le_log (half_pos hlx_lo0) (div_le_div_of_nonneg_right hlx_lo zero_le_two)
   have h_hi_mono : Real.log (lx / 2) ≤ Real.log (lx_hi / 2) :=
     Real.log_le_log (half_pos hlx_pos) (div_le_div_of_nonneg_right hlx_hi zero_le_two)
-  have hlo := hdlx_lo.trans (neg_two_mul_artanhPartial_add_le_log (half_pos hlx_lo0)
+  have hlo := hdlx_lo.trans (Real.neg_two_mul_artanhPartial_add_le_log (half_pos hlx_lo0)
     (by linarith [hlx_lo.trans hlx_hi]) 3)
-  have hhi := (log_le_neg_two_mul_artanhPartial
+  have hhi := (Real.log_le_neg_two_mul_artanhPartial
     (by linarith [hlx_lo0.trans_le (hlx_lo.trans hlx_hi)]) (by linarith) 3).trans hdlx_hi
   rw [hsplit]
   exact ⟨by linarith [log_two_lower_q], by linarith [log_two_upper_q]⟩
@@ -679,14 +480,14 @@ private theorem logIntegral_sub_div_log_at_65797 :
     logIntegral (65797 / 10000) - (65797 / 10000 : ℝ) / Real.log (65797 / 10000) < 0 := by
   have hx := log_x_enclosure (x := (65797 / 10000 : ℝ)) (d_lo := 0.49769478) (d_hi := 0.49769482)
     (by norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
   have hlx_lo : (1.883989140 : ℝ) ≤ Real.log (65797 / 10000) := le_trans (by norm_num) hx.1
   have hlx_hi : Real.log (65797 / 10000) ≤ (1.883989182 : ℝ) := hx.2.trans (by norm_num)
   have hllx := log_log_x_enclosure hlx_lo hlx_hi (by norm_num) (by norm_num)
     (dlx_lo := -0.05975577) (dlx_hi := -0.05975574)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
   have hllx_hi : Real.log (Real.log (65797 / 10000)) ≤ (0.63339145 : ℝ) :=
     hllx.2.trans (by norm_num)
   have hSx_hi : liSeries (Real.log (65797 / 10000)) ≤ (3.32697870 : ℝ) :=
@@ -702,14 +503,14 @@ private theorem logIntegral_sub_div_log_at_65798 :
     0 < logIntegral (65798 / 10000) - (65798 / 10000 : ℝ) / Real.log (65798 / 10000) := by
   have hx := log_x_enclosure (x := (65798 / 10000 : ℝ)) (d_lo := 0.49770998) (d_hi := 0.49771001)
     (by norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
   have hlx_lo : (1.884004340 : ℝ) ≤ Real.log (65798 / 10000) := le_trans (by norm_num) hx.1
   have hlx_hi : Real.log (65798 / 10000) ≤ (1.884004372 : ℝ) := hx.2.trans (by norm_num)
   have hllx := log_log_x_enclosure hlx_lo hlx_hi (by norm_num) (by norm_num)
     (dlx_lo := -0.05974771) (dlx_hi := -0.05974768)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
   have hllx_lo : (0.63339947 : ℝ) ≤ Real.log (Real.log (65798 / 10000)) :=
     le_trans (by norm_num) hllx.1
   have hSx_lo : (3.32702358 : ℝ) ≤ liSeries (Real.log (65798 / 10000)) :=
@@ -725,14 +526,14 @@ private theorem logIntegral_sub_div_log_at_658 :
     (7e-5 : ℝ) < logIntegral (658 / 100) - (658 / 100 : ℝ) / Real.log (658 / 100) := by
   have hx := log_x_enclosure (x := (658 / 100 : ℝ)) (d_lo := 0.49774038) (d_hi := 0.49774041)
     (by norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
   have hlx_lo : (1.884034740 : ℝ) ≤ Real.log (658 / 100) := le_trans (by norm_num) hx.1
   have hlx_hi : Real.log (658 / 100) ≤ (1.884034772 : ℝ) := hx.2.trans (by norm_num)
   have hllx := log_log_x_enclosure hlx_lo hlx_hi (by norm_num) (by norm_num)
     (dlx_lo := -0.05973157) (dlx_hi := -0.05973154)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
-    (by simp only [artanhPartial, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
+    (by simp only [Real.artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]; norm_num)
   have hllx_lo : (0.63341561 : ℝ) ≤ Real.log (Real.log (658 / 100)) :=
     le_trans (by norm_num) hllx.1
   have hSx_lo : (3.32711361 : ℝ) ≤ liSeries (Real.log (658 / 100)) :=

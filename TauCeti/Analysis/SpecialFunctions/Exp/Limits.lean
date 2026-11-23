@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
 # Limits of the real exponential
@@ -25,12 +26,17 @@ decaying bound `c e^{-κ s}`, `κ > 0`, tends to zero as `s → ∞`.
 * `Real.isBigO_exp_comp_sub_one`: if `f → 0` and `f = O(g)` along a filter, then
   `e^f - 1 = O(g)`.
 * `Real.tendsto_const_mul_exp_neg_mul_atTop`: `c e^{-κ s} → 0` as `s → ∞`, for `κ > 0`.
+* `Real.tendsto_exp_neg_mul_log_atTop`: `e^{-z} log z → 0` as `z → ∞`.
+* `Real.continuous_exp_sub_one_div`: the filled-in quotient `(e^u - 1) / u` is continuous on `ℝ`.
+* `Real.continuous_one_sub_exp_neg_div`: the filled-in quotient `(1 - e^{-t}) / t` is continuous
+  on `ℝ`.
+* `Real.tendsto_exp_sub_one_sub_div_sq`: `(e^h - 1 - h) / h² → 1 / 2` as `h → 0`, `h ≠ 0`.
 -/
 
 public section
 
 open Asymptotics Filter
-open scoped Topology
+open scoped Topology Nat
 
 namespace Real
 
@@ -66,5 +72,79 @@ theorem isBigO_exp_comp_sub_one {α F : Type*} [Norm F] {l : Filter α} {f : α 
 theorem tendsto_const_mul_exp_neg_mul_atTop (c : ℝ) {κ : ℝ} (hκ : 0 < κ) :
     Tendsto (fun s => c * exp (-(κ * s))) atTop (𝓝 0) := by
   simpa using (tendsto_exp_neg_atTop_nhds_zero.comp (tendsto_id.const_mul_atTop hκ)).const_mul c
+
+/-- `e^{-z} log z → 0` as `z → ∞`. -/
+theorem tendsto_exp_neg_mul_log_atTop :
+    Tendsto (fun z : ℝ ↦ exp (-z) * log z) atTop (𝓝 0) := by
+  have hpoly : Tendsto (fun z : ℝ ↦ z * exp (-z)) atTop (𝓝 0) := by
+    simpa using tendsto_pow_mul_exp_neg_atTop_nhds_zero 1
+  refine squeeze_zero' (g := fun z : ℝ ↦ z * exp (-z)) ?_ ?_ hpoly
+  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with z hz
+    exact mul_nonneg (exp_pos _).le (log_nonneg hz)
+  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with z hz
+    rw [mul_comm]
+    exact mul_le_mul_of_nonneg_right (log_le_self (by positivity)) (exp_pos _).le
+
+/-- The filled-in quotient `(e^u - 1) / u` (with value `1` at `0`) is continuous on `ℝ`. -/
+theorem continuous_exp_sub_one_div :
+    Continuous fun u : ℝ ↦ if u = 0 then (1 : ℝ) else (exp u - 1) / u := by
+  rw [continuous_iff_continuousAt]
+  intro u
+  rcases eq_or_ne u 0 with rfl | hu
+  · rw [← continuousWithinAt_compl_self, ContinuousWithinAt]
+    simp only [↓reduceIte]
+    have hlim : Tendsto (fun t : ℝ ↦ (exp t - 1) / t) (𝓝[≠] 0) (𝓝 1) := by
+      simpa using tendsto_exp_mul_sub_one_div 1
+    refine hlim.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    simp [Set.mem_compl_singleton_iff.mp ht]
+  · have hcont : ContinuousAt (fun t : ℝ ↦ (exp t - 1) / t) u := by fun_prop (disch := exact hu)
+    refine hcont.congr ?_
+    filter_upwards [eventually_ne_nhds hu] with t ht
+    simp [ht]
+
+/-- The filled-in quotient `(1 - e^{-t}) / t` (with value `1` at `0`) is continuous on `ℝ`. -/
+theorem continuous_one_sub_exp_neg_div :
+    Continuous fun t : ℝ ↦ if t = 0 then (1 : ℝ) else (1 - exp (-t)) / t := by
+  have heq : (fun t : ℝ ↦ if t = 0 then (1 : ℝ) else (1 - exp (-t)) / t) =
+      fun t : ℝ ↦ if -t = 0 then (1 : ℝ) else (exp (-t) - 1) / (-t) := by
+    ext t
+    by_cases ht : t = 0
+    · simp [ht]
+    · simp only [ht, ↓reduceIte, neg_ne_zero.mpr ht]
+      ring
+  rw [heq]
+  exact continuous_exp_sub_one_div.comp continuous_neg
+
+/-- Second-order difference quotient `(e^h - 1 - h) / h² → 1 / 2` as `h → 0`, `h ≠ 0`. -/
+theorem tendsto_exp_sub_one_sub_div_sq :
+    Tendsto (fun h : ℝ ↦ (exp h - 1 - h) / h ^ 2) (𝓝[≠] 0) (𝓝 (1 / 2 : ℝ)) := by
+  rw [Metric.tendsto_nhdsWithin_nhds]
+  intro ε hε
+  refine ⟨min 1 (ε / 2), lt_min zero_lt_one (half_pos hε), fun h hh hd ↦ ?_⟩
+  have hh0 : h ≠ 0 := Set.mem_compl_singleton_iff.mp hh
+  rw [Real.dist_eq, sub_zero] at hd
+  have hbound := exp_bound (hd.le.trans (min_le_left _ _)) (n := 3) (by norm_num)
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, pow_one,
+    Nat.factorial_zero, Nat.factorial_one, Nat.factorial_two, Nat.cast_one, Nat.cast_ofNat,
+    div_one] at hbound
+  have hdiv : |(exp h - 1 - h) / h ^ 2 - 1 / 2| =
+      |exp h - (1 + h + h ^ 2 / 2)| / |h| ^ 2 := by
+    rw [← abs_pow, ← abs_div]
+    congr 1
+    field_simp [hh0]
+    ring
+  rw [Real.dist_eq, hdiv]
+  calc |exp h - (1 + h + h ^ 2 / 2)| / |h| ^ 2
+      ≤ (|h| ^ 3 * ((3 + 1 : ℕ) / ((3 : ℕ)! * (3 : ℕ)))) / |h| ^ 2 := by
+        gcongr
+        simpa [sq_abs] using hbound
+    _ = (2 / 9 : ℝ) * |h| := by
+        have ha : |h| ≠ 0 := abs_ne_zero.mpr hh0
+        have hfac : ((3 + 1 : ℕ) / ((3 : ℕ)! * (3 : ℕ)) : ℝ) = 2 / 9 := by
+          norm_num [Nat.factorial]
+        rw [hfac]
+        field_simp [ha]
+    _ < ε := by linarith [hd.trans_le (min_le_right _ _), abs_nonneg h]
 
 end Real
