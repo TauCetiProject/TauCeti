@@ -38,10 +38,11 @@ that is `x = ODE.picard F t₀ x₀ x` on `[a, b]`, for `x` continuous on `[a, b
 * `TauCeti.absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard_of_lipschitzWith` and
   `TauCeti.ae_hasDerivAt_of_forall_mem_Icc_eq_picard_of_lipschitzWith`: every solution is
   absolutely continuous on `[a, b]`, with derivative `F t (x t)` at almost every `t ∈ (a, b)`.
-* `TauCeti.norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard`: if `‖F t x₀‖ ≤ m t` almost
-  everywhere, every solution satisfies `‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|`.
-* `TauCeti.dist_le_mul_exp_of_forall_mem_Icc_eq_picard`: solutions from two initial values stay
-  within `‖x₀ - y₀‖ exp |∫ s in t₀..t, L s|` of each other.
+* `TauCeti.norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith`: if
+  `‖F t x₀‖ ≤ m t` almost everywhere, every solution satisfies
+  `‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|`.
+* `TauCeti.dist_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith`: solutions from two
+  initial values stay within `‖x₀ - y₀‖ exp |∫ s in t₀..t, L s|` of each other.
 
 The linear case `F t x = M t x + G t`, with `L = ‖M‖`, is
 `TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard` in `TauCeti/Analysis/ODE/Caratheodory.lean`,
@@ -252,7 +253,8 @@ constant `L t` for almost every `t ∈ [a, b]`, where `L` is integrable on `[a, 
 `‖F t x₀‖ ≤ m t` for almost every `t ∈ [a, b]`, where `m` is integrable on `[a, b]`. A solution of
 `x t = x₀ + ∫ s in t₀..t, F s (x s)` on `[a, b]` satisfies
 `‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|` for every `t ∈ [a, b]`. -/
-theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a b) {m : ℝ → ℝ}
+theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith (ht₀ : t₀ ∈ Icc a b)
+    {m : ℝ → ℝ}
     (hm : IntegrableOn m (Icc a b)) (hFm : ∀ᵐ t ∂volume.restrict (Icc a b), ‖F t x₀‖ ≤ m t)
     {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t) {t : ℝ} (ht : t ∈ Icc a b) :
@@ -292,7 +294,8 @@ theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a 
 `TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith`, solutions `x` and `y` on
 `[a, b]` of the integral equation with initial values `x₀` and `y₀` at `t₀` satisfy
 `‖x t - y t‖ ≤ ‖x₀ - y₀‖ exp |∫ s in t₀..t, L s|` for every `t ∈ [a, b]`. -/
-theorem dist_le_mul_exp_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a b) {y₀ : E}
+theorem dist_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith (ht₀ : t₀ ∈ Icc a b)
+    {y₀ : E}
     {x y : ℝ → E} (hx : ContinuousOn x (Icc a b)) (hy : ContinuousOn y (Icc a b))
     (hxe : ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t)
     (hye : ∀ t ∈ Icc a b, y t = ODE.picard F t₀ y₀ y t) {t : ℝ} (ht : t ∈ Icc a b) :
