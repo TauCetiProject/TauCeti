@@ -244,8 +244,8 @@ lemma columnFiltrationSpectralObjectMap_abutment_naturality (n : ℕ) :
     ((flipFunctor C _ _).map φ) n _).trans ?_
   rw [Category.assoc, ← HomologicalComplex.homologyMap_comp,
     ← HomologicalComplex.homologyMap_comp]
-  congr 2
-  refine HomologicalComplex.hom_ext _ _ fun m ↦ total.hom_ext _ fun p q h ↦ ?_
-  simp [ιTotal_totalFlipIso_f_hom_assoc]
+  rw [total_map_flip_totalFlipIso_hom]
+  -- `(flipFunctor C _ _).obj K` is `K.flip` by definition
+  rfl
 
 end HomologicalComplex₂

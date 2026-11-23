@@ -53,6 +53,8 @@ compares the homology sequences of these short exact sequences.
   of the rows `≥ 1` of `K`; the projection `HomologicalComplex₂.dropRowZero` is natural
   (`HomologicalComplex₂.dropRowZero_naturality`) along the morphisms
   `HomologicalComplex₂.rowsSuccMap` of the bicomplexes of rows `≥ 1`.
+* `HomologicalComplex₂.total_map_flip_totalFlipIso_hom`: naturality of the signed isomorphism
+  between the total complexes of a bicomplex and of its flip.
 * `HomologicalComplex₂.quasiIso_total_map_of_rows`: a map of bicomplexes which is a
   quasi-isomorphism on every row induces a quasi-isomorphism of total complexes.
 * `HomologicalComplex₂.quasiIso_totalAugmentation_of_rows`: exact augmented rows make the
@@ -496,6 +498,11 @@ abbrev rowsSuccMap : rowsSucc K ⟶ rowsSucc L where
   f p := { f q := (φ.f p).f (q + 1) }
 
 omit [HasFiniteCoproducts C] in
+/-- The components of the map of the bicomplexes of rows `≥ 1` are those of `φ`, one row up. -/
+@[simp]
+lemma rowsSuccMap_f_f (p q : ℕ) : ((rowsSuccMap φ).f p).f q = (φ.f p).f (q + 1) := (rfl)
+
+omit [HasFiniteCoproducts C] in
 @[simp]
 lemma rowsSuccMap_id : rowsSuccMap (𝟙 K) = 𝟙 _ := (rfl)
 
@@ -541,6 +548,16 @@ lemma dropRowZero_naturality :
       dropRowZero K ≫
         extendMap (total.map (rowsSuccMap φ) (ComplexShape.down ℕ)) (embeddingDownNatAdd 1) :=
   (rowZeroShortComplexMap φ).comm₂₃
+
+/-- The signed isomorphism `HomologicalComplex₂.totalFlipIso` between the total complexes of the
+flip and of a bicomplex is natural. -/
+@[reassoc]
+lemma total_map_flip_totalFlipIso_hom :
+    total.map ((flipFunctor C _ _).map φ) (ComplexShape.down ℕ) ≫
+        (L.totalFlipIso (ComplexShape.down ℕ)).hom =
+      (K.totalFlipIso (ComplexShape.down ℕ)).hom ≫ total.map φ (ComplexShape.down ℕ) := by
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ total.hom_ext _ fun p q h ↦ ?_
+  simp [ιTotal_totalFlipIso_f_hom_assoc]
 
 end Preadditive
 
