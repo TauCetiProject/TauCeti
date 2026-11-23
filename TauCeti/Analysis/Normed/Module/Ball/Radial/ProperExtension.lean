@@ -31,8 +31,11 @@ For `r = 0` the closed ball and the sphere both consist of the points at distanc
 (just `{x₀}` when `E` is normed), `y` is always `x₀`, and
 `g x = y₀ + (dist x x₀ + 1) • (f x₀ - y₀)` runs out along the ray from `y₀` through `f x₀`.
 
-This is how a map defined near a point is replaced by a proper map with the same local behaviour,
-so that a degree, a sum of local indices over a fibre, is defined for it.
+For `r > 0` the closed ball is a neighbourhood of `x₀`, so `g` agrees with `f` near `x₀`. This is
+how a map defined near a point is replaced by a proper map with the same local behaviour there:
+when `E` and `F` are normed, oriented and of the same finite dimension, the proper map `g` has a
+degree, a sum of local indices over a fibre. For `r = 0` the theorem only says that `g` agrees with
+`f` at the points at distance zero from `x₀`.
 
 ## Main results
 
