@@ -157,7 +157,7 @@ theorem realCliffordSpinHomEquivKer_symm_apply_comp (n : ℕ) [NeZero n]
     (f : {g : realCliffordSpinGroupZero n →ₜ* H //
       (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤
         (g : realCliffordSpinGroupZero n →* H).ker}) :
-    ((realCliffordSpinHomEquivKer n).symm f).comp (realCliffordSpinProjectionZero n) = f.1 := by
+    ((realCliffordSpinHomEquivKer n).symm f).comp (realCliffordSpinProjectionZero n) = f.val := by
   have h := congrArg Subtype.val ((realCliffordSpinHomEquivKer n).apply_symm_apply f)
   rw [realCliffordSpinHomEquivKer_apply_coe] at h
   exact h

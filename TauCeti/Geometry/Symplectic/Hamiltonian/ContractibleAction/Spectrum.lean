@@ -103,7 +103,7 @@ the capped actions `A_H(γ, u)` (`TauCeti.cylinderAction`) of the contractible `
 `γ` of the Hamiltonian vector field of `H`, over all `C²` caps `u` of `γ`. -/
 def contractibleActionSpectrum (Ham : ℝ → M → ℝ) : Set ℝ :=
   {a | ∃ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1,
-    ∃ u, IsCap I u γ ∧ cylinderAction σ.1 Ham u = a}
+    ∃ u, IsCap I u γ ∧ cylinderAction σ.val Ham u = a}
 
 /-- A value lies in the contractible action spectrum exactly when it is the action of a contractible
 `1`-periodic orbit capped by one of its caps. -/
@@ -111,7 +111,7 @@ def contractibleActionSpectrum (Ham : ℝ → M → ℝ) : Set ℝ :=
 theorem mem_contractibleActionSpectrum {Ham : ℝ → M → ℝ} {a : ℝ} :
     a ∈ σ.contractibleActionSpectrum Ham ↔
       ∃ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1,
-        ∃ u, IsCap I u γ ∧ cylinderAction σ.1 Ham u = a :=
+        ∃ u, IsCap I u γ ∧ cylinderAction σ.val Ham u = a :=
   Iff.rfl
 
 /-- The action of a contractible `1`-periodic orbit capped by one of its caps lies in the
@@ -119,17 +119,17 @@ contractible action spectrum. -/
 theorem cylinderAction_mem_contractibleActionSpectrum {Ham : ℝ → M → ℝ} {γ : ℝ → M}
     (hγ : γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1)
     {u : ℝ × ℝ → M} (hu : IsCap I u γ) :
-    cylinderAction σ.1 Ham u ∈ σ.contractibleActionSpectrum Ham :=
+    cylinderAction σ.val Ham u ∈ σ.contractibleActionSpectrum Ham :=
   ⟨γ, hγ, u, hu, rfl⟩
 
 /-- For a weakly exact form the capped action does not depend on the cap, so the contractible
 action spectrum is the set of actions `A_H(γ)` (`TauCeti.contractibleLoopAction`) of the
 contractible `1`-periodic orbits `γ` that bound a cap. -/
-theorem contractibleActionSpectrum_eq_image (hω : IsWeaklyExact σ.1) (Ham : ℝ → M → ℝ) :
-    σ.contractibleActionSpectrum Ham = contractibleLoopAction σ.1 Ham ''
+theorem contractibleActionSpectrum_eq_image (hω : IsWeaklyExact σ.val) (Ham : ℝ → M → ℝ) :
+    σ.contractibleActionSpectrum Ham = contractibleLoopAction σ.val Ham ''
       {γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1 |
         ∃ u, IsCap I u γ} := by
-  have hω₀ : IsSmoothForm I 0 σ.1 := σ.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 σ.val := σ.isSmoothForm.of_le (by simp)
   ext a
   constructor
   · rintro ⟨γ, hγ, u, hu, rfl⟩
@@ -140,10 +140,10 @@ theorem contractibleActionSpectrum_eq_image (hω : IsWeaklyExact σ.1) (Ham : �
 /-- For a weakly exact form, the action `A_H(γ)` (`TauCeti.contractibleLoopAction`) of a
 contractible `1`-periodic orbit `γ` that bounds a cap lies in the contractible action spectrum. -/
 theorem _root_.TauCeti.IsWeaklyExact.contractibleLoopAction_mem_contractibleActionSpectrum
-    (hω : IsWeaklyExact σ.1) {Ham : ℝ → M → ℝ} {γ : ℝ → M}
+    (hω : IsWeaklyExact σ.val) {Ham : ℝ → M → ℝ} {γ : ℝ → M}
     (hγ : γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1)
     {u : ℝ × ℝ → M} (hu : IsCap I u γ) :
-    contractibleLoopAction σ.1 Ham γ ∈ σ.contractibleActionSpectrum Ham :=
+    contractibleLoopAction σ.val Ham γ ∈ σ.contractibleActionSpectrum Ham :=
   contractibleActionSpectrum_eq_image hω Ham ▸ mem_image_of_mem _ ⟨hγ, u, hu⟩
 
 namespace IsNondegenerate
@@ -156,7 +156,7 @@ a time-dependent Hamiltonian, jointly `C²` and `1`-periodic in time, whose cont
 `1`-periodic orbits are all nondegenerate. Then the contractible action spectrum of `H` is
 finite. -/
 theorem finite_contractibleActionSpectrum [CompactSpace M] [T2Space M] [BoundarylessManifold I M]
-    (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.1) {Ham : ℝ → M → ℝ}
+    (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.val) {Ham : ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry Ham)) (hP : Periodic Ham 1)
     (hnd : ∀ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1,
       IsNondegenerateFixedPt I
@@ -201,12 +201,12 @@ weakly exact two-form on a manifold modelled on a finite-dimensional space, `F` 
 function and `s ≠ 0`. If no level of `F` carries a closed characteristic contractible in `M` of
 period at most `|s|`, then the contractible action spectrum of the autonomous Hamiltonian `s F`
 consists of the values `-s F(x)` at the critical points `x` of `F`. -/
-theorem contractibleActionSpectrum_smul_eq (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.1)
+theorem contractibleActionSpectrum_smul_eq (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.val)
     (hF : MDifferentiable I 𝓘(ℝ) F) (hs : s ≠ 0)
     (hno : ∀ c, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE univ F c |s|) :
     σ.contractibleActionSpectrum (fun _ ↦ s • F) = (fun x ↦ -(s * F x)) '' criticalPoints I F := by
   have haction (x : M) :
-      contractibleLoopAction σ.1 (fun _ ↦ s • F) (fun _ ↦ x) = -(s * F x) := by
+      contractibleLoopAction σ.val (fun _ ↦ s • F) (fun _ ↦ x) = -(s * F x) := by
     simp [hω.contractibleLoopAction_const]
   rw [contractibleActionSpectrum_eq_image hω,
     contractiblePeriodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints h hF hs hno]
@@ -225,7 +225,7 @@ characteristic contractible in `M` of period at most `|s|`. If `ρ` is continuou
 lies in the contractible action spectrum of `s F` for every `s ∈ S`, then there is a single
 critical point `x` of `F` with `ρ(s) = -s F(x)` for all `s ∈ S`. -/
 theorem exists_mem_criticalPoints_forall_eq_neg_mul [I.Boundaryless] [LindelofSpace M]
-    (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.1) {n : ℕ} (hF : ContMDiff I 𝓘(ℝ) n F)
+    (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.val) {n : ℕ} (hF : ContMDiff I 𝓘(ℝ) n F)
     (hn : max (Module.finrank ℝ E) 1 ≤ n) {S : Set ℝ} (hS : IsPreconnected S)
     (hSne : S.Nonempty) (hS0 : ∀ s ∈ S, s ≠ 0)
     (hno : ∀ s ∈ S, ∀ c, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE univ F c |s|)

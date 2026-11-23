@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
-public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -44,15 +41,14 @@ smooth because it sends smooth sections to smooth sections
 (`TauCeti.Manifold.contMDiff_hom_iff`). This is the tensor characterization lemma, the algebraic
 description of bundle homomorphisms used for the zeroth-order terms of differential operators.
 
-The basic operators of order `1` are covariant derivatives: for a smooth covariant derivative `∇`
-and a smooth vector field `X`, the operator `∇_X` (`CovariantDerivative.alongVectorField`)
-satisfies the Leibniz rule `[∇_X, f] = M_{X f}`, so its commutator with every multiplication
-operator has order `0`.
-
 ## Main results
 
 * `TauCeti.differentialOperators_section_apply_eq_zero_of_eventuallyEq`: differential operators
   between sections are local.
+* `TauCeti.tsupport_differentialOperators_section_apply_subset`: hence they do not enlarge the
+  closed supports of sections.
+* `TauCeti.tsupport_smulCommutator_section_apply_subset`: commutators with multiplication by
+  smooth functions preserve the property of not enlarging supports.
 * `TauCeti.mem_differentialOperators_section_iff_forall_apply_eq_zero`: a linear map between
   sections has order `r` exactly when it kills `I_x ^ (r + 1) Γ(V)` at every point `x`.
 * `TauCeti.mapLinearMap_mem_differentialOperators_zero`: smooth bundle maps act on sections as
@@ -60,9 +56,6 @@ operator has order `0`.
 * `TauCeti.mem_differentialOperators_zero_iff_exists_eq_mapLinearMap`: for `V` of finite rank, the
   operators of order `0` are exactly the actions of smooth bundle maps, whose fibre maps are
   unique (`ContMDiffSection.mapLinearMap_inj`).
-* `CovariantDerivative.smulCommutator_alongVectorField_apply`,
-  `CovariantDerivative.alongVectorField_mem_differentialOperators_one`: the Leibniz rule
-  `[∇_X, f] = M_{X f}`, and `∇_X` has order at most one.
 
 ## References
 
@@ -100,6 +93,29 @@ theorem differentialOperators_section_apply_eq_zero_of_eventuallyEq
     {s : Cₛ^∞⟮I; F, V⟯} {x : M} (hs : ∀ᶠ y in 𝓝 x, s y = 0) : P s x = 0 :=
   apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top (apply_mem_smul_top_of_mem_pow_smul_top hP _
     (mem_smoothVanishingIdeal_pow_smul_top_of_eventuallyEq_zero hs (r + 1)))
+
+/-- Differential operators between sections do not enlarge supports: the closed support of `P s`
+lies in that of `s`. -/
+theorem tsupport_differentialOperators_section_apply_subset
+    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r)
+    (s : Cₛ^∞⟮I; F, V⟯) : (P s).tsupport ⊆ s.tsupport :=
+  ((P s).tsupport_subset_iff s.isClosed_tsupport).2 fun _ hx ↦
+    differentialOperators_section_apply_eq_zero_of_eventuallyEq hP <|
+      Filter.mem_of_superset (s.isClosed_tsupport.isOpen_compl.mem_nhds hx) fun _ hy ↦
+        s.eq_zero_of_notMem_tsupport hy
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+/-- If a linear map `Q : Γ(V) → Γ(W)` does not enlarge supports, neither does its commutator
+`[Q, a]` with multiplication by a smooth function `a`. -/
+theorem tsupport_smulCommutator_section_apply_subset
+    {Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} (hQ : ∀ s, (Q s).tsupport ⊆ s.tsupport)
+    (a : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) : (smulCommutator ℝ a Q s).tsupport ⊆ s.tsupport := by
+  refine (ContMDiffSection.tsupport_subset_iff s.isClosed_tsupport).2 fun x hx ↦ ?_
+  have h₁ := (Q (a • s)).eq_zero_of_notMem_tsupport fun h ↦
+    hx ((hQ _).trans (ContMDiffSection.tsupport_smul_function_subset_right a s) h)
+  have h₂ := (Q s).eq_zero_of_notMem_tsupport fun h ↦ hx (hQ s h)
+  simp [smulCommutator_apply_apply, h₁, h₂]
 
 /-- **Differential operators between sections, pointwise.** For a smooth real vector bundle `W` of
 finite rank, a linear map `P : Γ(V) → Γ(W)` is a differential operator of order `r` in
@@ -180,43 +196,3 @@ theorem mem_differentialOperators_zero_iff_exists_eq_mapLinearMap
   rw [ContMDiffSection.mapLinearMap_apply, hϕ]
 
 end TauCeti
-
-/-! ### Covariant derivatives -/
-
-namespace CovariantDerivative
-
-open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
-  (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
-
-/-- **The Leibniz rule.** The commutator of the covariant derivative `∇_X` along a smooth vector
-field with multiplication by a smooth function `f` is multiplication by the derivative `X f` of `f`
-along `X`: `∇_X (f s) - f ∇_X s = (X f) s`. -/
-theorem smulCommutator_alongVectorField_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
-    (f : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) :
-    smulCommutator ℝ f (cov.alongVectorField X) s = vectorFieldDerivation X f • s := by
-  ext y
-  simp [smulCommutator_apply_apply,
-    show ⇑(f • s) = ⇑f • ⇑s from funext (ContMDiffSection.smul_apply f s),
-    cov.covariantDerivative_smul_section_apply (f.contMDiff.mdifferentiable (by simp) y)
-      s.mdifferentiableAt, ContMDiffSection.vectorFieldDerivation_apply_apply]
-
-/-- The covariant derivative along a smooth vector field is a differential operator of order at
-most one. -/
-theorem alongVectorField_mem_differentialOperators_one
-    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
-    cov.alongVectorField X ∈
-      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1 := by
-  refine mem_differentialOperators_succ_iff.2 fun f ↦ mem_differentialOperators_zero_iff.2
-    fun g s ↦ ?_
-  rw [smulCommutator_alongVectorField_apply, smulCommutator_alongVectorField_apply, smul_comm]
-
-end CovariantDerivative

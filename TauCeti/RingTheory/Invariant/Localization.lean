@@ -143,9 +143,9 @@ private theorem map_algebraMapSubmonoid_toRingEquiv (g : G) :
   simp only [Algebra.algebraMapSubmonoid, Submonoid.mem_map]
   constructor
   · rintro ⟨_, ⟨m, hm, rfl⟩, rfl⟩
-    exact ⟨m, hm, (m.2 g).symm⟩
+    exact ⟨m, hm, (m.property g).symm⟩
   · rintro ⟨m, hm, rfl⟩
-    exact ⟨_, ⟨m, hm, rfl⟩, m.2 g⟩
+    exact ⟨_, ⟨m, hm, rfl⟩, m.property g⟩
 
 /-- The action of `G` on the localization `M⁻¹A` at a submonoid `M` of invariants, induced by its
 action on `A`. -/
@@ -182,8 +182,8 @@ denominator `s` is invariant. -/
 theorem smul_mk' (g : G) (a : A) (s : Algebra.algebraMapSubmonoid A M) :
     g • IsLocalization.mk' (Localization (Algebra.algebraMapSubmonoid A M)) a s =
       IsLocalization.mk' _ (g • a) s := by
-  obtain ⟨m, -, hm⟩ := s.2
-  have hs : g • (s : A) = s := hm ▸ m.2 g
+  obtain ⟨m, -, hm⟩ := s.property
+  have hs : g • (s : A) = s := hm ▸ m.property g
   rw [IsLocalization.eq_mk'_iff_mul_eq, ← hs, ← smul_algebraMap_localization,
     ← smul_algebraMap_localization, ← smul_mul', IsLocalization.mk'_spec]
 
@@ -191,7 +191,7 @@ theorem smul_mk' (g : G) (a : A) (s : Algebra.algebraMapSubmonoid A M) :
 theorem algebraMap_mem_fixedPoints (a : FixedPoints.subring A G) :
     algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a ∈
       FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G := fun g ↦ by
-  rw [smul_algebraMap_localization, a.2 g]
+  rw [smul_algebraMap_localization, a.property g]
 
 /-- The algebra structure of `(M⁻¹A)ᴳ` over `Aᴳ` given by the localization map `A → M⁻¹A`. -/
 noncomputable instance instAlgebraLocalization :
@@ -216,8 +216,8 @@ instance isLocalization [Finite G] :
     IsLocalization M (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G) :=
   isLocalization_of_mem_range_iff M (MulSemiringAction.toRingHom G A)
     (MulSemiringAction.toRingHom G _) (smul_algebraMap_localization M) Subtype.val_injective
-    (fun a ↦ ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.2, fun ha ↦ ⟨⟨a, ha⟩, rfl⟩⟩) Subtype.val_injective
-    (fun s ↦ ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.2, fun hs ↦ ⟨⟨s, hs⟩, rfl⟩⟩) fun _ ↦ rfl
+    (fun a ↦ ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.property, fun ha ↦ ⟨⟨a, ha⟩, rfl⟩⟩) Subtype.val_injective
+    (fun s ↦ ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.property, fun hs ↦ ⟨⟨s, hs⟩, rfl⟩⟩) fun _ ↦ rfl
 
 end Localization
 
@@ -264,10 +264,10 @@ theorem exists_mul_eq_zero_of_mul_eq_zero (Q : Ideal A) [Q.IsPrime] (x : FixedPo
   obtain ⟨u, huI, hu⟩ := Q.exists_mem_forall_smul_notMem (G := G) (I := I) fun g hg ↦ by
     -- The annihilator of `x` is `G`-stable, so it contains `g⁻¹ • t`, and then `t ∈ Q`.
     have hmem : g⁻¹ • t ∈ I := by
-      rw [hI, ← x.2 g⁻¹, ← smul_mul', htx, smul_zero]
+      rw [hI, ← x.property g⁻¹, ← smul_mul', htx, smul_zero]
     exact htQ (by simpa using hg hmem)
   obtain ⟨r, hrQ, c, hc⟩ := Q.exists_notMem_dvd_of_forall_smul_notMem hu
-  exact ⟨r, r.2, hrQ, by rw [hc, mul_comm u, mul_assoc, (hI u).mp huI, mul_zero]⟩
+  exact ⟨r, r.property, hrQ, by rw [hc, mul_comm u, mul_assoc, (hI u).mp huI, mul_zero]⟩
 
 /-- **Invariants inject into stalks.** For a finite group `G`, a prime `Q` of `A` and the prime
 `P` of `Aᴳ` below it, the induced homomorphism of local rings `(Aᴳ)_P → A_Q` is injective. -/

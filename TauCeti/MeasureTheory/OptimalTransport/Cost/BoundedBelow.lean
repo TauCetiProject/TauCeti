@@ -188,7 +188,7 @@ theorem lowerSemicontinuous_planCostBddBelow
     (ha : UpperSemicontinuous h.fst)
     (hb : UpperSemicontinuous h.snd) :
     LowerSemicontinuous
-      (fun π : Coupling μp νp => planCostBddBelow π.1.toMeasure π.2 h) := by
+      (fun π : Coupling μp νp => planCostBddBelow π.val.toMeasure π.property h) := by
   have hres := lowerSemicontinuous_residual h.fst h.snd hc ha hb
   have hlin : LowerSemicontinuous
       (fun π : ProbabilityMeasure (X × Y) =>
@@ -218,12 +218,12 @@ theorem lowerSemicontinuous_planCostBddBelow
   have hsub := hF.lowerSemicontinuousOn Set.univ
   have hcomp : LowerSemicontinuousOn
       (fun π : Coupling μp νp =>
-        ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) Set.univ := by
-    apply hsub.comp continuous_subtype_val.continuousOn
+        ((∫⁻ z, h.residual z ∂(π.val.toMeasure) : ENNReal) : EReal) + A + B) Set.univ := by
+    apply hsub.comp continuous_subtypeVal.continuousOn
     intro π _; simp
   have hcomp' : LowerSemicontinuous
       (fun π : Coupling μp νp =>
-        ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) :=
+        ((∫⁻ z, h.residual z ∂(π.val.toMeasure) : ENNReal) : EReal) + A + B) :=
     lowerSemicontinuousOn_univ_iff.mp hcomp
   simpa [planCostBddBelow, A, B] using hcomp'
 

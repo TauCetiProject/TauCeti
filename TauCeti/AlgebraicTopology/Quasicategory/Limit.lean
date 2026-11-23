@@ -29,7 +29,9 @@ the coslice are `C` itself, so that its limits are the terminal vertices of `C`
 (`SSet.slice.isLimit_iff_isTerminalVertex_π`) and its colimits the initial vertices
 (`SSet.coslice.isColimit_iff_isInitialVertex_π`). In the nerve of a category these are the
 terminal and the initial objects (`SSet.slice.isLimit_iff_nonempty_isTerminal`,
-`SSet.coslice.isColimit_iff_nonempty_isInitial`).
+`SSet.coslice.isColimit_iff_nonempty_isInitial`). In a terminal simplicial set, such as `Δ[0]`,
+every cone is a limit cone and every cocone a colimit cocone (`SSet.slice.isLimit_of_isTerminal`,
+`SSet.coslice.isColimit_of_isTerminal`).
 
 ## References
 
@@ -94,6 +96,11 @@ lemma isLimit_iff_nonempty_isTerminal {D : Type u'} [Category.{v} D] {L : SSet.{
   obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective v
   rw [nerve.isTerminalVertex_iff, Equiv.apply_symm_apply]
 
+variable (p) in
+/-- In a terminal simplicial set, such as `Δ[0]`, every cone is a limit cone. -/
+lemma isLimit_of_isTerminal (hC : IsTerminal C) (c : (slice p) _⦋0⦌) : IsLimit p c :=
+  isTerminalVertex_of_isTerminal (isTerminal p hC) c
+
 end slice
 
 namespace coslice
@@ -153,6 +160,11 @@ lemma isColimit_iff_nonempty_isInitial {D : Type u'} [Category.{v} D] {L : SSet.
   generalize (π q).app _ c = v
   obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective v
   rw [nerve.isInitialVertex_iff, Equiv.apply_symm_apply]
+
+variable (p) in
+/-- In a terminal simplicial set, such as `Δ[0]`, every cocone is a colimit cocone. -/
+lemma isColimit_of_isTerminal (hC : IsTerminal C) (c : (coslice p) _⦋0⦌) : IsColimit p c :=
+  isInitialVertex_of_isTerminal (isTerminal p hC) c
 
 end coslice
 

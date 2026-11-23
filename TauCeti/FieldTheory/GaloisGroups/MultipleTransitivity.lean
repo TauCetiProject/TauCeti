@@ -47,7 +47,7 @@ private theorem isPretransitive_ofStabilizer_iff [IsGalois F p.SplittingField] (
           (X - C (IntermediateField.AdjoinSimple.gen F (x : p.SplittingField)))).rootSet
             p.SplittingField) := by
   -- `x` is a root of `p` over `F⟮x⟯`, and a simple one since `p` is separable.
-  have hx := ((AdjoinSimple.isRoot_map_gen_iff x.1).mpr (mem_rootSet'.mp x.2).2).eq_zero
+  have hx := ((AdjoinSimple.isRoot_map_gen_iff x.val).mpr (mem_rootSet'.mp x.property).2).eq_zero
   have hx' := hsep.map.eval₂_derivative_ne_zero (RingHom.id _) (eval₂_id.trans hx)
   rw [eval₂_id] at hx'
   -- So the roots of the quotient are the roots of `p` other than `x` (`F⟮x⟯ → L` is injective);
@@ -58,11 +58,11 @@ private theorem isPretransitive_ofStabilizer_iff [IsGalois F p.SplittingField] (
   -- Hence `y ↦ y` is a bijection onto the roots of the quotient; the target set is read off from
   -- `hroots` rather than restated.
   let eRoots : SubMulAction.ofStabilizer p.Gal x ≃ (_ : Set p.SplittingField) :=
-    { toFun := fun y ↦ ⟨y, (Set.ext_iff.mp hroots _).mpr ⟨(y : p.rootSet p.SplittingField).2,
-        fun h ↦ (SubMulAction.mem_ofStabilizer_iff p.Gal x).mp y.2
+    { toFun := fun y ↦ ⟨y, (Set.ext_iff.mp hroots _).mpr ⟨(y : p.rootSet p.SplittingField).property,
+        fun h ↦ (SubMulAction.mem_ofStabilizer_iff p.Gal x).mp y.property
           (Subtype.ext (Set.mem_singleton_iff.mp h))⟩⟩
       invFun := fun z ↦
-        have hz := (Set.ext_iff.mp hroots _).mp z.2
+        have hz := (Set.ext_iff.mp hroots _).mp z.property
         ⟨⟨z, hz.1⟩, (SubMulAction.mem_ofStabilizer_iff p.Gal x).mpr
           fun h ↦ hz.2 (Set.mem_singleton_iff.mpr (congrArg Subtype.val h))⟩
       left_inv := fun _ ↦ rfl
@@ -99,7 +99,7 @@ theorem is_two_pretransitive_iff_irreducible_divByMonic
   -- (not `.mpr`) lets the expected root statement drive the elaboration of the root fact.
   have hqdvd : q ∣ p.map (algebraMap F K) :=
     Dvd.intro_left _ (mul_divByMonic_eq_iff_isRoot.mpr
-      (Iff.mpr (AdjoinSimple.isRoot_map_gen_iff x.1) (mem_rootSet'.mp x.2).2))
+      (Iff.mpr (AdjoinSimple.isRoot_map_gen_iff x.val) (mem_rootSet'.mp x.property).2))
   have hqdeg : 0 < q.natDegree := by
     rw [natDegree_divByMonic _ (monic_X_sub_C _), natDegree_map, natDegree_X_sub_C]
     exact Nat.sub_pos_of_lt hdeg

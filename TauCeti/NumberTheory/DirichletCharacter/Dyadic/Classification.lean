@@ -61,12 +61,10 @@ namespace DirichletCharacter
 theorem conductor_eq_one_or_four_or_eight_of_sq_eq_one {R : Type*} [CommMonoidWithZero R]
     {k : ℕ} {χ : DirichletCharacter R (2 ^ k)} (hχ : χ ^ 2 = 1) :
     χ.conductor = 1 ∨ χ.conductor = 4 ∨ χ.conductor = 8 := by
-  have hsq : χ.primitiveCharacter ^ 2 = 1 := by
-    apply changeLevel_injective χ.conductor_dvd_level
-    rw [map_pow, changeLevel_primitiveCharacter, map_one, hχ]
   obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp χ.conductor_dvd_level
   have hfac :=
-    χ.primitiveCharacter_isPrimitive.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one hsq
+    χ.primitiveCharacter_isPrimitive.factorization_two_eq_zero_or_two_or_three_of_sq_eq_one
+      (primitiveCharacter_pow_eq_one hχ)
   rw [hj, Nat.factorization_pow_self Nat.prime_two] at hfac
   rcases hfac with rfl | rfl | rfl <;> simp [hj]
 

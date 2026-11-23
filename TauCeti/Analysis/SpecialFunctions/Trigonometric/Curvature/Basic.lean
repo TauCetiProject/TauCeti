@@ -253,6 +253,56 @@ theorem curvatureSine_div_sq_mul (κ c t : ℝ) :
       (neg_pos.2 hc) (-t)).1
     rwa [neg_sq, neg_mul_neg, curvatureSine_neg, neg_mul_neg] at h
 
+/-- **Scaling law** of the model sine with speed factor `c`: `c s_(κ c²)(t) = s_κ(c t)`. At
+`c = 0` both sides vanish. -/
+theorem mul_curvatureSine_mul_sq (κ c t : ℝ) :
+    c * curvatureSine (κ * c ^ 2) t = curvatureSine κ (c * t) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  · have h := (curvatureSine_div_sq_mul (κ * c ^ 2) c t).symm
+    rwa [mul_div_cancel_right₀ κ (pow_ne_zero 2 hc)] at h
+
+/-- **Scaling law** of the model sine with nonzero speed factor `c`:
+`s_(κ c²)(t) = s_κ(c t) / c`. -/
+theorem curvatureSine_mul_sq (κ : ℝ) {c : ℝ} (hc : c ≠ 0) (t : ℝ) :
+    curvatureSine (κ * c ^ 2) t = curvatureSine κ (c * t) / c :=
+  eq_div_of_mul_eq hc (by rw [mul_comm, mul_curvatureSine_mul_sq])
+
+/-- **Unit-time rescaling** of the model sine: `s_(κ c²)(1) = s_κ(c) / c` for `c ≠ 0`. -/
+theorem curvatureSine_mul_sq_one (κ : ℝ) {c : ℝ} (hc : c ≠ 0) :
+    curvatureSine (κ * c ^ 2) 1 = curvatureSine κ c / c := by
+  simpa using curvatureSine_mul_sq κ hc 1
+
+/-- The speed-rescaled model sine `s_(κ c²)(t)` is positive for `c ≥ 0`, `t > 0`, and
+`c * t < π / √κ` (when `κ > 0`). -/
+theorem curvatureSine_mul_sq_pos {κ c t : ℝ} (hc : 0 ≤ c) (ht : 0 < t)
+    (hbound : 0 < κ → c * t < π / √κ) : 0 < curvatureSine (κ * c ^ 2) t := by
+  rcases hc.eq_or_lt with rfl | hcpos
+  · simpa using ht
+  · rw [curvatureSine_mul_sq κ hcpos.ne']
+    exact div_pos (curvatureSine_pos (mul_pos hcpos ht) hbound) hcpos
+
+/-- The speed-rescaled model sine `s_(κ c²)(t)` is nonnegative for `c ≥ 0`, `t ≥ 0`, and
+`c * t ≤ π / √κ` (when `κ > 0`). -/
+theorem curvatureSine_mul_sq_nonneg {κ c t : ℝ} (hc : 0 ≤ c) (ht : 0 ≤ t)
+    (hbound : 0 < κ → c * t ≤ π / √κ) : 0 ≤ curvatureSine (κ * c ^ 2) t := by
+  rcases hc.eq_or_lt with rfl | hcpos
+  · simpa using ht
+  · rw [curvatureSine_mul_sq κ hcpos.ne']
+    exact div_nonneg (curvatureSine_nonneg (mul_nonneg hcpos.le ht) hbound) hcpos.le
+
+/-- At unit time, the speed-rescaled model sine `s_(κ c²)(1)` is positive for `c ≥ 0` with
+`c < π / √κ` (when `κ > 0`). -/
+theorem curvatureSine_mul_sq_one_pos {κ c : ℝ} (hc : 0 ≤ c)
+    (hbound : 0 < κ → c < π / √κ) : 0 < curvatureSine (κ * c ^ 2) 1 :=
+  curvatureSine_mul_sq_pos hc zero_lt_one (by simpa using hbound)
+
+/-- At unit time, the speed-rescaled model sine `s_(κ c²)(1)` is nonnegative for `c ≥ 0` with
+`c ≤ π / √κ` (when `κ > 0`). -/
+theorem curvatureSine_mul_sq_one_nonneg {κ c : ℝ} (hc : 0 ≤ c)
+    (hbound : 0 < κ → c ≤ π / √κ) : 0 ≤ curvatureSine (κ * c ^ 2) 1 :=
+  curvatureSine_mul_sq_nonneg hc zero_le_one (by simpa using hbound)
+
 /-- **Scaling law** of the model cosine: `c_(κ/c²)(c t) = c_κ(t)` for `c ≠ 0`. -/
 theorem curvatureCosine_div_sq_mul (κ : ℝ) {c : ℝ} (hc : c ≠ 0) (t : ℝ) :
     curvatureCosine (κ / c ^ 2) (c * t) = curvatureCosine κ t := by

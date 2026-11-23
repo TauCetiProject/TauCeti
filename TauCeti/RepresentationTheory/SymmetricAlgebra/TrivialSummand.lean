@@ -101,7 +101,7 @@ private theorem prodEquiv_symm_lTensor_val_mem_symmetricAlgebraInvariants
   rw [prodEquiv_symmetricAlgebra_trivial_prod, AlgEquiv.apply_symm_apply]
   induction x with
   | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul q a => simp [(ρ.mem_symmetricAlgebraInvariants a).1 a.2 g]
+  | tmul q a => simp [(ρ.mem_symmetricAlgebraInvariants a).1 a.property g]
 
 variable [Finite G] [Module.Flat R (SymmetricAlgebra R N)]
 
