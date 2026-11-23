@@ -40,6 +40,17 @@ vector space, and compares it with the homogeneous symbols on `ℝⁿ`:
   (`TauCeti.HomogeneousSymbol.restrict_cutoffSymbol`) and with extension
   (`TauCeti.LocalHomogeneousSymbol.extend_cutoffSymbol`).
 
+Operations on homogeneous symbols on `ℝⁿ` that only involve the germ at a position localize to `U`
+(`TauCeti.LocalHomogeneousSymbol.ofEventuallyEq`). This gives the pointwise composition
+`TauCeti.LocalHomogeneousSymbol.comp` with its unit `TauCeti.LocalHomogeneousSymbol.id`, and the
+spatial and frequency derivatives `TauCeti.LocalHomogeneousSymbol.spatialDeriv` and
+`TauCeti.LocalHomogeneousSymbol.frequencyDeriv`, the operations from which the formal composition
+of expansions on `U` is built. As on `ℝⁿ`, the composition is bilinear and associative, the
+derivatives are linear in the symbol and in the direction, and they satisfy the product rule
+(`TauCeti.LocalHomogeneousSymbol.spatialDeriv_comp`,
+`TauCeti.LocalHomogeneousSymbol.frequencyDeriv_comp`). All of them commute with restriction to
+smaller open sets and with the restriction of homogeneous symbols on `ℝⁿ` to `U`.
+
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Definition 18.1.5.
@@ -537,6 +548,13 @@ theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U')
     · simp [hx]
     · simp [hx, image_eq_zero_of_notMem_tsupport fun hy => hx (hψU' hy)])
 
+/-- Near a position at which the cutoff equals `1`, the cut-off extension agrees with the original
+homogeneous symbol at every frequency. -/
+theorem eventually_coefficient_extend_eq {x : CoordinateSpace n} (hψ1 : ψ =ᶠ[𝓝 x] 1)
+    (a : LocalHomogeneousSymbol U V W m) :
+    ∀ᶠ y in 𝓝 x, ∀ η, (extend ψ hψ hψU a).coefficient (y, η) = a.coefficient (y, η) :=
+  hψ1.mono fun y hy η => by simp [hy]
+
 end Extend
 
 section CutoffSymbol
@@ -578,6 +596,420 @@ theorem extend_cutoffSymbol {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ
 
 end CutoffSymbol
 
+section OfEventuallyEq
+
+/-- The homogeneous symbol of degree `m` on `U` given by a function `f` which, near every position
+of `U`, agrees at the nonzero frequencies with a homogeneous symbol of degree `m` on `ℝⁿ`; its value
+at positions outside `U` and at the zero frequency is set to zero. Operations on homogeneous
+symbols on `ℝⁿ` that only involve the germ at a position, such as derivatives, localize to `U`
+through this constructor, applied to the cut-off extensions equal to the symbol near a position. -/
+def ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (h : ∀ x ∈ U, ∃ A : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m,
+      ∀ᶠ y in 𝓝 x, ∀ η, η ≠ 0 → A.coefficient (y, η) = f (y, η)) :
+    LocalHomogeneousSymbol U V W m :=
+  mk' f
+    (fun p hp => by
+      obtain ⟨A, hA⟩ := h p.1 hp.1
+      have hAf : A.coefficient =ᶠ[𝓝 p] f := by
+        filter_upwards [(continuous_fst.tendsto p).eventually hA,
+          (continuous_snd.tendsto p).eventually (isOpen_ne.mem_nhds hp.2)] with q hq hq'
+        exact hq q.2 hq'
+      exact ((A.contDiffAt_coefficient hp.2).congr_of_eventuallyEq hAf.symm).contDiffWithinAt)
+    fun x hx ξ hξ t ht => by
+      obtain ⟨A, hA⟩ := h x hx
+      rw [← hA.self_of_nhds _ (smul_ne_zero ht.ne' hξ), ← hA.self_of_nhds ξ hξ,
+        A.homogeneous x ξ t ht]
+
+@[simp]
+theorem coefficient_ofEventuallyEq_of_mem (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (h : ∀ x ∈ U, ∃ A : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m,
+      ∀ᶠ y in 𝓝 x, ∀ η, η ≠ 0 → A.coefficient (y, η) = f (y, η))
+    {x : CoordinateSpace n} (hx : x ∈ U) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (ofEventuallyEq f h).coefficient (x, ξ) = f (x, ξ) :=
+  coefficient_mk'_of_mem _ _ _ hx hξ
+
+@[simp]
+theorem coefficient_ofEventuallyEq_of_notMem
+    (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (h : ∀ x ∈ U, ∃ A : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m,
+      ∀ᶠ y in 𝓝 x, ∀ η, η ≠ 0 → A.coefficient (y, η) = f (y, η))
+    {x : CoordinateSpace n} (hx : x ∉ U) (ξ : CoordinateSpace n) :
+    (ofEventuallyEq f h).coefficient (x, ξ) = 0 :=
+  coefficient_mk'_of_notMem _ _ _ hx ξ
+
+end OfEventuallyEq
+
+/-! ### Composition and the identity -/
+
+section Comp
+
+variable {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℂ Y] {m' : ℝ}
+
+/-- The pointwise composition of homogeneous symbols of degrees `m'` and `m` on `U`, a homogeneous
+symbol of degree `m' + m` on `U`. -/
+def comp (b : LocalHomogeneousSymbol U W Y m') (a : LocalHomogeneousSymbol U V W m) :
+    LocalHomogeneousSymbol U V Y (m' + m) where
+  coefficient p := b.coefficient p ∘L a.coefficient p
+  coefficient_of_notMem x hx ξ := by simp [a.coefficient_of_notMem x hx ξ]
+  zero_covector x := by simp
+  contDiffOn_coefficient :=
+    -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
+    ((((ContinuousLinearMap.compL ℂ V W Y).bilinearRestrictScalars ℝ).contDiff.comp_contDiffOn
+      b.contDiffOn_coefficient).clm_apply a.contDiffOn_coefficient).congr fun _ _ => by simp
+  homogeneous x ξ t ht := by
+    ext v
+    simp [b.homogeneous x ξ t ht, a.homogeneous x ξ t ht, smul_smul, Real.rpow_add ht, mul_comm]
+
+@[simp]
+theorem coefficient_comp (b : LocalHomogeneousSymbol U W Y m') (a : LocalHomogeneousSymbol U V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (b.comp a).coefficient p = b.coefficient p ∘L a.coefficient p :=
+  (rfl)
+
+@[simp]
+theorem comp_add (b : LocalHomogeneousSymbol U W Y m') (a₁ a₂ : LocalHomogeneousSymbol U V W m) :
+    b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
+  ext1; funext p; simp [ContinuousLinearMap.comp_add]
+
+@[simp]
+theorem add_comp (b₁ b₂ : LocalHomogeneousSymbol U W Y m') (a : LocalHomogeneousSymbol U V W m) :
+    (b₁ + b₂).comp a = b₁.comp a + b₂.comp a := by
+  ext1; funext p; simp [ContinuousLinearMap.add_comp]
+
+@[simp]
+theorem comp_zero (b : LocalHomogeneousSymbol U W Y m') :
+    b.comp (0 : LocalHomogeneousSymbol U V W m) = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+theorem zero_comp (a : LocalHomogeneousSymbol U V W m) :
+    (0 : LocalHomogeneousSymbol U W Y m').comp a = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+theorem comp_neg (b : LocalHomogeneousSymbol U W Y m') (a : LocalHomogeneousSymbol U V W m) :
+    b.comp (-a) = -b.comp a := by
+  ext1; funext p; simp
+
+@[simp]
+theorem neg_comp (b : LocalHomogeneousSymbol U W Y m') (a : LocalHomogeneousSymbol U V W m) :
+    (-b).comp a = -b.comp a := by
+  ext1; funext p; simp
+
+@[simp]
+theorem comp_sub (b : LocalHomogeneousSymbol U W Y m') (a₁ a₂ : LocalHomogeneousSymbol U V W m) :
+    b.comp (a₁ - a₂) = b.comp a₁ - b.comp a₂ := by
+  ext1; funext p; simp [ContinuousLinearMap.comp_sub]
+
+@[simp]
+theorem sub_comp (b₁ b₂ : LocalHomogeneousSymbol U W Y m') (a : LocalHomogeneousSymbol U V W m) :
+    (b₁ - b₂).comp a = b₁.comp a - b₂.comp a := by
+  ext1; funext p; simp [ContinuousLinearMap.sub_comp]
+
+@[simp]
+theorem comp_smul (c : ℂ) (b : LocalHomogeneousSymbol U W Y m')
+    (a : LocalHomogeneousSymbol U V W m) : b.comp (c • a) = c • b.comp a := by
+  ext1; funext p; simp
+
+@[simp]
+theorem smul_comp (c : ℂ) (b : LocalHomogeneousSymbol U W Y m')
+    (a : LocalHomogeneousSymbol U V W m) : (c • b).comp a = c • b.comp a := by
+  ext1; funext p; simp [ContinuousLinearMap.smul_comp]
+
+/-- Composing with a transported symbol transports the composition. -/
+@[simp]
+theorem comp_castDegree {m'' : ℝ} (h : m = m'') (b : LocalHomogeneousSymbol U W Y m')
+    (a : LocalHomogeneousSymbol U V W m) :
+    b.comp (a.castDegree h) = (b.comp a).castDegree (by rw [h]) :=
+  (rfl)
+
+/-- Composing a transported symbol transports the composition. -/
+@[simp]
+theorem castDegree_comp {m'' : ℝ} (h : m' = m'') (b : LocalHomogeneousSymbol U W Y m')
+    (a : LocalHomogeneousSymbol U V W m) :
+    (b.castDegree h).comp a = (b.comp a).castDegree (by rw [h]) :=
+  (rfl)
+
+/-- Composition of homogeneous symbols on `U` is associative, up to transport of the degree. -/
+theorem comp_assoc {Y' : Type*} [NormedAddCommGroup Y'] [NormedSpace ℂ Y'] {m'' : ℝ}
+    (c : LocalHomogeneousSymbol U Y Y' m'') (b : LocalHomogeneousSymbol U W Y m')
+    (a : LocalHomogeneousSymbol U V W m) :
+    (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm :=
+  (rfl)
+
+/-- Composition commutes with restriction to a smaller open set. -/
+@[simp]
+theorem restrict_comp (h : U' ≤ U) (b : LocalHomogeneousSymbol U W Y m')
+    (a : LocalHomogeneousSymbol U V W m) :
+    restrict h (b.comp a) = (restrict h b).comp (restrict h a) :=
+  ext_of_mem fun x hx ξ _ => by simp [coefficient_restrict_of_mem h _ hx]
+
+variable (U V) in
+/-- The identity homogeneous symbol of degree `0` on `U`: the identity of `V` at every position of
+`U` and every nonzero frequency. It is the unit for `TauCeti.LocalHomogeneousSymbol.comp`. -/
+def id : LocalHomogeneousSymbol U V V 0 :=
+  mk' (fun _ => ContinuousLinearMap.id ℂ V) contDiffOn_const fun _ _ _ _ _ _ => by simp
+
+@[simp]
+theorem coefficient_id {x : CoordinateSpace n} (hx : x ∈ U) {ξ : CoordinateSpace n}
+    (hξ : ξ ≠ 0) : (id U V).coefficient (x, ξ) = ContinuousLinearMap.id ℂ V :=
+  coefficient_mk'_of_mem _ _ _ hx hξ
+
+/-- Composing with the identity symbol on the right does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem comp_id (b : LocalHomogeneousSymbol U V W m) :
+    b.comp (id U V) = b.castDegree (add_zero m).symm :=
+  ext_of_mem fun x hx ξ hξ => by simp [hx, hξ]
+
+/-- Composing with the identity symbol on the left does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem id_comp (a : LocalHomogeneousSymbol U V W m) :
+    (id U W).comp a = a.castDegree (zero_add m).symm :=
+  ext_of_mem fun x hx ξ hξ => by simp [hx, hξ]
+
+/-- The identity symbol restricts to the identity symbol. -/
+@[simp]
+theorem restrict_id (h : U' ≤ U) : restrict h (id U V) = id U' V :=
+  ext_of_mem fun x hx ξ hξ => by simp [coefficient_restrict_of_mem h _ hx, h hx, hx, hξ]
+
+end Comp
+
+/-! ### Spatial and frequency derivatives -/
+
+section Deriv
+
+variable (a : LocalHomogeneousSymbol U V W m)
+
+/-- At a position of `U` and a nonzero frequency, the coefficient is differentiable in the
+position. -/
+theorem differentiableAt_coefficient_position {x : CoordinateSpace n} (hx : x ∈ U)
+    {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    DifferentiableAt ℝ (fun y => a.coefficient (y, ξ)) x :=
+  ((a.contDiffOn_coefficient.contDiffAt (prod_mem_nhds (U.isOpen.mem_nhds hx)
+    (isOpen_ne.mem_nhds hξ))).differentiableAt (by simp)).comp x
+    (differentiableAt_id.prodMk (differentiableAt_const ξ))
+
+/-- At a position of `U` and a nonzero frequency, the coefficient is differentiable in the
+frequency. -/
+theorem differentiableAt_coefficient_frequency {x : CoordinateSpace n} (hx : x ∈ U)
+    {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    DifferentiableAt ℝ (fun η => a.coefficient (x, η)) ξ :=
+  ((a.contDiffOn_coefficient.contDiffAt (prod_mem_nhds (U.isOpen.mem_nhds hx)
+    (isOpen_ne.mem_nhds hξ))).differentiableAt (by simp)).comp ξ
+    ((differentiableAt_const x).prodMk differentiableAt_id)
+
+/-- The derivative of a homogeneous symbol on `U` in the spatial direction `v`; it is homogeneous
+of the same degree. Near each position of `U` it is the spatial derivative of a cut-off extension
+equal to `a` there. -/
+def spatialDeriv (v : CoordinateSpace n) : LocalHomogeneousSymbol U V W m :=
+  ofEventuallyEq (fun p => fderiv ℝ (fun y => a.coefficient (y, p.2)) p.1 v) fun x hx => by
+    obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
+      U.isOpen (singleton_subset_iff.2 hx)
+    refine ⟨(extend ψ hψ hψU a).spatialDeriv v, ?_⟩
+    filter_upwards [(eventually_coefficient_extend_eq hψ hψU (hψ1 x rfl) a).eventually_nhds]
+      with y hy η _
+    have hyη : (fun z => (extend ψ hψ hψU a).coefficient (z, η)) =ᶠ[𝓝 y]
+        fun z => a.coefficient (z, η) := hy.mono fun z hz => hz η
+    rw [HomogeneousSymbol.coefficient_spatialDeriv, hyη.fderiv_eq]
+
+/-- The derivative of a homogeneous symbol of degree `m` on `U` in the frequency direction `w`; it
+is homogeneous of degree `m - 1`. Near each position of `U` it is the frequency derivative of a
+cut-off extension equal to `a` there. -/
+def frequencyDeriv (w : CoordinateSpace n) : LocalHomogeneousSymbol U V W (m - 1) :=
+  ofEventuallyEq (fun p => fderiv ℝ (fun η => a.coefficient (p.1, η)) p.2 w) fun x hx => by
+    obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
+      U.isOpen (singleton_subset_iff.2 hx)
+    refine ⟨(extend ψ hψ hψU a).frequencyDeriv w, ?_⟩
+    filter_upwards [eventually_coefficient_extend_eq hψ hψU (hψ1 x rfl) a] with y hy η hη
+    rw [HomogeneousSymbol.coefficient_frequencyDeriv _ _ hη]
+    simp only [hy]
+
+/-- At a position of `U`, the spatial derivative is the partial derivative in the position. At the
+zero frequency both sides vanish, since the coefficient is zero along `ξ = 0`. -/
+@[simp]
+theorem coefficient_spatialDeriv (v : CoordinateSpace n) {x : CoordinateSpace n} (hx : x ∈ U)
+    (ξ : CoordinateSpace n) :
+    (a.spatialDeriv v).coefficient (x, ξ) = fderiv ℝ (fun y => a.coefficient (y, ξ)) x v := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · simp [zero_covector]
+  · exact coefficient_ofEventuallyEq_of_mem _ _ hx hξ
+
+/-- At a position of `U` and a nonzero frequency, the frequency derivative is the partial
+derivative in the frequency. -/
+@[simp]
+theorem coefficient_frequencyDeriv (w : CoordinateSpace n) {x : CoordinateSpace n} (hx : x ∈ U)
+    {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (a.frequencyDeriv w).coefficient (x, ξ) = fderiv ℝ (fun η => a.coefficient (x, η)) ξ w :=
+  coefficient_ofEventuallyEq_of_mem _ _ hx hξ
+
+/-- Spatial derivatives commute with restriction to a smaller open set. -/
+@[simp]
+theorem restrict_spatialDeriv (h : U' ≤ U) (v : CoordinateSpace n) :
+    restrict h (a.spatialDeriv v) = (restrict h a).spatialDeriv v :=
+  ext_of_mem fun x hx ξ _ => by
+    rw [coefficient_restrict_of_mem h _ hx, coefficient_spatialDeriv _ _ (h hx),
+      coefficient_spatialDeriv _ _ hx]
+    have hxξ : (fun y => (restrict h a).coefficient (y, ξ)) =ᶠ[𝓝 x]
+        fun y => a.coefficient (y, ξ) := by
+      filter_upwards [U'.isOpen.mem_nhds hx] with y hy
+      exact coefficient_restrict_of_mem h a hy ξ
+    rw [hxξ.fderiv_eq]
+
+/-- Frequency derivatives commute with restriction to a smaller open set. -/
+@[simp]
+theorem restrict_frequencyDeriv (h : U' ≤ U) (w : CoordinateSpace n) :
+    restrict h (a.frequencyDeriv w) = (restrict h a).frequencyDeriv w :=
+  ext_of_mem fun x hx ξ hξ => by
+    simp [coefficient_restrict_of_mem h _ hx, coefficient_frequencyDeriv _ _ (h hx) hξ,
+      coefficient_frequencyDeriv _ _ hx hξ]
+
+/-! The spatial and frequency derivatives are linear in the symbol and in the direction. -/
+
+@[simp]
+theorem add_spatialDeriv (b : LocalHomogeneousSymbol U V W m) (v : CoordinateSpace n) :
+    (a + b).spatialDeriv v = a.spatialDeriv v + b.spatialDeriv v :=
+  ext_of_mem fun x hx ξ hξ => by
+    simp [hx, fderiv_fun_add (a.differentiableAt_coefficient_position hx hξ)
+      (b.differentiableAt_coefficient_position hx hξ)]
+
+@[simp]
+theorem smul_spatialDeriv (c : ℂ) (v : CoordinateSpace n) :
+    (c • a).spatialDeriv v = c • a.spatialDeriv v :=
+  ext_of_mem fun x hx ξ hξ => by
+    simp [hx, fderiv_fun_const_smul (a.differentiableAt_coefficient_position hx hξ)]
+
+@[simp]
+theorem neg_spatialDeriv (v : CoordinateSpace n) : (-a).spatialDeriv v = -a.spatialDeriv v :=
+  ext_of_mem fun x hx ξ _ => by simp [hx]
+
+@[simp]
+theorem sub_spatialDeriv (b : LocalHomogeneousSymbol U V W m) (v : CoordinateSpace n) :
+    (a - b).spatialDeriv v = a.spatialDeriv v - b.spatialDeriv v :=
+  ext_of_mem fun x hx ξ hξ => by
+    simp [hx, fderiv_fun_sub (a.differentiableAt_coefficient_position hx hξ)
+      (b.differentiableAt_coefficient_position hx hξ)]
+
+@[simp]
+theorem zero_spatialDeriv (v : CoordinateSpace n) :
+    (0 : LocalHomogeneousSymbol U V W m).spatialDeriv v = 0 :=
+  ext_of_mem fun x hx ξ _ => by simp [hx]
+
+@[simp]
+theorem spatialDeriv_add (v v' : CoordinateSpace n) :
+    a.spatialDeriv (v + v') = a.spatialDeriv v + a.spatialDeriv v' :=
+  ext_of_mem fun x hx ξ _ => by simp [hx]
+
+@[simp]
+theorem spatialDeriv_smul (c : ℝ) (v : CoordinateSpace n) :
+    a.spatialDeriv (c • v) = (c : ℂ) • a.spatialDeriv v :=
+  ext_of_mem fun x hx ξ _ => by
+    rw [coefficient_smul, Pi.smul_apply, coefficient_spatialDeriv _ _ hx,
+      coefficient_spatialDeriv _ _ hx, map_smul, Complex.coe_smul]
+
+@[simp]
+theorem spatialDeriv_zero : a.spatialDeriv 0 = 0 :=
+  ext_of_mem fun x hx ξ _ => by simp [hx]
+
+@[simp]
+theorem add_frequencyDeriv (b : LocalHomogeneousSymbol U V W m) (w : CoordinateSpace n) :
+    (a + b).frequencyDeriv w = a.frequencyDeriv w + b.frequencyDeriv w :=
+  ext_of_mem fun x hx ξ hξ => by
+    simp [coefficient_frequencyDeriv _ _ hx hξ,
+      fderiv_fun_add (a.differentiableAt_coefficient_frequency hx hξ)
+        (b.differentiableAt_coefficient_frequency hx hξ)]
+
+@[simp]
+theorem smul_frequencyDeriv (c : ℂ) (w : CoordinateSpace n) :
+    (c • a).frequencyDeriv w = c • a.frequencyDeriv w :=
+  ext_of_mem fun x hx ξ hξ => by
+    simp [coefficient_frequencyDeriv _ _ hx hξ,
+      fderiv_fun_const_smul (a.differentiableAt_coefficient_frequency hx hξ)]
+
+@[simp]
+theorem neg_frequencyDeriv (w : CoordinateSpace n) :
+    (-a).frequencyDeriv w = -a.frequencyDeriv w :=
+  ext_of_mem fun x hx ξ hξ => by simp [coefficient_frequencyDeriv _ _ hx hξ]
+
+@[simp]
+theorem sub_frequencyDeriv (b : LocalHomogeneousSymbol U V W m) (w : CoordinateSpace n) :
+    (a - b).frequencyDeriv w = a.frequencyDeriv w - b.frequencyDeriv w :=
+  ext_of_mem fun x hx ξ hξ => by
+    simp [coefficient_frequencyDeriv _ _ hx hξ,
+      fderiv_fun_sub (a.differentiableAt_coefficient_frequency hx hξ)
+        (b.differentiableAt_coefficient_frequency hx hξ)]
+
+@[simp]
+theorem zero_frequencyDeriv (w : CoordinateSpace n) :
+    (0 : LocalHomogeneousSymbol U V W m).frequencyDeriv w = 0 :=
+  ext_of_mem fun x hx ξ hξ => by simp [coefficient_frequencyDeriv _ _ hx hξ]
+
+@[simp]
+theorem frequencyDeriv_add (w w' : CoordinateSpace n) :
+    a.frequencyDeriv (w + w') = a.frequencyDeriv w + a.frequencyDeriv w' :=
+  ext_of_mem fun x hx ξ hξ => by simp [coefficient_frequencyDeriv _ _ hx hξ]
+
+@[simp]
+theorem frequencyDeriv_smul (c : ℝ) (w : CoordinateSpace n) :
+    a.frequencyDeriv (c • w) = (c : ℂ) • a.frequencyDeriv w :=
+  ext_of_mem fun x hx ξ hξ => by
+    rw [coefficient_smul, Pi.smul_apply, coefficient_frequencyDeriv _ _ hx hξ,
+      coefficient_frequencyDeriv _ _ hx hξ, map_smul, Complex.coe_smul]
+
+@[simp]
+theorem frequencyDeriv_zero : a.frequencyDeriv 0 = 0 :=
+  ext_of_mem fun x hx ξ hξ => by simp [coefficient_frequencyDeriv _ _ hx hξ]
+
+/-! The derivatives commute with transport along an equality of degrees. -/
+
+@[simp]
+theorem spatialDeriv_castDegree {m' : ℝ} (h : m = m') (v : CoordinateSpace n) :
+    (a.castDegree h).spatialDeriv v = (a.spatialDeriv v).castDegree h := by
+  subst h; rfl
+
+@[simp]
+theorem frequencyDeriv_castDegree {m' : ℝ} (h : m = m') (w : CoordinateSpace n) :
+    (a.castDegree h).frequencyDeriv w = (a.frequencyDeriv w).castDegree (by rw [h]) := by
+  subst h; rfl
+
+end Deriv
+
+/-! ### The product rule for composition -/
+
+section CompDeriv
+
+variable {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℂ Y] {m' : ℝ}
+  (b : LocalHomogeneousSymbol U W Y m') (a : LocalHomogeneousSymbol U V W m)
+
+/-- The product rule for the spatial derivative of a composition. -/
+theorem spatialDeriv_comp (v : CoordinateSpace n) :
+    (b.comp a).spatialDeriv v = (b.spatialDeriv v).comp a + b.comp (a.spatialDeriv v) :=
+  ext_of_mem fun x hx ξ hξ => by
+    -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
+    have h := ((ContinuousLinearMap.compL ℂ V W Y).bilinearRestrictScalars ℝ).fderiv_of_bilinear
+      (b.differentiableAt_coefficient_position hx hξ)
+      (a.differentiableAt_coefficient_position hx hξ)
+    rw [coefficient_add, Pi.add_apply, add_comm (_ : V →L[ℂ] Y)]
+    simpa [hx] using congrArg (fun L => L v) h
+
+/-- The product rule for the frequency derivative of a composition. The degrees `m' - 1 + m`
+and `m' + (m - 1)` of the two terms are transported to the degree `m' + m - 1` of the left side,
+since they are equal but not definitionally so. -/
+theorem frequencyDeriv_comp (w : CoordinateSpace n) :
+    (b.comp a).frequencyDeriv w =
+      ((b.frequencyDeriv w).comp a).castDegree (by ring) +
+        (b.comp (a.frequencyDeriv w)).castDegree (by ring) :=
+  ext_of_mem fun x hx ξ hξ => by
+    -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
+    have h := ((ContinuousLinearMap.compL ℂ V W Y).bilinearRestrictScalars ℝ).fderiv_of_bilinear
+      (b.differentiableAt_coefficient_frequency hx hξ)
+      (a.differentiableAt_coefficient_frequency hx hξ)
+    rw [coefficient_add, Pi.add_apply, add_comm (_ : V →L[ℂ] Y)]
+    simpa [coefficient_frequencyDeriv _ _ hx hξ] using congrArg (fun L => L w) h
+
+end CompDeriv
+
 end LocalHomogeneousSymbol
 
 /-- The cut-off term commutes with restriction from `ℝⁿ` to an open set. -/
@@ -611,5 +1043,50 @@ theorem HomogeneousSymbol.restrictTopEquiv_symm_cutoffSymbol {V W : Type*}
     Symbol.restrictTopEquiv.symm (LocalHomogeneousSymbol.cutoffSymbol χ a) =
       cutoffSymbol χ (HomogeneousSymbol.restrictTopEquiv.symm a) :=
   Symbol.ext (funext fun p => by simp)
+
+
+namespace HomogeneousSymbol
+
+variable {U : TopologicalSpace.Opens (CoordinateSpace n)} {V W Y : Type*}
+  [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
+  [NormedAddCommGroup Y] [NormedSpace ℂ Y] {m m' : ℝ}
+
+/-- Composition commutes with the restriction of homogeneous symbols on `ℝⁿ` to an open set. -/
+@[simp]
+theorem restrict_comp (b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W Y m')
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    restrict U (b.comp a) = (restrict U b).comp (restrict U a) :=
+  LocalHomogeneousSymbol.ext_of_mem fun x hx ξ _ => by simp [hx]
+
+/-- The identity symbol on `ℝⁿ` restricts to the identity symbol on `U`. -/
+@[simp]
+theorem restrict_id :
+    restrict U (id (CoordinateSpace n) (CoordinateSpace n) V) = LocalHomogeneousSymbol.id U V :=
+  LocalHomogeneousSymbol.ext_of_mem fun x hx ξ hξ => by simp [hx, hξ]
+
+/-- Spatial derivatives commute with the restriction of homogeneous symbols on `ℝⁿ` to an open
+set. -/
+@[simp]
+theorem restrict_spatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+    (v : CoordinateSpace n) : restrict U (a.spatialDeriv v) = (restrict U a).spatialDeriv v :=
+  LocalHomogeneousSymbol.ext_of_mem fun x hx ξ _ => by
+    rw [coefficient_restrict_of_mem _ hx, LocalHomogeneousSymbol.coefficient_spatialDeriv _ _ hx,
+      coefficient_spatialDeriv]
+    have hxξ : (fun y => (restrict U a).coefficient (y, ξ)) =ᶠ[𝓝 x]
+        fun y => a.coefficient (y, ξ) := by
+      filter_upwards [U.isOpen.mem_nhds hx] with y hy
+      exact coefficient_restrict_of_mem a hy ξ
+    rw [hxξ.fderiv_eq]
+
+/-- Frequency derivatives commute with the restriction of homogeneous symbols on `ℝⁿ` to an open
+set. -/
+@[simp]
+theorem restrict_frequencyDeriv
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (w : CoordinateSpace n) :
+    restrict U (a.frequencyDeriv w) = (restrict U a).frequencyDeriv w :=
+  LocalHomogeneousSymbol.ext_of_mem fun x hx ξ hξ => by
+    simp [hx, hξ, LocalHomogeneousSymbol.coefficient_frequencyDeriv _ _ hx hξ]
+
+end HomogeneousSymbol
 
 end TauCeti

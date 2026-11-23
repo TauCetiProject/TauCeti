@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.DuhamelPotential.Basic
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Contraction
 import TauCeti.Analysis.Normed.Module.Multilinear.Curry
@@ -52,8 +53,11 @@ supremum of `f`.
 * `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL`: the Duhamel potential as a continuous
   linear map `C_{par,b}^{k+α}(E × [0, T]) → C_{par,b}^{k+2+α}(E × [0, T])`.
 * `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply`: its values.
-* `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply_slabMk_zero`: its zero initial value.
+* `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply_slabMk_zero` and
+  `TauCeti.ParabolicCkHolderSpace.spatialTrace_heatDuhamelPotentialL_zero`: its zero initial value.
 * `TauCeti.ParabolicCkHolderSpace.mixedDerivL_heatDuhamelPotentialL`: its fields.
+* `TauCeti.ParabolicCkHolderSpace.timeDerivL_heatDuhamelPotentialL_eq_laplacian_add`: the heat
+  equation `∂ₜw = Δw + f`.
 * `TauCeti.ParabolicCkHolderSpace.equivParabolicC2HolderSpace_heatDuhamelPotentialL`: agreement
   with the order-two Duhamel operator.
 
@@ -682,6 +686,13 @@ theorem heatDuhamelPotentialL_apply_slabMk_zero (f : ParabolicCkHolderSpace k α
     heatDuhamelPotentialL hα₀ hα₁ hT f (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) = 0 := by
   simp
 
+/-- **Zero initial trace.** The time slice of the Duhamel potential at `t = 0` vanishes. -/
+@[simp]
+theorem spatialTrace_heatDuhamelPotentialL_zero (f : ParabolicCkHolderSpace k α E F hT) :
+    (heatDuhamelPotentialL hα₀ hα₁ hT f).spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩ = 0 := by
+  ext x
+  simp
+
 /-- **The fields of the Duhamel potential.** For `2 r + m ≤ k + 2`, the field `∂ₜ^r D_x^m w` of
 the Duhamel potential `w` of `f` is
 `D^m Δ^r w + ∑_{i < r} D^m Δ^(r-1-i) ∂ₜ^i f`, the time derivatives `∂ₜ^i f` taken within `[0, T]`.
@@ -718,6 +729,17 @@ theorem equivParabolicC2HolderSpace_heatDuhamelPotentialL
   funext s x
   simp only [ParabolicC2HolderSpace.timeExtension_def, equivHolderSpace_apply]
 
+
+/-- **The heat equation.** The time derivative of the Duhamel potential `w` of `f` is `Δw + f`, at
+every point of the closed slab. -/
+theorem timeDerivL_heatDuhamelPotentialL_eq_laplacian_add (f : ParabolicCkHolderSpace k α E F hT)
+    (p : slab (E := E) 0 T) :
+    timeDerivL k α E F hT (heatDuhamelPotentialL hα₀ hα₁ hT f) p =
+      Δ (fun y ↦ heatDuhamelPotentialL hα₀ hα₁ hT f (slabMk y (slabTime p)))
+        (p : ParabolicSpaceTime E).space + f p := by
+  obtain ⟨x, t, rfl⟩ : ∃ x t, p = slabMk x t := ⟨_, _, (slabMk_space_slabTime p).symm⟩
+  rw [timeDerivL_apply, mixedDerivL_heatDuhamelPotentialL f (by omega)]
+  simp [ParabolicC2HolderSpace.timeExtension_def]
 
 end ParabolicCkHolderSpace
 

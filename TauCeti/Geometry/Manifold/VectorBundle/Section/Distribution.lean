@@ -21,7 +21,8 @@ locally convex topology of their fixed-compact support stages
 (`ContMDiffSection.compactlySupportedTopology`), computed in the preferred trivializations
 `trivializationAt F V x`. Every covering family of smooth frames gives the same topology
 (`TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology`), so this choice is
-only a normalization. The topology is Hausdorff.
+only a normalization. The topology is Hausdorff and makes the bundle tests a locally convex
+real topological vector space.
 
 A continuous linear functional `T : BundleTest I F V →L_c[ℝ] ℝ` is a distribution paired with
 `V`-valued tests; the space of these functionals carries the topology of uniform convergence on
@@ -203,6 +204,15 @@ theorem instTopologicalSpace_eq_compactlySupportedTopology [LocallyCompactSpace 
 instance : T2Space (BundleTest I F V) :=
   t2Space_compactlySupportedTopology (I := I) (n := ∞) _ _ _
     fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩
+
+instance : IsTopologicalAddGroup (BundleTest I F V) :=
+  isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := ∞) _ _ _
+
+instance : ContinuousSMul ℝ (BundleTest I F V) :=
+  continuousSMul_compactlySupportedTopology (I := I) (n := ∞) _ _ _
+
+instance : LocallyConvexSpace ℝ (BundleTest I F V) :=
+  locallyConvexSpace_compactlySupportedTopology (I := I) (n := ∞) _ _ _
 
 /-- Evaluation of bundle tests at a point is continuous. -/
 theorem continuous_eval_const (x : M) : Continuous fun s : BundleTest I F V ↦ s x := by
