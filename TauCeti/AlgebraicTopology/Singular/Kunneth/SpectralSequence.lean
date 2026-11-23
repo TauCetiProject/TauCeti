@@ -64,8 +64,10 @@ spectral sequence
 
 * **Naturality in `X`.** A map `g : X ⟶ X'` induces a morphism of spectral sequences
   `TopCat.singularKunnethSpectralSequenceMapLeft Y R g`, functorially in `g`, through the morphism
-  `g_* ▷ Q.X p` of Künneth bicomplexes (`HomologicalComplex.kunnethBicomplexMapLeft`). On the
-  abutment it is `(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)`
+  `g_* ▷ Q.X p` of Künneth bicomplexes (`HomologicalComplex.kunnethBicomplexMapLeft`). It is the
+  spectral sequence of the morphism of spectral objects
+  `TopCat.singularKunnethSpectralObjectMapLeft Y R g`, which on the abutment is
+  `(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)`
   (`TopCat.singularKunnethAbutmentIso_naturality_left`).
 
 Naturality in `Y`, which needs a comparison of Cartan–Eilenberg resolutions, the identification
@@ -238,8 +240,10 @@ abbrev singularKunnethSpectralObjectMapLeft :
 /-- **Naturality of the singular Künneth spectral sequence in the first space**: the morphism of
 spectral sequences induced by a map `g : X ⟶ X'`. It is compatible with identities and
 composition (`TopCat.singularKunnethSpectralSequenceMapLeft_id`,
-`TopCat.singularKunnethSpectralSequenceMapLeft_comp`) and, on the abutment, it is the map
-`(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)` (`TopCat.singularKunnethAbutmentIso_naturality_left`). -/
+`TopCat.singularKunnethSpectralSequenceMapLeft_comp`). It is the spectral sequence of the
+morphism of spectral objects `TopCat.singularKunnethSpectralObjectMapLeft Y R g`, which on the
+abutment is the map `(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)`
+(`TopCat.singularKunnethAbutmentIso_naturality_left`). -/
 abbrev singularKunnethSpectralSequenceMapLeft :
     singularKunnethSpectralSequence X Y R ⟶ singularKunnethSpectralSequence X' Y R :=
   kunnethSpectralSequenceMapLeft ((TauCeti.singularChains R).map g)
