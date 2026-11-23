@@ -273,26 +273,26 @@ private noncomputable def affineOrInfinityToDegreeOnePlace :
       Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 } →
       { P : Place F W.FunctionField // P.degree = 1 }
   | none => ⟨infinity W, degree_infinity (W := W)⟩
-  | some 𝔭 => ⟨ofPrime F W.FunctionField 𝔭.1, by
+  | some 𝔭 => ⟨ofPrime F W.FunctionField 𝔭.val, by
       rw [degree_ofPrime]
-      exact 𝔭.2⟩
+      exact 𝔭.property⟩
 
 private theorem affineOrInfinityToDegreeOnePlace_bijective :
     Function.Bijective (affineOrInfinityToDegreeOnePlace W) := by
   constructor
   · rintro (_ | 𝔭) (_ | 𝔮) h
     · rfl
-    · exact (infinity_ne_ofPrime (W := W) 𝔮.1 (congrArg Subtype.val h)).elim
-    · exact (infinity_ne_ofPrime (W := W) 𝔭.1 (congrArg Subtype.val h).symm).elim
+    · exact (infinity_ne_ofPrime (W := W) 𝔮.val (congrArg Subtype.val h)).elim
+    · exact (infinity_ne_ofPrime (W := W) 𝔭.val (congrArg Subtype.val h).symm).elim
     · congr 1
       apply Subtype.ext
       exact ofPrime_injective F W.FunctionField (congrArg Subtype.val h)
   · intro P
-    rcases eq_infinity_or_existsUnique_eq_ofPrime P.1 with hP | ⟨𝔭, h𝔭, -⟩
+    rcases eq_infinity_or_existsUnique_eq_ofPrime P.val with hP | ⟨𝔭, h𝔭, -⟩
     · refine ⟨none, Subtype.ext hP.symm⟩
     · have hdegree : Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 := by
         rw [← degree_ofPrime F W.FunctionField 𝔭, h𝔭]
-        exact P.2
+        exact P.property
       exact ⟨some ⟨𝔭, hdegree⟩, Subtype.ext h𝔭⟩
 
 /-- The degree-one normalized places are exactly the place at infinity together with the
@@ -308,15 +308,15 @@ noncomputable def degreeOneAffineOrInfinityEquiv :
 theorem coe_degreeOneAffineOrInfinityEquiv_none :
     (degreeOneAffineOrInfinityEquiv W (0 : WithZero
       { 𝔭 : HeightOneSpectrum W.CoordinateRing //
-        Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 })).1 = infinity W := by
+        Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 })).val = infinity W := by
   rfl
 
 @[simp]
 theorem coe_degreeOneAffineOrInfinityEquiv_some
     (𝔭 : { 𝔭 : HeightOneSpectrum W.CoordinateRing //
       Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 }) :
-    (degreeOneAffineOrInfinityEquiv W (𝔭 : WithZero _)).1 =
-      ofPrime F W.FunctionField 𝔭.1 := by
+    (degreeOneAffineOrInfinityEquiv W (𝔭 : WithZero _)).val =
+      ofPrime F W.FunctionField 𝔭.val := by
   rfl
 
 end Place
@@ -341,13 +341,13 @@ noncomputable def pointEquivDegreeOnePlace :
 /-- The point--place dictionary sends the point at infinity to the place at infinity. -/
 @[simp]
 theorem coe_pointEquivDegreeOnePlace_zero :
-    (pointEquivDegreeOnePlace W .zero).1 = Place.infinity W := by
+    (pointEquivDegreeOnePlace W .zero).val = Place.infinity W := by
   exact Place.coe_degreeOneAffineOrInfinityEquiv_none W
 
 /-- The point--place dictionary sends `(x, y)` to the normalized place of its maximal ideal. -/
 @[simp]
 theorem coe_pointEquivDegreeOnePlace_mk {x y : F} (h : W.Equation x y) :
-    (pointEquivDegreeOnePlace W (.mk h)).1 =
+    (pointEquivDegreeOnePlace W (.mk h)).val =
       Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h) := by
   rw [← CoordinateRing.equationEquivDegreeOnePlace_apply_coe ⟨(x, y), h⟩]
   exact Place.coe_degreeOneAffineOrInfinityEquiv_some W
@@ -357,7 +357,7 @@ theorem coe_pointEquivDegreeOnePlace_mk {x y : F} (h : W.Equation x y) :
 maximal ideal. -/
 @[simp]
 theorem coe_pointEquivDegreeOnePlace_some {x y : F} (h : W.Nonsingular x y) :
-    (pointEquivDegreeOnePlace W (.some x y h)).1 =
+    (pointEquivDegreeOnePlace W (.some x y h)).val =
       Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h.left) :=
   coe_pointEquivDegreeOnePlace_mk W h.left
 

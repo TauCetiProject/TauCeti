@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 public import TauCeti.Analysis.InnerProductSpace.SecondFundamentalForm
 public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
+import TauCeti.LinearAlgebra.Eigenspace.Smul
 
 /-!
 # The shape operator of a map into a real inner product space
@@ -244,7 +245,7 @@ theorem ker_fderiv_fderiv_norm_sq_sub_add_smul_comp (hi : ContDiffAt ℝ 2 i x)
         (fderiv ℝ (fderiv ℝ fun y ↦ ‖i y - (i x + t • ν)‖ ^ 2) x : V →ₗ[ℝ] V →L[ℝ] ℝ) =
       eigenspace (shapeOperator i x ν) t⁻¹ := by
   rw [ker_fderiv_fderiv_norm_sq_sub_comp hi h (by simpa using Submodule.smul_mem _ (-t) hν),
-    add_sub_cancel_left, shapeOperator_smul, eigenspace, genEigenspace_smul _ ht, mul_one]
+    add_sub_cancel_left, shapeOperator_smul, eigenspace_smul_eq_div _ ht, one_div]
 
 /-- The base point is not a focal point: squared distance from `i x` has nondegenerate Hessian
 at `x` along an immersion. -/

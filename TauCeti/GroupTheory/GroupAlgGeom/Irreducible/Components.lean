@@ -84,7 +84,7 @@ theorem IsEquationallyNoetherian.isCompact (h : IsEquationallyNoetherian ι) [Fi
   let T : Set (GX G X) := ⋃ U ∈ P, S U
   obtain ⟨T₀, hT₀, hfin, hV⟩ := h.exists_finite T
   -- Each equation of the finite subsystem `T₀` comes from one member of `P`.
-  have hU (w : T₀) : ∃ U ∈ P, w.1 ∈ S U := by simpa [T] using hT₀ w.2
+  have hU (w : T₀) : ∃ U ∈ P, w.val ∈ S U := by simpa [T] using hT₀ w.property
   choose U hUP hwU using hU
   have : Finite T₀ := hfin
   refine ⟨Set.range U, Set.range_subset_iff.2 hUP, Set.finite_range U, fun v hv ↦ ?_⟩
@@ -161,11 +161,11 @@ theorem IsEquationallyNoetherian.exists_finite_irreducible_systems
   obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin 𝒴
   choose T hTfin hV using fun i : Fin m ↦
     (h.exists_finite (I ι (e.symm i : Set (X → H)) : Set (GX G X))).imp fun _ hT ↦ hT.2
-  have hVT (i : Fin m) : V ι (T i) = e.symm i := (hV i).trans (hirr _ (e.symm i).2).2
-  refine ⟨m, T, hTfin, fun i ↦ (hVT i).symm ▸ (hirr _ (e.symm i).2).1,
+  have hVT (i : Fin m) : V ι (T i) = e.symm i := (hV i).trans (hirr _ (e.symm i).property).2
+  refine ⟨m, T, hTfin, fun i ↦ (hVT i).symm ▸ (hirr _ (e.symm i).property).1,
     fun i j hij ↦ e.symm.injective (Subtype.ext ?_), ?_⟩
   · rw [hVT, hVT] at hij
-    exact hanti.eq (e.symm i).2 (e.symm j).2 hij
+    exact hanti.eq (e.symm i).property (e.symm j).property hij
   · simp_rw [hVT, Set.sUnion_eq_iUnion]
     exact (e.symm.surjective.iUnion_comp _).symm
 

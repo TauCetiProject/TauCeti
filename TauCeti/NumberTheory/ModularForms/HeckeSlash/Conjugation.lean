@@ -74,10 +74,10 @@ theorem heckeSlashSum_slash_of_mem_normalizer
     rw [← SlashAction.slash_mul, hmul, SlashAction.slash_mul,
       hf _ ((Subgroup.mem_normalizer_iff.mp hg₁ γ).mp hγ)]
   -- the conjugated representatives decompose the same double coset
-  have hcover := doubleCoset_eq_iUnion_rightCosets_conj hg₁ hg₂ (rightCosetRep D)
+  have hcover := (doubleCoset_conj_eq_iUnion_rightCosets_conj_iff hg₁ hg₂ (rightCosetRep D)).mpr
     (doubleCoset_eq_iUnion_rightCosetRep D)
   rw [hdc] at hcover
-  have hinj := injective_rightCoset_conj (rightCosetRep D) hg₁
+  have hinj := (injective_rightCoset_conj_iff (rightCosetRep D) hg₁).mpr
     (op_rightCosetRep_smul_injective D)
   rw [heckeSlashSum_eq_sum_of_rightCosets k D _ hcover hinj _ hfg, heckeSlashSum_def,
     SlashAction.sum_slash]

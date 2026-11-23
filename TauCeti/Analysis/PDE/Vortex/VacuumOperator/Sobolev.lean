@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
 
 /-!
 # The vacuum vortex operator on the Sobolev scale
@@ -297,23 +299,25 @@ theorem temperedVacuumAdjoint_injective : Function.Injective temperedVacuumAdjoi
 automorphism of the fields of tempered distributions. Its inverse is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹`
 (`temperedVacuumOperatorEquiv_symm_apply`). -/
 def temperedVacuumOperatorEquiv : (Fin 4 → 𝓢'(ℂ, ℂ)) ≃L[ℂ] (Fin 4 → 𝓢'(ℂ, ℂ)) :=
-  .equivOfInverse temperedVacuumOperator
+  .ofContinuousLinearMap temperedVacuumOperator
     (temperedVacuumAdjoint ∘L .piMap fun _ ↦ laplacianResolvent ℂ (1 / 4))
     -- `ContinuousLinearMap.piMap` applies the resolvent componentwise, by definition.
-    (fun _ ↦ temperedVacuumOperator_injective <|
+    (ContinuousLinearMap.ext fun y ↦
+      temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent y)
+    (ContinuousLinearMap.ext fun _ ↦ temperedVacuumOperator_injective <|
       temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent _)
-    (fun y ↦ temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent y)
 
 /-- **The adjoint of the vacuum operator is invertible on tempered fields**: `L₀*` as a continuous
 linear automorphism of the fields of tempered distributions. Its inverse is
 `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹` (`temperedVacuumAdjointEquiv_symm_apply`). -/
 def temperedVacuumAdjointEquiv : (Fin 4 → 𝓢'(ℂ, ℂ)) ≃L[ℂ] (Fin 4 → 𝓢'(ℂ, ℂ)) :=
-  .equivOfInverse temperedVacuumAdjoint
+  .ofContinuousLinearMap temperedVacuumAdjoint
     (temperedVacuumOperator ∘L .piMap fun _ ↦ laplacianResolvent ℂ (1 / 4))
     -- `ContinuousLinearMap.piMap` applies the resolvent componentwise, by definition.
-    (fun _ ↦ temperedVacuumAdjoint_injective <|
+    (ContinuousLinearMap.ext fun y ↦
+      temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent y)
+    (ContinuousLinearMap.ext fun _ ↦ temperedVacuumAdjoint_injective <|
       temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent _)
-    (fun y ↦ temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent y)
 
 @[simp]
 theorem coe_temperedVacuumOperatorEquiv : ⇑temperedVacuumOperatorEquiv = temperedVacuumOperator :=

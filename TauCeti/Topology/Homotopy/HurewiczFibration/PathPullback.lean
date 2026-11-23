@@ -134,7 +134,7 @@ theorem toFiber_comp_inclusion_homotopic (hp : IsHurewiczFibration.{u} p) (a : I
       (congrArg α (by simpa using projection_contractionLift hp a (z.1, inclusion a z.2)))
   refine ContinuousMap.Homotopic.symm ⟨{
     toFun := fun z ↦ ⟨(contractionLift hp a (z.1, inclusion a z.2)).val.2, hfibre z⟩
-    continuous_toFun := (continuous_subtype_val.comp ((contractionLift hp a).continuous.comp
+    continuous_toFun := (continuous_subtypeVal.comp ((contractionLift hp a).continuous.comp
       (continuous_fst.prodMk ((inclusion a).continuous.comp continuous_snd)))).snd.subtype_mk hfibre
     map_zero_left := fun x ↦ Subtype.ext ?_
     map_one_left := fun _ ↦ rfl }⟩
