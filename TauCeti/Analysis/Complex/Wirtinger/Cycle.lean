@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-public import TauCeti.Analysis.Contour.Cycle.Circle
 public import TauCeti.Analysis.Green.Cycle
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Module.Dual
+import TauCeti.Analysis.Complex.Wirtinger.Green
 import TauCeti.Probability.Distributions.CircularLaw
 
 /-!
@@ -315,26 +316,6 @@ theorem circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerD
 
 end Contour.Cycle
 
-private theorem isIn_and_isNullHomologous_circleCycle {c : ℂ} {R : ℝ} {U : Set ℂ} (hR : 0 ≤ R)
-    (hball : closedBall c R ⊆ U) :
-    (Contour.circleCycle c R).IsIn U ∧ (Contour.circleCycle c R).IsNullHomologous U := by
-  refine ⟨?_, ?_⟩
-  · rw [Contour.Cycle.isIn_iff, Contour.Cycle.trace_circleCycle, abs_of_nonneg hR]
-    exact sphere_subset_closedBall.trans hball
-  · rw [Contour.Cycle.isNullHomologous_iff]
-    intro z hzU
-    exact Contour.Cycle.windingNumber_circleCycle_eq_zero_of_lt_dist hR
-      (not_le.mp fun hle ↦ hzU (hball (mem_closedBall.mpr hle)))
-
-private theorem setIntegral_windingWeight_circleCycle_eq_ball {c : ℂ} {R : ℝ} {U : Set ℂ}
-    (hR : 0 ≤ R) (hball : closedBall c R ⊆ U) (g : ℂ → ℂ) :
-    (∫ z in U, ((Contour.circleCycle c R).windingWeight z : ℂ) * g z) =
-      ∫ z in ball c R, g z := by
-  rw [Contour.Cycle.windingWeight_circleCycle c hR]
-  simp_rw [← Complex.real_smul, ← Set.indicator_smul_left, Pi.one_apply, one_smul]
-  rw [setIntegral_indicator measurableSet_ball,
-    inter_eq_right.mpr (ball_subset_closedBall.trans hball)]
-
 /-- **Complex circle Stokes formula for `F dbar z`.** For `R ≥ 0` and `F` real `C¹` on an open
 neighborhood `U` of `closedBall c R`,
 `∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) =
@@ -344,14 +325,30 @@ theorem integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wir
     (hball : closedBall c R ⊆ U) (hF : ContDiffOn ℝ 1 F U) :
     (∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ)) =
       (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1 := by
-  obtain ⟨htr, hnull⟩ := isIn_and_isNullHomologous_circleCycle hR hball
-  have hmain := (Contour.circleCycle c R)
-    |>.conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
-      hU htr hnull hF
-  rw [setIntegral_windingWeight_circleCycle_eq_ball hR hball,
-    Contour.Cycle.integral_circleCycle, circleIntegral,
-    ← intervalIntegral.intervalIntegral_conj] at hmain
-  simpa only [map_mul, starRingEnd_self_apply, mul_comm, smul_eq_mul] using hmain
+  have hFc : ContDiffOn ℝ 1 (fun z ↦ conj (F z)) U :=
+    (Complex.conjCLE : ℂ →L[ℝ] ℂ).contDiff.comp_contDiffOn hF
+  have hstokes := congrArg conj
+    (integral_ball_conjWirtingerDeriv_eq_circleIntegral (h := fun z ↦ conj (F z)) hR
+      fun z hz ↦ hFc.contDiffAt (hU.mem_nhds (hball hz)))
+  rw [← integral_conj, smul_eq_mul, map_mul, map_inv₀, map_mul, map_ofNat, conj_I,
+    circleIntegral, ← intervalIntegral.intervalIntegral_conj] at hstokes
+  have h_lhs : (∫ z in ball c R, conj (conjWirtingerDeriv (fun z ↦ conj (F z)) z 1)) =
+      ∫ z in ball c R, wirtingerDeriv F z 1 :=
+    setIntegral_congr_fun measurableSet_ball fun z _ ↦ by
+      rw [conjWirtingerDeriv_conj_comp_apply, starRingEnd_self_apply]
+  have h_rhs : (∫ θ in 0..2 * π, conj (deriv (circleMap c R) θ • conj (F (circleMap c R θ)))) =
+      ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) :=
+    intervalIntegral.integral_congr fun θ _ ↦ by
+      rw [smul_eq_mul, map_mul, starRingEnd_self_apply, mul_comm]
+  rw [h_lhs, h_rhs] at hstokes
+  have htwo : (2 : ℂ) * -I = -2 * I := by ring
+  rw [htwo] at hstokes
+  calc
+    (∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ))
+        = (-2 * I) * ((-2 * I)⁻¹ *
+            ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ)) := by
+          rw [← mul_assoc, mul_inv_cancel₀ (mul_ne_zero (by norm_num) I_ne_zero), one_mul]
+    _ = (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1 := by rw [hstokes]
 
 section MonomialMomentHelpers
 
