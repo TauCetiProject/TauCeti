@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Holder
@@ -18,50 +17,18 @@ import TauCeti.MeasureTheory.Function.Holder
 # The duality pairing of the Besov spaces `B^s_{p,q}` and `B^{-s}_{p',q'}`
 
 Let `φ : E → ℝ` be a smooth bump function on a finite-dimensional real inner product space, with
-inhomogeneous Littlewood–Paley blocks `Δⱼ`, and let `p, p'` and `q, q'` be pairs of Hölder
-conjugate exponents in `[1, ∞]`. This file proves that an element `v` of the Besov space
-`B^{-s}_{p',q'}` acts boundedly on the Schwartz functions for the norm of `B^s_{p,q}`: there is a
-constant `C`, depending only on `φ` and `s`, with
-
-`‖⟨v, f⟩‖ ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}`
-
-for every Schwartz function `f` (`TauCeti.BesovSpace.exists_norm_toDistr_apply_le`). Here `⟨v, f⟩`
-is the value of the tempered distribution of `v` at `f`, and `v` may take values in any complex
-Banach space. The constant does not depend on the exponents. This is the bounded half of the
-duality `(B^s_{p,q})^* = B^{-s}_{p',q'}`: smoothness `s` is paired with smoothness `-s`, and the
-integrability and fine indices with their conjugates.
-
-## The argument
-
-The blocks are Fourier multipliers by the pieces `ψⱼ` of the Littlewood–Paley partition, which are
-even functions (`ContDiffBump.inhomogeneousLittlewoodPaley_neg`). Hence they are symmetric for the
-pairing of tempered distributions with Schwartz functions,
-`(Δⱼ v) f = v (Δⱼ f)` (`TemperedDistribution.littlewoodPaleyBlock_apply_apply`).
-
-By the Littlewood–Paley reconstruction `v = ∑ⱼ Δⱼ v`, the value `v f` is the limit of the partial
-sums of `(Δⱼ v) f`. By almost orthogonality, `Δⱼ v = ∑_{j - L ≤ k < j + L} Δⱼ Δₖ v` with `L`
-depending only on `φ`, so by symmetry `(Δⱼ v) f = ∑_{j - L ≤ k < j + L} (Δₖ v) (Δⱼ f)`. Each term
-is the integral of `Δⱼ f` against the `L^{p'}` function `Δₖ v`, at most `‖Δⱼ f‖_p ‖Δₖ v‖_{p'}` by
-Hölder's inequality. Since `|j - k| < L`, the weights satisfy `2^{ks} ≤ 2^{|s| L} 2^{js}`, so
-
-`‖(Δⱼ v) f‖ ≤ 2^{|s| L} aⱼ cⱼ`, with `aⱼ = 2^{js} ‖Δⱼ f‖_p` and
-`cⱼ = ∑_{j - L ≤ k < j + L} 2^{-ks} ‖Δₖ v‖_{p'}`.
-
-The sequence `a` has `ℓ^q` norm `‖f‖_{B^s_{p,q}}`, and the window sums `c` have `ℓ^{q'}` norm at
-most `2 L ‖v‖_{B^{-s}_{p',q'}}`. Hölder's inequality for sequences bounds `∑ⱼ aⱼ cⱼ` by the
-product of these norms, uniformly over the partial sums.
-
-## The pairing on Besov spaces
-
-More generally, let `B : F →L[ℂ] G →L[ℂ] K` be a continuous bilinear map, for instance the scalar
-multiplication of `F` or the evaluation pairing of a fiber `F` with its dual. The **Besov duality
-pairing** of `u ∈ B^s_{p,q}(E, F)` and `w ∈ B^{-s}_{p',q'}(E, G)` is
+inhomogeneous Littlewood–Paley blocks `Δⱼ`, let `p, p'` and `q, q'` be pairs of Hölder conjugate
+exponents in `[1, ∞]`, and let `B : F →L[ℂ] G →L[ℂ] K` be a continuous bilinear map, for instance
+the scalar multiplication of `F` or the evaluation pairing of a fiber `F` with its dual. The
+**Besov duality pairing** of `u ∈ B^s_{p,q}(E, F)` and `w ∈ B^{-s}_{p',q'}(E, G)` is
 
 `⟨u, w⟩ = ∑ₖ ∫ B ((Δₖ u) x) ((Δ⁺ₖ w) x) dx`,  `Δ⁺ₖ = ∑_{k + 1 - L ≤ j < k + L} Δⱼ`,
 
 where `L = φ.littlewoodPaleyOverlap φ` is the overlap of the partition: pieces whose indices differ
 by at least `L` have disjoint supports, so that `Δ⁺ₖ Δₖ = Δₖ`
-(`TemperedDistribution.enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock`).
+(`TemperedDistribution.enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock`). Smoothness `s` is
+paired with smoothness `-s`, and the integrability and fine indices with their conjugates.
+
 Each term is bounded by Hölder's inequality in `Lᵖ × L^{p'}`, and after weighting the `k`-th
 term by `2^{ks} 2^{-ks} = 1` the series is bounded by Hölder's inequality in `ℓ^q × ℓ^{q'}`
 (Mathlib's `lp.dualPairing`). Hence `⟨·, ·⟩` is a continuous bilinear map with
@@ -74,17 +41,19 @@ The pairing extends the action of tempered distributions on test functions, from
 `w` is a scalar Schwartz function `ψ`, then `⟨u, w⟩ = u ψ` for the pairing `B v c = c • v`
 (`TauCeti.BesovSpace.toDistr_apply_eq_besovPairing`). If `u` is a scalar Schwartz function `ψ`,
 then `⟨u, w⟩ = w ψ` for the pairing `B c v = c • v`
-(`TauCeti.BesovSpace.besovPairing_eq_toDistr_apply`). Both follow from the transpose identity
-`(Δⱼ u) ψ = u (Δⱼ ψ)` for the even pieces of the partition
-(`TemperedDistribution.littlewoodPaleyBlock_apply_apply`) and the reconstruction `u = ∑ₖ Δₖ u`.
-For `F = G = K = ℂ` the pairing gives a bounded map from `B^{-s}_{p',q'}` to the continuous dual
-of `B^s_{p,q}`, which is the half of the duality `(B^s_{p,q})* = B^{-s}_{p',q'}`, `p, q < ∞`, that
-holds for all exponents.
+(`TauCeti.BesovSpace.besovPairing_eq_toDistr_apply`). Both follow from the symmetry
+`(Δⱼ u) ψ = u (Δⱼ ψ)` of the blocks, whose pieces are even
+(`TemperedDistribution.littlewoodPaleyBlock_apply_apply`), and the reconstruction `u = ∑ₖ Δₖ u`.
+
+In particular an element `v` of `B^{-s}_{p',q'}`, with values in any complex Banach space, acts
+boundedly on the Schwartz functions for the norm of `B^s_{p,q}`: there is a constant `C`,
+depending only on `φ` and `s`, with `‖⟨v, f⟩‖ ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}` for every
+Schwartz function `f` (`TauCeti.BesovSpace.exists_norm_toDistr_apply_le`). For `F = G = K = ℂ` the
+pairing gives a bounded map from `B^{-s}_{p',q'}` to the continuous dual of `B^s_{p,q}`, which is
+the half of the duality `(B^s_{p,q})* = B^{-s}_{p',q'}`, `p, q < ∞`, that holds for all exponents.
 
 ## Main declarations
 
-* `TauCeti.BesovSpace.exists_norm_toDistr_apply_le`: the duality bound
-  `‖⟨v, f⟩‖ ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}`.
 * `ContinuousLinearMap.besovPairing B φ s p p' q q'`: the duality pairing
   `B^s_{p,q}(E, F) × B^{-s}_{p',q'}(E, G) → K` induced by `B`, as a continuous bilinear map.
 * `ContinuousLinearMap.hasSum_besovPairing` and `ContinuousLinearMap.besovPairing_apply`: the
@@ -94,6 +63,8 @@ holds for all exponents.
 * `TauCeti.BesovSpace.toDistr_apply_eq_besovPairing` and
   `TauCeti.BesovSpace.besovPairing_eq_toDistr_apply`: on scalar Schwartz functions the pairing is
   the action of a tempered distribution.
+* `TauCeti.BesovSpace.exists_norm_toDistr_apply_le`: the duality bound
+  `‖⟨v, f⟩‖ ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}`.
 
 ## References
 
@@ -109,7 +80,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory FourierTransform TemperedDistribution Filter Topology
+open MeasureTheory TemperedDistribution Filter Topology
 open scoped ENNReal NNReal SchwartzMap
 
 variable {E F G K : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -117,95 +88,6 @@ variable {E F G K : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
   [NormedAddCommGroup K] [NormedSpace ℂ K] [CompleteSpace K]
-
-namespace TauCeti.BesovSpace
-
-/-! ### The duality bound on Schwartz functions -/
-
-/-- **One block of the pairing.** If `Δⱼ w = ∑_{j - L ≤ k < j + L} Δⱼ Δₖ w` for every `j` and
-every tempered distribution `w`, then for `v ∈ B^{-s}_{p',q'}` and a Schwartz function `f`,
-`‖(Δⱼ v) f‖ ≤ 2^{|s| L} 2^{js} ‖Δⱼ f‖_p ∑_{j - L ≤ k < j + L} 2^{-ks} ‖Δₖ v‖_{p'}`. -/
-private theorem norm_littlewoodPaleyBlock_toDistr_apply_le {φ : ContDiffBump (0 : E)} {s : ℝ}
-    {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)] [p.HolderConjugate p']
-    {L : ℕ} (hL : ∀ (j : ℕ) (w : 𝓢'(E, F)), littlewoodPaleyBlock F φ j w =
-      ∑ k ∈ Finset.Ico (j - L) (j + L), littlewoodPaleyBlock F φ j (littlewoodPaleyBlock F φ k w))
-    (v : BesovSpace F φ (-s) p' q') (f : 𝓢(E, ℂ)) (j : ℕ) :
-    ‖littlewoodPaleyBlock F φ j v.toDistr f‖ ≤
-      2 ^ (|s| * L) * (2 ^ (s * j) * ‖(SchwartzMap.toBesovSpaceCLM ℂ φ s p q f).block j‖) *
-        ∑ k ∈ Finset.Ico (j - L) (j + L), 2 ^ (-s * k) * ‖v.block k‖ := by
-  set u := SchwartzMap.toBesovSpaceCLM ℂ φ s p q f
-  -- The block `Δⱼ f`, as a Schwartz function.
-  set h := SchwartzMap.fourierMultiplierCLM ℂ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f
-  have hh : ‖u.block j‖ = (eLpNorm h p).toReal := by
-    rw [block_toBesovSpaceCLM, SchwartzMap.norm_toLp]
-  -- Hölder's inequality for the pairing of a block of `v` with `Δⱼ f`.
-  have hpair (k : ℕ) : ‖littlewoodPaleyBlock F φ k v.toDistr h‖ ≤ ‖u.block j‖ * ‖v.block k‖ := by
-    rw [← coe_block, Lp.toTemperedDistribution_apply]
-    have hle := ENNReal.toReal_mono (ENNReal.mul_ne_top (h.memLp p volume).eLpNorm_ne_top
-      (Lp.eLpNorm_ne_top (v.block k))) (TauCeti.enorm_integral_smul_le (q := p'))
-    simpa [hh, Lp.norm_def] using hle
-  -- By almost orthogonality and symmetry, `(Δⱼ v) f = ∑_{j - L ≤ k < j + L} (Δₖ v) (Δⱼ f)`.
-  have hsum : littlewoodPaleyBlock F φ j v.toDistr f =
-      ∑ k ∈ Finset.Ico (j - L) (j + L), littlewoodPaleyBlock F φ k v.toDistr h := by
-    rw [hL j]
-    simp [h, littlewoodPaleyBlock_apply_apply]
-  rw [hsum, mul_assoc, Finset.mul_sum, Finset.mul_sum]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k hk ↦ (hpair k).trans ?_)
-  -- Since `|j - k| < L`, the weights `2^{-js}` and `2^{-ks}` differ by at most `2^{|s| L}`.
-  have hw := Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two (-s) hk
-  rw [abs_neg] at hw
-  have h1 : (2 : ℝ) ^ (s * j) * 2 ^ (-s * j) = 1 := by
-    rw [← Real.rpow_add two_pos]
-    simp
-  calc ‖u.block j‖ * ‖v.block k‖
-      = 2 ^ (s * j) * ‖u.block j‖ * (2 ^ (-s * j) * ‖v.block k‖) := by
-        linear_combination (‖u.block j‖ * ‖v.block k‖) * h1.symm
-    _ ≤ 2 ^ (s * j) * ‖u.block j‖ * (2 ^ (|s| * L) * 2 ^ (-s * k) * ‖v.block k‖) := by gcongr
-    _ = _ := by ring
-
-/-- **The duality bound.** There is a constant `C`, depending only on the bump function `φ` and
-on `s`, such that for all Hölder conjugate pairs `p, p'` and `q, q'` of exponents in `[1, ∞]`,
-every `v ∈ B^{-s}_{p',q'}` and every Schwartz function `f`,
-
-`‖⟨v, f⟩‖ ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}`,
-
-where `⟨v, f⟩` is the value of the tempered distribution of `v` at `f`. -/
-theorem exists_norm_toDistr_apply_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)]
-      [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q']
-      (v : BesovSpace F φ (-s) p' q') (f : 𝓢(E, ℂ)),
-      ‖v.toDistr f‖ ≤ C * ‖v‖ * ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p q f‖ := by
-  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_eq_sum_Ico (F := F) φ φ
-  refine ⟨2 * L * 2 ^ (|s| * L), by positivity, fun {p p' q q'} _ _ _ _ _ _ v f ↦ ?_⟩
-  set u := SchwartzMap.toBesovSpaceCLM ℂ φ s p q f
-  -- The weighted block norms of `f` in `ℓ^q`, and the window sums of those of `v` in `ℓ^{q'}`.
-  set a := u.weightedBlockNorms
-  have haj (j : ℕ) : a j = _ := u.weightedBlockNorms_apply j
-  have ha : ‖a‖ ≤ ‖u‖ := (norm_weightedBlockNorms u).le
-  set b := v.weightedBlockNorms
-  have hbk (k : ℕ) : b k = _ := v.weightedBlockNorms_apply k
-  have hb : ‖b‖ ≤ ‖v‖ := (norm_weightedBlockNorms v).le
-  obtain ⟨c, hcj, hc⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
-  have hterm (j : ℕ) : ‖littlewoodPaleyBlock F φ j v.toDistr f‖ ≤ 2 ^ (|s| * L) * (a j * c j) := by
-    rw [← mul_assoc, haj, hcj, Finset.sum_congr rfl fun k _ ↦ hbk k]
-    exact norm_littlewoodPaleyBlock_toDistr_apply_le hL v f j
-  -- Hölder's inequality for sequences bounds every partial sum of `∑ⱼ aⱼ cⱼ` by `‖a‖ ‖c‖`.
-  have hsum (N : ℕ) : ∑ j ∈ Finset.range N, a j * c j ≤ ‖a‖ * ‖c‖ :=
-    (Finset.sum_le_sum fun j _ ↦ (Real.le_norm_self _).trans (norm_mul_le _ _)).trans
-      (lp.sum_norm_mul_norm_le a c _)
-  -- Pass to the limit in the reconstruction `v = ∑ⱼ Δⱼ v`, evaluated at `f`.
-  refine le_of_tendsto' (tendsto_sum_littlewoodPaleyBlock_apply φ v.toDistr f).norm fun N ↦ ?_
-  calc ‖∑ j ∈ Finset.range N, littlewoodPaleyBlock F φ j v.toDistr f‖
-      ≤ ∑ j ∈ Finset.range N, 2 ^ (|s| * L) * (a j * c j) :=
-        (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ hterm j)
-    _ = 2 ^ (|s| * L) * ∑ j ∈ Finset.range N, a j * c j := (Finset.mul_sum ..).symm
-    _ ≤ 2 ^ (|s| * L) * (‖u‖ * (2 * L * ‖v‖)) := by
-        gcongr
-        exact (hsum N).trans (mul_le_mul ha (hc.trans (by gcongr)) (norm_nonneg _)
-          (norm_nonneg _))
-    _ = 2 * L * 2 ^ (|s| * L) * ‖v‖ * ‖u‖ := by ring
-
-end TauCeti.BesovSpace
 
 namespace TauCeti.BesovSpace
 
@@ -247,7 +129,7 @@ functions. -/
 private def enlargedWeightedBlocks (w : BesovSpace G φ s p q) :
     lp (fun _ : ℕ ↦ Lp G p (volume : Measure E)) q :=
   ⟨fun k ↦ (((2 : ℝ) ^ (s * k) : ℝ) : ℂ) • enlargedBlock w k,
-    (((lp.memℓp w.weightedBlockNorms).sum_Ico_sub_add φ.littlewoodPaleyOverlap φ).const_mul
+    (((lp.memℓp w.weightedBlockNorms).sum_Ico_sub_add (φ.littlewoodPaleyOverlap φ)).const_mul
       (2 ^ (|s| * φ.littlewoodPaleyOverlap φ))).mono fun k ↦ norm_smul_enlargedBlock_le w k⟩
 
 omit [Fact (1 ≤ q)] in
@@ -261,7 +143,7 @@ private theorem norm_enlargedWeightedBlocks_le (w : BesovSpace G φ s p q) :
   have hq : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   -- The window sums of the weighted block norms of `w`, as an element of `ℓ^q`.
   obtain ⟨b, hb, hbn⟩ :=
-    lp.exists_eq_sum_Ico_sub_add_and_norm_le w.weightedBlockNorms φ.littlewoodPaleyOverlap φ
+    lp.exists_eq_sum_Ico_sub_add_and_norm_le w.weightedBlockNorms (φ.littlewoodPaleyOverlap φ)
   calc ‖enlargedWeightedBlocks w‖ ≤ ‖(2 ^ (|s| * φ.littlewoodPaleyOverlap φ) : ℝ) • b‖ :=
         lp.norm_mono hq fun k ↦ by
           rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, enlargedWeightedBlocks_apply, hb,
@@ -309,8 +191,9 @@ variable (φ s p p' q q') in
 /-- The **Besov duality pairing** `⟨u, w⟩ = ∑ₖ ∫ B ((Δₖ u) x) ((Δ⁺ₖ w) x) dx` of
 `u ∈ B^s_{p,q}(E, F)` and `w ∈ B^{-s}_{p',q'}(E, G)` for Hölder conjugate pairs `p, p'` and
 `q, q'`, induced by a continuous bilinear map `B`. Here `Δ⁺ₖ` is the sum of the blocks `Δⱼ` with
-`|j - k| < L`, where `L = φ.littlewoodPaleyOverlap φ` is the least `L` such that pieces of the
-partition whose indices differ by at least `L` have disjoint supports; thus `Δ⁺ₖ Δₖ = Δₖ`
+`|j - k| < L`, where `L = φ.littlewoodPaleyOverlap φ` is a width such that pieces of the
+partition whose indices differ by at least `L` have disjoint supports
+(`ContDiffBump.inhomogeneousLittlewoodPaley_mul_eq_zero`); thus `Δ⁺ₖ Δₖ = Δₖ`
 (`TemperedDistribution.enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock`). The pairing is the
 sum of the series `∑ₖ ∑_{|j - k| < L} ∫ B ((Δₖ u) x) ((Δⱼ w) x) dx`
 (`ContinuousLinearMap.besovPairing_apply`). On scalar Schwartz functions it is the action of a
@@ -353,7 +236,7 @@ private theorem summable_lpPairing (B : F →L[ℂ] G →L[ℂ] K) (u : BesovSpa
   .of_norm (by
     simpa using (lp.holder (p := q) (q := q') 1 (fun _ : ℕ ↦ B.lpPairing volume p p')
       (K := ‖B.lpPairing volume p p'‖) (fun _ ↦ le_rfl) u.weightedBlocks
-      (enlargedWeightedBlocks w)).2.summable (by simp))
+      (enlargedWeightedBlocks w)).property.summable (by simp))
 
 omit [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q.HolderConjugate q'] in
 /-- The `k`-th term of the pairing is `∫ B ((Δₖ u) x) ((Δ⁺ₖ w) x) dx`: the weights `2^{ks}` and
@@ -494,7 +377,7 @@ theorem toDistr_apply_eq_besovPairing (u : BesovSpace F φ s p q)
         rw [← Lp.toTemperedDistribution_apply, coe_block, map_sum]
         simp only [littlewoodPaleyBlock_apply_apply]
     _ = littlewoodPaleyBlock F φ k u.toDistr ψ := by
-        rw [← sum_apply, ← ContinuousLinearMap.sum_apply, ← enlargedLittlewoodPaleyBlock_eq_sum_Ico,
+        rw [← sum_apply, ← sum_apply, ← enlargedLittlewoodPaleyBlock_eq_sum_Ico,
           enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock φ
             fun _ _ hjk ξ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ hjk ξ]
 
@@ -520,8 +403,31 @@ theorem besovPairing_eq_toDistr_apply {u : BesovSpace ℂ φ s p q} {ψ : 𝓢(E
         simp only [coe_block, sum_apply, ψₖ, ← littlewoodPaleyBlock_apply_apply,
           littlewoodPaleyBlock_comm φ k]
     _ = littlewoodPaleyBlock G φ k w.toDistr ψ := by
-        rw [← sum_apply, ← ContinuousLinearMap.sum_apply, ← enlargedLittlewoodPaleyBlock_eq_sum_Ico,
+        rw [← sum_apply, ← sum_apply, ← enlargedLittlewoodPaleyBlock_eq_sum_Ico,
           enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock φ
             fun _ _ hjk ξ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ hjk ξ]
+
+/-- **The duality bound.** There is a constant `C`, depending only on the bump function `φ` and
+on `s`, such that for all Hölder conjugate pairs `p, p'` and `q, q'` of exponents in `[1, ∞]`,
+every `v ∈ B^{-s}_{p',q'}` and every Schwartz function `f`,
+
+`‖⟨v, f⟩‖ ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}`,
+
+where `⟨v, f⟩` is the value of the tempered distribution of `v` at `f`. -/
+theorem exists_norm_toDistr_apply_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)]
+      [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q']
+      (v : BesovSpace F φ (-s) p' q') (f : 𝓢(E, ℂ)),
+      ‖v.toDistr f‖ ≤ C * ‖v‖ * ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p q f‖ := by
+  obtain ⟨C, hC, h⟩ :=
+    ContinuousLinearMap.exists_norm_besovPairing_le (F := ℂ) (G := F) (K := F) φ s
+  refine ⟨C, hC, fun {p p' q q'} _ _ _ _ _ _ v f ↦ ?_⟩
+  rw [← besovPairing_eq_toDistr_apply (SchwartzMap.toDistr_toBesovSpaceCLM φ s p q f) v]
+  calc _ ≤ C * ‖ContinuousLinearMap.lsmul ℂ ℂ‖ * ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p q f‖ * ‖v‖ :=
+        h _ _ _
+    _ ≤ C * 1 * ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p q f‖ * ‖v‖ := by
+        gcongr
+        exact ContinuousLinearMap.opNorm_lsmul_le
+    _ = _ := by ring
 
 end TauCeti.BesovSpace
