@@ -29,7 +29,7 @@ the universe of the index type `ι`.
 ## Main results
 
 * `FDRep.homLinearEquivOfEquivDirectSum_apply_hom_hom_hom`,
-  `FDRep.e_homLinearEquivOfEquivDirectSum_symm_apply`: componentwise evaluation of
+  `FDRep.apply_homLinearEquivOfEquivDirectSum_symm_apply_hom_hom_hom`: componentwise evaluation of
   `FDRep.homLinearEquivOfEquivDirectSum` and its inverse.
 * `FDRep.finrank_hom_of_equiv_directSum`:
   `Module.finrank k (X ⟶ Y) = ∑ i, Module.finrank k (X ⟶ Z i)` over a field `k` for `[Fintype ι]`.
@@ -73,7 +73,8 @@ theorem homLinearEquivOfEquivDirectSum_apply_hom_hom_hom (X Y : FDRep R G) (Z : 
 /-- Applying `e` to the inverse of `homLinearEquivOfEquivDirectSum` recovers each supplied
 component morphism. -/
 @[simp]
-theorem e_homLinearEquivOfEquivDirectSum_symm_apply (X Y : FDRep R G) (Z : ι → FDRep R G)
+theorem apply_homLinearEquivOfEquivDirectSum_symm_apply_hom_hom_hom (X Y : FDRep R G)
+    (Z : ι → FDRep R G)
     (e : Representation.Equiv Y.ρ (Representation.directSum fun i ↦ (Z i).ρ))
     (φ : ∀ i, X ⟶ Z i) (x : X) (i : ι) :
     e (((homLinearEquivOfEquivDirectSum X Y Z e).symm φ).hom.hom.hom x) i =

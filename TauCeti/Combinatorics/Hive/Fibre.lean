@@ -843,6 +843,35 @@ private theorem apply_center_bounds_three {lam μ γ : DominantWeight 3}
     Nat.not_ofNat_lt_one, ↓reduceIte] at hrH hrC
   omega
 
+private def ofChartThree {lam μ γ : DominantWeight 3} (c : ℕ → ℕ → ℤ) (hc0 : c 0 0 = 0)
+    (hH : c 0 0 + c 1 2 ≤ c 0 1 + c 1 1 ∧ c 0 1 + c 1 3 ≤ c 0 2 + c 1 2 ∧
+      c 1 1 + c 2 3 ≤ c 1 2 + c 2 2)
+    (hC : c 1 1 + c 0 2 ≤ c 0 1 + c 1 2 ∧ c 1 2 + c 0 3 ≤ c 0 2 + c 1 3 ∧
+      c 2 2 + c 1 3 ≤ c 1 2 + c 2 3)
+    (hV : c 0 1 + c 2 2 ≤ c 1 1 + c 1 2 ∧ c 0 2 + c 2 3 ≤ c 1 2 + c 1 3 ∧
+      c 1 2 + c 3 3 ≤ c 2 2 + c 2 3)
+    (hb0 : ∀ k : Fin 3, c 0 (k.val + 1) - c 0 k.val = lam.val k)
+    (hb1 : ∀ k : Fin 3, c (k.val + 1) 3 - c k.val 3 = μ.val k)
+    (hb2 : ∀ k : Fin 3, c (k.val + 1) (k.val + 1) - c k.val k.val = γ.val k) :
+    FixedIntegerHive (productBoundary lam μ γ) :=
+  ⟨⟨fun p => c p.z (3 - p.x), by simpa using hc0,
+    fun hr => (isRhombusConcave_def _).mp (isRhombusConcave_of_chartThree c hH hC hV) hr⟩,
+    by
+      ext s k
+      fin_cases s <;> fin_cases k
+      · simpa [boundary_apply, productBoundary_zero, hc0] using hb0 0
+      · simpa [boundary_apply, productBoundary_zero] using hb0 1
+      · simpa [boundary_apply, productBoundary_zero] using hb0 2
+      · simpa [boundary_apply, productBoundary_one] using hb1 0
+      · simpa [boundary_apply, productBoundary_one] using hb1 1
+      · simpa [boundary_apply, productBoundary_one] using hb1 2
+      · have h : c 3 3 - c 2 2 = γ.val 2 := hb2 2
+        simpa [boundary_apply, productBoundary_two] using show c 2 2 - c 3 3 = -γ.val 2 by omega
+      · have h : c 2 2 - c 1 1 = γ.val 1 := hb2 1
+        simpa [boundary_apply, productBoundary_two] using show c 1 1 - c 2 2 = -γ.val 1 by omega
+      · have h : c 1 1 - c 0 0 = γ.val 0 := hb2 0
+        simpa [boundary_apply, productBoundary_two] using show c 0 0 - c 1 1 = -γ.val 0 by omega⟩
+
 /-- Rank-`3` check `c^{(2, 0, 0)}_{(1, 0, 0), (1, 0, 0)} = 1` and the classic multiplicity-two
 example `c^{(3, 2, 1)}_{(2, 1, 0), (2, 1, 0)} = 2`, whose unique interior vertex `(1, 1, 1)` takes
 the two values `4` and `5`. -/
@@ -862,21 +891,15 @@ theorem hiveCount_three_checks :
     else if i = 1 then (if j = 1 then 3 else if j = 2 then m else 5)
     else if j = 2 then 5 else 6
   let h₁ : FixedIntegerHive B₁ :=
-    ⟨⟨fun p => c₁ p.z (3 - p.x), by simp [c₁],
-        fun hr => (isRhombusConcave_def _).mp
-          (isRhombusConcave_of_chartThree c₁ (by decide) (by decide) (by decide)) hr⟩,
-      by ext s k; fin_cases s <;> fin_cases k <;>
-        simp [B₁, c₁, boundary_apply, productBoundary_zero, productBoundary_one,
-          productBoundary_two]⟩
+    ofChartThree c₁ rfl (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   let mk₂ (m : ℤ) (hm : m = 4 ∨ m = 5) : FixedIntegerHive B₂ :=
-    ⟨⟨fun p => c₂ m p.z (3 - p.x), by simp [c₂],
-        fun hr => (isRhombusConcave_def _).mp (isRhombusConcave_of_chartThree (c₂ m)
-          (by rcases hm with rfl | rfl <;> decide)
-          (by rcases hm with rfl | rfl <;> decide)
-          (by rcases hm with rfl | rfl <;> decide)) hr⟩,
-      by ext s k; fin_cases s <;> fin_cases k <;>
-        simp [B₂, c₂, boundary_apply, productBoundary_zero, productBoundary_one,
-          productBoundary_two]⟩
+    ofChartThree (c₂ m) rfl
+      (by rcases hm with rfl | rfl <;> decide)
+      (by rcases hm with rfl | rfl <;> decide)
+      (by rcases hm with rfl | rfl <;> decide)
+      (by rcases hm with rfl | rfl <;> decide)
+      (by rcases hm with rfl | rfl <;> decide)
+      (by rcases hm with rfl | rfl <;> decide)
   let h₂₄ := mk₂ 4 (Or.inl rfl)
   let h₂₅ := mk₂ 5 (Or.inr rfl)
   constructor

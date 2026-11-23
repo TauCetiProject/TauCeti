@@ -115,6 +115,12 @@ theorem shift_shift (l : DominantWeight n) (m m' : ℤ) :
     (l.shift m).shift m' = l.shift (m + m') := by
   ext i; simp [add_assoc]
 
+/-- Prefix sums of a shifted dominant weight `l.shift a` up to length `j ≤ n` shift by `j * a`. -/
+theorem prefixSum_shift (l : DominantWeight n) (a : ℤ) {j : ℕ} (hj : j ≤ n) :
+    prefixSum j (l.shift a).val = prefixSum j l.val + (j : ℤ) * a := by
+  rw [prefixSum_eq_sum_castLE hj, prefixSum_eq_sum_castLE hj]
+  simp [Finset.sum_add_distrib]
+
 /-- The **contragredient** (or **dual**) dominant weight `λ*ᵢ = -λₙ₋₁₋ᵢ`: negating and reversing
 an antitone integer sequence keeps it antitone. On representations this is passing to the dual
 module. -/
@@ -259,12 +265,25 @@ theorem isPolynomial_iff_zero_le_detShift (l : DominantWeight n) :
   | 0, _, _ => simp
   | _ + 1, _, h => exact h _
 
-/-- Subtracting its last entry makes any dominant weight polynomial. -/
-theorem isPolynomial_shift_neg_detShift (l : DominantWeight n) :
-    (l.shift (-l.detShift)).IsPolynomial := fun i => by
+/-- Shifting a dominant weight down by at most its last entry keeps it polynomial. -/
+theorem isPolynomial_shift_neg_of_le_detShift {l : DominantWeight n} {c : ℤ}
+    (hc : c ≤ l.detShift) : (l.shift (-c)).IsPolynomial := fun i => by
   have h := l.detShift_le i
   simp only [shift_apply]
   omega
+
+/-- Shifting a nonempty dominant weight down by `c` yields a polynomial weight exactly when
+`c ≤ l.detShift`. The hypothesis `n + 1` is not decoration: for `n = 0`, `IsPolynomial` holds
+vacuously while `l.detShift = 0`. -/
+theorem isPolynomial_shift_neg_iff_le_detShift {l : DominantWeight (n + 1)} {c : ℤ} :
+    (l.shift (-c)).IsPolynomial ↔ c ≤ l.detShift := by
+  rw [isPolynomial_iff_zero_le_detShift, detShift_shift]
+  omega
+
+/-- Subtracting its last entry makes any dominant weight polynomial. -/
+theorem isPolynomial_shift_neg_detShift (l : DominantWeight n) :
+    (l.shift (-l.detShift)).IsPolynomial :=
+  isPolynomial_shift_neg_of_le_detShift le_rfl
 
 /-- The entries of a dominant weight, truncated to `ℕ`, are still weakly decreasing. -/
 theorem toNat_antitone (l : DominantWeight n) : Antitone fun i => (l.val i).toNat :=

@@ -212,7 +212,7 @@ open CategoryTheory MonoidalCategory in
 `(rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ).ρ` is equivalent to the direct sum of
 `rationalWeylFDRep ℂ n ((weightOfShape n (ofPartition p.1.val)).shift (lam.detShift + μ.detShift))`
 indexed by `λ₀`-Yamanouchi semistandard tableaux of shape `μ₀`. -/
-theorem nonempty_equiv_fdrep_tensor_rationalWeyl (lam μ : DominantWeight n) :
+theorem nonempty_equiv_tensor_rationalWeylFDRep (lam μ : DominantWeight n) :
     Nonempty (Representation.Equiv
       (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ).ρ
       (Representation.directSum fun p :

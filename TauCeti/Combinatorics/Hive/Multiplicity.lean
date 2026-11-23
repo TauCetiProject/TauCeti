@@ -51,7 +51,8 @@ identifies integer hive counts with tensor-product multiplicities and invariant 
 * `TauCeti.Hive.finrank_invariants_eq_hiveCount`: dimension of `GL n ℂ`-invariants in
   `V_lam ⊗ V_μ ⊗ V_ν` equals `hiveCount ![lam.val, μ.val, ν.val]`.
 * `TauCeti.Hive.finrank_hom_two_std_std`, `TauCeti.Hive.finrank_invariants_two_std_checks`,
-  `TauCeti.Hive.finrank_hom_one`, `TauCeti.Hive.finrank_hom_zero`, and
+  `TauCeti.Hive.finrank_hom_rank_one`, `TauCeti.Hive.finrank_hom_rank_zero`,
+  `TauCeti.Hive.finrank_invariants_rank_zero`, and
   `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`: concrete rank-`0`, rank-`1`, and
   rank-`2` representation-theoretic and sharpness checks.
 
@@ -232,11 +233,7 @@ private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : 
   rw [hiveCount_productBoundary]
   split_ifs with hdet
   · set γ' := γ.shift (-(lam.detShift + μ.detShift))
-    have hγ' : γ'.IsPolynomial := by
-      rw [DominantWeight.isPolynomial_iff_zero_le_detShift]
-      cases n with
-      | zero => simp
-      | succ m => rw [DominantWeight.detShift_shift]; omega
+    have hγ' : γ'.IsPolynomial := DominantWeight.isPolynomial_shift_neg_of_le_detShift hdet
     have heq_iff (ν : Sub) : γ = w ν ↔ γ'.shape = ofPartition ν.val :=
       ⟨fun h => by
         have h' : γ' = weightOfShape n (ofPartition ν.val) := by simp [γ', h, w]
@@ -265,9 +262,8 @@ private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : 
       cases n with
       | zero => simp
       | succ m =>
-        have h0 := (DominantWeight.isPolynomial_iff_zero_le_detShift _).mp
-          (isPolynomial_weightOfShape (m + 1) (ofPartition ν.val))
-        rw [h, DominantWeight.detShift_shift]; omega
+        refine DominantWeight.isPolynomial_shift_neg_iff_le_detShift.mp ?_
+        simp [w, h]
     dsimp only [w] at hne'; simp only [hne', ↓reduceIte]
 
 /-- **The hive model of tensor-product multiplicities for `GL n ℂ`**: for all dominant weights
@@ -278,7 +274,7 @@ theorem finrank_hom_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
         rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) =
       hiveCount (productBoundary lam μ γ) := by
   classical
-  obtain ⟨he⟩ := nonempty_equiv_fdrep_tensor_rationalWeyl lam μ
+  obtain ⟨he⟩ := nonempty_equiv_tensor_rationalWeylFDRep lam μ
   rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he, Fintype.sum_sigma,
     ← sum_natCard_lrTableau_shift_eq_hiveCount lam μ γ]
   refine Finset.sum_congr rfl fun ν _ => ?_
@@ -293,6 +289,43 @@ theorem hiveCount_comm {n : ℕ} (l m p : DominantWeight n) :
   exact (Linear.homCongr ℂ (Iso.refl _)
     (β_ (rationalWeylFDRep ℂ n l) (rationalWeylFDRep ℂ n m))).finrank_eq
 
+/-- Reduces `Hom(𝟙, V_λ ⊗ V_μ ⊗ V_ν)` to `Hom(V_{ν*}, V_λ ⊗ V_μ)` by decomposing `V_λ ⊗ V_μ`
+into irreducibles `⊕_p V_σ`, evaluating `dim Hom(𝟙, V_σ ⊗ V_ν) = δ_{ν*, σ} = dim Hom(V_{ν*}, V_σ)`
+on each summand, and re-summing. -/
+private theorem finrank_hom_tensorUnit_tensor_eq {n : ℕ} (lam μ ν : DominantWeight n) :
+    Module.finrank ℂ (𝟙_ (FDRep ℂ (GL (Fin n) ℂ)) ⟶
+        rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ ⊗
+          rationalWeylFDRep ℂ n ν) =
+      Module.finrank ℂ (rationalWeylFDRep ℂ n ν.dual ⟶
+        rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) := by
+  classical
+  obtain ⟨i₀⟩ := nonempty_iso_tensorUnit_rationalWeylFDRep_zero ℂ n
+  rw [(Linear.homCongr ℂ i₀ (α_ _ _ _).symm).finrank_eq]
+  obtain ⟨he₁₂⟩ := nonempty_equiv_tensor_rationalWeylFDRep lam μ
+  -- Decompose `V_λ ⊗ V_μ ⊗ V_ν ≅ ⊕_p V_{σ(p)} ⊗ V_ν`.
+  have he₃ := (FDRep.tprodEquiv
+      (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) (rationalWeylFDRep ℂ n ν)).trans <|
+    (he₁₂.tprod (.refl _)).trans <| (Representation.tprodDirectSumLeftEquiv _ _).trans <|
+      Representation.directSumEquivCongr fun p =>
+        (FDRep.tprodEquiv (rationalWeylFDRep ℂ n
+          ((weightOfShape n (ofPartition p.fst.val)).shift (lam.detShift + μ.detShift)))
+          (rationalWeylFDRep ℂ n ν)).symm
+  -- Each summand satisfies `dim Hom(𝟙, V_σ ⊗ V_ν) = δ_{ν*, σ} = dim Hom(V_{ν*}, V_σ)`,
+  -- which re-sums to `dim Hom(V_{ν*}, V_λ ⊗ V_μ)`.
+  have hrot (σ : DominantWeight n) :
+      hiveCount (productBoundary σ ν 0) = if ν.dual = σ then 1 else 0 := by
+    have hb : productBoundary σ ν 0 = fun s => productBoundary 0 σ ν.dual (s + 1) := by
+      ext s i; fin_cases s <;> simp
+    rw [hb, hiveCount_rotate, hiveCount_productBoundary_zero_left]
+  have hterm (σ : DominantWeight n) :
+      Module.finrank ℂ (rationalWeylFDRep ℂ n 0 ⟶
+          rationalWeylFDRep ℂ n σ ⊗ rationalWeylFDRep ℂ n ν) =
+        Module.finrank ℂ (rationalWeylFDRep ℂ n ν.dual ⟶ rationalWeylFDRep ℂ n σ) := by
+    rw [finrank_hom_eq_hiveCount, hrot σ, finrank_hom_rationalWeylFDRep]
+  rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he₃]
+  refine (Finset.sum_congr rfl fun p _ => hterm _).trans ?_
+  exact (FDRep.finrank_hom_of_equiv_directSum _ _ _ he₁₂).symm
+
 /-- **The invariant form of the hive model for `GL n ℂ`**: for all dominant weights `λ, μ, ν` of
 `GL n ℂ`, the complex dimension of the space of `GL n ℂ`-invariants
 `𝟙_ (FDRep ℂ (GL (Fin n) ℂ)) ⟶ V_λ ⊗ V_μ ⊗ V_ν` equals the number of integer hives with cyclic
@@ -302,46 +335,31 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
         rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ ⊗
           rationalWeylFDRep ℂ n ν) =
       hiveCount ![lam.val, μ.val, ν.val] := by
-  classical
-  obtain ⟨i₀⟩ := nonempty_iso_tensorUnit_rationalWeylFDRep_zero ℂ n
-  rw [(Linear.homCongr ℂ i₀ (α_ _ _ _).symm).finrank_eq]
-  obtain ⟨he₁₂⟩ := nonempty_equiv_fdrep_tensor_rationalWeyl lam μ
-  have he₃ := (FDRep.tprodEquiv
-      (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) (rationalWeylFDRep ℂ n ν)).trans <|
-    (he₁₂.tprod (.refl _)).trans <| (Representation.tprodDirectSumLeftEquiv _ _).trans <|
-      Representation.directSumEquivCongr fun p =>
-        (FDRep.tprodEquiv (rationalWeylFDRep ℂ n
-          ((weightOfShape n (ofPartition p.fst.val)).shift (lam.detShift + μ.detShift)))
-          (rationalWeylFDRep ℂ n ν)).symm
-  have hrot (σ : DominantWeight n) :
-      hiveCount (productBoundary σ ν 0) = if ν.dual = σ then 1 else 0 := by
-    have hb : productBoundary σ ν 0 = fun s => productBoundary 0 σ ν.dual (s + 1) := by
-      ext s i; fin_cases s <;> simp
-    rw [hb, hiveCount_rotate, hiveCount_productBoundary_zero_left]
   have hdual : productBoundary lam μ ν.dual = ![lam.val, μ.val, ν.val] := by
     ext s i; fin_cases s <;> simp
-  rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he₃]
-  simp only [finrank_hom_eq_hiveCount, hrot, ← finrank_hom_rationalWeylFDRep ℂ]
-  rw [← FDRep.finrank_hom_of_equiv_directSum _ _ _ he₁₂, finrank_hom_eq_hiveCount, hdual]
+  rw [finrank_hom_tensorUnit_tensor_eq, finrank_hom_eq_hiveCount, hdual]
 
 /-! ### Concrete representation-theoretic and finite-alphabet checks -/
 
-/-- Rank-`0` check: on `GL 0 ℂ`, every intertwiner space `V_γ ⟶ V_λ ⊗ V_μ` and every trilinear
-invariant space `𝟙_ ⟶ V_λ ⊗ V_μ ⊗ V_ν` is one-dimensional, matching the unique empty hive. -/
-theorem finrank_hom_zero (lam μ γ ν : DominantWeight 0) :
+/-- Rank-`0` check: on `GL 0 ℂ`, every intertwiner space `V_γ ⟶ V_λ ⊗ V_μ` is one-dimensional,
+matching the unique empty hive. -/
+theorem finrank_hom_rank_zero (lam μ γ : DominantWeight 0) :
     Module.finrank ℂ (rationalWeylFDRep ℂ 0 γ ⟶
-        rationalWeylFDRep ℂ 0 lam ⊗ rationalWeylFDRep ℂ 0 μ) = 1 ∧
-      Module.finrank ℂ (𝟙_ (FDRep ℂ (GL (Fin 0) ℂ)) ⟶
+        rationalWeylFDRep ℂ 0 lam ⊗ rationalWeylFDRep ℂ 0 μ) = 1 := by
+  rw [finrank_hom_eq_hiveCount, hiveCount_rank_zero]
+
+/-- Rank-`0` invariant check: on `GL 0 ℂ`, every trilinear invariant space
+`𝟙_ ⟶ V_λ ⊗ V_μ ⊗ V_ν` is one-dimensional, matching the unique empty hive. -/
+theorem finrank_invariants_rank_zero (lam μ ν : DominantWeight 0) :
+    Module.finrank ℂ (𝟙_ (FDRep ℂ (GL (Fin 0) ℂ)) ⟶
         rationalWeylFDRep ℂ 0 lam ⊗ rationalWeylFDRep ℂ 0 μ ⊗
           rationalWeylFDRep ℂ 0 ν) = 1 := by
-  rw [finrank_hom_eq_hiveCount, finrank_invariants_eq_hiveCount, hiveCount_rank_zero,
-    hiveCount_rank_zero]
-  exact ⟨rfl, rfl⟩
+  rw [finrank_invariants_eq_hiveCount, hiveCount_rank_zero]
 
 open scoped Classical in
 /-- Rank-`1` check: on `GL 1 ℂ`, `Hom(V_g, V_a ⊗ V_b)` has dimension `1` when `g = a + b` and `0`
 otherwise. -/
-theorem finrank_hom_one (a b g : DominantWeight 1) :
+theorem finrank_hom_rank_one (a b g : DominantWeight 1) :
     Module.finrank ℂ (rationalWeylFDRep ℂ 1 g ⟶
         rationalWeylFDRep ℂ 1 a ⊗ rationalWeylFDRep ℂ 1 b) =
       if g = a + b then 1 else 0 := by
