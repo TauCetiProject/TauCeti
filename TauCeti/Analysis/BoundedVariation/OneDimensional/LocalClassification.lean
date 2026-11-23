@@ -119,9 +119,7 @@ private theorem measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero (e : E ≃�
     have hI : ball (e x) r ∩ Iio (e x) = (I : Set ℝ) := by
       rw [Real.ball_eq_Ioo, Set.Ioo_inter_Iio, min_eq_right (le_add_of_nonneg_right hr.le),
         Opens.coe_mk]
-    rw [← hI]
-    ext y
-    simp only [mem_preimage, mem_inter_iff, mem_ball, e.dist_map, mem_Iio, Set.mem_ofPred_eq]
+    rw [← hI, preimage_inter, e.preimage_ball, e.symm_apply_apply, ← Iio_def, preimage_ofPred_eq]
   have hmaps : MapsTo e.symm I
       (⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ : Opens E) := fun t ht => by
     have hmem : e.symm t ∈ ball x r ∩ {y | e y < e x} := by
@@ -198,8 +196,7 @@ theorem ae_eq_empty_or_univ_of_perimeter_ball_lt (hn : finrank ℝ E = 1) {r : �
     (hn.trans (Module.finrank_self ℝ).symm)
   set I : Opens ℝ := ⟨Ioo (e x - r) (e x + r), isOpen_Ioo⟩
   have hpre : e ⁻¹' I = ball x r := by
-    ext y
-    simp only [mem_preimage, I, Opens.coe_mk, ← Real.ball_eq_Ioo, mem_ball, e.dist_map]
+    rw [Opens.coe_mk, ← Real.ball_eq_Ioo, e.preimage_ball, e.symm_apply_apply]
   have hmaps : MapsTo e.symm I (⟨ball x r, isOpen_ball⟩ : Opens E) := fun t ht => by
     simp only [Opens.coe_mk]
     rw [← hpre]

@@ -77,7 +77,7 @@ forcing that difference to be `Hⁿ⁻¹`-null.
 * `TauCeti.euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero`:
   **Federer's theorem** in every dimension, `Hⁿ⁻¹((∂ᵉs ∩ Ω) \ ∂*s) = 0`.
 * `TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary` (and its finite-perimeter
-  specializations): `∂ᵉs ∩ Ω = ∂*s` up to an `Hⁿ⁻¹`-null set in every dimension.
+  specialization): `∂ᵉs ∩ Ω = ∂*s` up to an `Hⁿ⁻¹`-null set in every dimension.
 
 ## References
 
@@ -301,14 +301,5 @@ theorem essentialBoundary_inter_ae_eq_reducedBoundary_of_perimeter_ne_top
     (essentialBoundary μ s ∩ Ω : Set E) =ᵐ[μHE[finrank ℝ E - 1]] reducedBoundary μ Ω s :=
   essentialBoundary_inter_ae_eq_reducedBoundary (locallyIntegrableOn_indicator_const hs 1)
     fun _ _ hKΩ => ⟨Ω, hKΩ, by rwa [← perimeter_def]⟩
-
-/-- **Federer's structure theorem** for a set of finite perimeter in the whole space: if `s` is
-null-measurable and `P(s; ⊤) ≠ ∞`, then `∂ᵉs =ᵐ[μHE[n - 1]] ∂*s`, where `n = dim E` and `n - 1` is
-truncated natural subtraction (so `0 - 1 = 0` when `n = 0`). -/
-theorem essentialBoundary_ae_eq_reducedBoundary_top_of_perimeter_ne_top
-    (hs : NullMeasurableSet s μ) (hP : perimeter μ ⊤ s ≠ ∞) :
-    essentialBoundary μ s =ᵐ[μHE[finrank ℝ E - 1]] reducedBoundary μ ⊤ s := by
-  simpa using essentialBoundary_inter_ae_eq_reducedBoundary_of_perimeter_ne_top
-    (Ω := ⊤) (hs.mono Measure.restrict_le_self) hP
 
 end TauCeti

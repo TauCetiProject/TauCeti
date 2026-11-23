@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import TauCeti.Analysis.BoundedVariation.Poincare
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -169,18 +170,10 @@ theorem exists_min_div_closedBall_rpow_le_mul_perimeter_div (hn : 2 ≤ finrank 
       measure_congr (EventuallyEqSet.diff (μ.addHaar_closedBall_ae_eq_ball x r) .rfl)]
     exact min_measure_inter_measure_sdiff_rpow_le_perimeter hn hs
       (Ω := ⟨ball x r, isOpen_ball⟩) subset_rfl
-  have hexp : (n : ℝ) * q = ((n - 1 : ℕ) : ℝ) := by
-    have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast (zero_lt_two.trans_le hn).ne'
-    rw [Nat.cast_sub (one_le_two.trans hn), Nat.cast_one]
-    dsimp only [q]
-    field_simp
-  have hrpow_real : (r ^ n) ^ q = r ^ (n - 1) := by
-    calc (r ^ n) ^ q = (r ^ (n : ℝ)) ^ q := by rw [Real.rpow_natCast]
-      _ = r ^ ((n : ℝ) * q) := (Real.rpow_mul hr.le _ _).symm
-      _ = r ^ ((n - 1 : ℕ) : ℝ) := by rw [hexp]
-      _ = r ^ (n - 1) := Real.rpow_natCast r (n - 1)
   have hrpow : ENNReal.ofReal (r ^ n) ^ q = ENNReal.ofReal r ^ (n - 1) := by
-    rw [ENNReal.ofReal_rpow_of_nonneg (pow_nonneg hr.le n) hq.le, hrpow_real,
+    rw [ENNReal.ofReal_rpow_of_nonneg (pow_nonneg hr.le n) hq.le, ← Real.rpow_natCast_mul hr.le,
+      mul_comm, Real.rpow_mul_natCast hr.le,
+      Real.rpow_one_sub_inv_natCast_pow hr.le (zero_lt_two.trans_le hn).ne',
       ENNReal.ofReal_pow hr.le]
   have hden : μ (closedBall x r) ^ q =
       ENNReal.ofReal r ^ (n - 1) * μ (ball (0 : E) 1) ^ q := by

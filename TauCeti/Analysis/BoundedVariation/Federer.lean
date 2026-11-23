@@ -25,7 +25,7 @@ zero-dimensional Hausdorff / counting measure). By
 
 * `TauCeti.ae_hasDensityAt_of_mem_essentialBoundary`: `μHE[n - 1]`-almost every point of
   `∂ᵉs ∩ Ω` has density `1 / 2`;
-* `TauCeti.ae_hasDensityAt_zero_or_one_half_or_one` (and its finite-perimeter specializations):
+* `TauCeti.ae_hasDensityAt_zero_or_one_half_or_one` (and its finite-perimeter specialization):
   **Federer's `0`–`1/2`–`1` density theorem**, stating that at `μHE[n - 1]`-almost every point of
   `Ω`, `s` has density `0`, `1 / 2`, or `1`.
 
@@ -93,18 +93,6 @@ theorem ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_ne_top
       HasDensityAt μ s x 0 ∨ HasDensityAt μ s x (1 / 2) ∨ HasDensityAt μ s x 1 :=
   ae_hasDensityAt_zero_or_one_half_or_one (locallyIntegrableOn_indicator_const hs 1)
     fun _ _ hKΩ => ⟨Ω, hKΩ, by rwa [← perimeter_def]⟩
-
-/-- **Federer's `0`–`1/2`–`1` density theorem** for a set of finite perimeter in the whole space:
-if `s` is null-measurable and `P(s; ⊤) ≠ ∞`, then at `μHE[n - 1]`-almost every `x : E` the set `s`
-has density `0`, `1 / 2`, or `1`, where `n = dim E` and `n - 1` is truncated natural subtraction (so
-`0 - 1 = 0` when `n = 0`). -/
-theorem ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_top_ne_top
-    (hs : NullMeasurableSet s μ) (hP : perimeter μ ⊤ s ≠ ∞) :
-    ∀ᵐ x ∂μHE[finrank ℝ E - 1],
-      HasDensityAt μ s x 0 ∨ HasDensityAt μ s x (1 / 2) ∨ HasDensityAt μ s x 1 := by
-  filter_upwards [ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_ne_top (Ω := ⊤)
-    (hs.mono Measure.restrict_le_self) hP] with x hx
-  exact hx (Opens.mem_top x)
 
 end TauCeti
 
