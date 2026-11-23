@@ -61,8 +61,6 @@ construction and its loop and reconnection evaluations:
 ## Main results
 
 * `TauCeti.BrauerDiagram.isFraming_iff`: pointwise characterization of an arc framing.
-* `TauCeti.BrauerDiagram.isFraming_capCup`: `Equiv.swap (Sum.inr a) (Sum.inl b)` frames
-  `capCup a b`.
 * `TauCeti.BrauerDiagram.isFraming_framing`, `TauCeti.BrauerDiagram.exists_congr_permToBrauer_one`:
   every Brauer diagram is a boundary transport of `permToBrauer 1`.
 * `TauCeti.BrauerDiagram.exists_mul_sumCongr_mul_of_congr_permToBrauer_one_eq`: two boundary
@@ -125,19 +123,10 @@ theorem IsFraming.val_apply {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fi
   · exact hπ.val_inl _
   · exact hπ.val_inr _
 
-/-- The identity permutation frames the identity diagram. -/
-theorem isFraming_permToBrauer_one : (permToBrauer (1 : Equiv.Perm (Fin k))).IsFraming 1 :=
-  PerfectMatching.congr_refl _
-
 /-- `Equiv.Perm.sumCongr 1 σ` frames `permToBrauer σ`. -/
 theorem isFraming_permToBrauer (σ : Equiv.Perm (Fin k)) :
     (permToBrauer σ).IsFraming (Equiv.Perm.sumCongr 1 σ) := by
   simp [IsFraming, ← relabel_def]
-
-/-- The transposition `Equiv.swap (Sum.inr a) (Sum.inl b)` frames `capCup a b`. -/
-theorem isFraming_capCup (a b : Fin k) :
-    (capCup a b).IsFraming (Equiv.swap (Sum.inr a) (Sum.inl b)) := by
-  rw [isFraming_def, capCup_def]
 
 /-- Transporting a diagram along `ρ` multiplies its framings on the left by `ρ`. -/
 theorem IsFraming.congr {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}

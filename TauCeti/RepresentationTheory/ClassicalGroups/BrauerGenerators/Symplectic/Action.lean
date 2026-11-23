@@ -8,14 +8,15 @@ module
 public import TauCeti.Algebra.BrauerAlgebra.Generation
 public import TauCeti.Combinatorics.Brauer.SkewWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
--- Non-public: `BigOperators.Pi` supplies `Fintype.sum_ite_eq_off_pair` for the cap-cup
--- multiplication sum, `Matrix.Congruence` expands `(P * J * Qᵀ) i j` entrywise, and
--- `SymplecticGroup` supplies reindexing, entrywise, and multiplication identities for `Matrix.J`
--- in the reindexing, loop, and reconnection steps; `Associativity` and `WeightedAssociativity`
--- reassociate diagrams and match the loop counts of the two bracketings in the loop rule.
-import TauCeti.Algebra.BigOperators.Pi
+-- Non-public: `Data.Fintype.BigOperators` supplies
+-- `Fintype.sum_piFinset_eq_sum_filter_sum_sum_update` for the cap-cup multiplication sum,
+-- `Matrix.Congruence` expands `(P * J * Qᵀ) i j` entrywise, and `SymplecticGroup` supplies
+-- reindexing, entrywise, and multiplication identities for `Matrix.J` in the reindexing, loop,
+-- and reconnection steps; `Associativity` and `WeightedAssociativity` reassociate diagrams and
+-- match the loop counts of the two bracketings in the loop rule.
 import TauCeti.Combinatorics.Brauer.Associativity
 import TauCeti.Combinatorics.Brauer.WeightedAssociativity
+import TauCeti.Data.Fintype.BigOperators
 import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -263,10 +264,7 @@ theorem symplecticActionMatrix_permToBrauer_one :
     (permToBrauer 1).symplecticActionMatrix R ι =
       (1 : Matrix (Fin k → ι ⊕ ι) (Fin k → ι ⊕ ι) R) := by
   ext v u
-  rw [symplecticActionMatrix_eq_skewArcProd,
-    skewArcProd_permToBrauer_one (symplecticArcWeight_swap R u v)]
-  simp only [symplecticArcWeight_inl_inr, Fintype.prod_boole, Matrix.one_apply]
-  simp [funext_iff, eq_comm]
+  simp [symplecticActionMatrix_permToBrauer_apply, Matrix.one_apply, Equiv.Perm.one_def]
 
 /-- **Entries of the matrix of a cap-cup diagram** on two distinct strands `a ≠ b`: the `(v, u)`
 entry is `-(J (u a) (u b) * J (v a) (v b))` when `v` agrees with `u` off `{a, b}`, and `0`
@@ -428,10 +426,37 @@ theorem symplecticActionMatrix_capCup_mul_apply {m : Type*} {a b : Fin k} (hab :
       ∑ x : ι ⊕ ι, ∑ y : ι ⊕ ι,
         -(Matrix.J ι R x y * Matrix.J ι R (v a) (v b)) *
           M (Function.update (Function.update v a x) b y) u := by
+  let s : Fin k → Finset (ι ⊕ ι) := fun r => if r = a ∨ r = b then Finset.univ else {v r}
+  have hfilter : Finset.univ.filter (fun m : Fin k → ι ⊕ ι => ∀ t, t ≠ a → t ≠ b → v t = m t) =
+      Fintype.piFinset s := by
+    ext m
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fintype.mem_piFinset, s]
+    refine ⟨fun hm r => ?_, fun hm t hta htb => ?_⟩
+    · split_ifs with hr
+      · exact Finset.mem_univ _
+      · obtain ⟨hra, hrb⟩ := not_or.mp hr
+        exact Finset.mem_singleton.mpr (hm r hra hrb).symm
+    · have := hm t
+      simp [hta, htb] at this
+      exact this.symm
+  have hpin : ({h ∈ Fintype.piFinset s | h a = v a ∧ h b = v b} : Finset (Fin k → ι ⊕ ι)) =
+      {v} := by
+    ext h
+    simp only [Finset.mem_filter, Fintype.mem_piFinset, Finset.mem_singleton, s]
+    refine ⟨fun ⟨hs, ha, hb⟩ => funext fun r => ?_, ?_⟩
+    · by_cases hra : r = a
+      · exact hra ▸ ha
+      · by_cases hrb : r = b
+        · exact hrb ▸ hb
+        · simpa [hra, hrb] using hs r
+    · rintro rfl
+      refine ⟨fun r => ?_, rfl, rfl⟩
+      split_ifs <;> simp
   rw [Matrix.mul_apply]
-  simp only [symplecticActionMatrix_capCup_apply R ι hab, ite_mul, zero_mul]
-  rw [Fintype.sum_ite_eq_off_pair hab v]
-  simp [Function.update_of_ne hab]
+  simp only [symplecticActionMatrix_capCup_apply R ι hab, ite_mul, zero_mul, ← Finset.sum_filter,
+    hfilter, Fintype.sum_piFinset_eq_sum_filter_sum_sum_update hab s (a := v a) (b := v b)
+      (by simp [s]) (by simp [s]), hpin, Finset.sum_singleton]
+  simp [s, Function.update_of_ne hab]
 
 /-- Right-multiplying any matrix by `(capCup a b).symplecticActionMatrix` sums over the two middle
 labels `(x, y)` at `a` and `b`, fixing all other coordinates to agree with the input column `u`. -/

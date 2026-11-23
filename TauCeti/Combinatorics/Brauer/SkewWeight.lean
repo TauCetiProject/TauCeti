@@ -138,14 +138,6 @@ theorem skewArcProd_eq_of_isFraming (D : BrauerDiagram k)
   rw [skewArcProd, hdecomp, rawArcProd_mul_prodCongrLeft hW, rawArcProd_mul_sumCongr]
   rfl
 
-/-- On the identity diagram, the signed arc product is `∏ r, W (Sum.inl r) (Sum.inr r)`. -/
-theorem skewArcProd_permToBrauer_one {W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R}
-    (hW : ∀ x y, W y x = -W x y) :
-    (permToBrauer (1 : Equiv.Perm (Fin k))).skewArcProd W =
-      ∏ r : Fin k, W (Sum.inl r) (Sum.inr r) := by
-  rw [skewArcProd_eq_of_isFraming _ hW isFraming_permToBrauer_one]
-  simp
-
 /-- **The signed arc product of a permutation diagram**: `sign σ` times the product of the through
 weights `W (Sum.inl r) (Sum.inr (σ r))`. -/
 theorem skewArcProd_permToBrauer (σ : Equiv.Perm (Fin k))
@@ -164,7 +156,7 @@ theorem skewArcProd_capCup {a b : Fin k} (hab : a ≠ b)
     (capCup a b).skewArcProd W =
       -(W (Sum.inl a) (Sum.inl b) * W (Sum.inr a) (Sum.inr b) *
         ∏ r ∈ (Finset.univ.erase a).erase b, W (Sum.inl r) (Sum.inr r)) := by
-  rw [skewArcProd_eq_of_isFraming _ hW (isFraming_capCup a b),
+  rw [skewArcProd_eq_of_isFraming _ hW (((capCup a b).isFraming_def _).mpr (capCup_def a b).symm),
     Equiv.Perm.sign_swap Sum.inr_ne_inl, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
     neg_one_mul]
   congr 1

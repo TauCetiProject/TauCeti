@@ -6,22 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Pi
+public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
-public import Mathlib.Data.Fintype.Pi
-import Mathlib.Data.Fintype.Prod
+import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Int.Cast.Basic
 
 /-!
-# Finite products and sums against `Pi.single` and `Function.update`
+# Finite products and sums against `Pi.single`
 
 A product `∏ j, f j ^ e j` whose exponent vector `e` is `Pi.single i a` is the single power
 `f i ^ a`. For exponent vectors `α : ι → ℕ` over a finite type, this file records how the total
 degree `∑ j, α j` controls the decomposition of `α` into unit vectors `Pi.single i 1`, and proves
 an induction principle over the exponent vectors of a fixed degree `d`: starting from the pure
 power `Pi.single i d`, every such vector is reached by moving one unit at a time from the
-coordinate `i` to another coordinate. For general dependent functions over a finite index type,
-summing over all functions agreeing with a fixed function `v` outside two distinct coordinates
-`a ≠ b` reduces to the double sum over the two free values at `a` and `b`.
+coordinate `i` to another coordinate.
 
 ## Main results
 
@@ -29,8 +27,6 @@ summing over all functions agreeing with a fixed function `v` outside two distin
   or sum of `Pi.mulSingle i (Pi.mulSingle j (f i j))` / `Pi.single i (Pi.single j (f i j))` equals
   `f`.
 * `Fintype.prod_pow_pi_single`: `∏ j, f j ^ Pi.single i a j = f i ^ a`.
-* `Fintype.sum_ite_eq_off_pair`: sum over dependent functions agreeing with `v` outside two
-  distinct coordinates `a ≠ b` equals the double sum over the values at `a` and `b`.
 * `Fintype.sum_intCast_sub_pi_single_mul`: lowering the integer weight at `i` by `c` lowers
   `∑ j, χ j g j` by `c g i`.
 * `Pi.exists_eq_add_single_one`: an exponent vector with a positive `i`-th entry is `γ + e_i`.
@@ -131,30 +127,6 @@ theorem Pi.induction_on_single_of_sum_eq [Fintype ι] [DecidableEq ι] {d : ℕ}
     refine step β j hji hα (ih (by simp [sum_add_distrib, hα]) ?_)
     simp [hji.symm] at hm ⊢
     omega
-
-/-- Summing over dependent functions agreeing with `v` outside `{a, b}` (`a ≠ b`), with all other
-terms equal to `0`, is taking the double sum over the two free values at `a` and `b`. -/
-theorem Fintype.sum_ite_eq_off_pair [Fintype ι] [DecidableEq ι] {α : ι → Type*}
-    [∀ i, Fintype (α i)] {M : Type*} [AddCommMonoid M] {a b : ι} (hab : a ≠ b) (v : ∀ i, α i)
-    [DecidablePred fun m : ∀ i, α i => ∀ r, r ≠ a → r ≠ b → v r = m r]
-    (F : (∀ i, α i) → M) :
-    (∑ m : ∀ i, α i, if ∀ r, r ≠ a → r ≠ b → v r = m r then F m else 0) =
-      ∑ x : α a, ∑ y : α b, F (Function.update (Function.update v a x) b y) := by
-  let e : α a × α b ≃ {m : ∀ i, α i // ∀ r, r ≠ a → r ≠ b → v r = m r} :=
-    { toFun p := ⟨Function.update (Function.update v a p.1) b p.2, fun r hra hrb => by
-        simp [hra, hrb]⟩
-      invFun m := (m.val a, m.val b)
-      left_inv p := by simp [hab]
-      right_inv m := Subtype.ext <| funext fun r => by
-        rcases eq_or_ne r b with rfl | hrb
-        · simp
-        rcases eq_or_ne r a with rfl | hra
-        · simp [hab]
-        · simpa [hra, hrb] using m.property r hra hrb }
-  rw [← Finset.sum_filter,
-    Finset.sum_subtype (p := fun m => ∀ r, r ≠ a → r ≠ b → v r = m r) _ (fun _ => by simp),
-    ← e.sum_comp, ← Finset.univ_product_univ, Finset.sum_product]
-  rfl
 
 namespace TauCeti
 
