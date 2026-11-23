@@ -46,6 +46,10 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
 * `SchwartzMap.eLpNorm_gaussian`, `SchwartzMap.eLpNorm_gaussian_top`: its `Lᵖ` norms
   `(π / (p b.re))^(n/(2p))`, `0 < p < ∞`, and its `L^∞` norm `1`.
+* `SchwartzMap.eLpNorm_fourier_gaussian`: the `L^q` norms
+  `π^(n/2) (π b.re q)^(-n/(2q)) ‖b‖^(n/q - n/2)`, `0 < q < ∞`, of its Fourier transform. For fixed
+  `b.re` they grow with `‖b‖` exactly when `q < 2`, while the norms of the Gaussian itself depend
+  only on `b.re`.
 * `Function.hasTemperateGrowth_exp_neg_mul_norm_sq`: the real Gaussian `x ↦ exp (-c ‖x‖²)`,
   `0 ≤ c`, has temperate growth, so it is a Fourier multiplier symbol on tempered distributions.
 -/
@@ -201,6 +205,53 @@ theorem eLpNorm_gaussian_top [MeasurableSpace V] [OpensMeasurableSpace V] {b : �
   rw [← Lp.norm_toLp _ hm]
   exact Lp.norm_le_norm_top_of_ae_eq_of_continuousAt hm.coeFn_toLp
     (gaussian hb).continuous.continuousAt
+
+open MeasureTheory in
+open scoped ENNReal in
+/-- **The Lebesgue norms of the Fourier transform of the Gaussian.** For `0 < b.re` and
+`0 < q < ∞`, the Fourier transform of the Gaussian `exp (-b ‖x‖²)` on a real inner product space
+of dimension `n` has `L^q` norm `π^(n/2) (π b.re q)^(-n/(2q)) ‖b‖^(n/q - n/2)`. Indeed it is
+`(π / b)^(n/2)` times the Gaussian of parameter `π² / b`, whose real part is `π² b.re / ‖b‖²`.
+For `b = π` this is `q^(-n/(2q))`, the norm of the Gaussian itself, which is its own Fourier
+transform. -/
+theorem eLpNorm_fourier_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
+    {b : ℂ} (hb : 0 < b.re) {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ (⊤ : ℝ≥0∞)) :
+    eLpNorm (𝓕 ⇑(gaussian hb : 𝓢(V, ℂ))) q volume =
+      ENNReal.ofReal (Real.pi ^ ((Module.finrank ℝ V : ℝ) / 2) /
+        (Real.pi * b.re * q.toReal) ^ ((Module.finrank ℝ V : ℝ) / (2 * q.toReal)) *
+          ‖b‖ ^ ((Module.finrank ℝ V : ℝ) / q.toReal - (Module.finrank ℝ V : ℝ) / 2)) := by
+  have hnb : 0 < ‖b‖ := norm_pos_iff.2 fun h ↦ by simp [h] at hb
+  have hq' : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  have hre : ((Real.pi : ℂ) ^ 2 / b).re = Real.pi ^ 2 * b.re / ‖b‖ ^ 2 := by
+    rw [div_re, normSq_eq_norm_sq]
+    simp [← ofReal_pow]
+  have hb' : 0 < ((Real.pi : ℂ) ^ 2 / b).re := by
+    rw [hre]
+    positivity
+  -- The Fourier transform is `(π / b)^(n/2)` times the Gaussian of parameter `π² / b`.
+  have hF : 𝓕 ⇑(gaussian hb : 𝓢(V, ℂ)) =
+      ((Real.pi : ℂ) / b) ^ ((Module.finrank ℝ V : ℂ) / 2) • ⇑(gaussian hb' : 𝓢(V, ℂ)) := by
+    ext w
+    rw [coe_gaussian, fourier_gaussian_innerProductSpace hb, Pi.smul_apply, gaussian_apply,
+      smul_eq_mul]
+    congr 2
+    ring
+  have hc : ‖((Real.pi : ℂ) / b) ^ ((Module.finrank ℝ V : ℂ) / 2)‖ =
+      (Real.pi / ‖b‖) ^ ((Module.finrank ℝ V : ℝ) / 2) := by
+    have : ((Module.finrank ℝ V : ℂ) / 2) = (((Module.finrank ℝ V : ℝ) / 2 : ℝ) : ℂ) := by
+      rw [ofReal_div, ofReal_natCast, ofReal_ofNat]
+    rw [this, norm_cpow_real, norm_div, norm_real, Real.norm_of_nonneg Real.pi_pos.le]
+  rw [hF, eLpNorm_const_smul, eLpNorm_gaussian hb' hq0 hq, ← ofReal_norm, hc,
+    ← ENNReal.ofReal_mul (by positivity), hre]
+  congr 1
+  -- Collect the powers of `‖b‖`.
+  have hbase : Real.pi / (Real.pi ^ 2 * b.re / ‖b‖ ^ 2 * q.toReal) =
+      ‖b‖ ^ (2 : ℝ) / (Real.pi * b.re * q.toReal) := by
+    rw [Real.rpow_two]
+    field_simp
+  rw [hbase, Real.div_rpow Real.pi_pos.le hnb.le, Real.div_rpow (by positivity) (by positivity),
+    ← Real.rpow_mul hnb.le, Real.rpow_sub hnb]
+  field_simp
 
 end SchwartzMap
 

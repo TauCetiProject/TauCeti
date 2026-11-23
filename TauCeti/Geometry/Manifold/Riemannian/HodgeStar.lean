@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!
@@ -62,6 +63,9 @@ model vectors (`TauCeti.contMDiffAt_continuousAlternatingMap_apply`).
 * `TauCeti.RoughForm.hodgeStar_hodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
 * `TauCeti.RoughForm.hodgeStar_ofFunction`, `TauCeti.RoughForm.hodgeStar_smul_riemannianVolumeForm`:
   `⋆f = f vol` and `⋆(f vol) = f`.
+* `TauCeti.SmoothForm.coe_hodgeStar_ofFunction_one`,
+  `TauCeti.SmoothForm.exists_eq_funSMulₗ_hodgeStar_ofFunction_one`: `⋆1 = vol`, and every smooth
+  top-degree form is a smooth function times `⋆1`.
 * `TauCeti.RoughForm.hodgeStar_mextDeriv_ofFunction`: `⋆df = ι_(grad f) vol`.
 * `TauCeti.RoughForm.hodgeStar_hodgeStar_of_even`,
   `TauCeti.RoughForm.alternatingFormInner_hodgeStar_left`: in an even middle degree the star is
@@ -638,6 +642,29 @@ theorem hodgeStar_funSMulₗ (o : Manifold.Orientation I M (Fin m)) (hkl : k + l
     hodgeStar o hkl (funSMulₗ f α) = funSMulₗ f (hodgeStar o hkl α) :=
   Subtype.ext <| funext fun x ↦ by
     simp only [coe_hodgeStar, RoughForm.hodgeStar_apply, coe_funSMulₗ, map_smul]
+
+/-- The Hodge star of the constant function `1` is the Riemannian volume form, `⋆1 = vol`. -/
+theorem coe_hodgeStar_ofFunction_one (o : Manifold.Orientation I M (Fin m)) (hm : 0 + m = m) :
+    (hodgeStar o hm (ofFunction (ContMDiffMap.const 1 : C^∞⟮I, M; ℝ⟯)) : RoughForm I M ℝ m) =
+      riemannianVolumeForm o := by
+  rw [coe_hodgeStar, coe_ofFunction, RoughForm.hodgeStar_ofFunction]
+  funext y
+  rw [ContMDiffMap.const_apply, one_smul]
+
+/-- **Every top-degree smooth form is a smooth function times the volume form** `⋆1`: on a
+manifold of dimension `m = k`, a smooth `k`-form `α` is `g ⋆1` for the smooth function `g = ⋆α`. -/
+theorem exists_eq_funSMulₗ_hodgeStar_ofFunction_one (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 0 = m) (hlk : 0 + k = m) (α : SmoothForm I M ℝ k) :
+    ∃ g : C^∞⟮I, M; ℝ⟯,
+      α = funSMulₗ g (hodgeStar o hlk (ofFunction (ContMDiffMap.const 1))) := by
+  have hβ := RoughForm.eq_ofFunction (hodgeStar o hkl α).val
+  let g : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ (hodgeStar o hkl α).val y 0,
+    isSmoothForm_ofFunction_iff.1 (hβ ▸ (hodgeStar o hkl α).isSmoothForm)⟩
+  have hg : hodgeStar o hkl α = ofFunction g := Subtype.ext (by rw [coe_ofFunction]; exact hβ)
+  refine ⟨g, ?_⟩
+  have h2 := hodgeStar_hodgeStar o hkl hlk α
+  rw [mul_zero, pow_zero, one_smul] at h2
+  rw [← h2, hg, ofFunction_eq_funSMulₗ_one, hodgeStar_funSMulₗ]
 
 /-- The smooth zero-form `⋆(α ∧ ⋆β)`, linear in `β`, representing the pointwise inner product
 `⟨α, β⟩` of smooth `k`-forms on an oriented Riemannian `(k + l)`-manifold. -/

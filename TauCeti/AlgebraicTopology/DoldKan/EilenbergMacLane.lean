@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.SingleHomology
 public import TauCeti.AlgebraicTopology.DoldKan.HomotopyGroups
+import TauCeti.Algebra.Homology.ModuleCat.Single
+import TauCeti.AlgebraicTopology.DoldKan.FunctorGamma
 
 /-!
 # Simplicial Eilenberg–MacLane modules
@@ -15,14 +17,20 @@ The Dold–Kan image of the complex with a module `A` in degree `n` and zero els
 is a functorial simplicial Eilenberg–MacLane module. Its normalized Moore complex is
 canonically `A[n]`. At the zero vertex every `πₖ` with `k ≠ n` is a singleton; in
 particular the module is connected when `n` is positive. For positive `n`, the group
-`πₙ` is identified with `A`, naturally in coefficient maps. No identification of `π₀`
-with `A` is given here for the degree-zero model.
+`πₙ` is identified with `A`, naturally in coefficient maps, and for `n = 0` so is the set
+`π₀` of path components.
 
 The coefficient identification uses the native Dold–Kan counit, followed by the
 canonical homology identification for a single complex. Thus it fixes a specific
 identification, rather than just asserting the existence of an abstract isomorphism.
 All statements here concern combinatorial homotopy groups of the underlying Kan
 complex; no comparison with topological homotopy groups is asserted.
+
+The functor preserves monomorphisms, so the model of a submodule is a simplicial submodule of
+the model of the ambient module, and for a directed family of submodules exhausting a module the
+models of the members exhaust its model. The simplices are the finite sums over the summands of
+the splitting of `Γ(A[n])`, on each of which the map induced by `A → B` is the map itself
+(`AlgebraicTopology.DoldKan.Γ₀.map_app_on_summand`).
 
 ## Main definitions
 
@@ -31,12 +39,24 @@ complex; no comparison with topological homotopy groups is asserted.
 * `TauCeti.DoldKanEilenbergMacLane.normalizationIso`: the natural counit `NΓ(A[n]) ≅ A[n]`.
 * `TauCeti.DoldKanEilenbergMacLane.piAddEquiv`: the coefficient-normalized identification
   `πₙ₊₁(Γ(A[n+1]), 0) ≃+ A`.
+* `TauCeti.DoldKanEilenbergMacLane.piZeroEquiv`: the coefficient-normalized identification
+  `π₀(Γ(A[0]), 0) ≃ A`.
+
+## Main statements
+
+* `TauCeti.DoldKanEilenbergMacLane.subsingleton_pi`: the homotopy sets outside degree `n` vanish.
+* `TauCeti.DoldKanEilenbergMacLane.injective_map_app`: injective coefficient maps induce
+  injective maps of simplices.
+* `TauCeti.DoldKanEilenbergMacLane.exists_mem_range_map_app`: the model of a module is the union
+  of the models of a directed family of submodules exhausting it.
 
 ## References
 
 * P. G. Goerss and J. F. Jardine, *Simplicial Homotopy Theory*, Chapter III, §2.
+* A. Dold, *Homology of symmetric products and other functors of complexes*, Ann. of Math. 68
+  (1958), 54–80.
 * J. P. May, *Simplicial Objects in Algebraic Topology*, §17, for the Moore-complex
-  homotopy comparison used here.
+  homotopy comparison used here, and §23.
 -/
 
 public noncomputable section
@@ -207,6 +227,135 @@ theorem subsingleton_pi (A : ModuleCat.{v} R) (n k : ℕ) (h : k ≠ n) :
   | succ k =>
     exact (Additive.ofMul.trans (ChainComplex.doldKanPiAddEquivHomology
       ((single (ModuleCat R) (ComplexShape.down ℕ) n).obj A) k).toEquiv).subsingleton
+
+/-- The set of path components `π₀(Γ(A[0]), 0)` is the coefficient module, using the Moore
+comparison and the Dold–Kan counit. -/
+def piZeroEquiv (A : ModuleCat.{v} R) :
+    SSet.KanComplex.π 0 (simplicialSet A 0) (basepoint A 0) ≃ A :=
+  (ChainComplex.doldKanPiZeroEquivHomology
+    ((single (ModuleCat R) (ComplexShape.down ℕ) 0).obj A)).trans
+      (singleObjHomologySelfIso (ComplexShape.down ℕ) 0 A).toLinearEquiv.toEquiv
+
+/-- Compute the coefficient of a path component by the Moore comparison, the normalization
+counit and the canonical identification of single-complex homology. -/
+lemma piZeroEquiv_apply (A : ModuleCat.{v} R)
+    (x : SSet.KanComplex.π 0 (simplicialSet A 0) (basepoint A 0)) :
+    piZeroEquiv A x = (singleObjHomologySelfIso (ComplexShape.down ℕ) 0 A).hom
+      (homologyMap ((normalizationIso (R := R) 0).hom.app A) 0
+        (piZeroEquivNormalizedMooreComplexHomology
+          ((doldKanEilenbergMacLane R 0).obj A) x)) := by
+  rw [normalizationIso_hom_app, piZeroEquiv, Equiv.trans_apply, LinearEquiv.coe_toEquiv,
+    ChainComplex.doldKanPiZeroEquivHomology_apply]
+  -- `erw`: the two sides elaborate `ComplexShape.down ℕ` with different `Add ℕ` instances
+  erw [Iso.toLinearEquiv_apply]
+
+/-- The identification `π₀(Γ(A[0]), 0) ≃ A` sends the component of the zero vertex to `0`. -/
+@[simp]
+lemma piZeroEquiv_one (A : ModuleCat.{v} R) : piZeroEquiv A 1 = 0 :=
+  (congrArg (singleObjHomologySelfIso (ComplexShape.down ℕ) 0 A).hom
+    (ChainComplex.doldKanPiZeroEquivHomology_one _)).trans (map_zero _)
+
+/-- The coefficient identification of the path components is natural. -/
+lemma piZeroEquiv_map {A B : ModuleCat.{v} R} (f : A ⟶ B)
+    (x : SSet.KanComplex.π 0 (simplicialSet A 0) (basepoint A 0)) :
+    piZeroEquiv B (SSet.KanComplex.π.map (map f 0) (map_basepoint f _) x) =
+      f (piZeroEquiv A x) := by
+  simp only [map_def, Functor.comp_map, piZeroEquiv, Equiv.trans_apply,
+    LinearEquiv.coe_toEquiv]
+  -- `erw`: the class lives over `(single ⋙ Γ).obj A ⋙ forget _`, which is
+  -- `Γ.obj (single.obj A) ⋙ forget _` only after unfolding `Functor.comp`
+  erw [ChainComplex.doldKanPiZeroEquivHomology_map]
+  exact ConcreteCategory.congr_hom
+    (singleObjHomologySelfIso_hom_naturality (ComplexShape.down ℕ) 0 f)
+    (ChainComplex.doldKanPiZeroEquivHomology _ x)
+
+end DoldKanEilenbergMacLane
+
+/-- The simplicial Eilenberg–MacLane module functor preserves monomorphisms: `A ↦ A[n]`
+preserves finite limits, and `Γ` is an equivalence. -/
+instance preservesMonomorphisms_doldKanEilenbergMacLane (R : Type u) [Ring R] (n : ℕ) :
+    (doldKanEilenbergMacLane.{u, v} R n).PreservesMonomorphisms := by
+  have : (Idempotents.DoldKan.Γ : ChainComplex (ModuleCat.{v} R) ℕ ⥤ _).PreservesMonomorphisms :=
+    Functor.preservesMonomorphisms_of_adjunction
+      (Abelian.DoldKan.equivalence (A := ModuleCat.{v} R)).toAdjunction
+  exact Functor.preservesMonomorphisms_comp _ _
+
+namespace DoldKanEilenbergMacLane
+
+variable {R : Type u} [Ring R]
+
+/-- An injective coefficient map induces injective maps on simplices: the simplicial
+Eilenberg–MacLane module of a submodule is a simplicial submodule of that of the ambient
+module. -/
+theorem injective_map_app (n : ℕ) {A B : ModuleCat.{v} R} (f : A ⟶ B)
+    (hf : Function.Injective f) (m : SimplexCategoryᵒᵖ) :
+    Function.Injective (((doldKanEilenbergMacLane R n).map f).app m) := by
+  have : Mono f := (ModuleCat.mono_iff_injective f).2 hf
+  exact (ModuleCat.mono_iff_injective _).1 inferInstance
+
+section DirectedUnion
+
+variable {ι : Type*} [Nonempty ι] {B : ModuleCat.{v} R} (N : ι → Submodule R B)
+
+open AlgebraicTopology.DoldKan in
+/-- The simplicial Eilenberg–MacLane module of `B` is the union of those of the members of a
+directed family of submodules exhausting `B`: every simplex comes from some member. -/
+theorem exists_mem_range_map_app (n : ℕ) (hN : Directed (· ≤ ·) N)
+    (htop : ⨆ i, N i = ⊤) (Δ : SimplexCategoryᵒᵖ)
+    (x : ((doldKanEilenbergMacLane R n).obj B).obj Δ) :
+    ∃ i, x ∈ Set.range
+      (((doldKanEilenbergMacLane R n).map (X := ModuleCat.of R (N i)) (Y := B)
+        (ModuleCat.ofHom (N i).subtype)).app Δ) := by
+  -- Work with `Γ₀`, the functor underlying the model, whose splitting describes the simplices.
+  let K := (single (ModuleCat.{v} R) (ComplexShape.down ℕ) n).obj B
+  -- The images of the models of the `N i` form a directed family of submodules.
+  let r (i : ι) : Submodule R (((doldKanEilenbergMacLane R n).obj B).obj Δ) :=
+    LinearMap.range (((doldKanEilenbergMacLane R n).map (X := ModuleCat.of R (N i)) (Y := B)
+      (ModuleCat.ofHom (N i).subtype)).app Δ).hom
+  have hle {i j : ι} (h : N i ≤ N j) : r i ≤ r j := by
+    rintro _ ⟨z, rfl⟩
+    refine ⟨((doldKanEilenbergMacLane R n).map
+      (ModuleCat.ofHom (Submodule.inclusion h))).app Δ z, ?_⟩
+    rw [← Submodule.subtype_comp_inclusion (N i) (N j) h, ModuleCat.ofHom_comp, Functor.map_comp,
+      NatTrans.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply]
+  have hr : Directed (· ≤ ·) r := fun i j ↦
+    let ⟨k, hik, hjk⟩ := hN i j
+    ⟨k, hle hik, hle hjk⟩
+  suffices h : ⨆ i, r i = ⊤ from
+    (Submodule.mem_iSup_of_directed r hr).1 (h ▸ Submodule.mem_top)
+  -- It suffices that the quotient by their supremum vanishes on every summand of the splitting
+  -- `Γ₀.splitting` of the model, on which the map induced by `N i → B` is `(N i)[n] → B[n]`.
+  rw [← Submodule.ker_mkQ (⨆ i, r i), LinearMap.ker_eq_top]
+  -- The model is by definition `single _ _ n ⋙ Idempotents.DoldKan.Γ`, and `Idempotents.DoldKan.Γ`
+  -- is defined as `Γ₀`: its simplices are those of `Γ₀.obj K`, and its maps are those of `Γ₀`.
+  have hmap (i : ι) : ((doldKanEilenbergMacLane R n).map (X := ModuleCat.of R (N i)) (Y := B)
+      (ModuleCat.ofHom (N i).subtype)).app Δ = (Γ₀.map ((single (ModuleCat.{v} R)
+        (ComplexShape.down ℕ) n).map (ModuleCat.ofHom (N i).subtype))).app Δ := rfl
+  have h0 : (ModuleCat.ofHom (⨆ i, r i).mkQ : (Γ₀.obj K).obj Δ ⟶ ModuleCat.of R (_ ⧸ ⨆ i, r i)) =
+      0 := by
+    refine (Γ₀.splitting K).hom_ext' _ _ fun a ↦ ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
+    obtain ⟨i, y', rfl⟩ :=
+      HomologicalComplex.exists_single_map_subtype_f_apply_eq (ComplexShape.down ℕ) N n hN htop _ y
+    -- On the summand indexed by `a`, the map induced by `N i → B` is `(N i)[n] → B[n]`
+    -- (`Γ₀.map_app_on_summand`, transported along `hmap`).
+    have hy : ((doldKanEilenbergMacLane R n).map (X := ModuleCat.of R (N i)) (Y := B)
+        (ModuleCat.ofHom (N i).subtype)).app Δ (((Γ₀.splitting ((single (ModuleCat.{v} R)
+          (ComplexShape.down ℕ) n).obj (ModuleCat.of R (N i)))).cofan Δ).inj a y') =
+        ((Γ₀.splitting K).cofan Δ).inj a (((single (ModuleCat.{v} R) (ComplexShape.down ℕ) n).map
+          (ModuleCat.ofHom (N i).subtype)).f _ y') := by
+      rw [hmap]
+      exact ConcreteCategory.congr_hom (Γ₀.map_app_on_summand
+        ((single (ModuleCat.{v} R) (ComplexShape.down ℕ) n).map (ModuleCat.ofHom (N i).subtype))
+          Δ a) y'
+    -- Composition in `ModuleCat` is composition of linear maps, so the goal says that the class
+    -- modulo `⨆ i, r i` of the image of `y` in the summand indexed by `a` vanishes.
+    change (⨆ i, r i).mkQ (((Γ₀.splitting K).cofan Δ).inj a (((single (ModuleCat.{v} R)
+      (ComplexShape.down ℕ) n).map (ModuleCat.ofHom (N i).subtype)).f _ y')) = 0
+    refine (Submodule.mkQ_apply _ _).trans ((Submodule.Quotient.mk_eq_zero _).2 ?_)
+    exact Submodule.mem_iSup_of_mem i (LinearMap.mem_range.2 ⟨_, hy⟩)
+  exact congrArg ModuleCat.Hom.hom h0
+
+end DirectedUnion
 
 end DoldKanEilenbergMacLane
 

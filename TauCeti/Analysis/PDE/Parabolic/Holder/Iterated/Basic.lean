@@ -78,8 +78,9 @@ derivative in `x` of the `r`-th iterated derivative within `[a, b]` in `t`
 * `TauCeti.ParabolicCkHolderSpace.norm_eq`,
   `TauCeti.ParabolicCkHolderSpace.timeEHolderNorm_mixedDerivL_le` and
   `TauCeti.ParabolicCkHolderSpace.norm_timeSliceL_le_norm_mixedDerivL_add_timeEHolderNorm`: the
-  norm as a sum of field norms and the two-sided comparison of the time-slice norms with the
-  temporal `(1 + α) / 2`-seminorms.
+  norm as a sum of field norms, over the `TauCeti.parabolicDerivPairs k`, at most `(k + 1)²` pairs
+  (`TauCeti.card_parabolicDerivPairs_le`), and the two-sided comparison of the time-slice norms
+  with the temporal `(1 + α) / 2`-seminorms.
 
 ## References
 
@@ -171,6 +172,10 @@ theorem parabolicDerivPairs_two : parabolicDerivPairs 2 = {(0, 0), (0, 1), (0, 2
   ext ⟨r, m⟩
   simp only [mem_parabolicDerivPairs, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
   omega
+
+/-- There are at most `(k + 1)²` pairs `(r, m)` with `2 r + m ≤ k`. -/
+theorem card_parabolicDerivPairs_le (k : ℕ) : (parabolicDerivPairs k).card ≤ (k + 1) ^ 2 :=
+  (Finset.card_filter_le _ _).trans_eq (by rw [Finset.card_product, Finset.card_range, sq])
 
 variable (k α E F) in
 /-- Bounded parabolic Hölder maps of order `k` on a nondegenerate closed time slab
@@ -518,11 +523,20 @@ theorem coe_timeSliceL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     ⇑(timeSliceL r m f x) = fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) :=
   funext (timeSliceL_apply f h x)
 
+/-- The fields of top order `2 r + m = k` are parabolically `α`-Hölder, with the norm of their
+Hölder field as constant. -/
+theorem holderWith_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m = k) :
+    HolderWith ‖mixedDerivHolderL r m f‖₊ α
+      (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) := by
+  have hf := (mixedDerivHolderL r m f).holderWith_nnnorm
+  rwa [← HolderSpace.coe_toBoundedContinuousFunction,
+    toBoundedContinuousFunction_mixedDerivHolderL f h] at hf
+
 /-- The fields of top order `2 r + m = k` are parabolically `α`-Hölder. -/
 theorem memHolder_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m = k) : MemHolder α (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) := by
-  rw [← toBoundedContinuousFunction_mixedDerivHolderL f h]
-  exact (mixedDerivHolderL r m f).memHolder
+    (h : 2 * r + m = k) : MemHolder α (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) :=
+  ⟨_, holderWith_mixedDerivL f h⟩
 
 /-- The time slices of the fields of order `2 r + m = k - 1` are `(1 + α) / 2`-Hölder uniformly in
 space, with constant the norm of the family of slices. -/
@@ -578,7 +592,8 @@ private theorem iteratedDerivWithin_toFun (f : ParabolicCkHolderSpace k α E F h
       hd'.derivWithin (uniqueDiffOn_Icc hab s hs)]
     simp only [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le hs]
 
-/-- The recorded spatial derivatives of `D_t^r u` form a Taylor series up to order `k - 2 r`. -/
+/-- The recorded spatial derivatives of `D_t^r u` form a Taylor series up to order `k - 2 r`: the
+fields `D_t^r D_x^m u` on a time slice are the spatial derivatives of `D_t^r u`. -/
 theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) (r : ℕ)
     (t : Icc a b) :
     HasFTaylorSeriesUpTo ((k - 2 * r : ℕ) : WithTop ℕ∞)
@@ -592,7 +607,7 @@ theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F ha
     (continuous_id.prodMk continuous_const))
 
 /-- The spatial derivatives of `D_t^r u` are the fields `D_t^r D_x^m u`. -/
-private theorem iteratedFDeriv_mixedDerivL_zero (f : ParabolicCkHolderSpace k α E F hab)
+theorem iteratedFDeriv_mixedDerivL_zero (f : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m ≤ k) (x : E) (t : Icc a b) :
     iteratedFDeriv ℝ m (fun y ↦ (mixedDerivL r 0 f (slabMk y t)).curry0) x =
       mixedDerivL r m f (slabMk x t) :=
@@ -666,6 +681,14 @@ theorem mixedDerivL_zero_zero_apply (f : ParabolicCkHolderSpace k α E F hab)
     (p : slab (E := E) a b) (v : Fin 0 → E) : mixedDerivL 0 0 f p v = f p := by
   rw [Subsingleton.elim v 0, ← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply]
 
+/-- The order-zero field is the underlying map, read as a `0`-multilinear map. -/
+theorem mixedDerivL_zero_zero_eq (f : ParabolicCkHolderSpace k α E F hab)
+    (p : slab (E := E) a b) :
+    mixedDerivL 0 0 f p = (continuousMultilinearCurryFin0 ℝ E F).symm (f p) :=
+  ContinuousMultilinearMap.ext fun v ↦ by
+    rw [mixedDerivL_zero_zero_apply, continuousMultilinearCurryFin0_symm_apply,
+      ContinuousMultilinearMap.uncurry0_apply]
+
 /-- **The fields are the mixed derivatives.** For `2 r + m ≤ k`, the field `D_t^r D_x^m u` at
 `(x, t)` is the `m`-th iterated Fréchet derivative in `x` of the `r`-th iterated derivative of `u`
 in time within `[a, b]`. -/
@@ -708,6 +731,15 @@ theorem coe_add (f g : ParabolicCkHolderSpace k α E F hab) : ⇑(f + g) = f + g
 theorem coe_smul (c : ℝ) (f : ParabolicCkHolderSpace k α E F hab) : ⇑(c • f) = c • ⇑f := by
   ext p
   simp [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, -mixedDerivL_zero_zero_apply]
+
+@[simp]
+theorem coe_neg (f : ParabolicCkHolderSpace k α E F hab) : ⇑(-f) = -⇑f := by
+  ext p
+  simp [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, -mixedDerivL_zero_zero_apply]
+
+@[simp]
+theorem coe_sub (f g : ParabolicCkHolderSpace k α E F hab) : ⇑(f - g) = f - g := by
+  rw [sub_eq_add_neg, coe_add, coe_neg, sub_eq_add_neg]
 
 /-- Forgetting the derivatives is a continuous linear map into bounded continuous maps on the
 slab, obtained by reading the order-zero field as an `F`-valued map. -/
@@ -947,6 +979,11 @@ theorem norm_spatialFDerivBCF_le (f : ParabolicCkHolderSpace k α E F hab) :
     ‖spatialFDerivBCF f‖ ≤ ‖f‖ :=
   (norm_spatialFDerivBCF f).trans_le (f.norm_mixedDerivL_le 0 1)
 
+/-- Each value of each field is bounded by the norm. -/
+theorem norm_mixedDerivL_apply_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
+    (p : slab (E := E) a b) : ‖mixedDerivL r m f p‖ ≤ ‖f‖ :=
+  ((mixedDerivL r m f).norm_coe_le_norm p).trans (f.norm_mixedDerivL_le r m)
+
 /-- Each family of time slices is bounded by the norm. -/
 theorem norm_timeSliceL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) :
     ‖timeSliceL r m f‖ ≤ ‖f‖ := by
@@ -1049,6 +1086,33 @@ theorem norm_timeSliceL_le_norm_mixedDerivL_add_timeEHolderNorm
         (eHolderNorm_le_timeEHolderNorm _ _ x)
   · rw [timeSliceL_of_ne h, zero_apply, norm_zero]
     positivity
+
+/-- The contribution `‖D_t^r D_x^m u‖ + ‖time slices‖ + ‖Hölder field‖` of the pair `(r, m)` to the
+norm is at most `2 B + C`, where `B` bounds the field and `C` is a Hölder constant of its time
+slices (when `2 r + m + 1 = k`) or of the field itself (when `2 r + m = k`). -/
+theorem norm_add_norm_timeSliceL_add_norm_mixedDerivHolderL_le
+    (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ} {B : ℝ} {C : ℝ≥0}
+    (hB : ‖mixedDerivL r m f‖ ≤ B)
+    (hs : 2 * r + m + 1 = k → ∀ x : E,
+      HolderWith C ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t))
+    (hh : 2 * r + m = k → HolderWith C α (mixedDerivL r m f : slab (E := E) a b → _)) :
+    ‖mixedDerivL r m f‖ + (‖timeSliceL r m f‖ + ‖mixedDerivHolderL r m f‖) ≤ 2 * B + C := by
+  have hB0 : 0 ≤ B := le_trans (by positivity) hB
+  by_cases h₁ : 2 * r + m + 1 = k
+  · rw [mixedDerivHolderL_of_ne (by omega), _root_.zero_apply, norm_zero]
+    have := norm_timeSliceL_le_of_holderWith f h₁ (hs h₁)
+    linarith
+  · rw [timeSliceL_of_ne h₁, _root_.zero_apply, norm_zero]
+    by_cases h₂ : 2 * r + m = k
+    · have hc : ⇑(mixedDerivHolderL r m f) = ⇑(mixedDerivL r m f) :=
+        funext (mixedDerivHolderL_apply f h₂)
+      have := HolderSpace.norm_le_of_norm_le_of_holderWith (norm_nonneg (mixedDerivL r m f))
+        (f := mixedDerivHolderL r m f)
+        (fun p ↦ by rw [mixedDerivHolderL_apply f h₂]; exact (mixedDerivL r m f).norm_coe_le_norm p)
+        (by rw [hc]; exact hh h₂)
+      linarith
+    · rw [mixedDerivHolderL_of_ne h₂, _root_.zero_apply, norm_zero]
+      linarith [C.coe_nonneg]
 
 /-! ### Completeness -/
 
