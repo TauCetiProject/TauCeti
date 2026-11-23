@@ -271,7 +271,7 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
       rw [hKs, Set.disjoint_union_right, Set.disjoint_iUnion₂_right]
       exact ⟨hLi i, fun k hk => hB i k hi.ge hk⟩)
     (fun i j hij x ⟨hxi, hxj⟩ => by
-      have hij : i.1 ≠ j.1 := fun h => hij (Subtype.ext h)
+      have hij : i.val ≠ j.val := fun h => hij (Subtype.ext h)
       rw [hKs]
       rcases TauCeti.mem_intrinsicInterior_or_of_mem hPv hri hfr hxi with
         h | h | ⟨k, hk, -, hxk⟩
@@ -367,6 +367,7 @@ theorem exists_subdivision (P : ι → Set E) (hPc : ∀ i, IsCompact (P i))
     locallyFinite_convexHull_of_finite_restrict hPv hPlf (L := ⊥) ?_ (fun i => (hKP i).2)
       fun s hs => .inr ((hKf' s hs).imp fun _ => And.right)⟩
   intro x
-  exact ⟨univ, Filter.univ_mem, Set.finite_empty.subset fun σ _ => (Set.notMem_empty σ.1 σ.2).elim⟩
+  exact ⟨univ, Filter.univ_mem, Set.finite_empty.subset fun σ _ =>
+      (Set.notMem_empty σ.val σ.property).elim⟩
 
 end Geometry.SimplicialComplex

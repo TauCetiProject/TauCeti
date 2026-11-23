@@ -98,40 +98,6 @@ open scoped Laplacian ContDiff Topology Distributions
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The potential `P = |α|² / 4` of a continuous field whose section has unit modulus at infinity
-is bounded above. -/
-private theorem exists_forall_potential_le (hx : Continuous x)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ M, ∀ z, x z 2 ^ 2 + x z 3 ^ 2 ≤ M := by
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have := hxi 2; have := hxi 3; fun_prop
-  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1 (hlim.eventually (ge_mem_nhds (by norm_num : (1 : ℝ) < 2)))
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hPc.continuousOn
-  refine ⟨max M 1, fun z ↦ ?_⟩
-  by_cases hz : z ∈ K
-  · exact (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hM z hz).trans (le_max_left _ _))
-  · have h2 : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 2 := hKc hz
-    linarith [le_max_right M 1]
-
-/-- The potential `P = |α|² / 4` of a field whose section has unit modulus at infinity is
-bounded, nonnegative, and at least `1 / 8` outside some ball: the hypotheses of the Schrödinger
-solve. -/
-private theorem exists_memLp_top_potential_and_le (hx : Continuous x)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ R : ℝ, MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ volume ∧
-      (∀ᵐ z ∂volume, 0 ≤ x z 2 ^ 2 + x z 3 ^ 2) ∧
-      ∀ᵐ z ∂(volume : Measure ℂ), R < ‖z‖ → 1 / 8 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have := hxi 2; have := hxi 3; fun_prop
-  obtain ⟨M, hM⟩ := exists_forall_potential_le hx hlim
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  refine ⟨R, memLp_top_of_bound hPc.aestronglyMeasurable M (ae_of_all _ fun z ↦ ?_),
-    ae_of_all _ fun z ↦ by positivity, ae_of_all _ fun z hz ↦ (hR z hz).le⟩
-  rw [Real.norm_of_nonneg (by positivity)]
-  exact hM z
-
 /-- Where the section vanishes to order `k`, `‖α‖ ≤ C ‖z - a‖ ^ k`, the potential
 `P = |α|² / 4` vanishes to order `2k`. -/
 private theorem exists_eventually_potential_le {a : ℂ} {k : ℕ}
@@ -314,7 +280,7 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
         ∫ z, ((ρ z : ℂ) * (c / (z - a) ^ k) + h z) *
           ((Δ φ z - (x z 2 ^ 2 + x z 3 ^ 2) * φ z : ℝ) : ℂ) = 0 := by
   set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
-  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_potential_and_le hx hlim
+  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_sq_add_sq_and_le hx hlim
   set η₀ : ℂ → ℂ := fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k)
   set g : ℂ → ℂ := fun z ↦ Δ η₀ z - P z * η₀ z
   have hg2 : MemLp g 2 volume := memLp_laplacian_sub_mul_principalPart hx hα hρ hρc hρa c
@@ -347,7 +313,7 @@ bounded. -/
 private theorem memLp_top_apply (hx : Continuous x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {i : Fin 4}
     (hi : i = 2 ∨ i = 3) : MemLp (fun z ↦ x z i) ⊤ volume := by
-  obtain ⟨M, hM⟩ := exists_forall_potential_le hx hlim
+  obtain ⟨M, hM⟩ := exists_forall_sq_add_sq_le hx hlim
   have hxi : Continuous fun z ↦ x z i := by fun_prop
   refine memLp_top_of_bound hxi.aestronglyMeasurable (M + 1) (ae_of_all _ fun z ↦ ?_)
   rw [Real.norm_eq_abs]
@@ -474,7 +440,7 @@ private theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
       (fun z ↦ (h z).im) ∈ realSobolevFunctions ℂ 2 2 ∧
       ∀ z, Δ h z = ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) * h z - g z := by
   have hxi (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) := contDiff_euclidean.mp hx i
-  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_potential_and_le hx.continuous hlim
+  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_sq_add_sq_and_le hx.continuous hlim
   obtain ⟨h, hhs, hh₁, hh₂, he⟩ :=
     exists_contDiff_re_im_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq
       (((hxi 2).pow 2).add ((hxi 3).pow 2)) hP hP₀ (by norm_num : (0 : ℝ) < 1 / 8) hPa hgs hg2

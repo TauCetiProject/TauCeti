@@ -36,12 +36,15 @@ precomposition with multiplication. By the universal property of Kähler differe
 
 - `Derivation.traceDerivOfBasis_eq`: independence of the basis.
 - `Derivation.traceLin_smul_D`: `traceLin D (c • D a) = traceDeriv D a c`.
+- `Derivation.traceLin_D`: `traceLin D (d a) = D (Tr(a))`.
+- `Derivation.traceLin_smul_map`: `traceLin D` on `b • map η` is `Tr(b)` times the Kähler lift of
+  `D` at `η`.
 
 -/
 
 public section
 
-open Matrix Algebra TauCeti.Algebra
+open Matrix Algebra TauCeti.Algebra TensorProduct
 
 namespace Derivation
 
@@ -103,6 +106,22 @@ lemma traceDerivForm_one_right [DecidableEq m] (X : Matrix m m R) :
   simp only [traceDerivForm, Matrix.one_apply]
   refine Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ ?_
   split_ifs <;> simp
+
+/-- `Tr(1 · D(Y)) = D(Tr(Y))`. -/
+@[simp]
+lemma traceDerivForm_one_left [DecidableEq m] (Y : Matrix m m R) :
+    traceDerivForm D (1 : Matrix m m R) Y = D Y.trace := by
+  simp only [traceDerivForm, Matrix.trace, diag, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [Matrix.one_apply_ne' hj])
+    (fun h ↦ (h (Finset.mem_univ _)).elim)]
+  simp
+
+/-- For a derivation `D : R → R` into `R` itself, `traceDerivForm D X Y` is the matrix trace of
+`X * Y.map D`. -/
+lemma traceDerivForm_eq_trace_mul (D : Derivation k R R) (X : Matrix m n R) (Y : Matrix n m R) :
+    traceDerivForm D X Y = (X * Y.map D).trace := by
+  simp [traceDerivForm_def, Matrix.trace, diag, Matrix.mul_apply]
 
 /-- `Tr(X · D(c · 1)) = Tr(X) • D(c)`. -/
 lemma traceDerivForm_scalar_right [DecidableEq m] (X : Matrix m m R) (c : R) :
@@ -215,6 +234,13 @@ lemma traceDeriv_algebraMap (r : R) (c : B) :
   rw [traceDeriv_def, traceDerivOfBasis_def, leftMulMatrix_algebraMap,
     traceDerivForm_scalar_right, trace_eq_matrix_trace (Module.Free.chooseBasis R B)]
 
+/-- Evaluating the trace derivation of `a` at `1` differentiates the algebraic trace of `a`. -/
+@[simp]
+lemma traceDeriv_one_right (a : B) : traceDeriv D a 1 = D (trace R B a) := by
+  classical
+  rw [traceDeriv_def, traceDerivOfBasis_def, map_one, traceDerivForm_one_left,
+    trace_eq_matrix_trace (Module.Free.chooseBasis R B)]
+
 end Derivation
 
 namespace Derivation
@@ -297,8 +323,35 @@ lemma traceLin_smul_D (a c : B) :
     traceLin D (c • KaehlerDifferential.D k B a) = traceDeriv D a c := by
   rw [traceLin_smul, Derivation.liftKaehlerDifferential_comp_D, traceDerivation_apply]
 
+/-- **The trace of an exact differential is the derivative of the trace**:
+`traceLin D (d a) = D (Tr(a))`. -/
 @[simp]
-lemma traceLin_D (a : B) : traceLin D (KaehlerDifferential.D k B a) = traceDeriv D a 1 := by
-  rw [← traceLin_smul_D, one_smul]
+lemma traceLin_D (a : B) : traceLin D (KaehlerDifferential.D k B a) = D (trace R B a) := by
+  rw [← one_smul B (KaehlerDifferential.D k B a), traceLin_smul_D, traceDeriv_one_right]
+
+/-- On a differential pulled back from `R`, the trace acts on the coefficient by `Algebra.trace`. -/
+lemma traceLin_smul_D_algebraMap (r : R) (c : B) :
+    traceLin D (c • KaehlerDifferential.D k B (algebraMap R B r)) = trace R B c • D r := by
+  rw [traceLin_smul_D, traceDeriv_algebraMap]
+
+/-- On a scalar multiple of a differential pulled back from `R`, `traceLin D` applies
+`Algebra.trace R B` to the scalar factor and `D.liftKaehlerDifferential` to the base form. -/
+@[simp]
+theorem traceLin_smul_map (b : B) (η : Ω[R⁄k]) :
+    traceLin (B := B) D (b • KaehlerDifferential.map k k R B η) =
+      Algebra.trace R B b • D.liftKaehlerDifferential η := by
+  have h : traceLin (B := B) D ∘ₗ (LinearMap.lsmul B Ω[B⁄k] b).restrictScalars R ∘ₗ
+        KaehlerDifferential.map k k R B =
+      Algebra.trace R B b • D.liftKaehlerDifferential :=
+    Derivation.liftKaehlerDifferential_unique _ _ <| Derivation.ext fun r ↦ by
+      simp [traceDeriv_algebraMap]
+  exact congr($h η)
+
+/-- On pure tensors, `traceLin D` composed with `KaehlerDifferential.mapBaseChange` acts as
+`Algebra.trace R B` on the first factor and `D.liftKaehlerDifferential` on the second. -/
+theorem traceLin_mapBaseChange_tmul (b : B) (η : Ω[R⁄k]) :
+    traceLin (B := B) D (KaehlerDifferential.mapBaseChange k R B (b ⊗ₜ η)) =
+      Algebra.trace R B b • D.liftKaehlerDifferential η := by
+  rw [KaehlerDifferential.mapBaseChange_tmul, traceLin_smul_map]
 
 end Derivation
