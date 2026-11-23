@@ -80,6 +80,11 @@ public section
 
 open CategoryTheory TopologicalSpace AlgebraicGeometry
 
+/-- The image of a set under a composite of morphisms of schemes is the image of its image. -/
+theorem AlgebraicGeometry.Scheme.Hom.image_comp {X Y Z : Scheme} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (s : Set X) : (f ≫ g) '' s = g '' (f '' s) := by
+  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
+
 namespace TauCeti.AlgebraicGeometry
 
 universe u
@@ -202,9 +207,11 @@ theorem isContractedComponent_const_iff [Subsingleton S] (P : PointedPrestableFa
     (σ : S ⟶ V) (hσ : σ ≫ q = 𝟙 S) {E : Set P.total} :
     (const P σ hσ).IsContractedComponent E ↔ E ∈ irreducibleComponents P.total := by
   refine and_iff_left_of_imp fun _ ↦ ?_
-  -- The map of `const P σ hσ` is `P.toBase ≫ σ`; its image factors through the one-point base.
+  -- The map of `const P σ hσ` is `P.toBase ≫ σ` by definition; its image factors through the
+  -- one-point base. `rw [const_map]` is not used: the rewritten map would have source `P.total`
+  -- while `E` lives in `(const P σ hσ).curve.total`, which is `P.total` only definitionally.
   have : ((P.toBase ≫ σ) '' E).Subsingleton := by
-    rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
+    rw [Scheme.Hom.image_comp]
     exact Set.subsingleton_of_subsingleton.image _
   exact this
 

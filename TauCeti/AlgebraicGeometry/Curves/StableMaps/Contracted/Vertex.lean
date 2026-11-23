@@ -75,10 +75,12 @@ source curve. -/
 theorem isContractedVertex_const (P : PointedPrestableFamily (Spec (.of K)) n)
     (σ : Spec (.of K) ⟶ V) (hσ : σ ≫ q = 𝟙 _) (v : P.dualGraph.Vertex) :
     (const P σ hσ).IsContractedVertex v := by
-  -- The map of `const P σ hσ` is `P.toBase ≫ σ`; the image factors through the point `Spec K`.
+  -- The map of `const P σ hσ` is `P.toBase ≫ σ` by definition and its curve is `P`; the image
+  -- factors through the point `Spec K`. `rw [const_map]` is not used: the dual-graph vertex `v`
+  -- depends on the curve, so the rewrite would change the type of the set being mapped.
   have : (((P.total.singularLocus K).blowupToBase ≫ P.toBase ≫ σ) ''
       (P.total.dualGraphVertexEquiv P.markingPoint v : Set _)).Subsingleton := by
-    rw [← Category.assoc, Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
+    rw [← Category.assoc, Scheme.Hom.image_comp]
     exact Set.subsingleton_of_subsingleton.image _
   exact this
 
@@ -89,10 +91,12 @@ private theorem isContractedVertex_postcomp_iff_image {r : W ⟶ Spec (.of K)} (
     (F.postcomp h hh).IsContractedVertex v ↔
       (h '' (((F.curve.total.singularLocus K).blowupToBase ≫ F.map) ''
         (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _))).Subsingleton := by
-  -- The source curve of `F.postcomp h hh` is that of `F`, and its map is `F.map ≫ h`.
+  -- The source curve of `F.postcomp h hh` is that of `F`, and its map is `F.map ≫ h`
+  -- (`postcomp_curve`, `postcomp_map`); `change` is used because the vertex `v` depends on the
+  -- curve, so rewriting with these lemmas would change the type of the set being mapped.
   change (((F.curve.total.singularLocus K).blowupToBase ≫ F.map ≫ h) ''
     (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton ↔ _
-  rw [← Category.assoc, Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
+  rw [← Category.assoc, Scheme.Hom.image_comp]
 
 variable {F} in
 /-- Postcomposition with a morphism of targets contracts every vertex the map contracts. -/
