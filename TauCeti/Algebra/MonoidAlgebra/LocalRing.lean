@@ -16,7 +16,6 @@ import TauCeti.Algebra.CharP.LocalRing
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
-import Mathlib.RepresentationTheory.Invariants
 import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.PGroupInvariants
@@ -251,27 +250,14 @@ theorem isLocalHom_augmentation_of_isPGroup (hp : ¬IsUnit (p : R)) (hG : IsPGro
   have : CharP (ResidueField R) p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr <| by
     rw [← map_natCast (residue R), residue_eq_zero_iff]
     exact hp
-  -- A lift `u` of a left inverse of the reduction of `x` modulo the maximal ideal.
+  -- The reduction of `x` has a left inverse in the finite-dimensional algebra `k[G]`, so it is a
+  -- unit there, and units of `R[G]` are detected modulo the maximal ideal.
+  have := IsArtinianRing.of_finite (ResidueField R) (MonoidAlgebra (ResidueField R) G)
   obtain ⟨ū, hū⟩ := exists_mul_eq_one_of_augmentation_ne_zero hG
     (x := mapRingHom G (residue R) x) (by
       rw [augmentation_mapRingHom]
       exact (hx.map (residue R)).ne_zero)
-  obtain ⟨u, rfl⟩ : ∃ u, mapRingHom G (residue R) u = ū := by
-    rw [coe_mapRingHom]
-    exact MonoidAlgebra.map_surjective _ residue_surjective ū
-  -- Right multiplication by `x` is onto modulo the maximal ideal, so it is bijective.
-  let θ : (Unit → MonoidAlgebra R G) →ₗ[MonoidAlgebra R G] (Unit → MonoidAlgebra R G) :=
-    LinearMap.pi fun i ↦ (LinearMap.toSpanSingleton _ _ x).comp (LinearMap.proj i)
-  have hθ (z : Unit → MonoidAlgebra R G) (i : Unit) : θ z i = z i * x := by simp [θ]
-  obtain ⟨hinj, hsurj⟩ := bijective_of_forall_exists_mapRingHom_residue_eq θ fun y ↦
-    ⟨fun i ↦ y i * u, fun i ↦ by
-      rw [hθ, map_mul, map_mul, mul_assoc, hū, mul_one]⟩
-  obtain ⟨z, hz⟩ := hsurj 1
-  have hzx : z () * x = 1 := by simpa [hθ] using congrFun hz ()
-  have hxz : x * z () = 1 := by
-    simpa using congrFun (hinj (a₁ := fun _ ↦ x * z ()) (a₂ := 1)
-      (funext fun i ↦ by rw [hθ, hθ, mul_assoc, hzx, Pi.one_apply, one_mul, mul_one])) ()
-  exact ⟨⟨x, z (), hxz, hzx⟩, rfl⟩
+  exact (isUnit_map_iff (mapRingHom G (residue R)) x).mp (isUnit_iff_exists_inv'.mpr ⟨ū, hū⟩)
 
 end FinitePGroup
 
