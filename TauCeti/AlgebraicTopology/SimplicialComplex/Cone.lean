@@ -81,7 +81,7 @@ theorem mem_cone_iff {σ : Finset (α ⊕ PUnit)} :
     refine ⟨hσ, hleft, ?_⟩
     by_cases hright : σ.toRight = ∅
     · exact Or.inl hright
-    · exact Or.inr (Finset.nonempty_iff_ne_empty.mpr hright)
+    · exact Or.inr (Finset.ne_empty_iff_nonempty.mp hright)
 
 /-- A finite set tagged into the left summand is a face of the cone exactly when it is a face of
 the base complex. -/

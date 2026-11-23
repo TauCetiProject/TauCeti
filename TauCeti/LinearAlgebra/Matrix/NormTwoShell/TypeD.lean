@@ -150,23 +150,24 @@ theorem mem_normTwoShell_cartanMatrix_D_iff {a : Fin n → ℤ} :
 squared length two: a classical root corresponds to its coefficients in the simple roots, and a
 vector of the norm-two shell of `CartanMatrix.D n` to its classical coordinates. -/
 def typeDNormTwoShellEquiv : TypeDRoot n ≃ (CartanMatrix.D n).normTwoShell where
-  toFun x := ⟨typeDSimpleRootCoordinates n hn x.1, by
+  toFun x := ⟨typeDSimpleRootCoordinates n hn x.val, by
     rw [mem_normTwoShell_cartanMatrix_D_iff hn,
       typeDSimpleRootMatrix_mulVec_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x)]
-    exact x.2⟩
-  invFun a := ⟨typeDSimpleRootMatrix n hn *ᵥ a.1, (mem_normTwoShell_cartanMatrix_D_iff hn).mp a.2⟩
+    exact x.property⟩
+  invFun a := ⟨typeDSimpleRootMatrix n hn *ᵥ a.val, (mem_normTwoShell_cartanMatrix_D_iff hn).mp
+      a.property⟩
   left_inv x :=
     Subtype.ext (typeDSimpleRootMatrix_mulVec_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x))
-  right_inv a := Subtype.ext (typeDSimpleRootCoordinates_typeDSimpleRootMatrix_mulVec hn a.1)
+  right_inv a := Subtype.ext (typeDSimpleRootCoordinates_typeDSimpleRootMatrix_mulVec hn a.val)
 
 @[simp]
 theorem coe_typeDNormTwoShellEquiv_apply (x : TypeDRoot n) :
-    (typeDNormTwoShellEquiv hn x : Fin n → ℤ) = typeDSimpleRootCoordinates n hn x.1 :=
+    (typeDNormTwoShellEquiv hn x : Fin n → ℤ) = typeDSimpleRootCoordinates n hn x.val :=
   (rfl)
 
 @[simp]
 theorem coe_typeDNormTwoShellEquiv_symm_apply (a : (CartanMatrix.D n).normTwoShell) :
-    ((typeDNormTwoShellEquiv hn).symm a : Fin n → ℤ) = typeDSimpleRootMatrix n hn *ᵥ a.1 :=
+    ((typeDNormTwoShellEquiv hn).symm a : Fin n → ℤ) = typeDSimpleRootMatrix n hn *ᵥ a.val :=
   (rfl)
 
 /-- **The root of `Dₙ` with index `k` is the coroot with index `k` of the pinned root datum**

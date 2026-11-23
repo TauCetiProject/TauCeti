@@ -235,7 +235,7 @@ theorem tangentRepresentation_mem_orthogonal_orbitTangent
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)) :
     tangentRepresentation hd g u ∈ (hσ.symplecticFormAt x).orthogonal
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) := by
-  have : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  have : ContMDiffConstSMul I' ∞ G M := ContMDiffSMul.contMDiffConstSMul I
   exact SymplecticForm.apply_mem_orthogonal (ρ := (tangentRepresentation hd).toRepresentation)
     (hσ.symplecticFormAt_tangentRepresentation hσG hd)
     (fun g _ hv ↦ tangentRepresentation_mem_orbitTangent_fundamental hd g hv) g hu
@@ -249,7 +249,7 @@ def symplecticSliceRepresentation :
     stabilizer G x →*
       hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x ≃ₗ[ℝ]
         hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x :=
-  haveI : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  haveI : ContMDiffConstSMul I' ∞ G M := ContMDiffSMul.contMDiffConstSMul I
   (hσ.symplecticFormAt x).reducedSpaceRepresentation
     (tangentAut fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x)
     (hσ.isSymplectomorphism_tangentAut hσG
@@ -267,7 +267,7 @@ theorem symplecticSliceRepresentation_mk (g : stabilizer G x)
       Submodule.Quotient.mk
         ⟨tangentRepresentation
           (fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x) g u,
-          hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g u.2⟩ := by
+          hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g u.property⟩ := by
   rw [symplecticSliceRepresentation, SymplecticForm.reducedSpaceRepresentation_apply_mk]
   simp only [tangentAut_apply]
 
@@ -280,7 +280,7 @@ theorem symplecticSliceRepresentation_symm_mk (g : stabilizer G x)
       Submodule.Quotient.mk
         ⟨tangentRepresentation
           (fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x)
-          g⁻¹ u, hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g⁻¹ u.2⟩ := by
+          g⁻¹ u, hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g⁻¹ u.property⟩ := by
   rw [LinearEquiv.symm_apply_eq, symplecticSliceRepresentation_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext
     ((tangentRepresentation _).toRepresentation.self_inv_apply g (u : TangentSpace I' x)).symm)

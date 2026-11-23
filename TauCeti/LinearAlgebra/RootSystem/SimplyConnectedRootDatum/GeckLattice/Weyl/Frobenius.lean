@@ -145,7 +145,7 @@ theorem map_subtype_range_geckWeylRootSubgroupFixedPoints_eq
   constructor
   · rintro ⟨_, ⟨u, rfl⟩, rfl⟩
     exact ⟨⟨_, (t.coe_geckWeylRootSubgroupFixedPoints ht p k A l i u).symm⟩,
-      (t.geckWeylRootSubgroupFixedPoints ht p k A l i u).2⟩
+      (t.geckWeylRootSubgroupFixedPoints ht p k A l i u).property⟩
   · rintro ⟨⟨u, rfl⟩, hu⟩
     have hu' : Multiplicative.toAdd u ∈ frobeniusFixedSubring A p k :=
       (t.geckWeylRootSubgroupPoints_mem_fixedSubgroup_geckFrobenius_iff ht p k A l i u).mp hu

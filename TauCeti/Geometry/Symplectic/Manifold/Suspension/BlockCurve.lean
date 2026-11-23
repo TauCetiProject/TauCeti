@@ -153,7 +153,7 @@ theorem range_eq_range_orbitTorus_of_suspensionAlmostComplexStructure [T2Space C
       b.orientation = o.orientationAt c)
     (hhol : ∀ c, IsPseudoholomorphicAt j (suspensionAlmostComplexStructure φ hK hs ht) u c)
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
     Set.range u = Set.range (orbitTorus φ (isPeriodicPt_minimalPeriod φ x)) :=
@@ -181,10 +181,10 @@ theorem integralTopForm_mpullback_suspensionForm_of_suspensionAlmostComplexStruc
       b.orientation = o.orientationAt c)
     (hhol : ∀ c, IsPseudoholomorphicAt j (suspensionAlmostComplexStructure φ hK hs ht) u c)
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
-    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).val =
       minimalPeriod φ x :=
   integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero hu hu₁ ho hhol
     (fun c ↦ suspensionAlmostComplexStructure_apply_symm_one_zero φ hK hs ht (u c))
@@ -252,7 +252,7 @@ theorem range_eq_range_orbitTorus_of_seamAlmostComplexStructure [T2Space C] [Pre
       b.orientation = o.orientationAt c)
     (hhol : ∀ c, IsPseudoholomorphicAt j (seamAlmostComplexStructure hσ hJ₀) u c)
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
     Set.range u = Set.range (orbitTorus φ (isPeriodicPt_minimalPeriod φ x)) := by
@@ -272,10 +272,10 @@ theorem integralTopForm_mpullback_suspensionForm_of_seamAlmostComplexStructure [
       b.orientation = o.orientationAt c)
     (hhol : ∀ c, IsPseudoholomorphicAt j (seamAlmostComplexStructure hσ hJ₀) u c)
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
-    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).val =
       minimalPeriod φ x := by
   rw [seamAlmostComplexStructure_def] at hhol
   exact integralTopForm_mpullback_suspensionForm_of_suspensionAlmostComplexStructure _ _ _

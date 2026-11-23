@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ApplyLeft
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Postcomp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
 # Operator fields acting on Besov spaces
@@ -40,8 +40,6 @@ most `‖L‖` (`TauCeti.BesovSpace.postcomp`).
 
 ## Main declarations
 
-* `TauCeti.BesovSpace.postcomp`: a continuous linear map `L : F →L[ℂ] G` applied to the values,
-  as an operator `B^s_{p,q}(E; F) → B^s_{p,q}(E; G)` of norm at most `‖L‖`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_applyLeftCLM_and_norm_le`: an operator field with bounded
   derivatives acts boundedly on Besov spaces, with a bound independent of `p` and `q`.
 * `TauCeti.BesovSpace.applyLeftCLM`: this action as a bounded operator, and
@@ -70,75 +68,6 @@ variable {E F G H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
 namespace TauCeti.BesovSpace
 
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-
-/-! ### Constant operators -/
-
-/-- A continuous linear map `L : F →L[ℂ] G` applied to the values maps `B^s_{p,q}(E; F)` to
-`B^s_{p,q}(E; G)` with norm at most `‖L‖`. -/
-theorem exists_toDistr_eq_postcomp_and_norm_le (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
-    ∃ v : BesovSpace G φ s p q,
-      v.toDistr = PointwiseConvergenceCLM.postcomp _ L u.toDistr ∧ ‖v‖ ≤ ‖L‖ * ‖u‖ := by
-  refine exists_toDistr_eq_and_norm_le_of_block (norm_nonneg L) u
-    (fun j ↦ L.compLp (u.block j)) (fun j ↦ ?_) fun j ↦ ?_
-  · ext ψ
-    rw [← postcomp_littlewoodPaleyBlock, ← coe_block, PointwiseConvergenceCLM.postcomp_apply,
-      Lp.toTemperedDistribution_compLp_apply]
-    -- `L ∘ T` evaluates to `L (T ψ)`; `ContinuousLinearMap.comp_apply` does not fire because
-    -- `T` is coerced through the type synonym `𝓢'(E, F)` of pointwise convergence.
-    rfl
-  · calc 2 ^ (s * j) * ‖L.compLp (u.block j)‖ ≤ 2 ^ (s * j) * (‖L‖ * ‖u.block j‖) := by
-          gcongr
-          exact L.norm_compLp_le _
-      _ = ‖L‖ * (2 ^ (s * j) * ‖u.block j‖) := by ring
-
-end TauCeti.BesovSpace
-
-namespace TemperedDistribution
-
-variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-
-/-- If `u ∈ B^s_{p,q}(E; F)`, then `L u ∈ B^s_{p,q}(E; G)` for every continuous linear map
-`L : F →L[ℂ] G` applied to the values. -/
-theorem MemBesov.postcomp {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (L : F →L[ℂ] G) :
-    MemBesov φ s p q (PointwiseConvergenceCLM.postcomp _ L u : 𝓢'(E, G)) := by
-  obtain ⟨v, hv, -⟩ := TauCeti.BesovSpace.exists_toDistr_eq_postcomp_and_norm_le L hu.toBesovSpace
-  rw [← hu.toDistr_toBesovSpace, ← hv]
-  exact v.memBesov_toDistr
-
-end TemperedDistribution
-
-namespace TauCeti.BesovSpace
-
-variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-
-variable (φ s p q) in
-/-- A continuous linear map `L : F →L[ℂ] G` applied to the values, as a bounded operator
-`B^s_{p,q}(E; F) → B^s_{p,q}(E; G)` of norm at most `‖L‖`
-(`TauCeti.BesovSpace.norm_postcomp_le`). -/
-def postcomp (L : F →L[ℂ] G) : BesovSpace F φ s p q →L[ℂ] BesovSpace G φ s p q :=
-  LinearMap.mkContinuous
-    { toFun u := (u.memBesov_toDistr.postcomp L).toBesovSpace
-      map_add' u v := ext (by
-        simp only [toDistr_add, MemBesov.toDistr_toBesovSpace]
-        exact map_add _ _ _)
-      map_smul' c u := ext (by
-        simp only [toDistr_smul, MemBesov.toDistr_toBesovSpace, RingHom.id_apply]
-        exact map_smul _ _ _) }
-    ‖L‖ fun u ↦ by
-      obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_postcomp_and_norm_le L u
-      convert hvn using 2
-      ext1
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, MemBesov.toDistr_toBesovSpace, hv]
-
-@[simp]
-theorem toDistr_postcomp (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
-    (postcomp φ s p q L u).toDistr = PointwiseConvergenceCLM.postcomp _ L u.toDistr :=
-  MemBesov.toDistr_toBesovSpace _
-
-theorem norm_postcomp_le (L : F →L[ℂ] G) : ‖postcomp (E := E) φ s p q L‖ ≤ ‖L‖ :=
-  LinearMap.mkContinuous_norm_le _ (norm_nonneg L) _
-
-/-! ### Operator fields -/
 
 section ApplyLeft
 
@@ -179,8 +108,7 @@ theorem exists_toDistr_eq_applyLeftCLM_and_norm_le (φ : ContDiffBump (0 : E)) {
   · simp [applyLeftCLM_eq_sum_basis b hA, hv, c, sum_apply]
   · calc ‖∑ k, postcomp φ s p q (b k) (v k)‖ ≤ ∑ k, ‖b k‖ * (C₀ * (‖c k‖ * M) * ‖u‖) := by
           refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
-          exact ((postcomp φ s p q (b k)).le_of_opNorm_le (norm_postcomp_le _) _).trans
-            (by gcongr; exact hvn k)
+          exact (norm_postcomp_apply_le _ _).trans (by gcongr; exact hvn k)
       _ = C₀ * (∑ k, ‖b k‖ * ‖c k‖) * M * ‖u‖ := by
           rw [Finset.mul_sum, Finset.sum_mul, Finset.sum_mul]
           exact Finset.sum_congr rfl fun k _ ↦ by ring

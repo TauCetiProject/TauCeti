@@ -276,7 +276,7 @@ theorem abs_rademacherMoment_subtype_sub_le {p : ℝ} (hp : 1 ≤ p) {s t : Fins
     rademacherMoment_subtype_eq_ite sdiff_subset p x]
   refine (abs_rademacherMoment_sub_le hp _ _).trans_eq ?_
   congr 1; ext j
-  by_cases hj : (j : α) ∈ s <;> simp [hj, j.2]
+  by_cases hj : (j : α) ∈ s <;> simp [hj, j.property]
 
 /-- If the finite truncations `s ↦ K_p(x|_s)` (`1 ≤ p`) are bounded above in a real normed space,
 they converge along `Filter.atTop` to their supremum. -/

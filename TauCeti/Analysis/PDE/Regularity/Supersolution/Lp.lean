@@ -6,21 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Supersolution.Basic
+import TauCeti.Analysis.PDE.Regularity.Supersolution.LowerOrder
 
 /-!
-# Lower bounds from small negative powers of supersolutions
+# Lower bounds from negative powers of supersolutions
 
 A positive weak supersolution of `-div(a ∇u) ≥ 0` satisfies the local estimate
 
-`u⁻¹ ≤ D R^{-n/p} (∫_{B(x₀, R)} u⁻ᵖ)^{1/p}` on `B(x₀, R/2)`, for every `0 < p ≤ 2`.
+`u⁻¹ ≤ D R^{-n/p} (∫_{B(x₀, R)} u⁻ᵖ)^{1/p}` on `B(x₀, R/2)`, for every `p > 0`.
 
 The constant depends on the ellipticity constants, the dimension, the exponent and the
 normalization of Haar measure, but not on the positive lower bound assumed for `u`.
 This is the negative-power input to the weak Harnack inequality: a crossover estimate for
-positive and negative powers can combine this lower bound with reverse Hölder estimates.
+positive and negative powers can combine this lower bound with reverse Hölder estimates. It is
+the case `b = 0`, `c = 0` of Moser's bound for supersolutions of `-div(a ∇u) + b · ∇u + c u ≥ 0`
+(`TauCeti.PDE.exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow_lowerOrder`).
 
-The more general Sobolev-inequality form is also provided. Both results use local boundedness
-of subsolutions and the convex reciprocal approximations from
+A form under a Sobolev inequality on the balls of `Ω` is also provided, for `0 < p ≤ 2`. It uses
+local boundedness of subsolutions and the convex reciprocal approximations from
 `TauCeti.PDE.UniformlyEllipticOn.ae_inv_value_le_mul_setIntegral_rpow`.
 
 ## References
@@ -73,13 +76,12 @@ theorem exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow_of_forall_eLpNorm_l
   exact h.ae_inv_value_le_mul_setIntegral_rpow ha hu hm hum hR hball (by positivity) hp
     fun w hw => by simpa only [sub_zero, zero_add] using hbound (u := w) (k := 0) h ha hS hw hball
 
-/-- **Moser's lower bound from small negative powers.** For every `0 < p ≤ 2` and every
+/-- **Moser's lower bound from negative powers.** For every `p > 0` and every
 positive weak supersolution in any dimension `n ≥ 1`,
 `u⁻¹ ≤ D R^{-n/p} (∫_{B(x₀, R)} u⁻ᵖ)^{1/p}` almost everywhere on `B(x₀, R/2)`.
 The constant depends only on `λ`, `Λ`, `p`, the dimension and Haar normalization, not on the
 positive lower bound for `u`. No boundary regularity is required. -/
-theorem exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow [Nonempty ι] {p : ℝ}
-    (hp : 0 < p) (hp2 : p ≤ 2) :
+theorem exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow [Nonempty ι] {p : ℝ} (hp : 0 < p) :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {m : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
@@ -93,10 +95,10 @@ theorem exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow [Nonempty ι] {p : 
       ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)),
         (W1p.value u x)⁻¹ ≤ D * R ^ (-(Fintype.card ι : ℝ) / p) *
           (∫ x in ball x₀ R, (W1p.value u x)⁻¹ ^ p ∂mu) ^ p⁻¹ := by
-  obtain ⟨D, hD, hbound⟩ := exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow
-    (mu := mu) (lam := lam) (Lam := Lam) hp hp2
-  refine ⟨D, hD, fun h ha hu hm hum hR hball => ?_⟩
-  exact h.ae_inv_value_le_mul_setIntegral_rpow ha hu hm hum hR hball (by positivity) hp
-    fun w hw => by simpa only [sub_zero, zero_add] using hbound (u := w) (k := 0) h ha hw hball
+  obtain ⟨D, hD, hbound⟩ := exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow_lowerOrder
+    (mu := mu) (lam := lam) (Lam := Lam) hp le_rfl
+  exact ⟨D, hD, fun h ha hu hm hum hR hball => hbound (b := 0) (c := 0) (beta := 0) (gamma := 0)
+    h ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
+    (fun _ _ => by simp) hu hm hum hR hball (by simp) (by simp)⟩
 
 end TauCeti.PDE

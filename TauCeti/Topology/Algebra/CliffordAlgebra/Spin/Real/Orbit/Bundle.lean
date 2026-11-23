@@ -151,7 +151,7 @@ theorem exists_realCliffordSpinOrbitTrivialization (n : ℕ) [NeZero n]
     isPretransitive_realCliffordUnitLevel (n + 1) hn
   obtain ⟨g, rfl⟩ := MulAction.IsPretransitive.exists_smul_eq
     (M := realCliffordSpinGroupZero (n + 1)) (realCliffordSpinLastUnit n) y
-  let e₀ := (realCliffordSpinBaseTrivializationData n).1
+  let e₀ := (realCliffordSpinBaseTrivializationData n).val
   let _ : ContinuousSMul (realCliffordSpinGroupZero (n + 1)) (Fin (n + 1) → ℝ) :=
     ⟨by simpa only [spinGroup_smul_apply] using
       continuous_spinVectorAction (realCliffordForm (n + 1) 0)⟩
@@ -169,7 +169,7 @@ theorem exists_realCliffordSpinOrbitTrivialization (n : ℕ) [NeZero n]
   refine ⟨e₁, ?_⟩
   dsimp only [e₁, Bundle.Trivialization.homeomorphComp,
     Bundle.Trivialization.compHomeomorph]
-  rw [(realCliffordSpinBaseTrivializationData n).2]
+  rw [(realCliffordSpinBaseTrivializationData n).property]
   ext x
   simp only [Set.mem_preimage, Set.mem_compl_iff, Set.mem_singleton_iff, hBase,
     Homeomorph.smul_symm_apply]

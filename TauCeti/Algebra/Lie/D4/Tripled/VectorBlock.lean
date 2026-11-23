@@ -223,16 +223,16 @@ noncomputable def vectorBlockIndexEquiv : (Fin 4 ⊕ Fin 4) ≃ Block 0 :=
   Equiv.ofBijective
     (fun a => ⟨vectorIndex a, d4TripledSummand_vectorIndex a⟩)
     ⟨fun _ _ h => vectorIndex_injective (congrArg Subtype.val h), fun a => by
-      have ha : a.1 ∈ Set.range vectorIndex := by
+      have ha : a.val ∈ Set.range vectorIndex := by
         rw [range_vectorIndex]
-        exact a.2
+        exact a.property
       obtain ⟨x, hx⟩ := ha
       exact ⟨x, Subtype.ext hx⟩⟩
 
 /-- The underlying table coordinate of `vectorBlockIndexEquiv` is `vectorIndex`. -/
 @[simp]
 theorem coe_vectorBlockIndexEquiv (a : Fin 4 ⊕ Fin 4) :
-    (vectorBlockIndexEquiv a).1 = vectorIndex a := by
+    (vectorBlockIndexEquiv a).val = vectorIndex a := by
   exact congrArg Subtype.val (Equiv.ofBijective_apply _ _ a)
 
 private noncomputable def vectorSignEquiv :

@@ -32,7 +32,7 @@ variable {k : Type u} {G : Type v} [CommRing k] [Group G]
 def tensorInvariant (M : Rep k G) {N : Rep k G} (y : N.ρ.invariants) : M ⟶ M ⊗ N :=
   Rep.ofHom <| ((TensorProduct.mk k M.V N.V).flip y).intertwiningMap_of_isIntertwiningMap
     (ρ := M.ρ) (σ := (M ⊗ N).ρ) fun g m ↦ by
-      simp [Representation.tprod_apply, y.2 g]
+      simp [Representation.tprod_apply, y.property g]
 
 -- `simp` rewrites the carrier `(M ⊗ N).V` to `M.V ⊗[k] N.V` in the implicit arguments of the
 -- left-hand side before it looks a term up, so the left-hand side is stated in that form through

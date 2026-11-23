@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Degree
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Fiber
 
 /-!
 # The degree of the map from a modular curve to the level-one curve
@@ -27,6 +28,9 @@ the quantity `d` in the genus formula `g = 1 + d/12 - ε₂/4 - ε₃/3 - ε∞/
 ## Main statements
 
 * `Subgroup.degree_compactifiedQuotientMap_map_sl2zToPSL2R`: the map `X(H) → X(1)` has degree
+  `[SL(2, ℤ) : ±H]`.
+* `Subgroup.finsum_localMultiplicity_compactifiedQuotientMap_map_sl2zToPSL2R_ofCusp`: the cusp
+  widths of `H`, the local multiplicities of `X(H) → X(1)` at the cusps, add up to
   `[SL(2, ℤ) : ±H]`.
 * `CongruenceSubgroup.degree_compactifiedQuotientMap_Gamma0` and
   `CongruenceSubgroup.degree_compactifiedQuotientMap_Gamma0_mul_prod_primeFactors`: the degree
@@ -55,6 +59,23 @@ theorem degree_compactifiedQuotientMap_map_sl2zToPSL2R [H.FiniteIndex] :
     degree (compactifiedQuotientMap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R) =
       H.withCenter.index := by
   rw [degree_compactifiedQuotientMap, ← relIndex, relIndex_map_sl2zToPSL2R]
+
+/-- **The cusp widths add up to the degree.** For a finite-index subgroup `H ≤ SL(2, ℤ)`, the
+local multiplicities of `X(H) → X(1)` at the cusps of `X(H)`, which are the cusp widths, add up
+to `[SL(2, ℤ) : ±H]`: the cusps of `X(H)` form the fibre over the single cusp of `X(1)`. -/
+theorem finsum_localMultiplicity_compactifiedQuotientMap_map_sl2zToPSL2R_ofCusp
+    [H.FiniteIndex] :
+    ∑ᶠ C : (H.map sl2zToPSL2R).CuspOrbit,
+      localMultiplicity (compactifiedQuotientMap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R)
+        (CompactifiedQuotient.ofCusp C) = H.withCenter.index := by
+  have h := H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
+  let e : (H.map sl2zToPSL2R).CuspOrbit ≃ _ :=
+    (Equiv.subtypeUnivEquiv fun D ↦ Subsingleton.elim (cuspOrbitMap h D) default).symm.trans
+      (cuspOrbitFiberEquivCompactifiedFiber h default)
+  rw [← relIndex_map_sl2zToPSL2R, relIndex,
+    ← sum_localMultiplicity_compactifiedQuotientMap_fiber_ofCusp h default, ← finsum_comp_equiv e]
+  simp only [e, Equiv.trans_apply, cuspOrbitFiberEquivCompactifiedFiber_apply,
+    Equiv.subtypeUnivEquiv_symm_apply]
 
 end Subgroup
 
