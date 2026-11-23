@@ -86,8 +86,7 @@ theorem not_isOfFinOrder_of_mul_of {i j : ι} (hij : i ≠ j) {x : M i} {y : M j
     (hx : x ≠ 1) (hy : y ≠ 1) : ¬IsOfFinOrder (of x * of y : CoprodI M) := by
   have hprod : ((NeWord.singleton x hx).append hij (NeWord.singleton y hy)).prod =
       of x * of y := by
-    rw [NeWord.append_prod]
-    rfl
+    rw [NeWord.append_prod, NeWord.prod_singleton, NeWord.prod_singleton]
   rw [← hprod]
   exact ((NeWord.singleton x hx).append hij (NeWord.singleton y hy)).not_isOfFinOrder_prod_of_ne hij
 

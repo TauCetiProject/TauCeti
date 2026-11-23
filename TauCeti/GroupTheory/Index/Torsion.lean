@@ -43,13 +43,10 @@ theorem natCard_dvd_index_of_forall_conj_mem_eq_one (H K : Subgroup G)
   have hcanc : IsCancelSMul K (G ⧸ H) :=
     { right_cancel' := fun k₁ k₂ q hq => by
         obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-        rw [Subgroup.smul_def, Subgroup.smul_def, MulAction.Quotient.smul_mk,
-          MulAction.Quotient.smul_mk, smul_eq_mul, smul_eq_mul] at hq
-        have hmem : ((k₁ : G) * g)⁻¹ * ((k₂ : G) * g) ∈ H :=
-          QuotientGroup.eq.mp hq
-        rw [mul_inv_rev, mul_assoc, ← mul_assoc (k₁ : G)⁻¹] at hmem
+        simp only [Subgroup.smul_def, MulAction.Quotient.smul_mk, smul_eq_mul,
+          QuotientGroup.eq] at hq
         have hk : ((k₁⁻¹ * k₂ : K) : G) = 1 :=
-          h g _ (k₁⁻¹ * k₂).property (by simpa [mul_assoc] using hmem)
+          h g _ (k₁⁻¹ * k₂).property (by simpa [mul_assoc] using hq)
         exact inv_mul_eq_one.mp (Subtype.ext hk) }
   rw [Subgroup.index_eq_card]
   exact MulAction.natCard_dvd_natCard_of_isCancelSMul (G := K) (X := G ⧸ H)

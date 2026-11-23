@@ -86,14 +86,12 @@ noncomputable def curveGeomStructure :
       (𝟙_ (Over (Spec (.of (ULift.{u} UniversalLevelThree.Ring)))) ⟶
         Over.mk curveGeom.structureMap) :=
   (zmodProdMonoidHomEquiv 3 _).symm
-    ⟨(firstPointHom, secondPointHom),
-      by
+    (⟨firstPointHom, by
         rw [← zpow_ofNat, curveGeom.zpow_eq_one_iff_left_comp_mulBy_left]
-        exact firstPointHom_left_comp_mulBy_three_left,
-      by
+        exact firstPointHom_left_comp_mulBy_three_left⟩,
+      ⟨secondPointHom, by
         rw [← zpow_ofNat, curveGeom.zpow_eq_one_iff_left_comp_mulBy_left]
-        exact secondPointHom_left_comp_mulBy_three_left,
-      Commute.all _ _⟩
+        exact secondPointHom_left_comp_mulBy_three_left⟩)
 
 /-- The universal naive `[Γ(3)]`-structure sends `(1, 0)` to the point `(0, 0)`. -/
 @[simp]
@@ -243,7 +241,7 @@ private theorem bijective_map_universalStructure (X : EllObj B) :
     obtain ⟨k, ⟨hkP, hkQ⟩, -⟩ := existsUnique_hom_of_isFiberwiseInjective
         (naiveLevelEquiv X α).property
     refine ⟨k, (naiveLevelEquiv X).injective (Subtype.ext ?_)⟩
-    refine (zmodProdMonoidHomEquiv 3 _).injective (Subtype.ext (Prod.ext ?_ ?_))
+    refine (zmodProdMonoidHomEquiv 3 _).injective (Prod.ext (Subtype.ext ?_) (Subtype.ext ?_))
     · rw [coe_zmodProdMonoidHomEquiv_apply_fst, coe_zmodProdMonoidHomEquiv_apply_fst,
         naiveLevelEquiv_map_universalStructure_fst, hkP]
     · rw [coe_zmodProdMonoidHomEquiv_apply_snd, coe_zmodProdMonoidHomEquiv_apply_snd,

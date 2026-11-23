@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
-public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.CoprodI.Basic
 public import TauCeti.NumberTheory.Modular.Generators
@@ -16,11 +15,13 @@ import TauCeti.Algebra.Group.Submonoid.Torsion
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
 import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.GroupTheory.Index.Torsion
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.GroupTheory.TriangleGroup.FreeProduct
+import TauCeti.NumberTheory.Modular.Abelianization
 import TauCeti.NumberTheory.Modular.Torsion
 
 /-!
-# Free-product decomposition, torsion classes, and abelianization of `PSL(2, ℤ)`
+# Free-product decomposition and torsion/abelianization corollaries for `PSL(2, ℤ)`
 
 Combining Poincaré's triangle presentation `PSL(2, ℤ) ≃* Δ(3, 2, ∞)`
 (`TauCeti.ModularGroup.triangleGroupEquiv`) with the free-product decomposition of `Δ(a, b, 0)`
@@ -29,20 +30,16 @@ Combining Poincaré's triangle presentation `PSL(2, ℤ) ≃* Δ(3, 2, ∞)`
 `Fin 2`), sending the involution `S` to the generator of `ℤ/2ℤ` and `R = S * T` to the generator of
 `ℤ/3ℤ`.
 
-Together with the torsion classification in `TauCeti.NumberTheory.Modular.Torsion`, this yields
-further structural corollaries for finite-order elements, torsion-free subgroups, and characters of
-`PSL(2, ℤ)`:
+Together with the torsion classification (`TauCeti.NumberTheory.Modular.Torsion`) and
+abelianization (`TauCeti.NumberTheory.Modular.Abelianization`), this yields:
 
-* **Torsion conjugacy classes (`U = S * T⁻¹`)**: every element of finite order in `PSL(2, ℤ)` is
-  equal to `1` or conjugate to one of `S`, `U`, `U²`, and the three nontrivial classes (`S`,
-  `R`/`R²`, or `S`, `U`/`U²`) are pairwise non-conjugate.
-* **Orders of torsion elements**: every element of finite order in `PSL(2, ℤ)` has order `1`, `2`,
-  or `3`; elements of order `3` form the two conjugacy classes of `U` and `U²`.
+* **Torsion conjugacy classes**: the non-conjugacy of `S` with `R`, `R²`, `U`, `U²` and of `U`
+  with `U²`, together with the `U = S * T⁻¹` forms of the torsion and order-`3` classifications
+  and the set of possible finite orders `{1, 2, 3}`.
 * **Index divisibility**: for any torsion-free subgroup `Γ ≤ PSL(2, ℤ)`, `6 ∣ Γ.index` (including
   infinite index, encoded by `0`).
-* **Abelianization**: `Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6`, normalized so that the
-  cusp translation `T` maps to `1`, `U` to `2`, `S` to `3`, and `R` to `4`; consequently
-  `(commutator PSL(2, ℤ)).index = 6`.
+* **Abelianization cardinality and commutator index**:
+  `Nat.card (Group.Abelianization PSL(2, ℤ)) = 6` and `(commutator PSL(2, ℤ)).index = 6`.
 
 ## Main declarations
 
@@ -52,22 +49,17 @@ further structural corollaries for finite-order elements, torsion-free subgroups
   `TauCeti.ModularGroup.finTwoEquivCoprod_psl2zEquivCoprodI`:
   `PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))`, and
   its comparison with `psl2zEquivCoprod`.
-* `TauCeti.ModularGroup.isOfFinOrder_iff_coe_U`:
-  classification of torsion elements up to conjugacy in terms of `S`, `U`, `U²`.
-* `TauCeti.ModularGroup.not_isConj_coe_S_coe_R`,
-  `TauCeti.ModularGroup.not_isConj_coe_S_coe_R_sq`,
-  `TauCeti.ModularGroup.not_isConj_coe_S_coe_U`,
-  `TauCeti.ModularGroup.not_isConj_coe_S_coe_U_sq`,
-  `TauCeti.ModularGroup.not_isConj_coe_U_coe_U_sq`: pairwise non-conjugacy of the elliptic
-  representatives.
-* `TauCeti.ModularGroup.orderOf_eq_one_or_two_or_three_of_isOfFinOrder`,
-  `TauCeti.ModularGroup.orderOf_eq_three_iff_coe_U`:
-  orders of finite-order elements and conjugacy characterization of order `3` in terms of
-  `U` and `U²`.
+* `TauCeti.ModularGroup.not_isConj_coe_S_coe_R`, `TauCeti.ModularGroup.not_isConj_coe_U_coe_U_sq`:
+  pairwise non-conjugacy of the remaining elliptic representatives.
+* `TauCeti.ModularGroup.isOfFinOrder_iff_coe_U`,
+  `TauCeti.ModularGroup.orderOf_eq_one_or_two_or_three_of_isOfFinOrder`,
+  `TauCeti.ModularGroup.orderOf_eq_three_iff_coe_U`: `U`-form torsion and order-`3`
+  classifications and finite-order values in `PSL(2, ℤ)`.
 * `Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one_psl2z`,
   `Subgroup.six_dvd_index_of_isMulTorsionFree_psl2z`: `6 ∣ Γ.index` for torsion-free `Γ`.
-* `TauCeti.ModularGroup.psl2zAbelianizationAddEquiv`,
-  `TauCeti.ModularGroup.index_commutator_psl2z`: abelianization `≃ ZMod 6` and commutator index `6`.
+* `TauCeti.ModularGroup.natCard_abelianization_psl2z`,
+  `TauCeti.ModularGroup.index_commutator_psl2z`: abelianization cardinality `6` and commutator
+  index `6`.
 
 ## References
 
@@ -316,63 +308,14 @@ theorem _root_.Subgroup.six_dvd_index_of_isMulTorsionFree_psl2z (Γ : Subgroup P
   Γ.six_dvd_index_of_forall_isOfFinOrder_eq_one_psl2z
     fun _ hg hg_fin ↦ Γ.toSubmonoid.eq_one_of_isOfFinOrder_mem hg hg_fin
 
-/-! ### Abelianization of `PSL(2, ℤ)` -/
-
-/-- **Additive abelianization of `PSL(2, ℤ)`.** The abelianization of `PSL(2, ℤ)`, written
-additively, is canonically isomorphic to `ZMod 6`, normalized so that the cusp translation `T` maps
-to `1`, `U = S * T⁻¹` maps to `2`, `S` maps to `3`, and `R = S * T` maps to `4`. -/
-def psl2zAbelianizationAddEquiv :
-    Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6 :=
-  triangleGroupEquiv.symm.abelianizationCongr.toAdditive.trans
-    (TriangleGroup.abelianizationZeroAddEquivZMod (by decide : Nat.Coprime 3 2))
-
-/-- `psl2zAbelianizationAddEquiv` sends the class of `S` to `3`. -/
-@[simp]
-theorem psl2zAbelianizationAddEquiv_coe_S :
-    psl2zAbelianizationAddEquiv (.ofMul (.of (S : PSL(2, ℤ)))) = 3 := by
-  apply (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)).injective
-  have h3 : (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)) 3 = (0, 1) := by decide
-  rw [h3, psl2zAbelianizationAddEquiv, AddEquiv.trans_apply,
-    TriangleGroup.chineseRemainder_abelianizationZeroAddEquivZMod]
-  simp [triangleGroupEquiv_symm_coe_S]
-
-/-- `psl2zAbelianizationAddEquiv` sends the class of `R = S * T` to `4`. -/
-@[simp]
-theorem psl2zAbelianizationAddEquiv_coe_R :
-    psl2zAbelianizationAddEquiv (.ofMul (.of (R : PSL(2, ℤ)))) = 4 := by
-  apply (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)).injective
-  have h4 : (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)) 4 = (1, 0) := by decide
-  rw [h4, psl2zAbelianizationAddEquiv, AddEquiv.trans_apply,
-    TriangleGroup.chineseRemainder_abelianizationZeroAddEquivZMod]
-  simp [triangleGroupEquiv_symm_coe_R]
-
-/-- `psl2zAbelianizationAddEquiv` sends the class of the cusp translation `T` to `1`. -/
-@[simp]
-theorem psl2zAbelianizationAddEquiv_coe_T :
-    psl2zAbelianizationAddEquiv (.ofMul (.of (T : PSL(2, ℤ)))) = 1 := by
-  rw [← coe_S_mul_coe_R]
-  simp +decide [-coe_S_mul_coe_R]
-
-/-- `psl2zAbelianizationAddEquiv` sends the class of `U = S * T⁻¹` to `2`. -/
-@[simp]
-theorem psl2zAbelianizationAddEquiv_coe_U :
-    psl2zAbelianizationAddEquiv (.ofMul (.of (U : PSL(2, ℤ)))) = 2 := by
-  rw [U_def]
-  simp +decide
-
-/-- The inverse of `psl2zAbelianizationAddEquiv` maps `1` to the class of `T`. -/
-@[simp]
-theorem psl2zAbelianizationAddEquiv_symm_one :
-    psl2zAbelianizationAddEquiv.symm 1 = .ofMul (.of (T : PSL(2, ℤ))) := by
-  apply psl2zAbelianizationAddEquiv.injective
-  rw [AddEquiv.apply_symm_apply, psl2zAbelianizationAddEquiv_coe_T]
+/-! ### Abelianization cardinality and commutator index of `PSL(2, ℤ)` -/
 
 /-- The abelianization of `PSL(2, ℤ)` has cardinality `6`. -/
 @[simp]
 theorem natCard_abelianization_psl2z :
     Nat.card (Group.Abelianization PSL(2, ℤ)) = 6 := by
-  rw [Nat.card_congr psl2zAbelianizationAddEquiv.toMultiplicativeRight.toEquiv,
-    Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
+  rw [Nat.card_congr abelianizationMulEquiv.toEquiv, Nat.card_congr Multiplicative.toAdd,
+    Nat.card_zmod]
 
 /-- The commutator subgroup `[PSL(2, ℤ), PSL(2, ℤ)]` has index `6` in `PSL(2, ℤ)`. -/
 @[simp]

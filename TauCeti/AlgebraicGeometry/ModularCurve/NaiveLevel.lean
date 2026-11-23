@@ -436,15 +436,13 @@ noncomputable def gammaNaiveEquiv (X : EllObj B) :
           (𝟙_ (Over X.base) ⟶ (X.curve.torsion N).X) //
         ∀ a b : ZMod N, (a, b) ≠ 0 → ∀ s, ((PQ.1 ≫ X.curve.torsionι N) ^ a.val *
           (PQ.2 ≫ X.curve.torsionι N) ^ b.val).left s ≠ X.curve.zero s} :=
-  (naiveLevelEquiv X).trans <| (((zmodProdMonoidHomEquiv N _).trans <|
-    (Equiv.subtypeEquivRight fun p ↦ by simp [Commute.all]).trans
-      (Equiv.subtypeProdEquivProd (p := fun x ↦ x ^ N = 1) (q := fun x ↦ x ^ N = 1))).trans <|
+  (naiveLevelEquiv X).trans <| ((zmodProdMonoidHomEquiv N _).trans <|
     ((Equiv.subtypeEquivRight fun _ ↦ by rw [zpow_natCast]).trans
       (X.curve.torsionPointsEquiv N _)).prodCongr
     ((Equiv.subtypeEquivRight fun _ ↦ by rw [zpow_natCast]).trans
       (X.curve.torsionPointsEquiv N _))).subtypeEquiv fun φ ↦ by
       rw [EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff]
-      simp [Equiv.subtypeProdEquivProd]
+      simp
 
 /-- The first `S`-point `P` of `E[N]` of a naive `[Γ(N)]`-structure `φ` is `φ (1, 0)`. -/
 @[simp]
@@ -469,7 +467,7 @@ theorem naiveLevelEquiv_gammaNaiveEquiv_symm_apply (X : EllObj B)
     (a b : ZMod N) :
     (naiveLevelEquiv X ((gammaNaiveEquiv X).symm PQ)).val (.ofAdd (a, b)) =
       (PQ.val.1 ≫ X.curve.torsionι N) ^ a.val * (PQ.val.2 ≫ X.curve.torsionι N) ^ b.val := by
-  simp [gammaNaiveEquiv, Equiv.subtypeProdEquivProd]
+  simp [gammaNaiveEquiv]
 
 /-- The first `S`-point of `E[N]` of the pull-back of a naive `[Γ(N)]`-structure along an arrow `φ`
 of `Ell/B` is the base change along `φ` of its first `S`-point of `E[N]`. -/

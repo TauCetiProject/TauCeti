@@ -178,14 +178,10 @@ theorem coe_S_mul_coe_T : (S : PSL(2, ℤ)) * T = R := by
 theorem coe_S_mul_coe_R : (S : PSL(2, ℤ)) * R = T := by
   rw [← coe_S_mul_coe_T, ← mul_assoc, ← sq, coe_S_sq, one_mul]
 
-/-- In `PSL(2, ℤ)`, the inverse of `R` is `R²`. -/
-theorem coe_R_inv : (R : PSL(2, ℤ))⁻¹ = (R : PSL(2, ℤ)) ^ 2 :=
-  coe_R_sq.symm
-
 /-- In `PSL(2, ℤ)`, the inverse of `R²` is `R`. -/
 @[simp]
 theorem coe_R_sq_inv : ((R : PSL(2, ℤ)) ^ 2)⁻¹ = R := by
-  rw [← coe_R_inv, inv_inv]
+  rw [coe_R_sq, inv_inv]
 
 /-- In `PSL(2, ℤ)`, the inverse of `U` is `U²`. -/
 theorem coe_U_inv : (U : PSL(2, ℤ))⁻¹ = (U : PSL(2, ℤ)) ^ 2 :=
@@ -199,7 +195,7 @@ theorem coe_U_sq_inv : ((U : PSL(2, ℤ)) ^ 2)⁻¹ = U := by
 /-- The square of `R` in `PSL(2, ℤ)` has exact order `3`. -/
 @[simp]
 theorem orderOf_coe_R_sq : orderOf ((R : PSL(2, ℤ)) ^ 2) = 3 := by
-  rw [← coe_R_inv, orderOf_inv, orderOf_coe_R]
+  rw [coe_R_sq, orderOf_inv, orderOf_coe_R]
 
 /-- The square of `U` in `PSL(2, ℤ)` has exact order `3`. -/
 @[simp]
@@ -232,7 +228,7 @@ theorem isConj_coe_U_coe_R_inv : IsConj (U : PSL(2, ℤ)) (R : PSL(2, ℤ))⁻¹
 
 /-- Projectively, `U` and `R²` are conjugate. -/
 theorem isConj_coe_U_coe_R_sq : IsConj (U : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) :=
-  coe_R_inv ▸ isConj_coe_U_coe_R_inv
+  coe_R_sq.symm ▸ isConj_coe_U_coe_R_inv
 
 /-- Projectively, `U²` and `R` are conjugate. -/
 theorem isConj_coe_U_sq_coe_R : IsConj ((U : PSL(2, ℤ)) ^ 2) (R : PSL(2, ℤ)) := by

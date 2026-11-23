@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.ULift
 public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.Coprod.Basic
+import TauCeti.Algebra.Group.ULift
 
 /-!
 # Isomorphisms of free products of monoids
@@ -285,10 +286,6 @@ def uliftBoolEquivCoprod (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
       · exact congrArg Coprod.inl ((MulEquiv.ulift : ULift.{v} M ≃* M).apply_symm_apply x)
       · exact congrArg Coprod.inr ((MulEquiv.ulift : ULift.{u} N ≃* N).apply_symm_apply x))
 
-private theorem mulEquiv_ulift_apply {α : Type*} [Mul α] (x : ULift α) :
-    MulEquiv.ulift x = x.down :=
-  rfl
-
 /-- `uliftBoolEquivCoprod` maps the `false` factor inclusion to `Coprod.inl`. -/
 @[simp]
 theorem uliftBoolEquivCoprod_of_false {M : Type u} {N : Type v} [Monoid M] [Monoid N]
@@ -296,7 +293,7 @@ theorem uliftBoolEquivCoprod_of_false {M : Type u} {N : Type v} [Monoid M] [Mono
     uliftBoolEquivCoprod M N (of (i := false) x) = Coprod.inl x.down := by
   rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_apply,
     lift_of (M := boolFactors M N) (i := false) _ x]
-  exact congrArg Coprod.inl (mulEquiv_ulift_apply x)
+  exact congrArg Coprod.inl (MulEquiv.ulift_apply x)
 
 /-- `uliftBoolEquivCoprod` maps the `true` factor inclusion to `Coprod.inr`. -/
 @[simp]
@@ -305,7 +302,7 @@ theorem uliftBoolEquivCoprod_of_true {M : Type u} {N : Type v} [Monoid M] [Monoi
     uliftBoolEquivCoprod M N (of (i := true) y) = Coprod.inr y.down := by
   rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_apply,
     lift_of (M := boolFactors M N) (i := true) _ y]
-  exact congrArg Coprod.inr (mulEquiv_ulift_apply y)
+  exact congrArg Coprod.inr (MulEquiv.ulift_apply y)
 
 /-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inl x` to the `false` factor
 inclusion. -/
