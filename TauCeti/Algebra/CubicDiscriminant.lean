@@ -12,10 +12,11 @@ import Mathlib.Tactic.LinearCombination
 # Divisors of a monic cubic and of its discriminant
 
 Two divisibility transfers for the monic cubic `f(x) = x³ + a₂x² + a₄x + a₆` over a commutative
-ring. A common divisor of `f(x)` and of the quartic `3x⁴ + 4a₂x³ + 6a₄x² + 12a₆x + (4a₂a₆ − a₄²)`
-divides `f'(x)²`; and a common divisor of `f(x)` and `f'(x)²` divides `Cubic.discr ⟨1, a₂, a₄, a₆⟩`.
+ring. A divisor of `f(x)` divides `f'(x)²` exactly when it divides the quartic
+`3x⁴ + 4a₂x³ + 6a₄x² + 12a₆x + (4a₂a₆ − a₄²)`; and a common divisor of `f(x)` and `f'(x)²` divides
+`Cubic.discr ⟨1, a₂, a₄, a₆⟩`.
 
-Both are certified by explicit polynomial identities in `x`, so no hypothesis beyond the two
+Both are certified by explicit polynomial identities in `x`, so no hypothesis beyond the
 divisibilities is needed — no domain, no ellipticity, nothing about the ring beyond commutativity.
 
 Composing them is the algebraic half of the sharp discriminant bound in Nagell–Lutz: a divisor of
@@ -28,7 +29,7 @@ common root of the cubic and its derivative modulo `d`.
 
 ## Main results
 
-* `TauCeti.Cubic.dvd_derivative_sq`
+* `TauCeti.Cubic.dvd_derivative_sq_iff`
 * `TauCeti.Cubic.dvd_discr`
 * `TauCeti.Cubic.dvd_discr_of_dvd_sub`
 
@@ -46,18 +47,18 @@ namespace TauCeti.Cubic
 
 variable {R : Type*} [CommRing R] {d a₂ a₄ a₆ x : R}
 
-/-- If `d` divides both the monic cubic `f(x) = x³ + a₂x² + a₄x + a₆` and the quartic
-`3x⁴ + 4a₂x³ + 6a₄x² + 12a₆x + (4a₂a₆ − a₄²)`, then it divides `f'(x)²`.
+/-- If `d` divides the monic cubic `f(x) = x³ + a₂x² + a₄x + a₆`, then `d` divides `f'(x)²` if and
+only if it divides the quartic `3x⁴ + 4a₂x³ + 6a₄x² + 12a₆x + (4a₂a₆ − a₄²)`.
 
 The two are related by `f'(x)² + (that quartic) = (12x + 4a₂) · f(x)`, an identity in `x`. -/
-theorem dvd_derivative_sq (hf : d ∣ x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆)
-    (hq : d ∣ 3 * x ^ 4 + 4 * a₂ * x ^ 3 + 6 * a₄ * x ^ 2 + 12 * a₆ * x + (4 * a₂ * a₆ - a₄ ^ 2)) :
-    d ∣ (3 * x ^ 2 + 2 * a₂ * x + a₄) ^ 2 := by
+theorem dvd_derivative_sq_iff (hf : d ∣ x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆) :
+    d ∣ (3 * x ^ 2 + 2 * a₂ * x + a₄) ^ 2 ↔
+      d ∣ 3 * x ^ 4 + 4 * a₂ * x ^ 3 + 6 * a₄ * x ^ 2 + 12 * a₆ * x + (4 * a₂ * a₆ - a₄ ^ 2) := by
   have hid : (3 * x ^ 2 + 2 * a₂ * x + a₄) ^ 2 =
       (12 * x + 4 * a₂) * (x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆) -
         (3 * x ^ 4 + 4 * a₂ * x ^ 3 + 6 * a₄ * x ^ 2 + 12 * a₆ * x + (4 * a₂ * a₆ - a₄ ^ 2)) := by
     ring
-  exact hid ▸ dvd_sub (Dvd.dvd.mul_left hf _) hq
+  rw [hid, dvd_sub_right (hf.mul_left _)]
 
 /-- If `d` divides both the monic cubic `f(x) = x³ + a₂x² + a₄x + a₆` and `f'(x)²`, then it divides
 the cubic's discriminant.
@@ -72,7 +73,7 @@ theorem dvd_discr (hf : d ∣ x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆)
           (x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆)
         - (3 * x ^ 2 + 2 * a₂ * x - a₂ ^ 2 + 4 * a₄) * (3 * x ^ 2 + 2 * a₂ * x + a₄) ^ 2 := by
     simp only [_root_.Cubic.discr]; ring
-  exact hid ▸ dvd_sub (Dvd.dvd.mul_left hf _) (Dvd.dvd.mul_left hderiv _)
+  exact hid ▸ dvd_sub (hf.mul_left _) (hderiv.mul_left _)
 
 /-- **A repeated root modulo `d` makes `d` divide the discriminant.** If `x`, `y`, `z` are the roots
 of the monic cubic `X³ + a₂X² + a₄X + a₆` modulo `d`, that is `d` divides `x + y + z + a₂`,

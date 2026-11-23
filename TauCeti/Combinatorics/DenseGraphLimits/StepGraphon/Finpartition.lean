@@ -88,7 +88,7 @@ theorem stepGraphonOfFinpartition_def (P : Finpartition (univ : Finset (Fin m)))
 `val A B`. -/
 theorem stepGraphonOfFinpartition_apply (P : Finpartition (univ : Finset (Fin m)))
     (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ A B, val A B = val B A)
-    {A B : P.parts} {x y : I} (hx : cellFin m x ∈ A.1) (hy : cellFin m y ∈ B.1) :
+    {A B : P.parts} {x y : I} (hx : cellFin m x ∈ A.val) (hy : cellFin m y ∈ B.val) :
     stepGraphonOfFinpartition P val hsymm x y = (val A B : ℝ) := by
   have hx' : x ∈ (P.partsCellPartitionEquiv A : Set I) := by simpa using hx
   have hy' : y ∈ (P.partsCellPartitionEquiv B : Set I) := by simpa using hy
@@ -206,8 +206,8 @@ theorem rectIntegral_stepGraphonOfFinpartition (P : Finpartition (univ : Finset 
     (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ A B, val A B = val B A)
     (A B : P.parts) :
     (stepGraphonOfFinpartition P val hsymm).toSymmKernel.rectIntegral volume
-        (cellFin m ⁻¹' (A.1 : Set (Fin m))) (cellFin m ⁻¹' (B.1 : Set (Fin m))) =
-      (#A.1 / m) * (#B.1 / m) * (val A B : ℝ) := by
+        (cellFin m ⁻¹' (A.val : Set (Fin m))) (cellFin m ⁻¹' (B.val : Set (Fin m))) =
+      (#A.val / m) * (#B.val / m) * (val A B : ℝ) := by
   rw [← P.partsCellPartitionEquiv_apply_coe, ← P.partsCellPartitionEquiv_apply_coe,
     stepGraphonOfFinpartition_def, rectIntegral_stepGraphon,
     P.volume_real_partsCellPartitionEquiv, P.volume_real_partsCellPartitionEquiv,
@@ -220,7 +220,8 @@ theorem rectIntegral_stepGraphonOfFinpartition_preimage (P : Finpartition (univ 
     (S T : Finset (Fin m)) :
     (stepGraphonOfFinpartition P val hsymm).toSymmKernel.rectIntegral volume
         (cellFin m ⁻¹' (S : Set (Fin m))) (cellFin m ⁻¹' (T : Set (Fin m))) =
-      (∑ A : P.parts, ∑ B : P.parts, (val A B : ℝ) * #(S ∩ A.1) * #(T ∩ B.1)) / (m : ℝ) ^ 2 := by
+      (∑ A : P.parts, ∑ B : P.parts, (val A B : ℝ) * #(S ∩ A.val) * #(T ∩ B.val)) / (m : ℝ) ^ 2
+          := by
   rw [stepGraphonOfFinpartition_eq_comap_ofMatrix, Graphon.toSymmKernel_comap,
     SymmKernel.rectIntegral_comap_preimage _ measurePreserving_cellFin _
       S.measurableSet T.measurableSet,
@@ -229,11 +230,11 @@ theorem rectIntegral_stepGraphonOfFinpartition_preimage (P : Finpartition (univ 
   simp only [Graphon.coe_toSymmKernel, Graphon.ofMatrix_apply]
   have hT (A : P.parts) :
       ∑ j ∈ T, (val A ⟨P.part j, P.part_mem.2 (mem_univ j)⟩ : ℝ) =
-        ∑ B : P.parts, (#(T ∩ B.1) : ℝ) * val A B := by
+        ∑ B : P.parts, (#(T ∩ B.val) : ℝ) * val A B := by
     rw [P.sum_apply_part_subtype T fun B => (val A B : ℝ)]
     simp_rw [nsmul_eq_mul]
   simp_rw [sum_congr rfl fun i _ => hT ⟨P.part i, P.part_mem.2 (mem_univ i)⟩]
-  rw [P.sum_apply_part_subtype S fun A => ∑ B : P.parts, (#(T ∩ B.1) : ℝ) * val A B]
+  rw [P.sum_apply_part_subtype S fun A => ∑ B : P.parts, (#(T ∩ B.val) : ℝ) * val A B]
   refine Finset.sum_congr rfl fun A _ => ?_
   rw [nsmul_eq_mul, Finset.mul_sum]
   exact Finset.sum_congr rfl fun B _ => by ring
@@ -243,7 +244,7 @@ theorem rectIntegral_stepGraphonOfFinpartition_preimage (P : Finpartition (univ 
 theorem l2sq_stepGraphonOfFinpartition (P : Finpartition (univ : Finset (Fin m)))
     (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ A B, val A B = val B A) :
     l2sq volume (stepGraphonOfFinpartition P val hsymm).toSymmKernel =
-      ∑ A : P.parts, ∑ B : P.parts, (#A.1 * #B.1 / (m : ℝ) ^ 2) * (val A B : ℝ) ^ 2 := by
+      ∑ A : P.parts, ∑ B : P.parts, (#A.val * #B.val / (m : ℝ) ^ 2) * (val A B : ℝ) ^ 2 := by
   rw [stepGraphonOfFinpartition_def, l2sq_stepGraphon, ← P.partsCellPartitionEquiv.sum_comp]
   refine Finset.sum_congr rfl fun A _ => ?_
   rw [← P.partsCellPartitionEquiv.sum_comp]

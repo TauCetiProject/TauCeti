@@ -132,7 +132,7 @@ theorem rowIndex_injective :
   have hs : s.card = μ.rowLen i := YoungTableau.card_filter_rowIndex_eq t.toTableau i
   have hrow : ∀ (v : RowStandardTableau μ),
       YoungTableau.rowIndex v.toTableau = YoungTableau.rowIndex t.toTableau →
-      (fun k : Fin (μ.rowLen i) => v ⟨(i, k.1), YoungDiagram.mem_iff_lt_rowLen.mpr k.2⟩) =
+      (fun k : Fin (μ.rowLen i) => v ⟨(i, k.val), YoungDiagram.mem_iff_lt_rowLen.mpr k.isLt⟩) =
         s.orderEmbOfFin hs := fun v hv =>
     Finset.orderEmbOfFin_unique hs
       (fun k => Finset.mem_filter.mpr
@@ -192,7 +192,7 @@ theorem rowSuperstandard_toTableau (μ : YoungDiagram) :
 /-- The row-superstandard tableau labels each cell by its reading index. -/
 @[simp]
 theorem rowSuperstandard_apply_val (μ : YoungDiagram) (c : ↥μ.cells) :
-    (rowSuperstandard μ c).val = YoungDiagram.readingIndex μ c.1 :=
+    (rowSuperstandard μ c).val = YoungDiagram.readingIndex μ c.val :=
   StandardYoungTableau.rowSuperstandard_apply_val μ c
 
 /-- Every Young diagram carries a row-standard tableau. -/
@@ -207,8 +207,8 @@ variable {μ : YoungDiagram}
 
 /-- The entry in cell `c` obtained after sorting each row of `t` in increasing order. -/
 private def rowStandardizeFun (t : YoungTableau μ) (c : ↥μ.cells) : Fin μ.card :=
-  (Finset.univ.filter fun y => rowIndex t y = c.1.1).orderEmbOfFin
-    (card_filter_rowIndex_eq t c.1.1) ⟨c.1.2, YoungDiagram.mem_iff_lt_rowLen.mp c.2⟩
+  (Finset.univ.filter fun y => rowIndex t y = c.val.1).orderEmbOfFin
+    (card_filter_rowIndex_eq t c.val.1) ⟨c.val.2, YoungDiagram.mem_iff_lt_rowLen.mp c.property⟩
 
 private theorem rowStandardizeFun_surjective (t : YoungTableau μ) :
     Function.Surjective (rowStandardizeFun t) := by
@@ -218,7 +218,7 @@ private theorem rowStandardizeFun_surjective (t : YoungTableau μ) :
     simp [i]
   rw [← Finset.range_orderEmbOfFin _ (card_filter_rowIndex_eq t i)] at hx
   obtain ⟨j, hj⟩ := hx
-  exact ⟨⟨(i, j.1), YoungDiagram.mem_iff_lt_rowLen.mpr j.2⟩, hj⟩
+  exact ⟨⟨(i, j.val), YoungDiagram.mem_iff_lt_rowLen.mpr j.isLt⟩, hj⟩
 
 /-- **Row-standardization** of a `μ`-tableau `t`: the unique row-standard tableau obtained by
 sorting the labels of each row of `t` into strictly increasing order. -/
@@ -239,7 +239,7 @@ theorem rowIndex_rowStandardize (t : YoungTableau μ) :
   obtain ⟨c, rfl⟩ := (rowStandardize t).toTableau.surjective x
   rw [rowIndex_apply]
   have hmem : (rowStandardize t).toTableau c ∈
-      Finset.univ.filter fun y => rowIndex t y = c.1.1 := by
+      Finset.univ.filter fun y => rowIndex t y = c.val.1 := by
     rw [rowStandardize, Equiv.ofBijective_apply]
     exact Finset.orderEmbOfFin_mem _ _ _
   exact (Finset.mem_filter.mp hmem).2.symm

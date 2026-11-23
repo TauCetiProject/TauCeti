@@ -148,7 +148,7 @@ example :
   intro hcont htft S T f hS _ hB hT hTT
   have : IsAdicHom (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) := htft.isAdicHom
   refine ⟨affinoid_isPullback_of_isStablySheafyRing_left hS hT hB htft f f rfl rfl, ?_⟩
-  have hne : (spa S.plus).Nonempty := Set.nonempty_iff_ne_empty.mpr fun h ↦
+  have hne : (spa S.plus).Nonempty := Set.ne_empty_iff_nonempty.mp fun h ↦
     not_subsingleton ℚ_[2] ((spa_eq_empty_iff_subsingleton _ S.isRingOfIntegralElements).mp h)
   let x₀ : spa S.plus := ⟨hne.some, hne.some_mem⟩
   have hy (p : Pair.Hom T S) (hp : p.comp f = Pair.Hom.id S) :
@@ -169,9 +169,9 @@ example :
   have hy₁₂ : (comapOfPair hS hT f).hom.base y₁ = (comapOfPair hS hT f).hom.base y₂ :=
     hy₁.trans hy₂.symm
   have hy_ne : y₁ ≠ y₂ := fun hyeq ↦ by
-    have hspv : (p₁.spaComap x₀).1 = (p₂.spaComap x₀).1 :=
+    have hspv : (p₁.spaComap x₀).val = (p₂.spaComap x₀).val :=
       congrArg Subtype.val ((ofPairHomeomorph T hT).symm.injective hyeq)
-    have hvle : (p₁.spaComap x₀).1.toValuativeRel.vle ((0, 1) : ℚ_[2] × ℚ_[2]) 0 := by
+    have hvle : (p₁.spaComap x₀).val.toValuativeRel.vle ((0, 1) : ℚ_[2] × ℚ_[2]) 0 := by
       rw [Pair.Hom.spaComap_val, comap_vle]
       simp [p₁]
     rw [hspv, Pair.Hom.spaComap_val, comap_vle] at hvle

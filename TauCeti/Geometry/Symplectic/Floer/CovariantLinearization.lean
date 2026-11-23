@@ -9,7 +9,8 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Difference
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
@@ -31,9 +32,19 @@ This is a pointwise formula, not a Sobolev or Fredholm assertion. The bundle dif
 result also allows arbitrary parameter-dependent coefficients, with regularity required only
 of their pullbacks along the map family.
 
-The operator is written with partial curve velocities, so its definition does not depend on
-any choice of connection. For a differentiable map, `floerOperator_eq` identifies it with the
-coordinate expression of the intrinsic perturbed derivative `du - X_K`.
+At a solution of the Floer equation the linearization does not depend on the connection. Two
+torsion-free connections with difference tensor `Δ` give linearizations differing by
+`Δ(ξ, F(u))` (`floerLinearization_sub_floerLinearization`), so they agree wherever `F(u)`
+vanishes (`floerLinearization_eq_of_floerOperator_eq_zero`). There, on the velocity of a map
+family, the linearization is the ordinary derivative of the Floer operator of the family read
+in the tangent trivialization at `u z`
+(`floerLinearization_eq_deriv_sectionCoord_of_floerOperator_eq_zero`). So the linearized
+operator at a solution, whose surjectivity is the regularity condition for moduli spaces of
+Floer solutions, is determined by the solution and the Floer data alone.
+
+The nonlinear operator is written with partial curve velocities, so its definition does not
+depend on any choice of connection. For a differentiable map, `floerOperator_eq` identifies it
+with the coordinate expression of the intrinsic perturbed derivative `du - X_K`.
 
 ## References
 
@@ -297,6 +308,89 @@ theorem alongCurve_floerOperator (ω : SmoothTwoForm I M)
     (by simpa only [minSmoothness_of_isRCLikeNormedField] using ht)
   rw [← hscomm, ← htcomm, floerLinearization_def]
   abel
+
+/-- **Changing the connection in the linearized Floer operator.** For two torsion-free target
+connections `∇` and `∇'` with difference tensor `Δ = CovariantDerivative.difference ∇ ∇'`, the
+two intrinsic linearizations at a map `u` differ at `z` by `Δ` applied to the direction and to
+the value of the Floer operator there:
+
+`D_u ξ - D'_u ξ = Δ(ξ, F(u))`.
+
+The direction `ξ` is arbitrary, the map need only be differentiable along the two coordinate
+lines through `z`, and the coefficient fields need only be differentiable at `u z`. -/
+theorem floerLinearization_sub_floerLinearization (ω : SmoothTwoForm I M)
+    {cov cov' : CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (htor : cov.IsTorsionFree) (htor' : cov'.IsTorsionFree)
+    (J : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
+    (Ks Kt : ℝ × ℝ → M → ℝ) {u : ℝ × ℝ → M} (ξ : ∀ z, TangentSpace I (u z)) {z : ℝ × ℝ}
+    (hus : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun s ↦ u (s, z.2)) z.1)
+    (hut : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun t ↦ u (z.1, t)) z.2)
+    (hJ : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (J z x)) (u z))
+    (hKs : MDiffAt (T% (ω.hamiltonianVectorField (Ks z))) (u z))
+    (hKt : MDiffAt (T% (ω.hamiltonianVectorField (Kt z))) (u z)) :
+    ω.floerLinearization cov J Ks Kt u ξ z - ω.floerLinearization cov' J Ks Kt u ξ z =
+      cov.difference cov' (u z) (ξ z) (ω.floerOperator J Ks Kt u z) := by
+  have hc := htor.difference_apply_comm htor' (u z)
+  set w := curveVelocity I (fun t ↦ u (z.1, t)) z.2 - ω.hamiltonianVectorField (Kt z) (u z)
+  have hs := sub_eq_iff_eq_add'.mp (alongCurve_sub_alongCurve cov cov' (fun s ↦ ξ (s, z.2)) hus)
+  have ht := sub_eq_iff_eq_add'.mp (alongCurve_sub_alongCurve cov cov' (fun t ↦ ξ (z.1, t)) hut)
+  have hX (K : ℝ × ℝ → M → ℝ) (hK : MDiffAt (T% (ω.hamiltonianVectorField (K z))) (u z)) :
+      cov (ω.hamiltonianVectorField (K z)) (u z) (ξ z) =
+        cov' (ω.hamiltonianVectorField (K z)) (u z) (ξ z) +
+          cov.difference cov' (u z) (ξ z) (ω.hamiltonianVectorField (K z) (u z)) := by
+    rw [← hc, cov.difference_apply cov' hK, sub_apply]
+    abel
+  have hJw : cov.hom cov (J z) (u z) (ξ z) w =
+      cov'.hom cov' (J z) (u z) (ξ z) w +
+        (cov.difference cov' (u z) (ξ z) (J z (u z) w) -
+          J z (u z) (cov.difference cov' (u z) (ξ z) w)) := by
+    rw [hc (ξ z), hc (ξ z), ← cov.hom_apply_sub_hom_apply cov cov' cov' hJ (ξ z) w]
+    abel
+  rw [floerLinearization_def, floerLinearization_def, hs, ht, hX Ks hKs, hX Kt hKt, hJw,
+    floerOperator_def]
+  simp only [map_add, map_sub, w]
+  abel
+
+/-- **At a solution the linearized Floer operator does not depend on the connection.** If the
+Floer operator vanishes at `z`, any two torsion-free target connections give the same intrinsic
+linearization there, in every direction. -/
+theorem floerLinearization_eq_of_floerOperator_eq_zero (ω : SmoothTwoForm I M)
+    {cov cov' : CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (htor : cov.IsTorsionFree) (htor' : cov'.IsTorsionFree)
+    (J : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
+    (Ks Kt : ℝ × ℝ → M → ℝ) {u : ℝ × ℝ → M} (ξ : ∀ z, TangentSpace I (u z)) {z : ℝ × ℝ}
+    (hus : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun s ↦ u (s, z.2)) z.1)
+    (hut : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun t ↦ u (z.1, t)) z.2)
+    (hJ : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (J z x)) (u z))
+    (hKs : MDiffAt (T% (ω.hamiltonianVectorField (Ks z))) (u z))
+    (hKt : MDiffAt (T% (ω.hamiltonianVectorField (Kt z))) (u z))
+    (hF : ω.floerOperator J Ks Kt u z = 0) :
+    ω.floerLinearization cov J Ks Kt u ξ z = ω.floerLinearization cov' J Ks Kt u ξ z := by
+  rw [← sub_eq_zero, ω.floerLinearization_sub_floerLinearization htor htor' J Ks Kt ξ hus hut hJ
+    hKs hKt, hF, map_zero]
+
+/-- **At a solution the linearized Floer operator is a coordinate derivative.** For a jointly
+`C²` map family whose member at `q` solves the Floer equation at `z`, the intrinsic linearization
+on the parameter velocity is the ordinary derivative of the Floer operator of the family, read in
+the canonical tangent trivialization at `u q z`. No connection appears on the right. -/
+theorem floerLinearization_eq_deriv_sectionCoord_of_floerOperator_eq_zero
+    (ω : SmoothTwoForm I M) (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
+    (htor : cov.IsTorsionFree)
+    (J : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
+    (Ks Kt : ℝ × ℝ → M → ℝ) {u : ℝ → ℝ × ℝ → M} {q : ℝ} {z : ℝ × ℝ}
+    (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (q, z))
+    (hJ : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (J z x)) (u q z))
+    (hKs : MDiffAt (T% (ω.hamiltonianVectorField (Ks z))) (u q z))
+    (hKt : MDiffAt (T% (ω.hamiltonianVectorField (Kt z))) (u q z))
+    (hF : ω.floerOperator J Ks Kt (u q) z = 0) :
+    ω.floerLinearization cov J Ks Kt (u q) (fun w ↦ curveVelocity I (fun a ↦ u a w) q) z =
+      deriv (sectionCoord ℝ (F := E) (fun a ↦ u a z)
+        (fun a ↦ ω.floerOperator J Ks Kt (u a) z) (u q z)) q := by
+  rw [← ω.alongCurve_floerOperator cov htor J Ks Kt hu hJ hKs hKt, ← alongCurveWithin_univ,
+    cov.alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero _ _ hF, derivWithin_univ]
 
 end TauCeti.SmoothTwoForm
 

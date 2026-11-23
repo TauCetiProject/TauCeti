@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
@@ -215,7 +215,7 @@ theorem pairOfPantsPerturbation_eq_smul_endAngularForm {r : Puncture} {w : ℂ}
       by_contra hc
       obtain ⟨h₁, hs'⟩ := one_lt_endSign_mul_re_endCoord hc
       have hr : w ≠ r.endCenter :=
-        r.ne_endCenter_of_re_endCoord_ne_zero fun h' => by rw [h', mul_zero] at hw; linarith
+        r.ne_endCenter_of_endSign_mul_re_endCoord_pos (two_pos.trans_le hw)
       exact cylindricalEndLift_ne_cylindricalEndLift hs.symm (by linarith) (by linarith)
         ((r.cylindricalEndLift_endCoord hr).trans (s.cylindricalEndLift_endCoord hs').symm)
     simp [hc]
@@ -355,7 +355,7 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
       (fun p : ℂ × M => pairOfPantsPerturbation H p.1 p.2) ((w : ℂ), x) := by
   simp only [pairOfPantsPerturbation]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
   have hf : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℂ × M => q.endAngularForm p.1) ((w : ℂ), x) :=
     ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := q.endAngularForm) _

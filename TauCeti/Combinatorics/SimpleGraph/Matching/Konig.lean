@@ -80,8 +80,8 @@ theorem IsBipartite.matchingNum_eq_vertexCoverNum [Finite V] (h : G.IsBipartite)
   let _ : Fintype V := Fintype.ofFinite V
   let _ : Fintype E(Graph.ofSimpleGraph G) := Fintype.ofFinite _
   obtain ⟨s, _, hst⟩ := h.exists_isBipartiteWith
-  let L : Finset V(Graph.ofSimpleGraph G) := Finset.univ.filter fun x ↦ x.1 ∈ s
-  let R : Finset V(Graph.ofSimpleGraph G) := Finset.univ.filter fun x ↦ x.1 ∈ sᶜ
+  let L : Finset V(Graph.ofSimpleGraph G) := Finset.univ.filter fun x ↦ x.val ∈ s
+  let R : Finset V(Graph.ofSimpleGraph G) := Finset.univ.filter fun x ↦ x.val ∈ sᶜ
   have hLimg : Subtype.val '' (L : Set V(Graph.ofSimpleGraph G)) = s := by
     ext v; simp [L]
   have hRimg : Subtype.val '' (R : Set V(Graph.ofSimpleGraph G)) = sᶜ := by
@@ -206,10 +206,10 @@ theorem IsBipartiteWith.matchingNum_eq_encard_sub_iSup [Finite V] (hLR : G.IsBip
       L.encard - ⨆ (S : Set V) (_ : S ⊆ L), (S.encard - (⋃ x ∈ S, G.neighborSet x).encard) := by
   let f (S : Set V) : ℕ∞ := S.encard - (⋃ x ∈ S, G.neighborSet x).encard
   have : Nonempty {S : Set V // S ⊆ L} := ⟨⟨∅, empty_subset L⟩⟩
-  have hsup_eq : (⨆ S : {S : Set V // S ⊆ L}, f S.1) = ⨆ (S : Set V) (_ : S ⊆ L), f S :=
+  have hsup_eq : (⨆ S : {S : Set V // S ⊆ L}, f S.val) = ⨆ (S : Set V) (_ : S ⊆ L), f S :=
     iSup_subtype
-  have hsup_lt : (⨆ S : {S : Set V // S ⊆ L}, f S.1) < ⊤ :=
-    (iSup_le fun S ↦ tsub_le_self.trans (encard_le_encard S.2)).trans_lt
+  have hsup_lt : (⨆ S : {S : Set V // S ⊆ L}, f S.val) < ⊤ :=
+    (iSup_le fun S ↦ tsub_le_self.trans (encard_le_encard S.property)).trans_lt
       (Set.toFinite L).encard_lt_top
   obtain ⟨⟨S₀, hS₀⟩, hS₀eq⟩ := ENat.exists_eq_iSup_of_lt_top hsup_lt
   rw [← hsup_eq, ← hS₀eq]
@@ -233,7 +233,7 @@ theorem IsBipartiteWith.matchingNum_eq_encard_sub_iSup [Finite V] (hLR : G.IsBip
         _ ≤ M.edgeSet.encard + (f S₁ + (⋃ x ∈ S₁, G.neighborSet x).encard) :=
           add_le_add_right le_tsub_add _
         _ = (M.edgeSet.encard + f S₁) + (⋃ x ∈ S₁, G.neighborSet x).encard := by ac_rfl
-    have hf₁ : f S₁ ≤ f S₀ := hS₀eq ▸ le_iSup (fun S : {S : Set V // S ⊆ L} ↦ f S.1) ⟨S₁, hS₁⟩
+    have hf₁ : f S₁ ≤ f S₀ := hS₀eq ▸ le_iSup (fun S : {S : Set V // S ⊆ L} ↦ f S.val) ⟨S₁, hS₁⟩
     exact (tsub_le_tsub_left hf₁ L.encard).trans
       ((tsub_le_iff_right.2 hLle).trans hM.encard_edgeSet_le_matchingNum)
 

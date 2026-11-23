@@ -202,7 +202,7 @@ noncomputable def restrictedSubst :
     IsRestricted.subring (R := R) (fun _ : σ ↦ 1) →ₐ[R]
       IsRestricted.subring (R := R) (fun _ : τ ↦ 1) where
   toFun f := ⟨(f : MvPowerSeries σ R).subst fun s ↦ (a s : MvPowerSeries τ R),
-    IsRestricted.subst ha₀ ha₁ f.2⟩
+    IsRestricted.subst ha₀ ha₁ f.property⟩
   map_one' := Subtype.ext <| by simpa using map_one (substAlgHom (hasSubst_coe ha₀))
   map_mul' f g := Subtype.ext <| by simp [subst_mul (hasSubst_coe ha₀)]
   map_zero' := Subtype.ext <| by simpa using map_zero (substAlgHom (hasSubst_coe ha₀))

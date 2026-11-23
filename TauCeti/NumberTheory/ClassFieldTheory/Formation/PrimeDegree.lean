@@ -85,7 +85,7 @@ private def subquotientLayer : NormalLayer G where
   top_le_ground := OpenSubgroup.toSubgroup_le.1 (L.subgroupGround_mono (Subgroup.map_le_range f N))
   normal := ⟨fun v hv w ↦ by
     obtain ⟨hv', n, hn, hfn⟩ := (L.mem_subgroupGround _).1 (Subgroup.mem_subgroupOf.1 hv)
-    obtain ⟨hw', h, hfh⟩ := (L.mem_subgroupGround _).1 w.2
+    obtain ⟨hw', h, hfh⟩ := (L.mem_subgroupGround _).1 w.property
     refine Subgroup.mem_subgroupOf.2 ((L.mem_subgroupGround _).2
       ⟨L.ground.mul_mem (L.ground.mul_mem hw' hv') (L.ground.inv_mem hw'), h * n * h⁻¹,
         (inferInstance : N.Normal).conj_mem n hn h, ?_⟩)
@@ -117,7 +117,7 @@ private def subquotientGroundHom (hf : Function.Injective f) :
   (QuotientGroup.mk' N).comp <| (MonoidHom.ofInjective hf).symm.toMonoidHom.comp <|
     ((QuotientGroup.mk' L.relativeTop).comp
       (Subgroup.inclusion (L.subquotientLayer_ground_le f N))).codRestrict f.range
-      fun w ↦ ((L.mem_ground_subquotientLayer f N).1 w.2).2
+      fun w ↦ ((L.mem_ground_subquotientLayer f N).1 w.property).2
 
 private theorem f_subquotientGroundHom_spec (hf : Function.Injective f)
     (w : (L.subquotientLayer f N).ground) :
@@ -131,7 +131,7 @@ private theorem subquotientGroundHom_surjective (hf : Function.Injective f) :
   induction q using QuotientGroup.induction_on with | H h => ?_
   obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (f h)
   have hw : (u : G) ∈ (L.subquotientLayer f N).ground :=
-    (L.mem_ground_subquotientLayer f N).2 ⟨u.2, hu ▸ ⟨h, rfl⟩⟩
+    (L.mem_ground_subquotientLayer f N).2 ⟨u.property, hu ▸ ⟨h, rfl⟩⟩
   obtain ⟨h', hfh', hq⟩ := L.f_subquotientGroundHom_spec N hf ⟨u, hw⟩
   have hu' : Subgroup.inclusion (L.subquotientLayer_ground_le f N) ⟨u, hw⟩ = u := Subtype.ext rfl
   have hh : h' = h := hf (hfh'.trans ((congrArg QuotientGroup.mk hu').trans hu))
@@ -145,7 +145,7 @@ private theorem ker_subquotientGroundHom (hf : Function.Injective f) :
     OpenSubgroup.mem_toSubgroup, L.mem_top_subquotientLayer f N]
   constructor
   · intro hn
-    exact ⟨L.subquotientLayer_ground_le f N w.2, h, hn, hfh⟩
+    exact ⟨L.subquotientLayer_ground_le f N w.property, h, hn, hfh⟩
   · rintro ⟨_, n, hn, hfn⟩
     rwa [← hf (hfn.trans hfh.symm)]
 
@@ -172,21 +172,21 @@ both are the elements of the ambient module fixed by the preimage of `N` in `U`.
 private def subquotientCoeffEquiv :
     F.level (L.subquotientLayer f N).top ≃ₗ[ℤ]
       ((Rep.res f (L.rep F)).quotientToInvariants N).V where
-  toFun y := ⟨⟨y, F.level_antitone (L.le_subquotientLayer_top f N) y.2⟩, fun n ↦ by
+  toFun y := ⟨⟨y, F.level_antitone (L.le_subquotientLayer_top f N) y.property⟩, fun n ↦ by
     obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (f n)
     have hut : (u : G) ∈ (L.subquotientLayer f N).top :=
-      (L.mem_top_subquotientLayer f N).2 ⟨u.2, hu ▸ ⟨n, n.2, rfl⟩⟩
+      (L.mem_top_subquotientLayer f N).2 ⟨u.property, hu ▸ ⟨n, n.property, rfl⟩⟩
     refine Subtype.ext ?_
     -- `n` acts on `(A^V)^N` as `f n` acts on `A^V`, by definition of `Rep.res` and of
     -- `Representation.quotientToInvariants`
     change ((L.rep F).ρ (f n) _ : F.toRep.V) = y
     rw [← hu]
-    exact (F.mem_level.1 y.2) _ hut⟩
-  invFun x := ⟨x.1, F.mem_level.2 fun g hg ↦ by
+    exact (F.mem_level.1 y.property) _ hut⟩
+  invFun x := ⟨x.val, F.mem_level.2 fun g hg ↦ by
     obtain ⟨hg', n, hn, hfn⟩ := (L.mem_top_subquotientLayer f N).1 hg
-    have h := congrArg Subtype.val (x.2 ⟨n, hn⟩)
+    have h := congrArg Subtype.val (x.property ⟨n, hn⟩)
     -- the invariance of `x` under `n` is its invariance under `f n`, as above
-    change ((L.rep F).ρ (f n) x.1 : F.toRep.V) = x.1 at h
+    change ((L.rep F).ρ (f n) x.val : F.toRep.V) = x.val at h
     rw [hfn] at h
     exact h⟩
   map_add' _ _ := rfl

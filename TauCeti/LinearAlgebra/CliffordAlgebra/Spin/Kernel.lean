@@ -154,14 +154,14 @@ private theorem commute_ι_of_mem_ker_spinToOrthogonal
   calc
     (x : CliffordAlgebra Q) * ι Q v =
         ((x : CliffordAlgebra Q) * ι Q v * star (x : CliffordAlgebra Q)) * x := by
-          rw [mul_assoc, spinGroup.star_mul_self_of_mem x.2, mul_one]
+          rw [mul_assoc, spinGroup.star_mul_self_of_mem x.property, mul_one]
     _ = ι Q v * x := by rw [hconj]
 
 private theorem exists_coe_eq_algebraMap_of_mem_ker_spinToOrthogonal
     (hQ : Q.Nondegenerate) (x : spinGroup Q)
     (hx : x ∈ MonoidHom.ker (spinToOrthogonal Q)) :
     ∃ r : K, (x : CliffordAlgebra Q) = algebraMap K (CliffordAlgebra Q) r := by
-  exact exists_eq_algebraMap_of_mem_even_of_commute Q hQ x (spinGroup.mem_even x.2)
+  exact exists_eq_algebraMap_of_mem_even_of_commute Q hQ x (spinGroup.mem_even x.property)
     (commute_ι_of_mem_ker_spinToOrthogonal Q x hx)
 
 private theorem coe_eq_one_or_eq_neg_one_of_mem_ker_spinToOrthogonal
@@ -172,7 +172,7 @@ private theorem coe_eq_one_or_eq_neg_one_of_mem_ker_spinToOrthogonal
   have hr_sq : r * r = 1 := by
     apply algebraMap_injective Q
     simpa only [hr, star_algebraMap, map_mul, map_one] using
-      spinGroup.star_mul_self_of_mem x.2
+      spinGroup.star_mul_self_of_mem x.property
   rcases (mul_self_eq_one_iff.mp hr_sq) with rfl | rfl
   · left
     simpa using hr
@@ -196,7 +196,8 @@ theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_algebraMap
   rw [coe_spinToSpecialOrthogonal_apply]
   apply ι_injective Q
   have hc : Commute (x : CliffordAlgebra Q) (ι Q m) := h ▸ Algebra.commute_algebraMap_left r _
-  rw [ι_spinVectorAction_apply, hc.eq, mul_assoc, spinGroup.mul_star_self_of_mem x.2, mul_one]
+  rw [ι_spinVectorAction_apply, hc.eq, mul_assoc, spinGroup.mul_star_self_of_mem x.property,
+      mul_one]
   simp
 
 /-- A Spin element whose Clifford value is `-1` lies in the kernel of the Spin action. -/
@@ -366,7 +367,7 @@ theorem card_ker_spinToSpecialOrthogonal (hM : 0 < Module.finrank K M)
     exact spinGroup.negOne_ne_one Q hQ0 (congrArg Subtype.val hz)
   · intro y hy
     apply Subtype.ext
-    rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQ y).mp y.2 with h | h
+    rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQ y).mp y.property with h | h
     · exfalso
       apply hy
       apply Subtype.ext

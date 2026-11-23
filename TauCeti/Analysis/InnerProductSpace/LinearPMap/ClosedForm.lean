@@ -135,15 +135,15 @@ theorem closedFormDomain_le_range (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V �
 /-- Chosen `H`-representative of `x : closedFormDomain j q`. -/
 private def closedFormRep (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜)
     (x : closedFormDomain j q) : H :=
-  x.2.choose_spec.2.choose
+  x.property.choose_spec.2.choose
 
 private theorem closedFormRep_eq (j : V →L[𝕜] H) (hj : Function.Injective j)
     (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (x : closedFormDomain j q) {u : V} {h : H}
     (hx : j u = x) (hu : ∀ v : V, q u v = ⟪h, j v⟫_𝕜) :
     closedFormRep j q x = h := by
-  have hu_eq : x.2.choose = u := hj (x.2.choose_spec.1.trans hx.symm)
+  have hu_eq : x.property.choose = u := hj (x.property.choose_spec.1.trans hx.symm)
   refine hdense.eq_of_inner_left 𝕜 fun v => ?_
-  rw [closedFormRep, ← x.2.choose_spec.2.choose_spec v, hu_eq, hu v]
+  rw [closedFormRep, ← x.property.choose_spec.2.choose_spec v, hu_eq, hu v]
 
 /-- **The partial linear operator represented by a sesquilinear form.** Given an injective
 continuous linear map `j : V →L[𝕜] H` with dense range and a bounded sesquilinear form
@@ -155,14 +155,14 @@ def closedFormOperator (j : V →L[𝕜] H) (hj : Function.Injective j) (hdense 
   toFun :=
     { toFun := closedFormRep j q
       map_add' := fun x y => by
-        obtain ⟨u₁, hx₁, h₁, hh₁⟩ := x.2
-        obtain ⟨u₂, hx₂, h₂, hh₂⟩ := y.2
+        obtain ⟨u₁, hx₁, h₁, hh₁⟩ := x.property
+        obtain ⟨u₂, hx₂, h₂, hh₂⟩ := y.property
         rw [closedFormRep_eq j hj hdense q x hx₁ hh₁, closedFormRep_eq j hj hdense q y hx₂ hh₂]
         refine closedFormRep_eq j hj hdense q (x + y) (u := u₁ + u₂) ?_ fun v => ?_
         · rw [map_add, hx₁, hx₂, Submodule.coe_add]
         · simp [map_add, hh₁ v, hh₂ v, inner_add_left]
       map_smul' := fun c x => by
-        obtain ⟨u, hx, h, hh⟩ := x.2
+        obtain ⟨u, hx, h, hh⟩ := x.property
         rw [RingHom.id_apply, closedFormRep_eq j hj hdense q x hx hh]
         refine closedFormRep_eq j hj hdense q (c • x) (u := c • u) ?_ fun v => ?_
         · rw [map_smul, hx, Submodule.coe_smul]
@@ -203,7 +203,7 @@ theorem inner_closedFormOperator (j : V →L[𝕜] H) (hj : Function.Injective j
     (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜)
     {x : (closedFormOperator j hj hdense q).domain} {u : V} (hx : j u = x) (v : V) :
     ⟪closedFormOperator j hj hdense q x, j v⟫_𝕜 = q u v := by
-  obtain ⟨u', hx', h, hh⟩ := x.2
+  obtain ⟨u', hx', h, hh⟩ := x.property
   have hu : u = u' := hj (hx.trans hx'.symm)
   rw [closedFormOperator_apply_eq j hj hdense q hx' hh, hu, hh v]
 
@@ -216,7 +216,7 @@ theorem mem_graph_closedFormOperator_iff (j : V →L[𝕜] H) (hj : Function.Inj
   rw [LinearPMap.mem_graph_iff]
   constructor
   · rintro ⟨x, rfl, rfl⟩
-    obtain ⟨u, hx, _⟩ := x.2
+    obtain ⟨u, hx, _⟩ := x.property
     exact ⟨u, hx, fun v => (inner_closedFormOperator j hj hdense q hx v).symm⟩
   · rintro ⟨u, rfl, hu⟩
     have hmem := apply_mem_domain_closedFormOperator j hj hdense q hu
@@ -240,8 +240,8 @@ theorem isFormalAdjoint_closedFormOperator (j : V →L[𝕜] H) (hj : Function.I
     (hHermitian : ∀ u v, q u v = star (q v u)) :
     (closedFormOperator j hj hdense q).IsFormalAdjoint (closedFormOperator j hj hdense q) := by
   intro x y
-  obtain ⟨u, hx, _⟩ := x.2
-  obtain ⟨w, hy, _⟩ := y.2
+  obtain ⟨u, hx, _⟩ := x.property
+  obtain ⟨w, hy, _⟩ := y.property
   calc
     ⟪closedFormOperator j hj hdense q x, (y : H)⟫_𝕜
         = ⟪closedFormOperator j hj hdense q x, j w⟫_𝕜 := by rw [hy]
@@ -275,7 +275,7 @@ theorem mul_norm_sq_le_re_inner_closedFormOperator (j : V →L[𝕜] H) (hj : Fu
     (hγ : ∀ u : V, γ * ‖j u‖ ^ 2 ≤ RCLike.re (q u u))
     (x : (closedFormOperator j hj hdense q).domain) :
     γ * ‖(x : H)‖ ^ 2 ≤ RCLike.re ⟪closedFormOperator j hj hdense q x, (x : H)⟫_𝕜 := by
-  obtain ⟨u, hx, _⟩ := x.2
+  obtain ⟨u, hx, _⟩ := x.property
   have h := inner_closedFormOperator j hj hdense q hx u
   rw [← hx, congrArg RCLike.re h]
   exact hγ u
@@ -469,7 +469,7 @@ theorem formSolutionOperator_shiftedForm_apply_add_smul (j : V →L[𝕜] H)
     (x : (closedFormOperator j hj hdense q).domain) :
     InnerProductSpace.formSolutionOperator (shiftedForm j q α) hunit j
       (closedFormOperator j hj hdense q x + (α : 𝕜) • (x : H)) = x := by
-  obtain ⟨u, hx, _⟩ := x.2
+  obtain ⟨u, hx, _⟩ := x.property
   have hsol : u = InnerProductSpace.formSolutionMap (shiftedForm j q α) hunit j
       (closedFormOperator j hj hdense q x + (α : 𝕜) • (x : H)) := by
     refine InnerProductSpace.eq_formSolutionMap (shiftedForm j q α) hunit j fun v => ?_

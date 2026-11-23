@@ -83,8 +83,8 @@ theorem sideCount_singleFace [DecidableEq Γ.E] (e : Γ.E) :
     (singleFace Γ w hw hclosed).sideCount e = w.count e := by
   let eq : {c : (singleFace Γ w hw hclosed).Corner // (singleFace Γ w hw hclosed).outgoing c = e}
       ≃ {i : Fin w.length // w[i] = e} :=
-    { toFun c := ⟨c.1.2, (outgoing_def _ _).symm.trans c.2⟩
-      invFun i := ⟨⟨(), i.1⟩, (outgoing_def _ _).trans i.2⟩
+    { toFun c := ⟨c.val.2, (outgoing_def _ _).symm.trans c.property⟩
+      invFun i := ⟨⟨(), i.val⟩, (outgoing_def _ _).trans i.property⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   rw [sideCount_def, Nat.card_congr eq, Nat.card_eq_fintype_card, Fintype.card_subtype,
@@ -108,7 +108,7 @@ theorem eulerChar_singleFace :
 theorem nonempty_vertexLink_path_singleFace {x : Γ.V}
     {a y : ((singleFace Γ w hw hclosed).vertexLink x).V}
     (b : ((singleFace Γ w hw hclosed).vertexLink x).V) (k : Fin w.length)
-    (hk : Γ.src w[k] = x) (ha : a.1 = w[k]) (hb : b.1 = Γ.rev w[(finRotate w.length).symm k])
+    (hk : Γ.src w[k] = x) (ha : a.val = w[k]) (hb : b.val = Γ.rev w[(finRotate w.length).symm k])
     (h : Nonempty (((singleFace Γ w hw hclosed).vertexLink x).Path b y)) :
     Nonempty (((singleFace Γ w hw hclosed).vertexLink x).Path a y) := by
   obtain ⟨p⟩ := (singleFace Γ w hw hclosed).nonempty_vertexLink_path ⟨⟨(), k⟩,
@@ -176,8 +176,8 @@ theorem eulerChar_polygon {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) 
 the reverse of the preceding letter. -/
 theorem nonempty_vertexLink_path_polygon {α : Type u} {w : List (α × Bool)} {hw : w ≠ []}
     {a y : ((polygon w hw).vertexLink PUnit.unit).V} (b : ((polygon w hw).vertexLink PUnit.unit).V)
-    (k : Fin w.length) (ha : a.1 = w[k])
-    (hb : b.1 = (w[(finRotate w.length).symm k].1, !w[(finRotate w.length).symm k].2))
+    (k : Fin w.length) (ha : a.val = w[k])
+    (hb : b.val = (w[(finRotate w.length).symm k].1, !w[(finRotate w.length).symm k].2))
     (h : Nonempty (((polygon w hw).vertexLink PUnit.unit).Path b y)) :
     Nonempty (((polygon w hw).vertexLink PUnit.unit).Path a y) :=
   nonempty_vertexLink_path_singleFace b k rfl ha hb h

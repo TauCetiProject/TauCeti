@@ -253,7 +253,7 @@ theorem intValuation_smul_stickelbergerPhi (hm : 2 ≤ m) {p : ℕ} [Fact p.Prim
 
 /-- A prime containing `Φ(P)` contains `N P`, since `Φ(P) σ₋₁(Φ(P)) = N(P)^m` for the complex
 conjugation `σ₋₁`. -/
-private theorem absNorm_mem_of_stickelbergerPhi_mem (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal]
+private theorem absNorm_mem_of_stickelbergerPhi_mem (hm : 2 ≤ m) (P : Ideal (𝓞 K))
     (hP : (absNorm P).Coprime m) {Q : Ideal (𝓞 K)} [Q.IsPrime]
     (hΦQ : stickelbergerPhi P m ∈ Q) : (absNorm P : 𝓞 K) ∈ Q := by
   let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) ((galEquivZMod m K).symm (-1))
@@ -262,7 +262,7 @@ private theorem absNorm_mem_of_stickelbergerPhi_mem (hm : 2 ≤ m) (P : Ideal (�
       MulEquiv.apply_symm_apply, Units.val_neg, Units.val_one]
     obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne m)
     rw [ZMod.val_neg_one, Nat.succ_sub_one]
-  have h := stickelbergerPhi_mul_apply_eq_absNorm_pow P hP hm τ hτ
+  have h := stickelbergerPhi_mul_apply_eq_absNorm_pow hP hm τ hτ
   exact IsPrime.mem_of_pow_mem ‹_› m (h ▸ Q.mul_mem_right _ hΦQ)
 
 /-- The multiplicity of a nonzero prime `Q` in `(Φ(P))` is the sum of the representatives `c(σ)`

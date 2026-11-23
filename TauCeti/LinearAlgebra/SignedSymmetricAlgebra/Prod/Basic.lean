@@ -150,7 +150,7 @@ noncomputable def toProd :
     gradedTensorGrading (signedSymPiece G) (signedSymPiece H) →ₐᵍ[R]
       signedSymPiece (G.prod H) :=
   gradedTensorLift _ _ _ (inl G H) (inr G H) fun _ _ a b ↦ by
-    simpa only [mul_comm] using inl_mul_inr a.2 b.2
+    simpa only [mul_comm] using inl_mul_inr a.property b.property
 
 /-- The graded algebra map `A(V × W) → A(V) ᵍ⊗ A(W)`, `(x, y) ↦ x ᵍ⊗ₜ 1 + 1 ᵍ⊗ₜ y`. -/
 noncomputable def ofProd :

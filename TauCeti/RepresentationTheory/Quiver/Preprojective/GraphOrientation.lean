@@ -45,7 +45,8 @@ any choice of orientation.
   orientation.
 * `SimpleGraph.Coloring.signlessPreprojectiveAlgebraEquiv` and
   `SimpleGraph.IsBipartite.signlessPreprojectiveAlgebraEquiv`: the comparison between the graph's
-  signless algebra and the preprojective algebra of any orientation.
+  signless algebra and the preprojective algebra of any orientation, preserving and reflecting the
+  path-length grading (`signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff`).
 * `SimpleGraph.Coloring.sourceSinkSignlessPreprojectiveAlgebraEquiv`: the comparison between the
   graph's signless algebra and the preprojective algebra of the source--sink orientation.
 * `TauCeti.DoubledQuiver.Orientation.not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite`:
@@ -303,14 +304,14 @@ theorem orientedColor_vertex (o : Orientation G) (i : V) :
 /-- Every arrow of an orientation of a two-coloured graph has differently coloured endpoints. -/
 theorem orientedColor_ne (o : Orientation G) {i j : OrientedQuiver G o} (a : i ⟶ j) :
     C.orientedColor o i ≠ C.orientedColor o j :=
-  C.valid a.1
+  C.valid a.val
 
 /-- Every arrow of the source--sink orientation ends at a vertex of colour `true`. -/
 theorem orientedColor_sourceSink_target_eq_true
     {i j : OrientedQuiver G C.sourceSink} (a : i ⟶ j) :
     C.orientedColor C.sourceSink j = true := by
   rw [orientedColor]
-  exact (mem_sourceSink_iff C _).mp a.2
+  exact (mem_sourceSink_iff C _).mp a.property
 
 /-! ### The preprojective comparison -/
 
@@ -483,6 +484,29 @@ theorem signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk (o : Orientation 
           (rescale (doubledLabelling k fun _ j _ =>
             if hG.coloringBool.orientedColor o j then (1 : k) else -1) x)) :=
   hG.coloringBool.signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk k o x
+
+/-- The bipartite comparison preserves every path-length graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade (o : Orientation G)
+    {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)}
+    (hx : x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n) :
+    hG.signlessPreprojectiveAlgebraEquiv k o x ∈ preprojectiveGrade k (OrientedQuiver G o) n :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hx
+
+/-- The inverse bipartite comparison preserves every path-length graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade (o : Orientation G)
+    {n : ℕ} {x : preprojectiveAlgebra k (OrientedQuiver G o)}
+    (hx : x ∈ preprojectiveGrade k (OrientedQuiver G o) n) :
+    (hG.signlessPreprojectiveAlgebraEquiv k o).symm x ∈
+      signlessPreprojectiveGrade k (DoubledQuiver G) n :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade k o hx
+
+/-- **The bipartite comparison preserves path degree**: an element of the signless algebra has
+degree `n` if and only if its image in the preprojective algebra of `o` does. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff (o : Orientation G)
+    {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
+    hG.signlessPreprojectiveAlgebraEquiv k o x ∈ preprojectiveGrade k (OrientedQuiver G o) n ↔
+      x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff k o
 
 include hG in
 /-- **Path vanishing transfers from the signless algebra of a bipartite graph to every

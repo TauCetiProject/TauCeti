@@ -188,7 +188,7 @@ of `γ + L` is zero. -/
 theorem isZeroAtImInfty_thetaCoset {γ : E} (hγ : γ ∉ L) : IsZeroAtImInfty (thetaCoset L γ) := by
   have h (v : L) : γ + (v : E) ≠ 0 := fun h0 => hγ <| by
     rw [eq_neg_of_add_eq_zero_left h0]
-    exact neg_mem v.2
+    exact neg_mem v.property
   by_cases hex : ∃ y : ℝ, 0 < y ∧ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)
   · obtain ⟨y, _, hs⟩ := hex
     simpa [h, UpperHalfPlane.IsZeroAtImInfty, ZeroAtFilter] using

@@ -85,7 +85,7 @@ omit [IsUltrametricDist R] [∀ j, Fact (0 < d j)] in
 `τ`, is restricted. -/
 theorem isRestricted_coeff_sumAlgEquiv {f : MvPowerSeries (σ ⊕ τ) R}
     (hf : IsRestricted (Sum.elim c d) f) (a : σ →₀ ℕ) :
-    IsRestricted d (coeff a (sumAlgEquiv R σ τ f)) := by
+    IsRestricted d (coeff a (sumAlgEquiv R R σ τ f)) := by
   apply (isRestrictedFamily_coeff_iff _).mp
   simpa only [coeff_coeff_sumAlgEquiv] using
     ((isRestrictedFamily_coeff_iff f).mpr hf).comp_sumElim a
@@ -93,11 +93,11 @@ theorem isRestricted_coeff_sumAlgEquiv {f : MvPowerSeries (σ ⊕ τ) R}
 /-- The coefficients of a restricted series in `σ ⊕ τ`, as a formal series in `σ` over the
 restricted series in `τ`. -/
 private noncomputable def sumSlices (f : Flat) : MvPowerSeries σ Inner :=
-  fun a ↦ ⟨coeff a (sumAlgEquiv R σ τ f), isRestricted_coeff_sumAlgEquiv f.2 a⟩
+  fun a ↦ ⟨coeff a (sumAlgEquiv R R σ τ f), isRestricted_coeff_sumAlgEquiv f.property a⟩
 
 omit [∀ j, Fact (0 < d j)] in
 private theorem coe_coeff_sumSlices (f : Flat) (a : σ →₀ ℕ) :
-    ((coeff a (sumSlices f) : Inner) : MvPowerSeries τ R) = coeff a (sumAlgEquiv R σ τ f) :=
+    ((coeff a (sumSlices f) : Inner) : MvPowerSeries τ R) = coeff a (sumAlgEquiv R R σ τ f) :=
   (rfl)
 
 private theorem sumAddEquiv_subringLinearEquiv (f : Flat) (s : σ →₀ ℕ) :
@@ -118,7 +118,7 @@ private theorem isRestricted_sumSlices (f : Flat) : IsRestricted c (sumSlices f)
   have h := IsRestrictedFamily.mem_addSubgroup.mp
     (IsRestrictedFamily.Gauss.sumAddEquiv
       (IsRestrictedFamily.Gauss.ofAddSubgroup
-        (IsRestrictedFamily.subringLinearEquiv f))).toAddSubgroup.2
+        (IsRestrictedFamily.subringLinearEquiv f))).toAddSubgroup.property
   apply (isRestrictedFamily_coeff_iff _).mp
   apply isRestrictedFamily_iff.mpr
   simpa only [norm_sumAddEquiv_subringLinearEquiv] using isRestrictedFamily_iff.mp h
@@ -126,13 +126,13 @@ private theorem isRestricted_sumSlices (f : Flat) : IsRestricted c (sumSlices f)
 /-- Flattening a restricted series in `σ` over the restricted series in `τ` gives a restricted
 series in `σ ⊕ τ`. -/
 private theorem isRestricted_sumAlgEquiv_symm (g : Iter) :
-    IsRestricted (Sum.elim c d) ((sumAlgEquiv R σ τ).symm (map (Inner).subtype g)) := by
+    IsRestricted (Sum.elim c d) ((sumAlgEquiv R R σ τ).symm (map (Inner).subtype g)) := by
   let a : (σ →₀ ℕ) → IsRestrictedFamily.Gauss d R := fun s ↦
     .ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv
       (coeff s (g : MvPowerSeries σ Inner)))
   have ha : IsRestrictedFamily c a := by
     apply isRestrictedFamily_iff.mpr
-    have hg := (isRestrictedFamily_coeff_iff _).mpr (IsRestricted.mem_subring.mp g.2)
+    have hg := (isRestrictedFamily_coeff_iff _).mpr (IsRestricted.mem_subring.mp g.property)
     simpa only [a, IsRestrictedFamily.Gauss.norm_subringLinearEquiv] using
       isRestrictedFamily_iff.mp hg
   have h := IsRestrictedFamily.Gauss.isRestrictedFamily_flatten
@@ -145,19 +145,19 @@ private theorem isRestricted_sumAlgEquiv_symm (g : Iter) :
 
 /-- Flattening, as a ring homomorphism from `R{Y/d}{X/c}` to `R{X/c, Y/d}`. -/
 private noncomputable def sumFlatten : Iter →+* Flat :=
-  (((sumAlgEquiv R σ τ).symm.toRingEquiv.toRingHom.comp (map (Inner).subtype)).comp
+  (((sumAlgEquiv R R σ τ).symm.toRingEquiv.toRingHom.comp (map (Inner).subtype)).comp
     (Iter).subtype).codRestrict _ isRestricted_sumAlgEquiv_symm
 
 private theorem sumFlatten_sumSlices (f : Flat) :
     sumFlatten ⟨sumSlices f, isRestricted_sumSlices f⟩ = f := by
-  refine Subtype.ext ((sumAlgEquiv R σ τ).injective ?_)
+  refine Subtype.ext ((sumAlgEquiv R R σ τ).injective ?_)
   ext a : 1
   simpa [sumFlatten] using coe_coeff_sumSlices f a
 
 private theorem sumFlatten_bijective :
     Function.Bijective (sumFlatten (R := R) (c := c) (d := d)) := by
   refine ⟨fun g h hgh ↦ Subtype.ext ?_, fun f ↦ ⟨_, sumFlatten_sumSlices f⟩⟩
-  have := (sumAlgEquiv R σ τ).symm.injective (congrArg Subtype.val hgh)
+  have := (sumAlgEquiv R R σ τ).symm.injective (congrArg Subtype.val hgh)
   ext a : 1
   exact Subtype.ext (by simpa using congrArg (coeff a) this)
 
@@ -197,9 +197,8 @@ constant series in `σ` whose value is the constant `r` in `τ`. -/
 theorem restrictedSumEquiv_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
     restrictedSumEquiv (algebraMap S Flat s) = algebraMap S Iter s := by
   rw [restrictedSumEquiv, RingEquiv.symm_apply_eq, RingEquiv.ofBijective_apply]
-  refine Subtype.ext ((sumAlgEquiv R σ τ).injective ?_)
-  simpa [sumFlatten, coe_algebraMap_isRestrictedSubring_apply, algebraMap_apply,
-    -AlgEquiv.commutes] using (sumAlgEquiv R σ τ).commutes (algebraMap S R s)
+  refine Subtype.ext ((sumAlgEquiv R R σ τ).injective ?_)
+  simp [sumFlatten, coe_algebraMap_isRestrictedSubring_apply]
 
 /-- **Iteration of restricted series as an algebra isomorphism**: over every algebra `S` of
 coefficients, `restrictedSumEquiv` is an `S`-algebra isomorphism `R{X/c, Y/d} ≃ₐ[S] R{Y/d}{X/c}`.
@@ -236,7 +235,7 @@ theorem isometry_restrictedSumEquiv :
 @[simp]
 theorem map_subtype_restrictedSumEquiv (f : Flat) :
     map (Inner).subtype (restrictedSumEquiv f : MvPowerSeries σ Inner) =
-      sumAlgEquiv R σ τ (f : MvPowerSeries (σ ⊕ τ) R) := by
+      sumAlgEquiv R R σ τ (f : MvPowerSeries (σ ⊕ τ) R) := by
   ext a b
   simp [coeff_map]
 

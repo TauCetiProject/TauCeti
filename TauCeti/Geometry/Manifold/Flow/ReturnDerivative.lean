@@ -431,7 +431,8 @@ theorem normalReturnDerivative_zero (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
     normalReturnDerivative v g 0 p h = 1 := by
   ext w
   rw [coe_normalReturnDerivative_apply, returnDerivative_apply, one_apply_eq_self]
-  exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv (LinearMap.mem_ker.1 w.2)
+  exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv
+      (LinearMap.mem_ker.1 w.property)
 
 /-- **The normal return derivative of an iterate.** The return branch at time `k * T₀` is the
 `k`-fold iterate of the return branch at time `T₀`, and its normal derivative is the `k`-th power
@@ -593,9 +594,10 @@ theorem exists_linearEquiv_comp_normalReturnDerivative
   refine ⟨LinearEquiv.ofLinearMap f f' ?_ ?_, fun w ↦ rfl, ?_⟩
   · refine LinearMap.ext fun u ↦ Subtype.ext ?_
     exact mfderiv_flowTransition_apply_mfderiv_flowTransition_of_add_eq_zero hv hneg hback hg'
-      hg'v hg hgv (neg_add_cancel T) u.2
+      hg'v hg hgv (neg_add_cancel T) u.property
   · refine LinearMap.ext fun w ↦ Subtype.ext ?_
-    exact mfderiv_flowTransition_neg_apply_mfderiv_flowTransition hv hT hq hg hgv hg' hg'v w.2
+    exact mfderiv_flowTransition_neg_apply_mfderiv_flowTransition hv hT hq hg hgv hg' hg'v
+        w.property
   · refine LinearMap.ext fun w ↦ Subtype.ext ?_
     exact LinearMap.congr_fun
       (returnDerivative_comp_mfderiv_flowTransition hv hT hq hP hp hg hgv hg' hg'v) w

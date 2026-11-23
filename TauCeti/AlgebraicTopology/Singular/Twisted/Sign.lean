@@ -23,7 +23,7 @@ The sign local system of a double cover (`IsCoveringMap.signLocalSystem`) is of 
 (`IsCoveringMap.monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one`). For the
 orientation local system `o(E)` of a real vector bundle `E` with integer coefficients, this is the
 familiar dichotomy: over a connected base, `H₀(B; o(E))` is `ℤ` when `E` is orientable and `ℤ/2`
-otherwise. The bundle form is in `TauCeti.Topology.VectorBundle.Orientation.TwistedHomology`.
+otherwise. The bundle form is in `TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.Basic`.
 
 ## Main definitions
 

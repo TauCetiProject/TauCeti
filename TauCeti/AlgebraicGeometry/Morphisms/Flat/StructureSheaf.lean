@@ -109,7 +109,7 @@ theorem isIso_app_pullback_fst_of_flat [QuasiCompact f] [QuasiSeparated f] [Flat
     IsIso ((pullback.fst g f).app U) := by
   -- The affine opens of `T` lying over an affine open of `S` form a basis of `T`.
   let ι := {UV : T.affineOpens × S.affineOpens // (UV.1 : T.Opens) ≤ g ⁻¹ᵁ UV.2}
-  refine (pullback.fst g f).isIso_app_of_isBasis (B := fun i : ι ↦ i.1.1)
+  refine (pullback.fst g f).isIso_app_of_isBasis (B := fun i : ι ↦ i.val.1)
     g.isBasis_range_affineOpens_le_preimage (fun i ↦ ?_) U
   · obtain ⟨⟨⟨U', hU'⟩, ⟨V, hV⟩⟩, hUV⟩ := i
     -- Over `U'` the sections of the fibre product are `Γ(X, f⁻¹ V) ⊗_{Γ(S, V)} Γ(T, U')`.

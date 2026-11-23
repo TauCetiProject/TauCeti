@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
 import Mathlib.FieldTheory.IsAlgClosed.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 import TauCeti.RingTheory.Localization.Integral
 
 /-!
@@ -108,7 +108,8 @@ theorem IsUnramifiedWRT.kummer_multiple
       ((TauCeti.IntermediateField.adjoinBaseChange K₁ L₁ β).restrictScalars (integralClosure A K₁))
   have hβint : IsIntegral L₁ β :=
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hd) (hβ ▸ isIntegral_algebraMap)).tower_top
-  have hsurj := TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K₁ L₁ hβint
+  have hsurj := TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K₁ L₁
+    hβint.isAlgebraic
   refine ⟨hβπ, hgenβ, hdegree, inferInstance, ?_, ?_⟩
   · exact h.baseChange (TauCeti.IntermediateField.adjoinBaseChangeTensorLift K₁ L₁ β) hsurj
   · exact Module.Finite.of_surjective

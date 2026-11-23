@@ -52,9 +52,14 @@ reduced core `v` is nonempty so `|w| < |w| + |v| = |w ∗ w|`. Consequently, on 
 
 ## Main results
 
+* `TauCeti.InfWord.IsCyclicallyReduced.npow`, `TauCeti.InfWord.IsCyclicallyReduced.isMul_npow`:
+  the powers `uⁿ` (`TauCeti.InfWord.npow`) of a cyclically reduced word `u` are cyclically
+  reduced, and `uᵐ ∗ uⁿ = uᵐ⁺ⁿ`.
 * `TauCeti.InfWord.IsCyclicDecomposition.unique`: uniqueness of the cyclic decomposition `(c, v)`.
 * `TauCeti.InfWord.IsCyclicDecomposition.mul_self`: for `w = c⁻¹ ++ v ++ c` in `CDR(Λ, X)`,
   `w ∗ w = c⁻¹ ++ (v ++ v) ++ c`.
+* `TauCeti.InfWord.mem_CDR_of_isMul_conj`: `CDR(Λ, X)` is closed under conjugation: if
+  `u ∈ CDR(Λ, X)` and `c⁻¹ ∗ u ∗ c` is defined, then it lies in `CDR(Λ, X)`.
 * `TauCeti.InfWord.gromovProduct_lyndonLengthOfIsMul_eq_of_isGreatest`,
   `TauCeti.InfWord.ReducedSubgroup.gromovProduct_lyndonLength_eq_of_isGreatest`: the Gromov product
   of word length is the length of the longest common initial segment.
@@ -71,8 +76,8 @@ reduced core `v` is nonempty so `|w| < |w| + |v| = |w ∗ w|`. Consequently, on 
 ## References
 
 * A. Myasnikov, V. Remeslennikov, D. Serbin, *Regular free length functions on Lyndon's free
-  `ℤ[t]`-group `F^{ℤ[t]}`*, Contemp. Math. 378 (2005), 37–77, §3.2 (Example 3.5) and §4
-  (Theorem 4.1 and Corollary 4.2).
+  `ℤ[t]`-group `F^{ℤ[t]}`*, Contemp. Math. 378 (2005), 37–77, §3.2 (Example 3.5), §3.3
+  (standard exponentiation and Lemma 3.8 (1)) and §4 (Theorem 4.1 and Corollary 4.2).
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Groups with free regular length
   functions in `ℤⁿ`*, Trans. Amer. Math. Soc. 364 (2012), 2847–2882, §2.3, Theorem 2.
 -/
@@ -174,6 +179,40 @@ theorem IsCyclicallyReduced.isMul_self (h : w.IsCyclicallyReduced) : IsMul w w (
 theorem IsCyclicallyReduced.mul_self (h : w.IsCyclicallyReduced) :
     w.mul w = Part.some (w ++ w) :=
   mul_eq_some_append h.isReduced_append_self
+
+/-- A cyclically reduced word `u` cannot cancel on both sides against a reduced word `c`: either
+`u ++ c` or `c⁻¹ ++ u` is reduced. -/
+theorem IsCyclicallyReduced.isReduced_append_or_isReduced_inv_append (hu : u.IsCyclicallyReduced)
+    (hc : c.IsReduced) : (u ++ c).IsReduced ∨ (c⁻¹ ++ u).IsReduced := by
+  rw [isReduced_append_iff, isReduced_inv_append_iff]
+  by_cases h : 0 < u.length ∧ 0 < c.length ∧
+      c.letter (Order.succ 0) = (u.letter u.length).map (Prod.map id not)
+  · exact .inr ⟨hc, hu.isReduced, fun _ _ h' => hu.letter_succ_zero_ne h.1 (h'.trans h.2.2)⟩
+  · exact .inl ⟨hu.isReduced, hc, fun h₁ h₂ h₃ => h ⟨h₁, h₂, h₃⟩⟩
+
+private theorem IsCyclicallyReduced.isReduced_npow (hu : u.IsCyclicallyReduced) (n : ℕ) :
+    (u.npow n).IsReduced := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [npow_succ]
+    refine isReduced_append_iff.2 ⟨ih, hu.isReduced, fun hn hu0 => ?_⟩
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 :=
+      Nat.exists_eq_succ_of_ne_zero (by rintro rfl; simp at hn)
+    rw [npow_succ, length_append, letter_append_length_add _ _ hu0]
+    exact hu.letter_succ_zero_ne hu0
+
+/-- The powers of a cyclically reduced word are cyclically reduced. -/
+theorem IsCyclicallyReduced.npow (hu : u.IsCyclicallyReduced) (n : ℕ) :
+    (u.npow n).IsCyclicallyReduced := by
+  rw [isCyclicallyReduced_iff_isReduced_append_self, ← npow_add]
+  exact hu.isReduced_npow _
+
+/-- For a cyclically reduced word `u`, `uᵐ ∗ uⁿ = uᵐ⁺ⁿ`. -/
+theorem IsCyclicallyReduced.isMul_npow (hu : u.IsCyclicallyReduced) (m n : ℕ) :
+    IsMul (u.npow m) (u.npow n) (u.npow (m + n)) := by
+  rw [npow_add]
+  exact isMul_append (npow_add u m n ▸ hu.isReduced_npow (m + n))
 
 /-! ### Cyclic decompositions and `CDR(Λ, X)` -/
 
@@ -341,6 +380,67 @@ theorem length_lt_length_of_mem_CDR_of_isMul_self (hw : w ∈ CDR Λ X) (hne : w
   simp only [length_append, length_inv]
   grind
 
+/-- If `u ++ r = r ++ m` for a cyclically reduced `u` and a reduced `r ++ m`, then `m` is
+cyclically reduced. -/
+private theorem IsCyclicallyReduced.of_append_eq_append {r m : InfWord Λ X}
+    (hu : u.IsCyclicallyReduced) (hred : (r ++ m).IsReduced) (h : u ++ r = r ++ m) :
+    m.IsCyclicallyReduced := by
+  have hmu : m.length = u.length := by
+    have := congrArg length h
+    grind
+  refine ⟨hred.right_of_append, fun hm0 => ?_⟩
+  rcases eq_or_ne r (empty Λ X) with rfl | hr
+  · simp only [append_empty, empty_append] at h
+    exact (h ▸ hu).letter_succ_zero_ne hm0
+  have hr0 : 0 < r.length := length_pos_iff.2 hr
+  have hlast : m.letter m.length = r.letter r.length := by
+    have := congrArg (letter · (r.length + u.length)) h
+    rw [add_comm, letter_append_length_add _ _ hr0, add_comm, ← hmu,
+      letter_append_length_add _ _ hm0] at this
+    exact this.symm
+  rw [hlast]
+  exact hred.letter_succ_zero_ne_of_append hr0 hm0
+
+/-- The conjugate `c⁻¹ ∗ (u ∘ c)` of a cyclically reduced word `u`, when it is defined, lies in
+`CDR(Λ, X)`. -/
+private theorem mem_CDR_of_isMul_inv_append (hu : u.IsCyclicallyReduced)
+    (h : IsMul c⁻¹ (u ++ c) v) : v ∈ CDR Λ X := by
+  obtain ⟨-, hred, a, b, r, hca, hw, rfl, hv⟩ := isMul_iff.1 h
+  obtain rfl : c = r ++ a⁻¹ := by rw [← inv_inv c, hca, inv_append, inv_inv]
+  have hdrop : b.drop u.length = a⁻¹ := by
+    have := congrArg (drop · (r.length + u.length)) hw
+    rwa [drop_append_length_add _ _ u.length_nonneg, ← append_assoc, add_comm, ← length_append,
+      drop_append_length, eq_comm] at this
+  obtain ⟨m, hm⟩ : ∃ m, b.take u.length = m := ⟨_, rfl⟩
+  obtain rfl : b = m ++ a⁻¹ := by rw [← hdrop, ← hm, take_append_drop]
+  rw [hw, ← append_assoc] at hred
+  rw [← append_assoc, ← append_assoc, append_left_inj] at hw
+  exact ⟨a⁻¹, m, hu.of_append_eq_append hred.left_of_append hw, hv, by simp [append_assoc]⟩
+
+/-- A conjugate of a word of `CDR(Λ, X)` lies in `CDR(Λ, X)`: if `u ∈ CDR(Λ, X)` and the products
+`c⁻¹ ∗ u = x` and `x ∗ c = v` are defined, then `v ∈ CDR(Λ, X)`. The product `u ∗ c` need not be
+defined. -/
+theorem mem_CDR_of_isMul_conj {x : InfWord Λ X} (hu : u ∈ CDR Λ X) (h₁ : IsMul c⁻¹ u x)
+    (h₂ : IsMul x c v) : v ∈ CDR Λ X := by
+  obtain ⟨e, w, hd⟩ := hu
+  have hu' := hd.isReduced
+  rw [hd.eq, append_assoc] at hu' h₁
+  -- `c⁻¹ ∗ e⁻¹ = d⁻¹`, that is `e ∗ c = d`, is defined
+  obtain ⟨d, hcd⟩ : ∃ d, IsMul c⁻¹ e⁻¹ d⁻¹ := by
+    obtain ⟨d', hd'⟩ := h₁.exists_isMul_take e⁻¹.length
+    rw [take_append_length] at hd'
+    exact ⟨d'⁻¹, by rwa [inv_inv]⟩
+  have hec : IsMul e c d := by simpa using hcd.inv
+  have hwe : IsMul w e (w ++ e) := isMul_append hu'.right_of_append
+  have hx : IsMul d⁻¹ (w ++ e) x := hcd.assoc_right (isMul_append hu') h₁
+  rcases hd.isCyclicallyReduced.isReduced_append_or_isReduced_inv_append hec.isReduced with h | h
+  · have h₃ : IsMul (w ++ e) c (w ++ d) := (hwe.assoc_iff hec).2 (isMul_append h)
+    exact mem_CDR_of_isMul_inv_append hd.isCyclicallyReduced ((hx.assoc_iff h₃).1 h₂)
+  · have h₃ : IsMul (d⁻¹ ++ w) e x := ((isMul_append h).assoc_iff hwe).2 hx
+    rw [← inv_mem_CDR]
+    refine mem_CDR_of_isMul_inv_append (c := d) hd.isCyclicallyReduced.inv ?_
+    simpa using ((h₃.assoc_iff hec).1 h₂).inv
+
 /-! ### Word length as a free Lyndon length function -/
 
 section LyndonLength
@@ -469,7 +569,7 @@ theorem ReducedSubgroup.exists_isGreatest_and_coe_eq_gromovProduct_lyndonLength
 /-- On any subgroup of `CDR(Λ, X)`, word length `w ↦ |w|` is a free Lyndon length function. -/
 theorem ReducedSubgroup.isFree_lyndonLength {H : ReducedSubgroup Λ X}
     (hH : (H : Set (InfWord Λ X)) ⊆ CDR Λ X) : H.lyndonLength.IsFree :=
-  isFree_lyndonLengthOfIsMul H.isMul_coe_mul Subtype.val_injective fun u => hH u.2
+  isFree_lyndonLengthOfIsMul H.isMul_coe_mul Subtype.val_injective fun u => hH u.property
 
 end LyndonLength
 

@@ -111,16 +111,16 @@ theorem toAddSubmonoid_hull_rat (s : Set V) :
     | add _ _ _ _ ih₁ ih₂ => exact add_mem ih₁ ih₂
     | smul q w _ ih =>
       obtain ⟨n, hn, hnw⟩ := AddSubmonoid.mem_nsmulSaturation.mp ih
-      let d : ℕ := q.1.den
-      let a : ℕ := q.1.num.toNat
-      have ha : (a : ℚ) = q.1.num := by
-        exact_mod_cast Int.toNat_of_nonneg (Rat.num_nonneg.mpr q.2)
-      have hden : (d : ℚ) * q.1 = (a : ℚ) := by
+      let d : ℕ := q.val.den
+      let a : ℕ := q.val.num.toNat
+      have ha : (a : ℚ) = q.val.num := by
+        exact_mod_cast Int.toNat_of_nonneg (Rat.num_nonneg.mpr q.property)
+      have hden : (d : ℚ) * q.val = (a : ℚ) := by
         rw [mul_comm, ha]
-        exact q.1.mul_den_eq_num
+        exact q.val.mul_den_eq_num
       have hdw : d • (q • w) = a • w := by
         simp [← Nonneg.coe_smul, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul, hden]
-      refine AddSubmonoid.mem_nsmulSaturation.mpr ⟨n * d, Nat.mul_pos hn q.1.den_pos, ?_⟩
+      refine AddSubmonoid.mem_nsmulSaturation.mpr ⟨n * d, Nat.mul_pos hn q.val.den_pos, ?_⟩
       rw [mul_smul, hdw, smul_comm n a]
       exact nsmul_mem hnw a
   · exact (AddSubmonoid.nsmulSaturation_le_iff_le (hull ℚ s).nsmulSaturated_toAddSubmonoid).mpr
@@ -206,7 +206,7 @@ theorem FG.mem_nsmulSaturation_iff_forall_nonneg {S : AddSubmonoid L} (hS : S.FG
       by_contra hc0
       refine hx (mem_nsmulSaturation.mpr ⟨c (.inl ()), Nat.pos_of_ne_zero hc0, ?_⟩)
       rw [hsum]
-      exact _root_.sum_mem fun (a : s) _ => nsmul_mem (subset_closure a.2) _
+      exact _root_.sum_mem fun (a : s) _ => nsmul_mem (subset_closure a.property) _
     have hmS : ∀ y ∈ closure (s : Set L), 0 ≤ m y := by
       intro y hy
       induction hy using closure_induction with
@@ -240,11 +240,11 @@ theorem FG.mem_nsmulSaturation_iff_forall_nonneg_of_mem_closure {S : AddSubmonoi
   have hiff := hS.comap_subtype_closure.mem_nsmulSaturation_iff_forall_nonneg (x := ⟨x, hx⟩)
   rw [nsmulSaturation_comap, mem_comap, AddSubgroup.coe_subtype] at hiff
   refine hiff.trans ⟨fun h m hm => h m fun y hy => ?_, fun h m hm => ?_⟩
-  · have hy_eq : S.toGroupClosure ⟨y.1, hy⟩ = y := Subtype.ext (S.coe_toGroupClosure ⟨y.1, hy⟩)
-    exact hy_eq ▸ hm ⟨y.1, hy⟩
+  · have hy_eq : S.toGroupClosure ⟨y.val, hy⟩ = y := Subtype.ext (S.coe_toGroupClosure ⟨y.val, hy⟩)
+    exact hy_eq ▸ hm ⟨y.val, hy⟩
   · refine h m fun s => hm (S.toGroupClosure s) ?_
     rw [mem_comap, AddSubgroup.coe_subtype, S.coe_toGroupClosure]
-    exact s.2
+    exact s.property
 
 end GeneratedGroup
 

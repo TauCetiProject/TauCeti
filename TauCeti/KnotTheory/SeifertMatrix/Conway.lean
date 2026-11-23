@@ -257,7 +257,7 @@ theorem seifertConwayDeterminant_add_diagonal_single (V : Matrix ι ι R) (x : �
     induction j using Fin.lastCases with
     | last => simp [hlast]
     | cast j =>
-      have hj := ((Fintype.equivFin {y // y ≠ x}).symm j).2
+      have hj := ((Fintype.equivFin {y // y ≠ x}).symm j).property
       simp [hcast, hj, Fin.castSucc_ne_last]
   have hminor : (V.submatrix E E).submatrix Fin.castSucc Fin.castSucc =
       (V.submatrix ((↑) : {y // y ≠ x} → ι) (↑)).submatrix (Fintype.equivFin _).symm

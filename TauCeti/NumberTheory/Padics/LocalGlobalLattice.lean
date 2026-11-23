@@ -328,7 +328,7 @@ private theorem one_tmul_smul_mem {X : ∀ p : Nat.Primes, Submodule ℤ_[p] (�
     exact hpX
   · obtain ⟨m, hm⟩ := hD'q hqp
     have hpq : ‖(p : ℚ_[q])‖ = 1 := Padic.norm_natCast_eq_one_iff.mpr
-      ((Nat.coprime_primes q.2 p.2).mpr fun h ↦ hqp (Subtype.ext h))
+      ((Nat.coprime_primes q.property p.property).mpr fun h ↦ hqp (Subtype.ext h))
     have hc : ‖(m : ℚ_[q]) / (p : ℚ_[q]) ^ k p‖ ≤ 1 := by
       rw [norm_div, norm_pow, hpq, one_pow, div_one]
       simpa using Padic.norm_int_le_one (p := q) m
@@ -364,7 +364,7 @@ private theorem exists_forall_one_tmul_mem_add
       (1 : ℚ_[p]) ⊗ₜ[ℚ] (r • w) + (D' p : ℤ_[p]) • (p : ℤ_[p]) ^ k p • t := by
     have hrp : (r : ℚ_[p]) * (p : ℚ_[p]) ^ k p = D' p := by
       rw [hr, Rat.cast_div, Rat.cast_pow, Rat.cast_natCast, Rat.cast_natCast,
-        div_mul_cancel₀ _ (pow_ne_zero _ (Nat.cast_ne_zero.mpr p.2.ne_zero))]
+        div_mul_cancel₀ _ (pow_ne_zero _ (Nat.cast_ne_zero.mpr p.property.ne_zero))]
     rw [tmul_smul, ← algebraMap_smul ℚ_[p] r, eq_sub_of_add_eq hwt.symm, eq_ratCast]
     simp only [algebra_compatible_smul ℚ_[p] (D' p : ℤ_[p]),
       algebra_compatible_smul ℚ_[p] ((p : ℤ_[p]) ^ k p),

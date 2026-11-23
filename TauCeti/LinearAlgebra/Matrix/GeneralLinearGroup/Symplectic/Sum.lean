@@ -180,7 +180,7 @@ def sum : GLSymplectic n R × GLSymplectic m R →* GLSymplectic (n ⊕ m) R whe
       by rw [← symplecticSum_mul, Units.mul_inv, Units.mul_inv, symplecticSum_one],
       by rw [← symplecticSum_mul, Units.inv_mul, Units.inv_mul, symplecticSum_one]⟩,
       mem_iff_mem_symplecticGroup.2 (symplecticSum_mem_symplecticGroup
-        (mem_iff_mem_symplecticGroup.1 p.1.2) (mem_iff_mem_symplecticGroup.1 p.2.2))⟩
+        (mem_iff_mem_symplecticGroup.1 p.1.property) (mem_iff_mem_symplecticGroup.1 p.2.property))⟩
   map_one' := Subtype.ext (Units.ext (by simp))
   map_mul' p q := Subtype.ext (Units.ext (by simp))
 

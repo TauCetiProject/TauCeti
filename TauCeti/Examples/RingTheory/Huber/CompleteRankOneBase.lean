@@ -53,7 +53,7 @@ private theorem integers_padicComplexInt (p : ℕ) [Fact p.Prime] :
   hom_inj := Subtype.val_injective
   map_le_one x := by
     rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm]
-    exact (PadicComplex.valuation_coe p (x : ℂ_[p])) ▸ NNReal.coe_le_one.mpr x.2
+    exact (PadicComplex.valuation_coe p (x : ℂ_[p])) ▸ NNReal.coe_le_one.mpr x.property
   exists_of_le_one {x} hx := by
     rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm,
       ← PadicComplex.valuation_coe p] at hx
@@ -96,7 +96,7 @@ theorem isCompleteRankOneBase_padicComplexInt (p : ℕ) [Fact p.Prime] :
             dist_zero_right]
         rw [heq]
         exact (IsUltrametricDist.isOpen_closedBall _ (pow_pos hp_pos n).ne').preimage
-          continuous_subtype_val
+          continuous_subtypeVal
       · rw [nhds_subtype_eq_comap] at hs
         obtain ⟨U, hU, hUs⟩ := hs
         obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hU

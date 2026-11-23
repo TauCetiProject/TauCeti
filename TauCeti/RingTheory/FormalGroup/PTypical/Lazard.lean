@@ -154,7 +154,7 @@ def pTypicalEnd (M : Submonoid ℤ)
     (g := lift ⟨(formalGroup.map (algebraMap LazardRing S)).pTypicalFormalGroup p hunit,
       inferInstance⟩)
     fun y ↦ by
-      obtain ⟨m, hm, hy⟩ := y.2
+      obtain ⟨m, hm, hy⟩ := y.property
       rw [← hy, eq_intCast, map_intCast]
       exact TauCeti.IsLocalization.isUnit_intCast_of_mem LazardRing hm
 

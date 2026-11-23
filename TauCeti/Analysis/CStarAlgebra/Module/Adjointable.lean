@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
+import Mathlib.Algebra.Order.Star.Projection
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
 import TauCeti.Analysis.CStarAlgebra.Compression
 
@@ -75,6 +76,9 @@ generation, nor nontriviality of the modules is assumed; in particular the zero 
   `TauCeti.AdjointableMap.inner_eq_add_inner_one_sub_of_isStarProjection`: closed range for
   adjointable idempotents and orthogonal inner-product decomposition for adjointable star
   projections.
+* `TauCeti.AdjointableMap.eq_iff_range_eq_of_isStarProjection` and
+  `TauCeti.AdjointableMap.le_iff_range_subset_of_isStarProjection`: adjointable star projections
+  are determined by their ranges, and their spectral order is inclusion of ranges.
 
 ## References
 
@@ -222,6 +226,11 @@ theorem adjoint_inner_left (T : AdjointableMap A E F) (x : E) (y : F) :
     inner A (T.adjoint y) x = inner A y (T x) :=
   T.adjoint.inner_map_eq' y x
 
+/-- The underlying function of an adjointable operator is adjointable in the sense of
+`CStarModule.IsAdjointable`. -/
+theorem isAdjointable (T : AdjointableMap A E F) : IsAdjointable A ⇑T :=
+  isAdjointable_def.mpr ⟨T.adjoint, fun x y ↦ (T.adjoint_inner_right x y).symm⟩
+
 /-- Every `AdjointableMap` forms a `LinearMap.IsAdjointPair` with its adjoint. -/
 theorem isAdjointPair (T : AdjointableMap A E F) :
     LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
@@ -249,7 +258,7 @@ theorem inner_eq_zero_of_mem_range_of_adjoint_apply_eq_zero {T : AdjointableMap 
     {x y : F} (hx : x ∈ Set.range T) (hy : T.adjoint y = 0) :
     inner A x y = 0 := by
   obtain ⟨z, rfl⟩ := hx
-  rw [← T.adjoint_inner_right, hy, inner_zero_right]
+  rw [← T.adjoint_inner_right, hy, CStarModule.inner_zero_right]
 
 /-! #### Linear structure and composition -/
 
@@ -430,7 +439,7 @@ theorem comp_smul (c : ℂ) (S : AdjointableMap A F G) (T : AdjointableMap A E F
 @[simp] theorem adjoint_comp_self_eq_zero_iff {T : AdjointableMap A E F} :
     T.adjoint.comp T = 0 ↔ T = 0 := by
   refine ⟨fun h ↦ ext fun x ↦ (CStarModule.inner_self (A := A)).mp ?_, fun h ↦ by simp [h]⟩
-  rw [← T.adjoint_inner_right, ← comp_apply, h, zero_apply, inner_zero_right]
+  rw [← T.adjoint_inner_right, ← comp_apply, h, zero_apply, CStarModule.inner_zero_right]
 
 @[simp] theorem self_comp_adjoint_eq_zero_iff {T : AdjointableMap A E F} :
     T.comp T.adjoint = 0 ↔ T = 0 := by
@@ -663,6 +672,9 @@ variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
   exact LinearMap.IsAdjointPair.norm_eq_cstarModule
     (T := T.toContinuousLinearMap) (S := T.adjoint.toContinuousLinearMap)
     (by simpa only [coe_toContinuousLinearMap] using T.isAdjointPair)
+
+@[simp] theorem nnnorm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖₊ = ‖T‖₊ :=
+  NNReal.eq (norm_adjoint T)
 
 /-- The adjoint bundled as a conjugate-linear isometric equivalence
 `AdjointableMap A E F ≃ₗᵢ⋆[ℂ] AdjointableMap A F E`. -/
@@ -904,7 +916,8 @@ theorem inner_eq_zero_of_isSelfAdjoint_of_mem_range_of_apply_eq_zero {T : Adjoin
 theorem inner_map_self_eq_zero {T : AdjointableMap A E E} :
     (∀ x : E, inner A x (T x) = 0) ↔ T = 0 :=
   ⟨fun h ↦ CStarModule.eq_of_forall_inner_map_self (A := A) fun x ↦ by
-    rw [h x, zero_apply, inner_zero_right], by rintro rfl x; rw [zero_apply, inner_zero_right]⟩
+    rw [h x, zero_apply, CStarModule.inner_zero_right],
+    by rintro rfl x; rw [zero_apply, CStarModule.inner_zero_right]⟩
 
 end SelfAdjoint
 
@@ -947,7 +960,7 @@ theorem nonneg_iff_forall_inner_nonneg {T : AdjointableMap A E E} :
 theorem le_iff_forall_inner_le {S T : AdjointableMap A E E} :
     S ≤ T ↔ ∀ x : E, inner A x (S x) ≤ inner A x (T x) := by
   rw [← sub_nonneg, nonneg_iff_forall_inner_nonneg]
-  simp_rw [sub_apply, inner_sub_right, sub_nonneg]
+  simp_rw [sub_apply, CStarModule.inner_sub_right, sub_nonneg]
 
 /-- The positive square root `CFC.sqrt T` of a positive operator `T : AdjointableMap A E E`
 satisfies `⟪CFC.sqrt T x, CFC.sqrt T y⟫_A = ⟪x, T y⟫_A`. -/
@@ -973,6 +986,15 @@ theorem adjoint_conj_nonneg [CompleteSpace F] (S : AdjointableMap A E F)
   nonneg_iff_forall_inner_nonneg.mpr fun x ↦ by
     rw [comp_apply, comp_apply, S.adjoint_inner_right]
     exact nonneg_iff_forall_inner_nonneg.mp hT (S x)
+
+/-- For a self-adjoint adjointable operator `T`, `⟪x, T x⟫_A ≤ ‖T‖ • ⟪x, x⟫_A`. -/
+theorem inner_map_self_le_norm_smul {T : AdjointableMap A E E} (hT : IsSelfAdjoint T) (x : E) :
+    inner A x (T x) ≤ ‖T‖ • inner A x x := by
+  have hsub : 0 ≤ inner A x ((algebraMap ℝ (AdjointableMap A E E) ‖T‖ - T) x) :=
+    nonneg_iff_forall_inner_nonneg.mp
+      (sub_nonneg.mpr (IsSelfAdjoint.le_algebraMap_norm_self T hT)) x
+  rwa [sub_apply, algebraMap_apply, CStarModule.inner_sub_right, ← Complex.coe_smul,
+    inner_smul_right_complex, Complex.coe_smul, sub_nonneg] at hsub
 
 end Complete
 
@@ -1042,7 +1064,7 @@ theorem inner_eq_add_inner_one_sub_of_isStarProjection {P : AdjointableMap A E E
     inner A x y = inner A (P x) (P y) + inner A ((1 - P) x) ((1 - P) y) := by
   rw [inner_map_map_eq_inner_map_right_of_isStarProjection hP,
     inner_map_map_eq_inner_map_right_of_isStarProjection hP.one_sub,
-    ← inner_add_right, ← add_apply, add_sub_cancel, one_apply_eq_self]
+    ← CStarModule.inner_add_right, ← add_apply, add_sub_cancel, one_apply_eq_self]
 
 /-- The range of an adjointable star projection `P` is orthogonal to the range of `1 - P`:
 `⟪P x, y - P y⟫_A = 0`. -/
@@ -1050,7 +1072,7 @@ theorem inner_map_sub_map_eq_zero_of_isStarProjection {P : AdjointableMap A E E}
     (hP : IsStarProjection P) (x y : E) :
     inner A (P x) (y - P y) = 0 := by
   rw [← P.adjoint_inner_right, ← star_eq_adjoint, hP.isSelfAdjoint.star_eq, map_sub,
-    ← mul_apply_eq_comp, hP.isIdempotentElem.eq, sub_self, inner_zero_right]
+    ← mul_apply_eq_comp, hP.isIdempotentElem.eq, sub_self, CStarModule.inner_zero_right]
 
 /-- The range of an adjointable idempotent `P` is its fixed-point locus `{x | P x = x}`. -/
 theorem range_eq_of_isIdempotentElem {P : AdjointableMap A E E} (hP : IsIdempotentElem P) :
@@ -1068,6 +1090,61 @@ theorem isClosed_range_of_isIdempotentElem {P : AdjointableMap A E E} (hP : IsId
   simpa only [toContinuousLinearMapAlgHom_apply, ContinuousLinearMap.range_toLinearMap,
     LinearMap.coe_range, ContinuousLinearMap.coe_coe, coe_toContinuousLinearMap] using
     ContinuousLinearMap.IsIdempotentElem.isClosed_range (hP.map toContinuousLinearMapAlgHom)
+
+
+/-- An adjointable endomorphism `P` is a star projection (`P * P = P` and `P* = P`) if and only if
+`⟪P x, y⟫_A = ⟪P x, P y⟫_A` for all `x, y : E`. -/
+theorem isStarProjection_iff_forall_inner {P : AdjointableMap A E E} :
+    IsStarProjection P ↔ ∀ x y : E, inner A (P x) y = inner A (P x) (P y) := by
+  refine ⟨fun hP x y ↦ ?_, fun h ↦ ?_⟩
+  · rw [inner_map_map_eq_inner_map_right_of_isStarProjection hP, ← P.adjoint_inner_right,
+      ← star_eq_adjoint, hP.isSelfAdjoint.star_eq]
+  · have hsa : IsSelfAdjoint P := by
+      rw [IsSelfAdjoint, star_eq_adjoint]
+      exact ext fun y ↦ CStarModule.ext_inner_left (A := A) fun x ↦ by
+        rw [P.adjoint_inner_right, h x y, ← CStarModule.star_inner, ← h y x,
+          CStarModule.star_inner]
+    refine ⟨ext fun x ↦ CStarModule.ext_inner_right (A := A) fun y ↦ ?_, hsa⟩
+    rw [mul_apply_eq_comp, ← P.adjoint_inner_right, ← star_eq_adjoint, hsa.star_eq, ← h x y]
+
+/-- For an idempotent adjointable endomorphism `Q` and any adjointable `P` into its domain,
+`Q ∘ P = P` if and only if the range of `P` is contained in the range of `Q`. -/
+theorem comp_eq_right_iff_range_subset_of_isIdempotentElem
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+    {P : AdjointableMap A F E} {Q : AdjointableMap A E E} (hQ : IsIdempotentElem Q) :
+    Q.comp P = P ↔ Set.range P ⊆ Set.range Q := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ext fun x ↦ ?_⟩
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨P x, by rw [← comp_apply, h]⟩
+  · obtain ⟨z, hz⟩ := h ⟨x, rfl⟩
+    rw [comp_apply, ← hz, ← mul_apply_eq_comp, hQ.eq]
+
+/-- For an idempotent adjointable endomorphism `Q`, `Q * P = P` if and only if the range of `P` is
+contained in the range of `Q`. -/
+theorem mul_eq_right_iff_range_subset_of_isIdempotentElem {P Q : AdjointableMap A E E}
+    (hQ : IsIdempotentElem Q) :
+    Q * P = P ↔ Set.range P ⊆ Set.range Q :=
+  comp_eq_right_iff_range_subset_of_isIdempotentElem hQ
+
+/-- Two adjointable star projections with the same range are equal. -/
+theorem eq_of_isStarProjection_of_range_eq {P Q : AdjointableMap A E E}
+    (hP : IsStarProjection P) (hQ : IsStarProjection Q) (h : Set.range P = Set.range Q) :
+    P = Q := by
+  have hQP : Q * P = P :=
+    (mul_eq_right_iff_range_subset_of_isIdempotentElem hQ.isIdempotentElem).mpr h.le
+  have hPQ : P * Q = Q :=
+    (mul_eq_right_iff_range_subset_of_isIdempotentElem hP.isIdempotentElem).mpr h.ge
+  calc P = star P := hP.isSelfAdjoint.star_eq.symm
+    _ = star (Q * P) := by rw [hQP]
+    _ = star P * star Q := star_mul Q P
+    _ = P * Q := by rw [hP.isSelfAdjoint.star_eq, hQ.isSelfAdjoint.star_eq]
+    _ = Q := hPQ
+
+/-- Adjointable star projections are determined by their ranges. -/
+theorem eq_iff_range_eq_of_isStarProjection {P Q : AdjointableMap A E E}
+    (hP : IsStarProjection P) (hQ : IsStarProjection Q) :
+    P = Q ↔ Set.range P = Set.range Q :=
+  ⟨fun h ↦ h ▸ rfl, eq_of_isStarProjection_of_range_eq hP hQ⟩
 
 end Projections
 
@@ -1088,6 +1165,15 @@ theorem norm_apply_le_of_isStarProjection {P : AdjointableMap A E E}
     (hP : IsStarProjection P) (x : E) :
     ‖P x‖ ≤ ‖x‖ :=
   CStarModule.norm_le_of_inner_self_le (inner_map_map_le_of_isStarProjection hP x)
+
+
+/-- On a complete Hilbert C⋆-module, the spectral order on adjointable star projections agrees with
+inclusion of ranges. -/
+theorem le_iff_range_subset_of_isStarProjection [CompleteSpace E] {P Q : AdjointableMap A E E}
+    (hP : IsStarProjection P) (hQ : IsStarProjection Q) :
+    P ≤ Q ↔ Set.range P ⊆ Set.range Q :=
+  (hP.le_iff_mul_eq_right hQ).trans
+    (mul_eq_right_iff_range_subset_of_isIdempotentElem hQ.isIdempotentElem)
 
 end CStarProjections
 

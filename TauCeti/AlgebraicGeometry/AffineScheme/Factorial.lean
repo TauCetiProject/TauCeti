@@ -40,8 +40,8 @@ theorem IsAffineOpen.presheaf_map_bijective_of_not_le_basicOpen {X : Scheme.{u}}
     [UniqueFactorizationMonoid Γ(X, V)] [Nonempty U]
     (h : ∀ π : Γ(X, V), Prime π → ¬U ≤ X.basicOpen π) :
     Function.Bijective (X.presheaf.map (homOfLE hUV : U ⟶ V).op) := by
-  have : Nonempty V := ⟨⟨(Nonempty.some ‹Nonempty U›).1,
-    hUV (Nonempty.some ‹Nonempty U›).2⟩⟩
+  have : Nonempty V := ⟨⟨(Nonempty.some ‹Nonempty U›).val,
+    hUV (Nonempty.some ‹Nonempty U›).property⟩⟩
   have := functionField_isFractionRing_of_isAffineOpen X V hV
   refine ⟨map_injective_of_isIntegral X _, fun s ↦ ?_⟩
   let r := X.germToFunctionField U s
@@ -55,7 +55,7 @@ theorem IsAffineOpen.presheaf_map_bijective_of_not_le_basicOpen {X : Scheme.{u}}
   apply IsFractionRing.isInteger_of_isUnit_den
   by_contra hb
   obtain ⟨π, hπirr, hπden⟩ := WfDvdMonoid.exists_irreducible_factor hb
-    (nonZeroDivisors.ne_zero (IsFractionRing.den Γ(X, V) r).2)
+    (nonZeroDivisors.ne_zero (IsFractionRing.den Γ(X, V) r).property)
   obtain ⟨y, hyU, hyπ⟩ := Set.not_subset.mp (h π hπirr.prime)
   let := TopCat.Presheaf.algebra_section_stalk X.presheaf (⟨y, hUV hyU⟩ : V)
   have := hV.isLocalization_stalk ⟨y, hUV hyU⟩
@@ -162,7 +162,7 @@ private theorem exists_prime_localization_of_mem_minimalPrimes
       fun h ↦ hP' ((Spec.map ringMap).mem_preimage.mpr h)
     have hleq : (Spec.map ringMap q).asIdeal ≤ p := by
       rw [hasIdeal]
-      exact (Ideal.comap_mono (IsLocalRing.le_maximalIdeal q.2.ne_top)).trans hmax.le
+      exact (Ideal.comap_mono (IsLocalRing.le_maximalIdeal q.isPrime.ne_top)).trans hmax.le
     exact hq.2 ⟨(Spec.map ringMap q).isPrime, (hmem _).mpr hqU⟩ hleq
 
 /-- Every minimal prime of the reduced complement of a nonempty affine open in the spectrum

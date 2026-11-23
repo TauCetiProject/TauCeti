@@ -155,7 +155,7 @@ def cubicalChainComplexProdMap {P' Q' : TopPair.{u}} (f : P ⟶ P') (g : Q ⟶ Q
     P.cubicalChainComplexProd k Q ⟶ P'.cubicalChainComplexProd k Q' :=
   cokernel.map _ _ (cubicalChainComplexMap k (prodLeftMap g (Hom.snd f)))
     (cubicalChainComplexMap k (prodLeftMap g (Hom.fst f)))
-    (cubicalChainComplexMap_prodLeftMap_comm k P Q f g)
+    (cubicalChainComplexMap_prodLeftMap_comm k P Q f g).symm
 
 /-- The map of chains of products of pairs is induced by the map of relative chains
 `N(X × Y, X × B) ⟶ N(X' × Y', X' × B')`. -/

@@ -62,12 +62,12 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper �
 section ConnectedExpansion
 
 private theorem integral_prod_mul_prod_sub_eq_zero_of_not_connected {k₁ k₂ n : ℕ}
-    (hξm : ∀ ij : StrictUpper, ij.1.2 < n → AEMeasurable (ξ ij) P)
+    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
     (hηm : ∀ i < n, AEMeasurable (η i) P)
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
-    (hξzero : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξzero : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hηzero : ∀ i < n, ∫ ω, η i ω ∂P = 0) (w₁ : Fin k₁ → Fin n) (w₂ : Fin k₂ → Fin n)
     (hnot : ¬ ((∃ i j, s(w₁ i, w₁ (finRotate k₁ i)) = s(w₂ j, w₂ (finRotate k₂ j))) ∧
       ∀ t : Fin k₁ ⊕ Fin k₂, ∃ t' ≠ t,

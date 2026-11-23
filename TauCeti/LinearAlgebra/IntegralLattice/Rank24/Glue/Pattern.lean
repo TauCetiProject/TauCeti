@@ -309,7 +309,7 @@ theorem mem_expand_iff_exists_mem_symmetries (p : GluePattern) (word : List ℕ)
         (ofFn_seed_cyclic_comp_pow pre block post k).symm⟩
   | evenPermutations w =>
     rw [mem_expand_evenPermutations_iff, symmetries_evenPermutations]
-    exact ⟨fun ⟨σ, h⟩ ↦ ⟨σ.val, σ.2, h⟩, fun ⟨g, hg, h⟩ ↦ ⟨⟨g, hg⟩, h⟩⟩
+    exact ⟨fun ⟨σ, h⟩ ↦ ⟨σ.val, σ.property, h⟩, fun ⟨g, hg, h⟩ ↦ ⟨⟨g, hg⟩, h⟩⟩
 
 /-- **The expansion of a pattern is invariant under its indicated coordinate permutations**:
 permuting the positions of a word by a symmetry of the pattern does not change whether the word

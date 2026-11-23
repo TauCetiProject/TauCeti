@@ -90,7 +90,8 @@ on the function field by substitution, sending a function `f(x, y)` to
 `f(u²x + r, u³y + u²sx + t)`. This is the function-field pullback of the isogeny of `C⁻¹`. -/
 noncomputable def autGroupToAlgEquiv : W.autGroup →* (W.FunctionField ≃ₐ[F] W.FunctionField) where
   toFun C := AlgEquiv.ofBijective
-    (variableChangeIsogeny (C⁻¹ : W.autGroup).1 (mem_stabilizer_iff.mp (C⁻¹).2)).fieldPullback
+    (variableChangeIsogeny (C⁻¹ : W.autGroup).val (mem_stabilizer_iff.mp
+        (C⁻¹).property)).fieldPullback
     (bijective_fieldPullback_variableChangeIsogeny W _)
   map_one' := AlgEquiv.ext fun z ↦ by simp
   map_mul' C D := AlgEquiv.ext fun z ↦ by
@@ -103,8 +104,8 @@ noncomputable def autGroupToAlgEquiv : W.autGroup →* (W.FunctionField ≃ₐ[F
 isogeny of `C⁻¹`. -/
 theorem autGroupToAlgEquiv_apply (C : W.autGroup) (z : W.FunctionField) :
     autGroupToAlgEquiv W C z =
-      (variableChangeIsogeny (C⁻¹ : W.autGroup).1
-        (mem_stabilizer_iff.mp (C⁻¹).2)).fieldPullback z :=
+      (variableChangeIsogeny (C⁻¹ : W.autGroup).val
+        (mem_stabilizer_iff.mp (C⁻¹).property)).fieldPullback z :=
   (rfl)
 
 /-- **A change of variables substitutes into `x`**: the automorphism of `C = (u, r, s, t)` sends
@@ -112,8 +113,8 @@ the coordinate function `x` to `u²x + r`. -/
 @[simp]
 theorem autGroupToAlgEquiv_apply_genericX (C : W.autGroup) :
     autGroupToAlgEquiv W C (genericX W) =
-      algebraMap F W.FunctionField (C.1.u : F) ^ 2 * genericX W +
-        algebraMap F W.FunctionField C.1.r := by
+      algebraMap F W.FunctionField (C.val.u : F) ^ 2 * genericX W +
+        algebraMap F W.FunctionField C.val.r := by
   simp [autGroupToAlgEquiv_apply, genericX_def, CoordinateRing.mk, AdjoinRoot.mk_C,
     ← IsScalarTower.algebraMap_apply]
 
@@ -122,16 +123,16 @@ the coordinate function `y` to `u³y + u²sx + t`. -/
 @[simp]
 theorem autGroupToAlgEquiv_apply_genericY (C : W.autGroup) :
     autGroupToAlgEquiv W C (genericY W) =
-      algebraMap F W.FunctionField (C.1.u : F) ^ 3 * genericY W +
-        algebraMap F W.FunctionField (C.1.u : F) ^ 2 * algebraMap F W.FunctionField C.1.s *
-          genericX W + algebraMap F W.FunctionField C.1.t := by
+      algebraMap F W.FunctionField (C.val.u : F) ^ 3 * genericY W +
+        algebraMap F W.FunctionField (C.val.u : F) ^ 2 * algebraMap F W.FunctionField C.val.s *
+          genericX W + algebraMap F W.FunctionField C.val.t := by
   simp [autGroupToAlgEquiv_apply, genericX_def, genericY_def, CoordinateRing.mk,
     AdjoinRoot.mk_C, AdjoinRoot.mk_X, ← IsScalarTower.algebraMap_apply]
 
 /-- **Distinct changes of variables give distinct automorphisms of the function field.** -/
 theorem autGroupToAlgEquiv_injective : Function.Injective (autGroupToAlgEquiv W) := fun C D h ↦ by
-  have hφ : variableChangeIsogeny (C⁻¹ : W.autGroup).1 (mem_stabilizer_iff.mp (C⁻¹).2) =
-      variableChangeIsogeny (D⁻¹ : W.autGroup).1 (mem_stabilizer_iff.mp (D⁻¹).2) :=
+  have hφ : variableChangeIsogeny (C⁻¹ : W.autGroup).val (mem_stabilizer_iff.mp (C⁻¹).property) =
+      variableChangeIsogeny (D⁻¹ : W.autGroup).val (mem_stabilizer_iff.mp (D⁻¹).property) :=
     Isogeny.ext <| AlgHom.ext fun z ↦ by
       rw [← fieldPullback_algebraMap, ← fieldPullback_algebraMap, ← autGroupToAlgEquiv_apply,
         ← autGroupToAlgEquiv_apply, h]
@@ -184,7 +185,7 @@ variable [DecidableEq F]
 @[simp]
 theorem translation_smul_infinity (P : W.Point) :
     translation W (Point.equivBaseChangeSelf W P) • Place.infinity W =
-      (pointEquivDegreeOnePlace W (-P)).1 := by
+      (pointEquivDegreeOnePlace W (-P)).val := by
   rw [← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def,
     translation_smul_pointEquivDegreeOnePlace, zero_sub]
 
@@ -249,10 +250,10 @@ theorem exists_autGroupToAlgEquiv_mul_translation_mul_inv_eq (C : W.autGroup)
     (P : (W⁄F).toAffine.Point) : ∃ P' : (W⁄F).toAffine.Point,
       autGroupToAlgEquiv W C * translation W P * (autGroupToAlgEquiv W C)⁻¹ = translation W P' := by
   obtain ⟨P', hP'⟩ :=
-    exists_translation_comp_fieldPullback_variableChangeIsogeny (mem_stabilizer_iff.mp C.2) P
+    exists_translation_comp_fieldPullback_variableChangeIsogeny (mem_stabilizer_iff.mp C.property) P
   -- the inverse of the automorphism of `C` is the pullback of the isogeny of `C`
   have hinv (z : W.FunctionField) : (autGroupToAlgEquiv W C)⁻¹ z =
-      (variableChangeIsogeny C.1 (mem_stabilizer_iff.mp C.2)).fieldPullback z := by
+      (variableChangeIsogeny C.val (mem_stabilizer_iff.mp C.property)).fieldPullback z := by
     rw [← map_inv, autGroupToAlgEquiv_apply]
     simp only [inv_inv]
   have hcomm : translation W P * (autGroupToAlgEquiv W C)⁻¹ =

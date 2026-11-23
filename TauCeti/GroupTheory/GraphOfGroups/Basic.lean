@@ -141,20 +141,20 @@ variable {a b : Γ.V}
 
 /-- The boundary monomorphism `α_e : A_e →* A_a` of a dart `e : a ⟶ b` of the quiver of `Γ`:
 the map `α` of the underlying dart, read in `A_a` through `src e = a`. -/
-def αArrow (e : a ⟶ b) : 𝔸.edgeGroup (Γ.toGeomEdge e.1) →* 𝔸.vertexGroup a :=
-  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1).toMonoidHom.comp (𝔸.α e.1)
+def αArrow (e : a ⟶ b) : 𝔸.edgeGroup (Γ.toGeomEdge e.val) →* 𝔸.vertexGroup a :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.property.1).toMonoidHom.comp (𝔸.α e.val)
 
 /-- The boundary monomorphism `ω_e : A_e →* A_b` of a dart `e : a ⟶ b` of the quiver of `Γ`:
 the map `ω` of the underlying dart, read in `A_b` through `tgt e = b`. -/
-def ωArrow (e : a ⟶ b) : 𝔸.edgeGroup (Γ.toGeomEdge e.1) →* 𝔸.vertexGroup b :=
-  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2).toMonoidHom.comp (𝔸.ω e.1)
+def ωArrow (e : a ⟶ b) : 𝔸.edgeGroup (Γ.toGeomEdge e.val) →* 𝔸.vertexGroup b :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.property.2).toMonoidHom.comp (𝔸.ω e.val)
 
-theorem αArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
-    𝔸.αArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1 (𝔸.α e.1 c) :=
+theorem αArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
+    𝔸.αArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.property.1 (𝔸.α e.val c) :=
   (rfl)
 
-theorem ωArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
-    𝔸.ωArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2 (𝔸.ω e.1 c) :=
+theorem ωArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
+    𝔸.ωArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.property.2 (𝔸.ω e.val c) :=
   (rfl)
 
 @[simp] theorem αArrow_mk (e : Γ.E) : 𝔸.αArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) = 𝔸.α e :=
@@ -164,14 +164,14 @@ theorem ωArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
   (rfl)
 
 theorem αArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.αArrow e) :=
-  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1).injective.comp (𝔸.α_injective e.1)
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.property.1).injective.comp (𝔸.α_injective e.val)
 
 theorem ωArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.ωArrow e) :=
-  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2).injective.comp (𝔸.ω_injective e.1)
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.property.2).injective.comp (𝔸.ω_injective e.val)
 
 /-- The map `α` of an arrow `e'` whose dart is the reverse of the dart of `e` is `ω_e`. -/
-private theorem αArrow_eq_ωArrow_of_val_eq_rev (e' : b ⟶ a) (e : a ⟶ b) (h : e'.1 = Γ.rev e.1)
-    (c : 𝔸.edgeGroup (Γ.toGeomEdge e'.1)) :
+private theorem αArrow_eq_ωArrow_of_val_eq_rev (e' : b ⟶ a) (e : a ⟶ b) (h : e'.val = Γ.rev e.val)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge e'.val)) :
     𝔸.αArrow e' c =
       𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by rw [h, Γ.toGeomEdge_rev]) c) := by
   obtain ⟨e, rfl, rfl⟩ := e
@@ -185,14 +185,14 @@ private theorem αArrow_eq_ωArrow_of_val_eq_rev (e' : b ⟶ a) (e : a ⟶ b) (h
 
 /-- The map `α` of a reversed dart is `ω` of the dart. -/
 theorem αArrow_reverse_apply (e : a ⟶ b)
-    (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).val)) :
     𝔸.αArrow (Quiver.reverse e) c =
       𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) :=
   𝔸.αArrow_eq_ωArrow_of_val_eq_rev _ e (Γ.reverse_val e) c
 
 /-- The map `ω` of a reversed dart is `α` of the dart. -/
 theorem ωArrow_reverse_apply (e : a ⟶ b)
-    (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).val)) :
     𝔸.ωArrow (Quiver.reverse e) c =
       𝔸.αArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) := by
   rw [𝔸.αArrow_eq_ωArrow_of_val_eq_rev e (Quiver.reverse e) (by simp)]
@@ -201,8 +201,8 @@ theorem ωArrow_reverse_apply (e : a ⟶ b)
 /-- An edge group element `c` of a dart `e`, read as an element `c'` of the edge group of
 `rev e`: `α_{rev e}(c') = ω_e(c)` and `ω_{rev e}(c') = α_e(c)`. -/
 theorem exists_αArrow_reverse_eq_and_ωArrow_reverse_eq (e : a ⟶ b)
-    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
-    ∃ c' : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1),
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
+    ∃ c' : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).val),
       𝔸.αArrow (Quiver.reverse e) c' = 𝔸.ωArrow e c ∧
         𝔸.ωArrow (Quiver.reverse e) c' = 𝔸.αArrow e c :=
   ⟨(MulEquiv.cast (M := 𝔸.edgeGroup) (by simp)).symm c, by
@@ -228,7 +228,7 @@ theorem exists_αArrow_reverse_eq_and_ωArrow_reverse_eq (e : a ⟶ b)
 
 /-- At a vertex where a dart `e'` is followed by its reverse `e`, the image of `ω_{e'}` is the
 image of `α_e`. -/
-theorem range_ωArrow_eq_range_αArrow {c : Γ.V} (e' : a ⟶ b) (e : b ⟶ c) (h : e'.1 = Γ.rev e.1) :
+theorem range_ωArrow_eq_range_αArrow {c : Γ.V} (e' : a ⟶ b) (e : b ⟶ c) (h : e'.val = Γ.rev e.val) :
     (𝔸.ωArrow e').range = (𝔸.αArrow e).range := by
   obtain rfl := Γ.src_eq_tgt_of_val_eq_rev h
   obtain rfl := Γ.eq_reverse_of_val_eq_rev h
@@ -246,12 +246,12 @@ theorem range_ωArrow_eq_range_αArrow {c : Γ.V} (e' : a ⟶ b) (e : b ⟶ c) (
 
 /-- An arrow with trivial edge group has trivial `αArrow`-image. -/
 @[simp] theorem range_αArrow_eq_bot_of_subsingleton (e : a ⟶ b)
-    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e.1))] : (𝔸.αArrow e).range = ⊥ :=
+    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e.val))] : (𝔸.αArrow e).range = ⊥ :=
   MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
 
 /-- An arrow with trivial edge group has trivial `ωArrow`-image. -/
 @[simp] theorem range_ωArrow_eq_bot_of_subsingleton (e : a ⟶ b)
-    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e.1))] : (𝔸.ωArrow e).range = ⊥ :=
+    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e.val))] : (𝔸.ωArrow e).range = ⊥ :=
   MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
 
 end Arrow
@@ -362,18 +362,19 @@ element of the corresponding vertex group of the restriction by rewriting and si
 @[expose, instance_reducible] def restrict : GraphOfGroups.{u, v, w, x} (Γ.restrict S hS) where
   vertexGroup := 𝔸.vertexGroup
   edgeGroup y := 𝔸.edgeGroup
-    (SerreGraph.GeomEdge.lift (Γ.restrict S hS) (fun e : S => Γ.toGeomEdge e.1)
-      (fun e => Γ.toGeomEdge_rev e.1) y)
-  ω e := (𝔸.ω e.1).comp
+    (SerreGraph.GeomEdge.lift (Γ.restrict S hS) (fun e : S => Γ.toGeomEdge e.val)
+      (fun e => Γ.toGeomEdge_rev e.val) y)
+  ω e := (𝔸.ω e.val).comp
     (MulEquiv.cast (M := 𝔸.edgeGroup) (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e)).toMonoidHom
-  ω_injective e := (𝔸.ω_injective e.1).comp (MulEquiv.injective _)
+  ω_injective e := (𝔸.ω_injective e.val).comp (MulEquiv.injective _)
 
 /-- The boundary monomorphism `ω_e` of a dart of the restriction is `ω_e` of `𝔸`, read through the
 identification of the edge groups. -/
 @[simp] theorem restrict_ω_apply (e : (Γ.restrict S hS).E)
     (c : (𝔸.restrict S hS).edgeGroup ((Γ.restrict S hS).toGeomEdge e)) :
     (𝔸.restrict S hS).ω e c =
-      𝔸.ω e.1 (MulEquiv.cast (M := 𝔸.edgeGroup) (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e) c) :=
+      𝔸.ω e.val (MulEquiv.cast (M := 𝔸.edgeGroup) (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e) c)
+          :=
   (rfl)
 
 /-- The boundary monomorphism `α_e` of a dart of the restriction is `α_e` of `𝔸`, read through the
@@ -381,7 +382,7 @@ identification of the edge groups. -/
 @[simp] theorem restrict_α_apply (e : (Γ.restrict S hS).E)
     (c : (𝔸.restrict S hS).edgeGroup ((Γ.restrict S hS).toGeomEdge e)) :
     (𝔸.restrict S hS).α e c =
-      𝔸.α e.1 (MulEquiv.cast (M := 𝔸.edgeGroup)
+      𝔸.α e.val (MulEquiv.cast (M := 𝔸.edgeGroup)
         (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e) c) := by
   rw [α_apply, α_apply, restrict_ω_apply]
   simp only [MulEquiv.cast_apply, cast_cast]

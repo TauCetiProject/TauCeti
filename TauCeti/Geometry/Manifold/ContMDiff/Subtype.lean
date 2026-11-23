@@ -153,11 +153,11 @@ theorem ContMDiff.extend_prodMap_subtypeVal_one
     (hsupp : ∀ x : U, (x : M) ∉ s → ∀ y : N, g (x, y) = 1) :
     ContMDiff (I.prod I'') I' n ((Prod.map (Subtype.val : U → M) id).extend g 1) := by
   let V : Opens (M × N) := ⟨(U : Set M) ×ˢ univ, U.isOpen.prod isOpen_univ⟩
-  let g' : V → M' := fun v ↦ g (⟨v.1.1, v.2.1⟩, v.1.2)
-  have hπ₁ : ContMDiff (I.prod I'') I n (fun v : V ↦ (⟨v.1.1, v.2.1⟩ : U)) :=
-    (TauCeti.ContMDiff.subtypeVal_comp_iff U _).1 (contMDiff_fst.comp contMDiff_subtype_val)
+  let g' : V → M' := fun v ↦ g (⟨v.val.1, v.property.1⟩, v.val.2)
+  have hπ₁ : ContMDiff (I.prod I'') I n (fun v : V ↦ (⟨v.val.1, v.property.1⟩ : U)) :=
+    (TauCeti.ContMDiff.subtypeVal_comp_iff U _).1 (contMDiff_fst.comp contMDiff_subtypeVal)
   have hg' : ContMDiff (I.prod I'') I' n g' :=
-    hg.comp (hπ₁.prodMk (contMDiff_snd.comp contMDiff_subtype_val))
+    hg.comp (hπ₁.prodMk (contMDiff_snd.comp contMDiff_subtypeVal))
   have hext : (Prod.map (Subtype.val : U → M) id).extend g 1 = Subtype.val.extend g' 1 := by
     ext ⟨x, y⟩
     by_cases hx : x ∈ U

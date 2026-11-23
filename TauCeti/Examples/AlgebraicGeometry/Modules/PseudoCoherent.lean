@@ -186,10 +186,10 @@ private def sectionsEquivOfNeTop_nonQuasicoherentSheaf (R : Type u) [CommRing R]
 /-- Sections of `nonQuasicoherentSheaf R` over every affine open of `Spec R` are pseudo-coherent. -/
 private theorem isPseudoCoherentOver_sections_nonQuasicoherentSheaf (R : Type u) [CommRing R]
     [IsLocalRing R] (W : (Spec (.of R)).affineOpens) :
-    TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.1)
-      Γ(nonQuasicoherentSheaf R, W.1) ⊤ := by
-  by_cases hW : W.1 = ⊤
-  · have : Subsingleton Γ(nonQuasicoherentSheaf R, W.1) :=
+    TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.val)
+      Γ(nonQuasicoherentSheaf R, W.val) ⊤ := by
+  by_cases hW : W.val = ⊤
+  · have : Subsingleton Γ(nonQuasicoherentSheaf R, W.val) :=
       hW ▸ subsingleton_sections_top_nonQuasicoherentSheaf R
     exact TauCeti.Huber.IsPseudoCoherentOver.of_projective
   · exact TauCeti.Huber.IsPseudoCoherentOver.of_projective.of_equiv
@@ -238,7 +238,7 @@ public theorem exists_isPseudoCoherentOver_and_not_isQuasicoherent_of_not_isFiel
     [CommRing R] [IsDomain R] [IsLocalRing R] (hR : ¬ IsField R) :
     ∃ F : (Spec (.of R)).Modules,
       (∀ W : (Spec (.of R)).affineOpens,
-        TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.1) Γ(F, W.1) ⊤) ∧
+        TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.val) Γ(F, W.val) ⊤) ∧
       ¬ F.IsQuasicoherent ∧ ¬ F.IsPseudoCoherent :=
   ⟨nonQuasicoherentSheaf R,
     isPseudoCoherentOver_sections_nonQuasicoherentSheaf R,
@@ -252,7 +252,7 @@ public theorem exists_isPseudoCoherentOver_and_not_isQuasicoherent_of_isDiscrete
     (R : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] :
     ∃ F : (Spec (.of R)).Modules,
       (∀ W : (Spec (.of R)).affineOpens,
-        TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.1) Γ(F, W.1) ⊤) ∧
+        TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.val) Γ(F, W.val) ⊤) ∧
       ¬ F.IsQuasicoherent ∧ ¬ F.IsPseudoCoherent :=
   exists_isPseudoCoherentOver_and_not_isQuasicoherent_of_not_isField R
     (IsDiscreteValuationRing.not_isField R)

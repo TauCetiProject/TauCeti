@@ -45,6 +45,12 @@ results for `E₇` and `E₆` after deleting end vertices.
   `TauCeti.map_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom`: the restriction maps
   preserve the path-length grading, and along `f : G ↪g H` the degree-`d` piece of `Π⁺(H)` maps
   onto the degree-`d` piece of `Π⁺(G)`.
+* `TauCeti.signlessPreprojectiveEmbeddingHom_ofPath_toPath`,
+  `TauCeti.signlessPreprojectiveEmbeddingHom_ofPath_toPath_eq_zero_of_notMem_range_left`,
+  `TauCeti.signlessPreprojectiveEmbeddingHom_ofArrow_eq_zero_of_notMem_range_left`,
+  `TauCeti.signlessPreprojectiveEmbeddingHom_ofPath_toPath_eq_zero_of_notMem_range_right`, and
+  `TauCeti.signlessPreprojectiveEmbeddingHom_ofArrow_eq_zero_of_notMem_range_right`: evaluation of
+  the embedding quotient on arrows inside and outside `Set.range f`.
 * `TauCeti.moduleFinite_signlessPreprojectiveAlgebra_induce` and
   `TauCeti.moduleFinite_signlessPreprojectiveAlgebra_of_embedding`: finite generation over the
   coefficient ring descends along induced subgraphs and graph embeddings.
@@ -277,10 +283,10 @@ private theorem inducedSubgraphPathAlgebraHom_backtrackElem {i j : V} (h : G.Adj
 private theorem sum_inducedSubgraphPathAlgebraHom_backtrackElem_eq_zero {v : V} (hv : v ∈ S)
     [Fintype (G.neighborSet v)] :
     ∑ w : G.neighborSet v,
-      inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.2) = 0 := by
+      inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.property) = 0 := by
   classical
   let f : G.neighborSet v → InducedAlgebra k G S := fun w =>
-    inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.2)
+    inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.property)
   have hsum := Fintype.sum_subtype_add_sum_subtype
     (fun w : G.neighborSet v => (w : V) ∈ S) f
   have hcompl : ∑ w : {w : G.neighborSet v // (w : V) ∉ S}, f w = 0 := by
@@ -288,7 +294,7 @@ private theorem sum_inducedSubgraphPathAlgebraHom_backtrackElem_eq_zero {v : V} 
     intro w _
     simp only [f]
     rw [inducedSubgraphPathAlgebraHom_backtrackElem
-      (k := k) (G := G) (S := S) w.1.2]
+      (k := k) (G := G) (S := S) w.val.property]
     simp [w.property]
   rw [hcompl, add_zero] at hsum
   rw [← hsum]
@@ -297,15 +303,15 @@ private theorem sum_inducedSubgraphPathAlgebraHom_backtrackElem_eq_zero {v : V} 
         ∑ w : {w : G.neighborSet v // (w : V) ∈ S},
           signlessPreprojectiveMk k _
             (backtrackElem (G.induce S) k
-              (inducedAdj G S hv w.2 w.1.2)) := by
+              (inducedAdj G S hv w.property w.val.property)) := by
       apply Finset.sum_congr rfl
       intro w _
       simp only [f]
       rw [inducedSubgraphPathAlgebraHom_backtrackElem
-        (k := k) (G := G) (S := S) w.1.2]
+        (k := k) (G := G) (S := S) w.val.property]
       simp [hv, w.property]
     _ = ∑ w : (G.induce S).neighborSet ⟨v, hv⟩,
-          signlessPreprojectiveMk k _ (backtrackElem (G.induce S) k w.2) := by
+          signlessPreprojectiveMk k _ (backtrackElem (G.induce S) k w.property) := by
       let e : {w : G.neighborSet v // (w : V) ∈ S} ≃ (G.induce S).neighborSet ⟨v, hv⟩ :=
         (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ G.neighborSet v) (· ∈ S)).trans
           ((Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
@@ -335,7 +341,7 @@ private theorem inducedSubgraphPathAlgebraHom_signlessPreprojectiveRelator
   · apply Finset.sum_eq_zero
     intro w _
     rw [inducedSubgraphPathAlgebraHom_backtrackElem
-      (k := k) (G := G) (S := S) w.2]
+      (k := k) (G := G) (S := S) w.property]
     simp [hv]
 
 private theorem inducedSubgraphPath_mem_signlessPreprojectiveGrade
@@ -367,18 +373,18 @@ private theorem inducedSubgraphPathAlgebraHom_surjective_ofPath
   induction p with
   | nil =>
       obtain ⟨v, rfl⟩ := exists_eq_vertex (G.induce S) a
-      refine ⟨vertexIdempotent k (vertex G v.1), vertexIdempotent_mem_grade_zero _, ?_⟩
+      refine ⟨vertexIdempotent k (vertex G v.val), vertexIdempotent_mem_grade_zero _, ?_⟩
       rw [vertexIdempotent_eq_ofPath, inducedSubgraphPathAlgebraHom, liftAlgHom_ofPath]
       simp only [inducedSubgraphPath, inducedSubgraphVertex, vertexEquiv_symm_vertex]
       split_ifs with hv
       · rw [vertexIdempotent_eq_ofPath]
       · rw [vertexEquiv_symm_vertex] at hv
-        exact (hv v.2).elim
+        exact (hv v.property).elim
   | @cons b c p e ih =>
       obtain ⟨i, rfl⟩ := exists_eq_vertex (G.induce S) b
       obtain ⟨j, rfl⟩ := exists_eq_vertex (G.induce S) c
       obtain ⟨x, hxgrade, hx⟩ := ih
-      let h : G.Adj i.1 j.1 := by
+      let h : G.Adj i.val j.val := by
         have he := e.down
         rw [vertexEquiv_symm_vertex, vertexEquiv_symm_vertex] at he
         exact SimpleGraph.induce_adj.mp he
@@ -386,9 +392,9 @@ private theorem inducedSubgraphPathAlgebraHom_surjective_ofPath
         simpa only [Path.length_cons, add_comm 1 p.length] using
           grade_mul_grade_le 1 p.length (Submodule.mul_mem_mul (ofArrow_mem_grade_one _) hxgrade)
       refine ⟨ofArrow (arrow G h) * x, hgrade, ?_⟩
-      rw [map_mul, inducedSubgraphPathAlgebraHom_ofArrow, dite_eq_left i.2,
-        dite_eq_left j.2, hx]
-      have he : arrow (G.induce S) (inducedAdj G S i.2 j.2 h) = e :=
+      rw [map_mul, inducedSubgraphPathAlgebraHom_ofArrow, dite_eq_left i.property,
+        dite_eq_left j.property, hx]
+      have he : arrow (G.induce S) (inducedAdj G S i.property j.property h) = e :=
         Subsingleton.elim _ _
       rw [he, ← map_mul, ofArrow_mul_ofPath]
 
@@ -573,6 +579,72 @@ theorem signlessPreprojectiveEmbeddingHom_ofArrow (f : G ↪g H) {i j : V} (h : 
   intro _
   congr 2
 
+/-- The embedding homomorphism sends the length-one path of an arrow `f i ⟶ f j` to the
+length-one path of `i ⟶ j`. This is the simp-normal form of
+`signlessPreprojectiveEmbeddingHom_ofArrow`. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_ofPath_toPath (f : G ↪g H) {i j : V}
+    (h : H.Adj (f i) (f j)) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _
+          (ofPath ⟨vertex H (f i), vertex H (f j), (arrow H h).toPath⟩)) =
+      signlessPreprojectiveMk k _
+        (ofPath ⟨vertex G i, vertex G j, (arrow G (f.map_adj_iff.mp h)).toPath⟩) := by
+  rw [← ofArrow_eq_ofPath, ← ofArrow_eq_ofPath]
+  exact signlessPreprojectiveEmbeddingHom_ofArrow k f (f.map_adj_iff.mp h)
+
+/-- The embedding homomorphism kills the length-one path of an arrow whose source lies outside
+`Set.range f`. This is the simp-normal form of
+`signlessPreprojectiveEmbeddingHom_ofArrow_eq_zero_of_notMem_range_left`. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_ofPath_toPath_eq_zero_of_notMem_range_left
+    (f : G ↪g H) {u v : W} (h : H.Adj u v) (hu : u ∉ Set.range f) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _
+          (ofPath ⟨vertex H u, vertex H v, (arrow H h).toPath⟩)) = 0 := by
+  classical
+  rw [← ofArrow_eq_ofPath, signlessPreprojectiveEmbeddingHom, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_right hu,
+    map_zero]
+
+/-- The embedding homomorphism kills an arrow whose source lies outside `Set.range f`. This is not
+a simp lemma: `ofArrow` is not in simp-normal form, and
+`signlessPreprojectiveEmbeddingHom_ofPath_toPath_eq_zero_of_notMem_range_left` covers its normal
+form. -/
+theorem signlessPreprojectiveEmbeddingHom_ofArrow_eq_zero_of_notMem_range_left
+    (f : G ↪g H) {u v : W} (h : H.Adj u v) (hu : u ∉ Set.range f) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _ (ofArrow (arrow H h))) = 0 := by
+  rw [ofArrow_eq_ofPath,
+    signlessPreprojectiveEmbeddingHom_ofPath_toPath_eq_zero_of_notMem_range_left k f h hu]
+
+/-- The embedding homomorphism kills the length-one path of an arrow whose target lies outside
+`Set.range f`. This is the simp-normal form of
+`signlessPreprojectiveEmbeddingHom_ofArrow_eq_zero_of_notMem_range_right`. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_ofPath_toPath_eq_zero_of_notMem_range_right
+    (f : G ↪g H) {u v : W} (h : H.Adj u v) (hv : v ∉ Set.range f) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _
+          (ofPath ⟨vertex H u, vertex H v, (arrow H h).toPath⟩)) = 0 := by
+  classical
+  rw [← ofArrow_eq_ofPath, signlessPreprojectiveEmbeddingHom, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, signlessPreprojectiveInducedSubgraphHom_ofArrow]
+  by_cases hu : u ∈ Set.range f
+  · rw [dite_eq_left hu, dite_eq_right hv, map_zero]
+  · rw [dite_eq_right hu, map_zero]
+
+/-- The embedding homomorphism kills an arrow whose target lies outside `Set.range f`. This is not
+a simp lemma: `ofArrow` is not in simp-normal form, and
+`signlessPreprojectiveEmbeddingHom_ofPath_toPath_eq_zero_of_notMem_range_right` covers its normal
+form. -/
+theorem signlessPreprojectiveEmbeddingHom_ofArrow_eq_zero_of_notMem_range_right
+    (f : G ↪g H) {u v : W} (h : H.Adj u v) (hv : v ∉ Set.range f) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _ (ofArrow (arrow H h))) = 0 := by
+  rw [ofArrow_eq_ofPath,
+    signlessPreprojectiveEmbeddingHom_ofPath_toPath_eq_zero_of_notMem_range_right k f h hv]
+
 /-- Pushing a basis path of `DoubledQuiver G` forward along `f.toHom` and restricting along
 `signlessPreprojectiveEmbeddingHom k f` recovers its class in `Π⁺(G)`. -/
 @[simp]
@@ -629,11 +701,11 @@ theorem exists_mem_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom_
   induction hy using Submodule.span_induction with
   | mem _ hmem =>
     obtain ⟨p, rfl⟩ := hmem
-    refine ⟨signlessPreprojectiveMk k _ (ofPath ((DoubledQuiver.map f.toHom).mapTotalPath p.1)),
+    refine ⟨signlessPreprojectiveMk k _ (ofPath ((DoubledQuiver.map f.toHom).mapTotalPath p.val)),
       signlessPreprojectiveMk_mem_grade k _ (ofPath_mem_grade_of_length ?_),
-      signlessPreprojectiveEmbeddingHom_ofPath_mapTotalPath k f p.1⟩
+      signlessPreprojectiveEmbeddingHom_ofPath_mapTotalPath k f p.val⟩
     rw [Prefunctor.length_mapTotalPath]
-    exact p.2
+    exact p.property
   | zero => exact ⟨0, zero_mem _, by simp⟩
   | add u v _ _ hu hv =>
     obtain ⟨zu, hzu, hfu⟩ := hu

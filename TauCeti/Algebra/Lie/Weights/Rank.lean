@@ -48,6 +48,8 @@ exact divisions by the parity identity `dim L = rank L + 2 · #Δ⁺`.
 
 * `LieSubalgebra.engel_eq_cartan_iff_forall_root_apply_ne_zero`: an element has Engel
   subalgebra `H` exactly when every root is nonzero on it.
+* `LieSubalgebra.ker_ad_eq_toSubmodule_of_forall_root_apply_ne_zero`: for abelian `H`, an element
+  of `H` on which no root vanishes has centralizer `H`.
 * `LieSubalgebra.exists_engel_eq_cartan`: a Cartan subalgebra is the Engel subalgebra of one of its
   elements.
 * `LieSubalgebra.rank_le_finrank_cartan`: the rank of `L` is at most the dimension of `H`.
@@ -108,6 +110,18 @@ theorem engel_eq_cartan_iff_forall_root_apply_ne_zero {h : H}
       by_contra hχ
       exact hh χ (by simpa [LieSubalgebra.root] using hχ) hχh
     rw [hχ.eq]
+
+/-- **The centralizer of an element of `H` at which no root vanishes is `H`**, when `H` is abelian:
+the centralizer lies in the Engel subalgebra, which is `H`, and `H` commutes with its elements. -/
+theorem ker_ad_eq_toSubmodule_of_forall_root_apply_ne_zero [IsLieAbelian H]
+    [LieModule.IsTriangularizable K H L] {h : H} (hh : ∀ α ∈ H.root, (α : H → K) h ≠ 0) :
+    LinearMap.ker (ad K L (h : L)) = H.toSubmodule := by
+  refine le_antisymm (fun y hy ↦ ?_) (fun y hy ↦ ?_)
+  · rw [← (H.engel_eq_cartan_iff_forall_root_apply_ne_zero).mpr hh, LieSubalgebra.mem_toSubmodule,
+      LieSubalgebra.mem_engel_iff]
+    exact ⟨1, by simpa using hy⟩
+  · rw [LinearMap.mem_ker, ad_apply]
+    exact LieSubalgebra.lie_eq_zero_of_mem (Subtype.prop _) hy
 
 /-- **Every Cartan subalgebra is the Engel subalgebra of one of its elements** when its action has
 linear weights and is triangularizable over an infinite field. -/

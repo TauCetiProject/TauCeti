@@ -13,10 +13,11 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
-import TauCeti.Analysis.Fourier.NonstationaryPhase
+import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
 import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
 # The dispersive estimate for frequency-localized half-wave propagators
@@ -30,12 +31,13 @@ smooth, compactly supported and vanishing near the origin,
 `|𝓕⁻ (exp(2πit‖·‖) ψ) (x)| ≤ C (1 + |t|)^(-(n - 1)/2)`
 
 (`TauCeti.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le`). Rescaling to the
-Littlewood–Paley cutoffs `ψⱼ`, supported where `‖ξ‖ ≈ 2^j`, gives the kernel bound
+dilates `ψ (2^{-j} ·)`, supported where `‖ξ‖ ≈ 2^j`, gives the kernel bound
 `C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)` uniformly in `j ∈ ℤ`, and with it the dispersive estimate
 
 `‖W₊(t) Pⱼ f‖_∞ ≤ C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2) ‖f‖₁`
 
-for the frequency-localized propagators, the decay that drives the wave Strichartz estimates. No
+for the propagators localized by the multipliers `Pⱼ` with these symbols, the decay that drives
+the wave Strichartz estimates. The Littlewood–Paley cutoffs `ψⱼ` are the dilates of `ψ₀`. No
 bound for the unlocalized propagator is claimed: its kernel is not a function.
 
 ## The argument
@@ -65,6 +67,10 @@ is non-stationary on the support of `a`, so `𝓕 G_t (s) = O(|t|^(-N))`
 * `TauCeti.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_inv_smul_le`: the same
   bound for the cutoff rescaled to frequency `c`, `C cⁿ (1 + c |t|)^(-(n - 1)/2)` uniformly in
   `c > 0`.
+* `TauCeti.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le`: the `L¹ → L^∞` dispersive
+  estimate for `W₊(t)` localized by a multiplier with symbol `ψ (2^{-j} ·)`.
+* `TauCeti.exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint_le_top`: the
+  same estimate for the time pairings `U(s) U(t)*` of `U(t) = W₊(t) Pⱼ`.
 * `ContDiffBump.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le`:
   the kernel bound for the dyadic cutoffs, `C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)`.
 * `ContDiffBump.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le`: the
@@ -429,6 +435,8 @@ theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le {ψ : E
       _ ≤ max A K * max 1 (2 ^ ((n - 1) / 2)) * (1 + |t|) ^ (-(n - 1) / 2) := by
           rw [← mul_assoc]; gcongr; exact le_max_right _ _
 
+/-! ### Dilated cutoffs -/
+
 /-- **The dispersive bound for a rescaled half-wave kernel.** Let `E` have dimension `n` and let
 `ψ` be smooth, compactly supported and vanish near the origin. There is `C ≥ 0` such that for
 every scale `c > 0`, every time `t` and every point `x`, the kernel localized by `ψ(c⁻¹ ·)`, to
@@ -462,6 +470,104 @@ theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_inv_smul_l
         rw [abs_mul, abs_of_pos hc]
         ring
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The half-wave symbol times a dilate of a smooth cutoff vanishing near the origin is smooth:
+near the origin it vanishes identically, and elsewhere the symbol is smooth. -/
+private theorem contDiff_phaseSymbol_sqrtNegLaplacianSymbol_mul_comp_smul {ψ : E → ℂ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψ0 : (0 : E) ∉ tsupport ψ) (t : ℝ) {c : ℝ} :
+    ContDiff ℝ ∞ (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * ψ (c • ξ)) := by
+  refine contDiff_iff_contDiffAt.2 fun ξ ↦ ?_
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · refine contDiffAt_const (c := (0 : ℂ)).congr_of_eventuallyEq ?_
+    have h : ∀ᶠ η in nhds (0 : E), ψ (c • η) = 0 :=
+      ((continuous_const_smul c).tendsto' 0 0 (smul_zero c)).eventually
+        (notMem_tsupport_iff_eventuallyEq.1 hψ0)
+    filter_upwards [h] with η hη
+    rw [hη, mul_zero]
+  · exact ((contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol t).contDiffAt
+      (isOpen_compl_singleton.mem_nhds hξ)).mul (hψ.comp (contDiff_const_smul c)).contDiffAt
+
+/-- **The dispersive estimate for half-wave propagators localized by dilated cutoffs.** Let `E`
+have dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and for
+`j ∈ ℤ` let `T` be an `L²` Fourier multiplier whose symbol is the dilate `ψ (2^{-j} ·)`. There is
+`C ≥ 0`, independent of `j`, such that for every time `t` and every integrable `f ∈ L²`,
+
+`‖W₊(t) T f‖_∞ ≤ C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2) ‖f‖₁`.
+
+Since `W₋(t) = W₊(-t)`, the same bound holds for `W₋`. -/
+theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le {ψ : E → ℂ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ)
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ ψ (((2 : ℝ) ^ j)⁻¹ • ξ)) → ∀ (t : ℝ)
+      (f : Lp F 2 (volume : Measure E)), Integrable f →
+      eLpNorm (halfWavePropagator F t (Lp.fourierMultiplierCLM F m f)) ∞ volume ≤
+        ENNReal.ofReal (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
+          (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) * eLpNorm f 1 volume := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_inv_smul_le hψ hψc hψ0
+  refine ⟨C, hC0, fun j m hm t f hf ↦ ?_⟩
+  -- The localized symbol `exp(2πit‖·‖) ψ (2^{-j} ·)` as a Schwartz function.
+  set σ : 𝓢(E, ℂ) := HasCompactSupport.toSchwartzMap
+    ((hψc.comp_smul (inv_ne_zero (zpow_ne_zero j two_ne_zero))).mul_left
+      (f := phaseSymbol sqrtNegLaplacianSymbol t))
+    (contDiff_phaseSymbol_sqrtNegLaplacianSymbol_mul_comp_smul hψ hψ0 t)
+  have hσ : ⇑σ = fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * ψ (((2 : ℝ) ^ j)⁻¹ • ξ) :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  -- `W₊(t) T` is the multiplier with the Schwartz symbol `σ`.
+  have hop : halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) =
+      Lp.fourierMultiplierCLM F (σ.toLp ∞) f := by
+    rw [halfWavePropagator_def]
+    refine phasePropagator_fourierMultiplierCLM_apply_of_ae_eq _ t ?_ f
+    filter_upwards [hm, σ.coeFn_toLp ∞] with ξ h₁ h₂
+    rw [h₂, h₁, hσ]
+  rw [hop]
+  refine σ.eLpNorm_fourierMultiplierCLM_toLp_top_le (fun z ↦ ?_) hf
+  rw [SchwartzMap.fourierInv_coe, hσ]
+  exact hC (zpow_pos two_pos j) t z
+
+open scoped InnerProduct in
+/-- **The dispersive estimate for the time pairings of the frequency-localized half-wave
+propagators.** Let `E` have dimension `n`, let `ψ` be smooth, compactly supported and vanish near
+the origin, and let `U(t) = W₊(t) Pⱼ`, where `Pⱼ` is an `L²` Fourier multiplier with symbol
+`ψ (2^{-j} ·)`. There is `C > 0` such that for every `j ∈ ℤ`, all times `s, t` and every
+`g ∈ L²`,
+
+`‖U(s) U(t)* g‖_∞ ≤ C 2^{jn} (1 + 2^j |s - t|)^(-(n - 1)/2) ‖g‖₁`. -/
+theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint_le_top
+    {ψ : E → ℂ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) :
+    ∃ C, 0 < C ∧ ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ ψ (((2 : ℝ) ^ j)⁻¹ • ξ)) →
+      ∀ (s t : ℝ) (g : Lp ℂ 2 (volume : Measure E)),
+        eLpNorm ((halfWavePropagator ℂ s ∘L Lp.fourierMultiplierCLM ℂ m)
+          (((halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m)†) g)) ∞ volume ≤
+        ENNReal.ofReal (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
+          (1 + 2 ^ j * |s - t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) *
+          eLpNorm g 1 volume := by
+  -- The symbol of `Pⱼ Pⱼ*` is the dilate of the cutoff `|ψ|² = ψ * star ψ`.
+  set ψ' : E → ℂ := fun ξ ↦ ψ ξ * star (ψ ξ)
+  have hψ' : ContDiff ℝ ∞ ψ' := hψ.mul (Complex.conjCLE.contDiff.comp hψ)
+  have hψ'0 : (0 : E) ∉ tsupport ψ' := fun h ↦ hψ0 (tsupport_mul_subset_left h)
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le hψ' hψc.mul_right hψ'0 (F := ℂ)
+  refine ⟨C + 1, by positivity, fun j m hm s t g ↦ ?_⟩
+  have hm' : (m • star m : Lp ℂ ∞ (volume : Measure E)) =ᵐ[volume]
+      fun ξ ↦ ψ' (((2 : ℝ) ^ j)⁻¹ • ξ) := by
+    filter_upwards [Lp.coeFn_lpSMul (r := ∞) m (star m), Lp.coeFn_star m, hm] with ξ h₁ h₂ h₃
+    rw [h₁, Pi.smul_apply', h₂, Pi.star_apply, h₃, smul_eq_mul]
+  rw [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
+    Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
+  by_cases hg : MemLp g 1 volume
+  · refine (hC j _ hm' (s - t) g (memLp_one_iff_integrable.1 hg)).trans ?_
+    gcongr ?_ * _
+    exact ENNReal.ofReal_le_ofReal (by gcongr; linarith)
+  · -- Outside `L¹` the right-hand side is infinite.
+    have hpos : ENNReal.ofReal ((C + 1) * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
+        (1 + 2 ^ j * |s - t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) ≠ 0 :=
+      (ENNReal.ofReal_pos.2 (by positivity)).ne'
+    rw [top_unique (not_lt.1 (memLp_iff.not.1 hg)), ENNReal.mul_top hpos]
+    exact le_top
+
 end TauCeti
 
 /-! ### Dyadic blocks -/
@@ -484,18 +590,11 @@ theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewood
         C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
           (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2) := by
   obtain ⟨C, hC0, hC⟩ := exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_inv_smul_le
-    (ofRealCLM.contDiff.comp (φ.contDiff_littlewoodPaley 0))
-    ((φ.hasCompactSupport_littlewoodPaley 0).comp_left ofReal_zero)
-    (fun h ↦ φ.zero_notMem_tsupport_littlewoodPaley 0 (tsupport_comp_subset ofReal_zero _ h))
+    (φ.contDiff_ofReal_littlewoodPaley 0) (φ.hasCompactSupport_ofReal_littlewoodPaley 0)
+    (φ.zero_notMem_tsupport_ofReal_littlewoodPaley 0)
   refine ⟨C, hC0, fun j t x ↦ ?_⟩
-  -- `ψⱼ` is the rescaling `ψ₀ (2^{-j} ·)`.
-  have heq : (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * φ.littlewoodPaley j ξ) =
-      fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ *
-        (fun η ↦ (φ.littlewoodPaley 0 η : ℂ)) (((2 : ℝ) ^ j)⁻¹ • ξ) := by
-    ext ξ
-    rw [littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
-  rw [heq]
-  exact hC (zpow_pos two_pos j) t x
+  simpa only [φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j] using
+    hC (zpow_pos two_pos j) t x
 
 /-! ### The operator form -/
 
@@ -515,26 +614,11 @@ theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_l
       eLpNorm (halfWavePropagator F t (Lp.fourierMultiplierCLM F m f)) ∞ volume ≤
         ENNReal.ofReal (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
           (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) * eLpNorm f 1 volume := by
-  obtain ⟨C, hC0, hC⟩ :=
-    φ.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le
-  refine ⟨C, hC0, fun j m hm t f hf ↦ ?_⟩
-  -- The localized symbol `ψⱼ exp(2πit‖·‖)` as a Schwartz function.
-  set σ : 𝓢(E, ℂ) :=
-    φ.littlewoodPaleyPiece (contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol (E := E) t) j
-  have hσ : ⇑σ = fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * φ.littlewoodPaley j ξ := by
-    rw [coe_littlewoodPaleyPiece]
-    funext ξ
-    rw [Complex.real_smul, mul_comm]
-  -- `W₊(t) Pⱼ` is the multiplier with the Schwartz symbol `σ`.
-  have hop : halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) =
-      Lp.fourierMultiplierCLM F (σ.toLp ∞) f := by
-    rw [halfWavePropagator_def]
-    refine phasePropagator_fourierMultiplierCLM_apply_of_ae_eq _ t ?_ f
-    filter_upwards [hm, σ.coeFn_toLp ∞] with ξ h₁ h₂
-    rw [h₂, h₁, hσ]
-  rw [hop]
-  refine σ.eLpNorm_fourierMultiplierCLM_toLp_top_le (fun z ↦ ?_) hf
-  rw [SchwartzMap.fourierInv_coe, hσ]
-  exact hC j t z
+  obtain ⟨C, hC0, hC⟩ := exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le (F := F)
+    (φ.contDiff_ofReal_littlewoodPaley 0) (φ.hasCompactSupport_ofReal_littlewoodPaley 0)
+    (φ.zero_notMem_tsupport_ofReal_littlewoodPaley 0)
+  refine ⟨C, hC0, fun j m hm ↦ hC j m ?_⟩
+  filter_upwards [hm] with ξ hξ
+  rw [hξ, φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j]
 
 end ContDiffBump

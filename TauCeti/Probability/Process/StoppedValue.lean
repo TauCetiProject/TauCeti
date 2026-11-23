@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Function.Piecewise
 public import TauCeti.Data.Set.Countable
 
 /-!
-# Measurability of stopped values at countable-range times
+# Measurability of stopped values
 
 For a process `u` and a random time `τ : Ω → WithTop ι`, Mathlib's `stoppedValue u τ` is the value
 `u (τ ω) ω`, with an arbitrary index used where `τ ω = ⊤`. Mathlib proves that it is measurable
@@ -44,6 +44,12 @@ a raw filtration. For restarted increments `u (τ + t) - u τ`,
 `MeasureTheory.continuous_stoppedValue_add_const_sub_stoppedValue` relate the difference of stopped
 values to the stopped increment family on `{τ ≠ ⊤}`, record its vanishing at `⊤`, and show that it
 preserves pathwise continuity.
+
+For everywhere-continuous processes with coordinatewise strongly measurable evaluations on a
+second-countable metrizable ordered Borel time domain, evaluating `stoppedValue` at any measurable
+random time yields a strongly measurable map
+(`MeasureTheory.stronglyMeasurable_stoppedValue_of_continuous`), with no filtration, stopping-time,
+or Borel state-space assumption.
 -/
 
 public section
@@ -129,6 +135,20 @@ theorem stoppedValue_preimage_eq (t : Set β) :
   | top => simp
   | coe i => simp
 
+/-- The level-set partition used to glue stopped values. -/
+private noncomputable def stoppedValuePartition (τ : Ω → WithTop ι) :
+    IndexedPartition (fun v : Set.range τ => {ω | τ ω = v.val}) where
+  eq_of_mem := fun hv hw => Subtype.ext (hv.symm.trans hw)
+  some := fun v => v.property.choose
+  some_mem := fun v => v.property.choose_spec
+  index := fun ω => ⟨τ ω, ω, rfl⟩
+  mem_index := fun _ => rfl
+
+private theorem stoppedValue_eq_partition (ω : Ω) :
+    stoppedValue u τ ω = u ((stoppedValuePartition τ).index ω).val.untopA ω := by
+  have h := Set.mem_ofPred_eq.mp ((stoppedValuePartition τ).mem_index ω)
+  simp only [stoppedValue, h]
+
 variable [MeasurableSpace β]
 
 /-- At a random time with countable range whose level sets are measurable, the stopped value of a
@@ -176,6 +196,18 @@ theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder 
   cases v with
   | top => exact hτ.measurableSpace_le _ (hτ.measurableSet_eq_top_of_countable_range hc)
   | coe i => exact ℱ.le i _ (hτ.measurableSet_eq_of_countable_range hc i)
+
+omit [Nonempty ι] in
+/-- Every level set of a countable-range stopping time, including its infinite-time event,
+is measurable for the stopped sigma-algebra, even in a partially ordered time type. -/
+theorem IsStoppingTime.measurableSet_stopping_eq_of_countable_range [PartialOrder ι]
+    {ℱ : Filtration ι m} (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable)
+    (v : WithTop ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = v} := by
+  cases v with
+  | top => exact hτ.measurableSet_eq_top_of_countable_range hc
+  | coe i =>
+    rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
+    exact hτ.measurableSet_eq_of_countable_range hc i
 
 section CountableTime
 
@@ -231,18 +263,9 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
   -- the gluing below uses indicator functions; any value of the process serves as their zero
   let : Zero E := ⟨X (Classical.arbitrary ι) ω₀⟩
   have := hc.to_subtype
-  -- each level set of `τ` is measurable for the stopping sigma algebra, by transport of the slice
-  have hmeas (i : ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = i} := by
-    rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
-    exact hτ.measurableSet_eq_of_countable_range hc i
   let s : Set.range τ → Set Ω := fun v ↦ {ω | τ ω = v.val}
-  have hs : IndexedPartition s := IndexedPartition.mk' s
-    (fun v w hvw ↦ Set.disjoint_left.2 fun ω hv hw ↦
-      hvw (Subtype.ext (hv.symm.trans hw)))
-    (fun v ↦ by obtain ⟨ω, hω⟩ := v.property; exact ⟨ω, hω⟩)
-    (fun ω ↦ ⟨⟨τ ω, ⟨ω, rfl⟩⟩, rfl⟩)
-  have htop : MeasurableSet[hτ.measurableSpace] {ω | τ ω = ⊤} :=
-    hτ.measurableSet_eq_top_of_countable_range hc
+  let hs := stoppedValuePartition τ
+  have htop := hτ.measurableSet_stopping_eq_of_countable_range hc ⊤
   have hind (v : Set.range τ) :
       StronglyMeasurable[hτ.measurableSpace] ((s v).indicator (X v.val.untopA)) := by
     obtain ⟨v, hv⟩ := v
@@ -265,17 +288,13 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
         (fun t ht ↦ ?_) ((hX i).indicator hslice) (fun ω hω ↦ Set.indicator_of_notMem hω _)
       rw [Set.inter_comm, hτ.measurableSet_inter_eq_iff, Set.inter_comm]
       exact ht
-  have hm (v : Set.range τ) : MeasurableSet[hτ.measurableSpace] (s v) := by
-    obtain ⟨v, hv⟩ := v
-    induction v using WithTop.recTopCoe with
-    | top => exact htop
-    | coe i => exact hmeas i
+  have hm (v : Set.range τ) : MeasurableSet[hτ.measurableSpace] (s v) :=
+    hτ.measurableSet_stopping_eq_of_countable_range hc v.val
   let : MeasurableSpace Ω := hτ.measurableSpace
   convert hs.stronglyMeasurable_piecewise hm hind using 1
   ext ω
   rw [IndexedPartition.piecewise_apply, Set.indicator_of_mem (hs.mem_index ω)]
-  simp only [stoppedValue]
-  rw [(hs.mem_index ω : τ ω = _)]
+  exact stoppedValue_eq_partition ω
 
 /-- Stopping a strongly adapted process at a countable-range stopping time preserves literal
 strong adaptation on a raw filtration, with no path regularity or finiteness assumption on
@@ -292,5 +311,18 @@ theorem StronglyAdapted.stoppedProcess_of_countable_range
     ((isStoppingTime_const ℱ t).min hτ) hct).mono
       (((isStoppingTime_const ℱ t).min hτ).measurableSpace_le_of_le_const
         (fun _ ↦ min_le_left _ _))
+
+/-- Evaluating an everywhere-continuous, coordinatewise strongly measurable process at a measurable
+random time yields a strongly measurable random variable. -/
+theorem stronglyMeasurable_stoppedValue_of_continuous {ι Ω E : Type*}
+    [LinearOrder ι] [Nonempty ι] [TopologicalSpace ι] [OrderTopology ι]
+    [TopologicalSpace.MetrizableSpace ι] [SecondCountableTopology ι]
+    [MeasurableSpace ι] [BorelSpace ι] [TopologicalSpace E]
+    [TopologicalSpace.PseudoMetrizableSpace E] {_ : MeasurableSpace Ω}
+    {X : ι → Ω → E} {τ : Ω → WithTop ι}
+    (hX : ∀ t, StronglyMeasurable (X t)) (hc : ∀ ω, Continuous (X · ω)) (hτ : Measurable τ) :
+    StronglyMeasurable (stoppedValue X τ) :=
+  (stronglyMeasurable_uncurry_of_continuous_of_stronglyMeasurable hc hX).comp_measurable
+    (hτ.untopA.prodMk measurable_id)
 
 end MeasureTheory

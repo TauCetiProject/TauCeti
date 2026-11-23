@@ -189,9 +189,11 @@ theorem elementarySubgroup_normal_of_hasStableRangeLE {R n : Type*} [Ring R] [Fi
   let Y : Matrix Unit {k : n // k ≠ i} R := Matrix.single () ⟨j, hij.symm⟩ a
   have htr : φ.symm.reindexGL R (transvectionUnit hij a) = lowerBlockGL Y := by
     refine Units.ext ?_; ext (p | ⟨⟩) (q | ⟨⟩)
-    · simp [φ, coe_transvectionUnit_eq_one_add_single, Matrix.one_apply, Subtype.ext_iff, p.2.symm]
-    · simp [φ, coe_transvectionUnit_eq_one_add_single, p.2, p.2.symm]
-    · simp [φ, Y, coe_transvectionUnit_eq_one_add_single, single_apply, Subtype.ext_iff, q.2.symm]
+    · simp [φ, coe_transvectionUnit_eq_one_add_single, Matrix.one_apply, Subtype.ext_iff,
+        p.property.symm]
+    · simp [φ, coe_transvectionUnit_eq_one_add_single, p.property, p.property.symm]
+    · simp [φ, Y, coe_transvectionUnit_eq_one_add_single, single_apply, Subtype.ext_iff,
+        q.property.symm]
     · simp [φ, coe_transvectionUnit_eq_one_add_single, hij.symm]
   have hmid : fromBlocksGL (h⁻¹, (1 : GL Unit R)) * lowerBlockGL Y *
       (fromBlocksGL (h⁻¹, (1 : GL Unit R)))⁻¹ =
@@ -228,7 +230,7 @@ theorem HasStableRangeLE.exists_vecMul_elementarySubgroup_eq_single {R m : Type*
   refine ⟨φ.reindexGL R e₀, (φ.reindexGL_mem_elementarySubgroup_iff).mpr he₀, ?_⟩
   ext k; obtain ⟨x, rfl⟩ := φ.surjective k
   have hmul : (a ᵥ* (φ.reindexGL R e₀ : Matrix m m R)) (φ x) =
-      (Sum.elim (fun i : {i : m // i ≠ i₀} ↦ a i.1) (fun _ : Unit ↦ a i₀) ᵥ*
+      (Sum.elim (fun i : {i : m // i ≠ i₀} ↦ a i.val) (fun _ : Unit ↦ a i₀) ᵥ*
         (e₀ : Matrix _ _ R)) x := by
     simp only [Equiv.coe_reindexGL, submatrix_apply, vecMul, dotProduct]
     rw [← φ.sum_comp]
@@ -236,7 +238,7 @@ theorem HasStableRangeLE.exists_vecMul_elementarySubgroup_eq_single {R m : Type*
     exact Fintype.sum_congr _ _ fun y ↦ by rcases y with i | ⟨⟩ <;> simp [φ]
   rw [hmul, he₀_mul]
   rcases x with i | ⟨⟩
-  · simp [φ, i.2]
+  · simp [φ, i.property]
   · simp [φ]
 
 /-- **Right rank-one unipotent lemma:** over a ring of stable range at most `s` with
@@ -257,7 +259,7 @@ theorem HasStableRangeLE.oneSubVecMulVecGL_mem_elementarySubgroup {R m : Type*} 
       _ = 0 := by rw [← dotProduct_mulVec, mulVec_mulVec, Units.mul_inv, one_mulVec, hvu]
   let φ := Equiv.subtypeNeSumPUnit.{0} i₀
   let U : GL ({i : m // i ≠ i₀} ⊕ Unit) R :=
-    upperBlockGL (Matrix.of fun (i : {i : m // i ≠ i₀}) (_ : Unit) ↦ -u' i.1)
+    upperBlockGL (Matrix.of fun (i : {i : m // i ≠ i₀}) (_ : Unit) ↦ -u' i.val)
   have hconj : e⁻¹ * g * e = φ.reindexGL R U := by
     refine Units.ext ?_
     rw [Units.val_mul, Units.val_mul, coe_oneSubVecMulVecGL, Matrix.mul_sub, Matrix.mul_one,
@@ -265,9 +267,9 @@ theorem HasStableRangeLE.oneSubVecMulVecGL_mem_elementarySubgroup {R m : Type*} 
     ext p q; obtain ⟨p, rfl⟩ := φ.surjective p; obtain ⟨q, rfl⟩ := φ.surjective q
     simp only [Equiv.coe_reindexGL, submatrix_apply, φ.symm_apply_apply]
     rcases p with i | ⟨⟩ <;> rcases q with j | ⟨⟩
-    · simp [φ, U, vecMulVec_apply, Matrix.one_apply, Subtype.ext_iff, j.2]
-    · simp [φ, U, vecMulVec_apply, i.2]
-    · simp [φ, U, vecMulVec_apply, j.2, j.2.symm]
+    · simp [φ, U, vecMulVec_apply, Matrix.one_apply, Subtype.ext_iff, j.property]
+    · simp [φ, U, vecMulVec_apply, i.property]
+    · simp [φ, U, vecMulVec_apply, j.property, j.property.symm]
     · simp [φ, U, vecMulVec_apply, hu'0]
   have hg : g = e * (e⁻¹ * g * e) * e⁻¹ := by group
   rw [hg, hconj]

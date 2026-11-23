@@ -157,8 +157,8 @@ noncomputable def sumHalf (hC : BinaryCode.IsEven C) :
   toFun x := ⌊(∑ i, (x : ι → ℚ) i) / 2⌋
   map_zero' := by simp
   map_add' x y := by
-    obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.2
-    obtain ⟨l, hl⟩ := ConstructionA.exists_sum_eq_two_mul C hC y.2
+    obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.property
+    obtain ⟨l, hl⟩ := ConstructionA.exists_sum_eq_two_mul C hC y.property
     simp only [Submodule.coe_add, Pi.add_apply, Finset.sum_add_distrib, hk, hl]
     rw [show ((2 : ℚ) * k + 2 * l) / 2 = ((k + l : ℤ) : ℚ) by push_cast; ring,
       show (2 : ℚ) * k / 2 = k by ring, show (2 : ℚ) * l / 2 = l by ring]
@@ -175,11 +175,11 @@ theorem sumHalf_apply_of_sum_eq (hC : BinaryCode.IsEven C)
 theorem sumHalf_eq_zero_iff (hC : BinaryCode.IsEven C)
     (x : ConstructionA.lattice 2 C.toAddSubgroup) :
     sumHalf C hC x = 0 ↔ (x : ι → ℚ) ∈ lattice C := by
-  obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.2
+  obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.property
   rw [sumHalf_apply_of_sum_eq C hC hk, ZMod.intCast_zmod_eq_zero_iff_dvd, mem_lattice]
   constructor
   · rintro ⟨l, rfl⟩
-    exact ⟨x.2, l, by rw [hk]; push_cast; ring⟩
+    exact ⟨x.property, l, by rw [hk]; push_cast; ring⟩
   · rintro ⟨-, l, hl⟩
     refine ⟨l, ?_⟩
     have : (k : ℚ) = 2 * l := by linarith

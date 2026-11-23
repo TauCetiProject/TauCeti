@@ -245,8 +245,11 @@ the `2300` points. Entry `i` of the table is the image of the point `i`. -/
      [1524, 1527, 1529, 1530, 1525, 1526, 1528, 1531, 1538, 1537, 1535, 1532, 1539, 1536],
      [1534, 1533, 2295, 2285, 2293, 2287, 2290, 2296, 2288, 2298, 2292, 2286, 2294, 2284],
      [2289, 2299, 2291, 2297]].flatten
-  Function.Involutive.toPerm (fun i : Fin 2300 ↦ Fin.ofNat 2300 (Nat.bitField 12 t i))
-    (by unfold Function.Involutive; decide +kernel)
+  let f (i : Fin 2300) : Fin 2300 := Fin.ofNat 2300 (Nat.bitField 12 t i)
+  { toFun := f
+    invFun := f
+    left_inv := by decide +kernel
+    right_inv := by decide +kernel }
 
 /-- The image of the generator `b` of the presentation of `Co₂`, of index one: a permutation of
 order `5` of the `2300` points. Entry `i` of the first table is the image of the point `i`, and

@@ -120,13 +120,13 @@ variable {f : AInfinityHom AA BB} {eA : A} {eB : B}
 
 /-- A higher suspended Taylor component vanishes on any word containing the source unit. -/
 theorem taylor_of_tprod_eq_zero (hf : f.IsStrictlyUnital hA hB)
-    (n : {n : ℕ // 0 < n}) (hn : n.1 ≠ 1) (x : Fin n.1 → A)
+    (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 1) (x : Fin n.val → A)
     (hx : ∃ i, x i = eA) :
     f.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) = 0 := by
-  have htwist : f.component n.1
-      (fun i ↦ AA.grading.koszulTwist ((n.1 : ℤ) - 1 - i) (x i)) =
+  have htwist : f.component n.val
+      (fun i ↦ AA.grading.koszulTwist ((n.val : ℤ) - 1 - i) (x i)) =
       f.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) := by
-    rw [component_apply f n.1 n.2]
+    rw [component_apply f n.val n.property]
     simp only [InternalGrading.koszulTwist_koszulTwist]
   rw [← htwist]
   apply hf.component_eq_zero hn

@@ -133,7 +133,7 @@ noncomputable def radicalQuotientMap : L →ₗ[ℤ] L.radicalQuotient :=
   L.radical.mkQ.restrictScalars ℤ |>.domRestrict L.carrier |>.codRestrict
     L.radicalQuotient.carrier fun x ↦ by
       rw [radicalQuotient_carrier]
-      exact Submodule.mem_map.mpr ⟨x, x.2, rfl⟩
+      exact Submodule.mem_map.mpr ⟨x, x.property, rfl⟩
 
 /-- Evaluation rule for the radical quotient map. -/
 @[simp]

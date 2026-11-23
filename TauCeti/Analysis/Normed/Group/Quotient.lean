@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Group.Ultra
+
+import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.Analysis.Normed.Group.BallSphere
 
 /-!
@@ -43,6 +45,10 @@ quotient maps (`NormedAddGroupHom.IsQuotient`, also called metric surjections):
 * preservation of operator norms under precomposition (`NormedAddGroupHom.IsQuotient.norm_comp`,
   `NormedAddGroupHom.IsQuotient.nnnorm_comp`) and unit norm onto spaces with nontrivial topology
   (`NormedAddGroupHom.IsQuotient.norm_eq_one`).
+
+Finally, `TauCeti.isInducing_of_openQuotient_isometry` gives a topological-inducing criterion for
+an additive group homomorphism between open quotients of seminormed additive groups intertwined by
+an isometry whose image of the source kernel is dense in the target kernel.
 
 ## References
 
@@ -277,11 +283,11 @@ theorem isQuotient_iff_image_ball {f : NormedAddGroupHom M N} :
 /-- A normed quotient map expresses the seminorm of every `y` as the infimum of the seminorms of
 its preimages. -/
 theorem IsQuotient.norm_eq_iInf {f : NormedAddGroupHom M N} (hf : f.IsQuotient) (y : N) :
-    ‖y‖ = ⨅ x : {x : M // f x = y}, ‖x.1‖ := by
+    ‖y‖ = ⨅ x : {x : M // f x = y}, ‖x.val‖ := by
   have : Nonempty {x : M // f x = y} := nonempty_subtype.mpr (hf.surjective y)
-  have hbdd : BddBelow (Set.range fun x : {x : M // f x = y} ↦ ‖x.1‖) :=
-    ⟨0, Set.forall_mem_range.mpr fun x ↦ norm_nonneg x.1⟩
-  refine le_antisymm (le_ciInf fun x ↦ by simpa [x.2] using hf.norm_le x.1) ?_
+  have hbdd : BddBelow (Set.range fun x : {x : M // f x = y} ↦ ‖x.val‖) :=
+    ⟨0, Set.forall_mem_range.mpr fun x ↦ norm_nonneg x.val⟩
+  refine le_antisymm (le_ciInf fun x ↦ by simpa [x.property] using hf.norm_le x.val) ?_
   refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
   obtain ⟨x, hx, hlt⟩ := hf.norm_lift hε y
   exact (ciInf_le hbdd ⟨x, hx⟩).trans_lt hlt
@@ -291,12 +297,12 @@ if and only if it has norm at most one, is surjective, and expresses every targe
 infimum over preimages. -/
 theorem isQuotient_iff_iInf {f : NormedAddGroupHom M N} :
     f.IsQuotient ↔
-      ‖f‖ ≤ 1 ∧ Function.Surjective f ∧ ∀ y : N, ‖y‖ = ⨅ x : {x : M // f x = y}, ‖x.1‖ := by
+      ‖f‖ ≤ 1 ∧ Function.Surjective f ∧ ∀ y : N, ‖y‖ = ⨅ x : {x : M // f x = y}, ‖x.val‖ := by
   refine ⟨fun hf ↦ ⟨hf.norm_le_one, hf.surjective, hf.norm_eq_iInf⟩, ?_⟩
   rintro ⟨h₁, hsurj, hiInf⟩
   refine .of_norm_lift h₁ fun {ε} hε y ↦ ?_
   have : Nonempty {x : M // f x = y} := nonempty_subtype.mpr (hsurj y)
-  have hlt : (⨅ x : {x : M // f x = y}, ‖x.1‖) < ‖y‖ + ε := by
+  have hlt : (⨅ x : {x : M // f x = y}, ‖x.val‖) < ‖y‖ + ε := by
     rw [← hiInf y]
     exact lt_add_of_pos_right ‖y‖ hε
   obtain ⟨⟨x, hx⟩, hxlt⟩ := exists_lt_of_ciInf_lt hlt
@@ -375,3 +381,49 @@ theorem IsQuotient.nnnorm_eq_one [NontrivialTopology N] {q : NormedAddGroupHom M
 end IsQuotient
 
 end NormedAddGroupHom
+
+namespace TauCeti
+
+open Filter Topology
+
+/-- If `q : G ↠ Q` and `q' : G' ↠ Q'` are open quotient homomorphisms from seminormed additive
+groups intertwined by an isometry `f : G → G'` and a homomorphism `ι : Q → Q'`, and `f (ker q)` is
+dense in `ker q'`, then `ι` is topologically inducing. -/
+theorem isInducing_of_openQuotient_isometry {G G' Q Q' Fq Fq' Fι : Type*}
+    [SeminormedAddGroup G] [SeminormedAddGroup G']
+    [AddGroup Q] [TopologicalSpace Q] [IsTopologicalAddGroup Q]
+    [AddGroup Q'] [TopologicalSpace Q'] [IsTopologicalAddGroup Q']
+    [FunLike Fq G Q] [AddMonoidHomClass Fq G Q]
+    [FunLike Fq' G' Q'] [AddMonoidHomClass Fq' G' Q']
+    [FunLike Fι Q Q'] [AddMonoidHomClass Fι Q Q']
+    (q : Fq) (hq : IsOpenQuotientMap q) (q' : Fq') (hq' : IsOpenQuotientMap q')
+    (f : G → G') (hf : Isometry f) (ι : Fι) (hcomm : ∀ g, q' (f g) = ι (q g))
+    (hker : {x | q' x = 0} ⊆ closure (f '' {x | q x = 0})) :
+    Topology.IsInducing ι := by
+  have hcont : Continuous ι :=
+    hq.isQuotientMap.continuous_iff.mpr
+      (by simpa [Function.comp_def, ← hcomm] using hq'.continuous.comp hf.continuous)
+  rw [IsTopologicalAddGroup.isInducing_iff_nhds_zero]
+  refine le_antisymm (by simpa only [map_zero] using (hcont.tendsto 0).le_comap) fun U hU ↦ ?_
+  have hqU : q ⁻¹' U ∈ 𝓝 (0 : G) := hq.continuous.tendsto 0 (map_zero q ▸ hU)
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hqU
+  refine ⟨q' '' Metric.ball 0 (ε / 2),
+    (hq'.isOpenMap _ Metric.isOpen_ball).mem_nhds
+      ⟨0, Metric.mem_ball_self (half_pos hε), map_zero q'⟩, ?_⟩
+  rintro m ⟨w, hw, hwm⟩
+  obtain ⟨v, rfl⟩ := hq.surjective m
+  have hmem : f v - w ∈ closure (f '' {x | q x = 0}) :=
+    hker (by rw [Set.mem_ofPred_eq, map_sub, hcomm, hwm, sub_self])
+  obtain ⟨_, ⟨k, hk, rfl⟩, hdist⟩ := Metric.mem_closure_iff.mp hmem (ε / 2) (half_pos hε)
+  have hkv : -k + v ∈ Metric.ball (0 : G) ε := by
+    rw [Metric.mem_ball, dist_zero_right, ← dist_eq_norm_neg_add, ← hf.dist_eq, dist_comm]
+    rw [Metric.mem_ball, dist_zero_right] at hw
+    calc dist (f v) (f k) ≤ dist (f v) (f v - w) + dist (f v - w) (f k) := dist_triangle _ _ _
+      _ = ‖w‖ + dist (f v - w) (f k) := by
+        rw [dist_eq_norm_neg_add, sub_eq_add_neg, neg_add_cancel_left, norm_neg]
+      _ < ε / 2 + ε / 2 := add_lt_add hw hdist
+      _ = ε := add_halves ε
+  have hqv := hball hkv
+  rwa [Set.mem_preimage, map_add, map_neg, Set.mem_ofPred_eq.mp hk, neg_zero, zero_add] at hqv
+
+end TauCeti

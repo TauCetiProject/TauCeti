@@ -50,9 +50,9 @@ noncomputable def kerEquivOfRegular (h : e' ∘ₗ f = g ∘ₗ e) (he : Functio
     ker f ≃ₗ[R] ker g :=
   LinearEquiv.ofBijective (e.restrict fun _ hx ↦ map_mem_ker_of_comp_eq e h hx) <| by
     refine ⟨fun x y hxy ↦ Subtype.ext (he (congrArg Subtype.val hxy)), fun x ↦ ?_⟩
-    obtain ⟨y, hy⟩ := hreg x (by rw [mem_ker.mp x.2]; exact zero_mem _)
+    obtain ⟨y, hy⟩ := hreg x (by rw [mem_ker.mp x.property]; exact zero_mem _)
     refine ⟨⟨y, he' ?_⟩, Subtype.ext hy⟩
-    rw [map_zero, ← comp_apply, h, comp_apply, hy, mem_ker.mp x.2]
+    rw [map_zero, ← comp_apply, h, comp_apply, hy, mem_ker.mp x.property]
 
 @[simp]
 theorem coe_kerEquivOfRegular_apply (h : e' ∘ₗ f = g ∘ₗ e) (he : Function.Injective e)

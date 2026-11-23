@@ -17,6 +17,7 @@ public import TauCeti.Topology.FiberBundle.Countable
 public import TauCeti.Topology.FiberBundle.Separation
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Topology.Instances.ZMultiples
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The quotient of a cotangent bundle by the lattice of a coframe
@@ -204,7 +205,7 @@ theorem smul_def (k : Multiplicative (ι → ℤ)) (z : LatticeCover α hα) :
 @[simp]
 theorem smul_ofCotangent (k : Multiplicative (ι → ℤ)) (z : CotangentBundle I B) :
     k • ofCotangent hα z = ofCotangent hα
-      ⟨z.proj, z.2 + ∑ i, (k.toAdd i : ℝ) • SmoothForm.degreeOneEquiv (α i) z.proj⟩ := by
+      ⟨z.proj, z.snd + ∑ i, (k.toAdd i : ℝ) • SmoothForm.degreeOneEquiv (α i) z.proj⟩ := by
   rw [smul_def, Equiv.symm_apply_apply, vectorBundleTranslateDiffeomorph_apply,
     degreeOneEquiv_latticeForm_apply]
 
@@ -222,12 +223,12 @@ instance : MulAction (Multiplicative (ι → ℤ)) (LatticeCover α hα) where
     abel
 
 /-- The coordinates `c` of a covector `p = ∑ i, c i • α i x` in the frame. -/
-def coord (z : CotangentBundle I B) : ι → ℝ := fun i ↦ hα.coeff i z.proj z.2
+def coord (z : CotangentBundle I B) : ι → ℝ := fun i ↦ hα.coeff i z.proj z.snd
 
 omit [Fintype ι] in
 /-- The coordinate `i` of a covector is its coefficient `i` in the frame. -/
 @[simp]
-theorem coord_apply (z : CotangentBundle I B) (i : ι) : coord hα z i = hα.coeff i z.proj z.2 :=
+theorem coord_apply (z : CotangentBundle I B) (i : ι) : coord hα z i = hα.coeff i z.proj z.snd :=
   (rfl)
 
 omit [Fintype ι] in
@@ -332,7 +333,7 @@ theorem mk_surjective : Function.Surjective (mk hα) := fun z ↦ by
 /-- Two covectors have the same class in `T*B/Λ` exactly when they differ by a lattice vector. -/
 theorem mk_eq_mk_iff {z w : CotangentBundle I B} :
     mk hα z = mk hα w ↔ ∃ k : ι → ℤ,
-      z = ⟨w.proj, w.2 + ∑ i, (k i : ℝ) • SmoothForm.degreeOneEquiv (α i) w.proj⟩ := by
+      z = ⟨w.proj, w.snd + ∑ i, (k i : ℝ) • SmoothForm.degreeOneEquiv (α i) w.proj⟩ := by
   rw [mk, mk, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
   constructor
   · rintro ⟨k, hk⟩

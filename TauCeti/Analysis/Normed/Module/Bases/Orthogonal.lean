@@ -53,7 +53,7 @@ theorem IsTOrthogonalFamily.exists_forall_norm_sub_le {e : I → E}
   have hDb : BddBelow D := ⟨0, by rintro _ ⟨y, rfl⟩; exact norm_nonneg _⟩
   obtain ⟨r, hr, hlim, hmem⟩ := exists_seq_tendsto_sInf hD hDb
   choose y hy using fun n ↦ hmem n
-  have hyF (n : ℕ) : (y n : E) ∈ span K (range e) := (y n).2
+  have hyF (n : ℕ) : (y n : E) ∈ span K (range e) := (y n).property
   choose a ha using fun n ↦ (mem_span_range_iff_exists_fun K).1 (hyF n)
   have hr0 (n : ℕ) : 0 ≤ r n := hy n ▸ norm_nonneg _
   -- Orthogonality turns nested error bounds into nested balls in each scalar coordinate.

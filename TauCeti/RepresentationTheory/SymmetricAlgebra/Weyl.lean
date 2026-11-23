@@ -430,7 +430,7 @@ theorem exists_degree_sub_one_eq_of_isRegularWeight [P.IsRootSystem]
   obtain ⟨basis, hJ⟩ := P.exists_basis_lift_jacobian_ne_zero_of_isRegularWeight b hf hbij hv_reg
   obtain ⟨p, hp⟩ := P.exists_map_rat_eq_charpoly_weylGroupRootRep w
   exact P.weylGroupRootRep.exists_degree_sub_one_eq_of_eigenvector_of_jacobian_ne_zero
-    basis d hf (fun k ↦ (f k).2) w v c hc hv hv0 hJ hd hp ha hcop
+    basis d hf (fun k ↦ (f k).property) w v c hc hv hv0 hJ hd hp ha hcop
 
 end ReducedCrystallographic
 

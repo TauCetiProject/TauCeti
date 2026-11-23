@@ -59,8 +59,8 @@ instance fixedField {K M : Type*} [Field K] [Field M] [Algebra K M]
     -- The subgroup action evaluates the underlying automorphism, and fixed-field scalar
     -- multiplication is multiplication by the coerced field element. `change` exposes these
     -- definitions so `map_mul` and fixed-field membership apply to the resulting equality.
-    change g.1 (a.1 * b) = a.1 * g.1 b
-    rw [map_mul, (IntermediateField.mem_fixedField_iff H a.1).1 a.2 g g.2]⟩
+    change g.val (a.val * b) = a.val * g.val b
+    rw [map_mul, (IntermediateField.mem_fixedField_iff H a.val).1 a.property g g.property]⟩
   isInvariant := ⟨fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
 
 /-- **The image of `Gal(M/L)` in `Gal(M/K)` is a Galois group of `M / L`.** For a tower of fields

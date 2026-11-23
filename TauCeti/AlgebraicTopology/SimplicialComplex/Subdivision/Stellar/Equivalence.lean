@@ -165,7 +165,7 @@ theorem stellarEquivalent_stellarSubdivision_of_nonempty (hσne : σ.Nonempty)
 
 /-- Stellar equivalence is an equivalence relation. -/
 theorem equivalence_stellarEquivalent : Equivalence (StellarEquivalent (ι := ι)) :=
-  Relation.EqvGen.is_equivalence _
+  Relation.EqvGen.equivalence _
 
 namespace StellarEquivalent
 

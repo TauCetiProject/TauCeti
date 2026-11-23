@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Braid.HeckeSkein
 public import TauCeti.KnotTheory.Homfly.Specialization
 public import TauCeti.KnotTheory.Jimbo.Normalization
 import Mathlib.Algebra.MonoidAlgebra.Lift
+import TauCeti.KnotTheory.Markov.Skein
 
 /-!
 # Existence of the HOMFLY polynomial
@@ -46,9 +47,14 @@ strands produces the interpolating polynomial. Uniqueness is
 
 * `TauCeti.KnotTheory.exists_homflySpecialization_eq_jimboWeightedTrace`: the weighted Jimbo
   traces of a braid interpolate to a two-variable Laurent polynomial.
-* `TauCeti.MarkovBraid.homflySpecialization_homfly` and
-  `TauCeti.MarkovBraid.homfly_eq_of_homflySpecialization_eq`: the HOMFLY polynomial is the unique
-  Laurent polynomial specializing to the normalized Jimbo traces.
+* `TauCeti.KnotTheory.eval₂_homflyUnknot` and `TauCeti.KnotTheory.eval₂_homflyUnknot_pow`:
+  evaluation of the unknot factor `(a - a⁻¹) z⁻¹` over any commutative ring and its `sl_N`
+  specialization to the quantum dimension.
+* `TauCeti.MarkovBraid.homflySpecialization_homfly`,
+  `TauCeti.MarkovBraid.homfly_eq_of_homflySpecialization_eq`, and
+  `TauCeti.MarkovBraid.eval₂_homfly_eq_jimboTrace`: the HOMFLY polynomial is the unique Laurent
+  polynomial specializing to the normalized Jimbo traces, and evaluates to `jimboTrace` over any
+  commutative ring whenever `q - q⁻¹` is a unit.
 * `TauCeti.MarkovEquiv.homfly_eq`: Markov-equivalent braids have the same HOMFLY polynomial.
 * `TauCeti.MarkovBraid.homfly_skein` and `TauCeti.MarkovBraid.homfly_one`: the skein relation and
   the values on trivial braids.
@@ -153,6 +159,15 @@ theorem homflyUnknot_ne_zero (K : Type*) [Field K] : homflyUnknot K ≠ 0 := by
   intro h
   have hspec := homflySpecialization_homflyUnknot (K := K) 1
   simp [h, jimboWeight_def] at hspec
+
+/-- Whenever `q - q⁻¹` is a unit `u : Rˣ`, evaluating `homflyUnknot K` at `a = q ^ N` and `z = u`
+produces the `N`-colour quantum dimension `∑ a : Fin N, jimboWeight q a`, with no nonvanishing
+assumption on that sum. -/
+theorem eval₂_homflyUnknot_pow (K : Type*) [Field K] {R : Type*} [CommRing R]
+    (φ : K →+* R) (q u : Rˣ) (hu : (u : R) = (q : R) - ↑q⁻¹) (N : ℕ) :
+    eval₂ (eval₂ φ u) (q ^ N) (homflyUnknot K) = ∑ a : Fin N, jimboWeight q a := by
+  rw [eval₂_homflyUnknot, ← inv_pow, ← jimboWeight_sum (N := N) q, ← hu,
+    mul_right_comm, Units.mul_inv, one_mul]
 
 /-! ### Interpolating the weighted traces -/
 
@@ -330,5 +345,35 @@ theorem MarkovEquiv.homfly_eq (K : Type*) [Field K] {β γ : MarkovBraid} (h : M
     β.homfly K = γ.homfly K :=
   MarkovBraid.homfly_eq_of_homflySpecialization_eq K fun N ↦ by
     rw [MarkovBraid.homflySpecialization_homfly, h.jimboTrace_eq]
+
+namespace MarkovBraid
+
+open KnotTheory
+
+/-- Whenever `q - q⁻¹` is a unit `u : Rˣ`, evaluating the unreduced HOMFLY polynomial `β.homfly K`
+at `a = q ^ N` and `z = u` equals the writhe-normalized `N`-colour Jimbo trace `β.jimboTrace q`,
+for every `N : ℕ` (including `N = 0`) and with no nonvanishing assumption on the quantum
+dimension. -/
+theorem eval₂_homfly_eq_jimboTrace (K : Type*) [Field K] {R : Type*} [CommRing R]
+    (β : MarkovBraid) (φ : K →+* R) (q u : Rˣ) (hu : (u : R) = (q : R) - ↑q⁻¹) (N : ℕ) :
+    eval₂ (eval₂ φ u) (q ^ N) (β.homfly K) = β.jimboTrace (N := N) q := by
+  refine congrFun (eq_of_skein (q ^ N) ((q : R) - ↑q⁻¹) (∑ a : Fin N, jimboWeight q a)
+    (F := fun γ ↦ eval₂ (eval₂ φ u) (q ^ N) (γ.homfly K))
+    (G := fun γ ↦ γ.jimboTrace (N := N) q)
+    (fun _ _ h ↦ congrArg _ (h.homfly_eq K))
+    (fun _ _ h ↦ h.jimboTrace_eq q) ?_ ?_ ?_ ?_ ?_) β
+  · intro m c i
+    have hs := congrArg (eval₂ (eval₂ φ u) (q ^ N)) (homfly_skein K 1 c i)
+    simpa only [one_mul, map_sub, map_mul, eval₂_T, eval₂_C, zpow_one, zpow_neg_one, hu,
+      smul_eq_mul] using hs
+  · intro m c i
+    simpa only [one_mul, smul_eq_mul, inv_pow] using jimboTrace_skein (N := N) q 1 c i
+  · intro m b
+    rw [homfly_strandIncl, map_mul, eval₂_homflyUnknot_pow K φ q u hu N, smul_eq_mul]
+  · intro m b
+    rw [jimboTrace_strandIncl, smul_eq_mul]
+  · rw [homfly_one, pow_one, eval₂_homflyUnknot_pow K φ q u hu N, jimboTrace_one, pow_one]
+
+end MarkovBraid
 
 end TauCeti

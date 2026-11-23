@@ -97,13 +97,13 @@ theorem IsEffectiveCartier.exists_map_ker_inclusion_appTop_eq_span_singleton_and
   -- Choose an affine chart `U` around `z` on which `I = (α)`; its preimage `V` in `Z` is an affine
   -- open with sections `Γ(Y, U) ⧸ (α) J(U)`, and the stalk at `z` is a localization of them.
   obtain ⟨U, hzU, α, hα, hIα⟩ := (isEffectiveCartier_iff I).mp hI ((I * J).subschemeι z)
-  have hV : IsAffineOpen ((I * J).subschemeι ⁻¹ᵁ U.1) := U.2.preimage _
-  let _ : Algebra Γ((I * J).subscheme, (I * J).subschemeι ⁻¹ᵁ U.1)
+  have hV : IsAffineOpen ((I * J).subschemeι ⁻¹ᵁ U.val) := U.property.preimage _
+  let _ : Algebra Γ((I * J).subscheme, (I * J).subschemeι ⁻¹ᵁ U.val)
       ((I * J).subscheme.presheaf.stalk z) :=
     TopCat.Presheaf.algebra_section_stalk _ ⟨z, hzU⟩
   have := hV.isLocalization_stalk ⟨z, hzU⟩
   have hgerm : ((I * J).subscheme.presheaf.germ ⊤ z trivial).hom =
-      (algebraMap Γ((I * J).subscheme, (I * J).subschemeι ⁻¹ᵁ U.1)
+      (algebraMap Γ((I * J).subscheme, (I * J).subschemeι ⁻¹ᵁ U.val)
         ((I * J).subscheme.presheaf.stalk z)).comp
         ((I * J).subscheme.presheaf.map (homOfLE le_top).op).hom :=
     (congrArg CommRingCat.Hom.hom
@@ -112,7 +112,7 @@ theorem IsEffectiveCartier.exists_map_ker_inclusion_appTop_eq_span_singleton_and
   have hres {I' : Y.IdealSheafData} (h : I * J ≤ I') :
       (RingHom.ker (inclusion h).appTop.hom).map
         ((I * J).subscheme.presheaf.map (homOfLE le_top).op).hom =
-      RingHom.ker ((inclusion h).app ((I * J).subschemeι ⁻¹ᵁ U.1)).hom := by
+      RingHom.ker ((inclusion h).app ((I * J).subschemeι ⁻¹ᵁ U.val)).hom := by
     have := (inclusion h).ker.map_ideal' (U := ⟨_, hV⟩)
       (V := ⟨⊤, isAffineOpen_top _⟩) (homOfLE le_top).op
     rwa [Scheme.Hom.ker_apply, Scheme.Hom.ker_apply] at this
@@ -181,15 +181,16 @@ theorem IsEffectiveCartier.finrank_mul_subschemeι_comp_of_field {K : Type u} [F
   exact hI.exists_map_ker_inclusion_appTop_eq_span_singleton_and_annihilator hIle hJle
     (hZ.fromSpec q)
 
-/-- **The degree of a sum of relative effective Cartier divisors is the sum of the degrees.** If
-`I` and `J` are relative effective Cartier divisors on `X` over `S` and the closed subscheme of
-`I * J`, the divisor `D + E`, is finite over `S`, then its rank over `S` is the sum of the ranks of
-the closed subschemes of `I` and `J`. -/
-theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp {S X : Scheme.{u}} {f : X ⟶ S}
-    {I J : X.IdealSheafData} (hI : I.IsRelativeEffectiveCartier f)
-    (hJ : J.IsRelativeEffectiveCartier f) [IsFinite ((I * J).subschemeι ≫ f)] :
+/-- Ranks add for the product of a relative effective Cartier ideal and any ideal whose
+closed subscheme is flat, provided the product subscheme is finite over the base. -/
+theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp_of_flat
+    {S X : Scheme.{u}} {f : X ⟶ S}
+    {I : X.IdealSheafData} (hI : I.IsRelativeEffectiveCartier f)
+    (J : X.IdealSheafData) [Flat (J.subschemeι ≫ f)]
+    [IsFinite ((I * J).subschemeι ≫ f)] :
     ((I * J).subschemeι ≫ f).finrank =
       (I.subschemeι ≫ f).finrank + (J.subschemeι ≫ f).finrank := by
+  have := hI.flat_mul_subschemeι_comp J
   have hIle : I * J ≤ I := mul_le_of_le_one_right bot_le le_top
   have hJle : I * J ≤ J := mul_le_of_le_one_left bot_le le_top
   have : IsFinite (I.subschemeι ≫ f) := by
@@ -197,8 +198,6 @@ theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp {S X : Scheme.{u
   have : IsFinite (J.subschemeι ≫ f) := by
     rw [← inclusion_subschemeι hJle, Category.assoc]; infer_instance
   have := hI.flat
-  have := hJ.flat
-  have := (TauCeti.isRelativeEffectiveCartier_mul hI hJ).flat
   -- Compute the ranks at `t` on the fibre over the residue field of `t`.
   funext t
   let h := S.fromSpecResidueField t
@@ -212,6 +211,18 @@ theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp {S X : Scheme.{u
   rw [comap_mul] at this ⊢
   exact IsEffectiveCartier.finrank_mul_subschemeι_comp_of_field (K := S.residueField t)
     (pullback.snd f h) (hI.comap h).isEffectiveCartier _ s
+
+/-- **The degree of a sum of relative effective Cartier divisors is the sum of the degrees.** If
+`I` and `J` are relative effective Cartier divisors on `X` over `S` and the closed subscheme of
+`I * J`, the divisor `D + E`, is finite over `S`, then its rank over `S` is the sum of the ranks of
+the closed subschemes of `I` and `J`. -/
+theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp {S X : Scheme.{u}} {f : X ⟶ S}
+    {I J : X.IdealSheafData} (hI : I.IsRelativeEffectiveCartier f)
+    (hJ : J.IsRelativeEffectiveCartier f) [IsFinite ((I * J).subschemeι ≫ f)] :
+    ((I * J).subschemeι ≫ f).finrank =
+      (I.subschemeι ≫ f).finrank + (J.subschemeι ≫ f).finrank := by
+  have := hJ.flat
+  exact hI.finrank_mul_subschemeι_comp_of_flat J
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 
@@ -285,8 +296,8 @@ lemma mul_mem_relativeEffectiveCartierDegreeSubfunctor_obj {d e : ℕ} {T : (Ove
     (hD : D ∈ (relativeEffectiveCartierDegreeSubfunctor f d).obj T)
     (hE : E ∈ (relativeEffectiveCartierDegreeSubfunctor f e).obj T) :
     D * E ∈ (relativeEffectiveCartierDegreeSubfunctor f (d + e)).obj T := by
-  have hrelD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.2
-  have hrelE := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp E.2
+  have hrelD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.property
+  have hrelE := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp E.property
   have hrel := TauCeti.isRelativeEffectiveCartier_mul hrelD hrelE
   have := hrel.isFinite
   rw [mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff] at hD hE ⊢
@@ -301,7 +312,7 @@ lemma one_mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj (T : (Over S)ᵒ
     (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) ∈
       (relativeEffectiveCartierDegreeSubfunctor f 0).obj T := by
   have hrel := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
-    (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T).2
+    (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T).property
   have := hrel.flat
   have := hrel.isFinite
   rw [mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff]
