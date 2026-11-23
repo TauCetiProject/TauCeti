@@ -27,9 +27,9 @@ Against the constant function `1` it gives the set-integral form
 `(∫ x in S, f x ∂μ)² ≤ μ(S) ∫ x in S, f x² ∂μ` on a set of finite measure
 (`TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq`), which needs only `f²`
 to be integrable on `S`. On a probability space this becomes the first-moment bound
-`|∫ g dμ| ≤ √(∫ g² dμ)` (`MeasureTheory.abs_integral_le_sqrt_integral_sq`) and its consequence
-`∫ ‖f‖ᵏ dμ ≤ √(∫ ‖f‖²ᵏ dμ)` for absolute moments
-(`MeasureTheory.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`).
+`|∫ g dμ| ≤ √(∫ g² dμ)` (`MeasureTheory.Integrable.abs_integral_le_sqrt_integral_sq`) and its
+consequence `∫ ‖f‖ᵏ dμ ≤ √(∫ ‖f‖²ᵏ dμ)` for absolute moments
+(`MeasureTheory.Integrable.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`).
 -/
 
 public section
@@ -76,7 +76,7 @@ theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [Measurabl
 
 end TauCeti
 
-namespace MeasureTheory
+namespace MeasureTheory.Integrable
 
 /-- On a probability space, or for the zero measure, the absolute value of the mean of a real
 function with integrable square is at most the square root of its second moment. -/
@@ -96,6 +96,6 @@ theorem integral_norm_pow_le_sqrt_integral_norm_pow_two_mul {Ω E : Type*} [Meas
     (hf : Integrable (fun x => ‖f x‖ ^ (2 * k)) μ) :
     ∫ x, ‖f x‖ ^ k ∂μ ≤ √(∫ x, ‖f x‖ ^ (2 * k) ∂μ) := by
   simp only [pow_mul'] at hf ⊢
-  exact le_of_abs_le (abs_integral_le_sqrt_integral_sq hf)
+  exact le_of_abs_le hf.abs_integral_le_sqrt_integral_sq
 
-end MeasureTheory
+end MeasureTheory.Integrable
